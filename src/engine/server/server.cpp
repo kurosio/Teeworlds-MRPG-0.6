@@ -999,7 +999,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		else if(MsgID == NETMSG_INPUT)
 		{
 			CClient::CInput* pInput;
-			int64_t TagTime;
+			int64 TagTime;
 
 			m_aClients[ClientID].m_LastAckedSnapshot = Unpacker.GetInt();
 			int IntendedTick = Unpacker.GetInt();
@@ -1068,8 +1068,6 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		}
 		else if(MsgID == NETMSG_RCON_AUTH)
 		{
-			const char *pPw = Unpacker.GetString(CUnpacker::SANITIZE_CC);
-
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && Unpacker.Error() == 0)
 			{
 				if(g_Config.m_SvRconPassword[0] == 0 && g_Config.m_SvRconModPassword[0] == 0)
