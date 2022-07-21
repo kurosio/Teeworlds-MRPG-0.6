@@ -1,0 +1,4095 @@
+{
+    "translation": [
+        {
+            "key": "Mana required {INT}%",
+            "value": "Mana required {INT}%"
+        },
+        {
+            "key": "Used on {STR}",
+            "value": "Used on {STR}"
+        },
+        {
+            "key": "Learn {STR}",
+            "value": "Learn {STR}"
+        },
+        {
+            "key": "Max level {INT} {STR}",
+            "value": "Max level {INT} {STR}"
+        },
+        {
+            "key": "Next level {INT} {STR}",
+            "value": "Next level {INT} {STR}"
+        },
+        {
+            "key": "Skill Learn Information",
+            "value": "Skill Learn Information"
+        },
+        {
+            "key": "Here you can learn passive and active skills",
+            "value": "Here you can learn passive and active skills"
+        },
+        {
+            "key": "You can bind active skill any button using the console",
+            "value": "You can bind active skill any button using the console"
+        },
+        {
+            "key": "Improving",
+            "value": "Improving"
+        },
+        {
+            "key": "Healing",
+            "value": "Healing"
+        },
+        {
+            "key": "Attacking",
+            "value": "Attacking"
+        },
+        {
+            "key": "Defensive",
+            "value": "Defensive"
+        },
+        {
+            "key": "{STR} skill's",
+            "value": "{STR} skill's"
+        },
+        {
+            "hash": 12597889241404284179,
+            "key": "Glue",
+            "value": "Glue"
+        },
+        {
+            "key": "{INT}. {STR} | {INT}:{INT}min | {INT}P",
+            "value": "{INT}. {STR} | {INT}:{INT}min | {INT}P"
+        },
+        {
+            "hash": 4426147474729893160,
+            "key": "Noctis Lucis Caelum",
+            "value": "Noctis Lucis Caelum"
+        },
+        {
+            "hash": 7134787850364891227,
+            "key": "Apostle",
+            "value": "Apostle"
+        },
+        {
+            "hash": 12598891996009023386,
+            "key": "Mirt",
+            "value": "Mirt"
+        },
+        {
+            "hash": 12597899137008938078,
+            "key": "Gel",
+            "value": "Gel"
+        },
+        {
+            "hash": 12597894738962425234,
+            "key": "Potion resurrection",
+            "value": "Potion resurrection"
+        },
+        {
+            "hash": 14456815418340704872,
+            "key": "Main: Betrayal, Death",
+            "value": "Main: Betrayal, Death"
+        },
+        {
+            "hash": 4374102024552958487,
+            "key": "Do you need something, my young friend?",
+            "value": "Do you need something, my young friend?"
+        },
+        {
+            "hash": 4374100925041330276,
+            "key": "The [Bot_2] says we are expecting a storm, I came to clarify.",
+            "value": "The [Bot_2] says we are expecting a storm, I came to clarify."
+        },
+        {
+            "hash": 4374104223576214909,
+            "key": "Yes, he's right. A storm is waiting for us, it can be determined by the waves.",
+            "value": "Yes, he's right. A storm is waiting for us, it can be determined by the waves."
+        },
+        {
+            "hash": 4374103124064586698,
+            "key": "Waves? Can I ask you more details?",
+            "value": "Waves? Can I ask you more details?"
+        },
+        {
+            "hash": 4374097626506445643,
+            "key": "When a storm is expected, the waves among the desert sea begin to waver.",
+            "value": "When a storm is expected, the waves among the desert sea begin to waver."
+        },
+        {
+            "hash": 4374096526994817432,
+            "key": "I see, how big a storm is expected?",
+            "value": "I see, how big a storm is expected?"
+        },
+        {
+            "hash": 4374099825529702065,
+            "key": "I won't tell you exactly my friend.",
+            "value": "I won't tell you exactly my friend."
+        },
+        {
+            "hash": 4374098726018073854,
+            "key": "Don't worry, I've been sailing in a storm many times. We'll manage somehow! You'd better go eat and rest with your friends.",
+            "value": "Don't worry, I've been sailing in a storm many times. We'll manage somehow! You'd better go eat and rest with your friends."
+        },
+        {
+            "hash": 4374093228459932799,
+            "key": "OK, thanks for the advice.",
+            "value": "OK, thanks for the advice."
+        },
+        {
+            "hash": 4367476367482683576,
+            "key": "Oh [Player], where have you been? I've been looking for you for so long.",
+            "value": "Oh [Player], where have you been? I've been looking for you for so long."
+        },
+        {
+            "hash": 4367477466994311787,
+            "key": "Look at this interesting game from [Bot_46] homeland. It's called MAJONG.",
+            "value": "Look at this interesting game from [Bot_46] homeland. It's called MAJONG."
+        },
+        {
+            "hash": 4367478566505939998,
+            "key": "Yeah, I'm a little worried. I have a bad feeling about it.",
+            "value": "Yeah, I'm a little worried. I have a bad feeling about it."
+        },
+        {
+            "hash": 4367479666017568209,
+            "key": "Don't worry [Player]. Or have you forgotten who's with you? I'm the strongest girl from the village, don't worry!",
+            "value": "Don't worry [Player]. Or have you forgotten who's with you? I'm the strongest girl from the village, don't worry!"
+        },
+        {
+            "hash": 4367480765529196420,
+            "key": "Or at least I can cook well...",
+            "value": "Or at least I can cook well..."
+        },
+        {
+            "hash": 4367481865040824631,
+            "key": "Oh, speaking of which, aren't you hungry? Shall we go eat?",
+            "value": "Oh, speaking of which, aren't you hungry? Shall we go eat?"
+        },
+        {
+            "hash": 4367482964552452842,
+            "key": "And i wanted to offer you something to eat too. Of course you can. A strong girl needs to eat well!",
+            "value": "And i wanted to offer you something to eat too. Of course you can. A strong girl needs to eat well!"
+        },
+        {
+            "hash": 4367484064064081053,
+            "key": "Diana just don't get fat.",
+            "value": "Diana just don't get fat."
+        },
+        {
+            "hash": 4367467571389657888,
+            "key": "[Player] don't give me complexes!!! ( ‾́ ◡ ‾́ )",
+            "value": "[Player] don't give me complexes!!! ( ‾́ ◡ ‾́ )"
+        },
+        {
+            "hash": 4368468126971140673,
+            "key": "What will you eat?",
+            "value": "What will you eat?"
+        },
+        {
+            "hash": 4368467027459512462,
+            "key": "Let me ask my friend for a second.",
+            "value": "Let me ask my friend for a second."
+        },
+        {
+            "hash": 4369319148971186762,
+            "key": "[Bot_6], what are we going to eat?",
+            "value": "[Bot_6], what are we going to eat?"
+        },
+        {
+            "hash": 4369320248482814973,
+            "key": "Let's try pancakes!!! ** Said she with eyes like she saw pancakes for the first time**",
+            "value": "Let's try pancakes!!! ** Said she with eyes like she saw pancakes for the first time**"
+        },
+        {
+            "hash": 4369316949947930340,
+            "key": "Yes [Talked] i want to try them too.",
+            "value": "Yes [Talked] i want to try them too."
+        },
+        {
+            "hash": 4370275724087541107,
+            "key": "Hurry up and take them, I want to eat...",
+            "value": "Hurry up and take them, I want to eat..."
+        },
+        {
+            "hash": 4370274624575912896,
+            "key": " I'll take them, I'll take them... Don't worry, they don't have legs!",
+            "value": " I'll take them, I'll take them... Don't worry, they don't have legs!"
+        },
+        {
+            "hash": 4363685251389368948,
+            "key": "Did you choose something?",
+            "value": "Did you choose something?"
+        },
+        {
+            "hash": 4363686350900997159,
+            "key": "Yes we did, can we have pancakes please.",
+            "value": "Yes we did, can we have pancakes please."
+        },
+        {
+            "hash": 4363687450412625370,
+            "key": "Yes of course, take your order.",
+            "value": "Yes of course, take your order."
+        },
+        {
+            "hash": 4364536273389415037,
+            "key": "Mmm... They're really good. But I still cook tastier don't you [Player] agree?",
+            "value": "Mmm... They're really good. But I still cook tastier don't you [Player] agree?"
+        },
+        {
+            "hash": 4364535173877786826,
+            "key": "Maybe.",
+            "value": "Maybe."
+        },
+        {
+            "hash": 4364534074366158615,
+            "key": "What's possible.... It's not possible, it's definitely...",
+            "value": "What's possible.... It's not possible, it's definitely..."
+        },
+        {
+            "hash": 4364532974854530404,
+            "key": "Well, well. **Bell sound**",
+            "value": "Well, well. **Bell sound**"
+        },
+        {
+            "hash": 8771034730959712969,
+            "key": "Please remain calm, a very big storm is coming.",
+            "value": "Please remain calm, a very big storm is coming."
+        },
+        {
+            "hash": 8771033631448084758,
+            "key": "A violent storm?",
+            "value": "A violent storm?"
+        },
+        {
+            "hash": 8771032531936456547,
+            "key": "HOW DARE YOU... I AM A GOD OF THE SEAS AND OCEANS....",
+            "value": "HOW DARE YOU... I AM A GOD OF THE SEAS AND OCEANS...."
+        },
+        {
+            "hash": 8771031432424828336,
+            "key": "I can smell the oracle...",
+            "value": "I can smell the oracle..."
+        },
+        {
+            "hash": 8771039129006225813,
+            "key": " WHERE IS THE ORACLE.......",
+            "value": " WHERE IS THE ORACLE......."
+        },
+        {
+            "hash": 8771038029494597602,
+            "key": "What oracle?",
+            "value": "What oracle?"
+        },
+        {
+            "hash": 8771036929982969391,
+            "key": "Don't joke with me... WAIT FOR YOU IN MY CHAMBERS WITH THE ORACLE... OTHERWISE YOU WILL DIE HERE...",
+            "value": "Don't joke with me... WAIT FOR YOU IN MY CHAMBERS WITH THE ORACLE... OTHERWISE YOU WILL DIE HERE..."
+        },
+        {
+            "hash": 8771035830471341180,
+            "key": "**no sound of water** I have stopped the flow of the sea...",
+            "value": "**no sound of water** I have stopped the flow of the sea..."
+        },
+        {
+            "hash": 8771043527052738657,
+            "key": "How do we find you?",
+            "value": "How do we find you?"
+        },
+        {
+            "hash": 8771042427541110446,
+            "key": " Waiting for you under the water...",
+            "value": " Waiting for you under the water..."
+        },
+        {
+            "hash": 8048018254488596908,
+            "key": "Wow, when i'm at the helm, feel young.",
+            "value": "Wow, when i'm at the helm, feel young."
+        },
+        {
+            "hash": 8048019354000225119,
+            "key": "A man who is not even 25 told me...",
+            "value": "A man who is not even 25 told me..."
+        },
+        {
+            "hash": 8048020453511853330,
+            "key": "Oh no, I've been over 50 for a long time... But thank you, it's nice to hear. Okay, I'll keep an eye on the direction, don't bother me.",
+            "value": "Oh no, I've been over 50 for a long time... But thank you, it's nice to hear. Okay, I'll keep an eye on the direction, don't bother me."
+        },
+        {
+            "hash": 8039444262813510555,
+            "key": "I feel that there will be a storm.",
+            "value": "I feel that there will be a storm."
+        },
+        {
+            "hash": 8039443163301882344,
+            "key": "Do you feel it? How can you feel it?",
+            "value": "Do you feel it? How can you feel it?"
+        },
+        {
+            "hash": 8039446461836766977,
+            "key": "I've been sailing on a ship for a long time, and I've been to many places. And i can already tell it by feeling.",
+            "value": "I've been sailing on a ship for a long time, and I've been to many places. And i can already tell it by feeling."
+        },
+        {
+            "hash": 8039445362325138766,
+            "key": "I see, hope not a strong storm awaits us?",
+            "value": "I see, hope not a strong storm awaits us?"
+        },
+        {
+            "hash": 8039448660860023399,
+            "key": "I don't know for sure, but I have a hunch. Go to [Bot_1] and clarify, he is much more experienced than me.",
+            "value": "I don't know for sure, but I have a hunch. Go to [Bot_1] and clarify, he is much more experienced than me."
+        },
+        {
+            "hash": 7141408009877025083,
+            "key": "Deity of underwater kin",
+            "value": "Deity of underwater kin"
+        },
+        {
+            "hash": 6532231021523440270,
+            "key": "Hardness",
+            "value": "血量"
+        },
+        {
+            "hash": 6532232121035068481,
+            "key": "Lucky",
+            "value": "幸运"
+        },
+        {
+            "hash": 13474610218370217467,
+            "key": "Piety",
+            "value": "祈祷"
+        },
+        {
+            "hash": 13474609118858589256,
+            "key": "Vampirism",
+            "value": "吸血"
+        },
+        {
+            "hash": 13474612417393473889,
+            "key": "Ammo Regen",
+            "value": "子弹回复"
+        },
+        {
+            "hash": 13474611317881845678,
+            "key": "Ammo",
+            "value": "子弹"
+        },
+        {
+            "hash": 13474614616416730311,
+            "key": "Efficiency",
+            "value": "效率"
+        },
+        {
+            "hash": 13474613516905102100,
+            "key": "Extraction",
+            "value": "萃取"
+        },
+        {
+            "hash": 13474616815439986733,
+            "key": "Hammer Power",
+            "value": "锤子强度"
+        },
+        {
+            "hash": 13474615715928358522,
+            "key": "Gun Power",
+            "value": "手枪强度"
+        },
+        {
+            "hash": 13474601422277191779,
+            "key": "Shotgun Power",
+            "value": "霰弹强度"
+        },
+        {
+            "hash": 13474600322765563568,
+            "key": "Grenade Power",
+            "value": "榴弹强度"
+        },
+        {
+            "hash": 13471775677393257184,
+            "key": "Rifle Power",
+            "value": "激光强度"
+        },
+        {
+            "hash": 13471776776904885395,
+            "key": "Lucky items",
+            "value": "幸运物品"
+        },
+        {
+            "hash": 12278085539422668998,
+            "key": "Gold",
+            "value": "黄金"
+        },
+        {
+            "hash": 3770121739604156180,
+            "key": "Major currency",
+            "value": "主要货币"
+        },
+        {
+            "hash": 12278084439911040787,
+            "key": "Hammer",
+            "value": "锤子"
+        },
+        {
+            "hash": 3770125038139040813,
+            "key": "A normal hammer",
+            "value": "普通锤子"
+        },
+        {
+            "hash": 12278083340399412576,
+            "key": "Gun",
+            "value": "普通手枪"
+        },
+        {
+            "hash": 3770120640092527969,
+            "key": "Conventional weapon",
+            "value": "常规武器"
+        },
+        {
+            "hash": 12278091036980810053,
+            "key": "Shotgun",
+            "value": "霰弹枪"
+        },
+        {
+            "hash": 12278089937469181842,
+            "key": "Grenade",
+            "value": "榴弹发射器"
+        },
+        {
+            "hash": 12278088837957553631,
+            "key": "Rifle",
+            "value": "普通激光枪"
+        },
+        {
+            "hash": 12278087738445925420,
+            "key": "Material",
+            "value": "附魔材料"
+        },
+        {
+            "hash": 3770119540580899758,
+            "key": "Required to improve weapons",
+            "value": "需要提升武器"
+        },
+        {
+            "hash": 12278095435027322897,
+            "key": "Ticket guild",
+            "value": "公会创建票"
+        },
+        {
+            "hash": 3770114043022758703,
+            "key": "Command: /gcreate <name>",
+            "value": "指令: /gcreate <公会名称>"
+        },
+        {
+            "hash": 12278094335515694686,
+            "key": "Skill Point",
+            "value": "技能点数"
+        },
+        {
+            "hash": 3770112943511130492,
+            "key": "Skill point",
+            "value": "技能点数"
+        },
+        {
+            "hash": 12598883199915997698,
+            "key": "Decoration Armor",
+            "value": "装饰盔甲"
+        },
+        {
+            "hash": 18229470719904886597,
+            "key": "Decoration for house!",
+            "value": "房子的装饰！"
+        },
+        {
+            "hash": 12598884299427625909,
+            "key": "Decoration Hearth Elite",
+            "value": "装饰原始壁炉"
+        },
+        {
+            "hash": 12598881000892741276,
+            "key": "Decoration Ninja Elite",
+            "value": "装饰忍者壁炉"
+        },
+        {
+            "hash": 12598882100404369487,
+            "key": "Decoration Hearth",
+            "value": "专属壁炉"
+        },
+        {
+            "hash": 12598878801869484854,
+            "key": "Potion mana regen",
+            "value": "魔力恢复药水"
+        },
+        {
+            "hash": 18229463023323489120,
+            "key": "Regenerate +5%, 15sec every sec.\n",
+            "value": "每秒魔力恢复 +5%,持续15秒 "
+        },
+        {
+            "hash": 12598879901381113065,
+            "key": "Potion health regen",
+            "value": "生命恢复药水"
+        },
+        {
+            "hash": 18229464122835117331,
+            "key": "Regenerate +3% health, 15sec every sec.",
+            "value": "每秒生命恢复 +3% , 持续15秒"
+        },
+        {
+            "hash": 12598876602846228432,
+            "key": "Capsule survival experience",
+            "value": "经验值胶囊"
+        },
+        {
+            "hash": 18229465222346745542,
+            "key": "You got 10-50 experience survival",
+            "value": "你会随机获得10-50经验"
+        },
+        {
+            "hash": 12598877702357856643,
+            "key": "Little bag of gold",
+            "value": "小钱包"
+        },
+        {
+            "hash": 18229466321858373753,
+            "key": "You got 10-50 gold",
+            "value": "随机得到10-50黄金"
+        },
+        {
+            "hash": 18226529526299989847,
+            "key": "Information added later.",
+            "value": "简介很快添加."
+        },
+        {
+            "hash": 12597891440427540601,
+            "key": "Potato",
+            "value": "土豆"
+        },
+        {
+            "hash": 18232297564300449403,
+            "key": "Material need for craft!",
+            "value": "需要附魔材料来合成！"
+        },
+        {
+            "hash": 12597890340915912390,
+            "key": "Notebook",
+            "value": "笔记本"
+        },
+        {
+            "hash": 18232300862835334036,
+            "key": "In it, something is written",
+            "value": "这里面记载了一些东西"
+        },
+        {
+            "hash": 18232292066742308348,
+            "key": "I wonder what it's for?",
+            "value": "我想知道这是干什么的?"
+        },
+        {
+            "hash": 12597888141892655968,
+            "key": "Board",
+            "value": "板子"
+        },
+        {
+            "hash": 18232303061858590458,
+            "key": "Plain Board",
+            "value": "朴实的板子"
+        },
+        {
+            "hash": 12597895838474053445,
+            "key": "Mushroom",
+            "value": "蘑菇"
+        },
+        {
+            "hash": 18232296464788821192,
+            "key": "Resuscitates in the zone where you died!",
+            "value": "你将会在你死亡的地方苏醒！"
+        },
+        {
+            "hash": 12597893639450797023,
+            "key": "Goblin Pickaxe",
+            "value": "哥布林矿镐"
+        },
+        {
+            "hash": 18226518531183707737,
+            "key": "It happens sometimes",
+            "value": "预 兆"
+        },
+        {
+            "hash": 12597892539939168812,
+            "key": "Young fighter's ring",
+            "value": "年轻战士的戒指"
+        },
+        {
+            "hash": 12597900236520566289,
+            "key": "Small ammo bag",
+            "value": "小的弹夹"
+        },
+        {
+            "hash": 18226517431672079526,
+            "key": "Adds a small amount of ammunition",
+            "value": "添加少量弹药"
+        },
+        {
+            "hash": 12596899680939083504,
+            "key": "Goblin Ingot",
+            "value": "哥布林锭"
+        },
+        {
+            "hash": 12596900780450711715,
+            "key": "Copper Ingot",
+            "value": "铜锭"
+        },
+        {
+            "hash": 12596901879962339926,
+            "key": "Salantra Blessing",
+            "value": "Salantra的祝福"
+        },
+        {
+            "hash": 12596902979473968137,
+            "key": "Explosive module for gun",
+            "value": "手枪爆炸模块"
+        },
+        {
+            "hash": 12596904078985596348,
+            "key": "Explosive module for shotgun",
+            "value": "霰弹枪爆炸模块"
+        },
+        {
+            "hash": 12596905178497224559,
+            "key": "Kappa meat",
+            "value": "Kappa肉"
+        },
+        {
+            "hash": 12596906278008852770,
+            "key": "Ring of Arvida",
+            "value": "Arvida的戒指"
+        },
+        {
+            "hash": 12596907377520480981,
+            "key": "Relic of the Orc Lord",
+            "value": "Orc Lord的遗物"
+        },
+        {
+            "hash": 12596908477032109192,
+            "key": "Ticket reset class stats",
+            "value": "升级点重置券"
+        },
+        {
+            "hash": 18231301406765479462,
+            "key": "Resets only class stats(Dps, Tank, Healer).",
+            "value": "只会重置职业类点数(战士, 坦克, 治疗)."
+        },
+        {
+            "hash": 12596909576543737403,
+            "key": "Mode PVP",
+            "value": "PVP模式"
+        },
+        {
+            "hash": 18231302506277107673,
+            "key": "Settings game.",
+            "value": "游戏设置."
+        },
+        {
+            "hash": 12603666075497769423,
+            "key": "Ticket reset weapon stats",
+            "value": "武器升级点重置券"
+        },
+        {
+            "hash": 18226527327276733425,
+            "key": "Resets only ammo stats(Ammo).",
+            "value": "只会重置武器弹药类的升级点."
+        },
+        {
+            "hash": 12603664975986141212,
+            "key": "Orc's Belt",
+            "value": "Orc的腰带"
+        },
+        {
+            "hash": 18226526227765105214,
+            "key": "You can feel the light power of mana.",
+            "value": "你可以感受到mana微弱的力量."
+        },
+        {
+            "hash": 12603668274521025845,
+            "key": "Torn cloth clothes of orcs",
+            "value": "Orc的破布衣服"
+        },
+        {
+            "hash": 12603667175009397634,
+            "key": "Blessing for discount craft",
+            "value": "商店打折券"
+        },
+        {
+            "hash": 18226524028741848792,
+            "key": "Need dress it, -20% craft price",
+            "value": "需要装备，获得-20%的价格"
+        },
+        {
+            "hash": 12603661677451256579,
+            "key": "Noctis fragment",
+            "value": "Noctis的碎片"
+        },
+        {
+            "hash": 18226531725323246269,
+            "key": "Event Final Fantasy.",
+            "value": "最终幻想活动."
+        },
+        {
+            "hash": 12603660577939628368,
+            "key": "The core of Neptune",
+            "value": "海王核心"
+        },
+        {
+            "hash": 12603663876474513001,
+            "key": "Remains of a dead soul",
+            "value": "亡魂残骸"
+        },
+        {
+            "hash": 12603662776962884790,
+            "key": "Ring of God of War",
+            "value": "战神的戒指"
+        },
+        {
+            "hash": 12603674871590795111,
+            "key": "Bracelet of Fire",
+            "value": "火之手镯"
+        },
+        {
+            "hash": 12603673772079166900,
+            "key": "Big ammo bag",
+            "value": "大的弹药袋"
+        },
+        {
+            "hash": 12602674316009312326,
+            "key": "Strength ",
+            "value": "力量 "
+        },
+        {
+            "hash": 18225676305276687336,
+            "key": "Increase your strength",
+            "value": "提升你的力量"
+        },
+        {
+            "hash": 12602675415520940537,
+            "key": "Random home decor",
+            "value": "随意的家居装饰"
+        },
+        {
+            "hash": 13737693206538261030,
+            "key": "Heavenly hammer",
+            "value": "天堂之锤"
+        },
+        {
+            "hash": 4593152128912032658,
+            "key": "Reinforced kick",
+            "value": "增强击退"
+        },
+        {
+            "hash": 13737694306049889241,
+            "key": "Heavenly gun",
+            "value": "天堂手枪"
+        },
+        {
+            "hash": 4593146631353891603,
+            "key": "It look doesn't bad",
+            "value": "看上去不错"
+        },
+        {
+            "hash": 13737691007515004608,
+            "key": "Heavenly shotgun",
+            "value": "天堂霰弹枪"
+        },
+        {
+            "hash": 13737692107026632819,
+            "key": "Heavenly grenade",
+            "value": "天堂榴弹枪"
+        },
+        {
+            "hash": 13737697604584773874,
+            "key": "Heavenly rifle",
+            "value": "天堂激光枪"
+        },
+        {
+            "hash": 13737698704096402085,
+            "key": "Shadow wings",
+            "value": "影之翼"
+        },
+        {
+            "hash": 4591196097725823739,
+            "key": "Dark history",
+            "value": "黑暗年代"
+        },
+        {
+            "hash": 13737695405561517452,
+            "key": "Neptune wings",
+            "value": "海王之翼"
+        },
+        {
+            "hash": 4592182359656139781,
+            "key": "Covered in secrets",
+            "value": "隐藏在秘密之中"
+        },
+        {
+            "hash": 13737696505073145663,
+            "key": "Angel wings",
+            "value": "天使之翼"
+        },
+        {
+            "hash": 13737702002631286718,
+            "key": "Heavenly wings",
+            "value": "天堂之戒"
+        },
+        {
+            "hash": 13737703102142914929,
+            "key": "Rainbow wings",
+            "value": "缤纷之翼"
+        },
+        {
+            "hash": 13738684966026718127,
+            "key": "Magitech hammer",
+            "value": "魔力锤子"
+        },
+        {
+            "hash": 13738683866515089916,
+            "key": "Magitech gun",
+            "value": "魔力手枪"
+        },
+        {
+            "hash": 13738687165049974549,
+            "key": "Magitech shotgun",
+            "value": "魔力霰弹枪"
+        },
+        {
+            "hash": 13738686065538346338,
+            "key": "Magitech grenade",
+            "value": "魔力榴弹枪"
+        },
+        {
+            "hash": 13738680567980205283,
+            "key": "Magitech rifle",
+            "value": "魔力激光枪"
+        },
+        {
+            "hash": 13738679468468577072,
+            "key": "Stars wings",
+            "value": "繁星之翼"
+        },
+        {
+            "hash": 13738682767003461705,
+            "key": "Bat wings",
+            "value": "蝙蝠之翼"
+        },
+        {
+            "hash": 13738681667491833494,
+            "key": "Little eagle wings",
+            "value": "雏鹰之翼"
+        },
+        {
+            "hash": 13738693762119743815,
+            "key": "Necromante wings",
+            "value": "死灵之翼"
+        },
+        {
+            "hash": 13738692662608115604,
+            "key": "Goblin hammer",
+            "value": "哥布林锤子"
+        },
+        {
+            "hash": 13735885609421860596,
+            "key": "Goblin gun",
+            "value": "哥布林手枪"
+        },
+        {
+            "hash": 13735886708933488807,
+            "key": "Goblin shotgun",
+            "value": "哥布林霰弹枪"
+        },
+        {
+            "hash": 13735887808445117018,
+            "key": "Goblin grenade",
+            "value": "哥布林榴弹枪"
+        },
+        {
+            "hash": 13735888907956745229,
+            "key": "Goblin rifle",
+            "value": "哥布林激光枪"
+        },
+        {
+            "hash": 13735881211375347752,
+            "key": "Scythe",
+            "value": "镰刀"
+        },
+        {
+            "hash": 12994946601010180531,
+            "key": "Theme Couple",
+            "value": "主题情侣"
+        },
+        {
+            "hash": 8366932116851768616,
+            "key": "Strictly limited as the theme",
+            "value": "严格限定为主题"
+        },
+        {
+            "hash": 12994945501498552320,
+            "key": "Theme Final Fantasy",
+            "value": "最终幻想主题"
+        },
+        {
+            "hash": 12994948800033436953,
+            "key": "Theme Aion",
+            "value": "永恒之塔主题"
+        },
+        {
+            "hash": 12994947700521808742,
+            "key": "Theme Dragon Nest",
+            "value": "龙之巢主题"
+        },
+        {
+            "hash": 13696890409036144357,
+            "key": "Health turret",
+            "value": "治疗光环"
+        },
+        {
+            "hash": 16016582867007548810,
+            "key": "life span",
+            "value": "存在时间"
+        },
+        {
+            "hash": 13696887110501259724,
+            "key": "Sleepy Gravity",
+            "value": "引力陷阱"
+        },
+        {
+            "hash": 1489917704731638920,
+            "key": "Magnet mobs to itself",
+            "value": "把怪物吸住"
+        },
+        {
+            "hash": 16016581767495920599,
+            "key": "radius",
+            "value": "半径"
+        },
+        {
+            "hash": 13696888210012887935,
+            "key": "Craft Discount",
+            "value": "合成折扣"
+        },
+        {
+            "hash": 1489918804243267131,
+            "key": "Will give discount on the price of craft items",
+            "value": "我们可以获得合成的折扣"
+        },
+        {
+            "hash": 16016580667984292388,
+            "key": "% discount gold for craft item",
+            "value": "% 黄金合成折扣"
+        },
+        {
+            "hash": 13696884911478003302,
+            "key": "Proficiency with weapons",
+            "value": "武器大师"
+        },
+        {
+            "hash": 1489924301801408186,
+            "key": "You can perform an automatic fire",
+            "value": "可以自动开火"
+        },
+        {
+            "hash": 16016579568472664177,
+            "key": "can perform an auto fire with all types of weapons",
+            "value": "可以让所有武器自动攻击"
+        },
+        {
+            "hash": 13696886010989631513,
+            "key": "Blessing of God of war",
+            "value": "战士的祝福"
+        },
+        {
+            "hash": 1489925401313036397,
+            "key": "The blessing restores ammo",
+            "value": "重置弹药的祝福"
+        },
+        {
+            "hash": 16016578468961035966,
+            "key": "% recovers ammo within a radius of 800",
+            "value": "% 的几率恢复半径800内的弹药"
+        },
+        {
+            "hash": 13696882712454746880,
+            "key": "Noctis Lucis Attack Teleport",
+            "value": "Noctis Lucis 瞬移攻击"
+        },
+        {
+            "hash": 1489922102778151764,
+            "key": "An attacking teleport that deals damage to all mobs radius",
+            "value": "一种带传送的攻击，可以对命中目标半径内所有怪物造成伤害"
+        },
+        {
+            "hash": 16016577369449407755,
+            "key": "% your strength",
+            "value": "提升你%的力量 "
+        },
+        {
+            "hash": 13540916792449479304,
+            "key": "Help for workers",
+            "value": "帮助工人"
+        },
+        {
+            "hash": 535613983867480320,
+            "key": "Main: Arrival",
+            "value": "主线：初来乍到"
+        },
+        {
+            "hash": 13540920090984363937,
+            "key": "Helping a girl",
+            "value": "帮助女孩"
+        },
+        {
+            "hash": 13540918991472735726,
+            "key": "The fight with slime!",
+            "value": "与史莱姆激战！"
+        },
+        {
+            "hash": 535620580937249586,
+            "key": "Trader Sentry",
+            "value": "哨兵商人"
+        },
+        {
+            "hash": 13540922290007620359,
+            "key": "Gel? Why do you need it",
+            "value": "Gel? 你怎么需要这玩意"
+        },
+        {
+            "hash": 13540921190495992148,
+            "key": "Search for a daughter",
+            "value": "寻找一名女儿"
+        },
+        {
+            "hash": 535621680448877797,
+            "key": "Sailor",
+            "value": "水手"
+        },
+        {
+            "hash": 13540924489030876781,
+            "key": "What is ore mining?",
+            "value": "什么是矿物开采?"
+        },
+        {
+            "hash": 535619481425621375,
+            "key": "Mining",
+            "value": "挖掘"
+        },
+        {
+            "hash": 13540923389519248570,
+            "key": "My first pickaxe",
+            "value": "第一把矿稿"
+        },
+        {
+            "hash": 13540909095868081827,
+            "key": "Help destruction of dir",
+            "value": "帮助摧毁隧道"
+        },
+        {
+            "hash": 535626078495390641,
+            "key": "Deputy",
+            "value": "代理人"
+        },
+        {
+            "hash": 13540907996356453616,
+            "key": "Raid on the dirt",
+            "value": "领土侵略"
+        },
+        {
+            "hash": 7134786750853263016,
+            "key": "Acquaintance",
+            "value": "熟人"
+        },
+        {
+            "hash": 14452995714945056758,
+            "key": "Main: Apostle Elfia",
+            "value": "主线: Apostle Elfia"
+        },
+        {
+            "hash": 7134788949876519438,
+            "key": "Adventurer",
+            "value": "冒险家"
+        },
+        {
+            "hash": 7134790049388147649,
+            "key": "Something is starting",
+            "value": "开始征程"
+        },
+        {
+            "hash": 7134791148899775860,
+            "key": "History from Apostle",
+            "value": "Apostle的历史"
+        },
+        {
+            "hash": 7134792248411404071,
+            "key": "Diana has a problem",
+            "value": "戴安娜的烦恼"
+        },
+        {
+            "hash": 7134793347923032282,
+            "key": "Mmm delicious",
+            "value": "嗯，美餐一顿"
+        },
+        {
+            "hash": 7134794447434660493,
+            "key": "Time learn something",
+            "value": "是时候学点什么了"
+        },
+        {
+            "hash": 7134777954760237328,
+            "key": "Here are the goblins",
+            "value": "这些是哥布林"
+        },
+        {
+            "hash": 7134779054271865539,
+            "key": "Occupation of goblins",
+            "value": "被哥布林占领的地方"
+        },
+        {
+            "hash": 7137586107458120547,
+            "key": "Yasue San",
+            "value": "苏珊雅"
+        },
+        {
+            "hash": 7137585007946492336,
+            "key": "Abandoned mine",
+            "value": "废弃矿洞"
+        },
+        {
+            "hash": 7137588306481376969,
+            "key": "Goodbye Elfinia",
+            "value": "再见Elfinia"
+        },
+        {
+            "hash": 7138577866946577644,
+            "key": "Officer's disputes!",
+            "value": "军官的麻烦"
+        },
+        {
+            "hash": 14459619172992075247,
+            "key": "Officer Henry",
+            "value": "Henry长官"
+        },
+        {
+            "hash": 7138574568411693011,
+            "key": "Erik's way saying help.",
+            "value": "埃里克的求人之道."
+        },
+        {
+            "hash": 14459613675433934192,
+            "key": "Gunsmith Eric",
+            "value": "军火商埃里克"
+        },
+        {
+            "hash": 7141412407923537927,
+            "key": "Why are you here Noctis",
+            "value": "诺利克斯 你为什么会在这"
+        },
+        {
+            "hash": 14456822015410474138,
+            "key": "Final fantasy",
+            "value": "最终幻想"
+        },
+        {
+            "hash": 7141411308411909716,
+            "key": "First assignment",
+            "value": "第一个任务"
+        },
+        {
+            "hash": 7141414606946794349,
+            "key": "Resonance",
+            "value": "共鸣"
+        },
+        {
+            "hash": 4426149673753149582,
+            "key": "Weapons for young adventurers",
+            "value": "为年轻冒险家准备的武器"
+        },
+        {
+            "hash": 4426148574241521371,
+            "key": "Elfinia Artifacts",
+            "value": "Elfinia神器"
+        },
+        {
+            "hash": 4426154071799662426,
+            "key": "Master La",
+            "value": " 大师 La"
+        },
+        {
+            "hash": 9767379108023485727,
+            "key": "Elven class",
+            "value": "精灵教师"
+        },
+        {
+            "hash": 9767374709976972883,
+            "key": "Asian-style home",
+            "value": "亚洲风格的家"
+        },
+        {
+            "hash": 3180402932052985269,
+            "key": "You just don't get angry, everything's fine!",
+            "value": "你只要不生气，事情是会好起来的！"
+        },
+        {
+            "hash": 3180399633518100636,
+            "key": "In fact, she didn't want to come back, she was offended that you weren't spending time together. You can't rest.",
+            "value": "事实上，她不想回来，你没有花时间陪她，她很生气你不能休息休息区陪她"
+        },
+        {
+            "hash": 3180400733029728847,
+            "key": "Damn why didn't she ask for it herself? Okay, don't worry thanks for the work :) Everything will be fine, we will decide something with daughter",
+            "value": "该死的，她为什么不自己说呢？ 好的，别担心，谢谢你的帮助:) 一切一定会好起来的，我们会和女儿一起决定的"
+        },
+        {
+            "hash": 3180397434494844214,
+            "key": "Well, nice :) Good luck to you",
+            "value": "那么, 很好 :) 祝你好运"
+        },
+        {
+            "hash": 3181252854541403147,
+            "key": "To extract any ore [Player], you will need a pickaxe.",
+            "value": "在挖任何矿物之前[Player], 你需要一把镐子."
+        },
+        {
+            "hash": 3181251755029774936,
+            "key": "You can only get it by creating. But in some cases merchants can sell.",
+            "value": "你只能通过合成来获得它。但是在某些情况下，商人会出售."
+        },
+        {
+            "hash": 3181255053564659569,
+            "key": "Also, the picks have a durability of 100-0. If you durability reach 0. Don't worry it won't break.",
+            "value": "并且，稿子是有耐久的，当它的耐久达到0的时候，他会无法工作，但别担心，它不会被销毁"
+        },
+        {
+            "hash": 3181253954053031358,
+            "key": "But you can't work with break pickaxe it. You can repair it at any store.",
+            "value": "但是你不可以用坏掉的稿子，你可以在任何商店修复它"
+        },
+        {
+            "hash": 3181257252587915991,
+            "key": "You can also improve picks this will depend on their effectiveness.",
+            "value": "你也可以通过提高镐子的效率提升矿物获取量."
+        },
+        {
+            "hash": 3181256153076287780,
+            "key": "Each ore has its own strength. If you have a weak pick and the strength of the ore is high, it can take a long time to extract it. So don't forget about the improvements. Or craft even better picks.",
+            "value": "每一种矿物都有它自己的硬度。如果你的镐很逊，而矿物的硬度很高，那么挖取它可能需要很长时间，所以不要忘记改进，或者制作更好的镐。"
+        },
+        {
+            "hash": 3181259451611172413,
+            "key": "Everything is clearly explained, I will not repeat it again, if you need you will understand everything!",
+            "value": "所有事项我都说清楚了!我不会再重复，你需要自己把它们消化理解"
+        },
+        {
+            "hash": 3181258352099544202,
+            "key": "Yes of course thank you for the explanation",
+            "value": "当然，谢谢你的解释"
+        },
+        {
+            "hash": 3181244058448377459,
+            "key": "Well don't worry, I'll give you a couple of tasks to get used to in this area",
+            "value": "当然不用担心，我会给你一些任务让你适应这个领域"
+        },
+        {
+            "hash": 3178418313564442864,
+            "key": "Did you want something?",
+            "value": "你需要什么吗"
+        },
+        {
+            "hash": 3178419413076071075,
+            "key": "I think it's time for you to get your first pickaxe.",
+            "value": "我认为你是时候去打造你的第一把镐子了."
+        },
+        {
+            "hash": 3178420512587699286,
+            "key": "I think as crafted something, you don't need to explain!",
+            "value": "合成这种事，就不用你解释了"
+        },
+        {
+            "hash": 3178421612099327497,
+            "key": "So let's get right to the point, try to make a pickaxe bring it to me, I'll look at it.",
+            "value": "让我们进入正题，试着合成一把稿子带给我，我来康康"
+        },
+        {
+            "hash": 3178422711610955708,
+            "key": "Done. (you need to have an idea of how to craft items, you can see them near Craftsman in votes)",
+            "value": "结束. (你需要知道如何合成物品，在合成商人附近打开投票菜单即可)"
+        },
+        {
+            "hash": 3178423811122583919,
+            "key": "Well, it's not bad, so use it for the first time.",
+            "value": "嗯，还行，拿去试试挖矿吧"
+        },
+        {
+            "hash": 3178424910634212130,
+            "key": "All right so let's start with your first ore?",
+            "value": "那好，让我们开始你的第一次挖矿之旅?"
+        },
+        {
+            "hash": 3179410073052899961,
+            "key": "Well, as [Player], passed customs?",
+            "value": "那么, [Player], 通过海关?"
+        },
+        {
+            "hash": 3179408973541271750,
+            "key": "Yes [Talked]. He was very rude.",
+            "value": "是的 [Talked]. 他非常粗鲁."
+        },
+        {
+            "hash": 3179407874029643539,
+            "key": "Well, you have to understand that we also have a lot of problems lately, too many monsters, problems with kidnappings.",
+            "value": "嗯，你必须明白，我们最近也有很多问题，太多的怪物，绑架的问题."
+        },
+        {
+            "hash": 3179406774518015328,
+            "key": "Come on, show me [Here] seats!",
+            "value": "来吧, 给我看看 [Here] 椅子!"
+        },
+        {
+            "hash": 3179414471099412805,
+            "key": "Oh sure. By the way, in our village, the chief Apostle.",
+            "value": "好的. 顺带一提，在我们村子里, 首席使徒——"
+        },
+        {
+            "hash": 3179413371587784594,
+            "key": "Wait an Apostle? They are ancient beings sent by the gods. Do they exist?",
+            "value": "等等，你说使徒? 他们是传说中上帝派来的古代生物. 真的存在吗?"
+        },
+        {
+            "hash": 3179412272076156383,
+            "key": "Yes [Player]. They exist to keep order.",
+            "value": "是的 [Player] ，他们的存在是为了维护秩序。"
+        },
+        {
+            "hash": 3179411172564528172,
+            "key": "Okay [Player] let's go and show you our [Here]",
+            "value": "好吧 [Player] 走，我带你瞧瞧 [Here]"
+        },
+        {
+            "hash": 3191810365193403694,
+            "key": "**She said with a smile**: Here, you can do a craft items, make your own equipment potions, or what to eat.",
+            "value": "**她面带微笑**: 在这里，你可以合成物品，也可以合成药水或者什么其他吃的玩意."
+        },
+        {
+            "hash": 3191811464705031905,
+            "key": "[Player] even if you provide items, the craftsman you must pay for the use of the equipment",
+            "value": "[Player] 即使你提供了材料，你依然需要向合成商人支付装备的使用费用。"
+        },
+        {
+            "hash": 3191808166170147272,
+            "key": "Yes I think I can use it. Thanks for the explanation!",
+            "value": "我想我明白该怎么做了.谢谢你的讲解。"
+        },
+        {
+            "hash": 3191809265681775483,
+            "key": "Let's move on!",
+            "value": "行动起来吧!"
+        },
+        {
+            "hash": 3191814763239916538,
+            "key": "Yes let's go :)",
+            "value": "冲冲冲:)"
+        },
+        {
+            "hash": 3192802124681860791,
+            "key": "So here we have someone's house.",
+            "value": "这里，是一些房子."
+        },
+        {
+            "hash": 3192801025170232580,
+            "key": "You can also buy houses, decorate them or use the safety Deposit box.",
+            "value": "你可以买下一个房子（价格不菲），你可以捐赠或者使用其中的箱子（工会基金）"
+        },
+        {
+            "hash": 3192804323705117213,
+            "key": "Sounds good [Talked]!",
+            "value": "听起来很不错 [Talked]!"
+        },
+        {
+            "hash": 3192803224193489002,
+            "key": "**She likes to talk**: Well, okay, let's move on!",
+            "value": "**他很喜欢说话**: 那么, 好, 我们继续前进吧!"
+        },
+        {
+            "hash": 2529452465903381723,
+            "key": "This is the ether, it allows you to use instantaneous movement around the world.",
+            "value": "这是以太，他可以帮助你进行世界旅行."
+        },
+        {
+            "hash": 2529451366391753512,
+            "key": "But only there in the area where you have already visited.",
+            "value": "但是只能旅行到你已经到达过的区域."
+        },
+        {
+            "hash": 2529454664926638145,
+            "key": "Is it free [Talked]?",
+            "value": "这是免费的吗 [Talked]?"
+        },
+        {
+            "hash": 2529453565415009934,
+            "key": "Not always, there is nothing free in our world!",
+            "value": "并不是，在我们的世界没有东西是免费的!"
+        },
+        {
+            "hash": 2529456863949894567,
+            "key": "**Apparently she didn't like something**: Okay [Player] let's move on!",
+            "value": "**很显然她不喜欢这玩意**: 好的[Player] 让我们继续!"
+        },
+        {
+            "hash": 2529455764438266356,
+            "key": "Yes let's go [Talked]!",
+            "value": "好，冲冲冲 [Talked]!"
+        },
+        {
+            "hash": 2528460706414924626,
+            "key": "Here you will be able to raise his skills adventurer, to explore something new. Our world is divided into 3 classes (Healer, Tank, DPS)",
+            "value": "探险家，在这里你可以进行升级，去探索一些新的东西。我们的世界有3个职业  (奶妈, 坦克, 输出)"
+        },
+        {
+            "hash": 2528461805926552837,
+            "key": "So I can become something?",
+            "value": "所以我可以成为其中一个角色?"
+        },
+        {
+            "hash": 2528458507391668204,
+            "key": "[Player], you can be anyone you want (as well as fine-tune your game mode)",
+            "value": "[Player], 你可以是任何角色只要你想（也可以微调你的游戏模式）"
+        },
+        {
+            "hash": 2528459606903296415,
+            "key": "[Talked] so I can be both a Tank and a Defender?",
+            "value": "[Talked] 所以我可以同时是坦克和输出?"
+        },
+        {
+            "hash": 2528456308368411782,
+            "key": "Yes quite but do not forget about the main characteristics (Strength, Hardness, idk)",
+            "value": "是的，但别忘了你的主要角色(力量， 生命值, 或者什么别的)"
+        },
+        {
+            "hash": 2528457407880039993,
+            "key": "Thank you for a clear explanation :)",
+            "value": "谢谢你的解释 :)"
+        },
+        {
+            "hash": 2528454109345155360,
+            "key": "That's a small part of what I've been able to tell you.",
+            "value": "这只是我要告诉你的知识里很小的一部分"
+        },
+        {
+            "hash": 2527468946926467529,
+            "key": "And here, you will be treated. ",
+            "value": "在这里，护士姐姐会为你治疗. "
+        },
+        {
+            "hash": 2527467847414839318,
+            "key": "**She said very jealously**: True, I hate those nurses, all the guys from the village are taken away....",
+            "value": "**她嫉妒地说**: 是的，我讨厌那些护士，村里所有伙计都被带走了...."
+        },
+        {
+            "hash": 2527466747903211107,
+            "key": "Don't marry them...",
+            "value": "不要娶她们..."
+        },
+        {
+            "hash": 2527465648391582896,
+            "key": "Yes I will not marry anyone [Talked]! Thanks for the care!",
+            "value": "我不会娶任何人的放心吧[Talked]!谢谢你的提醒!"
+        },
+        {
+            "hash": 2526477187438010432,
+            "key": "**Yawning she said**: Okay I'm tired I'll go home.",
+            "value": "**她打着哈欠**:我累了，我要先回去了."
+        },
+        {
+            "hash": 2526478286949638643,
+            "key": "And you don't disappear, and [Player] go wash up :)",
+            "value": "但你不用走，现在，[Player]去洗漱吧:)"
+        },
+        {
+            "hash": 2526479386461266854,
+            "key": "Well have a good day [Talked] :)",
+            "value": "看上去我们过了不错的一天 [Talked] :)"
+        },
+        {
+            "hash": 2533243581996696351,
+            "key": "Are you ready?",
+            "value": "你准备好了吗?"
+        },
+        {
+            "hash": 2533242482485068140,
+            "key": "What, ready?",
+            "value": "什么,什么准备?"
+        },
+        {
+            "hash": 2533245781019952773,
+            "key": "Introduce you [Player] to the Apostle of our village. ",
+            "value": "介绍你，[Player]，给我们村里的使徒 "
+        },
+        {
+            "hash": 2533244681508324562,
+            "key": "[Talked] so what's it to them for me?",
+            "value": "[Talked]他们和我有什么关系?"
+        },
+        {
+            "hash": 2533239183950183507,
+            "key": "**She said rudely**: No, don't think so bad, they actually think of us as their children.",
+            "value": "**她粗鲁的说**: 不！别想的那么糟.他们实际上是把我们当成他们孩子的在照顾的."
+        },
+        {
+            "hash": 2533238084438555296,
+            "key": "Why so rude? I understand you, okay, I'm worried, but we'll see what happens.",
+            "value": "干嘛这么粗鲁? 我了解了, 好吧, 我也很担心, 但是看看会发生什么吧."
+        },
+        {
+            "hash": 2533241382973439929,
+            "key": "I'm sorry, but she's really close to me.",
+            "value": "好吧..我很抱歉..但是她真的离我有点近了...."
+        },
+        {
+            "hash": 2533240283461811718,
+            "key": "Are you one of them? Hm...",
+            "value": "你是他们中的一员吗? Hm..."
+        },
+        {
+            "hash": 2533252378089722039,
+            "key": "Fool let's go already.",
+            "value": "傻子，还不走吗？我们先走了。"
+        },
+        {
+            "hash": 2533251278578093828,
+            "key": "Well ... Let's go",
+            "value": "好的... 走吧"
+        },
+        {
+            "hash": 2532251822508239254,
+            "key": "Well, just don't mess with as a joke, it's Apostle, he is watching over us for many years.",
+            "value": "好吧，别开玩笑了，这是使徒，他已经守护我们很多年了."
+        },
+        {
+            "hash": 2532252922019867465,
+            "key": "I understand [Talked].",
+            "value": "我知道， [Talked]."
+        },
+        {
+            "hash": 2531295247391884909,
+            "key": "Hello dear Apostle *bowing*. I have come to you to wisdom.",
+            "value": "你好，亲爱的使徒*鞠躬*。我来到你这里是为了获得智慧。"
+        },
+        {
+            "hash": 2531294147880256698,
+            "key": "Hello, lift your head. I knew you'd come. But I'm not sure you're the one I saw.",
+            "value": "你好，抬起头来。我就知道你会来的。但我不确定你就是我看到的那个人."
+        },
+        {
+            "hash": 2531293048368628487,
+            "key": "See it?",
+            "value": "看见了吗?"
+        },
+        {
+            "hash": 2531291948857000276,
+            "key": "I can't communicate with my brothers and sisters, since our paths have diverged, but we have a common mind.",
+            "value": "我无法与我的兄弟姐妹沟通，因为我们的道路不同，但我们有一个共同的想法。"
+        },
+        {
+            "hash": 2531290849345372065,
+            "key": "I had a vision about a year ago that there would soon be a man who was as tenacious as the Apostles.",
+            "value": "大约一年前，我有一个预感，很快就会有一个人像使徒们一样顽强."
+        },
+        {
+            "hash": 2531289749833743854,
+            "key": "But in the end, he was going to die. My visions have always come true, but when they will come true is unknown.",
+            "value": "但最终，他会死的。我的梦想总是能实现，但何时能实现还不得而知."
+        },
+        {
+            "hash": 2531288650322115643,
+            "key": "So please be careful [Player]. I'm worried about everyone, but I've also been weak lately.",
+            "value": "所以， [Player]，请小心. 我担心所有人, 但我最近也很虚弱."
+        },
+        {
+            "hash": 2531287550810487432,
+            "key": "I .. Not to worry, I can handle it even if I turn out to be one of your visions",
+            "value": "我...没什么好担心的，就算我也是你的幻觉之一，我也能应付"
+        },
+        {
+            "hash": 2531286451298859221,
+            "key": "I hope this is not the case, get used to it, then go to Adventurer Koto.",
+            "value": "我希望情况不是这样，习惯它，然后去找冒险家Koto."
+        },
+        {
+            "hash": 2531285351787231010,
+            "key": "Thanks a lot.",
+            "value": "感激不尽."
+        },
+        {
+            "hash": 2530303487903427812,
+            "key": "Hello [Talked], the Apostle sent me to you. I want to be an adventurer!",
+            "value": "你好 [Talked], 信徒让我去找你. 我想成为一个冒险家!"
+        },
+        {
+            "hash": 2530304587415056023,
+            "key": "**He as if he doesn't want me to become an adventurer**: Will you be strong enough? Well, let's see, I think you already understand that you first need to test, only after I say whether you are worthy or not to become an Adventurer?",
+            "value": "**他好像不想让我成为冒险者一样**：你够坚强吗？ 好吧，你看，我想你已经明白，你首先要测\n试，然后来看看你是否有成为冒险者的资格？"
+        },
+        {
+            "hash": 2530305686926684234,
+            "key": "Well, what exactly is required?",
+            "value": "好吧，具体需要什么?"
+        },
+        {
+            "hash": 2530306786438312445,
+            "key": "If you pass my first test, pay the fee, I encourage you, and send you to the exam. And then we will decide whether you are worthy or not",
+            "value": "如果你通过我的第一个测试，付钱，我就把你送到第一个测试点然后决定教你值不值得."
+        },
+        {
+            "hash": 2530299089856914968,
+            "key": "Okay, where do we start [Talked]?",
+            "value": "好吧，我们从什么开始呢 [Talked]?"
+        },
+        {
+            "hash": 2530300189368543179,
+            "key": "Ha ha where do we start? Don't joke with me young fighter. First, take this and go to the southern part of the village.",
+            "value": "哈哈，从哪开始? 别开玩笑了年轻的战士. 首先，带上这个然后去村庄的东边."
+        },
+        {
+            "hash": 5017436173655458236,
+            "key": "Well",
+            "value": "那么.."
+        },
+        {
+            "hash": 2537034698090010979,
+            "key": "You did.",
+            "value": "你做到了."
+        },
+        {
+            "hash": 2537033598578382768,
+            "key": "What could I do?",
+            "value": "我应该做什么"
+        },
+        {
+            "hash": 2537036897113267401,
+            "key": "I thought you were joking, you wouldn't take it seriously, but you came.",
+            "value": "我以为你在开玩笑，不会认真对待，结果你还是来了。"
+        },
+        {
+            "hash": 2537035797601639190,
+            "key": "Well, let's go.",
+            "value": "好吧，走吧."
+        },
+        {
+            "hash": 2537039096136523823,
+            "key": "Let's go.",
+            "value": "走."
+        },
+        {
+            "hash": 2536078122973656634,
+            "key": "Why are you shivering [Player]?",
+            "value": "你怎么在颤抖[Player]?"
+        },
+        {
+            "hash": 2536079222485284845,
+            "key": "Am I that scary? Don't worry I'm kind *laughs*. Well, let's see how you cope. Kill for me ....",
+            "value": "我有那么可怕吗? 别担心，我很友善的*大笑*. 来吧,让我看看你要怎么对付他们，去把他们杀了 ...."
+        },
+        {
+            "hash": 2536075923950400212,
+            "key": "I managed it, and it wasn't difficult.",
+            "value": "我完成了，说实话，小菜一碟."
+        },
+        {
+            "hash": 2536077023462028423,
+            "key": "I noticed how well you did. But don't relax this is just the beginning ^^",
+            "value": "嘿！你做的不错.但别放松’注意了 这才只是开始.^^"
+        },
+        {
+            "hash": 2536073724927143790,
+            "key": "Ah.. Okay [Talked].",
+            "value": "额...好哦[Talked]."
+        },
+        {
+            "hash": 2536074824438772001,
+            "key": "Well today we're finished you can relax. You'll find me as soon as you're ready.",
+            "value": "今天就到这里吧，你可以回去休息一下，等你准备好了之后可以再来找我。"
+        },
+        {
+            "hash": 2536071525903887368,
+            "key": "Okay, well, have a good day.",
+            "value": "好的，祝你愉快。"
+        },
+        {
+            "hash": 1874676798799989008,
+            "key": "Hello, I am the personal Ambassador of the Apostle.",
+            "value": "你好，我是使徒大人的私人信使."
+        },
+        {
+            "hash": 1874677898311617219,
+            "key": "She wants to see you!",
+            "value": "她想见见你!"
+        },
+        {
+            "hash": 1874678997823245430,
+            "key": "Please follow me to village, I will be waiting for you there",
+            "value": "跟我去村庄吧，我会在那里等你"
+        },
+        {
+            "hash": 1874680097334873641,
+            "key": "Okay, I'm coming",
+            "value": "好的.我们走吧"
+        },
+        {
+            "hash": 1875527820800035097,
+            "key": "Listen there's another request!",
+            "value": "听着，这里有另一个任务!"
+        },
+        {
+            "hash": 1875526721288406886,
+            "key": "[Player] if you find some gel, I'll be happy to exchange them. Brown Slimes,Blue Slimes and Pink Slime drop Gel. You can take your time, i'll wait!",
+            "value": "[Player] 如果你找到了粘液球,我很乐意拿一些东西来交换.棕色，蓝色和紫色史莱姆会掉落粘液球,你可以慢慢打，我会在这里等你!"
+        },
+        {
+            "hash": 1875525621776778675,
+            "key": "Here, it wasn't easy but I got it [Talked].",
+            "value": "拿着，虽然不是很简单但我还是拿到了[Talked]."
+        },
+        {
+            "hash": 1875524522265150464,
+            "key": "Thank you very much for your help. All right I'll go back to my post, good luck to you [Player]!",
+            "value": "非常感谢你的帮助. 好了我该回到我的岗位了 [Player]!"
+        },
+        {
+            "key": "谢谢你[Talked]",
+            "value": "Thank's [Talked]"
+        },
+        {
+            "hash": 1876519580288492194,
+            "key": "[Player] you can go in!",
+            "value": "[Player]你可以进来了!"
+        },
+        {
+            "hash": 1876520679800120405,
+            "key": "Well [Talked], thank you for seeing me off!",
+            "value": "好的[Talked], 谢谢你为我送行!"
+        },
+        {
+            "hash": 1877511339776949291,
+            "key": "[Player] first we need to win over the slime. Dirty but necessary.",
+            "value": "[Player] 首先我们需要战胜这些史莱姆，虽然很脏但是是必须的."
+        },
+        {
+            "hash": 1877510240265321080,
+            "key": "I report everything, I coped with the task",
+            "value": "我都处理完了"
+        },
+        {
+            "hash": 1877513538800205713,
+            "key": "Well done, but that's not all.",
+            "value": "做得好，但还没结束."
+        },
+        {
+            "hash": 1877512439288577502,
+            "key": "Anything else?",
+            "value": "还有什么?"
+        },
+        {
+            "hash": 1877515737823462135,
+            "key": "Yes I think you know about the ethers find me next to him",
+            "value": "我想你知道在以太（水晶）旁边可以找到我"
+        },
+        {
+            "hash": 1878503099265406388,
+            "key": "I think you know that these crystals are actually not just for beauty. ",
+            "value": "我想你知道这些水晶不是单纯只是好看而已. "
+        },
+        {
+            "hash": 1878504198777034599,
+            "key": "You use them as a quick transition. But in fact, these are crystals (all the light of good prosperity) precisely because they exist.",
+            "value": "你可以通过水晶快速传送到其他世界"
+        },
+        {
+            "hash": 1878505298288662810,
+            "key": "Me when once before as became defender of the Apostle, I was able to meet with the crystal. Yes, he has a mind. From it warmth on the soul, all the sins immediately fall from the soul. I'm sure you'll meet him one day.",
+            "value": "我曾经是水晶的守护者，我可以见到水晶。是的，它有理智。从它热情的灵魂，所有罪恶立即在它面前倒下。我确定你有一天能见到它."
+        },
+        {
+            "key": "Hello, [Player], I am the Chinese translator of MRPG.",
+            "value": "你好，[Player], 我是MRPG中文翻译的其中一个人"
+        },
+        {
+            "hash": 1878506397800291021,
+            "key": "Thanks. I will remember that. (Auther text: This is how the player's rapprochement with the deities began)",
+            "value": "谢谢。我会记住的。（作者批注：这就是玩家与神灵怎样建立友好关系的）"
+        },
+        {
+            "hash": 1878498701218893544,
+            "key": "Well, I'll wait for you in the Apostle's chambers. We will continue the expulsion of the monsters",
+            "value": "那么，我会在使徒的屋子里等你。我们会继续驱逐怪物."
+        },
+        {
+            "hash": 1879354121265452477,
+            "key": "Our priority is higher now.",
+            "value": "我们的优先权现在更高了."
+        },
+        {
+            "hash": 1879353021753824266,
+            "key": "[Player] you need to defeat the main slug, in the southern part.",
+            "value": "[Player] 你得去击败那个主要的鼻涕虫(shengyan)，在南方."
+        },
+        {
+            "hash": 1879351922242196055,
+            "key": "That's it, I've met my goal. Clearing dirt.",
+            "value": "那就是了。我已经达到了我的目标。清除污垢."
+        },
+        {
+            "hash": 1879350822730567844,
+            "key": "Well done, we'll meet again.",
+            "value": "干得漂亮，我们会再遇见的."
+        },
+        {
+            "hash": 1880310696381806822,
+            "key": "I want to talk to you [Player].",
+            "value": "我想跟你谈谈 [Player]."
+        },
+        {
+            "hash": 1880311795893435033,
+            "key": "I know that your path will not stop here. One day you will become stronger and move on.",
+            "value": "我知道你的路途不会终止在这里。总有一天你会变得强大并且离开这里."
+        },
+        {
+            "hash": 1880308497358550400,
+            "key": "I have a request to you, if you meet other apostles, it is better to avoid them. Don't trust them, we apostles are not as pure as you think",
+            "value": "我有个请求。如果你遇见了别的使徒，最好避开他们。不要相信他们。我们使徒不像你想象的那么纯洁."
+        },
+        {
+            "hash": 1880309596870178611,
+            "key": "Maybe you, too, then the enemy really is?",
+            "value": "也许你也一样，不过真正的敌人是谁?"
+        },
+        {
+            "hash": 1880315094428319666,
+            "key": "I don't know *laughter*. The villagers I think will clearly tell you how it really is",
+            "value": "我不知道 *大笑*.村民们会告诉你."
+        },
+        {
+            "hash": 1880316193939947877,
+            "key": "Diana told me about you in General terms.",
+            "value": "戴安娜大体上告诉了我你的情况."
+        },
+        {
+            "hash": 1880312895405063244,
+            "key": "**She said it with concern**: You turn out to be a Joker, and a vulgar *laughter*",
+            "value": "**她关切地说**: 原来你是一个小丑，而且是个粗俗的人 *大笑*"
+        },
+        {
+            "hash": 1880313994916691455,
+            "key": "No [Talked]......",
+            "value": "不 [Talked]......"
+        },
+        {
+            "hash": 1880319492474832510,
+            "key": "Always listen to your heart. I think one day you will be able to bring light. But the main thing is perseverance!",
+            "value": "永远跟随你的心走。我认为总有一天你会有能力带来光亮和希望。但是最主要的是坚毅的精神和坚持!"
+        },
+        {
+            "hash": 1880320591986460721,
+            "key": "Do not delay with your title of adventurer. You can go now!",
+            "value": "不要为了你冒险家的头衔而停留，你可以现在就走了!"
+        },
+        {
+            "hash": 10060412625020022059,
+            "key": "I'm trying, thank you very much.",
+            "value": "我在尝试，非常感谢你."
+        },
+        {
+            "hash": 1881302455870263919,
+            "key": "You look sad today [Talked].",
+            "value": "你今天看起来很沮丧 [Talked]."
+        },
+        {
+            "hash": 1881301356358635708,
+            "key": "Oh man I'm too confused today.... [Player] help me collect lost.",
+            "value": "哦...啊我今天太迷糊了.... [Player] 请帮我收集丢失的东西."
+        },
+        {
+            "hash": 1881304654893520341,
+            "key": "Take your nose up [Talked], what's wrong with you?",
+            "value": "不要灰心丧气的！ [Talked], 你怎么了?"
+        },
+        {
+            "hash": 1881303555381892130,
+            "key": "My brother has to stop by today, and I want to cook something to feed him, but everything falls out of my hands..",
+            "value": "我兄弟今天要过来，我想做点东西喂他，但似乎一切都不在我的掌握之中..."
+        },
+        {
+            "hash": 1881298057823751075,
+            "key": "So let me help you?",
+            "value": "所以让我来帮你?"
+        },
+        {
+            "hash": 1881296958312122864,
+            "key": "And you I look [Player] today cheerful, well help. I will not remain in debt",
+            "value": "而且看起来今天你，[Player]，看起来很愉快，我不会继续欠人情."
+        },
+        {
+            "hash": 1881300256847007497,
+            "key": "Of course [Talked] ;)",
+            "value": "当然 [Talked] ;)"
+        },
+        {
+            "hash": 1882294215358721016,
+            "key": "Well here's my house! Ah as my not my, father is a master, and even brother. In General, our family",
+            "value": "欢迎来到我的家！并不完全是我的，房子的主人是我的爸爸，和他的兄弟;我在我们的家里是一般地位."
+        },
+        {
+            "hash": 1882295314870349227,
+            "key": "All right, come on in, I'll cook, and I'll ask you to bring something. All the help me need",
+            "value": "好，进来吧。我下厨，我会叫你带些东西过来，所有我需要的会帮助我的东西."
+        },
+        {
+            "hash": 1882296414381977438,
+            "key": "I will help you, especially since you are my first close friend in this village, I already trust you, how you can be abandoned.",
+            "value": "我会帮助你的.况且你是我在这个村子里的第一个朋友.我很信任你的.我怎么会抛下你呢？."
+        },
+        {
+            "hash": 1883285974847178113,
+            "key": "Well [Player], let's get started, little by little",
+            "value": "好吧 [Player], 让我们开始吧, 一点一点的"
+        },
+        {
+            "hash": 1883284875335549902,
+            "key": "Your house comfortable! [Talked]",
+            "value": "你的家看起来很舒适!真不错[Talked]"
+        },
+        {
+            "hash": 1883283775823921691,
+            "key": "Do you really think so? Well thank you.",
+            "value": "你真的这么想? 那么谢谢你."
+        },
+        {
+            "hash": 1883282676312293480,
+            "key": "All right let's get down to cooking",
+            "value": "好了.让我们来做饭吧"
+        },
+        {
+            "hash": 6305019265534940061,
+            "key": "Well, let's get started [Player]!",
+            "value": "好.我们开始吧 [Player]!"
+        },
+        {
+            "hash": 6305018166023311850,
+            "key": "Oh sure [Talked]",
+            "value": "没问题 [Talked]"
+        },
+        {
+            "hash": 6305017066511683639,
+            "key": "[Player] get me some first, we'll use it as oil",
+            "value": "[Player]首先拿一些粘液球给我，我会把他当做油来使用。"
+        },
+        {
+            "hash": 6305015967000055428,
+            "key": "I think everyone has their own way of making butter *laughter*",
+            "value": "我想每个人都有自己独特的黄油制作法吧 *大笑*"
+        },
+        {
+            "hash": 6305014867488427217,
+            "key": "Yeah you're right, good sense of humor damn *laughter*",
+            "value": "你说的没错, 这该死的幽默 *大笑*"
+        },
+        {
+            "hash": 6304027506046482964,
+            "key": "So now I need meat. How to cook without meat.",
+            "value": "现在我需要一些肉. 做饭怎么能少了肉呢."
+        },
+        {
+            "hash": 6304028605558111175,
+            "key": "I think you've heard of Kappa, they live near water, their meat is very tasty. So get it for me (you can self find them habitat)",
+            "value": "我想你已经听说过河童, 他们生活在洞穴里靠近水的地方， 他们的肉非常好吃. 所以，去帮我搞一些来吧 (你可以自己找到他们栖息地的)"
+        },
+        {
+            "hash": 6304029705069739386,
+            "key": "All delicious fine meat, looks great, take it!",
+            "value": "这肉非常不错，开始吧"
+        },
+        {
+            "hash": 6304030804581367597,
+            "key": "Well i let's start cooking :)",
+            "value": "好了我要开始烹饪了 :)"
+        },
+        {
+            "hash": 6304023107999970120,
+            "key": "**You see like she didn't know how to cook**: Are you sure you can cook?",
+            "value": "**我发觉她好像不会烹饪**: 你确定你会做饭吗?"
+        },
+        {
+            "hash": 6304024207511598331,
+            "key": "**She said angrily**: You know what I'll tell you [Player]... You don't know how to compliment girls at all..",
+            "value": "**她生气地说**: 你知道我想说什么吧 [Player]... 你根本不会恭维女孩子.."
+        },
+        {
+            "hash": 6304025307023226542,
+            "key": "**Someone knocks on the door**: Who could it be? lovers?",
+            "value": "**有人敲门**: 那是谁? 你的小对象?"
+        },
+        {
+            "hash": 6304026406534854753,
+            "key": "Oh it's probably my brother.",
+            "value": "噢那肯定是我哥哥."
+        },
+        {
+            "hash": 6306967600139751503,
+            "key": "**He said angrily and rudely**: Oh, what people, I've seen you somewhere.",
+            "value": "**他粗鲁地说**: 噢，是你，我在某个地方见过你."
+        },
+        {
+            "hash": 6306966500628123292,
+            "key": "You must have imagined it. ",
+            "value": "你肯定是梦见的吧.... "
+        },
+        {
+            "hash": 6306969799163007925,
+            "key": "Oh well.",
+            "value": "啊这"
+        },
+        {
+            "hash": 6305975840651294406,
+            "key": "[Player] you look sad.",
+            "value": "[Player] 你看上去很沮丧."
+        },
+        {
+            "hash": 6305976940162922617,
+            "key": "Okay [Talked]. I'll probably go extra here",
+            "value": "确实[Talked]. 我会更加努力的"
+        },
+        {
+            "hash": 6305973641628037984,
+            "key": "Yes calm down you why so decided to?",
+            "value": "冷静想想你为什么这么决定?"
+        },
+        {
+            "hash": 6305974741139666195,
+            "key": "Yes, everything is fine. I just have things to do, too. I'll go!",
+            "value": "嗯，事情都挺好的，我还有些事要忙，先走了!"
+        },
+        {
+            "hash": 6305980238697807250,
+            "key": "You offend me [Talked].....",
+            "value": "你顶撞我了 [Talked]....."
+        },
+        {
+            "hash": 6305981338209435461,
+            "key": "Sorry I'm really busy [Talked].",
+            "value": "抱歉我真的很忙 [Talked]."
+        },
+        {
+            "hash": 6305978039674550828,
+            "key": "Well, take care of yourself.",
+            "value": "好吧，照顾好自己"
+        },
+        {
+            "hash": 6301192965069522681,
+            "key": "So let's continue our training.",
+            "value": "那让我们继续训练吧."
+        },
+        {
+            "hash": 6301191865557894470,
+            "key": "Yes, of course, it's about time!",
+            "value": "当然，是时候了!"
+        },
+        {
+            "hash": 6301190766046266259,
+            "key": "**He speaks rudely**: I don't really like you. But let's see what you can achieve. Let's go back to the Deep Cave.",
+            "value": "**他粗鲁地说**: 我不是很喜欢你，但还是让我们看看你有什么能耐吧，现在先回去那个深洞"
+        },
+        {
+            "hash": 6300201205581065584,
+            "key": "**He speaks proudly**: Well, now we have more serious goals.",
+            "value": "**他自豪地说**: 这次，我们有更难的目标."
+        },
+        {
+            "hash": 6300202305092693795,
+            "key": "Exterminate the stronger slime. I'll see.",
+            "value": "打败更强大的史莱姆. 我想."
+        },
+        {
+            "hash": 6300203404604322006,
+            "key": "Everything is ready, they are vile I do not like slime, maybe something new?",
+            "value": "我准备好了, 但是史莱姆真的很恶心我不喜欢它们, 可以换成别的吗?"
+        },
+        {
+            "key": "Voting for the choice of tank!",
+            "value": "在投票里选择坦克!"
+        },
+        {
+            "hash": 6303035746558025867,
+            "key": "Take it, use it wisely. You will need it very much in the future.",
+            "value": "带上这个，明智地使用它，将来你会非常需要它的."
+        },
+        {
+            "hash": 6303034647046397656,
+            "key": "**You were surprised by the gift provided**: Oh, thank you very much. Do I owe you something?",
+            "value": "**你对这突然收到的礼物很惊喜**: 噢，非常感谢,我算不算欠你什么了?"
+        },
+        {
+            "hash": 6303037945581282289,
+            "key": "I hope you make it to the end, at least I hope you do. I didn't think you'd be Apostle's favorite.",
+            "value": "我喜欢你能结束这一切，至少我是这么希望的，但我不认为你是使徒最喜欢的一个."
+        },
+        {
+            "hash": 6303036846069654078,
+            "key": "Favorite [Talked]?",
+            "value": "最喜欢的[Talked]?"
+        },
+        {
+            "hash": 6303040144604538711,
+            "key": "**He said very rudely**: I'll go, meet you later.",
+            "value": "*他粗鲁地说**: 我走了，下次再见"
+        },
+        {
+            "hash": 6302184724557979778,
+            "key": "Hello [Player]. Are you free?",
+            "value": "你好[Player]. 你现在有空吗?"
+        },
+        {
+            "hash": 6302185824069607989,
+            "key": "Yes, of course. Everything okay?",
+            "value": "是的当然，有什么事吗?"
+        },
+        {
+            "hash": 6302182525534723356,
+            "key": "Apostle asked you to see her!",
+            "value": "使徒让你去见她!"
+        },
+        {
+            "hash": 6302183625046351567,
+            "key": "Well!",
+            "value": "好!"
+        },
+        {
+            "hash": 6302180326511466934,
+            "key": "Thank you, I'm going for a walk!",
+            "value": "谢谢，我要去散步了!"
+        },
+        {
+            "hash": 6312601497721569317,
+            "key": "**She speaks in fear**: Hello [Player]. Today I received news that in the southern part of our village, goblins attacked. ",
+            "value": "**她恐惧地说**: 你好 [Player]. 今天我收到消息，村庄的南部已经受到了哥布林的袭击. "
+        },
+        {
+            "hash": 6312600398209941106,
+            "key": "And it's not just goblins. This must be the army. The leader brought them.",
+            "value": "并且不只是哥布林. 肯定还有军队. 有人带领他们来的."
+        },
+        {
+            "hash": 6312599298698312895,
+            "key": "Maybe they kidnapped the residents and terrorized you, and now they decided to attack?",
+            "value": "也许是他们绑架了你的居民并恐吓你，但现在他们决定进攻了?"
+        },
+        {
+            "hash": 6312598199186684684,
+            "key": "I think so too. Anyway, I talked to Koko. About your appointment as an adventurer. We should prepare for resistance. Communication nodes they need to be destroyed",
+            "value": "我也是这么想的，无论如何，我会和可可说的，至于你，作为一名冒险家，我们需要守卫我们的居民，我们需要摧毁他们的通信节点."
+        },
+        {
+            "hash": 6312597099675056473,
+            "key": "Well, I did the job [Talked]!",
+            "value": "好，让我来吧 [Talked]!"
+        },
+        {
+            "hash": 6312596000163428262,
+            "key": "Good job thank's, you should meet with Koko, he will explain everything to you, good luck!",
+            "value": "非常好，你可以去找可可，他会像你解释一切的，祝你好运!"
+        },
+        {
+            "hash": 6312594900651800051,
+            "key": "Well, thank you!",
+            "value": "好的谢谢!"
+        },
+        {
+            "hash": 6311750475721523228,
+            "key": "Get ready let's go to the Goblin-occupied zone.",
+            "value": "准备好，我们出发前往哥布林占领的区域."
+        },
+        {
+            "hash": 6311751575233151439,
+            "key": "I'm ready to sort of out right now.",
+            "value": "好了我准备好了"
+        },
+        {
+            "hash": 6311752674744779650,
+            "key": "Well [Player], you're fun, Yes, but it's worth getting ready.",
+            "value": "很好[Player], 你很有趣, 但这确实值得好好准备."
+        },
+        {
+            "hash": 6311753774256407861,
+            "key": "Well, what do need [Talked]?",
+            "value": "那么,需要做什么[Talked]?"
+        },
+        {
+            "hash": 6311746077675010384,
+            "key": "I'll be waiting for you next to Craftsman.",
+            "value": "我会在合成商人那里等你."
+        },
+        {
+            "hash": 5650243598431547346,
+            "key": "So first we need potions.",
+            "value": "首先我们需要一些药水."
+        },
+        {
+            "hash": 5650244697943175557,
+            "key": "Go get supplies, and at the same time exterminate a few slugs so that we can get there without any problems.",
+            "value": "去获取一些物资，同时扫清路上的史莱姆这样我们可以一路畅通无阻."
+        },
+        {
+            "hash": 5650241399408290924,
+            "key": "**You sound very tired**: We can all move, but the problem is that I'm tired..",
+            "value": "**你很疲惫**:我们可以出发了但是我现在很累.."
+        },
+        {
+            "hash": 5650242498919919135,
+            "key": "Nothing to worry about [Player]. You need to toughen up. All right let's move out.",
+            "value": "不必担心 [Player]. 你需要加强锻炼了. 好的现在就出发吧。"
+        },
+        {
+            "hash": 5651235357920004443,
+            "key": "We'll get to the guard post now. We'll move out there to exterminate the goblins.",
+            "value": "我们现在就去哨所。我们会搬到那里去消灭哥布林。"
+        },
+        {
+            "hash": 5651234258408376232,
+            "key": "Well [Talked].",
+            "value": "那么 [Talked]."
+        },
+        {
+            "hash": 5648260079454633152,
+            "key": "**Grinning**: Huh?",
+            "value": "**笑嘻嘻**: Huh?"
+        },
+        {
+            "hash": 5648261178966261363,
+            "key": "We can't heal her..",
+            "value": "我们不能治疗她.."
+        },
+        {
+            "hash": 5648262278477889574,
+            "key": "I don't understand..",
+            "value": "什么意思.."
+        },
+        {
+            "hash": 5648263377989517785,
+            "key": "Our daughter, Maria.. She's sick!",
+            "value": "我们的女儿, Maria... 她生病了!"
+        },
+        {
+            "hash": 5648264477501145996,
+            "key": "Why don't you take her to the Nurse?!",
+            "value": "你为什么不带她去找护士呢?!"
+        },
+        {
+            "hash": 5648265577012774207,
+            "key": "I tried, but she said she can't do anything.. I found something in an old book of mine.. A gel treatment. But I also need Kappa Meat for it..",
+            "value": "我找过了, 但她说她也无能为力.我在一本老书里看到一些记载.. 一种粘液球治疗法. 但同时我还需要一些河童的肉.."
+        },
+        {
+            "hash": 5648266676524402418,
+            "key": "Tha..nk.. You..",
+            "value": "谢..谢.. 你.."
+        },
+        {
+            "hash": 5648267776036030629,
+            "key": "Well.. don't look at me, heal Maria!",
+            "value": "那么.. 别看我啊, 治疗Maria!"
+        },
+        {
+            "hash": 5649251838943090249,
+            "key": "F..Father?",
+            "value": "爸..爸爸？"
+        },
+        {
+            "hash": 5654034714524861974,
+            "key": "MARIA! You're well!",
+            "value": "MARIA! 你终于好了l!"
+        },
+        {
+            "hash": 5654035814036490185,
+            "key": "*with joy* Hi, Maria!",
+            "value": "*带着微笑* Hi, Maria!"
+        },
+        {
+            "hash": 5654032515501605552,
+            "key": "How can I ever make it up to you?",
+            "value": "我要怎么补偿你？"
+        },
+        {
+            "hash": 5654033615013233763,
+            "key": "Well Sir.. I might need a discount from your old friend, the Craftsman.",
+            "value": "是的先生...我想我需要从你的老朋友那里获取一些折扣，也就是锻造者"
+        },
+        {
+            "hash": 5654039112571374818,
+            "key": "Sure, I'll.. let him know you deserve it!",
+            "value": "当然, 我会.. 让他知道这是你应得的!"
+        },
+        {
+            "hash": 5655026474013319071,
+            "key": "Sure..What can I do?",
+            "value": "那么，我该怎么做?"
+        },
+        {
+            "hash": 5655025374501690860,
+            "key": "I heard you helped the craftsman with his deliveries..I have no time for small things like mining cooper, can you do it for me? I have to save the world in the main time..",
+            "value": "我听说你帮助过锻造者..我没有多余的时间用在挖矿这种小事上，你可以帮我吗，我必须把我的主要时间用在拯救世界上"
+        },
+        {
+            "hash": 5655028673036575493,
+            "key": " *a bit angry* Ok, I will do it.",
+            "value": " *稍微生气* 行吧我会去做的."
+        },
+        {
+            "hash": 5655027573524947282,
+            "key": "Oh, it's you kid!",
+            "value": "噢，谢谢你，孩子!"
+        },
+        {
+            "hash": 5655022075966806227,
+            "key": "*you can't control yourself* HEY. I'm NOT A KID!",
+            "value": "*你终于控制不住自己* 嘿，我!不!是!小!孩!"
+        },
+        {
+            "hash": 5655020976455178016,
+            "key": "Hey.. easy, just a joke, did you get what I wanted?",
+            "value": "嘿..冷静, 只是开玩笑, 你拿到我要的东西了吗"
+        },
+        {
+            "hash": 5655024274990062649,
+            "key": "Yes.. *puts a heavy cooper bag on Erik's table*",
+            "value": "是的. *把一个很重的装满矿物的背包放在Eric的桌子上*"
+        },
+        {
+            "hash": 5655023175478434438,
+            "key": "Good, now get out of here!",
+            "value": "很好，你可以走了!"
+        },
+        {
+            "hash": 5655035270106344759,
+            "key": "Wait.. YOU NOT GONNA PAY ME??",
+            "value": "等等... 你不打算给我什么报酬??"
+        },
+        {
+            "hash": 5655034170594716548,
+            "key": "Haha! I am messing with you.",
+            "value": "哈哈! 你被我耍啦."
+        },
+        {
+            "hash": 5652086379920050532,
+            "key": "So can you tell me how you got here?",
+            "value": "所以你能告诉我你是怎么到这里来的吗?"
+        },
+        {
+            "hash": 5652087479431678743,
+            "key": "**He's stuttered**: A long story..",
+            "value": "**他口齿不清地说**: 这是一个漫长的故事.."
+        },
+        {
+            "hash": 5652088578943306954,
+            "key": "We tried a new potion mixed with ether, but something went wrong, my hiccups are part of this experiment, and I ended up here after I drank it",
+            "value": "我们尝试了一种与以太混合的新药水，但出现了一些问题，我的打嗝也是拜这所赐，然后我喝下了它，最终出现在了这里"
+        },
+        {
+            "hash": 5652089678454935165,
+            "key": "**Sound in the tablet**: Noctis... Noctiis. Do you hear me?",
+            "value": "**来自某处的声音**: Noctis... Noctiis. 你能听到吗?"
+        },
+        {
+            "hash": 5652081981873537688,
+            "key": "**Noctis**: I can hear you, how do I get out of here?",
+            "value": "**Noctis**:我能听到，我要怎样才能离开这里"
+        },
+        {
+            "hash": 5652083081385165899,
+            "key": "**Sound in the tablet**: Collect all the fragments that ended up here. The connection is lost....",
+            "value": "**来自某处的声音**: 你必须搜集到所有的碎片.连线已中断...."
+        },
+        {
+            "hash": 5652084180896794110,
+            "key": "What were you talking to just now?",
+            "value": "你刚刚在说什么?"
+        },
+        {
+            "hash": 5652085280408422321,
+            "key": "A tablet made from a magic crystal. In General, as I thought I need your help in collecting fragments",
+            "value": "一种由魔法水晶制成的台子，言归正传，我想我需要你帮忙收集fragments"
+        },
+        {
+            "hash": 5652077583827024844,
+            "key": "Of course I'll help",
+            "value": "当然我会帮你的"
+        },
+        {
+            "hash": 5653078139408507629,
+            "key": "Look at what I can give you in return for your help. (Vote menu shop list)",
+            "value": "看看我有什么东西能作为回报. (投票菜单商店)"
+        },
+        {
+            "hash": 5653077039896879418,
+            "key": "Wow, [Talked] where can I find them?",
+            "value": "Wow, [Talked] 我要如何找到他们呢?"
+        },
+        {
+            "hash": 5653075940385251207,
+            "key": "In a distorted dimension.",
+            "value": "在一个扭曲的维度中."
+        },
+        {
+            "hash": 5653074840873622996,
+            "key": "Where is it? How do I get there?",
+            "value": "它在哪里?我该怎么去?"
+        },
+        {
+            "hash": 5653073741361994785,
+            "key": "[Player] way, so we'll be preparing to get there.",
+            "value": "[Player] 有办法, 让我们准备出发过去."
+        },
+        {
+            "hash": 5657861014990279354,
+            "key": "So first [Player], I'll need these things from you. They resonate between our worlds",
+            "value": "所以首先 [Player], 我需要这些东西给你，它们在我们的世界之间产生共鸣."
+        },
+        {
+            "hash": 5657862114501907565,
+            "key": "Take it [Talked].",
+            "value": "带上它 [Talked]."
+        },
+        {
+            "hash": 5657858815967022932,
+            "key": "Well thank you, it will be a little easier now.",
+            "value": "好的谢谢你，这会带来一点帮助"
+        },
+        {
+            "hash": 5657859915478651143,
+            "key": "**Sound in the tablet**: Noctis. How you to get the fragments we will be able to pick you up.",
+            "value": "**来自某处的声音**: Noctis. 你弄到碎片后我们会来接你的."
+        },
+        {
+            "hash": 5657856616943766510,
+            "key": "**Noctis**: Okay, Sid..",
+            "value": "**Noctis**:好，Sid.."
+        },
+        {
+            "hash": 5658817590106633699,
+            "key": "Next thing I need to create a resonance. Bring me these items.",
+            "value": "接着，我需要去创建一个共鸣.替我带来这些."
+        },
+        {
+            "hash": 5658816490595005488,
+            "key": "Everything is ready?. [Talked] take it",
+            "value": "一切准备好了吗?. [Talked] 带上这个"
+        },
+        {
+            "hash": 5658819789129890121,
+            "key": "[Player] yes.. almost, follow me and we'll start resonating.",
+            "value": "[Player] 是的..大概，跟我来，我们会启动共鸣."
+        },
+        {
+            "hash": 5026043150679390919,
+            "key": "All ready.",
+            "value": "准备好了."
+        },
+        {
+            "hash": 5026042051167762708,
+            "key": "Resonance received. I will wait for you with fragments",
+            "value": "共鸣启动完成，我会等你的碎片."
+        },
+        {
+            "hash": 5026045349702647341,
+            "key": "Can come to resonance?",
+            "value": "我能来参加这个共鸣吗?"
+        },
+        {
+            "hash": 5026044250191019130,
+            "key": "Yes. Don't worry nothing will happen to you.",
+            "value": "是的。不要担心，没有什么事会发生在你身上."
+        },
+        {
+            "hash": 5025051391190933822,
+            "key": "I welcome you [Talked], nice to meet you.",
+            "value": "欢迎你 [Talked], 很高兴遇见你."
+        },
+        {
+            "hash": 5025052490702562033,
+            "key": "Glad to meet you, i'am [Player]!",
+            "value": "很高兴见到你, 我是 [Player]!"
+        },
+        {
+            "hash": 5024200369190887733,
+            "key": "Him you will spend time here. I have to go to the village.",
+            "value": "他会在这里虚度光阴.我得去村庄了."
+        },
+        {
+            "hash": 5024199269679259522,
+            "key": "Need to stand on defense in the village, good luck to you I will wait for good news from you.",
+            "value": "要防守村庄.祝你好运，我会等你的好消息的."
+        },
+        {
+            "hash": 5024198170167631311,
+            "key": "Good luck to you [Talked].",
+            "value": "祝你好运 [Talked]."
+        },
+        {
+            "hash": 5023208609702430636,
+            "key": "I came from a far Eastern country, I have some problems in the country so I need to become stronger.",
+            "value": "我来自东方一个遥远的国家，在那个国家我有些问题，所以我需要变得更强大."
+        },
+        {
+            "hash": 5023209709214058847,
+            "key": "I came for similar purposes. But I would like to visit your country.",
+            "value": "我为了和你相似的目的来.但是我想去你的国家."
+        },
+        {
+            "hash": 5023210808725687058,
+            "key": "**He speaks with a smile**: If you wish I will be sailing back soon I can take you with me",
+            "value": "**他面带微笑**: 如果你想，我很快就会回来，我可以带上你一起去"
+        },
+        {
+            "hash": 5023211908237315269,
+            "key": "I'd love to, but I don't know, i have here made friends. We'll see.",
+            "value": "我非常愿意, 但我不知道,我在这里交了一些朋友. 我们会看到的."
+        },
+        {
+            "hash": 5023204211655917792,
+            "key": "Well, if we still live of course. And the got to talking and drive away goblins need.",
+            "value": "当然，前提是我们还活着. 先赶走这些哥布林再聊吧."
+        },
+        {
+            "hash": 5022216850213973539,
+            "key": "To begin with, we must exterminate many of them as possible. To get to them in zone",
+            "value": "首先，我们必须尽可能地消灭他们中的许多人，以便在区域内找到他们"
+        },
+        {
+            "hash": 5022215750702345328,
+            "key": "**Very tired voice**: [Talked]. I'm so tired, there are so many of them.....",
+            "value": "**非常疲惫的嗓音**: [Talked]. 我好累啊，它们人太多了......"
+        },
+        {
+            "hash": 5022219049237229961,
+            "key": "**He sounds very tired**: Yes, I am also very tired, but we have to deal with it.",
+            "value": "**他的声音听起来非常累**: 是的，我也非常累。但是我们必须得解决它们."
+        },
+        {
+            "hash": 5022217949725601750,
+            "key": "All right let's keep going before they pile up again.",
+            "value": "好了，快点在他们重新聚集在一起之前继续推进"
+        },
+        {
+            "hash": 5021260275097619194,
+            "key": "Hmmm.. I see a passageway. I think we can go through there and find out where they're coming from.",
+            "value": "嗯...我看到了一个通道. 我认为我们可以穿过这里，找一下出口."
+        },
+        {
+            "hash": 5021261374609247405,
+            "key": "I'm worried about something.. Where did this hole?",
+            "value": "我有些担心，这个洞是通向哪里的？"
+        },
+        {
+            "hash": 5021258076074362772,
+            "key": "I don't know either, honestly. Maybe the goblins have dug through and are coming out. In any case we need to find out.",
+            "value": "说实话，我也不知道，也许哥布林已经挖通了洞并且正在往外走。不管怎样，我们都得进去看看。"
+        },
+        {
+            "hash": 5020268515609162097,
+            "key": "I think this is where they live. ",
+            "value": "我想这就是他们的老巢了。"
+        },
+        {
+            "hash": 5020267416097533886,
+            "key": "In any case, if we can not cope with them, there is an option to block the way. But I think they'll dig it up again in time.",
+            "value": "不管怎样，如果我们无法对付他们的话，我们可以试着把路堵上，不过我想他们又会及时挖开。"
+        },
+        {
+            "hash": 5020266316585905675,
+            "key": "**In anger**: LET's BREAK UP THESE FREAKS ALREADY... ",
+            "value": "*愤怒**: 让我们把这些怪物都搞定...... "
+        },
+        {
+            "hash": 5020265217074277464,
+            "key": "I'm only for your idea. Let's go!",
+            "value": "只能这样了，冲！"
+        },
+        {
+            "hash": 5019417493609116008,
+            "key": "And here is their leader.",
+            "value": "这就是他们的首领。"
+        },
+        {
+            "hash": 5019418593120744219,
+            "key": "Did we manage?",
+            "value": "我们做到了?"
+        },
+        {
+            "hash": 5019419692632372430,
+            "key": "We don't know yet we need to get out of here....",
+            "value": "现在还不知道，我们得先离开这......"
+        },
+        {
+            "hash": 5019420792144000641,
+            "key": "I'll be waiting for you where we fought the goblins.",
+            "value": "我会在我们发现哥布林的地方等你。"
+        },
+        {
+            "hash": 5018425734120658911,
+            "key": "Finally we got out how do you think we managed?",
+            "value": "我们终于出来了，你觉得我们是怎么做到的？"
+        },
+        {
+            "hash": 5018424634609030700,
+            "key": "I don't know [Player], we have to report this news to the village.",
+            "value": "我不知道 [Player], 我们得把这个消息带到村庄里."
+        },
+        {
+            "hash": 5017433974632201814,
+            "key": "Well, I think my work here is done [Player].",
+            "value": "好了，我想我在这的工作也结束了[Player]."
+        },
+        {
+            "hash": 5017435074143830025,
+            "key": "Your [Talked] next trip will be to your homeland?",
+            "value": "你的[Talked]下一个目的地是你的祖国吗？"
+        },
+        {
+            "hash": 5017431775608945392,
+            "key": "Yes, I think it's time to go home, I missed it.",
+            "value": "是的，我想是时候回家了，我也有点想念她了。"
+        },
+        {
+            "hash": 5017432875120573603,
+            "key": "Will you take me with you?",
+            "value": "你会带上我吗?"
+        },
+        {
+            "hash": 5017438372678714658,
+            "key": "Yes, of course. Say goodbye to your friends or maybe one of them will go with you?",
+            "value": "是的，当然。跟你的朋友说再见，或者他们有人会和你一起去?"
+        },
+        {
+            "hash": 5017439472190342869,
+            "key": "No, I don't want to expose them to danger.",
+            "value": "不.我不想把他们带入危险."
+        },
+        {
+            "key": "Well",
+            "value": "那好."
+        },
+        {
+            "hash": 4371267483575998204,
+            "key": "Well, goodbye [Talked], I'll keep going. I want to be stronger than I was before.",
+            "value": "那好，再见. [Talked],我会一直走.我想要比以前更强大."
+        },
+        {
+            "hash": 4371268583087626415,
+            "key": "All right [Player]. Good luck don't forget that we will always be happy to welcome you as a guest ;)",
+            "value": "好的 [Player]. 祝你好运，别忘了我们会一直很高兴欢迎你成为我们的客人 ;)"
+        },
+        {
+            "hash": 4371269682599254626,
+            "key": "Don't forget, don't miss me ;)",
+            "value": "别忘了，不要忘记我. ;)"
+        },
+        {
+            "hash": 4371270782110882837,
+            "key": "Don't worry, Diana is very attached to you. I think she will be offended. Talk to she!",
+            "value": "别担心，戴安娜很喜欢你。我想她会生气的。和她谈谈!"
+        },
+        {
+            "hash": 4372259243064455301,
+            "key": "Why didn't you tell [Player] me you were going to leave?",
+            "value": "你为什么不告诉我， [Player]？ 你要去哪里?"
+        },
+        {
+            "hash": 4372258143552827090,
+            "key": "I'm Sorry [Talked]. I wanted to tell you..",
+            "value": "我很抱歉， [Talked]。我想告诉你的......"
+        },
+        {
+            "hash": 4372257044041198879,
+            "key": "**She said sadly**: Why? Will you take me with you?",
+            "value": "**她沮丧地说**：为什么?你会带上我吗?"
+        },
+        {
+            "hash": 4372255944529570668,
+            "key": "I don't want to put you in danger!",
+            "value": "我不想把你卷入危险之中！"
+        },
+        {
+            "hash": 4372254845017942457,
+            "key": "I want to travel with you!",
+            "value": "我想和你一起去！"
+        },
+        {
+            "hash": 4372253745506314246,
+            "key": "Ok, I'll take you. Now let me to say Yasue San.",
+            "value": "好吧，我会带上你。现在让我说山雅秀(Yasue San)."
+        },
+        {
+            "hash": 4372252645994686035,
+            "key": "**She said joyfully**: True? Thank! ;)",
+            "value": "**她风趣地说**：真的? 谢谢！ ;)"
+        },
+        {
+            "hash": 4373251002552912398,
+            "key": "Well, ready to go?",
+            "value": "好了，你准备好出发了吗?"
+        },
+        {
+            "hash": 4373252102064540609,
+            "key": "Yes, will I take Diana with me?",
+            "value": "是的，我可以带上戴安娜吗?"
+        },
+        {
+            "hash": 4373248803529655976,
+            "key": "Yes, of course, set sail:) I will show you my homeland!",
+            "value": "当然，准备启航:) 我会带你领略我的家乡！"
+        },
+        {
+            "hash": 9851257723871187306,
+            "key": "**He said surprised**: What a wonderful weather today!",
+            "value": "**他惊喜地说**：今天天气真好啊！"
+        },
+        {
+            "hash": 9851258823382815517,
+            "key": "Yes, I think so too.",
+            "value": "是的，我也这么想."
+        },
+        {
+            "hash": 9851255524847930884,
+            "key": "Well, how do you like on our ship [Player]? Captures the ocean, i think I'll stay here a little longer, it's wonderful here.",
+            "value": "嗯，你觉得我们的船怎么样[Player]?我想我会在这里多呆一会儿，这里太棒了 ."
+        },
+        {
+            "hash": 9851256624359559095,
+            "key": "I also really like it. Okay, I'll go, I wish you a good rest [Talked]!",
+            "value": "我也很喜欢。好吧，我得走了，希望你能好好休息 [Talked]!"
+        },
+        {
+            "hash": 9851253325824674462,
+            "key": "And I wish you good luck too [Player]!",
+            "value": "并且祝你好运 [Player]！"
+        },
+        {
+            "hash": 9850265964382730209,
+            "key": "**He looks very tired**: Very hot, impossible to work.",
+            "value": "**他看起来很疲惫**：太热了，不可能在这儿工作."
+        },
+        {
+            "hash": 9849274204894273112,
+            "key": "Hello, I arrived from a small village beyond the mountains and the ocean, my name is [Player], I have a desire to become an adventurer. But I do not know about this place, could you help me?",
+            "value": "你好，我来自山的那边海的那边的一个小村庄，我的名字是[Player]，我渴望成为一名冒险家，但我对这里不是很熟悉，你可以帮助我吗?"
+        },
+        {
+            "hash": 9849275304405901323,
+            "key": "Hello [Player], Yes of course I will help you, explain where you need to go, but you help my workers, they do not cope at all.",
+            "value": "你好 [Player]，没错我可以帮你, 告诉你你应该去哪, 但你得帮帮我的工人们, 他们可完全不会处理。"
+        },
+        {
+            "hash": 9849276403917529534,
+            "key": "What you need help with, I'm good at dealing with predators without meat you will not leave! *laughter*",
+            "value": "你需要什么帮助，我很擅长不用肉和那些食肉动物往来。 *笑*"
+        },
+        {
+            "hash": 9849277503429157745,
+            "key": "Oh, you're a Joker, no thanks go a little further guys will explain everything to you!",
+            "value": "哦,你可真会开玩笑， 不用感谢我， 去找其他伙计们，他们会给你解释一切！"
+        },
+        {
+            "hash": 9849278602940785956,
+            "key": "OK, thanks!",
+            "value": "好的，谢谢！"
+        },
+        {
+            "hash": 9843640307312455298,
+            "key": "Hey, pst! You, yes, you!",
+            "value": "嘿, 嘿！你, 没错, 就是你！"
+        },
+        {
+            "hash": 9843641406824083509,
+            "key": "Yeah? How can I help?",
+            "value": "嗯? 有什么我能做的吗?"
+        },
+        {
+            "hash": 9843638108289198876,
+            "key": "You cannot help me, kid! I just need...to TEST you, yes...!",
+            "value": "你帮不了我，小子！我只是想...测试你，是的没错......！"
+        },
+        {
+            "hash": 8701802162103532526,
+            "key": "Hi my name is [Player], [Talked] are you working?",
+            "value": "你好我的名字是[Player], [Talked]你是在工作吗?"
+        },
+        {
+            "hash": 8701803261615160737,
+            "key": "Hello [Player], Yes, I am on duty as a guard, and I also trade a little",
+            "value": "你好 [Player]，没错，我作为一名守卫在值班，同时我也会做点小生意."
+        },
+        {
+            "hash": 8701799963080276104,
+            "key": "Can you tell me how difficult it is to get into the service?",
+            "value": "你能告诉我参军有多难吗?"
+        },
+        {
+            "hash": 8701801062591904315,
+            "key": "If that's what you want, it's easy. And if you don't then you won't be able to get in ;)",
+            "value": "如果那就是你想要的，那很简单。如果你不想，那么你肯定不能加入 ;)"
+        },
+        {
+            "hash": 8701806560150045370,
+            "key": "By the way [Player], I need help, there are slugs nearby, again raging, and I can't leave the post. At the same time you will test your skills young adventurer.",
+            "value": "顺便说下[Player],我需要你的帮助, 有些史莱姆在附近再次肆虐起来，但我不能离开我的岗位。同时，你也能测试你的技能，年轻的冒险家."
+        },
+        {
+            "hash": 8701807659661673581,
+            "key": "Yes, no problem, wait [Talked]!!",
+            "value": "好的, 没问题...等等! [Talked]!!"
+        },
+        {
+            "hash": 8702793921591989623,
+            "key": "**He says with a look of horror on his face**: Help me find my daughter, she went to the village for food and never returned.",
+            "value": "**他一脸担忧地说**: 帮我找找我的女儿。她去村里找吃的后就再也没有回来了."
+        },
+        {
+            "hash": 8702792822080361412,
+            "key": "To the village? [Talked] Yes of course I will help. That's where I need to go!",
+            "value": "去村子? [Talked] 是的，我当然会帮忙。 那也是我要去的地方!"
+        },
+        {
+            "hash": 8702796120615246045,
+            "key": "Thanks a lot",
+            "value": "多谢了。"
+        },
+        {
+            "hash": 8700810402615075429,
+            "key": "Hello, would you like to learn the basics of mining?",
+            "value": "嗨！你想学习挖矿的基础知识吗?"
+        },
+        {
+            "hash": 8700809303103447218,
+            "key": "Yes, of course, I don't mind",
+            "value": "当然，我不介意。"
+        },
+        {
+            "hash": 8700808203591819007,
+            "key": "All right follow me I'll explain the basics to you!",
+            "value": "好吧..跟我来，我会先让你了解一点基础!"
+        },
+        {
+            "hash": 8698011046010217898,
+            "key": "Hello, and so you're new here?",
+            "value": "你好, 所以你是新来的?"
+        },
+        {
+            "hash": 8698012145521846109,
+            "key": "Yes.",
+            "value": "是的。"
+        },
+        {
+            "hash": 8698008846986961476,
+            "key": "I need to register you. Please introduce yourself, and the purpose of your arrival, and the time you to stay here",
+            "value": "我得登记你.。请介绍你自己, 还有你来的目的和停留时间。"
+        },
+        {
+            "hash": 8698009946498589687,
+            "key": "My name is [Player]. I came here to become an adventurer. I can't tell you the exact time of stay.",
+            "value": "我的名字是[Player]。我来这里是为了成为一名冒险家，我无法告知你我具体会待多久。"
+        },
+        {
+            "hash": 8698006647963705054,
+            "key": "And who for you should know the time of your stay here.",
+            "value": "谁会想知道你在这待多久。"
+        },
+        {
+            "hash": 8698007747475333265,
+            "key": "Okay well, I will write you down, in case of violation of the rules of our village, we have every right to prohibit your presence here, and report to superiors.",
+            "value": "好吧.你给我听好了。如果你违反了我们村子的规矩.我们有权禁止你到这里.并向上级报告"
+        },
+        {
+            "hash": 8698004448940448632,
+            "key": "Have a good day!",
+            "value": "祝你拥有美好的一天!"
+        },
+        {
+            "hash": 8698005548452076843,
+            "key": "Thank's [Talked]!",
+            "value": "谢了 [Talked]!"
+        },
+        {
+            "hash": 8696027527033303704,
+            "key": "[Stranger]Greetings, wanderer. *bowing*",
+            "value": "[Stranger] 你好, 流浪者. *鞠躬*"
+        },
+        {
+            "hash": 8696028626544931915,
+            "key": "I am the Deputy of the Apostle, and I also protect her.",
+            "value": "我是使徒的副手.我的职责是保护使徒."
+        },
+        {
+            "hash": 8696029726056560126,
+            "key": "I think you've already heard, that the monsters are raging.",
+            "value": "我想你已经听说了.有怪物在肆虐的消息."
+        },
+        {
+            "hash": 8696030825568188337,
+            "key": "I have a request for you [Player]",
+            "value": "我对你有一个要求 [Player]"
+        },
+        {
+            "hash": 8696031925079816548,
+            "key": "Which one?",
+            "value": "什么要求?"
+        },
+        {
+            "hash": 8696033024591444759,
+            "key": "Help in the southern part to win over the monsters. We can't drive them away but we can scare them away.",
+            "value": "帮助南方战胜怪物. 我们不能赶走它们，但是我们可以吓跑它们."
+        },
+        {
+            "hash": 8696034124103072970,
+            "key": "Of course I will.",
+            "value": "当然我会的."
+        },
+        {
+            "hash": 8696035223614701181,
+            "key": "Thank's [Player]!",
+            "value": "谢谢你， [Player]!"
+        },
+        {
+            "hash": 8694184745544800518,
+            "key": "You look awful today, [Talked]! What happend?",
+            "value": "你今天看起来很惊慌, [Talked]! 发生了什么？"
+        },
+        {
+            "hash": 8694185845056428729,
+            "key": "Oh.. don't you worry about me, boy..",
+            "value": "哦.. 你不用担心我, 小子.."
+        },
+        {
+            "hash": 8694182546521544096,
+            "key": "But I DO worry!",
+            "value": "但是我很担心！"
+        },
+        {
+            "hash": 8694183646033172307,
+            "key": "I'm tired of these fight I have with my wife, it's personal bussiness.",
+            "value": "我厌倦了和我妻子的这些争吵.这是我的私事."
+        },
+        {
+            "hash": 8694189143591313362,
+            "key": "I didn't want to be a pain to you, Officer. I will leave you to your problems now.",
+            "value": "我不想让你这么痛苦.警官.就让我现在解决你的问题."
+        },
+        {
+            "hash": 8694190243102941573,
+            "key": "No! Wait!",
+            "value": "不! 等等!"
+        },
+        {
+            "hash": 8695176505033257615,
+            "key": "Hello [Player], I have come to you from the Final Fantasy universe, my name is [Talked].",
+            "value": "你好啊 [Player]. 我从幻想乡来到你这里.我的名字是 [Talked]"
+        },
+        {
+            "hash": 8695175405521629404,
+            "key": "I can't say for sure how long I will be here, but for now I will be happy to know your world, and I will be happy to show my world",
+            "value": "当然我会在这里呆多久，但现在我很高兴了解你们的世界，也很高兴展示我的世界"
+        },
+        {
+            "hash": 8695178704056514037,
+            "key": "Are you serious? Did the author smoke dope?",
+            "value": "你认真的? 作者在吸食毒品？"
+        },
+        {
+            "hash": 8695177604544885826,
+            "key": "Maybe so, I have a couple of things that you can get from me, but not for free. I'll need the fragments I lost",
+            "value": "也许是这样，我有些东西你可以从我这里得到，但不是免费的。我需要我丢失的碎片"
+        },
+        {
+            "hash": 8049861035977100094,
+            "key": "Welcome home, sir! **she made a bow**",
+            "value": "欢迎回家, 先生! **她鞠了一躬**"
+        },
+        {
+            "key": "The main menu will return as soon as you leave this zone!",
+            "value": "在离开此区域后，主菜单将很快重新出现!"
+        },
+        {
+            "key": "Hi, {STR} Last log in {STR}",
+            "value": "Hello, {STR} 最近一次登录： {STR}"
+        },
+        {
+            "key": "Level {INT} : Exp {INT}/{INT}",
+            "value": "等级：{INT} :: 经验值：{INT}/{INT}"
+        },
+        {
+            "key": "Skill Point {INT}SP",
+            "value": "技能点 {INT}SP"
+        },
+        {
+            "key": "Gold: {INT}",
+            "value": "钱: {INT}"
+        },
+        {
+            "key": "☪ SUB MENU PERSONAL",
+            "value": "☪ 个人-子菜单"
+        },
+        {
+            "key": "Inventory",
+            "value": "背包"
+        },
+        {
+            "key": "Equipment",
+            "value": "装备"
+        },
+        {
+            "key": "Upgrades({INT}p)",
+            "value": "升级({INT}p)"
+        },
+        {
+            "key": "Dungeons",
+            "value": "地牢"
+        },
+        {
+            "key": "Settings",
+            "value": "设置"
+        },
+        {
+            "key": "Mailbox",
+            "value": "邮箱"
+        },
+        {
+            "key": "Journal",
+            "value": "日志"
+        },
+        {
+            "key": "Guild",
+            "value": "公会"
+        },
+        {
+            "key": "Guild finder",
+            "value": "寻找公会"
+        },
+        {
+            "key": "House",
+            "value": "房子"
+        },
+        {
+            "key": "√ SUB MENU INFORMATION",
+            "value": "√ 子菜单-信息"
+        },
+        {
+            "key": "Loots, mobs on your zone",
+            "value": "掉落物，怪物在你的区域里"
+        },
+        {
+            "key": "Ranking guilds and players",
+            "value": "公会排名和玩家"
+        },
+        {
+            "key": "Upgrades Information",
+            "value": "关于升级"
+        },
+        {
+            "key": "Select upgrades type in Reason, write count.",
+            "value": "选择升级项，然后在理由里选择数量"
+        },
+        {
+            "key": "Disciple of War. Level Power {INT}",
+            "value": "攻击的信徒. 等级效果 {INT}"
+        },
+        {
+            "key": "Disciple of Tank. Level Power {INT}",
+            "value": "坦克的信徒.等级效果 {INT}"
+        },
+        {
+            "key": "Disciple of Healer. Level Power {INT}",
+            "value": "治疗的信徒. 等级效果 {INT}"
+        },
+        {
+            "key": "Disciple of Jobs",
+            "value": "工作的信徒"
+        },
+        {
+            "key": "{STR} {INT}P (Price {INT}P)",
+            "value": "{STR} {INT}P (价格 {INT}P)"
+        },
+        {
+            "key": "Ranking Information",
+            "value": "排名介绍"
+        },
+        {
+            "key": "Top 10 guilds leveling",
+            "value": "前十等级最高公会"
+        },
+        {
+            "key": "Top 10 guilds wealthy",
+            "value": "前十最富有公会"
+        },
+        {
+            "key": "Top 10 players leveling",
+            "value": "前十等级最高玩家"
+        },
+        {
+            "key": "Top 10 players wealthy",
+            "value": "前十最富有玩家"
+        },
+        {
+            "key": "Chance & Loot Information",
+            "value": "盲盒和战利品信息"
+        },
+        {
+            "key": "Here you can see chance loot, mobs, on YOUR ZONE.",
+            "value": "在这里你可以看到周围的怪物信息以及可能掉落的战利品"
+        },
+        {
+            "key": "There are no active mobs in your zone!",
+            "value": "你的周围没有怪物"
+        },
+        {
+            "key": "Auto equip {STR} - {STR}",
+            "value": "自动装备 {STR} - {STR}"
+        },
+        {
+            "key": "Player Stats {STR}",
+            "value": "玩家统计数据 {STR}"
+        },
+        {
+            "key": "Player Upgrade Point: {INT}P",
+            "value": "玩家升级点: {INT}P"
+        },
+        {
+            "key": "You have {INT} {STR}",
+            "value": "你有 {INT} 个 {STR}"
+        },
+        {
+            "key": "Use it when you're not dead!",
+            "value": "你只能在没死的时候用这个！"
+        },
+        {
+            "key": "Level UP. Now Level {INT}!",
+            "value": "等级提升！现在的等级是：{INT}!"
+        },
+        {
+            "key": "Press 'F4' to continue the dialog!",
+            "value": "按 'F4' 继续对话！"
+        },
+        {
+            "key": "You got the effect {STR} time {INT}sec.",
+            "value": "你得到了效果：{STR}  持续时间：{INT}秒."
+        },
+        {
+            "key": "You lost the effect {STR}.",
+            "value": "你失去了效果 {STR}."
+        },
+        {
+            "key": "Repair all items - FREE",
+            "value": "免费修理所有物品"
+        },
+        {
+            "key": "Shop :: {STR}",
+            "value": "商店 :: {STR}"
+        },
+        {
+            "key": "List of completed quests",
+            "value": "已完成的任务的列表"
+        },
+        {
+            "key": "Active NPC for current quests",
+            "value": "当前任务的主要NPC"
+        },
+        {
+            "key": "Your mailbox is empty",
+            "value": "你的邮箱是空的"
+        },
+        {
+            "key": "Available aethers",
+            "value": "其他可用的"
+        },
+        {
+            "key": "Move to Guild House - free",
+            "value": "传送到公会房间 - 免费"
+        },
+        {
+            "key": "Move to Your House - free",
+            "value": "传送到你的家 - 免费"
+        },
+        {
+            "key": "Inventory Select List",
+            "value": "背包选择列表"
+        },
+        {
+            "key": "Used ({INT})",
+            "value": "正在使用：({INT})"
+        },
+        {
+            "key": "Craft ({INT})",
+            "value": "合成 ({INT})"
+        },
+        {
+            "key": "Modules ({INT})",
+            "value": "模型 ({INT})"
+        },
+        {
+            "key": "Potion ({INT})",
+            "value": "药水 ({INT})"
+        },
+        {
+            "key": "Other ({INT})",
+            "value": "其他 ({INT})"
+        },
+        {
+            "key": "Story dungeon's",
+            "value": "主线-地下城"
+        },
+        {
+            "key": "Alternative story dungeon's",
+            "value": "支线-地下城"
+        },
+        {
+            "key": "You are already in this dungeon!",
+            "value": "你已经在这个地下城里了！"
+        },
+        {
+            "key": "At the moment players are passing this dungeon!",
+            "value": "有玩家正在通过这个地牢！"
+        },
+        {
+            "key": "Your level is low to pass this dungeon!",
+            "value": "你的等级不允许进入地牢！"
+        },
+        {
+            "key": "{STR} joined to Dungeon {STR}!",
+            "value": "{STR} 加入了地牢 {STR}!"
+        },
+        {
+            "key": "You can vote for the choice of tank (Dungeon Tab)!",
+            "value": "你可以投票选择谁当坦克（地牢）"
+        },
+        {
+            "key": "You can't vote for yourself!",
+            "value": "你不可以投你自己！"
+        },
+        {
+            "key": "You already voted!",
+            "value": "你已经投票了"
+        },
+        {
+            "key": "{STR} voted for {STR}.",
+            "value": "{STR} 投票给 {STR}."
+        },
+        {
+            "key": "Languages Information",
+            "value": "关于语言"
+        },
+        {
+            "key": "Here you can choose the language.",
+            "value": "你可以在这里选择你的语言"
+        },
+        {
+            "key": "Note: translation is not complete.",
+            "value": "小贴士：翻译还没全部做完"
+        },
+        {
+            "key": "Active language: {STR}",
+            "value": "可以使用的语言: {STR}"
+        },
+        {
+            "key": "Select language \"{STR}\"",
+            "value": "选择语言\"{STR}\""
+        },
+        {
+            "key": "You chosen a language \"{STR}\".",
+            "value": "你选择了语言 \"{STR}\" ."
+        },
+        {
+            "key": "Settings language",
+            "value": "语言设置"
+        },
+        {
+            "key": "Required {INT}, but you have only {INT} {STR}!",
+            "value": "要求 {INT}, 但是你只有 {INT} {STR}!"
+        },
+        {
+            "key": "Not upgrade points for +{INT}. Required {INT}.",
+            "value": "没有足够的升级点来加{INT}点. 要求 {INT}."
+        },
+        {
+            "key": "Upgrade has a maximum level.",
+            "value": "已升级到最高等级."
+        },
+        {
+            "key": "This chat is intended for team / guilds!",
+            "value": "此聊天适用于团队/公会"
+        },
+        {
+            "key": "{STR} came! Good {STR}!",
+            "value": "{STR} Came! Good {STR}!"
+        },
+        {
+            "key": "Nighttime experience was increase to {INT}",
+            "value": "夜间经验提升到 {INT} %"
+        },
+        {
+            "key": "Daytime experience was downgraded to 100%",
+            "value": "白天经验恢复到100%"
+        },
+        {
+            "key": "{STR} opened zone ({STR})!",
+            "value": "{STR} 开放区域 ({STR})!"
+        },
+        {
+            "key": "Requires quest completion '{STR}'!",
+            "value": "要求完成任务 '{STR}'!"
+        },
+        {
+            "key": "You can see menu in the votes!",
+            "value": "你可以在投票里看见菜单"
+        },
+        {
+            "key": "You left the active zone, menu is restored!",
+            "value": "你离开了活动区域，菜单已恢复"
+        },
+        {
+            "key": "{STR} logged to account. Rank #{INT}",
+            "value": "{STR} 加入了MMO世界并登录. 等级 #{INT}"
+        },
+        {
+            "key": "You repaired all items.",
+            "value": "你修理了所有物品."
+        },
+        {
+            "key": "Learned a new skill [{STR}]",
+            "value": "学习一个新技能 [{STR}]"
+        },
+        {
+            "key": "Increased the skill [{STR} level to {INT}]",
+            "value": "把技能 [{STR} 级别提高到 {INT}]"
+        },
+        {
+            "key": "Skill already have maximum level!",
+            "value": "技能已经达到了最高等级！"
+        },
+        {
+            "key": "Menu is available in call-votes!",
+            "value": "菜单在投票界面使用！"
+        },
+        {
+            "key": "You start dialogue with {STR}!",
+            "value": "你开始和{STR}对话!"
+        },
+        {
+            "key": "Need to complete quest {STR}",
+            "value": "需要完成任务 {STR}"
+        },
+        {
+            "key": "Vote for {STR} (Votes: {INT})",
+            "value": "投票 {STR} (投票: {INT})"
+        },
+        {
+            "key": "You have {INT} unread messages!",
+            "value": "你有 {INT} 个未读信息!"
+        },
+        {
+            "key": "Task has not been completed yet!",
+            "value": "任务还没有做完！!"
+        },
+        {
+            "key": "[Done] Give the {STR}x{INT} to the {STR}!",
+            "value": "[完成] 给 {STR}x{INT} {STR}!"
+        },
+        {
+            "key": "[Done] Defeat the {STR}'s for the {STR}!",
+            "value": "[完成] 击败 {STR}'s 给 {STR}!"
+        },
+        {
+            "key": "- - - - [Your nickname is already registered] - - - -",
+            "value": "- - - - - - - [您的用户名早就被注册过了] - - - - - - -"
+        },
+        {
+            "key": "Your nick is a unique identifier, and it has already been used!",
+            "value": "您的用户名是一个唯一的标识符，它已经被别人使用了！"
+        },
+        {
+            "key": "You can restore access by contacting support, or change nick.",
+            "value": "你可以通过联系管理员或者更改你的昵称重新获取访问权限."
+        },
+        {
+            "key": "- - - - - - - [Successful registered] - - - - - - -",
+            "value": "- - - - - - - - - [注册成功] - - - - - - - - -"
+        },
+        {
+            "key": "Don't forget your data, have a nice game!",
+            "value": "不要忘了你的账号密码，祝你玩的开心！"
+        },
+        {
+            "hash": 6300204504115950217,
+            "key": "Well, I'll think about your request. Follow me.",
+            "value": "我会考虑你的请求的，跟我来."
+        },
+        {
+            "key": "# Your nickname is a unique identifier!",
+            "value": "# 你的用户名是你唯一的标识符!"
+        },
+        {
+            "key": "# Log in: \"/login {STR} {STR}\"",
+            "value": "# 使用: \"/login {STR} {STR}\"登录"
+        },
+        {
+            "key": "Username / Password must contain 4-12 characters",
+            "value": "用户名 / 密码必须在4到12个字符之间"
+        },
+        {
+            "key": "Wrong login or password",
+            "value": "错误的用户名或密码"
+        },
+        {
+            "key": "The account is already in the game!",
+            "value": "这个账号已经登录了！"
+        },
+        {
+            "key": "- - - - - - - [Successful login] - - - - - - -",
+            "value": "- - - - - - - - - [成功登录] - - - - - - - - -"
+        },
+        {
+            "key": "Your nickname was not found in the database!",
+            "value": "您的用户名不在数据库中!"
+        },
+        {
+            "key": "You are located {STR} ({STR})",
+            "value": "您正位于 {STR} ({STR})"
+        },
+        {
+            "key": "Quest NPCs are marked with an aura Heart and Shield.",
+            "value": "任务NPC会被高亮并带有心和盾牌粒子。"
+        },
+        {
+            "key": "Shield around you indicates location of active quest.",
+            "value": "你周围的盾牌指示活动任务的位置。"
+        },
+        {
+            "key": "Your Discord ID has been updated",
+            "value": "您的discord id已被更新"
+        },
+        {
+            "key": "Check the connection status in discord \"/connect\".",
+            "value": "在discord输入 \"/connect\"检查连接."
+        },
+        {
+            "key": "Some of the settings becomes valid after death",
+            "value": "一些设置在死亡后有效"
+        },
+        {
+            "key": "Modules settings",
+            "value": "组件设置"
+        },
+        {
+            "key": "The list of modules equipment is empty.",
+            "value": "模块设备列表为空。"
+        },
+        {
+            "key": "The voucher code '{STR}' has expired.",
+            "value": "礼品盒代码 {STR} 已过期."
+        },
+        {
+            "key": "This voucher has already been redeemed.",
+            "value": "这个礼品盒已经被使用了"
+        },
+        {
+            "key": "You have successfully redeemed the voucher '{STR}'.",
+            "value": "你成功的使用了礼品盒: '{STR}'."
+        },
+        {
+            "key": "The voucher code '{STR}' does not exist.",
+            "value": "礼品盒 '{STR}' 不存在."
+        },
+        {
+            "hash": 16434775753551125906,
+            "key": "Hello, I was sent to you by a carpenter to help you.",
+            "value": "你好，我是木匠派来帮助你的"
+        },
+        {
+            "hash": 16434776853062754117,
+            "key": "**He asks with a smile**: Hello, have you just arrived?",
+            "value": "**他笑着问**: 你好，你刚刚到吗?"
+        },
+        {
+            "hash": 16434773554527869484,
+            "key": "Yes, I came to you to become an adventurer, I need money.",
+            "value": "是的，我是来帮助你成为探险家的，我需要钱。"
+        },
+        {
+            "hash": 16434774654039497695,
+            "key": "Well, I'll tell you [Player], things have been very bad here lately, the residents are living in fear. Recently, a little girl was killed, as we understand there is a dead force involved.",
+            "value": "好吧, 让我告诉你 [Player], 这里最近很不太平, 居民每天生活在恐惧之中. 就在最近,有一名小女孩也被杀害, 在我们看来，这是一种死亡暴力."
+        },
+        {
+            "hash": 16434771355504613062,
+            "key": "**With horror in his eyes**: What ... Dead People",
+            "value": "**他的眼神带着恐惧**: 什么...... 尸..体..."
+        },
+        {
+            "hash": 16434772455016241273,
+            "key": "**He said hurriedly**: I don't know for sure. Over time, the residents will tell you everything, or you will feel for yourself what is happening there.",
+            "value": "**他急忙说**：我不确定。随着时间的推移，居民们会告诉你一切，或者你会自己察觉到那里发生了什么..."
+        },
+        {
+            "hash": 16434769156481356640,
+            "key": "I didn't expect it to be this bad. Well, what can I help you with?",
+            "value": "我没想到会这么糟..那么....我能帮你什么忙吗?"
+        },
+        {
+            "hash": 16434770255992984851,
+            "key": "Come with me, our guys dropped boards, help me collect them.",
+            "value": "跟我来, 我们的伙计掉落了一些板子，请帮我把他们捡回来."
+        },
+        {
+            "hash": 16433783994062668809,
+            "key": "Okay generally help me collect all the boards! I will reward you for your help.",
+            "value": "好吧，帮我收集所有的板子！ 我会奖励你。"
+        },
+        {
+            "hash": 16433782894551040598,
+            "key": "**Weakness in asks**: Oh, hell, they're heavy, I've got them all.",
+            "value": "**虚弱地说**: 哦, 见鬼, 它们很重, 我全拿到了."
+        },
+        {
+            "hash": 16433781795039412387,
+            "key": "Great job! Your muscles won't hurt you anyway [Player] *laughter*",
+            "value": "干得漂亮”! 反正你不会肌肉拉伤 [Player] *大笑*"
+        },
+        {
+            "hash": 16433780695527784176,
+            "key": "*laughter*",
+            "value": "*大笑*"
+        },
+        {
+            "hash": 16433788392109181653,
+            "key": "Now hand them out to my boys and let them go on with their business.",
+            "value": "现在把它们交给我的伙计们，让他们继续他们的工作。"
+        },
+        {
+            "hash": 16433787292597553442,
+            "key": "Good [Talked]!",
+            "value": "很好 [Talked]!"
+        },
+        {
+            "hash": 16438566869644440534,
+            "key": "Here you go, your boss told me to give it to you!",
+            "value": "给你，你老板叫我把它给你！"
+        },
+        {
+            "hash": 16438567969156068745,
+            "key": "Thanks for the help.",
+            "value": "谢谢你的帮助，你和Moker（翻译者JiaDaiSiHuo）一样乐于助人."
+        },
+        {
+            "key": "Here you go, your boss told me to give it to you!",
+            "value": "给你，你老板叫我把它给你！"
+        },
+        {
+            "key": "Thanks for the help.",
+            "value": "谢谢你的帮助，你和Moker（翻译者JiaDaiSiHuo）一样乐于助人."
+        },
+        {
+            "key": "Backpage",
+            "value": "上一页"
+        },
+        {
+            "key": "Thanks for the help.",
+            "value": "谢谢你的帮助，你和Moker（翻译者JiaDaiSiHuo）一样乐于助人."
+        },
+        {
+            "hash": 16437610294528086189,
+            "key": "Is tired. But I did it!",
+            "value": "虽然很累，但终究还是完成了"
+        },
+        {
+            "hash": 16437609195016457978,
+            "key": "Well done, take this. I think you need it if you're going to be an adventurer. Go straight, and you will go straight to the residents, if you ask where to go.",
+            "value": "干得好啊，收下这个。 如果你想成为冒险家，我认为你需要它。 如果你想问接下来去哪，那么直走，你会找到村庄."
+        },
+        {
+            "hash": 16437608095504829767,
+            "key": "**With a smile**: Well thank you, good luck with your work!",
+            "value": "**面带微笑**: 好的我真是谢谢你，祝你工作顺利铁子"
+        },
+        {
+            "hash": 16436618535039629092,
+            "key": "[Stranger]Hi, my name is [Player], how do I find the nearest village?",
+            "value": "[Stranger]嗨, 我的名字是 [Player], 请问我怎么找到最近的村庄?"
+        },
+        {
+            "hash": 16436619634551257303,
+            "key": "**She concerned**: Hello, my name is [Talked].",
+            "value": "**She concerned**: 你好，我的名字是[Talked]."
+        },
+        {
+            "hash": 16436620734062885514,
+            "key": "I'll be happy to help you settle in, but could you give my brother a note? He works now on the ship that you arrived on, i could have done it myself, but they won't let me in.",
+            "value": "我会很高兴帮你搬到这儿来, 但你能不能帮我把这份笔记捎给我的哥哥? 他现在在你去过的那艘大船上工作.本来我可以自己去做，但是他们不让我进去."
+        },
+        {
+            "hash": 16436621833574513725,
+            "key": "Yes, of course i help, will you be here [Talked]?",
+            "value": "那当然，我会帮你的，你会在这等我吗？"
+        },
+        {
+            "hash": 16436614136993116248,
+            "key": "I'll be here waiting!",
+            "value": "嗯，我会在这等!"
+        },
+        {
+            "hash": 16443349745226212259,
+            "key": "Hello, are you Diana's brother?",
+            "value": "你好，你就是戴安娜的哥哥吧?"
+        },
+        {
+            "hash": 16443348645714584048,
+            "key": "**He said rudely**: Yes. Did something happen to her?..",
+            "value": "**他粗鲁地说**: 是我，她怎么了.."
+        },
+        {
+            "hash": 16443351944249468681,
+            "key": "No, don't worry, she just asked me to pass you the notebook.",
+            "value": "别担心，她很好.她让我来给你递个本子"
+        },
+        {
+            "hash": 16443350844737840470,
+            "key": "Well, thank you very much, and tell her I'll be seeing her this evening.",
+            "value": "那么，谢谢你，顺便帮我转告她我我今晚会过去找她。"
+        },
+        {
+            "hash": 16443354143272725103,
+            "key": "Yes, good luck with your work!",
+            "value": "是的，祝你工作顺利！"
+        },
+        {
+            "hash": 16442393170109857914,
+            "key": "**She says impatiently**: Oh, you're already here, you're fast!",
+            "value": "**她不耐烦地说**: 哦, 你到了, 花的时间真~短~"
+        },
+        {
+            "hash": 16442394269621486125,
+            "key": "Really?",
+            "value": "你认真的么?"
+        },
+        {
+            "hash": 16442390971086601492,
+            "key": "Yes. How is he?",
+            "value": "是的. 他怎么样?"
+        },
+        {
+            "hash": 16442392070598229703,
+            "key": "He told me that he is busy now, and will visit you later in the evening!",
+            "value": "他告诉我他现在很忙，晚上会来看你的！"
+        },
+        {
+            "key": "[Player], do you have any questions? I'm sorry, can't help you.",
+            "value": "[Player], 你有什么问题吗？很抱歉，我不能帮助你."
+        },
+        {
+            "key": "What a beautiful [Time]. I don't have anything for you [Player].",
+            "value": "这真是个好天气. 但我没有什么能给你 [Player]."
+        },
+        {
+            "key": "[Player] are you interested something? I'm sorry, don't want to talk right now.",
+            "value": "[Player] 你是对什么东西很好奇吗？我很抱歉，我现在不想谈话"
+        },
+        {
+            "hash": 16442388772063345070,
+            "key": "I'm so happy! They won't let me in because of the problems that are happening. Dead men kidnap girls, and then they find them dead.",
+            "value": "太好了，他们不让我过去因为最近发生的事.死神绑架了她们，她们后来都被发现已经死了"
+        },
+        {
+            "hash": 16442389871574973281,
+            "key": "**He sounds surprised**: Only girls? Why the dead?",
+            "value": "**他的声音听上去很惊喜**: 只有女孩？为什么会死？"
+        },
+        {
+            "hash": 16442386573040088648,
+            "key": "**She's upset**: Honestly, I don't know. The dead or who it is, our headman says that most likely the dead ;(",
+            "value": "**她很难过**：老实说，我不知道死者是谁，我们的头目这么说 ;("
+        },
+        {
+            "hash": 16442387672551716859,
+            "key": "I came to you to become an adventurer, as I know you have magical creatures.",
+            "value": "我来找你是为了成为一名冒险家，因为我知道你有魔法制成的产物."
+        },
+        {
+            "hash": 16442384374016832226,
+            "key": "**She sounds like she knows it**: An adventurer? We have a Guild of adventurers, but to become an adventurer you need to pass the tests.",
+            "value": "**听起来她好像知道**：一个冒险家？我们有一个冒险家协会，但要成为一名冒险家，你需要通过测试。"
+        },
+        {
+            "hash": 8147826042696013639,
+            "key": "Yes the test [Player]. First, you will need to collect the minimum equipment. To apply and pay the fee. And only after that you will be assigned the position of adventurer.",
+            "value": "是的没错，一个测试[Player]. 首先, 你需要至少收集一些最垃圾的装备. 申请并支付费用. 然后你才会有资格成为冒险家."
+        },
+        {
+            "hash": 8147824943184385428,
+            "key": "Is everything so strict? Yes, I think I can handle it.",
+            "value": "这会很难吗？不过我想对我来说应该小菜一碟"
+        },
+        {
+            "hash": 8147828241719270061,
+            "key": "All right come on I'll show you our village [Player].",
+            "value": "好的，跟我来吧。我带你在我们村庄溜一圈[Player]."
+        },
+        {
+            "hash": 8147827142207641850,
+            "key": "Yes come on ;)",
+            "value": "我已经迫不及待了;)"
+        },
+        {
+            "hash": 3184192948634671686,
+            "key": " **She made it sound like there was something wrong with them**: Oh, my God, where are the slime from?.",
+            "value": " **她很不可思议地说**: WTF,这你妈的史莱姆是哪来的？"
+        },
+        {
+            "hash": 3184194048146299897,
+            "key": "I don't know [Talked], here even have slimes. Wahoo",
+            "value": "我也不知道啊 [Talked], 这里甚至有史莱姆。 芜湖!"
+        },
+        {
+            "hash": 3184190749611415264,
+            "key": "Well, Yes [Player], but now they are becoming more frequent",
+            "value": "确实 [Player], 但现在他们出现地越来越频繁"
+        },
+        {
+            "hash": 3184191849123043475,
+            "key": "**You speak proudly**: All right [Talked], I'll clear the way!",
+            "value": "**你自豪地说**: 没办法了[Talked], 只能露一手了!"
+        },
+        {
+            "hash": 3184197346681184530,
+            "key": "**You said in disgust**: Phew, the slime is so disgusting...",
+            "value": "**你厌恶地说**: 呕，这史莱姆好恶心..."
+        },
+        {
+            "hash": 3184198446192812741,
+            "key": "**She says with a smile**: Well you could use a bath [Player] ;)",
+            "value": "**她面带微笑**: 你可以洗个澡了 [Player] ;)"
+        },
+        {
+            "hash": 3184195147657928108,
+            "key": "I will not refuse such an honor ;)",
+            "value": "不胜感激 ;)"
+        },
+        {
+            "hash": 3184196247169556319,
+            "key": "Ah here is and decided, we'll get there I'll show you where I live. And I'll introduce you to the places. And you wash :)",
+            "value": "啊，好吧，我们去我住的地方吧。 我会向你介绍那些地方。 然后你可以去洗澡了:)"
+        },
+        {
+            "hash": 3184201744727697374,
+            "key": "All right, shall we continue on our way?",
+            "value": "行吧，那现在我们可以继续出发了吗"
+        },
+        {
+            "hash": 3184202844239325585,
+            "key": "Yes let's go",
+            "value": "当然，走吧."
+        },
+        {
+            "hash": 3185184708123128783,
+            "key": "**He said with surprise**: Did you defeat the slugs on the instructions of our master? Take this the master asked me to give you.",
+            "value": "**他惊讶地说**: 你按照我们主人的吩咐打败了史莱姆? 拿着这个，我们主人让我给你的"
+        },
+        {
+            "hash": 3185183608611500572,
+            "key": "Yes, I could. They were very slippery.",
+            "value": "是的我做到了，它们真的又黏又滑."
+        },
+        {
+            "hash": 3185186907146385205,
+            "key": "Hehe.. What did you think?",
+            "value": "哈哈..你会怎么想？"
+        },
+        {
+            "hash": 3185185807634756994,
+            "key": "Well, not so difficult, at the same time I warmed up.",
+            "value": "还好，不算太难，只算给我热热身"
+        },
+        {
+            "hash": 3185180310076615939,
+            "key": "Okay I need to serve, good luck to you, don't give up ;)",
+            "value": "好的，我需要上报，祝你好运， 不要放弃！ ;)"
+        },
+        {
+            "hash": 3182244614029860244,
+            "key": "**She said very rudely**: Who the hell are you? What do you want?",
+            "value": "**她粗鲁地说**: 见鬼，你是谁，想干嘛"
+        },
+        {
+            "hash": 3182245713541488455,
+            "key": "Do you know that your father is looking for you?",
+            "value": "你知道你的爸爸一直在找你吗?"
+        },
+        {
+            "hash": 3182246813053116666,
+            "key": "I hate this old guy, he doesn't have time for me......",
+            "value": "我讨厌这老家伙，他根本不肯陪我"
+        },
+        {
+            "hash": 3182247912564744877,
+            "key": "He can only go there. Do it. And we can't spend time together...",
+            "value": "他可以只去哪里！ 做他的事！ 却不能花点时间陪陪我...呜呜...."
+        },
+        {
+            "hash": 3182240215983347400,
+            "key": "Enrages...",
+            "value": "生气..."
+        },
+        {
+            "hash": 3182241315494975611,
+            "key": "Calm down let's go back together and tell him everything? Maybe he just cares about you like that.",
+            "value": "冷静下来，我们一起回去和他好好说？ 可能他就是以这种方式关心你。."
+        },
+        {
+            "hash": 3182242415006603822,
+            "key": "All right, let's go back.",
+            "value": "行吧，我们走."
+        },
+        {
+            "hash": 3183235274006689130,
+            "key": "Yes..",
+            "value": "嗯.."
+        },
+        {
+            "hash": 3180401832541357058,
+            "key": "So where was she?.",
+            "value": "所以，她在哪?."
+        },
+        {
+            "key": "This item cannot have more than 1 item",
+            "value": "这个物品只能同时拥有一个"
+        },
+        {
+            "key": "Create Slot Auction {STR}",
+            "value": "创建一次拍卖 {STR}"
+        },
+        {
+            "key": "Drop {STR}",
+            "value": "丢弃 {STR}"
+        },
+        {
+            "key": "Disassemble {STR} (+{INT} materials)",
+            "value": "拆解{STR} (+{INT} 附魔材料)"
+        },
+        {
+            "key": "Enchant {STR} ({INT} materials)",
+            "value": "附魔 {STR} ({INT} 附魔材料"
+        },
+        {
+            "key": "To plant {STR}, to house (0.06%)",
+            "value": "种植{STR}, 在房子 (0.06%)"
+        },
+        {
+            "key": "You can not undress equipping hammer",
+            "value": "你不能取消装备锤子"
+        },
+        {
+            "key": "Add {STR} to your guild house",
+            "value": "添加 {STR} 到你的公会"
+        },
+        {
+            "key": "Add {STR} to your house",
+            "value": "添加 {STR} 到你的房子"
+        },
+        {
+            "key": "Auto use {STR} - {STR}",
+            "value": "自动使用{STR} - {STR}"
+        },
+        {
+            "key": "Use {STR}",
+            "value": "使用 {STR}"
+        },
+        {
+            "key": "For bind command '/useitem {INT}'",
+            "value": "请使用 '/useitem {INT}'"
+        },
+        {
+            "key": "'{STR}' frozen for some quest.",
+            "value": "'{STR}' 完成某些任务以开启."
+        },
+        {
+            "key": "In the 'Adventure Journal', you can see in which quest an item is used",
+            "value": "在任务栏中,你可以看见哪个任务需要这个物品 "
+        },
+        {
+            "key": "{STR} enchant {STR} {STR} {STR}",
+            "value": "{STR}附魔 {STR} {STR} {STR}"
+        },
+        {
+            "key": "Enchantment level is maximum",
+            "value": "附魔等级达到上限"
+        },
+        {
+            "key": "Disassemble {STR}x{INT}, you receive {INT} materials",
+            "value": "拆解{STR}x{INT}, 你获得{INT}附魔材料"
+        },
+        {
+            "key": "You drop {STR}x{INT}",
+            "value": "你丢掉 {STR}x{INT}"
+        },
+        {
+            "key": "There are no items in this tab",
+            "value": "这个菜单里还没有物品"
+        },
+        {
+            "key": "{STR} Not equipped",
+            "value": "{STR} 未装备"
+        },
+        {
+            "key": "Equip Select Slot",
+            "value": "装备选择槽t"
+        },
+        {
+            "key": "Select tab and select arlor.",
+            "value": "选择标签并选中护甲."
+        },
+        {
+            "key": "Equip / Armor Information",
+            "value": "装备 / 护甲 信息"
+        },
+        {
+            "key": "Inventory Information",
+            "value": "背包信息"
+        },
+        {
+            "key": "Choose the type of items you want to show",
+            "value": "选择你想要展示的物品的种类"
+        },
+        {
+            "key": "You got of the {STR}x{INT}.",
+            "value": "你获得了 {STR}x{INT}."
+        },
+        {
+            "key": "After, need select item to interact",
+            "value": "之后，需要选择物品来交互"
+        },
+        {
+            "key": "You got of the {STR}x{INT}.",
+            "value": "你得到了{STR} x{INT}."
+        },
+        {
+            "key": "{STR} got of the {STR}x{INT}.",
+            "value": "{STR} 得到了 {STR}x{INT}."
+        },
+        {
+            "key": "{STR} used {STR}x{INT} and got {INT} survival experience.",
+            "value": "{STR} 使用了 {STR}x{INT}并获得了{INT} 人物经验."
+        },
+        {
+            "key": "This item can only be used (Auto Use, and then craft).",
+            "value": "此物品只能使用(自动使用, 然后合成)."
+        },
+        {
+            "key": "{STR} used {STR} returned {INT} upgrades.",
+            "value": "{STR} 使用 {STR} 并返还{INT} 升级点."
+        },
+        {
+            "key": "{STR} used {STR}x{INT} and got {INT} gold.",
+            "value": "{STR}使用 {STR}x{INT} 并得到 {INT} 黄金."
+        },
+        {
+            "key": "Wait until the last random box opens!",
+            "value": "等待最后一个随机盒子开启完毕!"
+        },
+        {
+            "key": "You used '{STR}x{INT}'.",
+            "value": "你使用了 '{STR} x{INT}'."
+        },
+        {
+            "key": "{STR} uses '{STR}x{INT}' and got:",
+            "value": "{STR} 使用'{STR}x{INT}'并得到t:"
+        },
+        {
+            "hash": 1489921003266523553,
+            "key": "Creates turret a recovery health ",
+            "value": "生成治疗光圈恢复生命 "
+        },
+        {
+            "hash": 18225677404788315547,
+            "key": "Lucky house decor",
+            "value": "幸运屋装饰"
+        },
+        {
+            "hash": 16442385473528460437,
+            "key": "Tests?....",
+            "value": "测试?...."
+        },
+        {
+            "hash": 1875532218846547941,
+            "key": "Thank's [Talked]",
+            "value": "谢谢你， [Talked]"
+        },
+        {
+            "hash": 18013039531073513930,
+            "key": "Crossroad",
+            "value": "十字路口"
+        },
+        {
+            "hash": 18013038431561885719,
+            "key": "Pier",
+            "value": "码头"
+        },
+        {
+            "hash": 18013037332050257508,
+            "key": "Guard post",
+            "value": "哨所"
+        },
+        {
+            "hash": 18013036232538629297,
+            "key": "Yugasaki",
+            "value": "幻想乡"
+        },
+        {
+            "hash": 6532223324942042793,
+            "key": "Shotgun Spread",
+            "value": "霰弹散射"
+        },
+        {
+            "hash": 6532220026407158160,
+            "key": "Grenade Spread",
+            "value": "榴弹散射"
+        },
+        {
+            "hash": 6532221125918786371,
+            "key": "Rifle Spread",
+            "value": "激光散射"
+        },
+        {
+            "hash": 6532226623476927426,
+            "key": "Strength",
+            "value": "力量"
+        },
+        {
+            "hash": 6532227722988555637,
+            "key": "Dexterity",
+            "value": "攻速"
+        },
+        {
+            "hash": 6532224424453671004,
+            "key": "Crit Dmg",
+            "value": "暴击伤害"
+        },
+        {
+            "hash": 6532225523965299215,
+            "key": "Direct Crit Dmg",
+            "value": "暴击几率"
+        },
+        {
+            "key": "Here you go, your boss told me to give it to you!",
+            "value": "给你，你老板叫我把它给你！"
+        }
+    ]
+}

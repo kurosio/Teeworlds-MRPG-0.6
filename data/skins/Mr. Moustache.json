@@ -1,0 +1,29 @@
+{
+	"skin": {
+		"body": {
+			"filename": "standard",
+			"custom_colors": true,
+			"hue": 23,
+			"sat": 255,
+			"lgt": 255
+		},
+		"hands": {
+			"filename": "standard",
+			"custom_colors": true,
+			"hue": 23,
+			"sat": 255,
+			"lgt": 255
+		},
+		"feet": {
+			"filename": "standard",
+			"custom_colors": true,
+			"hue": 23,
+			"sat": 255,
+			"lgt": 255
+		},
+		"eyes": {
+			"filename": "moustache",
+			"custom_colors": false
+		}
+	}
+}

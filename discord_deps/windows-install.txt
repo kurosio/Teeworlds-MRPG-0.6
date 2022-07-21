@@ -1,0 +1,2 @@
+Needs for build on windows
+OpenSSL: https://slproweb.com/products/Win32OpenSSL.html

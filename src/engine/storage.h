@@ -1,0 +1,44 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#ifndef ENGINE_STORAGE_H
+#define ENGINE_STORAGE_H
+
+#include <base/hash.h>
+#include "kernel.h"
+
+class IStorageEngine : public IInterface
+{
+	MACRO_INTERFACE("storage", 0)
+public:
+	enum
+	{
+		TYPE_SAVE = 0,
+		TYPE_ALL = -1,
+
+		STORAGETYPE_BASIC = 0,
+		STORAGETYPE_SERVER,
+		STORAGETYPE_CLIENT,
+	};
+	typedef bool(*FCheckCallback)(IOHANDLE Handle, const void *pUserData);
+
+	virtual void ListDirectory(int Type, const char* pPath, FS_LISTDIR_CALLBACK pfnCallback, void* pUser) = 0;
+	virtual void ListDirectoryInfo(int Type, const char* pPath, FS_LISTDIR_INFO_CALLBACK pfnCallback, void* pUser) = 0;
+	virtual IOHANDLE OpenFile(const char *pFilename, int Flags, int Type, char *pBuffer = 0, int BufferSize = 0, FCheckCallback pfnCheckCB = 0, const void *pCheckCBData = 0) = 0;
+	virtual bool FindFile(const char *pFilename, const char *pPath, int Type, char *pBuffer, int BufferSize) = 0;
+	virtual bool FindFile(const char *pFilename, const char *pPath, int Type, char *pBuffer, int BufferSize, const SHA256_DIGEST *pWantedSha256, unsigned WantedCrc, unsigned WantedSize) = 0;
+	virtual bool RemoveFile(const char *pFilename, int Type) = 0;
+	virtual bool RenameFile(const char* pOldFilename, const char* pNewFilename, int Type) = 0;
+	virtual bool CreateFolder(const char *pFoldername, int Type) = 0;
+	virtual void GetCompletePath(int Type, const char *pDir, char *pBuffer, unsigned BufferSize) = 0;
+	virtual bool GetHashAndSize(const char *pFilename, int StorageType, SHA256_DIGEST *pSha256, unsigned *pCrc, unsigned *pSize) = 0;
+
+	virtual bool RemoveBinaryFile(const char *pFilename) = 0;
+	virtual bool RenameBinaryFile(const char* pOldFilename, const char* pNewFilename) = 0;
+	virtual const char* GetBinaryPath(const char *pDir, char *pBuffer, unsigned BufferSize) = 0;
+};
+
+IStorageEngine *CreateStorage(const char *pApplicationName, int StorageType, int NumArgs, const char **ppArguments);
+IStorageEngine *CreateTestStorage();
+
+
+#endif

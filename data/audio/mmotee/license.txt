@@ -1,0 +1,34 @@
+Woodland Fantasy(music_mrpg_fantasy) - CC-BY 3.0
+https://opengameart.org/content/woodland-fantasy
+Converted to WavPack 
+Author: Matthew Pablo
+
+Stepping Stones(music_mrpg_festival) - CC-BY 3.0
+https://opengameart.org/content/stepping-stones
+Converted to WavPack was also cropped to 0:22 sec
+Author: Matthew Pablo
+
+Determination(music_mrpg_forest) - CC0 1.0(No Copyright)
+https://opengameart.org/content/meloncholy-town
+Converted to WavPack was also cropped to 1:00 sec
+Author: artisticdude
+
+Colossal Boss Battle Theme(music_mrpg_colossal) - CC-BY 3.0
+https://opengameart.org/content/colossal-boss-battle-theme
+Converted to WavPack
+Author: Matthew Pablo 
+
+Battle Theme A(music_mrpg_dungeon) - CC0 1.0(No Copyright)
+https://opengameart.org/content/battle-theme-a
+Converted to WavPack 
+Author: cynicmusic
+
+Inventory Sound Effects(item_pickup, item_equip, item_sell_buy) - CC-BY 3.0
+https://opengameart.org/content/inventory-sound-effects
+Converted to WavPack 
+Author: artisticdude (Submitted by Ogrebane)
+
+50 RPG sound effects(book_flip) - CC0 1.0(No Copyright)
+https://opengameart.org/content/50-rpg-sound-effects
+Converted to WavPack 
+Author: Kenney
