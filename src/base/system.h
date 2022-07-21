@@ -18,6 +18,15 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifdef CONF_FAMILY_UNIX
+#include <sys/un.h>
+#endif
+
+#ifdef CONF_PLATFORM_LINUX
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
