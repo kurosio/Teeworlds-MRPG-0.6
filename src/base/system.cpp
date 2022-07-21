@@ -15,7 +15,6 @@
 #if defined(CONF_FAMILY_UNIX)
 	#include <signal.h>
 	#include <sys/time.h>
-	#include <c>
 	#include <unistd.h>
 
 	/* unix net includes */
