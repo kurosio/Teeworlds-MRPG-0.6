@@ -1,6 +1,4 @@
-<a href="https://repology.org/metapackage/teeworlds/versions"><img src="https://i.ibb.co/0FnKBsV/Screenshot-2.png" alt="Screenshot-2" border="0" align="right"></a>
-
-MRPG (MMOTEE)
+MRPG transfer version to 0.6 (MMOTEE)
 [![CircleCI](https://circleci.com/gh/teeworlds/teeworlds.svg?style=svg)](https://circleci.com/gh/teeworlds/teeworlds) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/teeworlds/teeworlds?branch=master&svg=true)](https://ci.appveyor.com/project/heinrich5991/teeworlds)
 =========
 `readme will be changed over time`
