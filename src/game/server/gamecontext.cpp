@@ -1421,7 +1421,7 @@ bool CGS::IsClientPlayer(int ClientID) const
 }
 bool CGS::IsMmoClient(int ClientID) const
 {
-	return Server()->GetClientProtocolVersion(ClientID) == PROTOCOL_VERSION_MMO || ClientID >= MAX_PLAYERS && ClientID < MAX_CLIENTS;
+	return (Server()->GetClientProtocolVersion(ClientID) == PROTOCOL_VERSION_MMO) || (ClientID >= MAX_PLAYERS && ClientID < MAX_CLIENTS);
 }
 const char *CGS::Version() const { return GAME_VERSION; }
 const char *CGS::NetVersion() const { return GAME_NETVERSION; }

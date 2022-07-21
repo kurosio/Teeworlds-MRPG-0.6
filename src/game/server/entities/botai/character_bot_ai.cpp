@@ -562,7 +562,7 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 {
 	bool PlayerFinding = false;
 	const int MobID = m_pBotPlayer->GetBotSub();
-	const bool DialoguesNotEmpty = (m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.empty()
+	const bool DialoguesNotEmpty = ((m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.empty())
 				|| (m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC && !(NpcBotInfo::ms_aNpcBot[MobID].m_aDialog).empty()));
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
