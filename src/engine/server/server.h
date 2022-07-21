@@ -78,7 +78,6 @@ public:
 
 		int m_NextMapChunk;
 		int m_DataMmoChunk;
-		bool m_NoRconNote;
 		bool m_Quitting;
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
 

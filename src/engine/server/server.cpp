@@ -683,7 +683,6 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_OldWorldID = MAIN_WORLD_ID;
 	pThis->m_aClients[ClientID].m_WorldID = MAIN_WORLD_ID;
 	pThis->m_aClients[ClientID].m_ChangeMap = false;
-	pThis->m_aClients[ClientID].m_NoRconNote = false;
 	pThis->m_aClients[ClientID].m_ClientVersion = 0;
 	pThis->m_aClients[ClientID].m_Quitting = false;
 	pThis->m_aClients[ClientID].Reset();
@@ -723,7 +722,6 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_OldWorldID = MAIN_WORLD_ID;
 	pThis->m_aClients[ClientID].m_WorldID = MAIN_WORLD_ID;
 	pThis->m_aClients[ClientID].m_ChangeMap = false;
-	pThis->m_aClients[ClientID].m_NoRconNote = false;
 	pThis->m_aClients[ClientID].m_ClientVersion = 0;
 	pThis->m_aClients[ClientID].m_Quitting = false;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
@@ -1050,7 +1048,11 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		}
 		else if(MsgID == NETMSG_RCON_CMD)
 		{
-			const char *pCmd = Unpacker.GetString();
+			const char* pCmd = Unpacker.GetString();
+			if (!str_utf8_check(pCmd))
+			{
+				return;
+			}
 
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && Unpacker.Error() == 0 && m_aClients[ClientID].m_Authed)
 			{
@@ -1068,19 +1070,61 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		}
 		else if(MsgID == NETMSG_RCON_AUTH)
 		{
+			const char* pName = Unpacker.GetString(CUnpacker::SANITIZE_CC); // login name, now used
+			const char* pPw = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+			if (!str_utf8_check(pPw) || !str_utf8_check(pName))
+				return;
+
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && Unpacker.Error() == 0)
 			{
-				if(g_Config.m_SvRconPassword[0] == 0 && g_Config.m_SvRconModPassword[0] == 0)
+				if (g_Config.m_SvRconModPassword[0] && str_comp(pPw, g_Config.m_SvRconModPassword) == 0)
+					m_aClients[ClientID].m_Authed = AUTHED_MOD;
+				else if (g_Config.m_SvRconPassword[0] && str_comp(pPw, g_Config.m_SvRconPassword) == 0)
+					m_aClients[ClientID].m_Authed = AUTHED_ADMIN;
+				else if (g_Config.m_SvRconMaxTries)
 				{
-					if(!m_aClients[ClientID].m_NoRconNote)
+					m_aClients[ClientID].m_AuthTries++;
+					char aBuf[128];
+					str_format(aBuf, sizeof(aBuf), "Wrong password %d/%d.", m_aClients[ClientID].m_AuthTries, g_Config.m_SvRconMaxTries);
+					SendRconLine(ClientID, aBuf);
+					if (m_aClients[ClientID].m_AuthTries >= g_Config.m_SvRconMaxTries)
 					{
-						SendRconLine(ClientID, "No rcon password set on server. Set sv_rcon_password and/or sv_rcon_mod_password to enable the remote console.");
-						m_aClients[ClientID].m_NoRconNote = true;
+						if (!g_Config.m_SvRconBantime)
+							m_NetServer.Drop(ClientID, "Too many remote console authentication tries");
+						else
+							m_pServerBan->BanAddr(m_NetServer.ClientAddr(ClientID), g_Config.m_SvRconBantime * 60, "Too many remote console authentication tries");
 					}
 				}
 				else
 				{
 					SendRconLine(ClientID, "Wrong password.");
+				}
+
+				// authed
+				if(m_aClients[ClientID].m_Authed != AUTHED_NO)
+				{
+					CMsgPacker Msgp(NETMSG_RCON_AUTH_STATUS, true);
+					Msgp.AddInt(1); //authed
+					Msgp.AddInt(1); //cmdlist
+					SendMsg(&Msgp, MSGFLAG_VITAL, ClientID);
+
+					char aBuf[256];
+					char aAddrStr[NETADDR_MAXSTRSIZE];
+					net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
+					if(m_aClients[ClientID].m_Authed == AUTHED_MOD)
+					{
+						m_aClients[ClientID].m_pRconCmdToSend = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_MOD, CFGFLAG_SERVER);
+						SendRconLine(ClientID, "Moderator authentication successful. Limited remote console access granted.");
+						str_format(aBuf, sizeof(aBuf), "ClientID=%d addr=%s authed (moderator)", ClientID, aAddrStr);
+						Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+					}
+					else if(m_aClients[ClientID].m_Authed == AUTHED_ADMIN)
+					{
+						m_aClients[ClientID].m_pRconCmdToSend = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_ADMIN, CFGFLAG_SERVER);
+						SendRconLine(ClientID, "Admin authentication successful. Limited remote console access granted.");
+						str_format(aBuf, sizeof(aBuf), "ClientID=%d addr=%s authed (admin)", ClientID, aAddrStr);
+						Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+					}
 				}
 			}
 		}
