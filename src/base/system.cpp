@@ -1,7 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "system.h"
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -9,38 +7,43 @@
 #include <ctype.h>
 #include <time.h>
 
-#include <sys/types.h>
+#include "system.h"
+
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #if defined(CONF_FAMILY_UNIX)
+	#include <signal.h>
 	#include <sys/time.h>
+	#include <c>
 	#include <unistd.h>
 
 	/* unix net includes */
-	#include <sys/socket.h>
-	#include <sys/ioctl.h>
+	#include <arpa/inet.h>
 	#include <errno.h>
+	#include <fcntl.h>
 	#include <netdb.h>
 	#include <netinet/in.h>
-	#include <fcntl.h>
 	#include <pthread.h>
-	#include <arpa/inet.h>
+	#include <sys/ioctl.h>
+	#include <sys/socket.h>
 
 	#include <dirent.h>
 
-	#if defined(CONF_PLATFORM_MACOSX)
-		#include <Carbon/Carbon.h>
-	#endif
+	//#if defined(CONF_PLATFORM_MACOSX)
+	//	#include <Carbon/Carbon.h>
+	//#endif
 #elif defined(CONF_FAMILY_WINDOWS)
-	#define WIN32_LEAN_AND_MEAN
-	#undef _WIN32_WINNT
-	#define _WIN32_WINNT 0x0501 /* required for mingw to get getaddrinfo to work */
+#define WIN32_LEAN_AND_MEAN
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501 /* required for mingw to get getaddrinfo to work */
 	#include <windows.h>
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
-	#include <fcntl.h>
+
 	#include <direct.h>
 	#include <errno.h>
+	#include <fcntl.h>
 	#include <process.h>
 	#include <shellapi.h>
 	#include <wincrypt.h>

@@ -9,6 +9,11 @@
 #define BASE_SYSTEM_H
 
 #include "detect.h"
+
+#ifndef __USE_GNU
+#define __USE_GNU
+#endif
+
 #if defined(CONF_FAMILY_WINDOWS) && !defined(__GNUC__)
     #pragma warning(disable : 4996) /* We have to figure it out. After importing the discord, there was a need*/
 #endif
