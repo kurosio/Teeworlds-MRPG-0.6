@@ -13,8 +13,8 @@ void QuestCore::OnInit()
 		CQuestDataInfo::ms_aDataQuests[QUID].m_QuestID = QUID;
 		str_copy(CQuestDataInfo::ms_aDataQuests[QUID].m_aName, pRes->getString("Name").c_str(), sizeof(CQuestDataInfo::ms_aDataQuests[QUID].m_aName));
 		str_copy(CQuestDataInfo::ms_aDataQuests[QUID].m_aStoryLine, pRes->getString("StoryLine").c_str(), sizeof(CQuestDataInfo::ms_aDataQuests[QUID].m_aStoryLine));
-		CQuestDataInfo::ms_aDataQuests[QUID].m_Gold = (int)pRes->getInt("Money");
-		CQuestDataInfo::ms_aDataQuests[QUID].m_Exp = (int)pRes->getInt("Exp");
+		CQuestDataInfo::ms_aDataQuests[QUID].m_Gold = pRes->getInt("Money");
+		CQuestDataInfo::ms_aDataQuests[QUID].m_Exp = pRes->getInt("Exp");
 	}
 }
 
@@ -27,7 +27,7 @@ void QuestCore::OnInitAccount(CPlayer* pPlayer)
 		const int QuestID = pRes->getInt("QuestID");
 		CQuestData::ms_aPlayerQuests[ClientID][QuestID].m_pPlayer = pPlayer;
 		CQuestData::ms_aPlayerQuests[ClientID][QuestID].m_QuestID = QuestID;
-		CQuestData::ms_aPlayerQuests[ClientID][QuestID].m_State = (int)pRes->getInt("Type");
+		CQuestData::ms_aPlayerQuests[ClientID][QuestID].m_State = pRes->getInt("Type");
 		CQuestData::ms_aPlayerQuests[ClientID][QuestID].LoadSteps();
 	}
 }

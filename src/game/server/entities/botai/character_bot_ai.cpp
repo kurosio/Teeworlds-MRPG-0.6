@@ -377,7 +377,7 @@ void CCharacterBotAI::Move()
 
 	// jump over character
 	vec2 IntersectPos;
-	CCharacter* pChar = GameWorld()->IntersectCharacter(GetPos(), GetPos() + vec2(m_Input.m_Direction, 0) * 128, 16.0f, IntersectPos, (CCharacter*)this);
+	CCharacter* pChar = GameWorld()->IntersectCharacter(GetPos(), GetPos() + vec2(m_Input.m_Direction, 0) * 128, 16.0f, IntersectPos, this);
 	if (pChar && (pChar->GetPos().x < GetPos().x || !pChar->GetPlayer()->IsBot()))
 		m_Input.m_Jump = 1;
 
@@ -549,7 +549,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 			continue;
 
 		// check if the player is tastier for the bot
-		const bool FinderCollised = (bool)GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, 0, 0);
+		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, 0, 0);
 		if (!FinderCollised && ((m_BotTargetLife <= 10 && m_BotTargetCollised)
 			|| pFinderHard->GetAttributeCount(Stats::StHardness, true) > pPlayer->GetAttributeCount(Stats::StHardness, true)))
 			SetTarget(i);
@@ -562,7 +562,7 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 {
 	bool PlayerFinding = false;
 	const int MobID = m_pBotPlayer->GetBotSub();
-	const bool DialoguesNotEmpty = ((bool)(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST && !(QuestBotInfo::ms_aQuestBot[MobID].m_aDialog).empty())
+	const bool DialoguesNotEmpty = (m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.empty()
 				|| (m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC && !(NpcBotInfo::ms_aNpcBot[MobID].m_aDialog).empty()));
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{

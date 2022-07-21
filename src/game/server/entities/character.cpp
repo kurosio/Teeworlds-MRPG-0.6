@@ -405,7 +405,7 @@ void CCharacter::HandleWeapons()
 bool CCharacter::GiveWeapon(int Weapon, int GiveAmmo)
 {
 	const int WeaponID = clamp(Weapon, (int)WEAPON_HAMMER, (int)WEAPON_NINJA);
-	const bool IsHammer = (bool)(WeaponID == WEAPON_HAMMER);
+	const bool IsHammer = WeaponID == WEAPON_HAMMER;
 	if(m_pPlayer->GetEquippedItemID(WeaponID) <= 0 && !IsHammer)
 	{
 		if(RemoveWeapon(WeaponID) && WeaponID == m_ActiveWeapon)
@@ -417,7 +417,7 @@ bool CCharacter::GiveWeapon(int Weapon, int GiveAmmo)
 	if(m_aWeapons[WeaponID].m_Ammo >= MaximalAmmo)
 		return false;
 
-	const int GotAmmo = (int)(IsHammer ? -1 : (m_aWeapons[WeaponID].m_Got ? min(m_aWeapons[WeaponID].m_Ammo + GiveAmmo, MaximalAmmo) : min(GiveAmmo, MaximalAmmo)));
+	const int GotAmmo = IsHammer ? -1 : m_aWeapons[WeaponID].m_Got ? min(m_aWeapons[WeaponID].m_Ammo + GiveAmmo, MaximalAmmo) : min(GiveAmmo, MaximalAmmo);
 	m_aWeapons[WeaponID].m_Got = true;
 	m_aWeapons[WeaponID].m_Ammo = GotAmmo;
 	return true;
@@ -751,7 +751,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	// create healthmod indicator
-	GS()->CreateDamage(m_Pos, m_pPlayer->GetCID(), OldHealth-m_Health, (bool)(CritDamage > 0), false);
+	GS()->CreateDamage(m_Pos, m_pPlayer->GetCID(), OldHealth-m_Health, CritDamage > 0, false);
 
 	if(From != m_pPlayer->GetCID())
 		GS()->CreatePlayerSound(From, SOUND_HIT);

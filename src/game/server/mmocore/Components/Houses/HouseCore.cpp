@@ -644,7 +644,7 @@ void CHouseCore::TakeFromSafeDeposit(CPlayer* pPlayer, int TakeValue)
 	}
 
 	const int HouseID = pRes->getInt("ID");
-	const int Bank = static_cast<int>(pRes->getInt("HouseBank"));
+	const int Bank = pRes->getInt("HouseBank");
 	if(Bank < TakeValue)
 	{
 		GS()->Chat(ClientID, "Acceptable for take {INT}gold", Bank);

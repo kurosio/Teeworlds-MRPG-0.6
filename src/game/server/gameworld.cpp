@@ -215,7 +215,7 @@ CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 
 bool CGameWorld::IntersectClosestEntity(vec2 Pos, float Radius, int EnttypeID)
 {
-	for(CEntity *pDoor = (CEntity *)FindFirst(EnttypeID); pDoor; pDoor = (CEntity *)pDoor->TypeNext())
+	for(CEntity *pDoor = FindFirst(EnttypeID); pDoor; pDoor = pDoor->TypeNext())
  	{
 		vec2 IntersectPos = pDoor->m_PosTo;
 		if(pDoor->m_Pos != pDoor->m_PosTo)

@@ -845,7 +845,7 @@ bool GuildCore::JoinGuild(int AccountID, int GuildID)
 
 	// check the number of slots available
 	ResultPtr pResCheckSlot = SJK.SD("ID", "tw_accounts_data", "WHERE GuildID = '%d'", GuildID);
-	if((int)pResCheckSlot->rowsCount() >= (int)CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].m_Value)
+	if((int)pResCheckSlot->rowsCount() >= CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].m_Value)
 	{
 		GS()->ChatAccount(AccountID, "You don't joined [No slots for join]");
 		GS()->ChatGuild(GuildID, "{STR} don't joined [No slots for join]", pPlayerName);
@@ -957,7 +957,7 @@ void GuildCore::ShowMenuGuild(CPlayer *pPlayer) const
 		for(int i = CGuildData::CHAIR_EXPERIENCE; i < CGuildData::NUM_GUILD_UPGRADES; i++)
 		{
 			const char* pUpgradeName = CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].getDescription();
-			const int PriceUpgrade = (int)CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].m_Value * g_Config.m_SvPriceUpgradeGuildAnother;
+			const int PriceUpgrade = CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].m_Value * g_Config.m_SvPriceUpgradeGuildAnother;
 			GS()->AVM(ClientID, "MUPGRADE", i, NOPE, "Upgrade {STR} ({INT}) {INT}gold", pUpgradeName, CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].m_Value, PriceUpgrade);
 		}
 	}
@@ -1084,7 +1084,7 @@ bool GuildCore::UpgradeGuild(int GuildID, int Field)
 		CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value = pRes->getInt(pFieldName);
 
 		const int UpgradePrice = (Field == CGuildData::AVAILABLE_SLOTS ? g_Config.m_SvPriceUpgradeGuildSlot : g_Config.m_SvPriceUpgradeGuildAnother);
-		const int PriceAvailable = (int)CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value * UpgradePrice;
+		const int PriceAvailable = CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value * UpgradePrice;
 		if(PriceAvailable > CGuildData::ms_aGuild[GuildID].m_Bank)
 			return false;
 

@@ -236,7 +236,7 @@ const char* CLocalization::CLanguage::Localize_P(int Number, const char* pText) 
 
 	UChar aPluralKeyWord[6];
 	UErrorCode Status = U_ZERO_ERROR;
-	uplrules_select(m_pPluralRules, static_cast<double>(Number), aPluralKeyWord, 6, &Status);
+	uplrules_select(m_pPluralRules, Number, aPluralKeyWord, 6, &Status);
 
 	if(U_FAILURE(Status))
 		return nullptr;
@@ -330,7 +330,7 @@ bool CLocalization::Init()
 			CLanguage*& pLanguage = m_pLanguages.increment();
 			pLanguage = new CLanguage((const char*)rStart[i]["name"], (const char*)rStart[i]["file"], (const char*)rStart[i]["parent"]);
 
-			if((const char*)rStart[i]["direction"] && str_comp((const char*)rStart[i]["direction"], "rtl") == 0)
+			if((const char*)rStart[i]["direction"] && str_comp(rStart[i]["direction"], "rtl") == 0)
 				pLanguage->SetWritingDirection(DIRECTION_RTL);
 
 			if(m_Cfg_MainLanguage == pLanguage->GetFilename())

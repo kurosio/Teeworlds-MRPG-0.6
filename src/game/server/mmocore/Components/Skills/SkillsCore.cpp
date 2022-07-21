@@ -10,16 +10,16 @@ void CSkillsCore::OnInit()
 	{
 		while(pRes->next())
 		{
-			const int SkillID = (int)pRes->getInt("ID");
+			const int SkillID = pRes->getInt("ID");
 			str_copy(CSkillDataInfo::ms_aSkillsData[SkillID].m_aName, pRes->getString("Name").c_str(), sizeof(CSkillDataInfo::ms_aSkillsData[SkillID].m_aName));
 			str_copy(CSkillDataInfo::ms_aSkillsData[SkillID].m_aDesc, pRes->getString("Description").c_str(), sizeof(CSkillDataInfo::ms_aSkillsData[SkillID].m_aDesc));
 			str_copy(CSkillDataInfo::ms_aSkillsData[SkillID].m_aBonusName, pRes->getString("BonusName").c_str(), sizeof(CSkillDataInfo::ms_aSkillsData[SkillID].m_aBonusName));
-			CSkillDataInfo::ms_aSkillsData[SkillID].m_BonusValue = (int)pRes->getInt("BonusValue");
-			CSkillDataInfo::ms_aSkillsData[SkillID].m_ManaPercentageCost = (int)pRes->getInt("ManaPercentageCost");
-			CSkillDataInfo::ms_aSkillsData[SkillID].m_PriceSP = (int)pRes->getInt("PriceSP");
-			CSkillDataInfo::ms_aSkillsData[SkillID].m_MaxLevel = (int)pRes->getInt("MaxLevel");
-			CSkillDataInfo::ms_aSkillsData[SkillID].m_Passive = (bool)pRes->getBoolean("Passive");
-			CSkillDataInfo::ms_aSkillsData[SkillID].m_Type = (int)pRes->getInt("Type");
+			CSkillDataInfo::ms_aSkillsData[SkillID].m_BonusValue = pRes->getInt("BonusValue");
+			CSkillDataInfo::ms_aSkillsData[SkillID].m_ManaPercentageCost = pRes->getInt("ManaPercentageCost");
+			CSkillDataInfo::ms_aSkillsData[SkillID].m_PriceSP = pRes->getInt("PriceSP");
+			CSkillDataInfo::ms_aSkillsData[SkillID].m_MaxLevel = pRes->getInt("MaxLevel");
+			CSkillDataInfo::ms_aSkillsData[SkillID].m_Passive = pRes->getBoolean("Passive");
+			CSkillDataInfo::ms_aSkillsData[SkillID].m_Type = pRes->getInt("Type");
 		}
 	});
 }
@@ -30,11 +30,11 @@ void CSkillsCore::OnInitAccount(CPlayer *pPlayer)
 	ResultPtr pRes = SJK.SD("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
-		const int SkillID = (int)pRes->getInt("SkillID");
+		const int SkillID = pRes->getInt("SkillID");
 		CSkillData::ms_aSkills[ClientID][SkillID].SetSkillOwner(pPlayer);
 		CSkillData::ms_aSkills[ClientID][SkillID].m_SkillID = SkillID;
-		CSkillData::ms_aSkills[ClientID][SkillID].m_Level = (int)pRes->getInt("Level");
-		CSkillData::ms_aSkills[ClientID][SkillID].m_SelectedEmoticion = (int)pRes->getInt("UsedByEmoticon");
+		CSkillData::ms_aSkills[ClientID][SkillID].m_Level = pRes->getInt("Level");
+		CSkillData::ms_aSkills[ClientID][SkillID].m_SelectedEmoticion = pRes->getInt("UsedByEmoticon");
 	}
 }
 

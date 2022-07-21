@@ -105,7 +105,7 @@ bool CItemData::Remove(int Value, int Settings)
 		Equip();
 
 	const int Code = GS()->Mmo()->Item()->RemoveItem(m_pPlayer, m_ItemID, Value, Settings);
-	return (bool)(Code > 0);
+	return Code > 0;
 }
 
 bool CItemData::Equip()
@@ -197,7 +197,7 @@ bool CItemData::Use(int Value)
 			if(pAttribute.second.m_Type == AtWeapon)
 				continue;
 
-			BackUpgrades += (int)(m_pPlayer->Acc().m_aStats[pAttribute.first] * pAttribute.second.m_UpgradePrice);
+			BackUpgrades += m_pPlayer->Acc().m_aStats[pAttribute.first] * pAttribute.second.m_UpgradePrice;
 			m_pPlayer->Acc().m_aStats[pAttribute.first] = 0;
 		}
 
@@ -227,7 +227,7 @@ bool CItemData::Use(int Value)
 			if(UpgradeValue <= 0)
 				continue;
 
-			BackUpgrades += (int)(UpgradeValue * pAttribute.second.m_UpgradePrice);
+			BackUpgrades += UpgradeValue * pAttribute.second.m_UpgradePrice;
 			m_pPlayer->Acc().m_aStats[pAttribute.first] -= UpgradeValue;
 		}
 

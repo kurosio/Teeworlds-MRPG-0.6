@@ -12,11 +12,11 @@ void CStorageCore::OnInit()
 	{
 		while(pRes->next())
 		{
-			const int ID = (int)pRes->getInt("ID");
-			CStorageData::ms_aStorage[ID].m_PosX = (int)pRes->getInt("PosX");
-			CStorageData::ms_aStorage[ID].m_PosY = (int)pRes->getInt("PosY");
-			CStorageData::ms_aStorage[ID].m_Currency = (int)pRes->getInt("Currency");
-			CStorageData::ms_aStorage[ID].m_WorldID = (int)pRes->getInt("WorldID");
+			const int ID = pRes->getInt("ID");
+			CStorageData::ms_aStorage[ID].m_PosX = pRes->getInt("PosX");
+			CStorageData::ms_aStorage[ID].m_PosY = pRes->getInt("PosY");
+			CStorageData::ms_aStorage[ID].m_Currency = pRes->getInt("Currency");
+			CStorageData::ms_aStorage[ID].m_WorldID = pRes->getInt("WorldID");
 			str_copy(CStorageData::ms_aStorage[ID].m_aName, pRes->getString("Name").c_str(), sizeof(CStorageData::ms_aStorage[ID].m_aName));
 		}
 	});

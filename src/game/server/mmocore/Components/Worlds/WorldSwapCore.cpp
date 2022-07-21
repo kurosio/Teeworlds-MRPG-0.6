@@ -36,8 +36,8 @@ void CWorldSwapCore::OnInitWorld(const char* pWhereLocalWorld)
 	ResultPtr pRes = SJK.SD("RespawnWorld, MusicID", "enum_worlds", pWhereLocalWorld);
 	if(pRes->next())
 	{
-		const int RespawnWorld = (int)pRes->getInt("RespawnWorld");
-		const int MusicID = (int)pRes->getInt("MusicID");
+		const int RespawnWorld = pRes->getInt("RespawnWorld");
+		const int MusicID = pRes->getInt("MusicID");
 		SJK.UD("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
 		GS()->SetRespawnWorld(RespawnWorld);
 		GS()->SetMapMusic(MusicID);

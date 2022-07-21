@@ -18,7 +18,7 @@ void DungeonCore::OnInit()
 		CDungeonData::ms_aDungeon[ID].m_DoorY = pRes->getInt("DoorY");
 		CDungeonData::ms_aDungeon[ID].m_RequiredQuestID = pRes->getInt("RequiredQuestID");
 		CDungeonData::ms_aDungeon[ID].m_WorldID = pRes->getInt("WorldID");
-		CDungeonData::ms_aDungeon[ID].m_IsStory = (bool)pRes->getBoolean("Story");
+		CDungeonData::ms_aDungeon[ID].m_IsStory = pRes->getBoolean("Story");
 	}
 }
 

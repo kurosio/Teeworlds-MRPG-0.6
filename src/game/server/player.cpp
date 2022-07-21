@@ -174,7 +174,7 @@ void CPlayer::Snap(int SnappingClient)
 	if (!pPlayerInfo)
 		return;
 
-	const bool localClient = (bool)(m_ClientID == SnappingClient);
+	const bool localClient = m_ClientID == SnappingClient;
 	pPlayerInfo->m_Local = localClient;
 	pPlayerInfo->m_ClientID = m_ClientID;
 	pPlayerInfo->m_Team = GetTeam();
@@ -483,7 +483,7 @@ bool CPlayer::GetHidenMenu(int HideID) const
 bool CPlayer::IsAuthed() const
 {
 	if(GS()->Mmo()->Account()->IsActive(m_ClientID))
-		return (bool)(Acc().m_UserID > 0);
+		return Acc().m_UserID > 0;
 	return false;
 }
 

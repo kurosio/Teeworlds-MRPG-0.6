@@ -91,7 +91,7 @@ void CAccountPlantCore::Work(CPlayer* pPlayer, int Level)
 	pPlayer->Acc().m_aFarming[JOB_EXPERIENCE].m_Value += clamp(MultiplierExperience, 1, MultiplierExperience);
 
 	int ExperienceNeed = computeExperience(pPlayer->Acc().m_aFarming[JOB_LEVEL].m_Value);
-	for (; (int)pPlayer->Acc().m_aFarming[JOB_EXPERIENCE].m_Value >= ExperienceNeed; )
+	for (; pPlayer->Acc().m_aFarming[JOB_EXPERIENCE].m_Value >= ExperienceNeed; )
 	{
 		pPlayer->Acc().m_aFarming[JOB_EXPERIENCE].m_Value -= ExperienceNeed;
 		pPlayer->Acc().m_aFarming[JOB_LEVEL].m_Value++;

@@ -1421,7 +1421,7 @@ bool CGS::IsClientPlayer(int ClientID) const
 }
 bool CGS::IsMmoClient(int ClientID) const
 {
-	return (bool)((Server()->GetClientProtocolVersion(ClientID) == PROTOCOL_VERSION_MMO) || (ClientID >= MAX_PLAYERS && ClientID < MAX_CLIENTS));
+	return Server()->GetClientProtocolVersion(ClientID) == PROTOCOL_VERSION_MMO || ClientID >= MAX_PLAYERS && ClientID < MAX_CLIENTS;
 }
 const char *CGS::Version() const { return GAME_VERSION; }
 const char *CGS::NetVersion() const { return GAME_NETVERSION; }
@@ -1736,7 +1736,7 @@ void CGS::AVHI(int ClientID, const char *pIcon, const int HideID, vec3 Color, co
 		va_start(VarArgs, pText);
 
 		dynamic_string Buffer;
-		const bool HidenTabs = (bool)(HideID >= TAB_STAT ? m_apPlayers[ClientID]->GetHidenMenu(HideID) : false);
+		const bool HidenTabs = HideID >= TAB_STAT ? m_apPlayers[ClientID]->GetHidenMenu(HideID) : false;
 		Buffer.append(GetSymbolHandleMenu(ClientID, HidenTabs, HideID));
 
 		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
@@ -2196,7 +2196,7 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 		return true;
 
 	// parsing everything else
-	return (bool)(Mmo()->OnParsingVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, FormatText.cstr()));
+	return Mmo()->OnParsingVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, FormatText.cstr());
 }
 
 /* #########################################################################

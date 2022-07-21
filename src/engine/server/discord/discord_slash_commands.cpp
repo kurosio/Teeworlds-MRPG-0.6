@@ -312,7 +312,7 @@ void DiscordCommands::RegisterCommand(DiscordJob* pDiscord, std::string CommandI
 	NewCommand.m_pCallback = pCallback;
 	ms_aCommands.push_back(NewCommand);
 
-	const bool RequiresUpdate = (bool)(CommandID != "\0");
+	const bool RequiresUpdate = CommandID != "\0";
 	if(ArrSize > 0)
 	{
 		int StringPos = 0;

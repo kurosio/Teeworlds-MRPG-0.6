@@ -25,7 +25,7 @@ static void InitInformationBots()
 	ResultPtr pRes = SJK.SD("*", "tw_bots_info");
 	while(pRes->next())
 	{
-		const int BotID = (int)pRes->getInt("ID");
+		const int BotID = pRes->getInt("ID");
 		str_copy(DataBotInfo::ms_aDataBot[BotID].m_aNameBot, pRes->getString("Name").c_str(), sizeof(DataBotInfo::ms_aDataBot[BotID].m_aNameBot));
 		DataBotInfo::ms_aDataBot[BotID].m_aEquipSlot[EQUIP_HAMMER] = pRes->getInt("SlotHammer");
 		DataBotInfo::ms_aDataBot[BotID].m_aEquipSlot[EQUIP_GUN] = pRes->getInt("SlotGun");
@@ -77,25 +77,25 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 	ResultPtr pRes = SJK.SD("*", "tw_bots_quest", pWhereLocalWorld);
 	while(pRes->next())
 	{
-		const int MobID = (int)pRes->getInt("ID");
-		const int QuestID = (int)pRes->getInt("QuestID");
+		const int MobID = pRes->getInt("ID");
+		const int QuestID = pRes->getInt("QuestID");
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
 
 		QuestBotInfo::ms_aQuestBot[MobID].m_SubBotID = MobID;
 		QuestBotInfo::ms_aQuestBot[MobID].m_QuestID = QuestID;
-		QuestBotInfo::ms_aQuestBot[MobID].m_BotID = (int)pRes->getInt("BotID");
-		QuestBotInfo::ms_aQuestBot[MobID].m_Step = (int)pRes->getInt("Step");
-		QuestBotInfo::ms_aQuestBot[MobID].m_WorldID = (int)pRes->getInt("WorldID");
+		QuestBotInfo::ms_aQuestBot[MobID].m_BotID = pRes->getInt("BotID");
+		QuestBotInfo::ms_aQuestBot[MobID].m_Step = pRes->getInt("Step");
+		QuestBotInfo::ms_aQuestBot[MobID].m_WorldID = pRes->getInt("WorldID");
 		QuestBotInfo::ms_aQuestBot[MobID].m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
-		QuestBotInfo::ms_aQuestBot[MobID].m_aItemSearch[0] = (int)pRes->getInt("RequiredItemID1");
-		QuestBotInfo::ms_aQuestBot[MobID].m_aItemSearch[1] = (int)pRes->getInt("RequiredItemID2");
-		QuestBotInfo::ms_aQuestBot[MobID].m_aItemGives[0] = (int)pRes->getInt("RewardItemID1");
-		QuestBotInfo::ms_aQuestBot[MobID].m_aItemGives[1] = (int)pRes->getInt("RewardItemID2");
-		QuestBotInfo::ms_aQuestBot[MobID].m_aNeedMob[0] = (int)pRes->getInt("RequiredDefeatMobID1");
-		QuestBotInfo::ms_aQuestBot[MobID].m_aNeedMob[1] = (int)pRes->getInt("RequiredDefeatMobID2");
-		QuestBotInfo::ms_aQuestBot[MobID].m_InteractiveType = (int)pRes->getInt("InteractionType");
-		QuestBotInfo::ms_aQuestBot[MobID].m_InteractiveTemp = (int)pRes->getInt("InteractionTemp");
-		QuestBotInfo::ms_aQuestBot[MobID].m_GenerateNick = (bool)pRes->getBoolean("GenerateSubName");
+		QuestBotInfo::ms_aQuestBot[MobID].m_aItemSearch[0] = pRes->getInt("RequiredItemID1");
+		QuestBotInfo::ms_aQuestBot[MobID].m_aItemSearch[1] = pRes->getInt("RequiredItemID2");
+		QuestBotInfo::ms_aQuestBot[MobID].m_aItemGives[0] = pRes->getInt("RewardItemID1");
+		QuestBotInfo::ms_aQuestBot[MobID].m_aItemGives[1] = pRes->getInt("RewardItemID2");
+		QuestBotInfo::ms_aQuestBot[MobID].m_aNeedMob[0] = pRes->getInt("RequiredDefeatMobID1");
+		QuestBotInfo::ms_aQuestBot[MobID].m_aNeedMob[1] = pRes->getInt("RequiredDefeatMobID2");
+		QuestBotInfo::ms_aQuestBot[MobID].m_InteractiveType = pRes->getInt("InteractionType");
+		QuestBotInfo::ms_aQuestBot[MobID].m_InteractiveTemp = pRes->getInt("InteractionTemp");
+		QuestBotInfo::ms_aQuestBot[MobID].m_GenerateNick = pRes->getBoolean("GenerateSubName");
 		sscanf(pRes->getString("Amount").c_str(), "|%d|%d|%d|%d|%d|%d|",
 			&QuestBotInfo::ms_aQuestBot[MobID].m_aItemSearchValue[0], &QuestBotInfo::ms_aQuestBot[MobID].m_aItemSearchValue[1],
 			&QuestBotInfo::ms_aQuestBot[MobID].m_aItemGivesValue[0], &QuestBotInfo::ms_aQuestBot[MobID].m_aItemGivesValue[1],
@@ -134,7 +134,7 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 	ResultPtr pRes = SJK.SD("*", "tw_bots_npc", pWhereLocalWorld);
 	while(pRes->next())
 	{
-		const int MobID = (int)pRes->getInt("ID");
+		const int MobID = pRes->getInt("ID");
 		const int NumberOfNpc = pRes->getInt("Number");
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
 
@@ -180,7 +180,7 @@ void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 	ResultPtr pRes = SJK.SD("*", "tw_bots_mobs", pWhereLocalWorld);
 	while(pRes->next())
 	{
-		const int MobID = (int)pRes->getInt("ID");
+		const int MobID = pRes->getInt("ID");
 		const int BotID = pRes->getInt("BotID");
 		const int NumberOfMobs = pRes->getInt("Number");
 		

@@ -33,23 +33,23 @@ void CInventoryCore::OnInit()
 	{
 		while(pRes->next())
 		{
-			const int ItemID = (int)pRes->getInt("ItemID");
+			const int ItemID = pRes->getInt("ItemID");
 			str_copy(CItemDataInfo::ms_aItemsInfo[ItemID].m_aName, pRes->getString("Name").c_str(), sizeof(CItemDataInfo::ms_aItemsInfo[ItemID].m_aName));
 			str_copy(CItemDataInfo::ms_aItemsInfo[ItemID].m_aDesc, pRes->getString("Description").c_str(), sizeof(CItemDataInfo::ms_aItemsInfo[ItemID].m_aDesc));
 			str_copy(CItemDataInfo::ms_aItemsInfo[ItemID].m_aIcon, pRes->getString("Icon").c_str(), sizeof(CItemDataInfo::ms_aItemsInfo[ItemID].m_aIcon));
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_Type = (int)pRes->getInt("Type");
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_Function = (int)pRes->getInt("Function");
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_Dysenthis = (int)pRes->getInt("Desynthesis");
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_MinimalPrice = (int)pRes->getInt("Selling");
+			CItemDataInfo::ms_aItemsInfo[ItemID].m_Type = pRes->getInt("Type");
+			CItemDataInfo::ms_aItemsInfo[ItemID].m_Function = pRes->getInt("Function");
+			CItemDataInfo::ms_aItemsInfo[ItemID].m_Dysenthis = pRes->getInt("Desynthesis");
+			CItemDataInfo::ms_aItemsInfo[ItemID].m_MinimalPrice = pRes->getInt("Selling");
 			for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
 			{
 				char aBuf[32];
 				str_format(aBuf, sizeof(aBuf), "Attribute%d", i);
-				CItemDataInfo::ms_aItemsInfo[ItemID].m_aAttribute[i] = (int)pRes->getInt(aBuf);
+				CItemDataInfo::ms_aItemsInfo[ItemID].m_aAttribute[i] = pRes->getInt(aBuf);
 				str_format(aBuf, sizeof(aBuf), "AttributeValue%d", i);
-				CItemDataInfo::ms_aItemsInfo[ItemID].m_aAttributeValue[i] = (int)pRes->getInt(aBuf);
+				CItemDataInfo::ms_aItemsInfo[ItemID].m_aAttributeValue[i] = pRes->getInt(aBuf);
 			}
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_ProjID = (int)pRes->getInt("ProjectileID");
+			CItemDataInfo::ms_aItemsInfo[ItemID].m_ProjID = pRes->getInt("ProjectileID");
 		}
 	});
 
@@ -73,13 +73,13 @@ void CInventoryCore::OnInitAccount(CPlayer *pPlayer)
 	ResultPtr pRes = SJK.SD("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
-		int ItemID = (int)pRes->getInt("ItemID");
+		int ItemID = pRes->getInt("ItemID");
 		CItemData::ms_aItems[ClientID][ItemID].SetItemOwner(pPlayer);
 		CItemData::ms_aItems[ClientID][ItemID].m_ItemID = ItemID;
-		CItemData::ms_aItems[ClientID][ItemID].m_Value = (int)pRes->getInt("Value");
-		CItemData::ms_aItems[ClientID][ItemID].m_Settings = (int)pRes->getInt("Settings");
-		CItemData::ms_aItems[ClientID][ItemID].m_Enchant = (int)pRes->getInt("Enchant");
-		CItemData::ms_aItems[ClientID][ItemID].m_Durability = (int)pRes->getInt("Durability");
+		CItemData::ms_aItems[ClientID][ItemID].m_Value = pRes->getInt("Value");
+		CItemData::ms_aItems[ClientID][ItemID].m_Settings = pRes->getInt("Settings");
+		CItemData::ms_aItems[ClientID][ItemID].m_Enchant = pRes->getInt("Enchant");
+		CItemData::ms_aItems[ClientID][ItemID].m_Durability = pRes->getInt("Durability");
 	}
 }
 
@@ -492,7 +492,7 @@ void CInventoryCore::AddItemSleep(int AccountID, int ItemID, int Value, int Mill
 		ResultPtr pRes = SJK.SD("Value", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, AccountID);
 		if(pRes->next())
 		{
-			const int ReallyValue = (int)pRes->getInt("Value") + Value;
+			const int ReallyValue = pRes->getInt("Value") + Value;
 			SJK.UD("tw_accounts_items", "Value = '%d' WHERE UserID = '%d' AND ItemID = '%d'", ReallyValue, AccountID, ItemID);
 			lock_sleep.unlock();
 			return;

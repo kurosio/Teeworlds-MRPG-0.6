@@ -236,7 +236,7 @@ void MmoController::LoadLogicWorld() const
 	ResultPtr pRes = SJK.SD("*", "tw_logics_worlds", "WHERE WorldID = '%d'", GS()->GetWorldID());
 	while(pRes->next())
 	{
-		const int Type = (int)pRes->getInt("MobID"), Mode = (int)pRes->getInt("Mode"), Health = (int)pRes->getInt("ParseInt");
+		const int Type = pRes->getInt("MobID"), Mode = pRes->getInt("Mode"), Health = pRes->getInt("ParseInt");
 		const vec2 Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
 		GS()->m_pController->CreateLogic(Type, Mode, Position, Health);
 	}

@@ -79,7 +79,7 @@ void CHealthHealer::Snap(int SnappingClient)
 		return;
 
 	float AngleStep = 2.0f * pi / CHealthHealer::NUM_IDS;
-	float Radius = clamp(0.0f+(int)m_ReloadTick, 0.0f, 32.0f);
+	float Radius = clamp(0.0f+m_ReloadTick, 0.0f, 32.0f);
 	for(int i=0; i<CHealthHealer::NUM_IDS; i++)
 	{
 		vec2 VertexPos = m_Pos + vec2(Radius * cos(AngleStep*i), Radius * sin(AngleStep*i));
