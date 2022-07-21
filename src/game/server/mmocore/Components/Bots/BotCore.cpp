@@ -382,7 +382,6 @@ void CBotCore::ConAddCharacterBot(int ClientID, const char* pCharacter)
 	if(pRes->next())
 	{
 		// if the nickname is not in the database
-		const int ID = pRes->getInt("ID");
 		SJK.UD("tw_bots_info", "JsonTeeInfo = '%s' WHERE ID = '%d'", JsonTeeInfo.dump().c_str());
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Updated character bot!");
 		return;
