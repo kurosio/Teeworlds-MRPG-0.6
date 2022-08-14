@@ -15,7 +15,7 @@
 void GuildCore::LoadGuildRank(int GuildID)
 {
 	// rank loading
-	ResultPtr pRes = SJK.SD("*", "tw_guilds_ranks", "WHERE ID > '0' AND GuildID = '%d'", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds_ranks", "WHERE ID > '0' AND GuildID = '%d'", GuildID);
 	while(pRes->next())
 	{
 		int ID = pRes->getInt("ID");
@@ -27,9 +27,10 @@ void GuildCore::LoadGuildRank(int GuildID)
 
 void GuildCore::OnInit()
 {
-	SJK.SDT("*", "tw_guilds", [&](ResultPtr pRes)
+	const auto InitGuilds = Sqlpool.Prepare<DB::SELECT>("*", "tw_guilds");
+	InitGuilds->AtExecute([this](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			int GuildID = pRes->getInt("ID");
 			CGuildData::ms_aGuild[GuildID].m_UserID = pRes->getInt("UserID");
@@ -39,7 +40,7 @@ void GuildCore::OnInit()
 			CGuildData::ms_aGuild[GuildID].m_Score = pRes->getInt("Score");
 			str_copy(CGuildData::ms_aGuild[GuildID].m_aName, pRes->getString("Name").c_str(), sizeof(CGuildData::ms_aGuild[GuildID].m_aName));
 
-			for(int i = 0; i < CGuildData::NUM_GUILD_UPGRADES; i++)
+			for (int i = 0; i < CGuildData::NUM_GUILD_UPGRADES; i++)
 				CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].m_Value = pRes->getInt(CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].getFieldName());
 
 			LoadGuildRank(GuildID);
@@ -51,9 +52,11 @@ void GuildCore::OnInit()
 void GuildCore::OnInitWorld(const char* pWhereLocalWorld)
 {
 	// load houses
-	SJK.SDT("*", "tw_guilds_houses", [&](ResultPtr pRes)
+	const auto InitGuildHouses = Sqlpool.Prepare<DB::SELECT>("*", "tw_guilds_houses", pWhereLocalWorld);
+	InitGuildHouses->AtExecute([](IServer* pServer, ResultPtr pRes)
 	{
-		while(pRes->next())
+		CGS* pGS = (CGS*)pServer->GameServer();
+		while (pRes->next())
 		{
 			int HouseID = pRes->getInt("ID");
 			CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX = pRes->getInt("DoorX");
@@ -65,26 +68,26 @@ void GuildCore::OnInitWorld(const char* pWhereLocalWorld)
 			CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID = pRes->getInt("WorldID");
 			CGuildHouseData::ms_aHouseGuild[HouseID].m_TextX = pRes->getInt("TextX");
 			CGuildHouseData::ms_aHouseGuild[HouseID].m_TextY = pRes->getInt("TextY");
-			if(CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID > 0 && !CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor)
+			if (CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID > 0 && !CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor)
 			{
 				CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = 0;
-				CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = new GuildDoor(&GS()->m_World, vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX, CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY), CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID);
+				CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = new GuildDoor(&pGS->m_World, vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX, CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY), CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID);
 			}
 		}
-		Job()->ShowLoadingProgress("Guilds Houses", CGuildHouseData::ms_aHouseGuild.size());
-	}, pWhereLocalWorld);
+		pGS->Mmo()->ShowLoadingProgress("Guilds Houses", CGuildHouseData::ms_aHouseGuild.size());
+	});
 
-	// load decorations
-	SJK.SDT("*", "tw_guilds_decorations", [&](ResultPtr pRes)
+	const auto InitGuildHouseDecorations = Sqlpool.Prepare<DB::SELECT>("*", "tw_guilds_decorations", pWhereLocalWorld);
+	InitGuildHouseDecorations->AtExecute([this](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int DecoID = pRes->getInt("ID");
 			m_DecorationHouse[DecoID] = new CDecorationHouses(&GS()->m_World, vec2(pRes->getInt("PosX"),
 				pRes->getInt("PosY")), pRes->getInt("HouseID"), pRes->getInt("DecoID"));
 		}
 		Job()->ShowLoadingProgress("Guilds Houses Decorations", m_DecorationHouse.size());
-	}, pWhereLocalWorld);
+	});
 }
 void GuildCore::OnTick()
 {
@@ -164,7 +167,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		}
 
 		CGuildData::ms_aGuild[GuildID].m_UserID = SelectedUserID;
-		SJK.UD("tw_guilds", "UserID = '%d' WHERE ID = '%d'", SelectedUserID, GuildID);
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds", "UserID = '%d' WHERE ID = '%d'", SelectedUserID, GuildID);
 		AddHistoryGuild(GuildID, "New guild leader '%s'.", Job()->PlayerName(SelectedUserID));
 		GS()->ChatGuild(GuildID, "Change leader {STR}->{STR}", Server()->ClientName(ClientID), Job()->PlayerName(SelectedUserID));
 		GS()->StrongUpdateVotesForAll(MENU_GUILD_PLAYERS);
@@ -330,7 +333,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		const int SenderID = VoteID;
 		if(JoinGuild(SenderID, GuildID))
 		{
-			SJK.DD("tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'", GuildID, SenderID);
+			Sqlpool.Execute<DB::REMOVE>("tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'", GuildID, SenderID);
 			GS()->SendInbox(Server()->ClientName(ClientID),SenderID, CGuildData::ms_aGuild[GuildID].m_aName, "You were accepted to join guild");
 			GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 			GS()->StrongUpdateVotesForAll(MENU_GUILD_PLAYERS);
@@ -351,7 +354,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 
 		const int SenderID = VoteID;
 		GS()->Chat(ClientID, "You reject invite.");
-		SJK.DD("tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'", GuildID, SenderID);
+		Sqlpool.Execute<DB::REMOVE>("tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'", GuildID, SenderID);
 		GS()->SendInbox(Server()->ClientName(ClientID), SenderID, CGuildData::ms_aGuild[GuildID].m_aName, "You were denied join guild");
 		GS()->ResetVotes(ClientID, MENU_GUILD);
 		return true;
@@ -489,7 +492,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		if(pPlayer->SpendCurrency(Get))
 		{
 			AddMoneyBank(GuildID, Get);
-			SJK.UD("tw_accounts_data", "GuildDeposit = GuildDeposit + '%d' WHERE ID = '%d'", Get, pPlayer->Acc().m_UserID);
+			Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildDeposit = GuildDeposit + '%d' WHERE ID = '%d'", Get, pPlayer->Acc().m_UserID);
 			GS()->ChatGuild(GuildID, "{STR} deposit in treasury {INT}gold.", Server()->ClientName(ClientID), Get);
 			AddHistoryGuild(GuildID, "'%s' added to bank %dgold.", Server()->ClientName(ClientID), Get);
 			GS()->StrongUpdateVotes(ClientID, MENU_GUILD);
@@ -606,9 +609,9 @@ bool GuildCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
 		GS()->AVH(ClientID, TAB_INFO_DECORATION, GREEN_COLOR, "Decorations Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Add: Select your item in list. Select (Add to house),");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Add: SELECT your item in list. SELECT (Add to house),");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "later press (ESC) and mouse select position");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: Select down your decorations");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: SELECT down your decorations");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "and press (Back to inventory).");
 
 		Job()->Item()->ListInventory(pPlayer, TYPE_DECORATION);
@@ -704,13 +707,13 @@ bool GuildCore::AddDecorationHouse(int DecoID, int GuildID, vec2 Position)
 		return false;
 
 	int HouseID = GetGuildHouseID(GuildID);
-	ResultPtr pRes = SJK.SD("ID", "tw_guilds_decorations", "WHERE HouseID = '%d'", HouseID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds_decorations", "WHERE HouseID = '%d'", HouseID);
 	if ((int)pRes->rowsCount() >= g_Config.m_SvLimitDecoration)
 		return false;
 
-	ResultPtr pRes2 = SJK.SD("ID", "tw_guilds_decorations", "ORDER BY ID DESC LIMIT 1");
+	ResultPtr pRes2 = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds_decorations", "ORDER BY ID DESC LIMIT 1");
 	int InitID = (pRes2->next() ? pRes2->getInt("ID") + 1 : 1);
-	SJK.ID("tw_guilds_decorations", "(ID, DecoID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
+	Sqlpool.Execute<DB::INSERT>("tw_guilds_decorations", "(ID, DecoID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
 		InitID, DecoID, HouseID, (int)Position.x, (int)Position.y, GS()->GetWorldID());
 	m_DecorationHouse[InitID] = new CDecorationHouses(&GS()->m_World, Position, HouseID, DecoID);
 	return true;
@@ -727,7 +730,7 @@ bool GuildCore::DeleteDecorationHouse(int ID)
 		m_DecorationHouse.at(ID) = 0;
 	}
 	m_DecorationHouse.erase(ID);
-	SJK.DD("tw_guilds_decorations", "WHERE ID = '%d'", ID);
+	Sqlpool.Execute<DB::REMOVE>("tw_guilds_decorations", "WHERE ID = '%d'", ID);
 	return true;
 }
 
@@ -761,7 +764,7 @@ void GuildCore::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 
 	// we check the availability of the guild's name
 	CSqlString<64> GuildName(pGuildName);
-	ResultPtr pRes = SJK.SD("ID", "tw_guilds", "WHERE Name = '%s'", GuildName.cstr());
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds", "WHERE Name = '%s'", GuildName.cstr());
 	if(pRes->next())
 	{
 		GS()->Chat(ClientID, "This guild name already useds!");
@@ -776,7 +779,7 @@ void GuildCore::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	}
 
 	// get ID for initialization
-	ResultPtr pResID = SJK.SD("ID", "tw_guilds", "ORDER BY ID DESC LIMIT 1");
+	ResultPtr pResID = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds", "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID")+1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
 
 	// initialize the guild
@@ -791,15 +794,15 @@ void GuildCore::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	pPlayer->Acc().m_GuildID = InitID;
 
 	// we create a guild in the table
-	SJK.ID("tw_guilds", "(ID, Name, UserID) VALUES ('%d', '%s', '%d')", InitID, GuildName.cstr(), pPlayer->Acc().m_UserID);
-	SJK.UDS(1000, "tw_accounts_data", "GuildID = '%d' WHERE ID = '%d'", InitID, pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID) VALUES ('%d', '%s', '%d')", InitID, GuildName.cstr(), pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = '%d' WHERE ID = '%d'", InitID, pPlayer->Acc().m_UserID);
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
 	GS()->StrongUpdateVotes(ClientID, MAIN_MENU);
 }
 
 void GuildCore::DisbandGuild(int GuildID)
 {
-	ResultPtr pResCheck = SJK.SD("ID", "tw_guilds", "WHERE ID = '%d'", GuildID);
+	ResultPtr pResCheck = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds", "WHERE ID = '%d'", GuildID);
 	if(!pResCheck)
 	{
 		dbg_msg("Guild", "The guild is disassembled with identifier %d, but it was not found in the database.", GuildID);
@@ -814,7 +817,7 @@ void GuildCore::DisbandGuild(int GuildID)
 		SellGuildHouse(GuildID);
 
 	GS()->SendInbox("System", LeaderUID, "Your guild was disbanded.", "We returned some gold from your guild.", itGold, ReturnsGold);
-	SJK.DD("tw_guilds", "WHERE ID = '%d'", GuildID);
+	Sqlpool.Execute<DB::REMOVE>("tw_guilds", "WHERE ID = '%d'", GuildID);
 	GS()->Chat(-1, "The {STR} Guild has been disbanded.", CGuildData::ms_aGuild[GuildID].m_aName);
 
 	// clear guild data
@@ -828,14 +831,14 @@ void GuildCore::DisbandGuild(int GuildID)
 		pPlayer->Acc().m_GuildRank = 0;
 		GS()->ResetVotes(i, MAIN_MENU);
 	}
-	SJK.UD("tw_accounts_data", "GuildID = NULL, GuildRank = NULL, GuildDeposit = '0' WHERE GuildID = '%d'", GuildID);
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = NULL, GuildRank = NULL, GuildDeposit = '0' WHERE GuildID = '%d'", GuildID);
 	CGuildData::ms_aGuild.erase(GuildID);
 }
 
 bool GuildCore::JoinGuild(int AccountID, int GuildID)
 {
 	const char *pPlayerName = Job()->PlayerName(AccountID);
-	ResultPtr pResCheckJoin = SJK.SD("ID", "tw_accounts_data", "WHERE ID = '%d' AND GuildID IS NOT NULL", AccountID);
+	ResultPtr pResCheckJoin = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE ID = '%d' AND GuildID IS NOT NULL", AccountID);
 	if(pResCheckJoin->next())
 	{
 		GS()->ChatAccount(AccountID, "You already in guild group!");
@@ -844,7 +847,7 @@ bool GuildCore::JoinGuild(int AccountID, int GuildID)
 	}
 
 	// check the number of slots available
-	ResultPtr pResCheckSlot = SJK.SD("ID", "tw_accounts_data", "WHERE GuildID = '%d'", GuildID);
+	ResultPtr pResCheckSlot = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE GuildID = '%d'", GuildID);
 	if((int)pResCheckSlot->rowsCount() >= CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].m_Value)
 	{
 		GS()->ChatAccount(AccountID, "You don't joined [No slots for join]");
@@ -860,7 +863,7 @@ bool GuildCore::JoinGuild(int AccountID, int GuildID)
 		pPlayer->Acc().m_GuildRank = 0;
 		GS()->ResetVotes(pPlayer->GetCID(), MAIN_MENU);
 	}
-	SJK.UD("tw_accounts_data", "GuildID = '%d', GuildRank = NULL WHERE ID = '%d'", GuildID, AccountID);
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = NULL WHERE ID = '%d'", GuildID, AccountID);
 	GS()->ChatGuild(GuildID, "Player {STR} join in your guild!", pPlayerName);
 	return true;
 }
@@ -868,7 +871,7 @@ bool GuildCore::JoinGuild(int AccountID, int GuildID)
 void GuildCore::ExitGuild(int AccountID)
 {
 	// we check if the clan leader leaves
-	ResultPtr pRes = SJK.SD("ID", "tw_guilds", "WHERE UserID = '%d'", AccountID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds", "WHERE UserID = '%d'", AccountID);
 	if (pRes->next())
 	{
 		GS()->ChatAccount(AccountID, "A leader cannot leave his guild group!");
@@ -876,7 +879,7 @@ void GuildCore::ExitGuild(int AccountID)
 	}
 
 	// we check the account and its guild
-	ResultPtr pResExit = SJK.SD("GuildID", "tw_accounts_data", "WHERE ID = '%d'", AccountID);
+	ResultPtr pResExit = Sqlpool.Execute<DB::SELECT>("GuildID", "tw_accounts_data", "WHERE ID = '%d'", AccountID);
 	if (pResExit->next())
 	{
 		// we write to the guild that the player has left the guild
@@ -891,7 +894,7 @@ void GuildCore::ExitGuild(int AccountID)
 			pPlayer->Acc().m_GuildID = 0;
 			GS()->ResetVotes(pPlayer->GetCID(), MAIN_MENU);
 		}
-		SJK.UD("tw_accounts_data", "GuildID = NULL, GuildRank = NULL, GuildDeposit = '0' WHERE ID = '%d'", AccountID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = NULL, GuildRank = NULL, GuildDeposit = '0' WHERE ID = '%d'", AccountID);
 	}
 }
 
@@ -979,7 +982,7 @@ void GuildCore::ShowGuildPlayers(CPlayer* pPlayer, int GuildID)
 	pPlayer->m_VoteColored = GOLDEN_COLOR;
 	GS()->AVL(ClientID, "null", "List players of {STR}", CGuildData::ms_aGuild[GuildID].m_aName);
 
-	ResultPtr pRes = SJK.SD("ID, Nick, GuildRank, GuildDeposit", "tw_accounts_data", "WHERE GuildID = '%d'", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, Nick, GuildRank, GuildDeposit", "tw_accounts_data", "WHERE GuildID = '%d'", GuildID);
 	while (pRes->next())
 	{
 		bool AllowedInteractiveWithPlayers = false;
@@ -1041,24 +1044,24 @@ void GuildCore::AddExperience(int GuildID)
 	}
 
 	if(random_int()%10 == 2 || UpdateTable)
-		SJK.UD("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Level, CGuildData::ms_aGuild[GuildID].m_Exp, GuildID);
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Level, CGuildData::ms_aGuild[GuildID].m_Exp, GuildID);
 }
 
 bool GuildCore::AddMoneyBank(int GuildID, int Money)
 {
-	ResultPtr pRes = SJK.SD("ID, Bank", "tw_guilds", "WHERE ID = '%d'", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, Bank", "tw_guilds", "WHERE ID = '%d'", GuildID);
 	if(!pRes->next())
 		return false;
 
 	// add money
 	CGuildData::ms_aGuild[GuildID].m_Bank = pRes->getInt("Bank") + Money;
-	SJK.UD("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
+	Sqlpool.Execute<DB::UPDATE>("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
 	return true;
 }
 
 bool GuildCore::RemoveMoneyBank(int GuildID, int Money)
 {
-	ResultPtr pRes = SJK.SD("ID, Bank", "tw_guilds", "WHERE ID = '%d'", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, Bank", "tw_guilds", "WHERE ID = '%d'", GuildID);
 	if(!pRes->next())
 		return false;
 
@@ -1069,14 +1072,14 @@ bool GuildCore::RemoveMoneyBank(int GuildID, int Money)
 
 	// payment
 	CGuildData::ms_aGuild[GuildID].m_Bank -= Money;
-	SJK.UD("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
+	Sqlpool.Execute<DB::UPDATE>("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
 	return true;
 }
 
 // purchase of upgrade maximum number of slots
 bool GuildCore::UpgradeGuild(int GuildID, int Field)
 {
-	ResultPtr pRes = SJK.SD("*", "tw_guilds", "WHERE ID = '%d'", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "WHERE ID = '%d'", GuildID);
 	if(pRes->next())
 	{
 		const char* pFieldName = CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].getFieldName();
@@ -1090,7 +1093,7 @@ bool GuildCore::UpgradeGuild(int GuildID, int Field)
 
 		CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value++;
 		CGuildData::ms_aGuild[GuildID].m_Bank -= PriceAvailable;
-		SJK.UD("tw_guilds", "Bank = '%d', %s = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, pFieldName, CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value, GuildID);
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds", "Bank = '%d', %s = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, pFieldName, CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value, GuildID);
 		return true;
 	}
 	return false;
@@ -1140,14 +1143,14 @@ void GuildCore::AddRank(int GuildID, const char *Rank)
 	if(CGuildRankData::ms_aRankGuild.find(FindRank) != CGuildRankData::ms_aRankGuild.end())
 		return GS()->ChatGuild(GuildID, "Found this rank in your table, change name");
 
-	ResultPtr pRes = SJK.SD("ID", "tw_guilds_ranks", "WHERE GuildID = '%d'", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds_ranks", "WHERE GuildID = '%d'", GuildID);
 	if(pRes->rowsCount() >= 5) return;
 
-	ResultPtr pResID = SJK.SD("ID", "tw_guilds_ranks", "ORDER BY ID DESC LIMIT 1");
+	ResultPtr pResID = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds_ranks", "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID")+1 : 1; // thread save ? hm need for table all time auto increment = 1; NEED FIX IT
 
 	CSqlString<64> cGuildRank = CSqlString<64>(Rank);
-	SJK.ID("tw_guilds_ranks", "(ID, GuildID, Name) VALUES ('%d', '%d', '%s')", InitID, GuildID, cGuildRank.cstr());
+	Sqlpool.Execute<DB::INSERT>("tw_guilds_ranks", "(ID, GuildID, Name) VALUES ('%d', '%d', '%s')", InitID, GuildID, cGuildRank.cstr());
 	GS()->ChatGuild(GuildID, "Creates new rank [{STR}]!", Rank);
 	AddHistoryGuild(GuildID, "Added new rank '%s'.", Rank);
 
@@ -1160,8 +1163,8 @@ void GuildCore::DeleteRank(int RankID, int GuildID)
 {
 	if(CGuildRankData::ms_aRankGuild.find(RankID) != CGuildRankData::ms_aRankGuild.end())
 	{
-		SJK.UD("tw_accounts_data", "GuildRank = NULL WHERE GuildRank = '%d' AND GuildID = '%d'", RankID, GuildID);
-		SJK.DD("tw_guilds_ranks", "WHERE ID = '%d' AND GuildID = '%d'", RankID, GuildID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildRank = NULL WHERE GuildRank = '%d' AND GuildID = '%d'", RankID, GuildID);
+		Sqlpool.Execute<DB::REMOVE>("tw_guilds_ranks", "WHERE ID = '%d' AND GuildID = '%d'", RankID, GuildID);
 		GS()->ChatGuild(GuildID, "Rank [{STR}] succesful delete", CGuildRankData::ms_aRankGuild[RankID].m_aRank);
 		AddHistoryGuild(GuildID, "Deleted rank '%s'.", CGuildRankData::ms_aRankGuild[RankID].m_aRank);
 		CGuildRankData::ms_aRankGuild.erase(RankID);
@@ -1178,7 +1181,7 @@ void GuildCore::ChangeRank(int RankID, int GuildID, const char *NewRank)
 	if(CGuildRankData::ms_aRankGuild.find(RankID) != CGuildRankData::ms_aRankGuild.end())
 	{
 		CSqlString<64> cGuildRank = CSqlString<64>(NewRank);
-		SJK.UD("tw_guilds_ranks", "Name = '%s' WHERE ID = '%d' AND GuildID = '%d'",
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds_ranks", "Name = '%s' WHERE ID = '%d' AND GuildID = '%d'",
 			cGuildRank.cstr(), RankID, GuildID);
 		GS()->ChatGuild(GuildID, "Rank [{STR}] changes to [{STR}]", CGuildRankData::ms_aRankGuild[RankID].m_aRank, NewRank);
 		AddHistoryGuild(GuildID, "Rank '%s' changes to '%s'.", CGuildRankData::ms_aRankGuild[RankID].m_aRank, NewRank);
@@ -1197,7 +1200,7 @@ void GuildCore::ChangeRankAccess(int RankID)
 
 		const int GuildID = CGuildRankData::ms_aRankGuild[RankID].m_GuildID;
 		AddHistoryGuild(GuildID, "Rank '%s' access updated to '%s'.", CGuildRankData::ms_aRankGuild[RankID].m_aRank, AccessNames(CGuildRankData::ms_aRankGuild[RankID].m_Access));
-		SJK.UD("tw_guilds_ranks", "Access = '%d' WHERE ID = '%d' AND GuildID = '%d'", CGuildRankData::ms_aRankGuild[RankID].m_Access, RankID, GuildID);
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds_ranks", "Access = '%d' WHERE ID = '%d' AND GuildID = '%d'", CGuildRankData::ms_aRankGuild[RankID].m_Access, RankID, GuildID);
 		GS()->ChatGuild(GuildID, "Rank [{STR}] changes [{STR}]!", CGuildRankData::ms_aRankGuild[RankID].m_aRank, AccessNames(CGuildRankData::ms_aRankGuild[RankID].m_Access));
 	}
 }
@@ -1209,7 +1212,7 @@ void GuildCore::ChangePlayerRank(int AccountID, int RankID)
 	if(pPlayer)
 		pPlayer->Acc().m_GuildRank = RankID;
 
-	SJK.UD("tw_accounts_data", "GuildRank = '%d' WHERE ID = '%d'", RankID, AccountID);
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildRank = '%d' WHERE ID = '%d'", RankID, AccountID);
 }
 
 // rank menu display
@@ -1249,7 +1252,7 @@ void GuildCore::ShowMenuRank(CPlayer *pPlayer)
 int GuildCore::GetGuildPlayerValue(int GuildID)
 {
 	int MemberPlayers = -1;
-	ResultPtr pRes = SJK.SD("ID", "tw_accounts_data", "WHERE GuildID = '%d'", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE GuildID = '%d'", GuildID);
 		MemberPlayers = pRes->rowsCount();
 	return MemberPlayers;
 }
@@ -1268,14 +1271,14 @@ void GuildCore::SendInviteGuild(int GuildID, CPlayer *pPlayer)
 	}
 
 	const int UserID = pPlayer->Acc().m_UserID;
-	ResultPtr pRes = SJK.SD("ID", "tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'",  GuildID, UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'",  GuildID, UserID);
 	if(pRes->rowsCount() >= 1)
 	{
 		GS()->Chat(ClientID, "You have already sent a request to join this guild.");
 		return;
 	}
 
-	SJK.ID("tw_guilds_invites", "(GuildID, UserID) VALUES ('%d', '%d')", GuildID, UserID);
+	Sqlpool.Execute<DB::INSERT>("tw_guilds_invites", "(GuildID, UserID) VALUES ('%d', '%d')", GuildID, UserID);
 	GS()->ChatGuild(GuildID, "{STR} send invites to join our guilds", Job()->PlayerName(UserID));
 	GS()->Chat(ClientID, "You sent a request to join the guild.");
 }
@@ -1284,7 +1287,7 @@ void GuildCore::SendInviteGuild(int GuildID, CPlayer *pPlayer)
 void GuildCore::ShowInvitesGuilds(int ClientID, int GuildID)
 {
 	int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 1900;
-	ResultPtr pRes = SJK.SD("*", "tw_guilds_invites", "WHERE GuildID = '%d'", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds_invites", "WHERE GuildID = '%d'", GuildID);
 	while(pRes->next())
 	{
 		const int SenderID = pRes->getInt("UserID");
@@ -1311,7 +1314,7 @@ void GuildCore::ShowFinderGuilds(int ClientID)
 
 	int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 1800;
 	CSqlString<64> cGuildName = CSqlString<64>(pPlayer->GetTempData().m_aGuildSearchBuf);
-	ResultPtr pRes = SJK.SD("*", "tw_guilds", "WHERE Name LIKE '%%%s%%'", cGuildName.cstr());
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "WHERE Name LIKE '%%%s%%'", cGuildName.cstr());
 	while(pRes->next())
 	{
 		const int GuildID = pRes->getInt("ID");
@@ -1336,7 +1339,7 @@ void GuildCore::ShowHistoryGuild(int ClientID, int GuildID)
 {
 	// looking for the entire history of the guild in the database
 	char aBuf[128];
-	ResultPtr pRes = SJK.SD("*", "tw_guilds_history", "WHERE GuildID = '%d' ORDER BY ID DESC LIMIT 20", GuildID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds_history", "WHERE GuildID = '%d' ORDER BY ID DESC LIMIT 20", GuildID);
 	while(pRes->next())
 	{
 		str_format(aBuf, sizeof(aBuf), "[%s] %s", pRes->getString("Time").c_str(), pRes->getString("Text").c_str());
@@ -1359,7 +1362,7 @@ void GuildCore::AddHistoryGuild(int GuildID, const char *Buffer, ...)
 	va_end(VarArgs);
 
 	CSqlString<64> cBuf = CSqlString<64>(aBuf);
-	SJK.ID("tw_guilds_history", "(GuildID, Text) VALUES ('%d', '%s')", GuildID, cBuf.cstr());
+	Sqlpool.Execute<DB::INSERT>("tw_guilds_history", "(GuildID, Text) VALUES ('%d', '%s')", GuildID, cBuf.cstr());
 }
 
 /* #########################################################################
@@ -1431,7 +1434,7 @@ void GuildCore::BuyGuildHouse(int GuildID, int HouseID)
 		return;
 	}
 
-	ResultPtr pRes = SJK.SD("*", "tw_guilds_houses", "WHERE ID = '%d' AND GuildID IS NULL", HouseID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds_houses", "WHERE ID = '%d' AND GuildID IS NULL", HouseID);
 	if(pRes->next())
 	{
 		const int Price = pRes->getInt("Price");
@@ -1441,10 +1444,10 @@ void GuildCore::BuyGuildHouse(int GuildID, int HouseID)
 			return;
 		}
 		CGuildData::ms_aGuild[GuildID].m_Bank -= Price;
-		SJK.UD("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
 
 		CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID = GuildID;
-		SJK.UD("tw_guilds_houses", "GuildID = '%d' WHERE ID = '%d'", GuildID, HouseID);
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds_houses", "GuildID = '%d' WHERE ID = '%d'", GuildID, HouseID);
 
 		const char* WorldName = Server()->GetWorldName(CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID);
 		GS()->Chat(-1, "{STR} buyight guild house on {STR}!", GuildName(GuildID), WorldName);
@@ -1466,10 +1469,10 @@ void GuildCore::SellGuildHouse(int GuildID)
 		return;
 	}
 
-	ResultPtr pRes = SJK.SD("ID", "tw_guilds_houses", "WHERE ID = '%d' AND GuildID IS NOT NULL", HouseID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_guilds_houses", "WHERE ID = '%d' AND GuildID IS NOT NULL", HouseID);
 	if(pRes->next())
 	{
-		SJK.UD("tw_guilds_houses", "GuildID = NULL WHERE ID = '%d'", HouseID);
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds_houses", "GuildID = NULL WHERE ID = '%d'", HouseID);
 
 		const int ReturnedGold = CGuildHouseData::ms_aHouseGuild[HouseID].m_Price;
 		GS()->SendInbox("System", CGuildData::ms_aGuild[GuildID].m_UserID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);

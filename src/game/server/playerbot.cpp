@@ -268,7 +268,7 @@ void CPlayerBot::Snap(int SnappingClient)
 	pPlayerInfo->m_ClientID = m_ClientID;
 	pPlayerInfo->m_Team = TEAM_RED;
 
-	// --------------------- CUSTOM ----------------------
+	// --------------------- OTHER ----------------------
 	if(!GS()->IsMmoClient(SnappingClient))
 		return;
 

@@ -273,7 +273,7 @@ bool CItemData::Save() const
 {
 	if(m_pPlayer && m_pPlayer->IsAuthed())
 	{
-		SJK.UD("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
 			m_Value, m_Settings, m_Enchant, m_Durability, m_pPlayer->Acc().m_UserID, m_ItemID);
 		return true;
 	}

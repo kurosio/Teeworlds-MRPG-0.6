@@ -113,7 +113,7 @@ void DiscordJob::SendWarningMessage(SleepyDiscord::Snowflake<SleepyDiscord::Chan
 bool DiscordJob::SendGenerateMessage(SleepyDiscord::User UserRequestFrom, std::string Channel, std::string Title, std::string SearchNickname, int Color, bool MultipleSearch)
 {
 	const CSqlString<64> SearchNick(std::string("%" + SearchNickname + "%").c_str());
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_data", "WHERE Nick LIKE '%s' LIMIT %d", SearchNick.cstr(), (MultipleSearch ? 3 : 1));
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick LIKE '%s' LIMIT %d", SearchNick.cstr(), (MultipleSearch ? 3 : 1));
 	while(pRes->next())
 	{
 		const int AccountID = pRes->getInt("ID");

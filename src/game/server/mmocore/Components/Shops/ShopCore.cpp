@@ -11,7 +11,7 @@
 using namespace sqlstr;
 void CShopCore::OnInit()
 {
-	ResultPtr pRes = SJK.SD("ID, StorageID", "tw_store_items");
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, StorageID", "tw_store_items");
 	while(pRes->next())
 	{
 		int ID = pRes->getInt("ID");
@@ -185,18 +185,18 @@ void CShopCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionItem& pAuctionItem)
 	CItemData& pPlayerAuctionItem = pPlayer->GetItem(ItemID);
 
 	// check the number of slots whether everything is occupied or not
-	ResultPtr pResCheck = SJK.SD("ID", "tw_store_items", "WHERE UserID > '0' LIMIT %d", g_Config.m_SvMaxMasiveAuctionSlots);
+	ResultPtr pResCheck = Sqlpool.Execute<DB::SELECT>("ID", "tw_store_items", "WHERE UserID > '0' LIMIT %d", g_Config.m_SvMaxMasiveAuctionSlots);
 	if((int)pResCheck->rowsCount() >= g_Config.m_SvMaxMasiveAuctionSlots)
 		return GS()->Chat(ClientID, "Auction has run out of slots, wait for the release of slots!");
 
 	// check your slots
-	ResultPtr pResCheck2 = SJK.SD("ID", "tw_store_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, g_Config.m_SvMaxAuctionSlots);
+	ResultPtr pResCheck2 = Sqlpool.Execute<DB::SELECT>("ID", "tw_store_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, g_Config.m_SvMaxAuctionSlots);
 	const int ValueSlot = pResCheck2->rowsCount();
 	if(ValueSlot >= g_Config.m_SvMaxAuctionSlots)
 		return GS()->Chat(ClientID, "You use all open the slots in your auction!");
 
 	// we check if the item is in the auction
-	ResultPtr pResCheck3 = SJK.SD("ID", "tw_store_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+	ResultPtr pResCheck3 = Sqlpool.Execute<DB::SELECT>("ID", "tw_store_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 	if(pResCheck3->next())
 		return GS()->Chat(ClientID, "Your same item found in the database, need reopen the slot!");
 
@@ -207,7 +207,7 @@ void CShopCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionItem& pAuctionItem)
 	// pick up the item and add a slot
 	if(pPlayerAuctionItem.m_Value >= pAuctionItem.m_Value && pPlayerAuctionItem.Remove(pAuctionItem.m_Value))
 	{
-		SJK.ID("tw_store_items", "(ItemID, Price, ItemValue, UserID, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
+		Sqlpool.Execute<DB::INSERT>("tw_store_items", "(ItemID, Price, ItemValue, UserID, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
 			ItemID, pAuctionItem.m_Price, pAuctionItem.m_Value, pPlayer->Acc().m_UserID, pAuctionItem.m_Enchant);
 
 		const int AvailableSlot = (g_Config.m_SvMaxAuctionSlots - ValueSlot) - 1;
@@ -219,7 +219,7 @@ void CShopCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionItem& pAuctionItem)
 
 void CShopCore::CheckAuctionTime()
 {
-	ResultPtr pRes = SJK.SD("*", "tw_store_items", "WHERE UserID > 0 AND DATE_SUB(NOW(),INTERVAL %d MINUTE) > Time", g_Config.m_SvTimeAuctionSlot);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_store_items", "WHERE UserID > 0 AND DATE_SUB(NOW(),INTERVAL %d MINUTE) > Time", g_Config.m_SvTimeAuctionSlot);
 	int ReleaseSlots = (int)pRes->rowsCount();
 	while(pRes->next())
 	{
@@ -229,7 +229,7 @@ void CShopCore::CheckAuctionTime()
 		const int Enchant = pRes->getInt("Enchant");
 		const int UserID = pRes->getInt("UserID");
 		GS()->SendInbox("Auctionist", UserID, "Auction expired", "Your slot has expired", ItemID, Value, Enchant);
-		SJK.DD("tw_store_items", "WHERE ID = '%d'", ID);
+		Sqlpool.Execute<DB::REMOVE>("tw_store_items", "WHERE ID = '%d'", ID);
 	}
 	if(ReleaseSlots)
 		GS()->Chat(-1, "Auction {INT} slots has been released!", ReleaseSlots);
@@ -238,7 +238,7 @@ void CShopCore::CheckAuctionTime()
 bool CShopCore::BuyShopItem(CPlayer* pPlayer, int ID)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("*", "tw_store_items", "WHERE ID = '%d'", ID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_store_items", "WHERE ID = '%d'", ID);
 	if(!pRes->next())
 		return false;
 
@@ -262,7 +262,7 @@ bool CShopCore::BuyShopItem(CPlayer* pPlayer, int ID)
 		{
 			GS()->Chat(ClientID, "You closed auction slot!");
 			GS()->SendInbox("Auctionist", pPlayer, "Auction Alert", "You have bought a item, or canceled your slot", ItemID, Value, Enchant);
-			SJK.DD("tw_store_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
+			Sqlpool.Execute<DB::REMOVE>("tw_store_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
 			return true;
 		}
 
@@ -273,7 +273,7 @@ bool CShopCore::BuyShopItem(CPlayer* pPlayer, int ID)
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "Your [Slot %sx%d] was sold!", pPlayerBuyightItem.Info().GetName(), Value);
 		GS()->SendInbox("Auctionist", UserID, "Auction Sell", aBuf, itGold, Price, 0);
-		SJK.DD("tw_store_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
+		Sqlpool.Execute<DB::REMOVE>("tw_store_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
 		pPlayerBuyightItem.Add(Value, 0, Enchant);
 		GS()->Chat(ClientID, "You buy {STR}x{INT}.", pPlayerBuyightItem.Info().GetName(), Value);
 		return true;
@@ -300,7 +300,7 @@ void CShopCore::ShowAuction(CPlayer* pPlayer)
 
 	bool FoundItems = false;
 	int HideID = (int)(NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 400);
-	ResultPtr pRes = SJK.SD("*", "tw_store_items", "WHERE UserID > 0 ORDER BY Price");
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_store_items", "WHERE UserID > 0 ORDER BY Price");
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
@@ -344,7 +344,7 @@ void CShopCore::ShowMailShop(CPlayer *pPlayer, int StorageID)
 {
 	const int ClientID = pPlayer->GetCID();
 	int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 300;
-	ResultPtr pRes = SJK.SD("*", "tw_store_items", "WHERE StorageID = '%d' ORDER BY Price", StorageID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_store_items", "WHERE StorageID = '%d' ORDER BY Price", StorageID);
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");

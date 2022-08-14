@@ -28,7 +28,7 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS *pGS) : IGameController
 	ChangeState(DUNGEON_WAITING);
 
 	// key door construction
-	ResultPtr pRes = SJK.SD("*", "tw_dungeons_door", "WHERE DungeonID = '%d'", m_DungeonID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_dungeons_door", "WHERE DungeonID = '%d'", m_DungeonID);
 	while (pRes->next())
 	{
 		const int DungeonBotID = pRes->getInt("BotID");

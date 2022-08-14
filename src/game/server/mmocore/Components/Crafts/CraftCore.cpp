@@ -7,7 +7,7 @@
 
 void CCraftCore::OnInit()
 {
-	ResultPtr pRes = SJK.SD("*", "tw_crafts_list");
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_crafts_list");
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");

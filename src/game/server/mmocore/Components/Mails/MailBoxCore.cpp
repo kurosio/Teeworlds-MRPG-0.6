@@ -29,7 +29,7 @@ bool CMailBoxCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int V
 // check whether messages are available
 int CMailBoxCore::GetMailLettersSize(int AccountID)
 {
-	ResultPtr pRes = SJK.SD("ID", "tw_accounts_mailbox", "WHERE UserID = '%d'", AccountID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_mailbox", "WHERE UserID = '%d'", AccountID);
 	const int MailValue = pRes->rowsCount();
 	return MailValue;
 }
@@ -41,7 +41,7 @@ void CMailBoxCore::GetInformationInbox(CPlayer *pPlayer)
 	bool EmptyMailBox = true;
 	const int ClientID = pPlayer->GetCID();
 	int HideID = (int)(NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 200);
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_mailbox", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, MAILLETTER_MAX_CAPACITY);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, MAILLETTER_MAX_CAPACITY);
 	while(pRes->next())
 	{
 		// get the information to create an object
@@ -97,17 +97,17 @@ void CMailBoxCore::SendInbox(const char* pFrom, int AccountID, const char* pName
 	// send new message
 	if (ItemID <= 0)
 	{
-		SJK.ID("tw_accounts_mailbox", "(Name, Description, UserID, FromSend) VALUES ('%s', '%s', '%d', '%s');", cName.cstr(), cDesc.cstr(), AccountID, cFrom.cstr());
+		Sqlpool.Execute<DB::INSERT>("tw_accounts_mailbox", "(Name, Description, UserID, FromSend) VALUES ('%s', '%s', '%d', '%s');", cName.cstr(), cDesc.cstr(), AccountID, cFrom.cstr());
 		return;
 	}
-	SJK.ID("tw_accounts_mailbox", "(Name, Description, ItemID, ItemValue, Enchant, UserID, FromSend) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%s');",
+	Sqlpool.Execute<DB::INSERT>("tw_accounts_mailbox", "(Name, Description, ItemID, ItemValue, Enchant, UserID, FromSend) VALUES ('%s', '%s', '%d', '%d', '%d', '%d', '%s');",
 		 cName.cstr(), cDesc.cstr(), ItemID, Value, Enchant, AccountID, cFrom.cstr());
 }
 
 bool CMailBoxCore::SendInbox(const char* pFrom, const char* pNickname, const char* pName, const char* pDesc, int ItemID, int Value, int Enchant)
 {
 	const CSqlString<64> cName = CSqlString<64>(pNickname);
-	ResultPtr pRes = SJK.SD("ID, Nick", "tw_accounts_data", "WHERE Nick = '%s'", cName.cstr());
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '%s'", cName.cstr());
 	if(pRes->next())
 	{
 		const int AccountID = pRes->getInt("ID");
@@ -119,7 +119,7 @@ bool CMailBoxCore::SendInbox(const char* pFrom, const char* pNickname, const cha
 
 void CMailBoxCore::AcceptMailLetter(CPlayer* pPlayer, int MailLetterID)
 {
-	ResultPtr pRes = SJK.SD("ItemID, ItemValue, Enchant", "tw_accounts_mailbox", "WHERE ID = '%d'", MailLetterID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ItemID, ItemValue, Enchant", "tw_accounts_mailbox", "WHERE ID = '%d'", MailLetterID);
 	if(pRes->next())
 	{
 		// get informed about the mail
@@ -147,19 +147,19 @@ void CMailBoxCore::AcceptMailLetter(CPlayer* pPlayer, int MailLetterID)
 
 void CMailBoxCore::DeleteMailLetter(int MailLetterID)
 {
-	SJK.DD("tw_accounts_mailbox", "WHERE ID = '%d'", MailLetterID);
+	Sqlpool.Execute<DB::REMOVE>("tw_accounts_mailbox", "WHERE ID = '%d'", MailLetterID);
 }
 
 void CMailBoxCore::SetReadState(int MailLetterID, bool State)
 {
-	SJK.UD("tw_accounts_mailbox", "IsRead='%d' WHERE ID = '%d'", State, MailLetterID);
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_mailbox", "IsRead='%d' WHERE ID = '%d'", State, MailLetterID);
 }
 
 // client server
 void CMailBoxCore::SendClientListMail(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_mailbox", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, MAILLETTER_MAX_CAPACITY);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, MAILLETTER_MAX_CAPACITY);
 	while(pRes->next())
 	{
 		std::string Name = pRes->getString("Name").c_str();

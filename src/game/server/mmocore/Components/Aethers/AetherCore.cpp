@@ -10,9 +10,10 @@
 
 void CAetherCore::OnInit()
 {
-	SJK.SDT("*", "tw_aethers", [&](ResultPtr pRes)
+	const auto InitAethers = Sqlpool.Prepare<DB::SELECT>("*", "tw_aethers");
+	InitAethers->AtExecute([this](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int ID = pRes->getInt("ID");
 			str_copy(CAetherData::ms_aTeleport[ID].m_aName, pRes->getString("Name").c_str(), sizeof(CAetherData::ms_aTeleport[ID].m_aName));
@@ -26,7 +27,7 @@ void CAetherCore::OnInit()
 
 void CAetherCore::OnInitAccount(CPlayer *pPlayer)
 {
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
 		const int TeleportID = pRes->getInt("AetherID");
@@ -113,7 +114,7 @@ void CAetherCore::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
 		if (distance(vec2(tl.second.m_TeleX, tl.second.m_TeleY), Pos) > 100 || pPlayer->Acc().m_aAetherLocation.find(tl.first) != pPlayer->Acc().m_aAetherLocation.end())
 			continue;
 
-		SJK.ID("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, tl.first);
+		Sqlpool.Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, tl.first);
 		GS()->Chat(ClientID, "You unlock aether {STR}!", CAetherData::ms_aTeleport[tl.first].m_aName);
 		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Adventure unlock aether {STR}", CAetherData::ms_aTeleport[tl.first].m_aName);
 

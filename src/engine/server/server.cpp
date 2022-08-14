@@ -87,7 +87,7 @@ CServer::~CServer()
 #endif
 	delete m_pDataMmo;
 	delete m_pMultiWorlds;
-	SJK.DisconnectConnectionHeap();
+	Sqlpool.DisconnectConnectionHeap();
 }
 
 IGameServer* CServer::GameServer(int WorldID)
@@ -1536,8 +1536,8 @@ void CServer::SendServerInfoConnless(const NETADDR* pAddr, int Token, int Type)
 
 void CServer::UpdateServerInfo(bool Resend)
 {
-	//if (!m_RunServer)
-	//	return;
+	if (!m_RunServer)
+		return;
 
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 2; j++)

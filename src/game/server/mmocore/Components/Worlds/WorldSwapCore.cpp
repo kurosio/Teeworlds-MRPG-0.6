@@ -6,9 +6,10 @@
 
 void CWorldSwapCore::OnInit()
 {
-	SJK.SDT("*", "tw_world_swap", [&](ResultPtr pRes)
+	const auto InitWorlds = Sqlpool.Prepare<DB::SELECT>("*", "tw_world_swap");
+	InitWorlds->AtExecute([this](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int ID = pRes->getInt("ID");
 			CWorldSwapData::ms_aWorldSwap[ID].m_RequiredQuestID = pRes->getInt("RequiredQuestID");
@@ -18,7 +19,7 @@ void CWorldSwapCore::OnInit()
 			CWorldSwapData::ms_aWorldSwap[ID].m_WorldID[1] = pRes->getInt("TwoWorldID");
 		}
 
-		for(const auto& pSwapData : CWorldSwapData::ms_aWorldSwap)
+		for (const auto& pSwapData : CWorldSwapData::ms_aWorldSwap)
 		{
 			CWorldSwapPosition::ms_aWorldPositionLogic.push_back({ pSwapData.second.m_WorldID[0], pSwapData.second.m_WorldID[1], pSwapData.second.m_Position[0] });
 			CWorldSwapPosition::ms_aWorldPositionLogic.push_back({ pSwapData.second.m_WorldID[1], pSwapData.second.m_WorldID[0], pSwapData.second.m_Position[1] });
@@ -33,17 +34,17 @@ void CWorldSwapCore::OnInitWorld(const char* pWhereLocalWorld)
 	const int WorldID = GS()->GetWorldID();
 	const CSqlString<32> cstrWorldName = CSqlString<32>(Server()->GetWorldName(WorldID));
 
-	ResultPtr pRes = SJK.SD("RespawnWorld, MusicID", "enum_worlds", pWhereLocalWorld);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("RespawnWorld, MusicID", "enum_worlds", pWhereLocalWorld);
 	if(pRes->next())
 	{
 		const int RespawnWorld = pRes->getInt("RespawnWorld");
 		const int MusicID = pRes->getInt("MusicID");
-		SJK.UD("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
+		Sqlpool.Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
 		GS()->SetRespawnWorld(RespawnWorld);
 		GS()->SetMapMusic(MusicID);
 		return;
 	}
-	SJK.ID("enum_worlds", "(WorldID, Name) VALUES ('%d', '%s')", WorldID, cstrWorldName.cstr());
+	Sqlpool.Execute<DB::INSERT>("enum_worlds", "(WorldID, Name) VALUES ('%d', '%s')", WorldID, cstrWorldName.cstr());
 }
 
 bool CWorldSwapCore::OnHandleTile(CCharacter *pChr, int IndexCollision)

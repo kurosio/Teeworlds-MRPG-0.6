@@ -84,7 +84,7 @@ void CAccountMinerCore::Work(CPlayer *pPlayer, int Level)
 
 void CAccountMinerCore::OnInitAccount(CPlayer* pPlayer)
 {
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	if (pRes->next())
 	{
 		for(int i = 0; i < NUM_JOB_ACCOUNTS_STATS; i++)
@@ -96,12 +96,12 @@ void CAccountMinerCore::OnInitAccount(CPlayer* pPlayer)
 	}
 	pPlayer->Acc().m_aMining[JOB_LEVEL].m_Value = 1;
 	pPlayer->Acc().m_aMining[JOB_UPGR_QUANTITY].m_Value = 1;
-	SJK.ID("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
 }
 
 void CAccountMinerCore::OnInitWorld(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = SJK.SD("*", "tw_positions_mining", pWhereLocalWorld);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_positions_mining", pWhereLocalWorld);
 	while (pRes->next())
 	{
 		const int ID = pRes->getInt("ID");

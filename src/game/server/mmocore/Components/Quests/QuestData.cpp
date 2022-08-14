@@ -143,7 +143,7 @@ bool CQuestData::Accept()
 
 	// init quest
 	m_State = QuestState::QUEST_ACCEPT;
-	SJK.ID("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_QuestID, m_pPlayer->Acc().m_UserID, QuestState::QUEST_ACCEPT);
+	Sqlpool.Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_QuestID, m_pPlayer->Acc().m_UserID, QuestState::QUEST_ACCEPT);
 
 	// init steps
 	InitSteps();
@@ -166,7 +166,7 @@ void CQuestData::Finish()
 
 	// finish quest
 	m_State = QuestState::QUEST_FINISHED;
-	SJK.UD("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_QuestID, m_pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_QuestID, m_pPlayer->Acc().m_UserID);
 
 	// clear steps
 	ClearSteps();

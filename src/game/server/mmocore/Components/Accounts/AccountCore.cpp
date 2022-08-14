@@ -43,7 +43,7 @@ AccountCodeResult CAccountCore::RegisterAccount(int ClientID, const char *Login,
 	}
 	
 	const CSqlString<32> cClearNick = CSqlString<32>(Server()->ClientName(ClientID));
-	ResultPtr pRes = SJK.SD("ID", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
 	if(pRes->next())
 	{
 		GS()->Chat(ClientID, "- - - - [Your nickname is already registered] - - - -");
@@ -53,7 +53,7 @@ AccountCodeResult CAccountCore::RegisterAccount(int ClientID, const char *Login,
 		return AccountCodeResult::AOP_NICKNAME_ALREADY_EXIST;
 	}
 
-	ResultPtr pResID = SJK.SD("ID", "tw_accounts", "ORDER BY ID DESC LIMIT 1");
+	ResultPtr pResID = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts", "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID")+1 : 1; // thread save ? hm need for table all time auto increment = 1; NEED FIX IT
 
 	const CSqlString<32> cClearLogin = CSqlString<32>(Login);
@@ -65,8 +65,8 @@ AccountCodeResult CAccountCore::RegisterAccount(int ClientID, const char *Login,
 	char aSalt[32] = { 0 };
 	secure_random_password(aSalt, sizeof(aSalt), 24);
 
-	SJK.ID("tw_accounts", "(ID, Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('%d', '%s', '%s', '%s', UTC_TIMESTAMP(), '%s')", InitID, cClearLogin.cstr(), HashPassword(cClearPass.cstr(), aSalt).c_str(), aSalt, aAddrStr);
-	SJK.IDS(100, "tw_accounts_data", "(ID, Nick) VALUES ('%d', '%s')", InitID, cClearNick.cstr());
+	Sqlpool.Execute<DB::INSERT>("tw_accounts", "(ID, Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('%d', '%s', '%s', '%s', UTC_TIMESTAMP(), '%s')", InitID, cClearLogin.cstr(), HashPassword(cClearPass.cstr(), aSalt).c_str(), aSalt, aAddrStr);
+	Sqlpool.Execute<DB::INSERT, 100>("tw_accounts_data", "(ID, Nick) VALUES ('%d', '%s')", InitID, cClearNick.cstr());
 
 	GS()->Chat(ClientID, "- - - - - - - [Successful registered] - - - - - - -");
 	GS()->Chat(ClientID, "Don't forget your data, have a nice game!");
@@ -92,11 +92,11 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 	const CSqlString<32> cClearLogin = CSqlString<32>(Login);
 	const CSqlString<32> cClearPass = CSqlString<32>(Password);
 	const CSqlString<32> cClearNick = CSqlString<32>(Server()->ClientName(ClientID));
-	ResultPtr pResAccount = SJK.SD("*", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
+	ResultPtr pResAccount = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
 	if(pResAccount->next())
 	{
 		const int UserID = pResAccount->getInt("ID");
-		ResultPtr pResCheck = SJK.SD("ID, LoginDate, Language, Password, PasswordSalt", "tw_accounts", "WHERE Username = '%s' AND ID = '%d'", cClearLogin.cstr(), UserID);
+		ResultPtr pResCheck = Sqlpool.Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt", "tw_accounts", "WHERE Username = '%s' AND ID = '%d'", cClearLogin.cstr(), UserID);
 
 		bool LoginSuccess = false;
 		if(pResCheck->next())
@@ -142,7 +142,7 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 
 		char aAddrStr[64];
 		Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
-		SJK.UD("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '%s' WHERE ID = '%d'", aAddrStr, UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '%s' WHERE ID = '%d'", aAddrStr, UserID);
 		return AccountCodeResult::AOP_LOGIN_OK;
 	}
 
@@ -212,10 +212,10 @@ void CAccountCore::DiscordConnect(int ClientID, const char *pDID) const
 	const CSqlString<64> cDiscordID = CSqlString<64>(pDID);
 
 	// disable another account if it is connected to this discord
-	SJK.UD("tw_accounts_data", "DiscordID = 'null' WHERE DiscordID = '%s'", cDiscordID.cstr());
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "DiscordID = 'null' WHERE DiscordID = '%s'", cDiscordID.cstr());
 
 	// connect the player discord id
-	SJK.UDS(1000,"tw_accounts_data", "DiscordID = '%s' WHERE ID = '%d'", cDiscordID.cstr(), pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::UPDATE, 1000>("tw_accounts_data", "DiscordID = '%s' WHERE ID = '%d'", cDiscordID.cstr(), pPlayer->Acc().m_UserID);
 
 	GS()->Chat(ClientID, "Your Discord ID has been updated.");
 	GS()->Chat(ClientID, "Check the connection status in discord \"/connect\".");
@@ -225,7 +225,7 @@ void CAccountCore::DiscordConnect(int ClientID, const char *pDID) const
 int CAccountCore::GetRank(int AccountID)
 {
 	int Rank = 0;
-	ResultPtr pRes = SJK.SD("ID", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC");
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC");
 	while(pRes->next())
 	{
 		Rank++;
@@ -310,7 +310,7 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 
 			// add language selection
 			const char *pLanguageName = Server()->Localization()->m_pLanguages[i]->GetName();
-			GS()->AVM(ClientID, "SELECTLANGUAGE", i, TAB_LANGUAGES, "Select language \"{STR}\"", pLanguageName);
+			GS()->AVM(ClientID, "SELECTLANGUAGE", i, TAB_LANGUAGES, "SELECT language \"{STR}\"", pLanguageName);
 		}
 		GS()->AddVotesBackpage(ClientID);
 		return true;
@@ -382,7 +382,7 @@ void CAccountCore::UseVoucher(int ClientID, const char* pVoucher) const
 	const CSqlString<32> cVoucherCode = CSqlString<32>(pVoucher);
 	str_format(aSelect, sizeof(aSelect), "v.*, IF((SELECT r.ID FROM tw_voucher_redeemed r WHERE CASE v.Multiple WHEN 1 THEN r.VoucherID = v.ID AND r.UserID = %d ELSE r.VoucherID = v.ID END) IS NULL, FALSE, TRUE) AS used", pPlayer->Acc().m_UserID);
 
-	ResultPtr pResVoucher = SJK.SD(aSelect, "tw_voucher v", "WHERE v.Code = '%s'", cVoucherCode.cstr());
+	ResultPtr pResVoucher = Sqlpool.Execute<DB::SELECT>(aSelect, "tw_voucher v", "WHERE v.Code = '%s'", cVoucherCode.cstr());
 	if (pResVoucher->next())
 	{
 		const int VoucherID = pResVoucher->getInt("ID");
@@ -424,7 +424,7 @@ void CAccountCore::UseVoucher(int ClientID, const char* pVoucher) const
 			GS()->Mmo()->SaveAccount(pPlayer, SaveType::SAVE_STATS);
 			GS()->Mmo()->SaveAccount(pPlayer, SaveType::SAVE_UPGRADES);
 
-			SJK.ID("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Acc().m_UserID, (int)time(0));
+			Sqlpool.Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Acc().m_UserID, (int)time(0));
 			GS()->Chat(ClientID, "You have successfully redeemed the voucher '{STR}'.", pVoucher);
 		}
 

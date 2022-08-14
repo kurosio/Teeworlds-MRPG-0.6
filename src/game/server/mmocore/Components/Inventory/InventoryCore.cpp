@@ -29,9 +29,10 @@ void CInventoryCore::OnPrepareInformation(IStorageEngine* pStorage, CDataFileWri
 
 void CInventoryCore::OnInit()
 {
-	SJK.SDT("*", "tw_items_list", [&](ResultPtr pRes)
+	const auto InitItemsList = Sqlpool.Prepare<DB::SELECT>("*", "tw_items_list");
+	InitItemsList->AtExecute([](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int ItemID = pRes->getInt("ItemID");
 			str_copy(CItemDataInfo::ms_aItemsInfo[ItemID].m_aName, pRes->getString("Name").c_str(), sizeof(CItemDataInfo::ms_aItemsInfo[ItemID].m_aName));
@@ -41,7 +42,7 @@ void CInventoryCore::OnInit()
 			CItemDataInfo::ms_aItemsInfo[ItemID].m_Function = pRes->getInt("Function");
 			CItemDataInfo::ms_aItemsInfo[ItemID].m_Dysenthis = pRes->getInt("Desynthesis");
 			CItemDataInfo::ms_aItemsInfo[ItemID].m_MinimalPrice = pRes->getInt("Selling");
-			for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
+			for (int i = 0; i < STATS_MAX_FOR_ITEM; i++)
 			{
 				char aBuf[32];
 				str_format(aBuf, sizeof(aBuf), "Attribute%d", i);
@@ -53,9 +54,10 @@ void CInventoryCore::OnInit()
 		}
 	});
 
-	SJK.SDT("*", "tw_attributs", [&](ResultPtr pRes)
+	const auto InitAttributes = Sqlpool.Prepare<DB::SELECT>("*", "tw_attributs");
+	InitAttributes->AtExecute([](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int AttID = pRes->getInt("ID");
 			str_copy(CGS::ms_aAttributsInfo[AttID].m_aName, pRes->getString("Name").c_str(), sizeof(CGS::ms_aAttributsInfo[AttID].m_aName));
@@ -70,7 +72,7 @@ void CInventoryCore::OnInit()
 void CInventoryCore::OnInitAccount(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
 		int ItemID = pRes->getInt("ItemID");
@@ -102,7 +104,7 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "After, need select item to interact");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, RED_COLOR, "Inventory Select List");
+		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, RED_COLOR, "Inventory SELECT List");
 		int SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_USED);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", ItemType::TYPE_USED, TAB_INVENTORY_SELECT, "Used ({INT})", SizeItems);
 
@@ -128,10 +130,10 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 		GS()->AVH(ClientID, TAB_INFO_EQUIP, GREEN_COLOR, "Equip / Armor Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EQUIP, "Select tab and select armor.");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EQUIP, "SELECT tab and select armor.");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_EQUIP_SELECT, RED_COLOR, "Equip Select Slot");
+		GS()->AVH(ClientID, TAB_EQUIP_SELECT, RED_COLOR, "Equip SELECT Slot");
 		const char* pType[NUM_EQUIPS] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Wings", "Discord" };
 		for(int i = 0; i < NUM_EQUIPS; i++)
 		{
@@ -275,7 +277,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 void CInventoryCore::RepairDurabilityItems(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	SJK.UD("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	for(auto& it : CItemData::ms_aItems[ClientID])
 		it.second.m_Durability = 100;
 }
@@ -306,7 +308,7 @@ int CInventoryCore::GiveItem(CPlayer *pPlayer, int ItemID, int Value, int Settin
 	const int SecureID = SecureCheck(pPlayer, ItemID, Value, Settings, Enchant);
 	if(SecureID == 1)
 	{
-		SJK.UD("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d' WHERE ItemID = '%d' AND UserID = '%d'",
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d' WHERE ItemID = '%d' AND UserID = '%d'",
 		       CItemData::ms_aItems[ClientID][ItemID].m_Value, CItemData::ms_aItems[ClientID][ItemID].m_Settings, CItemData::ms_aItems[ClientID][ItemID].m_Enchant, ItemID, pPlayer->Acc().m_UserID);
 	}
 	return SecureID;
@@ -316,7 +318,7 @@ int CInventoryCore::SecureCheck(CPlayer *pPlayer, int ItemID, int Value, int Set
 {
 	// check initialize and add the item
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 	if(pRes->next())
 	{
 		CItemData::ms_aItems[ClientID][ItemID].m_Value = pRes->getInt("Value")+Value;
@@ -330,7 +332,7 @@ int CInventoryCore::SecureCheck(CPlayer *pPlayer, int ItemID, int Value, int Set
 	CItemData::ms_aItems[ClientID][ItemID].m_Settings = Settings;
 	CItemData::ms_aItems[ClientID][ItemID].m_Enchant = Enchant;
 	CItemData::ms_aItems[ClientID][ItemID].m_Durability = 100;
-	SJK.ID("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
+	Sqlpool.Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
 		ItemID, pPlayer->Acc().m_UserID, Value, Settings, Enchant);
 	return 2;
 }
@@ -340,7 +342,7 @@ int CInventoryCore::RemoveItem(CPlayer *pPlayer, int ItemID, int Value, int Sett
 	const int SecureID = DeSecureCheck(pPlayer, ItemID, Value, Settings);
 	if(SecureID == 1)
 	{
-		SJK.UD("tw_accounts_items", "Value = Value - '%d', Settings = Settings - '%d' WHERE ItemID = '%d' AND UserID = '%d'",
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = Value - '%d', Settings = Settings - '%d' WHERE ItemID = '%d' AND UserID = '%d'",
 			Value, Settings, ItemID, pPlayer->Acc().m_UserID);
 	}
 	return SecureID;
@@ -350,7 +352,7 @@ int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, int ItemID, int Value, int S
 {
 	// we check the database
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 	if(pRes->next())
 	{
 		// update if there is more
@@ -365,7 +367,7 @@ int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, int ItemID, int Value, int S
 		CItemData::ms_aItems[ClientID][ItemID].m_Value = 0;
 		CItemData::ms_aItems[ClientID][ItemID].m_Settings = 0;
 		CItemData::ms_aItems[ClientID][ItemID].m_Enchant = 0;
-		SJK.DD("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 		return 2;
 	}
 
@@ -489,15 +491,15 @@ void CInventoryCore::AddItemSleep(int AccountID, int ItemID, int Value, int Mill
 			return;
 		}
 
-		ResultPtr pRes = SJK.SD("Value", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, AccountID);
+		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Value", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, AccountID);
 		if(pRes->next())
 		{
 			const int ReallyValue = pRes->getInt("Value") + Value;
-			SJK.UD("tw_accounts_items", "Value = '%d' WHERE UserID = '%d' AND ItemID = '%d'", ReallyValue, AccountID, ItemID);
+			Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d' WHERE UserID = '%d' AND ItemID = '%d'", ReallyValue, AccountID, ItemID);
 			lock_sleep.unlock();
 			return;
 		}
-		SJK.ID("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '0', '0')", ItemID, AccountID, Value);
+		Sqlpool.Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '0', '0')", ItemID, AccountID, Value);
 		lock_sleep.unlock();
 	});
 	Thread.detach();

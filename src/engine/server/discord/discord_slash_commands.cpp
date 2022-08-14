@@ -139,7 +139,7 @@ void DiscordCommands::CmdConnect(SleepyDiscord::Interaction* pInteraction, Disco
 	response.type = SleepyDiscord::Interaction::Response::Type::ChannelMessageWithSource;
 	
 	const CSqlString<64> DiscordID = sqlstr::CSqlString<64>(std::string(pInteraction->member.ID).c_str());
-	ResultPtr pRes = SJK.SD("Nick", "tw_accounts_data", "WHERE DiscordID = '%s'", DiscordID.cstr());
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Nick", "tw_accounts_data", "WHERE DiscordID = '%s'", DiscordID.cstr());
 	if(!pRes->rowsCount())
 	{
 		SleepyDiscord::Embed EmbedConnectInfo;
@@ -261,7 +261,7 @@ void DiscordCommands::CmdRanking(SleepyDiscord::Interaction* pInteraction, Disco
 	EmbedRanking.title = GoldRanking ? "Ranking by Gold" : "Ranking by Level";
 	EmbedRanking.color = DC_DISCORD_INFO;
 
-	ResultPtr pRes = SJK.SD("a.ID, ad.Nick AS `Nick`, ad.Level AS `Level`, g.Value AS `Gold`", "tw_accounts a", "JOIN tw_accounts_data ad ON a.ID = ad.ID LEFT JOIN tw_accounts_items g ON a.ID = g.UserID AND g.ItemID = 1 ORDER BY %s LIMIT 10", (GoldRanking ? "g.Value DESC, ad.Level DESC" : "ad.Level DESC, g.Value DESC"));
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("a.ID, ad.Nick AS `Nick`, ad.Level AS `Level`, g.Value AS `Gold`", "tw_accounts a", "JOIN tw_accounts_data ad ON a.ID = ad.ID LEFT JOIN tw_accounts_items g ON a.ID = g.UserID AND g.ItemID = 1 ORDER BY %s LIMIT 10", (GoldRanking ? "g.Value DESC, ad.Level DESC" : "ad.Level DESC, g.Value DESC"));
 	while(pRes->next())
 	{
 		Names += std::to_string((int)pRes->getRow()) + ". **" + pRes->getString("Nick").c_str() + "**\n";

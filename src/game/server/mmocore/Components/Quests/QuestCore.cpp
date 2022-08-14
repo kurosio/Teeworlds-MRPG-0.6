@@ -6,7 +6,7 @@
 
 void QuestCore::OnInit()
 {
-	ResultPtr pRes = SJK.SD("*", "tw_quests_list");
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_quests_list");
 	while(pRes->next())
 	{
 		const int QUID = pRes->getInt("ID");
@@ -21,7 +21,7 @@ void QuestCore::OnInit()
 void QuestCore::OnInitAccount(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
 		const int QuestID = pRes->getInt("QuestID");

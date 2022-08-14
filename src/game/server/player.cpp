@@ -204,7 +204,7 @@ void CPlayer::Snap(int SnappingClient)
 		pSpectatorInfo->m_Y = m_ViewPos.y;
 	}
 
-	// --------------------- CUSTOM ----------------------
+	// --------------------- OTHER ----------------------
 	if(!GS()->IsMmoClient(SnappingClient) || GetTeam() == TEAM_SPECTATORS || !IsAuthed())
 		return;
 

@@ -25,7 +25,7 @@ void CSkillData::SelectNextControlEmote()
 	if(m_SelectedEmoticion >= NUM_EMOTICONS)
 		m_SelectedEmoticion = -1;
 
-	SJK.UD("tw_accounts_skills", "UsedByEmoticon = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_SelectedEmoticion, m_SkillID, m_pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_SelectedEmoticion, m_SkillID, m_pPlayer->Acc().m_UserID);
 }
 
 bool CSkillData::Use()
@@ -111,18 +111,18 @@ bool CSkillData::Upgrade()
 		return false;
 
 	const int ClientID = m_pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_skills", "WHERE SkillID = '%d' AND UserID = '%d'", m_SkillID, m_pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '%d' AND UserID = '%d'", m_SkillID, m_pPlayer->Acc().m_UserID);
 	if(pRes->next())
 	{
 		m_Level++;
-		SJK.UD("tw_accounts_skills", "Level = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_Level, m_SkillID, m_pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_skills", "Level = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_Level, m_SkillID, m_pPlayer->Acc().m_UserID);
 		GS()->Chat(ClientID, "Increased the skill [{STR} level to {INT}]", Info().m_aName, m_Level);
 		return true;
 	}
 
 	m_Level = 1;
 	m_SelectedEmoticion = -1;
-	SJK.ID("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('%d', '%d', '1');", m_SkillID, m_pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('%d', '%d', '1');", m_SkillID, m_pPlayer->Acc().m_UserID);
 	GS()->Chat(ClientID, "Learned a new skill [{STR}]", Info().m_aName);
 	return true;
 }

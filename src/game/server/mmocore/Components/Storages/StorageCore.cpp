@@ -8,9 +8,10 @@
 
 void CStorageCore::OnInit()
 {
-	SJK.SDT("*", "tw_storages", [&](ResultPtr pRes)
+	const auto InitStorages = Sqlpool.Prepare<DB::SELECT>("*", "tw_storages");
+	InitStorages->AtExecute([](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int ID = pRes->getInt("ID");
 			CStorageData::ms_aStorage[ID].m_PosX = pRes->getInt("PosX");

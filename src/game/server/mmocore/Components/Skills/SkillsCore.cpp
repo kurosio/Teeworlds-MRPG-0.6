@@ -6,9 +6,10 @@
 
 void CSkillsCore::OnInit()
 {
-	SJK.SDT("*", "tw_skills_list", [&](ResultPtr pRes)
+	auto InitSkills = Sqlpool.Prepare<DB::SELECT>("*", "tw_skills_list");
+	InitSkills->AtExecute([](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int SkillID = pRes->getInt("ID");
 			str_copy(CSkillDataInfo::ms_aSkillsData[SkillID].m_aName, pRes->getString("Name").c_str(), sizeof(CSkillDataInfo::ms_aSkillsData[SkillID].m_aName));
@@ -27,7 +28,7 @@ void CSkillsCore::OnInit()
 void CSkillsCore::OnInitAccount(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
 		const int SkillID = pRes->getInt("SkillID");

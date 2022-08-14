@@ -14,9 +14,10 @@
 void CHouseCore::OnInitWorld(const char* pWhereLocalWorld)
 {
 	// load house
-	SJK.SDT("*", "tw_houses", [&](ResultPtr pRes)
+	const auto InitHouses = Sqlpool.Prepare<DB::SELECT>("*", "tw_houses", pWhereLocalWorld);
+	InitHouses->AtExecute([this](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int HouseID = pRes->getInt("ID");
 			CHouseData::ms_aHouse[HouseID].m_DoorX = pRes->getInt("DoorX");
@@ -31,26 +32,27 @@ void CHouseCore::OnInitWorld(const char* pWhereLocalWorld)
 			CHouseData::ms_aHouse[HouseID].m_PlantID = pRes->getInt("PlantID");
 			CHouseData::ms_aHouse[HouseID].m_PlantPosX = pRes->getInt("PlantX");
 			CHouseData::ms_aHouse[HouseID].m_PlantPosY = pRes->getInt("PlantY");
-			if(GS()->GetWorldID() == CHouseData::ms_aHouse[HouseID].m_WorldID && CHouseData::ms_aHouse[HouseID].m_UserID > 0 && !CHouseData::ms_aHouse[HouseID].m_Door)
+			if (GS()->GetWorldID() == CHouseData::ms_aHouse[HouseID].m_WorldID && CHouseData::ms_aHouse[HouseID].m_UserID > 0 && !CHouseData::ms_aHouse[HouseID].m_Door)
 			{
 				CHouseData::ms_aHouse[HouseID].m_Door = nullptr;
 				CHouseData::ms_aHouse[HouseID].m_Door = new HouseDoor(&GS()->m_World, vec2(CHouseData::ms_aHouse[HouseID].m_DoorX, CHouseData::ms_aHouse[HouseID].m_DoorY));
 			}
 		}
 		Job()->ShowLoadingProgress("Houses", CHouseData::ms_aHouse.size());
-	}, pWhereLocalWorld);
+	});
 
 	// load decoration
-	SJK.SDT("*", "tw_houses_decorations", [&](ResultPtr pRes)
+	const auto InitHouseDecorations = Sqlpool.Prepare<DB::SELECT>("*", "tw_houses_decorations", pWhereLocalWorld);
+	InitHouseDecorations->AtExecute([this](IServer*, ResultPtr pRes)
 	{
-		while(pRes->next())
+		while (pRes->next())
 		{
 			const int DecoID = pRes->getInt("ID");
 			m_aDecorationHouse[DecoID] = new CDecorationHouses(&GS()->m_World, vec2(pRes->getInt("PosX"),
 				pRes->getInt("PosY")), pRes->getInt("HouseID"), pRes->getInt("DecoID"));
 		}
 		Job()->ShowLoadingProgress("Houses Decorations", m_aDecorationHouse.size());
-	}, pWhereLocalWorld);
+	});
 }
 
 bool CHouseCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
@@ -103,9 +105,9 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 	{
 		pPlayer->m_LastVoteMenu = MENU_HOUSE;
 		GS()->AVH(ClientID, TAB_INFO_DECORATION, GREEN_COLOR, "Decorations Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Add: Select your item in list. Select (Add to house),");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Add: SELECT your item in list. SELECT (Add to house),");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "later press (ESC) and mouse select position");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: Select down your decorations");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: SELECT down your decorations");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "and press (Back to inventory).");
 
 		Job()->Item()->ListInventory(pPlayer, TYPE_DECORATION);
@@ -131,7 +133,7 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 		const int PlantItemID = GetPlantsID(HouseID);
 
 		GS()->AVH(ClientID, TAB_INFO_HOUSE_PLANT, GREEN_COLOR, "Plants Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_PLANT, "Select item and in tab select 'To plant'");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_PLANT, "SELECT item and in tab select 'To plant'");
 		GS()->AV(ClientID, "null");
 
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Housing Active Plants: {STR}", GS()->GetItemInfo(PlantItemID).GetName());
@@ -327,7 +329,7 @@ void CHouseCore::ChangePlantsID(int HouseID, int PlantID)
 	if(Updates)
 	{
 		CHouseData::ms_aHouse[HouseID].m_PlantID = PlantID;
-		SJK.UD("tw_houses", "PlantID = '%d' WHERE ID = '%d'", PlantID, HouseID);
+		Sqlpool.Execute<DB::UPDATE>("tw_houses", "PlantID = '%d' WHERE ID = '%d'", PlantID, HouseID);
 	}
 }
 
@@ -347,16 +349,16 @@ bool CHouseCore::AddDecorationHouse(int DecoID, int HouseID, vec2 Position)
 		return false;
 	}
 
-	ResultPtr pRes = SJK.SD("ID", "tw_houses_decorations", "WHERE HouseID = '%d'", HouseID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_houses_decorations", "WHERE HouseID = '%d'", HouseID);
 	if(static_cast<int>(pRes->rowsCount()) >= g_Config.m_SvLimitDecoration)
 	{
 		return false;
 	}
 
-	ResultPtr pRes2 = SJK.SD("ID", "tw_houses_decorations", "ORDER BY ID DESC LIMIT 1");
+	ResultPtr pRes2 = Sqlpool.Execute<DB::SELECT>("ID", "tw_houses_decorations", "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pRes2->next() ? pRes2->getInt("ID")+1 : 1;
 
-	SJK.ID("tw_houses_decorations", "(ID, DecoID, HouseID, X, Y, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
+	Sqlpool.Execute<DB::INSERT>("tw_houses_decorations", "(ID, DecoID, HouseID, X, Y, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
 		InitID, DecoID, HouseID, static_cast<int>(Position.x), static_cast<int>(Position.y), GS()->GetWorldID());
 
 	m_aDecorationHouse[InitID] = new CDecorationHouses(&GS()->m_World, Position, HouseID, DecoID);
@@ -373,7 +375,7 @@ bool CHouseCore::DeleteDecorationHouse(int ID)
 			m_aDecorationHouse[ID] = nullptr;
 		}
 		m_aDecorationHouse.erase(ID);
-		SJK.DD("tw_houses_decorations", "WHERE ID = '%d'", ID);
+		Sqlpool.Execute<DB::REMOVE>("tw_houses_decorations", "WHERE ID = '%d'", ID);
 		return true;
 	}
 	return false;
@@ -582,7 +584,7 @@ void CHouseCore::BuyHouse(int HouseID, CPlayer *pPlayer)
 		return;
 	}
 
-	ResultPtr pRes = SJK.SD("UserID, Price", "tw_houses", "WHERE ID = '%d' AND UserID IS NULL", HouseID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("UserID, Price", "tw_houses", "WHERE ID = '%d' AND UserID IS NULL", HouseID);
 	if(pRes->next())
 	{
 		const int Price = pRes->getInt("Price");
@@ -593,7 +595,7 @@ void CHouseCore::BuyHouse(int HouseID, CPlayer *pPlayer)
 
 		CHouseData::ms_aHouse[HouseID].m_Bank = 0;
 		CHouseData::ms_aHouse[HouseID].m_UserID = pPlayer->Acc().m_UserID;
-		SJK.UD("tw_houses", "UserID = '%d', HouseBank = '0' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_UserID, HouseID);
+		Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_UserID, HouseID);
 
 		GS()->Chat(-1, "{STR} becomes the owner of the house class {STR}", Server()->ClientName(ClientID), CHouseData::ms_aHouse[HouseID].m_aClass);
 		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**{STR} becomes the owner of the house class {STR}**", Server()->ClientName(ClientID), CHouseData::ms_aHouse[HouseID].m_aClass);
@@ -606,13 +608,13 @@ void CHouseCore::BuyHouse(int HouseID, CPlayer *pPlayer)
 
 void CHouseCore::SellHouse(int HouseID)
 {
-	ResultPtr pRes = SJK.SD("HouseBank, UserID", "tw_houses", "WHERE ID = '%d' AND UserID IS NOT NULL", HouseID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("HouseBank, UserID", "tw_houses", "WHERE ID = '%d' AND UserID IS NOT NULL", HouseID);
 	if(pRes->next())
 	{
 		const int UserID = pRes->getInt("UserID");
 		const int Price = CHouseData::ms_aHouse[HouseID].m_Price + pRes->getInt("HouseBank");
 		GS()->SendInbox("System", UserID, "House is sold", "Your house is sold !", itGold, Price, 0);
-		SJK.UD("tw_houses", "UserID = NULL, HouseBank = '0' WHERE ID = '%d'", HouseID);
+		Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0' WHERE ID = '%d'", HouseID);
 
 		CPlayer *pPlayer = GS()->GetPlayerFromUserID(UserID);
 		if(pPlayer)
@@ -637,7 +639,7 @@ void CHouseCore::SellHouse(int HouseID)
 void CHouseCore::TakeFromSafeDeposit(CPlayer* pPlayer, int TakeValue)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	if(!pRes->next())
 	{
 		return;
@@ -653,14 +655,14 @@ void CHouseCore::TakeFromSafeDeposit(CPlayer* pPlayer, int TakeValue)
 
 	pPlayer->AddMoney(TakeValue);
 	CHouseData::ms_aHouse[HouseID].m_Bank = Bank - TakeValue;
-	SJK.UD("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_Bank, HouseID);
+	Sqlpool.Execute<DB::UPDATE>("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_Bank, HouseID);
 	GS()->Chat(ClientID, "You take {INT} gold in the safe {INT}!", TakeValue, CHouseData::ms_aHouse[HouseID].m_Bank);
 }
 
 void CHouseCore::AddSafeDeposit(CPlayer *pPlayer, int Balance)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = SJK.SD("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	if(!pRes->next())
 	{
 		return;
@@ -669,7 +671,7 @@ void CHouseCore::AddSafeDeposit(CPlayer *pPlayer, int Balance)
 	const int HouseID = pRes->getInt("ID");
 	CHouseData::ms_aHouse[HouseID].m_Bank = pRes->getInt("HouseBank") + Balance;
 	GS()->Chat(ClientID, "You put {INT} gold in the safe {INT}!", Balance, CHouseData::ms_aHouse[HouseID].m_Bank);
-	SJK.UD("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_Bank, HouseID);
+	Sqlpool.Execute<DB::UPDATE>("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_Bank, HouseID);
 }
 
 bool CHouseCore::ChangeStateDoor(int HouseID)

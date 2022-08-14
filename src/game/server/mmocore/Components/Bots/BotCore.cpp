@@ -22,7 +22,7 @@ static int GetIntegerEmoteValue(const char* JsonName, const char* JsonValue)
 
 static void InitInformationBots()
 {
-	ResultPtr pRes = SJK.SD("*", "tw_bots_info");
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_info");
 	while(pRes->next())
 	{
 		const int BotID = pRes->getInt("ID");
@@ -74,7 +74,7 @@ void CBotCore::OnInitWorld(const char* pWhereLocalWorld)
 // Initialization of quest bots
 void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = SJK.SD("*", "tw_bots_quest", pWhereLocalWorld);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_quest", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
@@ -131,7 +131,7 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 // Initialization of NPC bots
 void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = SJK.SD("*", "tw_bots_npc", pWhereLocalWorld);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_npc", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
@@ -177,7 +177,7 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 // Initialization of mobs bots
 void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = SJK.SD("*", "tw_bots_mobs", pWhereLocalWorld);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_mobs", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
@@ -378,16 +378,16 @@ void CBotCore::ConAddCharacterBot(int ClientID, const char* pCharacter)
 
 	// check the nick
 	CSqlString<16> cNick = CSqlString<16>(pCharacter);
-	ResultPtr pRes = SJK.SD("*", "tw_bots_info", "WHERE Name = '%s'", cNick.cstr());
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_info", "WHERE Name = '%s'", cNick.cstr());
 	if(pRes->next())
 	{
 		// if the nickname is not in the database
-		SJK.UD("tw_bots_info", "JsonTeeInfo = '%s' WHERE ID = '%d'", JsonTeeInfo.dump().c_str());
+		Sqlpool.Execute<DB::UPDATE>("tw_bots_info", "JsonTeeInfo = '%s' WHERE ID = '%d'", JsonTeeInfo.dump().c_str());
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Updated character bot!");
 		return;
 	}
 
 	// add a new bot
-	SJK.ID("tw_bots_info", "(Name, JsonTeeInfo) VALUES ('%s', '%s')", cNick.cstr(), JsonTeeInfo.dump().c_str());
+	Sqlpool.Execute<DB::INSERT>("tw_bots_info", "(Name, JsonTeeInfo) VALUES ('%s', '%s')", cNick.cstr(), JsonTeeInfo.dump().c_str());
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Added new character bot!");
 }

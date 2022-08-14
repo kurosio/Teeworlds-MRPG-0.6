@@ -164,7 +164,7 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 	if(Table == SAVE_STATS)
 	{
 		const int EquipDiscord = pPlayer->GetEquippedItemID(EQUIP_DISCORD);
-		SJK.UD("tw_accounts_data", "Level = '%d', Exp = '%d', DiscordEquip = '%d' WHERE ID = '%d'",
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d', DiscordEquip = '%d' WHERE ID = '%d'",
 			pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, EquipDiscord, pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_UPGRADES)
@@ -179,7 +179,7 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 			Buffer.append_at(Buffer.length(), aBuf);
 		}
 
-		SJK.UD("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Acc().m_Upgrade, Buffer.buffer(), pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Acc().m_Upgrade, Buffer.buffer(), pPlayer->Acc().m_UserID);
 		Buffer.clear();
 	}
 	else if(Table == SAVE_PLANT_DATA)
@@ -194,7 +194,7 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 			Buffer.append_at(Buffer.length(), aBuf);
 		}
 
-		SJK.UD("tw_accounts_farming", "%s WHERE UserID = '%d'", Buffer.buffer(), pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Buffer.buffer(), pPlayer->Acc().m_UserID);
 		Buffer.clear();
 	}
 	else if(Table == SAVE_MINER_DATA)
@@ -209,31 +209,31 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 			Buffer.append_at(Buffer.length(), aBuf);
 		}
 
-		SJK.UD("tw_accounts_mining", "%s WHERE UserID = '%d'", Buffer.buffer(), pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Buffer.buffer(), pPlayer->Acc().m_UserID);
 		Buffer.clear();
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{
-		SJK.UD("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Acc().m_GuildID, pPlayer->Acc().m_GuildRank, pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Acc().m_GuildID, pPlayer->Acc().m_GuildRank, pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_POSITION)
 	{
 		const int LatestCorrectWorldID = Account()->GetHistoryLatestCorrectWorldID(pPlayer);
-		SJK.UD("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_LANGUAGE)
 	{
-		SJK.UD("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pPlayer->Acc().m_UserID);
 	}
 	else
 	{
-		SJK.UD("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc().m_aLogin, pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc().m_aLogin, pPlayer->Acc().m_UserID);
 	}
 }
 
 void MmoController::LoadLogicWorld() const
 {
-	ResultPtr pRes = SJK.SD("*", "tw_logics_worlds", "WHERE WorldID = '%d'", GS()->GetWorldID());
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_logics_worlds", "WHERE WorldID = '%d'", GS()->GetWorldID());
 	while(pRes->next())
 	{
 		const int Type = pRes->getInt("MobID"), Mode = pRes->getInt("Mode"), Health = pRes->getInt("ParseInt");
@@ -245,7 +245,7 @@ void MmoController::LoadLogicWorld() const
 char SaveNick[32];
 const char* MmoController::PlayerName(int AccountID)
 {
-	ResultPtr pRes = SJK.SD("Nick", "tw_accounts_data", "WHERE ID = '%d'", AccountID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Nick", "tw_accounts_data", "WHERE ID = '%d'", AccountID);
 	if(pRes->next())
 	{
 		str_copy(SaveNick, pRes->getString("Nick").c_str(), sizeof(SaveNick));
@@ -267,7 +267,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	pPlayer->m_VoteColored = SMALL_LIGHT_GRAY_COLOR;
 	if(TypeID == GUILDS_LEVELING)
 	{
-		ResultPtr pRes = SJK.SD("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT 10");
+		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT 10");
 		while (pRes->next())
 		{
 			char NameGuild[64];
@@ -280,7 +280,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 	else if (TypeID == GUILDS_WEALTHY)
 	{
-		ResultPtr pRes = SJK.SD("*", "tw_guilds", "ORDER BY Bank DESC LIMIT 10");
+		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT 10");
 		while (pRes->next())
 		{
 			char NameGuild[64];
@@ -292,7 +292,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 	else if (TypeID == PLAYERS_LEVELING)
 	{
-		ResultPtr pRes = SJK.SD("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT 10");
+		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT 10");
 		while (pRes->next())
 		{
 			char Nick[64];
@@ -305,7 +305,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 	else if (TypeID == PLAYERS_WEALTHY)
 	{
-		ResultPtr pRes = SJK.SD("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT 10", (int)itGold);
+		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT 10", (int)itGold);
 		while (pRes->next())
 		{
 			char Nick[64];
