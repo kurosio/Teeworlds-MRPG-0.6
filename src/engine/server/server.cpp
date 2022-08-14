@@ -341,6 +341,8 @@ int CServer::Init()
 		m_aClients[i].m_Country = -1;
 		m_aClients[i].m_Snapshots.Init();
 	}
+
+	Sqlpool.Init(this);
 	return 0;
 }
 

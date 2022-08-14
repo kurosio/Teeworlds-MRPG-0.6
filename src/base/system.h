@@ -1005,23 +1005,6 @@ int str_format(char *buffer, int buffer_size, const char *format, ...)
 GNUC_ATTRIBUTE((format(printf, 3, 4)));
 
 /*
-	Function: va_str_format
-		Performs printf formating into a buffer.
-
-	Parameters:
-		buffer - Pointer to the buffer to recive the formated string.
-		buffer_size - Size of the buffer.
-		format - printf formating string.
-		... - Parameters for the formating.
-
-	Remarks:
-		- See the C manual for syntax for the printf formating string.
-		- The strings are treated as zero-terminated strings.
-		- Garantees that dst string will contain zero-termination.
-*/
-int va_str_format(char* buffer, int buffer_size, const char* format, va_list VarArgs);
-
-/*
 	Function: str_sanitize_strong
 		Replaces all characters below 32 and above 127 with whitespace.
 

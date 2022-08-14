@@ -4,10 +4,7 @@
 //TODO: add precompiled headers
 
 // core
-#include <mysql_connection.h>
-#include <cppconn/driver.h>
-#include <cppconn/statement.h>
-#include <cppconn/resultset.h>
+#include <engine/server/sql_connect_pool.h>
 
 // custom something that is subject to less changes is introduced
 #include <base/system.h>
