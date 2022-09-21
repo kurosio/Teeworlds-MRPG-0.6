@@ -14,6 +14,8 @@ using namespace sql;
 typedef std::unique_ptr<ResultSet> ResultPtr;
 inline std::recursive_mutex g_SqlThreadRecursiveLock;
 
+#define MAX_QUERY_LEN 2048
+
 enum class DB
 {
 	SELECT = 0,
@@ -22,6 +24,17 @@ enum class DB
 	REMOVE,
 	OTHER,
 };
+
+#define FORMAT_STRING_ARGS(format, output, len) \
+{                                               \
+	va_list ap;                                 \
+	char buffer[len];                           \
+	va_start(ap, format);                       \
+	vsprintf(buffer, format, ap);               \
+	buffer[len - 1] = 0;						\
+	va_end(ap);                                 \
+	(output) = buffer;                          \
+}
 
 static int va_str_format(char* buffer, int buffer_size, const char* format, va_list VarArgs)
 {
@@ -73,13 +86,9 @@ private:
 	public:
 		CResultSelect& UpdateQuery(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
 		{
-			char aBuf[1024];
-			va_list VarArgs;
-			va_start(VarArgs, pBuffer);
-			va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-			va_end(VarArgs);
-
-			m_Query = std::string("SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + std::string(aBuf) + ";");
+			std::string strQuery;
+			FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+			m_Query = std::string("SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + strQuery + ";");
 			return *this;
 		}
 
@@ -111,7 +120,7 @@ private:
 			return pResult;
 		}
 
-		void AtExecute(const std::function<void(IServer*, ResultPtr)>& pCallback = nullptr)
+		void AtExecute(const std::function<void(IServer*, ResultPtr)> pCallback = nullptr)
 		{
 			auto Item = [pCallback](const std::string Query)
 			{
@@ -148,18 +157,15 @@ private:
 	public:
 		CResultQuery& UpdateQuery(const char* pTable, const char* pBuffer, ...)
 		{
-			char aBuf[1024];
-			va_list VarArgs;
-			va_start(VarArgs, pBuffer);
-			va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-			va_end(VarArgs);
+			std::string strQuery;
+			FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
 
 			if (m_TypeQuery == DB::INSERT)
-				m_Query = std::string("INSERT INTO " + std::string(pTable) + " " + std::string(aBuf) + ";");
+				m_Query = std::string("INSERT INTO " + std::string(pTable) + " " + strQuery + ";");
 			else if (m_TypeQuery == DB::UPDATE)
-				m_Query = std::string("UPDATE " + std::string(pTable) + " SET " + std::string(aBuf) + ";");
+				m_Query = std::string("UPDATE " + std::string(pTable) + " SET " + strQuery + ";");
 			else if (m_TypeQuery == DB::REMOVE)
-				m_Query = std::string("DELETE FROM " + std::string(pTable) + " " + std::string(aBuf) + ";");
+				m_Query = std::string("DELETE FROM " + std::string(pTable) + " " + strQuery + ";");
 			return *this;
 		}
 
@@ -204,13 +210,9 @@ private:
 	public:
 		CResultQueryCustom& UpdateQuery(const char* pBuffer, ...)
 		{
-			char aBuf[1024];
-			va_list VarArgs;
-			va_start(VarArgs, pBuffer);
-			va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-			va_end(VarArgs);
-
-			m_Query = std::string(std::string(aBuf) + ";");
+			std::string strQuery;
+			FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+			m_Query = std::string(strQuery + ";");
 			return *this;
 		}
 	};
@@ -218,10 +220,10 @@ private:
 	// - - - - - - - - - - - - - - - -
 	// select
 	// - - - - - - - - - - - - - - - -
-	static std::shared_ptr<CResultSelect> PrepareQuerySelect(DB Type, const char* pSelect, const char* pTable, const char* pBuffer)
+	static std::shared_ptr<CResultSelect> PrepareQuerySelect(DB Type, const char* pSelect, const char* pTable, std::string strQuery)
 	{
 		CResultSelect Data;
-		Data.m_Query = std::string("SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + std::string(pBuffer) + ";");
+		Data.m_Query = std::string("SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + strQuery + ";");
 		Data.m_TypeQuery = Type;
 
 		return std::make_shared<CResultSelect>(Data);
@@ -231,37 +233,31 @@ public:
 	template<DB T>
 	static std::enable_if_t<T == DB::SELECT, std::shared_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
 	{
-		char aBuf[1024];
-		va_list VarArgs;
-		va_start(VarArgs, pBuffer);
-		va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-		va_end(VarArgs);
+		std::string strQuery;
+		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
 
 		// checking format query
-		return PrepareQuerySelect(T, pSelect, pTable, aBuf);
+		return PrepareQuerySelect(T, pSelect, pTable, strQuery);
 	}
 
 	template<DB T>
 	static std::enable_if_t<T == DB::SELECT, ResultPtr> Execute(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
 	{
-		char aBuf[1024];
-		va_list VarArgs;
-		va_start(VarArgs, pBuffer);
-		va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-		va_end(VarArgs);
+		std::string strQuery;
+		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
 
 		// checking format query
-		return PrepareQuerySelect(T, pSelect, pTable, aBuf)->Execute();
+		return PrepareQuerySelect(T, pSelect, pTable, strQuery)->Execute();
 	}
 
 	// - - - - - - - - - - - - - - - -
 	// custom
 	// - - - - - - - - - - - - - - - -
 private:
-	static std::shared_ptr<CResultQueryCustom> PrepareQueryCustom(DB Type, const char* pBuffer)
+	static std::shared_ptr<CResultQueryCustom> PrepareQueryCustom(DB Type, std::string strQuery)
 	{
 		CResultQueryCustom Data;
-		Data.m_Query = std::string(std::string(pBuffer) + ";");
+		Data.m_Query = std::string(strQuery + ";");
 		Data.m_TypeQuery = Type;
 
 		return std::make_shared<CResultQueryCustom>(Data);
@@ -271,43 +267,37 @@ public:
 	template<DB T>
 	static std::enable_if_t<T == DB::OTHER, CResultQueryCustom> Prepare(const char* pBuffer, ...)
 	{
-		char aBuf[1024];
-		va_list VarArgs;
-		va_start(VarArgs, pBuffer);
-		va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-		va_end(VarArgs);
+		std::string strQuery;
+		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
 
 		// checking format query
-		return PrepareQueryCustom(T, aBuf);
+		return PrepareQueryCustom(T, strQuery);
 	}
 
 	template<DB T, int Milliseconds = 0>
 	static std::enable_if_t<T == DB::OTHER, void> Execute(const char* pBuffer, ...)
 	{
-		char aBuf[1024];
-		va_list VarArgs;
-		va_start(VarArgs, pBuffer);
-		va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-		va_end(VarArgs);
+		std::string strQuery;
+		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
 
 		// checking format query
-		PrepareQueryCustom(T, aBuf)->Execute(Milliseconds);
+		PrepareQueryCustom(T, strQuery)->Execute(Milliseconds);
 	}
 
 	// - - - - - - - - - - - - - - - -
 	// insert : update : delete
 	// - - - - - - - - - - - - - - - -
 private:
-	static std::shared_ptr<CResultQuery> PrepareQueryInsertUpdateDelete(DB Type, const char * pTable, const char* pBuffer)
+	static std::shared_ptr<CResultQuery> PrepareQueryInsertUpdateDelete(DB Type, const char * pTable, std::string strQuery)
 	{
 		CResultQuery Data;
 		Data.m_TypeQuery = Type;
 		if(Type == DB::INSERT)
-			Data.m_Query = std::string("INSERT INTO " + std::string(pTable) + " " + std::string(pBuffer) + ";");
+			Data.m_Query = std::string("INSERT INTO " + std::string(pTable) + " " + strQuery + ";");
 		else if(Type == DB::UPDATE)
-			Data.m_Query = std::string("UPDATE " + std::string(pTable) + " SET " + std::string(pBuffer) + ";");
+			Data.m_Query = std::string("UPDATE " + std::string(pTable) + " SET " + strQuery + ";");
 		else if(Type == DB::REMOVE)
-			Data.m_Query = std::string("DELETE FROM " + std::string(pTable) + " " + std::string(pBuffer) + ";");
+			Data.m_Query = std::string("DELETE FROM " + std::string(pTable) + " " + strQuery + ";");
 
 		return std::make_shared<CResultQuery>(Data);
 	}
@@ -316,27 +306,21 @@ public:
 	template<DB T>
 	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), CResultQuery> Prepare(const char* pTable, const char* pBuffer, ...)
 	{
-		char aBuf[1024];
-		va_list VarArgs;
-		va_start(VarArgs, pBuffer);
-		va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-		va_end(VarArgs);
+		std::string strQuery;
+		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
 
 		// checking format query
-		return PrepareQueryInsertUpdateDelete(T, pTable, aBuf);
+		return PrepareQueryInsertUpdateDelete(T, pTable, strQuery);
 	}
 
 	template<DB T, int Milliseconds = 0>
 	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), void> Execute(const char* pTable, const char* pBuffer, ...)
 	{
-		char aBuf[1024];
-		va_list VarArgs;
-		va_start(VarArgs, pBuffer);
-		va_str_format(aBuf, sizeof(aBuf), pBuffer, VarArgs);
-		va_end(VarArgs);
+		std::string strQuery;
+		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
 
 		// checking format query
-		PrepareQueryInsertUpdateDelete(T, pTable, aBuf)->Execute(Milliseconds);
+		PrepareQueryInsertUpdateDelete(T, pTable, strQuery)->Execute(Milliseconds);
 	}
 };
 

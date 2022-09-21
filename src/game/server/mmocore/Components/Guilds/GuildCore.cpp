@@ -53,9 +53,8 @@ void GuildCore::OnInitWorld(const char* pWhereLocalWorld)
 {
 	// load houses
 	const auto InitGuildHouses = Sqlpool.Prepare<DB::SELECT>("*", "tw_guilds_houses", pWhereLocalWorld);
-	InitGuildHouses->AtExecute([](IServer* pServer, ResultPtr pRes)
+	InitGuildHouses->AtExecute([this](IServer* pServer, ResultPtr pRes)
 	{
-		CGS* pGS = (CGS*)pServer->GameServer();
 		while (pRes->next())
 		{
 			int HouseID = pRes->getInt("ID");
@@ -71,10 +70,10 @@ void GuildCore::OnInitWorld(const char* pWhereLocalWorld)
 			if (CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID > 0 && !CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor)
 			{
 				CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = 0;
-				CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = new GuildDoor(&pGS->m_World, vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX, CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY), CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID);
+				CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = new GuildDoor(&GS()->m_World, vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX, CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY), CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID);
 			}
 		}
-		pGS->Mmo()->ShowLoadingProgress("Guilds Houses", CGuildHouseData::ms_aHouseGuild.size());
+		Job()->ShowLoadingProgress("Houses", CGuildHouseData::ms_aHouseGuild.size());
 	});
 
 	const auto InitGuildHouseDecorations = Sqlpool.Prepare<DB::SELECT>("*", "tw_guilds_decorations", pWhereLocalWorld);
