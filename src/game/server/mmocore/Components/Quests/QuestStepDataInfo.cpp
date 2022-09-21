@@ -151,7 +151,7 @@ void CPlayerQuestStepDataInfo::DoCollectItem(CPlayer* pPlayer)
 		const int Value = m_Bot->m_aItemSearchValue[i];
 		if(ItemID > 0 && Value > 0)
 		{
-			pGS->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{INT} to the {STR}!", pPlayer->GetItem(ItemID).Info().GetName(), Value, m_Bot->GetName());
+			pGS->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(ItemID).Info().GetName(), Value, m_Bot->GetName());
 			antiStressing = ItemID == m_Bot->m_aItemGives[0] || ItemID == m_Bot->m_aItemGives[1];
 			pPlayer->GetItem(ItemID).Remove(Value);
 		}
@@ -308,7 +308,7 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* TextTa
 		{
 			CItemData PlayerQuestItem = pPlayer->GetItem(ItemID);
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Need {STR} [{INT}/{INT}]", PlayerQuestItem.Info().GetName(), PlayerQuestItem.m_Value, ValueItem);
+			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Need {STR} [{VAL}/{VAL}]", PlayerQuestItem.Info().GetName(), PlayerQuestItem.m_Value, ValueItem);
 			IsActiveTask = true;
 		}
 	}
@@ -321,7 +321,7 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* TextTa
 		if(ItemID > 0 && ValueItem > 0)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Receive {STR} [{INT}]", pPlayer->GetItem(ItemID).Info().GetName(), ValueItem);
+			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Receive {STR} [{VAL}]", pPlayer->GetItem(ItemID).Info().GetName(), ValueItem);
 		}
 	}
 

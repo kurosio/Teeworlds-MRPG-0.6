@@ -150,7 +150,7 @@ void CAetherCore::ShowTeleportList(CCharacter* pChar) const
 		}
 
 		const int Price = g_Config.m_SvPriceTeleport * (tl.second.m_WorldID + 1);
-		GS()->AVD(ClientID, "TELEPORT", tl.first, Price, TAB_AETHER, "[{STR}] : {STR} - {INT}gold",
+		GS()->AVD(ClientID, "TELEPORT", tl.first, Price, TAB_AETHER, "[{STR}] : {STR} - {VAL}gold",
 			tl.second.m_aName, Server()->GetWorldName(tl.second.m_WorldID), Price);
 	}
 	GS()->AV(ClientID, "null");

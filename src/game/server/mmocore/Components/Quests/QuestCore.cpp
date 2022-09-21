@@ -169,7 +169,7 @@ void QuestCore::ShowQuestID(CPlayer *pPlayer, int QuestID)
 		pPlayer->m_VoteColored = GOLDEN_COLOR;
 		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pData.GetName());
 		pPlayer->m_VoteColored = LIGHT_GOLDEN_COLOR;
-		pPlayer->GS()->AVL(ClientID, "null", "Gold: {INT} Exp: {INT}", pData.m_Gold, pData.m_Exp);
+		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pData.m_Gold, pData.m_Exp);
 
 		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
 		pPlayer->GS()->AddVotesBackpage(ClientID);
@@ -220,7 +220,7 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			{
 				CItemData PlayerItem = pPlayer->GetItem(NeedItemID);
 				int ClapmItem = clamp(PlayerItem.m_Value, 0, NeedValue);
-				GS()->AVMI(ClientID, PlayerItem.Info().GetIcon(), "null", NOPE, HideID, "- Item {STR} [{INT}/{INT}]", PlayerItem.Info().GetName(), ClapmItem, NeedValue);
+				GS()->AVMI(ClientID, PlayerItem.Info().GetIcon(), "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", PlayerItem.Info().GetName(), ClapmItem, NeedValue);
 				NeedOnlyTalk = false;
 			}
 		}
@@ -233,7 +233,7 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			if(RewardItemID > 0 && RewardValue > 0)
 			{
 				CItemDataInfo &RewardItem = GS()->GetItemInfo(RewardItemID);
-				GS()->AVMI(ClientID, RewardItem.GetIcon(), "null", NOPE, HideID, "- Receive {STR}x{INT}", RewardItem.GetName(), RewardValue);
+				GS()->AVMI(ClientID, RewardItem.GetIcon(), "null", NOPE, HideID, "- Receive {STR}x{VAL}", RewardItem.GetName(), RewardValue);
 			}
 		}
 

@@ -58,8 +58,8 @@
             "value": "Glue"
         },
         {
-            "key": "{INT}. {STR} | {INT}:{INT}min | {INT}P",
-            "value": "{INT}. {STR} | {INT}:{INT}min | {INT}P"
+            "key": "{INT}. {STR} | {INT}:{INT}min | {VAL}P",
+            "value": "{INT}. {STR} | {INT}:{INT}min | {VAL}P"
         },
         {
             "hash": 4426147474729893160,
@@ -3034,8 +3034,8 @@
             "value": "技能点 {INT}SP"
         },
         {
-            "key": "Gold: {INT}",
-            "value": "钱: {INT}"
+            "key": "Gold: {VAL}",
+            "value": "钱: {VAL}"
         },
         {
             "key": "☪ SUB MENU PERSONAL",
@@ -3314,8 +3314,8 @@
             "value": "语言设置"
         },
         {
-            "key": "Required {INT}, but you have only {INT} {STR}!",
-            "value": "要求 {INT}, 但是你只有 {INT} {STR}!"
+            "key": "Required {VAL}, but you have only {VAL} {STR}!",
+            "value": "要求 {VAL}, 但是你只有 {VAL} {STR}!"
         },
         {
             "key": "Not upgrade points for +{INT}. Required {INT}.",
@@ -3402,8 +3402,8 @@
             "value": "任务还没有做完！!"
         },
         {
-            "key": "[Done] Give the {STR}x{INT} to the {STR}!",
-            "value": "[完成] 给 {STR}x{INT} {STR}!"
+            "key": "[Done] Give the {STR}x{VAL} to the {STR}!",
+            "value": "[完成] 给 {STR}x{VAL} {STR}!"
         },
         {
             "key": "[Done] Defeat the {STR}'s for the {STR}!",
@@ -3881,12 +3881,12 @@
             "value": "丢弃 {STR}"
         },
         {
-            "key": "Disassemble {STR} (+{INT} materials)",
-            "value": "拆解{STR} (+{INT} 附魔材料)"
+            "key": "Disassemble {STR} (+{VAL} materials)",
+            "value": "拆解{STR} (+{VAL} 附魔材料)"
         },
         {
-            "key": "Enchant {STR} ({INT} materials)",
-            "value": "附魔 {STR} ({INT} 附魔材料"
+            "key": "Enchant {STR} ({VAL} materials)",
+            "value": "附魔 {STR} ({VAL} 附魔材料"
         },
         {
             "key": "To plant {STR}, to house (0.06%)",
@@ -3933,12 +3933,12 @@
             "value": "附魔等级达到上限"
         },
         {
-            "key": "Disassemble {STR}x{INT}, you receive {INT} materials",
-            "value": "拆解{STR}x{INT}, 你获得{INT}附魔材料"
+            "key": "Disassemble {STR}x{VAL}, you receive {VAL} materials",
+            "value": "拆解{STR}x{VAL}, 你获得{VAL}附魔材料"
         },
         {
-            "key": "You drop {STR}x{INT}",
-            "value": "你丢掉 {STR}x{INT}"
+            "key": "You drop {STR}x{VAL}",
+            "value": "你丢掉 {STR}x{VAL}"
         },
         {
             "key": "There are no items in this tab",
@@ -3969,8 +3969,8 @@
             "value": "选择你想要展示的物品的种类"
         },
         {
-            "key": "You got of the {STR}x{INT}.",
-            "value": "你获得了 {STR}x{INT}."
+            "key": "You got of the {STR}x{VAL}.",
+            "value": "你获得了 {STR}x{VAL}."
         },
         {
             "key": "After, need select item to interact",
@@ -3981,12 +3981,12 @@
             "value": "你得到了{STR} x{INT}."
         },
         {
-            "key": "{STR} got of the {STR}x{INT}.",
-            "value": "{STR} 得到了 {STR}x{INT}."
+            "key": "{STR} got of the {STR}x{VAL}.",
+            "value": "{STR} 得到了 {STR}x{VAL}."
         },
         {
-            "key": "{STR} used {STR}x{INT} and got {INT} survival experience.",
-            "value": "{STR} 使用了 {STR}x{INT}并获得了{INT} 人物经验."
+            "key": "{STR} used {STR}x{VAL} and got {VAL} survival experience.",
+            "value": "{STR} 使用了 {STR}x{VAL}并获得了{VAL} 人物经验."
         },
         {
             "key": "This item can only be used (Auto Use, and then craft).",
@@ -3997,8 +3997,8 @@
             "value": "{STR} 使用 {STR} 并返还{INT} 升级点."
         },
         {
-            "key": "{STR} used {STR}x{INT} and got {INT} gold.",
-            "value": "{STR}使用 {STR}x{INT} 并得到 {INT} 黄金."
+            "key": "{STR} used {STR}x{VAL} and got {VAL} gold.",
+            "value": "{STR}使用 {STR}x{VAL} 并得到 {VAL} 黄金."
         },
         {
             "key": "Wait until the last random box opens!",
@@ -4009,8 +4009,8 @@
             "value": "你使用了 '{STR} x{INT}'."
         },
         {
-            "key": "{STR} uses '{STR}x{INT}' and got:",
-            "value": "{STR} 使用'{STR}x{INT}'并得到t:"
+            "key": "{STR} uses '{STR}x{VAL}' and got:",
+            "value": "{STR} 使用'{STR}x{VAL}'并得到t:"
         },
         {
             "hash": 1489921003266523553,

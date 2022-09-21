@@ -120,7 +120,7 @@ void CDropItem::Tick()
 	}
 
 	// non enchantable item
-	GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GAME_INFORMATION, 100, "{STR}x{INT} {STR}",
+	GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GAME_INFORMATION, 100, "{STR}x{VAL} {STR}",
 		m_DropItem.Info().GetName(), m_DropItem.m_Value, pToNickname);
 }
 

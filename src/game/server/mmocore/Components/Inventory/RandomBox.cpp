@@ -22,7 +22,7 @@ bool CRandomBox::Start(CPlayer *pPlayer, int Seconds, CItemData* pPlayerUsesItem
 		pPlayer->m_aPlayerTick[LastRandomBox] = pPlayer->GS()->Server()->Tick() + Seconds;
 		std::sort(m_ArrayItems.begin(), m_ArrayItems.end(), [](const StructRandomItem& pLeft, const StructRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
 		new CRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc().m_UserID, Seconds, m_ArrayItems, pPlayerUsesItem, UseValue);
-		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{STR}x{INT}'.", pPlayerUsesItem->Info().GetName(), UseValue);
+		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{STR}x{VAL}'.", pPlayerUsesItem->Info().GetName(), UseValue);
 	}
 	return true;
 };
@@ -113,13 +113,13 @@ void CRandomBoxRandomizer::Tick()
 			{
 				const char* pClientName = GS()->Server()->ClientName(m_pPlayer->GetCID());
 				GS()->Chat(-1, "---------------------------------");
-				GS()->Chat(-1, "{STR} uses '{STR}x{INT}' and got:", pClientName, m_pPlayerUsesItem->Info().GetName(), m_UseValue);
+				GS()->Chat(-1, "{STR} uses '{STR}x{VAL}' and got:", pClientName, m_pPlayerUsesItem->Info().GetName(), m_UseValue);
 
 				for(auto& pItem : aReceivedItems)
 				{
 					CItemData* pPlayerRandomItem = &m_pPlayer->GetItem(pItem.RandomItem.m_ItemID);
 					GiveRandomItem(pItem.RandomItem);
-					GS()->Chat(-1, "* {STR}x{INT} - ({INT})", pPlayerRandomItem->Info().GetName(), pItem.RandomItem.m_Value, pItem.Coincidences);
+					GS()->Chat(-1, "* {STR}x{VAL} - ({INT})", pPlayerRandomItem->Info().GetName(), pItem.RandomItem.m_Value, pItem.Coincidences);
 				}
 				GS()->Chat(-1, "---------------------------------");
 			}

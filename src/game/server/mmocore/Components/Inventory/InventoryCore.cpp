@@ -192,7 +192,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 		CItemData& pItemPlayer = pPlayer->GetItem(VoteID);
 		pItemPlayer.Drop(Get);
 
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {STR}x{INT}", pItemPlayer.Info().GetName(), Get);
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {STR}x{VAL}", pItemPlayer.Info().GetName(), Get);
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
@@ -221,7 +221,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 		const int DesValue = pPlayerSelectedItem.Info().m_Dysenthis * Get;
 		if(pPlayerSelectedItem.Remove(Get) && pPlayerMaterialItem.Add(DesValue))
 		{
-			GS()->Chat(ClientID, "Disassemble {STR}x{INT}, you receive {INT} materials",
+			GS()->Chat(ClientID, "Disassemble {STR}x{VAL}, you receive {VAL} materials",
 				pPlayerSelectedItem.Info().GetName(), Get, DesValue);
 			GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		}
@@ -410,7 +410,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 	}
 	else
 	{
-		GS()->AVHI(ClientID, pItemPlayer.Info().GetIcon(), HideID, LIGHT_GRAY_COLOR, "{STR}{STR} x{INT}",
+		GS()->AVHI(ClientID, pItemPlayer.Info().GetIcon(), HideID, LIGHT_GRAY_COLOR, "{STR}{STR} x{VAL}",
 			(pItemPlayer.m_Settings ? "Dressed - " : "\0"), pNameItem, pItemPlayer.m_Value);
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info().GetDesc());
 	}
@@ -450,7 +450,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 	if (pItemPlayer.Info().IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
 	{
 		const int Price = pItemPlayer.GetEnchantPrice();
-		GS()->AVM(ClientID, "IENCHANT", ItemID, HideID, "Enchant {STR} ({INT} materials)", pNameItem, Price);
+		GS()->AVM(ClientID, "IENCHANT", ItemID, HideID, "Enchant {STR} ({VAL} materials)", pNameItem, Price);
 	}
 
 	// not allowed drop equipped hammer
@@ -458,7 +458,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 		return;
 
 	if (pItemPlayer.Info().m_Dysenthis > 0)
-		GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{INT} materials)", pNameItem, pItemPlayer.Info().m_Dysenthis);
+		GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.Info().m_Dysenthis);
 
 	GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop {STR}", pNameItem);
 

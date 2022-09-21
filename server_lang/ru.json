@@ -193,24 +193,20 @@
             "value": "Choose the type of items you want to show"
         },
         {
-            "key": "You got of the {STR}x{INT}.",
-            "value": "You got of the {STR}x{INT}."
-        },
-        {
             "key": "After, need select item to interact",
             "value": "After, need select item to interact"
         },
         {
-            "key": "You got of the {STR}x{INT}.",
-            "value": "You got of the {STR}x{INT}."
+            "key": "You got of the {STR}x{VAL}.",
+            "value": "You got of the {STR}x{VAL}."
         },
         {
-            "key": "{STR} got of the {STR}x{INT}.",
-            "value": "{STR} got of the {STR}x{INT}."
+            "key": "{STR} got of the {STR}x{VAL}.",
+            "value": "{STR} got of the {STR}x{VAL}."
         },
         {
-            "key": "{STR} used {STR}x{INT} and got {INT} survival experience.",
-            "value": "{STR} used {STR}x{INT} and got {INT} survival experience."
+            "key": "{STR} used {STR}x{VAL} and got {VAL} survival experience.",
+            "value": "{STR} used {STR}x{VAL} and got {VAL} survival experience."
         },
         {
             "key": "This item can only be used (Auto Use, and then craft).",
@@ -221,8 +217,8 @@
             "value": "{STR} used {STR} returned {INT} upgrades."
         },
         {
-            "key": "{STR} used {STR}x{INT} and got {INT} gold.",
-            "value": "{STR} used {STR}x{INT} and got {INT} gold."
+            "key": "{STR} used {STR}x{VAL} and got {VAL} gold.",
+            "value": "{STR} used {STR}x{VAL} and got {VAL} gold."
         },
         {
             "key": "Wait until the last random box opens!",
@@ -233,8 +229,8 @@
             "value": "You used '{STR}x{INT}'."
         },
         {
-            "key": "{STR} uses '{STR}x{INT}' and got:",
-            "value": "{STR} uses '{STR}x{INT}' and got:"
+            "key": "{STR} uses '{STR}x{VAL}' and got:",
+            "value": "{STR} uses '{STR}x{VAL}' and got:"
         },
         {
             "key": "{INT}. {STR} | {INT}:{INT}min | {INT}P",
@@ -3322,8 +3318,8 @@
             "value": "Очки навыков {INT}SP"
         },
         {
-            "key": "Gold: {INT}",
-            "value": "Золото: {INT}"
+            "key": "Gold: {VAL}",
+            "value": "Золото: {VAL}"
         },
         {
             "key": "☪ SUB MENU PERSONAL",
@@ -3600,8 +3596,8 @@
             "value": "Настройка языка"
         },
         {
-            "key": "Required {INT}, but you have only {INT} {STR}!",
-            "value": "Требуется {INT}, но у вас есть только {INT} {STR}!"
+            "key": "Required {VAL}, but you have only {VAL} {STR}!",
+            "value": "Требуется {VAL}, но у вас есть только {VAL} {STR}!"
         },
         {
             "key": "Not upgrade points for +{INT}. Required {INT}.",
@@ -3697,8 +3693,8 @@
             "value": "Задание еще не выполнено!"
         },
         {
-            "key": "[Done] Give the {STR}x{INT} to the {STR}!",
-            "value": "[Выполнено] Отдать {STR}x{INT} для {STR}!"
+            "key": "[Done] Give the {STR}x{VAL} to the {STR}!",
+            "value": "[Выполнено] Отдать {STR}x{VAL} для {STR}!"
         },
         {
             "key": "[Done] Defeat the {STR}'s for the {STR}!",
@@ -3900,12 +3896,12 @@
             "value": "Выбросить {STR}"
         },
         {
-            "key": "Disassemble {STR} (+{INT} materials)",
-            "value": "Разобрать {STR} (+{INT} материалов)"
+            "key": "Disassemble {STR} (+{VAL} materials)",
+            "value": "Разобрать {STR} (+{VAL} материалов)"
         },
         {
-            "key": "Enchant {STR} ({INT} materials)",
-            "value": "Зачаровать {STR} ({INT} материалов)"
+            "key": "Enchant {STR} ({VAL} materials)",
+            "value": "Зачаровать {STR} ({VAL} материалов)"
         },
         {
             "key": "To plant {STR}, to house (0.06%)",
@@ -3952,12 +3948,12 @@
             "value": "Зачарование максимального уровня"
         },
         {
-            "key": "Disassemble {STR}x{INT}, you receive {INT} materials",
-            "value": "Разобрать {STR}x{INT}, вы получите {INT} материалов"
+            "key": "Disassemble {STR}x{VAL}, you receive {VAL} materials",
+            "value": "Разобрать {STR}x{VAL}, вы получите {VAL} материалов"
         },
         {
-            "key": "You drop {STR}x{INT}",
-            "value": "Вы выбросили {STR}x{INT}"
+            "key": "You drop {STR}x{VAL}",
+            "value": "Вы выбросили {STR}x{VAL}"
         },
         {
             "key": "There are no items in this tab",

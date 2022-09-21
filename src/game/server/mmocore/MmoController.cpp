@@ -287,7 +287,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 			const int Rank = pRes->getRow();
 			const int Gold = pRes->getInt("Bank");
 			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
-			GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {INT}", Rank, NameGuild, Gold);
+			GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
 		}
 	}
 	else if (TypeID == PLAYERS_LEVELING)
@@ -313,7 +313,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 			const int Gold = pRes->getInt("Value");
 			const int UserID = pRes->getInt("UserID");
 			str_copy(Nick, PlayerName(UserID), sizeof(Nick));
-			GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {INT}", Rank, Nick, Gold);
+			GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
 		}
 	}
 }

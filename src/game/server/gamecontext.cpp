@@ -1875,7 +1875,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, ExpForLevel);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint).m_Value);
-		AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {INT}", pPlayer->GetItem(itGold).m_Value);
+		AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold).m_Value);
 		AV(ClientID, "null");
 
 		// personal menu
@@ -2135,7 +2135,7 @@ void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, int ItemID)
 {
 	const int ClientID = pPlayer->GetCID();
 	pPlayer->m_VoteColored = LIGHT_PURPLE_COLOR;
-	AVMI(ClientID, GetItemInfo(ItemID).GetIcon(), "null", NOPE, NOPE, "You have {INT} {STR}", pPlayer->GetItem(ItemID).m_Value, GetItemInfo(ItemID).GetName());
+	AVMI(ClientID, GetItemInfo(ItemID).GetIcon(), "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID).m_Value, GetItemInfo(ItemID).GetName());
 }
 
 // vote parsing of all functions of action methods

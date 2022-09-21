@@ -88,9 +88,9 @@ bool CItemData::Add(int Value, int Settings, int Enchant, bool Message)
 		return true;
 
 	if(Info().m_Type == TYPE_EQUIP || Info().m_Type == TYPE_MODULE)
-		GS()->Chat(-1, "{STR} got of the {STR}x{INT}.", GS()->Server()->ClientName(ClientID), Info().GetName(), Value);
+		GS()->Chat(-1, "{STR} got of the {STR}x{VAL}.", GS()->Server()->ClientName(ClientID), Info().GetName(), Value);
 	else if(Info().m_Type != TYPE_INVISIBLE)
-		GS()->Chat(ClientID, "You got of the {STR}x{INT}.", Info().GetName(), Value);
+		GS()->Chat(ClientID, "You got of the {STR}x{VAL}.", Info().GetName(), Value);
 
 	return true;
 }
@@ -150,20 +150,20 @@ bool CItemData::Use(int Value)
 	if(m_ItemID == itPotionHealthRegen && Remove(Value, 0))
 	{
 		m_pPlayer->GiveEffect("RegenHealth", 15);
-		GS()->Chat(ClientID, "You used {STR}x{INT}", Info().GetName(), Value);
+		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info().GetName(), Value);
 	}
 	// potion mana regen
 	else if(m_ItemID == itPotionManaRegen && Remove(Value, 0))
 	{
 		m_pPlayer->GiveEffect("RegenMana", 15);
-		GS()->Chat(ClientID, "You used {STR}x{INT}", Info().GetName(), Value);
+		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info().GetName(), Value);
 	}
 	// potion resurrection
 	else if(m_ItemID == itPotionResurrection && Remove(Value, 0))
 	{
 		m_pPlayer->GetTempData().m_TempSafeSpawn = false;
 		m_pPlayer->GetTempData().m_TempHealth = m_pPlayer->GetStartHealth();
-		GS()->Chat(ClientID, "You used {STR}x{INT}", Info().GetName(), Value);
+		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info().GetName(), Value);
 	}
 	// ticket discount craft
 	else if(m_ItemID == itTicketDiscountCraft)
@@ -174,14 +174,14 @@ bool CItemData::Use(int Value)
 	else if(m_ItemID == itCapsuleSurvivalExperience && Remove(Value, 0))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{STR} used {STR}x{INT} and got {INT} survival experience.", GS()->Server()->ClientName(ClientID), Info().GetName(), Value, Getting);
+		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} survival experience.", GS()->Server()->ClientName(ClientID), Info().GetName(), Value, Getting);
 		m_pPlayer->AddExp(Getting);
 	}
 	// little bag gold
 	else if(m_ItemID == itLittleBagGold && Remove(Value, 0))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{STR} used {STR}x{INT} and got {INT} gold.", GS()->Server()->ClientName(ClientID), Info().GetName(), Value, Getting);
+		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} gold.", GS()->Server()->ClientName(ClientID), Info().GetName(), Value, Getting);
 		m_pPlayer->AddMoney(Getting);
 	}
 	// ticket reset for class stats

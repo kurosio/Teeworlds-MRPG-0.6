@@ -66,7 +66,7 @@ void CMailBoxCore::GetInformationInbox(CPlayer *pPlayer)
 				GS()->GetItemInfo(ItemID).GetName(), (Enchant > 0 ? aEnchantBuf : "\0"), ShowLetterID);
 		}
 		else
-			GS()->AVM(ClientID, "MAIL", MailLetterID, HideID, "Receive {STR}x{INT} (L{INT})", GS()->GetItemInfo(ItemID).GetName(), ItemValue, ShowLetterID);
+			GS()->AVM(ClientID, "MAIL", MailLetterID, HideID, "Receive {STR}x{VAL} (L{INT})", GS()->GetItemInfo(ItemID).GetName(), ItemValue, ShowLetterID);
 
 		GS()->AVM(ClientID, "DELETE_MAIL", MailLetterID, HideID, "Delete (L{INT})", ShowLetterID);
 	}

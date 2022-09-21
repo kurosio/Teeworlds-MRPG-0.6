@@ -146,7 +146,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		GS()->Chat(-1, "{STR} finished {STR}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
 
 		if(pBestPlayer)
-			GS()->Chat(-1, "Most Valuable {STR}. With help {INT} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
+			GS()->Chat(-1, "Most Valuable {STR}. With help {VAL} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
@@ -462,7 +462,7 @@ void CGameControllerDungeon::SelectTankPlayer()
 		else
 		{
 			const int StrengthTank = pTankPlayer->GetLevelTypeAttribute(AtributType::AtTank);
-			GS()->ChatWorldID(m_WorldID, "[Dungeon]", "Tank {STR} assigned with class strength {INT}p!",
+			GS()->ChatWorldID(m_WorldID, "[Dungeon]", "Tank {STR} assigned with class strength {VAL}p!",
 				Server()->ClientName(m_TankClientID), StrengthTank);
 		}
 	}
