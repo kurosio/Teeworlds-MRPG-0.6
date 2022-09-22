@@ -468,7 +468,7 @@ void CPlayer::ShowInformationStats(BroadcastPriority Priority)
 	const int StartHealth = GetStartHealth();
 	const int Mana = GetMana();
 	const int StartMana = GetStartMana();
-	GS()->Broadcast(m_ClientID, Priority, 100, "H: {INT}/{INT} M: {INT}/{INT}", Health, StartHealth, Mana, StartMana);
+	GS()->Broadcast(m_ClientID, Priority, 100, "Health: {INT}/{INT} Mana: {INT}/{INT}", Health, StartHealth, Mana, StartMana);
 }
 
 /* #########################################################################
@@ -499,13 +499,14 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 	// - - - - - F4- - - - - - -
 	else
 	{
-		// conversations for vanilla clients
+		// conversations
 		if(GetTalkedID() > 0)
 		{
 			if(m_aPlayerTick[TickState::LastDialog] && m_aPlayerTick[TickState::LastDialog] > GS()->Server()->Tick())
 				return true;
 
 			m_aPlayerTick[TickState::LastDialog] = GS()->Server()->Tick() + (GS()->Server()->TickSpeed() / 4);
+			GS()->CreatePlayerSound(m_ClientID, SOUND_PICKUP_ARMOR);
 			SetTalking(GetTalkedID(), false);
 			return true;
 		}

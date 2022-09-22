@@ -994,16 +994,16 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_aPlayerTick[TickState::LastVoteTry] = Server()->Tick();
-			const auto& item = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
+			const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
 			{
 				const int length = str_length(pMsg->m_Value);
 				return (str_comp_nocase_num(pMsg->m_Value, vote.m_aDescription, length) == 0);
 			});
 
-			if(item != m_aPlayerVotes[ClientID].end())
+			if(iter != m_aPlayerVotes[ClientID].end())
 			{
 				const int InteractiveValue = string_to_number(pMsg->m_Reason, 1, 10000000);
-				ParsingVoteCommands(ClientID, item->m_aCommand, item->m_TempID, item->m_TempID2, InteractiveValue, pMsg->m_Reason, item->m_Callback);
+				ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_Reason, iter->m_Callback);
 				return;
 			}
 			ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
@@ -1951,9 +1951,10 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 		return true;
 	}
 
-
 	if(PPSTR(CMD, "null") == 0)
 		return true;
+
+	CreatePlayerSound(ClientID, SOUND_BODY_LAND);
 
 	if(PPSTR(CMD, "BACK") == 0)
 	{
