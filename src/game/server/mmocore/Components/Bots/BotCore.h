@@ -24,7 +24,6 @@ class CBotCore : public MmoComponent
 	void InitMobsBots(const char* pWhereLocalWorld);
 
 public:
-	void ProcessingTalkingNPC(int OwnID, int TalkingID, const char* Message, int Emote, int TalkedFlag = TALKED_FLAG_FULL) const;
 	void DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, int TalkedID, const char *pText = "empty");
 	void DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, int TalkedID);
 	void ShowBotQuestTaskInfo(CPlayer* pPlayer, int MobID, int Progress);

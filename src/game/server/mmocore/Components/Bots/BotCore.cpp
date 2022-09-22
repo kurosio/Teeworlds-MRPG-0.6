@@ -212,11 +212,6 @@ void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 	}
 }
 
-void CBotCore::ProcessingTalkingNPC(int OwnID, int TalkingID, const char *Message, int Emote, int TalkedFlag) const
-{
-	GS()->Motd(OwnID, Message);
-}
-
 void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, int TalkedID, const char *pText)
 {
 	const int SizeTalking = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog.size();
@@ -239,7 +234,8 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, int T
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
 
 		pPlayer->ClearDialogText();
-		GS()->Mmo()->BotsData()->ProcessingTalkingNPC(ClientID, TalkedID, reformTalkedText, EMOTE_BLINK, TALKED_FLAG_FULL|TALKED_FLAG_SAYS_BOT);
+
+		GS()->Motd(ClientID, reformTalkedText);
 		return;
 	}
 
@@ -256,7 +252,8 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, int T
 	GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
 
 	pPlayer->ClearDialogText();
-	GS()->Mmo()->BotsData()->ProcessingTalkingNPC(ClientID, TalkedID, reformTalkedText, NpcBotInfo::ms_aNpcBot[MobID].m_aDialog[Progress].m_Emote, DialogFlag);
+	
+	GS()->Motd(ClientID, reformTalkedText);
 }
 
 void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, int TalkedID)
@@ -285,7 +282,8 @@ void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, int
 	GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
 
 	pPlayer->ClearDialogText();
-	GS()->Mmo()->BotsData()->ProcessingTalkingNPC(ClientID, TalkedID, reformTalkedText, QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_Emote, DialogFlag);
+
+	GS()->Motd(ClientID, reformTalkedText);
 }
 
 void CBotCore::ShowBotQuestTaskInfo(CPlayer* pPlayer, int MobID, int Progress)

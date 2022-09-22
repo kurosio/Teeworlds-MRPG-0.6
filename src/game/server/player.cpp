@@ -741,6 +741,8 @@ void CPlayer::ClearTalking()
 	m_DialogNPC.m_TalkedID = -1;
 	m_DialogNPC.m_Progress = 0;
 	m_DialogNPC.m_FreezedProgress = false;
+
+	GS()->Motd(m_ClientID, "\0");
 }
 
 // - - - - - - F O R M A T - - - - - T E X T - - - - - - - - -
