@@ -996,7 +996,8 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_aPlayerTick[TickState::LastVoteTry] = Server()->Tick();
 			const auto& item = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
 			{
-				return (str_comp_nocase(pMsg->m_Value, vote.m_aDescription) == 0);
+				const int length = str_length(pMsg->m_Value);
+				return (str_comp_nocase_num(pMsg->m_Value, vote.m_aDescription, length) == 0);
 			});
 
 			if(item != m_aPlayerVotes[ClientID].end())
@@ -1450,7 +1451,7 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !m_apPlayers[ClientID])
 		return;
 
-	char aBufDesc[512]; // buffer x2 with unicode
+	char aBufDesc[VOTE_DESC_LENGTH]; // buffer x2 with unicode
 	str_copy(aBufDesc, pDesc, sizeof(aBufDesc));
 	if(str_comp(m_apPlayers[ClientID]->GetLanguage(), "ru") == 0 || str_comp(m_apPlayers[ClientID]->GetLanguage(), "uk") == 0)
 		str_translation_utf8_to_cp(aBufDesc);
@@ -1462,34 +1463,6 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	Vote.m_TempID = TempInt;
 	Vote.m_TempID2 = TempInt2;
 	Vote.m_Callback = Callback;
-
-	// trim right and set maximum length to 64 utf8-characters
-	int Length = 0;
-	const char *p = Vote.m_aDescription;
-	const char *pEnd = nullptr;
-	while(*p)
-	{
-		const char *pStrOld = p;
-		const int Code = str_utf8_decode(&p);
-
-		// check if unicode is not empty
-		if(Code > 0x20 && Code != 0xA0 && Code != 0x034F && (Code < 0x2000 || Code > 0x200F) && (Code < 0x2028 || Code > 0x202F) &&
-			(Code < 0x205F || Code > 0x2064) && (Code < 0x206A || Code > 0x206F) && (Code < 0xFE00 || Code > 0xFE0F) &&
-			Code != 0xFEFF && (Code < 0xFFF9 || Code > 0xFFFC))
-		{
-			pEnd = nullptr;
-		}
-		else if(pEnd == nullptr)
-			pEnd = pStrOld;
-
-		if(++Length >= 63)
-		{
-			*(const_cast<char *>(p)) = 0;
-			break;
-		}
-	}
-	if(pEnd != nullptr)
-		*(const_cast<char *>(pEnd)) = 0;
 
 	m_aPlayerVotes[ClientID].push_back(Vote);
 

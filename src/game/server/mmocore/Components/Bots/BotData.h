@@ -88,8 +88,6 @@ struct QuestBotInfo
 
 	const char* GetName() const
 	{
-		if(m_aGeneratedNickname[0] != '\0')
-			return m_aGeneratedNickname;
 		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
 	}
 
@@ -105,8 +103,6 @@ struct QuestBotInfo
 /************************************************************************/
 struct MobBotInfo
 {
-
-	char m_aGeneratedNickname[MAX_NAME_LENGTH];
 	bool m_Boss;
 	int m_Power;
 	int m_Spread;
@@ -124,8 +120,6 @@ struct MobBotInfo
 
 	const char* GetName() const
 	{
-		if(m_aGeneratedNickname[0] != '\0')
-			return m_aGeneratedNickname;
 		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
 	}
 

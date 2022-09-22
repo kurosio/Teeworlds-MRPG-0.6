@@ -893,8 +893,7 @@ bool CCharacter::InteractiveHammer(vec2 Direction, vec2 ProjStartPos)
 	if (GS()->TakeItemCharacter(m_pPlayer->GetCID()))
 		return true;
 
-	CJobItems* pJobItem = (CJobItems*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_JOBITEMS, nullptr);
-	if(pJobItem)
+	if(CJobItems* pJobItem = (CJobItems*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_JOBITEMS, nullptr))
 	{
 		pJobItem->Work(m_pPlayer->GetCID());
 		m_ReloadTimer = Server()->TickSpeed() / 3;
