@@ -231,8 +231,8 @@ void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 
 void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const char *pText)
 {
-	const int SizeTalking = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog.size();
-	if(!NpcBotInfo::IsNpcBotValid(MobID) || Progress >= SizeTalking)
+	const int sizeDialogs = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog.size();
+	if(!NpcBotInfo::IsNpcBotValid(MobID) || Progress >= sizeDialogs)
 	{
 		pPlayer->ClearTalking();
 		return;
@@ -259,7 +259,7 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 		TalkedNick = NpcBotInfo::ms_aNpcBot[MobID].GetName();
 
 	pPlayer->FormatDialogText(BotID, NpcBotInfo::ms_aNpcBot[MobID].m_aDialog[Progress].m_aText);
-	str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) %s:\n- %s", (1 + Progress), SizeTalking, TalkedNick, pPlayer->GetDialogText());
+	str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) %s:\n- %s", (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
 	pPlayer->ClearDialogText();
 	
 	GS()->Motd(ClientID, reformTalkedText);
@@ -267,7 +267,7 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 
 void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, bool ExecutionStep)
 {
-	int64 sizeDialogs = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.size();
+	const int sizeDialogs = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.size();
 	if(!QuestBotInfo::IsQuestBotValid(MobID) || Progress >= sizeDialogs)
 	{
 		pPlayer->ClearTalking();
@@ -288,7 +288,7 @@ void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, boo
 	char aReformatText[512];
 	pPlayer->FormatDialogText(BotID, QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_aText);
 	str_format(aReformatText, sizeof(aReformatText), "%s\n=========\n\n( %d of %d ) %s:\n- %s",
-	GS()->GetQuestInfo(QuestID).GetName(), (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
+		GS()->GetQuestInfo(QuestID).GetName(), (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
 	pPlayer->ClearDialogText();
 
 	if(ExecutionStep)
