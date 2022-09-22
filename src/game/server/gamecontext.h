@@ -147,19 +147,13 @@ public:
 	void SendMotd(int ClientID);
 	void SendSettings(int ClientID);
 	void SendSkinChange(int ClientID, int TargetID);
-	void SendEquipments(int ClientID, int TargetID);
-	void SendFullyEquipments(int TargetID);
 	void SendTeam(int ClientID, int Team, bool DoChatMsg, int TargetID);
 	void SendGameMsg(int GameMsgID, int ClientID);
 	void SendGameMsg(int GameMsgID, int ParaI1, int ClientID);
 	void SendGameMsg(int GameMsgID, int ParaI1, int ParaI2, int ParaI3, int ClientID);
-	void UpdateClientInformation(int ClientID) override;
 
 	void SendTuningParams(int ClientID);
-	void SendDialogText(int ClientID, int TalkingID, const char* Message, int Emote = -1, int TalkedFlag = TALKED_FLAG_FULL);
-	void ClearDialogText(int ClientID);
 	void SendProgressBar(int ClientID, int Count, int Request, const char *Message);
-	void SendInformationBoxGUI(int ClientID, const char* pMsg, ...);
 
 	/* #########################################################################
 		ENGINE GAMECONTEXT
@@ -251,8 +245,6 @@ private:
 	void SendDayInfo(int ClientID);
 
 public:
-	void ChangeEquipSkin(int ClientID, int ItemID);
-
 	bool IsMmoClient(int ClientID) const;
 	int GetWorldID() const { return m_WorldID; }
 	int GetDungeonID() const { return m_DungeonID; }

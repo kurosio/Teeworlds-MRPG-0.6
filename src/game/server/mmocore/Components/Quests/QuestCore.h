@@ -23,7 +23,6 @@ class QuestCore : public MmoComponent
 	void OnInit() override;
 	void OnInitAccount(CPlayer* pPlayer) override;
 	void OnResetClient(int ClientID) override;
-	void OnMessage(int MsgID, void* pRawMsg, int ClientID) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
@@ -49,9 +48,6 @@ private:
 
 public:
 	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, const char* TextTalk = "\0");
-	void QuestTableAddItem(int ClientID, const char* pText, int Requires, int ItemID, bool Giving);
-	void QuestTableAddInfo(int ClientID, const char* pText, int Requires, int Have);
-	void QuestTableClear(int ClientID);
 
 	bool InteractiveQuestNPC(CPlayer* pPlayer, QuestBotInfo& pBot, bool FinalStepTalking);
 	void AddMobProgressQuests(CPlayer* pPlayer, int BotID);

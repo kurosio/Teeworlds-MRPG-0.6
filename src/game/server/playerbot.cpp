@@ -267,23 +267,6 @@ void CPlayerBot::Snap(int SnappingClient)
 	pPlayerInfo->m_Local = LocalClient;
 	pPlayerInfo->m_ClientID = m_ClientID;
 	pPlayerInfo->m_Team = TEAM_RED;
-
-	// --------------------- OTHER ----------------------
-	if(!GS()->IsMmoClient(SnappingClient))
-		return;
-
-	CNetObj_Mmo_ClientInfo *pMrpgClientInfo = static_cast<CNetObj_Mmo_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_MMO_CLIENTINFO, m_ClientID, sizeof(CNetObj_Mmo_ClientInfo)));
-	if(!pMrpgClientInfo)
-		return;
-
-	pMrpgClientInfo->m_Local = LocalClient;
-	pMrpgClientInfo->m_MoodType = GetMoodState(SnappingClient);
-	pMrpgClientInfo->m_WorldType = GS()->Mmo()->WorldSwap()->GetWorldType();
-	pMrpgClientInfo->m_HealthStart = GetStartHealth();
-	pMrpgClientInfo->m_Health = GetHealth();
-	pMrpgClientInfo->m_Level = GetBotLevel();
-	pMrpgClientInfo->m_ActiveQuest = IsActiveQuests(SnappingClient);
-	StrToInts(pMrpgClientInfo->m_StateName, 6, GetStatusBot());
 }
 
 int CPlayerBot::GetMoodState(int SnappingClient) const

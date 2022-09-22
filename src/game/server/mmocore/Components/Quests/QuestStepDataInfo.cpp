@@ -245,49 +245,6 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* TextTa
 	CGS* pGS = pPlayer->GS();
 	const int ClientID = pPlayer->GetCID();
 
-	if(pGS->IsMmoClient(ClientID))
-	{
-		// search item's
-		for (int i = 0; i < 2; i++)
-		{
-			const int ItemID = m_Bot->m_aItemSearch[i];
-			const int ValueItem = m_Bot->m_aItemSearchValue[i];
-			if(ItemID <= 0 || ValueItem <= 0)
-				continue;
-
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{STR}", pPlayer->GetItem(ItemID).Info().GetName());
-			pGS->Mmo()->Quest()->QuestTableAddItem(ClientID, Buffer.buffer(), ValueItem, ItemID, false);
-			Buffer.clear();
-		}
-
-		// search mob's
-		for (int i = 0; i < 2; i++)
-		{
-			const int BotID = m_Bot->m_aNeedMob[i];
-			const int ValueMob = m_Bot->m_aNeedMobValue[i];
-			if (BotID <= 0 || ValueMob <= 0 || DataBotInfo::ms_aDataBot.find(BotID) == DataBotInfo::ms_aDataBot.end())
-				continue;
-
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "Defeat {STR}", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
-			pGS->Mmo()->Quest()->QuestTableAddInfo(ClientID, Buffer.buffer(), ValueMob, m_MobProgress[i]);
-			Buffer.clear();
-		}
-
-		// reward item's
-		for (int i = 0; i < 2; i++)
-		{
-			const int ItemID = m_Bot->m_aItemGives[i];
-			const int ValueItem = m_Bot->m_aItemGivesValue[i];
-			if (ItemID <= 0 || ValueItem <= 0)
-				continue;
-
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "Receive {STR}", pPlayer->GetItem(ItemID).Info().GetName());
-			pGS->Mmo()->Quest()->QuestTableAddItem(ClientID, Buffer.buffer(), ValueItem, ItemID, true);
-			Buffer.clear();
-		}
-		return;
-	}
-
 	bool IsActiveTask = false;
 
 	// search item's and mob's

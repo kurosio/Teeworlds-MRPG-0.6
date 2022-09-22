@@ -45,19 +45,6 @@ void QuestCore::OnResetClient(int ClientID)
 	CQuestData::ms_aPlayerQuests.erase(ClientID);
 }
 
-void QuestCore::OnMessage(int MsgID, void* pRawMsg, int ClientID)
-{
-	CPlayer* pPlayer = GS()->m_apPlayers[ClientID];
-	if(MsgID == NETMSGTYPE_CL_TALKINTERACTIVE)
-	{
-		if(pPlayer->m_aPlayerTick[LastDialog] && pPlayer->m_aPlayerTick[LastDialog] > Server()->Tick())
-			return;
-
-		pPlayer->m_aPlayerTick[LastDialog] = Server()->Tick() + (Server()->TickSpeed() / 4);
-		pPlayer->SetTalking(pPlayer->GetTalkedID(), false);
-	}
-}
-
 bool QuestCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -250,29 +237,6 @@ void QuestCore::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, const ch
 		pPlayerQuest.m_StepsQuestBot[pBot.m_SubBotID].ShowRequired(pPlayer, TextTalk);
 }
 
-void QuestCore::QuestTableAddInfo(int ClientID, const char* pText, int Requires, int Have)
-{
-	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !GS()->IsMmoClient(ClientID))
-		return;
-
-	CNetMsg_Sv_AddQuestingProcessing Msg;
-	Msg.m_pText = pText;
-	Msg.m_pRequiresNum = Requires;
-	Msg.m_pHaveNum = clamp(Have, 0, Requires);
-	Msg.m_pGivingTable = false;
-	StrToInts(Msg.m_pIcon, 4, "hammer");
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-void QuestCore::QuestTableClear(int ClientID)
-{
-	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !GS()->IsMmoClient(ClientID))
-		return;
-
-	CNetMsg_Sv_ClearQuestingProcessing Msg;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
 bool QuestCore::InteractiveQuestNPC(CPlayer* pPlayer, QuestBotInfo& pBot, bool FinalStepTalking)
 {
 	const int QuestID = pBot.m_QuestID;
@@ -359,22 +323,6 @@ void QuestCore::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 			AcceptNextStoryQuestStep(pPlayer, pPlayerQuest.first);
 		}
 	}
-}
-void QuestCore::QuestTableAddItem(int ClientID, const char* pText, int Requires, int ItemID, bool GivingTable)
-{
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if (!pPlayer || ItemID < itGold || !GS()->IsMmoClient(ClientID))
-		return;
-
-	const CItemData PlayerSelectedItem = pPlayer->GetItem(ItemID);
-
-	CNetMsg_Sv_AddQuestingProcessing Msg;
-	Msg.m_pText = pText;
-	Msg.m_pRequiresNum = Requires;
-	Msg.m_pHaveNum = clamp(PlayerSelectedItem.m_Value, 0, Requires);
-	Msg.m_pGivingTable = GivingTable;
-	StrToInts(Msg.m_pIcon, 4, PlayerSelectedItem.Info().GetIcon());
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
 int QuestCore::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const

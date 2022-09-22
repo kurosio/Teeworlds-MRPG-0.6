@@ -203,48 +203,6 @@ void CPlayer::Snap(int SnappingClient)
 		pSpectatorInfo->m_X = m_ViewPos.x;
 		pSpectatorInfo->m_Y = m_ViewPos.y;
 	}
-
-	// --------------------- OTHER ----------------------
-	if(!GS()->IsMmoClient(SnappingClient) || GetTeam() == TEAM_SPECTATORS || !IsAuthed())
-		return;
-
-	CNetObj_Mmo_ClientInfo *pMrpgClientInfo = static_cast<CNetObj_Mmo_ClientInfo *>(Server()->SnapNewItem(NETOBJTYPE_MMO_CLIENTINFO, m_ClientID, sizeof(CNetObj_Mmo_ClientInfo)));
-	if(!pClientInfo)
-		return;
-
-	pMrpgClientInfo->m_Local = localClient;
-	pMrpgClientInfo->m_WorldType = GS()->Mmo()->WorldSwap()->GetWorldType();
-	pMrpgClientInfo->m_MoodType = m_MoodState;
-	pMrpgClientInfo->m_Level = Acc().m_Level;
-	pMrpgClientInfo->m_Exp = Acc().m_Exp;
-	pMrpgClientInfo->m_Health = GetHealth();
-	pMrpgClientInfo->m_HealthStart = GetStartHealth();
-	pMrpgClientInfo->m_Armor = GetMana();
-
-	dynamic_string Buffer;
-	for (auto& eff : CGS::ms_aEffects[m_ClientID])
-	{
-		char aBuf[32];
-		const bool Minutes = eff.second >= 60;
-		str_format(aBuf, sizeof(aBuf), "%s %d%s ", eff.first.c_str(), Minutes ? eff.second / 60 : eff.second, Minutes ? "m" : "");
-		Buffer.append_at(Buffer.length(), aBuf);
-	}
-	StrToInts(pMrpgClientInfo->m_Potions, 12, Buffer.buffer());
-	Buffer.clear();
-
-	Server()->Localization()->Format(Buffer, GetLanguage(), "{INT}", GetItem(itGold).m_Value);
-	StrToInts(pMrpgClientInfo->m_Gold, 6, Buffer.buffer());
-	Buffer.clear();
-
-	if(Acc().IsGuild())
-	{
-		char aBuf[24];
-		const int GuildID = Acc().m_GuildID;
-		str_format(aBuf, sizeof(aBuf), "%s %s", GS()->Mmo()->Member()->GetGuildRank(GuildID, Acc().m_GuildRank), GS()->Mmo()->Member()->GuildName(GuildID));
-		StrToInts(pMrpgClientInfo->m_StateName, 6, aBuf);
-	}
-	else
-		StrToInts(pMrpgClientInfo->m_StateName, 6, "\0");
 }
 
 CCharacter *CPlayer::GetCharacter() const
@@ -353,12 +311,6 @@ int CPlayer::GetTeam()
 ######################################################################### */
 void CPlayer::ProgressBar(const char *Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const
 {
-	if (GS()->IsMmoClient(m_ClientID))
-	{
-		GS()->SendProgressBar(m_ClientID, MyExp, ExpNeed, Name);
-		return;
-	}
-
 	char aBufBroadcast[128];
 	const float GetLevelProgress = (float)(MyExp * 100.0) / (float)ExpNeed;
 	const float GetExpProgress = (float)(GivedExp * 100.0) / (float)ExpNeed;
@@ -551,7 +503,7 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 	else
 	{
 		// conversations for vanilla clients
-		if(GetTalkedID() > 0 && !GS()->IsMmoClient(m_ClientID))
+		if(GetTalkedID() > 0)
 		{
 			if(m_aPlayerTick[TickState::LastDialog] && m_aPlayerTick[TickState::LastDialog] > GS()->Server()->Tick())
 				return true;
@@ -707,7 +659,6 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 		m_DialogNPC.m_Progress = 0;
 	}
 
-	GS()->Mmo()->Quest()->QuestTableClear(m_ClientID);
 	CPlayerBot* pBotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[TalkedID]);
 	const int MobID = pBotPlayer->GetBotSub();
 	if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
@@ -790,7 +741,6 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 
 void CPlayer::ClearTalking()
 {
-	GS()->ClearDialogText(m_ClientID);
 	m_DialogNPC.m_TalkedID = -1;
 	m_DialogNPC.m_Progress = 0;
 	m_DialogNPC.m_FreezedProgress = false;

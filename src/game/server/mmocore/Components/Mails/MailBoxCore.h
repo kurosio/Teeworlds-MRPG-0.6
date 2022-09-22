@@ -7,7 +7,6 @@
 class CMailBoxCore : public MmoComponent
 {
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
-	void OnMessage(int MsgID, void* pRawMsg, int ClientID) override;
 
 public:
 	int GetMailLettersSize(int AccountID);
@@ -19,7 +18,6 @@ private:
 	void DeleteMailLetter(int MailLetterID);
 	void AcceptMailLetter(CPlayer* pPlayer, int MailLetterID);
 	void SetReadState(int MailLetterID, bool State);
-	void SendClientListMail(CPlayer* pPlayer);
 };
 
 #endif

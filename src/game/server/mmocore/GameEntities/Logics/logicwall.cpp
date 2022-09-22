@@ -111,20 +111,6 @@ void CLogicWallFire::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	if(GS()->IsMmoClient(SnappingClient))
-	{
-		CNetObj_MmoProj *pProj = static_cast<CNetObj_MmoProj *>(Server()->SnapNewItem(NETOBJTYPE_MMOPROJ, GetID(), sizeof(CNetObj_MmoProj)));
-		if(!pProj)
-			return;
-		pProj->m_X = (int)m_Pos.x;
-		pProj->m_Y = (int)m_Pos.y;
-		pProj->m_VelX = m_Dir.x;
-		pProj->m_VelY = m_Dir.y;
-		pProj->m_StartTick = Server()->Tick()-3;
-		pProj->m_Type = 0;
-		return;
-	}
-
 	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
 	if(!pP)
 		return;

@@ -129,20 +129,6 @@ void CDropItem::Snap(int SnappingClient)
 	if(m_Flashing || NetworkClipped(SnappingClient))
 		return;
 
-	// mrpg
-	if(GS()->IsMmoClient(SnappingClient))
-	{
-		CNetObj_MmoPickup *pMmoPickup = static_cast<CNetObj_MmoPickup*>(Server()->SnapNewItem(NETOBJTYPE_MMOPICKUP, GetID(), sizeof(CNetObj_MmoPickup)));
-		if(!pMmoPickup)
-			return;
-
-		pMmoPickup->m_X = (int)m_Pos.x;
-		pMmoPickup->m_Y = (int)m_Pos.y;
-		pMmoPickup->m_Type = MMO_PICKUP_BOX;
-		pMmoPickup->m_Angle = (int)(m_Angle * 256.0f);
-		return;
-	}
-
 	// vanilla
 	CNetObj_Pickup *pPickup = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
 	if(pPickup)

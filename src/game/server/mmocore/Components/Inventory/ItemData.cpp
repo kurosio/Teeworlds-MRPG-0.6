@@ -128,8 +128,6 @@ bool CItemData::Equip()
 
 		if(Info().m_Function == EQUIP_DISCORD)
 			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);
-
-		GS()->ChangeEquipSkin(m_pPlayer->GetCID(), m_ItemID);
 	}
 
 	if(m_pPlayer->GetCharacter())

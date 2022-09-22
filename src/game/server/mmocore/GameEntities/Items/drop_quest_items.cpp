@@ -94,20 +94,6 @@ void CDropQuestItem::Snap(int SnappingClient)
 	if(m_Flashing || m_ClientID != SnappingClient || NetworkClipped(SnappingClient))
 		return;
 
-	// mrpg
-	if (GS()->IsMmoClient(SnappingClient))
-	{
-		CNetObj_MmoPickup* pObj = static_cast<CNetObj_MmoPickup*>(Server()->SnapNewItem(NETOBJTYPE_MMOPICKUP, GetID(), sizeof(CNetObj_MmoPickup)));
-		if (!pObj)
-			return;
-
-		pObj->m_X = (int)m_Pos.x;
-		pObj->m_Y = (int)m_Pos.y;
-		pObj->m_Type = MMO_PICKUP_DROP;
-		pObj->m_Angle = (int)(m_Angle * 256.0f);
-		return;
-	}
-
 	// vanilla box
 	CNetObj_Projectile* pProj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
 	if (pProj)

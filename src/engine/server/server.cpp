@@ -243,15 +243,6 @@ void CServer::ChangeWorld(int ClientID, int NewWorldID)
 	SendMap(ClientID);
 }
 
-void CServer::BackInformationFakeClient(int FakeClientID)
-{
-	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
-	{
-		IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->m_pGameServer;
-		pGameServer->UpdateClientInformation(FakeClientID);
-	}
-}
-
 int CServer::GetClientWorldID(int ClientID)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)

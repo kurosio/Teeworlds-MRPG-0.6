@@ -43,7 +43,6 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
 	{
 		m_Core.m_NoCollision = true;
-		GS()->SendEquipments(m_pBotPlayer->GetCID(), -1);
 		CreateSnapProj(GetSnapFullID(), 2, PICKUP_HEALTH, true, false);
 		CreateSnapProj(GetSnapFullID(), 2, PICKUP_ARMOR, true, false);
 	}

@@ -61,8 +61,7 @@ void CCommandProcessor::ConChatLogin(IConsole::IResult* pResult, void* pUser)
 	str_copy(aUsername, pResult->GetString(0), sizeof(aUsername));
 	str_copy(aPassword, pResult->GetString(1), sizeof(aPassword));
 
-	const AccountCodeResult CodeOP = pGS->Mmo()->Account()->LoginAccount(ClientID, aUsername, aPassword);
-	pGS->Mmo()->Account()->SendAccountCodeResult(ClientID, CodeOP);
+	pGS->Mmo()->Account()->LoginAccount(ClientID, aUsername, aPassword);
 }
 
 void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
@@ -86,8 +85,7 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 	str_copy(aUsername, pResult->GetString(0), sizeof(aUsername));
 	str_copy(aPassword, pResult->GetString(1), sizeof(aPassword));
 
-	const AccountCodeResult CodeOP = pGS->Mmo()->Account()->RegisterAccount(ClientID, aUsername, aPassword);
-	pGS->Mmo()->Account()->SendAccountCodeResult(ClientID, CodeOP);
+	pGS->Mmo()->Account()->RegisterAccount(ClientID, aUsername, aPassword);
 }
 
 #ifdef CONF_DISCORD

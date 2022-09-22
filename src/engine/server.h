@@ -119,7 +119,6 @@ public:
 
 	// Bots
 	virtual void InitClientBot(int ClientID) = 0;
-	virtual void BackInformationFakeClient(int FakeClientID) = 0;
 
 	// snapshots
 	virtual int SnapNewID() = 0;
@@ -163,7 +162,6 @@ public:
 	virtual void ClearClientData(int ClientID) = 0;
 
 	virtual void PrepareClientChangeWorld(int ClientID) = 0;
-	virtual void UpdateClientInformation(int FakeClientID) = 0;
 
 	virtual void OnClientConnected(int ClientID) = 0;
 	virtual void OnClientEnter(int ClientID) = 0;

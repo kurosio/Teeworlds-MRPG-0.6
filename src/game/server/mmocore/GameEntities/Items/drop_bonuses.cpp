@@ -73,20 +73,6 @@ void CDropBonuses::Snap(int SnappingClient)
 	if(m_Flashing || NetworkClipped(SnappingClient))
 		return;
 
-	// client verification if the check is not drawn anymore
-	if(GS()->IsMmoClient(SnappingClient))
-	{
-		CNetObj_MmoPickup* pObj = static_cast<CNetObj_MmoPickup*>(Server()->SnapNewItem(NETOBJTYPE_MMOPICKUP, GetID(), sizeof(CNetObj_MmoPickup)));
-		if (!pObj)
-			return;
-
-		pObj->m_X = (int)m_Pos.x;
-		pObj->m_Y = (int)m_Pos.y;
-		pObj->m_Type = MMO_PICKUP_EXPERIENCE;
-		pObj->m_Angle = (int)(m_Angle * 256.0f);
-		return;
-	}
-
 	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
 	if(!pP)
 		return;

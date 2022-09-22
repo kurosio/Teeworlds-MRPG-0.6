@@ -136,14 +136,6 @@ std::unique_ptr<char[]> CGS::LevelString(int MaxValue, int CurrentValue, int Ste
 
 const char* CGS::GetSymbolHandleMenu(int ClientID, bool HidenTabs, int ID) const
 {
-	// mrpg client
-	if(IsMmoClient(ClientID))
-	{
-		if(HidenTabs)
-			return ID >= NUM_TAB_MENU ? ("▵ ") : (ID < NUM_TAB_MENU_INTERACTIVES ? ("▼ :: ") : ("▲ :: "));
-		return ID >= NUM_TAB_MENU ? ("▿ ") : (ID < NUM_TAB_MENU_INTERACTIVES ? ("▲ :: ") : ("▼ :: "));
-	}
-
 	// vanilla
 	if(HidenTabs)
 		return ID >= NUM_TAB_MENU ? ("/\\ # ") : (ID < NUM_TAB_MENU_INTERACTIVES ? ("\\/ # ") : ("/\\ # "));
@@ -273,7 +265,7 @@ void CGS::SendWorldMusic(int ClientID, int MusicID)
 void CGS::CreatePlayerSound(int ClientID, int Sound)
 {
 	// fix for vanilla unterstand SoundID
-	if(!m_apPlayers[ClientID] || (!IsMmoClient(ClientID) && (Sound < 0 || Sound > 40)))
+	if(!m_apPlayers[ClientID] || Sound < 0 || Sound > 40)
 		return;
 
 	CNetEvent_SoundWorld* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), CmaskOne(ClientID));
@@ -384,7 +376,6 @@ void CGS::FakeChat(const char *pName, const char *pText)
 	SendChat(FakeClientID, CHAT_ALL, -1, pText);
 	delete m_apPlayers[FakeClientID];
 	m_apPlayers[FakeClientID] = nullptr;
-	Server()->BackInformationFakeClient(FakeClientID);
 }
 
 // send a formatted message
@@ -719,38 +710,6 @@ void CGS::SendSkinChange(int ClientID, int TargetID)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);*/
 }
 
-// Send equipments
-void CGS::SendEquipments(int ClientID, int TargetID)
-{
-	CPlayer *pPlayer = GetPlayer(ClientID);
-	if(!pPlayer)
-		return;
-
-	CNetMsg_Sv_EquipItems Msg;
-	Msg.m_ClientID = ClientID;
-	for(int k = 0; k < NUM_EQUIPS; k++)
-	{
-		const int EquipItem = pPlayer->GetEquippedItemID(k);
-		const bool EnchantItem = pPlayer->IsBot() ? false : pPlayer->GetItem(EquipItem).IsEnchantMaxLevel();
-		Msg.m_EquipID[k] = EquipItem;
-		Msg.m_EnchantItem[k] = EnchantItem;
-	}
-
-	// send players equipping global bots local on world
-	const int MsgWorldID = (pPlayer->IsBot() ? pPlayer->GetPlayerWorldID() : -1);
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID, MsgWorldID);
-}
-
-// Send fully players equipments
-void CGS::SendFullyEquipments(int TargetID)
-{
-	for (int i = 0; i < MAX_CLIENTS; i++)
-			SendEquipments(i, TargetID);
-
-	SendEquipments(TargetID, TargetID);
-	SendEquipments(TargetID, -1);
-}
-
 void CGS::SendTeam(int ClientID, int Team, bool DoChatMsg, int TargetID)
 {
 /*	CNetMsg_Sv_Team Msg;
@@ -786,17 +745,6 @@ void CGS::SendGameMsg(int GameMsgID, int ParaI1, int ParaI2, int ParaI3, int Cli
 //	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
-// Send client information
-void CGS::UpdateClientInformation(int ClientID)
-{
-	CPlayer *pPlayer = GetPlayer(ClientID, false, false);
-	if(!pPlayer)
-		return;
-
-	//pPlayer->SendClientInfo(-1);
-	SendEquipments(ClientID, -1);
-}
-
 void CGS::SendTuningParams(int ClientID)
 {
 	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
@@ -804,26 +752,6 @@ void CGS::SendTuningParams(int ClientID)
 	for(unsigned i = 0; i < sizeof(m_Tuning)/sizeof(int); i++)
 		Msg.AddInt(pParams[i]);
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-// Send a conversation package with someone
-void CGS::SendDialogText(int ClientID, int TalkingID, const char *Message, int Emote, int TalkedFlag)
-{
-	CNetMsg_Sv_TalkText Msg;
-	Msg.m_ConversationWithClientID = TalkingID;
-	Msg.m_pText = Message;
-	Msg.m_Emote = Emote;
-	Msg.m_Flag = TalkedFlag;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-void CGS::ClearDialogText(int ClientID)
-{
-	if(!IsMmoClient(ClientID))
-		return;
-
-	CNetMsg_Sv_ClearTalkText Msg;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
 void CGS::SendProgressBar(int ClientID, int Count, int Request, const char* Message)
@@ -834,26 +762,6 @@ void CGS::SendProgressBar(int ClientID, int Count, int Request, const char* Mess
 	Msg.m_pRequires = Request;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
-
-void CGS::SendInformationBoxGUI(int ClientID, const char* pMsg, ...)
-{
-	va_list VarArgs;
-	va_start(VarArgs, pMsg);
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		if(m_apPlayers[i])
-		{
-			CNetMsg_Sv_SendGuiInformationBox Msg;
-			dynamic_string Buffer;
-			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pMsg, VarArgs);
-			Msg.m_pMsg = Buffer.buffer();
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-			Buffer.clear();
-		}
-	}
-	va_end(VarArgs);
-}
-
 
 /* #########################################################################
 	ENGINE GAMECONTEXT
@@ -1219,34 +1127,9 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 				SendSkinChange(pPlayer->GetCID(), i);
 			}
-		}*/
-
-		//////////////////////////////////////////////////////////////////////////////////
-		///////////// If the client has passed the test, the alternative is to use the client
-		else if (MsgID == NETMSGTYPE_CL_ISMMOSERVER)
-		{
-			CNetMsg_Cl_IsMmoServer *pMsg = (CNetMsg_Cl_IsMmoServer *)pRawMsg;
-			Server()->SetClientProtocolVersion(ClientID, pMsg->m_Version);
-
-			/*
-				receive information about the client if the old version is written and prohibit the use of all client functions
-				to avoid crashes between package sizes
-			*/
-			if(!IsMmoClient(ClientID))
-			{
-				Server()->Kick(ClientID, "Update client use updater or download in discord.");
-				return;
-			}
-
-			// send check success message
-			CNetMsg_Sv_AfterIsMmoServer GoodCheck;
-			Server()->SendPackMsg(&GoodCheck, MSGFLAG_VITAL|MSGFLAG_FLUSH|MSGFLAG_NORECORD, ClientID);
-
-			// loading of all parts of players' data
-			SendFullyEquipments(ClientID);
 		}
 		else
-			Mmo()->OnMessage(MsgID, pRawMsg, ClientID);
+			Mmo()->OnMessage(MsgID, pRawMsg, ClientID);*/
 	}
 	else
 	{
@@ -1658,21 +1541,6 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 		*(const_cast<char *>(pEnd)) = 0;
 
 	m_aPlayerVotes[ClientID].push_back(Vote);
-
-	// send to customers that have a mmo client
-	if(IsMmoClient(ClientID))
-	{
-		if(Vote.m_aDescription[0] == '\0')
-			m_apPlayers[ClientID]->m_VoteColored = { 0, 0, 0 };
-
-		CNetMsg_Sv_VoteMmoOptionAdd OptionMsg;
-		const vec3 ToHexColor = m_apPlayers[ClientID]->m_VoteColored;
-		OptionMsg.m_pHexColor = ((int)ToHexColor.r << 16) + ((int)ToHexColor.g << 8) + (int)ToHexColor.b;
-		OptionMsg.m_pDescription = Vote.m_aDescription;
-		StrToInts(OptionMsg.m_pIcon, 4, Vote.m_aIcon);
-		Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ClientID);
-		return;
-	}
 
 	if(Vote.m_aDescription[0] == '\0')
 		str_copy(Vote.m_aDescription, "———————————", sizeof(Vote.m_aDescription));
@@ -2298,15 +2166,6 @@ void CGS::SendDayInfo(int ClientID)
 		Chat(ClientID, "Nighttime experience was increase to {INT}%", m_MultiplierExp);
 	else if(m_DayEnumType == DayType::MORNING_TYPE)
 		Chat(ClientID, "Daytime experience was downgraded to 100%");
-}
-
-void CGS::ChangeEquipSkin(int ClientID, int ItemID)
-{
-	CPlayer *pPlayer = GetPlayer(ClientID, true);
-	if(!pPlayer || GetItemInfo(ItemID).m_Type != ItemType::TYPE_EQUIP || GetItemInfo(ItemID).m_Function == EQUIP_DISCORD || GetItemInfo(ItemID).m_Function == EQUIP_MINER)
-		return;
-
-	SendEquipments(ClientID, -1);
 }
 
 int CGS::GetExperienceMultiplier(int Experience) const

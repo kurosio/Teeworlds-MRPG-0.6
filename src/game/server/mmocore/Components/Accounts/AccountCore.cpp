@@ -23,17 +23,6 @@ int CAccountCore::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 	return pWorldIterator != pPlayer->Acc().m_aHistoryWorld.end() ? *pWorldIterator : MAIN_WORLD_ID;
 }
 
-void CAccountCore::SendAccountCodeResult(int ClientID, AccountCodeResult Code) const
-{
-	if(GS()->IsMmoClient(ClientID))
-	{
-		CNetMsg_Sv_ClientProgressAuth ProgressMsg;
-		ProgressMsg.m_Code = static_cast<int>(Code);
-		Server()->SendPackMsg(&ProgressMsg, MSGFLAG_VITAL, ClientID);
-		dbg_msg("account_system", "%s(%d) got the result of using the account: [code #%d]", Server()->ClientName(ClientID), ClientID, static_cast<int>(Code));
-	}
-}
-
 AccountCodeResult CAccountCore::RegisterAccount(int ClientID, const char *Login, const char *Password)
 {
 	if(str_length(Login) > 12 || str_length(Login) < 4 || str_length(Password) > 12 || str_length(Password) < 4)
@@ -167,7 +156,6 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 			GS()->Chat(ClientID, "You have {INT} unread messages!", MsgMailboxSize);
 
 		GS()->ResetVotes(ClientID, MenuList::MAIN_MENU);
-		GS()->SendFullyEquipments(ClientID);
 		return;
 	}
 
@@ -199,7 +187,6 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 		pPlayer->ChangeWorld(LatestCorrectWorldID);
 		return;
 	}
-	GS()->SendFullyEquipments(ClientID);
 }
 
 void CAccountCore::DiscordConnect(int ClientID, const char *pDID) const
@@ -293,13 +280,6 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Note: translation is not complete.");
 		GS()->AV(ClientID, "null");
 
-		if(!GS()->IsMmoClient(ClientID))
-		{
-			GS()->AVL(ClientID, "null", "Text may be cropped due to Vanilla Teeworlds.");
-			GS()->AVL(ClientID, "null", "I recommend that you download the MRPG client.");
-			GS()->AV(ClientID, "null");
-		}
-
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
 		GS()->AVH(ClientID, TAB_LANGUAGES, GRAY_COLOR, "Active language: [{STR}]", pPlayerLanguage);
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
@@ -337,25 +317,6 @@ void CAccountCore::OnResetClient(int ClientID)
 {
 	CAccountTempData::ms_aPlayerTempData.erase(ClientID);
 	CAccountData::ms_aData.erase(ClientID);
-}
-
-void CAccountCore::OnMessage(int MsgID, void* pRawMsg, int ClientID)
-{
-	CPlayer *pPlayer = GS()->m_apPlayers[ClientID];
-	if(!pPlayer)
-		return;
-
-	if(MsgID == NETMSGTYPE_CL_CLIENTAUTH)
-	{
-		AccountCodeResult CodeOP;
-		CNetMsg_Cl_ClientAuth* pMsg = (CNetMsg_Cl_ClientAuth*)pRawMsg;
-		if(pMsg->m_SelectRegister)
-			CodeOP = RegisterAccount(ClientID, pMsg->m_Login, pMsg->m_Password);
-		else
-			CodeOP = LoginAccount(ClientID, pMsg->m_Login, pMsg->m_Password);
-		
-		SendAccountCodeResult(ClientID, CodeOP);
-	}
 }
 
 std::string CAccountCore::HashPassword(const char* pPassword, const char* pSalt)

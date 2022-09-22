@@ -141,7 +141,6 @@ public:
 
 	virtual void ChangeWorld(int ClientID, int NewWorldID);
 	virtual int GetClientWorldID(int ClientID);
-	virtual void BackInformationFakeClient(int FakeClientID);
 
 	virtual void SetClientProtocolVersion(int ClientID, int Version);
 	virtual int GetClientProtocolVersion(int ClientID);

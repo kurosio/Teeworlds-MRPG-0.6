@@ -251,8 +251,6 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 
 		const int EnchantLevel = pItemPlayer.m_Enchant + 1;
 		pItemPlayer.SetEnchant(EnchantLevel);
-		if(pItemPlayer.IsEnchantMaxLevel())
-			GS()->SendEquipments(ClientID, -1);
 
 		char aEnchantBuf[16];
 		pItemPlayer.FormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));

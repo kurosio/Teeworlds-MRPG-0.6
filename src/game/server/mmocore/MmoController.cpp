@@ -140,15 +140,6 @@ void MmoController::PrepareInformation(IStorageEngine *pStorage)
 	DataInfoReader.Close();
 }
 
-void MmoController::OnMessage(int MsgID, void *pRawMsg, int ClientID)
-{
-	if(!pRawMsg)
-		return;
-
-	for(auto& pComponent : m_Components.m_paComponents)
-		pComponent->OnMessage(MsgID, pRawMsg, ClientID);
-}
-
 void MmoController::ResetClientData(int ClientID)
 {
 	for (auto& pComponent : m_Components.m_paComponents)

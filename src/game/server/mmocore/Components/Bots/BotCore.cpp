@@ -214,10 +214,7 @@ void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 
 void CBotCore::ProcessingTalkingNPC(int OwnID, int TalkingID, const char *Message, int Emote, int TalkedFlag) const
 {
-	if(GS()->IsMmoClient(OwnID))
-		GS()->SendDialogText(OwnID, TalkingID, Message, Emote, TalkedFlag);
-	else
-		GS()->Motd(OwnID, Message);
+	GS()->Motd(OwnID, Message);
 }
 
 void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, int TalkedID, const char *pText)
@@ -230,23 +227,17 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, int T
 	}
 
 	const int ClientID = pPlayer->GetCID();
-	if (!GS()->IsMmoClient(ClientID))
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
+	GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
 
 	char reformTalkedText[512];
 	const int BotID = NpcBotInfo::ms_aNpcBot[MobID].m_BotID;
 	if (str_comp_nocase(pText, "empty") != 0)
 	{
 		pPlayer->FormatDialogText(BotID, pText);
-		if(!GS()->IsMmoClient(ClientID))
-		{
-			str_format(reformTalkedText, sizeof(reformTalkedText), "( 1 of 1 ) %s:\n- %s", NpcBotInfo::ms_aNpcBot[MobID].GetName(), pPlayer->GetDialogText());
-			GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
-		}
-		else
-		{
-			str_format(reformTalkedText, sizeof(reformTalkedText), "( 1 of 1 ) - %s", pPlayer->GetDialogText());
-		}
+
+		str_format(reformTalkedText, sizeof(reformTalkedText), "( 1 of 1 ) %s:\n- %s", NpcBotInfo::ms_aNpcBot[MobID].GetName(), pPlayer->GetDialogText());
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
+
 		pPlayer->ClearDialogText();
 		GS()->Mmo()->BotsData()->ProcessingTalkingNPC(ClientID, TalkedID, reformTalkedText, EMOTE_BLINK, TALKED_FLAG_FULL|TALKED_FLAG_SAYS_BOT);
 		return;
@@ -254,21 +245,16 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, int T
 
 	const int DialogFlag = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog[Progress].m_Flag;
 	pPlayer->FormatDialogText(BotID, NpcBotInfo::ms_aNpcBot[MobID].m_aDialog[Progress].m_aText);
-	if(!GS()->IsMmoClient(ClientID))
-	{
-		const char* TalkedNick = "\0";
-		if(DialogFlag & TALKED_FLAG_SAYS_PLAYER)
-			TalkedNick = Server()->ClientName(ClientID);
-		else if(DialogFlag & TALKED_FLAG_BOT)
-			TalkedNick = NpcBotInfo::ms_aNpcBot[MobID].GetName();
 
-		str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) %s:\n- %s", (1 + Progress), SizeTalking, TalkedNick, pPlayer->GetDialogText());
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
-	}
-	else
-	{
-		str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) - %s", (1 + Progress), SizeTalking, pPlayer->GetDialogText());
-	}
+	const char* TalkedNick = "\0";
+	if(DialogFlag & TALKED_FLAG_SAYS_PLAYER)
+		TalkedNick = Server()->ClientName(ClientID);
+	else if(DialogFlag & TALKED_FLAG_BOT)
+		TalkedNick = NpcBotInfo::ms_aNpcBot[MobID].GetName();
+
+	str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) %s:\n- %s", (1 + Progress), SizeTalking, TalkedNick, pPlayer->GetDialogText());
+	GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
+
 	pPlayer->ClearDialogText();
 	GS()->Mmo()->BotsData()->ProcessingTalkingNPC(ClientID, TalkedID, reformTalkedText, NpcBotInfo::ms_aNpcBot[MobID].m_aDialog[Progress].m_Emote, DialogFlag);
 }
@@ -287,22 +273,17 @@ void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, int
 	const int BotID = QuestBotInfo::ms_aQuestBot[MobID].m_BotID;
 	const int DialogFlag = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_Flag;
 	pPlayer->FormatDialogText(BotID, QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_aText);
-	if(!GS()->IsMmoClient(ClientID))
-	{
-		const char* TalkedNick = "\0";
-		const int QuestID = QuestBotInfo::ms_aQuestBot[MobID].m_QuestID;
-		if(DialogFlag & TALKED_FLAG_SAYS_PLAYER)
-			TalkedNick = Server()->ClientName(ClientID);
-		else if(DialogFlag & TALKED_FLAG_BOT)
-			TalkedNick = QuestBotInfo::ms_aQuestBot[MobID].GetName();
-		str_format(reformTalkedText, sizeof(reformTalkedText), "%s\n=========\n\n( %d of %d ) %s:\n- %s",
-			GS()->GetQuestInfo(QuestID).GetName(), (1 + Progress), SizeTalking, TalkedNick, pPlayer->GetDialogText());
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
-	}
-	else
-	{
-		str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) - %s", (1 + Progress), SizeTalking, pPlayer->GetDialogText());
-	}
+
+	const char* TalkedNick = "\0";
+	const int QuestID = QuestBotInfo::ms_aQuestBot[MobID].m_QuestID;
+	if(DialogFlag & TALKED_FLAG_SAYS_PLAYER)
+		TalkedNick = Server()->ClientName(ClientID);
+	else if(DialogFlag & TALKED_FLAG_BOT)
+		TalkedNick = QuestBotInfo::ms_aQuestBot[MobID].GetName();
+	str_format(reformTalkedText, sizeof(reformTalkedText), "%s\n=========\n\n( %d of %d ) %s:\n- %s",
+		GS()->GetQuestInfo(QuestID).GetName(), (1 + Progress), SizeTalking, TalkedNick, pPlayer->GetDialogText());
+	GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "Press 'F4' to continue the dialog!");
+
 	pPlayer->ClearDialogText();
 	GS()->Mmo()->BotsData()->ProcessingTalkingNPC(ClientID, TalkedID, reformTalkedText, QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_Emote, DialogFlag);
 }
@@ -319,28 +300,21 @@ void CBotCore::ShowBotQuestTaskInfo(CPlayer* pPlayer, int MobID, int Progress)
 
 	// vanila clients
 	const int BotID = QuestBotInfo::ms_aQuestBot[MobID].m_BotID;
-	if (!GS()->IsMmoClient(ClientID))
-	{
-		const int QuestID = QuestBotInfo::ms_aQuestBot[MobID].m_QuestID;
-		const int DialogFlag = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_Flag;
-		const char* TalkedNick = "\0";
-		if(DialogFlag & TALKED_FLAG_SAYS_PLAYER)
-			TalkedNick = Server()->ClientName(ClientID);
-		else if(DialogFlag & TALKED_FLAG_BOT)
-			TalkedNick = QuestBotInfo::ms_aQuestBot[MobID].GetName();
+	const int QuestID = QuestBotInfo::ms_aQuestBot[MobID].m_QuestID;
+	const int DialogFlag = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_Flag;
+	const char* TalkedNick = "\0";
+	if(DialogFlag & TALKED_FLAG_SAYS_PLAYER)
+		TalkedNick = Server()->ClientName(ClientID);
+	else if(DialogFlag & TALKED_FLAG_BOT)
+		TalkedNick = QuestBotInfo::ms_aQuestBot[MobID].GetName();
 
-		char reformTalkedText[512];
-		pPlayer->FormatDialogText(BotID, QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_aText);
-		str_format(reformTalkedText, sizeof(reformTalkedText), "%s\n=========\n\n( %d of %d ) %s:\n- %s",
-			GS()->GetQuestInfo(QuestID).GetName(), (1 + Progress), SizeTalking, TalkedNick, pPlayer->GetDialogText());
-		pPlayer->ClearDialogText();
+	char reformTalkedText[512];
+	pPlayer->FormatDialogText(BotID, QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_aText);
+	str_format(reformTalkedText, sizeof(reformTalkedText), "%s\n=========\n\n( %d of %d ) %s:\n- %s",
+		GS()->GetQuestInfo(QuestID).GetName(), (1 + Progress), SizeTalking, TalkedNick, pPlayer->GetDialogText());
+	pPlayer->ClearDialogText();
 
-		GS()->Mmo()->Quest()->QuestShowRequired(pPlayer, QuestBotInfo::ms_aQuestBot[MobID], reformTalkedText);
-		return;
-	}
-
-	// mmo clients
-	GS()->Mmo()->Quest()->QuestShowRequired(pPlayer, QuestBotInfo::ms_aQuestBot[MobID], "\0");
+	GS()->Mmo()->Quest()->QuestShowRequired(pPlayer, QuestBotInfo::ms_aQuestBot[MobID], reformTalkedText);
 }
 
 int CBotCore::GetQuestNPC(int MobID)

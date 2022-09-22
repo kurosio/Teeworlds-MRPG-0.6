@@ -76,7 +76,6 @@ public:
 	bool OnPlayerHandleTile(CCharacter *pChr, int IndexCollision);
 	bool OnPlayerHandleMainMenu(int ClientID, int Menulist, bool ReplaceMenu);
 	void OnInitAccount(int ClientID);
-	void OnMessage(int MsgID, void *pRawMsg, int ClientID);
 	bool OnParsingVoteCommands(CPlayer *pPlayer, const char *CMD, int VoteID, int VoteID2, int Get, const char *GetText);
 	void ResetClientData(int ClientID);
 	void PrepareInformation(class IStorageEngine* pStorage);

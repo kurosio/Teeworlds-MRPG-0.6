@@ -30,7 +30,6 @@ private:
 	virtual bool OnHandleTile(class CCharacter* pChr, int IndexCollision) { return false; };
 	virtual bool OnHandleMenulist(class CPlayer* pPlayer, int Menulist, bool ReplaceMenu) { return false; };
 	virtual bool OnHandleVoteCommands(class CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText) { return false; }
-	virtual void OnMessage(int MsgID, void* pRawMsg, int ClientID) {};
 
 	virtual void OnPrepareInformation(class IStorageEngine* pStorage, class CDataFileWriter* pDataFile) {};
 };
