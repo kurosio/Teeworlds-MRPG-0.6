@@ -1108,11 +1108,6 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			// set start infos
 			Server()->SetClientName(ClientID, pMsg->m_pName);
-			// trying to set client name can delete the player object, check if it still exists
-			if (!m_apPlayers[ClientID])
-			{
-				return;
-			}
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
@@ -1128,8 +1123,8 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			// client is ready to enter
 			CNetMsg_Sv_ReadyToEnter m;
 			Server()->SendPackMsg(&m, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
-
-			Server()->ExpireServerInfo();
+			
+		Server()->ExpireServerInfo();
 		}
 	}
 }
@@ -1145,6 +1140,8 @@ void CGS::OnClientConnected(int ClientID)
 	SendMotd(ClientID);
 	SendSettings(ClientID);
 	m_aBroadcastStates[ClientID] = {};
+	
+	Server()->ExpireServerInfo();
 }
 
 void CGS::OnClientEnter(int ClientID)
@@ -1155,6 +1152,7 @@ void CGS::OnClientEnter(int ClientID)
 
 	m_pController->OnPlayerConnect(pPlayer);
 	m_pCommandProcessor->SendChatCommands(ClientID);
+	Server()->ExpireServerInfo();
 
 	// another
 	if(!pPlayer->IsAuthed())
@@ -1184,6 +1182,8 @@ void CGS::OnClientDrop(int ClientID, const char *pReason)
 
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
+	Server()->ExpireServerInfo();
+
 	if (Server()->ClientIngame(ClientID) && IsPlayerEqualWorldID(ClientID))
 	{
 		Chat(-1, "{STR} has left the MRPG", Server()->ClientName(ClientID));

@@ -1353,13 +1353,13 @@ void CServer::CacheServerInfo(CCache* pCache, int Type, bool SendClients)
 				q.AddInt(PlayersStored); // offset
 				Remaining = 24;
 			}
+
 			if (Remaining > 0)
 			{
 				Remaining--;
 			}
 
 			int PreviousSize = q.Size();
-
 			q.AddString(ClientName(i), MAX_NAME_LENGTH); // client name
 			q.AddString(ClientClan(i), MAX_CLAN_LENGTH); // client clan
 
@@ -1929,6 +1929,7 @@ void CServer::InitClientBot(int ClientID)
 	m_aClients[ClientID].m_WorldID = -1;
 	m_aClients[ClientID].m_Score = 1;
 	SetClientClan(ClientID, "::Bots:");
+
 	SendConnectionReady(ClientID);
 }
 
