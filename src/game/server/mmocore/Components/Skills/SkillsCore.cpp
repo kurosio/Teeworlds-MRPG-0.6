@@ -55,7 +55,7 @@ bool CSkillsCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceM
 		if (pChr->GetHelper()->BoolIndex(TILE_LEARN_SKILL))
 		{
 			const int ClientID = pPlayer->GetCID();
-			GS()->AVH(ClientID, TAB_INFO_SKILL, GREEN_COLOR, "Skill Learn Information");
+			GS()->AVH(ClientID, TAB_INFO_SKILL, "Skill Learn Information");
 			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "Here you can learn passive and active skills");
 			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "You can bind active skill any button using the console");
 			GS()->AV(ClientID, "null");
@@ -119,7 +119,6 @@ void CSkillsCore::ShowMailSkillList(CPlayer *pPlayer, int Type)
 {
 	const int ClientID = pPlayer->GetCID();
 	const char* pSkillTypeName[NUM_SKILL_TYPES] = { "Improving", "Healing", "Attacking", "Defensive" };
-	pPlayer->m_VoteColored = BLUE_COLOR;
 	GS()->AVL(ClientID, "null", "{STR} skill's", pSkillTypeName[Type]);
 	for (const auto& pSkillData : CSkillDataInfo::ms_aSkillsData)
 	{

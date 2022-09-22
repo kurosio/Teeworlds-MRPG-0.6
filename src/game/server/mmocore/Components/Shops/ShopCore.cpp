@@ -88,9 +88,8 @@ bool CShopCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 		const int SlotPrice = pPlayer->GetTempData().m_SellItem.m_Price;
 		const int SlotEnchant = pPlayer->GetTempData().m_SellItem.m_Enchant;
 
-		GS()->AVH(ClientID, TAB_INFO_AUCTION_BIND, GREEN_COLOR, "Information Auction Slot");
+		GS()->AVH(ClientID, TAB_INFO_AUCTION_BIND, "Information Auction Slot");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_AUCTION_BIND, "The reason for write the number for each row");
-		pPlayer->m_VoteColored = { 15,15,15 };
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Item x{VAL} Minimal Price: {VAL}gold", SlotValue, MinimalPrice);
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Auction Slot Price: {VAL}gold", g_Config.m_SvAuctionPriceSlot);
 		if(SlotEnchant > 0)
@@ -292,7 +291,7 @@ bool CShopCore::BuyShopItem(CPlayer* pPlayer, int ID)
 void CShopCore::ShowAuction(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	GS()->AVH(ClientID, TAB_INFO_AUCTION, GREEN_COLOR, "Auction Information");
+	GS()->AVH(ClientID, TAB_INFO_AUCTION, "Auction Information");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_AUCTION, "To create a slot, see inventory item interact.");
 	GS()->AV(ClientID, "null");
 	GS()->ShowVotesItemValueInformation(pPlayer);

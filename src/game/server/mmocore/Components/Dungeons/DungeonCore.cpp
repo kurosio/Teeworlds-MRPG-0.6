@@ -33,17 +33,15 @@ bool DungeonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceM
 	if(Menulist == MenuList::MENU_DUNGEONS)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
-		GS()->AVH(ClientID, TAB_INFO_DUNGEON, GREEN_COLOR, "Dungeons Information");
+		GS()->AVH(ClientID, TAB_INFO_DUNGEON, "Dungeons Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "In this section you can choose a dungeon");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "View the fastest players on the passage");
 		GS()->AV(ClientID, "null");
 
-		pPlayer->m_VoteColored = GOLDEN_COLOR;
 		GS()->AVL(ClientID, "null", "Story dungeon's");
 		ShowDungeonsList(pPlayer, true);
 		GS()->AV(ClientID, "null");
 
-		pPlayer->m_VoteColored = GOLDEN_COLOR;
 		GS()->AVL(ClientID, "null", "Alternative story dungeon's");
 		ShowDungeonsList(pPlayer, false);
 
@@ -52,7 +50,6 @@ bool DungeonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceM
 			GS()->AV(ClientID, "null");
 			ShowTankVotingDungeon(pPlayer);
 			GS()->AV(ClientID, "null");
-			pPlayer->m_VoteColored = { 30, 8, 8 };
 			GS()->AVL(ClientID, "DUNGEONEXIT", "Exit dungeon {STR} (warning)", CDungeonData::ms_aDungeon[GS()->GetDungeonID()].m_aName);
 		}
 		GS()->AddVotesBackpage(ClientID);
@@ -190,7 +187,7 @@ void DungeonCore::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 			continue;
 
 		const int HideID = 7500 + dungeon.first;
-		GS()->AVH(ClientID, HideID, LIGHT_GOLDEN_COLOR, "Lvl{INT} {STR} : Players {INT} : {STR} [{INT}%]",
+		GS()->AVH(ClientID, HideID, "Lvl{INT} {STR} : Players {INT} : {STR} [{INT}%]",
 			dungeon.second.m_Level, dungeon.second.m_aName, dungeon.second.m_Players, (dungeon.second.IsDungeonPlaying() ? "Active dungeon" : "Waiting players"), dungeon.second.m_Progress);
 
 		ShowDungeonTop(pPlayer, dungeon.first, HideID);
@@ -210,9 +207,7 @@ void DungeonCore::ShowTankVotingDungeon(CPlayer* pPlayer) const
 
 	const int ClientID = pPlayer->GetCID();
 	const int DungeonWorldID = CDungeonData::ms_aDungeon[GS()->GetDungeonID()].m_WorldID;
-	pPlayer->m_VoteColored = GRAY_COLOR;
 	GS()->AVL(ClientID, "null", "Voting for the choice of tank!");
-	pPlayer->m_VoteColored = LIGHT_GRAY_COLOR;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);

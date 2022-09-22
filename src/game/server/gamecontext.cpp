@@ -1520,7 +1520,7 @@ void CGS::AVL(int ClientID, const char *pCmd, const char *pText, ...)
 }
 
 // add formatted vote with color
-void CGS::AVH(int ClientID, const int HideID, vec3 Color, const char *pText, ...)
+void CGS::AVH(int ClientID, const int HideID, const char *pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
@@ -1534,10 +1534,8 @@ void CGS::AVH(int ClientID, const int HideID, vec3 Color, const char *pText, ...
 		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
 		if(HideID > TAB_SETTINGS_MODULES && HideID < NUM_TAB_MENU) { Buffer.append(" (Press me for help)"); }
 
-		m_apPlayers[ClientID]->m_VoteColored = { Color.r, Color.g, Color.b };
 		AV(ClientID, "HIDEN", Buffer.buffer(), HideID, -1, "unused");
-		if(length(m_apPlayers[ClientID]->m_VoteColored) > 1.0f)
-			m_apPlayers[ClientID]->m_VoteColored /= 4.0f;
+
 		Buffer.clear();
 		va_end(VarArgs);
 	}
@@ -1559,10 +1557,7 @@ void CGS::AVHI(int ClientID, const char *pIcon, const int HideID, vec3 Color, co
 		if(HideID > TAB_SETTINGS_MODULES && HideID < NUM_TAB_MENU)
 			Buffer.append(" (Press me for help)");
 
-		m_apPlayers[ClientID]->m_VoteColored = Color;
 		AV(ClientID, "HIDEN", Buffer.buffer(), HideID, -1, pIcon);
-		if(length(m_apPlayers[ClientID]->m_VoteColored) > 1.0f)
-			m_apPlayers[ClientID]->m_VoteColored /= 4.0f;
 
 		Buffer.clear();
 		va_end(VarArgs);
@@ -1676,7 +1671,6 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 	if (Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, true))
 	{
-		m_apPlayers[ClientID]->m_VoteColored = { 20, 7, 15 };
 		AVL(ClientID, "null", "The main menu will return as soon as you leave this zone!");
 		return;
 	}
@@ -1687,7 +1681,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 		// statistics menu
 		const int ExpForLevel = pPlayer->ExpNeed(pPlayer->Acc().m_Level);
-		AVH(ClientID, TAB_STAT, GREEN_COLOR, "Hi, {STR} Last log in {STR}", Server()->ClientName(ClientID), pPlayer->Acc().m_aLastLogin);
+		AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", Server()->ClientName(ClientID), pPlayer->Acc().m_aLastLogin);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, ExpForLevel);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint).m_Value);
@@ -1695,7 +1689,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AV(ClientID, "null");
 
 		// personal menu
-		AVH(ClientID, TAB_PERSONAL, GRAY_COLOR, "☪ SUB MENU PERSONAL");
+		AVH(ClientID, TAB_PERSONAL, "☪ SUB MENU PERSONAL");
 		AVM(ClientID, "MENU", MenuList::MENU_INVENTORY, TAB_PERSONAL, "Inventory");
 		AVM(ClientID, "MENU", MenuList::MENU_EQUIPMENT, TAB_PERSONAL, "Equipment");
 		AVM(ClientID, "MENU", MenuList::MENU_UPGRADE, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Acc().m_Upgrade);
@@ -1711,7 +1705,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AV(ClientID, "null");
 
 		// info menu
-		AVH(ClientID, TAB_INFORMATION, BLUE_COLOR, "√ SUB MENU INFORMATION");
+		AVH(ClientID, TAB_INFORMATION, "√ SUB MENU INFORMATION");
 		AVM(ClientID, "MENU", MenuList::MENU_GUIDEDROP, TAB_INFORMATION, "Loots, mobs on your zone");
 		AVM(ClientID, "MENU", MenuList::MENU_TOP_LIST, TAB_INFORMATION, "Ranking guilds and players");
 	}
@@ -1734,7 +1728,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 
-		AVH(ClientID, TAB_INFO_UPGR, GREEN_COLOR, "Upgrades Information");
+		AVH(ClientID, TAB_INFO_UPGR, "Upgrades Information");
 		AVM(ClientID, "null", NOPE, TAB_INFO_UPGR, "Select upgrades type in Reason, write count.");
 		AV(ClientID, "null");
 
@@ -1742,7 +1736,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 		// DPS UPGRADES
 		int Range = pPlayer->GetLevelTypeAttribute(AtributType::AtDps);
-		AVH(ClientID, TAB_UPGR_DPS, RED_COLOR, "Disciple of War. Level Power {INT}", Range);
+		AVH(ClientID, TAB_UPGR_DPS, "Disciple of War. Level Power {INT}", Range);
 		for(const auto& at : ms_aAttributsInfo)
 		{
 			if(at.second.m_Type != AtributType::AtDps || str_comp_nocase(at.second.m_aFieldName, "unfield") == 0 || at.second.m_UpgradePrice <= 0)
@@ -1753,7 +1747,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 		// TANK UPGRADES
 		Range = pPlayer->GetLevelTypeAttribute(AtributType::AtTank);
-		AVH(ClientID, TAB_UPGR_TANK, BLUE_COLOR, "Disciple of Tank. Level Power {INT}", Range);
+		AVH(ClientID, TAB_UPGR_TANK, "Disciple of Tank. Level Power {INT}", Range);
 		for(const auto& at : ms_aAttributsInfo)
 		{
 			if(at.second.m_Type != AtributType::AtTank || str_comp_nocase(at.second.m_aFieldName, "unfield") == 0 || at.second.m_UpgradePrice <= 0)
@@ -1764,7 +1758,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 		// HEALER UPGRADES
 		Range = pPlayer->GetLevelTypeAttribute(AtributType::AtHealer);
-		AVH(ClientID, TAB_UPGR_HEALER, GREEN_COLOR, "Disciple of Healer. Level Power {INT}", Range);
+		AVH(ClientID, TAB_UPGR_HEALER, "Disciple of Healer. Level Power {INT}", Range);
 		for(const auto& at : ms_aAttributsInfo)
 		{
 			if(at.second.m_Type != AtributType::AtHealer || str_comp_nocase(at.second.m_aFieldName, "unfield") == 0 || at.second.m_UpgradePrice <= 0)
@@ -1774,7 +1768,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AV(ClientID, "null");
 
 		// WEAPONS UPGRADES
-		AVH(ClientID, TAB_UPGR_WEAPON, GRAY_COLOR, "Upgrades Weapons / Ammo");
+		AVH(ClientID, TAB_UPGR_WEAPON, "Upgrades Weapons / Ammo");
 		for(const auto& at : ms_aAttributsInfo)
 		{
 			if(at.second.m_Type != AtributType::AtWeapon || str_comp_nocase(at.second.m_aFieldName, "unfield") == 0 || at.second.m_UpgradePrice <= 0)
@@ -1783,7 +1777,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		}
 
 		AV(ClientID, "null");
-		AVH(ClientID, TAB_UPGR_JOB, GOLDEN_COLOR, "Disciple of Jobs");
+		AVH(ClientID, TAB_UPGR_JOB, "Disciple of Jobs");
 		Mmo()->PlantsAcc()->ShowMenu(pPlayer);
 		Mmo()->MinerAcc()->ShowMenu(pPlayer);
 		AddVotesBackpage(ClientID);
@@ -1791,11 +1785,10 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 	else if (MenuList == MenuList::MENU_TOP_LIST)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
-		AVH(ClientID, TAB_INFO_TOP, GREEN_COLOR, "Ranking Information");
+		AVH(ClientID, TAB_INFO_TOP, "Ranking Information");
 		AVM(ClientID, "null", NOPE, TAB_INFO_TOP, "Here you can see top server Guilds, Players.");
 		AV(ClientID, "null");
 
-		m_apPlayers[ClientID]->m_VoteColored = { 20,7,15 };
 		AVM(ClientID, "SELECTEDTOP", ToplistTypes::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
 		AVM(ClientID, "SELECTEDTOP", ToplistTypes::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
 		AVM(ClientID, "SELECTEDTOP", ToplistTypes::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
@@ -1805,7 +1798,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 	else if(MenuList == MenuList::MENU_GUIDEDROP)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
-		AVH(ClientID, TAB_INFO_LOOT, GREEN_COLOR, "Chance & Loot Information");
+		AVH(ClientID, TAB_INFO_LOOT, "Chance & Loot Information");
 		AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "Here you can see chance loot, mobs, on YOUR ZONE.");
 		AV(ClientID, "null");
 
@@ -1819,7 +1812,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 			const int HideID = (NUM_TAB_MENU + mobs.first);
 			const vec2 Pos = mobs.second.m_Position / 32.0f;
-			AVH(ClientID, HideID, LIGHT_BLUE_COLOR, "{STR} [x{INT} y{INT}]", mobs.second.GetName(), (int)Pos.x, (int)Pos.y);
+			AVH(ClientID, HideID, "{STR} [x{INT} y{INT}]", mobs.second.GetName(), (int)Pos.x, (int)Pos.y);
 
 			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 			{
@@ -1915,16 +1908,14 @@ void CGS::AddVotesBackpage(int ClientID)
 		return;
 
 	AV(ClientID, "null");
-	m_apPlayers[ClientID]->m_VoteColored = RED_COLOR;
 	AVL(ClientID, "BACK", "Backpage");
-	m_apPlayers[ClientID]->m_VoteColored = {0,0,0};
 }
 
 // print player statistics
 void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	AVH(ClientID, TAB_INFO_STAT, BLUE_COLOR, "Player Stats {STR}", IsDungeon() ? "(Sync)" : "\0");
+	AVH(ClientID, TAB_INFO_STAT, "Player Stats {STR}", IsDungeon() ? "(Sync)" : "\0");
 	for(const auto& pAtt : ms_aAttributsInfo)
 	{
 		if(str_comp_nocase(pAtt.second.m_aFieldName, "unfield") == 0)
@@ -1950,7 +1941,6 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, int ItemID)
 {
 	const int ClientID = pPlayer->GetCID();
-	pPlayer->m_VoteColored = LIGHT_PURPLE_COLOR;
 	AVMI(ClientID, GetItemInfo(ItemID).GetIcon(), "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID).m_Value, GetItemInfo(ItemID).GetName());
 }
 

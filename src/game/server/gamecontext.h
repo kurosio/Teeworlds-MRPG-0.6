@@ -205,7 +205,7 @@ private:
 public:
 	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1, const char *pIcon = "unused", VoteCallBack Callback = nullptr);
 	void AVL(int ClientID, const char *pCmd, const char *pText, ...);
-	void AVH(int ClientID, int HideID, vec3 Color, const char *pText, ...);
+	void AVH(int ClientID, int HideID, const char *pText, ...);
 	void AVHI(int ClientID, const char *pIcon, int HideID, vec3 Color, const char *pText, ...);
 	void AVM(int ClientID, const char *pCmd, int TempInt, int HideID, const char* pText, ...);
 	void AVMI(int ClientID, const char *pIcon, const char *pCmd, int TempInt, int HideID, const char *pText, ...);

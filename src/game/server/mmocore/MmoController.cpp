@@ -235,7 +235,6 @@ void MmoController::ShowLoadingProgress(const char* pLoading, int Size) const
 void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 {
 	const int ClientID = pPlayer->GetCID();
-	pPlayer->m_VoteColored = SMALL_LIGHT_GRAY_COLOR;
 	if(TypeID == GUILDS_LEVELING)
 	{
 		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT 10");

@@ -77,7 +77,7 @@ void CStorageCore::ShowStorageMenu(CPlayer* pPlayer, int StorageID)
 		return;
 	}
 
-	GS()->AVH(ClientID, TAB_STORAGE, GOLDEN_COLOR, "Shop :: {STR}", CStorageData::ms_aStorage[StorageID].m_aName);
+	GS()->AVH(ClientID, TAB_STORAGE, "Shop :: {STR}", CStorageData::ms_aStorage[StorageID].m_aName);
 	GS()->AVM(ClientID, "REPAIRITEMS", StorageID, TAB_STORAGE, "Repair all items - FREE");
 	GS()->AV(ClientID, "null");
 	GS()->ShowVotesItemValueInformation(pPlayer, CStorageData::ms_aStorage[StorageID].m_Currency);

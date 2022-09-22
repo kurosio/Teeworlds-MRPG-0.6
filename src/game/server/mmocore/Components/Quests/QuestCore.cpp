@@ -89,19 +89,16 @@ void QuestCore::ShowQuestsMainList(CPlayer* pPlayer)
 	ShowQuestsTabList(pPlayer, QUEST_NO_ACCEPT);
 
 	// show the completed menu
-	pPlayer->m_VoteColored = BLUE_COLOR;
 	GS()->AVM(pPlayer->GetCID(), "MENU", MENU_JOURNAL_FINISHED, NOPE, "List of completed quests");
 }
 
 void QuestCore::ShowQuestsTabList(CPlayer* pPlayer, int StateQuest)
 {
 	const int ClientID = pPlayer->GetCID();
-	pPlayer->m_VoteColored = GOLDEN_COLOR;
 	GS()->AVL(ClientID, "null", "{STR} quests", GetStateName(StateQuest));
 
 	// check first quest story step
 	bool IsEmptyList = true;
-	pPlayer->m_VoteColored = LIGHT_GOLDEN_COLOR;
 	std::list < std::string /*stories was checked*/ > StoriesChecked;
 	for(const auto& pDataQuest : CQuestDataInfo::ms_aDataQuests)
 	{
@@ -128,7 +125,6 @@ void QuestCore::ShowQuestsTabList(CPlayer* pPlayer, int StateQuest)
 	// if the quest list is empty
 	if(IsEmptyList)
 	{
-		pPlayer->m_VoteColored = LIGHT_GOLDEN_COLOR;
 		GS()->AV(ClientID, "null", "List of quests is empty");
 	}
 	GS()->AV(ClientID, "null");
@@ -153,9 +149,7 @@ void QuestCore::ShowQuestID(CPlayer *pPlayer, int QuestID)
 		pPlayer->GS()->Mmo()->Quest()->ShowQuestsActiveNPC(pPlayer, QuestID);
 		pPlayer->GS()->AV(ClientID, "null");
 
-		pPlayer->m_VoteColored = GOLDEN_COLOR;
 		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pData.GetName());
-		pPlayer->m_VoteColored = LIGHT_GOLDEN_COLOR;
 		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pData.m_Gold, pData.m_Exp);
 
 		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
@@ -168,7 +162,6 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 {
 	CQuestData& pPlayerQuest = pPlayer->GetQuest(QuestID);
 	const int ClientID = pPlayer->GetCID();
-	pPlayer->m_VoteColored = BLUE_COLOR;
 	GS()->AVM(ClientID, "null", NOPE, NOPE, "Active NPC for current quests");
 
 	for(auto& pStepBot : CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot)
@@ -179,7 +172,7 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 		const vec2 Pos = pBotInfo->m_Position / 32.0f;
 		const char* pSymbol = (((pPlayerQuest.GetState() == QUEST_ACCEPT && pPlayerQuest.m_StepsQuestBot[pStepBot.first].m_StepComplete) || pPlayerQuest.GetState() ==
 			                       QUEST_FINISHED) ? "✔ " : "\0");
-		GS()->AVH(ClientID, HideID, LIGHT_BLUE_COLOR, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, pBotInfo->m_Step, pBotInfo->GetName(), Server()->GetWorldName(pBotInfo->m_WorldID), (int)Pos.x, (int)Pos.y);
+		GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, pBotInfo->m_Step, pBotInfo->GetName(), Server()->GetWorldName(pBotInfo->m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
 		if(pPlayerQuest.GetState() != QUEST_ACCEPT)

@@ -236,7 +236,7 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 
 		// settings
-		GS()->AVH(ClientID, TAB_SETTINGS, RED_COLOR, "Some of the settings becomes valid after death");
+		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings becomes valid after death");
 		GS()->AVM(ClientID, "MENU", MenuList::MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
 		for (const auto& it : CItemData::ms_aItems[ClientID])
 		{
@@ -248,7 +248,7 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		// equipment modules
 		bool IsFoundModules = false;
 		GS()->AV(ClientID, "null");
-		GS()->AVH(ClientID, TAB_SETTINGS_MODULES, GREEN_COLOR, "Modules settings");
+		GS()->AVH(ClientID, TAB_SETTINGS_MODULES, "Modules settings");
 		for (const auto& it : CItemData::ms_aItems[ClientID])
 		{
 			const CItemData ItemData = it.second;
@@ -274,13 +274,13 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 	if (Menulist == MenuList::MENU_SELECT_LANGUAGE)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MENU_SETTINGS;
-		GS()->AVH(ClientID, TAB_INFO_LANGUAGES, GREEN_COLOR, "Languages Information");
+		GS()->AVH(ClientID, TAB_INFO_LANGUAGES, "Languages Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Here you can choose the language.");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Note: translation is not complete.");
 		GS()->AV(ClientID, "null");
 
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
-		GS()->AVH(ClientID, TAB_LANGUAGES, GRAY_COLOR, "Active language: [{STR}]", pPlayerLanguage);
+		GS()->AVH(ClientID, TAB_LANGUAGES, "Active language: [{STR}]", pPlayerLanguage);
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{
 			// do not show the language already selected by the player in the selection lists

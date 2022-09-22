@@ -130,7 +130,7 @@ void CAetherCore::ShowTeleportList(CCharacter* pChar) const
 	GS()->ShowVotesItemValueInformation(pPlayer);
 	GS()->AV(ClientID, "null");
 
-	GS()->AVH(ClientID, TAB_AETHER, GOLDEN_COLOR, "Available aethers");
+	GS()->AVH(ClientID, TAB_AETHER, "Available aethers");
 	if (Job()->Member()->GetGuildHouseID(pPlayer->Acc().m_GuildID) >= 1)
 		GS()->AVM(ClientID, "MSPAWN", NOPE, TAB_AETHER, "Move to Guild House - free");
 	if (Job()->House()->PlayerHouseID(pPlayer) >= 1)

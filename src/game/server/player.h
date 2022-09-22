@@ -72,7 +72,6 @@ public:
 
 	bool m_Spawned;
 
-	vec3 m_VoteColored;
 	short m_aSortTabs[NUM_SORT_TAB];
 	short m_OpenVoteMenu;
 	short m_LastVoteMenu;

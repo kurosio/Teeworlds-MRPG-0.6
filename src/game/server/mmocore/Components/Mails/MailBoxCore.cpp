@@ -54,7 +54,7 @@ void CMailBoxCore::GetInformationInbox(CPlayer *pPlayer)
 		HideID++;
 
 		// add vote menu
-		GS()->AVH(ClientID, HideID, LIGHT_GOLDEN_COLOR, "✉ Letter({INT}) {STR}", ShowLetterID, pRes->getString("Name").c_str());
+		GS()->AVH(ClientID, HideID, "✉ Letter({INT}) {STR}", ShowLetterID, pRes->getString("Name").c_str());
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pRes->getString("Description").c_str());
 		if(ItemID <= 0 || ItemValue <= 0)
 			GS()->AVM(ClientID, "MAIL", MailLetterID, HideID, "Accept (L{INT})", ShowLetterID);

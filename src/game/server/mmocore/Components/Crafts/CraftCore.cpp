@@ -69,7 +69,6 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, int Selec
 {
 	bool IsNotEmpty = false;
 	const int ClientID = pPlayer->GetCID();
-	pPlayer->m_VoteColored = GRAY_COLOR;
 
 	for(const auto& cr : CCraftData::ms_aCraft)
 	{
@@ -205,7 +204,7 @@ bool CCraftCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 
 		if (pChr->GetHelper()->BoolIndex(TILE_CRAFT_ZONE))
 		{
-			GS()->AVH(ClientID, TAB_INFO_CRAFT, GREEN_COLOR, "Crafting Information");
+			GS()->AVH(ClientID, TAB_INFO_CRAFT, "Crafting Information");
 			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_CRAFT, "If you will not have enough items for crafting");
 			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_CRAFT, "You will write those and the amount that is still required");
 			GS()->AV(ClientID, "null");

@@ -81,12 +81,12 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 	if(Menulist == MenuList::MENU_INVENTORY)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
-		GS()->AVH(ClientID, TAB_INFO_INVENTORY, GREEN_COLOR, "Inventory Information");
+		GS()->AVH(ClientID, TAB_INFO_INVENTORY, "Inventory Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "Choose the type of items you want to show");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "After, need select item to interact");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, RED_COLOR, "Inventory SELECT List");
+		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, "Inventory SELECT List");
 		int SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_USED);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", ItemType::TYPE_USED, TAB_INVENTORY_SELECT, "Used ({INT})", SizeItems);
 
@@ -111,11 +111,11 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 	if(Menulist == MenuList::MENU_EQUIPMENT)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
-		GS()->AVH(ClientID, TAB_INFO_EQUIP, GREEN_COLOR, "Equip / Armor Information");
+		GS()->AVH(ClientID, TAB_INFO_EQUIP, "Equip / Armor Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EQUIP, "SELECT tab and select armor.");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_EQUIP_SELECT, RED_COLOR, "Equip SELECT Slot");
+		GS()->AVH(ClientID, TAB_EQUIP_SELECT, "Equip SELECT Slot");
 		const char* pType[NUM_EQUIPS] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Wings", "Discord" };
 		for(int i = 0; i < NUM_EQUIPS; i++)
 		{

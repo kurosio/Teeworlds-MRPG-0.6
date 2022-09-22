@@ -104,7 +104,7 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 	if(Menulist == MENU_HOUSE_DECORATION)
 	{
 		pPlayer->m_LastVoteMenu = MENU_HOUSE;
-		GS()->AVH(ClientID, TAB_INFO_DECORATION, GREEN_COLOR, "Decorations Information");
+		GS()->AVH(ClientID, TAB_INFO_DECORATION, "Decorations Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Add: SELECT your item in list. SELECT (Add to house),");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "later press (ESC) and mouse select position");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: SELECT down your decorations");
@@ -132,7 +132,7 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 		const int HouseID = OwnerHouseID(pPlayer->Acc().m_UserID);
 		const int PlantItemID = GetPlantsID(HouseID);
 
-		GS()->AVH(ClientID, TAB_INFO_HOUSE_PLANT, GREEN_COLOR, "Plants Information");
+		GS()->AVH(ClientID, TAB_INFO_HOUSE_PLANT, "Plants Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_PLANT, "SELECT item and in tab select 'To plant'");
 		GS()->AV(ClientID, "null");
 
@@ -401,14 +401,13 @@ void CHouseCore::ShowDecorationList(CPlayer *pPlayer)
 void CHouseCore::ShowHouseMenu(CPlayer* pPlayer, int HouseID)
 {
 	const int ClientID = pPlayer->GetCID();
-	GS()->AVH(ClientID, TAB_INFO_HOUSE, GREEN_COLOR, "House {INT} . {STR}", HouseID, CHouseData::ms_aHouse[HouseID].m_aClass);
+	GS()->AVH(ClientID, TAB_INFO_HOUSE, "House {INT} . {STR}", HouseID, CHouseData::ms_aHouse[HouseID].m_aClass);
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE, "Owner House: {STR}", Job()->PlayerName(CHouseData::ms_aHouse[HouseID].m_UserID));
 
 	GS()->AV(ClientID, "null");
 	GS()->ShowVotesItemValueInformation(pPlayer, itGold);
 	GS()->AV(ClientID, "null");
 
-	pPlayer->m_VoteColored = LIGHT_GRAY_COLOR;
 	if(CHouseData::ms_aHouse[HouseID].m_UserID <= 0)
 	{
 		GS()->AVM(ClientID, "BUYHOUSE", HouseID, NOPE, "Buy this house. Price {VAL}gold", CHouseData::ms_aHouse[HouseID].m_Price);
@@ -432,23 +431,19 @@ void CHouseCore::ShowPersonalHouse(CPlayer* pPlayer)
 	}
 
 	const bool StateDoor = GetHouseDoor(HouseID);
-	GS()->AVH(ClientID, TAB_HOUSE_STAT, BLUE_COLOR, "House stats {INT} Class {STR} Door [{STR}]", HouseID, CHouseData::ms_aHouse[HouseID].m_aClass, StateDoor ? "Closed" : "Opened");
+	GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR} Door [{STR}]", HouseID, CHouseData::ms_aHouse[HouseID].m_aClass, StateDoor ? "Closed" : "Opened");
 	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/doorhouse - interactive with door.");
 	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "- - - - - - - - - -");
 	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "Notes: Minimal operation house balance 100gold");
 	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "In your safe is: {VAL}gold", CHouseData::ms_aHouse[HouseID].m_Bank);
 	GS()->AV(ClientID, "null");
 	//
-	pPlayer->m_VoteColored = LIGHT_GRAY_COLOR;
 	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold).m_Value);
-	pPlayer->m_VoteColored = SMALL_LIGHT_GRAY_COLOR;
 	GS()->AVM(ClientID, "HOUSEADD", 1, NOPE, "Add to the safe gold. (Amount in a reason)");
 	GS()->AVM(ClientID, "HOUSETAKE", 1, NOPE, "Take the safe gold. (Amount in a reason)");
 	GS()->AV(ClientID, "null");
 	//
-	pPlayer->m_VoteColored = LIGHT_GRAY_COLOR;
 	GS()->AVL(ClientID, "null", "▤ House system");
-	pPlayer->m_VoteColored = SMALL_LIGHT_GRAY_COLOR;
 	GS()->AVM(ClientID, "HOUSEDOOR", HouseID, NOPE, "Change state to [\"{STR}\"]", StateDoor ? "OPEN" : "CLOSED");
 	GS()->AVM(ClientID, "HSPAWN", 1, NOPE, "Teleport to your house");
 	GS()->AVM(ClientID, "HSELL", HouseID, NOPE, "Sell your house (in reason 777)");
