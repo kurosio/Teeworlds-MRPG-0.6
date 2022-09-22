@@ -21,6 +21,17 @@
 #define GREEN_COLOR vec3(15, 40, 15)
 #define LIGHT_GREEN_COLOR vec3(0, 16, 0)
 
+// mood type
+enum class Mood : short
+{
+	NORMAL = 0,
+	ANGRY,
+	AGRESSED,
+	FRIENDLY,
+	QUEST,
+	TANK,
+};
+
 // jobs
 enum
 {

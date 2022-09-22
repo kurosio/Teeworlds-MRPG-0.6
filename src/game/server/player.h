@@ -11,8 +11,6 @@
 #include <game/voting.h>
 #include "entities/character.h"
 
-#include <game/game_context.h>
-
 enum
 {
 	WEAPON_SELF = -2, // self die
@@ -60,7 +58,7 @@ public:
 	int m_PlayerFlags;
 	int m_aPlayerTick[TickState::NUM_TICK];
 	bool m_Flymode;
-	int m_MoodState;
+	Mood m_MoodState;
 
 	CTeeInfo m_TeeInfos;
 	StructLatency m_Latency;
@@ -181,7 +179,8 @@ public:
 	void FormatDialogText(int DataBotID, const char *pText);
 	void ClearDialogText();
 
-	static int GetMoodState() { return MOOD_NORMAL; }
+	virtual const char* GetStatus() const;
+	virtual Mood GetMoodState() const { return Mood::NORMAL; }
 	void ChangeWorld(int WorldID);
 };
 

@@ -21,8 +21,8 @@
 #include <base/math.h>
 #include <base/vmath.h>
 #include <base/threadpool.h>
+#include <engine/shared/protocol.h>
 #include <generated/protocol.h>
-#include <game/game_context.h>
 #include <teeother/tl/nlohmann_json.h>
 
 #endif //SERVER_STDAFX_H

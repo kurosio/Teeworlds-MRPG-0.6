@@ -87,16 +87,13 @@ public:
 	/* #########################################################################
 		EVENTS
 	######################################################################### */
-	void CreateDamage(vec2 Pos, int ClientID, int Amount, bool CritDamage, bool OnlyVanilla);
+	void CreateDamage(vec2 Pos, int ClientID, int Amount, bool CritDamage);
 	void CreateHammerHit(vec2 Pos);
 	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage);
 	void CreatePlayerSpawn(vec2 Pos, int64 Mask = -1);
 	void CreateDeath(vec2 Pos, int ClientID);
 	void CreateSound(vec2 Pos, int Sound, int64 Mask = -1);
-	void SendWorldMusic(int ClientID, int MusicID = 0);
 	void CreatePlayerSound(int ClientID, int Sound);
-	void CreateEffect(vec2 Pos, int EffectID);
-	void CreateTextEffect(vec2 Pos, const char* pText, int Flag = TEXTEFFECT_FLAG_BASIC);
 
 	/* #########################################################################
 		CHAT FUNCTIONS
@@ -153,7 +150,6 @@ public:
 	void SendGameMsg(int GameMsgID, int ParaI1, int ParaI2, int ParaI3, int ClientID);
 
 	void SendTuningParams(int ClientID);
-	void SendProgressBar(int ClientID, int Count, int Request, const char *Message);
 
 	/* #########################################################################
 		ENGINE GAMECONTEXT

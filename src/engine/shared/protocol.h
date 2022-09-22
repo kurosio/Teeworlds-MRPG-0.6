@@ -70,12 +70,6 @@ enum
 	// sent by server (todo: move it up)
 	NETMSG_RCON_CMD_ADD,
 	NETMSG_RCON_CMD_REM,
-
-
-	// sent by mrpg
-	NETMSG_DATA_MMO_INFO,
-	NETMSG_DATA_MMO,
-	NETMSG_REQUEST_MMO_DATA,
 };
 
 enum

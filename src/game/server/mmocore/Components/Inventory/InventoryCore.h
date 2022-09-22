@@ -14,7 +14,6 @@ class CInventoryCore : public MmoComponent
 		CItemData::ms_aItems.clear();
 	};
 
-	void OnPrepareInformation(class IStorageEngine* pStorage, class CDataFileWriter* pDataFile) override;
 	void OnInit() override;
 	void OnInitAccount(class CPlayer* pPlayer) override;
 	void OnResetClient(int ClientID) override;

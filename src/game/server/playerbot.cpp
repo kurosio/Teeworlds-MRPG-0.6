@@ -77,8 +77,6 @@ void CPlayerBot::EffectsTick()
 		pEffect->second--;
 		if(pEffect->second <= 0)
 		{
-			if(m_pCharacter && m_pCharacter->IsAlive())
-				GS()->CreateTextEffect(m_pCharacter->m_Core.m_Pos, pEffect->first.c_str(), TEXTEFFECT_FLAG_POTION|TEXTEFFECT_FLAG_REMOVING);
 			pEffect = m_aEffects.erase(pEffect);
 			continue;
 		}
@@ -130,10 +128,7 @@ void CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
 
 	const float RandomChance = frandom() * 100.0f;
 	if(RandomChance < Chance)
-	{
 		m_aEffects[Potion] = Sec;
-		GS()->CreateTextEffect(m_pCharacter->m_Core.m_Pos, Potion, TEXTEFFECT_FLAG_POTION|TEXTEFFECT_FLAG_ADDING);
-	}
 }
 
 bool CPlayerBot::IsActiveEffect(const char* Potion) const
@@ -247,7 +242,7 @@ void CPlayerBot::Snap(int SnappingClient)
 	char aNickname[24];
 	GenerateNick(aNickname, sizeof(aNickname));
 	StrToInts(&pClientInfo->m_Name0, 4, aNickname);
-	StrToInts(&pClientInfo->m_Clan0, 3, "::BOTS::");
+	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	pClientInfo->m_Country = 0;
 	{
 		const CTeeInfo& TeeInfoBot = DataBotInfo::ms_aDataBot[m_BotID].m_TeeInfos;
@@ -269,26 +264,23 @@ void CPlayerBot::Snap(int SnappingClient)
 	pPlayerInfo->m_Team = TEAM_RED;
 }
 
-int CPlayerBot::GetMoodState(int SnappingClient) const
+Mood CPlayerBot::GetMoodState() const
 {
 	if(GetBotType() == TYPE_BOT_MOB)
 	{
 		CCharacterBotAI *pChr = (CCharacterBotAI *)m_pCharacter;
 		if(pChr && pChr->GetBotTarget() != m_ClientID)
-		{
-			if(pChr->GetBotTarget() == SnappingClient)
-				return MOOD_AGRESSED_TANK;
-			else
-				return MOOD_AGRESSED_OTHER;
-		}
-		else
-			return MOOD_ANGRY;
+			return Mood::AGRESSED;
+
+		return Mood::ANGRY;
 	}
-	else if(GetBotType() == TYPE_BOT_NPC)
-		return MOOD_FRIENDLY;
-	else if(GetBotType() == TYPE_BOT_QUEST)
-		return MOOD_QUESTING;
-	return MOOD_NORMAL;
+
+	if(GetBotType() == TYPE_BOT_NPC)
+		return Mood::FRIENDLY;
+	
+	if(GetBotType() == TYPE_BOT_QUEST)
+		return Mood::QUEST;
+	return Mood::NORMAL;
 }
 
 int CPlayerBot::GetBotLevel() const
@@ -324,21 +316,32 @@ int CPlayerBot::GetEquippedItemID(int EquipID, int SkipItemID) const
 	return DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];
 }
 
-const char* CPlayerBot::GetStatusBot() const
+const char* CPlayerBot::GetStatus() const
 {
-	if (m_BotType == TYPE_BOT_QUEST)
-	{
-		const int QuestID = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_QuestID;
-		return GS()->GetQuestInfo(QuestID).GetName();
-	}
-	else if (m_BotType == TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[m_SubBotID].m_Boss)
+	if (m_BotType == TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[m_SubBotID].m_Boss)
 	{
 		if (GS()->IsDungeon())
 			return "Boss";
 		return "Raid";
 	}
 
-	return "\0";
+	switch(GetMoodState())
+	{
+		default:
+		case Mood::NORMAL:
+			return "\0";
+		case Mood::FRIENDLY: 
+			return "Friendly";
+		case Mood::QUEST:
+		{
+			const int QuestID = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_QuestID;
+			return GS()->GetQuestInfo(QuestID).GetName();
+		}
+		case Mood::ANGRY: 
+			return "Angry";
+		case Mood::AGRESSED:
+			return "Aggressive";
+	}
 }
 
 void CPlayerBot::GenerateNick(char* buffer, int size_buffer) const

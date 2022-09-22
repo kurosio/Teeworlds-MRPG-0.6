@@ -592,17 +592,9 @@ bool CCharacter::IncreaseHealth(int Amount)
 	if(m_Health >= m_pPlayer->GetStartHealth())
 		return false;
 
-	const int OldHealth = m_Health;
 	Amount = clamp(Amount, 1, Amount);
 	m_Health = clamp(m_Health+Amount, 0, m_pPlayer->GetStartHealth());
 	m_pPlayer->ShowInformationStats();
-
-	if(IsAlive())
-	{
-		char aBuf[32];
-		str_format(aBuf, sizeof(aBuf), "%d Health", m_Health - OldHealth);
-		GS()->CreateTextEffect(m_Core.m_Pos, aBuf, TEXTEFFECT_FLAG_POTION|TEXTEFFECT_FLAG_ADDING);
-	}
 	return true;
 }
 
@@ -611,17 +603,9 @@ bool CCharacter::IncreaseMana(int Amount)
 	if(m_Mana >= m_pPlayer->GetStartMana())
 		return false;
 
-	const int OldMana = m_Mana;
 	Amount = clamp(Amount, 1, Amount);
 	m_Mana = clamp(m_Mana + Amount, 0, m_pPlayer->GetStartMana());
 	m_pPlayer->ShowInformationStats();
-
-	if(IsAlive())
-	{
-		char aBuf[32];
-		str_format(aBuf, sizeof(aBuf), "%d Mana", m_Mana - OldMana);
-		GS()->CreateTextEffect(m_Core.m_Pos, aBuf, TEXTEFFECT_FLAG_POTION|TEXTEFFECT_FLAG_ADDING);
-	}
 	return true;
 }
 
@@ -716,7 +700,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		if(min(5.0f + (float)TempInt * 0.0015f, 20.0f) > frandom() * 100.0f)
 		{
 			GS()->SendEmoticon(From, EMOTICON_HEARTS);
-			GS()->CreateTextEffect(m_Core.m_Pos, "MISS", TEXTEFFECT_FLAG_MISS);
 			return false;
 		}
 
@@ -751,7 +734,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	// create healthmod indicator
-	GS()->CreateDamage(m_Pos, m_pPlayer->GetCID(), OldHealth-m_Health, CritDamage > 0, false);
+	GS()->CreateDamage(m_Pos, m_pPlayer->GetCID(), OldHealth-m_Health, CritDamage > 0);
 
 	if(From != m_pPlayer->GetCID())
 		GS()->CreatePlayerSound(From, SOUND_HIT);
@@ -886,8 +869,6 @@ void CCharacter::HandleEvents()
 	if(m_Event == TILE_EVENT_LIKE)
 	{
 		SetEmote(EMOTE_HAPPY, 1);
-		if(Server()->Tick() % Server()->TickSpeed() == 0)
-			GS()->CreateEffect(m_Core.m_Pos, EFFECT_SPASALON);
 	}
 }
 
@@ -1158,8 +1139,6 @@ void CCharacter::ChangePosition(vec2 NewPos)
 	if(!m_Alive)
 		return;
 
-	GS()->CreateEffect(m_Core.m_Pos, EFFECT_TELEPORT);
-	GS()->CreateEffect(NewPos, EFFECT_TELEPORT);
 	GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
 	GS()->CreateDeath(NewPos, m_pPlayer->GetCID());
 	m_Core.m_Pos = NewPos;

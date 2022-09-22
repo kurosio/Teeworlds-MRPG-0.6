@@ -602,7 +602,6 @@ set_src(ENGINE_SHARED GLOB src/engine/shared
   memheap.cpp
   memheap.h
   message.h
-  mmodata.h
   netban.cpp
   netban.h
   network.cpp

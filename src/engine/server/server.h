@@ -9,7 +9,6 @@ class CServer : public IServer
 	class IConsole *m_pConsole;
 	class IStorageEngine *m_pStorage;
 	class CMultiWorlds* m_pMultiWorlds;
-	class CDataMMO* m_pDataMmo;
 	class CServerBan* m_pServerBan;
 	class DiscordJob* m_pDiscord;
 
@@ -77,7 +76,6 @@ public:
 		bool m_ChangeMap;
 
 		int m_NextMapChunk;
-		int m_DataMmoChunk;
 		bool m_Quitting;
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
 
@@ -129,9 +127,6 @@ public:
 	virtual bool CheckWorldTime(int Hour, int Minute);
 	virtual const char* GetStringTypeDay() const;
 	virtual int GetEnumTypeDay() const;
-
-	// mmo data
-	void SendDataMmoInfo(int ClientID);
 
 	// basic
 	virtual void SetClientName(int ClientID, const char *pName);

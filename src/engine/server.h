@@ -67,21 +67,16 @@ public:
 		if(pMsg->Pack(&Packer))
 			return -1;
 
-		auto IsNotVanilaMsg = [=](int CID) -> bool // first mmo msg
-		{
-			return  GetClientProtocolVersion(CID) == PROTOCOL_VERSION_MMO && pMsg->MsgID() >= NETMSGTYPE_CL_ISMMOSERVER;
-		};
-
 		int64 Mask = -1;
 		if(ClientID == -1)
 		{
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
-				if(ClientIngame(i) && (IsNotVanilaMsg(i) || pMsg->MsgID() < NETMSGTYPE_CL_ISMMOSERVER))
+				if(ClientIngame(i))
 					Mask |= (int64)1 << i;
 			}
 		}
-		else if(ClientIngame(ClientID) && (IsNotVanilaMsg(ClientID) || pMsg->MsgID() < NETMSGTYPE_CL_ISMMOSERVER))
+		else if(ClientIngame(ClientID))
 			Mask |= (int64)1 << ClientID;
 
 		return SendMsg(&Packer, Flags, ClientID, Mask, WorldID);

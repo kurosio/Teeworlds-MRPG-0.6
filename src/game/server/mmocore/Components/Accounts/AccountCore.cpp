@@ -148,7 +148,6 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 	GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 200, "You are located {STR} ({STR})",
 		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "Zone PVP" : "Safe zone"));
 
-	GS()->SendWorldMusic(ClientID, (GS()->IsDungeon() ? -1 : 0));
 	if(!FirstInitilize)
 	{
 		const int MsgMailboxSize = Job()->Inbox()->GetMailLettersSize(pPlayer->Acc().m_UserID);

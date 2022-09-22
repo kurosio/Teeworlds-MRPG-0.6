@@ -8,6 +8,7 @@
 
 // custom something that is subject to less changes is introduced
 #include <base/system.h>
+#include <game/server/mmocore/GameContext.h>
 #include <teeother/components/localization.h>
 
 #endif //SERVER_STDAFX_H

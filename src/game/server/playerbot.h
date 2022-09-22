@@ -64,8 +64,8 @@ private:
 	void TryRespawn() override;
 
 	int GetBotLevel() const;
-	const char* GetStatusBot() const;
-	int GetMoodState(int SnappingClient) const;
+	const char* GetStatus() const override;
+	Mood GetMoodState() const override;
 	bool IsActiveQuests(int SnapClientID) const;
 	void GenerateNick(char* buffer, int size_buffer) const;
 

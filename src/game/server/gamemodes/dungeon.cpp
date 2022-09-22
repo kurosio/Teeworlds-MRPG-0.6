@@ -95,7 +95,6 @@ void CGameControllerDungeon::ChangeState(int State)
 
 		SetMobsSpawn(true);
 		KillAllPlayers();
-		GS()->SendWorldMusic(-1);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
@@ -266,7 +265,7 @@ void CGameControllerDungeon::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int
 	 */
 
 	// if it's tank passage get how got size damage
-	if(pFrom->IsBot() && pTo->m_MoodState == MOOD_PLAYER_TANK)
+	if(pFrom->IsBot() && pTo->m_MoodState ==  Mood::TANK)
 	{
 		const int ClientID = pTo->GetCID();
 		m_Records[ClientID].m_PassageHelp += Damage;
@@ -310,7 +309,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 
 			// update tanking client status
 			if(ClientID == m_TankClientID)
-				pChr->GetPlayer()->m_MoodState = MOOD_PLAYER_TANK;
+				pChr->GetPlayer()->m_MoodState = Mood::TANK;
 
 			// player died after the safety timer ended
 			if(!m_SafeTick)
@@ -493,7 +492,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, int BonusI
 
 	// - - - - - - - - -- - - -
 	// balance tanks
-	if(pPlayer->m_MoodState == MOOD_PLAYER_TANK)
+	if(pPlayer->m_MoodState == Mood::TANK)
 	{
 		const float ActiveAttribute = m_SyncDungeon / 2.0f;
 		if(AttributeType == AtributType::AtTank)

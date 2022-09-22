@@ -148,7 +148,7 @@ CQuestDataInfo &CGS::GetQuestInfo(int QuestID) const { return CQuestDataInfo::ms
 /* #########################################################################
 	EVENTS
 ######################################################################### */
-void CGS::CreateDamage(vec2 Pos, int ClientID, int Amount, bool CritDamage, bool OnlyVanilla)
+void CGS::CreateDamage(vec2 Pos, int ClientID, int Amount, bool CritDamage)
 {
 	float a = 3 * 3.14159f / 2 /* + Angle */;
 	//float a = get_angle(dir);
@@ -164,17 +164,6 @@ void CGS::CreateDamage(vec2 Pos, int ClientID, int Amount, bool CritDamage, bool
 			pEvent->m_Y = (int)Pos.y;
 			pEvent->m_Angle = (int)(f * 256.0f);
 		}
-	}
-
-	if(!OnlyVanilla)
-	{
-		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), "%d", Amount);
-		int TextEffectFlag = TEXTEFFECT_FLAG_DAMAGE;
-		if(CritDamage)
-			TextEffectFlag |= TEXTEFFECT_FLAG_CRIT_DAMAGE;
-
-		CreateTextEffect(Pos, aBuf, TextEffectFlag);
 	}
 }
 
@@ -254,14 +243,6 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64 Mask)
 	}
 }
 
-void CGS::SendWorldMusic(int ClientID, int MusicID)
-{
-	CNetMsg_Sv_WorldMusic Msg;
-	Msg.m_pSoundID = (MusicID != 0 ? MusicID : m_MusicID);
-	Msg.m_pVolume = (IsDungeon() ? 8 : 2);
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ClientID, m_WorldID);
-}
-
 void CGS::CreatePlayerSound(int ClientID, int Sound)
 {
 	// fix for vanilla unterstand SoundID
@@ -274,29 +255,6 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 		pEvent->m_X = (int)m_apPlayers[ClientID]->m_ViewPos.x;
 		pEvent->m_Y = (int)m_apPlayers[ClientID]->m_ViewPos.y;
 		pEvent->m_SoundID = Sound;
-	}
-}
-
-void CGS::CreateEffect(vec2 Pos, int EffectID)
-{
-	CNetEvent_EffectMmo *pEvent = (CNetEvent_EffectMmo *)m_Events.Create(NETEVENTTYPE_EFFECTMMO, sizeof(CNetEvent_EffectMmo));
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-		pEvent->m_EffectID = EffectID;
-	}
-}
-
-void CGS::CreateTextEffect(vec2 Pos, const char* pText, int Added)
-{
-	CNetEvent_TextEffect *pEvent = (CNetEvent_TextEffect*)m_Events.Create(NETEVENTTYPE_TEXTEFFECT, sizeof(CNetEvent_TextEffect));
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-		pEvent->m_Flag = Added;
-		StrToInts(pEvent->m_aText, 4, pText);
 	}
 }
 
@@ -754,15 +712,6 @@ void CGS::SendTuningParams(int ClientID)
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
-void CGS::SendProgressBar(int ClientID, int Count, int Request, const char* Message)
-{
-	CNetMsg_Sv_ProgressBar Msg;
-	Msg.m_pText = Message;
-	Msg.m_pCount = Count;
-	Msg.m_pRequires = Request;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
 /* #########################################################################
 	ENGINE GAMECONTEXT
 ######################################################################### */
@@ -810,7 +759,6 @@ void CGS::OnInit(int WorldID)
 	m_Collision.Init(m_pLayers);
 	m_pMmoController = new MmoController(this);
 	m_pMmoController->LoadLogicWorld();
-	m_pMmoController->PrepareInformation(m_pStorage);
 	UpdateZoneDungeon();
 	UpdateZonePVP();
 

@@ -27,14 +27,11 @@
 #include <windows.h>
 #endif
 
-#include <engine/shared/mmodata.h>
 #include "discord/discord_main.h"
 #include "multi_worlds.h"
 #include "server_ban.h"
 
 #include <engine/server/sql_connect_pool.h>
-
-#include "game/game_context.h"
 
 void CServer::CClient::Reset()
 {
@@ -50,7 +47,6 @@ void CServer::CClient::Reset()
 	m_SnapRate = SNAPRATE_INIT;
 	m_Score = 0;
 	m_NextMapChunk = 0;
-	m_DataMmoChunk = 0;
 	m_ChangeMap = false;
 }
 
@@ -75,7 +71,6 @@ CServer::CServer() : m_Register()
 
 	m_pServerBan = new CServerBan;
 	m_pMultiWorlds = new CMultiWorlds;
-	m_pDataMmo = new CDataMMO;
 
 	Init();
 }
@@ -85,7 +80,6 @@ CServer::~CServer()
 #ifdef CONF_DISCORD
 	delete m_pDiscord;
 #endif
-	delete m_pDataMmo;
 	delete m_pMultiWorlds;
 	Sqlpool.DisconnectConnectionHeap();
 }
@@ -422,21 +416,6 @@ int CServer::ClientCountry(int ClientID) const
 bool CServer::ClientIngame(int ClientID) const
 {
 	return ClientID >= 0 && ClientID < MAX_CLIENTS && m_aClients[ClientID].m_State == CClient::STATE_INGAME;
-}
-
-void CServer::SendDataMmoInfo(int ClientID)
-{
-	int Size = m_pDataMmo->GetCurrentSize();
-	unsigned int Crc = m_pDataMmo->Crc();
-	SHA256_DIGEST Sha256 = m_pDataMmo->Sha256();
-
-	CMsgPacker Msg(NETMSG_DATA_MMO_INFO, true);
-	Msg.AddInt(Crc);
-	Msg.AddInt(Size);
-	Msg.AddInt(m_MapChunksPerRequest);
-	Msg.AddInt(MAP_CHUNK_SIZE);
-	Msg.AddRaw(&Sha256, sizeof(Sha256));
-	SendMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
 }
 
 void CServer::InitRconPasswordIfUnset()
@@ -888,7 +867,6 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				m_aClients[ClientID].m_Version = Unpacker.GetInt();
 				m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 				GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
-				SendDataMmoInfo(ClientID);
 				SendMap(ClientID);
 			}
 		}
@@ -913,32 +891,6 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			}
 			SendMapData(ClientID, g_Config.m_SvMapWindow + m_aClients[ClientID].m_NextMapChunk);
 			m_aClients[ClientID].m_NextMapChunk++;
-		}
-		else if(MsgID == NETMSG_REQUEST_MMO_DATA)
-		{
-			if((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_CONNECTING)
-			{
-				const int CurrentDataSize = m_pDataMmo->GetCurrentSize();
-				unsigned char* CurrentData = m_pDataMmo->GetCurrentData();
-
-				int ChunkSize = MAP_CHUNK_SIZE;
-				for(int i = 0; i < m_DataChunksPerRequest && m_aClients[ClientID].m_DataMmoChunk >= 0; ++i)
-				{
-					int Chunk = m_aClients[ClientID].m_DataMmoChunk;
-					int Offset = Chunk * ChunkSize;
-					if(Offset + ChunkSize >= CurrentDataSize)
-					{
-						ChunkSize = CurrentDataSize - Offset;
-						m_aClients[ClientID].m_DataMmoChunk = -1;
-					}
-					else
-						m_aClients[ClientID].m_DataMmoChunk++;
-
-					CMsgPacker Msg(NETMSG_DATA_MMO, true);
-					Msg.AddRaw(&CurrentData[Offset], ChunkSize);
-					SendMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
-				}
-			}
 		}
 		else if(MsgID == NETMSG_READY)
 		{
@@ -1637,11 +1589,6 @@ int CServer::Run()
 
 	str_format(aBuf, sizeof(aBuf), "version %s", GameServer()->NetVersion());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-	if(!m_pDataMmo->Load(m_pStorage))
-	{
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "mmo data information was not uploaded");
-		return -1;
-	}
 
 	// process pending commands
 	m_pConsole->StoreCommands(false);
@@ -1765,7 +1712,6 @@ int CServer::Run()
 							m_aClients[ClientID].Reset();
 							m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 							m_aClients[ClientID].m_WorldID = WORLD_STANDARD;
-							SendDataMmoInfo(ClientID);
 							SendMap(ClientID);
 						}
 						m_HeavyReload = false;

@@ -34,7 +34,7 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	{
 		m_LastVoteMenu = NOPE;
 		m_OpenVoteMenu = MenuList::MAIN_MENU;
-		m_MoodState = MOOD_NORMAL;
+		m_MoodState = Mood::NORMAL;
 		Acc().m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);
 		ClearTalking();
@@ -116,8 +116,6 @@ void CPlayer::EffectsTick()
 		pEffect->second--;
 		if(pEffect->second <= 0)
 		{
-			if(m_pCharacter && m_pCharacter->IsAlive())
-				GS()->CreateTextEffect(m_pCharacter->m_Core.m_Pos, pEffect->first.c_str(), TEXTEFFECT_FLAG_POTION|TEXTEFFECT_FLAG_REMOVING);
 			GS()->Chat(m_ClientID, "You lost the effect {STR}.", pEffect->first.c_str());
 			pEffect = CGS::ms_aEffects[m_ClientID].erase(pEffect);
 			continue;
@@ -163,7 +161,7 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
-	StrToInts(&pClientInfo->m_Clan0, 3, Server()->ClientClan(m_ClientID));
+	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_aSkinName);
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
@@ -193,7 +191,7 @@ void CPlayer::Snap(int SnappingClient)
 	//pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
 	//pPlayerInfo->m_Score = Acc().m_Level;
 
-	if (m_ClientID == SnappingClient && (GetTeam() == TEAM_SPECTATORS))
+	if(m_ClientID == SnappingClient && (GetTeam() == TEAM_SPECTATORS))
 	{
 		CNetObj_SpectatorInfo* pSpectatorInfo = static_cast<CNetObj_SpectatorInfo*>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, m_ClientID, sizeof(CNetObj_SpectatorInfo)));
 		if (!pSpectatorInfo)
@@ -366,7 +364,6 @@ void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 	{
 		GS()->Chat(m_ClientID, "You got the effect {STR} time {INT}sec.", Potion, Sec);
 		CGS::ms_aEffects[m_ClientID][Potion] = Sec;
-		GS()->CreateTextEffect(m_pCharacter->m_Core.m_Pos, Potion, TEXTEFFECT_FLAG_POTION|TEXTEFFECT_FLAG_ADDING);
 	}
 }
 
@@ -796,6 +793,13 @@ void CPlayer::FormatDialogText(int DataBotID, const char *pText) // TODO: perfor
 void CPlayer::ClearDialogText()
 {
 	mem_zero(m_aFormatDialogText, sizeof(m_aFormatDialogText));
+}
+
+const char* CPlayer::GetStatus() const
+{
+	if(IsAuthed() && Acc().IsGuild())
+		return GS()->Mmo()->Member()->GuildName(Acc().m_GuildID);
+	return Server()->ClientClan(m_ClientID);
 }
 
 void CPlayer::ChangeWorld(int WorldID)

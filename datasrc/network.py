@@ -23,7 +23,6 @@ GameMsgIDs = Enum("GAMEMSG", ["TEAM_SWAP", "SPEC_INVALIDID", "TEAM_SHUFFLE", "TE
 
 # mmotee
 WorldType = Enum("WORLD", ["STANDARD", "DUNGEON"])
-MoodType = Enum("MOOD", ["ANGRY", "AGRESSED_TANK", "AGRESSED_OTHER", "NORMAL", "FRIENDLY", "QUESTING", "PLAYER_TANK"])
 MmoPickups = Enum("MMO_PICKUP", ["BOX", "EXPERIENCE", "PLANT", "ORE", "SIDE_ARROW", "MAIN_ARROW", "DROP"])
 Equip = Enum("EQUIP", ["HAMMER", "GUN", "SHOTGUN", "GRENADE", "RIFLE", "MINER", "WINGS", "DISCORD"])
 Effects = Enum("EFFECT", ["SPASALON", "TELEPORT"])
@@ -121,7 +120,6 @@ Enums = [
     Effects,
 	Equip,
 	MmoPickups,
-	MoodType,
 	WorldType,
     Dialogs,
 ]
@@ -300,56 +298,6 @@ Objects = [
 	NetEvent("DamageInd:Common", [
 		NetIntAny("m_Angle"),
 	]),
-    
-    ## mmotee events
-	NetEvent("EffectMmo:Common", [
-		NetEnum("m_EffectID", Effects),
-	]),
-
-	NetEvent("TextEffect:Common", [
-		NetArray(NetIntAny("m_aText"), 4),
-		NetIntAny("m_Flag"),
-	]),
-
-    ## mmotee general object
-	NetObject("Mmo_ClientInfo", [
-		NetBool("m_Local"),
-		NetIntAny("m_Level"),
-		NetIntAny("m_Exp"),
-		
-		NetIntAny("m_Health"),
-		NetIntAny("m_HealthStart"),
-		NetIntAny("m_Armor"), 
-
-		NetArray(NetIntAny("m_Potions"), 12),
-		NetArray(NetIntAny("m_Gold"), 6),
-		NetArray(NetIntAny("m_StateName"), 6),
-
-		NetEnum("m_MoodType", MoodType),
-		NetEnum("m_WorldType", WorldType),
-		NetBool("m_ActiveQuest"),
-	]),
-
-	# mmotee send pickup item
-	NetObject("MmoPickup", [
-		NetIntAny("m_X"),
-		NetIntAny("m_Y"),
-		NetIntAny("m_Angle"),
-
-		NetEnum("m_Type", MmoPickups),
-	]),
-    
-	# mmotee send projectile item
-	NetObject("MmoProj", [
-		NetIntAny("m_X"),
-		NetIntAny("m_Y"),
-		NetIntAny("m_VelX"),
-		NetIntAny("m_VelY"),
-
-		NetIntAny("m_Type"),
-		NetIntRange("m_Weapon", 0, 'NUM_WEAPONS-1'),
-		NetTick("m_StartTick"),
-	]),
 ]
 
 Messages = [
@@ -490,152 +438,4 @@ Messages = [
 			NetStringStrict("m_Name"),
 			NetStringStrict("m_Arguments")
 	]),
-    
-	# mmotee client
-	# -------------
-	NetMessage("Cl_IsMmoServer", 
-	[
-		NetIntAny("m_Version"),
-	]),
-
-	# authirized client
-	NetMessage("Cl_ClientAuth", 
-	[
-        NetStringStrict("m_Login"),
-        NetStringStrict("m_Password"),
-		NetBool("m_SelectRegister"),
-	]),
-
-	# interactive mmo
-	NetMessage("Cl_TalkInteractive", []),
-    
-	# mmotee server
-	# -------------
-	NetMessage("Sv_AfterIsMmoServer", []),
-
-    # mmotee send equip items
-    NetMessage("Sv_EquipItems", 
-	[
-		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
-		NetArray(NetIntAny("m_EquipID"),  9),
-		NetArray(NetBool("m_EnchantItem"),  9),
-	]),
-    
-    # mmotee send add vote client
-	NetMessage("Sv_VoteMmoOptionAdd", 
-	[
-		NetStringStrict("m_pDescription"),
-        NetIntAny("m_pHexColor"),
-		NetArray(NetIntAny("m_pIcon"), 4),
-	]),
-
-	# authirized client
-	NetMessage("Sv_ClientProgressAuth", 
-	[
-		NetIntAny("m_Code"),
-	]),
-
-	# talk type how broadcast
-	NetMessage("Sv_TalkText",
-	[
-		NetStringStrict("m_pText"),
-		NetIntAny("m_ConversationWithClientID"),
-		NetEnum("m_Emote", Emotes),
-        NetIntAny("m_Flag"),
-	]),
-
-	# clear talk text
-	NetMessage("Sv_ClearTalkText", []),
-
-	# added item to Questing Process
-	NetMessage("Sv_AddQuestingProcessing",
-	[
-		NetStringStrict("m_pText"),
-		NetArray(NetIntAny("m_pIcon"), 4),
-		NetIntAny("m_pRequiresNum"),
-		NetIntAny("m_pHaveNum"),
-        NetBool("m_pGivingTable"),
-	]),
-
-	# clear all items on Questing Process
-	NetMessage("Sv_ClearQuestingProcessing", []),
-
-	# progress bar
-	NetMessage("Sv_ProgressBar",
-	[
-		NetStringStrict("m_pText"),
-		NetIntAny("m_pCount"),
-		NetIntAny("m_pRequires"),
-	]),
-
-    # music on map
-	NetMessage("Sv_WorldMusic",
-	[
-		NetIntAny("m_pSoundID"),
-		NetIntRange("m_pVolume", 1, 10),
-	]),
-
-    # -------------
-    # mrpg gui boxes
-	NetMessage("Sv_SendGuiInformationBox", 
-    [
-		NetStringStrict("m_pMsg"),
-    ]),
-    
-    # -------------
-    # mrpg inbox / TODO: optimize
-	NetMessage("Cl_MailLetterActions", 
-	[
-		NetIntAny("m_MailLetterID"),
-		NetIntAny("m_MailLetterFlags"),
-	]),
-    
-    NetMessage("Sv_SendMailLetterInfo",
-	[
-		NetIntAny("m_MailLetterID"), # unique value by which to receive the letter
-		NetStringStrict("m_pTitle"),
-        NetStringStrict("m_pFrom"),
-		NetStringStrict("m_pMsg"),
-        NetBool("m_IsRead"),
-        
-		NetStringStrict("m_pJsonAttachementItem"),
-	]),
-    
-	NetMessage("Cl_SendMailLetterTo", 
-	[
-		NetStringStrict("m_pTitle"),
-		NetStringStrict("m_pMsg"),
-		NetStringStrict("m_pPlayer"),
-		NetIntAny("m_FromClientID"),
-        
-        # todo: add support sending items / after implementations of items / and from
-	]),
-    
-    # - - - -
-    # dialogs
-	NetMessage("DialogCommon", 
-    [
-        NetStringStrict("m_pTitle"),
-		NetStringStrict("m_pButton1"),
-		NetStringStrict("m_pButton2"),
-	]),
-
-    # dialog msgbox
-	NetMessage("Sv_Dialog_Msgbox:DialogCommon", 
-    [
-		NetStringStrict("m_pMsg"),
-	]),
-
-    # dialog input
-	NetMessage("Sv_Dialog_Input:DialogCommon", 
-    [
-		NetStringStrict("m_pMsg"),
-	]),
-    
-    # dialog list
-    NetMessage("Sv_Dialog_List:DialogCommon", []),
-    NetMessage("Sv_Dialog_List_AddItem", 
-    [
-        NetStringStrict("m_pTitle"),
-    ]),
 ]

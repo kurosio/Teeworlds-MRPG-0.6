@@ -9,24 +9,6 @@
 #include <game/server/mmocore/Components/Quests/QuestCore.h>
 
 using namespace sqlstr;
-void CInventoryCore::OnPrepareInformation(IStorageEngine* pStorage, CDataFileWriter* pDataFile)
-{
-	nlohmann::json JsonQuestData;
-	for(auto& p : CItemDataInfo::ms_aItemsInfo)
-	{
-		JsonQuestData["items"].push_back(
-		{
-			{ "id", p.first },
-			{ "name", p.second.m_aName },
-			{ "desc", p.second.m_aDesc },
-			{ "icon", p.second.m_aIcon },
-		});
-	}
-
-	std::string Data = JsonQuestData.dump();
-	pDataFile->AddItem(MMO_DATA_INVENTORY_INFORMATION, 0, (int)Data.length() + 1, Data.c_str());
-}
-
 void CInventoryCore::OnInit()
 {
 	const auto InitItemsList = Sqlpool.Prepare<DB::SELECT>("*", "tw_items_list");
