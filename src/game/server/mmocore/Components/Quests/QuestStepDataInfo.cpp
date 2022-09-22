@@ -23,7 +23,7 @@ void CQuestStepDataInfo::UpdateBot(CGS* pGS)
 	int BotClientID = -1;
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		if(!pBotGS->m_apPlayers[i] || pBotGS->m_apPlayers[i]->GetBotType() != TYPE_BOT_QUEST || pBotGS->m_apPlayers[i]->GetBotSub() != m_Bot->m_SubBotID)
+		if(!pBotGS->m_apPlayers[i] || pBotGS->m_apPlayers[i]->GetBotType() != TYPE_BOT_QUEST || pBotGS->m_apPlayers[i]->GetBotMobID() != m_Bot->m_SubBotID)
 			continue;
 		BotClientID = i;
 	}
@@ -239,7 +239,7 @@ void CPlayerQuestStepDataInfo::CreateStepDropTakeItems(CPlayer* pPlayer)
 }
 
 
-void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* TextTalk)
+void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffer)
 {
 	dynamic_string Buffer;
 	CGS* pGS = pPlayer->GS();
@@ -282,7 +282,7 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* TextTa
 		}
 	}
 
-	pGS->Motd(ClientID, "{STR}\n\n{STR}{STR}\n\n", TextTalk, (IsActiveTask ? "### Task" : "\0"), Buffer.buffer());
+	pGS->Motd(ClientID, "{STR}\n\n{STR}{STR}\n\n", pBuffer, (IsActiveTask ? "### Task" : "\0"), Buffer.buffer());
 	pPlayer->ClearDialogText();
 	Buffer.clear();
 }

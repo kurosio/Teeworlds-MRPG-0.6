@@ -29,7 +29,7 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	ClearTarget();
 
 	// mob information
-	const int SubBotID = m_pBotPlayer->GetBotSub();
+	const int SubBotID = m_pBotPlayer->GetBotMobID();
 	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[SubBotID].m_Boss)
 	{
 		for(int i = 0; i < 3; i++)
@@ -80,7 +80,7 @@ void CCharacterBotAI::GiveRandomEffects(int To)
 	if(!pPlayerTo && To != m_pBotPlayer->GetCID())
 		return;
 
-	const int SubID = m_pBotPlayer->GetBotSub();
+	const int SubID = m_pBotPlayer->GetBotMobID();
 	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[SubID].m_aEffect[0] != '\0')
 		pPlayerTo->GiveEffect(MobBotInfo::ms_aMobBot[SubID].m_aEffect, 3 + random_int() % 3, 5.0f);
 }
@@ -143,7 +143,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 {
 	const int ClientID = pPlayer->GetCID();
 	const int BotID = m_pBotPlayer->GetBotID();
-	const int SubID = m_pBotPlayer->GetBotSub();
+	const int SubID = m_pBotPlayer->GetBotMobID();
 
 	// quest mob progress
 	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
@@ -251,7 +251,7 @@ void CCharacterBotAI::EngineBots()
 // interactive of NPC
 void CCharacterBotAI::EngineNPC()
 {
-	const int MobID = m_pBotPlayer->GetBotSub();
+	const int MobID = m_pBotPlayer->GetBotMobID();
 	const int EmoteBot = NpcBotInfo::ms_aNpcBot[MobID].m_Emote;
 	EmotesAction(EmoteBot);
 
@@ -300,7 +300,7 @@ void CCharacterBotAI::EngineMobs()
 		m_pBotPlayer->m_TargetPos = vec2(0, 0);
 
 	// behavior sleppy
-	const int MobID = m_pBotPlayer->GetBotSub();
+	const int MobID = m_pBotPlayer->GetBotMobID();
 	if(IsBotTargetEmpty() && str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Sleepy") == 0)
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
@@ -376,7 +376,7 @@ void CCharacterBotAI::Move()
 
 	// jump over character
 	vec2 IntersectPos;
-	CCharacter* pChar = GameWorld()->IntersectCharacter(GetPos(), GetPos() + vec2(m_Input.m_Direction, 0) * 128, 16.0f, IntersectPos, this);
+	CCharacter* pChar = GameWorld()->IntersectCharacter(GetPos(), GetPos() + vec2(m_Input.m_Direction, 0) * 128, 16.0f, IntersectPos, (CCharacter*)this);
 	if (pChar && (pChar->GetPos().x < GetPos().x || !pChar->GetPlayer()->IsBot()))
 		m_Input.m_Jump = 1;
 
@@ -453,6 +453,7 @@ void CCharacterBotAI::Move()
 
 	m_pBotPlayer->m_ThreadReadNow.store(false, std::memory_order::memory_order_release);
 }
+
 
 void CCharacterBotAI::Action()
 {
@@ -560,7 +561,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 bool CCharacterBotAI::SearchTalkedPlayer()
 {
 	bool PlayerFinding = false;
-	const int MobID = m_pBotPlayer->GetBotSub();
+	const int MobID = m_pBotPlayer->GetBotMobID();
 	const bool DialoguesNotEmpty = ((m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.empty())
 				|| (m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC && !(NpcBotInfo::ms_aNpcBot[MobID].m_aDialog).empty()));
 	for(int i = 0; i < MAX_PLAYERS; i++)

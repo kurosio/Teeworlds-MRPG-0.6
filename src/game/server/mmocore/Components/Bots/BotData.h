@@ -38,11 +38,6 @@ struct DataBotInfo
 /************************************************************************/
 struct NpcBotInfo
 {
-	const char* GetName() const
-	{
-		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
-	}
-
 	bool m_Static;
 	vec2 m_Position;
 	int m_Emote;
@@ -51,6 +46,11 @@ struct NpcBotInfo
 	int m_Function;
 	int m_GivesQuestID;
 	std::vector<DialogData> m_aDialog;
+
+	const char* GetName() const
+	{
+		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
+	}
 
 	static bool IsNpcBotValid(int MobID)
 	{
@@ -64,11 +64,7 @@ struct NpcBotInfo
 /************************************************************************/
 struct QuestBotInfo
 {
-	const char* GetName() const
-	{
-		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
-	}
-
+	char m_aGeneratedNickname[MAX_NAME_LENGTH];
 	vec2 m_Position;
 	int m_QuestID;
 	int m_Step;
@@ -90,6 +86,13 @@ struct QuestBotInfo
 	bool m_GenerateNick;
 	std::vector<DialogData> m_aDialog;
 
+	const char* GetName() const
+	{
+		if(m_aGeneratedNickname[0] != '\0')
+			return m_aGeneratedNickname;
+		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
+	}
+
 	static bool IsQuestBotValid(int MobID)
 	{
 		return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID);
@@ -102,11 +105,8 @@ struct QuestBotInfo
 /************************************************************************/
 struct MobBotInfo
 {
-	const char* GetName() const
-	{
-		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
-	}
 
+	char m_aGeneratedNickname[MAX_NAME_LENGTH];
 	bool m_Boss;
 	int m_Power;
 	int m_Spread;
@@ -121,6 +121,13 @@ struct MobBotInfo
 	int m_aValueItem[MAX_DROPPED_FROM_MOBS];
 	float m_aRandomItem[MAX_DROPPED_FROM_MOBS];
 	int m_BotID;
+
+	const char* GetName() const
+	{
+		if(m_aGeneratedNickname[0] != '\0')
+			return m_aGeneratedNickname;
+		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
+	}
 
 	static bool IsMobBotValid(int MobID)
 	{

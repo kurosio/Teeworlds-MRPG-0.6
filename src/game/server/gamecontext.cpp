@@ -1158,6 +1158,9 @@ void CGS::OnClientEnter(int ClientID)
 	// another
 	if(!pPlayer->IsAuthed())
 	{
+		Chat(-1, "{STR} entered and joined the MRPG", Server()->ClientName(ClientID));
+		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
+
 		SendTeam(ClientID, TEAM_SPECTATORS, false, -1);
 		Chat(ClientID, "- - - - - - - [Welcome to MRPG] - - - - - - -");
 		Chat(ClientID, "You need to create an account, or log in if you already have.");
@@ -1165,7 +1168,6 @@ void CGS::OnClientEnter(int ClientID)
 		Chat(ClientID, "Log in: \"/login <login> <pass>\"");
 		SendDayInfo(ClientID);
 
-		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 		ShowVotesNewbieInformation(ClientID);
 		return;
 	}
@@ -1183,6 +1185,7 @@ void CGS::OnClientDrop(int ClientID, const char *pReason)
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
 	if (Server()->ClientIngame(ClientID) && IsPlayerEqualWorldID(ClientID))
 	{
+		Chat(-1, "{STR} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
 
 		/*CNetMsg_Sv_ClientDrop Msg;

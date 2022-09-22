@@ -37,7 +37,7 @@ public:
 	void AddMobProgress(CPlayer* pPlayer, int BotID);
 	void CreateStepArrow(CPlayer* pPlayer);
 	void CreateStepDropTakeItems(CPlayer* pPlayer);
-	void ShowRequired(CPlayer* pPlayer, const char* TextTalk);
+	void ShowRequired(CPlayer* pPlayer, const char* pBuffer);
 };
 
 #endif

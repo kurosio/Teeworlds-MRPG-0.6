@@ -47,7 +47,7 @@ private:
 	void ShowQuestID(CPlayer *pPlayer, int QuestID);
 
 public:
-	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, const char* TextTalk = "\0");
+	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, const char* pBuffer);
 
 	bool InteractiveQuestNPC(CPlayer* pPlayer, QuestBotInfo& pBot, bool FinalStepTalking);
 	void AddMobProgressQuests(CPlayer* pPlayer, int BotID);

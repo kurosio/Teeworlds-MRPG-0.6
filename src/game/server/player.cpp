@@ -313,7 +313,7 @@ void CPlayer::ProgressBar(const char *Name, int MyLevel, int MyExp, int ExpNeed,
 	const float GetLevelProgress = (float)(MyExp * 100.0) / (float)ExpNeed;
 	const float GetExpProgress = (float)(GivedExp * 100.0) / (float)ExpNeed;
 	const std::unique_ptr<char[]> Level = std::move(GS()->LevelString(100, (int)GetLevelProgress, 10, ':', ' '));
-	str_format(aBufBroadcast, sizeof(aBufBroadcast), "^235Lv%d %s%s %0.2f%%+%0.3f%%(%d)XP\n", MyLevel, Name, Level.get(), GetLevelProgress, GetExpProgress, GivedExp);
+	str_format(aBufBroadcast, sizeof(aBufBroadcast), "Lv%d %s%s %0.2f%%+%0.3f%%(%d)XP", MyLevel, Name, Level.get(), GetLevelProgress, GetExpProgress, GivedExp);
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, aBufBroadcast);
 }
 
@@ -657,7 +657,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 	}
 
 	CPlayerBot* pBotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[TalkedID]);
-	const int MobID = pBotPlayer->GetBotSub();
+	const int MobID = pBotPlayer->GetBotMobID();
 	if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
 	{
 		// clearing the end of dialogs or a dialog that was meaningless
@@ -674,7 +674,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 		if (isTalkingEmpty || GetQuest(GivingQuestID).GetState() >= QuestState::QUEST_ACCEPT)
 		{
 			const char* pMeaninglessDialog = GS()->Mmo()->BotsData()->GetMeaninglessDialog();
-			GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, -1, TalkedID, pMeaninglessDialog);
+			GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, -1, pMeaninglessDialog);
 			m_DialogNPC.m_Progress = IS_TALKING_EMPTY;
 			return;
 		}
@@ -685,7 +685,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 		{
 			if(!m_DialogNPC.m_FreezedProgress)
 			{
-				GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, m_DialogNPC.m_Progress, TalkedID);
+				GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, m_DialogNPC.m_Progress);
 				m_DialogNPC.m_FreezedProgress = true;
 				return;
 			}
@@ -694,7 +694,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			m_DialogNPC.m_Progress++;
 		}
 
-		GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, m_DialogNPC.m_Progress, TalkedID);
+		GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, m_DialogNPC.m_Progress);
 	}
 
 	else if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
@@ -713,8 +713,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			if (!m_DialogNPC.m_FreezedProgress)
 			{
 				GS()->Mmo()->Quest()->DoStepDropTakeItems(this, QuestBotInfo::ms_aQuestBot[MobID]);
-				GS()->Mmo()->BotsData()->DialogBotStepQuest(this, MobID, m_DialogNPC.m_Progress, TalkedID);
-				GS()->Mmo()->BotsData()->ShowBotQuestTaskInfo(this, MobID, m_DialogNPC.m_Progress);
+				GS()->Mmo()->BotsData()->DialogBotStepQuest(this, MobID, m_DialogNPC.m_Progress, true);
 				m_DialogNPC.m_FreezedProgress = true;
 				return;
 			}
@@ -722,15 +721,14 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			// skip non complete dialog quest
 			if (!GS()->Mmo()->Quest()->InteractiveQuestNPC(this, QuestBotInfo::ms_aQuestBot[MobID], false))
 			{
-				GS()->Mmo()->BotsData()->DialogBotStepQuest(this, MobID, m_DialogNPC.m_Progress, TalkedID);
-				GS()->Mmo()->BotsData()->ShowBotQuestTaskInfo(this, MobID, m_DialogNPC.m_Progress);
+				GS()->Mmo()->BotsData()->DialogBotStepQuest(this, MobID, m_DialogNPC.m_Progress, true);
 				return;
 			}
 			else
 				m_DialogNPC.m_Progress++;
 		}
 
-		GS()->Mmo()->BotsData()->DialogBotStepQuest(this, MobID, m_DialogNPC.m_Progress, TalkedID);
+		GS()->Mmo()->BotsData()->DialogBotStepQuest(this, MobID, m_DialogNPC.m_Progress, false);
 	}
 
 	m_DialogNPC.m_Progress++;

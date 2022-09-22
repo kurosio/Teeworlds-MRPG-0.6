@@ -91,7 +91,7 @@ public:
 	virtual bool IsBot() const { return false; }
 	virtual int GetBotID() const { return -1; }
 	virtual int GetBotType() const { return -1; }
-	virtual int GetBotSub() const { return -1; }
+	virtual int GetBotMobID() const { return -1; }
 	virtual	int GetPlayerWorldID() const;
 
 	virtual int GetStartHealth();

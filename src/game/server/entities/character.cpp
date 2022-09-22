@@ -483,7 +483,7 @@ void CCharacter::ResetHook()
 void CCharacter::ResetInput()
 {
 	m_Input.m_Direction = 0;
-	//m_Input.m_Hook = 0;
+	m_Input.m_Hook = 0;
 	if((m_Input.m_Fire&1) != 0)
 		m_Input.m_Fire++;
 	m_Input.m_Fire &= INPUT_STATE_MASK;
@@ -559,6 +559,9 @@ void CCharacter::TickDefered()
 	m_Core.Quantize();
 	m_Pos = m_Core.m_Pos;
 	m_TriggeredEvents |= m_Core.m_TriggeredEvents;
+
+	if(m_TriggeredEvents & COREEVENT_HOOK_ATTACH_PLAYER)
+			GS()->CreateSound(m_Pos, SOUND_HOOK_ATTACH_PLAYER);
 
 	if(m_pPlayer->GetTeam() == TEAM_SPECTATORS)
 	{
@@ -638,7 +641,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	m_pPlayer->m_aPlayerTick[TickState::Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
 	if(m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
 	{
-		const int SubBotID = m_pPlayer->GetBotSub();
+		const int SubBotID = m_pPlayer->GetBotMobID();
 		m_pPlayer->m_aPlayerTick[TickState::Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick*Server()->TickSpeed();
 	}
 
@@ -929,7 +932,7 @@ void CCharacter::HandleTuning()
 		pTuningParams->m_PlayerCollision = 0;
 
 	// behavior mobs
-	const int MobID = m_pPlayer->GetBotSub();
+	const int MobID = m_pPlayer->GetBotMobID();
 	if(m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC || m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
 	{
 		// walk effect

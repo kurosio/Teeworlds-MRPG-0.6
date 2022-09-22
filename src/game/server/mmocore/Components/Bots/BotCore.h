@@ -24,12 +24,11 @@ class CBotCore : public MmoComponent
 	void InitMobsBots(const char* pWhereLocalWorld);
 
 public:
-	void DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, int TalkedID, const char *pText = "empty");
-	void DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, int TalkedID);
-	void ShowBotQuestTaskInfo(CPlayer* pPlayer, int MobID, int Progress);
+	void DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const char *pText = nullptr);
+	void DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, bool ExecutionStep);
 	static int GetQuestNPC(int MobID);
 	static const char *GetMeaninglessDialog();
-
+	
 	void ConAddCharacterBot(int ClientID, const char* pCharacter);
 };
 

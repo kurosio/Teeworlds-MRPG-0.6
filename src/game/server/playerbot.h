@@ -11,7 +11,7 @@ class CPlayerBot : public CPlayer
 
 	int m_BotType;
 	int m_BotID;
-	int m_SubBotID;
+	int m_MobID;
 	int m_BotHealth;
 	int m_DungeonAllowedSpawn;
 	std::map<int, vec2> m_WayPoints;
@@ -34,7 +34,7 @@ public:
 	bool IsBot() const override { return true; }
 	int GetBotID() const override { return m_BotID; }
 	int GetBotType() const override { return m_BotType; }
-	int GetBotSub() const override { return m_SubBotID; }
+	int GetBotMobID() const override { return m_MobID; }
 	int GetPlayerWorldID() const override;
 
 	int GetStartHealth() override;
@@ -67,7 +67,6 @@ private:
 	const char* GetStatus() const override;
 	Mood GetMoodState() const override;
 	bool IsActiveQuests(int SnapClientID) const;
-	void GenerateNick(char* buffer, int size_buffer) const;
 
 	/***********************************************************************************/
 	/*  Thread path finderdon't want to secure m_TargetPos, or m_WayPoints with mutex  */
