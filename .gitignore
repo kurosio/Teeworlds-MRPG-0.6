@@ -68,3 +68,5 @@ rules.ninja
 MinSizeRel/mastersrv.exe
 MinSizeRel/versionsrv.exe
 *.code-workspace
+cmake-build-debug/
+cmake-build-release/
