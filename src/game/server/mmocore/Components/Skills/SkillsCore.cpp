@@ -135,7 +135,6 @@ void CSkillsCore::SkillSelected(CPlayer *pPlayer, int SkillID)
 	const int HideID = NUM_TAB_MENU + SkillID;
 	const bool IsPassive = pSkill.Info().m_Passive;
 	const bool IsMaxLevel = pSkill.m_Level >= pSkill.Info().m_MaxLevel;
-	const char* pSkillIcon[NUM_SKILL_TYPES] = { "skill_impr", "skill_healer", "skill_dps", "skill_tank" };
 	
 	GS()->AVH(ClientID, HideID, "{STR} - {INT}SP ({INT}/{INT})", pSkill.Info().m_aName, pSkill.Info().m_PriceSP, pSkill.m_Level, pSkill.Info().m_MaxLevel);
 	if(!IsMaxLevel)
