@@ -16,23 +16,27 @@ void CInventoryCore::OnInit()
 	{
 		while (pRes->next())
 		{
-			const int ItemID = pRes->getInt("ItemID");
-			str_copy(CItemDataInfo::ms_aItemsInfo[ItemID].m_aName, pRes->getString("Name").c_str(), sizeof(CItemDataInfo::ms_aItemsInfo[ItemID].m_aName));
-			str_copy(CItemDataInfo::ms_aItemsInfo[ItemID].m_aDesc, pRes->getString("Description").c_str(), sizeof(CItemDataInfo::ms_aItemsInfo[ItemID].m_aDesc));
-			str_copy(CItemDataInfo::ms_aItemsInfo[ItemID].m_aIcon, pRes->getString("Icon").c_str(), sizeof(CItemDataInfo::ms_aItemsInfo[ItemID].m_aIcon));
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_Type = pRes->getInt("Type");
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_Function = pRes->getInt("Function");
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_Dysenthis = pRes->getInt("Desynthesis");
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_MinimalPrice = pRes->getInt("Selling");
+			const int ID = pRes->getInt("ID");
+			CItemDataInfo ItemInfo;
+
+
+			str_copy(ItemInfo.m_aName, pRes->getString("Name").c_str(), sizeof(ItemInfo.m_aName));
+			str_copy(ItemInfo.m_aDesc, pRes->getString("Description").c_str(), sizeof(ItemInfo.m_aDesc));
+			ItemInfo.m_Type = pRes->getInt("Type");
+			ItemInfo.m_Function = pRes->getInt("Function");
+			ItemInfo.m_InitialPrice = pRes->getInt("InitialPrice");
+			ItemInfo.m_Dysenthis = pRes->getInt("Desynthesis");
+
 			for (int i = 0; i < STATS_MAX_FOR_ITEM; i++)
 			{
 				char aBuf[32];
 				str_format(aBuf, sizeof(aBuf), "Attribute%d", i);
-				CItemDataInfo::ms_aItemsInfo[ItemID].m_aAttribute[i] = pRes->getInt(aBuf);
+				ItemInfo.m_aAttribute[i] = pRes->getInt(aBuf);
 				str_format(aBuf, sizeof(aBuf), "AttributeValue%d", i);
-				CItemDataInfo::ms_aItemsInfo[ItemID].m_aAttributeValue[i] = pRes->getInt(aBuf);
+				ItemInfo.m_aAttributeValue[i] = pRes->getInt(aBuf);
 			}
-			CItemDataInfo::ms_aItemsInfo[ItemID].m_ProjID = pRes->getInt("ProjectileID");
+
+			CItemDataInfo::ms_aItemsInfo[ID] = ItemInfo;
 		}
 	});
 
@@ -442,7 +446,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 
 	GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop {STR}", pNameItem);
 
-	if (pItemPlayer.Info().m_MinimalPrice > 0)
+	if (pItemPlayer.Info().m_InitialPrice > 0)
 		GS()->AVM(ClientID, "AUCTIONSLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
 }
 

@@ -154,7 +154,7 @@ void CCraftCore::CraftItem(CPlayer *pPlayer, int CraftID) const
 	if(TickedDiscountCraft)
 	{
 		pPlayer->GetItem(itTicketDiscountCraft).Remove(1);
-		GS()->Chat(ClientID, "You used item {STR} and get discount 25%.", GS()->GetItemInfo(itTicketDiscountCraft).m_aName);
+		GS()->Chat(ClientID, "You used item {STR} and get discount 25%.", GS()->GetItemInfo(itTicketDiscountCraft).GetName());
 	}
 
 	for(int i = 0; i < 3; i++)

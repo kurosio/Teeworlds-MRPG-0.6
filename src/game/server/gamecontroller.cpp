@@ -293,4 +293,6 @@ void IGameController::DoTeamChange(CPlayer *pPlayer, bool DoChatMsg)
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", ClientID, Server()->ClientName(ClientID), Team);
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	OnPlayerInfoChange(pPlayer, GS()->GetWorldID());
+
+	Server()->ExpireServerInfo();
 }

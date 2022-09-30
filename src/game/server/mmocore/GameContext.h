@@ -247,14 +247,14 @@ enum
 	itPotionHealthRegen = 15,			// Health regeneration potion
 	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
 	itLittleBagGold = 17,				// Gives 10-50 gold
-	itPotionResurrection = 25,			// Resurrection potion
-	itExplosiveGun = 33,				// Explosion for gun
-	itExplosiveShotgun = 34,			// Explosion for shotgun
-	itTicketResetClassStats = 38,		// Ticket to reset the statistics of class upgrades
-	itModePVP = 39,						// PVP mode setting
-	itTicketResetWeaponStats = 40,		// Ticket to reset the statistics cartridge upgrade
-	itTicketDiscountCraft = 43,			// Discount ticket for crafting
-	itRandomHomeDecoration = 51,		// Random home decor
+	itPotionResurrection = 18,			// Resurrection potion
+	itExplosiveGun = 19,				// Explosion for gun
+	itExplosiveShotgun = 20,			// Explosion for shotgun
+	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
+	itModePVP = 22,						// PVP mode setting
+	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
+	itTicketDiscountCraft = 24,			// Discount ticket for crafting
+	itRandomHomeDecoration = 25,		// Random home decor
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,
@@ -357,22 +357,6 @@ enum
 enum CDataList
 {
 	MMO_DATA_INVENTORY_INFORMATION = 0,
-};
-
-// sturctures
-class CItemDataInformation
-{
-public:
-	char m_aName[32];
-	char m_aDesc[64];
-	char m_aIcon[16];
-	int m_Type;
-	int m_Function;
-	int m_Dysenthis;
-	int m_MinimalPrice;
-	int m_aAttribute[2];
-	int m_aAttributeValue[2];
-	int m_ProjID;
 };
 
 // skin data

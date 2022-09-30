@@ -7,13 +7,24 @@
 #define PERCENT_OF_ENCHANT 8
 #define PERCENT_MAXIMUM_ENCHANT 40
 
-class CItemDataInfo : public CItemDataInformation
+class CItemDataInfo
 {
+	friend class CInventoryCore;
+
+	char m_aName[32];
+	char m_aDesc[64];
+
 public:
+	int m_Type;
+	int m_Function;
+	int m_Dysenthis;
+	int m_InitialPrice;
+	int m_aAttribute[2];
+	int m_aAttributeValue[2];
+
 	// main functions
 	const char* GetName() const { return m_aName; }
 	const char* GetDesc() const { return m_aDesc; }
-	const char* GetIcon() const { return m_aIcon; }
 
 	// equip modules types functions
 	int GetInfoEnchantStats(int AttributeID) const;

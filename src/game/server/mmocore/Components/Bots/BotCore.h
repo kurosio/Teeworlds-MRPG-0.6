@@ -23,6 +23,8 @@ class CBotCore : public MmoComponent
 	void InitNPCBots(const char* pWhereLocalWorld);
 	void InitMobsBots(const char* pWhereLocalWorld);
 
+	void SendChatDialog(bool PlayerTalked, int BotType, int MobID, int ClientID, const char* pText);
+
 public:
 	void DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const char *pText = nullptr);
 	void DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, bool ExecutionStep);

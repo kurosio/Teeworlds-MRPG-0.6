@@ -44,7 +44,7 @@ struct NpcBotInfo
 	int m_WorldID;
 	int m_BotID;
 	int m_Function;
-	int m_GivesQuestID;
+	int m_GiveQuestID;
 	std::vector<DialogData> m_aDialog;
 
 	const char* GetName() const

@@ -19,7 +19,6 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_Weapon = Weapon;
 	m_StartTick = Server()->Tick();
 	m_Explosive = Explosive;
-	m_OwnerMmoProjType = GetOwnerProjID(m_Owner);
 
 	GameWorld()->InsertEntity(this);
 }
@@ -113,37 +112,4 @@ void CProjectile::Snap(int SnappingClient)
 		pProj->m_StartTick = m_StartTick;
 		pProj->m_Type = m_Type;
 	}
-}
-
-int CProjectile::GetOwnerProjID(int ClientID) const
-{
-	CPlayer* pPlayer = GS()->m_apPlayers[ClientID];
-	switch (m_Type)
-	{
-	case WEAPON_GUN:
-	{
-		const int EquipID = pPlayer->GetEquippedItemID(EQUIP_GUN);
-		if (EquipID <= 0)
-			return -1;
-
-		return GS()->GetItemInfo(EquipID).m_ProjID;
-	}
-	case WEAPON_SHOTGUN:
-	{
-		const int EquipID = pPlayer->GetEquippedItemID(EQUIP_SHOTGUN);
-		if (EquipID <= 0)
-			return -1;
-
-		return GS()->GetItemInfo(EquipID).m_ProjID;
-	}
-	case WEAPON_GRENADE:
-	{
-		const int EquipID = pPlayer->GetEquippedItemID(EQUIP_GRENADE);
-		if (EquipID <= 0)
-			return -1;
-
-		return GS()->GetItemInfo(EquipID).m_ProjID;
-	}
-	}
-	return -1;
 }

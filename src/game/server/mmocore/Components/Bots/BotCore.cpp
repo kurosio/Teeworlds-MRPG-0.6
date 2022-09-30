@@ -151,8 +151,8 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 		NpcBot.m_Emote = pRes->getInt("Emote");
 		NpcBot.m_BotID = pRes->getInt("BotID");
 		NpcBot.m_Function = pRes->getInt("Function");
-		NpcBot.m_GivesQuestID = pRes->getInt("GivesQuestID");
-		if(NpcBot.m_GivesQuestID > 0)
+		NpcBot.m_GiveQuestID = pRes->getInt("GiveQuestID");
+		if(NpcBot.m_GiveQuestID > 0)
 			NpcBot.m_Function = FUNCTION_NPC_GIVE_QUEST;
 
 		try
@@ -229,6 +229,33 @@ void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 	}
 }
 
+// send a formatted message
+void CBotCore::SendChatDialog(bool PlayerTalked, int BotType, int MobID, int ClientID, const char* pText)
+{
+	CNetMsg_Sv_Chat Msg;
+	Msg.m_Team = -1;
+
+	if(PlayerTalked)
+	{
+		Msg.m_ClientID = ClientID;	
+	}
+	else
+	{	
+		// check it's if there's a active bot
+		int BotClientID = -1;
+		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+		{
+			if(!GS()->m_apPlayers[i] || GS()->m_apPlayers[i]->GetBotType() != BotType || GS()->m_apPlayers[i]->GetBotMobID() != MobID)
+				continue;
+			BotClientID = i;
+		}
+		Msg.m_ClientID = BotClientID;
+	}
+
+	Msg.m_pMessage = pText;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+}
+
 void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const char *pText)
 {
 	const int sizeDialogs = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog.size();
@@ -247,6 +274,7 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 		str_format(reformTalkedText, sizeof(reformTalkedText), "( 1 of 1 ) %s:\n- %s", NpcBotInfo::ms_aNpcBot[MobID].GetName(), pPlayer->GetDialogText());
 		pPlayer->ClearDialogText();
 
+		SendChatDialog(true, BotsTypes::TYPE_BOT_NPC, MobID, ClientID, pPlayer->GetDialogText());
 		GS()->Motd(ClientID, reformTalkedText);
 		return;
 	}
@@ -261,7 +289,8 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 	pPlayer->FormatDialogText(BotID, NpcBotInfo::ms_aNpcBot[MobID].m_aDialog[Progress].m_aText);
 	str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) %s:\n- %s", (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
 	pPlayer->ClearDialogText();
-	
+
+	SendChatDialog(false, BotsTypes::TYPE_BOT_NPC, MobID, ClientID, pPlayer->GetDialogText());
 	GS()->Motd(ClientID, reformTalkedText);
 }
 
@@ -302,7 +331,7 @@ int CBotCore::GetQuestNPC(int MobID)
 	if (!NpcBotInfo::IsNpcBotValid(MobID))
 		return -1;
 
-	return NpcBotInfo::ms_aNpcBot[MobID].m_GivesQuestID;
+	return NpcBotInfo::ms_aNpcBot[MobID].m_GiveQuestID;
 }
 
 

@@ -17,8 +17,6 @@ class CProjectile : public CEntity
 	int m_StartTick;
 	bool m_Explosive;
 
-	int m_OwnerMmoProjType;
-
 public:
 	CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
 		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon);
@@ -29,9 +27,6 @@ public:
 	void Tick() override;
 	virtual void TickPaused();
 	void Snap(int SnappingClient) override;
-
-private:
-	int GetOwnerProjID(int ClientID) const;
 };
 
 #endif

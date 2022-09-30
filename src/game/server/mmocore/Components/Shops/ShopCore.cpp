@@ -84,7 +84,7 @@ bool CShopCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 		CItemDataInfo &pInformationSellItem = GS()->GetItemInfo(ItemID);
 
 		const int SlotValue = pPlayer->GetTempData().m_SellItem.m_Value;
-		const int MinimalPrice = SlotValue * pInformationSellItem.m_MinimalPrice;
+		const int MinimalPrice = SlotValue * pInformationSellItem.m_InitialPrice;
 		const int SlotPrice = pPlayer->GetTempData().m_SellItem.m_Price;
 		const int SlotEnchant = pPlayer->GetTempData().m_SellItem.m_Enchant;
 
@@ -129,7 +129,7 @@ bool CShopCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const in
 		if(pPlayerSellItem.Info().IsEnchantable())
 			Get = 1;
 
-		const int c_minimalprice = (Get * pPlayerSellItem.Info().m_MinimalPrice);
+		const int c_minimalprice = (Get * pPlayerSellItem.Info().m_InitialPrice);
 		if(pPlayer->GetTempData().m_SellItem.m_Price < c_minimalprice)
 			pPlayer->GetTempData().m_SellItem.m_Price = c_minimalprice;
 
@@ -140,7 +140,7 @@ bool CShopCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const in
 
 	if(PPSTR(CMD, "AUCTIONPRICE") == 0)
 	{
-		const int c_minimalprice = (pPlayer->GetTempData().m_SellItem.m_Value * GS()->GetItemInfo(VoteID).m_MinimalPrice);
+		const int c_minimalprice = (pPlayer->GetTempData().m_SellItem.m_Value * GS()->GetItemInfo(VoteID).m_InitialPrice);
 		if(Get < c_minimalprice)
 			Get = c_minimalprice;
 

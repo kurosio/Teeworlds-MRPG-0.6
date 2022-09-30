@@ -296,7 +296,7 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 			return true;
 		}
 
-		GS()->Chat(-1, "Congratulations {STR}, planted at home {STR}!", Server()->ClientName(ClientID), GS()->GetItemInfo(ItemID).m_aName);
+		GS()->Chat(-1, "Congratulations {STR}, planted at home {STR}!", Server()->ClientName(ClientID), GS()->GetItemInfo(ItemID).GetName());
 		ChangePlantsID(HouseID, ItemID);
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 	}

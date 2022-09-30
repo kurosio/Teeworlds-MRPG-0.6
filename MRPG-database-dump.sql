@@ -13,7 +13,7 @@
     <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/lib/codemirror.css?v=5.1.3">
     <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/addon/hint/show-hint.css?v=5.1.3">
     <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/addon/lint/lint.css?v=5.1.3">
-    <link rel="stylesheet" type="text/css" href="./themes/pmahomme/css/theme.css?v=5.1.3&nocache=517469248ltr&server=1">
+    <link rel="stylesheet" type="text/css" href="./themes/pmahomme/css/theme.css?v=5.1.3&nocache=226645057ltr&server=1">
     <link rel="stylesheet" type="text/css" href="./themes/pmahomme/css/printview.css?v=5.1.3" media="print" id="printcss">
     <title>localhost / 127.0.0.1 | phpMyAdmin 5.1.3</title>
     <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.min.js?v=5.1.3"></script>
@@ -56,7 +56,7 @@
 
 <script data-cfasync="false" type="text/javascript">
 // <![CDATA[
-CommonParams.setAll({common_query:"",opendb_url:"index.php?route=/database/structure",lang:"ru",server:"1",table:"",db:"",token:"7c5e2a7968573c366e26316e2b3e685d",text_dir:"ltr",show_databases_navigation_as_tree:true,pma_text_default_tab:"Обзор",pma_text_left_default_tab:"Структура",pma_text_left_default_tab2:false,LimitChars:"50",pftext:"",confirm:true,LoginCookieValidity:"1440",session_gc_maxlifetime:"1440",logged_in:true,is_https:false,rootPath:"/phpmyadmin/",arg_separator:"&",PMA_VERSION:"5.1.3",auth_type:"config",user:"root"});
+CommonParams.setAll({common_query:"",opendb_url:"index.php?route=/database/structure",lang:"ru",server:"1",table:"",db:"",token:"54407872376d3568456d7e6b69557230",text_dir:"ltr",show_databases_navigation_as_tree:true,pma_text_default_tab:"Обзор",pma_text_left_default_tab:"Структура",pma_text_left_default_tab2:false,LimitChars:"50",pftext:"P",confirm:true,LoginCookieValidity:"1440",session_gc_maxlifetime:"1440",logged_in:true,is_https:false,rootPath:"/phpmyadmin/",arg_separator:"&",PMA_VERSION:"5.1.3",auth_type:"config",user:"root"});
 var firstDayOfCalendar = '0';
 var themeImagePath = '.\/themes\/pmahomme\/img\/';
 var mysqlDocTemplate = '.\/url.php\u003Furl\u003Dhttps\u00253A\u00252F\u00252Fdev.mysql.com\u00252Fdoc\u00252Frefman\u00252F8.0\u00252Fen\u00252F\u002525s.html';
@@ -260,7 +260,7 @@ $(function() {
       </div>
       <div id="pma_navigation_tree" class="list_container synced highlight autoexpand">
 
-  <div class="pma_quick_warp"><div class="drop_list"><button title="Недавние таблицы" class="drop_button btn">Недавнее</button><ul id="pma_recent_list"><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_bots_info">`test2`.`tw_bots_info`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=tw_attributs">`test`.`tw_attributs`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=tw_world_swap">`test`.`tw_world_swap`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=tw_accounts_items">`test`.`tw_accounts_items`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=tw_accounts">`test`.`tw_accounts`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=tw_crafts_list">`test`.`tw_crafts_list`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=tw_accounts_data">`test`.`tw_accounts_data`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=enum_quest_interactive">`test`.`enum_quest_interactive`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=enum_items_types">`test`.`enum_items_types`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test&table=enum_items_functional">`test`.`enum_items_functional`</a></li></ul></div><div class="drop_list"><button title="Избранные таблицы" class="drop_button btn">Избранное</button><ul id="pma_favorite_list"><li class="warp_link">Нет избранных таблиц.</li></ul></div><div class="clearfloat"></div></div>
+  <div class="pma_quick_warp"><div class="drop_list"><button title="Недавние таблицы" class="drop_button btn">Недавнее</button><ul id="pma_recent_list"><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts">`test2`.`tw_accounts`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_aethers">`test2`.`tw_accounts_aethers`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_data">`test2`.`tw_accounts_data`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_farming">`test2`.`tw_accounts_farming`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_items">`test2`.`tw_accounts_items`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_mailbox">`test2`.`tw_accounts_mailbox`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_mining">`test2`.`tw_accounts_mining`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_quests">`test2`.`tw_accounts_quests`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_skills">`test2`.`tw_accounts_skills`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_aethers">`test2`.`tw_aethers`</a></li></ul></div><div class="drop_list"><button title="Избранные таблицы" class="drop_button btn">Избранное</button><ul id="pma_favorite_list"><li class="warp_link">Нет избранных таблиц.</li></ul></div><div class="clearfloat"></div></div>
 
 <div class="clearfloat"></div>
 
@@ -284,7 +284,7 @@ $(function() {
                   <div id="pma_navigation_settings"><div class="page_settings"><form method="post" action="index.php&#x3F;route&#x3D;&#x25;2Fexport&amp;server&#x3D;1" class="config-form disableAjax">
   <input type="hidden" name="tab_hash" value="">
       <input type="hidden" name="check_page_refresh" id="check_page_refresh" value="">
-    <input type="hidden" name="token" value="7c5e2a7968573c366e26316e2b3e685d">
+    <input type="hidden" name="token" value="54407872376d3568456d7e6b69557230">
   <input type="hidden" name="submit_save" value="Navi">
 <ul class="tabs responsivetable row">
       <li><a href="#Navi_panel">Панель навигации</a></li>
@@ -561,7 +561,957 @@ $.extend(defaultValues, {
                     <span class="hide" id="instructions-1">
                         Нажмите Enter для выполнения запроса                    </span>
                 </div>
-                            </div><!-- console_message_container -->
+                                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_aethers">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_aethers`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_aethers">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_aethers`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_aethers">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_aethers`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_skills">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_skills`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_skills">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_skills`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_skills">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_skills`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_quests">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_quests`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_mining">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_mining`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_skills">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_skills`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_quests">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_quests`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_mining">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_mining`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_mining">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_mining`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_mailbox">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_mailbox`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_mining">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_mining`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_mailbox">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_mailbox`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_items">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_items`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_items">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_items`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_items">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_items`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_farming">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_farming`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_aethers">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_aethers`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_data">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_data`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_aethers">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_aethers`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts_aethers">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts_aethers`</span>
+                        </div>
+                                            <div class="message history collapsed hide select"
+                            targetdb="test2" targettable="tw_accounts">
+                            <div class="action_content">
+                    <span class="action collapse">
+            Свернуть
+                    </span>
+                            <span class="action expand">
+            Развернуть
+                    </span>
+                            <span class="action requery">
+            Повторный запрос
+                    </span>
+                            <span class="action edit">
+            Изменить
+                    </span>
+                            <span class="action explain">
+            Анализировать
+                    </span>
+                            <span class="action profiling">
+            Профилирование
+                    </span>
+                            <span class="action bookmark">
+            Закладка
+                    </span>
+                            <span class="text failed">
+            Сбой выполнения запроса
+                    </span>
+                            <span class="text targetdb">
+            База данных
+                            : <span>test2</span>
+                    </span>
+                            <span class="text query_time">
+            Запрошенное время
+                            : <span>В течение текущей сессии</span>
+                    </span>
+            </div>
+                            <span class="query">SELECT * FROM `tw_accounts`</span>
+                        </div>
+                                                </div><!-- console_message_container -->
             <div class="query_input">
                 <span class="console_query_input"></span>
             </div>
