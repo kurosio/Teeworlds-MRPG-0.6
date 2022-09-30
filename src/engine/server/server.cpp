@@ -682,6 +682,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 			pGameServer->OnClientDrop(ClientID, pReason);
 		}
 		pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
+		pThis->ExpireServerInfo();
 	}
 
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_EMPTY;
@@ -914,6 +915,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					}
 					m_aClients[ClientID].m_State = CClient::STATE_READY;
 					GameServer(WorldID)->OnClientConnected(ClientID);
+					ExpireServerInfo();
 				}
 
 				SendConnectionReady(ClientID);
@@ -937,6 +939,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 
 				m_aClients[ClientID].m_State = CClient::STATE_INGAME;
 				GameServer(WorldID)->OnClientEnter(ClientID);
+				ExpireServerInfo();
 			}
 		}
 		else if(MsgID == NETMSG_INPUT)

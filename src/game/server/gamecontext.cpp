@@ -1124,7 +1124,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			CNetMsg_Sv_ReadyToEnter m;
 			Server()->SendPackMsg(&m, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
 			
-		Server()->ExpireServerInfo();
+			Server()->ExpireServerInfo();
 		}
 	}
 }
@@ -1140,8 +1140,6 @@ void CGS::OnClientConnected(int ClientID)
 	SendMotd(ClientID);
 	SendSettings(ClientID);
 	m_aBroadcastStates[ClientID] = {};
-	
-	Server()->ExpireServerInfo();
 }
 
 void CGS::OnClientEnter(int ClientID)
@@ -1152,7 +1150,6 @@ void CGS::OnClientEnter(int ClientID)
 
 	m_pController->OnPlayerConnect(pPlayer);
 	m_pCommandProcessor->SendChatCommands(ClientID);
-	Server()->ExpireServerInfo();
 
 	// another
 	if(!pPlayer->IsAuthed())
@@ -1182,7 +1179,6 @@ void CGS::OnClientDrop(int ClientID, const char *pReason)
 
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
-	Server()->ExpireServerInfo();
 
 	if (Server()->ClientIngame(ClientID) && IsPlayerEqualWorldID(ClientID))
 	{
