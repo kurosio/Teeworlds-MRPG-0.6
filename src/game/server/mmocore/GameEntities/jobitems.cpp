@@ -68,7 +68,7 @@ void CJobItems::Work(int ClientID)
 
 void CJobItems::MiningWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem)
 {
-	const int EquipItem = pPlayer->GetEquippedItemID(EQUIP_MINER);
+	const int EquipItem = pPlayer->GetEquippedItemID(EQUIP_PICKAXE);
 	if(EquipItem <= 0)
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need equip Pickaxe!");

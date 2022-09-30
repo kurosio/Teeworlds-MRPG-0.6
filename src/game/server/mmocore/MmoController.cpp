@@ -134,9 +134,7 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 
 	if(Table == SAVE_STATS)
 	{
-		const int EquipDiscord = pPlayer->GetEquippedItemID(EQUIP_DISCORD);
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d', DiscordEquip = '%d' WHERE ID = '%d'",
-			pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, EquipDiscord, pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d' WHERE ID = '%d'", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_UPGRADES)
 	{

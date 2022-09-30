@@ -125,9 +125,6 @@ bool CItemData::Equip()
 			EquipItem.SetSettings(0);
 			EquipItemID = m_pPlayer->GetEquippedItemID(EquipID, m_ItemID);
 		}
-
-		if(Info().m_Function == EQUIP_DISCORD)
-			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);
 	}
 
 	if(m_pPlayer->GetCharacter())

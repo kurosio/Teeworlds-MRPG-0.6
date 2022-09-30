@@ -57,7 +57,6 @@ public:
 	vec2 m_ViewPos;
 	int m_PlayerFlags;
 	int m_aPlayerTick[TickState::NUM_TICK];
-	bool m_Flymode;
 	Mood m_MoodState;
 
 	CTeeInfo m_TeeInfos;

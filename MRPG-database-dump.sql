@@ -1,1770 +1,1981 @@
-<!doctype html>
-<html lang="ru" dir="ltr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="referrer" content="no-referrer">
-  <meta name="robots" content="noindex,nofollow">
-  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-  <style id="cfs-style">html{display: none;}</style>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-      <link rel="stylesheet" type="text/css" href="./themes/pmahomme/jquery/jquery-ui.css">
-    <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/lib/codemirror.css?v=5.1.3">
-    <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/addon/hint/show-hint.css?v=5.1.3">
-    <link rel="stylesheet" type="text/css" href="js/vendor/codemirror/addon/lint/lint.css?v=5.1.3">
-    <link rel="stylesheet" type="text/css" href="./themes/pmahomme/css/theme.css?v=5.1.3&nocache=226645057ltr&server=1">
-    <link rel="stylesheet" type="text/css" href="./themes/pmahomme/css/printview.css?v=5.1.3" media="print" id="printcss">
-    <title>localhost / 127.0.0.1 | phpMyAdmin 5.1.3</title>
-    <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.min.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery-migrate.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/sprintf.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/ajax.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/keyhandler.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/bootstrap/bootstrap.bundle.min.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery-ui.min.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/js.cookie.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.mousewheel.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.validate.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery-ui-timepicker-addon.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.ba-hashchange-2.0.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/jquery/jquery.debounce-1.0.6.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/menu_resizer.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/cross_framing_protection.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/rte.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/messages.php?l=ru&v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/config.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/doclinks.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/functions.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/navigation.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/indexes.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/common.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/page_settings.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/export_output.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/lib/codemirror.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/mode/sql/sql.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/addon/runmode/runmode.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/addon/hint/show-hint.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/addon/hint/sql-hint.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/codemirror/addon/lint/lint.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/codemirror/addon/lint/sql-lint.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/vendor/tracekit.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/error_report.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/drag_drop_import.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/shortcuts_handler.js?v=5.1.3"></script>
-  <script data-cfasync="false" type="text/javascript" src="js/dist/console.js?v=5.1.3"></script>
+-- phpMyAdmin SQL Dump
+-- version 5.2.0
+-- https://www.phpmyadmin.net/
+--
+-- Хост: 127.0.0.1
+-- Время создания: Сен 30 2022 г., 22:34
+-- Версия сервера: 10.4.24-MariaDB
+-- Версия PHP: 8.1.5
 
-<script data-cfasync="false" type="text/javascript">
-// <![CDATA[
-CommonParams.setAll({common_query:"",opendb_url:"index.php?route=/database/structure",lang:"ru",server:"1",table:"",db:"",token:"54407872376d3568456d7e6b69557230",text_dir:"ltr",show_databases_navigation_as_tree:true,pma_text_default_tab:"Обзор",pma_text_left_default_tab:"Структура",pma_text_left_default_tab2:false,LimitChars:"50",pftext:"P",confirm:true,LoginCookieValidity:"1440",session_gc_maxlifetime:"1440",logged_in:true,is_https:false,rootPath:"/phpmyadmin/",arg_separator:"&",PMA_VERSION:"5.1.3",auth_type:"config",user:"root"});
-var firstDayOfCalendar = '0';
-var themeImagePath = '.\/themes\/pmahomme\/img\/';
-var mysqlDocTemplate = '.\/url.php\u003Furl\u003Dhttps\u00253A\u00252F\u00252Fdev.mysql.com\u00252Fdoc\u00252Frefman\u00252F8.0\u00252Fen\u00252F\u002525s.html';
-var maxInputVars = 1000;
-
-if ($.datepicker) {
-  $.datepicker.regional[''].closeText = '\u0413\u043E\u0442\u043E\u0432\u043E';
-  $.datepicker.regional[''].prevText = '\u041F\u0440\u0435\u0434';
-  $.datepicker.regional[''].nextText = '\u0421\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0439';
-  $.datepicker.regional[''].currentText = '\u0421\u0435\u0433\u043E\u0434\u043D\u044F';
-  $.datepicker.regional[''].monthNames = [
-    '\u042F\u043D\u0432\u0430\u0440\u044C',
-    '\u0424\u0435\u0432\u0440\u0430\u043B\u044C',
-    '\u041C\u0430\u0440\u0442',
-    '\u0410\u043F\u0440\u0435\u043B\u044C',
-    '\u041C\u0430\u0439',
-    '\u0418\u044E\u043D\u044C',
-    '\u0418\u044E\u043B\u044C',
-    '\u0410\u0432\u0433\u0443\u0441\u0442',
-    '\u0421\u0435\u043D\u0442\u044F\u0431\u0440\u044C',
-    '\u041E\u043A\u0442\u044F\u0431\u0440\u044C',
-    '\u041D\u043E\u044F\u0431\u0440\u044C',
-    '\u0414\u0435\u043A\u0430\u0431\u0440\u044C',
-  ];
-  $.datepicker.regional[''].monthNamesShort = [
-    '\u042F\u043D\u0432',
-    '\u0424\u0435\u0432',
-    '\u041C\u0430\u0440',
-    '\u0410\u043F\u0440',
-    '\u041C\u0430\u0439',
-    '\u0418\u044E\u043D',
-    '\u0418\u044E\u043B',
-    '\u0410\u0432\u0433',
-    '\u0421\u0435\u043D',
-    '\u041E\u043A\u0442',
-    '\u041D\u043E\u044F',
-    '\u0414\u0435\u043A',
-  ];
-  $.datepicker.regional[''].dayNames = [
-    '\u0412\u043E\u0441\u043A\u0440\u0435\u0441\u0435\u043D\u044C\u0435',
-    '\u041F\u043E\u043D\u0435\u0434\u0435\u043B\u044C\u043D\u0438\u043A',
-    '\u0412\u0442\u043E\u0440\u043D\u0438\u043A',
-    '\u0421\u0440\u0435\u0434\u0430',
-    '\u0427\u0435\u0442\u0432\u0435\u0440\u0433',
-    '\u041F\u044F\u0442\u043D\u0438\u0446\u0430',
-    '\u0421\u0443\u0431\u0431\u043E\u0442\u0430',
-  ];
-  $.datepicker.regional[''].dayNamesShort = [
-    '\u0412\u0441',
-    '\u041F\u043D',
-    '\u0412\u0442',
-    '\u0421\u0440',
-    '\u0427\u0442',
-    '\u041F\u0442',
-    '\u0421\u0431',
-  ];
-  $.datepicker.regional[''].dayNamesMin = [
-    '\u0412\u0441',
-    '\u041F\u043D',
-    '\u0412\u0442',
-    '\u0421\u0440',
-    '\u0427\u0442',
-    '\u041F\u0442',
-    '\u0421\u0431',
-  ];
-  $.datepicker.regional[''].weekHeader = '\u041D\u0435\u0434.';
-  $.datepicker.regional[''].showMonthAfterYear = true;
-  $.datepicker.regional[''].yearSuffix = '';
-  $.extend($.datepicker._defaults, $.datepicker.regional['']);
-}
-
-if ($.timepicker) {
-  $.timepicker.regional[''].timeText = '\u0412\u0440\u0435\u043C\u044F';
-  $.timepicker.regional[''].hourText = '\u0427\u0430\u0441';
-  $.timepicker.regional[''].minuteText = '\u041C\u0438\u043D\u0443\u0442\u0430';
-  $.timepicker.regional[''].secondText = '\u0421\u0435\u043A\u0443\u043D\u0434\u0430';
-  $.extend($.timepicker._defaults, $.timepicker.regional['']);
-}
-
-function extendingValidatorMessages () {
-  $.extend($.validator.messages, {
-    required: '\u042D\u0442\u043E\u0020\u043F\u043E\u043B\u0435\u0020\u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C\u043E',
-    remote: '\u0418\u0441\u043F\u0440\u0430\u0432\u044C\u0442\u0435\u0020\u044D\u0442\u043E\u0020\u043F\u043E\u043B\u0435',
-    email: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0439\u0020\u0430\u0434\u0440\u0435\u0441\u0020\u044D\u002D\u043F\u043E\u0447\u0442\u044B',
-    url: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0439\u0020URL',
-    date: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u0443\u044E\u0020\u0434\u0430\u0442\u0443',
-    dateISO: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u0443\u044E\u0020\u0434\u0430\u0442\u0443\u0020\u0028ISO\u0029',
-    number: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E\u0435\u0020\u0447\u0438\u0441\u043B\u043E\u0432\u043E\u0435\u0020\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435',
-    creditcard: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u044B\u0439\u0020\u043D\u043E\u043C\u0435\u0440\u0020\u043A\u0440\u0435\u0434\u0438\u0442\u043D\u043E\u0439\u0020\u043A\u0430\u0440\u0442\u044B',
-    digits: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u0442\u043E\u043B\u044C\u043A\u043E\u0020\u0446\u0438\u0444\u0440\u044B',
-    equalTo: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u0442\u043E\u0020\u0436\u0435\u0020\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435\u0020\u0435\u0449\u0435\u0020\u0440\u0430\u0437',
-    maxlength: $.validator.format('\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043D\u0435\u0020\u0431\u043E\u043B\u0435\u0435\u0020\u007B0\u007D\u0020\u0441\u0438\u043C\u0432\u043E\u043B\u0028\u0430\/\u043E\u0432\u0029'),
-    minlength: $.validator.format('\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043D\u0435\u0020\u043C\u0435\u043D\u0435\u0435\u0020\u007B0\u007D\u0020\u0441\u0438\u043C\u0432\u043E\u043B\u0028\u0430\/\u043E\u0432\u0029'),
-    rangelength: $.validator.format('\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435\u0020\u043C\u0435\u0436\u0434\u0443\u0020\u007B0\u007D\u0020\u0438\u0020\u007B1\u007D\u0020\u0441\u0438\u043C\u0432\u043E\u043B\u0430\u043C\u0438\u0020\u0434\u043B\u0438\u043D\u043E\u0439'),
-    range: $.validator.format('\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435\u0020\u043C\u0435\u0436\u0434\u0443\u0020\u007B0\u007D\u0020\u0438\u0020\u007B1\u007D\u0020\u0441\u0438\u043C\u0432\u043E\u043B\u0430\u043C\u0438'),
-    max: $.validator.format('\u0412\u0432\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435\u0020\u043C\u0435\u043D\u044C\u0448\u0435\u0435\u0020\u0438\u043B\u0438\u0020\u0440\u0430\u0432\u043D\u043E\u0435\u0020\u007B0\u007D'),
-    min: $.validator.format('\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435,\u0020\u0431\u043E\u043B\u044C\u0448\u0435\u0435\u0020\u0438\u043B\u0438\u0020\u0440\u0430\u0432\u043D\u043E\u0435\u0020\u007B0\u007D'),
-    validationFunctionForDateTime: $.validator.format('\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u0443\u044E\u0020\u0434\u0430\u0442\u0443\u0020\u0438\u043B\u0438\u0020\u0432\u0440\u0435\u043C\u044F'),
-    validationFunctionForHex: $.validator.format('\u0412\u0432\u0435\u0434\u0438\u0442\u0435\u0020\u043F\u0440\u0430\u0432\u0438\u043B\u044C\u043D\u043E\u0435\u0020\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435\u0020HEX'),
-    validationFunctionForMd5: $.validator.format('This\u0020column\u0020can\u0020not\u0020contain\u0020a\u002032\u0020chars\u0020value'),
-    validationFunctionForAesDesEncrypt: $.validator.format('These\u0020functions\u0020are\u0020meant\u0020to\u0020return\u0020a\u0020binary\u0020result\u003B\u0020to\u0020avoid\u0020inconsistent\u0020results\u0020you\u0020should\u0020store\u0020it\u0020in\u0020a\u0020BINARY,\u0020VARBINARY,\u0020or\u0020BLOB\u0020column.')
-  });
-}
-
-ConsoleEnterExecutes=false
-
-AJAX.scriptHandler
-  .add('vendor/jquery/jquery.min.js', 0)
-  .add('vendor/jquery/jquery-migrate.js', 0)
-  .add('vendor/sprintf.js', 1)
-  .add('ajax.js', 0)
-  .add('keyhandler.js', 1)
-  .add('vendor/bootstrap/bootstrap.bundle.min.js', 1)
-  .add('vendor/jquery/jquery-ui.min.js', 0)
-  .add('vendor/js.cookie.js', 1)
-  .add('vendor/jquery/jquery.mousewheel.js', 0)
-  .add('vendor/jquery/jquery.validate.js', 0)
-  .add('vendor/jquery/jquery-ui-timepicker-addon.js', 0)
-  .add('vendor/jquery/jquery.ba-hashchange-2.0.js', 0)
-  .add('vendor/jquery/jquery.debounce-1.0.6.js', 0)
-  .add('menu_resizer.js', 1)
-  .add('cross_framing_protection.js', 0)
-  .add('rte.js', 1)
-  .add('messages.php', 0)
-  .add('config.js', 1)
-  .add('doclinks.js', 1)
-  .add('functions.js', 1)
-  .add('navigation.js', 1)
-  .add('indexes.js', 1)
-  .add('common.js', 1)
-  .add('page_settings.js', 1)
-  .add('export_output.js', 1)
-  .add('vendor/codemirror/lib/codemirror.js', 0)
-  .add('vendor/codemirror/mode/sql/sql.js', 0)
-  .add('vendor/codemirror/addon/runmode/runmode.js', 0)
-  .add('vendor/codemirror/addon/hint/show-hint.js', 0)
-  .add('vendor/codemirror/addon/hint/sql-hint.js', 0)
-  .add('vendor/codemirror/addon/lint/lint.js', 0)
-  .add('codemirror/addon/lint/sql-lint.js', 0)
-  .add('vendor/tracekit.js', 1)
-  .add('error_report.js', 1)
-  .add('drag_drop_import.js', 1)
-  .add('shortcuts_handler.js', 1)
-  .add('console.js', 1)
-;
-$(function() {
-        AJAX.fireOnload('vendor/sprintf.js');
-        AJAX.fireOnload('keyhandler.js');
-      AJAX.fireOnload('vendor/bootstrap/bootstrap.bundle.min.js');
-        AJAX.fireOnload('vendor/js.cookie.js');
-                AJAX.fireOnload('menu_resizer.js');
-        AJAX.fireOnload('rte.js');
-        AJAX.fireOnload('config.js');
-      AJAX.fireOnload('doclinks.js');
-      AJAX.fireOnload('functions.js');
-      AJAX.fireOnload('navigation.js');
-      AJAX.fireOnload('indexes.js');
-      AJAX.fireOnload('common.js');
-      AJAX.fireOnload('page_settings.js');
-      AJAX.fireOnload('export_output.js');
-                    AJAX.fireOnload('vendor/tracekit.js');
-      AJAX.fireOnload('error_report.js');
-      AJAX.fireOnload('drag_drop_import.js');
-      AJAX.fireOnload('shortcuts_handler.js');
-      AJAX.fireOnload('console.js');
-  });
-// ]]>
-</script>
-
-  <noscript><style>html{display:block}</style></noscript>
-</head>
-<body>
-    <div id="pma_navigation" data-config-navigation-width="240">
-    <div id="pma_navigation_resizer"></div>
-    <div id="pma_navigation_collapser"></div>
-    <div id="pma_navigation_content">
-      <div id="pma_navigation_header">
-
-                  <div id="pmalogo">
-                          <a href="index.php">
-                                      <img id="imgpmalogo" src="./themes/pmahomme/img/logo_left.png" alt="phpMyAdmin">
-                                      </a>
-                      </div>
-        
-        <div id="navipanellinks">
-          <a href="index.php?route=/" title="На главную"><img src="themes/dot.gif" title="На главную" alt="На главную" class="icon ic_b_home"></a>
-
-                      <a class="logout disableAjax" href="index.php?route=/logout" title="Пустые данные сеанса"><img src="themes/dot.gif" title="Пустые данные сеанса" alt="Пустые данные сеанса" class="icon ic_s_loggoff"></a>
-          
-          <a href="./doc/html/index.html" title="Документация phpMyAdmin" target="_blank" rel="noopener noreferrer"><img src="themes/dot.gif" title="Документация phpMyAdmin" alt="Документация phpMyAdmin" class="icon ic_b_docs"></a>
-
-          <a href="./url.php?url=https%3A%2F%2Fmariadb.com%2Fkb%2Fen%2Fdocumentation%2F" title="Документация MariaDB" target="_blank" rel="noopener noreferrer"><img src="themes/dot.gif" title="Документация MariaDB" alt="Документация MariaDB" class="icon ic_b_sqlhelp"></a>
-
-          <a id="pma_navigation_settings_icon" href="#" title="Настройки панели навигации"><img src="themes/dot.gif" title="Настройки панели навигации" alt="Настройки панели навигации" class="icon ic_s_cog"></a>
-
-          <a id="pma_navigation_reload" href="#" title="Обновить панель навигации"><img src="themes/dot.gif" title="Обновить панель навигации" alt="Обновить панель навигации" class="icon ic_s_reload"></a>
-        </div>
-
-        
-        <img src="themes/dot.gif" title="Загрузка…" alt="Загрузка…" style="visibility: hidden; display:none" class="icon ic_ajax_clock_small throbber">
-      </div>
-      <div id="pma_navigation_tree" class="list_container synced highlight autoexpand">
-
-  <div class="pma_quick_warp"><div class="drop_list"><button title="Недавние таблицы" class="drop_button btn">Недавнее</button><ul id="pma_recent_list"><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts">`test2`.`tw_accounts`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_aethers">`test2`.`tw_accounts_aethers`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_data">`test2`.`tw_accounts_data`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_farming">`test2`.`tw_accounts_farming`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_items">`test2`.`tw_accounts_items`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_mailbox">`test2`.`tw_accounts_mailbox`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_mining">`test2`.`tw_accounts_mining`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_quests">`test2`.`tw_accounts_quests`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_accounts_skills">`test2`.`tw_accounts_skills`</a></li><li class="warp_link"><a href="index.php?route=/table/recent-favorite&db=test2&table=tw_aethers">`test2`.`tw_aethers`</a></li></ul></div><div class="drop_list"><button title="Избранные таблицы" class="drop_button btn">Избранное</button><ul id="pma_favorite_list"><li class="warp_link">Нет избранных таблиц.</li></ul></div><div class="clearfloat"></div></div>
-
-<div class="clearfloat"></div>
-
-<ul>
-  
-  <!-- CONTROLS START --><li id="navigation_controls_outer"><div id="navigation_controls"><a href="#" id="pma_navigation_collapse" title="Свернуть все"><img src="themes/dot.gif" title="Свернуть все" alt="Свернуть все" class="icon ic_s_collapseall"></a><a href="#" id="pma_navigation_sync" title="Отсоединить от основной панели"><img src="themes/dot.gif" title="Отсоединить от основной панели" alt="Отсоединить от основной панели" class="icon ic_s_link"></a></div></li><!-- CONTROLS ENDS -->
-</ul>
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
 
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
-<div id='pma_navigation_tree_content'>
-  <ul>
-    <li class="first new_database italics"><div class='block'><i class='first'></i></div><div class="block second"><a href='index.php?route=/server/databases&server=1'><img src="themes/dot.gif" title="" alt="" class="icon ic_b_newdb"></a></div><a class='hover_show_full' href='index.php?route=/server/databases&server=1' title='Создать БД'>Создать БД</a><div class="clearfloat"></div></li><li class="database"><div class='block'><i></i><b></b><a class="expander" href='#'><span class="hide paths_nav" data-apath="cm9vdA==.aW5mb3JtYXRpb25fc2NoZW1h" data-vpath="cm9vdA==.aW5mb3JtYXRpb25fc2NoZW1h" data-pos="0"></span><img src="themes/dot.gif" title="Развернуть/Свернуть" alt="Развернуть/Свернуть" class="icon ic_b_plus"></a></div><div class="block second"><a href='index.php?route=/database/operations&amp;server=1&amp;db=information_schema&amp;'><img src="themes/dot.gif" title="Операции с базой данных" alt="Операции с базой данных" class="icon ic_s_db"></a></div><a class='hover_show_full' href='index.php?route=/database/structure&server=1&amp;db=information_schema' title='Структура'>information_schema</a><div class="clearfloat"></div></li><li class="database"><div class='block'><i></i><b></b><a class="expander" href='#'><span class="hide paths_nav" data-apath="cm9vdA==.bXlzcWw=" data-vpath="cm9vdA==.bXlzcWw=" data-pos="0"></span><img src="themes/dot.gif" title="Развернуть/Свернуть" alt="Развернуть/Свернуть" class="icon ic_b_plus"></a></div><div class="block second"><a href='index.php?route=/database/operations&amp;server=1&amp;db=mysql&amp;'><img src="themes/dot.gif" title="Операции с базой данных" alt="Операции с базой данных" class="icon ic_s_db"></a></div><a class='hover_show_full' href='index.php?route=/database/structure&server=1&amp;db=mysql' title='Структура'>mysql</a><div class="clearfloat"></div></li><li class="database"><div class='block'><i></i><b></b><a class="expander" href='#'><span class="hide paths_nav" data-apath="cm9vdA==.cGVyZm9ybWFuY2Vfc2NoZW1h" data-vpath="cm9vdA==.cGVyZm9ybWFuY2Vfc2NoZW1h" data-pos="0"></span><img src="themes/dot.gif" title="Развернуть/Свернуть" alt="Развернуть/Свернуть" class="icon ic_b_plus"></a></div><div class="block second"><a href='index.php?route=/database/operations&amp;server=1&amp;db=performance_schema&amp;'><img src="themes/dot.gif" title="Операции с базой данных" alt="Операции с базой данных" class="icon ic_s_db"></a></div><a class='hover_show_full' href='index.php?route=/database/structure&server=1&amp;db=performance_schema' title='Структура'>performance_schema</a><div class="clearfloat"></div></li><li class="database"><div class='block'><i></i><b></b><a class="expander" href='#'><span class="hide paths_nav" data-apath="cm9vdA==.cGhwbXlhZG1pbg==" data-vpath="cm9vdA==.cGhwbXlhZG1pbg==" data-pos="0"></span><img src="themes/dot.gif" title="Развернуть/Свернуть" alt="Развернуть/Свернуть" class="icon ic_b_plus"></a></div><div class="block second"><a href='index.php?route=/database/operations&amp;server=1&amp;db=phpmyadmin&amp;'><img src="themes/dot.gif" title="Операции с базой данных" alt="Операции с базой данных" class="icon ic_s_db"></a></div><a class='hover_show_full' href='index.php?route=/database/structure&server=1&amp;db=phpmyadmin' title='Структура'>phpmyadmin</a><div class="clearfloat"></div></li><li class="database"><div class='block'><i></i><b></b><a class="expander" href='#'><span class="hide paths_nav" data-apath="cm9vdA==.dGVzdA==" data-vpath="cm9vdA==.dGVzdA==" data-pos="0"></span><img src="themes/dot.gif" title="Развернуть/Свернуть" alt="Развернуть/Свернуть" class="icon ic_b_plus"></a></div><div class="block second"><a href='index.php?route=/database/operations&amp;server=1&amp;db=test&amp;'><img src="themes/dot.gif" title="Операции с базой данных" alt="Операции с базой данных" class="icon ic_s_db"></a></div><a class='hover_show_full' href='index.php?route=/database/structure&server=1&amp;db=test' title='Структура'>test</a><div class="clearfloat"></div></li><li class="last database"><div class='block'><i></i><a class="expander" href='#'><span class="hide paths_nav" data-apath="cm9vdA==.dGVzdDI=" data-vpath="cm9vdA==.dGVzdDI=" data-pos="0"></span><img src="themes/dot.gif" title="Развернуть/Свернуть" alt="Развернуть/Свернуть" class="icon ic_b_plus"></a></div><div class="block second"><a href='index.php?route=/database/operations&amp;server=1&amp;db=test2&amp;'><img src="themes/dot.gif" title="Операции с базой данных" alt="Операции с базой данных" class="icon ic_s_db"></a></div><a class='hover_show_full' href='index.php?route=/database/structure&server=1&amp;db=test2' title='Структура'>test2</a><div class="clearfloat"></div></li>
-  </ul>
-</div>
+--
+-- База данных: `test2`
+--
 
+-- --------------------------------------------------------
 
-      </div>
+--
+-- Структура таблицы `enum_behavior_mobs`
+--
 
-      <div id="pma_navi_settings_container">
-                  <div id="pma_navigation_settings"><div class="page_settings"><form method="post" action="index.php&#x3F;route&#x3D;&#x25;2Fexport&amp;server&#x3D;1" class="config-form disableAjax">
-  <input type="hidden" name="tab_hash" value="">
-      <input type="hidden" name="check_page_refresh" id="check_page_refresh" value="">
-    <input type="hidden" name="token" value="54407872376d3568456d7e6b69557230">
-  <input type="hidden" name="submit_save" value="Navi">
-<ul class="tabs responsivetable row">
-      <li><a href="#Navi_panel">Панель навигации</a></li>
-      <li><a href="#Navi_tree">Дерево навигации</a></li>
-      <li><a href="#Navi_servers">Сервера</a></li>
-      <li><a href="#Navi_databases">Базы данных</a></li>
-      <li><a href="#Navi_tables">Таблицы</a></li>
-  </ul>
-<div class="tabs_contents col">
-<fieldset class="optbox" id="Navi_panel">
-<legend>Панель навигации</legend>
-    <p>Настроить вид панели навигации.</p>
-<table class="pma-table" width="100%" cellspacing="0">
-<tr><th><label for="ShowDatabasesNavigationAsTree">Показать навигацию по базам данных в виде дерева</label><span class="doc"><a href="./doc/html/config.html#cfg_ShowDatabasesNavigationAsTree" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>В панели навигации заменяет дерево базы данных селектором</small></th><td><span class="checkbox"><input type="checkbox" name="ShowDatabasesNavigationAsTree" id="ShowDatabasesNavigationAsTree" checked="checked"></span><a class="restore-default hide" href="#ShowDatabasesNavigationAsTree" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationLinkWithMainPanel">Связать с главной панелью</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationLinkWithMainPanel" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Связать с главной панелью, выделив текущую базу данных или таблицу.</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationLinkWithMainPanel" id="NavigationLinkWithMainPanel" checked="checked"></span><a class="restore-default hide" href="#NavigationLinkWithMainPanel" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationDisplayLogo">Показывать логотип</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationDisplayLogo" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Отображать логотип в панели навигации.</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationDisplayLogo" id="NavigationDisplayLogo" checked="checked"></span><a class="restore-default hide" href="#NavigationDisplayLogo" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationLogoLink">Ссылка логотипа</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationLogoLink" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>URL, на который будет ссылаться логотип в панели навигации.</small></th><td><input type="text" class="w-75" name="NavigationLogoLink" id="NavigationLogoLink" value="index.php"><a class="restore-default hide" href="#NavigationLogoLink" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationLogoLinkWindow">Цель ссылки логотипа</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationLogoLinkWindow" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Открывать ссылку в основном окне (<code>main</code>) или в новом (<code>new</code>).</small></th><td><select class="w-75" name="NavigationLogoLinkWindow" id="NavigationLogoLinkWindow"><option value="main" selected="selected">main</option><option value="new">new</option></select><a class="restore-default hide" href="#NavigationLogoLinkWindow" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreePointerEnable">Включить подсветку</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreePointerEnable" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Подсвечивать сервер при наведении курсора.</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreePointerEnable" id="NavigationTreePointerEnable" checked="checked"></span><a class="restore-default hide" href="#NavigationTreePointerEnable" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="FirstLevelNavigationItems">Максимальное количество пунктов на первом уровне</label><span class="doc"><a href="./doc/html/config.html#cfg_FirstLevelNavigationItems" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Количество пунктов, выводимых на одной странице первого уровня дерева навигации.</small></th><td><input type="number" name="FirstLevelNavigationItems" id="FirstLevelNavigationItems" value="100"><a class="restore-default hide" href="#FirstLevelNavigationItems" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeDisplayItemFilterMinimum">Минимальное количество пунктов для вывода поля фильтра</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeDisplayItemFilterMinimum" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Определяет минимальное количество пунктов (таблиц, представлений, функций и событий) для вывода поля фильтра.</small></th><td><input type="number" name="NavigationTreeDisplayItemFilterMinimum" id="NavigationTreeDisplayItemFilterMinimum" value="30"><a class="restore-default hide" href="#NavigationTreeDisplayItemFilterMinimum" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NumRecentTables">Недавно использованные таблицы</label><span class="doc"><a href="./doc/html/config.html#cfg_NumRecentTables" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Максимальное количество недавно использованных таблиц; для отключения установите в 0.</small></th><td><input type="number" name="NumRecentTables" id="NumRecentTables" value="10"><a class="restore-default hide" href="#NumRecentTables" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NumFavoriteTables">Избранные таблицы</label><span class="doc"><a href="./doc/html/config.html#cfg_NumFavoriteTables" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Максимальное количество избранных таблиц; для отключения установите в 0.</small></th><td><input type="number" name="NumFavoriteTables" id="NumFavoriteTables" value="10"><a class="restore-default hide" href="#NumFavoriteTables" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationWidth">Ширина панели навигации</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationWidth" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Установите 0, чтобы свернуть панель навигации.</small></th><td><input type="number" name="NavigationWidth" id="NavigationWidth" value="240"><a class="restore-default hide" href="#NavigationWidth" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr></table>
-</fieldset>
-<fieldset class="optbox" id="Navi_tree">
-<legend>Дерево навигации</legend>
-    <p>Модифицировать дерево навигации.</p>
-<table class="pma-table" width="100%" cellspacing="0">
-<tr><th><label for="MaxNavigationItems">Максимальное количество пунктов в ветке</label><span class="doc"><a href="./doc/html/config.html#cfg_MaxNavigationItems" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Количество пунктов, выводимых на одной странице дерева навигации.</small></th><td><input type="number" name="MaxNavigationItems" id="MaxNavigationItems" value="50"><a class="restore-default hide" href="#MaxNavigationItems" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeEnableGrouping">Группировать пункты в дереве</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeEnableGrouping" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Группировать пункты в дереве навигации (определяется разделителем, указанным в закладках баз данных и таблиц сверху).</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreeEnableGrouping" id="NavigationTreeEnableGrouping" checked="checked"></span><a class="restore-default hide" href="#NavigationTreeEnableGrouping" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeEnableExpansion">Включить раскрытие навигационного дерева</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeEnableExpansion" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Следует ли предлагать возможность раскрытия дерева в панели навигации.</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreeEnableExpansion" id="NavigationTreeEnableExpansion" checked="checked"></span><a class="restore-default hide" href="#NavigationTreeEnableExpansion" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeShowTables">Отображение таблиц в дереве</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeShowTables" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Следует ли отображать таблицы под базой данных в дереве навигации</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreeShowTables" id="NavigationTreeShowTables" checked="checked"></span><a class="restore-default hide" href="#NavigationTreeShowTables" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeShowViews">Показать представления в дереве</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeShowViews" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Стоит ли отображать представления под базой данных в дереве навигации</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreeShowViews" id="NavigationTreeShowViews" checked="checked"></span><a class="restore-default hide" href="#NavigationTreeShowViews" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeShowFunctions">Отображать функции в дереве</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeShowFunctions" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Стоит ли отображать функции под базой данный в навигационном дереве</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreeShowFunctions" id="NavigationTreeShowFunctions" checked="checked"></span><a class="restore-default hide" href="#NavigationTreeShowFunctions" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeShowProcedures">Отображать процедуры в дереве</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeShowProcedures" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Стоит ли отображать процедуры под базой данный в навигационном дереве</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreeShowProcedures" id="NavigationTreeShowProcedures" checked="checked"></span><a class="restore-default hide" href="#NavigationTreeShowProcedures" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeShowEvents">Отображать события в дереве</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeShowEvents" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Стоит ли отображать события под базой данных в дереве навигации</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreeShowEvents" id="NavigationTreeShowEvents" checked="checked"></span><a class="restore-default hide" href="#NavigationTreeShowEvents" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeAutoexpandSingleDb">Развернуть одиночную базу данных</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeAutoexpandSingleDb" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Стоит ли разворачивать автоматически одиночную базу данных в дереве навигации.</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationTreeAutoexpandSingleDb" id="NavigationTreeAutoexpandSingleDb" checked="checked"></span><a class="restore-default hide" href="#NavigationTreeAutoexpandSingleDb" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr></table>
-</fieldset>
-<fieldset class="optbox" id="Navi_servers">
-<legend>Сервера</legend>
-    <p>Параметры отображения списка серверов.</p>
-<table class="pma-table" width="100%" cellspacing="0">
-<tr><th><label for="NavigationDisplayServers">Отображать выбор сервера</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationDisplayServers" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Отображать в верхней части панели навигации список серверов.</small></th><td><span class="checkbox"><input type="checkbox" name="NavigationDisplayServers" id="NavigationDisplayServers" checked="checked"></span><a class="restore-default hide" href="#NavigationDisplayServers" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="DisplayServersList">Выводить серверы списком</label><span class="doc"><a href="./doc/html/config.html#cfg_DisplayServersList" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Выводить доступные для выбора серверы в виде последовательного списка вместо выпадающего.</small></th><td><span class="checkbox"><input type="checkbox" name="DisplayServersList" id="DisplayServersList"></span><a class="restore-default hide" href="#DisplayServersList" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr></table>
-</fieldset>
-<fieldset class="optbox" id="Navi_databases">
-<legend>Базы данных</legend>
-    <p>Параметры отображения списка баз данных.</p>
-<table class="pma-table" width="100%" cellspacing="0">
-<tr><th><label for="NavigationTreeDisplayDbFilterMinimum">Минимальное количество баз данных для отображения поля фильтра</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeDisplayDbFilterMinimum" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span></th><td><input type="number" name="NavigationTreeDisplayDbFilterMinimum" id="NavigationTreeDisplayDbFilterMinimum" value="30"><a class="restore-default hide" href="#NavigationTreeDisplayDbFilterMinimum" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeDbSeparator">Разделитель дерева баз данных</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeDbSeparator" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Строка, разделяющая базы данных на различные уровни дерева.</small></th><td><input type="text" size="25" name="NavigationTreeDbSeparator" id="NavigationTreeDbSeparator" value="_"><a class="restore-default hide" href="#NavigationTreeDbSeparator" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr></table>
-</fieldset>
-<fieldset class="optbox" id="Navi_tables">
-<legend>Таблицы</legend>
-    <p>Параметры отображения списка таблиц.</p>
-<table class="pma-table" width="100%" cellspacing="0">
-<tr><th><label for="NavigationTreeDefaultTabTable">Цель иконки быстрого доступа</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeDefaultTabTable" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span></th><td><select class="w-75" name="NavigationTreeDefaultTabTable" id="NavigationTreeDefaultTabTable"><option value="structure" selected="selected">Структура</option><option value="sql">SQL</option><option value="search">Поиск</option><option value="insert">Вставить</option><option value="browse">Обзор</option></select><a class="restore-default hide" href="#NavigationTreeDefaultTabTable" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeDefaultTabTable2">Цель второй иконки быстрого доступа</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeDefaultTabTable2" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span></th><td><select class="w-75" name="NavigationTreeDefaultTabTable2" id="NavigationTreeDefaultTabTable2"><option value="" selected="selected"></option><option value="structure">Структура</option><option value="sql">SQL</option><option value="search">Поиск</option><option value="insert">Вставить</option><option value="browse">Обзор</option></select><a class="restore-default hide" href="#NavigationTreeDefaultTabTable2" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeTableSeparator">Разделитель дерева таблиц</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeTableSeparator" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span><small>Строка, разделяющая таблицы на различные уровни дерева.</small></th><td><input type="text" size="25" name="NavigationTreeTableSeparator" id="NavigationTreeTableSeparator" value="__"><a class="restore-default hide" href="#NavigationTreeTableSeparator" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr><tr><th><label for="NavigationTreeTableLevel">Максимальная глубина дерева таблиц</label><span class="doc"><a href="./doc/html/config.html#cfg_NavigationTreeTableLevel" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a>
-</span></th><td><input type="number" name="NavigationTreeTableLevel" id="NavigationTreeTableLevel" value="1"><a class="restore-default hide" href="#NavigationTreeTableLevel" title="Восстановить изначальное значение"><img src="themes/dot.gif" title="" alt="" class="icon ic_s_reload"></a></td></tr></table>
-</fieldset>
-</div>
-</form>
-<script type="text/javascript">
-    if (typeof configInlineParams === 'undefined' || !Array.isArray(configInlineParams)) {
-        configInlineParams = [];
-    }
-    configInlineParams.push(function () {
-        registerFieldValidator('FirstLevelNavigationItems', 'validatePositiveNumber', true);
-registerFieldValidator('NavigationTreeDisplayItemFilterMinimum', 'validatePositiveNumber', true);
-registerFieldValidator('NumRecentTables', 'validateNonNegativeNumber', true);
-registerFieldValidator('NumFavoriteTables', 'validateNonNegativeNumber', true);
-registerFieldValidator('NavigationWidth', 'validateNonNegativeNumber', true);
-registerFieldValidator('MaxNavigationItems', 'validatePositiveNumber', true);
-registerFieldValidator('NavigationTreeTableLevel', 'validatePositiveNumber', true);
-$.extend(Messages, {
-	'error_nan_p': 'Значение должно быть положительным числом!',
-	'error_nan_nneg': 'Значение должно быть отрицательным числом!',
-	'error_incorrect_port': 'Некорректный номер порта!',
-	'error_invalid_value': 'Некорректное значение!',
-	'error_value_lte': 'Значение должно быть меньше или равно %s!'});
-$.extend(defaultValues, {
-	'ShowDatabasesNavigationAsTree': true,
-	'NavigationLinkWithMainPanel': true,
-	'NavigationDisplayLogo': true,
-	'NavigationLogoLink': 'index.php',
-	'NavigationLogoLinkWindow': ['main'],
-	'NavigationTreePointerEnable': true,
-	'FirstLevelNavigationItems': '100',
-	'NavigationTreeDisplayItemFilterMinimum': '30',
-	'NumRecentTables': '10',
-	'NumFavoriteTables': '10',
-	'NavigationWidth': '240',
-	'MaxNavigationItems': '50',
-	'NavigationTreeEnableGrouping': true,
-	'NavigationTreeEnableExpansion': true,
-	'NavigationTreeShowTables': true,
-	'NavigationTreeShowViews': true,
-	'NavigationTreeShowFunctions': true,
-	'NavigationTreeShowProcedures': true,
-	'NavigationTreeShowEvents': true,
-	'NavigationTreeAutoexpandSingleDb': true,
-	'NavigationDisplayServers': true,
-	'DisplayServersList': false,
-	'NavigationTreeDisplayDbFilterMinimum': '30',
-	'NavigationTreeDbSeparator': '_',
-	'NavigationTreeDefaultTabTable': ['structure'],
-	'NavigationTreeDefaultTabTable2': [''],
-	'NavigationTreeTableSeparator': '__',
-	'NavigationTreeTableLevel': '1'});
-    });
-    if (typeof configScriptLoaded !== 'undefined' && configInlineParams) {
-        loadInlineConfig();
-    }
-</script>
-</div></div>
-              </div>
-    </div>
+CREATE TABLE `enum_behavior_mobs` (
+  `ID` int(11) NOT NULL,
+  `Behavior` varchar(32) NOT NULL DEFAULT 'Standard'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-          <div class="pma_drop_handler">
-        Перетащите файлы сюда      </div>
-      <div class="pma_sql_import_status">
-        <h2>
-          Выгрузка SQL          ( <span class="pma_import_count">0</span> )
-          <span class="close">x</span>
-          <span class="minimize">-</span>
-        </h2>
-        <div></div>
-      </div>
-      </div>
+--
+-- Дамп данных таблицы `enum_behavior_mobs`
+--
 
-  
-  
+INSERT INTO `enum_behavior_mobs` (`ID`, `Behavior`) VALUES
+(3, 'Sleepy'),
+(2, 'Slime'),
+(1, 'Standard');
 
-  
-      <noscript>
-      <div class="alert alert-danger" role="alert">
-  <img src="themes/dot.gif" title="" alt="" class="icon ic_s_error"> Для полноценной работы необходимо включить JavaScript!
-</div>
+-- --------------------------------------------------------
 
-    </noscript>
-  
-      <div id="floating_menubar"></div>
-<nav id="server-breadcrumb" aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item">
-      <img src="themes/dot.gif" title="" alt="" class="icon ic_s_host">
-      <a href="index.php?route=/" data-raw-text="127.0.0.1">
-        Сервер:        127.0.0.1
-      </a>
-    </li>
+--
+-- Структура таблицы `enum_effects_list`
+--
 
-      </ol>
-</nav>
-<div id="topmenucontainer" class="menucontainer">
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-label="Toggle navigation" aria-controls="navbarNav" aria-expanded="false">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul id="topmenu" class="navbar-nav">
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/databases">
-              <img src="themes/dot.gif" title="Базы данных" alt="Базы данных" class="icon ic_s_db">&nbsp;Базы данных
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/sql">
-              <img src="themes/dot.gif" title="SQL" alt="SQL" class="icon ic_b_sql">&nbsp;SQL
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/status">
-              <img src="themes/dot.gif" title="Состояние" alt="Состояние" class="icon ic_s_status">&nbsp;Состояние
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/privileges&viewing_mode=server">
-              <img src="themes/dot.gif" title="Учетные записи пользователей" alt="Учетные записи пользователей" class="icon ic_s_rights">&nbsp;Учетные записи пользователей
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/export">
-              <img src="themes/dot.gif" title="Экспорт" alt="Экспорт" class="icon ic_b_export">&nbsp;Экспорт
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/import">
-              <img src="themes/dot.gif" title="Импорт" alt="Импорт" class="icon ic_b_import">&nbsp;Импорт
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/preferences/manage">
-              <img src="themes/dot.gif" title="Настройки" alt="Настройки" class="icon ic_b_tblops">&nbsp;Настройки
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/replication">
-              <img src="themes/dot.gif" title="Репликация" alt="Репликация" class="icon ic_s_replication">&nbsp;Репликация
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/variables">
-              <img src="themes/dot.gif" title="Переменные" alt="Переменные" class="icon ic_s_vars">&nbsp;Переменные
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/collations">
-              <img src="themes/dot.gif" title="Кодировки" alt="Кодировки" class="icon ic_s_asci">&nbsp;Кодировки
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/engines">
-              <img src="themes/dot.gif" title="Типы таблиц" alt="Типы таблиц" class="icon ic_b_engine">&nbsp;Типы таблиц
-                          </a>
-          </li>
-                  <li class="nav-item">
-            <a class="nav-link text-nowrap" href="index.php?route=/server/plugins">
-              <img src="themes/dot.gif" title="Плагины" alt="Плагины" class="icon ic_b_plugin">&nbsp;Плагины
-                          </a>
-          </li>
-              </ul>
-    </div>
-  </nav>
-</div>
+CREATE TABLE `enum_effects_list` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(16) CHARACTER SET utf8mb4 DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-    <span id="page_nav_icons">
-      <span id="lock_page_icon"></span>
-      <span id="page_settings_icon">
-        <img src="themes/dot.gif" title="Настройки, касающиеся страницы" alt="Настройки, касающиеся страницы" class="icon ic_s_cog">
-      </span>
-      <a id="goto_pagetop" href="#"><img src="themes/dot.gif" title="Кликните на строку, чтобы перейти вверх страницы" alt="Кликните на строку, чтобы перейти вверх страницы" class="icon ic_s_top"></a>
-    </span>
-  
-  <div id="pma_console_container">
-    <div id="pma_console">
-                <div class="toolbar collapsed">
-                    <div class="switch_button console_switch">
-            <img src="themes/dot.gif" title="Консоль SQL запроса" alt="Консоль SQL запроса" class="icon ic_console">
-            <span>Консоль</span>
-        </div>
-                            <div class="button clear">
-            
-            <span>Очистить</span>
-        </div>
-                            <div class="button history">
-            
-            <span>История</span>
-        </div>
-                            <div class="button options">
-            
-            <span>Параметры</span>
-        </div>
-                            <div class="button bookmarks">
-            
-            <span>Закладки</span>
-        </div>
-                            <div class="button debug hide">
-            
-            <span>Отладка SQL</span>
-        </div>
-            </div>
-                <div class="content">
-            <div class="console_message_container">
-                <div class="message welcome">
-                    <span id="instructions-0">
-                        Нажмите Ctrl+Enter для выполнения запроса                    </span>
-                    <span class="hide" id="instructions-1">
-                        Нажмите Enter для выполнения запроса                    </span>
-                </div>
-                                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_aethers">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_aethers`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_aethers">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_aethers`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_aethers">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_aethers`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_skills">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_skills`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_skills">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_skills`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_skills">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_skills`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_quests">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_quests`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_mining">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_mining`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_skills">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_skills`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_quests">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_quests`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_mining">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_mining`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_mining">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_mining`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_mailbox">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_mailbox`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_mining">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_mining`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_mailbox">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_mailbox`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_items">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_items`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_items">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_items`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_items">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_items`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_farming">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_farming`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_aethers">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_aethers`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_data">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_data`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_aethers">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_aethers`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts_aethers">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts_aethers`</span>
-                        </div>
-                                            <div class="message history collapsed hide select"
-                            targetdb="test2" targettable="tw_accounts">
-                            <div class="action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span>test2</span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span>В течение текущей сессии</span>
-                    </span>
-            </div>
-                            <span class="query">SELECT * FROM `tw_accounts`</span>
-                        </div>
-                                                </div><!-- console_message_container -->
-            <div class="query_input">
-                <span class="console_query_input"></span>
-            </div>
-        </div><!-- message end -->
-                <div class="mid_layer"></div>
-                <div class="card" id="debug_console">
-            <div class="toolbar ">
-                    <div class="button order order_asc">
-            
-            <span>по возрастанию</span>
-        </div>
-                            <div class="button order order_desc">
-            
-            <span>по убыванию</span>
-        </div>
-                            <div class="text">
-            
-            <span>Порядок сортировки:</span>
-        </div>
-                            <div class="switch_button">
-            
-            <span>Отладка SQL</span>
-        </div>
-                            <div class="button order_by sort_count">
-            
-            <span>Количество</span>
-        </div>
-                            <div class="button order_by sort_exec">
-            
-            <span>Порядок выполнения</span>
-        </div>
-                            <div class="button order_by sort_time">
-            
-            <span>Занято времени</span>
-        </div>
-                            <div class="text">
-            
-            <span>Сортировки по:</span>
-        </div>
-                            <div class="button group_queries">
-            
-            <span>Группировать запросы</span>
-        </div>
-                            <div class="button ungroup_queries">
-            
-            <span>Разгруппировать запросы</span>
-        </div>
-            </div>
-            <div class="content debug">
-                <div class="message welcome"></div>
-                <div class="debugLog"></div>
-            </div> <!-- Content -->
-            <div class="templates">
-                <div class="debug_query action_content">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action dbg_show_trace">
-            Показать трассировку
-                    </span>
-                            <span class="action dbg_hide_trace">
-            Скрыть трассировку
-                    </span>
-                            <span class="text count hide">
-            Количество
-                    </span>
-                            <span class="text time">
-            Занято времени
-                    </span>
-            </div>
-            </div> <!-- Template -->
-        </div> <!-- Debug SQL card -->
-                    <div class="card" id="pma_bookmarks">
-                <div class="toolbar ">
-                    <div class="switch_button">
-            
-            <span>Закладки</span>
-        </div>
-                            <div class="button refresh">
-            
-            <span>Обновить</span>
-        </div>
-                            <div class="button add">
-            
-            <span>Добавить</span>
-        </div>
-            </div>
-                <div class="content bookmark">
-                    <div class="message welcome">
-    <span>Нет закладок</span>
-</div>
+--
+-- Дамп данных таблицы `enum_effects_list`
+--
 
-                </div>
-                <div class="mid_layer"></div>
-                <div class="card add">
-                    <div class="toolbar ">
-                    <div class="switch_button">
-            
-            <span>Добавить закладку</span>
-        </div>
-            </div>
-                    <div class="content add_bookmark">
-                        <div class="options">
-                            <label>
-                                Метка: <input type="text" name="label">
-                            </label>
-                            <label>
-                                Целевая база данных: <input type="text" name="targetdb">
-                            </label>
-                            <label>
-                                <input type="checkbox" name="shared">Сделать закладку общедоступной                            </label>
-                            <button class="btn btn-primary" type="submit" name="submit">OK</button>
-                        </div> <!-- options -->
-                        <div class="query_input">
-                            <span class="bookmark_add_input"></span>
-                        </div>
-                    </div>
-                </div> <!-- Add bookmark card -->
-            </div> <!-- Bookmarks card -->
-                        <div class="card" id="pma_console_options">
-            <div class="toolbar ">
-                    <div class="switch_button">
-            
-            <span>Параметры</span>
-        </div>
-                            <div class="button default">
-            
-            <span>Сбросить настройки</span>
-        </div>
-            </div>
-            <div class="content">
-                <label>
-                    <input type="checkbox" name="always_expand">Всегда разворачивать сообщения запроса                </label>
-                <br>
-                <label>
-                    <input type="checkbox" name="start_history">Показать историю запросов                </label>
-                <br>
-                <label>
-                    <input type="checkbox" name="current_query">Показать текущий запрос на просмотр                </label>
-                <br>
-                <label>
-                    <input type="checkbox" name="enter_executes">
-                        Выполнить запрос по нажатию Enter и вставить новую строку по нажатию Shift + Enter. Чтобы сделать эту опцию постоянной, смотрите настройки.                </label>
-                <br>
-                <label>
-                    <input type="checkbox" name="dark_theme">Переключиться на темную тему                </label>
-                <br>
-            </div>
-        </div> <!-- Options card -->
-        <div class="templates">
-                        <div class="query_actions">
-                    <span class="action collapse">
-            Свернуть
-                    </span>
-                            <span class="action expand">
-            Развернуть
-                    </span>
-                            <span class="action requery">
-            Повторный запрос
-                    </span>
-                            <span class="action edit">
-            Изменить
-                    </span>
-                            <span class="action explain">
-            Анализировать
-                    </span>
-                            <span class="action profiling">
-            Профилирование
-                    </span>
-                            <span class="action bookmark">
-            Закладка
-                    </span>
-                            <span class="text failed">
-            Сбой выполнения запроса
-                    </span>
-                            <span class="text targetdb">
-            База данных
-                            : <span></span>
-                    </span>
-                            <span class="text query_time">
-            Запрошенное время
-                            : <span></span>
-                    </span>
-            </div>
-        </div>
-    </div> <!-- #console end -->
-</div> <!-- #console_container end -->
+INSERT INTO `enum_effects_list` (`ID`, `Name`) VALUES
+(3, 'Fire'),
+(2, 'Poison'),
+(1, 'Slowdown');
 
+-- --------------------------------------------------------
 
-  <div id="page_content">
-    
+--
+-- Структура таблицы `enum_emotes`
+--
 
-    
-<!DOCTYPE HTML>
-<html lang="ru" dir="ltr">
-<head>
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <title>phpMyAdmin</title>
-    <meta charset="utf-8">
-    <style type="text/css">
-        html {
-            padding: 0;
-            margin: 0;
-        }
-        body  {
-            font-family: sans-serif;
-            font-size: small;
-            color: #000000;
-            background-color: #F5F5F5;
-            margin: 1em;
-        }
-        h1 {
-            margin: 0;
-            padding: 0.3em;
-            font-size: 1.4em;
-            font-weight: bold;
-            color: #ffffff;
-            background-color: #ff0000;
-        }
-        p {
-            margin: 0;
-            padding: 0.5em;
-            border: 0.1em solid red;
-            background-color: #ffeeee;
-        }
-    </style>
-</head>
-<body>
-<h1>phpMyAdmin - Ошибка</h1>
-<p>index.php: Отсутствующий параметр: what<a href="./doc/html/faq.html#faqmissingparameters" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a><br>index.php: Отсутствующий параметр: export_type<a href="./doc/html/faq.html#faqmissingparameters" target="documentation"><img src="themes/dot.gif" title="Документация" alt="Документация" class="icon ic_b_help"></a><br></p>
-</body>
-</html>
-  </div>
-  <div id="selflink" class="print_ignore"><a href="index.php?route=%2Fexport&amp;server=1" title="Открыть phpMyAdmin в новом окне" target="_blank" rel="noopener noreferrer"><img src="themes/dot.gif" title="Открыть phpMyAdmin в новом окне" alt="Открыть phpMyAdmin в новом окне" class="icon ic_window-new"></a></div>
+CREATE TABLE `enum_emotes` (
+  `ID` int(11) NOT NULL,
+  `Emote` varchar(64) NOT NULL DEFAULT 'nope'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-  <div class="clearfloat" id="pma_errors">
-    
-  </div>
+--
+-- Дамп данных таблицы `enum_emotes`
+--
 
-  
-<script data-cfasync="false" type="text/javascript">
-// <![CDATA[
-var debugSQLInfo = 'null';
+INSERT INTO `enum_emotes` (`ID`, `Emote`) VALUES
+(0, 'Normal Emote'),
+(1, 'Pain Emote'),
+(2, 'Happy Emote'),
+(3, 'Surprise Emote'),
+(4, 'Angry Emote'),
+(5, 'Blink Emote');
 
-// ]]>
-</script>
+-- --------------------------------------------------------
 
+--
+-- Структура таблицы `enum_items_functional`
+--
 
-  
-  
-  </body>
-</html>
+CREATE TABLE `enum_items_functional` (
+  `FunctionID` int(11) NOT NULL,
+  `Name` varchar(64) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Дамп данных таблицы `enum_items_functional`
+--
+
+INSERT INTO `enum_items_functional` (`FunctionID`, `Name`) VALUES
+(-1, 'Not have function'),
+(0, 'Equip hammer(Only equip type)'),
+(1, 'Equip gun(Only equip type)'),
+(2, 'Equip shotgun(Only equip type)'),
+(3, 'Equip grenade(Only equip type)'),
+(4, 'Equip rifle(Only equip type)'),
+(5, 'Equip miner(Only equip type)'),
+(6, 'Equip rake(Only equip type)'),
+(7, 'Equip armor(Only equip type)'),
+(8, 'Once use item x1'),
+(9, 'Several times use item x99'),
+(10, 'Settings(Only settings or modules type)'),
+(11, 'Plants item'),
+(12, 'Mining item');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `enum_items_types`
+--
+
+CREATE TABLE `enum_items_types` (
+  `TypeID` int(11) NOT NULL,
+  `Name` varchar(32) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Дамп данных таблицы `enum_items_types`
+--
+
+INSERT INTO `enum_items_types` (`TypeID`, `Name`) VALUES
+(-1, 'Invisible'),
+(1, 'Useds'),
+(2, 'Crafts'),
+(3, 'Modules'),
+(4, 'Others'),
+(5, 'Settings'),
+(6, 'Equipping'),
+(7, 'Decorations'),
+(8, 'Potions');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `enum_mmo_proj`
+--
+
+CREATE TABLE `enum_mmo_proj` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(64) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Дамп данных таблицы `enum_mmo_proj`
+--
+
+INSERT INTO `enum_mmo_proj` (`ID`, `Name`) VALUES
+(0, 'Magitech Gun'),
+(1, 'Magitech Shotgun'),
+(2, 'Magitech Grenade'),
+(-1, 'No Proj'),
+(3, 'Heavenly Gun'),
+(4, 'Heavenly Shotgun'),
+(5, 'Heavenly Grenade'),
+(6, 'Goblin Gun'),
+(7, 'Goblin Shotgun'),
+(8, 'Goblin Grenade');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `enum_quest_interactive`
+--
+
+CREATE TABLE `enum_quest_interactive` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(64) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Дамп данных таблицы `enum_quest_interactive`
+--
+
+INSERT INTO `enum_quest_interactive` (`ID`, `Name`) VALUES
+(1, 'Randomly accept or refuse with the item'),
+(2, 'Pick up items that NPC will drop.');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `enum_worlds`
+--
+
+CREATE TABLE `enum_worlds` (
+  `WorldID` int(11) NOT NULL,
+  `Name` varchar(32) CHARACTER SET utf8 NOT NULL,
+  `RespawnWorld` int(11) DEFAULT NULL,
+  `MusicID` int(11) NOT NULL DEFAULT -1
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Дамп данных таблицы `enum_worlds`
+--
+
+INSERT INTO `enum_worlds` (`WorldID`, `Name`, `RespawnWorld`, `MusicID`) VALUES
+(0, 'Pier Elfinia', NULL, 53),
+(1, 'Way to the Elfinia', 1, 54),
+(2, 'Elfinia', 2, 53),
+(3, 'Elfinia Deep cave', 2, 54),
+(4, 'Elfia home room', 2, 53),
+(5, 'Elfinia occupation of goblins', 5, 54),
+(6, 'Elfinia Abandoned mine', NULL, 56),
+(7, 'Diana home room', 2, 53),
+(8, 'Noctis Resonance', NULL, 55),
+(9, 'Departure', 9, 53),
+(10, 'Underwater of Neptune', 10, 55),
+(11, 'Yugasaki', 11, 53);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts`
+--
+
+CREATE TABLE `tw_accounts` (
+  `ID` int(11) NOT NULL,
+  `Username` varchar(64) NOT NULL,
+  `Password` varchar(64) NOT NULL,
+  `PasswordSalt` varchar(64) DEFAULT NULL,
+  `RegisterDate` varchar(64) NOT NULL,
+  `LoginDate` varchar(64) NOT NULL DEFAULT 'First log in',
+  `RegisteredIP` varchar(64) NOT NULL DEFAULT '0.0.0.0',
+  `LoginIP` varchar(64) NOT NULL DEFAULT '0.0.0.0',
+  `Language` varchar(8) NOT NULL DEFAULT 'en'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_accounts`
+--
+
+INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `RegisterDate`, `LoginDate`, `RegisteredIP`, `LoginIP`, `Language`) VALUES
+(1, 'kuro', '7dd4cd59370ae03ef3f73b0711cd702df5e1853bf97bf8705244c0c22d759db1', 'TYdfB9M75CLUNGkPCm6PF46C', '2021-10-21 17:26:48', '2022-10-01 03:03:58', '192.168.56.1', '192.168.0.10', 'ru'),
+(2, 'kuro', 'bc5905cfaa9e0188814fa2a56ecd6a998a4d39c6345ff9bff296bd5086dee93e', 'g8KmHG6T72CGXjRnn2CBq7Zt', '2021-11-04 08:38:30', '2021-11-04 23:23:59', '192.168.9.2', '192.168.42.35', 'ru'),
+(3, 'kuro', 'b46d7846dd83b73171009b49847825aa45abbb37071021d6b4219319a680ba27', 'eVE2pT8AbnS8Lc7AUMLtWRkS', '2021-11-04 12:43:33', '2021-11-04 21:18:05', '192.168.9.2', '192.168.9.2', 'ru'),
+(4, 'kuro', 'da6eee14f58fc11fefade37e6974b2fe18259a1619cffc84279a0d3fd0101d1b', 'Yhg56c79pk6LC97TZVjdbLVg', '2021-11-05 06:51:11', '2021-11-05 14:25:01', '192.168.9.2', '192.168.9.2', 'en'),
+(5, 'kuro', '60424ee200a9c54748fdbdb8b7cd7df29b651e4d8b4a23752c97a88d2260b2ed', 'YeXACqnVZECdfPpWaeg38NAa', '2022-07-20 12:29:06', '2022-09-22 23:28:28', '192.168.0.10', '192.168.0.11', 'ru'),
+(6, 'soska', '433cf6f8aebcb7960384f563972f9c9a06e7210ea53ca07307dde83f407fe093', 'WbGYAeknmmKZLNmBSLcCqMA6', '2022-07-20 14:14:04', '2022-07-20 21:40:16', '192.168.0.10', '192.168.0.10', 'en'),
+(7, 'kuro', '15efd964fc5ab19174a5c5d3c650d2b227dbbea5882380a77db935020ea169e5', 'K6hpqc2bmR3jTAMYWbEYUCCD', '2022-08-14 08:29:14', '2022-08-14 15:46:50', '192.168.0.11', '192.168.0.11', 'en'),
+(8, '9871爪20001', '2a17bdbb002ddae787cbb1f0d2d78a5081c33ce2b2806cdb633272b7cd2cd1fc', 'ocop8V49U6Me8NKqbG72f95W', '2022-09-22 14:13:20', '2022-09-22 21:13:26', '46.242.12.120', '46.242.12.120', 'ru'),
+(9, 'lel1', '252f176ea818de94a38f51570ede8bb28d2745a305c2f6cdff1f79ae219a545e', 'abmSUX5Ta2Pjt9bhb88WbkbP', '2022-09-22 15:58:27', '2022-09-23 00:03:17', '46.147.226.251', '46.147.226.251', 'en'),
+(10, 'test', '36235aabe710994638d3d920298d4c9b8207bcc094846d7033b6903bf4e58bf1', 'qmUfHhj3nT2LZp8X2XtALAc2', '2022-09-22 16:32:49', '2022-10-01 00:23:17', '138.199.47.239', '146.70.97.205', 'en');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts_aethers`
+--
+
+CREATE TABLE `tw_accounts_aethers` (
+  `ID` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL,
+  `AetherID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts_data`
+--
+
+CREATE TABLE `tw_accounts_data` (
+  `ID` int(11) NOT NULL,
+  `Nick` varchar(32) NOT NULL,
+  `DiscordID` varchar(64) NOT NULL DEFAULT 'null',
+  `WorldID` int(11) DEFAULT NULL,
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `Exp` int(11) NOT NULL DEFAULT 0,
+  `GuildID` int(11) DEFAULT NULL,
+  `GuildDeposit` int(11) NOT NULL DEFAULT 0,
+  `GuildRank` int(11) DEFAULT NULL,
+  `Upgrade` int(11) NOT NULL DEFAULT 0,
+  `SpreadShotgun` int(11) NOT NULL DEFAULT 3,
+  `SpreadGrenade` int(11) NOT NULL DEFAULT 1,
+  `SpreadRifle` int(11) NOT NULL DEFAULT 1,
+  `Dexterity` int(11) NOT NULL DEFAULT 0,
+  `CriticalHit` int(11) NOT NULL DEFAULT 0,
+  `DirectCriticalHit` int(11) NOT NULL DEFAULT 0,
+  `Hardness` int(11) NOT NULL DEFAULT 0,
+  `Tenacity` int(11) NOT NULL DEFAULT 0,
+  `Lucky` int(11) NOT NULL DEFAULT 0,
+  `Piety` int(11) NOT NULL DEFAULT 0,
+  `Vampirism` int(11) NOT NULL DEFAULT 0,
+  `AmmoRegen` int(11) NOT NULL DEFAULT 0,
+  `Ammo` int(11) NOT NULL DEFAULT 0,
+  `Efficiency` int(11) NOT NULL DEFAULT 0,
+  `Extraction` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_accounts_data`
+--
+
+INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `Exp`, `GuildID`, `GuildDeposit`, `GuildRank`, `Upgrade`, `SpreadShotgun`, `SpreadGrenade`, `SpreadRifle`, `Dexterity`, `CriticalHit`, `DirectCriticalHit`, `Hardness`, `Tenacity`, `Lucky`, `Piety`, `Vampirism`, `AmmoRegen`, `Ammo`, `Efficiency`, `Extraction`) VALUES
+(1, 'kurosio', '571251558457540617', 11, 34, 13608, NULL, 0, NULL, 0, 7, 3, 5, 1, 0, 0, 10000, 0, 0, 0, 5000, 10000, 30, 0, 0),
+(2, 'kurosio1', 'null', 2, 3, 99, NULL, 0, NULL, 20, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(3, 'kurosio12', 'null', 0, 2, 2, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(4, 'kurosio44', 'null', 7, 4, 156, NULL, 0, NULL, 30, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(5, 'missie', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(6, '[D] missie', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(7, 'missiedsadA♪', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(8, '9871爪20001', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(9, '<~{Barsik}~>', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(10, 'Anime.pdf', 'null', 0, 2, 17, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts_farming`
+--
+
+CREATE TABLE `tw_accounts_farming` (
+  `UserID` int(11) NOT NULL,
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `Exp` int(11) NOT NULL DEFAULT 0,
+  `Quantity` int(11) NOT NULL DEFAULT 1,
+  `Upgrade` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+--
+-- Дамп данных таблицы `tw_accounts_farming`
+--
+
+INSERT INTO `tw_accounts_farming` (`UserID`, `Level`, `Exp`, `Quantity`, `Upgrade`) VALUES
+(1, 1, 5, 1, 0),
+(2, 1, 2, 1, 0),
+(3, 1, 0, 1, 0),
+(4, 1, 0, 1, 0),
+(5, 1, 0, 1, 0),
+(6, 1, 0, 1, 0),
+(7, 1, 0, 1, 0),
+(8, 1, 0, 1, 0),
+(9, 1, 0, 1, 0),
+(10, 1, 0, 1, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts_items`
+--
+
+CREATE TABLE `tw_accounts_items` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) NOT NULL,
+  `Value` int(11) NOT NULL,
+  `Settings` int(11) NOT NULL,
+  `Enchant` int(11) NOT NULL,
+  `Durability` int(11) NOT NULL DEFAULT 100,
+  `UserID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
+
+--
+-- Дамп данных таблицы `tw_accounts_items`
+--
+
+INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`, `Durability`, `UserID`) VALUES
+(1, 2, 1, 0, 0, 100, 1),
+(2, 22, 2, 1, 0, 100, 1),
+(5, 3, 1, 1, 0, 100, 1),
+(6, 1, 11213, 0, 0, 100, 1),
+(10, 9, 9082, 0, 0, 100, 1),
+(14, 19, 1, 1, 0, 100, 1),
+(21, 18, 10097, 0, 0, 100, 1),
+(25, 17, 98, 0, 0, 100, 1),
+(27, 15, 10094, 0, 0, 100, 1),
+(34, 13, 1, 0, 0, 100, 1),
+(35, 14, 10, 0, 0, 100, 1),
+(38, 23, 2, 0, 0, 100, 1),
+(39, 24, 7, 1, 0, 100, 1),
+(48, 21, 1, 0, 0, 100, 1),
+(49, 7, 1122, 0, 0, 100, 1),
+(55, 5, 1, 1, 0, 100, 1),
+(56, 6, 1, 0, 0, 100, 1),
+(57, 2, 1, 1, 0, 100, 2),
+(58, 22, 1, 1, 0, 100, 2),
+(61, 3, 1, 1, 0, 100, 2),
+(62, 1, 179, 0, 0, 100, 2),
+(65, 2, 1, 1, 0, 100, 3),
+(66, 22, 1, 1, 0, 100, 3),
+(69, 3, 1, 1, 0, 100, 3),
+(70, 1, 15, 0, 0, 100, 3),
+(73, 16, 3, 0, 0, 100, 1),
+(74, 2, 1, 1, 0, 100, 4),
+(75, 22, 1, 1, 0, 100, 4),
+(78, 3, 1, 1, 0, 100, 4),
+(79, 1, 317, 0, 0, 100, 4),
+(81, 9, 2, 0, 0, 100, 4),
+(85, 2, 1, 1, 0, 100, 5),
+(86, 22, 1, 1, 0, 100, 5),
+(87, 2, 1, 1, 0, 100, 6),
+(88, 22, 1, 1, 0, 100, 6),
+(89, 10, 1, 0, 0, 100, 5),
+(90, 12, 1002, 0, 0, 100, 5),
+(91, 13, 1, 0, 0, 100, 5),
+(92, 14, 1, 0, 0, 100, 5),
+(95, 7, 101, 0, 0, 100, 5),
+(97, 1, 1, 0, 0, 100, 5),
+(98, 3, 1, 1, 0, 100, 5),
+(99, 4, 1, 1, 0, 100, 5),
+(100, 5, 1, 1, 2, 100, 5),
+(101, 6, 1, 1, 0, 100, 5),
+(102, 9, 876, 0, 0, 100, 5),
+(103, 15, 1000, 0, 0, 100, 5),
+(109, 18, 1000, 0, 0, 100, 5),
+(113, 2, 1, 1, 0, 100, 7),
+(114, 22, 1, 1, 0, 100, 7),
+(115, 2, 1, 1, 0, 100, 8),
+(116, 22, 1, 1, 0, 100, 8),
+(117, 4, 1, 1, 0, 100, 8),
+(119, 15, 13, 0, 0, 100, 8),
+(120, 20, 1, 1, 0, 100, 8),
+(121, 2, 1, 1, 0, 100, 9),
+(122, 22, 1, 1, 0, 100, 9),
+(125, 2, 1, 0, 0, 100, 10),
+(126, 22, 1, 1, 0, 100, 10),
+(127, 1, 1041, 0, 0, 100, 10),
+(147, 4, 1, 1, 10, 100, 1),
+(148, 20, 1, 1, 1, 100, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts_mailbox`
+--
+
+CREATE TABLE `tw_accounts_mailbox` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) DEFAULT NULL,
+  `ItemValue` int(11) DEFAULT NULL,
+  `Enchant` int(11) DEFAULT NULL,
+  `Name` varchar(64) NOT NULL,
+  `Description` varchar(64) NOT NULL,
+  `UserID` int(11) NOT NULL,
+  `IsRead` tinyint(4) NOT NULL DEFAULT 0,
+  `FromSend` varchar(32) NOT NULL DEFAULT 'Game'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts_mining`
+--
+
+CREATE TABLE `tw_accounts_mining` (
+  `UserID` int(11) NOT NULL,
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `Exp` int(11) NOT NULL DEFAULT 0,
+  `Upgrade` int(11) NOT NULL DEFAULT 0,
+  `Quantity` int(11) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+--
+-- Дамп данных таблицы `tw_accounts_mining`
+--
+
+INSERT INTO `tw_accounts_mining` (`UserID`, `Level`, `Exp`, `Upgrade`, `Quantity`) VALUES
+(1, 1, 0, 0, 1),
+(2, 1, 0, 0, 1),
+(3, 1, 0, 0, 1),
+(4, 1, 0, 0, 1),
+(5, 1, 0, 0, 1),
+(6, 1, 0, 0, 1),
+(7, 1, 0, 0, 1),
+(8, 1, 0, 0, 1),
+(9, 1, 0, 0, 1),
+(10, 1, 0, 0, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts_quests`
+--
+
+CREATE TABLE `tw_accounts_quests` (
+  `ID` int(11) NOT NULL,
+  `QuestID` int(11) DEFAULT NULL,
+  `UserID` int(11) NOT NULL,
+  `Step` int(11) NOT NULL DEFAULT 1,
+  `Type` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_accounts_skills`
+--
+
+CREATE TABLE `tw_accounts_skills` (
+  `ID` int(11) NOT NULL,
+  `SkillID` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL,
+  `Level` int(11) NOT NULL,
+  `UsedByEmoticon` int(11) DEFAULT -1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_accounts_skills`
+--
+
+INSERT INTO `tw_accounts_skills` (`ID`, `SkillID`, `UserID`, `Level`, `UsedByEmoticon`) VALUES
+(1, 1, 1, 8, -1),
+(2, 2, 1, 10, -1),
+(3, 5, 1, 4, -1),
+(4, 6, 1, 4, -1),
+(5, 1, 5, 1, 0),
+(6, 6, 5, 1, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_aethers`
+--
+
+CREATE TABLE `tw_aethers` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(64) NOT NULL DEFAULT 'Teleport name',
+  `WorldID` int(11) NOT NULL,
+  `TeleX` int(11) NOT NULL,
+  `TeleY` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_attributs`
+--
+
+CREATE TABLE `tw_attributs` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(32) NOT NULL,
+  `FieldName` varchar(32) NOT NULL DEFAULT 'unfield',
+  `Price` int(11) NOT NULL,
+  `Type` int(11) NOT NULL COMMENT '0.tank1.healer2.dps3.weapon4.hard5.jobs 6. others',
+  `Divide` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_attributs`
+--
+
+INSERT INTO `tw_attributs` (`ID`, `Name`, `FieldName`, `Price`, `Type`, `Divide`) VALUES
+(1, 'Shotgun Spread', 'SpreadShotgun', 100, 3, 0),
+(2, 'Grenade Spread', 'SpreadGrenade', 100, 3, 0),
+(3, 'Rifle Spread', 'SpreadRifle', 100, 3, 0),
+(4, 'Strength', 'unfield', 0, 4, 10),
+(5, 'Dexterity', 'Dexterity', 1, 2, 5),
+(6, 'Crit Dmg', 'CriticalHit', 1, 2, 5),
+(7, 'Direct Crit Dmg', 'DirectCriticalHit', 1, 2, 5),
+(8, 'Hardness', 'Hardness', 1, 0, 5),
+(9, 'Lucky', 'Lucky', 1, 0, 5),
+(10, 'Piety', 'Piety', 1, 1, 5),
+(11, 'Vampirism', 'Vampirism', 1, 1, 5),
+(12, 'Ammo Regen', 'AmmoRegen', 1, 3, 5),
+(13, 'Ammo', 'Ammo', 30, 3, 0),
+(14, 'Efficiency', 'unfield', -1, 5, 0),
+(15, 'Extraction', 'unfield', -1, 5, 0),
+(16, 'Hammer Power', 'unfield', -1, 4, 10),
+(17, 'Gun Power', 'unfield', -1, 4, 10),
+(18, 'Shotgun Power', 'unfield', -1, 4, 10),
+(19, 'Grenade Power', 'unfield', -1, 4, 10),
+(20, 'Rifle Power', 'unfield', -1, 4, 10),
+(21, 'Lucky items', 'unfield', -1, 6, 5);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_bots_info`
+--
+
+CREATE TABLE `tw_bots_info` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(32) NOT NULL DEFAULT 'Bot name',
+  `JsonTeeInfo` varchar(128) NOT NULL DEFAULT '{ "skin": "default", 	"custom_color": 0, 	"color_body": 0, 	"color_feer": 0}',
+  `SlotHammer` int(11) DEFAULT NULL,
+  `SlotGun` int(11) DEFAULT NULL,
+  `SlotShotgun` int(11) DEFAULT NULL,
+  `SlotGrenade` int(11) DEFAULT NULL,
+  `SlotRifle` int(11) DEFAULT NULL,
+  `SlotArmor` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+--
+-- Дамп данных таблицы `tw_bots_info`
+--
+
+INSERT INTO `tw_bots_info` (`ID`, `Name`, `JsonTeeInfo`, `SlotHammer`, `SlotGun`, `SlotShotgun`, `SlotGrenade`, `SlotRifle`, `SlotArmor`) VALUES
+(1, 'Sailor', '{\"skin\": \"greensward\",\"custom_color\": 0,\"color_body\": 0,\"color_feet\": 0}', NULL, NULL, NULL, NULL, NULL, NULL),
+(2, 'Worker', '{\"skin\": \"default\",\"custom_color\": 0,\"color_body\": 0,\"color_feet\": 0}', NULL, NULL, NULL, NULL, NULL, NULL),
+(3, 'Goblin', '{\"skin\": \"default\",\"custom_color\": 0,\"color_body\": 0,\"color_feet\": 0}', NULL, NULL, NULL, NULL, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_bots_mobs`
+--
+
+CREATE TABLE `tw_bots_mobs` (
+  `ID` int(11) NOT NULL,
+  `BotID` int(11) NOT NULL DEFAULT -1,
+  `WorldID` int(11) DEFAULT NULL,
+  `PositionX` int(11) NOT NULL,
+  `PositionY` int(11) NOT NULL,
+  `Effect` varchar(16) DEFAULT NULL,
+  `Behavior` varchar(32) NOT NULL DEFAULT 'Standard',
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `Power` int(11) NOT NULL DEFAULT 10,
+  `Spread` int(11) NOT NULL DEFAULT 0,
+  `Number` int(11) NOT NULL DEFAULT 1,
+  `Respawn` int(11) NOT NULL DEFAULT 1,
+  `Boss` tinyint(1) NOT NULL DEFAULT 0,
+  `it_drop_0` int(11) DEFAULT NULL,
+  `it_drop_1` int(11) DEFAULT NULL,
+  `it_drop_2` int(11) DEFAULT NULL,
+  `it_drop_3` int(11) DEFAULT NULL,
+  `it_drop_4` int(11) DEFAULT NULL,
+  `it_drop_count` varchar(64) NOT NULL DEFAULT '[0][0][0][0][0]',
+  `it_drop_chance` varchar(64) NOT NULL DEFAULT '[0][0][0][0][0]'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_bots_mobs`
+--
+
+INSERT INTO `tw_bots_mobs` (`ID`, `BotID`, `WorldID`, `PositionX`, `PositionY`, `Effect`, `Behavior`, `Level`, `Power`, `Spread`, `Number`, `Respawn`, `Boss`, `it_drop_0`, `it_drop_1`, `it_drop_2`, `it_drop_3`, `it_drop_4`, `it_drop_count`, `it_drop_chance`) VALUES
+(1, 3, 0, 5449, 1297, NULL, 'Standard', 12, 60, 1, 10, 1, 0, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|3.96|0|0|0|0|');
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_bots_npc`
+--
+
+CREATE TABLE `tw_bots_npc` (
+  `ID` int(11) NOT NULL,
+  `BotID` int(11) NOT NULL DEFAULT -1,
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `GiveQuestID` int(11) DEFAULT NULL,
+  `DialogData` varchar(4096) NOT NULL DEFAULT 'empty',
+  `Function` int(11) NOT NULL DEFAULT -1,
+  `Static` int(11) NOT NULL,
+  `Emote` int(11) NOT NULL DEFAULT 0 COMMENT '1.Pain 2.Happy 3.Surprise 4.Angry 5.Blink	',
+  `Number` int(11) NOT NULL DEFAULT 1,
+  `WorldID` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_bots_npc`
+--
+
+INSERT INTO `tw_bots_npc` (`ID`, `BotID`, `PosX`, `PosY`, `GiveQuestID`, `DialogData`, `Function`, `Static`, `Emote`, `Number`, `WorldID`) VALUES
+(1, 1, 1022, 1073, NULL, '[{\"text\":\"**He looks very tired**: Very hot, impossible to work.\",\"emote\":\"pain\"}]', -1, 0, 5, 2, 0),
+(2, 2, 5312, 1073, NULL, 'empty', -1, 1, 0, 1, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_bots_quest`
+--
+
+CREATE TABLE `tw_bots_quest` (
+  `ID` int(11) NOT NULL,
+  `BotID` int(11) NOT NULL DEFAULT -1,
+  `QuestID` int(11) NOT NULL DEFAULT -1,
+  `Step` int(11) NOT NULL DEFAULT 1,
+  `WorldID` int(11) DEFAULT NULL,
+  `GenerateSubName` tinyint(4) NOT NULL DEFAULT 0,
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `DialogData` varchar(4096) NOT NULL DEFAULT 'empty',
+  `RequiredItemID1` int(11) DEFAULT NULL,
+  `RequiredItemID2` int(11) DEFAULT NULL,
+  `RewardItemID1` int(11) DEFAULT NULL,
+  `RewardItemID2` int(11) DEFAULT NULL,
+  `RequiredDefeatMobID1` int(11) DEFAULT NULL,
+  `RequiredDefeatMobID2` int(11) DEFAULT NULL,
+  `Amount` varchar(64) NOT NULL DEFAULT '|0|0|0|0|0|0|',
+  `InteractionType` int(11) DEFAULT NULL,
+  `InteractionTemp` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_crafts_list`
+--
+
+CREATE TABLE `tw_crafts_list` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) DEFAULT NULL,
+  `ItemValue` int(11) NOT NULL,
+  `RequiredItemID0` int(11) DEFAULT NULL,
+  `RequiredItemID1` int(11) DEFAULT NULL,
+  `RequiredItemID2` int(11) DEFAULT NULL,
+  `RequiredItemsValues` varchar(32) NOT NULL DEFAULT '0 0 0',
+  `Price` int(11) NOT NULL DEFAULT 100,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_dungeons`
+--
+
+CREATE TABLE `tw_dungeons` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(64) NOT NULL DEFAULT 'Unknown',
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `DoorX` int(11) NOT NULL DEFAULT 0,
+  `DoorY` int(11) NOT NULL DEFAULT 0,
+  `RequiredQuestID` int(11) NOT NULL DEFAULT -1,
+  `Story` tinyint(4) NOT NULL DEFAULT 0,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_dungeons_door`
+--
+
+CREATE TABLE `tw_dungeons_door` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(64) NOT NULL DEFAULT 'Write here name dungeon',
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `BotID` int(11) NOT NULL,
+  `DungeonID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_dungeons_records`
+--
+
+CREATE TABLE `tw_dungeons_records` (
+  `ID` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL,
+  `DungeonID` int(11) NOT NULL,
+  `Seconds` int(11) NOT NULL,
+  `PassageHelp` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_guilds`
+--
+
+CREATE TABLE `tw_guilds` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(32) NOT NULL DEFAULT 'Member name',
+  `UserID` int(11) DEFAULT NULL,
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `Experience` int(11) NOT NULL DEFAULT 0,
+  `Bank` int(11) NOT NULL DEFAULT 0,
+  `Score` int(11) NOT NULL DEFAULT 0,
+  `AvailableSlots` int(11) NOT NULL DEFAULT 2,
+  `ChairExperience` int(11) NOT NULL DEFAULT 1,
+  `ChairMoney` int(11) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_guilds_decorations`
+--
+
+CREATE TABLE `tw_guilds_decorations` (
+  `ID` int(11) NOT NULL,
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `HouseID` int(11) NOT NULL,
+  `DecoID` int(11) NOT NULL,
+  `WorldID` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_guilds_history`
+--
+
+CREATE TABLE `tw_guilds_history` (
+  `ID` int(11) NOT NULL,
+  `GuildID` int(11) NOT NULL,
+  `Text` varchar(64) NOT NULL,
+  `Time` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_guilds_houses`
+--
+
+CREATE TABLE `tw_guilds_houses` (
+  `ID` int(11) NOT NULL,
+  `GuildID` int(11) DEFAULT NULL,
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `DoorX` int(11) NOT NULL,
+  `DoorY` int(11) NOT NULL,
+  `TextX` int(11) NOT NULL,
+  `TextY` int(11) NOT NULL,
+  `Price` int(11) NOT NULL DEFAULT 50000,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_guilds_invites`
+--
+
+CREATE TABLE `tw_guilds_invites` (
+  `ID` int(11) NOT NULL,
+  `GuildID` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_guilds_ranks`
+--
+
+CREATE TABLE `tw_guilds_ranks` (
+  `ID` int(11) NOT NULL,
+  `Access` int(11) NOT NULL DEFAULT 3,
+  `Name` varchar(32) NOT NULL DEFAULT 'Rank name',
+  `GuildID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_houses`
+--
+
+CREATE TABLE `tw_houses` (
+  `ID` int(11) NOT NULL,
+  `UserID` int(11) DEFAULT NULL,
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `DoorX` int(11) NOT NULL,
+  `DoorY` int(11) NOT NULL,
+  `Class` varchar(32) NOT NULL DEFAULT 'Class name',
+  `Price` int(11) NOT NULL,
+  `HouseBank` int(11) NOT NULL,
+  `PlantID` int(11) NOT NULL,
+  `PlantX` int(11) NOT NULL,
+  `PlantY` int(11) NOT NULL,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_houses_decorations`
+--
+
+CREATE TABLE `tw_houses_decorations` (
+  `ID` int(11) NOT NULL,
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `HouseID` int(11) NOT NULL,
+  `DecoID` int(11) NOT NULL,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_items_list`
+--
+
+CREATE TABLE `tw_items_list` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(32) NOT NULL DEFAULT 'Item name',
+  `Description` varchar(64) NOT NULL DEFAULT 'Item desc',
+  `Type` int(11) DEFAULT -1,
+  `Function` int(11) DEFAULT -1,
+  `InitialPrice` int(11) NOT NULL DEFAULT 100,
+  `Desynthesis` int(11) NOT NULL DEFAULT 100,
+  `Attribute0` int(11) DEFAULT NULL,
+  `Attribute1` int(11) DEFAULT NULL,
+  `AttributeValue0` int(11) NOT NULL DEFAULT 0,
+  `AttributeValue1` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_items_list`
+--
+
+INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `InitialPrice`, `Desynthesis`, `Attribute0`, `Attribute1`, `AttributeValue0`, `AttributeValue1`) VALUES
+(1, 'Gold', 'Major currency', -1, -1, 0, 0, 16, NULL, 0, 0),
+(2, 'Hammer', 'A normal hammer', 6, 0, 0, 0, 16, 6, 10, 3),
+(3, 'Gun', 'Conventional weapon', 6, 1, 10, 0, 17, NULL, 10, 0),
+(4, 'Shotgun', 'Conventional weapon', 6, 2, 10, 0, 18, NULL, 5, 0),
+(5, 'Grenade', 'Conventional weapon', 6, 3, 10, 0, 19, NULL, 10, 0),
+(6, 'Rifle', 'Conventional weapon', 6, 4, 10, 0, 20, NULL, 10, 0),
+(7, 'Material', 'Required to improve weapons', 4, -1, 10, 0, NULL, NULL, 0, 0),
+(8, 'Ticket guild', 'Command: /gcreate <name>', 4, -1, 10, 0, NULL, NULL, 0, 0),
+(9, 'Skill Point', 'Skill point', -1, -1, 10, 0, NULL, NULL, 0, 0),
+(10, 'Decoration Armor', 'Decoration for house!', 7, -1, 10, 0, NULL, NULL, 0, 0),
+(11, 'Decoration Hearth Elite', 'Decoration for house!', 7, -1, 10, 0, NULL, NULL, 0, 0),
+(12, 'Decoration Ninja Elite', 'Decoration for house!', 7, -1, 10, 0, NULL, NULL, 0, 0),
+(13, 'Decoration Hearth', 'Decoration for house!', 7, -1, 10, 0, NULL, NULL, 0, 0),
+(14, 'Potion mana regen', 'Regenerate +5%, 15sec every sec.\n', 8, 8, 10, 20, NULL, NULL, 0, 0),
+(15, 'Potion health regen', 'Regenerate +3% health, 15sec every sec.', 8, 8, 10, 20, NULL, NULL, 0, 0),
+(16, 'Capsule survival experience', 'You got 10-50 experience survival', 1, 9, 10, 0, NULL, NULL, 0, 0),
+(17, 'Little bag of gold', 'You got 10-50 gold', 1, 9, 10, 0, NULL, NULL, 0, 0),
+(18, 'Potion resurrection', 'Resuscitates in the zone where you died!', 8, -1, 10, 0, NULL, NULL, 0, 0),
+(19, 'Explosive module for gun', 'It happens sometimes', 3, 10, 10, 0, 17, NULL, 5, 0),
+(20, 'Explosive module for shotgun', 'It happens sometimes', 3, 10, 10, 0, 18, NULL, 5, 0),
+(21, 'Ticket reset class stats', 'Resets only class stats(Dps, Tank, Healer).', 1, 8, 10, 0, NULL, NULL, 0, 0),
+(22, 'Mode PVP', 'Settings game.', 5, 10, 0, 0, NULL, NULL, 0, 0),
+(23, 'Ticket reset weapon stats', 'Resets only ammo stats(Ammo).', 1, 8, 10, 0, NULL, NULL, 0, 0),
+(24, 'Blessing for discount craft', 'Need dress it, -20% craft price', 8, 8, 10, 0, NULL, NULL, 0, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_logics_worlds`
+--
+
+CREATE TABLE `tw_logics_worlds` (
+  `ID` int(11) NOT NULL,
+  `MobID` int(11) NOT NULL,
+  `Mode` int(11) NOT NULL DEFAULT 0 COMMENT '(1,3) 0 up 1 left',
+  `ParseInt` int(11) NOT NULL COMMENT '(2) health (3)itemid key',
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `WorldID` int(11) NOT NULL,
+  `Comment` varchar(64) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_positions_farming`
+--
+
+CREATE TABLE `tw_positions_farming` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) NOT NULL,
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `PositionX` int(11) NOT NULL,
+  `PositionY` int(11) NOT NULL,
+  `Distance` int(11) NOT NULL DEFAULT 300,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_positions_mining`
+--
+
+CREATE TABLE `tw_positions_mining` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) NOT NULL,
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `Health` int(11) NOT NULL DEFAULT 100,
+  `PositionX` int(11) NOT NULL,
+  `PositionY` int(11) NOT NULL,
+  `Distance` int(11) NOT NULL DEFAULT 300,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_quests_list`
+--
+
+CREATE TABLE `tw_quests_list` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(24) NOT NULL DEFAULT 'Quest name',
+  `Money` int(11) NOT NULL,
+  `Exp` int(11) NOT NULL,
+  `StoryLine` varchar(24) NOT NULL DEFAULT 'Hero'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_skills_list`
+--
+
+CREATE TABLE `tw_skills_list` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(64) NOT NULL,
+  `Description` varchar(64) NOT NULL,
+  `Type` int(11) NOT NULL DEFAULT 0 COMMENT '0-Improvements\r\n1-Healer\r\n2-Dps\r\n3-Tank',
+  `BonusName` varchar(64) NOT NULL DEFAULT '''name''',
+  `BonusValue` int(11) NOT NULL DEFAULT 1,
+  `ManaPercentageCost` int(11) NOT NULL DEFAULT 10,
+  `PriceSP` int(11) NOT NULL,
+  `MaxLevel` int(11) NOT NULL,
+  `Passive` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_skills_list`
+--
+
+INSERT INTO `tw_skills_list` (`ID`, `Name`, `Description`, `Type`, `BonusName`, `BonusValue`, `ManaPercentageCost`, `PriceSP`, `MaxLevel`, `Passive`) VALUES
+(1, 'Health turret', 'Creates turret a recovery health ', 1, 'life span', 3, 25, 24, 8, 0),
+(2, 'Sleepy Gravity', 'Magnet mobs to itself', 3, 'radius', 20, 25, 28, 10, 0),
+(3, 'Craft Discount', 'Will give discount on the price of craft items', 0, '% discount gold for craft item', 1, 0, 28, 50, 1),
+(4, 'Proficiency with weapons', 'You can perform an automatic fire', 0, 'can perform an auto fire with all types of weapons', 1, 0, 120, 1, 1),
+(5, 'Blessing of God of war', 'The blessing restores ammo', 3, '% recovers ammo within a radius of 800', 25, 50, 28, 4, 0),
+(6, 'Noctis Lucis Attack Teleport', 'An attacking teleport that deals damage to all mobs radius', 2, '% your strength', 25, 10, 100, 4, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_storages`
+--
+
+CREATE TABLE `tw_storages` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(32) NOT NULL DEFAULT '''Bussines name''',
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `Currency` int(11) NOT NULL DEFAULT 1,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_store_items`
+--
+
+CREATE TABLE `tw_store_items` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) NOT NULL,
+  `ItemValue` int(11) NOT NULL,
+  `RequiredItemID` int(11) NOT NULL DEFAULT 1,
+  `Price` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL DEFAULT 0,
+  `Enchant` int(11) NOT NULL DEFAULT 0,
+  `StorageID` int(11) DEFAULT NULL,
+  `Time` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_voucher`
+--
+
+CREATE TABLE `tw_voucher` (
+  `ID` int(11) NOT NULL,
+  `Code` varchar(32) NOT NULL,
+  `Data` text NOT NULL,
+  `Multiple` tinyint(1) NOT NULL DEFAULT 0,
+  `ValidUntil` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_voucher`
+--
+
+INSERT INTO `tw_voucher` (`ID`, `Code`, `Data`, `Multiple`, `ValidUntil`) VALUES
+(1, 'VALENTINE2021', '{\r\n	\"exp\": 10000,\r\n	\"items\": [\r\n		{\r\n			\"id\": 17,\r\n			\"value\": 30\r\n		},\r\n		{\r\n			\"id\": 15000,\r\n			\"value\": 1\r\n		}\r\n	]\r\n}', 1, 1614517578);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_voucher_redeemed`
+--
+
+CREATE TABLE `tw_voucher_redeemed` (
+  `ID` int(11) NOT NULL,
+  `VoucherID` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL,
+  `TimeCreated` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_world_swap`
+--
+
+CREATE TABLE `tw_world_swap` (
+  `ID` int(11) NOT NULL,
+  `WorldID` int(11) DEFAULT NULL,
+  `PositionX` int(11) DEFAULT NULL,
+  `PositionY` int(11) DEFAULT NULL,
+  `RequiredQuestID` int(11) DEFAULT NULL,
+  `TwoWorldID` int(11) DEFAULT NULL,
+  `TwoPositionX` int(11) DEFAULT NULL,
+  `TwoPositionY` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Индексы сохранённых таблиц
+--
+
+--
+-- Индексы таблицы `enum_behavior_mobs`
+--
+ALTER TABLE `enum_behavior_mobs`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `Behavior` (`Behavior`);
+
+--
+-- Индексы таблицы `enum_effects_list`
+--
+ALTER TABLE `enum_effects_list`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `Name` (`Name`);
+
+--
+-- Индексы таблицы `enum_emotes`
+--
+ALTER TABLE `enum_emotes`
+  ADD PRIMARY KEY (`ID`);
+
+--
+-- Индексы таблицы `enum_items_functional`
+--
+ALTER TABLE `enum_items_functional`
+  ADD PRIMARY KEY (`FunctionID`);
+
+--
+-- Индексы таблицы `enum_items_types`
+--
+ALTER TABLE `enum_items_types`
+  ADD PRIMARY KEY (`TypeID`);
+
+--
+-- Индексы таблицы `enum_mmo_proj`
+--
+ALTER TABLE `enum_mmo_proj`
+  ADD KEY `ID` (`ID`);
+
+--
+-- Индексы таблицы `enum_quest_interactive`
+--
+ALTER TABLE `enum_quest_interactive`
+  ADD KEY `ID` (`ID`);
+
+--
+-- Индексы таблицы `enum_worlds`
+--
+ALTER TABLE `enum_worlds`
+  ADD PRIMARY KEY (`WorldID`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `Name` (`Name`),
+  ADD KEY `SafeZoneWorldID` (`RespawnWorld`),
+  ADD KEY `WorldID_2` (`WorldID`);
+
+--
+-- Индексы таблицы `tw_accounts`
+--
+ALTER TABLE `tw_accounts`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `Password` (`Password`),
+  ADD KEY `Username` (`Username`);
+
+--
+-- Индексы таблицы `tw_accounts_aethers`
+--
+ALTER TABLE `tw_accounts_aethers`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `TeleportID` (`AetherID`);
+
+--
+-- Индексы таблицы `tw_accounts_data`
+--
+ALTER TABLE `tw_accounts_data`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `Nick` (`Nick`),
+  ADD KEY `MemberID` (`GuildID`),
+  ADD KEY `DiscordID` (`DiscordID`),
+  ADD KEY `tw_accounts_data_ibfk_3` (`WorldID`),
+  ADD KEY `GuildRank` (`GuildRank`),
+  ADD KEY `Level` (`Level`),
+  ADD KEY `Exp` (`Exp`);
+
+--
+-- Индексы таблицы `tw_accounts_farming`
+--
+ALTER TABLE `tw_accounts_farming`
+  ADD PRIMARY KEY (`UserID`),
+  ADD UNIQUE KEY `AccountID` (`UserID`);
+
+--
+-- Индексы таблицы `tw_accounts_items`
+--
+ALTER TABLE `tw_accounts_items`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `ItemID` (`ItemID`);
+
+--
+-- Индексы таблицы `tw_accounts_mailbox`
+--
+ALTER TABLE `tw_accounts_mailbox`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `tw_accounts_inbox_ibfk_2` (`ItemID`);
+
+--
+-- Индексы таблицы `tw_accounts_mining`
+--
+ALTER TABLE `tw_accounts_mining`
+  ADD PRIMARY KEY (`UserID`),
+  ADD UNIQUE KEY `AccountID` (`UserID`);
+
+--
+-- Индексы таблицы `tw_accounts_quests`
+--
+ALTER TABLE `tw_accounts_quests`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD UNIQUE KEY `UK_tw_accounts_quests` (`QuestID`,`UserID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `tw_accounts_quests_ibfk_4` (`QuestID`);
+
+--
+-- Индексы таблицы `tw_accounts_skills`
+--
+ALTER TABLE `tw_accounts_skills`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `SkillID` (`SkillID`),
+  ADD KEY `OwnerID` (`UserID`);
+
+--
+-- Индексы таблицы `tw_aethers`
+--
+ALTER TABLE `tw_aethers`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `WorldID` (`WorldID`);
+
+--
+-- Индексы таблицы `tw_attributs`
+--
+ALTER TABLE `tw_attributs`
+  ADD PRIMARY KEY (`ID`);
+
+--
+-- Индексы таблицы `tw_bots_info`
+--
+ALTER TABLE `tw_bots_info`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `SlotWings` (`SlotArmor`),
+  ADD KEY `SlotHammer` (`SlotHammer`),
+  ADD KEY `SlotGun` (`SlotGun`),
+  ADD KEY `tw_bots_world_ibfk_4` (`SlotShotgun`),
+  ADD KEY `SlotGrenade` (`SlotGrenade`),
+  ADD KEY `SlotRifle` (`SlotRifle`);
+
+--
+-- Индексы таблицы `tw_bots_mobs`
+--
+ALTER TABLE `tw_bots_mobs`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `MobID` (`BotID`),
+  ADD KEY `it_drop_0` (`it_drop_0`),
+  ADD KEY `it_drop_1` (`it_drop_1`),
+  ADD KEY `it_drop_2` (`it_drop_2`),
+  ADD KEY `it_drop_3` (`it_drop_3`),
+  ADD KEY `it_drop_4` (`it_drop_4`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `Effect` (`Effect`),
+  ADD KEY `Behavior` (`Behavior`);
+
+--
+-- Индексы таблицы `tw_bots_npc`
+--
+ALTER TABLE `tw_bots_npc`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `MobID` (`BotID`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `tw_bots_npc_ibfk_3` (`Emote`),
+  ADD KEY `tw_bots_npc_ibfk_5` (`GiveQuestID`);
+
+--
+-- Индексы таблицы `tw_bots_quest`
+--
+ALTER TABLE `tw_bots_quest`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `MobID` (`BotID`),
+  ADD KEY `it_need_0` (`RequiredItemID1`),
+  ADD KEY `tw_bots_quest_ibfk_3` (`RequiredItemID2`),
+  ADD KEY `tw_bots_quest_ibfk_4` (`RewardItemID1`),
+  ADD KEY `it_reward_1` (`RewardItemID2`),
+  ADD KEY `QuestID` (`QuestID`),
+  ADD KEY `tw_bots_quest_ibfk_6` (`RequiredDefeatMobID1`),
+  ADD KEY `tw_bots_quest_ibfk_7` (`RequiredDefeatMobID2`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `interactive_type` (`InteractionType`);
+
+--
+-- Индексы таблицы `tw_crafts_list`
+--
+ALTER TABLE `tw_crafts_list`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `CraftIID` (`ItemID`),
+  ADD KEY `Craft_Item_0` (`RequiredItemID0`),
+  ADD KEY `Craft_Item_1` (`RequiredItemID1`),
+  ADD KEY `Craft_Item_2` (`RequiredItemID2`),
+  ADD KEY `WorldID` (`WorldID`);
+
+--
+-- Индексы таблицы `tw_dungeons`
+--
+ALTER TABLE `tw_dungeons`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `WorldID` (`WorldID`);
+
+--
+-- Индексы таблицы `tw_dungeons_door`
+--
+ALTER TABLE `tw_dungeons_door`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `tw_dungeons_door_ibfk_1` (`DungeonID`),
+  ADD KEY `tw_dungeons_door_ibfk_2` (`BotID`);
+
+--
+-- Индексы таблицы `tw_dungeons_records`
+--
+ALTER TABLE `tw_dungeons_records`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `tw_dungeons_records_ibfk_1` (`UserID`),
+  ADD KEY `DungeonID` (`DungeonID`),
+  ADD KEY `Seconds` (`Seconds`);
+
+--
+-- Индексы таблицы `tw_guilds`
+--
+ALTER TABLE `tw_guilds`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `Bank` (`Bank`),
+  ADD KEY `Level` (`Level`),
+  ADD KEY `Experience` (`Experience`);
+
+--
+-- Индексы таблицы `tw_guilds_decorations`
+--
+ALTER TABLE `tw_guilds_decorations`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `tw_guilds_decorations_ibfk_2` (`DecoID`),
+  ADD KEY `tw_guilds_decorations_ibfk_3` (`WorldID`),
+  ADD KEY `HouseID` (`HouseID`);
+
+--
+-- Индексы таблицы `tw_guilds_history`
+--
+ALTER TABLE `tw_guilds_history`
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `MemberID` (`GuildID`);
+
+--
+-- Индексы таблицы `tw_guilds_houses`
+--
+ALTER TABLE `tw_guilds_houses`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `OwnerMID` (`GuildID`),
+  ADD KEY `WorldID` (`WorldID`);
+
+--
+-- Индексы таблицы `tw_guilds_invites`
+--
+ALTER TABLE `tw_guilds_invites`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `MemberID` (`GuildID`);
+
+--
+-- Индексы таблицы `tw_guilds_ranks`
+--
+ALTER TABLE `tw_guilds_ranks`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `MemberID` (`GuildID`);
+
+--
+-- Индексы таблицы `tw_houses`
+--
+ALTER TABLE `tw_houses`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `PlantID` (`PlantID`);
+
+--
+-- Индексы таблицы `tw_houses_decorations`
+--
+ALTER TABLE `tw_houses_decorations`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `HouseID` (`HouseID`),
+  ADD KEY `DecoID` (`DecoID`);
+
+--
+-- Индексы таблицы `tw_items_list`
+--
+ALTER TABLE `tw_items_list`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ItemID` (`ID`),
+  ADD KEY `ItemBonus` (`Attribute0`),
+  ADD KEY `ItemID_2` (`ID`),
+  ADD KEY `ItemType` (`Type`),
+  ADD KEY `tw_items_list_ibfk_3` (`Function`),
+  ADD KEY `tw_items_list_ibfk_5` (`Attribute1`);
+
+--
+-- Индексы таблицы `tw_logics_worlds`
+--
+ALTER TABLE `tw_logics_worlds`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `MobID` (`MobID`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `ParseInt` (`ParseInt`);
+
+--
+-- Индексы таблицы `tw_positions_farming`
+--
+ALTER TABLE `tw_positions_farming`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `ItemID` (`ItemID`),
+  ADD KEY `WorldID` (`WorldID`);
+
+--
+-- Индексы таблицы `tw_positions_mining`
+--
+ALTER TABLE `tw_positions_mining`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `ItemID` (`ItemID`),
+  ADD KEY `WorldID` (`WorldID`);
+
+--
+-- Индексы таблицы `tw_quests_list`
+--
+ALTER TABLE `tw_quests_list`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`);
+
+--
+-- Индексы таблицы `tw_skills_list`
+--
+ALTER TABLE `tw_skills_list`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`);
+
+--
+-- Индексы таблицы `tw_storages`
+--
+ALTER TABLE `tw_storages`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `Currency` (`Currency`);
+
+--
+-- Индексы таблицы `tw_store_items`
+--
+ALTER TABLE `tw_store_items`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `ItemID` (`ItemID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `StorageID` (`StorageID`),
+  ADD KEY `Time` (`Time`),
+  ADD KEY `NeedItem` (`RequiredItemID`),
+  ADD KEY `Price` (`Price`);
+
+--
+-- Индексы таблицы `tw_voucher`
+--
+ALTER TABLE `tw_voucher`
+  ADD PRIMARY KEY (`ID`);
+
+--
+-- Индексы таблицы `tw_voucher_redeemed`
+--
+ALTER TABLE `tw_voucher_redeemed`
+  ADD PRIMARY KEY (`ID`);
+
+--
+-- Индексы таблицы `tw_world_swap`
+--
+ALTER TABLE `tw_world_swap`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `TwoWorldID` (`TwoWorldID`),
+  ADD KEY `tw_world_swap_ibfk_3` (`RequiredQuestID`);
+
+--
+-- AUTO_INCREMENT для сохранённых таблиц
+--
+
+--
+-- AUTO_INCREMENT для таблицы `enum_behavior_mobs`
+--
+ALTER TABLE `enum_behavior_mobs`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT для таблицы `enum_effects_list`
+--
+ALTER TABLE `enum_effects_list`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT для таблицы `enum_items_functional`
+--
+ALTER TABLE `enum_items_functional`
+  MODIFY `FunctionID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+
+--
+-- AUTO_INCREMENT для таблицы `enum_items_types`
+--
+ALTER TABLE `enum_items_types`
+  MODIFY `TypeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_accounts`
+--
+ALTER TABLE `tw_accounts`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_accounts_aethers`
+--
+ALTER TABLE `tw_accounts_aethers`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_accounts_data`
+--
+ALTER TABLE `tw_accounts_data`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_accounts_items`
+--
+ALTER TABLE `tw_accounts_items`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=149;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
+--
+ALTER TABLE `tw_accounts_mailbox`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_accounts_quests`
+--
+ALTER TABLE `tw_accounts_quests`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_accounts_skills`
+--
+ALTER TABLE `tw_accounts_skills`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_aethers`
+--
+ALTER TABLE `tw_aethers`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_bots_info`
+--
+ALTER TABLE `tw_bots_info`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_bots_mobs`
+--
+ALTER TABLE `tw_bots_mobs`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_bots_npc`
+--
+ALTER TABLE `tw_bots_npc`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_bots_quest`
+--
+ALTER TABLE `tw_bots_quest`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_crafts_list`
+--
+ALTER TABLE `tw_crafts_list`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_dungeons`
+--
+ALTER TABLE `tw_dungeons`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_dungeons_door`
+--
+ALTER TABLE `tw_dungeons_door`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_dungeons_records`
+--
+ALTER TABLE `tw_dungeons_records`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_guilds`
+--
+ALTER TABLE `tw_guilds`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_guilds_decorations`
+--
+ALTER TABLE `tw_guilds_decorations`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_guilds_history`
+--
+ALTER TABLE `tw_guilds_history`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_guilds_houses`
+--
+ALTER TABLE `tw_guilds_houses`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_guilds_invites`
+--
+ALTER TABLE `tw_guilds_invites`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_guilds_ranks`
+--
+ALTER TABLE `tw_guilds_ranks`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_houses`
+--
+ALTER TABLE `tw_houses`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_houses_decorations`
+--
+ALTER TABLE `tw_houses_decorations`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_items_list`
+--
+ALTER TABLE `tw_items_list`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_logics_worlds`
+--
+ALTER TABLE `tw_logics_worlds`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_positions_farming`
+--
+ALTER TABLE `tw_positions_farming`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_positions_mining`
+--
+ALTER TABLE `tw_positions_mining`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_quests_list`
+--
+ALTER TABLE `tw_quests_list`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_skills_list`
+--
+ALTER TABLE `tw_skills_list`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_storages`
+--
+ALTER TABLE `tw_storages`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_store_items`
+--
+ALTER TABLE `tw_store_items`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_voucher`
+--
+ALTER TABLE `tw_voucher`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_voucher_redeemed`
+--
+ALTER TABLE `tw_voucher_redeemed`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_world_swap`
+--
+ALTER TABLE `tw_world_swap`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Ограничения внешнего ключа сохраненных таблиц
+--
+
+--
+-- Ограничения внешнего ключа таблицы `tw_accounts_aethers`
+--
+ALTER TABLE `tw_accounts_aethers`
+  ADD CONSTRAINT `tw_accounts_aethers_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_accounts_aethers_ibfk_2` FOREIGN KEY (`AetherID`) REFERENCES `tw_aethers` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_accounts_data`
+--
+ALTER TABLE `tw_accounts_data`
+  ADD CONSTRAINT `tw_accounts_data_ibfk_3` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_accounts_data_ibfk_4` FOREIGN KEY (`GuildRank`) REFERENCES `tw_guilds_ranks` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_accounts_data_ibfk_5` FOREIGN KEY (`ID`) REFERENCES `tw_accounts` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_accounts_farming`
+--
+ALTER TABLE `tw_accounts_farming`
+  ADD CONSTRAINT `tw_accounts_farming_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_accounts_items`
+--
+ALTER TABLE `tw_accounts_items`
+  ADD CONSTRAINT `tw_accounts_items_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_accounts_items_ibfk_2` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_accounts_mailbox`
+--
+ALTER TABLE `tw_accounts_mailbox`
+  ADD CONSTRAINT `tw_accounts_mailbox_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_accounts_mailbox_ibfk_2` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_accounts_mining`
+--
+ALTER TABLE `tw_accounts_mining`
+  ADD CONSTRAINT `tw_accounts_mining_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_accounts_quests`
+--
+ALTER TABLE `tw_accounts_quests`
+  ADD CONSTRAINT `tw_accounts_quests_ibfk_3` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_accounts_quests_ibfk_4` FOREIGN KEY (`QuestID`) REFERENCES `tw_quests_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_accounts_skills`
+--
+ALTER TABLE `tw_accounts_skills`
+  ADD CONSTRAINT `tw_accounts_skills_ibfk_1` FOREIGN KEY (`SkillID`) REFERENCES `tw_skills_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_accounts_skills_ibfk_2` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_aethers`
+--
+ALTER TABLE `tw_aethers`
+  ADD CONSTRAINT `tw_aethers_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_bots_info`
+--
+ALTER TABLE `tw_bots_info`
+  ADD CONSTRAINT `tw_bots_info_ibfk_1` FOREIGN KEY (`SlotArmor`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_info_ibfk_2` FOREIGN KEY (`SlotHammer`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_info_ibfk_3` FOREIGN KEY (`SlotGun`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_info_ibfk_4` FOREIGN KEY (`SlotShotgun`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_info_ibfk_5` FOREIGN KEY (`SlotGrenade`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_info_ibfk_6` FOREIGN KEY (`SlotRifle`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_bots_mobs`
+--
+ALTER TABLE `tw_bots_mobs`
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_1` FOREIGN KEY (`BotID`) REFERENCES `tw_bots_info` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_10` FOREIGN KEY (`it_drop_1`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_11` FOREIGN KEY (`it_drop_2`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_12` FOREIGN KEY (`it_drop_3`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_13` FOREIGN KEY (`it_drop_4`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_15` FOREIGN KEY (`Effect`) REFERENCES `enum_effects_list` (`Name`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_16` FOREIGN KEY (`Behavior`) REFERENCES `enum_behavior_mobs` (`Behavior`) ON DELETE NO ACTION ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_8` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE NO ACTION ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_mobs_ibfk_9` FOREIGN KEY (`it_drop_0`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_bots_npc`
+--
+ALTER TABLE `tw_bots_npc`
+  ADD CONSTRAINT `tw_bots_npc_ibfk_1` FOREIGN KEY (`BotID`) REFERENCES `tw_bots_info` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_npc_ibfk_3` FOREIGN KEY (`Emote`) REFERENCES `enum_emotes` (`ID`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  ADD CONSTRAINT `tw_bots_npc_ibfk_4` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_npc_ibfk_5` FOREIGN KEY (`GiveQuestID`) REFERENCES `tw_quests_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_bots_quest`
+--
+ALTER TABLE `tw_bots_quest`
+  ADD CONSTRAINT `tw_bots_quest_ibfk_1` FOREIGN KEY (`BotID`) REFERENCES `tw_bots_info` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_10` FOREIGN KEY (`InteractionType`) REFERENCES `enum_quest_interactive` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_2` FOREIGN KEY (`RequiredItemID1`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_3` FOREIGN KEY (`RequiredItemID2`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_4` FOREIGN KEY (`RewardItemID1`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_5` FOREIGN KEY (`RewardItemID2`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_6` FOREIGN KEY (`RequiredDefeatMobID1`) REFERENCES `tw_bots_info` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_7` FOREIGN KEY (`RequiredDefeatMobID2`) REFERENCES `tw_bots_info` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_8` FOREIGN KEY (`QuestID`) REFERENCES `tw_quests_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_bots_quest_ibfk_9` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_crafts_list`
+--
+ALTER TABLE `tw_crafts_list`
+  ADD CONSTRAINT `tw_crafts_list_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_crafts_list_ibfk_2` FOREIGN KEY (`RequiredItemID0`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_crafts_list_ibfk_3` FOREIGN KEY (`RequiredItemID1`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_crafts_list_ibfk_4` FOREIGN KEY (`RequiredItemID2`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_dungeons`
+--
+ALTER TABLE `tw_dungeons`
+  ADD CONSTRAINT `tw_dungeons_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_dungeons_door`
+--
+ALTER TABLE `tw_dungeons_door`
+  ADD CONSTRAINT `tw_dungeons_door_ibfk_1` FOREIGN KEY (`DungeonID`) REFERENCES `tw_dungeons` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_dungeons_door_ibfk_2` FOREIGN KEY (`BotID`) REFERENCES `tw_bots_info` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_dungeons_records`
+--
+ALTER TABLE `tw_dungeons_records`
+  ADD CONSTRAINT `tw_dungeons_records_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_dungeons_records_ibfk_2` FOREIGN KEY (`DungeonID`) REFERENCES `tw_dungeons` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_guilds`
+--
+ALTER TABLE `tw_guilds`
+  ADD CONSTRAINT `tw_guilds_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_guilds_decorations`
+--
+ALTER TABLE `tw_guilds_decorations`
+  ADD CONSTRAINT `tw_guilds_decorations_ibfk_2` FOREIGN KEY (`DecoID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_guilds_decorations_ibfk_3` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_guilds_decorations_ibfk_4` FOREIGN KEY (`HouseID`) REFERENCES `tw_guilds_houses` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_guilds_history`
+--
+ALTER TABLE `tw_guilds_history`
+  ADD CONSTRAINT `tw_guilds_history_ibfk_1` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_guilds_houses`
+--
+ALTER TABLE `tw_guilds_houses`
+  ADD CONSTRAINT `tw_guilds_houses_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_guilds_houses_ibfk_2` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_guilds_invites`
+--
+ALTER TABLE `tw_guilds_invites`
+  ADD CONSTRAINT `tw_guilds_invites_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_guilds_invites_ibfk_2` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_guilds_ranks`
+--
+ALTER TABLE `tw_guilds_ranks`
+  ADD CONSTRAINT `tw_guilds_ranks_ibfk_1` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_houses`
+--
+ALTER TABLE `tw_houses`
+  ADD CONSTRAINT `tw_houses_ibfk_1` FOREIGN KEY (`PlantID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_houses_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_houses_decorations`
+--
+ALTER TABLE `tw_houses_decorations`
+  ADD CONSTRAINT `tw_houses_decorations_ibfk_1` FOREIGN KEY (`HouseID`) REFERENCES `tw_houses` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_houses_decorations_ibfk_2` FOREIGN KEY (`DecoID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_houses_decorations_ibfk_3` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_items_list`
+--
+ALTER TABLE `tw_items_list`
+  ADD CONSTRAINT `tw_items_list_ibfk_1` FOREIGN KEY (`Type`) REFERENCES `enum_items_types` (`TypeID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_items_list_ibfk_2` FOREIGN KEY (`Function`) REFERENCES `enum_items_functional` (`FunctionID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_logics_worlds`
+--
+ALTER TABLE `tw_logics_worlds`
+  ADD CONSTRAINT `tw_logics_worlds_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `tw_world_swap` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_logics_worlds_ibfk_2` FOREIGN KEY (`ParseInt`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

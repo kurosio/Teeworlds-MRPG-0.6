@@ -510,13 +510,6 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 			SetTalking(GetTalkedID(), false);
 			return true;
 		}
-
-		if(m_PlayerFlags & PLAYERFLAG_SCOREBOARD && GetEquippedItemID(EQUIP_WINGS) > 0)
-		{
-			m_Flymode ^= true;
-			GS()->Chat(m_ClientID, "You {STR} fly mode, your hook changes!", m_Flymode ? "Enable" : "Disable");
-			return true;
-		}
 	}
 	return false;
 }

@@ -958,17 +958,6 @@ void CCharacter::HandleTuning()
 		}
 	}
 
-	// flight mode
-	if(m_pPlayer->m_Flymode && m_pPlayer->GetEquippedItemID(EQUIP_WINGS) > 0)
-	{
-		pTuningParams->m_Gravity = 0.00f;
-		pTuningParams->m_HookLength = 700.0f;
-		pTuningParams->m_AirControlAccel = 1.5f;
-
-		const vec2 Direction = vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY);
-		m_Core.m_Vel += Direction * 0.001f;
-	}
-
 	// water
 	if(m_pHelper->BoolIndex(TILE_WATER))
 	{

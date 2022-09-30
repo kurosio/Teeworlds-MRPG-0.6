@@ -34,8 +34,9 @@ static void InitInformationBots()
 		BotInfo.m_aEquipSlot[EQUIP_SHOTGUN] = pRes->getInt("SlotShotgun");
 		BotInfo.m_aEquipSlot[EQUIP_GRENADE] = pRes->getInt("SlotGrenade");
 		BotInfo.m_aEquipSlot[EQUIP_RIFLE] = pRes->getInt("SlotRifle");
-		BotInfo.m_aEquipSlot[EQUIP_MINER] = 0;
-		BotInfo.m_aEquipSlot[EQUIP_WINGS] = pRes->getInt("SlotWings");
+		BotInfo.m_aEquipSlot[EQUIP_ARMOR] = pRes->getInt("SlotArmor");
+		BotInfo.m_aEquipSlot[EQUIP_PICKAXE] = 0;
+		BotInfo.m_aEquipSlot[EQUIP_RAKE] = 0;
 
 		// load teeinfo
 		try
