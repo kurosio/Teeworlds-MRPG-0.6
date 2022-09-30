@@ -16,7 +16,7 @@ class CItemDataInfo
 
 public:
 	int m_Type;
-	int m_Function;
+	ItemFunctional m_Function;
 	int m_Dysenthis;
 	int m_InitialPrice;
 	int m_aAttribute[2];

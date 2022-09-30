@@ -571,7 +571,7 @@ CQuestData& CPlayer::GetQuest(int QuestID)
 	return CQuestData::ms_aPlayerQuests[m_ClientID][QuestID];
 }
 
-int CPlayer::GetEquippedItemID(int EquipID, int SkipItemID) const
+int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
 	for(const auto& it : CItemData::ms_aItems[m_ClientID])
 	{

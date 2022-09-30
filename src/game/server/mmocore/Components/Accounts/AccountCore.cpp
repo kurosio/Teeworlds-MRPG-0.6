@@ -175,9 +175,22 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 	}
 
 	// settings
-	if(!pPlayer->GetItem(itModePVP).m_Value)
-		pPlayer->GetItem(itModePVP).Add(1, 1);
+	auto InitializeSettings = [&pPlayer](std::unordered_map<int, int> pItems)
+	{
+		for(auto& [id, defaultvalue] : pItems)
+		{
+			if(!pPlayer->GetItem(id).m_Value)
+				pPlayer->GetItem(id).Add(1, defaultvalue);
+			
+		}
+	};
+	InitializeSettings
+	({
+		{ itModePVP, 1},
+		{ itShowEquipmentDescription, 0 }
+	});
 
+	// correcting world swapper
 	pPlayer->GetTempData().m_TempSafeSpawn = true;
 
 	const int LatestCorrectWorldID = GetHistoryLatestCorrectWorldID(pPlayer);
@@ -235,14 +248,14 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 
-		// settings
+		// game settings
 		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings becomes valid after death");
 		GS()->AVM(ClientID, "MENU", MenuList::MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
 		for (const auto& it : CItemData::ms_aItems[ClientID])
 		{
 			const CItemData ItemData = it.second;
 			if (ItemData.Info().m_Type == ItemType::TYPE_SETTINGS && ItemData.m_Value > 0)
-				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.m_Settings ? "Enable" : "Disable"), ItemData.Info().GetName());
+				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.m_Settings ? "Enabled" : "Disabled"), ItemData.Info().GetName());
 		}
 
 		// equipment modules

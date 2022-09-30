@@ -24,7 +24,6 @@ GameMsgIDs = Enum("GAMEMSG", ["TEAM_SWAP", "SPEC_INVALIDID", "TEAM_SHUFFLE", "TE
 # mmotee
 WorldType = Enum("WORLD", ["STANDARD", "DUNGEON"])
 MmoPickups = Enum("MMO_PICKUP", ["BOX", "EXPERIENCE", "PLANT", "ORE", "SIDE_ARROW", "MAIN_ARROW", "DROP"])
-Equip = Enum("EQUIP", ["HAMMER", "GUN", "SHOTGUN", "GRENADE", "RIFLE", "PICKAXE", "RAKE", "ARMOR"])
 Effects = Enum("EFFECT", ["SPASALON", "TELEPORT"])
 
 
@@ -118,7 +117,6 @@ Enums = [
 
     # mmotee
     Effects,
-	Equip,
 	MmoPickups,
 	WorldType,
     Dialogs,

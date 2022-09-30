@@ -23,7 +23,7 @@ void CInventoryCore::OnInit()
 			str_copy(ItemInfo.m_aName, pRes->getString("Name").c_str(), sizeof(ItemInfo.m_aName));
 			str_copy(ItemInfo.m_aDesc, pRes->getString("Description").c_str(), sizeof(ItemInfo.m_aDesc));
 			ItemInfo.m_Type = pRes->getInt("Type");
-			ItemInfo.m_Function = pRes->getInt("Function");
+			ItemInfo.m_Function = (ItemFunctional)pRes->getInt("Function");
 			ItemInfo.m_InitialPrice = pRes->getInt("InitialPrice");
 			ItemInfo.m_Dysenthis = pRes->getInt("Desynthesis");
 
@@ -120,10 +120,10 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		GS()->AV(ClientID, "null");
 
 		GS()->AVH(ClientID, TAB_EQUIP_SELECT, "Equip SELECT Slot");
-		const char* pType[NUM_EQUIPS] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Wings", "Discord" };
-		for(int i = 0; i < NUM_EQUIPS; i++)
+		const char* pType[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor" };
+		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
-			const int ItemID = pPlayer->GetEquippedItemID(i);
+			const int ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
 			CItemData& pItemPlayer = pPlayer->GetItem(ItemID);
 			if(ItemID <= 0 || !pItemPlayer.IsEquipped())
 			{
@@ -140,7 +140,7 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		bool FindItem = false;
 		for(const auto& it : CItemData::ms_aItems[ClientID])
 		{
-			if(!it.second.m_Value || it.second.Info().m_Function != pPlayer->m_aSortTabs[SORT_EQUIPING])
+			if(!it.second.m_Value || it.second.Info().m_Function != (ItemFunctional)pPlayer->m_aSortTabs[SORT_EQUIPING])
 				continue;
 
 			ItemSelected(pPlayer, it.second, true);
@@ -275,7 +275,8 @@ void CInventoryCore::ListInventory(CPlayer *pPlayer, int TypeList, bool SortedFu
 	bool Found = false;
 	for(const auto& it : CItemData::ms_aItems[ClientID])
 	{
-		if(!it.second.m_Value || ((SortedFunction && it.second.Info().m_Function != TypeList)
+		if(!it.second.m_Value 
+			|| ((SortedFunction && it.second.Info().m_Function != static_cast<ItemFunctional>(TypeList))
 			|| (!SortedFunction && it.second.Info().m_Type != TypeList)))
 			continue;
 
@@ -386,7 +387,9 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 		pItemPlayer.FormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));
 		GS()->AVH(ClientID, HideID, "{STR} {STR}{STR}",
 			pNameItem, (pItemPlayer.m_Enchant > 0 ? aEnchantBuf : "\0"), (pItemPlayer.m_Settings ? " ✔" : "\0"));
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info().GetDesc());
+
+		if(Dress && pPlayer->GetItem(itShowEquipmentDescription).IsEquipped())
+			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info().GetDesc());
 
 		char aAttributes[64];
 		pItemPlayer.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));

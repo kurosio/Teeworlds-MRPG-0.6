@@ -222,17 +222,11 @@ enum
 	MAX_INBOX_LIST = 30,					// maximum number of emails what is displayed
 	STATS_MAX_FOR_ITEM = 2,					// maximum number of stats per item
 
-	/*
-		All functions of items
-		This is sorted in the tabs
-	*/
-	FUNCTION_ONE_USED = NUM_EQUIPS,
-	FUNCTION_USED,
-	FUNCTION_SETTINGS,
-	FUNCTION_PLANTS,
-	FUNCTION_MINER,
+	// settings items
+	itModePVP = 22,						// PVP mode setting
+	itShowEquipmentDescription = 25,	// Description settings
 
-
+	// items
 	NOPE = -1,
 	itGold = 1,							// Money ordinary currency
 	itHammer = 2,						// Equipment Hammers
@@ -251,10 +245,9 @@ enum
 	itExplosiveGun = 19,				// Explosion for gun
 	itExplosiveShotgun = 20,			// Explosion for shotgun
 	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
-	itModePVP = 22,						// PVP mode setting
 	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
 	itTicketDiscountCraft = 24,			// Discount ticket for crafting
-	itRandomHomeDecoration = 25,		// Random home decor
+	itRandomHomeDecoration = 26,		// Random home decor
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,
@@ -265,11 +258,29 @@ enum
 	DECORATIONS_HOUSE = 0,
 	DECORATIONS_GUILD_HOUSE,
 
-	// maximum bot slots
-	MAX_EQUIPPED_SLOTS_BOTS = EQUIP_ARMOR + 1,
-
 	// bot dialogues
 	IS_TALKING_EMPTY = 999,
+};
+
+// item functionals
+enum ItemFunctional : int
+{
+	
+	EQUIP_HAMMER,
+	EQUIP_GUN,
+	EQUIP_SHOTGUN,
+	EQUIP_GRENADE,
+	EQUIP_RIFLE,
+	EQUIP_PICKAXE,
+	EQUIP_RAKE,
+	EQUIP_ARMOR,
+	NUM_EQUIPPED,
+
+	FUNCTION_ONE_USED = 8,
+	FUNCTION_USED,
+	FUNCTION_SETTINGS,
+	FUNCTION_PLANTS,
+	FUNCTION_MINER
 };
 
 enum GuildAccess

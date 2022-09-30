@@ -101,7 +101,7 @@ public:
 	virtual void HandleTuningParams();
 	virtual int64 GetMaskVisibleForClients() const { return -1; };
 	virtual int IsVisibleForClient(int ClientID) const { return 2; }
-	virtual int GetEquippedItemID(int EquipID, int SkipItemID = -1) const;
+	virtual int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
 	virtual int GetAttributeCount(int BonusID, bool ActiveFinalStats = false);
 	int GetItemsAttributeCount(int AttributeID) const;
 	virtual void UpdateTempData(int Health, int Mana);

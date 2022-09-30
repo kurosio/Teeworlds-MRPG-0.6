@@ -98,9 +98,9 @@ int CPlayerBot::GetAttributeCount(int BonusID, bool Really)
 
 	// get stats from the bot's equipment
 	int AttributeEx = MobBotInfo::ms_aMobBot[m_MobID].m_Power;
-	for (int i = 0; i < MAX_EQUIPPED_SLOTS_BOTS; i++)
+	for (unsigned i = 0; i < NUM_EQUIPPED; i++)
 	{
-		const int ItemID = GetEquippedItemID(i);
+		const int ItemID = GetEquippedItemID((ItemFunctional)i);
 		const int ItemBonusValue = GS()->GetItemInfo(ItemID).GetInfoEnchantStats(BonusID);
 		if (ItemID > 0 && ItemBonusValue > 0)
 			AttributeEx += ItemBonusValue;
@@ -308,7 +308,7 @@ bool CPlayerBot::IsActiveQuests(int SnapClientID) const
 	return false;
 }
 
-int CPlayerBot::GetEquippedItemID(int EquipID, int SkipItemID) const
+int CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
 	if((EquipID >= EQUIP_HAMMER && EquipID <= EQUIP_RIFLE) || EquipID == EQUIP_ARMOR)
 		return DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];

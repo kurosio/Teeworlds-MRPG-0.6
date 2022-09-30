@@ -46,7 +46,7 @@ public:
 
 	int64 GetMaskVisibleForClients() const override;
 	int IsVisibleForClient(int ClientID) const override;
-	int GetEquippedItemID(int EquipID, int SkipItemID = -1) const override;
+	int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetAttributeCount(int BonusID, bool Really = false) override;
 
 	void GiveEffect(const char* Potion, int Sec, float Chance = 100.0f) override;

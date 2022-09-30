@@ -23,7 +23,7 @@ struct DataBotInfo
 {
 	char m_aNameBot[MAX_NAME_ARRAY_SIZE];
 	CTeeInfo m_TeeInfos;
-	int m_aEquipSlot[MAX_EQUIPPED_SLOTS_BOTS];
+	int m_aEquipSlot[NUM_EQUIPPED];
 	bool m_aVisibleActive[MAX_PLAYERS];
 
 	static bool IsDataBotValid(int BotID)
