@@ -134,14 +134,6 @@ std::unique_ptr<char[]> CGS::LevelString(int MaxValue, int CurrentValue, int Ste
 	return Buf;
 }
 
-const char* CGS::GetSymbolHandleMenu(int ClientID, bool HidenTabs, int ID) const
-{
-	// vanilla
-	if(HidenTabs)
-		return ID >= NUM_TAB_MENU ? ("/\\ # ") : (ID < NUM_TAB_MENU_INTERACTIVES ? ("\\/ # ") : ("/\\ # "));
-	return ID >= NUM_TAB_MENU ? ("\\/ # ") : (ID < NUM_TAB_MENU_INTERACTIVES ? ("/\\ # ") : ("\\/ # "));
-}
-
 CItemDataInfo &CGS::GetItemInfo(int ItemID) const { return CItemDataInfo::ms_aItemsInfo[ItemID]; }
 CQuestDataInfo &CGS::GetQuestInfo(int QuestID) const { return CQuestDataInfo::ms_aDataQuests[QuestID]; }
 
@@ -1491,21 +1483,24 @@ void CGS::AVL(int ClientID, const char *pCmd, const char *pText, ...)
 }
 
 // add formatted vote with color
-void CGS::AVH(int ClientID, const int HideID, const char *pText, ...)
+void CGS::AVH(int ClientID, const int HiddenID, const char *pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
 		va_list VarArgs;
 		va_start(VarArgs, pText);
 
+		const bool HiddenTab = (HiddenID >= TAB_STAT) ? m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) : false;
+		auto Symbols = [](int ID, const char* pValue, const char* pValue2) -> const char* {	return ID >= NUM_TAB_MENU ? (pValue) : (ID < NUM_TAB_MENU_INTERACTIVES ? (pValue2) : (pValue));	};
+		const char* pSymbols = Symbols(HiddenID, HiddenTab ? "> # " : "V # ", HiddenTab ?  "V # " : "> # ");
+		
 		dynamic_string Buffer;
-		const bool HidenTabs = (HideID >= TAB_STAT) ? m_apPlayers[ClientID]->GetHidenMenu(HideID) : false;
-		Buffer.append(GetSymbolHandleMenu(ClientID, HidenTabs, HideID));
 
+		Buffer.append(pSymbols);
 		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		if(HideID > TAB_SETTINGS_MODULES && HideID < NUM_TAB_MENU) { Buffer.append(" (Press me for help)"); }
+		if(HiddenID > TAB_SETTINGS_MODULES && HiddenID < NUM_TAB_MENU) { Buffer.append(" (Press me for help)"); }
 
-		AV(ClientID, "HIDEN", Buffer.buffer(), HideID, -1);
+		AV(ClientID, "HIDDEN", Buffer.buffer(), HiddenID, -1);
 
 		Buffer.clear();
 		va_end(VarArgs);
@@ -1513,12 +1508,12 @@ void CGS::AVH(int ClientID, const int HideID, const char *pText, ...)
 }
 
 // add formatted vote as menu
-void CGS::AVM(int ClientID, const char *pCmd, const int TempInt, const int HideID, const char* pText, ...)
+void CGS::AVM(int ClientID, const char *pCmd, const int TempInt, const int HiddenID, const char* pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
-		if((!m_apPlayers[ClientID]->GetHidenMenu(HideID) && HideID > TAB_SETTINGS_MODULES) ||
-			(m_apPlayers[ClientID]->GetHidenMenu(HideID) && HideID <= TAB_SETTINGS_MODULES))
+		if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
+			(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
 			return;
 
 		va_list VarArgs;
@@ -1535,12 +1530,12 @@ void CGS::AVM(int ClientID, const char *pCmd, const int TempInt, const int HideI
 }
 
 // add formatted vote with multiple id's
-void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempInt2, const int HideID, const char *pText, ...)
+void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempInt2, const int HiddenID, const char *pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
-		if((!m_apPlayers[ClientID]->GetHidenMenu(HideID) && HideID > TAB_SETTINGS_MODULES) ||
-			(m_apPlayers[ClientID]->GetHidenMenu(HideID) && HideID <= TAB_SETTINGS_MODULES))
+		if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
+			(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
 			return;
 
 		va_list VarArgs;
@@ -1557,12 +1552,12 @@ void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempI
 }
 
 // add formatted callback vote with multiple id's (need disallow used it for menu)
-void CGS::AVCALLBACK(int ClientID, const char *pCmd, const int TempInt, const int TempInt2, const int HideID, VoteCallBack Callback, const char* pText, ...)
+void CGS::AVCALLBACK(int ClientID, const char *pCmd, const int TempInt, const int TempInt2, const int HiddenID, VoteCallBack Callback, const char* pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
-		if((!m_apPlayers[ClientID]->GetHidenMenu(HideID) && HideID > TAB_SETTINGS_MODULES) ||
-			(m_apPlayers[ClientID]->GetHidenMenu(HideID) && HideID <= TAB_SETTINGS_MODULES))
+		if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
+			(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
 			return;
 
 		va_list VarArgs;

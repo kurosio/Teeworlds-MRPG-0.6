@@ -143,7 +143,7 @@ public:
 	void AddExp(int Exp);
 	void AddMoney(int Money);
 
-	bool GetHidenMenu(int HideID) const;
+	bool GetHiddenMenu(int HideID) const;
 	bool IsAuthed() const;
 	int GetStartTeam() const;
 

@@ -421,7 +421,7 @@ void CPlayer::AddMoney(int Money)
 	GetItem(itGold).Add(Money);
 }
 
-bool CPlayer::GetHidenMenu(int HideID) const
+bool CPlayer::GetHiddenMenu(int HideID) const
 {
 	if(m_aHiddenMenu.find(HideID) != m_aHiddenMenu.end())
 		return m_aHiddenMenu.at(HideID);
@@ -533,7 +533,7 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 		return true;
 	}
 
-	if(PPSTR(CMD, "HIDEN") == 0)
+	if(PPSTR(CMD, "HIDDEN") == 0)
 	{
 		if(VoteID < TAB_STAT)
 			return true;

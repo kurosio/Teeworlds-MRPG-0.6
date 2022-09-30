@@ -82,7 +82,6 @@ public:
 	std::unique_ptr<char[]> LevelString(int MaxValue, int CurrentValue, int Step, char toValue, char fromValue);
 	CItemDataInfo &GetItemInfo(int ItemID) const;
 	CQuestDataInfo &GetQuestInfo(int QuestID) const;
-	const char* GetSymbolHandleMenu(int ClientID, bool HidenTabs, int ID) const;
 
 	/* #########################################################################
 		EVENTS
@@ -205,12 +204,12 @@ private:
 public:
 	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1, VoteCallBack Callback = nullptr);
 	void AVL(int ClientID, const char *pCmd, const char *pText, ...);
-	void AVH(int ClientID, int HideID, const char *pText, ...);
-	void AVM(int ClientID, const char *pCmd, int TempInt, int HideID, const char* pText, ...);
-	void AVD(int ClientID, const char *pCmd, int TempInt, int TempInt2, int HideID, const char *pText, ...);
+	void AVH(int ClientID, int HiddenID, const char *pText, ...);
+	void AVM(int ClientID, const char *pCmd, int TempInt, int HiddenID, const char* pText, ...);
+	void AVD(int ClientID, const char *pCmd, int TempInt, int TempInt2, int HiddenID, const char *pText, ...);
 
 	// TODO: fixme. improve the system using the ID method, as well as the ability to implement Backpage
-	void AVCALLBACK(int To, const char* Type, int ID, int ID2, int HideID, VoteCallBack Callback, const char* pText, ...);
+	void AVCALLBACK(int To, const char* Type, int ID, int ID2, int HiddenID, VoteCallBack Callback, const char* pText, ...);
 
 	void ClearVotes(int ClientID);
 	void ShowVotesNewbieInformation(int ClientID);
