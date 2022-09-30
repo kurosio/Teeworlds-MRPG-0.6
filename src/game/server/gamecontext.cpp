@@ -1442,7 +1442,7 @@ void CGS::ClearVotes(int ClientID)
 }
 
 // add a vote
-void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempInt, const int TempInt2, const char *pIcon, VoteCallBack Callback)
+void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempInt, const int TempInt2, VoteCallBack Callback)
 {
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !m_apPlayers[ClientID])
 		return;
@@ -1455,7 +1455,6 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	CVoteOptions Vote;
 	str_copy(Vote.m_aDescription, aBufDesc, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
-	str_copy(Vote.m_aIcon, pIcon, sizeof(Vote.m_aIcon));
 	Vote.m_TempID = TempInt;
 	Vote.m_TempID2 = TempInt2;
 	Vote.m_Callback = Callback;
@@ -1506,30 +1505,7 @@ void CGS::AVH(int ClientID, const int HideID, const char *pText, ...)
 		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
 		if(HideID > TAB_SETTINGS_MODULES && HideID < NUM_TAB_MENU) { Buffer.append(" (Press me for help)"); }
 
-		AV(ClientID, "HIDEN", Buffer.buffer(), HideID, -1, "unused");
-
-		Buffer.clear();
-		va_end(VarArgs);
-	}
-}
-
-// add formatted vote with color and icon
-void CGS::AVHI(int ClientID, const char *pIcon, const int HideID, vec3 Color, const char* pText, ...)
-{
-	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
-	{
-		va_list VarArgs;
-		va_start(VarArgs, pText);
-
-		dynamic_string Buffer;
-		const bool HidenTabs = HideID >= TAB_STAT ? m_apPlayers[ClientID]->GetHidenMenu(HideID) : false;
-		Buffer.append(GetSymbolHandleMenu(ClientID, HidenTabs, HideID));
-
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		if(HideID > TAB_SETTINGS_MODULES && HideID < NUM_TAB_MENU)
-			Buffer.append(" (Press me for help)");
-
-		AV(ClientID, "HIDEN", Buffer.buffer(), HideID, -1, pIcon);
+		AV(ClientID, "HIDEN", Buffer.buffer(), HideID, -1);
 
 		Buffer.clear();
 		va_end(VarArgs);
@@ -1558,28 +1534,6 @@ void CGS::AVM(int ClientID, const char *pCmd, const int TempInt, const int HideI
 	}
 }
 
-// add formatted vote as menu with icon
-void CGS::AVMI(int ClientID, const char *pIcon, const char *pCmd, const int TempInt, const int HideID, const char *pText, ...)
-{
-	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
-	{
-		if((!m_apPlayers[ClientID]->GetHidenMenu(HideID) && HideID > TAB_SETTINGS_MODULES) ||
-			(m_apPlayers[ClientID]->GetHidenMenu(HideID) && HideID <= TAB_SETTINGS_MODULES))
-			return;
-
-		va_list VarArgs;
-		va_start(VarArgs, pText);
-
-		dynamic_string Buffer;
-		if(TempInt != NOPE) { Buffer.append("- "); }
-
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		AV(ClientID, pCmd, Buffer.buffer(), TempInt, -1, pIcon);
-		Buffer.clear();
-		va_end(VarArgs);
-	}
-}
-
 // add formatted vote with multiple id's
 void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempInt2, const int HideID, const char *pText, ...)
 {
@@ -1603,7 +1557,7 @@ void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempI
 }
 
 // add formatted callback vote with multiple id's (need disallow used it for menu)
-void CGS::AVCALLBACK(int ClientID, const char *pCmd, const char *pIcon, const int TempInt, const int TempInt2, const int HideID, VoteCallBack Callback, const char* pText, ...)
+void CGS::AVCALLBACK(int ClientID, const char *pCmd, const int TempInt, const int TempInt2, const int HideID, VoteCallBack Callback, const char* pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
@@ -1618,7 +1572,7 @@ void CGS::AVCALLBACK(int ClientID, const char *pCmd, const char *pIcon, const in
 		Buffer.append("- ");
 
 		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		AV(ClientID, pCmd, Buffer.buffer(), TempInt, TempInt2, pIcon, Callback);
+		AV(ClientID, pCmd, Buffer.buffer(), TempInt, TempInt2, Callback);
 
 		Buffer.clear();
 		va_end(VarArgs);
@@ -1794,7 +1748,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 				const float Chance = mobs.second.m_aRandomItem[i];
 				CItemDataInfo &InfoDropItem = GetItemInfo(mobs.second.m_aDropItem[i]);
 				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", mobs.second.m_aValueItem[i], Chance, AddedChanceDrop);
-				AVMI(ClientID, InfoDropItem.GetIcon(), "null", NOPE, HideID, "{STR}{STR}", InfoDropItem.GetName(), aBuf);
+				AVM(ClientID, "null", NOPE, HideID, "{STR}{STR}", InfoDropItem.GetName(), aBuf);
 				FoundedBots = true;
 			}
 		}
@@ -1913,7 +1867,7 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, int ItemID)
 {
 	const int ClientID = pPlayer->GetCID();
-	AVMI(ClientID, GetItemInfo(ItemID).GetIcon(), "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID).m_Value, GetItemInfo(ItemID).GetName());
+	AVM(ClientID, "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID).m_Value, GetItemInfo(ItemID).GetName());
 }
 
 // vote parsing of all functions of action methods

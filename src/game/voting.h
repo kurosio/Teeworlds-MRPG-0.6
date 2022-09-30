@@ -56,7 +56,6 @@ class CVoteOptions
 public:
 	char m_aDescription[VOTE_DESC_LENGTH];
 	char m_aCommand[VOTE_CMD_LENGTH];
-	char m_aIcon[32];
 	int m_TempID;
 	int m_TempID2;
 	VoteCallBack m_Callback;

@@ -138,7 +138,7 @@ void QuestCore::ShowQuestID(CPlayer *pPlayer, int QuestID)
 	const int QuestPosition = pData.GetQuestStoryPosition();
 
 	// TODO: REMOVE IT
-	GS()->AVCALLBACK(ClientID, "MENU", "\0", QuestID, NOPE, NOPE, [](CVoteOptionsCallback Callback)
+	GS()->AVCALLBACK(ClientID, "MENU", QuestID, NOPE, NOPE, [](CVoteOptionsCallback Callback)
 	{
 		CPlayer* pPlayer = Callback.pPlayer;
 		const int ClientID = pPlayer->GetCID();
@@ -189,7 +189,7 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			const int KillNeed = pBotInfo->m_aNeedMobValue[i];
 			if(NeedKillMobID > 0 && KillNeed > 0 && DataBotInfo::ms_aDataBot.find(NeedKillMobID) != DataBotInfo::ms_aDataBot.end())
 			{
-				GS()->AVMI(ClientID, "broken_h", "null", NOPE, HideID, "- Defeat {STR} [{INT}/{INT}]",
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Defeat {STR} [{INT}/{INT}]",
 					DataBotInfo::ms_aDataBot[NeedKillMobID].m_aNameBot, pPlayerQuest.m_StepsQuestBot[pStepBot.first].m_MobProgress[i], KillNeed);
 				NeedOnlyTalk = false;
 			}
@@ -200,7 +200,7 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			{
 				CItemData PlayerItem = pPlayer->GetItem(NeedItemID);
 				int ClapmItem = clamp(PlayerItem.m_Value, 0, NeedValue);
-				GS()->AVMI(ClientID, PlayerItem.Info().GetIcon(), "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", PlayerItem.Info().GetName(), ClapmItem, NeedValue);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", PlayerItem.Info().GetName(), ClapmItem, NeedValue);
 				NeedOnlyTalk = false;
 			}
 		}
@@ -213,7 +213,7 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			if(RewardItemID > 0 && RewardValue > 0)
 			{
 				CItemDataInfo &RewardItem = GS()->GetItemInfo(RewardItemID);
-				GS()->AVMI(ClientID, RewardItem.GetIcon(), "null", NOPE, HideID, "- Receive {STR}x{VAL}", RewardItem.GetName(), RewardValue);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Receive {STR}x{VAL}", RewardItem.GetName(), RewardValue);
 			}
 		}
 

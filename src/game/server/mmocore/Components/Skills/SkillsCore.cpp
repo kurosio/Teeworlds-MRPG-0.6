@@ -137,7 +137,7 @@ void CSkillsCore::SkillSelected(CPlayer *pPlayer, int SkillID)
 	const bool IsMaxLevel = pSkill.m_Level >= pSkill.Info().m_MaxLevel;
 	const char* pSkillIcon[NUM_SKILL_TYPES] = { "skill_impr", "skill_healer", "skill_dps", "skill_tank" };
 	
-	GS()->AVHI(ClientID, pSkillIcon[pSkill.Info().m_Type], HideID, LIGHT_BLUE_COLOR, "{STR} - {INT}SP ({INT}/{INT})", pSkill.Info().m_aName, pSkill.Info().m_PriceSP, pSkill.m_Level, pSkill.Info().m_MaxLevel);
+	GS()->AVH(ClientID, HideID, "{STR} - {INT}SP ({INT}/{INT})", pSkill.Info().m_aName, pSkill.Info().m_PriceSP, pSkill.m_Level, pSkill.Info().m_MaxLevel);
 	if(!IsMaxLevel)
 	{
 		const int NewBonus = pSkill.GetBonus() + pSkill.Info().m_BonusValue;

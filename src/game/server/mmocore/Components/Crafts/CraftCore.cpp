@@ -86,8 +86,7 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, int Selec
 		const int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + cr.first;
 		if (InfoGetItem.IsEnchantable())
 		{
-			GS()->AVHI(ClientID, InfoGetItem.GetIcon(), HideID, LIGHT_GRAY_COLOR, "{STR}{STR} - {VAL} gold",
-				(pPlayer->GetItem(cr.second.m_ItemID).m_Value ? "✔ " : "\0"), InfoGetItem.GetName(), Price);
+			GS()->AVH(ClientID, HideID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(cr.second.m_ItemID).m_Value ? "✔ " : "\0"), InfoGetItem.GetName(), Price);
 
 			char aAttributes[128];
 			InfoGetItem.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
@@ -95,8 +94,7 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, int Selec
 		}
 		else
 		{
-			GS()->AVHI(ClientID, InfoGetItem.GetIcon(), HideID, LIGHT_GRAY_COLOR, "{STR}x{VAL} ({VAL}) :: {VAL} gold",
-				InfoGetItem.GetName(), cr.second.m_ItemValue, pPlayer->GetItem(cr.second.m_ItemID).m_Value, Price);
+			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", InfoGetItem.GetName(), cr.second.m_ItemValue, pPlayer->GetItem(cr.second.m_ItemID).m_Value, Price);
 		}
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", InfoGetItem.GetDesc());
 
@@ -108,7 +106,7 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, int Selec
 				continue;
 
 			CItemData &PlSearchItem = pPlayer->GetItem(SearchItemID);
-			GS()->AVMI(ClientID, PlSearchItem.Info().GetIcon(), "null", NOPE, HideID, "{STR} {VAL}({VAL})", PlSearchItem.Info().GetName(), SearchValue, PlSearchItem.m_Value);
+			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR} {VAL}({VAL})", PlSearchItem.Info().GetName(), SearchValue, PlSearchItem.m_Value);
 		}
 		GS()->AVM(ClientID, "CRAFT", cr.first, HideID, "Craft {STR}", InfoGetItem.GetName());
 	}

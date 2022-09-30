@@ -314,7 +314,7 @@ void CShopCore::ShowAuction(CPlayer* pPlayer)
 		{
 			char aEnchantBuf[16];
 			pBuyightItem.FormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf), Enchant);
-			GS()->AVHI(ClientID, pBuyightItem.GetIcon(), HideID, LIGHT_GRAY_COLOR, "{STR}{STR} {STR} - {VAL} gold",
+			GS()->AVH(ClientID, HideID, "{STR}{STR} {STR} - {VAL} gold",
 				(pPlayer->GetItem(ItemID).m_Value > 0 ? "✔ " : "\0"), pBuyightItem.GetName(), (Enchant > 0 ? aEnchantBuf : "\0"), Price);
 
 			char aAttributes[128];
@@ -323,7 +323,7 @@ void CShopCore::ShowAuction(CPlayer* pPlayer)
 		}
 		else
 		{
-			GS()->AVHI(ClientID, pBuyightItem.GetIcon(), HideID, LIGHT_GRAY_COLOR, "{STR}x{VAL} ({VAL}) - {VAL} gold",
+			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) - {VAL} gold",
 				pBuyightItem.GetName(), ItemValue, pPlayer->GetItem(ItemID).m_Value, Price);
 		}
 
@@ -359,7 +359,7 @@ void CShopCore::ShowMailShop(CPlayer *pPlayer, int StorageID)
 		{
 			char aEnchantBuf[16];
 			pBuyightItem.FormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf), Enchant);
-			GS()->AVHI(ClientID, pBuyightItem.GetIcon(), HideID, LIGHT_GRAY_COLOR, "{STR}{STR} {STR} - {VAL} {STR}",
+			GS()->AVH(ClientID, HideID, "{STR}{STR} {STR} - {VAL} {STR}",
 				(pPlayer->GetItem(ItemID).m_Value > 0 ? "✔ " : "\0"), pBuyightItem.GetName(), (Enchant > 0 ? aEnchantBuf : "\0"), Price, pRequiredItem.GetName());
 
 			char aAttributes[128];
@@ -368,7 +368,7 @@ void CShopCore::ShowMailShop(CPlayer *pPlayer, int StorageID)
 		}
 		else
 		{
-			GS()->AVHI(ClientID, pBuyightItem.GetIcon(), HideID, LIGHT_GRAY_COLOR, "{STR}x{VAL} ({VAL}) - {VAL} {STR}",
+			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) - {VAL} {STR}",
 				pBuyightItem.GetName(), ItemValue, pPlayer->GetItem(ItemID).m_Value, Price, pRequiredItem.GetName());
 		}
 

@@ -935,11 +935,11 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					char aBuf[256];
 					str_format(aBuf, sizeof(aBuf), "player has entered the game. ClientID=%d addr=%s", ClientID, aAddrStr);
 					Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+					ExpireServerInfo();
 				}
 
 				m_aClients[ClientID].m_State = CClient::STATE_INGAME;
 				GameServer(WorldID)->OnClientEnter(ClientID);
-				ExpireServerInfo();
 			}
 		}
 		else if(MsgID == NETMSG_INPUT)

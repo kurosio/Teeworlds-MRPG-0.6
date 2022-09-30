@@ -1487,7 +1487,7 @@ void GuildCore::ShowBuyHouse(CPlayer *pPlayer, int HouseID)
 	{
 		GS()->AV(ClientID, "null");
 		const int GuildBank = CGuildData::ms_aGuild[pPlayer->Acc().m_GuildID].m_Bank;
-		GS()->AVMI(ClientID, GS()->GetItemInfo(itGold).GetIcon(), "null", NOPE, NOPE, "Your guild have {VAL} Gold", GuildBank);
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", GuildBank);
 	}
 
 	GS()->AV(ClientID, "null");

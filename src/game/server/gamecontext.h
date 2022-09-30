@@ -203,16 +203,14 @@ private:
 	std::list<CVoteOptions> m_aPlayerVotes[MAX_PLAYERS];
 
 public:
-	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1, const char *pIcon = "unused", VoteCallBack Callback = nullptr);
+	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1, VoteCallBack Callback = nullptr);
 	void AVL(int ClientID, const char *pCmd, const char *pText, ...);
 	void AVH(int ClientID, int HideID, const char *pText, ...);
-	void AVHI(int ClientID, const char *pIcon, int HideID, vec3 Color, const char *pText, ...);
 	void AVM(int ClientID, const char *pCmd, int TempInt, int HideID, const char* pText, ...);
-	void AVMI(int ClientID, const char *pIcon, const char *pCmd, int TempInt, int HideID, const char *pText, ...);
 	void AVD(int ClientID, const char *pCmd, int TempInt, int TempInt2, int HideID, const char *pText, ...);
 
 	// TODO: fixme. improve the system using the ID method, as well as the ability to implement Backpage
-	void AVCALLBACK(int To, const char* Type, const char* Icon, int ID, int ID2, int HideID, VoteCallBack Callback, const char* pText, ...);
+	void AVCALLBACK(int To, const char* Type, int ID, int ID2, int HideID, VoteCallBack Callback, const char* pText, ...);
 
 	void ClearVotes(int ClientID);
 	void ShowVotesNewbieInformation(int ClientID);
