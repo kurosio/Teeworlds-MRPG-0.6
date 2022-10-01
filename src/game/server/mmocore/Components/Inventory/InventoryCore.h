@@ -30,7 +30,7 @@ public:
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, int ItemID) const;
 
 	void RepairDurabilityItems(class CPlayer *pPlayer);
-	int GetValueItemsType(class CPlayer* pPlayer, int Type) const;
+	int GetValueItemsType(class CPlayer* pPlayer, ItemType Type) const;
 
 	void AddItemSleep(int AccountID, int ItemID, int Value, int Milliseconds);
 	int GiveItem(class CPlayer* pPlayer, int ItemID, int Value, int Settings, int Enchant);

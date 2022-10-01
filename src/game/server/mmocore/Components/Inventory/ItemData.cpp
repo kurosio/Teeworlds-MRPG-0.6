@@ -72,7 +72,7 @@ bool CItemData::Add(int Value, int Settings, int Enchant, bool Message)
 	GS()->Mmo()->Item()->GiveItem(m_pPlayer, m_ItemID, Value, Settings, Enchant);
 
 	// check the empty slot if yes then put the item on
-	if((Info().m_Type == TYPE_EQUIP && m_pPlayer->GetEquippedItemID(Info().m_Function) <= 0) || Info().m_Type == TYPE_MODULE)
+	if((Info().IsType(ItemType::TYPE_EQUIP) && m_pPlayer->GetEquippedItemID(Info().m_Function) <= 0) || Info().IsType(ItemType::TYPE_MODULE))
 	{
 		if(!IsEquipped())
 			Equip();
@@ -82,12 +82,12 @@ bool CItemData::Add(int Value, int Settings, int Enchant, bool Message)
 		GS()->Chat(ClientID, "Auto equip {STR} - {STR}", Info().GetName(), aAttributes);
 	}
 
-	if(!Message || Info().m_Type == TYPE_SETTINGS)
+	if(!Message || Info().IsType(ItemType::TYPE_SETTINGS))
 		return true;
 
-	if(Info().m_Type == TYPE_EQUIP || Info().m_Type == TYPE_MODULE)
+	if(Info().IsType(ItemType::TYPE_EQUIP) || Info().IsType(ItemType::TYPE_MODULE))
 		GS()->Chat(-1, "{STR} got of the {STR}x{VAL}.", GS()->Server()->ClientName(ClientID), Info().GetName(), Value);
-	else if(Info().m_Type != TYPE_INVISIBLE)
+	else if(Info().GetType() != ItemType::TYPE_INVISIBLE)
 		GS()->Chat(ClientID, "You got of the {STR}x{VAL}.", Info().GetName(), Value);
 
 	return true;
@@ -113,7 +113,7 @@ bool CItemData::Equip()
 
 	m_Settings ^= true;
 
-	if(Info().m_Type == TYPE_EQUIP)
+	if(Info().IsType(ItemType::TYPE_EQUIP))
 	{
 		const ItemFunctional EquipID = Info().m_Function;
 		int EquipItemID = m_pPlayer->GetEquippedItemID(EquipID, m_ItemID);

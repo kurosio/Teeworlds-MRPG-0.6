@@ -13,11 +13,11 @@ class CItemDataInfo
 
 	char m_aName[32];
 	char m_aDesc[64];
+	ItemType m_Type;
+	int m_Dysenthis;
 
 public:
-	int m_Type;
 	ItemFunctional m_Function;
-	int m_Dysenthis;
 	int m_InitialPrice;
 	int m_aAttribute[2];
 	int m_aAttributeValue[2];
@@ -30,6 +30,14 @@ public:
 	int GetInfoEnchantStats(int AttributeID) const;
 	int GetInfoEnchantStats(int AttributeID, int Enchant) const;
 	int GetEnchantPrice(int EnchantLevel) const;
+
+	int GetDysenthis() const { return m_Dysenthis; }
+
+	ItemFunctional GetFunctional() const { return m_Function; }
+	bool IsFunctional(ItemFunctional Functional) const { return m_Function == Functional; }
+
+	ItemType GetType() const { return m_Type; }
+	bool IsType(ItemType Type) const { return m_Type == Type; }
 
 	bool IsEnchantable() const;
 	bool IsEnchantMaxLevel(int Enchant) const;

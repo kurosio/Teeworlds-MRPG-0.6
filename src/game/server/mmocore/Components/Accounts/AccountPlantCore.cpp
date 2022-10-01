@@ -81,7 +81,7 @@ void CAccountPlantCore::ShowPlantsItems(int ClientID) const
 	if(!pPlayer)
 		return;
 
-	Job()->Item()->ListInventory(pPlayer, FUNCTION_PLANTS, true);
+	Job()->Item()->ListInventory(pPlayer, ItemFunctional::FUNCTION_PLANTS);
 }
 
 void CAccountPlantCore::Work(CPlayer* pPlayer, int Level)

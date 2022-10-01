@@ -35,8 +35,8 @@ AccountCodeResult CAccountCore::RegisterAccount(int ClientID, const char *Login,
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
 	if(pRes->next())
 	{
-		GS()->Chat(ClientID, "- - - - [Your nickname is already registered] - - - -");
-		GS()->Chat(ClientID, "Your nick is a unique identifier, and it has already been used!");
+		GS()->Chat(ClientID, "- - - - [Your nickname is already registered!] - - - -");
+		GS()->Chat(ClientID, "Your game nick is a unique identifier, and it has already been used.");
 		GS()->Chat(ClientID, "You can restore access by contacting support, or change nick.");
 		GS()->Chat(ClientID, "Discord group \"{STR}\".", g_Config.m_SvDiscordInviteLink);
 		return AccountCodeResult::AOP_NICKNAME_ALREADY_EXIST;
@@ -57,9 +57,9 @@ AccountCodeResult CAccountCore::RegisterAccount(int ClientID, const char *Login,
 	Sqlpool.Execute<DB::INSERT>("tw_accounts", "(ID, Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('%d', '%s', '%s', '%s', UTC_TIMESTAMP(), '%s')", InitID, cClearLogin.cstr(), HashPassword(cClearPass.cstr(), aSalt).c_str(), aSalt, aAddrStr);
 	Sqlpool.Execute<DB::INSERT, 100>("tw_accounts_data", "(ID, Nick) VALUES ('%d', '%s')", InitID, cClearNick.cstr());
 
-	GS()->Chat(ClientID, "- - - - - - - [Successful registered] - - - - - - -");
+	GS()->Chat(ClientID, "- - - - - - - [Successful registered!] - - - - - - -");
 	GS()->Chat(ClientID, "Don't forget your data, have a nice game!");
-	GS()->Chat(ClientID, "# Your nickname is a unique identifier!");
+	GS()->Chat(ClientID, "# Your nickname is a unique identifier.");
 	GS()->Chat(ClientID, "# Log in: \"/login {STR} {STR}\"", cClearLogin.cstr(), cClearPass.cstr());
 	return AccountCodeResult::AOP_REGISTER_OK;
 }
@@ -96,13 +96,13 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 
 		if(!LoginSuccess)
 		{
-			GS()->Chat(ClientID, "Wrong login or password!");
+			GS()->Chat(ClientID, "Wrong login or password.");
 			return AccountCodeResult::AOP_LOGIN_WRONG;
 		}
 
 		if (GS()->GetPlayerFromUserID(UserID) != nullptr)
 		{
-			GS()->Chat(ClientID, "The account is already in the game!");
+			GS()->Chat(ClientID, "The account is already in the game.");
 			return AccountCodeResult::AOP_ALREADY_IN_GAME;
 		}
 
@@ -124,7 +124,7 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 				pPlayer->Acc().m_aStats[at.first] = pResAccount->getInt(at.second.m_aFieldName);
 		}
 
-		GS()->Chat(ClientID, "- - - - - - - [Successful login] - - - - - - -");
+		GS()->Chat(ClientID, "- - - - - - - [Successful login!] - - - - - - -");
 		GS()->Chat(ClientID, "Menu is available in call-votes!");
 		GS()->m_pController->DoTeamChange(pPlayer, false);
 		LoadAccount(pPlayer, true);
@@ -135,7 +135,7 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		return AccountCodeResult::AOP_LOGIN_OK;
 	}
 
-	GS()->Chat(ClientID, "Your nickname was not found in the database!");
+	GS()->Chat(ClientID, "Your nickname was not found in the database.");
 	return AccountCodeResult::AOP_NICKNAME_NOT_EXIST;
 }
 
@@ -150,9 +150,8 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 
 	if(!FirstInitilize)
 	{
-		const int MsgMailboxSize = Job()->Inbox()->GetMailLettersSize(pPlayer->Acc().m_UserID);
-		if (MsgMailboxSize > 0)
-			GS()->Chat(ClientID, "You have {INT} unread messages!", MsgMailboxSize);
+		if (const int Letters = Job()->Inbox()->GetMailLettersSize(pPlayer->Acc().m_UserID); Letters > 0)
+			GS()->Chat(ClientID, "You have {INT} unread letters!", Letters);
 
 		GS()->ResetVotes(ClientID, MenuList::MAIN_MENU);
 		return;
@@ -189,10 +188,10 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 		{ itModePVP, 1},
 		{ itShowEquipmentDescription, 0 }
 	});
-
+	
 	// correcting world swapper
 	pPlayer->GetTempData().m_TempSafeSpawn = true;
-
+	
 	const int LatestCorrectWorldID = GetHistoryLatestCorrectWorldID(pPlayer);
 	if(LatestCorrectWorldID != GS()->GetWorldID())
 	{
@@ -244,18 +243,17 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 	}
 
 	// settings
-	if (Menulist == MenuList::MENU_SETTINGS)
+	if (Menulist == MENU_SETTINGS)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MAIN_MENU;
 
 		// game settings
 		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings becomes valid after death");
-		GS()->AVM(ClientID, "MENU", MenuList::MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
-		for (const auto& it : CItemData::ms_aItems[ClientID])
+		GS()->AVM(ClientID, "MENU", MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
+		for (const auto& [ItemID, ItemData] : CItemData::ms_aItems[ClientID])
 		{
-			const CItemData ItemData = it.second;
-			if (ItemData.Info().m_Type == ItemType::TYPE_SETTINGS && ItemData.m_Value > 0)
-				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.m_Settings ? "Enabled" : "Disabled"), ItemData.Info().GetName());
+			if (ItemData.Info().IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
+				GS()->AVM(ClientID, "ISETTINGS", ItemID, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.m_Settings ? "Enabled" : "Disabled"), ItemData.Info().GetName());
 		}
 
 		// equipment modules
@@ -265,7 +263,7 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		for (const auto& it : CItemData::ms_aItems[ClientID])
 		{
 			const CItemData ItemData = it.second;
-			if (ItemData.Info().m_Type == ItemType::TYPE_MODULE && ItemData.m_Value > 0)
+			if (ItemData.Info().IsType(ItemType::TYPE_MODULE) && ItemData.m_Value > 0)
 			{
 				char aAttributes[128];
 				ItemData.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
@@ -283,9 +281,9 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 	}
 
 	// language selection
-	if (Menulist == MenuList::MENU_SELECT_LANGUAGE)
+	if (Menulist == MENU_SELECT_LANGUAGE)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MENU_SETTINGS;
+		pPlayer->m_LastVoteMenu = MENU_SETTINGS;
 		GS()->AVH(ClientID, TAB_INFO_LANGUAGES, "Languages Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Here you can choose the language.");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Note: translation is not complete.");

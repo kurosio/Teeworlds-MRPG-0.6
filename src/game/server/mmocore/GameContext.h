@@ -113,8 +113,28 @@ enum ToplistTypes
 	PLAYERS_WEALTHY,
 };
 
+// item functionals
+enum ItemFunctional : int
+{
+	
+	EQUIP_HAMMER,
+	EQUIP_GUN,
+	EQUIP_SHOTGUN,
+	EQUIP_GRENADE,
+	EQUIP_RIFLE,
+	EQUIP_PICKAXE,
+	EQUIP_RAKE,
+	EQUIP_ARMOR,
+	NUM_EQUIPPED,
 
-enum ItemType
+	FUNCTION_ONE_USED = 8,
+	FUNCTION_USED,
+	FUNCTION_SETTINGS,
+	FUNCTION_PLANTS,
+	FUNCTION_MINER
+};
+
+enum class ItemType : short
 {
 	TYPE_INVISIBLE = -1,
 	TYPE_USED = 1,
@@ -263,27 +283,6 @@ enum
 
 	// max mails for page
 	MAILLETTER_MAX_CAPACITY = 30,
-};
-
-// item functionals
-enum ItemFunctional : int
-{
-	
-	EQUIP_HAMMER,
-	EQUIP_GUN,
-	EQUIP_SHOTGUN,
-	EQUIP_GRENADE,
-	EQUIP_RIFLE,
-	EQUIP_PICKAXE,
-	EQUIP_RAKE,
-	EQUIP_ARMOR,
-	NUM_EQUIPPED,
-
-	FUNCTION_ONE_USED = 8,
-	FUNCTION_USED,
-	FUNCTION_SETTINGS,
-	FUNCTION_PLANTS,
-	FUNCTION_MINER
 };
 
 enum GuildAccess

@@ -32,11 +32,17 @@ public:
 	bool Use(int Value);
 	bool Drop(int Value);
 
+	bool HasItem() const { return m_Value; }
+
 	// equip modules types functions
 	int GetEnchantStats(int AttributeID) const { return Info().GetInfoEnchantStats(AttributeID, m_Enchant); }
 	int GetEnchantPrice() const { return Info().GetEnchantPrice(m_Enchant); }
 
-	bool IsEquipped() const { return m_Value > 0 && m_Settings > 0 && (Info().m_Type == ItemType::TYPE_POTION || Info().m_Type == ItemType::TYPE_SETTINGS || Info().m_Type == ItemType::TYPE_MODULE || Info().m_Type == ItemType::TYPE_EQUIP); }
+	bool IsEquipped() const
+	{
+		return m_Value > 0 && m_Settings > 0 && (Info().IsType(ItemType::TYPE_POTION) || Info().IsType(ItemType::TYPE_SETTINGS) 
+			|| Info().IsType(ItemType::TYPE_MODULE) || Info().IsType(ItemType::TYPE_EQUIP));
+	}
 	bool IsEnchantMaxLevel() const { return Info().IsEnchantMaxLevel(m_Enchant); }
 
 	void FormatEnchantLevel(char* pBuffer, int Size) const { Info().FormatEnchantLevel(pBuffer, Size, m_Enchant); }

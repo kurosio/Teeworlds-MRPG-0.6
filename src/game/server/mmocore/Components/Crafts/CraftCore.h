@@ -20,7 +20,7 @@ class CCraftCore : public MmoComponent
 
 	int GetFinalPrice(CPlayer* pPlayer, int CraftID) const;
 	void CraftItem(CPlayer* pPlayer, int CraftID) const;
-	void ShowCraftList(CPlayer* pPlayer, const char* TypeName, int SelectType) const;
+	void ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const;
 };
 
 #endif

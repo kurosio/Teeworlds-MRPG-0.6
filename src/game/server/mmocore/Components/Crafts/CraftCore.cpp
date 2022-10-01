@@ -65,15 +65,15 @@ int CCraftCore::GetFinalPrice(CPlayer* pPlayer, int CraftID) const
 	return max(CCraftData::ms_aCraft[CraftID].m_Price - Discount, 0);
 }
 
-void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, int SelectType) const
+void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
 {
 	bool IsNotEmpty = false;
 	const int ClientID = pPlayer->GetCID();
 
-	for(const auto& cr : CCraftData::ms_aCraft)
+	for(const auto& [CraftID, CraftData] : CCraftData::ms_aCraft)
 	{
-		CItemDataInfo& InfoGetItem = GS()->GetItemInfo(cr.second.m_ItemID);
-		if(InfoGetItem.m_Type != SelectType || cr.second.m_WorldID != GS()->GetWorldID())
+		CItemDataInfo& CraftItem = GS()->GetItemInfo(CraftData.m_ItemID);
+		if(CraftItem.GetType() != Type || CraftData.m_WorldID != GS()->GetWorldID())
 			continue;
 
 		if(!IsNotEmpty)
@@ -82,33 +82,33 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, int Selec
 			IsNotEmpty = true;
 		}
 
-		const int Price = GetFinalPrice(pPlayer, cr.first);
-		const int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + cr.first;
-		if (InfoGetItem.IsEnchantable())
+		const int Price = GetFinalPrice(pPlayer, CraftID);
+		const int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + CraftID;
+		if (CraftItem.IsEnchantable())
 		{
-			GS()->AVH(ClientID, HideID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(cr.second.m_ItemID).m_Value ? "✔ " : "\0"), InfoGetItem.GetName(), Price);
+			GS()->AVH(ClientID, HideID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(CraftData.m_ItemID).m_Value ? "✔ " : "\0"), CraftItem.GetName(), Price);
 
 			char aAttributes[128];
-			InfoGetItem.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
+			CraftItem.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
 			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", aAttributes);
 		}
 		else
 		{
-			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", InfoGetItem.GetName(), cr.second.m_ItemValue, pPlayer->GetItem(cr.second.m_ItemID).m_Value, Price);
+			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", CraftItem.GetName(), CraftData.m_ItemValue, pPlayer->GetItem(CraftData.m_ItemID).m_Value, Price);
 		}
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", InfoGetItem.GetDesc());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", CraftItem.GetDesc());
 
 		for(int i = 0; i < 3; i++)
 		{
-			const int SearchItemID = cr.second.m_aRequiredItemID[i];
-			const int SearchValue = cr.second.m_aRequiredItemsValues[i];
-			if(SearchItemID <= 0 || SearchValue <= 0)
+			const int RequiredItemID = CraftData.m_aRequiredItemID[i];
+			const int RequiredValue = CraftData.m_aRequiredItemsValues[i];
+			if(RequiredItemID <= 0 || RequiredValue <= 0)
 				continue;
 
-			CItemData &PlSearchItem = pPlayer->GetItem(SearchItemID);
-			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR} {VAL}({VAL})", PlSearchItem.Info().GetName(), SearchValue, PlSearchItem.m_Value);
+			CItemData &RequiredItem = pPlayer->GetItem(RequiredItemID);
+			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR} {VAL}({VAL})", RequiredItem.Info().GetName(), RequiredValue, RequiredItem.m_Value);
 		}
-		GS()->AVM(ClientID, "CRAFT", cr.first, HideID, "Craft {STR}", InfoGetItem.GetName());
+		GS()->AVM(ClientID, "CRAFT", CraftID, HideID, "Craft {STR}", CraftItem.GetName());
 	}
 
 	if(IsNotEmpty)
@@ -208,12 +208,12 @@ bool CCraftCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 			GS()->ShowVotesItemValueInformation(pPlayer);
 			GS()->AV(ClientID, "null");
 
-			ShowCraftList(pPlayer, "Craft | Can be used's", TYPE_USED);
-			ShowCraftList(pPlayer, "Craft | Potion's", TYPE_POTION);
-			ShowCraftList(pPlayer, "Craft | Equipment's", TYPE_EQUIP);
-			ShowCraftList(pPlayer, "Craft | Module's", TYPE_MODULE);
-			ShowCraftList(pPlayer, "Craft | Decoration's", TYPE_DECORATION);
-			ShowCraftList(pPlayer, "Craft | Other's", TYPE_OTHER);
+			ShowCraftList(pPlayer, "Craft | Can be used's", ItemType::TYPE_USED);
+			ShowCraftList(pPlayer, "Craft | Potion's", ItemType::TYPE_POTION);
+			ShowCraftList(pPlayer, "Craft | Equipment's", ItemType::TYPE_EQUIP);
+			ShowCraftList(pPlayer, "Craft | Module's", ItemType::TYPE_MODULE);
+			ShowCraftList(pPlayer, "Craft | Decoration's", ItemType::TYPE_DECORATION);
+			ShowCraftList(pPlayer, "Craft | Other's", ItemType::TYPE_OTHER);
 			return true;
 		}
 		return false;

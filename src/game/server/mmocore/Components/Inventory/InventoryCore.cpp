@@ -22,7 +22,7 @@ void CInventoryCore::OnInit()
 
 			str_copy(ItemInfo.m_aName, pRes->getString("Name").c_str(), sizeof(ItemInfo.m_aName));
 			str_copy(ItemInfo.m_aDesc, pRes->getString("Description").c_str(), sizeof(ItemInfo.m_aDesc));
-			ItemInfo.m_Type = pRes->getInt("Type");
+			ItemInfo.m_Type = (ItemType)pRes->getInt("Type");
 			ItemInfo.m_Function = (ItemFunctional)pRes->getInt("Function");
 			ItemInfo.m_InitialPrice = pRes->getInt("InitialPrice");
 			ItemInfo.m_Dysenthis = pRes->getInt("Desynthesis");
@@ -92,21 +92,21 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 
 		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, "Inventory SELECT List");
 		int SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_USED);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", ItemType::TYPE_USED, TAB_INVENTORY_SELECT, "Used ({INT})", SizeItems);
+		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_USED, TAB_INVENTORY_SELECT, "Used ({INT})", SizeItems);
 
 		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_CRAFT);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", ItemType::TYPE_CRAFT, TAB_INVENTORY_SELECT, "Craft ({INT})", SizeItems);
+		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_CRAFT, TAB_INVENTORY_SELECT, "Craft ({INT})", SizeItems);
 
 		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_MODULE);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", ItemType::TYPE_MODULE, TAB_INVENTORY_SELECT, "Modules ({INT})", SizeItems);
+		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_MODULE, TAB_INVENTORY_SELECT, "Modules ({INT})", SizeItems);
 
 		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_POTION);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", ItemType::TYPE_POTION, TAB_INVENTORY_SELECT, "Potion ({INT})", SizeItems);
+		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_POTION, TAB_INVENTORY_SELECT, "Potion ({INT})", SizeItems);
 
 		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_OTHER);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", ItemType::TYPE_OTHER, TAB_INVENTORY_SELECT, "Other ({INT})", SizeItems);
+		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_OTHER, TAB_INVENTORY_SELECT, "Other ({INT})", SizeItems);
 		if(pPlayer->m_aSortTabs[SORT_INVENTORY])
-			ListInventory(pPlayer, pPlayer->m_aSortTabs[SORT_INVENTORY]);
+			ListInventory(pPlayer, (ItemType)pPlayer->m_aSortTabs[SORT_INVENTORY]);
 
 		GS()->AddVotesBackpage(ClientID);
 		return true;
@@ -269,7 +269,7 @@ void CInventoryCore::ListInventory(CPlayer *pPlayer, int TypeList, bool SortedFu
 {
 	const int ClientID = pPlayer->GetCID();
 	GS()->AV(ClientID, "null");
-
+	
 	// show a list of items to the player
 	bool Found = false;
 	for(const auto& it : CItemData::ms_aItems[ClientID])
@@ -443,8 +443,8 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 	if (ItemID == pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 		return;
 
-	if (pItemPlayer.Info().m_Dysenthis > 0)
-		GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.Info().m_Dysenthis);
+	if (pItemPlayer.Info().GetDysenthis() > 0)
+		GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.Info().GetDysenthis());
 
 	GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop {STR}", pNameItem);
 
@@ -452,11 +452,13 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 		GS()->AVM(ClientID, "AUCTIONSLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
 }
 
-int CInventoryCore::GetValueItemsType(CPlayer *pPlayer, int Type) const
+int CInventoryCore::GetValueItemsType(CPlayer *pPlayer, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
-	return (int)std::count_if(CItemData::ms_aItems[ClientID].begin(), CItemData::ms_aItems[ClientID].end(), [Type](std::pair< const int, CItemData>& pItem)
-	                          {return pItem.second.m_Value > 0 && pItem.second.Info().m_Type == Type; });
+	return (int)std::count_if(CItemData::ms_aItems[ClientID].begin(), CItemData::ms_aItems[ClientID].end(), [Type](auto& pItem)
+	{
+		return pItem.second.HasItem() && pItem.second.Info().IsType(Type);
+	});
 }
 
 // TODO: FIX IT (lock .. unlock)

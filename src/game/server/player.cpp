@@ -573,11 +573,11 @@ CQuestData& CPlayer::GetQuest(int QuestID)
 
 int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
-	for(const auto& it : CItemData::ms_aItems[m_ClientID])
+	for(const auto& [id, value] : CItemData::ms_aItems[m_ClientID])
 	{
-		if(!it.second.m_Value || !it.second.m_Settings || it.second.Info().m_Function != EquipID || it.first == SkipItemID)
+		if(!value.m_Value || !value.m_Settings || value.Info().m_Function != EquipID || id == SkipItemID)
 			continue;
-		return it.first;
+		return id;
 	}
 	return -1;
 }

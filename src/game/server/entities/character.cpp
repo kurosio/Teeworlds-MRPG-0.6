@@ -173,7 +173,7 @@ bool CCharacter::DecoInteractive()
 		const int InteractiveType = m_pPlayer->GetTempData().m_TempDecorationType;
 		m_pPlayer->GetTempData().m_TempDecoractionID = -1;
 		m_pPlayer->GetTempData().m_TempDecorationType = -1;
-		if(m_pPlayer->GetItem(DecoID).m_Value <= 0 || GS()->GetItemInfo(DecoID).m_Type != ItemType::TYPE_DECORATION)
+		if(m_pPlayer->GetItem(DecoID).m_Value <= 0 || GS()->GetItemInfo(DecoID).GetType() != ItemType::TYPE_DECORATION)
 			return false;
 
 		if (InteractiveType == DECORATIONS_HOUSE)
