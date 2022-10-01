@@ -58,4 +58,5 @@ void CHearth::Snap(int SnappingClient)
 	pObj->m_X = (int)m_Pos.x;
 	pObj->m_Y = (int)m_Pos.y;
 	pObj->m_Type = 0;
+	pObj->m_Subtype = 0;
 }

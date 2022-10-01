@@ -76,6 +76,7 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 bool IGameController::OnEntity(int Index, vec2 Pos)
 {
 	int Type = -1;
+	int SubType = 0;
 	switch(Index)
 	{
 	case ENTITY_SPAWN:
@@ -94,20 +95,23 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 		Type = POWERUP_HEALTH;
 		break;
 	case ENTITY_PICKUP_SHOTGUN:
-		Type = POWERUP_ARMOR_SHOTGUN;
+		Type = POWERUP_WEAPON;
+		SubType = WEAPON_SHOTGUN;
 		break;
 	case ENTITY_PICKUP_GRENADE:
-		Type = POWERUP_ARMOR_GRENADE;
+		Type = POWERUP_WEAPON;
+		SubType = WEAPON_GRENADE;
 		break;
 	case ENTITY_PICKUP_LASER:
-		Type = POWERUP_ARMOR_LASER;
+		Type = POWERUP_WEAPON;
+		SubType = WEAPON_LASER;
 		break;
 	default: break;
 	}
 
 	if(Type != -1)
 	{
-		new CPickup(&GS()->m_World, Type, Pos);
+		new CPickup(&GS()->m_World, Type, SubType, Pos);
 		return true;
 	}
 

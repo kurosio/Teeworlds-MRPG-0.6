@@ -6,10 +6,11 @@
 #include <generated/server_data.h>
 #include "character.h"
 
-CPickup::CPickup(CGameWorld *pGameWorld, int Type, vec2 Pos)
+CPickup::CPickup(CGameWorld *pGameWorld, int Type, int SubType, vec2 Pos)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP, Pos, PickupPhysSize)
 {
 	m_Type = Type;
+	m_SubType = SubType;
 
 	CPickup::Reset();
 	GameWorld()->InsertEntity(this);

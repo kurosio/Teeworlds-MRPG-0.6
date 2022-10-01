@@ -6,12 +6,6 @@
 
 class CDropItem : public CEntity
 {
-	enum
-	{
-		NUM_IDS = 4,
-	};
-	int m_IDs[NUM_IDS];
-
 	vec2 m_Vel;
 	float m_Angle;
 	float m_AngleForce;
@@ -24,7 +18,6 @@ class CDropItem : public CEntity
 
 public:
 	CDropItem(class CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItemData DropItem, int OwnerID);
-	~CDropItem() override;
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

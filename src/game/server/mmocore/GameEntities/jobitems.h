@@ -39,7 +39,7 @@ private:
 
 	void FarmingWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem);
 	void MiningWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem);
-	int SwitchToObject(bool MmoItem) const;
+	int GetPickupType() const;
 };
 
 #endif

@@ -129,7 +129,7 @@ void CJobItems::FarmingWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedIt
 	}
 }
 
-int CJobItems::SwitchToObject(bool MmoItem) const
+int CJobItems::GetPickupType() const
 {
 	switch(m_Type)
 	{
@@ -171,5 +171,5 @@ void CJobItems::Snap(int SnappingClient)
 
 	pP->m_X = (int)m_Pos.x;
 	pP->m_Y = (int)m_Pos.y;
-	pP->m_Type = SwitchToObject(false);
+	pP->m_Type = GetPickupType();
 }

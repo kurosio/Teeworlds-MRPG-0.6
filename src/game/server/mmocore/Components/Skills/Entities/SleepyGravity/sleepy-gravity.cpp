@@ -78,8 +78,8 @@ void CSleepyGravity::Snap(int SnappingClient)
 	if (NetworkClipped(SnappingClient))
 		return;
 
-	float AngleStep = 2.0f * pi / CSleepyGravity::NUM_IDS;
-	for(int i=0; i<CSleepyGravity::NUM_IDS; i++)
+	const float AngleStep = 2.0f * pi / NUM_IDS;
+	for(int i = 0; i < NUM_IDS; i++)
 	{
 		vec2 VertexPos = m_Pos + vec2(m_Radius * cos(AngleStep*i), m_Radius * sin(AngleStep*i));
 		CNetObj_Projectile *pObj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_IDs[i], sizeof(CNetObj_Projectile)));
@@ -100,5 +100,6 @@ void CSleepyGravity::Snap(int SnappingClient)
 
 	pObj->m_X = (int)m_Pos.x;
 	pObj->m_Y = (int)m_Pos.y;
-	pObj->m_Type = 0;
+	pObj->m_Type = POWERUP_HEALTH;
+	pObj->m_Subtype = 0;
 }

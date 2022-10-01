@@ -22,18 +22,6 @@ CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForc
 	m_DropItem.m_Settings = 0;
 
 	GameWorld()->InsertEntity(this);
-	for(int i=0; i<NUM_IDS; i++)
-	{
-		m_IDs[i] = Server()->SnapNewID();
-	}
-}
-
-CDropItem::~CDropItem()
-{
-	for(int i=0; i<NUM_IDS; i++)
-	{
-		Server()->SnapFreeID(m_IDs[i]);
-	}
 }
 
 bool CDropItem::TakeItem(int ClientID)
@@ -135,24 +123,6 @@ void CDropItem::Snap(int SnappingClient)
 		pPickup->m_X = (int)m_Pos.x;
 		pPickup->m_Y = (int)m_Pos.y;
 		pPickup->m_Type = POWERUP_WEAPON;
-		pPickup->m_Subtype = WEAPON_GUN;
-	}
-
-	static const float Radius = 24.0f;
-	const float AngleStep = 2.0f * pi / NUM_IDS;
-	const float AngleStart = (pi / NUM_IDS) + (2.0f * pi * m_Angle) / 5.0f;
-	for(int i = 0; i < NUM_IDS; i++)
-	{
-		CNetObj_Laser *pRifleObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_IDs[i], sizeof(CNetObj_Laser)));
-		if(!pRifleObj)
-			return;
-
-		vec2 Pos = m_Pos + vec2(Radius * cos(AngleStart + AngleStep * i), Radius * sin(AngleStart + AngleStep * i));
-		vec2 PosTo = m_Pos + vec2(Radius * cos(AngleStart + AngleStep * (i+1)), Radius * sin(AngleStart + AngleStep * (i+1)));
-		pRifleObj->m_X = (int)Pos.x;
-		pRifleObj->m_Y = (int)Pos.y;
-		pRifleObj->m_FromX = (int)PosTo.x;
-		pRifleObj->m_FromY = (int)PosTo.y;
-		pRifleObj->m_StartTick = Server()->Tick() - 3;
+		pPickup->m_Subtype = WEAPON_HAMMER;
 	}
 }
