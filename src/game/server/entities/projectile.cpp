@@ -75,7 +75,7 @@ void CProjectile::Tick()
 
 	m_LifeSpan--;
 
-	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && !TargetChr->m_Core.m_NoCollision))
+	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && !TargetChr->m_Core.m_CollisionDisabled))
 	{
 
 		if (m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)

@@ -88,19 +88,19 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 		m_aaSpawnPoints[SPAWN_HUMAN_SAFE][m_aNumSpawnPoints[SPAWN_HUMAN_SAFE]++] = Pos;
 		break;
 	case ENTITY_ARMOR_1:
-		Type = PICKUP_ARMOR;
+		Type = POWERUP_ARMOR;
 		break;
 	case ENTITY_HEALTH_1:
-		Type = PICKUP_HEALTH;
+		Type = POWERUP_HEALTH;
 		break;
 	case ENTITY_PICKUP_SHOTGUN:
-		Type = PICKUP_SHOTGUN;
+		Type = POWERUP_ARMOR_SHOTGUN;
 		break;
 	case ENTITY_PICKUP_GRENADE:
-		Type = PICKUP_GRENADE;
+		Type = POWERUP_ARMOR_GRENADE;
 		break;
 	case ENTITY_PICKUP_LASER:
-		Type = PICKUP_LASER;
+		Type = POWERUP_ARMOR_LASER;
 		break;
 	default: break;
 	}

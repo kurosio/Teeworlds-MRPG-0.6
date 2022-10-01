@@ -66,11 +66,12 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	mem_zero(&m_ReckoningCore, sizeof(m_ReckoningCore));
 	GS()->m_World.InsertEntity(this);
 	m_Alive = true;
+	m_NumInputs = 0;
 
 	m_Mana = 0;
 	m_OldPos = Pos;
 	m_SkipDamage = false;
-	m_Core.m_NoCollision = false;
+	m_Core.m_CollisionDisabled = false;
 	m_Event = TILE_CLEAR_EVENTS;
 	m_Core.m_WorldID = m_pPlayer->GetPlayerWorldID();
 	if(!m_pPlayer->IsBot())
@@ -212,16 +213,18 @@ void CCharacter::FireWeapon()
 		return;
 
 	DoWeaponSwitch();
-
+	
+	// check if we gonna auto fire
 	bool FullAuto = false;
 	if(m_pPlayer->GetSkill(SkillMasterWeapon)->IsLearned())
 		FullAuto = true;
-
+	
+	// check if we gonna fire
 	bool WillFire = false;
 	if(CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses)
 		WillFire = true;
 
-	if(FullAuto && (m_LatestInput.m_Fire&1) && m_aWeapons[m_ActiveWeapon].m_Ammo)
+	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 		WillFire = true;
 
 	if(!WillFire)
@@ -285,7 +288,7 @@ void CCharacter::FireWeapon()
 					continue;
 				}
 
-				if (pTarget->m_Core.m_NoCollision)
+				if (pTarget->m_Core.m_CollisionDisabled)
 					continue;
 
 				if(length(pTarget->m_Pos-ProjStartPos) > 0.0f)
@@ -365,6 +368,7 @@ void CCharacter::FireWeapon()
 		case WEAPON_NINJA:
 			break;
 	}
+
 	m_AttackTick = Server()->Tick();
 
 	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
@@ -448,7 +452,6 @@ void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 
 	// copy new input
 	mem_copy(&m_Input, pNewInput, sizeof(m_Input));
-	m_NumInputs++;
 
 	// it is not allowed to aim in the center
 	if(m_Input.m_TargetX == 0 && m_Input.m_TargetY == 0)
@@ -459,16 +462,18 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput *pNewInput)
 {
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
 	mem_copy(&m_LatestInput, pNewInput, sizeof(m_LatestInput));
+	m_NumInputs++;
 
 	// it is not allowed to aim in the center
 	if(m_LatestInput.m_TargetX == 0 && m_LatestInput.m_TargetY == 0)
 		m_LatestInput.m_TargetY = -1;
 
-	if(m_NumInputs > 2 && m_pPlayer->GetTeam() != TEAM_SPECTATORS)
+	if(m_NumInputs > 1 && m_pPlayer->GetTeam() != TEAM_SPECTATORS)
 	{
 		HandleWeaponSwitch();
 		FireWeapon();
 	}
+
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
 }
 
@@ -483,8 +488,7 @@ void CCharacter::ResetHook()
 void CCharacter::ResetInput()
 {
 	m_Input.m_Direction = 0;
-	m_Input.m_Hook = 0;
-	if((m_Input.m_Fire&1) != 0)
+	if((m_Input.m_Fire & 1) != 0)
 		m_Input.m_Fire++;
 	m_Input.m_Fire &= INPUT_STATE_MASK;
 	m_Input.m_Jump = 0;
@@ -517,7 +521,7 @@ void CCharacter::Tick()
 
 	HandleAuthedPlayer();
 	HandleTilesets();
-	m_Core.m_NoCollision = false;
+	m_Core.m_CollisionDisabled = false;
 }
 
 void CCharacter::TickDefered()
@@ -925,10 +929,6 @@ void CCharacter::InteractiveRifle(vec2 Direction, vec2 ProjStartPos)
 void CCharacter::HandleTuning()
 {
 	CTuningParams* pTuningParams = &m_pPlayer->m_NextTuningParams;
-
-	// skip collision
-	if(m_Core.m_NoCollision)
-		pTuningParams->m_PlayerCollision = 0;
 
 	// behavior mobs
 	const int MobID = m_pPlayer->GetBotMobID();

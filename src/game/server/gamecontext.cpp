@@ -34,7 +34,6 @@
 
 #include <cstdarg>
 
-
 // static data that have the same value in different objects
 std::map < int, CGS::StructAttribut > CGS::ms_aAttributsInfo;
 std::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
@@ -180,9 +179,9 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 	}
 
 	CCharacter *apEnts[MAX_CLIENTS];
-	const float Radius = g_pData->m_Explosion.m_Radius;
-	const float InnerRadius = 48.0f;
-	const float MaxForce = g_pData->m_Explosion.m_MaxForce;
+	float Radius = 135.0f;
+	float InnerRadius = 48.0f;
+	const float MaxForce = 1.0f;
 	const int Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 	for(int i = 0; i < Num; i++)
 	{
@@ -262,9 +261,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
 
 	char aBufMode[32];
-	if(Mode == CHAT_WHISPER)
-		str_copy(aBufMode, "whisper", sizeof(aBufMode));
-	else if(Mode == CHAT_TEAM)
+	if(Mode == CHAT_TEAM)
 		str_copy(aBufMode, "teamchat", sizeof(aBufMode));
 	else
 		str_copy(aBufMode, "chat", sizeof(aBufMode));
@@ -307,11 +304,6 @@ void CGS::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 			if(pSearchPlayer && pSearchPlayer->Acc().m_GuildID == GuildID)
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
 		}
-	}
-	else if(Mode == CHAT_WHISPER)
-	{
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
 	}
 }
 
@@ -928,74 +920,23 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			SendChat(ClientID, CHAT_ALL, pPlayer->GetCID(), pMsg->m_pMessage);
 		}
 
-		else if (MsgID == NETMSGTYPE_CL_COMMAND)
-		{
-			if (g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[TickState::LastChat] && pPlayer->m_aPlayerTick[TickState::LastChat] + Server()->TickSpeed() > Server()->Tick())
-				return;
-
-			CNetMsg_Cl_Command *pMsg = (CNetMsg_Cl_Command*)pRawMsg;
-
-			if (!pMsg->m_Name[0])
-				return;
-
-			char aFullMsg[256];
-			str_format(aFullMsg, sizeof(aFullMsg), "/%s %s", pMsg->m_Name, pMsg->m_Arguments);
-
-			if (pMsg->m_Arguments[0])
-			{
-				// trim right and set maximum length to 128 utf8-characters
-				int Length = 0;
-				const char* p = pMsg->m_Arguments;
-				const char* pEnd = nullptr;
-				while (*p)
-				{
-					const char* pStrOld = p;
-					const int Code = str_utf8_decode(&p);
-
-					// check if unicode is not empty
-					if (Code > 0x20 && Code != 0xA0 && Code != 0x034F && (Code < 0x2000 || Code > 0x200F) && (Code < 0x2028 || Code > 0x202F) &&
-						(Code < 0x205F || Code > 0x2064) && (Code < 0x206A || Code > 0x206F) && (Code < 0xFE00 || Code > 0xFE0F) &&
-						Code != 0xFEFF && (Code < 0xFFF9 || Code > 0xFFFC))
-					{
-						pEnd = nullptr;
-					}
-					else if (pEnd == nullptr)
-						pEnd = pStrOld;
-
-					if (++Length >= 127)
-					{
-						*(const_cast<char*>(p)) = 0;
-						break;
-					}
-				}
-				if (pEnd != nullptr)
-					*(const_cast<char*>(pEnd)) = 0;
-
-				// drop empty and autocreated spam messages (more than 20 characters per second)
-				if (Length == 0)
-					return;
-			}
-
-			CommandProcessor()->ChatCmd(aFullMsg, pPlayer);
-		}
-
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{
 			CNetMsg_Cl_CallVote *pMsg = (CNetMsg_Cl_CallVote *)pRawMsg;
-			if (str_comp_nocase(pMsg->m_Type, "option") != 0 || Server()->Tick() < (pPlayer->m_aPlayerTick[TickState::LastVoteTry] + (Server()->TickSpeed() / 2)))
+			if (str_comp_nocase(pMsg->m_pType, "option") != 0 || Server()->Tick() < (pPlayer->m_aPlayerTick[TickState::LastVoteTry] + (Server()->TickSpeed() / 2)))
 				return;
 
 			pPlayer->m_aPlayerTick[TickState::LastVoteTry] = Server()->Tick();
 			const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
 			{
-				const int length = str_length(pMsg->m_Value);
-				return (str_comp_nocase_num(pMsg->m_Value, vote.m_aDescription, length) == 0);
+				const int length = str_length(pMsg->m_pValue);
+				return (str_comp_nocase_num(pMsg->m_pValue, vote.m_aDescription, length) == 0);
 			});
 
 			if(iter != m_aPlayerVotes[ClientID].end())
 			{
-				const int InteractiveValue = string_to_number(pMsg->m_Reason, 1, 10000000);
-				ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_Reason, iter->m_Callback);
+				const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
+				ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason, iter->m_Callback);
 				return;
 			}
 			ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
@@ -1045,6 +986,43 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			//pPlayer->KillCharacter(WEAPON_SELF);
 		}
 
+		else if(MsgID == NETMSGTYPE_CL_ISDDNETLEGACY)
+		{
+			IServer::CClientInfo Info;
+			Server()->GetClientInfo(ClientID, &Info);
+			if(Info.m_GotDDNetVersion)
+			{
+				return;
+			}
+			int DDNetVersion = pUnpacker->GetInt();
+			if(pUnpacker->Error() || DDNetVersion < 0)
+			{
+				DDNetVersion = VERSION_DDRACE;
+			}
+			Server()->SetClientDDNetVersion(ClientID, DDNetVersion);
+			//OnClientDDNetVersionKnown(ClientID);
+		}
+		else if(MsgID == NETMSGTYPE_CL_SHOWOTHERSLEGACY)
+		{
+			/*if(g_Config.m_SvShowOthers && !g_Config.m_SvShowOthersDefault)
+			{
+				CNetMsg_Cl_ShowOthersLegacy *pMsg = (CNetMsg_Cl_ShowOthersLegacy *)pRawMsg;
+				pPlayer->m_ShowOthers = pMsg->m_Show;
+			}*/
+		}
+		else if(MsgID == NETMSGTYPE_CL_SHOWOTHERS)
+		{
+			/*if(g_Config.m_SvShowOthers && !g_Config.m_SvShowOthersDefault)
+			{
+				CNetMsg_Cl_ShowOthers *pMsg = (CNetMsg_Cl_ShowOthers *)pRawMsg;
+				pPlayer->m_ShowOthers = pMsg->m_Show;
+			}*/
+		}
+		else if(MsgID == NETMSGTYPE_CL_SHOWDISTANCE)
+		{
+			//CNetMsg_Cl_ShowDistance *pMsg = (CNetMsg_Cl_ShowDistance *)pRawMsg;
+			//pPlayer->m_ShowDistance = vec2(pMsg->m_X, pMsg->m_Y);
+		}
 		/*else if (MsgID == NETMSGTYPE_CL_SKINCHANGE)
 		{
 			if(pPlayer->m_aPlayerTick[TickState::LastChangeInfo] && pPlayer->m_aPlayerTick[TickState::LastChangeInfo]+Server()->TickSpeed()*5 > Server()->Tick())
@@ -1141,7 +1119,6 @@ void CGS::OnClientEnter(int ClientID)
 		return;
 
 	m_pController->OnPlayerConnect(pPlayer);
-	m_pCommandProcessor->SendChatCommands(ClientID);
 
 	// another
 	if(!pPlayer->IsAuthed())
@@ -1190,34 +1167,18 @@ void CGS::OnClientDrop(int ClientID, const char *pReason)
 
 void CGS::OnClientDirectInput(int ClientID, void *pInput)
 {
-	const int NumFailures = m_NetObjHandler.NumObjFailures();
-	if(m_NetObjHandler.ValidateObj(NETOBJTYPE_PLAYERINPUT, pInput, sizeof(CNetObj_PlayerInput)) == -1)
+	m_apPlayers[ClientID]->OnDirectInput((CNetObj_PlayerInput *)pInput);
+
+	int Flags = ((CNetObj_PlayerInput *)pInput)->m_PlayerFlags;
+	if((Flags & 256) || (Flags & 512))
 	{
-		if(g_Config.m_Debug && NumFailures != m_NetObjHandler.NumObjFailures())
-		{
-			char aBuf[128];
-			str_format(aBuf, sizeof(aBuf), "NETOBJTYPE_PLAYERINPUT failed on '%s'", m_NetObjHandler.FailedObjOn());
-			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
-		}
+		Server()->Kick(ClientID, "please update your client or use DDNet client");
 	}
-	else
-		m_apPlayers[ClientID]->OnDirectInput((CNetObj_PlayerInput *)pInput);
 }
 
 void CGS::OnClientPredictedInput(int ClientID, void *pInput)
 {
-	const int NumFailures = m_NetObjHandler.NumObjFailures();
-	if(m_NetObjHandler.ValidateObj(NETOBJTYPE_PLAYERINPUT, pInput, sizeof(CNetObj_PlayerInput)) == -1)
-	{
-		if(g_Config.m_Debug && NumFailures != m_NetObjHandler.NumObjFailures())
-		{
-			char aBuf[128];
-			str_format(aBuf, sizeof(aBuf), "NETOBJTYPE_PLAYERINPUT corrected on '%s'", m_NetObjHandler.FailedObjOn());
-			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
-		}
-	}
-	else
-		m_apPlayers[ClientID]->OnPredictedInput((CNetObj_PlayerInput *)pInput);
+	m_apPlayers[ClientID]->OnPredictedInput((CNetObj_PlayerInput *)pInput);
 }
 
 // change the world
@@ -1242,10 +1203,14 @@ bool CGS::IsClientPlayer(int ClientID) const
 {
 	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
 }
-bool CGS::IsMmoClient(int ClientID) const
+
+int CGS::GetClientVersion(int ClientID) const
 {
-	return (Server()->GetClientProtocolVersion(ClientID) == PROTOCOL_VERSION_MMO) || (ClientID >= MAX_PLAYERS && ClientID < MAX_CLIENTS);
+	IServer::CClientInfo Info = {0};
+	Server()->GetClientInfo(ClientID, &Info);
+	return Info.m_DDNetVersion;
 }
+
 const char *CGS::Version() const { return GAME_VERSION; }
 const char *CGS::NetVersion() const { return GAME_NETVERSION; }
 
@@ -1278,7 +1243,7 @@ void CGS::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 
 void CGS::ConParseSkin(IConsole::IResult *pResult, void *pUserData)
 {
-	const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS-1);
+	/*const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS-1);
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
@@ -1297,7 +1262,7 @@ void CGS::ConParseSkin(IConsole::IResult *pResult, void *pUserData)
 			pPlayer->Acc().m_aSkinPartColors[3], pPlayer->Acc().m_aSkinPartColors[4],
 			pPlayer->Acc().m_aSkinPartColors[5]);
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", aBuf);
-	}
+	}*/
 }
 
 // give the item to the player
@@ -1903,13 +1868,11 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 
 	if(PPSTR(CMD, "BACK") == 0)
 	{
-		CreatePlayerSound(ClientID, SOUND_BOOK_FLIP);
 		ResetVotes(ClientID, pPlayer->m_LastVoteMenu);
 		return true;
 	}
 	if(PPSTR(CMD, "MENU") == 0)
 	{
-		CreatePlayerSound(ClientID, SOUND_BOOK_FLIP);
 		ResetVotes(ClientID, VoteID);
 		return true;
 	}

@@ -217,7 +217,6 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 	if(PPSTR(CMD, "ISETTINGS") == 0)
 	{
 		pPlayer->GetItem(VoteID).Equip();
-		GS()->CreatePlayerSound(ClientID, SOUND_ITEM_EQUIP);
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}

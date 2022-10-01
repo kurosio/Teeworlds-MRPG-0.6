@@ -23,10 +23,7 @@ struct CAccountData
 	int m_Upgrade;
 	std::map< int, int > m_aStats;
 
-	// skins
-	char m_aaSkinPartNames[NUM_SKINPARTS][MAX_SKIN_ARRAY_SIZE];
-	int m_aUseCustomColors[NUM_SKINPARTS];
-	int m_aSkinPartColors[NUM_SKINPARTS];
+	CTeeInfo m_Skin;
 
 	int m_Team;
 	std::map < int, bool > m_aAetherLocation;

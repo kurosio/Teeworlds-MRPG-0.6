@@ -260,6 +260,9 @@ enum
 
 	// bot dialogues
 	IS_TALKING_EMPTY = 999,
+
+	// max mails for page
+	MAILLETTER_MAX_CAPACITY = 30,
 };
 
 // item functionals

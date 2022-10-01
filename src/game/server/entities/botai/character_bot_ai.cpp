@@ -34,7 +34,7 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	{
 		for(int i = 0; i < 3; i++)
 		{
-			CreateSnapProj(GetSnapFullID(), 1, PICKUP_HEALTH, true, false);
+			CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
 			CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
 		}
 		if (!GS()->IsDungeon())
@@ -42,16 +42,16 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
 	{
-		m_Core.m_NoCollision = true;
-		CreateSnapProj(GetSnapFullID(), 2, PICKUP_HEALTH, true, false);
-		CreateSnapProj(GetSnapFullID(), 2, PICKUP_ARMOR, true, false);
+		m_Core.m_CollisionDisabled = true;
+		CreateSnapProj(GetSnapFullID(), 2, POWERUP_HEALTH, true, false);
+		CreateSnapProj(GetSnapFullID(), 2, POWERUP_ARMOR, true, false);
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
 	{
-		m_Core.m_NoCollision = true;
+		m_Core.m_CollisionDisabled = true;
 		const int Function = NpcBotInfo::ms_aNpcBot[SubBotID].m_Function;
 		if(Function == FunctionsNPC::FUNCTION_NPC_GIVE_QUEST)
-			CreateSnapProj(GetSnapFullID(), 3, PICKUP_ARMOR, false, false);
+			CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
 	}
 	return true;
 }
@@ -573,7 +573,7 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 			if (DialoguesNotEmpty)
 				GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialog: \"hammer hit\"");
 
-			pFindPlayer->GetCharacter()->m_Core.m_NoCollision = true;
+			pFindPlayer->GetCharacter()->m_Core.m_CollisionDisabled = true;
 			m_Input.m_TargetX = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
 			m_Input.m_TargetY = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
 			m_Input.m_Direction = 0;
@@ -658,7 +658,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 
 		// disable collision with players
 		if(distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f)
-			pFindPlayer->GetCharacter()->m_Core.m_NoCollision = true;
+			pFindPlayer->GetCharacter()->m_Core.m_CollisionDisabled = true;
 
 		// skip full health
 		if(pFindPlayer->GetHealth() >= pFindPlayer->GetStartHealth())

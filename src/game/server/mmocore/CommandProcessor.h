@@ -37,17 +37,9 @@ public:
 	~CCommandProcessor();
 
 	void ChatCmd(const char* pMessage, class CPlayer *pPlayer);
-	void SendChatCommands(int ClientID);
 
 private:
 	void AddCommand(const char* pName, const char* pParams, IConsole::FCommandCallback pfnFunc, void* pUser, const char* pHelp);
-
-	static void NewCommandHook(const CCommandManager::CCommand* pCommand, void* pContext);
-	static void RemoveCommandHook(const CCommandManager::CCommand* pCommand, void* pContext);
-
-	void SendChatCommand(const CCommandManager::CCommand* pCommand, int ClientID);
-	void SendRemoveChatCommand(const char* pCommand, int ClientID);
-	void SendRemoveChatCommand(const CCommandManager::CCommand* pCommand, int ClientID);
 
 	void LastChat(class CPlayer* pPlayer);
 };

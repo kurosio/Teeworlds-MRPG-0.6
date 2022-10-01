@@ -12,7 +12,7 @@
 CCommandProcessor::CCommandProcessor(CGS *pGS)
 {
 	m_pGS = pGS;
-	m_CommandManager.Init(m_pGS->Console(), this, NewCommandHook, RemoveCommandHook);
+	m_CommandManager.Init(m_pGS->Console(), this, nullptr, nullptr);
 
 	IServer* pServer = m_pGS->Server();
 	AddCommand("login", "s[username] s[password]", ConChatLogin, pServer, "");
@@ -342,23 +342,6 @@ void CCommandProcessor::ChatCmd(const char* pMessage, CPlayer* pPlayer)
 	GS()->Chat(ClientID, "Command {STR} not found!", pMessage);
 }
 
-void CCommandProcessor::SendChatCommands(int ClientID)
-{
-	// remove based commands
-	SendRemoveChatCommand("all", ClientID);
-	SendRemoveChatCommand("friend", ClientID);
-	SendRemoveChatCommand("m", ClientID);
-	SendRemoveChatCommand("mute", ClientID);
-	SendRemoveChatCommand("r", ClientID);
-	SendRemoveChatCommand("team", ClientID);
-	SendRemoveChatCommand("w", ClientID);
-	SendRemoveChatCommand("whisper", ClientID);
-
-	// send our commands
-	for(int i = 0; i < m_CommandManager.CommandCount(); i++)
-		SendChatCommand(m_CommandManager.GetCommand(i), ClientID);
-}
-
 void CCommandProcessor::AddCommand(const char* pName, const char* pParams, IConsole::FCommandCallback pfnFunc, void* pUser, const char* pHelp)
 {
 	GS()->Console()->Register(pName, pParams, CFGFLAG_CHAT, pfnFunc, pUser, pHelp);
@@ -372,42 +355,4 @@ void CCommandProcessor::LastChat(CPlayer *pPlayer)
 {
 	if(pPlayer->m_aPlayerTick[TickState::LastChat] + GS()->Server()->TickSpeed() <= GS()->Server()->Tick())
 		pPlayer->m_aPlayerTick[TickState::LastChat] = GS()->Server()->Tick();
-}
-
-void CCommandProcessor::NewCommandHook(const CCommandManager::CCommand* pCommand, void* pContext)
-{
-	CCommandProcessor* pSelf = (CCommandProcessor*)pContext;
-	pSelf->SendChatCommand(pCommand, -1);
-}
-
-void CCommandProcessor::RemoveCommandHook(const CCommandManager::CCommand* pCommand, void* pContext)
-{
-	CCommandProcessor* pSelf = (CCommandProcessor*)pContext;
-	pSelf->SendRemoveChatCommand(pCommand, -1);
-}
-
-void CCommandProcessor::SendChatCommand(const CCommandManager::CCommand* pCommand, int ClientID)
-{
-	CNetMsg_Sv_CommandInfo Msg;
-	Msg.m_Name = pCommand->m_aName;
-	Msg.m_HelpText = pCommand->m_aHelpText;
-	Msg.m_ArgsFormat = pCommand->m_aArgsFormat;
-
-	m_pGS->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-void CCommandProcessor::SendRemoveChatCommand(const CCommandManager::CCommand* pCommand, int ClientID)
-{
-	CNetMsg_Sv_CommandInfoRemove Msg;
-	Msg.m_Name = pCommand->m_aName;
-
-	m_pGS->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-void CCommandProcessor::SendRemoveChatCommand(const char* pCommand, int ClientID)
-{
-	CNetMsg_Sv_CommandInfoRemove Msg;
-	Msg.m_Name = pCommand;
-
-	m_pGS->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }

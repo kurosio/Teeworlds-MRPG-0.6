@@ -23,7 +23,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	vec2 At;
 	CCharacter *pOwnerChar = GS()->GetPlayerChar(m_Owner);
 	CCharacter *pHit = GS()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
-	if(!pHit || pHit->m_Core.m_NoCollision)
+	if(!pHit || pHit->m_Core.m_CollisionDisabled)
 		return false;
 
 	m_From = From;

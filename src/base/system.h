@@ -1335,20 +1335,66 @@ const char *str_find_nocase(const char *haystack, const char *needle);
 */
 const char *str_find(const char *haystack, const char *needle);
 
+
 /*
 	Function: str_hex
-		Takes a datablock and generates a hexstring of it.
-
+		Takes a datablock and generates a hex string of it, with spaces
+		between bytes.
 	Parameters:
 		dst - Buffer to fill with hex data
 		dst_size - size of the buffer
 		data - Data to turn into hex
 		data - Size of the data
-
 	Remarks:
-		- The desination buffer will be zero-terminated
+		- The destination buffer will be zero-terminated
 */
 void str_hex(char *dst, int dst_size, const void *data, int data_size);
+
+/*
+	Function: str_hex_decode
+		Takes a hex string *without spaces between bytes* and returns a
+		byte array.
+	Parameters:
+		dst - Buffer for the byte array
+		dst_size - size of the buffer
+		data - String to decode
+	Returns:
+		2 - String doesn't exactly fit the buffer
+		1 - Invalid character in string
+		0 - Success
+	Remarks:
+		- The contents of the buffer is only valid on success
+*/
+int str_hex_decode(void *dst, int dst_size, const char *src);
+
+/*
+	Function: str_base64
+		Takes a datablock and generates the base64 encoding of it.
+	Parameters:
+		dst - Buffer to fill with base64 data
+		dst_size - Size of the buffer
+		data - Data to turn into base64
+		data - Size of the data
+	Remarks:
+		- The destination buffer will be zero-terminated
+*/
+void str_base64(char *dst, int dst_size, const void *data, int data_size);
+
+/*
+	Function: str_base64_decode
+		Takes a base64 string without any whitespace and correct
+		padding and returns a byte array.
+	Parameters:
+		dst - Buffer for the byte array
+		dst_size - Size of the buffer
+		data - String to decode
+	Returns:
+		<0 - Error
+		>= 0 - Success, length of the resulting byte buffer
+	Remarks:
+		- The contents of the buffer is only valid on success
+*/
+int str_base64_decode(void *dst, int dst_size, const char *data);
 
 /*
 	Function: str_is_number
@@ -1911,6 +1957,67 @@ void secure_random_fill(void *bytes, unsigned length);
 		- The token is always null-terminated.
 */
 const char *str_next_token(const char *str, const char *delim, char *buffer, int buffer_size);
+
+/*
+	Function: str_in_list
+		Checks if needle is in list delimited by delim
+
+	Parameters:
+		list - List
+		delim - List delimiter.
+		needle - Item that is being looked for.
+
+	Returns:
+		1 - Item is in list.
+		0 - Item isn't in list.
+*/
+int str_in_list(const char *list, const char *delim, const char *needle);
+
+/*
+	Function: bytes_be_to_int
+		Packs 4 big endian bytes into an int
+
+	Returns:
+		The packed int
+
+	Remarks:
+		- Assumes the passed array is 4 bytes
+		- Assumes int is 4 bytes
+*/
+int bytes_be_to_int(const unsigned char *bytes);
+
+/*
+	Function: int_to_bytes_be
+		Packs an int into 4 big endian bytes
+
+	Remarks:
+		- Assumes the passed array is 4 bytes
+		- Assumes int is 4 bytes
+*/
+void int_to_bytes_be(unsigned char *bytes, int value);
+
+/*
+	Function: bytes_be_to_uint
+		Packs 4 big endian bytes into an unsigned
+
+	Returns:
+		The packed unsigned
+
+	Remarks:
+		- Assumes the passed array is 4 bytes
+		- Assumes unsigned is 4 bytes
+*/
+unsigned bytes_be_to_uint(const unsigned char *bytes);
+
+/*
+	Function: uint_to_bytes_be
+		Packs an unsigned into 4 big endian bytes
+
+	Remarks:
+		- Assumes the passed array is 4 bytes
+		- Assumes unsigned is 4 bytes
+*/
+void uint_to_bytes_be(unsigned char *bytes, unsigned value);
 
 /*
 	Function: pid

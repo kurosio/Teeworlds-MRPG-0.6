@@ -31,7 +31,7 @@ void CPickup::Tick()
 		if(Server()->Tick() > m_SpawnTick)
 		{
 			m_SpawnTick = -1;
-			if(m_Type == PICKUP_GRENADE || m_Type == PICKUP_SHOTGUN || m_Type == PICKUP_LASER)
+			if(m_Type == POWERUP_ARMOR_GRENADE || m_Type == POWERUP_ARMOR_SHOTGUN || m_Type == POWERUP_ARMOR_LASER)
 				GS()->CreateSound(m_Pos, SOUND_WEAPON_SPAWN);
 		}
 		else
@@ -43,7 +43,7 @@ void CPickup::Tick()
 		return;
 
 	bool Picked = false;
-	if(m_Type == PICKUP_HEALTH)
+	if(m_Type == POWERUP_HEALTH)
 	{
 		const int RestoreHealth = translate_to_percent_rest(pChr->GetPlayer()->GetStartHealth(), 1);
 		if(pChr->IncreaseHealth(RestoreHealth))
@@ -52,7 +52,7 @@ void CPickup::Tick()
 			Picked = true;
 		}
 	}
-	else if(m_Type == PICKUP_ARMOR)
+	else if(m_Type == POWERUP_ARMOR)
 	{
 		const int RestoreMana = translate_to_percent_rest(pChr->GetPlayer()->GetStartMana(), 1);
 		if(pChr->IncreaseMana(RestoreMana))
@@ -61,7 +61,7 @@ void CPickup::Tick()
 			Picked = true;
 		}
 	}
-	else if(m_Type == PICKUP_SHOTGUN)
+	else if(m_Type == POWERUP_ARMOR_SHOTGUN)
 	{
 		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeCount(Stats::StAmmo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
@@ -71,7 +71,7 @@ void CPickup::Tick()
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
 		}
 	}
-	else if(m_Type == PICKUP_GRENADE)
+	else if(m_Type == POWERUP_ARMOR_GRENADE)
 	{
 		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeCount(Stats::StAmmo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
@@ -82,7 +82,7 @@ void CPickup::Tick()
 
 		}
 	}
-	else if(m_Type == PICKUP_LASER)
+	else if(m_Type == POWERUP_ARMOR_LASER)
 	{
 		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeCount(Stats::StAmmo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);

@@ -174,6 +174,7 @@ public:
 	bool IsClientReady(int ClientID) const override;
 	bool IsClientPlayer(int ClientID) const override;
 
+	int GetClientVersion(int ClientID) const;
 	const char *Version() const override;
 	const char *NetVersion() const override;
 
@@ -238,7 +239,6 @@ private:
 	void SendDayInfo(int ClientID);
 
 public:
-	bool IsMmoClient(int ClientID) const;
 	int GetWorldID() const { return m_WorldID; }
 	int GetDungeonID() const { return m_DungeonID; }
 	bool IsDungeon() const { return (m_DungeonID > 0); }

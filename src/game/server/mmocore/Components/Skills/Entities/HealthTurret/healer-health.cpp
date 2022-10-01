@@ -89,7 +89,7 @@ void CHealthHealer::Snap(int SnappingClient)
 
 		pObj->m_X = (int)VertexPos.x;
 		pObj->m_Y = (int)VertexPos.y;
-		pObj->m_Type = PICKUP_HEALTH;
+		pObj->m_Type = POWERUP_HEALTH;
 	}
 
 	CNetObj_Pickup *pObj = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
@@ -98,5 +98,5 @@ void CHealthHealer::Snap(int SnappingClient)
 
 	pObj->m_X = (int)m_Pos.x;
 	pObj->m_Y = (int)m_Pos.y;
-	pObj->m_Type = PICKUP_ARMOR;
+	pObj->m_Type = POWERUP_ARMOR;
 }

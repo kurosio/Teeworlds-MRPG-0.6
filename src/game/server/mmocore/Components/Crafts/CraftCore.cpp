@@ -175,7 +175,6 @@ void CCraftCore::CraftItem(CPlayer *pPlayer, int CraftID) const
 		return;
 	}
 
-	GS()->CreatePlayerSound(ClientID, SOUND_ITEM_SELL_BUY);
 	GS()->Chat(ClientID, "You crafted [{STR}x{VAL}].", PlayerCraftItem.Info().GetName(), CraftGetValue);
 	GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 }

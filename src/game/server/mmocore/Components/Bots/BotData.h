@@ -21,7 +21,7 @@ struct DialogData
 /************************************************************************/
 struct DataBotInfo
 {
-	char m_aNameBot[MAX_NAME_ARRAY_SIZE];
+	char m_aNameBot[MAX_NAME_LENGTH];
 	CTeeInfo m_TeeInfos;
 	int m_aEquipSlot[NUM_EQUIPPED];
 	bool m_aVisibleActive[MAX_PLAYERS];

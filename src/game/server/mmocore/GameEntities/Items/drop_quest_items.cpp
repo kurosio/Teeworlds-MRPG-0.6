@@ -80,7 +80,6 @@ void CDropQuestItem::Tick()
 		{
 			pPlayerItem.Add(1);
 			pOwnerPlayer->GetCharacter()->m_ReloadTimer = 0;
-			GS()->CreatePlayerSound(m_ClientID, SOUND_ITEM_PICKUP);
 			GS()->Chat(m_ClientID, "You pick {STR} for {STR}!", pPlayerItem.Info().GetName(), m_QuestBot.GetName());
 			GS()->m_World.DestroyEntity(this);
 			return;

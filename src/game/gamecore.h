@@ -302,10 +302,10 @@ public:
 	bool m_LeftWall;
 
 	// DDNet Character
-	//void ReadDDNet(const CNetObj_DDNetCharacter* pObjDDNet);
+	void ReadDDNet(const CNetObj_DDNetCharacter* pObjDDNet);
 	bool m_Solo;
 	bool m_Jetpack;
-	bool m_NoCollision;
+	bool m_CollisionDisabled;
 	bool m_NoHookable;
 	bool m_EndlessHook;
 	bool m_EndlessJump;
@@ -339,15 +339,15 @@ struct CInputCount
 
 inline CInputCount CountInput(int Prev, int Cur)
 {
-	CInputCount c = { 0, 0 };
+	CInputCount c = {0, 0};
 	Prev &= INPUT_STATE_MASK;
 	Cur &= INPUT_STATE_MASK;
 	int i = Prev;
 
-	while (i != Cur)
+	while(i != Cur)
 	{
 		i = (i + 1) & INPUT_STATE_MASK;
-		if (i & 1)
+		if(i & 1)
 			c.m_Presses++;
 		else
 			c.m_Releases++;

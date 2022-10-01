@@ -52,12 +52,12 @@ void CDropBonuses::Tick()
 	CCharacter *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 16.0f, CGameWorld::ENTTYPE_CHARACTER, 0);
 	if(pChar && pChar->GetPlayer() && !pChar->GetPlayer()->IsBot())
 	{
-		if(m_Type == PICKUP_HEALTH)
+		if(m_Type == POWERUP_HEALTH)
 		{
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);
 		}
 		// experience
-		if(m_Type == PICKUP_ARMOR)
+		if(m_Type == POWERUP_ARMOR)
 		{
 			pChar->GetPlayer()->AddExp(m_Value);
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_ARMOR);

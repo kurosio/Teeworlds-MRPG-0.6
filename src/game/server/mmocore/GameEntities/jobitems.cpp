@@ -134,8 +134,8 @@ int CJobItems::SwitchToObject(bool MmoItem) const
 	switch(m_Type)
 	{
 		default:
-		case JOB_ITEM_FARMING: return (MmoItem ? (int)MMO_PICKUP_PLANT : (int)PICKUP_HEALTH);
-		case JOB_ITEM_MINING: return (MmoItem ? (int)MMO_PICKUP_ORE : (int)PICKUP_ARMOR);
+		case JOB_ITEM_FARMING: return (int)POWERUP_HEALTH;
+		case JOB_ITEM_MINING: return (int)POWERUP_ARMOR;
 	}
 }
 

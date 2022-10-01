@@ -4,6 +4,8 @@
 #define ENGINE_SERVER_SERVER_H
 #include <engine/server.h>
 
+#include <engine/shared/uuid_manager.h>
+
 class CServer : public IServer
 {
 	class IConsole *m_pConsole;
@@ -30,14 +32,15 @@ public:
 		enum
 		{
 			STATE_EMPTY = 0,
+			STATE_PREAUTH,
 			STATE_AUTH,
 			STATE_CONNECTING,
 			STATE_READY,
 			STATE_INGAME,
 
-			SNAPRATE_INIT=0,
+			SNAPRATE_INIT = 0,
 			SNAPRATE_FULL,
-			SNAPRATE_RECOVER
+			SNAPRATE_RECOVER,
 		};
 
 		class CInput
@@ -61,8 +64,8 @@ public:
 		int m_CurrentInput;
 
 		// names update
-		char m_aName[MAX_NAME_ARRAY_SIZE];
-		char m_aClan[MAX_CLAN_ARRAY_SIZE];
+		char m_aName[MAX_NAME_LENGTH];
+		char m_aClan[MAX_CLAN_LENGTH];
 		char m_aLanguage[MAX_LANGUAGE_LENGTH];
 
 		int m_Version;
@@ -81,6 +84,14 @@ public:
 
 		int m_ClientVersion;
 		void Reset();
+
+		// DDRace
+		NETADDR m_Addr;
+		bool m_GotDDNetVersionPacket;
+		bool m_DDNetVersionSettled;
+		int m_DDNetVersion;
+		char m_aDDNetVersionStr[64];
+		CUuid m_ConnectionID;
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
@@ -137,9 +148,6 @@ public:
 	virtual void ChangeWorld(int ClientID, int NewWorldID);
 	virtual int GetClientWorldID(int ClientID);
 
-	virtual void SetClientProtocolVersion(int ClientID, int Version);
-	virtual int GetClientProtocolVersion(int ClientID);
-
 	virtual void SetClientLanguage(int ClientID, const char* pLanguage);
 	virtual const char* GetClientLanguage(int ClientID) const;
 	virtual const char* GetWorldName(int WorldID);
@@ -162,13 +170,15 @@ public:
 	bool IsAuthed(int ClientID) const override;
 	bool IsBanned(int ClientID) override;
 	bool IsEmpty(int ClientID) const override;
+	void SetClientDDNetVersion(int ClientID, int DDNetVersion) override;
 	int GetClientInfo(int ClientID, CClientInfo *pInfo) const override;
 	void GetClientAddr(int ClientID, char *pAddrStr, int Size) const override;
 	const char *ClientName(int ClientID) const override;
 	const char *ClientClan(int ClientID) const override;
 	int ClientCountry(int ClientID) const override;
 	bool ClientIngame(int ClientID) const override;
-
+	
+	int GetClientVersion(int ClientID) const override;
 	virtual int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1);
 
 	void DoSnapshot(int WorldID);

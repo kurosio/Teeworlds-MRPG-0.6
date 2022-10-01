@@ -84,7 +84,7 @@ void CCharacterCore::Reset()
 	// DDNet Character
 	m_Solo = false;
 	m_Jetpack = false;
-	m_NoCollision = false;
+	m_CollisionDisabled = false;
 	m_NoHookable = false;
 	m_EndlessHook = false;
 	m_EndlessJump = false;
@@ -271,7 +271,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 			for (int i = 0; i < MAX_CLIENTS; i++)
 			{
 				CCharacterCore* pCharCore = m_pWorld->m_apCharacters[i];
-				if (!pCharCore || pCharCore->m_NoCollision || m_WorldID != pCharCore->m_WorldID || pCharCore == this)
+				if (!pCharCore || pCharCore->m_CollisionDisabled || m_WorldID != pCharCore->m_WorldID || pCharCore == this)
 					continue;
 
 				vec2 ClosestPoint;
@@ -370,7 +370,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 		for (int i = 0; i < MAX_CLIENTS; i++)
 		{
 			CCharacterCore* pCharCore = m_pWorld->m_apCharacters[i];
-			if (!pCharCore || pCharCore->m_NoCollision || m_WorldID != pCharCore->m_WorldID || pCharCore == this)
+			if (!pCharCore || pCharCore->m_CollisionDisabled || m_WorldID != pCharCore->m_WorldID || pCharCore == this)
 				continue;
 
 			//player *p = (player*)ent;
@@ -385,8 +385,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 			{
 				vec2 Dir = normalize(m_Pos - pCharCore->m_Pos);
 
-				bool CanCollide = (!m_NoCollision || !pCharCore->m_NoCollision) && pTuningParams->m_PlayerCollision;
-
+				bool CanCollide = (m_Super || pCharCore->m_Super) || (!m_CollisionDisabled && !pCharCore->m_CollisionDisabled && pTuningParams->m_PlayerCollision);
 				if (CanCollide && Distance < PhysicalSize() * 1.25f && Distance > 0.0f)
 				{
 					float a = (PhysicalSize() * 1.45f - Distance);
@@ -458,8 +457,8 @@ void CCharacterCore::Move(CTuningParams* pTunningPrms)
 		m_LeftWall = true;
 
 	m_Vel.x = m_Vel.x * (1.0f / RampValue);
-
-	if (m_pWorld && (m_Super || (pTuningParams->m_PlayerCollision && !m_NoCollision && !m_Solo)))
+	
+	if(m_pWorld && (m_Super || (pTuningParams->m_PlayerCollision && !m_CollisionDisabled && !m_Solo)))
 	{
 		// check player collision
 		float Distance = distance(m_Pos, NewPos);
@@ -474,7 +473,9 @@ void CCharacterCore::Move(CTuningParams* pTunningPrms)
 				for (int p = 0; p < MAX_CLIENTS; p++)
 				{
 					CCharacterCore* pCharCore = m_pWorld->m_apCharacters[p];
-					if (!pCharCore || pCharCore->m_NoCollision || m_WorldID != pCharCore->m_WorldID || pCharCore == this)
+					if (!pCharCore || m_WorldID != pCharCore->m_WorldID || pCharCore == this)
+						continue;
+					if((!(pCharCore->m_Super || m_Super) && (m_Solo || pCharCore->m_Solo || pCharCore->m_CollisionDisabled)))
 						continue;
 
 					float D = distance(Pos, pCharCore->m_Pos);
@@ -531,19 +532,19 @@ void CCharacterCore::Read(const CNetObj_CharacterCore* pObjCore)
 	m_Direction = pObjCore->m_Direction;
 	m_Angle = pObjCore->m_Angle;
 }
-/*
-void CCharacterCore::ReadDDNet(const CNetObj_DDNetCharacter* pObjDDNet)
+
+void CCharacterCore::ReadDDNet(const CNetObj_DDNetCharacter *pObjDDNet)
 {
 	// Collision
 	m_Solo = pObjDDNet->m_Flags & CHARACTERFLAG_SOLO;
 	m_Jetpack = pObjDDNet->m_Flags & CHARACTERFLAG_JETPACK;
-	m_NoCollision = pObjDDNet->m_Flags & CHARACTERFLAG_NO_COLLISION;
-	m_NoHammerHit = pObjDDNet->m_Flags & CHARACTERFLAG_NO_HAMMER_HIT;
-	m_NoGrenadeHit = pObjDDNet->m_Flags & CHARACTERFLAG_NO_GRENADE_HIT;
-	m_NoLaserHit = pObjDDNet->m_Flags & CHARACTERFLAG_NO_LASER_HIT;
-	m_NoShotgunHit = pObjDDNet->m_Flags & CHARACTERFLAG_NO_SHOTGUN_HIT;
-	m_NoHookHit = pObjDDNet->m_Flags & CHARACTERFLAG_NO_HOOK;
-	m_Super = pObjDDNet->m_Flags & CHARACTERFLAG_SUPER;
+	m_CollisionDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_COLLISION_DISABLED;
+	//m_HammerHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_HAMMER_HIT_DISABLED;
+	//m_ShotgunHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_SHOTGUN_HIT_DISABLED;
+	//m_GrenadeHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_GRENADE_HIT_DISABLED;
+	//m_LaserHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_LASER_HIT_DISABLED;
+	//m_HookHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_HOOK_HIT_DISABLED;
+	//m_Super = pObjDDNet->m_Flags & CHARACTERFLAG_SUPER;
 
 	// Endless
 	m_EndlessHook = pObjDDNet->m_Flags & CHARACTERFLAG_ENDLESS_HOOK;
@@ -552,7 +553,7 @@ void CCharacterCore::ReadDDNet(const CNetObj_DDNetCharacter* pObjDDNet)
 	// Freeze
 	m_FreezeEnd = pObjDDNet->m_FreezeEnd;
 	m_DeepFrozen = pObjDDNet->m_FreezeEnd == -1;
-	m_LiveFrozen = (pObjDDNet->m_Flags & CHARACTERFLAG_NO_MOVEMENTS) != 0;
+	m_LiveFrozen = (pObjDDNet->m_Flags & CHARACTERFLAG_MOVEMENTS_DISABLED) != 0;
 
 	// Telegun
 	m_HasTelegunGrenade = pObjDDNet->m_Flags & CHARACTERFLAG_TELEGUN_GRENADE;
@@ -572,21 +573,21 @@ void CCharacterCore::ReadDDNet(const CNetObj_DDNetCharacter* pObjDDNet)
 
 	// Display Information
 	// We only accept the display information when it is received, which means it is not -1 in each case.
-	if (pObjDDNet->m_JumpedTotal != -1)
+	if(pObjDDNet->m_JumpedTotal != -1)
 	{
 		m_JumpedTotal = pObjDDNet->m_JumpedTotal;
 	}
-	if (pObjDDNet->m_NinjaActivationTick != -1)
+	if(pObjDDNet->m_NinjaActivationTick != -1)
 	{
 		m_Ninja.m_ActivationTick = pObjDDNet->m_NinjaActivationTick;
 	}
-	if (pObjDDNet->m_FreezeStart != -1)
+	if(pObjDDNet->m_FreezeStart != -1)
 	{
 		m_FreezeStart = pObjDDNet->m_FreezeStart;
 		m_IsInFreeze = pObjDDNet->m_Flags & CHARACTERFLAG_IN_FREEZE;
 	}
 }
-*/
+
 void CCharacterCore::Quantize()
 {
 	CNetObj_CharacterCore Core;

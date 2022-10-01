@@ -43,7 +43,6 @@ bool CDropItem::TakeItem(int ClientID)
 		return false;
 
 	// change of enchanted objects
-	GS()->CreatePlayerSound(ClientID, SOUND_ITEM_EQUIP);
 	CItemData &pPlayerDroppedItem = pPlayer->GetItem(m_DropItem.GetID());
 	if(pPlayerDroppedItem.m_Value > 0 && pPlayerDroppedItem.Info().IsEnchantable())
 	{
@@ -135,7 +134,8 @@ void CDropItem::Snap(int SnappingClient)
 	{
 		pPickup->m_X = (int)m_Pos.x;
 		pPickup->m_Y = (int)m_Pos.y;
-		pPickup->m_Type = PICKUP_GUN;
+		pPickup->m_Type = POWERUP_WEAPON;
+		pPickup->m_Subtype = WEAPON_GUN;
 	}
 
 	static const float Radius = 24.0f;

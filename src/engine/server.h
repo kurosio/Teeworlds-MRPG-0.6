@@ -19,6 +19,12 @@
 #define DC_DISCORD_INFO 431050
 #define DC_INVISIBLE_GRAY 3553599
 
+// When recording a demo on the server, the ClientID -1 is used
+enum
+{
+	SERVER_DEMO_CLIENT = -1
+};
+
 class IServer : public IInterface
 {
 	MACRO_INTERFACE("server", 0)
@@ -37,6 +43,10 @@ public:
 	{
 		const char *m_pName;
 		int m_Latency;
+		bool m_GotDDNetVersion;
+		int m_DDNetVersion;
+		const char *m_pDDNetVersionStr;
+		const CUuid *m_pConnectionID;
 	};
 
 	int Tick() const { return m_CurrentGameTick; }
@@ -47,8 +57,10 @@ public:
 	virtual int ClientCountry(int ClientID) const = 0;
 	virtual bool ClientIngame(int ClientID) const = 0;
 	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) const = 0;
+	virtual void SetClientDDNetVersion(int ClientID, int DDNetVersion) = 0;
 	virtual void GetClientAddr(int ClientID, char* pAddrStr, int Size) const = 0;
-
+	
+	virtual int GetClientVersion(int ClientID) const = 0;
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1) = 0;
 
 	template<class T>
@@ -100,9 +112,6 @@ public:
 	virtual void ChangeWorld(int ClientID, int NewWorldID) = 0;
 	virtual int GetClientWorldID(int ClientID) = 0;
 	virtual const char* GetWorldName(int WorldID) = 0;
-
-	virtual void SetClientProtocolVersion(int ClientID, int Version) = 0;
-	virtual int GetClientProtocolVersion(int ClientID) = 0;
 
 	virtual void SetClientLanguage(int ClientID, const char* pLanguage) = 0;
 	virtual const char* GetClientLanguage(int ClientID) const = 0;

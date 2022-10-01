@@ -125,6 +125,7 @@ public:
 	void KillCharacter(int Weapon = WEAPON_WORLD);
 	void OnDisconnect();
 	void OnDirectInput(CNetObj_PlayerInput *NewInput);
+	void OnPredictedEarlyInput(CNetObj_PlayerInput* pNewInput);
 	void OnPredictedInput(CNetObj_PlayerInput *NewInput) const;
 
 	int GetCID() const { return m_ClientID; }

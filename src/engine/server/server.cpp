@@ -16,6 +16,7 @@
 #include <engine/shared/network.h>
 #include <engine/shared/packer.h>
 #include <engine/shared/protocol.h>
+#include <engine/shared/protocol_ex.h>
 #include <engine/shared/snapshot.h>
 #include <mastersrv/mastersrv.h>
 #include "snapshot_ids_pool.h"
@@ -183,20 +184,6 @@ void CServer::SetClientScore(int ClientID, int Score)
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
 		return;
 	m_aClients[ClientID].m_Score = Score;
-}
-
-void CServer::SetClientProtocolVersion(int ClientID, int Version)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
-		return;
-	m_aClients[ClientID].m_ClientVersion = Version;
-}
-
-int CServer::GetClientProtocolVersion(int ClientID)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
-		return 0;
-	return m_aClients[ClientID].m_ClientVersion;
 }
 
 void CServer::SetClientLanguage(int ClientID, const char* pLanguage)
@@ -375,9 +362,45 @@ int CServer::GetClientInfo(int ClientID, CClientInfo *pInfo) const
 	{
 		pInfo->m_pName = m_aClients[ClientID].m_aName;
 		pInfo->m_Latency = m_aClients[ClientID].m_Latency;
+
+		pInfo->m_GotDDNetVersion = m_aClients[ClientID].m_DDNetVersionSettled;
+		pInfo->m_DDNetVersion = m_aClients[ClientID].m_DDNetVersion >= 0 ? m_aClients[ClientID].m_DDNetVersion : VERSION_VANILLA;
+		if(m_aClients[ClientID].m_GotDDNetVersionPacket)
+		{
+			pInfo->m_pConnectionID = &m_aClients[ClientID].m_ConnectionID;
+			pInfo->m_pDDNetVersionStr = m_aClients[ClientID].m_aDDNetVersionStr;
+		}
+		else
+		{
+			pInfo->m_pConnectionID = nullptr;
+			pInfo->m_pDDNetVersionStr = nullptr;
+		}
 		return 1;
 	}
 	return 0;
+}
+
+void CServer::SetClientDDNetVersion(int ClientID, int DDNetVersion)
+{
+	dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "ClientID is not valid");
+
+	if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
+	{
+		m_aClients[ClientID].m_DDNetVersion = DDNetVersion;
+		m_aClients[ClientID].m_DDNetVersionSettled = true;
+	}
+}
+
+int CServer::GetClientVersion(int ClientID) const
+{
+	// Assume latest client version for server demos
+	if(ClientID == SERVER_DEMO_CLIENT)
+		return CLIENT_VERSIONNR;
+
+	CClientInfo Info;
+	if(GetClientInfo(ClientID, &Info))
+		return Info.m_DDNetVersion;
+	return VERSION_NONE;
 }
 
 void CServer::GetClientAddr(int ClientID, char *pAddrStr, int Size) const
@@ -451,8 +474,20 @@ void CServer::InitRconPasswordIfUnset()
 
 static inline bool RepackMsg(const CMsgPacker* pMsg, CPacker& Packer)
 {
+	int MsgId = pMsg->m_MsgID;
 	Packer.Reset();
+
+	if(MsgId < OFFSET_UUID)
+	{
+		Packer.AddInt((MsgId << 1) | (pMsg->m_System ? 1 : 0));
+	}
+	else
+	{
+		Packer.AddInt((0 << 1) | (pMsg->m_System ? 1 : 0)); // NETMSG_EX, NETMSGTYPE_EX
+		g_UuidManager.PackUuid(MsgId, &Packer);
+	}
 	Packer.AddRaw(pMsg->Data(), pMsg->Size());
+
 	return false;
 }
 
@@ -544,37 +579,32 @@ void CServer::DoSnapshot(int WorldID)
 			continue;
 
 		{
-			char aData[CSnapshot::MAX_SIZE];
-			CSnapshot *pData = (CSnapshot*)aData;	// Fix compiler warning for strict-aliasing
-			char aDeltaData[CSnapshot::MAX_SIZE];
-			char aCompData[CSnapshot::MAX_SIZE];
-			int SnapshotSize;
-			int Crc;
-			static CSnapshot EmptySnap;
-			CSnapshot *pDeltashot = &EmptySnap;
-			int DeltashotSize;
-			int DeltaTick = -1;
-			int DeltaSize;
-
 			m_SnapshotBuilder.Init();
+				
 			GameServer(WorldID)->OnSnap(i);
 
 			// finish snapshot
-			SnapshotSize = m_SnapshotBuilder.Finish(pData);
-			Crc = pData->Crc();
+			char aData[CSnapshot::MAX_SIZE];
+			CSnapshot *pData = (CSnapshot *)aData; // Fix compiler warning for strict-aliasing
+			int SnapshotSize = m_SnapshotBuilder.Finish(pData);
 
-			// remove old snapshos
+			int Crc = pData->Crc();
+
+			// remove old snapshots
 			// keep 3 seconds worth of snapshots
 			m_aClients[i].m_Snapshots.PurgeUntil(m_CurrentGameTick - SERVER_TICK_SPEED * 3);
 
-			// save it the snapshot
-			m_aClients[i].m_Snapshots.Add(m_CurrentGameTick, time_get(), SnapshotSize, pData, 0);
+			// save the snapshot
+			m_aClients[i].m_Snapshots.Add(m_CurrentGameTick, time_get(), SnapshotSize, pData, 0, nullptr);
 
-			// find snapshot that we can preform delta against
-			EmptySnap.Clear();
+			// find snapshot that we can perform delta against
+			static CSnapshot s_EmptySnap;
+			s_EmptySnap.Clear();
 
+			int DeltaTick = -1;
+			CSnapshot *pDeltashot = &s_EmptySnap;
 			{
-				DeltashotSize = m_aClients[i].m_Snapshots.Get(m_aClients[i].m_LastAckedSnapshot, 0, &pDeltashot, 0);
+				int DeltashotSize = m_aClients[i].m_Snapshots.Get(m_aClients[i].m_LastAckedSnapshot, 0, &pDeltashot, 0);
 				if(DeltashotSize >= 0)
 					DeltaTick = m_aClients[i].m_LastAckedSnapshot;
 				else
@@ -586,16 +616,15 @@ void CServer::DoSnapshot(int WorldID)
 			}
 
 			// create delta
-			DeltaSize = m_SnapshotDelta.CreateDelta(pDeltashot, pData, aDeltaData);
-
-			if(DeltaSize)
+			char aDeltaData[CSnapshot::MAX_SIZE];
+			if(int DeltaSize = m_SnapshotDelta.CreateDelta(pDeltashot, pData, aDeltaData))
 			{
 				// compress it
 				const int MaxSize = MAX_SNAPSHOT_PACKSIZE;
-				int NumPackets;
 
+				char aCompData[CSnapshot::MAX_SIZE];
 				SnapshotSize = CVariableInt::Compress(aDeltaData, DeltaSize, aCompData, sizeof(aCompData));
-				NumPackets = (SnapshotSize+MaxSize-1)/MaxSize;
+				int NumPackets = (SnapshotSize + MaxSize - 1) / MaxSize;
 
 				for(int n = 0, Left = SnapshotSize; Left > 0; n++)
 				{
@@ -606,23 +635,23 @@ void CServer::DoSnapshot(int WorldID)
 					{
 						CMsgPacker Msg(NETMSG_SNAPSINGLE, true);
 						Msg.AddInt(m_CurrentGameTick);
-						Msg.AddInt(m_CurrentGameTick-DeltaTick);
+						Msg.AddInt(m_CurrentGameTick - DeltaTick);
 						Msg.AddInt(Crc);
 						Msg.AddInt(Chunk);
-						Msg.AddRaw(&aCompData[n*MaxSize], Chunk);
-						SendMsg(&Msg, MSGFLAG_FLUSH, i, -1, WorldID);
+						Msg.AddRaw(&aCompData[n * MaxSize], Chunk);
+						SendMsg(&Msg, MSGFLAG_FLUSH, i);
 					}
 					else
 					{
 						CMsgPacker Msg(NETMSG_SNAP, true);
 						Msg.AddInt(m_CurrentGameTick);
-						Msg.AddInt(m_CurrentGameTick-DeltaTick);
+						Msg.AddInt(m_CurrentGameTick - DeltaTick);
 						Msg.AddInt(NumPackets);
 						Msg.AddInt(n);
 						Msg.AddInt(Crc);
 						Msg.AddInt(Chunk);
-						Msg.AddRaw(&aCompData[n*MaxSize], Chunk);
-						SendMsg(&Msg, MSGFLAG_FLUSH, i, -1, WorldID);
+						Msg.AddRaw(&aCompData[n * MaxSize], Chunk);
+						SendMsg(&Msg, MSGFLAG_FLUSH, i);
 					}
 				}
 			}
@@ -630,8 +659,8 @@ void CServer::DoSnapshot(int WorldID)
 			{
 				CMsgPacker Msg(NETMSG_SNAPEMPTY, true);
 				Msg.AddInt(m_CurrentGameTick);
-				Msg.AddInt(m_CurrentGameTick-DeltaTick);
-				SendMsg(&Msg, MSGFLAG_FLUSH, i, -1, WorldID);
+				Msg.AddInt(m_CurrentGameTick - DeltaTick);
+				SendMsg(&Msg, MSGFLAG_FLUSH, i);
 			}
 		}
 	}
@@ -657,6 +686,12 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_ChangeMap = false;
 	pThis->m_aClients[ClientID].m_ClientVersion = 0;
 	pThis->m_aClients[ClientID].m_Quitting = false;
+	
+	pThis->m_aClients[ClientID].m_DDNetVersion = VERSION_NONE;
+	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
+	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
+	mem_zero(&pThis->m_aClients[ClientID].m_Addr, sizeof(NETADDR));
+
 	pThis->m_aClients[ClientID].Reset();
 	return 0;
 }
@@ -740,22 +775,23 @@ void CServer::SendMapData(int ClientID, int Chunk)
 
 void CServer::SendMap(int ClientID)
 {
-	/*
+	const int WorldID = m_aClients[ClientID].m_WorldID;
+	const char* pWorldName = MultiWorlds()->GetWorld(WorldID)->m_aName;
+	IEngineMap* pMap = MultiWorlds()->GetWorld(WorldID)->m_pLoadedMap;
+	const unsigned Crc = pMap->Crc();
+
 	{
 		SHA256_DIGEST Sha256 = pMap->Sha256();
 		CMsgPacker Msg(NETMSG_MAP_DETAILS, true);
-		Msg.AddString(pWorldName, 0);
+		Msg.AddString("SOSOSO", 0);
 		Msg.AddRaw(&Sha256.data, sizeof(Sha256.data));
 		Msg.AddInt(Crc);
 		Msg.AddInt(pMap->GetCurrentMapSize());
+		Msg.AddString("", 0); // HTTPS map download URL
 		SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 	}
-	*/
+
 	{
-		const int WorldID = m_aClients[ClientID].m_WorldID;
-		const char* pWorldName = MultiWorlds()->GetWorld(WorldID)->m_aName;
-		IEngineMap* pMap = MultiWorlds()->GetWorld(WorldID)->m_pLoadedMap;
-		const unsigned Crc = pMap->Crc();
 
 		CMsgPacker Msg(NETMSG_MAP_CHANGE, true);
 		Msg.AddString(pWorldName, 0);
@@ -841,19 +877,47 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 	int ClientID = pPacket->m_ClientID;
 	CUnpacker Unpacker;
 	Unpacker.Reset(pPacket->m_pData, pPacket->m_DataSize);
+	CMsgPacker Packer(NETMSG_EX, true);
 
 	// unpack msgid and system flag
-	int MsgID = Unpacker.GetInt();
-	int Sys = MsgID & 1;
-	MsgID >>= 1;
+	int MsgID;
+	bool Sys;
+	CUuid Uuid;
 
-	if (Unpacker.Error())
+	int Result = UnpackMessageID(&MsgID, &Sys, &Uuid, &Unpacker, &Packer);
+	if(Result == UNPACKMESSAGE_ERROR)
+	{
 		return;
+	}
+	
+	if(Result == UNPACKMESSAGE_ANSWER)
+	{
+		SendMsg(&Packer, MSGFLAG_VITAL, ClientID);
+	}
 
 	if(Sys)
 	{
 		// system message
-		if(MsgID == NETMSG_INFO)
+		if(MsgID == NETMSG_CLIENTVER)
+		{
+			if((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_PREAUTH)
+			{
+				CUuid *pConnectionID = (CUuid *)Unpacker.GetRaw(sizeof(*pConnectionID));
+				int DDNetVersion = Unpacker.GetInt();
+				const char *pDDNetVersionStr = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+				if(Unpacker.Error() || !str_utf8_check(pDDNetVersionStr) || DDNetVersion < 0)
+				{
+					return;
+				}
+				m_aClients[ClientID].m_ConnectionID = *pConnectionID;
+				m_aClients[ClientID].m_DDNetVersion = DDNetVersion;
+				str_copy(m_aClients[ClientID].m_aDDNetVersionStr, pDDNetVersionStr, sizeof(m_aClients[ClientID].m_aDDNetVersionStr));
+				m_aClients[ClientID].m_DDNetVersionSettled = true;
+				m_aClients[ClientID].m_GotDDNetVersionPacket = true;
+				m_aClients[ClientID].m_State = CClient::STATE_AUTH;
+			}
+		}
+		else if(MsgID == NETMSG_INFO)
 		{
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_AUTH)
 			{
@@ -1790,8 +1854,8 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			{
 				const char *pAuthStr = pThis->m_aClients[i].m_Authed == AUTHED_ADMIN ? "(Admin)" :
 										pThis->m_aClients[i].m_Authed == AUTHED_MOD ? "(Mod)" : "";
-				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s client=%x name='%s' score=%d %s", i, aAddrStr,
-					pThis->m_aClients[i].m_Version, pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_Score, pAuthStr);
+				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s client=%d name='%s' score=%d %s", i, aAddrStr,
+					pThis->m_aClients[i].m_DDNetVersion, pThis->m_aClients[i].m_aName, pThis->m_aClients[i].m_Score, pAuthStr);
 			}
 			else
 				str_format(aBuf, sizeof(aBuf), "id=%d addr=%s connecting", i, aAddrStr);
