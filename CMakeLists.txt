@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.16...3.19.1)
 
 # Set project version from version.h
-file(STRINGS src/game/version.h VERSION_LINE LIMIT_COUNT 1 REGEX GAME_RELEASE_VERSION)
+file(STRINGS src/game/version.h VERSION_LINE LIMIT_COUNT 1 REGEX "^#define GAME_RELEASE_VERSION ")
 if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\"")
   project(mmoteeworlds VERSION ${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3})
+elseif(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\"")
+  project(mmoteeworlds VERSION ${CMAKE_MATCH_1}.${CMAKE_MATCH_2})
 else()
   message(FATAL_ERROR "Couldn't parse version from src/game/version.h")
 endif()
