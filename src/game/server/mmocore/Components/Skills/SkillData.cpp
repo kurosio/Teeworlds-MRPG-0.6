@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 
 #include "Entities/HealthTurret/healer-health.h"
-#include "Entities/NoctisTeleport/noctis-teleport.h"
+#include "Entities/AttackTeleport/attack-teleport.h"
 #include "Entities/SleepyGravity/sleepy-gravity.h"
 
 std::map < int, std::map < int, CSkillData > > CSkillData::ms_aSkills;
@@ -71,9 +71,9 @@ bool CSkillData::Use()
 		return true;
 	}
 
-	if(m_SkillID == Skill::SkillNoctisTeleport)
+	if(m_SkillID == Skill::SkillAttackTeleport)
 	{
-		new CNoctisTeleport(&GS()->m_World, PlayerPosition, pChr, GetBonus());
+		new CAttackTeleport(&GS()->m_World, PlayerPosition, pChr, GetBonus());
 		return true;
 	}
 

@@ -1,10 +1,10 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "noctis-teleport.h"
+#include "attack-teleport.h"
 
 #include <game/server/gamecontext.h>
 
-CNoctisTeleport::CNoctisTeleport(CGameWorld *pGameWorld, vec2 Pos, CCharacter* pPlayerChar, int SkillBonus)
+CAttackTeleport::CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CCharacter* pPlayerChar, int SkillBonus)
 : CEntity(pGameWorld, CGameWorld::ENTYPE_NOCTIS_TELEPORT, Pos, 28.0f)
 {
 	// transmitted arguments
@@ -15,14 +15,14 @@ CNoctisTeleport::CNoctisTeleport(CGameWorld *pGameWorld, vec2 Pos, CCharacter* p
 	GameWorld()->InsertEntity(this);
 }
 
-void CNoctisTeleport::Reset()
+void CAttackTeleport::Reset()
 {
 	GS()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 	GS()->m_World.DestroyEntity(this);
 	return;
 }
 
-void CNoctisTeleport::Tick()
+void CAttackTeleport::Tick()
 {
 	m_LifeSpan--;
 	if(!m_pPlayerChar || !m_pPlayerChar->IsAlive())
@@ -78,7 +78,7 @@ void CNoctisTeleport::Tick()
 	m_Pos += normalize(m_Direction) * 20.0f;
 }
 
-void CNoctisTeleport::Snap(int SnappingClient)
+void CAttackTeleport::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient))
 		return;
