@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "SkillDataInfo.h"
 
-std::map < int, CSkillDataInfo > CSkillDataInfo::ms_aSkillsData;
+CSkillDataInfo::SkillStores CSkillDataInfo::ms_aSkillsData;
 
 const char* CSkillDataInfo::GetControlEmoteStateName(int EmoticionID)
 {

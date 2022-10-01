@@ -227,9 +227,9 @@ int CAccountCore::GetRank(int AccountID)
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC");
 	while(pRes->next())
 	{
-		Rank++;
-		const int SelectedAccountID = pRes->getInt("ID");
-		if(AccountID == SelectedAccountID)
+		
+		const int ID = pRes->getInt("ID");
+		if(AccountID == ID)
 			return Rank;
 	}
 	return -1;
@@ -290,6 +290,7 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Here you can choose the language.");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Note: translation is not complete.");
 		GS()->AV(ClientID, "null");
+
 
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
 		GS()->AVH(ClientID, TAB_LANGUAGES, "Active language: [{STR}]", pPlayerLanguage);

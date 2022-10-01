@@ -91,7 +91,7 @@ enum Skill
 	SkillCraftDiscount = 3, // discount on crafting
 	SkillMasterWeapon = 4, // automatic gunfire
 	SkillBlessingGodWar = 5, // refill ammunition
-	SkillNoctisTeleport = 6, // ?knockout? teleport
+	SkillAttackTeleport = 6, // ?knockout? teleport
 };
 
 enum AtributType
@@ -343,17 +343,6 @@ enum DayType
 	DAY_TYPE,
 	MORNING_TYPE,
 	EVENING_TYPE
-};
-
-enum
-{
-	TEXTEFFECT_FLAG_BASIC = 1 << 1,
-	TEXTEFFECT_FLAG_DAMAGE = 1 << 2,
-	TEXTEFFECT_FLAG_CRIT_DAMAGE = 1 << 3,
-	TEXTEFFECT_FLAG_MISS = 1 << 4,
-	TEXTEFFECT_FLAG_POTION = 1 << 5,
-	TEXTEFFECT_FLAG_ADDING = 1 << 6,
-	TEXTEFFECT_FLAG_REMOVING = 1 << 7,
 };
 
 /*

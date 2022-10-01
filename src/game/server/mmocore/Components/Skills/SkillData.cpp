@@ -35,7 +35,7 @@ bool CSkillData::Use()
 
 	// mana check
 	CCharacter* pChr = m_pPlayer->GetCharacter();
-	const int PriceMana = translate_to_percent_rest(m_pPlayer->GetStartMana(), Info().m_ManaPercentageCost);
+	const int PriceMana = translate_to_percent_rest(m_pPlayer->GetStartMana(), Info()->GetManaPercentageCost());
 	if(PriceMana > 0 && pChr->CheckFailMana(PriceMana))
 		return false;
 
@@ -104,10 +104,10 @@ bool CSkillData::Use()
 
 bool CSkillData::Upgrade()
 {
-	if(!m_pPlayer || !m_pPlayer->IsAuthed() || m_Level >= Info().m_MaxLevel)
+	if(!m_pPlayer || !m_pPlayer->IsAuthed() || m_Level >= Info()->GetMaxLevel())
 		return false;
 
-	if(!m_pPlayer->SpendCurrency(Info().m_PriceSP, itSkillPoint))
+	if(!m_pPlayer->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
 		return false;
 
 	const int ClientID = m_pPlayer->GetCID();
@@ -116,13 +116,13 @@ bool CSkillData::Upgrade()
 	{
 		m_Level++;
 		Sqlpool.Execute<DB::UPDATE>("tw_accounts_skills", "Level = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_Level, m_SkillID, m_pPlayer->Acc().m_UserID);
-		GS()->Chat(ClientID, "Increased the skill [{STR} level to {INT}]", Info().m_aName, m_Level);
+		GS()->Chat(ClientID, "Increased the skill [{STR} level to {INT}]", Info()->GetName(), m_Level);
 		return true;
 	}
 
 	m_Level = 1;
 	m_SelectedEmoticion = -1;
 	Sqlpool.Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('%d', '%d', '1');", m_SkillID, m_pPlayer->Acc().m_UserID);
-	GS()->Chat(ClientID, "Learned a new skill [{STR}]", Info().m_aName);
+	GS()->Chat(ClientID, "Learned a new skill [{STR}]", Info()->GetName());
 	return true;
 }

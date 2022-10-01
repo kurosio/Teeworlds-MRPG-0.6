@@ -557,11 +557,11 @@ CItemData& CPlayer::GetItem(int ItemID)
 	return CItemData::ms_aItems[m_ClientID][ItemID];
 }
 
-CSkillData& CPlayer::GetSkill(int SkillID)
+CSkillData* CPlayer::GetSkill(int SkillID)
 {
 	CSkillData::ms_aSkills[m_ClientID][SkillID].m_SkillID = SkillID;
 	CSkillData::ms_aSkills[m_ClientID][SkillID].SetSkillOwner(this);
-	return CSkillData::ms_aSkills[m_ClientID][SkillID];
+	return &CSkillData::ms_aSkills[m_ClientID][SkillID];
 }
 
 CQuestData& CPlayer::GetQuest(int QuestID)

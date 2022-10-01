@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Сен 30 2022 г., 22:34
+-- Время создания: Окт 01 2022 г., 10:56
 -- Версия сервера: 10.4.24-MariaDB
 -- Версия PHP: 8.1.5
 
@@ -241,7 +241,7 @@ CREATE TABLE `tw_accounts` (
 --
 
 INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `RegisterDate`, `LoginDate`, `RegisteredIP`, `LoginIP`, `Language`) VALUES
-(1, 'kuro', '7dd4cd59370ae03ef3f73b0711cd702df5e1853bf97bf8705244c0c22d759db1', 'TYdfB9M75CLUNGkPCm6PF46C', '2021-10-21 17:26:48', '2022-10-01 03:03:58', '192.168.56.1', '192.168.0.10', 'ru'),
+(1, 'kuro', '7dd4cd59370ae03ef3f73b0711cd702df5e1853bf97bf8705244c0c22d759db1', 'TYdfB9M75CLUNGkPCm6PF46C', '2021-10-21 17:26:48', '2022-10-01 15:49:57', '192.168.56.1', '192.168.0.10', 'ru'),
 (2, 'kuro', 'bc5905cfaa9e0188814fa2a56ecd6a998a4d39c6345ff9bff296bd5086dee93e', 'g8KmHG6T72CGXjRnn2CBq7Zt', '2021-11-04 08:38:30', '2021-11-04 23:23:59', '192.168.9.2', '192.168.42.35', 'ru'),
 (3, 'kuro', 'b46d7846dd83b73171009b49847825aa45abbb37071021d6b4219319a680ba27', 'eVE2pT8AbnS8Lc7AUMLtWRkS', '2021-11-04 12:43:33', '2021-11-04 21:18:05', '192.168.9.2', '192.168.9.2', 'ru'),
 (4, 'kuro', 'da6eee14f58fc11fefade37e6974b2fe18259a1619cffc84279a0d3fd0101d1b', 'Yhg56c79pk6LC97TZVjdbLVg', '2021-11-05 06:51:11', '2021-11-05 14:25:01', '192.168.9.2', '192.168.9.2', 'en'),
@@ -303,7 +303,7 @@ CREATE TABLE `tw_accounts_data` (
 --
 
 INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `Exp`, `GuildID`, `GuildDeposit`, `GuildRank`, `Upgrade`, `SpreadShotgun`, `SpreadGrenade`, `SpreadRifle`, `Dexterity`, `CriticalHit`, `DirectCriticalHit`, `Hardness`, `Tenacity`, `Lucky`, `Piety`, `Vampirism`, `AmmoRegen`, `Ammo`, `Efficiency`, `Extraction`) VALUES
-(1, 'kurosio', '571251558457540617', 11, 34, 13608, NULL, 0, NULL, 0, 7, 3, 5, 1, 0, 0, 10000, 0, 0, 0, 5000, 10000, 30, 0, 0),
+(1, 'kurosio', '571251558457540617', 11, 34, 13903, NULL, 0, NULL, 0, 7, 3, 5, 1, 0, 0, 10000, 0, 0, 0, 5000, 10000, 30, 0, 0),
 (2, 'kurosio1', 'null', 2, 3, 99, NULL, 0, NULL, 20, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (3, 'kurosio12', 'null', 0, 2, 2, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (4, 'kurosio44', 'null', 7, 4, 156, NULL, 0, NULL, 30, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -365,11 +365,11 @@ CREATE TABLE `tw_accounts_items` (
 --
 
 INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`, `Durability`, `UserID`) VALUES
-(1, 2, 1, 0, 0, 100, 1),
+(1, 2, 1, 1, 1, 100, 1),
 (2, 22, 2, 1, 0, 100, 1),
 (5, 3, 1, 1, 0, 100, 1),
-(6, 1, 11213, 0, 0, 100, 1),
-(10, 9, 9082, 0, 0, 100, 1),
+(6, 1, 11402, 0, 0, 100, 1),
+(10, 9, 9083, 0, 0, 100, 1),
 (14, 19, 1, 1, 0, 100, 1),
 (21, 18, 10097, 0, 0, 100, 1),
 (25, 17, 98, 0, 0, 100, 1),
@@ -379,8 +379,8 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (38, 23, 2, 0, 0, 100, 1),
 (39, 24, 7, 1, 0, 100, 1),
 (48, 21, 1, 0, 0, 100, 1),
-(49, 7, 1122, 0, 0, 100, 1),
-(55, 5, 1, 1, 0, 100, 1),
+(49, 7, 447, 0, 0, 100, 1),
+(55, 5, 1, 1, 1, 100, 1),
 (56, 6, 1, 0, 0, 100, 1),
 (57, 2, 1, 1, 0, 100, 2),
 (58, 22, 1, 1, 0, 100, 2),
@@ -426,7 +426,8 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (126, 22, 1, 1, 0, 100, 10),
 (127, 1, 1041, 0, 0, 100, 10),
 (147, 4, 1, 1, 10, 100, 1),
-(148, 20, 1, 1, 1, 100, 1);
+(148, 20, 1, 1, 1, 100, 1),
+(149, 25, 1, 0, 0, 100, 1);
 
 -- --------------------------------------------------------
 
@@ -899,7 +900,7 @@ CREATE TABLE `tw_items_list` (
   `Attribute0` int(11) DEFAULT NULL,
   `Attribute1` int(11) DEFAULT NULL,
   `AttributeValue0` int(11) NOT NULL DEFAULT 0,
-  `AttributeValue1` int(11) NOT NULL
+  `AttributeValue1` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
@@ -930,7 +931,8 @@ INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `I
 (21, 'Ticket reset class stats', 'Resets only class stats(Dps, Tank, Healer).', 1, 8, 10, 0, NULL, NULL, 0, 0),
 (22, 'Mode PVP', 'Settings game.', 5, 10, 0, 0, NULL, NULL, 0, 0),
 (23, 'Ticket reset weapon stats', 'Resets only ammo stats(Ammo).', 1, 8, 10, 0, NULL, NULL, 0, 0),
-(24, 'Blessing for discount craft', 'Need dress it, -20% craft price', 8, 8, 10, 0, NULL, NULL, 0, 0);
+(24, 'Blessing for discount craft', 'Need dress it, -20% craft price', 8, 8, 10, 0, NULL, NULL, 0, 0),
+(25, 'Show equipment description', 'Settings game.', 5, 10, 0, 0, NULL, NULL, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -1025,7 +1027,7 @@ INSERT INTO `tw_skills_list` (`ID`, `Name`, `Description`, `Type`, `BonusName`, 
 (3, 'Craft Discount', 'Will give discount on the price of craft items', 0, '% discount gold for craft item', 1, 0, 28, 50, 1),
 (4, 'Proficiency with weapons', 'You can perform an automatic fire', 0, 'can perform an auto fire with all types of weapons', 1, 0, 120, 1, 1),
 (5, 'Blessing of God of war', 'The blessing restores ammo', 3, '% recovers ammo within a radius of 800', 25, 50, 28, 4, 0),
-(6, 'Noctis Lucis Attack Teleport', 'An attacking teleport that deals damage to all mobs radius', 2, '% your strength', 25, 10, 100, 4, 0);
+(6, 'Attack Teleport', 'An attacking teleport that deals damage to all mobs radius', 2, '% your strength', 25, 10, 100, 4, 0);
 
 -- --------------------------------------------------------
 
@@ -1575,7 +1577,7 @@ ALTER TABLE `tw_accounts_data`
 -- AUTO_INCREMENT для таблицы `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=149;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=150;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
@@ -1701,7 +1703,7 @@ ALTER TABLE `tw_houses_decorations`
 -- AUTO_INCREMENT для таблицы `tw_items_list`
 --
 ALTER TABLE `tw_items_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_logics_worlds`

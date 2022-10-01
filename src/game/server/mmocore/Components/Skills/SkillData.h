@@ -6,25 +6,30 @@
 
 class CSkillData
 {
+	friend class CSkillsCore;
+
+	int m_Level;
+
 	class CGS* m_pGS;
 	class CPlayer* m_pPlayer;
 	CGS* GS() const { return m_pGS; }
 
 public:
 	int m_SkillID;
-	int m_Level;
 	int m_SelectedEmoticion;
 
-	CSkillDataInfo& Info() const { return CSkillDataInfo::ms_aSkillsData[m_SkillID]; };
-	void SetSkillOwner(CPlayer* pPlayer);
 	int GetID() const { return m_SkillID; }
-	int GetBonus() const { return m_Level * Info().m_BonusValue; };
+	int GetBonus() const { return m_Level * Info()->GetBonusDefault(); }
 	bool IsLearned() const { return m_Level > 0; }
-	const char* GetControlEmoteStateName() const { return Info().GetControlEmoteStateName(m_SelectedEmoticion); }
+	int GetLevel() const { return m_Level; }
+	const char* GetControlEmoteStateName() const { return Info()->GetControlEmoteStateName(m_SelectedEmoticion); }
 
 	void SelectNextControlEmote();
 	bool Upgrade();
 	bool Use();
+
+	void SetSkillOwner(CPlayer* pPlayer);
+	CSkillDataInfo* Info() const { return &CSkillDataInfo::ms_aSkillsData[m_SkillID]; };
 
 	static std::map< int, std::map < int, CSkillData > > ms_aSkills;
 };

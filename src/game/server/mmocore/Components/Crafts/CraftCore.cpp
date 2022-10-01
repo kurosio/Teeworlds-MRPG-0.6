@@ -58,7 +58,7 @@ int CCraftCore::GetFinalPrice(CPlayer* pPlayer, int CraftID) const
 	if(!pPlayer)
 		return CCraftData::ms_aCraft[CraftID].m_Price;
 
-	int Discount = translate_to_percent_rest(CCraftData::ms_aCraft[CraftID].m_Price, pPlayer->GetSkill(SkillCraftDiscount).m_Level);
+	int Discount = translate_to_percent_rest(CCraftData::ms_aCraft[CraftID].m_Price, pPlayer->GetSkill(SkillCraftDiscount)->GetLevel());
 	if(pPlayer->GetItem(itTicketDiscountCraft).IsEquipped())
 		Discount += translate_to_percent_rest(CCraftData::ms_aCraft[CraftID].m_Price, 20);
 

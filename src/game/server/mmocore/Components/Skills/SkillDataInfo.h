@@ -15,18 +15,35 @@ enum
 class CSkillDataInfo
 {
 public:
+	typedef std::map< int, CSkillDataInfo > SkillStores;
+
+private:
+	friend class CSkillsCore;
+
 	char m_aName[32];
 	char m_aDesc[64];
 	char m_aBonusName[64];
-	int m_BonusValue;
+	int m_BonusDefault;
 	int m_Type;
 	int m_ManaPercentageCost;
 	int m_PriceSP;
 	int m_MaxLevel;
 	bool m_Passive;
 
+public:
+	const char* GetName() const { return m_aName; }
+	const char* GetDesc() const { return m_aDesc; }
+	const char* GetBonusName() const { return m_aBonusName; }
+	int GetPriceSP() const { return m_PriceSP; }
+	int GetManaPercentageCost() const { return m_ManaPercentageCost; }
+	int GetBonusDefault() const { return m_BonusDefault; }
+	int GetMaxLevel() const { return m_MaxLevel; }
+
+	bool IsPassive() const { return m_Passive; }
+
 	static const char* GetControlEmoteStateName(int EmoticionID);
-	static std::map< int, CSkillDataInfo > ms_aSkillsData;
+	
+	static SkillStores ms_aSkillsData;
 };
 
 #endif

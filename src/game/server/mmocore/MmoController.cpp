@@ -379,9 +379,9 @@ void MmoController::ConSyncLinesForTranslate()
 		}
 		for(auto& pItem : CSkillDataInfo::ms_aSkillsData)
 		{
-			PushingDialogs(JsonData, pItem.second.m_aName, "sknm", pItem.first);
-			PushingDialogs(JsonData, pItem.second.m_aDesc, "skds", pItem.first);
-			PushingDialogs(JsonData, pItem.second.m_aBonusName, "skbn", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetName(), "sknm", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetDesc(), "skds", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetBonusName(), "skbn", pItem.first);
 		}
 		for(auto& pItem : CQuestDataInfo::ms_aDataQuests)
 		{

@@ -243,7 +243,7 @@ void CCommandProcessor::ConChatUseSkill(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	const int SkillID = pResult->GetInteger(0);
-	pPlayer->GetSkill(SkillID).Use();
+	pPlayer->GetSkill(SkillID)->Use();
 }
 
 void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
