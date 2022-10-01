@@ -287,7 +287,6 @@ void IGameController::DoTeamChange(CPlayer *pPlayer, bool DoChatMsg)
 		return;
 
 	pPlayer->Acc().m_Team = Team;
-	GS()->SendTeam(ClientID, Team, DoChatMsg, -1);
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", ClientID, Server()->ClientName(ClientID), Team);

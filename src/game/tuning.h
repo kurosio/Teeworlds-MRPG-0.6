@@ -46,6 +46,18 @@ MACRO_TUNING_PARAM(PlayerCollision, player_collision, 1)
 MACRO_TUNING_PARAM(PlayerHooking, player_hooking, 1)
 
 // ddnet tuning
+MACRO_TUNING_PARAM(JetpackStrength, jetpack_strength, 400.0f)
+MACRO_TUNING_PARAM(ShotgunStrength, shotgun_strength, 10.0f)
+MACRO_TUNING_PARAM(ExplosionStrength, explosion_strength, 0.5f)
+MACRO_TUNING_PARAM(HammerStrength, hammer_strength, 1.0f)
 MACRO_TUNING_PARAM(HookDuration, hook_duration, 1.25f)
+
+MACRO_TUNING_PARAM(HammerFireDelay, hammer_fire_delay, 125)
+MACRO_TUNING_PARAM(GunFireDelay, gun_fire_delay, 125)
+MACRO_TUNING_PARAM(ShotgunFireDelay, shotgun_fire_delay, 500)
+MACRO_TUNING_PARAM(GrenadeFireDelay, grenade_fire_delay, 500)
+MACRO_TUNING_PARAM(LaserFireDelay, laser_fire_delay, 800)
+MACRO_TUNING_PARAM(NinjaFireDelay, ninja_fire_delay, 800)
+MACRO_TUNING_PARAM(HammerHitFireDelay, hammer_hit_fire_delay, 320)
 
 #endif

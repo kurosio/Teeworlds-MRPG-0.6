@@ -141,9 +141,7 @@ public:
 	void SendEmoticon(int ClientID, int Emoticon, bool SenderClient = false);
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendMotd(int ClientID);
-	void SendSettings(int ClientID);
 	void SendSkinChange(int ClientID, int TargetID);
-	void SendTeam(int ClientID, int Team, bool DoChatMsg, int TargetID);
 	void SendGameMsg(int GameMsgID, int ClientID);
 	void SendGameMsg(int GameMsgID, int ParaI1, int ClientID);
 	void SendGameMsg(int GameMsgID, int ParaI1, int ParaI2, int ParaI3, int ClientID);
@@ -194,7 +192,6 @@ private:
 	static void ConAddCharacter(IConsole::IResult *pResult, void *pUserData);
 	static void ConSyncLinesForTranslate(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainSettingUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	/* #########################################################################

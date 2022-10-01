@@ -178,22 +178,29 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 		pEvent->m_Y = (int)Pos.y;
 	}
 
+	// deal damage
 	CCharacter *apEnts[MAX_CLIENTS];
-	float Radius = 135.0f;
-	float InnerRadius = 48.0f;
-	const float MaxForce = 1.0f;
-	const int Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+	const float Radius = 135.0f;
+	const float InnerRadius = 48.0f;
+	const int Num = m_World.FindEntities(Pos, Radius, (CEntity **)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 	for(int i = 0; i < Num; i++)
 	{
 		vec2 Diff = apEnts[i]->GetPos() - Pos;
-		vec2 Force(0, MaxForce);
-		const float l = length(Diff);
-		if(l)
-			Force = normalize(Diff) * MaxForce;
-		const float Factor = 1 - clamp((l-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-		if ((int)(Factor * MaxDamage))
+		vec2 ForceDir(0, 1);
+		const float Length = length(Diff);
+		if(Length)
+			ForceDir = normalize(Diff) * 1.0f;
+
+		const float Factor = 1 - clamp((Length-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
+		if (const int Damage = (int)(Factor * MaxDamage))
 		{
-			apEnts[i]->TakeDamage(Force * Factor, (int)(Factor * MaxDamage), Owner, Weapon);
+			float Strength;
+			if(Owner == -1 || !m_apPlayers[Owner])
+				Strength = 0.5f;
+			else
+				Strength = m_apPlayers[Owner]->m_NextTuningParams.m_ExplosionStrength;
+			
+			apEnts[i]->TakeDamage(ForceDir * (Strength * Length), Damage, Owner, Weapon);
 		}
 	}
 }
@@ -630,10 +637,6 @@ void CGS::SendMotd(int ClientID)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
-void CGS::SendSettings(int ClientID)
-{
-}
-
 // Send a change of skin
 void CGS::SendSkinChange(int ClientID, int TargetID)
 {
@@ -650,16 +653,6 @@ void CGS::SendSkinChange(int ClientID, int TargetID)
 		Msg.m_aSkinPartColors[p] = pPlayer->Acc().m_aSkinPartColors[p];
 	}
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);*/
-}
-
-void CGS::SendTeam(int ClientID, int Team, bool DoChatMsg, int TargetID)
-{
-/*	CNetMsg_Sv_Team Msg;
-	Msg.m_ClientID = ClientID;
-	Msg.m_Team = Team;
-	Msg.m_Silent = DoChatMsg ? 0 : 1;
-	Msg.m_CooldownTick = 0;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, TargetID);*/
 }
 
 void CGS::SendGameMsg(int GameMsgID, int ClientID)
@@ -1108,7 +1101,6 @@ void CGS::OnClientConnected(int ClientID)
 	}
 
 	SendMotd(ClientID);
-	SendSettings(ClientID);
 	m_aBroadcastStates[ClientID] = {};
 }
 
@@ -1126,7 +1118,6 @@ void CGS::OnClientEnter(int ClientID)
 		Chat(-1, "{STR} entered and joined the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 
-		SendTeam(ClientID, TEAM_SPECTATORS, false, -1);
 		Chat(ClientID, "- - - - - - - [Welcome to MRPG] - - - - - - -");
 		Chat(ClientID, "You need to create an account, or log in if you already have.");
 		Chat(ClientID, "Register: \"/register <login> <pass>\"");
@@ -1364,16 +1355,6 @@ void CGS::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData,
 	{
 		CGS *pSelf = (CGS *)pUserData;
 		pSelf->SendMotd(-1);
-	}
-}
-
-void CGS::ConchainSettingUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
-{
-	pfnCallback(pResult, pCallbackUserData);
-	if(pResult->NumArguments())
-	{
-		CGS *pSelf = (CGS *)pUserData;
-		pSelf->SendSettings(-1);
 	}
 }
 
