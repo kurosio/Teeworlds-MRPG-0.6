@@ -306,7 +306,7 @@ public:
 	bool m_Solo;
 	bool m_Jetpack;
 	bool m_CollisionDisabled;
-	bool m_NoHookable;
+	bool m_HookHitDisabled;
 	bool m_EndlessHook;
 	bool m_EndlessJump;
 	bool m_NoHammerHit;

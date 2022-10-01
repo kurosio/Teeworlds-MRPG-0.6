@@ -85,7 +85,7 @@ void CCharacterCore::Reset()
 	m_Solo = false;
 	m_Jetpack = false;
 	m_CollisionDisabled = false;
-	m_NoHookable = false;
+	m_HookHitDisabled = false;
 	m_EndlessHook = false;
 	m_EndlessJump = false;
 	m_NoHammerHit = false;
@@ -279,7 +279,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 				{
 					if (distance(pCharCore->m_Pos, ClosestPoint) < PhysicalSize() + 2.0f)
 					{
-						if (!pCharCore->m_NoHookable)
+						if (!pCharCore->m_HookHitDisabled)
 						{
 							if (m_HookedPlayer == -1 || distance(m_HookPos, pCharCore->m_Pos) < Distance)
 							{

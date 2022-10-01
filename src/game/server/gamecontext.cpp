@@ -180,8 +180,8 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 
 	// deal damage
 	CCharacter *apEnts[MAX_CLIENTS];
-	const float Radius = 135.0f;
-	const float InnerRadius = 48.0f;
+	constexpr float Radius = 135.0f;
+	constexpr float InnerRadius = 48.0f;
 	const int Num = m_World.FindEntities(Pos, Radius, (CEntity **)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 	for(int i = 0; i < Num; i++)
 	{

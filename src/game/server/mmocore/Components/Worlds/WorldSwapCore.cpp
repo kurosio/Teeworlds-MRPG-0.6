@@ -52,13 +52,13 @@ bool CWorldSwapCore::OnHandleTile(CCharacter *pChr, int IndexCollision)
 	CPlayer *pPlayer = pChr->GetPlayer();
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_WORLD_SWAP))
 	{
-		pChr->m_Core.m_NoHookable = pChr->m_SkipDamage = true;
+		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = true;
 		ChangeWorld(pPlayer, pChr->m_Core.m_Pos);
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_WORLD_SWAP))
 	{
-		pChr->m_Core.m_NoHookable = pChr->m_SkipDamage = false;
+		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = false;
 		return true;
 	}
 	return false;

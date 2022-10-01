@@ -71,7 +71,7 @@ bool CAetherCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_AETHER_TELEPORT))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		pChr->m_Core.m_NoHookable = pChr->m_SkipDamage = true;
+		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = true;
 		UnlockLocation(pChr->GetPlayer(), pChr->m_Core.m_Pos);
 		GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
@@ -79,7 +79,7 @@ bool CAetherCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_AETHER_TELEPORT))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		pChr->m_Core.m_NoHookable = pChr->m_SkipDamage = false;
+		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = false;
 		GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}

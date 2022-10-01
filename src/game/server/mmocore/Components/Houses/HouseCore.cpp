@@ -63,14 +63,14 @@ bool CHouseCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLAYER_HOUSE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		pChr->m_Core.m_NoHookable = pChr->m_SkipDamage = true;
+		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = true;
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_PLAYER_HOUSE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		pChr->m_Core.m_NoHookable = pChr->m_SkipDamage = false;
+		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = false;
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
