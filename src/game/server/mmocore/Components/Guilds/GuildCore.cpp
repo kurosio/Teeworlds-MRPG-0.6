@@ -613,7 +613,7 @@ bool GuildCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: SELECT down your decorations");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "and press (Back to inventory).");
 
-		Job()->Item()->ListInventory(pPlayer, ItemType::TYPE_DECORATION);
+		Job()->Item()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
 		GS()->AV(ClientID, "null");
 		ShowDecorationList(pPlayer);
 		GS()->AddVotesBackpage(ClientID);

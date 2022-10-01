@@ -25,7 +25,8 @@ class CInventoryCore : public MmoComponent
 
 public:
 	// primary
-	void ListInventory(class CPlayer *pPlayer, int TypeList, bool SortedFunction = false);
+	void ListInventory(int ClientID, ItemType Type);
+	void ListInventory(int ClientID, ItemFunctional Type);
 	void ItemSelected(class CPlayer* pPlayer, const CItemData& pItemPlayer, bool Dress = false);
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, int ItemID) const;
 

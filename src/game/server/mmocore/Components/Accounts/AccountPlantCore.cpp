@@ -77,11 +77,7 @@ void CAccountPlantCore::ShowMenu(CPlayer* pPlayer) const
 
 void CAccountPlantCore::ShowPlantsItems(int ClientID) const
 {
-	CPlayer *pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
-
-	Job()->Item()->ListInventory(pPlayer, ItemFunctional::FUNCTION_PLANTS);
+	Job()->Item()->ListInventory(ClientID, ItemFunctional::FUNCTION_PLANTS);
 }
 
 void CAccountPlantCore::Work(CPlayer* pPlayer, int Level)

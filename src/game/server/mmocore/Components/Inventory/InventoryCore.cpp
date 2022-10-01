@@ -106,7 +106,7 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_OTHER);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_OTHER, TAB_INVENTORY_SELECT, "Other ({INT})", SizeItems);
 		if(pPlayer->m_aSortTabs[SORT_INVENTORY])
-			ListInventory(pPlayer, (ItemType)pPlayer->m_aSortTabs[SORT_INVENTORY]);
+			ListInventory(ClientID, (ItemType)pPlayer->m_aSortTabs[SORT_INVENTORY]);
 
 		GS()->AddVotesBackpage(ClientID);
 		return true;
@@ -265,24 +265,38 @@ void CInventoryCore::RepairDurabilityItems(CPlayer *pPlayer)
 		it.second.m_Durability = 100;
 }
 
-void CInventoryCore::ListInventory(CPlayer *pPlayer, int TypeList, bool SortedFunction)
+template < typename T >
+bool ExecuteTemplateItemsTypes(T Type, std::map < int, CItemData >& paItems, const std::function<void(const CItemData&)> pFunc)
 {
-	const int ClientID = pPlayer->GetCID();
-	GS()->AV(ClientID, "null");
-	
-	// show a list of items to the player
 	bool Found = false;
-	for(const auto& it : CItemData::ms_aItems[ClientID])
+	for(const auto& [ItemID, ItemData] : paItems)
 	{
-		if(!it.second.m_Value 
-			|| ((SortedFunction && it.second.Info().m_Function != static_cast<ItemFunctional>(TypeList))
-			|| (!SortedFunction && it.second.Info().m_Type != TypeList)))
-			continue;
+		bool ActivateCallback = false;
+		if constexpr(std::is_same_v<T, ItemType>)
+			ActivateCallback = ItemData.HasItem() && ItemData.Info().IsType(Type);
+		else if constexpr(std::is_same_v<T, ItemFunctional>)
+			ActivateCallback = ItemData.HasItem() && ItemData.Info().IsFunctional(Type);
 
-		ItemSelected(pPlayer, it.second);
-		Found = true;
+		if(ActivateCallback) 
+		{
+			pFunc(ItemData);
+			Found = true;
+		}
 	}
-	if(!Found)
+	return Found;
+}
+
+void CInventoryCore::ListInventory(int ClientID, ItemType Type)
+{
+	GS()->AV(ClientID, "null");
+	if(!ExecuteTemplateItemsTypes(Type, CItemData::ms_aItems[ClientID], [&](const CItemData& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
+		GS()->AVL(ClientID, "null", "There are no items in this tab");
+}
+
+void CInventoryCore::ListInventory(int ClientID, ItemFunctional Type)
+{
+	GS()->AV(ClientID, "null");
+	if(!ExecuteTemplateItemsTypes(Type, CItemData::ms_aItems[ClientID], [&](const CItemData& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
 		GS()->AVL(ClientID, "null", "There are no items in this tab");
 }
 
