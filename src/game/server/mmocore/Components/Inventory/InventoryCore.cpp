@@ -8,6 +8,27 @@
 #include <game/server/mmocore/Components/Houses/HouseCore.h>
 #include <game/server/mmocore/Components/Quests/QuestCore.h>
 
+template < typename T >
+bool ExecuteTemplateItemsTypes(T Type, std::map < int, CItemData >& paItems, const std::function<void(const CItemData&)> pFunc)
+{
+	bool Found = false;
+	for(const auto& [ItemID, ItemData] : paItems)
+	{
+		bool ActivateCallback = false;
+		if constexpr(std::is_same_v<T, ItemType>)
+			ActivateCallback = ItemData.HasItem() && ItemData.Info().IsType(Type);
+		else if constexpr(std::is_same_v<T, ItemFunctional>)
+			ActivateCallback = ItemData.HasItem() && ItemData.Info().IsFunctional(Type);
+
+		if(ActivateCallback) 
+		{
+			pFunc(ItemData);
+			Found = true;
+		}
+	}
+	return Found;
+}
+
 using namespace sqlstr;
 void CInventoryCore::OnInit()
 {
@@ -91,19 +112,19 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		GS()->AV(ClientID, "null");
 
 		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, "Inventory SELECT List");
-		int SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_USED);
+		int SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_USED);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_USED, TAB_INVENTORY_SELECT, "Used ({INT})", SizeItems);
 
-		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_CRAFT);
+		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_CRAFT, TAB_INVENTORY_SELECT, "Craft ({INT})", SizeItems);
 
-		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_MODULE);
+		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_MODULE);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_MODULE, TAB_INVENTORY_SELECT, "Modules ({INT})", SizeItems);
 
-		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_POTION);
+		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_POTION);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_POTION, TAB_INVENTORY_SELECT, "Potion ({INT})", SizeItems);
 
-		SizeItems = GetValueItemsType(pPlayer, ItemType::TYPE_OTHER);
+		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_OTHER);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_OTHER, TAB_INVENTORY_SELECT, "Other ({INT})", SizeItems);
 		if(pPlayer->m_aSortTabs[SORT_INVENTORY])
 			ListInventory(ClientID, (ItemType)pPlayer->m_aSortTabs[SORT_INVENTORY]);
@@ -120,34 +141,25 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		GS()->AV(ClientID, "null");
 
 		GS()->AVH(ClientID, TAB_EQUIP_SELECT, "Equip SELECT Slot");
-		const char* pType[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor" };
+		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
 			const int ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
-			CItemData& pItemPlayer = pPlayer->GetItem(ItemID);
-			if(ItemID <= 0 || !pItemPlayer.IsEquipped())
+			if(ItemID <= 0 || !pPlayer->GetItem(ItemID).IsEquipped())
 			{
-				GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} Not equipped", pType[i]);
+				GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} Not equipped", paTypeNames[i]);
 				continue;
 			}
 
 			char aAttributes[128];
-			pItemPlayer.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-			GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} | {STR}", pItemPlayer.Info().GetName(), aAttributes);
+			pPlayer->GetItem(ItemID).FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
+			GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} | {STR}", pPlayer->GetItem(ItemID).Info().GetName(), aAttributes);
 		}
+
 		GS()->AV(ClientID, "null");
 
-		bool FindItem = false;
-		for(const auto& it : CItemData::ms_aItems[ClientID])
-		{
-			if(!it.second.m_Value || it.second.Info().m_Function != (ItemFunctional)pPlayer->m_aSortTabs[SORT_EQUIPING])
-				continue;
-
-			ItemSelected(pPlayer, it.second, true);
-			FindItem = true;
-		}
-
-		if(!FindItem)
+		// show and sort equipment
+		if(!ExecuteTemplateItemsTypes((ItemFunctional)pPlayer->m_aSortTabs[SORT_EQUIPING], CItemData::ms_aItems[ClientID], [&](const CItemData& p){ ItemSelected(pPlayer, p, true); }))
 			GS()->AVL(ClientID, "null", "There are no items in this tab");
 
 		GS()->AddVotesBackpage(ClientID);
@@ -263,27 +275,6 @@ void CInventoryCore::RepairDurabilityItems(CPlayer *pPlayer)
 	Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	for(auto& it : CItemData::ms_aItems[ClientID])
 		it.second.m_Durability = 100;
-}
-
-template < typename T >
-bool ExecuteTemplateItemsTypes(T Type, std::map < int, CItemData >& paItems, const std::function<void(const CItemData&)> pFunc)
-{
-	bool Found = false;
-	for(const auto& [ItemID, ItemData] : paItems)
-	{
-		bool ActivateCallback = false;
-		if constexpr(std::is_same_v<T, ItemType>)
-			ActivateCallback = ItemData.HasItem() && ItemData.Info().IsType(Type);
-		else if constexpr(std::is_same_v<T, ItemFunctional>)
-			ActivateCallback = ItemData.HasItem() && ItemData.Info().IsFunctional(Type);
-
-		if(ActivateCallback) 
-		{
-			pFunc(ItemData);
-			Found = true;
-		}
-	}
-	return Found;
 }
 
 void CInventoryCore::ListInventory(int ClientID, ItemType Type)
@@ -466,7 +457,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 		GS()->AVM(ClientID, "AUCTIONSLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
 }
 
-int CInventoryCore::GetValueItemsType(CPlayer *pPlayer, ItemType Type) const
+int CInventoryCore::GetCountItemsType(CPlayer *pPlayer, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
 	return (int)std::count_if(CItemData::ms_aItems[ClientID].begin(), CItemData::ms_aItems[ClientID].end(), [Type](auto& pItem)
