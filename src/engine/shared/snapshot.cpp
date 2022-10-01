@@ -660,12 +660,8 @@ void *CSnapshotBuilder::NewItem(int Type, int ID, int Size)
 		return 0;
 	}
 
-	bool Extended = false;
 	if(Type >= OFFSET_UUID)
-	{
-		Extended = true;
 		Type = GetTypeFromIndex(GetExtendedItemTypeIndex(Type));
-	}
 
 	CSnapshotItem *pObj = (CSnapshotItem *)(m_aData + m_DataSize);
 	mem_zero(pObj, sizeof(CSnapshotItem) + Size);
