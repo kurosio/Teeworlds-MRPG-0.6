@@ -87,38 +87,38 @@ void CPlayerBot::EffectsTick()
 int CPlayerBot::GetStartHealth()
 {
 	if(m_BotType == TYPE_BOT_MOB)
-		return GetAttributeCount(StHardness);
+		return GetAttributeSize(Attribute::Hardness);
 	return 10;
 }
 
-int CPlayerBot::GetAttributeCount(int BonusID, bool Really)
+int CPlayerBot::GetAttributeSize(Attribute ID, bool WorkedSize)
 {
 	if(m_BotType != TYPE_BOT_MOB)
 		return 10;
 
 	// get stats from the bot's equipment
-	int AttributeEx = MobBotInfo::ms_aMobBot[m_MobID].m_Power;
+	int Size = MobBotInfo::ms_aMobBot[m_MobID].m_Power;
 	for (unsigned i = 0; i < NUM_EQUIPPED; i++)
 	{
 		const int ItemID = GetEquippedItemID((ItemFunctional)i);
-		const int ItemBonusValue = GS()->GetItemInfo(ItemID).GetInfoEnchantStats(BonusID);
+		const int ItemBonusValue = GS()->GetItemInfo(ItemID).GetInfoEnchantStats(ID);
 		if (ItemID > 0 && ItemBonusValue > 0)
-			AttributeEx += ItemBonusValue;
+			Size += ItemBonusValue;
 	}
 
 	// spread weapons
-	if(BonusID == StSpreadShotgun || BonusID == StSpreadGrenade || BonusID == StSpreadRifle)
-		AttributeEx = MobBotInfo::ms_aMobBot[m_MobID].m_Spread;
+	if(ID == Attribute::SpreadShotgun || ID == Attribute::SpreadGrenade || ID == Attribute::SpreadRifle)
+		Size = MobBotInfo::ms_aMobBot[m_MobID].m_Spread;
 
 	// all attribute stats without hardness
-	else if(BonusID != StHardness && CGS::ms_aAttributsInfo[BonusID].m_Devide > 0)
+	else if(const CAttributeData* pAtt = GS()->GetAttributeInfo(ID); ID != Attribute::Hardness && pAtt->GetDividing() > 0)
 	{
-		AttributeEx /= CGS::ms_aAttributsInfo[BonusID].m_Devide;
-		if(CGS::ms_aAttributsInfo[BonusID].m_Type == AtHardtype)
-			AttributeEx /= MobBotInfo::ms_aMobBot[m_MobID].m_Boss ? 30 : 2;
+		Size /= pAtt->GetDividing();
+		if(pAtt->GetType() == AttributeType::Hardtype)
+			Size /= MobBotInfo::ms_aMobBot[m_MobID].m_Boss ? 30 : 2;
 	}
 
-	return AttributeEx;
+	return Size;
 }
 
 void CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)

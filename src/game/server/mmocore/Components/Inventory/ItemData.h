@@ -35,7 +35,7 @@ public:
 	bool HasItem() const { return m_Value; }
 
 	// equip modules types functions
-	int GetEnchantStats(int AttributeID) const { return Info().GetInfoEnchantStats(AttributeID, m_Enchant); }
+	int GetEnchantStats(Attribute ID) const { return Info().GetInfoEnchantStats(ID, m_Enchant); }
 	int GetEnchantPrice() const { return Info().GetEnchantPrice(m_Enchant); }
 
 	bool IsEquipped() const

@@ -450,12 +450,12 @@ int CPlayer::ExpNeed(int Level)
 
 int CPlayer::GetStartHealth()
 {
-	return 10 + GetAttributeCount(Stats::StHardness, true);
+	return 10 + GetAttributeSize(Attribute::Hardness, true);
 }
 
 int CPlayer::GetStartMana()
 {
-	const int EnchantBonus = GetAttributeCount(Stats::StPiety, true);
+	const int EnchantBonus = GetAttributeSize(Attribute::Piety, true);
 	return 10 + EnchantBonus;
 }
 
@@ -518,7 +518,7 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 {
 	if(PPSTR(CMD, "UPGRADE") == 0)
 	{
-		if(Upgrade(Get, &Acc().m_aStats[VoteID], &Acc().m_Upgrade, VoteID2, 1000))
+		if(Upgrade(Get, &Acc().m_aStats[(Attribute)VoteID], &Acc().m_Upgrade, VoteID2, 1000))
 		{
 			GS()->Mmo()->SaveAccount(this, SaveType::SAVE_UPGRADES);
 			GS()->ResetVotes(m_ClientID, MenuList::MENU_UPGRADE);
@@ -573,68 +573,60 @@ CQuestData& CPlayer::GetQuest(int QuestID)
 
 int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
-	for(const auto& [id, value] : CItemData::ms_aItems[m_ClientID])
+	const auto Iter = std::find_if(CItemData::ms_aItems[m_ClientID].begin(), CItemData::ms_aItems[m_ClientID].end(), [EquipID, SkipItemID](const auto& p)
 	{
-		if(!value.m_Value || !value.m_Settings || value.Info().m_Function != EquipID || id == SkipItemID)
-			continue;
-		return id;
-	}
-	return -1;
+		return (p.second.HasItem() && p.second.IsEquipped() && p.second.Info().IsFunctional(EquipID) && p.first != SkipItemID); 
+	});
+	return Iter != CItemData::ms_aItems[m_ClientID].end() ? Iter->first : -1;
 }
 
-int CPlayer::GetAttributeCount(int BonusID, bool ActiveFinalStats)
+int CPlayer::GetAttributeSize(Attribute ID, bool WorkedSize)
 {
-	int AttributEx = GetItemsAttributeCount(BonusID);
+	int Size = 0;
+
+	// get all attributes from items
+	for(const auto& [ItemID, ItemData] : CItemData::ms_aItems[m_ClientID])
+	{
+		if(ItemData.IsEquipped() && ItemData.Info().IsEnchantable() && ItemData.Info().GetInfoEnchantStats(ID))
+			Size += ItemData.GetEnchantStats(ID);
+	}
 
 	// if the attribute has the value of player upgrades we sum up
-	if (str_comp_nocase(CGS::ms_aAttributsInfo[BonusID].m_aFieldName, "unfield") != 0)
-		AttributEx += Acc().m_aStats[BonusID];
+	const CAttributeData* pAtt = GS()->GetAttributeInfo(ID);
+	if (str_comp_nocase(pAtt->GetFieldName(), "unfield") != 0)
+		Size += Acc().m_aStats[ID];
 
 	// to the final active attribute stats for the player
-	if (ActiveFinalStats && CGS::ms_aAttributsInfo[BonusID].m_Devide > 0)
-		AttributEx /= CGS::ms_aAttributsInfo[BonusID].m_Devide;
+	if (WorkedSize && pAtt->GetDividing() > 0)
+		Size /= pAtt->GetDividing();
 
 	// if the best tank class is selected among the players we return the sync dungeon stats
-	if(GS()->IsDungeon() && CGS::ms_aAttributsInfo[BonusID].m_UpgradePrice < 10 && CDungeonData::ms_aDungeon[GS()->GetDungeonID()].IsDungeonPlaying())
+	if(GS()->IsDungeon() && pAtt->GetUpgradePrice() < 10 && CDungeonData::ms_aDungeon[GS()->GetDungeonID()].IsDungeonPlaying())
 	{
-		CGameControllerDungeon* pDungeon = static_cast<CGameControllerDungeon*>(GS()->m_pController);
-		return pDungeon->GetAttributeDungeonSync(this, BonusID);
+		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
+		return pDungeon->GetAttributeDungeonSync(this, ID);
 	}
-	return AttributEx;
+	return Size;
 }
 
-// TODO: not optimized algorithm
-int CPlayer::GetItemsAttributeCount(int AttributeID) const
+int CPlayer::GetTypeAttributesSize(AttributeType Type)
 {
-	int SummingSize = 0;
-	for(const auto& it : CItemData::ms_aItems[m_ClientID])
+	int Size = 0;
+	for (const auto& [ID, Att] : CGS::ms_aAttributesInfo)
 	{
-		if(!it.second.IsEquipped() || !it.second.Info().IsEnchantable() || !it.second.Info().GetInfoEnchantStats(AttributeID))
-			continue;
-
-		SummingSize += it.second.GetEnchantStats(AttributeID);
+		if (Att.IsType(Type))
+			Size += GetAttributeSize(ID, true);
 	}
-	return SummingSize;
+	return Size;
 }
 
-int CPlayer::GetLevelTypeAttribute(int Class)
+int CPlayer::GetAttributesSize()
 {
-	int Attributs = 0;
-	for (const auto& at : CGS::ms_aAttributsInfo)
-	{
-		if (at.second.m_Type == Class)
-			Attributs += GetAttributeCount(at.first, true);
-	}
-	return Attributs;
-}
+	int Size = 0;
+	for(const auto& at : CGS::ms_aAttributesInfo)
+		Size += GetAttributeSize(at.first, true);
 
-int CPlayer::GetLevelAllAttributes()
-{
-	int Attributs = 0;
-	for(const auto& at : CGS::ms_aAttributsInfo)
-		Attributs += GetAttributeCount(at.first, true);
-
-	return Attributs;
+	return Size;
 }
 
 // - - - - - - T A L K I N G - - - - B O T S - - - - - - - - -

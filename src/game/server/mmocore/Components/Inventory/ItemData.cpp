@@ -181,17 +181,17 @@ bool CItemData::Use(int Value)
 	else if(m_ItemID == itTicketResetClassStats && Remove(Value, 0))
 	{
 		int BackUpgrades = 0;
-		for(const auto& pAttribute : CGS::ms_aAttributsInfo)
+		for(const auto& [ID, Att] : CGS::ms_aAttributesInfo)
 		{
-			if(str_comp_nocase(pAttribute.second.m_aFieldName, "unfield") == 0 || pAttribute.second.m_UpgradePrice <= 0 || m_pPlayer->Acc().m_aStats[pAttribute.first] <= 0)
-				continue;
+			if(str_comp_nocase(Att.GetFieldName(), "unfield") != 0 && Att.GetUpgradePrice() > 0 && m_pPlayer->Acc().m_aStats[ID] > 0)
+			{
+				// skip weapon spreading
+				if(Att.IsType(AttributeType::Weapon))
+					continue;
 
-			// skip weapon spreading
-			if(pAttribute.second.m_Type == AtWeapon)
-				continue;
-
-			BackUpgrades += m_pPlayer->Acc().m_aStats[pAttribute.first] * pAttribute.second.m_UpgradePrice;
-			m_pPlayer->Acc().m_aStats[pAttribute.first] = 0;
+				BackUpgrades += m_pPlayer->Acc().m_aStats[ID] * Att.GetUpgradePrice();
+				m_pPlayer->Acc().m_aStats[ID] = 0;
+			}
 		}
 
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info().GetName(), BackUpgrades);
@@ -202,26 +202,26 @@ bool CItemData::Use(int Value)
 	else if(m_ItemID == itTicketResetWeaponStats && Remove(Value, 0))
 	{
 		int BackUpgrades = 0;
-		for(const auto& pAttribute : CGS::ms_aAttributsInfo)
+		for(const auto& [ID, Att] : CGS::ms_aAttributesInfo)
 		{
-			if(str_comp_nocase(pAttribute.second.m_aFieldName, "unfield") == 0 || pAttribute.second.m_UpgradePrice <= 0 || m_pPlayer->Acc().m_aStats[pAttribute.first] <= 0)
-				continue;
+			if(str_comp_nocase(Att.GetFieldName(), "unfield") != 0 && Att.GetUpgradePrice() > 0 && m_pPlayer->Acc().m_aStats[ID] > 0)
+			{
+				// skip all stats allow only weapons
+				if(Att.GetType() != AttributeType::Weapon)
+					continue;
 
-			// skip all stats allow only weapons
-			if(pAttribute.second.m_Type != AtWeapon)
-				continue;
+				int UpgradeValue = m_pPlayer->Acc().m_aStats[ID];
+				if(ID == Attribute::SpreadShotgun)
+					UpgradeValue = m_pPlayer->Acc().m_aStats[ID] - 3;
+				else if(ID == Attribute::SpreadGrenade || ID == Attribute::SpreadRifle)
+					UpgradeValue = m_pPlayer->Acc().m_aStats[ID] - 1;
 
-			int UpgradeValue = m_pPlayer->Acc().m_aStats[pAttribute.first];
-			if(pAttribute.first == StSpreadShotgun)
-				UpgradeValue = m_pPlayer->Acc().m_aStats[pAttribute.first] - 3;
-			else if(pAttribute.first == StSpreadGrenade || pAttribute.first == StSpreadRifle)
-				UpgradeValue = m_pPlayer->Acc().m_aStats[pAttribute.first] - 1;
+				if(UpgradeValue <= 0)
+					continue;
 
-			if(UpgradeValue <= 0)
-				continue;
-
-			BackUpgrades += UpgradeValue * pAttribute.second.m_UpgradePrice;
-			m_pPlayer->Acc().m_aStats[pAttribute.first] -= UpgradeValue;
+				BackUpgrades += UpgradeValue * Att.GetUpgradePrice();
+				m_pPlayer->Acc().m_aStats[ID] -= UpgradeValue;
+			}
 		}
 
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info().GetName(), BackUpgrades);

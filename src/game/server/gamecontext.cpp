@@ -35,7 +35,7 @@
 #include <cstdarg>
 
 // static data that have the same value in different objects
-std::map < int, CGS::StructAttribut > CGS::ms_aAttributsInfo;
+std::map < Attribute, CAttributeData > CGS::ms_aAttributesInfo;
 std::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
 int CGS::m_MultiplierExp = 100;
 
@@ -64,7 +64,7 @@ CGS::CGS()
 CGS::~CGS()
 {
 	m_Events.Clear();
-	ms_aAttributsInfo.clear();
+	ms_aAttributesInfo.clear();
 	for(auto& pEffects : ms_aEffects)
 		pEffects.clear();
 	for(auto* apPlayer : m_apPlayers)
@@ -259,7 +259,7 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 /* #########################################################################
 	CHAT FUNCTIONS
 ######################################################################### */
-void CGS::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
+void CGS::SendChat(int ChatterClientID, int Mode, const char *pText)
 {
 	char aBuf[256];
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
@@ -285,7 +285,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 		if(ChatterClientID < MAX_PLAYERS)
 			Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, DC_SERVER_CHAT, Server()->ClientName(ChatterClientID), pText);
 
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
 	}
 	else if(Mode == CHAT_TEAM)
 	{
@@ -322,7 +322,7 @@ void CGS::FakeChat(const char *pName, const char *pText)
 		return;
 
 	// send a chat and delete a player and throw a player away
-	SendChat(FakeClientID, CHAT_ALL, -1, pText);
+	SendChat(FakeClientID, CHAT_ALL, pText);
 	delete m_apPlayers[FakeClientID];
 	m_apPlayers[FakeClientID] = nullptr;
 }
@@ -910,7 +910,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
 				return;
 			}
-			SendChat(ClientID, CHAT_ALL, pPlayer->GetCID(), pMsg->m_pMessage);
+			SendChat(ClientID, CHAT_ALL, pMsg->m_pMessage);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
@@ -1320,7 +1320,7 @@ void CGS::ConSay(IConsole::IResult *pResult, void *pUserData)
 {
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
-	pSelf->SendChat(-1, CHAT_ALL, -1, pResult->GetString(0));
+	pSelf->SendChat(-1, CHAT_ALL, pResult->GetString(0));
 }
 
 // add a new bot player to the database
@@ -1399,8 +1399,6 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 
 	m_aPlayerVotes[ClientID].push_back(Vote);
 
-	if(Vote.m_aDescription[0] == '\0')
-		str_copy(Vote.m_aDescription, "———————————", sizeof(Vote.m_aDescription));
 
 	// send to vanilla clients
 	CNetMsg_Sv_VoteOptionAdd OptionMsg;
@@ -1601,47 +1599,45 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 		ShowVotesPlayerStats(pPlayer);
 
-		// DPS UPGRADES
-		int Range = pPlayer->GetLevelTypeAttribute(AtributType::AtDps);
-		AVH(ClientID, TAB_UPGR_DPS, "Disciple of War. Level Power {INT}", Range);
-		for(const auto& at : ms_aAttributsInfo)
+		auto ShowAttributeVote = [&](int HiddenID, AttributeType Type, std::function<void(int HiddenID)> pFunc)
 		{
-			if(at.second.m_Type != AtributType::AtDps || str_comp_nocase(at.second.m_aFieldName, "unfield") == 0 || at.second.m_UpgradePrice <= 0)
-				continue;
-			AVD(ClientID, "UPGRADE", at.first, at.second.m_UpgradePrice, TAB_UPGR_DPS, "{STR} {INT}P (Price {INT}P)", at.second.m_aName, pPlayer->Acc().m_aStats[at.first], at.second.m_UpgradePrice);
-		}
+			pFunc(HiddenID);
+			for (const auto& [ID, Att] : ms_aAttributesInfo)
+			{
+				if(Att.IsType(Type) && str_comp_nocase(Att.GetFieldName(), "unfield") != 0 && Att.GetUpgradePrice() > 0)
+					AVD(ClientID, "UPGRADE", (int)ID, Att.GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", Att.GetName(), pPlayer->Acc().m_aStats[ID], Att.GetUpgradePrice());
+			}
+		};
+
+		// Disciple of War
+		ShowAttributeVote(TAB_UPGR_DPS, AttributeType::Dps, [&](int HiddenID)
+		{
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
+			AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
+		});
 		AV(ClientID, "null");
 
-		// TANK UPGRADES
-		Range = pPlayer->GetLevelTypeAttribute(AtributType::AtTank);
-		AVH(ClientID, TAB_UPGR_TANK, "Disciple of Tank. Level Power {INT}", Range);
-		for(const auto& at : ms_aAttributsInfo)
+		// Disciple of Tank
+		ShowAttributeVote(TAB_UPGR_TANK, AttributeType::Tank, [&](int HiddenID)
 		{
-			if(at.second.m_Type != AtributType::AtTank || str_comp_nocase(at.second.m_aFieldName, "unfield") == 0 || at.second.m_UpgradePrice <= 0)
-				continue;
-			AVD(ClientID, "UPGRADE", at.first, at.second.m_UpgradePrice, TAB_UPGR_TANK, "{STR} {INT}P (Price {INT}P)", at.second.m_aName, pPlayer->Acc().m_aStats[at.first], at.second.m_UpgradePrice);
-		}
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
+			AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
+		});
 		AV(ClientID, "null");
 
-		// HEALER UPGRADES
-		Range = pPlayer->GetLevelTypeAttribute(AtributType::AtHealer);
-		AVH(ClientID, TAB_UPGR_HEALER, "Disciple of Healer. Level Power {INT}", Range);
-		for(const auto& at : ms_aAttributsInfo)
+		// Disciple of Healer
+		ShowAttributeVote(TAB_UPGR_HEALER, AttributeType::Healer, [&](int HiddenID)
 		{
-			if(at.second.m_Type != AtributType::AtHealer || str_comp_nocase(at.second.m_aFieldName, "unfield") == 0 || at.second.m_UpgradePrice <= 0)
-				continue;
-			AVD(ClientID, "UPGRADE", at.first, at.second.m_UpgradePrice, TAB_UPGR_HEALER, "{STR} {INT}P (Price {INT}P)", at.second.m_aName, pPlayer->Acc().m_aStats[at.first], at.second.m_UpgradePrice);
-		}
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Healer);
+			AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
+		});
 		AV(ClientID, "null");
 
-		// WEAPONS UPGRADES
-		AVH(ClientID, TAB_UPGR_WEAPON, "Upgrades Weapons / Ammo");
-		for(const auto& at : ms_aAttributsInfo)
+		// Upgrades Weapons and ammo
+		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeType::Weapon, [&](int HiddenID)
 		{
-			if(at.second.m_Type != AtributType::AtWeapon || str_comp_nocase(at.second.m_aFieldName, "unfield") == 0 || at.second.m_UpgradePrice <= 0)
-				continue;
-			AVD(ClientID, "UPGRADE", at.first, at.second.m_UpgradePrice, TAB_UPGR_WEAPON, "{STR} {INT}P (Price {INT}P)", at.second.m_aName, pPlayer->Acc().m_aStats[at.first], at.second.m_UpgradePrice);
-		}
+			AVH(ClientID, HiddenID, "Upgrades Weapons / Ammo");
+		});
 
 		AV(ClientID, "null");
 		AVH(ClientID, TAB_UPGR_JOB, "Disciple of Jobs");
@@ -1671,7 +1667,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 		char aBuf[128];
 		bool FoundedBots = false;
-		const float AddedChanceDrop = clamp((float)pPlayer->GetAttributeCount(Stats::StLuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
+		const float AddedChanceDrop = clamp((float)pPlayer->GetAttributeSize(Attribute::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
 		for(const auto& mobs : MobBotInfo::ms_aMobBot)
 		{
 			if (!IsPlayerEqualWorldID(ClientID, mobs.second.m_WorldID))
@@ -1783,21 +1779,20 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	AVH(ClientID, TAB_INFO_STAT, "Player Stats {STR}", IsDungeon() ? "(Sync)" : "\0");
-	for(const auto& pAtt : ms_aAttributsInfo)
+	for(const auto& [ID, Att] : ms_aAttributesInfo)
 	{
-		if(str_comp_nocase(pAtt.second.m_aFieldName, "unfield") == 0)
+		if(str_comp_nocase(Att.GetFieldName(), "unfield") == 0)
 			continue;
 
 		// if upgrades are cheap, they have a division of statistics
-		const int AttributeSize = pPlayer->GetAttributeCount(pAtt.first);
-		if(pAtt.second.m_Devide <= 1)
+		const int Size = pPlayer->GetAttributeSize(ID);
+		if(Att.GetDividing() <= 1)
 		{
-			const int AttributeRealSize = pPlayer->GetAttributeCount(pAtt.first, true);
-			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "{INT} (+{INT}) - {STR}", AttributeSize, AttributeRealSize, pAtt.second.m_aName);
+			const int WorkedSize = pPlayer->GetAttributeSize(ID, true);
+			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "{INT} (+{INT}) - {STR}", Size, WorkedSize, Att.GetName());
 			continue;
 		}
-
-		AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "+{INT} - {STR}", AttributeSize, pAtt.second.m_aName);
+		AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "+{INT} - {STR}", Size, Att.GetName());
 	}
 
 	AVM(ClientID, "null", NOPE, NOPE, "Player Upgrade Point: {INT}P", pPlayer->Acc().m_Upgrade);

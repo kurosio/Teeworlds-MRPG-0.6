@@ -525,14 +525,14 @@ int CServer::SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask, int 
 					// skip what is not included in the mask
 					if(Mask != -1 && (Mask & ((int64)1 << ClientID)) == 0)
 						continue;
-
+					
+					const CPacker* pPack = &Pack;
+					Packet.m_pData = pPack->Data();
+					Packet.m_DataSize = pPack->Size();
 					if (WorldID != -1)
 					{
 						if (m_aClients[i].m_WorldID == WorldID)
 						{
-							const CPacker* pPack = &Pack;
-							Packet.m_pData = pPack->Data();
-							Packet.m_DataSize = pPack->Size();
 							Packet.m_ClientID = i;
 							m_NetServer.Send(&Packet);
 						}

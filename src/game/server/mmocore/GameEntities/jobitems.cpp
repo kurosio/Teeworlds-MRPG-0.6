@@ -92,7 +92,7 @@ void CJobItems::MiningWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedIte
 	if(rand() % 10 == 0)
 		pEquippedPickaxe.SetDurability(Durability - 1);
 
-	m_TotalDamage += 3 + pPlayer->GetItemsAttributeCount(StEfficiency);
+	m_TotalDamage += 3 + pPlayer->GetAttributeSize(Attribute::Efficiency);
 	GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
 
 	GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{STR} [{INT}/{INT}P] : {STR} ({INT}/100%)",

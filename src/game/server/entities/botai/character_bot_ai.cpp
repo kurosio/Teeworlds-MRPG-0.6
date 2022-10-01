@@ -163,7 +163,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + random_int() % 2), Force);
 
 	// drop item's
-	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeCount(Stats::StLuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
+	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(Attribute::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
 	for(int i = 0; i < 5; i++)
 	{
 		CItemData DropItem;
@@ -551,7 +551,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, 0, 0);
 		if (!FinderCollised && ((m_BotTargetLife <= 10 && m_BotTargetCollised)
-			|| pFinderHard->GetAttributeCount(Stats::StHardness, true) > pPlayer->GetAttributeCount(Stats::StHardness, true)))
+			|| pFinderHard->GetAttributeSize(Attribute::Hardness, true) > pPlayer->GetAttributeSize(Attribute::Hardness, true)))
 			SetTarget(i);
 	}
 

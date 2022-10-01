@@ -138,14 +138,15 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 	}
 	else if(Table == SAVE_UPGRADES)
 	{
-		char aBuf[64];
 		dynamic_string Buffer;
-		for(const auto& at : CGS::ms_aAttributsInfo)
+		for(const auto& [ID, Att] : CGS::ms_aAttributesInfo)
 		{
-			if(str_comp_nocase(at.second.m_aFieldName, "unfield") == 0)
-				continue;
-			str_format(aBuf, sizeof(aBuf), ", %s = '%d' ", at.second.m_aFieldName, pPlayer->Acc().m_aStats[at.first]);
-			Buffer.append_at(Buffer.length(), aBuf);
+			if(str_comp_nocase(Att.GetFieldName(), "unfield") != 0)
+			{
+				char aBuf[64];
+				str_format(aBuf, sizeof(aBuf), ", %s = '%d' ", Att.GetFieldName(), pPlayer->Acc().m_aStats[ID]);
+				Buffer.append_at(Buffer.length(), aBuf);
+			}
 		}
 
 		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Acc().m_Upgrade, Buffer.buffer(), pPlayer->Acc().m_UserID);
@@ -368,9 +369,9 @@ void MmoController::ConSyncLinesForTranslate()
 		{
 			PushingDialogs(JsonData, pItem.second.m_aName, "aeth", pItem.first);
 		}
-		for(auto& pItem : CGS::ms_aAttributsInfo)
+		for(auto& pItem : CGS::ms_aAttributesInfo)
 		{
-			PushingDialogs(JsonData, pItem.second.m_aName, "attb", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetName(), "attb", (int)pItem.first);
 		}
 		for(auto& pItem : CItemDataInfo::ms_aItemsInfo)
 		{

@@ -442,10 +442,10 @@ void CGameControllerDungeon::SelectTankPlayer()
 		}
 
 		// selection by hardness statistics, if there are no votes
-		if(MaximalVotes <= 0 && pPlayer->GetLevelTypeAttribute(AtributType::AtTank) > MaximalHardness)
+		if(MaximalVotes <= 0 && pPlayer->GetTypeAttributesSize(AttributeType::Tank) > MaximalHardness)
 		{
 			m_TankClientID = i;
-			MaximalHardness = pPlayer->GetLevelTypeAttribute(AtributType::AtTank);
+			MaximalHardness = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
 		}
 	}
 
@@ -460,7 +460,7 @@ void CGameControllerDungeon::SelectTankPlayer()
 		}
 		else
 		{
-			const int StrengthTank = pTankPlayer->GetLevelTypeAttribute(AtributType::AtTank);
+			const int StrengthTank = pTankPlayer->GetTypeAttributesSize(AttributeType::Tank);
 			GS()->ChatWorldID(m_WorldID, "[Dungeon]", "Tank {STR} assigned with class strength {VAL}p!",
 				Server()->ClientName(m_TankClientID), StrengthTank);
 		}
@@ -478,24 +478,24 @@ int CGameControllerDungeon::GetSyncFactor() const
 		if(!pBotPlayer || pBotPlayer->GetBotType() != BotsTypes::TYPE_BOT_MOB || pBotPlayer->GetPlayerWorldID() != m_WorldID)
 			continue;
 
-		const int LevelDisciple = pBotPlayer->GetLevelAllAttributes();
+		const int LevelDisciple = pBotPlayer->GetAttributesSize();
 		MinFactor = min(MinFactor, LevelDisciple);
 		MaxFactor = max(MaxFactor, LevelDisciple);
 	}
 	return (MaxFactor + MinFactor) / 2;
 }
 
-int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, int BonusID) const
+int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, Attribute ID) const
 {
 	float Percent = 0.0f;
-	const int AttributeType = CGS::ms_aAttributsInfo[BonusID].m_Type;
+	const AttributeType Type = GS()->GetAttributeInfo(ID)->GetType();
 
 	// - - - - - - - - -- - - -
 	// balance tanks
 	if(pPlayer->m_MoodState == Mood::TANK)
 	{
 		const float ActiveAttribute = m_SyncDungeon / 2.0f;
-		if(AttributeType == AtributType::AtTank)
+		if(Type == AttributeType::Tank)
 			Percent = 30.0f;
 
 		const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
@@ -505,11 +505,11 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, int BonusI
 	// - - - - - - - - -- - - -
 	// balance healer damage divides the average attribute into the number of players
 	const float ActiveAttribute = m_SyncDungeon / m_ActivePlayers;
-	if(AttributeType == AtributType::AtHealer)
+	if(Type == AttributeType::Healer)
 		Percent = min(20.0f + (m_ActivePlayers * 2.0f), 35.0f);
-	else if(AttributeType == AtributType::AtTank)
+	else if(Type == AttributeType::Tank)
 		Percent = 5.0f;
-	else if(AttributeType == AtributType::AtHardtype || AttributeType == AtributType::AtDps)
+	else if(Type == AttributeType::Hardtype || Type == AttributeType::Dps)
 		Percent = 0.1f;
 
 	const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);

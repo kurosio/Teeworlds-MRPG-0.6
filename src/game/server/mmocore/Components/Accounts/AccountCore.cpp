@@ -118,10 +118,10 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		pPlayer->Acc().m_GuildRank = pResAccount->getInt("GuildRank");
 		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
 
-		for (const auto& at : CGS::ms_aAttributsInfo)
+		for (const auto& [ID, Att] : CGS::ms_aAttributesInfo)
 		{
-			if (str_comp_nocase(at.second.m_aFieldName, "unfield") != 0)
-				pPlayer->Acc().m_aStats[at.first] = pResAccount->getInt(at.second.m_aFieldName);
+			if (str_comp_nocase(Att.GetFieldName(), "unfield") != 0)
+				pPlayer->Acc().m_aStats[ID] = pResAccount->getInt(Att.GetFieldName());
 		}
 
 		GS()->Chat(ClientID, "- - - - - - - [Successful login!] - - - - - - -");

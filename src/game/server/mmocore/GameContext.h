@@ -42,33 +42,6 @@ enum
 	NUM_JOB_ACCOUNTS_STATS,
 };
 
-// player stats
-enum Stats
-{
-	StSpreadShotgun			= 1,
-	StSpreadGrenade			= 2,
-	StSpreadRifle			= 3,
-    StStrength				= 4,
-	StDexterity				= 5,
- 	StCriticalHit			= 6,
-	StDirectCriticalHit		= 7,
-    StHardness				= 8,
-	StLucky					= 9,
-	StPiety					= 10,
-	StVampirism				= 11,
-	StAmmoRegen				= 12,
-	StAmmo					= 13,
-	StEfficiency			= 14,
-	StExtraction			= 15,
-	StHammerPower			= 16,
-	StGunPower				= 17,
-	StShotgunPower			= 18,
-	StGrenadePower			= 19,
-	StRiflePower			= 20,
-	StLuckyDropItem			= 21,
-	STATS_PLAYER_NUM,
-};
-
 // player ticks
 enum TickState
 {
@@ -92,17 +65,6 @@ enum Skill
 	SkillMasterWeapon = 4, // automatic gunfire
 	SkillBlessingGodWar = 5, // refill ammunition
 	SkillAttackTeleport = 6, // ?knockout? teleport
-};
-
-enum AtributType
-{
-	AtTank,
-	AtHealer,
-	AtDps,
-	AtWeapon,
-	AtHardtype,
-	AtJob,
-	AtOther,
 };
 
 enum ToplistTypes
@@ -370,4 +332,60 @@ struct CTeeInfo
 	int m_ColorFeet;
 };
 
+// attribute data
+enum class Attribute : int
+{
+	SpreadShotgun			= 1,
+	SpreadGrenade			= 2,
+	SpreadRifle				= 3,
+    Strength				= 4,
+	Dexterity				= 5,
+ 	CriticalHit				= 6,
+	DirectCriticalHit		= 7,
+    Hardness				= 8,
+	Lucky					= 9,
+	Piety					= 10,
+	Vampirism				= 11,
+	AmmoRegen				= 12,
+	Ammo					= 13,
+	Efficiency				= 14,
+	Extraction				= 15,
+	HammerPower				= 16,
+	GunPower				= 17,
+	ShotgunPower			= 18,
+	GrenadePower			= 19,
+	RiflePower				= 20,
+	LuckyDropItem			= 21,
+	ATTRIBUTES_NUM,
+};
+
+enum class AttributeType : int
+{
+	Tank,
+	Healer,
+	Dps,
+	Weapon,
+	Hardtype,
+	Job,
+	Other,
+};
+
+class CAttributeData
+{
+	friend class CInventoryCore;
+
+	char m_aName[32];
+	char m_aFieldName[32];
+	int m_UpgradePrice;
+	AttributeType m_Type;
+	int m_Dividing;
+
+public:
+	const char* GetName() const { return m_aName; }
+	const char* GetFieldName() const { return m_aFieldName; }
+	int GetUpgradePrice() const { return m_UpgradePrice; }
+	bool IsType(AttributeType Type) const { return m_Type == Type; }
+	AttributeType GetType() const { return m_Type; }
+	int GetDividing() const { return m_Dividing; }
+};
 #endif

@@ -19,7 +19,7 @@ class CItemDataInfo
 public:
 	ItemFunctional m_Function;
 	int m_InitialPrice;
-	int m_aAttribute[2];
+	Attribute m_aAttribute[2];
 	int m_aAttributeValue[2];
 
 	// main functions
@@ -27,8 +27,8 @@ public:
 	const char* GetDesc() const { return m_aDesc; }
 
 	// equip modules types functions
-	int GetInfoEnchantStats(int AttributeID) const;
-	int GetInfoEnchantStats(int AttributeID, int Enchant) const;
+	int GetInfoEnchantStats(Attribute ID) const;
+	int GetInfoEnchantStats(Attribute ID, int Enchant) const;
 	int GetEnchantPrice(int EnchantLevel) const;
 
 	int GetDysenthis() const { return m_Dysenthis; }

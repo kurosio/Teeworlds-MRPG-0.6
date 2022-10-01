@@ -63,15 +63,8 @@ public:
 	######################################################################### */
 	static std::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
 	// - - - - - - - - - - - -
-	struct StructAttribut
-	{
-		char m_aName[32];
-		char m_aFieldName[32];
-		int m_UpgradePrice;
-		int m_Type;
-		int m_Devide;
-	};
-	static std::map < int, StructAttribut > ms_aAttributsInfo;
+
+	static std::map < Attribute, CAttributeData > ms_aAttributesInfo;
 
 	/* #########################################################################
 		HELPER PLAYER FUNCTION
@@ -82,6 +75,7 @@ public:
 	std::unique_ptr<char[]> LevelString(int MaxValue, int CurrentValue, int Step, char toValue, char fromValue);
 	CItemDataInfo &GetItemInfo(int ItemID) const;
 	CQuestDataInfo &GetQuestInfo(int QuestID) const;
+	CAttributeData* GetAttributeInfo(Attribute ID) const { return &ms_aAttributesInfo[ID]; } 
 
 	/* #########################################################################
 		EVENTS
@@ -98,7 +92,7 @@ public:
 		CHAT FUNCTIONS
 	######################################################################### */
 private:
-	void SendChat(int ChatterClientID, int Mode, int To, const char *pText);
+	void SendChat(int ChatterClientID, int Mode, const char *pText);
 	void UpdateDiscordStatus();
 
 public:

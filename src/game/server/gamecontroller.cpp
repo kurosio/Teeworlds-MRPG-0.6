@@ -66,7 +66,7 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	}
 
 	// Weapons
-	const int StartAmmo = 10 + pChr->GetPlayer()->GetAttributeCount(Stats::StAmmo);
+	const int StartAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(Attribute::Ammo);
 	pChr->GiveWeapon(WEAPON_HAMMER, -1);
 	for(int i = 1; i < NUM_WEAPONS-1; i++)
 		pChr->GiveWeapon(i, StartAmmo);

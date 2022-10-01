@@ -52,7 +52,7 @@ void CInventoryCore::OnInit()
 			{
 				char aBuf[32];
 				str_format(aBuf, sizeof(aBuf), "Attribute%d", i);
-				ItemInfo.m_aAttribute[i] = pRes->getInt(aBuf);
+				ItemInfo.m_aAttribute[i] = (Attribute)pRes->getInt(aBuf);
 				str_format(aBuf, sizeof(aBuf), "AttributeValue%d", i);
 				ItemInfo.m_aAttributeValue[i] = pRes->getInt(aBuf);
 			}
@@ -66,12 +66,15 @@ void CInventoryCore::OnInit()
 	{
 		while (pRes->next())
 		{
-			const int AttID = pRes->getInt("ID");
-			str_copy(CGS::ms_aAttributsInfo[AttID].m_aName, pRes->getString("Name").c_str(), sizeof(CGS::ms_aAttributsInfo[AttID].m_aName));
-			str_copy(CGS::ms_aAttributsInfo[AttID].m_aFieldName, pRes->getString("FieldName").c_str(), sizeof(CGS::ms_aAttributsInfo[AttID].m_aFieldName));
-			CGS::ms_aAttributsInfo[AttID].m_UpgradePrice = pRes->getInt("Price");
-			CGS::ms_aAttributsInfo[AttID].m_Type = pRes->getInt("Type");
-			CGS::ms_aAttributsInfo[AttID].m_Devide = pRes->getInt("Divide");
+			CAttributeData Att;
+			str_copy(Att.m_aName, pRes->getString("Name").c_str(), sizeof(Att.m_aName));
+			str_copy(Att.m_aFieldName, pRes->getString("FieldName").c_str(), sizeof(Att.m_aFieldName));
+			Att.m_UpgradePrice = pRes->getInt("Price");
+			Att.m_Type = (AttributeType)pRes->getInt("Type");
+			Att.m_Dividing = pRes->getInt("Divide");
+			
+			const Attribute AttID = (Attribute)pRes->getInt("ID");
+			CGS::ms_aAttributesInfo[AttID] = Att;
 		}
 	});
 }
