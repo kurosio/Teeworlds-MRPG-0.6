@@ -114,12 +114,15 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "After, need select item to interact");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, "Inventory SELECT List");
+		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, "Inventory tabs");
 		int SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_USED);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_USED, TAB_INVENTORY_SELECT, "Used ({INT})", SizeItems);
 
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_CRAFT, TAB_INVENTORY_SELECT, "Craft ({INT})", SizeItems);
+		
+		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP);
+		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_EQUIP, TAB_INVENTORY_SELECT, "Equipment ({INT})", SizeItems);
 
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_MODULE);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_MODULE, TAB_INVENTORY_SELECT, "Modules ({INT})", SizeItems);
