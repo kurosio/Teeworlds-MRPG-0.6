@@ -114,7 +114,7 @@ void CPlayer::EffectsTick()
 	if(Server()->Tick() % Server()->TickSpeed() != 0 || CGS::ms_aEffects[m_ClientID].empty())
 		return;
 
-	for(auto& pEffect = CGS::ms_aEffects[m_ClientID].begin(); pEffect != CGS::ms_aEffects[m_ClientID].end();)
+	for(auto pEffect = CGS::ms_aEffects[m_ClientID].begin(); pEffect != CGS::ms_aEffects[m_ClientID].end();)
 	{
 		pEffect->second--;
 		if(pEffect->second <= 0)

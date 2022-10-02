@@ -237,7 +237,7 @@ void CPlayerBot::Snap(int SnappingClient)
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
 		
 		char aNameBuf[MAX_NAME_LENGTH];
-		str_format(aNameBuf, sizeof(aNameBuf), "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, PercentHP);
+		str_format(aNameBuf, sizeof(aNameBuf), "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, clamp(PercentHP, 1, 100));
 		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
 	}
 	else
