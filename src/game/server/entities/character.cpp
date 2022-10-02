@@ -89,14 +89,14 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	return Spawned;
 }
 
-void CCharacter::SetWeapon(int W)
+void CCharacter::SetWeapon(int Weapon)
 {
-	if(W == m_Core.m_ActiveWeapon)
+	if(Weapon == m_Core.m_ActiveWeapon)
 		return;
 
 	m_LastWeapon = m_Core.m_ActiveWeapon;
 	m_QueuedWeapon = -1;
-	m_Core.m_ActiveWeapon = W;
+	m_Core.m_ActiveWeapon = Weapon;
 	GS()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 
 	if(m_Core.m_ActiveWeapon < 0 || m_Core.m_ActiveWeapon >= NUM_WEAPONS)
@@ -413,7 +413,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 	if(m_pPlayer->GetEquippedItemID((ItemFunctional)WeaponID) <= 0 && !IsHammer)
 	{
 		if(RemoveWeapon(WeaponID) && WeaponID == m_Core.m_ActiveWeapon)
-			m_Core.m_ActiveWeapon = m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER;
+			SetWeapon(m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER);
 		return false;
 	}
 
@@ -1080,11 +1080,11 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 		m_Health = m_pPlayer->GetStartHealth();
 	}
 
-	const CItemDataInfo pInformationItem = GS()->GetItemInfo(ItemID);
-	if((pInformationItem.m_Function >= EQUIP_HAMMER && pInformationItem.m_Function <= EQUIP_RIFLE))
-		m_pPlayer->GetCharacter()->GiveWeapon(pInformationItem.m_Function, 3);
+	const CItemDataInfo* pItemInfo = &GS()->GetItemInfo(ItemID);
+	if((pItemInfo->GetFunctional() >= EQUIP_HAMMER && pItemInfo->GetFunctional() <= EQUIP_LASER))
+		m_pPlayer->GetCharacter()->GiveWeapon(pItemInfo->GetFunctional(), 3);
 
-	if(pInformationItem.GetInfoEnchantStats(Attribute::AmmoRegen) > 0)
+	if(pItemInfo->GetInfoEnchantStats(Attribute::AmmoRegen) > 0)
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(Attribute::AmmoRegen, true);
 }
 

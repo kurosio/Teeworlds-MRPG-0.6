@@ -310,7 +310,7 @@ bool CPlayerBot::IsActiveQuests(int SnapClientID) const
 
 int CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
-	if((EquipID >= EQUIP_HAMMER && EquipID <= EQUIP_RIFLE) || EquipID == EQUIP_ARMOR)
+	if((EquipID >= EQUIP_HAMMER && EquipID <= EQUIP_LASER) || EquipID == EQUIP_ARMOR)
 		return DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];
 	return -1;
 }

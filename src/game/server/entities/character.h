@@ -91,7 +91,7 @@ public:
 	bool IsAlive() const { return m_Alive; }
 	void SetEvent(int EventID) { m_Event = EventID; }
 	void SetEmote(int Emote, int Sec);
-	void SetWeapon(int W);
+	void SetWeapon(int Weapon);
 	bool IncreaseHealth(int Amount);
 	bool IncreaseMana(int Amount);
 	bool CheckFailMana(int Mana);
