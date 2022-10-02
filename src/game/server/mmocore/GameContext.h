@@ -78,7 +78,6 @@ enum ToplistTypes
 // item functionals
 enum ItemFunctional : int
 {
-	
 	EQUIP_HAMMER,
 	EQUIP_GUN,
 	EQUIP_SHOTGUN,
@@ -93,7 +92,8 @@ enum ItemFunctional : int
 	FUNCTION_USED,
 	FUNCTION_SETTINGS,
 	FUNCTION_PLANTS,
-	FUNCTION_MINER
+	FUNCTION_MINER,
+	NUM_FUNCTIONS,
 };
 
 enum class ItemType : short
@@ -107,6 +107,7 @@ enum class ItemType : short
 	TYPE_EQUIP,
 	TYPE_DECORATION,
 	TYPE_POTION,
+	NUM_TYPES,
 };
 
 enum QuestState
@@ -129,7 +130,7 @@ enum MenuList
 	MENU_INBOX,
 	MENU_UPGRADE,
 	MENU_SETTINGS,
-	MENU_GUIDEDROP,
+	MENU_GUIDE_GRINDING,
 	MENU_EQUIPMENT,
 	MENU_GUILD,
 	MENU_GUILD_PLAYERS,

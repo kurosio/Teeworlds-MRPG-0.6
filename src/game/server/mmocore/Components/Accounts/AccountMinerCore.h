@@ -18,6 +18,7 @@ class CAccountMinerCore : public MmoComponent
 		int m_StartHealth;
 		vec2 m_Position;
 		int m_Distance;
+		int m_WorldID;
 	};
 	static std::map < int, StructOres > ms_aOre;
 
@@ -33,6 +34,7 @@ public:
 	void ShowMenu(CPlayer *pPlayer) const;
 	void Work(CPlayer *pPlayer, int Exp);
 
+	bool ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer);
 };
 
 #endif

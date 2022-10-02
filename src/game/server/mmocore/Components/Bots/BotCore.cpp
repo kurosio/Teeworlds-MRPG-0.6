@@ -347,6 +347,43 @@ const char* CBotCore::GetMeaninglessDialog()
 	return pTalking[random_int()%3];
 }
 
+bool CBotCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
+{
+	bool Found = false;
+	const int ClientID = pPlayer->GetCID();
+	const float ExtraChance = clamp((float)pPlayer->GetAttributeSize(Attribute::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
+	
+	char aBuf[128];
+	for(const auto& [ID, MobData] : MobBotInfo::ms_aMobBot)
+	{
+		if (WorldID == MobData.m_WorldID)
+		{
+			bool HasDropItem = false;
+			const int HideID = (NUM_TAB_MENU + ID);
+			const vec2 Pos = MobData.m_Position / 32.0f;
+			GS()->AVH(ClientID, HideID, "Mob {STR} [x{INT} y{INT}]", MobData.GetName(), (int)Pos.x, (int)Pos.y);
+
+			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
+			{
+				if(MobData.m_aDropItem[i] <= 0 || MobData.m_aValueItem[i] <= 0)
+					continue;
+
+				const float Chance = MobData.m_aRandomItem[i];
+				CItemDataInfo &InfoDropItem = GS()->GetItemInfo(MobData.m_aDropItem[i]);
+				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", MobData.m_aValueItem[i], Chance, ExtraChance);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}{STR}", InfoDropItem.GetName(), aBuf);
+				HasDropItem = true;
+			}
+
+			Found = true;
+
+			if(!HasDropItem)
+				GS()->AVM(ClientID, "null", NOPE, HideID, "The mob has no items!");
+		}
+	}
+	return Found;
+}
+
 // add a new bot
 void CBotCore::ConAddCharacterBot(int ClientID, const char* pCharacter)
 {

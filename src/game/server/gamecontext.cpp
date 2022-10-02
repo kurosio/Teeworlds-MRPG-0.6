@@ -1520,43 +1520,6 @@ void CGS::AVCALLBACK(int ClientID, const char *pCmd, const int TempInt, const in
 	}
 }
 
-bool CGS::ShowDropItemsByWorld(int WorldID, CPlayer* pPlayer)
-{
-	bool Found = false;
-	const int ClientID = pPlayer->GetCID();
-	const float ExtraChance = clamp((float)pPlayer->GetAttributeSize(Attribute::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
-	
-	char aBuf[128];
-	for(const auto& [ID, MobData] : MobBotInfo::ms_aMobBot)
-	{
-		if (WorldID == MobData.m_WorldID)
-		{
-			bool HasDropItem = false;
-			const int HideID = (NUM_TAB_MENU + ID);
-			const vec2 Pos = MobData.m_Position / 32.0f;
-			AVH(ClientID, HideID, "{STR} [x{INT} y{INT}]", MobData.GetName(), (int)Pos.x, (int)Pos.y);
-
-			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
-			{
-				if(MobData.m_aDropItem[i] <= 0 || MobData.m_aValueItem[i] <= 0)
-					continue;
-
-				const float Chance = MobData.m_aRandomItem[i];
-				CItemDataInfo &InfoDropItem = GetItemInfo(MobData.m_aDropItem[i]);
-				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", MobData.m_aValueItem[i], Chance, ExtraChance);
-				AVM(ClientID, "null", NOPE, HideID, "{STR}{STR}", InfoDropItem.GetName(), aBuf);
-				HasDropItem = true;
-			}
-
-			Found = true;
-
-			if(!HasDropItem)
-				AVM(ClientID, "null", NOPE, HideID, "The mob has no items!");
-		}
-	}
-	return Found;
-}
-
 void CGS::ResetVotes(int ClientID, int MenuList)
 {
 	CPlayer *pPlayer = GetPlayer(ClientID, true);
@@ -1610,7 +1573,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 
 		// info menu
 		AVH(ClientID, TAB_INFORMATION, "√ SUB MENU INFORMATION");
-		AVM(ClientID, "MENU", MenuList::MENU_GUIDEDROP, TAB_INFORMATION, "Loots, mobs on your zone");
+		AVM(ClientID, "MENU", MenuList::MENU_GUIDE_GRINDING, TAB_INFORMATION, "Wiki / Grinding Guide ");
 		AVM(ClientID, "MENU", MenuList::MENU_TOP_LIST, TAB_INFORMATION, "Ranking guilds and players");
 	}
 	else if(MenuList == MenuList::MENU_JOURNAL_MAIN)
@@ -1697,11 +1660,11 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
 		AddVotesBackpage(ClientID);
 	}
-	else if(MenuList == MenuList::MENU_GUIDEDROP)
+	else if(MenuList == MenuList::MENU_GUIDE_GRINDING)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
-		AVH(ClientID, TAB_INFO_LOOT, "Chance & Loot Information");
-		AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "Here you can see chance loot, mobs, on YOUR ZONE.");
+		AVH(ClientID, TAB_INFO_LOOT, "Grinding Information");
+		AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "You can look mobs, plants, and ores.");
 		AV(ClientID, "null");
 
 		for(int ID = MAIN_WORLD_ID; ID < Server()->GetWorldsSize(); ID++)
@@ -1716,13 +1679,17 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		}
 		else
 		{
-			if(!ShowDropItemsByWorld(pPlayer->m_aSortTabs[SORT_GUIDE_WORLD], pPlayer))
-				AVL(ClientID, "null", "There are no active mobs in your zone!");
+			const int WorldID = pPlayer->m_aSortTabs[SORT_GUIDE_WORLD];
+			const bool ActiveMob = Mmo()->BotsData()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActivePlant = Mmo()->PlantsAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActiveOre = Mmo()->MinerAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
+			if(!ActiveMob && !ActivePlant && !ActiveOre)
+				AVL(ClientID, "null", "There are no drops in the selected area.");
 		}
 		AddVotesBackpage(ClientID);
 	}
-
-	Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, false);
+	else
+		Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, false);
 }
 
 // information for unauthorized players
@@ -1868,11 +1835,6 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 
 	CreatePlayerSound(ClientID, SOUND_BODY_LAND);
 
-	if(PPSTR(CMD, "BACK") == 0)
-	{
-		ResetVotes(ClientID, pPlayer->m_LastVoteMenu);
-		return true;
-	}
 	if(PPSTR(CMD, "MENU") == 0)
 	{
 		ResetVotes(ClientID, VoteID);
@@ -1888,7 +1850,7 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 	if (PPSTR(CMD, "SORTEDWIKIWORLD") == 0)
 	{
 		pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] = VoteID;
-		ResetVotes(ClientID, MenuList::MENU_GUIDEDROP);
+		StrongUpdateVotes(ClientID, MenuList::MENU_GUIDE_GRINDING);
 		return true;
 	}
 	if(pPlayer->ParseVoteUpgrades(CMD, VoteID, VoteID2, Get))

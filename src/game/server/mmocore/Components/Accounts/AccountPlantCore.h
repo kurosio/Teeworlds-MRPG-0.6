@@ -18,6 +18,7 @@ class CAccountPlantCore : public MmoComponent
 		int m_StartHealth;
 		vec2 m_Position;
 		int m_Distance;
+		int m_WorldID;
 	};
 	static std::map < int, StructPlants > ms_aPlants;
 
@@ -31,9 +32,9 @@ public:
 	int GetPlantHealth(vec2 Pos) const;
 
 	void ShowMenu(CPlayer* pPlayer) const;
-	void ShowPlantsItems(int ClientID) const;
-
 	void Work(CPlayer* pPlayer, int Level);
+	
+	bool ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer);
 };
 
 #endif

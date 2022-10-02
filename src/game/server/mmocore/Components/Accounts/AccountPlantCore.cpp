@@ -20,6 +20,7 @@ void CAccountPlantCore::OnInitWorld(const char* pWhereLocalWorld)
 		ms_aPlants[ID].m_StartHealth = pRes->getInt("Health");
 		ms_aPlants[ID].m_Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
 		ms_aPlants[ID].m_Distance = pRes->getInt("Distance");
+		ms_aPlants[ID].m_WorldID = pRes->getInt("WorldID");
 	}
 }
 
@@ -74,9 +75,25 @@ void CAccountPlantCore::ShowMenu(CPlayer* pPlayer) const
 	GS()->AVD(ClientID, "PLANTUPGRADE", JOB_UPGR_QUANTITY, 20, TAB_UPGR_JOB, "Quantity +{INT} (Price 20P)", JobUpgrQuantity);
 }
 
-void CAccountPlantCore::ShowPlantsItems(int ClientID) const
+bool CAccountPlantCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 {
-	Job()->Item()->ListInventory(ClientID, ItemFunctional::FUNCTION_PLANTS);
+	bool Found = false;
+	const int ClientID = pPlayer->GetCID();
+	
+	for(const auto& [ID, Plant] : ms_aPlants)
+	{
+		if (WorldID == Plant.m_WorldID)
+		{
+			const int HideID = (NUM_TAB_MENU + ID) << 0x10;
+			const vec2 Pos = Plant.m_Position / 32.0f;
+			const CItemDataInfo* pItemInfo = &GS()->GetItemInfo(Plant.m_ItemID);
+			GS()->AVH(ClientID, HideID, "Plant {STR} [x{INT} y{INT}]", pItemInfo->GetName(), Plant.m_StartHealth, (int)Pos.x, (int)Pos.y);
+			GS()->AVM(ClientID, "null", NOPE, HideID, "Level: {INT} | Health: {INT}P", Plant.m_Level, Plant.m_StartHealth);
+			GS()->AVM(ClientID, "null", NOPE, HideID, "Distance of distribution: {INT}P", Plant.m_Distance);
+			Found = true;
+		}
+	}
+	return Found;
 }
 
 void CAccountPlantCore::Work(CPlayer* pPlayer, int Level)

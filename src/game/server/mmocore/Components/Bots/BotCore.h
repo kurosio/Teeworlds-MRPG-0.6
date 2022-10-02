@@ -31,6 +31,8 @@ public:
 	static int GetQuestNPC(int MobID);
 	static const char *GetMeaninglessDialog();
 	
+	bool ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer);
+
 	void ConAddCharacterBot(int ClientID, const char* pCharacter);
 };
 

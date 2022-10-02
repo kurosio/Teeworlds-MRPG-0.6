@@ -202,7 +202,6 @@ public:
 
 	// TODO: fixme. improve the system using the ID method, as well as the ability to implement Backpage
 	void AVCALLBACK(int To, const char* Type, int ID, int ID2, int HiddenID, VoteCallBack Callback, const char* pText, ...);
-	bool ShowDropItemsByWorld(int WorldID, CPlayer* pPlayer);
 
 	void ClearVotes(int ClientID);
 	void ShowVotesNewbieInformation(int ClientID);

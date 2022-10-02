@@ -7,17 +7,36 @@
 
 std::map < int , CAccountMinerCore::StructOres > CAccountMinerCore::ms_aOre;
 
-void CAccountMinerCore::ShowMenu(CPlayer *pPlayer) const
+void CAccountMinerCore::OnInitWorld(const char* pWhereLocalWorld)
 {
-	const int ClientID = pPlayer->GetCID();
-	const int JobLevel = pPlayer->Acc().m_aMining[JOB_LEVEL].m_Value;
-	const int JobExperience = pPlayer->Acc().m_aMining[JOB_EXPERIENCE].m_Value;
-	const int JobUpgrades = pPlayer->Acc().m_aMining[JOB_UPGRADES].m_Value;
-	const int JobUpgrQuantity = pPlayer->Acc().m_aMining[JOB_UPGR_QUANTITY].m_Value;
-	const int ExperienceNeed = computeExperience(JobLevel);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_positions_mining", pWhereLocalWorld);
+	while (pRes->next())
+	{
+		const int ID = pRes->getInt("ID");
+		ms_aOre[ID].m_ItemID = pRes->getInt("ItemID");
+		ms_aOre[ID].m_Level = pRes->getInt("Level");
+		ms_aOre[ID].m_StartHealth = pRes->getInt("Health");
+		ms_aOre[ID].m_Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
+		ms_aOre[ID].m_Distance = pRes->getInt("Distance");
+		ms_aOre[ID].m_WorldID = pRes->getInt("WorldID");
+	}
+}
 
-	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Miner Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
-	GS()->AVD(ClientID, "MINERUPGRADE", JOB_UPGR_QUANTITY, 20, TAB_UPGR_JOB, "Quantity +{INT} (Price 20P)", JobUpgrQuantity);
+void CAccountMinerCore::OnInitAccount(CPlayer* pPlayer)
+{
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	if (pRes->next())
+	{
+		for(int i = 0; i < NUM_JOB_ACCOUNTS_STATS; i++)
+		{
+			const char* pFieldName = pPlayer->Acc().m_aMining[i].getFieldName();
+			pPlayer->Acc().m_aMining[i].m_Value = pRes->getInt(pFieldName);
+		}
+		return;
+	}
+	pPlayer->Acc().m_aMining[JOB_LEVEL].m_Value = 1;
+	pPlayer->Acc().m_aMining[JOB_UPGR_QUANTITY].m_Value = 1;
+	Sqlpool.Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
 }
 
 int CAccountMinerCore::GetOreLevel(vec2 Pos) const
@@ -39,6 +58,40 @@ int CAccountMinerCore::GetOreHealth(vec2 Pos) const
 	auto Iter = std::find_if(ms_aOre.begin(), ms_aOre.end(), [Pos](auto& p)
 	{	return distance(p.second.m_Position, Pos) < p.second.m_Distance;	});
 	return Iter != ms_aOre.end() ? (*Iter).second.m_StartHealth : -1;
+}
+
+void CAccountMinerCore::ShowMenu(CPlayer *pPlayer) const
+{
+	const int ClientID = pPlayer->GetCID();
+	const int JobLevel = pPlayer->Acc().m_aMining[JOB_LEVEL].m_Value;
+	const int JobExperience = pPlayer->Acc().m_aMining[JOB_EXPERIENCE].m_Value;
+	const int JobUpgrades = pPlayer->Acc().m_aMining[JOB_UPGRADES].m_Value;
+	const int JobUpgrQuantity = pPlayer->Acc().m_aMining[JOB_UPGR_QUANTITY].m_Value;
+	const int ExperienceNeed = computeExperience(JobLevel);
+
+	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Miner Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
+	GS()->AVD(ClientID, "MINERUPGRADE", JOB_UPGR_QUANTITY, 20, TAB_UPGR_JOB, "Quantity +{INT} (Price 20P)", JobUpgrQuantity);
+}
+
+bool CAccountMinerCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
+{
+	bool Found = false;
+	const int ClientID = pPlayer->GetCID();
+	
+	for(const auto& [ID, Ore] : ms_aOre)
+	{
+		if (WorldID == Ore.m_WorldID)
+		{
+			const int HideID = (NUM_TAB_MENU + ID) << 0x10;
+			const vec2 Pos = Ore.m_Position / 32.0f;
+			const CItemDataInfo* pItemInfo = &GS()->GetItemInfo(Ore.m_ItemID);
+			GS()->AVH(ClientID, HideID, "Ore {STR} [x{INT} y{INT}]", pItemInfo->GetName(), Ore.m_StartHealth, (int)Pos.x, (int)Pos.y);
+			GS()->AVM(ClientID, "null", NOPE, HideID, "Level: {INT} | Health: {INT}P", Ore.m_Level, Ore.m_StartHealth);
+			GS()->AVM(ClientID, "null", NOPE, HideID, "Distance of distribution: {INT}P", Ore.m_Distance);
+			Found = true;
+		}
+	}
+	return Found;
 }
 
 void CAccountMinerCore::Work(CPlayer *pPlayer, int Level)
@@ -70,36 +123,6 @@ void CAccountMinerCore::Work(CPlayer *pPlayer, int Level)
 	Job()->SaveAccount(pPlayer, SAVE_MINER_DATA);
 }
 
-void CAccountMinerCore::OnInitAccount(CPlayer* pPlayer)
-{
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
-	if (pRes->next())
-	{
-		for(int i = 0; i < NUM_JOB_ACCOUNTS_STATS; i++)
-		{
-			const char* pFieldName = pPlayer->Acc().m_aMining[i].getFieldName();
-			pPlayer->Acc().m_aMining[i].m_Value = pRes->getInt(pFieldName);
-		}
-		return;
-	}
-	pPlayer->Acc().m_aMining[JOB_LEVEL].m_Value = 1;
-	pPlayer->Acc().m_aMining[JOB_UPGR_QUANTITY].m_Value = 1;
-	Sqlpool.Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
-}
-
-void CAccountMinerCore::OnInitWorld(const char* pWhereLocalWorld)
-{
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_positions_mining", pWhereLocalWorld);
-	while (pRes->next())
-	{
-		const int ID = pRes->getInt("ID");
-		ms_aOre[ID].m_ItemID = pRes->getInt("ItemID");
-		ms_aOre[ID].m_Level = pRes->getInt("Level");
-		ms_aOre[ID].m_StartHealth = pRes->getInt("Health");
-		ms_aOre[ID].m_Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
-		ms_aOre[ID].m_Distance = pRes->getInt("Distance");
-	}
-}
 
 bool CAccountMinerCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {

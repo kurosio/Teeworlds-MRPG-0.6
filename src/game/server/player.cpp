@@ -513,16 +513,30 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 		}
 		return true;
 	}
+	
+	if(PPSTR(CMD, "BACK") == 0)
+	{
+		// close other tabs after checked new
+		for(auto& [ID, Value] : m_aHiddenMenu)
+		{
+			if(ID > NUM_TAB_MENU)
+				Value = false;
+		}
+
+		GS()->ResetVotes(m_ClientID, m_LastVoteMenu);
+		return true;
+	}
 
 	if(PPSTR(CMD, "HIDDEN") == 0)
 	{
 		if(VoteID < TAB_STAT)
 			return true;
 
-		for(auto& x : m_aHiddenMenu)
+		// close other tabs after checked new
+		for(auto& [ID, Value] : m_aHiddenMenu)
 		{
-			if((x.first > NUM_TAB_MENU && x.first != VoteID))
-				x.second = false;
+			if((ID > NUM_TAB_MENU && VoteID > NUM_TAB_MENU && ID != VoteID))
+				Value = false;
 		}
 
 		m_aHiddenMenu[VoteID] ^= true;

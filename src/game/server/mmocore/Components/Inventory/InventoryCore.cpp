@@ -132,7 +132,8 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_OTHER);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_OTHER, TAB_INVENTORY_SELECT, "Other ({INT})", SizeItems);
-		if(pPlayer->m_aSortTabs[SORT_INVENTORY])
+
+		if(pPlayer->m_aSortTabs[SORT_INVENTORY] >= 0)
 			ListInventory(ClientID, (ItemType)pPlayer->m_aSortTabs[SORT_INVENTORY]);
 
 		GS()->AddVotesBackpage(ClientID);
@@ -162,11 +163,9 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 			GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} | {STR}", pPlayer->GetItem(ItemID).Info().GetName(), aAttributes);
 		}
 
-		GS()->AV(ClientID, "null");
-
 		// show and sort equipment
-		if(!ExecuteTemplateItemsTypes((ItemFunctional)pPlayer->m_aSortTabs[SORT_EQUIPING], CItemData::ms_aItems[ClientID], [&](const CItemData& p){ ItemSelected(pPlayer, p, true); }))
-			GS()->AVL(ClientID, "null", "There are no items in this tab");
+		if(pPlayer->m_aSortTabs[SORT_EQUIPING] >= 0)
+			ListInventory(ClientID, (ItemFunctional)pPlayer->m_aSortTabs[SORT_EQUIPING]);
 
 		GS()->AddVotesBackpage(ClientID);
 		return true;
@@ -285,9 +284,12 @@ void CInventoryCore::RepairDurabilityItems(CPlayer *pPlayer)
 
 void CInventoryCore::ListInventory(int ClientID, ItemType Type)
 {
-	GS()->AV(ClientID, "null");
-	if(!ExecuteTemplateItemsTypes(Type, CItemData::ms_aItems[ClientID], [&](const CItemData& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
-		GS()->AVL(ClientID, "null", "There are no items in this tab");
+	if(Type >= ItemType::TYPE_USED && Type < ItemType::NUM_TYPES)
+	{
+		GS()->AV(ClientID, "null");
+		if(!ExecuteTemplateItemsTypes(Type, CItemData::ms_aItems[ClientID], [&](const CItemData& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
+			GS()->AVL(ClientID, "null", "There are no items in this tab");
+	}
 }
 
 void CInventoryCore::ListInventory(int ClientID, ItemFunctional Type)
