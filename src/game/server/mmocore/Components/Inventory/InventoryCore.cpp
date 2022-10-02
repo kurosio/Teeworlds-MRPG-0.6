@@ -392,8 +392,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 	{
 		char aEnchantBuf[16];
 		pItemPlayer.FormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));
-		GS()->AVH(ClientID, HideID, "{STR} {STR}{STR}",
-			pNameItem, (pItemPlayer.m_Enchant > 0 ? aEnchantBuf : "\0"), (pItemPlayer.m_Settings ? " ✔" : "\0"));
+		GS()->AVH(ClientID, HideID, "{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, (pItemPlayer.m_Enchant > 0 ? aEnchantBuf : "\0"));
 
 		if(Dress && pPlayer->GetItem(itShowEquipmentDescription).IsEquipped())
 			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info().GetDesc());
@@ -404,19 +403,33 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 	}
 	else
 	{
-		GS()->AVH(ClientID, HideID, "{STR}{STR} x{VAL}",
-			(pItemPlayer.m_Settings ? "Dressed - " : "\0"), pNameItem, pItemPlayer.m_Value);
+		GS()->AVH(ClientID, HideID, "{STR}{STR} x{VAL}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.m_Value);
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info().GetDesc());
 	}
 
+	// functional by function
 	if (pItemPlayer.Info().m_Function == FUNCTION_ONE_USED || pItemPlayer.Info().m_Function == FUNCTION_USED)
 	{
 		GS()->AVM(ClientID, "null", NOPE, HideID, "For bind command '/useitem {INT}'", ItemID);
 		GS()->AVM(ClientID, "IUSE", ItemID, HideID, "Use {STR}", pNameItem);
 	}
+	else if(pItemPlayer.Info().m_Function == FUNCTION_PLANTS)
+	{
+		const int HouseID = Job()->House()->OwnerHouseID(pPlayer->Acc().m_UserID);
+		const int PlantItemID = Job()->House()->GetPlantsID(HouseID);
+		if(HouseID > 0 && PlantItemID != ItemID)
+		{
+			const int random_change = random_int() % 900;
+			GS()->AVD(ClientID, "HOMEPLANTSET", ItemID, random_change, HideID, "To plant {STR}, to house (0.06%)", pNameItem);
+		}
+	}
 
+	// functional by type
 	if (pItemPlayer.Info().m_Type == ItemType::TYPE_POTION)
+	{
 		GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "Auto use {STR} - {STR}", pNameItem, (pItemPlayer.m_Settings ? "Enable" : "Disable"));
+
+	}
 	else if (pItemPlayer.Info().m_Type == ItemType::TYPE_DECORATION)
 	{
 		GS()->AVM(ClientID, "DECOSTART", ItemID, HideID, "Add {STR} to your house", pNameItem);
@@ -430,17 +443,10 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 			GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "{STR} {STR}", (pItemPlayer.m_Settings ? "Undress" : "Equip"), pNameItem);
 	}
 
-	if(pItemPlayer.Info().m_Function == FUNCTION_PLANTS)
-	{
-		const int HouseID = Job()->House()->OwnerHouseID(pPlayer->Acc().m_UserID);
-		const int PlantItemID = Job()->House()->GetPlantsID(HouseID);
-		if(HouseID > 0 && PlantItemID != ItemID)
-		{
-			const int random_change = random_int() % 900;
-			GS()->AVD(ClientID, "HOMEPLANTSET", ItemID, random_change, HideID, "To plant {STR}, to house (0.06%)", pNameItem);
-		}
-	}
+	// house plant
 
+
+	// enchant
 	if (pItemPlayer.Info().IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
 	{
 		const int Price = pItemPlayer.GetEnchantPrice();
@@ -448,16 +454,23 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 	}
 
 	// not allowed drop equipped hammer
-	if (ItemID == pPlayer->GetEquippedItemID(EQUIP_HAMMER))
-		return;
+	if (ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
+	{
+		// dysenthis
+		if (pItemPlayer.Info().GetDysenthis() > 0)
+		{
+			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.Info().GetDysenthis());
+		}
 
-	if (pItemPlayer.Info().GetDysenthis() > 0)
-		GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.Info().GetDysenthis());
+		// drop
+		GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop {STR}", pNameItem);
 
-	GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop {STR}", pNameItem);
-
-	if (pItemPlayer.Info().m_InitialPrice > 0)
-		GS()->AVM(ClientID, "AUCTIONSLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
+		// auction
+		if (pItemPlayer.Info().m_InitialPrice > 0)
+		{
+			GS()->AVM(ClientID, "AUCTIONSLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
+		}
+	}
 }
 
 int CInventoryCore::GetCountItemsType(CPlayer *pPlayer, ItemType Type) const

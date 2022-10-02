@@ -1398,7 +1398,9 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	Vote.m_Callback = Callback;
 
 	m_aPlayerVotes[ClientID].push_back(Vote);
-
+	
+	if(Vote.m_aDescription[0] == '\0')
+		str_copy(Vote.m_aDescription, "························", sizeof(Vote.m_aDescription));
 
 	// send to vanilla clients
 	CNetMsg_Sv_VoteOptionAdd OptionMsg;
@@ -1436,7 +1438,7 @@ void CGS::AVH(int ClientID, const int HiddenID, const char *pText, ...)
 
 		const bool HiddenTab = (HiddenID >= TAB_STAT) ? m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) : false;
 		auto Symbols = [](int ID, const char* pValue, const char* pValue2) -> const char* {	return ID >= NUM_TAB_MENU ? (pValue) : (ID < NUM_TAB_MENU_INTERACTIVES ? (pValue2) : (pValue));	};
-		const char* pSymbols = Symbols(HiddenID, HiddenTab ? "> # " : "V # ", HiddenTab ?  "V # " : "> # ");
+		const char* pSymbols = Symbols(HiddenID, HiddenTab ? "► " : "▼ ", HiddenTab ?  "▼ " : "► ");
 		
 		dynamic_string Buffer;
 
@@ -1516,6 +1518,43 @@ void CGS::AVCALLBACK(int ClientID, const char *pCmd, const int TempInt, const in
 		Buffer.clear();
 		va_end(VarArgs);
 	}
+}
+
+bool CGS::ShowDropMobChances(CPlayer* pPlayer)
+{
+	bool Found = false;
+	const int ClientID = pPlayer->GetCID();
+	const float ExtraChance = clamp((float)pPlayer->GetAttributeSize(Attribute::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
+	
+	char aBuf[128];
+	for(const auto& [ID, MobData] : MobBotInfo::ms_aMobBot)
+	{
+		if (IsPlayerEqualWorldID(ClientID, MobData.m_WorldID))
+		{
+			bool HasDropItem = false;
+			const int HideID = (NUM_TAB_MENU + ID);
+			const vec2 Pos = MobData.m_Position / 32.0f;
+			AVH(ClientID, HideID, "{STR} [x{INT} y{INT}]", MobData.GetName(), (int)Pos.x, (int)Pos.y);
+
+			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
+			{
+				if(MobData.m_aDropItem[i] <= 0 || MobData.m_aValueItem[i] <= 0)
+					continue;
+
+				const float Chance = MobData.m_aRandomItem[i];
+				CItemDataInfo &InfoDropItem = GetItemInfo(MobData.m_aDropItem[i]);
+				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", MobData.m_aValueItem[i], Chance, ExtraChance);
+				AVM(ClientID, "null", NOPE, HideID, "{STR}{STR}", InfoDropItem.GetName(), aBuf);
+				HasDropItem = true;
+			}
+
+			Found = true;
+
+			if(!HasDropItem)
+				AVM(ClientID, "null", NOPE, HideID, "The mob has no items!");
+		}
+	}
+	return Found;
 }
 
 void CGS::ResetVotes(int ClientID, int MenuList)
@@ -1665,32 +1704,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "Here you can see chance loot, mobs, on YOUR ZONE.");
 		AV(ClientID, "null");
 
-		char aBuf[128];
-		bool FoundedBots = false;
-		const float AddedChanceDrop = clamp((float)pPlayer->GetAttributeSize(Attribute::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
-		for(const auto& mobs : MobBotInfo::ms_aMobBot)
-		{
-			if (!IsPlayerEqualWorldID(ClientID, mobs.second.m_WorldID))
-				continue;
-
-			const int HideID = (NUM_TAB_MENU + mobs.first);
-			const vec2 Pos = mobs.second.m_Position / 32.0f;
-			AVH(ClientID, HideID, "{STR} [x{INT} y{INT}]", mobs.second.GetName(), (int)Pos.x, (int)Pos.y);
-
-			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
-			{
-				if(mobs.second.m_aDropItem[i] <= 0 || mobs.second.m_aValueItem[i] <= 0)
-					continue;
-
-				const float Chance = mobs.second.m_aRandomItem[i];
-				CItemDataInfo &InfoDropItem = GetItemInfo(mobs.second.m_aDropItem[i]);
-				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", mobs.second.m_aValueItem[i], Chance, AddedChanceDrop);
-				AVM(ClientID, "null", NOPE, HideID, "{STR}{STR}", InfoDropItem.GetName(), aBuf);
-				FoundedBots = true;
-			}
-		}
-
-		if (!FoundedBots)
+		if(!ShowDropMobChances(pPlayer))
 			AVL(ClientID, "null", "There are no active mobs in your zone!");
 
 		AddVotesBackpage(ClientID);

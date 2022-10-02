@@ -35,8 +35,8 @@ bool CSkillData::Use()
 
 	// mana check
 	CCharacter* pChr = m_pPlayer->GetCharacter();
-	const int PriceMana = translate_to_percent_rest(m_pPlayer->GetStartMana(), Info()->GetManaPercentageCost());
-	if(PriceMana > 0 && pChr->CheckFailMana(PriceMana))
+	const int ManaCost = translate_to_percent_rest(m_pPlayer->GetStartMana(), Info()->GetManaPercentageCost());
+	if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
 		return false;
 
 	const vec2 PlayerPosition = pChr->GetPos();
@@ -51,7 +51,7 @@ bool CSkillData::Use()
 			pHh->Reset();
 			break;
 		}
-		const int PowerLevel = PriceMana;
+		const int PowerLevel = ManaCost;
 		new CHealthHealer(&GS()->m_World, m_pPlayer, GetBonus(), PowerLevel, PlayerPosition);
 		return true;
 	}
@@ -66,7 +66,7 @@ bool CSkillData::Use()
 			pHh->Reset();
 			break;
 		}
-		const int PowerLevel = PriceMana;
+		const int PowerLevel = ManaCost;
 		new CSleepyGravity(&GS()->m_World, m_pPlayer, GetBonus(), PowerLevel, PlayerPosition);
 		return true;
 	}
