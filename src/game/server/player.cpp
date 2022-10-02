@@ -21,7 +21,7 @@ IServer* CPlayer::Server() const { return m_pGS->Server(); };
 CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 {
 	for(short& SortTab : m_aSortTabs)
-		SortTab = 0;
+		SortTab = -1;
 
 	m_Spawned = true;
 	m_aPlayerTick[TickState::Respawn] = Server()->Tick() + Server()->TickSpeed();

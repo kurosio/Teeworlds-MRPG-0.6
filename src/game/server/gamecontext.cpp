@@ -1691,10 +1691,10 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVM(ClientID, "null", NOPE, TAB_INFO_TOP, "Here you can see top server Guilds, Players.");
 		AV(ClientID, "null");
 
-		AVM(ClientID, "SELECTEDTOP", ToplistTypes::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
-		AVM(ClientID, "SELECTEDTOP", ToplistTypes::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
-		AVM(ClientID, "SELECTEDTOP", ToplistTypes::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
-		AVM(ClientID, "SELECTEDTOP", ToplistTypes::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
+		AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
+		AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
+		AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
+		AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
 		AddVotesBackpage(ClientID);
 	}
 	else if(MenuList == MenuList::MENU_GUIDEDROP)
@@ -1704,9 +1704,21 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "Here you can see chance loot, mobs, on YOUR ZONE.");
 		AV(ClientID, "null");
 
-		if(!ShowDropItemsByWorld(pPlayer->GetPlayerWorldID(), pPlayer))
-			AVL(ClientID, "null", "There are no active mobs in your zone!");
+		for(int ID = MAIN_WORLD_ID; ID < Server()->GetWorldsSize(); ID++)
+		{
+			AVM(ClientID, "SORTEDWIKIWORLD", ID, NOPE, Server()->GetWorldName(ID));
+		}
+		AV(ClientID, "null");
 
+		if(pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] < 0)
+		{
+			AVL(ClientID, "null", "Select a zone to view information");
+		}
+		else
+		{
+			if(!ShowDropItemsByWorld(pPlayer->m_aSortTabs[SORT_GUIDE_WORLD], pPlayer))
+				AVL(ClientID, "null", "There are no active mobs in your zone!");
+		}
 		AddVotesBackpage(ClientID);
 	}
 
@@ -1866,11 +1878,17 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 		ResetVotes(ClientID, VoteID);
 		return true;
 	}
-	if (PPSTR(CMD, "SELECTEDTOP") == 0)
+	if (PPSTR(CMD, "SORTEDTOP") == 0)
 	{
 		ResetVotes(ClientID, MenuList::MENU_TOP_LIST);
 		AV(ClientID, "null", "\0");
 		Mmo()->ShowTopList(pPlayer, VoteID);
+		return true;
+	}
+	if (PPSTR(CMD, "SORTEDWIKIWORLD") == 0)
+	{
+		pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] = VoteID;
+		ResetVotes(ClientID, MenuList::MENU_GUIDEDROP);
 		return true;
 	}
 	if(pPlayer->ParseVoteUpgrades(CMD, VoteID, VoteID2, Get))

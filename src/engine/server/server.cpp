@@ -200,6 +200,11 @@ const char *CServer::GetWorldName(int WorldID)
 	return MultiWorlds()->GetWorld(WorldID)->m_aName;
 }
 
+int CServer::GetWorldsSize() const
+{
+	return MultiWorlds()->GetSizeInitilized();
+}
+
 const char* CServer::GetClientLanguage(int ClientID) const
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)

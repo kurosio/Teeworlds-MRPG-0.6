@@ -112,6 +112,7 @@ public:
 	virtual void ChangeWorld(int ClientID, int NewWorldID) = 0;
 	virtual int GetClientWorldID(int ClientID) = 0;
 	virtual const char* GetWorldName(int WorldID) = 0;
+	virtual int GetWorldsSize() const = 0;
 
 	virtual void SetClientLanguage(int ClientID, const char* pLanguage) = 0;
 	virtual const char* GetClientLanguage(int ClientID) const = 0;

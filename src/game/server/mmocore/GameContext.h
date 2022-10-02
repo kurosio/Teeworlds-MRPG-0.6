@@ -234,6 +234,7 @@ enum
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,
 	SORT_EQUIPING,
+	SORT_GUIDE_WORLD,
 	NUM_SORT_TAB,
 
 	// type of decorations
