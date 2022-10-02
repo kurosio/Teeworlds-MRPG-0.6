@@ -239,8 +239,19 @@ void CPlayerBot::Snap(int SnappingClient)
 	if (!pClientInfo)
 		return;
 
-	const char* pNickname = DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
-	StrToInts(&pClientInfo->m_Name0, 4, pNickname);
+	if(GetBotType() == TYPE_BOT_MOB)
+	{
+		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
+		
+		char aNameBuf[MAX_NAME_LENGTH];
+		str_format(aNameBuf, sizeof(aNameBuf), "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, PercentHP);
+		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
+	}
+	else
+	{
+		StrToInts(&pClientInfo->m_Name0, 4, DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot);
+	}
+
 	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	pClientInfo->m_Country = 0;
 	{
