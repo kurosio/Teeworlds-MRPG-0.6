@@ -22,35 +22,23 @@ void CAccountMinerCore::ShowMenu(CPlayer *pPlayer) const
 
 int CAccountMinerCore::GetOreLevel(vec2 Pos) const
 {
-	for(const auto& ore : ms_aOre)
-	{
-		vec2 Position = vec2(ore.second.m_PositionX, ore.second.m_PositionY);
-		if(distance(Position, Pos) < ore.second.m_Distance)
-			return ore.second.m_Level;
-	}
-	return -1;
+	auto Iter = std::find_if(ms_aOre.begin(), ms_aOre.end(), [Pos](auto& p)
+	{	return distance(p.second.m_Position, Pos) < p.second.m_Distance;	});
+	return Iter != ms_aOre.end() ? (*Iter).second.m_Level : -1;
 }
 
 int CAccountMinerCore::GetOreItemID(vec2 Pos) const
 {
-	for(const auto& ore : ms_aOre)
-	{
-		vec2 Position = vec2(ore.second.m_PositionX, ore.second.m_PositionY);
-		if(distance(Position, Pos) < ore.second.m_Distance)
-			return ore.second.m_ItemID;
-	}
-	return -1;
+	auto Iter = std::find_if(ms_aOre.begin(), ms_aOre.end(), [Pos](auto& p)
+	{	return distance(p.second.m_Position, Pos) < p.second.m_Distance;	});
+	return Iter != ms_aOre.end() ? (*Iter).second.m_ItemID : -1;
 }
 
 int CAccountMinerCore::GetOreHealth(vec2 Pos) const
 {
-	for(const auto& ore : ms_aOre)
-	{
-		vec2 Position = vec2(ore.second.m_PositionX, ore.second.m_PositionY);
-		if(distance(Position, Pos) < ore.second.m_Distance)
-			return ore.second.m_StartHealth;
-	}
-	return -1;
+	auto Iter = std::find_if(ms_aOre.begin(), ms_aOre.end(), [Pos](auto& p)
+	{	return distance(p.second.m_Position, Pos) < p.second.m_Distance;	});
+	return Iter != ms_aOre.end() ? (*Iter).second.m_StartHealth : -1;
 }
 
 void CAccountMinerCore::Work(CPlayer *pPlayer, int Level)
@@ -108,8 +96,7 @@ void CAccountMinerCore::OnInitWorld(const char* pWhereLocalWorld)
 		ms_aOre[ID].m_ItemID = pRes->getInt("ItemID");
 		ms_aOre[ID].m_Level = pRes->getInt("Level");
 		ms_aOre[ID].m_StartHealth = pRes->getInt("Health");
-		ms_aOre[ID].m_PositionX = pRes->getInt("PositionX");
-		ms_aOre[ID].m_PositionY = pRes->getInt("PositionY");
+		ms_aOre[ID].m_Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
 		ms_aOre[ID].m_Distance = pRes->getInt("Distance");
 	}
 }

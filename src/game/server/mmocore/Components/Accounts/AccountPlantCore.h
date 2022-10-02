@@ -6,19 +6,22 @@
 
 class CAccountPlantCore : public MmoComponent
 {
+public:
+	struct StructPlants
+	{
+		int m_ItemID;
+		int m_Level;
+		int m_StartHealth;
+		vec2 m_Position;
+		int m_Distance;
+	};
+
+private:
 	~CAccountPlantCore() override
 	{
 		ms_aPlants.clear();
 	};
 
-	struct StructPlants
-	{
-		int m_ItemID;
-		int m_Level;
-		int m_PositionX;
-		int m_PositionY;
-		int m_Distance;
-	};
 	static std::map < int, StructPlants > ms_aPlants;
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
@@ -28,6 +31,7 @@ class CAccountPlantCore : public MmoComponent
 public:
 	int GetPlantLevel(vec2 Pos) const;
 	int GetPlantItemID(vec2 Pos) const;
+	int GetPlantHealth(vec2 Pos) const;
 
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowPlantsItems(int ClientID) const;

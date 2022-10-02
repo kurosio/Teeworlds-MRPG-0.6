@@ -11,14 +11,14 @@ std::map < int , CAccountPlantCore::StructPlants > CAccountPlantCore::ms_aPlants
 
 void CAccountPlantCore::OnInitWorld(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_positions_farming", pWhereLocalWorld);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_positions_plant", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
 		ms_aPlants[ID].m_ItemID = pRes->getInt("ItemID");
 		ms_aPlants[ID].m_Level = pRes->getInt("Level");
-		ms_aPlants[ID].m_PositionX = pRes->getInt("PositionX");
-		ms_aPlants[ID].m_PositionY = pRes->getInt("PositionY");
+		ms_aPlants[ID].m_StartHealth = pRes->getInt("Health");
+		ms_aPlants[ID].m_Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
 		ms_aPlants[ID].m_Distance = pRes->getInt("Distance");
 	}
 }
@@ -42,24 +42,23 @@ void CAccountPlantCore::OnInitAccount(CPlayer *pPlayer)
 
 int CAccountPlantCore::GetPlantLevel(vec2 Pos) const
 {
-	for(const auto & Plant : ms_aPlants)
-	{
-		vec2 Position = vec2(Plant.second.m_PositionX, Plant.second.m_PositionY);
-		if(distance(Position, Pos) < Plant.second.m_Distance)
-			return Plant.second.m_Level;
-	}
-	return -1;
+	auto Iter = std::find_if(ms_aPlants.begin(), ms_aPlants.end(), [Pos](auto& p)
+	{	return distance(p.second.m_Position, Pos) < p.second.m_Distance;	});
+	return Iter != ms_aPlants.end() ? (*Iter).second.m_Level : -1;
 }
 
 int CAccountPlantCore::GetPlantItemID(vec2 Pos) const
 {
-	for(const auto & Plant : ms_aPlants)
-	{
-		vec2 Position = vec2(Plant.second.m_PositionX, Plant.second.m_PositionY);
-		if(distance(Position, Pos) < Plant.second.m_Distance)
-			return Plant.second.m_ItemID;
-	}
-	return -1;
+	auto Iter = std::find_if(ms_aPlants.begin(), ms_aPlants.end(), [Pos](auto& p)
+	{	return distance(p.second.m_Position, Pos) < p.second.m_Distance;	});
+	return Iter != ms_aPlants.end() ? (*Iter).second.m_ItemID : -1;
+}
+
+int CAccountPlantCore::GetPlantHealth(vec2 Pos) const
+{
+	auto Iter = std::find_if(ms_aPlants.begin(), ms_aPlants.end(), [Pos](auto& p)
+	{	return distance(p.second.m_Position, Pos) < p.second.m_Distance;	});
+	return Iter != ms_aPlants.end() ? (*Iter).second.m_StartHealth : -1;
 }
 
 void CAccountPlantCore::ShowMenu(CPlayer* pPlayer) const

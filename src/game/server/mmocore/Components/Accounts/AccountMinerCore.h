@@ -16,8 +16,7 @@ class CAccountMinerCore : public MmoComponent
 		int m_ItemID;
 		int m_Level;
 		int m_StartHealth;
-		int m_PositionX;
-		int m_PositionY;
+		vec2 m_Position;
 		int m_Distance;
 	};
 	static std::map < int, StructOres > ms_aOre;

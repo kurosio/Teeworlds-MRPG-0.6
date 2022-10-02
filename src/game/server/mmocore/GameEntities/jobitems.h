@@ -32,13 +32,14 @@ public:
 	int m_HouseID;
 private:
 	int m_Level;
-	int m_TotalDamage;
+	int m_DamageDealt;
 	int m_Health;
 	int m_SpawnTick;
 	int m_Type;
 
 	void FarmingWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem);
 	void MiningWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem);
+	bool Interaction(const char* pTool, CPlayer* pPlayer, const CItemData* pWorkedItem, ItemFunctional EquipID, int JobLevel);
 	int GetPickupType() const;
 };
 
