@@ -791,7 +791,7 @@ void CGS::OnTick()
 	m_pController->Tick();
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(!m_apPlayers[i] || m_apPlayers[i]->GetPlayerWorldID() != m_WorldID)
+		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetPlayerWorldID() != m_WorldID)
 			continue;
 
 		m_apPlayers[i]->Tick();

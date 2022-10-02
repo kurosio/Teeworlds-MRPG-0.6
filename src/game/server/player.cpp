@@ -53,11 +53,10 @@ CPlayer::~CPlayer()
 ######################################################################### */
 void CPlayer::Tick()
 {
-	if (!Server()->ClientIngame(m_ClientID))
-		return;
-
 	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
+	{
 		m_ViewPos -= vec2(clamp(m_ViewPos.x - m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y - m_LatestActivity.m_TargetY, -400.0f, 400.0f));
+	}
 
 	if(!IsAuthed())
 		return;
@@ -83,7 +82,9 @@ void CPlayer::Tick()
 	if (m_pCharacter)
 	{
 		if(m_pCharacter->IsAlive())
+		{
 			m_ViewPos = m_pCharacter->GetPos();
+		}
 		else
 		{
 			delete m_pCharacter;
@@ -91,7 +92,9 @@ void CPlayer::Tick()
 		}
 	}
 	else if (m_Spawned && m_aPlayerTick[TickState::Respawn] + Server()->TickSpeed() * 3 <= Server()->Tick())
+	{
 		TryRespawn();
+	}
 
 	// update player tick
 	TickSystemTalk();
@@ -111,7 +114,7 @@ void CPlayer::EffectsTick()
 	if(Server()->Tick() % Server()->TickSpeed() != 0 || CGS::ms_aEffects[m_ClientID].empty())
 		return;
 
-	for(auto pEffect = CGS::ms_aEffects[m_ClientID].begin(); pEffect != CGS::ms_aEffects[m_ClientID].end();)
+	for(auto& pEffect = CGS::ms_aEffects[m_ClientID].begin(); pEffect != CGS::ms_aEffects[m_ClientID].end();)
 	{
 		pEffect->second--;
 		if(pEffect->second <= 0)
@@ -141,8 +144,8 @@ void CPlayer::HandleTuningParams()
 		if(GetCharacter())
 		{
 			CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-			int *pParams = (int *)&m_NextTuningParams;
-			for(unsigned i = 0; i < sizeof(m_NextTuningParams)/sizeof(int); i++)
+			const int *pParams = (int *)&m_NextTuningParams;
+			for(unsigned i = 0; i < sizeof(m_NextTuningParams) / sizeof(int); i++)
 				Msg.AddInt(pParams[i]);
 			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 		}
@@ -153,9 +156,6 @@ void CPlayer::HandleTuningParams()
 
 void CPlayer::Snap(int SnappingClient)
 {
-	if(!Server()->ClientIngame(m_ClientID))
-		return;
-
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, m_ClientID, sizeof(CNetObj_ClientInfo)));
 	if (!pClientInfo)
 		return;
@@ -178,18 +178,6 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Team = GetTeam();
 	pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
 	pPlayerInfo->m_Score = Acc().m_Level;
-
-	//CNetObj_PlayerInfo *pPlayerInfo = static_cast<CNetObj_PlayerInfo *>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, m_ClientID, sizeof(CNetObj_PlayerInfo)));
-	//if(!pPlayerInfo)
-	//	return;
-
-	//pPlayerInfo->m_PlayerFlags = m_PlayerFlags&PLAYERFLAG_CHATTING;
-	//pPlayerInfo->m_PlayerFlags |= PLAYERFLAG_READY;
-	//if(Server()->IsAuthed(m_ClientID))
-	//	pPlayerInfo->m_PlayerFlags |= PLAYERFLAG_ADMIN;
-
-	//pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
-	//pPlayerInfo->m_Score = Acc().m_Level;
 
 	if(m_ClientID == SnappingClient && (GetTeam() == TEAM_SPECTATORS))
 	{

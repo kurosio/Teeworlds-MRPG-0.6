@@ -23,21 +23,12 @@ CPlayerBot::~CPlayerBot()
 	for(int i = 0; i < MAX_PLAYERS; i++)
 		DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive[i] = false;
 
-	/*CNetMsg_Sv_ClientDrop Msg;
-	Msg.m_ClientID = m_ClientID;
-	Msg.m_pReason = "\0";
-	Msg.m_Silent = true;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, -1, (this)->GetPlayerWorldID());*/
-
 	delete m_pCharacter;
 	m_pCharacter = nullptr;
 }
 
 void CPlayerBot::Tick()
 {
-	if(!Server()->ClientIngame(m_ClientID))
-		return;
-
 	if(m_pCharacter && !m_pCharacter->IsAlive())
 	{
 		delete m_pCharacter;
@@ -57,7 +48,9 @@ void CPlayerBot::Tick()
 		}
 	}
 	else if(m_Spawned && m_aPlayerTick[Respawn]+Server()->TickSpeed()*3 <= Server()->Tick())
+	{
 		TryRespawn();
+	}
 }
 
 void CPlayerBot::PostTick()
@@ -232,7 +225,7 @@ void CPlayerBot::HandleTuningParams()
 
 void CPlayerBot::Snap(int SnappingClient)
 {
-	if(!Server()->ClientIngame(m_ClientID) || !IsVisibleForClient(SnappingClient))
+	if(!IsVisibleForClient(SnappingClient))
 		return;
 
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, m_ClientID, sizeof(CNetObj_ClientInfo)));
