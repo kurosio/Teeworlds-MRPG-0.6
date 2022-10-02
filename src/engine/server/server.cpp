@@ -928,13 +928,6 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					m_NetServer.Drop(ClientID, "Wrong password");
 					return;
 				}
-				
-				// does not support vanilla for now time :: TODO: add support
-				if(m_aClients[ClientID].m_DDNetVersion == VERSION_NONE)
-				{
-					m_NetServer.Drop(ClientID, "Vanilla clients are not supported at this time. Expect an update. Try any other client other than this one.");
-					return;
-				}
 
 				m_aClients[ClientID].m_Version = Unpacker.GetInt();
 				m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
@@ -947,7 +940,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			if ((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) == 0 || m_aClients[ClientID].m_State < CClient::STATE_CONNECTING)
 				return;
 
-			int Chunk = Unpacker.GetInt();
+			const int Chunk = Unpacker.GetInt();
 			if (Chunk != m_aClients[ClientID].m_NextMapChunk || !g_Config.m_SvFastDownload)
 			{
 				SendMapData(ClientID, Chunk);
@@ -2065,7 +2058,7 @@ int main(int argc, const char **argv) // ignore_convention
 	IKernel *pKernel = IKernel::Create();
 
 	// create the components
-	int FlagMask = CFGFLAG_SERVER|CFGFLAG_ECON;
+	const int FlagMask = CFGFLAG_SERVER|CFGFLAG_ECON;
 	IEngine *pEngine = CreateEngine("Teeworlds_Server", false, 1);
 	IConsole *pConsole = CreateConsole(CFGFLAG_SERVER|CFGFLAG_ECON);
 	IEngineMasterServer *pEngineMasterServer = CreateEngineMasterServer();

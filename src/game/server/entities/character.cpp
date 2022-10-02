@@ -101,7 +101,7 @@ void CCharacter::SetWeapon(int W)
 
 	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
 		m_ActiveWeapon = 0;
-	m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
+	m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 }
 
 bool CCharacter::IsGrounded() const
@@ -116,7 +116,7 @@ bool CCharacter::IsGrounded() const
 void CCharacter::DoWeaponSwitch()
 {
 	// make sure we can switch
-	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got)
+	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_Core.m_aWeapons[WEAPON_NINJA].m_Got)
 		return;
 
 	// switch Weapon
@@ -138,7 +138,7 @@ void CCharacter::HandleWeaponSwitch()
 		while(Next) // Next Weapon selection
 		{
 			WantedWeapon = (WantedWeapon+1)%NUM_WEAPONS;
-			if(m_aWeapons[WantedWeapon].m_Got)
+			if(m_Core.m_aWeapons[WantedWeapon].m_Got)
 				Next--;
 		}
 	}
@@ -148,7 +148,7 @@ void CCharacter::HandleWeaponSwitch()
 		while(Prev) // Prev Weapon selection
 		{
 			WantedWeapon = (WantedWeapon-1)<0?NUM_WEAPONS-1:WantedWeapon-1;
-			if(m_aWeapons[WantedWeapon].m_Got)
+			if(m_Core.m_aWeapons[WantedWeapon].m_Got)
 				Prev--;
 		}
 	}
@@ -158,7 +158,7 @@ void CCharacter::HandleWeaponSwitch()
 		WantedWeapon = m_Input.m_WantedWeapon-1;
 
 	// check for insane values
-	if(WantedWeapon >= 0 && WantedWeapon < NUM_WEAPONS && WantedWeapon != m_ActiveWeapon && m_aWeapons[WantedWeapon].m_Got)
+	if(WantedWeapon >= 0 && WantedWeapon < NUM_WEAPONS && WantedWeapon != m_ActiveWeapon && m_Core.m_aWeapons[WantedWeapon].m_Got)
 		m_QueuedWeapon = WantedWeapon;
 
 	DoWeaponSwitch();
@@ -223,8 +223,8 @@ void CCharacter::FireWeapon()
 	bool WillFire = false;
 	if(CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses)
 		WillFire = true;
-
-	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
+	
+	if(FullAuto && (m_LatestInput.m_Fire&1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 		WillFire = true;
 
 	if(!WillFire)
@@ -236,7 +236,7 @@ void CCharacter::FireWeapon()
 		if(DecoInteractive())
 			return;
 
-		if(!m_aWeapons[m_ActiveWeapon].m_Ammo)
+		if(!m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 		{
 			m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
 			if(m_LastNoAmmoSound+Server()->TickSpeed() <= Server()->Tick())
@@ -371,8 +371,8 @@ void CCharacter::FireWeapon()
 
 	m_AttackTick = Server()->Tick();
 
-	if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
-		m_aWeapons[m_ActiveWeapon].m_Ammo--;
+	if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo > 0)
+		m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo--;
 
 	if(!m_ReloadTimer)
 	{
@@ -391,17 +391,17 @@ void CCharacter::HandleWeapons()
 
 	FireWeapon();
 
-	if(m_aWeapons[m_ActiveWeapon].m_Ammo >= 0)
+	if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo >= 0)
 	{
 		const int AmmoRegenTime = (m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (max(5000 - m_AmmoRegen, 1000)) / 10);
-		if (m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart < 0)
-			m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() + AmmoRegenTime;
+		if (m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
+			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() + AmmoRegenTime;
 
-		if (m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart <= Server()->Tick())
+		if (m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart <= Server()->Tick())
 		{
 			const int RealAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
-			m_aWeapons[m_ActiveWeapon].m_Ammo = min(m_aWeapons[m_ActiveWeapon].m_Ammo + 1, RealAmmo);
-			m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
+			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo = min(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo + 1, RealAmmo);
+			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 		}
 	}
 }
@@ -413,25 +413,25 @@ bool CCharacter::GiveWeapon(int Weapon, int GiveAmmo)
 	if(m_pPlayer->GetEquippedItemID((ItemFunctional)WeaponID) <= 0 && !IsHammer)
 	{
 		if(RemoveWeapon(WeaponID) && WeaponID == m_ActiveWeapon)
-			m_ActiveWeapon = m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER;
+			m_ActiveWeapon = m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER;
 		return false;
 	}
 
 	const int MaximalAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
-	if(m_aWeapons[WeaponID].m_Ammo >= MaximalAmmo)
+	if(m_Core.m_aWeapons[WeaponID].m_Ammo >= MaximalAmmo)
 		return false;
 
-	const int GotAmmo = IsHammer ? -1 : m_aWeapons[WeaponID].m_Got ? min(m_aWeapons[WeaponID].m_Ammo + GiveAmmo, MaximalAmmo) : min(GiveAmmo, MaximalAmmo);
-	m_aWeapons[WeaponID].m_Got = true;
-	m_aWeapons[WeaponID].m_Ammo = GotAmmo;
+	const int GotAmmo = IsHammer ? -1 : m_Core.m_aWeapons[WeaponID].m_Got ? min(m_Core.m_aWeapons[WeaponID].m_Ammo + GiveAmmo, MaximalAmmo) : min(GiveAmmo, MaximalAmmo);
+	m_Core.m_aWeapons[WeaponID].m_Got = true;
+	m_Core.m_aWeapons[WeaponID].m_Ammo = GotAmmo;
 	return true;
 }
 
 bool CCharacter::RemoveWeapon(int Weapon)
 {
-	const bool Succesful = m_aWeapons[Weapon].m_Got;
-	m_aWeapons[Weapon].m_Got = false;
-	m_aWeapons[Weapon].m_Ammo = -1;
+	const bool Succesful = m_Core.m_aWeapons[Weapon].m_Got;
+	m_Core.m_aWeapons[Weapon].m_Got = false;
+	m_Core.m_aWeapons[Weapon].m_Ammo = -1;
 	return Succesful;
 }
 
@@ -826,11 +826,11 @@ void CCharacter::Snap(int SnappingClient)
 		const float ManaTranslate = (float)m_Mana / (float)m_pPlayer->GetStartMana() * 10.0f;
 		pCharacter->m_Health = m_Health <= 0 ? 0 : clamp((int)HealthTranslate, 1, 10);
 		pCharacter->m_Armor = m_Mana <= 0 ? 0 : clamp((int)ManaTranslate, 1, 10);
-		if(m_aWeapons[m_ActiveWeapon].m_Ammo > 0)
+		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo > 0)
 		{
 			const int StartAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
-			const float AmmoTranslate = (float)m_aWeapons[m_ActiveWeapon].m_Ammo / (float)StartAmmo * 10.0f;
-			pCharacter->m_AmmoCount = m_aWeapons[m_ActiveWeapon].m_Ammo <= 0 ? 0 : clamp((int)AmmoTranslate, 1, 10);
+			const float AmmoTranslate = (float)m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo / (float)StartAmmo * 10.0f;
+			pCharacter->m_AmmoCount = m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo <= 0 ? 0 : clamp((int)AmmoTranslate, 1, 10);
 		}
 	}
 

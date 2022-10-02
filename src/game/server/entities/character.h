@@ -52,12 +52,6 @@ class CCharacter : public CEntity
 protected:
 	int m_Health;
 	int m_Armor;
-	struct WeaponStat
-	{
-		int m_AmmoRegenStart;
-		int m_Ammo;
-		bool m_Got;
-	} m_aWeapons[NUM_WEAPONS];
 
 	// these are non-heldback inputs
 	CNetObj_PlayerInput m_Input;

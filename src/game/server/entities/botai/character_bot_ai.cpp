@@ -201,8 +201,8 @@ void CCharacterBotAI::ChangeWeapons()
 bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 {
 	const int WeaponID = clamp(Weapon, (int)WEAPON_HAMMER, (int)WEAPON_NINJA);
-	m_aWeapons[WeaponID].m_Got = true;
-	m_aWeapons[WeaponID].m_Ammo = GiveAmmo;
+	m_Core.m_aWeapons[WeaponID].m_Got = true;
+	m_Core.m_aWeapons[WeaponID].m_Ammo = GiveAmmo;
 	return true;
 }
 
