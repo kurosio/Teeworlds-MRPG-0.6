@@ -102,7 +102,7 @@ public:
 		Function: TickDefered
 			Called after all entities Tick() function has been called.
 	*/
-	virtual void TickDefered() {}
+	virtual void TickDeferred() {}
 
 	/*
 		Function: Snap

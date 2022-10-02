@@ -218,12 +218,12 @@ void CCharacterBotAI::Tick()
 	CCharacter::Tick();
 }
 
-void CCharacterBotAI::TickDefered()
+void CCharacterBotAI::TickDeferred()
 {
 	if(!m_BotActive || !IsAlive())
 		return;
 
-	CCharacter::TickDefered();
+	CCharacter::TickDeferred();
 }
 
 // interactive bots

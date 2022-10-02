@@ -72,7 +72,7 @@ public:
 
 	virtual int GetSnapFullID() const;
 	void Tick() override;
-	void TickDefered() override;
+	void TickDeferred() override;
 	void Snap(int SnappingClient) override;
 	void PostSnap() override;
 

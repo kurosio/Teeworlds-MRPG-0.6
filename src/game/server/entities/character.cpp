@@ -429,11 +429,10 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 
 bool CCharacter::RemoveWeapon(int Weapon)
 {
-	// reverse
-	const bool Succesful = m_Core.m_aWeapons[Weapon].m_Got;
+	const bool Reverse = m_Core.m_aWeapons[Weapon].m_Got;
 	m_Core.m_aWeapons[Weapon].m_Got = false;
 	m_Core.m_aWeapons[Weapon].m_Ammo = -1;
-	return Succesful;
+	return Reverse;
 }
 
 void CCharacter::SetEmote(int Emote, int Sec)
@@ -527,7 +526,7 @@ void CCharacter::Tick()
 	m_Core.m_CollisionDisabled = false;
 }
 
-void CCharacter::TickDefered()
+void CCharacter::TickDeferred()
 {
 	if(!IsAlive())
 		return;
@@ -544,10 +543,10 @@ void CCharacter::TickDefered()
 		m_Core.AddDragVelocity();
 	m_Core.ResetDragVelocity();*/
 
-	CCharacterCore::CParams PlayerTunningParams(&m_pPlayer->m_NextTuningParams);
+	CCharacterCore::CParams PlayerTune(&m_pPlayer->m_NextTuningParams);
 	if(m_pPlayer->IsBot())
 	{
-		m_Core.Move(&PlayerTunningParams);
+		m_Core.Move(&PlayerTune);
 		m_Core.Quantize();
 		m_Pos = m_Core.m_Pos;
 		return;
@@ -557,12 +556,12 @@ void CCharacter::TickDefered()
 	{
 		CWorldCore TempWorld;
 		m_ReckoningCore.Init(&TempWorld, GS()->Collision());
-		m_ReckoningCore.Tick(false, &PlayerTunningParams);
-		m_ReckoningCore.Move(&PlayerTunningParams);
+		m_ReckoningCore.Tick(false, &PlayerTune);
+		m_ReckoningCore.Move(&PlayerTune);
 		m_ReckoningCore.Quantize();
 	}
 
-	m_Core.Move(&PlayerTunningParams);
+	m_Core.Move(&PlayerTune);
 	m_Core.Quantize();
 	m_Pos = m_Core.m_Pos;
 	m_TriggeredEvents |= m_Core.m_TriggeredEvents;
@@ -621,25 +620,27 @@ bool CCharacter::IncreaseMana(int Amount)
 
 void CCharacter::Die(int Killer, int Weapon)
 {
-	// change to safe zone
 	m_Alive = false;
+
+	// change to safe zone
 	const int ClientID = m_pPlayer->GetCID();
 	if(Weapon != WEAPON_WORLD && !GS()->IsDungeon())
 	{
 		m_pPlayer->ClearEffects();
 		m_pPlayer->UpdateTempData(0, 0);
-		const int SafezoneWorldID = GS()->GetRespawnWorld();
-		if(SafezoneWorldID >= 0 && !m_pPlayer->IsBot() && GS()->m_apPlayers[Killer])
+
+		const int RespawnWorldID = GS()->GetRespawnWorld();
+		if(RespawnWorldID >= 0 && !m_pPlayer->IsBot() && GS()->m_apPlayers[Killer])
 		{
 			// potion resurrection
-			CItemData& pItemPlayer = m_pPlayer->GetItem(itPotionResurrection);
-			if(pItemPlayer.IsEquipped())
+			CItemData* pItem = &m_pPlayer->GetItem(itPotionResurrection);
+			if(pItem->IsEquipped())
 			{
-				pItemPlayer.Use(1);
+				pItem->Use(1);
 			}
 			else
 			{
-				GS()->Chat(ClientID, "You are dead, you will be treated in {STR}", Server()->GetWorldName(SafezoneWorldID));
+				GS()->Chat(ClientID, "You are dead, you will be treated in {STR}", Server()->GetWorldName(RespawnWorldID));
 				m_pPlayer->GetTempData().m_TempSafeSpawn = true;
 			}
 		}
