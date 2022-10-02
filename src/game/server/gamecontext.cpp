@@ -1688,8 +1688,8 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		}
 		AddVotesBackpage(ClientID);
 	}
-	else
-		Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, false);
+
+	Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, false);
 }
 
 // information for unauthorized players
