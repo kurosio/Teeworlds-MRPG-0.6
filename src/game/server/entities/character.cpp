@@ -51,13 +51,13 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
-	m_ActiveWeapon = WEAPON_HAMMER;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
 
 	m_Pos = Pos;
 	m_Core.Reset();
 	m_Core.Init(&GS()->m_World.m_Core, GS()->Collision());
+	m_Core.m_ActiveWeapon = WEAPON_HAMMER;
 	m_Core.m_Pos = m_Pos;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = &m_Core;
 
@@ -91,16 +91,16 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 void CCharacter::SetWeapon(int W)
 {
-	if(W == m_ActiveWeapon)
+	if(W == m_Core.m_ActiveWeapon)
 		return;
 
-	m_LastWeapon = m_ActiveWeapon;
+	m_LastWeapon = m_Core.m_ActiveWeapon;
 	m_QueuedWeapon = -1;
-	m_ActiveWeapon = W;
+	m_Core.m_ActiveWeapon = W;
 	GS()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 
-	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
-		m_ActiveWeapon = 0;
+	if(m_Core.m_ActiveWeapon < 0 || m_Core.m_ActiveWeapon >= NUM_WEAPONS)
+		m_Core.m_ActiveWeapon = 0;
 	m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 }
 
@@ -125,7 +125,7 @@ void CCharacter::DoWeaponSwitch()
 
 void CCharacter::HandleWeaponSwitch()
 {
-	int WantedWeapon = m_ActiveWeapon;
+	int WantedWeapon = m_Core.m_ActiveWeapon;
 	if(m_QueuedWeapon != -1)
 		WantedWeapon = m_QueuedWeapon;
 
@@ -158,7 +158,7 @@ void CCharacter::HandleWeaponSwitch()
 		WantedWeapon = m_Input.m_WantedWeapon-1;
 
 	// check for insane values
-	if(WantedWeapon >= 0 && WantedWeapon < NUM_WEAPONS && WantedWeapon != m_ActiveWeapon && m_Core.m_aWeapons[WantedWeapon].m_Got)
+	if(WantedWeapon >= 0 && WantedWeapon < NUM_WEAPONS && WantedWeapon != m_Core.m_ActiveWeapon && m_Core.m_aWeapons[WantedWeapon].m_Got)
 		m_QueuedWeapon = WantedWeapon;
 
 	DoWeaponSwitch();
@@ -250,7 +250,7 @@ void CCharacter::FireWeapon()
 
 	const vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
 	const vec2 ProjStartPos = m_Pos+Direction*GetProximityRadius()*0.75f;
-	switch(m_ActiveWeapon)
+	switch(m_Core.m_ActiveWeapon)
 	{
 		case WEAPON_HAMMER:
 		{
@@ -300,7 +300,7 @@ void CCharacter::FireWeapon()
 				if (length(pTarget->m_Pos - m_Pos) > 0.0f)
 					Dir = normalize(pTarget->m_Pos - m_Pos);
 
-				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_pPlayer->GetCID(), m_ActiveWeapon);
+				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);
 				Hits = true;
 			}
 			if(Hits)
@@ -377,7 +377,7 @@ void CCharacter::FireWeapon()
 	if(!m_ReloadTimer)
 	{
 		const int ReloadArt = m_pPlayer->GetAttributeSize(Attribute::Dexterity);
-		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 + ReloadArt);
+		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 + ReloadArt);
 	}
 }
 
@@ -393,7 +393,7 @@ void CCharacter::HandleWeapons()
 
 	if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo >= 0)
 	{
-		const int AmmoRegenTime = (m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (max(5000 - m_AmmoRegen, 1000)) / 10);
+		const int AmmoRegenTime = (m_Core.m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (max(5000 - m_AmmoRegen, 1000)) / 10);
 		if (m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() + AmmoRegenTime;
 
@@ -406,22 +406,22 @@ void CCharacter::HandleWeapons()
 	}
 }
 
-bool CCharacter::GiveWeapon(int Weapon, int GiveAmmo)
+bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
 	const int WeaponID = clamp(Weapon, (int)WEAPON_HAMMER, (int)WEAPON_NINJA);
 	const bool IsHammer = WeaponID == WEAPON_HAMMER;
 	if(m_pPlayer->GetEquippedItemID((ItemFunctional)WeaponID) <= 0 && !IsHammer)
 	{
-		if(RemoveWeapon(WeaponID) && WeaponID == m_ActiveWeapon)
-			m_ActiveWeapon = m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER;
+		if(RemoveWeapon(WeaponID) && WeaponID == m_Core.m_ActiveWeapon)
+			m_Core.m_ActiveWeapon = m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER;
 		return false;
 	}
 
-	const int MaximalAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
-	if(m_Core.m_aWeapons[WeaponID].m_Ammo >= MaximalAmmo)
+	const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
+	if(m_Core.m_aWeapons[WeaponID].m_Ammo >= MaximumAmmo)
 		return false;
 
-	const int GotAmmo = IsHammer ? -1 : m_Core.m_aWeapons[WeaponID].m_Got ? min(m_Core.m_aWeapons[WeaponID].m_Ammo + GiveAmmo, MaximalAmmo) : min(GiveAmmo, MaximalAmmo);
+	const int GotAmmo = IsHammer ? -1 : m_Core.m_aWeapons[WeaponID].m_Got ? min(m_Core.m_aWeapons[WeaponID].m_Ammo + Ammo, MaximumAmmo) : min(Ammo, MaximumAmmo);
 	m_Core.m_aWeapons[WeaponID].m_Got = true;
 	m_Core.m_aWeapons[WeaponID].m_Ammo = GotAmmo;
 	return true;
@@ -429,6 +429,7 @@ bool CCharacter::GiveWeapon(int Weapon, int GiveAmmo)
 
 bool CCharacter::RemoveWeapon(int Weapon)
 {
+	// reverse
 	const bool Succesful = m_Core.m_aWeapons[Weapon].m_Got;
 	m_Core.m_aWeapons[Weapon].m_Got = false;
 	m_Core.m_aWeapons[Weapon].m_Ammo = -1;
@@ -539,7 +540,7 @@ void CCharacter::TickDefered()
 
 	// apply drag velocity when the player is not firing ninja
 	// and set it back to 0 for the next tick
-	/*if (m_ActiveWeapon != WEAPON_NINJA)
+	/*if (m_Core.m_ActiveWeapon != WEAPON_NINJA)
 		m_Core.AddDragVelocity();
 	m_Core.ResetDragVelocity();*/
 
@@ -682,13 +683,13 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	CPlayer* pFrom = GS()->GetPlayer(From);
 	if(From != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
-		if(pFrom->GetCharacter()->m_ActiveWeapon == WEAPON_GUN)
+		if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_GUN)
 			Dmg += pFrom->GetAttributeSize(Attribute::GunPower, true);
-		else if(pFrom->GetCharacter()->m_ActiveWeapon == WEAPON_SHOTGUN)
+		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_SHOTGUN)
 			Dmg += pFrom->GetAttributeSize(Attribute::ShotgunPower, true);
-		else if(pFrom->GetCharacter()->m_ActiveWeapon == WEAPON_GRENADE)
+		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_GRENADE)
 			Dmg += pFrom->GetAttributeSize(Attribute::GrenadePower, true);
-		else if(pFrom->GetCharacter()->m_ActiveWeapon == WEAPON_LASER)
+		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_LASER)
 			Dmg += pFrom->GetAttributeSize(Attribute::RiflePower, true);
 		else
 			Dmg += pFrom->GetAttributeSize(Attribute::HammerPower, true);
@@ -726,7 +727,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		}
 
 		// fix quick killer spread players
-		if(pFrom->GetCharacter()->m_ActiveWeapon != WEAPON_HAMMER &&
+		if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon != WEAPON_HAMMER &&
 			distance(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos) < ms_PhysSize+90.0f)
 			Dmg = max(1, Dmg/3);
 
@@ -814,7 +815,7 @@ void CCharacter::Snap(int SnappingClient)
 
 	pCharacter->m_AttackTick = m_AttackTick;
 	pCharacter->m_Direction = m_Input.m_Direction;
-	pCharacter->m_Weapon = m_ActiveWeapon;
+	pCharacter->m_Weapon = m_Core.m_ActiveWeapon;
 	pCharacter->m_AmmoCount = 0;
 	pCharacter->m_Health = 0;
 	pCharacter->m_Armor = 0;

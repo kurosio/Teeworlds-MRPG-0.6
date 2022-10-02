@@ -194,7 +194,7 @@ void CCharacterBotAI::ChangeWeapons()
 	if(Server()->Tick() % (Server()->TickSpeed()*RandomSec) == 0)
 	{
 		const int RandomWeapon = random_int()%4;
-		m_ActiveWeapon = clamp(RandomWeapon, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
+		m_Core.m_ActiveWeapon = clamp(RandomWeapon, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
 	}
 }
 
@@ -464,7 +464,7 @@ void CCharacterBotAI::Action()
 	if((m_Input.m_Hook && m_Core.m_HookState == HOOK_IDLE) || m_ReloadTimer != 0)
 		return;
 
-	if(m_ActiveWeapon == WEAPON_HAMMER && distance(pPlayer->GetCharacter()->GetPos(), GetPos()) > 128.0f)
+	if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && distance(pPlayer->GetCharacter()->GetPos(), GetPos()) > 128.0f)
 		return;
 
 	// fire

@@ -98,7 +98,7 @@ public:
 	int Mana() const { return m_Mana; }
 	int Health() const { return m_Health; }
 
-	virtual bool GiveWeapon(int Weapon, int GiveAmmo);
+	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
 
 	void CreateSnapProj(int SnapID, int Value, int TypeID, bool Dynamic, bool Projectile);
@@ -110,7 +110,6 @@ public:
 
 	// input
 	vec2 GetMousePos() const { return m_Core.m_Pos + vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY); }
-	int m_ActiveWeapon;
 	int m_Jumped;
 
 	// the player core for the physics
