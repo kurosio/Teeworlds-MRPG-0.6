@@ -37,8 +37,8 @@
 void CServer::CClient::Reset()
 {
 	// reset input
-	for(int i = 0; i < 200; i++)
-		m_aInputs[i].m_GameTick = -1;
+	for (auto& m_aInput : m_aInputs)
+		m_aInput.m_GameTick = -1;
 	m_CurrentInput = 0;
 	mem_zero(&m_LatestInput, sizeof(m_LatestInput));
 
@@ -93,42 +93,42 @@ IGameServer* CServer::GameServer(int WorldID)
 }
 
 // get the world minute
-int CServer::GetMinutesWorldTime() const
+int CServer::GetMinuteGameTime() const
 {
-	return m_TimeWorldMinute;
+	return m_TimeGameMinute;
 }
 
 // get the world hour
-int CServer::GetHourWorldTime() const
+int CServer::GetHourGameTime() const
 {
-	return m_TimeWorldHour;
+	return m_TimeGameHour;
 }
 
 // get the time offset at the beginning of the timer
-int CServer::GetOffsetWorldTime() const
+int CServer::GetOffsetGameTime() const
 {
 	return m_ShiftTime;
 }
 
 // set the time offset at the beginning of the timer
-void CServer::SetOffsetWorldTime(int Hour)
+void CServer::SetOffsetGameTime(int Hour)
 {
 	m_LastShiftTick = Tick();
-	m_TimeWorldHour = clamp(Hour, 0, 23);
-	m_TimeWorldMinute = 0;
+	m_TimeGameHour = clamp(Hour, 0, 23);
+	m_TimeGameMinute = 0;
 
 	if(Hour <= 0)
 		m_ShiftTime = m_LastShiftTick;
 	else
-		m_ShiftTime = m_LastShiftTick - ((m_TimeWorldHour * 60) * TickSpeed());
+		m_ShiftTime = m_LastShiftTick - ((m_TimeGameHour * 60) * TickSpeed());
 }
 
 // skipping in two places so that time does not run out.
-bool CServer::CheckWorldTime(int Hour, int Minute)
+bool CServer::CheckGameTime(int Hour, int Minute)
 {
-	if(m_TimeWorldHour == Hour && m_TimeWorldMinute == Minute)
+	if(m_TimeGameHour == Hour && m_TimeGameMinute == Minute)
 	{
-		m_TimeWorldMinute++;
+		m_TimeGameMinute++;
 		m_TimeWorldAlarm = true;
 		return true;
 	}
@@ -138,18 +138,18 @@ bool CServer::CheckWorldTime(int Hour, int Minute)
 // format Day
 const char* CServer::GetStringTypeDay() const
 {
-	if(m_TimeWorldHour >= 0 && m_TimeWorldHour < 6) return "Night";
-	if(m_TimeWorldHour >= 6 && m_TimeWorldHour < 13) return "Morning";
-	if(m_TimeWorldHour >= 13 && m_TimeWorldHour < 19) return "Day";
+	if(m_TimeGameHour >= 0 && m_TimeGameHour < 6) return "Night";
+	if(m_TimeGameHour >= 6 && m_TimeGameHour < 13) return "Morning";
+	if(m_TimeGameHour >= 13 && m_TimeGameHour < 19) return "Day";
 	return "Evening";
 }
 
 // format Day to Int
 int CServer::GetEnumTypeDay() const
 {
-	if(m_TimeWorldHour >= 0 && m_TimeWorldHour < 6) return NIGHT_TYPE;
-	if(m_TimeWorldHour >= 6 && m_TimeWorldHour < 13) return MORNING_TYPE;
-	if(m_TimeWorldHour >= 13 && m_TimeWorldHour < 19) return DAY_TYPE;
+	if(m_TimeGameHour >= 0 && m_TimeGameHour < 6) return NIGHT_TYPE;
+	if(m_TimeGameHour >= 6 && m_TimeGameHour < 13) return MORNING_TYPE;
+	if(m_TimeGameHour >= 13 && m_TimeGameHour < 19) return DAY_TYPE;
 	return EVENING_TYPE;
 }
 
@@ -300,8 +300,8 @@ int64 CServer::TickStartTime(int Tick) const
 
 int CServer::Init()
 {
-	m_TimeWorldMinute = 0;
-	m_TimeWorldHour = 0;
+	m_TimeGameMinute = 0;
+	m_TimeGameHour = 0;
 	m_TimeWorldAlarm = false;
 	m_CurrentGameTick = 0;
 	for(int i = 0; i < MAX_PLAYERS; i++)
@@ -448,9 +448,9 @@ void CServer::InitRconPasswordIfUnset()
 		return;
 	}
 
-	static const char VALUES[] = "ABCDEFGHKLMNPRSTUVWXYZabcdefghjkmnopqt23456789";
-	static const size_t NUM_VALUES = sizeof(VALUES) - 1; // Disregard the '\0'.
-	static const size_t PASSWORD_LENGTH = 6;
+	static constexpr char VALUES[] = "ABCDEFGHKLMNPRSTUVWXYZabcdefghjkmnopqt23456789";
+	static constexpr size_t NUM_VALUES = sizeof(VALUES) - 1; // Disregard the '\0'.
+	static constexpr size_t PASSWORD_LENGTH = 6;
 	dbg_assert(NUM_VALUES * NUM_VALUES >= 2048, "need at least 2048 possibilities for 2-character sequences");
 	// With 6 characters, we get a password entropy of log(2048) * 6/2 = 33bit.
 
@@ -462,7 +462,7 @@ void CServer::InitRconPasswordIfUnset()
 	secure_random_fill(aRandom, sizeof(aRandom));
 	for(size_t i = 0; i < PASSWORD_LENGTH / 2; i++)
 	{
-		unsigned short RandomNumber = aRandom[i] % 2048;
+		const unsigned short RandomNumber = aRandom[i] % 2048;
 		aRandomPassword[2 * i + 0] = VALUES[RandomNumber / NUM_VALUES];
 		aRandomPassword[2 * i + 1] = VALUES[RandomNumber % NUM_VALUES];
 	}
@@ -474,7 +474,7 @@ void CServer::InitRconPasswordIfUnset()
 
 static inline bool RepackMsg(const CMsgPacker* pMsg, CPacker& Packer)
 {
-	int MsgId = pMsg->m_MsgID;
+	const int MsgId = pMsg->m_MsgID;
 	Packer.Reset();
 
 	if(MsgId < OFFSET_UUID)
@@ -928,6 +928,13 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					m_NetServer.Drop(ClientID, "Wrong password");
 					return;
 				}
+				
+				// does not support vanilla for now time :: TODO: add support
+				if(m_aClients[ClientID].m_DDNetVersion == VERSION_NONE)
+				{
+					m_NetServer.Drop(ClientID, "Vanilla clients are not supported at this time. Expect an update. Try any other client other than this one.");
+					return;
+				}
 
 				m_aClients[ClientID].m_Version = Unpacker.GetInt();
 				m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
@@ -999,6 +1006,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					char aBuf[256];
 					str_format(aBuf, sizeof(aBuf), "player has entered the game. ClientID=%d addr=%s", ClientID, aAddrStr);
 					Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+
 					ExpireServerInfo();
 				}
 
@@ -1716,19 +1724,19 @@ int CServer::Run()
 				if(Tick() % TickSpeed() == 0)
 				{
 					if(!m_TimeWorldAlarm)
-						m_TimeWorldMinute++;
+						m_TimeGameMinute++;
 					else
 						m_TimeWorldAlarm = false;
 
-					if(m_TimeWorldMinute >= 60)
+					if(m_TimeGameMinute >= 60)
 					{
-						m_TimeWorldHour++;
-						if(m_TimeWorldHour >= 24)
+						m_TimeGameHour++;
+						if(m_TimeGameHour >= 24)
 						{
-							m_TimeWorldHour = 0;
-							SetOffsetWorldTime(0);
+							m_TimeGameHour = 0;
+							SetOffsetGameTime(0);
 						}
-						m_TimeWorldMinute = 0;
+						m_TimeGameMinute = 0;
 					}
 				}
 
@@ -1748,7 +1756,7 @@ int CServer::Run()
 					m_CurrentGameTick = 0;
 					m_GameStartTime = time_get();
 					m_ServerInfoFirstRequest = 0;
-					SetOffsetWorldTime(0);
+					SetOffsetGameTime(0);
 					
 					if(!MultiWorlds()->LoadWorlds(this, Kernel(), Storage(), Console()))
 					{
@@ -1877,7 +1885,6 @@ void CServer::ConReload(IConsole::IResult* pResult, void* pUser)
 void CServer::ConLogout(IConsole::IResult *pResult, void *pUser)
 {
 	CServer *pServer = (CServer *)pUser;
-
 	if(pServer->m_RconClientID >= 0 && pServer->m_RconClientID < MAX_PLAYERS &&
 		pServer->m_aClients[pServer->m_RconClientID].m_State != CClient::STATE_EMPTY)
 	{

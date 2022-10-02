@@ -1229,7 +1229,7 @@ void CGS::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 {
 	const int Hour = pResult->GetInteger(0);
 	IServer* pServer = (IServer*)pUserData;
-	pServer->SetOffsetWorldTime(Hour);
+	pServer->SetOffsetGameTime(Hour);
 }
 
 void CGS::ConParseSkin(IConsole::IResult *pResult, void *pUserData)

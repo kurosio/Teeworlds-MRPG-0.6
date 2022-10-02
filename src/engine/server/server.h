@@ -15,7 +15,7 @@ class CServer : public IServer
 	class DiscordJob* m_pDiscord;
 
 public:
-	virtual class IGameServer* GameServer(int WorldID = 0);
+	class IGameServer* GameServer(int WorldID = 0) override;
 	class IConsole *Console() const { return m_pConsole; }
 	class IStorageEngine*Storage() const { return m_pStorage; }
 	class CMultiWorlds* MultiWorlds() const { return m_pMultiWorlds; }
@@ -122,41 +122,41 @@ public:
 	CRegister m_Register;
 
 	CServer();
-	~CServer();
+	~CServer() override;
 
 	// world time
 	int m_ShiftTime;
 	int m_LastShiftTick;
-	int m_TimeWorldMinute;
-	int m_TimeWorldHour;
+	int m_TimeGameMinute;
+	int m_TimeGameHour;
 	bool m_TimeWorldAlarm;
 
-	virtual int GetMinutesWorldTime() const;
-	virtual int GetHourWorldTime() const;
-	virtual int GetOffsetWorldTime() const;
-	virtual void SetOffsetWorldTime(int Hour);
-	virtual bool CheckWorldTime(int Hour, int Minute);
-	virtual const char* GetStringTypeDay() const;
-	virtual int GetEnumTypeDay() const;
+	int GetMinuteGameTime() const override;
+	int GetHourGameTime() const override;
+	int GetOffsetGameTime() const override;
+	void SetOffsetGameTime(int Hour) override;
+	bool CheckGameTime(int Hour, int Minute) override;
+	const char* GetStringTypeDay() const override;
+	int GetEnumTypeDay() const override;
 
 	// basic
-	virtual void SetClientName(int ClientID, const char *pName);
-	virtual void SetClientClan(int ClientID, char const *pClan);
-	virtual void SetClientCountry(int ClientID, int Country);
-	virtual void SetClientScore(int ClientID, int Score);
+	void SetClientName(int ClientID, const char *pName) override;
+	void SetClientClan(int ClientID, char const *pClan) override;
+	void SetClientCountry(int ClientID, int Country) override;
+	void SetClientScore(int ClientID, int Score) override;
 
-	virtual void ChangeWorld(int ClientID, int NewWorldID);
-	virtual int GetClientWorldID(int ClientID);
+	void ChangeWorld(int ClientID, int NewWorldID) override;
+	int GetClientWorldID(int ClientID) override;
 
-	virtual void SetClientLanguage(int ClientID, const char* pLanguage);
-	virtual const char* GetClientLanguage(int ClientID) const;
-	virtual const char* GetWorldName(int WorldID);
+	void SetClientLanguage(int ClientID, const char* pLanguage) override;
+	const char* GetClientLanguage(int ClientID) const override;
+	const char* GetWorldName(int WorldID) override;
 
-	virtual void SendDiscordMessage(const char *pChannel, int Color, const char* pTitle, const char* pText);
-	virtual void SendDiscordGenerateMessage(const char *pTitle, int AccountID, int Color = 0);
-	virtual void UpdateDiscordStatus(const char *pStatus);
+	void SendDiscordMessage(const char *pChannel, int Color, const char* pTitle, const char* pText) override;
+	void SendDiscordGenerateMessage(const char *pTitle, int AccountID, int Color = 0) override;
+	void UpdateDiscordStatus(const char *pStatus) override;
 
-	void Kick(int ClientID, const char *pReason);
+	void Kick(int ClientID, const char *pReason) override;
 
 	int64 TickStartTime(int Tick) const;
 	int Init();
@@ -179,7 +179,7 @@ public:
 	bool ClientIngame(int ClientID) const override;
 	
 	int GetClientVersion(int ClientID) const override;
-	virtual int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1);
+	int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1) override;
 
 	void DoSnapshot(int WorldID);
 
@@ -254,12 +254,12 @@ public:
 	void RegisterCommands();
 
 	// Bots
-	virtual void InitClientBot(int ClientID);
+	void InitClientBot(int ClientID) override;
 
-	virtual int SnapNewID();
-	virtual void SnapFreeID(int ID);
-	virtual void *SnapNewItem(int Type, int ID, int Size);
-	void SnapSetStaticsize(int ItemType, int Size);
+	int SnapNewID() override;
+	void SnapFreeID(int ID) override;
+	void *SnapNewItem(int Type, int ID, int Size) override;
+	void SnapSetStaticsize(int ItemType, int Size) override;
 };
 
 #endif
