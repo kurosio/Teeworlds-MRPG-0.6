@@ -117,4 +117,7 @@ PercentArithmetic<T> add_percent_to_source(T *pvalue, float percent)
 template <typename T> // translate from the first to the second in percent e.g. ((10, 5) = 50%)
 PercentArithmetic<T> translate_to_percent(T from, T value) { return (T)(((double)value / (double)from) * 100.0f); }
 
+template <typename T> // translate from the first to the second in percent e.g. ((10, 5) = 50%)
+PercentArithmetic<T> translate_to_percent(T from, T value, float maximum_percent) { return (T)(((double)value / (double)from) * maximum_percent); }
+
 #endif // BASE_MATH_H

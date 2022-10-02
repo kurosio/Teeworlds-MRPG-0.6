@@ -824,15 +824,23 @@ void CCharacter::Snap(int SnappingClient)
 
 	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1)
 	{
-		const float HealthTranslate = (float)m_Health / (float)m_pPlayer->GetStartHealth() * 10.0f;
-		const float ManaTranslate = (float)m_Mana / (float)m_pPlayer->GetStartMana() * 10.0f;
-		pCharacter->m_Health = m_Health <= 0 ? 0 : clamp((int)HealthTranslate, 1, 10);
-		pCharacter->m_Armor = m_Mana <= 0 ? 0 : clamp((int)ManaTranslate, 1, 10);
 		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo > 0)
 		{
-			const int StartAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
-			const float AmmoTranslate = (float)m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo / (float)StartAmmo * 10.0f;
-			pCharacter->m_AmmoCount = m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo <= 0 ? 0 : clamp((int)AmmoTranslate, 1, 10);
+			const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
+			const int AmmoPercent =translate_to_percent(MaximumAmmo, m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo, 10.0f);
+			pCharacter->m_AmmoCount = clamp(AmmoPercent, 1, 10);
+		}
+
+		if(m_Health > 0)
+		{
+			const int HealthPercent = translate_to_percent(m_pPlayer->GetStartHealth(), m_Health, 10.0f);
+			pCharacter->m_Health = clamp(HealthPercent, 1, 10);
+		}
+
+		if(m_Mana > 0)
+		{
+			const int ManaPercent = translate_to_percent(m_pPlayer->GetStartMana(), m_Mana, 10.0f);
+			pCharacter->m_Armor = clamp(ManaPercent, 1, 10);
 		}
 	}
 
