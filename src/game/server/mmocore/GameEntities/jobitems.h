@@ -39,7 +39,7 @@ private:
 
 	void FarmingWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem);
 	void MiningWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem);
-	bool Interaction(const char* pTool, CPlayer* pPlayer, const CItemData* pWorkedItem, ItemFunctional EquipID, int JobLevel);
+	bool Interaction(const char* pTool, Attribute AttributeDmg, CPlayer* pPlayer, const CItemData* pWorkedItem, ItemFunctional EquipID, int JobLevel);
 	int GetPickupType() const;
 };
 

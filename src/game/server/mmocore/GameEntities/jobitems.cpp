@@ -66,7 +66,7 @@ void CJobItems::Work(int ClientID)
 		FarmingWork(ClientID, pPlayer, pWorkedItem);
 }
 
-bool CJobItems::Interaction(const char* pTool, CPlayer* pPlayer, const CItemData* pWorkedItem, ItemFunctional EquipID, int JobLevel)
+bool CJobItems::Interaction(const char* pTool, Attribute AttributeDmg, CPlayer* pPlayer, const CItemData* pWorkedItem, ItemFunctional EquipID, int JobLevel)
 {
 	const int ClientID = pPlayer->GetCID();
 	const int EquipItem = pPlayer->GetEquippedItemID(EquipID);
@@ -99,7 +99,7 @@ bool CJobItems::Interaction(const char* pTool, CPlayer* pPlayer, const CItemData
 		pEquippedItem->SetDurability(Durability - 1);
 
 	// damage
-	m_DamageDealt += 3 + pPlayer->GetAttributeSize(Attribute::Extraction);
+	m_DamageDealt += 3 + pPlayer->GetAttributeSize(AttributeDmg);
 	GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
 
 	// information
@@ -111,7 +111,7 @@ bool CJobItems::Interaction(const char* pTool, CPlayer* pPlayer, const CItemData
 
 void CJobItems::MiningWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem)
 {
-	if(Interaction("Pickaxe", pPlayer, &pWorkedItem, EQUIP_PICKAXE, pPlayer->Acc().m_aMining[JOB_LEVEL].m_Value))
+	if(Interaction("Pickaxe", Attribute::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, pPlayer->Acc().m_aMining[JOB_LEVEL].m_Value))
 	{
 		GS()->Mmo()->MinerAcc()->Work(pPlayer, m_Level);
 		pWorkedItem.Add(pPlayer->Acc().m_aMining[JOB_UPGR_QUANTITY].m_Value);
@@ -121,7 +121,7 @@ void CJobItems::MiningWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedIte
 
 void CJobItems::FarmingWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem)
 {
-	if(Interaction("Rake", pPlayer, &pWorkedItem, EQUIP_RAKE, pPlayer->Acc().m_aFarming[JOB_LEVEL].m_Value))
+	if(Interaction("Rake", Attribute::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, pPlayer->Acc().m_aFarming[JOB_LEVEL].m_Value))
 	{
 		GS()->Mmo()->PlantsAcc()->Work(pPlayer, m_Level);
 		pWorkedItem.Add(pPlayer->Acc().m_aFarming[JOB_UPGR_QUANTITY].m_Value);
