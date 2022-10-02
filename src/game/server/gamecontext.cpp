@@ -1520,7 +1520,7 @@ void CGS::AVCALLBACK(int ClientID, const char *pCmd, const int TempInt, const in
 	}
 }
 
-bool CGS::ShowDropMobChances(CPlayer* pPlayer)
+bool CGS::ShowDropItemsByWorld(int WorldID, CPlayer* pPlayer)
 {
 	bool Found = false;
 	const int ClientID = pPlayer->GetCID();
@@ -1529,7 +1529,7 @@ bool CGS::ShowDropMobChances(CPlayer* pPlayer)
 	char aBuf[128];
 	for(const auto& [ID, MobData] : MobBotInfo::ms_aMobBot)
 	{
-		if (IsPlayerEqualWorldID(ClientID, MobData.m_WorldID))
+		if (WorldID == MobData.m_WorldID)
 		{
 			bool HasDropItem = false;
 			const int HideID = (NUM_TAB_MENU + ID);
@@ -1704,7 +1704,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "Here you can see chance loot, mobs, on YOUR ZONE.");
 		AV(ClientID, "null");
 
-		if(!ShowDropMobChances(pPlayer))
+		if(!ShowDropItemsByWorld(pPlayer->GetPlayerWorldID(), pPlayer))
 			AVL(ClientID, "null", "There are no active mobs in your zone!");
 
 		AddVotesBackpage(ClientID);
