@@ -535,7 +535,10 @@ void CGS::Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, cons
 		{
 			dynamic_string Buffer;
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
-			AddBroadcast(i, Buffer.buffer(), Priority, LifeSpan);
+
+			char aDescriptionBuf[2048]{};
+			m_apPlayers[i]->FormatBroadcastBasicStats(aDescriptionBuf, sizeof(aDescriptionBuf), Buffer.buffer());
+			AddBroadcast(i, aDescriptionBuf, Priority, LifeSpan);
 			Buffer.clear();
 		}
 	}
@@ -572,7 +575,7 @@ void CGS::BroadcastTick(int ClientID)
 			str_copy(m_aBroadcastStates[ClientID].m_aNextMessage, m_aBroadcastStates[ClientID].m_aTimedMessage, sizeof(m_aBroadcastStates[ClientID].m_aNextMessage));
 
 		// send broadcast only if the message is different, or to fight auto-fading
-		if(str_comp(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage) != 0 ||
+		if(str_comp(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage) != 0 || 
 			m_aBroadcastStates[ClientID].m_NoChangeTick > Server()->TickSpeed())
 		{
 			CNetMsg_Sv_Broadcast Msg;
@@ -590,6 +593,17 @@ void CGS::BroadcastTick(int ClientID)
 
 		if(m_aBroadcastStates[ClientID].m_LifeSpanTick <= 0)
 		{
+			if(m_apPlayers[ClientID]->IsAuthed())
+			{
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(m_aBroadcastStates[ClientID].m_aNextMessage), "");
+				m_aBroadcastStates[ClientID].m_Priority = BroadcastPriority::LOWER;
+
+				CNetMsg_Sv_Broadcast Msg;
+				Msg.m_pMessage = m_aBroadcastStates[ClientID].m_aNextMessage;
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+				str_copy(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(m_aBroadcastStates[ClientID].m_aPrevMessage));
+			}
+
 			m_aBroadcastStates[ClientID].m_aTimedMessage[0] = 0;
 			m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
 		}
@@ -787,8 +801,8 @@ void CGS::OnTick()
 {
 	m_World.m_Core.m_Tuning = m_Tuning;
 	m_World.Tick();
-
 	m_pController->Tick();
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetPlayerWorldID() != m_WorldID)

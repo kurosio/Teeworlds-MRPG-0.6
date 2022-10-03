@@ -10,7 +10,6 @@
 #include "mmocore/Components/Dungeons/DungeonData.h"
 #include "mmocore/Components/Guilds/GuildCore.h"
 #include "mmocore/Components/Quests/QuestCore.h"
-#include "mmocore/Components/Worlds/WorldSwapCore.h"
 
 #include "mmocore/Components/Inventory/ItemData.h"
 #include "mmocore/Components/Skills/SkillData.h"
@@ -447,14 +446,37 @@ int CPlayer::GetStartMana()
 	return 10 + EnchantBonus;
 }
 
+void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAppendStr)
+{
+	if(!IsAuthed() || !m_pCharacter)
+	{
+		// default append
+		str_copy(pBuffer, pAppendStr, Size);
+		return;
+	}
+
+	const int LevelPercent = translate_to_percent(ExpNeed(Acc().m_Level), Acc().m_Exp);
+	const std::unique_ptr<char[]> Level = std::move(GS()->LevelString(100, (int)LevelPercent, 10, ':', ' '));
+	const int MaximumHealth = GetStartHealth();
+	const int MaximumMana = GetStartMana();
+	const int Health = m_pCharacter->Health();
+	const int Mana = m_pCharacter->Mana();
+	const int Gold = GetItem(itGold).m_Value;
+
+	str_format(pBuffer, Size, "\n\n\nLv%d : %s\nHealth: %d/%d\nMana: %d/%d\nGold: %d\n\n\n\n\n\n\n\n\n\n\n\n\n\n%s", 
+		Acc().m_Level, Level.get(), Health, MaximumHealth, Mana, MaximumMana, Gold, pAppendStr);
+	for(int space = 128, c = str_length(pBuffer); c < Size && space; c++, space--)
+		pBuffer[c] = ' ';
+}
+
 void CPlayer::ShowInformationStats(BroadcastPriority Priority)
 {
 	if (!m_pCharacter)
 		return;
 
-	const int Health = GetHealth();
+	const int Health = m_pCharacter->Health();
 	const int StartHealth = GetStartHealth();
-	const int Mana = GetMana();
+	const int Mana = m_pCharacter->Mana();
 	const int StartMana = GetStartMana();
 	GS()->Broadcast(m_ClientID, Priority, 100, "Health: {INT}/{INT} Mana: {INT}/{INT}", Health, StartHealth, Mana, StartMana);
 }

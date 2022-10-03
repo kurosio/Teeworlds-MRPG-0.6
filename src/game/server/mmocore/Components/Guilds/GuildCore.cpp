@@ -630,19 +630,14 @@ void GuildCore::TickHousingText()
 	if (Server()->Tick() % (Server()->TickSpeed() * 2) != 0)
 		return;
 
-	for (const auto& mh : CGuildHouseData::ms_aHouseGuild)
+	for (const auto& [ID, House] : CGuildHouseData::ms_aHouseGuild)
 	{
-		if (mh.second.m_WorldID != GS()->GetWorldID())
-			continue;
-
-		const int LifeTime = (Server()->TickSpeed() * 2) - 5;
-		const int GuildID = mh.second.m_GuildID;
-		if (GuildID > 0)
+		if (House.m_WorldID == GS()->GetWorldID())
 		{
-			GS()->CreateText(NULL, false, vec2(mh.second.m_TextX, mh.second.m_TextY), vec2(0, 0), LifeTime, GuildName(GuildID));
-			continue;
+			const int LifeTime = (Server()->TickSpeed() * 2) - 5;
+			const int GuildID = House.m_GuildID;
+			GS()->CreateText(nullptr, false, vec2(House.m_TextX, House.m_TextY), vec2(0, 0), LifeTime, (GuildID > 0 ? GuildName(GuildID) : "GUILD HOUSE"));
 		}
-		GS()->CreateText(NULL, false, vec2(mh.second.m_TextX, mh.second.m_TextY), vec2(0, 0), LifeTime, "GUILD HOUSE");
 	}
 }
 

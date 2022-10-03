@@ -98,6 +98,8 @@ public:
 	virtual	int GetHealth() { return GetTempData().m_TempHealth; }
 	virtual	int GetMana() { return GetTempData().m_TempMana; }
 
+	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr);
+
 	virtual void HandleTuningParams();
 	virtual int64 GetMaskVisibleForClients() const { return -1; };
 	virtual int IsVisibleForClient(int ClientID) const { return 2; }
