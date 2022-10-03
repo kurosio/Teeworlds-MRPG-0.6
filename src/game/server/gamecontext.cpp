@@ -595,17 +595,15 @@ void CGS::BroadcastTick(int ClientID)
 		{
 			if(m_apPlayers[ClientID]->IsAuthed())
 			{
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(m_aBroadcastStates[ClientID].m_aNextMessage), "");
-				m_aBroadcastStates[ClientID].m_Priority = BroadcastPriority::LOWER;
-
-				CNetMsg_Sv_Broadcast Msg;
-				Msg.m_pMessage = m_aBroadcastStates[ClientID].m_aNextMessage;
-				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-				str_copy(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(m_aBroadcastStates[ClientID].m_aPrevMessage));
+				m_aBroadcastStates[ClientID].m_LifeSpanTick = 300;
+				m_aBroadcastStates[ClientID].m_TimedPriority = (BroadcastPriority::BASIC_STATS);
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aTimedMessage, sizeof(m_aBroadcastStates[ClientID].m_aTimedMessage), "");
 			}
-
-			m_aBroadcastStates[ClientID].m_aTimedMessage[0] = 0;
-			m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
+			else
+			{
+				m_aBroadcastStates[ClientID].m_aTimedMessage[0] = 0;
+				m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
+			}
 		}
 		m_aBroadcastStates[ClientID].m_aNextMessage[0] = 0;
 		m_aBroadcastStates[ClientID].m_Priority = BroadcastPriority::LOWER;
