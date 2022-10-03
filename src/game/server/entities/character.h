@@ -16,7 +16,6 @@ class CCharacter : public CEntity
 
 	bool m_Alive;
 	int m_Event;
-	int m_Mana;
 	int m_LastWeapon;
 	int m_QueuedWeapon;
 	int m_AttackTick;
@@ -35,7 +34,6 @@ class CCharacter : public CEntity
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
 
 	void FireWeapon();
-	void HandleWeapons();
 	void HandleWeaponSwitch();
 	void DoWeaponSwitch();
 	bool InteractiveHammer(vec2 Direction, vec2 ProjStartPos);
@@ -44,22 +42,24 @@ class CCharacter : public CEntity
 	//void InteractiveGrenade(vec2 Direction, vec2 ProjStartPos);
 	//void InteractiveRifle(vec2 Direction, vec2 ProjStartPos);
 	bool DecoInteractive();
-	void HandleTuning();
+	virtual void HandleTuning();
 	void HandleBuff(CTuningParams* TuningParams);
 	void HandleAuthedPlayer();
 	bool IsLockedWorld();
 
 protected:
 	int m_Health;
-	int m_Armor;
+	int m_Mana;
 
 	// these are non-heldback inputs
 	CNetObj_PlayerInput m_Input;
 	CNetObj_PlayerInput m_LatestPrevInput;
 	CNetObj_PlayerInput m_LatestInput;
 
+	void HandleWeapons();
 	void HandleTilesets();
 	void HandleEvents();
+	void HandleIndependentTuning();
 
 public:
 	//character's size
@@ -85,6 +85,7 @@ public:
 	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
 	void ResetHook();
 	void ResetInput();
+	void ResetPredict();
 	bool IsGrounded() const;
 
 	bool IsAllowedPVP(int FromID) const;
@@ -123,6 +124,8 @@ public:
 	vec2 m_OldPos;
 	vec2 m_OlderPos;
 	bool m_DoorHit;
+	
+	int m_MoveRestrictions;
 
 private:
 	bool StartConversation(CPlayer* pTarget);

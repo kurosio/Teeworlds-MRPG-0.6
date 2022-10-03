@@ -23,7 +23,7 @@ class CCharacterBotAI : public CCharacter
 	vec2 m_PrevPos;
 	vec2 m_WallPos;
 	int m_EmotionsStyle;
-	std::map < int, bool > m_aListDmgPlayers;
+	std::unordered_map< int, bool > m_aListDmgPlayers;
 
 public:
 	CCharacterBotAI(CGameWorld* pWorld);
@@ -52,6 +52,7 @@ private:
 	void EngineNPC();
 	void EngineMobs();
 	void EngineQuestMob();
+	void HandleTuning() override;
 
 	CPlayer *SearchPlayer(float Distance) const;
     CPlayer *SearchTenacityPlayer(float Distance);

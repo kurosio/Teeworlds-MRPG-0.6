@@ -42,12 +42,14 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
 	{
+		m_Core.m_HookHitDisabled = true;
 		m_Core.m_CollisionDisabled = true;
 		CreateSnapProj(GetSnapFullID(), 2, POWERUP_HEALTH, true, false);
 		CreateSnapProj(GetSnapFullID(), 2, POWERUP_ARMOR, true, false);
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
 	{
+		m_Core.m_HookHitDisabled = true;
 		m_Core.m_CollisionDisabled = true;
 		const int Function = NpcBotInfo::ms_aNpcBot[SubBotID].m_Function;
 		if(Function == FunctionsNPC::FUNCTION_NPC_GIVE_QUEST)
@@ -58,17 +60,16 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 
 void CCharacterBotAI::ShowProgressHealth()
 {
-	for(const auto & pPlayerDamage : m_aListDmgPlayers)
+	for(const auto & [ClientID, Active] : m_aListDmgPlayers)
 	{
-		CPlayer *pPlayer = GS()->GetPlayer(pPlayerDamage.first, true);
-		if(pPlayer)
+		if(GS()->GetPlayer(ClientID, true))
 		{
 			const int BotID = m_pBotPlayer->GetBotID();
 			const int Health = m_pBotPlayer->GetHealth();
 			const int StartHealth = m_pBotPlayer->GetStartHealth();
 			const float Percent = (Health * 100.0) / StartHealth;
 			std::unique_ptr<char[]> Progress = std::move(GS()->LevelString(100, Percent, 10, ':', ' '));
-			GS()->Broadcast(pPlayerDamage.first, BroadcastPriority::GAME_PRIORITY, 100, "{STR} {STR}({INT}/{INT})",
+			GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{STR} {STR}({INT}/{INT})",
 				DataBotInfo::ms_aDataBot[BotID].m_aNameBot, Progress.get(), Health, StartHealth);
 		}
 	}
@@ -102,8 +103,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		SetTarget(From);
 
 	// add (from player) to the list of those who caused damage
-	if(m_aListDmgPlayers.find(From) == m_aListDmgPlayers.end())
-		m_aListDmgPlayers[From] = true;
+	m_aListDmgPlayers[From] = true;
 
 	// verify death
 	if(m_Health <= 0)
@@ -215,15 +215,40 @@ void CCharacterBotAI::Tick()
 	EngineBots();
 	HandleEvents();
 	HandleTilesets();
-	CCharacter::Tick();
+	HandleTuning();
+
+	m_Core.m_Input = m_Input;
+	m_Core.Tick(true, &m_pBotPlayer->m_NextTuningParams);
+	m_pBotPlayer->UpdateTempData(m_Health, m_Mana);
+
+	if(GameLayerClipped(m_Pos))
+		Die(m_pBotPlayer->GetCID(), WEAPON_SELF);
+
+	if (!m_DoorHit)
+	{
+		m_OlderPos = m_OldPos;
+		m_OldPos = m_Core.m_Pos;
+	}
+
+	HandleWeapons();
+
 }
 
 void CCharacterBotAI::TickDeferred()
 {
 	if(!m_BotActive || !IsAlive())
 		return;
+	
+	if(m_DoorHit)
+	{
+		ResetDoorPos();
+		m_DoorHit = false;
+	}
 
-	CCharacter::TickDeferred();
+	CCharacterCore::CParams PlayerTune(&m_pBotPlayer->m_NextTuningParams);
+	m_Core.Move(&PlayerTune);
+	m_Core.Quantize();
+	m_Pos = m_Core.m_Pos;
 }
 
 // interactive bots
@@ -284,6 +309,41 @@ void CCharacterBotAI::EngineQuestMob()
 	m_Input.m_TargetX = (m_Input.m_Direction*10+1);
 	EmotesAction(EMOTE_BLINK);
 	SearchTalkedPlayer();
+}
+
+void CCharacterBotAI::HandleTuning()
+{
+	CTuningParams* pTuningParams = &m_pBotPlayer->m_NextTuningParams;
+
+	// behavior mobs
+	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC || m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
+	{
+		// walk effect
+		pTuningParams->m_GroundControlSpeed = 5.0f;
+		pTuningParams->m_GroundControlAccel = 1.0f;
+	}
+	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+	{
+		// effect slime
+		const int MobID = m_pBotPlayer->GetBotMobID();
+		if(str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Slime") == 0)
+		{
+			pTuningParams->m_Gravity = 0.25f;
+			pTuningParams->m_GroundJumpImpulse = 8.0f;
+
+			pTuningParams->m_AirFriction = 0.75f;
+			pTuningParams->m_AirControlAccel = 1.0f;
+			pTuningParams->m_AirControlSpeed = 3.75f;
+			pTuningParams->m_AirJumpImpulse = 8.0f;
+
+			pTuningParams->m_HookFireSpeed = 30.0f;
+			pTuningParams->m_HookDragAccel = 1.5f;
+			pTuningParams->m_HookDragSpeed = 8.0f;
+			pTuningParams->m_PlayerHooking = 0;
+		}
+	}
+
+	HandleIndependentTuning();
 }
 
 // interactive of Mobs
@@ -572,8 +632,10 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 		{
 			if (DialoguesNotEmpty)
 				GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialog: \"hammer hit\"");
-
+			
+			pFindPlayer->GetCharacter()->m_Core.m_HammerHitDisabled = true;
 			pFindPlayer->GetCharacter()->m_Core.m_CollisionDisabled = true;
+			pFindPlayer->GetCharacter()->m_Core.m_HookHitDisabled = true;
 			m_Input.m_TargetX = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
 			m_Input.m_TargetY = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
 			m_Input.m_Direction = 0;
@@ -656,9 +718,12 @@ bool CCharacterBotAI::FunctionNurseNPC()
 			GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, 0, 0))
 			continue;
 
-		// disable collision with players
+		// disable collision and hook with players
 		if(distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f)
+		{
 			pFindPlayer->GetCharacter()->m_Core.m_CollisionDisabled = true;
+			pFindPlayer->GetCharacter()->m_Core.m_HookHitDisabled = true;
+		}
 
 		// skip full health
 		if(pFindPlayer->GetHealth() >= pFindPlayer->GetStartHealth())

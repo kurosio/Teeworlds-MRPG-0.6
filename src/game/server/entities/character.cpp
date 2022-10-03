@@ -28,7 +28,6 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_pHelper = new TileHandle();
 	m_DoorHit = false;
 	m_Health = 0;
-	m_Armor = 0;
 	m_TriggeredEvents = 0;
 }
 
@@ -110,7 +109,9 @@ bool CCharacter::IsGrounded() const
 		return true;
 	if(GS()->Collision()->CheckPoint(m_Pos.x-GetProximityRadius()/2, m_Pos.y+GetProximityRadius()/2+5))
 		return true;
-	return false;
+
+	int MoveRestrictionsBelow = GS()->Collision()->GetMoveRestrictions(m_Pos + vec2(0, GetProximityRadius() / 2 + 4), 0.0f);
+	return (MoveRestrictionsBelow & CANTMOVE_DOWN) != 0;
 }
 
 void CCharacter::DoWeaponSwitch()
@@ -446,6 +447,9 @@ void CCharacter::SetEmote(int Emote, int Sec)
 
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 {
+	// reset predict
+	ResetPredict();
+
 	// check for changes
 	if(mem_comp(&m_Input, pNewInput, sizeof(CNetObj_PlayerInput)) != 0)
 		m_LastAction = Server()->Tick();
@@ -496,6 +500,13 @@ void CCharacter::ResetInput()
 	m_LatestPrevInput = m_LatestInput = m_Input;
 }
 
+void CCharacter::ResetPredict()
+{
+	m_Core.m_HammerHitDisabled = false;
+	m_Core.m_CollisionDisabled = false;
+	m_Core.m_HookHitDisabled = false;
+}
+
 void CCharacter::Tick()
 {
 	if(!IsAlive())
@@ -522,35 +533,21 @@ void CCharacter::Tick()
 
 	HandleAuthedPlayer();
 	HandleTilesets();
-
-	m_Core.m_CollisionDisabled = false;
 }
 
 void CCharacter::TickDeferred()
 {
 	if(!IsAlive())
 		return;
-
+		
 	if(m_DoorHit)
 	{
 		ResetDoorPos();
 		m_DoorHit = false;
 	}
 
-	// apply drag velocity when the player is not firing ninja
-	// and set it back to 0 for the next tick
-	/*if (m_Core.m_ActiveWeapon != WEAPON_NINJA)
-		m_Core.AddDragVelocity();
-	m_Core.ResetDragVelocity();*/
-
+	// personal player tune
 	CCharacterCore::CParams PlayerTune(&m_pPlayer->m_NextTuningParams);
-	if(m_pPlayer->IsBot())
-	{
-		m_Core.Move(&PlayerTune);
-		m_Core.Quantize();
-		m_Pos = m_Core.m_Pos;
-		return;
-	}
 
 	// advance the dummy
 	{
@@ -987,35 +984,14 @@ void CCharacter::InteractiveRifle(vec2 Direction, vec2 ProjStartPos)
 */
 void CCharacter::HandleTuning()
 {
+	//CTuningParams* pTuningParams = &m_pPlayer->m_NextTuningParams;
+
+	HandleIndependentTuning();
+}
+
+void CCharacter::HandleIndependentTuning()
+{
 	CTuningParams* pTuningParams = &m_pPlayer->m_NextTuningParams;
-
-	// behavior mobs
-	const int MobID = m_pPlayer->GetBotMobID();
-	if(m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC || m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
-	{
-		// walk effect
-		pTuningParams->m_GroundControlSpeed = 5.0f;
-		pTuningParams->m_GroundControlAccel = 1.0f;
-	}
-	else if(m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
-	{
-		// effect slower
-		if(str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Slime") == 0)
-		{
-			pTuningParams->m_Gravity = 0.25f;
-			pTuningParams->m_GroundJumpImpulse = 8.0f;
-
-			pTuningParams->m_AirFriction = 0.75f;
-			pTuningParams->m_AirControlAccel = 1.0f;
-			pTuningParams->m_AirControlSpeed = 3.75f;
-			pTuningParams->m_AirJumpImpulse = 8.0f;
-
-			pTuningParams->m_HookFireSpeed = 30.0f;
-			pTuningParams->m_HookDragAccel = 1.5f;
-			pTuningParams->m_HookDragSpeed = 8.0f;
-			pTuningParams->m_PlayerHooking = 0;
-		}
-	}
 
 	// water
 	if(m_pHelper->BoolIndex(TILE_WATER))

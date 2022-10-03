@@ -561,6 +561,7 @@ int CCollision::GetMoveRestrictions(void* pUser, vec2 Pos, float Distance, int O
 		vec2(-1, 0),
 		vec2(0, -1) };
 	dbg_assert(0.0f <= Distance && Distance <= 32.0f, "invalid distance");
+
 	int Restrictions = 0;
 	for (int d = 0; d < NUM_MR_DIRS; d++)
 	{
