@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Окт 01 2022 г., 10:56
+-- Время создания: Окт 03 2022 г., 19:34
 -- Версия сервера: 10.4.24-MariaDB
 -- Версия PHP: 8.1.5
 
@@ -131,7 +131,7 @@ CREATE TABLE `enum_items_types` (
 --
 
 INSERT INTO `enum_items_types` (`TypeID`, `Name`) VALUES
-(-1, 'Invisible'),
+(0, 'Invisible'),
 (1, 'Useds'),
 (2, 'Crafts'),
 (3, 'Modules'),
@@ -241,16 +241,33 @@ CREATE TABLE `tw_accounts` (
 --
 
 INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `RegisterDate`, `LoginDate`, `RegisteredIP`, `LoginIP`, `Language`) VALUES
-(1, 'kuro', '7dd4cd59370ae03ef3f73b0711cd702df5e1853bf97bf8705244c0c22d759db1', 'TYdfB9M75CLUNGkPCm6PF46C', '2021-10-21 17:26:48', '2022-10-01 15:49:57', '192.168.56.1', '192.168.0.10', 'ru'),
+(1, 'kuro', '7dd4cd59370ae03ef3f73b0711cd702df5e1853bf97bf8705244c0c22d759db1', 'TYdfB9M75CLUNGkPCm6PF46C', '2021-10-21 17:26:48', '2022-10-04 00:28:46', '192.168.56.1', '192.168.0.10', 'ru'),
 (2, 'kuro', 'bc5905cfaa9e0188814fa2a56ecd6a998a4d39c6345ff9bff296bd5086dee93e', 'g8KmHG6T72CGXjRnn2CBq7Zt', '2021-11-04 08:38:30', '2021-11-04 23:23:59', '192.168.9.2', '192.168.42.35', 'ru'),
 (3, 'kuro', 'b46d7846dd83b73171009b49847825aa45abbb37071021d6b4219319a680ba27', 'eVE2pT8AbnS8Lc7AUMLtWRkS', '2021-11-04 12:43:33', '2021-11-04 21:18:05', '192.168.9.2', '192.168.9.2', 'ru'),
 (4, 'kuro', 'da6eee14f58fc11fefade37e6974b2fe18259a1619cffc84279a0d3fd0101d1b', 'Yhg56c79pk6LC97TZVjdbLVg', '2021-11-05 06:51:11', '2021-11-05 14:25:01', '192.168.9.2', '192.168.9.2', 'en'),
-(5, 'kuro', '60424ee200a9c54748fdbdb8b7cd7df29b651e4d8b4a23752c97a88d2260b2ed', 'YeXACqnVZECdfPpWaeg38NAa', '2022-07-20 12:29:06', '2022-09-22 23:28:28', '192.168.0.10', '192.168.0.11', 'ru'),
+(5, 'kuro', '60424ee200a9c54748fdbdb8b7cd7df29b651e4d8b4a23752c97a88d2260b2ed', 'YeXACqnVZECdfPpWaeg38NAa', '2022-07-20 12:29:06', '2022-10-01 22:23:09', '192.168.0.10', '192.168.0.10', 'ru'),
 (6, 'soska', '433cf6f8aebcb7960384f563972f9c9a06e7210ea53ca07307dde83f407fe093', 'WbGYAeknmmKZLNmBSLcCqMA6', '2022-07-20 14:14:04', '2022-07-20 21:40:16', '192.168.0.10', '192.168.0.10', 'en'),
 (7, 'kuro', '15efd964fc5ab19174a5c5d3c650d2b227dbbea5882380a77db935020ea169e5', 'K6hpqc2bmR3jTAMYWbEYUCCD', '2022-08-14 08:29:14', '2022-08-14 15:46:50', '192.168.0.11', '192.168.0.11', 'en'),
 (8, '9871爪20001', '2a17bdbb002ddae787cbb1f0d2d78a5081c33ce2b2806cdb633272b7cd2cd1fc', 'ocop8V49U6Me8NKqbG72f95W', '2022-09-22 14:13:20', '2022-09-22 21:13:26', '46.242.12.120', '46.242.12.120', 'ru'),
 (9, 'lel1', '252f176ea818de94a38f51570ede8bb28d2745a305c2f6cdff1f79ae219a545e', 'abmSUX5Ta2Pjt9bhb88WbkbP', '2022-09-22 15:58:27', '2022-09-23 00:03:17', '46.147.226.251', '46.147.226.251', 'en'),
-(10, 'test', '36235aabe710994638d3d920298d4c9b8207bcc094846d7033b6903bf4e58bf1', 'qmUfHhj3nT2LZp8X2XtALAc2', '2022-09-22 16:32:49', '2022-10-01 00:23:17', '138.199.47.239', '146.70.97.205', 'en');
+(10, 'test', '36235aabe710994638d3d920298d4c9b8207bcc094846d7033b6903bf4e58bf1', 'qmUfHhj3nT2LZp8X2XtALAc2', '2022-09-22 16:32:49', '2022-10-03 21:29:16', '138.199.47.239', '91.207.103.217', 'en'),
+(11, 'Hanuko33', 'fb757c3a351dcc37315fe17953d28f1999a4e79f5505a34bc39ced9c12823a11', 'eEdPcLPBaqqBAHLR7RDLVD6S', '2022-10-01 14:48:42', '2022-10-01 21:48:48', '176.221.122.121', '176.221.122.121', 'en'),
+(12, 'doruk', 'ffd5646688c0366c5f96230634c239337a593dc3ffafbd3229883011872505a8', 't9YemkDEVZXP7AFLaaq53RNU', '2022-10-01 17:26:49', '2022-10-02 00:26:56', '78.190.156.218', '78.190.156.218', 'en'),
+(13, 'cloud', '08a4d250c0de056ba2592c22ab861eca910cdc0abcfef2e8cd5fc36905fe36d0', 'gLpTPVEMXhR2ameYNgcFhmC3', '2022-10-01 19:33:30', '2022-10-02 02:33:37', '77.23.250.44', '77.23.250.44', 'en'),
+(14, 'kronos', 'bfeac966c377ce450e9e7d60da99b9164beab4f2ad18b0c8d5dce0737f396cd6', 'bD6gon3NcFBaGVAbtXGTPFZE', '2022-10-01 21:42:30', '2022-10-02 04:44:41', '46.198.179.144', '46.198.179.144', 'en'),
+(15, 'komut', '72f31dba66c336a1f0985c4262c8f226798dee446bc13513b0f8ed7934bd042d', 'AtoP7L8KFLqXcBagp7b6ET43', '2022-10-02 09:53:27', '2022-10-02 16:53:29', '87.152.160.13', '87.152.160.13', 'en'),
+(16, 'nolhan', '170cf5c0081c8578c92b81a1b402c25f807a2012d717ab5e4036b68ba9503ad1', '2S2odDWYGpCtcWEgATHgEVn9', '2022-10-02 12:07:12', '2022-10-02 19:07:20', '90.51.152.221', '90.51.152.221', 'en'),
+(17, '1234', '4c34add7003faa76af44c9c94730769ce04d39eabdf8d5f109c509acceb91e82', 'h4dBSSpGaKkd2Tq7h6oCcYeK', '2022-10-02 14:48:30', '2022-10-02 21:48:37', '88.236.65.116', '88.236.65.116', 'en'),
+(18, '<...>', 'd7b36c822d9b1a9d0775d999b04d420cb264c5ce83435bc8f195ba429a094e3a', 'GYGBF7A4hpUCj8N55Npb2WWF', '2022-10-03 06:09:55', '2022-10-03 13:10:09', '2.61.207.196', '2.61.207.196', 'en'),
+(19, 'SpIdEr', '0bb31d1777d4f6f56cd6ada9d5925bc497666adb4dccacd65c4f529a4746f308', 'DkYWnMUGMh73GWobRqD3LbgH', '2022-10-03 11:38:48', '2022-10-03 22:21:41', '185.3.32.208', '185.3.32.208', 'en'),
+(20, 'vlad', '31a4b5319f3973690797c94ad2dc2e5c0ae0da1ce136457d15267a105325adfb', 'f4gXXdNkbYWYEYFcHEkm4jSn', '2022-10-03 12:23:15', '2022-10-03 19:29:40', '46.147.226.251', '46.147.226.251', 'en'),
+(21, 'Dorito', '5dfbafadc8aa194425df825b94b1b6e8d6aee700d65bbb177fd0307644fa05de', 'Cf6hCm44WZ5Z6VjtPGNeogSf', '2022-10-03 12:49:01', '2022-10-03 19:49:21', '91.105.177.78', '91.105.177.78', 'en'),
+(22, 'Yamete', '3fa5df9f295e0519900f91830e0201fed422a1c2636e9963154d0cf782d20479', 'fgFcRnM2fbXjL82FL5c64A5X', '2022-10-03 13:00:54', '2022-10-03 20:01:04', '176.59.205.208', '176.59.205.208', 'en'),
+(23, 'kuro', '6d76332b95dbae4536ea909b71a07a97920f5233d3430576491cea6bcb0b3d2b', 'ENmCUbCWt7FKpUBUDScLgoNY', '2022-10-03 13:33:54', '2022-10-03 20:36:47', '192.168.0.10', '192.168.0.10', 'en'),
+(24, 'login', '62042966243b0d3b5e3fc14aa192ad4385723e83fc185ce294ea49b005875814', '2EjBmnVM47aZqn3R3gt9ACon', '2022-10-03 14:33:55', '2022-10-03 21:34:04', '89.77.152.236', '89.77.152.236', 'en'),
+(25, 'androoha23', 'ca7e97f3edd72431362f699289d157a9b7ddf7703849668fe7d504ae88eddf7d', 'ESa34t4Pp5Dokc49dDYDLp6o', '2022-10-03 15:19:16', 'First log in', '188.190.180.188', '0.0.0.0', 'en'),
+(26, 'AvOcaDO', 'cd7e122f4a8d4336c1dd5f5525dea5706d2fc0e608d526461ed4e65e25e33a63', '5Dcdc3ppEFa2F2FePaTRofpV', '2022-10-03 15:35:21', '2022-10-03 22:35:32', '185.3.32.208', '185.3.32.208', 'en'),
+(27, 'Wrawel', '5f4062f1f5d3303bae368e6ed0f3c55af776544c03b1e8632e8dc2ab9b735dfa', 'afmFgoPTPCekXRae6o3bPPoB', '2022-10-03 16:51:35', '2022-10-03 23:51:39', '77.64.253.139', '77.64.253.139', 'en');
 
 -- --------------------------------------------------------
 
@@ -303,7 +320,7 @@ CREATE TABLE `tw_accounts_data` (
 --
 
 INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `Exp`, `GuildID`, `GuildDeposit`, `GuildRank`, `Upgrade`, `SpreadShotgun`, `SpreadGrenade`, `SpreadRifle`, `Dexterity`, `CriticalHit`, `DirectCriticalHit`, `Hardness`, `Tenacity`, `Lucky`, `Piety`, `Vampirism`, `AmmoRegen`, `Ammo`, `Efficiency`, `Extraction`) VALUES
-(1, 'kurosio', '571251558457540617', 11, 34, 13903, NULL, 0, NULL, 0, 7, 3, 5, 1, 0, 0, 10000, 0, 0, 0, 5000, 10000, 30, 0, 0),
+(1, 'kurosio', '571251558457540617', 11, 34, 18290, NULL, 0, NULL, 14001, 7, 1, 5, 0, 0, 0, 10000, 0, 0, 0, 0, 10000, 30, 0, 0),
 (2, 'kurosio1', 'null', 2, 3, 99, NULL, 0, NULL, 20, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (3, 'kurosio12', 'null', 0, 2, 2, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (4, 'kurosio44', 'null', 7, 4, 156, NULL, 0, NULL, 30, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -312,7 +329,24 @@ INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `
 (7, 'missiedsadA♪', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (8, '9871爪20001', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (9, '<~{Barsik}~>', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(10, 'Anime.pdf', 'null', 0, 2, 17, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+(10, 'Anime.pdf', 'null', 0, 344, 1633919, 1, 0, NULL, 0, 13, 10, 3, 30, 100, 100, 10000, 0, 0, 0, 100, 100, 50, 0, 0),
+(11, 'Hanuko33', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(12, 'N L K $', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(13, 'Cloud', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(14, 'Ļåҕ | Kron0s', 'null', NULL, 2, 2, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(15, 'Hawk', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(16, 'Mel!odas.*', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(17, 'Akashi', 'null', 0, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(18, 'lld', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(19, 'SpIdEr', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(20, 'barski asshole', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(21, 'Dorito', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(22, 'd3vilsss72', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(23, 'emissie', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(24, 'axe', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(25, 'Aver_top', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(26, 'AvOcaDO', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(27, 'Wrawel', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -333,7 +367,7 @@ CREATE TABLE `tw_accounts_farming` (
 --
 
 INSERT INTO `tw_accounts_farming` (`UserID`, `Level`, `Exp`, `Quantity`, `Upgrade`) VALUES
-(1, 1, 5, 1, 0),
+(1, 1, 13, 1, 0),
 (2, 1, 2, 1, 0),
 (3, 1, 0, 1, 0),
 (4, 1, 0, 1, 0),
@@ -342,7 +376,23 @@ INSERT INTO `tw_accounts_farming` (`UserID`, `Level`, `Exp`, `Quantity`, `Upgrad
 (7, 1, 0, 1, 0),
 (8, 1, 0, 1, 0),
 (9, 1, 0, 1, 0),
-(10, 1, 0, 1, 0);
+(10, 1, 0, 1, 0),
+(11, 1, 0, 1, 0),
+(12, 1, 0, 1, 0),
+(13, 1, 0, 1, 0),
+(14, 1, 0, 1, 0),
+(15, 1, 0, 1, 0),
+(16, 1, 0, 1, 0),
+(17, 1, 0, 1, 0),
+(18, 1, 0, 1, 0),
+(19, 1, 0, 1, 0),
+(20, 1, 0, 1, 0),
+(21, 1, 0, 1, 0),
+(22, 1, 0, 1, 0),
+(23, 1, 0, 1, 0),
+(24, 1, 0, 1, 0),
+(26, 1, 0, 1, 0),
+(27, 1, 0, 1, 0);
 
 -- --------------------------------------------------------
 
@@ -367,21 +417,15 @@ CREATE TABLE `tw_accounts_items` (
 INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`, `Durability`, `UserID`) VALUES
 (1, 2, 1, 1, 1, 100, 1),
 (2, 22, 2, 1, 0, 100, 1),
-(5, 3, 1, 1, 0, 100, 1),
-(6, 1, 11402, 0, 0, 100, 1),
-(10, 9, 9083, 0, 0, 100, 1),
-(14, 19, 1, 1, 0, 100, 1),
-(21, 18, 10097, 0, 0, 100, 1),
+(6, 1, 15036, 0, 0, 100, 1),
+(10, 9, 9091, 0, 0, 100, 1),
+(21, 18, 10090, 0, 0, 100, 1),
 (25, 17, 98, 0, 0, 100, 1),
-(27, 15, 10094, 0, 0, 100, 1),
+(27, 15, 9763, 0, 0, 100, 1),
 (34, 13, 1, 0, 0, 100, 1),
-(35, 14, 10, 0, 0, 100, 1),
 (38, 23, 2, 0, 0, 100, 1),
-(39, 24, 7, 1, 0, 100, 1),
-(48, 21, 1, 0, 0, 100, 1),
-(49, 7, 447, 0, 0, 100, 1),
-(55, 5, 1, 1, 1, 100, 1),
-(56, 6, 1, 0, 0, 100, 1),
+(39, 24, 7, 0, 0, 100, 1),
+(49, 7, 476, 0, 0, 100, 1),
 (57, 2, 1, 1, 0, 100, 2),
 (58, 22, 1, 1, 0, 100, 2),
 (61, 3, 1, 1, 0, 100, 2),
@@ -422,12 +466,96 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (120, 20, 1, 1, 0, 100, 8),
 (121, 2, 1, 1, 0, 100, 9),
 (122, 22, 1, 1, 0, 100, 9),
-(125, 2, 1, 0, 0, 100, 10),
+(125, 2, 1, 1, 2, 100, 10),
 (126, 22, 1, 1, 0, 100, 10),
-(127, 1, 1041, 0, 0, 100, 10),
-(147, 4, 1, 1, 10, 100, 1),
-(148, 20, 1, 1, 1, 100, 1),
-(149, 25, 1, 0, 0, 100, 1);
+(127, 1, 1353, 0, 0, 100, 10),
+(149, 25, 2, 0, 0, 100, 1),
+(150, 2, 1, 1, 0, 100, 11),
+(151, 22, 1, 1, 0, 100, 11),
+(152, 25, 1, 0, 0, 100, 11),
+(153, 25, 1, 0, 0, 100, 5),
+(157, 2, 1, 1, 0, 100, 12),
+(158, 22, 1, 1, 0, 100, 12),
+(159, 25, 1, 0, 0, 100, 12),
+(160, 2, 1, 1, 0, 100, 13),
+(161, 22, 1, 1, 0, 100, 13),
+(162, 25, 1, 0, 0, 100, 13),
+(163, 2, 1, 1, 0, 100, 14),
+(164, 22, 1, 1, 0, 100, 14),
+(165, 25, 1, 0, 0, 100, 14),
+(166, 4, 1, 1, 10, 100, 14),
+(167, 20, 1, 1, 1, 100, 14),
+(168, 15, 25, 0, 0, 100, 14),
+(169, 14, 10, 0, 0, 100, 14),
+(170, 1, 7, 0, 0, 100, 14),
+(171, 2, 1, 1, 0, 100, 15),
+(172, 22, 1, 1, 0, 100, 15),
+(173, 25, 1, 0, 0, 100, 15),
+(175, 2, 1, 1, 0, 100, 16),
+(176, 22, 1, 1, 0, 100, 16),
+(177, 25, 1, 0, 0, 100, 16),
+(178, 2, 1, 1, 0, 100, 17),
+(179, 22, 1, 1, 0, 100, 17),
+(180, 25, 1, 0, 0, 100, 17),
+(181, 5, 1, 1, 1, 100, 17),
+(182, 3, 1, 1, 0, 100, 17),
+(183, 6, 1, 1, 0, 100, 17),
+(184, 15, 300, 0, 0, 100, 17),
+(185, 19, 1, 1, 0, 100, 17),
+(186, 3, 1, 1, 0, 100, 1),
+(189, 6, 1, 1, 0, 100, 1),
+(190, 8, 1, 0, 0, 100, 1),
+(191, 10, 1, 0, 0, 100, 1),
+(192, 19, 1, 1, 0, 100, 1),
+(194, 4, 1, 1, 0, 100, 17),
+(195, 20, 1, 1, 0, 100, 17),
+(196, 20, 1, 1, 0, 100, 1),
+(198, 1, 7, 0, 0, 100, 17),
+(199, 26, 1, 1, 0, 82, 1),
+(200, 27, 1, 1, 0, 100, 1),
+(201, 2, 1, 1, 0, 100, 18),
+(202, 22, 1, 1, 0, 100, 18),
+(203, 25, 1, 0, 0, 100, 18),
+(204, 18, 4, 0, 0, 100, 18),
+(219, 2, 1, 1, 0, 100, 19),
+(220, 22, 1, 0, 0, 100, 19),
+(221, 25, 1, 0, 0, 100, 19),
+(222, 18, 1, 0, 0, 100, 19),
+(223, 2, 1, 1, 0, 100, 20),
+(224, 22, 1, 1, 0, 100, 20),
+(225, 25, 1, 0, 0, 100, 20),
+(226, 1, 7, 0, 0, 100, 20),
+(227, 2, 1, 1, 0, 100, 21),
+(228, 22, 1, 1, 0, 100, 21),
+(229, 25, 1, 0, 0, 100, 21),
+(230, 2, 1, 1, 0, 100, 22),
+(231, 22, 1, 1, 0, 100, 22),
+(232, 25, 1, 0, 0, 100, 22),
+(233, 2, 1, 1, 0, 100, 23),
+(234, 22, 1, 1, 0, 100, 23),
+(235, 25, 1, 0, 0, 100, 23),
+(236, 4, 1, 1, 0, 100, 1),
+(237, 25, 2, 0, 0, 100, 10),
+(238, 5, 1, 1, 5, 100, 10),
+(244, 3, 1, 1, 5, 100, 10),
+(245, 4, 1, 1, 3, 100, 10),
+(246, 6, 1, 1, 5, 100, 10),
+(248, 7, 988075, 0, 0, 100, 10),
+(249, 19, 1, 1, 0, 100, 10),
+(250, 20, 1, 1, 0, 100, 10),
+(251, 9, 1000000, 0, 0, 100, 10),
+(254, 14, 996, 0, 0, 100, 10),
+(255, 18, 999, 0, 0, 100, 10),
+(256, 15, 953, 0, 0, 100, 10),
+(257, 2, 1, 1, 0, 100, 24),
+(258, 22, 1, 1, 0, 100, 24),
+(259, 25, 1, 0, 0, 100, 24),
+(260, 2, 1, 1, 0, 100, 26),
+(261, 22, 1, 1, 0, 100, 26),
+(262, 25, 1, 0, 0, 100, 26),
+(263, 2, 1, 1, 0, 100, 27),
+(264, 22, 1, 1, 0, 100, 27),
+(265, 25, 1, 0, 0, 100, 27);
 
 -- --------------------------------------------------------
 
@@ -475,7 +603,23 @@ INSERT INTO `tw_accounts_mining` (`UserID`, `Level`, `Exp`, `Upgrade`, `Quantity
 (7, 1, 0, 0, 1),
 (8, 1, 0, 0, 1),
 (9, 1, 0, 0, 1),
-(10, 1, 0, 0, 1);
+(10, 1, 0, 0, 1),
+(11, 1, 0, 0, 1),
+(12, 1, 0, 0, 1),
+(13, 1, 0, 0, 1),
+(14, 1, 0, 0, 1),
+(15, 1, 0, 0, 1),
+(16, 1, 0, 0, 1),
+(17, 1, 0, 0, 1),
+(18, 1, 0, 0, 1),
+(19, 1, 0, 0, 1),
+(20, 1, 0, 0, 1),
+(21, 1, 0, 0, 1),
+(22, 1, 0, 0, 1),
+(23, 1, 0, 0, 1),
+(24, 1, 0, 0, 1),
+(26, 1, 0, 0, 1),
+(27, 1, 0, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -515,7 +659,8 @@ INSERT INTO `tw_accounts_skills` (`ID`, `SkillID`, `UserID`, `Level`, `UsedByEmo
 (3, 5, 1, 4, -1),
 (4, 6, 1, 4, -1),
 (5, 1, 5, 1, 0),
-(6, 6, 5, 1, 1);
+(6, 6, 5, 1, 1),
+(7, 4, 1, 1, -1);
 
 -- --------------------------------------------------------
 
@@ -583,11 +728,11 @@ CREATE TABLE `tw_bots_info` (
   `ID` int(11) NOT NULL,
   `Name` varchar(32) NOT NULL DEFAULT 'Bot name',
   `JsonTeeInfo` varchar(128) NOT NULL DEFAULT '{ "skin": "default", 	"custom_color": 0, 	"color_body": 0, 	"color_feer": 0}',
-  `SlotHammer` int(11) DEFAULT NULL,
-  `SlotGun` int(11) DEFAULT NULL,
-  `SlotShotgun` int(11) DEFAULT NULL,
-  `SlotGrenade` int(11) DEFAULT NULL,
-  `SlotRifle` int(11) DEFAULT NULL,
+  `SlotHammer` int(11) DEFAULT 2,
+  `SlotGun` int(11) DEFAULT 3,
+  `SlotShotgun` int(11) DEFAULT 4,
+  `SlotGrenade` int(11) DEFAULT 5,
+  `SlotRifle` int(11) DEFAULT 6,
   `SlotArmor` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
 
@@ -774,6 +919,13 @@ CREATE TABLE `tw_guilds` (
   `ChairMoney` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Дамп данных таблицы `tw_guilds`
+--
+
+INSERT INTO `tw_guilds` (`ID`, `Name`, `UserID`, `Level`, `Experience`, `Bank`, `Score`, `AvailableSlots`, `ChairExperience`, `ChairMoney`) VALUES
+(1, 'Krutie', 10, 1, 7, 0, 0, 2, 1, 1);
+
 -- --------------------------------------------------------
 
 --
@@ -908,7 +1060,7 @@ CREATE TABLE `tw_items_list` (
 --
 
 INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `InitialPrice`, `Desynthesis`, `Attribute0`, `Attribute1`, `AttributeValue0`, `AttributeValue1`) VALUES
-(1, 'Gold', 'Major currency', -1, -1, 0, 0, 16, NULL, 0, 0),
+(1, 'Gold', 'Major currency', 0, -1, 0, 0, 16, NULL, 0, 0),
 (2, 'Hammer', 'A normal hammer', 6, 0, 0, 0, 16, 6, 10, 3),
 (3, 'Gun', 'Conventional weapon', 6, 1, 10, 0, 17, NULL, 10, 0),
 (4, 'Shotgun', 'Conventional weapon', 6, 2, 10, 0, 18, NULL, 5, 0),
@@ -916,7 +1068,7 @@ INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `I
 (6, 'Rifle', 'Conventional weapon', 6, 4, 10, 0, 20, NULL, 10, 0),
 (7, 'Material', 'Required to improve weapons', 4, -1, 10, 0, NULL, NULL, 0, 0),
 (8, 'Ticket guild', 'Command: /gcreate <name>', 4, -1, 10, 0, NULL, NULL, 0, 0),
-(9, 'Skill Point', 'Skill point', -1, -1, 10, 0, NULL, NULL, 0, 0),
+(9, 'Skill Point', 'Skill point', 0, -1, 10, 0, NULL, NULL, 0, 0),
 (10, 'Decoration Armor', 'Decoration for house!', 7, -1, 10, 0, NULL, NULL, 0, 0),
 (11, 'Decoration Hearth Elite', 'Decoration for house!', 7, -1, 10, 0, NULL, NULL, 0, 0),
 (12, 'Decoration Ninja Elite', 'Decoration for house!', 7, -1, 10, 0, NULL, NULL, 0, 0),
@@ -932,7 +1084,9 @@ INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `I
 (22, 'Mode PVP', 'Settings game.', 5, 10, 0, 0, NULL, NULL, 0, 0),
 (23, 'Ticket reset weapon stats', 'Resets only ammo stats(Ammo).', 1, 8, 10, 0, NULL, NULL, 0, 0),
 (24, 'Blessing for discount craft', 'Need dress it, -20% craft price', 8, 8, 10, 0, NULL, NULL, 0, 0),
-(25, 'Show equipment description', 'Settings game.', 5, 10, 0, 0, NULL, NULL, 0, 0);
+(25, 'Show equipment description', 'Settings game.', 5, 10, 0, 0, NULL, NULL, 0, 0),
+(26, 'Rusty Rake', 'The usual rusty rake.', 6, 6, 10, 50, 15, NULL, 3, 0),
+(27, 'Rusty Pickaxe', 'The usual rusty pickaxe.', 6, 5, 10, 50, 14, NULL, 3, 0);
 
 -- --------------------------------------------------------
 
@@ -954,22 +1108,6 @@ CREATE TABLE `tw_logics_worlds` (
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_positions_farming`
---
-
-CREATE TABLE `tw_positions_farming` (
-  `ID` int(11) NOT NULL,
-  `ItemID` int(11) NOT NULL,
-  `Level` int(11) NOT NULL DEFAULT 1,
-  `PositionX` int(11) NOT NULL,
-  `PositionY` int(11) NOT NULL,
-  `Distance` int(11) NOT NULL DEFAULT 300,
-  `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
-
--- --------------------------------------------------------
-
---
 -- Структура таблицы `tw_positions_mining`
 --
 
@@ -980,9 +1118,33 @@ CREATE TABLE `tw_positions_mining` (
   `Health` int(11) NOT NULL DEFAULT 100,
   `PositionX` int(11) NOT NULL,
   `PositionY` int(11) NOT NULL,
-  `Distance` int(11) NOT NULL DEFAULT 300,
+  `Distance` int(11) NOT NULL DEFAULT 300 COMMENT 'Range of unit spreading',
   `WorldID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_positions_plant`
+--
+
+CREATE TABLE `tw_positions_plant` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) NOT NULL,
+  `Level` int(11) NOT NULL DEFAULT 1,
+  `Health` int(11) NOT NULL DEFAULT 100,
+  `PositionX` int(11) NOT NULL,
+  `PositionY` int(11) NOT NULL,
+  `Distance` int(11) NOT NULL DEFAULT 300 COMMENT 'Range of unit spreading',
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+--
+-- Дамп данных таблицы `tw_positions_plant`
+--
+
+INSERT INTO `tw_positions_plant` (`ID`, `ItemID`, `Level`, `Health`, `PositionX`, `PositionY`, `Distance`, `WorldID`) VALUES
+(1, 7, 1, 100, 2254, 872, 300, 0);
 
 -- --------------------------------------------------------
 
@@ -1452,18 +1614,18 @@ ALTER TABLE `tw_logics_worlds`
   ADD KEY `ParseInt` (`ParseInt`);
 
 --
--- Индексы таблицы `tw_positions_farming`
+-- Индексы таблицы `tw_positions_mining`
 --
-ALTER TABLE `tw_positions_farming`
+ALTER TABLE `tw_positions_mining`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `ID` (`ID`),
   ADD KEY `ItemID` (`ItemID`),
   ADD KEY `WorldID` (`WorldID`);
 
 --
--- Индексы таблицы `tw_positions_mining`
+-- Индексы таблицы `tw_positions_plant`
 --
-ALTER TABLE `tw_positions_mining`
+ALTER TABLE `tw_positions_plant`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `ID` (`ID`),
   ADD KEY `ItemID` (`ItemID`),
@@ -1559,7 +1721,7 @@ ALTER TABLE `enum_items_types`
 -- AUTO_INCREMENT для таблицы `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_aethers`
@@ -1571,13 +1733,13 @@ ALTER TABLE `tw_accounts_aethers`
 -- AUTO_INCREMENT для таблицы `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=150;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=266;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
@@ -1595,7 +1757,7 @@ ALTER TABLE `tw_accounts_quests`
 -- AUTO_INCREMENT для таблицы `tw_accounts_skills`
 --
 ALTER TABLE `tw_accounts_skills`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_aethers`
@@ -1607,7 +1769,7 @@ ALTER TABLE `tw_aethers`
 -- AUTO_INCREMENT для таблицы `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_bots_mobs`
@@ -1655,7 +1817,7 @@ ALTER TABLE `tw_dungeons_records`
 -- AUTO_INCREMENT для таблицы `tw_guilds`
 --
 ALTER TABLE `tw_guilds`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_guilds_decorations`
@@ -1703,7 +1865,7 @@ ALTER TABLE `tw_houses_decorations`
 -- AUTO_INCREMENT для таблицы `tw_items_list`
 --
 ALTER TABLE `tw_items_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_logics_worlds`
@@ -1712,16 +1874,16 @@ ALTER TABLE `tw_logics_worlds`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_positions_farming`
---
-ALTER TABLE `tw_positions_farming`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT для таблицы `tw_positions_mining`
 --
 ALTER TABLE `tw_positions_mining`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_positions_plant`
+--
+ALTER TABLE `tw_positions_plant`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_quests_list`
@@ -1968,7 +2130,9 @@ ALTER TABLE `tw_houses_decorations`
 --
 ALTER TABLE `tw_items_list`
   ADD CONSTRAINT `tw_items_list_ibfk_1` FOREIGN KEY (`Type`) REFERENCES `enum_items_types` (`TypeID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_items_list_ibfk_2` FOREIGN KEY (`Function`) REFERENCES `enum_items_functional` (`FunctionID`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `tw_items_list_ibfk_2` FOREIGN KEY (`Function`) REFERENCES `enum_items_functional` (`FunctionID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_items_list_ibfk_3` FOREIGN KEY (`Attribute0`) REFERENCES `tw_attributs` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_items_list_ibfk_4` FOREIGN KEY (`Attribute1`) REFERENCES `tw_attributs` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `tw_logics_worlds`
@@ -1976,6 +2140,12 @@ ALTER TABLE `tw_items_list`
 ALTER TABLE `tw_logics_worlds`
   ADD CONSTRAINT `tw_logics_worlds_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `tw_world_swap` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_logics_worlds_ibfk_2` FOREIGN KEY (`ParseInt`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_positions_plant`
+--
+ALTER TABLE `tw_positions_plant`
+  ADD CONSTRAINT `tw_positions_plant_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
