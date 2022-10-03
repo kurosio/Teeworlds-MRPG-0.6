@@ -58,23 +58,6 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	return true;
 }
 
-void CCharacterBotAI::ShowProgressHealth()
-{
-	for(const auto & [ClientID, Active] : m_aListDmgPlayers)
-	{
-		if(GS()->GetPlayer(ClientID, true))
-		{
-			const int BotID = m_pBotPlayer->GetBotID();
-			const int Health = m_pBotPlayer->GetHealth();
-			const int StartHealth = m_pBotPlayer->GetStartHealth();
-			const float Percent = (Health * 100.0) / StartHealth;
-			std::unique_ptr<char[]> Progress = std::move(GS()->LevelString(100, Percent, 10, ':', ' '));
-			GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{STR} {STR}({INT}/{INT})",
-				DataBotInfo::ms_aDataBot[BotID].m_aNameBot, Progress.get(), Health, StartHealth);
-		}
-	}
-}
-
 void CCharacterBotAI::GiveRandomEffects(int To)
 {
 	CPlayer* pPlayerTo = GS()->GetPlayer(To);
@@ -190,11 +173,12 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 void CCharacterBotAI::ChangeWeapons()
 {
-	const int RandomSec = 1+random_int()%3;
-	if(Server()->Tick() % (Server()->TickSpeed()*RandomSec) == 0)
+	const int RandomSec = 1 + random_int() % 3;
+	if(Server()->Tick() % (Server()->TickSpeed() * RandomSec) == 0)
 	{
-		const int RandomWeapon = random_int()%4;
-		m_Core.m_ActiveWeapon = clamp(RandomWeapon, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
+		const int RandomWeapon = clamp(random_int()%4, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
+		if(RandomWeapon == WEAPON_HAMMER || m_pBotPlayer->GetEquippedItemID((ItemFunctional)RandomWeapon))
+			m_Core.m_ActiveWeapon = RandomWeapon;
 	}
 }
 
@@ -346,6 +330,21 @@ void CCharacterBotAI::HandleTuning()
 	HandleIndependentTuning();
 }
 
+void CCharacterBotAI::BehaviorTick()
+{
+	const int MobID = m_pBotPlayer->GetBotMobID();
+
+	// sleepy behavior
+	if(IsBotTargetEmpty() && str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Sleepy") == 0)
+	{
+		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
+		{
+			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_ZZZ);
+			SetEmote(EMOTE_BLINK, 1);
+		}
+	}
+}
+
 // interactive of Mobs
 void CCharacterBotAI::EngineMobs()
 {
@@ -357,25 +356,34 @@ void CCharacterBotAI::EngineMobs()
 		Action();
 	}
 	else if(Server()->Tick() > m_pBotPlayer->m_LastPosTick)
-		m_pBotPlayer->m_TargetPos = vec2(0, 0);
-
-	// behavior sleppy
-	const int MobID = m_pBotPlayer->GetBotMobID();
-	if(IsBotTargetEmpty() && str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Sleepy") == 0)
 	{
-		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
-		{
-			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_ZZZ);
-			SetEmote(EMOTE_BLINK, 1);
-		}
-		return;
+		m_pBotPlayer->m_TargetPos = vec2(0, 0);
 	}
 
-	if(MobBotInfo::ms_aMobBot[MobID].m_Boss)
-		ShowProgressHealth();
+	// behavior
+	BehaviorTick();
 
-	const bool WeaponedBot = (MobBotInfo::ms_aMobBot[MobID].m_Spread >= 1);
-	if(WeaponedBot)
+	// show health for boss mobs
+	const int MobID = m_pBotPlayer->GetBotMobID();
+	if(MobBotInfo::ms_aMobBot[MobID].m_Boss)
+	{
+		for(const auto & [ClientID, Active] : m_aListDmgPlayers)
+		{
+			if(GS()->GetPlayer(ClientID, true))
+			{
+				const int BotID = m_pBotPlayer->GetBotID();
+				const int Health = m_pBotPlayer->GetHealth();
+				const int StartHealth = m_pBotPlayer->GetStartHealth();
+				const float Percent = (Health * 100.0) / StartHealth;
+				std::unique_ptr<char[]> Progress = std::move(GS()->LevelString(100, Percent, 10, ':', ' '));
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{STR} {STR}({INT}/{INT})",
+					DataBotInfo::ms_aDataBot[BotID].m_aNameBot, Progress.get(), Health, StartHealth);
+			}
+		}
+	}
+
+	// bot with weapons since it has spread.
+	if(MobBotInfo::ms_aMobBot[MobID].m_Spread >= 1)
 		ChangeWeapons();
 
 	Move();
@@ -397,7 +405,7 @@ void CCharacterBotAI::Move()
 
 	int Index = -1;
 	int ActiveWayPoints = 0;
-	for(int i = 0; i < m_pBotPlayer->m_PathSize && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->GetWayPoint(i), m_Pos, 0, 0); i++)
+	for(int i = 0; i < m_pBotPlayer->m_PathSize && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->GetWayPoint(i), m_Pos, nullptr, nullptr); i++)
 	{
 		Index = i;
 		ActiveWayPoints = i;
@@ -420,13 +428,13 @@ void CCharacterBotAI::Move()
 	if((IsGround && WayDir.y < -0.5) || (!IsGround && WayDir.y < -0.5 && m_Core.m_Vel.y > 0))
 		m_Input.m_Jump = 1;
 
-	const bool IsCollide = GS()->Collision()->IntersectLine(m_Pos, m_Pos + vec2(m_Input.m_Direction, 0) * 150, &m_WallPos, 0x0);
+	const bool IsCollide = GS()->Collision()->IntersectLine(m_Pos, m_Pos + vec2(m_Input.m_Direction, 0) * 150, &m_WallPos, nullptr);
 	if(IsCollide)
 	{
-		if(IsGround && GS()->Collision()->IntersectLine(m_WallPos, m_WallPos + vec2(0, -1) * 210, 0x0, 0x0))
+		if(IsGround && GS()->Collision()->IntersectLine(m_WallPos, m_WallPos + vec2(0, -1) * 210, nullptr, nullptr))
 			m_Input.m_Jump = 1;
 
-		if(!IsGround && GS()->Collision()->IntersectLine(m_WallPos, m_WallPos + vec2(0, -1) * 125, 0x0, 0x0))
+		if(!IsGround && GS()->Collision()->IntersectLine(m_WallPos, m_WallPos + vec2(0, -1) * 125, nullptr, nullptr))
 			m_Input.m_Jump = 1;
 	}
 
@@ -472,7 +480,7 @@ void CCharacterBotAI::Move()
 				vec2 dir = direction(a);
 				vec2 Pos = GetPos() + dir * GS()->Tuning()->m_HookLength;
 
-				if((GS()->Collision()->IntersectLine(GetPos(), Pos, &Pos, 0) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
+				if((GS()->Collision()->IntersectLine(GetPos(), Pos, &Pos, nullptr) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
 				{
 					vec2 HookVel = dir * GS()->Tuning()->m_HookDragAccel;
 					if(HookVel.y > 0)
@@ -558,7 +566,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 		if(!GS()->m_apPlayers[i]
 			|| !GS()->m_apPlayers[i]->GetCharacter()
 			|| distance(m_Core.m_Pos, GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos) > Distance
-			|| GS()->Collision()->IntersectLineWithInvisible(GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos, m_Pos, 0, 0)
+			|| GS()->Collision()->IntersectLineWithInvisible(GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos, m_Pos, nullptr, nullptr)
 			|| !GS()->IsPlayerEqualWorldID(i))
 			continue;
 		return GS()->m_apPlayers[i];
@@ -588,7 +596,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 		return nullptr;
 
 	// throw off the lifetime of a target
-	m_BotTargetCollised = GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->GetPos(), m_Pos, 0, 0);
+	m_BotTargetCollised = GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->GetPos(), m_Pos, nullptr, nullptr);
 	if (m_BotTargetLife && m_BotTargetCollised)
 	{
 		m_BotTargetLife--;
@@ -609,7 +617,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 			continue;
 
 		// check if the player is tastier for the bot
-		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, 0, 0);
+		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
 		if (!FinderCollised && ((m_BotTargetLife <= 10 && m_BotTargetCollised)
 			|| pFinderHard->GetAttributeSize(Attribute::Hardness, true) > pPlayer->GetAttributeSize(Attribute::Hardness, true)))
 			SetTarget(i);
@@ -628,7 +636,7 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 	{
 		CPlayer* pFindPlayer = GS()->GetPlayer(i, true, true);
 		if(pFindPlayer && distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f &&
-			!GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, 0, 0) && m_pBotPlayer->IsVisibleForClient(i))
+			!GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr) && m_pBotPlayer->IsVisibleForClient(i))
 		{
 			if (DialoguesNotEmpty)
 				GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialog: \"hammer hit\"");
@@ -715,7 +723,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 	{
 		CPlayer* pFindPlayer = GS()->GetPlayer(i, true, true);
 		if(!pFindPlayer || distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) >= 256.0f ||
-			GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, 0, 0))
+			GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
 			continue;
 
 		// disable collision and hook with players
@@ -743,7 +751,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 		const int Health = max(pFindPlayer->GetStartHealth() / 20, 1);
 		vec2 DrawPosition = vec2(pFindPlayer->GetCharacter()->m_Core.m_Pos.x, pFindPlayer->GetCharacter()->m_Core.m_Pos.y - 90.0f);
 		str_format(aBuf, sizeof(aBuf), "%dHP", Health);
-		GS()->CreateText(NULL, false, DrawPosition, vec2(0, 0), 40, aBuf);
+		GS()->CreateText(nullptr, false, DrawPosition, vec2(0, 0), 40, aBuf);
 		new CHearth(&GS()->m_World, m_Pos, pFindPlayer, Health, pFindPlayer->GetCharacter()->m_Core.m_Vel);
 
 		m_Input.m_Direction = 0;

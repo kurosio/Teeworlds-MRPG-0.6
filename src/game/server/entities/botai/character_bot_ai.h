@@ -42,8 +42,13 @@ private:
 	int GetSnapFullID() const override;
 
 	void RewardPlayer(CPlayer *pPlayer, vec2 ForceDies) const;
+
+	/*
+	 * Changing weapons randomly, only for those that have in equipment
+	 */
 	void ChangeWeapons();
-	void ShowProgressHealth();
+
+
 	void EmotesAction(int EmotionStyle);
 	void SetAim(vec2 Dir);
 
@@ -53,6 +58,7 @@ private:
 	void EngineMobs();
 	void EngineQuestMob();
 	void HandleTuning() override;
+	void BehaviorTick();
 
 	CPlayer *SearchPlayer(float Distance) const;
     CPlayer *SearchTenacityPlayer(float Distance);
