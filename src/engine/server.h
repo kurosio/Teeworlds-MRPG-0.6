@@ -6,10 +6,6 @@
 #include "kernel.h"
 #include "message.h"
 
-#include <engine/shared/protocol.h>
-#include <generated/protocol.h>
-#include <game/version.h>
-
 #define DC_SERVER_INFO 13872503
 #define DC_PLAYER_INFO 1346299
 #define DC_JOIN_LEAVE 14494801

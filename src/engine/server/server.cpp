@@ -32,8 +32,6 @@
 #include "multi_worlds.h"
 #include "server_ban.h"
 
-#include <engine/server/sql_connect_pool.h>
-
 void CServer::CClient::Reset()
 {
 	// reset input

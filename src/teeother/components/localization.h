@@ -2,7 +2,6 @@
 #define TEEOTHER_COMPONENTS_LOCALIZATION_H
 
 #include <teeother/tl/hashtable.h>
-#include <cstdarg>
 
 /*
  * TODO: Add plural rules example {RP:{INT}:{STR}} or {PR:{INT}:player} use rules from lang files

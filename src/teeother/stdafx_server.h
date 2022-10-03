@@ -11,4 +11,6 @@
 #include <game/server/mmocore/GameContext.h>
 #include <teeother/components/localization.h>
 
+#include <game/version.h>
+
 #endif //SERVER_STDAFX_H

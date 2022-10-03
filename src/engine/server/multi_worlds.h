@@ -1,8 +1,6 @@
 #ifndef ENGINE_SERVER_MULTIWORLDS_CONTEXT_H
 #define ENGINE_SERVER_MULTIWORLDS_CONTEXT_H
 
-#include <engine/shared/protocol.h>
-
 class CMultiWorlds
 {
 	bool Add(int WorldID, class IKernel* pKernel, class IServer* pServer);

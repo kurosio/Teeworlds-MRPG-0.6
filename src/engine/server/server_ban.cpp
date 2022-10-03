@@ -4,7 +4,6 @@
 #include <engine/server.h>
 #include <engine/shared/config.h>
 #include <engine/shared/network.h>
-#include <engine/shared/protocol.h>
 
 void CServerBan::InitServerBan(IConsole* pConsole, IStorageEngine* pStorage, IServer* pServer, CNetServer* pNetServer)
 {

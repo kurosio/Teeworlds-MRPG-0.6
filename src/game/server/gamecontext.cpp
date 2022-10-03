@@ -8,8 +8,6 @@
 
 #include <game/gamecore.h>
 #include <game/layers.h>
-#include <game/version.h>
-#include <generated/server_data.h>
 
 #include "gamemodes/dungeon.h"
 #include "gamemodes/main.h"

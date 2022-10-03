@@ -3,9 +3,6 @@
 #ifndef GAME_ENUM_CONTEXT_H
 #define GAME_ENUM_CONTEXT_H
 
-#include <engine/shared/protocol.h>
-#include <generated/protocol.h>
-
 #define GRAY_COLOR vec3(40, 42, 45)
 #define LIGHT_GRAY_COLOR vec3(15, 15, 16)
 #define SMALL_LIGHT_GRAY_COLOR vec3(10, 11, 11)

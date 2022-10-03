@@ -3,7 +3,6 @@
 #ifndef GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
 #define GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
 #include <game/server/mmocore/MmoComponent.h>
-#include <generated/protocol.h>
 
 #include "AccountData.h"
 
