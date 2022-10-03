@@ -535,10 +535,7 @@ void CGS::Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, cons
 		{
 			dynamic_string Buffer;
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
-
-			char aDescriptionBuf[2048]{};
-			m_apPlayers[i]->FormatBroadcastBasicStats(aDescriptionBuf, sizeof(aDescriptionBuf), Buffer.buffer());
-			AddBroadcast(i, aDescriptionBuf, Priority, LifeSpan);
+			AddBroadcast(i, Buffer.buffer(), Priority, LifeSpan);
 			Buffer.clear();
 		}
 	}
@@ -578,6 +575,14 @@ void CGS::BroadcastTick(int ClientID)
 		if(str_comp(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage) != 0 || 
 			m_aBroadcastStates[ClientID].m_NoChangeTick > Server()->TickSpeed())
 		{
+			// combine game information with game priority
+			if(m_aBroadcastStates[ClientID].m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
+			{
+				char aAppendBuf[1024];
+				str_copy(aAppendBuf, m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(aAppendBuf));
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(m_aBroadcastStates[ClientID].m_aNextMessage), aAppendBuf);
+			}
+
 			CNetMsg_Sv_Broadcast Msg;
 			Msg.m_pMessage = m_aBroadcastStates[ClientID].m_aNextMessage;
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
@@ -593,10 +598,11 @@ void CGS::BroadcastTick(int ClientID)
 
 		if(m_aBroadcastStates[ClientID].m_LifeSpanTick <= 0)
 		{
+			// show game information on a regular basis
 			if(m_apPlayers[ClientID]->IsAuthed())
 			{
-				m_aBroadcastStates[ClientID].m_LifeSpanTick = 300;
-				m_aBroadcastStates[ClientID].m_TimedPriority = (BroadcastPriority::BASIC_STATS);
+				m_aBroadcastStates[ClientID].m_LifeSpanTick = 1000;
+				m_aBroadcastStates[ClientID].m_TimedPriority = (BroadcastPriority::GAME_BASIC_STATS);
 				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aTimedMessage, sizeof(m_aBroadcastStates[ClientID].m_aTimedMessage), "");
 			}
 			else

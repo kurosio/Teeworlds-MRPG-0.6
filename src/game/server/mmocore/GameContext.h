@@ -261,7 +261,7 @@ enum GuildAccess
 enum class BroadcastPriority
 {
 	LOWER,
-	BASIC_STATS,
+	GAME_BASIC_STATS,
 	GAME_INFORMATION,
 	GAME_PRIORITY,
 	GAME_WARNING,
