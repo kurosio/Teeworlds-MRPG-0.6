@@ -127,7 +127,7 @@ bool CItemData::Equip()
 	if(m_pPlayer->GetCharacter())
 		m_pPlayer->GetCharacter()->UpdateEquipingStats(m_ItemID);
 
-	m_pPlayer->ShowInformationStats(BroadcastPriority::GAME_INFORMATION);
+	m_pPlayer->ShowInformationStats();
 	return Save();
 }
 

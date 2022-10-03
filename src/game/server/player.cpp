@@ -449,11 +449,7 @@ int CPlayer::GetStartMana()
 void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAppendStr)
 {
 	if(!IsAuthed() || !m_pCharacter)
-	{
-		// default append
-		str_copy(pBuffer, pAppendStr, Size);
 		return;
-	}
 
 	const int LevelPercent = translate_to_percent(ExpNeed(Acc().m_Level), Acc().m_Exp);
 	const std::unique_ptr<char[]> Level = std::move(GS()->LevelString(100, (int)LevelPercent, 10, ':', ' '));
@@ -465,20 +461,13 @@ void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAp
 
 	str_format(pBuffer, Size, "\n\n\nLv%d : %s\nHealth: %d/%d\nMana: %d/%d\nGold: %d\n\n\n\n\n\n\n\n\n\n\n\n\n\n%s", 
 		Acc().m_Level, Level.get(), Health, MaximumHealth, Mana, MaximumMana, Gold, pAppendStr);
-	for(int space = 128, c = str_length(pBuffer); c < Size && space; c++, space--)
+	for(int space = 150, c = str_length(pBuffer); c < Size && space; c++, space--)
 		pBuffer[c] = ' ';
 }
 
-void CPlayer::ShowInformationStats(BroadcastPriority Priority)
+void CPlayer::ShowInformationStats()
 {
-	if (!m_pCharacter)
-		return;
-
-	const int Health = m_pCharacter->Health();
-	const int StartHealth = GetStartHealth();
-	const int Mana = m_pCharacter->Mana();
-	const int StartMana = GetStartMana();
-	GS()->Broadcast(m_ClientID, Priority, 100, "Health: {INT}/{INT} Mana: {INT}/{INT}", Health, StartHealth, Mana, StartMana);
+	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_BASIC_STATS, 100, "");
 }
 
 /* #########################################################################

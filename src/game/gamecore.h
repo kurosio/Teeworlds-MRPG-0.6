@@ -306,9 +306,13 @@ public:
 	bool m_Solo;
 	bool m_Jetpack;
 	bool m_CollisionDisabled;
-	bool m_HookHitDisabled;
 	bool m_EndlessHook;
 	bool m_EndlessJump;
+	bool m_HammerHitDisabled;
+	bool m_GrenadeHitDisabled;
+	bool m_LaserHitDisabled;
+	bool m_ShotgunHitDisabled;
+	bool m_HookHitDisabled;
 	bool m_NoHammerHit;
 	bool m_NoGrenadeHit;
 	bool m_NoLaserHit;

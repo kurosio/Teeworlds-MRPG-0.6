@@ -539,11 +539,11 @@ void CCharacterCore::ReadDDNet(const CNetObj_DDNetCharacter *pObjDDNet)
 	m_Solo = pObjDDNet->m_Flags & CHARACTERFLAG_SOLO;
 	m_Jetpack = pObjDDNet->m_Flags & CHARACTERFLAG_JETPACK;
 	m_CollisionDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_COLLISION_DISABLED;
-	//m_HammerHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_HAMMER_HIT_DISABLED;
-	//m_ShotgunHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_SHOTGUN_HIT_DISABLED;
-	//m_GrenadeHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_GRENADE_HIT_DISABLED;
-	//m_LaserHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_LASER_HIT_DISABLED;
-	//m_HookHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_HOOK_HIT_DISABLED;
+	m_HammerHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_HAMMER_HIT_DISABLED;
+	m_ShotgunHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_SHOTGUN_HIT_DISABLED;
+	m_GrenadeHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_GRENADE_HIT_DISABLED;
+	m_LaserHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_LASER_HIT_DISABLED;
+	m_HookHitDisabled = pObjDDNet->m_Flags & CHARACTERFLAG_HOOK_HIT_DISABLED;
 	//m_Super = pObjDDNet->m_Flags & CHARACTERFLAG_SUPER;
 
 	// Endless

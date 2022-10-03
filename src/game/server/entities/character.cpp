@@ -741,7 +741,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	{
 		GS()->m_pController->OnCharacterDamage(pFrom, m_pPlayer, min(Dmg, m_Health));
 		m_Health -= Dmg;
-		m_pPlayer->ShowInformationStats(BroadcastPriority::GAME_INFORMATION);
+		m_pPlayer->ShowInformationStats();
 	}
 
 	// create healthmod indicator
@@ -859,12 +859,12 @@ void CCharacter::Snap(int SnappingClient)
 	DDNetFlag(CHARACTERFLAG_ENDLESS_HOOK, m_Core.m_EndlessHook)
 	DDNetFlag(CHARACTERFLAG_ENDLESS_JUMP, m_Core.m_EndlessJump)
 	DDNetFlag(CHARACTERFLAG_JETPACK, m_Core.m_Jetpack)
-	DDNetFlag(CHARACTERFLAG_COLLISION_DISABLED, m_Core.m_CollisionDisabled)
-	DDNetFlag(CHARACTERFLAG_HOOK_HIT_DISABLED, m_Core.m_HookHitDisabled)
-	//DDNETFLAG(CHARACTERFLAG_HAMMER_HIT_DISABLED, m_Core.m_HammerHitDisabled)
-	//DDNETFLAG(CHARACTERFLAG_SHOTGUN_HIT_DISABLED, m_Core.m_ShotgunHitDisabled)
-	//DDNETFLAG(CHARACTERFLAG_GRENADE_HIT_DISABLED, m_Core.m_GrenadeHitDisabled)
-	//DDNETFLAG(CHARACTERFLAG_LASER_HIT_DISABLED, m_Core.m_LaserHitDisabled)
+	DDNetFlag(CHARACTERFLAG_COLLISION_DISABLED, (m_Core.m_CollisionDisabled || !(bool)m_pPlayer->m_NextTuningParams.m_PlayerCollision))
+	DDNetFlag(CHARACTERFLAG_HOOK_HIT_DISABLED, (m_Core.m_HookHitDisabled || !(bool)m_pPlayer->m_NextTuningParams.m_PlayerHooking))
+	DDNetFlag(CHARACTERFLAG_HAMMER_HIT_DISABLED, m_Core.m_HammerHitDisabled)
+	DDNetFlag(CHARACTERFLAG_SHOTGUN_HIT_DISABLED, m_Core.m_ShotgunHitDisabled)
+	DDNetFlag(CHARACTERFLAG_GRENADE_HIT_DISABLED, m_Core.m_GrenadeHitDisabled)
+	DDNetFlag(CHARACTERFLAG_LASER_HIT_DISABLED, m_Core.m_LaserHitDisabled)
 	DDNetFlag(CHARACTERFLAG_TELEGUN_GUN, m_Core.m_HasTelegunGun)
 	DDNetFlag(CHARACTERFLAG_TELEGUN_GRENADE, m_Core.m_HasTelegunGrenade)
 	DDNetFlag(CHARACTERFLAG_TELEGUN_LASER, m_Core.m_HasTelegunLaser)
@@ -876,7 +876,7 @@ void CCharacter::Snap(int SnappingClient)
 	DDNetFlag(CHARACTERFLAG_WEAPON_NINJA, m_Core.m_ActiveWeapon == WEAPON_NINJA)
 	DDNetFlag(CHARACTERFLAG_MOVEMENTS_DISABLED, m_Core.m_LiveFrozen)
 	DDNetFlag(CHARACTERFLAG_IN_FREEZE, m_Core.m_IsInFreeze)
-	//DDNetFlag(CHARACTERFLAG_PRACTICE_MODE, Teams()->IsPractice(Team()))
+	DDNetFlag(CHARACTERFLAG_PRACTICE_MODE, false)
 #undef DDNetFlag
 
 	pDDNetCharacter->m_FreezeEnd = 0;
@@ -1181,7 +1181,7 @@ bool CCharacter::CheckFailMana(int Mana)
 	if(m_Mana <= m_pPlayer->GetStartMana() / 5 && !m_pPlayer->IsActiveEffect("RegenMana") && m_pPlayer->GetItem(itPotionManaRegen).IsEquipped())
 		m_pPlayer->GetItem(itPotionManaRegen).Use(1);
 
-	m_pPlayer->ShowInformationStats(BroadcastPriority::GAME_INFORMATION);
+	m_pPlayer->ShowInformationStats();
 	return false;
 }
 
