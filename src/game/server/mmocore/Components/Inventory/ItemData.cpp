@@ -82,14 +82,13 @@ bool CItemData::Add(int Value, int Settings, int Enchant, bool Message)
 		GS()->Chat(ClientID, "Auto equip {STR} - {STR}", Info().GetName(), aAttributes);
 	}
 
-	if(!Message || Info().IsType(ItemType::TYPE_SETTINGS))
+	if(!Message || Info().IsType(ItemType::TYPE_SETTINGS) || Info().IsType(ItemType::TYPE_INVISIBLE))
 		return true;
 
 	if(Info().IsType(ItemType::TYPE_EQUIP) || Info().IsType(ItemType::TYPE_MODULE))
 		GS()->Chat(-1, "{STR} got of the {STR}x{VAL}.", GS()->Server()->ClientName(ClientID), Info().GetName(), Value);
-	else if(Info().GetType() != ItemType::TYPE_INVISIBLE)
+	else
 		GS()->Chat(ClientID, "You got of the {STR}x{VAL}.", Info().GetName(), Value);
-
 	return true;
 }
 
@@ -229,15 +228,15 @@ bool CItemData::Use(int Value)
 		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_UPGRADES);
 	}
 	// Random home decor
-	else if(m_ItemID == itRandomHomeDecoration)
-	{
-		CRandomBox RandomHomeDecor;
-		RandomHomeDecor.Add(itDecoArmor, 1, 50.0f);
-		RandomHomeDecor.Add(itDecoHealth, 1, 50.0f);
-		RandomHomeDecor.Add(itEliteDecoHealth, 1, 10.0f);
-		RandomHomeDecor.Add(itEliteDecoNinja, 1, 10.0f);
-		RandomHomeDecor.Start(m_pPlayer, 5, this, Value);
-	}
+	//else if(m_ItemID == itRandomHomeDecoration)
+	//{
+	//	CRandomBox RandomHomeDecor;
+	//	RandomHomeDecor.Add(itDecoArmor, 1, 50.0f);
+	//	RandomHomeDecor.Add(itDecoHealth, 1, 50.0f);
+	//	RandomHomeDecor.Add(itEliteDecoHealth, 1, 10.0f);
+	//	RandomHomeDecor.Add(itEliteDecoNinja, 1, 10.0f);
+	//	RandomHomeDecor.Start(m_pPlayer, 5, this, Value);
+	//}
 	return true;
 }
 

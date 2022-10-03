@@ -6,15 +6,11 @@
 
 class CDropItem : public CEntity
 {
-	vec2 m_Vel;
-	float m_Angle;
-	float m_AngleForce;
-	bool m_Flashing;
-	int m_LifeSpan;
-	int m_FlashTimer;
-
 	CItemData m_DropItem;
 	int m_OwnerID;
+	vec2 m_Vel;
+	int m_LifeSpan;
+	CFlashingTick m_Flash;
 
 public:
 	CDropItem(class CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItemData DropItem, int OwnerID);

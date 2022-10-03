@@ -36,9 +36,6 @@ private:
 	/* State */
 	bool m_MarkedForDestroy;
 
-	/* WorldID */
-	int m_WorldID;
-
 protected:
 	/* State */
 
@@ -64,14 +61,12 @@ public:
 	class CGS *GS() const { return m_pGameWorld->GS(); }
 	class IServer *Server() const { return m_pGameWorld->Server(); }
 
-
 	/* Getters */
 	CEntity *TypeNext() const { return m_pNextTypeEntity; }
 	CEntity *TypePrev() const { return m_pPrevTypeEntity; }
 	const vec2 &GetPos() const			{ return m_Pos; }
 	float GetProximityRadius() const	{ return m_ProximityRadius; }
 	bool IsMarkedForDestroy() const		{ return m_MarkedForDestroy; }
-	int GetWorldID() const				{ return m_WorldID; }
 
 	/* Setters */
 	void MarkForDestroy()				{ m_MarkedForDestroy = true; }
@@ -142,6 +137,39 @@ public:
 	int NetworkClipped(int SnappingClient, vec2 CheckPos) const;
 
 	bool GameLayerClipped(vec2 CheckPos) const;
+};
+
+/*
+	Class: CFlashingTick
+		CEntityComponent.
+*/
+class CFlashingTick
+{
+	int *m_LifeSpan;
+	int m_Timer;
+	bool m_Flashing;
+
+public:
+	CFlashingTick() = default;
+
+	void InitFlashing(int* EntityLifeSpan) { m_LifeSpan = EntityLifeSpan; }
+	bool IsFlashing() const { return m_Flashing; }
+
+	void OnTick()
+	{
+		if((*m_LifeSpan) < 150)
+		{
+			m_Timer--;
+			if(m_Timer > 5)
+				m_Flashing = true;
+			else
+			{
+				m_Flashing = false;
+				if(m_Timer <= 0)
+					m_Timer = 0;
+			}
+		}
+	}
 };
 
 #endif

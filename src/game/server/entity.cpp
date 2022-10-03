@@ -18,7 +18,6 @@ CEntity::CEntity(CGameWorld *pGameWorld, int ObjType, vec2 Pos, int ProximityRad
 
 	m_Pos = Pos;
 	m_PosTo = Pos;
-	m_WorldID = GS()->GetWorldID();
 }
 
 CEntity::~CEntity()

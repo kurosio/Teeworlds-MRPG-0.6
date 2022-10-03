@@ -78,7 +78,7 @@ enum ToplistTypes
 // item functionals
 enum ItemFunctional : int
 {
-	EQUIP_HAMMER,
+	EQUIP_HAMMER = 0,
 	EQUIP_GUN,
 	EQUIP_SHOTGUN,
 	EQUIP_GRENADE,
@@ -98,8 +98,8 @@ enum ItemFunctional : int
 
 enum class ItemType : short
 {
-	TYPE_INVISIBLE = -1,
-	TYPE_USED = 1,
+	TYPE_INVISIBLE = 0,
+	TYPE_USED,
 	TYPE_CRAFT,
 	TYPE_MODULE,
 	TYPE_OTHER,
@@ -128,7 +128,7 @@ enum MenuList
 	MAIN_MENU = 1,
 	MENU_INVENTORY,
 	MENU_INBOX,
-	MENU_UPGRADE,
+	MENU_UPGRADES,
 	MENU_SETTINGS,
 	MENU_GUIDE_GRINDING,
 	MENU_EQUIPMENT,
@@ -390,4 +390,5 @@ public:
 	AttributeType GetType() const { return m_Type; }
 	int GetDividing() const { return m_Dividing; }
 };
+
 #endif

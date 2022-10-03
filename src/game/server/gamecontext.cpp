@@ -1559,7 +1559,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVH(ClientID, TAB_PERSONAL, "☪ SUB MENU PERSONAL");
 		AVM(ClientID, "MENU", MenuList::MENU_INVENTORY, TAB_PERSONAL, "Inventory");
 		AVM(ClientID, "MENU", MenuList::MENU_EQUIPMENT, TAB_PERSONAL, "Equipment");
-		AVM(ClientID, "MENU", MenuList::MENU_UPGRADE, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Acc().m_Upgrade);
+		AVM(ClientID, "MENU", MenuList::MENU_UPGRADES, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Acc().m_Upgrade);
 		AVM(ClientID, "MENU", MenuList::MENU_DUNGEONS, TAB_PERSONAL, "Dungeons");
 		AVM(ClientID, "MENU", MenuList::MENU_SETTINGS, TAB_PERSONAL, "Settings");
 		AVM(ClientID, "MENU", MenuList::MENU_INBOX, TAB_PERSONAL, "Mailbox");
@@ -1591,7 +1591,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AV(ClientID, "null");
 		Mmo()->Inbox()->GetInformationInbox(pPlayer);
 	}
-	else if(MenuList == MenuList::MENU_UPGRADE)
+	else if(MenuList == MenuList::MENU_UPGRADES)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 

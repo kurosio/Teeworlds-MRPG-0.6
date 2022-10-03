@@ -9,13 +9,10 @@ CDropBonuses::CDropBonuses(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float Ang
 {
 	m_Pos = Pos;
 	m_Vel = Vel;
-	m_Angle = 0.0f;
-	m_AngleForce = AngleForce;
 
 	m_Value = Value;
 	m_Type = Type;
-	m_FlashTimer = 0;
-	m_Flashing = false;
+	m_Flash.InitFlashing(&m_LifeSpan);
 	m_LifeSpan = Server()->TickSpeed() * 15;
 	GameWorld()->InsertEntity(this);
 }
@@ -31,26 +28,14 @@ void CDropBonuses::Tick()
 	}
 
 	// flashing
-	if (m_LifeSpan < 150)
-	{
-		m_FlashTimer--;
-		if (m_FlashTimer > 5)
-			m_Flashing = true;
-		else
-		{
-			m_Flashing = false;
-			if (m_FlashTimer <= 0)
-				m_FlashTimer = 10;
-		}
-	}
+	m_Flash.OnTick();
 
 	// physic
-	vec2 ItemSize = vec2(GetProximityRadius(), GetProximityRadius());
-	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, ItemSize, &m_Angle, &m_AngleForce, 0.5f);
+	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), 0.5f);
 
 	// interactive
 	CCharacter *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 16.0f, CGameWorld::ENTTYPE_CHARACTER, 0);
-	if(pChar && pChar->GetPlayer() && !pChar->GetPlayer()->IsBot())
+	if(pChar && !pChar->GetPlayer()->IsBot())
 	{
 		if(m_Type == POWERUP_HEALTH)
 		{
@@ -70,7 +55,7 @@ void CDropBonuses::Tick()
 
 void CDropBonuses::Snap(int SnappingClient)
 {
-	if(m_Flashing || NetworkClipped(SnappingClient))
+	if(m_Flash.IsFlashing() || NetworkClipped(SnappingClient))
 		return;
 
 	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));

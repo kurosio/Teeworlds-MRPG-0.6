@@ -15,9 +15,8 @@ class CDropQuestItem : public CEntity
 	vec2 m_Vel;
 	float m_Angle;
 	float m_AngleForce;
-	bool m_Flashing;
 	int m_LifeSpan;
-	int m_FlashTimer;
+	CFlashingTick m_Flash;
 
 public:
 	CDropQuestItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, QuestBotInfo BotData, int ClientID);

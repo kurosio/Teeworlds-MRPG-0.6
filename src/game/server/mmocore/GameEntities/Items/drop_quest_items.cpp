@@ -15,8 +15,7 @@ CDropQuestItem::CDropQuestItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float
 
 	m_ClientID = ClientID;
 	m_QuestBot = BotData;
-	m_Flashing = false;
-	m_FlashTimer = 0;
+	m_Flash.InitFlashing(&m_LifeSpan);
 	m_LifeSpan = Server()->TickSpeed() * 60;
 	GameWorld()->InsertEntity(this);
 	for(int i=0; i<NUM_IDS; i++)
@@ -44,43 +43,32 @@ void CDropQuestItem::Tick()
 	}
 
 	// flashing
-	if (m_LifeSpan < 150)
-	{
-		m_FlashTimer--;
-		if (m_FlashTimer > 5)
-			m_Flashing = true;
-		else
-		{
-			m_Flashing = false;
-			if (m_FlashTimer <= 0)
-				m_FlashTimer = 10;
-		}
-	}
+	m_Flash.OnTick();
 
 	// physic
-	vec2 ItemSize = vec2(GetProximityRadius(), GetProximityRadius());
-	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, ItemSize, &m_Angle, &m_AngleForce, 0.5f);
+	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), &m_Angle, &m_AngleForce, 0.5f);
 
 	// check step and collected it or no
 	const int Value = m_QuestBot.m_aItemSearchValue[0];
-	CPlayer* pOwnerPlayer = GS()->m_apPlayers[m_ClientID];
-	CQuestData& pPlayerQuest = pOwnerPlayer->GetQuest(m_QuestBot.m_QuestID);
-	CItemData& pPlayerItem = pOwnerPlayer->GetItem(m_QuestBot.m_aItemSearch[0]);
-	if (pPlayerQuest.m_Step != m_QuestBot.m_Step || pPlayerItem.m_Value >= Value)
+	CPlayer* pPlayer = GS()->m_apPlayers[m_ClientID];
+	const CQuestData* pQuestPlayer = &pPlayer->GetQuest(m_QuestBot.m_QuestID);
+	CItemData* pItemPlayer = &pPlayer->GetItem(m_QuestBot.m_aItemSearch[0]);
+
+	if (pQuestPlayer->m_Step != m_QuestBot.m_Step || pItemPlayer->m_Value >= Value)
 	{
 		GS()->m_World.DestroyEntity(this);
 		return;
 	}
 
 	// interactive
-	if (pOwnerPlayer->GetCharacter() && distance(m_Pos, pOwnerPlayer->GetCharacter()->m_Core.m_Pos) < 32.0f)
+	if (pPlayer->GetCharacter() && distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos) < 32.0f)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press 'Fire' for pick Quest Item");
-		if (pOwnerPlayer->GetCharacter()->m_ReloadTimer)
+		if (pPlayer->GetCharacter()->m_ReloadTimer)
 		{
-			pPlayerItem.Add(1);
-			pOwnerPlayer->GetCharacter()->m_ReloadTimer = 0;
-			GS()->Chat(m_ClientID, "You pick {STR} for {STR}!", pPlayerItem.Info().GetName(), m_QuestBot.GetName());
+			pItemPlayer->Add(1);
+			pPlayer->GetCharacter()->m_ReloadTimer = 0;
+			GS()->Chat(m_ClientID, "You pick {STR} for {STR}!", pItemPlayer->Info().GetName(), m_QuestBot.GetName());
 			GS()->m_World.DestroyEntity(this);
 			return;
 		}
@@ -90,7 +78,7 @@ void CDropQuestItem::Tick()
 
 void CDropQuestItem::Snap(int SnappingClient)
 {
-	if(m_Flashing || m_ClientID != SnappingClient || NetworkClipped(SnappingClient))
+	if(m_Flash.IsFlashing() || m_ClientID != SnappingClient || NetworkClipped(SnappingClient))
 		return;
 
 	// vanilla box

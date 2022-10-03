@@ -12,15 +12,12 @@ CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForc
 {
 	m_Pos = Pos;
 	m_Vel = Vel;
-	m_Angle = 0.0f;
-	m_AngleForce = AngleForce;
-	m_Flashing = false;
+	m_Flash.InitFlashing(&m_LifeSpan);
 	m_LifeSpan = Server()->TickSpeed() * 20;
 
 	m_OwnerID = OwnerID;
 	m_DropItem = DropItem;
 	m_DropItem.m_Settings = 0;
-
 	GameWorld()->InsertEntity(this);
 }
 
@@ -31,18 +28,18 @@ bool CDropItem::TakeItem(int ClientID)
 		return false;
 
 	// change of enchanted objects
-	CItemData &pPlayerDroppedItem = pPlayer->GetItem(m_DropItem.GetID());
-	if(pPlayerDroppedItem.m_Value > 0 && pPlayerDroppedItem.Info().IsEnchantable())
+	CItemData* pItem = &pPlayer->GetItem(m_DropItem.GetID());
+	if(pItem->m_Value > 0 && pItem->Info().IsEnchantable())
 	{
-		tl_swap(pPlayerDroppedItem, m_DropItem);
-		GS()->Chat(ClientID, "You now own {STR}(+{INT})", pPlayerDroppedItem.Info().GetName(), pPlayerDroppedItem.m_Enchant);
+		tl_swap(*pItem, m_DropItem);
+		GS()->Chat(ClientID, "You now own {STR}(+{INT})", pItem->Info().GetName(), pItem->m_Enchant);
 		GS()->StrongUpdateVotes(ClientID, MENU_INVENTORY);
 		GS()->StrongUpdateVotes(ClientID, MENU_EQUIPMENT);
 		return true;
 	}
 
 	// simple subject delivery
-	pPlayerDroppedItem.Add(m_DropItem.m_Value, 0, m_DropItem.m_Enchant);
+	pItem->Add(m_DropItem.m_Value, 0, m_DropItem.m_Enchant);
 	GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 10, "\0");
 	GS()->StrongUpdateVotes(ClientID, MENU_INVENTORY);
 	GS()->StrongUpdateVotes(ClientID, MENU_EQUIPMENT);
@@ -62,58 +59,47 @@ void CDropItem::Tick()
 	}
 
 	// flashing
-	if(m_LifeSpan < 150)
-	{
-		m_FlashTimer--;
-		if (m_FlashTimer > 5)
-			m_Flashing = true;
-		else
-		{
-			m_Flashing = false;
-			if (m_FlashTimer <= 0)
-				m_FlashTimer = 10;
-		}
-	}
+	m_Flash.OnTick();
 
 	// set without owner if there is no player owner
 	if(m_OwnerID != -1 && !GS()->GetPlayer(m_OwnerID, true, true))
 		m_OwnerID = -1;
 
 	// physic
-	vec2 ItemSize = vec2(GetProximityRadius(), GetProximityRadius());
-	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, ItemSize, &m_Angle, &m_AngleForce, 0.5f);
-	if(length(m_Vel) < 0.3f)
-		m_Angle = 0.0f;
+	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), 0.5f);
 
-	// interactive
-	CCharacter *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 64, CGameWorld::ENTTYPE_CHARACTER, 0);
-	if(!pChar || pChar->GetPlayer()->IsBot())
-		return;
-
-	const char* pToNickname = (m_OwnerID != -1 ? Server()->ClientName(m_OwnerID) : "\0");
-	const CItemData pPlayerItem = pChar->GetPlayer()->GetItem(m_DropItem.GetID());
-
-	// enchantable item
-	if(pPlayerItem.Info().IsEnchantable())
+	// information
+	CCharacter *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 64.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
+	if(pChar && !pChar->GetPlayer()->IsBot())
 	{
-		if(pPlayerItem.m_Value > 0)
-			GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GAME_INFORMATION, 100, "{STR}(+{INT}) -> (+{INT}) {STR}",
-				m_DropItem.Info().GetName(), pPlayerItem.m_Enchant, m_DropItem.m_Enchant, pToNickname);
+		const int ClientID = pChar->GetPlayer()->GetCID();
+		const CItemData* pPlayerItem = &pChar->GetPlayer()->GetItem(m_DropItem.GetID());
+		const char* pOwnerNick = (m_OwnerID != -1 ? Server()->ClientName(m_OwnerID) : "\0");
+
+		if(pPlayerItem->Info().IsEnchantable())
+		{
+			if(pPlayerItem->m_Value > 0)
+			{
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You have: [{STR}(+{INT})]\nReplace with: [{STR}(+{INT}) {STR}]",
+					m_DropItem.Info().GetName(), pPlayerItem->m_Enchant, m_DropItem.Info().GetName(), m_DropItem.m_Enchant, pOwnerNick);
+			}
+			else
+			{
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{STR}(+{INT}) {STR}",
+					m_DropItem.Info().GetName(), m_DropItem.m_Enchant, pOwnerNick);
+			}
+		}
 		else
-			GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GAME_INFORMATION, 100, "{STR}(+{INT}) {STR}",
-				m_DropItem.Info().GetName(), m_DropItem.m_Enchant, pToNickname);
-
-		return;
+		{
+			GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{STR}x{VAL} {STR}",
+				m_DropItem.Info().GetName(), m_DropItem.m_Value, pOwnerNick);
+		}
 	}
-
-	// non enchantable item
-	GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GAME_INFORMATION, 100, "{STR}x{VAL} {STR}",
-		m_DropItem.Info().GetName(), m_DropItem.m_Value, pToNickname);
 }
 
 void CDropItem::Snap(int SnappingClient)
 {
-	if(m_Flashing || NetworkClipped(SnappingClient))
+	if(m_Flash.IsFlashing() || NetworkClipped(SnappingClient))
 		return;
 
 	// vanilla

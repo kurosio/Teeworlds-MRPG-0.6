@@ -132,7 +132,7 @@ bool CAccountPlantCore::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, 
 		if(pPlayer->Upgrade(Get, &pPlayer->Acc().m_aFarming[VoteID].m_Value, &pPlayer->Acc().m_aFarming[JOB_UPGRADES].m_Value, VoteID2, 3))
 		{
 			GS()->Mmo()->SaveAccount(pPlayer, SAVE_PLANT_DATA);
-			GS()->StrongUpdateVotes(ClientID, MENU_UPGRADE);
+			GS()->StrongUpdateVotes(ClientID, MENU_UPGRADES);
 		}
 		return true;
 	}
