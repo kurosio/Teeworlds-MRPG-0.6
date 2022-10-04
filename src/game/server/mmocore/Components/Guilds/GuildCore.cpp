@@ -442,9 +442,9 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		const int DecoItemID = VoteID2;
 		if(DeleteDecorationHouse(DecoID))
 		{
-			CItemData& PlDecoItem = pPlayer->GetItem(DecoItemID);
-			GS()->Chat(ClientID, "You back to the backpack {STR}!", PlDecoItem.Info().GetName());
-			PlDecoItem.Add(1);
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(DecoItemID);
+			GS()->Chat(ClientID, "You back to the backpack {STR}!", pPlayerItem->Info()->GetName());
+			pPlayerItem->Add(1);
 		}
 		GS()->StrongUpdateVotes(ClientID, MENU_GUILD_HOUSE_DECORATION);
 		return true;
@@ -766,7 +766,7 @@ void GuildCore::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	}
 
 	// we check the ticket, we take it and create
-	if(pPlayer->GetItem(itTicketGuild).m_Value <= 0 || !pPlayer->GetItem(itTicketGuild).Remove(1))
+	if(!pPlayer->GetItem(itTicketGuild)->HasItem() || !pPlayer->GetItem(itTicketGuild)->Remove(1))
 	{
 		GS()->Chat(ClientID, "You need first buy guild ticket on shop!");
 		return;
@@ -912,7 +912,7 @@ void GuildCore::ShowMenuGuild(CPlayer *pPlayer) const
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", CGuildData::ms_aGuild[GuildID].m_Bank);
 	GS()->AV(ClientID, "null");
 	//
-	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold).m_Value);
+	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
 	GS()->AVL(ClientID, "MMONEY", "Add gold guild bank. (Amount in a reason)", CGuildData::ms_aGuild[GuildID].m_aName);
 	GS()->AV(ClientID, "null");
 	//
@@ -924,7 +924,7 @@ void GuildCore::ShowMenuGuild(CPlayer *pPlayer) const
 	if (GuildHouse > 0)
 	{
 		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "⌂ Housing system", &pPlayer->GetItem(itGold).m_Value);
+		GS()->AVL(ClientID, "null", "⌂ Housing system");
 		GS()->AVM(ClientID, "MENU", MENU_GUILD_HOUSE_DECORATION, NOPE, "Settings Decoration(s)");
 		GS()->AVL(ClientID, "MDOOR", "Change state (\"{STR}\")", GetGuildDoor(GuildID) ? "OPEN" : "CLOSED");
 		GS()->AVL(ClientID, "MSPAWN", "Teleport to guild house");
@@ -932,13 +932,13 @@ void GuildCore::ShowMenuGuild(CPlayer *pPlayer) const
 	}
 	GS()->AV(ClientID, "null");
 	//
-	GS()->AVL(ClientID, "null", "✖ Disband guild", &pPlayer->GetItem(itGold).m_Value);
+	GS()->AVL(ClientID, "null", "✖ Disband guild");
 	GS()->AVL(ClientID, "null", "Gold spent on upgrades will not be refunded");
 	GS()->AVL(ClientID, "null", "All gold will be returned to the leader only");
 	GS()->AVL(ClientID, "MDISBAND", "Disband guild (in reason 55428)");
 	GS()->AV(ClientID, "null");
 	//
-	GS()->AVL(ClientID, "null", "☆ Guild upgrades", &pPlayer->GetItem(itGold).m_Value);
+	GS()->AVL(ClientID, "null", "☆ Guild upgrades");
 	if (GuildHouse > 0)
 	{
 		for(int i = CGuildData::CHAIR_EXPERIENCE; i < CGuildData::NUM_GUILD_UPGRADES; i++)

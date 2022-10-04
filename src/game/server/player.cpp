@@ -332,13 +332,13 @@ bool CPlayer::SpendCurrency(int Price, int ItemID)
 	if (Price <= 0)
 		return true;
 
-	CItemData& pItemPlayer = GetItem(ItemID);
-	if(pItemPlayer.m_Value < Price)
+	CPlayerItem* pItem = GetItem(ItemID);
+	if(pItem->GetValue() < Price)
 	{
-		GS()->Chat(m_ClientID,"Required {VAL}, but you have only {VAL} {STR}!", Price, pItemPlayer.m_Value, pItemPlayer.Info().GetName());
+		GS()->Chat(m_ClientID,"Required {VAL}, but you have only {VAL} {STR}!", Price, pItem->GetValue(), pItem->Info()->GetName());
 		return false;
 	}
-	return pItemPlayer.Remove(Price);
+	return pItem->Remove(Price);
 }
 
 void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
@@ -405,7 +405,7 @@ void CPlayer::AddExp(int Exp)
 
 void CPlayer::AddMoney(int Money)
 {
-	GetItem(itGold).Add(Money);
+	GetItem(itGold)->Add(Money);
 }
 
 bool CPlayer::GetHiddenMenu(int HideID) const
@@ -437,12 +437,12 @@ int CPlayer::ExpNeed(int Level)
 
 int CPlayer::GetStartHealth()
 {
-	return 10 + GetAttributeSize(Attribute::Hardness, true);
+	return 10 + GetAttributeSize(AttributeIdentifier::Hardness, true);
 }
 
 int CPlayer::GetStartMana()
 {
-	const int EnchantBonus = GetAttributeSize(Attribute::Piety, true);
+	const int EnchantBonus = GetAttributeSize(AttributeIdentifier::Piety, true);
 	return 10 + EnchantBonus;
 }
 
@@ -457,7 +457,7 @@ void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAp
 	const int MaximumMana = GetStartMana();
 	const int Health = m_pCharacter->Health();
 	const int Mana = m_pCharacter->Mana();
-	const int Gold = GetItem(itGold).m_Value;
+	const int Gold = GetItem(itGold)->GetValue();
 
 	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %d\n\n\n\n\n\n\n\n\n\n\n\n%s", 
 		Acc().m_Level, Level.get(), Health, MaximumHealth, Mana, MaximumMana, Gold, pAppendStr);
@@ -517,7 +517,7 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 {
 	if(PPSTR(CMD, "UPGRADE") == 0)
 	{
-		if(Upgrade(Get, &Acc().m_aStats[(Attribute)VoteID], &Acc().m_Upgrade, VoteID2, 1000))
+		if(Upgrade(Get, &Acc().m_aStats[(AttributeIdentifier)VoteID], &Acc().m_Upgrade, VoteID2, 1000))
 		{
 			GS()->Mmo()->SaveAccount(this, SaveType::SAVE_UPGRADES);
 			GS()->ResetVotes(m_ClientID, MenuList::MENU_UPGRADES);
@@ -563,11 +563,9 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 	return false;
 }
 
-CItemData& CPlayer::GetItem(int ItemID)
+CPlayerItem* CPlayer::GetItem(int ItemID)
 {
-	CItemData::ms_aItems[m_ClientID][ItemID].m_ItemID = ItemID;
-	CItemData::ms_aItems[m_ClientID][ItemID].SetItemOwner(this);
-	return CItemData::ms_aItems[m_ClientID][ItemID];
+	return &CPlayerItem::Data()[m_ClientID][ItemID];
 }
 
 CSkillData* CPlayer::GetSkill(int SkillID)
@@ -586,27 +584,27 @@ CQuestData& CPlayer::GetQuest(int QuestID)
 
 int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
-	const auto Iter = std::find_if(CItemData::ms_aItems[m_ClientID].begin(), CItemData::ms_aItems[m_ClientID].end(), [EquipID, SkipItemID](const auto& p)
+	const auto Iter = std::find_if(CPlayerItem::Data()[m_ClientID].begin(), CPlayerItem::Data()[m_ClientID].end(), [EquipID, SkipItemID](const auto& p)
 	{
-		return (p.second.HasItem() && p.second.IsEquipped() && p.second.Info().IsFunctional(EquipID) && p.first != SkipItemID); 
+		return (p.second.HasItem() && p.second.IsEquipped() && p.second.Info()->IsFunctional(EquipID) && p.first != SkipItemID); 
 	});
-	return Iter != CItemData::ms_aItems[m_ClientID].end() ? Iter->first : -1;
+	return Iter != CPlayerItem::Data()[m_ClientID].end() ? Iter->first : -1;
 }
 
-int CPlayer::GetAttributeSize(Attribute ID, bool WorkedSize)
+int CPlayer::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 {
 	int Size = 0;
 
 	// get all attributes from items
-	for(const auto& [ItemID, ItemData] : CItemData::ms_aItems[m_ClientID])
+	for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[m_ClientID])
 	{
-		if(ItemData.IsEquipped() && ItemData.Info().IsEnchantable() && ItemData.Info().GetInfoEnchantStats(ID))
+		if(ItemData.IsEquipped() && ItemData.Info()->IsEnchantable() && ItemData.Info()->GetInfoEnchantStats(ID))
 			Size += ItemData.GetEnchantStats(ID);
 	}
 
 	// if the attribute has the value of player upgrades we sum up
-	const CAttributeData* pAtt = GS()->GetAttributeInfo(ID);
-	if (str_comp_nocase(pAtt->GetFieldName(), "unfield") != 0)
+	const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID);
+	if (pAtt->HasField())
 		Size += Acc().m_aStats[ID];
 
 	// to the final active attribute stats for the player
@@ -625,9 +623,9 @@ int CPlayer::GetAttributeSize(Attribute ID, bool WorkedSize)
 int CPlayer::GetTypeAttributesSize(AttributeType Type)
 {
 	int Size = 0;
-	for (const auto& [ID, Att] : CGS::ms_aAttributesInfo)
+	for (const auto& [ID, Attribute] : CAttributeDescription::Data())
 	{
-		if (Att.IsType(Type))
+		if (Attribute.IsType(Type))
 			Size += GetAttributeSize(ID, true);
 	}
 	return Size;
@@ -636,8 +634,8 @@ int CPlayer::GetTypeAttributesSize(AttributeType Type)
 int CPlayer::GetAttributesSize()
 {
 	int Size = 0;
-	for(const auto& at : CGS::ms_aAttributesInfo)
-		Size += GetAttributeSize(at.first, true);
+	for(const auto& [ID, Attribute] : CAttributeDescription::Data())
+		Size += GetAttributeSize(ID, true);
 
 	return Size;
 }

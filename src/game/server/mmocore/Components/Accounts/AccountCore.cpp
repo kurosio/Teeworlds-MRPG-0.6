@@ -117,10 +117,9 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		pPlayer->Acc().m_Upgrade = pResAccount->getInt("Upgrade");
 		pPlayer->Acc().m_GuildRank = pResAccount->getInt("GuildRank");
 		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
-
-		for (const auto& [ID, Att] : CGS::ms_aAttributesInfo)
+		for (const auto& [ID, Att] : CAttributeDescription::Data())
 		{
-			if (str_comp_nocase(Att.GetFieldName(), "unfield") != 0)
+			if(Att.HasField())
 				pPlayer->Acc().m_aStats[ID] = pResAccount->getInt(Att.GetFieldName());
 		}
 
@@ -166,9 +165,9 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 	Server()->SendDiscordGenerateMessage(aLoginBuf, pPlayer->Acc().m_UserID);
 #endif
 
-	if (!pPlayer->GetItem(itHammer).m_Value)
+	if (!pPlayer->GetItem(itHammer)->GetValue())
 	{
-		pPlayer->GetItem(itHammer).Add(1);
+		pPlayer->GetItem(itHammer)->Add(1);
 		GS()->Chat(ClientID, "Quest NPCs are marked with an aura Heart and Shield.");
 		GS()->Chat(ClientID, "Shield around you indicates location of active quest.");
 	}
@@ -178,8 +177,8 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 	{
 		for(auto& [id, defaultvalue] : pItems)
 		{
-			if(!pPlayer->GetItem(id).m_Value)
-				pPlayer->GetItem(id).Add(1, defaultvalue);
+			if(!pPlayer->GetItem(id)->GetValue())
+				pPlayer->GetItem(id)->Add(1, defaultvalue);
 			
 		}
 	};
@@ -250,24 +249,24 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		// game settings
 		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings becomes valid after death");
 		GS()->AVM(ClientID, "MENU", MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
-		for (const auto& [ItemID, ItemData] : CItemData::ms_aItems[ClientID])
+		for (const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
-			if (ItemData.Info().IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
-				GS()->AVM(ClientID, "ISETTINGS", ItemID, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.m_Settings ? "Enabled" : "Disabled"), ItemData.Info().GetName());
+			if (ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
+				GS()->AVM(ClientID, "ISETTINGS", ItemID, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
 		}
 
 		// equipment modules
 		bool IsFoundModules = false;
 		GS()->AV(ClientID, "null");
 		GS()->AVH(ClientID, TAB_SETTINGS_MODULES, "Modules settings");
-		for (const auto& it : CItemData::ms_aItems[ClientID])
+		for (const auto& it : CPlayerItem::Data()[ClientID])
 		{
-			const CItemData ItemData = it.second;
-			if (ItemData.Info().IsType(ItemType::TYPE_MODULE) && ItemData.m_Value > 0)
+			const CPlayerItem ItemData = it.second;
+			if (ItemData.Info()->IsType(ItemType::TYPE_MODULE) && ItemData.GetValue() > 0)
 			{
 				char aAttributes[128];
-				ItemData.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS_MODULES, "{STR} {STR}{STR}", ItemData.Info().GetName(), aAttributes, (ItemData.m_Settings ? "✔" : "\0"));
+				ItemData.StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
+				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS_MODULES, "{STR} {STR}{STR}", ItemData.Info()->GetName(), aAttributes, (ItemData.GetSettings() ? "✔" : "\0"));
 				IsFoundModules = true;
 			}
 		}
@@ -387,7 +386,7 @@ void CAccountCore::UseVoucher(int ClientID, const char* pVoucher) const
 					if(ItemID > NOPE && Value > 0)
 					{
 						if(CItemDataInfo::ms_aItemsInfo.find(ItemID) != CItemDataInfo::ms_aItemsInfo.end())
-							pPlayer->GetItem(ItemID).Add(Value);
+							pPlayer->GetItem(ItemID)->Add(Value);
 					}
 				}
 			}

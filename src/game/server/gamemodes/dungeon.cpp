@@ -485,7 +485,7 @@ int CGameControllerDungeon::GetSyncFactor() const
 	return (MaxFactor + MinFactor) / 2;
 }
 
-int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, Attribute ID) const
+int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeIdentifier ID) const
 {
 	float Percent = 0.0f;
 	const AttributeType Type = GS()->GetAttributeInfo(ID)->GetType();

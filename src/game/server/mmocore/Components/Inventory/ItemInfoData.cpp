@@ -6,17 +6,18 @@
 
 std::map < int, CItemDataInfo > CItemDataInfo::ms_aItemsInfo;
 
-int CItemDataInfo::GetInfoEnchantStats(Attribute ID) const
+int CItemDataInfo::GetInfoEnchantStats(AttributeIdentifier ID) const
 {
-	for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
+	for (const auto& Att : m_aAttribute)
 	{
-		if(m_aAttribute[i] >= Attribute::SpreadShotgun && m_aAttribute[i] < Attribute::ATTRIBUTES_NUM && m_aAttribute[i] == ID)
-			return m_aAttributeValue[i];
+		AttributeIdentifier SearchID = Att.GetID();
+		if(SearchID >= AttributeIdentifier::SpreadShotgun && SearchID < AttributeIdentifier::ATTRIBUTES_NUM && SearchID == ID)
+			return Att.GetValue();
 	}
 	return 0;
 }
 
-int CItemDataInfo::GetInfoEnchantStats(Attribute ID, int Enchant) const
+int CItemDataInfo::GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const
 {
 	const int StatSize = GetInfoEnchantStats(ID);
 	if(StatSize <= 0)
@@ -35,73 +36,67 @@ int CItemDataInfo::GetInfoEnchantStats(Attribute ID, int Enchant) const
 int CItemDataInfo::GetEnchantPrice(int EnchantLevel) const
 {
 	int FinishedPrice = 0;
-	for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
+	for (const auto& Att : m_aAttribute)
 	{
-		if(CGS::ms_aAttributesInfo.find(m_aAttribute[i]) == CGS::ms_aAttributesInfo.end())
-			continue;
+		if(Att.HasValue())
+		{
+			int UpgradePrice;
+			AttributeType Type = Att.Info()->GetType();
 
-		int UpgradePrice;
-		const Attribute Attribute = m_aAttribute[i];
-		const AttributeType Type = CGS::ms_aAttributesInfo[Attribute].GetType();
+			// strength stats
+			if(Type == AttributeType::Hardtype)
+				UpgradePrice = max(20, Att.Info()->GetUpgradePrice()) * 15;
 
-		// strength stats
-		if(Type == AttributeType::Hardtype)
-			UpgradePrice = max(20, CGS::ms_aAttributesInfo[Attribute].GetUpgradePrice()) * 15;
+			// weapon and job stats
+			else if(Type == AttributeType::Job || Type == AttributeType::Weapon || Att.GetID() == AttributeIdentifier::LuckyDropItem)
+				UpgradePrice = max(40, Att.Info()->GetUpgradePrice()) * 15;
 
-		// weapon and job stats
-		else if(Type == AttributeType::Job || Type == AttributeType::Weapon || Attribute == Attribute::LuckyDropItem)
-			UpgradePrice = max(40, CGS::ms_aAttributesInfo[Attribute].GetUpgradePrice()) * 15;
+			// other stats
+			else
+				UpgradePrice = max(5, Att.Info()->GetUpgradePrice()) * 15;
 
-		// other stats
-		else
-			UpgradePrice = max(5, CGS::ms_aAttributesInfo[Attribute].GetUpgradePrice()) * 15;
-
-		const int PercentEnchant = max(1, translate_to_percent_rest(m_aAttributeValue[i], PERCENT_OF_ENCHANT));
-		FinishedPrice += UpgradePrice * (PercentEnchant * (1 + EnchantLevel));
+			const int PercentEnchant = max(1, translate_to_percent_rest(Att.GetValue(), PERCENT_OF_ENCHANT));
+			FinishedPrice += UpgradePrice * (PercentEnchant * (1 + EnchantLevel));
+		}
 	}
 	return FinishedPrice;
 }
 
 bool CItemDataInfo::IsEnchantable() const
 {
-	for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
-	{
-		if(CGS::ms_aAttributesInfo.find(m_aAttribute[i]) != CGS::ms_aAttributesInfo.end() && m_aAttributeValue[i] > 0)
-			return true;
-	}
-	return false;
+	return std::any_of(std::begin(m_aAttribute), std::end(m_aAttribute), [](const CAttribute &p){return p.GetValue() > 0; });
 }
 
 bool CItemDataInfo::IsEnchantMaxLevel(int Enchant) const
 {
-	for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
+	for (const auto& Att : m_aAttribute)
 	{
-		if(CGS::ms_aAttributesInfo.find(m_aAttribute[i]) != CGS::ms_aAttributesInfo.end() && m_aAttributeValue[i] > 0)
+		if(Att.HasValue())
 		{
-			const int EnchantMax = m_aAttributeValue[i] + translate_to_percent_rest(m_aAttributeValue[i], PERCENT_MAXIMUM_ENCHANT);
-			if(GetInfoEnchantStats(m_aAttribute[i], Enchant) > EnchantMax)
+			const int EnchantMax = Att.GetValue() + translate_to_percent_rest(Att.GetValue(), PERCENT_MAXIMUM_ENCHANT);
+			if(GetInfoEnchantStats(Att.GetID(), Enchant) > EnchantMax)
 				return true;
 		}
 	}
 	return false;
 }
 
-void CItemDataInfo::FormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const
+void CItemDataInfo::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const
 {
 	dynamic_string Buffer;
-	for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
+	for (const auto& Att : m_aAttribute)
 	{
-		if(CGS::ms_aAttributesInfo.find(m_aAttribute[i]) != CGS::ms_aAttributesInfo.end() && m_aAttributeValue[i] > 0)
+		if(Att.HasValue())
 		{
-			const int BonusValue = GetInfoEnchantStats(m_aAttribute[i], Enchant);
-			pPlayer->GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{STR}+{VAL} ", pPlayer->GS()->GetAttributeInfo(m_aAttribute[i])->GetName(), BonusValue);
+			const int BonusValue = GetInfoEnchantStats(Att.GetID(), Enchant);
+			pPlayer->GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{STR}+{VAL} ", Att.Info()->GetName(), BonusValue);
 		}
 	}
 	str_copy(pBuffer, Buffer.buffer(), Size);
 	Buffer.clear();
 }
 
-void CItemDataInfo::FormatEnchantLevel(char* pBuffer, int Size, int Enchant) const
+void CItemDataInfo::StrFormatEnchantLevel(char* pBuffer, int Size, int Enchant) const
 {
 	if(Enchant > 0)
 	{

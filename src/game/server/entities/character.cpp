@@ -79,7 +79,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 		GS()->Mmo()->Quest()->UpdateArrowStep(m_pPlayer);
 		GS()->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer);
 
-		m_AmmoRegen = m_pPlayer->GetAttributeSize(Attribute::AmmoRegen, true);
+		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen, true);
 		GS()->ResetVotes(m_pPlayer->GetCID(), m_pPlayer->m_OpenVoteMenu);
 		m_pPlayer->ShowInformationStats();
 	}
@@ -174,7 +174,7 @@ bool CCharacter::DecoInteractive()
 		const int InteractiveType = m_pPlayer->GetTempData().m_TempDecorationType;
 		m_pPlayer->GetTempData().m_TempDecoractionID = -1;
 		m_pPlayer->GetTempData().m_TempDecorationType = -1;
-		if(m_pPlayer->GetItem(DecoID).m_Value <= 0 || GS()->GetItemInfo(DecoID).GetType() != ItemType::TYPE_DECORATION)
+		if(m_pPlayer->GetItem(DecoID)->GetValue() <= 0 || GS()->GetItemInfo(DecoID).GetType() != ItemType::TYPE_DECORATION)
 			return false;
 
 		if (InteractiveType == DECORATIONS_HOUSE)
@@ -183,7 +183,7 @@ bool CCharacter::DecoInteractive()
 			if (GS()->Mmo()->House()->AddDecorationHouse(DecoID, HouseID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID).GetName());
-				m_pPlayer->GetItem(DecoID).Remove(1);
+				m_pPlayer->GetItem(DecoID)->Remove(1);
 				GS()->ResetVotes(ClientID, MenuList::MENU_HOUSE_DECORATION);
 				return true;
 			}
@@ -194,7 +194,7 @@ bool CCharacter::DecoInteractive()
 			if (GS()->Mmo()->Member()->AddDecorationHouse(DecoID, GuildID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your guild house!", GS()->GetItemInfo(DecoID).GetName());
-				m_pPlayer->GetItem(DecoID).Remove(1);
+				m_pPlayer->GetItem(DecoID)->Remove(1);
 				GS()->ResetVotes(ClientID, MenuList::MENU_GUILD_HOUSE_DECORATION);
 				return true;
 			}
@@ -263,7 +263,7 @@ void CCharacter::FireWeapon()
 
 			bool Hits = false;
 			bool StartedTalking = false;
-			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(Attribute::HammerPower, true);
+			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(AttributeIdentifier::HammerPower, true);
 			const float Radius = clamp(PlayerRadius / 5.0f, 1.7f, 8.0f);
 			GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
@@ -310,7 +310,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_GUN:
 		{
-			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveGun).IsEquipped();
+			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveGun)->IsEquipped();
 			new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos, Direction, (int)(Server()->TickSpeed()*GS()->Tuning()->m_GunLifetime),
 				g_pData->m_Weapons.m_Gun.m_pBase->m_Damage, IsExplosive, 0, -1, WEAPON_GUN);
 
@@ -319,8 +319,8 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_SHOTGUN:
 		{
-			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun).IsEquipped();
-			const int ShotSpread = min(2 + m_pPlayer->GetAttributeSize(Attribute::SpreadShotgun), 36);
+			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
+			const int ShotSpread = min(2 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadShotgun), 36);
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread);
 			for (int i = 1; i <= ShotSpread; ++i)
@@ -339,7 +339,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_GRENADE:
 		{
-			const int ShotSpread = min(1 + m_pPlayer->GetAttributeSize(Attribute::SpreadGrenade), 21);
+			const int ShotSpread = min(1 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadGrenade), 21);
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread);
 			for (int i = 1; i < ShotSpread; ++i)
@@ -357,7 +357,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_LASER:
 		{
-			const int ShotSpread = min(1 + m_pPlayer->GetAttributeSize(Attribute::SpreadRifle), 36);
+			const int ShotSpread = min(1 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadRifle), 36);
 			for (int i = 1; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f*(9.0f*ShotSpread)/2)) - (0.0058945f*(9.0f*i));
@@ -377,7 +377,7 @@ void CCharacter::FireWeapon()
 
 	if(!m_ReloadTimer)
 	{
-		const int ReloadArt = m_pPlayer->GetAttributeSize(Attribute::Dexterity);
+		const int ReloadArt = m_pPlayer->GetAttributeSize(AttributeIdentifier::Dexterity);
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 + ReloadArt);
 	}
 }
@@ -400,7 +400,7 @@ void CCharacter::HandleWeapons()
 
 		if (m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart <= Server()->Tick())
 		{
-			const int RealAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
+			const int RealAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo = min(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo + 1, RealAmmo);
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 		}
@@ -418,7 +418,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 		return false;
 	}
 
-	const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
+	const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
 	if(m_Core.m_aWeapons[WeaponID].m_Ammo >= MaximumAmmo)
 		return false;
 
@@ -630,10 +630,10 @@ void CCharacter::Die(int Killer, int Weapon)
 		if(RespawnWorldID >= 0 && !m_pPlayer->IsBot() && GS()->m_apPlayers[Killer])
 		{
 			// potion resurrection
-			CItemData* pItem = &m_pPlayer->GetItem(itPotionResurrection);
-			if(pItem->IsEquipped())
+			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(itPotionResurrection);
+			if(pPlayerItem->IsEquipped())
 			{
-				pItem->Use(1);
+				pPlayerItem->Use(1);
 			}
 			else
 			{
@@ -682,21 +682,21 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if(From != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
 		if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_GUN)
-			Dmg += pFrom->GetAttributeSize(Attribute::GunPower, true);
+			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::GunPower, true);
 		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_SHOTGUN)
-			Dmg += pFrom->GetAttributeSize(Attribute::ShotgunPower, true);
+			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::ShotgunPower, true);
 		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_GRENADE)
-			Dmg += pFrom->GetAttributeSize(Attribute::GrenadePower, true);
+			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::GrenadePower, true);
 		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_LASER)
-			Dmg += pFrom->GetAttributeSize(Attribute::RiflePower, true);
+			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::RiflePower, true);
 		else
-			Dmg += pFrom->GetAttributeSize(Attribute::HammerPower, true);
+			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::HammerPower, true);
 
-		const int EnchantBonus = pFrom->GetAttributeSize(Attribute::Strength, true);
+		const int EnchantBonus = pFrom->GetAttributeSize(AttributeIdentifier::Strength, true);
 		Dmg += EnchantBonus;
 
 		// vampirism replenish your health
-		int TempInt = pFrom->GetAttributeSize(Attribute::Vampirism, true);
+		int TempInt = pFrom->GetAttributeSize(AttributeIdentifier::Vampirism, true);
 		if(min(8.0f + (float)TempInt * 0.0015f, 30.0f) > frandom() * 100.0f)
 		{
 			pFrom->GetCharacter()->IncreaseHealth(max(1, Dmg/2));
@@ -704,7 +704,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		}
 
 		// miss out on damage
-		TempInt = pFrom->GetAttributeSize(Attribute::Lucky, true);
+		TempInt = pFrom->GetAttributeSize(AttributeIdentifier::Lucky, true);
 		if(min(5.0f + (float)TempInt * 0.0015f, 20.0f) > frandom() * 100.0f)
 		{
 			GS()->SendEmoticon(From, EMOTICON_HEARTS);
@@ -712,10 +712,10 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		}
 
 		// critical damage
-		TempInt = pFrom->GetAttributeSize(Attribute::DirectCriticalHit, true);
+		TempInt = pFrom->GetAttributeSize(AttributeIdentifier::DirectCriticalHit, true);
 		if(Dmg && !pFrom->IsBot() && min(8.0f + (float)TempInt * 0.0015f, 30.0f) > frandom() * 100.0f)
 		{
-			CritDamage = 100 + max(pFrom->GetAttributeSize(Attribute::CriticalHit, true), 1);
+			CritDamage = 100 + max(pFrom->GetAttributeSize(AttributeIdentifier::CriticalHit, true), 1);
 			const float CritDamageFormula = (float)Dmg + ((float)CritDamage * ((float)Dmg / 100.0f));
 			const float CritRange = (CritDamageFormula + (CritDamageFormula / 2.0f) / 2.0f);
 			Dmg = (int)CritDamageFormula + random_int()%(int)CritRange;
@@ -765,9 +765,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	// health recovery potion
 	if(!m_pPlayer->IsBot() && m_Health <= m_pPlayer->GetStartHealth() / 3)
 	{
-		CItemData& pItemPlayer = m_pPlayer->GetItem(itPotionHealthRegen);
-		if(!m_pPlayer->IsActiveEffect("RegenHealth") && pItemPlayer.IsEquipped())
-			pItemPlayer.Use(1);
+		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(itPotionHealthRegen);
+		if(!m_pPlayer->IsActiveEffect("RegenHealth") && pPlayerItem->IsEquipped())
+			pPlayerItem->Use(1);
 	}
 
 	const bool IsHardDamage = (CritDamage > 0);
@@ -823,7 +823,7 @@ void CCharacter::Snap(int SnappingClient)
 	{
 		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo > 0)
 		{
-			const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(Attribute::Ammo);
+			const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
 			const int AmmoPercent =translate_to_percent(MaximumAmmo, m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo, 10.0f);
 			pCharacter->m_AmmoCount = clamp(AmmoPercent, 1, 10);
 		}
@@ -1069,8 +1069,8 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 	if((pItemInfo->GetFunctional() >= EQUIP_HAMMER && pItemInfo->GetFunctional() <= EQUIP_LASER))
 		m_pPlayer->GetCharacter()->GiveWeapon(pItemInfo->GetFunctional(), 3);
 
-	if(pItemInfo->GetInfoEnchantStats(Attribute::AmmoRegen) > 0)
-		m_AmmoRegen = m_pPlayer->GetAttributeSize(Attribute::AmmoRegen, true);
+	if(pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen) > 0)
+		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen, true);
 }
 
 void CCharacter::HandleAuthedPlayer()
@@ -1104,7 +1104,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	if(!m_pPlayer->IsBot() && !pFrom->IsBot())
 	{
 		// anti settings pvp
-		if(!pFrom->GetItem(itModePVP).IsEquipped() || !m_pPlayer->GetItem(itModePVP).IsEquipped())
+		if(!pFrom->GetItem(itModePVP)->IsEquipped() || !m_pPlayer->GetItem(itModePVP)->IsEquipped())
 			return false;
 
 		// anti pvp on safe world or dungeon
@@ -1154,8 +1154,8 @@ bool CCharacter::CheckFailMana(int Mana)
 	}
 
 	m_Mana -= Mana;
-	if(m_Mana <= m_pPlayer->GetStartMana() / 5 && !m_pPlayer->IsActiveEffect("RegenMana") && m_pPlayer->GetItem(itPotionManaRegen).IsEquipped())
-		m_pPlayer->GetItem(itPotionManaRegen).Use(1);
+	if(m_Mana <= m_pPlayer->GetStartMana() / 5 && !m_pPlayer->IsActiveEffect("RegenMana") && m_pPlayer->GetItem(itPotionManaRegen)->IsEquipped())
+		m_pPlayer->GetItem(itPotionManaRegen)->Use(1);
 
 	m_pPlayer->ShowInformationStats();
 	return false;

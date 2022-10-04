@@ -198,9 +198,9 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			const int NeedValue = pBotInfo->m_aItemSearchValue[i];
 			if(NeedItemID > 0 && NeedValue > 0)
 			{
-				CItemData PlayerItem = pPlayer->GetItem(NeedItemID);
-				int ClapmItem = clamp(PlayerItem.m_Value, 0, NeedValue);
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", PlayerItem.Info().GetName(), ClapmItem, NeedValue);
+				CPlayerItem* pPlayerItem = pPlayer->GetItem(NeedItemID);
+				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, NeedValue);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), ClapmItem, NeedValue);
 				NeedOnlyTalk = false;
 			}
 		}
@@ -321,7 +321,7 @@ void QuestCore::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 int QuestCore::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
 {
 	const int ClientID = pPlayer->GetCID();
-	int AvailableValue = pPlayer->GetItem(ItemID).m_Value;
+	int AvailableValue = pPlayer->GetItem(ItemID)->GetValue();
 	for (const auto& pPlayerQuest : CQuestData::ms_aPlayerQuests[ClientID])
 	{
 		if(pPlayerQuest.second.m_State != QUEST_ACCEPT)

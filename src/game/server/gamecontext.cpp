@@ -33,7 +33,6 @@
 #include <cstdarg>
 
 // static data that have the same value in different objects
-std::map < Attribute, CAttributeData > CGS::ms_aAttributesInfo;
 std::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
 int CGS::m_MultiplierExp = 100;
 
@@ -62,7 +61,6 @@ CGS::CGS()
 CGS::~CGS()
 {
 	m_Events.Clear();
-	ms_aAttributesInfo.clear();
 	for(auto& pEffects : ms_aEffects)
 		pEffects.clear();
 	for(auto* apPlayer : m_apPlayers)
@@ -133,6 +131,12 @@ std::unique_ptr<char[]> CGS::LevelString(int MaxValue, int CurrentValue, int Ste
 
 CItemDataInfo &CGS::GetItemInfo(int ItemID) const { return CItemDataInfo::ms_aItemsInfo[ItemID]; }
 CQuestDataInfo &CGS::GetQuestInfo(int QuestID) const { return CQuestDataInfo::ms_aDataQuests[QuestID]; }
+
+CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const
+{
+	return &CAttributeDescription::Data()[ID];
+} 
+
 
 /* #########################################################################
 	EVENTS
@@ -1289,7 +1293,7 @@ void CGS::ConGiveItem(IConsole::IResult *pResult, void *pUserData)
 	{
 		if (Mail == 0)
 		{
-			pPlayer->GetItem(ItemID).Add(Value, 0, Enchant);
+			pPlayer->GetItem(ItemID)->Add(Value, 0, Enchant);
 			return;
 		}
 		pSelf->SendInbox("Console", pPlayer, "The sender heavens", "Sent from console", ItemID, Value, Enchant);
@@ -1328,7 +1332,7 @@ void CGS::ConRemItem(IConsole::IResult* pResult, void* pUserData)
 	CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
 	if (pPlayer)
 	{
-		pPlayer->GetItem(ItemID).Remove(Value, 0);
+		pPlayer->GetItem(ItemID)->Remove(Value, 0);
 	}
 }
 
@@ -1567,8 +1571,8 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", Server()->ClientName(ClientID), pPlayer->Acc().m_aLastLogin);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, ExpForLevel);
-		AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint).m_Value);
-		AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold).m_Value);
+		AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
+		AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
 		AV(ClientID, "null");
 
 		// personal menu
@@ -1620,10 +1624,10 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		auto ShowAttributeVote = [&](int HiddenID, AttributeType Type, std::function<void(int HiddenID)> pFunc)
 		{
 			pFunc(HiddenID);
-			for (const auto& [ID, Att] : ms_aAttributesInfo)
+			for (const auto& [ID, Attribute] : CAttributeDescription::Data())
 			{
-				if(Att.IsType(Type) && str_comp_nocase(Att.GetFieldName(), "unfield") != 0 && Att.GetUpgradePrice() > 0)
-					AVD(ClientID, "UPGRADE", (int)ID, Att.GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", Att.GetName(), pPlayer->Acc().m_aStats[ID], Att.GetUpgradePrice());
+				if(Attribute.IsType(Type) && Attribute.HasField())
+					AVD(ClientID, "UPGRADE", (int)ID, Attribute.GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", Attribute.GetName(), pPlayer->Acc().m_aStats[ID], Attribute.GetUpgradePrice());
 			}
 		};
 
@@ -1788,20 +1792,20 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	AVH(ClientID, TAB_INFO_STAT, "Player Stats {STR}", IsDungeon() ? "(Sync)" : "\0");
-	for(const auto& [ID, Att] : ms_aAttributesInfo)
+	for(const auto& [ID, Attribute] : CAttributeDescription::Data())
 	{
-		if(str_comp_nocase(Att.GetFieldName(), "unfield") == 0)
+		if(!Attribute.HasField())
 			continue;
 
 		// if upgrades are cheap, they have a division of statistics
 		const int Size = pPlayer->GetAttributeSize(ID);
-		if(Att.GetDividing() <= 1)
+		if(Attribute.GetDividing() <= 1)
 		{
 			const int WorkedSize = pPlayer->GetAttributeSize(ID, true);
-			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "{INT} (+{INT}) - {STR}", Size, WorkedSize, Att.GetName());
+			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "{INT} (+{INT}) - {STR}", Size, WorkedSize, Attribute.GetName());
 			continue;
 		}
-		AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "+{INT} - {STR}", Size, Att.GetName());
+		AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "+{INT} - {STR}", Size, Attribute.GetName());
 	}
 
 	AVM(ClientID, "null", NOPE, NOPE, "Player Upgrade Point: {INT}P", pPlayer->Acc().m_Upgrade);
@@ -1812,7 +1816,7 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, int ItemID)
 {
 	const int ClientID = pPlayer->GetCID();
-	AVM(ClientID, "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID).m_Value, GetItemInfo(ItemID).GetName());
+	AVM(ClientID, "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GetItemInfo(ItemID).GetName());
 }
 
 // vote parsing of all functions of action methods
@@ -1824,6 +1828,8 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 		Chat(ClientID, "Use it when you're not dead!");
 		return true;
 	}
+
+	//pPlayer->GetItem(itGold)->GetEnchantStats()
 
 	const sqlstr::CSqlString<64> FormatText = sqlstr::CSqlString<64>(Text);
 	if(Callback)
@@ -1923,9 +1929,9 @@ void CGS::CreateDropBonuses(vec2 Pos, int Type, int Value, int NumDrop, vec2 For
 }
 
 // lands items in the position type and quantity and their number themselves
-void CGS::CreateDropItem(vec2 Pos, int ClientID, CItemData DropItem, vec2 Force)
+void CGS::CreateDropItem(vec2 Pos, int ClientID, CItem DropItem, vec2 Force)
 {
-	if(DropItem.m_ItemID <= 0 || DropItem.m_Value <= 0)
+	if(DropItem.GetID() <= 0 || DropItem.GetValue() <= 0)
 		return;
 
 	const float Angle = angle(normalize(Force));
@@ -1933,7 +1939,7 @@ void CGS::CreateDropItem(vec2 Pos, int ClientID, CItemData DropItem, vec2 Force)
 }
 
 // random drop of the item with percentage
-void CGS::CreateRandomDropItem(vec2 Pos, int ClientID, float Chance, CItemData DropItem, vec2 Force)
+void CGS::CreateRandomDropItem(vec2 Pos, int ClientID, float Chance, CItem DropItem, vec2 Force)
 {
 	const float RandomDrop = frandom() * 100.0f;
 	if(RandomDrop < Chance)

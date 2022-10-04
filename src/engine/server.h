@@ -31,6 +31,7 @@ protected:
 public:
 	// static std::mutex m_aMutexPlayerDataSafe[MAX_CLIENTS];
 	virtual class IGameServer* GameServer(int WorldID = 0) = 0;
+	virtual class IGameServer* GameServerPlayer(int ClientID) = 0;
 
 	class CLocalization* m_pLocalization;
 	inline class CLocalization* Localization() const { return m_pLocalization; }

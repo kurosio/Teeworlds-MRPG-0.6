@@ -90,7 +90,7 @@ bool CPlayerQuestStepDataInfo::IsCompleteItems(CPlayer* pPlayer) const
 		const int Value = m_Bot->m_aItemSearchValue[i];
 		if(ItemID <= 0 || Value <= 0)
 			continue;
-		if(pPlayer->GetItem(ItemID).m_Value < Value)
+		if(pPlayer->GetItem(ItemID)->GetValue() < Value)
 			return false;
 	}
 	return true;
@@ -151,9 +151,9 @@ void CPlayerQuestStepDataInfo::DoCollectItem(CPlayer* pPlayer)
 		const int Value = m_Bot->m_aItemSearchValue[i];
 		if(ItemID > 0 && Value > 0)
 		{
-			pGS->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(ItemID).Info().GetName(), Value, m_Bot->GetName());
+			pGS->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(ItemID)->Info()->GetName(), Value, m_Bot->GetName());
 			antiStressing = ItemID == m_Bot->m_aItemGives[0] || ItemID == m_Bot->m_aItemGives[1];
-			pPlayer->GetItem(ItemID).Remove(Value);
+			pPlayer->GetItem(ItemID)->Remove(Value);
 		}
 	}
 
@@ -169,12 +169,12 @@ void CPlayerQuestStepDataInfo::DoCollectItem(CPlayer* pPlayer)
 				continue;
 			}
 
-			if(pPlayer->GetItem(ItemID).Info().IsEnchantable() && pPlayer->GetItem(ItemID).m_Value >= 1)
+			if(pPlayer->GetItem(ItemID)->Info()->IsEnchantable() && pPlayer->GetItem(ItemID)->GetValue() >= 1)
 			{
 				pGS->SendInbox("System", pPlayer, "No place for item", "You already have this item, but we can't put it in inventory", ItemID, 1);
 				continue;
 			}
-			pPlayer->GetItem(ItemID).Add(Value);
+			pPlayer->GetItem(ItemID)->Add(Value);
 		}
 	}
 }
@@ -263,9 +263,9 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 		const int ValueItem = m_Bot->m_aItemSearchValue[i];
 		if(ItemID > 0 && ValueItem > 0)
 		{
-			CItemData PlayerQuestItem = pPlayer->GetItem(ItemID);
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Need {STR} [{VAL}/{VAL}]", PlayerQuestItem.Info().GetName(), PlayerQuestItem.m_Value, ValueItem);
+			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Need {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), ValueItem);
 			IsActiveTask = true;
 		}
 	}
@@ -278,7 +278,7 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 		if(ItemID > 0 && ValueItem > 0)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Receive {STR} [{VAL}]", pPlayer->GetItem(ItemID).Info().GetName(), ValueItem);
+			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Receive {STR} [{VAL}]", pPlayer->GetItem(ItemID)->Info()->GetName(), ValueItem);
 		}
 	}
 

@@ -259,9 +259,9 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 		const int HouseID = PlayerHouseID(pPlayer);
 		if(HouseID > 0 && DeleteDecorationHouse(VoteID))
 		{
-			CItemData& PlDecoItem = pPlayer->GetItem(VoteID2);
-			GS()->Chat(ClientID, "You back to the backpack {STR}!", PlDecoItem.Info().GetName());
-			PlDecoItem.Add(1);
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID2);
+			GS()->Chat(ClientID, "You back to the backpack {STR}!", pPlayerItem->Info()->GetName());
+			pPlayerItem->Add(1);
 		}
 		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_DECORATION);
 		return true;
@@ -438,7 +438,7 @@ void CHouseCore::ShowPersonalHouse(CPlayer* pPlayer)
 	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "In your safe is: {VAL}gold", CHouseData::ms_aHouse[HouseID].m_Bank);
 	GS()->AV(ClientID, "null");
 	//
-	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold).m_Value);
+	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
 	GS()->AVM(ClientID, "HOUSEADD", 1, NOPE, "Add to the safe gold. (Amount in a reason)");
 	GS()->AVM(ClientID, "HOUSETAKE", 1, NOPE, "Take the safe gold. (Amount in a reason)");
 	GS()->AV(ClientID, "null");

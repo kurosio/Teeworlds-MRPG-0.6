@@ -139,12 +139,12 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 	else if(Table == SAVE_UPGRADES)
 	{
 		dynamic_string Buffer;
-		for(const auto& [ID, Att] : CGS::ms_aAttributesInfo)
+		for(const auto& [ID, Attribute] : CAttributeDescription::Data())
 		{
-			if(str_comp_nocase(Att.GetFieldName(), "unfield") != 0)
+			if(Attribute.HasField())
 			{
 				char aBuf[64];
-				str_format(aBuf, sizeof(aBuf), ", %s = '%d' ", Att.GetFieldName(), pPlayer->Acc().m_aStats[ID]);
+				str_format(aBuf, sizeof(aBuf), ", %s = '%d' ", Attribute.GetFieldName(), pPlayer->Acc().m_aStats[ID]);
 				Buffer.append_at(Buffer.length(), aBuf);
 			}
 		}
@@ -369,9 +369,9 @@ void MmoController::ConSyncLinesForTranslate()
 		{
 			PushingDialogs(JsonData, pItem.second.m_aName, "aeth", pItem.first);
 		}
-		for(auto& pItem : CGS::ms_aAttributesInfo)
+		for(auto& [ID, Item] : CAttributeDescription::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.GetName(), "attb", (int)pItem.first);
+			PushingDialogs(JsonData, Item.GetName(), "attb", (int)ID);
 		}
 		for(auto& pItem : CItemDataInfo::ms_aItemsInfo)
 		{

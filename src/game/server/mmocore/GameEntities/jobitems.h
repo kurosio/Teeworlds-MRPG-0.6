@@ -5,7 +5,7 @@
 #include <game/server/entity.h>
 
 class CPlayer;
-class CItemData;
+class CPlayerItem;
 const int PickupPhysSize = 14;
 
 class CJobItems : public CEntity
@@ -37,9 +37,9 @@ private:
 	int m_SpawnTick;
 	int m_Type;
 
-	void FarmingWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem);
-	void MiningWork(int ClientID, CPlayer* pPlayer, CItemData& pWorkedItem);
-	bool Interaction(const char* pTool, Attribute AttributeDmg, CPlayer* pPlayer, const CItemData* pWorkedItem, ItemFunctional EquipID, int JobLevel);
+	void FarmingWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorkedItem);
+	void MiningWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorkedItem);
+	bool Interaction(const char* pTool, AttributeIdentifier AttributeDmg, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemFunctional EquipID, int JobLevel);
 	int GetPickupType() const;
 };
 

@@ -21,7 +21,7 @@ struct CAccountData
 
 	// upgrades
 	int m_Upgrade;
-	std::map< Attribute, int > m_aStats;
+	std::map< AttributeIdentifier, int > m_aStats;
 
 	CTeeInfo m_Skin;
 

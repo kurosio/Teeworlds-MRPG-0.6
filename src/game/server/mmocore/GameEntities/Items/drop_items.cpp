@@ -1,13 +1,12 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <game/server/mmocore/Components/Inventory/ItemData.h>
 #include "drop_items.h"
 
 #include <game/server/gamecontext.h>
 
 #include <base/tl/base.h>
 
-CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItemData DropItem, int OwnerID)
+CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItem DropItem, int OwnerID)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPITEM, Pos, 28.0f)
 {
 	m_Pos = Pos;
@@ -17,7 +16,7 @@ CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForc
 
 	m_OwnerID = OwnerID;
 	m_DropItem = DropItem;
-	m_DropItem.m_Settings = 0;
+	m_DropItem.SetSettings(0);
 	GameWorld()->InsertEntity(this);
 }
 
@@ -28,18 +27,18 @@ bool CDropItem::TakeItem(int ClientID)
 		return false;
 
 	// change of enchanted objects
-	CItemData* pItem = &pPlayer->GetItem(m_DropItem.GetID());
-	if(pItem->m_Value > 0 && pItem->Info().IsEnchantable())
+	CPlayerItem* pPlayerItem = pPlayer->GetItem(m_DropItem.GetID());
+	if(pPlayerItem->GetValue() > 0 && pPlayerItem->Info()->IsEnchantable())
 	{
-		tl_swap(*pItem, m_DropItem);
-		GS()->Chat(ClientID, "You now own {STR}(+{INT})", pItem->Info().GetName(), pItem->m_Enchant);
+		tl_swap(static_cast<CItem&>(*pPlayerItem), m_DropItem);
+		GS()->Chat(ClientID, "You now own {STR}(+{INT})", pPlayerItem->Info()->GetName(), pPlayerItem->GetEnchant());
 		GS()->StrongUpdateVotes(ClientID, MENU_INVENTORY);
 		GS()->StrongUpdateVotes(ClientID, MENU_EQUIPMENT);
 		return true;
 	}
 
 	// simple subject delivery
-	pItem->Add(m_DropItem.m_Value, 0, m_DropItem.m_Enchant);
+	pPlayerItem->Add(m_DropItem.GetValue(), 0, m_DropItem.GetEnchant());
 	GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 10, "\0");
 	GS()->StrongUpdateVotes(ClientID, MENU_INVENTORY);
 	GS()->StrongUpdateVotes(ClientID, MENU_EQUIPMENT);
@@ -73,26 +72,26 @@ void CDropItem::Tick()
 	if(pChar && !pChar->GetPlayer()->IsBot())
 	{
 		const int ClientID = pChar->GetPlayer()->GetCID();
-		const CItemData* pPlayerItem = &pChar->GetPlayer()->GetItem(m_DropItem.GetID());
+		const CPlayerItem* pPlayerItem = pChar->GetPlayer()->GetItem(m_DropItem.GetID());
 		const char* pOwnerNick = (m_OwnerID != -1 ? Server()->ClientName(m_OwnerID) : "\0");
 
-		if(pPlayerItem->Info().IsEnchantable())
+		if(pPlayerItem->Info()->IsEnchantable())
 		{
-			if(pPlayerItem->m_Value > 0)
+			if(pPlayerItem->GetValue() > 0)
 			{
 				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You have: [{STR}(+{INT})]\nReplace with: [{STR}(+{INT}) {STR}]",
-					m_DropItem.Info().GetName(), pPlayerItem->m_Enchant, m_DropItem.Info().GetName(), m_DropItem.m_Enchant, pOwnerNick);
+					m_DropItem.Info()->GetName(), pPlayerItem->GetEnchant(), m_DropItem.Info()->GetName(), m_DropItem.GetEnchant(), pOwnerNick);
 			}
 			else
 			{
 				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{STR}(+{INT}) {STR}",
-					m_DropItem.Info().GetName(), m_DropItem.m_Enchant, pOwnerNick);
+					m_DropItem.Info()->GetName(), m_DropItem.GetEnchant(), pOwnerNick);
 			}
 		}
 		else
 		{
 			GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{STR}x{VAL} {STR}",
-				m_DropItem.Info().GetName(), m_DropItem.m_Value, pOwnerNick);
+				m_DropItem.Info()->GetName(), m_DropItem.GetValue(), pOwnerNick);
 		}
 	}
 }

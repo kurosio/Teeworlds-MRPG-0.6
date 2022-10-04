@@ -86,7 +86,7 @@ bool CSkillData::Use()
 				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
 				continue;
 
-			const int RealAmmo = 10 + pPlayer->GetAttributeSize(Attribute::Ammo);
+			const int RealAmmo = 10 + pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
 			const int RestoreAmmo = translate_to_percent_rest(RealAmmo, min(GetBonus(), 100));
 			for(int j = WEAPON_GUN; j <= WEAPON_LASER; j++)
 			{

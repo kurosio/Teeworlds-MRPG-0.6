@@ -80,11 +80,11 @@ void CPlayerBot::EffectsTick()
 int CPlayerBot::GetStartHealth()
 {
 	if(m_BotType == TYPE_BOT_MOB)
-		return GetAttributeSize(Attribute::Hardness);
+		return GetAttributeSize(AttributeIdentifier::Hardness);
 	return 10;
 }
 
-int CPlayerBot::GetAttributeSize(Attribute ID, bool WorkedSize)
+int CPlayerBot::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 {
 	if(m_BotType != TYPE_BOT_MOB)
 		return 10;
@@ -100,11 +100,11 @@ int CPlayerBot::GetAttributeSize(Attribute ID, bool WorkedSize)
 	}
 
 	// spread weapons
-	if(ID == Attribute::SpreadShotgun || ID == Attribute::SpreadGrenade || ID == Attribute::SpreadRifle)
+	if(ID == AttributeIdentifier::SpreadShotgun || ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
 		Size = MobBotInfo::ms_aMobBot[m_MobID].m_Spread;
 
 	// all attribute stats without hardness
-	else if(const CAttributeData* pAtt = GS()->GetAttributeInfo(ID); ID != Attribute::Hardness && pAtt->GetDividing() > 0)
+	else if(const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID); ID != AttributeIdentifier::Hardness && pAtt->GetDividing() > 0)
 	{
 		Size /= pAtt->GetDividing();
 		if(pAtt->GetType() == AttributeType::Hardtype)

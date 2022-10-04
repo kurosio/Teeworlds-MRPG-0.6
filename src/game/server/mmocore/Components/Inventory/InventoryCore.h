@@ -10,9 +10,10 @@ class CInventoryCore : public MmoComponent
 {
 	~CInventoryCore() override
 	{
+		CAttributeDescription::Data().clear();
 		CItemDataInfo::ms_aItemsInfo.clear();
-		CItemData::ms_aItems.clear();
-	};
+		CPlayerItem::Data().clear();
+	}
 
 	void OnInit() override;
 	void OnInitAccount(class CPlayer* pPlayer) override;
@@ -27,7 +28,7 @@ public:
 	// primary
 	void ListInventory(int ClientID, ItemType Type);
 	void ListInventory(int ClientID, ItemFunctional Type);
-	void ItemSelected(class CPlayer* pPlayer, const CItemData& pItemPlayer, bool Dress = false);
+	void ItemSelected(class CPlayer* pPlayer, const CPlayerItem& pItemPlayer, bool Dress = false);
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, int ItemID) const;
 
 	void RepairDurabilityItems(class CPlayer *pPlayer);

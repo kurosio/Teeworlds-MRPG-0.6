@@ -9,16 +9,16 @@
 #include <game/server/mmocore/Components/Quests/QuestCore.h>
 
 template < typename T >
-bool ExecuteTemplateItemsTypes(T Type, std::map < int, CItemData >& paItems, const std::function<void(const CItemData&)> pFunc)
+bool ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, const std::function<void(const CPlayerItem&)> pFunc)
 {
 	bool Found = false;
 	for(const auto& [ItemID, ItemData] : paItems)
 	{
 		bool ActivateCallback = false;
 		if constexpr(std::is_same_v<T, ItemType>)
-			ActivateCallback = ItemData.HasItem() && ItemData.Info().IsType(Type);
+			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsType(Type);
 		else if constexpr(std::is_same_v<T, ItemFunctional>)
-			ActivateCallback = ItemData.HasItem() && ItemData.Info().IsFunctional(Type);
+			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsFunctional(Type);
 
 		if(ActivateCallback) 
 		{
@@ -37,10 +37,7 @@ void CInventoryCore::OnInit()
 	{
 		while (pRes->next())
 		{
-			const int ID = pRes->getInt("ID");
 			CItemDataInfo ItemInfo;
-
-
 			str_copy(ItemInfo.m_aName, pRes->getString("Name").c_str(), sizeof(ItemInfo.m_aName));
 			str_copy(ItemInfo.m_aDesc, pRes->getString("Description").c_str(), sizeof(ItemInfo.m_aDesc));
 			ItemInfo.m_Type = (ItemType)pRes->getInt("Type");
@@ -50,13 +47,13 @@ void CInventoryCore::OnInit()
 
 			for (int i = 0; i < STATS_MAX_FOR_ITEM; i++)
 			{
-				char aBuf[32];
-				str_format(aBuf, sizeof(aBuf), "Attribute%d", i);
-				ItemInfo.m_aAttribute[i] = (Attribute)pRes->getInt(aBuf);
-				str_format(aBuf, sizeof(aBuf), "AttributeValue%d", i);
-				ItemInfo.m_aAttributeValue[i] = pRes->getInt(aBuf);
+				char aAttributeID[32], aAttributeValue[32];
+				str_format(aAttributeID, sizeof(aAttributeID), "Attribute%d", i);
+				str_format(aAttributeValue, sizeof(aAttributeValue), "AttributeValue%d", i);
+				ItemInfo.m_aAttribute[i] = CAttribute((AttributeIdentifier)pRes->getInt(aAttributeID), pRes->getInt(aAttributeValue)) ;
 			}
 
+			const int ID = pRes->getInt("ID");
 			CItemDataInfo::ms_aItemsInfo[ID] = ItemInfo;
 		}
 	});
@@ -66,15 +63,14 @@ void CInventoryCore::OnInit()
 	{
 		while (pRes->next())
 		{
-			CAttributeData Att;
-			str_copy(Att.m_aName, pRes->getString("Name").c_str(), sizeof(Att.m_aName));
-			str_copy(Att.m_aFieldName, pRes->getString("FieldName").c_str(), sizeof(Att.m_aFieldName));
-			Att.m_UpgradePrice = pRes->getInt("Price");
-			Att.m_Type = (AttributeType)pRes->getInt("Type");
-			Att.m_Dividing = pRes->getInt("Divide");
-			
-			const Attribute AttID = (Attribute)pRes->getInt("ID");
-			CGS::ms_aAttributesInfo[AttID] = Att;
+			const AttributeIdentifier ID = (AttributeIdentifier)pRes->getInt("ID");
+			std::string Name = pRes->getString("Name").c_str();
+			std::string FieldName = pRes->getString("FieldName").c_str();
+			int UpgradePrice = pRes->getInt("Price");
+			AttributeType Type = (AttributeType)pRes->getInt("Type");
+			int Dividing = pRes->getInt("Divide");
+
+			CAttributeDescription(ID).Init(Name, FieldName, UpgradePrice, Type, Dividing);
 		}
 	});
 }
@@ -86,18 +82,18 @@ void CInventoryCore::OnInitAccount(CPlayer *pPlayer)
 	while(pRes->next())
 	{
 		int ItemID = pRes->getInt("ItemID");
-		CItemData::ms_aItems[ClientID][ItemID].SetItemOwner(pPlayer);
-		CItemData::ms_aItems[ClientID][ItemID].m_ItemID = ItemID;
-		CItemData::ms_aItems[ClientID][ItemID].m_Value = pRes->getInt("Value");
-		CItemData::ms_aItems[ClientID][ItemID].m_Settings = pRes->getInt("Settings");
-		CItemData::ms_aItems[ClientID][ItemID].m_Enchant = pRes->getInt("Enchant");
-		CItemData::ms_aItems[ClientID][ItemID].m_Durability = pRes->getInt("Durability");
+		int Value = pRes->getInt("Value");
+		int Settings = pRes->getInt("Settings");
+		int Enchant = pRes->getInt("Enchant");
+		int Durability = pRes->getInt("Durability");
+
+		CPlayerItem(Server(), ItemID, ClientID).Init(Value, Enchant, Durability, Settings);
 	}
 }
 
 void CInventoryCore::OnResetClient(int ClientID)
 {
-	CItemData::ms_aItems.erase(ClientID);
+	CPlayerItem::Data().erase(ClientID);
 }
 
 bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
@@ -152,15 +148,15 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
 			const int ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
-			if(ItemID <= 0 || !pPlayer->GetItem(ItemID).IsEquipped())
+			if(ItemID <= 0 || !pPlayer->GetItem(ItemID)->IsEquipped())
 			{
 				GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} Not equipped", paTypeNames[i]);
 				continue;
 			}
 
 			char aAttributes[128];
-			pPlayer->GetItem(ItemID).FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-			GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} | {STR}", pPlayer->GetItem(ItemID).Info().GetName(), aAttributes);
+			pPlayer->GetItem(ItemID)->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
+			GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} | {STR}", pPlayer->GetItem(ItemID)->Info()->GetName(), aAttributes);
 		}
 
 		// show and sort equipment
@@ -192,10 +188,10 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 			return true;
 
 		Get = min(AvailableValue, Get);
-		CItemData& pItemPlayer = pPlayer->GetItem(VoteID);
-		pItemPlayer.Drop(Get);
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
+		pPlayerItem->Drop(Get);
 
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {STR}x{VAL}", pItemPlayer.Info().GetName(), Get);
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {STR}x{VAL}", pPlayerItem->Info()->GetName(), Get);
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
@@ -207,7 +203,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 			return true;
 
 		Get = min(AvailableValue, Get);
-		pPlayer->GetItem(VoteID).Use(Get);
+		pPlayer->GetItem(VoteID)->Use(Get);
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
@@ -219,13 +215,13 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 			return true;
 
 		Get = min(AvailableValue, Get);
-		CItemData& pPlayerSelectedItem = pPlayer->GetItem(VoteID);
-		CItemData& pPlayerMaterialItem = pPlayer->GetItem(itMaterial);
-		const int DesValue = pPlayerSelectedItem.Info().m_Dysenthis * Get;
-		if(pPlayerSelectedItem.Remove(Get) && pPlayerMaterialItem.Add(DesValue))
+		CPlayerItem* pPlayerSelectedItem = pPlayer->GetItem(VoteID);
+		CPlayerItem* pPlayerMaterialItem = pPlayer->GetItem(itMaterial);
+		const int DesValue = pPlayerSelectedItem->Info()->m_Dysenthis * Get;
+		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
 			GS()->Chat(ClientID, "Disassemble {STR}x{VAL}, you receive {VAL} materials",
-				pPlayerSelectedItem.Info().GetName(), Get, DesValue);
+				pPlayerSelectedItem->Info()->GetName(), Get, DesValue);
 			GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		}
 		return true;
@@ -233,33 +229,33 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 
 	if(PPSTR(CMD, "ISETTINGS") == 0)
 	{
-		pPlayer->GetItem(VoteID).Equip();
+		pPlayer->GetItem(VoteID)->Equip();
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 
 	if(PPSTR(CMD, "IENCHANT") == 0)
 	{
-		CItemData& pItemPlayer = pPlayer->GetItem(VoteID);
-		if(pItemPlayer.IsEnchantMaxLevel())
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
+		if(pPlayerItem->IsEnchantMaxLevel())
 		{
 			GS()->Chat(ClientID, "Enchantment level is maximum");
 			return true;
 		}
 
-		const int Price = pItemPlayer.GetEnchantPrice();
+		const int Price = pPlayerItem->GetEnchantPrice();
 		if(!pPlayer->SpendCurrency(Price, itMaterial))
 			return true;
 
-		const int EnchantLevel = pItemPlayer.m_Enchant + 1;
-		pItemPlayer.SetEnchant(EnchantLevel);
+		const int EnchantLevel = pPlayerItem->GetEnchant() + 1;
+		pPlayerItem->SetEnchant(EnchantLevel);
 
 		char aEnchantBuf[16];
-		pItemPlayer.FormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));
+		pPlayerItem->StrFormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));
 
 		char aAttributes[128];
-		pItemPlayer.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-		GS()->Chat(-1, "{STR} enchant {STR} {STR} {STR}", Server()->ClientName(ClientID), pItemPlayer.Info().GetName(), aEnchantBuf, aAttributes);
+		pPlayerItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
+		GS()->Chat(-1, "{STR} enchant {STR} {STR} {STR}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), aEnchantBuf, aAttributes);
 		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
@@ -278,7 +274,7 @@ void CInventoryCore::RepairDurabilityItems(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
-	for(auto& it : CItemData::ms_aItems[ClientID])
+	for(auto& it : CPlayerItem::Data()[ClientID])
 		it.second.m_Durability = 100;
 }
 
@@ -287,7 +283,7 @@ void CInventoryCore::ListInventory(int ClientID, ItemType Type)
 	if(Type >= ItemType::TYPE_USED && Type < ItemType::NUM_TYPES)
 	{
 		GS()->AV(ClientID, "null");
-		if(!ExecuteTemplateItemsTypes(Type, CItemData::ms_aItems[ClientID], [&](const CItemData& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
+		if(!ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
 			GS()->AVL(ClientID, "null", "There are no items in this tab");
 	}
 }
@@ -295,7 +291,7 @@ void CInventoryCore::ListInventory(int ClientID, ItemType Type)
 void CInventoryCore::ListInventory(int ClientID, ItemFunctional Type)
 {
 	GS()->AV(ClientID, "null");
-	if(!ExecuteTemplateItemsTypes(Type, CItemData::ms_aItems[ClientID], [&](const CItemData& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
+	if(!ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
 		GS()->AVL(ClientID, "null", "There are no items in this tab");
 }
 
@@ -306,7 +302,7 @@ int CInventoryCore::GiveItem(CPlayer *pPlayer, int ItemID, int Value, int Settin
 	if(SecureID == 1)
 	{
 		Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d' WHERE ItemID = '%d' AND UserID = '%d'",
-		       CItemData::ms_aItems[ClientID][ItemID].m_Value, CItemData::ms_aItems[ClientID][ItemID].m_Settings, CItemData::ms_aItems[ClientID][ItemID].m_Enchant, ItemID, pPlayer->Acc().m_UserID);
+		       CPlayerItem::Data()[ClientID][ItemID].m_Value, CPlayerItem::Data()[ClientID][ItemID].m_Settings, CPlayerItem::Data()[ClientID][ItemID].m_Enchant, ItemID, pPlayer->Acc().m_UserID);
 	}
 	return SecureID;
 }
@@ -318,17 +314,17 @@ int CInventoryCore::SecureCheck(CPlayer *pPlayer, int ItemID, int Value, int Set
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 	if(pRes->next())
 	{
-		CItemData::ms_aItems[ClientID][ItemID].m_Value = pRes->getInt("Value")+Value;
-		CItemData::ms_aItems[ClientID][ItemID].m_Settings = pRes->getInt("Settings")+Settings;
-		CItemData::ms_aItems[ClientID][ItemID].m_Enchant = Enchant;
+		CPlayerItem::Data()[ClientID][ItemID].m_Value = pRes->getInt("Value")+Value;
+		CPlayerItem::Data()[ClientID][ItemID].m_Settings = pRes->getInt("Settings")+Settings;
+		CPlayerItem::Data()[ClientID][ItemID].m_Enchant = Enchant;
 		return 1;
 	}
 
 	// create an object if not found
-	CItemData::ms_aItems[ClientID][ItemID].m_Value = Value;
-	CItemData::ms_aItems[ClientID][ItemID].m_Settings = Settings;
-	CItemData::ms_aItems[ClientID][ItemID].m_Enchant = Enchant;
-	CItemData::ms_aItems[ClientID][ItemID].m_Durability = 100;
+	CPlayerItem::Data()[ClientID][ItemID].m_Value = Value;
+	CPlayerItem::Data()[ClientID][ItemID].m_Settings = Settings;
+	CPlayerItem::Data()[ClientID][ItemID].m_Enchant = Enchant;
+	CPlayerItem::Data()[ClientID][ItemID].m_Durability = 100;
 	Sqlpool.Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
 		ItemID, pPlayer->Acc().m_UserID, Value, Settings, Enchant);
 	return 2;
@@ -355,70 +351,70 @@ int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, int ItemID, int Value, int S
 		// update if there is more
 		if(pRes->getInt("Value") > Value)
 		{
-			CItemData::ms_aItems[ClientID][ItemID].m_Value = pRes->getInt("Value")-Value;
-			CItemData::ms_aItems[ClientID][ItemID].m_Settings = pRes->getInt("Settings")-Settings;
+			CPlayerItem::Data()[ClientID][ItemID].m_Value = pRes->getInt("Value")-Value;
+			CPlayerItem::Data()[ClientID][ItemID].m_Settings = pRes->getInt("Settings")-Settings;
 			return 1;
 		}
 
 		// remove the object if it is less than the required amount
-		CItemData::ms_aItems[ClientID][ItemID].m_Value = 0;
-		CItemData::ms_aItems[ClientID][ItemID].m_Settings = 0;
-		CItemData::ms_aItems[ClientID][ItemID].m_Enchant = 0;
+		CPlayerItem::Data()[ClientID][ItemID].m_Value = 0;
+		CPlayerItem::Data()[ClientID][ItemID].m_Settings = 0;
+		CPlayerItem::Data()[ClientID][ItemID].m_Enchant = 0;
 		Sqlpool.Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 		return 2;
 	}
 
-	CItemData::ms_aItems[ClientID][ItemID].m_Value = 0;
-	CItemData::ms_aItems[ClientID][ItemID].m_Settings = 0;
-	CItemData::ms_aItems[ClientID][ItemID].m_Enchant = 0;
+	CPlayerItem::Data()[ClientID][ItemID].m_Value = 0;
+	CPlayerItem::Data()[ClientID][ItemID].m_Settings = 0;
+	CPlayerItem::Data()[ClientID][ItemID].m_Enchant = 0;
 	return 0;
 }
 
 int CInventoryCore::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
 {
 	const int AvailableValue = Job()->Quest()->GetUnfrozenItemValue(pPlayer, ItemID);
-	if(AvailableValue <= 0 && pPlayer->GetItem(ItemID).m_Value >= 1)
+	if(AvailableValue <= 0 && pPlayer->GetItem(ItemID)->HasItem())
 	{
-		GS()->Chat(pPlayer->GetCID(), "'{STR}' frozen for some quest.", pPlayer->GetItem(ItemID).Info().GetName());
-		GS()->Chat(pPlayer->GetCID(), "In the 'Adventure Journal', you can see in which quest an item is used", pPlayer->GetItem(ItemID).Info().GetName());
+		GS()->Chat(pPlayer->GetCID(), "'{STR}' frozen for some quest.", pPlayer->GetItem(ItemID)->Info()->GetName());
+		GS()->Chat(pPlayer->GetCID(), "In the 'Adventure Journal', you can see in which quest an item is used", pPlayer->GetItem(ItemID)->Info()->GetName());
 	}
 	return AvailableValue;
 }
 
-void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer, bool Dress)
+void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlayer, bool Dress)
 {
 	const int ClientID = pPlayer->GetCID();
 	const int ItemID = pItemPlayer.GetID();
 	const int HideID = NUM_TAB_MENU + ItemID;
-	const char* pNameItem = pItemPlayer.Info().GetName();
+	const char* pNameItem = pItemPlayer.Info()->GetName();
 
 	// overwritten or not
-	if (pItemPlayer.Info().IsEnchantable())
+	if (pItemPlayer.Info()->IsEnchantable())
 	{
 		char aEnchantBuf[16];
-		pItemPlayer.FormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));
+		pItemPlayer.StrFormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));
 		GS()->AVH(ClientID, HideID, "{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, (pItemPlayer.m_Enchant > 0 ? aEnchantBuf : "\0"));
 
-		if(Dress && pPlayer->GetItem(itShowEquipmentDescription).IsEquipped())
-			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info().GetDesc());
+		if(Dress && pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped())
+			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDesc());
 
 		char aAttributes[64];
-		pItemPlayer.FormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
+		pItemPlayer.StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", aAttributes);
 	}
 	else
 	{
 		GS()->AVH(ClientID, HideID, "{STR}{STR} x{VAL}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.m_Value);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info().GetDesc());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDesc());
 	}
 
 	// functional by function
-	if (pItemPlayer.Info().m_Function == FUNCTION_ONE_USED || pItemPlayer.Info().m_Function == FUNCTION_USED)
+	if (pItemPlayer.Info()->m_Function == FUNCTION_ONE_USED || pItemPlayer.Info()->m_Function == FUNCTION_USED)
 	{
 		GS()->AVM(ClientID, "null", NOPE, HideID, "For bind command '/useitem {INT}'", ItemID);
 		GS()->AVM(ClientID, "IUSE", ItemID, HideID, "Use {STR}", pNameItem);
 	}
-	else if(pItemPlayer.Info().m_Function == FUNCTION_PLANTS)
+	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANTS)
 	{
 		const int HouseID = Job()->House()->OwnerHouseID(pPlayer->Acc().m_UserID);
 		const int PlantItemID = Job()->House()->GetPlantsID(HouseID);
@@ -430,19 +426,19 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 	}
 
 	// functional by type
-	if (pItemPlayer.Info().m_Type == ItemType::TYPE_POTION)
+	if (pItemPlayer.Info()->m_Type == ItemType::TYPE_POTION)
 	{
 		GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "Auto use {STR} - {STR}", pNameItem, (pItemPlayer.m_Settings ? "Enable" : "Disable"));
 
 	}
-	else if (pItemPlayer.Info().m_Type == ItemType::TYPE_DECORATION)
+	else if (pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION)
 	{
 		GS()->AVM(ClientID, "DECOSTART", ItemID, HideID, "Add {STR} to your house", pNameItem);
 		GS()->AVM(ClientID, "DECOGUILDSTART", ItemID, HideID, "Add {STR} to your guild house", pNameItem);
 	}
-	else if(pItemPlayer.Info().m_Type == ItemType::TYPE_EQUIP || pItemPlayer.Info().m_Function == FUNCTION_SETTINGS)
+	else if(pItemPlayer.Info()->m_Type == ItemType::TYPE_EQUIP || pItemPlayer.Info()->m_Function == FUNCTION_SETTINGS)
 	{
-		if((pItemPlayer.Info().m_Function == EQUIP_HAMMER && pItemPlayer.IsEquipped()))
+		if((pItemPlayer.Info()->m_Function == EQUIP_HAMMER && pItemPlayer.IsEquipped()))
 			GS()->AVM(ClientID, "null", NOPE, HideID, "You can not undress equipping hammer", pNameItem);
 		else
 			GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "{STR} {STR}", (pItemPlayer.m_Settings ? "Undress" : "Equip"), pNameItem);
@@ -452,7 +448,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 
 
 	// enchant
-	if (pItemPlayer.Info().IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
+	if (pItemPlayer.Info()->IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
 	{
 		const int Price = pItemPlayer.GetEnchantPrice();
 		GS()->AVM(ClientID, "IENCHANT", ItemID, HideID, "Enchant {STR} ({VAL} materials)", pNameItem, Price);
@@ -462,16 +458,16 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 	if (ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
 		// dysenthis
-		if (pItemPlayer.Info().GetDysenthis() > 0)
+		if (pItemPlayer.Info()->GetDysenthis() > 0)
 		{
-			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.Info().GetDysenthis());
+			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.Info()->GetDysenthis());
 		}
 
 		// drop
 		GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop {STR}", pNameItem);
 
 		// auction
-		if (pItemPlayer.Info().m_InitialPrice > 0)
+		if (pItemPlayer.Info()->m_InitialPrice > 0)
 		{
 			GS()->AVM(ClientID, "AUCTIONSLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
 		}
@@ -481,9 +477,9 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CItemData& pItemPlayer
 int CInventoryCore::GetCountItemsType(CPlayer *pPlayer, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
-	return (int)std::count_if(CItemData::ms_aItems[ClientID].begin(), CItemData::ms_aItems[ClientID].end(), [Type](auto& pItem)
+	return (int)std::count_if(CPlayerItem::Data()[ClientID].begin(), CPlayerItem::Data()[ClientID].end(), [Type](auto& pItem)
 	{
-		return pItem.second.HasItem() && pItem.second.Info().IsType(Type);
+		return pItem.second.HasItem() && pItem.second.Info()->IsType(Type);
 	});
 }
 
@@ -500,7 +496,7 @@ void CInventoryCore::AddItemSleep(int AccountID, int ItemID, int Value, int Mill
 		CPlayer* pPlayer = GS()->GetPlayerFromUserID(AccountID);
 		if(pPlayer)
 		{
-			pPlayer->GetItem(ItemID).Add(Value);
+			pPlayer->GetItem(ItemID)->Add(Value);
 			lock_sleep.unlock();
 			return;
 		}

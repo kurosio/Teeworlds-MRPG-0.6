@@ -16,6 +16,7 @@ class CServer : public IServer
 
 public:
 	class IGameServer* GameServer(int WorldID = 0) override;
+	class IGameServer* GameServerPlayer(int ClientID) override;
 	class IConsole *Console() const { return m_pConsole; }
 	class IStorageEngine*Storage() const { return m_pStorage; }
 	class CMultiWorlds* MultiWorlds() const { return m_pMultiWorlds; }

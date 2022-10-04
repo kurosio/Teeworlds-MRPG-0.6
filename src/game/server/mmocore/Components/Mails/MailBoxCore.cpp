@@ -61,7 +61,7 @@ void CMailBoxCore::GetInformationInbox(CPlayer *pPlayer)
 		else if(GS()->GetItemInfo(ItemID).IsEnchantable())
 		{
 			char aEnchantBuf[16];
-			GS()->GetItemInfo(ItemID).FormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf), Enchant);
+			GS()->GetItemInfo(ItemID).StrFormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf), Enchant);
 			GS()->AVM(ClientID, "MAIL", MailLetterID, HideID, "Receive {STR} {STR} (L{INT})",
 				GS()->GetItemInfo(ItemID).GetName(), (Enchant > 0 ? aEnchantBuf : "\0"), ShowLetterID);
 		}
@@ -132,14 +132,14 @@ void CMailBoxCore::AcceptMailLetter(CPlayer* pPlayer, int MailLetterID)
 		}
 
 		// recieve
-		if(GS()->GetItemInfo(ItemID).IsEnchantable() && pPlayer->GetItem(ItemID).m_Value > 0)
+		if(GS()->GetItemInfo(ItemID).IsEnchantable() && pPlayer->GetItem(ItemID)->HasItem())
 		{
 			GS()->Chat(pPlayer->GetCID(), "Enchant item maximal count x1 in a backpack!");
 			return;
 		}
 
 		const int Enchant = pRes->getInt("Enchant");
-		pPlayer->GetItem(ItemID).Add(ItemValue, 0, Enchant);
+		pPlayer->GetItem(ItemID)->Add(ItemValue, 0, Enchant);
 		GS()->Chat(pPlayer->GetCID(), "You received an attached item [{STR}].", GS()->GetItemInfo(ItemID).GetName());
 		DeleteMailLetter(MailLetterID);
 	}

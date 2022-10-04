@@ -29,7 +29,7 @@ public:
 		m_ArrayItems.push_back(Item);
 	}
 
-	bool Start(CPlayer* pPlayer, int Seconds, CItemData* pPlayerUsesItem = nullptr, int UseValue = 1);
+	bool Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem = nullptr, int UseValue = 1);
 };
 
 class CRandomBoxRandomizer : public CEntity
@@ -38,11 +38,11 @@ class CRandomBoxRandomizer : public CEntity
 	int m_LifeTime;
 	int m_PlayerAccountID;
 	CPlayer* m_pPlayer;
-	CItemData* m_pPlayerUsesItem;
+	CPlayerItem* m_pPlayerUsesItem;
 	std::vector<StructRandomItem> m_List;
 
 public:
-	CRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<StructRandomItem> List, CItemData* pPlayerUsesItem, int UseValue);
+	CRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<StructRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue);
 
 	std::vector<StructRandomItem>::iterator SelectRandomItem();
 	void Tick() override;

@@ -229,7 +229,7 @@ void CCommandProcessor::ConChatUseItem(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	const int ItemID = pResult->GetInteger(0);
-	pPlayer->GetItem(ItemID).Use(1);
+	pPlayer->GetItem(ItemID)->Use(1);
 }
 
 void CCommandProcessor::ConChatUseSkill(IConsole::IResult* pResult, void* pUser)

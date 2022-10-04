@@ -146,13 +146,13 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + random_int() % 2), Force);
 
 	// drop item's
-	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(Attribute::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
+	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
 	for(int i = 0; i < 5; i++)
 	{
-		CItemData DropItem;
-		DropItem.m_ItemID = MobBotInfo::ms_aMobBot[SubID].m_aDropItem[i];
-		DropItem.m_Value = MobBotInfo::ms_aMobBot[SubID].m_aValueItem[i];
-		if(DropItem.m_ItemID <= 0 || DropItem.m_Value <= 0)
+		CItem DropItem;
+		DropItem.SetID(MobBotInfo::ms_aMobBot[SubID].m_aDropItem[i]);
+		DropItem.SetValue(MobBotInfo::ms_aMobBot[SubID].m_aValueItem[i]);
+		if(DropItem.GetID() <= 0 || DropItem.GetValue() <= 0)
 			continue;
 
 		const float RandomDrop = clamp(MobBotInfo::ms_aMobBot[SubID].m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
@@ -165,9 +165,9 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	const int CalculateSP = (pPlayer->Acc().m_Level > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + min(40, (pPlayer->Acc().m_Level - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
 	if(random_int() % CalculateSP == 0)
 	{
-		CItemData &pItemSkillPlayer = pPlayer->GetItem(itSkillPoint);
-		pItemSkillPlayer.Add(1);
-		GS()->Chat(ClientID, "Skill points increased. Now ({INT}SP)", pItemSkillPlayer.m_Value);
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
+		pPlayerItem->Add(1);
+		GS()->Chat(ClientID, "Skill points increased. Now ({INT}SP)", pPlayerItem->GetValue());
 	}
 }
 
@@ -619,7 +619,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
 		if (!FinderCollised && ((m_BotTargetLife <= 10 && m_BotTargetCollised)
-			|| pFinderHard->GetAttributeSize(Attribute::Hardness, true) > pPlayer->GetAttributeSize(Attribute::Hardness, true)))
+			|| pFinderHard->GetAttributeSize(AttributeIdentifier::Hardness, true) > pPlayer->GetAttributeSize(AttributeIdentifier::Hardness, true)))
 			SetTarget(i);
 	}
 

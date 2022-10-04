@@ -90,6 +90,12 @@ IGameServer* CServer::GameServer(int WorldID)
 	return MultiWorlds()->GetWorld(WorldID)->m_pGameServer;
 }
 
+IGameServer* CServer::GameServerPlayer(int ClientID)
+{
+	return GameServer(GetClientWorldID(ClientID));
+}
+
+
 // get the world minute
 int CServer::GetMinuteGameTime() const
 {

@@ -331,8 +331,8 @@ struct CTeeInfo
 	int m_ColorFeet;
 };
 
-// attribute data
-enum class Attribute : int
+// attribute context
+enum class AttributeIdentifier : int
 {
 	SpreadShotgun			= 1,
 	SpreadGrenade			= 2,
@@ -369,23 +369,16 @@ enum class AttributeType : int
 	Other,
 };
 
-class CAttributeData
+// helpers
+template < class T >
+class MultiworldIdentifiableStaticData
 {
-	friend class CInventoryCore;
-
-	char m_aName[32];
-	char m_aFieldName[32];
-	int m_UpgradePrice;
-	AttributeType m_Type;
-	int m_Dividing;
+protected:
+	inline static T m_pData{};
 
 public:
-	const char* GetName() const { return m_aName; }
-	const char* GetFieldName() const { return m_aFieldName; }
-	int GetUpgradePrice() const { return m_UpgradePrice; }
-	bool IsType(AttributeType Type) const { return m_Type == Type; }
-	AttributeType GetType() const { return m_Type; }
-	int GetDividing() const { return m_Dividing; }
+	static T& Data() { return m_pData; }
 };
+
 
 #endif

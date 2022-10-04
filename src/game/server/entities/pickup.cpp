@@ -64,7 +64,7 @@ void CPickup::Tick()
 	}
 	else if(m_Type == POWERUP_ARMOR_SHOTGUN)
 	{
-		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(Attribute::Ammo);
+		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(AttributeIdentifier::Ammo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
 		if(pChr->GiveWeapon(WEAPON_SHOTGUN, RestoreAmmo))
 		{
@@ -74,7 +74,7 @@ void CPickup::Tick()
 	}
 	else if(m_Type == POWERUP_ARMOR_GRENADE)
 	{
-		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(Attribute::Ammo);
+		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(AttributeIdentifier::Ammo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
 		if(pChr->GiveWeapon(WEAPON_GRENADE, RestoreAmmo))
 		{
@@ -85,7 +85,7 @@ void CPickup::Tick()
 	}
 	else if(m_Type == POWERUP_ARMOR_LASER)
 	{
-		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(Attribute::Ammo);
+		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(AttributeIdentifier::Ammo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
 		if(pChr->GiveWeapon(WEAPON_LASER, RestoreAmmo))
 		{

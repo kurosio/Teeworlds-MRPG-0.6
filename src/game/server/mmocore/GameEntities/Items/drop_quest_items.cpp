@@ -52,9 +52,9 @@ void CDropQuestItem::Tick()
 	const int Value = m_QuestBot.m_aItemSearchValue[0];
 	CPlayer* pPlayer = GS()->m_apPlayers[m_ClientID];
 	const CQuestData* pQuestPlayer = &pPlayer->GetQuest(m_QuestBot.m_QuestID);
-	CItemData* pItemPlayer = &pPlayer->GetItem(m_QuestBot.m_aItemSearch[0]);
+	CPlayerItem* pPlayerItem = pPlayer->GetItem(m_QuestBot.m_aItemSearch[0]);
 
-	if (pQuestPlayer->m_Step != m_QuestBot.m_Step || pItemPlayer->m_Value >= Value)
+	if (pQuestPlayer->m_Step != m_QuestBot.m_Step || pPlayerItem->GetValue() >= Value)
 	{
 		GS()->m_World.DestroyEntity(this);
 		return;
@@ -66,9 +66,9 @@ void CDropQuestItem::Tick()
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press 'Fire' for pick Quest Item");
 		if (pPlayer->GetCharacter()->m_ReloadTimer)
 		{
-			pItemPlayer->Add(1);
+			pPlayerItem->Add(1);
 			pPlayer->GetCharacter()->m_ReloadTimer = 0;
-			GS()->Chat(m_ClientID, "You pick {STR} for {STR}!", pItemPlayer->Info().GetName(), m_QuestBot.GetName());
+			GS()->Chat(m_ClientID, "You pick {STR} for {STR}!", pPlayerItem->Info()->GetName(), m_QuestBot.GetName());
 			GS()->m_World.DestroyEntity(this);
 			return;
 		}
