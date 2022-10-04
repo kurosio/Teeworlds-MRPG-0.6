@@ -370,8 +370,17 @@ enum class AttributeType : int
 };
 
 // helpers
+class _StoreMultiworldIdentifiableStaticData
+{
+	inline static class IServer* m_pServer{};
+
+public:
+	class IServer* Server() const { return m_pServer; }
+	static void Init(IServer* pServer) { m_pServer = pServer; }
+};
+
 template < class T >
-class MultiworldIdentifiableStaticData
+class MultiworldIdentifiableStaticData : public _StoreMultiworldIdentifiableStaticData
 {
 protected:
 	inline static T m_pData{};

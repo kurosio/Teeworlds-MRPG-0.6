@@ -323,6 +323,7 @@ int CServer::Init()
 		m_aClients[i].m_Snapshots.Init();
 	}
 
+	_StoreMultiworldIdentifiableStaticData::Init((IServer*)this);
 	Sqlpool.Init(this);
 	return 0;
 }

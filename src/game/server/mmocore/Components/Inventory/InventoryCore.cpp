@@ -87,7 +87,7 @@ void CInventoryCore::OnInitAccount(CPlayer *pPlayer)
 		int Enchant = pRes->getInt("Enchant");
 		int Durability = pRes->getInt("Durability");
 
-		CPlayerItem(Server(), ItemID, ClientID).Init(Value, Enchant, Durability, Settings);
+		CPlayerItem(ItemID, ClientID).Init(Value, Enchant, Durability, Settings);
 	}
 }
 

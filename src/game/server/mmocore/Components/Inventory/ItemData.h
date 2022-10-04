@@ -38,7 +38,6 @@ public:
 class CPlayerItem : public CItem, public MultiworldIdentifiableStaticData< std::map < int, std::map < int, CPlayerItem > > >
 {
 	friend class CInventoryCore;
-	class IServer* m_pServer;
 	int m_ClientID;
 
 	class CGS* GS() const;
@@ -46,7 +45,7 @@ class CPlayerItem : public CItem, public MultiworldIdentifiableStaticData< std::
 
 public:
 	CPlayerItem() = default;
-	CPlayerItem(class IServer* pServer, int ID, int ClientID) : m_pServer(pServer), m_ClientID(ClientID) { m_ItemID = ID; }
+	CPlayerItem(int ID, int ClientID) : m_ClientID(ClientID) { m_ItemID = ID; }
 	
 	void Init(int Value, int Enchant, int Durability, int Settings)
 	{

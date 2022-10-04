@@ -10,7 +10,7 @@
 
 CGS* CPlayerItem::GS() const
 {
-	return (CGS*)m_pServer->GameServerPlayer(m_ClientID);
+	return (CGS*)Server()->GameServerPlayer(m_ClientID);
 }
 
 CPlayer* CPlayerItem::GetPlayer() const
