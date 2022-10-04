@@ -23,14 +23,14 @@ public:
 };
 
 
-class CShop : public MultiworldIdentifiableStaticData< std::map< int, CShop > >
+class CTradingSpot : public MultiworldIdentifiableStaticData< std::map< int, CTradingSpot > >
 {
 	int m_ID{};
 	int m_StorageID{};
 
 public:
-	CShop() = default;
-	CShop(int ID) : m_ID(ID) {}
+	CTradingSpot() = default;
+	CTradingSpot(int ID) : m_ID(ID) {}
 
 	void Init(int StorageID) { m_StorageID = StorageID; }
 
