@@ -6,18 +6,18 @@
 #include <game/server/gamecontext.h>
 
 #include <game/server/mmocore/Components/Inventory/InventoryCore.h>
-#include <game/server/mmocore/Components/Storages/StorageCore.h>
+#include <game/server/mmocore/Components/Warehouse/WarehouseCore.h>
 
 using namespace sqlstr;
 void CShopCore::OnInit()
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, StorageID", "tw_store_items");
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, WarehouseID", "tw_store_items");
 	while(pRes->next())
 	{
 		int ID = pRes->getInt("ID");
-		int StorageID = pRes->getInt("StorageID");
+		int WarehouseID = pRes->getInt("WarehouseID");
 
-		CTradingSpot(ID).Init(StorageID);
+		CTradingSpot(ID).Init(WarehouseID);
 	}
 }
 
@@ -70,9 +70,9 @@ bool CShopCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 
 		if(pChr->GetHelper()->BoolIndex(TILE_SHOP_ZONE))
 		{
-			const int StorageID = Job()->Storage()->GetStorageID(pChr->m_Core.m_Pos);
-			Job()->Storage()->ShowStorageMenu(pChr->GetPlayer(), StorageID);
-			ShowMailShop(pPlayer, StorageID);
+			const int WarehouseID = Job()->Warehouse()->GetWarehouseID(pChr->m_Core.m_Pos);
+			Job()->Warehouse()->ShowWarehouseMenu(pChr->GetPlayer(), WarehouseID);
+			ShowMailShop(pPlayer, WarehouseID);
 			return true;
 		}
 		return false;
@@ -352,11 +352,11 @@ void CShopCore::ShowAuction(CPlayer* pPlayer)
 	GS()->AV(ClientID, "null");
 }
 
-void CShopCore::ShowMailShop(CPlayer *pPlayer, int StorageID)
+void CShopCore::ShowMailShop(CPlayer *pPlayer, int WarehouseID)
 {
 	const int ClientID = pPlayer->GetCID();
 	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 300;
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_store_items", "WHERE StorageID = '%d' ORDER BY Price", StorageID);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_store_items", "WHERE WarehouseID = '%d' ORDER BY Price", WarehouseID);
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");

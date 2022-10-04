@@ -1,29 +1,30 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "StorageCore.h"
+#include "WarehouseCore.h"
 
 #include <game/server/gamecontext.h>
 
 #include <game/server/mmocore/Components/Inventory/InventoryCore.h>
 
-void CStorageCore::OnInit()
+void CWarehouseCore::OnInit()
 {
-	const auto InitStorages = Sqlpool.Prepare<DB::SELECT>("*", "tw_storages");
+	const auto InitStorages = Sqlpool.Prepare<DB::SELECT>("*", "tw_warehouses");
 	InitStorages->AtExecute([](IServer*, ResultPtr pRes)
 	{
 		while (pRes->next())
 		{
 			const int ID = pRes->getInt("ID");
-			CStorageData::ms_aStorage[ID].m_PosX = pRes->getInt("PosX");
-			CStorageData::ms_aStorage[ID].m_PosY = pRes->getInt("PosY");
-			CStorageData::ms_aStorage[ID].m_Currency = pRes->getInt("Currency");
-			CStorageData::ms_aStorage[ID].m_WorldID = pRes->getInt("WorldID");
-			str_copy(CStorageData::ms_aStorage[ID].m_aName, pRes->getString("Name").c_str(), sizeof(CStorageData::ms_aStorage[ID].m_aName));
+			std::string Name = pRes->getString("Name").c_str();
+			vec2 Pos = vec2((float)pRes->getInt("PosX"), (float)pRes->getInt("PosY"));
+			int Currency = pRes->getInt("Currency");
+			int WorldID = pRes->getInt("WorldID");
+
+			CWarehouse(ID).Init(Name, Pos, Currency, WorldID);
 		}
 	});
 }
 
-bool CStorageCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CWarehouseCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
@@ -45,7 +46,7 @@ bool CStorageCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	return false;
 }
 
-bool CStorageCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CWarehouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
 	if(PPSTR(CMD, "REPAIRITEMS") == 0)
@@ -58,28 +59,28 @@ bool CStorageCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const
 	return false;
 }
 
-int CStorageCore::GetStorageID(vec2 Pos) const
+int CWarehouseCore::GetWarehouseID(vec2 Pos) const
 {
-	const auto pStorage = std::find_if(CStorageData::ms_aStorage.begin(), CStorageData::ms_aStorage.end(), [Pos](const std::pair < int, CStorageData >& pItem)
+	const auto pStorage = std::find_if(CWarehouse::Data().begin(), CWarehouse::Data().end(), [Pos](const auto& pItem)
 	{
 		const vec2 PosStorage(pItem.second.m_PosX, pItem.second.m_PosY);
 		return (distance(PosStorage, Pos) < 200);
 	});
-	return pStorage != CStorageData::ms_aStorage.end() ? (*pStorage).first : -1;
+	return pStorage != CWarehouse::Data().end() ? (*pStorage).first : -1;
 }
 
-void CStorageCore::ShowStorageMenu(CPlayer* pPlayer, int StorageID)
+void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, int WarehouseID)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(CStorageData::ms_aStorage.find(StorageID) == CStorageData::ms_aStorage.end())
+	if(CWarehouse::Data().find(WarehouseID) == CWarehouse::Data().end())
 	{
 		GS()->AV(ClientID, "null", "Storage Don't work");
 		return;
 	}
 
-	GS()->AVH(ClientID, TAB_STORAGE, "Shop :: {STR}", CStorageData::ms_aStorage[StorageID].m_aName);
-	GS()->AVM(ClientID, "REPAIRITEMS", StorageID, TAB_STORAGE, "Repair all items - FREE");
+	GS()->AVH(ClientID, TAB_STORAGE, "Shop :: {STR}", CWarehouse::Data()[WarehouseID].GetName());
+	GS()->AVM(ClientID, "REPAIRITEMS", WarehouseID, TAB_STORAGE, "Repair all items - FREE");
 	GS()->AV(ClientID, "null");
-	GS()->ShowVotesItemValueInformation(pPlayer, CStorageData::ms_aStorage[StorageID].m_Currency);
+	GS()->ShowVotesItemValueInformation(pPlayer, CWarehouse::Data()[WarehouseID].GetCurrency());
 	GS()->AV(ClientID, "null");
 }

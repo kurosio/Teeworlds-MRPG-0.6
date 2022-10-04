@@ -26,15 +26,19 @@ public:
 class CTradingSpot : public MultiworldIdentifiableStaticData< std::map< int, CTradingSpot > >
 {
 	int m_ID{};
-	int m_StorageID{};
+	int m_WarehouseID{};
 
 public:
 	CTradingSpot() = default;
 	CTradingSpot(int ID) : m_ID(ID) {}
 
-	void Init(int StorageID) { m_StorageID = StorageID; }
+	void Init(int WarehouseID)
+	{
+		m_WarehouseID = WarehouseID;
+		CTradingSpot::m_pData[m_ID] = *this;
+	}
 
-	int GetStorageID() const { return m_StorageID; }
+	int GetWarehouseID() const { return m_WarehouseID; }
 	int GetID() const { return m_ID; }
 };
 

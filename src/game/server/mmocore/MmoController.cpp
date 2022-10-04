@@ -21,7 +21,7 @@
 #include "Components/Quests/QuestCore.h"
 #include "Components/Shops/ShopCore.h"
 #include "Components/Skills/SkillsCore.h"
-#include "Components/Storages/StorageCore.h"
+#include "Components/Warehouse/WarehouseCore.h"
 #include "Components/Worlds/WorldSwapCore.h"
 
 MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
@@ -30,7 +30,7 @@ MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 	m_Components.add(m_pBotsInfo = new CBotCore());
 	m_Components.add(m_pItemWork = new CInventoryCore());
 	m_Components.add(m_pCraftJob = new CCraftCore());
-	m_Components.add(m_pStorageWork = new CStorageCore());
+	m_Components.add(m_pWarehouse = new CWarehouseCore());
 	m_Components.add(m_pShopmail = new CShopCore());
 	m_Components.add(m_pQuest = new QuestCore());
 	m_Components.add(m_pDungeonJob = new DungeonCore());
@@ -389,9 +389,9 @@ void MmoController::ConSyncLinesForTranslate()
 			PushingDialogs(JsonData, pItem.second.m_aName, "qudn", pItem.first);
 			PushingDialogs(JsonData, pItem.second.m_aStoryLine, "qusn", pItem.first);
 		}
-		for(auto& pItem : CStorageData::ms_aStorage)
+		for(auto& pItem : CWarehouse::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.m_aName, "stnm", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetName(), "stnm", pItem.first);
 		}
 		for(auto& pItem : CHouseData::ms_aHouse)
 		{

@@ -26,7 +26,7 @@ public:
 private:
 	bool BuyShopItem(CPlayer* pPlayer, int ID);
 	void ShowAuction(CPlayer* pPlayer);
-	void ShowMailShop(CPlayer* pPlayer, int StorageID);
+	void ShowMailShop(CPlayer* pPlayer, int WarehouseID);
 };
 
 #endif

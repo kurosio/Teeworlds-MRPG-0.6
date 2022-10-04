@@ -38,7 +38,7 @@ class MmoController
 	class CAccountPlantCore *m_pAccPlant;
 	class QuestCore *m_pQuest;
 	class CShopCore *m_pShopmail;
-	class CStorageCore *m_pStorageWork;
+	class CWarehouseCore *m_pWarehouse;
 	class GuildCore* m_pGuildJob;
 	class CCraftCore* m_pCraftJob;
 	class DungeonCore* m_pDungeonJob;
@@ -61,7 +61,7 @@ public:
 	CAccountPlantCore *PlantsAcc() const { return m_pAccPlant; }
 	QuestCore *Quest() const { return m_pQuest; }
 	CShopCore *Auction() const { return m_pShopmail; }
-	CStorageCore *Storage() const { return m_pStorageWork; }
+	CWarehouseCore *Warehouse() const { return m_pWarehouse; }
 
 	CCraftCore* Craft() const { return m_pCraftJob; }
 	DungeonCore* Dungeon() const { return m_pDungeonJob; }
