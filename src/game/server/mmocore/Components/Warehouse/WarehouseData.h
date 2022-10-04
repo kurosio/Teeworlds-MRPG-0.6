@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 
+#include <game/server/mmocore/Components/Inventory/ItemInfoData.h>
+
 class CWarehouse : public MultiworldIdentifiableStaticData< std::map< int, CWarehouse > >
 {
 	int m_ID{};
@@ -27,7 +29,7 @@ public:
 	int GetID() const { return m_ID; }
 	const char* GetName() const { return m_aName; }
 	vec2 GetPos() const { return m_Pos; }
-	int GetCurrency() const { return m_Currency; }
+	CItemDescription* Currency() const { return &CItemDescription::Data()[m_Currency]; }
 	int GetWorldID() const { return m_WorldID; }
 };
 

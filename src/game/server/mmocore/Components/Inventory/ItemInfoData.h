@@ -50,6 +50,7 @@ public:
 	int GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const;
 	int GetEnchantPrice(int EnchantLevel) const;
 
+	int GetID() const { return m_ItemID; }
 	int GetInitialPrice() const { return m_InitialPrice; }
 	int GetDysenthis() const { return m_Dysenthis; }
 
