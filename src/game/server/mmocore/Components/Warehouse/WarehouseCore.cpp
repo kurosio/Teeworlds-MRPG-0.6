@@ -63,8 +63,7 @@ int CWarehouseCore::GetWarehouseID(vec2 Pos) const
 {
 	const auto pStorage = std::find_if(CWarehouse::Data().begin(), CWarehouse::Data().end(), [Pos](const auto& pItem)
 	{
-		const vec2 PosStorage(pItem.second.m_PosX, pItem.second.m_PosY);
-		return (distance(PosStorage, Pos) < 200);
+		return (distance(pItem.second.GetPos(), Pos) < 200);
 	});
 	return pStorage != CWarehouse::Data().end() ? (*pStorage).first : -1;
 }

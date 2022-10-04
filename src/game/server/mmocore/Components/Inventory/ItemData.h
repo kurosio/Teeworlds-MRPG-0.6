@@ -16,7 +16,7 @@ protected:
 
 public:
 	CItem() = default;
-	CItem(int ID, int Value, int Enchant, int Durability, int Settings) : m_ItemID(ID), m_Value(Value), m_Enchant(Enchant), m_Durability(Durability), m_Settings(Settings) {}
+	CItem(int ID, int Value = 0, int Enchant = 0, int Durability = 0, int Settings = 0) : m_ItemID(ID), m_Value(Value), m_Enchant(Enchant), m_Durability(Durability), m_Settings(Settings) {}
 
 	// getters
 	int GetID() const { return m_ItemID; }
