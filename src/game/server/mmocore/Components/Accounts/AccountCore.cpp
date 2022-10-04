@@ -385,7 +385,7 @@ void CAccountCore::UseVoucher(int ClientID, const char* pVoucher) const
 
 					if(ItemID > NOPE && Value > 0)
 					{
-						if(CItemDataInfo::ms_aItemsInfo.find(ItemID) != CItemDataInfo::ms_aItemsInfo.end())
+						if(CItemDescription::Data().find(ItemID) != CItemDescription::Data().end())
 							pPlayer->GetItem(ItemID)->Add(Value);
 					}
 				}

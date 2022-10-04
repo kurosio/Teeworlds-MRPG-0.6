@@ -4,11 +4,9 @@
 
 #include <game/server/gamecontext.h>
 
-std::map < int, CItemDataInfo > CItemDataInfo::ms_aItemsInfo;
-
-int CItemDataInfo::GetInfoEnchantStats(AttributeIdentifier ID) const
+int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID) const
 {
-	for (const auto& Att : m_aAttribute)
+	for (const auto& Att : m_aAttributes)
 	{
 		AttributeIdentifier SearchID = Att.GetID();
 		if(SearchID >= AttributeIdentifier::SpreadShotgun && SearchID < AttributeIdentifier::ATTRIBUTES_NUM && SearchID == ID)
@@ -17,7 +15,7 @@ int CItemDataInfo::GetInfoEnchantStats(AttributeIdentifier ID) const
 	return 0;
 }
 
-int CItemDataInfo::GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const
+int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const
 {
 	const int StatSize = GetInfoEnchantStats(ID);
 	if(StatSize <= 0)
@@ -33,10 +31,10 @@ int CItemDataInfo::GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) cons
 	return EnchantStat;
 }
 
-int CItemDataInfo::GetEnchantPrice(int EnchantLevel) const
+int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 {
 	int FinishedPrice = 0;
-	for (const auto& Att : m_aAttribute)
+	for (const auto& Att : m_aAttributes)
 	{
 		if(Att.HasValue())
 		{
@@ -62,14 +60,14 @@ int CItemDataInfo::GetEnchantPrice(int EnchantLevel) const
 	return FinishedPrice;
 }
 
-bool CItemDataInfo::IsEnchantable() const
+bool CItemDescription::IsEnchantable() const
 {
-	return std::any_of(std::begin(m_aAttribute), std::end(m_aAttribute), [](const CAttribute &p){return p.GetValue() > 0; });
+	return std::any_of(std::begin(m_aAttributes), std::end(m_aAttributes), [](const CAttribute &p){return p.GetValue() > 0; });
 }
 
-bool CItemDataInfo::IsEnchantMaxLevel(int Enchant) const
+bool CItemDescription::IsEnchantMaxLevel(int Enchant) const
 {
-	for (const auto& Att : m_aAttribute)
+	for (const auto& Att : m_aAttributes)
 	{
 		if(Att.HasValue())
 		{
@@ -81,10 +79,10 @@ bool CItemDataInfo::IsEnchantMaxLevel(int Enchant) const
 	return false;
 }
 
-void CItemDataInfo::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const
+void CItemDescription::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const
 {
 	dynamic_string Buffer;
-	for (const auto& Att : m_aAttribute)
+	for (const auto& Att : m_aAttributes)
 	{
 		if(Att.HasValue())
 		{
@@ -96,7 +94,7 @@ void CItemDataInfo::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Siz
 	Buffer.clear();
 }
 
-void CItemDataInfo::StrFormatEnchantLevel(char* pBuffer, int Size, int Enchant) const
+void CItemDescription::StrFormatEnchantLevel(char* pBuffer, int Size, int Enchant) const
 {
 	if(Enchant > 0)
 	{

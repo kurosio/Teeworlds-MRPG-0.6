@@ -129,7 +129,7 @@ std::unique_ptr<char[]> CGS::LevelString(int MaxValue, int CurrentValue, int Ste
 	return Buf;
 }
 
-CItemDataInfo &CGS::GetItemInfo(int ItemID) const { return CItemDataInfo::ms_aItemsInfo[ItemID]; }
+CItemDescription* CGS::GetItemInfo(int ItemID) const { return &CItemDescription::Data()[ItemID]; }
 CQuestDataInfo &CGS::GetQuestInfo(int QuestID) const { return CQuestDataInfo::ms_aDataQuests[QuestID]; }
 
 CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const
@@ -1816,7 +1816,7 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, int ItemID)
 {
 	const int ClientID = pPlayer->GetCID();
-	AVM(ClientID, "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GetItemInfo(ItemID).GetName());
+	AVM(ClientID, "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GetItemInfo(ItemID)->GetName());
 }
 
 // vote parsing of all functions of action methods

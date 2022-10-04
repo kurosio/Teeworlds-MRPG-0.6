@@ -369,9 +369,9 @@ bool CBotCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 					continue;
 
 				const float Chance = MobData.m_aRandomItem[i];
-				CItemDataInfo &InfoDropItem = GS()->GetItemInfo(MobData.m_aDropItem[i]);
+				CItemDescription* pDropItemInfo = GS()->GetItemInfo(MobData.m_aDropItem[i]);
 				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", MobData.m_aValueItem[i], Chance, ExtraChance);
-				GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}{STR}", InfoDropItem.GetName(), aBuf);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}{STR}", pDropItemInfo->GetName(), aBuf);
 				HasDropItem = true;
 			}
 

@@ -84,7 +84,7 @@ bool CAccountMinerCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 		{
 			const int HideID = (NUM_TAB_MENU + ID) << 0x10;
 			const vec2 Pos = Ore.m_Position / 32.0f;
-			const CItemDataInfo* pItemInfo = &GS()->GetItemInfo(Ore.m_ItemID);
+			CItemDescription* pItemInfo = GS()->GetItemInfo(Ore.m_ItemID);
 			GS()->AVH(ClientID, HideID, "Ore {STR} [x{INT} y{INT}]", pItemInfo->GetName(), Ore.m_StartHealth, (int)Pos.x, (int)Pos.y);
 			GS()->AVM(ClientID, "null", NOPE, HideID, "Level: {INT} | Health: {INT}P", Ore.m_Level, Ore.m_StartHealth);
 			GS()->AVM(ClientID, "null", NOPE, HideID, "Distance of distribution: {INT}P", Ore.m_Distance);

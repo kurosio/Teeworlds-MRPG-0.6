@@ -738,7 +738,7 @@ void GuildCore::ShowDecorationList(CPlayer* pPlayer)
 		if (deco.second && deco.second->m_HouseID == HouseID)
 		{
 			GS()->AVD(ClientID, "DECOGUILDDELETE", deco.first, deco.second->m_DecoID, 1, "{STR}:{INT} back to the inventory",
-				GS()->GetItemInfo(deco.second->m_DecoID).GetName(), deco.first);
+				GS()->GetItemInfo(deco.second->m_DecoID)->GetName(), deco.first);
 		}
 	}
 }
@@ -961,7 +961,7 @@ void GuildCore::ShowGuildPlayers(CPlayer* pPlayer, int GuildID)
 {
 	const int ClientID = pPlayer->GetCID();
 	const bool SelfGuild = pPlayer->Acc().m_GuildID == GuildID;
-	int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 1000;
+	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1000;
 
 	GS()->AVL(ClientID, "null", "List players of {STR}", CGuildData::ms_aGuild[GuildID].m_aName);
 
@@ -1201,7 +1201,7 @@ void GuildCore::ChangePlayerRank(int AccountID, int RankID)
 void GuildCore::ShowMenuRank(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 1300;
+	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1300;
 	pPlayer->m_LastVoteMenu = MENU_GUILD;
 
 	GS()->AV(ClientID, "null", "Use reason how enter Value, Click fields!");
@@ -1268,7 +1268,7 @@ void GuildCore::SendInviteGuild(int GuildID, CPlayer *pPlayer)
 // show the invitation sheet to our guild
 void GuildCore::ShowInvitesGuilds(int ClientID, int GuildID)
 {
-	int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 1900;
+	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1900;
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds_invites", "WHERE GuildID = '%d'", GuildID);
 	while(pRes->next())
 	{
@@ -1294,7 +1294,7 @@ void GuildCore::ShowFinderGuilds(int ClientID)
 	GS()->AV(ClientID, "null");
 	GS()->AVM(ClientID, "MINVITENAME", 1, NOPE, "Find guild: {STR}", pPlayer->GetTempData().m_aGuildSearchBuf);
 
-	int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + 1800;
+	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1800;
 	CSqlString<64> cGuildName = CSqlString<64>(pPlayer->GetTempData().m_aGuildSearchBuf);
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "WHERE Name LIKE '%%%s%%'", cGuildName.cstr());
 	while(pRes->next())

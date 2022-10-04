@@ -37,24 +37,27 @@ void CInventoryCore::OnInit()
 	{
 		while (pRes->next())
 		{
-			CItemDataInfo ItemInfo;
-			str_copy(ItemInfo.m_aName, pRes->getString("Name").c_str(), sizeof(ItemInfo.m_aName));
-			str_copy(ItemInfo.m_aDesc, pRes->getString("Description").c_str(), sizeof(ItemInfo.m_aDesc));
-			ItemInfo.m_Type = (ItemType)pRes->getInt("Type");
-			ItemInfo.m_Function = (ItemFunctional)pRes->getInt("Function");
-			ItemInfo.m_InitialPrice = pRes->getInt("InitialPrice");
-			ItemInfo.m_Dysenthis = pRes->getInt("Desynthesis");
+			const int ID = pRes->getInt("ID");
+			std::string Name = pRes->getString("Name").c_str();
+			std::string Description = pRes->getString("Description").c_str();
+			ItemType Type = (ItemType)pRes->getInt("Type");
+			ItemFunctional Function = (ItemFunctional)pRes->getInt("Function");
+			int InitialPrice = pRes->getInt("InitialPrice");
+			int Dysenthis = pRes->getInt("Desynthesis");
 
+			CItemDescription::ContainerAttributes aContainerAttributes;
 			for (int i = 0; i < STATS_MAX_FOR_ITEM; i++)
 			{
 				char aAttributeID[32], aAttributeValue[32];
 				str_format(aAttributeID, sizeof(aAttributeID), "Attribute%d", i);
 				str_format(aAttributeValue, sizeof(aAttributeValue), "AttributeValue%d", i);
-				ItemInfo.m_aAttribute[i] = CAttribute((AttributeIdentifier)pRes->getInt(aAttributeID), pRes->getInt(aAttributeValue)) ;
+
+				AttributeIdentifier AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
+				int AttributeValue = pRes->getInt(aAttributeValue);
+				aContainerAttributes.push_back({ AttributeID, AttributeValue });
 			}
 
-			const int ID = pRes->getInt("ID");
-			CItemDataInfo::ms_aItemsInfo[ID] = ItemInfo;
+			CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes);
 		}
 	});
 
@@ -274,8 +277,8 @@ void CInventoryCore::RepairDurabilityItems(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
-	for(auto& it : CPlayerItem::Data()[ClientID])
-		it.second.m_Durability = 100;
+	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
+		Item.m_Durability = 100;
 }
 
 void CInventoryCore::ListInventory(int ClientID, ItemType Type)

@@ -379,7 +379,7 @@ public:
 	static void Init(IServer* pServer) { m_pServer = pServer; }
 };
 
-template < class T >
+template < typename T >
 class MultiworldIdentifiableStaticData : public _StoreMultiworldIdentifiableStaticData
 {
 protected:

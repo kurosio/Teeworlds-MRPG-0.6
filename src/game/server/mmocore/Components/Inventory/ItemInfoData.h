@@ -9,19 +9,38 @@
 
 #include "AttributeData.h"
 
-class CItemDataInfo
+class CItemDescription : public MultiworldIdentifiableStaticData < std::map< int, CItemDescription > >
 {
+public:
+	using ContainerAttributes = std::deque< CAttribute >;
+private:
 	friend class CInventoryCore;
 
-	char m_aName[32];
-	char m_aDesc[64];
-	ItemType m_Type;
-	int m_Dysenthis;
-	int m_InitialPrice;
-	ItemFunctional m_Function;
-	CAttribute m_aAttribute[STATS_MAX_FOR_ITEM];
+	int m_ItemID{};
+	char m_aName[32]{};
+	char m_aDesc[64]{};
+	ItemType m_Type{};
+	int m_Dysenthis{};
+	int m_InitialPrice{};
+	ItemFunctional m_Function{};
+	ContainerAttributes m_aAttributes{};
 
 public:
+	CItemDescription() = default;
+	CItemDescription(int ID) : m_ItemID(ID) {}
+
+	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes)
+	{
+		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
+		str_copy(m_aDesc, Description.c_str(), sizeof(m_aDesc));
+		m_Type = Type;
+		m_Dysenthis = Dysenthis;
+		m_InitialPrice = InitialPrice;
+		m_Function = Function;
+		m_aAttributes = std::move(aAttributes);
+		CItemDescription::m_pData[m_ItemID] = *this;
+	}
+
 	// main functions
 	const char* GetName() const { return m_aName; }
 	const char* GetDesc() const { return m_aDesc; }
@@ -45,8 +64,6 @@ public:
 
 	void StrFormatAttributes(class CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const;
 	void StrFormatEnchantLevel(char* pBuffer, int Size, int Enchant) const;
-
-	static std::map< int, CItemDataInfo > ms_aItemsInfo;
 };
 
 #endif

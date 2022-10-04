@@ -32,7 +32,7 @@ public:
 	virtual bool SetDurability(int Durability){ m_Durability = Durability; return true; }
 	virtual bool SetSettings(int Settings) { m_Settings = Settings; return true; }
 
-	CItemDataInfo* Info() const { return &CItemDataInfo::ms_aItemsInfo[m_ItemID]; }
+	CItemDescription* Info() const { return &CItemDescription::Data()[m_ItemID]; }
 };
 
 class CPlayerItem : public CItem, public MultiworldIdentifiableStaticData< std::map < int, std::map < int, CPlayerItem > > >

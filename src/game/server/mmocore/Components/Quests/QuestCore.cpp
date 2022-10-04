@@ -212,8 +212,8 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			const int RewardValue = pBotInfo->m_aItemGivesValue[i];
 			if(RewardItemID > 0 && RewardValue > 0)
 			{
-				CItemDataInfo &RewardItem = GS()->GetItemInfo(RewardItemID);
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Receive {STR}x{VAL}", RewardItem.GetName(), RewardValue);
+				CItemDescription* pRewardItemInfo = GS()->GetItemInfo(RewardItemID);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Receive {STR}x{VAL}", pRewardItemInfo->GetName(), RewardValue);
 			}
 		}
 

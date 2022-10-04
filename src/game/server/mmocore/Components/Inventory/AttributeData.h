@@ -5,12 +5,12 @@
 
 class CAttributeDescription : public MultiworldIdentifiableStaticData< std::map < AttributeIdentifier, CAttributeDescription > >
 {
-	char m_aName[32];
-	char m_aFieldName[32];
-	AttributeIdentifier m_ID;
-	AttributeType m_Type;
-	int m_UpgradePrice;
-	int m_Dividing;
+	char m_aName[32]{};
+	char m_aFieldName[32]{};
+	AttributeIdentifier m_ID{};
+	AttributeType m_Type{};
+	int m_UpgradePrice{};
+	int m_Dividing{};
 
 public:
 	CAttributeDescription() = default;

@@ -373,7 +373,7 @@ void MmoController::ConSyncLinesForTranslate()
 		{
 			PushingDialogs(JsonData, Item.GetName(), "attb", (int)ID);
 		}
-		for(auto& pItem : CItemDataInfo::ms_aItemsInfo)
+		for(auto& pItem : CItemDescription::Data())
 		{
 			PushingDialogs(JsonData, pItem.second.GetName(), "ittm", pItem.first);
 			PushingDialogs(JsonData, pItem.second.GetDesc(), "itdc", pItem.first);

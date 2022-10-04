@@ -174,7 +174,7 @@ bool CCharacter::DecoInteractive()
 		const int InteractiveType = m_pPlayer->GetTempData().m_TempDecorationType;
 		m_pPlayer->GetTempData().m_TempDecoractionID = -1;
 		m_pPlayer->GetTempData().m_TempDecorationType = -1;
-		if(m_pPlayer->GetItem(DecoID)->GetValue() <= 0 || GS()->GetItemInfo(DecoID).GetType() != ItemType::TYPE_DECORATION)
+		if(m_pPlayer->GetItem(DecoID)->GetValue() <= 0 || GS()->GetItemInfo(DecoID)->GetType() != ItemType::TYPE_DECORATION)
 			return false;
 
 		if (InteractiveType == DECORATIONS_HOUSE)
@@ -182,7 +182,7 @@ bool CCharacter::DecoInteractive()
 			const int HouseID = GS()->Mmo()->House()->PlayerHouseID(m_pPlayer);
 			if (GS()->Mmo()->House()->AddDecorationHouse(DecoID, HouseID, GetMousePos()))
 			{
-				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID).GetName());
+				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
 				GS()->ResetVotes(ClientID, MenuList::MENU_HOUSE_DECORATION);
 				return true;
@@ -193,7 +193,7 @@ bool CCharacter::DecoInteractive()
 			const int GuildID = m_pPlayer->Acc().m_GuildID;
 			if (GS()->Mmo()->Member()->AddDecorationHouse(DecoID, GuildID, GetMousePos()))
 			{
-				GS()->Chat(ClientID, "You added {STR}, to your guild house!", GS()->GetItemInfo(DecoID).GetName());
+				GS()->Chat(ClientID, "You added {STR}, to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
 				GS()->ResetVotes(ClientID, MenuList::MENU_GUILD_HOUSE_DECORATION);
 				return true;
@@ -1065,7 +1065,7 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 		m_Health = m_pPlayer->GetStartHealth();
 	}
 
-	const CItemDataInfo* pItemInfo = &GS()->GetItemInfo(ItemID);
+	CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
 	if((pItemInfo->GetFunctional() >= EQUIP_HAMMER && pItemInfo->GetFunctional() <= EQUIP_LASER))
 		m_pPlayer->GetCharacter()->GiveWeapon(pItemInfo->GetFunctional(), 3);
 

@@ -54,14 +54,14 @@ void CRandomBoxRandomizer::Tick()
 		if(m_pPlayer && m_pPlayer->GetCharacter())
 		{
 			const vec2 PlayerPosition = m_pPlayer->GetCharacter()->m_Core.m_Pos;
-			GS()->CreateText(nullptr, false, vec2(PlayerPosition.x, PlayerPosition.y - 80), vec2(0, -0.3f), 15, GS()->GetItemInfo(pSelectedRandomItem->m_ItemID).GetName());
+			GS()->CreateText(nullptr, false, vec2(PlayerPosition.x, PlayerPosition.y - 80), vec2(0, -0.3f), 15, GS()->GetItemInfo(pSelectedRandomItem->m_ItemID)->GetName());
 		}
 
 		if(!m_LifeTime)
 		{
 			auto GiveRandomItem = [&](StructRandomItem& pItem)
 			{
-				if(GS()->GetItemInfo(pItem.m_ItemID).IsEnchantable())
+				if(GS()->GetItemInfo(pItem.m_ItemID)->IsEnchantable())
 				{
 					for(int i = 0; i < pItem.m_Value; i++)
 					{

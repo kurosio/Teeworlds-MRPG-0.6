@@ -11,7 +11,7 @@ class CInventoryCore : public MmoComponent
 	~CInventoryCore() override
 	{
 		CAttributeDescription::Data().clear();
-		CItemDataInfo::ms_aItemsInfo.clear();
+		CItemDescription::Data().clear();
 		CPlayerItem::Data().clear();
 	}
 

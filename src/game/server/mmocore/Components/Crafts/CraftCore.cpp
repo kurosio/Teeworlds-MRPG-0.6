@@ -72,8 +72,8 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 
 	for(const auto& [CraftID, CraftData] : CCraftData::ms_aCraft)
 	{
-		CItemDataInfo& CraftItem = GS()->GetItemInfo(CraftData.m_ItemID);
-		if(CraftItem.GetType() != Type || CraftData.m_WorldID != GS()->GetWorldID())
+		CItemDescription* pCraftItemInfo = GS()->GetItemInfo(CraftData.m_ItemID);
+		if(pCraftItemInfo->GetType() != Type || CraftData.m_WorldID != GS()->GetWorldID())
 			continue;
 
 		if(!IsNotEmpty)
@@ -83,20 +83,20 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 		}
 
 		const int Price = GetFinalPrice(pPlayer, CraftID);
-		const int HideID = NUM_TAB_MENU + CItemDataInfo::ms_aItemsInfo.size() + CraftID;
-		if (CraftItem.IsEnchantable())
+		const int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + CraftID;
+		if (pCraftItemInfo->IsEnchantable())
 		{
-			GS()->AVH(ClientID, HideID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(CraftData.m_ItemID)->GetValue() ? "✔ " : "\0"), CraftItem.GetName(), Price);
+			GS()->AVH(ClientID, HideID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(CraftData.m_ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 
 			char aAttributes[128];
-			CraftItem.StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
+			pCraftItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
 			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", aAttributes);
 		}
 		else
 		{
-			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", CraftItem.GetName(), CraftData.m_ItemValue, pPlayer->GetItem(CraftData.m_ItemID)->GetValue(), Price);
+			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", pCraftItemInfo->GetName(), CraftData.m_ItemValue, pPlayer->GetItem(CraftData.m_ItemID)->GetValue(), Price);
 		}
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", CraftItem.GetDesc());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pCraftItemInfo->GetDesc());
 
 		for(int i = 0; i < 3; i++)
 		{
@@ -108,7 +108,7 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(RequiredItemID);
 			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR} {VAL}({VAL})", pPlayerItem->Info()->GetName(), RequiredValue, pPlayerItem->GetValue());
 		}
-		GS()->AVM(ClientID, "CRAFT", CraftID, HideID, "Craft {STR}", CraftItem.GetName());
+		GS()->AVM(ClientID, "CRAFT", CraftID, HideID, "Craft {STR}", pCraftItemInfo->GetName());
 	}
 
 	if(IsNotEmpty)
@@ -135,7 +135,7 @@ void CCraftCore::CraftItem(CPlayer *pPlayer, int CraftID) const
 			continue;
 
 		const int ItemLeft = (SearchValue - pPlayer->GetItem(SearchItemID)->GetValue());
-		GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{STR}x{VAL} ", GS()->GetItemInfo(SearchItemID).GetName(), ItemLeft);
+		GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{STR}x{VAL} ", GS()->GetItemInfo(SearchItemID)->GetName(), ItemLeft);
 	}
 	if(Buffer.length() > 0)
 	{
@@ -154,7 +154,7 @@ void CCraftCore::CraftItem(CPlayer *pPlayer, int CraftID) const
 	if(TickedDiscountCraft)
 	{
 		pPlayer->GetItem(itTicketDiscountCraft)->Remove(1);
-		GS()->Chat(ClientID, "You used item {STR} and get discount 25%.", GS()->GetItemInfo(itTicketDiscountCraft).GetName());
+		GS()->Chat(ClientID, "You used item {STR} and get discount 25%.", GS()->GetItemInfo(itTicketDiscountCraft)->GetName());
 	}
 
 	for(int i = 0; i < 3; i++)
