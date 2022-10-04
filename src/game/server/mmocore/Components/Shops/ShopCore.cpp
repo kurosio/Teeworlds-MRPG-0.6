@@ -17,7 +17,7 @@ void CShopCore::OnInit()
 		int ID = pRes->getInt("ID");
 		int StorageID = pRes->getInt("StorageID");
 
-		CShop(ID).Init(StorageID);
+		CTradingSpot(ID).Init(StorageID);
 	}
 }
 

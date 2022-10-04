@@ -10,7 +10,7 @@ class CShopCore : public MmoComponent
 {
 	~CShopCore() override
 	{
-		CShop::Data().clear();
+		CTradingSpot::Data().clear();
 	};
 
 	void OnInit() override;
