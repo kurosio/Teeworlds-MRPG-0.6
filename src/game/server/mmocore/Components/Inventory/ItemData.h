@@ -8,15 +8,15 @@
 class CItem
 {
 protected:
-	int m_ItemID;
-	int m_Value;
-	int m_Enchant;
-	int m_Durability;
-	int m_Settings;
+	int m_ItemID{};
+	int m_Value{};
+	int m_Enchant{};
+	int m_Durability{};
+	int m_Settings{};
 
 public:
 	CItem() = default;
-	CItem(int ID, int Value, int Enchant, int Durability, int Settings) : m_ItemID(ID), m_Value(Value), m_Enchant(Enchant), m_Durability(Durability),m_Settings(Settings) {}
+	CItem(int ID, int Value, int Enchant, int Durability, int Settings) : m_ItemID(ID), m_Value(Value), m_Enchant(Enchant), m_Durability(Durability), m_Settings(Settings) {}
 
 	// getters
 	int GetID() const { return m_ItemID; }
