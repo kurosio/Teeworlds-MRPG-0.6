@@ -80,6 +80,6 @@ void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, int WarehouseID)
 	GS()->AVH(ClientID, TAB_STORAGE, "Shop :: {STR}", CWarehouse::Data()[WarehouseID].GetName());
 	GS()->AVM(ClientID, "REPAIRITEMS", WarehouseID, TAB_STORAGE, "Repair all items - FREE");
 	GS()->AV(ClientID, "null");
-	GS()->ShowVotesItemValueInformation(pPlayer, CWarehouse::Data()[WarehouseID].Currency()->GetID());
+	GS()->ShowVotesItemValueInformation(pPlayer, CWarehouse::Data()[WarehouseID].GetCurrency()->GetID());
 	GS()->AV(ClientID, "null");
 }

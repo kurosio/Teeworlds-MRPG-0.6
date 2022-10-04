@@ -4,6 +4,7 @@
 #define GAME_SERVER_COMPONENT_SHOP_DATA_H
 
 #include <game/server/mmocore/Components/Inventory/ItemData.h>
+#include <game/server/mmocore/Components/Warehouse/WarehouseData.h>
 
 class CAuctionSlot
 {
@@ -38,7 +39,7 @@ public:
 		CTradingSpot::m_pData[m_ID] = *this;
 	}
 
-	int GetWarehouseID() const { return m_WarehouseID; }
+	CWarehouse* GetWarehouse() const { return &CWarehouse::Data()[m_WarehouseID]; }
 	int GetID() const { return m_ID; }
 };
 

@@ -29,7 +29,7 @@ public:
 	int GetID() const { return m_ID; }
 	const char* GetName() const { return m_aName; }
 	vec2 GetPos() const { return m_Pos; }
-	CItemDescription* Currency() const { return &CItemDescription::Data()[m_Currency]; }
+	CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_Currency]; }
 	int GetWorldID() const { return m_WorldID; }
 };
 
