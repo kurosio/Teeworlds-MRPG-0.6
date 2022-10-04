@@ -3,19 +3,39 @@
 #ifndef GAME_SERVER_COMPONENT_SHOP_DATA_H
 #define GAME_SERVER_COMPONENT_SHOP_DATA_H
 
-struct CAuctionItem
+#include <game/server/mmocore/Components/Inventory/ItemData.h>
+
+class CAuctionSlot
 {
-	int m_ItemID;
-	int m_Value;
-	int m_Price;
-	int m_Enchant;
+	CItem m_Item{};
+	int m_Price{};
+
+public:
+	CAuctionSlot() = default;
+	CAuctionSlot(CItem Item, int Price) : m_Item(std::move(Item)), m_Price(Price) {}
+
+	void SetItem(CItem Item) { m_Item = std::move(Item); }
+	void SetPrice(int Price) { m_Price = Price; }
+
+	CItem* GetItem() { return &m_Item; }
+	const CItem* GetItem() const { return &m_Item; }
+	int GetPrice() const { return m_Price; }
 };
 
-struct CShop
-{
-	int m_StorageID;
 
-	static std::map< int, CShop > ms_aShopList;
+class CShop : public MultiworldIdentifiableStaticData< std::map< int, CShop > >
+{
+	int m_ID{};
+	int m_StorageID{};
+
+public:
+	CShop() = default;
+	CShop(int ID) : m_ID(ID) {}
+
+	void Init(int StorageID) { m_StorageID = StorageID; }
+
+	int GetStorageID() const { return m_StorageID; }
+	int GetID() const { return m_ID; }
 };
 
 #endif

@@ -58,7 +58,7 @@ struct CAccountTempData
 	int m_TempDecorationType;
 	int m_TempID3;
 
-	CAuctionItem m_SellItem;
+	CAuctionSlot m_AuctionData;
 
 	// temp rankname for guild rank settings
 	char m_aRankGuildBuf[32];

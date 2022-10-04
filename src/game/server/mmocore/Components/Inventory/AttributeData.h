@@ -39,8 +39,8 @@ public:
 
 class CAttribute
 {
-	AttributeIdentifier m_ID;
-	int m_Value;
+	AttributeIdentifier m_ID{};
+	int m_Value{};
 
 public:
 	CAttribute() = default;

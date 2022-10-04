@@ -10,7 +10,7 @@ class CShopCore : public MmoComponent
 {
 	~CShopCore() override
 	{
-		CShop::ms_aShopList.clear();
+		CShop::Data().clear();
 	};
 
 	void OnInit() override;
@@ -20,7 +20,7 @@ class CShopCore : public MmoComponent
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
 public:
-	void CreateAuctionSlot(CPlayer *pPlayer, CAuctionItem &pAuctionItem);
+	void CreateAuctionSlot(CPlayer *pPlayer, CAuctionSlot* pAuctionData);
 	void CheckAuctionTime();
 
 private:
