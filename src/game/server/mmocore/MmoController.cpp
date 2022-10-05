@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "MmoController.h"
 
-#include <engine/storage.h>
 #include <engine/shared/datafile.h>
 #include <game/server/gamecontext.h>
 #include <teeother/system/string.h>
@@ -10,6 +9,7 @@
 #include "Components/Accounts/AccountCore.h"
 #include "Components/Accounts/AccountMinerCore.h"
 #include "Components/Accounts/AccountPlantCore.h"
+#include "Components/Auction/AuctionCore.h"
 #include "Components/Aethers/AetherCore.h"
 #include "Components/Bots/BotCore.h"
 #include "Components/Crafts/CraftCore.h"
@@ -19,7 +19,6 @@
 #include "Components/Inventory/InventoryCore.h"
 #include "Components/Mails/MailBoxCore.h"
 #include "Components/Quests/QuestCore.h"
-#include "Components/Shops/ShopCore.h"
 #include "Components/Skills/SkillsCore.h"
 #include "Components/Warehouse/WarehouseCore.h"
 #include "Components/Worlds/WorldSwapCore.h"
@@ -31,7 +30,7 @@ MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 	m_Components.add(m_pItemWork = new CInventoryCore());
 	m_Components.add(m_pCraftJob = new CCraftCore());
 	m_Components.add(m_pWarehouse = new CWarehouseCore());
-	m_Components.add(m_pShopmail = new CShopCore());
+	m_Components.add(new CAuctionCore());
 	m_Components.add(m_pQuest = new QuestCore());
 	m_Components.add(m_pDungeonJob = new DungeonCore());
 	m_Components.add(new CAetherCore());

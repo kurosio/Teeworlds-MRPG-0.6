@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 #define GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 
-#include <game/server/mmocore/Components/Shops/ShopData.h>
+#include <game/server/mmocore/Components/Auction/AuctionData.h>
 #include <game/server/mmocore/Utils/FieldData.h>
 
 struct CAccountData

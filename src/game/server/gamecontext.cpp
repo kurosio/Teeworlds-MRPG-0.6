@@ -32,6 +32,8 @@
 
 #include <cstdarg>
 
+#include "mmocore/Components/Warehouse/WarehouseData.h"
+
 // static data that have the same value in different objects
 std::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
 int CGS::m_MultiplierExp = 100;
@@ -131,12 +133,8 @@ std::unique_ptr<char[]> CGS::LevelString(int MaxValue, int CurrentValue, int Ste
 
 CItemDescription* CGS::GetItemInfo(int ItemID) const { return &CItemDescription::Data()[ItemID]; }
 CQuestDataInfo &CGS::GetQuestInfo(int QuestID) const { return CQuestDataInfo::ms_aDataQuests[QuestID]; }
-
-CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const
-{
-	return &CAttributeDescription::Data()[ID];
-} 
-
+CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const { return &CAttributeDescription::Data()[ID]; }
+CWarehouse* CGS::GetWarehouse(int ID) const { return &CWarehouse::Data()[ID]; }
 
 /* #########################################################################
 	EVENTS

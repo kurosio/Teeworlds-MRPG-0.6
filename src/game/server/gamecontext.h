@@ -71,9 +71,10 @@ public:
 	CPlayer *GetPlayer(int ClientID, bool CheckAuthed = false, bool CheckCharacter = false);
 	CPlayer *GetPlayerFromUserID(int AccountID);
 	std::unique_ptr<char[]> LevelString(int MaxValue, int CurrentValue, int Step, char toValue, char fromValue);
-	CItemDescription* GetItemInfo(int ItemID) const;
+	class CItemDescription* GetItemInfo(int ItemID) const;
 	CQuestDataInfo &GetQuestInfo(int QuestID) const;
-	CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;
+	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;
+	class CWarehouse* GetWarehouse(int ID) const;
 
 	/* #########################################################################
 		EVENTS

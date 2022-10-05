@@ -1,10 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_SHOP_DATA_H
-#define GAME_SERVER_COMPONENT_SHOP_DATA_H
+#ifndef GAME_SERVER_COMPONENT_AUCTION_DATA_H
+#define GAME_SERVER_COMPONENT_AUCTION_DATA_H
 
 #include <game/server/mmocore/Components/Inventory/ItemData.h>
-#include <game/server/mmocore/Components/Warehouse/WarehouseData.h>
 
 class CAuctionSlot
 {
@@ -21,26 +20,6 @@ public:
 	CItem* GetItem() { return &m_Item; }
 	const CItem* GetItem() const { return &m_Item; }
 	int GetPrice() const { return m_Price; }
-};
-
-
-class CTradingSpot : public MultiworldIdentifiableStaticData< std::map< int, CTradingSpot > >
-{
-	int m_ID{};
-	int m_WarehouseID{};
-
-public:
-	CTradingSpot() = default;
-	CTradingSpot(int ID) : m_ID(ID) {}
-
-	void Init(int WarehouseID)
-	{
-		m_WarehouseID = WarehouseID;
-		CTradingSpot::m_pData[m_ID] = *this;
-	}
-
-	CWarehouse* GetWarehouse() const { return &CWarehouse::Data()[m_WarehouseID]; }
-	int GetID() const { return m_ID; }
 };
 
 #endif

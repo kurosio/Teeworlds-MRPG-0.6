@@ -15,11 +15,14 @@ class CWarehouseCore : public MmoComponent
 
 	void OnInit() override;
 	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
+	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
+	void ShowWarehouseMenu(CPlayer *pPlayer, const CWarehouse* pWarehouse) const;
+	bool BuyItem(CPlayer* pPlayer, int WarehouseID, int TradeID);
+
 public:
-	void ShowWarehouseMenu(CPlayer *pPlayer, int WarehouseID);
-	int GetWarehouseID(vec2 Pos) const;
+	CWarehouse* GetWarehouse(vec2 Pos) const;
 };
 
 #endif

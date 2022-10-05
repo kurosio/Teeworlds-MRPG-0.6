@@ -3,10 +3,14 @@
 #ifndef GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 
-#include <game/server/mmocore/Components/Inventory/ItemInfoData.h>
+#include <game/server/mmocore/Components/Warehouse/TradingSlot.h>
 
 class CWarehouse : public MultiworldIdentifiableStaticData< std::map< int, CWarehouse > >
 {
+public:
+	using ContainerTradingSlots = std::deque<CTradingSlot>;
+
+private:
 	int m_ID{};
 	char m_aName[32]{};
 	vec2 m_Pos{};
@@ -14,6 +18,8 @@ class CWarehouse : public MultiworldIdentifiableStaticData< std::map< int, CWare
 	int m_WorldID{};
 
 public:
+	ContainerTradingSlots m_aTradingSlots{};
+
 	CWarehouse() = default;
 	CWarehouse(int ID) : m_ID(ID) {}
 
