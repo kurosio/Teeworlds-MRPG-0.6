@@ -41,7 +41,7 @@ bool CSkill::Use()
 
 	// mana check
 	CCharacter* pChr = GetPlayer()->GetCharacter();
-	const int ManaCost = translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetManaPercentageCost());
+	const int ManaCost = translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost());
 	if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
 		return false;
 

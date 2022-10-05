@@ -381,7 +381,7 @@ void MmoController::ConSyncLinesForTranslate()
 		{
 			PushingDialogs(JsonData, pItem.second.GetName(), "sknm", pItem.first);
 			PushingDialogs(JsonData, pItem.second.GetDescription(), "skds", pItem.first);
-			PushingDialogs(JsonData, pItem.second.GetBonusName(), "skbn", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetBoostName(), "skbn", pItem.first);
 		}
 		for(auto& pItem : CQuestDataInfo::ms_aDataQuests)
 		{

@@ -33,7 +33,7 @@ public:
 
 	bool IsLearned() const { return m_Level > 0; }
 	int GetLevel() const { return m_Level; }
-	int GetBonus() const { return m_Level * Info()->GetBonusDefault(); }
+	int GetBonus() const { return m_Level * Info()->GetBoostDefault(); }
 	const char* GetSelectedEmoticonName() const { return Info()->GetEmoticonName(m_SelectedEmoticion); }
 
 	void SelectNextControlEmote();
