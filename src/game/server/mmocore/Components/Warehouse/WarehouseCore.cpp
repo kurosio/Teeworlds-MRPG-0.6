@@ -153,7 +153,7 @@ void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWare
 				pItem->Info()->GetName(), pItem->GetValue(), pPlayer->GetItem(pItem->GetID())->GetValue(), Price, pCurrencyItem->GetName());
 		}
 
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItem->Info()->GetDesc());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItem->Info()->GetDescription());
 		GS()->AVD(ClientID, "SHOP_BUY", pWarehouse->GetID(), Trade.GetID(), HideID, "Exchange {STR}x{VAL} to {STR}x{VAL}", pCurrencyItem->GetName(), Price, pItem->Info()->GetName(), pItem->GetValue());
 		HideID++;
 	}

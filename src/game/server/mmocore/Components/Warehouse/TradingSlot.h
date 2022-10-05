@@ -27,6 +27,7 @@ public:
 	}
 
 	TradeIdentifier GetID() const { return m_ID; }
+
 	CItem* GetItem() { return &m_Item; }
 	const CItem* GetItem() const { return &m_Item; }
 	CItemDescription* GetCurrency() { return &CItemDescription::Data()[m_RequiredID]; }

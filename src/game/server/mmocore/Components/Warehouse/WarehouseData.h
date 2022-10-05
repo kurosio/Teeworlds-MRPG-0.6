@@ -35,6 +35,7 @@ public:
 	}
 
 	WarehouseIdentifier GetID() const { return m_ID; }
+
 	const char* GetName() const { return m_aName; }
 	vec2 GetPos() const { return m_Pos; }
 	CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_Currency]; }

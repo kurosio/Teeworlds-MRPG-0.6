@@ -15,12 +15,13 @@ class CItemDescription : public MultiworldIdentifiableStaticData < std::map< int
 {
 public:
 	using ContainerAttributes = std::deque< CAttribute >;
+
 private:
 	friend class CInventoryCore;
 
-	ItemIdentifier m_ItemID{};
+	ItemIdentifier m_ID{};
 	char m_aName[32]{};
-	char m_aDesc[64]{};
+	char m_aDescription[64]{};
 	ItemType m_Type{};
 	int m_Dysenthis{};
 	int m_InitialPrice{};
@@ -29,42 +30,39 @@ private:
 
 public:
 	CItemDescription() = default;
-	CItemDescription(ItemIdentifier ID) : m_ItemID(ID) {}
+	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
 	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes)
 	{
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
-		str_copy(m_aDesc, Description.c_str(), sizeof(m_aDesc));
+		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
 		m_Type = Type;
 		m_Dysenthis = Dysenthis;
 		m_InitialPrice = InitialPrice;
 		m_Function = Function;
 		m_aAttributes = std::move(aAttributes);
-		CItemDescription::m_pData[m_ItemID] = *this;
+		CItemDescription::m_pData[m_ID] = *this;
 	}
+
+	ItemIdentifier GetID() const { return m_ID; }
 
 	// main functions
 	const char* GetName() const { return m_aName; }
-	const char* GetDesc() const { return m_aDesc; }
+	const char* GetDescription() const { return m_aDescription; }
+	int GetInitialPrice() const { return m_InitialPrice; }
+	int GetDysenthis() const { return m_Dysenthis; }
+	ItemFunctional GetFunctional() const { return m_Function; }
+	bool IsFunctional(ItemFunctional Functional) const { return m_Function == Functional; }
+	ItemType GetType() const { return m_Type; }
+	bool IsType(ItemType Type) const { return m_Type == Type; }
+	
+	bool IsEnchantable() const;
+	bool IsEnchantMaxLevel(int Enchant) const;
 
 	// equip modules types functions
 	int GetInfoEnchantStats(AttributeIdentifier ID) const;
 	int GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const;
 	int GetEnchantPrice(int EnchantLevel) const;
-
-	ItemIdentifier GetID() const { return m_ItemID; }
-	int GetInitialPrice() const { return m_InitialPrice; }
-	int GetDysenthis() const { return m_Dysenthis; }
-
-	ItemFunctional GetFunctional() const { return m_Function; }
-	bool IsFunctional(ItemFunctional Functional) const { return m_Function == Functional; }
-
-	ItemType GetType() const { return m_Type; }
-	bool IsType(ItemType Type) const { return m_Type == Type; }
-
-	bool IsEnchantable() const;
-	bool IsEnchantMaxLevel(int Enchant) const;
-
 	void StrFormatAttributes(class CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const;
 	void StrFormatEnchantLevel(char* pBuffer, int Size, int Enchant) const;
 };

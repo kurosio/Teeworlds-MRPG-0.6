@@ -576,17 +576,17 @@ CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)
 	return &CPlayerItem::Data()[m_ClientID][ID];
 }
 
-CSkillData* CPlayer::GetSkill(SkillIdentifier ID)
+CSkill* CPlayer::GetSkill(SkillIdentifier ID)
 {
-	dbg_assert(CSkillDataInfo::Data().find(ID) != CSkillDataInfo::Data().end(), "invalid referring to the CSkillData");
+	dbg_assert(CSkillDescription::Data().find(ID) != CSkillDescription::Data().end(), "invalid referring to the CSkillData");
 	
-	if(CSkillData::Data()[m_ClientID].find(ID) == CSkillData::Data()[m_ClientID].end())
+	if(CSkill::Data()[m_ClientID].find(ID) == CSkill::Data()[m_ClientID].end())
 	{
-		CSkillData(ID, m_ClientID).Init({},{});
-		return &CSkillData::Data()[m_ClientID][ID];
+		CSkill(ID, m_ClientID).Init({},{});
+		return &CSkill::Data()[m_ClientID][ID];
 	}
 
-	return &CSkillData::Data()[m_ClientID][ID];
+	return &CSkill::Data()[m_ClientID][ID];
 }
 
 CQuestData& CPlayer::GetQuest(int QuestID)

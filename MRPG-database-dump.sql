@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Окт 03 2022 г., 19:34
+-- Время создания: Окт 05 2022 г., 17:26
 -- Версия сервера: 10.4.24-MariaDB
 -- Версия PHP: 8.1.5
 
@@ -205,8 +205,8 @@ CREATE TABLE `enum_worlds` (
 --
 
 INSERT INTO `enum_worlds` (`WorldID`, `Name`, `RespawnWorld`, `MusicID`) VALUES
-(0, 'Pier Elfinia', NULL, 53),
-(1, 'Way to the Elfinia', 1, 54),
+(0, 'Some1world', NULL, 53),
+(1, 'Some2world', 1, 54),
 (2, 'Elfinia', 2, 53),
 (3, 'Elfinia Deep cave', 2, 54),
 (4, 'Elfia home room', 2, 53),
@@ -241,7 +241,7 @@ CREATE TABLE `tw_accounts` (
 --
 
 INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `RegisterDate`, `LoginDate`, `RegisteredIP`, `LoginIP`, `Language`) VALUES
-(1, 'kuro', '7dd4cd59370ae03ef3f73b0711cd702df5e1853bf97bf8705244c0c22d759db1', 'TYdfB9M75CLUNGkPCm6PF46C', '2021-10-21 17:26:48', '2022-10-04 00:28:46', '192.168.56.1', '192.168.0.10', 'ru'),
+(1, 'kuro', '7dd4cd59370ae03ef3f73b0711cd702df5e1853bf97bf8705244c0c22d759db1', 'TYdfB9M75CLUNGkPCm6PF46C', '2021-10-21 17:26:48', '2022-10-05 22:19:03', '192.168.56.1', '192.168.0.11', 'ru'),
 (2, 'kuro', 'bc5905cfaa9e0188814fa2a56ecd6a998a4d39c6345ff9bff296bd5086dee93e', 'g8KmHG6T72CGXjRnn2CBq7Zt', '2021-11-04 08:38:30', '2021-11-04 23:23:59', '192.168.9.2', '192.168.42.35', 'ru'),
 (3, 'kuro', 'b46d7846dd83b73171009b49847825aa45abbb37071021d6b4219319a680ba27', 'eVE2pT8AbnS8Lc7AUMLtWRkS', '2021-11-04 12:43:33', '2021-11-04 21:18:05', '192.168.9.2', '192.168.9.2', 'ru'),
 (4, 'kuro', 'da6eee14f58fc11fefade37e6974b2fe18259a1619cffc84279a0d3fd0101d1b', 'Yhg56c79pk6LC97TZVjdbLVg', '2021-11-05 06:51:11', '2021-11-05 14:25:01', '192.168.9.2', '192.168.9.2', 'en'),
@@ -263,11 +263,13 @@ INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `Regist
 (20, 'vlad', '31a4b5319f3973690797c94ad2dc2e5c0ae0da1ce136457d15267a105325adfb', 'f4gXXdNkbYWYEYFcHEkm4jSn', '2022-10-03 12:23:15', '2022-10-03 19:29:40', '46.147.226.251', '46.147.226.251', 'en'),
 (21, 'Dorito', '5dfbafadc8aa194425df825b94b1b6e8d6aee700d65bbb177fd0307644fa05de', 'Cf6hCm44WZ5Z6VjtPGNeogSf', '2022-10-03 12:49:01', '2022-10-03 19:49:21', '91.105.177.78', '91.105.177.78', 'en'),
 (22, 'Yamete', '3fa5df9f295e0519900f91830e0201fed422a1c2636e9963154d0cf782d20479', 'fgFcRnM2fbXjL82FL5c64A5X', '2022-10-03 13:00:54', '2022-10-03 20:01:04', '176.59.205.208', '176.59.205.208', 'en'),
-(23, 'kuro', '6d76332b95dbae4536ea909b71a07a97920f5233d3430576491cea6bcb0b3d2b', 'ENmCUbCWt7FKpUBUDScLgoNY', '2022-10-03 13:33:54', '2022-10-03 20:36:47', '192.168.0.10', '192.168.0.10', 'en'),
+(23, 'kuro', '6d76332b95dbae4536ea909b71a07a97920f5233d3430576491cea6bcb0b3d2b', 'ENmCUbCWt7FKpUBUDScLgoNY', '2022-10-03 13:33:54', '2022-10-04 20:54:45', '192.168.0.10', '192.168.0.11', 'en'),
 (24, 'login', '62042966243b0d3b5e3fc14aa192ad4385723e83fc185ce294ea49b005875814', '2EjBmnVM47aZqn3R3gt9ACon', '2022-10-03 14:33:55', '2022-10-03 21:34:04', '89.77.152.236', '89.77.152.236', 'en'),
 (25, 'androoha23', 'ca7e97f3edd72431362f699289d157a9b7ddf7703849668fe7d504ae88eddf7d', 'ESa34t4Pp5Dokc49dDYDLp6o', '2022-10-03 15:19:16', 'First log in', '188.190.180.188', '0.0.0.0', 'en'),
 (26, 'AvOcaDO', 'cd7e122f4a8d4336c1dd5f5525dea5706d2fc0e608d526461ed4e65e25e33a63', '5Dcdc3ppEFa2F2FePaTRofpV', '2022-10-03 15:35:21', '2022-10-03 22:35:32', '185.3.32.208', '185.3.32.208', 'en'),
-(27, 'Wrawel', '5f4062f1f5d3303bae368e6ed0f3c55af776544c03b1e8632e8dc2ab9b735dfa', 'afmFgoPTPCekXRae6o3bPPoB', '2022-10-03 16:51:35', '2022-10-03 23:51:39', '77.64.253.139', '77.64.253.139', 'en');
+(27, 'Wrawel', '5f4062f1f5d3303bae368e6ed0f3c55af776544c03b1e8632e8dc2ab9b735dfa', 'afmFgoPTPCekXRae6o3bPPoB', '2022-10-03 16:51:35', '2022-10-03 23:51:39', '77.64.253.139', '77.64.253.139', 'en'),
+(28, 'flash429ea', 'c35c493ae9fbd1586caa12bc111b6eb3f07a2041da13655c9585a4c2e49ab138', 'jW7WaXaZBGZSd3H9AWtP3kW3', '2022-10-04 13:31:54', '2022-10-04 23:59:20', '78.162.148.103', '78.162.148.103', 'en'),
+(29, 'kuro', '36fd88d7862eb163f6b8eaee9904bab8644db2922d7aff330e12b51eeac75e75', 'LednaqtRd5C72qhKeTtGNRcL', '2022-10-04 14:07:15', '2022-10-04 21:48:25', '192.168.0.11', '192.168.0.11', 'en');
 
 -- --------------------------------------------------------
 
@@ -320,7 +322,7 @@ CREATE TABLE `tw_accounts_data` (
 --
 
 INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `Exp`, `GuildID`, `GuildDeposit`, `GuildRank`, `Upgrade`, `SpreadShotgun`, `SpreadGrenade`, `SpreadRifle`, `Dexterity`, `CriticalHit`, `DirectCriticalHit`, `Hardness`, `Tenacity`, `Lucky`, `Piety`, `Vampirism`, `AmmoRegen`, `Ammo`, `Efficiency`, `Extraction`) VALUES
-(1, 'kurosio', '571251558457540617', 11, 34, 18290, NULL, 0, NULL, 14001, 7, 1, 5, 0, 0, 0, 10000, 0, 0, 0, 0, 10000, 30, 0, 0),
+(1, 'kurosio', '571251558457540617', 11, 34, 18665, NULL, 0, NULL, 13893, 8, 1, 5, 2, 2, 1, 10000, 0, 1, 1, 1, 10000, 30, 0, 0),
 (2, 'kurosio1', 'null', 2, 3, 99, NULL, 0, NULL, 20, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (3, 'kurosio12', 'null', 0, 2, 2, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (4, 'kurosio44', 'null', 7, 4, 156, NULL, 0, NULL, 30, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -346,7 +348,9 @@ INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `
 (24, 'axe', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (25, 'Aver_top', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (26, 'AvOcaDO', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(27, 'Wrawel', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+(27, 'Wrawel', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(28, 'LewuArda07', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(29, 'Kurosioы', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -392,7 +396,9 @@ INSERT INTO `tw_accounts_farming` (`UserID`, `Level`, `Exp`, `Quantity`, `Upgrad
 (23, 1, 0, 1, 0),
 (24, 1, 0, 1, 0),
 (26, 1, 0, 1, 0),
-(27, 1, 0, 1, 0);
+(27, 1, 0, 1, 0),
+(28, 1, 0, 1, 0),
+(29, 1, 0, 1, 0);
 
 -- --------------------------------------------------------
 
@@ -415,17 +421,15 @@ CREATE TABLE `tw_accounts_items` (
 --
 
 INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`, `Durability`, `UserID`) VALUES
-(1, 2, 1, 1, 1, 100, 1),
-(2, 22, 2, 1, 0, 100, 1),
-(6, 1, 15036, 0, 0, 100, 1),
-(10, 9, 9091, 0, 0, 100, 1),
+(1, 2, 3, 1, 0, 100, 1),
+(2, 22, 4, 3, 0, 100, 1),
+(6, 1, 12338, 0, 0, 100, 1),
+(10, 9, 8363, 0, 0, 100, 1),
 (21, 18, 10090, 0, 0, 100, 1),
-(25, 17, 98, 0, 0, 100, 1),
-(27, 15, 9763, 0, 0, 100, 1),
+(27, 15, 9793, 0, 0, 100, 1),
 (34, 13, 1, 0, 0, 100, 1),
 (38, 23, 2, 0, 0, 100, 1),
-(39, 24, 7, 0, 0, 100, 1),
-(49, 7, 476, 0, 0, 100, 1),
+(49, 7, 241, 0, 0, 100, 1),
 (57, 2, 1, 1, 0, 100, 2),
 (58, 22, 1, 1, 0, 100, 2),
 (61, 3, 1, 1, 0, 100, 2),
@@ -434,7 +438,7 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (66, 22, 1, 1, 0, 100, 3),
 (69, 3, 1, 1, 0, 100, 3),
 (70, 1, 15, 0, 0, 100, 3),
-(73, 16, 3, 0, 0, 100, 1),
+(73, 16, 144, 0, 0, 100, 1),
 (74, 2, 1, 1, 0, 100, 4),
 (75, 22, 1, 1, 0, 100, 4),
 (78, 3, 1, 1, 0, 100, 4),
@@ -469,7 +473,7 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (125, 2, 1, 1, 2, 100, 10),
 (126, 22, 1, 1, 0, 100, 10),
 (127, 1, 1353, 0, 0, 100, 10),
-(149, 25, 2, 0, 0, 100, 1),
+(149, 25, 4, 0, 0, 100, 1),
 (150, 2, 1, 1, 0, 100, 11),
 (151, 22, 1, 1, 0, 100, 11),
 (152, 25, 1, 0, 0, 100, 11),
@@ -502,8 +506,6 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (183, 6, 1, 1, 0, 100, 17),
 (184, 15, 300, 0, 0, 100, 17),
 (185, 19, 1, 1, 0, 100, 17),
-(186, 3, 1, 1, 0, 100, 1),
-(189, 6, 1, 1, 0, 100, 1),
 (190, 8, 1, 0, 0, 100, 1),
 (191, 10, 1, 0, 0, 100, 1),
 (192, 19, 1, 1, 0, 100, 1),
@@ -511,8 +513,7 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (195, 20, 1, 1, 0, 100, 17),
 (196, 20, 1, 1, 0, 100, 1),
 (198, 1, 7, 0, 0, 100, 17),
-(199, 26, 1, 1, 0, 82, 1),
-(200, 27, 1, 1, 0, 100, 1),
+(199, 26, 1, 1, 1, 100, 1),
 (201, 2, 1, 1, 0, 100, 18),
 (202, 22, 1, 1, 0, 100, 18),
 (203, 25, 1, 0, 0, 100, 18),
@@ -534,7 +535,6 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (233, 2, 1, 1, 0, 100, 23),
 (234, 22, 1, 1, 0, 100, 23),
 (235, 25, 1, 0, 0, 100, 23),
-(236, 4, 1, 1, 0, 100, 1),
 (237, 25, 2, 0, 0, 100, 10),
 (238, 5, 1, 1, 5, 100, 10),
 (244, 3, 1, 1, 5, 100, 10),
@@ -555,7 +555,11 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (262, 25, 1, 0, 0, 100, 26),
 (263, 2, 1, 1, 0, 100, 27),
 (264, 22, 1, 1, 0, 100, 27),
-(265, 25, 1, 0, 0, 100, 27);
+(265, 25, 1, 0, 0, 100, 27),
+(283, 3, 1, 1, 0, 100, 1),
+(284, 6, 1, 1, 2, 100, 1),
+(286, 4, 1, 1, 5, 100, 1),
+(292, 17, 1, 0, 0, 100, 1);
 
 -- --------------------------------------------------------
 
@@ -619,7 +623,9 @@ INSERT INTO `tw_accounts_mining` (`UserID`, `Level`, `Exp`, `Upgrade`, `Quantity
 (23, 1, 0, 0, 1),
 (24, 1, 0, 0, 1),
 (26, 1, 0, 0, 1),
-(27, 1, 0, 0, 1);
+(27, 1, 0, 0, 1),
+(28, 1, 0, 0, 1),
+(29, 1, 0, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -657,10 +663,11 @@ INSERT INTO `tw_accounts_skills` (`ID`, `SkillID`, `UserID`, `Level`, `UsedByEmo
 (1, 1, 1, 8, -1),
 (2, 2, 1, 10, -1),
 (3, 5, 1, 4, -1),
-(4, 6, 1, 4, -1),
+(4, 6, 1, 4, 0),
 (5, 1, 5, 1, 0),
 (6, 6, 5, 1, 1),
-(7, 4, 1, 1, -1);
+(7, 4, 1, 1, -1),
+(8, 3, 1, 26, -1);
 
 -- --------------------------------------------------------
 
@@ -685,7 +692,7 @@ CREATE TABLE `tw_aethers` (
 CREATE TABLE `tw_attributs` (
   `ID` int(11) NOT NULL,
   `Name` varchar(32) NOT NULL,
-  `FieldName` varchar(32) NOT NULL DEFAULT 'unfield',
+  `FieldName` varchar(32) DEFAULT NULL,
   `Price` int(11) NOT NULL,
   `Type` int(11) NOT NULL COMMENT '0.tank1.healer2.dps3.weapon4.hard5.jobs 6. others',
   `Divide` int(11) NOT NULL DEFAULT 0
@@ -709,14 +716,30 @@ INSERT INTO `tw_attributs` (`ID`, `Name`, `FieldName`, `Price`, `Type`, `Divide`
 (11, 'Vampirism', 'Vampirism', 1, 1, 5),
 (12, 'Ammo Regen', 'AmmoRegen', 1, 3, 5),
 (13, 'Ammo', 'Ammo', 30, 3, 0),
-(14, 'Efficiency', 'unfield', -1, 5, 0),
-(15, 'Extraction', 'unfield', -1, 5, 0),
-(16, 'Hammer Power', 'unfield', -1, 4, 10),
-(17, 'Gun Power', 'unfield', -1, 4, 10),
-(18, 'Shotgun Power', 'unfield', -1, 4, 10),
-(19, 'Grenade Power', 'unfield', -1, 4, 10),
-(20, 'Rifle Power', 'unfield', -1, 4, 10),
-(21, 'Lucky items', 'unfield', -1, 6, 5);
+(14, 'Efficiency', NULL, -1, 5, 0),
+(15, 'Extraction', NULL, -1, 5, 0),
+(16, 'Hammer Power', NULL, -1, 4, 10),
+(17, 'Gun Power', NULL, -1, 4, 10),
+(18, 'Shotgun Power', NULL, -1, 4, 10),
+(19, 'Grenade Power', NULL, -1, 4, 10),
+(20, 'Rifle Power', NULL, -1, 4, 10),
+(21, 'Lucky items', NULL, -1, 6, 5);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_auction_items`
+--
+
+CREATE TABLE `tw_auction_items` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) NOT NULL,
+  `ItemValue` int(11) NOT NULL,
+  `Price` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL DEFAULT 0,
+  `Enchant` int(11) NOT NULL DEFAULT 0,
+  `Time` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -846,13 +869,18 @@ CREATE TABLE `tw_crafts_list` (
   `ID` int(11) NOT NULL,
   `ItemID` int(11) DEFAULT NULL,
   `ItemValue` int(11) NOT NULL,
-  `RequiredItemID0` int(11) DEFAULT NULL,
-  `RequiredItemID1` int(11) DEFAULT NULL,
-  `RequiredItemID2` int(11) DEFAULT NULL,
-  `RequiredItemsValues` varchar(32) NOT NULL DEFAULT '0 0 0',
+  `RequiredItems` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`RequiredItems`)),
   `Price` int(11) NOT NULL DEFAULT 100,
   `WorldID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+--
+-- Дамп данных таблицы `tw_crafts_list`
+--
+
+INSERT INTO `tw_crafts_list` (`ID`, `ItemID`, `ItemValue`, `RequiredItems`, `Price`, `WorldID`) VALUES
+(1, 16, 10, '{\"items\":[{\"id\": 1, \"value\": 12}]}', 100, 0),
+(2, 4, 10, '{\"items\":[{\"id\": 1, \"value\": 1}, {\"id\": 2, \"value\": 5}]}', 100, 0);
 
 -- --------------------------------------------------------
 
@@ -1062,7 +1090,7 @@ CREATE TABLE `tw_items_list` (
 INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `InitialPrice`, `Desynthesis`, `Attribute0`, `Attribute1`, `AttributeValue0`, `AttributeValue1`) VALUES
 (1, 'Gold', 'Major currency', 0, -1, 0, 0, 16, NULL, 0, 0),
 (2, 'Hammer', 'A normal hammer', 6, 0, 0, 0, 16, 6, 10, 3),
-(3, 'Gun', 'Conventional weapon', 6, 1, 10, 0, 17, NULL, 10, 0),
+(3, 'Gun', 'Conventional weapon', 6, 1, 100, 0, 17, NULL, 10, 0),
 (4, 'Shotgun', 'Conventional weapon', 6, 2, 10, 0, 18, NULL, 5, 0),
 (5, 'Grenade', 'Conventional weapon', 6, 3, 10, 0, 19, NULL, 10, 0),
 (6, 'Rifle', 'Conventional weapon', 6, 4, 10, 0, 20, NULL, 10, 0),
@@ -1171,9 +1199,9 @@ CREATE TABLE `tw_skills_list` (
   `Name` varchar(64) NOT NULL,
   `Description` varchar(64) NOT NULL,
   `Type` int(11) NOT NULL DEFAULT 0 COMMENT '0-Improvements\r\n1-Healer\r\n2-Dps\r\n3-Tank',
-  `BonusName` varchar(64) NOT NULL DEFAULT '''name''',
-  `BonusValue` int(11) NOT NULL DEFAULT 1,
-  `ManaPercentageCost` int(11) NOT NULL DEFAULT 10,
+  `BoostName` varchar(64) NOT NULL DEFAULT '''name''',
+  `BoostValue` int(11) NOT NULL DEFAULT 1,
+  `PercentageCost` int(11) NOT NULL DEFAULT 10,
   `PriceSP` int(11) NOT NULL,
   `MaxLevel` int(11) NOT NULL,
   `Passive` tinyint(1) NOT NULL DEFAULT 0
@@ -1183,46 +1211,13 @@ CREATE TABLE `tw_skills_list` (
 -- Дамп данных таблицы `tw_skills_list`
 --
 
-INSERT INTO `tw_skills_list` (`ID`, `Name`, `Description`, `Type`, `BonusName`, `BonusValue`, `ManaPercentageCost`, `PriceSP`, `MaxLevel`, `Passive`) VALUES
+INSERT INTO `tw_skills_list` (`ID`, `Name`, `Description`, `Type`, `BoostName`, `BoostValue`, `PercentageCost`, `PriceSP`, `MaxLevel`, `Passive`) VALUES
 (1, 'Health turret', 'Creates turret a recovery health ', 1, 'life span', 3, 25, 24, 8, 0),
 (2, 'Sleepy Gravity', 'Magnet mobs to itself', 3, 'radius', 20, 25, 28, 10, 0),
 (3, 'Craft Discount', 'Will give discount on the price of craft items', 0, '% discount gold for craft item', 1, 0, 28, 50, 1),
 (4, 'Proficiency with weapons', 'You can perform an automatic fire', 0, 'can perform an auto fire with all types of weapons', 1, 0, 120, 1, 1),
 (5, 'Blessing of God of war', 'The blessing restores ammo', 3, '% recovers ammo within a radius of 800', 25, 50, 28, 4, 0),
 (6, 'Attack Teleport', 'An attacking teleport that deals damage to all mobs radius', 2, '% your strength', 25, 10, 100, 4, 0);
-
--- --------------------------------------------------------
-
---
--- Структура таблицы `tw_storages`
---
-
-CREATE TABLE `tw_storages` (
-  `ID` int(11) NOT NULL,
-  `Name` varchar(32) NOT NULL DEFAULT '''Bussines name''',
-  `PosX` int(11) NOT NULL,
-  `PosY` int(11) NOT NULL,
-  `Currency` int(11) NOT NULL DEFAULT 1,
-  `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------------------
-
---
--- Структура таблицы `tw_store_items`
---
-
-CREATE TABLE `tw_store_items` (
-  `ID` int(11) NOT NULL,
-  `ItemID` int(11) NOT NULL,
-  `ItemValue` int(11) NOT NULL,
-  `RequiredItemID` int(11) NOT NULL DEFAULT 1,
-  `Price` int(11) NOT NULL,
-  `UserID` int(11) NOT NULL DEFAULT 0,
-  `Enchant` int(11) NOT NULL DEFAULT 0,
-  `StorageID` int(11) DEFAULT NULL,
-  `Time` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1257,6 +1252,53 @@ CREATE TABLE `tw_voucher_redeemed` (
   `UserID` int(11) NOT NULL,
   `TimeCreated` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_warehouses`
+--
+
+CREATE TABLE `tw_warehouses` (
+  `ID` int(11) NOT NULL,
+  `Name` varchar(32) NOT NULL DEFAULT '''Bussines name''',
+  `PosX` int(11) NOT NULL,
+  `PosY` int(11) NOT NULL,
+  `Currency` int(11) NOT NULL DEFAULT 1,
+  `WorldID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_warehouses`
+--
+
+INSERT INTO `tw_warehouses` (`ID`, `Name`, `PosX`, `PosY`, `Currency`, `WorldID`) VALUES
+(1, '\'Sososos\'', 4307, 625, 1, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_warehouse_items`
+--
+
+CREATE TABLE `tw_warehouse_items` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) NOT NULL,
+  `ItemValue` int(11) NOT NULL,
+  `RequiredItemID` int(11) NOT NULL DEFAULT 1,
+  `Price` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL DEFAULT 0,
+  `Enchant` int(11) NOT NULL DEFAULT 0,
+  `WarehouseID` int(11) DEFAULT NULL,
+  `Time` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_warehouse_items`
+--
+
+INSERT INTO `tw_warehouse_items` (`ID`, `ItemID`, `ItemValue`, `RequiredItemID`, `Price`, `UserID`, `Enchant`, `WarehouseID`, `Time`) VALUES
+(3, 15, 1, 1, 50, 0, 0, 1, '2022-10-04 20:13:02');
 
 -- --------------------------------------------------------
 
@@ -1429,6 +1471,17 @@ ALTER TABLE `tw_attributs`
   ADD PRIMARY KEY (`ID`);
 
 --
+-- Индексы таблицы `tw_auction_items`
+--
+ALTER TABLE `tw_auction_items`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `ItemID` (`ItemID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `Time` (`Time`),
+  ADD KEY `Price` (`Price`);
+
+--
 -- Индексы таблицы `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
@@ -1489,9 +1542,6 @@ ALTER TABLE `tw_crafts_list`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `ID` (`ID`),
   ADD KEY `CraftIID` (`ItemID`),
-  ADD KEY `Craft_Item_0` (`RequiredItemID0`),
-  ADD KEY `Craft_Item_1` (`RequiredItemID1`),
-  ADD KEY `Craft_Item_2` (`RequiredItemID2`),
   ADD KEY `WorldID` (`WorldID`);
 
 --
@@ -1646,28 +1696,6 @@ ALTER TABLE `tw_skills_list`
   ADD UNIQUE KEY `ID` (`ID`);
 
 --
--- Индексы таблицы `tw_storages`
---
-ALTER TABLE `tw_storages`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `WorldID` (`WorldID`),
-  ADD KEY `Currency` (`Currency`);
-
---
--- Индексы таблицы `tw_store_items`
---
-ALTER TABLE `tw_store_items`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `ItemID` (`ItemID`),
-  ADD KEY `OwnerID` (`UserID`),
-  ADD KEY `StorageID` (`StorageID`),
-  ADD KEY `Time` (`Time`),
-  ADD KEY `NeedItem` (`RequiredItemID`),
-  ADD KEY `Price` (`Price`);
-
---
 -- Индексы таблицы `tw_voucher`
 --
 ALTER TABLE `tw_voucher`
@@ -1678,6 +1706,28 @@ ALTER TABLE `tw_voucher`
 --
 ALTER TABLE `tw_voucher_redeemed`
   ADD PRIMARY KEY (`ID`);
+
+--
+-- Индексы таблицы `tw_warehouses`
+--
+ALTER TABLE `tw_warehouses`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `WorldID` (`WorldID`),
+  ADD KEY `Currency` (`Currency`);
+
+--
+-- Индексы таблицы `tw_warehouse_items`
+--
+ALTER TABLE `tw_warehouse_items`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `ItemID` (`ItemID`),
+  ADD KEY `OwnerID` (`UserID`),
+  ADD KEY `StorageID` (`WarehouseID`),
+  ADD KEY `Time` (`Time`),
+  ADD KEY `NeedItem` (`RequiredItemID`),
+  ADD KEY `Price` (`Price`);
 
 --
 -- Индексы таблицы `tw_world_swap`
@@ -1721,7 +1771,7 @@ ALTER TABLE `enum_items_types`
 -- AUTO_INCREMENT для таблицы `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_aethers`
@@ -1733,19 +1783,19 @@ ALTER TABLE `tw_accounts_aethers`
 -- AUTO_INCREMENT для таблицы `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=266;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=293;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
 --
 ALTER TABLE `tw_accounts_mailbox`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_quests`
@@ -1757,12 +1807,18 @@ ALTER TABLE `tw_accounts_quests`
 -- AUTO_INCREMENT для таблицы `tw_accounts_skills`
 --
 ALTER TABLE `tw_accounts_skills`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_aethers`
 --
 ALTER TABLE `tw_aethers`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_auction_items`
+--
+ALTER TABLE `tw_auction_items`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -1793,7 +1849,7 @@ ALTER TABLE `tw_bots_quest`
 -- AUTO_INCREMENT для таблицы `tw_crafts_list`
 --
 ALTER TABLE `tw_crafts_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_dungeons`
@@ -1898,18 +1954,6 @@ ALTER TABLE `tw_skills_list`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT для таблицы `tw_storages`
---
-ALTER TABLE `tw_storages`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT для таблицы `tw_store_items`
---
-ALTER TABLE `tw_store_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT для таблицы `tw_voucher`
 --
 ALTER TABLE `tw_voucher`
@@ -1920,6 +1964,18 @@ ALTER TABLE `tw_voucher`
 --
 ALTER TABLE `tw_voucher_redeemed`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_warehouses`
+--
+ALTER TABLE `tw_warehouses`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_warehouse_items`
+--
+ALTER TABLE `tw_warehouse_items`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_world_swap`
@@ -2045,10 +2101,7 @@ ALTER TABLE `tw_bots_quest`
 -- Ограничения внешнего ключа таблицы `tw_crafts_list`
 --
 ALTER TABLE `tw_crafts_list`
-  ADD CONSTRAINT `tw_crafts_list_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_crafts_list_ibfk_2` FOREIGN KEY (`RequiredItemID0`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_crafts_list_ibfk_3` FOREIGN KEY (`RequiredItemID1`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_crafts_list_ibfk_4` FOREIGN KEY (`RequiredItemID2`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
+  ADD CONSTRAINT `tw_crafts_list_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `tw_dungeons`
@@ -2146,6 +2199,20 @@ ALTER TABLE `tw_logics_worlds`
 --
 ALTER TABLE `tw_positions_plant`
   ADD CONSTRAINT `tw_positions_plant_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_warehouses`
+--
+ALTER TABLE `tw_warehouses`
+  ADD CONSTRAINT `tw_warehouses_ibfk_1` FOREIGN KEY (`Currency`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Ограничения внешнего ключа таблицы `tw_warehouse_items`
+--
+ALTER TABLE `tw_warehouse_items`
+  ADD CONSTRAINT `tw_warehouse_items_ibfk_1` FOREIGN KEY (`WarehouseID`) REFERENCES `tw_warehouses` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_warehouse_items_ibfk_2` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_warehouse_items_ibfk_3` FOREIGN KEY (`RequiredItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

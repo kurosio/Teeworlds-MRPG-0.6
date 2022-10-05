@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "SkillDataInfo.h"
 
-const char* CSkillDataInfo::GetControlEmoteStateName(int EmoticionID)
+const char* CSkillDescription::GetEmoticonName(int EmoticionID)
 {
 	switch(EmoticionID)
 	{

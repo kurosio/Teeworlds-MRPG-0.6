@@ -11,16 +11,16 @@ void CSkillsCore::OnInit()
 	{
 		std::string Name = pRes->getString("Name").c_str();
 		std::string Description = pRes->getString("Description").c_str();
-		std::string BonusName = pRes->getString("BonusName").c_str();
-		int BonusDefault = pRes->getInt("BonusValue");
-		int ManaPercentageCost = pRes->getInt("ManaPercentageCost");
+		std::string BoostName = pRes->getString("BoostName").c_str();
+		int BoostValue = pRes->getInt("BoostValue");
+		int PercentageCost = pRes->getInt("PercentageCost");
 		int PriceSP = pRes->getInt("PriceSP");
 		int MaxLevel = pRes->getInt("MaxLevel");
 		bool Passive = pRes->getBoolean("Passive");
 		SkillType Type = (SkillType)pRes->getInt("Type");
 
 		SkillIdentifier ID = pRes->getInt("ID");
-		CSkillDataInfo(ID).Init(Name, Description, BonusName, BonusDefault, Type, ManaPercentageCost, PriceSP, MaxLevel, Passive);
+		CSkillDescription(ID).Init(Name, Description, BoostName, BoostValue, Type, PercentageCost, PriceSP, MaxLevel, Passive);
 	}
 }
 
@@ -34,13 +34,13 @@ void CSkillsCore::OnInitAccount(CPlayer *pPlayer)
 		int SelectedEmoticion = pRes->getInt("UsedByEmoticon");
 
 		SkillIdentifier ID = pRes->getInt("SkillID");
-		CSkillData(ID, ClientID).Init(Level, SelectedEmoticion);
+		CSkill(ID, ClientID).Init(Level, SelectedEmoticion);
 	}
 }
 
 void CSkillsCore::OnResetClient(int ClientID)
 {
-	CSkillData::Data().erase(ClientID);
+	CSkill::Data().erase(ClientID);
 }
 
 bool CSkillsCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
@@ -122,7 +122,7 @@ void CSkillsCore::ShowMailSkillList(CPlayer *pPlayer, SkillType Type) const
 	const char* pSkillTypeName[NUM_SKILL_TYPES] = { "Improving", "Healing", "Attacking", "Defensive" };
 
 	GS()->AVL(ClientID, "null", "{STR} skill's", pSkillTypeName[Type]);
-	for (const auto& [ID, Skill] : CSkillDataInfo::Data())
+	for (const auto& [ID, Skill] : CSkillDescription::Data())
 	{
 		if(Skill.m_Type == Type)
 			ShowSkill(pPlayer, ID);
@@ -133,32 +133,32 @@ void CSkillsCore::ShowMailSkillList(CPlayer *pPlayer, SkillType Type) const
 void CSkillsCore::ShowSkill(CPlayer *pPlayer, SkillIdentifier ID) const
 {
 	const int ClientID = pPlayer->GetCID();
-	CSkillData* pSkill = pPlayer->GetSkill(ID);
+	CSkill* pSkill = pPlayer->GetSkill(ID);
 
 	const int HideID = NUM_TAB_MENU + ID;
 	const bool IsPassive = pSkill->Info()->IsPassive();
 	const bool IsMaximumLevel = pSkill->GetLevel() >= pSkill->Info()->GetMaxLevel();
 
 	GS()->AVH(ClientID, HideID, "{STR} - {INT}SP ({INT}/{INT})", pSkill->Info()->GetName(), pSkill->Info()->GetPriceSP(), pSkill->GetLevel(), pSkill->Info()->GetMaxLevel());
-	GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pSkill->Info()->GetDesc());
+	GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pSkill->Info()->GetDescription());
 	if(!IsMaximumLevel)
 	{
-		const int NewBonus = pSkill->GetBonus() + pSkill->Info()->GetBonusDefault();
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Next level {INT} {STR}", NewBonus, pSkill->Info()->GetBonusName());
+		const int NewBonus = pSkill->GetBonus() + pSkill->Info()->GetBoostDefault();
+		GS()->AVM(ClientID, "null", NOPE, HideID, "Next level {INT} {STR}", NewBonus, pSkill->Info()->GetBoostName());
 	}
 	else
 	{
 		const int ActiveBonus = pSkill->GetBonus();
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Max level {INT} {STR}", ActiveBonus, pSkill->Info()->GetBonusName());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "Max level {INT} {STR}", ActiveBonus, pSkill->Info()->GetBoostName());
 	}
 
 	if(!IsPassive)
 	{
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Mana required {INT}%", pSkill->Info()->GetManaPercentageCost());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "Mana required {INT}%", pSkill->Info()->GetPercentageCost());
 		if(pSkill->IsLearned())
 		{
 			GS()->AVM(ClientID, "null", NOPE, HideID, "F1 Bind: (bind 'key' say \"/useskill {INT}\")", ID);
-			GS()->AVM(ClientID, "SKILLCHANGEEMOTICION", ID, HideID, "Used on {STR}", pSkill->GetControlEmoteStateName());
+			GS()->AVM(ClientID, "SKILLCHANGEEMOTICION", ID, HideID, "Used on {STR}", pSkill->GetSelectedEmoticonName());
 		}
 	}
 
@@ -173,7 +173,7 @@ void CSkillsCore::ParseEmoticionSkill(CPlayer *pPlayer, int EmoticionID)
 	if(pPlayer && pPlayer->IsAuthed() && pPlayer->GetCharacter())
 	{
 		const int ClientID = pPlayer->GetCID();
-		for(auto& [ID, Skill] : CSkillData::Data()[ClientID])
+		for(auto& [ID, Skill] : CSkill::Data()[ClientID])
 		{
 			if (Skill.m_SelectedEmoticion == EmoticionID)
 				Skill.Use();

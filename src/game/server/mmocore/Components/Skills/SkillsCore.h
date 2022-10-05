@@ -10,8 +10,8 @@ class CSkillsCore : public MmoComponent
 {
 	~CSkillsCore() override
 	{
-		CSkillDataInfo::Data().clear();
-		CSkillData::Data().clear();
+		CSkillDescription::Data().clear();
+		CSkill::Data().clear();
 	};
 
 	void OnInit() override;

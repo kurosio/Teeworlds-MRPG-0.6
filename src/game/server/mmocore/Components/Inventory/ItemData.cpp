@@ -288,3 +288,52 @@ bool CPlayerItem::Save() const
 	}
 	return false;
 }
+
+// helper functions
+CItem CItem::FromJSON(const std::string& json)
+{
+	try
+	{
+		nlohmann::json JsonData = nlohmann::json::parse(json);
+		
+		ItemIdentifier ID = JsonData.value("id", 0);
+		int Value = JsonData.value("value", 0);
+		int Enchant = JsonData.value("enchant", 0);
+		int Durability = JsonData.value("durability", 0);
+
+		CItem Item(ID, Value, Enchant, Durability);
+		return Item;
+	}
+	catch (nlohmann::json::exception& s)
+	{
+		dbg_msg("CItem(FromJSON)", "%s (json %s)", json.c_str(), s.what());
+	}
+
+	return {};
+}
+
+CItemsContainer CItem::FromArrayJSON(const std::string& json)
+{
+	CItemsContainer Container;
+	try
+	{
+		nlohmann::json JsonData = nlohmann::json::parse(json);
+
+		for(auto& p : JsonData["items"])
+		{
+			ItemIdentifier ID = p.value("id", 0);
+			int Value = p.value("value", 0);
+			int Enchant = p.value("enchant", 0);
+			int Durability = p.value("durability", 0);
+
+			CItem Item(ID, Value, Enchant, Durability);
+			Container.push_back(Item);
+		}
+	}
+	catch (nlohmann::json::exception& s)
+	{
+		dbg_msg("CItem(FromArrayJson)", "(json %s)", s.what());
+	}
+
+	return Container;
+}

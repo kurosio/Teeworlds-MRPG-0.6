@@ -310,7 +310,7 @@ void CAuctionCore::ShowAuction(CPlayer* pPlayer)
 				pItemInfo->GetName(), ItemValue, pPlayer->GetItem(ItemID)->GetValue(), Price);
 		}
 
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemInfo->GetDesc());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemInfo->GetDescription());
 		GS()->AVM(ClientID, "null", NOPE, HideID, "Seller {STR}", Job()->PlayerName(UserID));
 		GS()->AVM(ClientID, "SHOP", ID, HideID, "Buy Price {VAL} gold", Price);
 		FoundItems = true;

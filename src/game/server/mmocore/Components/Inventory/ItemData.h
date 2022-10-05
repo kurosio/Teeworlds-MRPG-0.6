@@ -5,6 +5,9 @@
 
 #include "ItemInfoData.h"
 
+class CItem;
+using CItemsContainer = std::deque<CItem>;
+
 class CItem
 {
 protected:
@@ -18,27 +21,32 @@ public:
 	CItem() = default;
 	CItem(ItemIdentifier ID, int Value = 0, int Enchant = 0, int Durability = 0, int Settings = 0) : m_ID(ID), m_Value(Value), m_Enchant(Enchant), m_Durability(Durability), m_Settings(Settings) {}
 
-	// getters
 	ItemIdentifier GetID() const { return m_ID; }
+	virtual void SetID(ItemIdentifier ID) { m_ID = ID; }
+
+	// getters
 	int GetValue() const { return m_Value; }
 	int GetEnchant() const{return m_Enchant;}
 	int GetDurability() const{return m_Durability;}
 	int GetSettings() const{ return m_Settings; }
 
 	// virtual functions
-	virtual void SetID(ItemIdentifier ID) { m_ID = ID; }
 	virtual bool SetValue(int Value) { m_Value = Value; return true; }
 	virtual bool SetEnchant(int Enchant) { m_Enchant = Enchant; return true; }
 	virtual bool SetDurability(int Durability){ m_Durability = Durability; return true; }
 	virtual bool SetSettings(int Settings) { m_Settings = Settings; return true; }
 
 	CItemDescription* Info() const { return &CItemDescription::Data()[m_ID]; }
+
+	// helper functions
+	[[nodiscard]] static CItem FromJSON(const std::string& json);
+	[[nodiscard]] static CItemsContainer FromArrayJSON(const std::string& json);
 };
 
 class CPlayerItem : public CItem, public MultiworldIdentifiableStaticData< std::map < int, std::map < int, CPlayerItem > > >
 {
 	friend class CInventoryCore;
-	int m_ClientID;
+	int m_ClientID{};
 
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
@@ -56,9 +64,7 @@ public:
 		CPlayerItem::m_pData[m_ClientID][m_ID] = *this;
 	}
 	
-	static bool IsValidItem(ItemIdentifier ID) { return m_pData.find(ID) != m_pData.end(); }
-
-	// equip modules types functions
+	// getters
 	int GetEnchantStats(AttributeIdentifier ID) const { return Info()->GetInfoEnchantStats(ID, m_Enchant); }
 	int GetEnchantPrice() const { return Info()->GetEnchantPrice(m_Enchant); }
 	bool IsEquipped() const

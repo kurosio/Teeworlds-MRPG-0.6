@@ -399,7 +399,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 		GS()->AVH(ClientID, HideID, "{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, (pItemPlayer.m_Enchant > 0 ? aEnchantBuf : "\0"));
 
 		if(Dress && pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped())
-			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDesc());
+			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDescription());
 
 		char aAttributes[64];
 		pItemPlayer.StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
@@ -408,7 +408,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 	else
 	{
 		GS()->AVH(ClientID, HideID, "{STR}{STR} x{VAL}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.m_Value);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDesc());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDescription());
 	}
 
 	// functional by function

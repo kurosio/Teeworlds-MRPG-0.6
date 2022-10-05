@@ -8,12 +8,12 @@
 #include "Entities/AttackTeleport/attack-teleport.h"
 #include "Entities/SleepyGravity/sleepy-gravity.h"
 
-CGS* CSkillData::GS() const
+CGS* CSkill::GS() const
 {
 	return (CGS*)Server()->GameServerPlayer(m_ClientID);
 }
 
-CPlayer* CSkillData::GetPlayer() const
+CPlayer* CSkill::GetPlayer() const
 {
 	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
 	{
@@ -22,7 +22,7 @@ CPlayer* CSkillData::GetPlayer() const
 	return nullptr;
 }
 
-void CSkillData::SelectNextControlEmote()
+void CSkill::SelectNextControlEmote()
 {
 	if(!GetPlayer() || !GetPlayer()->IsAuthed())
 		return;
@@ -34,7 +34,7 @@ void CSkillData::SelectNextControlEmote()
 	Sqlpool.Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_SelectedEmoticion, m_ID, GetPlayer()->Acc().m_UserID);
 }
 
-bool CSkillData::Use()
+bool CSkill::Use()
 {
 	if(!GetPlayer() || !GetPlayer()->IsAuthed() || !GetPlayer()->GetCharacter() || m_Level <= 0)
 		return false;
@@ -108,7 +108,7 @@ bool CSkillData::Use()
 	return false;
 }
 
-bool CSkillData::Upgrade()
+bool CSkill::Upgrade()
 {
 	if(!GetPlayer() || !GetPlayer()->IsAuthed() || m_Level >= Info()->GetMaxLevel())
 		return false;

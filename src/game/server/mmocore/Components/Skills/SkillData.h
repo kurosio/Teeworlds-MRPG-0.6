@@ -5,7 +5,7 @@
 
 #include "SkillDataInfo.h"
 
-class CSkillData : public MultiworldIdentifiableStaticData< std::map< int, std::map < int, CSkillData > > >
+class CSkill : public MultiworldIdentifiableStaticData< std::map< int, std::map < int, CSkill > > >
 {
 	friend class CSkillsCore;
 
@@ -18,28 +18,29 @@ class CSkillData : public MultiworldIdentifiableStaticData< std::map< int, std::
 	int m_SelectedEmoticion{};
 
 public:
-	CSkillData() = default;
-	CSkillData(SkillIdentifier ID, int ClientID) : m_ID(ID), m_ClientID(ClientID) { }
+	CSkill() = default;
+	CSkill(SkillIdentifier ID, int ClientID) : m_ID(ID), m_ClientID(ClientID) { }
 	
 	void Init(int Level, int SelectedEmoticion)
 	{
 		m_Level = Level;
 		m_SelectedEmoticion = SelectedEmoticion;
-		CSkillData::m_pData[m_ClientID][m_ID] = *this;
+		CSkill::m_pData[m_ClientID][m_ID] = *this;
 	}
 
 	void SetID(SkillIdentifier ID) { m_ID = ID; }
 	SkillIdentifier GetID() const { return m_ID; }
-	int GetBonus() const { return m_Level * Info()->GetBonusDefault(); }
+
 	bool IsLearned() const { return m_Level > 0; }
 	int GetLevel() const { return m_Level; }
-	const char* GetControlEmoteStateName() const { return Info()->GetControlEmoteStateName(m_SelectedEmoticion); }
+	int GetBonus() const { return m_Level * Info()->GetBonusDefault(); }
+	const char* GetSelectedEmoticonName() const { return Info()->GetEmoticonName(m_SelectedEmoticion); }
 
 	void SelectNextControlEmote();
 	bool Upgrade();
 	bool Use();
 
-	CSkillDataInfo* Info() const { return &CSkillDataInfo::Data()[m_ID]; }
+	CSkillDescription* Info() const { return &CSkillDescription::Data()[m_ID]; }
 };
 
 #endif
