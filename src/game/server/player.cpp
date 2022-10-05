@@ -563,16 +563,30 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 	return false;
 }
 
-CPlayerItem* CPlayer::GetItem(int ItemID)
+CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)
 {
-	return &CPlayerItem::Data()[m_ClientID][ItemID];
+	dbg_assert(CItemDescription::Data().find(ID) != CItemDescription::Data().end(), "invalid referring to the CPlayerItem");
+
+	if(CPlayerItem::Data()[m_ClientID].find(ID) == CPlayerItem::Data()[m_ClientID].end())
+	{
+		CPlayerItem(ID, m_ClientID).Init({}, {}, {}, {});
+		return &CPlayerItem::Data()[m_ClientID][ID];
+	}
+
+	return &CPlayerItem::Data()[m_ClientID][ID];
 }
 
-CSkillData* CPlayer::GetSkill(int SkillID)
+CSkillData* CPlayer::GetSkill(SkillIdentifier ID)
 {
-	CSkillData::ms_aSkills[m_ClientID][SkillID].m_SkillID = SkillID;
-	CSkillData::ms_aSkills[m_ClientID][SkillID].SetSkillOwner(this);
-	return &CSkillData::ms_aSkills[m_ClientID][SkillID];
+	dbg_assert(CSkillDataInfo::Data().find(ID) != CSkillDataInfo::Data().end(), "invalid referring to the CSkillData");
+	
+	if(CSkillData::Data()[m_ClientID].find(ID) == CSkillData::Data()[m_ClientID].end())
+	{
+		CSkillData(ID, m_ClientID).Init({},{});
+		return &CSkillData::Data()[m_ClientID][ID];
+	}
+
+	return &CSkillData::Data()[m_ClientID][ID];
 }
 
 CQuestData& CPlayer::GetQuest(int QuestID)

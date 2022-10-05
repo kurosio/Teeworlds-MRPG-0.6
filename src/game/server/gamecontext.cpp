@@ -131,10 +131,24 @@ std::unique_ptr<char[]> CGS::LevelString(int MaxValue, int CurrentValue, int Ste
 	return Buf;
 }
 
-CItemDescription* CGS::GetItemInfo(ItemIdentifier ItemID) const { return &CItemDescription::Data()[ItemID]; }
+CItemDescription* CGS::GetItemInfo(ItemIdentifier ItemID) const
+{
+	dbg_assert(CItemDescription::Data().find(ItemID) != CItemDescription::Data().end(), "invalid referring to the CItemDescription");
+	return &CItemDescription::Data()[ItemID];
+}
 CQuestDataInfo &CGS::GetQuestInfo(int QuestID) const { return CQuestDataInfo::ms_aDataQuests[QuestID]; }
-CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const { return &CAttributeDescription::Data()[ID]; }
-CWarehouse* CGS::GetWarehouse(int ID) const { return &CWarehouse::Data()[ID]; }
+
+CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const
+{
+	dbg_assert(CAttributeDescription::Data().find(ID) != CAttributeDescription::Data().end(), "invalid referring to the CAttributeDescription");
+	return &CAttributeDescription::Data()[ID];
+}
+
+CWarehouse* CGS::GetWarehouse(int ID) const
+{
+	dbg_assert(CWarehouse::Data().find(ID) != CWarehouse::Data().end(), "invalid referring to the CWarehouse");
+	return &CWarehouse::Data()[ID];
+}
 
 /* #########################################################################
 	EVENTS

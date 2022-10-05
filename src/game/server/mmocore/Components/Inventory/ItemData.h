@@ -79,7 +79,6 @@ public:
 	void StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size) const { Info()->StrFormatAttributes(pPlayer, pBuffer, Size, m_Enchant); }
 
 	// override functions
-	void SetID(ItemIdentifier ID) override { /* disabled for player item data */}
 	bool SetValue(int Value) override;
 	bool SetEnchant(int Enchant) override;
 	bool SetDurability(int Durability) override;

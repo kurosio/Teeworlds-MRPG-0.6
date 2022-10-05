@@ -6,26 +6,22 @@
 
 void CSkillsCore::OnInit()
 {
-	auto InitSkills = Sqlpool.Prepare<DB::SELECT>("*", "tw_skills_list");
-	InitSkills->AtExecute([](IServer*, ResultPtr pRes)
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_skills_list");
+	while (pRes->next())
 	{
-		while (pRes->next())
-		{
-			CSkillDataInfo SkillInfo;
-			str_copy(SkillInfo.m_aName, pRes->getString("Name").c_str(), sizeof(SkillInfo.m_aName));
-			str_copy(SkillInfo.m_aDesc, pRes->getString("Description").c_str(), sizeof(SkillInfo.m_aDesc));
-			str_copy(SkillInfo.m_aBonusName, pRes->getString("BonusName").c_str(), sizeof(SkillInfo.m_aBonusName));
-			SkillInfo.m_BonusDefault = pRes->getInt("BonusValue");
-			SkillInfo.m_ManaPercentageCost = pRes->getInt("ManaPercentageCost");
-			SkillInfo.m_PriceSP = pRes->getInt("PriceSP");
-			SkillInfo.m_MaxLevel = pRes->getInt("MaxLevel");
-			SkillInfo.m_Passive = pRes->getBoolean("Passive");
-			SkillInfo.m_Type = pRes->getInt("Type");
-			
-			const int SkillID = pRes->getInt("ID");
-			CSkillDataInfo::ms_aSkillsData[SkillID] = SkillInfo;
-		}
-	});
+		std::string Name = pRes->getString("Name").c_str();
+		std::string Description = pRes->getString("Description").c_str();
+		std::string BonusName = pRes->getString("BonusName").c_str();
+		int BonusDefault = pRes->getInt("BonusValue");
+		int ManaPercentageCost = pRes->getInt("ManaPercentageCost");
+		int PriceSP = pRes->getInt("PriceSP");
+		int MaxLevel = pRes->getInt("MaxLevel");
+		bool Passive = pRes->getBoolean("Passive");
+		SkillType Type = (SkillType)pRes->getInt("Type");
+
+		SkillIdentifier ID = pRes->getInt("ID");
+		CSkillDataInfo(ID).Init(Name, Description, BonusName, BonusDefault, Type, ManaPercentageCost, PriceSP, MaxLevel, Passive);
+	}
 }
 
 void CSkillsCore::OnInitAccount(CPlayer *pPlayer)
@@ -34,20 +30,17 @@ void CSkillsCore::OnInitAccount(CPlayer *pPlayer)
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
-		CSkillData Skill;
-		Skill.SetSkillOwner(pPlayer);
-		Skill.m_SkillID = pRes->getInt("SkillID");
-		Skill.m_Level = pRes->getInt("Level");
-		Skill.m_SelectedEmoticion = pRes->getInt("UsedByEmoticon");
+		int Level = pRes->getInt("Level");
+		int SelectedEmoticion = pRes->getInt("UsedByEmoticon");
 
-		const int SkillID = pRes->getInt("SkillID");
-		CSkillData::ms_aSkills[ClientID][SkillID] = Skill;
+		SkillIdentifier ID = pRes->getInt("SkillID");
+		CSkillData(ID, ClientID).Init(Level, SelectedEmoticion);
 	}
 }
 
 void CSkillsCore::OnResetClient(int ClientID)
 {
-	CSkillData::ms_aSkills.erase(ClientID);
+	CSkillData::Data().erase(ClientID);
 }
 
 bool CSkillsCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
@@ -83,6 +76,7 @@ bool CSkillsCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
+
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_LEARN_SKILL))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
@@ -103,6 +97,7 @@ bool CSkillsCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 bool CSkillsCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
+
 	if (PPSTR(CMD, "SKILLLEARN") == 0)
 	{
 		const int SkillID = VoteID;
@@ -121,29 +116,32 @@ bool CSkillsCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const 
 	return false;
 }
 
-void CSkillsCore::ShowMailSkillList(CPlayer *pPlayer, int Type)
+void CSkillsCore::ShowMailSkillList(CPlayer *pPlayer, SkillType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
 	const char* pSkillTypeName[NUM_SKILL_TYPES] = { "Improving", "Healing", "Attacking", "Defensive" };
+
 	GS()->AVL(ClientID, "null", "{STR} skill's", pSkillTypeName[Type]);
-	for (const auto& pSkillData : CSkillDataInfo::ms_aSkillsData)
+	for (const auto& [ID, Skill] : CSkillDataInfo::Data())
 	{
-		if(pSkillData.second.m_Type == Type)
-			SkillSelected(pPlayer, pSkillData.first);
+		if(Skill.m_Type == Type)
+			ShowSkill(pPlayer, ID);
 	}
 	GS()->AV(ClientID, "null");
 }
 
-void CSkillsCore::SkillSelected(CPlayer *pPlayer, int SkillID)
+void CSkillsCore::ShowSkill(CPlayer *pPlayer, SkillIdentifier ID) const
 {
-	CSkillData* pSkill = pPlayer->GetSkill(SkillID);
 	const int ClientID = pPlayer->GetCID();
-	const int HideID = NUM_TAB_MENU + SkillID;
+	CSkillData* pSkill = pPlayer->GetSkill(ID);
+
+	const int HideID = NUM_TAB_MENU + ID;
 	const bool IsPassive = pSkill->Info()->IsPassive();
-	const bool IsMaxLevel = pSkill->m_Level >= pSkill->Info()->GetMaxLevel();
-	
-	GS()->AVH(ClientID, HideID, "{STR} - {INT}SP ({INT}/{INT})", pSkill->Info()->GetName(), pSkill->Info()->m_PriceSP, pSkill->GetLevel(), pSkill->Info()->m_MaxLevel);
-	if(!IsMaxLevel)
+	const bool IsMaximumLevel = pSkill->GetLevel() >= pSkill->Info()->GetMaxLevel();
+
+	GS()->AVH(ClientID, HideID, "{STR} - {INT}SP ({INT}/{INT})", pSkill->Info()->GetName(), pSkill->Info()->GetPriceSP(), pSkill->GetLevel(), pSkill->Info()->GetMaxLevel());
+	GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pSkill->Info()->GetDesc());
+	if(!IsMaximumLevel)
 	{
 		const int NewBonus = pSkill->GetBonus() + pSkill->Info()->GetBonusDefault();
 		GS()->AVM(ClientID, "null", NOPE, HideID, "Next level {INT} {STR}", NewBonus, pSkill->Info()->GetBonusName());
@@ -153,32 +151,32 @@ void CSkillsCore::SkillSelected(CPlayer *pPlayer, int SkillID)
 		const int ActiveBonus = pSkill->GetBonus();
 		GS()->AVM(ClientID, "null", NOPE, HideID, "Max level {INT} {STR}", ActiveBonus, pSkill->Info()->GetBonusName());
 	}
-	GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pSkill->Info()->GetDesc());
 
 	if(!IsPassive)
 	{
 		GS()->AVM(ClientID, "null", NOPE, HideID, "Mana required {INT}%", pSkill->Info()->GetManaPercentageCost());
 		if(pSkill->IsLearned())
 		{
-			GS()->AVM(ClientID, "null", NOPE, HideID, "F1 Bind: (bind 'key' say \"/useskill {INT}\")", SkillID);
-			GS()->AVM(ClientID, "SKILLCHANGEEMOTICION", SkillID, HideID, "Used on {STR}", pSkill->GetControlEmoteStateName());
+			GS()->AVM(ClientID, "null", NOPE, HideID, "F1 Bind: (bind 'key' say \"/useskill {INT}\")", ID);
+			GS()->AVM(ClientID, "SKILLCHANGEEMOTICION", ID, HideID, "Used on {STR}", pSkill->GetControlEmoteStateName());
 		}
 	}
 
-	if(!IsMaxLevel)
-		GS()->AVM(ClientID, "SKILLLEARN", SkillID, HideID, "Learn {STR}", pSkill->Info()->GetName());
+	if(!IsMaximumLevel)
+	{
+		GS()->AVM(ClientID, "SKILLLEARN", ID, HideID, "Learn {STR}", pSkill->Info()->GetName());
+	}
 }
 
 void CSkillsCore::ParseEmoticionSkill(CPlayer *pPlayer, int EmoticionID)
 {
-	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->GetCharacter())
-		return;
-
-	const int ClientID = pPlayer->GetCID();
-	for (auto& pSkillPlayer : CSkillData::ms_aSkills[ClientID])
+	if(pPlayer && pPlayer->IsAuthed() && pPlayer->GetCharacter())
 	{
-		CSkillData* pSkill = pPlayer->GetSkill(pSkillPlayer.first);
-		if (pSkill->m_SelectedEmoticion == EmoticionID)
-			pSkill->Use();
+		const int ClientID = pPlayer->GetCID();
+		for(auto& [ID, Skill] : CSkillData::Data()[ClientID])
+		{
+			if (Skill.m_SelectedEmoticion == EmoticionID)
+				Skill.Use();
+		}
 	}
 }

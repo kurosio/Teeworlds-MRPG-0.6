@@ -2,8 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "SkillDataInfo.h"
 
-CSkillDataInfo::SkillStores CSkillDataInfo::ms_aSkillsData;
-
 const char* CSkillDataInfo::GetControlEmoteStateName(int EmoticionID)
 {
 	switch(EmoticionID)
@@ -24,6 +22,6 @@ const char* CSkillDataInfo::GetControlEmoteStateName(int EmoticionID)
 		case EMOTICON_WTF: return "Emoticion Wtf";
 		case EMOTICON_EYES: return "Emoticion Eyes";
 		case EMOTICON_QUESTION: return "Emoticion Question";
+		default: return "Not selected";
 	}
-	return "Not selected";
 }

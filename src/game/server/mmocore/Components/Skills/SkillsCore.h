@@ -10,8 +10,8 @@ class CSkillsCore : public MmoComponent
 {
 	~CSkillsCore() override
 	{
-		CSkillDataInfo::ms_aSkillsData.clear();
-		CSkillData::ms_aSkills.clear();
+		CSkillDataInfo::Data().clear();
+		CSkillData::Data().clear();
 	};
 
 	void OnInit() override;
@@ -25,8 +25,8 @@ public:
 	void ParseEmoticionSkill(CPlayer* pPlayer, int EmoticionID);
 
 private:
-	void ShowMailSkillList(CPlayer* pPlayer, int Type);
-	void SkillSelected(CPlayer* pPlayer, int SkillID);
+	void ShowMailSkillList(CPlayer* pPlayer, SkillType Type) const;
+	void ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const;
 };
 
 #endif

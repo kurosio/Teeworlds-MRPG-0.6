@@ -94,9 +94,8 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 	for (unsigned i = 0; i < NUM_EQUIPPED; i++)
 	{
 		const int ItemID = GetEquippedItemID((ItemFunctional)i);
-		const int ItemBonusValue = GS()->GetItemInfo(ItemID)->GetInfoEnchantStats(ID);
-		if (ItemID > 0 && ItemBonusValue > 0)
-			Size += ItemBonusValue;
+		if(ItemID > 0)
+			Size += GS()->GetItemInfo(ItemID)->GetInfoEnchantStats(ID);
 	}
 
 	// spread weapons

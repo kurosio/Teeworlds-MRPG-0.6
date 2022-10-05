@@ -8,40 +8,46 @@
 #include "Entities/AttackTeleport/attack-teleport.h"
 #include "Entities/SleepyGravity/sleepy-gravity.h"
 
-std::map < int, std::map < int, CSkillData > > CSkillData::ms_aSkills;
-
-void CSkillData::SetSkillOwner(CPlayer* pPlayer)
+CGS* CSkillData::GS() const
 {
-	m_pPlayer = pPlayer;
-	m_pGS = pPlayer->GS();
+	return (CGS*)Server()->GameServerPlayer(m_ClientID);
+}
+
+CPlayer* CSkillData::GetPlayer() const
+{
+	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
+	{
+		return GS()->m_apPlayers[m_ClientID];
+	}
+	return nullptr;
 }
 
 void CSkillData::SelectNextControlEmote()
 {
-	if(!m_pPlayer || !m_pPlayer->IsAuthed())
+	if(!GetPlayer() || !GetPlayer()->IsAuthed())
 		return;
 
 	m_SelectedEmoticion++;
 	if(m_SelectedEmoticion >= NUM_EMOTICONS)
 		m_SelectedEmoticion = -1;
 
-	Sqlpool.Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_SelectedEmoticion, m_SkillID, m_pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_SelectedEmoticion, m_ID, GetPlayer()->Acc().m_UserID);
 }
 
 bool CSkillData::Use()
 {
-	if(!m_pPlayer || !m_pPlayer->IsAuthed() || !m_pPlayer->GetCharacter() || m_Level <= 0)
+	if(!GetPlayer() || !GetPlayer()->IsAuthed() || !GetPlayer()->GetCharacter() || m_Level <= 0)
 		return false;
 
 	// mana check
-	CCharacter* pChr = m_pPlayer->GetCharacter();
-	const int ManaCost = translate_to_percent_rest(m_pPlayer->GetStartMana(), Info()->GetManaPercentageCost());
+	CCharacter* pChr = GetPlayer()->GetCharacter();
+	const int ManaCost = translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetManaPercentageCost());
 	if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
 		return false;
 
 	const vec2 PlayerPosition = pChr->GetPos();
-	const int ClientID = m_pPlayer->GetCID();
-	if(m_SkillID == Skill::SkillHeartTurret)
+	const int ClientID = GetPlayer()->GetCID();
+	if(m_ID == Skill::SkillHeartTurret)
 	{
 		for(CHealthHealer* pHh = (CHealthHealer*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_SKILLTURRETHEART); pHh; pHh = (CHealthHealer*)pHh->TypeNext())
 		{
@@ -52,11 +58,11 @@ bool CSkillData::Use()
 			break;
 		}
 		const int PowerLevel = ManaCost;
-		new CHealthHealer(&GS()->m_World, m_pPlayer, GetBonus(), PowerLevel, PlayerPosition);
+		new CHealthHealer(&GS()->m_World, GetPlayer(), GetBonus(), PowerLevel, PlayerPosition);
 		return true;
 	}
 
-	if(m_SkillID == Skill::SkillSleepyGravity)
+	if(m_ID == Skill::SkillSleepyGravity)
 	{
 		for(CSleepyGravity* pHh = (CSleepyGravity*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_SLEEPYGRAVITY); pHh; pHh = (CSleepyGravity*)pHh->TypeNext())
 		{
@@ -67,17 +73,17 @@ bool CSkillData::Use()
 			break;
 		}
 		const int PowerLevel = ManaCost;
-		new CSleepyGravity(&GS()->m_World, m_pPlayer, GetBonus(), PowerLevel, PlayerPosition);
+		new CSleepyGravity(&GS()->m_World, GetPlayer(), GetBonus(), PowerLevel, PlayerPosition);
 		return true;
 	}
 
-	if(m_SkillID == Skill::SkillAttackTeleport)
+	if(m_ID == Skill::SkillAttackTeleport)
 	{
 		new CAttackTeleport(&GS()->m_World, PlayerPosition, pChr, GetBonus());
 		return true;
 	}
 
-	if(m_SkillID == Skill::SkillBlessingGodWar)
+	if(m_ID == Skill::SkillBlessingGodWar)
 	{
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
@@ -104,25 +110,25 @@ bool CSkillData::Use()
 
 bool CSkillData::Upgrade()
 {
-	if(!m_pPlayer || !m_pPlayer->IsAuthed() || m_Level >= Info()->GetMaxLevel())
+	if(!GetPlayer() || !GetPlayer()->IsAuthed() || m_Level >= Info()->GetMaxLevel())
 		return false;
 
-	if(!m_pPlayer->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
+	if(!GetPlayer()->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
 		return false;
 
-	const int ClientID = m_pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '%d' AND UserID = '%d'", m_SkillID, m_pPlayer->Acc().m_UserID);
+	const int ClientID = GetPlayer()->GetCID();
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Acc().m_UserID);
 	if(pRes->next())
 	{
 		m_Level++;
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_skills", "Level = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_Level, m_SkillID, m_pPlayer->Acc().m_UserID);
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_skills", "Level = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_Level, m_ID, GetPlayer()->Acc().m_UserID);
 		GS()->Chat(ClientID, "Increased the skill [{STR} level to {INT}]", Info()->GetName(), m_Level);
 		return true;
 	}
 
 	m_Level = 1;
 	m_SelectedEmoticion = -1;
-	Sqlpool.Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('%d', '%d', '1');", m_SkillID, m_pPlayer->Acc().m_UserID);
+	Sqlpool.Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('%d', '%d', '1');", m_ID, GetPlayer()->Acc().m_UserID);
 	GS()->Chat(ClientID, "Learned a new skill [{STR}]", Info()->GetName());
 	return true;
 }
