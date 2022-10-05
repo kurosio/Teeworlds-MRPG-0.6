@@ -84,7 +84,7 @@ void CInventoryCore::OnInitAccount(CPlayer *pPlayer)
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
-		int ItemID = pRes->getInt("ItemID");
+		ItemIdentifier ItemID = pRes->getInt("ItemID");
 		int Value = pRes->getInt("Value");
 		int Settings = pRes->getInt("Settings");
 		int Enchant = pRes->getInt("Enchant");
@@ -150,7 +150,7 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
-			const int ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
+			ItemIdentifier ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
 			if(ItemID <= 0 || !pPlayer->GetItem(ItemID)->IsEquipped())
 			{
 				GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} Not equipped", paTypeNames[i]);
@@ -298,7 +298,7 @@ void CInventoryCore::ListInventory(int ClientID, ItemFunctional Type)
 		GS()->AVL(ClientID, "null", "There are no items in this tab");
 }
 
-int CInventoryCore::GiveItem(CPlayer *pPlayer, int ItemID, int Value, int Settings, int Enchant)
+int CInventoryCore::GiveItem(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings, int Enchant)
 {
 	const int ClientID = pPlayer->GetCID();
 	const int SecureID = SecureCheck(pPlayer, ItemID, Value, Settings, Enchant);
@@ -310,7 +310,7 @@ int CInventoryCore::GiveItem(CPlayer *pPlayer, int ItemID, int Value, int Settin
 	return SecureID;
 }
 
-int CInventoryCore::SecureCheck(CPlayer *pPlayer, int ItemID, int Value, int Settings, int Enchant)
+int CInventoryCore::SecureCheck(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings, int Enchant)
 {
 	// check initialize and add the item
 	const int ClientID = pPlayer->GetCID();
@@ -333,7 +333,7 @@ int CInventoryCore::SecureCheck(CPlayer *pPlayer, int ItemID, int Value, int Set
 	return 2;
 }
 
-int CInventoryCore::RemoveItem(CPlayer *pPlayer, int ItemID, int Value, int Settings)
+int CInventoryCore::RemoveItem(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings)
 {
 	const int SecureID = DeSecureCheck(pPlayer, ItemID, Value, Settings);
 	if(SecureID == 1)
@@ -344,7 +344,7 @@ int CInventoryCore::RemoveItem(CPlayer *pPlayer, int ItemID, int Value, int Sett
 	return SecureID;
 }
 
-int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, int ItemID, int Value, int Settings)
+int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings)
 {
 	// we check the database
 	const int ClientID = pPlayer->GetCID();
@@ -373,7 +373,7 @@ int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, int ItemID, int Value, int S
 	return 0;
 }
 
-int CInventoryCore::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
+int CInventoryCore::GetUnfrozenItemValue(CPlayer *pPlayer, ItemIdentifier ItemID) const
 {
 	const int AvailableValue = Job()->Quest()->GetUnfrozenItemValue(pPlayer, ItemID);
 	if(AvailableValue <= 0 && pPlayer->GetItem(ItemID)->HasItem())
@@ -387,7 +387,7 @@ int CInventoryCore::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
 void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlayer, bool Dress)
 {
 	const int ClientID = pPlayer->GetCID();
-	const int ItemID = pItemPlayer.GetID();
+	const ItemIdentifier ItemID = pItemPlayer.GetID();
 	const int HideID = NUM_TAB_MENU + ItemID;
 	const char* pNameItem = pItemPlayer.Info()->GetName();
 
@@ -420,7 +420,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANTS)
 	{
 		const int HouseID = Job()->House()->OwnerHouseID(pPlayer->Acc().m_UserID);
-		const int PlantItemID = Job()->House()->GetPlantsID(HouseID);
+		const ItemIdentifier PlantItemID = Job()->House()->GetPlantsID(HouseID);
 		if(HouseID > 0 && PlantItemID != ItemID)
 		{
 			const int random_change = random_int() % 900;
@@ -488,7 +488,7 @@ int CInventoryCore::GetCountItemsType(CPlayer *pPlayer, ItemType Type) const
 
 // TODO: FIX IT (lock .. unlock)
 std::mutex lock_sleep;
-void CInventoryCore::AddItemSleep(int AccountID, int ItemID, int Value, int Milliseconds)
+void CInventoryCore::AddItemSleep(int AccountID, ItemIdentifier ItemID, int Value, int Milliseconds)
 {
 	std::thread Thread([this, AccountID, ItemID, Value, Milliseconds]()
 	{

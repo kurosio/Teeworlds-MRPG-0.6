@@ -14,7 +14,7 @@ void CWarehouseCore::OnInit()
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", TW_WAREHOUSE_TABLE);
 	while (pRes->next())
 	{
-		const int ID = pRes->getInt("ID");
+		WarehouseIdentifier ID = pRes->getInt("ID");
 		std::string Name = pRes->getString("Name").c_str();
 		vec2 Pos = vec2((float)pRes->getInt("PosX"), (float)pRes->getInt("PosY"));
 		int Currency = pRes->getInt("Currency");
@@ -28,10 +28,10 @@ void CWarehouseCore::OnInit()
 	ResultPtr pResStore = Sqlpool.Execute<DB::SELECT>("*", TW_WAREHOUSE_ITEMS_TABLE);
 	while(pResStore->next())
 	{
-		int ID = pResStore->getInt("ID");
-		int ItemID = pResStore->getInt("ItemID");
+		TradeIdentifier ID = pResStore->getInt("ID");
+		ItemIdentifier ItemID = pResStore->getInt("ItemID");
 		int ItemValue = pResStore->getInt("ItemValue");
-		int RequiredItemID = pResStore->getInt("RequiredItemID");
+		ItemIdentifier RequiredItemID = pResStore->getInt("RequiredItemID");
 		int Price = pResStore->getInt("Price");
 		int Enchant = pResStore->getInt("Enchant");
 		int WarehouseID = pResStore->getInt("WarehouseID");
@@ -160,11 +160,11 @@ void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWare
 	GS()->AV(ClientID, "null");
 }
 
-bool CWarehouseCore::BuyItem(CPlayer* pPlayer, int WarehouseID, int TradeID)
+bool CWarehouseCore::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier ID)
 {
 	// TODO: optimize rework structure impl
 	CWarehouse::ContainerTradingSlots& pContainer = GS()->GetWarehouse(WarehouseID)->m_aTradingSlots;
-	auto Iter = std::find_if(pContainer.begin(), pContainer.end(), [TradeID](const CTradingSlot& p){ return p.GetID() == TradeID; });
+	auto Iter = std::find_if(pContainer.begin(), pContainer.end(), [ID](const CTradingSlot& p){ return p.GetID() == ID; });
 	CTradingSlot* pTradeSlot =  Iter != pContainer.end() ? &(*Iter) : nullptr;
 	if(!pTradeSlot)
 		return false;

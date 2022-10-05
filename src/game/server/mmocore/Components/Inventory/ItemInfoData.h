@@ -9,6 +9,8 @@
 
 #include "AttributeData.h"
 
+using ItemIdentifier = int;
+
 class CItemDescription : public MultiworldIdentifiableStaticData < std::map< int, CItemDescription > >
 {
 public:
@@ -16,7 +18,7 @@ public:
 private:
 	friend class CInventoryCore;
 
-	int m_ItemID{};
+	ItemIdentifier m_ItemID{};
 	char m_aName[32]{};
 	char m_aDesc[64]{};
 	ItemType m_Type{};
@@ -27,7 +29,7 @@ private:
 
 public:
 	CItemDescription() = default;
-	CItemDescription(int ID) : m_ItemID(ID) {}
+	CItemDescription(ItemIdentifier ID) : m_ItemID(ID) {}
 
 	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes)
 	{
@@ -50,7 +52,7 @@ public:
 	int GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const;
 	int GetEnchantPrice(int EnchantLevel) const;
 
-	int GetID() const { return m_ItemID; }
+	ItemIdentifier GetID() const { return m_ItemID; }
 	int GetInitialPrice() const { return m_InitialPrice; }
 	int GetDysenthis() const { return m_Dysenthis; }
 

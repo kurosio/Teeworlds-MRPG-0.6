@@ -131,7 +131,7 @@ std::unique_ptr<char[]> CGS::LevelString(int MaxValue, int CurrentValue, int Ste
 	return Buf;
 }
 
-CItemDescription* CGS::GetItemInfo(int ItemID) const { return &CItemDescription::Data()[ItemID]; }
+CItemDescription* CGS::GetItemInfo(ItemIdentifier ItemID) const { return &CItemDescription::Data()[ItemID]; }
 CQuestDataInfo &CGS::GetQuestInfo(int QuestID) const { return CQuestDataInfo::ms_aDataQuests[QuestID]; }
 CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const { return &CAttributeDescription::Data()[ID]; }
 CWarehouse* CGS::GetWarehouse(int ID) const { return &CWarehouse::Data()[ID]; }
@@ -1278,7 +1278,7 @@ void CGS::ConParseSkin(IConsole::IResult *pResult, void *pUserData)
 void CGS::ConGiveItem(IConsole::IResult *pResult, void *pUserData)
 {
 	const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS - 1);
-	const int ItemID = pResult->GetInteger(1);
+	const ItemIdentifier ItemID = pResult->GetInteger(1);
 	const int Value = pResult->GetInteger(2);
 	const int Enchant = pResult->GetInteger(3);
 	const int Mail = pResult->GetInteger(4);
@@ -1321,7 +1321,7 @@ void CGS::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 void CGS::ConRemItem(IConsole::IResult* pResult, void* pUserData)
 {
 	const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS - 1);
-	const int ItemID = pResult->GetInteger(1);
+	const ItemIdentifier ItemID = pResult->GetInteger(1);
 	const int Value = pResult->GetInteger(2);
 
 	IServer* pServer = (IServer*)pUserData;
@@ -1811,7 +1811,7 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 }
 
 // display information by currency
-void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, int ItemID)
+void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, ItemIdentifier ItemID)
 {
 	const int ClientID = pPlayer->GetCID();
 	AVM(ClientID, "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GetItemInfo(ItemID)->GetName());
@@ -1956,7 +1956,7 @@ bool CGS::TakeItemCharacter(int ClientID)
 }
 
 // send a message with or without the object using ClientID
-void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const char* Desc, int ItemID, int Value, int Enchant)
+void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const char* Desc, ItemIdentifier ItemID, int Value, int Enchant)
 {
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
@@ -1965,7 +1965,7 @@ void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const
 }
 
 // send a message with or without the object using AccountID
-void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, int ItemID, int Value, int Enchant)
+void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, ItemIdentifier ItemID, int Value, int Enchant)
 {
 	Mmo()->Inbox()->SendInbox(pFrom, AccountID, Name, Desc, ItemID, Value, Enchant);
 }

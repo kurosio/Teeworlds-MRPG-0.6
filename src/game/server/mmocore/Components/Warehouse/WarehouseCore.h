@@ -19,7 +19,7 @@ class CWarehouseCore : public MmoComponent
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
 	void ShowWarehouseMenu(CPlayer *pPlayer, const CWarehouse* pWarehouse) const;
-	bool BuyItem(CPlayer* pPlayer, int WarehouseID, int TradeID);
+	bool BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier ID);
 
 public:
 	CWarehouse* GetWarehouse(vec2 Pos) const;

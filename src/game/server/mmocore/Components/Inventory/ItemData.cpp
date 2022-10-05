@@ -86,7 +86,7 @@ bool CPlayerItem::Add(int Value, int Settings, int Enchant, bool Message)
 		Value = 1;
 	}
 
-	GS()->Mmo()->Item()->GiveItem(GetPlayer(), m_ItemID, Value, Settings, Enchant);
+	GS()->Mmo()->Item()->GiveItem(GetPlayer(), m_ID, Value, Settings, Enchant);
 
 	// check the empty slot if yes then put the item on
 	if((Info()->IsType(ItemType::TYPE_EQUIP) && GetPlayer()->GetEquippedItemID(Info()->GetFunctional()) <= 0) || Info()->IsType(ItemType::TYPE_MODULE))
@@ -118,7 +118,7 @@ bool CPlayerItem::Remove(int Value, int Settings)
 	if(IsEquipped())
 		Equip();
 
-	const int Code = GS()->Mmo()->Item()->RemoveItem(GetPlayer(), m_ItemID, Value, Settings);
+	const int Code = GS()->Mmo()->Item()->RemoveItem(GetPlayer(), m_ID, Value, Settings);
 	return Code > 0;
 }
 
@@ -132,17 +132,17 @@ bool CPlayerItem::Equip()
 	if(Info()->IsType(ItemType::TYPE_EQUIP))
 	{
 		const ItemFunctional EquipID = Info()->GetFunctional();
-		int EquipItemID = GetPlayer()->GetEquippedItemID(EquipID, m_ItemID);
-		while(EquipItemID >= 1)
+		ItemIdentifier ItemID = GetPlayer()->GetEquippedItemID(EquipID, m_ID);
+		while(ItemID >= 1)
 		{
-			CPlayerItem* pPlayerItem = GetPlayer()->GetItem(EquipItemID);
+			CPlayerItem* pPlayerItem = GetPlayer()->GetItem(ItemID);
 			pPlayerItem->SetSettings(0);
-			EquipItemID = GetPlayer()->GetEquippedItemID(EquipID, m_ItemID);
+			ItemID = GetPlayer()->GetEquippedItemID(EquipID, m_ID);
 		}
 	}
 
 	if(GetPlayer()->GetCharacter())
-		GetPlayer()->GetCharacter()->UpdateEquipingStats(m_ItemID);
+		GetPlayer()->GetCharacter()->UpdateEquipingStats(m_ID);
 
 	GetPlayer()->ShowInformationStats();
 	return Save();
@@ -156,45 +156,45 @@ bool CPlayerItem::Use(int Value)
 
 	const int ClientID = GetPlayer()->GetCID();
 	// potion health regen
-	if(m_ItemID == itPotionHealthRegen && Remove(Value, 0))
+	if(m_ID == itPotionHealthRegen && Remove(Value, 0))
 	{
 		GetPlayer()->GiveEffect("RegenHealth", 15);
 		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
 	}
 	// potion mana regen
-	else if(m_ItemID == itPotionManaRegen && Remove(Value, 0))
+	else if(m_ID == itPotionManaRegen && Remove(Value, 0))
 	{
 		GetPlayer()->GiveEffect("RegenMana", 15);
 		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
 	}
 	// potion resurrection
-	else if(m_ItemID == itPotionResurrection && Remove(Value, 0))
+	else if(m_ID == itPotionResurrection && Remove(Value, 0))
 	{
 		GetPlayer()->GetTempData().m_TempSafeSpawn = false;
 		GetPlayer()->GetTempData().m_TempHealth = GetPlayer()->GetStartHealth();
 		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
 	}
 	// ticket discount craft
-	else if(m_ItemID == itTicketDiscountCraft)
+	else if(m_ID == itTicketDiscountCraft)
 	{
 		GS()->Chat(ClientID, "This item can only be used (Auto Use, and then craft).");
 	}
 	// survial capsule experience
-	else if(m_ItemID == itCapsuleSurvivalExperience && Remove(Value, 0))
+	else if(m_ID == itCapsuleSurvivalExperience && Remove(Value, 0))
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->AddExp(Getting);
 	}
 	// little bag gold
-	else if(m_ItemID == itLittleBagGold && Remove(Value, 0))
+	else if(m_ID == itLittleBagGold && Remove(Value, 0))
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->AddMoney(Getting);
 	}
 	// ticket reset for class stats
-	else if(m_ItemID == itTicketResetClassStats && Remove(Value, 0))
+	else if(m_ID == itTicketResetClassStats && Remove(Value, 0))
 	{
 		int BackUpgrades = 0;
 		for(const auto& [ID, Attribute] : CAttributeDescription::Data())
@@ -215,7 +215,7 @@ bool CPlayerItem::Use(int Value)
 		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
 	}
 	// ticket reset for weapons stats
-	else if(m_ItemID == itTicketResetWeaponStats && Remove(Value, 0))
+	else if(m_ID == itTicketResetWeaponStats && Remove(Value, 0))
 	{
 		int BackUpgrades = 0;
 		for(const auto& [ID, Attribute] : CAttributeDescription::Data())
@@ -283,7 +283,7 @@ bool CPlayerItem::Save() const
 	if(GetPlayer() && GetPlayer()->IsAuthed())
 	{
 		Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
-			m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc().m_UserID, m_ItemID);
+			m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc().m_UserID, m_ID);
 		return true;
 	}
 	return false;

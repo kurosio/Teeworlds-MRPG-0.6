@@ -5,30 +5,32 @@
 
 #include <game/server/mmocore/Components/Inventory/ItemData.h>
 
+using TradeIdentifier = int;
+
 class CTradingSlot
 {
-	int m_ID{};
+	TradeIdentifier m_ID{};
 	CItem m_Item{};
 
-	int m_RequiredItemID{};
+	ItemIdentifier m_RequiredID{};
 	int m_Price{};
 
 public:
 	CTradingSlot() = default;
-	CTradingSlot(int ID) :  m_ID(ID) {}
+	CTradingSlot(TradeIdentifier ID) :  m_ID(ID) {}
 
-	void Init(CItem Item, int RequiredItemID, int Price)
+	void Init(CItem Item, ItemIdentifier RequiredID, int Price)
 	{
 		m_Item = std::move(Item);
-		m_RequiredItemID = RequiredItemID;
+		m_RequiredID = RequiredID;
 		m_Price = Price;
 	}
 
-	int GetID() const { return m_ID; }
+	TradeIdentifier GetID() const { return m_ID; }
 	CItem* GetItem() { return &m_Item; }
 	const CItem* GetItem() const { return &m_Item; }
-	CItemDescription* GetCurrency() { return &CItemDescription::Data()[m_RequiredItemID]; }
-	const CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_RequiredItemID]; }
+	CItemDescription* GetCurrency() { return &CItemDescription::Data()[m_RequiredID]; }
+	const CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_RequiredID]; }
 	int GetPrice() const { return m_Price; }
 };
 

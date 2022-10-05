@@ -21,22 +21,22 @@ class CInventoryCore : public MmoComponent
 	bool OnHandleVoteCommands(class CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(class CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 
-	int SecureCheck(class CPlayer *pPlayer, int ItemID, int Value, int Settings, int Enchant);
-	int DeSecureCheck(class CPlayer *pPlayer, int ItemID, int Value, int Settings);
+	int SecureCheck(class CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings, int Enchant);
+	int DeSecureCheck(class CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings);
 
 public:
 	// primary
 	void ListInventory(int ClientID, ItemType Type);
 	void ListInventory(int ClientID, ItemFunctional Type);
 	void ItemSelected(class CPlayer* pPlayer, const CPlayerItem& pItemPlayer, bool Dress = false);
-	int GetUnfrozenItemValue(class CPlayer* pPlayer, int ItemID) const;
+	int GetUnfrozenItemValue(class CPlayer* pPlayer, ItemIdentifier ItemID) const;
 
 	void RepairDurabilityItems(class CPlayer *pPlayer);
 	int GetCountItemsType(class CPlayer* pPlayer, ItemType Type) const;
 
-	void AddItemSleep(int AccountID, int ItemID, int Value, int Milliseconds);
-	int GiveItem(class CPlayer* pPlayer, int ItemID, int Value, int Settings, int Enchant);
-	int RemoveItem(class CPlayer* pPlayer, int ItemID, int Value, int Settings);
+	void AddItemSleep(int AccountID, ItemIdentifier ItemID, int Value, int Milliseconds);
+	int GiveItem(class CPlayer* pPlayer, ItemIdentifier ItemID, int Value, int Settings, int Enchant);
+	int RemoveItem(class CPlayer* pPlayer, ItemIdentifier ItemID, int Value, int Settings);
 };
 
 #endif

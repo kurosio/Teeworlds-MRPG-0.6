@@ -273,7 +273,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 	else if (TypeID == PLAYERS_WEALTHY)
 	{
-		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT 10", (int)itGold);
+		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT 10", (ItemIdentifier)itGold);
 		while (pRes->next())
 		{
 			char Nick[64];

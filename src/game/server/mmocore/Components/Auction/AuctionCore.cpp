@@ -76,7 +76,7 @@ bool CAuctionCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		if(SlotEnchant > 0)
 			GS()->AVM(ClientID, "null", NOPE, NOPE, "Warning selling enchanted: +{INT}", SlotEnchant);
 		
-		const int SlotItemID = pAuctionItem->GetID();
+		const ItemIdentifier SlotItemID = pAuctionItem->GetID();
 		const int SlotPrice = pAuctionData->GetPrice();
 		GS()->AVM(ClientID, "AUCTIONCOUNT", SlotItemID, NOPE, "Item Value: {VAL}", SlotValue);
 		GS()->AVM(ClientID, "AUCTIONPRICE", SlotItemID, NOPE, "Item Price: {VAL}", SlotPrice);
@@ -214,7 +214,7 @@ void CAuctionCore::CheckAuctionTime() const
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
-		const int ItemID = pRes->getInt("ItemID");
+		const ItemIdentifier ItemID = pRes->getInt("ItemID");
 		const int Value = pRes->getInt("ItemValue");
 		const int Enchant = pRes->getInt("Enchant");
 		const int UserID = pRes->getInt("UserID");
@@ -233,7 +233,7 @@ bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
 		return false;
 
 	// checking for enchanted items
-	const int ItemID = pRes->getInt("ItemID");
+	const ItemIdentifier ItemID = pRes->getInt("ItemID");
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 	if(pPlayerItem->HasItem() && pPlayerItem->Info()->IsEnchantable())
 	{
@@ -256,7 +256,7 @@ bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
 	}
 
 	// player purchasing
-	const int RequiredItemID = pRes->getInt("RequiredItemID");
+	const ItemIdentifier RequiredItemID = pRes->getInt("RequiredItemID");
 	if(!pPlayer->SpendCurrency(Price, RequiredItemID))
 		return false;
 
@@ -286,7 +286,7 @@ void CAuctionCore::ShowAuction(CPlayer* pPlayer)
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
-		const int ItemID = pRes->getInt("ItemID");
+		const ItemIdentifier ItemID = pRes->getInt("ItemID");
 		const int Price = pRes->getInt("Price");
 		const int Enchant = pRes->getInt("Enchant");
 		const int ItemValue = pRes->getInt("ItemValue");

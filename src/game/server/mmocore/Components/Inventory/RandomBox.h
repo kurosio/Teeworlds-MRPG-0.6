@@ -10,7 +10,7 @@ class CPlayer;
 
 struct StructRandomItem
 {
-	int m_ItemID;
+	ItemIdentifier m_ItemID;
 	int m_Value;
 	float m_Chance;
 };
@@ -20,7 +20,7 @@ class CRandomBox
 	std::vector <StructRandomItem> m_ArrayItems;
 
 public:
-	void Add(int ItemID, int Value, float Chance)
+	void Add(ItemIdentifier ItemID, int Value, float Chance)
 	{
 		StructRandomItem Item;
 		Item.m_Chance = Chance;

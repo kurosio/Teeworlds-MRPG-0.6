@@ -5,13 +5,15 @@
 
 #include <game/server/mmocore/Components/Warehouse/TradingSlot.h>
 
+using WarehouseIdentifier = int;
+
 class CWarehouse : public MultiworldIdentifiableStaticData< std::map< int, CWarehouse > >
 {
 public:
 	using ContainerTradingSlots = std::deque<CTradingSlot>;
 
 private:
-	int m_ID{};
+	WarehouseIdentifier m_ID{};
 	char m_aName[32]{};
 	vec2 m_Pos{};
 	int m_Currency{};
@@ -21,7 +23,7 @@ public:
 	ContainerTradingSlots m_aTradingSlots{};
 
 	CWarehouse() = default;
-	CWarehouse(int ID) : m_ID(ID) {}
+	CWarehouse(WarehouseIdentifier ID) : m_ID(ID) {}
 
 	void Init(const std::string& Name, vec2 Pos, int Currency, int WorldID)
 	{
@@ -32,7 +34,7 @@ public:
 		CWarehouse::m_pData[m_ID] = *this;
 	}
 
-	int GetID() const { return m_ID; }
+	WarehouseIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_aName; }
 	vec2 GetPos() const { return m_Pos; }
 	CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_Currency]; }

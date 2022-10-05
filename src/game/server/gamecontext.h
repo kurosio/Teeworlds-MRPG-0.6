@@ -71,7 +71,7 @@ public:
 	CPlayer *GetPlayer(int ClientID, bool CheckAuthed = false, bool CheckCharacter = false);
 	CPlayer *GetPlayerFromUserID(int AccountID);
 	std::unique_ptr<char[]> LevelString(int MaxValue, int CurrentValue, int Step, char toValue, char fromValue);
-	class CItemDescription* GetItemInfo(int ItemID) const;
+	class CItemDescription* GetItemInfo(ItemIdentifier ItemID) const;
 	CQuestDataInfo &GetQuestInfo(int QuestID) const;
 	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;
 	class CWarehouse* GetWarehouse(int ID) const;
@@ -209,7 +209,7 @@ public:
 	void StrongUpdateVotesForAll(int MenuList);
 	void AddVotesBackpage(int ClientID);
 	void ShowVotesPlayerStats(CPlayer *pPlayer);
-	void ShowVotesItemValueInformation(CPlayer *pPlayer, int ItemID = itGold);
+	void ShowVotesItemValueInformation(CPlayer *pPlayer, ItemIdentifier ItemID = itGold);
 	bool ParsingVoteCommands(int ClientID, const char *CMD, int VoteID, int VoteID2, int Get, const char *Text, VoteCallBack Callback = nullptr);
 
 	/* #########################################################################
@@ -222,8 +222,8 @@ public:
 	void CreateDropItem(vec2 Pos, int ClientID, CItem DropItem, vec2 Force = vec2(0.0f, 0.0f));
 	void CreateRandomDropItem(vec2 Pos, int ClientID, float Chance, CItem DropItem, vec2 Force = vec2(0.0f, 0.0f));
 	bool TakeItemCharacter(int ClientID);
-	void SendInbox(const char* pFrom, CPlayer *pPlayer, const char* Name, const char* Desc, int ItemID = -1, int Value = -1, int Enchant = -1);
-	void SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, int ItemID = -1, int Value = -1, int Enchant = -1);
+	void SendInbox(const char* pFrom, CPlayer *pPlayer, const char* Name, const char* Desc, ItemIdentifier ItemID = -1, int Value = -1, int Enchant = -1);
+	void SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, ItemIdentifier ItemID = -1, int Value = -1, int Enchant = -1);
 
 private:
 	void SendDayInfo(int ClientID);
