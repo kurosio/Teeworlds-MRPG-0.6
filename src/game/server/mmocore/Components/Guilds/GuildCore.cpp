@@ -1477,21 +1477,28 @@ void GuildCore::ShowBuyHouse(CPlayer *pPlayer, int HouseID)
 	GS()->AVH(ClientID, TAB_INFO_GUILD_HOUSE, "Information Member Housing");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE, "Buying a house you will need to constantly the Treasury");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE, "In the intervals of time will be paid house");
+	GS()->AV(ClientID, "null");
 
+	// check player guild
 	if(pPlayer->Acc().IsGuild())
 	{
-		GS()->AV(ClientID, "null");
 		const int GuildBank = CGuildData::ms_aGuild[pPlayer->Acc().m_GuildID].m_Bank;
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", GuildBank);
 	}
 
-	GS()->AV(ClientID, "null");
-	const int GuildHouseOwner = CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID;
-	if(GuildHouseOwner > 0)
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Guild owner house: {STR}", CGuildData::ms_aGuild[GuildHouseOwner].m_aName);
+	// check valid house
+	if(CGuildHouseData::ms_aHouseGuild.find(HouseID) == CGuildHouseData::ms_aHouseGuild.end())
+	{
+		GS()->AVL(ClientID, "null", "This house is not for sale yet");
+	}
 	else
-		GS()->AVM(ClientID, "BUYMEMBERHOUSE", HouseID, NOPE, "Buy this guild house! Price: {VAL}", CGuildHouseData::ms_aHouseGuild[HouseID].m_Price);
-
+	{
+		const int GuildHouseOwner = CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID;
+		if(GuildHouseOwner > 0)
+			GS()->AVM(ClientID, "null", NOPE, NOPE, "Guild owner house: {STR}", CGuildData::ms_aGuild[GuildHouseOwner].m_aName);
+		else
+			GS()->AVM(ClientID, "BUYMEMBERHOUSE", HouseID, NOPE, "Buy this guild house! Price: {VAL}", CGuildHouseData::ms_aHouseGuild[HouseID].m_Price);
+	}
 	GS()->AV(ClientID, "null");
 }
 
