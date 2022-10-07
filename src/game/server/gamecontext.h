@@ -37,7 +37,6 @@ class CGS : public IGameServer
 	int m_WorldID;
 	int m_DungeonID;
 	int m_RespawnWorldID;
-	int m_MusicID;
 
 public:
 	IServer *Server() const { return m_pServer; }
@@ -164,6 +163,7 @@ public:
 	void OnClientPredictedInput(int ClientID, void *pInput) override;
 	bool IsClientReady(int ClientID) const override;
 	bool IsClientPlayer(int ClientID) const override;
+	bool PlayerExists(int ClientID) const override { return m_apPlayers[ClientID]; }
 
 	int GetClientVersion(int ClientID) const;
 	const char *Version() const override;
@@ -237,7 +237,6 @@ public:
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 
 	bool CheckingPlayersDistance(vec2 Pos, float Distance) const;
-	void SetMapMusic(int SoundID) { m_MusicID = SoundID; }
 	void SetRespawnWorld(int WorldID) { m_RespawnWorldID = WorldID; }
 	int GetRespawnWorld() const { return m_RespawnWorldID; }
 

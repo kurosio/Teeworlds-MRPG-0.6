@@ -34,14 +34,12 @@ void CWorldSwapCore::OnInitWorld(const char* pWhereLocalWorld)
 	const int WorldID = GS()->GetWorldID();
 	const CSqlString<32> cstrWorldName = CSqlString<32>(Server()->GetWorldName(WorldID));
 
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("RespawnWorld, MusicID", "enum_worlds", pWhereLocalWorld);
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("RespawnWorld", "enum_worlds", pWhereLocalWorld);
 	if(pRes->next())
 	{
 		const int RespawnWorld = pRes->getInt("RespawnWorld");
-		const int MusicID = pRes->getInt("MusicID");
 		Sqlpool.Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
 		GS()->SetRespawnWorld(RespawnWorld);
-		GS()->SetMapMusic(MusicID);
 		return;
 	}
 	Sqlpool.Execute<DB::INSERT>("enum_worlds", "(WorldID, Name) VALUES ('%d', '%s')", WorldID, cstrWorldName.cstr());

@@ -59,7 +59,6 @@ public:
 	int m_aPlayerTick[TickState::NUM_TICK];
 	Mood m_MoodState;
 
-	CTeeInfo m_TeeInfos;
 	StructLatency m_Latency;
 	StructLastAction m_LatestActivity;
 
@@ -92,6 +91,7 @@ public:
 	virtual int GetBotType() const { return -1; }
 	virtual int GetBotMobID() const { return -1; }
 	virtual	int GetPlayerWorldID() const;
+	virtual CTeeInfo& GetTeeInfo() const;
 
 	virtual int GetStartHealth();
 	int GetStartMana();

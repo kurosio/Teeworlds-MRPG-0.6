@@ -582,7 +582,7 @@ void CCharacter::TickDeferred()
 		mem_zero(&Current, sizeof(Current));
 		m_ReckoningCore.Write(&Predicted);
 		m_Core.Write(&Current);
-
+		
 		// only allow dead reackoning for a top of 3 seconds
 		if(m_ReckoningTick + Server()->TickSpeed() * 3 < Server()->Tick() || mem_comp(&Predicted, &Current, sizeof(CNetObj_Character)) != 0)
 		{
@@ -938,9 +938,9 @@ void CCharacter::HandleEvents()
 
 void CCharacter::GiveRandomEffects(int To)
 {
-	//CPlayer* pPlayerTo = GS()->GetPlayer(To);
-	//if(!pPlayerTo && To != m_pPlayer->GetCID())
-	//	return;
+	[[maybe_unused]]CPlayer* pPlayerTo = GS()->GetPlayer(To);
+	if(!pPlayerTo && To != m_pPlayer->GetCID())
+		return;
 
 	// Here effects ( buffs ) from player for TO
 }

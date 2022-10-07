@@ -23,7 +23,7 @@ struct CAccountData
 	int m_Upgrade;
 	std::map< AttributeIdentifier, int > m_aStats;
 
-	CTeeInfo m_Skin;
+	CTeeInfo m_TeeInfos;
 
 	int m_Team;
 	std::map < int, bool > m_aAetherLocation;

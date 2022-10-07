@@ -247,11 +247,10 @@ void CPlayerBot::Snap(int SnappingClient)
 	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	pClientInfo->m_Country = 0;
 	{
-		const CTeeInfo& TeeInfoBot = DataBotInfo::ms_aDataBot[m_BotID].m_TeeInfos;
-		StrToInts(&pClientInfo->m_Skin0, 6, TeeInfoBot.m_aSkinName);
-		pClientInfo->m_UseCustomColor = TeeInfoBot.m_UseCustomColor;
-		pClientInfo->m_ColorBody = TeeInfoBot.m_ColorBody;
-		pClientInfo->m_ColorFeet = TeeInfoBot.m_ColorFeet;
+		StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
+		pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
+		pClientInfo->m_ColorBody = GetTeeInfo().m_ColorBody;
+		pClientInfo->m_ColorFeet = GetTeeInfo().m_ColorFeet;
 	}
 
 	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, m_ClientID, sizeof(CNetObj_PlayerInfo)));
@@ -353,6 +352,11 @@ int CPlayerBot::GetPlayerWorldID() const
 	else if(m_BotType == TYPE_BOT_NPC)
 		return NpcBotInfo::ms_aNpcBot[m_MobID].m_WorldID;
 	return QuestBotInfo::ms_aQuestBot[m_MobID].m_WorldID;
+}
+
+CTeeInfo& CPlayerBot::GetTeeInfo() const
+{
+	return DataBotInfo::ms_aDataBot[m_BotID].m_TeeInfos;
 }
 
 std::atomic_flag g_ThreadPathWritedNow;

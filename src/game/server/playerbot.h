@@ -36,6 +36,7 @@ public:
 	int GetBotType() const override { return m_BotType; }
 	int GetBotMobID() const override { return m_MobID; }
 	int GetPlayerWorldID() const override;
+	CTeeInfo& GetTeeInfo() const override;
 
 	int GetStartHealth() override;
 	int GetHealth() override { return m_BotHealth; }

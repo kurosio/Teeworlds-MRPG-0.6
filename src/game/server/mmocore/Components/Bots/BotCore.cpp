@@ -44,13 +44,10 @@ static void InitInformationBots()
 			std::string JsonString = pRes->getString("JsonTeeInfo").c_str();
 			nlohmann::json JsonData = nlohmann::json::parse(JsonString);
 
-			CTeeInfo TeeInfo{};
-			str_copy(BotInfo.m_TeeInfos.m_aSkinName, JsonData.value("skin", "default").c_str(), sizeof(TeeInfo.m_aSkinName));
-			TeeInfo.m_UseCustomColor = JsonData.value("custom_color", 0);
-			TeeInfo.m_ColorBody = JsonData.value("color_body", -1);
-			TeeInfo.m_ColorFeet = JsonData.value("color_feet", -1);
-
-			BotInfo.m_TeeInfos = TeeInfo;
+			str_copy(BotInfo.m_TeeInfos.m_aSkinName, JsonData.value("skin", "default").c_str(), sizeof(BotInfo.m_TeeInfos.m_aSkinName));
+			BotInfo.m_TeeInfos.m_UseCustomColor = JsonData.value("custom_color", 0);
+			BotInfo.m_TeeInfos.m_ColorBody = JsonData.value("color_body", -1);
+			BotInfo.m_TeeInfos.m_ColorFeet = JsonData.value("color_feet", -1);
 		}
 		catch (nlohmann::json::exception& s)
 		{
@@ -392,10 +389,10 @@ void CBotCore::ConAddCharacterBot(int ClientID, const char* pCharacter)
 		return;
 
 	nlohmann::json JsonTeeInfo;
-	JsonTeeInfo["skin"] = pPlayer->m_TeeInfos.m_aSkinName;
-	JsonTeeInfo["custom_color"] = pPlayer->m_TeeInfos.m_UseCustomColor;
-	JsonTeeInfo["color_body"] = pPlayer->m_TeeInfos.m_ColorBody;
-	JsonTeeInfo["color_feet"] = pPlayer->m_TeeInfos.m_ColorFeet;
+	JsonTeeInfo["skin"] = pPlayer->Acc().m_TeeInfos.m_aSkinName;
+	JsonTeeInfo["custom_color"] = pPlayer->Acc().m_TeeInfos.m_UseCustomColor;
+	JsonTeeInfo["color_body"] = pPlayer->Acc().m_TeeInfos.m_ColorBody;
+	JsonTeeInfo["color_feet"] = pPlayer->Acc().m_TeeInfos.m_ColorFeet;
 
 	// check the nick
 	CSqlString<16> cNick = CSqlString<16>(pCharacter);
@@ -403,7 +400,8 @@ void CBotCore::ConAddCharacterBot(int ClientID, const char* pCharacter)
 	if(pRes->next())
 	{
 		// if the nickname is not in the database
-		Sqlpool.Execute<DB::UPDATE>("tw_bots_info", "JsonTeeInfo = '%s' WHERE ID = '%d'", JsonTeeInfo.dump().c_str());
+		const int ID = pRes->getInt("ID");
+		Sqlpool.Execute<DB::UPDATE>("tw_bots_info", "JsonTeeInfo = '%s' WHERE ID = '%d'", JsonTeeInfo.dump().c_str(), ID);
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Updated character bot!");
 		return;
 	}

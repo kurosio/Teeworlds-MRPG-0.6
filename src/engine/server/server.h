@@ -75,9 +75,10 @@ public:
 		int m_Authed;
 		int m_AuthTries;
 
+		char m_aNameTransfersPrefix[MAX_NAME_LENGTH];
 		int m_WorldID;
 		int m_OldWorldID;
-		bool m_ChangeMap;
+		bool m_IsChangesWorld;
 
 		int m_NextMapChunk;
 		bool m_Quitting;
@@ -146,6 +147,7 @@ public:
 	void SetClientCountry(int ClientID, int Country) override;
 	void SetClientScore(int ClientID, int Score) override;
 
+	bool IsClientChangesWorld(int ClientID) override;
 	void ChangeWorld(int ClientID, int NewWorldID) override;
 	int GetClientWorldID(int ClientID) override;
 

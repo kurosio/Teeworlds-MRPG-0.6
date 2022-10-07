@@ -372,7 +372,7 @@ enum class AttributeType : int
 // helpers
 class _StoreMultiworldIdentifiableStaticData
 {
-	inline static class IServer* m_pServer{};
+	inline static class IServer* m_pServer {};
 
 public:
 	class IServer* Server() const { return m_pServer; }
@@ -383,11 +383,10 @@ template < typename T >
 class MultiworldIdentifiableStaticData : public _StoreMultiworldIdentifiableStaticData
 {
 protected:
-	inline static T m_pData{};
+	inline static T m_pData {};
 
 public:
 	static T& Data() { return m_pData; }
 };
-
 
 #endif

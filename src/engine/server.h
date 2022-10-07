@@ -106,6 +106,7 @@ public:
 	virtual void SetClientCountry(int ClientID, int Country) = 0;
 	virtual void SetClientScore(int ClientID, int Score) = 0;
 
+	virtual bool IsClientChangesWorld(int ClientID) = 0;
 	virtual void ChangeWorld(int ClientID, int NewWorldID) = 0;
 	virtual int GetClientWorldID(int ClientID) = 0;
 	virtual const char* GetWorldName(int WorldID) = 0;
@@ -173,6 +174,8 @@ public:
 
 	virtual bool IsClientReady(int ClientID) const = 0;
 	virtual bool IsClientPlayer(int ClientID) const = 0;
+	virtual bool PlayerExists(int ClientID) const = 0;
+
 	virtual void FakeChat(const char *pName, const char *pText) = 0;
 
 	virtual const char *Version() const = 0;

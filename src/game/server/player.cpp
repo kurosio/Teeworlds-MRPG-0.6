@@ -162,10 +162,10 @@ void CPlayer::Snap(int SnappingClient)
 	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
 	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-	StrToInts(&pClientInfo->m_Skin0, 6, m_TeeInfos.m_aSkinName);
-	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
-	pClientInfo->m_ColorBody = m_TeeInfos.m_ColorBody;
-	pClientInfo->m_ColorFeet = m_TeeInfos.m_ColorFeet;
+	StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
+	pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
+	pClientInfo->m_ColorBody = GetTeeInfo().m_ColorBody;
+	pClientInfo->m_ColorFeet = GetTeeInfo().m_ColorFeet;
 
 	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, m_ClientID, sizeof(CNetObj_PlayerInfo)));
 	if (!pPlayerInfo)
@@ -829,4 +829,9 @@ void CPlayer::ChangeWorld(int WorldID)
 int CPlayer::GetPlayerWorldID() const
 {
 	return Server()->GetClientWorldID(m_ClientID);
+}
+
+CTeeInfo& CPlayer::GetTeeInfo() const
+{
+	return Acc().m_TeeInfos;
 }

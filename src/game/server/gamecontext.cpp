@@ -519,23 +519,12 @@ void CGS::AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priori
 	if (ClientID < 0 || ClientID >= MAX_PLAYERS)
 		return;
 
-	if(LifeSpan > 0)
-	{
-		if(m_aBroadcastStates[ClientID].m_TimedPriority > Priority)
-			return;
+	if(m_aBroadcastStates[ClientID].m_TimedPriority > Priority)
+		return;
 
-		str_copy(m_aBroadcastStates[ClientID].m_aTimedMessage, pText, sizeof(m_aBroadcastStates[ClientID].m_aTimedMessage));
-		m_aBroadcastStates[ClientID].m_LifeSpanTick = LifeSpan;
-		m_aBroadcastStates[ClientID].m_TimedPriority = Priority;
-	}
-	else
-	{
-		if(m_aBroadcastStates[ClientID].m_Priority > Priority)
-			return;
-
-		str_copy(m_aBroadcastStates[ClientID].m_aNextMessage, pText, sizeof(m_aBroadcastStates[ClientID].m_aNextMessage));
-		m_aBroadcastStates[ClientID].m_Priority = Priority;
-	}
+	str_copy(m_aBroadcastStates[ClientID].m_aTimedMessage, pText, sizeof(m_aBroadcastStates[ClientID].m_aTimedMessage));
+	m_aBroadcastStates[ClientID].m_LifeSpanTick = LifeSpan;
+	m_aBroadcastStates[ClientID].m_TimedPriority = Priority;
 }
 
 // formatted broadcast
@@ -585,51 +574,48 @@ void CGS::BroadcastTick(int ClientID)
 
 	if(m_apPlayers[ClientID] && IsPlayerEqualWorldID(ClientID))
 	{
-		if(m_aBroadcastStates[ClientID].m_LifeSpanTick > 0 && m_aBroadcastStates[ClientID].m_TimedPriority > m_aBroadcastStates[ClientID].m_Priority)
-			str_copy(m_aBroadcastStates[ClientID].m_aNextMessage, m_aBroadcastStates[ClientID].m_aTimedMessage, sizeof(m_aBroadcastStates[ClientID].m_aNextMessage));
-
-		// send broadcast only if the message is different, or to fight auto-fading
-		if(str_comp(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage) != 0 || 
-			m_aBroadcastStates[ClientID].m_NoChangeTick > Server()->TickSpeed())
+		CBroadcastState& Broadcast = m_aBroadcastStates[ClientID];
+		if(Broadcast.m_LifeSpanTick > 0 && Broadcast.m_TimedPriority > Broadcast.m_Priority)
 		{
 			// combine game information with game priority
-			if(m_aBroadcastStates[ClientID].m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
+			if(Broadcast.m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
 			{
-				char aAppendBuf[1024];
-				str_copy(aAppendBuf, m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(aAppendBuf));
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(m_aBroadcastStates[ClientID].m_aNextMessage), aAppendBuf);
-			}
-
-			CNetMsg_Sv_Broadcast Msg;
-			Msg.m_pMessage = m_aBroadcastStates[ClientID].m_aNextMessage;
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-			str_copy(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage, sizeof(m_aBroadcastStates[ClientID].m_aPrevMessage));
-			m_aBroadcastStates[ClientID].m_NoChangeTick = 0;
-		}
-		else
-			m_aBroadcastStates[ClientID].m_NoChangeTick++;
-
-		// update broadcast state
-		if(m_aBroadcastStates[ClientID].m_LifeSpanTick > 0)
-			m_aBroadcastStates[ClientID].m_LifeSpanTick--;
-
-		if(m_aBroadcastStates[ClientID].m_LifeSpanTick <= 0)
-		{
-			// show game information on a regular basis
-			if(m_apPlayers[ClientID]->IsAuthed())
-			{
-				m_aBroadcastStates[ClientID].m_LifeSpanTick = 1000;
-				m_aBroadcastStates[ClientID].m_TimedPriority = (BroadcastPriority::GAME_BASIC_STATS);
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aTimedMessage, sizeof(m_aBroadcastStates[ClientID].m_aTimedMessage), "");
+				char aAppendBuf[1024]{ };
+				str_copy(aAppendBuf, Broadcast.m_aTimedMessage, sizeof(aAppendBuf));
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(Broadcast.m_aNextMessage, sizeof(Broadcast.m_aNextMessage), aAppendBuf);
+				Broadcast.m_LifeSpanTick = 1000;
 			}
 			else
 			{
-				m_aBroadcastStates[ClientID].m_aTimedMessage[0] = 0;
-				m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
+				str_copy(Broadcast.m_aNextMessage, Broadcast.m_aTimedMessage, sizeof(Broadcast.m_aNextMessage));
 			}
 		}
-		m_aBroadcastStates[ClientID].m_aNextMessage[0] = 0;
-		m_aBroadcastStates[ClientID].m_Priority = BroadcastPriority::LOWER;
+
+		// send broadcast only if the message is different, or to fight auto-fading
+		if(Broadcast.m_NoChangeTick > Server()->TickSpeed() || str_comp(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage) != 0)
+		{
+			CNetMsg_Sv_Broadcast Msg;
+			Msg.m_pMessage = Broadcast.m_aNextMessage;
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+			str_copy(Broadcast.m_aPrevMessage, Broadcast.m_aNextMessage, sizeof(Broadcast.m_aPrevMessage));
+			Broadcast.m_NoChangeTick = 0;
+		}
+		else
+		{
+			Broadcast.m_NoChangeTick++;
+		}
+
+		// update broadcast state
+		if(Broadcast.m_LifeSpanTick > 0)
+			Broadcast.m_LifeSpanTick--;
+
+		if(Broadcast.m_LifeSpanTick <= 0)
+		{
+			Broadcast.m_aTimedMessage[0] = 0;
+			Broadcast.m_TimedPriority = BroadcastPriority::LOWER;
+		}
+		Broadcast.m_aNextMessage[0] = 0;
+		Broadcast.m_Priority = BroadcastPriority::LOWER;
 	}
 	else
 	{
@@ -760,7 +746,6 @@ void CGS::OnInit(int WorldID)
 	m_Events.SetGameServer(this);
 	m_WorldID = WorldID;
 	m_RespawnWorldID = -1;
-	m_MusicID = -1;
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
@@ -823,6 +808,7 @@ void CGS::OnTick()
 	m_World.m_Core.m_Tuning = m_Tuning;
 	m_World.Tick();
 	m_pController->Tick();
+
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -1085,34 +1071,37 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(pPlayer->m_aPlayerTick[TickState::LastChangeInfo] != 0)
 				return;
 
-			CNetMsg_Cl_StartInfo* pMsg = (CNetMsg_Cl_StartInfo*)pRawMsg;
-			if (!str_utf8_check(pMsg->m_pName))
-			{
-				Server()->Kick(ClientID, "name is not valid utf8");
-				return;
-			}
-			if (!str_utf8_check(pMsg->m_pClan))
-			{
-				Server()->Kick(ClientID, "clan is not valid utf8");
-				return;
-			}
-			if (!str_utf8_check(pMsg->m_pSkin))
-			{
-				Server()->Kick(ClientID, "skin is not valid utf8");
-				return;
-			}
-
 			pPlayer->m_aPlayerTick[TickState::LastChangeInfo] = Server()->Tick();
 
 			// set start infos
-			Server()->SetClientName(ClientID, pMsg->m_pName);
-			Server()->SetClientClan(ClientID, pMsg->m_pClan);
-			Server()->SetClientCountry(ClientID, pMsg->m_Country);
+			if(!pPlayer->IsAuthed())
+			{
+				CNetMsg_Cl_StartInfo* pMsg = (CNetMsg_Cl_StartInfo*)pRawMsg;
+				if (!str_utf8_check(pMsg->m_pName))
+				{
+					Server()->Kick(ClientID, "name is not valid utf8");
+					return;
+				}
+				if (!str_utf8_check(pMsg->m_pClan))
+				{
+					Server()->Kick(ClientID, "clan is not valid utf8");
+					return;
+				}
+				if (!str_utf8_check(pMsg->m_pSkin))
+				{
+					Server()->Kick(ClientID, "skin is not valid utf8");
+					return;
+				}
 
-			str_copy(pPlayer->m_TeeInfos.m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->m_TeeInfos.m_aSkinName));
-			pPlayer->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
-			pPlayer->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
-			pPlayer->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+				Server()->SetClientName(ClientID, pMsg->m_pName);
+				Server()->SetClientClan(ClientID, pMsg->m_pClan);
+				Server()->SetClientCountry(ClientID, pMsg->m_Country);
+
+				str_copy(pPlayer->Acc().m_TeeInfos.m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->Acc().m_TeeInfos.m_aSkinName));
+				pPlayer->Acc().m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
+				pPlayer->Acc().m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
+				pPlayer->Acc().m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+			}
 
 			// send clear vote options
 			CNetMsg_Sv_VoteClearOptions ClearMsg;
@@ -1175,16 +1164,15 @@ void CGS::OnClientDrop(int ClientID, const char *pReason)
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
 
-	if (Server()->ClientIngame(ClientID) && IsPlayerEqualWorldID(ClientID))
+	if ((Server()->ClientIngame(ClientID) || Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorldID(ClientID))
 	{
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+
 		Chat(-1, "{STR} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
-
-		/*CNetMsg_Sv_ClientDrop Msg;
-		Msg.m_ClientID = ClientID;
-		Msg.m_pReason = pReason;
-		Msg.m_Silent = false;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);*/
+		Mmo()->SaveAccount(m_apPlayers[ClientID], SaveType::SAVE_POSITION);
 	}
 
 	delete m_apPlayers[ClientID];

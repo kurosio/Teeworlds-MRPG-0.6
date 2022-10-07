@@ -61,12 +61,14 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 void CCharacterBotAI::GiveRandomEffects(int To)
 {
 	CPlayer* pPlayerTo = GS()->GetPlayer(To);
-	if(!pPlayerTo && To != m_pBotPlayer->GetCID())
-		return;
-
-	const int SubID = m_pBotPlayer->GetBotMobID();
-	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[SubID].m_aEffect[0] != '\0')
-		pPlayerTo->GiveEffect(MobBotInfo::ms_aMobBot[SubID].m_aEffect, 3 + random_int() % 3, 5.0f);
+	if(pPlayerTo && To != m_pBotPlayer->GetCID())
+	{
+		int MobID = m_pBotPlayer->GetBotMobID();
+		if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[MobID].m_aEffect[0] != '\0')
+		{
+			pPlayerTo->GiveEffect(MobBotInfo::ms_aMobBot[MobID].m_aEffect, 3 + random_int() % 3, 5.0f);
+		}
+	}
 }
 
 bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
@@ -93,12 +95,10 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	{
 		if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
 		{
-			for(const auto& ld : m_aListDmgPlayers)
+			for(const auto& [ClientID, Value] : m_aListDmgPlayers)
 			{
-				const int ClientID = ld.first;
 				CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
-				if(!pPlayer || !GS()->IsPlayerEqualWorldID(ClientID, m_pBotPlayer->GetPlayerWorldID())
-					|| distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
+				if(!pPlayer || !GS()->IsPlayerEqualWorldID(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
 					continue;
 
 				RewardPlayer(pPlayer, Force);
@@ -629,24 +629,21 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 bool CCharacterBotAI::SearchTalkedPlayer()
 {
 	bool PlayerFinding = false;
-	const int MobID = m_pBotPlayer->GetBotMobID();
-	const bool DialoguesNotEmpty = ((m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.empty())
-				|| (m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC && !(NpcBotInfo::ms_aNpcBot[MobID].m_aDialog).empty()));
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pFindPlayer = GS()->GetPlayer(i, true, true);
 		if(pFindPlayer && distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f &&
 			!GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr) && m_pBotPlayer->IsVisibleForClient(i))
 		{
-			if (DialoguesNotEmpty)
-				GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialog: \"hammer hit\"");
-			
 			pFindPlayer->GetCharacter()->m_Core.m_HammerHitDisabled = true;
 			pFindPlayer->GetCharacter()->m_Core.m_CollisionDisabled = true;
 			pFindPlayer->GetCharacter()->m_Core.m_HookHitDisabled = true;
+
 			m_Input.m_TargetX = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
 			m_Input.m_TargetY = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
 			m_Input.m_Direction = 0;
+
+			GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialog: \"hammer hit\"");
 			PlayerFinding = true;
 		}
 	}
