@@ -354,15 +354,17 @@ void MmoController::ConSyncLinesForTranslate()
 		{
 			int DialogNum = 0;
 			std::string UniqueID("diaqu" + std::to_string(pItem.first));
-			for(auto& pDialog : pItem.second.m_aDialog)
-				PushingDialogs(JsonData, pDialog.m_aText, UniqueID.c_str(), DialogNum++);
+			for(auto& pDialog : pItem.second.m_aDialogs)
+				for(auto& pVariant : pDialog.GetArrayText())
+					PushingDialogs(JsonData, pVariant.m_Text.c_str(), UniqueID.c_str(), DialogNum++);
 		}
 		for(auto& pItem : NpcBotInfo::ms_aNpcBot)
 		{
 			int DialogNum = 0;
 			std::string UniqueID("dianp" + std::to_string(pItem.first));
-			for(auto& pDialog : pItem.second.m_aDialog)
-				PushingDialogs(JsonData, pDialog.m_aText, UniqueID.c_str(), DialogNum++);
+			for(auto& pDialog : pItem.second.m_aDialogs)
+				for(auto& pVariant : pDialog.GetArrayText())
+					PushingDialogs(JsonData, pVariant.m_Text.c_str(), UniqueID.c_str(), DialogNum++);
 		}
 		for(auto& pItem : CAetherData::ms_aTeleport)
 		{

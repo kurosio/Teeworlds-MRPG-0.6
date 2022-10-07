@@ -42,15 +42,11 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
 	{
-		m_Core.m_HookHitDisabled = true;
-		m_Core.m_CollisionDisabled = true;
 		CreateSnapProj(GetSnapFullID(), 2, POWERUP_HEALTH, true, false);
 		CreateSnapProj(GetSnapFullID(), 2, POWERUP_ARMOR, true, false);
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
 	{
-		m_Core.m_HookHitDisabled = true;
-		m_Core.m_CollisionDisabled = true;
 		const int Function = NpcBotInfo::ms_aNpcBot[SubBotID].m_Function;
 		if(Function == FunctionsNPC::FUNCTION_NPC_GIVE_QUEST)
 			CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
@@ -280,7 +276,16 @@ void CCharacterBotAI::Snap(int SnappingClient)
 // interactive bots
 void CCharacterBotAI::EngineBots()
 {
-	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
+	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+	{
+		EngineMobs();
+	}
+	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
+	{
+		SetSafe();
+		EngineQuestMob();
+	}
+	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
 	{
 		const int tx = m_Pos.x + m_Input.m_Direction * 45.0f;
 		if(tx < 0)
@@ -291,12 +296,9 @@ void CCharacterBotAI::EngineBots()
 		m_LatestPrevInput = m_LatestInput;
 		m_LatestInput = m_Input;
 
+		SetSafe();
 		EngineNPC();
 	}
-	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
-		EngineMobs();
-	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
-		EngineQuestMob();
 }
 
 // interactive of NPC
@@ -678,7 +680,7 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 		if(pFindPlayer && distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f &&
 			!GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr) && m_pBotPlayer->IsVisibleForClient(i))
 		{
-			pFindPlayer->GetCharacter()->SetSafe();
+			pFindPlayer->GetCharacter()->m_SafeAreaForTick = true;
 
 			m_Input.m_TargetX = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
 			m_Input.m_TargetY = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
@@ -765,8 +767,11 @@ bool CCharacterBotAI::FunctionNurseNPC()
 			continue;
 
 		// disable collision and hook with players
-		if(distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f)
-			pFindPlayer->GetCharacter()->SetSafe();
+		float Distance = distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos);
+		if(Distance < 128.0f)
+			pFindPlayer->GetCharacter()->m_SafeAreaForTick = true;
+		else if(Distance < 64.0f)
+			m_Input.m_Direction = 0;
 
 		// skip full health
 		if(pFindPlayer->GetHealth() >= pFindPlayer->GetStartHealth())
@@ -777,6 +782,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 		m_Input.m_TargetY = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
 		m_LatestInput.m_TargetX = m_Input.m_TargetX;
 		m_LatestInput.m_TargetY = m_Input.m_TargetX;
+		PlayerFinding = true;
 
 		// health every sec
 		if(Server()->Tick() % Server()->TickSpeed() != 0)
@@ -790,7 +796,6 @@ bool CCharacterBotAI::FunctionNurseNPC()
 		new CHearth(&GS()->m_World, m_Pos, pFindPlayer, Health, pFindPlayer->GetCharacter()->m_Core.m_Vel);
 
 		m_Input.m_Direction = 0;
-		PlayerFinding = true;
 	}
 	return PlayerFinding;
 }

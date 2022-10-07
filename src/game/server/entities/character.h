@@ -62,6 +62,9 @@ protected:
 	void HandleEvents();
 	void HandleIndependentTuning();
 
+	void SetSafe(int FlagsDisallow = CHARACTERFLAG_HAMMER_HIT_DISABLED | CHARACTERFLAG_COLLISION_DISABLED | CHARACTERFLAG_HOOK_HIT_DISABLED);
+	void ResetSafe();
+
 public:
 	//character's size
 	static const int ms_PhysSize = 28;
@@ -86,11 +89,9 @@ public:
 	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
 	void ResetHook();
 	void ResetInput();
-	void ResetSafe();
 	bool IsGrounded() const;
 
 	bool IsAllowedPVP(int FromID) const;
-	void SetSafe(int FlagsDisallow = CHARACTERFLAG_HAMMER_HIT_DISABLED | CHARACTERFLAG_COLLISION_DISABLED | CHARACTERFLAG_HOOK_HIT_DISABLED);
 	bool IsAlive() const { return m_Alive; }
 	void SetEvent(int EventID) { m_Event = EventID; }
 	void SetEmote(int Emote, int Sec);
@@ -122,6 +123,7 @@ public:
 	bool m_DamageDisabled;
 	int m_AmmoRegen;
 	int m_ReloadTimer;
+	bool m_SafeAreaForTick;
 
 	vec2 m_OldPos;
 	vec2 m_OlderPos;

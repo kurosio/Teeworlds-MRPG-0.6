@@ -165,9 +165,9 @@ void CServer::SetClientName(int ClientID, const char *pName)
 	pName = str_utf8_skip_whitespaces(pName);
 	str_utf8_copy_num(m_aClients[ClientID].m_aName, *pName ? pName : pDefaultName, sizeof(m_aClients[ClientID].m_aName), MAX_NAME_LENGTH);
 
-	dynamic_string Name("[C]");
-	Name.append(m_aClients[ClientID].m_aName);
-	str_utf8_copy_num(m_aClients[ClientID].m_aNameTransfersPrefix, Name.buffer(), sizeof(m_aClients[ClientID].m_aNameTransfersPrefix), MAX_NAME_LENGTH);
+	char aPrefixName[MAX_NAME_LENGTH];
+	str_format(aPrefixName, sizeof(aPrefixName), "[C]%s", m_aClients[ClientID].m_aName);
+	str_utf8_copy_num(m_aClients[ClientID].m_aNameTransfersPrefix, aPrefixName, sizeof(m_aClients[ClientID].m_aNameTransfersPrefix), MAX_NAME_LENGTH);
 }
 
 void CServer::SetClientClan(int ClientID, const char *pClan)

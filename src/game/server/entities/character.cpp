@@ -504,8 +504,10 @@ void CCharacter::Tick()
 
 	// check safe area
 	ResetSafe();
-	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA))
+	if(m_SafeAreaForTick || GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA))
+	{
 		SetSafe();
+	}
 
 	HandleTilesets();
 	HandleTuning();
@@ -1055,6 +1057,26 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 	}
 }
 
+void CCharacter::SetSafe(int FlagsDisallow)
+{
+	if(FlagsDisallow & CHARACTERFLAG_HAMMER_HIT_DISABLED)
+		m_Core.m_HammerHitDisabled = true;
+	if(FlagsDisallow & CHARACTERFLAG_COLLISION_DISABLED)
+		m_Core.m_CollisionDisabled = true;
+	if(FlagsDisallow & CHARACTERFLAG_HOOK_HIT_DISABLED)
+		m_Core.m_HookHitDisabled = true;
+	m_DamageDisabled = true;
+	m_SafeAreaForTick = false;
+}
+
+void CCharacter::ResetSafe()
+{
+	m_Core.m_HammerHitDisabled = false;
+	m_Core.m_CollisionDisabled = false;
+	m_Core.m_HookHitDisabled = false;
+	m_DamageDisabled = false;
+}
+
 void CCharacter::UpdateEquipingStats(int ItemID)
 {
 	if(!m_Alive || !m_pPlayer->IsAuthed())
@@ -1126,26 +1148,6 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 
 	return true;
 }
-
-void CCharacter::SetSafe(int FlagsDisallow)
-{
-	if(FlagsDisallow & CHARACTERFLAG_HAMMER_HIT_DISABLED)
-		m_Core.m_HammerHitDisabled = true;
-	if(FlagsDisallow & CHARACTERFLAG_COLLISION_DISABLED)
-		m_Core.m_CollisionDisabled = true;
-	if(FlagsDisallow & CHARACTERFLAG_HOOK_HIT_DISABLED)
-		m_Core.m_HookHitDisabled = true;
-	m_DamageDisabled = true;
-}
-
-void CCharacter::ResetSafe()
-{
-	m_Core.m_HammerHitDisabled = false;
-	m_Core.m_CollisionDisabled = false;
-	m_Core.m_HookHitDisabled = false;
-	m_DamageDisabled = false;
-}
-
 
 bool CCharacter::IsLockedWorld()
 {

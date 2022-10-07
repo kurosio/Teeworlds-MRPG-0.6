@@ -7,33 +7,52 @@ std::map< int, NpcBotInfo > NpcBotInfo::ms_aNpcBot;
 std::map< int, QuestBotInfo > QuestBotInfo::ms_aQuestBot;
 std::map< int, MobBotInfo > MobBotInfo::ms_aMobBot;
 
-void DialogData::LoadFlags()
+void CDialog::Init(std::string DialogueData, int Emote, bool ActionStep)
 {
-	m_Flag = TALKED_FLAG_FULL;
+	auto VariantInit = [](VariantText* pVariant, std::string Text)
+	{
+		int64_t size = -1;
+		if(size = Text.find("[p]"); size != -1)
+		{
+			pVariant->m_Flag |= TALKED_FLAG_SAYS_PLAYER;
+			Text.erase(0, size + 3);
+		}
+		else
+		{
+			pVariant->m_Flag |= TALKED_FLAG_SAYS_BOT;
+		}
 
-	// flag for selected who talked
-	if(str_comp_nocase_num(m_aText, "[p]", 3) == 0)
-	{
-		m_Flag |= TALKED_FLAG_SAYS_PLAYER;
-		mem_move(m_aText, m_aText + 3, sizeof(m_aText));
-	}
-	else
-		m_Flag |= TALKED_FLAG_SAYS_BOT;
+		pVariant->m_Text = Text;
+	};
 
-	// flag for selected render
-	if(str_comp_nocase_num(m_aText, "[e]", 3) == 0)
+	size_t pos = 0;
+	std::string delimiter = "{OR}";
+	while((pos = DialogueData.find(delimiter)) != std::string::npos)
 	{
-		m_Flag ^= TALKED_FLAG_FULL;
-		mem_move(m_aText, m_aText + 3, sizeof(m_aText));
+		CDialog::VariantText Variant;
+		VariantInit(&Variant, DialogueData.substr(0, pos));
+		m_aVariantText.push_back(Variant);
+		DialogueData.erase(0, pos + delimiter.length());
 	}
-	else if(str_comp_nocase_num(m_aText, "[e1]", 4) == 0)
+
+	if(!DialogueData.empty() || IsEmptyDialog())
 	{
-		m_Flag ^= TALKED_FLAG_PLAYER;
-		mem_move(m_aText, m_aText + 4, sizeof(m_aText));
+		CDialog::VariantText Variant;
+		VariantInit(&Variant, DialogueData);
+		m_aVariantText.push_back(Variant);
 	}
-	else if(str_comp_nocase_num(m_aText, "[e2]", 4) == 0)
+
+	m_Emote = Emote;
+	m_ActionStep = ActionStep;
+}
+
+CDialog::VariantText* CDialog::GetVariant()
+{
+	if(m_aVariantText.size() > 1)
 	{
-		m_Flag ^= TALKED_FLAG_BOT;
-		mem_move(m_aText, m_aText + 4, sizeof(m_aText));
+		int random = random_int() % (int)m_aVariantText.size();
+		return &m_aVariantText[random];
 	}
+
+	return &m_aVariantText.front();
 }

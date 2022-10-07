@@ -672,8 +672,8 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 	if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
 	{
 		// clearing the end of dialogs or a dialog that was meaningless
-		const int sizeTalking = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog.size();
-		const bool isTalkingEmpty = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog.empty();
+		const int sizeTalking = NpcBotInfo::ms_aNpcBot[MobID].m_aDialogs.size();
+		const bool isTalkingEmpty = NpcBotInfo::ms_aNpcBot[MobID].m_aDialogs.empty();
 		if ((isTalkingEmpty && m_DialogNPC.m_Progress == IS_TALKING_EMPTY) || (!isTalkingEmpty && m_DialogNPC.m_Progress >= sizeTalking))
 		{
 			ClearTalking();
@@ -710,7 +710,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 
 	else if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
 	{
-		const int sizeTalking = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.size();
+		const int sizeTalking = QuestBotInfo::ms_aQuestBot[MobID].m_aDialogs.size();
 		if (m_DialogNPC.m_Progress >= sizeTalking)
 		{
 			ClearTalking();
@@ -718,7 +718,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			return;
 		}
 
-		const bool RequiestQuestTask = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[m_DialogNPC.m_Progress].m_RequestAction;
+		const bool RequiestQuestTask = QuestBotInfo::ms_aQuestBot[MobID].m_aDialogs[m_DialogNPC.m_Progress].IsRequestAction();
 		if (RequiestQuestTask)
 		{
 			if (!m_DialogNPC.m_FreezedProgress)
@@ -768,37 +768,37 @@ void CPlayer::FormatDialogText(int DataBotID, const char *pText) // TODO: perfor
 	str_copy(m_aFormatDialogText, GS()->Server()->Localization()->Localize(GetLanguage(), pText), sizeof(m_aFormatDialogText));
 
 	// arrays replacing dialogs
-	const char* pBot = str_find_nocase(m_aFormatDialogText, "[Bot_");
+	const char* pBot = str_find_nocase(m_aFormatDialogText, "<Bot_");
 	while(pBot != nullptr)
 	{
 		int SearchBotID = 0;
-		if(sscanf(pBot, "[Bot_%d]", &SearchBotID) && DataBotInfo::IsDataBotValid(SearchBotID))
+		if(sscanf(pBot, "<Bot_%d>", &SearchBotID) && DataBotInfo::IsDataBotValid(SearchBotID))
 		{
 			char aBufSearch[16];
-			str_format(aBufSearch, sizeof(aBufSearch), "[Bot_%d]", SearchBotID);
+			str_format(aBufSearch, sizeof(aBufSearch), "<Bot_%d>", SearchBotID);
 			str_replace(m_aFormatDialogText, aBufSearch, DataBotInfo::ms_aDataBot[SearchBotID].m_aNameBot);
 		}
-		pBot = str_find_nocase(m_aFormatDialogText, "[Bot_");
+		pBot = str_find_nocase(m_aFormatDialogText, "<Bot_");
 	}
 
-	const char* pWorld = str_find_nocase(m_aFormatDialogText, "[World_");
+	const char* pWorld = str_find_nocase(m_aFormatDialogText, "<World_");
 	while(pWorld != nullptr)
 	{
 		int WorldID = 0;
-		if(sscanf(pWorld, "[World_%d]", &WorldID))
+		if(sscanf(pWorld, "<World_%d>", &WorldID))
 		{
 			char aBufSearch[16];
-			str_format(aBufSearch, sizeof(aBufSearch), "[World_%d]", WorldID);
+			str_format(aBufSearch, sizeof(aBufSearch), "<World_%d>", WorldID);
 			str_replace(m_aFormatDialogText, aBufSearch, Server()->GetWorldName(WorldID));
 		}
-		pWorld = str_find_nocase(m_aFormatDialogText, "[World_");
+		pWorld = str_find_nocase(m_aFormatDialogText, "<World_");
 	}
 
 	// based replacing dialogs
-	str_replace(m_aFormatDialogText, "[Player]", GS()->Server()->ClientName(m_ClientID));
-	str_replace(m_aFormatDialogText, "[Talked]", DataBotInfo::ms_aDataBot[DataBotID].m_aNameBot);
-	str_replace(m_aFormatDialogText, "[Time]", GS()->Server()->GetStringTypeDay());
-	str_replace(m_aFormatDialogText, "[Here]", GS()->Server()->GetWorldName(GS()->GetWorldID()));
+	str_replace(m_aFormatDialogText, "<Player>", GS()->Server()->ClientName(m_ClientID));
+	str_replace(m_aFormatDialogText, "<Talked>", DataBotInfo::ms_aDataBot[DataBotID].m_aNameBot);
+	str_replace(m_aFormatDialogText, "<Time> ", GS()->Server()->GetStringTypeDay());
+	str_replace(m_aFormatDialogText, "<Here>", GS()->Server()->GetWorldName(GS()->GetWorldID()));
 }
 
 void CPlayer::ClearDialogText()

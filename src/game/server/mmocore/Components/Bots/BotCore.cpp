@@ -110,13 +110,12 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 				nlohmann::json JsonData = nlohmann::json::parse(DialogJsonStr.c_str());
 				for(auto& pItem : JsonData)
 				{
-					DialogData LoadTalk;
-					str_copy(LoadTalk.m_aText, pItem.value("text", "").c_str(), sizeof(LoadTalk.m_aText));
-					LoadTalk.m_Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "").c_str());
-					LoadTalk.m_RequestAction = pItem.value("action_step", 0);
-					LoadTalk.LoadFlags();
+					const int Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "").c_str());
+					bool ActionSteep = pItem.value("action_step", 0);
 
-					QuestBot.m_aDialog.push_back(LoadTalk);
+					CDialog Dialogue;
+					Dialogue.Init(pItem.value("text", ""), Emote, ActionSteep);
+					QuestBot.m_aDialogs.push_back(Dialogue);
 				}
 			}
 		}
@@ -158,15 +157,16 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 			std::string DialogJsonStr = pRes->getString("DialogData").c_str();
 			if(DialogJsonStr.length() >= 10)
 			{
-				DialogData LoadTalk;
+				CDialog Dialogue;
 				nlohmann::json JsonData = nlohmann::json::parse(DialogJsonStr.c_str());
 				for(auto& pItem : JsonData)
 				{
-					str_copy(LoadTalk.m_aText, pItem.value("text", "").c_str(), sizeof(LoadTalk.m_aText));
-					LoadTalk.m_Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "normal").c_str());
-					LoadTalk.LoadFlags();
+					const int Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "").c_str());
+					bool RequestAction = pItem.value("action_step", 0);
 
-					NpcBot.m_aDialog.push_back(LoadTalk);
+					CDialog Dialogue;
+					Dialogue.Init(pItem.value("text", ""), Emote, RequestAction);
+					NpcBot.m_aDialogs.push_back(Dialogue);
 				}
 			}
 		}
@@ -256,7 +256,7 @@ void CBotCore::SendChatDialog(bool PlayerTalked, int BotType, int MobID, int Cli
 
 void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const char *pText)
 {
-	const int sizeDialogs = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog.size();
+	const int sizeDialogs = NpcBotInfo::ms_aNpcBot[MobID].m_aDialogs.size();
 	if(!NpcBotInfo::IsNpcBotValid(MobID) || Progress >= sizeDialogs)
 	{
 		pPlayer->ClearTalking();
@@ -277,14 +277,15 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 		return;
 	}
 
+	CDialog::VariantText* pVariant = NpcBotInfo::ms_aNpcBot[MobID].m_aDialogs[Progress].GetVariant();
+
 	const char* TalkedNick = "\0";
-	const int DialogFlag = NpcBotInfo::ms_aNpcBot[MobID].m_aDialog[Progress].m_Flag;
-	if(DialogFlag & TALKED_FLAG_SAYS_PLAYER)
+	if(pVariant->m_Flag & TALKED_FLAG_SAYS_PLAYER)
 		TalkedNick = Server()->ClientName(ClientID);
-	else if(DialogFlag & TALKED_FLAG_BOT)
+	else if(pVariant->m_Flag & TALKED_FLAG_SAYS_BOT)
 		TalkedNick = NpcBotInfo::ms_aNpcBot[MobID].GetName();
 
-	pPlayer->FormatDialogText(BotID, NpcBotInfo::ms_aNpcBot[MobID].m_aDialog[Progress].m_aText);
+	pPlayer->FormatDialogText(BotID, pVariant->m_Text.c_str());
 	str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) %s:\n- %s", (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
 	pPlayer->ClearDialogText();
 
@@ -294,7 +295,7 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 
 void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, bool ExecutionStep)
 {
-	const int sizeDialogs = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog.size();
+	const int sizeDialogs = QuestBotInfo::ms_aQuestBot[MobID].m_aDialogs.size();
 	if(!QuestBotInfo::IsQuestBotValid(MobID) || Progress >= sizeDialogs)
 	{
 		pPlayer->ClearTalking();
@@ -303,17 +304,17 @@ void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, boo
 
 	const int ClientID = pPlayer->GetCID();
 	const int BotID = QuestBotInfo::ms_aQuestBot[MobID].m_BotID;
-	const int DialogFlag = QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_Flag;
+	CDialog::VariantText* pVariant = QuestBotInfo::ms_aQuestBot[MobID].m_aDialogs[Progress].GetVariant();
 
 	const char* TalkedNick = "\0";
 	const int QuestID = QuestBotInfo::ms_aQuestBot[MobID].m_QuestID;
-	if(DialogFlag & TALKED_FLAG_SAYS_PLAYER)
+	if(pVariant->m_Flag & TALKED_FLAG_SAYS_PLAYER)
 		TalkedNick = Server()->ClientName(ClientID);
-	else if(DialogFlag & TALKED_FLAG_BOT)
+	else if(pVariant->m_Flag & TALKED_FLAG_SAYS_BOT)
 		TalkedNick = QuestBotInfo::ms_aQuestBot[MobID].GetName();
 
 	char aReformatText[512];
-	pPlayer->FormatDialogText(BotID, QuestBotInfo::ms_aQuestBot[MobID].m_aDialog[Progress].m_aText);
+	pPlayer->FormatDialogText(BotID, pVariant->m_Text.c_str());
 	str_format(aReformatText, sizeof(aReformatText), "%s\n=========\n\n( %d of %d ) %s:\n- %s",
 		GS()->GetQuestInfo(QuestID).GetName(), (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
 	pPlayer->ClearDialogText();
