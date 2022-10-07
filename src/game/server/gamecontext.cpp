@@ -574,48 +574,57 @@ void CGS::BroadcastTick(int ClientID)
 
 	if(m_apPlayers[ClientID] && IsPlayerEqualWorldID(ClientID))
 	{
-		CBroadcastState& Broadcast = m_aBroadcastStates[ClientID];
-		if(Broadcast.m_LifeSpanTick > 0 && Broadcast.m_TimedPriority > Broadcast.m_Priority)
+		CBroadcastState& rBroadcast = m_aBroadcastStates[ClientID];
+		if(rBroadcast.m_LifeSpanTick > 0 && rBroadcast.m_TimedPriority > rBroadcast.m_Priority)
 		{
 			// combine game information with game priority
-			if(Broadcast.m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
+			if(rBroadcast.m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
 			{
 				char aAppendBuf[1024]{ };
-				str_copy(aAppendBuf, Broadcast.m_aTimedMessage, sizeof(aAppendBuf));
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(Broadcast.m_aNextMessage, sizeof(Broadcast.m_aNextMessage), aAppendBuf);
-				Broadcast.m_LifeSpanTick = 1000;
+				str_copy(aAppendBuf, rBroadcast.m_aTimedMessage, sizeof(aAppendBuf));
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(rBroadcast.m_aNextMessage, sizeof(rBroadcast.m_aNextMessage), aAppendBuf);
 			}
 			else
 			{
-				str_copy(Broadcast.m_aNextMessage, Broadcast.m_aTimedMessage, sizeof(Broadcast.m_aNextMessage));
+				str_copy(rBroadcast.m_aNextMessage, rBroadcast.m_aTimedMessage, sizeof(rBroadcast.m_aNextMessage));
 			}
 		}
 
 		// send broadcast only if the message is different, or to fight auto-fading
-		if(Broadcast.m_NoChangeTick > Server()->TickSpeed() || str_comp(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage) != 0)
+		if(rBroadcast.m_NoChangeTick > Server()->TickSpeed() || str_comp(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage) != 0)
 		{
 			CNetMsg_Sv_Broadcast Msg;
-			Msg.m_pMessage = Broadcast.m_aNextMessage;
+			Msg.m_pMessage = rBroadcast.m_aNextMessage;
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-			str_copy(Broadcast.m_aPrevMessage, Broadcast.m_aNextMessage, sizeof(Broadcast.m_aPrevMessage));
-			Broadcast.m_NoChangeTick = 0;
+			str_copy(rBroadcast.m_aPrevMessage, rBroadcast.m_aNextMessage, sizeof(rBroadcast.m_aPrevMessage));
+			rBroadcast.m_NoChangeTick = 0;
 		}
 		else
 		{
-			Broadcast.m_NoChangeTick++;
+			rBroadcast.m_NoChangeTick++;
 		}
 
 		// update broadcast state
-		if(Broadcast.m_LifeSpanTick > 0)
-			Broadcast.m_LifeSpanTick--;
+		if(rBroadcast.m_LifeSpanTick > 0)
+			rBroadcast.m_LifeSpanTick--;
 
-		if(Broadcast.m_LifeSpanTick <= 0)
+		if(rBroadcast.m_LifeSpanTick <= 0)
 		{
-			Broadcast.m_aTimedMessage[0] = 0;
-			Broadcast.m_TimedPriority = BroadcastPriority::LOWER;
+			// show game information on a regular basis
+			if(m_apPlayers[ClientID]->IsAuthed())
+			{
+				m_aBroadcastStates[ClientID].m_LifeSpanTick = 1000;
+				m_aBroadcastStates[ClientID].m_TimedPriority = (BroadcastPriority::GAME_BASIC_STATS);
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aTimedMessage, sizeof(m_aBroadcastStates[ClientID].m_aTimedMessage), "");
+			}
+			else
+			{
+				m_aBroadcastStates[ClientID].m_aTimedMessage[0] = 0;
+				m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
+			}
 		}
-		Broadcast.m_aNextMessage[0] = 0;
-		Broadcast.m_Priority = BroadcastPriority::LOWER;
+		rBroadcast.m_aNextMessage[0] = 0;
+		rBroadcast.m_Priority = BroadcastPriority::LOWER;
 	}
 	else
 	{
@@ -656,24 +665,6 @@ void CGS::SendMotd(int ClientID)
 	CNetMsg_Sv_Motd Msg;
 	Msg.m_pMessage = g_Config.m_SvMotd;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-// Send a change of skin
-void CGS::SendSkinChange(int ClientID, int TargetID)
-{
-	CPlayer *pPlayer = GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
-
-/*	CNetMsg_Sv_SkinChange Msg;
-	Msg.m_ClientID = ClientID;
-	for(int p = 0; p < NUM_SKINPARTS; p++)
-	{
-		Msg.m_apSkinPartNames[p] = pPlayer->Acc().m_aaSkinPartNames[p];
-		Msg.m_aUseCustomColors[p] = pPlayer->Acc().m_aUseCustomColors[p];
-		Msg.m_aSkinPartColors[p] = pPlayer->Acc().m_aSkinPartColors[p];
-	}
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);*/
 }
 
 void CGS::SendGameMsg(int GameMsgID, int ClientID)

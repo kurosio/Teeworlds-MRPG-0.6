@@ -281,7 +281,8 @@ void CCharacterBotAI::EngineNPC()
 		const int RandomDirection = random_int() % 6;
 		if(RandomDirection == 0 || RandomDirection == 2)
 			m_Input.m_Direction = -1 + RandomDirection;
-		else m_Input.m_Direction = 0;
+		else 
+			m_Input.m_Direction = 0;
 	}
 }
 

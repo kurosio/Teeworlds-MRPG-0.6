@@ -655,6 +655,14 @@ void CCharacter::Die(int Killer, int Weapon)
 	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 	m_pPlayer->ClearTalking();
 
+	// send the kill message
+	CNetMsg_Sv_KillMsg Msg;
+	Msg.m_Killer = Killer;
+	Msg.m_Victim = m_pPlayer->GetCID();
+	Msg.m_Weapon = Weapon;
+	Msg.m_ModeSpecial = 0;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, GS()->GetWorldID());
+
 	// respawn
 	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick()/2;
 	m_pPlayer->m_Spawned = true;
