@@ -102,25 +102,21 @@ bool GuildCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
 		GS()->ResetVotes(ClientID, MAIN_MENU);
-		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = true;
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_HOUSE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
 		GS()->ResetVotes(ClientID, MAIN_MENU);
-		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = false;
 		return true;
 	}
 
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_CHAIRS))
 	{
-		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = true;
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_CHAIRS))
 	{
-		pChr->m_Core.m_HookHitDisabled = pChr->m_SkipDamage = false;
 		return true;
 	}
 	if(pChr->GetHelper()->BoolIndex(TILE_GUILD_CHAIRS))

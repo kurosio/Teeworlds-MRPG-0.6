@@ -60,6 +60,18 @@ void CCollision::Init(class CLayers *pLayers)
 		case TILE_NOHOOK:
 			m_pTiles[i].m_Index = COLFLAG_SOLID|COLFLAG_NOHOOK;
 			break;
+		case TILE_GUILD_HOUSE:
+		case TILE_AUCTION:
+		case TILE_PLAYER_HOUSE:
+		case TILE_LEARN_SKILL:
+		case TILE_SHOP_ZONE:
+		case TILE_CRAFT_ZONE:
+		case TILE_AETHER_TELEPORT:
+		case TILE_GUILD_CHAIRS:
+		case TILE_WORLD_SWAP:
+			m_pTiles[i].m_Index = COLFLAG_SAFE_AREA;
+			m_pTiles[i].m_Reserved = static_cast<char>(Index);
+			break;
 		default:
 			m_pTiles[i].m_Index = 0;
 			m_pTiles[i].m_Reserved = static_cast< char >(Index);

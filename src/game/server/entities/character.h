@@ -18,18 +18,8 @@ class CCharacter : public CEntity
 	int m_Event;
 	int m_LastWeapon;
 	int m_QueuedWeapon;
-	int m_AttackTick;
-	int m_EmoteType;
-	int m_EmoteStop;
-
-	// last tick that the player took any action ie some input
-	int m_LastAction;
-	int m_LastNoAmmoSound;
-	int m_NumInputs;
-	int m_TriggeredEvents;
 
 	// info for dead reckoning
-	int m_ReckoningTick; // tick that we are performing dead reckoning From
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
 
@@ -48,6 +38,17 @@ class CCharacter : public CEntity
 	bool IsLockedWorld();
 
 protected:
+	int m_ReckoningTick; // tick that we are performing dead reckoning From
+
+	// last tick that the player took any action ie some input
+	int m_LastNoAmmoSound;
+	int m_NumInputs;
+	int m_TriggeredEvents;
+	int m_LastAction;
+
+	int m_AttackTick;
+	int m_EmoteType;
+	int m_EmoteStop;
 	int m_Health;
 	int m_Mana;
 
@@ -85,10 +86,11 @@ public:
 	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
 	void ResetHook();
 	void ResetInput();
-	void ResetPredict();
+	void ResetSafe();
 	bool IsGrounded() const;
 
 	bool IsAllowedPVP(int FromID) const;
+	void SetSafe(int FlagsDisallow = CHARACTERFLAG_HAMMER_HIT_DISABLED | CHARACTERFLAG_COLLISION_DISABLED | CHARACTERFLAG_HOOK_HIT_DISABLED);
 	bool IsAlive() const { return m_Alive; }
 	void SetEvent(int EventID) { m_Event = EventID; }
 	void SetEmote(int Emote, int Sec);
@@ -117,7 +119,7 @@ public:
 	CCharacterCore m_Core;
 
 	// allow perm
-	bool m_SkipDamage;
+	bool m_DamageDisabled;
 	int m_AmmoRegen;
 	int m_ReloadTimer;
 

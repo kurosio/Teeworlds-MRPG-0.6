@@ -69,7 +69,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	m_Mana = 0;
 	m_OldPos = Pos;
-	m_SkipDamage = false;
+	m_DamageDisabled = false;
 	m_Core.m_CollisionDisabled = false;
 	m_Event = TILE_CLEAR_EVENTS;
 	m_Core.m_WorldID = m_pPlayer->GetPlayerWorldID();
@@ -447,9 +447,6 @@ void CCharacter::SetEmote(int Emote, int Sec)
 
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 {
-	// reset predict
-	ResetPredict();
-
 	// check for changes
 	if(mem_comp(&m_Input, pNewInput, sizeof(CNetObj_PlayerInput)) != 0)
 		m_LastAction = Server()->Tick();
@@ -500,18 +497,19 @@ void CCharacter::ResetInput()
 	m_LatestPrevInput = m_LatestInput = m_Input;
 }
 
-void CCharacter::ResetPredict()
-{
-	m_Core.m_HammerHitDisabled = false;
-	m_Core.m_CollisionDisabled = false;
-	m_Core.m_HookHitDisabled = false;
-}
-
 void CCharacter::Tick()
 {
 	if(!IsAlive())
 		return;
 
+	// reset safe
+	ResetSafe();
+
+	// check safe area TODO: use another method
+	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA))
+		SetSafe();
+
+	HandleTilesets();
 	HandleTuning();
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pPlayer->m_NextTuningParams);
@@ -528,11 +526,10 @@ void CCharacter::Tick()
 
 	HandleWeapons();
 
-	if (m_pPlayer->IsBot() || IsLockedWorld())
+	if (IsLockedWorld())
 		return;
 
 	HandleAuthedPlayer();
-	HandleTilesets();
 }
 
 void CCharacter::TickDeferred()
@@ -849,10 +846,7 @@ void CCharacter::Snap(int SnappingClient)
 		}
 	}
 
-	// DDNetCharacter : disable for bots
-	if(m_pPlayer->IsBot())
-		return;
-
+	// DDNetCharacter
 	CNetObj_DDNetCharacter *pDDNetCharacter = static_cast<CNetObj_DDNetCharacter *>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_DDNetCharacter)));
 	if(!pDDNetCharacter)
 		return;
@@ -895,6 +889,7 @@ void CCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_FreezeStart = m_Core.m_FreezeStart;
 	pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;
 	pDDNetCharacter->m_TargetY = m_Core.m_Input.m_TargetY;
+
 }
 
 void CCharacter::PostSnap()
@@ -908,22 +903,23 @@ void CCharacter::HandleTilesets()
 		return;
 
 	// get index tileset char pos component items
-	const int Index = GS()->Collision()->GetParseTilesAt(m_Core.m_Pos.x, m_Core.m_Pos.y);
-	if(!m_pPlayer->IsBot() && GS()->Mmo()->OnPlayerHandleTile(this, Index))
+	const int Tile = GS()->Collision()->GetParseTilesAt(m_Core.m_Pos.x, m_Core.m_Pos.y);
+	if(!m_pPlayer->IsBot() && GS()->Mmo()->OnPlayerHandleTile(this, Tile))
 		return;
 
 	// next for all bots & players
-	for (int i = TILE_CLEAR_EVENTS; i <= TILE_EVENT_HEALTH; i++)
+	for(int i = TILE_CLEAR_EVENTS; i <= TILE_EVENT_HEALTH; i++)
 	{
-		if (m_pHelper->TileEnter(Index, i))
+		if(m_pHelper->TileEnter(Tile, i))
 			SetEvent(i);
-		else if (m_pHelper->TileExit(Index, i)) {}
+		else if(m_pHelper->TileExit(Tile, i)) { }
 	}
 
 	// water effect enter exit
-	const bool EnterExitWaterTile = m_pHelper->TileEnter(Index, TILE_WATER) || m_pHelper->TileExit(Index, TILE_WATER);
-	if (EnterExitWaterTile)
+	if(m_pHelper->TileEnter(Tile, TILE_WATER) || m_pHelper->TileExit(Tile, TILE_WATER))
+	{
 		GS()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+	}
 }
 
 void CCharacter::HandleEvents()
@@ -1096,7 +1092,7 @@ void CCharacter::HandleAuthedPlayer()
 bool CCharacter::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
-	if(!pFrom || (m_SkipDamage || pFrom->GetCharacter()->m_SkipDamage) || (m_pPlayer->IsBot() && pFrom->IsBot()))
+	if(!pFrom || (m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled) || (m_pPlayer->IsBot() && pFrom->IsBot()))
 		return false;
 
 	// pvp only for mobs
@@ -1132,6 +1128,26 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 
 	return true;
 }
+
+void CCharacter::SetSafe(int FlagsDisallow)
+{
+	if(FlagsDisallow & CHARACTERFLAG_HAMMER_HIT_DISABLED)
+		m_Core.m_HammerHitDisabled = true;
+	if(FlagsDisallow & CHARACTERFLAG_COLLISION_DISABLED)
+		m_Core.m_CollisionDisabled = true;
+	if(FlagsDisallow & CHARACTERFLAG_HOOK_HIT_DISABLED)
+		m_Core.m_HookHitDisabled = true;
+	m_DamageDisabled = true;
+}
+
+void CCharacter::ResetSafe()
+{
+	m_Core.m_HammerHitDisabled = false;
+	m_Core.m_CollisionDisabled = false;
+	m_Core.m_HookHitDisabled = false;
+	m_DamageDisabled = false;
+}
+
 
 bool CCharacter::IsLockedWorld()
 {

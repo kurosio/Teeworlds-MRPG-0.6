@@ -35,6 +35,7 @@ private:
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos) override;
 	void Tick() override;
 	void TickDeferred() override;
+	void Snap(int SnappingClient) override;
 	void GiveRandomEffects(int To) override;
 	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon) override;
 	void Die(int Killer, int Weapon) override;

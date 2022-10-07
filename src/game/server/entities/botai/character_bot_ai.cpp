@@ -196,6 +196,13 @@ void CCharacterBotAI::Tick()
 	if(!m_BotActive || !IsAlive())
 		return;
 
+	// reset safe
+	ResetSafe();
+
+	// check safe area TODO: use another method
+	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA))
+		SetSafe();
+
 	EngineBots();
 	HandleEvents();
 	HandleTilesets();
@@ -215,7 +222,6 @@ void CCharacterBotAI::Tick()
 	}
 
 	HandleWeapons();
-
 }
 
 void CCharacterBotAI::TickDeferred()
@@ -233,6 +239,44 @@ void CCharacterBotAI::TickDeferred()
 	m_Core.Move(&PlayerTune);
 	m_Core.Quantize();
 	m_Pos = m_Core.m_Pos;
+}
+
+void CCharacterBotAI::Snap(int SnappingClient)
+{
+	if(NetworkClipped(SnappingClient) || !m_pBotPlayer->IsVisibleForClient(SnappingClient))
+		return;
+
+	CNetObj_Character* pCharacter = static_cast<CNetObj_Character*>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pBotPlayer->GetCID(), sizeof(CNetObj_Character)));
+	if(!pCharacter)
+		return;
+
+	// write down the m_Core
+	if(!m_ReckoningTick || GS()->m_World.m_Paused)
+	{
+		// no dead reckoning when paused because the client doesn't know
+		// how far to perform the reckoning
+		pCharacter->m_Tick = 0;
+		m_Core.Write(pCharacter);
+	}
+
+	// set emote
+	if(m_EmoteStop < Server()->Tick())
+	{
+		m_EmoteType = EMOTE_NORMAL;
+		m_EmoteStop = -1;
+	}
+
+	pCharacter->m_Emote = m_EmoteType;
+	if(250 - ((Server()->Tick() - m_LastAction) % (250)) < 5)
+		pCharacter->m_Emote = EMOTE_BLINK;
+
+	pCharacter->m_AttackTick = m_AttackTick;
+	pCharacter->m_Direction = m_Input.m_Direction;
+	pCharacter->m_Weapon = m_Core.m_ActiveWeapon;
+	pCharacter->m_AmmoCount = 0;
+	pCharacter->m_Health = 0;
+	pCharacter->m_Armor = 0;
+	pCharacter->m_PlayerFlags = m_pBotPlayer->m_PlayerFlags;
 }
 
 // interactive bots
@@ -636,9 +680,7 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 		if(pFindPlayer && distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f &&
 			!GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr) && m_pBotPlayer->IsVisibleForClient(i))
 		{
-			pFindPlayer->GetCharacter()->m_Core.m_HammerHitDisabled = true;
-			pFindPlayer->GetCharacter()->m_Core.m_CollisionDisabled = true;
-			pFindPlayer->GetCharacter()->m_Core.m_HookHitDisabled = true;
+			pFindPlayer->GetCharacter()->SetSafe();
 
 			m_Input.m_TargetX = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
 			m_Input.m_TargetY = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
@@ -726,10 +768,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 
 		// disable collision and hook with players
 		if(distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f)
-		{
-			pFindPlayer->GetCharacter()->m_Core.m_CollisionDisabled = true;
-			pFindPlayer->GetCharacter()->m_Core.m_HookHitDisabled = true;
-		}
+			pFindPlayer->GetCharacter()->SetSafe();
 
 		// skip full health
 		if(pFindPlayer->GetHealth() >= pFindPlayer->GetStartHealth())
