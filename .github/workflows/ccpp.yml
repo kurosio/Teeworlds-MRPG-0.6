@@ -17,7 +17,7 @@ jobs:
         include:
         - name: "Ubuntu x86_64"
           os: ubuntu-latest
-          cmake-args: -G Ninja
+          cmake-args: -G "Unix Makefiles"
           package-file: mmoteeworlds-linux_x86_64.tar.xz
           package-full-file: mmoteeworlds-linux_x86_64-full.tar.xz
           env:
