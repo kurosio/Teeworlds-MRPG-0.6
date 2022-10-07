@@ -502,10 +502,8 @@ void CCharacter::Tick()
 	if(!IsAlive())
 		return;
 
-	// reset safe
+	// check safe area
 	ResetSafe();
-
-	// check safe area TODO: use another method
 	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA))
 		SetSafe();
 
