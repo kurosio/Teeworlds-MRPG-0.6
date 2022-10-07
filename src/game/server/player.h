@@ -73,6 +73,7 @@ public:
 	short m_aSortTabs[NUM_SORT_TAB];
 	short m_OpenVoteMenu;
 	short m_LastVoteMenu;
+	bool m_RequestChangeNickname;
 
 	// TODO: fixme. improve the system using the ID method, as well as the ability to implement Backpage
 	CVoteOptionsCallback m_ActiveMenuOptionCallback;

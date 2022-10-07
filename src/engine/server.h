@@ -56,7 +56,10 @@ public:
 	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) const = 0;
 	virtual void SetClientDDNetVersion(int ClientID, int DDNetVersion) = 0;
 	virtual void GetClientAddr(int ClientID, char* pAddrStr, int Size) const = 0;
-	
+
+	virtual void SetClientNameChangeRequest(int ClientID, const char* pName) = 0;
+	virtual const char* GetClientNameChangeRequest(int ClientID) = 0;
+
 	virtual int GetClientVersion(int ClientID) const = 0;
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1) = 0;
 

@@ -66,6 +66,7 @@ public:
 
 		// names update
 		char m_aName[MAX_NAME_LENGTH];
+		char m_aNameChangeRequest[MAX_NAME_LENGTH];
 		char m_aClan[MAX_CLAN_LENGTH];
 		char m_aLanguage[MAX_LANGUAGE_LENGTH];
 
@@ -146,6 +147,9 @@ public:
 	void SetClientClan(int ClientID, char const *pClan) override;
 	void SetClientCountry(int ClientID, int Country) override;
 	void SetClientScore(int ClientID, int Score) override;
+
+	void SetClientNameChangeRequest(int ClientID, const char* pName) override;
+	const char* GetClientNameChangeRequest(int ClientID) override;
 
 	bool IsClientChangesWorld(int ClientID) override;
 	void ChangeWorld(int ClientID, int NewWorldID) override;

@@ -970,6 +970,38 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			return;
 		}
 
+		else if(MsgID == NETMSGTYPE_CL_CHANGEINFO)
+		{
+			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[TickState::LastChangeInfo] 
+				&& pPlayer->m_aPlayerTick[TickState::LastChangeInfo] + Server()->TickSpeed() * g_Config.m_SvInfoChangeDelay > Server()->Tick())
+				return;
+
+			CNetMsg_Cl_ChangeInfo* pMsg = (CNetMsg_Cl_ChangeInfo*)pRawMsg;
+			if(!str_utf8_check(pMsg->m_pClan) || !str_utf8_check(pMsg->m_pSkin))
+				return;
+
+			pPlayer->m_aPlayerTick[TickState::LastChangeInfo] = Server()->Tick();
+
+			// set infos
+			if(str_comp(Server()->ClientName(ClientID), pMsg->m_pName) != 0)
+			{
+				pPlayer->m_RequestChangeNickname = true;
+				Server()->SetClientNameChangeRequest(ClientID, pMsg->m_pName);
+				Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 300, 
+					"Press F3 to confirm the nickname change to [{STR}]\n- After the change, you will only be able to log in with the new nickname", pMsg->m_pName);
+			}
+
+			Server()->SetClientClan(ClientID, pMsg->m_pClan);
+			Server()->SetClientCountry(ClientID, pMsg->m_Country);
+
+			str_copy(pPlayer->GetTeeInfo().m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->GetTeeInfo().m_aSkinName));
+			pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
+			pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
+			pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
+
+			Server()->ExpireServerInfo();
+		}
+
 		else if (MsgID == NETMSGTYPE_CL_EMOTICON)
 		{
 			CNetMsg_Cl_Emoticon *pMsg = (CNetMsg_Cl_Emoticon *)pRawMsg;

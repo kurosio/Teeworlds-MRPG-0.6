@@ -484,6 +484,17 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 	// - - - - - F3- - - - - - -
 	if (Vote == 1)
 	{
+		if(m_RequestChangeNickname)
+		{
+			if(GS()->Mmo()->Account()->ChangeNickname(m_ClientID))
+				GS()->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 300, "Your nickname has been successfully updated");
+			else
+				GS()->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 300, "This nickname is already in use");
+
+			m_RequestChangeNickname = false;
+			return true;
+		}
+
 		if(GS()->IsDungeon())
 		{
 			const int DungeonID = GS()->GetDungeonID();
@@ -494,6 +505,7 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 			}
 			return true;
 		}
+
 	}
 	// - - - - - F4- - - - - - -
 	else

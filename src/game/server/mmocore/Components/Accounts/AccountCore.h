@@ -23,6 +23,7 @@ public:
 	AccountCodeResult LoginAccount(int ClientID, const char *Login, const char *Password);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
 	void DiscordConnect(int ClientID, const char *pDID) const;
+	bool ChangeNickname(int ClientID);
 
 	int GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const;
 	

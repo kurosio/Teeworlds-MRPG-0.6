@@ -194,6 +194,22 @@ void CServer::SetClientScore(int ClientID, int Score)
 	m_aClients[ClientID].m_Score = Score;
 }
 
+void CServer::SetClientNameChangeRequest(int ClientID, const char* pName)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
+		return;
+
+	str_utf8_copy_num(m_aClients[ClientID].m_aNameChangeRequest, pName, sizeof(m_aClients[ClientID].m_aNameChangeRequest), MAX_NAME_LENGTH);
+}
+
+const char* CServer::GetClientNameChangeRequest(int ClientID)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
+		return "{invalid}";
+
+	return m_aClients[ClientID].m_aNameChangeRequest;
+}
+
 void CServer::SetClientLanguage(int ClientID, const char* pLanguage)
 {
 	if (ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)

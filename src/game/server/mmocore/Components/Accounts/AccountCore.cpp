@@ -219,13 +219,29 @@ void CAccountCore::DiscordConnect(int ClientID, const char *pDID) const
 #endif
 }
 
+bool CAccountCore::ChangeNickname(int ClientID)
+{
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer || !pPlayer->m_RequestChangeNickname)
+		return false;
+
+	// check newnickname
+	const CSqlString<32> cClearNick = CSqlString<32>(Server()->GetClientNameChangeRequest(ClientID));
+	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
+	if(pRes->next())
+		return false;
+
+	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "Nick = '%s' WHERE ID = '%d'", cClearNick.cstr(), pPlayer->Acc().m_UserID);
+	Server()->SetClientName(ClientID, Server()->GetClientNameChangeRequest(ClientID));
+	return true;
+}
+
 int CAccountCore::GetRank(int AccountID)
 {
 	int Rank = 0;
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC");
 	while(pRes->next())
 	{
-		
 		const int ID = pRes->getInt("ID");
 		if(AccountID == ID)
 			return Rank;
