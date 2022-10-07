@@ -72,7 +72,7 @@ jobs:
         mv mmoteeworlds_srv ..
         mv ${{ matrix.package-file }} ..
         cd ..
-        tar -cf ${{ matrix.package-full-file }} mmoteeworlds_srv maps server_lang ${{ matrix.package-file }}
+        tar -cf ${{ matrix.package-full-file }} ${{ matrix.package-file }}
         mv ${{ matrix.package-full-file }} release/artifacts
     - name: Package(Windows)
       if: contains(matrix.os, 'windows')
@@ -82,7 +82,7 @@ jobs:
         mv mmoteeworlds_srv.exe ..
         mv ${{ matrix.package-file }} ..
         cd ..
-        7z a ${{ matrix.package-full-file }} mmoteeworlds_srv.exe maps server_lang ${{ matrix.package-file }}
+        7z a ${{ matrix.package-full-file }} ${{ matrix.package-file }}
         mv ${{ matrix.package-full-file }} release/artifacts
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2-preview
