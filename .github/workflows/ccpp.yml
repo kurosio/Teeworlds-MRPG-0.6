@@ -13,33 +13,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, windows-2019]
+        os: [ubuntu-latest, windows-latest]
         include:
-        - name: "Ubuntu-Latest x86_64"
+        - name: "Ubuntu x86_64"
           os: ubuntu-latest
-          cmake-args: -G "Unix Makefiles"
-          build-args: --parallel
+          cmake-args: -G Ninja
           package-file: mmoteeworlds-linux_x86_64.tar.xz
           package-full-file: mmoteeworlds-linux_x86_64-full.tar.xz
           env:
             CFLAGS: -Wdeclaration-after-statement -Wduplicated-branches -Werror
             CXXFLAGS: -Wduplicated-branches -Werror
             
-        - name: "Windows x64"
+        - name: "Windows"
           os: windows-latest
-          cmake-args: -G "Visual Studio 17 2022" -A x64
+          cmake-args: -A x64
           package-file: mmoteeworlds-win64.zip
           package-full-file: mmoteeworlds-win64-full.zip
-          env:
-            CFLAGS: /WX
-            CXXFLAGS: /WX
-            LDFLAGS: /WX
-
-        - name: "Windows x86"
-          os: windows-2019
-          cmake-args: -G "Visual Studio 16 2019" -A Win32
-          package-file: mmoteeworlds-win32.zip
-          package-full-file: mmoteeworlds-win32-full.zip
           env:
             CFLAGS: /WX
             CXXFLAGS: /WX
