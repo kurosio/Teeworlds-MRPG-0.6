@@ -1091,7 +1091,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 	{
 		if (MsgID == NETMSGTYPE_CL_STARTINFO)
 		{
-			if(pPlayer->m_aPlayerTick[TickState::LastChangeInfo] != 0)
+			if(!pPlayer || pPlayer->m_aPlayerTick[TickState::LastChangeInfo] != 0)
 				return;
 
 			pPlayer->m_aPlayerTick[TickState::LastChangeInfo] = Server()->Tick();

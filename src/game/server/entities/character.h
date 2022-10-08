@@ -58,7 +58,7 @@ protected:
 	CNetObj_PlayerInput m_LatestInput;
 
 	void HandleWeapons();
-	void HandleTilesets();
+	void HandleTilesets(int *pIndex);
 	void HandleEvents();
 	void HandleIndependentTuning();
 

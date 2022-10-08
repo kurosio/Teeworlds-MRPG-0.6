@@ -24,9 +24,9 @@ public:
 	int GetNecessaryQuest(int WorldID = -1) const;
 	vec2 GetPositionQuestBot(int ClientID, const QuestBotInfo& QuestBot) const;
 	void CheckQuestingOpened(CPlayer* pPlayer, int QuestID) const;
+	bool ChangeWorld(CPlayer* pPlayer, vec2 Pos);
 
 private:
-	bool ChangeWorld(CPlayer* pPlayer, vec2 Pos);
 	int GetID(vec2 Pos) const;
 };
 

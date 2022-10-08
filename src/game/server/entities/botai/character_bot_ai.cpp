@@ -29,25 +29,28 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	ClearTarget();
 
 	// mob information
-	const int SubBotID = m_pBotPlayer->GetBotMobID();
-	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[SubBotID].m_Boss)
+	const int MobID = m_pBotPlayer->GetBotMobID();
+	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[MobID].m_Boss)
 	{
 		for(int i = 0; i < 3; i++)
 		{
 			CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
 			CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
 		}
-		if (!GS()->IsDungeon())
-			GS()->ChatWorldID(MobBotInfo::ms_aMobBot[SubBotID].m_WorldID, "", "In your zone emerging {STR}!", MobBotInfo::ms_aMobBot[SubBotID].GetName());
+
+		if(!GS()->IsDungeon())
+		{
+			GS()->ChatWorldID(MobBotInfo::ms_aMobBot[MobID].m_WorldID, "", "In your zone emerging {STR}!", MobBotInfo::ms_aMobBot[MobID].GetName());
+		}
 	}
-	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
+	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST && QuestBotInfo::ms_aQuestBot[MobID].m_HasAction)
 	{
 		CreateSnapProj(GetSnapFullID(), 2, POWERUP_HEALTH, true, false);
 		CreateSnapProj(GetSnapFullID(), 2, POWERUP_ARMOR, true, false);
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
 	{
-		const int Function = NpcBotInfo::ms_aNpcBot[SubBotID].m_Function;
+		const int Function = NpcBotInfo::ms_aNpcBot[MobID].m_Function;
 		if(Function == FunctionsNPC::FUNCTION_NPC_GIVE_QUEST)
 			CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
 	}
@@ -199,7 +202,9 @@ void CCharacterBotAI::Tick()
 
 	EngineBots();
 	HandleEvents();
-	HandleTilesets();
+	// safe change world data from tick
+	int Index;
+	HandleTilesets(&Index);
 	HandleTuning();
 
 	m_Core.m_Input = m_Input;

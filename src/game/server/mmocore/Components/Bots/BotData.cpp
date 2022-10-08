@@ -13,17 +13,17 @@ void CDialog::Init(int BotID, std::string DialogueData, int Emote, bool ActionSt
 	{
 		int64_t size = -1;
 
-		const char* pChecking = str_find_nocase(Text.c_str(), "[BS_");
-		if(int SearchBotID = 0; pChecking != nullptr && sscanf(pChecking, "[BS_%d]", &SearchBotID) && DataBotInfo::IsDataBotValid(SearchBotID))
+		const char* pChecking = str_find_nocase(Text.c_str(), "[bot_");
+		if(int SearchBotID = 0; pChecking != nullptr && sscanf(pChecking, "[bot_%d]", &SearchBotID) && DataBotInfo::IsDataBotValid(SearchBotID))
 		{
 			char aBufSearch[16];
-			str_format(aBufSearch, sizeof(aBufSearch), "[BS_%d]", SearchBotID);
+			str_format(aBufSearch, sizeof(aBufSearch), "[bot_%d]", SearchBotID);
 			Text.erase(0, str_length(aBufSearch));
 
 			pVariant->Init(DataBotInfo::ms_aDataBot[SearchBotID].m_aNameBot);
 			pVariant->m_Flag |= TALKED_FLAG_SAYS_BOT;
 		}
-		else if(pChecking = str_find_nocase(Text.c_str(), "[P]"); pChecking != nullptr)
+		else if(pChecking = str_find_nocase(Text.c_str(), "[p]"); pChecking != nullptr)
 		{
 			Text.erase(0, size + 4);
 

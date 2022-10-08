@@ -166,12 +166,15 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 
 	for(auto& pStepBot : CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot)
 	{
-		// header
-		QuestBotInfo* pBotInfo = pStepBot.second.m_Bot;
+		const QuestBotInfo* pBotInfo = pStepBot.second.m_Bot;
+		if(!pBotInfo->m_HasAction)
+			continue;
+
 		const int HideID = (NUM_TAB_MENU + pBotInfo->m_SubBotID);
 		const vec2 Pos = pBotInfo->m_Position / 32.0f;
-		const char* pSymbol = (((pPlayerQuest.GetState() == QUEST_ACCEPT && pPlayerQuest.m_StepsQuestBot[pStepBot.first].m_StepComplete) || pPlayerQuest.GetState() ==
-			                       QUEST_FINISHED) ? "✔ " : "\0");
+		const CPlayerQuestStepDataInfo& rQuestStepDataInfo = pPlayerQuest.m_StepsQuestBot[pStepBot.first];
+		const char* pSymbol = (((pPlayerQuest.GetState() == QUEST_ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest.GetState() == QUEST_FINISHED) ? "✔ " : "\0");
+		
 		GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, pBotInfo->m_Step, pBotInfo->GetName(), Server()->GetWorldName(pBotInfo->m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
@@ -190,7 +193,7 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			if(NeedKillMobID > 0 && KillNeed > 0 && DataBotInfo::ms_aDataBot.find(NeedKillMobID) != DataBotInfo::ms_aDataBot.end())
 			{
 				GS()->AVM(ClientID, "null", NOPE, HideID, "- Defeat {STR} [{INT}/{INT}]",
-					DataBotInfo::ms_aDataBot[NeedKillMobID].m_aNameBot, pPlayerQuest.m_StepsQuestBot[pStepBot.first].m_MobProgress[i], KillNeed);
+					DataBotInfo::ms_aDataBot[NeedKillMobID].m_aNameBot, rQuestStepDataInfo.m_MobProgress[i], KillNeed);
 				NeedOnlyTalk = false;
 			}
 

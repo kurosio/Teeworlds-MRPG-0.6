@@ -39,6 +39,7 @@ class CPlayer
 	{
 		int m_TalkedID;
 		int m_Progress;
+		int m_RequestProgress;
 		bool m_FreezedProgress;
 	};
 	StructDialogNPC m_DialogNPC;

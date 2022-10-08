@@ -47,16 +47,6 @@ void CWorldSwapCore::OnInitWorld(const char* pWhereLocalWorld)
 
 bool CWorldSwapCore::OnHandleTile(CCharacter *pChr, int IndexCollision)
 {
-	CPlayer *pPlayer = pChr->GetPlayer();
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_WORLD_SWAP))
-	{
-		ChangeWorld(pPlayer, pChr->m_Core.m_Pos);
-		return true;
-	}
-	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_WORLD_SWAP))
-	{
-		return true;
-	}
 	return false;
 }
 

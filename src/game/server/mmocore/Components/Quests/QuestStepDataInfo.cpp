@@ -205,7 +205,7 @@ void CPlayerQuestStepDataInfo::AddMobProgress(CPlayer* pPlayer, int BotID)
 
 void CPlayerQuestStepDataInfo::CreateStepArrow(CPlayer* pPlayer)
 {
-	if(!pPlayer || !pPlayer->GetCharacter() || m_StepComplete)
+	if(!pPlayer || !pPlayer->GetCharacter() || m_StepComplete || !m_Bot->m_HasAction)
 		return;
 
 	if(pPlayer->GetQuest(m_Bot->m_QuestID).GetState() == QUEST_ACCEPT && pPlayer->GetQuest(m_Bot->m_QuestID).m_Step == m_Bot->m_Step)

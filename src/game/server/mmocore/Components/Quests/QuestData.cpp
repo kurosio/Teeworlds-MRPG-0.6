@@ -192,7 +192,7 @@ void CQuestData::CheckaAvailableNewStep()
 {
 	// check whether the active steps is complete
 	auto pActiveStep = std::find_if(m_StepsQuestBot.begin(), m_StepsQuestBot.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &pItem)
-	{ return (pItem.second.m_Bot->m_Step == m_Step && !pItem.second.m_StepComplete); });
+	{ return (pItem.second.m_Bot->m_Step == m_Step && !pItem.second.m_StepComplete && pItem.second.m_Bot->m_HasAction); });
 	if(pActiveStep != m_StepsQuestBot.end())
 		return;
 
@@ -205,7 +205,7 @@ void CQuestData::CheckaAvailableNewStep()
 	CGS* pGS = m_pPlayer->GS();
 	for(auto& pStepBot : m_StepsQuestBot)
 	{
-		if(!pStepBot.second.m_StepComplete)
+		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot->m_HasAction)
 			FinalStep = false;
 
 		pStepBot.second.UpdateBot(pGS);

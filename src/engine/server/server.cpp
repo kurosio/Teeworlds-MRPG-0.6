@@ -1835,9 +1835,9 @@ int CServer::Run()
 							if(m_aClients[ClientID].m_State <= CClient::STATE_AUTH)
 								continue;
 
+							m_aClients[ClientID].Reset();
 							m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 							m_aClients[ClientID].m_WorldID = WORLD_STANDARD;
-							m_aClients[ClientID].Reset();
 							SendMap(ClientID);
 						}
 						m_HeavyReload = false;

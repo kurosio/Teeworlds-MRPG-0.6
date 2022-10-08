@@ -99,7 +99,7 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_aNeedMob[1] = pRes->getInt("RequiredDefeatMobID2");
 		QuestBot.m_InteractiveType = pRes->getInt("InteractionType");
 		QuestBot.m_InteractiveTemp = pRes->getInt("InteractionTemp");
-		QuestBot.m_GenerateNick = pRes->getBoolean("GenerateSubName");
+		//QuestBot.m_GenerateNick = pRes->getBoolean("GenerateSubName");
 		sscanf(pRes->getString("Amount").c_str(), "|%d|%d|%d|%d|%d|%d|",
 			&QuestBot.m_aItemSearchValue[0], &QuestBot.m_aItemSearchValue[1], &QuestBot.m_aItemGivesValue[0], &QuestBot.m_aItemGivesValue[1], &QuestBot.m_aNeedMobValue[0], &QuestBot.m_aNeedMobValue[1]);
 
@@ -111,10 +111,13 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 				for(auto& pItem : JsonData)
 				{
 					const int Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "").c_str());
-					bool ActionSteep = pItem.value("action_step", 0);
+					bool ActionStep = pItem.value("action_step", 0);
+
+					if(ActionStep)
+						QuestBot.m_HasAction = ActionStep;
 
 					CDialog Dialogue;
-					Dialogue.Init(QuestBot.m_BotID, pItem.value("text", ""), Emote, ActionSteep);
+					Dialogue.Init(QuestBot.m_BotID, pItem.value("text", ""), Emote, ActionStep);
 					QuestBot.m_aDialogs.push_back(Dialogue);
 				}
 			}
@@ -126,7 +129,10 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 		
 		// initilize
 		if(QuestID > 0)
+		{
 			CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot[MobID].m_Bot = &QuestBotInfo::ms_aQuestBot[MobID];
+		}
+
 		QuestBotInfo::ms_aQuestBot[MobID] = QuestBot;
 	}
 }

@@ -272,7 +272,7 @@ void CCharacter::FireWeapon()
 			for (int i = 0; i < Num; ++i)
 			{
 				CCharacter* pTarget = apEnts[i];
-				if((pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
+				if(!pTarget  || (pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
 					continue;
 
 				// talking wth bot
@@ -509,7 +509,16 @@ void CCharacter::Tick()
 		SetSafe();
 	}
 
-	HandleTilesets();
+	// safe change world data from tick
+	int Index;
+	HandleTilesets(&Index);
+	if(GetHelper()->TileEnter(Index, TILE_WORLD_SWAP))
+	{
+		GS()->Mmo()->WorldSwap()->ChangeWorld(m_pPlayer, m_Core.m_Pos);
+		return;
+	}
+	if(GetHelper()->TileExit(Index, TILE_WORLD_SWAP)) {}
+
 	HandleTuning();
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pPlayer->m_NextTuningParams);
@@ -897,13 +906,13 @@ void CCharacter::PostSnap()
 	m_TriggeredEvents = 0;
 }
 
-void CCharacter::HandleTilesets()
+void CCharacter::HandleTilesets(int* pIndex)
 {
 	if(!m_Alive)
 		return;
 
 	// get index tileset char pos component items
-	const int Tile = GS()->Collision()->GetParseTilesAt(m_Core.m_Pos.x, m_Core.m_Pos.y);
+	const int Tile = (*pIndex) = GS()->Collision()->GetParseTilesAt(m_Core.m_Pos.x, m_Core.m_Pos.y);
 	if(!m_pPlayer->IsBot() && GS()->Mmo()->OnPlayerHandleTile(this, Tile))
 		return;
 
