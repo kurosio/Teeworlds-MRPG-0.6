@@ -114,7 +114,7 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 					bool ActionSteep = pItem.value("action_step", 0);
 
 					CDialog Dialogue;
-					Dialogue.Init(pItem.value("text", ""), Emote, ActionSteep);
+					Dialogue.Init(QuestBot.m_BotID, pItem.value("text", ""), Emote, ActionSteep);
 					QuestBot.m_aDialogs.push_back(Dialogue);
 				}
 			}
@@ -165,7 +165,7 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 					bool RequestAction = pItem.value("action_step", 0);
 
 					CDialog Dialogue;
-					Dialogue.Init(pItem.value("text", ""), Emote, RequestAction);
+					Dialogue.Init(NpcBot.m_BotID, pItem.value("text", ""), Emote, RequestAction);
 					NpcBot.m_aDialogs.push_back(Dialogue);
 				}
 			}
@@ -280,10 +280,10 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 	CDialog::VariantText* pVariant = NpcBotInfo::ms_aNpcBot[MobID].m_aDialogs[Progress].GetVariant();
 
 	const char* TalkedNick = "\0";
-	if(pVariant->m_Flag & TALKED_FLAG_SAYS_PLAYER)
+	if(pVariant->GetSaysName() == nullptr)
 		TalkedNick = Server()->ClientName(ClientID);
-	else if(pVariant->m_Flag & TALKED_FLAG_SAYS_BOT)
-		TalkedNick = NpcBotInfo::ms_aNpcBot[MobID].GetName();
+	else
+		TalkedNick = pVariant->GetSaysName();
 
 	pPlayer->FormatDialogText(BotID, pVariant->m_Text.c_str());
 	str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) %s:\n- %s", (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
@@ -308,10 +308,10 @@ void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, boo
 
 	const char* TalkedNick = "\0";
 	const int QuestID = QuestBotInfo::ms_aQuestBot[MobID].m_QuestID;
-	if(pVariant->m_Flag & TALKED_FLAG_SAYS_PLAYER)
+	if(pVariant->GetSaysName() == nullptr)
 		TalkedNick = Server()->ClientName(ClientID);
-	else if(pVariant->m_Flag & TALKED_FLAG_SAYS_BOT)
-		TalkedNick = QuestBotInfo::ms_aQuestBot[MobID].GetName();
+	else
+		TalkedNick = pVariant->GetSaysName();
 
 	char aReformatText[512];
 	pPlayer->FormatDialogText(BotID, pVariant->m_Text.c_str());

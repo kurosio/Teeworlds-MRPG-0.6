@@ -7,18 +7,32 @@ std::map< int, NpcBotInfo > NpcBotInfo::ms_aNpcBot;
 std::map< int, QuestBotInfo > QuestBotInfo::ms_aQuestBot;
 std::map< int, MobBotInfo > MobBotInfo::ms_aMobBot;
 
-void CDialog::Init(std::string DialogueData, int Emote, bool ActionStep)
+void CDialog::Init(int BotID, std::string DialogueData, int Emote, bool ActionStep)
 {
-	auto VariantInit = [](VariantText* pVariant, std::string Text)
+	auto VariantInit = [BotID](VariantText* pVariant, std::string Text)
 	{
 		int64_t size = -1;
-		if(size = Text.find("[p]"); size != -1)
+
+		const char* pChecking = str_find_nocase(Text.c_str(), "[BS_");
+		if(int SearchBotID = 0; pChecking != nullptr && sscanf(pChecking, "[BS_%d]", &SearchBotID) && DataBotInfo::IsDataBotValid(SearchBotID))
 		{
+			char aBufSearch[16];
+			str_format(aBufSearch, sizeof(aBufSearch), "[BS_%d]", SearchBotID);
+			Text.erase(0, str_length(aBufSearch));
+
+			pVariant->Init(DataBotInfo::ms_aDataBot[SearchBotID].m_aNameBot);
+			pVariant->m_Flag |= TALKED_FLAG_SAYS_BOT;
+		}
+		else if(pChecking = str_find_nocase(Text.c_str(), "[P]"); pChecking != nullptr)
+		{
+			Text.erase(0, size + 4);
+
+			pVariant->Init("" /* dynamic data */);
 			pVariant->m_Flag |= TALKED_FLAG_SAYS_PLAYER;
-			Text.erase(0, size + 3);
 		}
 		else
 		{
+			pVariant->Init(DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 			pVariant->m_Flag |= TALKED_FLAG_SAYS_BOT;
 		}
 

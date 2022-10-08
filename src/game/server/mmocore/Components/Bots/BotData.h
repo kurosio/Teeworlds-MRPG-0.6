@@ -9,10 +9,24 @@
 class CDialog
 {
 public:
-	struct VariantText
+	class VariantText
 	{
-		std::string m_Text{};
-		int m_Flag{};
+		std::string m_SaysName;
+
+	public:
+		std::string m_Text {};
+		int m_Flag {};
+
+		void Init(std::string SaysName) { m_SaysName = SaysName; }
+
+		/* return nullptr in case the base name is not set, this also applies to dynamic data of the kind of player name */
+		const char* GetSaysName() const
+		{
+			if(m_SaysName.empty())
+				return nullptr;
+
+			return m_SaysName.c_str();
+		}
 	};
 
 private:
@@ -21,7 +35,7 @@ private:
 	bool m_ActionStep{};
 
 public:
-	void Init(std::string DialogueData, int Emote, bool ActionStep);
+	void Init(int BotID, std::string DialogueData, int Emote, bool ActionStep);
 
 	/* this method should not be called through this function, it should be a reference */
 	[[nodiscard]] VariantText* GetVariant();
