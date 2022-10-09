@@ -118,6 +118,7 @@ class MobBotInfo
 {
 public:
 	bool m_Boss{};
+	bool m_UseHookDissabled{};
 	int m_Power{};
 	int m_Spread{};
 	vec2 m_Position;
