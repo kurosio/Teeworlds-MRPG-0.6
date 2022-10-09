@@ -29,7 +29,7 @@ public:
 		return m_Copy;
 	}
 	// steps with array bot data on active step
-	std::map < int , CQuestStepDataInfo > m_StepsQuestBot;
+	std::unordered_map < int , CQuestStepDataInfo > m_StepsQuestBot;
 
 public:
 	static std::map < int, CQuestDataInfo > ms_aDataQuests;

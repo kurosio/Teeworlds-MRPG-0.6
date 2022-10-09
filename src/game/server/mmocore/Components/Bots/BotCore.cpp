@@ -344,9 +344,9 @@ const char* CBotCore::GetMeaninglessDialog()
 {
 	const char* pTalking[3] =
 	{
-		"[Player], do you have any questions? I'm sorry, can't help you.",
-		"What a beautiful [Time]. I don't have anything for you [Player].",
-		"[Player] are you interested something? I'm sorry, don't want to talk right now."
+		"<player>, do you have any questions? I'm sorry, can't help you.",
+		"What a beautiful <time>. I don't have anything for you <player>.",
+		"<player> are you interested something? I'm sorry, don't want to talk right now."
 	};
 	return pTalking[random_int()%3];
 }

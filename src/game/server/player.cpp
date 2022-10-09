@@ -741,14 +741,14 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			}
 
 			// final step
-			if((m_DialogNPC.m_Progress + 1) == SizeDialogs)
+			m_DialogNPC.m_Progress++;
+			if(m_DialogNPC.m_Progress >= SizeDialogs)
 			{
 				GS()->Mmo()->Quest()->InteractiveQuestNPC(this, QuestBotInfo::ms_aQuestBot[MobID], true);
+				ClearTalking();
 				return;
 			}
 
-			// add progress
-			m_DialogNPC.m_Progress++;
 			GS()->Mmo()->BotsData()->DialogBotStepQuest(this, MobID, m_DialogNPC.m_Progress, false);
 			return;
 		}

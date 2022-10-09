@@ -272,7 +272,7 @@ void CCharacter::FireWeapon()
 			for (int i = 0; i < Num; ++i)
 			{
 				CCharacter* pTarget = apEnts[i];
-				if(!pTarget  || (pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
+				if((pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
 					continue;
 
 				// talking wth bot
@@ -286,7 +286,7 @@ void CCharacter::FireWeapon()
 
 					const int BotID = pTarget->GetPlayer()->GetBotID();
 					GS()->Chat(m_pPlayer->GetCID(), "You start dialogue with {STR}!", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
-					continue;
+					break;
 				}
 
 				if (pTarget->m_Core.m_CollisionDisabled)
