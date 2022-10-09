@@ -136,7 +136,7 @@ void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWare
 
 		if (pItem->Info()->IsEnchantable())
 		{
-			const bool PlayerHasItem = pPlayer->GetItem(pItem->GetID())->HasItem();
+			const bool PlayerHasItem = pPlayer->GetItem(*pItem)->HasItem();
 
 			char aEnchantBuf[16];
 			pItem->Info()->StrFormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf), pItem->GetEnchant());
@@ -150,7 +150,7 @@ void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWare
 		else
 		{
 			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) - {VAL} {STR}",
-				pItem->Info()->GetName(), pItem->GetValue(), pPlayer->GetItem(pItem->GetID())->GetValue(), Price, pCurrencyItem->GetName());
+				pItem->Info()->GetName(), pItem->GetValue(), pPlayer->GetItem(*pItem)->GetValue(), Price, pCurrencyItem->GetName());
 		}
 
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItem->Info()->GetDescription());
