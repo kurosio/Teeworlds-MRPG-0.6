@@ -260,6 +260,11 @@ void CBotCore::SendChatDialog(bool PlayerTalked, int BotType, int MobID, int Cli
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
+void FormatDialog(char* aBuffer, int Size, const char* pTitle, std::pair < int, int > Page, const char* pTalked, const char* pDialogText)
+{
+	str_format(aBuffer, Size, "F4 - next dialog\n---------\n\n%s%s( %d of %d ) %s:\n- %s", pTitle, (pTitle[0] != '\0' ? "\n========= \n\n" : ""), Page.first, Page.second, pTalked, pDialogText);
+}
+
 void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const char *pText)
 {
 	const int sizeDialogs = NpcBotInfo::ms_aNpcBot[MobID].m_aDialogs.size();
@@ -275,7 +280,7 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 	if(pText != nullptr)
 	{
 		pPlayer->FormatDialogText(BotID, pText);
-		str_format(reformTalkedText, sizeof(reformTalkedText), "( 1 of 1 ) %s:\n- %s", NpcBotInfo::ms_aNpcBot[MobID].GetName(), pPlayer->GetDialogText());
+		FormatDialog(reformTalkedText, sizeof(reformTalkedText), "\0", { 1, 1 }, NpcBotInfo::ms_aNpcBot[MobID].GetName(), pPlayer->GetDialogText());
 		pPlayer->ClearDialogText();
 
 		SendChatDialog(true, BotsTypes::TYPE_BOT_NPC, MobID, ClientID, pPlayer->GetDialogText());
@@ -292,7 +297,7 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 		TalkedNick = pVariant->GetSaysName();
 
 	pPlayer->FormatDialogText(BotID, pVariant->m_Text.c_str());
-	str_format(reformTalkedText, sizeof(reformTalkedText), "( %d of %d ) %s:\n- %s", (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
+	FormatDialog(reformTalkedText, sizeof(reformTalkedText), "\0", { (1 + Progress), sizeDialogs }, TalkedNick, pPlayer->GetDialogText());
 	pPlayer->ClearDialogText();
 
 	SendChatDialog(false, BotsTypes::TYPE_BOT_NPC, MobID, ClientID, pPlayer->GetDialogText());
@@ -321,8 +326,7 @@ void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, boo
 
 	char aReformatText[512];
 	pPlayer->FormatDialogText(BotID, pVariant->m_Text.c_str());
-	str_format(aReformatText, sizeof(aReformatText), "%s\n=========\n\n( %d of %d ) %s:\n- %s",
-		GS()->GetQuestInfo(QuestID).GetName(), (1 + Progress), sizeDialogs, TalkedNick, pPlayer->GetDialogText());
+	FormatDialog(aReformatText, sizeof(aReformatText), GS()->GetQuestInfo(QuestID).GetName(), { (1 + Progress), sizeDialogs }, TalkedNick, pPlayer->GetDialogText());
 	pPlayer->ClearDialogText();
 
 	if(ExecutionStep)
