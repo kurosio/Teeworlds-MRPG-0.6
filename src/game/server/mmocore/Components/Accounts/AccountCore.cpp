@@ -242,6 +242,7 @@ int CAccountCore::GetRank(int AccountID)
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC");
 	while(pRes->next())
 	{
+		Rank++;
 		const int ID = pRes->getInt("ID");
 		if(AccountID == ID)
 			return Rank;
