@@ -45,18 +45,6 @@ bool CCraftCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	return false;
 }
 
-int CCraftCore::GetFinalPrice(CPlayer* pPlayer, int CraftID) const
-{
-	if(!pPlayer)
-		return CCraftData::Data()[CraftID].GetPrice();
-
-	int Discount = translate_to_percent_rest(CCraftData::Data()[CraftID].GetPrice(), pPlayer->GetSkill(SkillCraftDiscount)->GetLevel());
-	if(pPlayer->GetItem(itTicketDiscountCraft)->IsEquipped())
-		Discount += translate_to_percent_rest(CCraftData::Data()[CraftID].GetPrice(), 20);
-
-	return max(CCraftData::Data()[CraftID].GetPrice() - Discount, 0);
-}
-
 void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
@@ -72,7 +60,7 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 		pFuncNewTab = nullptr;
 
 		ItemIdentifier ItemID = Craft.GetItem()->GetID();
-		const int Price = GetFinalPrice(pPlayer, ID);
+		const int Price = Craft.GetPrice(pPlayer);
 		const int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + ID;
 
 		if(pCraftItemInfo->IsEnchantable())
@@ -133,7 +121,7 @@ void CCraftCore::CraftItem(CPlayer *pPlayer, int CraftID) const
 	}
 
 	// we are already organizing the crafting
-	const int Price = GetFinalPrice(pPlayer, CraftID);
+	const int Price = pCraft->GetPrice(pPlayer);
 	if(!pPlayer->SpendCurrency(Price))
 		return;
 

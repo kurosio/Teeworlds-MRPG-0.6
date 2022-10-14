@@ -36,7 +36,7 @@ public:
 	CraftIdentifier GetID() const { return m_ID; }
 	CItem* GetItem() { return &m_Item; }
 	const CItem* GetItem() const { return &m_Item; }
-	int GetPrice() const { return m_Price; }
+	int GetPrice(class CPlayer * pPlayer) const;
 	int GetWorldID() const { return m_WorldID; }
 };
 
