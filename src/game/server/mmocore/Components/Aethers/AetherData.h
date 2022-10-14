@@ -7,7 +7,7 @@ using AetherIdentifier = int;
 
 class CAether : public MultiworldIdentifiableStaticData< std::map< int, CAether > >
 {
-	AetherIdentifier m_ID;
+	AetherIdentifier m_ID{};
 	char m_aName[64]{};
 	vec2 m_Pos{};
 	int m_WorldID{};
