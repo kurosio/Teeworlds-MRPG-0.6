@@ -4,7 +4,7 @@
 
 #include <game/server/player.h>
 
-int CCraftData::GetPrice(CPlayer* pPlayer) const
+int CCraftItem::GetPrice(CPlayer* pPlayer) const
 {
 	if(!pPlayer)
 		return m_Price;

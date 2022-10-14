@@ -15,13 +15,13 @@ void CAetherCore::OnInit()
 	{
 		while (pRes->next())
 		{
-			const int ID = pRes->getInt("ID");
-			str_copy(CAetherData::ms_aTeleport[ID].m_aName, pRes->getString("Name").c_str(), sizeof(CAetherData::ms_aTeleport[ID].m_aName));
-			CAetherData::ms_aTeleport[ID].m_TeleX = pRes->getInt("TeleX");
-			CAetherData::ms_aTeleport[ID].m_TeleY = pRes->getInt("TeleY");
-			CAetherData::ms_aTeleport[ID].m_WorldID = pRes->getInt("WorldID");
+			vec2 Pos = vec2(pRes->getInt("TeleX"), pRes->getInt("TeleY"));
+			int WorldID = pRes->getInt("WorldID");
+
+			AetherIdentifier ID = pRes->getInt("ID");
+			CAether(ID).Init(pRes->getString("Name").c_str(), Pos, WorldID);
 		}
-		Job()->ShowLoadingProgress("Aethers", CAetherData::ms_aTeleport.size());
+		Job()->ShowLoadingProgress("Aethers", CAether::Data().size());
 	});
 }
 
@@ -42,16 +42,17 @@ bool CAetherCore::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, const 
 	// teleport
 	if(PPSTR(CMD, "TELEPORT") == 0)
 	{
-		const int TeleportID = VoteID;
+		AetherIdentifier AetherID = VoteID;
 		const int Price = VoteID2;
 		if(Price > 0 && !pPlayer->SpendCurrency(Price))
 			return true;
 
-		const vec2 Position = vec2(CAetherData::ms_aTeleport[TeleportID].m_TeleX, CAetherData::ms_aTeleport[TeleportID].m_TeleY);
-		if(!GS()->IsPlayerEqualWorldID(ClientID, CAetherData::ms_aTeleport[TeleportID].m_WorldID))
+		CAether* pAether = &CAether::Data()[AetherID];
+		vec2 Position = pAether->GetPosition();
+		if(!GS()->IsPlayerEqualWorldID(ClientID, pAether->GetWorldID()))
 		{
 			pPlayer->GetTempData().m_TempTeleportPos = Position;
-			pPlayer->ChangeWorld(CAetherData::ms_aTeleport[TeleportID].m_WorldID);
+			pPlayer->ChangeWorld(pAether->GetWorldID());
 			return true;
 		}
 
@@ -107,16 +108,16 @@ bool CAetherCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceM
 void CAetherCore::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
 {
 	const int ClientID = pPlayer->GetCID();
-	for (const auto& tl : CAetherData::ms_aTeleport)
+	for (const auto& [ID, Aether] : CAether::Data())
 	{
-		if (distance(vec2(tl.second.m_TeleX, tl.second.m_TeleY), Pos) > 100 || pPlayer->Acc().m_aAetherLocation.find(tl.first) != pPlayer->Acc().m_aAetherLocation.end())
+		if (distance(Aether.GetPosition(), Pos) > 100 || pPlayer->Acc().m_aAetherLocation.find(ID) != pPlayer->Acc().m_aAetherLocation.end())
 			continue;
 
-		Sqlpool.Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, tl.first);
-		GS()->Chat(ClientID, "You unlock aether {STR}!", CAetherData::ms_aTeleport[tl.first].m_aName);
-		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Adventure unlock aether {STR}", CAetherData::ms_aTeleport[tl.first].m_aName);
+		Sqlpool.Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, ID);
+		GS()->Chat(ClientID, "You unlock aether {STR}!", Aether.GetName());
+		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Adventure unlock aether {STR}", Aether.GetName());
 
-		pPlayer->Acc().m_aAetherLocation[tl.first] = true;
+		pPlayer->Acc().m_aAetherLocation[ID] = true;
 		return;
 	}
 }
@@ -134,22 +135,22 @@ void CAetherCore::ShowTeleportList(CCharacter* pChar) const
 	if (Job()->House()->PlayerHouseID(pPlayer) >= 1)
 		GS()->AVM(ClientID, "HSPAWN", NOPE, TAB_AETHER, "Move to Your House - free");
 
-	for (const auto& tl : CAetherData::ms_aTeleport)
+	for (const auto& [ID, Aether] : CAether::Data())
 	{
-		if (pPlayer->Acc().m_aAetherLocation.find(tl.first) == pPlayer->Acc().m_aAetherLocation.end())
+		if (pPlayer->Acc().m_aAetherLocation.find(ID) == pPlayer->Acc().m_aAetherLocation.end())
 			continue;
 
-		const bool LocalTeleport = (GS()->IsPlayerEqualWorldID(ClientID, tl.second.m_WorldID) &&
-			distance(pPlayer->GetCharacter()->m_Core.m_Pos, vec2(tl.second.m_TeleX, tl.second.m_TeleY)) < 120);
+		const bool LocalTeleport = (GS()->IsPlayerEqualWorldID(ClientID, Aether.GetWorldID()) &&
+			distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120);
 		if (LocalTeleport)
 		{
-			GS()->AVM(ClientID, "null", tl.first, TAB_AETHER, "[Local {STR}] : {STR}", tl.second.m_aName, Server()->GetWorldName(tl.second.m_WorldID));
+			GS()->AVM(ClientID, "null", ID, TAB_AETHER, "[Local {STR}] : {STR}", Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()));
 			continue;
 		}
 
-		const int Price = g_Config.m_SvPriceTeleport * (tl.second.m_WorldID + 1);
-		GS()->AVD(ClientID, "TELEPORT", tl.first, Price, TAB_AETHER, "[{STR}] : {STR} - {VAL}gold",
-			tl.second.m_aName, Server()->GetWorldName(tl.second.m_WorldID), Price);
+		const int Price = g_Config.m_SvPriceTeleport * (Aether.GetWorldID() + 1);
+		GS()->AVD(ClientID, "TELEPORT", ID, Price, TAB_AETHER, "[{STR}] : {STR} - {VAL}gold",
+			Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()), Price);
 	}
 	GS()->AV(ClientID, "null");
 }

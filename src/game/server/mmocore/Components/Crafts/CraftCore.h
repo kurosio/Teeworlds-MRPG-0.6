@@ -10,7 +10,7 @@ class CCraftCore : public MmoComponent
 {
 	~CCraftCore() override
 	{
-		CCraftData::Data().clear();
+		CCraftItem::Data().clear();
 	};
 
 	void OnInit() override;

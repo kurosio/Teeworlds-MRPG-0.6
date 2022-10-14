@@ -10,7 +10,7 @@ class CAetherCore : public MmoComponent
 {
 	~CAetherCore() override
 	{
-		CAetherData::ms_aTeleport.clear();
+		CAether::Data().clear();
 	};
 
 	void OnInit() override;

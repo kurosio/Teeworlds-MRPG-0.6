@@ -16,13 +16,13 @@ void CCraftCore::OnInit()
 		int WorldID = pRes->getInt("WorldID");
 
 		CraftIdentifier ID = pRes->getInt("ID");
-		CCraftData::ContainerRequiredCraftItems Container;
+		CCraftItem::ContainerRequiredCraftItems Container;
 
 		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
-		CCraftData(ID).Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
+		CCraftItem(ID).Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
 	}
 
-	Job()->ShowLoadingProgress("Crafts", (int)CCraftData::Data().size());
+	Job()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
 }
 
 bool CCraftCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
@@ -50,7 +50,7 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 	const int ClientID = pPlayer->GetCID();
 	std::function pFuncNewTab = [&](){ GS()->AVL(ClientID, "null", "{STR}", TypeName); };
 
-	for(const auto& [ID, Craft] : CCraftData::Data())
+	for(const auto& [ID, Craft] : CCraftItem::Data())
 	{
 		CItemDescription* pCraftItemInfo = Craft.GetItem()->Info();
 		if(pCraftItemInfo->GetType() != Type || Craft.GetWorldID() != GS()->GetWorldID())
@@ -93,7 +93,7 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 void CCraftCore::CraftItem(CPlayer *pPlayer, int CraftID) const
 {
 	const int ClientID = pPlayer->GetCID();
-	CCraftData* pCraft = &CCraftData::Data()[CraftID];
+	CCraftItem* pCraft = &CCraftItem::Data()[CraftID];
 	CPlayerItem* pPlayerCraftItem = pPlayer->GetItem(*pCraft->GetItem());
 
 	// check enchant

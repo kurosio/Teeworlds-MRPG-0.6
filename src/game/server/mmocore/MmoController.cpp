@@ -366,9 +366,9 @@ void MmoController::ConSyncLinesForTranslate()
 				for(auto& pVariant : pDialog.GetArrayText())
 					PushingDialogs(JsonData, pVariant.m_Text.c_str(), UniqueID.c_str(), DialogNum++);
 		}
-		for(auto& pItem : CAetherData::ms_aTeleport)
+		for(auto& [ID, Aether] : CAether::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.m_aName, "aeth", pItem.first);
+			PushingDialogs(JsonData, Aether.GetName(), "aeth", ID);
 		}
 		for(auto& [ID, Item] : CAttributeDescription::Data())
 		{
