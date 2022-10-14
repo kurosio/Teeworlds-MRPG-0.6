@@ -169,7 +169,7 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 
 		vec2 Position = GetPositionHouse(HouseID);
 		const int HouseWorldID = CHouseData::ms_aHouse[HouseID].m_WorldID;
-		if(!GS()->IsPlayerEqualWorldID(ClientID, HouseWorldID))
+		if(!GS()->IsPlayerEqualWorld(ClientID, HouseWorldID))
 		{
 			pPlayer->GetTempData().m_TempTeleportPos = Position;
 			pPlayer->ChangeWorld(HouseWorldID);
@@ -445,7 +445,7 @@ void CHouseCore::ShowPersonalHouse(CPlayer* pPlayer)
 	GS()->AVM(ClientID, "HOUSEDOOR", HouseID, NOPE, "Change state to [\"{STR}\"]", StateDoor ? "OPEN" : "CLOSED");
 	GS()->AVM(ClientID, "HSPAWN", 1, NOPE, "Teleport to your house");
 	GS()->AVM(ClientID, "HSELL", HouseID, NOPE, "Sell your house (in reason 777)");
-	if(GS()->IsPlayerEqualWorldID(ClientID, CHouseData::ms_aHouse[HouseID].m_WorldID))
+	if(GS()->IsPlayerEqualWorld(ClientID, CHouseData::ms_aHouse[HouseID].m_WorldID))
 	{
 		GS()->AVM(ClientID, "MENU", MENU_HOUSE_DECORATION, NOPE, "Settings Decorations");
 		GS()->AVM(ClientID, "MENU", MENU_HOUSE_PLANTS, NOPE, "Settings Plants");

@@ -88,7 +88,7 @@ bool CSkill::Use()
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
-			if(!pPlayer || !GS()->IsPlayerEqualWorldID(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
+			if(!pPlayer || !GS()->IsPlayerEqualWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
 				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
 				continue;
 

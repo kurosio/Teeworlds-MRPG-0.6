@@ -100,7 +100,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			for(const auto& [ClientID, Value] : m_aListDmgPlayers)
 			{
 				CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
-				if(!pPlayer || !GS()->IsPlayerEqualWorldID(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
+				if(!pPlayer || !GS()->IsPlayerEqualWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
 					continue;
 
 				RewardPlayer(pPlayer, Force);
@@ -194,7 +194,7 @@ bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 
 void CCharacterBotAI::Tick()
 {
-	m_BotActive = GS()->CheckingPlayersDistance(m_Core.m_Pos, 1000.0f);
+	m_BotActive = GS()->IsPlayersNearby(m_Core.m_Pos, 1000.0f);
 	if(!m_BotActive || !IsAlive())
 		return;
 
@@ -620,7 +620,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 			|| !GS()->m_apPlayers[i]->GetCharacter()
 			|| distance(m_Core.m_Pos, GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos) > Distance
 			|| GS()->Collision()->IntersectLineWithInvisible(GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos, m_Pos, nullptr, nullptr)
-			|| !GS()->IsPlayerEqualWorldID(i))
+			|| !GS()->IsPlayerEqualWorld(i))
 			continue;
 		return GS()->m_apPlayers[i];
 	}
@@ -641,7 +641,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 	// throw off aggression if the player is far away
 	CPlayer* pPlayer = GS()->GetPlayer(m_BotTargetID, true, true);
 	if (!IsBotTargetEmpty() && (!pPlayer
-		|| (pPlayer && (distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorldID(m_BotTargetID)))))
+		|| (pPlayer && (distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(m_BotTargetID)))))
 		ClearTarget();
 
 	// non-hostile mobs

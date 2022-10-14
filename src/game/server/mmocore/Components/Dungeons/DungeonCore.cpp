@@ -66,7 +66,7 @@ bool DungeonCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const 
 
 	if(PPSTR(CMD, "DUNGEONJOIN") == 0)
 	{
-		if(GS()->IsPlayerEqualWorldID(ClientID, CDungeonData::ms_aDungeon[VoteID].m_WorldID))
+		if(GS()->IsPlayerEqualWorld(ClientID, CDungeonData::ms_aDungeon[VoteID].m_WorldID))
 		{
 			GS()->Chat(ClientID, "You are already in this dungeon!");
 			GS()->StrongUpdateVotes(ClientID, MenuList::MENU_DUNGEONS);

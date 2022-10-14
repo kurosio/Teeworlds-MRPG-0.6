@@ -104,7 +104,7 @@ void CPlayer::Tick()
 void CPlayer::PostTick()
 {
 	// update latency value
-	if (Server()->ClientIngame(m_ClientID) && GS()->IsPlayerEqualWorldID(m_ClientID) && IsAuthed())
+	if (Server()->ClientIngame(m_ClientID) && GS()->IsPlayerEqualWorld(m_ClientID) && IsAuthed())
 		GetTempData().m_TempPing = m_Latency.m_Min;
 }
 
@@ -204,7 +204,7 @@ void CPlayer::TryRespawn()
 	if(GetTempData().m_TempSafeSpawn)
 	{
 		const int SafezoneWorldID = GS()->GetRespawnWorld();
-		if(SafezoneWorldID >= 0 && !GS()->IsPlayerEqualWorldID(m_ClientID, SafezoneWorldID))
+		if(SafezoneWorldID >= 0 && !GS()->IsPlayerEqualWorld(m_ClientID, SafezoneWorldID))
 		{
 			ChangeWorld(SafezoneWorldID);
 			return;

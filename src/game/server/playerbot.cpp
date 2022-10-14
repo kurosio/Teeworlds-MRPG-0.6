@@ -37,7 +37,7 @@ void CPlayerBot::Tick()
 
 	if(m_pCharacter)
 	{
-		if(m_pCharacter->IsAlive() && GS()->CheckingPlayersDistance(m_pCharacter->GetPos(), 1000.0f))
+		if(m_pCharacter->IsAlive() && GS()->IsPlayersNearby(m_pCharacter->GetPos(), 1000.0f))
 		{
 			m_ViewPos = m_pCharacter->GetPos();
 			ThreadMobsPathFinder();

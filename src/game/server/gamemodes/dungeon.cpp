@@ -42,7 +42,7 @@ void CGameControllerDungeon::KillAllPlayers()
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CCharacter* pCharacter = GS()->GetPlayerChar(i);
-		if(pCharacter && GS()->IsPlayerEqualWorldID(i, m_WorldID))
+		if(pCharacter && GS()->IsPlayerEqualWorld(i, m_WorldID))
 			pCharacter->Die(i, WEAPON_WORLD);
 	}
 }
@@ -114,7 +114,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		for (int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->m_apPlayers[i];
-			if (!pPlayer || !GS()->IsPlayerEqualWorldID(i, m_WorldID))
+			if (!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 				continue;
 
 			// update finish time int sec
@@ -219,7 +219,7 @@ void CGameControllerDungeon::StateTick()
 		for (int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->m_apPlayers[i];
-			if (!pPlayer || !GS()->IsPlayerEqualWorldID(i, m_WorldID))
+			if (!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 				continue;
 
 			pPlayer->GetTempData().m_TempTimeDungeon++;
@@ -326,7 +326,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 			// update vote menu for players
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
-				if(!GS()->m_apPlayers[i] || !GS()->IsPlayerEqualWorldID(i, m_WorldID))
+				if(!GS()->m_apPlayers[i] || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 					continue;
 
 				GS()->StrongUpdateVotes(i, MenuList::MENU_DUNGEONS);
@@ -372,7 +372,7 @@ int CGameControllerDungeon::PlayersReady() const
 	int ReadyPlayers = 0;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(!GS()->m_apPlayers[i] || !GS()->IsPlayerEqualWorldID(i, m_WorldID) || !GS()->m_apPlayers[i]->GetTempData().m_TempDungeonReady)
+		if(!GS()->m_apPlayers[i] || !GS()->IsPlayerEqualWorld(i, m_WorldID) || !GS()->m_apPlayers[i]->GetTempData().m_TempDungeonReady)
 			continue;
 		ReadyPlayers++;
 	}

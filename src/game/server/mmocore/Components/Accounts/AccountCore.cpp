@@ -140,7 +140,7 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 
 void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 {
-	if(!pPlayer || !pPlayer->IsAuthed() || !GS()->IsPlayerEqualWorldID(pPlayer->GetCID()))
+	if(!pPlayer || !pPlayer->IsAuthed() || !GS()->IsPlayerEqualWorld(pPlayer->GetCID()))
 		return;
 
 	const int ClientID = pPlayer->GetCID();

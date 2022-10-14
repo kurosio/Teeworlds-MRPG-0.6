@@ -441,7 +441,7 @@ void CGS::ChatWorldID(int WorldID, const char* Suffix, const char* pText, ...)
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GetPlayer(i, true);
-		if(!pPlayer || !IsPlayerEqualWorldID(i, WorldID))
+		if(!pPlayer || !IsPlayerEqualWorld(i, WorldID))
 			continue;
 
 		Buffer.append(Suffix);
@@ -555,7 +555,7 @@ void CGS::BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan
 	va_start(VarArgs, pText);
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(m_apPlayers[i] && IsPlayerEqualWorldID(i, WorldID))
+		if(m_apPlayers[i] && IsPlayerEqualWorld(i, WorldID))
 		{
 			dynamic_string Buffer;
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
@@ -572,7 +572,7 @@ void CGS::BroadcastTick(int ClientID)
 	if (ClientID < 0 || ClientID >= MAX_PLAYERS)
 		return;
 
-	if(m_apPlayers[ClientID] && IsPlayerEqualWorldID(ClientID))
+	if(m_apPlayers[ClientID] && IsPlayerEqualWorld(ClientID))
 	{
 		CBroadcastState& rBroadcast = m_aBroadcastStates[ClientID];
 		if(rBroadcast.m_LifeSpanTick > 0 && rBroadcast.m_TimedPriority > rBroadcast.m_Priority)
@@ -643,10 +643,14 @@ void CGS::BroadcastTick(int ClientID)
 ######################################################################### */
 void CGS::SendEmoticon(int ClientID, int Emoticon, bool SenderClient)
 {
+	// parse skills from emoticons
 	CPlayer* pPlayer = GetPlayer(ClientID, true, true);
-	if (pPlayer && SenderClient)
+	if(pPlayer && SenderClient)
+	{
 		Mmo()->Skills()->ParseEmoticionSkill(pPlayer, Emoticon);
+	}
 
+	// send emoticon
 	CNetMsg_Sv_Emoticon Msg;
 	Msg.m_ClientID = ClientID;
 	Msg.m_Emoticon = Emoticon;
@@ -665,31 +669,6 @@ void CGS::SendMotd(int ClientID)
 	CNetMsg_Sv_Motd Msg;
 	Msg.m_pMessage = g_Config.m_SvMotd;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-void CGS::SendGameMsg(int GameMsgID, int ClientID)
-{
-//	CMsgPacker Msg(NETMSGTYPE_SV_GAMEMSG);
-//	Msg.AddInt(GameMsgID);
-//	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-void CGS::SendGameMsg(int GameMsgID, int ParaI1, int ClientID)
-{
-//	CMsgPacker Msg(NETMSGTYPE_SV_GAMEMSG);
-//	Msg.AddInt(GameMsgID);
-//	Msg.AddInt(ParaI1);
-//	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
-void CGS::SendGameMsg(int GameMsgID, int ParaI1, int ParaI2, int ParaI3, int ClientID)
-{
-//	CMsgPacker Msg(NETMSGTYPE_SV_GAMEMSG);
-//	Msg.AddInt(GameMsgID);
-//	Msg.AddInt(ParaI1);
-//	Msg.AddInt(ParaI2);
-//	Msg.AddInt(ParaI3);
-//	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
 void CGS::SendTuningParams(int ClientID)
@@ -747,15 +726,21 @@ void CGS::OnInit(int WorldID)
 	m_Collision.Init(m_pLayers);
 	m_pMmoController = new MmoController(this);
 	m_pMmoController->LoadLogicWorld();
-	UpdateZoneDungeon();
-	UpdateZonePVP();
 
-	// create all game objects for the server
-	if(IsDungeon())
+	// order dependent
+	InitZoneDungeon();
+	InitZonePVP();
+
+	if(IsDungeon()) // dungeon game controller
+	{
 		m_pController = new CGameControllerDungeon(this);
-	else
+	}
+	else // default game controller
+	{
 		m_pController = new CGameControllerMain(this);
+	}
 
+	// command processor
 	m_pCommandProcessor = new CCommandProcessor(this);
 
 	// initialize cores
@@ -1187,7 +1172,7 @@ void CGS::OnClientDrop(int ClientID, const char *pReason)
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
 
-	if ((Server()->ClientIngame(ClientID) || Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorldID(ClientID))
+	if ((Server()->ClientIngame(ClientID) || Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
 	{
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
@@ -1855,8 +1840,6 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 		return true;
 	}
 
-	//pPlayer->GetItem(itGold)->GetEnchantStats()
-
 	const sqlstr::CSqlString<64> FormatText = sqlstr::CSqlString<64>(Text);
 	if(Callback)
 	{
@@ -1930,7 +1913,7 @@ int CGS::CreateBot(short BotType, int BotID, int SubID)
 // create lol text in the world
 void CGS::CreateText(CEntity* pParent, bool Follow, vec2 Pos, vec2 Vel, int Lifespan, const char* pText)
 {
-	if(!CheckingPlayersDistance(Pos, 800))
+	if(!IsPlayersNearby(Pos, 800))
 		return;
 
 	CLoltext Text;
@@ -2002,11 +1985,18 @@ void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const ch
 void CGS::SendDayInfo(int ClientID)
 {
 	if(ClientID == -1)
+	{
 		Chat(-1, "{STR} came! Good {STR}!", Server()->GetStringTypeDay(), Server()->GetStringTypeDay());
+	}
+
 	if(m_DayEnumType == DayType::NIGHT_TYPE)
+	{
 		Chat(ClientID, "Nighttime experience was increase to {INT}%", m_MultiplierExp);
+	}
 	else if(m_DayEnumType == DayType::MORNING_TYPE)
+	{
 		Chat(ClientID, "Daytime experience was downgraded to 100%");
+	}
 }
 
 int CGS::GetExperienceMultiplier(int Experience) const
@@ -2016,12 +2006,16 @@ int CGS::GetExperienceMultiplier(int Experience) const
 	return translate_to_percent_rest(Experience, m_MultiplierExp);
 }
 
-void CGS::UpdateZonePVP()
+void CGS::InitZonePVP()
 {
-	m_AllowedPVP = false;
+	// disallow pvp for dungeon zone
 	if(IsDungeon())
+	{
+		m_AllowedPVP = false;
 		return;
+	}
 
+	// with mobs allow pvp zone
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		if(m_apPlayers[i] && m_apPlayers[i]->GetBotType() == BotsTypes::TYPE_BOT_MOB && m_apPlayers[i]->GetPlayerWorldID() == m_WorldID)
@@ -2030,22 +2024,26 @@ void CGS::UpdateZonePVP()
 			return;
 		}
 	}
+
+	// default antipvp
+	m_AllowedPVP = false;
 }
 
-void CGS::UpdateZoneDungeon()
+void CGS::InitZoneDungeon()
 {
 	m_DungeonID = 0;
-	for(const auto& dd : CDungeonData::ms_aDungeon)
-	{
-		if(m_WorldID != dd.second.m_WorldID)
-			continue;
 
-		m_DungeonID = dd.first;
-		return;
+	for(const auto& [ID, Dungeon] : CDungeonData::ms_aDungeon)
+	{
+		if(m_WorldID == Dungeon.m_WorldID)
+		{
+			m_DungeonID = ID;
+			return;
+		}
 	}
 }
 
-bool CGS::IsPlayerEqualWorldID(int ClientID, int WorldID) const
+bool CGS::IsPlayerEqualWorld(int ClientID, int WorldID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return false;
@@ -2055,11 +2053,11 @@ bool CGS::IsPlayerEqualWorldID(int ClientID, int WorldID) const
 	return m_apPlayers[ClientID]->GetPlayerWorldID() == WorldID;
 }
 
-bool CGS::CheckingPlayersDistance(vec2 Pos, float Distance) const
+bool CGS::IsPlayersNearby(vec2 Pos, float Distance) const
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(m_apPlayers[i] && IsPlayerEqualWorldID(i) && distance(Pos, m_apPlayers[i]->m_ViewPos) <= Distance)
+		if(m_apPlayers[i] && IsPlayerEqualWorld(i) && distance(Pos, m_apPlayers[i]->m_ViewPos) <= Distance)
 			return true;
 	}
 	return false;

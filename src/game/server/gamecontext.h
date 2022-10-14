@@ -133,9 +133,6 @@ public:
 	void SendEmoticon(int ClientID, int Emoticon, bool SenderClient = false);
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendMotd(int ClientID);
-	void SendGameMsg(int GameMsgID, int ClientID);
-	void SendGameMsg(int GameMsgID, int ParaI1, int ClientID);
-	void SendGameMsg(int GameMsgID, int ParaI1, int ParaI2, int ParaI3, int ClientID);
 
 	void SendTuningParams(int ClientID);
 
@@ -232,16 +229,16 @@ public:
 	int GetDungeonID() const { return m_DungeonID; }
 	bool IsDungeon() const { return (m_DungeonID > 0); }
 	int GetExperienceMultiplier(int Experience) const;
-	bool IsPlayerEqualWorldID(int ClientID, int WorldID = -1) const;
+	bool IsPlayerEqualWorld(int ClientID, int WorldID = -1) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 
-	bool CheckingPlayersDistance(vec2 Pos, float Distance) const;
+	bool IsPlayersNearby(vec2 Pos, float Distance) const;
 	void SetRespawnWorld(int WorldID) { m_RespawnWorldID = WorldID; }
 	int GetRespawnWorld() const { return m_RespawnWorldID; }
 
 private:
-	void UpdateZonePVP();
-	void UpdateZoneDungeon();
+	void InitZonePVP();
+	void InitZoneDungeon();
 
 	bool m_AllowedPVP;
 	int m_DayEnumType;

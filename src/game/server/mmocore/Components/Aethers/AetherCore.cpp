@@ -49,7 +49,7 @@ bool CAetherCore::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, const 
 
 		CAether* pAether = &CAether::Data()[AetherID];
 		vec2 Position = pAether->GetPosition();
-		if(!GS()->IsPlayerEqualWorldID(ClientID, pAether->GetWorldID()))
+		if(!GS()->IsPlayerEqualWorld(ClientID, pAether->GetWorldID()))
 		{
 			pPlayer->GetTempData().m_TempTeleportPos = Position;
 			pPlayer->ChangeWorld(pAether->GetWorldID());
@@ -140,7 +140,7 @@ void CAetherCore::ShowTeleportList(CCharacter* pChar) const
 		if (pPlayer->Acc().m_aAetherLocation.find(ID) == pPlayer->Acc().m_aAetherLocation.end())
 			continue;
 
-		const bool LocalTeleport = (GS()->IsPlayerEqualWorldID(ClientID, Aether.GetWorldID()) &&
+		const bool LocalTeleport = (GS()->IsPlayerEqualWorld(ClientID, Aether.GetWorldID()) &&
 			distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120);
 		if (LocalTeleport)
 		{
