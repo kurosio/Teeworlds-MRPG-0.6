@@ -74,7 +74,7 @@ vec2 CWorldSwapCore::GetPositionQuestBot(int ClientID, const QuestBotInfo& Quest
 
 	// easy path finder
 	int PosWorldID = GS()->GetWorldID(); // start path
-	const int TargetWorldID = 5; // end path
+	const int TargetWorldID = QuestBot.m_WorldID; // end path
 
 	// nodes for check
 	struct CNodeWorlds
