@@ -72,14 +72,75 @@ vec2 CWorldSwapCore::GetPositionQuestBot(int ClientID, const QuestBotInfo& Quest
 	if(GS()->GetWorldID() == QuestBot.m_WorldID)
 		return QuestBot.m_Position;
 
-	int TargetWorldID = QuestBot.m_WorldID;
-	const auto pWorldSwap = std::find_if(CWorldSwapPosition::ms_aWorldPositionLogic.begin(), CWorldSwapPosition::ms_aWorldPositionLogic.end(), [&](const CWorldSwapPosition& pItem)
+	// easy path finder
+	int PosWorldID = GS()->GetWorldID(); // start path
+	const int TargetWorldID = 5; // end path
+
+	// nodes for check
+	struct CNodeWorlds
 	{
-		if(TargetWorldID == pItem.m_FindWorldID)
-			TargetWorldID = pItem.m_BaseWorldID;
-		return GS()->GetWorldID() == TargetWorldID;
+		int m_Base{};
+		int m_Find{};
+	};
+	std::vector<CNodeWorlds> StablePath;
+	std::vector<int> LastWorlds { PosWorldID };
+	std::map <int, bool> Checked { {PosWorldID, true} };
+
+	// search active nodes
+	while(PosWorldID != TargetWorldID)
+	{
+		bool HasAction = false;
+
+		for(auto& [BaseID, FindID, Pos] : CWorldSwapPosition::ms_aWorldPositionLogic)
+		{
+			if(BaseID == PosWorldID && Checked.find(FindID) == Checked.end())
+			{
+				LastWorlds.push_back(BaseID);
+				PosWorldID = FindID;
+				Checked[PosWorldID] = true;
+
+				HasAction = true;
+				StablePath.push_back({ BaseID, FindID });
+				dbg_msg("test", "CHECK: %d -> %d", BaseID, FindID);
+
+				// end foreach : found
+				if(PosWorldID == TargetWorldID)
+					break;
+			}
+		}
+
+		if(!HasAction)
+		{
+			// get failed node
+			auto Iter = std::find_if(StablePath.begin(), StablePath.end(), [LastWorlds, PosWorldID](CNodeWorlds& p)
+			{
+				return p.m_Base == LastWorlds.back() && p.m_Find == PosWorldID;
+			});
+			if(Iter == StablePath.end())
+			{
+				dbg_msg("test", "there is no path");
+				break;
+			}
+
+			// erase failed node
+			dbg_msg("test", "fail check tree erase");
+			StablePath.erase(Iter);
+			PosWorldID = LastWorlds.back();
+			LastWorlds.pop_back();
+		}
+	}
+
+	for(const auto& [Base, Find] : StablePath)
+	{
+		dbg_msg("test", "Found step: %d -> %d", Base, Find);
+	}
+
+	const auto Iter = std::find_if(CWorldSwapPosition::ms_aWorldPositionLogic.begin(), CWorldSwapPosition::ms_aWorldPositionLogic.end(), [&](const CWorldSwapPosition& pItem)
+	{
+		const CNodeWorlds NodeNearby = (int)StablePath.size() > 0 ? StablePath.front() : CNodeWorlds();
+		return NodeNearby.m_Base == pItem.m_BaseWorldID && NodeNearby.m_Find == pItem.m_FindWorldID;
 	});
-	return pWorldSwap != CWorldSwapPosition::ms_aWorldPositionLogic.end() ? (*pWorldSwap).m_Position : vec2(0, 0);
+	return Iter != CWorldSwapPosition::ms_aWorldPositionLogic.end() ? (*Iter).m_Position : vec2(0, 0);
 }
 
 void CWorldSwapCore::CheckQuestingOpened(CPlayer* pPlayer, int QuestID) const
