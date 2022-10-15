@@ -266,10 +266,13 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		// game settings
 		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings becomes valid after death");
 		GS()->AVM(ClientID, "MENU", MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
-		for (const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
+		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
-			if (ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
+			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
+			{
 				GS()->AVM(ClientID, "ISETTINGS", ItemID, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
+				dbg_msg("test", "%d", ItemData.GetSettings());
+			}
 		}
 
 		// equipment modules

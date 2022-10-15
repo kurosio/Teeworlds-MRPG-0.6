@@ -417,6 +417,7 @@ void CPlayerBot::ClearWayPoint()
 		bool Status = false;
 		if(!m_ThreadReadNow.compare_exchange_strong(Status, true, std::memory_order::memory_order_acquire, std::memory_order::memory_order_relaxed))
 			return;
+
 		m_WayPoints.clear();
 		m_ThreadReadNow.store(false, std::memory_order::memory_order_release);
 	}

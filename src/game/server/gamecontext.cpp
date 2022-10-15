@@ -1580,7 +1580,6 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		// statistics menu
 		const int ExpForLevel = pPlayer->ExpNeed(pPlayer->Acc().m_Level);
 		AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", Server()->ClientName(ClientID), pPlayer->Acc().m_aLastLogin);
-		AVM(ClientID, "null", NOPE, TAB_STAT, "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, ExpForLevel);
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
@@ -1630,8 +1629,10 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		AVM(ClientID, "null", NOPE, TAB_INFO_UPGR, "Select upgrades type in Reason, write count.");
 		AV(ClientID, "null");
 
+		// show player stats
 		ShowVotesPlayerStats(pPlayer);
 
+		// lambda function for easy use
 		auto ShowAttributeVote = [&](int HiddenID, AttributeType Type, std::function<void(int HiddenID)> pFunc)
 		{
 			pFunc(HiddenID);
@@ -1640,6 +1641,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 				if(Attribute.IsType(Type) && Attribute.HasField())
 					AVD(ClientID, "UPGRADE", (int)ID, Attribute.GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", Attribute.GetName(), pPlayer->Acc().m_aStats[ID], Attribute.GetUpgradePrice());
 			}
+			AV(ClientID, "null");
 		};
 
 		// Disciple of War
@@ -1648,7 +1650,6 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
 			AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
 		});
-		AV(ClientID, "null");
 
 		// Disciple of Tank
 		ShowAttributeVote(TAB_UPGR_TANK, AttributeType::Tank, [&](int HiddenID)
@@ -1656,7 +1657,6 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
 			AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
 		});
-		AV(ClientID, "null");
 
 		// Disciple of Healer
 		ShowAttributeVote(TAB_UPGR_HEALER, AttributeType::Healer, [&](int HiddenID)
@@ -1664,7 +1664,6 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Healer);
 			AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
 		});
-		AV(ClientID, "null");
 
 		// Upgrades Weapons and ammo
 		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeType::Weapon, [&](int HiddenID)
@@ -1672,7 +1671,6 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 			AVH(ClientID, HiddenID, "Upgrades Weapons / Ammo");
 		});
 
-		AV(ClientID, "null");
 		AVH(ClientID, TAB_UPGR_JOB, "Disciple of Jobs");
 		Mmo()->PlantsAcc()->ShowMenu(pPlayer);
 		Mmo()->MinerAcc()->ShowMenu(pPlayer);
@@ -1696,6 +1694,8 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 		AVH(ClientID, TAB_INFO_LOOT, "Grinding Information");
 		AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "You can look mobs, plants, and ores.");
+		AV(ClientID, "null");
+		AVL(ClientID, "null", "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
 		AV(ClientID, "null");
 
 		for(int ID = MAIN_WORLD_ID; ID < Server()->GetWorldsSize(); ID++)

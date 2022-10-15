@@ -100,24 +100,26 @@ void QuestCore::ShowQuestsTabList(CPlayer* pPlayer, int StateQuest)
 	// check first quest story step
 	bool IsEmptyList = true;
 	std::list < std::string /*stories was checked*/ > StoriesChecked;
-	for(const auto& pDataQuest : CQuestDataInfo::ms_aDataQuests)
+	for(const auto& [ID, Quest] : CQuestDataInfo::ms_aDataQuests)
 	{
-		if(pPlayer->GetQuest(pDataQuest.first).GetState() != StateQuest)
+		if(pPlayer->GetQuest(ID).GetState() != StateQuest)
 			continue;
 
 		if(StateQuest == QUEST_FINISHED)
 		{
-			ShowQuestID(pPlayer, pDataQuest.first);
+			ShowQuestID(pPlayer, ID);
 			IsEmptyList = false;
 			continue;
 		}
 
 		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), [=](const std::string& stories)
-		{ return (str_comp_nocase(CQuestDataInfo::ms_aDataQuests[pDataQuest.first].m_aStoryLine, stories.c_str()) == 0); });
+		{
+			return (str_comp_nocase(Quest.GetStory(), stories.c_str()) == 0);
+		});
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
-			StoriesChecked.emplace_back(CQuestDataInfo::ms_aDataQuests[pDataQuest.first].m_aStoryLine);
-			ShowQuestID(pPlayer, pDataQuest.first);
+			StoriesChecked.emplace_back(CQuestDataInfo::ms_aDataQuests[ID].m_aStoryLine);
+			ShowQuestID(pPlayer, ID);
 			IsEmptyList = false;
 		}
 	}

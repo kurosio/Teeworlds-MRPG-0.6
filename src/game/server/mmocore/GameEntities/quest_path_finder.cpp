@@ -12,20 +12,22 @@ CQuestPathFinder::CQuestPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientI
 	m_ClientID = ClientID;
 	m_SubBotID = QuestBot.m_SubBotID;
 	m_TargetPos = GS()->Mmo()->WorldSwap()->GetPositionQuestBot(ClientID, QuestBot);
-	m_MainScenario = str_startswith(GS()->GetQuestInfo(QuestBot.m_QuestID).GetStory(), "Main:") != nullptr;
+	m_MainScenario = str_startswith(GS()->GetQuestInfo(QuestBot.m_QuestID).GetStory(), "Main") != nullptr;
+
 	GameWorld()->InsertEntity(this);
 }
 
 void CQuestPathFinder::Tick()
 {
-	const int QuestID = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_QuestID;
-	const int Step = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_Step;
 	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	if(!pPlayer || !length(m_TargetPos))
 	{
 		GS()->m_World.DestroyEntity(this);
 		return;
 	}
+
+	const int QuestID = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_QuestID;
+	const int Step = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_Step;
 	if (pPlayer->GetQuest(QuestID).m_Step != Step || pPlayer->GetQuest(QuestID).GetState() != QuestState::QUEST_ACCEPT || pPlayer->GetQuest(QuestID).m_StepsQuestBot[m_SubBotID].m_StepComplete)
 	{
 		GS()->CreateDeath(m_Pos, m_ClientID);

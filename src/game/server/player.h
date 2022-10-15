@@ -35,16 +35,16 @@ class CPlayer
 		int m_TargetY;
 	};
 
-	struct StructDialogNPC
+	struct
 	{
 		int m_TalkedID;
 		int m_Progress;
 		int m_RequestProgress;
 		bool m_FreezedProgress;
-	};
-	StructDialogNPC m_DialogNPC;
+	} m_DialogNPC;
+
 	char m_aFormatDialogText[512];
-	std::map < int, bool > m_aHiddenMenu;
+	std::unordered_map < int, bool > m_aHiddenMenu;
 
 protected:
 	CCharacter* m_pCharacter;
@@ -128,7 +128,6 @@ public:
 	void KillCharacter(int Weapon = WEAPON_WORLD);
 	void OnDisconnect();
 	void OnDirectInput(CNetObj_PlayerInput *NewInput);
-	void OnPredictedEarlyInput(CNetObj_PlayerInput* pNewInput);
 	void OnPredictedInput(CNetObj_PlayerInput *NewInput) const;
 
 	int GetCID() const { return m_ClientID; }
@@ -172,6 +171,7 @@ public:
 	int GetTypeAttributesSize(AttributeType Type);
 	int GetAttributesSize();
 
+	// TODO: rework dialogs
 	// npc conversations
 	void SetTalking(int TalkedID, bool IsStartDialogue);
 	void ClearTalking();
