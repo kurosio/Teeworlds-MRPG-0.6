@@ -16,7 +16,6 @@ void CCraftCore::OnInit()
 		int WorldID = pRes->getInt("WorldID");
 
 		CraftIdentifier ID = pRes->getInt("ID");
-		CCraftItem::ContainerRequiredCraftItems Container;
 
 		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
 		CCraftItem(ID).Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
