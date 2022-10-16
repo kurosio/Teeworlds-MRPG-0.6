@@ -4,8 +4,6 @@
 #include <engine/shared/config.h>
 #include <generated/server_data.h>
 
-#include <game/collision.h>
-
 #include <game/server/gamecontext.h>
 
 #include "laser.h"

@@ -47,7 +47,7 @@ void CPlayerBot::Tick()
 			ClearWayPoint();
 		}
 	}
-	else if(m_Spawned && m_aPlayerTick[Respawn]+Server()->TickSpeed()*3 <= Server()->Tick())
+	else if(m_Spawned && GetRespawnTick() <= Server()->Tick())
 	{
 		TryRespawn();
 	}
@@ -74,6 +74,18 @@ void CPlayerBot::EffectsTick()
 			continue;
 		}
 		++pEffect;
+	}
+}
+
+int CPlayerBot::GetRespawnTick() const
+{
+	switch(m_BotType)
+	{
+	case TYPE_BOT_QUEST:
+	case TYPE_BOT_NPC:
+		return m_aPlayerTick[Respawn];
+	default: 
+		return m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3;
 	}
 }
 
