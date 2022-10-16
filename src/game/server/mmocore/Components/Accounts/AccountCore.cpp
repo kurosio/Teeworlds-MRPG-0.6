@@ -270,10 +270,7 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
 			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
-			{
 				GS()->AVM(ClientID, "ISETTINGS", ItemID, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
-				dbg_msg("test", "%d", ItemData.GetSettings());
-			}
 		}
 
 		// equipment modules

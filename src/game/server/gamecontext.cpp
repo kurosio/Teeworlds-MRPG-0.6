@@ -950,7 +950,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			if(!pPlayer->IsAuthed())
 			{
-				Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "Use /register <name> <pass>.");
+				Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "Use /register <name> <pass>\nOr /login <name> <pass>.");
 				return;
 			}
 
@@ -1157,10 +1157,7 @@ void CGS::OnClientEnter(int ClientID)
 		Chat(-1, "{STR} entered and joined the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 
-		Chat(ClientID, "- - - - - - - [Welcome to MRPG] - - - - - - -");
-		Chat(ClientID, "You need to create an account, or log in if you already have.");
-		Chat(ClientID, "Register: \"/register <login> <pass>\"");
-		Chat(ClientID, "Log in: \"/login <login> <pass>\"");
+		Chat(ClientID, "Welcome! Please login or create new account /cmdlist.");
 		SendDayInfo(ClientID);
 
 		ShowVotesNewbieInformation(ClientID);

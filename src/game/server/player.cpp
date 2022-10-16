@@ -164,9 +164,13 @@ void CPlayer::Snap(int SnappingClient)
 	{
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
 
-		char aNameBuf[MAX_NAME_LENGTH];
-		str_format(aNameBuf, sizeof(aNameBuf), "%s:%d%%", Server()->ClientName(m_ClientID), clamp(PercentHP, 1, 100));
-		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
+		char aHealthProgressBuf[6];
+		char aNicknameBuf[MAX_NAME_LENGTH];
+		char aEndNicknameBuf[MAX_NAME_LENGTH];
+		str_format(aHealthProgressBuf, sizeof(aHealthProgressBuf), ":%d%%", clamp(PercentHP, 1, 100));
+		str_utf8_truncate(aNicknameBuf, sizeof(aNicknameBuf), Server()->ClientName(m_ClientID), (int)((MAX_NAME_LENGTH - 1) - str_length(aHealthProgressBuf)));
+		str_format(aEndNicknameBuf, sizeof(aEndNicknameBuf), "%s%s", aNicknameBuf, aHealthProgressBuf);
+		StrToInts(&pClientInfo->m_Name0, 4, aEndNicknameBuf);
 	}
 	else
 	{
