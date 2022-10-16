@@ -159,7 +159,19 @@ void CPlayer::Snap(int SnappingClient)
 	if (!pClientInfo)
 		return;
 
-	StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
+	if(Server()->Tick() < m_SnapHealthTick)
+	{
+		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
+
+		char aNameBuf[MAX_NAME_LENGTH];
+		str_format(aNameBuf, sizeof(aNameBuf), "%s:%d%%", Server()->ClientName(m_ClientID), clamp(PercentHP, 1, 100));
+		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
+	}
+	else
+	{
+		StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
+	}
+
 	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
@@ -664,6 +676,11 @@ int CPlayer::GetAttributesSize()
 		Size += GetAttributeSize(ID, true);
 
 	return Size;
+}
+
+void CPlayer::SetSnapHealthTick(int Sec)
+{
+	m_SnapHealthTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
 }
 
 // - - - - - - T A L K I N G - - - - B O T S - - - - - - - - -

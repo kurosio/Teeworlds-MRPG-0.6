@@ -747,6 +747,7 @@ void CCharacterBotAI::ClearTarget()
 		m_BotTargetID = FromID;
 		m_BotTargetLife = 0;
 		m_BotTargetCollised = 0;
+
 	}
 }
 

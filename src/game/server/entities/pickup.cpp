@@ -62,7 +62,7 @@ void CPickup::Tick()
 			Picked = true;
 		}
 	}
-	else if(m_Type == POWERUP_ARMOR_SHOTGUN)
+	else if(m_SubType == POWERUP_WEAPON && m_Type == WEAPON_SHOTGUN)
 	{
 		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(AttributeIdentifier::Ammo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
@@ -72,7 +72,7 @@ void CPickup::Tick()
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
 		}
 	}
-	else if(m_Type == POWERUP_ARMOR_GRENADE)
+	else if(m_SubType == POWERUP_WEAPON && m_Type == WEAPON_GRENADE)
 	{
 		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(AttributeIdentifier::Ammo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
@@ -83,7 +83,7 @@ void CPickup::Tick()
 
 		}
 	}
-	else if(m_Type == POWERUP_ARMOR_LASER)
+	else if(m_SubType == POWERUP_WEAPON && m_Type == WEAPON_LASER)
 	{
 		const int RealAmmo = 10 + pChr->GetPlayer()->GetAttributeSize(AttributeIdentifier::Ammo);
 		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
@@ -120,4 +120,5 @@ void CPickup::Snap(int SnappingClient)
 	pP->m_X = (int)m_Pos.x;
 	pP->m_Y = (int)m_Pos.y;
 	pP->m_Type = m_Type;
+	pP->m_Subtype = m_SubType;
 }

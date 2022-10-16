@@ -44,6 +44,7 @@ class CPlayer
 	} m_DialogNPC;
 
 	char m_aFormatDialogText[512];
+	int m_SnapHealthTick;
 	std::unordered_map < int, bool > m_aHiddenMenu;
 
 protected:
@@ -170,6 +171,8 @@ public:
 
 	int GetTypeAttributesSize(AttributeType Type);
 	int GetAttributesSize();
+
+	void SetSnapHealthTick(int Sec);
 
 	std::deque<class CQuestPathFinder*> m_aQuestPathFinders;
 
