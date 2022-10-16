@@ -105,9 +105,9 @@ bool CSkill::Use()
 	{
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
-			CPlayer* pPlayer = GS()->m_apPlayers[i];
-			if(!pPlayer || !pPlayer->GetCharacter() || !GS()->IsPlayerEqualWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
-				)
+			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
+			if(!pPlayer || !GS()->IsPlayerEqualWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
+				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
 				continue;
 
 			pPlayer->GiveEffect("RegenHealth", 12 + GetBonus());
