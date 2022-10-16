@@ -15,8 +15,9 @@ public:
 
 	CQuestPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot);
 
+	void Reset() override;
 	void Tick() override;
-	void Snap(int SnappingClient) override;
+	void PathSnap(vec2 CorePos);
 	
 	int GetClientID() const { return m_ClientID; }
 };

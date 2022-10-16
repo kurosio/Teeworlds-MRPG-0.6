@@ -171,6 +171,8 @@ public:
 	int GetTypeAttributesSize(AttributeType Type);
 	int GetAttributesSize();
 
+	std::deque<class CQuestPathFinder*> m_aQuestPathFinders;
+
 	// TODO: rework dialogs
 	// npc conversations
 	void SetTalking(int TalkedID, bool IsStartDialogue);
