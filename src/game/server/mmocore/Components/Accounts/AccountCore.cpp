@@ -185,7 +185,8 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 	InitializeSettings
 	({
 		{ itModePVP, 1},
-		{ itShowEquipmentDescription, 0 }
+		{ itShowEquipmentDescription, 0 },
+		{ itShowCriticalDamage, 1 }
 	});
 	
 	// correcting world swapper

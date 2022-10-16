@@ -82,7 +82,7 @@ public:
 
 	virtual bool Spawn(class CPlayer* pPlayer, vec2 Pos);
 	virtual void GiveRandomEffects(int To);
-	virtual bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon);
+	virtual bool TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon);
 	virtual void Die(int Killer, int Weapon);
 
 	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);

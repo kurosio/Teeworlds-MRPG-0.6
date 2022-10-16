@@ -678,7 +678,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	GS()->CreateDeath(m_Pos, ClientID);
 }
 
-bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
+bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 {
 	// force
 	m_Core.m_Vel += Force;
@@ -687,14 +687,14 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		m_Core.m_Vel = normalize(m_Core.m_Vel) * MaximumVel;
 
 	// check disallow damage
-	if(!IsAllowedPVP(From))
+	if(!IsAllowedPVP(FromCID))
 		return false;
 
-	Dmg = (From == m_pPlayer->GetCID() ? max(1, Dmg/2) : max(1, Dmg));
+	Dmg = (FromCID == m_pPlayer->GetCID() ? max(1, Dmg/2) : max(1, Dmg));
 
 	int CritDamage = 0;
-	CPlayer* pFrom = GS()->GetPlayer(From);
-	if(From != m_pPlayer->GetCID() && pFrom->GetCharacter())
+	CPlayer* pFrom = GS()->GetPlayer(FromCID);
+	if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
 		if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_GUN)
 			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::GunPower, true);
@@ -715,14 +715,14 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		if(min(8.0f + (float)TempInt * 0.0015f, 30.0f) > frandom() * 100.0f)
 		{
 			pFrom->GetCharacter()->IncreaseHealth(max(1, Dmg/2));
-			GS()->SendEmoticon(From, EMOTICON_DROP);
+			GS()->SendEmoticon(FromCID, EMOTICON_DROP);
 		}
 
 		// miss out on damage
 		TempInt = pFrom->GetAttributeSize(AttributeIdentifier::Lucky, true);
 		if(min(5.0f + (float)TempInt * 0.0015f, 20.0f) > frandom() * 100.0f)
 		{
-			GS()->SendEmoticon(From, EMOTICON_HEARTS);
+			GS()->SendEmoticon(FromCID, EMOTICON_HEARTS);
 			return false;
 		}
 
@@ -736,7 +736,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			Dmg = (int)CritDamageFormula + random_int()%(int)CritRange;
 			
 			pFrom->GetCharacter()->SetEmote(EMOTE_ANGRY, 2);
-			GS()->SendEmoticon(From, EMOTICON_EXCLAMATION);
+			GS()->SendEmoticon(FromCID, EMOTICON_EXCLAMATION);
 		}
 
 		// fix quick killer spread players
@@ -758,15 +758,15 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	// create healthmod indicator
-	GS()->CreateDamage(m_Pos, m_pPlayer->GetCID(), OldHealth-m_Health, CritDamage > 0);
+	GS()->CreateDamage(m_Pos, FromCID, OldHealth-m_Health, CritDamage > 0);
 
-	if(From != m_pPlayer->GetCID())
-		GS()->CreatePlayerSound(From, SOUND_HIT);
+	if(FromCID != m_pPlayer->GetCID())
+		GS()->CreatePlayerSound(FromCID, SOUND_HIT);
 
 	// verify death
 	if(m_Health <= 0)
 	{
-		if(From != m_pPlayer->GetCID() && pFrom->GetCharacter())
+		if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
 			pFrom->GetCharacter()->SetEmote(EMOTE_HAPPY, 1);
 
 		// do not kill the bot it is still running in CCharacterBotAI::TakeDamage
@@ -774,7 +774,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			return false;
 
 		m_Health = 0;
-		Die(From, Weapon);
+		Die(FromCID, Weapon);
 		return false;
 	}
 

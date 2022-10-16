@@ -156,7 +156,7 @@ CWarehouse* CGS::GetWarehouse(int ID) const
 /* #########################################################################
 	EVENTS
 ######################################################################### */
-void CGS::CreateDamage(vec2 Pos, int ClientID, int Amount, bool CritDamage)
+void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage)
 {
 	float a = 3 * 3.14159f / 2 /* + Angle */;
 	//float a = get_angle(dir);
@@ -172,6 +172,13 @@ void CGS::CreateDamage(vec2 Pos, int ClientID, int Amount, bool CritDamage)
 			pEvent->m_Y = (int)Pos.y;
 			pEvent->m_Angle = (int)(f * 256.0f);
 		}
+	}
+
+	if(CritDamage)
+	{
+		CPlayer* pPlayer = GetPlayer(FromCID, true, true);
+		if(pPlayer && pPlayer->GetItem(itShowCriticalDamage)->IsEquipped())
+			Chat(FromCID, ":: Crit damage: {INT}p.", Amount);
 	}
 }
 

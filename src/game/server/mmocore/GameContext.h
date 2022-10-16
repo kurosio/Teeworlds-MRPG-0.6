@@ -206,7 +206,8 @@ enum
 
 	// settings items
 	itModePVP = 22,						// PVP mode setting
-	itShowEquipmentDescription = 25,	// Description settings
+	itShowEquipmentDescription = 25,	// Description setting
+	itShowCriticalDamage = 34,			// Critical damage setting
 
 	// items
 	NOPE = -1,
