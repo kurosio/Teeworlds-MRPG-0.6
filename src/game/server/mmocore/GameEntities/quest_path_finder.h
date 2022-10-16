@@ -11,13 +11,13 @@ class CQuestPathFinder : public CEntity
 public:
 	int m_ClientID;
 	int m_SubBotID;
+	class CPlayer* m_pPlayer;
 
 	CQuestPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
-
-	vec2 m_TargetPos;
+	
 	int GetClientID() const { return m_ClientID; }
 };
 

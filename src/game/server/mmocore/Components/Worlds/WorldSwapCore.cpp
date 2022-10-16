@@ -135,9 +135,9 @@ vec2 CWorldSwapCore::GetPositionQuestBot(int ClientID, const QuestBotInfo& Quest
 		dbg_msg("test", "Found step: %d -> %d", Base, Find);
 	}
 
-	const auto Iter = std::find_if(CWorldSwapPosition::ms_aWorldPositionLogic.begin(), CWorldSwapPosition::ms_aWorldPositionLogic.end(), [&](const CWorldSwapPosition& pItem)
+	auto Iter = std::find_if(CWorldSwapPosition::ms_aWorldPositionLogic.begin(), CWorldSwapPosition::ms_aWorldPositionLogic.end(), [&](const CWorldSwapPosition& pItem)
 	{
-		const CNodeWorlds NodeNearby = (int)StablePath.size() > 0 ? StablePath.front() : CNodeWorlds();
+		const CNodeWorlds NodeNearby = (int)StablePath.empty() ? CNodeWorlds() : StablePath.front();
 		return NodeNearby.m_Base == pItem.m_BaseWorldID && NodeNearby.m_Find == pItem.m_FindWorldID;
 	});
 	return Iter != CWorldSwapPosition::ms_aWorldPositionLogic.end() ? (*Iter).m_Position : vec2(0, 0);
