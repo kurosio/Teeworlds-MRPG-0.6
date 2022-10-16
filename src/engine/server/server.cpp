@@ -1836,7 +1836,6 @@ int CServer::Run()
 
 							m_aClients[ClientID].Reset();
 							m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
-							m_aClients[ClientID].m_WorldID = WORLD_STANDARD;
 							m_aClients[ClientID].m_IsChangesWorld = false;
 							SendMap(ClientID);
 						}
