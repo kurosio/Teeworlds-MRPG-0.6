@@ -23,6 +23,7 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 		SortTab = -1;
 
 	m_Spawned = true;
+	m_SnapHealthTick = 0;
 	m_aPlayerTick[TickState::Respawn] = Server()->Tick() + Server()->TickSpeed();
 	m_aPlayerTick[TickState::Die] = Server()->Tick();
 	m_PrevTuningParams = *pGS->Tuning();
@@ -159,7 +160,7 @@ void CPlayer::Snap(int SnappingClient)
 	if (!pClientInfo)
 		return;
 
-	if(Server()->Tick() < m_SnapHealthTick)
+	if(m_PlayerFlags ^ PLAYERFLAG_CHATTING && Server()->Tick() < m_SnapHealthTick)
 	{
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
 

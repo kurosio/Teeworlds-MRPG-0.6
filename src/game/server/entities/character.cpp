@@ -607,7 +607,7 @@ bool CCharacter::IncreaseHealth(int Amount)
 	Amount = clamp(Amount, 1, Amount);
 	m_Health = clamp(m_Health+Amount, 0, m_pPlayer->GetStartHealth());
 	m_pPlayer->ShowInformationStats();
-	m_pPlayer->SetSnapHealthTick(1);
+	m_pPlayer->SetSnapHealthTick(2);
 	return true;
 }
 
@@ -754,7 +754,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		GS()->m_pController->OnCharacterDamage(pFrom, m_pPlayer, min(Dmg, m_Health));
 		m_Health -= Dmg;
 		m_pPlayer->ShowInformationStats();
-		m_pPlayer->SetSnapHealthTick(1);
+		m_pPlayer->SetSnapHealthTick(2);
 	}
 
 	// create healthmod indicator
