@@ -62,6 +62,8 @@ enum Skill
 	SkillMasterWeapon = 4, // automatic gunfire
 	SkillBlessingGodWar = 5, // refill ammunition
 	SkillAttackTeleport = 6, // ?knockout? teleport
+	SkillCureI = 7, // health recovery cure
+	SkillHealthRegen = 8, // health regen
 };
 
 enum ToplistTypes

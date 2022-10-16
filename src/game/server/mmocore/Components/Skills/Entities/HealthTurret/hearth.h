@@ -12,9 +12,10 @@ class CHearth : public CEntity
 	vec2 m_InitialVel;
 	float m_InitialAmount;
 	int m_Health;
+	bool m_ShowInformation;
 
 public:
-	CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel);
+	CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel, bool ShowInformation = false);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

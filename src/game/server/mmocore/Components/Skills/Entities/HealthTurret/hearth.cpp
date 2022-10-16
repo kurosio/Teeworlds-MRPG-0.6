@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-CHearth::CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel)
+CHearth::CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel, bool ShowInformation)
 : CEntity(pGameWorld, CGameWorld::ENTYPE_HEARTLIFE, Pos)
 {
 	// set the values by arguments
@@ -13,6 +13,7 @@ CHearth::CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health,
 	m_pPlayer = pPlayer;
 	m_InitialAmount = 1.0f;
 	m_Health = Health;
+	m_ShowInformation = ShowInformation;
 
 	GameWorld()->InsertEntity(this);
 }
@@ -41,6 +42,12 @@ void CHearth::Tick()
 	// create the effect
 	GS()->CreateSound(m_Pos, 15);
 	pChar->IncreaseHealth(m_Health);
+	if(m_ShowInformation)
+	{
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "%dHP", m_Health);
+		GS()->CreateText(NULL, false, vec2(m_Pos.x, m_Pos.y - 96.0f), vec2(0, 0), 20, aBuf);
+	}
 
 	GS()->m_World.DestroyEntity(this);
 	return;

@@ -6,6 +6,7 @@
 
 #include "Entities/HealthTurret/healer-health.h"
 #include "Entities/AttackTeleport/attack-teleport.h"
+#include "Entities/HealthTurret/hearth.h"
 #include "Entities/SleepyGravity/sleepy-gravity.h"
 
 CGS* CSkill::GS() const
@@ -81,6 +82,40 @@ bool CSkill::Use()
 	{
 		new CAttackTeleport(&GS()->m_World, PlayerPosition, pChr, GetBonus());
 		return true;
+	}
+
+	if(m_ID == Skill::SkillCureI)
+	{
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
+			if(!pPlayer || !GS()->IsPlayerEqualWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
+				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
+				continue;
+
+			const int PowerLevel = ManaCost + translate_to_percent_rest(ManaCost, min(GetBonus(), 100));
+			new CHearth(&GS()->m_World, PlayerPosition, pPlayer, PowerLevel, pPlayer->GetCharacter()->m_Core.m_Vel, true);
+			GS()->CreateDeath(pPlayer->GetCharacter()->GetPos(), i);
+		}
+
+		GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
+	}
+
+	if(m_ID == Skill::SkillHealthRegen)
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			CPlayer* pPlayer = GS()->m_apPlayers[i];
+			if(!pPlayer || !pPlayer->GetCharacter() || !GS()->IsPlayerEqualWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
+				)
+				continue;
+
+			pPlayer->GiveEffect("RegenHealth", 12 + GetBonus());
+			GS()->CreateDeath(pPlayer->GetCharacter()->GetPos(), i);
+		}
+
+		GS()->CreateText(NULL, false, vec2(PlayerPosition.x, PlayerPosition.y - 96.0f), vec2(0, 0), 40, "SATELLA");
+		GS()->CreateSound(PlayerPosition, SOUND_PLAYER_SPAWN);
 	}
 
 	if(m_ID == Skill::SkillBlessingGodWar)
