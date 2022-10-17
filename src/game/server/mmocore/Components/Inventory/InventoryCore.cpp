@@ -223,8 +223,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 		const int DesValue = pPlayerSelectedItem->Info()->m_Dysenthis * Get;
 		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
-			GS()->Chat(ClientID, "Disassemble {STR}x{VAL}, you receive {VAL} materials",
-				pPlayerSelectedItem->Info()->GetName(), Get, DesValue);
+			GS()->Chat(ClientID, "Disassemble {STR}x{VAL}.", pPlayerSelectedItem->Info()->GetName(), Get);
 			GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		}
 		return true;
@@ -408,7 +407,8 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 	else
 	{
 		GS()->AVH(ClientID, HideID, "{STR}{STR} x{VAL}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.m_Value);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDescription());
+		if(pItemPlayer.Info()->m_Type != ItemType::TYPE_CRAFT && pItemPlayer.Info()->m_Type != ItemType::TYPE_OTHER)
+			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDescription());
 	}
 
 	// functional by function
