@@ -13,6 +13,7 @@ class CPlayerBot : public CPlayer
 	int m_BotID;
 	int m_MobID;
 	int m_BotHealth;
+	int m_BotStartHealth;
 	int m_DungeonAllowedSpawn;
 	std::map<int, vec2> m_WayPoints;
 
@@ -38,7 +39,7 @@ public:
 	int GetPlayerWorldID() const override;
 	CTeeInfo& GetTeeInfo() const override;
 
-	int GetStartHealth() override;
+	int GetStartHealth() override { return m_BotStartHealth; };
 	int GetHealth() override { return m_BotHealth; }
 	int GetMana() override { return 999; }
 

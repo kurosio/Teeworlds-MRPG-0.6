@@ -16,6 +16,7 @@ CPlayerBot::CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int Spaw
 	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(SubBotID), m_BotHealth(0), m_LastPosTick(0), m_PathSize(0)
 {
 	m_DungeonAllowedSpawn = false;
+	m_BotStartHealth = m_BotType == TYPE_BOT_MOB ? CPlayerBot::GetAttributeSize(AttributeIdentifier::Hardness) : 10;
 }
 
 CPlayerBot::~CPlayerBot()
@@ -87,13 +88,6 @@ int CPlayerBot::GetRespawnTick() const
 	default: 
 		return m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3;
 	}
-}
-
-int CPlayerBot::GetStartHealth()
-{
-	if(m_BotType == TYPE_BOT_MOB)
-		return GetAttributeSize(AttributeIdentifier::Hardness);
-	return 10;
 }
 
 int CPlayerBot::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
