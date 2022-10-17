@@ -666,7 +666,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 	{
 		// check the distance of the player
 		CPlayer* pFinderHard = GS()->GetPlayer(i, true, true);
-		if (!pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)
+		if (m_BotTargetID == i || !pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)
 			continue;
 
 		// check if the player is tastier for the bot
