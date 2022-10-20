@@ -1,4 +1,4 @@
-MRPG server transfer version to 0.6 (ddnet) not fully
+MRPG server transfer version from 0.7 to 0.6 (ddnet) with ex protocol and features
 [![CircleCI](https://circleci.com/gh/teeworlds/teeworlds.svg?style=svg)](https://circleci.com/gh/teeworlds/teeworlds) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/teeworlds/teeworlds?branch=master&svg=true)](https://ci.appveyor.com/project/heinrich5991/teeworlds)
 =========
 `readme will be changed over time`
@@ -78,10 +78,6 @@ pacman -S --needed ninja` on Arch Linux.)
 `-DDEV=ON`: Enable debug mode and disable some release mechanics. This leads to
 **faster** builds.
 
-`-DCLIENT=OFF`: Disable generation of the client target. Can be useful on
-headless servers which don't have graphics libraries like SDL2 installed.
-
-
 Building on Windows with Visual Studio
 ======================================
 
@@ -100,12 +96,6 @@ for the download to complete (terminals might pop up).
 
 Wait until the CMake configuration is done (watch the Output windows at the
 bottom).
-
-Select `teeworlds.exe` in the Select Startup Item… combobox next to the green
-arrow. Wait for the compilation to finish.
-
-For subsequent builds you only have to click the button with the green arrow
-again.
 
 
 Building on Windows with MinGW
@@ -130,10 +120,3 @@ click "Finish". Wait a bit (until the progress bar is full). Then click
 "Generate".
 
 You can now build Teeworlds by executing `mingw32-make` in the build directory.
-
-
-Building with bam, guides for all operating systems
-===================================================
-
-You can also compile Teeworlds with bam, a custom build system. Instructions
-for that can be found at https://www.teeworlds.com/?page=docs&wiki=hacking.
