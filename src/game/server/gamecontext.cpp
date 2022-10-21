@@ -924,18 +924,18 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_aPlayerTick[TickState::LastVoteTry] = Server()->Tick();
-			const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
+			const auto& iter = std::find_if(m_aPlayerVotes[ClientID]->begin(), m_aPlayerVotes[ClientID]->end(), [pMsg](const CVoteOptions& vote)
 			{
-				const int length = str_length(pMsg->m_pValue);
-				return (str_comp_nocase_num(pMsg->m_pValue, vote.m_aDescription, length) == 0);
+				return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
 			});
 
-			if(iter != m_aPlayerVotes[ClientID].end())
+			if(iter != m_aPlayerVotes[ClientID]->end())
 			{
 				const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
 				ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason, iter->m_Callback);
 				return;
 			}
+
 			ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		}
 
@@ -1244,7 +1244,7 @@ const char *CGS::NetVersion() const { return GAME_NETVERSION; }
 void CGS::ClearClientData(int ClientID)
 {
 	Mmo()->ResetClientData(ClientID);
-	m_aPlayerVotes[ClientID].clear();
+	m_aPlayerVotes[ClientID]->clear();
 	ms_aEffects[ClientID].clear();
 
 	// clear active snap bots for player
@@ -1407,7 +1407,7 @@ void CGS::ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IC
 ######################################################################### */
 void CGS::ClearVotes(int ClientID)
 {
-	m_aPlayerVotes[ClientID].clear();
+	m_aPlayerVotes[ClientID]->clear();
 
 	// send vote options
 	CNetMsg_Sv_VoteClearOptions ClearMsg;
@@ -1432,7 +1432,7 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	Vote.m_TempID2 = TempInt2;
 	Vote.m_Callback = Callback;
 
-	m_aPlayerVotes[ClientID].push_back(Vote);
+	m_aPlayerVotes[ClientID]->push_back(Vote);
 	
 	if(Vote.m_aDescription[0] == '\0')
 		str_copy(Vote.m_aDescription, "························", sizeof(Vote.m_aDescription));
@@ -1557,84 +1557,95 @@ void CGS::AVCALLBACK(int ClientID, const char *pCmd, const int TempInt, const in
 
 void CGS::ResetVotes(int ClientID, int MenuList)
 {
-	CPlayer *pPlayer = GetPlayer(ClientID, true);
+	// unfully safe
+	std::thread t1(&CallbackResetVotes, this, ClientID, MenuList);
+	t1.detach();
+}
+
+void CGS::CallbackResetVotes(CGS* pGS, int ClientID, int MenuList)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+	pGS->ClearVotes(ClientID);
+
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
 	if(!pPlayer)
 		return;
 
-	if(pPlayer && pPlayer->m_ActiveMenuRegisteredCallback)
+	if(pPlayer->m_ActiveMenuRegisteredCallback)
 	{
 		pPlayer->m_ActiveMenuRegisteredCallback = nullptr;
 		pPlayer->m_ActiveMenuOptionCallback = { nullptr };
 	}
 
-	sleep_pause(3); // TODO: fix need it
 	pPlayer->m_OpenVoteMenu = MenuList;
-	ClearVotes(ClientID);
 
-	if (Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, true))
+	// handle mmo replace menus
+	if (pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, true))
 	{
-		AVL(ClientID, "null", "The main menu will return as soon as you leave this zone!");
+		pGS->AVL(ClientID, "null", "The main menu will return as soon as you leave this zone!");
 		return;
 	}
 
+	// default menus
 	if(MenuList == MenuList::MAIN_MENU)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 
 		// statistics menu
 		const int ExpForLevel = pPlayer->ExpNeed(pPlayer->Acc().m_Level);
-		AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", Server()->ClientName(ClientID), pPlayer->Acc().m_aLastLogin);
-		AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, ExpForLevel);
-		AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
-		AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
-		AV(ClientID, "null");
+		pGS->AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", pGS->Server()->ClientName(ClientID), pPlayer->Acc().m_aLastLogin);
+		pGS->AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, ExpForLevel);
+		pGS->AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
+		pGS->AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
+		pGS->AV(ClientID, "null");
 
 		// personal menu
-		AVH(ClientID, TAB_PERSONAL, "☪ SUB MENU PERSONAL");
-		AVM(ClientID, "MENU", MenuList::MENU_INVENTORY, TAB_PERSONAL, "Inventory");
-		AVM(ClientID, "MENU", MenuList::MENU_EQUIPMENT, TAB_PERSONAL, "Equipment");
-		AVM(ClientID, "MENU", MenuList::MENU_UPGRADES, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Acc().m_Upgrade);
-		AVM(ClientID, "MENU", MenuList::MENU_DUNGEONS, TAB_PERSONAL, "Dungeons");
-		AVM(ClientID, "MENU", MenuList::MENU_SETTINGS, TAB_PERSONAL, "Settings");
-		AVM(ClientID, "MENU", MenuList::MENU_INBOX, TAB_PERSONAL, "Mailbox");
-		AVM(ClientID, "MENU", MenuList::MENU_JOURNAL_MAIN, TAB_PERSONAL, "Journal");
-		if(Mmo()->House()->PlayerHouseID(pPlayer) > 0)
-			AVM(ClientID, "MENU", MenuList::MENU_HOUSE, TAB_PERSONAL, "House");
-		AVM(ClientID, "MENU", MenuList::MENU_GUILD_FINDER, TAB_PERSONAL, "Guild finder");
+		pGS->AVH(ClientID, TAB_PERSONAL, "☪ SUB MENU PERSONAL");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_INVENTORY, TAB_PERSONAL, "Inventory");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_EQUIPMENT, TAB_PERSONAL, "Equipment");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_UPGRADES, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Acc().m_Upgrade);
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_DUNGEONS, TAB_PERSONAL, "Dungeons");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_SETTINGS, TAB_PERSONAL, "Settings");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_INBOX, TAB_PERSONAL, "Mailbox");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_JOURNAL_MAIN, TAB_PERSONAL, "Journal");
+		if(pGS->Mmo()->House()->PlayerHouseID(pPlayer) > 0)
+			pGS->AVM(ClientID, "MENU", MenuList::MENU_HOUSE, TAB_PERSONAL, "House");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_GUILD_FINDER, TAB_PERSONAL, "Guild finder");
 		if(pPlayer->Acc().IsGuild())
-			AVM(ClientID, "MENU", MenuList::MENU_GUILD, TAB_PERSONAL, "Guild");
-		AV(ClientID, "null");
+			pGS->AVM(ClientID, "MENU", MenuList::MENU_GUILD, TAB_PERSONAL, "Guild");
+		pGS->AV(ClientID, "null");
 
 		// info menu
-		AVH(ClientID, TAB_INFORMATION, "√ SUB MENU INFORMATION");
-		AVM(ClientID, "MENU", MenuList::MENU_GUIDE_GRINDING, TAB_INFORMATION, "Wiki / Grinding Guide ");
-		AVM(ClientID, "MENU", MenuList::MENU_TOP_LIST, TAB_INFORMATION, "Ranking guilds and players");
+		pGS->AVH(ClientID, TAB_INFORMATION, "√ SUB MENU INFORMATION");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_GUIDE_GRINDING, TAB_INFORMATION, "Wiki / Grinding Guide ");
+		pGS->AVM(ClientID, "MENU", MenuList::MENU_TOP_LIST, TAB_INFORMATION, "Ranking guilds and players");
 	}
 	else if(MenuList == MenuList::MENU_JOURNAL_MAIN)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 
-		Mmo()->Quest()->ShowQuestsMainList(pPlayer);
-		AddVotesBackpage(ClientID);
+		pGS->Mmo()->Quest()->ShowQuestsMainList(pPlayer);
+		pGS->AddVotesBackpage(ClientID);
 	}
 	else if(MenuList == MenuList::MENU_INBOX)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 
-		AddVotesBackpage(ClientID);
-		AV(ClientID, "null");
-		Mmo()->Inbox()->GetInformationInbox(pPlayer);
+		pGS->AddVotesBackpage(ClientID);
+		pGS->AV(ClientID, "null");
+		pGS->Mmo()->Inbox()->GetInformationInbox(pPlayer);
 	}
 	else if(MenuList == MenuList::MENU_UPGRADES)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 
-		AVH(ClientID, TAB_INFO_UPGR, "Upgrades Information");
-		AVM(ClientID, "null", NOPE, TAB_INFO_UPGR, "Select upgrades type in Reason, write count.");
-		AV(ClientID, "null");
+		pGS->AVH(ClientID, TAB_INFO_UPGR, "Upgrades Information");
+		pGS->AVM(ClientID, "null", NOPE, TAB_INFO_UPGR, "Select upgrades type in Reason, write count.");
+		pGS->AV(ClientID, "null");
 
 		// show player stats
-		ShowVotesPlayerStats(pPlayer);
+		pGS->ShowVotesPlayerStats(pPlayer);
 
 		// lambda function for easy use
 		auto ShowAttributeVote = [&](int HiddenID, AttributeType Type, std::function<void(int HiddenID)> pFunc)
@@ -1643,89 +1654,98 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 			for (const auto& [ID, Attribute] : CAttributeDescription::Data())
 			{
 				if(Attribute.IsType(Type) && Attribute.HasField())
-					AVD(ClientID, "UPGRADE", (int)ID, Attribute.GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", Attribute.GetName(), pPlayer->Acc().m_aStats[ID], Attribute.GetUpgradePrice());
+					pGS->AVD(ClientID, "UPGRADE", (int)ID, Attribute.GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", Attribute.GetName(), pPlayer->Acc().m_aStats[ID], Attribute.GetUpgradePrice());
 			}
-			AV(ClientID, "null");
+			pGS->AV(ClientID, "null");
 		};
 
 		// Disciple of War
 		ShowAttributeVote(TAB_UPGR_DPS, AttributeType::Dps, [&](int HiddenID)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
-			AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
+			pGS->AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
 		});
 
 		// Disciple of Tank
 		ShowAttributeVote(TAB_UPGR_TANK, AttributeType::Tank, [&](int HiddenID)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
-			AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
+			pGS->AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
 		});
 
 		// Disciple of Healer
 		ShowAttributeVote(TAB_UPGR_HEALER, AttributeType::Healer, [&](int HiddenID)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Healer);
-			AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
+			pGS->AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
 		});
 
 		// Upgrades Weapons and ammo
 		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeType::Weapon, [&](int HiddenID)
 		{
-			AVH(ClientID, HiddenID, "Upgrades Weapons / Ammo");
+			pGS->AVH(ClientID, HiddenID, "Upgrades Weapons / Ammo");
 		});
 
-		AVH(ClientID, TAB_UPGR_JOB, "Disciple of Jobs");
-		Mmo()->PlantsAcc()->ShowMenu(pPlayer);
-		Mmo()->MinerAcc()->ShowMenu(pPlayer);
-		AddVotesBackpage(ClientID);
+		pGS->AVH(ClientID, TAB_UPGR_JOB, "Disciple of Jobs");
+		pGS->Mmo()->PlantsAcc()->ShowMenu(pPlayer);
+		pGS->Mmo()->MinerAcc()->ShowMenu(pPlayer);
+		pGS->AddVotesBackpage(ClientID);
 	}
 	else if (MenuList == MenuList::MENU_TOP_LIST)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
-		AVH(ClientID, TAB_INFO_TOP, "Ranking Information");
-		AVM(ClientID, "null", NOPE, TAB_INFO_TOP, "Here you can see top server Guilds, Players.");
-		AV(ClientID, "null");
+		pGS->AVH(ClientID, TAB_INFO_TOP, "Ranking Information");
+		pGS->AVM(ClientID, "null", NOPE, TAB_INFO_TOP, "Here you can see top server Guilds, Players.");
+		pGS->AV(ClientID, "null");
 
-		AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
-		AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
-		AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
-		AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
-		AddVotesBackpage(ClientID);
+		pGS->AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
+		pGS->AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
+		pGS->AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
+		pGS->AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
+
+		if(pPlayer->m_aSortTabs[SORT_TOP] >= 0)
+		{
+			pGS->AV(ClientID, "null", "\0");
+			pGS->Mmo()->ShowTopList(pPlayer, pPlayer->m_aSortTabs[SORT_TOP]);
+		}
+
+		pGS->AddVotesBackpage(ClientID);
 	}
 	else if(MenuList == MenuList::MENU_GUIDE_GRINDING)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
-		AVH(ClientID, TAB_INFO_LOOT, "Grinding Information");
-		AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "You can look mobs, plants, and ores.");
-		AV(ClientID, "null");
-		AVL(ClientID, "null", "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
-		AV(ClientID, "null");
+		pGS->AVH(ClientID, TAB_INFO_LOOT, "Grinding Information");
+		pGS->AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "You can look mobs, plants, and ores.");
+		pGS->AV(ClientID, "null");
+		pGS->AVL(ClientID, "null", "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
+		pGS->AV(ClientID, "null");
 
-		for(int ID = MAIN_WORLD_ID; ID < Server()->GetWorldsSize(); ID++)
+		for(int ID = MAIN_WORLD_ID; ID < pGS->Server()->GetWorldsSize(); ID++)
 		{
-			AVM(ClientID, "SORTEDWIKIWORLD", ID, NOPE, Server()->GetWorldName(ID));
+			pGS->AVM(ClientID, "SORTEDWIKIWORLD", ID, NOPE, pGS->Server()->GetWorldName(ID));
 		}
-		AV(ClientID, "null");
+		pGS->AV(ClientID, "null");
 
 		if(pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] < 0)
 		{
-			AVL(ClientID, "null", "Select a zone to view information");
+			pGS->AVL(ClientID, "null", "Select a zone to view information");
 		}
 		else
 		{
 			const int WorldID = pPlayer->m_aSortTabs[SORT_GUIDE_WORLD];
-			const bool ActiveMob = Mmo()->BotsData()->ShowGuideDropByWorld(WorldID, pPlayer);
-			const bool ActivePlant = Mmo()->PlantsAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
-			const bool ActiveOre = Mmo()->MinerAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActiveMob = pGS->Mmo()->BotsData()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActivePlant = pGS->Mmo()->PlantsAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActiveOre = pGS->Mmo()->MinerAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
 			if(!ActiveMob && !ActivePlant && !ActiveOre)
-				AVL(ClientID, "null", "There are no drops in the selected area.");
+				pGS->AVL(ClientID, "null", "There are no drops in the selected area.");
 		}
-		AddVotesBackpage(ClientID);
+		pGS->AddVotesBackpage(ClientID);
 	}
 
-	Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, false);
+	// hande mmo unreplace menus
+	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList, false);
 }
+
 
 // information for unauthorized players
 void CGS::ShowVotesNewbieInformation(int ClientID)
@@ -1877,9 +1897,8 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 	}
 	if (PPSTR(CMD, "SORTEDTOP") == 0)
 	{
-		ResetVotes(ClientID, MenuList::MENU_TOP_LIST);
-		AV(ClientID, "null", "\0");
-		Mmo()->ShowTopList(pPlayer, VoteID);
+		pPlayer->m_aSortTabs[SORT_TOP] = VoteID;
+		StrongUpdateVotes(ClientID, MenuList::MENU_TOP_LIST);
 		return true;
 	}
 	if (PPSTR(CMD, "SORTEDWIKIWORLD") == 0)

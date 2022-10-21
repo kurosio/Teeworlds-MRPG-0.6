@@ -236,6 +236,7 @@ enum
 	SORT_INVENTORY = 0,
 	SORT_EQUIPING,
 	SORT_GUIDE_WORLD,
+	SORT_TOP,
 	NUM_SORT_TAB,
 
 	// type of decorations

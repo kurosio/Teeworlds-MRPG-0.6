@@ -17,6 +17,8 @@
 
 #include "mmocore/MmoController.h"
 
+#include "mmocore/Utils/SafePtr.h"
+
 class CGS : public IGameServer
 {
 	/* #########################################################################
@@ -186,7 +188,8 @@ private:
 	/* #########################################################################
 		VOTING MMO GAMECONTEXT
 	######################################################################### */
-	std::list<CVoteOptions> m_aPlayerVotes[MAX_PLAYERS];
+	safe_ptr< std::list<CVoteOptions> > m_aPlayerVotes[MAX_PLAYERS];
+	static void CallbackResetVotes(CGS* pGS, int ClientID, int MenuList);
 
 public:
 	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1, VoteCallBack Callback = nullptr);
@@ -201,6 +204,7 @@ public:
 	void ClearVotes(int ClientID);
 	void ShowVotesNewbieInformation(int ClientID);
 	void ResetVotes(int ClientID, int MenuList);
+
 	void StrongUpdateVotes(int ClientID, int MenuList);
 	void StrongUpdateVotesForAll(int MenuList);
 	void AddVotesBackpage(int ClientID);

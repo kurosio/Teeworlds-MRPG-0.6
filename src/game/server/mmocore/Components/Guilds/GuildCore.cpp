@@ -898,13 +898,9 @@ void GuildCore::ShowMenuGuild(CPlayer *pPlayer) const
 	const int GuildID = pPlayer->Acc().m_GuildID;
 	const int GuildHouse = GetGuildHouseID(GuildID);
 	const int ExpNeed = computeExperience(CGuildData::ms_aGuild[GuildID].m_Level);
-	GS()->AVH(ClientID, TAB_GUILD_STAT, "Guild name: {STR}", CGuildData::ms_aGuild[GuildID].m_aName);
+	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", CGuildData::ms_aGuild[GuildID].m_aName, Job()->PlayerName(CGuildData::ms_aGuild[GuildID].m_UserID));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", CGuildData::ms_aGuild[GuildID].m_Level, CGuildData::ms_aGuild[GuildID].m_Exp, ExpNeed);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].m_Value);
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Leader: {STR}", Job()->PlayerName(CGuildData::ms_aGuild[GuildID].m_UserID));
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "- - - - - - - - - -");
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "/gexit - leave of guild group.");
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "- - - - - - - - - -");
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", CGuildData::ms_aGuild[GuildID].m_Bank);
 	GS()->AV(ClientID, "null");
 	//
