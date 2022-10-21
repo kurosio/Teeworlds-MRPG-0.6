@@ -8,21 +8,21 @@
 
 class CPlayer;
 
-struct StructRandomItem
+struct StRandomItem
 {
-	ItemIdentifier m_ItemID;
-	int m_Value;
-	float m_Chance;
+	ItemIdentifier m_ItemID{};
+	int m_Value{};
+	float m_Chance{};
 };
 
 class CRandomBox
 {
-	std::vector <StructRandomItem> m_ArrayItems;
+	std::vector <StRandomItem> m_ArrayItems{};
 
 public:
 	void Add(ItemIdentifier ItemID, int Value, float Chance)
 	{
-		StructRandomItem Item;
+		StRandomItem Item;
 		Item.m_Chance = Chance;
 		Item.m_Value = Value;
 		Item.m_ItemID = ItemID;
@@ -39,12 +39,12 @@ class CRandomBoxRandomizer : public CEntity
 	int m_PlayerAccountID;
 	CPlayer* m_pPlayer;
 	CPlayerItem* m_pPlayerUsesItem;
-	std::vector<StructRandomItem> m_List;
+	std::vector<StRandomItem> m_List;
 
 public:
-	CRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<StructRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue);
+	CRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<StRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue);
 
-	std::vector<StructRandomItem>::iterator SelectRandomItem();
+	std::vector<StRandomItem>::iterator SelectRandomItem();
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 };

@@ -20,14 +20,16 @@ bool CRandomBox::Start(CPlayer *pPlayer, int Seconds, CPlayerItem* pPlayerUsesIt
 	{
 		Seconds *= pPlayer->GS()->Server()->TickSpeed();
 		pPlayer->m_aPlayerTick[LastRandomBox] = pPlayer->GS()->Server()->Tick() + Seconds;
-		std::sort(m_ArrayItems.begin(), m_ArrayItems.end(), [](const StructRandomItem& pLeft, const StructRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
+		std::sort(m_ArrayItems.begin(), m_ArrayItems.end(), [](const StRandomItem& pLeft, const StRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
+
 		new CRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc().m_UserID, Seconds, m_ArrayItems, pPlayerUsesItem, UseValue);
 		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{STR}x{VAL}'.", pPlayerUsesItem->Info()->GetName(), UseValue);
 	}
+
 	return true;
 };
 
-CRandomBoxRandomizer::CRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<StructRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue)
+CRandomBoxRandomizer::CRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<StRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_RANDOM_BOX, pPlayer->m_ViewPos)
 {
 	m_UseValue = UseValue;
@@ -36,31 +38,34 @@ CRandomBoxRandomizer::CRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPla
 	m_PlayerAccountID = PlayerAccountID;
 	m_pPlayerUsesItem = pPlayerUsesItem;
 	std::copy(List.begin(), List.end(), std::back_inserter(m_List));
+
 	GameWorld()->InsertEntity(this);
 }
 
-std::vector<StructRandomItem>::iterator CRandomBoxRandomizer::SelectRandomItem()
+std::vector<StRandomItem>::iterator CRandomBoxRandomizer::SelectRandomItem()
 {
 	const float RandomDrop = frandom() * 100.0f;
-	const auto pItem = std::find_if(m_List.begin(), m_List.end(), [RandomDrop](const StructRandomItem &pItem) { return RandomDrop < pItem.m_Chance; });
-	return pItem != m_List.end() ? pItem : std::prev(m_List.end());
+	const auto iter = std::find_if(m_List.begin(), m_List.end(), [RandomDrop](const StRandomItem &pItem) { return RandomDrop < pItem.m_Chance; });
+	return iter != m_List.end() ? iter : std::prev(m_List.end());
 }
 
 void CRandomBoxRandomizer::Tick()
 {
 	if(!m_LifeTime || m_LifeTime % Server()->TickSpeed() == 0)
 	{
-		auto pSelectedRandomItem = SelectRandomItem();
+		auto iterrandom = SelectRandomItem();
 		if(m_pPlayer && m_pPlayer->GetCharacter())
 		{
 			const vec2 PlayerPosition = m_pPlayer->GetCharacter()->m_Core.m_Pos;
-			GS()->CreateText(nullptr, false, vec2(PlayerPosition.x, PlayerPosition.y - 80), vec2(0, -0.3f), 15, GS()->GetItemInfo(pSelectedRandomItem->m_ItemID)->GetName());
+			GS()->CreateText(nullptr, false, vec2(PlayerPosition.x, PlayerPosition.y - 80), vec2(0, -0.3f), 15, GS()->GetItemInfo(iterrandom->m_ItemID)->GetName());
 		}
 
 		if(!m_LifeTime)
 		{
-			auto GiveRandomItem = [&](StructRandomItem& pItem)
+			// function lambda for check allowed get or send it from inbox
+			auto GiveRandomItem = [&](StRandomItem& pItem)
 			{
+				// for enchantable
 				if(GS()->GetItemInfo(pItem.m_ItemID)->IsEnchantable())
 				{
 					for(int i = 0; i < pItem.m_Value; i++)
@@ -78,10 +83,12 @@ void CRandomBoxRandomizer::Tick()
 						}
 					}
 				}
-				else
+				else // default
 				{
 					if(!m_pPlayer)
+					{
 						GS()->SendInbox("System", m_PlayerAccountID, "Random box", "Item was not received by you personally.", pItem.m_ItemID, pItem.m_Value);
+					}
 					else
 					{
 						m_pPlayer->GetItem(pItem.m_ItemID)->Add(pItem.m_Value, 0, 0, false);
@@ -89,23 +96,29 @@ void CRandomBoxRandomizer::Tick()
 					}
 				}
 			};
-			struct ReceivedItem { StructRandomItem RandomItem; int Coincidences; };
-			std::list<ReceivedItem> aReceivedItems;
 
 			// get list received items
+			struct ReceivedItem { StRandomItem RandomItem; int Coincidences; };
+			std::list<ReceivedItem> aReceivedItems;
+
 			for(int i = 0; i < m_UseValue; i++)
 			{
-				auto pItem = std::find_if(aReceivedItems.begin(), aReceivedItems.end(),
-					[&pSelectedRandomItem](const ReceivedItem& pItem){ return pItem.RandomItem.m_ItemID == pSelectedRandomItem->m_ItemID; });
-				if(pItem != aReceivedItems.end())
+				auto iter = std::find_if(aReceivedItems.begin(), aReceivedItems.end(),[&iterrandom](const ReceivedItem& pItem)
 				{
-					pItem->RandomItem.m_Value += pSelectedRandomItem->m_Value;
-					pItem->Coincidences++;
+					return pItem.RandomItem.m_ItemID == iterrandom->m_ItemID;
+				});
+
+				if(iter != aReceivedItems.end())
+				{
+					iter->RandomItem.m_Value += iterrandom->m_Value;
+					iter->Coincidences++;
 				}
 				else
-					aReceivedItems.push_back({ *pSelectedRandomItem, 1});
+				{
+					aReceivedItems.push_back({ *iterrandom, 1 });
+				}
 
-				pSelectedRandomItem = SelectRandomItem();
+				iterrandom = SelectRandomItem();
 			}
 			
 			// got all random items
