@@ -38,7 +38,7 @@ void CWarehouseCore::OnInit()
 
 		CTradingSlot TradeSlot(ID);
 		std::shared_ptr<CItem> pItem = std::make_shared<CItem>(CItem(ItemID, ItemValue, Enchant));
-		TradeSlot.Init(pItem, GS()->GetItemInfo(RequiredItemID), Price);
+		TradeSlot.Init(pItem, &CItemDescription::Data()[RequiredItemID], Price);
 		StoreTrades[WarehouseID].push_back(TradeSlot);
 	}
 
