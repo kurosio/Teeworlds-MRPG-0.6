@@ -10,28 +10,27 @@ using TradeIdentifier = int;
 class CTradingSlot
 {
 	TradeIdentifier m_ID{};
-	CItem m_Item{};
-
-	ItemIdentifier m_RequiredID{};
+	std::shared_ptr<CItem> m_pItem{};
+	std::shared_ptr<CItemDescription> m_pRequiredItem{};
 	int m_Price{};
 
 public:
 	CTradingSlot() = default;
 	CTradingSlot(TradeIdentifier ID) :  m_ID(ID) {}
 
-	void Init(CItem Item, ItemIdentifier RequiredID, int Price)
+	void Init(std::shared_ptr <CItem> pItem, std::shared_ptr<CItemDescription> pRequiredItem, int Price)
 	{
-		m_Item = std::move(Item);
-		m_RequiredID = RequiredID;
+		m_pItem = std::move(pItem);
+		m_pRequiredItem = std::move(pRequiredItem);
 		m_Price = Price;
 	}
 
 	TradeIdentifier GetID() const { return m_ID; }
 
-	CItem* GetItem() { return &m_Item; }
-	const CItem* GetItem() const { return &m_Item; }
-	CItemDescription* GetCurrency() { return &CItemDescription::Data()[m_RequiredID]; }
-	const CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_RequiredID]; }
+	CItem* GetItem() { return m_pItem.get(); }
+	const CItem* GetItem() const { return m_pItem.get(); }
+	CItemDescription* GetCurrency() { return m_pRequiredItem.get(); }
+	const CItemDescription* GetCurrency() const { return m_pRequiredItem.get(); }
 	int GetPrice() const { return m_Price; }
 };
 
