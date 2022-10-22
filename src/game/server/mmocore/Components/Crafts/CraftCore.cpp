@@ -32,13 +32,13 @@ bool CCraftCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_CRAFT_ZONE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_CRAFT_ZONE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 	return false;
@@ -148,7 +148,7 @@ void CCraftCore::CraftItem(CPlayer *pPlayer, int CraftID) const
 		GS()->Chat(ClientID, "You crafted [{STR}x{VAL}].", pPlayerCraftItem->Info()->GetName(), CraftGetValue);
 	}
 
-	GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+	GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 }
 
 bool CCraftCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)

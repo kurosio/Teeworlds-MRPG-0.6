@@ -73,13 +73,10 @@ public:
 	bool m_Spawned;
 
 	short m_aSortTabs[NUM_SORT_TAB];
+	int m_TempMenuValue;
 	short m_OpenVoteMenu;
 	short m_LastVoteMenu;
 	bool m_RequestChangeNickname;
-
-	// TODO: fixme. improve the system using the ID method, as well as the ability to implement Backpage
-	CVoteOptionsCallback m_ActiveMenuOptionCallback;
-	VoteCallBack m_ActiveMenuRegisteredCallback;
 
 	/* #########################################################################
 		FUNCTIONS PLAYER ENGINE

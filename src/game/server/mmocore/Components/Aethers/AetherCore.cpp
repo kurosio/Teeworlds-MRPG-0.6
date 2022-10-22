@@ -57,7 +57,7 @@ bool CAetherCore::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, const 
 		}
 
 		pPlayer->GetCharacter()->ChangePosition(Position);
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 

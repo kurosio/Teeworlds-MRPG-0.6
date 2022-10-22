@@ -549,7 +549,7 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 		if(Upgrade(Get, &Acc().m_aStats[(AttributeIdentifier)VoteID], &Acc().m_Upgrade, VoteID2, 1000))
 		{
 			GS()->Mmo()->SaveAccount(this, SaveType::SAVE_UPGRADES);
-			GS()->ResetVotes(m_ClientID, MenuList::MENU_UPGRADES);
+			GS()->UpdateVotes(m_ClientID, MenuList::MENU_UPGRADES);
 		}
 		return true;
 	}
@@ -563,7 +563,7 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 				Value = false;
 		}
 
-		GS()->ResetVotes(m_ClientID, m_LastVoteMenu);
+		GS()->UpdateVotes(m_ClientID, m_LastVoteMenu);
 		return true;
 	}
 
@@ -583,10 +583,7 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 		if(m_aHiddenMenu[VoteID] == false)
 			m_aHiddenMenu.erase(VoteID);
 
-		if(m_ActiveMenuRegisteredCallback)
-			m_ActiveMenuRegisteredCallback(m_ActiveMenuOptionCallback);
-		else
-			GS()->StrongUpdateVotes(m_ClientID, m_OpenVoteMenu);
+		GS()->StrongUpdateVotes(m_ClientID, m_OpenVoteMenu);
 		return true;
 	}
 	return false;

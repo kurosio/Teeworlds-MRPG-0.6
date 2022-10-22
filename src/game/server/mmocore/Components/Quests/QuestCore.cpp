@@ -57,11 +57,12 @@ bool QuestCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 		return false;
 	}
 
-	if(Menulist == MenuList::MENU_JOURNAL_MAIN)
+	if(Menulist == MENU_JOURNAL_MAIN)
 	{
 		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
 
 		ShowQuestsMainList(pPlayer);
+
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -71,8 +72,24 @@ bool QuestCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
 
 		ShowQuestsTabList(pPlayer, QUEST_FINISHED);
+
 		GS()->AddVotesBackpage(ClientID);
 		return true;
+	}
+
+	if(Menulist == MENU_JOURNAL_QUEST_INFORMATION)
+	{
+		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
+
+		const int QuestID = pPlayer->m_TempMenuValue;
+		CQuestDataInfo pData = pPlayer->GetQuest(QuestID).Info();
+
+		pPlayer->GS()->Mmo()->Quest()->ShowQuestsActiveNPC(pPlayer, QuestID);
+		pPlayer->GS()->AV(ClientID, "null");
+		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pData.GetName());
+		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pData.m_Gold, pData.m_Exp);
+
+		pPlayer->GS()->AddVotesBackpage(ClientID);
 	}
 
 	return false;
@@ -149,24 +166,7 @@ void QuestCore::ShowQuestID(CPlayer *pPlayer, int QuestID)
 	const int QuestsSize = pData.GetQuestStorySize();
 	const int QuestPosition = pData.GetQuestStoryPosition();
 
-	// TODO: REMOVE IT
-	GS()->AVCALLBACK(ClientID, "MENU", QuestID, NOPE, NOPE, [](CVoteOptionsCallback Callback)
-	{
-		CPlayer* pPlayer = Callback.pPlayer;
-		const int ClientID = pPlayer->GetCID();
-		const int QuestID = Callback.VoteID;
-		CQuestDataInfo pData = pPlayer->GetQuest(QuestID).Info();
-
-		pPlayer->GS()->ClearVotes(ClientID);
-		pPlayer->GS()->Mmo()->Quest()->ShowQuestsActiveNPC(pPlayer, QuestID);
-		pPlayer->GS()->AV(ClientID, "null");
-
-		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pData.GetName());
-		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pData.m_Gold, pData.m_Exp);
-
-		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
-		pPlayer->GS()->AddVotesBackpage(ClientID);
-	}, "{INT}/{INT} {STR}: {STR}", QuestPosition, QuestsSize, pData.GetStory(), pData.GetName());
+	GS()->AVD(ClientID, "MENU", MENU_JOURNAL_QUEST_INFORMATION, QuestID, NOPE, "{INT}/{INT} {STR}: {STR}", QuestPosition, QuestsSize, pData.GetStory(), pData.GetName());
 }
 
 // active npc information display

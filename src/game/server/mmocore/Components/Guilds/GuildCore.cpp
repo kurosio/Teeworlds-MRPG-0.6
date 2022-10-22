@@ -101,13 +101,13 @@ bool GuildCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_HOUSE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->ResetVotes(ClientID, MAIN_MENU);
+		GS()->UpdateVotes(ClientID, MAIN_MENU);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_HOUSE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->ResetVotes(ClientID, MAIN_MENU);
+		GS()->UpdateVotes(ClientID, MAIN_MENU);
 		return true;
 	}
 
@@ -351,7 +351,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		GS()->Chat(ClientID, "You reject invite.");
 		Sqlpool.Execute<DB::REMOVE>("tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'", GuildID, SenderID);
 		GS()->SendInbox(Server()->ClientName(ClientID), SenderID, CGuildData::ms_aGuild[GuildID].m_aName, "You were denied join guild");
-		GS()->ResetVotes(ClientID, MENU_GUILD);
+		GS()->UpdateVotes(ClientID, MENU_GUILD);
 		return true;
 	}
 
@@ -819,7 +819,7 @@ void GuildCore::DisbandGuild(int GuildID)
 
 		pPlayer->Acc().m_GuildID = 0;
 		pPlayer->Acc().m_GuildRank = 0;
-		GS()->ResetVotes(i, MAIN_MENU);
+		GS()->UpdateVotes(i, MAIN_MENU);
 	}
 	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = NULL, GuildRank = NULL, GuildDeposit = '0' WHERE GuildID = '%d'", GuildID);
 	CGuildData::ms_aGuild.erase(GuildID);
@@ -851,7 +851,7 @@ bool GuildCore::JoinGuild(int AccountID, int GuildID)
 	{
 		pPlayer->Acc().m_GuildID = GuildID;
 		pPlayer->Acc().m_GuildRank = 0;
-		GS()->ResetVotes(pPlayer->GetCID(), MAIN_MENU);
+		GS()->UpdateVotes(pPlayer->GetCID(), MAIN_MENU);
 	}
 	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = NULL WHERE ID = '%d'", GuildID, AccountID);
 	GS()->ChatGuild(GuildID, "Player {STR} join in your guild!", pPlayerName);
@@ -882,7 +882,7 @@ void GuildCore::ExitGuild(int AccountID)
 		if(pPlayer)
 		{
 			pPlayer->Acc().m_GuildID = 0;
-			GS()->ResetVotes(pPlayer->GetCID(), MAIN_MENU);
+			GS()->UpdateVotes(pPlayer->GetCID(), MAIN_MENU);
 		}
 		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = NULL, GuildRank = NULL, GuildDeposit = '0' WHERE ID = '%d'", AccountID);
 	}

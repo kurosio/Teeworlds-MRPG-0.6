@@ -39,18 +39,6 @@ struct CVoteOptionServer
 	char m_aCommand[1];
 };
 
-class CVoteOptionsCallback
-{
-public:
-	class CPlayer* pPlayer;
-	int VoteID;
-	int VoteID2;
-	int Get;
-	char Text[VOTE_DESC_LENGTH];
-	char Command[VOTE_CMD_LENGTH];
-};
-typedef std::function<void(CVoteOptionsCallback)> VoteCallBack;
-
 class CVoteOptions
 {
 public:
@@ -58,7 +46,6 @@ public:
 	char m_aCommand[VOTE_CMD_LENGTH];
 	int m_TempID;
 	int m_TempID2;
-	VoteCallBack m_Callback;
 };
 
 #endif

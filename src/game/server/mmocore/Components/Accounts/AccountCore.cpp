@@ -152,7 +152,7 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 		if (const int Letters = Job()->Inbox()->GetMailLettersSize(pPlayer->Acc().m_UserID); Letters > 0)
 			GS()->Chat(ClientID, "You have {INT} unread letters!", Letters);
 
-		GS()->ResetVotes(ClientID, MenuList::MAIN_MENU);
+		GS()->UpdateVotes(ClientID, MenuList::MAIN_MENU);
 		return;
 	}
 

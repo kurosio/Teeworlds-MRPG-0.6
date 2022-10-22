@@ -792,7 +792,6 @@ void CGS::OnTick()
 	m_World.Tick();
 	m_pController->Tick();
 
-
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetPlayerWorldID() != m_WorldID)
@@ -923,20 +922,25 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if (str_comp_nocase(pMsg->m_pType, "option") != 0 || Server()->Tick() < (pPlayer->m_aPlayerTick[TickState::LastVoteTry] + (Server()->TickSpeed() / 2)))
 				return;
 
-			pPlayer->m_aPlayerTick[TickState::LastVoteTry] = Server()->Tick();
-			const auto& iter = std::find_if(m_aPlayerVotes[ClientID]->begin(), m_aPlayerVotes[ClientID]->end(), [pMsg](const CVoteOptions& vote)
+			if(m_mtxUniqueVotes.try_lock())
 			{
-				return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
-			});
+				pPlayer->m_aPlayerTick[TickState::LastVoteTry] = Server()->Tick();
+				const auto& iter = std::find_if(m_aPlayerVotes[ClientID]->begin(), m_aPlayerVotes[ClientID]->end(), [pMsg](const CVoteOptions& vote)
+				{
+					return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
+				});
 
-			if(iter != m_aPlayerVotes[ClientID]->end())
-			{
-				const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
-				ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason, iter->m_Callback);
-				return;
+				if(iter != m_aPlayerVotes[ClientID]->end())
+				{
+					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
+					ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason);
+					m_mtxUniqueVotes.unlock();
+					return;
+				}
+
+				UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+				m_mtxUniqueVotes.unlock();
 			}
-
-			ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
@@ -1119,8 +1123,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 
 			// send clear vote options
-			CNetMsg_Sv_VoteClearOptions ClearMsg;
-			Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
+			ClearVotes(ClientID);
 
 			// client is ready to enter
 			CNetMsg_Sv_ReadyToEnter m;
@@ -1414,7 +1417,7 @@ void CGS::ClearVotes(int ClientID)
 }
 
 // add a vote
-void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempInt, const int TempInt2, VoteCallBack Callback)
+void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempInt, const int TempInt2)
 {
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !m_apPlayers[ClientID])
 		return;
@@ -1429,17 +1432,10 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_TempID = TempInt;
 	Vote.m_TempID2 = TempInt2;
-	Vote.m_Callback = Callback;
-
-	m_aPlayerVotes[ClientID]->push_back(Vote);
-	
 	if(Vote.m_aDescription[0] == '\0')
 		str_copy(Vote.m_aDescription, "························", sizeof(Vote.m_aDescription));
 
-	// send to vanilla clients
-	CNetMsg_Sv_VoteOptionAdd OptionMsg;
-	OptionMsg.m_pDescription = Vote.m_aDescription;
-	Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+	m_aPlayerVotes[ClientID]->emplace_back(Vote);
 }
 
 // add formatted vote
@@ -1531,62 +1527,37 @@ void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempI
 	}
 }
 
-// add formatted callback vote with multiple id's (need disallow used it for menu)
-void CGS::AVCALLBACK(int ClientID, const char *pCmd, const int TempInt, const int TempInt2, const int HiddenID, VoteCallBack Callback, const char* pText, ...)
-{
-	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
-	{
-		if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
-			(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
-			return;
-
-		va_list VarArgs;
-		va_start(VarArgs, pText);
-
-		dynamic_string Buffer;
-		Buffer.append("- ");
-
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		AV(ClientID, pCmd, Buffer.buffer(), TempInt, TempInt2, Callback);
-
-		Buffer.clear();
-		va_end(VarArgs);
-	}
-}
-
-void CGS::ResetVotes(int ClientID, int MenuList)
-{
-	// unfully safe
-	std::thread t1(&CallbackResetVotes, this, ClientID, MenuList);
-	t1.detach();
-}
-
-void CGS::CallbackResetVotes(CGS* pGS, int ClientID, int MenuList)
+void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist)
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	std::lock_guard<std::mutex> guard(pGS->m_mtxUniqueVotes);
+	std::unique_lock<std::mutex> guard(pGS->m_mtxUniqueVotes);
 
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
 	if(!pPlayer)
 		return;
 
-	// clear callback
-	if(pPlayer->m_ActiveMenuRegisteredCallback)
-	{
-		pPlayer->m_ActiveMenuRegisteredCallback = nullptr;
-		pPlayer->m_ActiveMenuOptionCallback = { nullptr };
-	}
-
 	// clear votes
-	CNetMsg_Sv_VoteClearOptions ClearMsg;
-	pGS->Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
-	pGS->m_aPlayerVotes[ClientID]->clear();
+	pGS->ClearVotes(ClientID);
 
 	// parse votes
-	pPlayer->m_OpenVoteMenu = MenuList;
-	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, MenuList);
+	pPlayer->m_OpenVoteMenu = Menulist;
+	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, Menulist);
+
+	// send parsed votes
+	for(auto p = pGS->m_aPlayerVotes[ClientID]->begin(); p != pGS->m_aPlayerVotes[ClientID]->end(); p++)
+	{
+		CNetMsg_Sv_VoteOptionAdd OptionMsg;
+		OptionMsg.m_pDescription = p->m_aDescription;
+		pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+	}
 }
 
+void CGS::UpdateVotes(int ClientID, int MenuList)
+{
+	// unfully safe
+	std::thread t1(&CallbackUpdateVotes, this, ClientID, MenuList);
+	t1.detach();
+}
 
 // information for unauthorized players
 void CGS::ShowVotesNewbieInformation(int ClientID)
@@ -1640,7 +1611,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 void CGS::StrongUpdateVotes(int ClientID, int MenuList)
 {
 	if(m_apPlayers[ClientID] && m_apPlayers[ClientID]->m_OpenVoteMenu == MenuList)
-		ResetVotes(ClientID, MenuList);
+		UpdateVotes(ClientID, MenuList);
 }
 
 // strong update votes variability of the data
@@ -1649,7 +1620,7 @@ void CGS::StrongUpdateVotesForAll(int MenuList)
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(m_apPlayers[i] && m_apPlayers[i]->m_OpenVoteMenu == MenuList)
-			ResetVotes(i, MenuList);
+			UpdateVotes(i, MenuList);
 	}
 }
 
@@ -1696,33 +1667,12 @@ void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, ItemIdentifier ItemID)
 }
 
 // vote parsing of all functions of action methods
-bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, const int VoteID2, int Get, const char *Text, VoteCallBack Callback)
+bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, const int VoteID2, int Get, const char *Text)
 {
 	CPlayer *pPlayer = GetPlayer(ClientID, false, true);
 	if(!pPlayer)
 	{
 		Chat(ClientID, "Use it when you're not dead!");
-		return true;
-	}
-
-	const sqlstr::CSqlString<64> FormatText = sqlstr::CSqlString<64>(Text);
-	if(Callback)
-	{
-		CVoteOptionsCallback InstanceCallback;
-		InstanceCallback.pPlayer = pPlayer;
-		InstanceCallback.Get = Get;
-		InstanceCallback.VoteID = VoteID;
-		InstanceCallback.VoteID2 = VoteID2;
-		str_copy(InstanceCallback.Text, FormatText.cstr(), sizeof(InstanceCallback.Text));
-		str_copy(InstanceCallback.Command, CMD, sizeof(InstanceCallback.Command));
-
-		// TODO: fixme. improve the system using the ID method, as well as the ability to implement Backpage
-		if(PPSTR(CMD, "MENU") == 0)
-		{
-			pPlayer->m_ActiveMenuOptionCallback = InstanceCallback;
-			pPlayer->m_ActiveMenuRegisteredCallback = Callback;
-		}
-		Callback(InstanceCallback);
 		return true;
 	}
 
@@ -1733,7 +1683,8 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 
 	if(PPSTR(CMD, "MENU") == 0)
 	{
-		ResetVotes(ClientID, VoteID);
+		pPlayer->m_TempMenuValue = VoteID2;
+		UpdateVotes(ClientID, VoteID);
 		return true;
 	}
 	if (PPSTR(CMD, "SORTEDTOP") == 0)
@@ -1752,6 +1703,7 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 		return true;
 
 	// parsing everything else
+	const sqlstr::CSqlString<64> FormatText = sqlstr::CSqlString<64>(Text);
 	return Mmo()->OnParsingVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, FormatText.cstr());
 }
 

@@ -195,7 +195,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 		pPlayerItem->Drop(Get);
 
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {STR}x{VAL}", pPlayerItem->Info()->GetName(), Get);
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 
@@ -207,7 +207,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 
 		Get = min(AvailableValue, Get);
 		pPlayer->GetItem(VoteID)->Use(Get);
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 
@@ -224,7 +224,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
 			GS()->Chat(ClientID, "Disassemble {STR}x{VAL}.", pPlayerSelectedItem->Info()->GetName(), Get);
-			GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		}
 		return true;
 	}
@@ -232,7 +232,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 	if(PPSTR(CMD, "ISETTINGS") == 0)
 	{
 		pPlayer->GetItem(VoteID)->Equip();
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 
@@ -258,7 +258,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 		char aAttributes[128];
 		pPlayerItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
 		GS()->Chat(-1, "{STR} enchant {STR} {STR} {STR}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), aEnchantBuf, aAttributes);
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 

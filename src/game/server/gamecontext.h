@@ -189,29 +189,27 @@ private:
 		VOTING MMO GAMECONTEXT
 	######################################################################### */
 	std::mutex m_mtxUniqueVotes;
-	safe_ptr< std::list<CVoteOptions> > m_aPlayerVotes[MAX_PLAYERS];
-	static void CallbackResetVotes(CGS* pGS, int ClientID, int MenuList);
+	std::atomic_bool m_atmUniqueVotes;
+	safe_ptr< std::deque<CVoteOptions> > m_aPlayerVotes[MAX_PLAYERS];
+	static void CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist);
 
 public:
-	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1, VoteCallBack Callback = nullptr);
+	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1);
 	void AVL(int ClientID, const char *pCmd, const char *pText, ...);
 	void AVH(int ClientID, int HiddenID, const char *pText, ...);
 	void AVM(int ClientID, const char *pCmd, int TempInt, int HiddenID, const char* pText, ...);
 	void AVD(int ClientID, const char *pCmd, int TempInt, int TempInt2, int HiddenID, const char *pText, ...);
 
-	// TODO: fixme. improve the system using the ID method, as well as the ability to implement Backpage
-	void AVCALLBACK(int To, const char* Type, int ID, int ID2, int HiddenID, VoteCallBack Callback, const char* pText, ...);
-
 	void ClearVotes(int ClientID);
 	void ShowVotesNewbieInformation(int ClientID);
-	void ResetVotes(int ClientID, int MenuList);
+	void UpdateVotes(int ClientID, int MenuList);
 
 	void StrongUpdateVotes(int ClientID, int MenuList);
 	void StrongUpdateVotesForAll(int MenuList);
 	void AddVotesBackpage(int ClientID);
 	void ShowVotesPlayerStats(CPlayer *pPlayer);
 	void ShowVotesItemValueInformation(CPlayer *pPlayer, ItemIdentifier ItemID = itGold);
-	bool ParsingVoteCommands(int ClientID, const char *CMD, int VoteID, int VoteID2, int Get, const char *Text, VoteCallBack Callback = nullptr);
+	bool ParsingVoteCommands(int ClientID, const char *CMD, int VoteID, int VoteID2, int Get, const char *Text);
 
 	/* #########################################################################
 		MMO GAMECONTEXT

@@ -63,13 +63,13 @@ bool CHouseCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLAYER_HOUSE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_PLAYER_HOUSE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 
@@ -189,7 +189,7 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 		}
 
 		SellHouse(HouseID);
-		GS()->ResetVotes(ClientID, MAIN_MENU);
+		GS()->UpdateVotes(ClientID, MAIN_MENU);
 		return true;
 	}
 
@@ -290,13 +290,13 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 		if(ChanceSuccesful != 0)
 		{
 			GS()->Chat(ClientID, "Unfortunately plant did not take root!");
-			GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 			return true;
 		}
 
 		GS()->Chat(-1, "Congratulations {STR}, planted at home {STR}!", Server()->ClientName(ClientID), GS()->GetItemInfo(ItemID)->GetName());
 		ChangePlantsID(HouseID, ItemID);
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 	}
 
 	return false;
@@ -592,7 +592,7 @@ void CHouseCore::BuyHouse(int HouseID, CPlayer *pPlayer)
 
 		GS()->Chat(-1, "{STR} becomes the owner of the house class {STR}", Server()->ClientName(ClientID), CHouseData::ms_aHouse[HouseID].m_aClass);
 		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**{STR} becomes the owner of the house class {STR}**", Server()->ClientName(ClientID), CHouseData::ms_aHouse[HouseID].m_aClass);
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return;
 	}
 
@@ -613,7 +613,7 @@ void CHouseCore::SellHouse(int HouseID)
 		if(pPlayer)
 		{
 			GS()->Chat(pPlayer->GetCID(), "Your House is sold!");
-			GS()->ResetVotes(pPlayer->GetCID(), MAIN_MENU);
+			GS()->UpdateVotes(pPlayer->GetCID(), MAIN_MENU);
 		}
 		GS()->Chat(-1, "House: {INT} have been is released!", HouseID);
 		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {INT}] have been sold!**", HouseID);

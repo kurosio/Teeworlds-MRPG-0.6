@@ -54,13 +54,13 @@ bool CWarehouseCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_SHOP_ZONE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_SHOP_ZONE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->ResetVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
 
@@ -104,7 +104,7 @@ bool CWarehouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 	if(PPSTR(CMD, "SHOP_BUY") == 0)
 	{
 		if(BuyItem(pPlayer, VoteID, VoteID2))
-			GS()->ResetVotes(ClientID, MenuList::MAIN_MENU);
+			GS()->UpdateVotes(ClientID, MenuList::MAIN_MENU);
 	}
 
 	return false;

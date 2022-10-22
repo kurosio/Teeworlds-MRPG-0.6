@@ -80,7 +80,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 		GS()->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer);
 
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen, true);
-		GS()->ResetVotes(m_pPlayer->GetCID(), m_pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(m_pPlayer->GetCID(), m_pPlayer->m_OpenVoteMenu);
 		m_pPlayer->ShowInformationStats();
 	}
 
@@ -184,7 +184,7 @@ bool CCharacter::DecoInteractive()
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
-				GS()->ResetVotes(ClientID, MenuList::MENU_HOUSE_DECORATION);
+				GS()->UpdateVotes(ClientID, MenuList::MENU_HOUSE_DECORATION);
 				return true;
 			}
 		}
@@ -195,14 +195,14 @@ bool CCharacter::DecoInteractive()
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
-				GS()->ResetVotes(ClientID, MenuList::MENU_GUILD_HOUSE_DECORATION);
+				GS()->UpdateVotes(ClientID, MenuList::MENU_GUILD_HOUSE_DECORATION);
 				return true;
 			}
 		}
 
 		GS()->Chat(ClientID, "Distance House and Decoration maximal {INT} block!", g_Config.m_SvLimitDecoration);
 		GS()->Chat(ClientID, "Setting object reset, use repeat!");
-		GS()->ResetVotes(ClientID, MenuList::MENU_HOUSE_DECORATION);
+		GS()->UpdateVotes(ClientID, MenuList::MENU_HOUSE_DECORATION);
 		return true;
 	}
 	return false;
