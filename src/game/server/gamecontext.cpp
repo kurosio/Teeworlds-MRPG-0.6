@@ -1165,7 +1165,6 @@ void CGS::OnClientEnter(int ClientID)
 	}
 
 	Mmo()->Account()->LoadAccount(pPlayer, false);
-	ResetVotes(ClientID, MenuList::MAIN_MENU);
 }
 
 void CGS::OnClientDrop(int ClientID, const char *pReason)
@@ -1566,17 +1565,21 @@ void CGS::CallbackResetVotes(CGS* pGS, int ClientID, int MenuList)
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-	pGS->ClearVotes(ClientID);
-
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
 	if(!pPlayer)
 		return;
 
+	// clear callback
 	if(pPlayer->m_ActiveMenuRegisteredCallback)
 	{
 		pPlayer->m_ActiveMenuRegisteredCallback = nullptr;
 		pPlayer->m_ActiveMenuOptionCallback = { nullptr };
 	}
+
+	// clear votes
+	CNetMsg_Sv_VoteClearOptions ClearMsg;
+	pGS->Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
+	pGS->m_aPlayerVotes[ClientID]->clear();
 
 	pPlayer->m_OpenVoteMenu = MenuList;
 
