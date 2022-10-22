@@ -289,14 +289,19 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 // dump dialogs for translate
 void MmoController::ConSyncLinesForTranslate()
 {
-	static std::mutex ms_MutexDump;
-	if(!ms_MutexDump.try_lock())
+	static std::mutex ms_mtxDump;
+
+	// check thread last action
+	if(!ms_mtxDump.try_lock())
 	{
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Wait the last operation is in progress..");
 		return;
 	}
+
+	// start new action
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Start of thread data collection for translation!");
 
+	// lambda function for easy parse and hashing
 	auto PushingDialogs = [](nlohmann::json& pJson, const char* pTextKey, const char* UniqueStart, int UniqueID)
 	{
 		if(pTextKey[0] == '\0')
@@ -331,6 +336,7 @@ void MmoController::ConSyncLinesForTranslate()
 		}
 	};
 
+	// update and sorted by translate
 	char aDirLanguageFile[256];
 	for(int i = 0; i < GS()->Server()->Localization()->m_pLanguages.size(); i++)
 	{
@@ -358,6 +364,7 @@ void MmoController::ConSyncLinesForTranslate()
 				for(auto& pVariant : pDialog.GetArrayText())
 					PushingDialogs(JsonData, pVariant.m_Text.c_str(), UniqueID.c_str(), DialogNum++);
 		}
+
 		for(auto& pItem : NpcBotInfo::ms_aNpcBot)
 		{
 			int DialogNum = 0;
@@ -366,34 +373,41 @@ void MmoController::ConSyncLinesForTranslate()
 				for(auto& pVariant : pDialog.GetArrayText())
 					PushingDialogs(JsonData, pVariant.m_Text.c_str(), UniqueID.c_str(), DialogNum++);
 		}
+
 		for(auto& [ID, Aether] : CAether::Data())
 		{
 			PushingDialogs(JsonData, Aether.GetName(), "aeth", ID);
 		}
+
 		for(auto& [ID, Item] : CAttributeDescription::Data())
 		{
 			PushingDialogs(JsonData, Item.GetName(), "attb", (int)ID);
 		}
+
 		for(auto& pItem : CItemDescription::Data())
 		{
 			PushingDialogs(JsonData, pItem.second.GetName(), "ittm", pItem.first);
 			PushingDialogs(JsonData, pItem.second.GetDescription(), "itdc", pItem.first);
 		}
+
 		for(auto& pItem : CSkillDescription::Data())
 		{
 			PushingDialogs(JsonData, pItem.second.GetName(), "sknm", pItem.first);
 			PushingDialogs(JsonData, pItem.second.GetDescription(), "skds", pItem.first);
 			PushingDialogs(JsonData, pItem.second.GetBoostName(), "skbn", pItem.first);
 		}
+
 		for(auto& pItem : CQuestDataInfo::ms_aDataQuests)
 		{
 			PushingDialogs(JsonData, pItem.second.m_aName, "qudn", pItem.first);
 			PushingDialogs(JsonData, pItem.second.m_aStoryLine, "qusn", pItem.first);
 		}
+
 		for(auto& pItem : CWarehouse::Data())
 		{
 			PushingDialogs(JsonData, pItem.second.GetName(), "stnm", pItem.first);
 		}
+
 		for(auto& pItem : CHouseData::ms_aHouse)
 		{
 			PushingDialogs(JsonData, pItem.second.m_aClass, "hmnm", pItem.first);
@@ -413,6 +427,7 @@ void MmoController::ConSyncLinesForTranslate()
 		io_close(File);
 	}
 
+	// end transaction
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Completed successfully!");
-	ms_MutexDump.unlock();
+	ms_mtxDump.unlock();
 }
