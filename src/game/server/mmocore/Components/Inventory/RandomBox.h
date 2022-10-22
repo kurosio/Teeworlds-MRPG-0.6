@@ -20,14 +20,12 @@ class CRandomBox
 	std::vector <StRandomItem> m_ArrayItems{};
 
 public:
+	CRandomBox() = default;
 	CRandomBox(CRandomBox&) = delete;
 	CRandomBox(const CRandomBox&) = delete;
-	CRandomBox(const std::initializer_list<StRandomItem>& pList)
-	{
-		for(auto& p : pList)
-			m_ArrayItems.push_back(p);
-	}
-
+	CRandomBox(const std::initializer_list<StRandomItem>& pList) { m_ArrayItems.insert(m_ArrayItems.end(), pList.begin(), pList.end()); }
+	void add(const StRandomItem& element) { m_ArrayItems.push_back(element); }
+	void add(ItemIdentifier ItemID, int Value, float Chance) { m_ArrayItems.push_back({ItemID, Value, Chance}); }
 	bool Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem = nullptr, int UseValue = 1);
 };
 
