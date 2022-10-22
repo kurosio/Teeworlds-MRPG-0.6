@@ -1540,7 +1540,7 @@ void CGS::StartCustomVotes(int ClientID, int LastVoteMenu)
 
 void CGS::EndCustomVotes(int ClientID)
 {
-	std::thread(&CallbackUpdateVotes, this, ClientID, CUSTOM_MENU, false).detach();
+	std::thread(&CallbackUpdateVotes, this, ClientID, CUSTOM_MENU, true).detach();
 }
 
 void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool PrepareCustom)
@@ -1552,15 +1552,8 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	if(!pPlayer)
 		return;
 
-	if(Menulist == CUSTOM_MENU)
+	if(Menulist == CUSTOM_MENU && PrepareCustom)
 	{
-		if(PrepareCustom)
-		{
-			pPlayer->m_OpenVoteMenu = Menulist;
-			pGS->ClearVotes(ClientID);
-			return;
-		}
-
 		// send parsed votes
 		for(auto p = pGS->m_aPlayerVotes[ClientID]->begin(); p != pGS->m_aPlayerVotes[ClientID]->end(); ++p)
 		{

@@ -206,7 +206,7 @@ private:
 public:
 	void StartCustomVotes(int ClientID, int LastVoteMenu);
 	void EndCustomVotes(int ClientID);
-	void UpdateVotes(int ClientID, int MenuList = CUSTOM_MENU);
+	void UpdateVotes(int ClientID, int MenuList);
 	void StrongUpdateVotes(int ClientID, int MenuList);
 	void StrongUpdateVotesForAll(int MenuList);
 	void AddVotesBackpage(int ClientID);
