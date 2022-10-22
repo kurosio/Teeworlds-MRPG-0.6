@@ -1,8 +1,8 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "MmoController.h"
 
-#include <engine/shared/datafile.h>
+#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <teeother/system/string.h>
 
@@ -22,6 +22,7 @@
 #include "Components/Skills/SkillsCore.h"
 #include "Components/Warehouse/WarehouseCore.h"
 #include "Components/Worlds/WorldSwapCore.h"
+
 
 MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 {
@@ -79,17 +80,189 @@ void MmoController::OnInitAccount(int ClientID)
 		pComponent->OnInitAccount(pPlayer);
 }
 
-bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist, bool ReplaceMenu)
+bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 {
 	CPlayer *pPlayer = GS()->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return true;
 
+	// ----------------------------------------
+	// check replaced votes
 	for(auto& pComponent : m_Components.m_paComponents)
 	{
-		if(pComponent->OnHandleMenulist(pPlayer, Menulist, ReplaceMenu))
+		if(pComponent->OnHandleMenulist(pPlayer, Menulist, true))
+		{
+			GS()->AVL(ClientID, "null", "The main menu will return as soon as you leave this zone!");
+			return true;
+		}
+	}
+
+	// ----------------------------------------
+
+	// main menu
+	if(Menulist == MAIN_MENU)
+	{
+		pPlayer->m_LastVoteMenu = MAIN_MENU;
+
+		// statistics menu
+		const int ExpForLevel = pPlayer->ExpNeed(pPlayer->Acc().m_Level);
+		GS()->AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pPlayer->Acc().m_aLastLogin);
+		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, ExpForLevel);
+		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
+		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
+		GS()->AV(ClientID, "null");
+
+		// personal menu
+		GS()->AVH(ClientID, TAB_PERSONAL, "☪ SUB MENU PERSONAL");
+		GS()->AVM(ClientID, "MENU", MENU_INVENTORY, TAB_PERSONAL, "Inventory");
+		GS()->AVM(ClientID, "MENU", MENU_EQUIPMENT, TAB_PERSONAL, "Equipment");
+		GS()->AVM(ClientID, "MENU", MENU_UPGRADES, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Acc().m_Upgrade);
+		GS()->AVM(ClientID, "MENU", MENU_DUNGEONS, TAB_PERSONAL, "Dungeons");
+		GS()->AVM(ClientID, "MENU", MENU_SETTINGS, TAB_PERSONAL, "Settings");
+		GS()->AVM(ClientID, "MENU", MENU_INBOX, TAB_PERSONAL, "Mailbox");
+		GS()->AVM(ClientID, "MENU", MENU_JOURNAL_MAIN, TAB_PERSONAL, "Journal");
+		if(GS()->Mmo()->House()->PlayerHouseID(pPlayer) > 0)
+			GS()->AVM(ClientID, "MENU", MENU_HOUSE, TAB_PERSONAL, "House");
+		GS()->AVM(ClientID, "MENU", MENU_GUILD_FINDER, TAB_PERSONAL, "Guild finder");
+		if(pPlayer->Acc().IsGuild())
+			GS()->AVM(ClientID, "MENU", MENU_GUILD, TAB_PERSONAL, "Guild");
+		GS()->AV(ClientID, "null");
+
+		// info menu
+		GS()->AVH(ClientID, TAB_INFORMATION, "√ SUB MENU INFORMATION");
+		GS()->AVM(ClientID, "MENU", MENU_GUIDE_GRINDING, TAB_INFORMATION, "Wiki / Grinding Guide ");
+		GS()->AVM(ClientID, "MENU", MENU_TOP_LIST, TAB_INFORMATION, "Ranking guilds and players");
+		return true;
+	}
+
+	// player upgrades
+	if(Menulist == MENU_UPGRADES)
+	{
+		pPlayer->m_LastVoteMenu = MAIN_MENU;
+
+		GS()->AVH(ClientID, TAB_INFO_UPGR, "Upgrades Information");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_UPGR, "Select upgrades type in Reason, write count.");
+		GS()->AV(ClientID, "null");
+
+		// show player stats
+		GS()->ShowVotesPlayerStats(pPlayer);
+
+		// lambda function for easy use
+		auto ShowAttributeVote = [&](int HiddenID, AttributeType Type, std::function<void(int HiddenID)> pFunc)
+		{
+			pFunc(HiddenID);
+			for(const auto& [ID, Attribute] : CAttributeDescription::Data())
+			{
+				if(Attribute.IsType(Type) && Attribute.HasField())
+					GS()->AVD(ClientID, "UPGRADE", (int)ID, Attribute.GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", Attribute.GetName(), pPlayer->Acc().m_aStats[ID], Attribute.GetUpgradePrice());
+			}
+			GS()->AV(ClientID, "null");
+		};
+
+		// Disciple of War
+		ShowAttributeVote(TAB_UPGR_DPS, AttributeType::Dps, [&](int HiddenID)
+		{
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
+			GS()->AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
+		});
+
+		// Disciple of Tank
+		ShowAttributeVote(TAB_UPGR_TANK, AttributeType::Tank, [&](int HiddenID)
+		{
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
+			GS()->AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
+		});
+
+		// Disciple of Healer
+		ShowAttributeVote(TAB_UPGR_HEALER, AttributeType::Healer, [&](int HiddenID)
+		{
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Healer);
+			GS()->AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
+		});
+
+		// Upgrades Weapons and ammo
+		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeType::Weapon, [&](int HiddenID)
+		{
+			GS()->AVH(ClientID, HiddenID, "Upgrades Weapons / Ammo");
+		});
+
+		GS()->AVH(ClientID, TAB_UPGR_JOB, "Disciple of Jobs");
+		GS()->Mmo()->PlantsAcc()->ShowMenu(pPlayer);
+		GS()->Mmo()->MinerAcc()->ShowMenu(pPlayer);
+		GS()->AddVotesBackpage(ClientID);
+		return true;
+	}
+
+	// top list
+	if(Menulist == MENU_TOP_LIST)
+	{
+		pPlayer->m_LastVoteMenu = MAIN_MENU;
+
+		GS()->AVH(ClientID, TAB_INFO_TOP, "Ranking Information");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_TOP, "Here you can see top server Guilds, Players.");
+		GS()->AV(ClientID, "null");
+
+		GS()->AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
+		GS()->AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
+		GS()->AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
+		GS()->AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
+
+		if(pPlayer->m_aSortTabs[SORT_TOP] >= 0)
+		{
+			GS()->AV(ClientID, "null", "\0");
+			ShowTopList(pPlayer, pPlayer->m_aSortTabs[SORT_TOP]);
+		}
+
+		GS()->AddVotesBackpage(ClientID);
+		return true;
+	}
+
+	// grinding guide
+	if(Menulist == MENU_GUIDE_GRINDING)
+	{
+		pPlayer->m_LastVoteMenu = MAIN_MENU;
+
+		GS()->AVH(ClientID, TAB_INFO_LOOT, "Grinding Information");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "You can look mobs, plants, and ores.");
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
+		GS()->AV(ClientID, "null");
+
+		// show all world's
+		for(int ID = MAIN_WORLD_ID; ID < GS()->Server()->GetWorldsSize(); ID++)
+		{
+			GS()->AVM(ClientID, "SORTEDWIKIWORLD", ID, NOPE, GS()->Server()->GetWorldName(ID));
+		}
+		GS()->AV(ClientID, "null");
+
+		// selected zone
+		if(pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] < 0)
+		{
+			GS()->AVL(ClientID, "null", "Select a zone to view information");
+		}
+		else
+		{
+			const int WorldID = pPlayer->m_aSortTabs[SORT_GUIDE_WORLD];
+			const bool ActiveMob = BotsData()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActivePlant = PlantsAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActiveOre = MinerAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
+			if(!ActiveMob && !ActivePlant && !ActiveOre)
+				GS()->AVL(ClientID, "null", "There are no drops in the selected area.");
+		}
+
+		GS()->AddVotesBackpage(ClientID);
+		return true;
+	}
+
+	// ----------------------------------------
+	// check append votes
+	for(auto& pComponent : m_Components.m_paComponents)
+	{
+		if(pComponent->OnHandleMenulist(pPlayer, Menulist, false))
 			return true;
 	}
+	// ----------------------------------------
+
 	return false;
 }
 

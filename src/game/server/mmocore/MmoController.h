@@ -72,7 +72,7 @@ public:
 	// global systems
 	void OnTick();
 	bool OnPlayerHandleTile(CCharacter *pChr, int IndexCollision);
-	bool OnPlayerHandleMainMenu(int ClientID, int Menulist, bool ReplaceMenu);
+	bool OnPlayerHandleMainMenu(int ClientID, int Menulist);
 	void OnInitAccount(int ClientID);
 	bool OnParsingVoteCommands(CPlayer *pPlayer, const char *CMD, int VoteID, int VoteID2, int Get, const char *GetText);
 	void ResetClientData(int ClientID);
@@ -83,6 +83,8 @@ public:
 	static const char* PlayerName(int AccountID);
 	void SaveAccount(CPlayer *pPlayer, int Table) const;
 	void ShowLoadingProgress(const char* pLoading, int Size) const;
+
+private:
 	void ShowTopList(CPlayer* pPlayer, int TypeID) const;
 };
 

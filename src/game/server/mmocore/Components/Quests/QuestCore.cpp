@@ -57,9 +57,19 @@ bool QuestCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 		return false;
 	}
 
+	if(Menulist == MenuList::MENU_JOURNAL_MAIN)
+	{
+		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
+
+		ShowQuestsMainList(pPlayer);
+		GS()->AddVotesBackpage(ClientID);
+		return true;
+	}
+
 	if(Menulist == MENU_JOURNAL_FINISHED)
 	{
 		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
+
 		ShowQuestsTabList(pPlayer, QUEST_FINISHED);
 		GS()->AddVotesBackpage(ClientID);
 		return true;

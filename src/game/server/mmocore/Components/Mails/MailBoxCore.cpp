@@ -26,6 +26,25 @@ bool CMailBoxCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int V
 	return false;
 }
 
+bool CMailBoxCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+{
+	const int ClientID = pPlayer->GetCID();
+	if(ReplaceMenu)
+		return false;
+
+	if(Menulist == MenuList::MENU_INBOX)
+	{
+		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
+
+		GS()->AddVotesBackpage(ClientID);
+		GS()->AV(ClientID, "null");
+		GetInformationInbox(pPlayer);
+		return true;
+	}
+
+	return false;
+}
+
 // check whether messages are available
 int CMailBoxCore::GetMailLettersSize(int AccountID)
 {
