@@ -1530,7 +1530,7 @@ void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempI
 void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist)
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	std::unique_lock<std::mutex> guard(pGS->m_mtxUniqueVotes);
+	std::unique_lock guard(pGS->m_mtxUniqueVotes);
 
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
 	if(!pPlayer)
@@ -1544,7 +1544,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist)
 	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, Menulist);
 
 	// send parsed votes
-	for(auto p = pGS->m_aPlayerVotes[ClientID]->begin(); p != pGS->m_aPlayerVotes[ClientID]->end(); p++)
+	for(auto p = pGS->m_aPlayerVotes[ClientID]->begin(); p != pGS->m_aPlayerVotes[ClientID]->end(); ++p)
 	{
 		CNetMsg_Sv_VoteOptionAdd OptionMsg;
 		OptionMsg.m_pDescription = p->m_aDescription;

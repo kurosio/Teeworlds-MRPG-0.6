@@ -186,10 +186,9 @@ private:
 	static void ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	/* #########################################################################
-		VOTING MMO GAMECONTEXT
+		VOTING MMO GAMECONTEXT TODO: rework fully
 	######################################################################### */
 	std::mutex m_mtxUniqueVotes;
-	std::atomic_bool m_atmUniqueVotes;
 	safe_ptr< std::deque<CVoteOptions> > m_aPlayerVotes[MAX_PLAYERS];
 	static void CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist);
 
