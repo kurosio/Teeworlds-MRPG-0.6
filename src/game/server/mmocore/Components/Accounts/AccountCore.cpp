@@ -152,7 +152,7 @@ void CAccountCore::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 		if (const int Letters = Job()->Inbox()->GetMailLettersSize(pPlayer->Acc().m_UserID); Letters > 0)
 			GS()->Chat(ClientID, "You have {INT} unread letters!", Letters);
 
-		GS()->UpdateVotes(ClientID, MenuList::MAIN_MENU);
+		GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
 		return;
 	}
 
@@ -262,7 +262,7 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 	// settings
 	if (Menulist == MENU_SETTINGS)
 	{
-		pPlayer->m_LastVoteMenu = MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		// game settings
 		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings becomes valid after death");

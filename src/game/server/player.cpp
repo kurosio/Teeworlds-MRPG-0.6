@@ -33,7 +33,7 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	if(m_ClientID < MAX_PLAYERS)
 	{
 		m_LastVoteMenu = NOPE;
-		m_OpenVoteMenu = MenuList::MAIN_MENU;
+		m_OpenVoteMenu = MenuList::MENU_MAIN;
 		m_MoodState = Mood::NORMAL;
 		Acc().m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);
@@ -406,7 +406,7 @@ void CPlayer::AddExp(int Exp)
 		GS()->Chat(m_ClientID, "Level UP. Now Level {INT}!", Acc().m_Level);
 		if(Acc().m_Exp < ExpNeed(Acc().m_Level))
 		{
-			GS()->StrongUpdateVotes(m_ClientID, MenuList::MAIN_MENU);
+			GS()->StrongUpdateVotes(m_ClientID, MenuList::MENU_MAIN);
 			GS()->Mmo()->SaveAccount(this, SaveType::SAVE_STATS);
 			GS()->Mmo()->SaveAccount(this, SaveType::SAVE_UPGRADES);
 		}

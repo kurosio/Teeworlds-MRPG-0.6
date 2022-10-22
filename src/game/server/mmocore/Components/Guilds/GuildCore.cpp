@@ -101,13 +101,13 @@ bool GuildCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_HOUSE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->UpdateVotes(ClientID, MAIN_MENU);
+		GS()->UpdateVotes(ClientID, MENU_MAIN);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_HOUSE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->UpdateVotes(ClientID, MAIN_MENU);
+		GS()->UpdateVotes(ClientID, MENU_MAIN);
 		return true;
 	}
 
@@ -165,7 +165,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		Sqlpool.Execute<DB::UPDATE>("tw_guilds", "UserID = '%d' WHERE ID = '%d'", SelectedUserID, GuildID);
 		AddHistoryGuild(GuildID, "New guild leader '%s'.", Job()->PlayerName(SelectedUserID));
 		GS()->ChatGuild(GuildID, "Change leader {STR}->{STR}", Server()->ClientName(ClientID), Job()->PlayerName(SelectedUserID));
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_PLAYERS);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
 		return true;
 	}
 
@@ -179,7 +179,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		}
 
 		BuyGuildHouse(GuildID, VoteID);
-		GS()->StrongUpdateVotesForAll(MAIN_MENU);
+		GS()->StrongUpdateVotesForAll(MENU_MAIN);
 		return true;
 	}
 
@@ -295,7 +295,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 
 		// change rank and clear the menu
 		ChangePlayerRank(VoteID, VoteID2);
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_PLAYERS);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
 		return true;
 	}
 
@@ -312,7 +312,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		}
 
 		ExitGuild(VoteID);
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_PLAYERS);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
 		return true;
 	}
 
@@ -331,7 +331,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 			Sqlpool.Execute<DB::REMOVE>("tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'", GuildID, SenderID);
 			GS()->SendInbox(Server()->ClientName(ClientID),SenderID, CGuildData::ms_aGuild[GuildID].m_aName, "You were accepted to join guild");
 			GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_PLAYERS);
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
 			return true;
 		}
 		GS()->Chat(ClientID, "You can't accept (there are no free slot or he is already in Guild).");
@@ -412,15 +412,15 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 			return true;
 		}
 
-		GS()->ClearVotes(ClientID);
+		GS()->StartCustomVotes(ClientID, MENU_INVENTORY);
 		GS()->AV(ClientID, "null", "Please close vote and press Left Mouse,");
 		GS()->AV(ClientID, "null", "on position where add decoration!");
 		GS()->AddVotesBackpage(ClientID);
+		GS()->EndCustomVotes(ClientID);
 
 		const int DecoItemID = VoteID;
 		pPlayer->GetTempData().m_TempDecoractionID = DecoItemID;
 		pPlayer->GetTempData().m_TempDecorationType = DECORATIONS_GUILD_HOUSE;
-		pPlayer->m_LastVoteMenu = MENU_INVENTORY;
 		return true;
 	}
 
@@ -527,15 +527,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		SendInviteGuild(VoteID, pPlayer);
 		return true;
 	}
-
-	if(PPSTR(CMD, "MINVITEVIEWPLAYERS") == 0)
-	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD_FINDER;
-		GS()->ClearVotes(ClientID);
-		ShowGuildPlayers(pPlayer, VoteID);
-		GS()->AddVotesBackpage(ClientID);
-		return true;
-	}
+	
 	return false;
 }
 
@@ -559,25 +551,34 @@ bool GuildCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 
 	if(Menulist == MENU_GUILD_FINDER)
 	{
-		pPlayer->m_LastVoteMenu = MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
 		ShowFinderGuilds(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_GUILD_FINDER_VIEW_PLAYERS)
+	{
+		pPlayer->m_LastVoteMenu = MENU_GUILD_FINDER;
+		ShowGuildPlayers(pPlayer, pPlayer->m_TempMenuValue);
+		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD)
 	{
-		pPlayer->m_LastVoteMenu = MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
 		ShowMenuGuild(pPlayer);
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_PLAYERS)
+	if(Menulist == MENU_GUILD_VIEW_PLAYERS)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
 		ShowGuildPlayers(pPlayer, pPlayer->Acc().m_GuildID);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
+
 
 	if(Menulist == MENU_GUILD_HISTORY)
 	{
@@ -787,7 +788,7 @@ void GuildCore::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	Sqlpool.Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID) VALUES ('%d', '%s', '%d')", InitID, GuildName.cstr(), pPlayer->Acc().m_UserID);
 	Sqlpool.Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = '%d' WHERE ID = '%d'", InitID, pPlayer->Acc().m_UserID);
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
-	GS()->StrongUpdateVotes(ClientID, MAIN_MENU);
+	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
 }
 
 void GuildCore::DisbandGuild(int GuildID)
@@ -819,7 +820,7 @@ void GuildCore::DisbandGuild(int GuildID)
 
 		pPlayer->Acc().m_GuildID = 0;
 		pPlayer->Acc().m_GuildRank = 0;
-		GS()->UpdateVotes(i, MAIN_MENU);
+		GS()->UpdateVotes(i, MENU_MAIN);
 	}
 	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = NULL, GuildRank = NULL, GuildDeposit = '0' WHERE GuildID = '%d'", GuildID);
 	CGuildData::ms_aGuild.erase(GuildID);
@@ -851,7 +852,7 @@ bool GuildCore::JoinGuild(int AccountID, int GuildID)
 	{
 		pPlayer->Acc().m_GuildID = GuildID;
 		pPlayer->Acc().m_GuildRank = 0;
-		GS()->UpdateVotes(pPlayer->GetCID(), MAIN_MENU);
+		GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
 	}
 	Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = NULL WHERE ID = '%d'", GuildID, AccountID);
 	GS()->ChatGuild(GuildID, "Player {STR} join in your guild!", pPlayerName);
@@ -882,7 +883,7 @@ void GuildCore::ExitGuild(int AccountID)
 		if(pPlayer)
 		{
 			pPlayer->Acc().m_GuildID = 0;
-			GS()->UpdateVotes(pPlayer->GetCID(), MAIN_MENU);
+			GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
 		}
 		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = NULL, GuildRank = NULL, GuildDeposit = '0' WHERE ID = '%d'", AccountID);
 	}
@@ -909,7 +910,7 @@ void GuildCore::ShowMenuGuild(CPlayer *pPlayer) const
 	GS()->AV(ClientID, "null");
 	//
 	GS()->AVL(ClientID, "null", "▤ Guild system");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_PLAYERS, NOPE, "List of players");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_VIEW_PLAYERS, NOPE, "List of players");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_HISTORY, NOPE, "History of activity");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank settings");
@@ -1298,7 +1299,9 @@ void GuildCore::ShowFinderGuilds(int ClientID)
 		GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} : Players [{INT}/{INT}]",
 			cGuildName.cstr(), Job()->PlayerName(CGuildData::ms_aGuild[GuildID].m_UserID), PlayersCount, AvailableSlot);
 		GS()->AVM(ClientID, "null", NOPE, HideID, "House: {STR} | Bank: {VAL} gold", (GetGuildHouseID(GuildID) <= 0 ? "No" : "Yes"), CGuildData::ms_aGuild[GuildID].m_Bank);
-		GS()->AVM(ClientID, "MINVITEVIEWPLAYERS", GuildID, HideID, "View player list");
+
+		GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, GuildID, HideID, "View player list");
+
 		GS()->AVM(ClientID, "MINVITESEND", GuildID, HideID, "Send request to join {STR}", cGuildName.cstr());
 		HideID++;
 	}

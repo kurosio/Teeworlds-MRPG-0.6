@@ -107,7 +107,7 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 
 	if(Menulist == MenuList::MENU_INVENTORY)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
 		GS()->AVH(ClientID, TAB_INFO_INVENTORY, "Inventory Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "Choose the type of items you want to show");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "After, need select item to interact");
@@ -141,7 +141,7 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 
 	if(Menulist == MenuList::MENU_EQUIPMENT)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
 		GS()->AVH(ClientID, TAB_INFO_EQUIP, "Equip / Armor Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EQUIP, "SELECT tab and select armor.");
 		GS()->AV(ClientID, "null");

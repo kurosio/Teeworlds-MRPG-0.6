@@ -59,7 +59,7 @@ bool QuestCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMen
 
 	if(Menulist == MENU_JOURNAL_MAIN)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
 
 		ShowQuestsMainList(pPlayer);
 

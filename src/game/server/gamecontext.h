@@ -190,7 +190,7 @@ private:
 	######################################################################### */
 	std::mutex m_mtxUniqueVotes;
 	safe_ptr< std::deque<CVoteOptions> > m_aPlayerVotes[MAX_PLAYERS];
-	static void CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist);
+	static void CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool PrepareCustom);
 
 public:
 	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1);
@@ -199,10 +199,14 @@ public:
 	void AVM(int ClientID, const char *pCmd, int TempInt, int HiddenID, const char* pText, ...);
 	void AVD(int ClientID, const char *pCmd, int TempInt, int TempInt2, int HiddenID, const char *pText, ...);
 
+private:
 	void ClearVotes(int ClientID);
 	void ShowVotesNewbieInformation(int ClientID);
-	void UpdateVotes(int ClientID, int MenuList);
 
+public:
+	void StartCustomVotes(int ClientID, int LastVoteMenu);
+	void EndCustomVotes(int ClientID);
+	void UpdateVotes(int ClientID, int MenuList = CUSTOM_MENU);
 	void StrongUpdateVotes(int ClientID, int MenuList);
 	void StrongUpdateVotesForAll(int MenuList);
 	void AddVotesBackpage(int ClientID);

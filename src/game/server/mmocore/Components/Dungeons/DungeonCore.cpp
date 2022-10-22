@@ -32,7 +32,7 @@ bool DungeonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceM
 
 	if(Menulist == MenuList::MENU_DUNGEONS)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
 		GS()->AVH(ClientID, TAB_INFO_DUNGEON, "Dungeons Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "In this section you can choose a dungeon");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "View the fastest players on the passage");

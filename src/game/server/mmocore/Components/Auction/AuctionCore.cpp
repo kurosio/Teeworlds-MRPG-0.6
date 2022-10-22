@@ -92,7 +92,7 @@ bool CAuctionCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const
 	if(PPSTR(CMD, "AUCTION_BUY") == 0)
 	{
 		if(BuyItem(pPlayer, VoteID))
-			GS()->UpdateVotes(ClientID, MenuList::MAIN_MENU);
+			GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
 		return true;
 	}
 

@@ -218,6 +218,6 @@ void CQuestData::CheckaAvailableNewStep()
 		Finish();
 		const int ClientID = m_pPlayer->GetCID();
 		pGS->StrongUpdateVotes(ClientID, MenuList::MENU_JOURNAL_MAIN);
-		pGS->StrongUpdateVotes(ClientID, MenuList::MAIN_MENU);
+		pGS->StrongUpdateVotes(ClientID, MenuList::MENU_MAIN);
 	}
 }

@@ -1527,7 +1527,23 @@ void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempI
 	}
 }
 
-void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist)
+void CGS::StartCustomVotes(int ClientID, int LastVoteMenu)
+{
+	// start without thread
+	if(CPlayer* pPlayer = GetPlayer(ClientID, true))
+	{
+		pPlayer->m_OpenVoteMenu = CUSTOM_MENU;
+		pPlayer->m_LastVoteMenu = LastVoteMenu;
+		ClearVotes(ClientID);
+	}
+}
+
+void CGS::EndCustomVotes(int ClientID)
+{
+	std::thread(&CallbackUpdateVotes, this, ClientID, CUSTOM_MENU, false).detach();
+}
+
+void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool PrepareCustom)
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	std::unique_lock guard(pGS->m_mtxUniqueVotes);
@@ -1536,11 +1552,28 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist)
 	if(!pPlayer)
 		return;
 
-	// clear votes
-	pGS->ClearVotes(ClientID);
+	if(Menulist == CUSTOM_MENU)
+	{
+		if(PrepareCustom)
+		{
+			pPlayer->m_OpenVoteMenu = Menulist;
+			pGS->ClearVotes(ClientID);
+			return;
+		}
+
+		// send parsed votes
+		for(auto p = pGS->m_aPlayerVotes[ClientID]->begin(); p != pGS->m_aPlayerVotes[ClientID]->end(); ++p)
+		{
+			CNetMsg_Sv_VoteOptionAdd OptionMsg;
+			OptionMsg.m_pDescription = p->m_aDescription;
+			pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+		}
+		return;
+	}
 
 	// parse votes
 	pPlayer->m_OpenVoteMenu = Menulist;
+	pGS->ClearVotes(ClientID);
 	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, Menulist);
 
 	// send parsed votes
@@ -1555,8 +1588,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist)
 void CGS::UpdateVotes(int ClientID, int MenuList)
 {
 	// unfully safe
-	std::thread t1(&CallbackUpdateVotes, this, ClientID, MenuList);
-	t1.detach();
+	std::thread(&CallbackUpdateVotes, this, ClientID, MenuList, false).detach();
 }
 
 // information for unauthorized players

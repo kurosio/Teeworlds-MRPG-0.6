@@ -117,7 +117,7 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 
 	if(Menulist == MENU_HOUSE)
 	{
-		pPlayer->m_LastVoteMenu = MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		ShowPersonalHouse(pPlayer);
 		GS()->AddVotesBackpage(ClientID);
@@ -189,7 +189,7 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 		}
 
 		SellHouse(HouseID);
-		GS()->UpdateVotes(ClientID, MAIN_MENU);
+		GS()->UpdateVotes(ClientID, MENU_MAIN);
 		return true;
 	}
 
@@ -241,12 +241,12 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 			return true;
 		}
 
-		GS()->ClearVotes(ClientID);
+		GS()->StartCustomVotes(ClientID, MENU_INVENTORY);
 		GS()->AV(ClientID, "null", "Please close vote and press Left Mouse,");
 		GS()->AV(ClientID, "null", "on position where add decoration!");
 		GS()->AddVotesBackpage(ClientID);
+		GS()->EndCustomVotes(ClientID);
 
-		pPlayer->m_LastVoteMenu = MENU_INVENTORY;
 		pPlayer->GetTempData().m_TempDecoractionID = VoteID;
 		pPlayer->GetTempData().m_TempDecorationType = DECORATIONS_HOUSE;
 		return true;
@@ -613,7 +613,7 @@ void CHouseCore::SellHouse(int HouseID)
 		if(pPlayer)
 		{
 			GS()->Chat(pPlayer->GetCID(), "Your House is sold!");
-			GS()->UpdateVotes(pPlayer->GetCID(), MAIN_MENU);
+			GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
 		}
 		GS()->Chat(-1, "House: {INT} have been is released!", HouseID);
 		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {INT}] have been sold!**", HouseID);

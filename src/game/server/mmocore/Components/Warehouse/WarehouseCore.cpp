@@ -104,7 +104,7 @@ bool CWarehouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 	if(PPSTR(CMD, "SHOP_BUY") == 0)
 	{
 		if(BuyItem(pPlayer, VoteID, VoteID2))
-			GS()->UpdateVotes(ClientID, MenuList::MAIN_MENU);
+			GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
 	}
 
 	return false;

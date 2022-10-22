@@ -34,7 +34,7 @@ bool CMailBoxCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 
 	if(Menulist == MenuList::MENU_INBOX)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
 
 		GS()->AddVotesBackpage(ClientID);
 		GS()->AV(ClientID, "null");

@@ -100,9 +100,9 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// ----------------------------------------
 
 	// main menu
-	if(Menulist == MAIN_MENU)
+	if(Menulist == MENU_MAIN)
 	{
-		pPlayer->m_LastVoteMenu = MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		// statistics menu
 		const int ExpForLevel = pPlayer->ExpNeed(pPlayer->Acc().m_Level);
@@ -138,7 +138,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// player upgrades
 	if(Menulist == MENU_UPGRADES)
 	{
-		pPlayer->m_LastVoteMenu = MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		GS()->AVH(ClientID, TAB_INFO_UPGR, "Upgrades Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_UPGR, "Select upgrades type in Reason, write count.");
@@ -196,7 +196,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// top list
 	if(Menulist == MENU_TOP_LIST)
 	{
-		pPlayer->m_LastVoteMenu = MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		GS()->AVH(ClientID, TAB_INFO_TOP, "Ranking Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_TOP, "Here you can see top server Guilds, Players.");
@@ -220,7 +220,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// grinding guide
 	if(Menulist == MENU_GUIDE_GRINDING)
 	{
-		pPlayer->m_LastVoteMenu = MAIN_MENU;
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		GS()->AVH(ClientID, TAB_INFO_LOOT, "Grinding Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "You can look mobs, plants, and ores.");
