@@ -189,6 +189,14 @@ bool CPlayerItem::Use(int Value)
 	// little bag gold
 	else if(m_ID == itLittleBagGold && Remove(Value, 0))
 	{
+
+		CRandomBox({
+			{ itGold, 10, 50.0f },
+			{ itDecoArmor, 1, 30.0f },
+			{ itEliteDecoNinja, 1, 10.0f },
+			{ itEliteDecoHealth, 1, 5.0f }
+			}).Start(GetPlayer(), 5, this, Value);
+
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->AddMoney(Getting);
@@ -244,15 +252,16 @@ bool CPlayerItem::Use(int Value)
 		GetPlayer()->Acc().m_Upgrade += BackUpgrades;
 		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
 	}
+
 	// Random home decor
 	//else if(m_ItemID == itRandomHomeDecoration)
 	//{
-	//	CRandomBox RandomHomeDecor;
-	//	RandomHomeDecor.Add(itDecoArmor, 1, 50.0f);
-	//	RandomHomeDecor.Add(itDecoHealth, 1, 50.0f);
-	//	RandomHomeDecor.Add(itEliteDecoHealth, 1, 10.0f);
-	//	RandomHomeDecor.Add(itEliteDecoNinja, 1, 10.0f);
-	//	RandomHomeDecor.Start(GetPlayer(), 5, this, Value);
+	//	CRandomBox({
+	//		{ itGold, 10, 50.0f },
+	//		{ itDecoArmor, 1, 30.0f },
+	//		{ itEliteDecoNinja, 1, 10.0f },
+	//		{ itEliteDecoHealth, 1, 5.0f }
+	//	}).Start(GetPlayer(), 5, this, Value);
 	//}
 	return true;
 }
