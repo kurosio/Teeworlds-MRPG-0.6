@@ -4,18 +4,22 @@
 
 #include <game/server/gamecontext.h>
 
-bool CRandomBox::Start(CPlayer *pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem, int UseValue)
+bool CRandomBox::start(CPlayer *pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem, int UseValue)
 {
-	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayerUsesItem)
+	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayerUsesItem || !pPlayerUsesItem->HasItem())
 		return false;
 
+	// check last random box
 	if(pPlayer->m_aPlayerTick[LastRandomBox] > pPlayer->GS()->Server()->Tick())
 	{
 		pPlayer->GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "Wait until the last random box opens!");
 		return false;
 	}
 
+	// clamp use value for maximum
 	UseValue = min(100, UseValue);
+
+	// remove item and init box
 	if(pPlayerUsesItem->Remove(UseValue))
 	{
 		Seconds *= pPlayer->GS()->Server()->TickSpeed();

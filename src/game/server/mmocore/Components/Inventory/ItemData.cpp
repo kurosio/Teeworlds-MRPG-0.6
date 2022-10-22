@@ -253,7 +253,7 @@ bool CPlayerItem::Use(int Value)
 	//		{ itDecoArmor, 1, 30.0f },
 	//		{ itEliteDecoNinja, 1, 10.0f },
 	//		{ itEliteDecoHealth, 1, 5.0f }
-	//	}).Start(GetPlayer(), 5, this, Value);
+	//	}).start(GetPlayer(), 5, this, Value);
 	//}
 	return true;
 }
