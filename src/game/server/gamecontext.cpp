@@ -1564,6 +1564,7 @@ void CGS::ResetVotes(int ClientID, int MenuList)
 void CGS::CallbackResetVotes(CGS* pGS, int ClientID, int MenuList)
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	std::lock_guard<std::mutex> guard(pGS->m_mtxUniqueVotes);
 
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
 	if(!pPlayer)

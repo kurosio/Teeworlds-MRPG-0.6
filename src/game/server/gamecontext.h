@@ -188,6 +188,7 @@ private:
 	/* #########################################################################
 		VOTING MMO GAMECONTEXT
 	######################################################################### */
+	std::mutex m_mtxUniqueVotes;
 	safe_ptr< std::list<CVoteOptions> > m_aPlayerVotes[MAX_PLAYERS];
 	static void CallbackResetVotes(CGS* pGS, int ClientID, int MenuList);
 
