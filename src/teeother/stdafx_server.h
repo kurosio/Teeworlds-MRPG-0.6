@@ -2,6 +2,7 @@
 #define SERVER_STDAFX_H
 
 //TODO: add precompiled headers
+#include <variant>
 
 // core
 #include <engine/server/sql_connect_pool.h>

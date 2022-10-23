@@ -13,13 +13,12 @@ struct CGuildData
 		CHAIR_EXPERIENCE = 1,
 		NUM_GUILD_UPGRADES,
 	};
-	CGuildData()
-	{
-		m_aUpgrade[AVAILABLE_SLOTS].init("AvailableSlots", "Available slots");
-		m_aUpgrade[CHAIR_EXPERIENCE].init("ChairExperience", "Chair experience");
-	}
-	CFieldData<int> m_aUpgrade[NUM_GUILD_UPGRADES];
 
+	CFieldContainer m_UpgradeData
+	{
+		CFieldData<int>{AVAILABLE_SLOTS, "AvailableSlots", "Available slots"},
+		CFieldData<int>{CHAIR_EXPERIENCE, "ChairExperience", "Chair experience"},
+	};
 
 	char m_aName[32];
 	int m_Level;

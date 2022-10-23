@@ -40,9 +40,7 @@ void GuildCore::OnInit()
 			CGuildData::ms_aGuild[GuildID].m_Score = pRes->getInt("Score");
 			str_copy(CGuildData::ms_aGuild[GuildID].m_aName, pRes->getString("Name").c_str(), sizeof(CGuildData::ms_aGuild[GuildID].m_aName));
 
-			for (int i = 0; i < CGuildData::NUM_GUILD_UPGRADES; i++)
-				CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].m_Value = pRes->getInt(CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].getFieldName());
-
+			CGuildData::ms_aGuild[GuildID].m_UpgradeData.initFields(&pRes);
 			LoadGuildRank(GuildID);
 		}
 		Job()->ShowLoadingProgress("Guilds", CGuildData::ms_aGuild.size());
@@ -128,7 +126,7 @@ bool GuildCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 			if(HouseID <= 0 || GuildID <= 0)
 				return true;
 
-			const int Exp = CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::CHAIR_EXPERIENCE].m_Value;
+			const int Exp = CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::CHAIR_EXPERIENCE, 0).m_Value;
 			pPlayer->AddExp(Exp);
 		}
 		return true;
@@ -384,8 +382,8 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 		const int UpgradeID = VoteID;
 		if(UpgradeGuild(GuildID, UpgradeID))
 		{
-			const int GuildValue = CGuildData::ms_aGuild[GuildID].m_aUpgrade[UpgradeID].m_Value;
-			const char* pUpgradeName = CGuildData::ms_aGuild[GuildID].m_aUpgrade[UpgradeID].getDescription();
+			const int GuildValue = CGuildData::ms_aGuild[GuildID].m_UpgradeData(UpgradeID, 0).m_Value;
+			const char* pUpgradeName = CGuildData::ms_aGuild[GuildID].m_UpgradeData(UpgradeID, 0).getDescription();
 			GS()->ChatGuild(GuildID, "Improved to {VAL} {STR} in {STR}!", GuildValue, pUpgradeName, CGuildData::ms_aGuild[GuildID].m_aName);
 			AddHistoryGuild(GuildID, "'%s' level up to '%d'.", pUpgradeName, GuildValue);
 			GS()->StrongUpdateVotes(ClientID, MENU_GUILD);
@@ -681,7 +679,7 @@ bool GuildCore::CheckMemberAccess(CPlayer *pPlayer, int Access) const
 int GuildCore::GetMemberChairBonus(int GuildID, int Field) const
 {
 	if(GuildID > 0 && CGuildData::ms_aGuild.find(GuildID) != CGuildData::ms_aGuild.end())
-		return CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value;
+		return CGuildData::ms_aGuild[GuildID].m_UpgradeData(Field, 0).m_Value;
 	return -1;
 }
 
@@ -780,8 +778,8 @@ void GuildCore::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	CGuildData::ms_aGuild[InitID].m_Exp = 0;
 	CGuildData::ms_aGuild[InitID].m_Bank = 0;
 	CGuildData::ms_aGuild[InitID].m_Score = 0;
-	CGuildData::ms_aGuild[InitID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].m_Value = 2;
-	CGuildData::ms_aGuild[InitID].m_aUpgrade[CGuildData::CHAIR_EXPERIENCE].m_Value = 1;
+	CGuildData::ms_aGuild[InitID].m_UpgradeData(CGuildData::AVAILABLE_SLOTS, 0).m_Value = 2;
+	CGuildData::ms_aGuild[InitID].m_UpgradeData(CGuildData::CHAIR_EXPERIENCE, 0).m_Value = 1;
 	pPlayer->Acc().m_GuildID = InitID;
 
 	// we create a guild in the table
@@ -839,7 +837,7 @@ bool GuildCore::JoinGuild(int AccountID, int GuildID)
 
 	// check the number of slots available
 	ResultPtr pResCheckSlot = Sqlpool.Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE GuildID = '%d'", GuildID);
-	if((int)pResCheckSlot->rowsCount() >= CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].m_Value)
+	if((int)pResCheckSlot->rowsCount() >= CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::AVAILABLE_SLOTS, 0).m_Value)
 	{
 		GS()->ChatAccount(AccountID, "You don't joined [No slots for join]");
 		GS()->ChatGuild(GuildID, "{STR} don't joined [No slots for join]", pPlayerName);
@@ -901,7 +899,7 @@ void GuildCore::ShowMenuGuild(CPlayer *pPlayer) const
 	const int ExpNeed = computeExperience(CGuildData::ms_aGuild[GuildID].m_Level);
 	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", CGuildData::ms_aGuild[GuildID].m_aName, Job()->PlayerName(CGuildData::ms_aGuild[GuildID].m_UserID));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", CGuildData::ms_aGuild[GuildID].m_Level, CGuildData::ms_aGuild[GuildID].m_Exp, ExpNeed);
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].m_Value);
+	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::AVAILABLE_SLOTS, 0).m_Value);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", CGuildData::ms_aGuild[GuildID].m_Bank);
 	GS()->AV(ClientID, "null");
 	//
@@ -936,14 +934,14 @@ void GuildCore::ShowMenuGuild(CPlayer *pPlayer) const
 	{
 		for(int i = CGuildData::CHAIR_EXPERIENCE; i < CGuildData::NUM_GUILD_UPGRADES; i++)
 		{
-			const char* pUpgradeName = CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].getDescription();
-			const int PriceUpgrade = CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].m_Value * g_Config.m_SvPriceUpgradeGuildAnother;
-			GS()->AVM(ClientID, "MUPGRADE", i, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgradeName, CGuildData::ms_aGuild[GuildID].m_aUpgrade[i].m_Value, PriceUpgrade);
+			const char* pUpgradeName = CGuildData::ms_aGuild[GuildID].m_UpgradeData(i, 0).getDescription();
+			const int PriceUpgrade = CGuildData::ms_aGuild[GuildID].m_UpgradeData(i, 0).m_Value * g_Config.m_SvPriceUpgradeGuildAnother;
+			GS()->AVM(ClientID, "MUPGRADE", i, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgradeName, CGuildData::ms_aGuild[GuildID].m_UpgradeData(i, 0).m_Value, PriceUpgrade);
 		}
 	}
 
-	const char* pUpgradeName = CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].getDescription();
-	const int UpgradeValue = CGuildData::ms_aGuild[GuildID].m_aUpgrade[CGuildData::AVAILABLE_SLOTS].m_Value;
+	const char* pUpgradeName = CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::AVAILABLE_SLOTS, 0).getDescription();
+	const int UpgradeValue = CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::AVAILABLE_SLOTS, 0).m_Value;
 	const int PriceUpgrade = UpgradeValue * g_Config.m_SvPriceUpgradeGuildSlot;
 	GS()->AVM(ClientID, "MUPGRADE", CGuildData::AVAILABLE_SLOTS, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgradeName, UpgradeValue, PriceUpgrade);
 	GS()->AddVotesBackpage(ClientID);
@@ -1057,18 +1055,18 @@ bool GuildCore::UpgradeGuild(int GuildID, int Field)
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "WHERE ID = '%d'", GuildID);
 	if(pRes->next())
 	{
-		const char* pFieldName = CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].getFieldName();
+		const char* pFieldName = CGuildData::ms_aGuild[GuildID].m_UpgradeData(Field, 0).getFieldName();
 		CGuildData::ms_aGuild[GuildID].m_Bank = pRes->getInt("Bank");
-		CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value = pRes->getInt(pFieldName);
+		CGuildData::ms_aGuild[GuildID].m_UpgradeData(Field, 0).m_Value = pRes->getInt(pFieldName);
 
 		const int UpgradePrice = (Field == CGuildData::AVAILABLE_SLOTS ? g_Config.m_SvPriceUpgradeGuildSlot : g_Config.m_SvPriceUpgradeGuildAnother);
-		const int PriceAvailable = CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value * UpgradePrice;
+		const int PriceAvailable = CGuildData::ms_aGuild[GuildID].m_UpgradeData(Field, 0).m_Value * UpgradePrice;
 		if(PriceAvailable > CGuildData::ms_aGuild[GuildID].m_Bank)
 			return false;
 
-		CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value++;
+		CGuildData::ms_aGuild[GuildID].m_UpgradeData(Field, 0).m_Value++;
 		CGuildData::ms_aGuild[GuildID].m_Bank -= PriceAvailable;
-		Sqlpool.Execute<DB::UPDATE>("tw_guilds", "Bank = '%d', %s = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, pFieldName, CGuildData::ms_aGuild[GuildID].m_aUpgrade[Field].m_Value, GuildID);
+		Sqlpool.Execute<DB::UPDATE>("tw_guilds", "Bank = '%d', %s = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, pFieldName, CGuildData::ms_aGuild[GuildID].m_UpgradeData(Field, 0).m_Value, GuildID);
 		return true;
 	}
 	return false;

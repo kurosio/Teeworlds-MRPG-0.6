@@ -326,33 +326,13 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 	}
 	else if(Table == SAVE_PLANT_DATA)
 	{
-		char aBuf[64];
-		dynamic_string Buffer;
-		for(int i = 0; i < NUM_JOB_ACCOUNTS_STATS; i++)
-		{
-			const char *pFieldName = pPlayer->Acc().m_aFarming[i].getFieldName();
-			const int JobValue = pPlayer->Acc().m_aFarming[i].m_Value;
-			str_format(aBuf, sizeof(aBuf), "%s = '%d' %s", pFieldName, JobValue, (i == NUM_JOB_ACCOUNTS_STATS-1 ? "" : ", "));
-			Buffer.append_at(Buffer.length(), aBuf);
-		}
-
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Buffer.buffer(), pPlayer->Acc().m_UserID);
-		Buffer.clear();
+		std::string Fields = pPlayer->Acc().m_FarmingData.getUpdateField();
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_MINER_DATA)
 	{
-		char aBuf[64];
-		dynamic_string Buffer;
-		for(int i = 0; i < NUM_JOB_ACCOUNTS_STATS; i++)
-		{
-			const char* pFieldName = pPlayer->Acc().m_aMining[i].getFieldName();
-			const int JobValue = pPlayer->Acc().m_aMining[i].m_Value;
-			str_format(aBuf, sizeof(aBuf), "%s = '%d' %s", pFieldName, JobValue, (i == NUM_JOB_ACCOUNTS_STATS-1 ? "" : ", "));
-			Buffer.append_at(Buffer.length(), aBuf);
-		}
-
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Buffer.buffer(), pPlayer->Acc().m_UserID);
-		Buffer.clear();
+		std::string Fields = pPlayer->Acc().m_MiningData.getUpdateField();
+		Sqlpool.Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{

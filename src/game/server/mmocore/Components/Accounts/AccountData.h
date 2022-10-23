@@ -9,45 +9,40 @@
 struct CAccountData
 {
 	// main
-	char m_aLogin[64];
-	char m_aLastLogin[64];
-	char m_aLanguage[8];
-	int m_UserID;
-	int m_Level;
-	int m_Exp;
-	int m_GuildID;
-	int m_GuildRank;
-	std::list< int > m_aHistoryWorld;
+	char m_aLogin[64]{};
+	char m_aLastLogin[64]{};
+	char m_aLanguage[8]{};
+	int m_UserID{};
+	int m_Level{};
+	int m_Exp{};
+	int m_GuildID{};
+	int m_GuildRank{};
+	std::list< int > m_aHistoryWorld{};
 
 	// upgrades
-	int m_Upgrade;
-	std::map< AttributeIdentifier, int > m_aStats;
+	int m_Upgrade{};
+	std::map< AttributeIdentifier, int > m_aStats{};
 
-	CTeeInfo m_TeeInfos;
-
-	int m_Team;
-	std::map < int, bool > m_aAetherLocation;
+	CTeeInfo m_TeeInfos{};
+	int m_Team{};
+	std::map < int, bool > m_aAetherLocation{};
 	bool IsGuild() const { return m_GuildID > 0; }
 
-	CFieldData<int> m_aMining[NUM_JOB_ACCOUNTS_STATS];
-	CFieldData<int> m_aFarming[NUM_JOB_ACCOUNTS_STATS];
-
-	CAccountData()
+	CFieldContainer m_MiningData
 	{
-		m_UserID = -1;
-		m_Level = 0;
-		m_Team = TEAM_SPECTATORS;
+		{ CFieldData<int>(JOB_LEVEL, "Level", "Miner level") },
+		{ CFieldData<int>(JOB_EXPERIENCE, "Exp", "Miner experience") },
+		{ CFieldData<int>(JOB_UPGR_QUANTITY, "Quantity", "Miner quantity") },
+		{ CFieldData<int>(JOB_UPGRADES, "Upgrade", "Miner upgrades") }
+	};
 
-		m_aMining[JOB_LEVEL].init("Level", "Miner level");
-		m_aMining[JOB_EXPERIENCE].init("Exp", "Miner experience");
-		m_aMining[JOB_UPGR_QUANTITY].init("Quantity", "Miner quantity");
-		m_aMining[JOB_UPGRADES].init("Upgrade", "Miner upgrades");
-		
-		m_aFarming[JOB_LEVEL].init("Level", "Farmer level");
-		m_aFarming[JOB_EXPERIENCE].init("Exp", "Farmer experience");
-		m_aFarming[JOB_UPGR_QUANTITY].init("Quantity", "Farmer quantity");
-		m_aFarming[JOB_UPGRADES].init("Upgrade", "Farmer upgrades");
-	}
+	CFieldContainer m_FarmingData
+	{
+		{ CFieldData<int>(JOB_LEVEL, "Level", "Farmer level") },
+		{ CFieldData<int>(JOB_EXPERIENCE, "Exp", "Farmer experience") },
+		{ CFieldData<int>(JOB_UPGR_QUANTITY, "Quantity", "Farmer quantity") },
+		{ CFieldData<int>(JOB_UPGRADES, "Upgrade", "Farmer upgrades") }
+	};
 
 	static std::map < int, CAccountData > ms_aData;
 };
