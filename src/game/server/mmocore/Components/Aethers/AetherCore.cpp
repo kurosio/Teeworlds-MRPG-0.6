@@ -145,12 +145,12 @@ void CAetherCore::ShowTeleportList(CCharacter* pChar) const
 			distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120);
 		if (LocalTeleport)
 		{
-			GS()->AVM(ClientID, "null", ID, TAB_AETHER, "[Local {STR}] : {STR}", Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()));
+			GS()->AVM(ClientID, "null", NOPE, TAB_AETHER, "* {STR} : {STR}", Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()));
 			continue;
 		}
 
 		const int Price = g_Config.m_SvPriceTeleport * (Aether.GetWorldID() + 1);
-		GS()->AVD(ClientID, "TELEPORT", ID, Price, TAB_AETHER, "[{STR}] : {STR} - {VAL}gold",
+		GS()->AVD(ClientID, "TELEPORT", ID, Price, TAB_AETHER, "{STR} : {STR} - {VAL}gold",
 			Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()), Price);
 	}
 	GS()->AV(ClientID, "null");
