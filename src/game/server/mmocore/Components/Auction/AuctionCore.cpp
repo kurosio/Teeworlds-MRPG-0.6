@@ -69,15 +69,20 @@ bool CAuctionCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 
 		GS()->AVH(ClientID, TAB_INFO_AUCTION_BIND, "Information Auction Slot");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_AUCTION_BIND, "The reason for write the number for each row");
+		GS()->AV(ClientID, "null");
+
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Item x{VAL} Minimal Price: {VAL}gold", SlotValue, MinimalPrice);
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Auction Slot Price: {VAL}gold", g_Config.m_SvAuctionPriceSlot);
 		if(SlotEnchant > 0)
+		{
 			GS()->AVM(ClientID, "null", NOPE, NOPE, "Warning selling enchanted: +{INT}", SlotEnchant);
-		
+		}
+
 		const ItemIdentifier SlotItemID = pAuctionItem->GetID();
 		const int SlotPrice = pAuctionData->GetPrice();
 		GS()->AVM(ClientID, "AUCTION_COUNT", SlotItemID, NOPE, "Item Value: {VAL}", SlotValue);
 		GS()->AVM(ClientID, "AUCTION_PRICE", SlotItemID, NOPE, "Item Price: {VAL}", SlotPrice);
+		GS()->AV(ClientID, "null");
 		GS()->AVM(ClientID, "AUCTION_ACCEPT", SlotItemID, NOPE, "Add {STR}x{VAL} {VAL}gold", pAuctionItem->Info()->GetName(), SlotValue, SlotPrice);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
