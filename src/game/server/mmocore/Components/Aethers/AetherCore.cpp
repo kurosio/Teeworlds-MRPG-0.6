@@ -21,6 +21,7 @@ void CAetherCore::OnInit()
 			AetherIdentifier ID = pRes->getInt("ID");
 			CAether(ID).Init(pRes->getString("Name").c_str(), Pos, WorldID);
 		}
+
 		Job()->ShowLoadingProgress("Aethers", CAether::Data().size());
 	});
 }
@@ -113,11 +114,11 @@ void CAetherCore::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
 		if (distance(Aether.GetPosition(), Pos) > 100 || pPlayer->Acc().m_aAetherLocation.find(ID) != pPlayer->Acc().m_aAetherLocation.end())
 			continue;
 
+		pPlayer->Acc().m_aAetherLocation[ID] = true;
 		Sqlpool.Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, ID);
+
 		GS()->Chat(ClientID, "You unlock aether {STR}!", Aether.GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Adventure unlock aether {STR}", Aether.GetName());
-
-		pPlayer->Acc().m_aAetherLocation[ID] = true;
 		return;
 	}
 }

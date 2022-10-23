@@ -21,6 +21,8 @@ public:
 		str_copy(m_aName, pName, sizeof(m_aName));
 		m_Pos = Pos;
 		m_WorldID = WorldID;
+
+		CAether::Data()[m_ID] = *this;
 	}
 
 	const char* GetName() const { return m_aName; }
