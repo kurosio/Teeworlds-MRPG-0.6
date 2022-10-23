@@ -183,12 +183,12 @@ bool CCraftCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 			GS()->ShowVotesItemValueInformation(pPlayer);
 			GS()->AV(ClientID, "null");
 
-			ShowCraftList(pPlayer, "Craft | Can be used's", ItemType::TYPE_USED);
-			ShowCraftList(pPlayer, "Craft | Potion's", ItemType::TYPE_POTION);
-			ShowCraftList(pPlayer, "Craft | Equipment's", ItemType::TYPE_EQUIP);
-			ShowCraftList(pPlayer, "Craft | Module's", ItemType::TYPE_MODULE);
-			ShowCraftList(pPlayer, "Craft | Decoration's", ItemType::TYPE_DECORATION);
-			ShowCraftList(pPlayer, "Craft | Other's", ItemType::TYPE_OTHER);
+			ShowCraftList(pPlayer, "Can be used's", ItemType::TYPE_USED);
+			ShowCraftList(pPlayer, "Potion's", ItemType::TYPE_POTION);
+			ShowCraftList(pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
+			ShowCraftList(pPlayer, "Module's", ItemType::TYPE_MODULE);
+			ShowCraftList(pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
+			ShowCraftList(pPlayer, "Other's", ItemType::TYPE_OTHER);
 			return true;
 		}
 		return false;
