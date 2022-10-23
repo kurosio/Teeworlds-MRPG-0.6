@@ -76,9 +76,9 @@ bool CAuctionCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		
 		const ItemIdentifier SlotItemID = pAuctionItem->GetID();
 		const int SlotPrice = pAuctionData->GetPrice();
-		GS()->AVM(ClientID, "AUCTIONCOUNT", SlotItemID, NOPE, "Item Value: {VAL}", SlotValue);
-		GS()->AVM(ClientID, "AUCTIONPRICE", SlotItemID, NOPE, "Item Price: {VAL}", SlotPrice);
-		GS()->AVM(ClientID, "AUCTIONACCEPT", SlotItemID, NOPE, "Add {STR}x{VAL} {VAL}gold", pAuctionItem->Info()->GetName(), SlotValue, SlotPrice);
+		GS()->AVM(ClientID, "AUCTION_COUNT", SlotItemID, NOPE, "Item Value: {VAL}", SlotValue);
+		GS()->AVM(ClientID, "AUCTION_PRICE", SlotItemID, NOPE, "Item Price: {VAL}", SlotPrice);
+		GS()->AVM(ClientID, "AUCTION_ACCEPT", SlotItemID, NOPE, "Add {STR}x{VAL} {VAL}gold", pAuctionItem->Info()->GetName(), SlotValue, SlotPrice);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -96,7 +96,7 @@ bool CAuctionCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTIONCOUNT") == 0)
+	if(PPSTR(CMD, "AUCTION_COUNT") == 0)
 	{
 		// if there are fewer items installed, we set the number of items.
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
@@ -117,7 +117,7 @@ bool CAuctionCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTIONPRICE") == 0)
+	if(PPSTR(CMD, "AUCTION_PRICE") == 0)
 	{
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
 		const int MinimalPrice = (pAuctionData->GetItem()->GetValue() * pAuctionData->GetItem()->Info()->GetInitialPrice());
@@ -129,7 +129,7 @@ bool CAuctionCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTIONSLOT") == 0)
+	if(PPSTR(CMD, "AUCTION_SLOT") == 0)
 	{
 		int AvailableValue = Job()->Item()->GetUnfrozenItemValue(pPlayer, VoteID);
 		if(AvailableValue <= 0)
@@ -141,7 +141,7 @@ bool CAuctionCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTIONACCEPT") == 0)
+	if(PPSTR(CMD, "AUCTION_ACCEPT") == 0)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
@@ -219,8 +219,11 @@ void CAuctionCore::CheckAuctionTime() const
 		GS()->SendInbox("Auctionist", UserID, "Auction expired", "Your slot has expired", ItemID, Value, Enchant);
 		Sqlpool.Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ID = '%d'", ID);
 	}
+
 	if(ReleaseSlots)
+	{
 		GS()->Chat(-1, "Auction {INT} slots has been released!", ReleaseSlots);
+	}
 }
 
 bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
@@ -308,9 +311,9 @@ void CAuctionCore::ShowAuction(CPlayer* pPlayer)
 				pItemInfo->GetName(), ItemValue, pPlayer->GetItem(ItemID)->GetValue(), Price);
 		}
 
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemInfo->GetDescription());
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Seller {STR}", Job()->PlayerName(UserID));
-		GS()->AVM(ClientID, "SHOP", ID, HideID, "Buy Price {VAL} gold", Price);
+		//GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemInfo->GetDescription());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "* Seller {STR}", Job()->PlayerName(UserID));
+		GS()->AVM(ClientID, "AUCTION_BUY", ID, HideID, "Buy Price {VAL} gold", Price);
 		FoundItems = true;
 		++HideID;
 	}
