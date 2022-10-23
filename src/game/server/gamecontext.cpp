@@ -979,14 +979,20 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_aPlayerTick[TickState::LastChangeInfo] = Server()->Tick();
 
 			// set infos
-			if(str_comp(Server()->ClientName(ClientID), pMsg->m_pName) != 0)
+			if(pPlayer->IsAuthed())
 			{
-				pPlayer->m_RequestChangeNickname = true;
-				Server()->SetClientNameChangeRequest(ClientID, pMsg->m_pName);
-				Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 300, 
-					"Press F3 to confirm the nickname change to [{STR}]\n- After the change, you will only be able to log in with the new nickname", pMsg->m_pName);
+				if(str_comp(Server()->ClientName(ClientID), pMsg->m_pName) != 0)
+				{
+					pPlayer->m_RequestChangeNickname = true;
+					Server()->SetClientNameChangeRequest(ClientID, pMsg->m_pName);
+					Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 300,
+						"Press F3 to confirm the nickname change to [{STR}]\n- After the change, you will only be able to log in with the new nickname", pMsg->m_pName);
+				}
 			}
-
+			else
+			{
+				Server()->SetClientName(ClientID, pMsg->m_pName);
+			}
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 

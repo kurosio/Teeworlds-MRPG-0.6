@@ -9,6 +9,14 @@
  * TODO: try using constexpr and a kind of variation pattern
  * std::variant and std::any are used partially at compile time and runtime.
  * And there is no way to give exact information about the returned object
+ *
+ * Can use container how only for work inside db
+ * struct DataStructure : pulbic CFieldContainer
+ * {
+ *		CFieldData<int> m_Level { "Level", "info", this };
+ * } m_Data;
+ *
+ * m_Data.initFields();
  */
 
 template < typename T >
