@@ -31,7 +31,7 @@ public:
 	int GetPlantItemID(vec2 Pos) const;
 	int GetPlantHealth(vec2 Pos) const;
 
-	void ShowMenu(CPlayer* pPlayer) const;
+	//void ShowMenu(CPlayer* pPlayer) const;
 	void Work(CPlayer* pPlayer, int Level);
 	
 	bool ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer);

@@ -32,7 +32,6 @@ struct CAccountData
 	{
 		{ CFieldData<int>(JOB_LEVEL, "Level", "Miner level") },
 		{ CFieldData<int>(JOB_EXPERIENCE, "Exp", "Miner experience") },
-		{ CFieldData<int>(JOB_UPGR_QUANTITY, "Quantity", "Miner quantity") },
 		{ CFieldData<int>(JOB_UPGRADES, "Upgrade", "Miner upgrades") }
 	};
 
@@ -40,7 +39,6 @@ struct CAccountData
 	{
 		{ CFieldData<int>(JOB_LEVEL, "Level", "Farmer level") },
 		{ CFieldData<int>(JOB_EXPERIENCE, "Exp", "Farmer experience") },
-		{ CFieldData<int>(JOB_UPGR_QUANTITY, "Quantity", "Farmer quantity") },
 		{ CFieldData<int>(JOB_UPGRADES, "Upgrade", "Farmer upgrades") }
 	};
 

@@ -33,8 +33,9 @@ void CAccountPlantCore::OnInitAccount(CPlayer *pPlayer)
 		return;
 	}
 
-	pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value = 1;
-	pPlayer->Acc().m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value = 1;
+	pPlayer->Acc().m_FarmingData(JOB_LEVEL, 1).m_Value = 1;
+	pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value = 0;
+	pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value = 0;
 	Sqlpool.Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
 }
 
@@ -59,18 +60,17 @@ int CAccountPlantCore::GetPlantHealth(vec2 Pos) const
 	return Iter != ms_aPlants.end() ? (*Iter).second.m_StartHealth : -1;
 }
 
-void CAccountPlantCore::ShowMenu(CPlayer* pPlayer) const
-{
-	const int ClientID = pPlayer->GetCID();
-	const int JobLevel = pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value;
-	const int JobExperience = pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value;
-	const int JobUpgrades = pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value;
-	const int JobUpgrQuantity = pPlayer->Acc().m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value;
-	const int ExperienceNeed = computeExperience(JobLevel);
-
-	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Plants Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
-	GS()->AVD(ClientID, "PLANTUPGRADE", JOB_UPGR_QUANTITY, 20, TAB_UPGR_JOB, "Quantity +{INT} (Price 20P)", JobUpgrQuantity);
-}
+//void CAccountPlantCore::ShowMenu(CPlayer* pPlayer) const
+//{
+//	const int ClientID = pPlayer->GetCID();
+//	const int JobLevel = pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value;
+//	const int JobExperience = pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value;
+//	const int JobUpgrades = pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value;
+//	const int JobUpgrQuantity = pPlayer->Acc().m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value;
+//	const int ExperienceNeed = computeExperience(JobLevel);
+//
+//	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Plants Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
+//}
 
 bool CAccountPlantCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 {

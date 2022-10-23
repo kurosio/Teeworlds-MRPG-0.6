@@ -285,7 +285,7 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 			{
 				char aAttributes[128];
 				ItemData.StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS_MODULES, "{STR} {STR}{STR}", ItemData.Info()->GetName(), aAttributes, (ItemData.GetSettings() ? "✔" : "\0"));
+				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS_MODULES, "{STR}{STR} * {STR}", (ItemData.GetSettings() ? "✔" : "\0"), ItemData.Info()->GetName(), aAttributes);
 				IsFoundModules = true;
 			}
 		}

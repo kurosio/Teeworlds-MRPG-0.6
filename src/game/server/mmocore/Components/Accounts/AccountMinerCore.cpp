@@ -33,8 +33,8 @@ void CAccountMinerCore::OnInitAccount(CPlayer* pPlayer)
 	}
 
 	pPlayer->Acc().m_MiningData(JOB_LEVEL, 1).m_Value = 1;
-	pPlayer->Acc().m_MiningData(JOB_UPGR_QUANTITY, 1).m_Value = 1;
-	pPlayer->Acc().m_MiningData(JOB_UPGR_QUANTITY, 1).m_Value = 1;
+	pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value = 0;
+	pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value = 0;
 	Sqlpool.Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
 }
 
@@ -59,18 +59,16 @@ int CAccountMinerCore::GetOreHealth(vec2 Pos) const
 	return Iter != ms_aOre.end() ? (*Iter).second.m_StartHealth : -1;
 }
 
-void CAccountMinerCore::ShowMenu(CPlayer *pPlayer) const
-{
-	const int ClientID = pPlayer->GetCID();
-	const int JobLevel = pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value;
-	const int JobExperience = pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value;
-	const int JobUpgrades = pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value;
-	const int JobUpgrQuantity = pPlayer->Acc().m_MiningData(JOB_UPGR_QUANTITY, 0).m_Value;
-	const int ExperienceNeed = computeExperience(JobLevel);
-
-	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Miner Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
-	GS()->AVD(ClientID, "MINERUPGRADE", JOB_UPGR_QUANTITY, 20, TAB_UPGR_JOB, "Quantity +{INT} (Price 20P)", JobUpgrQuantity);
-}
+//void CAccountMinerCore::ShowMenu(CPlayer *pPlayer) const
+//{
+//	const int ClientID = pPlayer->GetCID();
+//	const int JobLevel = pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value;
+//	const int JobExperience = pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value;
+//	const int JobUpgrades = pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value;
+//	const int ExperienceNeed = computeExperience(JobLevel);
+//
+//	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Miner Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
+//}
 
 bool CAccountMinerCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 {
@@ -104,7 +102,7 @@ void CAccountMinerCore::Work(CPlayer *pPlayer, int Level)
 	{
 		pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value -= ExperienceNeed;
 		pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value++;
-		pPlayer->Acc().m_MiningData(JOB_UPGR_QUANTITY, 0).m_Value++;
+		pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value++;
 
 		if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())
 		{

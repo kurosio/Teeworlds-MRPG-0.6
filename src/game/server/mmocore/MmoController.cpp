@@ -156,7 +156,6 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 				if(Attribute.IsType(Type) && Attribute.HasField())
 					GS()->AVD(ClientID, "UPGRADE", (int)ID, Attribute.GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", Attribute.GetName(), pPlayer->Acc().m_aStats[ID], Attribute.GetUpgradePrice());
 			}
-			GS()->AV(ClientID, "null");
 		};
 
 		// Disciple of War
@@ -164,6 +163,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
 			GS()->AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
+			GS()->AV(ClientID, "null");
 		});
 
 		// Disciple of Tank
@@ -171,6 +171,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
 			GS()->AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
+			GS()->AV(ClientID, "null");
 		});
 
 		// Disciple of Healer
@@ -178,6 +179,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Healer);
 			GS()->AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
+			GS()->AV(ClientID, "null");
 		});
 
 		// Upgrades Weapons and ammo
@@ -186,9 +188,6 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			GS()->AVH(ClientID, HiddenID, "Upgrades Weapons / Ammo");
 		});
 
-		GS()->AVH(ClientID, TAB_UPGR_JOB, "Disciple of Jobs");
-		GS()->Mmo()->PlantsAcc()->ShowMenu(pPlayer);
-		GS()->Mmo()->MinerAcc()->ShowMenu(pPlayer);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}

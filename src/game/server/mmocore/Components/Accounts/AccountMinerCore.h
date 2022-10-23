@@ -31,7 +31,7 @@ public:
 	int GetOreItemID(vec2 Pos) const;
 	int GetOreHealth(vec2 Pos) const;
 
-	void ShowMenu(CPlayer *pPlayer) const;
+	//void ShowMenu(CPlayer *pPlayer) const;
 	void Work(CPlayer *pPlayer, int Exp);
 
 	bool ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer);

@@ -114,7 +114,7 @@ void CJobItems::MiningWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorkedI
 	if(Interaction("Pickaxe", AttributeIdentifier::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value))
 	{
 		GS()->Mmo()->MinerAcc()->Work(pPlayer, m_Level);
-		pWorkedItem.Add(pPlayer->Acc().m_MiningData(JOB_UPGR_QUANTITY, 0).m_Value);
+		pWorkedItem.Add(1+ rand()%2);
 		SetSpawn(20);
 	}
 }
@@ -124,7 +124,7 @@ void CJobItems::FarmingWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorked
 	if(Interaction("Rake", AttributeIdentifier::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value))
 	{
 		GS()->Mmo()->PlantsAcc()->Work(pPlayer, m_Level);
-		pWorkedItem.Add(pPlayer->Acc().m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value);
+		pWorkedItem.Add(1 + rand() % 2);
 		SetSpawn(20);		
 	}
 }

@@ -153,7 +153,7 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 			ItemIdentifier ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
 			if(ItemID <= 0 || !pPlayer->GetItem(ItemID)->IsEquipped())
 			{
-				GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} Not equipped", paTypeNames[i]);
+				GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} not equipped", paTypeNames[i]);
 				continue;
 			}
 
