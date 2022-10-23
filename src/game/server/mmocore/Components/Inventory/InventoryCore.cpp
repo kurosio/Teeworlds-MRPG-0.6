@@ -472,7 +472,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 		// auction
 		if (pItemPlayer.Info()->m_InitialPrice > 0)
 		{
-			GS()->AVM(ClientID, "AUCTIONSLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
+			GS()->AVM(ClientID, "AUCTION_SLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
 		}
 	}
 }
