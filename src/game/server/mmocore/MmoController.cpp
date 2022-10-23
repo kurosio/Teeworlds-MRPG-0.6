@@ -163,24 +163,25 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
 			GS()->AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
-			GS()->AV(ClientID, "null");
 		});
+		GS()->AV(ClientID, "null");
 
 		// Disciple of Tank
 		ShowAttributeVote(TAB_UPGR_TANK, AttributeType::Tank, [&](int HiddenID)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
 			GS()->AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
-			GS()->AV(ClientID, "null");
 		});
+		GS()->AV(ClientID, "null");
 
 		// Disciple of Healer
 		ShowAttributeVote(TAB_UPGR_HEALER, AttributeType::Healer, [&](int HiddenID)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Healer);
 			GS()->AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
-			GS()->AV(ClientID, "null");
+
 		});
+		GS()->AV(ClientID, "null");
 
 		// Upgrades Weapons and ammo
 		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeType::Weapon, [&](int HiddenID)
