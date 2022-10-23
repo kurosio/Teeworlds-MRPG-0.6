@@ -124,6 +124,7 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		}
 
 		GS()->Chat(ClientID, "- - - - - - - [Successful login!] - - - - - - -");
+		GS()->Chat(ClientID, "Don't forget that cl_motd_time must be set!");
 		GS()->Chat(ClientID, "Menu is available in call-votes!");
 		GS()->m_pController->DoTeamChange(pPlayer, false);
 		LoadAccount(pPlayer, true);

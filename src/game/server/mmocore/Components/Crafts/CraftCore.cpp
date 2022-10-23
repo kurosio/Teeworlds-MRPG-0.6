@@ -46,8 +46,8 @@ bool CCraftCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
 {
+	bool IsNotEmpty = false;
 	const int ClientID = pPlayer->GetCID();
-	std::function pFuncNewTab = [&](){ GS()->AVL(ClientID, "null", "{STR}", TypeName); };
 
 	for(const auto& [ID, Craft] : CCraftItem::Data())
 	{
@@ -55,8 +55,11 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 		if(pCraftItemInfo->GetType() != Type || Craft.GetWorldID() != GS()->GetWorldID())
 			continue;
 
-		pFuncNewTab();
-		pFuncNewTab = nullptr;
+		if(!IsNotEmpty)
+		{
+			GS()->AVL(ClientID, "null", "{STR}", TypeName);
+			IsNotEmpty = true;
+		}
 
 		ItemIdentifier ItemID = Craft.GetItem()->GetID();
 		const int Price = Craft.GetPrice(pPlayer);
@@ -74,18 +77,18 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 		{
 			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", pCraftItemInfo->GetName(), Craft.GetItem()->GetValue(), pPlayer->GetItem(ItemID)->GetValue(), Price);
 		}
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pCraftItemInfo->GetDescription());
+		//GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pCraftItemInfo->GetDescription());
 
 		for(auto& RequiredItem: Craft.m_RequiredItem)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(RequiredItem.GetID());
-			GS()->AVM(ClientID, "null", NOPE, HideID, "# {STR} {VAL}({VAL})", pPlayerItem->Info()->GetName(), RequiredItem.GetValue(), pPlayerItem->GetValue());
+			GS()->AVM(ClientID, "null", NOPE, HideID, "* {STR} {VAL}({VAL})", pPlayerItem->Info()->GetName(), RequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
 
 		GS()->AVM(ClientID, "CRAFT", ID, HideID, "Craft {STR}", pCraftItemInfo->GetName());
 	}
 
-	if(!pFuncNewTab)
+	if(IsNotEmpty)
 		GS()->AV(ClientID, "null");
 }
 
