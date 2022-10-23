@@ -146,7 +146,7 @@ void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWare
 
 			char aAttributes[128];
 			pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
-			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", aAttributes);
+			GS()->AVM(ClientID, "null", NOPE, HideID, "* {STR}", aAttributes);
 		}
 		else
 		{

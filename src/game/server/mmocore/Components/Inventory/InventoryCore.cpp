@@ -159,7 +159,7 @@ bool CInventoryCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 
 			char aAttributes[128];
 			pPlayer->GetItem(ItemID)->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-			GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} | {STR}", pPlayer->GetItem(ItemID)->Info()->GetName(), aAttributes);
+			GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} * {STR}", pPlayer->GetItem(ItemID)->Info()->GetName(), aAttributes);
 		}
 
 		// show and sort equipment
