@@ -62,6 +62,7 @@ public:
 
 	// general
 	virtual void Snap();
+	void DDNetSnap();
 	virtual void Tick();
 
 	bool CanSpawn(int SpawnType, vec2 *pPos, vec2 BotPos) const;

@@ -34,6 +34,7 @@ class CGameControllerDungeon : public IGameController
 	int m_FinishedTick;
 	int m_SafeTick;
 	int m_MaximumTick;
+	int m_ShiftRoundStartTick;
 
 	CPlayerDungeonRecord m_Records[MAX_PLAYERS];
 
@@ -41,6 +42,8 @@ public:
 	CGameControllerDungeon(class CGS* pGameServer);
 
 	void Tick() override;
+	void Snap() override;
+
 	bool OnEntity(int Index, vec2 Pos) override;
 	void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) override;
 	void OnCharacterDeath(class CCharacter* pVictim, class CPlayer* pKiller, int Weapon) override;

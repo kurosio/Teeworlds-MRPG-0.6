@@ -209,6 +209,7 @@ void CGameControllerDungeon::StateTick()
 				ChangeState(DUNGEON_STARTED);
 			}
 		}
+		m_ShiftRoundStartTick = Server()->Tick();
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
@@ -527,6 +528,22 @@ void CGameControllerDungeon::Tick()
 
 	StateTick();
 	IGameController::Tick();
+}
+
+void CGameControllerDungeon::Snap()
+{
+	CNetObj_GameInfo* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
+	if(!pGameInfoObj)
+		return;
+
+	pGameInfoObj->m_GameFlags = m_GameFlags;
+	pGameInfoObj->m_GameStateFlags = 0;
+	pGameInfoObj->m_RoundStartTick = m_ShiftRoundStartTick;
+	pGameInfoObj->m_WarmupTimer = 0;
+	pGameInfoObj->m_RoundNum = 0;
+	pGameInfoObj->m_RoundCurrent = 1;
+
+	DDNetSnap();
 }
 
 void CGameControllerDungeon::CreateLogic(int Type, int Mode, vec2 Pos, int ParseInt)
