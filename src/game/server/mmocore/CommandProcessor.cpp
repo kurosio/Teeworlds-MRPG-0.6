@@ -162,8 +162,8 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 	if (!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	const int HouseID = pGS->Mmo()->House()->PlayerHouseID(pPlayer);
-	pGS->Mmo()->House()->ChangeStateDoor(HouseID);
+	CHouseData* pHouse = pPlayer->Acc().GetHouse();
+	pHouse->GetDoor()->Reverse();
 }
 
 void CCommandProcessor::ConChatSellHouse(IConsole::IResult* pResult, void* pUser)
@@ -177,15 +177,15 @@ void CCommandProcessor::ConChatSellHouse(IConsole::IResult* pResult, void* pUser
 		return;
 
 	// check owner house id
-	const int HouseID = pGS->Mmo()->House()->PlayerHouseID(pPlayer);
-	if(HouseID < 0)
+	CHouseData* pHouse = pPlayer->Acc().GetHouse();
+	if(!pHouse)
 	{
 		pGS->Chat(ClientID, "You have no home.");
 		return;
 	}
 
 	// sell house
-	pGS->Mmo()->House()->SellHouse(HouseID);
+	pHouse->SellHouse();
 }
 
 void CCommandProcessor::ConChatPosition(IConsole::IResult* pResult, void* pUser)

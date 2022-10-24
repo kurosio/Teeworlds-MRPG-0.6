@@ -419,9 +419,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 	}
 	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANTS)
 	{
-		const int HouseID = Job()->House()->OwnerHouseID(pPlayer->Acc().m_UserID);
-		const ItemIdentifier PlantItemID = Job()->House()->GetPlantsID(HouseID);
-		if(HouseID > 0 && PlantItemID != ItemID)
+		if(CHouseData* pHouse = pPlayer->Acc().GetHouse(); pHouse && pHouse->GetPlantItemID() != ItemID)
 		{
 			const int random_change = random_int() % 900;
 			GS()->AVD(ClientID, "HOMEPLANTSET", ItemID, random_change, HideID, "To plant {STR}, to house (0.06%)", pNameItem);

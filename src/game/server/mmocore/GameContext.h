@@ -204,6 +204,7 @@ enum
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
 	MAX_INBOX_LIST = 30,					// maximum number of emails what is displayed
 	STATS_MAX_FOR_ITEM = 2,					// maximum number of stats per item
+	MAX_DECORATIONS_HOUSE = 10,
 
 	// settings items
 	itModePVP = 22,						// PVP mode setting
