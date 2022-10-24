@@ -11,6 +11,7 @@ constexpr auto TW_WAREHOUSE_ITEMS_TABLE = "tw_warehouse_items";
 
 void CWarehouseCore::OnInit()
 {
+	// init warehouses
 	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", TW_WAREHOUSE_TABLE);
 	while (pRes->next())
 	{
@@ -20,11 +21,12 @@ void CWarehouseCore::OnInit()
 		int Currency = pRes->getInt("Currency");
 		int WorldID = pRes->getInt("WorldID");
 
+		// init by server
 		CWarehouse(ID).Init(Name, Pos, Currency, WorldID);
 	}
 
-	// collect all data
-	std::unordered_map< int , CWarehouse::ContainerTradingSlots > StoreTrades;
+	// init trades slots
+	std::unordered_map< int , CWarehouse::ContainerTradingSlots > TradesSlots;
 	ResultPtr pResStore = Sqlpool.Execute<DB::SELECT>("*", TW_WAREHOUSE_ITEMS_TABLE);
 	while(pResStore->next())
 	{
@@ -36,14 +38,15 @@ void CWarehouseCore::OnInit()
 		int Enchant = pResStore->getInt("Enchant");
 		int WarehouseID = pResStore->getInt("WarehouseID");
 
+		// init by server
 		CTradingSlot TradeSlot(ID);
 		std::shared_ptr<CItem> pItem = std::make_shared<CItem>(CItem(ItemID, ItemValue, Enchant));
 		TradeSlot.Init(pItem, &CItemDescription::Data()[RequiredItemID], Price);
-		StoreTrades[WarehouseID].push_back(TradeSlot);
+		TradesSlots[WarehouseID].push_back(TradeSlot);
 	}
 
-	// init warehouse
-	for(auto& [WarehouseID, DataContainer] : StoreTrades)
+	// init trades slots for warehouses
+	for(auto& [WarehouseID, DataContainer] : TradesSlots)
 		CWarehouse::Data()[WarehouseID].m_aTradingSlots = DataContainer;
 }
 
@@ -51,6 +54,8 @@ bool CWarehouseCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
+
+	// shop zone
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_SHOP_ZONE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
@@ -79,9 +84,14 @@ bool CWarehouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 		if(pChr->GetHelper()->BoolIndex(TILE_SHOP_ZONE))
 		{
 			if(CWarehouse* pWarehouse = Job()->Warehouse()->GetWarehouse(pChr->m_Core.m_Pos))
+			{
 				Job()->Warehouse()->ShowWarehouseMenu(pChr->GetPlayer(), pWarehouse);
+			}
 			else
+			{
 				GS()->AV(ClientID, "null", "Warehouse don't work");
+			}
+
 			return true;
 		}
 
@@ -94,7 +104,7 @@ bool CWarehouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 bool CWarehouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(PPSTR(CMD, "REPAIRITEMS") == 0)
+	if(PPSTR(CMD, "REPAIR_ITEMS") == 0)
 	{
 		Job()->Item()->RepairDurabilityItems(pPlayer);
 		GS()->Chat(ClientID, "You repaired all items.");
@@ -122,19 +132,25 @@ CWarehouse* CWarehouseCore::GetWarehouse(vec2 Pos) const
 void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWarehouse) const
 {
 	const int ClientID = pPlayer->GetCID();
+
+	// show base shop functions
 	GS()->AVH(ClientID, TAB_STORAGE, "Shop :: {STR}", pWarehouse->GetName());
-	GS()->AVM(ClientID, "REPAIRITEMS", NOPE, TAB_STORAGE, "Repair all items - FREE");
+	GS()->AVM(ClientID, "REPAIR_ITEMS", NOPE, TAB_STORAGE, "Repair all items - FREE");
+
+	// show currency
 	GS()->AV(ClientID, "null");
 	GS()->ShowVotesItemValueInformation(pPlayer, pWarehouse->GetCurrency()->GetID());
 	GS()->AV(ClientID, "null");
 
+	// show trade list
 	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 300;
 	for(auto& Trade : pWarehouse->m_aTradingSlots)
 	{
+		int Price = Trade.GetPrice();
 		const CItemDescription* pCurrencyItem = Trade.GetCurrency();
-		const int Price = Trade.GetPrice();
 		const CItem* pItem = Trade.GetItem();
 
+		// show trade slot actions
 		if (pItem->Info()->IsEnchantable())
 		{
 			const bool PlayerHasItem = pPlayer->GetItem(*pItem)->HasItem();
@@ -158,18 +174,20 @@ void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWare
 		GS()->AVD(ClientID, "SHOP_BUY", pWarehouse->GetID(), Trade.GetID(), HideID, "Buy {STR}x{VAL}", pItem->Info()->GetName(), pItem->GetValue());
 		HideID++;
 	}
+
 	GS()->AV(ClientID, "null");
 }
 
 bool CWarehouseCore::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier ID)
 {
-	// TODO: optimize rework structure impl
+	// finding a trade slot
 	CWarehouse::ContainerTradingSlots& pContainer = GS()->GetWarehouse(WarehouseID)->m_aTradingSlots;
 	auto Iter = std::find_if(pContainer.begin(), pContainer.end(), [ID](const CTradingSlot& p){ return p.GetID() == ID; });
 	CTradingSlot* pTradeSlot =  Iter != pContainer.end() ? &(*Iter) : nullptr;
 	if(!pTradeSlot)
 		return false;
 
+	// check for enchantment
 	const int ClientID = pPlayer->GetCID();
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(pTradeSlot->GetItem()->GetID());
 	if(pPlayerItem->HasItem() && pPlayerItem->Info()->IsEnchantable())
@@ -178,11 +196,13 @@ bool CWarehouseCore::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier 
 		return false;
 	}
 
-	CItem* pItem = pTradeSlot->GetItem();
+	// purchase
 	if(!pPlayer->SpendCurrency(pTradeSlot->GetPrice(), pTradeSlot->GetCurrency()->GetID()))
 		return false;
 
-	pPlayerItem->Add(pItem->GetValue(), 0, pItem->GetEnchant());
-	GS()->Chat(ClientID, "You exchange {STR}x{VAL} to {STR}x{VAL}.", pTradeSlot->GetCurrency()->GetName(), pTradeSlot->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
+	// give trade slot for player
+	CItem* pTradeItem = pTradeSlot->GetItem();
+	pPlayerItem->Add(pTradeItem->GetValue(), 0, pTradeItem->GetEnchant());
+	GS()->Chat(ClientID, "You exchange {STR}x{VAL} to {STR}x{VAL}.", pTradeSlot->GetCurrency()->GetName(), pTradeSlot->GetPrice(), pTradeItem->Info()->GetName(), pTradeItem->GetValue());
 	return true;
 }
