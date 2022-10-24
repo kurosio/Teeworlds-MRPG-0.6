@@ -1166,9 +1166,9 @@ void CGS::OnClientEnter(int ClientID)
 		Chat(-1, "{STR} entered and joined the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 
-		Chat(ClientID, "Welcome! Please login or create new account /cmdlist.");
-		SendDayInfo(ClientID);
+		MmoController::AsyncClientEnterMsgInfo(this, ClientID);
 
+		SendDayInfo(ClientID);
 		ShowVotesNewbieInformation(ClientID);
 		return;
 	}
@@ -1388,7 +1388,7 @@ void CGS::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData)
 	CGS* pSelf = (CGS*)pServer->GameServer();
 
 	// dump
-	std::thread(&MmoController::ConSyncLinesForTranslate, pSelf->m_pMmoController).detach();
+	std::thread(&MmoController::ConAsyncLinesForTranslate, pSelf->m_pMmoController).detach();
 }
 
 void CGS::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

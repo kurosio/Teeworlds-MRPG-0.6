@@ -439,8 +439,30 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 }
 
+void MmoController::AsyncClientEnterMsgInfo(class CGS* pGS, int ClientID)
+{
+	CSqlString<MAX_NAME_LENGTH> PlayerName(pGS->Server()->ClientName(ClientID));
+
+	// create new thread
+	const auto AsyncEnterRes = Sqlpool.Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '%s'", PlayerName.cstr());
+	AsyncEnterRes->AtExecute([&pGS, PlayerName, ClientID](IServer*, ResultPtr pRes)
+	{
+		// send information : CPlayer checked by Chat() : PlayerName and ClientID getter by copy. 
+		pGS->Chat(ClientID, "Welcome! A list of commands can be found using /cmdlist.");
+
+		if(!pRes->next())
+		{
+			pGS->Chat(ClientID, "You need to register using /register <login> <pass>.", PlayerName.cstr());
+			pGS->Chat(-1, "Apparently we have a new player {STR}!", PlayerName.cstr());
+			return;
+		}
+
+		pGS->Chat(ClientID, "You need to login using /login <user> <pass>.", PlayerName.cstr());
+	});
+}
+
 // dump dialogs for translate
-void MmoController::ConSyncLinesForTranslate()
+void MmoController::ConAsyncLinesForTranslate()
 {
 	static std::mutex ms_mtxDump;
 
