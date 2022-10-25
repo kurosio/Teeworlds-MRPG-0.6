@@ -9,8 +9,6 @@
 // TODO: reconstruct
 class CAccountData
 {
-	class CHouseData* m_pHouse{};
-
 public:
 	// main
 	char m_aLogin[64]{};
@@ -23,9 +21,8 @@ public:
 	int m_GuildRank{};
 	std::list< int > m_aHistoryWorld{};
 
-	void SetHouse(CHouseData* pHouse) { m_pHouse = pHouse; };
-	class CHouseData* GetHouse();
-	bool HasHouse() const { return m_pHouse; }
+	class CHouseData* GetHouse() const;
+	bool HasHouse() const;
 
 	// upgrades
 	int m_Upgrade{};

@@ -194,7 +194,6 @@ void CHouseData::Buy(CPlayer* pPlayer)
 	{
 		// update data
 		m_AccountID = pPlayer->Acc().m_UserID;
-		pPlayer->Acc().SetHouse(this);
 		m_DoorData.Close();
 		m_Bank.Reset();
 		Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' WHERE ID = '%d'", m_AccountID, m_ID);
