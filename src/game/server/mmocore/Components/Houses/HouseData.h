@@ -140,8 +140,8 @@ public:
 	bool AddDecoration(ItemIdentifier DecoItemID, vec2 Pos);
 	bool RemoveDecoration(HouseDecorationIdentifier ID);
 
-	void BuyHouse(CPlayer* pPlayer);
-	void SellHouse();
+	void Buy(CPlayer* pPlayer);
+	void Sell();
 
 	void UpdatePlantItemID(ItemIdentifier PlantItemID);
 

@@ -23,11 +23,8 @@ public:
 	int m_GuildRank{};
 	std::list< int > m_aHistoryWorld{};
 
-	void SetHouse(CHouseData* pHouse)
-	{
-		m_pHouse = pHouse;
-	};
-	class CHouseData* GetHouse() const { return m_pHouse; }
+	void SetHouse(CHouseData* pHouse) { m_pHouse = pHouse; };
+	class CHouseData* GetHouse();
 	bool HasHouse() const { return m_pHouse; }
 
 	// upgrades

@@ -172,7 +172,7 @@ bool CHouseData::RemoveDecoration(HouseDecorationIdentifier ID)
 	return true;
 }
 
-void CHouseData::BuyHouse(CPlayer* pPlayer)
+void CHouseData::Buy(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -185,38 +185,28 @@ void CHouseData::BuyHouse(CPlayer* pPlayer)
 
 	if(HasOwner())
 	{
-		GS()->Chat(ClientID, "House already have a owner.");
+		GS()->Chat(ClientID, "House has already been purchased!");
 		return;
 	}
 
 	// buy house
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("UserID, Price", "tw_houses", "WHERE ID = '%d' AND UserID IS NULL", m_ID);
-	if(pRes->next())
+	if(pPlayer->SpendCurrency(m_Price))
 	{
-		const int Price = pRes->getInt("Price");
+		// update data
+		m_AccountID = pPlayer->Acc().m_UserID;
+		pPlayer->Acc().SetHouse(this);
+		m_DoorData.Close();
+		m_Bank.Reset();
+		Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' WHERE ID = '%d'", m_AccountID, m_ID);
 
-		if(pPlayer->SpendCurrency(Price))
-		{
-			// update data
-			m_AccountID = pPlayer->Acc().m_UserID;
-			pPlayer->Acc().SetHouse(this);
-			m_DoorData.Close();
-			m_Bank.Reset();
-			Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' WHERE ID = '%d'", m_AccountID, m_ID);
-
-			// send information
-			GS()->Chat(-1, "{STR} becomes the owner of the house class {STR}", Server()->ClientName(ClientID), GetClassName());
-			GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**{STR} becomes the owner of the house class {STR}**", Server()->ClientName(ClientID), GetClassName());
-			GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
-		}
-		return;
+		// send information
+		GS()->Chat(-1, "{STR} becomes the owner of the house class {STR}", Server()->ClientName(ClientID), GetClassName());
+		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**{STR} becomes the owner of the house class {STR}**", Server()->ClientName(ClientID), GetClassName());
+		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 	}
-
-	// house already purchased
-	GS()->Chat(ClientID, "House has already been purchased!");
 }
 
-void CHouseData::SellHouse()
+void CHouseData::Sell()
 {
 	// check house
 	if(!HasOwner())
@@ -228,15 +218,8 @@ void CHouseData::SellHouse()
 	const int Price = m_Price + m_Bank.Get();
 	GS()->SendInbox("System", m_AccountID, "House is sold", "Your house is sold !", itGold, Price, 0);
 
-	// update data
-	m_AccountID = -1;
-	m_DoorData.Open();
-	m_Bank.Reset();
-	Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0' WHERE ID = '%d'", m_ID);
-
 	// send information
-	CPlayer* pPlayer = GetPlayer();
-	if(pPlayer)
+	if(CPlayer* pPlayer = GetPlayer())
 	{
 		GS()->Chat(pPlayer->GetCID(), "Your House is sold!");
 		GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
@@ -244,6 +227,13 @@ void CHouseData::SellHouse()
 	GS()->Chat(-1, "House: {INT} have been is released!", m_ID);
 	GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {INT}] have been sold!**", m_ID);
 
+	// update data
+	m_DoorData.Open();
+	m_Bank.Reset();
+	Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0' WHERE ID = '%d'", m_ID);
+
+	// account used for GetPlayer() reset last moment
+	m_AccountID = -1;
 }
 
 void CHouseData::UpdatePlantItemID(ItemIdentifier PlantItemID)
@@ -275,18 +265,17 @@ void CHouseData::UpdatePlantItemID(ItemIdentifier PlantItemID)
 
 void CHouseData::ShowDecorations()
 {
-	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
-
-	int ClientID = GetPlayer()->GetCID();
-
-	for(auto& p : m_aDecorations)
+	if(CPlayer* pPlayer = GetPlayer())
 	{
-		if(p.HasUsed())
+		int ClientID = pPlayer->GetCID();
+
+		for(auto& p : m_aDecorations)
 		{
-			GS()->AVD(ClientID, "DECODELETE", p.GetID(), p.GetDecorationItemID(), 1, "{STR}:{INT} back to the inventory",
-				GS()->GetItemInfo(p.GetDecorationItemID())->GetName(), p.GetID());
+			if(p.HasUsed())
+			{
+				GS()->AVD(ClientID, "DECODELETE", p.GetID(), p.GetDecorationItemID(), 1, "{STR}:{INT} back to the inventory",
+					GS()->GetItemInfo(p.GetDecorationItemID())->GetName(), p.GetID());
+			}
 		}
 	}
 }

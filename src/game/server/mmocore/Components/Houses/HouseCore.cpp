@@ -149,7 +149,7 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 		const int HouseID = VoteID;
 		if(CHouseData* pHouse = GetHouse(HouseID))
 		{
-			pHouse->BuyHouse(pPlayer);
+			pHouse->Buy(pPlayer);
 		}
 
 		return true;
@@ -189,7 +189,7 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 			return true;
 		}
 
-		pHouse->SellHouse();
+		pHouse->Sell();
 		GS()->UpdateVotes(ClientID, MENU_MAIN);
 		return true;
 	}

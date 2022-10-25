@@ -185,7 +185,7 @@ void CCommandProcessor::ConChatSellHouse(IConsole::IResult* pResult, void* pUser
 	}
 
 	// sell house
-	pHouse->SellHouse();
+	pHouse->Sell();
 }
 
 void CCommandProcessor::ConChatPosition(IConsole::IResult* pResult, void* pUser)
