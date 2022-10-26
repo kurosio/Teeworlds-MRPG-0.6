@@ -90,14 +90,14 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		SetTarget(From);
 
 	// add (from player) to the list of those who caused damage
-	m_aListDmgPlayers[From] = true;
+	m_aListDmgPlayers.push_back(From);
 
 	// verify death
 	if(m_Health <= 0)
 	{
 		if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
 		{
-			for(const auto& [ClientID, Value] : m_aListDmgPlayers)
+			for(const auto& ClientID : m_aListDmgPlayers)
 			{
 				CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
 				if(!pPlayer || !GS()->IsPlayerEqualWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
@@ -420,7 +420,7 @@ void CCharacterBotAI::EngineMobs()
 	const int MobID = m_pBotPlayer->GetBotMobID();
 	if(MobBotInfo::ms_aMobBot[MobID].m_Boss)
 	{
-		for(const auto & [ClientID, Active] : m_aListDmgPlayers)
+		for(const auto & ClientID : m_aListDmgPlayers)
 		{
 			if(GS()->GetPlayer(ClientID, true))
 			{

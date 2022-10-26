@@ -1,9 +1,17 @@
 #ifndef ENGINE_SERVER_SQL_CONNECT_POOL_H
 #define ENGINE_SERVER_SQL_CONNECT_POOL_H
 
-#include <cppconn/driver.h>
-#include <cppconn/statement.h>
-#include <cppconn/resultset.h>
+#if __cplusplus >= 201703L
+	#define throw(...)
+	#include <cppconn/driver.h>
+	#include <cppconn/statement.h>
+	#include <cppconn/resultset.h>
+	#undef throw /* reset */
+#else
+	#include <cppconn/driver.h>
+	#include <cppconn/statement.h>
+	#include <cppconn/resultset.h>
+#endif
 
 #include <cstdarg>
 #include <thread>
