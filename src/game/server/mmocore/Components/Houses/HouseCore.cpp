@@ -356,7 +356,7 @@ bool CHouseCore::AddDecorationHouse(int DecoID, int HouseID, vec2 Position)
 	ResultPtr pRes2 = Sqlpool.Execute<DB::SELECT>("ID", "tw_houses_decorations", "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pRes2->next() ? pRes2->getInt("ID")+1 : 1;
 
-	Sqlpool.Execute<DB::INSERT>("tw_houses_decorations", "(ID, DecoID, HouseID, X, Y, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
+	Sqlpool.Execute<DB::INSERT>("tw_houses_decorations", "(ID, DecoID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
 		InitID, DecoID, HouseID, static_cast<int>(Position.x), static_cast<int>(Position.y), GS()->GetWorldID());
 
 	m_aDecorationHouse[InitID] = new CDecorationHouses(&GS()->m_World, Position, HouseID, DecoID);
