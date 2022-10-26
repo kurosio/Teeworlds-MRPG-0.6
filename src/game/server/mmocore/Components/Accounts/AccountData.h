@@ -6,10 +6,8 @@
 #include <game/server/mmocore/Components/Auction/AuctionData.h>
 #include <game/server/mmocore/Utils/FieldData.h>
 
-// TODO: reconstruct
-class CAccountData
+struct CAccountData
 {
-public:
 	// main
 	char m_aLogin[64]{};
 	char m_aLastLogin[64]{};
@@ -20,9 +18,6 @@ public:
 	int m_GuildID{};
 	int m_GuildRank{};
 	std::list< int > m_aHistoryWorld{};
-
-	class CHouseData* GetHouse() const;
-	bool HasHouse() const;
 
 	// upgrades
 	int m_Upgrade{};

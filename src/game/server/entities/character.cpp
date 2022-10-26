@@ -179,8 +179,8 @@ bool CCharacter::DecoInteractive()
 
 		if (InteractiveType == DECORATIONS_HOUSE)
 		{
-			CHouseData* pHouse = m_pPlayer->Acc().GetHouse();
-			if (pHouse && pHouse->AddDecoration(DecoID, GetMousePos()))
+			const int HouseID = GS()->Mmo()->House()->PlayerHouseID(m_pPlayer);
+			if (GS()->Mmo()->House()->AddDecorationHouse(DecoID, HouseID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);

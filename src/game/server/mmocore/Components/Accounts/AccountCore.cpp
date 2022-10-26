@@ -12,8 +12,6 @@
 
 #include <base/hash_ctxt.h>
 
-#include "game/server/mmocore/Components/Houses/HouseCore.h"
-
 int CAccountCore::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 {
 	const auto pWorldIterator = std::find_if(pPlayer->Acc().m_aHistoryWorld.begin(), pPlayer->Acc().m_aHistoryWorld.end(), [=](int WorldID)
@@ -119,9 +117,6 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		pPlayer->Acc().m_Upgrade = pResAccount->getInt("Upgrade");
 		pPlayer->Acc().m_GuildRank = pResAccount->getInt("GuildRank");
 		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
-
-		pPlayer->Acc().SetHouse(CHouseCore::GetHouseByAccountID(UserID));
-
 		for (const auto& [ID, Att] : CAttributeDescription::Data())
 		{
 			if(Att.HasField())

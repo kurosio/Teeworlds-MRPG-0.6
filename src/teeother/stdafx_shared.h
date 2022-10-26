@@ -24,6 +24,5 @@
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
 #include <teeother/tl/nlohmann_json.h>
-#include <teeother/tl/veque.h>
 
 #endif //SERVER_STDAFX_H

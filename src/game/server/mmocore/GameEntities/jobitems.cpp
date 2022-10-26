@@ -53,8 +53,7 @@ void CJobItems::Work(int ClientID)
 		return;
 
 	// not allowed un owner house job
-	CHouseData* pHouse = GS()->Mmo()->House()->GetHouse(m_HouseID);
-	if(pHouse && !pHouse->HasOwner())
+	if(m_HouseID > 0 && !GS()->Mmo()->House()->IsHouseHasOwner(m_HouseID))
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "It is forbidden to pick plants without the owner!");
 		return;
