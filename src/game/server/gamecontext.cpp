@@ -1166,7 +1166,7 @@ void CGS::OnClientEnter(int ClientID)
 		Chat(-1, "{STR} entered and joined the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 
-		MmoController::AsyncClientEnterMsgInfo(this, ClientID);
+		MmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 
 		SendDayInfo(ClientID);
 		ShowVotesNewbieInformation(ClientID);

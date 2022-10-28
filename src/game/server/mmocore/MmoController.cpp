@@ -439,14 +439,16 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 }
 
-void MmoController::AsyncClientEnterMsgInfo(class CGS* pGS, int ClientID)
+void MmoController::AsyncClientEnterMsgInfo(std::string ClientName, int ClientID)
 {
-	CSqlString<MAX_NAME_LENGTH> PlayerName(pGS->Server()->ClientName(ClientID));
+	CSqlString<MAX_NAME_LENGTH> PlayerName(ClientName.c_str());
 
 	// create new thread
 	const auto AsyncEnterRes = Sqlpool.Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '%s'", PlayerName.cstr());
-	AsyncEnterRes->AtExecute([&pGS, PlayerName, ClientID](IServer*, ResultPtr pRes)
+	AsyncEnterRes->AtExecute([PlayerName, ClientID](IServer* pServer, ResultPtr pRes)
 	{
+		CGS* pGS = (CGS*)pServer->GameServerPlayer(ClientID);
+
 		// send information : CPlayer checked by Chat() : PlayerName and ClientID getter by copy. 
 		pGS->Chat(ClientID, "Welcome! A list of commands can be found using /cmdlist.");
 

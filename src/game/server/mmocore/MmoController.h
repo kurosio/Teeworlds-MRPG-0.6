@@ -77,7 +77,7 @@ public:
 	bool OnParsingVoteCommands(CPlayer *pPlayer, const char *CMD, int VoteID, int VoteID2, int Get, const char *GetText);
 	void ResetClientData(int ClientID);
 
-	static void AsyncClientEnterMsgInfo(class CGS* pGS, int ClientID);
+	static void AsyncClientEnterMsgInfo(std::string ClientName, int ClientID);
 	void ConAsyncLinesForTranslate();
 	//
 	void LoadLogicWorld() const;
