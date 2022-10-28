@@ -1705,11 +1705,14 @@ int CServer::Run()
 
 	str_format(aBuf, sizeof(aBuf), "server name is '%s'", g_Config.m_SvName);
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
+
+	if(!MultiWorlds()->GetSizeInitilized())
 	{
-		IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->m_pGameServer;
-		pGameServer->OnInit(i);
+		dbg_msg("server", "the worlds were not found or were not initialized");
+		return -1;
 	}
+	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
+		MultiWorlds()->GetWorld(i)->m_pGameServer->OnInit(i);
 
 	str_format(aBuf, sizeof(aBuf), "version %s", GameServer()->NetVersion());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
