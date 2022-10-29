@@ -13,9 +13,9 @@
 
 // ##############################################################
 // ################# GLOBAL STEP STRUCTURE ######################
-void CQuestStepDataInfo::UpdateBot(IServer* pServer)
+void CQuestStepDataInfo::UpdateBot()
 {
-	CGS* pGS = (CGS*)pServer->GameServer(m_Bot->m_WorldID);
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServer(m_Bot->m_WorldID);
 	if(!pGS)
 		return;
 
@@ -135,7 +135,7 @@ bool CPlayerQuestStepDataInfo::Finish(CPlayer* pPlayer, bool FinalStepTalking)
 	m_StepComplete = true;
 	DataBotInfo::ms_aDataBot[m_Bot->m_BotID].m_aVisibleActive[ClientID] = false;
 	CQuestData::ms_aPlayerQuests[ClientID][QuestID].SaveSteps();
-	UpdateBot(pGS->Server());
+	UpdateBot();
 
 	CQuestData::ms_aPlayerQuests[ClientID][QuestID].CheckaAvailableNewStep();
 	pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);

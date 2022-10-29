@@ -375,6 +375,15 @@ enum class AttributeType : int
 };
 
 // helpers
+class Instance
+{
+	friend class CServer;
+	inline static class IServer* m_pServer{};
+
+public:
+	static IServer* GetServer() { return m_pServer; }
+};
+
 class _StoreMultiworldIdentifiableStaticData
 {
 	inline static class IServer* m_pServer {};

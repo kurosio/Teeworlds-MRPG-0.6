@@ -35,7 +35,7 @@ void CQuestData::InitSteps()
 		pStep.second.m_MobProgress[1] = 0;
 		pStep.second.m_StepComplete = false;
 		pStep.second.m_ClientQuitting = false;
-		pStep.second.UpdateBot(m_pPlayer->GS()->Server());
+		pStep.second.UpdateBot();
 		pStep.second.CreateStepArrow(m_pPlayer);
 
 		JsonQuestData["steps"].push_back(
@@ -91,7 +91,7 @@ void CQuestData::LoadSteps()
 		m_StepsQuestBot[SubBotID].m_MobProgress[0] = pStep.value("mobprogress1", 0);
 		m_StepsQuestBot[SubBotID].m_MobProgress[1] = pStep.value("mobprogress2", 0);
 		m_StepsQuestBot[SubBotID].m_ClientQuitting = false;
-		m_StepsQuestBot[SubBotID].UpdateBot(m_pPlayer->GS()->Server());
+		m_StepsQuestBot[SubBotID].UpdateBot();
 		m_StepsQuestBot[SubBotID].CreateStepArrow(m_pPlayer);
 	}
 }
@@ -129,7 +129,7 @@ void CQuestData::ClearSteps()
 {
 	for(auto& pStepBot : m_StepsQuestBot)
 	{
-		pStepBot.second.UpdateBot(m_pPlayer->GS()->Server());
+		pStepBot.second.UpdateBot();
 		pStepBot.second.CreateStepArrow(m_pPlayer);
 	}
 	m_StepsQuestBot.clear();
@@ -208,7 +208,7 @@ void CQuestData::CheckaAvailableNewStep()
 		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot->m_HasAction)
 			FinalStep = false;
 
-		pStepBot.second.UpdateBot(pGS->Server());
+		pStepBot.second.UpdateBot();
 		pStepBot.second.CreateStepArrow(m_pPlayer);
 	}
 

@@ -755,12 +755,12 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY || pThis->IsClientChangesWorld(ClientID))
 	{
 		pThis->m_aClients[ClientID].m_Quitting = true;
+		pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
 
 		for(int i = 0; i < pThis->MultiWorlds()->GetSizeInitilized(); i++)
 		{
 			IGameServer* pGameServer = pThis->MultiWorlds()->GetWorld(i)->m_pGameServer;
 			pGameServer->OnClientDrop(ClientID, pReason);
-			pGameServer->ClearClientData(ClientID);
 		}
 
 		pThis->ExpireServerInfo();
@@ -823,8 +823,8 @@ void CServer::SendCapabilities(int ClientID)
 {
 	CMsgPacker Msg(NETMSG_CAPABILITIES, true);
 	Msg.AddInt(SERVERCAP_CURVERSION); // version
-	Msg.AddInt(SERVERCAPFLAG_DDNET | SERVERCAPFLAG_ANYPLAYERFLAG | SERVERCAPFLAG_PINGEX | SERVERCAPFLAG_SYNCWEAPONINPUT); // flags
-	SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	Msg.AddInt(SERVERCAPFLAG_ANYPLAYERFLAG | SERVERCAPFLAG_SYNCWEAPONINPUT); // flags
+	SendMsg(&Msg, MSGFLAG_VITAL, ClientID, -1, m_aClients[ClientID].m_WorldID);
 }
 
 void CServer::SendMap(int ClientID)
@@ -1688,6 +1688,8 @@ int CServer::Run()
 	m_PrintCBIndex = Console()->RegisterPrintCallback(g_Config.m_ConsoleOutputLevel, SendRconLineAuthed, this);
 	m_MapChunksPerRequest = g_Config.m_SvMapDownloadSpeed;
 	m_DataChunksPerRequest = g_Config.m_SvMapDownloadSpeed;
+
+	Instance::m_pServer = static_cast<IServer*>(this);
 
 	// loading maps to memory
 	char aBuf[256];

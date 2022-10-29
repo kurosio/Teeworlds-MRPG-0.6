@@ -39,7 +39,7 @@ void QuestCore::OnResetClient(int ClientID)
 		for(auto& pStepBot : qp.second.m_StepsQuestBot)
 		{
 			pStepBot.second.m_ClientQuitting = true;
-			pStepBot.second.UpdateBot(Server());
+			pStepBot.second.UpdateBot();
 		}
 	}
 
