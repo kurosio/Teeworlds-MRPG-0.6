@@ -167,7 +167,7 @@ void CPlayerBot::TryRespawn()
 	}
 
 	// create character
-	const int AllocMemoryCell = MAX_CLIENTS*GS()->GetWorldID()+m_ClientID;
+	const int AllocMemoryCell = m_ClientID + GS()->GetWorldID() * MAX_CLIENTS;
 	m_pCharacter = new(AllocMemoryCell) CCharacterBotAI(&GS()->m_World);
 	m_pCharacter->Spawn(this, SpawnPos);
 	GS()->CreatePlayerSpawn(SpawnPos, GetMaskVisibleForClients());

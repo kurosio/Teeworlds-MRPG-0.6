@@ -90,7 +90,8 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		SetTarget(From);
 
 	// add (from player) to the list of those who caused damage
-	m_aListDmgPlayers.push_back(From);
+	if(std::find_if(m_aListDmgPlayers.begin(), m_aListDmgPlayers.end(), [From](int ClientID){ return ClientID == From; }) == m_aListDmgPlayers.end())
+		m_aListDmgPlayers.push_back(From);
 
 	// verify death
 	if(m_Health <= 0)
@@ -523,7 +524,7 @@ void CCharacterBotAI::Move()
 			m_Input.m_Hook = 1;
 		else if(m_LatestInput.m_Hook == 0 && m_Core.m_HookState == HOOK_IDLE)
 		{
-			int NumDir = 32;
+			int NumDir = 45;
 			vec2 HookDir(0.0f, 0.0f);
 			float MaxForce = 0;
 
@@ -532,6 +533,9 @@ void CCharacterBotAI::Move()
 				float a = 2 * i * pi / NumDir;
 				vec2 dir = direction(a);
 				vec2 Pos = GetPos() + dir * GS()->Tuning()->m_HookLength;
+
+				if(GameWorld()->IntersectCharacter(GetPos(), Pos, 16.0f, IntersectPos, (CCharacter*)this))
+					continue;
 
 				if((GS()->Collision()->IntersectLine(GetPos(), Pos, &Pos, nullptr) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
 				{

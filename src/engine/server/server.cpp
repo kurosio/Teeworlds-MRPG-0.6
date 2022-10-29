@@ -736,7 +736,6 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
 	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
 	mem_zero(&pThis->m_aClients[ClientID].m_Addr, sizeof(NETADDR));
-
 	pThis->m_aClients[ClientID].Reset();
 	return 0;
 }
@@ -761,9 +760,9 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 		{
 			IGameServer* pGameServer = pThis->MultiWorlds()->GetWorld(i)->m_pGameServer;
 			pGameServer->OnClientDrop(ClientID, pReason);
+			pGameServer->ClearClientData(ClientID);
 		}
 
-		pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
 		pThis->ExpireServerInfo();
 	}
 
@@ -818,6 +817,14 @@ void CServer::SendMapData(int ClientID, int Chunk)
 		str_format(aBuf, sizeof(aBuf), "sending chunk %d with size %d", Chunk, ChunkSize);
 		Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
 	}
+}
+
+void CServer::SendCapabilities(int ClientID)
+{
+	CMsgPacker Msg(NETMSG_CAPABILITIES, true);
+	Msg.AddInt(SERVERCAP_CURVERSION); // version
+	Msg.AddInt(SERVERCAPFLAG_DDNET | SERVERCAPFLAG_ANYPLAYERFLAG | SERVERCAPFLAG_PINGEX | SERVERCAPFLAG_SYNCWEAPONINPUT); // flags
+	SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
 void CServer::SendMap(int ClientID)
@@ -979,6 +986,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				m_aClients[ClientID].m_Version = Unpacker.GetInt();
 				m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 				GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
+				SendCapabilities(ClientID);
 				SendMap(ClientID);
 			}
 		}
@@ -1029,6 +1037,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				
 				m_aClients[ClientID].m_State = CClient::STATE_READY;
 				SendConnectionReady(ClientID);
+				SendCapabilities(ClientID);
 				ExpireServerInfo();
 			}
 		}
@@ -1063,37 +1072,37 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			int Size = Unpacker.GetInt();
 
 			// check for errors
-			if (Unpacker.Error() || Size / 4 > MAX_INPUT_SIZE)
+			if(Unpacker.Error() || Size / 4 > MAX_INPUT_SIZE)
 				return;
 
-			if (m_aClients[ClientID].m_LastAckedSnapshot > 0)
+			if(m_aClients[ClientID].m_LastAckedSnapshot > 0)
 				m_aClients[ClientID].m_SnapRate = CClient::SNAPRATE_FULL;
 
-			if (m_aClients[ClientID].m_Snapshots.Get(m_aClients[ClientID].m_LastAckedSnapshot, &TagTime, 0, 0) >= 0)
+			if(m_aClients[ClientID].m_Snapshots.Get(m_aClients[ClientID].m_LastAckedSnapshot, &TagTime, 0, 0) >= 0)
 				m_aClients[ClientID].m_Latency = (int)(((time_get() - TagTime) * 1000) / time_freq());
 
 			// add message to report the input timing
 			// skip packets that are old
-			if (IntendedTick > m_aClients[ClientID].m_LastInputTick)
+			if(IntendedTick > m_aClients[ClientID].m_LastInputTick)
 			{
 				int TimeLeft = ((TickStartTime(IntendedTick) - time_get()) * 1000) / time_freq();
 
-				CMsgPacker Msg(NETMSG_INPUTTIMING, true);
-				Msg.AddInt(IntendedTick);
-				Msg.AddInt(TimeLeft);
-				SendMsg(&Msg, 0, ClientID, -1, m_aClients[ClientID].m_WorldID);
+				CMsgPacker Msgp(NETMSG_INPUTTIMING, true);
+				Msgp.AddInt(IntendedTick);
+				Msgp.AddInt(TimeLeft);
+				SendMsg(&Msgp, 0, ClientID, -1, m_aClients[ClientID].m_WorldID);
 			}
 
 			m_aClients[ClientID].m_LastInputTick = IntendedTick;
 
 			pInput = &m_aClients[ClientID].m_aInputs[m_aClients[ClientID].m_CurrentInput];
 
-			if (IntendedTick <= Tick())
+			if(IntendedTick <= Tick())
 				IntendedTick = Tick() + 1;
 
 			pInput->m_GameTick = IntendedTick;
 
-			for (int i = 0; i < Size / 4; i++)
+			for(int i = 0; i < Size / 4; i++)
 				pInput->m_aData[i] = Unpacker.GetInt();
 
 			mem_copy(m_aClients[ClientID].m_LatestInput.m_aData, pInput->m_aData, MAX_INPUT_SIZE * sizeof(int));
@@ -1203,6 +1212,17 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		{
 			CMsgPacker Msg(NETMSG_PING_REPLY, true);
 			SendMsg(&Msg, 0, ClientID, -1, m_aClients[ClientID].m_WorldID);
+		}
+		else if(MsgID == NETMSG_PINGEX)
+		{
+			CUuid* pID = (CUuid*)Unpacker.GetRaw(sizeof(*pID));
+			if(Unpacker.Error())
+			{
+				return;
+			}
+			CMsgPacker Msgp(NETMSG_PONGEX, true);
+			Msgp.AddRaw(pID, sizeof(*pID));
+			SendMsg(&Msgp, MSGFLAG_FLUSH, ClientID, m_aClients[ClientID].m_WorldID);
 		}
 		else
 		{
@@ -1747,7 +1767,7 @@ int CServer::Run()
 			while(t > TickStartTime(m_CurrentGameTick+1))
 			{
 				NewTicks = true;
-				
+
 				m_CurrentGameTick++;
 				if((m_CurrentGameTick % 2) == 0)
 					ShouldSnap = true;

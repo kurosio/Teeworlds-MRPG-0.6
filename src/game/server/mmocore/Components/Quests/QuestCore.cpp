@@ -39,9 +39,10 @@ void QuestCore::OnResetClient(int ClientID)
 		for(auto& pStepBot : qp.second.m_StepsQuestBot)
 		{
 			pStepBot.second.m_ClientQuitting = true;
-			pStepBot.second.UpdateBot(GS());
+			pStepBot.second.UpdateBot(Server());
 		}
 	}
+
 	CQuestData::ms_aPlayerQuests.erase(ClientID);
 }
 

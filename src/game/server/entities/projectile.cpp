@@ -61,6 +61,7 @@ void CProjectile::Tick()
 	const float Ct = (Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed();
 	const vec2 PrevPos = GetPos(Pt);
 	vec2 CurPos = GetPos(Ct);
+
 	if (!GS()->m_apPlayers[m_Owner] || !GS()->m_apPlayers[m_Owner]->GetCharacter())
 	{
 		if (m_Explosive)
@@ -95,20 +96,74 @@ void CProjectile::TickPaused()
 	++m_StartTick;
 }
 
+void CProjectile::FillInfo(CNetObj_Projectile* pProj)
+{
+	pProj->m_X = (int)m_Pos.x;
+	pProj->m_Y = (int)m_Pos.y;
+	pProj->m_VelX = (int)(m_Direction.x * 100.0f);
+	pProj->m_VelY = (int)(m_Direction.y * 100.0f);
+	pProj->m_StartTick = m_StartTick;
+	pProj->m_Type = m_Type;
+}
+
 void CProjectile::Snap(int SnappingClient)
 {
 	const float Ct = (Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed();
 	if (NetworkClipped(SnappingClient, GetPos(Ct)))
 		return;
 
-	CNetObj_Projectile* pProj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
-	if (pProj)
+	int SnappingClientVersion = GS()->GetClientVersion(SnappingClient);
+	CNetObj_DDNetProjectile DDNetProjectile;
+	if(SnappingClientVersion >= VERSION_DDNET_ANTIPING_PROJECTILE && FillExtraInfo(&DDNetProjectile))
 	{
-		pProj->m_X = (int)m_Pos.x;
-		pProj->m_Y = (int)m_Pos.y;
-		pProj->m_VelX = (int)(m_Direction.x * 100.0f);
-		pProj->m_VelY = (int)(m_Direction.y * 100.0f);
-		pProj->m_StartTick = m_StartTick;
-		pProj->m_Type = m_Type;
+		int Type = SnappingClientVersion < VERSION_DDNET_MSG_LEGACY ? (int)NETOBJTYPE_PROJECTILE : NETOBJTYPE_DDNETPROJECTILE;
+		void* pProj = Server()->SnapNewItem(Type, GetID(), sizeof(DDNetProjectile));
+		if(!pProj)
+		{
+			return;
+		}
+		mem_copy(pProj, &DDNetProjectile, sizeof(DDNetProjectile));
 	}
+	else
+	{
+		CNetObj_Projectile* pProj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
+		if(!pProj)
+		{
+			return;
+		}
+		FillInfo(pProj);
+	}
+}
+
+bool CProjectile::FillExtraInfo(CNetObj_DDNetProjectile* pProj)
+{
+	const int MaxPos = 0x7fffffff / 100;
+	if(abs((int)m_Pos.y) + 1 >= MaxPos || abs((int)m_Pos.x) + 1 >= MaxPos)
+	{
+		//If the modified data would be too large to fit in an integer, send normal data instead
+		return false;
+	}
+	//Send additional/modified info, by modifying the fields of the netobj
+	float Angle = -atan2f(m_Direction.x, m_Direction.y);
+
+	int Data = 0;
+	Data |= (abs(m_Owner) & 255) << 0;
+	if(m_Owner < 0)
+		Data |= PROJECTILEFLAG_NO_OWNER;
+	//This bit tells the client to use the extra info
+	Data |= PROJECTILEFLAG_IS_DDNET;
+	// PROJECTILEFLAG_BOUNCE_HORIZONTAL, PROJECTILEFLAG_BOUNCE_VERTICAL
+	//Data |= (0 & 3) << 10;
+	if(m_Explosive)
+		Data |= PROJECTILEFLAG_EXPLOSIVE;
+	//if(m_Freeze)
+	//	Data |= PROJECTILEFLAG_FREEZE;
+
+	pProj->m_X = (int)(m_Pos.x * 100.0f);
+	pProj->m_Y = (int)(m_Pos.y * 100.0f);
+	pProj->m_Angle = (int)(Angle * 1000000.0f);
+	pProj->m_Data = Data;
+	pProj->m_StartTick = m_StartTick;
+	pProj->m_Type = m_Type;
+	return true;
 }

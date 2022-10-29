@@ -15,7 +15,7 @@ class CQuestStepDataInfo
 public:
 	QuestBotInfo* m_Bot;
 
-	void UpdateBot(CGS* pGS);
+	void UpdateBot(class IServer* pServer);
 	bool IsActiveStep(CGS* pGS) const;
 };
 

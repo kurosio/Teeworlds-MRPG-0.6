@@ -13,19 +13,21 @@
 
 // ##############################################################
 // ################# GLOBAL STEP STRUCTURE ######################
-void CQuestStepDataInfo::UpdateBot(CGS* pGS)
+void CQuestStepDataInfo::UpdateBot(IServer* pServer)
 {
-	CGS* pBotGS = (CGS*)pGS->Server()->GameServer(m_Bot->m_WorldID);
-	if(!pBotGS)
+	CGS* pGS = (CGS*)pServer->GameServer(m_Bot->m_WorldID);
+	if(!pGS)
 		return;
 
 	// check it's if there's a active bot
 	int BotClientID = -1;
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		if(!pBotGS->m_apPlayers[i] || pBotGS->m_apPlayers[i]->GetBotType() != TYPE_BOT_QUEST || pBotGS->m_apPlayers[i]->GetBotMobID() != m_Bot->m_SubBotID)
+		if(!pGS->m_apPlayers[i] || pGS->m_apPlayers[i]->GetBotType() != TYPE_BOT_QUEST || pGS->m_apPlayers[i]->GetBotMobID() != m_Bot->m_SubBotID)
 			continue;
+
 		BotClientID = i;
+		break;
 	}
 
 	// seek if all players have an active bot
@@ -33,14 +35,14 @@ void CQuestStepDataInfo::UpdateBot(CGS* pGS)
 	if(ActiveStepBot && BotClientID <= -1)
 	{
 		//dbg_msg("quest sync", "quest to step bot active, but mob not found create");
-		pBotGS->CreateBot(TYPE_BOT_QUEST, m_Bot->m_BotID, m_Bot->m_SubBotID);
+		pGS->CreateBot(TYPE_BOT_QUEST, m_Bot->m_BotID, m_Bot->m_SubBotID);
 	}
 	// if the bot is not active for more than one player
 	if(!ActiveStepBot && BotClientID >= MAX_PLAYERS)
 	{
 		//dbg_msg("quest sync", "mob found, but quest to step not active on players");
-		delete pBotGS->m_apPlayers[BotClientID];
-		pBotGS->m_apPlayers[BotClientID] = nullptr;
+		delete pGS->m_apPlayers[BotClientID];
+		pGS->m_apPlayers[BotClientID] = nullptr;
 	}
 }
 
@@ -133,7 +135,7 @@ bool CPlayerQuestStepDataInfo::Finish(CPlayer* pPlayer, bool FinalStepTalking)
 	m_StepComplete = true;
 	DataBotInfo::ms_aDataBot[m_Bot->m_BotID].m_aVisibleActive[ClientID] = false;
 	CQuestData::ms_aPlayerQuests[ClientID][QuestID].SaveSteps();
-	UpdateBot(pGS);
+	UpdateBot(pGS->Server());
 
 	CQuestData::ms_aPlayerQuests[ClientID][QuestID].CheckaAvailableNewStep();
 	pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);

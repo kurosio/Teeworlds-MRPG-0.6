@@ -510,14 +510,13 @@ void CCharacter::Tick()
 	}
 
 	// safe change world data from tick
-	int Index;
+	int Index = TILE_AIR;
 	HandleTilesets(&Index);
 	if(GetHelper()->TileEnter(Index, TILE_WORLD_SWAP))
 	{
 		GS()->Mmo()->WorldSwap()->ChangeWorld(m_pPlayer, m_Core.m_Pos);
 		return;
 	}
-	if(GetHelper()->TileExit(Index, TILE_WORLD_SWAP)) {}
 
 	HandleTuning();
 	m_Core.m_Input = m_Input;

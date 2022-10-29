@@ -26,7 +26,9 @@ public:
 	void Reset() override;
 	void Tick() override;
 	virtual void TickPaused();
+	void FillInfo(CNetObj_Projectile* pProj);
 	void Snap(int SnappingClient) override;
+	bool FillExtraInfo(CNetObj_DDNetProjectile* pProj);
 };
 
 #endif
