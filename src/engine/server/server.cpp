@@ -713,6 +713,43 @@ void CServer::DoSnapshot(int WorldID)
 }
 
 
+int CServer::ClientRejoinCallback(int ClientID, void* pUser)
+{
+	CServer* pThis = (CServer*)pUser;
+
+	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
+	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
+	pThis->m_aClients[ClientID].m_DDNetVersion = VERSION_NONE;
+	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
+	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
+
+	pThis->m_aClients[ClientID].Reset();
+	pThis->SendMap(ClientID);
+	return 0;
+}
+
+int CServer::NewClientNoAuthCallback(int ClientID, void* pUser)
+{
+	CServer* pThis = (CServer*)pUser;
+
+	pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
+	pThis->m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
+	pThis->m_aClients[ClientID].m_aName[0] = 0;
+	pThis->m_aClients[ClientID].m_aClan[0] = 0;
+	pThis->m_aClients[ClientID].m_Country = -1;
+	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
+	pThis->m_aClients[ClientID].m_AuthTries = 0;
+	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
+	pThis->m_aClients[ClientID].m_DDNetVersion = VERSION_NONE;
+	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
+	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
+	pThis->m_aClients[ClientID].Reset();
+
+	pThis->SendCapabilities(ClientID);
+	pThis->SendMap(ClientID);
+	return 0;
+}
+
 int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 {
 	// THREAD_PLAYER_DATA_SAFE(ClientID)
@@ -1265,7 +1302,7 @@ void CServer::PumpNetwork()
 	m_NetServer.Update();
 
 	// process packets
-	while (m_NetServer.Recv(&Packet, &ResponseToken))
+	while(m_NetServer.Recv(&Packet, &ResponseToken))
 	{
 		if (Packet.m_ClientID == -1)
 		{
@@ -1722,7 +1759,7 @@ int CServer::Run()
 		dbg_msg("server", "couldn't open socket. port %d might already be in use", g_Config.m_SvPort);
 		return -1;
 	}
-	m_NetServer.SetCallbacks(NewClientCallback, DelClientCallback, this);
+	m_NetServer.SetCallbacks(NewClientCallback, NewClientNoAuthCallback, ClientRejoinCallback, DelClientCallback, this);
 	m_Econ.Init(Console(), m_pServerBan);
 
 	str_format(aBuf, sizeof(aBuf), "server name is '%s'", g_Config.m_SvName);
