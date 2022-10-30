@@ -36,7 +36,7 @@ void CQuestData::InitSteps()
 		pStep.second.m_StepComplete = false;
 		pStep.second.m_ClientQuitting = false;
 		pStep.second.UpdateBot();
-		pStep.second.CreateStepArrow(m_pPlayer);
+		pStep.second.CreateStepArrow(m_pPlayer->GetCID());
 
 		JsonQuestData["steps"].push_back(
 		{
@@ -92,7 +92,7 @@ void CQuestData::LoadSteps()
 		m_StepsQuestBot[SubBotID].m_MobProgress[1] = pStep.value("mobprogress2", 0);
 		m_StepsQuestBot[SubBotID].m_ClientQuitting = false;
 		m_StepsQuestBot[SubBotID].UpdateBot();
-		m_StepsQuestBot[SubBotID].CreateStepArrow(m_pPlayer);
+		m_StepsQuestBot[SubBotID].CreateStepArrow(m_pPlayer->GetCID());
 	}
 }
 
@@ -130,7 +130,7 @@ void CQuestData::ClearSteps()
 	for(auto& pStepBot : m_StepsQuestBot)
 	{
 		pStepBot.second.UpdateBot();
-		pStepBot.second.CreateStepArrow(m_pPlayer);
+		pStepBot.second.CreateStepArrow(m_pPlayer->GetCID());
 	}
 	m_StepsQuestBot.clear();
 	fs_remove(GetJsonFileName().c_str());
@@ -192,7 +192,10 @@ void CQuestData::CheckaAvailableNewStep()
 {
 	// check whether the active steps is complete
 	auto pActiveStep = std::find_if(m_StepsQuestBot.begin(), m_StepsQuestBot.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &pItem)
-	{ return (pItem.second.m_Bot->m_Step == m_Step && !pItem.second.m_StepComplete && pItem.second.m_Bot->m_HasAction); });
+	{
+		return (pItem.second.m_Bot->m_Step == m_Step && !pItem.second.m_StepComplete && pItem.second.m_Bot->m_HasAction);
+	});
+
 	if(pActiveStep != m_StepsQuestBot.end())
 		return;
 
@@ -202,20 +205,21 @@ void CQuestData::CheckaAvailableNewStep()
 
 	// check if all steps have been completed
 	bool FinalStep = true;
-	CGS* pGS = m_pPlayer->GS();
 	for(auto& pStepBot : m_StepsQuestBot)
 	{
 		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot->m_HasAction)
 			FinalStep = false;
 
 		pStepBot.second.UpdateBot();
-		pStepBot.second.CreateStepArrow(m_pPlayer);
+		pStepBot.second.CreateStepArrow(m_pPlayer->GetCID());
 	}
 
 	// finish the quest or update the step
 	if(FinalStep)
 	{
 		Finish();
+
+		CGS* pGS = m_pPlayer->GS();
 		const int ClientID = m_pPlayer->GetCID();
 		pGS->StrongUpdateVotes(ClientID, MenuList::MENU_JOURNAL_MAIN);
 		pGS->StrongUpdateVotes(ClientID, MenuList::MENU_MAIN);

@@ -290,7 +290,7 @@ void QuestCore::UpdateArrowStep(CPlayer *pPlayer)
 			continue;
 
 		for(auto& pStepBot : pPlayerQuest.second.m_StepsQuestBot)
-			pStepBot.second.CreateStepArrow(pPlayer);
+			pStepBot.second.CreateStepArrow(ClientID);
 	}
 }
 

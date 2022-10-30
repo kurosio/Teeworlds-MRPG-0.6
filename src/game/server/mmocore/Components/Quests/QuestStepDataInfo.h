@@ -35,7 +35,7 @@ public:
 	void DoCollectItem(CPlayer* pPlayer);
 
 	void AddMobProgress(CPlayer* pPlayer, int BotID);
-	void CreateStepArrow(CPlayer* pPlayer);
+	void CreateStepArrow(int ClientID);
 	void CreateStepDropTakeItems(CPlayer* pPlayer);
 	void ShowRequired(CPlayer* pPlayer, const char* pBuffer);
 };

@@ -205,17 +205,16 @@ void CPlayerQuestStepDataInfo::AddMobProgress(CPlayer* pPlayer, int BotID)
 	}
 }
 
-void CPlayerQuestStepDataInfo::CreateStepArrow(CPlayer* pPlayer)
+void CPlayerQuestStepDataInfo::CreateStepArrow(int ClientID)
 {
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+
 	if(!pPlayer || !pPlayer->GetCharacter() || m_StepComplete || !m_Bot->m_HasAction)
 		return;
 
 	if(pPlayer->GetQuest(m_Bot->m_QuestID).GetState() == QUEST_ACCEPT && pPlayer->GetQuest(m_Bot->m_QuestID).m_Step == m_Bot->m_Step)
-	{
-		CGS* pGS = pPlayer->GS();
-		const int ClientID = pPlayer->GetCID();
 		new CQuestPathFinder(&pGS->m_World, pPlayer->GetCharacter()->m_Core.m_Pos, ClientID, *m_Bot);
-	}
 }
 
 void CPlayerQuestStepDataInfo::CreateStepDropTakeItems(CPlayer* pPlayer)
