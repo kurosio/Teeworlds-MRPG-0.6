@@ -260,7 +260,7 @@ void CBotCore::SendChatDialog(bool PlayerTalked, int BotType, int MobID, int Cli
 
 void FormatDialog(char* aBuffer, int Size, const char* pTitle, std::pair < int, int > Page, const char* pTalked, const char* pDialogText)
 {
-	str_format(aBuffer, Size, "F4 - next dialog\n---------\n\n%s%s( %d of %d ) %s:\n- %s", pTitle, (pTitle[0] != '\0' ? "\n========= \n\n" : ""), Page.first, Page.second, pTalked, pDialogText);
+	str_format(aBuffer, Size, "F4 (vote no) - next dialog\n---------\n\n%s%s( %d of %d ) %s:\n- %s", pTitle, (pTitle[0] != '\0' ? "\n========= \n\n" : ""), Page.first, Page.second, pTalked, pDialogText);
 }
 
 void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const char *pText)

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Ноя 05 2022 г., 11:13
+-- Время создания: Ноя 05 2022 г., 12:55
 -- Версия сервера: 10.4.24-MariaDB
 -- Версия PHP: 8.1.5
 
@@ -156,11 +156,11 @@ CREATE TABLE `enum_worlds` (
 --
 
 INSERT INTO `enum_worlds` (`WorldID`, `Name`, `RespawnWorld`) VALUES
-(0, 'Port Skandia', NULL),
-(1, 'Logging Site', 1),
-(2, 'Test zone', 2),
-(3, 'Abandoned mine', 2),
-(4, 'Elfia home room', 2),
+(0, 'Start', NULL),
+(1, 'Port Skandia', 1),
+(2, 'Logging Site', 2),
+(3, 'Test zone', 2),
+(4, 'Abandoned mine', 2),
 (5, 'Elfinia occupation of goblins', 5),
 (6, 'Elfinia Abandoned mine', NULL),
 (7, 'Diana home room', 2),
@@ -187,6 +187,14 @@ CREATE TABLE `tw_accounts` (
   `Language` varchar(8) NOT NULL DEFAULT 'en'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Дамп данных таблицы `tw_accounts`
+--
+
+INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `RegisterDate`, `LoginDate`, `RegisteredIP`, `LoginIP`, `Language`) VALUES
+(1, 'kuro', 'f4e129eafad40d03dc551fa09beb2e2a8881cabebfff2eae00b786d77be2c85c', 'mUKXMbg9co4eXRRjXdjd5B6U', '2022-11-05 10:19:27', '2022-11-05 17:35:33', '192.168.0.13', '192.168.0.13', 'ru'),
+(2, 'kuro', '4ecd52e2b1e130dc995ec9612bc747a1bed5ef238b28124d12d39a874cef73fd', 'Zn6HtbXfV7eXteU2ZGm9m6Aa', '2022-11-05 11:46:29', '2022-11-05 18:53:26', '192.168.0.13', '192.168.0.13', 'en');
+
 -- --------------------------------------------------------
 
 --
@@ -198,6 +206,18 @@ CREATE TABLE `tw_accounts_aethers` (
   `UserID` int(11) NOT NULL,
   `AetherID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+--
+-- Дамп данных таблицы `tw_accounts_aethers`
+--
+
+INSERT INTO `tw_accounts_aethers` (`ID`, `UserID`, `AetherID`) VALUES
+(1, 1, 2),
+(2, 1, 5),
+(3, 1, 4),
+(4, 1, 3),
+(5, 1, 1),
+(6, 2, 2);
 
 -- --------------------------------------------------------
 
@@ -233,6 +253,14 @@ CREATE TABLE `tw_accounts_data` (
   `Extraction` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Дамп данных таблицы `tw_accounts_data`
+--
+
+INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `Exp`, `GuildID`, `GuildDeposit`, `GuildRank`, `Upgrade`, `SpreadShotgun`, `SpreadGrenade`, `SpreadRifle`, `Dexterity`, `CriticalHit`, `DirectCriticalHit`, `Hardness`, `Tenacity`, `Lucky`, `Piety`, `Vampirism`, `AmmoRegen`, `Ammo`, `Efficiency`, `Extraction`) VALUES
+(1, '#tildg66', 'null', NULL, 6, 546, NULL, 0, NULL, 50, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(2, 'Kurosio', 'null', NULL, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
 -- --------------------------------------------------------
 
 --
@@ -245,6 +273,14 @@ CREATE TABLE `tw_accounts_farming` (
   `Exp` int(11) NOT NULL DEFAULT 0,
   `Upgrade` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+
+--
+-- Дамп данных таблицы `tw_accounts_farming`
+--
+
+INSERT INTO `tw_accounts_farming` (`UserID`, `Level`, `Exp`, `Upgrade`) VALUES
+(1, 1, 6, 0),
+(2, 1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -261,6 +297,31 @@ CREATE TABLE `tw_accounts_items` (
   `Durability` int(11) NOT NULL DEFAULT 100,
   `UserID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
+
+--
+-- Дамп данных таблицы `tw_accounts_items`
+--
+
+INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`, `Durability`, `UserID`) VALUES
+(1, 2, 1, 1, 0, 100, 1),
+(2, 22, 1, 1, 0, 100, 1),
+(3, 25, 1, 0, 0, 100, 1),
+(4, 34, 1, 1, 0, 100, 1),
+(5, 1, 763, 0, 0, 100, 1),
+(8, 38, 1, 1, 0, 100, 1),
+(11, 40, 2, 0, 0, 100, 1),
+(12, 9, 12, 0, 0, 100, 1),
+(14, 21, 1, 0, 0, 100, 1),
+(15, 23, 1, 0, 0, 100, 1),
+(16, 8, 1, 0, 0, 100, 1),
+(17, 4, 1, 1, 0, 100, 1),
+(18, 26, 1, 1, 0, 86, 1),
+(19, 33, 9, 0, 0, 100, 1),
+(20, 2, 1, 1, 0, 100, 2),
+(21, 22, 1, 1, 0, 100, 2),
+(22, 25, 1, 0, 0, 100, 2),
+(23, 34, 1, 1, 0, 100, 2),
+(24, 1, 30, 0, 0, 100, 2);
 
 -- --------------------------------------------------------
 
@@ -293,6 +354,14 @@ CREATE TABLE `tw_accounts_mining` (
   `Upgrade` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
 
+--
+-- Дамп данных таблицы `tw_accounts_mining`
+--
+
+INSERT INTO `tw_accounts_mining` (`UserID`, `Level`, `Exp`, `Upgrade`) VALUES
+(1, 1, 0, 0),
+(2, 1, 0, 0);
+
 -- --------------------------------------------------------
 
 --
@@ -305,6 +374,24 @@ CREATE TABLE `tw_accounts_quests` (
   `UserID` int(11) NOT NULL,
   `Type` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_accounts_quests`
+--
+
+INSERT INTO `tw_accounts_quests` (`ID`, `QuestID`, `UserID`, `Type`) VALUES
+(1, 1, 1, 2),
+(2, 2, 1, 2),
+(3, 3, 1, 2),
+(4, 4, 1, 2),
+(5, 5, 1, 2),
+(6, 6, 1, 2),
+(7, 7, 1, 2),
+(8, 8, 1, 2),
+(9, 9, 1, 2),
+(10, 10, 1, 1),
+(11, 1, 2, 2),
+(12, 2, 2, 1);
 
 -- --------------------------------------------------------
 
@@ -339,11 +426,11 @@ CREATE TABLE `tw_aethers` (
 --
 
 INSERT INTO `tw_aethers` (`ID`, `Name`, `WorldID`, `TeleX`, `TeleY`) VALUES
-(1, 'Logging Site', 1, 5857, 1041),
-(2, 'Center', 0, 8003, 7089),
-(3, 'East', 0, 3194, 7441),
-(4, 'Craftsman', 0, 9412, 8465),
-(5, 'West', 0, 12385, 6833);
+(1, 'Logging Site', 2, 5857, 1041),
+(2, 'Center', 1, 8003, 7089),
+(3, 'East', 1, 3194, 7441),
+(4, 'Craftsman', 1, 9412, 8465),
+(5, 'West', 1, 12385, 6833);
 
 -- --------------------------------------------------------
 
@@ -490,14 +577,14 @@ CREATE TABLE `tw_bots_mobs` (
 --
 
 INSERT INTO `tw_bots_mobs` (`ID`, `BotID`, `WorldID`, `PositionX`, `PositionY`, `Effect`, `Behavior`, `HookDissabled`, `Level`, `Power`, `Spread`, `Number`, `Respawn`, `Boss`, `it_drop_0`, `it_drop_1`, `it_drop_2`, `it_drop_3`, `it_drop_4`, `it_drop_count`, `it_drop_chance`) VALUES
-(1, 20, 1, 1216, 704, NULL, 'Sleepy', 0, 3, 3, 0, 7, 1, 0, 40, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|5|0|0|0|0|'),
-(3, 24, 1, 2610, 832, NULL, 'Sleepy', 1, 4, 3, 0, 7, 1, 0, 32, 40, NULL, NULL, NULL, '|2|1|0|0|0|', '|6|5|0|0|0|'),
-(4, 27, 2, 9512, 1915, 'Fire', 'Standard', 0, 7, 10, 1, 12, 3, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(5, 28, 3, 2982, 2494, 'Fire', 'Standard', 0, 10, 50, 2, 10, 1, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(6, 29, 3, 4840, 2560, 'Fire', 'Standard', 0, 12, 60, 2, 8, 1, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(7, 30, 3, 1150, 3700, 'Fire', 'Standard', 0, 12, 70, 1, 10, 1, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(8, 32, 3, 1440, 5100, 'Fire', 'Standard', 0, 10, 80, 2, 8, 1, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(9, 31, 3, 3960, 4595, 'Fire', 'Standard', 0, 15, 800, 3, 1, 1, 1, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|');
+(1, 20, 2, 1216, 704, NULL, 'Sleepy', 0, 3, 3, 0, 7, 1, 0, 40, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|5|0|0|0|0|'),
+(3, 24, 2, 2610, 832, NULL, 'Sleepy', 1, 4, 3, 0, 7, 1, 0, 32, 40, NULL, NULL, NULL, '|2|1|0|0|0|', '|6|5|0|0|0|'),
+(4, 27, 3, 9512, 1915, 'Fire', 'Standard', 0, 7, 10, 1, 12, 3, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
+(5, 28, 4, 2982, 2494, 'Fire', 'Standard', 0, 10, 50, 2, 10, 1, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
+(6, 29, 4, 4840, 2560, 'Fire', 'Standard', 0, 12, 60, 2, 8, 1, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
+(7, 30, 4, 1150, 3700, 'Fire', 'Standard', 0, 12, 70, 1, 10, 1, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
+(8, 32, 4, 1440, 5100, 'Fire', 'Standard', 0, 10, 80, 2, 8, 1, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
+(9, 31, 4, 3960, 4595, 'Fire', 'Standard', 0, 15, 800, 3, 1, 1, 1, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|');
 
 -- --------------------------------------------------------
 
@@ -524,15 +611,15 @@ CREATE TABLE `tw_bots_npc` (
 --
 
 INSERT INTO `tw_bots_npc` (`ID`, `BotID`, `PosX`, `PosY`, `GiveQuestID`, `DialogData`, `Function`, `Static`, `Emote`, `Number`, `WorldID`) VALUES
-(1, 7, 6472, 7569, NULL, '[{\"text\":\"Someone once told me friendship is magic. That\'s ridiculous. You can\'t turn people into frogs with friendship{OR}Hey..what\'s <bot_9> up to? Have you...have you talked to her, by chance?{OR}\",\"emote\":\"normal\"}\n]', -1, 0, '', 1, 0),
-(2, 8, 9973, 8561, NULL, '[{\"text\":\"This is a big upgrade from wiping that table all day.{OR}A lot of tenacity and a little bit of luck can go a long way...{OR}<bot_9> seems nice. I should bring her back with me.{OR}\",\"emote\":\"happy\"}\n]', -1, 0, 'Happy', 1, 0),
-(3, 9, 2791, 7345, NULL, '[{ \"text\": \"I think you look better this way.{OR}Quit being such a baby! I’ve seen worse.{OR}I keep asking for wine, but all <bot_7> gives me are mugs of ale.\"}]', 0, 0, 'Happy', 1, 0),
-(4, 11, 3415, 7505, 1, '[{\"text\":\"[p]The nightmare fatigues you greatly, your thoughts fractured and sluggish. You\'re relieved that the terrible dream was only just that, but you regret not being able to see it to its end.\"},{\"text\":\"[p]The people in your dream seem powerful and important, not at all like the people you know at the small fishing village. How did the dream end? You long to find out...\"},{\"text\":\"<player>, are you zoning out? I thought you said you were supposed to deliver some goods to <bot_10>. You\'re an official garrison member; I shouldn\'t need to remind you to do your job!\"},{\"text\":\"I like you a lot; don\'t let me down. The boss wants to discuss something with me, so go ahead and meed with the Chief\'s Wife.\"},{\"text\":\"[p]You are not sure why or when you fell asleep. Yesterday, you agreed to deliver some merchandise to the Chief\'s Wife. It looks as though you\'ve missed the delivery; you have to apologize to her.\",\"action_step\":1}]', -1, 1, 'Blink', 1, 0),
-(5, 14, 9417, 6833, NULL, NULL, -1, 1, 'Happy', 1, 0),
-(6, 15, 6280, 6417, NULL, NULL, -1, 1, '', 1, 0),
-(7, 9, 5612, 1009, NULL, '[{ \"text\": \"I think you look better this way.{OR}Quit being such a baby! I’ve seen worse.{OR}I keep asking for wine, but all <bot_7> gives me are mugs of ale.\"}]', 0, 0, 'Happy', 1, 1),
-(8, 26, 5779, 8369, NULL, NULL, 0, 0, 'Blink', 1, 0),
-(9, 9, 1075, 2161, NULL, '[{ \"text\": \"I think you look better this way.{OR}Quit being such a baby! I’ve seen worse.{OR}I keep asking for wine, but all <bot_7> gives me are mugs of ale.\"}]', 0, 1, 'Happy', 1, 2);
+(1, 7, 6472, 7569, NULL, '[{\"text\":\"Someone once told me friendship is magic. That\'s ridiculous. You can\'t turn people into frogs with friendship{OR}Hey..what\'s <bot_9> up to? Have you...have you talked to her, by chance?{OR}\",\"emote\":\"normal\"}\n]', -1, 0, '', 1, 1),
+(2, 8, 9973, 8561, NULL, '[{\"text\":\"This is a big upgrade from wiping that table all day.{OR}A lot of tenacity and a little bit of luck can go a long way...{OR}<bot_9> seems nice. I should bring her back with me.{OR}\",\"emote\":\"happy\"}\n]', -1, 0, 'Happy', 1, 1),
+(3, 9, 2791, 7345, NULL, '[{ \"text\": \"I think you look better this way.{OR}Quit being such a baby! I’ve seen worse.{OR}I keep asking for wine, but all <bot_7> gives me are mugs of ale.\"}]', 0, 0, 'Happy', 1, 1),
+(4, 11, 1915, 1041, 1, '[{\"text\":\"[p]The nightmare fatigues you greatly, your thoughts fractured and sluggish. You\'re relieved that the terrible dream was only just that, but you regret not being able to see it to its end.\"},{\"text\":\"[p]The people in your dream seem powerful and important, not at all like the people you know at the small fishing village. How did the dream end? You long to find out...\"},{\"text\":\"<player>, are you zoning out? I thought you said you were supposed to deliver some goods to <bot_10>. You\'re an official garrison member; I shouldn\'t need to remind you to do your job!\"},{\"text\":\"I like you a lot; don\'t let me down. The boss wants to discuss something with me, so go ahead and meed with the Chief\'s Wife.\"},{\"text\":\"[p]You are not sure why or when you fell asleep. Yesterday, you agreed to deliver some merchandise to the Chief\'s Wife. It looks as though you\'ve missed the delivery; you have to apologize to her.\",\"action_step\":1}]', -1, 1, 'Blink', 1, 0),
+(5, 14, 9417, 6833, NULL, NULL, -1, 1, 'Happy', 1, 1),
+(6, 15, 6280, 6417, NULL, NULL, -1, 1, '', 1, 1),
+(7, 9, 5612, 1009, NULL, '[{ \"text\": \"I think you look better this way.{OR}Quit being such a baby! I’ve seen worse.{OR}I keep asking for wine, but all <bot_7> gives me are mugs of ale.\"}]', 0, 0, 'Happy', 1, 2),
+(8, 26, 5779, 8369, NULL, NULL, 0, 0, 'Blink', 1, 1),
+(9, 9, 1075, 2161, NULL, '[{ \"text\": \"I think you look better this way.{OR}Quit being such a baby! I’ve seen worse.{OR}I keep asking for wine, but all <bot_7> gives me are mugs of ale.\"}]', 0, 1, 'Happy', 1, 3);
 
 -- --------------------------------------------------------
 
@@ -565,34 +652,34 @@ CREATE TABLE `tw_bots_quest` (
 --
 
 INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`, `PosY`, `DialogData`, `RequiredItemID1`, `RequiredItemID2`, `RewardItemID1`, `RewardItemID2`, `RequiredDefeatMobID1`, `RequiredDefeatMobID2`, `Amount`, `InteractionType`, `InteractionTemp`) VALUES
-(1, 10, 1, 1, 0, 7897, 7921, '[{\"text\":\"It is now getting late. <player>, this boy is so...\"},{\"text\":\"\\\"<player>, have you forgotten your promise already?\\\"\\n\\n Sheila asks with a gentle smile.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(2, 10, 2, 1, 0, 7897, 7921, '[{\"text\":\"[p]You apologize to <bot_10> and ask if there is a way to make it up to her.\"},{\"text\":\"\\\"Your apology is quite sincere. I forgive you. And I do have another task,\\\" <bot_10> says with a kind smile.\"},{\"text\":\"These boxes of jam just arrived from the port. Please help me deliver them to the merchants in the village.\"},{\"text\":\"Sheila gives a frown only an irritated mother can give.\\n\\n \\\"Also, ask them if they have seen my son, <bot_12>. I have no idea where he is.\\\"\",\"action_step\":1},{\"text\":\"I\'ve heard of rebellions, but <bot_12> has gone too far. It\'s late, and he hasn\'t come home yet. I fear he\'s getting spoiled, and we can\'t have that! He needs to learn a lesson.\"}]', NULL, NULL, 29, NULL, NULL, NULL, '|0|0|3|0|0|0|', NULL, NULL),
-(3, 13, 2, 2, 0, 8141, 7089, '[{\"text\":\"This is so unusual. So you\'re helping <bot_10> deliver goods today? I suppose you are indeed a real garrison member. Keep up the good work.\",\"action_step\":1},{\"text\":\"From now on, everyone will treat you as an adult. Perhaps you\'ll travel the world, meeting maharajas and princesses. Or maybe you\'ll just live and work in this fishing port all your life. You know, either way.\"},{\"text\":\"Just remember this: in the outside world, you can buy different potions at various drugstores. You might find some other special items there, too.\"},{\"text\":\"[p]You ask <bot_13> if she has seen <bot_12>.\"},{\"text\":\"<bot_12> didn\'t come to the marketplace today. It\'s a bit odd; he usually stops by.\"}]', 29, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL),
-(4, 14, 2, 2, 0, 9255, 6801, '[{\"text\":\"\\\"<player>, would you like to buy a piece of <item_28>? We carry the armor in all sizes, and we... what is this?\\\"\\n\\n <bot_14> takes the jar of jam and examines it suspiciously.\",\"action_step\":1},{\"text\":\"\\\"Wait, I clearly told <bot_13> that I don\'t want any jam. It\'s too sweet. I like my jam salty and sour!\\\"\\n\\n <bot_14> huffs.\"},{\"text\":\"Well, let\'s forget about the jam. Why don\'t you treat yourself to some new armor? Being a garrison member in a fishing village is not exactly a dangerous job, but from time to time, you\'ll need to clear out some monsters, and you\'ll be happy to have steel between their claws and your heart!\"},{\"text\":\"[p]You ask <bot_14> if she has seen <bot_12>.\"},{\"text\":\"I saw him yesterday, but not today.\"}]', 29, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL),
-(5, 15, 2, 2, 0, 6561, 6449, '[{\"text\":\"\\\"Jam! At last! My toast has been going naked!\\\"\\n\\n <bot_15> pops open the jar, dips in his fingers, and slurps up the jelly eagerly.\",\"action_step\":1},{\"text\":\"\\\"Mmm! <bot_13> was right. The jam is perfectly sweet and tart. Would you like some? I promise my fingers are clean.\\\"\\n\\n <bot_15> follows your gaze to the newly produced weapons.\"},{\"text\":\"Impressive, right? These weapons all come from abroad! This one here, for instance, is the <item_3>, a symbol of power. And over there is the <item_5>.\"},{\"text\":\"I\'ll give you a tip, jelly kid. When you have time, just visit weapon shops in different places. You might find exceptionally good weaponry at reasonable prices!\"},{\"text\":\"[p]You ask <bot_15> if he has seen <bot_12>.\"},{\"text\":\"<bot_12>? No, I haven\'t seen him today.\"}]', 29, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL),
-(6, 10, 2, 3, 0, 7897, 7921, '[{\"text\":\"\\\"Have you delivered the jam? You\'ve truly grown; it\'s time for you to start saving your money.\\\"\\n\\n <bot_10> places some gleaming coins in your palm and closes your fingers around them.\"},{\"text\":\"Did any of the merchants see <bot_12>?\"},{\"text\":\"[p]You shake your head and tell her that none of the merchants have seen him today. Hearing this, <bot_10>\'s irritation starts to turn to worry.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(10, 10, 3, 1, 0, 7726, 7921, '[{\"text\":\"\\\"Hasn\'t anyone seen <bot_12>? Where has that boy gone?\\\"\\n\\n <bot_10> glances around anxiously.\"},{\"text\":\"\\\"He can\'t have gone too far...\\\"\\n\\n She hangs her head, looking despondently at the <item_30> in her hand.\"},{\"text\":\"I ought to go look for him. Could you bring this <item_30> to my husband, <bot_16>? When you see him, ask him to find you a suitable job.\",\"action_step\":1}]', NULL, NULL, 30, NULL, NULL, NULL, '|0|0|1|0|0|0|', NULL, NULL),
-(11, 16, 3, 2, 0, 6558, 7569, '[{\"text\":\"[bot_17]I must report to you, as you are the Village Chief. The sea has begun to churn; the situation grows more unstable by the day. I can only guide the ships into the port with light signals, but...\"},{\"text\":\"<bot_16> frowns, pacing anxiously as he chats with <bot_17>, the lighthouse manager.\"},{\"text\":\"\\\"Got it. The monster population in the forest has skyrocketed, too. Things are getting rough around here.\\\"\\n\\n <bot_16> looks over at you, eyeing the <item_30>.\"},{\"text\":\"<player>, where is my wife, and why are you delivering my lunch?\",\"action_step\":1}]', 30, NULL, 38, NULL, NULL, NULL, '|1|0|1|0|0|0|', NULL, NULL),
-(12, 17, 3, 2, 0, 6418, 7569, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(13, 16, 4, 1, 0, 6558, 7569, '[{\"text\":\"\\\"<bot_10> dotes on him. She spoils him. He can play alone once in a while, you know? Who knows, he might grow up to be a great conqueror - if he stops being so darn soft!\\\"\\n\\n <bot_16> chortles.\"},{\"text\":\"As for your work... well, I really don\'t have much for you to do.\"},{\"text\":\"[bot_17]<bot_16>, you said you needed someone to replace one of <bot_18>\'s... less enthusiastic workers. How could you forget so quickly?\"},{\"text\":\"I didn\'t forget. But working for <bot_18> is no picnic. Very few are willing to work backbreaking hours at the Logging Site, and <bot_18>\'s not exactly Mr. Personality.\"},{\"text\":\"<player>, would you like to try working at the Logging Site? The salary\'s not bad.\",\"action_step\":1},{\"text\":\"\\\"This boy <bot_19> is a fool! He only makes work harder for me! Unless we\'re short workers, I\'d fire him right away!\\\"\\n\\n <bot_18> grumbles to himself. It seems that working at the Logging Site is quite arduous.\"}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(14, 17, 4, 1, 0, 6428, 7569, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(15, 18, 4, 1, 0, 6480, 7569, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(16, 18, 4, 2, 1, 6256, 1105, '[{\"text\":\"Did <bot_16> ask you to come here? Excellent. I was just wondering what the Garrison Members in the village normally do during the day. They just hang about the forest. They might as well be here doing something productive for once.\"},{\"text\":\"Speaking of which, have you seen <bot_19> lately? He hasn\'t come to work in days!\"},{\"text\":\"[p]You shake your head and explain that you don\'t know him.\"},{\"text\":\"Well, there\'s no time to lose. you should just start working right away.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(17, 18, 5, 1, 1, 6256, 1105, '[{\"text\":\"Lately, numerous <bot_20>hops have migrated to the Logging Site. The naughty troublemakers make a mess all day long. Workmen complain constantly about picking up their, er, \'jelly beans.\'\"},{\"text\":\"We cannot let those rascally rabbits slow us down. If the wood is not delivered to the village fast enough, construction there will be delayed.\"},{\"text\":\"I\'ve a task for you. Drive the <bot_20>hops out of the Logging Site so the lumberjacks can focus on their work!\",\"action_step\":1},{\"text\":\"\\\"We have three days to deliver to the furniture shop. We cannot be late.\\\"\\n\\n <bot_18> snaps, scanning a list.\"},{\"text\":\"\\\"Not bad for a newbie.\\\"\\n\\n <bot_18> is clearly satisfied by the reduced number of <bot_20>hops.\"},{\"text\":\"This was originally <bot_19>\'s job, but I think you ought to take his place. You\'re more responsible than he ever was. Go to the Garrison Captain. I will speak to him.\"}]', NULL, NULL, NULL, NULL, 20, NULL, '|0|0|0|0|15|0|', NULL, NULL),
-(18, 18, 6, 1, 1, 5971, 1041, '[{\"text\":\"\\\"It\'s about time to send the chopped wood back to the village\\\"\\n\\nCaine explains, scanning the sky.\"},{\"text\":\"You must help me finish off today\'s work if you want your proper salary.\"},{\"text\":\"You\'ll find a good deal of wood in the area. I need you to carry it to me.\"},{\"text\":\"<bot_22> typically pile up the chopped wood under another tree. Take a walk around the Logging Site. It shouldn\'t be hard to find the wood.\",\"action_step\":1},{\"text\":\"[p]You pass the collected lumber to Caine.\"},{\"text\":\"You move pretty fast. What about the others?\"}]', 31, NULL, NULL, NULL, NULL, NULL, '|15|0|0|0|0|0|', 2, NULL),
-(19, 18, 7, 1, 1, 5971, 1041, '[{\"text\":\"What are those <bot_21> doing now? It\'s late, and they haven\'t brought the wood back yet.\"},{\"text\":\"<player>, everyone says I\'m too harsh. I suppose you can judge for yourself now. Only you have returned with the wood. What are all the others doing out there, picking each other\'s noses?\"},{\"text\":\"\\\"Take this hammer and search the site for anyone sleeping on the job. Give \'em a wake up call they won\'t forget!\\\"\\n\\n <bot_18> snarls, his face flushed with fury.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(20, 21, 7, 2, 1, 5246, 1073, '[{\"text\":\"[p]You started to wake up the <bot_21>.\"},{\"text\":\"I\'m awake, don\'t touch me.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(21, 21, 7, 2, 1, 5574, 1009, '[{\"text\":\"[p]You started to wake up the <bot_21>.\"},{\"text\":\"I\'m awake, don\'t touch me.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(22, 21, 7, 2, 1, 6507, 1137, '[{\"text\":\"[p]You started to wake up the <bot_21>.\"},{\"text\":\"I\'m awake, don\'t touch me.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(23, 21, 7, 2, 1, 3817, 1169, '[{\"text\":\"[p]You started to wake up the <bot_21>.\"},{\"text\":\"I\'m awake, don\'t touch me.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(24, 18, 7, 3, 1, 5727, 1009, '[{\"text\":\"These lazy fools are becoming more and more arrogant. It\'s time they take a pay cut! I doubt they\'ll dare slack off on the job again.\"},{\"text\":\"See for yourself. <player>, who started working here just today, has contributed more to our project in one day than you have in your career. Shame on you!\"},{\"text\":\"[bot_22]I was just taking a break. I didn\'t know I was going to fall asleep. It\'s not a big deal.\"},{\"text\":\"Not much of an excuse, you lazy fool! You only get half a day\'s pay today. End of discussion!\"},{\"text\":\"[bot_22]You\'re such a scrooge! Everyone needs a nap now and again!\"},{\"text\":\"\\\"If you argue again, I\'ll take away your breaks,\\\" <bot_18> growls, glaring.\"},{\"text\":\"[bot_22]Fine, fine. I know I made a mistake. I won\'t do it again.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(25, 22, 7, 3, 1, 5539, 1009, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(26, 18, 8, 1, 1, 5727, 1009, '[{\"text\":\"<player>, you have impressed me. I think I can recommend <bot_23> to you, you can make more money with it than working at the <world_1>.\"},{\"text\":\"[p]You nervously explain to <bot_18> that you know nothing about medicine, and you don\'t want to be a burden to the doctor.\"},{\"text\":\"Oh, c\'mon. It can\'t be that hard! You only go to school for, what, eleven, twelve years to become a doctor? No biggie. Just look at it as a learning experience.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(27, 23, 8, 2, 0, 2688, 7345, '[{\"text\":\"Haha, each of those lazy lumberjacks comes to me with the same complaints. Seems like this <bot_18> guy is pretty strict.\"},{\"text\":\"Hello, <player>, how are you?\"},{\"text\":\"[p]*You tell him how you\'re feeling today*\"},{\"text\":\"Mm, okay.\"},{\"text\":\"<bot_18> sent you to me, I know.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(28, 23, 9, 1, 0, 2688, 7345, '[{\"text\":\"At the moment, I can\'t find any physical problems. Maybe you\'re overworked; that can affect your brain, you know. You\'ve got the same symptoms as the other workmen.\"},{\"text\":\"[p]*You consider his reasoning, but it doesn\'t quite make sense. You explain to <bot_23> that perhaps your continuous nightmares have kept you from getting a proper night\'s sleep.*\"},{\"text\":\"I heard <bot_18> sent you here to help out. Luckily, I\'ve got the perfect project for you.\"},{\"text\":\"This should be a simple task for someone like you. Here, take this; it\'ll get your blood flowing.\"},{\"text\":\"You and the other lumberjacks need something - some sort of medicine to refresh your minds and bodies. Something to put some pep back in your step.\"},{\"text\":\"I need you to prepare some <item_32> for me. You can find <bot_24> nearby.\"},{\"text\":\"You need blood from <bot_24>s to make the refreshing medicine. Nothing\'s more invigorating than animal blood, am I right?\",\"action_step\":1},{\"text\":\"[p]*You present <bot_23> with the <item_32> you collected.*\"},{\"text\":\"*<bot_23> crows happily.*\"},{\"text\":\"I\'m going to officially name you as my assistant. When the time is right, I\'ll teach you everything I know! I bet you\'re a fast learner!\"}]', 32, NULL, NULL, NULL, NULL, NULL, '|10|0|0|0|0|0|', NULL, NULL),
-(29, 23, 10, 1, 0, 2688, 7345, '[{\"text\":\"To begin with, approach <bot_14>. She has something for you that will help your task.\"},{\"text\":\"[p]Well.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(30, 14, 10, 2, 0, 9255, 6801, '[{\"text\":\"Oh yes, I was just waiting for you. <bot_23> asked me to give you this.\",\"action_step\":1},{\"text\":\"I don\'t know why, but apparently he wants you to get all kinds of herbs for him.\"},{\"text\":\"We used to have Aliya as an herbalist. I\'m relying on you.\"}]', NULL, NULL, 26, NULL, NULL, NULL, '|0|0|1|0|0|0|', NULL, NULL),
-(31, 23, 10, 3, 0, 2688, 7345, '[{\"text\":\"\\\"I\'ve almost completely ground up these herbs. We should put some <item_33>s into the medicine and grind them together, too...\\\" \\n\\n<bot_23> suddenly pauses to examine the medicine.\"},{\"text\":\"\\\"I used up the mushrooms last time I prepared a medication. I haven\'t had time to seek them out again.\\\" \\n\\n<bot_23> scratches his head, anxious.\"},{\"text\":\"<player>, looks like I need to ask you to go gather some <item_33>s. They typically grow near tree trunks. Take a look around the area, and I\'m sure you\'ll find \'em.\\n\\n(You can find the location of ores, loot, and mobs in the Wiki tab in the voting).\",\"action_step\":1},{\"text\":\"These mushrooms may well be Skandia\'s most valuable resource. A good deal of caravans come to the port just to buy them. I hear they are also excellent in risotto.\"},{\"text\":\"[p]<bot_23> grins when you hand him the <item_33>s.\"},{\"text\":\"\\\"Perfect! These are Skandia\'s most unique mushrooms.\\\" \\n\\n<bot_23> examines them out one by one.\"},{\"text\":\"\\\"You are truly an excellent assistant,\\\" \\n\\n<bot_23> comments, patting you on the back.\"}]', 33, NULL, NULL, NULL, NULL, NULL, '|32|0|0|0|0|0|', NULL, NULL);
+(1, 10, 1, 1, 0, 3483, 1041, '[{\"text\":\"It is now getting late. <player>, this boy is so...\"},{\"text\":\"\\\"<player>, have you forgotten your promise already?\\\"\\n\\n Sheila asks with a gentle smile.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(2, 10, 2, 1, 1, 7897, 7921, '[{\"text\":\"[p]You apologize to <bot_10> and ask if there is a way to make it up to her.\"},{\"text\":\"\\\"Your apology is quite sincere. I forgive you. And I do have another task,\\\" <bot_10> says with a kind smile.\"},{\"text\":\"These boxes of jam just arrived from the port. Please help me deliver them to the merchants in the village.\"},{\"text\":\"Sheila gives a frown only an irritated mother can give.\\n\\n \\\"Also, ask them if they have seen my son, <bot_12>. I have no idea where he is.\\\"\",\"action_step\":1},{\"text\":\"I\'ve heard of rebellions, but <bot_12> has gone too far. It\'s late, and he hasn\'t come home yet. I fear he\'s getting spoiled, and we can\'t have that! He needs to learn a lesson.\"}]', NULL, NULL, 29, NULL, NULL, NULL, '|0|0|3|0|0|0|', NULL, NULL),
+(3, 13, 2, 2, 1, 8141, 7089, '[{\"text\":\"This is so unusual. So you\'re helping <bot_10> deliver goods today? I suppose you are indeed a real garrison member. Keep up the good work.\",\"action_step\":1},{\"text\":\"From now on, everyone will treat you as an adult. Perhaps you\'ll travel the world, meeting maharajas and princesses. Or maybe you\'ll just live and work in this fishing port all your life. You know, either way.\"},{\"text\":\"Just remember this: in the outside world, you can buy different potions at various drugstores. You might find some other special items there, too.\"},{\"text\":\"[p]You ask <bot_13> if she has seen <bot_12>.\"},{\"text\":\"<bot_12> didn\'t come to the marketplace today. It\'s a bit odd; he usually stops by.\"}]', 29, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL),
+(4, 14, 2, 2, 1, 9255, 6801, '[{\"text\":\"\\\"<player>, would you like to buy a piece of <item_28>? We carry the armor in all sizes, and we... what is this?\\\"\\n\\n <bot_14> takes the jar of jam and examines it suspiciously.\",\"action_step\":1},{\"text\":\"\\\"Wait, I clearly told <bot_13> that I don\'t want any jam. It\'s too sweet. I like my jam salty and sour!\\\"\\n\\n <bot_14> huffs.\"},{\"text\":\"Well, let\'s forget about the jam. Why don\'t you treat yourself to some new armor? Being a garrison member in a fishing village is not exactly a dangerous job, but from time to time, you\'ll need to clear out some monsters, and you\'ll be happy to have steel between their claws and your heart!\"},{\"text\":\"[p]You ask <bot_14> if she has seen <bot_12>.\"},{\"text\":\"I saw him yesterday, but not today.\"}]', 29, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL),
+(5, 15, 2, 2, 1, 6561, 6449, '[{\"text\":\"\\\"Jam! At last! My toast has been going naked!\\\"\\n\\n <bot_15> pops open the jar, dips in his fingers, and slurps up the jelly eagerly.\",\"action_step\":1},{\"text\":\"\\\"Mmm! <bot_13> was right. The jam is perfectly sweet and tart. Would you like some? I promise my fingers are clean.\\\"\\n\\n <bot_15> follows your gaze to the newly produced weapons.\"},{\"text\":\"Impressive, right? These weapons all come from abroad! This one here, for instance, is the <item_3>, a symbol of power. And over there is the <item_5>.\"},{\"text\":\"I\'ll give you a tip, jelly kid. When you have time, just visit weapon shops in different places. You might find exceptionally good weaponry at reasonable prices!\"},{\"text\":\"[p]You ask <bot_15> if he has seen <bot_12>.\"},{\"text\":\"<bot_12>? No, I haven\'t seen him today.\"}]', 29, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL),
+(6, 10, 2, 3, 1, 7897, 7921, '[{\"text\":\"\\\"Have you delivered the jam? You\'ve truly grown; it\'s time for you to start saving your money.\\\"\\n\\n <bot_10> places some gleaming coins in your palm and closes your fingers around them.\"},{\"text\":\"Did any of the merchants see <bot_12>?\"},{\"text\":\"[p]You shake your head and tell her that none of the merchants have seen him today. Hearing this, <bot_10>\'s irritation starts to turn to worry.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(10, 10, 3, 1, 1, 7726, 7921, '[{\"text\":\"\\\"Hasn\'t anyone seen <bot_12>? Where has that boy gone?\\\"\\n\\n <bot_10> glances around anxiously.\"},{\"text\":\"\\\"He can\'t have gone too far...\\\"\\n\\n She hangs her head, looking despondently at the <item_30> in her hand.\"},{\"text\":\"I ought to go look for him. Could you bring this <item_30> to my husband, <bot_16>? When you see him, ask him to find you a suitable job.\",\"action_step\":1}]', NULL, NULL, 30, NULL, NULL, NULL, '|0|0|1|0|0|0|', NULL, NULL),
+(11, 16, 3, 2, 1, 6558, 7569, '[{\"text\":\"[bot_17]I must report to you, as you are the Village Chief. The sea has begun to churn; the situation grows more unstable by the day. I can only guide the ships into the port with light signals, but...\"},{\"text\":\"<bot_16> frowns, pacing anxiously as he chats with <bot_17>, the lighthouse manager.\"},{\"text\":\"\\\"Got it. The monster population in the forest has skyrocketed, too. Things are getting rough around here.\\\"\\n\\n <bot_16> looks over at you, eyeing the <item_30>.\"},{\"text\":\"<player>, where is my wife, and why are you delivering my lunch?\",\"action_step\":1}]', 30, NULL, 38, NULL, NULL, NULL, '|1|0|1|0|0|0|', NULL, NULL),
+(12, 17, 3, 2, 1, 6418, 7569, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(13, 16, 4, 1, 1, 6558, 7569, '[{\"text\":\"\\\"<bot_10> dotes on him. She spoils him. He can play alone once in a while, you know? Who knows, he might grow up to be a great conqueror - if he stops being so darn soft!\\\"\\n\\n <bot_16> chortles.\"},{\"text\":\"As for your work... well, I really don\'t have much for you to do.\"},{\"text\":\"[bot_17]<bot_16>, you said you needed someone to replace one of <bot_18>\'s... less enthusiastic workers. How could you forget so quickly?\"},{\"text\":\"I didn\'t forget. But working for <bot_18> is no picnic. Very few are willing to work backbreaking hours at the Logging Site, and <bot_18>\'s not exactly Mr. Personality.\"},{\"text\":\"<player>, would you like to try working at the Logging Site? The salary\'s not bad.\",\"action_step\":1},{\"text\":\"\\\"This boy <bot_19> is a fool! He only makes work harder for me! Unless we\'re short workers, I\'d fire him right away!\\\"\\n\\n <bot_18> grumbles to himself. It seems that working at the Logging Site is quite arduous.\"}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(14, 17, 4, 1, 1, 6428, 7569, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(15, 18, 4, 1, 1, 6480, 7569, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(16, 18, 4, 2, 2, 6256, 1105, '[{\"text\":\"Did <bot_16> ask you to come here? Excellent. I was just wondering what the Garrison Members in the village normally do during the day. They just hang about the forest. They might as well be here doing something productive for once.\"},{\"text\":\"Speaking of which, have you seen <bot_19> lately? He hasn\'t come to work in days!\"},{\"text\":\"[p]You shake your head and explain that you don\'t know him.\"},{\"text\":\"Well, there\'s no time to lose. you should just start working right away.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(17, 18, 5, 1, 2, 6256, 1105, '[{\"text\":\"Lately, numerous <bot_20>hops have migrated to the Logging Site. The naughty troublemakers make a mess all day long. Workmen complain constantly about picking up their, er, \'jelly beans.\'\"},{\"text\":\"We cannot let those rascally rabbits slow us down. If the wood is not delivered to the village fast enough, construction there will be delayed.\"},{\"text\":\"I\'ve a task for you. Drive the <bot_20>hops out of the Logging Site so the lumberjacks can focus on their work!\",\"action_step\":1},{\"text\":\"\\\"We have three days to deliver to the furniture shop. We cannot be late.\\\"\\n\\n <bot_18> snaps, scanning a list.\"},{\"text\":\"\\\"Not bad for a newbie.\\\"\\n\\n <bot_18> is clearly satisfied by the reduced number of <bot_20>hops.\"},{\"text\":\"This was originally <bot_19>\'s job, but I think you ought to take his place. You\'re more responsible than he ever was. Go to the Garrison Captain. I will speak to him.\"}]', NULL, NULL, NULL, NULL, 20, NULL, '|0|0|0|0|15|0|', NULL, NULL),
+(18, 18, 6, 1, 2, 5971, 1041, '[{\"text\":\"\\\"It\'s about time to send the chopped wood back to the village\\\"\\n\\nCaine explains, scanning the sky.\"},{\"text\":\"You must help me finish off today\'s work if you want your proper salary.\"},{\"text\":\"You\'ll find a good deal of wood in the area. I need you to carry it to me.\"},{\"text\":\"<bot_22> typically pile up the chopped wood under another tree. Take a walk around the Logging Site. It shouldn\'t be hard to find the wood.\",\"action_step\":1},{\"text\":\"[p]You pass the collected lumber to Caine.\"},{\"text\":\"You move pretty fast. What about the others?\"}]', 31, NULL, NULL, NULL, NULL, NULL, '|15|0|0|0|0|0|', 2, NULL),
+(19, 18, 7, 1, 2, 5971, 1041, '[{\"text\":\"What are those <bot_21> doing now? It\'s late, and they haven\'t brought the wood back yet.\"},{\"text\":\"<player>, everyone says I\'m too harsh. I suppose you can judge for yourself now. Only you have returned with the wood. What are all the others doing out there, picking each other\'s noses?\"},{\"text\":\"\\\"Take this hammer and search the site for anyone sleeping on the job. Give \'em a wake up call they won\'t forget!\\\"\\n\\n <bot_18> snarls, his face flushed with fury.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(20, 21, 7, 2, 2, 5246, 1073, '[{\"text\":\"[p]You started to wake up the <bot_21>.\"},{\"text\":\"I\'m awake, don\'t touch me.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(21, 21, 7, 2, 2, 5574, 1009, '[{\"text\":\"[p]You started to wake up the <bot_21>.\"},{\"text\":\"I\'m awake, don\'t touch me.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(22, 21, 7, 2, 2, 6507, 1137, '[{\"text\":\"[p]You started to wake up the <bot_21>.\"},{\"text\":\"I\'m awake, don\'t touch me.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(23, 21, 7, 2, 2, 3817, 1169, '[{\"text\":\"[p]You started to wake up the <bot_21>.\"},{\"text\":\"I\'m awake, don\'t touch me.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(24, 18, 7, 3, 2, 5727, 1009, '[{\"text\":\"These lazy fools are becoming more and more arrogant. It\'s time they take a pay cut! I doubt they\'ll dare slack off on the job again.\"},{\"text\":\"See for yourself. <player>, who started working here just today, has contributed more to our project in one day than you have in your career. Shame on you!\"},{\"text\":\"[bot_22]I was just taking a break. I didn\'t know I was going to fall asleep. It\'s not a big deal.\"},{\"text\":\"Not much of an excuse, you lazy fool! You only get half a day\'s pay today. End of discussion!\"},{\"text\":\"[bot_22]You\'re such a scrooge! Everyone needs a nap now and again!\"},{\"text\":\"\\\"If you argue again, I\'ll take away your breaks,\\\" <bot_18> growls, glaring.\"},{\"text\":\"[bot_22]Fine, fine. I know I made a mistake. I won\'t do it again.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(25, 22, 7, 3, 2, 5539, 1009, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(26, 18, 8, 1, 2, 5727, 1009, '[{\"text\":\"<player>, you have impressed me. I think I can recommend <bot_23> to you, you can make more money with it than working at the <world_1>.\"},{\"text\":\"[p]You nervously explain to <bot_18> that you know nothing about medicine, and you don\'t want to be a burden to the doctor.\"},{\"text\":\"Oh, c\'mon. It can\'t be that hard! You only go to school for, what, eleven, twelve years to become a doctor? No biggie. Just look at it as a learning experience.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(27, 23, 8, 2, 1, 2688, 7345, '[{\"text\":\"Haha, each of those lazy lumberjacks comes to me with the same complaints. Seems like this <bot_18> guy is pretty strict.\"},{\"text\":\"Hello, <player>, how are you?\"},{\"text\":\"[p]*You tell him how you\'re feeling today*\"},{\"text\":\"Mm, okay.\"},{\"text\":\"<bot_18> sent you to me, I know.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(28, 23, 9, 1, 1, 2688, 7345, '[{\"text\":\"At the moment, I can\'t find any physical problems. Maybe you\'re overworked; that can affect your brain, you know. You\'ve got the same symptoms as the other workmen.\"},{\"text\":\"[p]*You consider his reasoning, but it doesn\'t quite make sense. You explain to <bot_23> that perhaps your continuous nightmares have kept you from getting a proper night\'s sleep.*\"},{\"text\":\"I heard <bot_18> sent you here to help out. Luckily, I\'ve got the perfect project for you.\"},{\"text\":\"This should be a simple task for someone like you. Here, take this; it\'ll get your blood flowing.\"},{\"text\":\"You and the other lumberjacks need something - some sort of medicine to refresh your minds and bodies. Something to put some pep back in your step.\"},{\"text\":\"I need you to prepare some <item_32> for me. You can find <bot_24> nearby.\"},{\"text\":\"You need blood from <bot_24>s to make the refreshing medicine. Nothing\'s more invigorating than animal blood, am I right?\",\"action_step\":1},{\"text\":\"[p]*You present <bot_23> with the <item_32> you collected.*\"},{\"text\":\"*<bot_23> crows happily.*\"},{\"text\":\"I\'m going to officially name you as my assistant. When the time is right, I\'ll teach you everything I know! I bet you\'re a fast learner!\"}]', 32, NULL, NULL, NULL, NULL, NULL, '|10|0|0|0|0|0|', NULL, NULL),
+(29, 23, 10, 1, 1, 2688, 7345, '[{\"text\":\"To begin with, approach <bot_14>. She has something for you that will help your task.\"},{\"text\":\"[p]Well.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(30, 14, 10, 2, 1, 9255, 6801, '[{\"text\":\"Oh yes, I was just waiting for you. <bot_23> asked me to give you this.\",\"action_step\":1},{\"text\":\"I don\'t know why, but apparently he wants you to get all kinds of herbs for him.\"},{\"text\":\"We used to have Aliya as an herbalist. I\'m relying on you.\"}]', NULL, NULL, 26, NULL, NULL, NULL, '|0|0|1|0|0|0|', NULL, NULL),
+(31, 23, 10, 3, 1, 2688, 7345, '[{\"text\":\"\\\"I\'ve almost completely ground up these herbs. We should put some <item_33>s into the medicine and grind them together, too...\\\" \\n\\n<bot_23> suddenly pauses to examine the medicine.\"},{\"text\":\"\\\"I used up the mushrooms last time I prepared a medication. I haven\'t had time to seek them out again.\\\" \\n\\n<bot_23> scratches his head, anxious.\"},{\"text\":\"<player>, looks like I need to ask you to go gather some <item_33>s. They typically grow near tree trunks. Take a look around the area, and I\'m sure you\'ll find \'em.\\n\\n(You can find the location of ores, loot, and mobs in the Wiki tab in the voting).\",\"action_step\":1},{\"text\":\"These mushrooms may well be Skandia\'s most valuable resource. A good deal of caravans come to the port just to buy them. I hear they are also excellent in risotto.\"},{\"text\":\"[p]<bot_23> grins when you hand him the <item_33>s.\"},{\"text\":\"\\\"Perfect! These are Skandia\'s most unique mushrooms.\\\" \\n\\n<bot_23> examines them out one by one.\"},{\"text\":\"\\\"You are truly an excellent assistant,\\\" \\n\\n<bot_23> comments, patting you on the back.\"}]', 33, NULL, NULL, NULL, NULL, NULL, '|32|0|0|0|0|0|', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -614,8 +701,8 @@ CREATE TABLE `tw_crafts_list` (
 --
 
 INSERT INTO `tw_crafts_list` (`ID`, `ItemID`, `ItemValue`, `RequiredItems`, `Price`, `WorldID`) VALUES
-(1, 39, 10, '{\"items\":[{\"id\":40,\"value\":40},{\"id\":33,\"value\":24}]}', 80, 0),
-(2, 41, 10, '{\"items\":[{\"id\":40,\"value\":50},{\"id\":33,\"value\":12},{\"id\":32,\"value\":60}]}', 100, 0);
+(1, 39, 10, '{\"items\":[{\"id\":40,\"value\":40},{\"id\":33,\"value\":24}]}', 80, 1),
+(2, 41, 10, '{\"items\":[{\"id\":40,\"value\":50},{\"id\":33,\"value\":12},{\"id\":32,\"value\":60}]}', 100, 1);
 
 -- --------------------------------------------------------
 
@@ -639,7 +726,7 @@ CREATE TABLE `tw_dungeons` (
 --
 
 INSERT INTO `tw_dungeons` (`ID`, `Name`, `Level`, `DoorX`, `DoorY`, `RequiredQuestID`, `Story`, `WorldID`) VALUES
-(1, 'Abandoned mine', 10, 1105, 1521, -1, 1, 3);
+(1, 'Abandoned mine', 10, 1105, 1521, -1, 1, 4);
 
 -- --------------------------------------------------------
 
@@ -719,12 +806,12 @@ CREATE TABLE `tw_guilds_decorations` (
 --
 
 INSERT INTO `tw_guilds_decorations` (`ID`, `PosX`, `PosY`, `HouseID`, `DecoID`, `WorldID`) VALUES
-(1, 4371, 6337, 1, 12, 0),
-(2, 4050, 6337, 1, 12, 0),
-(3, 4096, 6283, 1, 11, 0),
-(4, 4319, 6283, 1, 11, 0),
-(5, 4198, 6276, 1, 10, 0),
-(6, 4202, 6351, 1, 12, 0);
+(1, 4371, 6337, 1, 12, 1),
+(2, 4050, 6337, 1, 12, 1),
+(3, 4096, 6283, 1, 11, 1),
+(4, 4319, 6283, 1, 11, 1),
+(5, 4198, 6276, 1, 10, 1),
+(6, 4202, 6351, 1, 12, 1);
 
 -- --------------------------------------------------------
 
@@ -763,8 +850,8 @@ CREATE TABLE `tw_guilds_houses` (
 --
 
 INSERT INTO `tw_guilds_houses` (`ID`, `GuildID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `TextX`, `TextY`, `Price`, `WorldID`) VALUES
-(1, NULL, 4120, 6449, 4521, 6449, 4206, 6307, 80000, 0),
-(2, NULL, 9504, 5713, 9187, 5713, 9486, 5612, 80000, 0);
+(1, NULL, 4120, 6449, 4521, 6449, 4206, 6307, 80000, 1),
+(2, NULL, 9504, 5713, 9187, 5713, 9486, 5612, 80000, 1);
 
 -- --------------------------------------------------------
 
@@ -818,8 +905,8 @@ CREATE TABLE `tw_houses` (
 --
 
 INSERT INTO `tw_houses` (`ID`, `UserID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `Class`, `Price`, `HouseBank`, `PlantID`, `PlantX`, `PlantY`, `WorldID`) VALUES
-(1, NULL, 8001, 5297, 8294, 5297, 'Default', 40000, 13781, 40, 7499, 5329, 0),
-(2, NULL, 8989, 7729, 8704, 7729, 'Default', 40000, 0, 40, 9466, 7761, 0);
+(1, NULL, 8001, 5297, 8294, 5297, 'Default', 40000, 13781, 40, 7499, 5329, 1),
+(2, NULL, 8989, 7729, 8704, 7729, 'Default', 40000, 0, 40, 9466, 7761, 1);
 
 -- --------------------------------------------------------
 
@@ -841,9 +928,9 @@ CREATE TABLE `tw_houses_decorations` (
 --
 
 INSERT INTO `tw_houses_decorations` (`ID`, `PosX`, `PosY`, `HouseID`, `DecoID`, `WorldID`) VALUES
-(1, 7970, 5230, 1, 12, 0),
-(2, 8173, 5176, 1, 12, 0),
-(3, 8075, 5205, 1, 10, 0);
+(1, 7970, 5230, 1, 12, 1),
+(2, 8173, 5176, 1, 12, 1),
+(3, 8075, 5205, 1, 10, 1);
 
 -- --------------------------------------------------------
 
@@ -968,7 +1055,7 @@ CREATE TABLE `tw_positions_plant` (
 --
 
 INSERT INTO `tw_positions_plant` (`ID`, `ItemID`, `Level`, `Health`, `PositionX`, `PositionY`, `Distance`, `WorldID`) VALUES
-(1, 33, 1, 125, 4940, 1014, 400, 1);
+(1, 33, 1, 125, 4940, 1014, 400, 2);
 
 -- --------------------------------------------------------
 
@@ -1052,7 +1139,7 @@ CREATE TABLE `tw_voucher` (
 --
 
 INSERT INTO `tw_voucher` (`ID`, `Code`, `Data`, `Multiple`, `ValidUntil`) VALUES
-(1, 'VALENTINE2021', '{\r\n	\"exp\": 10000,\r\n	\"items\": [\r\n		{\r\n			\"id\": 17,\r\n			\"value\": 30\r\n		},\r\n		{\r\n			\"id\": 15000,\r\n			\"value\": 1\r\n		}\r\n	]\r\n}', 1, 1614517578);
+(1, 'START', '{\n	\"exp\": 1000,\n	\"items\": [\n		{\n			\"id\": 17,\n			\"value\": 10\n		},\n		{\n			\"id\": 21,\n			\"value\": 1\n		},\n		{\n			\"id\": 23,\n			\"value\": 1\n		},\n		{\n			\"id\": 9,\n			\"value\": 10\n		},\n		{\n			\"id\": 8,\n			\"value\": 1\n		},\n		{\n			\"id\": 4,\n			\"value\": 1\n		}\n	]\n}', 1, 1670205449);
 
 -- --------------------------------------------------------
 
@@ -1066,6 +1153,13 @@ CREATE TABLE `tw_voucher_redeemed` (
   `UserID` int(11) NOT NULL,
   `TimeCreated` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_voucher_redeemed`
+--
+
+INSERT INTO `tw_voucher_redeemed` (`ID`, `VoucherID`, `UserID`, `TimeCreated`) VALUES
+(1, 1, 1, 1667644547);
 
 -- --------------------------------------------------------
 
@@ -1088,8 +1182,8 @@ CREATE TABLE `tw_warehouses` (
 --
 
 INSERT INTO `tw_warehouses` (`ID`, `Name`, `PosX`, `PosY`, `Currency`, `WorldID`, `test`) VALUES
-(1, 'Betsy shop', 9437, 6833, 1, 0, 'ARG2,ARG3'),
-(2, 'Weapons from Correy', 6247, 6417, 1, 0, 'ARG2');
+(1, 'Betsy shop', 9437, 6833, 1, 1, 'ARG2,ARG3'),
+(2, 'Weapons from Correy', 6247, 6417, 1, 1, 'ARG2');
 
 -- --------------------------------------------------------
 
@@ -1145,8 +1239,9 @@ CREATE TABLE `tw_world_swap` (
 --
 
 INSERT INTO `tw_world_swap` (`ID`, `WorldID`, `PositionX`, `PositionY`, `RequiredQuestID`, `TwoWorldID`, `TwoPositionX`, `TwoPositionY`) VALUES
-(9, 0, 3607, 8105, 3, 1, 6912, 991),
-(10, 0, 13744, 6670, NULL, 2, 496, 2000);
+(8, 0, 3793, 1041, 1, 1, 8117, 7030),
+(9, 1, 3607, 8105, 3, 2, 6912, 991),
+(10, 1, 13744, 6670, NULL, 3, 496, 2000);
 
 --
 -- Индексы сохранённых таблиц
@@ -1589,25 +1684,25 @@ ALTER TABLE `enum_items_types`
 -- AUTO_INCREMENT для таблицы `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_aethers`
 --
 ALTER TABLE `tw_accounts_aethers`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
@@ -1619,7 +1714,7 @@ ALTER TABLE `tw_accounts_mailbox`
 -- AUTO_INCREMENT для таблицы `tw_accounts_quests`
 --
 ALTER TABLE `tw_accounts_quests`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_skills`
@@ -1781,7 +1876,7 @@ ALTER TABLE `tw_voucher`
 -- AUTO_INCREMENT для таблицы `tw_voucher_redeemed`
 --
 ALTER TABLE `tw_voucher_redeemed`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_warehouses`
@@ -1918,7 +2013,8 @@ ALTER TABLE `tw_bots_quest`
 -- Ограничения внешнего ключа таблицы `tw_crafts_list`
 --
 ALTER TABLE `tw_crafts_list`
-  ADD CONSTRAINT `tw_crafts_list_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `tw_crafts_list_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_crafts_list_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `tw_dungeons`
@@ -2009,13 +2105,15 @@ ALTER TABLE `tw_logics_worlds`
 -- Ограничения внешнего ключа таблицы `tw_positions_plant`
 --
 ALTER TABLE `tw_positions_plant`
-  ADD CONSTRAINT `tw_positions_plant_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `tw_positions_plant_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_positions_plant_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `tw_warehouses`
 --
 ALTER TABLE `tw_warehouses`
-  ADD CONSTRAINT `tw_warehouses_ibfk_1` FOREIGN KEY (`Currency`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `tw_warehouses_ibfk_1` FOREIGN KEY (`Currency`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_warehouses_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`);
 
 --
 -- Ограничения внешнего ключа таблицы `tw_warehouse_items`

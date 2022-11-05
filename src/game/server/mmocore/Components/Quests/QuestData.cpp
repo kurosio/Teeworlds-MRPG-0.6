@@ -189,6 +189,7 @@ void CQuestData::Finish()
 	// save player stats and accept next story quest
 	pGS->Mmo()->SaveAccount(m_pPlayer, SaveType::SAVE_STATS);
 	pGS->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer, m_QuestID);
+	pGS->CreateText(nullptr, false, vec2(m_pPlayer->m_ViewPos.x, m_pPlayer->m_ViewPos.y - 70), vec2(0, -0.5), 30, "COMPLECTED");
 }
 
 void CQuestData::CheckaAvailableNewStep()
