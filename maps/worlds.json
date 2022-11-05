@@ -1,3 +1,18 @@
 {"worlds":[
-	
+	{
+		"name": "Port Skandia",
+		"path": "chapter-1/Port Skandia.map"
+	},	
+	{
+		"name": "Logging Site",
+		"path": "chapter-1/Logging Site.map"
+	},	
+	{
+		"name": "Test zone",
+		"path": "2222222.map"
+	},	
+	{
+		"name": "Abandoned mine",
+		"path": "dungeons/Abandoned mine.map"
+	}
 ]}
