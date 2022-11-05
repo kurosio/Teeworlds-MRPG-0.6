@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Ноя 05 2022 г., 11:03
+-- Время создания: Ноя 05 2022 г., 11:10
 -- Версия сервера: 10.4.24-MariaDB
 -- Версия PHP: 8.1.5
 
@@ -700,14 +700,6 @@ CREATE TABLE `tw_guilds` (
   `ChairMoney` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
---
--- Дамп данных таблицы `tw_guilds`
---
-
-INSERT INTO `tw_guilds` (`ID`, `Name`, `UserID`, `Level`, `Experience`, `Bank`, `Score`, `AvailableSlots`, `ChairExperience`, `ChairMoney`) VALUES
-(2, 'Porn', 1, 10, 332, 109410, 0, 3, 11, 1),
-(3, 'veteran', 50, 8, 1248, 0, 0, 3, 4, 1);
-
 -- --------------------------------------------------------
 
 --
@@ -772,8 +764,8 @@ CREATE TABLE `tw_guilds_houses` (
 --
 
 INSERT INTO `tw_guilds_houses` (`ID`, `GuildID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `TextX`, `TextY`, `Price`, `WorldID`) VALUES
-(1, 2, 4120, 6449, 4521, 6449, 4206, 6307, 80000, 0),
-(2, 3, 9504, 5713, 9187, 5713, 9486, 5612, 80000, 0);
+(1, NULL, 4120, 6449, 4521, 6449, 4206, 6307, 80000, 0),
+(2, NULL, 9504, 5713, 9187, 5713, 9486, 5612, 80000, 0);
 
 -- --------------------------------------------------------
 
@@ -827,8 +819,8 @@ CREATE TABLE `tw_houses` (
 --
 
 INSERT INTO `tw_houses` (`ID`, `UserID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `Class`, `Price`, `HouseBank`, `PlantID`, `PlantX`, `PlantY`, `WorldID`) VALUES
-(1, 1, 8001, 5297, 8294, 5297, 'Default', 40000, 13781, 40, 7499, 5329, 0),
-(2, 10, 8989, 7729, 8704, 7729, 'Default', 40000, 0, 40, 9466, 7761, 0);
+(1, NULL, 8001, 5297, 8294, 5297, 'Default', 40000, 13781, 40, 7499, 5329, 0),
+(2, NULL, 8989, 7729, 8704, 7729, 'Default', 40000, 0, 40, 9466, 7761, 0);
 
 -- --------------------------------------------------------
 
@@ -1700,7 +1692,7 @@ ALTER TABLE `tw_dungeons_records`
 -- AUTO_INCREMENT для таблицы `tw_guilds`
 --
 ALTER TABLE `tw_guilds`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_guilds_decorations`
@@ -1987,7 +1979,8 @@ ALTER TABLE `tw_guilds_ranks`
 --
 ALTER TABLE `tw_houses`
   ADD CONSTRAINT `tw_houses_ibfk_1` FOREIGN KEY (`PlantID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_houses_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `tw_houses_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_houses_ibfk_3` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `tw_houses_decorations`
