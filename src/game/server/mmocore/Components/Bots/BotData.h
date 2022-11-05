@@ -104,6 +104,7 @@ public:
 	int m_InteractiveTemp{};
 	bool m_GenerateNick{};
 	bool m_HasAction{};
+	std::string m_EventJsonData;
 	std::vector<CDialog> m_aDialogs {};
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }

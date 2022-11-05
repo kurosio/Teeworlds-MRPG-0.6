@@ -99,6 +99,7 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_InteractiveType = pRes->getInt("InteractionType");
 		QuestBot.m_InteractiveTemp = pRes->getInt("InteractionTemp");
 		//QuestBot.m_GenerateNick = pRes->getBoolean("GenerateSubName");
+		QuestBot.m_EventJsonData = pRes->getString("EventData").c_str();
 		sscanf(pRes->getString("Amount").c_str(), "|%d|%d|%d|%d|%d|%d|",
 			&QuestBot.m_aItemSearchValue[0], &QuestBot.m_aItemSearchValue[1], &QuestBot.m_aItemGivesValue[0], &QuestBot.m_aItemGivesValue[1], &QuestBot.m_aNeedMobValue[0], &QuestBot.m_aNeedMobValue[1]);
 
@@ -126,11 +127,13 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 		{
 			dbg_msg("dialog error", "dialog [quest bot id %d] (json %s)", pRes->getInt("ID"), s.what());
 		}
-		
+
 		// initilize
 		QuestBotInfo::ms_aQuestBot[MobID] = QuestBot;
 		if(QuestID > 0)
+		{
 			CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot[MobID].m_Bot = QuestBotInfo::ms_aQuestBot[MobID];
+		}
 	}
 }
 

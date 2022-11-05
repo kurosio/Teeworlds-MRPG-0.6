@@ -42,7 +42,7 @@ bool CSkill::Use()
 
 	// mana check
 	CCharacter* pChr = GetPlayer()->GetCharacter();
-	const int ManaCost = translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost());
+	const int ManaCost = max(1, translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost()));
 	if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
 		return false;
 
@@ -93,7 +93,7 @@ bool CSkill::Use()
 				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
 				continue;
 
-			const int PowerLevel = ManaCost + translate_to_percent_rest(ManaCost, min(GetBonus(), 100));
+			const int PowerLevel = max(ManaCost + translate_to_percent_rest(ManaCost, min(GetBonus(), 100)), 1);
 			new CHearth(&GS()->m_World, PlayerPosition, pPlayer, PowerLevel, pPlayer->GetCharacter()->m_Core.m_Vel, true);
 			GS()->CreateDeath(pPlayer->GetCharacter()->GetPos(), i);
 		}

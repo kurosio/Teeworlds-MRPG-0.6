@@ -688,7 +688,7 @@ void CPlayer::SetSnapHealthTick(int Sec)
 // - - - - - - T A L K I N G - - - - B O T S - - - - - - - - -
 void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 {
-	if (TalkedID < MAX_PLAYERS || !GS()->m_apPlayers[TalkedID] || (!IsStartDialogue && m_DialogNPC.m_TalkedID == -1))
+	if (TalkedID < MAX_PLAYERS || !GetCharacter() || !GS()->m_apPlayers[TalkedID] || (!IsStartDialogue && m_DialogNPC.m_TalkedID == -1))
 		return;
 
 	m_DialogNPC.m_TalkedID = TalkedID;
@@ -743,11 +743,6 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 	else if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
 	{
 		const int SizeDialogs = QuestBotInfo::ms_aQuestBot[MobID].m_aDialogs.size();
-		if (m_DialogNPC.m_Progress >= SizeDialogs)
-		{
-			ClearTalking();
-			return;
-		}
 
 		//  after
 		if(m_DialogNPC.m_FreezedProgress)
@@ -765,6 +760,54 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			{
 				GS()->Mmo()->Quest()->InteractiveQuestNPC(this, QuestBotInfo::ms_aQuestBot[MobID], true);
 				ClearTalking();
+
+				try
+				{
+					std::string& EventData = QuestBotInfo::ms_aQuestBot[MobID].m_EventJsonData;
+					if(!EventData.empty())
+					{
+						nlohmann::json JsonData = nlohmann::json::parse(EventData);
+
+						/* * * * * * * *
+						 * Chat event
+						 * * * * * * * */
+						if(JsonData.find("chat") != JsonData.end())
+						{
+							for(auto& p : JsonData["chat"])
+							{
+								std::string Text = p.value("text", "\0");
+								if(p.find("broadcast") != p.end() && p.value("broadcast", 0))
+									GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 300, Text.c_str());
+								else
+									GS()->Chat(m_ClientID, Text.c_str());
+							}
+						}
+
+						/* * * * * * * * *
+						 * Teleport event
+						 * * * * * * * * */
+						if(JsonData.find("teleport") != JsonData.end())
+						{
+							auto pTeleport = JsonData["teleport"];
+							vec2 Position(pTeleport.value("x", -1.0f), pTeleport.value("y", -1.0f));
+
+							if(pTeleport.find("world_id") != pTeleport.end() && GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
+							{
+								GetTempData().m_TempTeleportPos = Position;
+								ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID));
+								return;
+							}
+
+							GetCharacter()->ChangePosition(Position);
+						}
+					}
+				}
+				catch(nlohmann::json::exception& s)
+				{
+					dbg_msg("dialog error", "%s", s.what());
+				}
+
+
 				return;
 			}
 

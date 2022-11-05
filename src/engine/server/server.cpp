@@ -792,7 +792,6 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY || pThis->IsClientChangesWorld(ClientID))
 	{
 		pThis->m_aClients[ClientID].m_Quitting = true;
-		pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
 
 		for(int i = 0; i < pThis->MultiWorlds()->GetSizeInitilized(); i++)
 		{
@@ -800,6 +799,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 			pGameServer->OnClientDrop(ClientID, pReason);
 		}
 
+		pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
 		pThis->ExpireServerInfo();
 	}
 

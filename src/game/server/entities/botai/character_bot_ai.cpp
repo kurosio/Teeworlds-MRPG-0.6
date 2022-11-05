@@ -140,8 +140,8 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	pPlayer->AddMoney(Golds);
 
 	// experience
-	const int ExperienceMob = computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel;
-	const int ExperienceWithMultiplier = max(1, GS()->GetExperienceMultiplier(ExperienceMob));
+	const int ExperienceMob = max(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
+	const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
 	GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
 
 	// drop experience
@@ -686,7 +686,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 bool CCharacterBotAI::SearchTalkedPlayer()
 {
 	bool PlayerFinding = false;
-	for(int i = 0; i < MAX_PLAYERS; i++)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		CPlayer* pFindPlayer = GS()->GetPlayer(i, true, true);
 		if(pFindPlayer && distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f &&
