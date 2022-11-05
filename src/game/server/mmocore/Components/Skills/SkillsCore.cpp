@@ -6,7 +6,7 @@
 
 void CSkillsCore::OnInit()
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_skills_list");
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_skills_list");
 	while (pRes->next())
 	{
 		std::string Name = pRes->getString("Name").c_str();
@@ -27,7 +27,7 @@ void CSkillsCore::OnInit()
 void CSkillsCore::OnInitAccount(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
 		int Level = pRes->getInt("Level");

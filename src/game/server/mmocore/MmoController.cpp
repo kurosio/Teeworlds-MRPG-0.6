@@ -306,7 +306,7 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 
 	if(Table == SAVE_STATS)
 	{
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d' WHERE ID = '%d'", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, pPlayer->Acc().m_UserID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d' WHERE ID = '%d'", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_UPGRADES)
 	{
@@ -321,41 +321,41 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 			}
 		}
 
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Acc().m_Upgrade, Buffer.buffer(), pPlayer->Acc().m_UserID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Acc().m_Upgrade, Buffer.buffer(), pPlayer->Acc().m_UserID);
 		Buffer.clear();
 	}
 	else if(Table == SAVE_PLANT_DATA)
 	{
 		std::string Fields = pPlayer->Acc().m_FarmingData.getUpdateField();
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_UserID);
+		Database->Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_MINER_DATA)
 	{
 		std::string Fields = pPlayer->Acc().m_MiningData.getUpdateField();
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_UserID);
+		Database->Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Acc().m_GuildID, pPlayer->Acc().m_GuildRank, pPlayer->Acc().m_UserID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Acc().m_GuildID, pPlayer->Acc().m_GuildRank, pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_POSITION)
 	{
 		const int LatestCorrectWorldID = Account()->GetHistoryLatestCorrectWorldID(pPlayer);
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pPlayer->Acc().m_UserID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pPlayer->Acc().m_UserID);
 	}
 	else if(Table == SAVE_LANGUAGE)
 	{
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pPlayer->Acc().m_UserID);
+		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pPlayer->Acc().m_UserID);
 	}
 	else
 	{
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc().m_aLogin, pPlayer->Acc().m_UserID);
+		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc().m_aLogin, pPlayer->Acc().m_UserID);
 	}
 }
 
 void MmoController::LoadLogicWorld() const
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_logics_worlds", "WHERE WorldID = '%d'", GS()->GetWorldID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_logics_worlds", "WHERE WorldID = '%d'", GS()->GetWorldID());
 	while(pRes->next())
 	{
 		const int Type = pRes->getInt("MobID"), Mode = pRes->getInt("Mode"), Health = pRes->getInt("ParseInt");
@@ -367,7 +367,7 @@ void MmoController::LoadLogicWorld() const
 char SaveNick[32];
 const char* MmoController::PlayerName(int AccountID)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Nick", "tw_accounts_data", "WHERE ID = '%d'", AccountID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Nick", "tw_accounts_data", "WHERE ID = '%d'", AccountID);
 	if(pRes->next())
 	{
 		str_copy(SaveNick, pRes->getString("Nick").c_str(), sizeof(SaveNick));
@@ -388,7 +388,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	const int ClientID = pPlayer->GetCID();
 	if(TypeID == GUILDS_LEVELING)
 	{
-		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT 10");
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT 10");
 		while (pRes->next())
 		{
 			char NameGuild[64];
@@ -401,7 +401,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 	else if (TypeID == GUILDS_WEALTHY)
 	{
-		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT 10");
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT 10");
 		while (pRes->next())
 		{
 			char NameGuild[64];
@@ -413,7 +413,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 	else if (TypeID == PLAYERS_LEVELING)
 	{
-		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT 10");
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT 10");
 		while (pRes->next())
 		{
 			char Nick[64];
@@ -426,7 +426,7 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 	}
 	else if (TypeID == PLAYERS_WEALTHY)
 	{
-		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT 10", (ItemIdentifier)itGold);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT 10", (ItemIdentifier)itGold);
 		while (pRes->next())
 		{
 			char Nick[64];
@@ -444,10 +444,10 @@ void MmoController::AsyncClientEnterMsgInfo(std::string ClientName, int ClientID
 	CSqlString<MAX_NAME_LENGTH> PlayerName(ClientName.c_str());
 
 	// create new thread
-	const auto AsyncEnterRes = Sqlpool.Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '%s'", PlayerName.cstr());
-	AsyncEnterRes->AtExecute([PlayerName, ClientID](IServer* pServer, ResultPtr pRes)
+	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '%s'", PlayerName.cstr());
+	AsyncEnterRes->AtExecute([PlayerName, ClientID](ResultPtr pRes)
 	{
-		CGS* pGS = (CGS*)pServer->GameServerPlayer(ClientID);
+		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
 		// send information : CPlayer checked by Chat() : PlayerName and ClientID getter by copy. 
 		pGS->Chat(ClientID, "Welcome! A list of commands can be found using /cmdlist.");

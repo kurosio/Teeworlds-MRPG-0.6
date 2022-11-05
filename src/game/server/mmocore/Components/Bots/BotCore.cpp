@@ -22,7 +22,7 @@ static int GetIntegerEmoteValue(const char* JsonName, const char* JsonValue)
 
 static void InitInformationBots()
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_info");
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_info");
 	while(pRes->next())
 	{
 		const int BotID = pRes->getInt("ID");
@@ -76,12 +76,11 @@ void CBotCore::OnInitWorld(const char* pWhereLocalWorld)
 // Initialization of quest bots
 void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_quest", pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_quest", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
 		const int QuestID = pRes->getInt("QuestID");
-		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
 
 		// load from database
 		QuestBotInfo QuestBot;
@@ -105,7 +104,8 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 
 		try
 		{
-			if(DialogJsonStr.length() >= 10)
+			std::string DialogJsonStr = pRes->getString("DialogData").c_str();
+			if(!DialogJsonStr.empty())
 			{
 				nlohmann::json JsonData = nlohmann::json::parse(DialogJsonStr.c_str());
 				for(auto& pItem : JsonData)
@@ -130,14 +130,14 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 		// initilize
 		QuestBotInfo::ms_aQuestBot[MobID] = QuestBot;
 		if(QuestID > 0)
-			CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot[MobID].m_Bot = &QuestBotInfo::ms_aQuestBot[MobID];
+			CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot[MobID].m_Bot = QuestBotInfo::ms_aQuestBot[MobID];
 	}
 }
 
 // Initialization of NPC bots
 void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_npc", pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_npc", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
@@ -158,7 +158,7 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 		try
 		{
 			std::string DialogJsonStr = pRes->getString("DialogData").c_str();
-			if(DialogJsonStr.length() >= 10)
+			if(!DialogJsonStr.empty())
 			{
 				CDialog Dialogue;
 				nlohmann::json JsonData = nlohmann::json::parse(DialogJsonStr.c_str());
@@ -190,7 +190,7 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 // Initialization of mobs bots
 void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_mobs", pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_mobs", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
@@ -405,17 +405,17 @@ void CBotCore::ConAddCharacterBot(int ClientID, const char* pCharacter)
 
 	// check the nick
 	CSqlString<16> cNick = CSqlString<16>(pCharacter);
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_bots_info", "WHERE Name = '%s'", cNick.cstr());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_info", "WHERE Name = '%s'", cNick.cstr());
 	if(pRes->next())
 	{
 		// if the nickname is not in the database
 		const int ID = pRes->getInt("ID");
-		Sqlpool.Execute<DB::UPDATE>("tw_bots_info", "JsonTeeInfo = '%s' WHERE ID = '%d'", JsonTeeInfo.dump().c_str(), ID);
+		Database->Execute<DB::UPDATE>("tw_bots_info", "JsonTeeInfo = '%s' WHERE ID = '%d'", JsonTeeInfo.dump().c_str(), ID);
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Updated character bot!");
 		return;
 	}
 
 	// add a new bot
-	Sqlpool.Execute<DB::INSERT>("tw_bots_info", "(Name, JsonTeeInfo) VALUES ('%s', '%s')", cNick.cstr(), JsonTeeInfo.dump().c_str());
+	Database->Execute<DB::INSERT>("tw_bots_info", "(Name, JsonTeeInfo) VALUES ('%s', '%s')", cNick.cstr(), JsonTeeInfo.dump().c_str());
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Added new character bot!");
 }

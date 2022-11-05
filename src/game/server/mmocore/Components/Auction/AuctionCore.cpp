@@ -168,7 +168,7 @@ void CAuctionCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionDat
 	const int ClientID = pPlayer->GetCID();
 
 	// check the number of slots whether everything is occupied or not
-	ResultPtr pResCheck = Sqlpool.Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID > '0' LIMIT %d", g_Config.m_SvMaxMasiveAuctionSlots);
+	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID > '0' LIMIT %d", g_Config.m_SvMaxMasiveAuctionSlots);
 	if((int)pResCheck->rowsCount() >= g_Config.m_SvMaxMasiveAuctionSlots)
 	{
 		GS()->Chat(ClientID, "Auction has run out of slots, wait for the release of slots!");
@@ -176,7 +176,7 @@ void CAuctionCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionDat
 	}
 
 	// check your slots
-	ResultPtr pResCheck2 = Sqlpool.Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, g_Config.m_SvMaxAuctionSlots);
+	ResultPtr pResCheck2 = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, g_Config.m_SvMaxAuctionSlots);
 	const int ValueSlot = (int)pResCheck2->rowsCount();
 	if(ValueSlot >= g_Config.m_SvMaxAuctionSlots)
 	{
@@ -185,7 +185,7 @@ void CAuctionCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionDat
 	}
 
 	// we check if the item is in the auction
-	ResultPtr pResCheck3 = Sqlpool.Execute<DB::SELECT>("ID", TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", pAuctionData->GetItem()->GetID(), pPlayer->Acc().m_UserID);
+	ResultPtr pResCheck3 = Database->Execute<DB::SELECT>("ID", TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", pAuctionData->GetItem()->GetID(), pPlayer->Acc().m_UserID);
 	if(pResCheck3->next())
 	{
 		GS()->Chat(ClientID, "Your same item found in the database, need reopen the slot!");
@@ -201,7 +201,7 @@ void CAuctionCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionDat
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(pAuctionItem->GetID());
 	if(pPlayerItem->GetValue() >= pAuctionItem->GetValue() && pPlayerItem->Remove(pAuctionItem->GetValue()))
 	{
-		Sqlpool.Execute<DB::INSERT>(TW_AUCTION_TABLE, "(ItemID, Price, ItemValue, UserID, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
+		Database->Execute<DB::INSERT>(TW_AUCTION_TABLE, "(ItemID, Price, ItemValue, UserID, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
 			pAuctionItem->GetID(), pAuctionData->GetPrice(), pAuctionItem->GetValue(), pPlayer->Acc().m_UserID, pAuctionItem->GetEnchant());
 
 		const int AvailableSlot = (g_Config.m_SvMaxAuctionSlots - ValueSlot) - 1;
@@ -212,7 +212,7 @@ void CAuctionCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionDat
 
 void CAuctionCore::CheckAuctionTime() const
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 AND DATE_SUB(NOW(),INTERVAL %d MINUTE) > Time", g_Config.m_SvTimeAuctionSlot);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 AND DATE_SUB(NOW(),INTERVAL %d MINUTE) > Time", g_Config.m_SvTimeAuctionSlot);
 	int ReleaseSlots = (int)pRes->rowsCount();
 	while(pRes->next())
 	{
@@ -222,7 +222,7 @@ void CAuctionCore::CheckAuctionTime() const
 		const int Enchant = pRes->getInt("Enchant");
 		const int UserID = pRes->getInt("UserID");
 		GS()->SendInbox("Auctionist", UserID, "Auction expired", "Your slot has expired", ItemID, Value, Enchant);
-		Sqlpool.Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ID = '%d'", ID);
+		Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ID = '%d'", ID);
 	}
 
 	if(ReleaseSlots)
@@ -234,7 +234,7 @@ void CAuctionCore::CheckAuctionTime() const
 bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE ID = '%d'", ID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE ID = '%d'", ID);
 	if(!pRes->next())
 		return false;
 
@@ -257,7 +257,7 @@ bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
 	{
 		GS()->Chat(ClientID, "You closed auction slot!");
 		GS()->SendInbox("Auctionist", pPlayer, "Auction Alert", "You have bought a item, or canceled your slot", ItemID, Value, Enchant);
-		Sqlpool.Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
+		Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
 		return true;
 	}
 
@@ -270,7 +270,7 @@ bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Your [Slot %sx%d] was sold!", pPlayerItem->Info()->GetName(), Value);
 	GS()->SendInbox("Auctionist", UserID, "Auction Sell", aBuf, itGold, Price, 0);
-	Sqlpool.Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
+	Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
 
 	pPlayerItem->Add(Value, 0, Enchant);
 	GS()->Chat(ClientID, "You buy {STR}x{VAL}.", pPlayerItem->Info()->GetName(), Value);
@@ -288,7 +288,7 @@ void CAuctionCore::ShowAuction(CPlayer* pPlayer)
 
 	bool FoundItems = false;
 	int HideID = (int)(NUM_TAB_MENU + CItemDescription::Data().size() + 400);
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 ORDER BY Price");
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 ORDER BY Price");
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");

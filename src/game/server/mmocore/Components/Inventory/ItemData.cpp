@@ -283,7 +283,7 @@ bool CPlayerItem::Save() const
 {
 	if(GetPlayer() && GetPlayer()->IsAuthed())
 	{
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
+		Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
 			m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc().m_UserID, m_ID);
 		return true;
 	}

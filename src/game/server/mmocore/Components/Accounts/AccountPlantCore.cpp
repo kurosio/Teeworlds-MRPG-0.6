@@ -11,7 +11,7 @@ std::map < int , CAccountPlantCore::StructPlants > CAccountPlantCore::ms_aPlants
 
 void CAccountPlantCore::OnInitWorld(const char* pWhereLocalWorld)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_positions_plant", pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_positions_plant", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
@@ -26,7 +26,7 @@ void CAccountPlantCore::OnInitWorld(const char* pWhereLocalWorld)
 
 void CAccountPlantCore::OnInitAccount(CPlayer *pPlayer)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	if(pRes->next())
 	{
 		pPlayer->Acc().m_FarmingData.initFields(&pRes);
@@ -36,7 +36,7 @@ void CAccountPlantCore::OnInitAccount(CPlayer *pPlayer)
 	pPlayer->Acc().m_FarmingData(JOB_LEVEL, 1).m_Value = 1;
 	pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value = 0;
 	pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value = 0;
-	Sqlpool.Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
+	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
 }
 
 int CAccountPlantCore::GetPlantLevel(vec2 Pos) const

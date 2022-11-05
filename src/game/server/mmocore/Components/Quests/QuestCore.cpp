@@ -6,7 +6,7 @@
 
 void QuestCore::OnInit()
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_quests_list");
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_quests_list");
 	while(pRes->next())
 	{
 		const int QUID = pRes->getInt("ID");
@@ -21,7 +21,7 @@ void QuestCore::OnInit()
 void QuestCore::OnInitAccount(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
 		const int QuestID = pRes->getInt("QuestID");
@@ -179,16 +179,16 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 
 	for(auto& pStepBot : CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot)
 	{
-		const QuestBotInfo* pBotInfo = pStepBot.second.m_Bot;
-		if(!pBotInfo->m_HasAction)
+		const QuestBotInfo& BotInfo = pStepBot.second.m_Bot;
+		if(!BotInfo.m_HasAction)
 			continue;
 
-		const int HideID = (NUM_TAB_MENU + pBotInfo->m_SubBotID);
-		const vec2 Pos = pBotInfo->m_Position / 32.0f;
+		const int HideID = (NUM_TAB_MENU + BotInfo.m_SubBotID);
+		const vec2 Pos = BotInfo.m_Position / 32.0f;
 		const CPlayerQuestStepDataInfo& rQuestStepDataInfo = pPlayerQuest.m_StepsQuestBot[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest.GetState() == QUEST_ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest.GetState() == QUEST_FINISHED) ? "✔ " : "\0");
 		
-		GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, pBotInfo->m_Step, pBotInfo->GetName(), Server()->GetWorldName(pBotInfo->m_WorldID), (int)Pos.x, (int)Pos.y);
+		GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
 		if(pPlayerQuest.GetState() != QUEST_ACCEPT)
@@ -201,8 +201,8 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 		bool NeedOnlyTalk = true;
 		for(int i = 0; i < 2; i++)
 		{
-			const int NeedKillMobID = pBotInfo->m_aNeedMob[i];
-			const int KillNeed = pBotInfo->m_aNeedMobValue[i];
+			const int NeedKillMobID = BotInfo.m_aNeedMob[i];
+			const int KillNeed = BotInfo.m_aNeedMobValue[i];
 			if(NeedKillMobID > 0 && KillNeed > 0 && DataBotInfo::ms_aDataBot.find(NeedKillMobID) != DataBotInfo::ms_aDataBot.end())
 			{
 				GS()->AVM(ClientID, "null", NOPE, HideID, "- Defeat {STR} [{INT}/{INT}]",
@@ -210,8 +210,8 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 				NeedOnlyTalk = false;
 			}
 
-			const int NeedItemID = pBotInfo->m_aItemSearch[i];
-			const int NeedValue = pBotInfo->m_aItemSearchValue[i];
+			const int NeedItemID = BotInfo.m_aItemSearch[i];
+			const int NeedValue = BotInfo.m_aItemSearchValue[i];
 			if(NeedItemID > 0 && NeedValue > 0)
 			{
 				CPlayerItem* pPlayerItem = pPlayer->GetItem(NeedItemID);
@@ -224,8 +224,8 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 		// reward from bot after can move to up
 		for(int i = 0; i < 2; i++)
 		{
-			const int RewardItemID = pBotInfo->m_aItemGives[i];
-			const int RewardValue = pBotInfo->m_aItemGivesValue[i];
+			const int RewardItemID = BotInfo.m_aItemGives[i];
+			const int RewardValue = BotInfo.m_aItemGivesValue[i];
 			if(RewardItemID > 0 && RewardValue > 0)
 			{
 				CItemDescription* pRewardItemInfo = GS()->GetItemInfo(RewardItemID);
@@ -274,7 +274,7 @@ void QuestCore::AddMobProgressQuests(CPlayer* pPlayer, int BotID)
 
 		for(auto& pStepBot : pPlayerQuest.second.m_StepsQuestBot)
 		{
-			if(pPlayerQuest.second.m_Step == pStepBot.second.m_Bot->m_Step)
+			if(pPlayerQuest.second.m_Step == pStepBot.second.m_Bot.m_Step)
 				pStepBot.second.AddMobProgress(pPlayer, BotID);
 		}
 	}

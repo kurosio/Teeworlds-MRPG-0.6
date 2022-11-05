@@ -40,7 +40,7 @@ void CQuestData::InitSteps()
 
 		JsonQuestData["steps"].push_back(
 		{
-			{ "subbotid", pStep.second.m_Bot->m_SubBotID },
+			{ "subbotid", pStep.second.m_Bot.m_SubBotID },
 			{ "mobprogress1", pStep.second.m_MobProgress[0] },
 			{ "mobprogress2", pStep.second.m_MobProgress[1] },
 			{ "state", pStep.second.m_StepComplete }
@@ -108,7 +108,7 @@ void CQuestData::SaveSteps()
 	{
 		JsonQuestData["steps"].push_back(
 		{
-			{ "subbotid", pStep.second.m_Bot->m_SubBotID },
+			{ "subbotid", pStep.second.m_Bot.m_SubBotID },
 			{ "mobprogress1", pStep.second.m_MobProgress[0] },
 			{ "mobprogress2", pStep.second.m_MobProgress[1] },
 			{ "state", pStep.second.m_StepComplete }
@@ -132,6 +132,7 @@ void CQuestData::ClearSteps()
 		pStepBot.second.UpdateBot();
 		pStepBot.second.CreateStepArrow(m_pPlayer->GetCID());
 	}
+
 	m_StepsQuestBot.clear();
 	fs_remove(GetJsonFileName().c_str());
 }
@@ -141,20 +142,21 @@ bool CQuestData::Accept()
 	if(m_State != QuestState::QUEST_NO_ACCEPT)
 		return false;
 
+	int ClientID = m_pPlayer->GetCID();
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+
 	// init quest
 	m_State = QuestState::QUEST_ACCEPT;
-	Sqlpool.Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_QuestID, m_pPlayer->Acc().m_UserID, QuestState::QUEST_ACCEPT);
+	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_QuestID, m_pPlayer->Acc().m_UserID, QuestState::QUEST_ACCEPT);
 
 	// init steps
 	InitSteps();
 
 	// information
-	CGS* pGS = m_pPlayer->GS();
-	const int ClientID = m_pPlayer->GetCID();
 	const int QuestsSize = Info().GetQuestStorySize();
 	const int QuestPosition = Info().GetQuestStoryPosition();
-	pGS->Chat(ClientID, "Accepted the quest ({STR} - {STR} {INT}/{INT})!", Info().GetStory(), Info().GetName(), QuestPosition, QuestsSize);
-	pGS->Chat(ClientID, "Reward for completing (Gold {VAL}, Experience {INT})!", Info().m_Gold, Info().m_Exp);
+	pGS->Chat(ClientID, "Accepted ({STR} - {STR} {INT}/{INT})!", Info().GetStory(), Info().GetName(), QuestPosition, QuestsSize);
+	pGS->Chat(ClientID, "# Reward (Gold {VAL}, Experience {INT})!", Info().m_Gold, Info().m_Exp);
 	pGS->CreatePlayerSound(ClientID, SOUND_CTF_CAPTURE);
 	return true;
 }
@@ -164,16 +166,17 @@ void CQuestData::Finish()
 	if(m_State != QuestState::QUEST_ACCEPT)
 		return;
 
+	int ClientID = m_pPlayer->GetCID();
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+
 	// finish quest
 	m_State = QuestState::QUEST_FINISHED;
-	Sqlpool.Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_QuestID, m_pPlayer->Acc().m_UserID);
+	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_QuestID, m_pPlayer->Acc().m_UserID);
 
 	// clear steps
 	ClearSteps();
 
 	// awards and write about completion
-	CGS* pGS = m_pPlayer->GS();
-	const int ClientID = m_pPlayer->GetCID();
 	m_pPlayer->AddMoney(Info().m_Gold);
 	m_pPlayer->AddExp(Info().m_Exp);
 	pGS->Chat(-1, "{STR} completed ({STR} - {STR})!", pGS->Server()->ClientName(ClientID), Info().m_aStoryLine, Info().m_aName);
@@ -193,7 +196,7 @@ void CQuestData::CheckaAvailableNewStep()
 	// check whether the active steps is complete
 	auto pActiveStep = std::find_if(m_StepsQuestBot.begin(), m_StepsQuestBot.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &pItem)
 	{
-		return (pItem.second.m_Bot->m_Step == m_Step && !pItem.second.m_StepComplete && pItem.second.m_Bot->m_HasAction);
+		return (pItem.second.m_Bot.m_Step == m_Step && !pItem.second.m_StepComplete && pItem.second.m_Bot.m_HasAction);
 	});
 
 	if(pActiveStep != m_StepsQuestBot.end())
@@ -207,7 +210,7 @@ void CQuestData::CheckaAvailableNewStep()
 	bool FinalStep = true;
 	for(auto& pStepBot : m_StepsQuestBot)
 	{
-		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot->m_HasAction)
+		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot.m_HasAction)
 			FinalStep = false;
 
 		pStepBot.second.UpdateBot();
@@ -219,8 +222,9 @@ void CQuestData::CheckaAvailableNewStep()
 	{
 		Finish();
 
-		CGS* pGS = m_pPlayer->GS();
-		const int ClientID = m_pPlayer->GetCID();
+		int ClientID = m_pPlayer->GetCID();
+		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+
 		pGS->StrongUpdateVotes(ClientID, MenuList::MENU_JOURNAL_MAIN);
 		pGS->StrongUpdateVotes(ClientID, MenuList::MENU_MAIN);
 	}

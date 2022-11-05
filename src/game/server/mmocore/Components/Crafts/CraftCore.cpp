@@ -7,7 +7,7 @@
 
 void CCraftCore::OnInit()
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_crafts_list");
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_crafts_list");
 	while(pRes->next())
 	{
 		int ItemID = pRes->getInt("ItemID");
@@ -20,7 +20,7 @@ void CCraftCore::OnInit()
 		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
 		CCraftItem(ID).Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
 	}
-
+	
 	Job()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
 }
 

@@ -17,19 +17,29 @@ CCommandProcessor::CCommandProcessor(CGS *pGS)
 	IServer* pServer = m_pGS->Server();
 	AddCommand("login", "s[username] s[password]", ConChatLogin, pServer, "");
 	AddCommand("register", "s[username] s[password]", ConChatRegister, pServer, "");
+
+	// guild commands
 	AddCommand("gexit", "", ConChatGuildExit, pServer, "");
 	AddCommand("gcreate", "r[guildname]", ConChatGuildCreate, pServer, "");
+
+	// house commands
 	AddCommand("doorhouse", "", ConChatDoorHouse, pServer, "");
 	AddCommand("sellhouse", "", ConChatSellHouse, pServer, "");
+
+	// admin command
 	AddCommand("pos", "", ConChatPosition, pServer, "");
 	AddCommand("sound", "i[sound]", ConChatSound, pServer, "");
+
+	// game command
 	AddCommand("useitem", "i[item]", ConChatUseItem, pServer, "");
 	AddCommand("useskill", "i[skill]", ConChatUseSkill, pServer, "");
+	AddCommand("voucher", "r[voucher]", ConChatVoucher, pServer, "");
+	AddCommand("coupon", "r[coupon]", ConChatVoucher, pServer, "");
+
+	// information command
 	AddCommand("cmdlist", "", ConChatCmdList, pServer, "");
 	AddCommand("help", "", ConChatCmdList, pServer, "");
 	AddCommand("rules", "", ConChatRules, pServer, "");
-	AddCommand("voucher", "r[voucher]", ConChatVoucher, pServer, "");
-	AddCommand("coupon", "r[coupon]", ConChatVoucher, pServer, "");
 #ifdef CONF_DISCORD
 	AddCommand("discord_connect", "s[DID]", ConChatDiscordConnect, pServer, "");
 #endif

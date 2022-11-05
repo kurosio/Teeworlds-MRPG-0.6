@@ -6,8 +6,8 @@
 
 void CWorldSwapCore::OnInit()
 {
-	const auto InitWorlds = Sqlpool.Prepare<DB::SELECT>("*", "tw_world_swap");
-	InitWorlds->AtExecute([this](IServer*, ResultPtr pRes)
+	const auto InitWorlds = Database->Prepare<DB::SELECT>("*", "tw_world_swap");
+	InitWorlds->AtExecute([this](ResultPtr pRes)
 	{
 		while (pRes->next())
 		{
@@ -34,15 +34,15 @@ void CWorldSwapCore::OnInitWorld(const char* pWhereLocalWorld)
 	const int WorldID = GS()->GetWorldID();
 	const CSqlString<32> cstrWorldName = CSqlString<32>(Server()->GetWorldName(WorldID));
 
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("RespawnWorld", "enum_worlds", pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("RespawnWorld", "enum_worlds", pWhereLocalWorld);
 	if(pRes->next())
 	{
 		const int RespawnWorld = pRes->getInt("RespawnWorld");
-		Sqlpool.Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
+		Database->Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
 		GS()->SetRespawnWorld(RespawnWorld);
 		return;
 	}
-	Sqlpool.Execute<DB::INSERT>("enum_worlds", "(WorldID, Name) VALUES ('%d', '%s')", WorldID, cstrWorldName.cstr());
+	Database->Execute<DB::INSERT>("enum_worlds", "(WorldID, Name) VALUES ('%d', '%s')", WorldID, cstrWorldName.cstr());
 }
 
 bool CWorldSwapCore::OnHandleTile(CCharacter *pChr, int IndexCollision)

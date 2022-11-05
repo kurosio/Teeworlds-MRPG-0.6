@@ -517,6 +517,7 @@ void CCharacter::Tick()
 		GS()->Mmo()->WorldSwap()->ChangeWorld(m_pPlayer, m_Core.m_Pos);
 		return;
 	}
+	else if(GetHelper()->TileExit(Index, TILE_WORLD_SWAP)) {}
 
 	HandleTuning();
 	m_Core.m_Input = m_Input;

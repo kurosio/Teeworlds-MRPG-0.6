@@ -13,8 +13,7 @@ class CPlayer;
 class CQuestStepDataInfo
 {
 public:
-	QuestBotInfo* m_Bot;
-
+	QuestBotInfo m_Bot;
 	void UpdateBot();
 	bool IsActiveStep(CGS* pGS) const;
 };

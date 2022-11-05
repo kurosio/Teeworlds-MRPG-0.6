@@ -79,7 +79,7 @@ CServer::~CServer()
 	delete m_pDiscord;
 #endif
 	delete m_pMultiWorlds;
-	Sqlpool.DisconnectConnectionHeap();
+	Database->DisconnectConnectionHeap();
 }
 
 IGameServer* CServer::GameServer(int WorldID)
@@ -163,11 +163,11 @@ void CServer::SetClientName(int ClientID, const char *pName)
 
 	const char* pDefaultName = "(1)";
 	pName = str_utf8_skip_whitespaces(pName);
-	str_utf8_copy_num(m_aClients[ClientID].m_aName, *pName ? pName : pDefaultName, sizeof(m_aClients[ClientID].m_aName), MAX_NAME_LENGTH);
+	str_copy(m_aClients[ClientID].m_aName, *pName ? pName : pDefaultName, MAX_NAME_LENGTH);
 
 	char aPrefixName[MAX_NAME_LENGTH];
 	str_format(aPrefixName, sizeof(aPrefixName), "[C]%s", m_aClients[ClientID].m_aName);
-	str_utf8_copy_num(m_aClients[ClientID].m_aNameTransfersPrefix, aPrefixName, sizeof(m_aClients[ClientID].m_aNameTransfersPrefix), MAX_NAME_LENGTH);
+	str_copy(m_aClients[ClientID].m_aNameTransfersPrefix, aPrefixName, MAX_NAME_LENGTH);
 }
 
 void CServer::SetClientClan(int ClientID, const char *pClan)
@@ -353,8 +353,8 @@ int CServer::Init()
 		m_aClients[i].m_Snapshots.Init();
 	}
 
+	CConectionPool::Initilize();
 	_StoreMultiworldIdentifiableStaticData::Init((IServer*)this);
-	Sqlpool.Init(this);
 	return 0;
 }
 

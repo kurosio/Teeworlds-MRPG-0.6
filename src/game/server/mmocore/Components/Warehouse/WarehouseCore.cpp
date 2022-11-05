@@ -12,7 +12,7 @@ constexpr auto TW_WAREHOUSE_ITEMS_TABLE = "tw_warehouse_items";
 void CWarehouseCore::OnInit()
 {
 	// init warehouses
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", TW_WAREHOUSE_TABLE);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_WAREHOUSE_TABLE);
 	while (pRes->next())
 	{
 		WarehouseIdentifier ID = pRes->getInt("ID");
@@ -27,7 +27,7 @@ void CWarehouseCore::OnInit()
 
 	// init trades slots
 	std::unordered_map< int , CWarehouse::ContainerTradingSlots > TradesSlots;
-	ResultPtr pResStore = Sqlpool.Execute<DB::SELECT>("*", TW_WAREHOUSE_ITEMS_TABLE);
+	ResultPtr pResStore = Database->Execute<DB::SELECT>("*", TW_WAREHOUSE_ITEMS_TABLE);
 	while(pResStore->next())
 	{
 		TradeIdentifier ID = pResStore->getInt("ID");

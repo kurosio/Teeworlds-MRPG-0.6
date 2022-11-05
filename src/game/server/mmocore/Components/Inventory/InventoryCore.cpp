@@ -32,8 +32,8 @@ bool ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, c
 using namespace sqlstr;
 void CInventoryCore::OnInit()
 {
-	const auto InitItemsList = Sqlpool.Prepare<DB::SELECT>("*", "tw_items_list");
-	InitItemsList->AtExecute([](IServer*, ResultPtr pRes)
+	const auto InitItemsList = Database->Prepare<DB::SELECT>("*", "tw_items_list");
+	InitItemsList->AtExecute([](ResultPtr pRes)
 	{
 		while (pRes->next())
 		{
@@ -61,8 +61,8 @@ void CInventoryCore::OnInit()
 		}
 	});
 
-	const auto InitAttributes = Sqlpool.Prepare<DB::SELECT>("*", "tw_attributs");
-	InitAttributes->AtExecute([](IServer*, ResultPtr pRes)
+	const auto InitAttributes = Database->Prepare<DB::SELECT>("*", "tw_attributs");
+	InitAttributes->AtExecute([](ResultPtr pRes)
 	{
 		while (pRes->next())
 		{
@@ -81,7 +81,7 @@ void CInventoryCore::OnInit()
 void CInventoryCore::OnInitAccount(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
 		ItemIdentifier ItemID = pRes->getInt("ItemID");
@@ -275,7 +275,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 void CInventoryCore::RepairDurabilityItems(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
 		Item.m_Durability = 100;
 }
@@ -303,7 +303,7 @@ int CInventoryCore::GiveItem(CPlayer *pPlayer, ItemIdentifier ItemID, int Value,
 	const int SecureID = SecureCheck(pPlayer, ItemID, Value, Settings, Enchant);
 	if(SecureID == 1)
 	{
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d' WHERE ItemID = '%d' AND UserID = '%d'",
+		Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d' WHERE ItemID = '%d' AND UserID = '%d'",
 		       CPlayerItem::Data()[ClientID][ItemID].m_Value, CPlayerItem::Data()[ClientID][ItemID].m_Settings, CPlayerItem::Data()[ClientID][ItemID].m_Enchant, ItemID, pPlayer->Acc().m_UserID);
 	}
 	return SecureID;
@@ -313,7 +313,7 @@ int CInventoryCore::SecureCheck(CPlayer *pPlayer, ItemIdentifier ItemID, int Val
 {
 	// check initialize and add the item
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 	if(pRes->next())
 	{
 		CPlayerItem::Data()[ClientID][ItemID].m_Value = pRes->getInt("Value")+Value;
@@ -327,7 +327,7 @@ int CInventoryCore::SecureCheck(CPlayer *pPlayer, ItemIdentifier ItemID, int Val
 	CPlayerItem::Data()[ClientID][ItemID].m_Settings = Settings;
 	CPlayerItem::Data()[ClientID][ItemID].m_Enchant = Enchant;
 	CPlayerItem::Data()[ClientID][ItemID].m_Durability = 100;
-	Sqlpool.Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
+	Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
 		ItemID, pPlayer->Acc().m_UserID, Value, Settings, Enchant);
 	return 2;
 }
@@ -337,7 +337,7 @@ int CInventoryCore::RemoveItem(CPlayer *pPlayer, ItemIdentifier ItemID, int Valu
 	const int SecureID = DeSecureCheck(pPlayer, ItemID, Value, Settings);
 	if(SecureID == 1)
 	{
-		Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = Value - '%d', Settings = Settings - '%d' WHERE ItemID = '%d' AND UserID = '%d'",
+		Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = Value - '%d', Settings = Settings - '%d' WHERE ItemID = '%d' AND UserID = '%d'",
 			Value, Settings, ItemID, pPlayer->Acc().m_UserID);
 	}
 	return SecureID;
@@ -347,7 +347,7 @@ int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, ItemIdentifier ItemID, int V
 {
 	// we check the database
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 	if(pRes->next())
 	{
 		// update if there is more
@@ -362,7 +362,7 @@ int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, ItemIdentifier ItemID, int V
 		CPlayerItem::Data()[ClientID][ItemID].m_Value = 0;
 		CPlayerItem::Data()[ClientID][ItemID].m_Settings = 0;
 		CPlayerItem::Data()[ClientID][ItemID].m_Enchant = 0;
-		Sqlpool.Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+		Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
 		return 2;
 	}
 
@@ -504,15 +504,15 @@ void CInventoryCore::AddItemSleep(int AccountID, ItemIdentifier ItemID, int Valu
 			return;
 		}
 
-		ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("Value", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, AccountID);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("Value", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, AccountID);
 		if(pRes->next())
 		{
 			const int ReallyValue = pRes->getInt("Value") + Value;
-			Sqlpool.Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d' WHERE UserID = '%d' AND ItemID = '%d'", ReallyValue, AccountID, ItemID);
+			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d' WHERE UserID = '%d' AND ItemID = '%d'", ReallyValue, AccountID, ItemID);
 			lock_sleep.unlock();
 			return;
 		}
-		Sqlpool.Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '0', '0')", ItemID, AccountID, Value);
+		Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '0', '0')", ItemID, AccountID, Value);
 		lock_sleep.unlock();
 	});
 	Thread.detach();

@@ -14,8 +14,8 @@
 void CHouseCore::OnInitWorld(const char* pWhereLocalWorld)
 {
 	// load house
-	const auto InitHouses = Sqlpool.Prepare<DB::SELECT>("*", "tw_houses", pWhereLocalWorld);
-	InitHouses->AtExecute([this](IServer*, ResultPtr pRes)
+	auto InitHouses = Database->Prepare<DB::SELECT>("*", "tw_houses", pWhereLocalWorld);
+	InitHouses->AtExecute([this](ResultPtr pRes)
 	{
 		while (pRes->next())
 		{
@@ -42,8 +42,8 @@ void CHouseCore::OnInitWorld(const char* pWhereLocalWorld)
 	});
 
 	// load decoration
-	const auto InitHouseDecorations = Sqlpool.Prepare<DB::SELECT>("*", "tw_houses_decorations", pWhereLocalWorld);
-	InitHouseDecorations->AtExecute([this](IServer*, ResultPtr pRes)
+	const auto InitHouseDecorations = Database->Prepare<DB::SELECT>("*", "tw_houses_decorations", pWhereLocalWorld);
+	InitHouseDecorations->AtExecute([this](ResultPtr pRes)
 	{
 		while (pRes->next())
 		{
@@ -327,7 +327,7 @@ void CHouseCore::ChangePlantsID(int HouseID, int PlantID)
 	if(Updates)
 	{
 		CHouseData::ms_aHouse[HouseID].m_PlantID = PlantID;
-		Sqlpool.Execute<DB::UPDATE>("tw_houses", "PlantID = '%d' WHERE ID = '%d'", PlantID, HouseID);
+		Database->Execute<DB::UPDATE>("tw_houses", "PlantID = '%d' WHERE ID = '%d'", PlantID, HouseID);
 	}
 }
 
@@ -347,16 +347,16 @@ bool CHouseCore::AddDecorationHouse(int DecoID, int HouseID, vec2 Position)
 		return false;
 	}
 
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID", "tw_houses_decorations", "WHERE HouseID = '%d'", HouseID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_houses_decorations", "WHERE HouseID = '%d'", HouseID);
 	if(static_cast<int>(pRes->rowsCount()) >= g_Config.m_SvLimitDecoration)
 	{
 		return false;
 	}
 
-	ResultPtr pRes2 = Sqlpool.Execute<DB::SELECT>("ID", "tw_houses_decorations", "ORDER BY ID DESC LIMIT 1");
+	ResultPtr pRes2 = Database->Execute<DB::SELECT>("ID", "tw_houses_decorations", "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pRes2->next() ? pRes2->getInt("ID")+1 : 1;
 
-	Sqlpool.Execute<DB::INSERT>("tw_houses_decorations", "(ID, DecoID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
+	Database->Execute<DB::INSERT>("tw_houses_decorations", "(ID, DecoID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
 		InitID, DecoID, HouseID, static_cast<int>(Position.x), static_cast<int>(Position.y), GS()->GetWorldID());
 
 	m_aDecorationHouse[InitID] = new CDecorationHouses(&GS()->m_World, Position, HouseID, DecoID);
@@ -373,7 +373,7 @@ bool CHouseCore::DeleteDecorationHouse(int ID)
 			m_aDecorationHouse[ID] = nullptr;
 		}
 		m_aDecorationHouse.erase(ID);
-		Sqlpool.Execute<DB::REMOVE>("tw_houses_decorations", "WHERE ID = '%d'", ID);
+		Database->Execute<DB::REMOVE>("tw_houses_decorations", "WHERE ID = '%d'", ID);
 		return true;
 	}
 	return false;
@@ -577,7 +577,7 @@ void CHouseCore::BuyHouse(int HouseID, CPlayer *pPlayer)
 		return;
 	}
 
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("UserID, Price", "tw_houses", "WHERE ID = '%d' AND UserID IS NULL", HouseID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("UserID, Price", "tw_houses", "WHERE ID = '%d' AND UserID IS NULL", HouseID);
 	if(pRes->next())
 	{
 		const int Price = pRes->getInt("Price");
@@ -588,7 +588,7 @@ void CHouseCore::BuyHouse(int HouseID, CPlayer *pPlayer)
 
 		CHouseData::ms_aHouse[HouseID].m_Bank = 0;
 		CHouseData::ms_aHouse[HouseID].m_UserID = pPlayer->Acc().m_UserID;
-		Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_UserID, HouseID);
+		Database->Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_UserID, HouseID);
 
 		GS()->Chat(-1, "{STR} becomes the owner of the house class {STR}", Server()->ClientName(ClientID), CHouseData::ms_aHouse[HouseID].m_aClass);
 		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**{STR} becomes the owner of the house class {STR}**", Server()->ClientName(ClientID), CHouseData::ms_aHouse[HouseID].m_aClass);
@@ -601,13 +601,13 @@ void CHouseCore::BuyHouse(int HouseID, CPlayer *pPlayer)
 
 void CHouseCore::SellHouse(int HouseID)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("HouseBank, UserID", "tw_houses", "WHERE ID = '%d' AND UserID IS NOT NULL", HouseID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("HouseBank, UserID", "tw_houses", "WHERE ID = '%d' AND UserID IS NOT NULL", HouseID);
 	if(pRes->next())
 	{
 		const int UserID = pRes->getInt("UserID");
 		const int Price = CHouseData::ms_aHouse[HouseID].m_Price + pRes->getInt("HouseBank");
 		GS()->SendInbox("System", UserID, "House is sold", "Your house is sold !", itGold, Price, 0);
-		Sqlpool.Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0' WHERE ID = '%d'", HouseID);
+		Database->Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0' WHERE ID = '%d'", HouseID);
 
 		CPlayer *pPlayer = GS()->GetPlayerFromUserID(UserID);
 		if(pPlayer)
@@ -632,7 +632,7 @@ void CHouseCore::SellHouse(int HouseID)
 void CHouseCore::TakeFromSafeDeposit(CPlayer* pPlayer, int TakeValue)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	if(!pRes->next())
 	{
 		return;
@@ -648,14 +648,14 @@ void CHouseCore::TakeFromSafeDeposit(CPlayer* pPlayer, int TakeValue)
 
 	pPlayer->AddMoney(TakeValue);
 	CHouseData::ms_aHouse[HouseID].m_Bank = Bank - TakeValue;
-	Sqlpool.Execute<DB::UPDATE>("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_Bank, HouseID);
+	Database->Execute<DB::UPDATE>("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_Bank, HouseID);
 	GS()->Chat(ClientID, "You take {VAL} gold in the safe {VAL}!", TakeValue, CHouseData::ms_aHouse[HouseID].m_Bank);
 }
 
 void CHouseCore::AddSafeDeposit(CPlayer *pPlayer, int Balance)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	if(!pRes->next())
 	{
 		return;
@@ -664,7 +664,7 @@ void CHouseCore::AddSafeDeposit(CPlayer *pPlayer, int Balance)
 	const int HouseID = pRes->getInt("ID");
 	CHouseData::ms_aHouse[HouseID].m_Bank = pRes->getInt("HouseBank") + Balance;
 	GS()->Chat(ClientID, "You put {VAL} gold in the safe {VAL}!", Balance, CHouseData::ms_aHouse[HouseID].m_Bank);
-	Sqlpool.Execute<DB::UPDATE>("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_Bank, HouseID);
+	Database->Execute<DB::UPDATE>("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", CHouseData::ms_aHouse[HouseID].m_Bank, HouseID);
 }
 
 bool CHouseCore::ChangeStateDoor(int HouseID)

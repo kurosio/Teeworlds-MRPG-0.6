@@ -8,7 +8,7 @@
 
 void DungeonCore::OnInit()
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_dungeons");
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons");
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
@@ -150,21 +150,21 @@ void DungeonCore::SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayerDung
 	const int Seconds = pPlayerDungeonRecord->m_Time;
 	const float PassageHelp = pPlayerDungeonRecord->m_PassageHelp;
 
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE UserID = '%d' AND DungeonID = '%d'", pPlayer->Acc().m_UserID, DungeonID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE UserID = '%d' AND DungeonID = '%d'", pPlayer->Acc().m_UserID, DungeonID);
 	if (pRes->next())
 	{
 		if (pRes->getInt("Seconds") > Seconds && pRes->getInt("PassageHelp") < PassageHelp)
-			Sqlpool.Execute<DB::UPDATE>("tw_dungeons_records", "Seconds = '%d', PassageHelp = '%f' WHERE UserID = '%d' AND DungeonID = '%d'",
+			Database->Execute<DB::UPDATE>("tw_dungeons_records", "Seconds = '%d', PassageHelp = '%f' WHERE UserID = '%d' AND DungeonID = '%d'",
 				Seconds, PassageHelp, pPlayer->Acc().m_UserID, DungeonID);
 		return;
 	}
-	Sqlpool.Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Seconds, PassageHelp) VALUES ('%d', '%d', '%d', '%f')", pPlayer->Acc().m_UserID, DungeonID, Seconds, PassageHelp);
+	Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Seconds, PassageHelp) VALUES ('%d', '%d', '%d', '%f')", pPlayer->Acc().m_UserID, DungeonID, Seconds, PassageHelp);
 }
 
 void DungeonCore::ShowDungeonTop(CPlayer* pPlayer, int DungeonID, int HideID) const
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '%d' ORDER BY Seconds ASC LIMIT 5", DungeonID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '%d' ORDER BY Seconds ASC LIMIT 5", DungeonID);
 	while (pRes->next())
 	{
 		const int Rank = pRes->getRow();

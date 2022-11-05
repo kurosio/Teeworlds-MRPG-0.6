@@ -10,8 +10,8 @@
 
 void CAetherCore::OnInit()
 {
-	const auto InitAethers = Sqlpool.Prepare<DB::SELECT>("*", "tw_aethers");
-	InitAethers->AtExecute([this](IServer*, ResultPtr pRes)
+	const auto InitAethers = Database->Prepare<DB::SELECT>("*", "tw_aethers");
+	InitAethers->AtExecute([this](ResultPtr pRes)
 	{
 		while (pRes->next())
 		{
@@ -28,7 +28,7 @@ void CAetherCore::OnInit()
 
 void CAetherCore::OnInitAccount(CPlayer *pPlayer)
 {
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
 	while(pRes->next())
 	{
 		const int TeleportID = pRes->getInt("AetherID");
@@ -115,7 +115,7 @@ void CAetherCore::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
 			continue;
 
 		pPlayer->Acc().m_aAetherLocation[ID] = true;
-		Sqlpool.Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, ID);
+		Database->Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, ID);
 
 		GS()->Chat(ClientID, "You unlock aether {STR}!", Aether.GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Adventure unlock aether {STR}", Aether.GetName());

@@ -113,13 +113,13 @@ void DiscordJob::SendWarningMessage(SleepyDiscord::Snowflake<SleepyDiscord::Chan
 bool DiscordJob::SendGenerateMessage(SleepyDiscord::User UserRequestFrom, std::string Channel, std::string Title, std::string SearchNickname, int Color, bool MultipleSearch)
 {
 	const CSqlString<64> SearchNick(std::string("%" + SearchNickname + "%").c_str());
-	ResultPtr pRes = Sqlpool.Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick LIKE '%s' LIMIT %d", SearchNick.cstr(), (MultipleSearch ? 3 : 1));
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick LIKE '%s' LIMIT %d", SearchNick.cstr(), (MultipleSearch ? 3 : 1));
 	while(pRes->next())
 	{
 		const int AccountID = pRes->getInt("ID");
 		const int Rank = Server()->GameServer()->GetRank(AccountID);
 		std::string Nickname(pRes->getString("Nick").c_str());
-		std::string PhpArguments = "?player=" + Nickname + "&dicid=" + std::to_string(pRes->getInt("DiscordEquip")) + "&rank=" + std::to_string(Rank);
+		std::string PhpArguments = "?player=" + Nickname + "&rank=" + std::to_string(Rank);
 		const std::string ImageUrl = std::string(g_Config.m_SvDiscordGenerateURL) + PhpArguments;
 
 		SleepyDiscord::Embed embed;

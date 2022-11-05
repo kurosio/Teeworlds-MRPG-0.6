@@ -22,21 +22,31 @@
 	 working running through each request in order
 	 This pool is not asynchronous
 */
-// multithread mutex :: warning recursive
 std::atomic_flag g_atomic_lock;
 
 // #####################################################
 // SQL CONNECTION POOL
 // #####################################################
-std::shared_ptr<CConectionPool> CConectionPool::m_Instance;
+std::shared_ptr<CConectionPool> CConectionPool::m_ptrInstance;
+void CConectionPool::Initilize()
+{
+	m_ptrInstance = std::make_shared<CConectionPool>(std::forward<CConectionPool>({}));
+}
+
+std::shared_ptr<CConectionPool> CConectionPool::GetInstance()
+{
+	return m_ptrInstance;
+}
+
 CConectionPool::CConectionPool()
 {
 	try
 	{
 		m_pDriver = get_driver_instance();
-		for (int i = 0; i < g_Config.m_SvMySqlPoolSize; ++i)
+		for(int i = 0; i < g_Config.m_SvMySqlPoolSize; ++i)
+		{
 			this->CreateConnection();
-
+		}
 	}
 	catch (SQLException& e)
 	{
@@ -48,13 +58,6 @@ CConectionPool::CConectionPool()
 CConectionPool::~CConectionPool()
 {
 	DisconnectConnectionHeap();
-}
-
-CConectionPool& CConectionPool::GetInstance()
-{
-	if (m_Instance == nullptr)
-		m_Instance.reset(new CConectionPool());
-	return *m_Instance;
 }
 
 Connection* CConectionPool::CreateConnection()
@@ -82,6 +85,7 @@ Connection* CConectionPool::CreateConnection()
 			DisconnectConnection(pConnection);
 		}
 	}
+
 	g_atomic_lock.test_and_set(std::memory_order_acquire);
 	m_ConnList.push_back(pConnection);
 	g_atomic_lock.clear(std::memory_order_release);
@@ -91,7 +95,7 @@ Connection* CConectionPool::CreateConnection()
 Connection* CConectionPool::GetConnection()
 {
 	Connection* pConnection;
-	if (m_ConnList.empty())
+	if(m_ConnList.empty())
 	{
 		pConnection = CreateConnection();
 		return pConnection;
@@ -124,17 +128,18 @@ void CConectionPool::ReleaseConnection(Connection* pConnection)
 
 void CConectionPool::DisconnectConnection(Connection* pConnection)
 {
-	if (pConnection)
+	try
 	{
-		try
+		if(pConnection)
 		{
 			pConnection->close();
 		}
-		catch (SQLException& e)
-		{
-			dbg_msg("Sql Exception", "%s", e.what());
-		}
 	}
+	catch (SQLException& e)
+	{
+		dbg_msg("Sql Exception", "%s", e.what());
+	}
+
 	g_atomic_lock.test_and_set(std::memory_order_acquire);
 	m_ConnList.remove(pConnection);
 	delete pConnection;
@@ -144,6 +149,8 @@ void CConectionPool::DisconnectConnection(Connection* pConnection)
 
 void CConectionPool::DisconnectConnectionHeap()
 {
-	for (auto& iconn : m_ConnList)
-		DisconnectConnection(iconn);
+	for(auto& pConn : m_ConnList)
+	{
+		DisconnectConnection(pConn);
+	}
 }

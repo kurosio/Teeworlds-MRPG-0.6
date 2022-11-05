@@ -160,7 +160,7 @@ void CPlayer::Snap(int SnappingClient)
 	if (!pClientInfo)
 		return;
 
-	if(m_PlayerFlags ^ PLAYERFLAG_CHATTING && Server()->Tick() < m_SnapHealthTick)
+	if(!(m_PlayerFlags & PLAYERFLAG_CHATTING) && Server()->Tick() < m_SnapHealthTick)
 	{
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
 
