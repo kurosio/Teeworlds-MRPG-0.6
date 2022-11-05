@@ -16,8 +16,6 @@
 
 #include <cstdarg>
 
-#include "sql_connect_pool.h"
-
 using namespace sql;
 
 /*
