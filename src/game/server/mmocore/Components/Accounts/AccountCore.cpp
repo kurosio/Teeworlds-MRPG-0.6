@@ -135,7 +135,7 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		return AccountCodeResult::AOP_LOGIN_OK;
 	}
 
-	GS()->Chat(ClientID, "Your nickname was not found in the Database->");
+	GS()->Chat(ClientID, "Your nickname was not found in the Database.");
 	return AccountCodeResult::AOP_NICKNAME_NOT_EXIST;
 }
 
