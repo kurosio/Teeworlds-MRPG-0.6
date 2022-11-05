@@ -1174,6 +1174,7 @@ void CGS::OnClientEnter(int ClientID)
 	}
 
 	Mmo()->Account()->LoadAccount(pPlayer, false);
+	Mmo()->SaveAccount(m_apPlayers[ClientID], SaveType::SAVE_POSITION);
 }
 
 void CGS::OnClientDrop(int ClientID, const char *pReason)

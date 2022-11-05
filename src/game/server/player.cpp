@@ -744,6 +744,23 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 	{
 		const int SizeDialogs = QuestBotInfo::ms_aQuestBot[MobID].m_aDialogs.size();
 
+		// function parse json event data
+		auto ParseEvent = [](std::string &EventData, const std::function<void(nlohmann::json& pJson)>& pFunc)
+		{
+			try
+			{
+				if(!EventData.empty())
+				{
+					nlohmann::json JsonData = nlohmann::json::parse(EventData);
+					pFunc(JsonData);
+				}
+			}
+			catch(nlohmann::json::exception& s)
+			{
+				dbg_msg("dialog error", "%s", s.what());
+			}
+		};
+
 		//  after
 		if(m_DialogNPC.m_FreezedProgress)
 		{
@@ -761,53 +778,26 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 				GS()->Mmo()->Quest()->InteractiveQuestNPC(this, QuestBotInfo::ms_aQuestBot[MobID], true);
 				ClearTalking();
 
-				try
+				ParseEvent(QuestBotInfo::ms_aQuestBot[MobID].m_EventJsonData, [this](nlohmann::json& pJson)
 				{
-					std::string& EventData = QuestBotInfo::ms_aQuestBot[MobID].m_EventJsonData;
-					if(!EventData.empty())
+					/* * * * * * * * *
+					 * Teleport event
+					 * * * * * * * * */
+					if(pJson.find("teleport") != pJson.end())
 					{
-						nlohmann::json JsonData = nlohmann::json::parse(EventData);
+						auto pTeleport = pJson["teleport"];
+						vec2 Position(pTeleport.value("x", -1.0f), pTeleport.value("y", -1.0f));
 
-						/* * * * * * * *
-						 * Chat event
-						 * * * * * * * */
-						if(JsonData.find("chat") != JsonData.end())
+						if(pTeleport.find("world_id") != pTeleport.end() && GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
 						{
-							for(auto& p : JsonData["chat"])
-							{
-								std::string Text = p.value("text", "\0");
-								if(p.find("broadcast") != p.end() && p.value("broadcast", 0))
-									GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 300, Text.c_str());
-								else
-									GS()->Chat(m_ClientID, Text.c_str());
-							}
+							GetTempData().m_TempTeleportPos = Position;
+							ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID));
+							return;
 						}
 
-						/* * * * * * * * *
-						 * Teleport event
-						 * * * * * * * * */
-						if(JsonData.find("teleport") != JsonData.end())
-						{
-							auto pTeleport = JsonData["teleport"];
-							vec2 Position(pTeleport.value("x", -1.0f), pTeleport.value("y", -1.0f));
-
-							if(pTeleport.find("world_id") != pTeleport.end() && GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
-							{
-								GetTempData().m_TempTeleportPos = Position;
-								ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID));
-								return;
-							}
-
-							GetCharacter()->ChangePosition(Position);
-						}
+						GetCharacter()->ChangePosition(Position);
 					}
-				}
-				catch(nlohmann::json::exception& s)
-				{
-					dbg_msg("dialog error", "%s", s.what());
-				}
-
-
+				});
 				return;
 			}
 
@@ -823,6 +813,36 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			GS()->Mmo()->BotsData()->DialogBotStepQuest(this, MobID, m_DialogNPC.m_Progress, true);
 			m_DialogNPC.m_RequestProgress = m_DialogNPC.m_Progress;
 			m_DialogNPC.m_FreezedProgress = true;
+
+			ParseEvent(QuestBotInfo::ms_aQuestBot[MobID].m_EventJsonData, [this](nlohmann::json& pJson)
+			{
+				/* * * * * * * *
+				 * Chat event
+				 * * * * * * * */
+				if(pJson.find("chat") != pJson.end())
+				{
+					bool Highlighting = false;
+					for(auto& p : pJson["chat"])
+					{
+						std::string Text = p.value("text", "\0");
+						if(p.find("broadcast") != p.end() && p.value("broadcast", 0))
+							GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 300, Text.c_str());
+						else
+						{
+							if(!Highlighting)
+							{
+								GS()->Chat(m_ClientID, "*****************************");
+								Highlighting = true;
+							}
+							GS()->Chat(m_ClientID, Text.c_str());
+						}
+					}
+
+					if(Highlighting)
+						GS()->Chat(m_ClientID, "*****************************");
+				}
+			});
+
 			return;
 		}
 
