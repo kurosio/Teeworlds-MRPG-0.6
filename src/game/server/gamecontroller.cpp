@@ -4,7 +4,9 @@
 #include "gamecontroller.h"
 
 #include "gamecontext.h"
+
 #include "entities/pickup.h"
+#include "mmocore/GameEntities/npcwall.h"
 
 /*
 	Here you need to put it in order make more events
@@ -114,6 +116,30 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 		new CPickup(&GS()->m_World, Type, SubType, Pos);
 		return true;
 	}
+
+	// BOT'S WALLS
+	if(Index == ENTITY_NPC_WALLUP)
+	{
+		new CNPCWall(&GS()->m_World, Pos, false, CNPCWall::Flags::FRIENDLY_BOT);
+		return true;
+	}
+
+	if(Index == ENTITY_NPC_WALLLEFT)
+	{
+		new CNPCWall(&GS()->m_World, Pos, true, CNPCWall::Flags::FRIENDLY_BOT);
+		return true;
+	}
+	if(Index == ENTITY_MOB_WALLUP)
+	{
+		new CNPCWall(&GS()->m_World, Pos, false, CNPCWall::Flags::AGRESSED_BOT);
+		return true;
+	}
+	if(Index == ENTITY_MOB_WALLLEFT)
+	{
+		new CNPCWall(&GS()->m_World, Pos, true, CNPCWall::Flags::AGRESSED_BOT);
+		return true;
+	}
+
 
 	return false;
 }

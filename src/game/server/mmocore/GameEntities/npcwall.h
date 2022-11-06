@@ -7,12 +7,22 @@
 class CNPCWall : public CEntity
 {
 public:
-	CNPCWall(CGameWorld *pGameWorld, vec2 Pos, bool Left);
+	enum Flags
+	{
+		NPC_BOT,
+		QUEST_BOT,
+		MOB_BOT,
+		FRIENDLY_BOT = NPC_BOT|QUEST_BOT,
+		AGRESSED_BOT = MOB_BOT
+	};
+
+	CNPCWall(CGameWorld *pGameWorld, vec2 Pos, bool Left, int Flag);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
 private:
+	int m_Flag;
 	bool m_Active;
 };
 

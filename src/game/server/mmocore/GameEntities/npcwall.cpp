@@ -5,7 +5,7 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
-CNPCWall::CNPCWall(CGameWorld *pGameWorld, vec2 Pos, bool Left)
+CNPCWall::CNPCWall(CGameWorld *pGameWorld, vec2 Pos, bool Left, int Flag)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_NPC_DOOR, Pos)
 {
 	if(!Left)
@@ -15,6 +15,7 @@ CNPCWall::CNPCWall(CGameWorld *pGameWorld, vec2 Pos, bool Left)
 
 	m_PosTo = GS()->Collision()->FindDirCollision(100, m_PosTo, (Left ? 'x' : 'y'), (Left ? '+' : '-'));
 	m_Active = false;
+	m_Flag = Flag;
 
 	GameWorld()->InsertEntity(this);
 }
@@ -25,7 +26,9 @@ void CNPCWall::Tick()
 	m_Active = false;
 	for (CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		if (pChar->GetPlayer()->IsBot() && pChar->GetPlayer()->GetBotType() != BotsTypes::TYPE_BOT_MOB)
+		int BotType = pChar->GetPlayer()->GetBotType();
+		if (pChar->GetPlayer()->IsBot() && ((m_Flag & Flags::MOB_BOT && BotType == BotsTypes::TYPE_BOT_MOB) 
+			|| (m_Flag & Flags::NPC_BOT && BotType == BotsTypes::TYPE_BOT_NPC) || (m_Flag & Flags::QUEST_BOT && BotType == BotsTypes::TYPE_BOT_QUEST)))
 		{
 			vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
 			const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);

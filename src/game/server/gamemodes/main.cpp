@@ -4,7 +4,6 @@
 
 #include <game/server/gamecontext.h>
 #include <game/server/mmocore/GameEntities/jobitems.h>
-#include <game/server/mmocore/GameEntities/npcwall.h>
 #include <game/server/mmocore/GameEntities/Logics/logicwall.h>
 
 #include <game/server/mmocore/Components/Accounts/AccountMinerCore.h>
@@ -42,18 +41,6 @@ bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
 {
 	if(IGameController::OnEntity(Index, Pos))
 		return true;
-
-	if(Index == ENTITY_NPC_WALLUP)
-	{
-		new CNPCWall(&GS()->m_World, Pos, false);
-		return true;
-	}
-
-	if(Index == ENTITY_NPC_WALLLEFT)
-	{
-		new CNPCWall(&GS()->m_World, Pos, true);
-		return true;
-	}
 
 	if(Index == ENTITY_PLANTS)
 	{
