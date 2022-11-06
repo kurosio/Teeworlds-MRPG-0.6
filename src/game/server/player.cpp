@@ -847,6 +847,19 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 					if(Highlighting)
 						GS()->Chat(m_ClientID, "*****************************");
 				}
+
+				/* * * * * * * *
+				 * Effect event
+				 * * * * * * * */
+				if(pJson.find("effect") != pJson.end())
+				{
+					auto pEffect = pJson["effect"];
+					std::string Effect = pEffect.value("name", "\0");
+					int Seconds = pEffect.value("seconds", 0);
+
+					if(!Effect.empty())
+						GiveEffect(Effect.c_str(), Seconds);
+				}
 			});
 
 			return;
