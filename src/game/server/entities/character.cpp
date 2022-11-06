@@ -120,6 +120,10 @@ bool CCharacter::IsCollisionFlag(int Flag) const
 		return true;
 	if(GS()->Collision()->CheckPoint(m_Pos.x-GetProximityRadius()/2, m_Pos.y+GetProximityRadius()/2+5, Flag))
 		return true;
+	if(GS()->Collision()->CheckPoint(m_Pos.x+GetProximityRadius()/2, m_Pos.y-GetProximityRadius()/2+5, Flag))
+		return true;
+	if(GS()->Collision()->CheckPoint(m_Pos.x-GetProximityRadius()/2, m_Pos.y-GetProximityRadius()/2+5, Flag))
+		return true;
 	return false;
 }
 

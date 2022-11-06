@@ -481,9 +481,9 @@ void CCharacterBotAI::Move()
 	// check dissalow move
 	if(IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
 	{
-		m_pBotPlayer->m_TargetPos = vec2(0, 0);
 		m_Input.m_Direction = -m_Input.m_Direction;
 		m_DoorHit = true;
+		ClearTarget();
 	}
 
 	// jumping
@@ -698,7 +698,7 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 	{
 		CPlayer* pFindPlayer = GS()->GetPlayer(i, true, true);
 		if(pFindPlayer && distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f &&
-			!GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr) && m_pBotPlayer->IsVisibleForClient(i))
+			!GS()->Collision()->IntersectLineWithInvisible(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr) && m_pBotPlayer->IsVisibleForClient(i))
 		{
 			pFindPlayer->GetCharacter()->m_SafeAreaForTick = true;
 
