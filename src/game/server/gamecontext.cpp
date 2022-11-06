@@ -589,7 +589,7 @@ void CGS::BroadcastTick(int ClientID)
 			{
 				char aAppendBuf[1024]{ };
 				str_copy(aAppendBuf, rBroadcast.m_aTimedMessage, sizeof(aAppendBuf));
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(rBroadcast.m_aNextMessage, sizeof(rBroadcast.m_aNextMessage), aAppendBuf);
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(rBroadcast.m_aNextMessage, sizeof(rBroadcast.m_aNextMessage), m_apPlayers[ClientID]->m_PlayerFlags&PLAYERFLAG_CHATTING ? "\0" : aAppendBuf);
 			}
 			else
 			{

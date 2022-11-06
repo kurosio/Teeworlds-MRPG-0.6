@@ -105,7 +105,7 @@ void CPlayer::Tick()
 void CPlayer::PostTick()
 {
 	// update latency value
-	if (Server()->ClientIngame(m_ClientID) && GS()->IsPlayerEqualWorld(m_ClientID) && IsAuthed())
+	if (Server()->ClientIngame(m_ClientID) && IsAuthed())
 		GetTempData().m_TempPing = m_Latency.m_Min;
 }
 
@@ -129,12 +129,11 @@ void CPlayer::EffectsTick()
 
 void CPlayer::TickSystemTalk()
 {
-	if(m_DialogNPC.m_TalkedID == -1 || m_DialogNPC.m_TalkedID == m_ClientID)
-		return;
-
-	const int TalkedID = m_DialogNPC.m_TalkedID;
-	if(!m_pCharacter || TalkedID < MAX_PLAYERS || !GS()->m_apPlayers[TalkedID] || distance(m_ViewPos, GS()->m_apPlayers[TalkedID]->m_ViewPos) > 180.0f)
-		ClearTalking();
+	if(const int TalkedID = m_DialogNPC.m_TalkedID; TalkedID != -1 && TalkedID != m_ClientID)
+	{
+		if(!m_pCharacter || TalkedID < MAX_PLAYERS || !GS()->m_apPlayers[TalkedID] || distance(m_ViewPos, GS()->m_apPlayers[TalkedID]->m_ViewPos) > 180.0f)
+			ClearTalking();
+	}
 }
 
 void CPlayer::HandleTuningParams()
@@ -144,10 +143,12 @@ void CPlayer::HandleTuningParams()
 		if(GetCharacter())
 		{
 			CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-			const int *pParams = (int *)&m_NextTuningParams;
+			const int *pParams = reinterpret_cast<int*>(&m_NextTuningParams);
 			for(unsigned i = 0; i < sizeof(m_NextTuningParams) / sizeof(int); i++)
+			{
 				Msg.AddInt(pParams[i]);
-			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
+			}
+			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID, -1, GetPlayerWorldID());
 		}
 		m_PrevTuningParams = m_NextTuningParams;
 	}
@@ -226,23 +227,24 @@ void CPlayer::TryRespawn()
 			ChangeWorld(SafezoneWorldID);
 			return;
 		}
+
 		SpawnType = SPAWN_HUMAN_SAFE;
 	}
 
-	if(!GS()->m_pController->CanSpawn(SpawnType, &SpawnPos, vec2(-1, -1)))
-		return;
-
-	if(!GS()->IsDungeon() && total_size_vec2(GetTempData().m_TempTeleportPos) >= 1.0f)
+	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos, vec2(-1, -1)))
 	{
-		SpawnPos = GetTempData().m_TempTeleportPos;
-		GetTempData().m_TempTeleportPos = vec2(-1, -1);
-	}
+		if(!GS()->IsDungeon() && total_size_vec2(GetTempData().m_TempTeleportPos) >= 1.0f)
+		{
+			SpawnPos = GetTempData().m_TempTeleportPos;
+			GetTempData().m_TempTeleportPos = vec2(-1, -1);
+		}
 
-	const int AllocMemoryCell = MAX_CLIENTS*GS()->GetWorldID()+m_ClientID;
-	m_pCharacter = new(AllocMemoryCell) CCharacter(&GS()->m_World);
-	m_pCharacter->Spawn(this, SpawnPos);
-	GS()->CreatePlayerSpawn(SpawnPos);
-	m_Spawned = false;
+		const int AllocMemoryCell = MAX_CLIENTS * GS()->GetWorldID() + m_ClientID;
+		m_pCharacter = new(AllocMemoryCell) CCharacter(&GS()->m_World);
+		m_pCharacter->Spawn(this, SpawnPos);
+		GS()->CreatePlayerSpawn(SpawnPos);
+		m_Spawned = false;
+	}
 }
 
 void CPlayer::KillCharacter(int Weapon)
@@ -360,14 +362,14 @@ bool CPlayer::SpendCurrency(int Price, int ItemID)
 
 void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 {
-	if(!m_pCharacter || !m_pCharacter->IsAlive())
-		return;
-
-	const float RandomChance = frandom() * 100.0f;
-	if(RandomChance < Chance)
+	if(m_pCharacter && m_pCharacter->IsAlive())
 	{
-		GS()->Chat(m_ClientID, "You got the effect {STR} time {INT}sec.", Potion, Sec);
-		CGS::ms_aEffects[m_ClientID][Potion] = Sec;
+		const float RandomChance = frandom() * 100.0f;
+		if(RandomChance < Chance)
+		{
+			GS()->Chat(m_ClientID, "You got the effect {STR} time {INT}sec.", Potion, Sec);
+			CGS::ms_aEffects[m_ClientID][Potion] = Sec;
+		}
 	}
 }
 
@@ -395,7 +397,7 @@ void CPlayer::UpdateTempData(int Health, int Mana)
 void CPlayer::AddExp(int Exp)
 {
 	Acc().m_Exp += Exp;
-	for( ; Acc().m_Exp >= ExpNeed(Acc().m_Level); )
+	while(Acc().m_Exp >= ExpNeed(Acc().m_Level))
 	{
 		Acc().m_Exp -= ExpNeed(Acc().m_Level), Acc().m_Level++;
 		Acc().m_Upgrade += 10;
@@ -403,7 +405,7 @@ void CPlayer::AddExp(int Exp)
 		GS()->CreateDeath(m_pCharacter->m_Core.m_Pos, m_ClientID);
 		GS()->CreateSound(m_pCharacter->m_Core.m_Pos, 4);
 		GS()->CreateText(m_pCharacter, false, vec2(0, -40), vec2(0, -1), 30, "level");
-		GS()->Chat(m_ClientID, "Level UP. Now Level {INT}!", Acc().m_Level);
+		GS()->Chat(m_ClientID, "Congratulations. Level UP. Now Level {INT}!", Acc().m_Level);
 		if(Acc().m_Exp < ExpNeed(Acc().m_Level))
 		{
 			GS()->StrongUpdateVotes(m_ClientID, MenuList::MENU_MAIN);
@@ -429,7 +431,6 @@ bool CPlayer::GetHiddenMenu(int HideID) const
 {
 	if(m_aHiddenMenu.find(HideID) != m_aHiddenMenu.end())
 		return m_aHiddenMenu.at(HideID);
-
 	return false;
 }
 
