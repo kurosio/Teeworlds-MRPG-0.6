@@ -262,8 +262,7 @@ bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
 	}
 
 	// player purchasing
-	const ItemIdentifier RequiredItemID = pRes->getInt("RequiredItemID");
-	if(!pPlayer->SpendCurrency(Price, RequiredItemID))
+	if(!pPlayer->SpendCurrency(Price))
 		return false;
 
 	// information & exchange item
