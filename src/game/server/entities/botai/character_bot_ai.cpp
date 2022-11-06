@@ -470,6 +470,7 @@ void CCharacterBotAI::Move()
 		WayDir = normalize(m_pBotPlayer->GetWayPoint(Index) - GetPos());
 
 	// set the direction
+	const bool IsCollide = GS()->Collision()->IntersectLineWithInvisible(m_Pos, m_Pos + vec2(m_Input.m_Direction, 0) * 150, &m_WallPos, nullptr);
 	if(WayDir.x < 0 && ActiveWayPoints > 3)
 		m_Input.m_Direction = -1;
 	else if(WayDir.x > 0 && ActiveWayPoints > 3)
@@ -477,12 +478,19 @@ void CCharacterBotAI::Move()
 	else
 		m_Input.m_Direction = m_PrevDirection;
 
+	// check dissalow move
+	if(IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
+	{
+		m_pBotPlayer->m_TargetPos = vec2(0, 0);
+		m_Input.m_Direction = -m_Input.m_Direction;
+		m_DoorHit = true;
+	}
+
 	// jumping
 	const bool IsGround = IsGrounded();
 	if((IsGround && WayDir.y < -0.5) || (!IsGround && WayDir.y < -0.5 && m_Core.m_Vel.y > 0))
 		m_Input.m_Jump = 1;
 
-	const bool IsCollide = GS()->Collision()->IntersectLine(m_Pos, m_Pos + vec2(m_Input.m_Direction, 0) * 150, &m_WallPos, nullptr);
 	if(IsCollide)
 	{
 		if(IsGround && GS()->Collision()->IntersectLine(m_WallPos, m_WallPos + vec2(0, -1) * 210, nullptr, nullptr))

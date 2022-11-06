@@ -90,6 +90,7 @@ public:
 	void ResetHook();
 	void ResetInput();
 	bool IsGrounded() const;
+	bool IsCollisionFlag(int Flag) const;
 
 	bool IsAllowedPVP(int FromID) const;
 	bool IsAlive() const { return m_Alive; }
