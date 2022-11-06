@@ -2,64 +2,64 @@
     "translation": [
         {
             "key": "Mana required {INT}%",
-            "value": "Mana required {INT}%"
+            "value": "需要{INT}%魔法值"
         },
         {
             "key": "Used on {STR}",
-            "value": "Used on {STR}"
+            "value": "用于{STR}"
         },
         {
             "key": "Learn {STR}",
-            "value": "Learn {STR}"
+            "value": "学习{STR}"
         },
         {
             "key": "Max level {INT} {STR}",
-            "value": "Max level {INT} {STR}"
+            "value": "最高等级{INT} {STR}"
         },
         {
             "key": "Next level {INT} {STR}",
-            "value": "Next level {INT} {STR}"
+            "value": "下一等级{INT} {STR}"
         },
         {
             "key": "Skill Learn Information",
-            "value": "Skill Learn Information"
+            "value": "魔法学习介绍"
         },
         {
             "key": "Here you can learn passive and active skills",
-            "value": "Here you can learn passive and active skills"
+            "value": "在这里你可以学习被动和主动魔法"
         },
         {
             "key": "You can bind active skill any button using the console",
-            "value": "You can bind active skill any button using the console"
+            "value": "你可以在控制台（F1）里绑定一个按键使用魔法"
         },
         {
             "key": "Improving",
-            "value": "Improving"
+            "value": "辅助"
         },
         {
             "key": "Healing",
-            "value": "Healing"
+            "value": "治疗"
         },
         {
             "key": "Attacking",
-            "value": "Attacking"
+            "value": "攻击"
         },
         {
             "key": "Defensive",
-            "value": "Defensive"
+            "value": "防御"
         },
         {
             "key": "{STR} skill's",
-            "value": "{STR} skill's"
+            "value": "{STR} 的技能"
         },
         {
             "hash": 12597889241404284179,
             "key": "Glue",
-            "value": "Glue"
+            "value": "粘液"
         },
         {
             "key": "{INT}. {STR} | {INT}:{INT}min | {VAL}P",
-            "value": "{INT}. {STR} | {INT}:{INT}min | {VAL}P"
+            "value": "{INT}. {STR} | {INT}:{INT}分钟 | {VAL}P"
         },
         {
             "hash": 4426147474729893160,
@@ -69,7 +69,7 @@
         {
             "hash": 7134787850364891227,
             "key": "Apostle",
-            "value": "Apostle"
+            "value": "传教士"
         },
         {
             "hash": 12598891996009023386,
@@ -79,272 +79,272 @@
         {
             "hash": 12597899137008938078,
             "key": "Gel",
-            "value": "Gel"
+            "value": "凝胶"
         },
         {
             "hash": 12597894738962425234,
             "key": "Potion resurrection",
-            "value": "Potion resurrection"
+            "value": "复活药水"
         },
         {
             "hash": 14456815418340704872,
             "key": "Main: Betrayal, Death",
-            "value": "Main: Betrayal, Death"
+            "value": "主线: 背叛，死亡"
         },
         {
             "hash": 4374102024552958487,
             "key": "Do you need something, my young friend?",
-            "value": "Do you need something, my young friend?"
+            "value": "你需要些什么吗，我年轻的朋友? 哈哈."
         },
         {
             "hash": 4374100925041330276,
             "key": "The [Bot_2] says we are expecting a storm, I came to clarify.",
-            "value": "The [Bot_2] says we are expecting a storm, I came to clarify."
+            "value": "[Bot_2] 告诉我，一场大风暴正在来袭, 我想直到这是不是真的."
         },
         {
             "hash": 4374104223576214909,
             "key": "Yes, he's right. A storm is waiting for us, it can be determined by the waves.",
-            "value": "Yes, he's right. A storm is waiting for us, it can be determined by the waves."
+            "value": "是的，他是对的。暴风雨在等着我们，大海在决定一切。"
         },
         {
             "hash": 4374103124064586698,
             "key": "Waves? Can I ask you more details?",
-            "value": "Waves? Can I ask you more details?"
+            "value": "什么寄吧海浪？我可以询问你一些细节吗？"
         },
         {
             "hash": 4374097626506445643,
             "key": "When a storm is expected, the waves among the desert sea begin to waver.",
-            "value": "When a storm is expected, the waves among the desert sea begin to waver."
+            "value": "当暴风雨来临时，沙漠中的海浪开始摇摆."
         },
         {
             "hash": 4374096526994817432,
             "key": "I see, how big a storm is expected?",
-            "value": "I see, how big a storm is expected?"
+            "value": "道理我都懂，所以暴风雨到底有多大？"
         },
         {
             "hash": 4374099825529702065,
             "key": "I won't tell you exactly my friend.",
-            "value": "I won't tell you exactly my friend."
+            "value": "我不会确切的告诉你的，我的朋友."
         },
         {
             "hash": 4374098726018073854,
             "key": "Don't worry, I've been sailing in a storm many times. We'll manage somehow! You'd better go eat and rest with your friends.",
-            "value": "Don't worry, I've been sailing in a storm many times. We'll manage somehow! You'd better go eat and rest with your friends."
+            "value": "都怪这该死的暴风雨！不用担心！我已经在暴风雨中航行了很多次。我们会设法解决的！你最好和你的朋友一起吃饭休息！"
         },
         {
             "hash": 4374093228459932799,
             "key": "OK, thanks for the advice.",
-            "value": "OK, thanks for the advice."
+            "value": "好的，多谢你的劝告."
         },
         {
             "hash": 4367476367482683576,
             "key": "Oh [Player], where have you been? I've been looking for you for so long.",
-            "value": "Oh [Player], where have you been? I've been looking for you for so long."
+            "value": "哦，我的朋友 [Player], 你最近怎么样了? 我偷窥..不是，观察你很久了."
         },
         {
             "hash": 4367477466994311787,
             "key": "Look at this interesting game from [Bot_46] homeland. It's called MAJONG.",
-            "value": "Look at this interesting game from [Bot_46] homeland. It's called MAJONG."
+            "value": "快看看这个来自[Bot_46]家乡的游戏公司，麻将，他们做出了我的石阶这个好玩的游戏.."
         },
         {
             "hash": 4367478566505939998,
             "key": "Yeah, I'm a little worried. I have a bad feeling about it.",
-            "value": "Yeah, I'm a little worried. I have a bad feeling about it."
+            "value": "是啊，我有一点点担心，我对此有不好的预感."
         },
         {
             "hash": 4367479666017568209,
             "key": "Don't worry [Player]. Or have you forgotten who's with you? I'm the strongest girl from the village, don't worry!",
-            "value": "Don't worry [Player]. Or have you forgotten who's with you? I'm the strongest girl from the village, don't worry!"
+            "value": "不用担心 [Player]. 或者你忘记了和你在一起的是谁？我是村庄里最强大的女生，不用担心！"
         },
         {
             "hash": 4367480765529196420,
             "key": "Or at least I can cook well...",
-            "value": "Or at least I can cook well..."
+            "value": "至少我做饭很好吃.."
         },
         {
             "hash": 4367481865040824631,
             "key": "Oh, speaking of which, aren't you hungry? Shall we go eat?",
-            "value": "Oh, speaking of which, aren't you hungry? Shall we go eat?"
+            "value": "噢，说了这么久，你饿了吗？要不我们去吃饭吧！"
         },
         {
             "hash": 4367482964552452842,
             "key": "And i wanted to offer you something to eat too. Of course you can. A strong girl needs to eat well!",
-            "value": "And i wanted to offer you something to eat too. Of course you can. A strong girl needs to eat well!"
+            "value": "我刚好想约你一起出去吃东西。一个强大的女孩需要吃好吃的！"
         },
         {
             "hash": 4367484064064081053,
             "key": "Diana just don't get fat.",
-            "value": "Diana just don't get fat."
+            "value": "但你可别吃胖了，哈哈。"
         },
         {
             "hash": 4367467571389657888,
             "key": "[Player] don't give me complexes!!! ( ‾́ ◡ ‾́ )",
-            "value": "[Player] don't give me complexes!!! ( ‾́ ◡ ‾́ )"
+            "value": "[Player] 滚!!! ( ‾́ ◡ ‾́ )"
         },
         {
             "hash": 4368468126971140673,
             "key": "What will you eat?",
-            "value": "What will you eat?"
+            "value": "你想吃些什么?"
         },
         {
             "hash": 4368467027459512462,
             "key": "Let me ask my friend for a second.",
-            "value": "Let me ask my friend for a second."
+            "value": "让我先问问我的朋友."
         },
         {
             "hash": 4369319148971186762,
             "key": "[Bot_6], what are we going to eat?",
-            "value": "[Bot_6], what are we going to eat?"
+            "value": "[Bot_6], 你想要去吃些什么吗?"
         },
         {
             "hash": 4369320248482814973,
             "key": "Let's try pancakes!!! ** Said she with eyes like she saw pancakes for the first time**",
-            "value": "Let's try pancakes!!! ** Said she with eyes like she saw pancakes for the first time**"
+            "value": "让我们去试试烙饼!!! ** 她说话时的表情仿佛就像是第一次看见烙饼 **"
         },
         {
             "hash": 4369316949947930340,
             "key": "Yes [Talked] i want to try them too.",
-            "value": "Yes [Talked] i want to try them too."
+            "value": "好！[Talked]，我正好也想去试试"
         },
         {
             "hash": 4370275724087541107,
             "key": "Hurry up and take them, I want to eat...",
-            "value": "Hurry up and take them, I want to eat..."
+            "value": "快点去买！！我要饿死了..."
         },
         {
             "hash": 4370274624575912896,
             "key": " I'll take them, I'll take them... Don't worry, they don't have legs!",
-            "value": " I'll take them, I'll take them... Don't worry, they don't have legs!"
+            "value": " 我会的我会的... 别担心, 他们没有腿，不会悄悄地挪移的，哈哈"
         },
         {
             "hash": 4363685251389368948,
             "key": "Did you choose something?",
-            "value": "Did you choose something?"
+            "value": "请问你想吃什么?"
         },
         {
             "hash": 4363686350900997159,
             "key": "Yes we did, can we have pancakes please.",
-            "value": "Yes we did, can we have pancakes please."
+            "value": "打劫！把烙饼都交出来！哈哈，看玩笑的."
         },
         {
             "hash": 4363687450412625370,
             "key": "Yes of course, take your order.",
-            "value": "Yes of course, take your order."
+            "value": "滚，SB，去给钱！"
         },
         {
             "hash": 4364536273389415037,
             "key": "Mmm... They're really good. But I still cook tastier don't you [Player] agree?",
-            "value": "Mmm... They're really good. But I still cook tastier don't you [Player] agree?"
+            "value": "我艹好好吃啊，但是我还是想煮点东西吃，[Player] 你意下如何？"
         },
         {
             "hash": 4364535173877786826,
             "key": "Maybe.",
-            "value": "Maybe."
+            "value": "彳亍"
         },
         {
             "hash": 4364534074366158615,
             "key": "What's possible.... It's not possible, it's definitely...",
-            "value": "What's possible.... It's not possible, it's definitely..."
+            "value": "什么！这不可能！这绝对是————"
         },
         {
             "hash": 4364532974854530404,
             "key": "Well, well. **Bell sound**",
-            "value": "Well, well. **Bell sound**"
+            "value": "是的, 完全正确. **钟声响起**"
         },
         {
             "hash": 8771034730959712969,
             "key": "Please remain calm, a very big storm is coming.",
-            "value": "Please remain calm, a very big storm is coming."
+            "value": "保持冷静，暴风雨就要来了."
         },
         {
             "hash": 8771033631448084758,
             "key": "A violent storm?",
-            "value": "A violent storm?"
+            "value": "什..么？"
         },
         {
             "hash": 8771032531936456547,
             "key": "HOW DARE YOU... I AM A GOD OF THE SEAS AND OCEANS....",
-            "value": "HOW DARE YOU... I AM A GOD OF THE SEAS AND OCEANS...."
+            "value": "你好大的胆子！ 我乃掌管世间河流与海洋的天神！"
         },
         {
             "hash": 8771031432424828336,
             "key": "I can smell the oracle...",
-            "value": "I can smell the oracle..."
+            "value": "我可以闻到神谕..."
         },
         {
             "hash": 8771039129006225813,
             "key": " WHERE IS THE ORACLE.......",
-            "value": " WHERE IS THE ORACLE......."
+            "value": " 神谕在哪......."
         },
         {
             "hash": 8771038029494597602,
             "key": "What oracle?",
-            "value": "What oracle?"
+            "value": "什么寄吧神谕?"
         },
         {
             "hash": 8771036929982969391,
             "key": "Don't joke with me... WAIT FOR YOU IN MY CHAMBERS WITH THE ORACLE... OTHERWISE YOU WILL DIE HERE...",
-            "value": "Don't joke with me... WAIT FOR YOU IN MY CHAMBERS WITH THE ORACLE... OTHERWISE YOU WILL DIE HERE..."
+            "value": "不要取笑我... 我将手持神谕在此等你, 否则你将葬命于此..."
         },
         {
             "hash": 8771035830471341180,
             "key": "**no sound of water** I have stopped the flow of the sea...",
-            "value": "**no sound of water** I have stopped the flow of the sea..."
+            "value": "**水声淡无** 我阻止了大海的流动..."
         },
         {
             "hash": 8771043527052738657,
             "key": "How do we find you?",
-            "value": "How do we find you?"
+            "value": "我们怎么找到你?"
         },
         {
             "hash": 8771042427541110446,
             "key": " Waiting for you under the water...",
-            "value": " Waiting for you under the water..."
+            "value": "我在水下等着你..."
         },
         {
             "hash": 8048018254488596908,
             "key": "Wow, when i'm at the helm, feel young.",
-            "value": "Wow, when i'm at the helm, feel young."
+            "value": "哇哦，当我还是那个掌舵者时, 我还很年轻..."
         },
         {
             "hash": 8048019354000225119,
             "key": "A man who is not even 25 told me...",
-            "value": "A man who is not even 25 told me..."
+            "value": "一个没满25岁的人告诉我的.."
         },
         {
             "hash": 8048020453511853330,
             "key": "Oh no, I've been over 50 for a long time... But thank you, it's nice to hear. Okay, I'll keep an eye on the direction, don't bother me.",
-            "value": "Oh no, I've been over 50 for a long time... But thank you, it's nice to hear. Okay, I'll keep an eye on the direction, don't bother me."
+            "value": "哦，天哪.. 我已经50多岁了.. 谢谢你，我很高兴听到这个。我会时刻观察那个方向的，不要打扰我。"
         },
         {
             "hash": 8039444262813510555,
             "key": "I feel that there will be a storm.",
-            "value": "I feel that there will be a storm."
+            "value": "我感觉到，那里将掀起一场风暴."
         },
         {
             "hash": 8039443163301882344,
             "key": "Do you feel it? How can you feel it?",
-            "value": "Do you feel it? How can you feel it?"
+            "value": "你‘感觉’到了？你是怎么感受到的？"
         },
         {
             "hash": 8039446461836766977,
             "key": "I've been sailing on a ship for a long time, and I've been to many places. And i can already tell it by feeling.",
-            "value": "I've been sailing on a ship for a long time, and I've been to many places. And i can already tell it by feeling."
+            "value": "我已经在船上航行了许多年，我去到过许多地方，我可以确切的告诉你一个道理：无他，唯手熟尔."
         },
         {
             "hash": 8039445362325138766,
             "key": "I see, hope not a strong storm awaits us?",
-            "value": "I see, hope not a strong storm awaits us?"
+            "value": "我明白了，希望这并不是一个很强的暴风雨..."
         },
         {
             "hash": 8039448660860023399,
             "key": "I don't know for sure, but I have a hunch. Go to [Bot_1] and clarify, he is much more experienced than me.",
-            "value": "I don't know for sure, but I have a hunch. Go to [Bot_1] and clarify, he is much more experienced than me."
+            "value": "我不清楚，但是我有预感.. 去找[Bot_1]！他比我更有经验！"
         },
         {
             "hash": 7141408009877025083,
             "key": "Deity of underwater kin",
-            "value": "Deity of underwater kin"
+            "value": "海之眷顾"
         },
         {
             "hash": 6532231021523440270,
@@ -659,7 +659,7 @@
         {
             "hash": 12596905178497224559,
             "key": "Kappa meat",
-            "value": "Kappa肉"
+            "value": "河童的肉"
         },
         {
             "hash": 12596906278008852770,
@@ -669,7 +669,7 @@
         {
             "hash": 12596907377520480981,
             "key": "Relic of the Orc Lord",
-            "value": "Orc Lord的遗物"
+            "value": "半兽人王的遗物"
         },
         {
             "hash": 12596908477032109192,
@@ -704,17 +704,17 @@
         {
             "hash": 12603664975986141212,
             "key": "Orc's Belt",
-            "value": "Orc的腰带"
+            "value": "半兽人的腰带"
         },
         {
             "hash": 18226526227765105214,
             "key": "You can feel the light power of mana.",
-            "value": "你可以感受到mana微弱的力量."
+            "value": "你可以感受到魔法微弱的力量."
         },
         {
             "hash": 12603668274521025845,
             "key": "Torn cloth clothes of orcs",
-            "value": "Orc的破布衣服"
+            "value": "半兽人的破布衣服(女版)"
         },
         {
             "hash": 12603667175009397634,
@@ -759,7 +759,7 @@
         {
             "hash": 12603673772079166900,
             "key": "Big ammo bag",
-            "value": "大的弹药袋"
+            "value": "大弹药袋"
         },
         {
             "hash": 12602674316009312326,
@@ -1029,7 +1029,7 @@
         {
             "hash": 16016577369449407755,
             "key": "% your strength",
-            "value": "提升你%的力量 "
+            "value": "%的力量 "
         },
         {
             "hash": 13540916792449479304,
@@ -1059,12 +1059,12 @@
         {
             "hash": 13540922290007620359,
             "key": "Gel? Why do you need it",
-            "value": "Gel? 你怎么需要这玩意"
+            "value": "凝胶? 你怎么需要这玩意"
         },
         {
             "hash": 13540921190495992148,
             "key": "Search for a daughter",
-            "value": "寻找一名女儿"
+            "value": "寻找他的女儿"
         },
         {
             "hash": 535621680448877797,
@@ -1129,7 +1129,7 @@
         {
             "hash": 7134792248411404071,
             "key": "Diana has a problem",
-            "value": "戴安娜的烦恼"
+            "value": "戴老帽的烦恼"
         },
         {
             "hash": 7134793347923032282,
@@ -1154,7 +1154,7 @@
         {
             "hash": 7137586107458120547,
             "key": "Yasue San",
-            "value": "苏珊雅"
+            "value": "花二蛋"
         },
         {
             "hash": 7137585007946492336,
@@ -1164,7 +1164,7 @@
         {
             "hash": 7137588306481376969,
             "key": "Goodbye Elfinia",
-            "value": "再见Elfinia"
+            "value": "再见，Elfinia"
         },
         {
             "hash": 7138577866946577644,
@@ -1174,7 +1174,7 @@
         {
             "hash": 14459619172992075247,
             "key": "Officer Henry",
-            "value": "Henry长官"
+            "value": "亨利长官"
         },
         {
             "hash": 7138574568411693011,
@@ -1214,12 +1214,12 @@
         {
             "hash": 4426148574241521371,
             "key": "Elfinia Artifacts",
-            "value": "Elfinia神器"
+            "value": "Elfinia的神器"
         },
         {
             "hash": 4426154071799662426,
             "key": "Master La",
-            "value": " 大师 La"
+            "value": " La大师"
         },
         {
             "hash": 9767379108023485727,
@@ -1354,7 +1354,7 @@
         {
             "hash": 3179414471099412805,
             "key": "Oh sure. By the way, in our village, the chief Apostle.",
-            "value": "好的. 顺带一提，在我们村子里, 首席使徒——"
+            "value": "好的. 顺带一提，在我们村子里, 使徒——"
         },
         {
             "hash": 3179413371587784594,
@@ -1629,7 +1629,7 @@
         {
             "hash": 2530303487903427812,
             "key": "Hello [Talked], the Apostle sent me to you. I want to be an adventurer!",
-            "value": "你好 [Talked], 信徒让我去找你. 我想成为一个冒险家!"
+            "value": "你好 [Talked], 传教士让我去找你. 我想成为一个冒险家!"
         },
         {
             "hash": 2530304587415056023,
@@ -1877,7 +1877,7 @@
         {
             "hash": 1880316193939947877,
             "key": "Diana told me about you in General terms.",
-            "value": "戴安娜大体上告诉了我你的情况."
+            "value": "戴老帽大体上告诉了我你的情况."
         },
         {
             "hash": 1880312895405063244,
@@ -2700,7 +2700,7 @@
         {
             "hash": 4371270782110882837,
             "key": "Don't worry, Diana is very attached to you. I think she will be offended. Talk to she!",
-            "value": "别担心，戴安娜很喜欢你。我想她会生气的。和她谈谈!"
+            "value": "别担心，戴老帽很喜欢你。我想她会生气的。和她谈谈!"
         },
         {
             "hash": 4372259243064455301,
@@ -2730,7 +2730,7 @@
         {
             "hash": 4372253745506314246,
             "key": "Ok, I'll take you. Now let me to say Yasue San.",
-            "value": "好吧，我会带上你。现在让我说山雅秀(Yasue San)."
+            "value": "好吧，我会带上你。现在让我说关于花二蛋的事情."
         },
         {
             "hash": 4372252645994686035,
@@ -2745,7 +2745,7 @@
         {
             "hash": 4373252102064540609,
             "key": "Yes, will I take Diana with me?",
-            "value": "是的，我可以带上戴安娜吗?"
+            "value": "是的，我可以带上戴老帽吗?"
         },
         {
             "hash": 4373248803529655976,
@@ -2870,7 +2870,7 @@
         {
             "hash": 8700810402615075429,
             "key": "Hello, would you like to learn the basics of mining?",
-            "value": "嗨！你想学习挖矿的基础知识吗?"
+            "value": "嗨！你想了解一些关于挖矿的基础知识吗?"
         },
         {
             "hash": 8700809303103447218,
@@ -3005,7 +3005,7 @@
         {
             "hash": 8695178704056514037,
             "key": "Are you serious? Did the author smoke dope?",
-            "value": "你认真的? 作者在吸食毒品？"
+            "value": "你认真的? 作者在吸大麻？？"
         },
         {
             "hash": 8695177604544885826,
@@ -3023,7 +3023,7 @@
         },
         {
             "key": "Hi, {STR} Last log in {STR}",
-            "value": "Hello, {STR} 最近一次登录： {STR}"
+            "value": ", {STR} 最近一次登录： {STR}"
         },
         {
             "key": "Level {INT} : Exp {INT}/{INT}",
@@ -3087,11 +3087,11 @@
         },
         {
             "key": "Loots, mobs on your zone",
-            "value": "掉落物，怪物在你的区域里"
+            "value": "你的周围有怪物和凋落物"
         },
         {
             "key": "Ranking guilds and players",
-            "value": "公会排名和玩家"
+            "value": "公会与玩家排名"
         },
         {
             "key": "Upgrades Information",
@@ -3103,7 +3103,7 @@
         },
         {
             "key": "Disciple of War. Level Power {INT}",
-            "value": "攻击的信徒. 等级效果 {INT}"
+            "value": "战争之. 等级效果 {INT}"
         },
         {
             "key": "Disciple of Tank. Level Power {INT}",
@@ -3359,7 +3359,7 @@
         },
         {
             "key": "{STR} logged to account. Rank #{INT}",
-            "value": "{STR} 加入了MMO世界并登录. 等级 #{INT}"
+            "value": "玩家 {STR} 加入了MMOTee:世界. 当前排名 #{INT}"
         },
         {
             "key": "You repaired all items.",
@@ -3484,7 +3484,7 @@
         },
         {
             "key": "Some of the settings becomes valid after death",
-            "value": "一些设置在死亡后有效"
+            "value": "一些选项在死亡后有效"
         },
         {
             "key": "Modules settings",
@@ -3528,12 +3528,12 @@
         {
             "hash": 16434774654039497695,
             "key": "Well, I'll tell you [Player], things have been very bad here lately, the residents are living in fear. Recently, a little girl was killed, as we understand there is a dead force involved.",
-            "value": "好吧, 让我告诉你 [Player], 这里最近很不太平, 居民每天生活在恐惧之中. 就在最近,有一名小女孩也被杀害, 在我们看来，这是一种死亡暴力."
+            "value": "好吧, 让我告诉你 [Player], 这里最近很不太平, 居民每天生活在恐惧之中. 就在最近,有一名小女孩也被杀害, 在我们看来，这是恐怖袭击."
         },
         {
             "hash": 16434771355504613062,
             "key": "**With horror in his eyes**: What ... Dead People",
-            "value": "**他的眼神带着恐惧**: 什么...... 尸..体..."
+            "value": "**他的眼神带着恐惧**: 什么...... 尸体..."
         },
         {
             "hash": 16434772455016241273,
@@ -3563,7 +3563,7 @@
         {
             "hash": 16433781795039412387,
             "key": "Great job! Your muscles won't hurt you anyway [Player] *laughter*",
-            "value": "干得漂亮”! 反正你不会肌肉拉伤 [Player] *大笑*"
+            "value": "干得漂亮! 反正你不会肌肉拉伤 [Player] *大笑*"
         },
         {
             "hash": 16433780695527784176,
@@ -3586,25 +3586,16 @@
             "value": "给你，你老板叫我把它给你！"
         },
         {
-            "hash": 16438567969156068745,
-            "key": "Thanks for the help.",
-            "value": "谢谢你的帮助，你和Moker（翻译者JiaDaiSiHuo）一样乐于助人."
-        },
-        {
             "key": "Here you go, your boss told me to give it to you!",
             "value": "给你，你老板叫我把它给你！"
         },
         {
             "key": "Thanks for the help.",
-            "value": "谢谢你的帮助，你和Moker（翻译者JiaDaiSiHuo）一样乐于助人."
+            "value": "谢谢你的帮助."
         },
         {
             "key": "Backpage",
             "value": "上一页"
-        },
-        {
-            "key": "Thanks for the help.",
-            "value": "谢谢你的帮助，你和Moker（翻译者JiaDaiSiHuo）一样乐于助人."
         },
         {
             "hash": 16437610294528086189,
@@ -3629,7 +3620,7 @@
         {
             "hash": 16436619634551257303,
             "key": "**She concerned**: Hello, my name is [Talked].",
-            "value": "**She concerned**: 你好，我的名字是[Talked]."
+            "value": "**她担心**: 你好，我的名字是[Talked]."
         },
         {
             "hash": 16436620734062885514,
@@ -3649,7 +3640,7 @@
         {
             "hash": 16443349745226212259,
             "key": "Hello, are you Diana's brother?",
-            "value": "你好，你就是戴安娜的哥哥吧?"
+            "value": "你好，你就是戴老帽的哥哥吧?"
         },
         {
             "hash": 16443348645714584048,
@@ -3938,7 +3929,7 @@
         },
         {
             "key": "You drop {STR}x{VAL}",
-            "value": "你丢掉 {STR}x{VAL}"
+            "value": "你丢掉了{STR}x{VAL}个"
         },
         {
             "key": "There are no items in this tab",
@@ -3946,11 +3937,11 @@
         },
         {
             "key": "{STR} Not equipped",
-            "value": "{STR} 未装备"
+            "value": "{STR} 未被装备"
         },
         {
             "key": "Equip Select Slot",
-            "value": "装备选择槽t"
+            "value": "装备选择槽"
         },
         {
             "key": "Select tab and select arlor.",
@@ -3990,7 +3981,7 @@
         },
         {
             "key": "This item can only be used (Auto Use, and then craft).",
-            "value": "此物品只能使用(自动使用, 然后合成)."
+            "value": "此物品只能被使用(自动使用, 然后合成)."
         },
         {
             "key": "{STR} used {STR} returned {INT} upgrades.",
@@ -3998,11 +3989,11 @@
         },
         {
             "key": "{STR} used {STR}x{VAL} and got {VAL} gold.",
-            "value": "{STR}使用 {STR}x{VAL} 并得到 {VAL} 黄金."
+            "value": "{STR}使用 {STR}x{VAL}个 并得到 {VAL} 黄金."
         },
         {
             "key": "Wait until the last random box opens!",
-            "value": "等待最后一个随机盒子开启完毕!"
+            "value": "等待最后一个盲盒开启完毕!"
         },
         {
             "key": "You used '{STR}x{INT}'.",
