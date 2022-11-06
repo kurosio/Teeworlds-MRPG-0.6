@@ -743,6 +743,11 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 	else if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
 	{
 		const int SizeDialogs = QuestBotInfo::ms_aQuestBot[MobID].m_aDialogs.size();
+		if(m_DialogNPC.m_Progress >= SizeDialogs)
+		{
+			ClearTalking();
+			return;
+		}
 
 		// function parse json event data
 		auto ParseEvent = [](std::string &EventData, const std::function<void(nlohmann::json& pJson)>& pFunc)

@@ -76,6 +76,7 @@ CServer::CServer() : m_Register()
 CServer::~CServer()
 {
 #ifdef CONF_DISCORD
+	m_pDiscord->quit();
 	delete m_pDiscord;
 #endif
 	delete m_pMultiWorlds;
