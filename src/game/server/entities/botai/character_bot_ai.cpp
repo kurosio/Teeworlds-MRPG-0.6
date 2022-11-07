@@ -362,9 +362,9 @@ void CCharacterBotAI::HandleTuning()
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
 	{
-		// effect slime
+		// effect slower
 		const int MobID = m_pBotPlayer->GetBotMobID();
-		if(str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Slime") == 0)
+		if(str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Slower") == 0)
 		{
 			pTuningParams->m_Gravity = 0.25f;
 			pTuningParams->m_GroundJumpImpulse = 8.0f;
@@ -377,7 +377,6 @@ void CCharacterBotAI::HandleTuning()
 			pTuningParams->m_HookFireSpeed = 30.0f;
 			pTuningParams->m_HookDragAccel = 1.5f;
 			pTuningParams->m_HookDragSpeed = 8.0f;
-			pTuningParams->m_PlayerHooking = 0;
 		}
 	}
 

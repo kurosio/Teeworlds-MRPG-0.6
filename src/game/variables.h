@@ -152,10 +152,6 @@ MACRO_CONFIG_STR(SvDiscordServerChatChannel, sv_discord_server_chat_channel, 128
 MACRO_CONFIG_STR(SvDiscordSuggestionChannel, sv_discord_suggestion_channel, 128, "", CFGFLAG_SERVER, "Discord suggestions channel")
 MACRO_CONFIG_STR(SvDiscordAdminChannel, sv_discord_admin_channel, 128, "", CFGFLAG_SERVER, "Discord admin channel")
 
-// discord api
-MACRO_CONFIG_STR(SvDiscordGithubWatherLink, sv_discord_github_watcher_link, 256, "https://api.github.com/repos/MrCosmo666/Teeworlds-MRPG/commits", CFGFLAG_SERVER, "Discord github api watcher link")
-MACRO_CONFIG_STR(SvDiscordGithubWatherChannel, sv_discord_github_watcher_channel, 128, "", CFGFLAG_SERVER, "Discord github api watcher channel")
-
 // mysql
 MACRO_CONFIG_STR(SvMySqlHost, sv_sql_host, 32, "localhost", CFGFLAG_SERVER, "MySQL Host")
 MACRO_CONFIG_STR(SvMySqlDatabase, sv_sql_database, 32, "database", CFGFLAG_SERVER, "MySQL Database")

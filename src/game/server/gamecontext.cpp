@@ -777,7 +777,6 @@ void CGS::OnConsoleInit()
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
 	Console()->Register("set_world_time", "i[hour]", CFGFLAG_SERVER, ConSetWorldTime, m_pServer, "Set worlds time.");
-	Console()->Register("parseskin", "i[cid]", CFGFLAG_SERVER, ConParseSkin, m_pServer, "Parse skin on console. Easy for devlop bots.");
 	Console()->Register("giveitem", "i[cid]i[itemid]i[count]i[enchant]i[mail]", CFGFLAG_SERVER, ConGiveItem, m_pServer, "Give item <clientid> <itemid> <count> <enchant> <mail 1=yes 0=no>");
 	Console()->Register("removeitem", "i[cid]i[itemid]i[count]", CFGFLAG_SERVER, ConRemItem, m_pServer, "Remove item <clientid> <itemid> <count>");
 	Console()->Register("disband_guild", "r[guildname]", CFGFLAG_SERVER, ConDisbandGuild, m_pServer, "Disband the guild with the name");
@@ -1276,30 +1275,6 @@ void CGS::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 	pServer->SetOffsetGameTime(Hour);
 }
 
-void CGS::ConParseSkin(IConsole::IResult *pResult, void *pUserData)
-{
-	/*const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS-1);
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
-
-	CPlayer *pPlayer = pSelf->GetPlayer(ClientID, true);
-	if(pPlayer)
-	{
-		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "%s %s %s %s %s %s", pPlayer->Acc().m_aaSkinPartNames[0],
-			pPlayer->Acc().m_aaSkinPartNames[1], pPlayer->Acc().m_aaSkinPartNames[2],
-			pPlayer->Acc().m_aaSkinPartNames[3], pPlayer->Acc().m_aaSkinPartNames[4],
-			pPlayer->Acc().m_aaSkinPartNames[5]);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", aBuf);
-
-		str_format(aBuf, sizeof(aBuf), "%d %d %d %d %d %d", pPlayer->Acc().m_aSkinPartColors[0],
-			pPlayer->Acc().m_aSkinPartColors[1], pPlayer->Acc().m_aSkinPartColors[2],
-			pPlayer->Acc().m_aSkinPartColors[3], pPlayer->Acc().m_aSkinPartColors[4],
-			pPlayer->Acc().m_aSkinPartColors[5]);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", aBuf);
-	}*/
-}
-
 // give the item to the player
 void CGS::ConGiveItem(IConsole::IResult *pResult, void *pUserData)
 {
@@ -1615,15 +1590,6 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	TI("it's because it's not shield, it's mana.");
 	TI("It is used for active skills, which you will need to buy");
 	TI("in the future. Active skills use mana, but they use %% of mana.");
-	AV(ClientID, "null");
-	TI("#### Some Informations ####");
-	TI("Brown Slimes drop Glue and Gel (lower chance to drop Gel)");
-	TI("Green Slimes drop Glue");
-	TI("Blue Slimes drop Gel");
-	TI("Pink Slime drop 3 Gels and 3 Glue");
-	TI("Goblins drop Goblin Ingots");
-	TI("Orc Warrior drop Goblin Ingot and Torn Cloth Clothes of Orc");
-	TI("- A more accurate drop can be found in the menu");
 	AV(ClientID, "null");
 	TI("#### The upgrades now ####");
 	TI("- Strength : Damage");

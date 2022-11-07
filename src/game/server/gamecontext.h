@@ -175,7 +175,6 @@ public:
 	######################################################################### */
 private:
 	static void ConSetWorldTime(IConsole::IResult *pResult, void *pUserData);
-	static void ConParseSkin(IConsole::IResult *pResult, void *pUserData);
 	static void ConGiveItem(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemItem(IConsole::IResult* pResult, void* pUserData);
 	static void ConDisbandGuild(IConsole::IResult* pResult, void* pUserData);
