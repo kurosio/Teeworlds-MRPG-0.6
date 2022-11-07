@@ -364,7 +364,7 @@ void CCharacterBotAI::HandleTuning()
 	{
 		// effect slower
 		const int MobID = m_pBotPlayer->GetBotMobID();
-		if(str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Slower") == 0)
+		if(MobBotInfo::ms_aMobBot[MobID].IsEnabledBehavior("Slower"))
 		{
 			pTuningParams->m_Gravity = 0.25f;
 			pTuningParams->m_GroundJumpImpulse = 8.0f;
@@ -388,7 +388,7 @@ void CCharacterBotAI::BehaviorTick()
 	const int MobID = m_pBotPlayer->GetBotMobID();
 
 	// sleepy behavior
-	if(IsBotTargetEmpty() && str_comp(MobBotInfo::ms_aMobBot[MobID].m_aBehavior, "Sleepy") == 0)
+	if(IsBotTargetEmpty() && MobBotInfo::ms_aMobBot[MobID].IsEnabledBehavior("Sleepy"))
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{

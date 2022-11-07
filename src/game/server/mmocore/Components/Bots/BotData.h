@@ -117,6 +117,9 @@ public:
 /************************************************************************/
 class MobBotInfo
 {
+	friend class CBotCore;
+	char m_aBehavior[512] {};
+
 public:
 	bool m_Boss{};
 	bool m_UseHookDissabled{};
@@ -127,12 +130,17 @@ public:
 	int m_RespawnTick{};
 	int m_WorldID{};
 	char m_aEffect[16]{};
-	char m_aBehavior[32]{};
 	int m_aDropItem[MAX_DROPPED_FROM_MOBS]{};
 	int m_aValueItem[MAX_DROPPED_FROM_MOBS]{};
 	float m_aRandomItem[MAX_DROPPED_FROM_MOBS]{};
 	int m_BotID{};
 
+	bool IsEnabledBehavior(const char* pBehavior) const
+	{
+		if(str_find(m_aBehavior, pBehavior) != nullptr)
+			return true;
+		return false;
+	}
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsMobBotValid(int MobID) { return ms_aMobBot.find(MobID) != ms_aMobBot.end() && DataBotInfo::IsDataBotValid(ms_aMobBot[MobID].m_BotID); }
 	static std::map<int, MobBotInfo> ms_aMobBot;
