@@ -76,6 +76,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	if(!m_pPlayer->IsBot())
 	{
 		m_pPlayer->m_MoodState = m_pPlayer->GetMoodState();
+
 		GS()->Mmo()->Quest()->UpdateArrowStep(m_pPlayer);
 		GS()->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer);
 
@@ -535,6 +536,7 @@ void CCharacter::Tick()
 	HandleTuning();
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pPlayer->m_NextTuningParams);
+
 	m_pPlayer->UpdateTempData(m_Health, m_Mana);
 
 	if(GameLayerClipped(m_Pos))
@@ -565,19 +567,18 @@ void CCharacter::TickDeferred()
 		m_DoorHit = false;
 	}
 
-	// personal player tune
-	CCharacterCore::CParams PlayerTune(&m_pPlayer->m_NextTuningParams);
-
 	// advance the dummy
 	{
 		CWorldCore TempWorld;
+		CCharacterCore::CParams CoreTickParams(&GameWorld()->m_Core.m_Tuning);
 		m_ReckoningCore.Init(&TempWorld, GS()->Collision());
-		m_ReckoningCore.Tick(false, &PlayerTune);
-		m_ReckoningCore.Move(&PlayerTune);
+		m_ReckoningCore.Tick(false, &CoreTickParams);
+		m_ReckoningCore.Move(&CoreTickParams);
 		m_ReckoningCore.Quantize();
 	}
 
-	m_Core.Move(&PlayerTune);
+	CCharacterCore::CParams CoreTickParams(&m_pPlayer->m_NextTuningParams);
+	m_Core.Move(&CoreTickParams);
 	m_Core.Quantize();
 	m_Pos = m_Core.m_Pos;
 	m_TriggeredEvents |= m_Core.m_TriggeredEvents;
@@ -1049,14 +1050,14 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 	if(m_pPlayer->IsActiveEffect("Slowdown"))
 	{
 		TuningParams->m_Gravity = 0.35f;
-		TuningParams->m_GroundFriction = 0.30f;
-		TuningParams->m_GroundControlSpeed = 60.0f / Server()->TickSpeed();
-		TuningParams->m_GroundControlAccel = 0.4f;
-		TuningParams->m_GroundJumpImpulse = 3.0f;
+		TuningParams->m_GroundFriction = 0.45f;
+		TuningParams->m_GroundControlSpeed = 100.0f / Server()->TickSpeed();
+		TuningParams->m_GroundControlAccel = 0.7f;
+		TuningParams->m_GroundJumpImpulse = 7.0f;
 		TuningParams->m_AirFriction = 0.4f;
-		TuningParams->m_AirControlSpeed = 60.0f / Server()->TickSpeed();
-		TuningParams->m_AirControlAccel = 0.4f;
-		TuningParams->m_AirJumpImpulse = 3.0f;
+		TuningParams->m_AirControlSpeed = 100.0f / Server()->TickSpeed();
+		TuningParams->m_AirControlAccel = 0.7f;
+		TuningParams->m_AirJumpImpulse = 7.0f;
 		TuningParams->m_HookLength = 0.0f;
 	}
 

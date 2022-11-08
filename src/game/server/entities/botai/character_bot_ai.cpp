@@ -209,8 +209,8 @@ void CCharacterBotAI::Tick()
 	// safe change world data from tick
 	int Index;
 	HandleTilesets(&Index);
-	HandleTuning();
 
+	HandleTuning();
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pBotPlayer->m_NextTuningParams);
 	m_pBotPlayer->UpdateTempData(m_Health, m_Mana);

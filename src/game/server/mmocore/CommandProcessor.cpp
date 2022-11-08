@@ -29,6 +29,7 @@ CCommandProcessor::CCommandProcessor(CGS *pGS)
 	// admin command
 	AddCommand("pos", "", ConChatPosition, pServer, "");
 	AddCommand("sound", "i[sound]", ConChatSound, pServer, "");
+	AddCommand("effect", "s[effect] i[sec]", ConChatGiveEffect, pServer, "");
 
 	// game command
 	AddCommand("useitem", "i[item]", ConChatUseItem, pServer, "");
@@ -226,6 +227,17 @@ void CCommandProcessor::ConChatSound(IConsole::IResult* pResult, void* pUser)
 
 	const int SoundID = clamp(pResult->GetInteger(0), 0, 40);
 	pGS->CreateSound(pPlayer->GetCharacter()->m_Core.m_Pos, SoundID);
+}
+
+void CCommandProcessor::ConChatGiveEffect(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	IServer* pServer = (IServer*)pUser;
+	CGS* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+
+	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	if(pPlayer && pPlayer->IsAuthed())
+		pPlayer->GiveEffect(pResult->GetString(0), pResult->GetInteger(1));
 }
 
 void CCommandProcessor::ConChatUseItem(IConsole::IResult* pResult, void* pUser)

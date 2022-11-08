@@ -98,8 +98,6 @@ void CPlayer::Tick()
 
 	// update player tick
 	TickSystemTalk();
-	HandleTuningParams();
-	EffectsTick();
 }
 
 void CPlayer::PostTick()
@@ -107,6 +105,9 @@ void CPlayer::PostTick()
 	// update latency value
 	if (Server()->ClientIngame(m_ClientID) && IsAuthed())
 		GetTempData().m_TempPing = m_Latency.m_Min;
+
+	EffectsTick();
+	HandleTuningParams();
 }
 
 void CPlayer::EffectsTick()
@@ -123,6 +124,7 @@ void CPlayer::EffectsTick()
 			pEffect = CGS::ms_aEffects[m_ClientID].erase(pEffect);
 			continue;
 		}
+
 		++pEffect;
 	}
 }
@@ -140,18 +142,16 @@ void CPlayer::HandleTuningParams()
 {
 	if(!(m_PrevTuningParams == m_NextTuningParams))
 	{
-		if(GetCharacter())
+		CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+		const int *pParams = reinterpret_cast<int*>(&m_NextTuningParams);
+		for(unsigned i = 0; i < sizeof(m_NextTuningParams) / sizeof(int); i++)
 		{
-			CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-			const int *pParams = reinterpret_cast<int*>(&m_NextTuningParams);
-			for(unsigned i = 0; i < sizeof(m_NextTuningParams) / sizeof(int); i++)
-			{
-				Msg.AddInt(pParams[i]);
-			}
-			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID, -1, GetPlayerWorldID());
+			Msg.AddInt(pParams[i]);
 		}
+		Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 		m_PrevTuningParams = m_NextTuningParams;
 	}
+
 	m_NextTuningParams = *GS()->Tuning();
 }
 
