@@ -209,10 +209,11 @@ void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_Boss = pRes->getBoolean("Boss");
 		MobBot.m_Level = pRes->getInt("Level");
 		MobBot.m_RespawnTick = pRes->getInt("Respawn");
-		MobBot.m_UseHookDissabled = pRes->getInt("HookDissabled");
 		MobBot.m_BotID = BotID;
-		str_copy(MobBot.m_aEffect, pRes->getString("Effect").c_str(), sizeof(MobBot.m_aEffect));
+
 		str_copy(MobBot.m_aBehavior, pRes->getString("Behavior").c_str(), sizeof(MobBot.m_aBehavior));
+		std::string BuffDebuff = pRes->getString("Effect").c_str();
+		MobBot.InitBuffDebuff(4, 4, 3.0f, BuffDebuff);
 
 		for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 		{

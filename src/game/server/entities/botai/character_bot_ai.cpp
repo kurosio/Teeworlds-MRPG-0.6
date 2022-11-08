@@ -30,21 +30,16 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 
 	// mob information
 	const int MobID = m_pBotPlayer->GetBotMobID();
-	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[MobID].m_Boss)
 	{
-		if(MobBotInfo::ms_aMobBot[MobID].m_Boss)
+		for(int i = 0; i < 3; i++)
 		{
-			for(int i = 0; i < 3; i++)
-			{
-				CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
-				CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
-			}
-
-			if(!GS()->IsDungeon())
-				GS()->ChatWorldID(MobBotInfo::ms_aMobBot[MobID].m_WorldID, "", "In your zone emerging {STR}!", MobBotInfo::ms_aMobBot[MobID].GetName());
+			CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
+			CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
 		}
 
-		m_UseHookDissabled = MobBotInfo::ms_aMobBot[MobID].m_UseHookDissabled;
+		if(!GS()->IsDungeon())
+			GS()->ChatWorldID(MobBotInfo::ms_aMobBot[MobID].m_WorldID, "", "In your zone emerging {STR}!", MobBotInfo::ms_aMobBot[MobID].GetName());
 	}
 	else if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST && QuestBotInfo::ms_aQuestBot[MobID].m_HasAction)
 	{
@@ -62,13 +57,14 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 
 void CCharacterBotAI::GiveRandomEffects(int To)
 {
-	CPlayer* pPlayerTo = GS()->GetPlayer(To);
-	if(pPlayerTo && To != m_pBotPlayer->GetCID())
+	if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
 	{
-		int MobID = m_pBotPlayer->GetBotMobID();
-		if(m_pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[MobID].m_aEffect[0] != '\0')
+		CPlayer* pPlayerTo = GS()->GetPlayer(To);
+		if(pPlayerTo && To != m_pBotPlayer->GetCID())
 		{
-			pPlayerTo->GiveEffect(MobBotInfo::ms_aMobBot[MobID].m_aEffect, 3 + random_int() % 3, 5.0f);
+			int MobID = m_pBotPlayer->GetBotMobID();
+			if(const CMobBuffDebuff* pBuff = MobBotInfo::ms_aMobBot[MobID].GetRandomEffect())
+				pPlayerTo->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
 		}
 	}
 }
@@ -509,7 +505,7 @@ void CCharacterBotAI::Move()
 	if (pChar && (pChar->GetPos().x < GetPos().x || !pChar->GetPlayer()->IsBot()))
 		m_Input.m_Jump = 1;
 
-	if(!m_UseHookDissabled && (ActiveWayPoints > 2 && !m_Input.m_Hook && (WayDir.x != 0 || WayDir.y != 0)))
+	if(ActiveWayPoints > 2 && !m_Input.m_Hook && (WayDir.x != 0 || WayDir.y != 0))
 	{
 		if(m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookedPlayer == -1)
 		{

@@ -115,32 +115,59 @@ public:
 /************************************************************************/
 /*  Global data mob bot                                                 */
 /************************************************************************/
+
+class CMobBuffDebuff
+{
+	float m_Chance{};
+	std::string m_Effect{};
+	std::tuple<int, int> m_Time{};
+
+public:
+	CMobBuffDebuff() = default;
+	CMobBuffDebuff(float Chance, std::string Effect, std::tuple<int, int> Time) : m_Chance(Chance), m_Effect(Effect), m_Time(Time) {}
+
+	enum
+	{
+		SECONDS,
+		RANGE
+	};
+
+	const char* getEffect() const { return m_Effect.c_str(); }
+	int getTime() const
+	{
+		int Range = std::get<RANGE>(m_Time);
+		int Time = std::get<SECONDS>(m_Time) - Range / 2;
+		return Time + random_int() % Range;
+	}
+	float getChance() const { return m_Chance; }
+};
+
 class MobBotInfo
 {
 	friend class CBotCore;
 	char m_aBehavior[512] {};
 
+	std::deque < CMobBuffDebuff > m_Effects;
+
 public:
 	bool m_Boss{};
-	bool m_UseHookDissabled{};
 	int m_Power{};
 	int m_Spread{};
 	vec2 m_Position;
 	int m_Level{};
 	int m_RespawnTick{};
 	int m_WorldID{};
-	char m_aEffect[16]{};
 	int m_aDropItem[MAX_DROPPED_FROM_MOBS]{};
 	int m_aValueItem[MAX_DROPPED_FROM_MOBS]{};
 	float m_aRandomItem[MAX_DROPPED_FROM_MOBS]{};
 	int m_BotID{};
 
-	bool IsEnabledBehavior(const char* pBehavior) const
-	{
-		if(str_find(m_aBehavior, pBehavior) != nullptr)
-			return true;
-		return false;
-	}
+	std::deque < CMobBuffDebuff >& GetEffects() { return m_Effects; }
+	[[nodiscard]] CMobBuffDebuff* GetRandomEffect() { return m_Effects.empty() ? nullptr : &m_Effects[random_int() % m_Effects.size()]; }
+
+	bool IsEnabledBehavior(const char* pBehavior) const { return str_find(m_aBehavior, pBehavior) != nullptr; }
+	void InitBuffDebuff(int Seconds, int Range, float Chance, std::string& buffSets);
+
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsMobBotValid(int MobID) { return ms_aMobBot.find(MobID) != ms_aMobBot.end() && DataBotInfo::IsDataBotValid(ms_aMobBot[MobID].m_BotID); }
 	static std::map<int, MobBotInfo> ms_aMobBot;

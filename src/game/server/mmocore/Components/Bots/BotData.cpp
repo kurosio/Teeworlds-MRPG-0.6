@@ -70,3 +70,19 @@ CDialog::VariantText* CDialog::GetVariant()
 
 	return &m_aVariantText.front();
 }
+
+void MobBotInfo::InitBuffDebuff(int Seconds, int Range, float Chance, std::string& buffSets)
+{
+	if(!buffSets.empty())
+	{
+		size_t start;
+		size_t end = 0;
+		std::string delim = ",";
+
+		while((start = buffSets.find_first_not_of(delim, end)) != std::string::npos)
+		{
+			end = buffSets.find(delim, start);
+			m_Effects.push_back({ Chance, buffSets.substr(start, end - start), { Seconds, Range } });
+		}
+	}
+}
