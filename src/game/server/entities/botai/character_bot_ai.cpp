@@ -370,7 +370,6 @@ void CCharacterBotAI::HandleTuning()
 			pTuningParams->m_AirControlSpeed = 3.75f;
 			pTuningParams->m_AirJumpImpulse = 8.0f;
 
-			pTuningParams->m_HookFireSpeed = 30.0f;
 			pTuningParams->m_HookDragAccel = 1.5f;
 			pTuningParams->m_HookDragSpeed = 8.0f;
 		}
