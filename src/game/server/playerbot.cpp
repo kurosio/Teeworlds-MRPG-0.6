@@ -385,7 +385,7 @@ void CPlayerBot::FindThreadPath(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 S
 
 void CPlayerBot::GetThreadRandomRadiusWaypointTarget(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 Pos, float Radius)
 {
-	if(!pGameServer || !pBotPlayer || g_ThreadPathWritedNow.test_and_set(std::memory_order_acquire))
+	if(!pGameServer || !pBotPlayer || length(Pos) <= 0 || g_ThreadPathWritedNow.test_and_set(std::memory_order_acquire))
 		return;
 
 	while(pBotPlayer->m_ThreadReadNow.load(std::memory_order_acquire))
@@ -411,7 +411,7 @@ void CPlayerBot::ThreadMobsPathFinder()
 		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 96.0f)
 		{
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
-			std::thread(&GetThreadRandomRadiusWaypointTarget, GS(), this, m_pCharacter->m_Core.m_Pos, 800.0f).detach();
+			std::thread(&GetThreadRandomRadiusWaypointTarget, GS(), this, m_ViewPos, 800.0f).detach();
 		}
 	}
 }
