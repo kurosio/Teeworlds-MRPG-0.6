@@ -58,6 +58,7 @@ public:
 	void Tick() override;
 	void PostTick() override;
 	void Snap(int SnappingClient) override;
+	void FakeSnap() override;
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
 
 private:

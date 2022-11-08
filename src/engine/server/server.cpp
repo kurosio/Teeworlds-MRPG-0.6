@@ -2139,6 +2139,11 @@ void CServer::SnapSetStaticsize(int ItemType, int Size)
 	m_SnapshotDelta.SetStaticsize(ItemType, Size);
 }
 
+int* CServer::GetIdMap(int ClientID)
+{
+	return m_aIdMap + VANILLA_MAX_CLIENTS * ClientID;
+}
+
 static CServer *CreateServer() { return new CServer(); }
 
 int main(int argc, const char **argv) // ignore_convention

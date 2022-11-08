@@ -839,6 +839,9 @@ void CGS::OnSnap(int ClientID)
 		if(arpPlayer)
 			arpPlayer->Snap(ClientID);
 	}
+
+	if(ClientID >= MAX_PLAYERS)
+		m_apPlayers[ClientID]->FakeSnap();
 }
 
 void CGS::OnPreSnap() {}

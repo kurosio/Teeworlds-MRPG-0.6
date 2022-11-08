@@ -233,7 +233,11 @@ void CPlayerBot::Snap(int SnappingClient)
 	if(!IsVisibleForClient(SnappingClient))
 		return;
 
-	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, m_ClientID, sizeof(CNetObj_ClientInfo)));
+	int ID = m_ClientID;
+	if(!Server()->Translate(ID, SnappingClient))
+		return;
+
+	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, ID, sizeof(CNetObj_ClientInfo)));
 	if (!pClientInfo)
 		return;
 
@@ -259,7 +263,7 @@ void CPlayerBot::Snap(int SnappingClient)
 		pClientInfo->m_ColorFeet = GetTeeInfo().m_ColorFeet;
 	}
 
-	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, m_ClientID, sizeof(CNetObj_PlayerInfo)));
+	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, ID, sizeof(CNetObj_PlayerInfo)));
 	if (!pPlayerInfo)
 		return;
 
@@ -267,9 +271,11 @@ void CPlayerBot::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = 0;
 	pPlayerInfo->m_Score = 0;
 	pPlayerInfo->m_Local = LocalClient;
-	pPlayerInfo->m_ClientID = m_ClientID;
+	pPlayerInfo->m_ClientID = ID;
 	pPlayerInfo->m_Team = TEAM_BLUE;
 }
+
+void CPlayerBot::FakeSnap() { CPlayer::FakeSnap(); }
 
 Mood CPlayerBot::GetMoodState() const
 {

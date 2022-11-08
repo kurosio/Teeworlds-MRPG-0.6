@@ -98,6 +98,8 @@ public:
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
+	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS];
+
 	CSnapshotDelta m_SnapshotDelta;
 	CSnapshotBuilder m_SnapshotBuilder;
 	CSnapIDPool m_IDPool;
@@ -271,6 +273,8 @@ public:
 	void SnapFreeID(int ID) override;
 	void *SnapNewItem(int Type, int ID, int Size) override;
 	void SnapSetStaticsize(int ItemType, int Size) override;
+
+	int* GetIdMap(int ClientID) override;
 };
 
 #endif

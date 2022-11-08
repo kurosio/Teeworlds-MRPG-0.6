@@ -114,6 +114,7 @@ public:
 	virtual void Tick();
 	virtual void PostTick();
 	virtual void Snap(int SnappingClient);
+	virtual void FakeSnap();
 
 private:
 	virtual void EffectsTick();

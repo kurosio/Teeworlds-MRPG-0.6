@@ -29,6 +29,12 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 
+	int* pIdMap = Server()->GetIdMap(m_ClientID);
+	for(int i = MAX_PLAYERS; i < VANILLA_MAX_CLIENTS; i++)
+		pIdMap[i] = -1;
+
+	pIdMap[0] = m_ClientID;
+
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
 	{
@@ -206,6 +212,36 @@ void CPlayer::Snap(int SnappingClient)
 		pSpectatorInfo->m_X = m_ViewPos.x;
 		pSpectatorInfo->m_Y = m_ViewPos.y;
 	}
+}
+
+void CPlayer::FakeSnap()
+{
+	int FakeID = VANILLA_MAX_CLIENTS - 1;
+	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, FakeID, sizeof(CNetObj_ClientInfo)));
+	if(!pClientInfo)
+		return;
+
+	StrToInts(&pClientInfo->m_Name0, 4, " ");
+	StrToInts(&pClientInfo->m_Clan0, 3, "");
+	StrToInts(&pClientInfo->m_Skin0, 6, "default");
+
+	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, FakeID, sizeof(CNetObj_PlayerInfo)));
+	if(!pPlayerInfo)
+		return;
+
+	pPlayerInfo->m_Latency = m_Latency.m_Min;
+	pPlayerInfo->m_Local = 1;
+	pPlayerInfo->m_ClientID = FakeID;
+	pPlayerInfo->m_Score = -9999;
+	pPlayerInfo->m_Team = TEAM_SPECTATORS;
+
+	CNetObj_SpectatorInfo* pSpectatorInfo = static_cast<CNetObj_SpectatorInfo*>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, FakeID, sizeof(CNetObj_SpectatorInfo)));
+	if(!pSpectatorInfo)
+		return;
+
+	pSpectatorInfo->m_SpectatorID = -1;
+	pSpectatorInfo->m_X = m_ViewPos.x;
+	pSpectatorInfo->m_Y = m_ViewPos.y;
 }
 
 CCharacter *CPlayer::GetCharacter() const

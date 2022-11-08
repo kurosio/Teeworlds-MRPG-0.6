@@ -63,6 +63,32 @@ public:
 	virtual int GetClientVersion(int ClientID) const = 0;
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1) = 0;
 
+	bool Translate(int& Target, int Client)
+	{
+		int* pMap = GetIdMap(Client);
+		bool Found = false;
+		for(int i = 0; i < VANILLA_MAX_CLIENTS; i++)
+		{
+			if(Target == pMap[i])
+			{
+				Target = i;
+				Found = true;
+				break;
+			}
+		}
+		return Found;
+	}
+
+	bool ReverseTranslate(int& Target, int Client)
+	{
+		Target = clamp(Target, 0, VANILLA_MAX_CLIENTS - 1);
+		int* pMap = GetIdMap(Client);
+		if(pMap[Target] == -1)
+			return false;
+		Target = pMap[Target];
+		return true;
+	}
+
 	template<class T>
 	int SendPackMsgMask(T* pMsg, int Flags, int64 Mask, int WorldID = -1)
 	{
@@ -145,6 +171,8 @@ public:
 	virtual bool IsBanned(int ClientID) = 0;
 	virtual bool IsEmpty(int ClientID) const = 0;
 	virtual void Kick(int ClientID, const char *pReason) = 0;
+
+	virtual int* GetIdMap(int ClientID) = 0;
 
 	virtual void ExpireServerInfo() = 0;
 };

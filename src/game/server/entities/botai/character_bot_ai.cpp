@@ -245,9 +245,19 @@ void CCharacterBotAI::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient) || !m_pBotPlayer->IsVisibleForClient(SnappingClient))
 		return;
 
-	CNetObj_Character* pCharacter = static_cast<CNetObj_Character*>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pBotPlayer->GetCID(), sizeof(CNetObj_Character)));
+	int ID = m_pBotPlayer->GetCID();
+	if(!Server()->Translate(ID, SnappingClient))
+		return;
+
+	CNetObj_Character* pCharacter = static_cast<CNetObj_Character*>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(CNetObj_Character)));
 	if(!pCharacter)
 		return;
+
+	if(pCharacter->m_HookedPlayer != -1)
+	{
+		if(!Server()->Translate(pCharacter->m_HookedPlayer, SnappingClient))
+			pCharacter->m_HookedPlayer = -1;
+	}
 
 	// write down the m_Core
 	if(!m_ReckoningTick || GS()->m_World.m_Paused)

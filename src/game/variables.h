@@ -169,6 +169,8 @@ MACRO_CONFIG_INT(ClNotifyWindow, cl_notify_window, 1, 0, 1, CFGFLAG_CLIENT | CFG
 // performance
 MACRO_CONFIG_INT(ClInactiveRendering, cl_inactive_rendering, 1, 0, 2, CFGFLAG_CLIENT, "0 = Always render, 1 = Stop rendering when minimized, 2 = Stop rendering when window is inactive")
 
+MACRO_CONFIG_INT(SvMapUpdateRate, sv_mapupdaterate, 5, 1, 100, CFGFLAG_SERVER, "64 player id <-> vanilla id players map update rate")
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS - 1, CFGFLAG_SERVER, "")
