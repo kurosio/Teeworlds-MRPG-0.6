@@ -64,12 +64,12 @@ public:
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1) = 0;
 
 	template<class T>
-	int SendPackMsgMask(T* pMsg, int Flags, int ClientID, int64 Mask, int WorldID = -1)
+	int SendPackMsgMask(T* pMsg, int Flags, int64 Mask, int WorldID = -1)
 	{
 		CMsgPacker Packer(pMsg->MsgID(), false);
 		if(pMsg->Pack(&Packer))
 			return -1;
-		return SendMsg(&Packer, Flags, ClientID, Mask, WorldID);
+		return SendMsg(&Packer, Flags, -1, Mask, WorldID);
 	}
 
 	template<class T>

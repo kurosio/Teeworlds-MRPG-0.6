@@ -35,6 +35,7 @@ public:
 		COLFLAG_DEATH=2,
 		COLFLAG_NOHOOK=4,
 		COLFLAG_SAFE_AREA = 1 << 3,
+		COLFLAG_DISALLOW_MOVE = 1 << 4,
 	};
 
 	CCollision();

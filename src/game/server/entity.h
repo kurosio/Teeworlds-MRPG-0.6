@@ -65,6 +65,7 @@ public:
 	CEntity *TypeNext() const { return m_pNextTypeEntity; }
 	CEntity *TypePrev() const { return m_pPrevTypeEntity; }
 	const vec2 &GetPos() const			{ return m_Pos; }
+	const vec2 &GetPosTo() const			{ return m_PosTo; }
 	float GetProximityRadius() const	{ return m_ProximityRadius; }
 	bool IsMarkedForDestroy() const		{ return m_MarkedForDestroy; }
 

@@ -36,6 +36,7 @@ public:
 	int GetIndex(int XPos, int YPos) const;
 
 	vec2 GetRandomWaypoint();
+	vec2 GetRandomWaypointRadius(vec2 Pos, float Radius);
 
 	void FindPath();
 

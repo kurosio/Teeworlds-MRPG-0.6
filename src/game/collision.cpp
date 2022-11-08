@@ -72,6 +72,10 @@ void CCollision::Init(class CLayers *pLayers)
 			m_pTiles[i].m_Index = COLFLAG_SAFE_AREA;
 			m_pTiles[i].m_Reserved = static_cast<char>(Index);
 			break;
+		case TILE_INVISIBLE_WALL:
+			m_pTiles[i].m_Index = COLFLAG_DISALLOW_MOVE;
+			m_pTiles[i].m_Reserved = static_cast<char>(Index);
+			break;
 		default:
 			m_pTiles[i].m_Index = 0;
 			m_pTiles[i].m_Reserved = static_cast< char >(Index);
@@ -227,7 +231,7 @@ bool CCollision::IntersectLineWithInvisible(vec2 Pos0, vec2 Pos1, vec2* pOutColl
 
 	while(CurTileX != Tile1X || CurTileY != Tile1Y)
 	{
-		if(IsTile(CurTileX * 32, CurTileY * 32, COLFLAG_SOLID) || GetParseTile(CurTileX*32, CurTileY*32) == TILE_INVISIBLE_WALL)
+		if(IsTile(CurTileX * 32, CurTileY * 32, COLFLAG_SOLID) || IsTile(CurTileX*32, CurTileY*32, COLFLAG_DISALLOW_MOVE))
 			break;
 		if(CurTileY != Tile1Y && (CurTileX == Tile1X || Error > 0))
 		{
@@ -242,7 +246,7 @@ bool CCollision::IntersectLineWithInvisible(vec2 Pos0, vec2 Pos1, vec2* pOutColl
 			Vertical = true;
 		}
 	}
-	if(IsTile(CurTileX * 32, CurTileY * 32, COLFLAG_SOLID) || GetParseTile(CurTileX * 32, CurTileY * 32) == TILE_INVISIBLE_WALL)
+	if(IsTile(CurTileX * 32, CurTileY * 32, COLFLAG_SOLID) || IsTile(CurTileX * 32, CurTileY * 32, COLFLAG_DISALLOW_MOVE))
 	{
 		if(CurTileX != Tile0X || CurTileY != Tile0Y)
 		{
@@ -300,7 +304,8 @@ vec2 CCollision::FindDirCollision(int CheckNum, vec2 SourceVec, char Cord, char 
 				else if(IsCordinateY)
 					SourceVec.y += i;
 			}
-			if(GetCollisionAt(SourceVec.x, SourceVec.y) > 0)
+			int ColFlag = GetCollisionAt(SourceVec.x, SourceVec.y);
+			if(ColFlag & COLFLAG_SOLID || ColFlag & COLFLAG_NOHOOK || ColFlag & COLFLAG_DEATH)
 				break;
 		}
 	}

@@ -569,9 +569,9 @@ int CServer::SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask, int 
 				if (m_aClients[i].m_State == CClient::STATE_INGAME && !m_aClients[i].m_Quitting)
 				{
 					// skip what is not included in the mask
-					if(Mask != -1 && (Mask & ((int64)1 << ClientID)) == 0)
+					if(Mask != -1 && (Mask & (int64)1 << i) == 0)
 						continue;
-					
+
 					const CPacker* pPack = &Pack;
 					Packet.m_pData = pPack->Data();
 					Packet.m_DataSize = pPack->Size();

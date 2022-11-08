@@ -563,18 +563,6 @@ bool CGameControllerDungeon::OnEntity(int Index, vec2 Pos)
 	if(IGameController::OnEntity(Index, Pos))
 		return true;
 
-	if(Index == ENTITY_NPC_WALLUP)
-	{
-		new CNPCWall(&GS()->m_World, Pos, false);
-		return true;
-	}
-
-	if(Index == ENTITY_NPC_WALLLEFT)
-	{
-		new CNPCWall(&GS()->m_World, Pos, true);
-		return true;
-	}
-
 	return false;
 }
 
