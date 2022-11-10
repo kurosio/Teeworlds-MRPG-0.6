@@ -72,7 +72,7 @@ void CCharacterBotAI::GiveRandomEffects(int To)
 bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
 	CPlayer* pFrom = GS()->GetPlayer(From, true);
-	if (!pFrom || !m_BotActive)
+	if (!pFrom || !m_pBotPlayer->IsActive())
 		return false;
 
 	if(m_pBotPlayer->GetBotType() != BotsTypes::TYPE_BOT_MOB || pFrom->IsBot())
@@ -191,8 +191,7 @@ bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 
 void CCharacterBotAI::Tick()
 {
-	m_BotActive = GS()->IsPlayersNearby(m_Core.m_Pos, 1000.0f);
-	if(!m_BotActive || !IsAlive())
+	if(!m_pBotPlayer->IsActive() || !IsAlive())
 		return;
 
 	// check safe area
@@ -225,7 +224,7 @@ void CCharacterBotAI::Tick()
 
 void CCharacterBotAI::TickDeferred()
 {
-	if(!m_BotActive || !IsAlive())
+	if(!m_pBotPlayer->IsActive() || !IsAlive())
 		return;
 	
 	if(m_DoorHit)

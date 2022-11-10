@@ -14,6 +14,7 @@ class CPlayerBot : public CPlayer
 	int m_MobID;
 	int m_BotHealth;
 	int m_BotStartHealth;
+	bool m_BotActive;
 	int m_DungeonAllowedSpawn;
 	std::map<int, vec2> m_WayPoints;
 
@@ -59,6 +60,9 @@ public:
 	void PostTick() override;
 	void Snap(int SnappingClient) override;
 	void FakeSnap() override;
+
+	bool IsActive() const override {return m_BotActive;};
+
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
 
 private:

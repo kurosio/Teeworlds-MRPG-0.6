@@ -30,6 +30,8 @@ CPlayerBot::~CPlayerBot()
 
 void CPlayerBot::Tick()
 {
+	m_BotActive = false;
+
 	if(m_pCharacter && !m_pCharacter->IsAlive())
 	{
 		delete m_pCharacter;
@@ -38,7 +40,8 @@ void CPlayerBot::Tick()
 
 	if(m_pCharacter)
 	{
-		if(m_pCharacter->IsAlive() && GS()->IsPlayersNearby(m_pCharacter->GetPos(), 1000.0f))
+		m_BotActive = GS()->IsPlayersNearby(m_pCharacter->GetPos(), 1000.0f);
+		if(m_pCharacter->IsAlive() && m_BotActive)
 		{
 			m_ViewPos = m_pCharacter->GetPos();
 			ThreadMobsPathFinder();
@@ -50,6 +53,7 @@ void CPlayerBot::Tick()
 	}
 	else if(m_Spawned && GetRespawnTick() <= Server()->Tick())
 	{
+		m_BotActive = true;
 		TryRespawn();
 	}
 }
@@ -192,7 +196,7 @@ int64 CPlayerBot::GetMaskVisibleForClients() const
 int CPlayerBot::IsVisibleForClient(int ClientID) const
 {
 	CPlayer* pSnappingPlayer = GS()->m_apPlayers[ClientID];
-	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer)
+	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer || !m_BotActive)
 		return 0;
 
 	if(m_BotType == TYPE_BOT_QUEST)
@@ -206,6 +210,7 @@ int CPlayerBot::IsVisibleForClient(int ClientID) const
 
 		// [first] quest bot active for player
 		DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive[ClientID] = true;
+		return 2;
 	}
 
 	if(m_BotType == TYPE_BOT_NPC)
@@ -216,8 +221,14 @@ int CPlayerBot::IsVisibleForClient(int ClientID) const
 
 		if(!IsActiveQuests(ClientID))
 			return 1;
+
+		return 2;
 	}
-	return 2;
+
+	if(m_BotType == TYPE_BOT_MOB)
+		return 2;
+
+	return 0;
 }
 
 void CPlayerBot::HandleTuningParams()

@@ -796,6 +796,7 @@ void CGS::OnTick()
 		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetPlayerWorldID() != m_WorldID)
 			continue;
 
+		m_World.UpdatePlayerMaps(i);
 		m_apPlayers[i]->Tick();
 		m_apPlayers[i]->PostTick();
 		if(i < MAX_PLAYERS)

@@ -116,6 +116,8 @@ public:
 	virtual void Snap(int SnappingClient);
 	virtual void FakeSnap();
 
+	virtual bool IsActive() const { return true; }
+
 private:
 	virtual void EffectsTick();
 	void TickSystemTalk();

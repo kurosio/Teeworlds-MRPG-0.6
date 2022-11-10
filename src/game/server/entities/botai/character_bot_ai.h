@@ -18,7 +18,6 @@ class CCharacterBotAI : public CCharacter
 
 	// bot ai
 	bool m_UseHookDissabled;
-	bool m_BotActive;
 	int m_MoveTick;
 	int m_PrevDirection;
 	vec2 m_PrevPos;
