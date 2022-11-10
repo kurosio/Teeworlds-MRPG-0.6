@@ -809,7 +809,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 
 void CCharacter::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient) || !m_pPlayer->IsVisibleForClient(SnappingClient))
+	if(NetworkClipped(SnappingClient))
 		return;
 
 	CNetObj_Character *pCharacter = static_cast<CNetObj_Character *>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, m_pPlayer->GetCID(), sizeof(CNetObj_Character)));
@@ -848,6 +848,11 @@ void CCharacter::Snap(int SnappingClient)
 	pCharacter->m_Health = 0;
 	pCharacter->m_Armor = 0;
 	pCharacter->m_PlayerFlags = m_pPlayer->m_PlayerFlags;
+	if(pCharacter->m_HookedPlayer != -1)
+	{
+		if(!Server()->Translate(pCharacter->m_HookedPlayer, SnappingClient))
+			pCharacter->m_HookedPlayer = -1;
+	}
 
 	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1)
 	{

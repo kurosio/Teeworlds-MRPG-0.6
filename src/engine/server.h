@@ -65,6 +65,9 @@ public:
 
 	bool Translate(int& Target, int Client)
 	{
+		if(Target < MAX_PLAYERS || Client >= MAX_PLAYERS)
+			return true;
+
 		int* pMap = GetIdMap(Client);
 		bool Found = false;
 		for(int i = MAX_PLAYERS; i < VANILLA_MAX_CLIENTS; i++)
@@ -81,6 +84,9 @@ public:
 
 	bool ReverseTranslate(int& Target, int Client)
 	{
+		if(Target < MAX_PLAYERS || Client >= MAX_PLAYERS)
+			return true;
+
 		Target = clamp(Target, 0, VANILLA_MAX_CLIENTS - 1);
 		int* pMap = GetIdMap(Client);
 		if(pMap[Target] == -1)

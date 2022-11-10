@@ -252,12 +252,6 @@ void CCharacterBotAI::Snap(int SnappingClient)
 	if(!pCharacter)
 		return;
 
-	if(pCharacter->m_HookedPlayer != -1)
-	{
-		if(!Server()->Translate(pCharacter->m_HookedPlayer, SnappingClient))
-			pCharacter->m_HookedPlayer = -1;
-	}
-
 	// write down the m_Core
 	if(!m_ReckoningTick || GS()->m_World.m_Paused)
 	{

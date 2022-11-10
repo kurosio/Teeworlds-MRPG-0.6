@@ -289,7 +289,7 @@ void CGameWorld::UpdatePlayerMaps(int ClientID)
 		Dist[j].second = j;
 
 		CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[j]);
-		if(!Server()->ClientIngame(j) || !pBotPlayer || pBotPlayer->GetPlayerWorldID() != WorldID || !pBotPlayer->IsVisibleForClient(ClientID) || !pBotPlayer->GetCharacter())
+		if(!pBotPlayer || pBotPlayer->GetPlayerWorldID() != WorldID || !pBotPlayer->IsVisibleForClient(ClientID) || !pBotPlayer->GetCharacter())
 		{
 			Dist[j].first = 1e10;
 			continue;
