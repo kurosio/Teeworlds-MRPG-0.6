@@ -206,13 +206,14 @@ vec2 CPathfinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
 {
 	array<vec2> lPossibleWaypoints;
 
-	int StartX = round_to_int((Pos.x - (Radius / 2.0f)) / 32.0f);
-	int StartY = round_to_int((Pos.y - (Radius / 2.0f)) / 32.0f);
-	int EndX = round_to_int((Pos.x + (Radius / 2.0f)) / 32.0f);
-	int EndY = round_to_int((Pos.y + (Radius / 2.0f)) / 32.0f);
-	for(int i = min(1, StartY); i < min(EndY, m_LayerHeight); i++)
+	int StartX = clamp(round_to_int((Pos.x - (Radius / 2.0f)) / 32.0f), 1, m_LayerWidth);
+	int StartY = clamp(round_to_int((Pos.y - (Radius / 2.0f)) / 32.0f), 1, m_LayerHeight);
+	int EndX = clamp(round_to_int((Pos.x + (Radius / 2.0f)) / 32.0f), 1, m_LayerWidth);
+	int EndY = clamp(round_to_int((Pos.y + (Radius / 2.0f)) / 32.0f), 1, m_LayerHeight);
+
+	for(int i = StartY; i < EndY; i++)
 	{
-		for(int j = min(1, StartX); j < min(EndX, m_LayerWidth); j++)
+		for(int j = StartX; j < EndX; j++)
 		{
 			if(m_lMap[i * m_LayerWidth + j].m_IsClosed || m_lMap[i * m_LayerWidth + j].m_IsCol)
 				continue;

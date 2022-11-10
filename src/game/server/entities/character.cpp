@@ -965,7 +965,7 @@ void CCharacter::HandleEvents()
 		}
 	}
 
-	if(m_Event == TILE_EVENT_LIKE)
+	else if(m_Event == TILE_EVENT_LIKE)
 	{
 		SetEmote(EMOTE_HAPPY, 1);
 	}
