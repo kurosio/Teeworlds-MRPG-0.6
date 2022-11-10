@@ -389,6 +389,7 @@ void CPlayerBot::FindThreadPath(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 S
 
 	while(pBotPlayer->m_ThreadReadNow.load(std::memory_order_acquire))
 		std::this_thread::sleep_for(std::chrono::microseconds(1));
+
 	pGameServer->PathFinder()->Init();
 	pGameServer->PathFinder()->SetStart(StartPos);
 	pGameServer->PathFinder()->SetEnd(SearchPos);
@@ -425,7 +426,7 @@ void CPlayerBot::ThreadMobsPathFinder()
 		{
 			std::thread(&FindThreadPath, GS(), this, m_ViewPos, m_TargetPos).detach();
 		}
-		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 96.0f)
+		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
 		{
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
 			std::thread(&GetThreadRandomRadiusWaypointTarget, GS(), this, m_ViewPos, 800.0f).detach();

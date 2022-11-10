@@ -474,6 +474,7 @@ void CCharacterBotAI::Move()
 
 	// set the direction
 	const bool IsCollide = GS()->Collision()->IntersectLineWithInvisible(m_Pos, m_Pos + vec2(m_Input.m_Direction, 0) * 150, &m_WallPos, nullptr);
+
 	if(WayDir.x < 0 && ActiveWayPoints > 3)
 		m_Input.m_Direction = -1;
 	else if(WayDir.x > 0 && ActiveWayPoints > 3)
