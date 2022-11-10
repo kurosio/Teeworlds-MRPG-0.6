@@ -90,34 +90,78 @@ public:
 	}
 
 	template<class T>
-	int SendPackMsgMask(T* pMsg, int Flags, int64 Mask, int WorldID = -1)
+	int SendPackMsg(const T* pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1)
 	{
-		CMsgPacker Packer(pMsg->MsgID(), false);
-		if(pMsg->Pack(&Packer))
-			return -1;
-		return SendMsg(&Packer, Flags, -1, Mask, WorldID);
-	}
+		int Result = 0;
 
-	template<class T>
-	int SendPackMsg(T* pMsg, int Flags, int ClientID, int WorldID = -1)
-	{
-		CMsgPacker Packer(pMsg->MsgID(), false);
-		if(pMsg->Pack(&Packer))
-			return -1;
-
-		int64 Mask = -1;
 		if(ClientID == -1)
 		{
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
 				if(ClientIngame(i))
-					Mask |= (int64)1 << i;
+					Result = SendPackMsgTranslate(pMsg, Flags, i, Mask, WorldID);
 			}
 		}
-		else if(ClientIngame(ClientID))
-			Mask |= (int64)1 << ClientID;
+		else
+		{
+			Result = SendPackMsgTranslate(pMsg, Flags, ClientID, Mask, WorldID);
+		}
+
+		return Result;
+	}
+
+	template<class T>
+	int SendPackMsgOne(const T* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	{
+		dbg_assert(ClientID != -1, "SendPackMsgOne called with -1");
+		CMsgPacker Packer(pMsg->MsgID(), false);
+		if(pMsg->Pack(&Packer))
+			return -1;
 
 		return SendMsg(&Packer, Flags, ClientID, Mask, WorldID);
+	}
+
+	template<class T>
+	int SendPackMsgTranslate(const T* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	{
+		return SendPackMsgOne(pMsg, Flags, ClientID, Mask, WorldID);
+	}
+
+	int SendPackMsgTranslate(const CNetMsg_Sv_Emoticon* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	{
+		CNetMsg_Sv_Emoticon MsgCopy;
+		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
+
+		return Translate(MsgCopy.m_ClientID, ClientID) && SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
+	}
+
+	int SendPackMsgTranslate(const CNetMsg_Sv_Chat* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	{
+		CNetMsg_Sv_Chat MsgCopy;
+		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
+
+		char aBuf[1000];
+		if(MsgCopy.m_ClientID >= 0 && !Translate(MsgCopy.m_ClientID, ClientID))
+		{
+			str_format(aBuf, sizeof(aBuf), "%s: %s", ClientName(MsgCopy.m_ClientID), MsgCopy.m_pMessage);
+			MsgCopy.m_pMessage = aBuf;
+			MsgCopy.m_ClientID = VANILLA_MAX_CLIENTS - 1;
+		}
+
+		return SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
+	}
+
+	// translate KillMsg
+	int SendPackMsgTranslate(const CNetMsg_Sv_KillMsg* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	{
+		CNetMsg_Sv_KillMsg MsgCopy;
+		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
+		if(!Translate(MsgCopy.m_Victim, ClientID))
+			return 0;
+		if(!Translate(MsgCopy.m_Killer, ClientID))
+			MsgCopy.m_Killer = MsgCopy.m_Victim;
+
+		return SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
 	}
 
 	// World Time
