@@ -66,10 +66,10 @@ void CPathfinder::Init()
 
 void CPathfinder::SetStart(vec2 Pos)
 {
-	Pos.x = clamp((int)Pos.x, 0, m_LayerWidth * 32);
-	Pos.y = clamp((int)Pos.y, 0, m_LayerHeight * 32);
-	int Index = GetIndex((int)(Pos.x / 32), (int)(Pos.y / 32));
+	Pos.x = clamp(round_to_int(Pos.x / 32.0f), 1, m_LayerWidth);
+	Pos.y = clamp(round_to_int(Pos.y / 32.0f), 1, m_LayerHeight);
 
+	int Index = GetIndex(Pos.x, Pos.y);
 	m_lNodes[Index].m_Parent = START;
 	m_lNodes[Index].m_IsClosed = true;
 	m_ClosedNodes++;
@@ -78,7 +78,10 @@ void CPathfinder::SetStart(vec2 Pos)
 
 void CPathfinder::SetEnd(vec2 Pos)
 {
-	int Index = GetIndex((int)(Pos.x / 32), (int)(Pos.y / 32));
+	Pos.x = clamp(round_to_int(Pos.x / 32.0f), 1, m_LayerWidth);
+	Pos.y = clamp(round_to_int(Pos.y / 32.0f), 1, m_LayerHeight);
+
+	int Index = GetIndex(Pos.x, Pos.y);
 	m_lNodes[Index].m_Parent = END;
 	m_EndIndex = Index;
 }
@@ -205,7 +208,6 @@ vec2 CPathfinder::GetRandomWaypoint()
 vec2 CPathfinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
 {
 	array<vec2> lPossibleWaypoints;
-
 	int StartX = clamp(round_to_int((Pos.x - (Radius / 2.0f)) / 32.0f), 1, m_LayerWidth);
 	int StartY = clamp(round_to_int((Pos.y - (Radius / 2.0f)) / 32.0f), 1, m_LayerHeight);
 	int EndX = clamp(round_to_int((Pos.x + (Radius / 2.0f)) / 32.0f), 1, m_LayerWidth);

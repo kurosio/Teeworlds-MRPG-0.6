@@ -30,7 +30,7 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_NextTuningParams = m_PrevTuningParams;
 
 	int* pIdMap = Server()->GetIdMap(m_ClientID);
-	for(int i = MAX_PLAYERS; i < VANILLA_MAX_CLIENTS; i++)
+	for(int i = 1; i < VANILLA_MAX_CLIENTS; i++)
 		pIdMap[i] = -1;
 
 	pIdMap[0] = m_ClientID;
