@@ -319,15 +319,17 @@ void CGameWorld::UpdatePlayerMaps(int ClientID)
 
 	std::nth_element(&Dist[0], &Dist[VANILLA_MAX_CLIENTS - 1], &Dist[MAX_CLIENTS], distCompare);
 
-	int Mapc = 0;
 	int Demand = 0;
+	int Mapc = MAX_PLAYERS;
 	for(int j = MAX_PLAYERS; j < VANILLA_MAX_CLIENTS - 1; j++)
 	{
 		int k = Dist[j].second;
 		if(aReverseMap[k] != -1 || Dist[j].first > 5e9f)
 			continue;
+
 		while(Mapc < VANILLA_MAX_CLIENTS && pMap[Mapc] != -1)
 			Mapc++;
+
 		if(Mapc < VANILLA_MAX_CLIENTS - 1)
 			pMap[Mapc] = k;
 		else

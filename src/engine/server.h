@@ -67,7 +67,7 @@ public:
 	{
 		int* pMap = GetIdMap(Client);
 		bool Found = false;
-		for(int i = 0; i < VANILLA_MAX_CLIENTS; i++)
+		for(int i = MAX_PLAYERS; i < VANILLA_MAX_CLIENTS; i++)
 		{
 			if(Target == pMap[i])
 			{
