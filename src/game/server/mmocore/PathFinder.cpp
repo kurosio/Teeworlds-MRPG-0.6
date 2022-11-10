@@ -66,10 +66,10 @@ void CPathfinder::Init()
 
 void CPathfinder::SetStart(vec2 Pos)
 {
-	Pos.x = clamp(round_to_int(Pos.x / 32.0f), 1, m_LayerWidth);
-	Pos.y = clamp(round_to_int(Pos.y / 32.0f), 1, m_LayerHeight);
+	int StartX = clamp(round_to_int(Pos.x / 32.0f), 1, m_LayerWidth);
+	int StartY = clamp(round_to_int(Pos.y / 32.0f), 1, m_LayerHeight);
 
-	int Index = GetIndex(Pos.x, Pos.y);
+	int Index = GetIndex(StartX, StartY);
 	m_lNodes[Index].m_Parent = START;
 	m_lNodes[Index].m_IsClosed = true;
 	m_ClosedNodes++;
@@ -78,10 +78,10 @@ void CPathfinder::SetStart(vec2 Pos)
 
 void CPathfinder::SetEnd(vec2 Pos)
 {
-	Pos.x = clamp(round_to_int(Pos.x / 32.0f), 1, m_LayerWidth);
-	Pos.y = clamp(round_to_int(Pos.y / 32.0f), 1, m_LayerHeight);
+	int EndX = clamp(round_to_int(Pos.x / 32.0f), 1, m_LayerWidth);
+	int EndY = clamp(round_to_int(Pos.y / 32.0f), 1, m_LayerHeight);
 
-	int Index = GetIndex(Pos.x, Pos.y);
+	int Index = GetIndex(EndX, EndY);
 	m_lNodes[Index].m_Parent = END;
 	m_EndIndex = Index;
 }
