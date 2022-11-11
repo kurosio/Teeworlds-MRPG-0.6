@@ -241,11 +241,8 @@ void CCharacterBotAI::TickDeferred()
 
 void CCharacterBotAI::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient) || !m_pBotPlayer->IsVisibleForClient(SnappingClient))
-		return;
-
 	int ID = m_pBotPlayer->GetCID();
-	if(!Server()->Translate(ID, SnappingClient))
+	if(NetworkClipped(SnappingClient) || !Server()->Translate(ID, SnappingClient) || !m_pBotPlayer->IsVisibleForClient(SnappingClient))
 		return;
 
 	CNetObj_Character* pCharacter = static_cast<CNetObj_Character*>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(CNetObj_Character)));

@@ -210,7 +210,6 @@ int CPlayerBot::IsVisibleForClient(int ClientID) const
 
 		// [first] quest bot active for player
 		DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive[ClientID] = true;
-		return 2;
 	}
 
 	if(m_BotType == TYPE_BOT_NPC)
@@ -221,14 +220,9 @@ int CPlayerBot::IsVisibleForClient(int ClientID) const
 
 		if(!IsActiveQuests(ClientID))
 			return 1;
-
-		return 2;
 	}
 
-	if(m_BotType == TYPE_BOT_MOB)
-		return 2;
-
-	return 0;
+	return 2;
 }
 
 void CPlayerBot::HandleTuningParams()
@@ -242,7 +236,7 @@ void CPlayerBot::HandleTuningParams()
 void CPlayerBot::Snap(int SnappingClient)
 {
 	int ID = m_ClientID;
-	if(!Server()->Translate(ID, SnappingClient) || !IsVisibleForClient(SnappingClient))
+	if(!IsVisibleForClient(SnappingClient) || !Server()->Translate(ID, SnappingClient))
 		return;
 
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, ID, sizeof(CNetObj_ClientInfo)));
@@ -283,7 +277,10 @@ void CPlayerBot::Snap(int SnappingClient)
 	pPlayerInfo->m_Team = TEAM_BLUE;
 }
 
-void CPlayerBot::FakeSnap() { CPlayer::FakeSnap(); }
+void CPlayerBot::FakeSnap()
+{
+	CPlayer::FakeSnap();
+}
 
 Mood CPlayerBot::GetMoodState() const
 {

@@ -182,6 +182,8 @@ void CGameWorld::Tick()
 		}
 
 	RemoveEntities();
+
+	UpdatePlayerMaps();
 }
 
 
@@ -272,76 +274,79 @@ bool distCompare(std::pair<float, int> a, std::pair<float, int> b)
 	return (a.first < b.first);
 }
 
-void CGameWorld::UpdatePlayerMaps(int ClientID)
+void CGameWorld::UpdatePlayerMaps()
 {
-	CPlayer* pPlayer = GS()->m_apPlayers[ClientID];
-	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0 || !Server()->ClientIngame(ClientID) || Server()->GetClientWorldID(ClientID) != GS()->GetWorldID() || !pPlayer || pPlayer->IsBot())
+	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0)
 		return;
 
-	std::pair<float, int> Dist[MAX_CLIENTS]{{0, 0}};
-
-	int WorldID = Server()->GetClientWorldID(ClientID);
-	int* pMap = Server()->GetIdMap(ClientID);
-
-	// compute distances
-	for(int j = MAX_PLAYERS; j < MAX_CLIENTS; j++)
+	std::pair<float, int> Dist[MAX_CLIENTS]{{0, -1}};
+	for(int ClientID = 0; ClientID < MAX_PLAYERS; ClientID++)
 	{
-		Dist[j].second = j;
-
-		CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[j]);
-		if(!pBotPlayer || pBotPlayer->GetPlayerWorldID() != WorldID || !pBotPlayer->IsVisibleForClient(ClientID) || !pBotPlayer->GetCharacter())
-		{
-			Dist[j].first = 1e10;
+		CPlayer* pPlayer = GS()->m_apPlayers[ClientID];
+		if(!Server()->ClientIngame(ClientID) || Server()->GetClientWorldID(ClientID) != GS()->GetWorldID() || !pPlayer)
 			continue;
+
+		int WorldID = Server()->GetClientWorldID(ClientID);
+		int* pMap = Server()->GetIdMap(ClientID);
+
+		// compute distances
+		for(int j = MAX_PLAYERS; j < MAX_CLIENTS; j++)
+		{
+			Dist[j].second = j;
+
+			CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[j]);
+			if(!pBotPlayer || pBotPlayer->GetPlayerWorldID() != WorldID || !pBotPlayer->IsVisibleForClient(ClientID) || !pBotPlayer->GetCharacter())
+			{
+				Dist[j].first = 1e10;
+				continue;
+			}
+
+			Dist[j].first += distance(pPlayer->m_ViewPos, pBotPlayer->GetCharacter()->m_Pos);
 		}
 
-		Dist[j].first += distance(pPlayer->m_ViewPos, GS()->m_apPlayers[j]->GetCharacter()->m_Pos);
+		// always send the player themselves
+		Dist[ClientID].first = 0;
+
+		// compute reverse map
+		int aReverseMap[MAX_CLIENTS];
+		for(int& j : aReverseMap)
+		{
+			j = -1;
+		}
+		for(int j = MAX_PLAYERS; j < VANILLA_MAX_CLIENTS; j++)
+		{
+			if(pMap[j] == -1)
+				continue;
+			if(Dist[pMap[j]].first > 5e9f)
+				pMap[j] = -1;
+			else
+				aReverseMap[pMap[j]] = j;
+		}
+
+		std::nth_element(&Dist[0], &Dist[VANILLA_MAX_CLIENTS - 1], &Dist[MAX_CLIENTS], distCompare);
+
+		int Mapc = MAX_PLAYERS;
+		int Demand = 0;
+		for(int j = MAX_PLAYERS; j < VANILLA_MAX_CLIENTS - 1; j++)
+		{
+			int k = Dist[j].second;
+			if(aReverseMap[k] != -1 || Dist[j].first > 5e9f)
+				continue;
+			while(Mapc < VANILLA_MAX_CLIENTS && pMap[Mapc] != -1)
+				Mapc++;
+			if(Mapc < VANILLA_MAX_CLIENTS - 1)
+				pMap[Mapc] = k;
+			else
+				Demand++;
+		}
+
+		for(int j = MAX_CLIENTS - 1; j > VANILLA_MAX_CLIENTS - 2; j--)
+		{
+			int k = Dist[j].second;
+			if(aReverseMap[k] != -1 && Demand-- > 0)
+				pMap[aReverseMap[k]] = -1;
+		}
+
+		pMap[VANILLA_MAX_CLIENTS - 1] = -1; // player with empty name to say chat msgs
 	}
-
-	// always send the player themselves
-	Dist[ClientID].first = 0;
-
-	// compute reverse map
-	int aReverseMap[MAX_CLIENTS];
-	for(int& j : aReverseMap)
-	{
-		j = -1;
-	}
-	for(int j = MAX_PLAYERS; j < VANILLA_MAX_CLIENTS; j++)
-	{
-		if(pMap[j] == -1)
-			continue;
-		if(Dist[pMap[j]].first > 5e9f)
-			pMap[j] = -1;
-		else
-			aReverseMap[pMap[j]] = j;
-	}
-
-	std::nth_element(&Dist[0], &Dist[VANILLA_MAX_CLIENTS - 1], &Dist[MAX_CLIENTS], distCompare);
-
-	int Demand = 0;
-	int Mapc = MAX_PLAYERS;
-	for(int j = MAX_PLAYERS; j < VANILLA_MAX_CLIENTS - 1; j++)
-	{
-		int k = Dist[j].second;
-		if(aReverseMap[k] != -1 || Dist[j].first > 5e9f)
-			continue;
-
-		while(Mapc < VANILLA_MAX_CLIENTS && pMap[Mapc] != -1)
-			Mapc++;
-
-		if(Mapc < VANILLA_MAX_CLIENTS - 1)
-			pMap[Mapc] = k;
-		else
-			Demand++;
-	}
-	for(int j = MAX_CLIENTS - 1; j > VANILLA_MAX_CLIENTS - 2; j--)
-	{
-		int k = Dist[j].second;
-		if(aReverseMap[k] != -1 && Demand-- > 0)
-			pMap[aReverseMap[k]] = -1;
-	}
-
-	pMap[VANILLA_MAX_CLIENTS - 1] = -1; // player with empty name to say chat msgs
 }
-

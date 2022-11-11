@@ -76,7 +76,7 @@ public:
 	~CGameWorld();
 
 	void SetGameServer(CGS *pGS);
-	void UpdatePlayerMaps(int ClientID);
+	void UpdatePlayerMaps();
 
 	CEntity *FindFirst(int Type);
 

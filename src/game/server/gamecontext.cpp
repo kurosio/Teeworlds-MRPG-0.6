@@ -796,7 +796,6 @@ void CGS::OnTick()
 		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetPlayerWorldID() != m_WorldID)
 			continue;
 
-		m_World.UpdatePlayerMaps(i);
 		m_apPlayers[i]->Tick();
 		m_apPlayers[i]->PostTick();
 		if(i < MAX_PLAYERS)
@@ -832,9 +831,7 @@ void CGS::OnSnap(int ClientID)
 	if(!pPlayer || pPlayer->GetPlayerWorldID() != GetWorldID())
 		return;
 
-	m_World.Snap(ClientID);
 	m_pController->Snap();
-	m_Events.Snap(ClientID);
 	for(auto& arpPlayer : m_apPlayers)
 	{
 		if(arpPlayer)
@@ -842,7 +839,10 @@ void CGS::OnSnap(int ClientID)
 	}
 
 	if(ClientID >= MAX_PLAYERS)
-		m_apPlayers[ClientID]->FakeSnap();
+		pPlayer->FakeSnap();
+
+	m_World.Snap(ClientID);
+	m_Events.Snap(ClientID);
 }
 
 void CGS::OnPreSnap() {}
