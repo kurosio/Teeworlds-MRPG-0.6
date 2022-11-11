@@ -29,15 +29,13 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 
-	int* pIdMap = Server()->GetIdMap(m_ClientID);
-	for(int i = 1; i < VANILLA_MAX_CLIENTS; i++)
-		pIdMap[i] = -1;
-
-	pIdMap[0] = m_ClientID;
-
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
 	{
+		int* pIdMap = Server()->GetIdMap(m_ClientID);
+		memset(pIdMap, -1, sizeof(int) * VANILLA_MAX_CLIENTS);
+		pIdMap[0] = m_ClientID;
+
 		m_LastVoteMenu = NOPE;
 		m_OpenVoteMenu = MenuList::MENU_MAIN;
 		m_MoodState = Mood::NORMAL;
