@@ -279,16 +279,12 @@ void CGameWorld::UpdatePlayerMaps()
 	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0)
 		return;
 
-	std::pair<float, int> Dist[MAX_CLIENTS]{{0.0f, -1}};
+	std::pair<float, int> Dist[MAX_CLIENTS];
 	for(int ClientID = 0; ClientID < MAX_PLAYERS; ClientID++)
 	{
 		CPlayer* pPlayer = GS()->m_apPlayers[ClientID];
 		int ClientWorldID = Server()->GetClientWorldID(ClientID);
-
-		if(ClientWorldID != GS()->GetWorldID())
-			break;
-
-		if(!Server()->ClientIngame(ClientID) || !pPlayer)
+		if(!Server()->ClientIngame(ClientID) || ClientWorldID != GS()->GetWorldID() || !pPlayer)
 			continue;
 
 		int* pMap = Server()->GetIdMap(ClientID);
@@ -299,11 +295,16 @@ void CGameWorld::UpdatePlayerMaps()
 			Dist[j].second = j;
 
 			CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[j]);
-			if(!pBotPlayer || pBotPlayer->GetPlayerWorldID() != ClientWorldID || !pBotPlayer->IsVisibleForClient(ClientID) || !pBotPlayer->GetCharacter())
+			if(!Server()->ClientIngame(j) || !pBotPlayer || !pBotPlayer->GetCharacter())
 			{
 				Dist[j].first = 1e10;
 				continue;
 			}
+
+			if(!pBotPlayer->IsVisibleForClient(ClientID))
+				Dist[j].first = 1e8;
+			else
+				Dist[j].first = 0;
 
 			Dist[j].first += distance(pPlayer->m_ViewPos, pBotPlayer->GetCharacter()->m_Pos);
 		}

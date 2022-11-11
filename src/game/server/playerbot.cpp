@@ -364,7 +364,7 @@ int CPlayerBot::GetPlayerWorldID() const
 {
 	if(m_BotType == TYPE_BOT_MOB)
 		return MobBotInfo::ms_aMobBot[m_MobID].m_WorldID;
-	else if(m_BotType == TYPE_BOT_NPC)
+	if(m_BotType == TYPE_BOT_NPC)
 		return NpcBotInfo::ms_aNpcBot[m_MobID].m_WorldID;
 	return QuestBotInfo::ms_aQuestBot[m_MobID].m_WorldID;
 }
