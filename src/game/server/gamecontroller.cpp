@@ -23,15 +23,13 @@ IGameController::IGameController(CGS *pGS)
 		m_aNumSpawnPoints[i] = 0;
 }
 
-
-
 void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
 {
 }
 
 void IGameController::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int Weapon)
 {
-	return;
+	pVictim->GetPlayer()->TryRemoveEidolon();
 }
 
 bool IGameController::OnCharacterSpawn(CCharacter* pChr)
@@ -72,6 +70,9 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	pChr->GiveWeapon(WEAPON_HAMMER, -1);
 	for(int i = WEAPON_GUN; i < NUM_WEAPONS - 1; i++)
 		pChr->GiveWeapon(i, MaximumAmmo);
+
+	// eidolons
+	pChr->GetPlayer()->TryCreateEidolon();
 	return true;
 }
 

@@ -117,13 +117,13 @@ bool CCharacter::IsGrounded() const
 
 bool CCharacter::IsCollisionFlag(int Flag) const
 {
-	if(GS()->Collision()->CheckPoint(m_Pos.x+GetProximityRadius()/2, m_Pos.y+GetProximityRadius()/2+5, Flag))
+	if(GS()->Collision()->CheckPoint(m_Pos.x+GetProximityRadius()/2, m_Pos.y+GetProximityRadius()/2+10, Flag))
 		return true;
-	if(GS()->Collision()->CheckPoint(m_Pos.x-GetProximityRadius()/2, m_Pos.y+GetProximityRadius()/2+5, Flag))
+	if(GS()->Collision()->CheckPoint(m_Pos.x-GetProximityRadius()/2, m_Pos.y+GetProximityRadius()/2+10, Flag))
 		return true;
-	if(GS()->Collision()->CheckPoint(m_Pos.x+GetProximityRadius()/2, m_Pos.y-GetProximityRadius()/2+5, Flag))
+	if(GS()->Collision()->CheckPoint(m_Pos.x+GetProximityRadius()/2, m_Pos.y-GetProximityRadius()/2+10, Flag))
 		return true;
-	if(GS()->Collision()->CheckPoint(m_Pos.x-GetProximityRadius()/2, m_Pos.y-GetProximityRadius()/2+5, Flag))
+	if(GS()->Collision()->CheckPoint(m_Pos.x-GetProximityRadius()/2, m_Pos.y-GetProximityRadius()/2+10, Flag))
 		return true;
 	return false;
 }
@@ -302,6 +302,10 @@ void CCharacter::FireWeapon()
 					GS()->Chat(m_pPlayer->GetCID(), "You start dialogue with {STR}!", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 					break;
 				}
+
+				// dissalow hammer hit from self eidolon
+				if(m_pPlayer->GetEidolon() && m_pPlayer->GetEidolon()->GetCID() == pTarget->GetPlayer()->GetCID())
+					continue;
 
 				if (pTarget->m_Core.m_CollisionDisabled)
 					continue;
@@ -772,7 +776,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	}
 
 	// create healthmod indicator
-	GS()->CreateDamage(m_Pos, FromCID, OldHealth-m_Health, CritDamage > 0);
+	const bool IsCriticalDamage = (CritDamage > 0);
+	GS()->CreateDamage(m_Pos, FromCID, OldHealth-m_Health, IsCriticalDamage);
 
 	if(FromCID != m_pPlayer->GetCID())
 		GS()->CreatePlayerSound(FromCID, SOUND_HIT);
@@ -800,8 +805,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 			pPlayerItem->Use(1);
 	}
 
-	const bool IsHardDamage = (CritDamage > 0);
-	GS()->CreateSound(m_Pos, IsHardDamage ? (int)SOUND_PLAYER_PAIN_LONG : (int)SOUND_PLAYER_PAIN_SHORT);
+	GS()->CreateSound(m_Pos, IsCriticalDamage ? (int)SOUND_PLAYER_PAIN_LONG : (int)SOUND_PLAYER_PAIN_SHORT);
 	m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
 	return true;
@@ -1129,6 +1133,12 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 	if((pItemInfo->GetFunctional() >= EQUIP_HAMMER && pItemInfo->GetFunctional() <= EQUIP_LASER))
 		m_pPlayer->GetCharacter()->GiveWeapon(pItemInfo->GetFunctional(), 3);
 
+	if(pItemInfo->GetFunctional() == EQUIP_EIDOLON)
+	{
+		m_pPlayer->TryRemoveEidolon();
+		m_pPlayer->TryCreateEidolon();
+	}
+
 	if(pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen) > 0)
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen, true);
 }
@@ -1148,6 +1158,19 @@ void CCharacter::HandleAuthedPlayer()
 bool CCharacter::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
+
+	// eidolon
+	if(pFrom && pFrom->IsBot() && pFrom->GetBotType() == BotsTypes::TYPE_BOT_EIDOLON)
+	{
+		// dissalow  damage from self eidolon
+		if(m_pPlayer->GetEidolon() && m_pPlayer->GetEidolon()->GetCID() == pFrom->GetCID())
+			return false;
+
+		// enable damage from eidolon to mobs
+		if(m_pPlayer->IsBot() && m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+			return true;
+	}
+
 	if(!pFrom || (m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled) || (m_pPlayer->IsBot() && pFrom->IsBot()))
 		return false;
 
@@ -1227,7 +1250,7 @@ void CCharacter::ChangePosition(vec2 NewPos)
 		return;
 
 	GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
-	GS()->CreateDeath(NewPos, m_pPlayer->GetCID());
+	GS()->CreatePlayerSpawn(NewPos);
 	m_Core.m_Pos = NewPos;
 }
 
@@ -1247,7 +1270,9 @@ bool CCharacter::StartConversation(CPlayer *pTarget)
 
 	// skip if not NPC, or it is not drawn
 	CPlayerBot* pTargetBot = static_cast<CPlayerBot*>(pTarget);
-	if (!pTargetBot || pTargetBot->GetBotType() == BotsTypes::TYPE_BOT_MOB || !pTargetBot->IsVisibleForClient(m_pPlayer->GetCID()))
+	if (!pTargetBot || pTargetBot->GetBotType() == BotsTypes::TYPE_BOT_MOB 
+		|| pTargetBot->GetBotType() == BotsTypes::TYPE_BOT_EIDOLON 
+		|| !pTargetBot->IsVisibleForClient(m_pPlayer->GetCID()))
 		return false;
 	return true;
 }

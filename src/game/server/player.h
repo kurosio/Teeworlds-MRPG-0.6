@@ -77,6 +77,7 @@ public:
 	short m_OpenVoteMenu;
 	short m_LastVoteMenu;
 	bool m_RequestChangeNickname;
+	int m_EidolonCID;
 
 	/* #########################################################################
 		FUNCTIONS PLAYER ENGINE
@@ -117,6 +118,9 @@ public:
 	virtual void FakeSnap();
 
 	virtual bool IsActive() const { return true; }
+	class CPlayerBot* GetEidolon() const;
+	void TryCreateEidolon();
+	void TryRemoveEidolon();
 
 private:
 	virtual void EffectsTick();

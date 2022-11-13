@@ -5,6 +5,8 @@
 
 #include "player.h"
 
+inline std::mutex mtxThreadPathWritedNow;
+
 class CPlayerBot : public CPlayer
 {
 	MACRO_ALLOC_POOL_ID()
@@ -64,6 +66,7 @@ public:
 	bool IsActive() const override {return m_BotActive;};
 
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
+	class CPlayer* GetEidolonOwner() const;
 
 private:
 	std::unordered_map < std::string /* effect */, int /* seconds */ > m_aEffects;

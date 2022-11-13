@@ -57,15 +57,17 @@ private:
 	void EngineBots();
 	void EngineNPC();
 	void EngineMobs();
+	void EngineEidolons();
 	void EngineQuestMob();
 	void HandleTuning() override;
 	void BehaviorTick();
 
 	CPlayer *SearchPlayer(float Distance) const;
     CPlayer *SearchTenacityPlayer(float Distance);
+	CPlayerBot* SearchMob(float Distance) const;
 
 	void Move();
-	void Action();
+	void Fire();
 
 	// Target bot system
 	void ClearTarget();

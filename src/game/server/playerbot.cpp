@@ -14,6 +14,7 @@ MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIEN
 CPlayerBot::CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint)
 	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(SubBotID), m_BotHealth(0), m_LastPosTick(0), m_PathSize(0)
 {
+	m_EidolonCID = -1;
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = m_BotType == TYPE_BOT_MOB ? CPlayerBot::GetAttributeSize(AttributeIdentifier::Hardness) : 10;
 }
@@ -40,6 +41,26 @@ void CPlayerBot::Tick()
 	if(m_pCharacter)
 	{
 		m_BotActive = GS()->IsPlayersNearby(m_pCharacter->GetPos(), 1000.0f);
+
+		// update eidolon position
+		if(m_BotType == BotsTypes::TYPE_BOT_EIDOLON)
+		{
+			m_BotActive = m_BotActive && GetEidolonOwner();
+			if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && !m_BotActive)
+			{
+				vec2 OwnerPos = pOwner->GetCharacter()->m_Core.m_Pos;
+				static constexpr int Directions = 4;
+				static vec2 Positions[Directions] = { vec2(-48.0f, 0.0f), vec2(0.0f, -48.0f), vec2(48.0f, 0.0f), vec2(0.0f, 48.0f) };
+				vec2* Pos = std::find_if(std::begin(Positions), std::end(Positions), [&OwnerPos, this](const vec2& p){ return !GS()->Collision()->CheckPoint(OwnerPos + p); });
+				vec2 NewPos = OwnerPos + (Pos ? *Pos : vec2(0,0));
+
+				m_pCharacter->ResetInput();
+				m_pCharacter->m_DoorHit = false;
+				m_pCharacter->ChangePosition(NewPos);
+				m_BotActive = true;
+			}
+		}
+
 		if(m_pCharacter->IsAlive() && m_BotActive)
 		{
 			m_ViewPos = m_pCharacter->GetPos();
@@ -62,6 +83,13 @@ void CPlayerBot::PostTick()
 	// update playerbot tick
 	HandleTuningParams();
 	EffectsTick();
+}
+
+CPlayer* CPlayerBot::GetEidolonOwner() const
+{
+	if(m_BotType != TYPE_BOT_EIDOLON || m_MobID < 0 || m_MobID >= MAX_PLAYERS)
+		return nullptr;
+	return GS()->m_apPlayers[m_MobID];
 }
 
 void CPlayerBot::EffectsTick()
@@ -87,6 +115,7 @@ int CPlayerBot::GetRespawnTick() const
 	{
 	case TYPE_BOT_QUEST:
 	case TYPE_BOT_NPC:
+	case TYPE_BOT_EIDOLON:
 		return m_aPlayerTick[Respawn];
 	default: 
 		return m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3;
@@ -95,30 +124,39 @@ int CPlayerBot::GetRespawnTick() const
 
 int CPlayerBot::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 {
-	if(m_BotType != TYPE_BOT_MOB)
+	if(m_BotType != TYPE_BOT_MOB && m_BotType != TYPE_BOT_EIDOLON)
 		return 10;
 
-	// get stats from the bot's equipment
-	int Size = MobBotInfo::ms_aMobBot[m_MobID].m_Power;
-	for (unsigned i = 0; i < NUM_EQUIPPED; i++)
+	auto CalculateAttribute = [ID, this](int Power, int Spread, int HardtypeDividing) -> int
 	{
-		const int ItemID = GetEquippedItemID((ItemFunctional)i);
-		if(ItemID > 0)
-			Size += GS()->GetItemInfo(ItemID)->GetInfoEnchantStats(ID);
-	}
+		// get stats from the bot's equipment
+		int Size = Power;
+		for(unsigned i = 0; i < NUM_EQUIPPED; i++)
+		{
+			const int ItemID = GetEquippedItemID((ItemFunctional)i);
+			if(ItemID > 0)
+				Size += GS()->GetItemInfo(ItemID)->GetInfoEnchantStats(ID);
+		}
 
-	// spread weapons
-	if(ID == AttributeIdentifier::SpreadShotgun || ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
-		Size = MobBotInfo::ms_aMobBot[m_MobID].m_Spread;
+		// spread weapons
+		if(ID == AttributeIdentifier::SpreadShotgun || ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
+			Size = Spread;
 
-	// all attribute stats without hardness
-	else if(const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID); ID != AttributeIdentifier::Hardness && pAtt->GetDividing() > 0)
-	{
-		Size /= pAtt->GetDividing();
-		if(pAtt->GetType() == AttributeType::Hardtype)
-			Size /= MobBotInfo::ms_aMobBot[m_MobID].m_Boss ? 30 : 2;
-	}
+		// all attribute stats without hardness
+		else if(const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID); ID != AttributeIdentifier::Hardness && pAtt->GetDividing() > 0)
+		{
+			Size /= pAtt->GetDividing();
+			if(pAtt->GetType() == AttributeType::Hardtype)
+				Size /= HardtypeDividing;
+		}
+		return Size;
+	};
 
+	int Size = 0;
+	if(m_BotType == TYPE_BOT_EIDOLON)
+		Size = CalculateAttribute(EidolonsVar::getEidolonItemID(m_BotID), 1, 5);
+	else if(m_BotType == TYPE_BOT_MOB)
+		Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss ? 30 : 2);
 	return Size;
 }
 
@@ -167,6 +205,14 @@ void CPlayerBot::TryRespawn()
 	else if(m_BotType == TYPE_BOT_QUEST)
 	{
 		SpawnPos = QuestBotInfo::ms_aQuestBot[m_MobID].m_Position;
+	}
+	else if(m_BotType == TYPE_BOT_EIDOLON)
+	{
+		CPlayer* pOwner = GetEidolonOwner();
+		if(!pOwner || !pOwner->GetCharacter())
+			return;
+
+		SpawnPos = pOwner->GetCharacter()->GetPos();
 	}
 
 	// create character
@@ -294,7 +340,10 @@ Mood CPlayerBot::GetMoodState() const
 
 	if(GetBotType() == TYPE_BOT_NPC)
 		return Mood::FRIENDLY;
-	
+
+	if(GetBotType() == TYPE_BOT_EIDOLON)
+		return Mood::FRIENDLY;
+
 	if(GetBotType() == TYPE_BOT_QUEST)
 		return Mood::QUEST;
 	return Mood::NORMAL;
@@ -341,6 +390,12 @@ const char* CPlayerBot::GetStatus() const
 		return "Raid";
 	}
 
+	if(m_BotType == TYPE_BOT_EIDOLON && GetEidolonOwner())
+	{
+		int OwnerID = GetEidolonOwner()->GetCID();
+		return Server()->ClientName(OwnerID);
+	}
+
 	switch(GetMoodState())
 	{
 		default:
@@ -366,6 +421,8 @@ int CPlayerBot::GetPlayerWorldID() const
 		return MobBotInfo::ms_aMobBot[m_MobID].m_WorldID;
 	if(m_BotType == TYPE_BOT_NPC)
 		return NpcBotInfo::ms_aNpcBot[m_MobID].m_WorldID;
+	if(m_BotType == TYPE_BOT_EIDOLON)
+		return Server()->GetClientWorldID(m_MobID);
 	return QuestBotInfo::ms_aQuestBot[m_MobID].m_WorldID;
 }
 
@@ -374,11 +431,12 @@ CTeeInfo& CPlayerBot::GetTeeInfo() const
 	return DataBotInfo::ms_aDataBot[m_BotID].m_TeeInfos;
 }
 
-std::atomic_flag g_ThreadPathWritedNow;
 void CPlayerBot::FindThreadPath(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 StartPos, vec2 SearchPos)
 {
-	if(!pGameServer || !pBotPlayer || length(StartPos) <= 0 || length(SearchPos) <= 0 || g_ThreadPathWritedNow.test_and_set(std::memory_order_acquire))
+	if(!pGameServer || !pBotPlayer || length(StartPos) <= 0 || length(SearchPos) <= 0)
 		return;
+
+	mtxThreadPathWritedNow.lock();
 
 	while(pBotPlayer->m_ThreadReadNow.load(std::memory_order_acquire))
 		std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -391,13 +449,15 @@ void CPlayerBot::FindThreadPath(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 S
 	for(int i = pBotPlayer->m_PathSize - 1, j = 0; i >= 0; i--, j++)
 		pBotPlayer->m_WayPoints[j] = vec2(pGameServer->PathFinder()->m_lFinalPath[i].m_Pos.x * 32 + 16, pGameServer->PathFinder()->m_lFinalPath[i].m_Pos.y * 32 + 16);
 
-	g_ThreadPathWritedNow.clear(std::memory_order_release);
+	mtxThreadPathWritedNow.unlock();
 }
 
 void CPlayerBot::GetThreadRandomRadiusWaypointTarget(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 Pos, float Radius)
 {
-	if(!pGameServer || !pBotPlayer || length(Pos) <= 0 || g_ThreadPathWritedNow.test_and_set(std::memory_order_acquire))
+	if(!pGameServer || !pBotPlayer || length(Pos) <= 0)
 		return;
+
+	mtxThreadPathWritedNow.lock();
 
 	while(pBotPlayer->m_ThreadReadNow.load(std::memory_order_acquire))
 		std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -405,7 +465,7 @@ void CPlayerBot::GetThreadRandomRadiusWaypointTarget(CGS* pGameServer, CPlayerBo
 	const vec2 TargetPos = pGameServer->PathFinder()->GetRandomWaypointRadius(Pos, Radius);
 	pBotPlayer->m_TargetPos = vec2(TargetPos.x * 32, TargetPos.y * 32);
 
-	g_ThreadPathWritedNow.clear(std::memory_order::memory_order_release);
+	mtxThreadPathWritedNow.unlock();
 }
 
 void CPlayerBot::ThreadMobsPathFinder()
@@ -423,6 +483,15 @@ void CPlayerBot::ThreadMobsPathFinder()
 		{
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
 			std::thread(&GetThreadRandomRadiusWaypointTarget, GS(), this, m_ViewPos, 800.0f).detach();
+		}
+	}
+
+	else if(GetBotType() == TYPE_BOT_EIDOLON)
+	{
+		int OwnerID = m_MobID;
+		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0))
+		{
+			std::thread(&FindThreadPath, GS(), this, m_ViewPos, m_TargetPos).detach();
 		}
 	}
 }

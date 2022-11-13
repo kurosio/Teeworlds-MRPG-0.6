@@ -22,6 +22,7 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	for(short& SortTab : m_aSortTabs)
 		SortTab = -1;
 
+	m_EidolonCID = -1;
 	m_Spawned = true;
 	m_SnapHealthTick = 0;
 	m_aPlayerTick[TickState::Respawn] = Server()->Tick() + Server()->TickSpeed();
@@ -113,6 +114,51 @@ void CPlayer::PostTick()
 	EffectsTick();
 	HandleTuningParams();
 }
+
+CPlayerBot* CPlayer::GetEidolon() const
+{
+	if(m_EidolonCID < MAX_PLAYERS || m_EidolonCID >= MAX_CLIENTS)
+		return nullptr;
+	return dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[m_EidolonCID]);
+}
+
+void CPlayer::TryCreateEidolon()
+{
+	if(IsBot() || !IsAuthed() || !GetCharacter())
+		return;
+
+	mtxThreadPathWritedNow.lock();
+
+	if(int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON); EidolonItemID > 0 && EidolonsVar::getEidolonBot(EidolonItemID) > 0)
+	{
+		const int EidolonCID = GS()->CreateBot(BotsTypes::TYPE_BOT_EIDOLON, EidolonsVar::getEidolonBot(EidolonItemID), m_ClientID);
+		m_EidolonCID = EidolonCID;
+	}
+
+	mtxThreadPathWritedNow.unlock();
+}
+
+void CPlayer::TryRemoveEidolon()
+{
+	if(IsBot())
+		return;
+
+	mtxThreadPathWritedNow.lock();
+
+	if(m_EidolonCID >= MAX_PLAYERS && m_EidolonCID < MAX_CLIENTS && GS()->m_apPlayers[m_EidolonCID])
+	{
+		if(GS()->m_apPlayers[m_EidolonCID]->GetCharacter())
+			GS()->m_apPlayers[m_EidolonCID]->KillCharacter(WEAPON_WORLD);
+
+		delete GS()->m_apPlayers[m_EidolonCID];
+		GS()->m_apPlayers[m_EidolonCID] = nullptr;
+	}
+
+	m_EidolonCID = -1;
+
+	mtxThreadPathWritedNow.unlock();
+}
+
 
 void CPlayer::EffectsTick()
 {

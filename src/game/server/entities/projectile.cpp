@@ -70,13 +70,14 @@ void CProjectile::Tick()
 		GS()->m_World.DestroyEntity(this);
 		return;
 	}
+
 	bool Collide = GS()->Collision()->IntersectLineWithInvisible(PrevPos, CurPos, &CurPos, 0);
 	CCharacter* OwnerChar = GS()->GetPlayerChar(m_Owner);
 	CCharacter* TargetChr = GS()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
 
 	m_LifeSpan--;
 
-	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && !TargetChr->m_Core.m_CollisionDisabled))
+	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && !TargetChr->m_Core.m_CollisionDisabled && OwnerChar->IsAllowedPVP(TargetChr->GetPlayer()->GetCID())))
 	{
 		if (m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
 			GS()->CreateSound(CurPos, m_SoundImpact);

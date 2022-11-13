@@ -18,6 +18,7 @@
 #define GREEN_COLOR vec3(15, 40, 15)
 #define LIGHT_GREEN_COLOR vec3(0, 16, 0)
 
+
 // mood type
 enum class Mood : short
 {
@@ -87,7 +88,7 @@ enum ItemFunctional : int
 	EQUIP_EIDOLON,
 	NUM_EQUIPPED,
 
-	FUNCTION_ONE_USED = 8,
+	FUNCTION_ONE_USED = 9,
 	FUNCTION_USED,
 	FUNCTION_SETTINGS,
 	FUNCTION_PLANTS,
@@ -252,6 +253,27 @@ enum
 	MAILLETTER_MAX_CAPACITY = 30,
 };
 
+class EidolonsVar
+{
+	inline static std::initializer_list< std::pair < int, int > > m_Eidons
+	{
+		{ 57, 45 }
+	};
+
+public:
+	static int getEidolonBot(int ItemID)
+	{
+		auto Iter = std::find_if(m_Eidons.begin(), m_Eidons.end(), [ItemID](const std::pair < int, int >& p) { return p.first == ItemID; });
+		return Iter != m_Eidons.end() ? (*Iter).second : -1;
+	}
+	static int getEidolonItemID(int BotID)
+	{
+		auto Iter = std::find_if(m_Eidons.begin(), m_Eidons.end(), [BotID](const std::pair < int, int >& p) { return p.second == BotID; });
+		return Iter != m_Eidons.end() ? (*Iter).first : -1;
+	}
+};
+
+
 enum GuildAccess
 {
 	ACCESS_LEADER = -1,
@@ -286,6 +308,7 @@ enum BotsTypes
 	TYPE_BOT_QUEST = 2,
 	TYPE_BOT_NPC = 3,
 	TYPE_BOT_FAKE = 4,
+	TYPE_BOT_EIDOLON = 5,
 };
 
 enum
@@ -361,6 +384,7 @@ enum class AttributeIdentifier : int
 	GrenadePower			= 19,
 	RiflePower				= 20,
 	LuckyDropItem			= 21,
+	Eidolon					= 22,
 	ATTRIBUTES_NUM,
 };
 

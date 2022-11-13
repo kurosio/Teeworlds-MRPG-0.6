@@ -37,6 +37,7 @@ static void InitInformationBots()
 		BotInfo.m_aEquipSlot[EQUIP_ARMOR] = pRes->getInt("SlotArmor");
 		BotInfo.m_aEquipSlot[EQUIP_PICKAXE] = 0;
 		BotInfo.m_aEquipSlot[EQUIP_RAKE] = 0;
+		BotInfo.m_aEquipSlot[EQUIP_EIDOLON] = 0;
 
 		// load teeinfo
 		try
