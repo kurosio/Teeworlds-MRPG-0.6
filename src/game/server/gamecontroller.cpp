@@ -29,6 +29,7 @@ void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage
 
 void IGameController::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int Weapon)
 {
+	// eidolons
 	pVictim->GetPlayer()->TryRemoveEidolon();
 }
 

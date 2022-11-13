@@ -465,7 +465,7 @@ void CCharacterBotAI::EngineMobs()
 void CCharacterBotAI::EngineEidolons()
 {
 	bool MobMove = true;
-	if(const CPlayer* pOwner = m_pBotPlayer->GetEidolonOwner())
+	if(const CPlayer* pOwner = m_pBotPlayer->GetEidolonOwner(); pOwner && pOwner->GetCharacter())
 	{
 		float Distance = distance(pOwner->m_ViewPos, m_Pos);
 		if(Distance > 400.0f)

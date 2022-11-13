@@ -282,21 +282,22 @@ void CGameControllerDungeon::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int
 
 void CGameControllerDungeon::OnCharacterDeath(CCharacter* pVictim, CPlayer* pKiller, int Weapon)
 {
-	if (!pKiller || !pVictim || !pVictim->GetPlayer())
-		return;
+	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 
 	/*
 	 * Commentary, here will be introduced counting of killed mobs and the percentage of passing
 	 */
-
-	const int KillerID = pKiller->GetCID();
-	const int VictimID = pVictim->GetPlayer()->GetCID();
-	if (KillerID != VictimID && pVictim->GetPlayer()->IsBot() && pVictim->GetPlayer()->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+	if(pKiller && pVictim)
 	{
-		const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
-		CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;
-		GS()->ChatWorldID(m_WorldID, "[Dungeon]", "The dungeon is completed on [{INT}%]", Progress);
-		UpdateDoorKeyState();
+		const int KillerID = pKiller->GetCID();
+		const int VictimID = pVictim->GetPlayer()->GetCID();
+		if(KillerID != VictimID && pVictim->GetPlayer()->IsBot() && pVictim->GetPlayer()->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+		{
+			const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
+			CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;
+			GS()->ChatWorldID(m_WorldID, "[Dungeon]", "The dungeon is completed on [{INT}%]", Progress);
+			UpdateDoorKeyState();
+		}
 	}
 }
 
