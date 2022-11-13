@@ -1162,13 +1162,14 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	// eidolon
 	if(pFrom && pFrom->IsBot() && pFrom->GetBotType() == BotsTypes::TYPE_BOT_EIDOLON)
 	{
-		// dissalow  damage from self eidolon
-		if(m_pPlayer->GetEidolon() && m_pPlayer->GetEidolon()->GetCID() == pFrom->GetCID())
-			return false;
-
 		// enable damage from eidolon to mobs
 		if(m_pPlayer->IsBot() && m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
 			return true;
+
+		// dissalow  damage from self eidolon
+		CPlayerBot* pFromBot = dynamic_cast<CPlayerBot*>(pFrom);
+		if(pFromBot->GetEidolonOwner() && pFromBot->GetEidolonOwner()->GetCID() == m_pPlayer->GetCID())
+			return false;
 	}
 
 	if(!pFrom || (m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled) || (m_pPlayer->IsBot() && pFrom->IsBot()))
