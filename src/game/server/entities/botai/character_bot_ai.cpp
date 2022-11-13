@@ -389,7 +389,7 @@ void CCharacterBotAI::HandleTuning()
 	// eidolon boost
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
 	{
-		pTuningParams->m_HookFireSpeed = 160.0f;
+		pTuningParams->m_HookFireSpeed = 320.0f;
 	}
 
 	HandleIndependentTuning();

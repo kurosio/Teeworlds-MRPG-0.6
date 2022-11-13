@@ -234,6 +234,7 @@ enum
 	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
 	itTicketDiscountCraft = 24,			// Discount ticket for crafting
 	itRandomHomeDecoration = 26,		// Random home decor
+	itEidolonOtohime = 57,				// Eidolon
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,
@@ -257,7 +258,7 @@ class EidolonsVar
 {
 	inline static std::initializer_list< std::pair < int, int > > m_Eidons
 	{
-		{ 57, 45 }
+		{ itEidolonOtohime, 45 }
 	};
 
 public:
