@@ -6,8 +6,6 @@
 
 #include <game/server/mmocore/Components/Inventory/InventoryCore.h>
 
-#include "RandomBox.h"
-
 CGS* CPlayerItem::GS() const
 {
 	return (CGS*)Server()->GameServerPlayer(m_ClientID);
@@ -243,6 +241,11 @@ bool CPlayerItem::Use(int Value)
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
 		GetPlayer()->Acc().m_Upgrade += BackUpgrades;
 		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
+	}
+
+	else if(Info()->GetRandomBox())
+	{
+		Info()->GetRandomBox()->start(GetPlayer(), 5, this, Value);
 	}
 
 	// Random home decor

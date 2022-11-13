@@ -8,6 +8,7 @@
 #define PERCENT_MAXIMUM_ENCHANT 40
 
 #include "AttributeData.h"
+#include "RandomBox.h"
 
 using ItemIdentifier = int;
 
@@ -27,13 +28,31 @@ private:
 	int m_InitialPrice{};
 	ItemFunctional m_Function{};
 	ContainerAttributes m_aAttributes{};
+	std::string m_Data{};
+	CRandomBox m_RandomBox{};
 
 public:
 	CItemDescription() = default;
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
-	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes)
+	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes, std::string Data)
 	{
+		m_Data = Data;
+		JsonTools::parseFromString(m_Data, [this](nlohmann::json& pJson)
+		{
+			// Parse random box
+			if(pJson.find("random_box") != pJson.end())
+			{
+				for(auto& p : pJson["random_box"])
+				{
+					int ItemID = p.value("item_id", -1);
+					int Value = p.value("value", 1);
+					float Chance = p.value("chance", 100.0f);
+					m_RandomBox.add(ItemID, Value, Chance);
+				}
+			}
+		});
+
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
 		m_Type = Type;
@@ -55,7 +74,8 @@ public:
 	bool IsFunctional(ItemFunctional Functional) const { return m_Function == Functional; }
 	ItemType GetType() const { return m_Type; }
 	bool IsType(ItemType Type) const { return m_Type == Type; }
-	
+	class CRandomBox* GetRandomBox() { return m_RandomBox.empty() ? nullptr : &m_RandomBox; }
+
 	bool IsEnchantable() const;
 	bool IsEnchantMaxLevel(int Enchant) const;
 

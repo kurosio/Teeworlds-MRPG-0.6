@@ -129,9 +129,9 @@ void CPlayer::TryCreateEidolon()
 
 	mtxThreadPathWritedNow.lock();
 
-	if(int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON); EidolonItemID > 0 && EidolonsVar::getEidolonBot(EidolonItemID) > 0)
+	if(int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON); EidolonItemID > 0 && EidolonsTools::getEidolonBot(EidolonItemID) > 0)
 	{
-		const int EidolonCID = GS()->CreateBot(BotsTypes::TYPE_BOT_EIDOLON, EidolonsVar::getEidolonBot(EidolonItemID), m_ClientID);
+		const int EidolonCID = GS()->CreateBot(BotsTypes::TYPE_BOT_EIDOLON, EidolonsTools::getEidolonBot(EidolonItemID), m_ClientID);
 		m_EidolonCID = EidolonCID;
 	}
 
@@ -830,23 +830,6 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			return;
 		}
 
-		// function parse json event data
-		auto ParseEvent = [](std::string &EventData, const std::function<void(nlohmann::json& pJson)>& pFunc)
-		{
-			try
-			{
-				if(!EventData.empty())
-				{
-					nlohmann::json JsonData = nlohmann::json::parse(EventData);
-					pFunc(JsonData);
-				}
-			}
-			catch(nlohmann::json::exception& s)
-			{
-				dbg_msg("dialog error", "%s", s.what());
-			}
-		};
-
 		//  after
 		if(m_DialogNPC.m_FreezedProgress)
 		{
@@ -864,7 +847,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 				GS()->Mmo()->Quest()->InteractiveQuestNPC(this, QuestBotInfo::ms_aQuestBot[MobID], true);
 				ClearTalking();
 
-				ParseEvent(QuestBotInfo::ms_aQuestBot[MobID].m_EventJsonData, [this](nlohmann::json& pJson)
+				JsonTools::parseFromString(QuestBotInfo::ms_aQuestBot[MobID].m_EventJsonData, [this](nlohmann::json& pJson)
 				{
 					/* * * * * * * * *
 					 * Teleport event
@@ -900,7 +883,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			m_DialogNPC.m_RequestProgress = m_DialogNPC.m_Progress;
 			m_DialogNPC.m_FreezedProgress = true;
 
-			ParseEvent(QuestBotInfo::ms_aQuestBot[MobID].m_EventJsonData, [this](nlohmann::json& pJson)
+			JsonTools::parseFromString(QuestBotInfo::ms_aQuestBot[MobID].m_EventJsonData, [this](nlohmann::json& pJson)
 			{
 				/* * * * * * * *
 				 * Chat event

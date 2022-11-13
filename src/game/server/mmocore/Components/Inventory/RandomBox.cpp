@@ -48,8 +48,11 @@ CRandomBoxRandomizer::CRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPla
 
 std::vector<StRandomItem>::iterator CRandomBoxRandomizer::SelectRandomItem()
 {
-	const float RandomDrop = frandom() * 100.0f;
-	const auto iter = std::find_if(m_List.begin(), m_List.end(), [RandomDrop](const StRandomItem &pItem) { return RandomDrop < pItem.m_Chance; });
+	const auto iter = std::find_if(m_List.begin(), m_List.end(), [](const StRandomItem &pItem)
+	{
+		const float RandomDrop = frandom() * 100.0f;
+		return RandomDrop < pItem.m_Chance;
+	});
 	return iter != m_List.end() ? iter : std::prev(m_List.end());
 }
 

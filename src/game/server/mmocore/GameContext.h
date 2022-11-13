@@ -235,6 +235,8 @@ enum
 	itTicketDiscountCraft = 24,			// Discount ticket for crafting
 	itRandomHomeDecoration = 26,		// Random home decor
 	itEidolonOtohime = 57,				// Eidolon
+	itRandomRelicsBox = 58,				// Random Relics box
+	itEidolonMerrilee = 59,				// Eidolon
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,
@@ -253,27 +255,6 @@ enum
 	// max mails for page
 	MAILLETTER_MAX_CAPACITY = 30,
 };
-
-class EidolonsVar
-{
-	inline static std::initializer_list< std::pair < int, int > > m_Eidons
-	{
-		{ itEidolonOtohime, 45 }
-	};
-
-public:
-	static int getEidolonBot(int ItemID)
-	{
-		auto Iter = std::find_if(m_Eidons.begin(), m_Eidons.end(), [ItemID](const std::pair < int, int >& p) { return p.first == ItemID; });
-		return Iter != m_Eidons.end() ? (*Iter).second : -1;
-	}
-	static int getEidolonItemID(int BotID)
-	{
-		auto Iter = std::find_if(m_Eidons.begin(), m_Eidons.end(), [BotID](const std::pair < int, int >& p) { return p.second == BotID; });
-		return Iter != m_Eidons.end() ? (*Iter).first : -1;
-	}
-};
-
 
 enum GuildAccess
 {
@@ -401,6 +382,47 @@ enum class AttributeType : int
 };
 
 // helpers
+class EidolonsTools
+{
+	inline static std::initializer_list< std::pair < int, int > > m_Eidons
+	{
+		{ itEidolonOtohime, 45 },
+		{ itEidolonMerrilee, 46 }
+	};
+
+public:
+	static int getEidolonBot(int ItemID)
+	{
+		auto Iter = std::find_if(m_Eidons.begin(), m_Eidons.end(), [ItemID](const std::pair < int, int >& p) { return p.first == ItemID; });
+		return Iter != m_Eidons.end() ? (*Iter).second : -1;
+	}
+	static int getEidolonItemID(int BotID)
+	{
+		auto Iter = std::find_if(m_Eidons.begin(), m_Eidons.end(), [BotID](const std::pair < int, int >& p) { return p.second == BotID; });
+		return Iter != m_Eidons.end() ? (*Iter).first : -1;
+	}
+};
+
+class JsonTools
+{
+public:
+	static void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
+	{
+		try
+		{
+			if(!Data.empty())
+			{
+				nlohmann::json JsonData = nlohmann::json::parse(Data);
+				pFuncCallback(JsonData);
+			}
+		}
+		catch(nlohmann::json::exception& s)
+		{
+			dbg_msg("dialog error", "%s", s.what());
+		}
+	}
+};
+
 class Instance
 {
 	friend class CServer;

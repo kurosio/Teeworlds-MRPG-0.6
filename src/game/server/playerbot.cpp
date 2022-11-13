@@ -154,7 +154,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 
 	int Size = 0;
 	if(m_BotType == TYPE_BOT_EIDOLON)
-		Size = CalculateAttribute(EidolonsVar::getEidolonItemID(m_BotID), 1, 5);
+		Size = CalculateAttribute(EidolonsTools::getEidolonItemID(m_BotID), 1, 5);
 	else if(m_BotType == TYPE_BOT_MOB)
 		Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss ? 30 : 2);
 	return Size;

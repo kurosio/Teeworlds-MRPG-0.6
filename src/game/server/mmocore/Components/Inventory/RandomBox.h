@@ -4,13 +4,12 @@
 #define GAME_SERVER_INVENTORY_RANDOM_BOX_H
 #include <game/server/entity.h>
 
-#include "ItemData.h"
-
+class CPlayerItem;
 class CPlayer;
 
 struct StRandomItem
 {
-	ItemIdentifier m_ItemID{};
+	int m_ItemID{};
 	int m_Value{};
 	float m_Chance{};
 };
@@ -25,8 +24,9 @@ public:
 	CRandomBox(const CRandomBox&) = delete;
 	CRandomBox(const std::initializer_list<StRandomItem>& pList) { m_ArrayItems.insert(m_ArrayItems.end(), pList.begin(), pList.end()); }
 	void add(const StRandomItem& element) { m_ArrayItems.push_back(element); }
-	void add(ItemIdentifier ItemID, int Value, float Chance) { m_ArrayItems.push_back({ItemID, Value, Chance}); }
+	void add(int ItemID, int Value, float Chance) { m_ArrayItems.push_back({ItemID, Value, Chance}); }
 	bool start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem = nullptr, int UseValue = 1);
+	bool empty() const { return m_ArrayItems.empty(); }
 };
 
 class CRandomBoxRandomizer : public CEntity

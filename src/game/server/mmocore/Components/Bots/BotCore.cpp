@@ -40,20 +40,14 @@ static void InitInformationBots()
 		BotInfo.m_aEquipSlot[EQUIP_EIDOLON] = 0;
 
 		// load teeinfo
-		try
+		std::string JsonString = pRes->getString("JsonTeeInfo").c_str();
+		JsonTools::parseFromString(JsonString, [&](nlohmann::json& pJson)
 		{
-			std::string JsonString = pRes->getString("JsonTeeInfo").c_str();
-			nlohmann::json JsonData = nlohmann::json::parse(JsonString);
-
-			str_copy(BotInfo.m_TeeInfos.m_aSkinName, JsonData.value("skin", "default").c_str(), sizeof(BotInfo.m_TeeInfos.m_aSkinName));
-			BotInfo.m_TeeInfos.m_UseCustomColor = JsonData.value("custom_color", 0);
-			BotInfo.m_TeeInfos.m_ColorBody = JsonData.value("color_body", -1);
-			BotInfo.m_TeeInfos.m_ColorFeet = JsonData.value("color_feet", -1);
-		}
-		catch (nlohmann::json::exception& s)
-		{
-			dbg_msg("bot parse", "teeinfo [from bot id %d] (json %s)", BotID, s.what());
-		}
+			str_copy(BotInfo.m_TeeInfos.m_aSkinName, pJson.value("skin", "default").c_str(), sizeof(BotInfo.m_TeeInfos.m_aSkinName));
+			BotInfo.m_TeeInfos.m_UseCustomColor = pJson.value("custom_color", 0);
+			BotInfo.m_TeeInfos.m_ColorBody = pJson.value("color_body", -1);
+			BotInfo.m_TeeInfos.m_ColorFeet = pJson.value("color_feet", -1);
+		});
 
 		for(int i = 0; i < MAX_PLAYERS; i++)
 			BotInfo.m_aVisibleActive[i] = false;
@@ -104,30 +98,23 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 		sscanf(pRes->getString("Amount").c_str(), "|%d|%d|%d|%d|%d|%d|",
 			&QuestBot.m_aItemSearchValue[0], &QuestBot.m_aItemSearchValue[1], &QuestBot.m_aItemGivesValue[0], &QuestBot.m_aItemGivesValue[1], &QuestBot.m_aNeedMobValue[0], &QuestBot.m_aNeedMobValue[1]);
 
-		try
+
+		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
+		JsonTools::parseFromString(DialogJsonStr, [&](nlohmann::json& pJson)
 		{
-			std::string DialogJsonStr = pRes->getString("DialogData").c_str();
-			if(!DialogJsonStr.empty())
+			for(auto& pItem : pJson)
 			{
-				nlohmann::json JsonData = nlohmann::json::parse(DialogJsonStr.c_str());
-				for(auto& pItem : JsonData)
-				{
-					const int Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "").c_str());
-					bool ActionStep = pItem.value("action_step", 0);
+				const int Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "").c_str());
+				bool ActionStep = pItem.value("action_step", 0);
 
-					if(ActionStep)
-						QuestBot.m_HasAction = ActionStep;
+				if(ActionStep)
+					QuestBot.m_HasAction = ActionStep;
 
-					CDialog Dialogue;
-					Dialogue.Init(QuestBot.m_BotID, pItem.value("text", ""), Emote, ActionStep);
-					QuestBot.m_aDialogs.push_back(Dialogue);
-				}
+				CDialog Dialogue;
+				Dialogue.Init(QuestBot.m_BotID, pItem.value("text", ""), Emote, ActionStep);
+				QuestBot.m_aDialogs.push_back(Dialogue);
 			}
-		}
-		catch(nlohmann::json::exception& s)
-		{
-			dbg_msg("dialog error", "dialog [quest bot id %d] (json %s)", pRes->getInt("ID"), s.what());
-		}
+		});
 
 		// initilize
 		QuestBotInfo::ms_aQuestBot[MobID] = QuestBot;
@@ -159,28 +146,20 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 		if(NpcBot.m_GiveQuestID > 0)
 			NpcBot.m_Function = FUNCTION_NPC_GIVE_QUEST;
 
-		try
+		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
+		JsonTools::parseFromString(DialogJsonStr, [&](nlohmann::json& pJson)
 		{
-			std::string DialogJsonStr = pRes->getString("DialogData").c_str();
-			if(!DialogJsonStr.empty())
+			CDialog Dialogue;
+			for(auto& pItem : pJson)
 			{
-				CDialog Dialogue;
-				nlohmann::json JsonData = nlohmann::json::parse(DialogJsonStr.c_str());
-				for(auto& pItem : JsonData)
-				{
-					const int Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "").c_str());
-					bool RequestAction = pItem.value("action_step", 0);
+				const int Emote = GetIntegerEmoteValue("emote", pItem.value("emote", "").c_str());
+				bool RequestAction = pItem.value("action_step", 0);
 
-					CDialog Dialogue;
-					Dialogue.Init(NpcBot.m_BotID, pItem.value("text", ""), Emote, RequestAction);
-					NpcBot.m_aDialogs.push_back(Dialogue);
-				}
+				CDialog Dialogue;
+				Dialogue.Init(NpcBot.m_BotID, pItem.value("text", ""), Emote, RequestAction);
+				NpcBot.m_aDialogs.push_back(Dialogue);
 			}
-		}
-		catch(nlohmann::json::exception& s)
-		{
-			dbg_msg("dialog error", "dialog [npc bot id %d] (json %s)", pRes->getInt("ID"), s.what());
-		}
+		});
 
 		// initilize
 		NpcBotInfo::ms_aNpcBot[MobID] = NpcBot;

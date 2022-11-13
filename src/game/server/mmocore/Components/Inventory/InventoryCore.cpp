@@ -40,6 +40,7 @@ void CInventoryCore::OnInit()
 			const int ID = pRes->getInt("ID");
 			std::string Name = pRes->getString("Name").c_str();
 			std::string Description = pRes->getString("Description").c_str();
+			std::string Data = pRes->getString("Data").c_str();
 			ItemType Type = (ItemType)pRes->getInt("Type");
 			ItemFunctional Function = (ItemFunctional)pRes->getInt("Function");
 			int InitialPrice = pRes->getInt("InitialPrice");
@@ -57,7 +58,7 @@ void CInventoryCore::OnInit()
 				aContainerAttributes.push_back({ AttributeID, AttributeValue });
 			}
 
-			CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes);
+			CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, Data);
 		}
 	});
 
