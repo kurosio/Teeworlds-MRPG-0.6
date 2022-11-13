@@ -136,10 +136,7 @@ bool CLocalization::Init()
 	json_value* pJsonData = json_parse_ex(&JsonSettings, pFileData, FileSize, aError);
 	free(pFileData);
 	if(pJsonData == nullptr)
-	{
-		delete[] pFileData;
 		return true; // return true because it's not a critical error
-	}
 
 	// extract data
 	m_pMainLanguage = nullptr;

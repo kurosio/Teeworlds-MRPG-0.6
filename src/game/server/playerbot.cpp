@@ -489,7 +489,7 @@ void CPlayerBot::ThreadMobsPathFinder()
 	else if(GetBotType() == TYPE_BOT_EIDOLON)
 	{
 		int OwnerID = m_MobID;
-		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0))
+		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 5) == 0)
 		{
 			std::thread(&FindThreadPath, GS(), this, m_ViewPos, m_TargetPos).detach();
 		}

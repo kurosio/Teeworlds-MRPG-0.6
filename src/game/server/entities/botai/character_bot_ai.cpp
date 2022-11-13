@@ -492,6 +492,8 @@ void CCharacterBotAI::EngineEidolons()
 
 			if(Server()->Tick() % Server()->TickSpeed() == 0)
 				m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+
+			m_pBotPlayer->m_TargetPos = vec2(0, 0);
 			m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
 			m_Input.m_Direction = 0;
 			MobMove = false;
