@@ -8,6 +8,7 @@
 
 #include <game/collision.h>
 
+#include <game/server/mmocore/GameEntities/Eidolons/base.h>
 #include <game/server/mmocore/Components/Skills/Entities/HealthTurret/hearth.h> // for nurse
 
 #include <game/server/mmocore/Components/Bots/BotData.h>
@@ -51,6 +52,12 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 		const int Function = NpcBotInfo::ms_aNpcBot[MobID].m_Function;
 		if(Function == FUNCTION_NPC_GIVE_QUEST)
 			CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
+	}
+	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
+	{
+		int ClientID = m_pBotPlayer->GetCID();
+		int OwnerCID = m_pBotPlayer->GetEidolonOwner()->GetCID();
+		new CEidolon(&GS()->m_World, Pos, 0, ClientID, OwnerCID);
 	}
 	return true;
 }

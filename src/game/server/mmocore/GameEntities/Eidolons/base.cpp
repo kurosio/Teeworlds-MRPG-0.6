@@ -4,12 +4,13 @@
 
 #include <game/server/gamecontext.h>
 
-CEidolon::CEidolon(CGameWorld *pGameWorld, vec2 Pos, int Type, int OwnerID)
+CEidolon::CEidolon(CGameWorld *pGameWorld, vec2 Pos, int Type, int EidolonCID, int OwnerCID)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, Pos)
 {
 	m_Pos = Pos;
 	m_Type = Type;
-	m_OwnerID = OwnerID;
+	m_EidolonCID = EidolonCID;
+	m_OwnerCID = OwnerCID;
 	GameWorld()->InsertEntity(this);
 
 	for(int i = 0; i < NUM_PARTICLES_AROUND_EIDOLON; i++)
@@ -28,24 +29,24 @@ CEidolon::~CEidolon()
 
 void CEidolon::Tick()
 {
-	CPlayer* pPlayer = GS()->m_apPlayers[m_OwnerID];
-	if(!pPlayer || !pPlayer->GetCharacter() || !pPlayer->GetEquippedItemID(ItemFunctional::EQUIP_EIDOLON))
+	CPlayer* pEidolon = GS()->GetPlayer(m_EidolonCID, false, true);
+	if(!pEidolon || !pEidolon->GetEquippedItemID(ItemFunctional::EQUIP_EIDOLON))
 	{
 		Destroy();
 		return;
 	}
 
-	vec2 MoveTo = pPlayer->GetCharacter()->GetPos() + m_MoveTo;
+	vec2 MoveTo = pEidolon->GetCharacter()->GetPos() + m_MoveTo;
 
 	constexpr int Tired = 5;
 	for(int i = 0; i < Tired; i++)
 	{
-		if(distance(MoveTo, m_Pos) < 10.0f || GS()->Collision()->CheckPoint(MoveTo) || GS()->Collision()->IntersectLine(MoveTo, pPlayer->GetCharacter()->GetPos(), nullptr, nullptr))
+		if(distance(MoveTo, m_Pos) < 10.0f || GS()->Collision()->CheckPoint(MoveTo) || GS()->Collision()->IntersectLine(MoveTo, pEidolon->GetCharacter()->GetPos(), nullptr, nullptr))
 		{
 			m_MoveTo.x = frandom_num(-96, 96);
 			m_MoveTo.y = frandom_num(-96, 96);
 			m_TickMove = Server()->Tick() + random_int() % Server()->TickSpeed();
-			MoveTo = pPlayer->GetCharacter()->GetPos() + m_MoveTo;
+			MoveTo = pEidolon->GetCharacter()->GetPos() + m_MoveTo;
 		}
 	}
 
@@ -61,7 +62,21 @@ void CEidolon::Tick()
 			m_MovePos.y -= 1;
 	}
 
-	m_Pos = pPlayer->GetCharacter()->GetPos() + m_MovePos;
+	m_Pos = pEidolon->GetCharacter()->GetPos() + m_MovePos;
+
+	// interaction
+	CPlayer* pOwner = GS()->GetPlayer(m_OwnerCID, false, true);
+	if(pOwner && pOwner->GetHealth() < pOwner->GetStartHealth() / 3)
+	{
+		int RestoreHealth = pOwner->GetStartHealth() / 2;
+		GS()->CreateText(nullptr, false, m_Pos, vec2(0, 0), 50, "Eidolon");
+		pOwner->GetCharacter()->IncreaseHealth(RestoreHealth);
+		GS()->CreateSound(m_Pos, SOUND_CTF_CAPTURE);
+		GS()->CreateDeath(m_Pos, m_EidolonCID);
+		GS()->CreateDeath(m_Pos, m_OwnerCID);
+		Destroy();
+		return;
+	}
 }
 
 void CEidolon::Snap(int SnappingClient)

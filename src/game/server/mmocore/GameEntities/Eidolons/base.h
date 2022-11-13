@@ -6,13 +6,13 @@
 
 class CEidolon : public CEntity
 {
-	int m_OwnerID;
+	int m_EidolonCID;
+	int m_OwnerCID;
 	int m_Type;
 
 	int m_TickMove;
 	vec2 m_MoveTo;
 	vec2 m_MovePos;
-
 	enum
 	{
 		NUM_PARTICLES_AROUND_EIDOLON = 3
@@ -20,7 +20,7 @@ class CEidolon : public CEntity
 	int m_IDs[NUM_PARTICLES_AROUND_EIDOLON];
 
 public:
-	CEidolon(CGameWorld* pGameWorld, vec2 Pos, int Type, int OwnerID);
+	CEidolon(CGameWorld* pGameWorld, vec2 Pos, int Type, int EidolonCID, int OwnerCID);
 	~CEidolon();
 
 	void Tick() override;
