@@ -310,7 +310,7 @@ void CCharacterBotAI::Snap(int SnappingClient)
 
 	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
 	pDDNetCharacter->m_TeleCheckpoint = 0;
-	pDDNetCharacter->m_StrongWeakID = -1; // ???
+	pDDNetCharacter->m_StrongWeakID = 0; // ???
 
 	// Display Informations
 	pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;

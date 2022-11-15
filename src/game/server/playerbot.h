@@ -24,6 +24,7 @@ public:
 	int m_LastPosTick;
 	int m_PathSize;
 	vec2 m_TargetPos;
+	vec2 m_OldTargetPos;
 	std::atomic_bool m_ThreadReadNow;
 
 	CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint);

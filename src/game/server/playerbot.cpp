@@ -15,6 +15,7 @@ CPlayerBot::CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int Spaw
 	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(SubBotID), m_BotHealth(0), m_LastPosTick(0), m_PathSize(0)
 {
 	m_EidolonCID = -1;
+	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = m_BotType == TYPE_BOT_MOB ? CPlayerBot::GetAttributeSize(AttributeIdentifier::Hardness) : 10;
 }
@@ -441,6 +442,8 @@ void CPlayerBot::FindThreadPath(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 S
 	while(pBotPlayer->m_ThreadReadNow.load(std::memory_order_acquire))
 		std::this_thread::sleep_for(std::chrono::microseconds(1));
 
+	pBotPlayer->m_OldTargetPos = pBotPlayer->m_TargetPos;
+
 	pGameServer->PathFinder()->Init();
 	pGameServer->PathFinder()->SetStart(StartPos);
 	pGameServer->PathFinder()->SetEnd(SearchPos);
@@ -462,6 +465,8 @@ void CPlayerBot::GetThreadRandomRadiusWaypointTarget(CGS* pGameServer, CPlayerBo
 	while(pBotPlayer->m_ThreadReadNow.load(std::memory_order_acquire))
 		std::this_thread::sleep_for(std::chrono::microseconds(1));
 
+	pBotPlayer->m_OldTargetPos = pBotPlayer->m_TargetPos;
+
 	const vec2 TargetPos = pGameServer->PathFinder()->GetRandomWaypointRadius(Pos, Radius);
 	pBotPlayer->m_TargetPos = vec2(TargetPos.x * 32, TargetPos.y * 32);
 
@@ -470,7 +475,7 @@ void CPlayerBot::GetThreadRandomRadiusWaypointTarget(CGS* pGameServer, CPlayerBo
 
 void CPlayerBot::ThreadMobsPathFinder()
 {
-	if(!m_pCharacter || !m_pCharacter->IsAlive())
+	if(!m_pCharacter || !m_pCharacter->IsAlive() || (m_TargetPos != vec2(0,0) && distance(m_TargetPos, m_OldTargetPos) < 10.0f))
 		return;
 
 	if(GetBotType() == TYPE_BOT_MOB)
