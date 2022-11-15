@@ -171,11 +171,11 @@ public:
 	}
 
 	// World Time
-	virtual int GetMinuteGameTime() const = 0;
-	virtual int GetHourGameTime() const = 0;
-	virtual int GetOffsetGameTime() const = 0;
-	virtual void SetOffsetGameTime(int Hour) = 0;
-	virtual bool CheckGameTime(int Hour, int Minute) = 0;
+	virtual int GetMinuteWorldTime() const = 0;
+	virtual int GetHourWorldTime() const = 0;
+	virtual int GetOffsetWorldTime() const = 0;
+	virtual void SetOffsetWorldTime(int Hour) = 0;
+	virtual bool CheckWorldTime(int Hour, int Minute) = 0;
 	virtual const char* GetStringTypeDay() const = 0;
 	virtual int GetEnumTypeDay() const = 0;
 

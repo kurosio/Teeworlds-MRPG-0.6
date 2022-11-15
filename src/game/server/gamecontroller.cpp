@@ -192,7 +192,7 @@ void IGameController::Snap()
 
 	pGameInfoObj->m_GameFlags = m_GameFlags;
 	pGameInfoObj->m_GameStateFlags = 0;
-	pGameInfoObj->m_RoundStartTick = Server()->GetOffsetGameTime();
+	pGameInfoObj->m_RoundStartTick = Server()->GetOffsetWorldTime();
 	pGameInfoObj->m_WarmupTimer = 0;
 	pGameInfoObj->m_RoundNum = 0;
 	pGameInfoObj->m_RoundCurrent = 1;

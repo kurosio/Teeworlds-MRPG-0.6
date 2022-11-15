@@ -97,43 +97,42 @@ IGameServer* CServer::GameServerPlayer(int ClientID)
 
 
 // get the world minute
-int CServer::GetMinuteGameTime() const
+int CServer::GetMinuteWorldTime() const
 {
-	return m_TimeGameMinute;
+	return m_WorldMinute;
 }
 
 // get the world hour
-int CServer::GetHourGameTime() const
+int CServer::GetHourWorldTime() const
 {
-	return m_TimeGameHour;
+	return m_WorldHour;
 }
 
 // get the time offset at the beginning of the timer
-int CServer::GetOffsetGameTime() const
+int CServer::GetOffsetWorldTime() const
 {
 	return m_ShiftTime;
 }
 
 // set the time offset at the beginning of the timer
-void CServer::SetOffsetGameTime(int Hour)
+void CServer::SetOffsetWorldTime(int Hour)
 {
 	m_LastShiftTick = Tick();
-	m_TimeGameHour = clamp(Hour, 0, 23);
-	m_TimeGameMinute = 0;
+	m_WorldHour = clamp(Hour, 0, 23);
+	m_WorldMinute = 0;
 
 	if(Hour <= 0)
 		m_ShiftTime = m_LastShiftTick;
 	else
-		m_ShiftTime = m_LastShiftTick - ((m_TimeGameHour * 60) * TickSpeed());
+		m_ShiftTime = m_LastShiftTick - ((m_WorldHour * 60) * TickSpeed());
 }
 
 // skipping in two places so that time does not run out.
-bool CServer::CheckGameTime(int Hour, int Minute)
+bool CServer::CheckWorldTime(int Hour, int Minute)
 {
-	if(m_TimeGameHour == Hour && m_TimeGameMinute == Minute)
+	if(m_WorldHour == Hour && m_WorldMinute == Minute && m_IsNewMinute)
 	{
-		m_TimeGameMinute++;
-		m_TimeWorldAlarm = true;
+		m_WorldMinute++;
 		return true;
 	}
 	return false;
@@ -142,18 +141,21 @@ bool CServer::CheckGameTime(int Hour, int Minute)
 // format Day
 const char* CServer::GetStringTypeDay() const
 {
-	if(m_TimeGameHour >= 0 && m_TimeGameHour < 6) return "Night";
-	if(m_TimeGameHour >= 6 && m_TimeGameHour < 13) return "Morning";
-	if(m_TimeGameHour >= 13 && m_TimeGameHour < 19) return "Day";
-	return "Evening";
+	switch(GetEnumTypeDay())
+	{
+		case MORNING_TYPE: return "Morning";
+		case DAY_TYPE: return "Day";
+		case EVENING_TYPE: return "Evening";
+		default: return "Night";
+	}
 }
 
 // format Day to Int
 int CServer::GetEnumTypeDay() const
 {
-	if(m_TimeGameHour >= 0 && m_TimeGameHour < 6) return NIGHT_TYPE;
-	if(m_TimeGameHour >= 6 && m_TimeGameHour < 13) return MORNING_TYPE;
-	if(m_TimeGameHour >= 13 && m_TimeGameHour < 19) return DAY_TYPE;
+	if(m_WorldHour >= 0 && m_WorldHour < 6) return NIGHT_TYPE;
+	if(m_WorldHour >= 6 && m_WorldHour < 13) return MORNING_TYPE;
+	if(m_WorldHour >= 13 && m_WorldHour < 19) return DAY_TYPE;
 	return EVENING_TYPE;
 }
 
@@ -340,9 +342,9 @@ int64 CServer::TickStartTime(int Tick) const
 
 int CServer::Init()
 {
-	m_TimeGameMinute = 0;
-	m_TimeGameHour = 0;
-	m_TimeWorldAlarm = false;
+	m_WorldMinute = 0;
+	m_WorldHour = 0;
+	m_IsNewMinute = false;
 	m_CurrentGameTick = 0;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
@@ -1795,8 +1797,8 @@ int CServer::Run()
 	// start game
 	{
 		m_GameStartTime = time_get();
-
 		UpdateServerInfo();
+
 		while(m_RunServer)
 		{
 			int64 t = time_get();
@@ -1834,22 +1836,21 @@ int CServer::Run()
 				}
 
 				// world time
+				m_IsNewMinute = false;
 				if(Tick() % TickSpeed() == 0)
 				{
-					if(!m_TimeWorldAlarm)
-						m_TimeGameMinute++;
-					else
-						m_TimeWorldAlarm = false;
-
-					if(m_TimeGameMinute >= 60)
+					m_WorldMinute++;
+					m_IsNewMinute = true;
+				
+					if(m_WorldMinute >= 60)
 					{
-						m_TimeGameHour++;
-						if(m_TimeGameHour >= 24)
+						m_WorldHour++;
+						if(m_WorldHour >= 24)
 						{
-							m_TimeGameHour = 0;
-							SetOffsetGameTime(0);
+							m_WorldHour = 0;
+							SetOffsetWorldTime(0);
 						}
-						m_TimeGameMinute = 0;
+						m_WorldMinute = 0;
 					}
 				}
 
@@ -1869,7 +1870,7 @@ int CServer::Run()
 					m_CurrentGameTick = 0;
 					m_GameStartTime = time_get();
 					m_ServerInfoFirstRequest = 0;
-					SetOffsetGameTime(0);
+					SetOffsetWorldTime(0);
 					
 					if(!MultiWorlds()->LoadWorlds(this, Kernel(), Storage(), Console()))
 					{

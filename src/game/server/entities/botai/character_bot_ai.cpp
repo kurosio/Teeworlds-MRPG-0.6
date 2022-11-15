@@ -55,6 +55,7 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	}
 	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
 	{
+		m_Core.m_Solo = true;
 		int ClientID = m_pBotPlayer->GetCID();
 		int OwnerCID = m_pBotPlayer->GetEidolonOwner()->GetCID();
 		new CEidolon(&GS()->m_World, Pos, 0, ClientID, OwnerCID);
@@ -212,23 +213,24 @@ void CCharacterBotAI::Tick()
 
 	// check safe area
 	ResetSafe();
-	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA))
+	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA) || m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
 		SetSafe();
 
-	EngineBots();
-	HandleEvents();
-	// safe change world data from tick
-	int Index;
-	HandleTilesets(&Index);
-
+	// engine bots
+	HandleBot();
+	HandleTilesets();
 	HandleTuning();
+
+	// core
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pBotPlayer->m_NextTuningParams);
 	m_pBotPlayer->UpdateTempData(m_Health, m_Mana);
 
+	// game clipped
 	if(GameLayerClipped(m_Pos))
 		Die(m_pBotPlayer->GetCID(), WEAPON_SELF);
 
+	// door
 	if (!m_DoorHit)
 	{
 		m_OlderPos = m_OldPos;
@@ -259,6 +261,7 @@ void CCharacterBotAI::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient) || !Server()->Translate(ID, SnappingClient) || !m_pBotPlayer->IsVisibleForClient(SnappingClient))
 		return;
 
+	// Character
 	CNetObj_Character* pCharacter = static_cast<CNetObj_Character*>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(CNetObj_Character)));
 	if(!pCharacter)
 		return;
@@ -290,10 +293,32 @@ void CCharacterBotAI::Snap(int SnappingClient)
 	pCharacter->m_Health = 0;
 	pCharacter->m_Armor = 0;
 	pCharacter->m_PlayerFlags = m_pBotPlayer->m_PlayerFlags;
+
+	// DDNetCharacter
+	CNetObj_DDNetCharacter* pDDNetCharacter = static_cast<CNetObj_DDNetCharacter*>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, ID, sizeof(CNetObj_DDNetCharacter)));
+	if(!pDDNetCharacter)
+		return;
+
+	pDDNetCharacter->m_Flags = 0;
+#define DDNetFlag(flag, check) if(check) { pDDNetCharacter->m_Flags |= (flag); }
+	if(m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
+	{
+		DDNetFlag(CHARACTERFLAG_SOLO, false)
+		DDNetFlag(CHARACTERFLAG_COLLISION_DISABLED, true)
+	}
+#undef DDNetFlag
+
+	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
+	pDDNetCharacter->m_TeleCheckpoint = 0;
+	pDDNetCharacter->m_StrongWeakID = -1; // ???
+
+	// Display Informations
+	pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;
+	pDDNetCharacter->m_TargetY = m_Core.m_Input.m_TargetY;
 }
 
 // interactive bots
-void CCharacterBotAI::EngineBots()
+void CCharacterBotAI::HandleBot()
 {
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
 	{
@@ -321,6 +346,8 @@ void CCharacterBotAI::EngineBots()
 
 	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
 		EngineEidolons();
+
+	HandleEvent();
 }
 
 // interactive of NPC

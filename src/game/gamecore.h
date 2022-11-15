@@ -285,8 +285,8 @@ public:
 
 	void Init(CWorldCore* pWorld, CCollision* pCollision);
 	void Reset();
-	void Tick(bool UseInput, CTuningParams* pTunningPrms = nullptr);
-	void Move(CTuningParams* pTunningPrms = nullptr);
+	void Tick(bool UseInput, CTuningParams* pTuningParams = nullptr);
+	void Move(CTuningParams* pTuningParams = nullptr);
 
 	void Read(const CNetObj_CharacterCore* pObjCore);
 	void Write(CNetObj_CharacterCore* pObjCore);

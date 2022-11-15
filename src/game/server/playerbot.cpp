@@ -43,7 +43,7 @@ void CPlayerBot::Tick()
 		m_BotActive = GS()->IsPlayersNearby(m_pCharacter->GetPos(), 1000.0f);
 
 		// update eidolon position
-		if(m_BotType == BotsTypes::TYPE_BOT_EIDOLON)
+		if(m_BotType == TYPE_BOT_EIDOLON)
 		{
 			m_BotActive = m_BotActive && GetEidolonOwner();
 			if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && !m_BotActive)

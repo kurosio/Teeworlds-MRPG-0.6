@@ -54,7 +54,7 @@ private:
 	void SetAim(vec2 Dir);
 
 	bool SearchTalkedPlayer();
-	void EngineBots();
+	void HandleBot();
 	void EngineNPC();
 	void EngineMobs();
 	void EngineEidolons();

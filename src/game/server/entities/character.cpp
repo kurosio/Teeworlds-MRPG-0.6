@@ -523,10 +523,21 @@ void CCharacter::Tick()
 	// check safe area
 	ResetSafe();
 	if(m_SafeAreaForTick || GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA))
-	{
 		SetSafe();
+
+	// check allowed world for player
+	if(CheckAllowedWorld())
+	{
+		m_pPlayer->GetTempData().m_TempTeleportPos = vec2(-1, -1);
+		GS()->Chat(m_pPlayer->GetCID(), "This chapter is still closed, you magically transported first zone!");
+		m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
+		return;
 	}
 
+	// handle player
+	HandlePlayer();
+
+	// handle tiles
 	// safe change world data from tick
 	int Index = TILE_AIR;
 	HandleTilesets(&Index);
@@ -537,34 +548,30 @@ void CCharacter::Tick()
 	}
 	else if(GetHelper()->TileExit(Index, TILE_WORLD_SWAP)) {}
 
+	// handle
+	HandleWeapons();
 	HandleTuning();
+
+	// core
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pPlayer->m_NextTuningParams);
-
 	m_pPlayer->UpdateTempData(m_Health, m_Mana);
 
+	// game clipped
 	if(GameLayerClipped(m_Pos))
 		Die(m_pPlayer->GetCID(), WEAPON_SELF);
 
-	if (!m_DoorHit)
+	// door
+	if(!m_DoorHit)
 	{
 		m_OlderPos = m_OldPos;
 		m_OldPos = m_Core.m_Pos;
 	}
-
-	HandleWeapons();
-
-	if (IsLockedWorld())
-		return;
-
-	HandleAuthedPlayer();
 }
 
 void CCharacter::TickDeferred()
 {
-	if(!IsAlive())
-		return;
-		
+	// door reset
 	if(m_DoorHit)
 	{
 		ResetDoorPos();
@@ -943,7 +950,12 @@ void CCharacter::HandleTilesets(int* pIndex)
 		return;
 
 	// get index tileset char pos component items
-	const int Tile = (*pIndex) = GS()->Collision()->GetParseTilesAt(m_Core.m_Pos.x, m_Core.m_Pos.y);
+	const int Tile = GS()->Collision()->GetParseTilesAt(m_Core.m_Pos.x, m_Core.m_Pos.y);
+	if(pIndex)
+	{
+		(*pIndex) = Tile;
+	}
+
 	if(!m_pPlayer->IsBot() && GS()->Mmo()->OnPlayerHandleTile(this, Tile))
 		return;
 
@@ -962,7 +974,7 @@ void CCharacter::HandleTilesets(int* pIndex)
 	}
 }
 
-void CCharacter::HandleEvents()
+void CCharacter::HandleEvent()
 {
 	if(m_Event == TILE_EVENT_PARTY)
 	{
@@ -1143,7 +1155,7 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen, true);
 }
 
-void CCharacter::HandleAuthedPlayer()
+void CCharacter::HandlePlayer()
 {
 	if(!m_pPlayer->IsAuthed())
 		return;
@@ -1152,7 +1164,8 @@ void CCharacter::HandleAuthedPlayer()
 	if(m_Mana < m_pPlayer->GetStartMana() && Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
 		IncreaseMana(m_pPlayer->GetStartMana() / 20);
 
-	HandleEvents();
+	// handle
+	HandleEvent();
 }
 
 bool CCharacter::IsAllowedPVP(int FromID) const
@@ -1209,21 +1222,15 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	return true;
 }
 
-bool CCharacter::IsLockedWorld()
+bool CCharacter::CheckAllowedWorld() const
 {
-	if(m_Alive && (Server()->Tick() % Server()->TickSpeed() * 3) == 0  && m_pPlayer->IsAuthed())
+	if(Server()->Tick() % Server()->TickSpeed() * 3 == 0 && m_pPlayer->IsAuthed())
 	{
-		const int NecessaryQuest = GS()->Mmo()->WorldSwap()->GetNecessaryQuest();
-		if(NecessaryQuest > 0 && !m_pPlayer->GetQuest(NecessaryQuest).IsComplected())
+		if(const int NecessaryQuest = GS()->Mmo()->WorldSwap()->GetNecessaryQuest(); NecessaryQuest > 0 && !m_pPlayer->GetQuest(NecessaryQuest).IsComplected())
 		{
 			const int CheckHouseID = GS()->Mmo()->Member()->GetPosHouseID(m_Core.m_Pos);
 			if(CheckHouseID <= 0)
-			{
-				m_pPlayer->GetTempData().m_TempTeleportPos = vec2(-1, -1);
-				GS()->Chat(m_pPlayer->GetCID(), "This chapter is still closed, you magically transported first zone!");
-				m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
 				return true;
-			}
 		}
 	}
 	return false;

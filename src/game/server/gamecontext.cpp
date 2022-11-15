@@ -1276,7 +1276,7 @@ void CGS::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 {
 	const int Hour = pResult->GetInteger(0);
 	IServer* pServer = (IServer*)pUserData;
-	pServer->SetOffsetGameTime(Hour);
+	pServer->SetOffsetWorldTime(Hour);
 }
 
 // give the item to the player

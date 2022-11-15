@@ -107,9 +107,9 @@ void CCharacterCore::Reset()
 	m_Input.m_TargetY = -1;
 }
 
-void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
+void CCharacterCore::Tick(bool UseInput, CTuningParams* pTuningParams)
 {
-	const CTuningParams* pTuningParams = pTunningPrms ? pTunningPrms : &m_pWorld->m_Tuning;
+	const CTuningParams* pTuning = pTuningParams ? pTuningParams : &m_pWorld->m_Tuning;
 
 	m_MoveRestrictions = m_pCollision->GetMoveRestrictions(this, m_Pos);
 	m_TriggeredEvents = 0;
@@ -123,11 +123,11 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 
 	vec2 TargetDirection = normalize(vec2(m_Input.m_TargetX, m_Input.m_TargetY));
 
-	m_Vel.y += pTuningParams->m_Gravity;
+	m_Vel.y += pTuning->m_Gravity;
 
-	float MaxSpeed = Grounded ? pTuningParams->m_GroundControlSpeed : pTuningParams->m_AirControlSpeed;
-	float Accel = Grounded ? pTuningParams->m_GroundControlAccel : pTuningParams->m_AirControlAccel;
-	float Friction = Grounded ? pTuningParams->m_GroundFriction : pTuningParams->m_AirFriction;
+	float MaxSpeed = Grounded ? pTuning->m_GroundControlSpeed : pTuning->m_AirControlSpeed;
+	float Accel = Grounded ? pTuning->m_GroundControlAccel : pTuning->m_AirControlAccel;
+	float Friction = Grounded ? pTuning->m_GroundFriction : pTuning->m_AirFriction;
 
 	// handle input
 	if (UseInput)
@@ -159,7 +159,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 				if (Grounded && (!(m_Jumped & 2) || m_Jumps != 0))
 				{
 					m_TriggeredEvents |= COREEVENT_GROUND_JUMP;
-					m_Vel.y = -pTuningParams->m_GroundJumpImpulse;
+					m_Vel.y = -pTuning->m_GroundJumpImpulse;
 					if (m_Jumps > 1)
 					{
 						m_Jumped |= 1;
@@ -173,7 +173,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 				else if (!(m_Jumped & 2))
 				{
 					m_TriggeredEvents |= COREEVENT_AIR_JUMP;
-					m_Vel.y = -pTuningParams->m_AirJumpImpulse;
+					m_Vel.y = -pTuning->m_AirJumpImpulse;
 					m_Jumped |= 3;
 					m_JumpedTotal++;
 				}
@@ -193,7 +193,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 				m_HookPos = m_Pos + TargetDirection * PhysicalSize() * 1.5f;
 				m_HookDir = TargetDirection;
 				SetHookedPlayer(-1);
-				m_HookTick = (float)SERVER_TICK_SPEED * (1.25f - pTuningParams->m_HookDuration);
+				m_HookTick = (float)SERVER_TICK_SPEED * (1.25f - pTuning->m_HookDuration);
 				m_TriggeredEvents |= COREEVENT_HOOK_LAUNCH;
 			}
 		}
@@ -240,11 +240,11 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 	}
 	else if (m_HookState == HOOK_FLYING)
 	{
-		vec2 NewPos = m_HookPos + m_HookDir * pTuningParams->m_HookFireSpeed;
-		if ((!m_NewHook && distance(m_Pos, NewPos) > pTuningParams->m_HookLength) || (m_NewHook && distance(m_HookTeleBase, NewPos) > pTuningParams->m_HookLength))
+		vec2 NewPos = m_HookPos + m_HookDir * pTuning->m_HookFireSpeed;
+		if ((!m_NewHook && distance(m_Pos, NewPos) > pTuning->m_HookLength) || (m_NewHook && distance(m_HookTeleBase, NewPos) > pTuning->m_HookLength))
 		{
 			m_HookState = HOOK_RETRACT_START;
-			NewPos = m_Pos + normalize(NewPos - m_Pos) * pTuningParams->m_HookLength;
+			NewPos = m_Pos + normalize(NewPos - m_Pos) * pTuning->m_HookLength;
 			m_Reset = true;
 		}
 
@@ -265,7 +265,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 		}
 
 		// Check against other players first
-		if (m_pWorld && pTuningParams->m_PlayerHooking)
+		if (m_pWorld && pTuning->m_PlayerHooking)
 		{
 			float Distance = 0.0f;
 			for (int i = 0; i < MAX_CLIENTS; i++)
@@ -335,7 +335,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 		// don't do this hook rutine when we are hook to a player
 		if (m_HookedPlayer == -1 && distance(m_HookPos, m_Pos) > 46.0f)
 		{
-			vec2 HookVel = normalize(m_HookPos - m_Pos) * pTuningParams->m_HookDragAccel;
+			vec2 HookVel = normalize(m_HookPos - m_Pos) * pTuning->m_HookDragAccel;
 			// the hook as more power to drag you up then down.
 			// this makes it easier to get on top of an platform
 			if (HookVel.y > 0)
@@ -351,7 +351,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 			vec2 NewVel = m_Vel + HookVel;
 
 			// check if we are under the legal limit for the hook
-			if (length(NewVel) < pTuningParams->m_HookDragSpeed || length(NewVel) < length(m_Vel))
+			if (length(NewVel) < pTuning->m_HookDragSpeed || length(NewVel) < length(m_Vel))
 				m_Vel = NewVel; // no problem. apply
 		}
 
@@ -385,7 +385,7 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 			{
 				vec2 Dir = normalize(m_Pos - pCharCore->m_Pos);
 
-				bool CanCollide = (m_Super || pCharCore->m_Super) || (!m_CollisionDisabled && !pCharCore->m_CollisionDisabled && pTuningParams->m_PlayerCollision);
+				bool CanCollide = (m_Super || pCharCore->m_Super) || (!m_CollisionDisabled && !pCharCore->m_CollisionDisabled && pTuning->m_PlayerCollision);
 				if (CanCollide && Distance < PhysicalSize() * 1.25f && Distance > 0.0f)
 				{
 					float a = (PhysicalSize() * 1.45f - Distance);
@@ -401,12 +401,12 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 				}
 
 				// handle hook influence
-				if (!m_NoHookHit && m_HookedPlayer == i && pTuningParams->m_PlayerHooking)
+				if (!m_NoHookHit && m_HookedPlayer == i && pTuning->m_PlayerHooking)
 				{
 					if (Distance > PhysicalSize() * 1.50f) // TODO: fix tweakable variable
 					{
-						float HookAccel = pTuningParams->m_HookDragAccel * (Distance / pTuningParams->m_HookLength);
-						float DragSpeed = pTuningParams->m_HookDragSpeed;
+						float HookAccel = pTuning->m_HookDragAccel * (Distance / pTuning->m_HookLength);
+						float DragSpeed = pTuning->m_HookDragSpeed;
 
 						vec2 Temp;
 						// add force to the hooked player
@@ -433,10 +433,10 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTunningPrms)
 		m_Vel = normalize(m_Vel) * 6000;
 }
 
-void CCharacterCore::Move(CTuningParams* pTunningPrms)
+void CCharacterCore::Move(CTuningParams* pTuningParams)
 {
-	const CTuningParams* pTuningParams = pTunningPrms ? pTunningPrms : &m_pWorld->m_Tuning;
-	float RampValue = VelocityRamp(length(m_Vel) * 50, pTuningParams->m_VelrampStart, pTuningParams->m_VelrampRange, pTuningParams->m_VelrampCurvature);
+	const CTuningParams* pTuning = pTuningParams ? pTuningParams : &m_pWorld->m_Tuning;
+	float RampValue = VelocityRamp(length(m_Vel) * 50, pTuning->m_VelrampStart, pTuning->m_VelrampRange, pTuning->m_VelrampCurvature);
 
 	m_Vel.x = m_Vel.x * RampValue;
 
@@ -458,7 +458,7 @@ void CCharacterCore::Move(CTuningParams* pTunningPrms)
 
 	m_Vel.x = m_Vel.x * (1.0f / RampValue);
 	
-	if(m_pWorld && (m_Super || (pTuningParams->m_PlayerCollision && !m_CollisionDisabled && !m_Solo)))
+	if(m_pWorld && (m_Super || (pTuning->m_PlayerCollision && !m_CollisionDisabled && !m_Solo)))
 	{
 		// check player collision
 		float Distance = distance(m_Pos, NewPos);
