@@ -117,10 +117,10 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		pPlayer->Acc().m_Upgrade = pResAccount->getInt("Upgrade");
 		pPlayer->Acc().m_GuildRank = pResAccount->getInt("GuildRank");
 		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
-		for (const auto& [ID, Att] : CAttributeDescription::Data())
+		for (const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(Att.HasField())
-				pPlayer->Acc().m_aStats[ID] = pResAccount->getInt(Att.GetFieldName());
+			if(pAttribute->HasField())
+				pPlayer->Acc().m_aStats[ID] = pResAccount->getInt(pAttribute->GetFieldName());
 		}
 
 		GS()->Chat(ClientID, "- - - - - - - [Successful login!] - - - - - - -");

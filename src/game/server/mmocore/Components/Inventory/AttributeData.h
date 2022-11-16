@@ -3,7 +3,9 @@
 #ifndef GAME_SERVER_COMPONENT_ATTRIBUTEDATA_H
 #define GAME_SERVER_COMPONENT_ATTRIBUTEDATA_H
 
-class CAttributeDescription : public MultiworldIdentifiableStaticData< std::map < AttributeIdentifier, CAttributeDescription > >
+using AttributeDescriptionPtr = std::shared_ptr< class CAttributeDescription >;
+
+class CAttributeDescription : public MultiworldIdentifiableStaticData< std::map < AttributeIdentifier, AttributeDescriptionPtr > >
 {
 	char m_aName[32]{};
 	char m_aFieldName[32]{};
@@ -14,7 +16,13 @@ class CAttributeDescription : public MultiworldIdentifiableStaticData< std::map 
 
 public:
 	CAttributeDescription() = default;
-	CAttributeDescription(AttributeIdentifier ID) : m_aName{}, m_aFieldName{}, m_ID(ID), m_Type(), m_UpgradePrice(0), m_Dividing(0) {}
+
+	static AttributeDescriptionPtr CreateDataItem(AttributeIdentifier ID)
+	{
+		m_pData[ID] = std::make_shared<CAttributeDescription>();
+		m_pData[ID]->m_ID = ID;
+		return m_pData[ID];
+	}
 
 	void Init(const std::string& Name, const std::string& FieldName, int UpgradePrice, AttributeType Type, int Dividing)
 	{
@@ -23,7 +31,6 @@ public:
 		m_UpgradePrice = UpgradePrice;
 		m_Type = Type;
 		m_Dividing = Dividing;
-		CAttributeDescription::m_pData[m_ID] = *this;
 	}
 
 	static bool IsValidItem(AttributeIdentifier ID) { return m_pData.find(ID) != m_pData.end(); }
@@ -52,7 +59,7 @@ public:
 	AttributeIdentifier GetID() const { return m_ID; }
 	int GetValue() const { return m_Value; }
 	bool HasValue() const { return m_Value > 0; }
-	CAttributeDescription* Info() const { return &CAttributeDescription::Data()[m_ID]; }
+	CAttributeDescription* Info() const { return CAttributeDescription::Data()[m_ID].get(); }
 };
 
 #endif

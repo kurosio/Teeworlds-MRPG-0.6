@@ -74,7 +74,7 @@ void CInventoryCore::OnInit()
 			AttributeType Type = (AttributeType)pRes->getInt("Type");
 			int Dividing = pRes->getInt("Divide");
 
-			CAttributeDescription(ID).Init(Name, FieldName, UpgradePrice, Type, Dividing);
+			CAttributeDescription::CreateDataItem(ID)->Init(Name, FieldName, UpgradePrice, Type, Dividing);
 		}
 	});
 }

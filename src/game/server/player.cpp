@@ -744,9 +744,9 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 int CPlayer::GetTypeAttributesSize(AttributeType Type)
 {
 	int Size = 0;
-	for (const auto& [ID, Attribute] : CAttributeDescription::Data())
+	for (const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
-		if (Attribute.IsType(Type))
+		if (pAttribute->IsType(Type))
 			Size += GetAttributeSize(ID, true);
 	}
 	return Size;

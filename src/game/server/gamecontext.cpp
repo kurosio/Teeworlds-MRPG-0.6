@@ -143,7 +143,7 @@ CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const
 {
 	dbg_assert(CAttributeDescription::Data().find(ID) != CAttributeDescription::Data().end(), "invalid referring to the CAttributeDescription");
 
-	return &CAttributeDescription::Data()[ID];
+	return CAttributeDescription::Data()[ID].get();
 }
 
 CWarehouse* CGS::GetWarehouse(int ID) const
@@ -1641,20 +1641,20 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	AVH(ClientID, TAB_INFO_STAT, "Player Stats {STR}", IsDungeon() ? "(Sync)" : "\0");
-	for(const auto& [ID, Attribute] : CAttributeDescription::Data())
+	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
-		if(!Attribute.HasField())
+		if(!pAttribute->HasField())
 			continue;
 
 		// if upgrades are cheap, they have a division of statistics
 		const int Size = pPlayer->GetAttributeSize(ID);
-		if(Attribute.GetDividing() <= 1)
+		if(pAttribute->GetDividing() <= 1)
 		{
 			const int WorkedSize = pPlayer->GetAttributeSize(ID, true);
-			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "{INT} (+{INT}) - {STR}", Size, WorkedSize, Attribute.GetName());
+			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "{INT} (+{INT}) - {STR}", Size, WorkedSize, pAttribute->GetName());
 			continue;
 		}
-		AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "+{INT} - {STR}", Size, Attribute.GetName());
+		AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "+{INT} - {STR}", Size, pAttribute->GetName());
 	}
 
 	AVM(ClientID, "null", NOPE, NOPE, "Player Upgrade Point: {INT}P", pPlayer->Acc().m_Upgrade);

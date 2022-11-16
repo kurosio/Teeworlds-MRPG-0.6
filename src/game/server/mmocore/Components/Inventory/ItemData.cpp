@@ -195,15 +195,15 @@ bool CPlayerItem::Use(int Value)
 	else if(m_ID == itTicketResetClassStats && Remove(Value, 0))
 	{
 		int BackUpgrades = 0;
-		for(const auto& [ID, Attribute] : CAttributeDescription::Data())
+		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(Attribute.HasField() && GetPlayer()->Acc().m_aStats[ID] > 0)
+			if(pAttribute->HasField() && GetPlayer()->Acc().m_aStats[ID] > 0)
 			{
 				// skip weapon spreading
-				if(Attribute.IsType(AttributeType::Weapon))
+				if(pAttribute->IsType(AttributeType::Weapon))
 					continue;
 
-				BackUpgrades += GetPlayer()->Acc().m_aStats[ID] * Attribute.GetUpgradePrice();
+				BackUpgrades += GetPlayer()->Acc().m_aStats[ID] * pAttribute->GetUpgradePrice();
 				GetPlayer()->Acc().m_aStats[ID] = 0;
 			}
 		}
@@ -216,12 +216,12 @@ bool CPlayerItem::Use(int Value)
 	else if(m_ID == itTicketResetWeaponStats && Remove(Value, 0))
 	{
 		int BackUpgrades = 0;
-		for(const auto& [ID, Attribute] : CAttributeDescription::Data())
+		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(Attribute.HasField() && GetPlayer()->Acc().m_aStats[ID] > 0)
+			if(pAttribute->HasField() && GetPlayer()->Acc().m_aStats[ID] > 0)
 			{
 				// skip all stats allow only weapons
-				if(Attribute.GetType() != AttributeType::Weapon)
+				if(pAttribute->GetType() != AttributeType::Weapon)
 					continue;
 
 				int UpgradeValue = GetPlayer()->Acc().m_aStats[ID];
@@ -233,7 +233,7 @@ bool CPlayerItem::Use(int Value)
 				if(UpgradeValue <= 0)
 					continue;
 
-				BackUpgrades += UpgradeValue * Attribute.GetUpgradePrice();
+				BackUpgrades += UpgradeValue * pAttribute->GetUpgradePrice();
 				GetPlayer()->Acc().m_aStats[ID] -= UpgradeValue;
 			}
 		}
