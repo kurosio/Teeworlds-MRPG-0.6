@@ -14,7 +14,7 @@ std::string CQuestData::GetJsonFileName() const { return Info().GetJsonFileName(
 std::map < int, std::map <int, CQuestData > > CQuestData::ms_aPlayerQuests;
 void CQuestData::InitSteps()
 {
-	if(m_State != QuestState::QUEST_ACCEPT || !m_pPlayer)
+	if(m_State != QuestState::ACCEPT || !m_pPlayer)
 		return;
 
 	// checking dir
@@ -59,7 +59,7 @@ void CQuestData::InitSteps()
 
 void CQuestData::LoadSteps()
 {
-	if(m_State != QuestState::QUEST_ACCEPT || !m_pPlayer)
+	if(m_State != QuestState::ACCEPT || !m_pPlayer)
 		return;
 
 	// loading file is not open pereinitilized steps
@@ -98,7 +98,7 @@ void CQuestData::LoadSteps()
 
 void CQuestData::SaveSteps()
 {
-	if(m_State != QuestState::QUEST_ACCEPT)
+	if(m_State != QuestState::ACCEPT)
 		return;
 
 	// set json structure
@@ -139,15 +139,15 @@ void CQuestData::ClearSteps()
 
 bool CQuestData::Accept()
 {
-	if(m_State != QuestState::QUEST_NO_ACCEPT)
+	if(m_State != QuestState::NO_ACCEPT)
 		return false;
 
 	int ClientID = m_pPlayer->GetCID();
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
 	// init quest
-	m_State = QuestState::QUEST_ACCEPT;
-	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_QuestID, m_pPlayer->Acc().m_UserID, QuestState::QUEST_ACCEPT);
+	m_State = QuestState::ACCEPT;
+	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_QuestID, m_pPlayer->Acc().m_UserID, m_State);
 
 	// init steps
 	InitSteps();
@@ -164,14 +164,14 @@ bool CQuestData::Accept()
 
 void CQuestData::Finish()
 {
-	if(m_State != QuestState::QUEST_ACCEPT)
+	if(m_State != QuestState::ACCEPT)
 		return;
 
 	int ClientID = m_pPlayer->GetCID();
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
 	// finish quest
-	m_State = QuestState::QUEST_FINISHED;
+	m_State = QuestState::FINISHED;
 	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_QuestID, m_pPlayer->Acc().m_UserID);
 
 	// clear steps
@@ -188,7 +188,7 @@ void CQuestData::Finish()
 	pGS->Mmo()->Dungeon()->CheckQuestingOpened(m_pPlayer, m_QuestID);
 
 	// save player stats and accept next story quest
-	pGS->Mmo()->SaveAccount(m_pPlayer, SaveType::SAVE_STATS);
+	pGS->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);
 	pGS->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer, m_QuestID);
 	pGS->CreateText(nullptr, false, vec2(m_pPlayer->m_ViewPos.x, m_pPlayer->m_ViewPos.y - 70), vec2(0, -0.5), 30, "COMPLECTED");
 }
@@ -227,7 +227,7 @@ void CQuestData::CheckaAvailableNewStep()
 		int ClientID = m_pPlayer->GetCID();
 		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
-		pGS->StrongUpdateVotes(ClientID, MenuList::MENU_JOURNAL_MAIN);
-		pGS->StrongUpdateVotes(ClientID, MenuList::MENU_MAIN);
+		pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
+		pGS->StrongUpdateVotes(ClientID, MENU_MAIN);
 	}
 }

@@ -794,7 +794,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 
 		// you get to know in general if the quest is to give out a random senseless dialog
 		int GivingQuestID = GS()->Mmo()->BotsData()->GetQuestNPC(MobID);
-		if (isTalkingEmpty || GetQuest(GivingQuestID).GetState() >= QuestState::QUEST_ACCEPT)
+		if (isTalkingEmpty || GetQuest(GivingQuestID).GetState() >= QuestState::ACCEPT)
 		{
 			const char* pMeaninglessDialog = GS()->Mmo()->BotsData()->GetMeaninglessDialog();
 			GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, -1, pMeaninglessDialog);

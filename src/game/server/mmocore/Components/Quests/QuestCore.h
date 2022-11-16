@@ -43,7 +43,7 @@ public:
 	void ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID);
 
 private:
-	void ShowQuestsTabList(CPlayer* pPlayer, int StateQuest);
+	void ShowQuestsTabList(CPlayer* pPlayer, QuestState State);
 	void ShowQuestID(CPlayer *pPlayer, int QuestID);
 
 public:

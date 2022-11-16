@@ -10,13 +10,13 @@ public:
 	int m_QuestID;
 	CPlayer* m_pPlayer;
 
-	int m_State;
+	QuestState m_State;
 	int m_Step;
 
 	std::string GetJsonFileName() const;
 	CQuestDataInfo& Info() const;
-	bool IsComplected() const { return m_State == QuestState::QUEST_FINISHED; }
-	int GetState() const { return m_State; }
+	bool IsComplected() const { return m_State == QuestState::FINISHED; }
+	QuestState GetState() const { return m_State; }
 
 	// steps
 	void InitSteps();

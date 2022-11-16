@@ -110,11 +110,11 @@ enum class ItemType : short
 	NUM_TYPES,
 };
 
-enum QuestState
+enum class QuestState : int
 {
-	QUEST_NO_ACCEPT = 0,
-	QUEST_ACCEPT,
-	QUEST_FINISHED,
+	NO_ACCEPT = 0,
+	ACCEPT,
+	FINISHED,
 };
 
 enum FunctionsNPC

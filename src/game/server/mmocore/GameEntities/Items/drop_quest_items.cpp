@@ -36,7 +36,7 @@ void CDropQuestItem::Tick()
 {
 	// life time dk
 	m_LifeSpan--;
-	if (m_LifeSpan < 0 || !GS()->m_apPlayers[m_ClientID] || GS()->m_apPlayers[m_ClientID]->GetQuest(m_QuestBot.m_QuestID).GetState() != QuestState::QUEST_ACCEPT)
+	if (m_LifeSpan < 0 || !GS()->m_apPlayers[m_ClientID] || GS()->m_apPlayers[m_ClientID]->GetQuest(m_QuestBot.m_QuestID).GetState() != QuestState::ACCEPT)
 	{
 		GS()->m_World.DestroyEntity(this);
 		return;
