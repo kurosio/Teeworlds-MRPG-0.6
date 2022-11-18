@@ -50,6 +50,7 @@ public:
 	bool OnCharacterSpawn(class CCharacter* pChr) override;
 	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override;
 	int GetAttributeDungeonSync(class CPlayer* pPlayer, AttributeIdentifier ID) const;
+	int GetSyncFactor() const;
 
 private:
 	int PlayersReady() const;
@@ -66,7 +67,6 @@ private:
 	void ResetDoorKeyState();
 	void SelectTankPlayer();
 
-	int GetSyncFactor() const;
 };
 
 class DungeonDoor : public CEntity

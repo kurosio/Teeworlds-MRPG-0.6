@@ -188,6 +188,7 @@ bool CCraftCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 			ShowCraftList(pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
 			ShowCraftList(pPlayer, "Module's", ItemType::TYPE_MODULE);
 			ShowCraftList(pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
+			ShowCraftList(pPlayer, "Craft's", ItemType::TYPE_CRAFT);
 			ShowCraftList(pPlayer, "Other's", ItemType::TYPE_OTHER);
 			return true;
 		}

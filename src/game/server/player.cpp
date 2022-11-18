@@ -714,9 +714,16 @@ int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 
 int CPlayer::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 {
-	int Size = 0;
+	// if the best tank class is selected among the players we return the sync dungeon stats
+	const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID);
+	if(GS()->IsDungeon() && pAtt->GetUpgradePrice() < 10 && CDungeonData::ms_aDungeon[GS()->GetDungeonID()].IsDungeonPlaying())
+	{
+		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
+		return pDungeon->GetAttributeDungeonSync(this, ID);
+	}
 
 	// get all attributes from items
+	int Size = 0;
 	for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[m_ClientID])
 	{
 		if(ItemData.IsEquipped() && ItemData.Info()->IsEnchantable() && ItemData.Info()->GetInfoEnchantStats(ID))
@@ -724,7 +731,6 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 	}
 
 	// if the attribute has the value of player upgrades we sum up
-	const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID);
 	if (pAtt->HasField())
 		Size += Acc().m_aStats[ID];
 
@@ -732,12 +738,6 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 	if (WorkedSize && pAtt->GetDividing() > 0)
 		Size /= pAtt->GetDividing();
 
-	// if the best tank class is selected among the players we return the sync dungeon stats
-	if(GS()->IsDungeon() && pAtt->GetUpgradePrice() < 10 && CDungeonData::ms_aDungeon[GS()->GetDungeonID()].IsDungeonPlaying())
-	{
-		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
-		return pDungeon->GetAttributeDungeonSync(this, ID);
-	}
 	return Size;
 }
 

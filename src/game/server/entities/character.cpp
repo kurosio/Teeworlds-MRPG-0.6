@@ -198,7 +198,7 @@ bool CCharacter::DecoInteractive()
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
-				GS()->UpdateVotes(ClientID, MenuList::MENU_HOUSE_DECORATION);
+				GS()->UpdateVotes(ClientID, MENU_HOUSE_DECORATION);
 				return true;
 			}
 		}
@@ -209,14 +209,14 @@ bool CCharacter::DecoInteractive()
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
-				GS()->UpdateVotes(ClientID, MenuList::MENU_GUILD_HOUSE_DECORATION);
+				GS()->UpdateVotes(ClientID, MENU_GUILD_HOUSE_DECORATION);
 				return true;
 			}
 		}
 
 		GS()->Chat(ClientID, "Distance House and Decoration maximal {INT} block!", g_Config.m_SvLimitDecoration);
 		GS()->Chat(ClientID, "Setting object reset, use repeat!");
-		GS()->UpdateVotes(ClientID, MenuList::MENU_HOUSE_DECORATION);
+		GS()->UpdateVotes(ClientID, MENU_HOUSE_DECORATION);
 		return true;
 	}
 	return false;
@@ -675,11 +675,11 @@ void CCharacter::Die(int Killer, int Weapon)
 		}
 	}
 
-	m_pPlayer->m_aPlayerTick[TickState::Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
-	if(m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+	m_pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
+	if(m_pPlayer->GetBotType() == TYPE_BOT_MOB)
 	{
 		const int SubBotID = m_pPlayer->GetBotMobID();
-		m_pPlayer->m_aPlayerTick[TickState::Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick*Server()->TickSpeed();
+		m_pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick*Server()->TickSpeed();
 	}
 
 	// a nice sound
@@ -1173,10 +1173,10 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
 
 	// eidolon
-	if(pFrom && pFrom->IsBot() && pFrom->GetBotType() == BotsTypes::TYPE_BOT_EIDOLON)
+	if(pFrom && pFrom->IsBot() && pFrom->GetBotType() == TYPE_BOT_EIDOLON)
 	{
 		// enable damage from eidolon to mobs
-		if(m_pPlayer->IsBot() && m_pPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+		if(m_pPlayer->IsBot() && m_pPlayer->GetBotType() == TYPE_BOT_MOB)
 			return true;
 
 		// dissalow  damage from self eidolon
@@ -1189,7 +1189,8 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		return false;
 
 	// pvp only for mobs
-	if((m_pPlayer->IsBot() && m_pPlayer->GetBotType() != BotsTypes::TYPE_BOT_MOB) || (pFrom->IsBot() && pFrom->GetBotType() != BotsTypes::TYPE_BOT_MOB))
+	if((m_pPlayer->IsBot() && m_pPlayer->GetBotType() != TYPE_BOT_MOB) || (pFrom->IsBot() && pFrom->GetBotType() !=
+		TYPE_BOT_MOB))
 		return false;
 
 	// disable damage on invisible wall
@@ -1278,8 +1279,9 @@ bool CCharacter::StartConversation(CPlayer *pTarget)
 
 	// skip if not NPC, or it is not drawn
 	CPlayerBot* pTargetBot = static_cast<CPlayerBot*>(pTarget);
-	if (!pTargetBot || pTargetBot->GetBotType() == BotsTypes::TYPE_BOT_MOB 
-		|| pTargetBot->GetBotType() == BotsTypes::TYPE_BOT_EIDOLON 
+	if (!pTargetBot || pTargetBot->GetBotType() == TYPE_BOT_MOB
+		|| pTargetBot->GetBotType() == TYPE_BOT_EIDOLON
+		|| (pTarget->GetBotType() == TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[pTarget->GetBotMobID()].m_HasAction)
 		|| !pTargetBot->IsVisibleForClient(m_pPlayer->GetCID()))
 		return false;
 	return true;

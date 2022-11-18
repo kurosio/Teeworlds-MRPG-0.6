@@ -498,7 +498,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeI
 	{
 		const float ActiveAttribute = m_SyncDungeon / 2.0f;
 		if(Type == AttributeType::Tank)
-			Percent = 40.0f;
+			Percent = 30.0f;
 
 		const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
 		return max(AttributeSyncProcent, 1);

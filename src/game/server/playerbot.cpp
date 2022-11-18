@@ -6,6 +6,7 @@
 #include "mmocore/PathFinder.h"
 
 #include "entities/botai/character_bot_ai.h"
+#include "gamemodes/dungeon.h"
 
 #include "mmocore/Components/Bots/BotCore.h"
 
@@ -150,12 +151,18 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 			if(pAtt->GetType() == AttributeType::Hardtype)
 				Size /= HardtypeDividing;
 		}
+
 		return Size;
 	};
 
 	int Size = 0;
 	if(m_BotType == TYPE_BOT_EIDOLON)
-		Size = CalculateAttribute(EidolonsTools::getEidolonItemID(m_BotID), 1, 5);
+	{
+		if(GS()->IsDungeon())
+			Size = CalculateAttribute(translate_to_percent_rest(max(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, 5);
+		else
+			Size = CalculateAttribute(EidolonsTools::getEidolonItemID(m_BotID), 1, 5);
+	}
 	else if(m_BotType == TYPE_BOT_MOB)
 		Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss ? 30 : 2);
 	return Size;
