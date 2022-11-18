@@ -101,23 +101,6 @@ bool CSkill::Use()
 		GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
 	}
 
-	if(m_ID == Skill::SkillHealthRegen)
-	{
-		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
-			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
-			if(!pPlayer || !GS()->IsPlayerEqualWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
-				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
-				continue;
-
-			pPlayer->GiveEffect("RegenHealth", 12 + GetBonus());
-			GS()->CreateDeath(pPlayer->GetCharacter()->GetPos(), i);
-		}
-
-		GS()->CreateText(NULL, false, vec2(PlayerPosition.x, PlayerPosition.y - 96.0f), vec2(0, 0), 40, "SATELLA");
-		GS()->CreateSound(PlayerPosition, SOUND_PLAYER_SPAWN);
-	}
-
 	if(m_ID == Skill::SkillBlessingGodWar)
 	{
 		for(int i = 0; i < MAX_PLAYERS; i++)

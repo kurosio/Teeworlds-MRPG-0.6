@@ -693,7 +693,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	Msg.m_Victim = m_pPlayer->GetCID();
 	Msg.m_Weapon = Weapon;
 	Msg.m_ModeSpecial = 0;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, GS()->GetWorldID());
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, GS()->GetWorldID());
 
 	// respawn
 	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick()/2;
