@@ -429,6 +429,7 @@ int CPlayerBot::GetPlayerWorldID() const
 
 CTeeInfo& CPlayerBot::GetTeeInfo() const
 {
+	dbg_assert(DataBotInfo::IsDataBotValid(m_BotID), "Assert getter TeeInfo from data bot");
 	return DataBotInfo::ms_aDataBot[m_BotID].m_TeeInfos;
 }
 

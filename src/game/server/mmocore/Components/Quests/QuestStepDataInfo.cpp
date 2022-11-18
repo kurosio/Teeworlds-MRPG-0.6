@@ -260,7 +260,7 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 		if(BotID > 0 && ValueMob > 0 && DataBotInfo::ms_aDataBot.find(BotID) != DataBotInfo::ms_aDataBot.end())
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Defeat {STR} [{INT}/{INT}]", DataBotInfo::ms_aDataBot[BotID].m_aNameBot, m_MobProgress[i], ValueMob);
+			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Defeat {STR} ({INT}/{INT})", DataBotInfo::ms_aDataBot[BotID].m_aNameBot, m_MobProgress[i], ValueMob);
 			IsActiveTask = true;
 		}
 
@@ -270,7 +270,7 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Need {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), ValueItem);
+			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Need {STR} ({VAL}/{VAL})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), ValueItem);
 			IsActiveTask = true;
 		}
 	}
@@ -283,11 +283,11 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 		if(ItemID > 0 && ValueItem > 0)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Receive {STR} [{VAL}]", pPlayer->GetItem(ItemID)->Info()->GetName(), ValueItem);
+			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Receive {STR} ({VAL})", pPlayer->GetItem(ItemID)->Info()->GetName(), ValueItem);
 		}
 	}
 
-	pGS->Motd(ClientID, "{STR}\n\n{STR}{STR}\n\n", pBuffer, (IsActiveTask ? "### Task" : "\0"), Buffer.buffer());
+	pGS->Motd(ClientID, "{STR}\n\n{STR}{STR}\n\n", pBuffer, (IsActiveTask ? "~~ Task" : "\0"), Buffer.buffer());
 	pPlayer->ClearDialogText();
 	Buffer.clear();
 }

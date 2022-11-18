@@ -155,7 +155,7 @@ bool CQuestData::Accept()
 	// information
 	const int QuestsSize = Info().GetQuestStorySize();
 	const int QuestPosition = Info().GetQuestStoryPosition();
-	pGS->Chat(ClientID, "****** Quest story [{STR}] ({INT}/{INT}) ******", Info().GetStory(), QuestPosition, QuestsSize);
+	pGS->Chat(ClientID, "------ Quest story [{STR}] ({INT}/{INT}) ------", Info().GetStory(), QuestPosition, QuestsSize);
 	pGS->Chat(ClientID, "Name: \"{STR}\"", Info().GetName());
 	pGS->Chat(ClientID, "Reward: \"Gold {VAL}, Experience {INT}\".", Info().m_Gold, Info().m_Exp);
 	pGS->CreatePlayerSound(ClientID, SOUND_CTF_CAPTURE);
@@ -196,12 +196,8 @@ void CQuestData::Finish()
 void CQuestData::CheckaAvailableNewStep()
 {
 	// check whether the active steps is complete
-	auto pActiveStep = std::find_if(m_StepsQuestBot.begin(), m_StepsQuestBot.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &pItem)
-	{
-		return (pItem.second.m_Bot.m_Step == m_Step && !pItem.second.m_StepComplete && pItem.second.m_Bot.m_HasAction);
-	});
-
-	if(pActiveStep != m_StepsQuestBot.end())
+	if(std::find_if(m_StepsQuestBot.begin(), m_StepsQuestBot.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &p)
+	{ return (p.second.m_Bot.m_Step == m_Step && !p.second.m_StepComplete && p.second.m_Bot.m_HasAction); }) != m_StepsQuestBot.end())
 		return;
 
 	// update steps

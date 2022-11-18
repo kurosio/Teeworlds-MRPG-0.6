@@ -250,7 +250,14 @@ void CCommandProcessor::ConChatUseItem(IConsole::IResult* pResult, void* pUser)
 	if (!pPlayer || !pPlayer->IsAuthed())
 		return;
 
+	// check valid
 	const int ItemID = pResult->GetInteger(0);
+	if(CItemDescription::Data().find(ItemID) == CItemDescription::Data().end())
+	{
+		pGS->Chat(ClientID, "There is no item with the entered Item Identifier.");
+		return;
+	}
+
 	pPlayer->GetItem(ItemID)->Use(1);
 }
 
@@ -264,7 +271,14 @@ void CCommandProcessor::ConChatUseSkill(IConsole::IResult* pResult, void* pUser)
 	if (!pPlayer || !pPlayer->IsAuthed())
 		return;
 
+	// check valid
 	const int SkillID = pResult->GetInteger(0);
+	if(CSkillDescription::Data().find(SkillID) == CSkillDescription::Data().end())
+	{
+		pGS->Chat(ClientID, "There is no skill with the entered Skill Identifier.");
+		return;
+	}
+
 	pPlayer->GetSkill(SkillID)->Use();
 }
 
