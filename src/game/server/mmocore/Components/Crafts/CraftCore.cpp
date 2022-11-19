@@ -16,11 +16,10 @@ void CCraftCore::OnInit()
 		int WorldID = pRes->getInt("WorldID");
 
 		CraftIdentifier ID = pRes->getInt("ID");
-
 		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
-		CCraftItem(ID).Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
+		CCraftItem::CreateDataItem(ID)->Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
 	}
-	
+
 	Job()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
 }
 
@@ -46,23 +45,30 @@ bool CCraftCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
 {
-	bool IsNotEmpty = false;
+	// sort by function
+	std::sort(CCraftItem::Data().begin(), CCraftItem::Data().end(), [](const CraftPtr& p1, const CraftPtr& p2)
+	{
+		return p1->GetItem()->Info()->GetFunctional() > p2->GetItem()->Info()->GetFunctional();
+	});
+
+	bool IsEmpty = true;
 	const int ClientID = pPlayer->GetCID();
 
-	for(const auto& [ID, Craft] : CCraftItem::Data())
+	for(const auto& pCraft: CCraftItem::Data())
 	{
-		CItemDescription* pCraftItemInfo = Craft.GetItem()->Info();
-		if(pCraftItemInfo->GetType() != Type || Craft.GetWorldID() != GS()->GetWorldID())
+		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
+		if(pCraftItemInfo->GetType() != Type || pCraft->GetWorldID() != GS()->GetWorldID())
 			continue;
 
-		if(!IsNotEmpty)
+		if(IsEmpty)
 		{
 			GS()->AVL(ClientID, "null", "{STR}", TypeName);
-			IsNotEmpty = true;
+			IsEmpty = false;
 		}
 
-		ItemIdentifier ItemID = Craft.GetItem()->GetID();
-		const int Price = Craft.GetPrice(pPlayer);
+		CraftIdentifier ID = pCraft->GetID();
+		ItemIdentifier ItemID = pCraft->GetItem()->GetID();
+		const int Price = pCraft->GetPrice(pPlayer);
 		const int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + ID;
 
 		if(pCraftItemInfo->IsEnchantable())
@@ -75,11 +81,11 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 		}
 		else
 		{
-			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", pCraftItemInfo->GetName(), Craft.GetItem()->GetValue(), pPlayer->GetItem(ItemID)->GetValue(), Price);
+			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), pPlayer->GetItem(ItemID)->GetValue(), Price);
 		}
 		//GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pCraftItemInfo->GetDescription());
 
-		for(auto& RequiredItem: Craft.m_RequiredItem)
+		for(auto& RequiredItem: pCraft->m_RequiredItem)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(RequiredItem.GetID());
 			GS()->AVM(ClientID, "null", NOPE, HideID, "* {STR} {VAL}({VAL})", pPlayerItem->Info()->GetName(), RequiredItem.GetValue(), pPlayerItem->GetValue());
@@ -88,14 +94,16 @@ void CCraftCore::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType 
 		GS()->AVM(ClientID, "CRAFT", ID, HideID, "Craft {STR}", pCraftItemInfo->GetName());
 	}
 
-	if(IsNotEmpty)
+	if(!IsEmpty)
 		GS()->AV(ClientID, "null");
 }
 
-void CCraftCore::CraftItem(CPlayer *pPlayer, int CraftID) const
+void CCraftCore::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 {
+	if(!pPlayer || !pCraft)
+		return;
+
 	const int ClientID = pPlayer->GetCID();
-	CCraftItem* pCraft = &CCraftItem::Data()[CraftID];
 	CPlayerItem* pPlayerCraftItem = pPlayer->GetItem(*pCraft->GetItem());
 
 	// check enchant
@@ -158,7 +166,7 @@ bool CCraftCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 {
 	if(PPSTR(CMD, "CRAFT") == 0)
 	{
-		CraftItem(pPlayer, VoteID);
+		CraftItem(pPlayer, GetCraftByID(VoteID));
 		return true;
 	}
 
@@ -196,4 +204,12 @@ bool CCraftCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 	}
 
 	return false;
+}
+
+CCraftItem* CCraftCore::GetCraftByID(CraftIdentifier ID) const
+{
+	auto p = std::find_if(CCraftItem::Data().begin(), CCraftItem::Data().end(), [ID](const CraftPtr& p){ return p->GetID() == ID; });
+	if(p != CCraftItem::Data().end())
+		return p->get();
+	return nullptr;
 }

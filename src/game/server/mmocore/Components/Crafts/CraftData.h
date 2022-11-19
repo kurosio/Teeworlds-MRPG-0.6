@@ -7,7 +7,9 @@
 
 using CraftIdentifier = int;
 
-class CCraftItem : public MultiworldIdentifiableStaticData< std::map< int, CCraftItem > >
+using CraftPtr = std::shared_ptr< class CCraftItem >;
+
+class CCraftItem : public MultiworldIdentifiableStaticData< std::deque< CraftPtr > >
 {
 private:
 	CraftIdentifier m_ID{};
@@ -19,7 +21,13 @@ public:
 	CItemsContainer m_RequiredItem;
 
 	CCraftItem() = default;
-	CCraftItem(CraftIdentifier ID) :  m_ID(ID) {}
+
+	static CraftPtr CreateDataItem(CraftIdentifier ID)
+	{
+		CCraftItem p;
+		p.m_ID = ID;
+		return m_pData.emplace_back(std::make_shared<CCraftItem>(p));
+	}
 
 	void Init(CItemsContainer RequiredContainer, CItem Item, int Price, int WorldID)
 	{
@@ -27,7 +35,6 @@ public:
 		m_Item = std::move(Item);
 		m_Price = Price;
 		m_WorldID = WorldID;
-		CCraftItem::Data()[m_ID] = *this;
 	}
 
 	CraftIdentifier GetID() const { return m_ID; }

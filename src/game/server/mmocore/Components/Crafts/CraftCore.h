@@ -17,8 +17,9 @@ class CCraftCore : public MmoComponent
 	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
+	CCraftItem* GetCraftByID(CraftIdentifier ID) const;
 
-	void CraftItem(CPlayer* pPlayer, int CraftID) const;
+	void CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
 	void ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const;
 };
 
