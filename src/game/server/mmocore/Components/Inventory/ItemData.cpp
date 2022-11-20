@@ -254,11 +254,9 @@ bool CPlayerItem::Use(int Value)
 	else if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal)
 	{
 		if(GetPlayer()->m_aPlayerTick[PotionRecast] >= Server()->Tick())
-		{
-			int Seconds = max(1, (GetPlayer()->m_aPlayerTick[PotionRecast] - Server()->Tick()) / Server()->TickSpeed());
-			GS()->Chat(ClientID, "Wait for recast timer {INT} sec.", Seconds);
-		}
-		else if(Remove(Value, 0))
+			return true;
+
+		if(Remove(Value, 0))
 		{
 			int PotionTime = pHeal->getTime();
 			GetPlayer()->GiveEffect(pHeal->getEffect(), PotionTime);
