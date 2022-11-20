@@ -449,13 +449,6 @@ void CCharacter::HandleHookActions()
 		}
 	}
 
-	// explode hook
-	if(m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_GROUND && distance(m_Core.m_HookPos, m_Core.m_Pos) > 48.0f || m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_PLAYER)
-	{
-		if(m_pPlayer->GetItem(itExplodeImpulseHook)->IsEquipped())
-			GS()->CreateExplosion(m_Core.m_HookPos, ClientID, WEAPON_GRENADE, 1);
-	}
-
 	// spider hook
 	if(m_Core.m_HookState == HOOK_FLYING && m_pPlayer->GetItem(itSpiderHook)->IsEquipped())
 	{
@@ -465,6 +458,13 @@ void CCharacter::HandleHookActions()
 			m_Core.m_HookState = HOOK_GRABBED;
 			m_Core.m_TriggeredEvents |= COREEVENT_HOOK_ATTACH_GROUND;
 		}
+	}
+
+	// explode hook
+	if((m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_GROUND && distance(m_Core.m_HookPos, m_Core.m_Pos) > 48.0f) || m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_PLAYER)
+	{
+		if(m_pPlayer->GetItem(itExplodeImpulseHook)->IsEquipped())
+			GS()->CreateExplosion(m_Core.m_HookPos, ClientID, WEAPON_GRENADE, 1);
 	}
 }
 
