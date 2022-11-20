@@ -87,6 +87,10 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB)
 		return false;
 
+	// dissalow entered line damage
+	if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
+		return false;
+
 	// dissalow damage from bot to bot except type eidolon
 	if(pFrom->IsBot() && pFrom->GetBotType() != TYPE_BOT_EIDOLON)
 		return false;

@@ -441,8 +441,6 @@ void CCharacter::HandleHookActions()
 
 	if(pHookedPlayer && pHookedPlayer->GetCharacter())
 	{
-		vec2 HookedPlayerPos = pHookedPlayer->GetCharacter()->m_Core.m_Pos;
-
 		// poison hook :: damage increase with hammer damage
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
@@ -1211,10 +1209,6 @@ void CCharacter::HandlePlayer()
 bool CCharacter::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
-
-	// dissalow entered line damage
-	if(pFrom && GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
-		return false;
 
 	// eidolon
 	if(pFrom && pFrom->IsBot() && pFrom->GetBotType() == TYPE_BOT_EIDOLON)
