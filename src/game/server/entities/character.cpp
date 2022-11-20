@@ -1266,6 +1266,8 @@ void CCharacter::ChangePosition(vec2 NewPos)
 	GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
 	GS()->CreatePlayerSpawn(NewPos);
 	m_Core.m_Pos = NewPos;
+	m_Pos = NewPos;
+	ResetHook();
 }
 
 void CCharacter::ResetDoorPos()
