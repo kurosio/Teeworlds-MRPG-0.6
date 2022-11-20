@@ -241,6 +241,7 @@ enum
 	itEidolonMerrilee = 59,				// Eidolon
 	itPoisonHook = 64,					// Poison hook
 	itExplodeImpulseHook = 65,			// Explode hook
+	itSpiderHook = 66,					// Spider hook
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,

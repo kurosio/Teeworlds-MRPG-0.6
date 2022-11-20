@@ -437,8 +437,8 @@ void CCharacter::HandleWeapons()
 void CCharacter::HandleHookActions()
 {
 	int ClientID = m_pPlayer->GetCID();
-	CPlayer* pHookedPlayer = GetHookedPlayer();
 
+	CPlayer* pHookedPlayer = GetHookedPlayer();
 	if(pHookedPlayer && pHookedPlayer->GetCharacter())
 	{
 		// poison hook :: damage increase with hammer damage
@@ -454,6 +454,17 @@ void CCharacter::HandleHookActions()
 	{
 		if(m_pPlayer->GetItem(itExplodeImpulseHook)->IsEquipped())
 			GS()->CreateExplosion(m_Core.m_HookPos, ClientID, WEAPON_GRENADE, 1);
+	}
+
+	// spider hook
+	if(m_Core.m_HookState == HOOK_FLYING && m_pPlayer->GetItem(itSpiderHook)->IsEquipped())
+	{
+		float Distance = min((float)m_pPlayer->m_NextTuningParams.m_HookLength - m_pPlayer->m_NextTuningParams.m_HookFireSpeed, distance(GetMousePos(), m_Core.m_Pos));
+		if(distance(m_Core.m_Pos, m_Core.m_HookPos) > Distance)
+		{
+			m_Core.m_HookState = HOOK_GRABBED;
+			m_Core.m_TriggeredEvents |= COREEVENT_HOOK_ATTACH_GROUND;
+		}
 	}
 }
 
