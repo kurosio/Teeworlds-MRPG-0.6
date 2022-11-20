@@ -804,12 +804,15 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		return false;
 	}
 
-	// health recovery potion
+	// health recovery potion worker health potions
 	if(!m_pPlayer->IsBot() && m_Health <= m_pPlayer->GetStartHealth() / 3)
 	{
-		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(itPotionHealthRegen);
-		if(!m_pPlayer->IsActiveEffect("RegenHealth") && pPlayerItem->IsEquipped())
-			pPlayerItem->Use(1);
+		std::for_each(PotionTools::Heal::getList().begin(), PotionTools::Heal::getList().end(), [this](const PotionTools::Heal& p)
+		{
+			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(p.getItemID());
+			if(!m_pPlayer->IsActiveEffect(p.getEffect()) && pPlayerItem->IsEquipped())
+				pPlayerItem->Use(1);
+		});
 	}
 
 	GS()->CreateSound(m_Pos, IsCriticalDamage ? (int)SOUND_PLAYER_PAIN_LONG : (int)SOUND_PLAYER_PAIN_SHORT);
@@ -1096,16 +1099,18 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 			const int PoisonSize = translate_to_percent_rest(m_pPlayer->GetStartHealth(), 3);
 			TakeDamage(vec2(0, 0), PoisonSize, m_pPlayer->GetCID(), WEAPON_SELF);
 		}
-		if(m_pPlayer->IsActiveEffect("RegenHealth"))
-		{
-			const int RestoreHealth = translate_to_percent_rest(m_pPlayer->GetStartHealth(), 3);
-			IncreaseHealth(RestoreHealth);
-		}
 		if(m_pPlayer->IsActiveEffect("RegenMana"))
 		{
 			const int RestoreMana = translate_to_percent_rest(m_pPlayer->GetStartMana(), 5);
 			IncreaseMana(RestoreMana);
 		}
+
+		// worker health potions
+		std::for_each(PotionTools::Heal::getList().begin(), PotionTools::Heal::getList().end(), [this](const PotionTools::Heal& p)
+		{
+			if(m_pPlayer->IsActiveEffect(p.getEffect()))
+				IncreaseHealth(p.getRecovery());
+		});
 	}
 }
 

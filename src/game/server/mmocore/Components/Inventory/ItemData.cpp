@@ -153,14 +153,8 @@ bool CPlayerItem::Use(int Value)
 		return false;
 
 	const int ClientID = GetPlayer()->GetCID();
-	// potion health regen
-	if(m_ID == itPotionHealthRegen && Remove(Value, 0))
-	{
-		GetPlayer()->GiveEffect("RegenHealth", 15);
-		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
-	}
 	// potion mana regen
-	else if(m_ID == itPotionManaRegen && Remove(Value, 0))
+	if(m_ID == itPotionManaRegen && Remove(Value, 0))
 	{
 		GetPlayer()->GiveEffect("RegenMana", 15);
 		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
@@ -248,6 +242,13 @@ bool CPlayerItem::Use(int Value)
 		Info()->GetRandomBox()->start(GetPlayer(), 5, this, Value);
 	}
 
+	// potion health regen
+	else if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal && Remove(Value, 0))
+	{
+		GetPlayer()->GiveEffect(pHeal->getEffect(), pHeal->getTime());
+		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
+		GS()->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 140.0f), vec2(), 70, pHeal->getEffect());
+	}
 	// Random home decor
 	//else if(m_ItemID == itRandomHomeDecoration)
 	//{

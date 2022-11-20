@@ -1,5 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <any>
 #ifndef GAME_ENUM_CONTEXT_H
 #define GAME_ENUM_CONTEXT_H
 
@@ -223,7 +224,7 @@ enum
 	itEliteDecoNinja = 12,				// Elite Ninja Decoration
 	itDecoHealth = 13,					// Decoration Heart
 	itPotionManaRegen = 14,				// Mana regeneration potion
-	itPotionHealthRegen = 15,			// Health regeneration potion
+	itTinyHealthPotion = 15,			// Tiny health potion
 	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
 	itLittleBagGold = 17,				// Gives 10-50 gold
 	itPotionResurrection = 18,			// Resurrection potion
@@ -254,6 +255,43 @@ enum
 	// max mails for page
 	MAILLETTER_MAX_CAPACITY = 30,
 };
+
+// todo use template class 
+class PotionTools
+{
+public:
+	class Heal
+	{
+		int m_ItemID{};
+		std::string m_Effect{};
+		int m_Recovery{};
+		int m_Time{};
+
+	public:
+		Heal() = delete;
+		Heal(int ItemID, std::string Effect, int Recovery, int Time) : m_ItemID(ItemID), m_Effect(Effect), m_Recovery(Recovery), m_Time(Time) {}
+
+		static const Heal* getHealInfo(int ItemID)
+		{
+			auto p = std::find_if(m_PotionHealthInfo.begin(), m_PotionHealthInfo.end(), [ItemID](const Heal& p){ return p.m_ItemID == ItemID; });
+			return p != m_PotionHealthInfo.end() ? p : nullptr;
+		}
+		static std::initializer_list<Heal>& getList() { return m_PotionHealthInfo; }
+
+		int getItemID() const { return m_ItemID; }
+		const char* getEffect() const { return m_Effect.c_str(); }
+		int getRecovery() const { return m_Recovery; }
+		int getTime() const { return m_Time; }
+	};
+
+private:
+	inline static std::initializer_list<Heal> m_PotionHealthInfo
+	{
+		{ itTinyHealthPotion, "TinyHP", 7, 15 }
+	};
+};
+
+
 
 enum GuildAccess
 {
