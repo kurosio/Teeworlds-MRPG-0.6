@@ -198,7 +198,7 @@ int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *p
 	return 0;
 }
 
-bool CCollision::IntersectLineWithInvisible(vec2 Pos0, vec2 Pos1, vec2* pOutCollision, vec2* pOutBeforeCollision) const
+bool CCollision::IntersectLineColFlag(vec2 Pos0, vec2 Pos1, vec2* pOutCollision, vec2* pOutBeforeCollision, int ColFlag) const
 {
 	const int Tile0X = round_to_int(Pos0.x) / 32;
 	const int Tile0Y = round_to_int(Pos0.y) / 32;
@@ -231,7 +231,7 @@ bool CCollision::IntersectLineWithInvisible(vec2 Pos0, vec2 Pos1, vec2* pOutColl
 
 	while(CurTileX != Tile1X || CurTileY != Tile1Y)
 	{
-		if(IsTile(CurTileX * 32, CurTileY * 32, COLFLAG_SOLID) || IsTile(CurTileX*32, CurTileY*32, COLFLAG_DISALLOW_MOVE))
+		if(IsTile(CurTileX * 32, CurTileY * 32, ColFlag))
 			break;
 		if(CurTileY != Tile1Y && (CurTileX == Tile1X || Error > 0))
 		{
@@ -246,7 +246,7 @@ bool CCollision::IntersectLineWithInvisible(vec2 Pos0, vec2 Pos1, vec2* pOutColl
 			Vertical = true;
 		}
 	}
-	if(IsTile(CurTileX * 32, CurTileY * 32, COLFLAG_SOLID) || IsTile(CurTileX * 32, CurTileY * 32, COLFLAG_DISALLOW_MOVE))
+	if(IsTile(CurTileX * 32, CurTileY * 32, ColFlag))
 	{
 		if(CurTileX != Tile0X || CurTileY != Tile0Y)
 		{

@@ -26,6 +26,7 @@ class CCharacter : public CEntity
 	void FireWeapon();
 	void HandleWeaponSwitch();
 	void DoWeaponSwitch();
+	void HandleHookActions();
 	bool InteractiveHammer(vec2 Direction, vec2 ProjStartPos);
 	//void InteractiveGun(vec2 Direction, vec2 ProjStartPos);
 	//void InteractiveShotgun(vec2 Direction, vec2 ProjStartPos);
@@ -93,6 +94,7 @@ public:
 	void ResetInput();
 	bool IsGrounded() const;
 	bool IsCollisionFlag(int Flag) const;
+	CPlayer* GetHookedPlayer() const;
 
 	bool IsAllowedPVP(int FromID) const;
 	bool IsAlive() const { return m_Alive; }

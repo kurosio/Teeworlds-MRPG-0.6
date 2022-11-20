@@ -239,6 +239,8 @@ enum
 	itEidolonOtohime = 57,				// Eidolon
 	itRandomRelicsBox = 58,				// Random Relics box
 	itEidolonMerrilee = 59,				// Eidolon
+	itPoisonHook = 64,					// Poison hook
+	itExplodeImpulseHook = 65,			// Explode hook
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,

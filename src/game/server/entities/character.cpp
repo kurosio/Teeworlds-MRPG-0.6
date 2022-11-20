@@ -128,6 +128,13 @@ bool CCharacter::IsCollisionFlag(int Flag) const
 	return false;
 }
 
+CPlayer* CCharacter::GetHookedPlayer() const
+{
+	if(m_Core.m_HookedPlayer > 0 && m_Core.m_HookedPlayer < MAX_CLIENTS)
+		return GS()->m_apPlayers[m_Core.m_HookedPlayer];
+	return nullptr;
+}
+
 void CCharacter::DoWeaponSwitch()
 {
 	// make sure we can switch
@@ -423,7 +430,34 @@ void CCharacter::HandleWeapons()
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 		}
 	}
+
+	HandleHookActions();
 }
+
+void CCharacter::HandleHookActions()
+{
+	CPlayer* pHookedPlayer = GetHookedPlayer();
+	if(!pHookedPlayer || !pHookedPlayer->GetCharacter())
+		return;
+
+	int ClientID = m_pPlayer->GetCID();
+	vec2 HookedPlayerPos = pHookedPlayer->GetCharacter()->m_Core.m_Pos;
+
+	if(Server()->Tick() % (Server()->TickSpeed() - 20) == 0)
+	{
+		// poison hook :: damage increase with hammer damage
+		if(m_pPlayer->GetItem(itPoisonHook)->IsEquipped())
+			pHookedPlayer->GetCharacter()->TakeDamage({}, 1, ClientID, WEAPON_HAMMER);
+	}
+
+	if(Server()->Tick() % Server()->TickSpeed() == 0)
+	{
+		// explode hook
+		if(m_pPlayer->GetItem(itExplodeImpulseHook)->IsEquipped())
+			GS()->CreateExplosion(HookedPlayerPos, ClientID, WEAPON_GRENADE, 1);
+	}
+}
+
 
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
@@ -1176,6 +1210,10 @@ void CCharacter::HandlePlayer()
 bool CCharacter::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
+
+	// dissalow entered line damage
+	if(pFrom && GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
+		return false;
 
 	// eidolon
 	if(pFrom && pFrom->IsBot() && pFrom->GetBotType() == TYPE_BOT_EIDOLON)
