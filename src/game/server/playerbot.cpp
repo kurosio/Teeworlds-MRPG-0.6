@@ -51,14 +51,9 @@ void CPlayerBot::Tick()
 			if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && !m_BotActive)
 			{
 				vec2 OwnerPos = pOwner->GetCharacter()->m_Core.m_Pos;
-				static constexpr int Directions = 4;
-				static vec2 Positions[Directions] = { vec2(-48.0f, 0.0f), vec2(0.0f, -48.0f), vec2(48.0f, 0.0f), vec2(0.0f, 48.0f) };
-				vec2* Pos = std::find_if(std::begin(Positions), std::end(Positions), [&OwnerPos, this](const vec2& p){ return !GS()->Collision()->CheckPoint(OwnerPos + p); });
-				vec2 NewPos = OwnerPos + (Pos ? *Pos : vec2(0,0));
-
 				m_pCharacter->ResetInput();
 				m_pCharacter->m_DoorHit = false;
-				m_pCharacter->ChangePosition(NewPos);
+				m_pCharacter->ChangePosition(OwnerPos);
 				m_BotActive = true;
 			}
 		}
