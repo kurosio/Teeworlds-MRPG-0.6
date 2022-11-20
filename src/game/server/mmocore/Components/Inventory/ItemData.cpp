@@ -113,7 +113,8 @@ bool CPlayerItem::Remove(int Value, int Settings)
 	if(Value <= 0 || !GetPlayer())
 		return false;
 
-	if(IsEquipped())
+	// unequip if this is the last item
+	if(m_Value <= Value && IsEquipped())
 		Equip();
 
 	const int Code = GS()->Mmo()->Item()->RemoveItem(GetPlayer(), m_ID, Value, Settings);
