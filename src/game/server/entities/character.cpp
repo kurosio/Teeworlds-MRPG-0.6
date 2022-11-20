@@ -454,7 +454,7 @@ void CCharacter::HandleHookActions()
 	{
 		// explode hook
 		if(m_pPlayer->GetItem(itExplodeImpulseHook)->IsEquipped())
-			GS()->CreateExplosion(HookedPlayerPos, ClientID, WEAPON_GRENADE, 1);
+			GS()->CreateExplosion(HookedPlayerPos, ClientID, WEAPON_GRENADE, g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage);
 	}
 }
 
