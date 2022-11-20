@@ -436,25 +436,26 @@ void CCharacter::HandleWeapons()
 
 void CCharacter::HandleHookActions()
 {
-	CPlayer* pHookedPlayer = GetHookedPlayer();
-	if(!pHookedPlayer || !pHookedPlayer->GetCharacter())
-		return;
-
 	int ClientID = m_pPlayer->GetCID();
-	vec2 HookedPlayerPos = pHookedPlayer->GetCharacter()->m_Core.m_Pos;
+	CPlayer* pHookedPlayer = GetHookedPlayer();
 
-	if(Server()->Tick() % (Server()->TickSpeed() - 20) == 0)
+	if(pHookedPlayer && pHookedPlayer->GetCharacter())
 	{
+		vec2 HookedPlayerPos = pHookedPlayer->GetCharacter()->m_Core.m_Pos;
+
 		// poison hook :: damage increase with hammer damage
-		if(m_pPlayer->GetItem(itPoisonHook)->IsEquipped())
-			pHookedPlayer->GetCharacter()->TakeDamage({}, 1, ClientID, WEAPON_HAMMER);
+		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
+		{
+			if(m_pPlayer->GetItem(itPoisonHook)->IsEquipped())
+				pHookedPlayer->GetCharacter()->TakeDamage({}, 1, ClientID, WEAPON_HAMMER);
+		}
 	}
 
-	if(Server()->Tick() % Server()->TickSpeed() == 0)
+	// explode hook
+	if(m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_GROUND && distance(m_Core.m_HookPos, m_Core.m_Pos) > 48.0f || m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_PLAYER)
 	{
-		// explode hook
 		if(m_pPlayer->GetItem(itExplodeImpulseHook)->IsEquipped())
-			GS()->CreateExplosion(HookedPlayerPos, ClientID, WEAPON_GRENADE, g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage);
+			GS()->CreateExplosion(m_Core.m_HookPos, ClientID, WEAPON_GRENADE, 1);
 	}
 }
 
