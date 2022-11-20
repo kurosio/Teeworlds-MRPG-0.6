@@ -253,16 +253,16 @@ bool CPlayerItem::Use(int Value)
 	// potion health regen
 	else if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal)
 	{
-		if(GetPlayer()->m_aPlayerTick[PotionHealthRecast] >= Server()->Tick())
+		if(GetPlayer()->m_aPlayerTick[PotionRecast] >= Server()->Tick())
 		{
-			int Seconds = max(1, (GetPlayer()->m_aPlayerTick[PotionHealthRecast] - Server()->Tick()) / Server()->TickSpeed());
+			int Seconds = max(1, (GetPlayer()->m_aPlayerTick[PotionRecast] - Server()->Tick()) / Server()->TickSpeed());
 			GS()->Chat(ClientID, "Wait for recast timer {INT} sec.", Seconds);
 		}
 		else if(Remove(Value, 0))
 		{
 			int PotionTime = pHeal->getTime();
 			GetPlayer()->GiveEffect(pHeal->getEffect(), PotionTime);
-			GetPlayer()->m_aPlayerTick[PotionHealthRecast] = Server()->Tick() + ((PotionTime + HP_POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
+			GetPlayer()->m_aPlayerTick[PotionRecast] = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 
 			GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
 			GS()->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 140.0f), vec2(), 70, pHeal->getEffect());

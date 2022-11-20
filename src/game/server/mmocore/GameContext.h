@@ -52,7 +52,7 @@ enum TickState
 	LastVoteTry,
 	LastDialog,
 	LastRandomBox,
-	PotionHealthRecast,
+	PotionRecast,
 	NUM_TICK,
 };
 
@@ -207,7 +207,7 @@ enum
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
 	MAX_INBOX_LIST = 30,					// maximum number of emails what is displayed
 	STATS_MAX_FOR_ITEM = 2,					// maximum number of stats per item
-	HP_POTION_RECAST_APPEND_TIME = 15,		// recast time for potion health in seconds
+	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
 
 	// settings items
 	itModePVP = 22,						// PVP mode setting

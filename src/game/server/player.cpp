@@ -557,8 +557,15 @@ void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAp
 	const int Mana = m_pCharacter->Mana();
 	const int Gold = GetItem(itGold)->GetValue();
 
-	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %d\n\n\n\n\n\n\n\n\n\n\n\n%s", 
-		Acc().m_Level, Level.get(), Health, MaximumHealth, Mana, MaximumMana, Gold, pAppendStr);
+	char aRecastInfo[32]{};
+	if(m_aPlayerTick[PotionRecast] > Server()->Tick())
+	{
+		int Seconds = max(0, (m_aPlayerTick[PotionRecast] - Server()->Tick()) / Server()->TickSpeed());
+		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
+	}
+
+	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %d\n%s\n\n\n\n\n\n\n\n\n\n\n%s", 
+		Acc().m_Level, Level.get(), Health, MaximumHealth, Mana, MaximumMana, Gold, aRecastInfo, pAppendStr);
 	for(int space = 150, c = str_length(pBuffer); c < Size && space; c++, space--)
 		pBuffer[c] = ' ';
 }

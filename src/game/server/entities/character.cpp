@@ -805,7 +805,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	}
 
 	// health recovery potion worker health potions
-	if(m_pPlayer->m_aPlayerTick[PotionHealthRecast] < Server()->Tick() && !m_pPlayer->IsBot() && m_Health <= m_pPlayer->GetStartHealth() / 3)
+	if(m_pPlayer->m_aPlayerTick[PotionRecast] < Server()->Tick() && !m_pPlayer->IsBot() && m_Health <= m_pPlayer->GetStartHealth() / 3)
 	{
 		std::for_each(PotionTools::Heal::getList().begin(), PotionTools::Heal::getList().end(), [this](const PotionTools::Heal& p)
 		{
