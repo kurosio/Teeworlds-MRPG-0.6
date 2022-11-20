@@ -158,6 +158,7 @@ bool CPlayerItem::Use(int Value)
 	{
 		GetPlayer()->GiveEffect("RegenMana", 15);
 		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
+		return true;
 	}
 	// potion resurrection
 	else if(m_ID == itPotionResurrection && Remove(Value, 0))
@@ -165,11 +166,13 @@ bool CPlayerItem::Use(int Value)
 		GetPlayer()->GetTempData().m_TempSafeSpawn = false;
 		GetPlayer()->GetTempData().m_TempHealth = GetPlayer()->GetStartHealth();
 		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
+		return true;
 	}
 	// ticket discount craft
 	else if(m_ID == itTicketDiscountCraft)
 	{
 		GS()->Chat(ClientID, "This item can only be used (Auto Use, and then craft).");
+		return true;
 	}
 	// survial capsule experience
 	else if(m_ID == itCapsuleSurvivalExperience && Remove(Value, 0))
@@ -177,6 +180,7 @@ bool CPlayerItem::Use(int Value)
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->AddExp(Getting);
+		return true;
 	}
 	// little bag gold
 	else if(m_ID == itLittleBagGold && Remove(Value, 0))
@@ -184,6 +188,7 @@ bool CPlayerItem::Use(int Value)
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->AddMoney(Getting);
+		return true;
 	}
 	// ticket reset for class stats
 	else if(m_ID == itTicketResetClassStats && Remove(Value, 0))
@@ -205,6 +210,7 @@ bool CPlayerItem::Use(int Value)
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
 		GetPlayer()->Acc().m_Upgrade += BackUpgrades;
 		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
+		return true;
 	}
 	// ticket reset for weapons stats
 	else if(m_ID == itTicketResetWeaponStats && Remove(Value, 0))
@@ -235,30 +241,35 @@ bool CPlayerItem::Use(int Value)
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
 		GetPlayer()->Acc().m_Upgrade += BackUpgrades;
 		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
+		return true;
 	}
 
 	else if(Info()->GetRandomBox())
 	{
 		Info()->GetRandomBox()->start(GetPlayer(), 5, this, Value);
+		return true;
 	}
 
 	// potion health regen
-	else if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal && Remove(Value, 0))
+	else if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal)
 	{
-		GetPlayer()->GiveEffect(pHeal->getEffect(), pHeal->getTime());
-		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
-		GS()->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 140.0f), vec2(), 70, pHeal->getEffect());
+		if(GetPlayer()->m_aPlayerTick[PotionHealthRecast] >= Server()->Tick())
+		{
+			int Seconds = max(1, (GetPlayer()->m_aPlayerTick[PotionHealthRecast] - Server()->Tick()) / Server()->TickSpeed());
+			GS()->Chat(ClientID, "Wait for recast timer {INT} sec.", Seconds);
+		}
+		else if(Remove(Value, 0))
+		{
+			int PotionTime = pHeal->getTime();
+			GetPlayer()->GiveEffect(pHeal->getEffect(), PotionTime);
+			GetPlayer()->m_aPlayerTick[PotionHealthRecast] = Server()->Tick() + ((PotionTime + HP_POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
+
+			GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
+			GS()->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 140.0f), vec2(), 70, pHeal->getEffect());
+		}
+		return true;
 	}
-	// Random home decor
-	//else if(m_ItemID == itRandomHomeDecoration)
-	//{
-	//	CRandomBox({
-	//		{ itGold, 10, 50.0f },
-	//		{ itDecoArmor, 1, 30.0f },
-	//		{ itEliteDecoNinja, 1, 10.0f },
-	//		{ itEliteDecoHealth, 1, 5.0f }
-	//	}).start(GetPlayer(), 5, this, Value);
-	//}
+
 	return true;
 }
 
