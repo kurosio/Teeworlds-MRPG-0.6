@@ -51,7 +51,6 @@ void CPlayerBot::Tick()
 			if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && !m_BotActive)
 			{
 				vec2 OwnerPos = pOwner->GetCharacter()->m_Core.m_Pos;
-				m_pCharacter->ResetInput();
 				m_pCharacter->m_DoorHit = false;
 				m_pCharacter->ChangePosition(OwnerPos);
 				m_BotActive = true;
