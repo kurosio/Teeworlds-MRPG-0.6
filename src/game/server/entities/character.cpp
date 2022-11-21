@@ -448,15 +448,17 @@ void CCharacter::HandleHookActions()
 				pHookedPlayer->GetCharacter()->TakeDamage({}, 1, ClientID, WEAPON_HAMMER);
 		}
 	}
-
-	// spider hook
-	if(m_Core.m_HookState == HOOK_FLYING && m_pPlayer->GetItem(itSpiderHook)->IsEquipped())
+	else
 	{
-		float Distance = min((float)m_pPlayer->m_NextTuningParams.m_HookLength - m_pPlayer->m_NextTuningParams.m_HookFireSpeed, distance(GetMousePos(), m_Core.m_Pos));
-		if(distance(m_Core.m_Pos, m_Core.m_HookPos) > Distance)
+		// spider hook
+		if(m_Core.m_HookState == HOOK_FLYING && m_pPlayer->GetItem(itSpiderHook)->IsEquipped())
 		{
-			m_Core.m_HookState = HOOK_GRABBED;
-			m_Core.m_TriggeredEvents |= COREEVENT_HOOK_ATTACH_GROUND;
+			float Distance = min((float)m_pPlayer->m_NextTuningParams.m_HookLength - m_pPlayer->m_NextTuningParams.m_HookFireSpeed, distance(GetMousePos(), m_Core.m_Pos));
+			if(distance(m_Core.m_Pos, m_Core.m_HookPos) > Distance)
+			{
+				m_Core.m_HookState = HOOK_GRABBED;
+				m_Core.m_TriggeredEvents |= COREEVENT_HOOK_ATTACH_GROUND;
+			}
 		}
 	}
 
