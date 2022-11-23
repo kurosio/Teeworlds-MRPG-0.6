@@ -1008,6 +1008,7 @@ void CPlayer::FormatDialogText(int DataBotID, const char *pText) // TODO: perfor
 	str_replace(m_aFormatDialogText, "<talked>", DataBotInfo::ms_aDataBot[DataBotID].m_aNameBot);
 	str_replace(m_aFormatDialogText, "<time> ", GS()->Server()->GetStringTypeDay());
 	str_replace(m_aFormatDialogText, "<here>", GS()->Server()->GetWorldName(GS()->GetWorldID()));
+	str_replace(m_aFormatDialogText, "<eidolon>", GetEidolon() ? DataBotInfo::ms_aDataBot[GetEidolon()->GetBotID()].m_aNameBot : "Eidolon");
 }
 
 void CPlayer::ClearDialogText()

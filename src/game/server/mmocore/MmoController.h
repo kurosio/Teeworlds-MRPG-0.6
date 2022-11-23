@@ -44,7 +44,7 @@ class MmoController
 	class CHouseCore* m_pHouseJob;
 	class CMailBoxCore* m_pMailBoxJob;
 	class CSkillsCore* m_pSkillJob;
-	class CWorldSwapCore* m_pWorldSwapJob;
+	class CWorldDataCore* m_pWorldSwapJob;
 
 public:
 	explicit MmoController(CGS *pGameServer);
@@ -67,7 +67,7 @@ public:
 	CMailBoxCore* Inbox() const { return m_pMailBoxJob; }
 	GuildCore* Member() const { return m_pGuildJob; }
 	CSkillsCore* Skills() const { return m_pSkillJob; }
-	CWorldSwapCore *WorldSwap() const { return m_pWorldSwapJob; }
+	CWorldDataCore *WorldSwap() const { return m_pWorldSwapJob; }
 
 	// global systems
 	void OnTick();

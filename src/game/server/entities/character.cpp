@@ -13,7 +13,7 @@
 #include <game/server/mmocore/Components/Guilds/GuildCore.h>
 #include <game/server/mmocore/Components/Houses/HouseCore.h>
 #include <game/server/mmocore/Components/Quests/QuestCore.h>
-#include <game/server/mmocore/Components/Worlds/WorldSwapCore.h>
+#include <game/server/mmocore/Components/Worlds/WorldData.h>
 
 #include <game/server/mmocore/GameEntities/jobitems.h>
 #include <game/server/mmocore/GameEntities/snapfull.h>
@@ -73,6 +73,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_Core.m_CollisionDisabled = false;
 	m_Event = TILE_CLEAR_EVENTS;
 	m_Core.m_WorldID = m_pPlayer->GetPlayerWorldID();
+
 	if(!m_pPlayer->IsBot())
 	{
 		m_pPlayer->m_MoodState = m_pPlayer->GetMoodState();
@@ -563,7 +564,7 @@ void CCharacter::ResetInput()
 
 void CCharacter::Tick()
 {
-	if(!IsAlive())
+	if(!m_Alive)
 		return;
 
 	// check safe area
@@ -589,7 +590,7 @@ void CCharacter::Tick()
 	HandleTilesets(&Index);
 	if(GetHelper()->TileEnter(Index, TILE_WORLD_SWAP))
 	{
-		GS()->Mmo()->WorldSwap()->ChangeWorld(m_pPlayer, m_Core.m_Pos);
+		GS()->GetWorldData()->Move(m_pPlayer);
 		return;
 	}
 	else if(GetHelper()->TileExit(Index, TILE_WORLD_SWAP)) {}
@@ -617,6 +618,9 @@ void CCharacter::Tick()
 
 void CCharacter::TickDeferred()
 {
+	if(!m_Alive)
+		return;
+
 	// door reset
 	if(m_DoorHit)
 	{
@@ -995,9 +999,6 @@ void CCharacter::PostSnap()
 
 void CCharacter::HandleTilesets(int* pIndex)
 {
-	if(!m_Alive)
-		return;
-
 	// get index tileset char pos component items
 	const int Tile = GS()->Collision()->GetParseTilesAt(m_Core.m_Pos.x, m_Core.m_Pos.y);
 	if(pIndex)
@@ -1278,7 +1279,8 @@ bool CCharacter::CheckAllowedWorld() const
 {
 	if(Server()->Tick() % Server()->TickSpeed() * 3 == 0 && m_pPlayer->IsAuthed())
 	{
-		if(const int NecessaryQuest = GS()->Mmo()->WorldSwap()->GetNecessaryQuest(); NecessaryQuest > 0 && !m_pPlayer->GetQuest(NecessaryQuest).IsComplected())
+		CQuestDataInfo* pQuestInfo = GS()->GetWorldData()->GetRequiredQuest();
+		if(pQuestInfo && !m_pPlayer->GetQuest(pQuestInfo->m_QuestID).IsComplected())
 		{
 			const int CheckHouseID = GS()->Mmo()->Member()->GetPosHouseID(m_Core.m_Pos);
 			if(CheckHouseID <= 0)

@@ -76,6 +76,7 @@ public:
 	CQuestDataInfo &GetQuestInfo(int QuestID) const;
 	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;
 	class CWarehouse* GetWarehouse(int ID) const;
+	class CWorldData* GetWorldData(int ID = -1) const;
 
 	/* #########################################################################
 		EVENTS

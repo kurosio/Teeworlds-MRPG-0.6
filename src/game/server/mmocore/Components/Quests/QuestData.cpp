@@ -2,11 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "QuestCore.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/mmocore/Components/Dungeons/DungeonCore.h>
-#include <game/server/mmocore/Components/Worlds/WorldSwapCore.h>
+#include <game/server/mmocore/Components/Worlds/WorldCore.h>
 
 CQuestDataInfo& CQuestData::Info() const { return CQuestDataInfo::ms_aDataQuests[m_QuestID]; }
 std::string CQuestData::GetJsonFileName() const { return Info().GetJsonFileName(m_pPlayer->Acc().m_UserID); }

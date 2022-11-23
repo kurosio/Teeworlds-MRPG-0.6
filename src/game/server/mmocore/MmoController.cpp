@@ -21,7 +21,7 @@
 #include "Components/Quests/QuestCore.h"
 #include "Components/Skills/SkillsCore.h"
 #include "Components/Warehouse/WarehouseCore.h"
-#include "Components/Worlds/WorldSwapCore.h"
+#include "Components/Worlds/WorldCore.h"
 
 
 MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
@@ -35,7 +35,7 @@ MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 	m_Components.add(m_pQuest = new QuestCore());
 	m_Components.add(m_pDungeonJob = new DungeonCore());
 	m_Components.add(new CAetherCore());
-	m_Components.add(m_pWorldSwapJob = new CWorldSwapCore());
+	m_Components.add(m_pWorldSwapJob = new CWorldDataCore());
 	m_Components.add(m_pHouseJob = new CHouseCore());
 	m_Components.add(m_pGuildJob = new GuildCore());
 	m_Components.add(m_pSkillJob = new CSkillsCore());

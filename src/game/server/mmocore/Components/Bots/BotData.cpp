@@ -30,6 +30,13 @@ void CDialog::Init(int BotID, std::string DialogueData, int Emote, bool ActionSt
 			pVariant->Init("" /* dynamic data */);
 			pVariant->m_Flag |= TALKED_FLAG_SAYS_PLAYER;
 		}
+		else if(pChecking = str_find_nocase(Text.c_str(), "[eidolon]"); pChecking != nullptr)
+		{
+			Text.erase(0, size + 10);
+
+			pVariant->Init("" /* dynamic data */);
+			pVariant->m_Flag |= TALKED_FLAG_SAYS_EIDOLON;
+		}
 		else
 		{
 			pVariant->Init(DataBotInfo::ms_aDataBot[BotID].m_aNameBot);

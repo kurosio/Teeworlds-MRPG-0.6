@@ -33,6 +33,7 @@
 #include <cstdarg>
 
 #include "mmocore/Components/Warehouse/WarehouseData.h"
+#include "mmocore/Components/Worlds/WorldData.h"
 
 // static data that have the same value in different objects
 std::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
@@ -151,6 +152,15 @@ CWarehouse* CGS::GetWarehouse(int ID) const
 	dbg_assert(CWarehouse::Data().find(ID) != CWarehouse::Data().end(), "invalid referring to the CWarehouse");
 
 	return &CWarehouse::Data()[ID];
+}
+
+CWorldData* CGS::GetWorldData(int ID) const
+{
+	int WorldID = ID == -1 ? GetWorldID() : ID;
+	auto p = std::find_if(CWorldData::Data().begin(), CWorldData::Data().end(), [WorldID](const WorldDataPtr& p){return WorldID == p->GetID(); });
+	dbg_assert(p != CWorldData::Data().end(), "invalid referring to the CWorldData");
+
+	return (*p).get();
 }
 
 /* #########################################################################

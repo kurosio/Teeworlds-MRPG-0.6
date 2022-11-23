@@ -2,32 +2,25 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_COMPONENT_WORLDSWAP_CORE_H
 #define GAME_SERVER_COMPONENT_WORLDSWAP_CORE_H
+
 #include <game/server/mmocore/MmoComponent.h>
 
-#include <game/server/mmocore/Components/Bots/BotData.h>
-#include "WorldSwapData.h"
+#include "WorldData.h"
 
-class CWorldSwapCore : public MmoComponent
+class CWorldDataCore : public MmoComponent
 {
-	~CWorldSwapCore() override
+	~CWorldDataCore() override
 	{
-		CWorldSwapData::ms_aWorldSwap.clear();
+		CWorldData::Data().clear();
 		CWorldSwapPosition::ms_aWorldPositionLogic.clear();
 	};
 
-	void OnInit() override;
 	void OnInitWorld(const char* pWhereLocalWorld) override;
-	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
 
 public:
 	int GetWorldType() const;
-	int GetNecessaryQuest(int WorldID = -1) const;
-	vec2 GetPositionQuestBot(int ClientID, const QuestBotInfo& QuestBot) const;
+	void FindPosition(int WorldID, vec2 Pos, vec2* OutPos);
 	void CheckQuestingOpened(CPlayer* pPlayer, int QuestID) const;
-	bool ChangeWorld(CPlayer* pPlayer, vec2 Pos);
-
-private:
-	int GetID(vec2 Pos) const;
 };
 
 #endif

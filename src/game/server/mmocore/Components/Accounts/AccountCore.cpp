@@ -8,7 +8,7 @@
 #include <game/server/mmocore/Components/Dungeons/DungeonCore.h>
 #include <game/server/mmocore/Components/Mails/MailBoxCore.h>
 #include <game/server/mmocore/Components/Quests/QuestCore.h>
-#include <game/server/mmocore/Components/Worlds/WorldSwapCore.h>
+#include <game/server/mmocore/Components/Worlds/WorldData.h>
 
 #include <base/hash_ctxt.h>
 
@@ -16,9 +16,8 @@ int CAccountCore::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 {
 	const auto pWorldIterator = std::find_if(pPlayer->Acc().m_aHistoryWorld.begin(), pPlayer->Acc().m_aHistoryWorld.end(), [=](int WorldID)
 	{
-		const int QuestToUnlock = Job()->WorldSwap()->GetNecessaryQuest(WorldID);
-		const bool IsValidQuest = Job()->Quest()->IsValidQuest(QuestToUnlock);
-		return !Job()->Dungeon()->IsDungeonWorld(WorldID) && ((IsValidQuest && pPlayer->GetQuest(QuestToUnlock).IsComplected()) || !IsValidQuest);
+		CQuestDataInfo* pQuestInfo = GS()->GetWorldData(WorldID)->GetRequiredQuest();
+		return !Job()->Dungeon()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->m_QuestID).IsComplected()) || !pQuestInfo);
 	});
 	return pWorldIterator != pPlayer->Acc().m_aHistoryWorld.end() ? *pWorldIterator : MAIN_WORLD_ID;
 }

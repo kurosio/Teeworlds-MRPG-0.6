@@ -97,7 +97,7 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_EventJsonData = pRes->getString("EventData").c_str();
 		sscanf(pRes->getString("Amount").c_str(), "|%d|%d|%d|%d|%d|%d|",
 			&QuestBot.m_aItemSearchValue[0], &QuestBot.m_aItemSearchValue[1], &QuestBot.m_aItemGivesValue[0], &QuestBot.m_aItemGivesValue[1], &QuestBot.m_aNeedMobValue[0], &QuestBot.m_aNeedMobValue[1]);
-
+		QuestBot.m_HasAction = false;
 
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
 		JsonTools::parseFromString(DialogJsonStr, [&](nlohmann::json& pJson)
@@ -273,7 +273,9 @@ void CBotCore::DialogBotStepNPC(CPlayer* pPlayer, int MobID, int Progress, const
 	CDialog::VariantText* pVariant = NpcBotInfo::ms_aNpcBot[MobID].m_aDialogs[Progress].GetVariant();
 
 	const char* TalkedNick;
-	if(pVariant->GetSaysName() == nullptr)
+	if(pVariant->m_Flag & TALKED_FLAG_SAYS_EIDOLON)
+		TalkedNick = pPlayer->GetEidolon() ? DataBotInfo::ms_aDataBot[pPlayer->GetEidolon()->GetBotID()].m_aNameBot : "Eidolon";
+	else if(pVariant->GetSaysName() == nullptr)
 		TalkedNick = Server()->ClientName(ClientID);
 	else
 		TalkedNick = pVariant->GetSaysName();
@@ -301,7 +303,9 @@ void CBotCore::DialogBotStepQuest(CPlayer* pPlayer, int MobID, int Progress, boo
 
 	const char* TalkedNick = "\0";
 	const int QuestID = QuestBotInfo::ms_aQuestBot[MobID].m_QuestID;
-	if(pVariant->GetSaysName() == nullptr)
+	if(pVariant->m_Flag & TALKED_FLAG_SAYS_EIDOLON)
+		TalkedNick = pPlayer->GetEidolon() ? DataBotInfo::ms_aDataBot[pPlayer->GetEidolon()->GetBotID()].m_aNameBot : "Eidolon";
+	else if(pVariant->GetSaysName() == nullptr)
 		TalkedNick = Server()->ClientName(ClientID);
 	else
 		TalkedNick = pVariant->GetSaysName();
