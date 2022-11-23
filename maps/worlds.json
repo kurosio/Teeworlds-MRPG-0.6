@@ -18,5 +18,13 @@
 	{
 		"name": "Abandoned mine",
 		"path": "dungeons/Abandoned mine.map"
+	},	
+	{
+		"name": "Helonia Coast",
+		"path": "chapter-2/Helonia Coast.map"
+	},	
+	{
+		"name": "Helonia region Azuria",
+		"path": "chapter-2/Azuria.map"
 	}
 ]}
