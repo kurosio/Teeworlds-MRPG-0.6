@@ -239,7 +239,6 @@ public:
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 
 	bool IsPlayersNearby(vec2 Pos, float Distance) const;
-	void SetRespawnWorld(int WorldID) { m_RespawnWorldID = WorldID; }
 	int GetRespawnWorld() const { return m_RespawnWorldID; }
 
 private:

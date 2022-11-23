@@ -732,7 +732,6 @@ void CGS::OnInit(int WorldID)
 	m_World.SetGameServer(this);
 	m_Events.SetGameServer(this);
 	m_WorldID = WorldID;
-	m_RespawnWorldID = -1;
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
@@ -747,6 +746,7 @@ void CGS::OnInit(int WorldID)
 	// order dependent
 	InitZoneDungeon();
 	InitZonePVP();
+	m_RespawnWorldID = GetWorldData()->GetRespawnWorld()->GetID();
 
 	if(IsDungeon()) // dungeon game controller
 	{
