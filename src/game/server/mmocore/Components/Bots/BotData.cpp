@@ -13,8 +13,8 @@ void CDialog::Init(int BotID, std::string DialogueData, int Emote, bool ActionSt
 	{
 		int64_t size = -1;
 
-		const char* pChecking = str_find_nocase(Text.c_str(), "[bot_");
-		if(int SearchBotID = 0; pChecking != nullptr && sscanf(pChecking, "[bot_%d]", &SearchBotID) && DataBotInfo::IsDataBotValid(SearchBotID))
+		const char* pBot = str_find_nocase(Text.c_str(), "[bot_");
+		if(int SearchBotID = 0; pBot != nullptr && sscanf(pBot, "[bot_%d]", &SearchBotID) && DataBotInfo::IsDataBotValid(SearchBotID))
 		{
 			char aBufSearch[16];
 			str_format(aBufSearch, sizeof(aBufSearch), "[bot_%d]", SearchBotID);
@@ -23,14 +23,14 @@ void CDialog::Init(int BotID, std::string DialogueData, int Emote, bool ActionSt
 			pVariant->Init(DataBotInfo::ms_aDataBot[SearchBotID].m_aNameBot);
 			pVariant->m_Flag |= TALKED_FLAG_SAYS_BOT;
 		}
-		else if(pChecking = str_find_nocase(Text.c_str(), "[p]"); pChecking != nullptr)
+		else if(str_find_nocase(Text.c_str(), "[p]") != nullptr)
 		{
 			Text.erase(0, size + 4);
 
 			pVariant->Init("" /* dynamic data */);
 			pVariant->m_Flag |= TALKED_FLAG_SAYS_PLAYER;
 		}
-		else if(pChecking = str_find_nocase(Text.c_str(), "[eidolon]"); pChecking != nullptr)
+		else if(str_find_nocase(Text.c_str(), "[eidolon]") != nullptr)
 		{
 			Text.erase(0, size + 10);
 

@@ -158,9 +158,9 @@ CWorldData* CGS::GetWorldData(int ID) const
 {
 	int WorldID = ID == -1 ? GetWorldID() : ID;
 	auto p = std::find_if(CWorldData::Data().begin(), CWorldData::Data().end(), [WorldID](const WorldDataPtr& p){return WorldID == p->GetID(); });
-	dbg_assert(p != CWorldData::Data().end(), "invalid referring to the CWorldData");
-
-	return (*p).get();
+	if(p != CWorldData::Data().end())
+		return (*p).get();
+	return nullptr;
 }
 
 /* #########################################################################

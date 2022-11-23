@@ -16,8 +16,12 @@ int CAccountCore::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 {
 	const auto pWorldIterator = std::find_if(pPlayer->Acc().m_aHistoryWorld.begin(), pPlayer->Acc().m_aHistoryWorld.end(), [=](int WorldID)
 	{
-		CQuestDataInfo* pQuestInfo = GS()->GetWorldData(WorldID)->GetRequiredQuest();
-		return !Job()->Dungeon()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->m_QuestID).IsComplected()) || !pQuestInfo);
+		if(GS()->GetWorldData(WorldID))
+		{
+			CQuestDataInfo* pQuestInfo = GS()->GetWorldData(WorldID)->GetRequiredQuest();
+			return !Job()->Dungeon()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->m_QuestID).IsComplected()) || !pQuestInfo);
+		}
+		return false;
 	});
 	return pWorldIterator != pPlayer->Acc().m_aHistoryWorld.end() ? *pWorldIterator : MAIN_WORLD_ID;
 }
