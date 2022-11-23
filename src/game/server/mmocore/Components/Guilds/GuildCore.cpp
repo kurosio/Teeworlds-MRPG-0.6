@@ -1426,7 +1426,7 @@ void GuildCore::BuyGuildHouse(int GuildID, int HouseID)
 
 		const char* WorldName = Server()->GetWorldName(CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID);
 		GS()->Chat(-1, "{STR} buyight guild house on {STR}!", GuildName(GuildID), WorldName);
-		GS()->ChatDiscord(DC_SERVER_INFO, "Information", "{STR} buyight guild house on {STR}!", GuildName(GuildID), WorldName);
+		GS()->ChatDiscord(DC_SERVER_INFO, "Information", "{STR} bought guild house on {STR}!", GuildName(GuildID), WorldName);
 		AddHistoryGuild(GuildID, "Bought a house on '%s'.", WorldName);
 		return;
 	}
