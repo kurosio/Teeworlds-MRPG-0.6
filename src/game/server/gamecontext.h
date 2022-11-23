@@ -242,8 +242,7 @@ public:
 	int GetRespawnWorld() const { return m_RespawnWorldID; }
 
 private:
-	void InitZonePVP();
-	void InitZoneDungeon();
+	void InitZones();
 
 	bool m_AllowedPVP;
 	int m_DayEnumType;
