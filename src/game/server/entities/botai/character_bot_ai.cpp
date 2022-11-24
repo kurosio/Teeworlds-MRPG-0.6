@@ -573,8 +573,6 @@ void CCharacterBotAI::Move()
 	if(Index > -1)
 		WayDir = normalize(m_pBotPlayer->GetWayPoint(Index) - GetPos());
 
-	// set the direction
-	const bool IsCollide = GS()->Collision()->IntersectLineWithInvisible(m_Pos, m_Pos + vec2(m_Input.m_Direction, 0) * 150, &m_WallPos, nullptr);
 
 	if(WayDir.x < 0 && ActiveWayPoints > 3)
 		m_Input.m_Direction = -1;
@@ -584,7 +582,7 @@ void CCharacterBotAI::Move()
 		m_Input.m_Direction = m_PrevDirection;
 
 	// check dissalow move
-	if(m_pBotPlayer->GetBotType() != BotsTypes::TYPE_BOT_EIDOLON && IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
+	if(m_pBotPlayer->GetBotType() != TYPE_BOT_EIDOLON && IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
 	{
 		m_Input.m_Direction = -m_Input.m_Direction;
 		m_DoorHit = true;
@@ -595,8 +593,8 @@ void CCharacterBotAI::Move()
 	const bool IsGround = IsGrounded();
 	if((IsGround && WayDir.y < -0.5) || (!IsGround && WayDir.y < -0.5 && m_Core.m_Vel.y > 0))
 		m_Input.m_Jump = 1;
-
-	if(IsCollide)
+	
+	if(GS()->Collision()->IntersectLineWithInvisible(m_Pos, m_Pos + vec2(m_Input.m_Direction, 0) * 150, &m_WallPos, nullptr))
 	{
 		if(IsGround && GS()->Collision()->IntersectLine(m_WallPos, m_WallPos + vec2(0, -1) * 210, nullptr, nullptr))
 			m_Input.m_Jump = 1;
@@ -627,6 +625,8 @@ void CCharacterBotAI::Move()
 			else
 				HookVel.x *= 0.75f;
 
+			HookVel += vec2(0, 1) * GS()->Tuning()->m_Gravity;
+
 			float ps = dot(WayDir, HookVel);
 			if(ps > 0 || (WayDir.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < SERVER_TICK_SPEED + SERVER_TICK_SPEED / 2))
 				m_Input.m_Hook = 1;
@@ -635,7 +635,7 @@ void CCharacterBotAI::Move()
 		}
 		else if(m_Core.m_HookState == HOOK_FLYING)
 			m_Input.m_Hook = 1;
-		else if(m_LatestInput.m_Hook == 0 && m_Core.m_HookState == HOOK_IDLE)
+		else if(m_LatestInput.m_Hook == 0 && m_Core.m_HookState == HOOK_IDLE && random_int() % 3 == 0)
 		{
 			int NumDir = 45;
 			vec2 HookDir(0.0f, 0.0f);
@@ -670,6 +670,7 @@ void CCharacterBotAI::Move()
 					}
 				}
 			}
+
 			if(length(HookDir) > 32.f)
 			{
 				SetAim(HookDir);

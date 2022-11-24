@@ -479,7 +479,7 @@ void CPlayerBot::GetThreadRandomRadiusWaypointTarget(CGS* pGameServer, CPlayerBo
 
 void CPlayerBot::ThreadMobsPathFinder()
 {
-	if(!m_pCharacter || !m_pCharacter->IsAlive() || (m_TargetPos != vec2(0,0) && distance(m_TargetPos, m_OldTargetPos) < 10.0f))
+	if(!m_pCharacter || !m_pCharacter->IsAlive() || (m_TargetPos != vec2(0,0) && distance(m_TargetPos, m_OldTargetPos) < 48.0f))
 		return;
 
 	if(GetBotType() == TYPE_BOT_MOB)
@@ -498,7 +498,7 @@ void CPlayerBot::ThreadMobsPathFinder()
 	else if(GetBotType() == TYPE_BOT_EIDOLON)
 	{
 		int OwnerID = m_MobID;
-		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 5) == 0)
+		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
 		{
 			std::thread(&FindThreadPath, GS(), this, m_ViewPos, m_TargetPos).detach();
 		}

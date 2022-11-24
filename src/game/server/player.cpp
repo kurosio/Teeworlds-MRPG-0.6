@@ -25,8 +25,8 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_EidolonCID = -1;
 	m_Spawned = true;
 	m_SnapHealthTick = 0;
-	m_aPlayerTick[TickState::Respawn] = Server()->Tick() + Server()->TickSpeed();
-	m_aPlayerTick[TickState::Die] = Server()->Tick();
+	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
+	m_aPlayerTick[Die] = Server()->Tick();
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 
@@ -38,7 +38,7 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 		pIdMap[0] = m_ClientID;
 
 		m_LastVoteMenu = NOPE;
-		m_OpenVoteMenu = MenuList::MENU_MAIN;
+		m_OpenVoteMenu = MENU_MAIN;
 		m_MoodState = Mood::NORMAL;
 		Acc().m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);
@@ -96,7 +96,7 @@ void CPlayer::Tick()
 			m_pCharacter = nullptr;
 		}
 	}
-	else if (m_Spawned && m_aPlayerTick[TickState::Respawn] + Server()->TickSpeed() * 3 <= Server()->Tick())
+	else if (m_Spawned && m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3 <= Server()->Tick())
 	{
 		TryRespawn();
 	}
@@ -131,7 +131,7 @@ void CPlayer::TryCreateEidolon()
 
 	if(int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON); EidolonItemID > 0 && EidolonsTools::getEidolonBot(EidolonItemID) > 0)
 	{
-		const int EidolonCID = GS()->CreateBot(BotsTypes::TYPE_BOT_EIDOLON, EidolonsTools::getEidolonBot(EidolonItemID), m_ClientID);
+		const int EidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, EidolonsTools::getEidolonBot(EidolonItemID), m_ClientID);
 		m_EidolonCID = EidolonCID;
 	}
 
@@ -488,15 +488,15 @@ void CPlayer::AddExp(int Exp)
 		GS()->Chat(m_ClientID, "Congratulations. Level UP. Now Level {INT}!", Acc().m_Level);
 		if(Acc().m_Exp < ExpNeed(Acc().m_Level))
 		{
-			GS()->StrongUpdateVotes(m_ClientID, MenuList::MENU_MAIN);
-			GS()->Mmo()->SaveAccount(this, SaveType::SAVE_STATS);
-			GS()->Mmo()->SaveAccount(this, SaveType::SAVE_UPGRADES);
+			GS()->StrongUpdateVotes(m_ClientID, MENU_MAIN);
+			GS()->Mmo()->SaveAccount(this, SAVE_STATS);
+			GS()->Mmo()->SaveAccount(this, SAVE_UPGRADES);
 		}
 	}
 	ProgressBar("Account", Acc().m_Level, Acc().m_Exp, ExpNeed(Acc().m_Level), Exp);
 
 	if (rand() % 5 == 0)
-		GS()->Mmo()->SaveAccount(this, SaveType::SAVE_STATS);
+		GS()->Mmo()->SaveAccount(this, SAVE_STATS);
 
 	if (Acc().IsGuild())
 		GS()->Mmo()->Member()->AddExperience(Acc().m_GuildID);
@@ -618,10 +618,10 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 		// conversations
 		if(GetTalkedID() > 0)
 		{
-			if(m_aPlayerTick[TickState::LastDialog] && m_aPlayerTick[TickState::LastDialog] > GS()->Server()->Tick())
+			if(m_aPlayerTick[LastDialog] && m_aPlayerTick[LastDialog] > GS()->Server()->Tick())
 				return true;
 
-			m_aPlayerTick[TickState::LastDialog] = GS()->Server()->Tick() + (GS()->Server()->TickSpeed() / 4);
+			m_aPlayerTick[LastDialog] = GS()->Server()->Tick() + (GS()->Server()->TickSpeed() / 4);
 			GS()->CreatePlayerSound(m_ClientID, SOUND_PICKUP_ARMOR);
 			SetTalking(GetTalkedID(), false);
 			return true;
@@ -636,8 +636,8 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 	{
 		if(Upgrade(Get, &Acc().m_aStats[(AttributeIdentifier)VoteID], &Acc().m_Upgrade, VoteID2, 1000))
 		{
-			GS()->Mmo()->SaveAccount(this, SaveType::SAVE_UPGRADES);
-			GS()->UpdateVotes(m_ClientID, MenuList::MENU_UPGRADES);
+			GS()->Mmo()->SaveAccount(this, SAVE_UPGRADES);
+			GS()->UpdateVotes(m_ClientID, MENU_UPGRADES);
 		}
 		return true;
 	}
@@ -788,7 +788,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 
 	CPlayerBot* pBotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[TalkedID]);
 	const int MobID = pBotPlayer->GetBotMobID();
-	if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_NPC)
+	if (pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 	{
 		// clearing the end of dialogs or a dialog that was meaningless
 		const int sizeTalking = NpcBotInfo::ms_aNpcBot[MobID].m_aDialogs.size();
@@ -828,7 +828,7 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 		GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, m_DialogNPC.m_Progress);
 	}
 
-	else if (pBotPlayer->GetBotType() == BotsTypes::TYPE_BOT_QUEST)
+	else if (pBotPlayer->GetBotType() == TYPE_BOT_QUEST)
 	{
 		const int SizeDialogs = QuestBotInfo::ms_aQuestBot[MobID].m_aDialogs.size();
 		if(m_DialogNPC.m_Progress >= SizeDialogs)
