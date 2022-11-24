@@ -192,7 +192,7 @@ void CQuestData::Finish()
 	pGS->CreateText(nullptr, false, vec2(m_pPlayer->m_ViewPos.x, m_pPlayer->m_ViewPos.y - 70), vec2(0, -0.5), 30, "COMPLECTED");
 }
 
-void CQuestData::CheckaAvailableNewStep()
+void CQuestData::CheckAvailableNewStep()
 {
 	// check whether the active steps is complete
 	if(std::find_if(m_StepsQuestBot.begin(), m_StepsQuestBot.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &p)

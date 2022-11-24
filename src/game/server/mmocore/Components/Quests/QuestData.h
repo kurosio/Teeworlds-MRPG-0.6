@@ -26,7 +26,7 @@ public:
 	std::map < int, CPlayerQuestStepDataInfo > m_StepsQuestBot;
 
 	// main
-	void CheckaAvailableNewStep();
+	void CheckAvailableNewStep();
 	bool Accept();
 private:
 	void Finish();

@@ -138,27 +138,41 @@ bool CPlayerQuestStepDataInfo::Finish(CPlayer* pPlayer, bool FinalStepTalking)
 	CQuestData::ms_aPlayerQuests[ClientID][QuestID].SaveSteps();
 	UpdateBot();
 
-	CQuestData::ms_aPlayerQuests[ClientID][QuestID].CheckaAvailableNewStep();
+	CQuestData::ms_aPlayerQuests[ClientID][QuestID].CheckAvailableNewStep();
 	pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
 	return true;
 }
 
 void CPlayerQuestStepDataInfo::DoCollectItem(CPlayer* pPlayer)
 {
+	bool antiStressing = false;
 	int ClientID = pPlayer->GetCID();
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
-	// anti stressing with double thread sql result what work one (item)
-	bool antiStressing = false;
-	for(int i = 0; i < 2; i++)
+	// type of show TODO: update structures and checker
+	if(m_Bot.m_InteractiveType == (int)INTERACTIVE_SHOW_ITEMS)
 	{
-		const int ItemID = m_Bot.m_aItemSearch[i];
-		const int Value = m_Bot.m_aItemSearchValue[i];
-		if(ItemID > 0 && Value > 0)
+		for(int i = 0; i < 2; i++)
 		{
-			pGS->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(ItemID)->Info()->GetName(), Value, m_Bot.GetName());
-			antiStressing = ItemID == m_Bot.m_aItemGives[0] || ItemID == m_Bot.m_aItemGives[1];
-			pPlayer->GetItem(ItemID)->Remove(Value);
+			const int ItemID = m_Bot.m_aItemSearch[i];
+			const int Value = m_Bot.m_aItemSearchValue[i];
+			if(ItemID > 0 && Value > 0)
+				pGS->Chat(pPlayer->GetCID(), "[Done] Show the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(ItemID)->Info()->GetName(), Value, m_Bot.GetName());
+		}
+	}
+	else
+	{
+		// anti stressing with double thread sql result what work one (item)
+		for(int i = 0; i < 2; i++)
+		{
+			const int ItemID = m_Bot.m_aItemSearch[i];
+			const int Value = m_Bot.m_aItemSearchValue[i];
+			if(ItemID > 0 && Value > 0)
+			{
+				pGS->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(ItemID)->Info()->GetName(), Value, m_Bot.GetName());
+				antiStressing = ItemID == m_Bot.m_aItemGives[0] || ItemID == m_Bot.m_aItemGives[1];
+				pPlayer->GetItem(ItemID)->Remove(Value);
+			}
 		}
 	}
 
@@ -270,7 +284,11 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Need {STR} ({VAL}/{VAL})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), ValueItem);
+
+			const char* pInteractiveType = m_Bot.m_InteractiveType == (int)INTERACTIVE_SHOW_ITEMS ? "Show" : "Need";
+			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- {STR} {STR} ({VAL}/{VAL})", 
+				pGS->Server()->Localization()->Localize(pPlayer->GetLanguage(), pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), ValueItem);
+
 			IsActiveTask = true;
 		}
 	}
