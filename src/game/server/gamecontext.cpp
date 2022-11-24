@@ -1837,6 +1837,16 @@ void CGS::InitZones()
 	m_AllowedPVP = false;
 	m_RespawnWorldID = GetWorldData()->GetRespawnWorld()->GetID();
 
+	// with mobs allow pvp zone
+	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+	{
+		if(m_apPlayers[i] && m_apPlayers[i]->GetBotType() == TYPE_BOT_MOB && m_apPlayers[i]->GetPlayerWorldID() == m_WorldID)
+		{
+			m_AllowedPVP = true;
+			return;
+		}
+	}
+
 	// init dungeon zone
 	for(const auto& [ID, Dungeon] : CDungeonData::ms_aDungeon)
 	{
@@ -1845,16 +1855,6 @@ void CGS::InitZones()
 			m_DungeonID = ID;
 			m_AllowedPVP = false;
 			break;
-		}
-	}
-
-	// with mobs allow pvp zone
-	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
-	{
-		if(m_apPlayers[i] && m_apPlayers[i]->GetBotType() == TYPE_BOT_MOB && m_apPlayers[i]->GetPlayerWorldID() == m_WorldID)
-		{
-			m_AllowedPVP = true;
-			return;
 		}
 	}
 }
