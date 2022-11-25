@@ -1843,7 +1843,7 @@ void CGS::InitZones()
 		if(m_apPlayers[i] && m_apPlayers[i]->GetBotType() == TYPE_BOT_MOB && m_apPlayers[i]->GetPlayerWorldID() == m_WorldID)
 		{
 			m_AllowedPVP = true;
-			return;
+			break;
 		}
 	}
 
