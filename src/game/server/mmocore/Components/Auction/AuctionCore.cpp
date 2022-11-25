@@ -212,7 +212,7 @@ void CAuctionCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionDat
 
 void CAuctionCore::CheckAuctionTime() const
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 AND DATE_SUB(NOW(),INTERVAL %d MINUTE) > Time", g_Config.m_SvTimeAuctionSlot);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 AND DATE_SUB(NOW(),INTERVAL %d MINUTE) > ValidUntil", g_Config.m_SvTimeAuctionSlot);
 	int ReleaseSlots = (int)pRes->rowsCount();
 	while(pRes->next())
 	{
