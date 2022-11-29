@@ -78,7 +78,7 @@ void CHealthHealer::Snap(int SnappingClient)
 	if (NetworkClipped(SnappingClient))
 		return;
 
-	float AngleStep = 2.0f * pi / CHealthHealer::NUM_IDS;
+	float AngleStep = 2.0f * pi / (float)CHealthHealer::NUM_IDS;
 	float Radius = clamp(0.0f+m_ReloadTick, 0.0f, 32.0f);
 	for(int i=0; i<CHealthHealer::NUM_IDS; i++)
 	{

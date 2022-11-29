@@ -189,7 +189,7 @@ private:
 		VOTING MMO GAMECONTEXT TODO: rework fully
 	######################################################################### */
 	std::mutex m_mtxUniqueVotes;
-	safe_ptr< std::deque<CVoteOptions> > m_aPlayerVotes[MAX_PLAYERS];
+	std::deque<CVoteOptions> m_aPlayerVotes[MAX_PLAYERS];
 	static void CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool PrepareCustom);
 
 public:

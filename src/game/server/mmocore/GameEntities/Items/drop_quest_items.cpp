@@ -94,8 +94,8 @@ void CDropQuestItem::Snap(int SnappingClient)
 	}
 
 	static const float Radius = 16.0f;
-	const float AngleStep = 2.0f * pi / CDropQuestItem::NUM_IDS;
-	const float AngleStart = (pi / CDropQuestItem::NUM_IDS) + (2.0f * pi * m_Angle);
+	const float AngleStep = 2.0f * pi / (float)CDropQuestItem::NUM_IDS;
+	const float AngleStart = (pi / (float)CDropQuestItem::NUM_IDS) + (2.0f * pi * m_Angle);
 	for(int i = 0; i < CDropQuestItem::NUM_IDS; i++)
 	{
 		CNetObj_Laser *pRifleObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_IDs[i], sizeof(CNetObj_Laser)));

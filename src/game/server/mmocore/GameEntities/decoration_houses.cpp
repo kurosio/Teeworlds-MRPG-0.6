@@ -56,7 +56,7 @@ void CDecorationHouses::Snap(int SnappingClient)
 	}
 
 	float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) / 10.0f;
-	float AngleStep = 2.0f * pi / BODY;
+	float AngleStep = 2.0f * pi / (float)BODY;
 	float Radius = 30.0f;
 	for (int i = 0; i < BODY; i++)
 	{

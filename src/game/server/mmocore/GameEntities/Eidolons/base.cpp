@@ -104,8 +104,8 @@ void CEidolon::Snap(int SnappingClient)
 			return;
 
 		pObj->m_Type = WEAPON_HAMMER;
-		pObj->m_X = m_Pos.x + cos(Server()->Tick() - pi / NUM_PARTICLES_AROUND_EIDOLON * i) * 18.f;
-		pObj->m_Y = m_Pos.y + sin(Server()->Tick() - pi / NUM_PARTICLES_AROUND_EIDOLON * i) * 18.f;
+		pObj->m_X = m_Pos.x + cos(Server()->Tick() - pi / (float)NUM_PARTICLES_AROUND_EIDOLON * i) * 18.f;
+		pObj->m_Y = m_Pos.y + sin(Server()->Tick() - pi / (float)NUM_PARTICLES_AROUND_EIDOLON * i) * 18.f;
 		pObj->m_StartTick = Server()->Tick();
 	}
 }

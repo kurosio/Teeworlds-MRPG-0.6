@@ -229,7 +229,7 @@ enum
 	itTinyHealthPotion = 15,			// Tiny health potion
 	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
 	itLittleBagGold = 17,				// Gives 10-50 gold
-	itPotionResurrection = 18,			// Resurrection potion
+	itPotionResurrection = 18,			// Resurrection potion :: UNUSED
 	itExplosiveGun = 19,				// Explosion for gun
 	itExplosiveShotgun = 20,			// Explosion for shotgun
 	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades

@@ -935,12 +935,12 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(m_mtxUniqueVotes.try_lock())
 			{
 				pPlayer->m_aPlayerTick[LastVoteTry] = Server()->Tick();
-				const auto& iter = std::find_if(m_aPlayerVotes[ClientID]->begin(), m_aPlayerVotes[ClientID]->end(), [pMsg](const CVoteOptions& vote)
+				const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
 				{
 					return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
 				});
 
-				if(iter != m_aPlayerVotes[ClientID]->end())
+				if(iter != m_aPlayerVotes[ClientID].end())
 				{
 					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
 					ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason);
@@ -1263,7 +1263,7 @@ const char *CGS::NetVersion() const { return GAME_NETVERSION; }
 void CGS::ClearClientData(int ClientID)
 {
 	Mmo()->ResetClientData(ClientID);
-	m_aPlayerVotes[ClientID]->clear();
+	m_aPlayerVotes[ClientID].clear();
 	ms_aEffects[ClientID].clear();
 
 	// clear active snap bots for player
@@ -1402,7 +1402,7 @@ void CGS::ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IC
 ######################################################################### */
 void CGS::ClearVotes(int ClientID)
 {
-	m_aPlayerVotes[ClientID]->clear();
+	m_aPlayerVotes[ClientID].clear();
 
 	// send vote options
 	CNetMsg_Sv_VoteClearOptions ClearMsg;
@@ -1428,7 +1428,7 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	if(Vote.m_aDescription[0] == '\0')
 		str_copy(Vote.m_aDescription, "························", sizeof(Vote.m_aDescription));
 
-	m_aPlayerVotes[ClientID]->emplace_back(Vote);
+	m_aPlayerVotes[ClientID].emplace_back(Vote);
 }
 
 // add formatted vote
@@ -1533,25 +1533,23 @@ void CGS::StartCustomVotes(int ClientID, int LastVoteMenu)
 
 void CGS::EndCustomVotes(int ClientID)
 {
-	std::thread(&CallbackUpdateVotes, this, ClientID, CUSTOM_MENU, true).detach();
+	CallbackUpdateVotes(this, ClientID, CUSTOM_MENU, true);
 }
 
 void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool PrepareCustom)
 {
-	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	std::unique_lock guard(pGS->m_mtxUniqueVotes);
-
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
 	if(!pPlayer)
 		return;
 
+	std::this_thread::sleep_for(std::chrono::milliseconds(3));
 	if(Menulist == CUSTOM_MENU && PrepareCustom)
 	{
 		// send parsed votes
-		for(auto p = pGS->m_aPlayerVotes[ClientID]->begin(); p != pGS->m_aPlayerVotes[ClientID]->end(); ++p)
+		for(auto p : pGS->m_aPlayerVotes[ClientID])
 		{
 			CNetMsg_Sv_VoteOptionAdd OptionMsg;
-			OptionMsg.m_pDescription = p->m_aDescription;
+			OptionMsg.m_pDescription = p.m_aDescription;
 			pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
 		}
 		return;
@@ -1563,10 +1561,10 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, Menulist);
 
 	// send parsed votes
-	for(auto p = pGS->m_aPlayerVotes[ClientID]->begin(); p != pGS->m_aPlayerVotes[ClientID]->end(); ++p)
+	for(auto p : pGS->m_aPlayerVotes[ClientID])
 	{
 		CNetMsg_Sv_VoteOptionAdd OptionMsg;
-		OptionMsg.m_pDescription = p->m_aDescription;
+		OptionMsg.m_pDescription = p.m_aDescription;
 		pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
 	}
 }
@@ -1574,7 +1572,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 void CGS::UpdateVotes(int ClientID, int MenuList)
 {
 	// unfully safe
-	std::thread(&CallbackUpdateVotes, this, ClientID, MenuList, false).detach();
+	CallbackUpdateVotes(this, ClientID, MenuList, false);
 }
 
 // information for unauthorized players

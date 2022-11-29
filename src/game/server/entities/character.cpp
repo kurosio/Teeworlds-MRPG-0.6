@@ -711,17 +711,8 @@ void CCharacter::Die(int Killer, int Weapon)
 		const int RespawnWorldID = GS()->GetRespawnWorld();
 		if(RespawnWorldID >= 0 && !m_pPlayer->IsBot() && GS()->m_apPlayers[Killer])
 		{
-			// potion resurrection
-			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(itPotionResurrection);
-			if(pPlayerItem->IsEquipped())
-			{
-				pPlayerItem->Use(1);
-			}
-			else
-			{
-				GS()->Chat(ClientID, "You are dead, you will be treated in {STR}", Server()->GetWorldName(RespawnWorldID));
-				m_pPlayer->GetTempData().m_TempSafeSpawn = true;
-			}
+			GS()->Chat(ClientID, "You are dead, you will be treated in {STR}", Server()->GetWorldName(RespawnWorldID));
+			m_pPlayer->GetTempData().m_TempSafeSpawn = true;
 		}
 	}
 
@@ -743,10 +734,10 @@ void CCharacter::Die(int Killer, int Weapon)
 	Msg.m_Victim = m_pPlayer->GetCID();
 	Msg.m_Weapon = Weapon;
 	Msg.m_ModeSpecial = 0;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, GS()->GetWorldID());
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, m_pPlayer->GetPlayerWorldID());
 
 	// respawn
-	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick()/2;
+	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
 	m_pPlayer->m_Spawned = true;
 	GS()->m_World.RemoveEntity(this);
 	GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;

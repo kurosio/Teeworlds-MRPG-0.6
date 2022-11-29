@@ -198,6 +198,7 @@ bool CCraftCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 			ShowCraftList(pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
 			ShowCraftList(pPlayer, "Craft's", ItemType::TYPE_CRAFT);
 			ShowCraftList(pPlayer, "Other's", ItemType::TYPE_OTHER);
+			ShowCraftList(pPlayer, "Quest and all the rest's", ItemType::TYPE_INVISIBLE);
 			return true;
 		}
 		return false;

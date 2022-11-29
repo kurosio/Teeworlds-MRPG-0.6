@@ -45,7 +45,7 @@ void CSleepyGravity::Tick()
 	{
 		for(int i = 0; i < CSleepyGravity::NUM_IDS; i++)
 		{
-			float AngleStep = 2.0f * pi / CSleepyGravity::NUM_IDS;
+			float AngleStep = 2.0f * pi / (float)CSleepyGravity::NUM_IDS;
 			vec2 VertexPos = m_Pos + vec2(m_Radius * cos(AngleStep * i), m_Radius * sin(AngleStep * i));
 			if(!m_LifeSpan)
 				GS()->CreateExplosion(VertexPos, m_pPlayer->GetCID(), WEAPON_GRENADE, m_PowerLevel);
@@ -78,7 +78,7 @@ void CSleepyGravity::Snap(int SnappingClient)
 	if (NetworkClipped(SnappingClient))
 		return;
 
-	const float AngleStep = 2.0f * pi / NUM_IDS;
+	const float AngleStep = 2.0f * pi / (float)NUM_IDS;
 	for(int i = 0; i < NUM_IDS; i++)
 	{
 		vec2 VertexPos = m_Pos + vec2(m_Radius * cos(AngleStep*i), m_Radius * sin(AngleStep*i));
