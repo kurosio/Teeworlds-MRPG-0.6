@@ -1648,17 +1648,11 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 	AVH(ClientID, TAB_INFO_STAT, "Player Stats {STR}", IsDungeon() ? "(Sync)" : "\0");
 	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
-		if(!pAttribute->HasField())
+		if(!pAttribute->HasDatabaseField())
 			continue;
 
 		// if upgrades are cheap, they have a division of statistics
 		const int Size = pPlayer->GetAttributeSize(ID);
-		if(pAttribute->GetDividing() <= 1)
-		{
-			const int WorkedSize = pPlayer->GetAttributeSize(ID, true);
-			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "{INT} (+{INT}) - {STR}", Size, WorkedSize, pAttribute->GetName());
-			continue;
-		}
 		AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "+{INT} - {STR}", Size, pAttribute->GetName());
 	}
 

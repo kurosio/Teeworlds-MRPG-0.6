@@ -345,7 +345,7 @@ bool CBotCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 {
 	bool Found = false;
 	const int ClientID = pPlayer->GetCID();
-	const float ExtraChance = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem, true) / 100.0f, 0.01f, 10.0f);
+	const float ExtraChance = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
 	
 	char aBuf[128];
 	for(const auto& [ID, MobData] : MobBotInfo::ms_aMobBot)

@@ -12,8 +12,8 @@ CHealthHealer::CHealthHealer(CGameWorld *pGameWorld, CPlayer* pPlayer, int Skill
 	m_pPlayer = pPlayer;
 	m_PowerLevel = PowerLevel;
 
-	m_LifeSpan = (10 + SkillBonus)*Server()->TickSpeed();
-	m_ReloadTick = 2*Server()->TickSpeed();
+	m_LifeSpan = (10 + SkillBonus) * Server()->TickSpeed();
+	m_ReloadTick = 2 * Server()->TickSpeed();
 
 	GameWorld()->InsertEntity(this);
 

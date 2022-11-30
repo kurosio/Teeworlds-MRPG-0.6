@@ -72,9 +72,8 @@ void CInventoryCore::OnInit()
 			std::string FieldName = pRes->getString("FieldName").c_str();
 			int UpgradePrice = pRes->getInt("Price");
 			AttributeType Type = (AttributeType)pRes->getInt("Type");
-			int Dividing = pRes->getInt("Divide");
 
-			CAttributeDescription::CreateDataItem(ID)->Init(Name, FieldName, UpgradePrice, Type, Dividing);
+			CAttributeDescription::CreateDataItem(ID)->Init(Name, FieldName, UpgradePrice, Type);
 		}
 	});
 }

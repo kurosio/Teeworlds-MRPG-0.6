@@ -197,7 +197,7 @@ bool CPlayerItem::Use(int Value)
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(pAttribute->HasField() && GetPlayer()->Acc().m_aStats[ID] > 0)
+			if(pAttribute->HasDatabaseField() && GetPlayer()->Acc().m_aStats[ID] > 0)
 			{
 				// skip weapon spreading
 				if(pAttribute->IsType(AttributeType::Weapon))
@@ -219,7 +219,7 @@ bool CPlayerItem::Use(int Value)
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(pAttribute->HasField() && GetPlayer()->Acc().m_aStats[ID] > 0)
+			if(pAttribute->HasDatabaseField() && GetPlayer()->Acc().m_aStats[ID] > 0)
 			{
 				// skip all stats allow only weapons
 				if(pAttribute->GetType() != AttributeType::Weapon)

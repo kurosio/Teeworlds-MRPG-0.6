@@ -120,12 +120,12 @@ int CPlayerBot::GetRespawnTick() const
 	}
 }
 
-int CPlayerBot::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
+int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 {
 	if(m_BotType != TYPE_BOT_MOB && m_BotType != TYPE_BOT_EIDOLON)
 		return 10;
 
-	auto CalculateAttribute = [ID, this](int Power, int Spread, int HardtypeDividing) -> int
+	auto CalculateAttribute = [ID, this](int Power, int Spread, bool Boss) -> int
 	{
 		// get stats from the bot's equipment
 		int Size = Power;
@@ -136,31 +136,33 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 				Size += GS()->GetItemInfo(ItemID)->GetInfoEnchantStats(ID);
 		}
 
-		// spread weapons
+		// sync power mobs
+		float Percent = 100.0f;
+		CAttributeDescription* pAttribute = GS()->GetAttributeInfo(ID);
 		if(ID == AttributeIdentifier::SpreadShotgun || ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
 			Size = Spread;
+		else if(pAttribute->IsType(AttributeType::Healer))
+			Percent = 15.0f;
+		else if(pAttribute->IsType(AttributeType::Hardtype))
+			Percent = 5.0f;
 
-		// all attribute stats without hardness
-		else if(const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID); ID != AttributeIdentifier::Hardness && pAtt->GetDividing() > 0)
-		{
-			Size /= pAtt->GetDividing();
-			if(pAtt->GetType() == AttributeType::Hardtype)
-				Size /= HardtypeDividing;
-		}
+		if(Boss && ID != AttributeIdentifier::Hardness)
+			Percent /= 10.0f;
 
-		return Size;
+		const int SyncPercentSize = max(1, translate_to_percent_rest(Size, Percent));
+		return SyncPercentSize;
 	};
 
 	int Size = 0;
 	if(m_BotType == TYPE_BOT_EIDOLON)
 	{
 		if(GS()->IsDungeon())
-			Size = CalculateAttribute(translate_to_percent_rest(max(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, 5);
+			Size = CalculateAttribute(translate_to_percent_rest(max(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, false);
 		else
-			Size = CalculateAttribute(EidolonsTools::getEidolonItemID(m_BotID), 1, 5);
+			Size = CalculateAttribute(EidolonsTools::getEidolonItemID(m_BotID), 1, false);
 	}
 	else if(m_BotType == TYPE_BOT_MOB)
-		Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss ? 30 : 2);
+		Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss);
 	return Size;
 }
 

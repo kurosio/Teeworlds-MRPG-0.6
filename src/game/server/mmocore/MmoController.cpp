@@ -153,7 +153,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			pFunc(HiddenID);
 			for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 			{
-				if(pAttribute->IsType(Type) && pAttribute->HasField())
+				if(pAttribute->IsType(Type) && pAttribute->HasDatabaseField())
 					GS()->AVD(ClientID, "UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", 
 						pAttribute->GetName(), pPlayer->Acc().m_aStats[ID], pAttribute->GetUpgradePrice());
 			}
@@ -314,7 +314,7 @@ void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
 		dynamic_string Buffer;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(pAttribute->HasField())
+			if(pAttribute->HasDatabaseField())
 			{
 				char aBuf[64];
 				str_format(aBuf, sizeof(aBuf), ", %s = '%d' ", pAttribute->GetFieldName(), pPlayer->Acc().m_aStats[ID]);

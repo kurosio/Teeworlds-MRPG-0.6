@@ -12,7 +12,6 @@ class CAttributeDescription : public MultiworldIdentifiableStaticData< std::map 
 	AttributeIdentifier m_ID{};
 	AttributeType m_Type{};
 	int m_UpgradePrice{};
-	int m_Dividing{};
 
 public:
 	CAttributeDescription() = default;
@@ -24,24 +23,20 @@ public:
 		return m_pData[ID];
 	}
 
-	void Init(const std::string& Name, const std::string& FieldName, int UpgradePrice, AttributeType Type, int Dividing)
+	void Init(const std::string& Name, const std::string& FieldName, int UpgradePrice, AttributeType Type)
 	{
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aFieldName, FieldName.c_str(), sizeof(m_aFieldName));
 		m_UpgradePrice = UpgradePrice;
 		m_Type = Type;
-		m_Dividing = Dividing;
 	}
-
-	static bool IsValidItem(AttributeIdentifier ID) { return m_pData.find(ID) != m_pData.end(); }
 
 	const char* GetName() const { return m_aName; }
 	const char* GetFieldName() const { return m_aFieldName; }
-	bool HasField() const { return m_aFieldName[0] != '\0' && m_UpgradePrice > 0; }
+	bool HasDatabaseField() const { return m_aFieldName[0] != '\0' && m_UpgradePrice > 0; }
 	int GetUpgradePrice() const { return m_UpgradePrice; }
 	bool IsType(AttributeType Type) const { return m_Type == Type; }
 	AttributeType GetType() const { return m_Type; }
-	int GetDividing() const { return m_Dividing; }
 };
 
 class CAttribute

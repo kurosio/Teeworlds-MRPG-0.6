@@ -291,7 +291,7 @@ void CGameControllerDungeon::OnCharacterDeath(CCharacter* pVictim, CPlayer* pKil
 	{
 		const int KillerID = pKiller->GetCID();
 		const int VictimID = pVictim->GetPlayer()->GetCID();
-		if(KillerID != VictimID && pVictim->GetPlayer()->IsBot() && pVictim->GetPlayer()->GetBotType() == BotsTypes::TYPE_BOT_MOB)
+		if(KillerID != VictimID && pVictim->GetPlayer()->IsBot() && pVictim->GetPlayer()->GetBotType() == TYPE_BOT_MOB)
 		{
 			const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
 			CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;
@@ -331,7 +331,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 				if(!GS()->m_apPlayers[i] || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 					continue;
 
-				GS()->StrongUpdateVotes(i, MenuList::MENU_DUNGEONS);
+				GS()->StrongUpdateVotes(i, MENU_DUNGEONS);
 			}
 		}
 	}
@@ -363,7 +363,7 @@ int CGameControllerDungeon::CountMobs() const
 	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if (BotPlayer && BotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
+		if (BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
 			CountMobs++;
 	}
 	return CountMobs;
@@ -398,7 +398,7 @@ int CGameControllerDungeon::LeftMobsToWin() const
 	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if (BotPlayer && BotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && BotPlayer->GetCharacter() && m_WorldID == BotPlayer->GetPlayerWorldID())
+		if (BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && BotPlayer->GetCharacter() && m_WorldID == BotPlayer->GetPlayerWorldID())
 			LeftMobs++;
 	}
 	return LeftMobs;
@@ -409,7 +409,7 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if (BotPlayer && BotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
+		if (BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
 		{
 			BotPlayer->SetDungeonAllowedSpawn(AllowedSpawn);
 			if(!AllowedSpawn && BotPlayer->GetCharacter())
@@ -477,7 +477,7 @@ int CGameControllerDungeon::GetSyncFactor() const
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		CPlayerBot* pBotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if(!pBotPlayer || pBotPlayer->GetBotType() != BotsTypes::TYPE_BOT_MOB || pBotPlayer->GetPlayerWorldID() != m_WorldID)
+		if(!pBotPlayer || pBotPlayer->GetBotType() != TYPE_BOT_MOB || pBotPlayer->GetPlayerWorldID() != m_WorldID)
 			continue;
 
 		const int LevelDisciple = pBotPlayer->GetAttributesSize();

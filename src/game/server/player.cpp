@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "player.h"
 
@@ -227,6 +227,24 @@ void CPlayer::Snap(int SnappingClient)
 	{
 		StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
 	}
+
+	/*
+	 * 	if(Server()->Tick() % Server()->TickSpeed() / 2 == 0)
+		{
+			constexpr int LIMIT_CLAN_TAB = 10;
+			str_format(m_aEndStatus, sizeof(m_aEndStatus), "%s : %s", GetStatus(), GS()->Mmo()->Member()->GetGuildRank(Acc().m_GuildID, Acc().m_GuildRank));
+
+			std::string EndStatus = m_aEndStatus;
+			std::rotate(std::begin(m_aEndStatus), std::begin(m_aEndStatus) + m_ClanMovePos, std::end(m_aEndStatus));
+			m_ClanMovePos += str_utf8_forward(m_aEndStatus, 0);
+
+			int Size = str_utf8_fix_truncation(m_aEndStatus);
+			if(Size - m_ClanMovePos < LIMIT_CLAN_TAB)
+				m_ClanMovePos = 0;
+		}
+
+		StrToInts(&pClientInfo->m_Clan0, 3, m_aEndStatus);
+	 */
 
 	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
@@ -480,7 +498,7 @@ void CPlayer::AddExp(int Exp)
 	while(Acc().m_Exp >= ExpNeed(Acc().m_Level))
 	{
 		Acc().m_Exp -= ExpNeed(Acc().m_Level), Acc().m_Level++;
-		Acc().m_Upgrade += 10;
+		Acc().m_Upgrade += 1;
 
 		GS()->CreateDeath(m_pCharacter->m_Core.m_Pos, m_ClientID);
 		GS()->CreateSound(m_pCharacter->m_Core.m_Pos, 4);
@@ -535,12 +553,12 @@ int CPlayer::ExpNeed(int Level)
 
 int CPlayer::GetStartHealth()
 {
-	return 10 + GetAttributeSize(AttributeIdentifier::Hardness, true);
+	return 10 + GetAttributeSize(AttributeIdentifier::Hardness);
 }
 
 int CPlayer::GetStartMana()
 {
-	const int EnchantBonus = GetAttributeSize(AttributeIdentifier::Piety, true);
+	const int EnchantBonus = GetAttributeSize(AttributeIdentifier::Piety);
 	return 10 + EnchantBonus;
 }
 
@@ -719,11 +737,11 @@ int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 	return Iter != CPlayerItem::Data()[m_ClientID].end() ? Iter->first : -1;
 }
 
-int CPlayer::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
+int CPlayer::GetAttributeSize(AttributeIdentifier ID)
 {
 	// if the best tank class is selected among the players we return the sync dungeon stats
 	const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID);
-	if(GS()->IsDungeon() && pAtt->GetUpgradePrice() < 10 && CDungeonData::ms_aDungeon[GS()->GetDungeonID()].IsDungeonPlaying())
+	if(GS()->IsDungeon() && pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[GS()->GetDungeonID()].IsDungeonPlaying())
 	{
 		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
 		return pDungeon->GetAttributeDungeonSync(this, ID);
@@ -734,16 +752,14 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID, bool WorkedSize)
 	for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[m_ClientID])
 	{
 		if(ItemData.IsEquipped() && ItemData.Info()->IsEnchantable() && ItemData.Info()->GetInfoEnchantStats(ID))
+		{
 			Size += ItemData.GetEnchantStats(ID);
+		}
 	}
 
 	// if the attribute has the value of player upgrades we sum up
-	if (pAtt->HasField())
+	if (pAtt->HasDatabaseField())
 		Size += Acc().m_aStats[ID];
-
-	// to the final active attribute stats for the player
-	if (WorkedSize && pAtt->GetDividing() > 0)
-		Size /= pAtt->GetDividing();
 
 	return Size;
 }
@@ -754,7 +770,7 @@ int CPlayer::GetTypeAttributesSize(AttributeType Type)
 	for (const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
 		if (pAttribute->IsType(Type))
-			Size += GetAttributeSize(ID, true);
+			Size += GetAttributeSize(ID);
 	}
 	return Size;
 }
@@ -763,7 +779,7 @@ int CPlayer::GetAttributesSize()
 {
 	int Size = 0;
 	for(const auto& [ID, Attribute] : CAttributeDescription::Data())
-		Size += GetAttributeSize(ID, true);
+		Size += GetAttributeSize(ID);
 
 	return Size;
 }

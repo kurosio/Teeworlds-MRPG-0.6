@@ -81,7 +81,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 		GS()->Mmo()->Quest()->UpdateArrowStep(m_pPlayer);
 		GS()->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer);
 
-		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen, true);
+		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
 		GS()->UpdateVotes(m_pPlayer->GetCID(), m_pPlayer->m_OpenVoteMenu);
 		m_pPlayer->ShowInformationStats();
 	}
@@ -285,8 +285,8 @@ void CCharacter::FireWeapon()
 
 			bool Hits = false;
 			bool StartedTalking = false;
-			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(AttributeIdentifier::HammerPower, true);
-			const float Radius = clamp(PlayerRadius / 5.0f, 1.7f, 8.0f);
+			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(AttributeIdentifier::HammerPower);
+			const float Radius = clamp(PlayerRadius / 5.0f, IsBot ? 1.7f : 3.2f, 8.0f);
 			GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
 			CCharacter *apEnts[MAX_CLIENTS];
@@ -762,41 +762,43 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	CPlayer* pFrom = GS()->GetPlayer(FromCID);
 	if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
-		if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_GUN)
-			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::GunPower, true);
-		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_SHOTGUN)
-			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::ShotgunPower, true);
-		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_GRENADE)
-			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::GrenadePower, true);
-		else if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon == WEAPON_LASER)
-			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::RiflePower, true);
+		if(Weapon == WEAPON_GUN)
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::GunPower);
+		else if(Weapon == WEAPON_SHOTGUN)
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::ShotgunPower);
+		else if(Weapon == WEAPON_GRENADE)
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::GrenadePower);
+		else if(Weapon == WEAPON_LASER)
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::RiflePower);
 		else
-			Dmg += pFrom->GetAttributeSize(AttributeIdentifier::HammerPower, true);
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::HammerPower);
 
-		const int EnchantBonus = pFrom->GetAttributeSize(AttributeIdentifier::Strength, true);
+		const int EnchantBonus = pFrom->GetAttributeSize(AttributeIdentifier::Strength);
 		Dmg += EnchantBonus;
 
 		// vampirism replenish your health
-		int TempInt = pFrom->GetAttributeSize(AttributeIdentifier::Vampirism, true);
+		int TempInt = pFrom->GetAttributeSize(AttributeIdentifier::Vampirism);
 		if(min(8.0f + (float)TempInt * 0.0015f, 30.0f) > frandom() * 100.0f)
 		{
-			pFrom->GetCharacter()->IncreaseHealth(max(1, Dmg/2));
+			const int Recovery = max(1, Dmg / 2);
+			GS()->Chat(FromCID, ":: Vampirism stolen: {INT}HP.", Recovery);
+			pFrom->GetCharacter()->IncreaseHealth(Recovery);
 			GS()->SendEmoticon(FromCID, EMOTICON_DROP);
 		}
 
 		// miss out on damage
-		TempInt = pFrom->GetAttributeSize(AttributeIdentifier::Lucky, true);
+		TempInt = m_pPlayer->GetAttributeSize(AttributeIdentifier::Lucky);
 		if(min(5.0f + (float)TempInt * 0.0015f, 20.0f) > frandom() * 100.0f)
 		{
-			GS()->SendEmoticon(FromCID, EMOTICON_HEARTS);
+			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_HEARTS);
 			return false;
 		}
 
 		// critical damage
-		TempInt = pFrom->GetAttributeSize(AttributeIdentifier::DirectCriticalHit, true);
+		TempInt = pFrom->GetAttributeSize(AttributeIdentifier::DirectCriticalHit);
 		if(Dmg && !pFrom->IsBot() && min(8.0f + (float)TempInt * 0.0015f, 30.0f) > frandom() * 100.0f)
 		{
-			CritDamage = 100 + max(pFrom->GetAttributeSize(AttributeIdentifier::CriticalHit, true), 1);
+			CritDamage = 100 + max(pFrom->GetAttributeSize(AttributeIdentifier::CriticalHit), 1);
 			const float CritDamageFormula = (float)Dmg + ((float)CritDamage * ((float)Dmg / 100.0f));
 			const float CritRange = (CritDamageFormula + (CritDamageFormula / 2.0f) / 2.0f);
 			Dmg = (int)CritDamageFormula + random_int()%(int)CritRange;
@@ -1195,7 +1197,7 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 	}
 
 	if(pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen) > 0)
-		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen, true);
+		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
 }
 
 void CCharacter::HandlePlayer()

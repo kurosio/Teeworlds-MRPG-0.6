@@ -122,7 +122,7 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
 		for (const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(pAttribute->HasField())
+			if(pAttribute->HasDatabaseField())
 				pPlayer->Acc().m_aStats[ID] = pResAccount->getInt(pAttribute->GetFieldName());
 		}
 
@@ -309,7 +309,6 @@ bool CAccountCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Here you can choose the language.");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Note: translation is not complete.");
 		GS()->AV(ClientID, "null");
-
 
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
 		GS()->AVH(ClientID, TAB_LANGUAGES, "Active language: [{STR}]", pPlayerLanguage);
