@@ -67,12 +67,13 @@ enum Skill
 	SkillCureI = 7, // health recovery cure
 };
 
-enum ToplistTypes
+enum class ToplistType : int
 {
 	GUILDS_LEVELING,
 	GUILDS_WEALTHY,
 	PLAYERS_LEVELING,
 	PLAYERS_WEALTHY,
+	NUM_TOPLIST_TYPES,
 };
 
 // item functionals
@@ -390,25 +391,25 @@ enum class AttributeIdentifier : int
 	SpreadShotgun			= 1,
 	SpreadGrenade			= 2,
 	SpreadRifle				= 3,
-    Strength				= 4,
-	Dexterity				= 5,
- 	CriticalHit				= 6,
-	DirectCriticalHit		= 7,
-    Hardness				= 8,
+    DMG						= 4,
+	AttackSPD				= 5,
+ 	CritDMG					= 6,
+	Crit					= 7,
+    HP						= 8,
 	Lucky					= 9,
-	Piety					= 10,
+	MP						= 10,
 	Vampirism				= 11,
 	AmmoRegen				= 12,
 	Ammo					= 13,
 	Efficiency				= 14,
 	Extraction				= 15,
-	HammerPower				= 16,
-	GunPower				= 17,
-	ShotgunPower			= 18,
-	GrenadePower			= 19,
-	RiflePower				= 20,
+	HammerDMG				= 16,
+	GunDMG					= 17,
+	ShotgunDMG				= 18,
+	GrenadeDMG				= 19,
+	RifleDMG				= 20,
 	LuckyDropItem			= 21,
-	Eidolon					= 22,
+	EidolonPWR				= 22,
 	ATTRIBUTES_NUM,
 };
 

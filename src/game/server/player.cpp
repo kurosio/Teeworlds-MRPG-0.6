@@ -553,12 +553,12 @@ int CPlayer::ExpNeed(int Level)
 
 int CPlayer::GetStartHealth()
 {
-	return 10 + GetAttributeSize(AttributeIdentifier::Hardness);
+	return 10 + GetAttributeSize(AttributeIdentifier::HP);
 }
 
 int CPlayer::GetStartMana()
 {
-	const int EnchantBonus = GetAttributeSize(AttributeIdentifier::Piety);
+	const int EnchantBonus = GetAttributeSize(AttributeIdentifier::MP);
 	return 10 + EnchantBonus;
 }
 
@@ -762,6 +762,20 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID)
 		Size += Acc().m_aStats[ID];
 
 	return Size;
+}
+
+float CPlayer::GetAttributePercent(AttributeIdentifier ID)
+{
+	float Percent = 0.0f;
+	int Size = GetAttributeSize(ID);
+
+	if(ID == AttributeIdentifier::Vampirism)
+		Percent = min(8.0f + (float)Size * 0.0015f, 30.0f);
+	if(ID == AttributeIdentifier::Crit)
+		Percent = min(8.0f + (float)Size * 0.0015f, 30.0f);
+	if(ID == AttributeIdentifier::Lucky)
+		Percent = min(5.0f + (float)Size * 0.0015f, 20.0f);
+	return Percent;
 }
 
 int CPlayer::GetTypeAttributesSize(AttributeType Type)

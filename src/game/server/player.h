@@ -106,6 +106,7 @@ public:
 	virtual int IsVisibleForClient(int ClientID) const { return 2; }
 	virtual int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
 	virtual int GetAttributeSize(AttributeIdentifier ID);
+	float GetAttributePercent(AttributeIdentifier ID);
 	virtual void UpdateTempData(int Health, int Mana);
 
 	virtual void GiveEffect(const char* Potion, int Sec, float Chance = 100.0f);

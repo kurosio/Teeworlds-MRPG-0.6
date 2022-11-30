@@ -285,7 +285,7 @@ void CCharacter::FireWeapon()
 
 			bool Hits = false;
 			bool StartedTalking = false;
-			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(AttributeIdentifier::HammerPower);
+			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(AttributeIdentifier::HammerDMG);
 			const float Radius = clamp(PlayerRadius / 5.0f, IsBot ? 1.7f : 3.2f, 8.0f);
 			GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
@@ -403,7 +403,7 @@ void CCharacter::FireWeapon()
 
 	if(!m_ReloadTimer)
 	{
-		const int ReloadArt = m_pPlayer->GetAttributeSize(AttributeIdentifier::Dexterity);
+		const int ReloadArt = m_pPlayer->GetAttributeSize(AttributeIdentifier::AttackSPD);
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 + ReloadArt);
 	}
 }
@@ -763,22 +763,21 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
 		if(Weapon == WEAPON_GUN)
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::GunPower);
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::GunDMG);
 		else if(Weapon == WEAPON_SHOTGUN)
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::ShotgunPower);
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::ShotgunDMG);
 		else if(Weapon == WEAPON_GRENADE)
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::GrenadePower);
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::GrenadeDMG);
 		else if(Weapon == WEAPON_LASER)
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::RiflePower);
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::RifleDMG);
 		else
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::HammerPower);
+			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::HammerDMG);
 
-		const int EnchantBonus = pFrom->GetAttributeSize(AttributeIdentifier::Strength);
+		const int EnchantBonus = pFrom->GetAttributeSize(AttributeIdentifier::DMG);
 		Dmg += EnchantBonus;
 
 		// vampirism replenish your health
-		int TempInt = pFrom->GetAttributeSize(AttributeIdentifier::Vampirism);
-		if(min(8.0f + (float)TempInt * 0.0015f, 30.0f) > frandom() * 100.0f)
+		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Vampirism) > frandom() * 100.0f)
 		{
 			const int Recovery = max(1, Dmg / 2);
 			GS()->Chat(FromCID, ":: Vampirism stolen: {INT}HP.", Recovery);
@@ -787,18 +786,16 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		}
 
 		// miss out on damage
-		TempInt = m_pPlayer->GetAttributeSize(AttributeIdentifier::Lucky);
-		if(min(5.0f + (float)TempInt * 0.0015f, 20.0f) > frandom() * 100.0f)
+		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Lucky) > frandom() * 100.0f)
 		{
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_HEARTS);
 			return false;
 		}
 
 		// critical damage
-		TempInt = pFrom->GetAttributeSize(AttributeIdentifier::DirectCriticalHit);
-		if(Dmg && !pFrom->IsBot() && min(8.0f + (float)TempInt * 0.0015f, 30.0f) > frandom() * 100.0f)
+		if(Dmg && !pFrom->IsBot() && m_pPlayer->GetAttributePercent(AttributeIdentifier::Crit) > frandom() * 100.0f)
 		{
-			CritDamage = 100 + max(pFrom->GetAttributeSize(AttributeIdentifier::CriticalHit), 1);
+			CritDamage = 100 + max(pFrom->GetAttributeSize(AttributeIdentifier::CritDMG), 1);
 			const float CritDamageFormula = (float)Dmg + ((float)CritDamage * ((float)Dmg / 100.0f));
 			const float CritRange = (CritDamageFormula + (CritDamageFormula / 2.0f) / 2.0f);
 			Dmg = (int)CritDamageFormula + random_int()%(int)CritRange;
@@ -825,12 +822,16 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		m_pPlayer->SetSnapHealthTick(2);
 	}
 
-	// create healthmod indicator
+	// create healthmod indicator & effects
 	const bool IsCriticalDamage = (CritDamage > 0);
 	GS()->CreateDamage(m_Pos, FromCID, OldHealth-m_Health, IsCriticalDamage);
+	GS()->CreateSound(m_Pos, IsCriticalDamage ? (int)SOUND_PLAYER_PAIN_LONG : (int)SOUND_PLAYER_PAIN_SHORT);
+	m_EmoteType = EMOTE_PAIN;
+	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
 
 	if(FromCID != m_pPlayer->GetCID())
 		GS()->CreatePlayerSound(FromCID, SOUND_HIT);
+
 
 	// verify death
 	if(m_Health <= 0)
@@ -858,9 +859,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		});
 	}
 
-	GS()->CreateSound(m_Pos, IsCriticalDamage ? (int)SOUND_PLAYER_PAIN_LONG : (int)SOUND_PLAYER_PAIN_SHORT);
-	m_EmoteType = EMOTE_PAIN;
-	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
 	return true;
 }
 

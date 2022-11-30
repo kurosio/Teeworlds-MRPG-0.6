@@ -18,7 +18,7 @@ CPlayerBot::CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int Spaw
 	m_EidolonCID = -1;
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
-	m_BotStartHealth = m_BotType == TYPE_BOT_MOB ? CPlayerBot::GetAttributeSize(AttributeIdentifier::Hardness) : 10;
+	m_BotStartHealth = m_BotType == TYPE_BOT_MOB ? CPlayerBot::GetAttributeSize(AttributeIdentifier::HP) : 10;
 }
 
 CPlayerBot::~CPlayerBot()
@@ -146,7 +146,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 		else if(pAttribute->IsType(AttributeType::Hardtype))
 			Percent = 5.0f;
 
-		if(Boss && ID != AttributeIdentifier::Hardness)
+		if(Boss && ID != AttributeIdentifier::HP)
 			Percent /= 10.0f;
 
 		const int SyncPercentSize = max(1, translate_to_percent_rest(Size, Percent));

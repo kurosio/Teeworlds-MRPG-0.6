@@ -203,15 +203,15 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_TOP, "Here you can see top server Guilds, Players.");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
-		GS()->AVM(ClientID, "SORTEDTOP", ToplistTypes::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
-		GS()->AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
-		GS()->AVM(ClientID, "SORTEDTOP", ToplistTypes::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
+		GS()->AVM(ClientID, "SORTEDTOP", (int)ToplistType::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
+		GS()->AVM(ClientID, "SORTEDTOP", (int)ToplistType::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
+		GS()->AVM(ClientID, "SORTEDTOP", (int)ToplistType::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
+		GS()->AVM(ClientID, "SORTEDTOP", (int)ToplistType::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
 
 		if(pPlayer->m_aSortTabs[SORT_TOP] >= 0)
 		{
 			GS()->AV(ClientID, "null", "\0");
-			ShowTopList(pPlayer, pPlayer->m_aSortTabs[SORT_TOP]);
+			ShowTopList(ClientID, (ToplistType)pPlayer->m_aSortTabs[SORT_TOP], false, 10);
 		}
 
 		GS()->AddVotesBackpage(ClientID);
@@ -384,12 +384,11 @@ void MmoController::ShowLoadingProgress(const char* pLoading, int Size) const
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "LOAD DB", aLoadingBuf);
 }
 
-void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
+void MmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalMode, int Limit) const
 {
-	const int ClientID = pPlayer->GetCID();
-	if(TypeID == GUILDS_LEVELING)
+	if(Type == ToplistType::GUILDS_LEVELING)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT 10");
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT %d", Limit);
 		while (pRes->next())
 		{
 			char NameGuild[64];
@@ -397,24 +396,32 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 			const int Level = pRes->getInt("Level");
 			const int Experience = pRes->getInt("Experience");
 			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
-			GS()->AVL(ClientID, "null", "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
+
+			if(ChatGlobalMode)
+				GS()->Chat(-1, "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
+			else
+				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
 		}
 	}
-	else if (TypeID == GUILDS_WEALTHY)
+	else if (Type == ToplistType::GUILDS_WEALTHY)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT 10");
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT %d", Limit);
 		while (pRes->next())
 		{
 			char NameGuild[64];
 			const int Rank = pRes->getRow();
 			const int Gold = pRes->getInt("Bank");
 			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
-			GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
+
+			if(ChatGlobalMode)
+				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
+			else
+				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
 		}
 	}
-	else if (TypeID == PLAYERS_LEVELING)
+	else if (Type == ToplistType::PLAYERS_LEVELING)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT 10");
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT %d", Limit);
 		while (pRes->next())
 		{
 			char Nick[64];
@@ -422,12 +429,17 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 			const int Level = pRes->getInt("Level");
 			const int Experience = pRes->getInt("Exp");
 			str_copy(Nick, pRes->getString("Nick").c_str(), sizeof(Nick));
-			GS()->AVL(ClientID, "null", "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
+
+			if(ChatGlobalMode)
+				GS()->Chat(-1, "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
+			else
+				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
+
 		}
 	}
-	else if (TypeID == PLAYERS_WEALTHY)
+	else if (Type == ToplistType::PLAYERS_WEALTHY)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT 10", (ItemIdentifier)itGold);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT %d", (ItemIdentifier)itGold, Limit);
 		while (pRes->next())
 		{
 			char Nick[64];
@@ -435,7 +447,11 @@ void MmoController::ShowTopList(CPlayer* pPlayer, int TypeID) const
 			const int Gold = pRes->getInt("Value");
 			const int UserID = pRes->getInt("UserID");
 			str_copy(Nick, PlayerName(UserID), sizeof(Nick));
-			GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
+
+			if(ChatGlobalMode)
+				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
+			else
+				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
 		}
 	}
 }

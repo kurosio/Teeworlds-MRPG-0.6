@@ -790,7 +790,7 @@ CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
 		if (!FinderCollised && ((m_BotTargetLife <= 10 && m_BotTargetCollised)
-			|| pFinderHard->GetAttributeSize(AttributeIdentifier::Hardness) > pPlayer->GetAttributeSize(AttributeIdentifier::Hardness)))
+			|| pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pPlayer->GetAttributeSize(AttributeIdentifier::HP)))
 			SetTarget(i);
 	}
 

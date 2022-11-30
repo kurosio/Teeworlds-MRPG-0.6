@@ -828,6 +828,38 @@ void CGS::OnTickMainWorld()
 		SendDayInfo(-1);
 	}
 
+	// chat messages
+	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatMessageTime) == 0)
+	{
+		std::deque<std::string> ChatMsg
+		{
+			{ "[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 1\", this will allow the voting menu not to close after clicking to vote." },
+			{ "[INFO] If you can't see the dialogs with NPCs, check in F1 console \"cl_motd_time\" so that the value is set." },
+			{ "[INFO] Information and data can be found in the call voting menu." },
+			{ "[INFO] The mod supports translation, you can find it in \"Call vote -> Settings -> Settings language\"." },
+			{ "[INFO] Don't know what to do? For example, try to find ways to improve your attributes, of which there are more than 25." },
+		};
+		Chat(-1, ChatMsg[random_int() % ChatMsg.size()].c_str());
+	}
+
+	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatTopMessageTime) == 0)
+	{
+		const char* StrTypeName;
+		ToplistType RandomType = (ToplistType)(random_int() % (int)ToplistType::NUM_TOPLIST_TYPES);
+
+		switch(RandomType)
+		{
+			case ToplistType::GUILDS_LEVELING: StrTypeName = "---- [Top 5 guilds by leveling] ----"; break;
+			case ToplistType::GUILDS_WEALTHY: StrTypeName = "---- [Top 5 guilds by gold] ----"; break;
+			case ToplistType::PLAYERS_LEVELING: StrTypeName = "---- [Top 5 players by leveling] ----"; break;
+			default: StrTypeName = "---- [Top 5 players by gold] ----"; break;
+		}
+
+		Chat(-1, StrTypeName);
+		Mmo()->ShowTopList(-1, RandomType, true, 5);
+	}
+
+	// discord status
 	UpdateDiscordStatus();
 }
 
@@ -1601,7 +1633,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	TI("in the future. Active skills use mana, but they use %% of mana.");
 	AV(ClientID, "null");
 	TI("#### The upgrades now ####");
-	TI("- Strength : Damage");
+	TI("- DMG : Damage");
 	TI("- Dexterity : Shooting speed");
 	TI("- Crit Dmg : Damage dealt by critical hits");
 	TI("- Direct Crit Dmg : Critical chance");
@@ -1645,7 +1677,7 @@ void CGS::AddVotesBackpage(int ClientID)
 void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	AVH(ClientID, TAB_INFO_STAT, "Player Stats {STR}", IsDungeon() ? "(Sync)" : "\0");
+	AVH(ClientID, TAB_INFO_STAT, "Your main stats & chances {STR}", IsDungeon() ? "(Sync)" : "\0");
 	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
 		if(!pAttribute->HasDatabaseField())
@@ -1653,10 +1685,23 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 
 		// if upgrades are cheap, they have a division of statistics
 		const int Size = pPlayer->GetAttributeSize(ID);
-		AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "+{INT} - {STR}", Size, pAttribute->GetName());
+
+		// percent data TODO: extract percent attributes
+		float Percent = pPlayer->GetAttributePercent(ID);
+		if(Percent)
+		{
+			char aBuf[64];
+			str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
+			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "* {INT} - {STR} {STR}", Size, pAttribute->GetName(), aBuf);
+		}
+		else
+		{
+			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "* {INT} - {STR}", Size, pAttribute->GetName());
+		}
 	}
 
-	AVM(ClientID, "null", NOPE, NOPE, "Player Upgrade Point: {INT}P", pPlayer->Acc().m_Upgrade);
+	AV(ClientID, "null");
+	AVM(ClientID, "null", NOPE, NOPE, "# Player Upgrade Point: {INT}P", pPlayer->Acc().m_Upgrade);
 	AV(ClientID, "null");
 }
 
