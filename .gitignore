@@ -38,6 +38,8 @@ cscope.out
 
 # CMake
 generated
+cmake-build-debug/
+cmake-build-release/
 
 .ninja_deps
 .ninja_log
