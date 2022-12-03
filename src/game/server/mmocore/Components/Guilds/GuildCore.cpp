@@ -1279,31 +1279,34 @@ void GuildCore::ShowInvitesGuilds(int ClientID, int GuildID)
 void GuildCore::ShowFinderGuilds(int ClientID)
 {
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	GS()->AVL(ClientID, "null", "You are not in guild!");
-	GS()->AV(ClientID, "null", "Use reason how Value.");
-	GS()->AV(ClientID, "null", "Example: Find guild: [], in reason name.");
-	GS()->AV(ClientID, "null");
-	GS()->AVM(ClientID, "MINVITENAME", 1, NOPE, "Find guild: {STR}", pPlayer->GetTempData().m_aGuildSearchBuf);
+    if (pPlayer->Acc().IsGuild())
+        GS()->AVL(ClientID, "null", "You already in guild '{STR}'!", CGuildData::ms_aGuild[pPlayer->Acc().m_GuildID].m_aName);
+    else
+        GS()->AVL(ClientID, "null", "You are not in guild!");
+    GS()->AV(ClientID, "null", "Use reason how Value.");
+    GS()->AV(ClientID, "null", "Example: Find guild: [], in reason name.");
+    GS()->AV(ClientID, "null");
+    GS()->AVM(ClientID, "MINVITENAME", 1, NOPE, "Find guild: {STR}", pPlayer->GetTempData().m_aGuildSearchBuf);
 
-	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1800;
-	CSqlString<64> cGuildName = CSqlString<64>(pPlayer->GetTempData().m_aGuildSearchBuf);
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "WHERE Name LIKE '%%%s%%'", cGuildName.cstr());
-	while(pRes->next())
-	{
-		const int GuildID = pRes->getInt("ID");
-		const int AvailableSlot = pRes->getInt("AvailableSlots");
-		const int PlayersCount = GetGuildPlayerValue(GuildID);
-		cGuildName = pRes->getString("Name").c_str();
-		GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} : Players [{INT}/{INT}]",
-			cGuildName.cstr(), Job()->PlayerName(CGuildData::ms_aGuild[GuildID].m_UserID), PlayersCount, AvailableSlot);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "House: {STR} | Bank: {VAL} gold", (GetGuildHouseID(GuildID) <= 0 ? "No" : "Yes"), CGuildData::ms_aGuild[GuildID].m_Bank);
+    int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1800;
+    CSqlString<64> cGuildName = CSqlString<64>(pPlayer->GetTempData().m_aGuildSearchBuf);
+    ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "WHERE Name LIKE '%%%s%%'", cGuildName.cstr());
+    while(pRes->next())
+    {
+        const int GuildID = pRes->getInt("ID");
+        const int AvailableSlot = pRes->getInt("AvailableSlots");
+        const int PlayersCount = GetGuildPlayerValue(GuildID);
+        cGuildName = pRes->getString("Name").c_str();
+        GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} : Players [{INT}/{INT}]",
+                  cGuildName.cstr(), Job()->PlayerName(CGuildData::ms_aGuild[GuildID].m_UserID), PlayersCount, AvailableSlot);
+        GS()->AVM(ClientID, "null", NOPE, HideID, "House: {STR} | Bank: {VAL} gold", (GetGuildHouseID(GuildID) <= 0 ? "No" : "Yes"), CGuildData::ms_aGuild[GuildID].m_Bank);
 
-		GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, GuildID, HideID, "View player list");
+        GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, GuildID, HideID, "View player list");
 
-		GS()->AVM(ClientID, "MINVITESEND", GuildID, HideID, "Send request to join {STR}", cGuildName.cstr());
-		HideID++;
-	}
-	GS()->AddVotesBackpage(ClientID);
+        GS()->AVM(ClientID, "MINVITESEND", GuildID, HideID, "Send request to join {STR}", cGuildName.cstr());
+        HideID++;
+    }
+    GS()->AddVotesBackpage(ClientID);
 }
 
 /* #########################################################################
