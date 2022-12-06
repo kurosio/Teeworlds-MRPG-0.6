@@ -315,6 +315,7 @@ void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, "- Don't use multiple accounts");
 	pGS->Chat(ClientID, "- Don't share your account credentials (username, password)");
 	pGS->Chat(ClientID, "- Do not use ads, that is not part of the game");
+	pGS->Chat(ClientID, "- Do not block other players");
 }
 
 void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
