@@ -1,6 +1,11 @@
 #if defined(CONF_OPENSSL)
 #include "hash_ctxt.h"
 
+#ifdef __GNUC__
+// https://www.openssl.org/docs/manmaster/man3/SHA256_Init.html
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 void sha256_init(SHA256_CTX *ctxt)
 {
 	SHA256_Init(ctxt);
