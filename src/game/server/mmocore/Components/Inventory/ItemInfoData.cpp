@@ -43,11 +43,11 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 
 			// strength stats
 			if(Type == AttributeType::Hardtype)
-				UpgradePrice = max(20, Att.Info()->GetUpgradePrice()) * 55;
+				UpgradePrice = max(80, Att.Info()->GetUpgradePrice()) * 55;
 
 			// weapon and job stats
 			else if(Type == AttributeType::Job || Type == AttributeType::Weapon || Att.GetID() == AttributeIdentifier::LuckyDropItem)
-				UpgradePrice = max(40, Att.Info()->GetUpgradePrice()) * 55;
+				UpgradePrice = max(100, Att.Info()->GetUpgradePrice()) * 55;
 
 			// other stats
 			else
