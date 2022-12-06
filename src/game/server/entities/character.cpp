@@ -501,12 +501,24 @@ bool CCharacter::RemoveWeapon(int Weapon)
 	return Reverse;
 }
 
-void CCharacter::SetEmote(int Emote, int Sec)
+void CCharacter::SetEmote(int Emote, int Sec, bool StartEmoticion)
 {
 	if (m_Alive && m_EmoteStop < Server()->Tick())
 	{
 		m_EmoteType = Emote;
 		m_EmoteStop = Server()->Tick() + Sec*Server()->TickSpeed();
+	}
+
+	if(StartEmoticion)
+	{
+		if(Emote == EMOTE_BLINK)
+			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_DOTDOT);
+		else if(Emote == EMOTE_HAPPY)
+			GS()->SendEmoticon(m_pPlayer->GetCID(), (random_int() % 2 == 0 ? (int)EMOTICON_HEARTS : (int)EMOTICON_EYES));
+		else if(Emote == EMOTE_ANGRY)
+			GS()->SendEmoticon(m_pPlayer->GetCID(), (EMOTICON_SPLATTEE + random_int() % 3));
+		else if(Emote == EMOTE_PAIN)
+			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_DROP);
 	}
 }
 
@@ -800,8 +812,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 			const float CritRange = (CritDamageFormula + (CritDamageFormula / 2.0f) / 2.0f);
 			Dmg = (int)CritDamageFormula + random_int()%(int)CritRange;
 			
-			pFrom->GetCharacter()->SetEmote(EMOTE_ANGRY, 2);
-			GS()->SendEmoticon(FromCID, EMOTICON_EXCLAMATION);
+			pFrom->GetCharacter()->SetEmote(EMOTE_ANGRY, 2, true);
 		}
 
 		// fix quick killer spread players
@@ -837,7 +848,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	if(m_Health <= 0)
 	{
 		if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
-			pFrom->GetCharacter()->SetEmote(EMOTE_HAPPY, 1);
+			pFrom->GetCharacter()->SetEmote(EMOTE_HAPPY, 1, false);
 
 		// do not kill the bot it is still running in CCharacterBotAI::TakeDamage
 		if(m_pPlayer->IsBot())
@@ -1019,7 +1030,7 @@ void CCharacter::HandleEvent()
 {
 	if(m_Event == TILE_EVENT_PARTY)
 	{
-		SetEmote(EMOTE_HAPPY, 1);
+		SetEmote(EMOTE_HAPPY, 1, false);
 		if(random_int() % 50 == 0)
 		{
 			GS()->SendEmoticon(m_pPlayer->GetCID(), 1 + random_int() % 2);
@@ -1029,7 +1040,7 @@ void CCharacter::HandleEvent()
 
 	else if(m_Event == TILE_EVENT_LIKE)
 	{
-		SetEmote(EMOTE_HAPPY, 1);
+		SetEmote(EMOTE_HAPPY, 1, false);
 	}
 }
 
@@ -1100,7 +1111,7 @@ void CCharacter::HandleIndependentTuning()
 		pTuningParams->m_AirFriction = 0.95f;
 		pTuningParams->m_AirControlSpeed = 250.0f / Server()->TickSpeed();
 		pTuningParams->m_AirControlAccel = 1.5f;
-		SetEmote(EMOTE_BLINK, 1);
+		SetEmote(EMOTE_BLINK, 1, false);
 	}
 
 	// potions and buffs are different
@@ -1221,10 +1232,6 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		// enable damage from eidolon to mobs
 		if(m_pPlayer->IsBot() && m_pPlayer->GetBotType() == TYPE_BOT_MOB)
 			return true;
-
-		// allow damage if 
-		//if(CPlayerBot* pEidolon = dynamic_cast<CPlayerBot*>(pFrom); pEidolon && IsAllowedPVP(pEidolon->GetEidolonOwner()->GetCID()))
-		//	return true;
 
 		return false;
 	}

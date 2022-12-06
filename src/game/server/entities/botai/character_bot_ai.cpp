@@ -16,6 +16,7 @@
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
+
 CCharacterBotAI::CCharacterBotAI(CGameWorld *pWorld) : CCharacter(pWorld) {}
 CCharacterBotAI::~CCharacterBotAI() = default;
 
@@ -27,6 +28,7 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	if(!CCharacter::Spawn(m_pBotPlayer, Pos))
 		return false;
 
+	// target init
 	m_Target.Reset();
 	m_Target.Init(this);
 
@@ -104,8 +106,8 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
 
 	// if the bot doesn't have target player, set to from
-	if(m_Target.IsEmpty())
-		m_Target.Set(From, 250);
+	if(m_Target.IsEmpty() && pFrom->GetBotType() == TYPE_BOT_MOB)
+		m_Target.Set(From, 200);
 
 	// add (from player) to the list of those who caused damage
 	if(std::find_if(m_aListDmgPlayers.begin(), m_aListDmgPlayers.end(), [From](int ClientID){ return ClientID == From; }) == m_aListDmgPlayers.end())
@@ -463,7 +465,7 @@ void CCharacterBotAI::BehaviorTick()
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
 			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_ZZZ);
-			SetEmote(EMOTE_BLINK, 1);
+			SetEmote(EMOTE_BLINK, 1, false);
 		}
 	}
 }
@@ -528,33 +530,38 @@ void CCharacterBotAI::EngineEidolons()
 	bool MobMove = true;
 	if(const CPlayer* pOwner = m_pBotPlayer->GetEidolonOwner(); pOwner && pOwner->GetCharacter())
 	{
-		float Distance = distance(pOwner->m_ViewPos, m_Pos);
-		if(Distance > 400.0f)
+		// search target
+		if(const CPlayerBot* pEmenyPlayer = SearchMob(400.0f); pEmenyPlayer && pEmenyPlayer->GetCharacter())
 		{
-			m_Target.SetType(TARGET_TYPE::LOST);
-			m_pBotPlayer->m_TargetPos = pOwner->GetCharacter()->GetPos();
-		}
-		else if(const CPlayerBot* pEmenyPlayer = SearchMob(400.0f); pEmenyPlayer && pEmenyPlayer->GetCharacter())
-		{
-			m_Target.Set(pEmenyPlayer->GetCID(), 200);
+			m_Target.Set(pEmenyPlayer->GetCID(), 100);
 			m_pBotPlayer->m_TargetPos = pEmenyPlayer->GetCharacter()->GetPos();
 		}
-		else if(Distance < 128.0f && m_Target.IsEmpty())
+
+		// check player distance with active target
+		float Distance = distance(pOwner->m_ViewPos, m_Pos);
+		if(Distance > 400.0f && !m_Target.IsEmpty())
 		{
-			if(pOwner->GetCharacter()->m_Core.m_HookState != HOOK_GRABBED)
-				ResetHook();
-
-			if(Server()->Tick() % Server()->TickSpeed() == 0)
-				m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
-
-			m_pBotPlayer->m_TargetPos = vec2(0, 0);
-			m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
-			m_Input.m_Direction = 0;
-			MobMove = false;
+			m_Target.Reset();
 		}
-		else
+
+		// side empty target
+		if(m_Target.IsEmpty())
 		{
-			m_Target.SetType(TARGET_TYPE::LOST);
+			if(Distance < 128.0f)
+			{
+				if(pOwner->GetCharacter()->m_Core.m_HookState != HOOK_GRABBED)
+					ResetHook();
+
+				if(Server()->Tick() % Server()->TickSpeed() == 0)
+					m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+
+				m_pBotPlayer->m_TargetPos = vec2(0, 0);
+				m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
+				m_Input.m_Direction = 0;
+				MobMove = false;
+			}
+
+			// always with empty target / target pos it's owner
 			m_pBotPlayer->m_TargetPos = pOwner->GetCharacter()->GetPos();
 		}
 	}
@@ -776,7 +783,7 @@ CPlayer *CCharacterBotAI::SearchTankPlayer(float Distance)
 		CPlayer *pPlayer = SearchPlayer(Distance);
 		if(pPlayer && pPlayer->GetCharacter())
 		{
-			m_Target.Set(pPlayer->GetCID(), 200);
+			m_Target.Set(pPlayer->GetCID(), 100);
 		}
 
 		return pPlayer;
@@ -805,7 +812,7 @@ CPlayer *CCharacterBotAI::SearchTankPlayer(float Distance)
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
 		if (!FinderCollised && pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pPlayer->GetAttributeSize(AttributeIdentifier::HP))
-			m_Target.Set(i, 200);
+			m_Target.Set(i, 100);
 	}
 
 	return pPlayer;
@@ -874,28 +881,16 @@ void CCharacterBotAI::EmotesAction(int EmotionStyle)
 	if (EmotionStyle < EMOTE_PAIN || EmotionStyle > EMOTE_BLINK)
 		return;
 
-	if ((Server()->Tick() % (Server()->TickSpeed() * 3 + random_int() % 10)) == 0)
+	if (Server()->Tick() % (Server()->TickSpeed() * 3 + random_int() % 10) == 0)
 	{
 		if (EmotionStyle == EMOTE_BLINK)
-		{
-			SetEmote(EMOTE_BLINK, 1 + random_int() % 2);
-			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_DOTDOT);
-		}
+			SetEmote(EMOTE_BLINK, 1 + random_int() % 2, true);
 		else if (EmotionStyle == EMOTE_HAPPY)
-		{
-			SetEmote(EMOTE_HAPPY, 1 + random_int() % 2);
-			GS()->SendEmoticon(m_pBotPlayer->GetCID(), (random_int() % 2 == 0 ? (int)EMOTICON_HEARTS : (int)EMOTICON_EYES));
-		}
+			SetEmote(EMOTE_HAPPY, 1 + random_int() % 2, true);
 		else if (EmotionStyle == EMOTE_ANGRY)
-		{
-			SetEmote(EMOTE_ANGRY, 1 + random_int() % 2);
-			GS()->SendEmoticon(m_pBotPlayer->GetCID(), (EMOTICON_SPLATTEE + random_int() % 3));
-		}
+			SetEmote(EMOTE_ANGRY, 1 + random_int() % 2, true);
 		else if (EmotionStyle == EMOTE_PAIN)
-		{
-			SetEmote(EMOTE_PAIN, 1 + random_int() % 2);
-			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_DROP);
-		}
+			SetEmote(EMOTE_PAIN, 1 + random_int() % 2, true);
 	}
 }
 

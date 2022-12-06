@@ -21,7 +21,7 @@ class CCharacterBotAI : public CCharacter
 	// target system
 	class CTargetSystem
 	{
-		int m_TargetID{};
+		int m_TargetID{-1};
 		bool m_TargetCollised{};
 		int m_TargetAggression{};
 		TARGET_TYPE m_TargetType {};
@@ -35,37 +35,58 @@ class CCharacterBotAI : public CCharacter
 
 		void Reset()
 		{
-			m_TargetID = -1;
-			m_TargetAggression = 0;
-			m_TargetCollised = false;
-			m_TargetType = TARGET_TYPE::EMPTY;
+			if(m_pCharacter)
+			{
+				m_TargetID = -1;
+				m_TargetAggression = 0;
+				m_TargetCollised = false;
+				m_TargetType = TARGET_TYPE::EMPTY;
+				m_pCharacter->SetEmote(EMOTE_BLINK, 1, true);
+			}
 		}
 
 		void Tick()
 		{
-			if(m_TargetType == TARGET_TYPE::LOST && m_TargetAggression)
+			if(m_pCharacter)
 			{
-				m_TargetAggression--;
-				if(!m_TargetAggression)
-					Reset();
+				if(m_TargetType == TARGET_TYPE::LOST && m_TargetAggression)
+				{
+					m_TargetAggression--;
+					if(!m_TargetAggression)
+						Reset();
+				}
+				else if(m_TargetType == TARGET_TYPE::ACTIVE && random_int() % 100 == 0)
+				{
+					m_pCharacter->SetEmote(EMOTE_ANGRY, 3, true);
+				}
 			}
 		}
-
 		int GetCID() const { return m_TargetID; }
 		int GetAggresion() const { return m_TargetAggression; }
 		void Set(int ClientID, int Aggression)
 		{
-			m_TargetID = ClientID;
-			m_TargetAggression = Aggression;
-			m_TargetType = TARGET_TYPE::ACTIVE;
+			if(m_pCharacter && ClientID >= 0 && ClientID < MAX_CLIENTS)
+			{
+				m_TargetID = ClientID;
+				m_TargetAggression = Aggression;
+				m_TargetType = TARGET_TYPE::ACTIVE;
+			}
 		}
 
 		void SetType(TARGET_TYPE TargetType)
 		{
-			m_TargetType = TargetType;
+			if(m_pCharacter)
+			{
+				if(m_TargetType == TARGET_TYPE::LOST)
+				{
+					m_pCharacter->SetEmote(EMOTE_PAIN, 1, true);
+				}
+
+				m_TargetType = TargetType;
+			}
 		}
 
-		bool IsEmpty() const { return m_TargetID == -1; }
+		bool IsEmpty() const { return m_TargetID <= -1; }
 		bool IsCollised() const { return m_TargetCollised; }
 		void UpdateCollised(bool Collised) { m_TargetCollised = Collised; }
 	} m_Target;
