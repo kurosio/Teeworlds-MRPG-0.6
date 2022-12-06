@@ -27,7 +27,11 @@ void CFlyingExperience::Tick()
 	float Dist = distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos);
 	if(Dist < pPlayer->GetCharacter()->ms_PhysSize)
 	{
-		pPlayer->AddExp(m_Experience);
+		if(m_Experience)
+		{
+			pPlayer->AddExp(m_Experience);
+		}
+
 		GS()->m_World.DestroyEntity(this);
 		return;
 	}

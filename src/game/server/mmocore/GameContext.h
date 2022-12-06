@@ -65,6 +65,7 @@ enum Skill
 	SkillBlessingGodWar = 5, // refill ammunition
 	SkillAttackTeleport = 6, // ?knockout? teleport
 	SkillCureI = 7, // health recovery cure
+	SkillProvoke = 8, // provoke
 };
 
 enum class ToplistType : int

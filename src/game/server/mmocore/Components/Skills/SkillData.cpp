@@ -8,6 +8,8 @@
 #include "Entities/AttackTeleport/attack-teleport.h"
 #include "Entities/HealthTurret/hearth.h"
 #include "Entities/SleepyGravity/sleepy-gravity.h"
+#include "game/server/entities/botai/character_bot_ai.h"
+#include "game/server/mmocore/GameEntities/Items/flying_experience.h"
 
 CGS* CSkill::GS() const
 {
@@ -123,6 +125,44 @@ bool CSkill::Use()
 		GS()->CreateText(NULL, false, vec2(PlayerPosition.x, PlayerPosition.y - 96.0f), vec2(0, 0), 40, "RECOVERY AMMO");
 		return true;
 	}
+
+	if(m_ID == Skill::SkillProvoke)
+	{
+		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+		{
+			// check player
+			CPlayerBot* pPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i, false, true));
+			if(!pPlayer || !GS()->IsPlayerEqualWorld(i))
+				continue;
+
+			// check distance
+			if(distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800)
+				continue;
+
+			// check allowed pvp
+			if(!pPlayer->GetCharacter()->IsAllowedPVP(ClientID))
+				continue;
+
+			// check target upper agression
+			CCharacterBotAI* pCharacterBotAI = dynamic_cast<CCharacterBotAI*>(pPlayer->GetCharacter());
+			if(CPlayer* pPlayerAgr = GS()->GetPlayer(pCharacterBotAI->GetTarget()->GetCID(), false, true))
+			{
+				if(pPlayerAgr->GetStartHealth() > GetPlayer()->GetStartHealth())
+					continue;
+			}
+
+			// set agression
+			pCharacterBotAI->GetTarget()->Set(ClientID, GetBonus());
+			GS()->CreatePlayerSpawn(pPlayer->GetCharacter()->GetPos());
+			pPlayer->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
+			new CFlyingExperience(&GS()->m_World, PlayerPosition, i, 0, pPlayer->GetCharacter()->m_Core.m_Vel);
+		}
+
+		// some effects
+		GS()->CreateSound(PlayerPosition, SOUND_NINJA_FIRE);
+		GS()->CreateText(NULL, false, vec2(PlayerPosition.x, PlayerPosition.y - 96.0f), vec2(0, 0), 40, "PROVOKE");
+	}
+
 	return false;
 }
 
