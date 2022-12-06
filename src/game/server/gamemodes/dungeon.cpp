@@ -498,7 +498,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeI
 	{
 		const float ActiveAttribute = m_SyncDungeon / 2.0f;
 		if(Type == AttributeType::Tank)
-			Percent = 30.0f;
+			Percent = 40.0f;
 
 		const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
 		return max(AttributeSyncProcent, 1);
@@ -508,7 +508,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeI
 	// balance healer damage divides the average attribute into the number of players
 	const float ActiveAttribute = m_SyncDungeon / m_ActivePlayers;
 	if(Type == AttributeType::Healer)
-		Percent = min(25.0f + (m_ActivePlayers * 2.0f), 40.0f);
+		Percent = min(30.0f + (m_ActivePlayers * 2.0f), 50.0f);
 	else if(Type == AttributeType::Tank)
 		Percent = 5.0f;
 	else if(Type == AttributeType::Hardtype || Type == AttributeType::Dps)
