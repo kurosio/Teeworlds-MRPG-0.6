@@ -79,7 +79,7 @@ void CCharacterBotAI::GiveRandomEffects(int To)
 
 bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
-	CPlayer* pFrom = GS()->GetPlayer(From, false);
+	CPlayer* pFrom = GS()->GetPlayer(From, false, true);
 	if (!pFrom || !m_pBotPlayer->IsActive())
 		return false;
 
@@ -88,7 +88,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 
 	// dissalow entered line damage
-	if(pFrom->GetCharacter() && GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
+	if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
 		return false;
 
 	// dissalow damage from bot to bot except type eidolon
