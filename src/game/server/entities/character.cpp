@@ -1223,8 +1223,8 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 			return true;
 
 		// allow damage if 
-		if(CPlayerBot* pEidolon = dynamic_cast<CPlayerBot*>(pFrom); pEidolon && IsAllowedPVP(pEidolon->GetEidolonOwner()->GetCID()))
-			return true;
+		//if(CPlayerBot* pEidolon = dynamic_cast<CPlayerBot*>(pFrom); pEidolon && IsAllowedPVP(pEidolon->GetEidolonOwner()->GetCID()))
+		//	return true;
 
 		return false;
 	}
@@ -1233,8 +1233,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		return false;
 
 	// pvp only for mobs
-	if((m_pPlayer->IsBot() && m_pPlayer->GetBotType() != TYPE_BOT_MOB) || (pFrom->IsBot() && pFrom->GetBotType() !=
-		TYPE_BOT_MOB))
+	if((m_pPlayer->IsBot() && m_pPlayer->GetBotType() != TYPE_BOT_MOB) || (pFrom->IsBot() && pFrom->GetBotType() != TYPE_BOT_MOB))
 		return false;
 
 	// disable damage on safe area
