@@ -126,7 +126,7 @@ MACRO_CONFIG_INT(SvMiningIncreaseLevel, sv_mining_increase_level, 80, 0, 1000, C
 MACRO_CONFIG_INT(SvPlantingIncreaseLevel, sv_planting_increase_level, 80, 0, 10000, CFGFLAG_SERVER, "Planting items own level to increase")
 MACRO_CONFIG_INT(SvMultiplierExpRaidDungeon, sv_multiplier_exp_raid_dungeon, 150, 100, 1000, CFGFLAG_SERVER, "Dungeon experience multiplier")
 
-MACRO_CONFIG_INT(SvStrongGold, sv_strong_gold, 8, 0, 10000, CFGFLAG_SERVER, "Power mobs / strong gold")
+MACRO_CONFIG_INT(SvStrongGold, sv_strong_gold, 2, 0, 5, CFGFLAG_SERVER, "Power mobs / strong gold")
 MACRO_CONFIG_INT(SvStrongAntiPVP, sv_strong_anti_pvp, 50, 0, 10000, CFGFLAG_SERVER, "Anti-PVP Difference classing leveling for denied.")
 
 // world time

@@ -338,7 +338,7 @@ Mood CPlayerBot::GetMoodState() const
 	if(GetBotType() == TYPE_BOT_MOB)
 	{
 		CCharacterBotAI *pChr = (CCharacterBotAI *)m_pCharacter;
-		if(pChr && pChr->GetBotTarget() != m_ClientID)
+		if(pChr && !pChr->GetTarget()->IsEmpty())
 			return Mood::AGRESSED;
 
 		return Mood::ANGRY;

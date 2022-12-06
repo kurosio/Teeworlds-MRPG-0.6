@@ -4,6 +4,13 @@
 #define GAME_SERVER_BOTAI_HELPER_H
 #include "../character.h"
 
+enum class TARGET_TYPE
+{
+	EMPTY,
+	ACTIVE,
+	LOST
+};
+
 class CEntityFunctionNurse;
 class CCharacterBotAI : public CCharacter
 {
@@ -12,9 +19,57 @@ class CCharacterBotAI : public CCharacter
 	class CPlayerBot* m_pBotPlayer;
 
 	// target system
-	int m_BotTargetID;
-	int m_BotTargetLife;
-	bool m_BotTargetCollised;
+	class CTargetSystem
+	{
+		int m_TargetID{};
+		bool m_TargetCollised{};
+		int m_TargetAggression{};
+		TARGET_TYPE m_TargetType {};
+		CCharacterBotAI* m_pCharacter {};
+
+	public:
+		void Init(CCharacterBotAI* pCharacter)
+		{
+			m_pCharacter = pCharacter;
+		}
+
+		void Reset()
+		{
+			m_TargetID = -1;
+			m_TargetAggression = 0;
+			m_TargetCollised = false;
+			m_TargetType = TARGET_TYPE::EMPTY;
+		}
+
+		void Tick()
+		{
+			if(m_TargetType == TARGET_TYPE::LOST && m_TargetAggression)
+			{
+				m_TargetAggression--;
+				if(!m_TargetAggression)
+					Reset();
+			}
+		}
+
+		int GetCID() const { return m_TargetID; }
+		int GetAggresion() const { return m_TargetAggression; }
+		void Set(int ClientID, int Aggression)
+		{
+			m_TargetID = ClientID;
+			m_TargetAggression = Aggression;
+			m_TargetType = TARGET_TYPE::ACTIVE;
+		}
+
+		void SetType(TARGET_TYPE TargetType)
+		{
+			m_TargetType = TargetType;
+		}
+
+		bool IsEmpty() const { return m_TargetID == -1; }
+		bool IsCollised() const { return m_TargetCollised; }
+		void UpdateCollised(bool Collised) { m_TargetCollised = Collised; }
+	} m_Target;
+
 
 	// bot ai
 	bool m_UseHookDissabled;
@@ -29,7 +84,7 @@ public:
 	CCharacterBotAI(CGameWorld* pWorld);
 	~CCharacterBotAI() override;
 
-	int GetBotTarget() const { return m_BotTargetID; };
+	CTargetSystem* GetTarget() { return &m_Target; }
 
 private:
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos) override;
@@ -63,16 +118,11 @@ private:
 	void BehaviorTick();
 
 	CPlayer *SearchPlayer(float Distance) const;
-    CPlayer *SearchTenacityPlayer(float Distance);
+    CPlayer *SearchTankPlayer(float Distance);
 	CPlayerBot* SearchMob(float Distance) const;
 
 	void Move();
 	void Fire();
-
-	// Target bot system
-	void ClearTarget();
-	void SetTarget(int ClientID);
-	bool IsBotTargetEmpty() const;
 
 	// Bots functions
 	bool FunctionNurseNPC();

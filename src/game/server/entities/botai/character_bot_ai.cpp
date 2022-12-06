@@ -27,7 +27,8 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	if(!CCharacter::Spawn(m_pBotPlayer, Pos))
 		return false;
 
-	ClearTarget();
+	m_Target.Reset();
+	m_Target.Init(this);
 
 	// mob information
 	const int MobID = m_pBotPlayer->GetBotMobID();
@@ -103,8 +104,8 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
 
 	// if the bot doesn't have target player, set to from
-	if(IsBotTargetEmpty())
-		SetTarget(From);
+	if(m_Target.IsEmpty())
+		m_Target.Set(From, 250);
 
 	// add (from player) to the list of those who caused damage
 	if(std::find_if(m_aListDmgPlayers.begin(), m_aListDmgPlayers.end(), [From](int ClientID){ return ClientID == From; }) == m_aListDmgPlayers.end())
@@ -125,7 +126,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			}
 		}
 		m_aListDmgPlayers.clear();
-		ClearTarget();
+		m_Target.Reset();
 
 		Die(From, Weapon);
 		return false;
@@ -144,19 +145,21 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 
 void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 {
-	const int ClientID = pPlayer->GetCID();
-	const int BotID = m_pBotPlayer->GetBotID();
-	const int SubID = m_pBotPlayer->GetBotMobID();
+	int ClientID = pPlayer->GetCID();
+	int BotID = m_pBotPlayer->GetBotID();
+	int SubID = m_pBotPlayer->GetBotMobID();
 
 	// quest mob progress
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
+	{
 		GS()->Mmo()->Quest()->AddMobProgressQuests(pPlayer, BotID);
+	}
 
-	// golds
-	const int Golds = max(MobBotInfo::ms_aMobBot[SubID].m_Power / g_Config.m_SvStrongGold, 1);
-	pPlayer->AddMoney(Golds);
+	// grinding gold
+	int Gold = max(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
+	pPlayer->AddMoney(Gold);
 
-	// experience
+	// grinding experience
 	const int ExperienceMob = max(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
 	const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
 	GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
@@ -193,8 +196,8 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 void CCharacterBotAI::ChangeWeapons()
 {
-	const int RandomSec = 1 + random_int() % 3;
-	if(Server()->Tick() % (Server()->TickSpeed() * RandomSec) == 0)
+	const int RandomSeconds = 1 + random_int() % 3;
+	if(Server()->Tick() % (Server()->TickSpeed() * RandomSeconds) == 0)
 	{
 		const int RandomWeapon = clamp(random_int()%4, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
 		if(RandomWeapon == WEAPON_HAMMER || m_pBotPlayer->GetEquippedItemID((ItemFunctional)RandomWeapon))
@@ -212,6 +215,7 @@ bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 
 void CCharacterBotAI::Tick()
 {
+	// check active this bot
 	if(!m_pBotPlayer->IsActive() || !IsAlive())
 		return;
 
@@ -234,7 +238,7 @@ void CCharacterBotAI::Tick()
 	if(GameLayerClipped(m_Pos))
 		Die(m_pBotPlayer->GetCID(), WEAPON_SELF);
 
-	// door
+	// update door state
 	if (!m_DoorHit)
 	{
 		m_OlderPos = m_OldPos;
@@ -244,9 +248,11 @@ void CCharacterBotAI::Tick()
 
 void CCharacterBotAI::TickDeferred()
 {
+	// check active this bot
 	if(!m_pBotPlayer->IsActive() || !IsAlive())
 		return;
-	
+
+	// reset door
 	if(m_DoorHit)
 	{
 		ResetDoorPos();
@@ -324,33 +330,47 @@ void CCharacterBotAI::Snap(int SnappingClient)
 // interactive bots
 void CCharacterBotAI::HandleBot()
 {
-	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
+	// bot-like behavior
+	switch(m_pBotPlayer->GetBotType())
 	{
-		EngineMobs();
+		// default bot mob
+		case TYPE_BOT_MOB:
+		{
+			m_Target.Tick();
+			EngineMobs();
+		} break;
+		// player eidolon
+		case TYPE_BOT_EIDOLON:
+		{
+			m_Target.Tick();
+			EngineEidolons();
+		} break;
+		// quest bot
+		case TYPE_BOT_QUEST:
+		{
+			SetSafe();
+			EngineQuestMob();
+		} break;
+		// npc bot
+		case TYPE_BOT_NPC:
+		{
+			const int tx = m_Pos.x + m_Input.m_Direction * 45.0f;
+			if(tx < 0)
+				m_Input.m_Direction = 1;
+			else if(tx >= GS()->Collision()->GetWidth() * 32.0f)
+				m_Input.m_Direction = -1;
+
+			m_LatestPrevInput = m_LatestInput;
+			m_LatestInput = m_Input;
+
+			SetSafe();
+			EngineNPC();
+		} break;
+		// unknown bot
+		default: break;
 	}
-	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST)
-	{
-		SetSafe();
-		EngineQuestMob();
-	}
-	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
-	{
-		const int tx = m_Pos.x + m_Input.m_Direction * 45.0f;
-		if(tx < 0)
-			m_Input.m_Direction = 1;
-		else if(tx >= GS()->Collision()->GetWidth() * 32.0f)
-			m_Input.m_Direction = -1;
 
-		m_LatestPrevInput = m_LatestInput;
-		m_LatestInput = m_Input;
-
-		SetSafe();
-		EngineNPC();
-	}
-
-	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
-		EngineEidolons();
-
+	// handle
 	HandleEvent();
 }
 
@@ -438,7 +458,7 @@ void CCharacterBotAI::BehaviorTick()
 	const int MobID = m_pBotPlayer->GetBotMobID();
 
 	// sleepy behavior
-	if(IsBotTargetEmpty() && MobBotInfo::ms_aMobBot[MobID].IsEnabledBehavior("Sleepy"))
+	if(m_Target.IsEmpty() && MobBotInfo::ms_aMobBot[MobID].IsEnabledBehavior("Sleepy"))
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
@@ -452,7 +472,9 @@ void CCharacterBotAI::BehaviorTick()
 void CCharacterBotAI::EngineMobs()
 {
 	ResetInput();
-	CPlayer* pPlayer = SearchTenacityPlayer(1000.0f);
+
+	// search hardress player
+	CPlayer* pPlayer = SearchTankPlayer(1000.0f);
 	if(pPlayer && pPlayer->GetCharacter())
 	{
 		m_pBotPlayer->m_TargetPos = pPlayer->GetCharacter()->GetPos();
@@ -478,6 +500,7 @@ void CCharacterBotAI::EngineMobs()
 				const int Health = m_pBotPlayer->GetHealth();
 				const int StartHealth = m_pBotPlayer->GetStartHealth();
 				const float Percent = (Health * 100.0) / StartHealth;
+
 				std::unique_ptr<char[]> Progress = std::move(GS()->LevelString(100, Percent, 10, ':', ' '));
 				GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{STR} {STR}({INT}/{INT})",
 					DataBotInfo::ms_aDataBot[BotID].m_aNameBot, Progress.get(), Health, StartHealth);
@@ -508,15 +531,15 @@ void CCharacterBotAI::EngineEidolons()
 		float Distance = distance(pOwner->m_ViewPos, m_Pos);
 		if(Distance > 400.0f)
 		{
-			ClearTarget();
+			m_Target.SetType(TARGET_TYPE::LOST);
 			m_pBotPlayer->m_TargetPos = pOwner->GetCharacter()->GetPos();
 		}
 		else if(const CPlayerBot* pEmenyPlayer = SearchMob(400.0f); pEmenyPlayer && pEmenyPlayer->GetCharacter())
 		{
+			m_Target.Set(pEmenyPlayer->GetCID(), 200);
 			m_pBotPlayer->m_TargetPos = pEmenyPlayer->GetCharacter()->GetPos();
-			SetTarget(pEmenyPlayer->GetCID());
 		}
-		else if(Distance < 128.0f && IsBotTargetEmpty())
+		else if(Distance < 128.0f && m_Target.IsEmpty())
 		{
 			if(pOwner->GetCharacter()->m_Core.m_HookState != HOOK_GRABBED)
 				ResetHook();
@@ -531,7 +554,7 @@ void CCharacterBotAI::EngineEidolons()
 		}
 		else
 		{
-			ClearTarget();
+			m_Target.SetType(TARGET_TYPE::LOST);
 			m_pBotPlayer->m_TargetPos = pOwner->GetCharacter()->GetPos();
 		}
 	}
@@ -584,9 +607,9 @@ void CCharacterBotAI::Move()
 	// check dissalow move
 	if(m_pBotPlayer->GetBotType() != TYPE_BOT_EIDOLON && IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
 	{
+		m_Target.SetType(TARGET_TYPE::LOST);
 		m_Input.m_Direction = -m_Input.m_Direction;
 		m_DoorHit = true;
-		ClearTarget();
 	}
 
 	// jumping
@@ -696,8 +719,8 @@ void CCharacterBotAI::Move()
 
 void CCharacterBotAI::Fire()
 {
-	CPlayer* pPlayer = GS()->GetPlayer(m_BotTargetID, false, true);
-	if(IsBotTargetEmpty() || !pPlayer || m_BotTargetCollised)
+	CPlayer* pPlayer = GS()->GetPlayer(m_Target.GetCID(), false, true);
+	if(m_Target.IsEmpty() || m_Target.IsCollised() || !pPlayer)
 		return;
 
 	if((m_Input.m_Hook && m_Core.m_HookState == HOOK_IDLE) || m_ReloadTimer != 0)
@@ -746,52 +769,43 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 }
 
 // finding a player among people who have the highest fury
-CPlayer *CCharacterBotAI::SearchTenacityPlayer(float Distance)
+CPlayer *CCharacterBotAI::SearchTankPlayer(float Distance)
 {
-	if(IsBotTargetEmpty() && (GS()->IsDungeon() || random_int() % 30 == 0))
+	if(m_Target.IsEmpty() && (GS()->IsDungeon() || random_int() % 30 == 0))
 	{
 		CPlayer *pPlayer = SearchPlayer(Distance);
 		if(pPlayer && pPlayer->GetCharacter())
-			SetTarget(pPlayer->GetCID());
+		{
+			m_Target.Set(pPlayer->GetCID(), 200);
+		}
+
 		return pPlayer;
 	}
 
-	// throw off aggression if the player is far away
-	CPlayer* pPlayer = GS()->GetPlayer(m_BotTargetID, true, true);
-	if (!IsBotTargetEmpty() && (!pPlayer
-		|| (pPlayer && (distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(m_BotTargetID)))))
-		ClearTarget();
+	// strong warnings for reset target (position and world zone)
+	CPlayer* pPlayer = GS()->GetPlayer(m_Target.GetCID(), true, true);
+	if (!m_Target.IsEmpty() && (!pPlayer || (pPlayer && (distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(m_Target.GetCID())))))
+		m_Target.Reset();
 
 	// non-hostile mobs
-	if (IsBotTargetEmpty() || !pPlayer)
+	if (m_Target.IsEmpty() || !pPlayer)
 		return nullptr;
 
 	// throw off the lifetime of a target
-	m_BotTargetCollised = GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->GetPos(), m_Pos, nullptr, nullptr);
-	if (m_BotTargetLife && m_BotTargetCollised)
-	{
-		m_BotTargetLife--;
-		if (!m_BotTargetLife)
-			ClearTarget();
-	}
-	else
-	{
-		m_BotTargetLife = Server()->TickSpeed() * 3;
-	}
+	m_Target.UpdateCollised(GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->GetPos(), m_Pos, nullptr, nullptr));
 
 	// looking for a stronger
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
 		// check the distance of the player
 		CPlayer* pFinderHard = GS()->GetPlayer(i, true, true);
-		if (m_BotTargetID == i || !pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)
+		if (m_Target.GetCID() == i || !pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)
 			continue;
 
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
-		if (!FinderCollised && ((m_BotTargetLife <= 10 && m_BotTargetCollised)
-			|| pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pPlayer->GetAttributeSize(AttributeIdentifier::HP)))
-			SetTarget(i);
+		if (!FinderCollised && pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pPlayer->GetAttributeSize(AttributeIdentifier::HP))
+			m_Target.Set(i, 200);
 	}
 
 	return pPlayer;
@@ -805,19 +819,21 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 	// looking for a stronger
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		// check the distance of the player
-		CPlayerBot* pCheckedPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if(!pCheckedPlayer || !pCheckedPlayer->GetCharacter() || distance(pCheckedPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > Distance || pCheckedPlayer->GetBotType() !=
-			TYPE_BOT_MOB)
+		// check active player bot
+		CPlayerBot* pSearchBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		if(!pSearchBotPlayer || !pSearchBotPlayer->GetCharacter() || pSearchBotPlayer->GetBotType() != TYPE_BOT_MOB)
 			continue;
 
-		// check if the player is tastier for the bot
-		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pCheckedPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
-		if(!FinderCollised)
-		{
-			pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-			break;
-		}
+		// check distance
+		if(distance(pSearchBotPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > Distance)
+			continue;
+
+		// check walls and closed lines
+		if(GS()->Collision()->IntersectLineWithInvisible(pSearchBotPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
+			continue;
+
+		pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		break;
 	}
 
 	return pBotPlayer;
@@ -828,20 +844,28 @@ bool CCharacterBotAI::SearchTalkedPlayer()
 	bool PlayerFinding = false;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		CPlayer* pFindPlayer = GS()->GetPlayer(i, true, true);
-		if(pFindPlayer && distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) < 128.0f &&
-			!GS()->Collision()->IntersectLineWithInvisible(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr) && m_pBotPlayer->IsVisibleForClient(i))
-		{
-			pFindPlayer->GetCharacter()->m_SafeAreaForTick = true;
+		// check for visible client
+		if(!m_pBotPlayer->IsVisibleForClient(i))
+			continue;
 
-			m_Input.m_TargetX = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
-			m_Input.m_TargetY = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
-			m_Input.m_Direction = 0;
+		// check active player near bot
+		CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
+		if(!pPlayer || distance(pPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 128.0f)
+			continue;
 
-			GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialog: \"hammer hit\"");
-			PlayerFinding = true;
-		}
+		// check walls and closed lines
+		if(GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
+			continue;
+
+		pPlayer->GetCharacter()->m_SafeAreaForTick = true;
+		m_Input.m_TargetX = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
+		m_Input.m_TargetY = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
+		m_Input.m_Direction = 0;
+
+		GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialog: \"hammer hit\"");
+		PlayerFinding = true;
 	}
+
 	return PlayerFinding;
 }
 
@@ -875,36 +899,10 @@ void CCharacterBotAI::EmotesAction(int EmotionStyle)
 	}
 }
 
-// - - - - - - - - - - - - - - - - - - - - - Target bot system
-bool CCharacterBotAI::IsBotTargetEmpty() const
-{
-	return m_BotTargetID == m_pBotPlayer->GetCID();
-}
-
-void CCharacterBotAI::ClearTarget()
-{
-	const int FromID = m_pBotPlayer->GetCID();
-	if(m_BotTargetID != FromID)
-	{
-		m_pBotPlayer->m_TargetPos = vec2(0, 0);
-		m_EmotionsStyle = 1 + random_int() % 5;
-		m_BotTargetID = FromID;
-		m_BotTargetLife = 0;
-		m_BotTargetCollised = 0;
-	}
-}
-
-void CCharacterBotAI::SetTarget(int ClientID)
-{
-	m_EmotionsStyle = EMOTE_ANGRY;
-	m_BotTargetID = ClientID;
-}
-
 // - - - - - - - - - - - - - - - - - - - - - Npc functions
 bool CCharacterBotAI::BaseFunctionNPC()
 {
-	const bool PlayerFinding = SearchTalkedPlayer();
-	return PlayerFinding;
+	return SearchTalkedPlayer();
 }
 
 bool CCharacterBotAI::FunctionNurseNPC()
@@ -913,25 +911,31 @@ bool CCharacterBotAI::FunctionNurseNPC()
 	bool PlayerFinding = false;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		CPlayer* pFindPlayer = GS()->GetPlayer(i, true, true);
-		if(!pFindPlayer || distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) >= 256.0f ||
-			GS()->Collision()->IntersectLine(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
+		// check active player near bot
+		CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
+		if(!pPlayer || distance(pPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) >= 256.0f)
+			continue;
+
+		// check walls and closed lines
+		if(GS()->Collision()->IntersectLine(pPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
 			continue;
 
 		// disable collision and hook with players
-		float Distance = distance(pFindPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos);
+		float Distance = distance(pPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos);
 		if(Distance < 128.0f)
-			pFindPlayer->GetCharacter()->m_SafeAreaForTick = true;
-		else if(Distance < 64.0f)
-			m_Input.m_Direction = 0;
+		{
+			pPlayer->GetCharacter()->m_SafeAreaForTick = true;
+			if(Distance < 64.0f)
+				m_Input.m_Direction = 0;
+		}
 
 		// skip full health
-		if(pFindPlayer->GetHealth() >= pFindPlayer->GetStartHealth())
+		if(pPlayer->GetHealth() >= pPlayer->GetStartHealth())
 			continue;
 
 		// set target to player
-		m_Input.m_TargetX = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
-		m_Input.m_TargetY = static_cast<int>(pFindPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
+		m_Input.m_TargetX = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
+		m_Input.m_TargetY = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
 		m_LatestInput.m_TargetX = m_Input.m_TargetX;
 		m_LatestInput.m_TargetY = m_Input.m_TargetX;
 		PlayerFinding = true;
@@ -941,13 +945,15 @@ bool CCharacterBotAI::FunctionNurseNPC()
 			continue;
 
 		// increase health for player
-		const int Health = max(pFindPlayer->GetStartHealth() / 20, 1);
-		vec2 DrawPosition = vec2(pFindPlayer->GetCharacter()->m_Core.m_Pos.x, pFindPlayer->GetCharacter()->m_Core.m_Pos.y - 90.0f);
+		int Health = max(pPlayer->GetStartHealth() / 20, 1);
+		new CHearth(&GS()->m_World, m_Pos, pPlayer, Health, pPlayer->GetCharacter()->m_Core.m_Vel);
+		m_Input.m_Direction = 0;
+
+		// information
+		vec2 DrawPosition = vec2(pPlayer->GetCharacter()->m_Core.m_Pos.x, pPlayer->GetCharacter()->m_Core.m_Pos.y - 90.0f);
 		str_format(aBuf, sizeof(aBuf), "%dHP", Health);
 		GS()->CreateText(nullptr, false, DrawPosition, vec2(0, 0), 40, aBuf);
-		new CHearth(&GS()->m_World, m_Pos, pFindPlayer, Health, pFindPlayer->GetCharacter()->m_Core.m_Vel);
-
-		m_Input.m_Direction = 0;
 	}
+
 	return PlayerFinding;
 }

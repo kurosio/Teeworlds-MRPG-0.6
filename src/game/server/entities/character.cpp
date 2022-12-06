@@ -1222,10 +1222,11 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		if(m_pPlayer->IsBot() && m_pPlayer->GetBotType() == TYPE_BOT_MOB)
 			return true;
 
-		// dissalow  damage from self eidolon
-		CPlayerBot* pFromBot = dynamic_cast<CPlayerBot*>(pFrom);
-		if(pFromBot->GetEidolonOwner() && pFromBot->GetEidolonOwner()->GetCID() == m_pPlayer->GetCID())
-			return false;
+		// allow damage if 
+		if(CPlayerBot* pEidolon = dynamic_cast<CPlayerBot*>(pFrom); pEidolon && IsAllowedPVP(pEidolon->GetEidolonOwner()->GetCID()))
+			return true;
+
+		return false;
 	}
 
 	if(!pFrom || (m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled) || (m_pPlayer->IsBot() && pFrom->IsBot()))
@@ -1236,9 +1237,8 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		TYPE_BOT_MOB))
 		return false;
 
-	// disable damage on invisible wall
-	if(GS()->Collision()->GetParseTilesAt(GetPos().x, GetPos().y) == TILE_INVISIBLE_WALL
-		|| GS()->Collision()->GetParseTilesAt(pFrom->GetCharacter()->GetPos().x, pFrom->GetCharacter()->GetPos().y) == TILE_INVISIBLE_WALL)
+	// disable damage on safe area
+	if(GS()->Collision()->GetTile(GetPos()) & CCollision::COLFLAG_SAFE_AREA || GS()->Collision()->GetTile(pFrom->GetCharacter()->GetPos()) & CCollision::COLFLAG_SAFE_AREA)
 		return false;
 
 	// players anti pvp
