@@ -128,6 +128,7 @@ bool CSkill::Use()
 
 	if(m_ID == Skill::SkillProvoke)
 	{
+		bool MissedProvoked = false;
 		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 		{
 			// check player
@@ -148,7 +149,10 @@ bool CSkill::Use()
 			if(CPlayer* pPlayerAgr = GS()->GetPlayer(pCharacterBotAI->GetTarget()->GetCID(), false, true))
 			{
 				if(pPlayerAgr->GetStartHealth() > GetPlayer()->GetStartHealth())
+				{
+					MissedProvoked = true;
 					continue;
+				}
 			}
 
 			// set agression
@@ -161,6 +165,8 @@ bool CSkill::Use()
 		// some effects
 		GS()->CreateSound(PlayerPosition, SOUND_NINJA_FIRE);
 		GS()->CreateText(NULL, false, vec2(PlayerPosition.x, PlayerPosition.y - 96.0f), vec2(0, 0), 40, "PROVOKE");
+		if(MissedProvoked)
+			GS()->Chat(ClientID, "Some were not provoked due to a stronger provocation.");
 	}
 
 	return false;
