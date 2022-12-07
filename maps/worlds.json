@@ -26,5 +26,9 @@
 	{
 		"name": "Helonia region Azuria",
 		"path": "chapter-2/Azuria.map"
+	},	
+	{
+		"name": "Helonia region Port",
+		"path": "chapter-2/Helonia Port.map"
 	}
 ]}
