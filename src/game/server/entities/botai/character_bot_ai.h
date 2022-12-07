@@ -41,7 +41,6 @@ class CCharacterBotAI : public CCharacter
 				m_TargetAggression = 0;
 				m_TargetCollised = false;
 				m_TargetType = TARGET_TYPE::EMPTY;
-				m_pCharacter->SetEmote(EMOTE_BLINK, 1, true);
 			}
 		}
 
@@ -54,10 +53,6 @@ class CCharacterBotAI : public CCharacter
 					m_TargetAggression--;
 					if(!m_TargetAggression)
 						Reset();
-				}
-				else if(m_TargetType == TARGET_TYPE::ACTIVE && random_int() % 100 == 0)
-				{
-					m_pCharacter->SetEmote(EMOTE_ANGRY, 3, true);
 				}
 			}
 		}
@@ -77,11 +72,6 @@ class CCharacterBotAI : public CCharacter
 		{
 			if(m_pCharacter)
 			{
-				if(m_TargetType == TARGET_TYPE::LOST)
-				{
-					m_pCharacter->SetEmote(EMOTE_PAIN, 1, true);
-				}
-
 				m_TargetType = TargetType;
 			}
 		}
