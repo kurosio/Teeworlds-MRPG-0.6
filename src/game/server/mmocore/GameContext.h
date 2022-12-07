@@ -244,6 +244,7 @@ enum
 	itPoisonHook = 64,					// Poison hook
 	itExplodeImpulseHook = 65,			// Explode hook
 	itSpiderHook = 66,					// Spider hook
+	itEidolonDryad = 80,				// Eidolon
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,
@@ -431,7 +432,8 @@ class EidolonsTools
 	inline static std::initializer_list< std::pair < int, int > > m_Eidons
 	{
 		{ itEidolonOtohime, 45 },
-		{ itEidolonMerrilee, 46 }
+		{ itEidolonMerrilee, 46 },
+		{ itEidolonDryad, 58 }
 	};
 
 public:
