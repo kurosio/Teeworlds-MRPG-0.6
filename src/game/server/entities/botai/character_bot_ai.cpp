@@ -43,7 +43,9 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 		}
 
 		if(!GS()->IsDungeon())
+		{
 			GS()->ChatWorldID(MobBotInfo::ms_aMobBot[MobID].m_WorldID, "", "In your zone emerging {STR}!", MobBotInfo::ms_aMobBot[MobID].GetName());
+		}
 	}
 	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST && QuestBotInfo::ms_aQuestBot[MobID].m_HasAction)
 	{
@@ -66,16 +68,16 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	return true;
 }
 
-void CCharacterBotAI::GiveRandomEffects(int To)
+void CCharacterBotAI::GiveRandomEffects(int ClientID)
 {
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
 	{
-		CPlayer* pPlayerTo = GS()->GetPlayer(To);
-		if(pPlayerTo && To != m_pBotPlayer->GetCID())
+		CPlayer* pPlayer = GS()->GetPlayer(ClientID);
+		if(pPlayer && ClientID != m_pBotPlayer->GetCID())
 		{
 			int MobID = m_pBotPlayer->GetBotMobID();
 			if(const CMobBuffDebuff* pBuff = MobBotInfo::ms_aMobBot[MobID].GetRandomEffect())
-				pPlayerTo->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
+				pPlayer->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
 		}
 	}
 }

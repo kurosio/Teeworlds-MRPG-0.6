@@ -112,7 +112,7 @@ private:
 	void Tick() override;
 	void TickDeferred() override;
 	void Snap(int SnappingClient) override;
-	void GiveRandomEffects(int To) override;
+	void GiveRandomEffects(int ClientID) override;
 	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon) override;
 	void Die(int Killer, int Weapon) override;
 	bool GiveWeapon(int Weapon, int GiveAmmo) override;

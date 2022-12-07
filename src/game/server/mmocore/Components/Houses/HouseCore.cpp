@@ -265,7 +265,7 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 		return true;
 	}
 
-	if(PPSTR(CMD, "HOMEPLANTSET") == 0)
+	if(PPSTR(CMD, "HOME_PLANT_SET") == 0)
 	{
 		const int HouseID = PlayerHouseID(pPlayer);
 		if(HouseID < 0)

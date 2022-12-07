@@ -79,4 +79,28 @@ inline ThreadPool::~ThreadPool()
         worker.detach();
 }
 
+#define sleep_pause(microsec) set_pause_function([](){}, microsec) \
+
+template <typename T>
+void set_timer_detach(T header, int miliseconds)
+{
+    std::thread t([=]()
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(miliseconds));
+        header();
+    });
+    t.detach();
+}
+
+template <typename T>
+void set_pause_function(T header, int miliseconds)
+{
+    std::thread t([=]()
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(miliseconds));
+        header();
+    });
+    t.join();
+}
+
 #endif

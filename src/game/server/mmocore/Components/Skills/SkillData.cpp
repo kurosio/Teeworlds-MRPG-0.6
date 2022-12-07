@@ -52,6 +52,7 @@ bool CSkill::Use()
 	const int ClientID = GetPlayer()->GetCID();
 	if(m_ID == Skill::SkillHeartTurret)
 	{
+		// check and reset
 		for(CHealthHealer* pHh = (CHealthHealer*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_SKILLTURRETHEART); pHh; pHh = (CHealthHealer*)pHh->TypeNext())
 		{
 			if(pHh->m_pPlayer->GetCID() != ClientID)
@@ -60,6 +61,8 @@ bool CSkill::Use()
 			pHh->Reset();
 			break;
 		}
+
+		// create healt turret
 		const int PowerLevel = ManaCost;
 		new CHealthHealer(&GS()->m_World, GetPlayer(), GetBonus(), PowerLevel, PlayerPosition);
 		return true;
@@ -67,6 +70,7 @@ bool CSkill::Use()
 
 	if(m_ID == Skill::SkillSleepyGravity)
 	{
+		// check and reset
 		for(CSleepyGravity* pHh = (CSleepyGravity*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_SLEEPYGRAVITY); pHh; pHh = (CSleepyGravity*)pHh->TypeNext())
 		{
 			if(pHh->m_pPlayer->GetCID() != ClientID)
@@ -75,6 +79,8 @@ bool CSkill::Use()
 			pHh->Reset();
 			break;
 		}
+
+		// create sleepy
 		const int PowerLevel = ManaCost;
 		new CSleepyGravity(&GS()->m_World, GetPlayer(), GetBonus(), PowerLevel, PlayerPosition);
 		return true;
@@ -90,11 +96,20 @@ bool CSkill::Use()
 	{
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
+			// check player
 			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
-			if(!pPlayer || !GS()->IsPlayerEqualWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
-				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
+			if(!pPlayer || !GS()->IsPlayerEqualWorld(i))
 				continue;
 
+			// check distance
+			if(distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800)
+				continue;
+
+			// dissalow heal for pvp clients
+			if(pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID)
+				continue;
+
+			// create healt
 			const int PowerLevel = max(ManaCost + translate_to_percent_rest(ManaCost, min(GetBonus(), 100)), 1);
 			new CHearth(&GS()->m_World, PlayerPosition, pPlayer, PowerLevel, pPlayer->GetCharacter()->m_Core.m_Vel, true);
 			GS()->CreateDeath(pPlayer->GetCharacter()->GetPos(), i);
