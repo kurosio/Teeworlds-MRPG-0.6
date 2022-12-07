@@ -97,8 +97,7 @@ private:
 	void UpdateDiscordStatus();
 
 public:
-	void FakeChat(const char *pName, const char *pText) override;
-	void Chat(int ClientID, const char* pText, ...);
+	void Chat(int ClientID, const char* pText, ...) override;
 	bool ChatAccount(int AccountID, const char* pText, ...);
 	void ChatDiscord(int Color, const char *Title, const char* pText, ...);
 	void ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, ...);

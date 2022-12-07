@@ -65,8 +65,8 @@ void DiscordJob::onMessage(SleepyDiscord::Message message)
 	// send from the discord chat to server chat
 	if(message.channelID == g_Config.m_SvDiscordServerChatChannel)
 	{
-		const std::string Nickname("D|" + message.author.username);
-		m_pServer->GameServer(FAKE_DISCORD_WORLD_ID)->FakeChat(Nickname.c_str(), message.content.c_str());
+		std::string EndText = "### [D|" + message.author.username + "]: " + message.content;
+		m_pServer->GameServer(FAKE_DISCORD_WORLD_ID)->Chat(-1, EndText.c_str());
 		return;
 	}
 

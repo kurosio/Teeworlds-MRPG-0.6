@@ -348,19 +348,6 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char *pText)
 	}
 }
 
-// Fake chat player in game
-void CGS::FakeChat(const char *pName, const char *pText)
-{
-	const int FakeClientID = CreateBot(TYPE_BOT_FAKE, 1, 1);
-	if(FakeClientID < 0 || FakeClientID > MAX_CLIENTS || !m_apPlayers[FakeClientID])
-		return;
-
-	// send a chat and delete a player and throw a player away
-	SendChat(FakeClientID, CHAT_ALL, pText);
-	delete m_apPlayers[FakeClientID];
-	m_apPlayers[FakeClientID] = nullptr;
-}
-
 // send a formatted message
 void CGS::Chat(int ClientID, const char* pText, ...)
 {
