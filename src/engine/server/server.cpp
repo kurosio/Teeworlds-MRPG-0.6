@@ -2006,9 +2006,15 @@ void CServer::ConLogout(IConsole::IResult *pResult, void *pUser)
 	{
 		pServer->m_aClients[pServer->m_RconClientID].m_Authed = AUTHED_NO;
 		pServer->m_aClients[pServer->m_RconClientID].m_AuthTries = 0;
-		pServer->m_aClients[pServer->m_RconClientID].m_pRconCmdToSend = 0;
+		pServer->m_aClients[pServer->m_RconClientID].m_pRconCmdToSend = nullptr;
 		pServer->SendRconLine(pServer->m_RconClientID, "Logout successful.");
-		char aBuf[32];
+        {
+            CMsgPacker Msgp(NETMSG_RCON_AUTH_STATUS, true);
+            Msgp.AddInt(0); //authed
+            Msgp.AddInt(0); //cmdlist
+            pServer->SendMsg(&Msgp, MSGFLAG_VITAL, pServer->m_RconClientID);
+        }
+        char aBuf[32];
 		str_format(aBuf, sizeof(aBuf), "ClientID=%d logged out", pServer->m_RconClientID);
 		pServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 	}
