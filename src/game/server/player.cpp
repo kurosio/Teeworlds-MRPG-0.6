@@ -3,6 +3,7 @@
 #include "player.h"
 
 #include "gamecontext.h"
+#include "engine/shared/config.h"
 #include "gamemodes/dungeon.h"
 
 #include "mmocore/Components/Accounts/AccountCore.h"
@@ -43,12 +44,19 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 		Acc().m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);
 		ClearTalking();
+
+		m_Afk = false;
+		delete m_pLastInput;
+		m_pLastInput = new CNetObj_PlayerInput({ 0 });
+		m_LastInputInit = false;
+		m_LastPlaytime = 0;
 	}
 }
 
 CPlayer::~CPlayer()
 {
 	m_aHiddenMenu.clear();
+	delete m_pLastInput;
 	delete m_pCharacter;
 	m_pCharacter = nullptr;
 }
@@ -58,11 +66,6 @@ CPlayer::~CPlayer()
 ######################################################################### */
 void CPlayer::Tick()
 {
-	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
-	{
-		m_ViewPos -= vec2(clamp(m_ViewPos.x - m_LatestActivity.m_TargetX, -500.0f, 500.0f), clamp(m_ViewPos.y - m_LatestActivity.m_TargetY, -400.0f, 400.0f));
-	}
-
 	if(!IsAuthed())
 		return;
 
@@ -360,9 +363,14 @@ void CPlayer::OnDisconnect()
 	KillCharacter();
 }
 
-void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
+void CPlayer::OnDirectInput(CNetObj_PlayerInput *pNewInput)
 {
-	if(NewInput->m_PlayerFlags&PLAYERFLAG_CHATTING)
+	// update view pos
+	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
+		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
+
+	// reset input with chating
+	if(pNewInput->m_PlayerFlags&PLAYERFLAG_CHATTING)
 	{
 		// skip the input if chat is active
 		if(m_PlayerFlags&PLAYERFLAG_CHATTING)
@@ -372,33 +380,41 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 		if(m_pCharacter)
 			m_pCharacter->ResetInput();
 
-		m_PlayerFlags = NewInput->m_PlayerFlags;
+		m_PlayerFlags = pNewInput->m_PlayerFlags;
 		return;
 	}
 
-	m_PlayerFlags = NewInput->m_PlayerFlags;
+	m_PlayerFlags = pNewInput->m_PlayerFlags;
 
 	if(m_pCharacter)
-		m_pCharacter->OnDirectInput(NewInput);
+	{
+		// update afk time
+		if(g_Config.m_SvMaxAfkTime != 0)
+			m_Afk = (bool)(m_LastPlaytime < time_get() - time_freq() * g_Config.m_SvMaxAfkTime);
+
+		m_pCharacter->OnDirectInput(pNewInput);
+	}
 
 	// check for activity
-	if(NewInput->m_Direction || m_LatestActivity.m_TargetX != NewInput->m_TargetX ||
-		m_LatestActivity.m_TargetY != NewInput->m_TargetY || NewInput->m_Jump ||
-		NewInput->m_Fire&1 || NewInput->m_Hook)
+	if(mem_comp(pNewInput, m_pLastInput, sizeof(CNetObj_PlayerInput)))
 	{
-		m_LatestActivity.m_TargetX = NewInput->m_TargetX;
-		m_LatestActivity.m_TargetY = NewInput->m_TargetY;
+		mem_copy(m_pLastInput, pNewInput, sizeof(CNetObj_PlayerInput));
+		// Ignore the first direct input and keep the player afk as it is sent automatically
+		if(m_LastInputInit)
+			m_LastPlaytime = time_get();
+
+		m_LastInputInit = true;
 	}
 }
 
-void CPlayer::OnPredictedInput(CNetObj_PlayerInput *NewInput) const
+void CPlayer::OnPredictedInput(CNetObj_PlayerInput *pNewInput) const
 {
 	// skip the input if chat is active
-	if((m_PlayerFlags&PLAYERFLAG_CHATTING) && (NewInput->m_PlayerFlags&PLAYERFLAG_CHATTING))
+	if((m_PlayerFlags&PLAYERFLAG_CHATTING) && (pNewInput->m_PlayerFlags&PLAYERFLAG_CHATTING))
 		return;
 
 	if(m_pCharacter)
-		m_pCharacter->OnPredictedInput(NewInput);
+		m_pCharacter->OnPredictedInput(pNewInput);
 }
 
 int CPlayer::GetTeam()

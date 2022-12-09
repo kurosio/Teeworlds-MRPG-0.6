@@ -54,6 +54,13 @@ protected:
 	IServer* Server() const;
 	int m_ClientID;
 
+	// lastest afk state
+	bool m_Afk;
+	bool m_AfkMoved;
+	bool m_LastInputInit;
+	int64_t m_LastPlaytime;
+	CNetObj_PlayerInput* m_pLastInput;
+
 public:
 	CGS* GS() const { return m_pGS; }
 	vec2 m_ViewPos;
@@ -98,6 +105,7 @@ public:
 	int GetStartMana();
 	virtual	int GetHealth() { return GetTempData().m_TempHealth; }
 	virtual	int GetMana() { return GetTempData().m_TempMana; }
+	bool IsAfk() const { return m_Afk; }
 
 	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr);
 
@@ -133,8 +141,8 @@ public:
 
 	void KillCharacter(int Weapon = WEAPON_WORLD);
 	void OnDisconnect();
-	void OnDirectInput(CNetObj_PlayerInput *NewInput);
-	void OnPredictedInput(CNetObj_PlayerInput *NewInput) const;
+	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
+	void OnPredictedInput(CNetObj_PlayerInput *pNewInput) const;
 
 	int GetCID() const { return m_ClientID; }
 	/* #########################################################################

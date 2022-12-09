@@ -159,6 +159,15 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		GS()->Mmo()->Quest()->AddMobProgressQuests(pPlayer, BotID);
 	}
 
+	// reduce afk farming
+	if(pPlayer->IsAfk())
+	{
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "You get reduced rewards, due to farming mobs afk.");
+		pPlayer->AddMoney(1);
+		GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, 1, Force);
+		return;
+	}
+
 	// grinding gold
 	int Gold = max(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
 	pPlayer->AddMoney(Gold);
