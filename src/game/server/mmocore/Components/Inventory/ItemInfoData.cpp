@@ -22,7 +22,7 @@ int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) c
 		return 0;
 
 	const int PercentEnchant = translate_to_percent_rest(StatSize, PERCENT_OF_ENCHANT);
-	int EnchantStat = StatSize + PercentEnchant * Enchant;
+	int EnchantStat = StatSize + (PercentEnchant * Enchant);
 
 	// the case when with percent will back 0
 	if(PercentEnchant <= 0)
