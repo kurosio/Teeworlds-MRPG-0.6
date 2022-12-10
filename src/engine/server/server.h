@@ -165,6 +165,7 @@ public:
 	void SendDiscordMessage(const char *pChannel, int Color, const char* pTitle, const char* pText) override;
 	void SendDiscordGenerateMessage(const char *pTitle, int AccountID, int Color = 0) override;
 	void UpdateDiscordStatus(const char *pStatus) override;
+    std::string EscapeDiscordMarkdown(const std::string &input) override;
 
 	void Kick(int ClientID, const char *pReason) override;
 

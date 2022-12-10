@@ -286,7 +286,7 @@ void CServer::SendDiscordMessage(const char *pChannel, int Color, const char* pT
 {
 #ifdef CONF_DISCORD
 	SleepyDiscord::Embed embed;
-	embed.title = std::string(pTitle);
+	embed.title = std::string(EscapeDiscordMarkdown(pTitle));
 	embed.description = std::string(pText);
 	embed.color = Color;
 
@@ -302,6 +302,18 @@ void CServer::UpdateDiscordStatus(const char *pStatus)
 	DiscordTask ThreadTask(std::bind(&DiscordJob::updateStatus, m_pDiscord, std::string(pStatus), std::numeric_limits<uint64_t>::max(), SleepyDiscord::online, false));
 	m_pDiscord->AddThreadTask(ThreadTask);
 #endif
+}
+
+std::string CServer::EscapeDiscordMarkdown(const std::string &input)
+{
+    std::string out(input);
+    for (size_t i = 0; i < out.size(); ++i) {
+        if (out.at(i) == '*' || out.at(i) == '\\' || out.at(i) == '>' || out.at(i) == '_' || out.at(i) == '`') {
+            out.insert(i, "\\");
+            i++;
+        }
+    }
+    return out;
 }
 
 void CServer::Kick(int ClientID, const char *pReason)

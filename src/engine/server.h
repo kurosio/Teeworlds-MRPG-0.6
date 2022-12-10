@@ -198,6 +198,7 @@ public:
 	virtual void SendDiscordMessage(const char *pChannel, int Color, const char* pTitle, const char* pText) = 0;
 	virtual void SendDiscordGenerateMessage(const char* pTitle, int AccountID, int Color = 0) = 0;
 	virtual void UpdateDiscordStatus(const char *pStatus) = 0;
+    virtual std::string EscapeDiscordMarkdown(const std::string &input) = 0;
 
 	// Bots
 	virtual void InitClientBot(int ClientID) = 0;
