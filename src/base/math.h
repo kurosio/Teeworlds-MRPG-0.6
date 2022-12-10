@@ -126,10 +126,13 @@ static std::enable_if_t<std::is_integral_v<integer>, std::string > get_commas(in
 {
 	std::string NumberString = std::to_string(Number);
 
-	for(auto it = NumberString.rbegin(); (num + 1) <= std::distance(it, NumberString.rend());)
+	if(NumberString.length() > num)
 	{
-		std::advance(it, num);
-		NumberString.insert(it.base(), separator);
+		for(auto it = NumberString.rbegin(); (num + 1) <= std::distance(it, NumberString.rend());)
+		{
+			std::advance(it, num);
+			NumberString.insert(it.base(), separator);
+		}
 	}
 
 	return NumberString;

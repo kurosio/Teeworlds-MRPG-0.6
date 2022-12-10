@@ -131,7 +131,7 @@ bool CCharacter::IsCollisionFlag(int Flag) const
 
 CPlayer* CCharacter::GetHookedPlayer() const
 {
-	if(m_Core.m_HookedPlayer > 0 && m_Core.m_HookedPlayer < MAX_CLIENTS)
+	if(m_Core.m_HookedPlayer > 0 && m_Core.m_HookedPlayer < MAX_CLIENTS && m_Core.m_HookState == HOOK_GRABBED)
 		return GS()->m_apPlayers[m_Core.m_HookedPlayer];
 	return nullptr;
 }
