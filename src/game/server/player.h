@@ -8,7 +8,6 @@
 #include "mmocore/Components/Quests/QuestData.h"
 #include "mmocore/Components/Skills/SkillData.h"
 
-#include <game/voting.h>
 #include "entities/character.h"
 
 enum

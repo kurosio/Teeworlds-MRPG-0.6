@@ -5,8 +5,6 @@
 
 #include <game/server/mmocore/Components/Inventory/ItemInfoData.h>
 
-#include "game/server/mmocore/GameEntities/decoration_houses.h"
-
 using HouseIdentifier = int;
 using HouseDecorationIdentifier = int;
 
@@ -73,20 +71,14 @@ class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDa
 	int m_WorldID{};
 	int m_Price{};
 	ItemIdentifier m_PlantItemID{};
-	CDecorationHouses* m_apDecorations[MAX_DECORATIONS_HOUSE]{};
+	class CDecorationHouses* m_apDecorations[MAX_DECORATIONS_HOUSE]{};
 
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
 
 public:
 	CHouseData() = default;
-	~CHouseData()
-	{
-		delete m_pDoorData;
-		delete m_pBank;
-		m_pDoorData = nullptr;
-		m_pBank = nullptr;
-	}
+	~CHouseData();
 
 	static HouseDataPtr CreateDataItem(HouseIdentifier ID)
 	{

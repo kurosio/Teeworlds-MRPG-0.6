@@ -4,7 +4,9 @@
 
 #include "Entities/HouseDoor.h"
 #include "game/server/gamecontext.h"
+
 #include "game/server/mmocore/GameEntities/jobitems.h"
+#include "game/server/mmocore/GameEntities/decoration_houses.h"
 
 // house bank data
 CPlayer* CHouseBankData::GetPlayer() const { return m_pGS->GetPlayerFromUserID(*m_pAccountID); }
@@ -90,6 +92,20 @@ void CHouseDoorData::Reverse()
 
 CGS* CHouseData::GS() const { return static_cast<CGS*>(Server()->GameServer(m_WorldID)); }
 CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerFromUserID(m_AccountID); }
+
+CHouseData::~CHouseData()
+{
+	delete m_pDoorData;
+	m_pDoorData = nullptr;
+	delete m_pBank;
+	m_pBank = nullptr;
+
+	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
+	{
+		delete m_apDecorations[i];
+		m_apDecorations[i] = nullptr;
+	}
+}
 
 void CHouseData::InitDecorations()
 {
