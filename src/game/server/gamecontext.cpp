@@ -777,6 +777,8 @@ void CGS::OnConsoleInit()
 	Console()->Register("say", "r[text]", CFGFLAG_SERVER, ConSay, m_pServer, "Say in chat");
 	Console()->Register("addcharacter", "i[cid]r[botname]", CFGFLAG_SERVER, ConAddCharacter, m_pServer, "(Warning) Add new bot on database or update if finding <clientid> <bot name>");
 	Console()->Register("sync_lines_for_translate", "", CFGFLAG_SERVER, ConSyncLinesForTranslate, m_pServer, "Perform sync lines in translated files. Order non updated translated to up");
+	Console()->Register("afk_list", "", CFGFLAG_SERVER, ConListAfk, m_pServer, "List all afk players");
+	Console()->Register("is_afk", "i[cid]", CFGFLAG_SERVER, ConCheckAfk, m_pServer, "Check if player is afk");
 }
 
 void CGS::OnTick()
@@ -1395,6 +1397,48 @@ void CGS::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData)
 
 	// dump
 	std::thread(&MmoController::ConAsyncLinesForTranslate, pSelf->m_pMmoController).detach();
+}
+
+void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)
+{
+	IServer* pServer = (IServer*)pUserData;
+    CGS* pSelf;
+    char aBuf[1024];
+    int counter=0;
+
+    for (int i = 0; i < MAX_PLAYERS; ++i) {
+        pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(i));
+        CPlayer* pPlayer = pSelf->GetPlayer(i);
+        if(pPlayer)
+            dbg_msg("AFK", "%d player is %d afk", pPlayer->GetCID(), pPlayer->IsAfk());
+        if (pPlayer && pPlayer->IsAfk()) {
+            str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time=%ds", pPlayer->GetCID(),
+                       pServer->ClientName(pPlayer->GetCID()),
+                       pPlayer->TicksAfk() / pServer->TickSpeed());
+            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
+            counter++;
+        }
+    }
+    str_format(aBuf, sizeof(aBuf), "%d afk players in total", counter);
+    pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
+}
+
+void CGS::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
+{
+	IServer* pServer = (IServer*)pUserData;
+    CGS* GS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(pResult->GetInteger(0)));
+    char aBuf[1024];
+
+    CPlayer* pPlayer = GS->GetPlayer(pResult->GetInteger(0));
+
+    if (pPlayer && pPlayer->IsAfk()) {
+        str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time=%ds", pPlayer->GetCID(),
+                   pServer->ClientName(pPlayer->GetCID()),
+                   pPlayer->TicksAfk() / pServer->TickSpeed());
+        GS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
+    }
+    else
+        GS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "No such player or he's not afk");
 }
 
 void CGS::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

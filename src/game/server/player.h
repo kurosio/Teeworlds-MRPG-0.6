@@ -59,6 +59,7 @@ protected:
 	bool m_AfkMoved;
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
+	int m_TicksAfk;
 	CNetObj_PlayerInput* m_pLastInput;
 
 public:
@@ -106,6 +107,7 @@ public:
 	virtual	int GetHealth() { return GetTempData().m_TempHealth; }
 	virtual	int GetMana() { return GetTempData().m_TempMana; }
 	bool IsAfk() const { return m_Afk; }
+	int TicksAfk() const { return m_TicksAfk; }
 
 	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr);
 

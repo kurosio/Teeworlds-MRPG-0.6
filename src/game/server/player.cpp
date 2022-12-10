@@ -92,6 +92,10 @@ void CPlayer::Tick()
 		if(m_pCharacter->IsAlive())
 		{
 			m_ViewPos = m_pCharacter->GetPos();
+            if(m_Afk)
+                m_TicksAfk++;
+            else
+                m_TicksAfk = 0;
 		}
 		else
 		{
