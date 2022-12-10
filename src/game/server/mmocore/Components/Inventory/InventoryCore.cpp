@@ -422,7 +422,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 		if(CHouseData* pHouse = pPlayer->Acc().GetHouse(); pHouse && pHouse->GetPlantItemID() != ItemID)
 		{
 			const int random_change = random_int() % 1500;
-			GS()->AVD(ClientID, "HOME_PLANT_SET", ItemID, random_change, HideID, "To plant {STR}, to house (0.06%)", pNameItem);
+			GS()->AVD(ClientID, "PLANTING_HOUSE_SET", ItemID, random_change, HideID, "To plant {STR}, to house (0.06%)", pNameItem);
 		}
 	}
 
@@ -434,7 +434,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 	}
 	else if (pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION)
 	{
-		GS()->AVM(ClientID, "DECOSTART", ItemID, HideID, "Add {STR} to your house", pNameItem);
+		GS()->AVM(ClientID, "DECORATION_HOUSE_ADD", ItemID, HideID, "Add {STR} to your house", pNameItem);
 		GS()->AVM(ClientID, "DECOGUILDSTART", ItemID, HideID, "Add {STR} to your guild house", pNameItem);
 	}
 	else if(pItemPlayer.Info()->m_Type == ItemType::TYPE_EQUIP || pItemPlayer.Info()->m_Function == FUNCTION_SETTINGS)

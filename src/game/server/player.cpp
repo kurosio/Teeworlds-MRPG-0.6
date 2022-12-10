@@ -10,6 +10,7 @@
 #include "mmocore/Components/Bots/BotCore.h"
 #include "mmocore/Components/Dungeons/DungeonData.h"
 #include "mmocore/Components/Guilds/GuildCore.h"
+#include "mmocore/Components/Houses/HouseData.h"
 #include "mmocore/Components/Quests/QuestCore.h"
 
 #include "mmocore/Components/Inventory/ItemData.h"

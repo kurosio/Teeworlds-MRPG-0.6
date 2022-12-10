@@ -130,18 +130,17 @@ public:
 	CHouseDoorData* GetDoor() const { return m_pDoorData; }
 	CHouseBankData* GetBank() const { return m_pBank; }
 
-	void InitDecorations();
 	bool AddDecoration(ItemIdentifier ItemID, vec2 Pos);
-	bool RemoveDecoration(HouseDecorationIdentifier ID);
+	bool RemoveDecoration(HouseDecorationIdentifier DecoID);
 
 	void Buy(CPlayer* pPlayer);
 	void Sell();
 
-	void UpdatePlantItemID(ItemIdentifier PlantItemID);
+	void SetPlantItemID(ItemIdentifier PlantItemID);
+	void ShowDecorations() const;
 
-	void ShowDecorations();
-
-	static std::map< int, CHouseData > ms_aHouse;
+private:
+	void InitDecorations();
 };
 
 #endif

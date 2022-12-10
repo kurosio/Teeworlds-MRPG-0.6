@@ -6,8 +6,7 @@
 #include "game/server/gamecontext.h"
 #include "game/server/mmocore/GameEntities/jobitems.h"
 
-std::map <int, CHouseData> CHouseData::ms_aHouse;
-
+// house bank data
 CPlayer* CHouseBankData::GetPlayer() const { return m_pGS->GetPlayerFromUserID(*m_pAccountID); }
 
 void CHouseBankData::Add(int Value)
@@ -59,14 +58,13 @@ void CHouseBankData::Take(int Value)
 	}
 }
 
-
+// house door data
 CHouseDoorData::~CHouseDoorData()
 {
 	delete m_pDoor;
 	m_pDoor = nullptr;
 }
 
-// house door data
 void CHouseDoorData::Open()
 {
 	if(m_pDoor)
@@ -126,11 +124,12 @@ bool CHouseData::AddDecoration(ItemIdentifier ItemID, vec2 DecorationPos)
 	{
 		if(!m_apDecorations[i])
 		{
-			// get housedecorationidentifier and insert
+			// insert to last identifier and got it
 			ResultPtr pRes2 = Database->Execute<DB::SELECT>("ID", "tw_houses_decorations", "ORDER BY ID DESC LIMIT 1");
 			const int InitID = pRes2->next() ? pRes2->getInt("ID") + 1 : 1;
 			Database->Execute<DB::INSERT>("tw_houses_decorations", "(ID, ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')", InitID, ItemID, m_ID, (int)DecorationPos.x, (int)DecorationPos.y, GS()->GetWorldID());
 
+			// create new decoration on gameworld
 			m_apDecorations[i] = new CDecorationHouses(&GS()->m_World, DecorationPos, m_AccountID, InitID, ItemID);
 			return true;
 		}
@@ -140,17 +139,19 @@ bool CHouseData::AddDecoration(ItemIdentifier ItemID, vec2 DecorationPos)
 	return false;
 }
 
-bool CHouseData::RemoveDecoration(HouseDecorationIdentifier ID)
+bool CHouseData::RemoveDecoration(HouseDecorationIdentifier DecoID)
 {
 	// remove decoration
 	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
 	{
-		if(m_apDecorations[i] && m_apDecorations[i]->GetDecorationID() == ID)
+		if(m_apDecorations[i] && m_apDecorations[i]->GetDecorationID() == DecoID)
 		{
+			// delete from gameworld
 			delete m_apDecorations[i];
 			m_apDecorations[i] = nullptr;
 
-			Database->Execute<DB::REMOVE>("tw_houses_decorations", "WHERE ID = '%d'", ID);
+			// remove from database
+			Database->Execute<DB::REMOVE>("tw_houses_decorations", "WHERE ID = '%d'", DecoID);
 			return true;
 		}
 	}
@@ -162,13 +163,14 @@ void CHouseData::Buy(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// checked
+	// check player house
 	if(pPlayer->Acc().HasHouse())
 	{
 		GS()->Chat(ClientID, "You already have a home.");
 		return;
 	}
 
+	// check house owner
 	if(HasOwner())
 	{
 		GS()->Chat(ClientID, "House has already been purchased!");
@@ -195,9 +197,7 @@ void CHouseData::Sell()
 {
 	// check house
 	if(!HasOwner())
-	{
 		return;
-	}
 
 	// returned fully value gold
 	const int Price = m_Price + m_pBank->Get();
@@ -221,15 +221,13 @@ void CHouseData::Sell()
 	m_AccountID = -1;
 }
 
-void CHouseData::UpdatePlantItemID(ItemIdentifier PlantItemID)
+void CHouseData::SetPlantItemID(ItemIdentifier PlantItemID)
 {
 	// checked
 	if(PlantItemID == m_PlantItemID)
-	{
 		return;
-	}
 
-	// check for update
+	// check for update and set new plant itemid
 	bool Updates = false;
 	for(CJobItems* pPlant = (CJobItems*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_JOBITEMS); pPlant; pPlant = (CJobItems*)pPlant->TypeNext())
 	{
@@ -248,20 +246,21 @@ void CHouseData::UpdatePlantItemID(ItemIdentifier PlantItemID)
 	}
 }
 
-void CHouseData::ShowDecorations()
+void CHouseData::ShowDecorations() const
 {
 	CPlayer* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
+	// show all house decoration slots
 	int ClientID = pPlayer->GetCID();
 	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
 	{
 		if(m_apDecorations[i])
 		{
-			int ID = m_apDecorations[i]->GetDecorationID();
+			int DecoID = m_apDecorations[i]->GetDecorationID();
 			CItemDescription* pItemDecoration = GS()->GetItemInfo(m_apDecorations[i]->GetItemID());
-			GS()->AVD(ClientID, "DECODELETE", ID, pItemDecoration->GetID(), 1, "[Slot {INT}]: {STR} back to the inventory", i + 1, pItemDecoration->GetName());
+			GS()->AVD(ClientID, "DECORATION_HOUSE_DELETE", DecoID, pItemDecoration->GetID(), 1, "[Slot {INT}]: {STR} back to the inventory", i + 1, pItemDecoration->GetName());
 		}
 	}
 }

@@ -602,9 +602,9 @@ void MmoController::ConAsyncLinesForTranslate()
 			PushingDialogs(JsonData, pItem.second.GetName(), "stnm", pItem.first);
 		}
 
-		for(auto& pItem : CHouseData::ms_aHouse)
+		for(auto& pItem : CHouseData::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.GetClassName(), "hmnm", pItem.first);
+			PushingDialogs(JsonData, pItem->GetClassName(), "hmnm", pItem->GetID());
 		}
 
 		// order non updated translated to up
