@@ -99,7 +99,7 @@ public:
 
 		// door init
 		m_pDoorData = new CHouseDoorData(GS(), HouseDoorPos);
-		if(m_AccountID > 0)
+		if(m_AccountID <= 0)
 			m_pDoorData->Open();
 
 		// bank init
