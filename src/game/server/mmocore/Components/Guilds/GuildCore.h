@@ -52,7 +52,7 @@ public:
 	bool AddMoneyBank(int GuildID, int Money);
 	bool RemoveMoneyBank(int GuildID, int Money);
 	bool UpgradeGuild(int GuildID, int Field);
-	bool AddDecorationHouse(int DecoID, int GuildID, vec2 Position);
+	bool AddDecorationHouse(int ItemID, int GuildID, vec2 Position);
 
 private:
 	bool DeleteDecorationHouse(int ID);

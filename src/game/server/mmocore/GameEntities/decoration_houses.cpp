@@ -2,11 +2,12 @@
 
 #include <engine/server.h>
 
-CDecorationHouses::CDecorationHouses(CGameWorld* pGameWorld, vec2 Pos, int HouseID, int DecoID)
+CDecorationHouses::CDecorationHouses(CGameWorld* pGameWorld, vec2 Pos, int HouseID, int DecoID, int ItemID)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DECOHOUSE, Pos)
 {
 	m_HouseID = HouseID;
 	m_DecoID = DecoID;
+	m_ItemID = ItemID;
 
 	GameWorld()->InsertEntity(this);
 
@@ -27,7 +28,7 @@ CDecorationHouses::~CDecorationHouses()
 
 int CDecorationHouses::SwitchToObject(bool Data) const
 {
-	switch (m_DecoID)
+	switch (m_ItemID)
 	{
 	case itDecoHealth: return (Data ? -1 : (int)POWERUP_HEALTH);
 	case itDecoArmor: return (Data ? -1 : (int)POWERUP_ARMOR);

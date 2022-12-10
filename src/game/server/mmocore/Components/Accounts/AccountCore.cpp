@@ -10,6 +10,8 @@
 #include <game/server/mmocore/Components/Quests/QuestCore.h>
 #include <game/server/mmocore/Components/Worlds/WorldData.h>
 
+#include "game/server/mmocore/Components/Houses/HouseCore.h"
+
 #include <base/hash_ctxt.h>
 
 int CAccountCore::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
@@ -120,6 +122,9 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 		pPlayer->Acc().m_Upgrade = pResAccount->getInt("Upgrade");
 		pPlayer->Acc().m_GuildRank = pResAccount->getInt("GuildRank");
 		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
+
+		//pPlayer->Acc().SetHouse(CHouseCore::GetHouseByAccountID(UserID));
+
 		for (const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
 			if(pAttribute->HasDatabaseField())

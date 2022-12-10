@@ -19,6 +19,9 @@ struct CAccountData
 	int m_GuildRank{};
 	std::list< int > m_aHistoryWorld{};
 
+	class CHouseData* GetHouse() const;
+	bool HasHouse() const;
+
 	// upgrades
 	int m_Upgrade{};
 	std::map< AttributeIdentifier, int > m_aStats{};

@@ -121,7 +121,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		GS()->AVM(ClientID, "MENU", MENU_SETTINGS, TAB_PERSONAL, "Settings");
 		GS()->AVM(ClientID, "MENU", MENU_INBOX, TAB_PERSONAL, "Mailbox");
 		GS()->AVM(ClientID, "MENU", MENU_JOURNAL_MAIN, TAB_PERSONAL, "Journal");
-		if(GS()->Mmo()->House()->PlayerHouseID(pPlayer) > 0)
+		if(pPlayer->Acc().HasHouse())
 			GS()->AVM(ClientID, "MENU", MENU_HOUSE, TAB_PERSONAL, "House");
 		GS()->AVM(ClientID, "MENU", MENU_GUILD_FINDER, TAB_PERSONAL, "Guild finder");
 		if(pPlayer->Acc().IsGuild())
@@ -604,7 +604,7 @@ void MmoController::ConAsyncLinesForTranslate()
 
 		for(auto& pItem : CHouseData::ms_aHouse)
 		{
-			PushingDialogs(JsonData, pItem.second.m_aClass, "hmnm", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetClassName(), "hmnm", pItem.first);
 		}
 
 		// order non updated translated to up

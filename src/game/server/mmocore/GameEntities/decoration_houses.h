@@ -4,6 +4,10 @@
 
 class CDecorationHouses : public CEntity
 {
+	int m_DecoID {};
+	int m_HouseID {};
+	int m_ItemID {};
+
 	enum
 	{
 		PERSPECT = 1,
@@ -11,14 +15,15 @@ class CDecorationHouses : public CEntity
 		NUM_IDS,
 	};
 	int m_IDs[NUM_IDS]{};
-
 	int SwitchToObject(bool Data) const;
-public:
-	int m_DecoID;
-	int m_HouseID;
 
-	CDecorationHouses(CGameWorld* pGameWorld, vec2 Pos, int OwnerID, int DecoID);
+public:
+	CDecorationHouses(CGameWorld* pGameWorld, vec2 Pos, int HouseID, int DecoID, int ItemID);
 	~CDecorationHouses() override;
+
+	int GetDecorationID() const { return m_DecoID; }
+	int GetHouseID() const { return m_HouseID; }
+	int GetItemID() const { return m_ItemID; }
 
 	void Snap(int SnappingClient) override;
 };

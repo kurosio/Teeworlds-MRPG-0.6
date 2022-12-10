@@ -79,9 +79,8 @@ void GuildCore::OnInitWorld(const char* pWhereLocalWorld)
 	{
 		while (pRes->next())
 		{
-			const int DecoID = pRes->getInt("ID");
-			m_DecorationHouse[DecoID] = new CDecorationHouses(&GS()->m_World, vec2(pRes->getInt("PosX"),
-				pRes->getInt("PosY")), pRes->getInt("HouseID"), pRes->getInt("DecoID"));
+			const int ID = pRes->getInt("ID");
+			m_DecorationHouse[ID] = new CDecorationHouses(&GS()->m_World, vec2(pRes->getInt("PosX"), pRes->getInt("PosY")), pRes->getInt("HouseID"), ID, pRes->getInt("ItemID"));
 		}
 		Job()->ShowLoadingProgress("Guilds Houses Decorations", m_DecorationHouse.size());
 	});
@@ -432,11 +431,11 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 			return true;
 		}
 
-		const int DecoID = VoteID;
-		const int DecoItemID = VoteID2;
-		if(DeleteDecorationHouse(DecoID))
+		const int ID = VoteID;
+		const int ItemID = VoteID2;
+		if(DeleteDecorationHouse(ID))
 		{
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(DecoItemID);
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 			GS()->Chat(ClientID, "You back to the backpack {STR}!", pPlayerItem->Info()->GetName());
 			pPlayerItem->Add(1);
 		}
@@ -686,7 +685,7 @@ int GuildCore::GetMemberChairBonus(int GuildID, int Field) const
 /* #########################################################################
 	FUNCTIONS HOUSES DECORATION
 ######################################################################### */
-bool GuildCore::AddDecorationHouse(int DecoID, int GuildID, vec2 Position)
+bool GuildCore::AddDecorationHouse(int ItemID, int GuildID, vec2 Position)
 {
 	if (CGuildData::ms_aGuild.find(GuildID) == CGuildData::ms_aGuild.end())
 		return false;
@@ -702,9 +701,9 @@ bool GuildCore::AddDecorationHouse(int DecoID, int GuildID, vec2 Position)
 
 	ResultPtr pRes2 = Database->Execute<DB::SELECT>("ID", "tw_guilds_decorations", "ORDER BY ID DESC LIMIT 1");
 	int InitID = (pRes2->next() ? pRes2->getInt("ID") + 1 : 1);
-	Database->Execute<DB::INSERT>("tw_guilds_decorations", "(ID, DecoID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
-		InitID, DecoID, HouseID, (int)Position.x, (int)Position.y, GS()->GetWorldID());
-	m_DecorationHouse[InitID] = new CDecorationHouses(&GS()->m_World, Position, HouseID, DecoID);
+	Database->Execute<DB::INSERT>("tw_guilds_decorations", "(ID, ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
+		InitID, ItemID, HouseID, (int)Position.x, (int)Position.y, GS()->GetWorldID());
+	m_DecorationHouse[InitID] = new CDecorationHouses(&GS()->m_World, Position, HouseID, InitID, ItemID);
 	return true;
 }
 
@@ -730,10 +729,10 @@ void GuildCore::ShowDecorationList(CPlayer* pPlayer)
 	int HouseID = GetGuildHouseID(GuildID);
 	for (auto & deco : m_DecorationHouse)
 	{
-		if (deco.second && deco.second->m_HouseID == HouseID)
+		if (deco.second && deco.second->GetHouseID() == HouseID)
 		{
-			GS()->AVD(ClientID, "DECOGUILDDELETE", deco.first, deco.second->m_DecoID, 1, "{STR}:{INT} back to the inventory",
-				GS()->GetItemInfo(deco.second->m_DecoID)->GetName(), deco.first);
+			GS()->AVD(ClientID, "DECOGUILDDELETE", deco.first, deco.second->GetItemID(), 1, "{STR}:{INT} back to the inventory",
+				GS()->GetItemInfo(deco.second->GetItemID())->GetName(), deco.first);
 		}
 	}
 }

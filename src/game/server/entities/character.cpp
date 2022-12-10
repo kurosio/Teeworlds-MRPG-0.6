@@ -201,8 +201,8 @@ bool CCharacter::DecoInteractive()
 
 		if (InteractiveType == DECORATIONS_HOUSE)
 		{
-			const int HouseID = GS()->Mmo()->House()->PlayerHouseID(m_pPlayer);
-			if (GS()->Mmo()->House()->AddDecorationHouse(DecoID, HouseID, GetMousePos()))
+			CHouseData* pHouse = m_pPlayer->Acc().GetHouse();
+			if(pHouse && pHouse->AddDecoration(DecoID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
@@ -220,10 +220,11 @@ bool CCharacter::DecoInteractive()
 				GS()->UpdateVotes(ClientID, MENU_GUILD_HOUSE_DECORATION);
 				return true;
 			}
+
+			GS()->Chat(ClientID, "Distance House and Decoration maximal {INT} block!", g_Config.m_SvLimitDecoration);
+			GS()->Chat(ClientID, "Setting object reset, use repeat!");
 		}
 
-		GS()->Chat(ClientID, "Distance House and Decoration maximal {INT} block!", g_Config.m_SvLimitDecoration);
-		GS()->Chat(ClientID, "Setting object reset, use repeat!");
 		GS()->UpdateVotes(ClientID, MENU_HOUSE_DECORATION);
 		return true;
 	}

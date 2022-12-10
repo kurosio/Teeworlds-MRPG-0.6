@@ -205,6 +205,7 @@ enum
 		Basic kernel server settings
 		This is where the most basic server settings are stored
 	*/
+	MAX_DECORATIONS_HOUSE = 20,				// maximum decorations for houses
 	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
 	MAX_INBOX_LIST = 30,					// maximum number of emails what is displayed
