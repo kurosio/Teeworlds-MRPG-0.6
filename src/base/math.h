@@ -120,4 +120,19 @@ PercentArithmetic<T> translate_to_percent(T from, T value) { return (T)(((double
 template <typename T> // translate from the first to the second in percent e.g. ((10, 5, 50) = 25%)
 PercentArithmetic<T> translate_to_percent(T from, T value, float maximum_percent) { return (T)(((double)value / (double)from) * maximum_percent); }
 
+// translate to commas
+template<typename integer, const unsigned num, const char separator>
+static std::enable_if_t<std::is_integral_v<integer>, std::string > get_commas(integer Number)
+{
+	std::string NumberString = std::to_string(Number);
+
+	for(auto it = NumberString.rbegin(); (num + 1) <= std::distance(it, NumberString.rend());)
+	{
+		std::advance(it, num);
+		NumberString.insert(it.base(), separator);
+	}
+
+	return NumberString;
+}
+
 #endif // BASE_MATH_H
