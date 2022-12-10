@@ -1195,6 +1195,13 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 		m_Health = m_pPlayer->GetStartHealth();
 	}
 
+	if(m_Mana > m_pPlayer->GetStartMana())
+	{
+		GS()->Chat(m_pPlayer->GetCID(), "Your mana has been lowered.");
+		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that gave it away.");
+		m_Mana = m_pPlayer->GetStartMana();
+	}
+
 	CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
 	if((pItemInfo->GetFunctional() >= EQUIP_HAMMER && pItemInfo->GetFunctional() <= EQUIP_LASER))
 		m_pPlayer->GetCharacter()->GiveWeapon(pItemInfo->GetFunctional(), 3);

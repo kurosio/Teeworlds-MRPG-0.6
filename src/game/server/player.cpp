@@ -574,8 +574,7 @@ int CPlayer::GetStartHealth()
 
 int CPlayer::GetStartMana()
 {
-	const int EnchantBonus = GetAttributeSize(AttributeIdentifier::MP);
-	return 10 + EnchantBonus;
+	return 10 + GetAttributeSize(AttributeIdentifier::MP);
 }
 
 void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAppendStr)
