@@ -121,7 +121,7 @@ template <typename T> // translate from the first to the second in percent e.g. 
 PercentArithmetic<T> translate_to_percent(T from, T value, float maximum_percent) { return (T)(((double)value / (double)from) * maximum_percent); }
 
 // translate to commas
-template<typename integer, const unsigned num, const char separator>
+template<typename integer, const char separator = ',', const unsigned num = 3>
 static std::enable_if_t<std::is_integral_v<integer>, std::string > get_commas(integer Number)
 {
 	std::string NumberString = std::to_string(Number);

@@ -602,8 +602,8 @@ void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAp
 		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
 	}
 
-	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %d\n%s\n\n\n\n\n\n\n\n\n\n\n%s", 
-		Acc().m_Level, Level.get(), Health, MaximumHealth, Mana, MaximumMana, Gold, aRecastInfo, pAppendStr);
+	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%s", 
+		Acc().m_Level, Level.get(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
 	for(int space = 150, c = str_length(pBuffer); c < Size && space; c++, space--)
 		pBuffer[c] = ' ';
 }

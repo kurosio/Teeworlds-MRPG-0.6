@@ -257,7 +257,7 @@ void CLocalization::Format_V(dynamic_string& Buffer, const char* pLanguageCode, 
 			else if(str_comp_num("VAL", pText + ParamTypeStart, 3) == 0) // value
 			{
 				const int pVarArgValue = va_arg(VarArgsIter, int);
-				BufferIter = Buffer.append_at(BufferIter, get_commas<int, 3, ','>(pVarArgValue).c_str());
+				BufferIter = Buffer.append_at(BufferIter, get_commas<int>(pVarArgValue).c_str());
 			}
 
 			//
