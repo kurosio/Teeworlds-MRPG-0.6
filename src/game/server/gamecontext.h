@@ -181,6 +181,8 @@ private:
 	static void ConSay(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddCharacter(IConsole::IResult *pResult, void *pUserData);
 	static void ConSyncLinesForTranslate(IConsole::IResult *pResult, void *pUserData);
+	static void ConListAfk(IConsole::IResult *pResult, void *pUserData);
+	static void ConCheckAfk(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
