@@ -58,6 +58,24 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, 
 	return Num;
 }
 
+std::vector<CEntity*> CGameWorld::FindEntities(vec2 Pos, float Radius, int Max, int Type)
+{
+    if(Type < 0 || Type >= NUM_ENTTYPES)
+        return {};
+
+    std::vector<CEntity*> vEnts(Max);
+    for(CEntity *pEnt = m_apFirstEntityTypes[Type];	pEnt; pEnt = pEnt->m_pNextTypeEntity)
+    {
+        if(distance(pEnt->m_Pos, Pos) < Radius+pEnt->m_ProximityRadius)
+        {
+            vEnts.push_back(pEnt);
+            if(vEnts.size() == std::size_t(Max))
+                break;
+        }
+    }
+    return vEnts;
+}
+
 void CGameWorld::InsertEntity(CEntity *pEnt)
 {
 #ifdef CONF_DEBUG

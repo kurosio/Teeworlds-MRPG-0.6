@@ -98,6 +98,21 @@ public:
 	int FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, int Type);
 
 	/*
+		Function: find_entities_to_vec
+			Finds entities close to a position and returns them in a vector.
+
+		Arguments:
+			pos - Position.
+			radius - How close the entities have to be.
+			max - Number of entities that fits into the ents array.
+			type - Type of the entities to find.
+
+		Returns:
+			Vector with all found entities.
+	*/
+	std::vector<CEntity*> FindEntities(vec2 Pos, float Radius, int Max, int Type);
+
+	/*
 		Function: closest_CEntity
 			Finds the closest CEntity of a type to a specific point.
 

@@ -1810,8 +1810,14 @@ bool CGS::TakeItemCharacter(int ClientID)
 	if(!pPlayer)
 		return false;
 
-	CDropItem *pDrop = (CDropItem*)m_World.ClosestEntity(pPlayer->GetCharacter()->m_Core.m_Pos, 64, CGameWorld::ENTTYPE_DROPITEM, nullptr);
-	if(pDrop) { return pDrop->TakeItem(ClientID);}
+    std::vector<CDropItem*> vDrops;
+    for (CEntity* item: m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 64, 64, CGameWorld::ENTTYPE_DROPITEM))
+        vDrops.push_back((CDropItem*)item);
+
+    for (const auto &pDrop: vDrops)
+    {
+        if(pDrop && pDrop->TakeItem(ClientID)) { return true; }
+    }
 	return false;
 }
 
