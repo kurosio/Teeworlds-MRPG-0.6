@@ -10,7 +10,7 @@
 #include <game/server/mmocore/Components/Quests/QuestCore.h>
 #include <game/server/mmocore/Components/Worlds/WorldData.h>
 
-#include "game/server/mmocore/Components/Houses/HouseCore.h"
+#include <game/server/mmocore/Components/Houses/HouseCore.h>
 
 #include <base/hash_ctxt.h>
 
@@ -110,6 +110,13 @@ AccountCodeResult CAccountCore::LoginAccount(int ClientID, const char *Login, co
 			GS()->Chat(ClientID, "The account is already in the game.");
 			return AccountCodeResult::AOP_ALREADY_IN_GAME;
 		}
+
+        ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", UserID);
+        if(pResBan->next())
+        {
+            GS()->Chat(ClientID, "You account was suspended until \"{STR}\" with the reason of \"{STR}\"", pResBan->getString("BannedUntil").c_str(), pResBan->getString("Reason").c_str());
+            return AccountCodeResult::AOP_ACCOUNT_BANNED;
+        }
 
 		Server()->SetClientLanguage(ClientID, pResCheck->getString("Language").c_str());
 		str_copy(pPlayer->Acc().m_aLogin, cClearLogin.cstr(), sizeof(pPlayer->Acc().m_aLogin));
@@ -428,4 +435,41 @@ void CAccountCore::UseVoucher(int ClientID, const char* pVoucher) const
 	}
 
 	GS()->Chat(ClientID, "The voucher code '{STR}' does not exist.", pVoucher);
+}
+
+bool CAccountCore::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason) {
+    ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", pPlayer->Acc().m_UserID);
+    if(pResBan->next())
+    {
+        m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "This account is already banned");
+        return false;
+    }
+    Database->Execute<DB::INSERT>("tw_accounts_bans", "(AccountId, BannedUntil, Reason) VALUES (%d, %s, '%s')", pPlayer->Acc().m_UserID, std::string("current_timestamp + " + Time.asSqlInterval()).c_str(), Reason.c_str());
+    GS()->Server()->Kick(pPlayer->GetCID(), "Your account was banned");
+    m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully banned!");
+    return true;
+}
+
+bool CAccountCore::UnBanAccount(int BanId) {
+    ResultPtr pResBan = Database->Execute<DB::SELECT>("AccountId", "tw_accounts_bans", "WHERE Id = '%d' AND current_timestamp() < `BannedUntil`", BanId);
+    if(pResBan->next())
+    {
+        Database->Execute<DB::UPDATE>("tw_accounts_bans", "BannedUntil = current_timestamp WHERE Id = '%d'", BanId);
+        m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully unbanned!");
+        return true;
+    }
+    m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Ban is not valid anymore or does not exist!");
+    return false;
+}
+
+std::vector<CAccountCore::AccBan> CAccountCore::BansAccount() {
+    std::vector<AccBan> out;
+    ResultPtr pResBan = Database->Execute<DB::SELECT>("Id, BannedUntil, Reason, AccountId", "tw_accounts_bans", "WHERE current_timestamp() < `BannedUntil`");
+    if(pResBan->next())
+    {
+        ResultPtr pResNick = Database->Execute<DB::SELECT>("Nick", "tw_accounts_data", "WHERE ID = '%d'", pResBan->getInt("AccountId"));
+        pResNick->next();
+        out.push_back({pResBan->getInt("Id"), pResBan->getString("BannedUntil").c_str(), pResNick->getString("Nick").c_str(), pResBan->getString("Reason").c_str()});
+    }
+    return out;
 }

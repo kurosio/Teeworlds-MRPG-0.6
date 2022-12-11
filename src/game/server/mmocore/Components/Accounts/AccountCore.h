@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
 #define GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
 #include <game/server/mmocore/MmoComponent.h>
+#include <game/server/mmocore/Utils/TimePeriodData.h>
 
 #include "AccountData.h"
 
@@ -18,12 +19,23 @@ class CAccountCore : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 	void OnResetClient(int ClientID) override;
 
+    struct AccBan
+    {
+        int id;
+        std::string until;
+        std::string nickname;
+        std::string reason;
+    };
+
 public:
 	AccountCodeResult RegisterAccount(int ClientID, const char *Login, const char *Password);
 	AccountCodeResult LoginAccount(int ClientID, const char *Login, const char *Password);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
 	void DiscordConnect(int ClientID, const char *pDID) const;
 	bool ChangeNickname(int ClientID);
+    bool BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason);
+    bool UnBanAccount(int BanId);
+    static std::vector<AccBan> BansAccount();
 
 	int GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const;
 	
