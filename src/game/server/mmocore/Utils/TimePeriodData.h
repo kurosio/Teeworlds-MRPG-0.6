@@ -61,7 +61,10 @@ public:
     bool parse(const std::string& from)
     {
         if(!std::regex_search(from, std::regex("\\d[dhms]")))
-            return bool(_days = _hours = _minutes = _seconds = 0);
+        {
+            _days = _hours = _minutes = _seconds = 0;
+            return false;
+        }
 
         _days = numberBeforeChar(from, 'd');
         _hours = numberBeforeChar(from, 'h');
