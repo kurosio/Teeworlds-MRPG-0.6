@@ -310,12 +310,12 @@ void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	pGS->Chat(ClientID, "Server rules");
-	pGS->Chat(ClientID, "- Be respectful, don't insult other players");
 	pGS->Chat(ClientID, "- Don't use racist words");
 	pGS->Chat(ClientID, "- Don't spam messages");
 	pGS->Chat(ClientID, "- Don't block other players");
 	pGS->Chat(ClientID, "- Don't abuse bugs");
 	pGS->Chat(ClientID, "- Don't use third party software which give you unfair advantage (bots, clickers, macros)");
+	pGS->Chat(ClientID, "- Don't share unwanted/malicious/advertisement links");
 	pGS->Chat(ClientID, "- Don't use multiple accounts");
 	pGS->Chat(ClientID, "- Don't share your account credentials (username, password)");
 	pGS->Chat(ClientID, "- The admins and moderators will mute/kick/ban per discretion");
