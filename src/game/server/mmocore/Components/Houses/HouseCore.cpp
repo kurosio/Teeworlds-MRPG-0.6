@@ -77,6 +77,13 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 	if(Menulist == MENU_HOUSE_DECORATION)
 	{
 		pPlayer->m_LastVoteMenu = MENU_HOUSE;
+		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		if(!pHouse)
+		{
+			GS()->AVL(ClientID, "null", "You not owner home!");
+			return true;
+		}
+
 		GS()->AVH(ClientID, TAB_INFO_DECORATION, "Decorations Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Add: SELECT your item in list. SELECT (Add to house),");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "later press (ESC) and mouse select position");
@@ -85,7 +92,7 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 
 		Job()->Item()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
 		GS()->AV(ClientID, "null");
-		pPlayer->Acc().GetHouse()->ShowDecorations();
+		pHouse->ShowDecorations();
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
