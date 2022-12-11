@@ -164,7 +164,7 @@ void DiscordCommands::CmdConnect(SleepyDiscord::Interaction* pInteraction, Disco
 
 	if(pRes->next())
 	{
-		const std::string Nick(pRes->getString("Nick").c_str());
+		const std::string Nick(pDiscord->Server()->EscapeDiscordMarkdown(pRes->getString("Nick").c_str()));
 		SleepyDiscord::Embed EmbedSuccess;
 		EmbedSuccess.description = "Your account is connected to the game nickname [" + Nick + "].";
 		EmbedSuccess.color = DC_DISCORD_SUCCESS;
@@ -212,7 +212,7 @@ void DiscordCommands::CmdOnline(SleepyDiscord::Interaction* pInteraction, Discor
 		{
 			std::string Nickname(pDiscord->Server()->ClientName(i));
 			std::string Team(pPlayer->GetTeam() != TEAM_SPECTATORS ? "Ingame" : "Spectator");
-			Onlines += std::string("**" + Nickname + "** - " + Team + "\n");
+			Onlines += std::string("**" + pDiscord->Server()->EscapeDiscordMarkdown(Nickname) + "** - " + Team + "\n");
 		}
 	}
 
@@ -235,7 +235,7 @@ void DiscordCommands::CmdStats(SleepyDiscord::Interaction* pInteraction, Discord
 	if(!Found)
 	{
 		SleepyDiscord::Embed EmbedWarning;
-		EmbedWarning.description = "Accounts containing [" + std::string(pSearchNick) + "] among nicknames were not found on the server.";
+		EmbedWarning.description = "Accounts containing [" + pDiscord->Server()->EscapeDiscordMarkdown(pSearchNick) + "] among nicknames were not found on the server.";
 		EmbedWarning.color = DC_DISCORD_WARNING;
 		response.data.embeds.push_back(EmbedWarning);
 		
@@ -263,7 +263,7 @@ void DiscordCommands::CmdRanking(SleepyDiscord::Interaction* pInteraction, Disco
 	ResultPtr pRes = Database->Execute<DB::SELECT>("a.ID, ad.Nick AS `Nick`, ad.Level AS `Level`, g.Value AS `Gold`", "tw_accounts a", "JOIN tw_accounts_data ad ON a.ID = ad.ID LEFT JOIN tw_accounts_items g ON a.ID = g.UserID AND g.ItemID = 1 ORDER BY %s LIMIT 10", (GoldRanking ? "g.Value DESC, ad.Level DESC" : "ad.Level DESC, g.Value DESC"));
 	while(pRes->next())
 	{
-		Names += std::to_string((int)pRes->getRow()) + ". **" + pRes->getString("Nick").c_str() + "**\n";
+		Names += std::to_string((int)pRes->getRow()) + ". **" + pDiscord->Server()->EscapeDiscordMarkdown(pRes->getString("Nick")).c_str() + "**\n";
 		Levels += std::to_string(pRes->getInt("Level")) + "\n";
 		GoldValues += std::to_string(pRes->getInt("Gold")) + "\n";
 	}

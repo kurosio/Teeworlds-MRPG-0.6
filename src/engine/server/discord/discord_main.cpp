@@ -118,7 +118,7 @@ bool DiscordJob::SendGenerateMessage(SleepyDiscord::User UserRequestFrom, std::s
 	{
 		const int AccountID = pRes->getInt("ID");
 		const int Rank = Server()->GameServer()->GetRank(AccountID);
-		std::string Nickname(pRes->getString("Nick").c_str());
+		std::string Nickname(Server()->EscapeDiscordMarkdown(pRes->getString("Nick").c_str()));
 		std::string PhpArguments = "?player=" + Nickname + "&rank=" + std::to_string(Rank);
 		const std::string ImageUrl = std::string(g_Config.m_SvDiscordGenerateURL) + PhpArguments;
 

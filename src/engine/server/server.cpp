@@ -287,7 +287,7 @@ void CServer::SendDiscordMessage(const char *pChannel, int Color, const char* pT
 #ifdef CONF_DISCORD
 	SleepyDiscord::Embed embed;
 	embed.title = std::string(EscapeDiscordMarkdown(pTitle));
-	embed.description = std::string(pText);
+	embed.description = std::string(EscapeDiscordMarkdown(pText));
 	embed.color = Color;
 
 	DiscordTask Task(std::bind(&DiscordJob::sendMessageWithoutResponse, m_pDiscord, std::string(pChannel), std::string("\0"), embed));
