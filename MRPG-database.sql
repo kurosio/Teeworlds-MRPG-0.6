@@ -409,6 +409,21 @@ INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tw_accounts_bans`
+--
+
+CREATE TABLE `tw_accounts_bans` (
+  `Id` int(11) NOT NULL,
+  `AccountId` int(11) NOT NULL,
+  `BannedSince` timestamp NULL DEFAULT current_timestamp(),
+  `BannedUntil` timestamp NOT NULL DEFAULT current_timestamp(),
+  `Reason` varchar(512) NOT NULL DEFAULT 'No Reason Given'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
+-- --------------------------------------------------------
+
+--
 -- Структура таблицы `tw_accounts_farming`
 --
 
@@ -2380,6 +2395,13 @@ ALTER TABLE `tw_accounts_data`
   ADD KEY `Exp` (`Exp`);
 
 --
+-- Indexes for table `tw_accounts_bans`
+--
+ALTER TABLE `tw_accounts_bans`
+  ADD PRIMARY KEY (`Id`),
+  ADD KEY `tw_accounts_bans_tw_accounts_ID_fk` (`AccountId`);
+
+--
 -- Индексы таблицы `tw_accounts_farming`
 --
 ALTER TABLE `tw_accounts_farming`
@@ -2755,6 +2777,12 @@ ALTER TABLE `tw_accounts_data`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
+-- AUTO_INCREMENT for table `tw_accounts_bans`
+--
+ALTER TABLE `tw_accounts_bans`
+  MODIFY `Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
 -- AUTO_INCREMENT для таблицы `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
@@ -2976,6 +3004,11 @@ ALTER TABLE `tw_accounts_data`
   ADD CONSTRAINT `tw_accounts_data_ibfk_3` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_data_ibfk_4` FOREIGN KEY (`GuildRank`) REFERENCES `tw_guilds_ranks` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_data_ibfk_5` FOREIGN KEY (`ID`) REFERENCES `tw_accounts` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+--
+-- Constraints for table `tw_accounts_bans`
+--
+ALTER TABLE `tw_accounts_bans`
+  ADD CONSTRAINT `tw_accounts_bans_tw_accounts_ID_fk` FOREIGN KEY (`AccountId`) REFERENCES `tw_accounts` (`ID`);
 
 --
 -- Ограничения внешнего ключа таблицы `tw_accounts_farming`
