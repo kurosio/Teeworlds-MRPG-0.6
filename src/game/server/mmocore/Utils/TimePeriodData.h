@@ -13,10 +13,10 @@ class TimePeriodData {
 
     void validate()
     {
-        _seconds = std::max(0, _seconds);
-        _minutes = std::max(0, _minutes);
-        _hours = std::max(0, _hours);
-        _days = std::max(0, _days);
+        _seconds = max(0, _seconds);
+        _minutes = max(0, _minutes);
+        _hours = max(0, _hours);
+        _days = max(0, _days);
 
         _seconds = asSeconds();
 
@@ -61,7 +61,7 @@ public:
     bool parse(const std::string& from)
     {
         if(!std::regex_search(from, std::regex("\\d[dhms]")))
-            return _days = _hours = _minutes = _seconds = 0;
+            return bool(_days = _hours = _minutes = _seconds = 0);
 
         _days = numberBeforeChar(from, 'd');
         _hours = numberBeforeChar(from, 'h');
@@ -73,19 +73,17 @@ public:
 
     std::string asSqlInterval() const
     {
-        std::stringstream ss;
-        ss << "interval " << asSeconds() << " second\n";
-        return ss.str();
+        return std::string("interval " + std::to_string(asSeconds()) + " second");
     }
 
     inline int asSeconds() const
     {
-       return _seconds+_minutes*60+_hours*60*60+_days*24*60*60;
+       return (_seconds+_minutes*60+_hours*60*60+_days*24*60*60);
     }
 
     inline bool isZero() const
     {
-        return asSeconds() == 0;
+        return (asSeconds() == 0);
     }
 };
 
