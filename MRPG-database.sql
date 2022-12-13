@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.0-1.fc36
 -- https://www.phpmyadmin.net/
 --
--- Хост: 127.0.0.1
--- Время создания: Дек 10 2022 г., 17:42
--- Версия сервера: 10.4.24-MariaDB
--- Версия PHP: 8.1.5
+-- Хост: localhost
+-- Время создания: Дек 13 2022 г., 06:36
+-- Версия сервера: 10.5.16-MariaDB
+-- Версия PHP: 8.1.13
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- База данных: `test2`
+-- База данных: `mrpg06new`
 --
 
 -- --------------------------------------------------------
@@ -234,7 +234,8 @@ INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `Regist
 (40, 'bqwpd', '2c70b8c77e170cf4af4340d80f1c4a0f0b63d07d8ee9f33ccf06883c5be4188e', 'XZG2XFkbdPPaR3oZdERVLLGD', '2022-11-30 15:43:30', 'First log in', '145.255.22.128', '0.0.0.0', 'en'),
 (41, 'Kartosh4ka', '631d2c1952595d54154f50d2c5febb6422d8e39405acbb608670480880354882', 'f6XCjUnnYGEHHg5Y3qoY32CU', '2022-11-30 16:59:09', '2022-11-30 23:59:17', '178.214.244.1', '178.214.244.1', 'en'),
 (42, 'kuro', '54deccc823b80a1c3f67a74284d94877c89af0f162b650034409b0eb720488b9', 'Na35SW3bdmBBLbCmaoVaZKT8', '2022-11-30 17:57:38', '2022-12-01 01:13:47', '192.168.0.10', '????????????????????????????????????????????????????????????????', 'en'),
-(43, 'kuro', '872b70a3ab83b2e17f9fc4e3279c31fa39a1ba6d114196bbbcd42ad6b4634e19', 'o6CEUfe2W5SkT8eWa5YCHYkq', '2022-12-01 13:49:36', '2022-12-01 23:44:22', '192.168.0.10', '????????????????????????????????????????????????????????????????', 'en');
+(43, 'kuro', '872b70a3ab83b2e17f9fc4e3279c31fa39a1ba6d114196bbbcd42ad6b4634e19', 'o6CEUfe2W5SkT8eWa5YCHYkq', '2022-12-01 13:49:36', '2022-12-01 23:44:22', '192.168.0.10', '????????????????????????????????????????????????????????????????', 'en'),
+(44, 'Anime', '8895382fb46975c0c0edf71c1dfbd77a04126615c9c7ed5c9c7afef1b698cdb6', '7YZBXtkTU5eSD3KXPPdopkdj', '2022-12-13 06:18:08', '2022-12-13 08:35:19', '127.0.0.1', '(Î', 'en');
 
 -- --------------------------------------------------------
 
@@ -326,6 +327,20 @@ INSERT INTO `tw_accounts_aethers` (`ID`, `UserID`, `AetherID`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Структура таблицы `tw_accounts_bans`
+--
+
+CREATE TABLE `tw_accounts_bans` (
+  `Id` int(11) NOT NULL,
+  `AccountId` int(11) NOT NULL,
+  `BannedSince` timestamp NULL DEFAULT current_timestamp(),
+  `BannedUntil` timestamp NOT NULL DEFAULT current_timestamp(),
+  `Reason` varchar(512) NOT NULL DEFAULT 'No Reason Given'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Структура таблицы `tw_accounts_data`
 --
 
@@ -404,22 +419,8 @@ INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `
 (40, 'bqwpd', 'null', NULL, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (41, 'Kartosh4ka', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (42, '5Kurosio69', 'null', 2, 4, 88, NULL, 0, NULL, 3, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(43, 'Kurosio6913', 'null', 2, 5, 8, NULL, 0, NULL, 4, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_accounts_bans`
---
-
-CREATE TABLE `tw_accounts_bans` (
-  `Id` int(11) NOT NULL,
-  `AccountId` int(11) NOT NULL,
-  `BannedSince` timestamp NULL DEFAULT current_timestamp(),
-  `BannedUntil` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Reason` varchar(512) NOT NULL DEFAULT 'No Reason Given'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
+(43, 'Kurosio6913', 'null', 2, 5, 8, NULL, 0, NULL, 4, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(44, 'Anime.pdf', 'null', 5, 11, 1572, 1, 56000, NULL, 1, 3, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -479,7 +480,8 @@ INSERT INTO `tw_accounts_farming` (`UserID`, `Level`, `Exp`, `Upgrade`) VALUES
 (39, 1, 0, 0),
 (41, 1, 0, 0),
 (42, 1, 0, 0),
-(43, 1, 0, 0);
+(43, 1, 0, 0),
+(44, 1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -858,7 +860,37 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (443, 14, 10, 0, 0, 100, 33),
 (445, 12, 19, 0, 0, 100, 33),
 (446, 13, 1, 0, 0, 100, 33),
-(447, 11, 1, 0, 0, 100, 33);
+(447, 11, 1, 0, 0, 100, 33),
+(453, 28, 1, 1, 0, 100, 44),
+(454, 52, 96, 0, 0, 100, 44),
+(455, 40, 2, 0, 0, 100, 44),
+(456, 37, 1, 1, 100, 100, 44),
+(457, 6, 1, 1, 0, 100, 44),
+(458, 4, 1, 1, 0, 100, 44),
+(459, 67, 2, 0, 0, 100, 44),
+(460, 19, 1, 1, 100, 100, 44),
+(461, 9, 424, 0, 0, 100, 44),
+(462, 32, 90, 0, 0, 100, 44),
+(463, 21, 1, 0, 0, 100, 44),
+(464, 26, 1, 1, 0, 100, 44),
+(465, 15, 1, 0, 0, 100, 44),
+(466, 68, 1, 0, 0, 100, 44),
+(467, 57, 1, 1, 1000, 100, 44),
+(468, 5, 1, 1, 0, 100, 44),
+(469, 36, 1, 1, 100, 100, 44),
+(470, 22, 1, 1, 0, 100, 44),
+(471, 47, 1, 0, 0, 100, 44),
+(472, 7, 19975, 0, 0, 100, 44),
+(473, 38, 1, 1, 0, 100, 44),
+(474, 25, 1, 0, 0, 100, 44),
+(475, 23, 1, 0, 0, 100, 44),
+(476, 2, 1, 1, 2, 100, 44),
+(477, 34, 1, 1, 0, 100, 44),
+(478, 17, 10, 0, 0, 100, 44),
+(479, 53, 96, 0, 0, 100, 44),
+(480, 1, 9700385, 0, 0, 100, 44),
+(481, 3, 1, 1, 5, 100, 44),
+(482, 33, 68, 0, 0, 100, 44);
 
 -- --------------------------------------------------------
 
@@ -884,7 +916,12 @@ CREATE TABLE `tw_accounts_mailbox` (
 
 INSERT INTO `tw_accounts_mailbox` (`ID`, `ItemID`, `ItemValue`, `Enchant`, `Name`, `Description`, `UserID`, `IsRead`, `FromSend`) VALUES
 (1, 5, 1, 0, 'The sender heavens', 'Sent from console', 4, 0, 'Console'),
-(2, 19, 1, -1, 'Random box', 'Item was not received by you personally.', 4, 0, 'System');
+(2, 19, 1, -1, 'Random box', 'Item was not received by you personally.', 4, 0, 'System'),
+(7, 1, 21000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System'),
+(8, 1, 21000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System'),
+(9, 1, 32000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System'),
+(10, 1, 32000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System'),
+(11, 1, 32000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System');
 
 -- --------------------------------------------------------
 
@@ -944,7 +981,8 @@ INSERT INTO `tw_accounts_mining` (`UserID`, `Level`, `Exp`, `Upgrade`) VALUES
 (39, 1, 0, 0),
 (41, 1, 0, 0),
 (42, 1, 0, 0),
-(43, 1, 0, 0);
+(43, 1, 0, 0),
+(44, 1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -1148,7 +1186,37 @@ INSERT INTO `tw_accounts_quests` (`ID`, `QuestID`, `UserID`, `Type`) VALUES
 (194, 3, 38, 2),
 (195, 4, 38, 1),
 (196, 7, 33, 1),
-(197, 37, 2, 1);
+(197, 37, 2, 1),
+(200, 1, 44, 2),
+(201, 2, 44, 2),
+(202, 3, 44, 2),
+(203, 4, 44, 2),
+(204, 5, 44, 2),
+(205, 6, 44, 2),
+(206, 7, 44, 2),
+(207, 8, 44, 2),
+(208, 9, 44, 2),
+(209, 10, 44, 2),
+(210, 11, 44, 2),
+(211, 12, 44, 2),
+(212, 13, 44, 2),
+(213, 14, 44, 2),
+(214, 15, 44, 2),
+(215, 16, 44, 2),
+(216, 17, 44, 2),
+(217, 18, 44, 2),
+(218, 19, 44, 2),
+(219, 20, 44, 2),
+(220, 21, 44, 2),
+(221, 22, 44, 2),
+(222, 23, 44, 2),
+(223, 24, 36, 2),
+(224, 25, 44, 2),
+(225, 26, 44, 2),
+(226, 27, 44, 2),
+(227, 28, 44, 2),
+(228, 29, 44, 1),
+(229, 24, 44, 1);
 
 -- --------------------------------------------------------
 
@@ -1174,7 +1242,14 @@ INSERT INTO `tw_accounts_skills` (`ID`, `SkillID`, `UserID`, `Level`, `UsedByEmo
 (3, 1, 33, 6, -1),
 (4, 8, 2, 1, 0),
 (5, 8, 33, 1, 0),
-(6, 4, 33, 1, -1);
+(6, 4, 33, 1, -1),
+(7, 4, 44, 1, -1),
+(8, 1, 44, 8, -1),
+(9, 7, 44, 5, -1),
+(10, 5, 44, 4, -1),
+(11, 2, 44, 10, -1),
+(12, 3, 44, 50, -1),
+(13, 6, 44, 4, -1);
 
 -- --------------------------------------------------------
 
@@ -1876,7 +1951,7 @@ INSERT INTO `tw_houses` (`ID`, `UserID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `Clas
 (1, NULL, 8001, 5297, 8294, 5297, 'Default', 21000, 0, 40, 7499, 5329, 1),
 (2, NULL, 8989, 7729, 8704, 7729, 'Default', 21000, 0, 40, 9466, 7761, 1),
 (3, NULL, 2046, 913, 1936, 913, 'Extra', 32000, 0, 40, 2570, 982, 5),
-(4, NULL, 2049, 593, 1936, 593, 'Extra', 32000, 0, 40, 2570, 444, 5),
+(4, 44, 2049, 593, 1936, 593, 'Extra', 32000, 0, 40, 2570, 444, 5),
 (5, NULL, 1211, 913, 1330, 913, 'Extra', 32000, 0, 40, 707, 991, 5),
 (6, NULL, 1222, 593, 1330, 593, 'Extra', 32000, 0, 40, 706, 444, 5);
 
@@ -2382,6 +2457,13 @@ ALTER TABLE `tw_accounts_aethers`
   ADD KEY `TeleportID` (`AetherID`);
 
 --
+-- Индексы таблицы `tw_accounts_bans`
+--
+ALTER TABLE `tw_accounts_bans`
+  ADD PRIMARY KEY (`Id`),
+  ADD KEY `tw_accounts_bans_tw_accounts_ID_fk` (`AccountId`);
+
+--
 -- Индексы таблицы `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
@@ -2393,13 +2475,6 @@ ALTER TABLE `tw_accounts_data`
   ADD KEY `GuildRank` (`GuildRank`),
   ADD KEY `Level` (`Level`),
   ADD KEY `Exp` (`Exp`);
-
---
--- Indexes for table `tw_accounts_bans`
---
-ALTER TABLE `tw_accounts_bans`
-  ADD PRIMARY KEY (`Id`),
-  ADD KEY `tw_accounts_bans_tw_accounts_ID_fk` (`AccountId`);
 
 --
 -- Индексы таблицы `tw_accounts_farming`
@@ -2762,7 +2837,7 @@ ALTER TABLE `enum_items_types`
 -- AUTO_INCREMENT для таблицы `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_aethers`
@@ -2771,40 +2846,40 @@ ALTER TABLE `tw_accounts_aethers`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts_data`
---
-ALTER TABLE `tw_accounts_data`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
-
---
--- AUTO_INCREMENT for table `tw_accounts_bans`
+-- AUTO_INCREMENT для таблицы `tw_accounts_bans`
 --
 ALTER TABLE `tw_accounts_bans`
   MODIFY `Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
+-- AUTO_INCREMENT для таблицы `tw_accounts_data`
+--
+ALTER TABLE `tw_accounts_data`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+
+--
 -- AUTO_INCREMENT для таблицы `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=448;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=483;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
 --
 ALTER TABLE `tw_accounts_mailbox`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_quests`
 --
 ALTER TABLE `tw_accounts_quests`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=198;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=230;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_skills`
 --
 ALTER TABLE `tw_accounts_skills`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_aethers`
@@ -2998,17 +3073,18 @@ ALTER TABLE `tw_accounts_aethers`
   ADD CONSTRAINT `tw_accounts_aethers_ibfk_2` FOREIGN KEY (`AetherID`) REFERENCES `tw_aethers` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Ограничения внешнего ключа таблицы `tw_accounts_bans`
+--
+ALTER TABLE `tw_accounts_bans`
+  ADD CONSTRAINT `tw_accounts_bans_tw_accounts_ID_fk` FOREIGN KEY (`AccountId`) REFERENCES `tw_accounts` (`ID`);
+
+--
 -- Ограничения внешнего ключа таблицы `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
   ADD CONSTRAINT `tw_accounts_data_ibfk_3` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_data_ibfk_4` FOREIGN KEY (`GuildRank`) REFERENCES `tw_guilds_ranks` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_data_ibfk_5` FOREIGN KEY (`ID`) REFERENCES `tw_accounts` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
---
--- Constraints for table `tw_accounts_bans`
---
-ALTER TABLE `tw_accounts_bans`
-  ADD CONSTRAINT `tw_accounts_bans_tw_accounts_ID_fk` FOREIGN KEY (`AccountId`) REFERENCES `tw_accounts` (`ID`);
 
 --
 -- Ограничения внешнего ключа таблицы `tw_accounts_farming`
