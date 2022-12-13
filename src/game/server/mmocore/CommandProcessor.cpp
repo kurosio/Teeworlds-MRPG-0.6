@@ -174,7 +174,10 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 		return;
 
 	CHouseData* pHouse = pPlayer->Acc().GetHouse();
-	pHouse->GetDoor()->Reverse();
+    if(pHouse)
+	    pHouse->GetDoor()->Reverse();
+    else
+        pGS->Chat(pPlayer->GetCID(), "You don't own a house!");
 }
 
 void CCommandProcessor::ConChatSellHouse(IConsole::IResult* pResult, void* pUser)
