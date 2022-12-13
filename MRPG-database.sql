@@ -336,7 +336,7 @@ CREATE TABLE `tw_accounts_bans` (
   `BannedSince` timestamp NULL DEFAULT current_timestamp(),
   `BannedUntil` timestamp NOT NULL DEFAULT current_timestamp(),
   `Reason` varchar(512) NOT NULL DEFAULT 'No Reason Given'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
