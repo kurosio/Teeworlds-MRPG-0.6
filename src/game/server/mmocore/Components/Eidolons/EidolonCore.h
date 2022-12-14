@@ -4,6 +4,8 @@
 #define GAME_SERVER_COMPONENT_EIDOLON_CORE_H
 #include <game/server/mmocore/MmoComponent.h>
 
+#include "game/server/mmocore/Components/Eidolons/EidolonInfoData.h"
+
 class CEidolonCore : public MmoComponent
 {
 	int m_EidolonItemSelected[MAX_PLAYERS] {};
