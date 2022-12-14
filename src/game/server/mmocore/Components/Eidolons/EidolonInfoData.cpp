@@ -28,7 +28,16 @@ CEidolonInfoData::EidolonDescriptionList CEidolonInfoData::m_EidolonsInfoData =
 		itEidolonDryad, 58,
 		{
 			"Dryads are green dryads with sea-green vines.",
-			"They have violet-colored flowers for hands and beady eyes."
+			"They have violet-colored flowers for hands and beady eyes.",
+			"Trained by scaffolding, to use some weapons, and boosts."
+		}
+	},
+	{
+		itEidolonPigQueen, 6,
+		{
+			"Perhaps the self-proclaimed queen of pigs.",
+			"It has a delicate pink color, likes to eat everything green.",
+			"Has a strong attack, but cannot use anything."
 		}
 	}
 };

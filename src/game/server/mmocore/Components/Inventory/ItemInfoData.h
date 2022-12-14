@@ -75,6 +75,7 @@ public:
 	ItemType GetType() const { return m_Type; }
 	bool IsType(ItemType Type) const { return m_Type == Type; }
 	class CRandomBox* GetRandomBox() { return m_RandomBox.empty() ? nullptr : &m_RandomBox; }
+	ContainerAttributes& GetAttributes() { return m_aAttributes; }
 
 	bool IsEnchantable() const;
 	bool IsEnchantMaxLevel(int Enchant) const;

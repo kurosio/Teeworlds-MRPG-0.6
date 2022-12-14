@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "EidolonCore.h"
 
@@ -42,7 +42,7 @@ bool CEidolonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		for(auto& pEidolon : CEidolonInfoData::Data())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolon.GetItemID());
-			const char* pCollectedInfo = Server()->Localization()->Localize(pPlayer->GetLanguage(), pPlayerItem->HasItem() ? "in collected" : "not collected");
+			const char* pCollectedInfo = (pPlayerItem->HasItem() ? "✔" : "\0");
 			const char* pUsedAtMoment = pPlayerItem->IsEquipped() ? Server()->Localization()->Localize(pPlayer->GetLanguage(), "[summoned by you]") : "\0";
 			GS()->AVM(ClientID, "EIDOLON_SELECT", pEidolon.GetItemID(), TAB_EIDOLONS, "{STR} {STR} {STR}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
 		}
@@ -60,14 +60,16 @@ bool CEidolonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 			GS()->AVH(ClientID, TAB_EIDOLON_DESCRIPTION, "Descriptions of eidolon ({STR})", pEidolonInfo->GetDataBot()->m_aNameBot);
 			for(auto& Line : pEidolonInfo->GetLinesDescription())
 				GS()->AVM(ClientID, "null", NOPE, TAB_EIDOLON_DESCRIPTION, Line.c_str());
-
+			char aAttributeBonus[128];
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
+			pPlayerItem->StrFormatAttributes(pPlayer, aAttributeBonus, sizeof(aAttributeBonus));
+			GS()->AVM(ClientID, "null", NOPE, TAB_EIDOLON_DESCRIPTION, aAttributeBonus);
 			GS()->AV(ClientID, "null");
 
 			GS()->AVH(ClientID, TAB_EIDOLON_UNLOCKING_ENHANCEMENTS, "Unlocking Enhancements.");
 			GS()->AVM(ClientID, "null", NOPE, TAB_EIDOLON_UNLOCKING_ENHANCEMENTS, "Available soon.");
 			GS()->AV(ClientID, "null");
 
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
 			if(pPlayerItem->HasItem())
 			{
 				const char* pStateSummon = Server()->Localization()->Localize(pPlayer->GetLanguage(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
