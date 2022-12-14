@@ -220,7 +220,7 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 		Get = min(AvailableValue, Get);
 		CPlayerItem* pPlayerSelectedItem = pPlayer->GetItem(VoteID);
 		CPlayerItem* pPlayerMaterialItem = pPlayer->GetItem(itMaterial);
-		const int DesValue = pPlayerSelectedItem->Info()->m_Dysenthis * Get;
+		const int DesValue = pPlayerSelectedItem->GetDysenthis() * Get;
 		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
 			GS()->Chat(ClientID, "Disassemble {STR}x{VAL}.", pPlayerSelectedItem->Info()->GetName(), Get);
@@ -459,9 +459,9 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 	if (ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
 		// dysenthis
-		if (pItemPlayer.Info()->GetDysenthis() > 0)
+		if (pItemPlayer.GetDysenthis() > 0)
 		{
-			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.Info()->GetDysenthis());
+			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.GetDysenthis());
 		}
 
 		// drop

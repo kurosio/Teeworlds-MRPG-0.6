@@ -67,6 +67,7 @@ public:
 	// getters
 	int GetEnchantStats(AttributeIdentifier ID) const { return Info()->GetInfoEnchantStats(ID, m_Enchant); }
 	int GetEnchantPrice() const { return Info()->GetEnchantPrice(m_Enchant); }
+	int GetDysenthis() const { return Info()->GetDysenthis(m_Enchant); }
 	bool IsEquipped() const
 	{
 		return m_Value > 0 && m_Settings > 0 && (Info()->IsType(ItemType::TYPE_POTION) || Info()->IsType(ItemType::TYPE_SETTINGS) 
