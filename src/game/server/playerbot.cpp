@@ -159,7 +159,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 		if(GS()->IsDungeon())
 			Size = CalculateAttribute(translate_to_percent_rest(max(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, false);
 		else
-			Size = CalculateAttribute(EidolonsTools::getEidolonItemID(m_BotID), 1, false);
+			Size = CalculateAttribute(m_EidolonItemID, 1, false);
 	}
 	else if(m_BotType == TYPE_BOT_MOB)
 		Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss);

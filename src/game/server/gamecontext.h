@@ -75,6 +75,7 @@ public:
 	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;
 	class CWarehouse* GetWarehouse(int ID) const;
 	class CWorldData* GetWorldData(int ID = -1) const;
+	class CEidolonInfoData* GetEidolonByItemID(ItemIdentifier ItemID) const;
 
 	/* #########################################################################
 		EVENTS

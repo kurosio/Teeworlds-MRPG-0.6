@@ -143,10 +143,12 @@ enum MenuList
 	MENU_GUILD_HISTORY,
 	MENU_GUILD_FINDER,
 	MENU_GUILD_FINDER_VIEW_PLAYERS,
+	MENU_GUILD_HOUSE_DECORATION,
 	MENU_HOUSE,
 	MENU_HOUSE_DECORATION,
-	MENU_GUILD_HOUSE_DECORATION,
 	MENU_HOUSE_PLANTS,
+	MENU_EIDOLON_COLLECTION,
+	MENU_EIDOLON_COLLECTION_SELECTED,
 	MENU_JOURNAL_MAIN,
 	MENU_JOURNAL_FINISHED,
 	MENU_JOURNAL_QUEST_INFORMATION,
@@ -173,6 +175,8 @@ enum TabHideList
 	TAB_STORAGE,
 	TAB_HOUSE_STAT,
 	TAB_AETHER,
+	TAB_EIDOLONS,
+	TAB_EIDOLON_DESCRIPTION,
 	TAB_LANGUAGES,
 	TAB_SETTINGS,
 	TAB_SETTINGS_MODULES,
@@ -428,28 +432,6 @@ enum class AttributeType : int
 };
 
 // helpers
-class EidolonsTools
-{
-	inline static std::initializer_list< std::pair < int, int > > m_Eidons
-	{
-		{ itEidolonOtohime, 45 },
-		{ itEidolonMerrilee, 46 },
-		{ itEidolonDryad, 58 }
-	};
-
-public:
-	static int getEidolonBot(int ItemID)
-	{
-		auto Iter = std::find_if(m_Eidons.begin(), m_Eidons.end(), [ItemID](const std::pair < int, int >& p) { return p.first == ItemID; });
-		return Iter != m_Eidons.end() ? (*Iter).second : -1;
-	}
-	static int getEidolonItemID(int BotID)
-	{
-		auto Iter = std::find_if(m_Eidons.begin(), m_Eidons.end(), [BotID](const std::pair < int, int >& p) { return p.second == BotID; });
-		return Iter != m_Eidons.end() ? (*Iter).first : -1;
-	}
-};
-
 class JsonTools
 {
 public:

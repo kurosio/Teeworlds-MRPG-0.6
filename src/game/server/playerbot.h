@@ -67,6 +67,8 @@ public:
 	bool IsActive() const override {return m_BotActive;};
 
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
+
+	int m_EidolonItemID;
 	class CPlayer* GetEidolonOwner() const;
 
 private:

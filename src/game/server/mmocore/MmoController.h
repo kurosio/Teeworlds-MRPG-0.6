@@ -45,6 +45,7 @@ class MmoController
 	class CMailBoxCore* m_pMailBoxJob;
 	class CSkillsCore* m_pSkillJob;
 	class CWorldDataCore* m_pWorldSwapJob;
+	class CEidolonCore* m_pEidolonJob;
 
 public:
 	explicit MmoController(CGS *pGameServer);
@@ -60,6 +61,7 @@ public:
 	CAccountPlantCore *PlantsAcc() const { return m_pAccPlant; }
 	QuestCore *Quest() const { return m_pQuest; }
 	CWarehouseCore *Warehouse() const { return m_pWarehouse; }
+	CEidolonCore* Eidolons() const { return m_pEidolonJob; }
 
 	CCraftCore* Craft() const { return m_pCraftJob; }
 	DungeonCore* Dungeon() const { return m_pDungeonJob; }

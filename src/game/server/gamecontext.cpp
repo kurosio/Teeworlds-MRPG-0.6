@@ -30,6 +30,7 @@
 
 #include <cstdarg>
 
+#include "mmocore/Components/Eidolons/EidolonInfoData.h"
 #include "mmocore/Components/Warehouse/WarehouseData.h"
 #include "mmocore/Components/Worlds/WorldData.h"
 
@@ -158,6 +159,12 @@ CWorldData* CGS::GetWorldData(int ID) const
 	auto p = std::find_if(CWorldData::Data().begin(), CWorldData::Data().end(), [WorldID](const WorldDataPtr& p){return WorldID == p->GetID(); });
 
 	return p != CWorldData::Data().end() ? (*p).get() : nullptr;
+}
+
+CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
+{
+	auto p = std::find_if(CEidolonInfoData::Data().begin(), CEidolonInfoData::Data().end(), [ItemID](CEidolonInfoData& p){ return p.GetItemID() == ItemID; });
+	return p != CEidolonInfoData::Data().end() ? &(*p) : nullptr;
 }
 
 /* #########################################################################

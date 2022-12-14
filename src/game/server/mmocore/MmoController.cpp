@@ -14,6 +14,7 @@
 #include "Components/Bots/BotCore.h"
 #include "Components/Crafts/CraftCore.h"
 #include "Components/Dungeons/DungeonCore.h"
+#include "Components/Eidolons/EidolonCore.h"
 #include "Components/Guilds/GuildCore.h"
 #include "Components/Houses/HouseCore.h"
 #include "Components/Inventory/InventoryCore.h"
@@ -27,22 +28,23 @@
 MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
-	m_Components.add(m_pBotsInfo = new CBotCore());
-	m_Components.add(m_pItemWork = new CInventoryCore());
-	m_Components.add(m_pCraftJob = new CCraftCore());
-	m_Components.add(m_pWarehouse = new CWarehouseCore());
-	m_Components.add(new CAuctionCore());
-	m_Components.add(m_pQuest = new QuestCore());
-	m_Components.add(m_pDungeonJob = new DungeonCore());
-	m_Components.add(new CAetherCore());
-	m_Components.add(m_pWorldSwapJob = new CWorldDataCore());
-	m_Components.add(m_pHouseJob = new CHouseCore());
-	m_Components.add(m_pGuildJob = new GuildCore());
-	m_Components.add(m_pSkillJob = new CSkillsCore());
-	m_Components.add(m_pAccMain = new CAccountCore());
-	m_Components.add(m_pAccMiner = new CAccountMinerCore());
-	m_Components.add(m_pAccPlant = new CAccountPlantCore());
-	m_Components.add(m_pMailBoxJob = new CMailBoxCore());
+	m_Components.add(m_pBotsInfo = new CBotCore);
+	m_Components.add(m_pItemWork = new CInventoryCore);
+	m_Components.add(m_pCraftJob = new CCraftCore);
+	m_Components.add(m_pWarehouse = new CWarehouseCore);
+	m_Components.add(new CAuctionCore);
+	m_Components.add(m_pEidolonJob = new CEidolonCore);
+	m_Components.add(m_pQuest = new QuestCore);
+	m_Components.add(m_pDungeonJob = new DungeonCore);
+	m_Components.add(new CAetherCore);
+	m_Components.add(m_pWorldSwapJob = new CWorldDataCore);
+	m_Components.add(m_pHouseJob = new CHouseCore);
+	m_Components.add(m_pGuildJob = new GuildCore);
+	m_Components.add(m_pSkillJob = new CSkillsCore);
+	m_Components.add(m_pAccMain = new CAccountCore);
+	m_Components.add(m_pAccMiner = new CAccountMinerCore);
+	m_Components.add(m_pAccPlant = new CAccountPlantCore);
+	m_Components.add(m_pMailBoxJob = new CMailBoxCore);
 
 	for(auto& pComponent : m_Components.m_paComponents)
 	{
@@ -117,6 +119,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		GS()->AVM(ClientID, "MENU", MENU_INVENTORY, TAB_PERSONAL, "Inventory");
 		GS()->AVM(ClientID, "MENU", MENU_EQUIPMENT, TAB_PERSONAL, "Equipment");
 		GS()->AVM(ClientID, "MENU", MENU_UPGRADES, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Acc().m_Upgrade);
+		GS()->AVM(ClientID, "MENU", MENU_EIDOLON_COLLECTION, TAB_PERSONAL, "Eidolon Collection");
 		GS()->AVM(ClientID, "MENU", MENU_DUNGEONS, TAB_PERSONAL, "Dungeons");
 		GS()->AVM(ClientID, "MENU", MENU_SETTINGS, TAB_PERSONAL, "Settings");
 		GS()->AVM(ClientID, "MENU", MENU_INBOX, TAB_PERSONAL, "Mailbox");

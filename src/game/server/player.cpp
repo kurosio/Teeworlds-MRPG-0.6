@@ -9,6 +9,7 @@
 #include "mmocore/Components/Accounts/AccountCore.h"
 #include "mmocore/Components/Bots/BotCore.h"
 #include "mmocore/Components/Dungeons/DungeonData.h"
+#include "mmocore/Components/Eidolons/EidolonInfoData.h"
 #include "mmocore/Components/Guilds/GuildCore.h"
 #include "mmocore/Components/Houses/HouseData.h"
 #include "mmocore/Components/Quests/QuestCore.h"
@@ -137,10 +138,14 @@ void CPlayer::TryCreateEidolon()
 
 	mtxThreadPathWritedNow.lock();
 
-	if(int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON); EidolonItemID > 0 && EidolonsTools::getEidolonBot(EidolonItemID) > 0)
+	int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON);
+	if(CEidolonInfoData* pEidolonData = GS()->GetEidolonByItemID(EidolonItemID))
 	{
-		const int EidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, EidolonsTools::getEidolonBot(EidolonItemID), m_ClientID);
-		m_EidolonCID = EidolonCID;
+		if(const int EidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, pEidolonData->GetDataBotID(), m_ClientID))
+		{
+			dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[EidolonCID])->m_EidolonItemID = EidolonItemID;
+			m_EidolonCID = EidolonCID;
+		}
 	}
 
 	mtxThreadPathWritedNow.unlock();
