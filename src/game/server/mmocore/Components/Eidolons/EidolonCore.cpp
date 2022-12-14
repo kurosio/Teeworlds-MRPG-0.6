@@ -43,7 +43,8 @@ bool CEidolonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolon.GetItemID());
 			const char* pCollectedInfo = Server()->Localization()->Localize(pPlayer->GetLanguage(), pPlayerItem->HasItem() ? "in collected" : "not collected");
-			GS()->AVM(ClientID, "EIDOLON_SELECT", pEidolon.GetItemID(), TAB_EIDOLONS, "{STR} {STR}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo);
+			const char* pUsedAtMoment = pPlayerItem->IsEquipped() ? Server()->Localization()->Localize(pPlayer->GetLanguage(), "[summoned by you]") : "\0";
+			GS()->AVM(ClientID, "EIDOLON_SELECT", pEidolon.GetItemID(), TAB_EIDOLONS, "{STR} {STR} {STR}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
 		}
 
 		GS()->AddVotesBackpage(ClientID);
@@ -59,8 +60,22 @@ bool CEidolonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 			GS()->AVH(ClientID, TAB_EIDOLON_DESCRIPTION, "Descriptions of eidolon ({STR})", pEidolonInfo->GetDataBot()->m_aNameBot);
 			for(auto& Line : pEidolonInfo->GetLinesDescription())
 				GS()->AVM(ClientID, "null", NOPE, TAB_EIDOLON_DESCRIPTION, Line.c_str());
-		}
 
+			GS()->AV(ClientID, "null");
+
+			GS()->AVH(ClientID, TAB_EIDOLON_UNLOCKING_ENHANCEMENTS, "Unlocking Enhancements.");
+			GS()->AVM(ClientID, "null", NOPE, TAB_EIDOLON_UNLOCKING_ENHANCEMENTS, "Available soon.");
+			GS()->AV(ClientID, "null");
+
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
+			if(pPlayerItem->HasItem())
+			{
+				const char* pStateSummon = Server()->Localization()->Localize(pPlayer->GetLanguage(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
+				GS()->AVM(ClientID, "ISETTINGS", pEidolonInfo->GetItemID(), NOPE, "{STR} {STR}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
+			}
+			else
+				GS()->AVL(ClientID, "null", "To summon it, you must first get it");
+		}
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
