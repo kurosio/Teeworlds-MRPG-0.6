@@ -17,8 +17,6 @@
 
 #include "mmocore/MmoController.h"
 
-#include "mmocore/Utils/SafePtr.h"
-
 class CGS : public IGameServer
 {
 	/* #########################################################################

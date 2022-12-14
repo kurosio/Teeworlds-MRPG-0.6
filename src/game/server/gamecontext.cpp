@@ -20,8 +20,6 @@
 #include "mmocore/GameEntities/Items/flying_experience.h"
 
 #include "mmocore/Components/Accounts/AccountCore.h"
-#include "mmocore/Components/Accounts/AccountMinerCore.h"
-#include "mmocore/Components/Accounts/AccountPlantCore.h"
 #include "mmocore/Components/Bots/BotCore.h"
 #include "mmocore/Components/Dungeons/DungeonCore.h"
 #include "mmocore/Components/Mails/MailBoxCore.h"
@@ -158,9 +156,8 @@ CWorldData* CGS::GetWorldData(int ID) const
 {
 	int WorldID = ID == -1 ? GetWorldID() : ID;
 	auto p = std::find_if(CWorldData::Data().begin(), CWorldData::Data().end(), [WorldID](const WorldDataPtr& p){return WorldID == p->GetID(); });
-	if(p != CWorldData::Data().end())
-		return (*p).get();
-	return nullptr;
+
+	return p != CWorldData::Data().end() ? (*p).get() : nullptr;
 }
 
 /* #########################################################################
@@ -300,16 +297,10 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char *pText)
 		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
 	else
 		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
-
-	char aBufMode[32];
-	if(Mode == CHAT_TEAM)
-		str_copy(aBufMode, "teamchat", sizeof(aBufMode));
-	else
-		str_copy(aBufMode, "chat", sizeof(aBufMode));
-	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, aBufMode, aBuf);
+	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat", aBuf);
 
 	CNetMsg_Sv_Chat Msg;
-	Msg.m_Team = -1;
+	Msg.m_Team = 0;
 	Msg.m_ClientID = ChatterClientID;
 	Msg.m_pMessage = pText;
 
@@ -330,14 +321,11 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char *pText)
 			return;
 		}
 
-		// send discord chat only from players
-		if(pChatterPlayer)
-			Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, DC_SERVER_CHAT, Server()->ClientName(ChatterClientID), pText);
-
 		// pack one for the recording only
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
 
 		// send chat to guild team
+		Msg.m_Team = 1;
 		const int GuildID = pChatterPlayer->Acc().m_GuildID;
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
@@ -907,48 +895,16 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastChat] && pPlayer->m_aPlayerTick[LastChat]+Server()->TickSpeed() > Server()->Tick())
 				return;
 
-			CNetMsg_Cl_Say* pMsg = (CNetMsg_Cl_Say*)pRawMsg;
-			if (!str_utf8_check(pMsg->m_pMessage))
-			{
-				return;
-			}
-
-			// trim right and set maximum length to 128 utf8-characters
-			int Length = 0;
-			const char *p = pMsg->m_pMessage;
-			const char *pEnd = nullptr;
-			while(*p)
-			{
-				const char *pStrOld = p;
-				const int Code = str_utf8_decode(&p);
-
-				// check if unicode is not empty
-				if(Code > 0x20 && Code != 0xA0 && Code != 0x034F && (Code < 0x2000 || Code > 0x200F) && (Code < 0x2028 || Code > 0x202F) &&
-					(Code < 0x205F || Code > 0x2064) && (Code < 0x206A || Code > 0x206F) && (Code < 0xFE00 || Code > 0xFE0F) &&
-					Code != 0xFEFF && (Code < 0xFFF9 || Code > 0xFFFC))
-				{
-					pEnd = nullptr;
-				}
-				else if(pEnd == nullptr)
-					pEnd = pStrOld;
-
-				if(++Length >= 127)
-				{
-					*(const_cast<char *>(p)) = 0;
-					break;
-				}
-			}
-			if(pEnd != nullptr)
-				*(const_cast<char *>(pEnd)) = 0;
-
 			pPlayer->m_aPlayerTick[LastChat] = Server()->Tick();
 
-			if(pMsg->m_pMessage[0] == '/')
-			{
-				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
+			CNetMsg_Cl_Say* pMsg = (CNetMsg_Cl_Say*)pRawMsg;
+			if (!str_utf8_check(pMsg->m_pMessage))
 				return;
-			}
-			SendChat(ClientID, CHAT_ALL, pMsg->m_pMessage);
+
+			if(pMsg->m_pMessage[0] == '/')
+				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
+			else
+				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)

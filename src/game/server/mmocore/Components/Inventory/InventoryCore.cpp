@@ -445,9 +445,6 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 			GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "{STR} {STR}", (pItemPlayer.m_Settings ? "Undress" : "Equip"), pNameItem);
 	}
 
-	// house plant
-
-
 	// enchant
 	if (pItemPlayer.Info()->IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
 	{
