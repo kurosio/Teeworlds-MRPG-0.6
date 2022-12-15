@@ -4,8 +4,6 @@
 
 #include <game/server/gamecontext.h>
 
-#include "EidolonInfoData.h"
-
 using namespace sqlstr;
 
 #define TW_TABLE_EIDOLON_ENHANCEMENTS "tw_account_eidolon_enhancements"

@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_EIDOLON_CORE_H
 #include <game/server/mmocore/MmoComponent.h>
 
-#include "game/server/mmocore/Components/Eidolons/EidolonInfoData.h"
+#include "EidolonInfoData.h"
 
 class CEidolonCore : public MmoComponent
 {
@@ -14,6 +14,7 @@ class CEidolonCore : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 
 public:
+	// return eidolon size by pair (first player collection / second maximum eidolons)
 	std::pair<int, int> GetEidolonsSize(int ClientID) const;
 };
 
