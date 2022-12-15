@@ -106,7 +106,10 @@ bool CPlayerItem::Add(int Value, int Settings, int Enchant, bool Message)
 	{
 		GS()->Chat(-1, "{STR} got of the {STR}x{VAL}.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value);
 		if(Info()->IsFunctional(EQUIP_EIDOLON))
-			GS()->Chat(-1, "{STR} has a collection {INT} out of {INT} eidolons.", GS()->Server()->ClientName(ClientID), GS()->Mmo()->Eidolons()->GetPlayerCollectedEidolonsSize(GetPlayer()), CEidolonInfoData::Data().size());
+		{
+			std::pair EidolonSize = GS()->Mmo()->Eidolons()->GetEidolonsSize(ClientID);
+			GS()->Chat(-1, "{STR} has a collection {INT} out of {INT} eidolons.", GS()->Server()->ClientName(ClientID), EidolonSize.first, EidolonSize.second);
+		}
 	}
 	else
 		GS()->Chat(ClientID, "You got of the {STR}x{VAL}({VAL}).", Info()->GetName(), Value, m_Value);

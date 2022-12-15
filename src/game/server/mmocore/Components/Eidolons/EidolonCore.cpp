@@ -8,6 +8,8 @@
 
 using namespace sqlstr;
 
+#define TW_TABLE_EIDOLON_ENHANCEMENTS "tw_account_eidolon_enhancements"
+
 bool CEidolonCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -17,11 +19,6 @@ bool CEidolonCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int V
 
 		pPlayer->m_TempMenuValue = MENU_EIDOLON_COLLECTION_SELECTED;
 		GS()->UpdateVotes(ClientID, MENU_EIDOLON_COLLECTION_SELECTED);
-		return true;
-	}
-
-	if(PPSTR(CMD, "DELETE_MAIL") == 0)
-	{
 		return true;
 	}
 
@@ -37,8 +34,12 @@ bool CEidolonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 	if(Menulist == MENU_EIDOLON_COLLECTION)
 	{
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		GS()->AVH(ClientID, TAB_INFO_EIDOLONS, "Eidolon Collection Information");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EIDOLONS, "Here you can see your collection of eidolons.");
+		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_EIDOLONS, "My eidolons (own {INT} out of {INT}).", GetPlayerCollectedEidolonsSize(pPlayer), CEidolonInfoData::Data().size());
+		std::pair EidolonSize = GetEidolonsSize(ClientID);
+		GS()->AVH(ClientID, TAB_EIDOLONS, "My eidolons (own {INT} out of {INT}).", EidolonSize.first, EidolonSize.second);
 		for(auto& pEidolon : CEidolonInfoData::Data())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolon.GetItemID());
@@ -85,17 +86,20 @@ bool CEidolonCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 	return false;
 }
 
-int CEidolonCore::GetPlayerCollectedEidolonsSize(CPlayer* pPlayer) const
+std::pair<int, int> CEidolonCore::GetEidolonsSize(int ClientID) const
 {
-	if(!pPlayer)
-		return 0;
+	int Collect = 0;
+	int Max = static_cast<int>(CEidolonInfoData::Data().size());
 
-	int Collected = 0;
-	for(auto& p : CPlayerItem::Data()[pPlayer->GetCID()])
+	if(CPlayerItem::Data().find(ClientID) != CPlayerItem::Data().end())
 	{
-		if(p.second.HasItem() && p.second.Info()->IsType(ItemType::TYPE_EQUIP) && p.second.Info()->IsFunctional(
-			EQUIP_EIDOLON))
-			Collected++;
+		for(auto& p : CPlayerItem::Data()[ClientID])
+		{
+			if(p.second.HasItem() && p.second.Info()->IsType(ItemType::TYPE_EQUIP) && p.second.Info()->IsFunctional(
+				EQUIP_EIDOLON))
+				Collect++;
+		}
 	}
-	return Collected;
+
+	return std::make_pair(Collect, Max);
 }

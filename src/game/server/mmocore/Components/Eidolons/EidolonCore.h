@@ -14,7 +14,7 @@ class CEidolonCore : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 
 public:
-	int GetPlayerCollectedEidolonsSize(CPlayer* pPlayer) const;
+	std::pair<int, int> GetEidolonsSize(int ClientID) const;
 };
 
 #endif
