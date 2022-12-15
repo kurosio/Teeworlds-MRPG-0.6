@@ -766,6 +766,7 @@ void CGS::OnConsoleInit()
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
 	Console()->Register("set_world_time", "i[hour]", CFGFLAG_SERVER, ConSetWorldTime, m_pServer, "Set worlds time.");
+	Console()->Register("itemlist", "", CFGFLAG_SERVER, ConItemList, m_pServer, "items list");
 	Console()->Register("giveitem", "i[cid]i[itemid]i[count]i[enchant]i[mail]", CFGFLAG_SERVER, ConGiveItem, m_pServer, "Give item <clientid> <itemid> <count> <enchant> <mail 1=yes 0=no>");
 	Console()->Register("removeitem", "i[cid]i[itemid]i[count]", CFGFLAG_SERVER, ConRemItem, m_pServer, "Remove item <clientid> <itemid> <count>");
 	Console()->Register("disband_guild", "r[guildname]", CFGFLAG_SERVER, ConDisbandGuild, m_pServer, "Disband the guild with the name");
@@ -1274,6 +1275,19 @@ void CGS::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 	pServer->SetOffsetWorldTime(Hour);
 }
 
+void CGS::ConItemList(IConsole::IResult* pResult, void* pUserData)
+{
+	IServer* pServer = (IServer*)pUserData;
+	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+
+	char aBuf[256];
+	for(auto& p : CItemDescription::Data())
+	{
+		str_format(aBuf, sizeof(aBuf), "ID: %d | Name: %s | %s", p.first, p.second.GetName(), p.second.IsEnchantable() ? "Enchantable" : "Default stack");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "item_list", aBuf);
+	}
+}
+
 // give the item to the player
 void CGS::ConGiveItem(IConsole::IResult *pResult, void *pUserData)
 {
@@ -1287,7 +1301,7 @@ void CGS::ConGiveItem(IConsole::IResult *pResult, void *pUserData)
 	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
 	CPlayer *pPlayer = pSelf->GetPlayer(ClientID, true);
-	if(pPlayer)
+	if(pPlayer && CPlayerItem::Data()[ClientID].find(ItemID) != CPlayerItem::Data()[ClientID].end())
 	{
 		if (Mail == 0)
 		{
