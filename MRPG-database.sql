@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0-1.fc36
+-- version 5.2.0
 -- https://www.phpmyadmin.net/
 --
--- Хост: localhost
--- Время создания: Дек 13 2022 г., 06:36
--- Версия сервера: 10.5.16-MariaDB
--- Версия PHP: 8.1.13
+-- Хост: 127.0.0.1
+-- Время создания: Дек 15 2022 г., 18:08
+-- Версия сервера: 10.4.24-MariaDB
+-- Версия PHP: 8.1.5
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- База данных: `mrpg06new`
+-- База данных: `test2`
 --
 
 -- --------------------------------------------------------
@@ -193,7 +193,7 @@ CREATE TABLE `tw_accounts` (
 
 INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `RegisterDate`, `LoginDate`, `RegisteredIP`, `LoginIP`, `Language`) VALUES
 (1, 'kuro', 'f4e129eafad40d03dc551fa09beb2e2a8881cabebfff2eae00b786d77be2c85c', 'mUKXMbg9co4eXRRjXdjd5B6U', '2022-11-05 10:19:27', '2022-11-05 17:35:33', '192.168.0.13', '192.168.0.13', 'ru'),
-(2, 'kuro', '4ecd52e2b1e130dc995ec9612bc747a1bed5ef238b28124d12d39a874cef73fd', 'Zn6HtbXfV7eXteU2ZGm9m6Aa', '2022-11-05 11:46:29', '2022-12-07 22:45:51', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
+(2, 'kuro', '4ecd52e2b1e130dc995ec9612bc747a1bed5ef238b28124d12d39a874cef73fd', 'Zn6HtbXfV7eXteU2ZGm9m6Aa', '2022-11-05 11:46:29', '2022-12-15 23:15:57', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (3, 'kuro', 'ba2efbefc57ba80d2521b9bba5d9dac74c7a704d816794d6620183e0f6236147', 'NG6HFWSEoeq47KhCpgHMCZ2E', '2022-11-05 12:37:39', '2022-11-05 19:40:40', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (4, 'kuro', '31868d16ddc7f823c41a23eb120e770e97bc01c194d70902391209b6537977b2', 'KF4aNjL4ZGZkDeMHNm2KF76o', '2022-11-05 16:59:34', '2022-11-18 22:27:28', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (5, 'kuro', '53223e0fce3f089c1efbd7736723893c23cd5e5ff8d78893b5ea60020680465e', '8XaHg5NgNdoBTTKmgTVf2WZU', '2022-11-05 17:00:31', '2022-11-06 00:00:32', '192.168.0.13', '192.168.0.13', 'en'),
@@ -224,7 +224,7 @@ INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `Regist
 (30, 'kuro', '9fb8dc32ef6739c1d0becc94225af1c6dcbe4b749f97c0aad3519691d9161a70', 'E2WTgBcSkh2a5TaHtXkKVGYd', '2022-11-18 12:10:52', '2022-11-18 19:10:53', '192.168.0.13', '192.168.0.13', 'en'),
 (31, 'kuro', '2a03b6f6806091fa7be9df3d691c669cf97e3e2a0121ce8b51309fb63ab918c4', 'f3LFFfZYDT3j7MgmbkAFBCMT', '2022-11-18 12:12:05', '2022-11-18 20:15:38', '192.168.0.13', '192.168.0.13', 'en'),
 (32, 'kuro', '04368fbdd888b9d9f632c8ed11a2f26444d48c87536f9d018b3b1b303009741e', 'oqMjV3Beo6MDPX2P5EnGaUVT', '2022-11-18 18:12:19', '2022-11-19 01:15:19', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
-(33, 'kuro', 'eaf6e0d7ccce22f3bc91e0398a6de86d53220974526baccd93383d2dec9b1a04', 'WCqTL7c5kceZqFDqe3ZR6gXc', '2022-11-20 06:25:28', '2022-12-10 23:07:18', '192.168.0.13', '192.168.0.13', 'en'),
+(33, 'kuro', 'eaf6e0d7ccce22f3bc91e0398a6de86d53220974526baccd93383d2dec9b1a04', 'WCqTL7c5kceZqFDqe3ZR6gXc', '2022-11-20 06:25:28', '2022-12-15 22:28:50', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (34, 'kuro', 'a6c980adf07665a831f55cc407edad15bf4ad763e1fccee262a8c4fd7506fc41', 'qYAGXPXPeKfDPaAkcSmR8ThN', '2022-11-20 08:42:21', '2022-11-20 16:20:41', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (35, 'kuro', '90840ccccd60c06893745d8173933117dfc3e7e608308e3f6c7a815dd81d4553', 'kfRCnS7p6pG4aeDmNjB8jBUN', '2022-11-21 11:58:21', '2022-11-21 19:10:18', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (36, 'kuro', '32b74aeef0d7590be8670f2ecd8d968f1d37ebedcb7ca08bad8ca9d39c7e282e', 'KHS3LpDjD9PKpRWNY84Wn4C3', '2022-11-23 15:34:03', '2022-11-23 22:42:20', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
@@ -235,7 +235,8 @@ INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `Regist
 (41, 'Kartosh4ka', '631d2c1952595d54154f50d2c5febb6422d8e39405acbb608670480880354882', 'f6XCjUnnYGEHHg5Y3qoY32CU', '2022-11-30 16:59:09', '2022-11-30 23:59:17', '178.214.244.1', '178.214.244.1', 'en'),
 (42, 'kuro', '54deccc823b80a1c3f67a74284d94877c89af0f162b650034409b0eb720488b9', 'Na35SW3bdmBBLbCmaoVaZKT8', '2022-11-30 17:57:38', '2022-12-01 01:13:47', '192.168.0.10', '????????????????????????????????????????????????????????????????', 'en'),
 (43, 'kuro', '872b70a3ab83b2e17f9fc4e3279c31fa39a1ba6d114196bbbcd42ad6b4634e19', 'o6CEUfe2W5SkT8eWa5YCHYkq', '2022-12-01 13:49:36', '2022-12-01 23:44:22', '192.168.0.10', '????????????????????????????????????????????????????????????????', 'en'),
-(44, 'Anime', '8895382fb46975c0c0edf71c1dfbd77a04126615c9c7ed5c9c7afef1b698cdb6', '7YZBXtkTU5eSD3KXPPdopkdj', '2022-12-13 06:18:08', '2022-12-13 08:35:19', '127.0.0.1', '(Î', 'en');
+(44, 'kuro', '97c8700a488d4c714f6ca217632f2a6e93f796e9978cf1ea808246cc45d13961', 'ZH7WPbkFGhoKfmSbSngSnLC9', '2022-12-14 16:32:10', '2022-12-14 23:59:12', '192.168.0.12', '192.168.0.12', 'en'),
+(45, 'kuro', '28ca876a62e9c64461f04a95e18e162d2c4866ce410a593fa32c8b12269fd312', 'j3GtadFqVWBjHcmGAABVfcHM', '2022-12-14 17:12:59', '2022-12-15 00:13:01', '192.168.0.12', '192.168.0.12', 'en');
 
 -- --------------------------------------------------------
 
@@ -322,7 +323,9 @@ INSERT INTO `tw_accounts_aethers` (`ID`, `UserID`, `AetherID`) VALUES
 (66, 43, 5),
 (67, 43, 1),
 (68, 38, 1),
-(69, 33, 4);
+(69, 33, 4),
+(70, 2, 7),
+(71, 2, 8);
 
 -- --------------------------------------------------------
 
@@ -335,8 +338,8 @@ CREATE TABLE `tw_accounts_bans` (
   `AccountId` int(11) NOT NULL,
   `BannedSince` timestamp NULL DEFAULT current_timestamp(),
   `BannedUntil` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Reason` varchar(512) NOT NULL DEFAULT 'No Reason Given'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `Reason` varchar(512) CHARACTER SET utf8 NOT NULL DEFAULT 'No Reason Given'
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
@@ -378,7 +381,7 @@ CREATE TABLE `tw_accounts_data` (
 
 INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `Exp`, `GuildID`, `GuildDeposit`, `GuildRank`, `Upgrade`, `SpreadShotgun`, `SpreadGrenade`, `SpreadRifle`, `AttackSPD`, `CritDMG`, `Crit`, `HP`, `Tenacity`, `Lucky`, `MP`, `Vampirism`, `AmmoRegen`, `Ammo`, `Efficiency`, `Extraction`) VALUES
 (1, '#tildg66', 'null', NULL, 6, 546, NULL, 0, NULL, 50, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(2, 'Kurosio', 'null', 5, 16, 1058, 2, 0, NULL, 111, 3, 1, 1, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(2, 'Kurosio', 'null', 7, 16, 2429, 2, 0, NULL, 111, 3, 1, 1, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (3, '533', 'null', 1, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (4, '5333', 'null', 1, 14, 2010, NULL, 0, NULL, 120, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (5, '53334', 'null', NULL, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -409,7 +412,7 @@ INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `
 (30, 'Alkocsapskooo2', 'null', 0, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (31, 'Alkocsapskooo21', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (32, 'OreoChocolate', 'null', 1, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(33, 'Kurosio69', 'null', 1, 8, 891, 1, 111110, 1, 7, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(33, 'Kurosio69', 'null', 2, 9, 66, 1, 111110, 1, 8, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (34, '224', 'null', 2, 3, 131, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0),
 (35, 'Potatelike', 'null', 2, 3, 85, NULL, 0, NULL, 20, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (36, 'Kurosio1', 'null', 1, 3, 14, NULL, 0, NULL, 20, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -420,7 +423,8 @@ INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `
 (41, 'Kartosh4ka', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (42, '5Kurosio69', 'null', 2, 4, 88, NULL, 0, NULL, 3, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (43, 'Kurosio6913', 'null', 2, 5, 8, NULL, 0, NULL, 4, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(44, 'Anime.pdf', 'null', 5, 11, 1572, 1, 56000, NULL, 1, 3, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0);
+(44, 'Kurosioxx', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(45, 'Kurosioss', 'null', 0, 1, 0, 2, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -481,7 +485,8 @@ INSERT INTO `tw_accounts_farming` (`UserID`, `Level`, `Exp`, `Upgrade`) VALUES
 (41, 1, 0, 0),
 (42, 1, 0, 0),
 (43, 1, 0, 0),
-(44, 1, 0, 0);
+(44, 1, 0, 0),
+(45, 1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -522,7 +527,7 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (21, 22, 2, 1, 0, 100, 2),
 (22, 25, 1, 0, 0, 100, 2),
 (23, 34, 101, 1, 0, 100, 2),
-(24, 1, 6875, 0, 0, 100, 2),
+(24, 1, 7785, 0, 0, 100, 2),
 (26, 2, 1, 1, 0, 100, 3),
 (27, 22, 1, 1, 0, 100, 3),
 (28, 25, 1, 0, 0, 100, 3),
@@ -602,16 +607,15 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (107, 38, 1, 1, 0, 100, 4),
 (109, 38, 1, 1, 2, 100, 2),
 (110, 32, 66, 0, 0, 100, 2),
-(111, 9, 32, 0, 0, 100, 2),
-(113, 33, 32, 0, 0, 100, 2),
+(111, 9, 33, 0, 0, 100, 2),
+(113, 33, 27, 0, 0, 100, 2),
 (114, 31, 100, 0, 0, 100, 2),
 (115, 26, 1, 1, 0, 100, 2),
 (122, 46, 5, 0, 0, 100, 2),
-(124, 5, 1, 1, 0, 100, 2),
+(124, 5, 1, 1, 1, 100, 2),
 (125, 40, 37, 0, 0, 100, 2),
 (128, 54, 10, 0, 0, 100, 2),
 (129, 52, 44, 0, 0, 100, 2),
-(130, 51, 1, 1, 0, 100, 2),
 (131, 53, 2, 0, 0, 100, 2),
 (132, 2, 1, 1, 0, 100, 19),
 (133, 22, 1, 1, 0, 100, 19),
@@ -674,11 +678,11 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (203, 57, 1, 0, 0, 100, 4),
 (205, 17, 1010, 0, 0, 100, 4),
 (206, 16, 445, 0, 0, 100, 4),
-(207, 7, 9893575, 0, 0, 100, 2),
+(207, 7, 9810347, 0, 0, 100, 2),
 (211, 48, 180, 0, 0, 100, 4),
 (212, 19, 1, 1, 0, 100, 4),
 (213, 59, 1, 1, 0, 100, 4),
-(214, 44, 5, 0, 0, 100, 2),
+(214, 44, 4, 0, 0, 100, 2),
 (215, 2, 1, 1, 0, 100, 28),
 (216, 22, 1, 1, 0, 100, 28),
 (217, 25, 1, 0, 0, 100, 28),
@@ -720,10 +724,9 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (256, 22, 1, 1, 0, 100, 33),
 (257, 25, 1, 0, 0, 100, 33),
 (258, 34, 1, 1, 0, 100, 33),
-(261, 41, 1, 1, 1, 100, 2),
 (262, 37, 1, 1, 1, 100, 2),
 (263, 36, 1, 1, 4, 100, 2),
-(264, 35, 1, 1, 5, 100, 2),
+(264, 35, 1, 1, 8, 100, 2),
 (267, 62, 1, 0, 0, 100, 2),
 (268, 61, 4, 0, 0, 100, 2),
 (269, 60, 1, 0, 6, 100, 2),
@@ -738,10 +741,9 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (282, 9, 1, 0, 0, 100, 34),
 (283, 32, 4, 0, 0, 100, 34),
 (284, 40, 1, 0, 0, 100, 34),
-(285, 64, 1, 1, 0, 100, 2),
-(286, 65, 1, 1, 0, 100, 2),
+(286, 65, 1, 1, 9, 100, 2),
 (287, 66, 1, 1, 0, 100, 33),
-(288, 66, 1, 1, 0, 100, 2),
+(288, 66, 1, 1, 9, 100, 2),
 (289, 65, 1, 1, 0, 100, 33),
 (292, 2, 1, 1, 0, 100, 35),
 (293, 22, 1, 1, 0, 100, 35),
@@ -749,8 +751,8 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (295, 34, 1, 1, 0, 100, 35),
 (296, 1, 161, 0, 0, 100, 35),
 (299, 38, 1, 1, 0, 100, 35),
-(300, 67, 40, 0, 0, 100, 2),
-(302, 1, 803021, 0, -1, 100, 33),
+(300, 67, 41, 0, 0, 100, 2),
+(302, 1, 1112282374, 0, 0, 100, 33),
 (305, 38, 1, 1, 0, 100, 33),
 (306, 2, 1, 1, 0, 100, 36),
 (307, 22, 1, 1, 0, 100, 36),
@@ -758,15 +760,15 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (309, 34, 1, 1, 0, 100, 36),
 (310, 1, 95, 0, 0, 100, 36),
 (313, 38, 1, 1, 0, 100, 36),
-(314, 40, 60, 0, 0, 100, 33),
-(315, 9, 99736, 0, 0, 100, 33),
+(314, 40, 73, 0, 0, 100, 33),
+(315, 9, 99742, 0, 0, 100, 33),
 (316, 44, 11, 0, 0, 100, 33),
 (317, 56, 2, 0, 0, 100, 33),
 (318, 52, 1, 0, 0, 100, 33),
 (319, 54, 1, 0, 0, 100, 33),
-(320, 57, 1, 0, 2, 100, 33),
-(321, 32, 98, 0, 0, 100, 33),
-(322, 68, 12, 0, 0, 100, 2),
+(320, 57, 1, 1, 2, 100, 33),
+(321, 32, 208, 0, 0, 100, 33),
+(322, 68, 13, 0, 0, 100, 2),
 (323, 69, 1, 0, 5, 100, 2),
 (325, 71, 41, 0, 0, 100, 2),
 (327, 70, 10, 0, 0, 100, 2),
@@ -852,45 +854,31 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (432, 3, 1, 1, 0, 100, 33),
 (433, 11, 1, 0, 0, 100, 2),
 (434, 10, 2, 0, 0, 100, 2),
-(436, 80, 1, 1, 0, 100, 2),
 (437, 7, 25, 0, 0, 100, 33),
 (438, 81, 1, 0, 0, 100, 33),
-(439, 80, 1, 1, 1, 100, 33),
 (442, 15, 10, 0, 0, 100, 33),
 (443, 14, 10, 0, 0, 100, 33),
 (445, 12, 19, 0, 0, 100, 33),
-(446, 13, 1, 0, 0, 100, 33),
+(446, 13, 2, 0, 0, 100, 33),
 (447, 11, 1, 0, 0, 100, 33),
-(453, 28, 1, 1, 0, 100, 44),
-(454, 52, 96, 0, 0, 100, 44),
-(455, 40, 2, 0, 0, 100, 44),
-(456, 37, 1, 1, 100, 100, 44),
-(457, 6, 1, 1, 0, 100, 44),
-(458, 4, 1, 1, 0, 100, 44),
-(459, 67, 2, 0, 0, 100, 44),
-(460, 19, 1, 1, 100, 100, 44),
-(461, 9, 424, 0, 0, 100, 44),
-(462, 32, 90, 0, 0, 100, 44),
-(463, 21, 1, 0, 0, 100, 44),
-(464, 26, 1, 1, 0, 100, 44),
-(465, 15, 1, 0, 0, 100, 44),
-(466, 68, 1, 0, 0, 100, 44),
-(467, 57, 1, 1, 1000, 100, 44),
-(468, 5, 1, 1, 0, 100, 44),
-(469, 36, 1, 1, 100, 100, 44),
-(470, 22, 1, 1, 0, 100, 44),
-(471, 47, 1, 0, 0, 100, 44),
-(472, 7, 19975, 0, 0, 100, 44),
-(473, 38, 1, 1, 0, 100, 44),
-(474, 25, 1, 0, 0, 100, 44),
-(475, 23, 1, 0, 0, 100, 44),
-(476, 2, 1, 1, 2, 100, 44),
-(477, 34, 1, 1, 0, 100, 44),
-(478, 17, 10, 0, 0, 100, 44),
-(479, 53, 96, 0, 0, 100, 44),
-(480, 1, 9700385, 0, 0, 100, 44),
-(481, 3, 1, 1, 5, 100, 44),
-(482, 33, 68, 0, 0, 100, 44);
+(448, 50, 100, 0, 0, 100, 33),
+(449, 33, 1054, 0, 0, 100, 33),
+(450, 2, 1, 1, 0, 100, 44),
+(451, 22, 1, 1, 0, 100, 44),
+(452, 25, 1, 0, 0, 100, 44),
+(453, 34, 1, 1, 0, 100, 44),
+(454, 2, 1, 1, 0, 100, 45),
+(455, 22, 1, 1, 0, 100, 45),
+(456, 25, 1, 0, 0, 100, 45),
+(457, 34, 1, 1, 0, 100, 45),
+(458, 81, 1, 0, 0, 100, 2),
+(459, 82, 2, 0, 0, 100, 2),
+(460, 84, 4, 0, 0, 100, 2),
+(461, 80, 1, 1, 2, 100, 2),
+(462, 88, 1, 0, 0, 100, 2),
+(463, 80, 1, 0, 1, 100, 33),
+(464, 79, 8, 0, 0, 100, 2),
+(465, 91, 10, 0, 0, 100, 2);
 
 -- --------------------------------------------------------
 
@@ -917,11 +905,7 @@ CREATE TABLE `tw_accounts_mailbox` (
 INSERT INTO `tw_accounts_mailbox` (`ID`, `ItemID`, `ItemValue`, `Enchant`, `Name`, `Description`, `UserID`, `IsRead`, `FromSend`) VALUES
 (1, 5, 1, 0, 'The sender heavens', 'Sent from console', 4, 0, 'Console'),
 (2, 19, 1, -1, 'Random box', 'Item was not received by you personally.', 4, 0, 'System'),
-(7, 1, 21000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System'),
-(8, 1, 21000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System'),
-(9, 1, 32000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System'),
-(10, 1, 32000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System'),
-(11, 1, 32000, 0, 'House is sold', 'Your house is sold !', 44, 0, 'System');
+(7, NULL, NULL, NULL, 'dkaso', 'You were accepted to join guild', 45, 0, 'Kurosio');
 
 -- --------------------------------------------------------
 
@@ -982,7 +966,8 @@ INSERT INTO `tw_accounts_mining` (`UserID`, `Level`, `Exp`, `Upgrade`) VALUES
 (41, 1, 0, 0),
 (42, 1, 0, 0),
 (43, 1, 0, 0),
-(44, 1, 0, 0);
+(44, 1, 0, 0),
+(45, 1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -1186,37 +1171,9 @@ INSERT INTO `tw_accounts_quests` (`ID`, `QuestID`, `UserID`, `Type`) VALUES
 (194, 3, 38, 2),
 (195, 4, 38, 1),
 (196, 7, 33, 1),
-(197, 37, 2, 1),
-(200, 1, 44, 2),
-(201, 2, 44, 2),
-(202, 3, 44, 2),
-(203, 4, 44, 2),
-(204, 5, 44, 2),
-(205, 6, 44, 2),
-(206, 7, 44, 2),
-(207, 8, 44, 2),
-(208, 9, 44, 2),
-(209, 10, 44, 2),
-(210, 11, 44, 2),
-(211, 12, 44, 2),
-(212, 13, 44, 2),
-(213, 14, 44, 2),
-(214, 15, 44, 2),
-(215, 16, 44, 2),
-(216, 17, 44, 2),
-(217, 18, 44, 2),
-(218, 19, 44, 2),
-(219, 20, 44, 2),
-(220, 21, 44, 2),
-(221, 22, 44, 2),
-(222, 23, 44, 2),
-(223, 24, 36, 2),
-(224, 25, 44, 2),
-(225, 26, 44, 2),
-(226, 27, 44, 2),
-(227, 28, 44, 2),
-(228, 29, 44, 1),
-(229, 24, 44, 1);
+(197, 37, 2, 2),
+(198, 38, 2, 2),
+(199, 39, 2, 2);
 
 -- --------------------------------------------------------
 
@@ -1242,14 +1199,19 @@ INSERT INTO `tw_accounts_skills` (`ID`, `SkillID`, `UserID`, `Level`, `UsedByEmo
 (3, 1, 33, 6, -1),
 (4, 8, 2, 1, 0),
 (5, 8, 33, 1, 0),
-(6, 4, 33, 1, -1),
-(7, 4, 44, 1, -1),
-(8, 1, 44, 8, -1),
-(9, 7, 44, 5, -1),
-(10, 5, 44, 4, -1),
-(11, 2, 44, 10, -1),
-(12, 3, 44, 50, -1),
-(13, 6, 44, 4, -1);
+(6, 4, 33, 1, -1);
+
+-- --------------------------------------------------------
+
+--
+-- Структура таблицы `tw_account_eidolon_enhancements`
+--
+
+CREATE TABLE `tw_account_eidolon_enhancements` (
+  `ID` int(11) NOT NULL,
+  `Index` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
 
@@ -1361,7 +1323,7 @@ CREATE TABLE `tw_bots_info` (
 
 INSERT INTO `tw_bots_info` (`ID`, `Name`, `JsonTeeInfo`, `SlotHammer`, `SlotGun`, `SlotShotgun`, `SlotGrenade`, `SlotRifle`, `SlotArmor`) VALUES
 (5, 'Pig', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"pinky\"}', 2, NULL, NULL, NULL, NULL, NULL),
-(6, 'Pig Queen', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"pinky\"}', 2, 3, NULL, 5, NULL, NULL),
+(6, 'Pig Queen', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"pinky\"}', 2, NULL, NULL, NULL, NULL, NULL),
 (7, 'Skill master', '{\"color_body\":9895735,\"color_feet\":9633571,\"custom_color\":1,\"skin\":\"jeet\"}', 2, 3, 4, 5, 6, NULL),
 (8, 'Craftsman', '{\"color_body\":8545280,\"color_feet\":8257280,\"custom_color\":1,\"skin\":\"coala\"}', 2, 3, 4, 5, 6, NULL),
 (9, 'Nurse', '{\"color_body\":9502464,\"color_feet\":10477151,\"custom_color\":0,\"skin\":\"tika\"}', 2, 3, 4, 5, 6, NULL),
@@ -1414,7 +1376,9 @@ INSERT INTO `tw_bots_info` (`ID`, `Name`, `JsonTeeInfo`, `SlotHammer`, `SlotGun`
 (56, 'Helonian Man', '{\"color_body\":2555648,\"color_feet\":4980735,\"custom_color\":0,\"skin\":\"chinese_by_whis\"}', 2, 3, 4, 5, 6, NULL),
 (57, 'Grandpa', '{\"color_body\":15697152,\"color_feet\":4980735,\"custom_color\":1,\"skin\":\"greyfox\"}', 2, 3, 4, 5, 6, NULL),
 (58, 'Dryad', '{\"color_body\":12779264,\"color_feet\":4980735,\"custom_color\":1,\"skin\":\"amina_kitty\"}', 2, 3, 4, 5, NULL, NULL),
-(59, 'Spirit', '{\"color_body\":2752256,\"color_feet\":4980735,\"custom_color\":1,\"skin\":\"asteroid\"}', 2, 3, 4, 5, 6, NULL);
+(59, 'Spirit', '{\"color_body\":2752256,\"color_feet\":4980735,\"custom_color\":1,\"skin\":\"asteroid\"}', 2, 3, 4, 5, 6, NULL),
+(60, 'Parrot', '{\"color_body\":2752256,\"color_feet\":4980735,\"custom_color\":0,\"skin\":\"clefairy\"}', 2, NULL, NULL, NULL, NULL, NULL),
+(61, 'Soran', '{\"color_body\":11155259,\"color_feet\":4980735,\"custom_color\":1,\"skin\":\"coala_warpaint\"}', 2, 3, 4, 5, 6, NULL);
 
 -- --------------------------------------------------------
 
@@ -1468,7 +1432,8 @@ INSERT INTO `tw_bots_mobs` (`ID`, `BotID`, `WorldID`, `PositionX`, `PositionY`, 
 (17, 53, 6, 7475, 1585, 'Poison', 'Slower', 18, 1020, 0, 1, 320, 1, 68, NULL, NULL, NULL, NULL, '|1|1|0|0|0|', '|100|0|0|0|0|'),
 (18, 54, 6, 4898, 2400, 'Poison', 'Slower', 20, 100, 0, 6, 1, 0, 72, 64, NULL, NULL, NULL, '|1|1|0|0|0|', '|7|0.2|0|0|0|'),
 (19, 58, 7, 750, 2812, '', 'Sleepy', 21, 120, 0, 8, 1, 0, 67, 78, 84, NULL, NULL, '|1|2|1|0|0|', '|2.5|7.32|8.45|0|0|'),
-(20, 59, 7, 2280, 553, 'Fire', 'Slower', 21, 160, 0, 10, 1, 0, 78, 72, NULL, NULL, NULL, '|2|1|0|0|0|', '|7.82|1|0|0|0|');
+(20, 59, 7, 2280, 553, 'Fire', 'Slower', 21, 160, 0, 10, 1, 0, 78, 72, NULL, NULL, NULL, '|2|1|0|0|0|', '|7.82|1|0|0|0|'),
+(21, 60, 7, 3628, 3640, 'Poison', 'Slower', 22, 180, 0, 5, 1, 0, 90, 70, NULL, NULL, NULL, '|1|1|0|0|0|', '|3.8|4.0|0|0|0|');
 
 -- --------------------------------------------------------
 
@@ -1664,7 +1629,11 @@ INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`
 (113, 56, 36, 3, 5, 3304, 1649, '[{\"text\":\"[p]You pass a flyer to a young man.\",\"action_step\":1},{\"text\":\"He reads it with surprise, then smiles.\"},{\"text\":\"\\\"Finally, someone\'s taking some action around here! We\'ve put up with those pirates for far too long!\\\"\"},{\"text\":\"\\\"You can count on my help. And my friends will be on your side, too.\\\" The Helonian Man grins, excitement in his eyes.\"}]', NULL, 74, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL),
 (114, 55, 36, 3, 5, 547, 1073, '[{\"text\":\"[p]You shove a flyer into the hands of a middle-aged man.\",\"action_step\":1},{\"text\":\"\\\"Don\'t go looking for problems! I have a wife and kid at home. I\'m not going to pick a fight with a pirate, you fool!\\\" Clearly agitated, the man crumples the flyer into a ball.\"},{\"text\":\"\\\"Get out of here! Don\'t come near my house again. I will have no part in your foolish plan!\\\" He throws the paper to the ground, furious.\"}]', NULL, 74, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL),
 (115, 50, 36, 4, 5, 1564, 1841, '[{\"text\":\"\\\"We all know those pirates are vicious cads, but we\'re just normal people. We\'re not experts like you, <player>. We shouldn\'t start trouble.\\\"\"},{\"text\":\"\\\"Speaking of which, I really must thank you. I\'ve heard that, thanks to you, Braeden will hand over the supplies. I couldn\'t persuade him no matter how hard I tried.\\\"\"},{\"text\":\"\\\"Earlier, when I was fishing, I found something called a \'Secret Stone.\' They say such a stone could be very useful for adventurers. I want to give it to you as a way to express my gratitude, but...\"},{\"text\":\"[p]Noticing Isaac\'s hesitation, you ask him to tell you more.\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
-(116, 50, 37, 1, 5, 1564, 1841, '[{\"text\":\"\\\"While fishing, I accidentally caught a stone in my net, and it totally shredded the mesh. I need that net! Without it, my livelihood is all but destroyed.\\\"\"},{\"text\":\"\\\"I\'m still not sure what to do. I could get the materials needed to make a new net in the forest, but I\'ve heard that the pirates frequent that area and tend to attack anyone who goes in alone.\\\"\"},{\"text\":\"[p]You ask Isaac what kinds of items he needs for the net, offering to help collect them.\"},{\"text\":\"\\\"That would be fantastic! You can get high-quality Thin Vines from the Spirit and Dryads in the Helonia Woods (Azuria). The vines can be woven into excellent nets.\\nThin Vine you can craft.\\\"\",\"action_step\":1},{\"text\":\"\\\"My foolish brother! I wonder if he took my words to heart. He needs to focus on fishing, not provoking pirates.\\\"\"},{\"text\":\"[p]You hand all the Thin Vines to Isaac.\"},{\"text\":\"\\\"Wow, look at all of these!\\\" he exclaims, clearly pleased.\"},{\"text\":\"\\\"Even without the whole pirate issue, it would\'ve taken Braeden and I much longer to collect the Thin Vines.\\\"\"},{\"text\":\"\\\"Thank you so much.\\\"\"}]', NULL, 79, NULL, NULL, NULL, 58, 59, '|2|0|0|0|10|10|', NULL, NULL);
+(116, 50, 37, 1, 5, 1564, 1841, '[{\"text\":\"\\\"While fishing, I accidentally caught a stone in my net, and it totally shredded the mesh. I need that net! Without it, my livelihood is all but destroyed.\\\"\"},{\"text\":\"\\\"I\'m still not sure what to do. I could get the materials needed to make a new net in the forest, but I\'ve heard that the pirates frequent that area and tend to attack anyone who goes in alone.\\\"\"},{\"text\":\"[p]You ask Isaac what kinds of items he needs for the net, offering to help collect them.\"},{\"text\":\"\\\"That would be fantastic! You can get high-quality Thin Vines from the Spirit and Dryads in the Helonia Woods (Azuria). The vines can be woven into excellent nets.\\nThin Vine you can craft.\\\"\",\"action_step\":1},{\"text\":\"\\\"My foolish brother! I wonder if he took my words to heart. He needs to focus on fishing, not provoking pirates.\\\"\"},{\"text\":\"[p]You hand all the Thin Vines to Isaac.\"},{\"text\":\"\\\"Wow, look at all of these!\\\" he exclaims, clearly pleased.\"},{\"text\":\"\\\"Even without the whole pirate issue, it would\'ve taken Braeden and I much longer to collect the Thin Vines.\\\"\"},{\"text\":\"\\\"Thank you so much.\\\"\"}]', NULL, 79, NULL, NULL, NULL, 58, 59, '|2|0|0|0|10|10|', NULL, NULL),
+(117, 50, 38, 1, 5, 1564, 1841, '[{\"text\":\"\\\"Before I leave, I must tell my brother something.\\\"\"},{\"text\":\"[p]You are momentarily taken aback. If Isaac finds Braeden, he\'ll definitely learn about the counterattack plan. Casually, you ask why he needs to find his brothers.\"},{\"text\":\"\\\"I fear that even Braeden collected so many Thin Vines, he doesn\'t have the parrots the pirates are after... and I\'ve still got the cages.\\\"\"},{\"text\":\"\\\"Pirates love parrots. What are you gonna do?\\\" Isaac shrugs.\"},{\"text\":\"\\\"I got to make sure he remembers, or everything he\'s done up to this point will be for naught.\\\"\"},{\"text\":\"[p]You anxiously stop Isaac in his tracks and tell him you\'ll help Braeden catch the parrots.\"},{\"text\":\"\\\"You\'re willing to help? Excellent! I don\'t think Braeden has it in him to catch the birds anyway.\\\"\"},{\"text\":\"\\\"Go to Helonia Woods. Catch the parrots. We fishermen mostly focus on, you know, fishing, so the pirates\' request isn\'t an easy one for us. And the parrots aren\'t exactly the friendliest birds ever...\\\"\",\"action_step\":1}]', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|0|', NULL, NULL),
+(118, 51, 38, 2, 6, 6551, 3505, '[{\"text\":\"\\\"Don\'t let a little mistake ruin the whole counterattack plan.\\\"\"},{\"text\":\"\\\"I feel like I\'m forgetting something... eh, I\'m sure it wasn\'t that important.\\\"\",\"action_step\":1},{\"text\":\"[p]You give Braeden the Wild Parrots and tell him what Isaac has said.\"},{\"text\":\"\\\"I knew I was forgetting something! I nearly let a bunch of stupid birds ruin the whole plan!\\\" Braeden groans, pulling at his hair.\"},{\"text\":\"\\\"I\'m lucky to have your help - and my brother\'s too. You caught those dastardly birds a lot faster than I could\'ve. Heck, even if I had a few days, I\'m not sure I\'d be able to catch \'em.\\\"\"}]', NULL, 90, NULL, NULL, NULL, NULL, NULL, '|5|0|0|0|0|0|', NULL, NULL),
+(119, 51, 39, 1, 6, 6551, 3505, '[{\"text\":\"\\\"That was really close, but I\'ve got everything I need.\\\" Braeden smiles, flushed.\"},{\"text\":\"\\\"Can you help me get these items into town? The mayor will be happy to see \'em,\\\" Braeden grunts.\"},{\"text\":\"\\\"I still have to go to my brother\'s place to get new fishing nets, and I\'ve gotta make sure he\'s still in the dark about our plans. If you\'re ready, go ahead. I don\'t want to give the pirates a reason to start trouble.\\\"\",\"action_step\":1}]', NULL, NULL, NULL, 91, NULL, NULL, NULL, '|0|0|1|0|0|0|', NULL, NULL),
+(120, 48, 39, 2, 7, 3870, 1553, '[{\"text\":\"\\\"We\'re missing Braeden\'s items. I can\'t believe he\'s not here yet!\\\"\",\"action_step\":1},{\"text\":\"[p]You place the box full of supplies next to the Town Mayor, explaining that these are the items Braeden is supposed to collect. Everything is accounted for within the box.\"},{\"text\":\"\\\"Wonderful!\\\" Her expression lifts, then suddenly darkens.\"},{\"text\":\"\\\"The pirates... they\'re here. I hope things go as planned,\\\" She murmurs, biting her lip.\"}]', NULL, 91, NULL, NULL, NULL, NULL, NULL, '|1|0|0|0|0|0|', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1799,8 +1768,8 @@ CREATE TABLE `tw_guilds` (
 --
 
 INSERT INTO `tw_guilds` (`ID`, `Name`, `UserID`, `Level`, `Experience`, `Bank`, `Score`, `AvailableSlots`, `ChairExperience`, `ChairMoney`) VALUES
-(1, 'kuro', 33, 7, 863, 10310, 0, 2, 2, 1),
-(2, 'dkaso', 2, 2, 9, 0, 0, 2, 1, 1);
+(1, 'kuro', 33, 8, 355, 10310, 0, 2, 2, 1),
+(2, 'dkaso', 2, 3, 97, 0, 0, 2, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -1859,7 +1828,9 @@ INSERT INTO `tw_guilds_history` (`ID`, `GuildID`, `Text`, `Time`) VALUES
 (13, 1, 'Lost a house on \'Port Skandia\'.', '2022-12-10 23:06:13'),
 (14, 1, '\'Kurosio69\' added to bank 55555gold.', '2022-12-10 23:06:35'),
 (15, 1, 'Bought a house on \'Port Skandia\'.', '2022-12-10 23:07:00'),
-(16, 1, '\'Chair experience\' level up to \'2\'.', '2022-12-10 23:07:33');
+(16, 1, '\'Chair experience\' level up to \'2\'.', '2022-12-10 23:07:33'),
+(17, 1, 'Guild raised level to \'8\'.', '2022-12-11 02:03:33'),
+(18, 2, 'Guild raised level to \'3\'.', '2022-12-14 20:13:55');
 
 -- --------------------------------------------------------
 
@@ -1900,6 +1871,13 @@ CREATE TABLE `tw_guilds_invites` (
   `GuildID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_guilds_invites`
+--
+
+INSERT INTO `tw_guilds_invites` (`ID`, `GuildID`, `UserID`) VALUES
+(1, 1, 45);
 
 -- --------------------------------------------------------
 
@@ -1949,9 +1927,9 @@ CREATE TABLE `tw_houses` (
 
 INSERT INTO `tw_houses` (`ID`, `UserID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `Class`, `Price`, `HouseBank`, `PlantID`, `PlantX`, `PlantY`, `WorldID`) VALUES
 (1, NULL, 8001, 5297, 8294, 5297, 'Default', 21000, 0, 40, 7499, 5329, 1),
-(2, NULL, 8989, 7729, 8704, 7729, 'Default', 21000, 0, 40, 9466, 7761, 1),
+(2, 33, 8989, 7729, 8704, 7729, 'Default', 21000, 202, 40, 9466, 7761, 1),
 (3, NULL, 2046, 913, 1936, 913, 'Extra', 32000, 0, 40, 2570, 982, 5),
-(4, 44, 2049, 593, 1936, 593, 'Extra', 32000, 0, 40, 2570, 444, 5),
+(4, NULL, 2049, 593, 1936, 593, 'Extra', 32000, 0, 40, 2570, 444, 5),
 (5, NULL, 1211, 913, 1330, 913, 'Extra', 32000, 0, 40, 707, 991, 5),
 (6, NULL, 1222, 593, 1330, 593, 'Extra', 32000, 0, 40, 706, 444, 5);
 
@@ -1978,7 +1956,6 @@ INSERT INTO `tw_houses_decorations` (`ID`, `PosX`, `PosY`, `HouseID`, `ItemID`, 
 (1, 7970, 5230, 1, 12, 1),
 (2, 8173, 5176, 1, 12, 1),
 (3, 8075, 5205, 1, 10, 1),
-(4, 8810, 7639, 2, 13, 1),
 (5, 8987, 7647, 2, 13, 1),
 (7, 9129, 7679, 2, 13, 1),
 (8, 8939, 7627, 2, 13, 1),
@@ -2102,7 +2079,11 @@ INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `D
 (84, 'Large Petal', 'After a special drying process.', 2, -1, NULL, 5, 2, NULL, NULL, 0, 0),
 (85, 'Thorny Ring', 'Thorny Ring is an item level 1.', 3, 11, NULL, 5, 32, 12, 8, 32, 16),
 (86, 'Thorny Necklace', 'Thorny Necklace is an item level 1.', 3, 11, NULL, 5, 32, 8, 10, 24, 12),
-(87, 'Bone Armillae', 'Bone Armillae is an item level 1.', 3, 11, NULL, 5, 32, 4, NULL, 1, 0);
+(87, 'Bone Armillae', 'Bone Armillae is an item level 1.', 3, 11, NULL, 5, 32, 4, NULL, 1, 0),
+(88, 'Pig Queen', 'Eidolon Pig Queen', 6, 8, NULL, 0, 0, 22, 4, 150, 1),
+(89, 'Eidolon Crystal', 'Required to improve eidolons', 4, -1, NULL, 5, 0, NULL, NULL, 0, 0),
+(90, 'Caged Parrot', '....', 2, -1, NULL, 0, 0, NULL, NULL, 0, 0),
+(91, 'Box full of supplies', '....', 0, -1, NULL, 0, 0, NULL, NULL, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -2225,7 +2206,9 @@ INSERT INTO `tw_quests_list` (`ID`, `Name`, `Money`, `Exp`, `StoryLine`) VALUES
 (34, 'Mysterious Paint', 30, 25, 'Ch2'),
 (35, 'Ammo Preparation', 30, 25, 'Ch2'),
 (36, 'Residents of Helonia', 30, 25, 'Ch2'),
-(37, 'Fishing Net', 30, 25, 'Ch2');
+(37, 'Fishing Net', 30, 25, 'Ch2'),
+(38, 'A Noisy Gift', 30, 25, 'Ch2'),
+(39, 'Greedy Pirates', 30, 25, 'Ch2');
 
 -- --------------------------------------------------------
 
@@ -2525,6 +2508,12 @@ ALTER TABLE `tw_accounts_skills`
   ADD UNIQUE KEY `ID` (`ID`),
   ADD KEY `SkillID` (`SkillID`),
   ADD KEY `OwnerID` (`UserID`);
+
+--
+-- Индексы таблицы `tw_account_eidolon_enhancements`
+--
+ALTER TABLE `tw_account_eidolon_enhancements`
+  ADD PRIMARY KEY (`ID`);
 
 --
 -- Индексы таблицы `tw_aethers`
@@ -2837,49 +2826,49 @@ ALTER TABLE `enum_items_types`
 -- AUTO_INCREMENT для таблицы `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_aethers`
 --
 ALTER TABLE `tw_accounts_aethers`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
-
---
--- AUTO_INCREMENT для таблицы `tw_accounts_bans`
---
-ALTER TABLE `tw_accounts_bans`
-  MODIFY `Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=483;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=467;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
 --
 ALTER TABLE `tw_accounts_mailbox`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_quests`
 --
 ALTER TABLE `tw_accounts_quests`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=230;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=200;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_skills`
 --
 ALTER TABLE `tw_accounts_skills`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_account_eidolon_enhancements`
+--
+ALTER TABLE `tw_account_eidolon_enhancements`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_aethers`
@@ -2897,13 +2886,13 @@ ALTER TABLE `tw_auction_items`
 -- AUTO_INCREMENT для таблицы `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_bots_mobs`
 --
 ALTER TABLE `tw_bots_mobs`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_bots_npc`
@@ -2915,7 +2904,7 @@ ALTER TABLE `tw_bots_npc`
 -- AUTO_INCREMENT для таблицы `tw_bots_quest`
 --
 ALTER TABLE `tw_bots_quest`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=117;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_crafts_list`
@@ -2957,7 +2946,7 @@ ALTER TABLE `tw_guilds_decorations`
 -- AUTO_INCREMENT для таблицы `tw_guilds_history`
 --
 ALTER TABLE `tw_guilds_history`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_guilds_houses`
@@ -2969,7 +2958,7 @@ ALTER TABLE `tw_guilds_houses`
 -- AUTO_INCREMENT для таблицы `tw_guilds_invites`
 --
 ALTER TABLE `tw_guilds_invites`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_guilds_ranks`
@@ -2993,7 +2982,7 @@ ALTER TABLE `tw_houses_decorations`
 -- AUTO_INCREMENT для таблицы `tw_items_list`
 --
 ALTER TABLE `tw_items_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=92;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_logics_worlds`
@@ -3017,7 +3006,7 @@ ALTER TABLE `tw_positions_plant`
 -- AUTO_INCREMENT для таблицы `tw_quests_list`
 --
 ALTER TABLE `tw_quests_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_skills_list`
