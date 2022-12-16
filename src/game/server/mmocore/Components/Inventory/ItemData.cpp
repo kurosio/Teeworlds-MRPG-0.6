@@ -126,8 +126,8 @@ bool CPlayerItem::Remove(int Value, int Settings)
 	if(m_Value <= Value && IsEquipped())
 		Equip();
 
-	const int Code = GS()->Mmo()->Item()->RemoveItem(GetPlayer(), m_ID, Value, Settings);
-	return Code > 0;
+	GS()->Mmo()->Item()->RemoveItem(GetPlayer(), m_ID, Value, Settings);
+	return true;
 }
 
 bool CPlayerItem::Equip()

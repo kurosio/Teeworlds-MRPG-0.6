@@ -297,79 +297,63 @@ void CInventoryCore::ListInventory(int ClientID, ItemFunctional Type)
 		GS()->AVL(ClientID, "null", "There are no items in this tab");
 }
 
-int CInventoryCore::GiveItem(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings, int Enchant)
+void CInventoryCore::GiveItem(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings, int Enchant)
 {
-	const int ClientID = pPlayer->GetCID();
-	const int SecureID = SecureCheck(pPlayer, ItemID, Value, Settings, Enchant);
-	if(SecureID == 1)
+	const auto pRes = Database->Prepare<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+	pRes->AtExecute([Enchant, Value, Settings, ItemID, ClientID = pPlayer->GetCID(), UserID = pPlayer->Acc().m_UserID](ResultPtr pRes)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d' WHERE ItemID = '%d' AND UserID = '%d'",
-		       CPlayerItem::Data()[ClientID][ItemID].m_Value, CPlayerItem::Data()[ClientID][ItemID].m_Settings, CPlayerItem::Data()[ClientID][ItemID].m_Enchant, ItemID, pPlayer->Acc().m_UserID);
-	}
-	return SecureID;
-}
-
-int CInventoryCore::SecureCheck(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings, int Enchant)
-{
-	// check initialize and add the item
-	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
-	if(pRes->next())
-	{
-		CPlayerItem::Data()[ClientID][ItemID].m_Value = pRes->getInt("Value")+Value;
-		CPlayerItem::Data()[ClientID][ItemID].m_Settings = pRes->getInt("Settings")+Settings;
-		CPlayerItem::Data()[ClientID][ItemID].m_Enchant = Enchant;
-		return 1;
-	}
-
-	// create an object if not found
-	CPlayerItem::Data()[ClientID][ItemID].m_Value = Value;
-	CPlayerItem::Data()[ClientID][ItemID].m_Settings = Settings;
-	CPlayerItem::Data()[ClientID][ItemID].m_Enchant = Enchant;
-	CPlayerItem::Data()[ClientID][ItemID].m_Durability = 100;
-	Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
-		ItemID, pPlayer->Acc().m_UserID, Value, Settings, Enchant);
-	return 2;
-}
-
-int CInventoryCore::RemoveItem(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings)
-{
-	const int SecureID = DeSecureCheck(pPlayer, ItemID, Value, Settings);
-	if(SecureID == 1)
-	{
-		Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = Value - '%d', Settings = Settings - '%d' WHERE ItemID = '%d' AND UserID = '%d'",
-			Value, Settings, ItemID, pPlayer->Acc().m_UserID);
-	}
-	return SecureID;
-}
-
-int CInventoryCore::DeSecureCheck(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings)
-{
-	// we check the database
-	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
-	if(pRes->next())
-	{
-		// update if there is more
-		if(pRes->getInt("Value") > Value)
+		if(pRes->next())
 		{
-			CPlayerItem::Data()[ClientID][ItemID].m_Value = pRes->getInt("Value")-Value;
-			CPlayerItem::Data()[ClientID][ItemID].m_Settings = pRes->getInt("Settings")-Settings;
-			return 1;
+			// update an item
+			CPlayerItem::Data()[ClientID][ItemID].m_Value = pRes->getInt("Value") + Value;
+			CPlayerItem::Data()[ClientID][ItemID].m_Settings = pRes->getInt("Settings") + Settings;
+			CPlayerItem::Data()[ClientID][ItemID].m_Enchant = Enchant;
+			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d' WHERE ItemID = '%d' AND UserID = '%d'",
+				CPlayerItem::Data()[ClientID][ItemID].m_Value, CPlayerItem::Data()[ClientID][ItemID].m_Settings, CPlayerItem::Data()[ClientID][ItemID].m_Enchant, ItemID, UserID);
 		}
+		else
+		{
+			// create an item
+			CPlayerItem::Data()[ClientID][ItemID].m_Value = Value;
+			CPlayerItem::Data()[ClientID][ItemID].m_Settings = Settings;
+			CPlayerItem::Data()[ClientID][ItemID].m_Enchant = Enchant;
+			CPlayerItem::Data()[ClientID][ItemID].m_Durability = 100;
+			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')", ItemID, UserID, Value, Settings, Enchant);
+		}
+	});
+}
 
-		// remove the object if it is less than the required amount
-		CPlayerItem::Data()[ClientID][ItemID].m_Value = 0;
-		CPlayerItem::Data()[ClientID][ItemID].m_Settings = 0;
-		CPlayerItem::Data()[ClientID][ItemID].m_Enchant = 0;
-		Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
-		return 2;
-	}
-
-	CPlayerItem::Data()[ClientID][ItemID].m_Value = 0;
-	CPlayerItem::Data()[ClientID][ItemID].m_Settings = 0;
-	CPlayerItem::Data()[ClientID][ItemID].m_Enchant = 0;
-	return 0;
+void CInventoryCore::RemoveItem(CPlayer *pPlayer, ItemIdentifier ItemID, int Value, int Settings)
+{
+	const auto pRes = Database->Prepare<DB::SELECT>("Value, Settings", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, pPlayer->Acc().m_UserID);
+	pRes->AtExecute([Value, Settings, ItemID, ClientID = pPlayer->GetCID(), UserID = pPlayer->Acc().m_UserID](ResultPtr pRes)
+	{
+		if(pRes->next())
+		{
+			if(pRes->getInt("Value") > Value)
+			{
+				// update item
+				CPlayerItem::Data()[ClientID][ItemID].m_Value = pRes->getInt("Value") - Value;
+				CPlayerItem::Data()[ClientID][ItemID].m_Settings = pRes->getInt("Settings") - Settings;
+				Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = Value - '%d', Settings = Settings - '%d' WHERE ItemID = '%d' AND UserID = '%d'", Value, Settings, ItemID, UserID);
+			}
+			else
+			{
+				// remove from table
+				CPlayerItem::Data()[ClientID][ItemID].m_Value = 0;
+				CPlayerItem::Data()[ClientID][ItemID].m_Settings = 0;
+				CPlayerItem::Data()[ClientID][ItemID].m_Enchant = 0;
+				Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
+			}
+		}
+		else
+		{
+			// reset value
+			CPlayerItem::Data()[ClientID][ItemID].m_Value = 0;
+			CPlayerItem::Data()[ClientID][ItemID].m_Settings = 0;
+			CPlayerItem::Data()[ClientID][ItemID].m_Enchant = 0;
+		}
+	});
 }
 
 int CInventoryCore::GetUnfrozenItemValue(CPlayer *pPlayer, ItemIdentifier ItemID) const

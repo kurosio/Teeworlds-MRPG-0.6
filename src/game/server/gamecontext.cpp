@@ -921,25 +921,20 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if (str_comp_nocase(pMsg->m_pType, "option") != 0 || Server()->Tick() < (pPlayer->m_aPlayerTick[LastVoteTry] + (Server()->TickSpeed() / 2)))
 				return;
 
-			if(m_mtxUniqueVotes.try_lock())
+			pPlayer->m_aPlayerTick[LastVoteTry] = Server()->Tick();
+			const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
 			{
-				pPlayer->m_aPlayerTick[LastVoteTry] = Server()->Tick();
-				const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
-				{
-					return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
-				});
+				return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
+			});
 
-				if(iter != m_aPlayerVotes[ClientID].end())
-				{
-					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
-					ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason);
-					m_mtxUniqueVotes.unlock();
-					return;
-				}
-
-				UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
-				m_mtxUniqueVotes.unlock();
+			if(iter != m_aPlayerVotes[ClientID].end())
+			{
+				const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
+				ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason);
+				return;
 			}
+
+			UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
