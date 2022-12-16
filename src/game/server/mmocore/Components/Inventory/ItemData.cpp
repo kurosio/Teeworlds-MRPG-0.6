@@ -70,7 +70,7 @@ bool CPlayerItem::SetValue(int Value)
 	return Changes;
 }
 
-bool CPlayerItem::Add(int Value, int Settings, int Enchant, bool Message)
+bool CPlayerItem::Add(int Value, int Settings, int StartEnchant, bool Message)
 {
 	if(Value < 1 || !GetPlayer() || !GetPlayer()->IsAuthed())
 		return false;
@@ -86,16 +86,21 @@ bool CPlayerItem::Add(int Value, int Settings, int Enchant, bool Message)
 		Value = 1;
 	}
 
-	GS()->Mmo()->Item()->GiveItem(GetPlayer(), m_ID, Value, Settings, Enchant);
+	if(!m_Value)
+	{
+		m_Enchant = StartEnchant;
+	}
+	m_Value += Value;
+	m_Settings += Settings;
 
 	// check the empty slot if yes then put the item on
 	if((Info()->IsType(ItemType::TYPE_EQUIP) && GetPlayer()->GetEquippedItemID(Info()->GetFunctional()) <= 0) || Info()->IsType(ItemType::TYPE_MODULE))
 	{
 		if(!IsEquipped())
-			Equip();
+			Equip(false);
 
 		char aAttributes[128];
-		Info()->StrFormatAttributes(GetPlayer(), aAttributes, sizeof(aAttributes), Enchant);
+		Info()->StrFormatAttributes(GetPlayer(), aAttributes, sizeof(aAttributes), StartEnchant);
 		GS()->Chat(ClientID, "Auto equip {STR} - {STR}", Info()->GetName(), aAttributes);
 	}
 
@@ -113,7 +118,7 @@ bool CPlayerItem::Add(int Value, int Settings, int Enchant, bool Message)
 	}
 	else
 		GS()->Chat(ClientID, "You got of the {STR}x{VAL}({VAL}).", Info()->GetName(), Value, m_Value);
-	return true;
+	return Save();
 }
 
 bool CPlayerItem::Remove(int Value, int Settings)
@@ -124,13 +129,14 @@ bool CPlayerItem::Remove(int Value, int Settings)
 
 	// unequip if this is the last item
 	if(m_Value <= Value && IsEquipped())
-		Equip();
+		Equip(false);
 
-	GS()->Mmo()->Item()->RemoveItem(GetPlayer(), m_ID, Value, Settings);
-	return true;
+	m_Value -= Value;
+	m_Settings -= Settings;
+	return Save();
 }
 
-bool CPlayerItem::Equip()
+bool CPlayerItem::Equip(bool SaveItem)
 {
 	if(m_Value < 1 || !GetPlayer() || !GetPlayer()->IsAuthed())
 		return false;
@@ -153,7 +159,7 @@ bool CPlayerItem::Equip()
 		GetPlayer()->GetCharacter()->UpdateEquipingStats(m_ID);
 
 	GetPlayer()->ShowInformationStats();
-	return Save();
+	return SaveItem ? Save() : true;
 }
 
 bool CPlayerItem::Use(int Value)
@@ -302,12 +308,38 @@ bool CPlayerItem::Drop(int Value)
 	return false;
 }
 
-bool CPlayerItem::Save() const
+// TODO: move GiveItem and RemoveItem from InventoryCore to Save
+bool CPlayerItem::Save()
 {
 	if(GetPlayer() && GetPlayer()->IsAuthed())
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
-			m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc().m_UserID, m_ID);
+		int UserID = GetPlayer()->Acc().m_UserID;
+		const auto pRes = Database->Prepare<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", m_ID, UserID);
+		pRes->AtExecute([this, UserID](ResultPtr pRes)
+		{
+			// check database value
+			if(pRes->next())
+			{
+				// remove item
+				if(!m_Value)
+				{
+					Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", m_ID, UserID);
+					return;
+				}
+
+				// update an item
+				Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
+					m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc().m_UserID, m_ID);
+				return;
+			}
+
+			// insert item
+			if(m_Value)
+			{
+				m_Durability = 100;
+				Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')", m_ID, UserID, m_Value, m_Settings, m_Enchant);
+			}
+		});
 		return true;
 	}
 	return false;

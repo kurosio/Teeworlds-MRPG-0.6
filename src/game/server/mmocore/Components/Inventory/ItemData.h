@@ -77,9 +77,9 @@ public:
 	bool HasItem() const { return m_Value > 0; }
 
 	// main functions
-	bool Add(int Value, int Settings = 0, int Enchant = 0, bool Message = true);
+	bool Add(int Value, int StartSettings = 0, int StartEnchant = 0, bool Message = true);
 	bool Remove(int Value, int Settings = 0);
-	bool Equip();
+	bool Equip(bool SaveItem = true);
 	bool Use(int Value);
 	bool Drop(int Value);
 	void StrFormatEnchantLevel(char* pBuffer, int Size) const { Info()->StrFormatEnchantLevel(pBuffer, Size, m_Enchant); }
@@ -91,7 +91,7 @@ public:
 	bool SetDurability(int Durability) override;
 	bool SetSettings(int Settings) override;
 private:
-	bool Save() const;
+	bool Save();
 };
 
 #endif

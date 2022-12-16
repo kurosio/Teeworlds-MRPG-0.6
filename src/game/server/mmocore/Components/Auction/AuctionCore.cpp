@@ -241,11 +241,6 @@ bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
 	// checking for enchanted items
 	const ItemIdentifier ItemID = pRes->getInt("ItemID");
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
-	if(pPlayerItem->HasItem() && pPlayerItem->Info()->IsEnchantable())
-	{
-		GS()->Chat(ClientID, "Enchant item maximal count x1 in a backpack!");
-		return false;
-	}
 
 	const int UserID = pRes->getInt("UserID");
 	const int Price = pRes->getInt("Price");
@@ -259,6 +254,13 @@ bool CAuctionCore::BuyItem(CPlayer* pPlayer, int ID)
 		GS()->SendInbox("Auctionist", pPlayer, "Auction Alert", "You have bought a item, or canceled your slot", ItemID, Value, Enchant);
 		Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
 		return true;
+	}
+
+	// checking for enchanted items
+	if(pPlayerItem->HasItem() && pPlayerItem->Info()->IsEnchantable())
+	{
+		GS()->Chat(ClientID, "Enchant item maximal count x1 in a backpack!");
+		return false;
 	}
 
 	// player purchasing

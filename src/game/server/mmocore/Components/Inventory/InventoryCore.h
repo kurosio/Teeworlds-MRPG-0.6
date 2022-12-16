@@ -32,8 +32,6 @@ public:
 	int GetCountItemsType(class CPlayer* pPlayer, ItemType Type) const;
 
 	void AddItemSleep(int AccountID, ItemIdentifier ItemID, int Value, int Milliseconds);
-	void GiveItem(class CPlayer* pPlayer, ItemIdentifier ItemID, int Value, int Settings, int Enchant);
-	void RemoveItem(class CPlayer* pPlayer, ItemIdentifier ItemID, int Value, int Settings);
 };
 
 #endif

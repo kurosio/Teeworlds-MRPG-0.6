@@ -1301,7 +1301,7 @@ void CGS::ConGiveItem(IConsole::IResult *pResult, void *pUserData)
 	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
 	CPlayer *pPlayer = pSelf->GetPlayer(ClientID, true);
-	if(pPlayer && CPlayerItem::Data()[ClientID].find(ItemID) != CPlayerItem::Data()[ClientID].end())
+	if(pPlayer && CItemDescription::Data().find(ItemID) != CItemDescription::Data().end())
 	{
 		if (Mail == 0)
 		{
@@ -1636,7 +1636,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	if(Menulist == CUSTOM_MENU && PrepareCustom)
 	{
 		// send parsed votes
-		for(auto p : pGS->m_aPlayerVotes[ClientID])
+		for(auto& p : pGS->m_aPlayerVotes[ClientID])
 		{
 			CNetMsg_Sv_VoteOptionAdd OptionMsg;
 			OptionMsg.m_pDescription = p.m_aDescription;
@@ -1651,7 +1651,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, Menulist);
 
 	// send parsed votes
-	for(auto p : pGS->m_aPlayerVotes[ClientID])
+	for(auto& p : pGS->m_aPlayerVotes[ClientID])
 	{
 		CNetMsg_Sv_VoteOptionAdd OptionMsg;
 		OptionMsg.m_pDescription = p.m_aDescription;
