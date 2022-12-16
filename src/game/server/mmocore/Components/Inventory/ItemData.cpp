@@ -4,8 +4,6 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/mmocore/Components/Inventory/InventoryCore.h>
-
 #include "game/server/mmocore/Components/Eidolons/EidolonCore.h"
 
 CGS* CPlayerItem::GS() const
@@ -307,14 +305,13 @@ bool CPlayerItem::Drop(int Value)
 	return false;
 }
 
-// TODO: move GiveItem and RemoveItem from InventoryCore to Save
 bool CPlayerItem::Save()
 {
 	if(GetPlayer() && GetPlayer()->IsAuthed())
 	{
 		int UserID = GetPlayer()->Acc().m_UserID;
-		const auto pRes = Database->Prepare<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", m_ID, UserID);
-		pRes->AtExecute([this, UserID](ResultPtr pRes)
+		const auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", m_ID, UserID);
+		pResCheck->AtExecute([this, UserID](ResultPtr pRes)
 		{
 			// check database value
 			if(pRes->next())
