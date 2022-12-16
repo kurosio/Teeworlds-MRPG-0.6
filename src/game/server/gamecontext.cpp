@@ -1344,7 +1344,7 @@ void CGS::ConRemItem(IConsole::IResult* pResult, void* pUserData)
 	CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
 	if (pPlayer)
 	{
-		pPlayer->GetItem(ItemID)->Remove(Value, 0);
+		pPlayer->GetItem(ItemID)->Remove(Value);
 	}
 }
 

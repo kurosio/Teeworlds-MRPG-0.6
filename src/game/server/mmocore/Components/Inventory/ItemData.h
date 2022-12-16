@@ -78,7 +78,7 @@ public:
 
 	// main functions
 	bool Add(int Value, int StartSettings = 0, int StartEnchant = 0, bool Message = true);
-	bool Remove(int Value, int Settings = 0);
+	bool Remove(int Value);
 	bool Equip(bool SaveItem = true);
 	bool Use(int Value);
 	bool Drop(int Value);

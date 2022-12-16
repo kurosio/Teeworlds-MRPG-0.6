@@ -64,13 +64,13 @@ bool CPlayerItem::SetValue(int Value)
 {
 	bool Changes = false;
 	if(m_Value > Value)
-		Changes = Remove((m_Value - Value), m_Settings);
+		Changes = Remove((m_Value - Value));
 	else if(m_Value < Value)
 		Changes = Add((Value - m_Value), m_Settings, m_Enchant, false);
 	return Changes;
 }
 
-bool CPlayerItem::Add(int Value, int Settings, int StartEnchant, bool Message)
+bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Message)
 {
 	if(Value < 1 || !GetPlayer() || !GetPlayer()->IsAuthed())
 		return false;
@@ -89,9 +89,9 @@ bool CPlayerItem::Add(int Value, int Settings, int StartEnchant, bool Message)
 	if(!m_Value)
 	{
 		m_Enchant = StartEnchant;
+		m_Settings = StartSettings;
 	}
 	m_Value += Value;
-	m_Settings += Settings;
 
 	// check the empty slot if yes then put the item on
 	if((Info()->IsType(ItemType::TYPE_EQUIP) && GetPlayer()->GetEquippedItemID(Info()->GetFunctional()) <= 0) || Info()->IsType(ItemType::TYPE_MODULE))
@@ -121,7 +121,7 @@ bool CPlayerItem::Add(int Value, int Settings, int StartEnchant, bool Message)
 	return Save();
 }
 
-bool CPlayerItem::Remove(int Value, int Settings)
+bool CPlayerItem::Remove(int Value)
 {
 	Value = min(Value, m_Value);
 	if(Value <= 0 || !GetPlayer())
@@ -132,7 +132,6 @@ bool CPlayerItem::Remove(int Value, int Settings)
 		Equip(false);
 
 	m_Value -= Value;
-	m_Settings -= Settings;
 	return Save();
 }
 
@@ -170,14 +169,14 @@ bool CPlayerItem::Use(int Value)
 
 	const int ClientID = GetPlayer()->GetCID();
 	// potion mana regen
-	if(m_ID == itPotionManaRegen && Remove(Value, 0))
+	if(m_ID == itPotionManaRegen && Remove(Value))
 	{
 		GetPlayer()->GiveEffect("RegenMana", 15);
 		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
 		return true;
 	}
 	// potion resurrection
-	else if(m_ID == itPotionResurrection && Remove(Value, 0))
+	else if(m_ID == itPotionResurrection && Remove(Value))
 	{
 		GetPlayer()->GetTempData().m_TempSafeSpawn = false;
 		GetPlayer()->GetTempData().m_TempHealth = GetPlayer()->GetStartHealth();
@@ -191,7 +190,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// survial capsule experience
-	else if(m_ID == itCapsuleSurvivalExperience && Remove(Value, 0))
+	else if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
@@ -199,7 +198,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// little bag gold
-	else if(m_ID == itLittleBagGold && Remove(Value, 0))
+	else if(m_ID == itLittleBagGold && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
@@ -207,7 +206,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// ticket reset for class stats
-	else if(m_ID == itTicketResetClassStats && Remove(Value, 0))
+	else if(m_ID == itTicketResetClassStats && Remove(Value))
 	{
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
@@ -229,7 +228,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// ticket reset for weapons stats
-	else if(m_ID == itTicketResetWeaponStats && Remove(Value, 0))
+	else if(m_ID == itTicketResetWeaponStats && Remove(Value))
 	{
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
@@ -272,7 +271,7 @@ bool CPlayerItem::Use(int Value)
 		if(GetPlayer()->m_aPlayerTick[PotionRecast] >= Server()->Tick())
 			return true;
 
-		if(Remove(Value, 0))
+		if(Remove(Value))
 		{
 			int PotionTime = pHeal->getTime();
 			GetPlayer()->GiveEffect(pHeal->getEffect(), PotionTime);
