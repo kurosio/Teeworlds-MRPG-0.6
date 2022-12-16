@@ -112,6 +112,10 @@ void CPlayer::Tick()
 
 	// update player tick
 	TickSystemTalk();
+
+	// post updated votes if player open menu
+	if(m_PlayerFlags & PLAYERFLAG_IN_MENU && IsActivePostVoteList())
+		PostVoteList();
 }
 
 void CPlayer::PostTick()
@@ -317,6 +321,12 @@ void CPlayer::FakeSnap()
 	pSpectatorInfo->m_SpectatorID = -1;
 	pSpectatorInfo->m_X = m_ViewPos.x;
 	pSpectatorInfo->m_Y = m_ViewPos.y;
+}
+
+void CPlayer::PostVoteList()
+{
+	m_PostVotes();
+	m_PostVotes = nullptr;
 }
 
 CCharacter *CPlayer::GetCharacter() const

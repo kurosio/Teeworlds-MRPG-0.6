@@ -921,6 +921,11 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if (str_comp_nocase(pMsg->m_pType, "option") != 0 || Server()->Tick() < (pPlayer->m_aPlayerTick[LastVoteTry] + (Server()->TickSpeed() / 2)))
 				return;
 
+			// post updated votes
+			if(pPlayer->IsActivePostVoteList())
+				pPlayer->PostVoteList();
+
+			// search votes
 			pPlayer->m_aPlayerTick[LastVoteTry] = Server()->Tick();
 			const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
 			{
@@ -1657,7 +1662,13 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 void CGS::UpdateVotes(int ClientID, int MenuList)
 {
 	// unfully safe
-	CallbackUpdateVotes(this, ClientID, MenuList, false);
+	if(m_apPlayers[ClientID])
+	{
+		if(m_apPlayers[ClientID]->m_PlayerFlags & PLAYERFLAG_IN_MENU)
+			CallbackUpdateVotes(this, ClientID, MenuList, false);
+		else
+			m_apPlayers[ClientID]->SetPostVoteListCallback(std::bind(&CallbackUpdateVotes, this, ClientID, MenuList, false));
+	}
 }
 
 // information for unauthorized players

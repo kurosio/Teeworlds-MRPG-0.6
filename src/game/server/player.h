@@ -60,6 +60,7 @@ protected:
 	int64_t m_LastPlaytime;
 	int m_TicksAfk;
 	CNetObj_PlayerInput* m_pLastInput;
+	std::function<void()> m_PostVotes;
 
 public:
 	CGS* GS() const { return m_pGS; }
@@ -126,6 +127,10 @@ public:
 	virtual void PostTick();
 	virtual void Snap(int SnappingClient);
 	virtual void FakeSnap();
+
+	void SetPostVoteListCallback(const std::function<void()> pFunc) { m_PostVotes = pFunc; }
+	bool IsActivePostVoteList() const { return m_PostVotes != nullptr; }
+	void PostVoteList();
 
 	virtual bool IsActive() const { return true; }
 	class CPlayerBot* GetEidolon() const;
