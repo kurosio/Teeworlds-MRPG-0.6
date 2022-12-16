@@ -118,6 +118,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	// verify death
 	if(m_Health <= 0)
 	{
+		// reward players
 		if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
 		{
 			for(const auto& ClientID : m_aListDmgPlayers)
@@ -132,6 +133,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		m_aListDmgPlayers.clear();
 		m_Target.Reset();
 
+		// die
 		Die(From, Weapon);
 		return false;
 	}
@@ -141,10 +143,33 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 void CCharacterBotAI::Die(int Killer, int Weapon)
 {
-	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB)
+	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB || Killer < 0 || Killer > MAX_CLIENTS || !GS()->m_apPlayers[Killer])
 		return;
 
-	CCharacter::Die(Killer, Weapon);
+	m_Alive = false;
+
+	// a nice sound
+	int ClientID = m_pBotPlayer->GetCID();
+	const int SubBotID = m_pBotPlayer->GetBotMobID();
+	CPlayer* pPlayerKiller = GS()->m_apPlayers[Killer];
+	GS()->m_pController->OnCharacterDeath(this, pPlayerKiller, Weapon);
+	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
+
+	// send the kill message
+	CNetMsg_Sv_KillMsg Msg;
+	Msg.m_Killer = Killer;
+	Msg.m_Victim = ClientID;
+	Msg.m_Weapon = Weapon;
+	Msg.m_ModeSpecial = 0;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, pPlayerKiller->GetPlayerWorldID());
+
+	// respawn
+	m_pBotPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick * Server()->TickSpeed();
+	m_pBotPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
+	m_pBotPlayer->m_Spawned = true;
+	GS()->m_World.RemoveEntity(this);
+	GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
+	GS()->CreateDeath(m_Pos, ClientID);
 }
 
 void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const

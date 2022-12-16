@@ -29,12 +29,12 @@ void CNPCWall::Tick()
 		if(!pChar->GetPlayer()->IsBot())
 			continue;
 
-		vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
-		const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if(Distance <= g_Config.m_SvDoorRadiusHit * 3)
+		int BotType = pChar->GetPlayer()->GetBotType();
+		if(((m_Flag & Flags::MOB_BOT && BotType == BotsTypes::TYPE_BOT_MOB) || (m_Flag & Flags::NPC_BOT && BotType == BotsTypes::TYPE_BOT_NPC) || (m_Flag & Flags::QUEST_BOT && BotType == BotsTypes::TYPE_BOT_QUEST)))
 		{
-			int BotType = pChar->GetPlayer()->GetBotType();
-			if(((m_Flag & Flags::MOB_BOT && BotType == BotsTypes::TYPE_BOT_MOB) || (m_Flag & Flags::NPC_BOT && BotType == BotsTypes::TYPE_BOT_NPC) || (m_Flag & Flags::QUEST_BOT && BotType == BotsTypes::TYPE_BOT_QUEST)))
+			vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
+			const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+			if(Distance <= g_Config.m_SvDoorRadiusHit * 3)
 			{
 				if(Distance <= g_Config.m_SvDoorRadiusHit)
 					pChar->m_DoorHit = true;

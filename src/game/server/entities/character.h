@@ -14,7 +14,6 @@ class CCharacter : public CEntity
 	class CPlayer *m_pPlayer;
 	TileHandle *m_pHelper;
 
-	bool m_Alive;
 	int m_Event;
 	int m_LastWeapon;
 	int m_QueuedWeapon;
@@ -41,6 +40,7 @@ class CCharacter : public CEntity
 	bool CheckAllowedWorld() const;
 
 protected:
+	bool m_Alive;
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 
 	// last tick that the player took any action ie some input

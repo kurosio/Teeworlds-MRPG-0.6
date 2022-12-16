@@ -1663,12 +1663,7 @@ void CGS::UpdateVotes(int ClientID, int MenuList)
 {
 	// unfully safe
 	if(m_apPlayers[ClientID])
-	{
-		if(m_apPlayers[ClientID]->m_PlayerFlags & PLAYERFLAG_IN_MENU)
-			CallbackUpdateVotes(this, ClientID, MenuList, false);
-		else
-			m_apPlayers[ClientID]->SetPostVoteListCallback(std::bind(&CallbackUpdateVotes, this, ClientID, MenuList, false));
-	}
+		m_apPlayers[ClientID]->SetPostVoteListCallback(std::bind(&CallbackUpdateVotes, this, ClientID, MenuList, false));
 }
 
 // information for unauthorized players

@@ -722,18 +722,11 @@ void CCharacter::Die(int Killer, int Weapon)
 		m_pPlayer->UpdateTempData(0, 0);
 
 		const int RespawnWorldID = GS()->GetRespawnWorld();
-		if(RespawnWorldID >= 0 && !m_pPlayer->IsBot() && GS()->m_apPlayers[Killer])
+		if(RespawnWorldID >= 0 && GS()->m_apPlayers[Killer])
 		{
 			GS()->Chat(ClientID, "You are dead, you will be treated in {STR}", Server()->GetWorldName(RespawnWorldID));
 			m_pPlayer->GetTempData().m_TempSafeSpawn = true;
 		}
-	}
-
-	m_pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
-	if(m_pPlayer->GetBotType() == TYPE_BOT_MOB)
-	{
-		const int SubBotID = m_pPlayer->GetBotMobID();
-		m_pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick*Server()->TickSpeed();
 	}
 
 	// a nice sound
@@ -750,6 +743,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, m_pPlayer->GetPlayerWorldID());
 
 	// respawn
+	m_pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
 	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
 	m_pPlayer->m_Spawned = true;
 	GS()->m_World.RemoveEntity(this);

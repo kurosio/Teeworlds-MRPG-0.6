@@ -299,7 +299,7 @@ bool CPlayerItem::Drop(int Value)
 	if(Remove(Value))
 	{
 		DropItem.m_Value = Value;
-		GS()->CreateDropItem(m_pCharacter->m_Core.m_Pos, -1, DropItem, Force);
+		GS()->CreateDropItem(m_pCharacter->m_Core.m_Pos, -1, static_cast<CItem>(DropItem), Force);
 		return true;
 	}
 	return false;
