@@ -59,8 +59,9 @@ struct CAccountTempData
 	// temp rankname for guild rank settings
 	char m_aRankGuildBuf[32];
 
-	// temp guild name for searching
+	// temp for searching
 	char m_aGuildSearchBuf[32];
+	char m_aPlayerSearchBuf[32];
 
 	// player stats
 	int m_TempHealth;

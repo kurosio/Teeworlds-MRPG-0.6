@@ -2,93 +2,9 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "HouseData.h"
 
-#include "Entities/HouseDoor.h"
 #include "game/server/gamecontext.h"
-
 #include "game/server/mmocore/GameEntities/jobitems.h"
 #include "game/server/mmocore/GameEntities/decoration_houses.h"
-
-// house bank data
-CPlayer* CHouseBankData::GetPlayer() const { return m_pGS->GetPlayerFromUserID(*m_pAccountID); }
-
-void CHouseBankData::Add(int Value)
-{
-	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
-
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", *m_pAccountID);
-	if(pRes->next())
-	{
-		HouseIdentifier HouseID = pRes->getInt("ID");
-
-		if(pPlayer->SpendCurrency(Value))
-		{
-			m_Bank = pRes->getInt("HouseBank") + Value;
-			Database->Execute<DB::UPDATE>("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", m_Bank, HouseID);
-
-			int ClientID = pPlayer->GetCID();
-			m_pGS->Chat(ClientID, "You put {VAL} gold in the safe {VAL}!", Value, m_Bank);
-		}
-	}
-}
-
-void CHouseBankData::Take(int Value)
-{
-	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
-
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, HouseBank", "tw_houses", "WHERE UserID = '%d'", *m_pAccountID);
-	if(pRes->next())
-	{
-		int ClientID = pPlayer->GetCID();
-		HouseIdentifier HouseID = pRes->getInt("ID");
-		int Bank = pRes->getInt("HouseBank");
-
-		// update data
-		Value = min(Value, Bank);
-		if(Value > 0)
-		{
-			pPlayer->AddMoney(Value);
-			m_Bank = Bank - Value;
-			Database->Execute<DB::UPDATE>("tw_houses", "HouseBank = '%d' WHERE ID = '%d'", m_Bank, HouseID);
-
-			// send information
-			m_pGS->Chat(ClientID, "You take {VAL} gold in the safe {VAL}!", Value, m_Bank);
-		}
-	}
-}
-
-// house door data
-CHouseDoorData::~CHouseDoorData()
-{
-	delete m_pDoor;
-	m_pDoor = nullptr;
-}
-
-void CHouseDoorData::Open()
-{
-	if(m_pDoor)
-	{
-		delete m_pDoor;
-		m_pDoor = nullptr;
-	}
-}
-
-void CHouseDoorData::Close()
-{
-	if(!m_pDoor)
-		m_pDoor = new HouseDoor(&m_pGS->m_World, m_Pos);
-}
-
-void CHouseDoorData::Reverse()
-{
-	if(m_pDoor)
-		Open();
-	else
-		Close();
-}
 
 CGS* CHouseData::GS() const { return static_cast<CGS*>(Server()->GameServer(m_WorldID)); }
 CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerFromUserID(m_AccountID); }
@@ -200,7 +116,7 @@ void CHouseData::Buy(CPlayer* pPlayer)
 		m_AccountID = pPlayer->Acc().m_UserID;
 		m_pDoorData->Close();
 		m_pBank->Reset();
-		Database->Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' WHERE ID = '%d'", m_AccountID, m_ID);
+		Database->Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
 
 		// send information
 		GS()->Chat(-1, "{STR} becomes the owner of the house class {STR}", Server()->ClientName(ClientID), GetClassName());
@@ -231,16 +147,16 @@ void CHouseData::Sell()
 	// update data
 	m_pDoorData->Open();
 	m_pBank->Reset();
-	Database->Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0' WHERE ID = '%d'", m_ID);
+	Database->Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0' AccessData = NULL WHERE ID = '%d'", m_ID);
 
 	// account used for GetPlayer() reset last moment
 	m_AccountID = -1;
 }
 
-void CHouseData::SetPlantItemID(ItemIdentifier PlantItemID)
+void CHouseData::SetPlantItemID(ItemIdentifier ItemID)
 {
 	// checked
-	if(PlantItemID == m_PlantItemID)
+	if(ItemID == m_PlantItemID)
 		return;
 
 	// check for update and set new plant itemid
@@ -249,7 +165,7 @@ void CHouseData::SetPlantItemID(ItemIdentifier PlantItemID)
 	{
 		if(pPlant->m_HouseID == m_ID)
 		{
-			pPlant->m_ItemID = PlantItemID;
+			pPlant->m_ItemID = ItemID;
 			Updates = true;
 		}
 	}
@@ -257,8 +173,8 @@ void CHouseData::SetPlantItemID(ItemIdentifier PlantItemID)
 	// update data
 	if(Updates)
 	{
-		m_PlantItemID = PlantItemID;
-		Database->Execute<DB::UPDATE>("tw_houses", "PlantID = '%d' WHERE ID = '%d'", PlantItemID, m_ID);
+		m_PlantItemID = ItemID;
+		Database->Execute<DB::UPDATE>("tw_houses", "PlantID = '%d' WHERE ID = '%d'", ItemID, m_ID);
 	}
 }
 

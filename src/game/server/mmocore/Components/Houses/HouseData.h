@@ -5,60 +5,14 @@
 
 #include <game/server/mmocore/Components/Inventory/ItemInfoData.h>
 
+#include "HouseBankData.h"
+#include "HouseDoorData.h"
+
 using HouseIdentifier = int;
 using HouseDecorationIdentifier = int;
 
 using HouseDataPtr = std::shared_ptr< class CHouseData >;
 
-/*
- * BANK DATA
- */
-class CHouseBankData
-{
-	CGS* m_pGS;
-	int* m_pAccountID{};
-	int m_Bank{};
-
-	class CPlayer* GetPlayer() const;
-
-public:
-	CHouseBankData() = default;
-	CHouseBankData(CGS* pGS, int* pAccountID, int Bank) : m_pGS(pGS), m_pAccountID(pAccountID), m_Bank(Bank) {};
-
-	int Get() const { return m_Bank; }
-
-	void Add(int Value);
-	void Take(int Value);
-	void Reset() { m_Bank = 0; }
-};
-
-/*
- * DOOR DATA
- */
-class CHouseDoorData
-{
-	friend class CHouseData;
-	class CGS* m_pGS {};
-
-	vec2 m_Pos{};
-	class HouseDoor* m_pDoor{};
-
-public:
-	CHouseDoorData() = default;
-	CHouseDoorData(class CGS* pGS, vec2 Pos) : m_pGS(pGS), m_Pos(Pos) {}
-	~CHouseDoorData();
-
-	const vec2& GetPos() const { return m_Pos; }
-	bool GetState() const { return m_pDoor; }
-
-	void Open();
-	void Close();
-	void Reverse();
-};
-
-/*
- * HOUSE DATA
- */
 class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDataPtr > >
 {
 	HouseIdentifier m_ID{};
@@ -87,7 +41,7 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, std::string ClassName, int Price, int Bank, vec2 Pos, vec2 HouseDoorPos, vec2 PlantPos, int PlantItemID, int WorldID)
+	void Init(int AccountID, std::string ClassName, int Price, int Bank, vec2 Pos, vec2 HouseDoorPos, vec2 PlantPos, int PlantItemID, int WorldID, std::string AccessData)
 	{
 		m_AccountID = AccountID;
 		str_copy(m_aClassName, ClassName.c_str(), sizeof(m_aClassName));
@@ -98,7 +52,7 @@ public:
 		m_WorldID = WorldID;
 
 		// door init
-		m_pDoorData = new CHouseDoorData(GS(), HouseDoorPos);
+		m_pDoorData = new CHouseDoorData(GS(), HouseDoorPos, std::move(AccessData), this);
 		if(m_AccountID <= 0)
 			m_pDoorData->Open();
 		else
@@ -113,14 +67,13 @@ public:
 
 	HouseIdentifier GetID() const { return m_ID; }
 	int GetAccountID() const { return m_AccountID; }
+	const char* GetClassName() const { return m_aClassName; }
 	const vec2& GetPos() const { return m_Pos; }
 	const vec2& GetPlantPos() const { return m_PlantPos; }
-	int GetWorldID() const { return m_WorldID; }
-	ItemIdentifier GetPlantItemID() const { return m_PlantItemID; }
-	const char* GetClassName() const { return m_aClassName; }
-	bool HasOwner() const { return m_AccountID > 0; }
 	int GetPrice() const { return m_Price; }
-
+	ItemIdentifier GetPlantItemID() const { return m_PlantItemID; }
+	int GetWorldID() const { return m_WorldID; }
+	bool HasOwner() const { return m_AccountID > 0; }
 	CHouseDoorData* GetDoor() const { return m_pDoorData; }
 	CHouseBankData* GetBank() const { return m_pBank; }
 
@@ -130,7 +83,7 @@ public:
 	void Buy(CPlayer* pPlayer);
 	void Sell();
 
-	void SetPlantItemID(ItemIdentifier PlantItemID);
+	void SetPlantItemID(ItemIdentifier ItemID);
 	void ShowDecorations() const;
 
 private:

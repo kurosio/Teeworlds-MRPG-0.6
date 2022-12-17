@@ -147,6 +147,7 @@ enum MenuList
 	MENU_HOUSE,
 	MENU_HOUSE_DECORATION,
 	MENU_HOUSE_PLANTS,
+	MENU_HOUSE_ACCESS_TO_DOOR,
 	MENU_EIDOLON_COLLECTION,
 	MENU_EIDOLON_COLLECTION_SELECTED,
 	MENU_JOURNAL_MAIN,
@@ -163,7 +164,8 @@ enum TabHideList
 	TAB_STAT = 1,
 	TAB_PERSONAL,
 	TAB_INFORMATION,
-	TAB_HOUSE_COMMAND,
+	TAB_HOUSE_ACCESS_TO_DOOR_REMOVE,
+	TAB_HOUSE_ACCESS_TO_DOOR_ADD,
 	TAB_EQUIP_SELECT,
 	TAB_UPGR_DPS,
 	TAB_UPGR_TANK,
@@ -186,6 +188,7 @@ enum TabHideList
 	// start info
 	TAB_INFO_INVENTORY,
 	TAB_INFO_HOUSE,
+	TAB_INFO_HOUSE_INVITES_TO_DOOR,
 	TAB_INFO_STAT,
 	TAB_INFO_CRAFT,
 	TAB_INFO_TOP,
@@ -211,6 +214,7 @@ enum
 		Basic kernel server settings
 		This is where the most basic server settings are stored
 	*/
+	MAX_HOUSE_INVITED_PLAYERS = 3,			// maximum player what can have access for house door
 	MAX_DECORATIONS_HOUSE = 20,				// maximum decorations for houses
 	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type

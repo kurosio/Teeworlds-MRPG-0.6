@@ -24,8 +24,9 @@ void CHouseCore::OnInitWorld(const char* pWhereLocalWorld)
 			vec2 PlantPos(pRes->getInt("PlantX"), pRes->getInt("PlantY"));
 			int PlantItemID = pRes->getInt("PlantID");
 			int WorldID = pRes->getInt("WorldID");
+			std::string AccessData = pRes->getString("AccessData").c_str();
 
-			CHouseData::CreateDataItem(ID)->Init(AccountID, ClassName, Price, Bank, Pos, DoorPos, PlantPos, PlantItemID, WorldID);
+			CHouseData::CreateDataItem(ID)->Init(AccountID, ClassName, Price, Bank, Pos, DoorPos, PlantPos, PlantItemID, WorldID, AccessData);
 		}
 		
 		Job()->ShowLoadingProgress("Houses", CHouseData::Data().size());
@@ -123,6 +124,71 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Housing active plants: {STR}", GS()->GetItemInfo(pHouse->GetPlantItemID())->GetName());
 		GS()->Mmo()->Item()->ListInventory(ClientID, FUNCTION_PLANTS);
+		GS()->AddVotesBackpage(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_HOUSE_ACCESS_TO_DOOR)
+	{
+		pPlayer->m_LastVoteMenu = MENU_HOUSE;
+
+		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		if(!pHouse)
+		{
+			GS()->AVL(ClientID, "null", "You not owner home!");
+			return true;
+		}
+
+		// information
+		GS()->AVH(ClientID, TAB_INFO_HOUSE_INVITES_TO_DOOR, "Player's access to door.");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_INVITES_TO_DOOR, "You can add a limited number of players who can");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_INVITES_TO_DOOR, "enter the house regardless of door status");
+		GS()->AV(ClientID, "null");
+
+		// show active access players to house
+		CHouseDoorData* pHouseDoor = pHouse->GetDoor();
+		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You can add {INT} player's to the list.", pHouseDoor->GetAvailableAccessSlots());
+		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You and your eidolon have full access to door");
+		for(auto& p : pHouseDoor->GetAccessVector())
+		{
+			GS()->AVM(ClientID, "HOUSE_INVITED_LIST_REMOVE", p, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "Take access to door from {STR}", GS()->Mmo()->PlayerName(p));
+		}
+
+		// field to find player for append
+		GS()->AV(ClientID, "null");
+		GS()->AV(ClientID, "null", "Use reason. The entered value can be a partial.");
+		GS()->AV(ClientID, "null", "Example: Find player: [], in reason nickname.");
+		GS()->AVM(ClientID, "HOUSE_INVITED_LIST_FIND", 1, NOPE, "Find player: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		GS()->AV(ClientID, "null");
+
+		// search result
+		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Search Result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		if(pPlayer->GetTempData().m_aPlayerSearchBuf[0] != '\0')
+		{
+			bool Found = false;
+			CSqlString<64> cPlayerName = CSqlString<64>(pPlayer->GetTempData().m_aPlayerSearchBuf);
+			ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick LIKE '%%%s%%' LIMIT 20", cPlayerName.cstr());
+			while(pRes->next())
+			{
+				const int UserID = pRes->getInt("ID");
+				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Acc().m_UserID))
+					continue;
+
+				cPlayerName = pRes->getString("Nick").c_str();
+				GS()->AVM(ClientID, "HOUSE_INVITED_LIST_ADD", UserID, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Give access for {STR}", cPlayerName.cstr());
+				Found = true;
+			}
+			if(!Found)
+			{
+				GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Players for the request {STR} not found!", pPlayer->GetTempData().m_aPlayerSearchBuf);
+			}
+		}
+		else
+		{
+			GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Set the reason for the search field");
+		}
+
+		// back page
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -348,6 +414,40 @@ bool CHouseCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const i
 		return true;
 	}
 
+	// house invited list
+	if(PPSTR(CMD, "HOUSE_INVITED_LIST_FIND") == 0)
+	{
+		if(PPSTR(GetText, "NULL") == 0)
+		{
+			GS()->Chat(ClientID, "Use please another name.");
+			return true;
+		}
+
+		str_copy(pPlayer->GetTempData().m_aPlayerSearchBuf, GetText, sizeof(pPlayer->GetTempData().m_aPlayerSearchBuf));
+		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
+		return true;
+	}
+
+	if(PPSTR(CMD, "HOUSE_INVITED_LIST_ADD") == 0)
+	{
+		const int UserID = VoteID;
+		if(CHouseData* pHouse = pPlayer->Acc().GetHouse())
+			pHouse->GetDoor()->AddAccess(UserID);
+
+		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
+		return true;
+	}
+
+	if(PPSTR(CMD, "HOUSE_INVITED_LIST_REMOVE") == 0)
+	{
+		const int UserID = VoteID;
+		if(CHouseData* pHouse = pPlayer->Acc().GetHouse())
+			pHouse->GetDoor()->RemoveAccess(UserID);
+
+		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
+		return true;
+	}
+
 	return false;
 }
 
@@ -408,6 +508,7 @@ void CHouseCore::ShowPersonalHouse(CPlayer* pPlayer)
 	GS()->AVM(ClientID, "HOUSE_DOOR", ID, NOPE, "Change state to [\"{STR}\"]", StateDoor ? "OPEN" : "CLOSED");
 	GS()->AVM(ClientID, "HOUSE_SPAWN", 1, NOPE, "Teleport to your house");
 	GS()->AVM(ClientID, "HOUSE_SELL", ID, NOPE, "Sell your house (in reason 777)");
+	GS()->AVM(ClientID, "MENU", MENU_HOUSE_ACCESS_TO_DOOR, NOPE, "Player's access to your door");
 
 	if(GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
 	{

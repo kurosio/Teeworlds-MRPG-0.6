@@ -6,8 +6,10 @@
 
 class HouseDoor : public CEntity
 {
+	class CHouseDoorData* m_pHouseDoor;
+
 public:
-	HouseDoor(CGameWorld* pGameWorld, vec2 Pos);
+	HouseDoor(CGameWorld* pGameWorld, vec2 Pos, CHouseDoorData* pHouseDoor);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
