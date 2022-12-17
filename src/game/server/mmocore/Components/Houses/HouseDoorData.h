@@ -9,12 +9,12 @@ class CHouseDoorData
 	class CGS* m_pGS {};
 
 	vec2 m_Pos {};
-	CHouseData* m_pHouse{};
+	class CHouseData* m_pHouse{};
 	class HouseDoor* m_pDoor {};
 	std::vector<int> m_AccessUserIDs{};
 
 public:
-	CHouseDoorData(class CGS* pGS, vec2 Pos, std::string AccessData, CHouseData* pHouse) : m_pGS(pGS), m_Pos(Pos), m_pHouse(pHouse)
+	CHouseDoorData(class CGS* pGS, vec2 Pos, std::string AccessData, class CHouseData* pHouse) : m_pGS(pGS), m_Pos(Pos), m_pHouse(pHouse)
 	{
 		// init access list
 		if(!AccessData.empty())
