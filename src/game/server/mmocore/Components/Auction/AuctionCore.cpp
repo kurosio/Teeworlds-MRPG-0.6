@@ -302,10 +302,8 @@ void CAuctionCore::ShowAuction(CPlayer* pPlayer)
 
 		if(pItemInfo->IsEnchantable())
 		{
-			char aEnchantBuf[16];
-			pItemInfo->StrFormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf), Enchant);
 			GS()->AVH(ClientID, HideID, "{STR}{STR} {STR} - {VAL} gold",
-				(pPlayer->GetItem(ItemID)->GetValue() > 0 ? "✔ " : "\0"), pItemInfo->GetName(), (Enchant > 0 ? aEnchantBuf : "\0"), Price);
+				(pPlayer->GetItem(ItemID)->GetValue() > 0 ? "✔ " : "\0"), pItemInfo->GetName(), pItemInfo->StringEnchantLevel(Enchant).c_str(), Price);
 
 			char aAttributes[128];
 			pItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), Enchant);

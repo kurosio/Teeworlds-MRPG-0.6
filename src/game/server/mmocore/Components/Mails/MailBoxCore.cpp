@@ -73,19 +73,18 @@ void CMailBoxCore::GetInformationInbox(CPlayer *pPlayer)
 		HideID++;
 
 		// add vote menu
+		CItemDescription* pItemAttach = GS()->GetItemInfo(ItemID);
 		GS()->AVH(ClientID, HideID, "✉ Letter({INT}) {STR}", ShowLetterID, pRes->getString("Name").c_str());
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pRes->getString("Description").c_str());
 		if(ItemID <= 0 || ItemValue <= 0)
 			GS()->AVM(ClientID, "MAIL", MailLetterID, HideID, "Accept (L{INT})", ShowLetterID);
-		else if(GS()->GetItemInfo(ItemID)->IsEnchantable())
+		else if(pItemAttach->IsEnchantable())
 		{
-			char aEnchantBuf[16];
-			GS()->GetItemInfo(ItemID)->StrFormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf), Enchant);
 			GS()->AVM(ClientID, "MAIL", MailLetterID, HideID, "Receive {STR} {STR} (L{INT})",
-				GS()->GetItemInfo(ItemID)->GetName(), (Enchant > 0 ? aEnchantBuf : "\0"), ShowLetterID);
+				pItemAttach->GetName(), pItemAttach->StringEnchantLevel(Enchant).c_str(), ShowLetterID);
 		}
 		else
-			GS()->AVM(ClientID, "MAIL", MailLetterID, HideID, "Receive {STR}x{VAL} (L{INT})", GS()->GetItemInfo(ItemID)->GetName(), ItemValue, ShowLetterID);
+			GS()->AVM(ClientID, "MAIL", MailLetterID, HideID, "Receive {STR}x{VAL} (L{INT})", pItemAttach->GetName(), ItemValue, ShowLetterID);
 
 		GS()->AVM(ClientID, "DELETE_MAIL", MailLetterID, HideID, "Delete (L{INT})", ShowLetterID);
 	}

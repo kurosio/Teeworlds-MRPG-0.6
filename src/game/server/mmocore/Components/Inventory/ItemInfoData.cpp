@@ -94,12 +94,9 @@ void CItemDescription::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int 
 	Buffer.clear();
 }
 
-void CItemDescription::StrFormatEnchantLevel(char* pBuffer, int Size, int Enchant) const
+std::string CItemDescription::StringEnchantLevel(int Enchant) const
 {
 	if(Enchant > 0)
-	{
-		str_format(pBuffer, Size, "[%s]", IsEnchantMaxLevel(Enchant) ? "Max" : std::string("+" + std::to_string(Enchant)).c_str());
-		return;
-	}
-	str_copy(pBuffer, "\0", Size);
+		return IsEnchantMaxLevel(Enchant) ? "Max" : "[" + std::string("+" + std::to_string(Enchant)) + "]";
+	return "\0";
 }

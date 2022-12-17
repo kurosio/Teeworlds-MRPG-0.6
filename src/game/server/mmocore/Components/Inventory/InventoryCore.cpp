@@ -252,12 +252,9 @@ bool CInventoryCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 		const int EnchantLevel = pPlayerItem->GetEnchant() + 1;
 		pPlayerItem->SetEnchant(EnchantLevel);
 
-		char aEnchantBuf[16];
-		pPlayerItem->StrFormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));
-
 		char aAttributes[128];
 		pPlayerItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-		GS()->Chat(-1, "{STR} enchant {STR} {STR} {STR}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), aEnchantBuf, aAttributes);
+		GS()->Chat(-1, "{STR} enchant {STR} {STR} {STR}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str(), aAttributes);
 		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
 		return true;
 	}
@@ -318,9 +315,7 @@ void CInventoryCore::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlay
 	// overwritten or not
 	if (pItemPlayer.Info()->IsEnchantable())
 	{
-		char aEnchantBuf[16];
-		pItemPlayer.StrFormatEnchantLevel(aEnchantBuf, sizeof(aEnchantBuf));
-		GS()->AVH(ClientID, HideID, "{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, (pItemPlayer.m_Enchant > 0 ? aEnchantBuf : "\0"));
+		GS()->AVH(ClientID, HideID, "{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.StringEnchantLevel().c_str());
 
 		if(Dress && pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped())
 			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDescription());

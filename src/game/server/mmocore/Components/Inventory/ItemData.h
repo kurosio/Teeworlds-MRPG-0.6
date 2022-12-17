@@ -38,7 +38,7 @@ public:
 
 	CItemDescription* Info() const { return &CItemDescription::Data()[m_ID]; }
 
-	void StrFormatEnchantLevel(char* pBuffer, int Size) const { Info()->StrFormatEnchantLevel(pBuffer, Size, m_Enchant); }
+	std::string StringEnchantLevel() const { return Info()->StringEnchantLevel(m_Enchant); }
 
 	// helper functions
 	[[nodiscard]] static CItem FromJSON(const std::string& json);

@@ -35,9 +35,7 @@ bool CDropItem::TakeItem(int ClientID)
 		if(!pPlayerItem->IsEquipped() && LastEquipped)
 			pPlayerItem->Equip(false);
 
-		char aBufEnchantLevel[16];
-		pPlayerItem->StrFormatEnchantLevel(aBufEnchantLevel, sizeof(aBufEnchantLevel));
-		GS()->Chat(ClientID, "You now own {STR}{STR}", pPlayerItem->Info()->GetName(), aBufEnchantLevel);
+		GS()->Chat(ClientID, "You now own {STR}{STR}", pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str());
 		GS()->StrongUpdateVotes(ClientID, MENU_INVENTORY);
 		GS()->StrongUpdateVotes(ClientID, MENU_EQUIPMENT);
 		pPlayerItem->Save();
@@ -86,12 +84,8 @@ void CDropItem::Tick()
 		{
 			if(pPlayerItem->GetValue() > 0)
 			{
-				enum { PLAYER_ITEM_FORMAT_ENCHANT, DROP_ITEM_FORMAT_ENCHANT, MAX_FORMAT_ENCHANTS};
-				char aBufEnchantLevel[MAX_FORMAT_ENCHANTS][16];
-				pPlayerItem->StrFormatEnchantLevel(aBufEnchantLevel[PLAYER_ITEM_FORMAT_ENCHANT], sizeof(aBufEnchantLevel[PLAYER_ITEM_FORMAT_ENCHANT]));
-				m_DropItem.StrFormatEnchantLevel(aBufEnchantLevel[DROP_ITEM_FORMAT_ENCHANT], sizeof(aBufEnchantLevel[DROP_ITEM_FORMAT_ENCHANT]));
 				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You have: {STR}{STR}\nReplace with: {STR}{STR} {STR}",
-					pPlayerItem->Info()->GetName(), aBufEnchantLevel[PLAYER_ITEM_FORMAT_ENCHANT], m_DropItem.Info()->GetName(), aBufEnchantLevel[DROP_ITEM_FORMAT_ENCHANT], pOwnerNick);
+					pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str(), m_DropItem.Info()->GetName(), m_DropItem.StringEnchantLevel().c_str(), pOwnerNick);
 			}
 			else
 			{
