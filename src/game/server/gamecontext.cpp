@@ -636,7 +636,6 @@ void CGS::BroadcastTick(int ClientID)
 ######################################################################### */
 void CGS::SendEmoticon(int ClientID, int Emoticon)
 {
-	// send emoticon
 	CNetMsg_Sv_Emoticon Msg;
 	Msg.m_ClientID = ClientID;
 	Msg.m_Emoticon = Emoticon;

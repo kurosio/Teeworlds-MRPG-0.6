@@ -38,6 +38,8 @@ public:
 
 	CItemDescription* Info() const { return &CItemDescription::Data()[m_ID]; }
 
+	void StrFormatEnchantLevel(char* pBuffer, int Size) const { Info()->StrFormatEnchantLevel(pBuffer, Size, m_Enchant); }
+
 	// helper functions
 	[[nodiscard]] static CItem FromJSON(const std::string& json);
 	[[nodiscard]] static CItemsContainer FromArrayJSON(const std::string& json);
@@ -82,16 +84,14 @@ public:
 	bool Equip(bool SaveItem = true);
 	bool Use(int Value);
 	bool Drop(int Value);
-	void StrFormatEnchantLevel(char* pBuffer, int Size) const { Info()->StrFormatEnchantLevel(pBuffer, Size, m_Enchant); }
 	void StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size) const { Info()->StrFormatAttributes(pPlayer, pBuffer, Size, m_Enchant); }
+	bool Save();
 
 	// override functions
 	bool SetValue(int Value) override;
 	bool SetEnchant(int Enchant) override;
 	bool SetDurability(int Durability) override;
 	bool SetSettings(int Settings) override;
-private:
-	bool Save();
 };
 
 #endif
