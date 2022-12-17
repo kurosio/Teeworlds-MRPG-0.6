@@ -190,8 +190,7 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage)
 
 	if(CritDamage)
 	{
-		CPlayer* pPlayer = GetPlayer(FromCID, true, true);
-		if(pPlayer && pPlayer->GetItem(itShowCriticalDamage)->IsEquipped())
+		if(CPlayer* pPlayer = GetPlayer(FromCID, true, true); pPlayer && pPlayer->GetItem(itShowCriticalDamage)->IsEquipped())
 			Chat(FromCID, ":: Crit damage: {INT}p.", Amount);
 	}
 }
@@ -411,8 +410,7 @@ void CGS::ChatGuild(int GuildID, const char* pText, ...)
 	dynamic_string Buffer;
 	for(int i = 0 ; i < MAX_PLAYERS ; i ++)
 	{
-		CPlayer *pPlayer = GetPlayer(i, true);
-		if(pPlayer && pPlayer->Acc().IsGuild() && pPlayer->Acc().m_GuildID == GuildID)
+		if(CPlayer *pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Acc().IsGuild() && pPlayer->Acc().m_GuildID == GuildID)
 		{
 			Buffer.append("[Guild]");
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
@@ -444,7 +442,7 @@ void CGS::ChatWorldID(int WorldID, const char* Suffix, const char* pText, ...)
 			continue;
 
 		Buffer.append(Suffix);
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
+		Server()->Localization()->Format_VL(Buffer, pPlayer->GetLanguage(), pText, VarArgs);
 
 		Msg.m_pMessage = Buffer.buffer();
 
@@ -489,24 +487,20 @@ void CGS::ChatDiscordChannel(const char *pChanel, int Color, const char *Title, 
 // Send Motd
 void CGS::Motd(int ClientID, const char* Text, ...)
 {
-	if(ClientID < 0 || ClientID >= MAX_PLAYERS)
+	CPlayer* pPlayer = GetPlayer(ClientID, true);
+	if(!pPlayer)
 		return;
-
-	CNetMsg_Sv_Motd Msg;
 
 	va_list VarArgs;
 	va_start(VarArgs, Text);
+	dynamic_string Buffer;
+	Server()->Localization()->Format_VL(Buffer, pPlayer->GetLanguage(), Text, VarArgs);
 
-	if(m_apPlayers[ClientID])
-	{
-		dynamic_string Buffer;
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), Text, VarArgs);
+	CNetMsg_Sv_Motd Msg;
+	Msg.m_pMessage = Buffer.buffer();
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 
-		Msg.m_pMessage = Buffer.buffer();
-
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-		Buffer.clear();
-	}
+	Buffer.clear();
 	va_end(VarArgs);
 }
 
@@ -640,15 +634,8 @@ void CGS::BroadcastTick(int ClientID)
 /* #########################################################################
 	PACKET MESSAGE FUNCTIONS
 ######################################################################### */
-void CGS::SendEmoticon(int ClientID, int Emoticon, bool SenderClient)
+void CGS::SendEmoticon(int ClientID, int Emoticon)
 {
-	// parse skills from emoticons
-	CPlayer* pPlayer = GetPlayer(ClientID, true, true);
-	if(pPlayer && SenderClient)
-	{
-		Mmo()->Skills()->ParseEmoticionSkill(pPlayer, Emoticon);
-	}
-
 	// send emoticon
 	CNetMsg_Sv_Emoticon Msg;
 	Msg.m_ClientID = ClientID;
@@ -1011,7 +998,10 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_aPlayerTick[LastEmote] = Server()->Tick();
-			SendEmoticon(ClientID, pMsg->m_Emoticon, true);
+			SendEmoticon(ClientID, pMsg->m_Emoticon);
+
+			// parse skills from emoticons
+			Mmo()->Skills()->ParseEmoticionSkill(pPlayer, pMsg->m_Emoticon);
 		}
 
 		else if (MsgID == NETMSGTYPE_CL_KILL)
