@@ -415,12 +415,8 @@ void CAccountCore::UseVoucher(int ClientID, const char* pVoucher) const
 				{
 					const int ItemID = Item.value("id", -1);
 					const int Value = Item.value("value", 0);
-
-					if(ItemID > NOPE && Value > 0)
-					{
-						if(CItemDescription::Data().find(ItemID) != CItemDescription::Data().end())
-							pPlayer->GetItem(ItemID)->Add(Value);
-					}
+					if(Value > 0 && CItemDescription::Data().find(ItemID) != CItemDescription::Data().end())
+						pPlayer->GetItem(ItemID)->Add(Value);
 				}
 			}
 

@@ -92,13 +92,7 @@ void CPlayer::Tick()
 	if (m_pCharacter)
 	{
 		if(m_pCharacter->IsAlive())
-		{
 			m_ViewPos = m_pCharacter->GetPos();
-            if(m_Afk)
-                m_TicksAfk++;
-            else
-                m_TicksAfk = 0;
-		}
 		else
 		{
 			delete m_pCharacter;
@@ -599,6 +593,11 @@ int CPlayer::GetStartHealth()
 int CPlayer::GetStartMana()
 {
 	return 10 + GetAttributeSize(AttributeIdentifier::MP);
+}
+
+int64_t CPlayer::GetAfkTime() const
+{
+	return m_Afk ? ((time_get() - m_LastPlaytime) / time_freq()) - g_Config.m_SvMaxAfkTime : 0;
 }
 
 void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAppendStr)
