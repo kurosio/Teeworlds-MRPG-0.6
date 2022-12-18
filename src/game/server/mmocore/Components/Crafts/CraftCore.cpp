@@ -188,7 +188,7 @@ bool CCraftCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_CRAFT, "If you will not have enough items for crafting");
 			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_CRAFT, "You will write those and the amount that is still required");
 			GS()->AV(ClientID, "null");
-			GS()->ShowVotesItemValueInformation(pPlayer);
+			GS()->AddVoteItemValue(ClientID);
 			GS()->AV(ClientID, "null");
 
 			ShowCraftList(pPlayer, "Can be used's", ItemType::TYPE_USED);

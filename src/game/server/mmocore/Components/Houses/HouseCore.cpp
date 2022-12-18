@@ -93,13 +93,11 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 		GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR} Door [{STR}]", ID, pHouse->GetClassName(), StateDoor ? "Closed" : "Opened");
 		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/doorhouse - interactive with door.");
 		GS()->AV(ClientID, "null");
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Notes: Minimal operation house balance 100gold");
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "In your house safe is: {VAL}gold", pHouse->GetBank()->Get());
-		GS()->AV(ClientID, "null");
 
-		GS()->AVL(ClientID, "null", "◍  Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
-		GS()->AVM(ClientID, "HOUSE_BANK_ADD", 1, NOPE, "Add to safe gold. (Amount in a reason)");
-		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, NOPE, "Take safe gold. (Amount in a reason)");
+		GS()->AVH(ClientID, TAB_HOUSE_SAFE_INTERACTIVE, "◍ House safe is: {VAL} Gold", pHouse->GetBank()->Get());
+		GS()->AddVoteItemValue(ClientID, itGold, TAB_HOUSE_SAFE_INTERACTIVE);
+		GS()->AVM(ClientID, "HOUSE_BANK_ADD", 1, TAB_HOUSE_SAFE_INTERACTIVE, "Add gold. (Amount in a reason)");
+		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, TAB_HOUSE_SAFE_INTERACTIVE, "Take gold. (Amount in a reason)");
 		GS()->AV(ClientID, "null");
 
 		GS()->AVH(ClientID, TAB_HOUSE_MANAGING, "▤ Managing your home");
@@ -501,7 +499,7 @@ void CHouseCore::ShowHouseMenu(CPlayer* pPlayer, CHouseData* pHouse)
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE, "Owner House: {STR}", Job()->PlayerName(pHouse->GetAccountID()));
 
 	GS()->AV(ClientID, "null");
-	GS()->ShowVotesItemValueInformation(pPlayer, itGold);
+	GS()->AddVoteItemValue(ClientID, itGold);
 	GS()->AV(ClientID, "null");
 
 	if(pHouse->GetAccountID() <= 0)

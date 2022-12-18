@@ -1754,10 +1754,10 @@ void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 }
 
 // display information by currency
-void CGS::ShowVotesItemValueInformation(CPlayer *pPlayer, ItemIdentifier ItemID)
+void CGS::AddVoteItemValue(int ClientID, ItemIdentifier ItemID, int HideID)
 {
-	const int ClientID = pPlayer->GetCID();
-	AVM(ClientID, "null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GetItemInfo(ItemID)->GetName());
+	if(CPlayer* pPlayer = GetPlayer(ClientID); pPlayer)
+		AVM(ClientID, "null", NOPE, HideID, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GetItemInfo(ItemID)->GetName());
 }
 
 // vote parsing of all functions of action methods

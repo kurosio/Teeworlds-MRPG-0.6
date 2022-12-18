@@ -127,7 +127,7 @@ void CAetherCore::ShowTeleportList(CCharacter* pChar) const
 {
 	CPlayer* pPlayer = pChar->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
-	GS()->ShowVotesItemValueInformation(pPlayer);
+	GS()->AddVoteItemValue(ClientID);
 	GS()->AV(ClientID, "null");
 
 	GS()->AVH(ClientID, TAB_AETHER, "Available aethers");

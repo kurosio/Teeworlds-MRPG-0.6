@@ -284,7 +284,7 @@ void CAuctionCore::ShowAuction(CPlayer* pPlayer)
 	GS()->AVH(ClientID, TAB_INFO_AUCTION, "Auction Information");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_AUCTION, "To create a slot, see inventory item interact.");
 	GS()->AV(ClientID, "null");
-	GS()->ShowVotesItemValueInformation(pPlayer);
+	GS()->AddVoteItemValue(ClientID);
 	GS()->AV(ClientID, "null");
 
 	bool FoundItems = false;

@@ -58,7 +58,7 @@ bool CSkillsCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceM
 			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "Here you can learn passive and active skills");
 			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "You can bind active skill any button using the console");
 			GS()->AV(ClientID, "null");
-			GS()->ShowVotesItemValueInformation(pPlayer, itSkillPoint);
+			GS()->AddVoteItemValue(ClientID, itSkillPoint);
 			GS()->AV(ClientID, "null");
 
 			ShowMailSkillList(pPlayer, SKILL_TYPE_TANK);

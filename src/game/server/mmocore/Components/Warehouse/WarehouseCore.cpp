@@ -139,7 +139,7 @@ void CWarehouseCore::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWare
 
 	// show currency
 	GS()->AV(ClientID, "null");
-	GS()->ShowVotesItemValueInformation(pPlayer, pWarehouse->GetCurrency()->GetID());
+	GS()->AddVoteItemValue(ClientID, pWarehouse->GetCurrency()->GetID());
 	GS()->AV(ClientID, "null");
 
 	// show trade list
