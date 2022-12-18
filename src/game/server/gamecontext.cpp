@@ -1378,11 +1378,14 @@ void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)
     int Counter = 0;
     for (int i = 0; i < MAX_PLAYERS; ++i) 
 	{
+		// check client in-game
 		if(pServer->ClientIngame(i))
 		{
+			// check afk state
 			pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(i));
 			if(CPlayer* pPlayer = pSelf->GetPlayer(i); pPlayer && pPlayer->IsAfk())
 			{
+				// write information about afk
 				str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time=%ds", i, pServer->ClientName(i), pPlayer->GetAfkTime());
 				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
 				Counter++;
@@ -1390,6 +1393,7 @@ void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 		}
     }
 
+	// total afk players
     str_format(aBuf, sizeof(aBuf), "%d afk players in total", Counter);
     pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
 }
@@ -1399,12 +1403,15 @@ void CGS::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 
+	// check client in-game
 	int ClientID = pResult->GetInteger(0);
 	if(pServer->ClientIngame(ClientID))
 	{
+		// check afk state
 		pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 		if(CPlayer* pPlayer = pSelf->GetPlayer(ClientID); pPlayer && pPlayer->IsAfk())
 		{
+			// write information about afk
 			char aBuf[1024];
 			str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time=%ds", ClientID, pServer->ClientName(ClientID), pPlayer->GetAfkTime());
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
@@ -1412,53 +1419,63 @@ void CGS::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
 		}
 	}
 
+	// if not found information about afk
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "No such player or he's not afk");
 }
 
 void CGS::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 {
+	const int ClientID = pResult->GetInteger(0);
 	IServer* pServer = (IServer*)pUserData;
-    CGS* pSelf = (CGS*)pServer->GameServerPlayer(pResult->GetInteger(0));
+    CGS* pSelf = (CGS*)pServer->GameServerPlayer(ClientID);
 
-    CPlayer* pPlayer = pSelf->GetPlayer(pResult->GetInteger(0), true);
+	// check valid timeperiod
+	TimePeriodData time(pResult->GetString(1));
+	if(time.isZero())
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Time bad formatted or equals zero!");
+		return;
+	}
 
-    TimePeriodData time(pResult->GetString(1));
-    if(time.isZero())
-    {
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Time bad formatted or equals zero!");
-        return;
-    }
+	// check player
+    CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
+	if(!pPlayer)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Player not found or isn't logged in");
+		return;
+	}
 
-    if(pPlayer)
-        pSelf->Mmo()->Account()->BanAccount(pPlayer, time, pResult->GetString(2));
-    else
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Player not found or isn't logged in");
+	// ban account
+	pSelf->Mmo()->Account()->BanAccount(pPlayer, time, pResult->GetString(2));
 }
 
-void CGS::ConUnBanAcc(IConsole::IResult *pResult, void *pUserData) {
+void CGS::ConUnBanAcc(IConsole::IResult *pResult, void *pUserData)
+{
     IServer* pServer = (IServer*)pUserData;
     CGS* pSelf = (CGS*)pServer->GameServer();
 
+	// unban account by banid
     pSelf->Mmo()->Account()->UnBanAccount(pResult->GetInteger(0));
 }
 
 void CGS::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 {
 	IServer* pServer = (IServer*)pUserData;
-    CGS* pSelf = (CGS*)pServer->GameServer();
-    char aBuf[1024];
-    int counter=0;
-    for (const auto &item: pSelf->Mmo()->Account()->BansAccount()) {
-        counter++;
-        str_format(aBuf, sizeof(aBuf), "ban_id=%d name='%s' ban_until='%s' reason='%s'", item.id,
-                   item.nickname.c_str(),
-                   item.until.c_str(),
-                   item.reason.c_str());
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
-    }
-    str_format(aBuf, sizeof(aBuf), "%d bans in total", counter);
-    pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
+    CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 
+    char aBuf[1024];
+    int Counter = 0;
+    for (const auto &p: pSelf->Mmo()->Account()->BansAccount()) 
+	{
+		// write information about afk
+        str_format(aBuf, sizeof(aBuf), "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
+		Counter++;
+	}
+
+	// total bans
+    str_format(aBuf, sizeof(aBuf), "%d bans in total", Counter);
+    pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
 }
 
 void CGS::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
