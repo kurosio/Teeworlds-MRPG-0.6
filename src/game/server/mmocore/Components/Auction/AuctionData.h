@@ -20,6 +20,8 @@ public:
 	CItem* GetItem() { return &m_Item; }
 	const CItem* GetItem() const { return &m_Item; }
 	int GetPrice() const { return m_Price; }
+
+	int GetTaxPrice() const;
 };
 
 #endif

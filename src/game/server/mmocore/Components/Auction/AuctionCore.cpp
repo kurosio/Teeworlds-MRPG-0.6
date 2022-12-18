@@ -71,8 +71,7 @@ bool CAuctionCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_AUCTION_BIND, "The reason for write the number for each row");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Item x{VAL} Minimal Price: {VAL}gold", SlotValue, MinimalPrice);
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Auction Slot Price: {VAL}gold", g_Config.m_SvAuctionPriceSlot);
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "Tax for creating a slot: {VAL}gold", pAuctionData->GetTaxPrice());
 		if(SlotEnchant > 0)
 		{
 			GS()->AVM(ClientID, "null", NOPE, NOPE, "Warning selling enchanted: +{INT}", SlotEnchant);
@@ -168,32 +167,24 @@ void CAuctionCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionDat
 	const int ClientID = pPlayer->GetCID();
 
 	// check the number of slots whether everything is occupied or not
-	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID > '0' LIMIT %d", g_Config.m_SvMaxMasiveAuctionSlots);
-	if((int)pResCheck->rowsCount() >= g_Config.m_SvMaxMasiveAuctionSlots)
+	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID > '0' LIMIT %d", g_Config.m_SvMaxAuctionSlots);
+	if((int)pResCheck->rowsCount() >= g_Config.m_SvMaxAuctionSlots)
 	{
 		GS()->Chat(ClientID, "Auction has run out of slots, wait for the release of slots!");
 		return;
 	}
 
 	// check your slots
-	ResultPtr pResCheck2 = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, g_Config.m_SvMaxAuctionSlots);
+	ResultPtr pResCheck2 = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_UserID, g_Config.m_SvMaxAuctionPlayerSlots);
 	const int ValueSlot = (int)pResCheck2->rowsCount();
-	if(ValueSlot >= g_Config.m_SvMaxAuctionSlots)
+	if(ValueSlot >= g_Config.m_SvMaxAuctionPlayerSlots)
 	{
 		GS()->Chat(ClientID, "You use all open the slots in your auction!");
 		return;
 	}
 
-	// we check if the item is in the auction
-	ResultPtr pResCheck3 = Database->Execute<DB::SELECT>("ID", TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", pAuctionData->GetItem()->GetID(), pPlayer->Acc().m_UserID);
-	if(pResCheck3->next())
-	{
-		GS()->Chat(ClientID, "Your same item found in the database, need reopen the slot!");
-		return;
-	}
-
-	// if the money for the slot auction is withdrawn
-	if(!pPlayer->SpendCurrency(g_Config.m_SvAuctionPriceSlot))
+	// take a tax from the player for the slot
+	if(!pPlayer->SpendCurrency(pAuctionData->GetTaxPrice()))
 		return;
 
 	// pick up the item and add a slot
@@ -204,30 +195,9 @@ void CAuctionCore::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionDat
 		Database->Execute<DB::INSERT>(TW_AUCTION_TABLE, "(ItemID, Price, ItemValue, UserID, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
 			pAuctionItem->GetID(), pAuctionData->GetPrice(), pAuctionItem->GetValue(), pPlayer->Acc().m_UserID, pAuctionItem->GetEnchant());
 
-		const int AvailableSlot = (g_Config.m_SvMaxAuctionSlots - ValueSlot) - 1;
+		const int AvailableSlot = (g_Config.m_SvMaxAuctionPlayerSlots - ValueSlot) - 1;
 		GS()->Chat(-1, "{STR} created a slot [{STR}x{VAL}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pAuctionItem->GetValue());
 		GS()->Chat(ClientID, "Still available {INT} slots!", AvailableSlot);
-	}
-}
-
-void CAuctionCore::CheckAuctionTime() const
-{
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 AND DATE_SUB(NOW(),INTERVAL %d MINUTE) > ValidUntil", g_Config.m_SvTimeAuctionSlot);
-	int ReleaseSlots = (int)pRes->rowsCount();
-	while(pRes->next())
-	{
-		const int ID = pRes->getInt("ID");
-		const ItemIdentifier ItemID = pRes->getInt("ItemID");
-		const int Value = pRes->getInt("ItemValue");
-		const int Enchant = pRes->getInt("Enchant");
-		const int UserID = pRes->getInt("UserID");
-		GS()->SendInbox("Auctionist", UserID, "Auction expired", "Your slot has expired", ItemID, Value, Enchant);
-		Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ID = '%d'", ID);
-	}
-
-	if(ReleaseSlots)
-	{
-		GS()->Chat(-1, "Auction {INT} slots has been released!", ReleaseSlots);
 	}
 }
 

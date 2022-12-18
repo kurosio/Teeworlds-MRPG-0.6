@@ -110,11 +110,9 @@ MACRO_CONFIG_INT(SvPriceTeleport, sv_price_teleport, 12, 0, 10000, CFGFLAG_SERVE
 MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERVER, "Door radius hit.")
 
 // auction
-MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_amax_slots, 5, 1, 1000, CFGFLAG_SERVER, "Max autction slots")
-MACRO_CONFIG_INT(SvAuctionPriceSlot, sv_apriceslot, 40, 0, 100000, CFGFLAG_SERVER, "Price for added new slot auction")
-MACRO_CONFIG_INT(SvTimeAuctionSlot, sv_atimeslot, 1440, 5, 100000, CFGFLAG_SERVER, "Time in minutes for auction end slot")
-MACRO_CONFIG_INT(SvMaxMasiveAuctionSlots, sv_amax_masslot, 50, 10, 300, CFGFLAG_SERVER, "Max massive auction slots")
-MACRO_CONFIG_INT(SvTimeCheckAuction, sv_achecktime, 30, 1, 300, CFGFLAG_SERVER, "Minutes auction checks")
+MACRO_CONFIG_INT(SvMaxAuctionPlayerSlots, sv_max_auction_player_slots, 10, 1, 1000, CFGFLAG_SERVER, "Max player auction slots")
+MACRO_CONFIG_INT(SvAuctionSlotTaxPrice, sv_auction_slot_tax_price, 10, 0, 100, CFGFLAG_SERVER, "Price tax for added new slot auction in percent")
+MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_auction_max_slots, 50, 10, 300, CFGFLAG_SERVER, "Max massive auction slots")
 
 // member group
 MACRO_CONFIG_INT(SvPriceUpgradeGuildSlot, sv_price_member_slot, 4100, 100, 9000000, CFGFLAG_SERVER, "Price for upgrade member slots")
