@@ -57,7 +57,6 @@ protected:
 	bool m_Afk;
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
-	int m_TicksAfk;
 	CNetObj_PlayerInput* m_pLastInput;
 	std::function<void()> m_PostVotes;
 
