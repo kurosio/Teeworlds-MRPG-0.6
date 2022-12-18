@@ -92,14 +92,14 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 
 		GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR} Door [{STR}]", ID, pHouse->GetClassName(), StateDoor ? "Closed" : "Opened");
 		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/doorhouse - interactive with door.");
-		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "- - - - - - - - - -");
-		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "Notes: Minimal operation house balance 100gold");
-		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "In your safe is: {VAL}gold", pHouse->GetBank()->Get());
+		GS()->AV(ClientID, "null");
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "Notes: Minimal operation house balance 100gold");
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "In your house safe is: {VAL}gold", pHouse->GetBank()->Get());
 		GS()->AV(ClientID, "null");
 
 		GS()->AVL(ClientID, "null", "◍  Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
-		GS()->AVM(ClientID, "HOUSE_BANK_ADD", 1, NOPE, "Add to the safe gold. (Amount in a reason)");
-		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, NOPE, "Take the safe gold. (Amount in a reason)");
+		GS()->AVM(ClientID, "HOUSE_BANK_ADD", 1, NOPE, "Add to safe gold. (Amount in a reason)");
+		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, NOPE, "Take safe gold. (Amount in a reason)");
 		GS()->AV(ClientID, "null");
 
 		GS()->AVH(ClientID, TAB_HOUSE_MANAGING, "▤ Managing your home");
@@ -185,11 +185,11 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 
 		// show active access players to house
 		CHouseDoorData* pHouseDoor = pHouse->GetDoor();
-		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You can add {INT} player's to the list.", pHouseDoor->GetAvailableAccessSlots());
-		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You and your eidolon have full access to door");
+		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You can add {INT} player's.", pHouseDoor->GetAvailableAccessSlots());
+		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You and your eidolon have full access");
 		for(auto& p : pHouseDoor->GetAccesses())
 		{
-			GS()->AVM(ClientID, "HOUSE_INVITED_LIST_REMOVE", p, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "Take access to door from {STR}", GS()->Mmo()->PlayerName(p));
+			GS()->AVM(ClientID, "HOUSE_INVITED_LIST_REMOVE", p, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "Remove access from {STR}", GS()->Mmo()->PlayerName(p));
 		}
 
 		// field to find player for append
@@ -200,7 +200,7 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 		GS()->AV(ClientID, "null");
 
 		// search result
-		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Search Result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Search result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
 		if(pPlayer->GetTempData().m_aPlayerSearchBuf[0] != '\0')
 		{
 			bool Found = false;
