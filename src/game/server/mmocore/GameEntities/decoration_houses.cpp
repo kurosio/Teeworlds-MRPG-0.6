@@ -30,9 +30,9 @@ int CDecorationHouses::SwitchToObject(bool Data) const
 {
 	switch (m_ItemID)
 	{
-	case itDecoHealth: return (Data ? -1 : (int)POWERUP_HEALTH);
+	case itDecoHeart: return (Data ? -1 : (int)POWERUP_HEALTH);
 	case itDecoArmor: return (Data ? -1 : (int)POWERUP_ARMOR);
-	case itEliteDecoHealth: return (Data ? (int)WEAPON_SHOTGUN : (int)POWERUP_HEALTH);
+	case itEliteDecoHeart: return (Data ? (int)WEAPON_SHOTGUN : (int)POWERUP_HEALTH);
 	case itEliteDecoNinja: return (Data ? -1 : (int)POWERUP_NINJA);
 	default: break;
 	}
