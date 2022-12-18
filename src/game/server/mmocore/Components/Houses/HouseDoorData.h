@@ -19,7 +19,7 @@ public:
 
 	const vec2& GetPos() const { return m_Pos; }
 	bool GetState() const { return m_pDoor; }
-	std::vector<int>& GetAccessVector() { return m_AccessUserIDs; }
+	std::vector<int>& GetAccesses() { return m_AccessUserIDs; }
 
 	void AddAccess(int UserID);
 	void RemoveAccess(int UserID);

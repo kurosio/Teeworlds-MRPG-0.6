@@ -149,7 +149,7 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 		CHouseDoorData* pHouseDoor = pHouse->GetDoor();
 		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You can add {INT} player's to the list.", pHouseDoor->GetAvailableAccessSlots());
 		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You and your eidolon have full access to door");
-		for(auto& p : pHouseDoor->GetAccessVector())
+		for(auto& p : pHouseDoor->GetAccesses())
 		{
 			GS()->AVM(ClientID, "HOUSE_INVITED_LIST_REMOVE", p, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "Take access to door from {STR}", GS()->Mmo()->PlayerName(p));
 		}
