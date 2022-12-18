@@ -110,7 +110,7 @@ MACRO_CONFIG_INT(SvPriceTeleport, sv_price_teleport, 12, 0, 10000, CFGFLAG_SERVE
 MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERVER, "Door radius hit.")
 
 // auction
-MACRO_CONFIG_INT(SvMaxAuctionPlayerSlots, sv_max_auction_player_slots, 10, 1, 1000, CFGFLAG_SERVER, "Max player auction slots")
+MACRO_CONFIG_INT(SvMaxAuctionPlayerSlots, sv_max_auction_player_slots, 5, 1, 1000, CFGFLAG_SERVER, "Max player auction slots")
 MACRO_CONFIG_INT(SvAuctionSlotTaxPrice, sv_auction_slot_tax_price, 10, 0, 100, CFGFLAG_SERVER, "Price tax for added new slot auction in percent")
 MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_auction_max_slots, 50, 10, 300, CFGFLAG_SERVER, "Max massive auction slots")
 
