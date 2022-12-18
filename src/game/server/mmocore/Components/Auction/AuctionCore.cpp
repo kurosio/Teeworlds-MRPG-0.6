@@ -11,11 +11,6 @@ constexpr auto TW_AUCTION_TABLE = "tw_auction_items";
 
 void CAuctionCore::OnTick()
 {
-	//if(GS()->GetWorldID() == MAIN_WORLD_ID) TODO: fix and rebuild me
-	//{
-	//	if(Server()->Tick() % (1 * Server()->TickSpeed() * (g_Config.m_SvTimeCheckAuction * 60)) == 0)
-	//		CheckAuctionTime();
-	//}
 }
 
 bool CAuctionCore::OnHandleTile(CCharacter* pChr, int IndexCollision)
@@ -64,7 +59,6 @@ bool CAuctionCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replace
 		CItem* pAuctionItem = pAuctionData->GetItem();
 
 		const int SlotValue = pAuctionItem->GetValue();
-		const int MinimalPrice = SlotValue * pAuctionItem->Info()->GetInitialPrice();
 		const int SlotEnchant = pAuctionItem->GetEnchant();
 
 		GS()->AVH(ClientID, TAB_INFO_AUCTION_BIND, "Information Auction Slot");
