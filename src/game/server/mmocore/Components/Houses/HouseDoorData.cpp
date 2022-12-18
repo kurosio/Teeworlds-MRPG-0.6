@@ -2,9 +2,23 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "HouseDoorData.h"
 
-#include "game/server/gamecontext.h"
 #include "Entities/HouseDoor.h"
 #include "HouseData.h"
+
+#include <game/server/mmocore/Utils/DBSet.h>
+#include <game/server/gamecontext.h>
+
+CHouseDoorData::CHouseDoorData(CGS* pGS, vec2 Pos, std::string AccessData, CHouseData* pHouse)
+	: m_pGS(pGS), m_Pos(Pos), m_pHouse(pHouse)
+{
+	// init access list
+	DBSet m_Set(AccessData);
+	for(auto& p : m_Set.GetDataItems())
+	{
+		if(int UID = std::atoi(p.c_str()); UID > 0)
+			m_AccessUserIDs.push_back(UID);
+	}
+}
 
 // house door data
 CHouseDoorData::~CHouseDoorData()

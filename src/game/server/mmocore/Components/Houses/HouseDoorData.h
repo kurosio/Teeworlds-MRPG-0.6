@@ -14,25 +14,7 @@ class CHouseDoorData
 	std::vector<int> m_AccessUserIDs{};
 
 public:
-	CHouseDoorData(class CGS* pGS, vec2 Pos, std::string AccessData, class CHouseData* pHouse) : m_pGS(pGS), m_Pos(Pos), m_pHouse(pHouse)
-	{
-		// init access list
-		if(!AccessData.empty())
-		{
-			size_t start;
-			size_t end = 0;
-			const std::string delim = ",";
-
-			while((start = AccessData.find_first_not_of(delim, end)) != std::string::npos)
-			{
-				end = AccessData.find(delim, start);
-
-				int UserID;
-				if(sscanf(AccessData.substr(start, end - start).c_str(), "%d", &UserID) == 1)
-					m_AccessUserIDs.push_back(UserID);
-			}
-		}
-	}
+	CHouseDoorData(class CGS* pGS, vec2 Pos, std::string AccessData, class CHouseData* pHouse);
 	~CHouseDoorData();
 
 	const vec2& GetPos() const { return m_Pos; }
