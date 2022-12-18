@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Дек 18 2022 г., 14:37
+-- Время создания: Дек 18 2022 г., 19:05
 -- Версия сервера: 10.4.24-MariaDB
 -- Версия PHP: 8.1.5
 
@@ -193,7 +193,7 @@ CREATE TABLE `tw_accounts` (
 
 INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `RegisterDate`, `LoginDate`, `RegisteredIP`, `LoginIP`, `Language`) VALUES
 (1, 'kuro', 'f4e129eafad40d03dc551fa09beb2e2a8881cabebfff2eae00b786d77be2c85c', 'mUKXMbg9co4eXRRjXdjd5B6U', '2022-11-05 10:19:27', '2022-11-05 17:35:33', '192.168.0.13', '192.168.0.13', 'ru'),
-(2, 'kuro', '4ecd52e2b1e130dc995ec9612bc747a1bed5ef238b28124d12d39a874cef73fd', 'Zn6HtbXfV7eXteU2ZGm9m6Aa', '2022-11-05 11:46:29', '2022-12-18 19:56:41', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
+(2, 'kuro', '4ecd52e2b1e130dc995ec9612bc747a1bed5ef238b28124d12d39a874cef73fd', 'Zn6HtbXfV7eXteU2ZGm9m6Aa', '2022-11-05 11:46:29', '2022-12-19 01:02:36', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (3, 'kuro', 'ba2efbefc57ba80d2521b9bba5d9dac74c7a704d816794d6620183e0f6236147', 'NG6HFWSEoeq47KhCpgHMCZ2E', '2022-11-05 12:37:39', '2022-11-05 19:40:40', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (4, 'kuro', '31868d16ddc7f823c41a23eb120e770e97bc01c194d70902391209b6537977b2', 'KF4aNjL4ZGZkDeMHNm2KF76o', '2022-11-05 16:59:34', '2022-11-18 22:27:28', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (5, 'kuro', '53223e0fce3f089c1efbd7736723893c23cd5e5ff8d78893b5ea60020680465e', '8XaHg5NgNdoBTTKmgTVf2WZU', '2022-11-05 17:00:31', '2022-11-06 00:00:32', '192.168.0.13', '192.168.0.13', 'en'),
@@ -345,6 +345,13 @@ CREATE TABLE `tw_accounts_bans` (
   `BannedUntil` timestamp NOT NULL DEFAULT current_timestamp(),
   `Reason` varchar(512) CHARACTER SET utf8 NOT NULL DEFAULT 'No Reason Given'
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Дамп данных таблицы `tw_accounts_bans`
+--
+
+INSERT INTO `tw_accounts_bans` (`Id`, `AccountId`, `BannedSince`, `BannedUntil`, `Reason`) VALUES
+(1, 2, '2022-12-18 18:03:10', '2022-12-18 18:03:32', 'suka');
 
 -- --------------------------------------------------------
 
@@ -2877,6 +2884,12 @@ ALTER TABLE `tw_accounts`
 --
 ALTER TABLE `tw_accounts_aethers`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
+
+--
+-- AUTO_INCREMENT для таблицы `tw_accounts_bans`
+--
+ALTER TABLE `tw_accounts_bans`
+  MODIFY `Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_data`
