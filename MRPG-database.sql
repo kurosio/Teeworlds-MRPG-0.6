@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Дек 15 2022 г., 18:08
+-- Время создания: Дек 18 2022 г., 14:37
 -- Версия сервера: 10.4.24-MariaDB
 -- Версия PHP: 8.1.5
 
@@ -193,7 +193,7 @@ CREATE TABLE `tw_accounts` (
 
 INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `RegisterDate`, `LoginDate`, `RegisteredIP`, `LoginIP`, `Language`) VALUES
 (1, 'kuro', 'f4e129eafad40d03dc551fa09beb2e2a8881cabebfff2eae00b786d77be2c85c', 'mUKXMbg9co4eXRRjXdjd5B6U', '2022-11-05 10:19:27', '2022-11-05 17:35:33', '192.168.0.13', '192.168.0.13', 'ru'),
-(2, 'kuro', '4ecd52e2b1e130dc995ec9612bc747a1bed5ef238b28124d12d39a874cef73fd', 'Zn6HtbXfV7eXteU2ZGm9m6Aa', '2022-11-05 11:46:29', '2022-12-15 23:15:57', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
+(2, 'kuro', '4ecd52e2b1e130dc995ec9612bc747a1bed5ef238b28124d12d39a874cef73fd', 'Zn6HtbXfV7eXteU2ZGm9m6Aa', '2022-11-05 11:46:29', '2022-12-18 19:56:41', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (3, 'kuro', 'ba2efbefc57ba80d2521b9bba5d9dac74c7a704d816794d6620183e0f6236147', 'NG6HFWSEoeq47KhCpgHMCZ2E', '2022-11-05 12:37:39', '2022-11-05 19:40:40', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (4, 'kuro', '31868d16ddc7f823c41a23eb120e770e97bc01c194d70902391209b6537977b2', 'KF4aNjL4ZGZkDeMHNm2KF76o', '2022-11-05 16:59:34', '2022-11-18 22:27:28', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (5, 'kuro', '53223e0fce3f089c1efbd7736723893c23cd5e5ff8d78893b5ea60020680465e', '8XaHg5NgNdoBTTKmgTVf2WZU', '2022-11-05 17:00:31', '2022-11-06 00:00:32', '192.168.0.13', '192.168.0.13', 'en'),
@@ -224,7 +224,7 @@ INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `Regist
 (30, 'kuro', '9fb8dc32ef6739c1d0becc94225af1c6dcbe4b749f97c0aad3519691d9161a70', 'E2WTgBcSkh2a5TaHtXkKVGYd', '2022-11-18 12:10:52', '2022-11-18 19:10:53', '192.168.0.13', '192.168.0.13', 'en'),
 (31, 'kuro', '2a03b6f6806091fa7be9df3d691c669cf97e3e2a0121ce8b51309fb63ab918c4', 'f3LFFfZYDT3j7MgmbkAFBCMT', '2022-11-18 12:12:05', '2022-11-18 20:15:38', '192.168.0.13', '192.168.0.13', 'en'),
 (32, 'kuro', '04368fbdd888b9d9f632c8ed11a2f26444d48c87536f9d018b3b1b303009741e', 'oqMjV3Beo6MDPX2P5EnGaUVT', '2022-11-18 18:12:19', '2022-11-19 01:15:19', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
-(33, 'kuro', 'eaf6e0d7ccce22f3bc91e0398a6de86d53220974526baccd93383d2dec9b1a04', 'WCqTL7c5kceZqFDqe3ZR6gXc', '2022-11-20 06:25:28', '2022-12-15 22:28:50', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
+(33, 'kuro', 'eaf6e0d7ccce22f3bc91e0398a6de86d53220974526baccd93383d2dec9b1a04', 'WCqTL7c5kceZqFDqe3ZR6gXc', '2022-11-20 06:25:28', '2022-12-18 05:09:19', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (34, 'kuro', 'a6c980adf07665a831f55cc407edad15bf4ad763e1fccee262a8c4fd7506fc41', 'qYAGXPXPeKfDPaAkcSmR8ThN', '2022-11-20 08:42:21', '2022-11-20 16:20:41', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (35, 'kuro', '90840ccccd60c06893745d8173933117dfc3e7e608308e3f6c7a815dd81d4553', 'kfRCnS7p6pG4aeDmNjB8jBUN', '2022-11-21 11:58:21', '2022-11-21 19:10:18', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
 (36, 'kuro', '32b74aeef0d7590be8670f2ecd8d968f1d37ebedcb7ca08bad8ca9d39c7e282e', 'KHS3LpDjD9PKpRWNY84Wn4C3', '2022-11-23 15:34:03', '2022-11-23 22:42:20', '192.168.0.13', '????????????????????????????????????????????????????????????????', 'en'),
@@ -236,7 +236,8 @@ INSERT INTO `tw_accounts` (`ID`, `Username`, `Password`, `PasswordSalt`, `Regist
 (42, 'kuro', '54deccc823b80a1c3f67a74284d94877c89af0f162b650034409b0eb720488b9', 'Na35SW3bdmBBLbCmaoVaZKT8', '2022-11-30 17:57:38', '2022-12-01 01:13:47', '192.168.0.10', '????????????????????????????????????????????????????????????????', 'en'),
 (43, 'kuro', '872b70a3ab83b2e17f9fc4e3279c31fa39a1ba6d114196bbbcd42ad6b4634e19', 'o6CEUfe2W5SkT8eWa5YCHYkq', '2022-12-01 13:49:36', '2022-12-01 23:44:22', '192.168.0.10', '????????????????????????????????????????????????????????????????', 'en'),
 (44, 'kuro', '97c8700a488d4c714f6ca217632f2a6e93f796e9978cf1ea808246cc45d13961', 'ZH7WPbkFGhoKfmSbSngSnLC9', '2022-12-14 16:32:10', '2022-12-14 23:59:12', '192.168.0.12', '192.168.0.12', 'en'),
-(45, 'kuro', '28ca876a62e9c64461f04a95e18e162d2c4866ce410a593fa32c8b12269fd312', 'j3GtadFqVWBjHcmGAABVfcHM', '2022-12-14 17:12:59', '2022-12-15 00:13:01', '192.168.0.12', '192.168.0.12', 'en');
+(45, 'kuro', '28ca876a62e9c64461f04a95e18e162d2c4866ce410a593fa32c8b12269fd312', 'j3GtadFqVWBjHcmGAABVfcHM', '2022-12-14 17:12:59', '2022-12-15 00:13:01', '192.168.0.12', '192.168.0.12', 'en'),
+(46, 'kuro', '6381aa303ae0f288b28589b1e1eec1d11ae7a3cd62deb9c21795b90b14aea431', 'P3d35RY8Z8KEh3LRjj7ESHfH', '2022-12-16 16:00:11', '2022-12-17 01:40:25', '192.168.0.14', '????????????????????????????????????????????????????????????????', 'en');
 
 -- --------------------------------------------------------
 
@@ -325,7 +326,11 @@ INSERT INTO `tw_accounts_aethers` (`ID`, `UserID`, `AetherID`) VALUES
 (68, 38, 1),
 (69, 33, 4),
 (70, 2, 7),
-(71, 2, 8);
+(71, 2, 8),
+(72, 46, 2),
+(73, 46, 3),
+(74, 46, 1),
+(75, 46, 5);
 
 -- --------------------------------------------------------
 
@@ -381,7 +386,7 @@ CREATE TABLE `tw_accounts_data` (
 
 INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `Exp`, `GuildID`, `GuildDeposit`, `GuildRank`, `Upgrade`, `SpreadShotgun`, `SpreadGrenade`, `SpreadRifle`, `AttackSPD`, `CritDMG`, `Crit`, `HP`, `Tenacity`, `Lucky`, `MP`, `Vampirism`, `AmmoRegen`, `Ammo`, `Efficiency`, `Extraction`) VALUES
 (1, '#tildg66', 'null', NULL, 6, 546, NULL, 0, NULL, 50, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(2, 'Kurosio', 'null', 7, 16, 2429, 2, 0, NULL, 111, 3, 1, 1, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(2, 'Kurosio', 'null', 5, 16, 2584, 2, 0, NULL, 111, 3, 1, 1, 0, 30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (3, '533', 'null', 1, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (4, '5333', 'null', 1, 14, 2010, NULL, 0, NULL, 120, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (5, '53334', 'null', NULL, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -412,7 +417,7 @@ INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `
 (30, 'Alkocsapskooo2', 'null', 0, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (31, 'Alkocsapskooo21', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (32, 'OreoChocolate', 'null', 1, 2, 7, NULL, 0, NULL, 10, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(33, 'Kurosio69', 'null', 2, 9, 66, 1, 111110, 1, 8, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(33, 'Kurosio69', 'null', 1, 9, 301, 1, 111110, 1, 8, 6, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (34, '224', 'null', 2, 3, 131, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0),
 (35, 'Potatelike', 'null', 2, 3, 85, NULL, 0, NULL, 20, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (36, 'Kurosio1', 'null', 1, 3, 14, NULL, 0, NULL, 20, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
@@ -424,7 +429,8 @@ INSERT INTO `tw_accounts_data` (`ID`, `Nick`, `DiscordID`, `WorldID`, `Level`, `
 (42, '5Kurosio69', 'null', 2, 4, 88, NULL, 0, NULL, 3, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (43, 'Kurosio6913', 'null', 2, 5, 8, NULL, 0, NULL, 4, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
 (44, 'Kurosioxx', 'null', 0, 1, 0, NULL, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-(45, 'Kurosioss', 'null', 0, 1, 0, 2, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+(45, 'Kurosioss', 'null', 0, 1, 0, 2, 0, NULL, 0, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+(46, 'Kurosio697', 'null', 3, 6, 2, NULL, 0, NULL, 5, 3, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -486,7 +492,8 @@ INSERT INTO `tw_accounts_farming` (`UserID`, `Level`, `Exp`, `Upgrade`) VALUES
 (42, 1, 0, 0),
 (43, 1, 0, 0),
 (44, 1, 0, 0),
-(45, 1, 0, 0);
+(45, 1, 0, 0),
+(46, 1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -527,7 +534,7 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (21, 22, 2, 1, 0, 100, 2),
 (22, 25, 1, 0, 0, 100, 2),
 (23, 34, 101, 1, 0, 100, 2),
-(24, 1, 7785, 0, 0, 100, 2),
+(24, 1, 65436, 0, 0, 100, 2),
 (26, 2, 1, 1, 0, 100, 3),
 (27, 22, 1, 1, 0, 100, 3),
 (28, 25, 1, 0, 0, 100, 3),
@@ -605,15 +612,14 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (104, 25, 1, 0, 0, 100, 17),
 (105, 34, 1, 1, 0, 100, 17),
 (107, 38, 1, 1, 0, 100, 4),
-(109, 38, 1, 1, 2, 100, 2),
-(110, 32, 66, 0, 0, 100, 2),
+(110, 32, 65, 0, 0, 100, 2),
 (111, 9, 33, 0, 0, 100, 2),
 (113, 33, 27, 0, 0, 100, 2),
-(114, 31, 100, 0, 0, 100, 2),
-(115, 26, 1, 1, 0, 100, 2),
+(114, 31, 85, 0, 0, 100, 2),
+(115, 26, 1, 1, 0, 99, 2),
 (122, 46, 5, 0, 0, 100, 2),
 (124, 5, 1, 1, 1, 100, 2),
-(125, 40, 37, 0, 0, 100, 2),
+(125, 40, 12, 0, 0, 100, 2),
 (128, 54, 10, 0, 0, 100, 2),
 (129, 52, 44, 0, 0, 100, 2),
 (131, 53, 2, 0, 0, 100, 2),
@@ -744,7 +750,6 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (286, 65, 1, 1, 9, 100, 2),
 (287, 66, 1, 1, 0, 100, 33),
 (288, 66, 1, 1, 9, 100, 2),
-(289, 65, 1, 1, 0, 100, 33),
 (292, 2, 1, 1, 0, 100, 35),
 (293, 22, 1, 1, 0, 100, 35),
 (294, 25, 1, 0, 0, 100, 35),
@@ -752,22 +757,20 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (296, 1, 161, 0, 0, 100, 35),
 (299, 38, 1, 1, 0, 100, 35),
 (300, 67, 41, 0, 0, 100, 2),
-(302, 1, 1112282374, 0, 0, 100, 33),
-(305, 38, 1, 1, 0, 100, 33),
+(302, 1, 1112283269, 0, 0, 100, 33),
 (306, 2, 1, 1, 0, 100, 36),
 (307, 22, 1, 1, 0, 100, 36),
 (308, 25, 1, 0, 0, 100, 36),
 (309, 34, 1, 1, 0, 100, 36),
 (310, 1, 95, 0, 0, 100, 36),
 (313, 38, 1, 1, 0, 100, 36),
-(314, 40, 73, 0, 0, 100, 33),
-(315, 9, 99742, 0, 0, 100, 33),
+(314, 40, 81, 0, 0, 100, 33),
+(315, 9, 99746, 0, 0, 100, 33),
 (316, 44, 11, 0, 0, 100, 33),
 (317, 56, 2, 0, 0, 100, 33),
 (318, 52, 1, 0, 0, 100, 33),
 (319, 54, 1, 0, 0, 100, 33),
 (320, 57, 1, 1, 2, 100, 33),
-(321, 32, 208, 0, 0, 100, 33),
 (322, 68, 13, 0, 0, 100, 2),
 (323, 69, 1, 0, 5, 100, 2),
 (325, 71, 41, 0, 0, 100, 2),
@@ -852,17 +855,14 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (430, 6, 1, 1, 0, 100, 33),
 (431, 4, 1, 1, 0, 100, 33),
 (432, 3, 1, 1, 0, 100, 33),
-(433, 11, 1, 0, 0, 100, 2),
-(434, 10, 2, 0, 0, 100, 2),
 (437, 7, 25, 0, 0, 100, 33),
-(438, 81, 1, 0, 0, 100, 33),
 (442, 15, 10, 0, 0, 100, 33),
 (443, 14, 10, 0, 0, 100, 33),
 (445, 12, 19, 0, 0, 100, 33),
 (446, 13, 2, 0, 0, 100, 33),
 (447, 11, 1, 0, 0, 100, 33),
 (448, 50, 100, 0, 0, 100, 33),
-(449, 33, 1054, 0, 0, 100, 33),
+(449, 33, 1055, 0, 0, 100, 33),
 (450, 2, 1, 1, 0, 100, 44),
 (451, 22, 1, 1, 0, 100, 44),
 (452, 25, 1, 0, 0, 100, 44),
@@ -878,7 +878,26 @@ INSERT INTO `tw_accounts_items` (`ID`, `ItemID`, `Value`, `Settings`, `Enchant`,
 (462, 88, 1, 0, 0, 100, 2),
 (463, 80, 1, 0, 1, 100, 33),
 (464, 79, 8, 0, 0, 100, 2),
-(465, 91, 10, 0, 0, 100, 2);
+(465, 91, 10, 0, 0, 100, 2),
+(468, 65, 1, 1, 0, 100, 33),
+(473, 32, 210, 0, 0, 100, 33),
+(474, 81, 1, 0, 0, 100, 33),
+(475, 2, 1, 1, 0, 100, 46),
+(476, 22, 1, 1, 0, 100, 46),
+(477, 25, 1, 0, 0, 100, 46),
+(478, 34, 1, 1, 0, 100, 46),
+(479, 1, 304, 0, 0, 100, 46),
+(523, 40, 7, 0, 0, 100, 46),
+(532, 26, 1, 1, 0, 100, 46),
+(533, 33, 20, 0, 0, 100, 46),
+(535, 46, 1, 0, 0, 100, 46),
+(536, 9, 2, 0, 0, 100, 46),
+(539, 38, 1, 1, 0, 100, 46),
+(542, 38, 1, 1, 2, 100, 33),
+(543, 90, 1, 0, 10, 100, 33),
+(552, 38, 1, 1, 3, 100, 2),
+(553, 10, 2, 0, 0, 100, 2),
+(554, 11, 1, 0, 0, 100, 2);
 
 -- --------------------------------------------------------
 
@@ -967,7 +986,8 @@ INSERT INTO `tw_accounts_mining` (`UserID`, `Level`, `Exp`, `Upgrade`) VALUES
 (42, 1, 0, 0),
 (43, 1, 0, 0),
 (44, 1, 0, 0),
-(45, 1, 0, 0);
+(45, 1, 0, 0),
+(46, 1, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -1173,7 +1193,21 @@ INSERT INTO `tw_accounts_quests` (`ID`, `QuestID`, `UserID`, `Type`) VALUES
 (196, 7, 33, 1),
 (197, 37, 2, 2),
 (198, 38, 2, 2),
-(199, 39, 2, 2);
+(199, 39, 2, 2),
+(200, 1, 46, 2),
+(201, 2, 46, 2),
+(202, 3, 46, 2),
+(203, 4, 46, 2),
+(204, 5, 46, 2),
+(205, 6, 46, 2),
+(206, 7, 46, 2),
+(207, 8, 46, 2),
+(208, 9, 46, 2),
+(209, 10, 46, 2),
+(210, 11, 46, 2),
+(211, 12, 46, 2),
+(212, 13, 46, 2),
+(213, 14, 46, 1);
 
 -- --------------------------------------------------------
 
@@ -1298,6 +1332,15 @@ CREATE TABLE `tw_auction_items` (
   `Enchant` int(11) NOT NULL DEFAULT 0,
   `ValidUntil` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Дамп данных таблицы `tw_auction_items`
+--
+
+INSERT INTO `tw_auction_items` (`ID`, `ItemID`, `ItemValue`, `Price`, `UserID`, `Enchant`, `ValidUntil`) VALUES
+(1, 38, 1, 20, 46, 0, 0),
+(2, 32, 1, 5252, 2, 0, 0),
+(3, 40, 25, 8000, 2, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -1768,7 +1811,7 @@ CREATE TABLE `tw_guilds` (
 --
 
 INSERT INTO `tw_guilds` (`ID`, `Name`, `UserID`, `Level`, `Experience`, `Bank`, `Score`, `AvailableSlots`, `ChairExperience`, `ChairMoney`) VALUES
-(1, 'kuro', 33, 8, 355, 10310, 0, 2, 2, 1),
+(1, 'kuro', 33, 8, 579, 10310, 0, 2, 2, 1),
 (2, 'dkaso', 2, 3, 97, 0, 0, 2, 1, 1);
 
 -- --------------------------------------------------------
@@ -1918,6 +1961,7 @@ CREATE TABLE `tw_houses` (
   `PlantID` int(11) NOT NULL,
   `PlantX` int(11) NOT NULL,
   `PlantY` int(11) NOT NULL,
+  `AccessData` varchar(128) DEFAULT NULL,
   `WorldID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -1925,13 +1969,13 @@ CREATE TABLE `tw_houses` (
 -- Дамп данных таблицы `tw_houses`
 --
 
-INSERT INTO `tw_houses` (`ID`, `UserID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `Class`, `Price`, `HouseBank`, `PlantID`, `PlantX`, `PlantY`, `WorldID`) VALUES
-(1, NULL, 8001, 5297, 8294, 5297, 'Default', 21000, 0, 40, 7499, 5329, 1),
-(2, 33, 8989, 7729, 8704, 7729, 'Default', 21000, 202, 40, 9466, 7761, 1),
-(3, NULL, 2046, 913, 1936, 913, 'Extra', 32000, 0, 40, 2570, 982, 5),
-(4, NULL, 2049, 593, 1936, 593, 'Extra', 32000, 0, 40, 2570, 444, 5),
-(5, NULL, 1211, 913, 1330, 913, 'Extra', 32000, 0, 40, 707, 991, 5),
-(6, NULL, 1222, 593, 1330, 593, 'Extra', 32000, 0, 40, 706, 444, 5);
+INSERT INTO `tw_houses` (`ID`, `UserID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `Class`, `Price`, `HouseBank`, `PlantID`, `PlantX`, `PlantY`, `AccessData`, `WorldID`) VALUES
+(1, NULL, 8001, 5297, 8294, 5297, 'Default', 21000, 0, 40, 7499, 5329, NULL, 1),
+(2, 33, 8989, 7729, 8704, 7729, 'Default', 21000, 202, 40, 9466, 7761, '2', 1),
+(3, 2, 2046, 913, 1936, 913, 'Extra', 32000, 9074, 40, 2570, 982, '', 5),
+(4, NULL, 2049, 593, 1936, 593, 'Extra', 32000, 0, 40, 2570, 444, NULL, 5),
+(5, NULL, 1211, 913, 1330, 913, 'Extra', 32000, 0, 40, 707, 991, NULL, 5),
+(6, NULL, 1222, 593, 1330, 593, 'Extra', 32000, 0, 40, 706, 444, NULL, 5);
 
 -- --------------------------------------------------------
 
@@ -2003,9 +2047,9 @@ INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `D
 (8, 'Ticket guild', 'Command: /gcreate <name>', 4, -1, NULL, 5, 0, NULL, NULL, 0, 0),
 (9, 'Skill Point', 'Skill point', 0, -1, NULL, 5, 0, NULL, NULL, 0, 0),
 (10, 'Decoration Armor', 'Decoration for house!', 7, -1, NULL, 5, 0, NULL, NULL, 0, 0),
-(11, 'Decoration Hearth Elite', 'Decoration for house!', 7, -1, NULL, 5, 0, NULL, NULL, 0, 0),
+(11, 'Decoration Heart Elite', 'Decoration for house!', 7, -1, NULL, 5, 0, NULL, NULL, 0, 0),
 (12, 'Decoration Ninja Elite', 'Decoration for house!', 7, -1, NULL, 5, 0, NULL, NULL, 0, 0),
-(13, 'Decoration Hearth', 'Decoration for house!', 7, -1, NULL, 5, 0, NULL, NULL, 0, 0),
+(13, 'Decoration Heart', 'Decoration for house!', 7, -1, NULL, 5, 0, NULL, NULL, 0, 0),
 (14, 'Potion mana regen', 'Regenerate +5%, 15sec every sec.\n', 8, 9, NULL, 5, 10, NULL, NULL, 0, 0),
 (15, 'Tiny HP Potion', 'Recovers 7HP per second for 10 seconds.', 8, 9, NULL, 5, 10, NULL, NULL, 0, 0),
 (16, 'Capsule survival experience', 'You got 10-50 experience survival', 1, 10, NULL, 5, 0, NULL, NULL, 0, 0),
@@ -2065,7 +2109,7 @@ INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `D
 (70, 'Cleaned Fruit', 'This fruit gives out a sweet fragrance.', 2, -1, NULL, 5, 2, NULL, NULL, 0, 0),
 (71, 'Hard Fruit', 'The fruit has just been picked from a tree and is caked in mud.', 2, 12, NULL, 5, 2, NULL, NULL, 0, 0),
 (72, 'Insect Fluid', 'It\'s extremely sticky and has a slightly sour taste.', 2, -1, NULL, 5, 2, NULL, NULL, 0, 0),
-(73, 'Waterproof Bomb', 'Covered in waterproof paint and won\'t get wet.', 0, -1, NULL, 0, 0, NULL, NULL, 0, 0),
+(73, 'Waterproof Bomb', 'Covered in waterproof paint and won\'t get wet.', 4, -1, NULL, 0, 0, NULL, NULL, 0, 0),
 (74, 'Flyer from Braeden', 'The flyer from Fisherman Braeden is covered in text.', 0, -1, NULL, 0, 0, NULL, NULL, 0, 0),
 (75, 'Eternal Sun Belt', 'Eternal Sun Belt is an item level 1.', 3, 11, NULL, 5, 30, 9, 5, 30, 52),
 (76, 'Shadower Mantle (DoH)', 'Mantle for Healer.', 6, 7, NULL, 5, 100, 10, 11, 30, 15),
@@ -2082,7 +2126,7 @@ INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `D
 (87, 'Bone Armillae', 'Bone Armillae is an item level 1.', 3, 11, NULL, 5, 32, 4, NULL, 1, 0),
 (88, 'Pig Queen', 'Eidolon Pig Queen', 6, 8, NULL, 0, 0, 22, 4, 150, 1),
 (89, 'Eidolon Crystal', 'Required to improve eidolons', 4, -1, NULL, 5, 0, NULL, NULL, 0, 0),
-(90, 'Caged Parrot', '....', 2, -1, NULL, 0, 0, NULL, NULL, 0, 0),
+(90, 'Caged Parrot', 'Was it worth it?', 2, -1, NULL, 5, 0, NULL, NULL, 0, 0),
 (91, 'Box full of supplies', '....', 0, -1, NULL, 0, 0, NULL, NULL, 0, 0);
 
 -- --------------------------------------------------------
@@ -2826,25 +2870,25 @@ ALTER TABLE `enum_items_types`
 -- AUTO_INCREMENT для таблицы `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_aethers`
 --
 ALTER TABLE `tw_accounts_aethers`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=467;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=555;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
@@ -2856,7 +2900,7 @@ ALTER TABLE `tw_accounts_mailbox`
 -- AUTO_INCREMENT для таблицы `tw_accounts_quests`
 --
 ALTER TABLE `tw_accounts_quests`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=200;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=214;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_accounts_skills`
@@ -2880,7 +2924,7 @@ ALTER TABLE `tw_aethers`
 -- AUTO_INCREMENT для таблицы `tw_auction_items`
 --
 ALTER TABLE `tw_auction_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_bots_info`
