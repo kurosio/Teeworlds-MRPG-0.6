@@ -29,7 +29,6 @@ class CHouseCore : public MmoComponent
 		MENUS HOUSES
 	######################################################################### */
 	void ShowHouseMenu(CPlayer* pPlayer, CHouseData* pHouse);
-	void ShowPersonalHouse(CPlayer* pPlayer);
 
 	/* #########################################################################
 		GET CHECK HOUSES

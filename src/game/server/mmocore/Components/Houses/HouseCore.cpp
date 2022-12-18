@@ -75,6 +75,53 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 		return false;
 	}
 
+
+	if(Menulist == MENU_HOUSE)
+	{
+		pPlayer->m_LastVoteMenu = MENU_MAIN;
+
+		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		if(!pHouse)
+		{
+			GS()->AVL(ClientID, "null", "You not owner home!");
+			return true;
+		}
+
+		HouseIdentifier ID = pHouse->GetID();
+		bool StateDoor = pHouse->GetDoor()->GetState();
+
+		GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR} Door [{STR}]", ID, pHouse->GetClassName(), StateDoor ? "Closed" : "Opened");
+		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/doorhouse - interactive with door.");
+		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "- - - - - - - - - -");
+		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "Notes: Minimal operation house balance 100gold");
+		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "In your safe is: {VAL}gold", pHouse->GetBank()->Get());
+		GS()->AV(ClientID, "null");
+
+		GS()->AVL(ClientID, "null", "◍  Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
+		GS()->AVM(ClientID, "HOUSE_BANK_ADD", 1, NOPE, "Add to the safe gold. (Amount in a reason)");
+		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, NOPE, "Take the safe gold. (Amount in a reason)");
+		GS()->AV(ClientID, "null");
+
+		GS()->AVH(ClientID, TAB_HOUSE_MANAGING, "▤ Managing your home");
+		GS()->AVM(ClientID, "HOUSE_SPAWN", ID, TAB_HOUSE_MANAGING, "Teleport to your house");
+		GS()->AVM(ClientID, "HOUSE_DOOR", ID, TAB_HOUSE_MANAGING, "Change state door to [\"{STR}\"]", StateDoor ? "Open" : "Closed");
+		GS()->AVM(ClientID, "HOUSE_SELL", ID, TAB_HOUSE_MANAGING, "Sell your house (in reason 777)");
+
+		if(GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
+		{
+			GS()->AVM(ClientID, "MENU", MENU_HOUSE_ACCESS_TO_DOOR, TAB_HOUSE_MANAGING, "Settings up accesses to your door");
+			GS()->AVM(ClientID, "MENU", MENU_HOUSE_DECORATION, TAB_HOUSE_MANAGING, "Settings your decorations");
+			GS()->AVM(ClientID, "MENU", MENU_HOUSE_PLANTS, TAB_HOUSE_MANAGING, "Settings your plants");
+		}
+		else
+		{
+			GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_MANAGING, "More settings allow, only on house zone");
+		}
+
+		GS()->AddVotesBackpage(ClientID);
+		return true;
+	}
+
 	if(Menulist == MENU_HOUSE_DECORATION)
 	{
 		pPlayer->m_LastVoteMenu = MENU_HOUSE;
@@ -94,15 +141,6 @@ bool CHouseCore::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMe
 		Job()->Item()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
 		GS()->AV(ClientID, "null");
 		pHouse->ShowDecorations();
-		GS()->AddVotesBackpage(ClientID);
-		return true;
-	}
-
-	if(Menulist == MENU_HOUSE)
-	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
-
-		ShowPersonalHouse(pPlayer);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -476,49 +514,6 @@ void CHouseCore::ShowHouseMenu(CPlayer* pPlayer, CHouseData* pHouse)
 	}
 
 	GS()->AV(ClientID, "null");
-}
-
-void CHouseCore::ShowPersonalHouse(CPlayer* pPlayer)
-{
-	const int ClientID = pPlayer->GetCID();
-
-	CHouseData* pHouse = pPlayer->Acc().GetHouse();
-	if(!pHouse)
-	{
-		GS()->AVL(ClientID, "null", "You not owner home!");
-		return;
-	}
-
-	HouseIdentifier ID = pHouse->GetID();
-	bool StateDoor = pHouse->GetDoor()->GetState();
-
-	GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR} Door [{STR}]", ID, pHouse->GetClassName(), StateDoor ? "Closed" : "Opened");
-	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/doorhouse - interactive with door.");
-	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "- - - - - - - - - -");
-	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "Notes: Minimal operation house balance 100gold");
-	GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "In your safe is: {VAL}gold", pHouse->GetBank()->Get());
-	GS()->AV(ClientID, "null");
-
-	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
-	GS()->AVM(ClientID, "HOUSE_BANK_ADD", 1, NOPE, "Add to the safe gold. (Amount in a reason)");
-	GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, NOPE, "Take the safe gold. (Amount in a reason)");
-	GS()->AV(ClientID, "null");
-
-	GS()->AVL(ClientID, "null", "▤ House system");
-	GS()->AVM(ClientID, "HOUSE_DOOR", ID, NOPE, "Change state to [\"{STR}\"]", StateDoor ? "OPEN" : "CLOSED");
-	GS()->AVM(ClientID, "HOUSE_SPAWN", 1, NOPE, "Teleport to your house");
-	GS()->AVM(ClientID, "HOUSE_SELL", ID, NOPE, "Sell your house (in reason 777)");
-	GS()->AVM(ClientID, "MENU", MENU_HOUSE_ACCESS_TO_DOOR, NOPE, "Player's access to your door");
-
-	if(GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
-	{
-		GS()->AVM(ClientID, "MENU", MENU_HOUSE_DECORATION, NOPE, "Settings Decorations");
-		GS()->AVM(ClientID, "MENU", MENU_HOUSE_PLANTS, NOPE, "Settings Plants");
-	}
-	else
-	{
-		GS()->AVM(ClientID, "null", MENU_HOUSE_DECORATION, NOPE, "More settings allow, only on house zone");
-	}
 }
 
 CHouseData* CHouseCore::GetHouseByAccountID(int AccountID)
