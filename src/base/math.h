@@ -97,7 +97,7 @@ inline unsigned long long computeExperience(unsigned Level)
 {
 	if(Level == 1)
 		return 18;
-	return (unsigned long long)(24 * pow(Level, 2)) - ((unsigned long long)24 * Level);
+	return Level * (static_cast<unsigned long long>(Level) - 1) * 24;
 }
 
 // percents
