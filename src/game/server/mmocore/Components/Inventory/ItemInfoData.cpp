@@ -97,6 +97,6 @@ void CItemDescription::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int 
 std::string CItemDescription::StringEnchantLevel(int Enchant) const
 {
 	if(Enchant > 0)
-		return IsEnchantMaxLevel(Enchant) ? "Max" : "[" + std::string("+" + std::to_string(Enchant)) + "]";
+		return "[" + (IsEnchantMaxLevel(Enchant) ? "Max" : std::string("+" + std::to_string(Enchant))) + "]";
 	return "\0";
 }
