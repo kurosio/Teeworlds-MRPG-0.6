@@ -6,7 +6,6 @@
 #include <game/server/gamecontext.h>
 
 #include <game/server/mmocore/Components/Guilds/GuildCore.h>
-#include <game/server/mmocore/Components/Houses/HouseCore.h>
 
 void CAetherCore::OnInit()
 {
