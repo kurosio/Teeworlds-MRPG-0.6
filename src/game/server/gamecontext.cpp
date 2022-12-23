@@ -1386,7 +1386,7 @@ void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 			if(CPlayer* pPlayer = pSelf->GetPlayer(i); pPlayer && pPlayer->IsAfk())
 			{
 				// write information about afk
-				str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time='%d's", i, pServer->ClientName(i), pPlayer->GetAfkTime());
+				str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time='%ld's", i, pServer->ClientName(i), pPlayer->GetAfkTime());
 				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
 				Counter++;
 			}
@@ -1413,7 +1413,7 @@ void CGS::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
 		{
 			// write information about afk
 			char aBuf[1024];
-			str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time='%d's", ClientID, pServer->ClientName(ClientID), pPlayer->GetAfkTime());
+			str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time='%ld's", ClientID, pServer->ClientName(ClientID), pPlayer->GetAfkTime());
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
 			return;
 		}
