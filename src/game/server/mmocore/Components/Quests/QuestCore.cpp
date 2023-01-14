@@ -113,11 +113,24 @@ static const char* GetStateName(QuestState State)
 
 void QuestCore::ShowQuestsMainList(CPlayer* pPlayer)
 {
+	int ClientID = pPlayer->GetCID();
+
+	// information
+	const int TotalQuests = CQuestDataInfo::ms_aDataQuests.size();
+	const int TotalComplectedQuests = GetClientComplectedQuestsSize(ClientID);
+	const int TotalUncomplectedQuests = TotalQuests - TotalComplectedQuests;
+	GS()->AVH(ClientID, TAB_INFO_STATISTIC_QUESTS, "Quests statistic");
+	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total quests: {INT}", TotalQuests);
+	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total complected quests: {INT}", TotalComplectedQuests);
+	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total complected quests: {INT}", TotalUncomplectedQuests);
+	GS()->AV(ClientID, "null");
+
+	// tabs with quests
 	ShowQuestsTabList(pPlayer, QuestState::ACCEPT);
 	ShowQuestsTabList(pPlayer, QuestState::NO_ACCEPT);
 
 	// show the completed menu
-	GS()->AVM(pPlayer->GetCID(), "MENU", MENU_JOURNAL_FINISHED, NOPE, "List of completed quests");
+	GS()->AVM(ClientID, "MENU", MENU_JOURNAL_FINISHED, NOPE, "List of completed quests");
 }
 
 void QuestCore::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
@@ -350,4 +363,17 @@ int QuestCore::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
 		}
 	}
 	return max(AvailableValue, 0);
+}
+
+int QuestCore::GetClientComplectedQuestsSize(int ClientID) const
+{
+	int Total = 0;
+
+	for(auto& [QuestID, Data] : CQuestData::ms_aPlayerQuests[ClientID])
+	{
+		if(Data.IsComplected())
+			Total++;
+	}
+
+	return Total;
 }
