@@ -122,7 +122,7 @@ void QuestCore::ShowQuestsMainList(CPlayer* pPlayer)
 	GS()->AVH(ClientID, TAB_INFO_STATISTIC_QUESTS, "Quests statistic");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total quests: {INT}", TotalQuests);
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total complected quests: {INT}", TotalComplectedQuests);
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total complected quests: {INT}", TotalUncomplectedQuests);
+	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total incomplete quests: {INT}", TotalUncomplectedQuests);
 	GS()->AV(ClientID, "null");
 
 	// tabs with quests
