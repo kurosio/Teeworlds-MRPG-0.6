@@ -68,13 +68,13 @@ public:
 private:
 	CConectionPool();
 
-	Connection* CreateConnection();
-	Connection* GetConnection();
-	void ReleaseConnection(Connection* pConnection);
-	void DisconnectConnection(Connection* pConnection);
+	std::shared_ptr<Connection> CreateConnection();
+	std::shared_ptr<Connection> GetConnection();
+	void ReleaseConnection(std::shared_ptr<Connection> pConnection);
+	void DisconnectConnection(std::shared_ptr<Connection> pConnection);
 
 	static std::shared_ptr<CConectionPool> m_ptrInstance;
-	std::list<Connection*> m_ConnList;
+	std::list<std::shared_ptr<Connection>> m_ConnList;
 	Driver* m_pDriver;
 
 public:
@@ -112,7 +112,7 @@ private:
 
 			g_SqlThreadRecursiveLock.lock();
 			Database->m_pDriver->threadInit();
-			Connection* pConnection = Database->GetConnection();
+			std::shared_ptr<Connection> pConnection = Database->GetConnection();
 			ResultPtr pResult = nullptr;
 			try
 			{
@@ -142,7 +142,7 @@ private:
 
 				g_SqlThreadRecursiveLock.lock();
 				Database->m_pDriver->threadInit();
-				Connection* pConnection = Database->GetConnection();
+				std::shared_ptr<Connection> pConnection = Database->GetConnection();
 				try
 				{
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
@@ -196,7 +196,7 @@ private:
 
 				g_SqlThreadRecursiveLock.lock();
 				Database->m_pDriver->threadInit();
-				Connection* pConnection = Database->GetConnection();
+				std::shared_ptr<Connection> pConnection = Database->GetConnection();
 				try
 				{
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());

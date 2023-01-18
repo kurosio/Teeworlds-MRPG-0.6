@@ -30,6 +30,8 @@ std::atomic_flag g_atomic_lock;
 std::shared_ptr<CConectionPool> CConectionPool::m_ptrInstance;
 void CConectionPool::Initilize()
 {
+	if(m_ptrInstance)
+		m_ptrInstance.reset();
 	m_ptrInstance = std::make_shared<CConectionPool>(std::forward<CConectionPool>({}));
 }
 
@@ -44,9 +46,7 @@ CConectionPool::CConectionPool()
 	{
 		m_pDriver = get_driver_instance();
 		for(int i = 0; i < g_Config.m_SvMySqlPoolSize; ++i)
-		{
 			this->CreateConnection();
-		}
 	}
 	catch (SQLException& e)
 	{
@@ -60,16 +60,41 @@ CConectionPool::~CConectionPool()
 	DisconnectConnectionHeap();
 }
 
-Connection* CConectionPool::CreateConnection()
+void CConectionPool::DisconnectConnectionHeap()
 {
-	Connection* pConnection = nullptr;
+	g_atomic_lock.test_and_set(std::memory_order_acquire);
+	while(!m_ConnList.empty())
+	{
+		std::shared_ptr<Connection> pConnection = m_ConnList.front();
+		m_ConnList.pop_front();
+
+		try
+		{
+			if(pConnection)
+			{
+				pConnection->close();
+			}
+		}
+		catch(SQLException& e)
+		{
+			dbg_msg("Sql Exception", "%s", e.what());
+		}
+
+		pConnection.reset();
+	}
+	g_atomic_lock.clear(std::memory_order_release);
+}
+
+std::shared_ptr<Connection> CConectionPool::CreateConnection()
+{
+	std::shared_ptr<Connection> pConnection = nullptr;
 	while (pConnection == nullptr)
 	{
 		try
 		{
 			std::string Hostname(g_Config.m_SvMySqlHost);
 			Hostname.append(":" + std::to_string(g_Config.m_SvMySqlPort));
-			pConnection = m_pDriver->connect(Hostname.c_str(), g_Config.m_SvMySqlLogin, g_Config.m_SvMySqlPassword);
+			pConnection.reset(m_pDriver->connect(Hostname.c_str(), g_Config.m_SvMySqlLogin, g_Config.m_SvMySqlPassword));
 
 			pConnection->setClientOption("OPT_CHARSET_NAME", "utf8mb4");
 			pConnection->setClientOption("OPT_CONNECT_TIMEOUT", "10");
@@ -92,9 +117,9 @@ Connection* CConectionPool::CreateConnection()
 	return pConnection;
 }
 
-Connection* CConectionPool::GetConnection()
+std::shared_ptr<Connection> CConectionPool::GetConnection()
 {
-	Connection* pConnection;
+	std::shared_ptr<Connection> pConnection;
 	if(m_ConnList.empty())
 	{
 		pConnection = CreateConnection();
@@ -108,15 +133,14 @@ Connection* CConectionPool::GetConnection()
 
 	if (pConnection->isClosed())
 	{
-		delete pConnection;
-		pConnection = nullptr;
+		pConnection.reset();
 		pConnection = CreateConnection();
 	}
 
 	return pConnection;
 }
 
-void CConectionPool::ReleaseConnection(Connection* pConnection)
+void CConectionPool::ReleaseConnection(std::shared_ptr<Connection> pConnection)
 {
 	if (pConnection)
 	{
@@ -126,7 +150,7 @@ void CConectionPool::ReleaseConnection(Connection* pConnection)
 	}
 }
 
-void CConectionPool::DisconnectConnection(Connection* pConnection)
+void CConectionPool::DisconnectConnection(std::shared_ptr<Connection> pConnection)
 {
 	try
 	{
@@ -142,15 +166,6 @@ void CConectionPool::DisconnectConnection(Connection* pConnection)
 
 	g_atomic_lock.test_and_set(std::memory_order_acquire);
 	m_ConnList.remove(pConnection);
-	delete pConnection;
-	pConnection = nullptr;
+	pConnection.reset();
 	g_atomic_lock.clear(std::memory_order_release);
-}
-
-void CConectionPool::DisconnectConnectionHeap()
-{
-	for(auto& pConn : m_ConnList)
-	{
-		DisconnectConnection(pConn);
-	}
 }

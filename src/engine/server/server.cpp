@@ -80,6 +80,7 @@ CServer::~CServer()
 	delete m_pDiscord;
 #endif
 	delete m_pMultiWorlds;
+
 	Database->DisconnectConnectionHeap();
 }
 
@@ -368,7 +369,6 @@ int CServer::Init()
 		m_aClients[i].m_Snapshots.Init();
 	}
 
-	CConectionPool::Initilize();
 	_StoreMultiworldIdentifiableStaticData::Init((IServer*)this);
 	return 0;
 }
@@ -1741,6 +1741,8 @@ int CServer::Run()
 	m_MapChunksPerRequest = g_Config.m_SvMapDownloadSpeed;
 	m_DataChunksPerRequest = g_Config.m_SvMapDownloadSpeed;
 
+	// initilize pool
+	CConectionPool::Initilize();
 	Instance::m_pServer = static_cast<IServer*>(this);
 
 	// loading maps to memory

@@ -118,11 +118,11 @@ void QuestCore::ShowQuestsMainList(CPlayer* pPlayer)
 	// information
 	const int TotalQuests = CQuestDataInfo::ms_aDataQuests.size();
 	const int TotalComplectedQuests = GetClientComplectedQuestsSize(ClientID);
-	const int TotalUncomplectedQuests = TotalQuests - TotalComplectedQuests;
+	const int TotalIncomplectedQuests = TotalQuests - TotalComplectedQuests;
 	GS()->AVH(ClientID, TAB_INFO_STATISTIC_QUESTS, "Quests statistic");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total quests: {INT}", TotalQuests);
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total complected quests: {INT}", TotalComplectedQuests);
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total incomplete quests: {INT}", TotalUncomplectedQuests);
+	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total incomplete quests: {INT}", TotalIncomplectedQuests);
 	GS()->AV(ClientID, "null");
 
 	// tabs with quests
