@@ -355,7 +355,7 @@ bool CBotCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 			bool HasDropItem = false;
 			const int HideID = (NUM_TAB_MENU + ID);
 			const vec2 Pos = MobData.m_Position / 32.0f;
-			GS()->AVH(ClientID, HideID, "Mob {STR} [x{INT} y{INT}]", MobData.GetName(), (int)Pos.x, (int)Pos.y);
+			GS()->AVH(ClientID, HideID, "{STR} [x{INT} y{INT}]", MobData.GetName(), (int)Pos.x, (int)Pos.y);
 
 			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 			{

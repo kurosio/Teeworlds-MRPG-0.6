@@ -409,7 +409,7 @@ bool GuildCore::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int Vote
 			return true;
 		}
 
-		GS()->StartCustomVotes(ClientID, MENU_INVENTORY);
+		GS()->StartCustomVotes(ClientID, MENU_GUILD_HOUSE_DECORATION);
 		GS()->AV(ClientID, "null", "Please close vote and press Left Mouse,");
 		GS()->AV(ClientID, "null", "on position where add decoration!");
 		GS()->AddVotesBackpage(ClientID);

@@ -206,8 +206,6 @@ bool CCharacter::DecoInteractive()
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
-				GS()->UpdateVotes(ClientID, MENU_HOUSE_DECORATION);
-				return true;
 			}
 		}
 		else if (InteractiveType == DECORATIONS_GUILD_HOUSE)
@@ -217,15 +215,15 @@ bool CCharacter::DecoInteractive()
 			{
 				GS()->Chat(ClientID, "You added {STR}, to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
-				GS()->UpdateVotes(ClientID, MENU_GUILD_HOUSE_DECORATION);
-				return true;
 			}
-
-			GS()->Chat(ClientID, "Distance House and Decoration maximal {INT} block!", g_Config.m_SvLimitDecoration);
-			GS()->Chat(ClientID, "Setting object reset, use repeat!");
+			else
+			{
+				GS()->Chat(ClientID, "Distance House and Decoration maximal {INT} block!", g_Config.m_SvLimitDecoration);
+				GS()->Chat(ClientID, "Setting object reset, use repeat!");
+			}
 		}
 
-		GS()->UpdateVotes(ClientID, MENU_HOUSE_DECORATION);
+		GS()->UpdateVotes(ClientID, m_pPlayer->m_LastVoteMenu);
 		return true;
 	}
 	return false;
