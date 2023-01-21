@@ -16,6 +16,7 @@
 
 #include "mmocore/Components/Inventory/ItemData.h"
 #include "mmocore/Components/Skills/SkillData.h"
+#include "mmocore/Components/TutorialEvent/TutorialEventCore.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -92,7 +93,10 @@ void CPlayer::Tick()
 	if (m_pCharacter)
 	{
 		if(m_pCharacter->IsAlive())
+		{
 			m_ViewPos = m_pCharacter->GetPos();
+			GS()->Mmo()->Tutorial()->TryCheckNextTutorialStep(this);
+		}
 		else
 		{
 			delete m_pCharacter;
@@ -886,6 +890,8 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 			{
 				GS()->Mmo()->BotsData()->DialogBotStepNPC(this, MobID, m_DialogNPC.m_Progress);
 				m_DialogNPC.m_FreezedProgress = true;
+
+				m_LastTalkedBotID = MobID;
 				return;
 			}
 
@@ -942,6 +948,8 @@ void CPlayer::SetTalking(int TalkedID, bool IsStartDialogue)
 						GetCharacter()->ChangePosition(Position);
 					}
 				});
+
+				m_LastTalkedBotID = MobID;
 				return;
 			}
 

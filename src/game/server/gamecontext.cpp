@@ -899,6 +899,8 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
 			else
 				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
+
+			str_copy(pPlayer->m_aLastMsg, pMsg->m_pMessage, sizeof(pPlayer->m_aLastMsg));
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
