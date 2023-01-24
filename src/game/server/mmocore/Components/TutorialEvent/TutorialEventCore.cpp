@@ -123,7 +123,7 @@ void EventChecker(std::deque<TutorialBase*>& pItems, CPlayer* pPlayer, int Step,
 void CTutorialEventCore::TryCheckNextTutorialStep(CPlayer* pPlayer) const
 {
 	int PlayerStep = pPlayer->m_TutorialStep - 1;
-	if(PlayerStep < 0 || PlayerStep >= TutorialBase::Data().size())
+	if(PlayerStep < 0 || PlayerStep >= static_cast<int>(TutorialBase::Data().size()))
 		return;
 
 	const int Type = GetTutorial(PlayerStep)->m_TutorialType;
