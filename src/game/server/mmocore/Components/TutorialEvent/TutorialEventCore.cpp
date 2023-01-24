@@ -31,22 +31,22 @@ void CTutorialEventCore::OnInit()
 	{
 		for(auto& pStep : pJson)
 		{
-			if(const int Type = pStep.value("type", 0); (1 << Type) == TUTORIAL_VECTOR_ONE)
+			if(const int Type = pStep.value("type", 0); (1 << Type) & TUTORIAL_VECTOR_ONE)
 			{
-				TutorialVectorOne Tutorial;
-				Tutorial.m_Position = vec2(pStep.value("posX", 0), pStep.value("posY", 0));
+				TutorialData<vec2> Tutorial;
+				Tutorial.m_Data = std::make_tuple(vec2(pStep.value("posX", 0), pStep.value("posY", 0)));
 				TutorialBase::Init(Type, pStep.value("info", "\0").c_str(), Tutorial);
 			}
 			else if((1 << Type) & TUTORIAL_INTEGER_ONE)
 			{
-				TutorialIntegerOne Tutorial;
-				Tutorial.m_Integer = pStep.value("integer", 0);
+				TutorialData<int> Tutorial;
+				Tutorial.m_Data = pStep.value("integer", 0);
 				TutorialBase::Init(Type, pStep.value("info", "\0").c_str(), Tutorial);
 			}
 			else if((1 << Type) & TUTORIAL_STRING_ONE)
 			{
-				TutorialStringOne Tutorial;
-				str_copy(Tutorial.m_aStringBuf, pStep.value("string", "\0").c_str(), sizeof(Tutorial.m_aStringBuf));
+				TutorialData<std::string> Tutorial;
+				Tutorial.m_Data = pStep.value("string", "\0");
 				TutorialBase::Init(Type, pStep.value("info", "\0").c_str(), Tutorial);
 			}
 		}
@@ -130,41 +130,41 @@ void CTutorialEventCore::TryCheckNextTutorialStep(CPlayer* pPlayer) const
 
 	if(Type == TUTORIAL_MOVE_TO)
 	{
-		EventChecker<TutorialVectorOne>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialVectorOne* pTutorial)
+		EventChecker<TutorialData<vec2>>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialData<vec2>* pTutorial)
 		{
-			return distance(pTutorial->m_Position, pPlayer->m_ViewPos) < 100;
+			return distance(std::get<0>(pTutorial->m_Data), pPlayer->m_ViewPos) < 100;
 		});
 	}
 
 	if(Type == TUTORIAL_EQUIP)
 	{
-		EventChecker<TutorialIntegerOne>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialIntegerOne* pTutorial)
+		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->GetItem(pTutorial->m_Integer)->IsEquipped();
+			return pPlayer->GetItem(std::get<0>(pTutorial->m_Data))->IsEquipped();
 		});
 	}
 
 	if(Type == TUTORIAL_PLAYER_FLAG)
 	{
-		EventChecker<TutorialIntegerOne>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialIntegerOne* pTutorial)
+		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->m_PlayerFlags & pTutorial->m_Integer;
+			return pPlayer->m_PlayerFlags & std::get<0>(pTutorial->m_Data);
 		});
 	}
 
 	if(Type == TUTORIAL_OPEN_VOTE_MENU)
 	{
-		EventChecker<TutorialIntegerOne>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialIntegerOne* pTutorial)
+		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->m_OpenVoteMenu == pTutorial->m_Integer;
+			return pPlayer->m_OpenVoteMenu == std::get<0>(pTutorial->m_Data);
 		});
 	}
 
 	if(Type == TUTORIAL_CHAT_MSG)
 	{
-		EventChecker<TutorialStringOne>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialStringOne* pTutorial)
+		EventChecker<TutorialData<std::string>>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialData<std::string>* pTutorial)
 		{
-			return str_comp(pPlayer->m_aLastMsg, pTutorial->m_aStringBuf) == 0;
+			return str_comp(pPlayer->m_aLastMsg, std::get<0>(pTutorial->m_Data).c_str()) == 0;
 		});
 	}
 }

@@ -24,7 +24,7 @@ class TutorialBase : public MultiworldIdentifiableStaticData< std::deque< Tutori
 public:
 	virtual ~TutorialBase() = default;
 
-	template < typename CASTPOL>
+	template < typename CASTPOL >
 	static void Init(int Type, const char* pText, CASTPOL Data)
 	{
 		Data.m_TutorialType = Type;
@@ -36,22 +36,11 @@ public:
 	char m_aTextBuf[1024]{};
 };
 
-class TutorialVectorOne final : public TutorialBase
+template<typename... Args>
+class TutorialData final : public TutorialBase
 {
 public:
-	vec2 m_Position;
-};
-
-class TutorialIntegerOne final : public TutorialBase
-{
-public:
-	int m_Integer;
-};
-
-class TutorialStringOne final : public TutorialBase
-{
-public:
-	char m_aStringBuf[256];
+	std::tuple< Args...> m_Data;
 };
 
 #endif
