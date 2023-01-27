@@ -9,7 +9,6 @@
 #include "Entities/HealthTurret/hearth.h"
 #include "Entities/SleepyGravity/sleepy-gravity.h"
 #include "game/server/entities/botai/character_bot_ai.h"
-#include "game/server/mmocore/GameEntities/Items/flying_experience.h"
 
 CGS* CSkill::GS() const
 {
@@ -174,7 +173,7 @@ bool CSkill::Use()
 			pCharacterBotAI->GetTarget()->Set(ClientID, GetBonus());
 			GS()->CreatePlayerSpawn(pPlayer->GetCharacter()->GetPos());
 			pPlayer->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
-			new CFlyingExperience(&GS()->m_World, PlayerPosition, i, 0, pPlayer->GetCharacter()->m_Core.m_Vel);
+			GS()->CreateFlyingPoint(PlayerPosition, i, pPlayer->GetCharacter()->m_Core.m_Vel);
 		}
 
 		// some effects

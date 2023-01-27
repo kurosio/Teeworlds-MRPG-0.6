@@ -1,21 +1,20 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "flying_experience.h"
+#include "flying_point.h"
 
 #include <game/server/gamecontext.h>
 
-CFlyingExperience::CFlyingExperience(CGameWorld *pGameWorld, vec2 Pos, int ClientID, int Experience, vec2 InitialVel)
+CFlyingPoint::CFlyingPoint(CGameWorld *pGameWorld, vec2 Pos, int ClientID, vec2 InitialVel)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, Pos)
 {
 	m_Pos = Pos;
 	m_InitialVel = InitialVel;
 	m_InitialAmount = 1.0f;
-	m_Experience = Experience;
 	m_ClientID = ClientID;
 	GameWorld()->InsertEntity(this);
 }
 
-void CFlyingExperience::Tick()
+void CFlyingPoint::Tick()
 {
 	CPlayer *pPlayer = GS()->m_apPlayers[m_ClientID];
 	if(!pPlayer || !pPlayer->GetCharacter())
@@ -27,11 +26,8 @@ void CFlyingExperience::Tick()
 	float Dist = distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos);
 	if(Dist < pPlayer->GetCharacter()->ms_PhysSize)
 	{
-		if(m_Experience)
-		{
-			pPlayer->AddExp(m_Experience);
-		}
-
+		if(m_pFunctionCollised)
+			m_pFunctionCollised(pPlayer);
 		GS()->m_World.DestroyEntity(this);
 		return;
 	}
@@ -41,7 +37,7 @@ void CFlyingExperience::Tick()
 	m_InitialAmount *= 0.98f;
 }
 
-void CFlyingExperience::Snap(int SnappingClient)
+void CFlyingPoint::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient))
 		return;

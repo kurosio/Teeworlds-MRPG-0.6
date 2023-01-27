@@ -15,6 +15,7 @@
 #include "player.h"
 #include "playerbot.h"
 
+#include "mmocore/GameEntities/Tools/flying_point.h"
 #include "mmocore/MmoController.h"
 
 class CGS : public IGameServer
@@ -76,6 +77,7 @@ public:
 	class CWarehouse* GetWarehouse(int ID) const;
 	class CWorldData* GetWorldData(int ID = -1) const;
 	class CEidolonInfoData* GetEidolonByItemID(ItemIdentifier ItemID) const;
+	/* [[nodiscard]] */class CFlyingPoint* CreateFlyingPoint(vec2 Pos, int ClientID, vec2 InitialVel);
 
 	/* #########################################################################
 		EVENTS

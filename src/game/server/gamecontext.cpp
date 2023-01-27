@@ -17,7 +17,6 @@
 #include "mmocore/GameEntities/loltext.h"
 #include "mmocore/GameEntities/Items/drop_bonuses.h"
 #include "mmocore/GameEntities/Items/drop_items.h"
-#include "mmocore/GameEntities/Items/flying_experience.h"
 
 #include "mmocore/Components/Accounts/AccountCore.h"
 #include "mmocore/Components/Bots/BotCore.h"
@@ -165,6 +164,12 @@ CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
 {
 	auto p = std::find_if(CEidolonInfoData::Data().begin(), CEidolonInfoData::Data().end(), [ItemID](CEidolonInfoData& p){ return p.GetItemID() == ItemID; });
 	return p != CEidolonInfoData::Data().end() ? &(*p) : nullptr;
+}
+
+CFlyingPoint* CGS::CreateFlyingPoint(vec2 Pos, int ClientID, vec2 InitialVel)
+{
+	CFlyingPoint* pFlying = new CFlyingPoint(&m_World, Pos, ClientID, InitialVel);
+	return pFlying;
 }
 
 /* #########################################################################
@@ -1854,7 +1859,11 @@ void CGS::CreateText(CEntity* pParent, bool Follow, vec2 Pos, vec2 Vel, int Life
 // creates a particle of experience that follows the player
 void CGS::CreateParticleExperience(vec2 Pos, int ClientID, int Experience, vec2 Force)
 {
-	new CFlyingExperience(&m_World, Pos, ClientID, Experience, Force);
+	CFlyingPoint* pPoint = CreateFlyingPoint(Pos, ClientID, Force);
+	pPoint->Register([Experience](CPlayer* pPlayer)
+	{
+		pPlayer->AddExp(Experience);
+	});
 }
 
 // gives a bonus in the position type and quantity and the number of them.
