@@ -1746,7 +1746,7 @@ void CGS::AddVotesBackpage(int ClientID)
 void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	AVH(ClientID, TAB_INFO_STAT, "Your main stats & chances {STR}", IsDungeon() ? "(Sync)" : "\0");
+	AVH(ClientID, TAB_INFO_STAT, "Your main stats & chances{STR}", IsDungeon() ? " (Sync)" : "\0");
 	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
 		if(!pAttribute->HasDatabaseField())

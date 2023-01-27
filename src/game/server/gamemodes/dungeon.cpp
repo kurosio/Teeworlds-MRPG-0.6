@@ -37,7 +37,7 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS *pGS) : IGameController
 	}
 }
 
-void CGameControllerDungeon::KillAllPlayers()
+void CGameControllerDungeon::KillAllPlayers() const
 {
 	for (int i = 0; i < MAX_PLAYERS; i++)
 	{
