@@ -21,7 +21,6 @@
 #include "Components/Mails/MailBoxCore.h"
 #include "Components/Quests/QuestCore.h"
 #include "Components/Skills/SkillsCore.h"
-#include "Components/TutorialEvent/TutorialEventCore.h"
 #include "Components/Warehouse/WarehouseCore.h"
 #include "Components/Worlds/WorldCore.h"
 
@@ -42,7 +41,6 @@ MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 	m_Components.add(m_pHouseJob = new CHouseCore);
 	m_Components.add(m_pGuildJob = new GuildCore);
 	m_Components.add(m_pSkillJob = new CSkillsCore);
-	m_Components.add(m_pTutorialEvent = new CTutorialEventCore);
 	m_Components.add(m_pAccMain = new CAccountCore);
 	m_Components.add(m_pAccMiner = new CAccountMinerCore);
 	m_Components.add(m_pAccPlant = new CAccountPlantCore);

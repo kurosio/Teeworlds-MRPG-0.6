@@ -43,7 +43,6 @@ class MmoController
 	class DungeonCore* m_pDungeonJob;
 	class CHouseCore* m_pHouseJob;
 	class CMailBoxCore* m_pMailBoxJob;
-	class CTutorialEventCore* m_pTutorialEvent;
 	class CSkillsCore* m_pSkillJob;
 	class CWorldDataCore* m_pWorldSwapJob;
 	class CEidolonCore* m_pEidolonJob;
@@ -63,7 +62,6 @@ public:
 	QuestCore *Quest() const { return m_pQuest; }
 	CWarehouseCore *Warehouse() const { return m_pWarehouse; }
 	CEidolonCore* Eidolons() const { return m_pEidolonJob; }
-	CTutorialEventCore* Tutorial() const { return m_pTutorialEvent; }
 
 	CCraftCore* Craft() const { return m_pCraftJob; }
 	DungeonCore* Dungeon() const { return m_pDungeonJob; }

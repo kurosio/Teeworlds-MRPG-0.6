@@ -66,8 +66,6 @@ public:
 	int m_PlayerFlags;
 	int m_aPlayerTick[TickState::NUM_TICK];
 	Mood m_MoodState;
-	char m_aLastMsg[256];
-	int m_LastTalkedBotID;
 
 	StructLatency m_Latency;
 	StructLastAction m_LatestActivity;
@@ -86,8 +84,6 @@ public:
 	short m_LastVoteMenu;
 	bool m_RequestChangeNickname;
 	int m_EidolonCID;
-
-	int m_TutorialStep;
 
 	/* #########################################################################
 		FUNCTIONS PLAYER ENGINE
