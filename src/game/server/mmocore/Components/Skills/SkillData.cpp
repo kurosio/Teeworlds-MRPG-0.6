@@ -173,7 +173,7 @@ bool CSkill::Use()
 			pCharacterBotAI->GetTarget()->Set(ClientID, GetBonus());
 			GS()->CreatePlayerSpawn(pPlayer->GetCharacter()->GetPos());
 			pPlayer->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
-			GS()->CreateFlyingPoint(PlayerPosition, i, pPlayer->GetCharacter()->m_Core.m_Vel);
+			GS()->CreateFlyingPoint(PlayerPosition, pPlayer->GetCharacter()->m_Core.m_Vel, i);
 		}
 
 		// some effects

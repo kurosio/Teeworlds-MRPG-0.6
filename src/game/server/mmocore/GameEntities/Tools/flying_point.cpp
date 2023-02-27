@@ -4,20 +4,22 @@
 
 #include <game/server/gamecontext.h>
 
-CFlyingPoint::CFlyingPoint(CGameWorld *pGameWorld, vec2 Pos, int ClientID, vec2 InitialVel)
+CFlyingPoint::CFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, Pos)
 {
 	m_Pos = Pos;
 	m_InitialVel = InitialVel;
 	m_InitialAmount = 1.0f;
 	m_ClientID = ClientID;
+	m_FromID = FromID;
+	m_Type = WEAPON_HAMMER;
 	GameWorld()->InsertEntity(this);
 }
 
 void CFlyingPoint::Tick()
 {
 	CPlayer *pPlayer = GS()->m_apPlayers[m_ClientID];
-	if(!pPlayer || !pPlayer->GetCharacter())
+	if(!pPlayer || !pPlayer->GetCharacter() || (m_FromID != -1 && (!GS()->m_apPlayers[m_FromID] || !GS()->m_apPlayers[m_FromID]->GetCharacter())))
 	{
 		GS()->m_World.DestroyEntity(this);
 		return;
@@ -27,7 +29,10 @@ void CFlyingPoint::Tick()
 	if(Dist < pPlayer->GetCharacter()->ms_PhysSize)
 	{
 		if(m_pFunctionCollised)
-			m_pFunctionCollised(pPlayer);
+		{
+			CPlayer* pFrom = GS()->GetPlayer(m_FromID);
+			m_pFunctionCollised(this, pFrom ? pFrom : pPlayer, pPlayer);
+		}
 		GS()->m_World.DestroyEntity(this);
 		return;
 	}
@@ -50,6 +55,6 @@ void CFlyingPoint::Snap(int SnappingClient)
 		pObj->m_VelX = 0;
 		pObj->m_VelY = 0;
 		pObj->m_StartTick = Server()->Tick();
-		pObj->m_Type = WEAPON_HAMMER;
+		pObj->m_Type = m_Type;
 	}
 }

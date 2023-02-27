@@ -549,4 +549,13 @@ Messages = [
 		NetIntAny("m_ServerTimeBest"),
 		NetIntAny("m_PlayerTimeBest"),
 	]),
+    
+	# mrpg net
+	# -------------
+	NetMessageEx("Cl_IsMRPGServer", "clismrpgserver@netmsg.mrpg.dev", 
+	[
+		NetIntAny("m_Version"),
+	]),
+
+	NetMessageEx("Sv_AfterIsMRPGServer", "svaftermrpgserver@netmsg.mrpg.dev", []),
 ]

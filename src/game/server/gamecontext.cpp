@@ -166,9 +166,9 @@ CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
 	return p != CEidolonInfoData::Data().end() ? &(*p) : nullptr;
 }
 
-CFlyingPoint* CGS::CreateFlyingPoint(vec2 Pos, int ClientID, vec2 InitialVel)
+CFlyingPoint* CGS::CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
 {
-	CFlyingPoint* pFlying = new CFlyingPoint(&m_World, Pos, ClientID, InitialVel);
+	CFlyingPoint* pFlying = new CFlyingPoint(&m_World, Pos, InitialVel, ClientID, FromID);
 	return pFlying;
 }
 
@@ -1055,6 +1055,29 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			//CNetMsg_Cl_ShowDistance *pMsg = (CNetMsg_Cl_ShowDistance *)pRawMsg;
 			//pPlayer->m_ShowDistance = vec2(pMsg->m_X, pMsg->m_Y);
 		}
+
+		//////////////////////////////////////////////////////////////////////////////////
+	///////////// If the client has passed the test, the alternative is to use the client
+		else if(MsgID == NETMSGTYPE_CL_ISMRPGSERVER)
+		{
+			/*
+				receive information about the client if the old version is written and prohibit the use of all client functions
+				to avoid crashes between package sizes
+			*/
+			CNetMsg_Cl_IsMRPGServer* pMsg = (CNetMsg_Cl_IsMRPGServer*)pRawMsg;
+			if(pMsg->m_Version != PROTOCOL_VERSION_MRPG)
+			{
+				Server()->Kick(ClientID, "Update client use updater or download in discord.");
+				return;
+			}
+
+			Server()->SetStateClientMRPG(ClientID, true);
+
+			// send check success message
+			CNetMsg_Sv_AfterIsMRPGServer GoodCheck;
+			Server()->SendPackMsg(&GoodCheck, MSGFLAG_VITAL | MSGFLAG_FLUSH | MSGFLAG_NORECORD, ClientID);
+			dbg_msg("test", "client %d : mmo: yes", ClientID);
+		}
 		/*else if (MsgID == NETMSGTYPE_CL_SKINCHANGE)
 		{
 			if(pPlayer->m_aPlayerTick[TickState::LastChangeInfo] && pPlayer->m_aPlayerTick[TickState::LastChangeInfo]+Server()->TickSpeed()*5 > Server()->Tick())
@@ -1859,8 +1882,8 @@ void CGS::CreateText(CEntity* pParent, bool Follow, vec2 Pos, vec2 Vel, int Life
 // creates a particle of experience that follows the player
 void CGS::CreateParticleExperience(vec2 Pos, int ClientID, int Experience, vec2 Force)
 {
-	CFlyingPoint* pPoint = CreateFlyingPoint(Pos, ClientID, Force);
-	pPoint->Register([Experience](CPlayer* pPlayer)
+	CFlyingPoint* pPoint = CreateFlyingPoint(Pos, Force, ClientID);
+	pPoint->Register([Experience](CFlyingPoint*, CPlayer*, CPlayer* pPlayer)
 	{
 		pPlayer->AddExp(Experience);
 	});

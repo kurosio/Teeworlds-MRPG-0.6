@@ -464,6 +464,22 @@ void CServer::GetClientAddr(int ClientID, char *pAddrStr, int Size) const
 		net_addr_str(m_NetServer.ClientAddr(ClientID), pAddrStr, Size, false);
 }
 
+void CServer::SetStateClientMRPG(int ClientID, bool State)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
+		return;
+
+	m_aClients[ClientID].m_IsClientMRPG = State;
+}
+
+bool CServer::GetStateClientMRPG(int ClientID) const
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
+		return 0;
+	return m_aClients[ClientID].m_IsClientMRPG;
+}
+
+
 const char *CServer::ClientName(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State == CClient::STATE_EMPTY)
@@ -782,6 +798,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_WorldID = MAIN_WORLD_ID;
 	pThis->m_aClients[ClientID].m_IsChangesWorld = false;
 	pThis->m_aClients[ClientID].m_ClientVersion = 0;
+	pThis->m_aClients[ClientID].m_IsClientMRPG = false;
 	pThis->m_aClients[ClientID].m_Quitting = false;
 	
 	pThis->m_aClients[ClientID].m_DDNetVersion = VERSION_NONE;
@@ -829,6 +846,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_WorldID = MAIN_WORLD_ID;
 	pThis->m_aClients[ClientID].m_IsChangesWorld = false;
 	pThis->m_aClients[ClientID].m_ClientVersion = 0;
+	pThis->m_aClients[ClientID].m_IsClientMRPG = false;
 	pThis->m_aClients[ClientID].m_Quitting = false;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
 	return 0;

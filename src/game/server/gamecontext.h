@@ -77,7 +77,7 @@ public:
 	class CWarehouse* GetWarehouse(int ID) const;
 	class CWorldData* GetWorldData(int ID = -1) const;
 	class CEidolonInfoData* GetEidolonByItemID(ItemIdentifier ItemID) const;
-	/* [[nodiscard]] */class CFlyingPoint* CreateFlyingPoint(vec2 Pos, int ClientID, vec2 InitialVel);
+	/* [[nodiscard]] */class CFlyingPoint* CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, int FromID = -1);
 
 	/* #########################################################################
 		EVENTS

@@ -86,6 +86,7 @@ public:
 		const IConsole::CCommandInfo *m_pRconCmdToSend;
 
 		int m_ClientVersion;
+		bool m_IsClientMRPG;
 		void Reset();
 
 		// DDRace
@@ -184,6 +185,10 @@ public:
 	void SetClientDDNetVersion(int ClientID, int DDNetVersion) override;
 	int GetClientInfo(int ClientID, CClientInfo *pInfo) const override;
 	void GetClientAddr(int ClientID, char *pAddrStr, int Size) const override;
+
+	void SetStateClientMRPG(int ClientID, bool State) override;
+	bool GetStateClientMRPG(int ClientID) const override;
+
 	const char *ClientName(int ClientID) const override;
 	const char *ClientClan(int ClientID) const override;
 	int ClientCountry(int ClientID) const override;

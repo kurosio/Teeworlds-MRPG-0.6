@@ -57,6 +57,9 @@ public:
 	virtual void SetClientDDNetVersion(int ClientID, int DDNetVersion) = 0;
 	virtual void GetClientAddr(int ClientID, char* pAddrStr, int Size) const = 0;
 
+	virtual void SetStateClientMRPG(int ClientID, bool State) = 0;
+	virtual bool GetStateClientMRPG(int ClientID) const = 0;
+
 	virtual void SetClientNameChangeRequest(int ClientID, const char* pName) = 0;
 	virtual const char* GetClientNameChangeRequest(int ClientID) = 0;
 
