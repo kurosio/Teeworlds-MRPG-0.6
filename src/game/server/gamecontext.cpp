@@ -857,9 +857,6 @@ void CGS::OnSnap(int ClientID)
 			arpPlayer->Snap(ClientID);
 	}
 
-	if(ClientID >= MAX_PLAYERS)
-		pPlayer->FakeSnap();
-
 	m_World.Snap(ClientID);
 	m_Events.Snap(ClientID);
 }
@@ -1253,6 +1250,11 @@ bool CGS::IsClientReady(int ClientID) const
 bool CGS::IsClientPlayer(int ClientID) const
 {
 	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+}
+
+bool CGS::IsClientMRPG(int ClientID) const
+{
+	return Server()->GetStateClientMRPG(ClientID) || (ClientID >= MAX_PLAYERS && ClientID < MAX_CLIENTS);
 }
 
 int CGS::GetClientVersion(int ClientID) const

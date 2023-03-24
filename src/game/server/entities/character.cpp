@@ -283,7 +283,6 @@ void CCharacter::FireWeapon()
 			}
 
 			bool Hits = false;
-			bool StartedTalking = false;
 			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(AttributeIdentifier::HammerDMG);
 			const float Radius = clamp(PlayerRadius / 5.0f, IsBot ? 1.7f : 3.2f, 8.0f);
 			GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
@@ -297,12 +296,10 @@ void CCharacter::FireWeapon()
 					continue;
 
 				// talking wth bot
-				if (!StartedTalking && StartConversation(pTarget->GetPlayer()))
+				if (StartConversation(pTarget->GetPlayer()))
 				{
-					m_pPlayer->SetTalking(pTarget->GetPlayer()->GetCID(), true);
 					GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_PLAYER_SPAWN);
 					GS()->CreateHammerHit(ProjStartPos);
-					StartedTalking = true;
 					Hits = true;
 
 					const int BotID = pTarget->GetPlayer()->GetBotID();
@@ -730,7 +727,6 @@ void CCharacter::Die(int Killer, int Weapon)
 	// a nice sound
 	GS()->m_pController->OnCharacterDeath(this, GS()->m_apPlayers[Killer], Weapon);
 	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
-	m_pPlayer->ClearTalking();
 
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;
@@ -1336,6 +1332,8 @@ bool CCharacter::StartConversation(CPlayer *pTarget)
 		|| (pTarget->GetBotType() == TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[pTarget->GetBotMobID()].m_HasAction)
 		|| !pTargetBot->IsVisibleForClient(m_pPlayer->GetCID()))
 		return false;
+
+	m_pPlayer->m_Dialog.Start(m_pPlayer, pTarget->GetCID());
 	return true;
 }
 

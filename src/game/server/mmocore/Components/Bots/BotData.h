@@ -3,48 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_BOT_DATA_H
 #define GAME_SERVER_COMPONENT_BOT_DATA_H
 
-/************************************************************************/
-/*  Dialog struct (reworked 08.01.2022)                                 */
-/************************************************************************/
-class CDialog
-{
-public:
-	class VariantText
-	{
-		std::string m_SaysName;
-
-	public:
-		std::string m_Text {};
-		int m_Flag {};
-
-		void Init(std::string SaysName) { m_SaysName = SaysName; }
-
-		/* return nullptr in case the base name is not set, this also applies to dynamic data of the kind of player name */
-		const char* GetSaysName() const
-		{
-			if(m_SaysName.empty())
-				return nullptr;
-
-			return m_SaysName.c_str();
-		}
-	};
-
-private:
-	std::deque <VariantText> m_aVariantText{};
-	int m_Emote{};
-	bool m_ActionStep{};
-
-public:
-	void Init(int BotID, std::string DialogueData, int Emote, bool ActionStep);
-
-	/* this method should not be called through this function, it should be a reference */
-	[[nodiscard]] VariantText* GetVariant();
-	int GetEmote() const { return m_Emote; }
-	bool IsRequestAction() const { return m_ActionStep; }
-	std::deque<VariantText>& GetArrayText()  { return m_aVariantText; }
-	bool IsEmptyDialog() const { return m_aVariantText.empty(); }
-
-};
+#include "DialogsData.h"
 
 /************************************************************************/
 /*  Global data information bot                                         */
@@ -74,7 +33,7 @@ public:
 	int m_BotID{};
 	int m_Function{};
 	int m_GiveQuestID{};
-	std::vector<CDialog> m_aDialogs {};
+	std::vector<CDialogElem> m_aDialogs {};
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsNpcBotValid(int MobID) { return ms_aNpcBot.find(MobID) != ms_aNpcBot.end() && DataBotInfo::IsDataBotValid(ms_aNpcBot[MobID].m_BotID); }
@@ -105,7 +64,7 @@ public:
 	bool m_GenerateNick{};
 	bool m_HasAction{};
 	std::string m_EventJsonData{};
-	std::vector<CDialog> m_aDialogs {};
+	std::vector<CDialogElem> m_aDialogs {};
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsQuestBotValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }

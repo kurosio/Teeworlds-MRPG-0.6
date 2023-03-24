@@ -261,6 +261,10 @@ void CServer::ChangeWorld(int ClientID, int NewWorldID)
 	m_aClients[ClientID].m_WorldID = NewWorldID;
 	GameServer(m_aClients[ClientID].m_WorldID)->PrepareClientChangeWorld(ClientID);
 
+	int* pIdMap = GetIdMap(ClientID);
+	memset(pIdMap, -1, sizeof(int) * VANILLA_MAX_CLIENTS);
+	pIdMap[0] = ClientID;
+
 	m_aClients[ClientID].Reset();
 	m_aClients[ClientID].m_IsChangesWorld = true;
 	m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
@@ -783,8 +787,11 @@ int CServer::NewClientNoAuthCallback(int ClientID, void* pUser)
 
 int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 {
-	// THREAD_PLAYER_DATA_SAFE(ClientID)
-	CServer *pThis = (CServer *)pUser;
+	CServer* pThis = (CServer*)pUser;
+	int* pIdMap = pThis->GetIdMap(ClientID);
+	memset(pIdMap, -1, sizeof(int) * VANILLA_MAX_CLIENTS);
+	pIdMap[0] = ClientID;
+
 	pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
 	str_copy(pThis->m_aClients[ClientID].m_aLanguage, "en", sizeof(pThis->m_aClients[ClientID].m_aLanguage));
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_AUTH;

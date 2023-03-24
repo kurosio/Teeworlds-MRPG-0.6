@@ -287,7 +287,7 @@ void CPlayerBot::HandleTuningParams()
 void CPlayerBot::Snap(int SnappingClient)
 {
 	int ID = m_ClientID;
-	if(!IsVisibleForClient(SnappingClient) || !Server()->Translate(ID, SnappingClient))
+	if(!Server()->Translate(ID, SnappingClient) || !IsVisibleForClient(SnappingClient))
 		return;
 
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, ID, sizeof(CNetObj_ClientInfo)));

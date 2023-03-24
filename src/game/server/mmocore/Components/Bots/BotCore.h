@@ -18,6 +18,7 @@ class CBotCore : public MmoComponent
 
 	void OnInit() override;
 	void OnInitWorld(const char* pWhereLocalWorld) override;
+	bool OnMessage(int MsgID, void* pRawMsg, int ClientID) override;
 
 	void InitQuestBots(const char* pWhereLocalWorld);
 	void InitNPCBots(const char* pWhereLocalWorld);

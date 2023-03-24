@@ -87,13 +87,14 @@ enum class AccountCodeResult : short
 
 enum
 {
-    TALKED_FLAG_EMPTY_FULL = 1 << 0,
-    TALKED_FLAG_BOT = 1 << 1,
-    TALKED_FLAG_PLAYER = 1 << 2,
-    TALKED_FLAG_SAYS_PLAYER = 1 << 3,
-    TALKED_FLAG_SAYS_BOT = 1 << 4,
-    TALKED_FLAG_SAYS_EIDOLON = 1 << 5,
-    TALKED_FLAG_FULL = TALKED_FLAG_PLAYER|TALKED_FLAG_BOT,
+    TALKED_FLAG_LBOT = 1 << 0,
+    TALKED_FLAG_RBOT = 1 << 1,
+    TALKED_FLAG_LPLAYER = 1 << 2,
+    TALKED_FLAG_LEMPTY = 1 << 3,
+    TALKED_FLAG_REMPTY = 1 << 4,
+    TALKED_FLAG_SPEAK_LEFT = 1 << 5,
+    TALKED_FLAG_SPEAK_RIGHT = 1 << 6,
+    TALKED_FLAG_SPEAK_WORLD = 1 << 7,
 };
 
 enum
@@ -558,4 +559,18 @@ Messages = [
 	]),
 
 	NetMessageEx("Sv_AfterIsMRPGServer", "svaftermrpgserver@netmsg.mrpg.dev", []),
+    
+	# dialog packages
+	# -------------
+	NetMessageEx("Sv_Dialog", "svdialog@netmsg.mrpg.dev",
+	[
+		NetIntAny("m_LeftClientID"),
+		NetIntAny("m_RightClientID"),
+		NetString("m_pText"),
+        NetIntAny("m_Flag"),
+	]),
+    
+	NetMessageEx("Cl_DialogNext", "cldialognext@netmsg.mrpg.dev", []),
+
+	NetMessageEx("Sv_ClearDialog", "svcleardialog@netmsg.mrpg.dev", []),
 ]

@@ -72,6 +72,20 @@ void MmoController::OnTick()
 		pComponent->OnTick();
 }
 
+bool MmoController::OnMessage(int MsgID, void* pRawMsg, int ClientID)
+{
+	if(GS()->Server()->ClientIngame(ClientID) && GS()->GetPlayer(ClientID))
+	{
+		for(auto& pComponent : m_Components.m_paComponents)
+		{
+			if(pComponent->OnMessage(MsgID, pRawMsg, ClientID))
+				return true;
+		}
+	}
+
+	return false;
+}
+
 void MmoController::OnInitAccount(int ClientID)
 {
 	CPlayer *pPlayer = GS()->GetPlayer(ClientID);
@@ -558,8 +572,7 @@ void MmoController::ConAsyncLinesForTranslate()
 			int DialogNum = 0;
 			std::string UniqueID("diaqu" + std::to_string(pItem.first));
 			for(auto& pDialog : pItem.second.m_aDialogs)
-				for(auto& pVariant : pDialog.GetArrayText())
-					PushingDialogs(JsonData, pVariant.m_Text.c_str(), UniqueID.c_str(), DialogNum++);
+					PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
 		}
 
 		for(auto& pItem : NpcBotInfo::ms_aNpcBot)
@@ -567,8 +580,7 @@ void MmoController::ConAsyncLinesForTranslate()
 			int DialogNum = 0;
 			std::string UniqueID("dianp" + std::to_string(pItem.first));
 			for(auto& pDialog : pItem.second.m_aDialogs)
-				for(auto& pVariant : pDialog.GetArrayText())
-					PushingDialogs(JsonData, pVariant.m_Text.c_str(), UniqueID.c_str(), DialogNum++);
+					PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
 		}
 
 		for(auto& [ID, Aether] : CAether::Data())

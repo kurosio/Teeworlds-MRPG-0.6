@@ -136,7 +136,6 @@ public:
 	void SendEmoticon(int ClientID, int Emoticon);
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendMotd(int ClientID);
-
 	void SendTuningParams(int ClientID);
 
 	/* #########################################################################
@@ -162,6 +161,7 @@ public:
 	void OnClientPredictedInput(int ClientID, void *pInput) override;
 	bool IsClientReady(int ClientID) const override;
 	bool IsClientPlayer(int ClientID) const override;
+	bool IsClientMRPG(int ClientID) const;
 	bool PlayerExists(int ClientID) const override { return m_apPlayers[ClientID]; }
 
 	int GetClientVersion(int ClientID) const;

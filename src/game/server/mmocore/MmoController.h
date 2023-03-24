@@ -73,6 +73,7 @@ public:
 
 	// global systems
 	void OnTick();
+	bool OnMessage(int MsgID, void* pRawMsg, int ClientID);
 	bool OnPlayerHandleTile(CCharacter *pChr, int IndexCollision);
 	bool OnPlayerHandleMainMenu(int ClientID, int Menulist);
 	void OnInitAccount(int ClientID);

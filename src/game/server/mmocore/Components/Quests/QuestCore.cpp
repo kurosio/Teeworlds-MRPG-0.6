@@ -251,12 +251,12 @@ void QuestCore::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 	}
 }
 
-void QuestCore::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, const char* pBuffer)
+void QuestCore::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size)
 {
 	const int QuestID = pBot.m_QuestID;
 	CQuestData& pPlayerQuest = pPlayer->GetQuest(QuestID);
 	if(pPlayerQuest.m_StepsQuestBot.find(pBot.m_SubBotID) != pPlayerQuest.m_StepsQuestBot.end())
-		pPlayerQuest.m_StepsQuestBot[pBot.m_SubBotID].ShowRequired(pPlayer, pBuffer);
+		pPlayerQuest.m_StepsQuestBot[pBot.m_SubBotID].ShowRequired(pPlayer, aBufQuestTask, Size);
 }
 
 bool QuestCore::InteractiveQuestNPC(CPlayer* pPlayer, QuestBotInfo& pBot, bool FinalStepTalking)

@@ -34,15 +34,6 @@ class CPlayer
 		int m_TargetY;
 	};
 
-	struct
-	{
-		int m_TalkedID;
-		int m_Progress;
-		int m_RequestProgress;
-		bool m_FreezedProgress;
-	} m_DialogNPC;
-
-	char m_aFormatDialogText[512];
 	int m_SnapHealthTick;
 	std::unordered_map < int, bool > m_aHiddenMenu;
 
@@ -75,15 +66,16 @@ public:
 	######################################################################### */
 	CTuningParams m_PrevTuningParams;
 	CTuningParams m_NextTuningParams;
+	CPlayerDialog m_Dialog;
 
 	bool m_Spawned;
-
 	short m_aSortTabs[NUM_SORT_TAB];
 	int m_TempMenuValue;
 	short m_OpenVoteMenu;
 	short m_LastVoteMenu;
 	bool m_RequestChangeNickname;
 	int m_EidolonCID;
+
 
 	/* #########################################################################
 		FUNCTIONS PLAYER ENGINE
@@ -137,7 +129,6 @@ public:
 
 private:
 	virtual void EffectsTick();
-	void TickSystemTalk();
 	virtual void TryRespawn();
 
 public:
@@ -192,18 +183,7 @@ public:
 	void SetSnapHealthTick(int Sec);
 
 	std::deque<class CQuestPathFinder*> m_aQuestPathFinders;
-
-	// TODO: rework dialogs
-	// npc conversations
-	void SetTalking(int TalkedID, bool IsStartDialogue);
-	void ClearTalking();
-	int GetTalkedID() const { return m_DialogNPC.m_TalkedID; }
-
-	// dialog formating
-	const char *GetDialogText() const;
-	void FormatDialogText(int DataBotID, const char *pText);
-	void ClearDialogText();
-
+	
 	virtual const char* GetStatus() const;
 	virtual Mood GetMoodState() const { return Mood::NORMAL; }
 	void ChangeWorld(int WorldID);

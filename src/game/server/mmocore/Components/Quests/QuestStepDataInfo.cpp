@@ -258,13 +258,10 @@ void CPlayerQuestStepDataInfo::CreateStepDropTakeItems(CPlayer* pPlayer)
 }
 
 
-void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffer)
+void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, char* aBufQuestTask, int Size)
 {
-	dynamic_string Buffer;
+	dynamic_string Buffer("\n\n");
 	CGS* pGS = pPlayer->GS();
-	const int ClientID = pPlayer->GetCID();
-
-	bool IsActiveTask = false;
 
 	// search item's and mob's
 	for(int i = 0; i < 2; i++)
@@ -275,7 +272,6 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 		{
 			Buffer.append_at(Buffer.length(), "\n");
 			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Defeat {STR} ({INT}/{INT})", DataBotInfo::ms_aDataBot[BotID].m_aNameBot, m_MobProgress[i], ValueMob);
-			IsActiveTask = true;
 		}
 
 		const int ItemID = m_Bot.m_aItemSearch[i];
@@ -288,8 +284,6 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 			const char* pInteractiveType = m_Bot.m_InteractiveType == (int)INTERACTIVE_SHOW_ITEMS ? "Show" : "Need";
 			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- {STR} {STR} ({VAL}/{VAL})", 
 				pGS->Server()->Localization()->Localize(pPlayer->GetLanguage(), pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), ValueItem);
-
-			IsActiveTask = true;
 		}
 	}
 
@@ -305,7 +299,6 @@ void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, const char* pBuffe
 		}
 	}
 
-	pGS->Motd(ClientID, "{STR}\n\n{STR}{STR}\n\n", pBuffer, (IsActiveTask ? "~~ Task" : "\0"), Buffer.buffer());
-	pPlayer->ClearDialogText();
+	str_copy(aBufQuestTask, Buffer.buffer(), Size);
 	Buffer.clear();
 }
