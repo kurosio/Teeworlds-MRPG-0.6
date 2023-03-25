@@ -194,16 +194,16 @@ CGS* CPlayerDialog::GS() const { return m_pPlayer->GS(); }
 void CPlayerDialog::Start(CPlayer* pPlayer, int BotCID)
 {
 	m_pPlayer = pPlayer;
-	if(!m_pPlayer || !GS()->GetPlayer(BotCID))
+	if(!pPlayer || !GS()->GetPlayer(BotCID))
 		return;
 
 	Clear();
 
-	m_BotCID = BotCID;
 	const CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[BotCID]);
 
 	m_Step = 0;
 	m_BotType = pPlayerBot->GetBotType();
+	m_BotCID = BotCID;
 	m_MobID = pPlayerBot->GetBotMobID();
 
 	// show step dialog or meaningless
@@ -395,7 +395,7 @@ void CPlayerDialog::Next()
 		}
 
 		// run event
-		RunEvents();
+		DialogEvents();
 	}
 
 	// next step
@@ -411,8 +411,8 @@ void CPlayerDialog::Next()
 void CPlayerDialog::PostNext()
 {
 	// is last dialog
-	CDialogElem* pDialog = GetCurrent();
-	if(!pDialog)
+	CDialogElem* pCurrent = GetCurrent();
+	if(!pCurrent)
 	{
 		// post next quest bot type
 		if(m_BotType == TYPE_BOT_QUEST)
@@ -421,13 +421,13 @@ void CPlayerDialog::PostNext()
 		}
 
 		// clear and run post events
-		PostRunEvent();
+		EndDialogEvents();
 		Clear();
 		return;
 	}
 
 	// show next dialog
-	pDialog->Show(GS(), m_pPlayer->GetCID());
+	pCurrent->Show(GS(), m_pPlayer->GetCID());
 }
 
 void CPlayerDialog::Clear()
@@ -455,7 +455,7 @@ void CPlayerDialog::Clear()
 	}
 }
 
-void CPlayerDialog::RunEvents() const
+void CPlayerDialog::DialogEvents() const
 {
 	std::string EventData {};
 	if(m_BotType == TYPE_BOT_QUEST)
@@ -490,7 +490,7 @@ void CPlayerDialog::RunEvents() const
 	});
 }
 
-void CPlayerDialog::PostRunEvent() const
+void CPlayerDialog::EndDialogEvents() const
 {
 	std::string EventData {};
 	if(m_BotType == TYPE_BOT_QUEST)

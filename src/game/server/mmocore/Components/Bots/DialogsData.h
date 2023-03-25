@@ -9,7 +9,7 @@
 class CPlayerDialog
 {
 	friend class CDialogElem;
-	class  CGS* GS() const;
+	class CGS* GS() const;
 	class CPlayer* m_pPlayer {};
 
 	int m_BotCID{};
@@ -31,8 +31,8 @@ private:
 	void ClearText();
 
 	class CDialogElem* GetCurrent() const;
-	void RunEvents() const;
-	void PostRunEvent() const;
+	void DialogEvents() const;
+	void EndDialogEvents() const;
 	void PostNext();
 	void Clear();
 };
