@@ -32,6 +32,7 @@ static DialogInitilizerType DialogInitilizer(int DataBotID, const std::string& J
 	{
 		CDialogElem Dialogue;
 		Dialogue.Init(DataBotID, "<player>, do you have any questions? I'm sorry, can't help you.", false);
+		Value.second.push_back(Dialogue);
 	}
 
 	return Value;
