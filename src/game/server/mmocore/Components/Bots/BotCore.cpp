@@ -7,10 +7,10 @@
 #include <game/server/mmocore/Components/Quests/QuestCore.h>
 
 // dialogue initilizer
-typedef std::pair < bool, std::vector<CDialogElem> > DialogInitilizerType;
-static DialogInitilizerType DialogInitilizer(int DataBotID, const std::string& JsonDialogData)
+typedef std::pair < bool, std::vector<CDialogElem> > DialogsInitilizerType;
+static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string& JsonDialogData)
 {
-	DialogInitilizerType Value;
+	DialogsInitilizerType Value;
 	JsonTools::parseFromString(JsonDialogData, [&](nlohmann::json& pJson)
 	{
 		for(auto& pItem : pJson)
@@ -117,7 +117,7 @@ void CBotCore::InitQuestBots(const char* pWhereLocalWorld)
 
 		// dialog initilizer
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
-		auto [lAction, aDialogs] = DialogInitilizer(QuestBot.m_BotID, DialogJsonStr);
+		auto [lAction, aDialogs] = DialogsInitilizer(QuestBot.m_BotID, DialogJsonStr);
 		QuestBot.m_HasAction = lAction;
 		QuestBot.m_aDialogs = aDialogs;
 
@@ -149,7 +149,7 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 
 		// dialog initilizer
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
-		DialogInitilizerType DialogsInitilizer = DialogInitilizer(NpcBot.m_BotID, DialogJsonStr);
+		DialogInitilizerType DialogsInitilizer = DialogsInitilizer(NpcBot.m_BotID, DialogJsonStr);
 		NpcBot.m_aDialogs = DialogsInitilizer.second;
 
 		// initilize
