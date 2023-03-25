@@ -149,8 +149,7 @@ void CBotCore::InitNPCBots(const char* pWhereLocalWorld)
 
 		// dialog initilizer
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
-		DialogInitilizerType DialogsInitilizer = DialogsInitilizer(NpcBot.m_BotID, DialogJsonStr);
-		NpcBot.m_aDialogs = DialogsInitilizer.second;
+		NpcBot.m_aDialogs = DialogsInitilizer(NpcBot.m_BotID, DialogJsonStr).second;
 
 		// initilize
 		NpcBotInfo::ms_aNpcBot[MobID] = NpcBot;
