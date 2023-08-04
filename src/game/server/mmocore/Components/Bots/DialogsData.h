@@ -26,7 +26,7 @@ public:
 	void TickUpdate();
 
 private:
-	void FormatText(class CDialogElem* pDialog, const char* pLeftNickname, const char* pRightNickname);
+	void FormatText(const class CDialogElem* pDialog, const char* pLeftNickname, const char* pRightNickname);
 	const char* GetCurrentText() const { return m_aFormatedText; }
 	void ClearText();
 

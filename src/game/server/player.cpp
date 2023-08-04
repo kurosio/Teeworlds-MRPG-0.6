@@ -134,7 +134,7 @@ void CPlayer::TryCreateEidolon()
 	int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON);
 	if(CEidolonInfoData* pEidolonData = GS()->GetEidolonByItemID(EidolonItemID))
 	{
-		if(const int EidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, pEidolonData->GetDataBotID(), m_ClientID))
+		if(const int EidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, pEidolonData->GetDataBotID(), m_ClientID); EidolonCID != -1)
 		{
 			dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[EidolonCID])->m_EidolonItemID = EidolonItemID;
 			m_EidolonCID = EidolonCID;

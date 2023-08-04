@@ -36,7 +36,7 @@ public:
 	std::vector<CDialogElem> m_aDialogs {};
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
-	static bool IsNpcBotValid(int MobID) { return ms_aNpcBot.find(MobID) != ms_aNpcBot.end() && DataBotInfo::IsDataBotValid(ms_aNpcBot[MobID].m_BotID); }
+	static bool IsValid(int MobID) { return ms_aNpcBot.find(MobID) != ms_aNpcBot.end() && DataBotInfo::IsDataBotValid(ms_aNpcBot[MobID].m_BotID); }
 	static std::map<int, NpcBotInfo> ms_aNpcBot;
 };
 
@@ -67,7 +67,7 @@ public:
 	std::vector<CDialogElem> m_aDialogs {};
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
-	static bool IsQuestBotValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }
+	static bool IsValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }
 	static std::map<int, QuestBotInfo> ms_aQuestBot;
 };
 
@@ -121,14 +121,33 @@ public:
 	float m_aRandomItem[MAX_DROPPED_FROM_MOBS]{};
 	int m_BotID{};
 
-	std::deque < CMobBuffDebuff >& GetEffects() { return m_Effects; }
-	[[nodiscard]] CMobBuffDebuff* GetRandomEffect() { return m_Effects.empty() ? nullptr : &m_Effects[random_int() % m_Effects.size()]; }
+	const char* GetName() const
+	{
+		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
+	}
 
-	bool IsEnabledBehavior(const char* pBehavior) const { return str_find(m_aBehavior, pBehavior) != nullptr; }
-	void InitBuffDebuff(int Seconds, int Range, float Chance, std::string& buffSets);
+	std::deque < CMobBuffDebuff >& GetEffects()
+	{
+		return m_Effects;
+	}
 
-	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
-	static bool IsMobBotValid(int MobID) { return ms_aMobBot.find(MobID) != ms_aMobBot.end() && DataBotInfo::IsDataBotValid(ms_aMobBot[MobID].m_BotID); }
+	[[nodiscard]] CMobBuffDebuff* GetRandomEffect()
+	{
+		return m_Effects.empty() ? nullptr : &m_Effects[random_int() % m_Effects.size()];
+	}
+
+	void InitDebuffs(int Seconds, int Range, float Chance, std::string& buffSets);
+
+	bool IsIncludedBehavior(const char* pBehavior) const
+	{
+		return str_find(m_aBehavior, pBehavior) != nullptr;
+	}
+
+	static bool IsValid(int MobID)
+	{
+		return ms_aMobBot.find(MobID) != ms_aMobBot.end() && DataBotInfo::IsDataBotValid(ms_aMobBot[MobID].m_BotID);
+	}
+
 	static std::map<int, MobBotInfo> ms_aMobBot;
 };
 

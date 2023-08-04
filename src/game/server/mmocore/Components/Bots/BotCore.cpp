@@ -179,7 +179,7 @@ void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_BotID = BotID;
 		str_copy(MobBot.m_aBehavior, pRes->getString("Behavior").c_str(), sizeof(MobBot.m_aBehavior));
 		std::string BuffDebuff = pRes->getString("Effect").c_str();
-		MobBot.InitBuffDebuff(4, 4, 3.0f, BuffDebuff);
+		MobBot.InitDebuffs(4, 4, 3.0f, BuffDebuff);
 
 		for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 		{
@@ -203,7 +203,7 @@ void CBotCore::InitMobsBots(const char* pWhereLocalWorld)
 
 int CBotCore::GetQuestNPC(int MobID)
 {
-	if (!NpcBotInfo::IsNpcBotValid(MobID))
+	if (!NpcBotInfo::IsValid(MobID))
 		return -1;
 
 	return NpcBotInfo::ms_aNpcBot[MobID].m_GiveQuestID;
@@ -213,9 +213,8 @@ bool CBotCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 {
 	bool Found = false;
 	const int ClientID = pPlayer->GetCID();
-	const float ExtraChance = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
-	
-	char aBuf[128];
+	const float ExtraChance = clamp(static_cast<float>(pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem)) / 100.0f, 0.01f, 10.0f);
+
 	for(const auto& [ID, MobData] : MobBotInfo::ms_aMobBot)
 	{
 		if (WorldID == MobData.m_WorldID)
@@ -232,6 +231,8 @@ bool CBotCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 
 				const float Chance = MobData.m_aRandomItem[i];
 				CItemDescription* pDropItemInfo = GS()->GetItemInfo(MobData.m_aDropItem[i]);
+
+				char aBuf[128];
 				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", MobData.m_aValueItem[i], Chance, ExtraChance);
 				GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}{STR}", pDropItemInfo->GetName(), aBuf);
 				HasDropItem = true;
@@ -240,7 +241,9 @@ bool CBotCore::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 			Found = true;
 
 			if(!HasDropItem)
+			{
 				GS()->AVM(ClientID, "null", NOPE, HideID, "The mob has no items!");
+			}
 		}
 	}
 	return Found;

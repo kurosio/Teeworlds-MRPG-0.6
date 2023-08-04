@@ -7,7 +7,7 @@ std::map< int, NpcBotInfo > NpcBotInfo::ms_aNpcBot;
 std::map< int, QuestBotInfo > QuestBotInfo::ms_aQuestBot;
 std::map< int, MobBotInfo > MobBotInfo::ms_aMobBot;
 
-void MobBotInfo::InitBuffDebuff(int Seconds, int Range, float Chance, std::string& buffSets)
+void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, std::string& buffSets)
 {
 	if(!buffSets.empty())
 	{

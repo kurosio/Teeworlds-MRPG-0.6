@@ -170,8 +170,6 @@ void CDialogElem::Show(CGS* pGS, int ClientID)
 		Msg.m_pText = pPlayer->m_Dialog.GetCurrentText();
 		Msg.m_Flag = m_Flags;
 		pGS->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-
-		//pGS->Motd(ClientID, pPlayer->m_Dialog.GetCurrentText());
 	}
 	else
 	{
@@ -233,12 +231,13 @@ void CPlayerDialog::TickUpdate()
 		Clear();
 }
 
-void CPlayerDialog::FormatText(CDialogElem* pDialog, const char* pLeftNickname, const char* pRightNickname)
+void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNickname, const char* pRightNickname)
 {
 	if(!pDialog || !m_pPlayer || m_aFormatedText[0] != '\0')
 		return;
 
-	bool IsVanillaClient = false;
+	const int ClientID = m_pPlayer->GetCID();
+	const bool IsVanillaClient = !GS()->IsClientMRPG(ClientID);
 	/*
 	 * Information format
 	 */
@@ -294,7 +293,7 @@ void CPlayerDialog::FormatText(CDialogElem* pDialog, const char* pLeftNickname, 
 	if(IsVanillaClient)
 	{
 		if(pDialog->GetFlag() & TALKED_FLAG_SPEAK_LEFT || pDialog->GetFlag() & TALKED_FLAG_SPEAK_RIGHT)
-			str_format(aBufSpeakNickname, sizeof(aBufSpeakNickname), "%s...\n", pDialog->GetFlag() & TALKED_FLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
+			str_format(aBufSpeakNickname, sizeof(aBufSpeakNickname), "%s says:\n", pDialog->GetFlag() & TALKED_FLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
 	}
 
 	/*
@@ -343,7 +342,7 @@ void CPlayerDialog::FormatText(CDialogElem* pDialog, const char* pLeftNickname, 
 		}
 
 		// based replacing dialogs
-		str_replace(aBufText, "<player>", GS()->Server()->ClientName(m_pPlayer->GetCID()));
+		str_replace(aBufText, "<player>", GS()->Server()->ClientName(ClientID));
 		str_replace(aBufText, "<time>", GS()->Server()->GetStringTypeDay());
 		str_replace(aBufText, "<here>", GS()->Server()->GetWorldName(GS()->GetWorldID()));
 		str_replace(aBufText, "<eidolon>", m_pPlayer->GetEidolon() ? DataBotInfo::ms_aDataBot[m_pPlayer->GetEidolon()->GetBotID()].m_aNameBot : "Eidolon");
