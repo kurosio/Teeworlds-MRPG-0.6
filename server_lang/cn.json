@@ -679,12 +679,12 @@
         {
             "hash": 15192606723802409587,
             "key": "It sounds like the first choice would be much quicker. You ask Flower where you could find the Ruins Giant.\n",
-	        "value": "听起来第一种选择要快得多。你问Flower在哪里可以找到废墟大屌男。\n"
+	        "value": "听起来第一种选择要快得多。你问Flower在哪里可以找到废墟巨人。\n"
         },
         {
             "hash": 7095874003817480993,
             "key": "\"I suppose you're right. I have two choices. I can defeat the Ruins Giant that stole the translation information... Or I can spend a few days retranslating the ancient spells in Navea.\"\n",
-            "value": "\"I suppose you're right. I have two choices. I can defeat the Ruins Giant that stole the translation information... Or I can spend a few days retranslating the ancient spells in Navea.\"\n"
+            "value": "\"我想你是对的。我有两个选择。我可以打败窃取翻译信息的废墟巨人……或者我可以花几天时间在 Navea 重新翻译古老的咒语.\"\n"
         },
         {
             "hash": 3745366404024544755,
@@ -749,262 +749,262 @@
         {
             "hash": 16934086539743192334,
             "key": "Just as you are about to speak, a black shadow suddenly races over to you. Both you and Flower shriek in surprise.",
-            "value": "Just as you are about to speak, a black shadow suddenly races over to you. Both you and Flower shriek in surprise."
+            "value": "就在你正要说话的时候，一个黑影突然向你跑过来。你和 Flower 都惊讶地尖叫起来."
         },
         {
             "hash": 16371045832492527986,
             "key": "\"I'm so glad you're here to help! Otherwise, I'd never be able to decipher these runes.\"",
-            "value": "\"I'm so glad you're here to help! Otherwise, I'd never be able to decipher these runes.\""
+            "value": "\"我很高兴你能来帮忙!否则,我永远无法破译这些符文.\""
         },
         {
             "hash": 6834481868297331722,
             "key": "You tell Flower that you have cleared away the Fairies.",
-            "value": "You tell Flower that you have cleared away the Fairies."
+            "value": "你告诉 Flower 你把那些仙灵赶走了."
         },
         {
             "hash": 5468139570300196454,
             "key": "\"These are all old runic letters, but whoever etched them upon the stone probably didn't want others to decipher his message easily. This must be the reason...\"\n",
-            "value": "\"These are all old runic letters, but whoever etched them upon the stone probably didn't want others to decipher his message easily. This must be the reason...\"\n"
+            "value": "\"这都是些古老的符文字母，但刻在石头上的人可能不想让别人轻易破译他的信息.一定是这样...\"\n"
         },
         {
             "hash": 2721514411081075829,
             "key": "\"First, I need you to help me get rid of those pesky Petal Fairies and Green Fairies. Only then can I freely search for clues about the stone statue.\"",
-            "value": "\"First, I need you to help me get rid of those pesky Petal Fairies and Green Fairies. Only then can I freely search for clues about the stone statue.\""
+            "value": "\"首先，我需要你帮我除掉右边那些讨厌的花瓣仙子和绿仙子。只有这样，我才能自由地寻找石像的线索.\""
         },
         {
             "hash": 1846567790914868014,
             "key": "\"Something happened a while ago. Elena needed me to decipher the Runic letters on the statue. She said it was urgent, but she never explained why. However, her request has proven excessively difficult. The first time I translated the spell, it was stolen. Now the Fairies nearby won't let me anywhere near the Stone Statue.\"",
-            "value": "\"Something happened a while ago. Elena needed me to decipher the Runic letters on the statue. She said it was urgent, but she never explained why. However, her request has proven excessively difficult. The first time I translated the spell, it was stolen. Now the Fairies nearby won't let me anywhere near the Stone Statue.\""
+            "value": "\"刚才发生了一件事. Elena 要我破译雕像上的符文字母.她说事情紧急，但没说为啥。然而，她站着说话不腰疼.我第一次翻译咒语时，它被仙灵偷走了.现在，附近的仙灵们不让我靠近石像.\""
         },
         {
             "hash": 9878011284361087256,
             "key": "Hearing that the same thing had happened to Flower sparks hope in your heart. However, you notice that she is focused on the machine in your hands.",
-            "value": "Hearing that the same thing had happened to Flower sparks hope in your heart. However, you notice that she is focused on the machine in your hands."
+            "value": "听到 Flower 也遭遇了同样的事，你心中燃起了希望.然而，你注意到她专注于你手中的机器."
         },
         {
             "hash": 12014897425511146596,
             "key": "\"If I can help you, I'm more than willing to do so. I've seen something like this before. There was a spirit - a Light Orb - following me, but...\"",
-            "value": "\"If I can help you, I'm more than willing to do so. I've seen something like this before. There was a spirit - a Light Orb - following me, but...\""
+            "value": "\"如果我能帮你，我非常乐意。我以前见过类似的情况.有一个灵魂 - 一个光球 - 跟着我，但是……\""
         },
         {
             "hash": 3888228036111991511,
             "key": "You immediately ask <bot_23> what's going on.",
-            "value": "You immediately ask <bot_23> what's going on."
+            "value": "你火速问 <bot_23> 发生什么事了."
         },
         {
             "hash": 16129869841651186580,
             "key": "\"You, too...\" <bot_33> murmurs to herself as she stares at the Light Orb.",
-            "value": "\"You, too...\" <bot_33> murmurs to herself as she stares at the Light Orb."
+            "value": "\"你也是...\" <bot_33> 盯着光球喃喃自语."
         },
         {
             "hash": 1197003045375977563,
             "key": "You appear in front of <bot_33>. The look on her face betrays an overwhelming sense of horror.",
-            "value": "You appear in front of <bot_33>. The look on her face betrays an overwhelming sense of horror."
+            "value": "你出现在 <bot_33> 面前. 她脸上的表情流露出一种强烈的恐惧感."
         },
         {
             "hash": 5405019322355363843,
             "key": "\"Originally, there was some sort of connection between these Runic letters. I don't know why I didn't think about that before,\" <bot_33> muses, her head in her hands.",
-            "value": "\"Originally, there was some sort of connection between these Runic letters. I don't know why I didn't think about that before,\" <bot_33> muses, her head in her hands."
+            "value": "\"这些符文字母之间有某种联系. 我不知道为什么之前没想到,\" <bot_33> 双手抱头沉思."
         },
         {
             "hash": 17198007252119228610,
             "key": "All I can say is, <player>, um... don't worry... Just get yourself to the Statue Ruins right away. There, you'll find the Witch's Assistant, <bot_33>. Perhaps she can help.",
-            "value": "All I can say is, <player>, um... don't worry... Just get yourself to the Statue Ruins right away. There, you'll find the Witch's Assistant, <bot_33>. Perhaps she can help."
+            "value": "我只能说, <player>, 嗯…别担心…赶快去雕像遗址吧。在那里，你会找到女巫的助手 <bot_33>. 也许她能帮上忙."
         },
         {
             "hash": 14196724018063334186,
             "key": "A moment of awkward silence passes, and then... <bot_23> -- thinking carefully -- lets out a long breath.",
-            "value": "A moment of awkward silence passes, and then... <bot_23> -- thinking carefully -- lets out a long breath."
+            "value": "一阵尴尬的沉默过去了，然后…… <bot_23> --仔细思考 -- 深深地吸了一口气."
         },
         {
             "hash": 13683672048611937085,
             "key": "I don't understand. I've never seen anyone react this way to my medicine. A possible allergy... no... impossible! I'm just as interested in finding out what's going on as you are!",
-            "value": "I don't understand. I've never seen anyone react this way to my medicine. A possible allergy... no... impossible! I'm just as interested in finding out what's going on as you are!"
+            "value": "我不明白.我从没见过有人对我的药有这种反应.可能是过敏…不…不可能!我和你一样想知道到底发生了什么!"
         },
         {
             "hash": 8862359915338691542,
             "key": "This... is just a bottle of <item_45>. It couldn't do something like this...",
-            "value": "This... is just a bottle of <item_45>. It couldn't do something like this..."
+            "value": "这，这只是一瓶 <item_45>. 它不可能起这种作用..."
         },
         {
             "hash": 3087409276044007700,
             "key": "You nervously explain to <bot_18> that you know nothing about medicine, and you don't want to be a burden to the doctor.",
-            "value": "You nervously explain to <bot_18> that you know nothing about medicine, and you don't want to be a burden to the doctor."
+            "value": "你紧张地对 <bot_18> 说你对医学一无所知，你不想成为医生的负担."
         },
         {
             "hash": 17805833350844960800,
             "key": "For a moment, you have no idea how to react.",
-            "value": "For a moment, you have no idea how to react."
+            "value": "有那么一瞬间，你不知道该如何反应."
         },
         {
             "hash": 14601086003531801637,
             "key": "You turn and see a Light Orb floating next to you. It emits a faint blue light. You have a feeling that's what was causing you to feel ill...",
-            "value": "You turn and see a Light Orb floating next to you. It emits a faint blue light. You have a feeling that's what was causing you to feel ill..."
+            "value": "你转过身，看到一个光球漂浮在你旁边。它发出微弱的蓝光。你有一种感觉，那就是导致你不舒服的原因..."
         },
         {
             "hash": 10773714309623744091,
             "key": "\"Something's appeared next to you. And, um, it's getting brighter...\" <bot_23> tries his best to mask it, but you can tell he is worried.",
-            "value": "\"Something's appeared next to you. And, um, it's getting brighter...\" <bot_23> tries his best to mask it, but you can tell he is worried."
+            "value": "\"你旁边出现了什么东西。嗯，天越来越亮了…...\" <bot_23> 尽力掩饰，但你能看出他很担心."
         },
         {
             "hash": 10209053307359612736,
             "key": "You take deep breaths to try to feel better, which seems to help. You start to feel lighter. As you fill your lungs with what... seems like more than just air.",
-            "value": "You take deep breaths to try to feel better, which seems to help. You start to feel lighter. As you fill your lungs with what... seems like more than just air."
+            "value": "你深呼吸，试着让自己感觉好一点，这似乎有帮助。你开始感觉轻松了。什么东西填满了你的肺…不只只是空气."
         },
         {
             "hash": 7836863735889141045,
             "key": "Hey, <player>, what's wrong with you? Maybe we ought to induce vomiting...",
-            "value": "Hey, <player>, what's wrong with you? Maybe we ought to induce vomiting..."
+            "value": "嘿, <player>, 你怎么了?也许我们应该催吐..."
         },
         {
             "hash": 7140032092570529402,
             "key": "While Village <bot_23> is checking up on you, you start feeling nauseous.",
-            "value": "While Village <bot_23> is checking up on you, you start feeling nauseous."
+            "value": "当村民 <bot_23> 正在检查你的情况时，你开始感到恶心."
         },
         {
             "hash": 10836147628434630177,
             "key": "Why do you feel dizzy? Could you be allergic to the medicine? Here, look. How many fingers am I holding up?",
-            "value": "Why do you feel dizzy? Could you be allergic to the medicine? Here, look. How many fingers am I holding up?"
+            "value": "你为什么觉得头晕?你会不会对这种药过敏?看这里，（它举起了指头)这是几?"
         },
         {
             "hash": 8527419691905087538,
             "key": "What?! that medicine shouldn't have had any side effects. Let me take a closer look.",
-            "value": "What?! that medicine shouldn't have had any side effects. Let me take a closer look."
+            "value": "什么? !那种药应该不会有副作用的.让我仔细看看."
         },
         {
             "hash": 17035957775630292352,
             "key": "To begin with, approach <bot_14>. She has something for you that will help your task.",
-            "value": "To begin with, approach <bot_14>. She has something for you that will help your task."
+            "value": "首先，去找 <bot_14> .她有东西可以帮你完成任务."
         },
         {
             "hash": 10901133288594529618,
             "key": "\"Drink it up. It's the only way you'll have the energy to work tomorrow,\" <bot_23> says with a grin.",
-            "value": "\"Drink it up. It's the only way you'll have the energy to work tomorrow,\" <bot_23> says with a grin."
+            "value": "\"把它喝了吧,这是你明天有精力工作的唯一方法.\" <bot_23> 笑着说."
         },
         {
             "hash": 10261262356318915533,
             "key": "Oh this <item_45>, a useful thing. At least for 3 days it will be easier.",
-            "value": "Oh this <item_45>, a useful thing. At least for 3 days it will be easier."
+            "value": "噢，这是 <item_45> , 挺有用的，至少接下来三天可以轻松点."
         },
         {
             "hash": 13954558694289912097,
             "key": "<bot_23> asked me to give this to you",
-            "value": "<bot_23> asked me to give this to you"
+            "value": "<bot_23> 让我把这个给你"
         },
         {
             "hash": 10344213703068234893,
             "key": "Wait until your mind stabilizes, then please send the potion to the lumberjacks.\n",
-            "value": "Wait until your mind stabilizes, then please send the potion to the lumberjacks.\n"
+            "value": "等你的情绪稳定下来，再把药水送到伐木工人那里.\n"
         },
         {
             "hash": 2748044480661097008,
             "key": "I'll let you try this bottle of <item_45>. Trust me, it'll make you feel better.",
-            "value": "I'll let you try this bottle of <item_45>. Trust me, it'll make you feel better."
+            "value": "试试这瓶 <item_45>. 相信我，这会让你感觉好些的."
         },
         {
             "hash": 3133477604782422587,
             "key": "Good! Put them together and give 'em a good grind. Then mix in this medicine, bottle it, and we're done! Easy, eh?",
-            "value": "Good! Put them together and give 'em a good grind. Then mix in this medicine, bottle it, and we're done! Easy, eh?"
+            "value": "非常好!把它们放在一起好好磨一磨。然后把药混在瓶子里，就完事了!很容易,不是吗?"
         },
         {
             "hash": 9424205322844232645,
             "key": "\"You are truly an excellent assistant,\" \n\n<bot_23> comments, patting you on the back.",
-            "value": "\"You are truly an excellent assistant,\" \n\n<bot_23> comments, patting you on the back."
+            "value": "\"你是个十分优秀的助手,\" \n\n<bot_23>说，拍着你的背."
         },
         {
             "hash": 3345933021052829684,
             "key": "\"Perfect! These are Skandia's most unique mushrooms.\" \n\n<bot_23> examines them out one by one.",
-            "value": "\"Perfect! These are Skandia's most unique mushrooms.\" \n\n<bot_23> examines them out one by one."
+            "value": "\"无与伦比！! 这简直是 Skandia 里最独特的蘑菇.\" \n\n<bot_23> 逐一检查了过去."
         },
         {
             "hash": 11279510902090408510,
             "key": "I heard <bot_18> sent you here to help out. Luckily, I've got the perfect project for you.",
-            "value": "I heard <bot_18> sent you here to help out. Luckily, I've got the perfect project for you."
+            "value": "我听说 <bot_18> 派你来帮忙。幸运的是，我为你准备了一个完美的项目."
         },
         {
             "hash": 10610497013921202634,
             "key": "These mushrooms may well be Skandia's most valuable resource. A good deal of caravans come to the port just to buy them. I hear they are also excellent in risotto.",
-            "value": "These mushrooms may well be Skandia's most valuable resource. A good deal of caravans come to the port just to buy them. I hear they are also excellent in risotto."
+            "value": "这些蘑菇是 Skandia 最有价值的东西. 很多商队来港口就是为了买这些东西。我听说他们做的意大利调味饭也很好吃."
         },
         {
             "hash": 9926901459034629342,
             "key": "<player>, looks like I need to ask you to go gather some <item_33>s. They typically grow near tree trunks. Take a look around the area, and I'm sure you'll find 'em.\n\n(You can find the location of ores, loot, and mobs in the Wiki tab in the voting).",
-            "value": "<player>, looks like I need to ask you to go gather some <item_33>s. They typically grow near tree trunks. Take a look around the area, and I'm sure you'll find 'em.\n\n(You can find the location of ores, loot, and mobs in the Wiki tab in the voting)."
+            "value": "<player>, 看起来我需要让你去收集一些 <item_33>. 它们通常生长在树干附近[冒头的爱心就是]. 看看周围的区域，我相信你会找到他们.\n\n(你可以在投票的Wiki标签中找到矿石，战利品和怪物的位置)."
         },
         {
             "hash": 12408896769643711551,
             "key": "\"I used up the mushrooms last time I prepared a medication. I haven't had time to seek them out again.\" \n\n<bot_23> scratches his head, anxious.",
-            "value": "\"I used up the mushrooms last time I prepared a medication. I haven't had time to seek them out again.\" \n\n<bot_23> scratches his head, anxious."
+            "value": "\"我上次配药的时候把蘑菇都用光了。我还没来得及再去找他们.\" \n\n<bot_23> 抓着他的头，焦虑着."
         },
         {
             "hash": 9803499324233160798,
             "key": "\"I've almost completely ground up these herbs. We should put some <item_33>s into the medicine and grind them together, too...\" \n\n<bot_23> suddenly pauses to examine the medicine.",
-            "value": "\"I've almost completely ground up these herbs. We should put some <item_33>s into the medicine and grind them together, too...\" \n\n<bot_23> suddenly pauses to examine the medicine."
+            "value": "\"我几乎把这些草药都磨碎了。我们应该把一些 <item_33> 放进药里，把它们一起磨碎...\" \n\n<bot_23> 突然停下来检查药物."
         },
         {
             "hash": 276284221641829821,
             "key": "We used to have Aliya as an herbalist. I'm relying on you.",
-            "value": "We used to have Aliya as an herbalist. I'm relying on you."
+            "value": "Aliya 以前是我们的草药医生。但是现在你是我唯一的希望."
         },
         {
             "hash": 10498847370573293116,
             "key": "I don't know why, but apparently he wants you to get all kinds of herbs for him.",
-            "value": "I don't know why, but apparently he wants you to get all kinds of herbs for him."
+            "value": "我不知道为什么，但显然他想让你给他买各种草药."
         },
         {
             "hash": 17672210029151900289,
             "key": "Oh yes, I was just waiting for you. <bot_23> asked me to give you this.",
-            "value": "Oh yes, I was just waiting for you. <bot_23> asked me to give you this."
+            "value": "我正等你呢. <bot_23> 叫我给你这些b东西."
         },
         {
             "hash": 10948230905007101185,
             "key": "Grass Pickaxe",
-            "value": "Grass Pickaxe"
+            "value": "草镐"
         },
         {
             "hash": 791099131677487030,
             "key": "*You consider his reasoning, but it doesn't quite make sense. You explain to <bot_23> that perhaps your continuous nightmares have kept you from getting a proper night's sleep.*",
-            "value": "*You consider his reasoning, but it doesn't quite make sense. You explain to <bot_23> that perhaps your continuous nightmares have kept you from getting a proper night's sleep.*"
+            "value": "*你考虑了一下他的推理，但不太有道理。你向 <bot_23> 解释说，也许是你连续不断的噩梦让你晚上睡不好觉.*"
         },
         {
             "hash": 12751073640881105682,
             "key": "I'm going to officially name you as my assistant. When the time is right, I'll teach you everything I know! I bet you're a fast learner!",
-            "value": "I'm going to officially name you as my assistant. When the time is right, I'll teach you everything I know! I bet you're a fast learner!"
+            "value": "我要正式任命你为我的助理。等时机成熟，我会把我知道的一切都教给你!我打赌你学东西比索X克都快!"
         },
         {
             "hash": 18376926282091137771,
             "key": "*<bot_23> crows happily.*",
-            "value": "*<bot_23> crows happily.*"
+            "value": "*<bot_23> 高兴地啼叫.*"
         },
         {
             "hash": 7783800512311131629,
             "key": "*You present <bot_23> with the <item_32> you collected.*",
-            "value": "*You present <bot_23> with the <item_32> you collected.*"
+            "value": "*你给了 <bot_23> 所有你收集到的 <item_32> .*"
         },
         {
             "hash": 7826020863009505414,
             "key": "You need blood from <bot_24>s to make the refreshing medicine. Nothing's more invigorating than animal blood, am I right?",
-            "value": "You need blood from <bot_24>s to make the refreshing medicine. Nothing's more invigorating than animal blood, am I right?"
+            "value": "你需要 <bot_24> 的血液来制作提神药。没有什么比动物血更能提神了，对吧?"
         },
         {
             "hash": 18398753933762380782,
             "key": "I need you to prepare some <item_32> for me. You can find <bot_24> nearby.",
-            "value": "I need you to prepare some <item_32> for me. You can find <bot_24> nearby."
+            "value": "我需要你给我准备点 <item_32> 给我，你可以在附近找到 <bot_24>."
         },
         {
             "hash": 7768444980153533793,
             "key": "You and the other lumberjacks need something - some sort of medicine to refresh your minds and bodies. Something to put some pep back in your step.",
-            "value": "You and the other lumberjacks need something - some sort of medicine to refresh your minds and bodies. Something to put some pep back in your step."
+            "value": "你和其他伐木工人需要一些东西——某种药物来恢复你的精神和身体。能让你振作起来的东西."
         },
         {
             "hash": 3974084332029277940,
             "key": "This should be a simple task for someone like you. Here, take this; it'll get your blood flowing.",
-            "value": "This should be a simple task for someone like you. Here, take this; it'll get your blood flowing."
+            "value": "这对你这样的人来说应该是一个简单的任务。来，拿着这个;这会让你血液循环变快."
         },
         {
             "hash": 12440094771282567672,
             "key": "Something strange is happening to your body. You can feel the potion pumping through your every vein, and you also feel rather nauseous. You quickly explain your symptoms to <bot_23>.",
-            "value": "Something strange is happening to your body. You can feel the potion pumping through your every vein, and you also feel rather nauseous. You quickly explain your symptoms to <bot_23>."
+            "value": "你的身体发生了奇怪的变化。能感觉到药水在你的每根血管里流动，你感到很恶心.你迅速向 <bot_23> 解释现在的感觉."
         },
         {
             "hash": 14840411738735821918,
@@ -1039,7 +1039,7 @@
         {
             "hash": 7337837698340269897,
             "key": "Haha, each of those lazy lumberjacks comes to me with the same complaints. Seems like this <bot_18> guy is pretty strict.",
-            "value": "Haha, each of those lazy lumberjacks comes to me with the same complaints. Seems like this <bot_18> guy is pretty strict."
+            "value": "哈哈，每个懒惰的伐木工人都来找我抱怨同样的问题。看起来 <bot_18> 这个家伙很严格."
         },
         {
             "hash": 12069560188756430242,
@@ -1059,62 +1059,62 @@
         {
             "hash": 8625756660679627897,
             "key": "Fine, fine. I know I made a mistake. I won't do it again.",
-            "value": "Fine, fine. I know I made a mistake. I won't do it again."
+            "value": "好吧，我知道我犯了个错误。我不会再犯了."
         },
         {
             "hash": 10882978853539282093,
             "key": "\"If you argue again, I'll take away your breaks,\" <bot_18> growls, glaring.",
-            "value": "\"If you argue again, I'll take away your breaks,\" <bot_18> growls, glaring."
+            "value": "\"如果你再吵，我就剥夺你的休息时间,\" <bot_18> 瞪着眼睛咆哮着."
         },
         {
             "hash": 3151292058993928841,
             "key": "You're such a scrooge! Everyone needs a nap now and again!",
-            "value": "You're such a scrooge! Everyone needs a nap now and again!"
+            "value": "你这个吝啬鬼!每个人都需要时不时地打个盹!"
         },
         {
             "hash": 16753378890092143814,
             "key": "Not much of an excuse, you lazy fool! You only get half a day's pay today. End of discussion!",
-            "value": "Not much of an excuse, you lazy fool! You only get half a day's pay today. End of discussion!"
+            "value": "这可不是什么借口，你这个懒鬼!你今天只能拿到半天的工资!.讨论就此结束!"
         },
         {
             "hash": 10303874733011353589,
             "key": "I was just taking a break. I didn't know I was going to fall asleep. It's not a big deal.",
-            "value": "I was just taking a break. I didn't know I was going to fall asleep. It's not a big deal."
+            "value": "我只是休息一下.不知道我会直接睡着.这没什么大不了的."
         },
         {
             "hash": 1393155412820743863,
             "key": "See for yourself. <player>, who started working here just today, has contributed more to our project in one day than you have in your career. Shame on you!",
-            "value": "See for yourself. <player>, who started working here just today, has contributed more to our project in one day than you have in your career. Shame on you!"
+            "value": "看看你自己. <player>, 他今天才开始在这里工作，一天内对我们项目的贡献比你这辈子的贡献都多,你怎么敢的!"
         },
         {
             "hash": 6803651276352725173,
             "key": "You'll find a good deal of wood in the area. I need you to carry it to me.",
-            "value": "You'll find a good deal of wood in the area. I need you to carry it to me."
+            "value": "你会在这个地区找到很多木头.我需要你把它带给我."
         },
         {
             "hash": 9535118113888933874,
             "key": "Lately, numerous <bot_20>hops have migrated to the Logging Site. The naughty troublemakers make a mess all day long. Workmen complain constantly about picking up their, er, 'jelly beans.'",
-            "value": "Lately, numerous <bot_20>hops have migrated to the Logging Site. The naughty troublemakers make a mess all day long. Workmen complain constantly about picking up their, er, 'jelly beans.'"
+            "value": "最近，很多 <bot_20> 到达了伐木场.整天在伐木场捣乱.工人们经常抱怨拿起他们的，呃，也许说是“糖豆”的东西?'"
         },
         {
             "hash": 2622905954536637344,
             "key": "You started to wake up the <bot_21>.",
-            "value": "You started to wake up the <bot_21>."
+            "value": "你叫醒 <bot_21>."
         },
         {
             "hash": 7279927329885197060,
             "key": "\"Take this hammer and search the site for anyone sleeping on the job. Give 'em a wake up call they won't forget!\"\n\n <bot_18> snarls, his face flushed with fury.",
-            "value": "\"Take this hammer and search the site for anyone sleeping on the job. Give 'em a wake up call they won't forget!\"\n\n <bot_18> snarls, his face flushed with fury."
+            "value": "\"拿着这把锤子，搜索一下现场有没有上班睡觉的人。给他们一个他们不会忘记的叫醒电话!\"\n\n <bot_18> 咆哮着，他的脸因愤怒而涨得通红."
         },
         {
             "hash": 13439188090627692859,
             "key": "<player>, everyone says I'm too harsh. I suppose you can judge for yourself now. Only you have returned with the wood. What are all the others doing out there, picking each other's noses?",
-            "value": "<player>, everyone says I'm too harsh. I suppose you can judge for yourself now. Only you have returned with the wood. What are all the others doing out there, picking each other's noses?"
+            "value": "<player>, 我想你现在可以自己判断我是否是个苛刻的人.只有你带着木头回来了.其他人都在外面干什么，互相给对方挖鼻屎吗?"
         },
         {
             "hash": 9348793141477231374,
             "key": "What are those <bot_21> doing now? It's late, and they haven't brought the wood back yet.",
-            "value": "What are those <bot_21> doing now? It's late, and they haven't brought the wood back yet."  
+            "value": "那些 <bot_21> 现在在做什么?很晚了，他们还没把木头运回来."  
         },
         {
             "hash": 14944572866691720881,
@@ -1144,222 +1144,222 @@
         {
             "hash": 6009548368082353097,
             "key": "You shake your head and tell her that none of the merchants have seen him today. Hearing this, <bot_10>'s irritation starts to turn to worry.",
-            "value": "You shake your head and tell her that none of the merchants have seen him today. Hearing this, <bot_10>'s irritation starts to turn to worry."
+            "value": "你摇了摇头，告诉她今天没有一个商人见过他.听到这个消息, <bot_10> 不再生气了，反而开始担忧起来."
         },
         {
             "hash": 7540411718520276415,
             "key": "\"It's about time to send the chopped wood back to the village\"\n\nCaine explains, scanning the sky.",
-            "value": "\"It's about time to send the chopped wood back to the village\"\n\nCaine explains, scanning the sky."
+            "value": "\"是时候把砍好的木头云回村里了\"\n\nCaine 扫视着天空，解释道."
         },
         {
             "hash": 4993171975205777266,
             "key": "This was originally <bot_19>'s job, but I think you ought to take his place. You're more responsible than he ever was. Go to the Garrison Captain. I will speak to him.",
-            "value": "This was originally <bot_19>'s job, but I think you ought to take his place. You're more responsible than he ever was. Go to the Garrison Captain. I will speak to him."
+            "value": "最开始应该是 <bot_19> 的工作, 但我认为你可以胜任它. 你比他更有责任感. 去找警长吧. 我会跟他说一声的."
         },
         {
             "hash": 16011981553089055938,
             "key": "\"Not bad for a newbie.\"\n\n <bot_18> is clearly satisfied by the reduced number of <bot_20>hops.",
-            "value": "\"Not bad for a newbie.\"\n\n <bot_18> is clearly satisfied by the reduced number of <bot_20>hops."
+            "value": "\"对一个新手来说做的不错.\"\n\n <bot_18> 对 <bot_20> 数量减少了很多感到很满意"
         },
         {
             "hash": 8853943301018517306,
             "key": "\"We have three days to deliver to the furniture shop. We cannot be late.\"\n\n <bot_18> snaps, scanning a list.",
-            "value": "\"We have three days to deliver to the furniture shop. We cannot be late.\"\n\n <bot_18> snaps, scanning a list."
+            "value": "\"我们有三天时间送到店铺. 别迟到了.\"\n\n <bot_18> 骂道.说着打开了一个清单."
         },
         {
             "hash": 16291227522251957453,
             "key": "I've a task for you. Drive the <bot_20>hops out of the Logging Site so the lumberjacks can focus on their work!",
-            "value": "I've a task for you. Drive the <bot_20>hops out of the Logging Site so the lumberjacks can focus on their work!"
+            "value": "我有个任务给你.把 <bot_20> 统统赶走，这样我的工人才能好好伐木!"
         },
         {
             "hash": 16068731296860174150,
             "key": "We cannot let those rascally rabbits slow us down. If the wood is not delivered to the village fast enough, construction there will be delayed.",
-            "value": "We cannot let those rascally rabbits slow us down. If the wood is not delivered to the village fast enough, construction there will be delayed."
+            "value": "我们不能让那些流氓兔子拖我们的后腿.如果木材不能及时送到村里，那里的建设就会延误."
         },
         {
             "hash": 2416934418634475611,
             "key": "Default",
-            "value": "Default"
+            "value": "默认"
         },
         {
             "hash": 10781522789063647488,
             "key": "\"Jam! At last! My toast has been going naked!\"\n\n <bot_15> pops open the jar, dips in his fingers, and slurps up the jelly eagerly.",
-            "value": "\"Jam! At last! My toast has been going naked!\"\n\n <bot_15> pops open the jar, dips in his fingers, and slurps up the jelly eagerly."
+            "value": "\"果酱! 终于! 我已经把面包的衣服脱光了!就等你这个!\"\n\n <bot_15>打开罐子, 用手指蘸了蘸, 急切地吸了一口果冻."
         },
         {
             "hash": 6499881368598262730,
             "key": "You shake your head and explain that you don't know him.",
-            "value": "You shake your head and explain that you don't know him."
+            "value": "你摇摇头，解释说你不认识他."
         },
         {
             "hash": 12469204287581557739,
             "key": "Speaking of which, have you seen <bot_19> lately? He hasn't come to work in days!",
-            "value": "Speaking of which, have you seen <bot_19> lately? He hasn't come to work in days!"
+            "value": "说到这里， 你最近看到过 <bot_19> 吗? 他好几天没来上班了!"
         },
         {
             "hash": 15043884220511902757,
             "key": "Did <bot_16> ask you to come here? Excellent. I was just wondering what the Garrison Members in the village normally do during the day. They just hang about the forest. They might as well be here doing something productive for once.",
-            "value": "Did <bot_16> ask you to come here? Excellent. I was just wondering what the Garrison Members in the village normally do during the day. They just hang about the forest. They might as well be here doing something productive for once."
+            "value": "是 <bot_16> 叫你来的吗? 太好了.我只是想知道村里的驻军在白天通常都做些什么.\n他们只是在森林里摸鱼,他们还不如在这里干点有意义的事."
         },
         {
             "hash": 17358713634316059815,
             "key": "\"This boy <bot_19> is a fool! He only makes work harder for me! Unless we're short workers, I'd fire him right away!\"\n\n <bot_18> grumbles to himself. It seems that working at the Logging Site is quite arduous.",
-            "value": "\"This boy <bot_19> is a fool! He only makes work harder for me! Unless we're short workers, I'd fire him right away!\"\n\n <bot_18> grumbles to himself. It seems that working at the Logging Site is quite arduous."
+            "value": "\"<bot_19> 纯纯傻瓜! 他只会让我工作更辛苦!除非我们人手不够，否则我会马上解雇他!\"\n\n <bot_18> 自言自语道.看来在伐木场工作很辛苦."
         },
         {
             "hash": 11170296840470681305,
             "key": "<player>, would you like to try working at the Logging Site? The salary's not bad.",
-            "value": "<player>, would you like to try working at the Logging Site? The salary's not bad."
+            "value": "<player>, 你想在伐木场工作吗?薪水还不错."
         },
         {
             "hash": 12178723111141070659,
             "key": "I didn't forget. But working for <bot_18> is no picnic. Very few are willing to work backbreaking hours at the Logging Site, and <bot_18>'s not exactly Mr. Personality.",
-            "value": "I didn't forget. But working for <bot_18> is no picnic. Very few are willing to work backbreaking hours at the Logging Site, and <bot_18>'s not exactly Mr. Personality."
+            "value": "我没有忘记.但是给 <bot_18> 打工不轻松. 很少有人愿意在伐木场好好伐木, 而且 <bot_18> 完全不是“先生”的性格."
         },
         {
             "hash": 10662631406172530109,
             "key": "<bot_16>, you said you needed someone to replace one of <bot_18>'s... less enthusiastic workers. How could you forget so quickly?",
-            "value": "<bot_16>, you said you needed someone to replace one of <bot_18>'s... less enthusiastic workers. How could you forget so quickly?"
+            "value": "<bot_16>, 你说你需要有人来取代一个 <bot_18> 的摆烂的员工. 你怎么这么快就忘了?"
         },
         {
             "hash": 9922107841972140951,
             "key": "Did any of the merchants see <bot_12>?",
-            "value": "Did any of the merchants see <bot_12>?"
+            "value": "有谁看到了 <bot_12> 了吗?"
         },
         {
             "hash": 7156795899474991148,
             "key": "<player>, where is my wife, and why are you delivering my lunch?",
-            "value": "<player>, where is my wife, and why are you delivering my lunch?"
+            "value": "<player>, 我老婆呢，为什么是你给我送饭过来?"
         },
         {
             "hash": 15681983121659490430,
             "key": "\"Got it. The monster population in the forest has skyrocketed, too. Things are getting rough around here.\"\n\n <bot_16> looks over at you, eyeing the <item_30>.",
-            "value": "\"Got it. The monster population in the forest has skyrocketed, too. Things are getting rough around here.\"\n\n <bot_16> looks over at you, eyeing the <item_30>."
+            "value": "\"明白了. 森林里的怪物数量也直线上升. 这里的情况越来越糟了.\"\n\n <bot_16> 看着你, 又转头看向 <item_30>."
         },
         {
             "hash": 10517660222718990184,
             "key": "<bot_16> frowns, pacing anxiously as he chats with <bot_17>, the lighthouse manager.",
-            "value": "<bot_16> frowns, pacing anxiously as he chats with <bot_17>, the lighthouse manager."
+            "value": "<bot_16> 皱眉，焦急地踱步，与 灯塔管理员 <bot_17> 聊天."
         },
         {
             "hash": 6990547798445142418,
             "key": "I must report to you, as you are the Village Chief. The sea has begun to churn; the situation grows more unstable by the day. I can only guide the ships into the port with light signals, but...",
-            "value": "I must report to you, as you are the Village Chief. The sea has begun to churn; the situation grows more unstable by the day. I can only guide the ships into the port with light signals, but..."
+            "value": "我必须向你汇报，因为你是村长。大海已经开始翻腾;局势一天比一天不稳定。我只能用灯光信号引导船只进入港口，但是……"
         },
         {
             "hash": 18211260882352399424,
             "key": "I ought to go look for him. Could you bring this <item_30> to my husband, <bot_16>? When you see him, ask him to find you a suitable job.",
-            "value": "I ought to go look for him. Could you bring this <item_30> to my husband, <bot_16>? When you see him, ask him to find you a suitable job."
+            "value": "我应该去找他。你能把 <item_30> 给我老公吗, <bot_16>? 你见到他时，请他帮你找一份合适的工作."
         },
         {
             "hash": 1176161457901062443,
             "key": "\"He can't have gone too far...\"\n\n She hangs her head, looking despondently at the <item_30> in her hand.",
-            "value": "\"He can't have gone too far...\"\n\n She hangs her head, looking despondently at the <item_30> in her hand."
+            "value": "\"他不可能走得太远...\"\n\n 她低下头，沮丧地看着手里的 <item_30> ."
         },
         {
             "hash": 16100382458623250178,
             "key": "\"Hasn't anyone seen <bot_12>? Where has that boy gone?\"\n\n <bot_10> glances around anxiously.",
-            "value": "\"Hasn't anyone seen <bot_12>? Where has that boy gone?\"\n\n <bot_10> glances around anxiously."
+            "value": "\"有没有人看到 <bot_12>? 那个男孩去哪儿了?\"\n\n <bot_10> 焦急地环顾四周."
         },
         {
             "hash": 128031574374696187,
             "key": "I saw him yesterday, but not today.",
-            "value": "I saw him yesterday, but not today."
+            "value": "我昨天见过他，今天没见过."
         },
         {
             "hash": 1586096624844905271,
             "key": "Well, let's forget about the jam. Why don't you treat yourself to some new armor? Being a garrison member in a fishing village is not exactly a dangerous job, but from time to time, you'll need to clear out some monsters, and you'll be happy to have steel between their claws and your heart!",
-            "value": "Well, let's forget about the jam. Why don't you treat yourself to some new armor? Being a garrison member in a fishing village is not exactly a dangerous job, but from time to time, you'll need to clear out some monsters, and you'll be happy to have steel between their claws and your heart!"
+            "value": "好吧，让我们忘记果酱吧。你为什么不给自己买件新盔甲呢?作为一个渔村的驻军成员并不是一份危险的工作.\n但时不时地，你需要噶一些怪物，你会很高兴在他们的爪子和你的心脏之间有一块铁垫着!"
         },
         {
             "hash": 10815893320102861010,
             "key": "\"Have you delivered the jam? You've truly grown; it's time for you to start saving your money.\"\n\n <bot_10> places some gleaming coins in your palm and closes your fingers around them.",
-            "value": "\"Have you delivered the jam? You've truly grown; it's time for you to start saving your money.\"\n\n <bot_10> places some gleaming coins in your palm and closes your fingers around them."
+            "value": "\"你送果酱了吗? 你真长大了; 是时候让你开始存钱了.\"\n\n <bot_10> 把一些闪闪发光的硬币放在你的掌心，然后合上你的手指."
         },
         {
             "hash": 14914451239558124716,
             "key": "<bot_12>? No, I haven't seen him today.",
-            "value": "<bot_12>? No, I haven't seen him today."
+            "value": "<bot_12>? 我今天没看见它."
         },
         {
             "hash": 3399040635497204496,
             "key": "You ask <bot_15> if he has seen <bot_12>.",
-            "value": "You ask <bot_15> if he has seen <bot_12>."
+            "value": "你问 <bot_15> 他是否看见过 <bot_12>."
         },
         {
             "hash": 16143657299438071430,
             "key": "I'll give you a tip, jelly kid. When you have time, just visit weapon shops in different places. You might find exceptionally good weaponry at reasonable prices!",
-            "value": "I'll give you a tip, jelly kid. When you have time, just visit weapon shops in different places. You might find exceptionally good weaponry at reasonable prices!"
+            "value": "我给你个建议.当你有时间的时候，参观不同地方的武器商店.你可能会发现价格合理并且做工优良的武器!"
         },
         {
             "hash": 15255764621545538157,
             "key": "Impressive, right? These weapons all come from abroad! This one here, for instance, is the <item_3>, a symbol of power. And over there is the <item_5>.",
-            "value": "Impressive, right? These weapons all come from abroad! This one here, for instance, is the <item_3>, a symbol of power. And over there is the <item_5>."
+            "value": "令人印象深刻的,对吧?这些武器都是从国外来的!比如这个 <item_3>,简直是权力的象征。那边是 <item_5>."
         },
         {
             "hash": 3740354017484560161,
             "key": "\"Mmm! <bot_13> was right. The jam is perfectly sweet and tart. Would you like some? I promise my fingers are clean.\"\n\n <bot_15> follows your gaze to the newly produced weapons.",
-            "value": "\"Mmm! <bot_13> was right. The jam is perfectly sweet and tart. Would you like some? I promise my fingers are clean.\"\n\n <bot_15> follows your gaze to the newly produced weapons."
+            "value": "\"Mmm! <bot_13> 是正确的。这种果酱又甜又酸。你来点吗?我保证我的手指是干净的.\"\n\n <bot_15> 跟随你的目光去参观新生产的武器."
         },
         {
             "hash": 13101507228905881831,
             "key": "You ask <bot_14> if she has seen <bot_12>.",
-            "value": "You ask <bot_14> if she has seen <bot_12>."
+            "value": "你问 <bot_14> 是否见过 <bot_12>."
         },
         {
             "hash": 4474785796029483859,
             "key": "From now on, everyone will treat you as an adult. Perhaps you'll travel the world, meeting maharajas and princesses. Or maybe you'll just live and work in this fishing port all your life. You know, either way.",
-            "value": "From now on, everyone will treat you as an adult. Perhaps you'll travel the world, meeting maharajas and princesses. Or maybe you'll just live and work in this fishing port all your life. You know, either way."
+            "value": "从现在开始，所有人都会把你当大人看待。也许你会周游世界，会见王公和公主。或者你可能一辈子都在这个渔港生活和工作。你知道，不管怎样."
         },
         {
             "hash": 10040037476551923069,
             "key": "\"<bot_10> dotes on him. She spoils him. He can play alone once in a while, you know? Who knows, he might grow up to be a great conqueror - if he stops being so darn soft!\"\n\n <bot_16> chortles.",
-            "value": "\"<bot_10> dotes on him. She spoils him. He can play alone once in a while, you know? Who knows, he might grow up to be a great conqueror - if he stops being so darn soft!\"\n\n <bot_16> chortles."
+            "value": "\"<bot_10> 溺爱他.宠着他.他偶尔可以一个人玩，你知道吗?谁知道呢，他长大后可能会成为一个伟大的征服者——如果他不再那么软弱的话!\"\n\n <bot_16> 放声大笑起来."
         },
         {
             "hash": 3597954254051464029,
             "key": "\"Wait, I clearly told <bot_13> that I don't want any jam. It's too sweet. I like my jam salty and sour!\"\n\n <bot_14> huffs.",
-            "value": "\"Wait, I clearly told <bot_13> that I don't want any jam. It's too sweet. I like my jam salty and sour!\"\n\n <bot_14> huffs."
+            "value": "\"我清楚的记得我跟 <bot_13> 说过我不想要任何果酱。太甜了。我喜欢咸的和酸的果酱!\"\n\n <bot_14> 大吼."
         },
         {
             "hash": 13442820610893231090,
             "key": "\"<player>, would you like to buy a piece of <item_28>? We carry the armor in all sizes, and we... what is this?\"\n\n <bot_14> takes the jar of jam and examines it suspiciously.",
-            "value": "\"<player>, would you like to buy a piece of <item_28>? We carry the armor in all sizes, and we... what is this?\"\n\n <bot_14> takes the jar of jam and examines it suspiciously."
+            "value": "\"<player>, 你想要买一件 <item_28> 吗?我们有各种尺寸的盔甲，而且我们... 等等，这是什么?\"\n\n <bot_14> 拿起果酱罐，仔细地检查着."
         },
         {
             "hash": 11737622151086926750,
             "key": "<bot_12> didn't come to the marketplace today. It's a bit odd; he usually stops by.",
-            "value": "<bot_12> didn't come to the marketplace today. It's a bit odd; he usually stops by."
+            "value": "<bot_12> 今天没去市场。这有点奇怪;他通常会来."
         },
         {
             "hash": 3350820844715498149,
             "key": "You ask <bot_13> if she has seen <bot_12>.",
-            "value": "You ask <bot_13> if she has seen <bot_12>."
+            "value": "你问 <bot_13> 是否见到过 <bot_12>."
         },
         {
             "hash": 12966828210966770804,
             "key": "Just remember this: in the outside world, you can buy different potions at various drugstores. You might find some other special items there, too.",
-            "value": "Just remember this: in the outside world, you can buy different potions at various drugstores. You might find some other special items there, too."
+            "value": "只要记住这一点:在外面的世界，你可以在不同的药店买到不同的药水。你可能还会在那里找到一些其他特殊的物品."
         },
         {
             "hash": 4471887970599252885,
             "key": "As for your work... well, I really don't have much for you to do.",
-            "value": "As for your work... well, I really don't have much for you to do."
+            "value": "至于你的工作…我真的没什么事让你做."
         },
         {
             "hash": 3692134226702845236,
             "key": "This is so unusual. So you're helping <bot_10> deliver goods today? I suppose you are indeed a real garrison member. Keep up the good work.",
-            "value": "This is so unusual. So you're helping <bot_10> deliver goods today? I suppose you are indeed a real garrison member. Keep up the good work."
+            "value": "这太不寻常了。所以你今天帮 <bot_10> 送货?我想你确实是一个真正的驻军成员。再接再厉."
         },
         {
             "hash": 79811783592983524,
             "key": "Sheila gives a frown only an irritated mother can give.\n\n \"Also, ask them if they have seen my son, <bot_12>. I have no idea where he is.\"",
-            "value": "Sheila gives a frown only an irritated mother can give.\n\n \"Also, ask them if they have seen my son, <bot_12>. I have no idea where he is.\""
+            "value": "Sheila 皱眉，只有当一位母亲生气了才会皱眉.\n\n \"还有，问问他们是否见过我的儿子, <bot_12>. 他不知道跑哪去野了.\""
         },
         {
             "hash": 9924678140434629430,
             "key": "These boxes of jam just arrived from the port. Please help me deliver them to the merchants in the village.",
-            "value": "These boxes of jam just arrived from the port. Please help me deliver them to the merchants in the village."
+            "value": "这几箱果酱刚从港口运来。请帮我把它们送到村里的商人那里."
         },
         {
             "hash": 1537876834063188768,
@@ -2753,8 +2753,8 @@
             "value": "[Player]你可以进来了!"
         },
         {
-            "key": "谢谢你[Talked]",
-            "value": "Thank's [Talked]"
+            "key": "Thank's [Talked]",
+            "value": "谢谢你 [Talked]"
         },
         {
             "hash": 1880313994916691455,
