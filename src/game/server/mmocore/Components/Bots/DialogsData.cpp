@@ -26,16 +26,16 @@ void CDialogElem::Init(int BotID, std::string Text, bool Request)
 		str_format(aBufSearch, sizeof(aBufSearch), "[ls_%d]", LeftDataBotID);
 		Text.erase(Text.find(aBufSearch), str_length(aBufSearch));
 		m_LeftSide = LeftDataBotID;
-		m_Flags |= TALKED_FLAG_LBOT;
+		m_Flags |= DIALOGFLAG_LEFT_BOT;
 	}
 	else if(str_find_nocase(Text.c_str(), "[le]") != nullptr)
 	{
 		Text.erase(Text.find("[le]"), 4);
-		m_Flags |= TALKED_FLAG_LEMPTY;
+		m_Flags |= DIALOGFLAG_LEFT_EMPTY;
 	}
 	else
 	{
-		m_Flags |= TALKED_FLAG_LPLAYER;
+		m_Flags |= DIALOGFLAG_LEFT_PLAYER;
 	}
 
 	// right side
@@ -46,32 +46,32 @@ void CDialogElem::Init(int BotID, std::string Text, bool Request)
 		str_format(aBufSearch, sizeof(aBufSearch), "[rs_%d]", RightDataBotID);
 		Text.erase(Text.find(aBufSearch), str_length(aBufSearch));
 		m_RightSide = RightDataBotID;
-		m_Flags |= TALKED_FLAG_RBOT;
+		m_Flags |= DIALOGFLAG_RIGHT_BOT;
 	}
 	else if(str_find_nocase(Text.c_str(), "[re]") != nullptr)
 	{
 		Text.erase(Text.find("[re]"), 4);
-		m_Flags |= TALKED_FLAG_REMPTY;
+		m_Flags |= DIALOGFLAG_RIGHT_EMPTY;
 	}
 	else
 	{
 		m_RightSide = BotID;
-		m_Flags |= TALKED_FLAG_RBOT;
+		m_Flags |= DIALOGFLAG_RIGHT_BOT;
 	}
 
 	// speak left or right or world
-	if(m_Flags & TALKED_FLAG_LEMPTY && m_Flags & TALKED_FLAG_REMPTY)
+	if(m_Flags & DIALOGFLAG_LEFT_EMPTY && m_Flags & DIALOGFLAG_RIGHT_EMPTY)
 	{
-		m_Flags |= TALKED_FLAG_SPEAK_WORLD;
+		m_Flags |= DIALOGFLAG_SPEAK_WORLD;
 	}
 	else if(str_find_nocase(Text.c_str(), "[l]") != nullptr)
 	{
 		Text.erase(Text.find("[l]"), 3);
-		m_Flags |= TALKED_FLAG_SPEAK_LEFT;
+		m_Flags |= DIALOGFLAG_SPEAK_LEFT;
 	}
 	else
 	{
-		m_Flags |= TALKED_FLAG_SPEAK_RIGHT;
+		m_Flags |= DIALOGFLAG_SPEAK_RIGHT;
 	}
 
 	// initilize var
@@ -117,26 +117,26 @@ void CDialogElem::Show(CGS* pGS, int ClientID)
 	const char* pRightNickname = nullptr;
 
 	// checking flags
-	if(m_Flags & TALKED_FLAG_SPEAK_WORLD)
+	if(m_Flags & DIALOGFLAG_SPEAK_WORLD)
 	{
 		pLeftNickname = "...";
 	}
 	else
 	{
 		// left sides flags
-		if(m_Flags & TALKED_FLAG_LPLAYER)
+		if(m_Flags & DIALOGFLAG_LEFT_PLAYER)
 		{
 			LeftSideClientID = ClientID;
 			pLeftNickname = pGS->Server()->ClientName(LeftSideClientID);
 
 		}
-		else if(m_Flags & TALKED_FLAG_LBOT)
+		else if(m_Flags & DIALOGFLAG_LEFT_BOT)
 		{
 			// search clientid by bot id or dissable flag what left side it's bot
 			if(LeftSideClientID = GetClientIDByBotID(pGS, ClientID, m_LeftSide); LeftSideClientID == -1)
 			{
-				m_Flags ^= TALKED_FLAG_LBOT;
-				m_Flags |= TALKED_FLAG_LEMPTY;
+				m_Flags ^= DIALOGFLAG_LEFT_BOT;
+				m_Flags |= DIALOGFLAG_LEFT_EMPTY;
 			}
 			else
 			{
@@ -145,13 +145,13 @@ void CDialogElem::Show(CGS* pGS, int ClientID)
 		}
 
 		// right sides flags
-		if(m_Flags & TALKED_FLAG_RBOT)
+		if(m_Flags & DIALOGFLAG_RIGHT_BOT)
 		{
 			// search clientid by bot id or dissable flag what right side it's bot
 			if(RightSideClientID = GetClientIDByBotID(pGS, ClientID, m_RightSide); RightSideClientID == -1)
 			{
-				m_Flags ^= TALKED_FLAG_RBOT;
-				m_Flags |= TALKED_FLAG_REMPTY;
+				m_Flags ^= DIALOGFLAG_RIGHT_BOT;
+				m_Flags |= DIALOGFLAG_RIGHT_EMPTY;
 			}
 			else
 			{
@@ -292,8 +292,8 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	char aBufSpeakNickname[64]{};
 	if(IsVanillaClient)
 	{
-		if(pDialog->GetFlag() & TALKED_FLAG_SPEAK_LEFT || pDialog->GetFlag() & TALKED_FLAG_SPEAK_RIGHT)
-			str_format(aBufSpeakNickname, sizeof(aBufSpeakNickname), "%s ...:\n", pDialog->GetFlag() & TALKED_FLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
+		if(pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT || pDialog->GetFlag() & DIALOGFLAG_SPEAK_RIGHT)
+			str_format(aBufSpeakNickname, sizeof(aBufSpeakNickname), "%s ...:\n", pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
 	}
 
 	/*

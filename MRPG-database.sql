@@ -1611,8 +1611,8 @@ CREATE TABLE `tw_bots_mobs` (
 --
 
 INSERT INTO `tw_bots_mobs` (`ID`, `BotID`, `WorldID`, `PositionX`, `PositionY`, `Effect`, `Behavior`, `Level`, `Power`, `Spread`, `Number`, `Respawn`, `Boss`, `it_drop_0`, `it_drop_1`, `it_drop_2`, `it_drop_3`, `it_drop_4`, `it_drop_count`, `it_drop_chance`) VALUES
-(1, 20, 2, 1216, 704, '', 'Slower', 3, 8, 0, 250, 1, 0, 40, 44, NULL, NULL, NULL, '|1|1|0|0|0|', '|5|2.11|0|0|0|'),
-(3, 24, 2, 2610, 832, '', 'Slower', 4, 8, 0, 250, 1, 0, 32, 40, NULL, NULL, NULL, '|2|1|0|0|0|', '|5.5|5|0|0|0|'),
+(1, 20, 2, 1216, 704, '', 'Slower', 3, 8, 0, 7, 1, 0, 40, 44, NULL, NULL, NULL, '|1|1|0|0|0|', '|5|2.11|0|0|0|'),
+(3, 24, 2, 2610, 832, '', 'Slower', 4, 8, 0, 7, 1, 0, 32, 40, NULL, NULL, NULL, '|2|1|0|0|0|', '|5.5|5|0|0|0|'),
 (4, 27, 3, 9512, 1915, 'Fire', NULL, 9, 25, 0, 12, 3, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
 (5, 28, 4, 2982, 2494, 'Poison', NULL, 10, 50, 2, 10, 1, 0, 48, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|5|0|0|0|0|'),
 (6, 29, 4, 4840, 2560, 'Poison', NULL, 12, 60, 2, 8, 1, 0, 48, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|5|0|0|0|0|'),
