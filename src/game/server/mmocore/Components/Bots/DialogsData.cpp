@@ -9,7 +9,7 @@
 
 /*
  * Information about formatting:
- * [p] - speak left side / not set right side if all sets to empty world side
+ * [l] - speak left side / not set right side if all sets to empty world side
  * [ls_ID] - left side bot speak with ID if not set speak Player
  * [le] - left side is empty
  * [rs_ID] - right side bot speak with ID if not set speak Bot from dialog
@@ -64,9 +64,9 @@ void CDialogElem::Init(int BotID, std::string Text, bool Request)
 	{
 		m_Flags |= TALKED_FLAG_SPEAK_WORLD;
 	}
-	else if(str_find_nocase(Text.c_str(), "[p]") != nullptr)
+	else if(str_find_nocase(Text.c_str(), "[l]") != nullptr)
 	{
-		Text.erase(Text.find("[p]"), 3);
+		Text.erase(Text.find("[l]"), 3);
 		m_Flags |= TALKED_FLAG_SPEAK_LEFT;
 	}
 	else
