@@ -9,7 +9,7 @@
 
 /*
  * Information about formatting:
- * [l] - speak left side / not set right side if all sets to empty world side
+ * [p] - speak left side / not set right side if all sets to empty world side
  * [ls_ID] - left side bot speak with ID if not set speak Player
  * [le] - left side is empty
  * [rs_ID] - right side bot speak with ID if not set speak Bot from dialog
@@ -64,9 +64,9 @@ void CDialogElem::Init(int BotID, std::string Text, bool Request)
 	{
 		m_Flags |= TALKED_FLAG_SPEAK_WORLD;
 	}
-	else if(str_find_nocase(Text.c_str(), "[l]") != nullptr)
+	else if(str_find_nocase(Text.c_str(), "[p]") != nullptr)
 	{
-		Text.erase(Text.find("[l]"), 3);
+		Text.erase(Text.find("[p]"), 3);
 		m_Flags |= TALKED_FLAG_SPEAK_LEFT;
 	}
 	else
@@ -293,7 +293,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	if(IsVanillaClient)
 	{
 		if(pDialog->GetFlag() & TALKED_FLAG_SPEAK_LEFT || pDialog->GetFlag() & TALKED_FLAG_SPEAK_RIGHT)
-			str_format(aBufSpeakNickname, sizeof(aBufSpeakNickname), "%s says:\n", pDialog->GetFlag() & TALKED_FLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
+			str_format(aBufSpeakNickname, sizeof(aBufSpeakNickname), "%s ...:\n", pDialog->GetFlag() & TALKED_FLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
 	}
 
 	/*
