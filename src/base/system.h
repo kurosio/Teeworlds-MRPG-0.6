@@ -1005,6 +1005,12 @@ int str_format(char *buffer, int buffer_size, const char *format, ...)
 GNUC_ATTRIBUTE((format(printf, 3, 4)));
 
 /*
+	Function: str_format_progress_bar
+		From some values text buffer with progress bar
+ */
+void str_format_progress_bar(char* pbuffer, size_t buffer_size, int max_value, int current_value, int step, char to_value, char from_value);
+
+/*
 	Function: str_sanitize_strong
 		Replaces all characters below 32 and above 127 with whitespace.
 

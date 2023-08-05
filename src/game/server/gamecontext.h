@@ -70,7 +70,6 @@ public:
 	class CCharacter *GetPlayerChar(int ClientID);
 	CPlayer *GetPlayer(int ClientID, bool CheckAuthed = false, bool CheckCharacter = false);
 	CPlayer *GetPlayerFromUserID(int AccountID);
-	std::unique_ptr<char[]> LevelString(int MaxValue, int CurrentValue, int Step, char toValue, char fromValue);
 	class CItemDescription* GetItemInfo(ItemIdentifier ItemID) const;
 	CQuestDataInfo &GetQuestInfo(int QuestID) const;
 	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;

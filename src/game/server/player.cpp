@@ -429,11 +429,12 @@ int CPlayer::GetTeam()
 ######################################################################### */
 void CPlayer::ProgressBar(const char *Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const
 {
-	char aBufBroadcast[128];
-	const float GetLevelProgress = (float)(MyExp * 100.0) / (float)ExpNeed;
-	const float GetExpProgress = (float)(GivedExp * 100.0) / (float)ExpNeed;
-	const std::unique_ptr<char[]> Level = std::move(GS()->LevelString(100, (int)GetLevelProgress, 10, ':', ' '));
-	str_format(aBufBroadcast, sizeof(aBufBroadcast), "Lv%d %s%s %0.2f%%+%0.3f%%(%d)XP", MyLevel, Name, Level.get(), GetLevelProgress, GetExpProgress, GivedExp);
+	char aBufBroadcast[128], aBufProgress[32];
+	const float GetLevelProgress = translate_to_percent((float)ExpNeed, (float)MyExp);
+	const float GetExpProgress = translate_to_percent((float)ExpNeed, (float)GivedExp);
+
+	str_format_progress_bar(aBufProgress, sizeof(aBufProgress), 100, (int)GetLevelProgress, 10, ':', ' ');
+	str_format(aBufBroadcast, sizeof(aBufBroadcast), "Lv%d %s%s %0.2f%%+%0.3f%%(%d)XP", MyLevel, Name, aBufProgress, GetLevelProgress, GetExpProgress, GivedExp);
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, aBufBroadcast);
 }
 
@@ -591,8 +592,8 @@ void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAp
 	if(!IsAuthed() || !m_pCharacter)
 		return;
 
+	char aBufProgressBarExp[32];
 	const int LevelPercent = translate_to_percent(ExpNeed(Acc().m_Level), Acc().m_Exp);
-	const std::unique_ptr<char[]> Level = std::move(GS()->LevelString(100, (int)LevelPercent, 10, ':', ' '));
 	const int MaximumHealth = GetStartHealth();
 	const int MaximumMana = GetStartMana();
 	const int Health = m_pCharacter->Health();
@@ -606,8 +607,9 @@ void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAp
 		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
 	}
 
+	str_format_progress_bar(aBufProgressBarExp, sizeof(aBufProgressBarExp), 100, LevelPercent, 10, ':', ' ');
 	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%s", 
-		Acc().m_Level, Level.get(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
+		Acc().m_Level, aBufProgressBarExp, Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
 	for(int space = 150, c = str_length(pBuffer); c < Size && space; c++, space--)
 		pBuffer[c] = ' ';
 }

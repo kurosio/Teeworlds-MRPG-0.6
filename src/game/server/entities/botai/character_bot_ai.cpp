@@ -534,14 +534,15 @@ void CCharacterBotAI::EngineMobs()
 		{
 			if(GS()->GetPlayer(ClientID, true))
 			{
+				char aBufProgress[32];
 				const int BotID = m_pBotPlayer->GetBotID();
 				const int Health = m_pBotPlayer->GetHealth();
 				const int StartHealth = m_pBotPlayer->GetStartHealth();
-				const float Percent = (Health * 100.0) / StartHealth;
+				const float Percent = translate_to_percent((float)StartHealth, (float)Health);
 
-				std::unique_ptr<char[]> Progress = std::move(GS()->LevelString(100, Percent, 10, ':', ' '));
+				str_format_progress_bar(aBufProgress, sizeof(aBufProgress), 100, (int)Percent, 10, ':', ' ');
 				GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{STR} {STR}({INT}/{INT})",
-					DataBotInfo::ms_aDataBot[BotID].m_aNameBot, Progress.get(), Health, StartHealth);
+					DataBotInfo::ms_aDataBot[BotID].m_aNameBot, aBufProgress, Health, StartHealth);
 			}
 		}
 	}

@@ -107,29 +107,6 @@ CPlayer* CGS::GetPlayerFromUserID(int AccountID)
 	return nullptr;
 }
 
-// Level String by Matodor (Progress Bar) creates some sort of bar progress
-std::unique_ptr<char[]> CGS::LevelString(int MaxValue, int CurrentValue, int Step, char toValue, char fromValue)
-{
-	CurrentValue = clamp(CurrentValue, 0, MaxValue);
-
-	const int Size = 3 + MaxValue / Step;
-	std::unique_ptr<char[]> Buf(new char[Size]);
-	Buf[0] = '[';
-	Buf[Size - 2] = ']';
-	Buf[Size - 1] = '\0';
-
-	const int a = CurrentValue / Step;
-	const int b = (MaxValue - CurrentValue) / Step;
-    int i = 1;
-
-	for (int ai = 0; ai < a; ai++, i++)
-		Buf[i] = toValue;
-	for (int bi = 0; bi < b || i < Size - 2; bi++, i++)
-		Buf[i] = fromValue;
-
-	return Buf;
-}
-
 CItemDescription* CGS::GetItemInfo(ItemIdentifier ItemID) const
 {
 	dbg_assert(CItemDescription::Data().find(ItemID) != CItemDescription::Data().end(), "invalid referring to the CItemDescription");
@@ -1956,7 +1933,7 @@ void CGS::SendDayInfo(int ClientID)
 {
 	if(ClientID == -1)
 	{
-		Chat(-1, "{STR} came! Good {STR}!", Server()->GetStringTypeDay(), Server()->GetStringTypeDay());
+		Chat(-1, "{STR} came!", Server()->GetStringTypeDay());
 	}
 
 	if(m_DayEnumType == NIGHT_TYPE)
