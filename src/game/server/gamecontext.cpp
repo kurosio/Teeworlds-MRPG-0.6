@@ -1897,8 +1897,7 @@ void CGS::CreateDropBonuses(vec2 Pos, int Type, int Value, int NumDrop, vec2 For
 	for(int i = 0; i < NumDrop; i++)
 	{
 		const vec2 Vel = Force + vec2(frandom() * 15.0f, frandom() * 15.0f);
-		const float Angle = Force.x * (0.15f + frandom() * 0.1f);
-		new CDropBonuses(&m_World, Pos, Vel, Angle, Type, Value);
+		new CDropBonuses(&m_World, Pos, Vel, Type, Value);
 	}
 }
 

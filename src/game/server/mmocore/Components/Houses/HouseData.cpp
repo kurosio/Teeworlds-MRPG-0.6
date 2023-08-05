@@ -116,7 +116,7 @@ void CHouseData::Buy(CPlayer* pPlayer)
 		m_AccountID = pPlayer->Acc().m_UserID;
 		m_pDoorData->Close();
 		m_pBank->Reset();
-		Database->Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0' AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
+		Database->Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
 
 		// send information
 		GS()->Chat(-1, "{STR} becomes the owner of the house class {STR}", Server()->ClientName(ClientID), GetClassName());
@@ -147,7 +147,7 @@ void CHouseData::Sell()
 	// update data
 	m_pDoorData->Open();
 	m_pBank->Reset();
-	Database->Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0' AccessData = NULL WHERE ID = '%d'", m_ID);
+	Database->Execute<DB::UPDATE>("tw_houses", "UserID = NULL, HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_ID);
 
 	// account used for GetPlayer() reset last moment
 	m_AccountID = -1;

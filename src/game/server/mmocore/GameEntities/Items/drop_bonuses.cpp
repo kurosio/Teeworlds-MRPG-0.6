@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-CDropBonuses::CDropBonuses(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, int Type, int Value)
+CDropBonuses::CDropBonuses(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, int Type, int Value)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, Pos, 24)
 {
 	m_Pos = Pos;
@@ -41,6 +41,7 @@ void CDropBonuses::Tick()
 		{
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);
 		}
+
 		// experience
 		if(m_Type == POWERUP_ARMOR)
 		{
