@@ -92,7 +92,7 @@ CPlayer* CPlayerBot::GetEidolonOwner() const
 
 void CPlayerBot::EffectsTick()
 {
-	if(Server()->Tick() % Server()->TickSpeed() != 0)
+	if(Server()->Tick() % Server()->TickSpeed() != 0 || m_aEffects.empty())
 		return;
 
 	for(auto pEffect = m_aEffects.begin(); pEffect != m_aEffects.end();)
