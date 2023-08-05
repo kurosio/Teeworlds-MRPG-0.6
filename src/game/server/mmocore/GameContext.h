@@ -1,6 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <any>
 #ifndef GAME_ENUM_CONTEXT_H
 #define GAME_ENUM_CONTEXT_H
 
@@ -19,6 +18,12 @@
 #define GREEN_COLOR vec3(15, 40, 15)
 #define LIGHT_GREEN_COLOR vec3(0, 16, 0)
 
+enum class EntLaserOrbiteType : short
+{
+	DEFAULT,
+	MOVE_LEFT,
+	MOVE_RIGHT,
+};
 
 // mood type
 enum class Mood : short

@@ -17,6 +17,7 @@
 #include "mmocore/GameEntities/loltext.h"
 #include "mmocore/GameEntities/Items/drop_bonuses.h"
 #include "mmocore/GameEntities/Items/drop_items.h"
+#include "mmocore/GameEntities/laser_orbite.h"
 
 #include "mmocore/Components/Accounts/AccountCore.h"
 #include "mmocore/Components/Bots/BotCore.h"
@@ -1926,6 +1927,18 @@ void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const
 void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, ItemIdentifier ItemID, int Value, int Enchant)
 {
 	Mmo()->Inbox()->SendInbox(pFrom, AccountID, Name, Desc, ItemID, Value, Enchant);
+}
+
+void CGS::CreateLaserOrbite(vec2* pAttachedPos, int Amount, EntLaserOrbiteType Type, float Speed, float Radius)
+{
+	if(pAttachedPos)
+		new CLaserOrbite(&m_World, -1, pAttachedPos, Amount, Type, Speed, Radius);
+}
+
+void CGS::CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius)
+{
+	if(const CPlayer* pPlayer = GetPlayer(ClientID, false, true); pPlayer)
+		new CLaserOrbite(&m_World, ClientID, nullptr, Amount, Type, Speed, Radius);
 }
 
 // send day information

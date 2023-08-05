@@ -24,6 +24,8 @@ CDecorationHouses::~CDecorationHouses()
 		for (int i = 0; i < NUM_IDS; i++)
 			Server()->SnapFreeID(m_IDs[i]);
 	}
+
+	GameWorld()->DestroyEntity(this);
 }
 
 int CDecorationHouses::SwitchToObject(bool Data) const
