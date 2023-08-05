@@ -2365,7 +2365,7 @@ void str_format_progress_bar(char* pbuffer, size_t buffer_size, int max_value, i
 	for(int bi = 0; bi < b || i < sizec - 2; bi++, i++)
 		allocbuf[i] = from_value;
 
-	str_copy(pbuffer, allocbuf, sizec);
+	str_copy(pbuffer, allocbuf, buffer_size);
 	free(allocbuf);
 }
 
