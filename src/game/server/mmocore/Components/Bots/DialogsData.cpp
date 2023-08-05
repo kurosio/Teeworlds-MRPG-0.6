@@ -59,10 +59,10 @@ void CDialogElem::Init(int BotID, std::string Text, bool Request)
 		m_Flags |= DIALOGFLAG_RIGHT_BOT;
 	}
 
-	// speak left or right or world
+	// speak left or right or author
 	if(m_Flags & DIALOGFLAG_LEFT_EMPTY && m_Flags & DIALOGFLAG_RIGHT_EMPTY)
 	{
-		m_Flags |= DIALOGFLAG_SPEAK_WORLD;
+		m_Flags |= DIALOGFLAG_SPEAK_AUTHOR;
 	}
 	else if(str_find_nocase(Text.c_str(), "[l]") != nullptr)
 	{
@@ -117,7 +117,7 @@ void CDialogElem::Show(CGS* pGS, int ClientID)
 	const char* pRightNickname = nullptr;
 
 	// checking flags
-	if(m_Flags & DIALOGFLAG_SPEAK_WORLD)
+	if(m_Flags & DIALOGFLAG_SPEAK_AUTHOR)
 	{
 		pLeftNickname = "...";
 	}
@@ -238,6 +238,8 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 
 	const int ClientID = m_pPlayer->GetCID();
 	const bool IsVanillaClient = !GS()->IsClientMRPG(ClientID);
+	const bool IsSpeakAuthor = pDialog->GetFlag() & DIALOGFLAG_SPEAK_AUTHOR;
+
 	/*
 	 * Information format
 	 */
@@ -261,21 +263,16 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	 * Nickname format
 	 */
 	char aBufNickname[128] {};
-	if(IsVanillaClient)
+	if(IsVanillaClient && !IsSpeakAuthor)
 	{
-		if(pLeftNickname != nullptr && pRightNickname != nullptr)
+		if(pLeftNickname && pRightNickname)
 			str_format(aBufNickname, sizeof(aBufNickname), "%s and %s:\n\n", pLeftNickname, pRightNickname);
-		else if(pLeftNickname != nullptr && pRightNickname)
-			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pLeftNickname);
-		else if(pRightNickname != nullptr && pLeftNickname)
+		else if(pRightNickname)
 			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pRightNickname);
-		else
-			aBufNickname[0] = '\0';
+		else if(pLeftNickname)
+			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pLeftNickname);
 	}
 
-	/*
-	 * Page format
-	 */
 	char aBufPosition[128];
 	{
 		int PageNum = m_Step;
@@ -284,7 +281,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 		else if(m_BotType == TYPE_BOT_NPC)
 			PageNum = static_cast<int>(NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs.size());
 
-		const char* pNicknameTalked = pDialog->GetFlag() & DIALOGFLAG_SPEAK_WORLD ? "..." : (pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
+		const char* pNicknameTalked = IsSpeakAuthor ? "..." : (pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
 		str_format(aBufPosition, sizeof(aBufPosition), "--------- [ %d of %d ] %s ---------\n", (m_Step + 1), max(1, PageNum), pNicknameTalked);
 	}
 
