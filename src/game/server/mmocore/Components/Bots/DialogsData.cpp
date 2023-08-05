@@ -258,6 +258,22 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	}
 
 	/*
+	 * Nickname format
+	 */
+	char aBufNickname[128] {};
+	if(IsVanillaClient)
+	{
+		if(pLeftNickname != nullptr && pRightNickname != nullptr)
+			str_format(aBufNickname, sizeof(aBufNickname), "%s and %s:\n\n", pLeftNickname, pRightNickname);
+		else if(pLeftNickname != nullptr && pRightNickname)
+			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pLeftNickname);
+		else if(pRightNickname != nullptr && pLeftNickname)
+			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pRightNickname);
+		else
+			aBufNickname[0] = '\0';
+	}
+
+	/*
 	 * Page format
 	 */
 	char aBufPosition[128];
@@ -267,23 +283,9 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 			PageNum = static_cast<int>(QuestBotInfo::ms_aQuestBot[m_MobID].m_aDialogs.size());
 		else if(m_BotType == TYPE_BOT_NPC)
 			PageNum = static_cast<int>(NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs.size());
-		str_format(aBufPosition, sizeof(aBufPosition), "--------- [ %d of %d ] %s ---------\n", (m_Step + 1), max(1, PageNum), pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
-	}
 
-	/*
-	 * Nickname format
-	 */
-	char aBufNickname[128]{};
-	if(IsVanillaClient)
-	{
-		if(pLeftNickname != nullptr && pRightNickname != nullptr)
-			str_format(aBufNickname, sizeof(aBufNickname), "%s and %s:\n\n", pLeftNickname, pRightNickname);
-		else if(pLeftNickname != nullptr)
-			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pLeftNickname);
-		else if(pRightNickname != nullptr)
-			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pRightNickname);
-		else 
-			aBufNickname[0] = '\0';
+		const char* pNicknameTalked = pDialog->GetFlag() & DIALOGFLAG_SPEAK_WORLD ? "..." : (pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
+		str_format(aBufPosition, sizeof(aBufPosition), "--------- [ %d of %d ] %s ---------\n", (m_Step + 1), max(1, PageNum), pNicknameTalked);
 	}
 
 	/*
