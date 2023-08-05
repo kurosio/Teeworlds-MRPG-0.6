@@ -49,7 +49,7 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	}
 	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST && QuestBotInfo::ms_aQuestBot[MobID].m_HasAction)
 	{
-		GS()->CreateLaserOrbite(m_pBotPlayer->GetCID(), 3, EntLaserOrbiteType::MOVE_RIGHT, 0.1f, 90.f);
+		GS()->CreateLaserOrbite(m_pBotPlayer->GetCID(), 3, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 76.f);
 	}
 	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 	{
