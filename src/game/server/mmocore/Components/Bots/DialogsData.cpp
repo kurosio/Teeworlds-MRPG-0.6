@@ -254,20 +254,20 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	if(IsVanillaClient && m_BotType == TYPE_BOT_QUEST)
 	{
 		int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		str_format(aBufTittle, sizeof(aBufTittle), "%s\n---------\n", GS()->GetQuestInfo(QuestID).GetName());
+		str_format(aBufTittle, sizeof(aBufTittle), "### %s\n\n", GS()->GetQuestInfo(QuestID).GetName());
 	}
 
 	/*
 	 * Page format
 	 */
-	char aBufPage[24];
+	char aBufPosition[128];
 	{
 		int PageNum = m_Step;
 		if(m_BotType == TYPE_BOT_QUEST)
 			PageNum = static_cast<int>(QuestBotInfo::ms_aQuestBot[m_MobID].m_aDialogs.size());
 		else if(m_BotType == TYPE_BOT_NPC)
 			PageNum = static_cast<int>(NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs.size());
-		str_format(aBufPage, sizeof(aBufPage), "( %d of %d ) ", (m_Step + 1), max(1, PageNum));
+		str_format(aBufPosition, sizeof(aBufPosition), "--------- [ %d of %d ] %s ---------\n", (m_Step + 1), max(1, PageNum), pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
 	}
 
 	/*
@@ -284,16 +284,6 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pRightNickname);
 		else 
 			aBufNickname[0] = '\0';
-	}
-
-	/*
-	 * Speak format
-	 */
-	char aBufSpeakNickname[64]{};
-	if(IsVanillaClient)
-	{
-		if(pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT || pDialog->GetFlag() & DIALOGFLAG_SPEAK_RIGHT)
-			str_format(aBufSpeakNickname, sizeof(aBufSpeakNickname), "%s ...:\n", pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
 	}
 
 	/*
@@ -359,7 +349,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	}
 
 	// copy all formated data
-	str_format(m_aFormatedText, sizeof(m_aFormatedText), "%s%s%s%s%s%s%s", aBufInformation, aBufTittle, aBufNickname, aBufPage, aBufSpeakNickname, aBufText, aBufQuestTask);
+	str_format(m_aFormatedText, sizeof(m_aFormatedText), "%s%s%s%s%s%s", aBufInformation, aBufTittle, aBufNickname, aBufPosition, aBufText, aBufQuestTask);
 }
 
 void CPlayerDialog::ClearText()
