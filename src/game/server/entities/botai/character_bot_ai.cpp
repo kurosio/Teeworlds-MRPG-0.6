@@ -85,15 +85,14 @@ void CCharacterBotAI::OnSpawnInitBotTypes()
 
 void CCharacterBotAI::GiveRandomEffects(int ClientID)
 {
-	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
+	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB)
+		return;
+
+	if(CPlayer* pPlayer = GS()->GetPlayer(ClientID); pPlayer && ClientID != m_pBotPlayer->GetCID())
 	{
-		CPlayer* pPlayer = GS()->GetPlayer(ClientID);
-		if(pPlayer && ClientID != m_pBotPlayer->GetCID())
-		{
-			const int MobID = m_pBotPlayer->GetBotMobID();
-			if(const CMobBuffDebuff* pBuff = MobBotInfo::ms_aMobBot[MobID].GetRandomEffect())
-				pPlayer->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
-		}
+		const int MobID = m_pBotPlayer->GetBotMobID();
+		if(const CMobBuffDebuff* pBuff = MobBotInfo::ms_aMobBot[MobID].GetRandomEffect())
+			pPlayer->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
 	}
 }
 
@@ -182,9 +181,10 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 	m_pBotPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick * Server()->TickSpeed();
 	m_pBotPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
 	m_pBotPlayer->m_Spawned = true;
+	GS()->CreateDeath(m_Pos, ClientID);
+
 	GS()->m_World.RemoveEntity(this);
 	GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
-	GS()->CreateDeath(m_Pos, ClientID);
 }
 
 void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
@@ -195,9 +195,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// quest mob progress
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
-	{
 		GS()->Mmo()->Quest()->AddMobProgressQuests(pPlayer, BotID);
-	}
 
 	// reduce afk farming
 	if(pPlayer->IsAfk())
@@ -433,22 +431,25 @@ void CCharacterBotAI::HandleBot()
 void CCharacterBotAI::EngineNPC()
 {
 	const int MobID = m_pBotPlayer->GetBotMobID();
-	const int EmoteBot = NpcBotInfo::ms_aNpcBot[MobID].m_Emote;
-	EmotesAction(EmoteBot);
+	NpcBotInfo* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobID];
+
+	// emote actions
+	EmotesAction(pNpcBot->m_Emote);
 
 	// direction eyes
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 		m_Input.m_TargetY = random_int()%4- random_int()%8;
 	m_Input.m_TargetX = (m_Input.m_Direction*10+1);
 
+	// functional
 	bool PlayerFinding;
-	if(NpcBotInfo::ms_aNpcBot[MobID].m_Function == FUNCTION_NPC_NURSE)
+	if(pNpcBot->m_Function == FUNCTION_NPC_NURSE)
 		PlayerFinding = FunctionNurseNPC();
 	else
 		PlayerFinding = BaseFunctionNPC();
 
 	// walking for npc
-	if(!PlayerFinding && !NpcBotInfo::ms_aNpcBot[MobID].m_Static && random_int() % 50 == 0)
+	if(!PlayerFinding && !pNpcBot->m_Static && random_int() % 50 == 0)
 	{
 		const int RandomDirection = random_int() % 6;
 		if(RandomDirection == 0 || RandomDirection == 2)
@@ -464,8 +465,12 @@ void CCharacterBotAI::EngineQuestMob()
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 		m_Input.m_TargetY = random_int()%4- random_int()%8;
 	m_Input.m_TargetX = (m_Input.m_Direction*10+1);
+
+	// emote actions
 	EmotesAction(EMOTE_BLINK);
-	SearchTalkedPlayer();
+
+	// functional
+	SearchPlayersToTalk();
 }
 
 void CCharacterBotAI::HandleTuning()
@@ -510,10 +515,14 @@ void CCharacterBotAI::HandleTuning()
 
 void CCharacterBotAI::BehaviorTick()
 {
+	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB)
+		return;
+
 	const int MobID = m_pBotPlayer->GetBotMobID();
+	MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
 
 	// sleepy behavior
-	if(m_Target.IsEmpty() && MobBotInfo::ms_aMobBot[MobID].IsIncludedBehavior("Sleepy"))
+	if(m_Target.IsEmpty() && pMobBot->IsIncludedBehavior("Sleepy"))
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
@@ -526,6 +535,10 @@ void CCharacterBotAI::BehaviorTick()
 // interactive of Mobs
 void CCharacterBotAI::EngineMobs()
 {
+	const int MobID = m_pBotPlayer->GetBotMobID();
+	MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
+
+	// reset input
 	ResetInput();
 
 	// search hardress player
@@ -536,16 +549,13 @@ void CCharacterBotAI::EngineMobs()
 		Fire();
 	}
 	else if(Server()->Tick() > m_pBotPlayer->m_LastPosTick)
-	{
 		m_pBotPlayer->m_TargetPos = vec2(0, 0);
-	}
 
 	// behavior
 	BehaviorTick();
 
 	// show health for boss mobs
-	const int MobID = m_pBotPlayer->GetBotMobID();
-	if(MobBotInfo::ms_aMobBot[MobID].m_Boss)
+	if(pMobBot->m_Boss)
 	{
 		for(const auto & ClientID : m_aListDmgPlayers)
 		{
@@ -565,7 +575,7 @@ void CCharacterBotAI::EngineMobs()
 	}
 
 	// bot with weapons since it has spread.
-	if(MobBotInfo::ms_aMobBot[MobID].m_Spread >= 1)
+	if(pMobBot->m_Spread >= 1)
 		ChangeWeapons();
 
 	Move();
@@ -900,7 +910,7 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 	return pBotPlayer;
 }
 
-bool CCharacterBotAI::SearchTalkedPlayer()
+bool CCharacterBotAI::SearchPlayersToTalk()
 {
 	bool PlayerFinding = false;
 	for(int i = 0; i < MAX_PLAYERS; i++)
@@ -951,7 +961,7 @@ void CCharacterBotAI::EmotesAction(int EmotionStyle)
 // - - - - - - - - - - - - - - - - - - - - - Npc functions
 bool CCharacterBotAI::BaseFunctionNPC()
 {
-	return SearchTalkedPlayer();
+	return SearchPlayersToTalk();
 }
 
 bool CCharacterBotAI::FunctionNurseNPC()

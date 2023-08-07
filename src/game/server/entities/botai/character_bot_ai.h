@@ -120,7 +120,7 @@ private:
 	void EmotesAction(int EmotionStyle);
 	void SetAim(vec2 Dir);
 
-	bool SearchTalkedPlayer();
+	bool SearchPlayersToTalk();
 	void HandleBot();
 	void EngineNPC();
 	void EngineMobs();
