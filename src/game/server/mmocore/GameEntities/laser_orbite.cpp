@@ -26,7 +26,7 @@ void CLaserOrbite::Reset()
 
 void CLaserOrbite::Tick()
 {
-	if(m_pAttachedPos == nullptr)
+	if(m_pAttachedPos == nullptr || (m_ClientID >= 0 && !GS()->GetPlayer(m_ClientID, false, true)))
 	{
 		Reset();
 		return;
