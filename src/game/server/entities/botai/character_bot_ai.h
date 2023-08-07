@@ -98,6 +98,7 @@ public:
 	CTargetSystem* GetTarget() { return &m_Target; }
 
 private:
+	void OnSpawnInitBotTypes();
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos) override;
 	void Tick() override;
 	void TickDeferred() override;

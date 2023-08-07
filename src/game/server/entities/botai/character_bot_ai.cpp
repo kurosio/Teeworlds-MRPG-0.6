@@ -28,44 +28,59 @@ bool CCharacterBotAI::Spawn(class CPlayer *pPlayer, vec2 Pos)
 	if(!CCharacter::Spawn(m_pBotPlayer, Pos))
 		return false;
 
-	int ClientID = m_pBotPlayer->GetCID();
-
 	// target init
 	m_Target.Reset();
 	m_Target.Init(this);
 
-	// mob information
-	const int MobID = m_pBotPlayer->GetBotMobID();
-	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[MobID].m_Boss)
-	{
-		for(int i = 0; i < 3; i++)
-		{
-			CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
-			CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
-		}
+	// bot types init
+	OnSpawnInitBotTypes();
 
-		if(!GS()->IsDungeon())
-		{
-			GS()->ChatWorldID(MobBotInfo::ms_aMobBot[MobID].m_WorldID, "", "In your zone emerging {STR}!", MobBotInfo::ms_aMobBot[MobID].GetName());
-		}
-	}
-	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST && QuestBotInfo::ms_aQuestBot[MobID].m_HasAction)
-	{
-		GS()->CreateLaserOrbite(ClientID, 5, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 64.f);
-	}
-	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
-	{
-		const int Function = NpcBotInfo::ms_aNpcBot[MobID].m_Function;
-		if(Function == FUNCTION_NPC_GIVE_QUEST)
-			CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
-	}
-	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
-	{
-		m_Core.m_Solo = true;
-		int OwnerCID = m_pBotPlayer->GetEidolonOwner()->GetCID();
-		new CEidolon(&GS()->m_World, Pos, 0, ClientID, OwnerCID);
-	}
 	return true;
+}
+
+void CCharacterBotAI::OnSpawnInitBotTypes()
+{
+	// mob information
+	const int ClientID = m_pBotPlayer->GetCID();
+	const int MobID = m_pBotPlayer->GetBotMobID();
+	switch(m_pBotPlayer->GetBotType())
+	{
+		case TYPE_BOT_MOB:
+		{
+			MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
+			if(pMobBot->m_Boss)
+			{
+				for(int i = 0; i < 3; i++)
+				{
+					CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
+					CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
+				}
+
+				if(!GS()->IsDungeon())
+					GS()->ChatWorldID(pMobBot->m_WorldID, "", "In your zone emerging {STR}!", pMobBot->GetName());
+			}
+		} break;
+		case TYPE_BOT_QUEST:
+		{
+			QuestBotInfo* pQuestBot = &QuestBotInfo::ms_aQuestBot[MobID];
+			if(pQuestBot->m_HasAction)
+				GS()->CreateLaserOrbite(ClientID, 5, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 64.f);
+		} break;
+		case TYPE_BOT_NPC:
+		{
+			NpcBotInfo* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobID];
+			const int Function = pNpcBot->m_Function;
+			if(Function == FUNCTION_NPC_GIVE_QUEST)
+				CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
+		} break;
+		case TYPE_BOT_EIDOLON:
+		{
+			m_Core.m_Solo = true;
+			const int OwnerCID = m_pBotPlayer->GetEidolonOwner()->GetCID();
+			new CEidolon(&GS()->m_World, m_Core.m_Pos, 0, ClientID, OwnerCID);
+		} break;
+		default: break;
+	}
 }
 
 void CCharacterBotAI::GiveRandomEffects(int ClientID)
@@ -75,7 +90,7 @@ void CCharacterBotAI::GiveRandomEffects(int ClientID)
 		CPlayer* pPlayer = GS()->GetPlayer(ClientID);
 		if(pPlayer && ClientID != m_pBotPlayer->GetCID())
 		{
-			int MobID = m_pBotPlayer->GetBotMobID();
+			const int MobID = m_pBotPlayer->GetBotMobID();
 			if(const CMobBuffDebuff* pBuff = MobBotInfo::ms_aMobBot[MobID].GetRandomEffect())
 				pPlayer->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
 		}
@@ -174,9 +189,9 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 
 void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 {
-	int ClientID = pPlayer->GetCID();
-	int BotID = m_pBotPlayer->GetBotID();
-	int SubID = m_pBotPlayer->GetBotMobID();
+	const int ClientID = pPlayer->GetCID();
+	const int BotID = m_pBotPlayer->GetBotID();
+	const int SubID = m_pBotPlayer->GetBotMobID();
 
 	// quest mob progress
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
@@ -190,45 +205,46 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "You get reduced rewards, due to farming mobs afk.");
 		pPlayer->AddMoney(1);
 		GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, 1, Force);
-		return;
 	}
-
-	// grinding gold
-	int Gold = max(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
-	pPlayer->AddMoney(Gold);
-
-	// grinding experience
-	const int ExperienceMob = max(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
-	const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
-	GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
-
-	// drop experience
-	const int ExperienceDrop = max(ExperienceWithMultiplier / 2, 1);
-	GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + random_int() % 2), Force);
-
-	// drop item's
-	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
-	for(int i = 0; i < 5; i++)
+	else
 	{
-		CItem DropItem;
-		DropItem.SetID(MobBotInfo::ms_aMobBot[SubID].m_aDropItem[i]);
-		DropItem.SetValue(MobBotInfo::ms_aMobBot[SubID].m_aValueItem[i]);
-		if(DropItem.GetID() <= 0 || DropItem.GetValue() <= 0)
-			continue;
+		// grinding gold
+		const int Gold = max(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
+		pPlayer->AddMoney(Gold);
 
-		const float RandomDrop = clamp(MobBotInfo::ms_aMobBot[SubID].m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
-		const vec2 ForceRandom(centrelized_frandom(Force.x, Force.x / 4.0f), centrelized_frandom(Force.y, Force.y / 8.0f));
-		GS()->CreateRandomDropItem(m_Core.m_Pos, ClientID, RandomDrop, DropItem, ForceRandom);
-	}
+		// grinding experience
+		const int ExperienceMob = max(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
+		const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
+		GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
 
-	// skill point
-	// TODO: balance depending on the difficulty, not just the level
-	const int CalculateSP = (pPlayer->Acc().m_Level > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + min(40, (pPlayer->Acc().m_Level - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
-	if(random_int() % CalculateSP == 0)
-	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
-		pPlayerItem->Add(1);
-		GS()->Chat(ClientID, "Skill points increased. Now ({INT}SP)", pPlayerItem->GetValue());
+		// drop experience
+		const int ExperienceDrop = max(ExperienceWithMultiplier / 2, 1);
+		GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + random_int() % 2), Force);
+
+		// drop item's
+		const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
+		for(int i = 0; i < 5; i++)
+		{
+			CItem DropItem;
+			DropItem.SetID(MobBotInfo::ms_aMobBot[SubID].m_aDropItem[i]);
+			DropItem.SetValue(MobBotInfo::ms_aMobBot[SubID].m_aValueItem[i]);
+			if(DropItem.GetID() <= 0 || DropItem.GetValue() <= 0)
+				continue;
+
+			const float RandomDrop = clamp(MobBotInfo::ms_aMobBot[SubID].m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
+			const vec2 ForceRandom(centrelized_frandom(Force.x, Force.x / 4.0f), centrelized_frandom(Force.y, Force.y / 8.0f));
+			GS()->CreateRandomDropItem(m_Core.m_Pos, ClientID, RandomDrop, DropItem, ForceRandom);
+		}
+
+		// skill point
+		// TODO: balance depending on the difficulty, not just the level
+		const int CalculateSP = (pPlayer->Acc().m_Level > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + min(40, (pPlayer->Acc().m_Level - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
+		if(random_int() % CalculateSP == 0)
+		{
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
+			pPlayerItem->Add(1);
+			GS()->Chat(ClientID, "Skill points increased. Now ({INT}SP)", pPlayerItem->GetValue());
+		}
 	}
 }
 
@@ -259,6 +275,7 @@ void CCharacterBotAI::Tick()
 
 	// check safe area
 	ResetSafe();
+
 	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA) || m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
 		SetSafe();
 
