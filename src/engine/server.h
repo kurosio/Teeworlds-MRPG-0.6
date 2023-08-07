@@ -252,7 +252,7 @@ public:
 	virtual void OnShutdown() = 0;
 
 	virtual void OnTick() = 0;
-	virtual void OnTickMainWorld() = 0;
+	virtual void OnTickGlobal() = 0;
 	virtual void OnPreSnap() = 0;
 	virtual void OnSnap(int ClientID) = 0;
 	virtual void OnPostSnap() = 0;

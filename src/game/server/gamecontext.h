@@ -145,7 +145,7 @@ public:
 	void OnShutdown() override { delete this; }
 
 	void OnTick() override;
-	void OnTickMainWorld() override;
+	void OnTickGlobal() override;
 	void OnPreSnap() override;
 	void OnSnap(int ClientID) override;
 	void OnPostSnap() override;

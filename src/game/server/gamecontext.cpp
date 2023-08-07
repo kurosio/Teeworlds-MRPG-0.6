@@ -773,7 +773,7 @@ void CGS::OnTick()
 }
 
 // Here we use functions that can have static data or functions that don't need to be called in all worlds
-void CGS::OnTickMainWorld()
+void CGS::OnTickGlobal()
 {
 	if(m_DayEnumType != Server()->GetEnumTypeDay())
 	{

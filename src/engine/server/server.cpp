@@ -1893,7 +1893,7 @@ int CServer::Run()
 					}
 				}
 
-				MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_pGameServer->OnTickMainWorld();
+				MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_pGameServer->OnTickGlobal();
 				for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 				{
 					IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->m_pGameServer;

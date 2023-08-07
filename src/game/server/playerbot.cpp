@@ -197,7 +197,7 @@ void CPlayerBot::TryRespawn()
 			return;
 
 		const vec2 MobRespawnPosition = MobBotInfo::ms_aMobBot[m_MobID].m_Position;
-		if(!GS()->m_pController->CanSpawn(m_BotType, &SpawnPos, MobRespawnPosition))
+		if(!GS()->m_pController->CanSpawn(m_BotType, &SpawnPos, std::make_pair(MobRespawnPosition, 800.f)))
 			return;
 
 		// reset spawn mobs on non allowed spawn dungeon

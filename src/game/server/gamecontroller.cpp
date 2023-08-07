@@ -244,13 +244,13 @@ void IGameController::UpdateGameInfo(int ClientID)
 	}*/
 }
 
-bool IGameController::CanSpawn(int SpawnType, vec2 *pOutPos, vec2 BotPos) const
+bool IGameController::CanSpawn(int SpawnType, vec2 *pOutPos, std::pair<vec2, float> LimiterSpread) const
 {
 	if(SpawnType < SPAWN_HUMAN || SpawnType >= SPAWN_NUM || GS()->m_World.m_ResetRequested)
 		return false;
 
 	CSpawnEval Eval;
-	EvaluateSpawnType(&Eval, SpawnType, BotPos);
+	EvaluateSpawnType(&Eval, SpawnType, LimiterSpread);
 
 	*pOutPos = Eval.m_Pos;
 	return Eval.m_Got;
@@ -259,22 +259,21 @@ bool IGameController::CanSpawn(int SpawnType, vec2 *pOutPos, vec2 BotPos) const
 float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const
 {
 	float Score = 0.0f;
-	CCharacter *pC = dynamic_cast<CCharacter *>(GS()->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER));
-	for(; pC; pC = (CCharacter *)pC->TypeNext())
+	for(const CCharacter *pC = dynamic_cast<CCharacter *>(GS()->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER)); pC; pC = (CCharacter *)pC->TypeNext())
 	{
 		// team mates are not as dangerous as enemies
 		float Scoremod = 1.0f;
 		if(pEval->m_FriendlyTeam != -1 && pC->GetPlayer()->GetTeam() == pEval->m_FriendlyTeam)
 			Scoremod = 0.5f;
 
-		float d = distance(Pos, pC->GetPos());
+		const float d = distance(Pos, pC->GetPos());
 		Score += Scoremod * (d == 0.f ? 1000000000.0f : 1.0f/d);
 	}
 
 	return Score;
 }
 
-void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int SpawnType, vec2 BotPos) const
+void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int SpawnType, std::pair<vec2, float> LimiterSpread) const
 {
 	// get spawn point
 	for(int i = 0; i < m_aNumSpawnPoints[SpawnType]; i++)
@@ -285,7 +284,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int SpawnType, vec2 B
 		vec2 Positions[5] = { vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f) };
 		int Result = -1;
 
-		if(total_size_vec2(BotPos) >= 1.0f && distance(BotPos, m_aaSpawnPoints[SpawnType][i]) > 800.0f)
+		if(!LimiterSpread.second && distance(LimiterSpread.first, m_aaSpawnPoints[SpawnType][i]) > LimiterSpread.second)
 			continue;
 
 		for(int Index = 0; Index < 5 && Result == -1; ++Index)

@@ -332,7 +332,7 @@ void CPlayer::TryRespawn()
 		SpawnType = SPAWN_HUMAN_SAFE;
 	}
 
-	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos, vec2(-1, -1)))
+	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
 	{
 		if(!GS()->IsDungeon() && total_size_vec2(GetTempData().m_TempTeleportPos) >= 1.0f)
 		{

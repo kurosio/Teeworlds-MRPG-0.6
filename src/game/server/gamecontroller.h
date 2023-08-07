@@ -29,11 +29,12 @@ class IGameController
 		int m_FriendlyTeam;
 		float m_Score;
 	};
+
 	vec2 m_aaSpawnPoints[SPAWN_NUM][64];
 	int m_aNumSpawnPoints[SPAWN_NUM];
 
 	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const;
-	void EvaluateSpawnType(CSpawnEval *pEval, int Type, vec2 BotPos) const;
+	void EvaluateSpawnType(CSpawnEval *pEval, int Type, std::pair<vec2, float> LimiterSpread) const;
 
 protected:
 	CGS *GS() const { return m_pGS; }
@@ -65,7 +66,7 @@ public:
 	void DDNetSnap();
 	virtual void Tick();
 
-	bool CanSpawn(int SpawnType, vec2 *pPos, vec2 BotPos) const;
+	bool CanSpawn(int SpawnType, vec2 *pPos, std::pair<vec2, float> LimiterSpread = std::make_pair(vec2(), -1.f)) const;
 	void DoTeamChange(class CPlayer *pPlayer, bool DoChatMsg=true);
 
 };
