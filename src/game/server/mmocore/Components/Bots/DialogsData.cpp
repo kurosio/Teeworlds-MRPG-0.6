@@ -16,7 +16,7 @@
  * [re] - right side empty
  */
 
-void CDialogElem::Init(int BotID, std::string Text, bool Request)
+void CDialogElem::Init(int BotID, std::string Text, bool Action)
 {
  	// left side
 	const char* pBot = str_find_nocase(Text.c_str(), "[ls_");
@@ -76,7 +76,7 @@ void CDialogElem::Init(int BotID, std::string Text, bool Request)
 
 	// initilize var
 	m_Text = Text;
-	m_Request = Request;
+	m_Request = Action;
 }
 
 // TODO: Replace not optimized for search

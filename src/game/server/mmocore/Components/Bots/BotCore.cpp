@@ -10,16 +10,14 @@
 typedef std::pair < bool, std::vector<CDialogElem> > DialogsInitilizerType;
 static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string& JsonDialogData)
 {
-	DialogsInitilizerType Value;
+	DialogsInitilizerType Value{false, {}};
 	JsonTools::parseFromString(JsonDialogData, [&](nlohmann::json& pJson)
 	{
 		for(auto& pItem : pJson)
 		{
 			bool Action = pItem.value("action_step", 0);
-			if(Action)
-			{
+			if(!Value.first && Action)
 				Value.first = true;
-			}
 
 			CDialogElem Dialogue;
 			Dialogue.Init(DataBotID, pItem.value("text", ""), Action);

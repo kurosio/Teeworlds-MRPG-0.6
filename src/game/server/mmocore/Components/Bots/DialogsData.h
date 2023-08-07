@@ -53,7 +53,7 @@ class CDialogElem
 	int GetClientIDByBotID(class CGS* pGS, int CheckVisibleForCID, int BotID) const;
 
 public:
-	void Init(int BotID, std::string Text, bool Request);
+	void Init(int BotID, std::string Text, bool Action);
 	void Show(class CGS* pGS, int ClientID);
 
 	const char* GetText() const { return m_Text.c_str(); }

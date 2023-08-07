@@ -284,7 +284,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int SpawnType, std::p
 		vec2 Positions[5] = { vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f) };
 		int Result = -1;
 
-		if(!LimiterSpread.second && distance(LimiterSpread.first, m_aaSpawnPoints[SpawnType][i]) > LimiterSpread.second)
+		if(LimiterSpread.second >= 1.f && distance(LimiterSpread.first, m_aaSpawnPoints[SpawnType][i]) > LimiterSpread.second)
 			continue;
 
 		for(int Index = 0; Index < 5 && Result == -1; ++Index)
