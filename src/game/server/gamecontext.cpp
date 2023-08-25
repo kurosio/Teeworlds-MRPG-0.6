@@ -1525,7 +1525,7 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 
 	char aBufDesc[VOTE_DESC_LENGTH];
 	str_copy(aBufDesc, pDesc, sizeof(aBufDesc));
-	if(const auto pReplaceIndent = "────────────────────────";
+	if(const auto pReplaceIndent = "························";
 		aBufDesc[0] == '\0' && !m_aPlayerVotes[ClientID].empty() && str_comp(m_aPlayerVotes[ClientID].back().m_aDescription, pReplaceIndent) != 0)
 		str_copy(aBufDesc, pReplaceIndent, sizeof(aBufDesc));
 	else if(str_comp(m_apPlayers[ClientID]->GetLanguage(), "ru") == 0 || str_comp(m_apPlayers[ClientID]->GetLanguage(), "uk") == 0)

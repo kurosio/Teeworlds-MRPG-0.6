@@ -146,7 +146,7 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EQUIP, "SELECT tab and select armor.");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_EQUIP_SELECT, "Equip SELECT Slot");
+		GS()->AVH(ClientID, TAB_EQUIP_SELECT, "Equipment");
 		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor", "Eidolon" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
@@ -337,7 +337,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	// functional by function
 	if (pItemPlayer.Info()->m_Function == FUNCTION_ONE_USED || pItemPlayer.Info()->m_Function == FUNCTION_USED)
 	{
-		GS()->AVM(ClientID, "null", NOPE, HideID, "For bind command '/useitem {INT}'", ItemID);
+		GS()->AVM(ClientID, "null", NOPE, HideID, "Bind command '/useitem {INT}'", ItemID);
 		GS()->AVM(ClientID, "IUSE", ItemID, HideID, "Use");
 	}
 	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANTS)

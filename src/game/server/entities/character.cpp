@@ -427,14 +427,14 @@ void CCharacter::HandleWeapons()
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 		}
 	}
-
-	HandleHookActions();
 }
 
 void CCharacter::HandleHookActions()
 {
-	int ClientID = m_pPlayer->GetCID();
+	if(!m_Alive)
+		return;
 
+	int ClientID = m_pPlayer->GetCID();
 	CPlayer* pHookedPlayer = GetHookedPlayer();
 	if(pHookedPlayer && pHookedPlayer->GetCharacter())
 	{
@@ -1216,6 +1216,7 @@ void CCharacter::HandlePlayer()
 
 	// handle
 	HandleEvent();
+	HandleHookActions();
 }
 
 bool CCharacter::IsAllowedPVP(int FromID) const
