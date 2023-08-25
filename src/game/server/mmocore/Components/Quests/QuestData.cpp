@@ -1,11 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "QuestCore.h"
+#include "QuestManager.h"
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/mmocore/Components/Dungeons/DungeonCore.h>
-#include <game/server/mmocore/Components/Worlds/WorldCore.h>
+#include <game/server/mmocore/Components/Dungeons/DungeonManager.h>
+#include <game/server/mmocore/Components/Worlds/WorldManager.h>
 
 CQuestDataInfo& CQuestData::Info() const { return CQuestDataInfo::ms_aDataQuests[m_QuestID]; }
 std::string CQuestData::GetJsonFileName() const { return Info().GetJsonFileName(m_pPlayer->Acc().m_UserID); }
@@ -182,13 +182,15 @@ void CQuestData::Finish()
 	pGS->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", pGS->Server()->ClientName(ClientID), Info().m_aStoryLine, Info().m_aName);
 	pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(ClientID), "Completed ({STR} - {STR})", Info().m_aStoryLine, Info().m_aName);
 
-	// check whether the after quest has opened something new
+	// notify whether the after quest has opened something new
 	pGS->Mmo()->WorldSwap()->NotifyUnlockedZonesByQuest(m_pPlayer, m_QuestID);
 	pGS->Mmo()->Dungeon()->NotifyUnlockedDungeonsByQuest(m_pPlayer, m_QuestID);
 
 	// save player stats and accept next story quest
 	pGS->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);
-	pGS->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer, m_QuestID);
+	pGS->Mmo()->Quest()->AcceptNextStoryQuest(m_pPlayer, m_QuestID);
+
+	// effect's
 	pGS->CreateText(nullptr, false, vec2(m_pPlayer->m_ViewPos.x, m_pPlayer->m_ViewPos.y - 70), vec2(0, -0.5), 30, "COMPLECTED");
 }
 

@@ -18,7 +18,7 @@ public:
 	using ContainerAttributes = std::deque< CAttribute >;
 
 private:
-	friend class CInventoryCore;
+	friend class CInventoryManager;
 
 	ItemIdentifier m_ID{};
 	char m_aName[32]{};

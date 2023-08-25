@@ -103,7 +103,7 @@ public:
 
 class MobBotInfo
 {
-	friend class CBotCore;
+	friend class CBotManager;
 	char m_aBehavior[512] {};
 
 	std::deque < CMobBuffDebuff > m_Effects;

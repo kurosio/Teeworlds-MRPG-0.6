@@ -47,7 +47,7 @@ public:
 
 class CPlayerItem : public CItem, public MultiworldIdentifiableStaticData< std::map < int, std::map < int, CPlayerItem > > >
 {
-	friend class CInventoryCore;
+	friend class CInventoryManager;
 	int m_ClientID{};
 
 	class CGS* GS() const;

@@ -6,9 +6,9 @@
 #include <game/server/mmocore/GameEntities/jobitems.h>
 #include <game/server/mmocore/GameEntities/Logics/logicwall.h>
 
-#include <game/server/mmocore/Components/Accounts/AccountMinerCore.h>
-#include <game/server/mmocore/Components/Accounts/AccountPlantCore.h>
-#include <game/server/mmocore/Components/Houses/HouseCore.h>
+#include <game/server/mmocore/Components/Accounts/AccountMinerManager.h>
+#include <game/server/mmocore/Components/Accounts/AccountPlantManager.h>
+#include <game/server/mmocore/Components/Houses/HouseManager.h>
 
 CGameControllerMain::CGameControllerMain(class CGS *pGS)
 : IGameController(pGS)

@@ -12,7 +12,7 @@
 #include <game/server/mmocore/Components/Skills/Entities/HealthTurret/hearth.h> // for nurse
 
 #include <game/server/mmocore/Components/Bots/BotData.h>
-#include <game/server/mmocore/Components/Quests/QuestCore.h>
+#include <game/server/mmocore/Components/Quests/QuestManager.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 

@@ -19,14 +19,14 @@
 #include "mmocore/GameEntities/Items/drop_items.h"
 #include "mmocore/GameEntities/laser_orbite.h"
 
-#include "mmocore/Components/Accounts/AccountCore.h"
-#include "mmocore/Components/Bots/BotCore.h"
-#include "mmocore/Components/Dungeons/DungeonCore.h"
-#include "mmocore/Components/Mails/MailBoxCore.h"
-#include "mmocore/Components/Guilds/GuildCore.h"
-#include "mmocore/Components/Houses/HouseCore.h"
-#include "mmocore/Components/Quests/QuestCore.h"
-#include "mmocore/Components/Skills/SkillsCore.h"
+#include "mmocore/Components/Accounts/AccountManager.h"
+#include "mmocore/Components/Bots/BotManager.h"
+#include "mmocore/Components/Dungeons/DungeonManager.h"
+#include "mmocore/Components/Mails/MailBoxManager.h"
+#include "mmocore/Components/Guilds/GuildManager.h"
+#include "mmocore/Components/Houses/HouseManager.h"
+#include "mmocore/Components/Quests/QuestManager.h"
+#include "mmocore/Components/Skills/SkillManager.h"
 
 #include <cstdarg>
 

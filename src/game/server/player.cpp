@@ -6,13 +6,13 @@
 #include "engine/shared/config.h"
 #include "gamemodes/dungeon.h"
 
-#include "mmocore/Components/Accounts/AccountCore.h"
-#include "mmocore/Components/Bots/BotCore.h"
+#include "mmocore/Components/Accounts/AccountManager.h"
+#include "mmocore/Components/Bots/BotManager.h"
 #include "mmocore/Components/Dungeons/DungeonData.h"
 #include "mmocore/Components/Eidolons/EidolonInfoData.h"
-#include "mmocore/Components/Guilds/GuildCore.h"
+#include "mmocore/Components/Guilds/GuildManager.h"
 #include "mmocore/Components/Houses/HouseData.h"
-#include "mmocore/Components/Quests/QuestCore.h"
+#include "mmocore/Components/Quests/QuestManager.h"
 
 #include "mmocore/Components/Inventory/ItemData.h"
 #include "mmocore/Components/Skills/SkillData.h"

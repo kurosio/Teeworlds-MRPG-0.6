@@ -31,21 +31,21 @@ class MmoController
 	};
 	CStack m_Components;
 
-	class CAccountCore*m_pAccMain;
-	class CBotCore *m_pBotsInfo;
-	class CInventoryCore *m_pItemWork;
-	class CAccountMinerCore *m_pAccMiner;
-	class CAccountPlantCore *m_pAccPlant;
-	class QuestCore *m_pQuest;
-	class CWarehouseCore *m_pWarehouse;
-	class GuildCore* m_pGuildJob;
-	class CCraftCore* m_pCraftJob;
-	class DungeonCore* m_pDungeonJob;
-	class CHouseCore* m_pHouseJob;
-	class CMailBoxCore* m_pMailBoxJob;
-	class CSkillsCore* m_pSkillJob;
-	class CWorldDataCore* m_pWorldSwapJob;
-	class CEidolonCore* m_pEidolonJob;
+	class CAccountManager*m_pAccMain;
+	class CBotManager *m_pBotsInfo;
+	class CInventoryManager *m_pItemWork;
+	class CAccountMinerManager *m_pAccMiner;
+	class CAccountPlantManager *m_pAccPlant;
+	class CQuestManager *m_pQuest;
+	class CWarehouseManager *m_pWarehouse;
+	class CGuildManager* m_pGuildJob;
+	class CCraftManager* m_pCraftJob;
+	class CDungeonManager* m_pDungeonJob;
+	class CHouseManager* m_pHouseJob;
+	class CMailBoxManager* m_pMailBoxJob;
+	class CSkillManager* m_pSkillJob;
+	class CWorldManager* m_pWorldSwapJob;
+	class CEidolonManager* m_pEidolonJob;
 
 public:
 	explicit MmoController(CGS *pGameServer);
@@ -54,22 +54,22 @@ public:
 	CGS *m_pGameServer;
 	CGS *GS() const { return m_pGameServer; }
 
-	CAccountCore *Account() const { return m_pAccMain; }
-	CBotCore *BotsData() const { return m_pBotsInfo; }
-	CInventoryCore *Item() const { return m_pItemWork; }
-	CAccountMinerCore *MinerAcc() const { return m_pAccMiner; }
-	CAccountPlantCore *PlantsAcc() const { return m_pAccPlant; }
-	QuestCore *Quest() const { return m_pQuest; }
-	CWarehouseCore *Warehouse() const { return m_pWarehouse; }
-	CEidolonCore* Eidolons() const { return m_pEidolonJob; }
+	CAccountManager *Account() const { return m_pAccMain; }
+	CBotManager *BotsData() const { return m_pBotsInfo; }
+	CInventoryManager *Item() const { return m_pItemWork; }
+	CAccountMinerManager *MinerAcc() const { return m_pAccMiner; }
+	CAccountPlantManager *PlantsAcc() const { return m_pAccPlant; }
+	CQuestManager *Quest() const { return m_pQuest; }
+	CWarehouseManager *Warehouse() const { return m_pWarehouse; }
+	CEidolonManager* Eidolons() const { return m_pEidolonJob; }
 
-	CCraftCore* Craft() const { return m_pCraftJob; }
-	DungeonCore* Dungeon() const { return m_pDungeonJob; }
-	CHouseCore* House() const { return m_pHouseJob; }
-	CMailBoxCore* Inbox() const { return m_pMailBoxJob; }
-	GuildCore* Member() const { return m_pGuildJob; }
-	CSkillsCore* Skills() const { return m_pSkillJob; }
-	CWorldDataCore *WorldSwap() const { return m_pWorldSwapJob; }
+	CCraftManager* Craft() const { return m_pCraftJob; }
+	CDungeonManager* Dungeon() const { return m_pDungeonJob; }
+	CHouseManager* House() const { return m_pHouseJob; }
+	CMailBoxManager* Inbox() const { return m_pMailBoxJob; }
+	CGuildManager* Member() const { return m_pGuildJob; }
+	CSkillManager* Skills() const { return m_pSkillJob; }
+	CWorldManager *WorldSwap() const { return m_pWorldSwapJob; }
 
 	// global systems
 	void OnTick();

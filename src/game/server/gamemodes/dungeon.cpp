@@ -10,8 +10,8 @@
 #include <game/server/mmocore/GameEntities/Logics/logicwall.h>
 #include <teeother/system/string.h>
 
-#include <game/server/mmocore/Components/Accounts/AccountCore.h>
-#include <game/server/mmocore/Components/Dungeons/DungeonCore.h>
+#include <game/server/mmocore/Components/Accounts/AccountManager.h>
+#include <game/server/mmocore/Components/Dungeons/DungeonManager.h>
 
 CGameControllerDungeon::CGameControllerDungeon(class CGS *pGS) : IGameController(pGS)
 {

@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include "game/server/mmocore/Components/Eidolons/EidolonCore.h"
+#include "game/server/mmocore/Components/Eidolons/EidolonManager.h"
 
 CGS* CPlayerItem::GS() const
 {

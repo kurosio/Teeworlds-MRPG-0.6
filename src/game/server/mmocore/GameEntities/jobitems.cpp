@@ -4,9 +4,9 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/mmocore/Components/Accounts/AccountMinerCore.h>
-#include <game/server/mmocore/Components/Accounts/AccountPlantCore.h>
-#include <game/server/mmocore/Components/Houses/HouseCore.h>
+#include <game/server/mmocore/Components/Accounts/AccountMinerManager.h>
+#include <game/server/mmocore/Components/Accounts/AccountPlantManager.h>
+#include <game/server/mmocore/Components/Houses/HouseManager.h>
 
 // 1 - miner / 2 - plant
 CJobItems::CJobItems(CGameWorld *pGameWorld, int ItemID, int Level, vec2 Pos, int Type, int Health, int HouseID)

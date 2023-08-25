@@ -16,7 +16,7 @@ using SkillIdentifier = int;
 
 class CSkillDescription : public MultiworldIdentifiableStaticData< std::map < SkillIdentifier, CSkillDescription > >
 {
-	friend class CSkillsCore;
+	friend class CSkillManager;
 
 	SkillIdentifier m_ID{};
 	char m_aName[32]{};

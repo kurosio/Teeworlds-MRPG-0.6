@@ -7,7 +7,7 @@
 
 class CSkill : public MultiworldIdentifiableStaticData< std::map< int, std::map < int, CSkill > > >
 {
-	friend class CSkillsCore;
+	friend class CSkillManager;
 
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;

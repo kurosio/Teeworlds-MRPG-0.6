@@ -8,7 +8,7 @@
 #include "entities/botai/character_bot_ai.h"
 #include "gamemodes/dungeon.h"
 
-#include "mmocore/Components/Bots/BotCore.h"
+#include "mmocore/Components/Bots/BotManager.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 

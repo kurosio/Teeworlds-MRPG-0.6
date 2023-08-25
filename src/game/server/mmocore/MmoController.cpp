@@ -6,45 +6,45 @@
 #include <game/server/gamecontext.h>
 #include <teeother/system/string.h>
 
-#include "Components/Accounts/AccountCore.h"
-#include "Components/Accounts/AccountMinerCore.h"
-#include "Components/Accounts/AccountPlantCore.h"
-#include "Components/Auction/AuctionCore.h"
-#include "Components/Aethers/AetherCore.h"
-#include "Components/Bots/BotCore.h"
-#include "Components/Crafts/CraftCore.h"
-#include "Components/Dungeons/DungeonCore.h"
-#include "Components/Eidolons/EidolonCore.h"
-#include "Components/Guilds/GuildCore.h"
-#include "Components/Houses/HouseCore.h"
-#include "Components/Inventory/InventoryCore.h"
-#include "Components/Mails/MailBoxCore.h"
-#include "Components/Quests/QuestCore.h"
-#include "Components/Skills/SkillsCore.h"
-#include "Components/Warehouse/WarehouseCore.h"
-#include "Components/Worlds/WorldCore.h"
+#include "Components/Accounts/AccountManager.h"
+#include "Components/Accounts/AccountMinerManager.h"
+#include "Components/Accounts/AccountPlantManager.h"
+#include "Components/Auction/AuctionManager.h"
+#include "Components/Aethers/AetherManager.h"
+#include "Components/Bots/BotManager.h"
+#include "Components/Crafts/CraftManager.h"
+#include "Components/Dungeons/DungeonManager.h"
+#include "Components/Eidolons/EidolonManager.h"
+#include "Components/Guilds/GuildManager.h"
+#include "Components/Houses/HouseManager.h"
+#include "Components/Inventory/InventoryManager.h"
+#include "Components/Mails/MailBoxManager.h"
+#include "Components/Quests/QuestManager.h"
+#include "Components/Skills/SkillManager.h"
+#include "Components/Warehouse/WarehouseManager.h"
+#include "Components/Worlds/WorldManager.h"
 
 
 MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
-	m_Components.add(m_pBotsInfo = new CBotCore);
-	m_Components.add(m_pItemWork = new CInventoryCore);
-	m_Components.add(m_pCraftJob = new CCraftCore);
-	m_Components.add(m_pWarehouse = new CWarehouseCore);
-	m_Components.add(new CAuctionCore);
-	m_Components.add(m_pEidolonJob = new CEidolonCore);
-	m_Components.add(m_pQuest = new QuestCore);
-	m_Components.add(m_pDungeonJob = new DungeonCore);
-	m_Components.add(new CAetherCore);
-	m_Components.add(m_pWorldSwapJob = new CWorldDataCore);
-	m_Components.add(m_pHouseJob = new CHouseCore);
-	m_Components.add(m_pGuildJob = new GuildCore);
-	m_Components.add(m_pSkillJob = new CSkillsCore);
-	m_Components.add(m_pAccMain = new CAccountCore);
-	m_Components.add(m_pAccMiner = new CAccountMinerCore);
-	m_Components.add(m_pAccPlant = new CAccountPlantCore);
-	m_Components.add(m_pMailBoxJob = new CMailBoxCore);
+	m_Components.add(m_pBotsInfo = new CBotManager);
+	m_Components.add(m_pItemWork = new CInventoryManager);
+	m_Components.add(m_pCraftJob = new CCraftManager);
+	m_Components.add(m_pWarehouse = new CWarehouseManager);
+	m_Components.add(new CAuctionManager);
+	m_Components.add(m_pEidolonJob = new CEidolonManager);
+	m_Components.add(m_pQuest = new CQuestManager);
+	m_Components.add(m_pDungeonJob = new CDungeonManager);
+	m_Components.add(new CAetherManager);
+	m_Components.add(m_pWorldSwapJob = new CWorldManager);
+	m_Components.add(m_pHouseJob = new CHouseManager);
+	m_Components.add(m_pGuildJob = new CGuildManager);
+	m_Components.add(m_pSkillJob = new CSkillManager);
+	m_Components.add(m_pAccMain = new CAccountManager);
+	m_Components.add(m_pAccMiner = new CAccountMinerManager);
+	m_Components.add(m_pAccPlant = new CAccountPlantManager);
+	m_Components.add(m_pMailBoxJob = new CMailBoxManager);
 
 	for(auto& pComponent : m_Components.m_paComponents)
 	{

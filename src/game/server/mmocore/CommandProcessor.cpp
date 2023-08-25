@@ -5,9 +5,9 @@
 #include <engine/shared/config.h>
 #include "game/server/gamecontext.h"
 
-#include <game/server/mmocore/Components/Accounts/AccountCore.h>
-#include <game/server/mmocore/Components/Guilds/GuildCore.h>
-#include <game/server/mmocore/Components/Houses/HouseCore.h>
+#include <game/server/mmocore/Components/Accounts/AccountManager.h>
+#include <game/server/mmocore/Components/Guilds/GuildManager.h>
+#include <game/server/mmocore/Components/Houses/HouseManager.h>
 
 CCommandProcessor::CCommandProcessor(CGS *pGS)
 {

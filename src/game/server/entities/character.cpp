@@ -10,9 +10,9 @@
 #include "projectile.h"
 
 #include <game/server/mmocore/Components/Bots/BotData.h>
-#include <game/server/mmocore/Components/Guilds/GuildCore.h>
-#include <game/server/mmocore/Components/Houses/HouseCore.h>
-#include <game/server/mmocore/Components/Quests/QuestCore.h>
+#include <game/server/mmocore/Components/Guilds/GuildManager.h>
+#include <game/server/mmocore/Components/Houses/HouseManager.h>
+#include <game/server/mmocore/Components/Quests/QuestManager.h>
 #include <game/server/mmocore/Components/Worlds/WorldData.h>
 
 #include <game/server/mmocore/GameEntities/jobitems.h>
