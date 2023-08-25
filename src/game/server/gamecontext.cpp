@@ -1523,9 +1523,12 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !m_apPlayers[ClientID])
 		return;
 
-	char aBufDesc[VOTE_DESC_LENGTH]; // buffer x2 with unicode
+	char aBufDesc[VOTE_DESC_LENGTH];
 	str_copy(aBufDesc, pDesc, sizeof(aBufDesc));
-	if(str_comp(m_apPlayers[ClientID]->GetLanguage(), "ru") == 0 || str_comp(m_apPlayers[ClientID]->GetLanguage(), "uk") == 0)
+	if(const auto pReplaceIndent = "────────────────────────";
+		aBufDesc[0] == '\0' && !m_aPlayerVotes[ClientID].empty() && str_comp(m_aPlayerVotes[ClientID].back().m_aDescription, pReplaceIndent) != 0)
+		str_copy(aBufDesc, pReplaceIndent, sizeof(aBufDesc));
+	else if(str_comp(m_apPlayers[ClientID]->GetLanguage(), "ru") == 0 || str_comp(m_apPlayers[ClientID]->GetLanguage(), "uk") == 0)
 		str_translation_utf8_to_cp(aBufDesc);
 
 	CVoteOptions Vote;
@@ -1533,10 +1536,9 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_TempID = TempInt;
 	Vote.m_TempID2 = TempInt2;
-	if(Vote.m_aDescription[0] == '\0')
-		str_copy(Vote.m_aDescription, "························", sizeof(Vote.m_aDescription));
 
-	m_aPlayerVotes[ClientID].emplace_back(Vote);
+	if(Vote.m_aDescription[0] != '\0')
+		m_aPlayerVotes[ClientID].emplace_back(Vote);
 }
 
 // add formatted vote

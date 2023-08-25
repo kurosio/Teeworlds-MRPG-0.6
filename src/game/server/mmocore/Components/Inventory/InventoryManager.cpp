@@ -312,6 +312,9 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	const int HideID = NUM_TAB_MENU + ItemID;
 	const char* pNameItem = pItemPlayer.Info()->GetName();
 
+	// add escape
+	GS()->AVM(ClientID, "null", -1, HideID, "");
+
 	// overwritten or not
 	if (pItemPlayer.Info()->IsEnchantable())
 	{
@@ -390,6 +393,9 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 			GS()->AVM(ClientID, "AUCTION_SLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
 		}
 	}
+
+	// add escape
+	GS()->AVM(ClientID, "null", -1, HideID, "");
 }
 
 int CInventoryManager::GetCountItemsType(CPlayer *pPlayer, ItemType Type) const
