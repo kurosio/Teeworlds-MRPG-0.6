@@ -20,7 +20,7 @@ class CWorldDataCore : public MmoComponent
 public:
 	int GetWorldType() const;
 	void FindPosition(int WorldID, vec2 Pos, vec2* OutPos);
-	void CheckQuestingOpened(CPlayer* pPlayer, int QuestID) const;
+	void NotifyUnlockedZonesByQuest(CPlayer* pPlayer, int QuestID) const;
 };
 
 #endif

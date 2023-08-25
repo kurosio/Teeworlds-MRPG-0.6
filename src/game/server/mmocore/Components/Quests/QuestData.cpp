@@ -183,8 +183,8 @@ void CQuestData::Finish()
 	pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(ClientID), "Completed ({STR} - {STR})", Info().m_aStoryLine, Info().m_aName);
 
 	// check whether the after quest has opened something new
-	pGS->Mmo()->WorldSwap()->CheckQuestingOpened(m_pPlayer, m_QuestID);
-	pGS->Mmo()->Dungeon()->CheckQuestingOpened(m_pPlayer, m_QuestID);
+	pGS->Mmo()->WorldSwap()->NotifyUnlockedZonesByQuest(m_pPlayer, m_QuestID);
+	pGS->Mmo()->Dungeon()->NotifyUnlockedDungeonsByQuest(m_pPlayer, m_QuestID);
 
 	// save player stats and accept next story quest
 	pGS->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);

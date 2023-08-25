@@ -140,7 +140,7 @@ void CWorldDataCore::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 		*OutPos = (*Iter).m_Position;
 }
 
-void CWorldDataCore::CheckQuestingOpened(CPlayer* pPlayer, int QuestID) const
+void CWorldDataCore::NotifyUnlockedZonesByQuest(CPlayer* pPlayer, int QuestID) const
 {
 	const int ClientID = pPlayer->GetCID();
 	for(const auto& pData : CWorldData::Data())

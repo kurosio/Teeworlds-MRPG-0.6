@@ -218,7 +218,7 @@ void DungeonCore::ShowTankVotingDungeon(CPlayer* pPlayer) const
 	}
 }
 
-void DungeonCore::CheckQuestingOpened(CPlayer *pPlayer, int QuestID) const
+void DungeonCore::NotifyUnlockedDungeonsByQuest(CPlayer *pPlayer, int QuestID) const
 {
 	const int ClientID = pPlayer->GetCID();
 	for (const auto& dungeon : CDungeonData::ms_aDungeon)
