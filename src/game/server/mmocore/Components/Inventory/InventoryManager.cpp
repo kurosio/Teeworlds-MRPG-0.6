@@ -338,21 +338,21 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	if (pItemPlayer.Info()->m_Function == FUNCTION_ONE_USED || pItemPlayer.Info()->m_Function == FUNCTION_USED)
 	{
 		GS()->AVM(ClientID, "null", NOPE, HideID, "For bind command '/useitem {INT}'", ItemID);
-		GS()->AVM(ClientID, "IUSE", ItemID, HideID, "Use {STR}", pNameItem);
+		GS()->AVM(ClientID, "IUSE", ItemID, HideID, "Use");
 	}
 	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANTS)
 	{
 		if(CHouseData* pHouse = pPlayer->Acc().GetHouse(); pHouse && pHouse->GetPlantItemID() != ItemID)
 		{
 			const int random_change = random_int() % 1500;
-			GS()->AVD(ClientID, "PLANTING_HOUSE_SET", ItemID, random_change, HideID, "To plant {STR}, to house (0.06%)", pNameItem);
+			GS()->AVD(ClientID, "PLANTING_HOUSE_SET", ItemID, random_change, HideID, "To plant at home (0.06%)");
 		}
 	}
 
 	// functional by type
 	if (pItemPlayer.Info()->m_Type == ItemType::TYPE_POTION)
 	{
-		GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "Auto use {STR} - {STR}", pNameItem, (pItemPlayer.m_Settings ? "Enable" : "Disable"));
+		GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "Auto use - {STR}", (pItemPlayer.m_Settings ? "Enable" : "Disable"));
 
 	}
 	else if (pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION)
@@ -365,14 +365,14 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 		if((pItemPlayer.Info()->m_Function == EQUIP_HAMMER && pItemPlayer.IsEquipped()))
 			GS()->AVM(ClientID, "null", NOPE, HideID, "You can not undress equipping hammer", pNameItem);
 		else
-			GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "{STR} {STR}", (pItemPlayer.m_Settings ? "Undress" : "Equip"), pNameItem);
+			GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, (pItemPlayer.m_Settings ? "Undress" : "Equip"));
 	}
 
 	// enchant
 	if (pItemPlayer.Info()->IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
 	{
 		const int Price = pItemPlayer.GetEnchantPrice();
-		GS()->AVM(ClientID, "IENCHANT", ItemID, HideID, "Enchant {STR} ({VAL} materials)", pNameItem, Price);
+		GS()->AVM(ClientID, "IENCHANT", ItemID, HideID, "Enchant ({VAL}m)", Price);
 	}
 
 	// not allowed drop equipped hammer
@@ -381,17 +381,17 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 		// dysenthis
 		if (pItemPlayer.GetDysenthis() > 0)
 		{
-			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble {STR} (+{VAL} materials)", pNameItem, pItemPlayer.GetDysenthis());
+			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble (+{VAL}m)", pItemPlayer.GetDysenthis());
+		}
+
+		// auction
+		if(pItemPlayer.Info()->m_InitialPrice > 0)
+		{
+			GS()->AVM(ClientID, "AUCTION_SLOT", ItemID, HideID, "Sell at auction");
 		}
 
 		// drop
-		GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop {STR}", pNameItem);
-
-		// auction
-		if (pItemPlayer.Info()->m_InitialPrice > 0)
-		{
-			GS()->AVM(ClientID, "AUCTION_SLOT", ItemID, HideID, "Create Slot Auction {STR}", pNameItem);
-		}
+		GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop");
 	}
 
 	// add escape
