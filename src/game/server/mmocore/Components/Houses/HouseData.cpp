@@ -184,16 +184,18 @@ void CHouseData::ShowDecorations() const
 	if(!pPlayer)
 		return;
 
-	// show all house decoration slots
-	bool Found = false;
 	int ClientID = pPlayer->GetCID();
+	GS()->AVL(ClientID, "null", "Select item for to put in inventory.");
+
+	bool Found = false;
 	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
 	{
 		if(m_apDecorations[i])
 		{
-			int DecoID = m_apDecorations[i]->GetDecorationID();
+			const int DecoID = m_apDecorations[i]->GetDecorationID();
+			const vec2 DecoPos = m_apDecorations[i]->GetPos();
 			CItemDescription* pItemDecoration = GS()->GetItemInfo(m_apDecorations[i]->GetItemID());
-			GS()->AVD(ClientID, "DECORATION_HOUSE_DELETE", DecoID, pItemDecoration->GetID(), 1, "[Slot {INT}]: {STR} back to the inventory", i + 1, pItemDecoration->GetName());
+			GS()->AVD(ClientID, "DECORATION_HOUSE_DELETE", DecoID, pItemDecoration->GetID(), 1, "[Slot {INT}]: {STR} (x: {INT} y: {INT})", i + 1, pItemDecoration->GetName(), (int)DecoPos.x/32, (int)DecoPos.y/32);
 			Found = true;
 		}
 	}
