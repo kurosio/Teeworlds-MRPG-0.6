@@ -34,7 +34,7 @@ public:
 	CHouseData() = default;
 	~CHouseData();
 
-	static HouseDataPtr CreateDataItem(HouseIdentifier ID)
+	static HouseDataPtr CreateElement(HouseIdentifier ID)
 	{
 		HouseDataPtr pData = std::make_shared<CHouseData>();
 		pData->m_ID = ID;

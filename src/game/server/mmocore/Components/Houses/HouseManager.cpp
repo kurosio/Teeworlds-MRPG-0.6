@@ -26,7 +26,7 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 			int WorldID = pRes->getInt("WorldID");
 			std::string AccessData = pRes->getString("AccessData").c_str();
 
-			CHouseData::CreateDataItem(ID)->Init(AccountID, ClassName, Price, Bank, Pos, DoorPos, PlantPos, PlantItemID, WorldID, AccessData);
+			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, DoorPos, PlantPos, PlantItemID, WorldID, AccessData);
 		}
 		
 		Job()->ShowLoadingProgress("Houses", CHouseData::Data().size());

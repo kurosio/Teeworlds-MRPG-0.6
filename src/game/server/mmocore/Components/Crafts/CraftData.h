@@ -14,15 +14,15 @@ class CCraftItem : public MultiworldIdentifiableStaticData< std::deque< CraftPtr
 private:
 	CraftIdentifier m_ID{};
 	CItem m_Item{};
+	CItemsContainer m_RequiredItem;
 	int m_Price{};
 	int m_WorldID{};
 
 public:
-	CItemsContainer m_RequiredItem;
 
 	CCraftItem() = default;
 
-	static CraftPtr CreateDataItem(CraftIdentifier ID)
+	static CraftPtr CreateElement(CraftIdentifier ID)
 	{
 		CCraftItem p;
 		p.m_ID = ID;
@@ -40,6 +40,8 @@ public:
 	CraftIdentifier GetID() const { return m_ID; }
 	CItem* GetItem() { return &m_Item; }
 	const CItem* GetItem() const { return &m_Item; }
+	CItemsContainer& GetRequiredItems() { return m_RequiredItem; }
+	const CItemsContainer& GetRequiredItems() const { return m_RequiredItem; }
 	int GetPrice(class CPlayer * pPlayer) const;
 	int GetWorldID() const { return m_WorldID; }
 };

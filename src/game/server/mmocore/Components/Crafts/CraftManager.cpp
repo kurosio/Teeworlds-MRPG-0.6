@@ -17,7 +17,7 @@ void CCraftManager::OnInit()
 
 		CraftIdentifier ID = pRes->getInt("ID");
 		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
-		CCraftItem::CreateDataItem(ID)->Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
+		CCraftItem::CreateElement(ID)->Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
 	}
 
 	Job()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
@@ -85,7 +85,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 		}
 		//GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pCraftItemInfo->GetDescription());
 
-		for(auto& RequiredItem: pCraft->m_RequiredItem)
+		for(auto& RequiredItem: pCraft->GetRequiredItems())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(RequiredItem.GetID());
 			GS()->AVM(ClientID, "null", NOPE, HideID, "* {STR} {VAL}({VAL})", pPlayerItem->Info()->GetName(), RequiredItem.GetValue(), pPlayerItem->GetValue());
@@ -115,7 +115,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 
 	// first podding set what is available and required for removal
 	dynamic_string Buffer;
-	for(auto& RequiredItem : pCraft->m_RequiredItem)
+	for(auto& RequiredItem : pCraft->GetRequiredItems())
 	{
 		if(pPlayer->GetItem(RequiredItem)->GetValue() < RequiredItem.GetValue())
 		{
@@ -143,7 +143,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 	}
 
 	// action get and remove
-	for(auto& RequiredItem : pCraft->m_RequiredItem)
+	for(auto& RequiredItem : pCraft->GetRequiredItems())
 	{
 		pPlayer->GetItem(RequiredItem)->Remove(RequiredItem.GetValue());
 	}

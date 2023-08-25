@@ -45,7 +45,7 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	{
 		int RespawnWorld = pRes->getInt("RespawnWorld");
 		int RequiredQuestID = pRes->getInt("RequiredQuestID");
-		CWorldData::CreateDataItem(WorldID)->Init(RespawnWorld, RequiredQuestID, WorldSwappers);
+		CWorldData::CreateElement(WorldID)->Init(RespawnWorld, RequiredQuestID, WorldSwappers);
 
 		// update name world from json
 		Database->Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
@@ -53,7 +53,7 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	}
 
 	// create new world data
-	CWorldData::CreateDataItem(WorldID)->Init(WorldID, -1, WorldSwappers);
+	CWorldData::CreateElement(WorldID)->Init(WorldID, -1, WorldSwappers);
 	Database->Execute<DB::INSERT>("enum_worlds", "(WorldID, Name, RespawnWorld) VALUES ('%d', '%s', '%d')", WorldID, cstrWorldName.cstr(), WorldID);
 }
 

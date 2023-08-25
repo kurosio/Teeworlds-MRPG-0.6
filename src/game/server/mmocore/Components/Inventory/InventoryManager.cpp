@@ -73,7 +73,7 @@ void CInventoryManager::OnInit()
 			int UpgradePrice = pRes->getInt("Price");
 			AttributeType Type = (AttributeType)pRes->getInt("Type");
 
-			CAttributeDescription::CreateDataItem(ID)->Init(Name, FieldName, UpgradePrice, Type);
+			CAttributeDescription::CreateElement(ID)->Init(Name, FieldName, UpgradePrice, Type);
 		}
 	});
 }

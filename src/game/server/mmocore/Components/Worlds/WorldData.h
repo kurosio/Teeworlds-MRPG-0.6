@@ -47,7 +47,7 @@ class CWorldData : public MultiworldIdentifiableStaticData< std::deque< WorldDat
 public:
 	CWorldData() = default;
 
-	static WorldDataPtr CreateDataItem(WorldIdentifier ID)
+	static WorldDataPtr CreateElement(WorldIdentifier ID)
 	{
 		WorldDataPtr pData = std::make_shared<CWorldData>();
 		pData->m_ID = ID;

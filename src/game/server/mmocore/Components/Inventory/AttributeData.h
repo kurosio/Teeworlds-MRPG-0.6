@@ -16,7 +16,7 @@ class CAttributeDescription : public MultiworldIdentifiableStaticData< std::map 
 public:
 	CAttributeDescription() = default;
 
-	static AttributeDescriptionPtr CreateDataItem(AttributeIdentifier ID)
+	static AttributeDescriptionPtr CreateElement(AttributeIdentifier ID)
 	{
 		m_pData[ID] = std::make_shared<CAttributeDescription>();
 		m_pData[ID]->m_ID = ID;
