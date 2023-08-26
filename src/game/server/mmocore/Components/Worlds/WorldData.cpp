@@ -30,7 +30,7 @@ void CWorldData::Move(CPlayer* pPlayer)
 	CWorldData* pSecondWorldData = pGS->GetWorldData(pSwapper->GetSecondWorldID());
 	if(pSecondWorldData && pSecondWorldData->GetRequiredQuest() && !pPlayer->GetQuest(pSecondWorldData->GetRequiredQuest()->m_QuestID).IsComplected())
 	{
-		pGS->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Requires quest completion '{STR}'!", pSecondWorldData->GetRequiredQuest()->GetName());
+		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Requires quest completion '{STR}'!", pSecondWorldData->GetRequiredQuest()->GetName());
 		return;
 	}
 
