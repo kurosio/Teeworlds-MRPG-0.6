@@ -36,6 +36,7 @@ CCommandProcessor::CCommandProcessor(CGS *pGS)
 	AddCommand("useskill", "i[skill]", ConChatUseSkill, pServer, "");
 	AddCommand("voucher", "r[voucher]", ConChatVoucher, pServer, "");
 	AddCommand("coupon", "r[coupon]", ConChatVoucher, pServer, "");
+	AddCommand("tutorial", "", ConChatTutorial, pServer, "");
 
 	// information command
 	AddCommand("cmdlist", "", ConChatCmdList, pServer, "");
@@ -293,6 +294,7 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, "/register <name> <pass> - new account.");
 	pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
 	pGS->Chat(ClientID, "/rules - server rules.");
+	pGS->Chat(ClientID, "/tutorial - training challenge.");
 	pGS->Chat(ClientID, "Another information see Wiki Page.");
 }
 
@@ -335,6 +337,25 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 	char aVoucher[32];
 	str_copy(aVoucher, pResult->GetString(0), sizeof(aVoucher));
 	pGS->Mmo()->Account()->UseVoucher(ClientID, aVoucher);
+}
+
+void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+
+	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	if (!pPlayer || !pPlayer->IsAuthed())
+		return;
+
+	if(pGS->IsPlayerEqualWorld(ClientID, TUTORIAL_WORLD_ID))
+	{
+		pGS->Chat(ClientID, "You're already taking a training challenge!");
+		return;
+	}
+
+	pGS->Chat(ClientID, "You have begun the training challenge!");
+	pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
 }
 
 
