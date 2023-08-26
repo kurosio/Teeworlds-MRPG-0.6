@@ -58,6 +58,9 @@ public:
 	int m_aPlayerTick[TickState::NUM_TICK];
 	Mood m_MoodState;
 
+	char m_aLastMsg[256];
+	int m_TutorialStep;
+
 	StructLatency m_Latency;
 	StructLastAction m_LatestActivity;
 

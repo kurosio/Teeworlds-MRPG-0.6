@@ -25,6 +25,7 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	for(short& SortTab : m_aSortTabs)
 		SortTab = -1;
 
+	m_TutorialStep = 1;
 	m_EidolonCID = -1;
 	m_Spawned = true;
 	m_SnapHealthTick = 0;

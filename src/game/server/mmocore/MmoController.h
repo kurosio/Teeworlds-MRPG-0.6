@@ -38,14 +38,15 @@ class MmoController
 	class CAccountPlantManager *m_pAccPlant;
 	class CQuestManager *m_pQuest;
 	class CWarehouseManager *m_pWarehouse;
-	class CGuildManager* m_pGuildJob;
-	class CCraftManager* m_pCraftJob;
-	class CDungeonManager* m_pDungeonJob;
-	class CHouseManager* m_pHouseJob;
-	class CMailBoxManager* m_pMailBoxJob;
-	class CSkillManager* m_pSkillJob;
-	class CWorldManager* m_pWorldSwapJob;
-	class CEidolonManager* m_pEidolonJob;
+	class CGuildManager* m_pGuild;
+	class CCraftManager* m_pCraft;
+	class CDungeonManager* m_pDungeon;
+	class CHouseManager* m_pHouse;
+	class CMailBoxManager* m_pMailBox;
+	class CSkillManager* m_pSkill;
+	class CTutorialManager* m_pTutorial;
+	class CWorldManager* m_pWorldSwap;
+	class CEidolonManager* m_pEidolon;
 
 public:
 	explicit MmoController(CGS *pGameServer);
@@ -61,15 +62,16 @@ public:
 	CAccountPlantManager *PlantsAcc() const { return m_pAccPlant; }
 	CQuestManager *Quest() const { return m_pQuest; }
 	CWarehouseManager *Warehouse() const { return m_pWarehouse; }
-	CEidolonManager* Eidolons() const { return m_pEidolonJob; }
+	CEidolonManager* Eidolons() const { return m_pEidolon; }
+	CTutorialManager* Tutorial() const { return m_pTutorial; }
 
-	CCraftManager* Craft() const { return m_pCraftJob; }
-	CDungeonManager* Dungeon() const { return m_pDungeonJob; }
-	CHouseManager* House() const { return m_pHouseJob; }
-	CMailBoxManager* Inbox() const { return m_pMailBoxJob; }
-	CGuildManager* Member() const { return m_pGuildJob; }
-	CSkillManager* Skills() const { return m_pSkillJob; }
-	CWorldManager *WorldSwap() const { return m_pWorldSwapJob; }
+	CCraftManager* Craft() const { return m_pCraft; }
+	CDungeonManager* Dungeon() const { return m_pDungeon; }
+	CHouseManager* House() const { return m_pHouse; }
+	CMailBoxManager* Inbox() const { return m_pMailBox; }
+	CGuildManager* Member() const { return m_pGuild; }
+	CSkillManager* Skills() const { return m_pSkill; }
+	CWorldManager *WorldSwap() const { return m_pWorldSwap; }
 
 	// global systems
 	void OnTick();

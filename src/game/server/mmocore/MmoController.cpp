@@ -21,6 +21,7 @@
 #include "Components/Mails/MailBoxManager.h"
 #include "Components/Quests/QuestManager.h"
 #include "Components/Skills/SkillManager.h"
+#include "Components/Tutorial/TutorialManager.h"
 #include "Components/Warehouse/WarehouseManager.h"
 #include "Components/Worlds/WorldManager.h"
 
@@ -30,21 +31,22 @@ MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 	// order
 	m_Components.add(m_pBotsInfo = new CBotManager);
 	m_Components.add(m_pItemWork = new CInventoryManager);
-	m_Components.add(m_pCraftJob = new CCraftManager);
+	m_Components.add(m_pCraft = new CCraftManager);
 	m_Components.add(m_pWarehouse = new CWarehouseManager);
 	m_Components.add(new CAuctionManager);
-	m_Components.add(m_pEidolonJob = new CEidolonManager);
+	m_Components.add(m_pEidolon = new CEidolonManager);
 	m_Components.add(m_pQuest = new CQuestManager);
-	m_Components.add(m_pDungeonJob = new CDungeonManager);
+	m_Components.add(m_pDungeon = new CDungeonManager);
 	m_Components.add(new CAetherManager);
-	m_Components.add(m_pWorldSwapJob = new CWorldManager);
-	m_Components.add(m_pHouseJob = new CHouseManager);
-	m_Components.add(m_pGuildJob = new CGuildManager);
-	m_Components.add(m_pSkillJob = new CSkillManager);
+	m_Components.add(m_pWorldSwap = new CWorldManager);
+	m_Components.add(m_pHouse = new CHouseManager);
+	m_Components.add(m_pGuild = new CGuildManager);
+	m_Components.add(m_pSkill = new CSkillManager);
+	m_Components.add(m_pTutorial = new CTutorialManager);
 	m_Components.add(m_pAccMain = new CAccountManager);
 	m_Components.add(m_pAccMiner = new CAccountMinerManager);
 	m_Components.add(m_pAccPlant = new CAccountPlantManager);
-	m_Components.add(m_pMailBoxJob = new CMailBoxManager);
+	m_Components.add(m_pMailBox = new CMailBoxManager);
 
 	for(auto& pComponent : m_Components.m_paComponents)
 	{

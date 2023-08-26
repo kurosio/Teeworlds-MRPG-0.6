@@ -11,6 +11,7 @@
 
 #include "gamemodes/dungeon.h"
 #include "gamemodes/main.h"
+#include "gamemodes/tutorial.h"
 
 #include "mmocore/CommandProcessor.h"
 #include "mmocore/PathFinder.h"
@@ -696,7 +697,11 @@ void CGS::OnInit(int WorldID)
 
 	InitZones();
 
-	if(IsDungeon()) // dungeon game controller
+	if(m_WorldID == TUTORIAL_WORLD_ID)
+	{
+		m_pController = new CGameControllerTutorial(this);
+	}
+	else if(IsDungeon()) // dungeon game controller
 	{
 		m_pController = new CGameControllerDungeon(this);
 	}
@@ -879,6 +884,8 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
 			else
 				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
+
+			str_copy(pPlayer->m_aLastMsg, pMsg->m_pMessage, sizeof(pPlayer->m_aLastMsg));
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)

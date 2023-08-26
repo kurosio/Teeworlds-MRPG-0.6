@@ -265,6 +265,7 @@ enum
 	itSpiderHook = 66,					// Spider hook
 	itEidolonDryad = 80,				// Eidolon
 	itEidolonPigQueen = 88,				// Eidolon
+	itAdventurersBadge = 92,			// The adventurer's badge
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,
