@@ -433,6 +433,7 @@ list(APPEND TARGETS_DEP json md5)
 ########################################################################
 
 file(COPY maps DESTINATION .)
+file(COPY server_data DESTINATION .)
 file(COPY server_lang DESTINATION .)
 #file(COPY data DESTINATION .)
 #set(COPY_FILES_CLIENT
@@ -1031,6 +1032,7 @@ set(CPACK_SOURCE_FILES
   other/
   readme.md
   scripts/
+  server_data/
   server_lang/
   src/
   storage.cfg
@@ -1057,7 +1059,7 @@ set(CPACK_TARGETS
 #  ${TARGET_CLIENT}
 )
 #set(CPACK_DIRS data)
-set(CPACK_DIRS server_lang maps)
+set(CPACK_DIRS server_data server_lang maps)
 set(CPACK_FILES
   license.txt
   storage.cfg
@@ -1071,6 +1073,7 @@ endif()
 if(NOT DEV)
   #install(DIRECTORY data DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME} COMPONENT data)
   install(DIRECTORY maps DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME} COMPONENT maps)
+  install(DIRECTORY server_data DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME} COMPONENT server_data)
   install(DIRECTORY server_lang DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME} COMPONENT server_lang)
 #  install(TARGETS ${TARGET_CLIENT} DESTINATION bin COMPONENT client)
 endif()

@@ -1,0 +1,19 @@
+[
+	{"type": 10, "info": "Talk to your instructor, and accept your first quest.\n\nUse 'Hammer Fire' - to start a dialog.\nUse 'F4 (Vote NO)' - to communicate during a dialog.", "integer": 1 },
+	{"type": 6, "info": "Use the arrows on your keyboard to go down.", "posX": 679, "posY": 2577 },	
+	{"type": 6, "info": "Use the jump to get past the obstacles.", "posX": 5558, "posY": 1452 },
+	{"type": 6, "info": "Keep moving forward, you're doing well!", "posX": 8260, "posY": 1169 },
+	{"type": 6, "info": "Now combine movement and the use of jumps.", "posX": 12279, "posY": 1777 },
+	{"type": 6, "info": "Now let's try use the hook.", "posX": 17100, "posY": 2069 },
+	{"type": 6, "info": "Now let's complicate things a bit with the hook.", "posX": 18884, "posY": 1037 },
+	{"type": 6, "info": "Move to the right side.", "posX": 21911, "posY": 2692 },
+	{"type": 6, "info": "And now all together!", "posX": 25617, "posY": 2180 },
+	{"type": 6, "info": "Move to the right side.", "posX": 28420, "posY": 2017 },
+	{"type": 8, "info": "Press TAB. Look at the list of players.", "integer": 8 },
+	{"type": 8, "info": "Using ESC. Open the menu.", "integer": 2 },
+	{"type": 9, "info": "Select the 'Call vote' tab.\nAfter select tab 'Settings' from the menu.\n\nThere you can find the basic settings of the player.\nAnd also the setting of modules on the character", "integer": 5 },
+	{"type": 9, "info": "Press 'Backpage'. To go back to the menu selection.", "integer": 1 },
+	{"type": 8, "info": "Open a chat.", "integer": 4 },
+	{"type": 12, "info": "Write and send to chat 'Hello guys!'.", "string": "Hello guys!" },
+	{"type": 11, "info": "Talk to an NPC. And complete your first quest!\n\nUse 'Hammer Fire' - to start a dialog.\nUse 'F4 (Vote NO)' - to communicate during a dialog.", "integer": 1 }
+] 
