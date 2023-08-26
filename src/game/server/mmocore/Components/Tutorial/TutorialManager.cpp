@@ -116,7 +116,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 	{
 		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->GetQuest(std::get<0>(pTutorial->m_Data)).GetState() == QuestState::ACCEPT;
+			return pPlayer->GetQuest(std::get<0>(pTutorial->m_Data)).GetState() >= QuestState::ACCEPT;
 		});
 	}
 	
