@@ -38,7 +38,6 @@ bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 	int ClientID = pChr->GetPlayer()->GetCID();
 	if(!pChr->GetPlayer()->IsBot())
 	{
-		GS()->CreateLaserOrbite(ClientID, 3, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 92.f);
 		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, POWERUP_NINJA, true, false);
 		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, POWERUP_ARMOR_LASER, true, false);
 		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, POWERUP_ARMOR_NINJA, true, false);
