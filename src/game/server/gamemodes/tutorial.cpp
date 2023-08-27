@@ -35,7 +35,6 @@ void CGameControllerTutorial::Tick()
 
 bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 {
-	int ClientID = pChr->GetPlayer()->GetCID();
 	if(!pChr->GetPlayer()->IsBot())
 	{
 		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, POWERUP_NINJA, true, false);
