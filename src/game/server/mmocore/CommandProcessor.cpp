@@ -237,7 +237,7 @@ void CCommandProcessor::ConChatGiveEffect(IConsole::IResult* pResult, void* pUse
 	CGS* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(pPlayer && pPlayer->IsAuthed())
+	if(pPlayer && pPlayer->IsAuthed() && pGS->Server()->IsAuthed(ClientID))
 		pPlayer->GiveEffect(pResult->GetString(0), pResult->GetInteger(1));
 }
 

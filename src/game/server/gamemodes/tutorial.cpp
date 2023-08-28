@@ -37,9 +37,6 @@ bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 {
 	if(!pChr->GetPlayer()->IsBot())
 	{
-		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, POWERUP_NINJA, true, false);
-		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, POWERUP_ARMOR_LASER, true, false);
-		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, POWERUP_ARMOR_NINJA, true, false);
 		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, WEAPON_GRENADE, true, true);
 		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, WEAPON_GUN, true, true);
 		pChr->CreateSnapProj(pChr->GetSnapFullID(), 1, WEAPON_SHOTGUN, true, true);

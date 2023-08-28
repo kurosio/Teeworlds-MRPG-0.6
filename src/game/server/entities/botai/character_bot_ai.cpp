@@ -667,7 +667,6 @@ void CCharacterBotAI::Move()
 	if(Index > -1)
 		WayDir = normalize(m_pBotPlayer->GetWayPoint(Index) - GetPos());
 
-
 	if(WayDir.x < 0 && ActiveWayPoints > 3)
 		m_Input.m_Direction = -1;
 	else if(WayDir.x > 0 && ActiveWayPoints > 3)
