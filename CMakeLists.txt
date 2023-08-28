@@ -419,14 +419,18 @@ endif()
 ########################################################################
 
 set_src(DEP_JSON_SRC GLOB src/engine/external/json-parser json.c json.h)
-add_library(json EXCLUDE_FROM_ALL OBJECT ${DEP_JSON_SRC})
-set(DEP_JSON $<TARGET_OBJECTS:json>)
-
 set_src(DEP_MD5_SRC GLOB src/engine/external/md5 md5.c md5.h)
-add_library(md5 EXCLUDE_FROM_ALL OBJECT ${DEP_MD5_SRC})
+set_src(DEP_PUGIXML_SRC GLOB src/engine/external/xml pugiconfig.hpp pugixml.cpp pugixml.hpp)
 
-list(APPEND TARGETS_DEP json md5)
-  set(DEP_MD5 $<TARGET_OBJECTS:md5>)
+add_library(json EXCLUDE_FROM_ALL OBJECT ${DEP_JSON_SRC})
+add_library(md5 EXCLUDE_FROM_ALL OBJECT ${DEP_MD5_SRC})
+add_library(pugixml EXCLUDE_FROM_ALL OBJECT ${DEP_PUGIXML_SRC})
+
+set(DEP_JSON $<TARGET_OBJECTS:json>)
+set(DEP_MD5 $<TARGET_OBJECTS:md5>)
+set(DEP_PUGIXML $<TARGET_OBJECTS:pugixml>)
+
+list(APPEND TARGETS_DEP json md5 pugixml)
 
 ########################################################################
 # COPY DATA AND DLLS
@@ -634,7 +638,7 @@ set(GAME_GENERATED_SHARED
 )
 
 # Libraries & Deps
-set(DEPS ${DEP_JSON} ${DEP_MD5} ${ZLIB_DEP})
+set(DEPS ${DEP_JSON} ${DEP_MD5} ${ZLIB_DEP} ${DEP_PUGIXML})
 set(LIBS ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARY} ${PLATFORM_LIBS})
 
 # Targets
@@ -859,46 +863,46 @@ endif()
 # VARIOUS TARGETS
 ########################################################################
 
-set_src(MASTERSRV_SRC GLOB src/mastersrv mastersrv.cpp mastersrv.h)
+#set_src(MASTERSRV_SRC GLOB src/mastersrv mastersrv.cpp mastersrv.h)
 #set_src(VERSIONSRV_SRC GLOB src/versionsrv mapversions.h versionsrv.cpp versionsrv.h)
 #list(APPEND VERSIONSRV_SRC ${PROJECT_BINARY_DIR}/src/generated/nethash.cpp)
 
-set(TARGET_MASTERSRV mastersrv)
+#set(TARGET_MASTERSRV mastersrv)
 #set(TARGET_VERSIONSRV versionsrv)
 
-add_executable(${TARGET_MASTERSRV} EXCLUDE_FROM_ALL ${MASTERSRV_SRC} $<TARGET_OBJECTS:engine-shared> ${DEPS})
+#add_executable(${TARGET_MASTERSRV} EXCLUDE_FROM_ALL ${MASTERSRV_SRC} $<TARGET_OBJECTS:engine-shared> ${DEPS})
 #add_executable(${TARGET_VERSIONSRV} EXCLUDE_FROM_ALL ${VERSIONSRV_SRC} $<TARGET_OBJECTS:engine-shared> ${DEPS})
 
-target_link_libraries(${TARGET_MASTERSRV} ${LIBS})
+#target_link_libraries(${TARGET_MASTERSRV} ${LIBS})
 #target_link_libraries(${TARGET_VERSIONSRV} ${LIBS})
 
-list(APPEND TARGETS_OWN ${TARGET_MASTERSRV})
-list(APPEND TARGETS_LINK ${TARGET_MASTERSRV})
+#list(APPEND TARGETS_OWN ${TARGET_MASTERSRV})
+#list(APPEND TARGETS_LINK ${TARGET_MASTERSRV})
 #list(APPEND TARGETS_OWN ${TARGET_MASTERSRV} ${TARGET_VERSIONSRV})
 #list(APPEND TARGETS_LINK ${TARGET_MASTERSRV} ${TARGET_VERSIONSRV})
 
-set(TARGETS_TOOLS)
-set_src(TOOLS GLOB src/tools packetgen.cpp)
-foreach(ABS_T ${TOOLS})
-  file(RELATIVE_PATH T "${PROJECT_SOURCE_DIR}/src/tools/" ${ABS_T})
-  if(T MATCHES "\\.cpp$")
-    string(REGEX REPLACE "\\.cpp$" "" TOOL "${T}")
-    add_executable(${TOOL} EXCLUDE_FROM_ALL
-      ${DEPS}
-      src/tools/${TOOL}.cpp
-      ${EXTRA_TOOL_SRC}
-      $<TARGET_OBJECTS:engine-shared>
-    )
+#set(TARGETS_TOOLS)
+#set_src(TOOLS GLOB src/tools packetgen.cpp)
+#foreach(ABS_T ${TOOLS})
+#  file(RELATIVE_PATH T "${PROJECT_SOURCE_DIR}/src/tools/" ${ABS_T})
+#  if(T MATCHES "\\.cpp$")
+#    string(REGEX REPLACE "\\.cpp$" "" TOOL "${T}")
+#    add_executable(${TOOL} EXCLUDE_FROM_ALL
+#      ${DEPS}
+#      src/tools/${TOOL}.cpp
+#      ${EXTRA_TOOL_SRC}
+#      $<TARGET_OBJECTS:engine-shared>
+#    )
 
-    target_link_libraries(${TOOL} ${LIBS})
-    list(APPEND TARGETS_TOOLS ${TOOL})
-  endif()
-endforeach()
+#    target_link_libraries(${TOOL} ${LIBS})
+#    list(APPEND TARGETS_TOOLS ${TOOL})
+#  endif()
+#endforeach()
 
-list(APPEND TARGETS_OWN ${TARGETS_TOOLS})
-list(APPEND TARGETS_LINK ${TARGETS_TOOLS})
+#list(APPEND TARGETS_OWN ${TARGETS_TOOLS})
+#list(APPEND TARGETS_LINK ${TARGETS_TOOLS})
 
-add_custom_target(tools DEPENDS ${TARGETS_TOOLS})
+#add_custom_target(tools DEPENDS ${TARGETS_TOOLS})
 add_custom_target(everything DEPENDS ${TARGETS_OWN})
 
 ########################################################################
