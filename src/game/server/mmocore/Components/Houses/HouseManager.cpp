@@ -41,13 +41,13 @@ bool CHouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLAYER_HOUSE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_PLAYER_HOUSE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 
@@ -438,13 +438,13 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			if(ChanceSuccesful != 0)
 			{
 				GS()->Chat(ClientID, "Unfortunately plant did not take root!");
-				GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+				GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 				return true;
 			}
 
 			GS()->Chat(-1, "Congratulations {STR}, planted at home {STR}!", Server()->ClientName(ClientID), GS()->GetItemInfo(TryItemID)->GetName());
 			pHouse->SetPlantItemID(TryItemID);
-			GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		}
 
 		return true;

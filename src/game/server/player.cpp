@@ -38,7 +38,7 @@ CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	if(m_ClientID < MAX_PLAYERS)
 	{
 		m_LastVoteMenu = NOPE;
-		m_OpenVoteMenu = MENU_MAIN;
+		m_CurrentVoteMenu = MENU_MAIN;
 		m_MoodState = Mood::NORMAL;
 		Acc().m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);
@@ -716,7 +716,7 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 		if(m_aHiddenMenu[VoteID] == false)
 			m_aHiddenMenu.erase(VoteID);
 
-		GS()->StrongUpdateVotes(m_ClientID, m_OpenVoteMenu);
+		GS()->StrongUpdateVotes(m_ClientID, m_CurrentVoteMenu);
 		return true;
 	}
 	return false;
@@ -829,7 +829,6 @@ void CPlayer::SetSnapHealthTick(int Sec)
 {
 	m_SnapHealthTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
 }
-
 
 const char* CPlayer::GetStatus() const
 {

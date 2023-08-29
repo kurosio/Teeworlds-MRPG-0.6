@@ -101,17 +101,64 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_Step = pRes->getInt("Step");
 		QuestBot.m_WorldID = pRes->getInt("WorldID");
 		QuestBot.m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
-		QuestBot.m_aItemSearch[0] = pRes->getInt("RequiredItemID1");
-		QuestBot.m_aItemSearch[1] = pRes->getInt("RequiredItemID2");
-		QuestBot.m_aItemGives[0] = pRes->getInt("RewardItemID1");
-		QuestBot.m_aItemGives[1] = pRes->getInt("RewardItemID2");
-		QuestBot.m_aNeedMob[0] = pRes->getInt("RequiredDefeatMobID1");
-		QuestBot.m_aNeedMob[1] = pRes->getInt("RequiredDefeatMobID2");
 		QuestBot.m_InteractiveType = pRes->getInt("InteractionType");
 		QuestBot.m_InteractiveTemp = pRes->getInt("InteractionTemp");
 		QuestBot.m_EventJsonData = pRes->getString("EventData").c_str();
-		sscanf(pRes->getString("Amount").c_str(), "|%d|%d|%d|%d|%d|%d|",
-			&QuestBot.m_aItemSearchValue[0], &QuestBot.m_aItemSearchValue[1], &QuestBot.m_aItemGivesValue[0], &QuestBot.m_aItemGivesValue[1], &QuestBot.m_aNeedMobValue[0], &QuestBot.m_aNeedMobValue[1]);
+
+		// tasks initilized
+		std::string TasksData = pRes->getString("TasksData").c_str();
+		JsonTools::parseFromString(TasksData, [&](nlohmann::json& pJson)
+		{
+			if(pJson.find("required_items") != pJson.end())
+			{
+				for(auto& p : pJson["required_items"])
+				{
+					QuestBotInfo::TaskRequiredItems::Type ParsedType = QuestBotInfo::TaskRequiredItems::Type::DEFAULT;
+
+					const int ItemID = p.value("id", -1);
+					const int Count = p.value("count", -1);
+					if(ItemID > 0 && Count > 0)
+					{
+						if(std::string Type = p.value("type", "default"); Type == "pickup")
+						{
+							ParsedType = QuestBotInfo::TaskRequiredItems::Type::PICKUP;
+						}
+						else if(Type == "show")
+						{
+							ParsedType = QuestBotInfo::TaskRequiredItems::Type::SHOW;
+						}
+
+						QuestBot.m_RequiredItems.push_back({ ItemID, Count, ParsedType });
+					}
+				}
+			}
+
+			if(pJson.find("reward_items") != pJson.end())
+			{
+				for(auto& p : pJson["reward_items"])
+				{
+					int ItemID = p.value("id", -1);
+					int Count = p.value("count", -1);
+					if(ItemID > 0 && Count > 0)
+					{
+						QuestBot.m_RewardItems.push_back({ ItemID, Count });
+					}
+				}
+			}
+
+			if(pJson.find("defeat_bots") != pJson.end())
+			{
+				for(auto& p : pJson["defeat_bots"])
+				{
+					int BotID = p.value("id", -1);
+					int Count = p.value("count", -1);
+					if(BotID > 0 && Count > 0)
+					{
+						QuestBot.m_RequiredDefeat.push_back({ BotID, Count });
+					}
+				}
+			}
+		});
 
 		// dialog initilizer
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();

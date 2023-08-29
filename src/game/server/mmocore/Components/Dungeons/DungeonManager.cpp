@@ -112,28 +112,28 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		CPlayer* pSearchPlayer = GS()->GetPlayer(VoteID, true);
 		if(!pSearchPlayer)
 		{
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 			return true;
 		}
 
 		if(VoteID == ClientID)
 		{
 			GS()->Chat(ClientID, "You can't vote for yourself!");
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 			return true;
 		}
 
 		if(pPlayer->GetTempData().m_TempAlreadyVotedDungeon)
 		{
 			GS()->Chat(ClientID, "You already voted!");
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 			return true;
 		}
 
 		pPlayer->GetTempData().m_TempAlreadyVotedDungeon = true;
 		pSearchPlayer->GetTempData().m_TempTankVotingDungeon++;
 		GS()->ChatWorldID(pPlayer->GetPlayerWorldID(), "[Dungeon]", "{STR} voted for {STR}.", Server()->ClientName(ClientID), Server()->ClientName(VoteID));
-		GS()->StrongUpdateVotesForAll(pPlayer->m_OpenVoteMenu);
+		GS()->StrongUpdateVotesForAll(pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	return false;

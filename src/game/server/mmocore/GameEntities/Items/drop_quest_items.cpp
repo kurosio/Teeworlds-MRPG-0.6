@@ -5,74 +5,79 @@
 
 #include <game/server/gamecontext.h>
 
-CDropQuestItem::CDropQuestItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, QuestBotInfo BotData, int ClientID)
+CDropQuestItem::CDropQuestItem(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, int ItemID, int Needed, int QuestID, int Step, int ClientID)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPQUEST, Pos, 24.0f)
 {
 	m_Pos = Pos;
 	m_Vel = Vel;
 	m_Angle = 0.0f;
 	m_AngleForce = AngleForce;
-
 	m_ClientID = ClientID;
-	m_QuestBot = BotData;
+	m_ItemID = ItemID;
+	m_Needed = Needed;
+	m_QuestID = QuestID;
+	m_Step = Step;
 	m_Flash.InitFlashing(&m_LifeSpan);
 	m_LifeSpan = Server()->TickSpeed() * 60;
+
 	GameWorld()->InsertEntity(this);
-	for(int i=0; i<NUM_IDS; i++)
+	for (int& m_ID : m_IDs)
 	{
-		m_IDs[i] = Server()->SnapNewID();
+		m_ID = Server()->SnapNewID();
 	}
 }
 
 CDropQuestItem::~CDropQuestItem()
 {
-	for(int i=0; i<NUM_IDS; i++)
+	for (const int m_ID : m_IDs)
 	{
-		Server()->SnapFreeID(m_IDs[i]);
+		Server()->SnapFreeID(m_ID);
 	}
  }
 
+void CDropQuestItem::Destroy()
+{
+	GS()->m_World.DestroyEntity(this);
+}
+
 void CDropQuestItem::Tick()
 {
-	// life time dk
-	m_LifeSpan--;
-	if (m_LifeSpan < 0 || !GS()->m_apPlayers[m_ClientID] || GS()->m_apPlayers[m_ClientID]->GetQuest(m_QuestBot.m_QuestID).GetState() != QuestState::ACCEPT)
-	{
-		GS()->m_World.DestroyEntity(this);
-		return;
-	}
-
-	// flashing
-	m_Flash.OnTick();
-
-	// physic
-	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), &m_Angle, &m_AngleForce, 0.5f);
-
-	// check step and collected it or no
-	const int Value = m_QuestBot.m_aItemSearchValue[0];
 	CPlayer* pPlayer = GS()->m_apPlayers[m_ClientID];
-	const CQuestData* pQuestPlayer = &pPlayer->GetQuest(m_QuestBot.m_QuestID);
-	CPlayerItem* pPlayerItem = pPlayer->GetItem(m_QuestBot.m_aItemSearch[0]);
-
-	if (pQuestPlayer->m_Step != m_QuestBot.m_Step || pPlayerItem->GetValue() >= Value)
+	if (m_LifeSpan < 0 || !pPlayer)
 	{
-		GS()->m_World.DestroyEntity(this);
+		Destroy();
 		return;
 	}
 
-	// interactive
+	CPlayerItem* pItem = pPlayer->GetItem(m_ItemID);
+	const CQuestData* pQuest = &pPlayer->GetQuest(m_QuestID);
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->m_Step != m_Step || pItem->GetValue() >= m_Needed)
+	{
+		Destroy();
+		return;
+	}
+
+	// pickup
 	if (pPlayer->GetCharacter() && distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos) < 32.0f)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press 'Fire' for pick Quest Item");
 		if (pPlayer->GetCharacter()->m_ReloadTimer)
 		{
-			pPlayerItem->Add(1);
+			pItem->Add(1);
 			pPlayer->GetCharacter()->m_ReloadTimer = 0;
-			GS()->Chat(m_ClientID, "You pick {STR} for {STR}!", pPlayerItem->Info()->GetName(), m_QuestBot.GetName());
-			GS()->m_World.DestroyEntity(this);
+
+			const char* pQuestBotNickname = pQuest->Info().m_StepsQuestBot[m_Step].m_Bot.GetName();
+			GS()->Chat(m_ClientID, "You pick {STR} for {STR}!", pItem->Info()->GetName(), pQuestBotNickname);
+
+			Destroy();
 			return;
 		}
+
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press 'Fire' for pick Quest Item");
 	}
+
+	m_LifeSpan--;
+	m_Flash.OnTick();
+	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), &m_Angle, &m_AngleForce, 0.5f);
 }
 
 

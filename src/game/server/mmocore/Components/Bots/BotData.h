@@ -53,18 +53,41 @@ public:
 	int m_WorldID{};
 	int m_BotID{};
 	int m_SubBotID{};
-	int m_aItemSearch[2]{};
-	int m_aItemSearchValue[2]{};
-	int m_aItemGives[2]{};
-	int m_aItemGivesValue[2]{};
-	int m_aNeedMob[2]{};
-	int m_aNeedMobValue[2]{};
 	int m_InteractiveType{};
 	int m_InteractiveTemp{};
 	bool m_GenerateNick{};
 	bool m_HasAction{};
 	std::string m_EventJsonData{};
 	std::vector<CDialogElem> m_aDialogs {};
+
+	struct TaskRequiredItems
+	{
+		enum class Type : short
+		{
+			DEFAULT,
+			PICKUP,
+			SHOW,
+		};
+
+		int m_ItemID;
+		int m_Count;
+		Type m_Type;
+	};
+	std::deque < TaskRequiredItems > m_RequiredItems;
+
+	struct RewardItems
+	{
+		int m_ItemID;
+		int m_Count;
+	};
+	std::deque < RewardItems > m_RewardItems;
+
+	struct TaskRequiredDefeat
+	{
+		int m_BotID;
+		int m_Count;
+	};
+	std::deque < TaskRequiredDefeat > m_RequiredDefeat;
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }

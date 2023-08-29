@@ -20,14 +20,14 @@ public:
 	int GetQuestStoryPosition() const;
 	int GetQuestStorySize() const;
 
-	std::map<int, CPlayerQuestStepDataInfo> CopyBasicSteps()
+	void InitPlayerDefaultSteps(std::map < int, CPlayerQuestStepDataInfo >& pElem) const
 	{
-		std::map<int, CPlayerQuestStepDataInfo> m_Copy;
-		for(auto& pStepBot : m_StepsQuestBot)
-			m_Copy[pStepBot.first] = (CPlayerQuestStepDataInfo&)pStepBot.second;
-
-		return m_Copy;
+		for(const auto& [rStepID, rStepData] : m_StepsQuestBot)
+		{
+			pElem[rStepID].m_Bot = rStepData.m_Bot;
+		}
 	}
+
 	// steps with array bot data on active step
 	std::unordered_map < int , CQuestStepDataInfo > m_StepsQuestBot;
 

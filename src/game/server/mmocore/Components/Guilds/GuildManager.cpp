@@ -327,7 +327,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		{
 			Database->Execute<DB::REMOVE>("tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'", GuildID, SenderID);
 			GS()->SendInbox(Server()->ClientName(ClientID),SenderID, CGuildData::ms_aGuild[GuildID].m_aName, "You were accepted to join guild");
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 			GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
 			return true;
 		}

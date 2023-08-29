@@ -20,14 +20,14 @@ bool CAuctionManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_AUCTION))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 
 	if (pChr->GetHelper()->TileExit(IndexCollision, TILE_AUCTION))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 

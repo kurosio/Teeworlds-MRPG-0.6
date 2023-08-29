@@ -74,11 +74,10 @@ public:
 	bool m_Spawned;
 	short m_aSortTabs[NUM_SORT_TAB];
 	int m_TempMenuValue;
-	short m_OpenVoteMenu;
+	short m_CurrentVoteMenu;
 	short m_LastVoteMenu;
 	bool m_RequestChangeNickname;
 	int m_EidolonCID;
-
 
 	/* #########################################################################
 		FUNCTIONS PLAYER ENGINE

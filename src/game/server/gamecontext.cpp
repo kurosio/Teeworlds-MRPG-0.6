@@ -912,7 +912,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 			}
 
-			UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
@@ -1642,7 +1642,7 @@ void CGS::StartCustomVotes(int ClientID, int LastVoteMenu)
 	// start without thread
 	if(CPlayer* pPlayer = GetPlayer(ClientID, true))
 	{
-		pPlayer->m_OpenVoteMenu = CUSTOM_MENU;
+		pPlayer->m_CurrentVoteMenu = CUSTOM_MENU;
 		pPlayer->m_LastVoteMenu = LastVoteMenu;
 		ClearVotes(ClientID);
 	}
@@ -1673,7 +1673,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	}
 
 	// parse votes
-	pPlayer->m_OpenVoteMenu = Menulist;
+	pPlayer->m_CurrentVoteMenu = Menulist;
 	pGS->ClearVotes(ClientID);
 	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, Menulist);
 
@@ -1735,7 +1735,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 // strong update votes variability of the data
 void CGS::StrongUpdateVotes(int ClientID, int MenuList)
 {
-	if(m_apPlayers[ClientID] && m_apPlayers[ClientID]->m_OpenVoteMenu == MenuList)
+	if(m_apPlayers[ClientID] && m_apPlayers[ClientID]->m_CurrentVoteMenu == MenuList)
 		UpdateVotes(ClientID, MenuList);
 }
 
@@ -1744,7 +1744,7 @@ void CGS::StrongUpdateVotesForAll(int MenuList)
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(m_apPlayers[i] && m_apPlayers[i]->m_OpenVoteMenu == MenuList)
+		if(m_apPlayers[i] && m_apPlayers[i]->m_CurrentVoteMenu == MenuList)
 			UpdateVotes(i, MenuList);
 	}
 }

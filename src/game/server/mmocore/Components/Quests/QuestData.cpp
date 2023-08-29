@@ -25,25 +25,31 @@ void CQuestData::InitSteps()
 
 	// initialized quest steps
 	m_Step = 1;
-	m_StepsQuestBot = Info().CopyBasicSteps();
+	Info().InitPlayerDefaultSteps(m_StepsQuestBot);
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
 	for(auto& pStep : m_StepsQuestBot)
 	{
-		pStep.second.m_MobProgress[0] = 0;
-		pStep.second.m_MobProgress[1] = 0;
 		pStep.second.m_StepComplete = false;
 		pStep.second.m_ClientQuitting = false;
-		pStep.second.UpdateBot();
-		pStep.second.CreateStepArrow(m_pPlayer->GetCID());
 
 		JsonQuestData["steps"].push_back(
 		{
 			{ "subbotid", pStep.second.m_Bot.m_SubBotID },
-			{ "mobprogress1", pStep.second.m_MobProgress[0] },
-			{ "mobprogress2", pStep.second.m_MobProgress[1] },
 			{ "state", pStep.second.m_StepComplete }
 		});
+
+		for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
+		{
+			JsonQuestData["steps"][0]["defeat"].push_back(
+			{
+				{ "id", p.m_BotID },
+				{ "count", 0 },
+			});
+		}
+
+		pStep.second.UpdateBot();
+		pStep.second.CreateStepArrow(m_pPlayer->GetCID());
 	}
 
 	// save file
@@ -80,15 +86,22 @@ void CQuestData::LoadSteps()
 	io_close(File);
 
 	// loading steps
-	m_StepsQuestBot = Info().CopyBasicSteps();
+	Info().InitPlayerDefaultSteps(m_StepsQuestBot);
 	m_Step = JsonQuestData.value("current_step", 1);
 	auto Steps = JsonQuestData["steps"];
 	for(auto& pStep : Steps)
 	{
 		const int SubBotID = pStep.value("subbotid", 0);
 		m_StepsQuestBot[SubBotID].m_StepComplete = pStep.value("state", false);
-		m_StepsQuestBot[SubBotID].m_MobProgress[0] = pStep.value("mobprogress1", 0);
-		m_StepsQuestBot[SubBotID].m_MobProgress[1] = pStep.value("mobprogress2", 0);
+
+		if(pStep.find("defeat") != pStep.end())
+		{
+			for(auto& p : pStep["defeat"])
+			{
+				m_StepsQuestBot[SubBotID].m_aMobProgress[p.value("id", 0)] = p.value("count", 0);
+			}
+		}
+
 		m_StepsQuestBot[SubBotID].m_ClientQuitting = false;
 		m_StepsQuestBot[SubBotID].UpdateBot();
 		m_StepsQuestBot[SubBotID].CreateStepArrow(m_pPlayer->GetCID());
@@ -108,10 +121,16 @@ void CQuestData::SaveSteps()
 		JsonQuestData["steps"].push_back(
 		{
 			{ "subbotid", pStep.second.m_Bot.m_SubBotID },
-			{ "mobprogress1", pStep.second.m_MobProgress[0] },
-			{ "mobprogress2", pStep.second.m_MobProgress[1] },
 			{ "state", pStep.second.m_StepComplete }
 		});
+		for(auto& p : pStep.second.m_aMobProgress)
+		{
+			JsonQuestData["steps"][0]["defeat"].push_back(
+				{
+					{ "id", p.first },
+					{ "count", p.second },
+				});
+		}
 	}
 
 	// replace file

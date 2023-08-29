@@ -108,7 +108,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 	{
 		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep,[&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->m_OpenVoteMenu == std::get<0>(pTutorial->m_Data);
+			return pPlayer->m_CurrentVoteMenu == std::get<0>(pTutorial->m_Data);
 		});
 	}
 

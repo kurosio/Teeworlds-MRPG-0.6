@@ -13,7 +13,7 @@ class CPlayer;
 class CQuestStepDataInfo
 {
 public:
-	QuestBotInfo m_Bot;
+	QuestBotInfo m_Bot{};
 	void UpdateBot();
 	bool IsActiveStep(CGS* pGS) const;
 };
@@ -23,15 +23,15 @@ public:
 class CPlayerQuestStepDataInfo : public CQuestStepDataInfo
 {
 public:
-	int m_MobProgress[2];
-	bool m_StepComplete;
-	bool m_ClientQuitting;
+	std::unordered_map < int, int > m_aMobProgress{};
+	bool m_StepComplete{};
+	bool m_ClientQuitting{};
 
 	int GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const;
 	bool IsCompleteItems(CPlayer* pPlayer) const;
-	bool IsCompleteMobs(CPlayer* pPlayer) const;
+	bool IsCompleteMobs(CPlayer* pPlayer);
 	bool Finish(CPlayer* pPlayer, bool FinalStepTalking);
-	void DoCollectItem(CPlayer* pPlayer);
+	void PostFinish(CPlayer* pPlayer);
 
 	void AddMobProgress(CPlayer* pPlayer, int BotID);
 	void CreateStepArrow(int ClientID);

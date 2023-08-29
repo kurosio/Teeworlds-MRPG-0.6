@@ -80,13 +80,13 @@ bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_LEARN_SKILL))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_LEARN_SKILL))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	return false;
@@ -100,7 +100,7 @@ bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		const int SkillID = VoteID;
 		if (pPlayer->GetSkill(SkillID)->Upgrade())
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 
@@ -108,7 +108,7 @@ bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		const int SkillID = VoteID;
 		pPlayer->GetSkill(SkillID)->SelectNextControlEmote();
-		GS()->StrongUpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	return false;

@@ -19,14 +19,18 @@ class CDropQuestItem : public CEntity
 	CFlashingTick m_Flash;
 
 public:
-	CDropQuestItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, QuestBotInfo BotData, int ClientID);
+	CDropQuestItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, int ItemID, int Needed, int QuestID, int Step, int ClientID);
 	virtual ~CDropQuestItem();
 
 	int m_ClientID;
-	QuestBotInfo m_QuestBot;
+	int m_ItemID;
+	int m_Needed;
+	int m_QuestID;
+	int m_Step;
 
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
+	virtual void Destroy() override;
 
 };
 

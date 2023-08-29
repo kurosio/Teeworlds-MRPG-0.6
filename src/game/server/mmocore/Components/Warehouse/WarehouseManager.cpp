@@ -59,13 +59,13 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_SHOP_ZONE))
 	{
 		GS()->Chat(ClientID, "You can see menu in the votes!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_SHOP_ZONE))
 	{
 		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_OpenVoteMenu);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 

@@ -198,9 +198,9 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 
 		const int HideID = (NUM_TAB_MENU + BotInfo.m_SubBotID);
 		const vec2 Pos = BotInfo.m_Position / 32.0f;
-		const CPlayerQuestStepDataInfo& rQuestStepDataInfo = pPlayerQuest.m_StepsQuestBot[pStepBot.first];
+		CPlayerQuestStepDataInfo& rQuestStepDataInfo = pPlayerQuest.m_StepsQuestBot[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest.GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest.GetState() == QuestState::FINISHED) ? "✔ " : "\0");
-		
+
 		GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
@@ -210,44 +210,47 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			continue;
 		}
 
-		// need for bot
-		bool NeedOnlyTalk = true;
-		for(int i = 0; i < 2; i++)
+		// show required defeat
+		bool NoTasks = true;
+		if(!BotInfo.m_RequiredDefeat.empty())
 		{
-			const int NeedKillMobID = BotInfo.m_aNeedMob[i];
-			const int KillNeed = BotInfo.m_aNeedMobValue[i];
-			if(NeedKillMobID > 0 && KillNeed > 0 && DataBotInfo::ms_aDataBot.find(NeedKillMobID) != DataBotInfo::ms_aDataBot.end())
+			for(auto& p : BotInfo.m_RequiredDefeat)
 			{
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Defeat {STR} [{INT}/{INT}]",
-					DataBotInfo::ms_aDataBot[NeedKillMobID].m_aNameBot, rQuestStepDataInfo.m_MobProgress[i], KillNeed);
-				NeedOnlyTalk = false;
-			}
-
-			const int NeedItemID = BotInfo.m_aItemSearch[i];
-			const int NeedValue = BotInfo.m_aItemSearchValue[i];
-			if(NeedItemID > 0 && NeedValue > 0)
-			{
-				CPlayerItem* pPlayerItem = pPlayer->GetItem(NeedItemID);
-				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, NeedValue);
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), ClapmItem, NeedValue);
-				NeedOnlyTalk = false;
+				if(DataBotInfo::ms_aDataBot.find(p.m_BotID) != DataBotInfo::ms_aDataBot.end())
+				{
+					GS()->AVM(ClientID, "null", NOPE, HideID, "- Defeat {STR} [{INT}/{INT}]",
+						DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, rQuestStepDataInfo.m_aMobProgress[p.m_BotID], p.m_Count);
+					NoTasks = false;
+				}
 			}
 		}
 
-		// reward from bot after can move to up
-		for(int i = 0; i < 2; i++)
+		// show required item's
+		if(!BotInfo.m_RequiredItems.empty())
 		{
-			const int RewardItemID = BotInfo.m_aItemGives[i];
-			const int RewardValue = BotInfo.m_aItemGivesValue[i];
-			if(RewardItemID > 0 && RewardValue > 0)
+			for(auto& p : BotInfo.m_RequiredItems)
 			{
-				CItemDescription* pRewardItemInfo = GS()->GetItemInfo(RewardItemID);
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Receive {STR}x{VAL}", pRewardItemInfo->GetName(), RewardValue);
+				CPlayerItem* pPlayerItem = pPlayer->GetItem(p.m_ItemID);
+				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, p.m_Count);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), ClapmItem, p.m_Count);
+				NoTasks = false;
 			}
 		}
 
-		if(NeedOnlyTalk)
+		// show reward item's
+		if(!BotInfo.m_RewardItems.empty())
+		{
+			for(auto& p : BotInfo.m_RewardItems)
+			{
+				CItemDescription* pRewardItemInfo = GS()->GetItemInfo(p.m_ItemID);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Receive {STR}x{VAL}", pRewardItemInfo->GetName(), p.m_Count);
+			}
+		}
+
+		if(NoTasks)
+		{
 			GS()->AVM(ClientID, "null", NOPE, HideID, "You just need to talk.");
+		}
 	}
 }
 
