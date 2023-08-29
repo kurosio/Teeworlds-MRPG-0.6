@@ -183,9 +183,6 @@ bool CPlayerQuestStepDataInfo::IsComplete(CPlayer* pPlayer)
 
 bool CPlayerQuestStepDataInfo::Finish(CPlayer* pPlayer)
 {
-	int ClientID = pPlayer->GetCID();
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
-
 	// quest completion
 	if(IsComplete(pPlayer))
 	{
@@ -219,7 +216,7 @@ void CPlayerQuestStepDataInfo::PostFinish(CPlayer* pPlayer)
 			{
 				for(auto& [m_ItemID, m_Count] : m_Bot.m_RewardItems)
 				{
-					AntiStressing = p.m_ItemID = m_ItemID;
+					AntiStressing = (p.m_ItemID == m_ItemID);
 				}
 			}
 
@@ -253,6 +250,7 @@ void CPlayerQuestStepDataInfo::PostFinish(CPlayer* pPlayer)
 	const int QuestID = m_Bot.m_QuestID;
 	m_StepComplete = true;
 	DataBotInfo::ms_aDataBot[m_Bot.m_BotID].m_aVisibleActive[ClientID] = false;
+	UpdateBot();
 
 	pPlayer->GetQuest(QuestID)->CheckAvailableNewStep();
 	pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
