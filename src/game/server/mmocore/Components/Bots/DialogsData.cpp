@@ -374,12 +374,22 @@ void CPlayerDialog::Next()
 			int QuestID = NpcBotInfo::ms_aNpcBot[m_MobID].m_GiveQuestID;
 			m_pPlayer->GetQuest(QuestID).Accept();
 		}
+
 		// bot type Quest (who requred tasks)
-		else if(m_BotType == TYPE_BOT_QUEST && !GS()->Mmo()->Quest()->InteractiveQuestNPC(m_pPlayer, QuestBotInfo::ms_aQuestBot[m_MobID], false))
+		else if(m_BotType == TYPE_BOT_QUEST)
 		{
-			GS()->Mmo()->Quest()->DoStepDropTakeItems(m_pPlayer, QuestBotInfo::ms_aQuestBot[m_MobID]);
-			pDialog->Show(GS(), m_pPlayer->GetCID());
-			return;
+			int ClientID = m_pPlayer->GetCID();
+			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+			CQuestData* pQuest = &m_pPlayer->GetQuest(QuestID);
+
+			if(!pQuest->m_aPlayerSteps[m_MobID].IsComplete(m_pPlayer))
+			{
+				GS()->Chat(ClientID, "Task has not been completed yet!");
+				pDialog->Show(GS(), ClientID);
+				return;
+			}
+
+			GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
 		}
 
 		// run event
@@ -398,20 +408,38 @@ void CPlayerDialog::Next()
 
 void CPlayerDialog::PostNext()
 {
-	// is last dialog
 	CDialogElem* pCurrent = GetCurrent();
+
+	// is last dialog
 	if(!pCurrent)
 	{
-		// post next quest bot type
+		bool RunEndDialogEvent = true;
+
+		// finish quest on last dialogue
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
-			GS()->Mmo()->Quest()->InteractiveQuestNPC(m_pPlayer, QuestBotInfo::ms_aQuestBot[m_MobID], true);
+			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+			RunEndDialogEvent = m_pPlayer->GetQuest(QuestID).m_aPlayerSteps[m_MobID].Finish(m_pPlayer);
 		}
 
 		// clear and run post events
-		EndDialogEvents();
+		if(RunEndDialogEvent)
+		{
+			EndDialogEvents();
+		}
 		Clear();
 		return;
+	}
+
+	// post dialog action
+	if(pCurrent->IsRequestAction())
+	{
+		if(m_BotType == TYPE_BOT_QUEST)
+		{
+			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+			CQuestData* pQuest = &m_pPlayer->GetQuest(QuestID);
+			pQuest->m_aPlayerSteps[m_MobID].CreateStepDropTakeItems(m_pPlayer);
+		}
 	}
 
 	// show next dialog

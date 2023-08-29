@@ -25,11 +25,11 @@ void CQuestData::InitSteps()
 
 	// initialized quest steps
 	m_Step = 1;
-	Info().InitPlayerDefaultSteps(m_StepsQuestBot);
+	Info().InitPlayerDefaultSteps(m_aPlayerSteps);
 
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
-	for(auto& pStep : m_StepsQuestBot)
+	for(auto& pStep : m_aPlayerSteps)
 	{
 		pStep.second.m_StepComplete = false;
 		pStep.second.m_ClientQuitting = false;
@@ -95,25 +95,25 @@ void CQuestData::LoadSteps()
 	io_close(File);
 
 	// loading steps
-	Info().InitPlayerDefaultSteps(m_StepsQuestBot);
+	Info().InitPlayerDefaultSteps(m_aPlayerSteps);
 	m_Step = JsonQuestData.value("current_step", 1);
 	auto Steps = JsonQuestData["steps"];
 	for(auto& pStep : Steps)
 	{
 		const int SubBotID = pStep.value("subbotid", 0);
-		m_StepsQuestBot[SubBotID].m_StepComplete = pStep.value("state", false);
+		m_aPlayerSteps[SubBotID].m_StepComplete = pStep.value("state", false);
 
 		if(pStep.find("defeat") != pStep.end())
 		{
 			for(auto& p : pStep["defeat"])
 			{
-				m_StepsQuestBot[SubBotID].m_aMobProgress[p.value("id", 0)] = p.value("count", 0);
+				m_aPlayerSteps[SubBotID].m_aMobProgress[p.value("id", 0)] = p.value("count", 0);
 			}
 		}
 
-		m_StepsQuestBot[SubBotID].m_ClientQuitting = false;
-		m_StepsQuestBot[SubBotID].UpdateBot();
-		m_StepsQuestBot[SubBotID].CreateStepArrow(m_pPlayer->GetCID());
+		m_aPlayerSteps[SubBotID].m_ClientQuitting = false;
+		m_aPlayerSteps[SubBotID].UpdateBot();
+		m_aPlayerSteps[SubBotID].CreateStepArrow(m_pPlayer->GetCID());
 	}
 }
 
@@ -125,7 +125,7 @@ void CQuestData::SaveSteps()
 	// set json structure
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
-	for(auto& pStep : m_StepsQuestBot)
+	for(auto& pStep : m_aPlayerSteps)
 	{
 		if(pStep.second.m_Bot.m_HasAction)
 		{
@@ -158,13 +158,13 @@ void CQuestData::SaveSteps()
 
 void CQuestData::ClearSteps()
 {
-	for(auto& pStepBot : m_StepsQuestBot)
+	for(auto& pStepBot : m_aPlayerSteps)
 	{
 		pStepBot.second.UpdateBot();
 		pStepBot.second.CreateStepArrow(m_pPlayer->GetCID());
 	}
 
-	m_StepsQuestBot.clear();
+	m_aPlayerSteps.clear();
 	fs_remove(GetJsonFileName().c_str());
 }
 
@@ -229,8 +229,8 @@ void CQuestData::Finish()
 void CQuestData::CheckAvailableNewStep()
 {
 	// check whether the active steps is complete
-	if(std::find_if(m_StepsQuestBot.begin(), m_StepsQuestBot.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &p)
-	{ return (p.second.m_Bot.m_Step == m_Step && !p.second.m_StepComplete && p.second.m_Bot.m_HasAction); }) != m_StepsQuestBot.end())
+	if(std::find_if(m_aPlayerSteps.begin(), m_aPlayerSteps.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &p)
+	{ return (p.second.m_Bot.m_Step == m_Step && !p.second.m_StepComplete && p.second.m_Bot.m_HasAction); }) != m_aPlayerSteps.end())
 		return;
 
 	// update steps
@@ -239,7 +239,7 @@ void CQuestData::CheckAvailableNewStep()
 
 	// check if all steps have been completed
 	bool FinalStep = true;
-	for(auto& pStepBot : m_StepsQuestBot)
+	for(auto& pStepBot : m_aPlayerSteps)
 	{
 		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot.m_HasAction)
 			FinalStep = false;

@@ -64,9 +64,7 @@ void CDropQuestItem::Tick()
 		{
 			pItem->Add(1);
 			pPlayer->GetCharacter()->m_ReloadTimer = 0;
-
-			const char* pQuestBotNickname = pQuest->Info().m_StepsQuestBot[m_Step].m_Bot.GetName();
-			GS()->Chat(m_ClientID, "You pick {STR} for {STR}!", pItem->Info()->GetName(), pQuestBotNickname);
+			GS()->Chat(m_ClientID, "You pick {STR}!", pItem->Info()->GetName());
 
 			Destroy();
 			return;

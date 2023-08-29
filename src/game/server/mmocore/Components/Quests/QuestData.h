@@ -23,7 +23,7 @@ public:
 	void LoadSteps();
 	void SaveSteps();
 	void ClearSteps();
-	std::map < int, CPlayerQuestStepDataInfo > m_StepsQuestBot;
+	std::map < int, CPlayerQuestStepDataInfo > m_aPlayerSteps;
 
 	// main
 	void CheckAvailableNewStep();

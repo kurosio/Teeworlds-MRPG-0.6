@@ -28,9 +28,8 @@ public:
 	bool m_ClientQuitting{};
 
 	int GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const;
-	bool IsCompleteItems(CPlayer* pPlayer) const;
-	bool IsCompleteMobs(CPlayer* pPlayer);
-	bool Finish(CPlayer* pPlayer, bool FinalStepTalking);
+	bool IsComplete(CPlayer* pPlayer);
+	bool Finish(CPlayer* pPlayer);
 	void PostFinish(CPlayer* pPlayer);
 
 	void AddMobProgress(CPlayer* pPlayer, int BotID);

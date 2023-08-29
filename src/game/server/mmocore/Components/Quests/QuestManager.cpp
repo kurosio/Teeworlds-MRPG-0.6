@@ -36,7 +36,7 @@ void CQuestManager::OnResetClient(int ClientID)
 {
 	for(auto& qp : CQuestData::ms_aPlayerQuests[ClientID])
 	{
-		for(auto& pStepBot : qp.second.m_StepsQuestBot)
+		for(auto& pStepBot : qp.second.m_aPlayerSteps)
 		{
 			pStepBot.second.m_ClientQuitting = true;
 			pStepBot.second.UpdateBot();
@@ -198,7 +198,7 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 
 		const int HideID = (NUM_TAB_MENU + BotInfo.m_SubBotID);
 		const vec2 Pos = BotInfo.m_Position / 32.0f;
-		CPlayerQuestStepDataInfo& rQuestStepDataInfo = pPlayerQuest.m_StepsQuestBot[pStepBot.first];
+		CPlayerQuestStepDataInfo& rQuestStepDataInfo = pPlayerQuest.m_aPlayerSteps[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest.GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest.GetState() == QuestState::FINISHED) ? "✔ " : "\0");
 
 		GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
@@ -258,25 +258,8 @@ void CQuestManager::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char
 {
 	const int QuestID = pBot.m_QuestID;
 	CQuestData& pPlayerQuest = pPlayer->GetQuest(QuestID);
-	if(pPlayerQuest.m_StepsQuestBot.find(pBot.m_SubBotID) != pPlayerQuest.m_StepsQuestBot.end())
-		pPlayerQuest.m_StepsQuestBot[pBot.m_SubBotID].ShowRequired(pPlayer, aBufQuestTask, Size);
-}
-
-bool CQuestManager::InteractiveQuestNPC(CPlayer* pPlayer, QuestBotInfo& pBot, bool FinalStepTalking)
-{
-	const int QuestID = pBot.m_QuestID;
-	CQuestData& pPlayerQuest = pPlayer->GetQuest(QuestID);
-	if(pPlayerQuest.m_StepsQuestBot.find(pBot.m_SubBotID) != pPlayerQuest.m_StepsQuestBot.end())
-		return pPlayerQuest.m_StepsQuestBot[pBot.m_SubBotID].Finish(pPlayer, FinalStepTalking);
-	return false;
-}
-
-void CQuestManager::DoStepDropTakeItems(CPlayer* pPlayer, QuestBotInfo& pBot)
-{
-	const int QuestID = pBot.m_QuestID;
-	CQuestData& pPlayerQuest = pPlayer->GetQuest(QuestID);
-	if(pPlayerQuest.m_StepsQuestBot.find(pBot.m_SubBotID) != pPlayerQuest.m_StepsQuestBot.end())
-		pPlayerQuest.m_StepsQuestBot[pBot.m_SubBotID].CreateStepDropTakeItems(pPlayer);
+	if(pPlayerQuest.m_aPlayerSteps.find(pBot.m_SubBotID) != pPlayerQuest.m_aPlayerSteps.end())
+		pPlayerQuest.m_aPlayerSteps[pBot.m_SubBotID].ShowRequired(pPlayer, aBufQuestTask, Size);
 }
 
 void CQuestManager::AddMobProgressQuests(CPlayer* pPlayer, int BotID)
@@ -288,7 +271,7 @@ void CQuestManager::AddMobProgressQuests(CPlayer* pPlayer, int BotID)
 		if(pPlayerQuest.second.m_State != QuestState::ACCEPT)
 			continue;
 
-		for(auto& pStepBot : pPlayerQuest.second.m_StepsQuestBot)
+		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
 		{
 			if(pPlayerQuest.second.m_Step == pStepBot.second.m_Bot.m_Step)
 				pStepBot.second.AddMobProgress(pPlayer, BotID);
@@ -305,7 +288,7 @@ void CQuestManager::UpdateArrowStep(CPlayer *pPlayer)
 		if(pPlayerQuest.second.m_State != QuestState::ACCEPT)
 			continue;
 
-		for(auto& pStepBot : pPlayerQuest.second.m_StepsQuestBot)
+		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
 			pStepBot.second.CreateStepArrow(ClientID);
 	}
 }
@@ -359,7 +342,7 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
 		if(pPlayerQuest.second.m_State != QuestState::ACCEPT)
 			continue;
 
-		for(auto& pStepBot : pPlayerQuest.second.m_StepsQuestBot)
+		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
 		{
 			if(!pStepBot.second.m_StepComplete)
 				AvailableValue -= pStepBot.second.GetValueBlockedItem(pPlayer, ItemID);

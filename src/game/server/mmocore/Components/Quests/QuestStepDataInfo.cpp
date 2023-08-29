@@ -134,7 +134,7 @@ bool CQuestStepDataInfo::IsActiveStep(CGS* pGS) const
 			continue;
 
 		// skip complete steps and players who come out to clear the world of bots
-		if(pPlayerQuest.m_StepsQuestBot[SubBotID].m_StepComplete || pPlayerQuest.m_StepsQuestBot[SubBotID].m_ClientQuitting)
+		if(pPlayerQuest.m_aPlayerSteps[SubBotID].m_StepComplete || pPlayerQuest.m_aPlayerSteps[SubBotID].m_ClientQuitting)
 			continue;
 
 		return true;
@@ -148,18 +148,18 @@ int CPlayerQuestStepDataInfo::GetValueBlockedItem(CPlayer* pPlayer, int ItemID) 
 {
 	if(!m_Bot.m_RequiredItems.empty())
 	{
-		for(auto& pRequired : m_Bot.m_RequiredItems)
+		for(auto& p : m_Bot.m_RequiredItems)
 		{
-			if(pRequired.m_ItemID != ItemID)
+			if(p.m_ItemID != ItemID)
 				continue;
-			return pRequired.m_Count;
+			return p.m_Count;
 		}
 	}
 
 	return 0;
 }
 
-bool CPlayerQuestStepDataInfo::IsCompleteItems(CPlayer* pPlayer) const
+bool CPlayerQuestStepDataInfo::IsComplete(CPlayer* pPlayer)
 {
 	if(!m_Bot.m_RequiredItems.empty())
 	{
@@ -170,11 +170,6 @@ bool CPlayerQuestStepDataInfo::IsCompleteItems(CPlayer* pPlayer) const
 		}
 	}
 
-	return true; 
-}
-
-bool CPlayerQuestStepDataInfo::IsCompleteMobs(CPlayer* pPlayer)
-{
 	if(!m_Bot.m_RequiredDefeat.empty())
 	{
 		for(auto& [m_BotID, m_Count] : m_Bot.m_RequiredDefeat)
@@ -183,32 +178,23 @@ bool CPlayerQuestStepDataInfo::IsCompleteMobs(CPlayer* pPlayer)
 				return false;
 		}
 	}
-
-	return true;
+	return true; 
 }
 
-bool CPlayerQuestStepDataInfo::Finish(CPlayer* pPlayer, bool FinalStepTalking)
+bool CPlayerQuestStepDataInfo::Finish(CPlayer* pPlayer)
 {
 	int ClientID = pPlayer->GetCID();
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
-	// check complecte
-	if(!IsCompleteItems(pPlayer) || !IsCompleteMobs(pPlayer))
+	// quest completion
+	if(IsComplete(pPlayer))
 	{
-		pGS->Chat(ClientID, "Task has not been completed yet!");
-		return false;
-	}
-
-	// sound effect
-	if(!FinalStepTalking)
-	{
-		pGS->CreatePlayerSound(ClientID, SOUND_CTF_RETURN);
+		PostFinish(pPlayer);
 		return true;
 	}
 
-	// post
-	PostFinish(pPlayer);
-	return true;
+	// quest not yet completed
+	return false;
 }
 
 void CPlayerQuestStepDataInfo::PostFinish(CPlayer* pPlayer)

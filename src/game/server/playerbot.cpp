@@ -256,7 +256,7 @@ int CPlayerBot::IsVisibleForClient(int ClientID) const
 		if(pSnappingPlayer->GetQuest(QuestID).GetState() != QuestState::ACCEPT)
 			return 0;
 
-		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_Step != pSnappingPlayer->GetQuest(QuestID).m_Step) || pSnappingPlayer->GetQuest(QuestID).m_StepsQuestBot[GetBotMobID()].m_StepComplete)
+		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_Step != pSnappingPlayer->GetQuest(QuestID).m_Step) || pSnappingPlayer->GetQuest(QuestID).m_aPlayerSteps[GetBotMobID()].m_StepComplete)
 			return 0;
 
 		// [first] quest bot active for player

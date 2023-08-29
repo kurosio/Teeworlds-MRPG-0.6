@@ -50,9 +50,7 @@ private:
 public:
 	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size);
 
-	bool InteractiveQuestNPC(CPlayer* pPlayer, QuestBotInfo& pBot, bool FinalStepTalking);
 	void AddMobProgressQuests(CPlayer* pPlayer, int BotID);
-	void DoStepDropTakeItems(CPlayer* pPlayer, QuestBotInfo& pBot);
 
 	void UpdateArrowStep(CPlayer *pPlayer);
 	void AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);
