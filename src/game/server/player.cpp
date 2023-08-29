@@ -750,7 +750,7 @@ CSkill* CPlayer::GetSkill(SkillIdentifier ID)
 
 CQuestData* CPlayer::GetQuest(QuestIdentifier ID)
 {
-	dbg_assert(CQuestDataInfo::ms_aDataQuests.find(ID) != CQuestDataInfo::ms_aDataQuests.end(), "invalid referring to the CQuestData");
+	dbg_assert(CQuestDataInfo::Data().find(ID) != CQuestDataInfo::Data().end(), "invalid referring to the CQuestData");
 
 	if(CQuestData::Data()[m_ClientID].find(ID) == CQuestData::Data()[m_ClientID].end())
 	{

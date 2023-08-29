@@ -21,8 +21,8 @@ CPlayer* CQuestData::GetPlayer() const
 	return nullptr;
 }
 
-CQuestDataInfo& CQuestData::Info() const { return CQuestDataInfo::ms_aDataQuests[m_ID]; }
-std::string CQuestData::GetJsonFileName() const { return Info().GetJsonFileName(GetPlayer()->Acc().m_UserID); }
+CQuestDataInfo* CQuestData::Info() const { return &CQuestDataInfo::Data()[m_ID]; }
+std::string CQuestData::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_UserID); }
 
 void CQuestData::InitSteps()
 {
@@ -38,7 +38,7 @@ void CQuestData::InitSteps()
 
 	// initialized quest steps
 	m_Step = 1;
-	Info().InitPlayerDefaultSteps(m_aPlayerSteps);
+	Info()->InitPlayerDefaultSteps(m_aPlayerSteps);
 
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
@@ -105,7 +105,7 @@ void CQuestData::LoadSteps()
 	io_close(File);
 
 	// loading steps
-	Info().InitPlayerDefaultSteps(m_aPlayerSteps);
+	Info()->InitPlayerDefaultSteps(m_aPlayerSteps);
 	m_Step = JsonQuestData.value("current_step", 1);
 	for(auto& pStep : JsonQuestData["steps"])
 	{
@@ -198,11 +198,11 @@ bool CQuestData::Accept()
 	InitSteps();
 
 	// information
-	const int QuestsSize = Info().GetQuestStorySize();
-	const int QuestPosition = Info().GetQuestStoryPosition();
-	pGS->Chat(ClientID, "------ Quest story [{STR}] ({INT}/{INT}) ------", Info().GetStory(), QuestPosition, QuestsSize);
-	pGS->Chat(ClientID, "Name: \"{STR}\"", Info().GetName());
-	pGS->Chat(ClientID, "Reward: \"Gold {VAL}, Experience {INT}\".", Info().m_Gold, Info().m_Exp);
+	const int QuestsSize = Info()->GetQuestStorySize();
+	const int QuestPosition = Info()->GetQuestStoryPosition();
+	pGS->Chat(ClientID, "------ Quest story [{STR}] ({INT}/{INT}) ------", Info()->GetStory(), QuestPosition, QuestsSize);
+	pGS->Chat(ClientID, "Name: \"{STR}\"", Info()->GetName());
+	pGS->Chat(ClientID, "Reward: \"Gold {VAL}, Experience {INT}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
 	pGS->CreatePlayerSound(ClientID, SOUND_CTF_CAPTURE);
 	return true;
 }
@@ -222,10 +222,10 @@ void CQuestData::Finish()
 	ClearSteps();
 
 	// awards and write about completion
-	GetPlayer()->AddMoney(Info().m_Gold);
-	GetPlayer()->AddExp(Info().m_Exp);
-	pGS->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", pGS->Server()->ClientName(m_ClientID), Info().m_aStoryLine, Info().m_aName);
-	pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info().m_aStoryLine, Info().m_aName);
+	GetPlayer()->AddMoney(Info()->GetRewardGold());
+	GetPlayer()->AddExp(Info()->GetRewardExp());
+	pGS->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", pGS->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
+	pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
 
 	// notify whether the after quest has opened something new
 	pGS->Mmo()->WorldSwap()->NotifyUnlockedZonesByQuest(GetPlayer(), m_ID);

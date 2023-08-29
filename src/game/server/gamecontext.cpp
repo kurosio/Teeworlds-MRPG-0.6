@@ -115,7 +115,12 @@ CItemDescription* CGS::GetItemInfo(ItemIdentifier ItemID) const
 
 	return &CItemDescription::Data()[ItemID];
 }
-CQuestDataInfo &CGS::GetQuestInfo(int QuestID) const { return CQuestDataInfo::ms_aDataQuests[QuestID]; }
+CQuestDataInfo* CGS::GetQuestInfo(QuestIdentifier QuestID) const
+{
+	dbg_assert(CQuestDataInfo::Data().find(QuestID) != CQuestDataInfo::Data().end(), "invalid referring to the CItemDescription");
+
+	return &CQuestDataInfo::Data()[QuestID];
+}
 
 CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const
 {

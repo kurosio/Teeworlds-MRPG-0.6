@@ -145,7 +145,7 @@ void CWorldManager::NotifyUnlockedZonesByQuest(CPlayer* pPlayer, int QuestID) co
 	const int ClientID = pPlayer->GetCID();
 	for(const auto& pData : CWorldData::Data())
 	{
-		if(pData->GetRequiredQuest() && pData->GetRequiredQuest()->m_QuestID == QuestID)
+		if(pData->GetRequiredQuest() && pData->GetRequiredQuest()->GetID() == QuestID)
 			GS()->Chat(-1, "{STR} opened zone ({STR})!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
 	}
 }

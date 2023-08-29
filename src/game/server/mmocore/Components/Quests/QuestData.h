@@ -31,7 +31,7 @@ public:
 		CQuestData::m_pData[m_ClientID][m_ID].LoadSteps();
 	}
 
-	CQuestDataInfo& Info() const;
+	CQuestDataInfo* Info() const;
 	std::string GetJsonFileName() const;
 	QuestIdentifier GetID() const { return m_ID; }
 	QuestState GetState() const { return m_State; }

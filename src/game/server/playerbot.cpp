@@ -412,7 +412,7 @@ const char* CPlayerBot::GetStatus() const
 		case Mood::QUEST:
 		{
 			const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			return GS()->GetQuestInfo(QuestID).GetName();
+			return GS()->GetQuestInfo(QuestID)->GetName();
 		}
 		case Mood::ANGRY: 
 			return "Angry";

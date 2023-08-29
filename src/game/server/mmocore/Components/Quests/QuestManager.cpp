@@ -9,12 +9,13 @@ void CQuestManager::OnInit()
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_quests_list");
 	while(pRes->next())
 	{
-		const int QUID = pRes->getInt("ID");
-		CQuestDataInfo::ms_aDataQuests[QUID].m_QuestID = QUID;
-		str_copy(CQuestDataInfo::ms_aDataQuests[QUID].m_aName, pRes->getString("Name").c_str(), sizeof(CQuestDataInfo::ms_aDataQuests[QUID].m_aName));
-		str_copy(CQuestDataInfo::ms_aDataQuests[QUID].m_aStoryLine, pRes->getString("StoryLine").c_str(), sizeof(CQuestDataInfo::ms_aDataQuests[QUID].m_aStoryLine));
-		CQuestDataInfo::ms_aDataQuests[QUID].m_Gold = pRes->getInt("Money");
-		CQuestDataInfo::ms_aDataQuests[QUID].m_Exp = pRes->getInt("Exp");
+		QuestIdentifier ID = pRes->getInt("ID");
+		std::string Name = pRes->getString("Name").c_str();
+		std::string Story = pRes->getString("StoryLine").c_str();
+		int Gold = pRes->getInt("Money");
+		int Exp = pRes->getInt("Exp");
+		
+		CQuestDataInfo(ID).Init(Name, Story, Gold, Exp);
 	}
 }
 
@@ -82,12 +83,12 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
 
 		const int QuestID = pPlayer->m_TempMenuValue;
-		CQuestDataInfo pData = pPlayer->GetQuest(QuestID)->Info();
+		CQuestDataInfo* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 
 		pPlayer->GS()->Mmo()->Quest()->ShowQuestsActiveNPC(pPlayer, QuestID);
 		pPlayer->GS()->AV(ClientID, "null");
-		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pData.GetName());
-		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pData.m_Gold, pData.m_Exp);
+		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pQuestInfo->GetName());
+		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pQuestInfo->GetRewardGold(), pQuestInfo->GetRewardExp());
 
 		pPlayer->GS()->AddVotesBackpage(ClientID);
 	}
@@ -115,7 +116,7 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 	int ClientID = pPlayer->GetCID();
 
 	// information
-	const int TotalQuests = CQuestDataInfo::ms_aDataQuests.size();
+	const int TotalQuests = CQuestDataInfo::Data().size();
 	const int TotalComplectedQuests = GetClientComplectedQuestsSize(ClientID);
 	const int TotalIncomplectedQuests = TotalQuests - TotalComplectedQuests;
 	GS()->AVH(ClientID, TAB_INFO_STATISTIC_QUESTS, "Quests statistic");
@@ -140,7 +141,7 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 	// check first quest story step
 	bool IsEmptyList = true;
 	std::list < std::string /*stories was checked*/ > StoriesChecked;
-	for(const auto& [ID, Quest] : CQuestDataInfo::ms_aDataQuests)
+	for(const auto& [ID, pQuestInfo] : CQuestDataInfo::Data())
 	{
 		if(pPlayer->GetQuest(ID)->GetState() != State)
 			continue;
@@ -154,11 +155,11 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 
 		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), [=](const std::string& stories)
 		{
-			return (str_comp_nocase(Quest.GetStory(), stories.c_str()) == 0);
+			return (str_comp_nocase(pQuestInfo.GetStory(), stories.c_str()) == 0);
 		});
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
-			StoriesChecked.emplace_back(CQuestDataInfo::ms_aDataQuests[ID].m_aStoryLine);
+			StoriesChecked.emplace_back(CQuestDataInfo::Data()[ID].GetStory());
 			ShowQuestID(pPlayer, ID);
 			IsEmptyList = false;
 		}
@@ -174,12 +175,13 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 
 void CQuestManager::ShowQuestID(CPlayer *pPlayer, int QuestID)
 {
-	CQuestDataInfo& pData = pPlayer->GetQuest(QuestID)->Info();
+	CQuestDataInfo* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 	const int ClientID = pPlayer->GetCID();
-	const int QuestsSize = pData.GetQuestStorySize();
-	const int QuestPosition = pData.GetQuestStoryPosition();
+	const int QuestsSize = pQuestInfo->GetQuestStorySize();
+	const int QuestPosition = pQuestInfo->GetQuestStoryPosition();
 
-	GS()->AVD(ClientID, "MENU", MENU_JOURNAL_QUEST_INFORMATION, QuestID, NOPE, "{INT}/{INT} {STR}: {STR}", QuestPosition, QuestsSize, pData.GetStory(), pData.GetName());
+	GS()->AVD(ClientID, "MENU", MENU_JOURNAL_QUEST_INFORMATION, QuestID, NOPE, "{INT}/{INT} {STR}: {STR}", 
+		QuestPosition, QuestsSize, pQuestInfo->GetStory(), pQuestInfo->GetName());
 }
 
 // active npc information display
@@ -189,7 +191,7 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 	const int ClientID = pPlayer->GetCID();
 	GS()->AVM(ClientID, "null", NOPE, NOPE, "Active NPC for current quests");
 
-	for(auto& pStepBot : CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot)
+	for(auto& pStepBot : CQuestDataInfo::Data()[QuestID].m_StepsQuestBot)
 	{
 		const QuestBotInfo& BotInfo = pStepBot.second.m_Bot;
 		if(!BotInfo.m_HasAction)
@@ -294,11 +296,11 @@ void CQuestManager::UpdateArrowStep(CPlayer *pPlayer)
 
 void CQuestManager::AcceptNextStoryQuest(CPlayer *pPlayer, int CheckQuestID)
 {
-	const CQuestDataInfo CheckingQuest = CQuestDataInfo::ms_aDataQuests[CheckQuestID];
-	for (auto pQuestData = CQuestDataInfo::ms_aDataQuests.find(CheckQuestID); pQuestData != CQuestDataInfo::ms_aDataQuests.end(); pQuestData++)
+	const CQuestDataInfo CheckingQuest = CQuestDataInfo::Data()[CheckQuestID];
+	for (auto pQuestData = CQuestDataInfo::Data().find(CheckQuestID); pQuestData != CQuestDataInfo::Data().end(); pQuestData++)
 	{
 		// search next quest story step
-		if(str_comp_nocase(CheckingQuest.m_aStoryLine, pQuestData->second.m_aStoryLine) == 0)
+		if(str_comp_nocase(CheckingQuest.GetStory(), pQuestData->second.GetStory()) == 0)
 		{
 			// skip all if a quest story is found that is still active
 			if(pPlayer->GetQuest(pQuestData->first)->GetState() == QuestState::ACCEPT)
@@ -323,10 +325,10 @@ void CQuestManager::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 
 		// accept next story quest
 		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), [=](const std::string& stories)
-		{ return (str_comp_nocase(CQuestDataInfo::ms_aDataQuests[pPlayerQuest.first].m_aStoryLine, stories.c_str()) == 0); });
+		{ return (str_comp_nocase(CQuestDataInfo::Data()[pPlayerQuest.first].GetStory(), stories.c_str()) == 0); });
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
-			StoriesChecked.emplace_front(CQuestDataInfo::ms_aDataQuests[pPlayerQuest.first].m_aStoryLine);
+			StoriesChecked.emplace_front(CQuestDataInfo::Data()[pPlayerQuest.first].GetStory());
 			AcceptNextStoryQuest(pPlayer, pPlayerQuest.first);
 		}
 	}

@@ -168,7 +168,7 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 
 		// initilize
 		QuestBotInfo::ms_aQuestBot[MobID] = QuestBot;
-		CQuestDataInfo::ms_aDataQuests[QuestID].m_StepsQuestBot[MobID].m_Bot = QuestBotInfo::ms_aQuestBot[MobID];
+		GS()->GetQuestInfo(QuestID)->m_StepsQuestBot[MobID].m_Bot = QuestBotInfo::ms_aQuestBot[MobID];
 	}
 }
 

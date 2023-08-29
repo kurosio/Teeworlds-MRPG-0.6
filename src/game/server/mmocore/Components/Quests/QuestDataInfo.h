@@ -7,20 +7,35 @@
 
 using QuestIdentifier = int;
 
-class CQuestDataInfo
+class CQuestDataInfo : public MultiworldIdentifiableStaticData < std::map< int, CQuestDataInfo > >
 {
-public:
-	char m_aName[24];
-	char m_aStoryLine[24];
-	int m_QuestID;
-	int m_Gold;
-	int m_Exp;
+	QuestIdentifier m_ID{};
+	char m_aName[24]{};
+	char m_aStoryLine[24]{};
+	int m_Gold{};
+	int m_Exp{};
 
+public:
+	CQuestDataInfo() = default;
+	CQuestDataInfo(QuestIdentifier ID) : m_ID(ID) {}
+
+	void Init(const std::string& Name, const std::string& Story, int Gold, int Exp)
+	{
+		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
+		str_copy(m_aStoryLine, Story.c_str(), sizeof(m_aStoryLine));
+		m_Gold = Gold;
+		m_Exp = Exp;
+		CQuestDataInfo::m_pData[m_ID] = *this;
+	}
+
+	QuestIdentifier GetID() const { return m_ID; }
 	std::string GetJsonFileName(int AccountID) const;
 	const char* GetName() const { return m_aName; }
 	const char* GetStory() const { return m_aStoryLine; }
 	int GetQuestStoryPosition() const;
 	int GetQuestStorySize() const;
+	int GetRewardGold() const { return m_Gold; }
+	int GetRewardExp() const { return m_Exp; }
 
 	void InitPlayerDefaultSteps(std::map < int, CPlayerQuestStepDataInfo >& pElem) const
 	{
@@ -35,9 +50,6 @@ public:
 
 	// steps with array bot data on active step
 	std::unordered_map < int , CQuestStepDataInfo > m_StepsQuestBot;
-
-public:
-	static std::map < int, CQuestDataInfo > ms_aDataQuests;
 };
 
 #endif

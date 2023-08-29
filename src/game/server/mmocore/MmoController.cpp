@@ -29,13 +29,13 @@
 MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
+	m_Components.add(m_pQuest = new CQuestManager);
 	m_Components.add(m_pBotsInfo = new CBotManager);
 	m_Components.add(m_pItemWork = new CInventoryManager);
 	m_Components.add(m_pCraft = new CCraftManager);
 	m_Components.add(m_pWarehouse = new CWarehouseManager);
 	m_Components.add(new CAuctionManager);
 	m_Components.add(m_pEidolon = new CEidolonManager);
-	m_Components.add(m_pQuest = new CQuestManager);
 	m_Components.add(m_pDungeon = new CDungeonManager);
 	m_Components.add(new CAetherManager);
 	m_Components.add(m_pWorldSwap = new CWorldManager);
@@ -608,10 +608,10 @@ void MmoController::ConAsyncLinesForTranslate()
 			PushingDialogs(JsonData, pItem.second.GetBoostName(), "skbn", pItem.first);
 		}
 
-		for(auto& pItem : CQuestDataInfo::ms_aDataQuests)
+		for(auto& pItem : CQuestDataInfo::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.m_aName, "qudn", pItem.first);
-			PushingDialogs(JsonData, pItem.second.m_aStoryLine, "qusn", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetName(), "qudn", pItem.first);
+			PushingDialogs(JsonData, pItem.second.GetStory(), "qusn", pItem.first);
 		}
 
 		for(auto& pItem : CWarehouse::Data())

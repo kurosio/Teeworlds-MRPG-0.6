@@ -28,7 +28,7 @@ void CWorldData::Move(CPlayer* pPlayer)
 
 	int ClientID = pPlayer->GetCID();
 	CWorldData* pSecondWorldData = pGS->GetWorldData(pSwapper->GetSecondWorldID());
-	if(pSecondWorldData && pSecondWorldData->GetRequiredQuest() && !pPlayer->GetQuest(pSecondWorldData->GetRequiredQuest()->m_QuestID)->IsComplected())
+	if(pSecondWorldData && pSecondWorldData->GetRequiredQuest() && !pPlayer->GetQuest(pSecondWorldData->GetRequiredQuest()->GetID())->IsComplected())
 	{
 		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Requires quest completion '{STR}'!", pSecondWorldData->GetRequiredQuest()->GetName());
 		return;
@@ -49,8 +49,8 @@ CWorldSwapData* CWorldData::GetSwapperByPos(vec2 Pos)
 
 CQuestDataInfo* CWorldData::GetRequiredQuest() const
 {
-	if(CQuestDataInfo::ms_aDataQuests.find(m_RequiredQuestID) != CQuestDataInfo::ms_aDataQuests.end())
-		return &CQuestDataInfo::ms_aDataQuests[m_RequiredQuestID];
+	if(CQuestDataInfo::Data().find(m_RequiredQuestID) != CQuestDataInfo::Data().end())
+		return &CQuestDataInfo::Data()[m_RequiredQuestID];
 	return nullptr;
 }
 

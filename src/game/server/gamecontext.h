@@ -71,7 +71,7 @@ public:
 	CPlayer *GetPlayer(int ClientID, bool CheckAuthed = false, bool CheckCharacter = false);
 	CPlayer *GetPlayerFromUserID(int AccountID);
 	class CItemDescription* GetItemInfo(ItemIdentifier ItemID) const;
-	CQuestDataInfo &GetQuestInfo(int QuestID) const;
+	CQuestDataInfo* GetQuestInfo(QuestIdentifier QuestID) const;
 	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;
 	class CWarehouse* GetWarehouse(int ID) const;
 	class CWorldData* GetWorldData(int ID = -1) const;

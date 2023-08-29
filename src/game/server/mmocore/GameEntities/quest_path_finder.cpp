@@ -16,7 +16,7 @@ CQuestPathFinder::CQuestPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientI
 	m_ClientID = ClientID;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_SubBotID = QuestBot.m_SubBotID;
-	m_MainScenario = str_startswith_nocase(GS()->GetQuestInfo(QuestBot.m_QuestID).GetStory(), "Ch") != nullptr;
+	m_MainScenario = str_startswith_nocase(GS()->GetQuestInfo(QuestBot.m_QuestID)->GetStory(), "Ch") != nullptr;
 
 	m_pPlayer->m_aQuestPathFinders.push_back(this);
 	GameWorld()->InsertEntity(this);
