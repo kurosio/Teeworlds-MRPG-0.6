@@ -253,10 +253,10 @@ int CPlayerBot::IsVisibleForClient(int ClientID) const
 	if(m_BotType == TYPE_BOT_QUEST)
 	{
 		const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		if(pSnappingPlayer->GetQuest(QuestID).GetState() != QuestState::ACCEPT)
+		if(pSnappingPlayer->GetQuest(QuestID)->GetState() != QuestState::ACCEPT)
 			return 0;
 
-		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_Step != pSnappingPlayer->GetQuest(QuestID).m_Step) || pSnappingPlayer->GetQuest(QuestID).m_aPlayerSteps[GetBotMobID()].m_StepComplete)
+		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_Step != pSnappingPlayer->GetQuest(QuestID)->GetStep()) || pSnappingPlayer->GetQuest(QuestID)->m_aPlayerSteps[GetBotMobID()].m_StepComplete)
 			return 0;
 
 		// [first] quest bot active for player
@@ -372,7 +372,7 @@ bool CPlayerBot::IsActiveQuests(int SnapClientID) const
 	if(m_BotType == TYPE_BOT_NPC)
 	{
 		const int GivesQuest = GS()->Mmo()->BotsData()->GetQuestNPC(m_MobID);
-		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GIVE_QUEST && pSnappingPlayer->GetQuest(GivesQuest).GetState() == QuestState::NO_ACCEPT)
+		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GIVE_QUEST && pSnappingPlayer->GetQuest(GivesQuest)->GetState() == QuestState::NO_ACCEPT)
 			return true;
 
 		return false;

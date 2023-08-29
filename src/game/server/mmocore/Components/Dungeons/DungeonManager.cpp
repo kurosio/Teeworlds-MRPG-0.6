@@ -193,10 +193,10 @@ void CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 		ShowDungeonTop(pPlayer, dungeon.first, HideID);
 
 		const int NeededQuestID = dungeon.second.m_RequiredQuestID;
-		if(NeededQuestID <= 0 || pPlayer->GetQuest(NeededQuestID).IsComplected())
+		if(NeededQuestID <= 0 || pPlayer->GetQuest(NeededQuestID)->IsComplected())
 			GS()->AVM(ClientID, "DUNGEONJOIN", dungeon.first, HideID, "Join dungeon {STR}", dungeon.second.m_aName);
 		else
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Need to complete quest {STR}", pPlayer->GetQuest(NeededQuestID).Info().GetName());
+			GS()->AVM(ClientID, "null", NOPE, HideID, "Need to complete quest {STR}", pPlayer->GetQuest(NeededQuestID)->Info().GetName());
 	}
 }
 

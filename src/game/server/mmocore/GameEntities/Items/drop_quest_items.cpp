@@ -50,8 +50,8 @@ void CDropQuestItem::Tick()
 	}
 
 	CPlayerItem* pItem = pPlayer->GetItem(m_ItemID);
-	const CQuestData* pQuest = &pPlayer->GetQuest(m_QuestID);
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->m_Step != m_Step || pItem->GetValue() >= m_Needed)
+	const CQuestData* pQuest = pPlayer->GetQuest(m_QuestID);
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStep() != m_Step || pItem->GetValue() >= m_Needed)
 	{
 		Destroy();
 		return;

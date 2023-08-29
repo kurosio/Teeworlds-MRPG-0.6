@@ -175,7 +175,7 @@ public:
 	class CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }
 	class CPlayerItem* GetItem(ItemIdentifier ID);
 	class CSkill* GetSkill(SkillIdentifier ID);
-	CQuestData& GetQuest(int QuestID);
+	class CQuestData* GetQuest(QuestIdentifier ID);
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
 	CAccountData& Acc() const { return CAccountData::ms_aData[m_ClientID]; }
 

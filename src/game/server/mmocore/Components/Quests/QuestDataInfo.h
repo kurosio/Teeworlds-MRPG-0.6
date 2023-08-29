@@ -5,6 +5,8 @@
 
 #include "QuestStepDataInfo.h"
 
+using QuestIdentifier = int;
+
 class CQuestDataInfo
 {
 public:
@@ -25,6 +27,9 @@ public:
 		for(const auto& [rStepID, rStepData] : m_StepsQuestBot)
 		{
 			pElem[rStepID].m_Bot = rStepData.m_Bot;
+			pElem[rStepID].m_StepComplete = false;
+			pElem[rStepID].m_ClientQuitting = false;
+			pElem[rStepID].m_aMobProgress.clear();
 		}
 	}
 

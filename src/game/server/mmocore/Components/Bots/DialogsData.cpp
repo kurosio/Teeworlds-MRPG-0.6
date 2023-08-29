@@ -372,7 +372,7 @@ void CPlayerDialog::Next()
 		if(m_BotType == TYPE_BOT_NPC)
 		{
 			int QuestID = NpcBotInfo::ms_aNpcBot[m_MobID].m_GiveQuestID;
-			m_pPlayer->GetQuest(QuestID).Accept();
+			m_pPlayer->GetQuest(QuestID)->Accept();
 		}
 
 		// bot type Quest (who requred tasks)
@@ -380,7 +380,7 @@ void CPlayerDialog::Next()
 		{
 			int ClientID = m_pPlayer->GetCID();
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CQuestData* pQuest = &m_pPlayer->GetQuest(QuestID);
+			CQuestData* pQuest = m_pPlayer->GetQuest(QuestID);
 
 			if(!pQuest->m_aPlayerSteps[m_MobID].IsComplete(m_pPlayer))
 			{
@@ -419,7 +419,7 @@ void CPlayerDialog::PostNext()
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			RunEndDialogEvent = m_pPlayer->GetQuest(QuestID).m_aPlayerSteps[m_MobID].Finish(m_pPlayer);
+			RunEndDialogEvent = m_pPlayer->GetQuest(QuestID)->m_aPlayerSteps[m_MobID].Finish(m_pPlayer);
 		}
 
 		// clear and run post events
@@ -437,7 +437,7 @@ void CPlayerDialog::PostNext()
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CQuestData* pQuest = &m_pPlayer->GetQuest(QuestID);
+			CQuestData* pQuest = m_pPlayer->GetQuest(QuestID);
 			pQuest->m_aPlayerSteps[m_MobID].CreateStepDropTakeItems(m_pPlayer);
 		}
 	}

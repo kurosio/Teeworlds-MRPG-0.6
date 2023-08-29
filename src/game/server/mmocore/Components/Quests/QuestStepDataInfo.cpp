@@ -129,12 +129,12 @@ bool CQuestStepDataInfo::IsActiveStep(CGS* pGS) const
 		if(!pPlayer || !pPlayer->IsAuthed())
 			continue;
 
-		CQuestData& pPlayerQuest = pPlayer->GetQuest(QuestID);
-		if(pPlayerQuest.GetState() != QuestState::ACCEPT || m_Bot.m_Step != pPlayerQuest.m_Step)
+		CQuestData* pPlayerQuest = pPlayer->GetQuest(QuestID);
+		if(pPlayerQuest->GetState() != QuestState::ACCEPT || m_Bot.m_Step != pPlayerQuest->GetStep())
 			continue;
 
 		// skip complete steps and players who come out to clear the world of bots
-		if(pPlayerQuest.m_aPlayerSteps[SubBotID].m_StepComplete || pPlayerQuest.m_aPlayerSteps[SubBotID].m_ClientQuitting)
+		if(pPlayerQuest->m_aPlayerSteps[SubBotID].m_StepComplete || pPlayerQuest->m_aPlayerSteps[SubBotID].m_ClientQuitting)
 			continue;
 
 		return true;
@@ -253,17 +253,15 @@ void CPlayerQuestStepDataInfo::PostFinish(CPlayer* pPlayer)
 	const int QuestID = m_Bot.m_QuestID;
 	m_StepComplete = true;
 	DataBotInfo::ms_aDataBot[m_Bot.m_BotID].m_aVisibleActive[ClientID] = false;
-	CQuestData::ms_aPlayerQuests[ClientID][QuestID].SaveSteps();
 
-	CQuestData::ms_aPlayerQuests[ClientID][QuestID].CheckAvailableNewStep();
+	pPlayer->GetQuest(QuestID)->CheckAvailableNewStep();
 	pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
-	UpdateBot();
 }
 
 void CPlayerQuestStepDataInfo::AddMobProgress(CPlayer* pPlayer, int BotID)
 {
 	const int QuestID = m_Bot.m_QuestID;
-	if(m_Bot.m_RequiredDefeat.empty() || !pPlayer || DataBotInfo::ms_aDataBot.find(BotID) == DataBotInfo::ms_aDataBot.end() || pPlayer->GetQuest(QuestID).GetState() != QuestState::ACCEPT)
+	if(m_Bot.m_RequiredDefeat.empty() || !pPlayer || DataBotInfo::ms_aDataBot.find(BotID) == DataBotInfo::ms_aDataBot.end() || pPlayer->GetQuest(QuestID)->GetState() != QuestState::ACCEPT)
 		return;
 
 	int ClientID = pPlayer->GetCID();
@@ -279,7 +277,7 @@ void CPlayerQuestStepDataInfo::AddMobProgress(CPlayer* pPlayer, int BotID)
 		if(m_aMobProgress[BotID] >= p.m_Count)
 			pGS->Chat(ClientID, "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[BotID].m_aNameBot, m_Bot.GetName());
 
-		CQuestData::ms_aPlayerQuests[ClientID][QuestID].SaveSteps();
+		CQuestData::Data()[ClientID][QuestID].SaveSteps();
 		break;
 	}
 }
@@ -292,7 +290,7 @@ void CPlayerQuestStepDataInfo::CreateStepArrow(int ClientID)
 	if(!pPlayer || !pPlayer->GetCharacter() || m_StepComplete || !m_Bot.m_HasAction)
 		return;
 
-	if(pPlayer->GetQuest(m_Bot.m_QuestID).GetState() == QuestState::ACCEPT && pPlayer->GetQuest(m_Bot.m_QuestID).m_Step == m_Bot.m_Step)
+	if(pPlayer->GetQuest(m_Bot.m_QuestID)->GetState() == QuestState::ACCEPT && pPlayer->GetQuest(m_Bot.m_QuestID)->GetStep() == m_Bot.m_Step)
 		new CQuestPathFinder(&pGS->m_World, pPlayer->GetCharacter()->m_Core.m_Pos, ClientID, m_Bot);
 }
 

@@ -18,7 +18,7 @@ class CQuestManager : public MmoComponent
 	~CQuestManager() override
 	{
 		CQuestDataInfo::ms_aDataQuests.clear();
-		CQuestData::ms_aPlayerQuests.clear();
+		CQuestData::Data().clear();
 	}
 
 	void OnInit() override;
@@ -34,7 +34,7 @@ public:
 		{
 			if (ClientID < 0 || ClientID >= MAX_PLAYERS)
 				return true;
-			if (CQuestData::ms_aPlayerQuests[ClientID].find(QuestID) != CQuestData::ms_aPlayerQuests[ClientID].end())
+			if (CQuestData::Data()[ClientID].find(QuestID) != CQuestData::Data()[ClientID].end())
 				return true;
 		}
 		return false;

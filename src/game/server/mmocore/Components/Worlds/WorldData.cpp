@@ -28,7 +28,7 @@ void CWorldData::Move(CPlayer* pPlayer)
 
 	int ClientID = pPlayer->GetCID();
 	CWorldData* pSecondWorldData = pGS->GetWorldData(pSwapper->GetSecondWorldID());
-	if(pSecondWorldData && pSecondWorldData->GetRequiredQuest() && !pPlayer->GetQuest(pSecondWorldData->GetRequiredQuest()->m_QuestID).IsComplected())
+	if(pSecondWorldData && pSecondWorldData->GetRequiredQuest() && !pPlayer->GetQuest(pSecondWorldData->GetRequiredQuest()->m_QuestID)->IsComplected())
 	{
 		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Requires quest completion '{STR}'!", pSecondWorldData->GetRequiredQuest()->GetName());
 		return;

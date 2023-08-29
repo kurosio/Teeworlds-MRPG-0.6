@@ -748,11 +748,17 @@ CSkill* CPlayer::GetSkill(SkillIdentifier ID)
 	return &CSkill::Data()[m_ClientID][ID];
 }
 
-CQuestData& CPlayer::GetQuest(int QuestID)
+CQuestData* CPlayer::GetQuest(QuestIdentifier ID)
 {
-	CQuestData::ms_aPlayerQuests[m_ClientID][QuestID].m_QuestID = QuestID;
-	CQuestData::ms_aPlayerQuests[m_ClientID][QuestID].m_pPlayer = this;
-	return CQuestData::ms_aPlayerQuests[m_ClientID][QuestID];
+	dbg_assert(CQuestDataInfo::ms_aDataQuests.find(ID) != CQuestDataInfo::ms_aDataQuests.end(), "invalid referring to the CQuestData");
+
+	if(CQuestData::Data()[m_ClientID].find(ID) == CQuestData::Data()[m_ClientID].end())
+	{
+		CQuestData(ID, m_ClientID).Init({});
+		return &CQuestData::Data()[m_ClientID][ID];
+	}
+
+	return &CQuestData::Data()[m_ClientID][ID];
 }
 
 int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
