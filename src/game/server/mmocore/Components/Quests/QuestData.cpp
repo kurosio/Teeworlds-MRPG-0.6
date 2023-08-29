@@ -26,6 +26,7 @@ void CQuestData::InitSteps()
 	// initialized quest steps
 	m_Step = 1;
 	Info().InitPlayerDefaultSteps(m_StepsQuestBot);
+
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
 	for(auto& pStep : m_StepsQuestBot)
@@ -33,19 +34,27 @@ void CQuestData::InitSteps()
 		pStep.second.m_StepComplete = false;
 		pStep.second.m_ClientQuitting = false;
 
-		JsonQuestData["steps"].push_back(
+		if(pStep.second.m_Bot.m_HasAction)
 		{
-			{ "subbotid", pStep.second.m_Bot.m_SubBotID },
-			{ "state", pStep.second.m_StepComplete }
-		});
+			JsonQuestData["steps"].push_back(
+				{
+					{ "subbotid", pStep.second.m_Bot.m_SubBotID },
+					{ "state", pStep.second.m_StepComplete }
+				});
 
-		for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
-		{
-			JsonQuestData["steps"][0]["defeat"].push_back(
+			if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
 			{
-				{ "id", p.m_BotID },
-				{ "count", 0 },
-			});
+				for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
+				{
+					JsonQuestData["steps"].back()["defeat"].push_back(
+						{
+							{ "id", p.m_BotID },
+							{ "count", 0 },
+						});
+
+					pStep.second.m_aMobProgress[p.m_BotID] = 0;
+				}
+			}
 		}
 
 		pStep.second.UpdateBot();
@@ -118,18 +127,22 @@ void CQuestData::SaveSteps()
 	JsonQuestData["current_step"] = m_Step;
 	for(auto& pStep : m_StepsQuestBot)
 	{
-		JsonQuestData["steps"].push_back(
+		if(pStep.second.m_Bot.m_HasAction)
 		{
-			{ "subbotid", pStep.second.m_Bot.m_SubBotID },
-			{ "state", pStep.second.m_StepComplete }
-		});
-		for(auto& p : pStep.second.m_aMobProgress)
-		{
-			JsonQuestData["steps"][0]["defeat"].push_back(
+			JsonQuestData["steps"].push_back(
 				{
-					{ "id", p.first },
-					{ "count", p.second },
+					{ "subbotid", pStep.second.m_Bot.m_SubBotID },
+					{ "state", pStep.second.m_StepComplete }
 				});
+
+			for(auto& p : pStep.second.m_aMobProgress)
+			{
+				JsonQuestData["steps"].back()["defeat"].push_back(
+					{
+						{ "id", p.first },
+						{ "count", p.second },
+					});
+			}
 		}
 	}
 
