@@ -130,11 +130,11 @@ bool CQuestStepDataInfo::IsActiveStep(CGS* pGS) const
 			continue;
 
 		CQuestData* pPlayerQuest = pPlayer->GetQuest(QuestID);
-		if(pPlayerQuest->GetState() != QuestState::ACCEPT || m_Bot.m_Step != pPlayerQuest->GetStep())
+		if(pPlayerQuest->GetState() != QuestState::ACCEPT || m_Bot.m_Step != pPlayerQuest->GetCurrentStep())
 			continue;
 
 		// skip complete steps and players who come out to clear the world of bots
-		if(pPlayerQuest->m_aPlayerSteps[SubBotID].m_StepComplete || pPlayerQuest->m_aPlayerSteps[SubBotID].m_ClientQuitting)
+		if(pPlayerQuest->GetMobStep(SubBotID)->m_StepComplete || pPlayerQuest->GetMobStep(SubBotID)->m_ClientQuitting)
 			continue;
 
 		return true;
@@ -288,7 +288,7 @@ void CPlayerQuestStepDataInfo::CreateStepArrow(int ClientID)
 	if(!pPlayer || !pPlayer->GetCharacter() || m_StepComplete || !m_Bot.m_HasAction)
 		return;
 
-	if(pPlayer->GetQuest(m_Bot.m_QuestID)->GetState() == QuestState::ACCEPT && pPlayer->GetQuest(m_Bot.m_QuestID)->GetStep() == m_Bot.m_Step)
+	if(pPlayer->GetQuest(m_Bot.m_QuestID)->GetState() == QuestState::ACCEPT && pPlayer->GetQuest(m_Bot.m_QuestID)->GetCurrentStep() == m_Bot.m_Step)
 		new CQuestPathFinder(&pGS->m_World, pPlayer->GetCharacter()->m_Core.m_Pos, ClientID, m_Bot);
 }
 

@@ -272,7 +272,7 @@ void CQuestManager::AddMobProgressQuests(CPlayer* pPlayer, int BotID)
 
 		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
 		{
-			if(pPlayerQuest.second.GetStep() == pStepBot.second.m_Bot.m_Step)
+			if(pPlayerQuest.second.GetCurrentStep() == pStepBot.second.m_Bot.m_Step)
 				pStepBot.second.AddMobProgress(pPlayer, BotID);
 		}
 	}
