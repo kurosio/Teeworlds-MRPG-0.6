@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 #include <teeother/system/string.h>
 
-#include <game/server/mmocore/GameEntities/quest_path_finder.h>
+#include "Entities/quest_path_finder.h"
 #include <game/server/mmocore/GameEntities/Items/drop_quest_items.h>
 
 #include <game/server/mmocore/Components/Inventory/InventoryManager.h>
@@ -186,6 +186,7 @@ bool CPlayerQuestStep::Finish(CPlayer* pPlayer)
 	// quest completion
 	if(IsComplete(pPlayer))
 	{
+		m_StepComplete = true;
 		PostFinish(pPlayer);
 		return true;
 	}
@@ -199,6 +200,16 @@ void CPlayerQuestStep::PostFinish(CPlayer* pPlayer)
 	bool AntiStressing = false;
 	int ClientID = pPlayer->GetCID();
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+
+	// save file or dissable post finish
+	const int QuestID = m_Bot.m_QuestID;
+	if(!pPlayer->GetQuest(QuestID)->SaveSteps())
+	{
+		m_StepComplete = false;
+		pGS->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
+		dbg_msg("quest step", "[quest step post finish] can't save file.");
+		return;
+	}
 
 	// required item's
 	if(!m_Bot.m_RequiredItems.empty())
@@ -246,9 +257,7 @@ void CPlayerQuestStep::PostFinish(CPlayer* pPlayer)
 		}
 	}
 
-	// update state complete
-	const int QuestID = m_Bot.m_QuestID;
-	m_StepComplete = true;
+	// update bot status
 	DataBotInfo::ms_aDataBot[m_Bot.m_BotID].m_aVisibleActive[ClientID] = false;
 	UpdateBot();
 
@@ -283,16 +292,17 @@ void CPlayerQuestStep::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 	}
 }
 
-void CPlayerQuestStep::CreateStepArrow(int ClientID)
+void CPlayerQuestStep::UpdatePathNavigator(int ClientID)
 {
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
 
-	if(!pPlayer || !pPlayer->GetCharacter() || m_StepComplete || !m_Bot.m_HasAction)
+	if(m_StepComplete || m_ClientQuitting || !pPlayer || !pPlayer->GetCharacter() || !m_Bot.m_HasAction)
 		return;
 
-	if(pPlayer->GetQuest(m_Bot.m_QuestID)->GetState() == QuestState::ACCEPT && pPlayer->GetQuest(m_Bot.m_QuestID)->GetCurrentStep() == m_Bot.m_Step)
-		new CQuestPathFinder(&pGS->m_World, pPlayer->GetCharacter()->m_Core.m_Pos, ClientID, m_Bot);
+	CQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
+	if(pQuest->GetState() == QuestState::ACCEPT && pQuest->GetCurrentStep() == m_Bot.m_Step)
+		new CQuestPathFinder(&pGS->m_World, m_Bot.m_Position, ClientID, m_Bot);
 }
 
 void CPlayerQuestStep::CreateVarietyTypesRequiredItems(CPlayer* pPlayer)

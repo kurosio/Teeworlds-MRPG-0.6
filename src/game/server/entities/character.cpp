@@ -18,8 +18,6 @@
 #include <game/server/mmocore/GameEntities/jobitems.h>
 #include <game/server/mmocore/GameEntities/snapfull.h>
 
-#include "game/server/mmocore/GameEntities/quest_path_finder.h"
-
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 CCharacter::CCharacter(CGameWorld *pWorld)
@@ -78,7 +76,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	{
 		m_pPlayer->m_MoodState = m_pPlayer->GetMoodState();
 
-		GS()->Mmo()->Quest()->UpdateArrowStep(m_pPlayer);
+		GS()->Mmo()->Quest()->UpdatePathNavigator(m_pPlayer);
 		GS()->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer);
 
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
@@ -911,12 +909,6 @@ void CCharacter::Snap(int SnappingClient)
 
 	if(m_pPlayer->GetCID() == SnappingClient || SnappingClient == -1)
 	{
-		// snap quest pathfinder
-		for(const auto& p : m_pPlayer->m_aQuestPathFinders)
-		{
-			p->PathSnap(vec2(pCharacter->m_X, pCharacter->m_Y));
-		}
-
 		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo > 0)
 		{
 			const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);

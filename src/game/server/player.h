@@ -184,8 +184,6 @@ public:
 
 	void SetSnapHealthTick(int Sec);
 
-	std::deque<class CQuestPathFinder*> m_aQuestPathFinders;
-	
 	virtual const char* GetStatus() const;
 	virtual Mood GetMoodState() const { return Mood::NORMAL; }
 	void ChangeWorld(int WorldID);

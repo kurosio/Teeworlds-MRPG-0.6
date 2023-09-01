@@ -78,7 +78,7 @@ void CQuest::InitSteps()
 		}
 
 		pStep.second.UpdateBot();
-		pStep.second.CreateStepArrow(m_ClientID);
+		pStep.second.UpdatePathNavigator(m_ClientID);
 	}
 
 	// save file
@@ -137,16 +137,16 @@ void CQuest::LoadSteps()
 		if(!pStep.second.m_StepComplete)
 		{
 			pStep.second.UpdateBot();
-			pStep.second.CreateStepArrow(m_ClientID);
+			pStep.second.UpdatePathNavigator(m_ClientID);
 		}
 	}
 }
 
-void CQuest::SaveSteps()
+bool CQuest::SaveSteps()
 {
 	// only for accept state
 	if(m_State != QuestState::ACCEPT)
-		return;
+		return false;
 
 	// json structuring
 	nlohmann::json JsonQuestData;
@@ -175,11 +175,12 @@ void CQuest::SaveSteps()
 	// replace file
 	IOHANDLE File = io_open(GetJsonFileName().c_str(), IOFLAG_WRITE);
 	if(!File)
-		return;
+		return false;
 
 	std::string Data = JsonQuestData.dump();
 	io_write(File, Data.c_str(), (unsigned)Data.length());
 	io_close(File);
+	return true;
 }
 
 void CQuest::ClearSteps()
@@ -188,7 +189,7 @@ void CQuest::ClearSteps()
 	for(auto& pStepBot : m_aPlayerSteps)
 	{
 		pStepBot.second.UpdateBot();
-		pStepBot.second.CreateStepArrow(m_ClientID);
+		pStepBot.second.UpdatePathNavigator(m_ClientID);
 	}
 
 	// clear and remove temp user quest data
@@ -270,7 +271,7 @@ void CQuest::CheckAvailableNewStep()
 			FinalStep = false;
 
 		pStepBot.second.UpdateBot();
-		pStepBot.second.CreateStepArrow(m_ClientID);
+		pStepBot.second.UpdatePathNavigator(m_ClientID);
 	}
 
 	// finish the quest or update the step
@@ -282,9 +283,5 @@ void CQuest::CheckAvailableNewStep()
 
 		pGS->StrongUpdateVotes(m_ClientID, MENU_JOURNAL_MAIN);
 		pGS->StrongUpdateVotes(m_ClientID, MENU_MAIN);
-	}
-	else
-	{
-		SaveSteps();
 	}
 }

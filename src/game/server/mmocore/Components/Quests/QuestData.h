@@ -42,7 +42,7 @@ public:
 	CPlayerQuestStep* GetMobStep(int MobID) { return &m_aPlayerSteps[MobID]; }
 	void InitSteps();
 	void LoadSteps();
-	void SaveSteps();
+	bool SaveSteps();
 	void ClearSteps();
 
 	// main

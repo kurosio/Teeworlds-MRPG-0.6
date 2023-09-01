@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_ENTITIES_QUESTAI_H
 #define GAME_SERVER_ENTITIES_QUESTAI_H
+
 #include <game/server/entity.h>
 
 class CQuestPathFinder : public CEntity
@@ -15,9 +16,8 @@ public:
 
 	CQuestPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot);
 
-	void Reset() override;
 	void Tick() override;
-	void PathSnap(vec2 CorePos);
+	void Snap(int SnappingClient) override;
 	
 	int GetClientID() const { return m_ClientID; }
 };
