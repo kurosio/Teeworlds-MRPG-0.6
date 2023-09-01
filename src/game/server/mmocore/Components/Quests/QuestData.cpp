@@ -40,6 +40,7 @@ void CQuest::InitSteps()
 	m_Step = 1;
 	Info()->InitPlayerDefaultSteps(m_aPlayerSteps);
 
+	// json structuring
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
 	for(auto& pStep : m_aPlayerSteps)
@@ -61,10 +62,19 @@ void CQuest::InitSteps()
 							{ "id", p.m_BotID },
 							{ "count", 0 },
 						});
-
-					pStep.second.m_aMobProgress[p.m_BotID] = 0;
 				}
 			}
+		}
+
+	}
+
+	// update step bot's and pre init
+	for(auto& pStep : m_aPlayerSteps)
+	{
+		if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
+		{
+			for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
+				pStep.second.m_aMobProgress[p.m_BotID] = 0;
 		}
 
 		pStep.second.UpdateBot();
@@ -77,13 +87,14 @@ void CQuest::InitSteps()
 		return;
 
 	std::string Data = JsonQuestData.dump();
-	io_write(File, Data.c_str(), Data.length());
+	io_write(File, Data.c_str(), (unsigned)Data.length());
 	io_close(File);
 }
 
 void CQuest::LoadSteps()
 {
-	if(m_State != QuestState::ACCEPT || !GetPlayer())
+	// only for accept state
+	if(m_State != QuestState::ACCEPT)
 		return;
 
 	// loading file is not open pereinitilized steps
@@ -133,10 +144,11 @@ void CQuest::LoadSteps()
 
 void CQuest::SaveSteps()
 {
+	// only for accept state
 	if(m_State != QuestState::ACCEPT)
 		return;
 
-	// set json structure
+	// json structuring
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
 	for(auto& pStep : m_aPlayerSteps)
@@ -166,25 +178,27 @@ void CQuest::SaveSteps()
 		return;
 
 	std::string Data = JsonQuestData.dump();
-	io_write(File, Data.c_str(), Data.length());
+	io_write(File, Data.c_str(), (unsigned)Data.length());
 	io_close(File);
 }
 
 void CQuest::ClearSteps()
 {
+	// update status for bots
 	for(auto& pStepBot : m_aPlayerSteps)
 	{
 		pStepBot.second.UpdateBot();
 		pStepBot.second.CreateStepArrow(m_ClientID);
 	}
 
+	// clear and remove temp user quest data
 	m_aPlayerSteps.clear();
 	fs_remove(GetJsonFileName().c_str());
 }
 
 bool CQuest::Accept()
 {
-	if(m_State != QuestState::NO_ACCEPT)
+	if(m_State != QuestState::NO_ACCEPT || !GetPlayer())
 		return false;
 
 	int ClientID = GetPlayer()->GetCID();
@@ -209,7 +223,7 @@ bool CQuest::Accept()
 
 void CQuest::Finish()
 {
-	if(m_State != QuestState::ACCEPT)
+	if(m_State != QuestState::ACCEPT || !GetPlayer())
 		return;
 	
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(m_ClientID);
