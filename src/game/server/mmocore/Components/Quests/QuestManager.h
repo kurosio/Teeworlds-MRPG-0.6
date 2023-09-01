@@ -50,7 +50,7 @@ private:
 public:
 	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size);
 
-	void AddMobProgressQuests(CPlayer* pPlayer, int BotID);
+	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
 
 	void UpdateArrowStep(CPlayer *pPlayer);
 	void AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);

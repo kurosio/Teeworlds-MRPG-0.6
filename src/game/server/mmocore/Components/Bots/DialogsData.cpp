@@ -438,7 +438,7 @@ void CPlayerDialog::PostNext()
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-			pQuest->GetMobStep(m_MobID)->CreateStepDropTakeItems(m_pPlayer);
+			pQuest->GetMobStep(m_MobID)->CreateVarietyTypesRequiredItems(m_pPlayer);
 		}
 	}
 

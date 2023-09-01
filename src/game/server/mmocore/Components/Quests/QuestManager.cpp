@@ -260,22 +260,24 @@ void CQuestManager::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char
 	const int QuestID = pBot.m_QuestID;
 	CQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
 	if(pPlayerQuest->m_aPlayerSteps.find(pBot.m_SubBotID) != pPlayerQuest->m_aPlayerSteps.end())
-		pPlayerQuest->m_aPlayerSteps[pBot.m_SubBotID].ShowRequired(pPlayer, aBufQuestTask, Size);
+		pPlayerQuest->m_aPlayerSteps[pBot.m_SubBotID].FormatStringTasks(pPlayer, aBufQuestTask, Size);
 }
 
-void CQuestManager::AddMobProgressQuests(CPlayer* pPlayer, int BotID)
+void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
 	for(auto& pPlayerQuest : CQuest::Data()[ClientID])
 	{
+		// only for accepted quests
 		if(pPlayerQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
 
+		// check current steps and append
 		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
 		{
 			if(pPlayerQuest.second.GetCurrentStep() == pStepBot.second.m_Bot.m_Step)
-				pStepBot.second.AddMobProgress(pPlayer, BotID);
+				pStepBot.second.AppendDefeatProgress(pPlayer, DefeatedBotID);
 		}
 	}
 }

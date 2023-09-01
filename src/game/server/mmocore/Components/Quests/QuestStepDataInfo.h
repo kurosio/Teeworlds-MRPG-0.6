@@ -32,10 +32,10 @@ public:
 	bool Finish(CPlayer* pPlayer);
 	void PostFinish(CPlayer* pPlayer);
 
-	void AddMobProgress(CPlayer* pPlayer, int BotID);
+	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
 	void CreateStepArrow(int ClientID);
-	void CreateStepDropTakeItems(CPlayer* pPlayer);
-	void ShowRequired(CPlayer* pPlayer, char* aBufQuestTask, int Size);
+	void CreateVarietyTypesRequiredItems(CPlayer* pPlayer);
+	void FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, int Size);
 };
 
 #endif

@@ -195,7 +195,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// quest mob progress
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
-		GS()->Mmo()->Quest()->AddMobProgressQuests(pPlayer, BotID);
+		GS()->Mmo()->Quest()->AppendDefeatProgress(pPlayer, BotID);
 
 	// reduce afk farming
 	if(pPlayer->IsAfk())

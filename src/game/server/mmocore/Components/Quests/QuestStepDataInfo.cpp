@@ -256,26 +256,29 @@ void CPlayerQuestStep::PostFinish(CPlayer* pPlayer)
 	pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
 }
 
-void CPlayerQuestStep::AddMobProgress(CPlayer* pPlayer, int BotID)
+void CPlayerQuestStep::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 {
+	if(m_Bot.m_RequiredDefeat.empty() || !pPlayer || DataBotInfo::IsDataBotValid(DefeatedBotID))
+		return;
+
 	const int QuestID = m_Bot.m_QuestID;
-	if(m_Bot.m_RequiredDefeat.empty() || !pPlayer || DataBotInfo::ms_aDataBot.find(BotID) == DataBotInfo::ms_aDataBot.end() || pPlayer->GetQuest(QuestID)->GetState() != QuestState::ACCEPT)
+	if(pPlayer->GetQuest(QuestID)->GetState() != QuestState::ACCEPT)
 		return;
 
 	int ClientID = pPlayer->GetCID();
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
 	// check complecte mob
-	for(auto& p : m_Bot.m_RequiredDefeat)
+	for(auto& [m_BotID, m_Count] : m_Bot.m_RequiredDefeat)
 	{
-		if(BotID != p.m_BotID || m_aMobProgress[BotID] >= p.m_Count)
+		if(DefeatedBotID != m_BotID || m_aMobProgress[DefeatedBotID] >= m_Count)
 			continue;
 
-		m_aMobProgress[BotID]++;
-		if(m_aMobProgress[BotID] >= p.m_Count)
-			pGS->Chat(ClientID, "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[BotID].m_aNameBot, m_Bot.GetName());
+		m_aMobProgress[DefeatedBotID]++;
+		if(m_aMobProgress[DefeatedBotID] >= m_Count)
+			pGS->Chat(ClientID, "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
 
-		CQuest::Data()[ClientID][QuestID].SaveSteps();
+		pPlayer->GetQuest(QuestID)->SaveSteps();
 		break;
 	}
 }
@@ -292,27 +295,30 @@ void CPlayerQuestStep::CreateStepArrow(int ClientID)
 		new CQuestPathFinder(&pGS->m_World, pPlayer->GetCharacter()->m_Core.m_Pos, ClientID, m_Bot);
 }
 
-void CPlayerQuestStep::CreateStepDropTakeItems(CPlayer* pPlayer)
+void CPlayerQuestStep::CreateVarietyTypesRequiredItems(CPlayer* pPlayer)
 {
-	if(!pPlayer || !pPlayer->GetCharacter() || m_Bot.m_RequiredItems.empty())
+	if(m_Bot.m_RequiredItems.empty() || !pPlayer || !pPlayer->GetCharacter())
 		return;
 
 	const int ClientID = pPlayer->GetCID();
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 	for(auto& [m_ItemID, m_Count, m_Type] : m_Bot.m_RequiredItems)
 	{
+		// Drop and pickup type
 		if(m_Type == QuestBotInfo::TaskRequiredItems::Type::PICKUP)
 		{
+			// check whether items are already available for pickup
 			for(CDropQuestItem* pHh = (CDropQuestItem*)pGS->m_World.FindFirst(CGameWorld::ENTTYPE_DROPQUEST); pHh; pHh = (CDropQuestItem*)pHh->TypeNext())
 			{
 				if(pHh->m_ClientID == ClientID && pHh->m_QuestID == m_Bot.m_QuestID && pHh->m_ItemID == m_ItemID && pHh->m_Step == m_Bot.m_Step)
 					return;
 			}
 
+			// create items
 			const int Value = 3 + m_Count;
 			for(int i = 0; i < Value; i++)
 			{
-				vec2 Vel = vec2(frandom() * 40.0f - frandom() * 80.0f, frandom() * 40.0f - frandom() * 80.0f);
+				vec2 Vel = vec2(frandom_num(-40.0f, 40.0f), frandom_num(-40.0f, 40.0f));
 				float AngleForce = Vel.x * (0.15f + frandom() * 0.1f);
 				new CDropQuestItem(&pGS->m_World, m_Bot.m_Position, Vel, AngleForce, m_ItemID, m_Count, m_Bot.m_QuestID, m_Bot.m_Step, ClientID);
 			}
@@ -321,7 +327,7 @@ void CPlayerQuestStep::CreateStepDropTakeItems(CPlayer* pPlayer)
 }
 
 
-void CPlayerQuestStep::ShowRequired(CPlayer* pPlayer, char* aBufQuestTask, int Size)
+void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, int Size)
 {
 	dynamic_string Buffer("\n\n");
 	CGS* pGS = pPlayer->GS();
