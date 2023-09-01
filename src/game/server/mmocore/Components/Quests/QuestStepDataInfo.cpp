@@ -186,9 +186,25 @@ bool CPlayerQuestStep::Finish(CPlayer* pPlayer)
 	// quest completion
 	if(IsComplete(pPlayer))
 	{
+		const int QuestID = m_Bot.m_QuestID;
+		int ClientID = pPlayer->GetCID();
+		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+
+		// save file or dissable post finish
 		m_StepComplete = true;
-		PostFinish(pPlayer);
-		return true;
+		if(!pPlayer->GetQuest(QuestID)->SaveSteps())
+		{
+			pGS->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
+			dbg_msg("quest step", "[quest step post finish] can't save file.");
+			m_StepComplete = false;
+		}
+
+		if(m_StepComplete)
+		{
+			PostFinish(pPlayer);
+		}
+
+		return m_StepComplete;
 	}
 
 	// quest not yet completed
@@ -199,17 +215,8 @@ void CPlayerQuestStep::PostFinish(CPlayer* pPlayer)
 {
 	bool AntiStressing = false;
 	int ClientID = pPlayer->GetCID();
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
-
-	// save file or dissable post finish
 	const int QuestID = m_Bot.m_QuestID;
-	if(!pPlayer->GetQuest(QuestID)->SaveSteps())
-	{
-		m_StepComplete = false;
-		pGS->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
-		dbg_msg("quest step", "[quest step post finish] can't save file.");
-		return;
-	}
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
 	// required item's
 	if(!m_Bot.m_RequiredItems.empty())
@@ -267,7 +274,7 @@ void CPlayerQuestStep::PostFinish(CPlayer* pPlayer)
 
 void CPlayerQuestStep::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 {
-	if(m_Bot.m_RequiredDefeat.empty() || !pPlayer || DataBotInfo::IsDataBotValid(DefeatedBotID))
+	if(m_Bot.m_RequiredDefeat.empty() || !pPlayer || !DataBotInfo::IsDataBotValid(DefeatedBotID))
 		return;
 
 	const int QuestID = m_Bot.m_QuestID;

@@ -284,4 +284,8 @@ void CQuest::CheckAvailableNewStep()
 		pGS->StrongUpdateVotes(m_ClientID, MENU_JOURNAL_MAIN);
 		pGS->StrongUpdateVotes(m_ClientID, MENU_MAIN);
 	}
+	else
+	{
+		SaveSteps();
+	}
 }
