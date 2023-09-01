@@ -15,7 +15,7 @@ void CQuestManager::OnInit()
 		int Gold = pRes->getInt("Money");
 		int Exp = pRes->getInt("Exp");
 		
-		CQuestDataInfo(ID).Init(Name, Story, Gold, Exp);
+		CQuestDescription(ID).Init(Name, Story, Gold, Exp);
 	}
 }
 
@@ -28,13 +28,13 @@ void CQuestManager::OnInitAccount(CPlayer* pPlayer)
 		QuestIdentifier ID = pRes->getInt("QuestID");
 		QuestState State = (QuestState)pRes->getInt("Type");
 
-		CQuestData(ID, ClientID).Init(State);
+		CQuest(ID, ClientID).Init(State);
 	}
 }
 
 void CQuestManager::OnResetClient(int ClientID)
 {
-	for(auto& qp : CQuestData::Data()[ClientID])
+	for(auto& qp : CQuest::Data()[ClientID])
 	{
 		for(auto& pStepBot : qp.second.m_aPlayerSteps)
 		{
@@ -43,7 +43,7 @@ void CQuestManager::OnResetClient(int ClientID)
 		}
 	}
 
-	CQuestData::Data().erase(ClientID);
+	CQuest::Data().erase(ClientID);
 }
 
 bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
@@ -83,7 +83,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
 
 		const int QuestID = pPlayer->m_TempMenuValue;
-		CQuestDataInfo* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
+		CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 
 		pPlayer->GS()->Mmo()->Quest()->ShowQuestsActiveNPC(pPlayer, QuestID);
 		pPlayer->GS()->AV(ClientID, "null");
@@ -116,7 +116,7 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 	int ClientID = pPlayer->GetCID();
 
 	// information
-	const int TotalQuests = CQuestDataInfo::Data().size();
+	const int TotalQuests = CQuestDescription::Data().size();
 	const int TotalComplectedQuests = GetClientComplectedQuestsSize(ClientID);
 	const int TotalIncomplectedQuests = TotalQuests - TotalComplectedQuests;
 	GS()->AVH(ClientID, TAB_INFO_STATISTIC_QUESTS, "Quests statistic");
@@ -141,7 +141,7 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 	// check first quest story step
 	bool IsEmptyList = true;
 	std::list < std::string /*stories was checked*/ > StoriesChecked;
-	for(const auto& [ID, pQuestInfo] : CQuestDataInfo::Data())
+	for(const auto& [ID, pQuestInfo] : CQuestDescription::Data())
 	{
 		if(pPlayer->GetQuest(ID)->GetState() != State)
 			continue;
@@ -159,7 +159,7 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 		});
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
-			StoriesChecked.emplace_back(CQuestDataInfo::Data()[ID].GetStory());
+			StoriesChecked.emplace_back(CQuestDescription::Data()[ID].GetStory());
 			ShowQuestID(pPlayer, ID);
 			IsEmptyList = false;
 		}
@@ -175,7 +175,7 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 
 void CQuestManager::ShowQuestID(CPlayer *pPlayer, int QuestID)
 {
-	CQuestDataInfo* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
+	CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 	const int ClientID = pPlayer->GetCID();
 	const int QuestsSize = pQuestInfo->GetQuestStorySize();
 	const int QuestPosition = pQuestInfo->GetQuestStoryPosition();
@@ -187,11 +187,11 @@ void CQuestManager::ShowQuestID(CPlayer *pPlayer, int QuestID)
 // active npc information display
 void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 {
-	CQuestData* pPlayerQuest = pPlayer->GetQuest(QuestID);
+	CQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
 	const int ClientID = pPlayer->GetCID();
 	GS()->AVM(ClientID, "null", NOPE, NOPE, "Active NPC for current quests");
 
-	for(auto& pStepBot : CQuestDataInfo::Data()[QuestID].m_StepsQuestBot)
+	for(auto& pStepBot : CQuestDescription::Data()[QuestID].m_StepsQuestBot)
 	{
 		const QuestBotInfo& BotInfo = pStepBot.second.m_Bot;
 		if(!BotInfo.m_HasAction)
@@ -199,7 +199,7 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 
 		const int HideID = (NUM_TAB_MENU + BotInfo.m_SubBotID);
 		const vec2 Pos = BotInfo.m_Position / 32.0f;
-		CPlayerQuestStepDataInfo& rQuestStepDataInfo = pPlayerQuest->m_aPlayerSteps[pStepBot.first];
+		CPlayerQuestStep& rQuestStepDataInfo = pPlayerQuest->m_aPlayerSteps[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest->GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest->GetState() == QuestState::FINISHED) ? "✔ " : "\0");
 
 		GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
@@ -258,7 +258,7 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 void CQuestManager::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size)
 {
 	const int QuestID = pBot.m_QuestID;
-	CQuestData* pPlayerQuest = pPlayer->GetQuest(QuestID);
+	CQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
 	if(pPlayerQuest->m_aPlayerSteps.find(pBot.m_SubBotID) != pPlayerQuest->m_aPlayerSteps.end())
 		pPlayerQuest->m_aPlayerSteps[pBot.m_SubBotID].ShowRequired(pPlayer, aBufQuestTask, Size);
 }
@@ -267,7 +267,7 @@ void CQuestManager::AddMobProgressQuests(CPlayer* pPlayer, int BotID)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
-	for(auto& pPlayerQuest : CQuestData::Data()[ClientID])
+	for(auto& pPlayerQuest : CQuest::Data()[ClientID])
 	{
 		if(pPlayerQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
@@ -284,7 +284,7 @@ void CQuestManager::UpdateArrowStep(CPlayer *pPlayer)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
-	for (auto& pPlayerQuest : CQuestData::Data()[ClientID])
+	for (auto& pPlayerQuest : CQuest::Data()[ClientID])
 	{
 		if(pPlayerQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
@@ -296,8 +296,8 @@ void CQuestManager::UpdateArrowStep(CPlayer *pPlayer)
 
 void CQuestManager::AcceptNextStoryQuest(CPlayer *pPlayer, int CheckQuestID)
 {
-	const CQuestDataInfo CheckingQuest = CQuestDataInfo::Data()[CheckQuestID];
-	for (auto pQuestData = CQuestDataInfo::Data().find(CheckQuestID); pQuestData != CQuestDataInfo::Data().end(); pQuestData++)
+	const CQuestDescription CheckingQuest = CQuestDescription::Data()[CheckQuestID];
+	for (auto pQuestData = CQuestDescription::Data().find(CheckQuestID); pQuestData != CQuestDescription::Data().end(); pQuestData++)
 	{
 		// search next quest story step
 		if(str_comp_nocase(CheckingQuest.GetStory(), pQuestData->second.GetStory()) == 0)
@@ -317,7 +317,7 @@ void CQuestManager::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 {
 	// check first quest story step search active quests
 	std::list < std::string /*stories was checked*/ > StoriesChecked;
-	for(const auto& pPlayerQuest : CQuestData::Data()[pPlayer->GetCID()])
+	for(const auto& pPlayerQuest : CQuest::Data()[pPlayer->GetCID()])
 	{
 		// allow accept next story quest only for complected some quest on story
 		if(pPlayerQuest.second.GetState() != QuestState::FINISHED)
@@ -325,10 +325,10 @@ void CQuestManager::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 
 		// accept next story quest
 		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), [=](const std::string& stories)
-		{ return (str_comp_nocase(CQuestDataInfo::Data()[pPlayerQuest.first].GetStory(), stories.c_str()) == 0); });
+		{ return (str_comp_nocase(CQuestDescription::Data()[pPlayerQuest.first].GetStory(), stories.c_str()) == 0); });
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
-			StoriesChecked.emplace_front(CQuestDataInfo::Data()[pPlayerQuest.first].GetStory());
+			StoriesChecked.emplace_front(CQuestDescription::Data()[pPlayerQuest.first].GetStory());
 			AcceptNextStoryQuest(pPlayer, pPlayerQuest.first);
 		}
 	}
@@ -338,7 +338,7 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
 {
 	const int ClientID = pPlayer->GetCID();
 	int AvailableValue = pPlayer->GetItem(ItemID)->GetValue();
-	for (const auto& pPlayerQuest : CQuestData::Data()[ClientID])
+	for (const auto& pPlayerQuest : CQuest::Data()[ClientID])
 	{
 		if(pPlayerQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
@@ -356,7 +356,7 @@ int CQuestManager::GetClientComplectedQuestsSize(int ClientID) const
 {
 	int Total = 0;
 
-	for(auto& [QuestID, Data] : CQuestData::Data()[ClientID])
+	for(auto& [QuestID, Data] : CQuest::Data()[ClientID])
 	{
 		if(Data.IsComplected())
 			Total++;

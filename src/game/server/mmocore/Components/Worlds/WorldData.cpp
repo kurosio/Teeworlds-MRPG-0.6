@@ -47,10 +47,10 @@ CWorldSwapData* CWorldData::GetSwapperByPos(vec2 Pos)
 	return nullptr;
 }
 
-CQuestDataInfo* CWorldData::GetRequiredQuest() const
+CQuestDescription* CWorldData::GetRequiredQuest() const
 {
-	if(CQuestDataInfo::Data().find(m_RequiredQuestID) != CQuestDataInfo::Data().end())
-		return &CQuestDataInfo::Data()[m_RequiredQuestID];
+	if(CQuestDescription::Data().find(m_RequiredQuestID) != CQuestDescription::Data().end())
+		return &CQuestDescription::Data()[m_RequiredQuestID];
 	return nullptr;
 }
 

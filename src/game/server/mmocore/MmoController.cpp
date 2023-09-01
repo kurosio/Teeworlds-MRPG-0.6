@@ -608,7 +608,7 @@ void MmoController::ConAsyncLinesForTranslate()
 			PushingDialogs(JsonData, pItem.second.GetBoostName(), "skbn", pItem.first);
 		}
 
-		for(auto& pItem : CQuestDataInfo::Data())
+		for(auto& pItem : CQuestDescription::Data())
 		{
 			PushingDialogs(JsonData, pItem.second.GetName(), "qudn", pItem.first);
 			PushingDialogs(JsonData, pItem.second.GetStory(), "qusn", pItem.first);

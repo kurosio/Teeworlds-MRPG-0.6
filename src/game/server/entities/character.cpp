@@ -1273,7 +1273,7 @@ bool CCharacter::CheckAllowedWorld() const
 {
 	if(Server()->Tick() % Server()->TickSpeed() * 3 == 0 && m_pPlayer->IsAuthed())
 	{
-		CQuestDataInfo* pQuestInfo = GS()->GetWorldData()->GetRequiredQuest();
+		CQuestDescription* pQuestInfo = GS()->GetWorldData()->GetRequiredQuest();
 		if(pQuestInfo && !m_pPlayer->GetQuest(pQuestInfo->GetID())->IsComplected())
 		{
 			const int CheckHouseID = GS()->Mmo()->Member()->GetPosHouseID(m_Core.m_Pos);

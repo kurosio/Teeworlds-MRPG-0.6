@@ -17,8 +17,8 @@ class CQuestManager : public MmoComponent
 {
 	~CQuestManager() override
 	{
-		CQuestDataInfo::Data().clear();
-		CQuestData::Data().clear();
+		CQuestDescription::Data().clear();
+		CQuest::Data().clear();
 	}
 
 	void OnInit() override;
@@ -30,11 +30,11 @@ class CQuestManager : public MmoComponent
 public:
 	bool IsValidQuest(int QuestID, int ClientID = -1) const
 	{
-		if (CQuestDataInfo::Data().find(QuestID) != CQuestDataInfo::Data().end())
+		if (CQuestDescription::Data().find(QuestID) != CQuestDescription::Data().end())
 		{
 			if (ClientID < 0 || ClientID >= MAX_PLAYERS)
 				return true;
-			if (CQuestData::Data()[ClientID].find(QuestID) != CQuestData::Data()[ClientID].end())
+			if (CQuest::Data()[ClientID].find(QuestID) != CQuest::Data()[ClientID].end())
 				return true;
 		}
 		return false;

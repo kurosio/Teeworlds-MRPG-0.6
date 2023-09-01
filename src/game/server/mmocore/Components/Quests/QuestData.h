@@ -5,9 +5,9 @@
 
 #include "QuestDataInfo.h"
 
-using ContainerPlayerQuestSteps = std::map < int, CPlayerQuestStepDataInfo >;
+using ContainerPlayerQuestSteps = std::map < int, CPlayerQuestStep >;
 
-class CQuestData : public MultiworldIdentifiableStaticData< std::map < int, std::map <int, CQuestData > > >
+class CQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map <int, CQuest > > >
 {
 	int m_ClientID {};
 	QuestIdentifier m_ID {};
@@ -21,17 +21,17 @@ class CQuestData : public MultiworldIdentifiableStaticData< std::map < int, std:
 public:
 	friend class CQuestManager;
 
-	CQuestData() = default;
-	CQuestData(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
+	CQuest() = default;
+	CQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
 
 	void Init(QuestState State)
 	{
 		m_State = State;
-		CQuestData::m_pData[m_ClientID][m_ID] = *this;
-		CQuestData::m_pData[m_ClientID][m_ID].LoadSteps();
+		CQuest::m_pData[m_ClientID][m_ID] = *this;
+		CQuest::m_pData[m_ClientID][m_ID].LoadSteps();
 	}
 
-	CQuestDataInfo* Info() const;
+	CQuestDescription* Info() const;
 	std::string GetJsonFileName() const;
 	QuestIdentifier GetID() const { return m_ID; }
 	QuestState GetState() const { return m_State; }
@@ -39,7 +39,7 @@ public:
 
 	// steps
 	int GetCurrentStep() const { return m_Step; }
-	CPlayerQuestStepDataInfo* GetMobStep(int MobID) { return &m_aPlayerSteps[MobID]; }
+	CPlayerQuestStep* GetMobStep(int MobID) { return &m_aPlayerSteps[MobID]; }
 	void InitSteps();
 	void LoadSteps();
 	void SaveSteps();

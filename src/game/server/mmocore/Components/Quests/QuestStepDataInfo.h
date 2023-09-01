@@ -10,7 +10,7 @@ class CPlayer;
 
 // ##############################################################
 // ################# GLOBAL STEP STRUCTURE ######################
-class CQuestStepDataInfo
+class CQuestStepDescription
 {
 public:
 	QuestBotInfo m_Bot{};
@@ -20,7 +20,7 @@ public:
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
-class CPlayerQuestStepDataInfo : public CQuestStepDataInfo
+class CPlayerQuestStep : public CQuestStepDescription
 {
 public:
 	std::unordered_map < int, int > m_aMobProgress{};

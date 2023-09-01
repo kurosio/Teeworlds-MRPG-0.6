@@ -20,7 +20,7 @@ int CAccountManager::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 	{
 		if(GS()->GetWorldData(WorldID))
 		{
-			CQuestDataInfo* pQuestInfo = GS()->GetWorldData(WorldID)->GetRequiredQuest();
+			CQuestDescription* pQuestInfo = GS()->GetWorldData(WorldID)->GetRequiredQuest();
 			return !Job()->Dungeon()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->GetID())->IsComplected()) || !pQuestInfo);
 		}
 		return false;

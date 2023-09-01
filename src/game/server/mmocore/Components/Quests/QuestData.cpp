@@ -7,12 +7,12 @@
 #include <game/server/mmocore/Components/Dungeons/DungeonManager.h>
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 
-CGS* CQuestData::GS() const
+CGS* CQuest::GS() const
 {
 	return (CGS*)Server()->GameServerPlayer(m_ClientID);
 }
 
-CPlayer* CQuestData::GetPlayer() const
+CPlayer* CQuest::GetPlayer() const
 {
 	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
 	{
@@ -21,10 +21,10 @@ CPlayer* CQuestData::GetPlayer() const
 	return nullptr;
 }
 
-CQuestDataInfo* CQuestData::Info() const { return &CQuestDataInfo::Data()[m_ID]; }
-std::string CQuestData::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_UserID); }
+CQuestDescription* CQuest::Info() const { return &CQuestDescription::Data()[m_ID]; }
+std::string CQuest::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_UserID); }
 
-void CQuestData::InitSteps()
+void CQuest::InitSteps()
 {
 	if(m_State != QuestState::ACCEPT || !GetPlayer())
 		return;
@@ -81,7 +81,7 @@ void CQuestData::InitSteps()
 	io_close(File);
 }
 
-void CQuestData::LoadSteps()
+void CQuest::LoadSteps()
 {
 	if(m_State != QuestState::ACCEPT || !GetPlayer())
 		return;
@@ -131,7 +131,7 @@ void CQuestData::LoadSteps()
 	}
 }
 
-void CQuestData::SaveSteps()
+void CQuest::SaveSteps()
 {
 	if(m_State != QuestState::ACCEPT)
 		return;
@@ -170,7 +170,7 @@ void CQuestData::SaveSteps()
 	io_close(File);
 }
 
-void CQuestData::ClearSteps()
+void CQuest::ClearSteps()
 {
 	for(auto& pStepBot : m_aPlayerSteps)
 	{
@@ -182,7 +182,7 @@ void CQuestData::ClearSteps()
 	fs_remove(GetJsonFileName().c_str());
 }
 
-bool CQuestData::Accept()
+bool CQuest::Accept()
 {
 	if(m_State != QuestState::NO_ACCEPT)
 		return false;
@@ -207,7 +207,7 @@ bool CQuestData::Accept()
 	return true;
 }
 
-void CQuestData::Finish()
+void CQuest::Finish()
 {
 	if(m_State != QuestState::ACCEPT)
 		return;
@@ -239,10 +239,10 @@ void CQuestData::Finish()
 	pGS->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 70), vec2(0, -0.5), 30, "COMPLECTED");
 }
 
-void CQuestData::CheckAvailableNewStep()
+void CQuest::CheckAvailableNewStep()
 {
 	// check whether the active steps is complete
-	if(std::find_if(m_aPlayerSteps.begin(), m_aPlayerSteps.end(), [this](std::pair <const int, CPlayerQuestStepDataInfo> &p)
+	if(std::find_if(m_aPlayerSteps.begin(), m_aPlayerSteps.end(), [this](std::pair <const int, CPlayerQuestStep> &p)
 	{ return (p.second.m_Bot.m_Step == m_Step && !p.second.m_StepComplete && p.second.m_Bot.m_HasAction); }) != m_aPlayerSteps.end())
 		return;
 

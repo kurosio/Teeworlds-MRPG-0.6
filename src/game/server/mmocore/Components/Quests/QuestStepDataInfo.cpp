@@ -86,7 +86,7 @@
  *		int m_Count;
  *	}
  */
-void CQuestStepDataInfo::UpdateBot()
+void CQuestStepDescription::UpdateBot()
 {
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServer(m_Bot.m_WorldID);
 	if(!pGS)
@@ -119,7 +119,7 @@ void CQuestStepDataInfo::UpdateBot()
 	}
 }
 
-bool CQuestStepDataInfo::IsActiveStep(CGS* pGS) const
+bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 {
 	const int QuestID = m_Bot.m_QuestID;
 	const int SubBotID = m_Bot.m_SubBotID;
@@ -129,7 +129,7 @@ bool CQuestStepDataInfo::IsActiveStep(CGS* pGS) const
 		if(!pPlayer || !pPlayer->IsAuthed())
 			continue;
 
-		CQuestData* pPlayerQuest = pPlayer->GetQuest(QuestID);
+		CQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
 		if(pPlayerQuest->GetState() != QuestState::ACCEPT || m_Bot.m_Step != pPlayerQuest->GetCurrentStep())
 			continue;
 
@@ -144,7 +144,7 @@ bool CQuestStepDataInfo::IsActiveStep(CGS* pGS) const
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
-int CPlayerQuestStepDataInfo::GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const
+int CPlayerQuestStep::GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const
 {
 	if(!m_Bot.m_RequiredItems.empty())
 	{
@@ -159,7 +159,7 @@ int CPlayerQuestStepDataInfo::GetValueBlockedItem(CPlayer* pPlayer, int ItemID) 
 	return 0;
 }
 
-bool CPlayerQuestStepDataInfo::IsComplete(CPlayer* pPlayer)
+bool CPlayerQuestStep::IsComplete(CPlayer* pPlayer)
 {
 	if(!m_Bot.m_RequiredItems.empty())
 	{
@@ -181,7 +181,7 @@ bool CPlayerQuestStepDataInfo::IsComplete(CPlayer* pPlayer)
 	return true; 
 }
 
-bool CPlayerQuestStepDataInfo::Finish(CPlayer* pPlayer)
+bool CPlayerQuestStep::Finish(CPlayer* pPlayer)
 {
 	// quest completion
 	if(IsComplete(pPlayer))
@@ -194,7 +194,7 @@ bool CPlayerQuestStepDataInfo::Finish(CPlayer* pPlayer)
 	return false;
 }
 
-void CPlayerQuestStepDataInfo::PostFinish(CPlayer* pPlayer)
+void CPlayerQuestStep::PostFinish(CPlayer* pPlayer)
 {
 	bool AntiStressing = false;
 	int ClientID = pPlayer->GetCID();
@@ -256,7 +256,7 @@ void CPlayerQuestStepDataInfo::PostFinish(CPlayer* pPlayer)
 	pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
 }
 
-void CPlayerQuestStepDataInfo::AddMobProgress(CPlayer* pPlayer, int BotID)
+void CPlayerQuestStep::AddMobProgress(CPlayer* pPlayer, int BotID)
 {
 	const int QuestID = m_Bot.m_QuestID;
 	if(m_Bot.m_RequiredDefeat.empty() || !pPlayer || DataBotInfo::ms_aDataBot.find(BotID) == DataBotInfo::ms_aDataBot.end() || pPlayer->GetQuest(QuestID)->GetState() != QuestState::ACCEPT)
@@ -275,12 +275,12 @@ void CPlayerQuestStepDataInfo::AddMobProgress(CPlayer* pPlayer, int BotID)
 		if(m_aMobProgress[BotID] >= p.m_Count)
 			pGS->Chat(ClientID, "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[BotID].m_aNameBot, m_Bot.GetName());
 
-		CQuestData::Data()[ClientID][QuestID].SaveSteps();
+		CQuest::Data()[ClientID][QuestID].SaveSteps();
 		break;
 	}
 }
 
-void CPlayerQuestStepDataInfo::CreateStepArrow(int ClientID)
+void CPlayerQuestStep::CreateStepArrow(int ClientID)
 {
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
@@ -292,7 +292,7 @@ void CPlayerQuestStepDataInfo::CreateStepArrow(int ClientID)
 		new CQuestPathFinder(&pGS->m_World, pPlayer->GetCharacter()->m_Core.m_Pos, ClientID, m_Bot);
 }
 
-void CPlayerQuestStepDataInfo::CreateStepDropTakeItems(CPlayer* pPlayer)
+void CPlayerQuestStep::CreateStepDropTakeItems(CPlayer* pPlayer)
 {
 	if(!pPlayer || !pPlayer->GetCharacter() || m_Bot.m_RequiredItems.empty())
 		return;
@@ -321,7 +321,7 @@ void CPlayerQuestStepDataInfo::CreateStepDropTakeItems(CPlayer* pPlayer)
 }
 
 
-void CPlayerQuestStepDataInfo::ShowRequired(CPlayer* pPlayer, char* aBufQuestTask, int Size)
+void CPlayerQuestStep::ShowRequired(CPlayer* pPlayer, char* aBufQuestTask, int Size)
 {
 	dynamic_string Buffer("\n\n");
 	CGS* pGS = pPlayer->GS();

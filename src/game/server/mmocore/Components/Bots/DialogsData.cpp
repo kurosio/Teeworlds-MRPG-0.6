@@ -380,7 +380,7 @@ void CPlayerDialog::Next()
 		{
 			int ClientID = m_pPlayer->GetCID();
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CQuestData* pQuest = m_pPlayer->GetQuest(QuestID);
+			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 
 			if(!pQuest->GetMobStep(m_MobID)->IsComplete(m_pPlayer))
 			{
@@ -437,7 +437,7 @@ void CPlayerDialog::PostNext()
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CQuestData* pQuest = m_pPlayer->GetQuest(QuestID);
+			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 			pQuest->GetMobStep(m_MobID)->CreateStepDropTakeItems(m_pPlayer);
 		}
 	}

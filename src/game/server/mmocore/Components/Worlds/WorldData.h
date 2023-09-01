@@ -59,7 +59,7 @@ public:
 
 	WorldIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_aName; }
-	class CQuestDataInfo* GetRequiredQuest() const;
+	class CQuestDescription* GetRequiredQuest() const;
 	CWorldData* GetRespawnWorld() ;
 	CWorldSwapData* GetSwapperByPos(vec2 Pos);
 	std::deque <CWorldSwapData>& GetSwappers() { return m_Swappers; }
