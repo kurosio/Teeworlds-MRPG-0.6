@@ -246,7 +246,7 @@ void IGameController::UpdateGameInfo(int ClientID)
 
 bool IGameController::CanSpawn(int SpawnType, vec2 *pOutPos, std::pair<vec2, float> LimiterSpread) const
 {
-	if(SpawnType < SPAWN_HUMAN || SpawnType >= SPAWN_NUM || GS()->m_World.m_ResetRequested)
+	if(SpawnType < SPAWN_HUMAN || SpawnType >= SPAWN_NUM)
 		return false;
 
 	CSpawnEval Eval;

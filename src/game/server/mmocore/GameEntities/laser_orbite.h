@@ -7,7 +7,7 @@
 class CLaserOrbite : public CEntity
 {
 public:
-	CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius);
+	CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int64 Mask);
 
 	void Destroy() override;
 	void Tick() override;
@@ -19,6 +19,7 @@ private:
 	int m_ClientID {};
 	float m_MoveSpeed{};
 	float m_Radius{};
+	int64 m_Mask{};
 	CEntity* m_pEntParent{};
 
 	vec2 UtilityOrbitePos(int PosID) const;

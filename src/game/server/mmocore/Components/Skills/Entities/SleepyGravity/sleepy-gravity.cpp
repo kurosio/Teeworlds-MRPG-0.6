@@ -23,7 +23,7 @@ CSleepyGravity::~CSleepyGravity()
 		Server()->SnapFreeID(m_IDs[i]);
 }
 
-void CSleepyGravity::Reset()
+void CSleepyGravity::Destroy()
 {
 	if(m_pPlayer && m_pPlayer->GetCharacter())
 		GS()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
@@ -35,7 +35,7 @@ void CSleepyGravity::Tick()
 {
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !m_LifeSpan)
 	{
-		Reset();
+		Destroy();
 		return;
 	}
 

@@ -10,7 +10,7 @@ public:
 	CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CCharacter* pPlayerChar, int SkillBonus);
 
 	void Snap(int SnappingClient) override;
-	void Reset() override;
+	void Destroy() override;
 	void Tick() override;
 
 private:

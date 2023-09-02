@@ -27,7 +27,7 @@ CHealthHealer::~CHealthHealer()
 		Server()->SnapFreeID(m_IDs[i]);
 }
 
-void CHealthHealer::Reset()
+void CHealthHealer::Destroy()
 {
 	// if the player is eating, we create effects
 	if(m_pPlayer && m_pPlayer->GetCharacter())

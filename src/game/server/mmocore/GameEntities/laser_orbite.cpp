@@ -4,9 +4,10 @@
 
 #include <game/server/gamecontext.h>
 
-CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius)
+CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int64 Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f)), m_MoveType(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_Radius(Radius), m_pEntParent(pEntParent)
 {
+	m_Mask = Mask;
 	GameWorld()->InsertEntity(this);
 	m_IDs.set_size(Amount);
 	for(int i = 0; i < m_IDs.size(); i++)
@@ -50,7 +51,7 @@ vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const
 
 void CLaserOrbite::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient, m_Pos))
+	if(NetworkClipped(SnappingClient, m_Pos) || !CmaskIsSet(m_Mask, SnappingClient))
 		return;
 
 	if(const CPlayer* pPlayer = GS()->GetPlayer(m_ClientID); pPlayer && pPlayer->IsVisibleForClient(SnappingClient) != 2)

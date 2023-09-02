@@ -14,7 +14,6 @@ CGameWorld::CGameWorld(): m_pNextTraverseEntity(nullptr), m_Paused(false)
 	m_pGS = nullptr;
 	m_pServer = nullptr;
 
-	m_ResetRequested = false;
 	for (int i = 0; i < NUM_ENTTYPES; i++)
 		m_apFirstEntityTypes[i] = nullptr;
 }
@@ -142,24 +141,6 @@ void CGameWorld::PostSnap()
 		}
 }
 
-void CGameWorld::Reset()
-{
-	// reset all entities
-	for(int i = 0; i < NUM_ENTTYPES; i++)
-		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
-		{
-			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-			pEnt->Reset();
-			pEnt = m_pNextTraverseEntity;
-		}
-	RemoveEntities();
-
-	GS()->m_pController->OnReset();
-	RemoveEntities();
-
-	m_ResetRequested = false;
-}
-
 void CGameWorld::RemoveEntities()
 {
 	// destroy objects marked for destruction
@@ -179,9 +160,6 @@ void CGameWorld::RemoveEntities()
 
 void CGameWorld::Tick()
 {
-	if(m_ResetRequested)
-		Reset();
-
 	// update all objects
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 		for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )

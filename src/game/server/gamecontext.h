@@ -231,8 +231,8 @@ public:
 	void SendInbox(const char* pFrom, CPlayer *pPlayer, const char* Name, const char* Desc, ItemIdentifier ItemID = -1, int Value = -1, int Enchant = -1);
 	void SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, ItemIdentifier ItemID = -1, int Value = -1, int Enchant = -1);
 
-	void CreateLaserOrbite(class CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius);
-	void CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius);
+	void CreateLaserOrbite(class CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int64 Mask = -1);
+	void CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int64 Mask = -1);
 
 private:
 	void SendDayInfo(int ClientID);

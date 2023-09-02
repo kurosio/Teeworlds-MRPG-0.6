@@ -19,7 +19,7 @@ public:
 	~CHealthHealer() override;
 
 	void Snap(int SnappingClient) override;
-	void Reset() override;
+	void Destroy() override;
 	void Tick() override;
 
 private:

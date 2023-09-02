@@ -58,7 +58,6 @@ public:
 	};
 
 private:
-	void Reset();
 	void RemoveEntities();
 
 	CEntity *m_pNextTraverseEntity;
