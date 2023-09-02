@@ -14,9 +14,9 @@ CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, vec2 Pos, int ClientID, int
 	m_QuestID = QuestID;
 	m_pComplete = pComplete;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
-	GS()->CreateLaserOrbite(&m_Pos, 4, EntLaserOrbiteType::DEFAULT, 0.0f, 80.0f);
-
 	GameWorld()->InsertEntity(this);
+
+	GS()->CreateLaserOrbite(&m_Pos, 4, EntLaserOrbiteType::DEFAULT, 0.0f, 80.0f);
 }
 
 void CEntityMoveTo::Reset()

@@ -441,15 +441,14 @@ void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, 
 
 int CPlayerQuestStep::GetMoveToCurrentStep() const
 {
-	int Position = -1;
-	for(auto& p : m_Bot.m_RequiredMoveTo)
+	for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
 	{
-		Position++;
-		if(m_aMoveToProgress[Position])
+		if(m_aMoveToProgress[i])
 			continue;
 
-		return p.m_Step;
+		return m_Bot.m_RequiredMoveTo[i].m_Step;
 	}
+
 	return 1;
 }
 
