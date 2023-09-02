@@ -63,8 +63,8 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 		{
 			for(auto& p : pJson["reward_items"])
 			{
-				int ItemID = p.value("id", -1);
-				int Count = p.value("count", -1);
+				const int ItemID = p.value("id", -1);
+				const int Count = p.value("count", -1);
 				if(ItemID > 0 && Count > 0)
 				{
 					m_RewardItems.push_back({ ItemID, Count });
@@ -77,8 +77,8 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 		{
 			for(auto& p : pJson["defeat_bots"])
 			{
-				int BotID = p.value("id", -1);
-				int Count = p.value("count", -1);
+				const int BotID = p.value("id", -1);
+				const int Count = p.value("count", -1);
 				if(BotID > 0 && Count > 0)
 				{
 					m_RequiredDefeat.push_back({ BotID, Count });
@@ -92,16 +92,18 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 			int LatestBiggerStep = 1;
 			for(auto& p : pJson["move_to"])
 			{
-				vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
-				int WorldID = p.value("world_id", m_WorldID);
-				int Step = p.value("step", 1);
-				bool PathNavigator = p.value("navigator", true);
+				const vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
+				const int WorldID = p.value("world_id", m_WorldID);
+				const int Step = p.value("step", 1);
+				const int CollectItemID = p.value("collect_item_id", -1);
+				const bool PathNavigator = p.value("navigator", true);
+
 				if(Step > LatestBiggerStep)
 					LatestBiggerStep = Step;
 
 				if(Position.x > 0.f && Position.y > 0.f)
 				{
-					m_RequiredMoveTo.push_back({ Position, WorldID, LatestBiggerStep, PathNavigator });
+					m_RequiredMoveTo.push_back({ Position, WorldID, LatestBiggerStep, CollectItemID, PathNavigator });
 				}
 			}
 		}

@@ -11,14 +11,17 @@ public:
 	bool* m_pComplete;
 	int m_ClientID;
 	int m_QuestID;
+	int m_CollectItemID;
 	class CPlayer* m_pPlayer;
+	std::deque < CEntityMoveTo* >* m_apCollection;
 
-	CEntityMoveTo(CGameWorld* pGameWorld, vec2 Pos, int ClientID, int QuestID, bool *pComplete);
+	CEntityMoveTo(CGameWorld* pGameWorld, vec2 Pos, int ClientID, int QuestID, int CollectItemID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection);
 
-	void Reset() override;
+	void Destroy() override;
 	void Tick() override;
 	void Snap(int SnappingClient) override;
-	
+
+	bool PickItem() const;
 	int GetClientID() const { return m_ClientID; }
 };
 

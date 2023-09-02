@@ -12,9 +12,11 @@ public:
 	int m_WorldID;
 	bool* m_pComplete;
 	class CPlayer* m_pPlayer;
+	std::deque < CEntityPathFinder* >* m_apCollection;
 
-	CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int WorldID, int ClientID, bool* pComplete);
+	CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection);
 
+	void Destroy() override;
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 	

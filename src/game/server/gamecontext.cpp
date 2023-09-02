@@ -1943,10 +1943,10 @@ void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const ch
 	Mmo()->Inbox()->SendInbox(pFrom, AccountID, Name, Desc, ItemID, Value, Enchant);
 }
 
-void CGS::CreateLaserOrbite(vec2* pAttachedPos, int Amount, EntLaserOrbiteType Type, float Speed, float Radius)
+void CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius)
 {
-	if(pAttachedPos)
-		new CLaserOrbite(&m_World, -1, pAttachedPos, Amount, Type, Speed, Radius);
+	if(pEntParent)
+		new CLaserOrbite(&m_World, -1, pEntParent, Amount, Type, Speed, Radius);
 }
 
 void CGS::CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius)

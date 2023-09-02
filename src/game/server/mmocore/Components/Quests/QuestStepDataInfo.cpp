@@ -345,7 +345,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo(int ClientID)
 
 			// add entity path navigator
 			if(pRequired.m_PathNavigator)
-				AddEntityNavigator(ClientID, pRequired.m_PositionTo, pRequired.m_WorldID, &m_aMoveToProgress[i]);
+				AddEntityNavigator(ClientID, pRequired.m_Position, pRequired.m_WorldID, &m_aMoveToProgress[i]);
 		}
 	}
 }
@@ -472,7 +472,7 @@ CEntityPathFinder* CPlayerQuestStep::FoundEntityNavigator(vec2 Position) const
 {
 	for(const auto& pPath : m_apEntitiesNavigator)
 	{
-		if(pPath && pPath->GetPos() == Position)
+		if(pPath && pPath->GetPosTo() == Position)
 			return pPath;
 	}
 
@@ -485,9 +485,9 @@ CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(int ClientID, const QuestBotInf
 		return nullptr;
 
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
-	CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pTaskMoveTo->m_PositionTo);
+	CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pTaskMoveTo->m_Position);
 	if(!pEntMoveTo)
-		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&pGS->m_World, pTaskMoveTo->m_PositionTo, ClientID, m_Bot.m_QuestID, pComplete));
+		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&pGS->m_World, pTaskMoveTo->m_Position, ClientID, m_Bot.m_QuestID, pTaskMoveTo->m_CollectItemID, pComplete, &m_apEntitiesMoveTo));
 
 	return pEntMoveTo;
 }
@@ -500,7 +500,7 @@ CEntityPathFinder* CPlayerQuestStep::AddEntityNavigator(int ClientID, vec2 Posit
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 	CEntityPathFinder* pEntMoveToFinder = FoundEntityNavigator(Position);
 	if(!pEntMoveToFinder)
-		pEntMoveToFinder = m_apEntitiesNavigator.emplace_back(new CEntityPathFinder(&pGS->m_World, Position, WorldID, ClientID, pComplete));
+		pEntMoveToFinder = m_apEntitiesNavigator.emplace_back(new CEntityPathFinder(&pGS->m_World, Position, WorldID, ClientID, pComplete, &m_apEntitiesNavigator));
 
 	return pEntMoveToFinder;
 }

@@ -4,19 +4,16 @@
 
 #include <game/server/gamecontext.h>
 
-CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, vec2* pAttachedPos, int Amount, EntLaserOrbiteType Type, float Speed, float Radius)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f)), m_MoveType(Type), m_ClientID(ClientID), m_MoveSpeed(Speed), m_Radius(Radius), m_pAttachedPos(pAttachedPos)
+CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f)), m_MoveType(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_Radius(Radius), m_pEntParent(pEntParent)
 {
 	GameWorld()->InsertEntity(this);
 	m_IDs.set_size(Amount);
 	for(int i = 0; i < m_IDs.size(); i++)
 		m_IDs[i] = Server()->SnapNewID();
-
-	if(const CPlayer* pPlayer = GS()->GetPlayer(ClientID, false, true))
-		m_pAttachedPos = &pPlayer->GetCharacter()->m_Core.m_Pos;
 }
 
-void CLaserOrbite::Reset()
+void CLaserOrbite::Destroy()
 {
 	for(int i = 0; i < m_IDs.size(); i++)
 		Server()->SnapFreeID(m_IDs[i]);
@@ -26,13 +23,17 @@ void CLaserOrbite::Reset()
 
 void CLaserOrbite::Tick()
 {
-	if(m_pAttachedPos == nullptr || (m_ClientID >= 0 && !GS()->GetPlayer(m_ClientID, false, true)))
+	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID, false, true);
+	if((m_ClientID < 0 && (m_pEntParent == nullptr || m_pEntParent->IsMarkedForDestroy())) || (m_ClientID >= 0 && !pPlayer))
 	{
-		Reset();
+		Destroy();
 		return;
 	}
 
-	m_Pos = *m_pAttachedPos;
+	if(m_pEntParent)
+		m_Pos = m_pEntParent->GetPos();
+	else if(m_ClientID >= 0 && pPlayer)
+		m_Pos = pPlayer->GetCharacter()->m_Core.m_Pos;
 }
 
 vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const
@@ -49,16 +50,16 @@ vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const
 
 void CLaserOrbite::Snap(int SnappingClient)
 {
-	if(!m_pAttachedPos || NetworkClipped(SnappingClient, *m_pAttachedPos))
+	if(NetworkClipped(SnappingClient, m_Pos))
 		return;
 
 	if(const CPlayer* pPlayer = GS()->GetPlayer(m_ClientID); pPlayer && pPlayer->IsVisibleForClient(SnappingClient) != 2)
 		return;
 
-	vec2 LastPosition = *m_pAttachedPos + UtilityOrbitePos(m_IDs.size() - 1);
+	vec2 LastPosition = m_Pos + UtilityOrbitePos(m_IDs.size() - 1);
 	for(int i = 0; i < m_IDs.size(); i++)
 	{
-		vec2 PosStart = *m_pAttachedPos + UtilityOrbitePos(i);
+		vec2 PosStart = m_Pos + UtilityOrbitePos(i);
 
 		CNetObj_Laser* pObj = static_cast<CNetObj_Laser*>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_IDs[i], sizeof(CNetObj_Laser)));
 		if(!pObj)

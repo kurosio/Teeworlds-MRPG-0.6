@@ -1,12 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <game/server/mmocore/Components/Bots/BotData.h>
 #include "path_finder.h"
 
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 #include <game/server/gamecontext.h>
 
-CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int WorldID, int ClientID, bool* pComplete)
+CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, Pos)
 {
 	vec2 GetterPos{0,0};
@@ -17,22 +16,36 @@ CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int World
 	m_WorldID = WorldID;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_pComplete = pComplete;
+	m_apCollection = apCollection;
 
 	GameWorld()->InsertEntity(this);
+}
+
+void CEntityPathFinder::Destroy()
+{
+	for(auto it = m_apCollection->begin(); it != m_apCollection->end(); ++it)
+	{
+		if(mem_comp((*it), this, sizeof(CEntityPathFinder)) == 0)
+		{
+			m_apCollection->erase(it);
+			break;
+		}
+	}
+	GS()->m_World.DestroyEntity(this);
 }
 
 void CEntityPathFinder::Tick()
 {
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !total_size_vec2(m_PosTo))
 	{
-		GS()->m_World.DestroyEntity(this);
+		Destroy();
 		return;
 	}
 	
 	if (!m_pComplete || (*m_pComplete) == true)
 	{
 		GS()->CreatePlayerSpawn(m_Pos, CmaskOne(m_ClientID));
-		GS()->m_World.DestroyEntity(this);
+		Destroy();
 	}
 }
 
