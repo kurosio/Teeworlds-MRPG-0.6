@@ -60,6 +60,13 @@ public:
 	std::string m_EventJsonData{};
 	std::vector<CDialogElem> m_aDialogs {};
 
+	struct RewardItems
+	{
+		int m_ItemID;
+		int m_Count;
+	};
+	std::deque < RewardItems > m_RewardItems;
+
 	struct TaskRequiredItems
 	{
 		enum class Type : short
@@ -69,28 +76,30 @@ public:
 			SHOW,
 		};
 
-		int m_ItemID;
-		int m_Count;
-		Type m_Type;
+		int m_ItemID{};
+		int m_Count{};
+		Type m_Type{};
 	};
 	std::deque < TaskRequiredItems > m_RequiredItems;
 
-	struct RewardItems
-	{
-		int m_ItemID;
-		int m_Count;
-	};
-	std::deque < RewardItems > m_RewardItems;
-
 	struct TaskRequiredDefeat
 	{
-		int m_BotID;
-		int m_Count;
+		int m_BotID{};
+		int m_Count{};
 	};
 	std::deque < TaskRequiredDefeat > m_RequiredDefeat;
 
+	struct TaskRequiredMoveTo
+	{
+		vec2 m_PositionTo{};
+		bool m_PathNavigator{};
+	};
+	std::deque < TaskRequiredMoveTo > m_RequiredMoveTo;
+
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }
+	void InitTasks(std::string JsonData);
+
 	static std::map<int, QuestBotInfo> ms_aQuestBot;
 };
 
