@@ -64,6 +64,18 @@ void CQuest::InitSteps()
 						});
 				}
 			}
+
+			if(!pStep.second.m_Bot.m_RequiredMoveTo.empty())
+			{
+				for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
+				{
+					JsonQuestData["steps"].back()["move_to"].push_back(
+						{
+							{ "complete", false },
+						});
+				}
+
+			}
 		}
 
 	}
@@ -76,9 +88,10 @@ void CQuest::InitSteps()
 			for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
 				pStep.second.m_aMobProgress[p.m_BotID] = 0;
 		}
+		int MoveToElementsSize = pStep.second.m_Bot.m_RequiredMoveTo.size();
+		pStep.second.m_aMoveToProgress.resize(MoveToElementsSize, false);
 
-		pStep.second.UpdateBot();
-		pStep.second.UpdatePathNavigator(m_ClientID);
+		pStep.second.Update(m_ClientID);
 	}
 
 	// save file
@@ -122,13 +135,22 @@ void CQuest::LoadSteps()
 	{
 		const int SubBotID = pStep.value("subbotid", 0);
 		m_aPlayerSteps[SubBotID].m_StepComplete = pStep.value("state", false);
-		m_aPlayerSteps[SubBotID].m_ClientQuitting = false;
-
-		if(m_aPlayerSteps[SubBotID].m_StepComplete || pStep.find("defeat") == pStep.end())
+		if(m_aPlayerSteps[SubBotID].m_StepComplete)
 			continue;
 
-		for(auto& p : pStep["defeat"])
-			m_aPlayerSteps[SubBotID].m_aMobProgress[p.value("id", 0)] = p.value("count", 0);
+		if(pStep.find("defeat") != pStep.end())
+		{
+			for(auto& p : pStep["defeat"])
+				m_aPlayerSteps[SubBotID].m_aMobProgress[p.value("id", 0)] = p.value("count", 0);
+		}
+
+		if(pStep.find("move_to") != pStep.end())
+		{
+			for(auto& p : pStep["move_to"])
+				m_aPlayerSteps[SubBotID].m_aMoveToProgress.push_back(p.value("complete", false));
+		}
+
+		m_aPlayerSteps[SubBotID].m_ClientQuitting = false;
 	}
 
 	// update step bot's
@@ -136,8 +158,7 @@ void CQuest::LoadSteps()
 	{
 		if(!pStep.second.m_StepComplete)
 		{
-			pStep.second.UpdateBot();
-			pStep.second.UpdatePathNavigator(m_ClientID);
+			pStep.second.Update(m_ClientID);
 		}
 	}
 }
@@ -169,6 +190,14 @@ bool CQuest::SaveSteps()
 						{ "count", p.second },
 					});
 			}
+
+			for(auto& p : pStep.second.m_aMoveToProgress)
+			{
+				JsonQuestData["steps"].back()["move_to"].push_back(
+					{
+						{ "complete", p },
+					});
+			}
 		}
 	}
 
@@ -186,10 +215,9 @@ bool CQuest::SaveSteps()
 void CQuest::ClearSteps()
 {
 	// update status for bots
-	for(auto& pStepBot : m_aPlayerSteps)
+	for(auto& pStep : m_aPlayerSteps)
 	{
-		pStepBot.second.UpdateBot();
-		pStepBot.second.UpdatePathNavigator(m_ClientID);
+		pStep.second.Update(m_ClientID);
 	}
 
 	// clear and remove temp user quest data
@@ -270,8 +298,7 @@ void CQuest::CheckAvailableNewStep()
 		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot.m_HasAction)
 			FinalStep = false;
 
-		pStepBot.second.UpdateBot();
-		pStepBot.second.UpdatePathNavigator(m_ClientID);
+		pStepBot.second.Update(m_ClientID);
 	}
 
 	// finish the quest or update the step

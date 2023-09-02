@@ -23,7 +23,9 @@ public:
 class CPlayerQuestStep : public CQuestStepDescription
 {
 public:
-	std::unordered_map < int, int > m_aMobProgress{};
+	std::unordered_map < int /*BotID*/, int/*Count*/ > m_aMobProgress { };
+	std::deque < bool > m_aMoveToProgress{};
+
 	bool m_StepComplete{};
 	bool m_ClientQuitting{};
 
@@ -36,6 +38,8 @@ public:
 	void UpdatePathNavigator(int ClientID);
 	void CreateVarietyTypesRequiredItems(CPlayer* pPlayer);
 	void FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, int Size);
+
+	void Update(int ClientID);
 };
 
 #endif

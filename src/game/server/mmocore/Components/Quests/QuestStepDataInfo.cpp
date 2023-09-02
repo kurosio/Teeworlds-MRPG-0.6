@@ -178,6 +178,16 @@ bool CPlayerQuestStep::IsComplete(CPlayer* pPlayer)
 				return false;
 		}
 	}
+
+	if(!m_aMoveToProgress.empty())
+	{
+		for(auto& pComplete : m_aMoveToProgress)
+		{
+			if(!pComplete)
+				return false;
+		}
+	}
+
 	return true; 
 }
 
@@ -385,4 +395,10 @@ void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, 
 
 	str_copy(aBufQuestTask, Buffer.buffer(), Size);
 	Buffer.clear();
+}
+
+void CPlayerQuestStep::Update(int ClientID)
+{
+	UpdateBot();
+	UpdatePathNavigator(ClientID);
 }
