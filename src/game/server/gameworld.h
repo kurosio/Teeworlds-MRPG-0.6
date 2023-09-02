@@ -37,6 +37,9 @@ public:
 		// unused
 		ENTTYPE_EVENTS,
 
+		// quest
+		ENTTYPE_MOVE_TO,
+
 		// door's
 		ENTTYPE_DUNGEON_DOOR,
 		ENTTYPE_DUNGEON_PROGRESS_DOOR,

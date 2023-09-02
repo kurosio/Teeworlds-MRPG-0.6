@@ -382,7 +382,7 @@ void CPlayerDialog::Next()
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 
-			if(!pQuest->GetMobStep(m_MobID)->IsComplete(m_pPlayer))
+			if(!pQuest->GetStepByMob(m_MobID)->IsComplete(m_pPlayer))
 			{
 				GS()->Chat(ClientID, "Task has not been completed yet!");
 				pDialog->Show(GS(), ClientID);
@@ -419,7 +419,7 @@ void CPlayerDialog::PostNext()
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			RunEndDialogEvent = m_pPlayer->GetQuest(QuestID)->GetMobStep(m_MobID)->Finish(m_pPlayer);
+			RunEndDialogEvent = m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish(m_pPlayer);
 		}
 
 		// clear and run post events
@@ -438,7 +438,7 @@ void CPlayerDialog::PostNext()
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-			pQuest->GetMobStep(m_MobID)->CreateVarietyTypesRequiredItems(m_pPlayer);
+			pQuest->GetStepByMob(m_MobID)->CreateVarietyTypesRequiredItems(m_pPlayer);
 		}
 	}
 

@@ -15,6 +15,7 @@ public:
 
 	CEntityMoveTo(CGameWorld* pGameWorld, vec2 Pos, int ClientID, int QuestID, bool *pComplete);
 
+	void Reset() override;
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 	

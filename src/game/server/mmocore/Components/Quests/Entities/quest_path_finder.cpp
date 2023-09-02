@@ -6,7 +6,7 @@
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 #include <game/server/gamecontext.h>
 
-CQuestPathFinder::CQuestPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot)
+CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, Pos)
 {
 	vec2 GetterPos{0,0};
@@ -21,7 +21,7 @@ CQuestPathFinder::CQuestPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientI
 	GameWorld()->InsertEntity(this);
 }
 
-void CQuestPathFinder::Tick()
+void CStepPathFinder::Tick()
 {
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !total_size_vec2(m_PosTo))
 	{
@@ -32,14 +32,14 @@ void CQuestPathFinder::Tick()
 	const int QuestID = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_QuestID;
 	const int Step = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_Step;
 	CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-	if (pQuest->GetCurrentStep() != Step || pQuest->GetState() != QuestState::ACCEPT || pQuest->GetMobStep(m_SubBotID)->m_StepComplete || pQuest->GetMobStep(m_SubBotID)->m_ClientQuitting)
+	if (pQuest->GetCurrentStep() != Step || pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepByMob(m_SubBotID)->m_StepComplete || pQuest->GetStepByMob(m_SubBotID)->m_ClientQuitting)
 	{
 		GS()->CreateDeath(m_Pos, m_ClientID);
 		GS()->m_World.DestroyEntity(this);
 	}
 }
 
-void CQuestPathFinder::Snap(int SnappingClient)
+void CStepPathFinder::Snap(int SnappingClient)
 {
 	if(m_ClientID != SnappingClient || !m_pPlayer || !m_pPlayer->GetCharacter())
 		return;

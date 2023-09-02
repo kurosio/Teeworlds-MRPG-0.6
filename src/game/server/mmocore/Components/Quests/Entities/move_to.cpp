@@ -4,8 +4,10 @@
 
 #include <game/server/gamecontext.h>
 
+#include "game/server/mmocore/Components/Quests/QuestManager.h"
+
 CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, vec2 Pos, int ClientID, int QuestID, bool* pComplete)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, Pos)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, Pos)
 {
 	m_Pos = Pos;
 	m_ClientID = ClientID;
@@ -17,11 +19,21 @@ CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, vec2 Pos, int ClientID, int
 	GameWorld()->InsertEntity(this);
 }
 
+void CEntityMoveTo::Reset()
+{
+	if(m_pPlayer && m_pPlayer->GetCharacter())
+	{
+		GS()->Mmo()->Quest()->UpdateSteps(m_pPlayer);
+	}
+	GS()->m_World.DestroyEntity(this);
+}
+
+
 void CEntityMoveTo::Tick()
 {
-	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !total_size_vec2(m_PosTo) || !m_pComplete)
+	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !total_size_vec2(m_PosTo) || !m_pComplete || (*m_pComplete == true))
 	{
-		GS()->m_World.DestroyEntity(this);
+		Reset();
 		return;
 	}
 
@@ -30,7 +42,7 @@ void CEntityMoveTo::Tick()
 		(*m_pComplete) = true;
 		m_pPlayer->GetQuest(m_QuestID)->SaveSteps();
 		GS()->CreateDeath(m_Pos, m_ClientID);
-		GS()->m_World.DestroyEntity(this);
+		Reset();
 	}
 }
 

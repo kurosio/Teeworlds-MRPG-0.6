@@ -9,6 +9,7 @@ class CEntityPathFinder : public CEntity
 {
 public:
 	int m_ClientID;
+	int m_WorldID;
 	bool* m_pComplete;
 	class CPlayer* m_pPlayer;
 

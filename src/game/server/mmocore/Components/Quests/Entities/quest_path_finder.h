@@ -5,7 +5,7 @@
 
 #include <game/server/entity.h>
 
-class CQuestPathFinder : public CEntity
+class CStepPathFinder : public CEntity
 {
 	bool m_MainScenario;
 
@@ -14,7 +14,7 @@ public:
 	int m_SubBotID;
 	class CPlayer* m_pPlayer;
 
-	CQuestPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot);
+	CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

@@ -7,6 +7,8 @@
 #include <game/server/mmocore/Components/Dungeons/DungeonManager.h>
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 
+#include "Entities/quest_path_finder.h"
+
 CGS* CQuest::GS() const
 {
 	return (CGS*)Server()->GameServerPlayer(m_ClientID);
@@ -314,4 +316,27 @@ void CQuest::CheckAvailableNewStep()
 	{
 		SaveSteps();
 	}
+}
+
+CStepPathFinder* CQuest::FoundEntityMobNavigator(int SubBotID) const
+{
+	for(const auto& pEnt : m_apEntityMobNavigator)
+	{
+		if(pEnt && pEnt->m_SubBotID == SubBotID)
+			return pEnt;
+	}
+
+	return nullptr;
+}
+
+CStepPathFinder* CQuest::AddEntityMobNavigator(QuestBotInfo* pBot)
+{
+	if(!pBot)
+		return nullptr;
+
+	CStepPathFinder* pPathFinder = FoundEntityMobNavigator(pBot->m_SubBotID);
+	if(!pPathFinder)
+		pPathFinder = m_apEntityMobNavigator.emplace_back(new CStepPathFinder(&GS()->m_World, pBot->m_Position, m_ClientID, *pBot));
+
+	return pPathFinder;
 }

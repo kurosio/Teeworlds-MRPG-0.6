@@ -5,15 +5,15 @@
 
 #include "QuestDataInfo.h"
 
-using ContainerPlayerQuestSteps = std::map < int, CPlayerQuestStep >;
-
 class CQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map <int, CQuest > > >
 {
 	int m_ClientID {};
 	QuestIdentifier m_ID {};
 	QuestState m_State {};
 	int m_Step {};
-	ContainerPlayerQuestSteps m_aPlayerSteps {};
+
+	std::map < int, CPlayerQuestStep > m_aPlayerSteps {};
+	std::deque < class CStepPathFinder* > m_apEntityMobNavigator{};
 
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
@@ -38,12 +38,16 @@ public:
 	bool IsComplected() const { return m_State == QuestState::FINISHED; }
 
 	// steps
-	int GetCurrentStep() const { return m_Step; }
-	CPlayerQuestStep* GetMobStep(int MobID) { return &m_aPlayerSteps[MobID]; }
 	void InitSteps();
 	void LoadSteps();
 	bool SaveSteps();
 	void ClearSteps();
+	int GetCurrentStep() const { return m_Step; }
+	CPlayerQuestStep* GetStepByMob(int MobID) { return &m_aPlayerSteps[MobID]; }
+
+	// steps path finder tools
+	class CStepPathFinder* FoundEntityMobNavigator(int SubBotID) const;
+	class CStepPathFinder* AddEntityMobNavigator(class QuestBotInfo* pBot);
 
 	// main
 	void CheckAvailableNewStep();

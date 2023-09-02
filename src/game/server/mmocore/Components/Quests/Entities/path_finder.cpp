@@ -14,6 +14,7 @@ CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int World
 
 	m_PosTo = GetterPos;
 	m_ClientID = ClientID;
+	m_WorldID = WorldID;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_pComplete = pComplete;
 

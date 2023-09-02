@@ -24,12 +24,11 @@ class CPlayerQuestStep : public CQuestStepDescription
 {
 public:
 	std::unordered_map < int /*BotID*/, int/*Count*/ > m_aMobProgress { };
-	std::deque < bool > m_aMoveToProgress{};
+	std::deque < bool /* State */ > m_aMoveToProgress { };
 
 	bool m_StepComplete{};
 	bool m_ClientQuitting{};
 
-	int GetCountMoveToComplected();
 	int GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const;
 	bool IsComplete(CPlayer* pPlayer);
 	bool Finish(CPlayer* pPlayer);
@@ -43,6 +42,17 @@ public:
 	void UpdateTaskMoveTo(int ClientID);
 	void Update(int ClientID);
 
+	int GetMoveToCurrentStep() const;
+	int GetCountMoveToComplected();
+
+	// steps path finder tools
+	std::deque < class CEntityMoveTo* > m_apEntitiesMoveTo {};
+	std::deque < class CEntityPathFinder* > m_apEntitiesNavigator {};
+
+	CEntityMoveTo* FoundEntityMoveTo(vec2 Position) const;
+	CEntityPathFinder* FoundEntityNavigator(vec2 Position) const;
+	CEntityMoveTo* AddEntityMoveTo(int ClientID, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete);
+	CEntityPathFinder* AddEntityNavigator(int ClientID, vec2 Position, int WorldID, bool* pComplete);
 };
 
 #endif
