@@ -92,11 +92,12 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 			for(auto& p : pJson["move_to"])
 			{
 				vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
-				bool PathNavigator = p.value("navigator", false);
+				int WorldID = p.value("world_id", m_WorldID);
+				bool PathNavigator = p.value("navigator", true);
 
 				if(Position.x > 0.f && Position.y > 0.f)
 				{
-					m_RequiredMoveTo.push_back({ Position, PathNavigator });
+					m_RequiredMoveTo.push_back({ Position, WorldID, PathNavigator });
 				}
 			}
 		}

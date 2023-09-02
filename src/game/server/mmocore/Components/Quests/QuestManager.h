@@ -52,7 +52,7 @@ public:
 
 	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
 
-	void UpdatePathNavigator(CPlayer *pPlayer);
+	void UpdateSteps(CPlayer *pPlayer);
 	void AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);
 	void AcceptNextStoryQuestStep(CPlayer* pPlayer);
 	int GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const;

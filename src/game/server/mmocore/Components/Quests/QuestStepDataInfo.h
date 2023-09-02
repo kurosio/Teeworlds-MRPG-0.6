@@ -35,11 +35,13 @@ public:
 	void PostFinish(CPlayer* pPlayer);
 
 	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
-	void UpdatePathNavigator(int ClientID);
 	void CreateVarietyTypesRequiredItems(CPlayer* pPlayer);
 	void FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, int Size);
 
+	void UpdatePathNavigator(int ClientID);
+	void UpdateTaskMoveTo(int ClientID);
 	void Update(int ClientID);
+
 };
 
 #endif

@@ -282,7 +282,7 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 	}
 }
 
-void CQuestManager::UpdatePathNavigator(CPlayer *pPlayer)
+void CQuestManager::UpdateSteps(CPlayer *pPlayer)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
@@ -292,7 +292,10 @@ void CQuestManager::UpdatePathNavigator(CPlayer *pPlayer)
 			continue;
 
 		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
+		{
 			pStepBot.second.UpdatePathNavigator(ClientID);
+			pStepBot.second.UpdateTaskMoveTo(ClientID);
+		}
 	}
 }
 

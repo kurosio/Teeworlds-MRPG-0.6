@@ -92,6 +92,7 @@ public:
 	struct TaskRequiredMoveTo
 	{
 		vec2 m_PositionTo{};
+		int m_WorldID{};
 		bool m_PathNavigator{};
 	};
 	std::deque < TaskRequiredMoveTo > m_RequiredMoveTo;

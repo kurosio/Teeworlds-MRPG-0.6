@@ -76,7 +76,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	{
 		m_pPlayer->m_MoodState = m_pPlayer->GetMoodState();
 
-		GS()->Mmo()->Quest()->UpdatePathNavigator(m_pPlayer);
+		GS()->Mmo()->Quest()->UpdateSteps(m_pPlayer);
 		GS()->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer);
 
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);

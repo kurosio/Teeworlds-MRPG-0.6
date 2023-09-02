@@ -10,6 +10,8 @@
 
 #include <game/server/mmocore/Components/Inventory/InventoryManager.h>
 #include "QuestManager.h"
+#include "Entities/move_to.h"
+#include "Entities/path_finder.h"
 
 // ##############################################################
 // ################# GLOBAL STEP STRUCTURE ######################
@@ -322,6 +324,38 @@ void CPlayerQuestStep::UpdatePathNavigator(int ClientID)
 		new CQuestPathFinder(&pGS->m_World, m_Bot.m_Position, ClientID, m_Bot);
 }
 
+void CPlayerQuestStep::UpdateTaskMoveTo(int ClientID)
+{
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+
+	if(m_aMoveToProgress.empty() || m_StepComplete || m_ClientQuitting || !pPlayer || !pPlayer->GetCharacter())
+		return;
+
+	CQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
+	if(pQuest->GetState() == QuestState::ACCEPT && pQuest->GetCurrentStep() == m_Bot.m_Step)
+	{
+		int Position = 0;
+		for(auto& p : m_Bot.m_RequiredMoveTo)
+		{
+			if(p.m_WorldID == pPlayer->GetPlayerWorldID())
+				new CEntityMoveTo(&pGS->m_World, p.m_PositionTo, ClientID, m_Bot.m_QuestID, &m_aMoveToProgress[Position]);
+
+			if(p.m_PathNavigator)
+				new CEntityPathFinder(&pGS->m_World, p.m_PositionTo, p.m_WorldID, ClientID, &m_aMoveToProgress[Position]);
+
+			Position++;
+		}
+	}
+}
+
+void CPlayerQuestStep::Update(int ClientID)
+{
+	UpdateBot();
+	UpdatePathNavigator(ClientID);
+	UpdateTaskMoveTo(ClientID);
+}
+
 void CPlayerQuestStep::CreateVarietyTypesRequiredItems(CPlayer* pPlayer)
 {
 	if(m_Bot.m_RequiredItems.empty() || !pPlayer || !pPlayer->GetCharacter())
@@ -395,10 +429,4 @@ void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, 
 
 	str_copy(aBufQuestTask, Buffer.buffer(), Size);
 	Buffer.clear();
-}
-
-void CPlayerQuestStep::Update(int ClientID)
-{
-	UpdateBot();
-	UpdatePathNavigator(ClientID);
 }
