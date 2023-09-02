@@ -29,6 +29,7 @@ public:
 	bool m_StepComplete{};
 	bool m_ClientQuitting{};
 
+	int GetCountMoveToComplected();
 	int GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const;
 	bool IsComplete(CPlayer* pPlayer);
 	bool Finish(CPlayer* pPlayer);

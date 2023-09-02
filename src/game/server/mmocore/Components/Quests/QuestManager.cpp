@@ -248,6 +248,12 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 			}
 		}
 
+		// show move to
+		if(!BotInfo.m_RequiredMoveTo.empty())
+		{
+			GS()->AVM(ClientID, "null", NOPE, HideID, "- Some action is required");
+		}
+
 		if(NoTasks)
 		{
 			GS()->AVM(ClientID, "null", NOPE, HideID, "You just need to talk.");

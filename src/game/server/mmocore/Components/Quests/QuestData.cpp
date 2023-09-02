@@ -67,14 +67,13 @@ void CQuest::InitSteps()
 
 			if(!pStep.second.m_Bot.m_RequiredMoveTo.empty())
 			{
-				for(auto& p : pStep.second.m_Bot.m_RequiredMoveTo)
+				for(size_t i = 0; i < pStep.second.m_Bot.m_RequiredMoveTo.size(); i++)
 				{
 					JsonQuestData["steps"].back()["move_to"].push_back(
 						{
 							{ "complete", false },
 						});
 				}
-
 			}
 		}
 

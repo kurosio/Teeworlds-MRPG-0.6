@@ -144,6 +144,11 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 	return false;
 }
 
+int CPlayerQuestStep::GetCountMoveToComplected()
+{
+	return (int)std::count_if(m_aMoveToProgress.begin(), m_aMoveToProgress.end(), [](const bool State){return State == true; });
+}
+
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
 int CPlayerQuestStep::GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const
@@ -183,11 +188,8 @@ bool CPlayerQuestStep::IsComplete(CPlayer* pPlayer)
 
 	if(!m_aMoveToProgress.empty())
 	{
-		for(auto& pComplete : m_aMoveToProgress)
-		{
-			if(!pComplete)
-				return false;
-		}
+		if(GetCountMoveToComplected() < m_aMoveToProgress.size())
+			return false;
 	}
 
 	return true; 
@@ -425,6 +427,13 @@ void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, 
 			Buffer.append_at(Buffer.length(), "\n");
 			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Receive {STR} ({VAL})", pPlayer->GetItem(p.m_ItemID)->Info()->GetName(), p.m_Count);
 		}
+	}
+
+	// show move to
+	if(!m_Bot.m_RequiredMoveTo.empty())
+	{
+		Buffer.append_at(Buffer.length(), "\n");
+		pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Some movement is required ({VAL}/{VAL})", GetCountMoveToComplected(), m_Bot.m_RequiredMoveTo.size());
 	}
 
 	str_copy(aBufQuestTask, Buffer.buffer(), Size);
