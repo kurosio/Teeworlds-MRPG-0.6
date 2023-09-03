@@ -1815,7 +1815,18 @@ int CServer::Run()
 	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 		MultiWorlds()->GetWorld(i)->m_pGameServer->OnInit(i);
 
-	str_format(aBuf, sizeof(aBuf), "version %s", GameServer()->NetVersion());
+
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "----------------------------------------------------");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "███╗   ███╗██████╗ ██████╗  ██████╗ ");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "████╗ ████║██╔══██╗██╔══██╗██╔════╝ ");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██╔████╔██║██████╔╝██████╔╝██║  ███╗");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██║╚██╔╝██║██╔══██╗██╔═══╝ ██║   ██║");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██║ ╚═╝ ██║██║  ██║██║     ╚██████╔╝");
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "╚═╝     ╚═╝╚═╝  ╚═╝╚═╝      ╚═════╝ ");
+
+	str_format(aBuf, sizeof(aBuf), "initialized worlds: %d", MultiWorlds()->GetSizeInitilized());
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+	str_format(aBuf, sizeof(aBuf), "version: %s", GameServer()->NetVersion());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
 	// process pending commands
@@ -1823,10 +1834,10 @@ int CServer::Run()
 
 	if(m_GeneratedRconPassword)
 	{
-		dbg_msg("server", "+-------------------------+");
-		dbg_msg("server", "| rcon password: '%s' |", g_Config.m_SvRconPassword);
-		dbg_msg("server", "+-------------------------+");
+		dbg_msg("server", "rcon password: '%s'", g_Config.m_SvRconPassword);
 	}
+
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "----------------------------------------------------");
 
 	// intilized discord bot
 #ifdef CONF_DISCORD
