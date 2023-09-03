@@ -28,6 +28,7 @@ public:
 
 	bool m_StepComplete{};
 	bool m_ClientQuitting{};
+	bool m_TaskListReceived{};
 
 	int GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const;
 	bool IsComplete(CPlayer* pPlayer);

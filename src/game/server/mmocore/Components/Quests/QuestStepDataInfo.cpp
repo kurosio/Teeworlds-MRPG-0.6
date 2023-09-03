@@ -325,7 +325,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo(int ClientID)
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
 
-	if(m_aMoveToProgress.empty() || m_StepComplete || m_ClientQuitting || !pPlayer || !pPlayer->GetCharacter())
+	if(m_aMoveToProgress.empty() || !m_TaskListReceived || m_StepComplete || m_ClientQuitting || !pPlayer || !pPlayer->GetCharacter())
 		return;
 
 	CQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);

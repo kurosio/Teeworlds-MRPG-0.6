@@ -380,7 +380,15 @@ void CPlayerDialog::Next()
 		{
 			int ClientID = m_pPlayer->GetCID();
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+
 			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+			CPlayerQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
+
+			if(!pStep->m_TaskListReceived)
+			{
+				pStep->m_TaskListReceived = true;
+				pStep->UpdateTaskMoveTo(ClientID);
+			}
 
 			if(!pQuest->GetStepByMob(m_MobID)->IsComplete(m_pPlayer))
 			{
