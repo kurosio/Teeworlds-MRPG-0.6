@@ -1943,16 +1943,16 @@ void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const ch
 	Mmo()->Inbox()->SendInbox(pFrom, AccountID, Name, Desc, ItemID, Value, Enchant);
 }
 
-void CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int64 Mask)
+void CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask)
 {
 	if(pEntParent)
-		new CLaserOrbite(&m_World, -1, pEntParent, Amount, Type, Speed, Radius, Mask);
+		new CLaserOrbite(&m_World, -1, pEntParent, Amount, Type, Speed, Radius, LaserType, Mask);
 }
 
-void CGS::CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int64 Mask)
+void CGS::CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask)
 {
 	if(const CPlayer* pPlayer = GetPlayer(ClientID, false, true); pPlayer)
-		new CLaserOrbite(&m_World, ClientID, nullptr, Amount, Type, Speed, Radius, Mask);
+		new CLaserOrbite(&m_World, ClientID, nullptr, Amount, Type, Speed, Radius, LaserType, Mask);
 }
 
 // send day information

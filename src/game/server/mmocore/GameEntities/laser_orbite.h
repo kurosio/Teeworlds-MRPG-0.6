@@ -7,7 +7,7 @@
 class CLaserOrbite : public CEntity
 {
 public:
-	CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int64 Mask);
+	CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask);
 
 	void Destroy() override;
 	void Tick() override;
@@ -17,6 +17,7 @@ private:
 	array<int> m_IDs;
 	EntLaserOrbiteType m_MoveType {};
 	int m_ClientID {};
+	int m_LaserType {};
 	float m_MoveSpeed{};
 	float m_Radius{};
 	int64 m_Mask{};

@@ -64,7 +64,7 @@ void CCharacterBotAI::OnSpawnInitBotTypes()
 		{
 			QuestBotInfo* pQuestBot = &QuestBotInfo::ms_aQuestBot[MobID];
 			if(pQuestBot->m_HasAction)
-				GS()->CreateLaserOrbite(ClientID, 5, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 64.f);
+				GS()->CreateLaserOrbite(ClientID, 5, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 64.f, LASERTYPE_SHOTGUN);
 		} break;
 		case TYPE_BOT_NPC:
 		{

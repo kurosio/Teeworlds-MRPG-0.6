@@ -17,7 +17,7 @@ CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskReq
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	GameWorld()->InsertEntity(this);
 
-	GS()->CreateLaserOrbite(this, 4, EntLaserOrbiteType::DEFAULT, 0.0f, s_Radius, CmaskOne(ClientID));
+	GS()->CreateLaserOrbite(this, 4, EntLaserOrbiteType::DEFAULT, 0.0f, s_Radius, LASERTYPE_FREEZE, CmaskOne(ClientID));
 }
 
 void CEntityMoveTo::Destroy()

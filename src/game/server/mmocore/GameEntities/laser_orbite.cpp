@@ -4,11 +4,13 @@
 
 #include <game/server/gamecontext.h>
 
-CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int64 Mask)
+CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f)), m_MoveType(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_Radius(Radius), m_pEntParent(pEntParent)
 {
 	m_Mask = Mask;
+	m_LaserType = LaserType;
 	GameWorld()->InsertEntity(this);
+
 	m_IDs.set_size(Amount);
 	for(int i = 0; i < m_IDs.size(); i++)
 		m_IDs[i] = Server()->SnapNewID();
@@ -19,6 +21,7 @@ void CLaserOrbite::Destroy()
 	for(int i = 0; i < m_IDs.size(); i++)
 		Server()->SnapFreeID(m_IDs[i]);
 	m_IDs.clear();
+
 	GS()->m_World.DestroyEntity(this);
 }
 
@@ -62,15 +65,32 @@ void CLaserOrbite::Snap(int SnappingClient)
 	{
 		vec2 PosStart = m_Pos + UtilityOrbitePos(i);
 
-		CNetObj_Laser* pObj = static_cast<CNetObj_Laser*>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_IDs[i], sizeof(CNetObj_Laser)));
-		if(!pObj)
-			return;
+		if(GS()->GetClientVersion(SnappingClient) >= VERSION_DDNET_MULTI_LASER)
+		{
+			CNetObj_DDNetLaser* pObj = static_cast<CNetObj_DDNetLaser*>(Server()->SnapNewItem(NETOBJTYPE_DDNETLASER, m_IDs[i], sizeof(CNetObj_DDNetLaser)));
+			if(!pObj)
+				return;
 
-		pObj->m_FromX = (int)PosStart.x;
-		pObj->m_FromY = (int)PosStart.y;
-		pObj->m_X = (int)LastPosition.x;
-		pObj->m_Y = (int)LastPosition.y;
-		pObj->m_StartTick = Server()->Tick() - 3;
+			pObj->m_FromX = (int)PosStart.x;
+			pObj->m_FromY = (int)PosStart.y;
+			pObj->m_ToX = (int)LastPosition.x;
+			pObj->m_ToY = (int)LastPosition.y;
+			pObj->m_StartTick = Server()->Tick() - 3;
+			pObj->m_Owner = m_ClientID;
+			pObj->m_Type = m_LaserType;
+		}
+		else
+		{
+			CNetObj_Laser* pObj = static_cast<CNetObj_Laser*>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_IDs[i], sizeof(CNetObj_Laser)));
+			if(!pObj)
+				return;
+
+			pObj->m_FromX = (int)PosStart.x;
+			pObj->m_FromY = (int)PosStart.y;
+			pObj->m_X = (int)LastPosition.x;
+			pObj->m_Y = (int)LastPosition.y;
+			pObj->m_StartTick = Server()->Tick() - 3;
+		}
 
 		LastPosition = PosStart;
 	}
