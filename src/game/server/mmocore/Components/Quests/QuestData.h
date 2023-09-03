@@ -23,6 +23,7 @@ public:
 
 	CQuest() = default;
 	CQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
+	~CQuest();
 
 	void Init(QuestState State)
 	{

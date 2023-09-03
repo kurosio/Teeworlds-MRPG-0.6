@@ -30,6 +30,7 @@ public:
 	bool m_ClientQuitting{};
 	bool m_TaskListReceived{};
 
+	void Clear();
 	int GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const;
 	bool IsComplete(CPlayer* pPlayer);
 	bool Finish(CPlayer* pPlayer);

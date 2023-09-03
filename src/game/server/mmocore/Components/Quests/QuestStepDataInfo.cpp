@@ -145,6 +145,19 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
+void CPlayerQuestStep::Clear()
+{
+	for(auto& p : m_apEntitiesMoveTo)
+		delete p;
+	for(auto& p : m_apEntitiesNavigator)
+		delete p;
+
+	m_aMobProgress.clear();
+	m_aMoveToProgress.clear();
+	m_apEntitiesMoveTo.clear();
+	m_apEntitiesNavigator.clear();
+}
+
 int CPlayerQuestStep::GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const
 {
 	if(!m_Bot.m_RequiredItems.empty())

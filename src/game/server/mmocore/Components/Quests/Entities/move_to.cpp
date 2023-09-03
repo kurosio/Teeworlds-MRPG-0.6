@@ -7,7 +7,7 @@
 
 #include "game/server/mmocore/Components/Quests/QuestManager.h"
 
-constexpr float s_Radius = 60.0f;
+constexpr float s_Radius = 36.0f;
 
 CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool* pComplete, std::deque < CEntityMoveTo* >* apCollection)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, pTaskMoveTo->m_Position), m_QuestID(QuestID), m_ClientID(ClientID), m_pTaskMoveTo(pTaskMoveTo)

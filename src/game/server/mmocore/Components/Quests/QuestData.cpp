@@ -23,6 +23,17 @@ CPlayer* CQuest::GetPlayer() const
 	return nullptr;
 }
 
+CQuest::~CQuest()
+{
+	for(auto& p : m_apEntityMobNavigator)
+		delete p;
+	for(auto& p : m_aPlayerSteps)
+		p.second.Clear();
+
+	m_apEntityMobNavigator.clear();
+	m_aPlayerSteps.clear();
+}
+
 CQuestDescription* CQuest::Info() const { return &CQuestDescription::Data()[m_ID]; }
 std::string CQuest::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_UserID); }
 
