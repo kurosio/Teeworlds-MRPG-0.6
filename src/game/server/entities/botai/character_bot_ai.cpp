@@ -366,7 +366,7 @@ void CCharacterBotAI::Snap(int SnappingClient)
 #define DDNetFlag(flag, check) if(check) { pDDNetCharacter->m_Flags |= (flag); }
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
 	{
-		DDNetFlag(CHARACTERFLAG_SOLO, false)
+		DDNetFlag(CHARACTERFLAG_SOLO, true)
 		DDNetFlag(CHARACTERFLAG_COLLISION_DISABLED, true)
 	}
 #undef DDNetFlag
