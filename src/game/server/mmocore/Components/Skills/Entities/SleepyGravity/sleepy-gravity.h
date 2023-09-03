@@ -18,7 +18,6 @@ public:
 	~CSleepyGravity() override;
 
 	void Snap(int SnappingClient) override;
-	void Destroy() override;
 	void Tick() override;
 
 private:

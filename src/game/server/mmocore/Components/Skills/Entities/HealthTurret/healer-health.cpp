@@ -23,18 +23,12 @@ CHealthHealer::CHealthHealer(CGameWorld *pGameWorld, CPlayer* pPlayer, int Skill
 
 CHealthHealer::~CHealthHealer()
 {
-	for(int i = 0; i < NUM_IDS; i++)
-		Server()->SnapFreeID(m_IDs[i]);
-}
-
-void CHealthHealer::Destroy()
-{
 	// if the player is eating, we create effects
 	if(m_pPlayer && m_pPlayer->GetCharacter())
 		GS()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 
-	GS()->m_World.DestroyEntity(this);
-	return;
+	for(int i = 0; i < NUM_IDS; i++)
+		Server()->SnapFreeID(m_IDs[i]);
 }
 
 void CHealthHealer::Tick()
@@ -42,7 +36,7 @@ void CHealthHealer::Tick()
 	m_LifeSpan--;
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !m_LifeSpan)
 	{
-		Reset();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 

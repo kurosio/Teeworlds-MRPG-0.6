@@ -23,7 +23,7 @@ void CHearth::Tick()
 	// check if there is a player or not to use his functions
 	if(!m_pPlayer || !m_pPlayer->GetCharacter())
 	{
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -49,7 +49,7 @@ void CHearth::Tick()
 		GS()->CreateText(NULL, false, vec2(m_Pos.x, m_Pos.y - 96.0f), vec2(0, 0), 20, aBuf);
 	}
 
-	GS()->m_World.DestroyEntity(this);
+	GameWorld()->DestroyEntity(this);
 	return;
 }
 

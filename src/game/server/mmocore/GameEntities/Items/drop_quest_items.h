@@ -20,7 +20,7 @@ class CDropQuestItem : public CEntity
 
 public:
 	CDropQuestItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, int ItemID, int Needed, int QuestID, int Step, int ClientID);
-	virtual ~CDropQuestItem();
+	~CDropQuestItem() override;
 
 	int m_ClientID;
 	int m_ItemID;
@@ -30,8 +30,6 @@ public:
 
 	virtual void Tick();
 	virtual void Snap(int SnappingClient);
-	virtual void Destroy() override;
-
 };
 
 #endif

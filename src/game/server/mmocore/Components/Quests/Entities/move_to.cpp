@@ -20,7 +20,7 @@ CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskReq
 	GS()->CreateLaserOrbite(this, 4, EntLaserOrbiteType::DEFAULT, 0.0f, s_Radius, LASERTYPE_FREEZE, CmaskOne(ClientID));
 }
 
-void CEntityMoveTo::Destroy()
+CEntityMoveTo::~CEntityMoveTo()
 {
 	if(m_pPlayer && m_pPlayer->GetCharacter())
 	{
@@ -35,7 +35,6 @@ void CEntityMoveTo::Destroy()
 			break;
 		}
 	}
-	GS()->m_World.DestroyEntity(this);
 }
 
 bool CEntityMoveTo::PickItem() const
@@ -58,7 +57,7 @@ void CEntityMoveTo::Tick()
 {
 	if(!m_pTaskMoveTo || !m_pPlayer || !m_pPlayer->GetCharacter() || !m_pComplete || (*m_pComplete == true))
 	{
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -72,7 +71,7 @@ void CEntityMoveTo::Tick()
 			(*m_pComplete) = true;
 			m_pPlayer->GetQuest(m_QuestID)->SaveSteps();
 			GS()->CreateDeath(m_Pos, m_ClientID);
-			Destroy();
+			GameWorld()->DestroyEntity(this);
 		};
 
 		const bool HasCollectItem = m_pTaskMoveTo->m_CollectItemID > 0;

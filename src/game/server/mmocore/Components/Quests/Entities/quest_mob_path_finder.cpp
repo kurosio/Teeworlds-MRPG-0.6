@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <game/server/mmocore/Components/Bots/BotData.h>
-#include "quest_path_finder.h"
+#include "quest_mob_path_finder.h"
 
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 #include <game/server/gamecontext.h>
@@ -19,15 +19,22 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID,
 	m_MainScenario = str_startswith_nocase(GS()->GetQuestInfo(QuestBot.m_QuestID)->GetStory(), "Ch") != nullptr;
 	GameWorld()->InsertEntity(this);
 
-	if(m_MainScenario)
-		GS()->CreateLaserOrbite(this, 2, EntLaserOrbiteType::MOVE_LEFT, 10.0f, 6.f, LASERTYPE_FREEZE, CmaskOne(ClientID));
+	m_IDs.set_size(STEP_PATH_FINDER_IDS);
+	for (int i = 0; i < m_IDs.size(); i++)
+		m_IDs[i] = Server()->SnapNewID();
+}
+
+CStepPathFinder::~CStepPathFinder()
+{
+	for(int i = 0; i < m_IDs.size(); i++)
+		Server()->SnapFreeID(m_IDs[i]);
 }
 
 void CStepPathFinder::Tick()
 {
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !total_size_vec2(m_PosTo))
 	{
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -37,7 +44,7 @@ void CStepPathFinder::Tick()
 	if (pQuest->GetCurrentStep() != Step || pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepByMob(m_SubBotID)->m_StepComplete || pQuest->GetStepByMob(m_SubBotID)->m_ClientQuitting)
 	{
 		GS()->CreateDeath(m_Pos, m_ClientID);
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 	}
 }
 
@@ -57,5 +64,17 @@ void CStepPathFinder::Snap(int SnappingClient)
 		pPickup->m_Y = (int)m_Pos.y;
 		pPickup->m_Type = (m_MainScenario ? (int)POWERUP_HEALTH : (int)POWERUP_ARMOR);
 		pPickup->m_Subtype = 0;
+	}
+
+	for(int i = 0; i < m_IDs.size(); i++)
+	{
+		CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_IDs[i], sizeof(CNetObj_Projectile)));
+		if(!pObj)
+			return;
+
+		pObj->m_Type = WEAPON_HAMMER;
+		pObj->m_X = m_Pos.x + cos(Server()->Tick() - pi / (float)STEP_PATH_FINDER_IDS * i) * 18.f;
+		pObj->m_Y = m_Pos.y + sin(Server()->Tick() - pi / (float)STEP_PATH_FINDER_IDS * i) * 18.f;
+		pObj->m_StartTick = Server()->Tick();
 	}
 }

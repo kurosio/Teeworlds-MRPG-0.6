@@ -47,7 +47,7 @@ bool CDropItem::TakeItem(int ClientID)
 	GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 10, "\0");
 	GS()->StrongUpdateVotes(ClientID, MENU_INVENTORY);
 	GS()->StrongUpdateVotes(ClientID, MENU_EQUIPMENT);
-	GS()->m_World.DestroyEntity(this);
+	GameWorld()->DestroyEntity(this);
 	return true;
 }
 
@@ -58,7 +58,7 @@ void CDropItem::Tick()
 	if(m_LifeSpan < 0)
 	{
 		GS()->CreatePlayerSpawn(m_Pos);
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 

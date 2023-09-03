@@ -21,7 +21,7 @@ CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int World
 	GameWorld()->InsertEntity(this);
 }
 
-void CEntityPathFinder::Destroy()
+CEntityPathFinder::~CEntityPathFinder()
 {
 	for(auto it = m_apCollection->begin(); it != m_apCollection->end(); ++it)
 	{
@@ -31,21 +31,20 @@ void CEntityPathFinder::Destroy()
 			break;
 		}
 	}
-	GS()->m_World.DestroyEntity(this);
 }
 
 void CEntityPathFinder::Tick()
 {
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !total_size_vec2(m_PosTo))
 	{
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 	
 	if (!m_pComplete || (*m_pComplete) == true)
 	{
 		GS()->CreatePlayerSpawn(m_Pos, CmaskOne(m_ClientID));
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 	}
 }
 

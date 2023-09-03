@@ -57,7 +57,7 @@ bool CSkill::Use()
 			if(pHh->m_pPlayer->GetCID() != ClientID)
 				continue;
 
-			pHh->Reset();
+			pHh->Destroy();
 			break;
 		}
 
@@ -75,7 +75,7 @@ bool CSkill::Use()
 			if(pHh->m_pPlayer->GetCID() != ClientID)
 				continue;
 
-			pHh->Reset();
+			pHh->Destroy();
 			break;
 		}
 

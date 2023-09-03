@@ -79,11 +79,12 @@ CLogicWallFire::CLogicWallFire(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction,
 	m_Dir = Direction;
 	GameWorld()->InsertEntity(this);
 }
+
 void CLogicWallFire::Tick()
 {
 	if(!pLogicWall || GS()->Collision()->CheckPoint(m_Pos.x, m_Pos.y))
 	{
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -99,7 +100,8 @@ void CLogicWallFire::Tick()
 				pLogicWall->SetDestroy(120);
 				p->SetDestroy(120);
 			}
-			GS()->m_World.DestroyEntity(this);
+
+			GameWorld()->DestroyEntity(this);
 			return;
 		}
 	}

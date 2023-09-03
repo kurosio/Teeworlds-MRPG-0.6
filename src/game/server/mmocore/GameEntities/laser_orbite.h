@@ -8,8 +8,8 @@ class CLaserOrbite : public CEntity
 {
 public:
 	CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask);
+	~CLaserOrbite() override;
 
-	void Destroy() override;
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 

@@ -68,7 +68,7 @@ void CSnapFull::Tick()
 	CPlayer *pOwner = GS()->m_apPlayers[m_ClientID];
 	if(!pOwner || !pOwner->GetCharacter())
 	{
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 

@@ -21,7 +21,7 @@ void CFlyingPoint::Tick()
 	CPlayer *pPlayer = GS()->m_apPlayers[m_ClientID];
 	if(!pPlayer || !pPlayer->GetCharacter() || (m_FromID != -1 && (!GS()->m_apPlayers[m_FromID] || !GS()->m_apPlayers[m_FromID]->GetCharacter())))
 	{
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -33,7 +33,7 @@ void CFlyingPoint::Tick()
 			CPlayer* pFrom = GS()->GetPlayer(m_FromID);
 			m_pFunctionCollised(this, pFrom ? pFrom : pPlayer, pPlayer);
 		}
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 

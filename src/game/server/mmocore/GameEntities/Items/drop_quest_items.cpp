@@ -29,15 +29,10 @@ CDropQuestItem::CDropQuestItem(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, float
 
 CDropQuestItem::~CDropQuestItem()
 {
-	for (const int m_ID : m_IDs)
+	for(const int m_ID : m_IDs)
 	{
 		Server()->SnapFreeID(m_ID);
 	}
- }
-
-void CDropQuestItem::Destroy()
-{
-	GS()->m_World.DestroyEntity(this);
 }
 
 void CDropQuestItem::Tick()
@@ -45,7 +40,7 @@ void CDropQuestItem::Tick()
 	CPlayer* pPlayer = GS()->m_apPlayers[m_ClientID];
 	if (m_LifeSpan < 0 || !pPlayer)
 	{
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -53,7 +48,7 @@ void CDropQuestItem::Tick()
 	const CQuest* pQuest = pPlayer->GetQuest(m_QuestID);
 	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStep() != m_Step || pItem->GetValue() >= m_Needed)
 	{
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -66,7 +61,7 @@ void CDropQuestItem::Tick()
 			pPlayer->GetCharacter()->m_ReloadTimer = 0;
 			GS()->Chat(m_ClientID, "You got {STR}.", pItem->Info()->GetName());
 
-			Destroy();
+			GameWorld()->DestroyEntity(this);
 			return;
 		}
 

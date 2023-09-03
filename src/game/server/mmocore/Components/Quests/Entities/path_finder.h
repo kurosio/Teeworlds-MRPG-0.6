@@ -15,8 +15,8 @@ public:
 	std::deque < CEntityPathFinder* >* m_apCollection;
 
 	CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection);
+	~CEntityPathFinder() override;
 
-	void Destroy() override;
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 	

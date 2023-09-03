@@ -39,7 +39,7 @@ void CLaser::DoBounce()
 
 	if(m_Energy < 0 || !GS()->GetPlayerChar(m_Owner))
 	{
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -80,16 +80,11 @@ void CLaser::DoBounce()
 	}
 }
 
-void CLaser::Reset()
-{
-	GS()->m_World.DestroyEntity(this);
-}
-
 void CLaser::Tick()
 {
 	if(GS()->Collision()->GetParseTilesAt(m_Pos.x, m_Pos.y) == TILE_INVISIBLE_WALL)
 	{
-		Reset();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 

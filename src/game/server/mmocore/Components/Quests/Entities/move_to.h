@@ -17,8 +17,8 @@ public:
 	class CPlayer* m_pPlayer;
 
 	CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection);
+	~CEntityMoveTo() override;
 
-	void Destroy() override;
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 

@@ -17,6 +17,7 @@ CDecorationHouses::CDecorationHouses(CGameWorld* pGameWorld, vec2 Pos, int House
 			m_IDs[i] = Server()->SnapNewID();
 	}
 }
+
 CDecorationHouses::~CDecorationHouses()
 {
 	if (SwitchToObject(true) >= 0)
@@ -24,8 +25,6 @@ CDecorationHouses::~CDecorationHouses()
 		for (int i = 0; i < NUM_IDS; i++)
 			Server()->SnapFreeID(m_IDs[i]);
 	}
-
-	GameWorld()->DestroyEntity(this);
 }
 
 int CDecorationHouses::SwitchToObject(bool Data) const

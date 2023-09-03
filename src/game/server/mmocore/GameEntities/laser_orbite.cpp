@@ -16,13 +16,11 @@ CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntPa
 		m_IDs[i] = Server()->SnapNewID();
 }
 
-void CLaserOrbite::Destroy()
+CLaserOrbite::~CLaserOrbite()
 {
 	for(int i = 0; i < m_IDs.size(); i++)
 		Server()->SnapFreeID(m_IDs[i]);
 	m_IDs.clear();
-
-	GS()->m_World.DestroyEntity(this);
 }
 
 void CLaserOrbite::Tick()
@@ -30,7 +28,7 @@ void CLaserOrbite::Tick()
 	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID, false, true);
 	if((m_ClientID < 0 && (m_pEntParent == nullptr || m_pEntParent->IsMarkedForDestroy())) || (m_ClientID >= 0 && !pPlayer))
 	{
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 

@@ -15,11 +15,9 @@ CAttackTeleport::CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CCharacter* p
 	GameWorld()->InsertEntity(this);
 }
 
-void CAttackTeleport::Destroy()
+CAttackTeleport::~CAttackTeleport()
 {
 	GS()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
-	GS()->m_World.DestroyEntity(this);
-	return;
 }
 
 void CAttackTeleport::Tick()
@@ -27,7 +25,7 @@ void CAttackTeleport::Tick()
 	m_LifeSpan--;
 	if(!m_pPlayerChar || !m_pPlayerChar->IsAlive())
 	{
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -69,8 +67,8 @@ void CAttackTeleport::Tick()
 		}
 		m_pPlayerChar->ChangePosition(OldPosition);
 
-		// reset entity
-		Reset();
+		// destroy entity
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 

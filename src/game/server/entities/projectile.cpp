@@ -25,7 +25,7 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 
 void CProjectile::Reset()
 {
-	GS()->m_World.DestroyEntity(this);
+	GameWorld()->DestroyEntity(this);
 }
 
 vec2 CProjectile::GetPos(float Time)
@@ -67,7 +67,7 @@ void CProjectile::Tick()
 		if (m_Explosive)
 			GS()->CreateExplosion(CurPos, -1, m_Weapon, m_Damage);
 
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -88,7 +88,7 @@ void CProjectile::Tick()
 		else if (TargetChr)
 			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
 
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 	}
 }
 

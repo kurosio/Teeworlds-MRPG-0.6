@@ -19,23 +19,18 @@ CSleepyGravity::CSleepyGravity(CGameWorld *pGameWorld, CPlayer* pPlayer, int Ski
 
 CSleepyGravity::~CSleepyGravity()
 {
-	for(int i = 0; i < NUM_IDS; i++)
-		Server()->SnapFreeID(m_IDs[i]);
-}
-
-void CSleepyGravity::Destroy()
-{
 	if(m_pPlayer && m_pPlayer->GetCharacter())
 		GS()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 
-	GS()->m_World.DestroyEntity(this);
+	for(int i = 0; i < NUM_IDS; i++)
+		Server()->SnapFreeID(m_IDs[i]);
 }
 
 void CSleepyGravity::Tick()
 {
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !m_LifeSpan)
 	{
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 

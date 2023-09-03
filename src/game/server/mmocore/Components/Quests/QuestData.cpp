@@ -7,7 +7,7 @@
 #include <game/server/mmocore/Components/Dungeons/DungeonManager.h>
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 
-#include "Entities/quest_path_finder.h"
+#include "Entities/quest_mob_path_finder.h"
 
 CGS* CQuest::GS() const
 {

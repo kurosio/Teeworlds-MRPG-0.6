@@ -7,14 +7,17 @@
 
 class CStepPathFinder : public CEntity
 {
+	enum { STEP_PATH_FINDER_IDS = 2, };
 	bool m_MainScenario;
 
 public:
+	array < int > m_IDs;
 	int m_ClientID;
 	int m_SubBotID;
 	class CPlayer* m_pPlayer;
 
 	CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot);
+	~CStepPathFinder() override;
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

@@ -148,8 +148,8 @@ void CRandomBoxRandomizer::Tick()
 				for(auto& pItem : aReceivedItems)
 					GiveRandomItem(pItem.RandomItem);
 			}
-			
-			GS()->m_World.DestroyEntity(this);
+
+			GameWorld()->DestroyEntity(this);
 			return;
 		}
 	}

@@ -8,9 +8,9 @@ class CAttackTeleport : public CEntity
 {
 public:
 	CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CCharacter* pPlayerChar, int SkillBonus);
+	~CAttackTeleport() override;
 
 	void Snap(int SnappingClient) override;
-	void Destroy() override;
 	void Tick() override;
 
 private:

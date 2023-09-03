@@ -23,7 +23,7 @@ void CDropBonuses::Tick()
 	if (m_LifeSpan < 0)
 	{
 		GS()->CreatePlayerSpawn(m_Pos);
-		GS()->m_World.DestroyEntity(this);
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -49,8 +49,7 @@ void CDropBonuses::Tick()
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_ARMOR);
 		}
 
-		GS()->m_World.DestroyEntity(this);
-		return;
+		GameWorld()->DestroyEntity(this);
 	}
 }
 

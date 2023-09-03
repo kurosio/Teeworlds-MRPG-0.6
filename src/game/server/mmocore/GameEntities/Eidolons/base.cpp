@@ -32,7 +32,7 @@ void CEidolon::Tick()
 	CPlayer* pEidolon = GS()->GetPlayer(m_EidolonCID, false, true);
 	if(!pEidolon || !pEidolon->GetEquippedItemID(ItemFunctional::EQUIP_EIDOLON))
 	{
-		Destroy();
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
@@ -74,8 +74,7 @@ void CEidolon::Tick()
 		GS()->CreateSound(m_Pos, SOUND_CTF_CAPTURE);
 		GS()->CreateDeath(m_Pos, m_EidolonCID);
 		GS()->CreateDeath(m_Pos, m_OwnerCID);
-		Destroy();
-		return;
+		GameWorld()->DestroyEntity(this);
 	}
 }
 

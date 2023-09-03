@@ -21,7 +21,7 @@ class CEidolon : public CEntity
 
 public:
 	CEidolon(CGameWorld* pGameWorld, vec2 Pos, int Type, int EidolonCID, int OwnerCID);
-	~CEidolon();
+	~CEidolon() override;
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
