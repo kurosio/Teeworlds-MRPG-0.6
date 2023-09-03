@@ -1,6 +1,8 @@
 MRPG server transfer version from 0.7 to 0.6 (ddnet) with ex protocol and features
 [![CircleCI](https://circleci.com/gh/teeworlds/teeworlds.svg?style=svg)](https://circleci.com/gh/teeworlds/teeworlds) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/teeworlds/teeworlds?branch=master&svg=true)](https://ci.appveyor.com/project/heinrich5991/teeworlds)
 =========
+Wiki about maintaining mod: https://github.com/kurosio/Teeworlds-MRPG-0.6/wiki
+
 `readme will be changed over time`
  
 
