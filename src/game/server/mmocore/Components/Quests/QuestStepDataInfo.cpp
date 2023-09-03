@@ -487,7 +487,7 @@ CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(int ClientID, const QuestBotInf
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 	CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pTaskMoveTo->m_Position);
 	if(!pEntMoveTo)
-		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&pGS->m_World, pTaskMoveTo->m_Position, ClientID, m_Bot.m_QuestID, pTaskMoveTo->m_CollectItemID, pComplete, &m_apEntitiesMoveTo));
+		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&pGS->m_World, pTaskMoveTo, ClientID, m_Bot.m_QuestID, pComplete, &m_apEntitiesMoveTo));
 
 	return pEntMoveTo;
 }

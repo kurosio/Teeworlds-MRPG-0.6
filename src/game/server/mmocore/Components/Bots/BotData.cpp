@@ -97,13 +97,15 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 				const int Step = p.value("step", 1);
 				const int CollectItemID = p.value("collect_item_id", -1);
 				const bool PathNavigator = p.value("navigator", true);
+				const std::string TextUseInChat = p.value("use_in_chat", "\0").c_str();
+				const std::string Text = p.value("text", "\0").c_str();
 
 				if(Step > LatestBiggerStep)
 					LatestBiggerStep = Step;
 
 				if(Position.x > 0.f && Position.y > 0.f)
 				{
-					m_RequiredMoveTo.push_back({ Position, WorldID, LatestBiggerStep, CollectItemID, PathNavigator });
+					m_RequiredMoveTo.push_back({ Position, WorldID, LatestBiggerStep, CollectItemID, TextUseInChat, Text, PathNavigator });
 				}
 			}
 		}

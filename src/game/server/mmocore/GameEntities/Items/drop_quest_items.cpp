@@ -64,13 +64,13 @@ void CDropQuestItem::Tick()
 		{
 			pItem->Add(1);
 			pPlayer->GetCharacter()->m_ReloadTimer = 0;
-			GS()->Chat(m_ClientID, "You pick {STR}!", pItem->Info()->GetName());
+			GS()->Chat(m_ClientID, "You got {STR}.", pItem->Info()->GetName());
 
 			Destroy();
 			return;
 		}
 
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press 'Fire' for pick Quest Item");
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press 'Fire', to pick up an item");
 	}
 
 	m_LifeSpan--;

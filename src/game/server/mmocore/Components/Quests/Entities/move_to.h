@@ -7,22 +7,25 @@
 
 class CEntityMoveTo : public CEntity
 {
-public:
-	bool* m_pComplete;
-	int m_ClientID;
 	int m_QuestID;
-	int m_CollectItemID;
-	class CPlayer* m_pPlayer;
+	int m_ClientID;
+	bool* m_pComplete;
 	std::deque < CEntityMoveTo* >* m_apCollection;
+	const QuestBotInfo::TaskRequiredMoveTo* m_pTaskMoveTo;
 
-	CEntityMoveTo(CGameWorld* pGameWorld, vec2 Pos, int ClientID, int QuestID, int CollectItemID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection);
+public:
+	class CPlayer* m_pPlayer;
+
+	CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection);
 
 	void Destroy() override;
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
 	bool PickItem() const;
+
 	int GetClientID() const { return m_ClientID; }
+	int GetQuestID() const { return m_QuestID; }
 };
 
 #endif
