@@ -101,8 +101,6 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_Step = pRes->getInt("Step");
 		QuestBot.m_WorldID = pRes->getInt("WorldID");
 		QuestBot.m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
-		QuestBot.m_InteractiveType = pRes->getInt("InteractionType");
-		QuestBot.m_InteractiveTemp = pRes->getInt("InteractionTemp");
 		QuestBot.m_EventJsonData = pRes->getString("EventData").c_str();
 
 		// tasks initilized

@@ -53,8 +53,6 @@ public:
 	int m_WorldID{};
 	int m_BotID{};
 	int m_SubBotID{};
-	int m_InteractiveType{};
-	int m_InteractiveTemp{};
 	bool m_GenerateNick{};
 	bool m_HasAction{};
 	std::string m_EventJsonData{};
