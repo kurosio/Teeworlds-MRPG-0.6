@@ -17,11 +17,10 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID,
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_SubBotID = QuestBot.m_SubBotID;
 	m_MainScenario = str_startswith_nocase(GS()->GetQuestInfo(QuestBot.m_QuestID)->GetStory(), "Ch") != nullptr;
+	GameWorld()->InsertEntity(this);
+
 	if(m_MainScenario)
 		GS()->CreateLaserOrbite(this, 2, EntLaserOrbiteType::MOVE_LEFT, 10.0f, 6.f, LASERTYPE_FREEZE, CmaskOne(ClientID));
-
-
-	GameWorld()->InsertEntity(this);
 }
 
 void CStepPathFinder::Tick()
