@@ -23,12 +23,15 @@ CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int World
 
 CEntityPathFinder::~CEntityPathFinder()
 {
-	for(auto it = m_apCollection->begin(); it != m_apCollection->end(); ++it)
+	if(m_apCollection && !m_apCollection->empty())
 	{
-		if(mem_comp((*it), this, sizeof(CEntityPathFinder)) == 0)
+		for(auto it = m_apCollection->begin(); it != m_apCollection->end(); ++it)
 		{
-			m_apCollection->erase(it);
-			break;
+			if(mem_comp((*it), this, sizeof(CEntityPathFinder)) == 0)
+			{
+				m_apCollection->erase(it);
+				break;
+			}
 		}
 	}
 }

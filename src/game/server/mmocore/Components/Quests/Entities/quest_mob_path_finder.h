@@ -9,6 +9,7 @@ class CStepPathFinder : public CEntity
 {
 	enum { STEP_PATH_FINDER_IDS = 2, };
 	bool m_MainScenario;
+	std::deque < CStepPathFinder* >* m_apCollection;
 
 public:
 	array < int > m_IDs;
@@ -16,7 +17,7 @@ public:
 	int m_SubBotID;
 	class CPlayer* m_pPlayer;
 
-	CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot);
+	CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection);
 	~CStepPathFinder() override;
 
 	void Tick() override;

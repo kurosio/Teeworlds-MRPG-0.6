@@ -25,7 +25,7 @@ CPlayer* CQuest::GetPlayer() const
 
 CQuest::~CQuest()
 {
-	for(auto& p : m_apEntityMobNavigator)
+	for(auto p : m_apEntityMobNavigator)
 		delete p;
 	for(auto& p : m_aPlayerSteps)
 		p.second.Clear();
@@ -347,7 +347,7 @@ CStepPathFinder* CQuest::AddEntityMobNavigator(QuestBotInfo* pBot)
 
 	CStepPathFinder* pPathFinder = FoundEntityMobNavigator(pBot->m_SubBotID);
 	if(!pPathFinder)
-		pPathFinder = m_apEntityMobNavigator.emplace_back(new CStepPathFinder(&GS()->m_World, pBot->m_Position, m_ClientID, *pBot));
+		pPathFinder = m_apEntityMobNavigator.emplace_back(new CStepPathFinder(&GS()->m_World, pBot->m_Position, m_ClientID, *pBot, &m_apEntityMobNavigator));
 
 	return pPathFinder;
 }

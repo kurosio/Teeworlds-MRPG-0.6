@@ -6,7 +6,7 @@
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 #include <game/server/gamecontext.h>
 
-CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot)
+CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, Pos)
 {
 	vec2 GetterPos{0,0};
@@ -14,6 +14,7 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID,
 
 	m_PosTo = GetterPos;
 	m_ClientID = ClientID;
+	m_apCollection = apCollection;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_SubBotID = QuestBot.m_SubBotID;
 	m_MainScenario = str_startswith_nocase(GS()->GetQuestInfo(QuestBot.m_QuestID)->GetStory(), "Ch") != nullptr;
@@ -26,6 +27,18 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID,
 
 CStepPathFinder::~CStepPathFinder()
 {
+	if(m_apCollection && !m_apCollection->empty())
+	{
+		for(auto it = m_apCollection->begin(); it != m_apCollection->end(); ++it)
+		{
+			if(mem_comp((*it), this, sizeof(CStepPathFinder)) == 0)
+			{
+				m_apCollection->erase(it);
+				break;
+			}
+		}
+	}
+
 	for(int i = 0; i < m_IDs.size(); i++)
 		Server()->SnapFreeID(m_IDs[i]);
 }

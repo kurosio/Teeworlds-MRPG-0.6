@@ -27,12 +27,15 @@ CEntityMoveTo::~CEntityMoveTo()
 		GS()->Mmo()->Quest()->UpdateSteps(m_pPlayer);
 	}
 
-	for(auto it = m_apCollection->begin(); it != m_apCollection->end(); ++it)
+	if(m_apCollection && !m_apCollection->empty())
 	{
-		if(mem_comp((*it), this, sizeof(CEntityMoveTo)) == 0)
+		for(auto it = m_apCollection->begin(); it != m_apCollection->end(); ++it)
 		{
-			m_apCollection->erase(it);
-			break;
+			if(mem_comp((*it), this, sizeof(CEntityMoveTo)) == 0)
+			{
+				m_apCollection->erase(it);
+				break;
+			}
 		}
 	}
 }
