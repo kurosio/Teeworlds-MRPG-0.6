@@ -515,17 +515,18 @@ void CPlayer::AddExp(int Exp)
 	Acc().m_Exp += Exp;
 	while(Acc().m_Exp >= ExpNeed(Acc().m_Level))
 	{
-		Acc().m_Exp -= ExpNeed(Acc().m_Level), Acc().m_Level++;
+		Acc().m_Exp -= ExpNeed(Acc().m_Level);
+		Acc().m_Level++;
 		Acc().m_Upgrade += 1;
 
 		if(m_pCharacter)
 		{
 			GS()->CreateDeath(m_pCharacter->m_Core.m_Pos, m_ClientID);
 			GS()->CreateSound(m_pCharacter->m_Core.m_Pos, 4);
-			GS()->CreateText(m_pCharacter, false, vec2(0, -40), vec2(0, -1), 30, "level");
+			GS()->CreateText(m_pCharacter, false, vec2(0, -40), vec2(0, -1), 30, "level up");
 		}
 
-		GS()->Chat(m_ClientID, "Congratulations. Level UP. Now Level {INT}!", Acc().m_Level);
+		GS()->Chat(m_ClientID, "Congratulations. You attain level {INT}!", Acc().m_Level);
 		if(Acc().m_Exp < ExpNeed(Acc().m_Level))
 		{
 			GS()->StrongUpdateVotes(m_ClientID, MENU_MAIN);

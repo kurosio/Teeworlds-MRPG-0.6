@@ -255,18 +255,20 @@ bool CQuest::Accept()
 	// information
 	const int QuestsSize = Info()->GetQuestStorySize();
 	const int QuestPosition = Info()->GetQuestStoryPosition();
-	pGS->Chat(ClientID, "------ Quest story [{STR}] ({INT}/{INT}) ------", Info()->GetStory(), QuestPosition, QuestsSize);
+	pGS->Chat(ClientID, "--- Quest story [{STR}] ({INT}/{INT})", Info()->GetStory(), QuestPosition, QuestsSize);
 	pGS->Chat(ClientID, "Name: \"{STR}\"", Info()->GetName());
 	pGS->Chat(ClientID, "Reward: \"Gold {VAL}, Experience {INT}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
-	pGS->CreatePlayerSound(ClientID, SOUND_CTF_CAPTURE);
+	pGS->Broadcast(ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Accepted");
+	pGS->CreatePlayerSound(ClientID, SOUND_CTF_GRAB_EN);
 	return true;
 }
 
 void CQuest::Finish()
 {
-	if(m_State != QuestState::ACCEPT || !GetPlayer())
+	CPlayer* pPlayer = GetPlayer();
+	if(m_State != QuestState::ACCEPT || !pPlayer)
 		return;
-	
+
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(m_ClientID);
 
 	// finish quest
@@ -283,15 +285,17 @@ void CQuest::Finish()
 	pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
 
 	// notify whether the after quest has opened something new
-	pGS->Mmo()->WorldSwap()->NotifyUnlockedZonesByQuest(GetPlayer(), m_ID);
-	pGS->Mmo()->Dungeon()->NotifyUnlockedDungeonsByQuest(GetPlayer(), m_ID);
+	pGS->Mmo()->WorldSwap()->NotifyUnlockedZonesByQuest(pPlayer, m_ID);
+	pGS->Mmo()->Dungeon()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
 
 	// save player stats and accept next story quest
-	pGS->Mmo()->SaveAccount(GetPlayer(), SAVE_STATS);
-	pGS->Mmo()->Quest()->AcceptNextStoryQuest(GetPlayer(), m_ID);
+	pGS->Mmo()->SaveAccount(pPlayer, SAVE_STATS);
+	pGS->Mmo()->Quest()->AcceptNextStoryQuest(pPlayer, m_ID);
 
 	// effect's
-	pGS->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 70), vec2(0, -0.5), 30, "COMPLECTED");
+	pGS->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Complete");
+	pGS->CreateText(nullptr, false, vec2(pPlayer->m_ViewPos.x, pPlayer->m_ViewPos.y - 70), vec2(0, -0.5), 30, "QUEST COMPLETE");
+	pGS->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
 }
 
 void CQuest::CheckAvailableNewStep()

@@ -312,7 +312,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char *pText)
 		CPlayer* pChatterPlayer = GetPlayer(ChatterClientID, true);
 		if(!pChatterPlayer || pChatterPlayer->Acc().m_GuildID <= 0)
 		{
-			Chat(ChatterClientID, "This chat is intended for team / guilds!");
+			Chat(ChatterClientID, "This chat is for guilds and team members!");
 			return;
 		}
 
@@ -1965,7 +1965,7 @@ void CGS::SendDayInfo(int ClientID)
 
 	if(m_DayEnumType == NIGHT_TYPE)
 	{
-		Chat(ClientID, "Nighttime experience was increase to {INT}%", m_MultiplierExp);
+		Chat(ClientID, "Nighttime experience was increased to {INT}%", m_MultiplierExp);
 	}
 	else if(m_DayEnumType == MORNING_TYPE)
 	{

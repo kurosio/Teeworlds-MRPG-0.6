@@ -116,8 +116,8 @@ void CAetherManager::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
 		pPlayer->Acc().m_aAetherLocation[ID] = true;
 		Database->Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, ID);
 
-		GS()->Chat(ClientID, "You unlock aether {STR}!", Aether.GetName());
-		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Adventure unlock aether {STR}", Aether.GetName());
+		GS()->Chat(ClientID, "You now have Aethernet access to the {STR}.", Aether.GetName());
+		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Now have Aethernet access to the {STR}.", Aether.GetName());
 		return;
 	}
 }

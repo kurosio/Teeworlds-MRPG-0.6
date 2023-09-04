@@ -384,7 +384,7 @@ void CPlayerDialog::Next()
 			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 			if(!pQuest->GetStepByMob(m_MobID)->IsComplete())
 			{
-				GS()->Chat(ClientID, "Task has not been completed yet!");
+				GS()->Chat(ClientID, "The tasks haven't been completed yet!");
 				pDialog->Show(GS(), ClientID);
 				return;
 			}

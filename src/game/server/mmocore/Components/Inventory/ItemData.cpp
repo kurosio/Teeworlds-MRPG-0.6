@@ -107,7 +107,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 
 	if(Info()->IsType(ItemType::TYPE_EQUIP) || Info()->IsType(ItemType::TYPE_MODULE))
 	{
-		GS()->Chat(-1, "{STR} got of the {STR}x{VAL}.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value);
+		GS()->Chat(-1, "{STR} got of the {STR}.", GS()->Server()->ClientName(ClientID), Info()->GetName());
 		if(Info()->IsFunctional(EQUIP_EIDOLON))
 		{
 			std::pair EidolonSize = GS()->Mmo()->Eidolons()->GetEidolonsSize(ClientID);
@@ -115,7 +115,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		}
 	}
 	else
-		GS()->Chat(ClientID, "You got of the {STR}x{VAL}({VAL}).", Info()->GetName(), Value, m_Value);
+		GS()->Chat(ClientID, "You obtain an {STR}x{VAL}({VAL}).", Info()->GetName(), Value, m_Value);
 	return Save();
 }
 

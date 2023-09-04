@@ -301,7 +301,7 @@ void CCharacter::FireWeapon()
 					Hits = true;
 
 					const int BotID = pTarget->GetPlayer()->GetBotID();
-					GS()->Chat(m_pPlayer->GetCID(), "You start dialogue with {STR}!", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
+					GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with the {STR}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 					break;
 				}
 
