@@ -100,6 +100,8 @@ void CPlayerQuestStep::Clear()
 	m_aMoveToProgress.clear();
 	m_apEntitiesMoveTo.clear();
 	m_apEntitiesNavigator.clear();
+	m_ClientQuitting = true;
+	UpdateBot();
 }
 
 int CPlayerQuestStep::GetNumberBlockedItem(int ItemID) const

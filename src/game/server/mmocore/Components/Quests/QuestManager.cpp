@@ -34,15 +34,6 @@ void CQuestManager::OnInitAccount(CPlayer* pPlayer)
 
 void CQuestManager::OnResetClient(int ClientID)
 {
-	for(auto& qp : CQuest::Data()[ClientID])
-	{
-		for(auto& pStepBot : qp.second.m_aPlayerSteps)
-		{
-			pStepBot.second.m_ClientQuitting = true;
-			pStepBot.second.UpdateBot();
-		}
-	}
-
 	CQuest::Data().erase(ClientID);
 }
 
@@ -116,7 +107,7 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 	int ClientID = pPlayer->GetCID();
 
 	// information
-	const int TotalQuests = CQuestDescription::Data().size();
+	const int TotalQuests = (int)CQuestDescription::Data().size();
 	const int TotalComplectedQuests = GetClientComplectedQuestsSize(ClientID);
 	const int TotalIncomplectedQuests = TotalQuests - TotalComplectedQuests;
 	GS()->AVH(ClientID, TAB_INFO_STATISTIC_QUESTS, "Quests statistic");
@@ -153,9 +144,9 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 			continue;
 		}
 
-		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), [=](const std::string& stories)
+		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), [pStory = pQuestInfo.GetStory()](const std::string& stories)
 		{
-			return (str_comp_nocase(pQuestInfo.GetStory(), stories.c_str()) == 0);
+			return (str_comp_nocase(pStory, stories.c_str()) == 0);
 		});
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
@@ -173,19 +164,18 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 	GS()->AV(ClientID, "null");
 }
 
-void CQuestManager::ShowQuestID(CPlayer *pPlayer, int QuestID)
+void CQuestManager::ShowQuestID(CPlayer *pPlayer, int QuestID) const
 {
 	CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
-	const int ClientID = pPlayer->GetCID();
 	const int QuestsSize = pQuestInfo->GetQuestStorySize();
 	const int QuestPosition = pQuestInfo->GetQuestStoryPosition();
 
-	GS()->AVD(ClientID, "MENU", MENU_JOURNAL_QUEST_INFORMATION, QuestID, NOPE, "{INT}/{INT} {STR}: {STR}", 
+	GS()->AVD(pPlayer->GetCID(), "MENU", MENU_JOURNAL_QUEST_INFORMATION, QuestID, NOPE, "{INT}/{INT} {STR}: {STR}",
 		QuestPosition, QuestsSize, pQuestInfo->GetStory(), pQuestInfo->GetName());
 }
 
 // active npc information display
-void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
+void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID) const
 {
 	CQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
 	const int ClientID = pPlayer->GetCID();
@@ -273,16 +263,16 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
-	for(auto& pPlayerQuest : CQuest::Data()[ClientID])
+	for(auto& pQuest : CQuest::Data()[ClientID])
 	{
 		// only for accepted quests
-		if(pPlayerQuest.second.GetState() != QuestState::ACCEPT)
+		if(pQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
 
 		// check current steps and append
-		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
+		for(auto& pStepBot : pQuest.second.m_aPlayerSteps)
 		{
-			if(pPlayerQuest.second.GetCurrentStepPos() == pStepBot.second.m_Bot.m_Step)
+			if(pQuest.second.GetCurrentStepPos() == pStepBot.second.m_Bot.m_Step)
 				pStepBot.second.AppendDefeatProgress(DefeatedBotID);
 		}
 	}
@@ -292,15 +282,18 @@ void CQuestManager::UpdateSteps(CPlayer *pPlayer)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
-	for (auto& pPlayerQuest : CQuest::Data()[ClientID])
+	for (auto& pQuest : CQuest::Data()[ClientID])
 	{
-		if(pPlayerQuest.second.GetState() != QuestState::ACCEPT)
+		if(pQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
 
-		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
+		for(auto& pStepBot : pQuest.second.m_aPlayerSteps)
 		{
-			pStepBot.second.UpdatePathNavigator();
-			pStepBot.second.UpdateTaskMoveTo();
+			if(pQuest.second.GetCurrentStepPos() == pStepBot.second.m_Bot.m_Step)
+			{
+				pStepBot.second.UpdatePathNavigator();
+				pStepBot.second.UpdateTaskMoveTo();
+			}
 		}
 	}
 }
@@ -308,7 +301,7 @@ void CQuestManager::UpdateSteps(CPlayer *pPlayer)
 void CQuestManager::AcceptNextStoryQuest(CPlayer *pPlayer, int CheckQuestID)
 {
 	const CQuestDescription CheckingQuest = CQuestDescription::Data()[CheckQuestID];
-	for (auto pQuestData = CQuestDescription::Data().find(CheckQuestID); pQuestData != CQuestDescription::Data().end(); pQuestData++)
+	for (auto pQuestData = CQuestDescription::Data().find(CheckQuestID); pQuestData != CQuestDescription::Data().end(); ++pQuestData)
 	{
 		// search next quest story step
 		if(str_comp_nocase(CheckingQuest.GetStory(), pQuestData->second.GetStory()) == 0)
@@ -349,12 +342,12 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
 {
 	const int ClientID = pPlayer->GetCID();
 	int AvailableValue = pPlayer->GetItem(ItemID)->GetValue();
-	for (const auto& pPlayerQuest : CQuest::Data()[ClientID])
+	for (const auto& pQuest : CQuest::Data()[ClientID])
 	{
-		if(pPlayerQuest.second.GetState() != QuestState::ACCEPT)
+		if(pQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
 
-		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
+		for(auto& pStepBot : pQuest.second.m_aPlayerSteps)
 		{
 			if(!pStepBot.second.m_StepComplete)
 				AvailableValue -= pStepBot.second.GetNumberBlockedItem(ItemID);

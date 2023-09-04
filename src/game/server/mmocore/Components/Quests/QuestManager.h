@@ -41,11 +41,11 @@ public:
 	}
 
 	void ShowQuestsMainList(CPlayer* pPlayer);
-	void ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID);
+	void ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID) const;
 
 private:
 	void ShowQuestsTabList(CPlayer* pPlayer, QuestState State);
-	void ShowQuestID(CPlayer *pPlayer, int QuestID);
+	void ShowQuestID(CPlayer *pPlayer, int QuestID) const;
 
 public:
 	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size);
