@@ -37,10 +37,11 @@ public:
 	int GetRewardGold() const { return m_Gold; }
 	int GetRewardExp() const { return m_Exp; }
 
-	void InitPlayerDefaultSteps(std::map < int, CPlayerQuestStep >& pElem) const
+	void InitPlayerDefaultSteps(int OwnerCID, std::map < int, CPlayerQuestStep >& pElem) const
 	{
 		for(const auto& [rStepID, rStepData] : m_StepsQuestBot)
 		{
+			pElem[rStepID].m_ClientID = OwnerCID;
 			pElem[rStepID].m_Bot = rStepData.m_Bot;
 			pElem[rStepID].m_StepComplete = false;
 			pElem[rStepID].m_ClientQuitting = false;

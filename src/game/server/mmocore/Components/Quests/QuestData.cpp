@@ -51,7 +51,7 @@ void CQuest::InitSteps()
 
 	// initialized quest steps
 	m_Step = 1;
-	Info()->InitPlayerDefaultSteps(m_aPlayerSteps);
+	Info()->InitPlayerDefaultSteps(m_ClientID, m_aPlayerSteps);
 
 	// json structuring
 	nlohmann::json JsonQuestData;
@@ -103,7 +103,7 @@ void CQuest::InitSteps()
 		int MoveToElementsSize = pStep.second.m_Bot.m_RequiredMoveTo.size();
 		pStep.second.m_aMoveToProgress.resize(MoveToElementsSize, false);
 
-		pStep.second.Update(m_ClientID);
+		pStep.second.Update();
 	}
 
 	// save file
@@ -141,7 +141,7 @@ void CQuest::LoadSteps()
 	io_close(File);
 
 	// loading steps
-	Info()->InitPlayerDefaultSteps(m_aPlayerSteps);
+	Info()->InitPlayerDefaultSteps(m_ClientID, m_aPlayerSteps);
 	m_Step = JsonQuestData.value("current_step", 1);
 	for(auto& pStep : JsonQuestData["steps"])
 	{
@@ -170,7 +170,7 @@ void CQuest::LoadSteps()
 	{
 		if(!pStep.second.m_StepComplete)
 		{
-			pStep.second.Update(m_ClientID);
+			pStep.second.Update();
 		}
 	}
 }
@@ -229,7 +229,7 @@ void CQuest::ClearSteps()
 	// update status for bots
 	for(auto& pStep : m_aPlayerSteps)
 	{
-		pStep.second.Update(m_ClientID);
+		pStep.second.Update();
 	}
 
 	// clear and remove temp user quest data
@@ -310,7 +310,7 @@ void CQuest::CheckAvailableNewStep()
 		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot.m_HasAction)
 			FinalStep = false;
 
-		pStepBot.second.Update(m_ClientID);
+		pStepBot.second.Update();
 	}
 
 	// finish the quest or update the step

@@ -264,9 +264,9 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID)
 void CQuestManager::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size)
 {
 	const int QuestID = pBot.m_QuestID;
-	CQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
-	if(pPlayerQuest->m_aPlayerSteps.find(pBot.m_SubBotID) != pPlayerQuest->m_aPlayerSteps.end())
-		pPlayerQuest->m_aPlayerSteps[pBot.m_SubBotID].FormatStringTasks(pPlayer, aBufQuestTask, Size);
+	CQuest* pQuest = pPlayer->GetQuest(QuestID);
+	CPlayerQuestStep* pStep = pQuest->GetStepByMob(pBot.m_SubBotID);
+	pStep->FormatStringTasks(aBufQuestTask, Size);
 }
 
 void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
@@ -282,8 +282,8 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 		// check current steps and append
 		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
 		{
-			if(pPlayerQuest.second.GetCurrentStep() == pStepBot.second.m_Bot.m_Step)
-				pStepBot.second.AppendDefeatProgress(pPlayer, DefeatedBotID);
+			if(pPlayerQuest.second.GetCurrentStepPos() == pStepBot.second.m_Bot.m_Step)
+				pStepBot.second.AppendDefeatProgress(DefeatedBotID);
 		}
 	}
 }
@@ -299,8 +299,8 @@ void CQuestManager::UpdateSteps(CPlayer *pPlayer)
 
 		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
 		{
-			pStepBot.second.UpdatePathNavigator(ClientID);
-			pStepBot.second.UpdateTaskMoveTo(ClientID);
+			pStepBot.second.UpdatePathNavigator();
+			pStepBot.second.UpdateTaskMoveTo();
 		}
 	}
 }
@@ -357,7 +357,7 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer *pPlayer, int ItemID) const
 		for(auto& pStepBot : pPlayerQuest.second.m_aPlayerSteps)
 		{
 			if(!pStepBot.second.m_StepComplete)
-				AvailableValue -= pStepBot.second.GetValueBlockedItem(pPlayer, ItemID);
+				AvailableValue -= pStepBot.second.GetNumberBlockedItem(ItemID);
 		}
 	}
 	return max(AvailableValue, 0);

@@ -43,7 +43,7 @@ public:
 	void LoadSteps();
 	bool SaveSteps();
 	void ClearSteps();
-	int GetCurrentStep() const { return m_Step; }
+	int GetCurrentStepPos() const { return m_Step; }
 	CPlayerQuestStep* GetStepByMob(int MobID) { return &m_aPlayerSteps[MobID]; }
 
 	// steps path finder tools

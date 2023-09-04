@@ -14,79 +14,6 @@
 
 // ##############################################################
 // ################# GLOBAL STEP STRUCTURE ######################
-/*
- *	.... REQUIRED TYPE .....
- *	required_items
- *	[{
- *		{
- *			id 1
- *			count 20
- *		},
- *		{
- *			id 2
- *			count 25
- *		}
- *	}]
- *
- *	struct TaskRequiredItems
- *	{
- *		int m_ItemID;
- *		int m_Count;
- *	}
- *	std::deque < TaskRequiredItems > m_RequiredItems;
- *
- *	.... COLECT TYPE ....
- *	collect_items
- *	[{
- *		{
- *			id 33
- *			posX 1023
- *			posY 2032
- *		},
- *		{
- *			id 33
- *			posX 1026
- *			posY 2032
- *		}
- *	}]
- *
- *	struct CollectItems
- *	{
- *		int m_ItemID;
- *		vec2 m_Position;
- *	}
- *
- *	std::deque < CollectItems > m_CollectItems;
- *
- *	.... MOVE TYPE .....
- *	move_to
- *	{
- *		posX 2303
- *		posY 5124
- *		arrow 1
- *	}
- *
- *	struct MoveTo
- *	{
- *		vec2 m_MoveTo;
- *		bool m_Arrow;
- *	}
- *
- *	.... DEFEAT TYPE .....
- *	defeat
- *	[{
- *		{
- *			id 23
- *			count 20
- *		}
- *	}]
- *
- *	struct DefeatMob
- *	{
- *		int m_MobID;
- *		int m_Count;
- *	}
- */
 void CQuestStepDescription::UpdateBot()
 {
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServer(m_Bot.m_WorldID);
@@ -122,20 +49,23 @@ void CQuestStepDescription::UpdateBot()
 
 bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 {
-	const int QuestID = m_Bot.m_QuestID;
+	const int QuestID = GetQuestID();
 	const int SubBotID = m_Bot.m_SubBotID;
+
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = pGS->m_apPlayers[i];
 		if(!pPlayer || !pPlayer->IsAuthed())
 			continue;
 
-		CQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
-		if(pPlayerQuest->GetState() != QuestState::ACCEPT || m_Bot.m_Step != pPlayerQuest->GetCurrentStep())
+		// skip some quest actions
+		CQuest* pQuest = pPlayer->GetQuest(QuestID);
+		if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != m_Bot.m_Step)
 			continue;
 
-		// skip complete steps and players who come out to clear the world of bots
-		if(pPlayerQuest->GetStepByMob(SubBotID)->m_StepComplete || pPlayerQuest->GetStepByMob(SubBotID)->m_ClientQuitting)
+		// skip some step actions
+		CPlayerQuestStep* pStep = pQuest->GetStepByMob(SubBotID);
+		if(pStep->m_StepComplete || pStep->m_ClientQuitting)
 			continue;
 
 		return true;
@@ -145,41 +75,55 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
+CGS* CPlayerQuestStep::GS() const
+{
+	return (CGS*)Instance::GetServer()->GameServerPlayer(m_ClientID);
+}
+
+CPlayer* CPlayerQuestStep::GetPlayer() const
+{
+	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
+	{
+		return GS()->m_apPlayers[m_ClientID];
+	}
+	return nullptr;
+}
+
 void CPlayerQuestStep::Clear()
 {
-	for(auto& p : m_apEntitiesMoveTo)
-		delete p;
-	for(auto& p : m_apEntitiesNavigator)
-		delete p;
-
+	for(auto& pEnt : m_apEntitiesMoveTo)
+		delete pEnt;
+	for(auto& pEnt : m_apEntitiesNavigator)
+		delete pEnt;
+	
 	m_aMobProgress.clear();
 	m_aMoveToProgress.clear();
 	m_apEntitiesMoveTo.clear();
 	m_apEntitiesNavigator.clear();
 }
 
-int CPlayerQuestStep::GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const
+int CPlayerQuestStep::GetNumberBlockedItem(int ItemID) const
 {
+	int Amount = 0;
 	if(!m_Bot.m_RequiredItems.empty())
 	{
 		for(auto& p : m_Bot.m_RequiredItems)
 		{
-			if(p.m_ItemID != ItemID)
-				continue;
-			return p.m_Count;
+			if(p.m_ItemID == ItemID)
+				Amount += p.m_Count;
 		}
 	}
 
-	return 0;
+	return Amount;
 }
 
-bool CPlayerQuestStep::IsComplete(CPlayer* pPlayer)
+bool CPlayerQuestStep::IsComplete()
 {
 	if(!m_Bot.m_RequiredItems.empty())
 	{
 		for(auto& p : m_Bot.m_RequiredItems)
 		{
-			if(pPlayer->GetItem(p.m_ItemID)->GetValue() < p.m_Count)
+			if(GetPlayer()->GetItem(p.m_ItemID)->GetValue() < p.m_Count)
 				return false;
 		}
 	}
@@ -202,27 +146,27 @@ bool CPlayerQuestStep::IsComplete(CPlayer* pPlayer)
 	return true; 
 }
 
-bool CPlayerQuestStep::Finish(CPlayer* pPlayer)
+bool CPlayerQuestStep::Finish()
 {
-	// quest completion
-	if(IsComplete(pPlayer))
-	{
-		const int QuestID = m_Bot.m_QuestID;
-		int ClientID = pPlayer->GetCID();
-		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+	CPlayer* pPlayer = GetPlayer();
 
+	// quest completion
+	if(IsComplete())
+	{
 		// save file or dissable post finish
 		m_StepComplete = true;
+
+		const int QuestID = GetQuestID();
 		if(!pPlayer->GetQuest(QuestID)->SaveSteps())
 		{
-			pGS->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
+			GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
 			dbg_msg("quest step", "[quest step post finish] can't save file.");
 			m_StepComplete = false;
 		}
 
 		if(m_StepComplete)
 		{
-			PostFinish(pPlayer);
+			PostFinish();
 		}
 
 		return m_StepComplete;
@@ -232,56 +176,60 @@ bool CPlayerQuestStep::Finish(CPlayer* pPlayer)
 	return false;
 }
 
-void CPlayerQuestStep::PostFinish(CPlayer* pPlayer)
+void CPlayerQuestStep::PostFinish()
 {
-	bool AntiStressing = false;
+	bool AntiDatabaseStress = false;
+	CPlayer* pPlayer = GetPlayer();
 	int ClientID = pPlayer->GetCID();
-	const int QuestID = m_Bot.m_QuestID;
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
 	// required item's
 	if(!m_Bot.m_RequiredItems.empty())
 	{
-		for(auto& p : m_Bot.m_RequiredItems)
+		for(auto& pRequired : m_Bot.m_RequiredItems)
 		{
-			if(p.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW)
+			// show type element
+			if(pRequired.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW)
 			{
-				pGS->Chat(pPlayer->GetCID(), "[Done] Show the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(p.m_ItemID)->Info()->GetName(), p.m_Count, m_Bot.GetName());
+				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(pRequired.m_ItemID)->Info()->GetName(), pRequired.m_Count, m_Bot.GetName());
 				continue;
 			}
 
-			// anti stressing with double thread sql result what work one (item)
+			// check for stress database
 			if(!m_Bot.m_RewardItems.empty())
 			{
 				for(auto& [m_ItemID, m_Count] : m_Bot.m_RewardItems)
 				{
-					AntiStressing = (p.m_ItemID == m_ItemID);
+					AntiDatabaseStress = (pRequired.m_ItemID == m_ItemID);
 				}
 			}
 
-			pPlayer->GetItem(p.m_ItemID)->Remove(p.m_Count);
-			pGS->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(p.m_ItemID)->Info()->GetName(), p.m_Count, m_Bot.GetName());
+			// remove item
+			pPlayer->GetItem(pRequired.m_ItemID)->Remove(pRequired.m_Count);
+			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(pRequired.m_ItemID)->Info()->GetName(), pRequired.m_Count, m_Bot.GetName());
 		}
 	}
 
 	// reward item's
 	if(!m_Bot.m_RewardItems.empty())
 	{
-		for(auto& p : m_Bot.m_RewardItems)
+		for(auto& pReward : m_Bot.m_RewardItems)
 		{
-			if(AntiStressing)
+			// under stress, add a delay
+			if(AntiDatabaseStress)
 			{
-				pGS->Mmo()->Item()->AddItemSleep(pPlayer->Acc().m_UserID, p.m_ItemID, p.m_Count, 300);
+				GS()->Mmo()->Item()->AddItemSleep(pPlayer->Acc().m_UserID, pReward.m_ItemID, pReward.m_Count, 300);
 				continue;
 			}
 
-			if(pPlayer->GetItem(p.m_ItemID)->Info()->IsEnchantable() && pPlayer->GetItem(p.m_ItemID)->GetValue() >= 1)
+			// check for enchant item
+			if(pPlayer->GetItem(pReward.m_ItemID)->Info()->IsEnchantable() && pPlayer->GetItem(pReward.m_ItemID)->GetValue() >= 1)
 			{
-				pGS->SendInbox("System", pPlayer, "No place for item", "You already have this item, but we can't put it in inventory", p.m_ItemID, 1);
+				GS()->SendInbox("System", pPlayer, "No place for item", "You already have this item, but we can't put it in inventory", pReward.m_ItemID, 1);
 				continue;
 			}
 
-			pPlayer->GetItem(p.m_ItemID)->Add(p.m_Count);
+			// give item
+			pPlayer->GetItem(pReward.m_ItemID)->Add(pReward.m_Count);
 		}
 	}
 
@@ -289,103 +237,118 @@ void CPlayerQuestStep::PostFinish(CPlayer* pPlayer)
 	DataBotInfo::ms_aDataBot[m_Bot.m_BotID].m_aVisibleActive[ClientID] = false;
 	UpdateBot();
 
-	pPlayer->GetQuest(QuestID)->CheckAvailableNewStep();
-	pGS->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
+	pPlayer->GetQuest(GetQuestID())->CheckAvailableNewStep();
+	GS()->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
 }
 
-void CPlayerQuestStep::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
+void CPlayerQuestStep::AppendDefeatProgress(int DefeatedBotID)
 {
-	if(m_Bot.m_RequiredDefeat.empty() || !pPlayer || !DataBotInfo::IsDataBotValid(DefeatedBotID))
+	// check default action
+	CPlayer* pPlayer = GetPlayer();
+	if(m_StepComplete || m_ClientQuitting || m_Bot.m_RequiredDefeat.empty() || !pPlayer || !DataBotInfo::IsDataBotValid(DefeatedBotID))
 		return;
 
-	const int QuestID = m_Bot.m_QuestID;
-	if(pPlayer->GetQuest(QuestID)->GetState() != QuestState::ACCEPT)
+	// check quest action
+	CQuest* pQuest = pPlayer->GetQuest(GetQuestID());
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
 		return;
-
-	int ClientID = pPlayer->GetCID();
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
 	// check complecte mob
-	for(auto& [m_BotID, m_Count] : m_Bot.m_RequiredDefeat)
+	for(auto& [DefeatBotID, DefeatCount] : m_Bot.m_RequiredDefeat)
 	{
-		if(DefeatedBotID != m_BotID || m_aMobProgress[DefeatedBotID] >= m_Count)
+		if(DefeatedBotID != DefeatBotID || m_aMobProgress[DefeatedBotID] >= DefeatCount)
 			continue;
 
 		m_aMobProgress[DefeatedBotID]++;
-		if(m_aMobProgress[DefeatedBotID] >= m_Count)
-			pGS->Chat(ClientID, "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
+		if(m_aMobProgress[DefeatedBotID] >= DefeatCount)
+			GS()->Chat(pPlayer->GetCID(), "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
 
-		pPlayer->GetQuest(QuestID)->SaveSteps();
+		pQuest->SaveSteps();
 		break;
 	}
 }
 
-void CPlayerQuestStep::UpdatePathNavigator(int ClientID)
+void CPlayerQuestStep::UpdatePathNavigator()
 {
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-
+	// check default action
+	CPlayer* pPlayer = GetPlayer();
 	if(m_StepComplete || m_ClientQuitting || !pPlayer || !pPlayer->GetCharacter() || !m_Bot.m_HasAction)
 		return;
 
-	CQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
-	if(pQuest->GetState() == QuestState::ACCEPT && pQuest->GetCurrentStep() == m_Bot.m_Step)
-		pQuest->AddEntityMobNavigator(&m_Bot);
-}
-
-void CPlayerQuestStep::UpdateTaskMoveTo(int ClientID)
-{
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-
-	if(m_aMoveToProgress.empty() || !m_TaskListReceived || m_StepComplete || m_ClientQuitting || !pPlayer || !pPlayer->GetCharacter())
+	// check quest action
+	CQuest* pQuest = pPlayer->GetQuest(GetQuestID());
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
 		return;
 
-	CQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
-	if(pQuest->GetState() == QuestState::ACCEPT && pQuest->GetCurrentStep() == m_Bot.m_Step)
+	// navigator
+	pQuest->AddEntityMobNavigator(&m_Bot);
+}
+
+void CPlayerQuestStep::UpdateTaskMoveTo()
+{
+	// check default action
+	CPlayer* pPlayer = GetPlayer();
+	if(m_StepComplete || m_ClientQuitting || m_aMoveToProgress.empty() || !pPlayer || !pPlayer->GetCharacter())
+		return;
+
+	// only with received task
+	if(!m_TaskListReceived)
+		return;
+
+	// check quest action
+	CQuest* pQuest = pPlayer->GetQuest(GetQuestID());
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
+		return;
+
+	// check and add entities
+	const int CurrentStep = GetMoveToCurrentStepPos();
+	for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
 	{
-		const int CurrentStep = GetMoveToCurrentStep();
-		for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
-		{
-			// skip completed and not current step's
-			QuestBotInfo::TaskRequiredMoveTo& pRequired = m_Bot.m_RequiredMoveTo[i];
-			if(CurrentStep != pRequired.m_Step || m_aMoveToProgress[i])
-				continue;
+		// skip completed and not current step's
+		QuestBotInfo::TaskRequiredMoveTo& pRequired = m_Bot.m_RequiredMoveTo[i];
+		if(CurrentStep != pRequired.m_Step || m_aMoveToProgress[i])
+			continue;
 
-			// add entity move to
-			if(pRequired.m_WorldID == pPlayer->GetPlayerWorldID())
-				AddEntityMoveTo(ClientID, &pRequired, &m_aMoveToProgress[i]);
+		// add entity move to
+		if(pRequired.m_WorldID == pPlayer->GetPlayerWorldID())
+			AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i]);
 
-			// add entity path navigator
-			if(pRequired.m_PathNavigator)
-				AddEntityNavigator(ClientID, pRequired.m_Position, pRequired.m_WorldID, &m_aMoveToProgress[i]);
-		}
+		// add entity path navigator
+		if(pRequired.m_PathNavigator)
+			AddEntityNavigator(pRequired.m_Position, pRequired.m_WorldID, &m_aMoveToProgress[i]);
 	}
 }
 
-void CPlayerQuestStep::Update(int ClientID)
+void CPlayerQuestStep::Update()
 {
 	UpdateBot();
-	UpdatePathNavigator(ClientID);
-	UpdateTaskMoveTo(ClientID);
+	UpdatePathNavigator();
+	UpdateTaskMoveTo();
 }
 
-void CPlayerQuestStep::CreateVarietyTypesRequiredItems(CPlayer* pPlayer)
+void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 {
-	if(m_Bot.m_RequiredItems.empty() || !pPlayer || !pPlayer->GetCharacter())
+	// check default action
+	CPlayer* pPlayer = GetPlayer();
+	if(m_StepComplete || m_ClientQuitting || m_Bot.m_RequiredItems.empty() || !pPlayer || !pPlayer->GetCharacter())
 		return;
 
+	// check quest action
+	CQuest* pQuest = pPlayer->GetQuest(GetQuestID());
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
+		return;
+
+	// create variety types
 	const int ClientID = pPlayer->GetCID();
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 	for(auto& [m_ItemID, m_Count, m_Type] : m_Bot.m_RequiredItems)
 	{
-		// Drop and pickup type
+		// TYPE Drop and Pick up
 		if(m_Type == QuestBotInfo::TaskRequiredItems::Type::PICKUP)
 		{
 			// check whether items are already available for pickup
-			for(CDropQuestItem* pHh = (CDropQuestItem*)pGS->m_World.FindFirst(CGameWorld::ENTTYPE_DROPQUEST); pHh; pHh = (CDropQuestItem*)pHh->TypeNext())
+			for(CDropQuestItem* pHh = (CDropQuestItem*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DROPQUEST); pHh; pHh = (CDropQuestItem*)pHh->TypeNext())
 			{
-				if(pHh->m_ClientID == ClientID && pHh->m_QuestID == m_Bot.m_QuestID && pHh->m_ItemID == m_ItemID && pHh->m_Step == m_Bot.m_Step)
+				if(pHh->m_ClientID == ClientID && pHh->m_QuestID == GetQuestID() && pHh->m_ItemID == m_ItemID && pHh->m_Step == GetStepPos())
 					return;
 			}
 
@@ -395,17 +358,23 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems(CPlayer* pPlayer)
 			{
 				vec2 Vel = vec2(frandom_num(-40.0f, 40.0f), frandom_num(-40.0f, 40.0f));
 				float AngleForce = Vel.x * (0.15f + frandom() * 0.1f);
-				new CDropQuestItem(&pGS->m_World, m_Bot.m_Position, Vel, AngleForce, m_ItemID, m_Count, m_Bot.m_QuestID, m_Bot.m_Step, ClientID);
+				new CDropQuestItem(&GS()->m_World, m_Bot.m_Position, Vel, AngleForce, m_ItemID, m_Count, GetQuestID(), GetStepPos(), ClientID);
 			}
 		}
+
+		// TODO: add new types
 	}
 }
 
 
-void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, int Size)
+void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 {
+	CPlayer* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return;
+
 	dynamic_string Buffer("\n\n");
-	CGS* pGS = pPlayer->GS();
+	const char* pLang = pPlayer->GetLanguage();
 
 	// show required bots
 	if(!m_Bot.m_RequiredDefeat.empty())
@@ -413,7 +382,7 @@ void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, 
 		for(auto& p : m_Bot.m_RequiredDefeat)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Defeat {STR} ({INT}/{INT})", DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID], p.m_Count);
+			GS()->Server()->Localization()->Format(Buffer, pLang, "- Defeat {STR} ({INT}/{INT})", DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID], p.m_Count);
 		}
 	}
 
@@ -426,8 +395,8 @@ void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, 
 			Buffer.append_at(Buffer.length(), "\n");
 
 			const char* pInteractiveType = p.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show" : "Need";
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- {STR} {STR} ({VAL}/{VAL})",
-				pGS->Server()->Localization()->Localize(pPlayer->GetLanguage(), pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), p.m_Count);
+			GS()->Server()->Localization()->Format(Buffer, pLang, "- {STR} {STR} ({VAL}/{VAL})",
+				GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), p.m_Count);
 		}
 	}
 
@@ -437,7 +406,7 @@ void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, 
 		for(auto& p : m_Bot.m_RewardItems)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Receive {STR} ({VAL})", pPlayer->GetItem(p.m_ItemID)->Info()->GetName(), p.m_Count);
+			GS()->Server()->Localization()->Format(Buffer, pLang, "- Receive {STR} ({VAL})", pPlayer->GetItem(p.m_ItemID)->Info()->GetName(), p.m_Count);
 		}
 	}
 
@@ -445,14 +414,14 @@ void CPlayerQuestStep::FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, 
 	if(!m_Bot.m_RequiredMoveTo.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n");
-		pGS->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "- Some movement is required ({VAL}/{VAL})", GetCountMoveToComplected(), m_Bot.m_RequiredMoveTo.size());
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Some movement is required ({VAL}/{VAL})", GetCountMoveToComplected(), m_Bot.m_RequiredMoveTo.size());
 	}
 
 	str_copy(aBufQuestTask, Buffer.buffer(), Size);
 	Buffer.clear();
 }
 
-int CPlayerQuestStep::GetMoveToCurrentStep() const
+int CPlayerQuestStep::GetMoveToCurrentStepPos() const
 {
 	for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
 	{
@@ -492,28 +461,30 @@ CEntityPathFinder* CPlayerQuestStep::FoundEntityNavigator(vec2 Position) const
 	return nullptr;
 }
 
-CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(int ClientID, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete)
+CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete)
 {
-	if(!pTaskMoveTo || !pComplete || (*pComplete) == true)
+	CPlayer* pPlayer = GetPlayer();
+	if(!pPlayer || !pTaskMoveTo || !pComplete || (*pComplete) == true)
 		return nullptr;
 
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+	const int ClientID = pPlayer->GetCID();
 	CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pTaskMoveTo->m_Position);
 	if(!pEntMoveTo)
-		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&pGS->m_World, pTaskMoveTo, ClientID, m_Bot.m_QuestID, pComplete, &m_apEntitiesMoveTo));
+		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, GetQuestID(), pComplete, &m_apEntitiesMoveTo));
 
 	return pEntMoveTo;
 }
 
-CEntityPathFinder* CPlayerQuestStep::AddEntityNavigator(int ClientID, vec2 Position, int WorldID, bool* pComplete)
+CEntityPathFinder* CPlayerQuestStep::AddEntityNavigator(vec2 Position, int WorldID, bool* pComplete)
 {
+	CPlayer* pPlayer = GetPlayer();
 	if(!pComplete || (*pComplete) == true)
 		return nullptr;
 
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+	const int ClientID = pPlayer->GetCID();
 	CEntityPathFinder* pEntMoveToFinder = FoundEntityNavigator(Position);
 	if(!pEntMoveToFinder)
-		pEntMoveToFinder = m_apEntitiesNavigator.emplace_back(new CEntityPathFinder(&pGS->m_World, Position, WorldID, ClientID, pComplete, &m_apEntitiesNavigator));
+		pEntMoveToFinder = m_apEntitiesNavigator.emplace_back(new CEntityPathFinder(&GS()->m_World, Position, WorldID, ClientID, pComplete, &m_apEntitiesNavigator));
 
 	return pEntMoveToFinder;
 }

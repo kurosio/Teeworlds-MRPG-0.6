@@ -46,7 +46,7 @@ void CDropQuestItem::Tick()
 
 	CPlayerItem* pItem = pPlayer->GetItem(m_ItemID);
 	const CQuest* pQuest = pPlayer->GetQuest(m_QuestID);
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStep() != m_Step || pItem->GetValue() >= m_Needed)
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != m_Step || pItem->GetValue() >= m_Needed)
 	{
 		GameWorld()->DestroyEntity(this);
 		return;

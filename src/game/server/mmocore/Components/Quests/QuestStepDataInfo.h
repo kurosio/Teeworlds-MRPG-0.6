@@ -16,35 +16,41 @@ public:
 	QuestBotInfo m_Bot{};
 	void UpdateBot();
 	bool IsActiveStep(CGS* pGS) const;
+	int GetQuestID() const { return m_Bot.m_QuestID; }
+	int GetStepPos() const { return m_Bot.m_Step; }
 };
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
 class CPlayerQuestStep : public CQuestStepDescription
 {
+	class CGS* GS() const;
+	class CPlayer* GetPlayer() const;
+
 public:
 	std::unordered_map < int /*BotID*/, int/*Count*/ > m_aMobProgress { };
 	std::deque < bool /* State */ > m_aMoveToProgress { };
 
+	int m_ClientID {};
 	bool m_StepComplete{};
 	bool m_ClientQuitting{};
 	bool m_TaskListReceived{};
 
 	void Clear();
-	int GetValueBlockedItem(CPlayer* pPlayer, int ItemID) const;
-	bool IsComplete(CPlayer* pPlayer);
-	bool Finish(CPlayer* pPlayer);
-	void PostFinish(CPlayer* pPlayer);
+	int GetNumberBlockedItem(int ItemID) const;
+	bool IsComplete();
+	bool Finish();
+	void PostFinish();
 
-	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
-	void CreateVarietyTypesRequiredItems(CPlayer* pPlayer);
-	void FormatStringTasks(CPlayer* pPlayer, char* aBufQuestTask, int Size);
+	void AppendDefeatProgress(int DefeatedBotID);
+	void CreateVarietyTypesRequiredItems();
+	void FormatStringTasks(char* aBufQuestTask, int Size);
 
-	void UpdatePathNavigator(int ClientID);
-	void UpdateTaskMoveTo(int ClientID);
-	void Update(int ClientID);
+	void UpdatePathNavigator();
+	void UpdateTaskMoveTo();
+	void Update();
 
-	int GetMoveToCurrentStep() const;
+	int GetMoveToCurrentStepPos() const;
 	int GetCountMoveToComplected();
 
 	// steps path finder tools
@@ -53,8 +59,8 @@ public:
 
 	CEntityMoveTo* FoundEntityMoveTo(vec2 Position) const;
 	CEntityPathFinder* FoundEntityNavigator(vec2 Position) const;
-	CEntityMoveTo* AddEntityMoveTo(int ClientID, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete);
-	CEntityPathFinder* AddEntityNavigator(int ClientID, vec2 Position, int WorldID, bool* pComplete);
+	CEntityMoveTo* AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete);
+	CEntityPathFinder* AddEntityNavigator(vec2 Position, int WorldID, bool* pComplete);
 };
 
 #endif
