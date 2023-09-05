@@ -932,7 +932,7 @@ bool CCharacterBotAI::SearchPlayersToTalk()
 		m_Input.m_TargetY = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
 		m_Input.m_Direction = 0;
 
-		GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialog: \"hammer hit\"");
+		GS()->Broadcast(i, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialogue: \"hammer hit\"");
 		PlayerFinding = true;
 	}
 

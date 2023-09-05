@@ -166,6 +166,7 @@ bool CPlayerItem::Use(int Value)
 		return false;
 
 	const int ClientID = GetPlayer()->GetCID();
+
 	// potion mana regen
 	if(m_ID == itPotionManaRegen && Remove(Value))
 	{

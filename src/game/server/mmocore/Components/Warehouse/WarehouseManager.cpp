@@ -64,7 +64,7 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_SHOP_ZONE))
 	{
-		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
+		GS()->Chat(ClientID, "You have left the active zone. The menu has been restored!");
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}

@@ -202,7 +202,7 @@ bool CCharacter::DecoInteractive()
 			CHouseData* pHouse = m_pPlayer->Acc().GetHouse();
 			if(pHouse && pHouse->AddDecoration(DecoID, GetMousePos()))
 			{
-				GS()->Chat(ClientID, "You added {STR}, to your house!", GS()->GetItemInfo(DecoID)->GetName());
+				GS()->Chat(ClientID, "You have added {STR} to your house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
 			}
 		}
@@ -211,12 +211,12 @@ bool CCharacter::DecoInteractive()
 			const int GuildID = m_pPlayer->Acc().m_GuildID;
 			if (GS()->Mmo()->Member()->AddDecorationHouse(DecoID, GuildID, GetMousePos()))
 			{
-				GS()->Chat(ClientID, "You added {STR}, to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
+				GS()->Chat(ClientID, "You have added {STR} to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
 			}
 			else
 			{
-				GS()->Chat(ClientID, "Distance House and Decoration maximal {INT} block!", g_Config.m_SvLimitDecoration);
+				GS()->Chat(ClientID, "The maximum distance between the House and the Decoration is {INT} blocks!", g_Config.m_SvLimitDecoration);
 				GS()->Chat(ClientID, "Setting object reset, use repeat!");
 			}
 		}
@@ -301,7 +301,7 @@ void CCharacter::FireWeapon()
 					Hits = true;
 
 					const int BotID = pTarget->GetPlayer()->GetBotID();
-					GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with the {STR}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
+					GS()->Chat(m_pPlayer->GetCID(), "You start speaking with {STR}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 					break;
 				}
 
@@ -582,7 +582,8 @@ void CCharacter::Tick()
 	if(CheckAllowedWorld())
 	{
 		m_pPlayer->GetTempData().m_TempTeleportPos = vec2(-1, -1);
-		GS()->Chat(m_pPlayer->GetCID(), "This chapter is still closed, you magically transported first zone!");
+		GS()->Chat(m_pPlayer->GetCID(), "This chapter is still closed.");
+		GS()->Chat(m_pPlayer->GetCID(), "You were magically transported to the first zone!");
 		m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
 		return;
 	}
@@ -717,7 +718,7 @@ void CCharacter::Die(int Killer, int Weapon)
 		const int RespawnWorldID = GS()->GetRespawnWorld();
 		if(RespawnWorldID >= 0 && GS()->m_apPlayers[Killer])
 		{
-			GS()->Chat(ClientID, "You are dead, you will be treated in {STR}", Server()->GetWorldName(RespawnWorldID));
+			GS()->Chat(ClientID, "You have passed away, and you will be taken care of in {STR}.", Server()->GetWorldName(RespawnWorldID));
 			m_pPlayer->GetTempData().m_TempSafeSpawn = true;
 		}
 	}
@@ -1171,14 +1172,14 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 
 	if(m_Health > m_pPlayer->GetStartHealth())
 	{
-		GS()->Chat(m_pPlayer->GetCID(), "Your health has been lowered.");
+		GS()->Chat(m_pPlayer->GetCID(), "Your health has been reduced.");
 		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that gave it away.");
 		m_Health = m_pPlayer->GetStartHealth();
 	}
 
 	if(m_Mana > m_pPlayer->GetStartMana())
 	{
-		GS()->Chat(m_pPlayer->GetCID(), "Your mana has been lowered.");
+		GS()->Chat(m_pPlayer->GetCID(), "Your mana has been reduced.");
 		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that gave it away.");
 		m_Mana = m_pPlayer->GetStartMana();
 	}

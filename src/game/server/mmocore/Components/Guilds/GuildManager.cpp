@@ -103,7 +103,7 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_HOUSE))
 	{
-		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
+		GS()->Chat(ClientID, "You have left the active zone. The menu has been restored!");
 		GS()->UpdateVotes(ClientID, MENU_MAIN);
 		return true;
 	}

@@ -46,7 +46,7 @@ bool CHouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_PLAYER_HOUSE))
 	{
-		GS()->Chat(ClientID, "You left the active zone, menu is restored!");
+		GS()->Chat(ClientID, "You have left the active zone. The menu has been restored!");
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}

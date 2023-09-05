@@ -177,7 +177,7 @@ void CPlayer::EffectsTick()
 		pEffect->second--;
 		if(pEffect->second <= 0)
 		{
-			GS()->Chat(m_ClientID, "You lost the effect {STR}.", pEffect->first.c_str());
+			GS()->Chat(m_ClientID, "You lost the {STR} effect.", pEffect->first.c_str());
 			pEffect = CGS::ms_aEffects[m_ClientID].erase(pEffect);
 			continue;
 		}
@@ -470,7 +470,7 @@ bool CPlayer::SpendCurrency(int Price, int ItemID)
 	CPlayerItem* pItem = GetItem(ItemID);
 	if(pItem->GetValue() < Price)
 	{
-		GS()->Chat(m_ClientID,"Required {VAL}, but you have only {VAL} {STR}!", Price, pItem->GetValue(), pItem->Info()->GetName());
+		GS()->Chat(m_ClientID,"Required {VAL}, but you have only {VAL} {STR}!", Price, pItem->Info()->GetName(), pItem->GetValue());
 		return false;
 	}
 	return pItem->Remove(Price);
@@ -483,7 +483,7 @@ void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 		const float RandomChance = frandom() * 100.0f;
 		if(RandomChance < Chance)
 		{
-			GS()->Chat(m_ClientID, "You got the effect {STR} time {INT}sec.", Potion, Sec);
+			GS()->Chat(m_ClientID, "You got the effect {STR} time {INT} seconds.", Potion, Sec);
 			CGS::ms_aEffects[m_ClientID][Potion] = Sec;
 		}
 	}
@@ -652,7 +652,7 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 			if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
 			{
 				GetTempData().m_TempDungeonReady ^= true;
-				GS()->Chat(m_ClientID, "You change the ready mode to {STR}!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
+				GS()->Chat(m_ClientID, "You changed the ready mode to \"{STR}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
 			}
 			return true;
 		}
