@@ -10,6 +10,7 @@ class CEntityMoveTo : public CEntity
 	int m_QuestID;
 	int m_ClientID;
 	bool* m_pComplete;
+	array < int > m_IDs;
 	std::deque < CEntityMoveTo* >* m_apCollection;
 	const QuestBotInfo::TaskRequiredMoveTo* m_pTaskMoveTo;
 

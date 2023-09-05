@@ -1052,6 +1052,8 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		{
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_AUTH)
 			{
+				const char* pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+				if(!str_utf8_check(pVersion)) { return; }
 				const char* pPassword = Unpacker.GetString(CUnpacker::SANITIZE_CC);
 				if (g_Config.m_Password[0] != 0 && str_comp(g_Config.m_Password, pPassword) != 0)
 				{

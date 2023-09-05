@@ -66,6 +66,18 @@ void CStepPathFinder::Snap(int SnappingClient)
 	if(m_ClientID != SnappingClient || !m_pPlayer || !m_pPlayer->GetCharacter())
 		return;
 
+	for(int i = 0; i < m_IDs.size(); i++)
+	{
+		CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_IDs[i], sizeof(CNetObj_Projectile)));
+		if(!pObj)
+			continue;
+
+		pObj->m_Type = WEAPON_NINJA;
+		pObj->m_X = m_Pos.x + cos(Server()->Tick() - pi / (float)STEP_PATH_FINDER_IDS * i) * 8.f;
+		pObj->m_Y = m_Pos.y + sin(Server()->Tick() - pi / (float)STEP_PATH_FINDER_IDS * i) * 8.f;
+		pObj->m_StartTick = Server()->Tick() - 5;
+	}
+
 	CNetObj_Pickup *pPickup = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
 	if(pPickup)
 	{
@@ -77,17 +89,5 @@ void CStepPathFinder::Snap(int SnappingClient)
 		pPickup->m_Y = (int)m_Pos.y;
 		pPickup->m_Type = (m_MainScenario ? (int)POWERUP_HEALTH : (int)POWERUP_ARMOR);
 		pPickup->m_Subtype = 0;
-	}
-
-	for(int i = 0; i < m_IDs.size(); i++)
-	{
-		CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_IDs[i], sizeof(CNetObj_Projectile)));
-		if(!pObj)
-			return;
-
-		pObj->m_Type = WEAPON_HAMMER;
-		pObj->m_X = m_Pos.x + cos(Server()->Tick() - pi / (float)STEP_PATH_FINDER_IDS * i) * 18.f;
-		pObj->m_Y = m_Pos.y + sin(Server()->Tick() - pi / (float)STEP_PATH_FINDER_IDS * i) * 18.f;
-		pObj->m_StartTick = Server()->Tick();
 	}
 }
