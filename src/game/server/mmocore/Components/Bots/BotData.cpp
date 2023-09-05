@@ -95,7 +95,7 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 				const vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
-				const int CollectItemID = p.value("collect_item_id", -1);
+				const int PickedUpItemID = p.value("pick_up_item_id", -1);
 				const bool PathNavigator = p.value("navigator", true);
 				const std::string TextUseInChat = p.value("use_in_chat", "\0").c_str();
 				const std::string Text = p.value("text", "\0").c_str();
@@ -105,7 +105,7 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 
 				if(Position.x > 0.f && Position.y > 0.f)
 				{
-					m_RequiredMoveTo.push_back({ Position, WorldID, LatestBiggerStep, CollectItemID, TextUseInChat, Text, PathNavigator });
+					m_RequiredMoveTo.push_back({ Position, WorldID, LatestBiggerStep, PickedUpItemID, TextUseInChat, Text, PathNavigator });
 				}
 			}
 		}

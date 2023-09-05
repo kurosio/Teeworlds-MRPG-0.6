@@ -44,7 +44,7 @@ bool CEntityMoveTo::PickItem() const
 {
 	if(m_pPlayer->GetCharacter()->m_ReloadTimer)
 	{
-		CPlayerItem* pItem = m_pPlayer->GetItem(m_pTaskMoveTo->m_CollectItemID);
+		CPlayerItem* pItem = m_pPlayer->GetItem(m_pTaskMoveTo->m_PickUpItemID);
 		pItem->Add(1);
 		GS()->Chat(m_ClientID, "You got {STR}.", pItem->Info()->GetName());
 
@@ -77,7 +77,7 @@ void CEntityMoveTo::Tick()
 			GameWorld()->DestroyEntity(this);
 		};
 
-		const bool HasCollectItem = m_pTaskMoveTo->m_CollectItemID > 0;
+		const bool HasCollectItem = m_pTaskMoveTo->m_PickUpItemID > 0;
 		const bool TextUseInChat = !m_pTaskMoveTo->m_aTextUseInChat.empty();
 
 
@@ -88,7 +88,7 @@ void CEntityMoveTo::Tick()
 			{
 				if(HasCollectItem)
 				{
-					CPlayerItem* pItem = m_pPlayer->GetItem(m_pTaskMoveTo->m_CollectItemID);
+					CPlayerItem* pItem = m_pPlayer->GetItem(m_pTaskMoveTo->m_PickUpItemID);
 					pItem->Add(1);
 					GS()->Chat(m_ClientID, "You got {STR}.", pItem->Info()->GetName());
 				}

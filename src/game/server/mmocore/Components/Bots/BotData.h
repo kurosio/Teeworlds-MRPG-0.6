@@ -92,7 +92,7 @@ public:
 		vec2 m_Position{};
 		int m_WorldID{};
 		int m_Step{};
-		int m_CollectItemID{};
+		int m_PickUpItemID{};
 		std::string m_aTextUseInChat{};
 		std::string m_aTextChat{};
 		bool m_PathNavigator{};
