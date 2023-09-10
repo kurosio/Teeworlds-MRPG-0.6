@@ -444,12 +444,12 @@ void CPlayerBot::ThreadMobsPathFinder()
 	{
 		if(m_TargetPos != vec2(0, 0) && (Server()->Tick() + 3 * m_ClientID) % (Server()->TickSpeed()) == 0)
 		{
-			m_pftPathFinderData = g_Finder.Add<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			m_pftPathFinderData = g_Finder.Prepare<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
 		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
 		{
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
-			m_pftPathFinderData = g_Finder.Add<CPathFinderData::TYPE::RANDOM>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			m_pftPathFinderData = g_Finder.Prepare<CPathFinderData::TYPE::RANDOM>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
 	}
 
@@ -458,7 +458,7 @@ void CPlayerBot::ThreadMobsPathFinder()
 		int OwnerID = m_MobID;
 		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
 		{
-			m_pftPathFinderData = g_Finder.Add<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			m_pftPathFinderData = g_Finder.Prepare<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
 	}
 }

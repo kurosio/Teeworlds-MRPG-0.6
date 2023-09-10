@@ -650,11 +650,13 @@ void CCharacterBotAI::EngineEidolons()
 
 void CCharacterBotAI::Move()
 {
-	// check future status
-	CHandlerPathFinder::TryGetUpdateData(m_pBotPlayer->m_pftPathFinderData, m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
+	// try get path finder data
+	CHandlerPathFinder::TryGetPreparedData(m_pBotPlayer->m_pftPathFinderData, &m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
 
+	// update aim
 	SetAim(m_pBotPlayer->m_TargetPos - m_Pos);
 
+	// parse path finder data
 	int Index = -1;
 	int ActiveWayPoints = 0;
 	for(int i = 0; i < m_PathFinderData.m_Size && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_PathFinderData.m_Points[i], m_Pos, nullptr, nullptr); i++)

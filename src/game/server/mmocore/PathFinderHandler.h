@@ -54,7 +54,7 @@ class CHandlerPathFinder
 
 public:
 	template<CPathFinderData::TYPE type>
-	std::future<CPathFinderData> Add(CPathfinder* pPathFinder, vec2 StartPos, vec2 SearchPos)
+	std::future<CPathFinderData> Prepare(CPathfinder* pPathFinder, vec2 StartPos, vec2 SearchPos)
 	{
 		auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ pPathFinder, StartPos, SearchPos }));
 
@@ -64,6 +64,6 @@ public:
 			return Pool.enqueue(&FindThreadPath, Handle);
 	}
 
-	static bool TryGetUpdateData(std::future<CPathFinderData>& pft, CPathFinderData& pData, vec2* pTarget, vec2* pOldTarget);
+	static bool TryGetPreparedData(std::future<CPathFinderData>& pft, CPathFinderData* pData, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
 };
 #endif

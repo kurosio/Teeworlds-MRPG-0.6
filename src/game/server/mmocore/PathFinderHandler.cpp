@@ -62,14 +62,14 @@ CPathFinderData CHandlerPathFinder::GetThreadRandomRadiusWaypointTarget(const st
 	return{};
 }
 
-bool CHandlerPathFinder::TryGetUpdateData(std::future<CPathFinderData>& pft, CPathFinderData& pData, vec2* pTarget, vec2* pOldTarget)
+bool CHandlerPathFinder::TryGetPreparedData(std::future<CPathFinderData>& pft, CPathFinderData* pData, vec2* pTarget, vec2* pOldTarget)
 {
 	// check future status
-	if(pft.valid() && pft.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
+	if(pData && pft.valid() && pft.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
 	{
-		pData.Clear();
-		pData = pft.get();
-		pData.Prepare(pTarget, pOldTarget);
+		pData->Clear();
+		*pData = pft.get();
+		pData->Prepare(pTarget, pOldTarget);
 		return true;
 	}
 
