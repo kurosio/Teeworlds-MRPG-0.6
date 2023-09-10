@@ -39,12 +39,12 @@ public:
 
 class CHandlerPathFinder
 {
-	ThreadPool Pool { 4 };
+	ThreadPool m_Pool { 4 };
 	struct HandleArgsPack
 	{
-		class CPathfinder* m_PathFinder;
-		vec2 m_StartFrom;
-		vec2 m_Search;
+		class CPathfinder* m_PathFinder{};
+		vec2 m_StartFrom{};
+		vec2 m_Search{};
 
 		[[nodiscard]] bool IsValid() const { return m_PathFinder; }
 	};
@@ -59,9 +59,9 @@ public:
 		auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ pPathFinder, StartPos, SearchPos }));
 
 		if constexpr (type == CPathFinderData::TYPE::RANDOM)
-			return Pool.enqueue(&GetThreadRandomRadiusWaypointTarget, Handle);
+			return m_Pool.enqueue(&GetThreadRandomRadiusWaypointTarget, Handle);
 		else
-			return Pool.enqueue(&FindThreadPath, Handle);
+			return m_Pool.enqueue(&FindThreadPath, Handle);
 	}
 
 	static bool TryGetPreparedData(std::future<CPathFinderData>& pft, CPathFinderData* pData, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
