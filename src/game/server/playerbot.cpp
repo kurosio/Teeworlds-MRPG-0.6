@@ -63,7 +63,7 @@ void CPlayerBot::Tick()
 		if(m_pCharacter->IsAlive() && m_BotActive)
 		{
 			m_ViewPos = m_pCharacter->GetPos();
-			ThreadMobsPathFinder();
+			HandlePathFinder();
 		}
 	}
 	else if(m_Spawned && GetRespawnTick() <= Server()->Tick())
@@ -435,9 +435,9 @@ CTeeInfo& CPlayerBot::GetTeeInfo() const
 	return DataBotInfo::ms_aDataBot[m_BotID].m_TeeInfos;
 }
 
-void CPlayerBot::ThreadMobsPathFinder()
+void CPlayerBot::HandlePathFinder()
 {
-	if(!m_BotActive || !m_pCharacter || !m_pCharacter->IsAlive() || (m_TargetPos != vec2(0, 0) && distance(m_TargetPos, m_OldTargetPos) < 48.0f))
+	if(!m_BotActive || !m_pCharacter || !m_pCharacter->IsAlive())
 		return;
 
 	if(GetBotType() == TYPE_BOT_MOB)

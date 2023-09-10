@@ -78,7 +78,7 @@ private:
 	/***********************************************************************************/
 	/*  Thread path finderdon't want to secure m_TargetPos, or m_WayPoints with mutex  */
 	/***********************************************************************************/
-	void ThreadMobsPathFinder();
+	void HandlePathFinder();
 };
 
 #endif
