@@ -40,7 +40,6 @@ void CEntityPathNavigator::Tick()
 		SetNavigatorPositions(m_Pos, m_PosTo, m_WorldID);
 
 	m_Pos = GS()->m_apPlayers[m_ClientID]->m_ViewPos;
-	dbg_msg("test", "%d", m_Data.Get().m_Size);
 }
 
 void CEntityPathNavigator::Snap(int SnappingClient)

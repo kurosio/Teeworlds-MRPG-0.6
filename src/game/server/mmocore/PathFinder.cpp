@@ -304,14 +304,14 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(c
 	return{};
 }
 
-bool CPathFinder::CHandler::TryGetPreparedData(CPathFinderPrepared* pData, vec2* pTarget, vec2* pOldTarget)
+bool CPathFinder::CHandler::TryGetPreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget, vec2* pOldTarget)
 {
 	// check future status
-	if(pData && pData->m_FutureData.valid() && pData->m_FutureData.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
+	if(pPrepare && pPrepare->m_FutureData.valid() && pPrepare->m_FutureData.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
 	{
-		pData->m_Data.Clear();
-		pData->m_Data = pData->m_FutureData.get();
-		pData->m_Data.Prepare(pTarget, pOldTarget);
+		pPrepare->m_Data.Clear();
+		pPrepare->m_Data = pPrepare->m_FutureData.get();
+		pPrepare->m_Data.Prepare(pTarget, pOldTarget);
 		return true;
 	}
 

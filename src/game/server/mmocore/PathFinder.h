@@ -47,22 +47,29 @@ class CPathFinder
 			m_pPathFinder = pPathFinder;
 		}
 
+		/*
+		 * Prepares the data to CPathFinderPrepared
+		 * creates a task with a smart pointer and passes it to the thread
+		 */
 		template<CPathFinderPrepared::TYPE type>
-		void Prepare(CPathFinderPrepared* pHandlerData, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
+		void Prepare(CPathFinderPrepared* pPrepare, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
 		{
 			auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ m_pPathFinder, StartPos, SearchPos, Radius }));
 
 			if constexpr(type == CPathFinderPrepared::TYPE::RANDOM)
 			{
-				pHandlerData->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
+				pPrepare->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
 			}
 			else
 			{
-				pHandlerData->m_FutureData = m_Pool.enqueue(&CallbackFindPath, Handle);
+				pPrepare->m_FutureData = m_Pool.enqueue(&CallbackFindPath, Handle);
 			}
 		}
 
-		bool TryGetPreparedData(CPathFinderPrepared* pData, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
+		/*
+		 * After use TryGetPreparedData with True, prepared future data will be cleared, signaling the possibility of preparing 
+		 */
+		bool TryGetPreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
 	};
 
 	friend class CHandler;
