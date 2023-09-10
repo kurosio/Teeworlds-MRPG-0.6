@@ -8,6 +8,14 @@
 
 #define MAX_WAY_CALC 50000
 
+/*
+ * Example:
+ * The handler works in sync while not restricting the main thread
+ * Handler has its own pool with the number of threads, threads are static regardless of the number of instances of the class
+ * To use it, first set the task with Prepare, when ready TryGetPrepared will return the data that can be worked with.
+ * There is no danger of working with unprepared data.
+ */
+
 // player object
 class CPathFinder
 {
@@ -39,12 +47,12 @@ class CPathFinder
 			m_pPathFinder = pPathFinder;
 		}
 
-		template<CPathFinderPrepared::CData::TYPE type>
+		template<CPathFinderPrepared::TYPE type>
 		void Prepare(CPathFinderPrepared* pHandlerData, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
 		{
 			auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ m_pPathFinder, StartPos, SearchPos, Radius }));
 
-			if constexpr(type == CPathFinderPrepared::CData::TYPE::RANDOM)
+			if constexpr(type == CPathFinderPrepared::TYPE::RANDOM)
 			{
 				pHandlerData->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
 			}

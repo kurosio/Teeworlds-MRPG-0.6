@@ -6,15 +6,15 @@ class CPathFinderPrepared
 	friend class CPathFinder;
 
 public:
+	enum class TYPE : int
+	{
+		DEFAULT,
+		RANDOM
+	};
+
 	class CData
 	{
 	public:
-		enum class TYPE : int
-		{
-			DEFAULT,
-			RANDOM
-		};
-
 		int m_Size {};
 		TYPE m_Type {};
 		std::map<int, vec2> m_Points {};

@@ -266,7 +266,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackFindPath(const std::sh
 
 		// initilize for future data
 		CPathFinderPrepared::CData Data;
-		Data.m_Type = CPathFinderPrepared::CData::TYPE::DEFAULT;
+		Data.m_Type = CPathFinderPrepared::TYPE::DEFAULT;
 		Data.m_Size = pPathFinder->m_FinalSize;
 		for(int i = Data.m_Size - 1, j = 0; i >= 0; i--, j++)
 		{
@@ -295,7 +295,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(c
 
 		// initilize for future data
 		CPathFinderPrepared::CData Data;
-		Data.m_Type = CPathFinderPrepared::CData::TYPE::RANDOM;
+		Data.m_Type = CPathFinderPrepared::TYPE::RANDOM;
 		Data.m_Size = 1;
 		Data.m_Points[0] = vec2(TargetPos.x * 32, TargetPos.y * 32);
 		return Data;

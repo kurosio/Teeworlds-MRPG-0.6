@@ -25,7 +25,7 @@ void CEntityPathNavigator::SetNavigatorPositions(vec2 StartPos, vec2 EndPos, int
 
 	m_Pos = StartPos;
 	m_PosTo = GetterPos;
-	GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::CData::TYPE::DEFAULT>(&m_Data, m_Pos, m_PosTo);
+	GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_Data, m_Pos, m_PosTo);
 }
 
 void CEntityPathNavigator::Tick()
