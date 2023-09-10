@@ -9,6 +9,8 @@
 
 #include "Entities/quest_mob_path_finder.h"
 
+#include "game/server/mmocore/GameEntities/Tools/path_navigator.h"
+
 CGS* CQuest::GS() const
 {
 	return (CGS*)Server()->GameServerPlayer(m_ClientID);
@@ -351,7 +353,11 @@ CStepPathFinder* CQuest::AddEntityMobNavigator(QuestBotInfo* pBot)
 
 	CStepPathFinder* pPathFinder = FoundEntityMobNavigator(pBot->m_SubBotID);
 	if(!pPathFinder)
-		pPathFinder = m_apEntityMobNavigator.emplace_back(new CStepPathFinder(&GS()->m_World, pBot->m_Position, m_ClientID, *pBot, &m_apEntityMobNavigator));
+	{
+		if(GS()->m_apPlayers[m_ClientID])
+			new CEntityPathNavigator(&GS()->m_World, GS()->m_apPlayers[m_ClientID]->m_ViewPos, pBot->m_Position, m_ClientID, pBot->m_WorldID);
 
+		pPathFinder = m_apEntityMobNavigator.emplace_back(new CStepPathFinder(&GS()->m_World, pBot->m_Position, m_ClientID, *pBot, &m_apEntityMobNavigator));
+	}
 	return pPathFinder;
 }

@@ -11,7 +11,54 @@
 // player object
 class CPathFinder
 {
-	class CPathFinderHandler* m_pHandler{};
+	// handler
+	class CHandler
+	{
+		inline static ThreadPool m_Pool { 4 };
+		CPathFinder* m_pPathFinder;
+
+		struct HandleArgsPack
+		{
+			CPathFinder* m_PathFinder {};
+			vec2 m_StartFrom {};
+			vec2 m_Search {};
+			float m_Radius {};
+
+			[[nodiscard]] bool IsValid() const
+			{
+				return m_PathFinder;
+			}
+		};
+
+		static CPathFinderPrepared::CData CallbackFindPath(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
+		static CPathFinderPrepared::CData CallbackRandomRadiusWaypoint(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
+
+	public:
+		explicit CHandler(CPathFinder* pPathFinder)
+		{
+			m_pPathFinder = pPathFinder;
+		}
+
+		template<CPathFinderPrepared::CData::TYPE type>
+		void Prepare(CPathFinderPrepared* pHandlerData, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
+		{
+			auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ m_pPathFinder, StartPos, SearchPos, Radius }));
+
+			if constexpr(type == CPathFinderPrepared::CData::TYPE::RANDOM)
+			{
+				pHandlerData->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
+			}
+			else
+			{
+				pHandlerData->m_FutureData = m_Pool.enqueue(&CallbackFindPath, Handle);
+			}
+		}
+
+		bool TryGetPreparedData(CPathFinderPrepared* pData, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
+	};
+
+	friend class CHandler;
+	CHandler* m_pHandler{};
 
 public:
 	CPathFinder(CLayers* Layers, class CCollision* Collision);
@@ -39,7 +86,7 @@ public:
 
 	std::mutex m_mtxLimitedOnceUse;
 	int GetIndex(int XPos, int YPos) const;
-	CPathFinderHandler* SyncHandler() const { return m_pHandler; }
+	CHandler* SyncHandler() const { return m_pHandler; }
 
 	vec2 GetRandomWaypoint();
 	vec2 GetRandomWaypointRadius(vec2 Pos, float Radius);
@@ -73,37 +120,6 @@ private:
 
 	// fake array sizes
 	int m_ClosedNodes;
-};
-
-class CPathFinderHandler
-{
-	inline static ThreadPool m_Pool { 4 };
-	struct HandleArgsPack
-	{
-		CPathFinder* m_PathFinder {};
-		vec2 m_StartFrom {};
-		vec2 m_Search {};
-		float m_Radius {};
-
-		[[nodiscard]] bool IsValid() const { return m_PathFinder; }
-	};
-
-	static CPathFinderData CallbackFindPath(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
-	static CPathFinderData CallbackRandomRadiusWaypoint(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
-
-public:
-	template<CPathFinderData::TYPE type>
-	std::future<CPathFinderData> Prepare(CPathFinder* pPathFinder, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
-	{
-		auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ pPathFinder, StartPos, SearchPos, Radius }));
-
-		if constexpr(type == CPathFinderData::TYPE::RANDOM)
-			return m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
-		else
-			return m_Pool.enqueue(&CallbackFindPath, Handle);
-	}
-
-	bool TryGetPreparedData(std::future<CPathFinderData>& pft, CPathFinderData* pData, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
 };
 
 #endif

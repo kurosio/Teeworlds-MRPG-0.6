@@ -1,41 +1,52 @@
 #ifndef GAME_SERVER_MMOCORE_PATHFINDERHANDLER_H
 #define GAME_SERVER_MMOCORE_PATHFINDERHANDLER_H
 
-class CPathFinderData
+class CPathFinderPrepared
 {
+	friend class CPathFinder;
+
 public:
-	enum class TYPE : int
+	class CData
 	{
-		CLASIC,
-		RANDOM
+	public:
+		enum class TYPE : int
+		{
+			DEFAULT,
+			RANDOM
+		};
+
+		int m_Size {};
+		TYPE m_Type {};
+		std::map<int, vec2> m_Points {};
+
+		void Prepare(vec2* pTarget, vec2* pOldTarget)
+		{
+			if(pTarget && pOldTarget)
+			{
+				*pOldTarget = *pTarget;
+
+			}
+
+			if(pTarget && m_Type == TYPE::RANDOM && m_Points.find(0) != m_Points.end())
+			{
+				*pTarget = m_Points[0];
+			}
+		}
+
+		void Clear()
+		{
+			m_Size = -1;
+			m_Points.clear();
+		}
+
+		[[nodiscard]] bool IsValid() const { return m_Size > 0; }
 	};
 
-	int m_Size{};
-	TYPE m_Type{};
-	std::map<int, vec2> m_Points{};
+	CData& Get() { return m_Data; }
 
-	void Prepare(vec2* pTarget, vec2* pOldTarget)
-	{
-		if(pTarget && pOldTarget)
-		{
-			*pOldTarget = *pTarget;
-
-		}
-
-		if(pTarget && m_Type == TYPE::RANDOM && m_Points.find(0) != m_Points.end())
-		{
-			*pTarget = m_Points[0];
-		}
-	}
-
-	void Clear()
-	{
-		m_Size = -1;
-		m_Points.clear();
-	}
-
-	[[nodiscard]] bool IsValid() const { return m_Size > 0; }
+private:
+	CData m_Data;
+	std::future<CData> m_FutureData;
 };
-
 
 #endif

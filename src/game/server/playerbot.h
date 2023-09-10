@@ -23,7 +23,7 @@ public:
 	int m_LastPosTick;
 	vec2 m_TargetPos;
 	vec2 m_OldTargetPos;
-	std::future<CPathFinderData> m_pftPathFinderData;
+	CPathFinderPrepared m_PathFinderData;
 
 	CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint);
 	~CPlayerBot() override;

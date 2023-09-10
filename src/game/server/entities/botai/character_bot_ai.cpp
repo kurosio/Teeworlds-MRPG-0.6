@@ -653,7 +653,9 @@ void CCharacterBotAI::EngineEidolons()
 void CCharacterBotAI::Move()
 {
 	// try get path finder data
-	GS()->PathFinder()->SyncHandler()->TryGetPreparedData(m_pBotPlayer->m_pftPathFinderData, &m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
+	GS()->PathFinder()->SyncHandler()->TryGetPreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
+
+	CPathFinderPrepared::CData& pData = m_pBotPlayer->m_PathFinderData.Get();
 
 	// update aim
 	SetAim(m_pBotPlayer->m_TargetPos - m_Pos);
@@ -661,7 +663,7 @@ void CCharacterBotAI::Move()
 	// parse path finder data
 	int Index = -1;
 	int ActiveWayPoints = 0;
-	for(int i = 0; i < m_PathFinderData.m_Size && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_PathFinderData.m_Points[i], m_Pos, nullptr, nullptr); i++)
+	for(int i = 0; i < pData.m_Size && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(pData.m_Points[i], m_Pos, nullptr, nullptr); i++)
 	{
 		Index = i;
 		ActiveWayPoints = i;
@@ -669,7 +671,7 @@ void CCharacterBotAI::Move()
 
 	vec2 WayDir = vec2(0, 0);
 	if(Index > -1)
-		WayDir = normalize(m_PathFinderData.m_Points[Index] - GetPos());
+		WayDir = normalize(pData.m_Points[Index] - GetPos());
 
 	if(WayDir.x < 0 && ActiveWayPoints > 3)
 		m_Input.m_Direction = -1;

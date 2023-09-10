@@ -49,7 +49,7 @@ CPathFinder::CPathFinder(CLayers* Layers, CCollision* Collision) : m_pLayers(Lay
 	}
 
 	// create handler
-	m_pHandler = new CPathFinderHandler();
+	m_pHandler = new CHandler(this);
 }
 
 CPathFinder::~CPathFinder()
@@ -241,11 +241,11 @@ vec2 CPathFinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
 }
 
 /*
- * CPathFinderHandler
+ * CHandler
  * - Synchronized path search in a separate thread pool
  */
 
-CPathFinderData CPathFinderHandler::CallbackFindPath(const std::shared_ptr<HandleArgsPack>& pHandleData)
+CPathFinderPrepared::CData CPathFinder::CHandler::CallbackFindPath(const std::shared_ptr<HandleArgsPack>& pHandleData)
 {
 	HandleArgsPack* pHandle = pHandleData.get();
 
@@ -265,8 +265,8 @@ CPathFinderData CPathFinderHandler::CallbackFindPath(const std::shared_ptr<Handl
 		pPathFinder->FindPath();
 
 		// initilize for future data
-		CPathFinderData Data;
-		Data.m_Type = CPathFinderData::TYPE::CLASIC;
+		CPathFinderPrepared::CData Data;
+		Data.m_Type = CPathFinderPrepared::CData::TYPE::DEFAULT;
 		Data.m_Size = pPathFinder->m_FinalSize;
 		for(int i = Data.m_Size - 1, j = 0; i >= 0; i--, j++)
 		{
@@ -279,7 +279,7 @@ CPathFinderData CPathFinderHandler::CallbackFindPath(const std::shared_ptr<Handl
 	return {};
 }
 
-CPathFinderData CPathFinderHandler::CallbackRandomRadiusWaypoint(const std::shared_ptr<HandleArgsPack>& pHandleData)
+CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(const std::shared_ptr<HandleArgsPack>& pHandleData)
 {
 	HandleArgsPack* pHandle = pHandleData.get();
 
@@ -294,8 +294,8 @@ CPathFinderData CPathFinderHandler::CallbackRandomRadiusWaypoint(const std::shar
 		const vec2 TargetPos = pHandle->m_PathFinder->GetRandomWaypointRadius(StartPos, pHandle->m_Radius);
 
 		// initilize for future data
-		CPathFinderData Data;
-		Data.m_Type = CPathFinderData::TYPE::RANDOM;
+		CPathFinderPrepared::CData Data;
+		Data.m_Type = CPathFinderPrepared::CData::TYPE::RANDOM;
 		Data.m_Size = 1;
 		Data.m_Points[0] = vec2(TargetPos.x * 32, TargetPos.y * 32);
 		return Data;
@@ -304,14 +304,14 @@ CPathFinderData CPathFinderHandler::CallbackRandomRadiusWaypoint(const std::shar
 	return{};
 }
 
-bool CPathFinderHandler::TryGetPreparedData(std::future<CPathFinderData>& pft, CPathFinderData* pData, vec2* pTarget, vec2* pOldTarget)
+bool CPathFinder::CHandler::TryGetPreparedData(CPathFinderPrepared* pData, vec2* pTarget, vec2* pOldTarget)
 {
 	// check future status
-	if(pData && pft.valid() && pft.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
+	if(pData && pData->m_FutureData.valid() && pData->m_FutureData.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
 	{
-		pData->Clear();
-		*pData = pft.get();
-		pData->Prepare(pTarget, pOldTarget);
+		pData->m_Data.Clear();
+		pData->m_Data = pData->m_FutureData.get();
+		pData->m_Data.Prepare(pTarget, pOldTarget);
 		return true;
 	}
 

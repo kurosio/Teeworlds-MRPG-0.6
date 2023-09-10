@@ -443,12 +443,12 @@ void CPlayerBot::HandlePathFinder()
 	{
 		if(m_TargetPos != vec2(0, 0) && (Server()->Tick() + 3 * m_ClientID) % (Server()->TickSpeed()) == 0)
 		{
-			m_pftPathFinderData = GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::CData::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
 		{
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
-			m_pftPathFinderData = GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderData::TYPE::RANDOM>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::CData::TYPE::RANDOM>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}
 
@@ -457,7 +457,7 @@ void CPlayerBot::HandlePathFinder()
 		int OwnerID = m_MobID;
 		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
 		{
-			m_pftPathFinderData = GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::CData::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}
 }
