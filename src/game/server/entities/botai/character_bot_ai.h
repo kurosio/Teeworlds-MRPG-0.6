@@ -90,6 +90,7 @@ class CCharacterBotAI : public CCharacter
 	vec2 m_WallPos;
 	int m_EmotionsStyle;
 	std::deque< int > m_aListDmgPlayers;
+	CPathFinderData m_PathFinderData;
 
 public:
 	CCharacterBotAI(CGameWorld* pWorld);

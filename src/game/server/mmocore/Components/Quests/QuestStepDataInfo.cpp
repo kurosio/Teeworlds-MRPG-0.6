@@ -58,6 +58,10 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 		if(!pPlayer || !pPlayer->IsAuthed())
 			continue;
 
+		// invalid data
+		if(CQuestDescription::Data().find(QuestID) == CQuestDescription::Data().end())
+			continue;
+
 		// skip some quest actions
 		CQuest* pQuest = pPlayer->GetQuest(QuestID);
 		if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != m_Bot.m_Step)

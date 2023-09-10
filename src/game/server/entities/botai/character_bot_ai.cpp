@@ -650,15 +650,14 @@ void CCharacterBotAI::EngineEidolons()
 
 void CCharacterBotAI::Move()
 {
-	bool Status = false;
-	if(!m_pBotPlayer->m_ThreadReadNow.compare_exchange_strong(Status, true, std::memory_order::memory_order_acquire, std::memory_order::memory_order_relaxed))
-		return;
+	// check future status
+	CHandlerPathFinder::TryGetUpdateData(m_pBotPlayer->m_pftPathFinderData, m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
 
 	SetAim(m_pBotPlayer->m_TargetPos - m_Pos);
 
 	int Index = -1;
 	int ActiveWayPoints = 0;
-	for(int i = 0; i < m_pBotPlayer->m_PathSize && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->GetWayPoint(i), m_Pos, nullptr, nullptr); i++)
+	for(int i = 0; i < m_PathFinderData.m_Size && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_PathFinderData.m_Points[i], m_Pos, nullptr, nullptr); i++)
 	{
 		Index = i;
 		ActiveWayPoints = i;
@@ -666,7 +665,7 @@ void CCharacterBotAI::Move()
 
 	vec2 WayDir = vec2(0, 0);
 	if(Index > -1)
-		WayDir = normalize(m_pBotPlayer->GetWayPoint(Index) - GetPos());
+		WayDir = normalize(m_PathFinderData.m_Points[Index] - GetPos());
 
 	if(WayDir.x < 0 && ActiveWayPoints > 3)
 		m_Input.m_Direction = -1;
@@ -783,8 +782,6 @@ void CCharacterBotAI::Move()
 		m_Input.m_Jump = 1;
 		m_MoveTick = Server()->Tick();
 	}
-
-	m_pBotPlayer->m_ThreadReadNow.store(false, std::memory_order::memory_order_release);
 }
 
 

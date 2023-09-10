@@ -3,7 +3,6 @@
 #include "playerbot.h"
 
 #include "gamecontext.h"
-#include "mmocore/PathFinder.h"
 
 #include "entities/botai/character_bot_ai.h"
 #include "gamemodes/dungeon.h"
@@ -12,8 +11,10 @@
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
+static CHandlerPathFinder g_Finder = CHandlerPathFinder();
+
 CPlayerBot::CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint)
-	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(SubBotID), m_BotHealth(0), m_LastPosTick(0), m_PathSize(0)
+	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(SubBotID), m_BotHealth(0), m_LastPosTick(0)
 {
 	m_EidolonCID = -1;
 	m_OldTargetPos = vec2(0, 0);
@@ -63,10 +64,6 @@ void CPlayerBot::Tick()
 		{
 			m_ViewPos = m_pCharacter->GetPos();
 			ThreadMobsPathFinder();
-		}
-		else
-		{
-			ClearWayPoint();
 		}
 	}
 	else if(m_Spawned && GetRespawnTick() <= Server()->Tick())
@@ -438,62 +435,21 @@ CTeeInfo& CPlayerBot::GetTeeInfo() const
 	return DataBotInfo::ms_aDataBot[m_BotID].m_TeeInfos;
 }
 
-void CPlayerBot::FindThreadPath(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 StartPos, vec2 SearchPos)
-{
-	if(!pGameServer || !pBotPlayer || length(StartPos) <= 0 || length(SearchPos) <= 0)
-		return;
-
-	mtxThreadPathWritedNow.lock();
-
-	while(pBotPlayer->m_ThreadReadNow.load(std::memory_order_acquire))
-		std::this_thread::sleep_for(std::chrono::microseconds(1));
-
-	pBotPlayer->m_OldTargetPos = pBotPlayer->m_TargetPos;
-
-	pGameServer->PathFinder()->Init();
-	pGameServer->PathFinder()->SetStart(StartPos);
-	pGameServer->PathFinder()->SetEnd(SearchPos);
-	pGameServer->PathFinder()->FindPath();
-	pBotPlayer->m_PathSize = pGameServer->PathFinder()->m_FinalSize;
-	for(int i = pBotPlayer->m_PathSize - 1, j = 0; i >= 0; i--, j++)
-		pBotPlayer->m_WayPoints[j] = vec2(pGameServer->PathFinder()->m_lFinalPath[i].m_Pos.x * 32 + 16, pGameServer->PathFinder()->m_lFinalPath[i].m_Pos.y * 32 + 16);
-
-	mtxThreadPathWritedNow.unlock();
-}
-
-void CPlayerBot::GetThreadRandomRadiusWaypointTarget(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 Pos, float Radius)
-{
-	if(!pGameServer || !pBotPlayer || length(Pos) <= 0)
-		return;
-
-	mtxThreadPathWritedNow.lock();
-
-	while(pBotPlayer->m_ThreadReadNow.load(std::memory_order_acquire))
-		std::this_thread::sleep_for(std::chrono::microseconds(1));
-
-	pBotPlayer->m_OldTargetPos = pBotPlayer->m_TargetPos;
-
-	const vec2 TargetPos = pGameServer->PathFinder()->GetRandomWaypointRadius(Pos, Radius);
-	pBotPlayer->m_TargetPos = vec2(TargetPos.x * 32, TargetPos.y * 32);
-
-	mtxThreadPathWritedNow.unlock();
-}
-
 void CPlayerBot::ThreadMobsPathFinder()
 {
-	if(!m_pCharacter || !m_pCharacter->IsAlive() || (m_TargetPos != vec2(0,0) && distance(m_TargetPos, m_OldTargetPos) < 48.0f))
+	if(!m_BotActive || !m_pCharacter || !m_pCharacter->IsAlive() || (m_TargetPos != vec2(0, 0) && distance(m_TargetPos, m_OldTargetPos) < 48.0f))
 		return;
 
 	if(GetBotType() == TYPE_BOT_MOB)
 	{
 		if(m_TargetPos != vec2(0, 0) && (Server()->Tick() + 3 * m_ClientID) % (Server()->TickSpeed()) == 0)
 		{
-			std::thread(&FindThreadPath, GS(), this, m_ViewPos, m_TargetPos).detach();
+			m_pftPathFinderData = g_Finder.Add<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
 		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
 		{
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
-			std::thread(&GetThreadRandomRadiusWaypointTarget, GS(), this, m_ViewPos, 800.0f).detach();
+			m_pftPathFinderData = g_Finder.Add<CPathFinderData::TYPE::RANDOM>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
 	}
 
@@ -502,20 +458,7 @@ void CPlayerBot::ThreadMobsPathFinder()
 		int OwnerID = m_MobID;
 		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
 		{
-			std::thread(&FindThreadPath, GS(), this, m_ViewPos, m_TargetPos).detach();
+			m_pftPathFinderData = g_Finder.Add<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
-	}
-}
-
-void CPlayerBot::ClearWayPoint()
-{
-	if(!m_WayPoints.empty())
-	{
-		bool Status = false;
-		if(!m_ThreadReadNow.compare_exchange_strong(Status, true, std::memory_order::memory_order_acquire, std::memory_order::memory_order_relaxed))
-			return;
-
-		m_WayPoints.clear();
-		m_ThreadReadNow.store(false, std::memory_order::memory_order_release);
 	}
 }

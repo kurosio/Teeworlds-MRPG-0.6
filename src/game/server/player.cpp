@@ -130,8 +130,6 @@ void CPlayer::TryCreateEidolon()
 	if(IsBot() || !IsAuthed() || !GetCharacter())
 		return;
 
-	mtxThreadPathWritedNow.lock();
-
 	int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON);
 	if(CEidolonInfoData* pEidolonData = GS()->GetEidolonByItemID(EidolonItemID))
 	{
@@ -141,16 +139,12 @@ void CPlayer::TryCreateEidolon()
 			m_EidolonCID = EidolonCID;
 		}
 	}
-
-	mtxThreadPathWritedNow.unlock();
 }
 
 void CPlayer::TryRemoveEidolon()
 {
 	if(IsBot())
 		return;
-
-	mtxThreadPathWritedNow.lock();
 
 	if(m_EidolonCID >= MAX_PLAYERS && m_EidolonCID < MAX_CLIENTS && GS()->m_apPlayers[m_EidolonCID])
 	{
@@ -162,8 +156,6 @@ void CPlayer::TryRemoveEidolon()
 	}
 
 	m_EidolonCID = -1;
-
-	mtxThreadPathWritedNow.unlock();
 }
 
 

@@ -5,7 +5,7 @@
 
 #include "player.h"
 
-inline std::mutex mtxThreadPathWritedNow;
+#include "mmocore/PathFinderHandler.h"
 
 class CPlayerBot : public CPlayer
 {
@@ -18,22 +18,15 @@ class CPlayerBot : public CPlayer
 	int m_BotStartHealth;
 	bool m_BotActive;
 	int m_DungeonAllowedSpawn;
-	std::map<int, vec2> m_WayPoints;
 
 public:
 	int m_LastPosTick;
-	int m_PathSize;
 	vec2 m_TargetPos;
 	vec2 m_OldTargetPos;
-	std::atomic_bool m_ThreadReadNow;
+	std::future<CPathFinderData> m_pftPathFinderData;
 
 	CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint);
 	~CPlayerBot() override;
-
-	vec2& GetWayPoint(int Index) { return m_WayPoints[Index]; }
-	static void FindThreadPath(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 StartPos, vec2 SearchPos);
-	static void GetThreadRandomRadiusWaypointTarget(CGS* pGameServer, CPlayerBot* pBotPlayer, vec2 Pos, float Radius);
-	void ClearWayPoint();
 
 	int GetTeam() override { return TEAM_BLUE; }
 	bool IsBot() const override { return true; }
