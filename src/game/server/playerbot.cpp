@@ -8,10 +8,9 @@
 #include "gamemodes/dungeon.h"
 
 #include "mmocore/Components/Bots/BotManager.h"
+#include "mmocore/PathFinder.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
-
-static CHandlerPathFinder g_Finder = CHandlerPathFinder();
 
 CPlayerBot::CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint)
 	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(SubBotID), m_BotHealth(0), m_LastPosTick(0)
@@ -444,12 +443,12 @@ void CPlayerBot::HandlePathFinder()
 	{
 		if(m_TargetPos != vec2(0, 0) && (Server()->Tick() + 3 * m_ClientID) % (Server()->TickSpeed()) == 0)
 		{
-			m_pftPathFinderData = g_Finder.Prepare<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			m_pftPathFinderData = GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
 		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
 		{
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
-			m_pftPathFinderData = g_Finder.Prepare<CPathFinderData::TYPE::RANDOM>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			m_pftPathFinderData = GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderData::TYPE::RANDOM>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
 	}
 
@@ -458,7 +457,7 @@ void CPlayerBot::HandlePathFinder()
 		int OwnerID = m_MobID;
 		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
 		{
-			m_pftPathFinderData = g_Finder.Prepare<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
+			m_pftPathFinderData = GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderData::TYPE::CLASIC>(GS()->PathFinder(), m_ViewPos, m_TargetPos);
 		}
 	}
 }

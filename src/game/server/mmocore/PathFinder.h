@@ -4,14 +4,18 @@
 #include <game/layers.h>
 #include "BinaryHeap.h"
 
+#include "PathFinderData.h"
+
 #define MAX_WAY_CALC 50000
 
 // player object
-class CPathfinder
+class CPathFinder
 {
+	class CPathFinderHandler* m_pHandler{};
+
 public:
-	CPathfinder(class CLayers* Layers, class CCollision* Collision);
-	~CPathfinder();
+	CPathFinder(CLayers* Layers, class CCollision* Collision);
+	~CPathFinder();
 
 	struct CNode
 	{
@@ -33,7 +37,9 @@ public:
 	void SetStart(vec2 Pos);
 	void SetEnd(vec2 Pos);
 
+	std::mutex m_mtxLimitedOnceUse;
 	int GetIndex(int XPos, int YPos) const;
+	CPathFinderHandler* SyncHandler() const { return m_pHandler; }
 
 	vec2 GetRandomWaypoint();
 	vec2 GetRandomWaypointRadius(vec2 Pos, float Radius);
@@ -51,8 +57,8 @@ private:
 		END = -4,
 	};
 
-	class CLayers *m_pLayers;
-	class CCollision *m_pCollision;
+	CLayers *m_pLayers;
+	CCollision *m_pCollision;
 
 	array<CNode> m_lNodes;
 
@@ -67,6 +73,37 @@ private:
 
 	// fake array sizes
 	int m_ClosedNodes;
+};
+
+class CPathFinderHandler
+{
+	inline static ThreadPool m_Pool { 4 };
+	struct HandleArgsPack
+	{
+		CPathFinder* m_PathFinder {};
+		vec2 m_StartFrom {};
+		vec2 m_Search {};
+		float m_Radius {};
+
+		[[nodiscard]] bool IsValid() const { return m_PathFinder; }
+	};
+
+	static CPathFinderData CallbackFindPath(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
+	static CPathFinderData CallbackRandomRadiusWaypoint(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
+
+public:
+	template<CPathFinderData::TYPE type>
+	std::future<CPathFinderData> Prepare(CPathFinder* pPathFinder, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
+	{
+		auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ pPathFinder, StartPos, SearchPos, Radius }));
+
+		if constexpr(type == CPathFinderData::TYPE::RANDOM)
+			return m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
+		else
+			return m_Pool.enqueue(&CallbackFindPath, Handle);
+	}
+
+	bool TryGetPreparedData(std::future<CPathFinderData>& pft, CPathFinderData* pData, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
 };
 
 #endif

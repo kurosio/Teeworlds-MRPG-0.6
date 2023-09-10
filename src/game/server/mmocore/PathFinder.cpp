@@ -5,7 +5,7 @@
 #include <game/layers.h>
 #include <game/mapitems.h>
 
-CPathfinder::CPathfinder(CLayers* Layers, CCollision* Collision) : m_pLayers(Layers), m_pCollision(Collision)
+CPathFinder::CPathFinder(CLayers* Layers, CCollision* Collision) : m_pLayers(Layers), m_pCollision(Collision)
 {
 	m_ClosedNodes = 0;
 	m_FinalSize = 0;
@@ -47,16 +47,23 @@ CPathfinder::CPathfinder(CLayers* Layers, CCollision* Collision) : m_pLayers(Lay
 			ID++;
 		}
 	}
+
+	// create handler
+	m_pHandler = new CPathFinderHandler();
 }
 
-CPathfinder::~CPathfinder()
+CPathFinder::~CPathFinder()
 {
 	m_lMap.clear();
 	m_lFinalPath.clear();
 	m_lNodes.clear();
+
+	// delete handler
+	delete m_pHandler;
+	m_pHandler = nullptr;
 }
 
-void CPathfinder::Init()
+void CPathFinder::Init()
 {
 	m_ClosedNodes = 0;
 	m_FinalSize = 0;
@@ -64,7 +71,7 @@ void CPathfinder::Init()
 	m_lNodes = m_lMap;
 }
 
-void CPathfinder::SetStart(vec2 Pos)
+void CPathFinder::SetStart(vec2 Pos)
 {
 	int StartX = clamp((int)(Pos.x / 32.0f), 0, m_LayerWidth);
 	int StartY = clamp((int)(Pos.y / 32.0f), 0, m_LayerHeight);
@@ -76,7 +83,7 @@ void CPathfinder::SetStart(vec2 Pos)
 	m_StartIndex = Index;
 }
 
-void CPathfinder::SetEnd(vec2 Pos)
+void CPathFinder::SetEnd(vec2 Pos)
 {
 	int EndX = clamp((int)(Pos.x / 32.0f), 0, m_LayerWidth);
 	int EndY = clamp((int)(Pos.y / 32.0f), 0, m_LayerHeight);
@@ -87,12 +94,12 @@ void CPathfinder::SetEnd(vec2 Pos)
 }
 
 
-int CPathfinder::GetIndex(int XPos, int YPos) const
+int CPathFinder::GetIndex(int XPos, int YPos) const
 {
 	return XPos + m_pLayers->GameLayer()->m_Width * YPos;
 }
 
-void CPathfinder::FindPath()
+void CPathFinder::FindPath()
 {
 	int CurrentIndex = m_StartIndex;
 	if (m_StartIndex > -1 && m_EndIndex > -1)
@@ -183,7 +190,7 @@ void CPathfinder::FindPath()
 	}
 }
 
-vec2 CPathfinder::GetRandomWaypoint()
+vec2 CPathFinder::GetRandomWaypoint()
 {
 	array<vec2> lPossibleWaypoints;
 	for (int i = 0; i < m_LayerHeight; i++)
@@ -205,7 +212,7 @@ vec2 CPathfinder::GetRandomWaypoint()
 	return vec2(0, 0);
 }
 
-vec2 CPathfinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
+vec2 CPathFinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
 {
 	array<vec2> lPossibleWaypoints;
 	float Range = (Radius / 2.0f);
@@ -231,4 +238,82 @@ vec2 CPathfinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
 		return lPossibleWaypoints[Rand];
 	}
 	return vec2(0, 0);
+}
+
+/*
+ * CPathFinderHandler
+ * - Synchronized path search in a separate thread pool
+ */
+
+CPathFinderData CPathFinderHandler::CallbackFindPath(const std::shared_ptr<HandleArgsPack>& pHandleData)
+{
+	HandleArgsPack* pHandle = pHandleData.get();
+
+	if(pHandle && pHandle->IsValid() && length(pHandle->m_StartFrom) > 0 && length(pHandle->m_Search) > 0)
+	{
+		// guard element, path finder working only with one item TODO: rework
+		std::lock_guard QueueLock { pHandle->m_PathFinder->m_mtxLimitedOnceUse };
+
+		const vec2 StartPos = pHandle->m_StartFrom;
+		const vec2 SearchPos = pHandle->m_Search;
+		CPathFinder* pPathFinder = pHandle->m_PathFinder;
+
+		// path finder working
+		pPathFinder->Init();
+		pPathFinder->SetStart(StartPos);
+		pPathFinder->SetEnd(SearchPos);
+		pPathFinder->FindPath();
+
+		// initilize for future data
+		CPathFinderData Data;
+		Data.m_Type = CPathFinderData::TYPE::CLASIC;
+		Data.m_Size = pPathFinder->m_FinalSize;
+		for(int i = Data.m_Size - 1, j = 0; i >= 0; i--, j++)
+		{
+			Data.m_Points[j] = vec2(pPathFinder->m_lFinalPath[i].m_Pos.x * 32 + 16, pPathFinder->m_lFinalPath[i].m_Pos.y * 32 + 16);
+		}
+
+		return Data;
+	}
+
+	return {};
+}
+
+CPathFinderData CPathFinderHandler::CallbackRandomRadiusWaypoint(const std::shared_ptr<HandleArgsPack>& pHandleData)
+{
+	HandleArgsPack* pHandle = pHandleData.get();
+
+	if(pHandle && pHandle->IsValid() && length(pHandle->m_StartFrom) > 0)
+	{
+		// guard element, path finder working only with one item TODO: rework
+		std::lock_guard QueueLock { pHandle->m_PathFinder->m_mtxLimitedOnceUse };
+
+		const vec2 StartPos = pHandle->m_StartFrom;
+
+		// path finder working
+		const vec2 TargetPos = pHandle->m_PathFinder->GetRandomWaypointRadius(StartPos, pHandle->m_Radius);
+
+		// initilize for future data
+		CPathFinderData Data;
+		Data.m_Type = CPathFinderData::TYPE::RANDOM;
+		Data.m_Size = 1;
+		Data.m_Points[0] = vec2(TargetPos.x * 32, TargetPos.y * 32);
+		return Data;
+	}
+
+	return{};
+}
+
+bool CPathFinderHandler::TryGetPreparedData(std::future<CPathFinderData>& pft, CPathFinderData* pData, vec2* pTarget, vec2* pOldTarget)
+{
+	// check future status
+	if(pData && pft.valid() && pft.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
+	{
+		pData->Clear();
+		*pData = pft.get();
+		pData->Prepare(pTarget, pOldTarget);
+		return true;
+	}
+
+	return false;
 }

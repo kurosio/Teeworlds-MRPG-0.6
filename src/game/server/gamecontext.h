@@ -25,7 +25,7 @@ class CGS : public IGameServer
 	######################################################################### */
 	class IServer* m_pServer;
 	class IConsole* m_pConsole;
-	class CPathfinder* m_pPathFinder;
+	class CPathFinder* m_pPathFinder;
 	class IStorageEngine* m_pStorage;
 	class CCommandProcessor* m_pCommandProcessor;
 	class MmoController* m_pMmoController;
@@ -56,7 +56,7 @@ public:
 	CPlayer *m_apPlayers[MAX_CLIENTS];
 	IGameController *m_pController;
 	CGameWorld m_World;
-	CPathfinder* PathFinder() const { return m_pPathFinder; }
+	CPathFinder* PathFinder() const { return m_pPathFinder; }
 
 	/* #########################################################################
 		SWAP GAMECONTEX DATA

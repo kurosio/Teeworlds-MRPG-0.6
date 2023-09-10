@@ -735,7 +735,7 @@ void CGS::OnInit(int WorldID)
 	}
 
 	// initialize pathfinder
-	m_pPathFinder = new CPathfinder(m_pLayers, &m_Collision);
+	m_pPathFinder = new CPathFinder(m_pLayers, &m_Collision);
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 }
 

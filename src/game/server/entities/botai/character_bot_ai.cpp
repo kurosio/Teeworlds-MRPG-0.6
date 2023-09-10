@@ -14,6 +14,8 @@
 #include <game/server/mmocore/Components/Bots/BotData.h>
 #include <game/server/mmocore/Components/Quests/QuestManager.h>
 
+#include "game/server/mmocore/PathFinder.h"
+
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 
@@ -651,7 +653,7 @@ void CCharacterBotAI::EngineEidolons()
 void CCharacterBotAI::Move()
 {
 	// try get path finder data
-	CHandlerPathFinder::TryGetPreparedData(m_pBotPlayer->m_pftPathFinderData, &m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
+	GS()->PathFinder()->SyncHandler()->TryGetPreparedData(m_pBotPlayer->m_pftPathFinderData, &m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
 
 	// update aim
 	SetAim(m_pBotPlayer->m_TargetPos - m_Pos);
