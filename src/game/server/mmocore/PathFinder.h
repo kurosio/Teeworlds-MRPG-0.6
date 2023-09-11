@@ -54,22 +54,26 @@ class CPathFinder
 		template<CPathFinderPrepared::TYPE type>
 		void Prepare(CPathFinderPrepared* pPrepare, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
 		{
-			auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ m_pPathFinder, StartPos, SearchPos, Radius }));
+			// first need done old task
+			if(!pPrepare->m_FutureData.valid())
+			{
+				auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ m_pPathFinder, StartPos, SearchPos, Radius }));
 
-			if constexpr(type == CPathFinderPrepared::TYPE::RANDOM)
-			{
-				pPrepare->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
-			}
-			else
-			{
-				pPrepare->m_FutureData = m_Pool.enqueue(&CallbackFindPath, Handle);
+				if constexpr(type == CPathFinderPrepared::TYPE::RANDOM)
+				{
+					pPrepare->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
+				}
+				else
+				{
+					pPrepare->m_FutureData = m_Pool.enqueue(&CallbackFindPath, Handle);
+				}
 			}
 		}
 
 		/*
-		 * After use TryGetPreparedData with True, prepared future data will be cleared, signaling the possibility of preparing 
+		 * After use TryMarkAndUpdatePreparedData with True, prepared future data will be cleared, signaling the possibility of preparing 
 		 */
-		bool TryGetPreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
+		bool TryMarkAndUpdatePreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
 	};
 
 	friend class CHandler;

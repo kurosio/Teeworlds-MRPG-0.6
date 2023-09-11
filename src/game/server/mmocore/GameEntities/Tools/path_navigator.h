@@ -10,22 +10,17 @@
 class CEntityPathNavigator : public CEntity
 {
 	bool m_Snapping {};
-	bool m_StartSnake {};
 	int m_StepPos {};
 	CEntity* m_pParent {};
 	CPathFinderPrepared m_Data {};
 	int m_TickLastIdle {};
-	vec2 m_StartPos {};
 	vec2 m_LastPos {};
 	int64 m_Mask {};
 
 public:
 	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, vec2 EndPos, int WorldID, int64 Mask = -1);
 
-	void SetNavigatorPositions(vec2 StartPos);
-
 	void Tick() override;
-	void Snap(int SnappingClient) override;
 	void PostSnap() override;
 };
 

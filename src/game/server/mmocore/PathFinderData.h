@@ -44,6 +44,14 @@ public:
 
 	CData& Get() { return m_Data; }
 
+	/*
+	 * returns true if the data requires updating from prepared data or if the data is empty
+	 */
+	bool IsRequiredUpdatePreparedData() const
+	{
+		return !m_Data.IsValid() || m_FutureData.valid();
+	}
+
 private:
 	CData m_Data;
 	std::future<CData> m_FutureData;

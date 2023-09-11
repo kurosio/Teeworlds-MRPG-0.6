@@ -652,8 +652,8 @@ void CCharacterBotAI::EngineEidolons()
 
 void CCharacterBotAI::Move()
 {
-	// try get path finder data
-	GS()->PathFinder()->SyncHandler()->TryGetPreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
+	// try get path finder updated data
+	GS()->PathFinder()->SyncHandler()->TryMarkAndUpdatePreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
 
 	CPathFinderPrepared::CData& pData = m_pBotPlayer->m_PathFinderData.Get();
 
