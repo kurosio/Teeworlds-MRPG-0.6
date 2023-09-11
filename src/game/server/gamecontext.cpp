@@ -159,7 +159,7 @@ CFlyingPoint* CGS::CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, in
 /* #########################################################################
 	EVENTS
 ######################################################################### */
-void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage)
+void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64 Mask)
 {
 	float a = 3 * 3.14159f / 2 /* + Angle */;
 	//float a = get_angle(dir);
@@ -168,7 +168,7 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage)
 	for (int i = 0; i < Amount; i++)
 	{
 		float f = mix(s, e, float(i + 1) / float(Amount + 2));
-		CNetEvent_DamageInd* pEvent = (CNetEvent_DamageInd*)m_Events.Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd));
+		CNetEvent_DamageInd* pEvent = (CNetEvent_DamageInd*)m_Events.Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd), Mask);
 		if (pEvent)
 		{
 			pEvent->m_X = (int)Pos.x;
