@@ -22,7 +22,11 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID,
 	m_MainScenario = str_startswith_nocase(GS()->GetQuestInfo(QuestBot.m_QuestID)->GetStory(), "Ch") != nullptr;
 	GameWorld()->InsertEntity(this);
 
-	new CEntityPathNavigator(&GS()->m_World, this, GetterPos, QuestBot.m_WorldID, CmaskOne(ClientID));
+	// quest navigator finder
+	if(m_pPlayer && m_pPlayer->GetItem(itShowQuestPathIdle)->IsEquipped())
+	{
+		new CEntityPathNavigator(&GS()->m_World, this, GetterPos, QuestBot.m_WorldID, CmaskOne(ClientID));
+	}
 }
 
 CStepPathFinder::~CStepPathFinder()

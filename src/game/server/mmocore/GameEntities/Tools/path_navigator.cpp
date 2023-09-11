@@ -34,7 +34,7 @@ void CEntityPathNavigator::Tick()
 	// update prepared data by required
 	if(m_Data.IsRequiredUpdatePreparedData())
 	{
-		if(m_TickLastIdle < Server()->Tick())
+		if(m_TickLastIdle < Server()->Tick() && distance(m_pParent->GetPos(), m_PosTo) > 240.f)
 		{
 			m_StepPos = 0;
 			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_Data, m_pParent->GetPos(), m_PosTo);
