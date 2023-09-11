@@ -7,12 +7,10 @@
 
 class CStepPathFinder : public CEntity
 {
-	enum { STEP_PATH_FINDER_IDS = 2, };
 	bool m_MainScenario;
 	std::deque < CStepPathFinder* >* m_apCollection;
 
 public:
-	array < int > m_IDs;
 	int m_ClientID;
 	int m_SubBotID;
 	class CPlayer* m_pPlayer;

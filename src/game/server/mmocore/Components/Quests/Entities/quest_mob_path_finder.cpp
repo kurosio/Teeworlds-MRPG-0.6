@@ -6,6 +6,8 @@
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 #include <game/server/gamecontext.h>
 
+#include <game/server/mmocore/GameEntities/Tools/path_navigator.h>
+
 CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, Pos)
 {
@@ -20,9 +22,7 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID,
 	m_MainScenario = str_startswith_nocase(GS()->GetQuestInfo(QuestBot.m_QuestID)->GetStory(), "Ch") != nullptr;
 	GameWorld()->InsertEntity(this);
 
-	m_IDs.set_size(STEP_PATH_FINDER_IDS);
-	for (int i = 0; i < m_IDs.size(); i++)
-		m_IDs[i] = Server()->SnapNewID();
+	new CEntityPathNavigator(&GS()->m_World, this, GetterPos, QuestBot.m_WorldID, CmaskOne(ClientID));
 }
 
 CStepPathFinder::~CStepPathFinder()
@@ -38,9 +38,6 @@ CStepPathFinder::~CStepPathFinder()
 			}
 		}
 	}
-
-	for(int i = 0; i < m_IDs.size(); i++)
-		Server()->SnapFreeID(m_IDs[i]);
 }
 
 void CStepPathFinder::Tick()
@@ -66,27 +63,14 @@ void CStepPathFinder::Snap(int SnappingClient)
 	if(m_ClientID != SnappingClient || !m_pPlayer || !m_pPlayer->GetCharacter())
 		return;
 
-	for(int i = 0; i < m_IDs.size(); i++)
-	{
-		CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_IDs[i], sizeof(CNetObj_Projectile)));
-		if(!pObj)
-			continue;
-
-		pObj->m_Type = WEAPON_NINJA;
-		pObj->m_X = m_Pos.x + cos(Server()->Tick() - pi / (float)STEP_PATH_FINDER_IDS * i) * 8.f;
-		pObj->m_Y = m_Pos.y + sin(Server()->Tick() - pi / (float)STEP_PATH_FINDER_IDS * i) * 8.f;
-		pObj->m_StartTick = Server()->Tick() - 5;
-	}
-
 	CNetObj_Pickup *pPickup = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
 	if(pPickup)
 	{
-		vec2 CorePos = m_pPlayer->GetCharacter()->m_Core.m_Pos;
-		m_Pos = CorePos;
-		m_Pos -= normalize(CorePos - m_PosTo) * clamp(distance(m_Pos, m_PosTo), 32.0f, 90.0f);
+		m_Pos = m_pPlayer->GetCharacter()->m_Core.m_Pos;
+		vec2 Pos = m_Pos - normalize(m_Pos - m_PosTo) * clamp(distance(m_Pos, m_PosTo), 32.0f, 90.0f);
 
-		pPickup->m_X = (int)m_Pos.x;
-		pPickup->m_Y = (int)m_Pos.y;
+		pPickup->m_X = (int)Pos.x;
+		pPickup->m_Y = (int)Pos.y;
 		pPickup->m_Type = (m_MainScenario ? (int)POWERUP_HEALTH : (int)POWERUP_ARMOR);
 		pPickup->m_Subtype = 0;
 	}
