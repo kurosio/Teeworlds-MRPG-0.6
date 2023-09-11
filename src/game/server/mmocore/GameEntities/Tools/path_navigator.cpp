@@ -25,7 +25,7 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pPar
 void CEntityPathNavigator::Tick()
 {
 	// check
-	if(!m_pParent)
+	if(!m_pParent || m_pParent->IsMarkedForDestroy())
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
