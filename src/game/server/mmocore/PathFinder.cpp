@@ -73,8 +73,8 @@ void CPathFinder::Init()
 
 void CPathFinder::SetStart(vec2 Pos)
 {
-	int StartX = clamp((int)(Pos.x / 32.0f), 0, m_LayerWidth);
-	int StartY = clamp((int)(Pos.y / 32.0f), 0, m_LayerHeight);
+	int StartX = clamp((int)(Pos.x / 32.0f), 0, m_LayerWidth - 1);
+	int StartY = clamp((int)(Pos.y / 32.0f), 0, m_LayerHeight - 1);
 
 	int Index = GetIndex(StartX, StartY);
 	m_lNodes[Index].m_Parent = START;
@@ -85,8 +85,8 @@ void CPathFinder::SetStart(vec2 Pos)
 
 void CPathFinder::SetEnd(vec2 Pos)
 {
-	int EndX = clamp((int)(Pos.x / 32.0f), 0, m_LayerWidth);
-	int EndY = clamp((int)(Pos.y / 32.0f), 0, m_LayerHeight);
+	int EndX = clamp((int)(Pos.x / 32.0f), 0, m_LayerWidth - 1);
+	int EndY = clamp((int)(Pos.y / 32.0f), 0, m_LayerHeight - 1);
 
 	int Index = GetIndex(EndX, EndY);
 	m_lNodes[Index].m_Parent = END;
@@ -216,10 +216,10 @@ vec2 CPathFinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
 {
 	array<vec2> lPossibleWaypoints;
 	float Range = (Radius / 2.0f);
-	int StartX = clamp((int)((Pos.x - Range) / 32.0f), 0, m_LayerWidth);
-	int StartY = clamp((int)((Pos.y - Range) / 32.0f), 0, m_LayerHeight);
-	int EndX = clamp((int)((Pos.x + Range) / 32.0f), 0, m_LayerWidth);
-	int EndY = clamp((int)((Pos.y + Range) / 32.0f), 0, m_LayerHeight);
+	int StartX = clamp((int)((Pos.x - Range) / 32.0f), 0, m_LayerWidth - 1);
+	int StartY = clamp((int)((Pos.y - Range) / 32.0f), 0, m_LayerHeight - 1);
+	int EndX = clamp((int)((Pos.x + Range) / 32.0f), 0, m_LayerWidth - 1);
+	int EndY = clamp((int)((Pos.y + Range) / 32.0f), 0, m_LayerHeight - 1);
 
 	for(int i = StartY; i < EndY; i++)
 	{

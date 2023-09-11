@@ -8,17 +8,17 @@
 
 #include "game/server/mmocore/PathFinder.h"
 
-CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, vec2 EndPos, int WorldID, int64 Mask)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, {})
+CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, vec2 StartPos, vec2 SearchPos, int WorldID, int64 Mask)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, StartPos)
 {
 	vec2 PosTo { 0, 0 };
-	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, EndPos, &PosTo);
+	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, SearchPos, &PosTo);
 
 	m_Mask = Mask;
 	m_PosTo = PosTo;
-	m_pParent = pParent;
 	m_StepPos = 0;
-	GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_Data, pParent ? pParent->GetPos() : vec2(), m_PosTo);
+	m_pParent = pParent;
+	GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_Data, m_Pos, m_PosTo);
 	GameWorld()->InsertEntity(this);
 }
 

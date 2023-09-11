@@ -18,7 +18,7 @@ class CEntityPathNavigator : public CEntity
 	int64 m_Mask {};
 
 public:
-	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, vec2 EndPos, int WorldID, int64 Mask = -1);
+	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, vec2 StartPos, vec2 SearchPos, int WorldID, int64 Mask = -1);
 
 	void Tick() override;
 	void PostSnap() override;

@@ -8,13 +8,13 @@
 
 #include <game/server/mmocore/GameEntities/Tools/path_navigator.h>
 
-CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, Pos)
+CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos)
 {
-	vec2 GetterPos{0,0};
-	GS()->Mmo()->WorldSwap()->FindPosition(QuestBot.m_WorldID, Pos, &GetterPos);
+	vec2 PosTo{0,0};
+	GS()->Mmo()->WorldSwap()->FindPosition(QuestBot.m_WorldID, SearchPos, &PosTo);
 
-	m_PosTo = GetterPos;
+	m_PosTo = PosTo;
 	m_ClientID = ClientID;
 	m_apCollection = apCollection;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
@@ -25,7 +25,7 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID,
 	// quest navigator finder
 	if(m_pPlayer && m_pPlayer->GetItem(itShowQuestPathIdle)->IsEquipped())
 	{
-		new CEntityPathNavigator(&GS()->m_World, this, GetterPos, QuestBot.m_WorldID, CmaskOne(ClientID));
+		new CEntityPathNavigator(&GS()->m_World, this, m_pPlayer->m_ViewPos, SearchPos, QuestBot.m_WorldID, CmaskOne(ClientID));
 	}
 }
 

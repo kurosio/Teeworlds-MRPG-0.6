@@ -15,7 +15,7 @@ public:
 	int m_SubBotID;
 	class CPlayer* m_pPlayer;
 
-	CStepPathFinder(CGameWorld* pGameWorld, vec2 Pos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection);
+	CStepPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection);
 	~CStepPathFinder() override;
 
 	void Tick() override;
