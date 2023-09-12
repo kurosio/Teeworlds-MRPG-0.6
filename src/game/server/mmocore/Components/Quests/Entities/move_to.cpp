@@ -44,19 +44,18 @@ CEntityMoveTo::~CEntityMoveTo()
 		Server()->SnapFreeID(m_IDs[i]);
 }
 
-bool CEntityMoveTo::PickItem() const
+bool CEntityMoveTo::PressedFire() const
 {
-	if(m_pPlayer->GetCharacter()->m_ReloadTimer)
+	// only for press fire type
+	if(m_pTaskMoveTo->m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE)
 	{
-		CPlayerItem* pItem = m_pPlayer->GetItem(m_pTaskMoveTo->m_PickUpItemID);
-		pItem->Add(1);
-		GS()->Chat(m_ClientID, "You got {STR}.", pItem->Info()->GetName());
-
-		m_pPlayer->GetCharacter()->m_ReloadTimer = 0;
-		return true;
+		if(m_pPlayer->GetCharacter()->m_ReloadTimer)
+		{
+			m_pPlayer->GetCharacter()->m_ReloadTimer = 0;
+			return true;
+		}
 	}
 
-	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press 'Fire', to pick up an item");
 	return false;
 }
 
@@ -68,53 +67,109 @@ void CEntityMoveTo::Tick()
 		return;
 	}
 
-	if(distance(m_pPlayer->m_ViewPos, m_Pos) < s_Radius)
+	// check distance to check complete
+	if(distance(m_pPlayer->m_ViewPos, m_Pos) > s_Radius)
+		return;
+
+	// function by success
+	auto FuncSuccess = [this]()
 	{
-		auto FuncSuccess = [this]()
+		if(!m_pTaskMoveTo->m_aTextChat.empty())
 		{
-			if(!m_pTaskMoveTo->m_aTextChat.empty())
-				GS()->Chat(m_ClientID, m_pTaskMoveTo->m_aTextChat.c_str());
-
-			(*m_pComplete) = true;
-			m_pPlayer->GetQuest(m_QuestID)->SaveSteps();
-			GS()->CreateDeath(m_Pos, m_ClientID);
-			GameWorld()->DestroyEntity(this);
-		};
-
-		const bool HasCollectItem = m_pTaskMoveTo->m_PickUpItemID > 0;
-		const bool TextUseInChat = !m_pTaskMoveTo->m_aTextUseInChat.empty();
-
-
-		// text use in chat type
-		if(TextUseInChat)
-		{
-			if(m_pTaskMoveTo->m_aTextUseInChat == m_pPlayer->m_aLastMsg)
-			{
-				if(HasCollectItem)
-				{
-					CPlayerItem* pItem = m_pPlayer->GetItem(m_pTaskMoveTo->m_PickUpItemID);
-					pItem->Add(1);
-					GS()->Chat(m_ClientID, "You got {STR}.", pItem->Info()->GetName());
-				}
-
-				FuncSuccess();
-			}
-
-			GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Open the chat and enter the text\n(without the brackets)\n'{STR}'", m_pTaskMoveTo->m_aTextUseInChat.c_str());
-			return;
+			GS()->Chat(m_ClientID, m_pTaskMoveTo->m_aTextChat.c_str());
 		}
 
+		(*m_pComplete) = true;
+		m_pPlayer->GetQuest(m_QuestID)->SaveSteps();
+		GS()->CreateDeath(m_Pos, m_ClientID);
+		GameWorld()->DestroyEntity(this);
+	};
 
-		// default pickup item or just move
-		if(HasCollectItem)
+	// interact by text or press fire
+	QuestBotInfo::TaskRequiredMoveTo::Types Type = m_pTaskMoveTo->m_Type;
+	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE && PressedFire()
+		|| Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE && m_pTaskMoveTo->m_aTextUseInChat == m_pPlayer->m_aLastMsg)
+	{
+		// clear last msg for correct check required item TODO: FIX (don't clear last msg)
+		m_pPlayer->m_aLastMsg[0] = '\0';
+
+		// first required item
+		if(!m_pTaskMoveTo->m_RequiredItem.Empty())
 		{
-			if(PickItem())
-				FuncSuccess();
-			return;
+			ItemIdentifier ItemID = m_pTaskMoveTo->m_RequiredItem.m_ID;
+
+			// check required value
+			int RequiredValue = m_pTaskMoveTo->m_RequiredItem.m_Count;
+			if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
+				return;
+
+			// remove item
+			CPlayerItem* pItem = m_pPlayer->GetItem(ItemID);
+			GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pItem->Info()->GetName(), RequiredValue);
 		}
 
-		// only move
+		// secound pickup item
+		if(!m_pTaskMoveTo->m_PickupItem.Empty())
+		{
+			ItemIdentifier ItemID = m_pTaskMoveTo->m_PickupItem.m_ID;
+			CPlayerItem* pItem = m_pPlayer->GetItem(ItemID);
+
+			int PickupValue = m_pTaskMoveTo->m_PickupItem.m_Count;
+			GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pItem->Info()->GetName(), PickupValue);
+			pItem->Add(PickupValue);
+		}
+
+		// finish success
 		FuncSuccess();
+		return;
+	}
+
+	// only move it
+	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::MOVE_ONLY)
+	{
+		// finish success
+		FuncSuccess();
+		return;
+	}
+
+	// handle broadcast
+	HandleBroadcastInformation();
+}
+
+void CEntityMoveTo::HandleBroadcastInformation() const
+{
+	// var
+	auto& pPickupItem = m_pTaskMoveTo->m_PickupItem;
+	auto& pRequireItem = m_pTaskMoveTo->m_RequiredItem;
+	const auto Type = m_pTaskMoveTo->m_Type;
+
+	// text information
+	dynamic_string Buffer;
+	if(!pRequireItem.Empty())
+	{
+		const char* pLang = m_pPlayer->GetLanguage();
+		CPlayerItem* pItem = m_pPlayer->GetItem(pRequireItem.m_ID);
+
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Required [{STR}x{VAL}({VAL})]", pItem->Info()->GetName(), pRequireItem.m_Count, pItem->GetValue());
+		Buffer.append("\n");
+	}
+	if(!pPickupItem.Empty())
+	{
+		const char* pLang = m_pPlayer->GetLanguage();
+		CPlayerItem* pItem = m_pPlayer->GetItem(pPickupItem.m_ID);
+
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Pick up [{STR}x{VAL}({VAL})]", pItem->Info()->GetName(), pPickupItem.m_Count, pItem->GetValue());
+		Buffer.append("\n");
+	}
+
+	// select by type
+	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE)
+	{
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Open the chat and enter the text\n(without the brackets)\n'{STR}'\n{STR}", m_pTaskMoveTo->m_aTextUseInChat.c_str(), Buffer.buffer());
+	}
+	else if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE)
+	{
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press 'Fire', to interact.\n{STR}", Buffer.buffer());
 	}
 }
 

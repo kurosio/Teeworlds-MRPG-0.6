@@ -89,13 +89,35 @@ public:
 
 	struct TaskRequiredMoveTo
 	{
+		enum class Types : int
+		{
+			MOVE_ONLY,
+			PRESS_FIRE,
+			USE_CHAT_MODE
+		};
+		struct PickupItem
+		{
+			int m_ID{};
+			int m_Count{};
+			bool Empty() const { return m_ID <= 0 || m_Count <= 0; }
+		};
+
+		struct RequiredItem
+		{
+			int m_ID{};
+			int m_Count{};
+			bool Empty() const { return m_ID <= 0 || m_Count <= 0; }
+		};
+
 		vec2 m_Position{};
 		int m_WorldID{};
 		int m_Step{};
-		int m_PickUpItemID{};
+		PickupItem m_PickupItem{};
+		RequiredItem m_RequiredItem{};
 		std::string m_aTextUseInChat{};
 		std::string m_aTextChat{};
-		bool m_PathNavigator{};
+		bool m_Navigator{};
+		Types m_Type {};
 	};
 	std::deque < TaskRequiredMoveTo > m_RequiredMoveTo;
 

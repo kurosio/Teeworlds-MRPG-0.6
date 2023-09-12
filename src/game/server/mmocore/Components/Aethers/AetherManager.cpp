@@ -96,7 +96,7 @@ bool CAetherManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 
 		if (pChr->GetHelper()->BoolIndex(TILE_AETHER_TELEPORT))
 		{
-			ShowTeleportList(pChr);
+			ShowList(pChr);
 			return true;
 		}
 		return false;
@@ -122,7 +122,7 @@ void CAetherManager::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
 	}
 }
 
-void CAetherManager::ShowTeleportList(CCharacter* pChar) const
+void CAetherManager::ShowList(CCharacter* pChar) const
 {
 	CPlayer* pPlayer = pChar->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
@@ -130,27 +130,28 @@ void CAetherManager::ShowTeleportList(CCharacter* pChar) const
 	GS()->AV(ClientID, "null");
 
 	GS()->AVH(ClientID, TAB_AETHER, "Available aethers");
-	if (Job()->Member()->GetGuildHouseID(pPlayer->Acc().m_GuildID) >= 1)
+	if(Job()->Member()->GetGuildHouseID(pPlayer->Acc().m_GuildID) >= 1)
+	{
 		GS()->AVM(ClientID, "MSPAWN", NOPE, TAB_AETHER, "Move to Guild House - free");
-	if (pPlayer->Acc().HasHouse())
+	}
+
+	if(pPlayer->Acc().HasHouse())
+	{
 		GS()->AVM(ClientID, "HOUSE_SPAWN", NOPE, TAB_AETHER, "Move to Your House - free");
+	}
 
 	for (const auto& [ID, Aether] : CAether::Data())
 	{
 		if (pPlayer->Acc().m_aAetherLocation.find(ID) == pPlayer->Acc().m_aAetherLocation.end())
 			continue;
 
-		const bool LocalTeleport = (GS()->IsPlayerEqualWorld(ClientID, Aether.GetWorldID()) &&
-			distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120);
+		const bool LocalTeleport = (GS()->IsPlayerEqualWorld(ClientID, Aether.GetWorldID()) && distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120);
 		if (LocalTeleport)
-		{
-			GS()->AVM(ClientID, "null", NOPE, TAB_AETHER, "* {STR} : {STR}", Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()));
 			continue;
-		}
 
 		const int Price = g_Config.m_SvPriceTeleport * (Aether.GetWorldID() + 1);
-		GS()->AVD(ClientID, "TELEPORT", ID, Price, TAB_AETHER, "{STR} : {STR} - {VAL}gold",
-			Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()), Price);
+		GS()->AVD(ClientID, "TELEPORT", ID, Price, TAB_AETHER, "{STR} : {STR} - {VAL}gold", Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()), Price);
 	}
+
 	GS()->AV(ClientID, "null");
 }

@@ -23,7 +23,8 @@ public:
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
-	bool PickItem() const;
+	void HandleBroadcastInformation() const;
+	bool PressedFire() const;
 
 	int GetClientID() const { return m_ClientID; }
 	int GetQuestID() const { return m_QuestID; }

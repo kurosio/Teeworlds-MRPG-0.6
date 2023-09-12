@@ -320,7 +320,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 			AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i]);
 
 		// add entity path navigator
-		if(pRequired.m_PathNavigator)
+		if(pRequired.m_Navigator)
 			AddEntityNavigator(pRequired.m_Position, pRequired.m_WorldID, &m_aMoveToProgress[i]);
 	}
 }
@@ -420,7 +420,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RequiredMoveTo.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n");
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Some movement is required ({VAL}/{VAL})", GetCountMoveToComplected(), m_Bot.m_RequiredMoveTo.size());
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Requires some action ({VAL}/{VAL})", GetCountMoveToComplected(), m_Bot.m_RequiredMoveTo.size());
 	}
 
 	str_copy(aBufQuestTask, Buffer.buffer(), Size);

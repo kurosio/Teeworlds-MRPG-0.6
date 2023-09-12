@@ -90,22 +90,64 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 		if(pJson.find("move_to") != pJson.end())
 		{
 			int LatestBiggerStep = 1;
+
 			for(auto& p : pJson["move_to"])
 			{
+				// initilize default
 				const vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
-				const int PickedUpItemID = p.value("pick_up_item_id", -1);
-				const bool PathNavigator = p.value("navigator", true);
-				const std::string TextUseInChat = p.value("use_in_chat", "\0").c_str();
-				const std::string Text = p.value("text", "\0").c_str();
+				const bool Navigator = p.value("navigator", true);
+				const std::string TextChat = p.value("text", "\0").c_str();
+				TaskRequiredMoveTo::Types Type = TaskRequiredMoveTo::Types::MOVE_ONLY;
 
-				if(Step > LatestBiggerStep)
-					LatestBiggerStep = Step;
-
-				if(Position.x > 0.f && Position.y > 0.f)
+				// initilize pick_up_item object
+				TaskRequiredMoveTo::PickupItem PickUpItem{};
+				if(p.find("pick_up_item") != p.end())
 				{
-					m_RequiredMoveTo.push_back({ Position, WorldID, LatestBiggerStep, PickedUpItemID, TextUseInChat, Text, PathNavigator });
+					auto& PickUpItemJson = p["pick_up_item"];
+					PickUpItem.m_ID = PickUpItemJson.value("id", -1);
+					PickUpItem.m_Count = PickUpItemJson.value("count", 1);
+					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
+				}
+
+				// initilize required_item object
+				TaskRequiredMoveTo::RequiredItem RequiredItem{};
+				if(p.find("required_item") != p.end())
+				{
+					auto& RequiredItemJson = p["required_item"];
+					RequiredItem.m_ID = RequiredItemJson.value("id", -1);
+					RequiredItem.m_Count = RequiredItemJson.value("count", 1);
+					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
+				}
+
+				// initilize use chat type
+				const std::string TextUseInChat = p.value("use_in_chat", "\0").c_str();
+				if(!TextUseInChat.empty())
+				{
+					Type = TaskRequiredMoveTo::Types::USE_CHAT_MODE;
+				}
+
+				// steps can only be taken to increase the orderly 
+				if(Step > LatestBiggerStep)
+				{
+					LatestBiggerStep = Step;
+				}
+
+				// add element to container
+				if(total_size_vec2(Position) > 0.f)
+				{
+					TaskRequiredMoveTo Move;
+					Move.m_WorldID = WorldID;
+					Move.m_Step = Step;
+					Move.m_Navigator = Navigator;
+					Move.m_PickupItem = PickUpItem;
+					Move.m_RequiredItem = RequiredItem;
+					Move.m_Position = Position;
+					Move.m_aTextChat = TextChat;
+					Move.m_aTextUseInChat = TextUseInChat;
+					Move.m_Type = Type;
+					m_RequiredMoveTo.push_back(Move);
 				}
 			}
 		}

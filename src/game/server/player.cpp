@@ -462,7 +462,7 @@ bool CPlayer::SpendCurrency(int Price, int ItemID)
 	CPlayerItem* pItem = GetItem(ItemID);
 	if(pItem->GetValue() < Price)
 	{
-		GS()->Chat(m_ClientID,"Required {VAL}, but you have only {VAL} {STR}!", Price, pItem->Info()->GetName(), pItem->GetValue());
+		GS()->Chat(m_ClientID,"Required {VAL}, but you have only {VAL} {STR}!", Price, pItem->GetValue(), pItem->Info()->GetName());
 		return false;
 	}
 	return pItem->Remove(Price);
