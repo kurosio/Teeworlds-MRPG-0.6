@@ -10,7 +10,6 @@
 class CEntityPathNavigator : public CEntity
 {
 	bool m_First{};
-	bool m_Snapping {};
 	int m_StepPos {};
 	CEntity* m_pParent {};
 	CPathFinderPrepared m_Data {};
