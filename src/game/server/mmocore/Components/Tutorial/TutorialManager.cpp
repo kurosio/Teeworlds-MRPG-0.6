@@ -68,7 +68,7 @@ void EventChecker(std::deque<TutorialBase*>& pItems, CPlayer* pPlayer, int Step,
 	}
 	else if(pGS->Server()->Tick() % (pGS->Server()->TickSpeed() * 1) == 0)
 	{
-		pGS->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "[Tutorial {INT}/{INT}]\n{STR}", Step + 1, pItems.size(), pTutorial->GetText());
+		pGS->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "- Tutorial {INT} of {INT}.\n\n{STR}", Step + 1, pItems.size(), pTutorial->GetText());
 	}
 }
 

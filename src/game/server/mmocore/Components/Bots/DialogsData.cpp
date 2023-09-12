@@ -256,7 +256,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	if(IsVanillaClient && m_BotType == TYPE_BOT_QUEST)
 	{
 		int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		str_format(aBufTittle, sizeof(aBufTittle), "### %s\n\n", GS()->GetQuestInfo(QuestID)->GetName());
+		str_format(aBufTittle, sizeof(aBufTittle), "* %s\n\n", GS()->GetQuestInfo(QuestID)->GetName());
 	}
 
 	/*
@@ -266,11 +266,11 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	if(IsVanillaClient && !IsSpeakAuthor)
 	{
 		if(pLeftNickname && pRightNickname)
-			str_format(aBufNickname, sizeof(aBufNickname), "%s and %s:\n\n", pLeftNickname, pRightNickname);
+			str_format(aBufNickname, sizeof(aBufNickname), "* %s and %s:\n", pLeftNickname, pRightNickname);
 		else if(pRightNickname)
-			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pRightNickname);
+			str_format(aBufNickname, sizeof(aBufNickname), "* %s:\n", pRightNickname);
 		else if(pLeftNickname)
-			str_format(aBufNickname, sizeof(aBufNickname), "%s:\n\n", pLeftNickname);
+			str_format(aBufNickname, sizeof(aBufNickname), "* %s:\n", pLeftNickname);
 	}
 
 	char aBufPosition[128];
@@ -282,7 +282,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 			PageNum = static_cast<int>(NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs.size());
 
 		const char* pNicknameTalked = IsSpeakAuthor ? "..." : (pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
-		str_format(aBufPosition, sizeof(aBufPosition), "--------- ( %d of %d ) %s ---------\n", (m_Step + 1), max(1, PageNum), pNicknameTalked);
+		str_format(aBufPosition, sizeof(aBufPosition), "\u2500\u2500\u2500\u2500 | %d of %d | %s.\n", (m_Step + 1), max(1, PageNum), pNicknameTalked);
 	}
 
 	/*
@@ -348,7 +348,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	}
 
 	// copy all formated data
-	str_format(m_aFormatedText, sizeof(m_aFormatedText), "%s%s%s%s%s%s", aBufInformation, aBufTittle, aBufNickname, aBufPosition, aBufText, aBufQuestTask);
+	str_format(m_aFormatedText, sizeof(m_aFormatedText), "%s%s%s%s\u00ab%s\u00bb%s", aBufNickname, aBufInformation, aBufTittle, aBufPosition, aBufText, aBufQuestTask);
 }
 
 void CPlayerDialog::ClearText()
