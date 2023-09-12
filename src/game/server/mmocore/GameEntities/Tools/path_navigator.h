@@ -9,7 +9,7 @@
 
 class CEntityPathNavigator : public CEntity
 {
-	bool m_First{};
+	bool m_StartByCreating{};
 	int m_StepPos {};
 	CEntity* m_pParent {};
 	CPathFinderPrepared m_Data {};
@@ -19,7 +19,7 @@ class CEntityPathNavigator : public CEntity
 	int m_TickCountDown {};
 
 public:
-	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, vec2 StartPos, vec2 SearchPos, int WorldID, int64 Mask = -1);
+	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, int64 Mask = -1);
 
 	void Tick() override;
 	void PostSnap() override;

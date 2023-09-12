@@ -8,17 +8,17 @@
 
 #include "game/server/mmocore/PathFinder.h"
 
-CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, vec2 StartPos, vec2 SearchPos, int WorldID, int64 Mask)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, StartPos)
+CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, int64 Mask)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, FromPos)
 {
 	vec2 PosTo { 0, 0 };
 	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, SearchPos, &PosTo);
 
-	m_First = true;
 	m_Mask = Mask;
 	m_PosTo = PosTo;
 	m_StepPos = 0;
 	m_pParent = pParent;
+	m_StartByCreating = StartByCreating;
 	GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_Data, m_Pos, m_PosTo);
 	GameWorld()->InsertEntity(this);
 }
@@ -64,7 +64,7 @@ void CEntityPathNavigator::Tick()
 	{
 		m_TickCountDown = Server()->Tick() + Server()->TickSpeed();
 		m_Data.Get().Clear();
-		m_First = false;
+		m_StartByCreating = false;
 	}
 }
 
@@ -73,7 +73,7 @@ void CEntityPathNavigator::PostSnap()
 	// update last position
 	if(m_pParent)
 	{
-		if(m_LastPos != m_pParent->GetPos() && m_TickLastIdle != -1 && !m_First)
+		if(m_LastPos != m_pParent->GetPos() && m_TickLastIdle != -1 && !m_StartByCreating)
 		{
 			m_TickLastIdle = Server()->Tick() + (Server()->TickSpeed() * 3);
 		}
