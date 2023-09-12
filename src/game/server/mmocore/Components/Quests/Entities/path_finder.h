@@ -14,7 +14,7 @@ public:
 	class CPlayer* m_pPlayer;
 	std::deque < CEntityPathFinder* >* m_apCollection;
 
-	CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection);
+	CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection);
 	~CEntityPathFinder() override;
 
 	void Tick() override;

@@ -25,7 +25,7 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int Cli
 	// quest navigator finder
 	if(m_pPlayer && m_pPlayer->GetItem(itShowQuestNavigator)->IsEquipped())
 	{
-		new CEntityPathNavigator(&GS()->m_World, this, true, m_pPlayer->m_ViewPos, SearchPos, QuestBot.m_WorldID, CmaskOne(ClientID));
+		new CEntityPathNavigator(&GS()->m_World, this, true, m_pPlayer->m_ViewPos, SearchPos, QuestBot.m_WorldID, false, CmaskOne(ClientID));
 	}
 }
 

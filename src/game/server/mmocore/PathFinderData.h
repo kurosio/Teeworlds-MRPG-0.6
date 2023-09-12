@@ -39,7 +39,7 @@ public:
 			m_Points.clear();
 		}
 
-		[[nodiscard]] bool IsValid() const { return m_Size > 0; }
+		bool Empty() const { return m_Size <= 0; }
 	};
 
 	CData& Get() { return m_Data; }
@@ -49,7 +49,7 @@ public:
 	 */
 	bool IsRequiredUpdatePreparedData() const
 	{
-		return !m_Data.IsValid() || m_FutureData.valid();
+		return m_Data.Empty() || m_FutureData.valid();
 	}
 
 private:

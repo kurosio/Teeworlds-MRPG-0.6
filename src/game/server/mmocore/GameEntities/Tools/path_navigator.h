@@ -17,11 +17,13 @@ class CEntityPathNavigator : public CEntity
 	int64 m_Mask {};
 	int m_TickLastIdle {};
 	int m_TickCountDown {};
+	bool m_Projectile {};
 
 public:
-	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, int64 Mask = -1);
+	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64 Mask = -1);
 
 	void Tick() override;
+	void Snap(int SnappingClient) override;
 	void PostSnap() override;
 };
 

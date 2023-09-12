@@ -8,7 +8,7 @@
 
 #include "game/server/mmocore/PathFinder.h"
 
-CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, int64 Mask)
+CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64 Mask)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, FromPos)
 {
 	vec2 PosTo { 0, 0 };
@@ -18,6 +18,7 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pPar
 	m_PosTo = PosTo;
 	m_StepPos = 0;
 	m_pParent = pParent;
+	m_Projectile = Projectile;
 	m_StartByCreating = StartByCreating;
 	GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_Data, m_Pos, m_PosTo);
 	GameWorld()->InsertEntity(this);
@@ -50,21 +51,60 @@ void CEntityPathNavigator::Tick()
 	}
 
 	// valid data
-	m_Pos = m_Data.Get().m_Points[m_StepPos];
-
-	// update timer by steps
-	if(Server()->Tick() % (Server()->TickSpeed() / 15) == 0)
+	if(m_Projectile)
 	{
-		m_StepPos++;
-		GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, 0, m_Mask);
+		// smooth movement
+		const vec2 Dir = m_Data.Get().m_Points.find(m_StepPos + 1) != m_Data.Get().m_Points.end()
+			? normalize(m_Data.Get().m_Points[m_StepPos + 1] - m_Pos) : vec2 {};
+		m_Pos += Dir * 5.f;
+
+		// update timer by steps
+		if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
+		{
+			m_StepPos++;
+
+			if(m_StepPos < m_Data.Get().m_Size)
+			{
+				m_Pos = m_Data.Get().m_Points[m_StepPos];
+			}
+		}
+	}
+	else
+	{
+		// movement
+		m_Pos = m_Data.Get().m_Points[m_StepPos];
+
+		// update timer by steps
+		if(Server()->Tick() % (Server()->TickSpeed() / 15) == 0)
+		{
+			m_StepPos++;
+			GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, false, m_Mask);
+		}
 	}
 
 	// checking
 	if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= m_Data.Get().m_Size)
 	{
-		m_TickCountDown = Server()->Tick() + Server()->TickSpeed();
+		m_TickCountDown = Server()->Tick() + (Server()->TickSpeed() * 2);
 		m_Data.Get().Clear();
 		m_StartByCreating = false;
+	}
+}
+
+void CEntityPathNavigator::Snap(int SnappingClient)
+{
+	if(!m_Projectile || m_Data.Get().Empty() || !CmaskIsSet(m_Mask, SnappingClient) || NetworkClipped(SnappingClient))
+		return;
+
+	CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
+	if(pObj)
+	{
+		pObj->m_X = (int)m_Pos.x;
+		pObj->m_Y = (int)m_Pos.y;
+		pObj->m_VelX = 0;
+		pObj->m_VelY = 0;
+		pObj->m_StartTick = Server()->Tick();
+		pObj->m_Type = WEAPON_HAMMER;
 	}
 }
 

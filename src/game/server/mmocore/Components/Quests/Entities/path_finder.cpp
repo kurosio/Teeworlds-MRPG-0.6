@@ -5,11 +5,13 @@
 #include <game/server/mmocore/Components/Worlds/WorldManager.h>
 #include <game/server/gamecontext.h>
 
-CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, Pos)
+#include <game/server/mmocore/GameEntities/Tools/path_navigator.h>
+
+CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos)
 {
 	vec2 GetterPos{0,0};
-	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, Pos, &GetterPos);
+	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, SearchPos, &GetterPos);
 
 	m_PosTo = GetterPos;
 	m_ClientID = ClientID;
@@ -17,8 +19,13 @@ CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 Pos, int World
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_pComplete = pComplete;
 	m_apCollection = apCollection;
-
 	GameWorld()->InsertEntity(this);
+
+	// quest navigator finder
+	if(m_pPlayer && m_pPlayer->GetItem(itShowQuestNavigator)->IsEquipped())
+	{
+		new CEntityPathNavigator(&GS()->m_World, this, true, m_pPlayer->m_ViewPos, SearchPos, WorldID, true, CmaskOne(ClientID));
+	}
 }
 
 CEntityPathFinder::~CEntityPathFinder()
