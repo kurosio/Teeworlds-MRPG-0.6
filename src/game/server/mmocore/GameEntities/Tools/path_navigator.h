@@ -9,13 +9,15 @@
 
 class CEntityPathNavigator : public CEntity
 {
+	bool m_First{};
 	bool m_Snapping {};
 	int m_StepPos {};
 	CEntity* m_pParent {};
 	CPathFinderPrepared m_Data {};
-	int m_TickLastIdle {};
 	vec2 m_LastPos {};
 	int64 m_Mask {};
+	int m_TickLastIdle {};
+	int m_TickCountDown {};
 
 public:
 	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, vec2 StartPos, vec2 SearchPos, int WorldID, int64 Mask = -1);

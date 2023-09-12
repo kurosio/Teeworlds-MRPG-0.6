@@ -203,7 +203,7 @@ void CAccountManager::LoadAccount(CPlayer *pPlayer, bool FirstInitilize)
 		{ itModePVP, 1},
 		{ itShowEquipmentDescription, 0 },
 		{ itShowCriticalDamage, 1 },
-		{ itShowQuestPathIdle, 1 }
+		{ itShowQuestNavigator, 1 }
 	});
 	
 	// correcting world swapper

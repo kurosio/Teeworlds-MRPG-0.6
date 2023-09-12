@@ -234,7 +234,7 @@ enum
 	itModePVP = 22,						// PVP mode setting
 	itShowEquipmentDescription = 25,	// Description setting
 	itShowCriticalDamage = 34,			// Critical damage setting
-	itShowQuestPathIdle = 93,			// Show quest path when idle
+	itShowQuestNavigator = 93,			// Show quest path when idle
 
 	// items
 	NOPE = -1,

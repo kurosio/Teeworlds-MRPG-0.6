@@ -14,6 +14,7 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pPar
 	vec2 PosTo { 0, 0 };
 	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, SearchPos, &PosTo);
 
+	m_First = true;
 	m_Mask = Mask;
 	m_PosTo = PosTo;
 	m_StepPos = 0;
@@ -30,6 +31,10 @@ void CEntityPathNavigator::Tick()
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
+
+	// countdown
+	if(m_TickCountDown > Server()->Tick())
+		return;
 
 	// update prepared data by required
 	if(m_Data.IsRequiredUpdatePreparedData())
@@ -57,7 +62,9 @@ void CEntityPathNavigator::Tick()
 	// checking
 	if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= m_Data.Get().m_Size)
 	{
+		m_TickCountDown = Server()->Tick() + Server()->TickSpeed();
 		m_Data.Get().Clear();
+		m_First = false;
 	}
 }
 
@@ -66,9 +73,9 @@ void CEntityPathNavigator::PostSnap()
 	// update last position
 	if(m_pParent)
 	{
-		if(m_LastPos != m_pParent->GetPos())
+		if(m_LastPos != m_pParent->GetPos() && m_TickLastIdle != -1 && !m_First)
 		{
-			m_TickLastIdle = Server()->Tick() + Server()->TickSpeed();
+			m_TickLastIdle = Server()->Tick() + (Server()->TickSpeed() * 3);
 		}
 		m_LastPos = m_pParent->GetPos();
 	}
