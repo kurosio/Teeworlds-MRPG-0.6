@@ -76,19 +76,19 @@ CGS::~CGS()
 	delete m_pLayers;
 }
 
-class CCharacter *CGS::GetPlayerChar(int ClientID)
+class CCharacter* CGS::GetPlayerChar(int ClientID)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return nullptr;
 	return m_apPlayers[ClientID]->GetCharacter();
 }
 
-CPlayer *CGS::GetPlayer(int ClientID, bool CheckAuthed, bool CheckCharacter)
+CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuthed, bool CheckCharacter)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return nullptr;
 
-	CPlayer *pPlayer = m_apPlayers[ClientID];
+	CPlayer* pPlayer = m_apPlayers[ClientID];
 	if((CheckAuthed && pPlayer->IsAuthed()) || !CheckAuthed)
 	{
 		if(CheckCharacter && !pPlayer->GetCharacter())
@@ -165,11 +165,11 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64
 	//float a = get_angle(dir);
 	float s = a - pi / 3;
 	float e = a + pi / 3;
-	for (int i = 0; i < Amount; i++)
+	for(int i = 0; i < Amount; i++)
 	{
 		float f = mix(s, e, float(i + 1) / float(Amount + 2));
 		CNetEvent_DamageInd* pEvent = (CNetEvent_DamageInd*)m_Events.Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd), Mask);
-		if (pEvent)
+		if(pEvent)
 		{
 			pEvent->m_X = (int)Pos.x;
 			pEvent->m_Y = (int)Pos.y;
@@ -186,7 +186,7 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64
 
 void CGS::CreateHammerHit(vec2 Pos)
 {
-	CNetEvent_HammerHit *pEvent = (CNetEvent_HammerHit *)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit));
+	CNetEvent_HammerHit* pEvent = (CNetEvent_HammerHit*)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit));
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -197,7 +197,7 @@ void CGS::CreateHammerHit(vec2 Pos)
 void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 {
 	// create the event
-	CNetEvent_Explosion *pEvent = (CNetEvent_Explosion *)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
+	CNetEvent_Explosion* pEvent = (CNetEvent_Explosion*)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -205,10 +205,10 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 	}
 
 	// deal damage
-	CCharacter *apEnts[MAX_CLIENTS];
+	CCharacter* apEnts[MAX_CLIENTS];
 	constexpr float Radius = 135.0f;
 	constexpr float InnerRadius = 48.0f;
-	const int Num = m_World.FindEntities(Pos, Radius, (CEntity **)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+	const int Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 	for(int i = 0; i < Num; i++)
 	{
 		vec2 Diff = apEnts[i]->GetPos() - Pos;
@@ -217,15 +217,15 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 		if(Length)
 			ForceDir = normalize(Diff) * 1.0f;
 
-		const float Factor = 1 - clamp((Length-InnerRadius)/(Radius-InnerRadius), 0.0f, 1.0f);
-		if (const int Damage = (int)(Factor * MaxDamage))
+		const float Factor = 1 - clamp((Length - InnerRadius) / (Radius - InnerRadius), 0.0f, 1.0f);
+		if(const int Damage = (int)(Factor * MaxDamage))
 		{
 			float Strength;
 			if(Owner == -1 || !m_apPlayers[Owner])
 				Strength = 0.5f;
 			else
 				Strength = m_apPlayers[Owner]->m_NextTuningParams.m_ExplosionStrength;
-			
+
 			apEnts[i]->TakeDamage(ForceDir * (Strength * Length), Damage, Owner, Weapon);
 		}
 	}
@@ -233,7 +233,7 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 
 void CGS::CreatePlayerSpawn(vec2 Pos, int64 Mask)
 {
-	CNetEvent_Spawn *ev = (CNetEvent_Spawn *)m_Events.Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn), Mask);
+	CNetEvent_Spawn* ev = (CNetEvent_Spawn*)m_Events.Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn), Mask);
 	if(ev)
 	{
 		ev->m_X = (int)Pos.x;
@@ -243,7 +243,7 @@ void CGS::CreatePlayerSpawn(vec2 Pos, int64 Mask)
 
 void CGS::CreateDeath(vec2 Pos, int ClientID)
 {
-	CNetEvent_Death *pEvent = (CNetEvent_Death *)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death));
+	CNetEvent_Death* pEvent = (CNetEvent_Death*)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death));
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -258,7 +258,7 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64 Mask)
 	if(Sound < 0 || Sound > 40)
 		return;
 
-	CNetEvent_SoundWorld *pEvent = (CNetEvent_SoundWorld *)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask);
+	CNetEvent_SoundWorld* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask);
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -285,7 +285,7 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 /* #########################################################################
 	CHAT FUNCTIONS
 ######################################################################### */
-void CGS::SendChat(int ChatterClientID, int Mode, const char *pText)
+void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 {
 	char aBuf[256];
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
@@ -317,16 +317,16 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char *pText)
 		}
 
 		// pack one for the recording only
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NOSEND, -1);
 
 		// send chat to guild team
 		Msg.m_Team = 1;
 		const int GuildID = pChatterPlayer->Acc().m_GuildID;
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			CPlayer *pSearchPlayer = GetPlayer(i, true);
+			CPlayer* pSearchPlayer = GetPlayer(i, true);
 			if(pSearchPlayer && pSearchPlayer->Acc().m_GuildID == GuildID)
-				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
 		}
 	}
 }
@@ -345,9 +345,9 @@ void CGS::Chat(int ClientID, const char* pText, ...)
 	va_start(VarArgs, pText);
 
 	dynamic_string Buffer;
-	for (int i = Start; i < End; i++)
+	for(int i = Start; i < End; i++)
 	{
-		if (m_apPlayers[i])
+		if(m_apPlayers[i])
 		{
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
 
@@ -362,7 +362,7 @@ void CGS::Chat(int ClientID, const char* pText, ...)
 // send to an authorized player
 bool CGS::ChatAccount(int AccountID, const char* pText, ...)
 {
-	CPlayer *pPlayer = GetPlayerFromUserID(AccountID);
+	CPlayer* pPlayer = GetPlayerFromUserID(AccountID);
 	if(!pPlayer)
 		return false;
 
@@ -397,9 +397,9 @@ void CGS::ChatGuild(int GuildID, const char* pText, ...)
 	va_start(VarArgs, pText);
 
 	dynamic_string Buffer;
-	for(int i = 0 ; i < MAX_PLAYERS ; i ++)
+	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(CPlayer *pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Acc().IsGuild() && pPlayer->Acc().m_GuildID == GuildID)
+		if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Acc().IsGuild() && pPlayer->Acc().m_GuildID == GuildID)
 		{
 			Buffer.append("[Guild]");
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
@@ -424,7 +424,7 @@ void CGS::ChatWorldID(int WorldID, const char* Suffix, const char* pText, ...)
 	va_start(VarArgs, pText);
 
 	dynamic_string Buffer;
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GetPlayer(i, true);
 		if(!pPlayer || !IsPlayerEqualWorld(i, WorldID))
@@ -442,7 +442,7 @@ void CGS::ChatWorldID(int WorldID, const char* Suffix, const char* pText, ...)
 }
 
 // Send discord message
-void CGS::ChatDiscord(int Color, const char *Title, const char* pText, ...)
+void CGS::ChatDiscord(int Color, const char* Title, const char* pText, ...)
 {
 #ifdef CONF_DISCORD
 	va_list VarArgs;
@@ -458,7 +458,7 @@ void CGS::ChatDiscord(int Color, const char *Title, const char* pText, ...)
 }
 
 // Send a discord message to the channel
-void CGS::ChatDiscordChannel(const char *pChanel, int Color, const char *Title, const char* pText, ...)
+void CGS::ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, ...)
 {
 #ifdef CONF_DISCORD
 	va_list VarArgs;
@@ -498,7 +498,7 @@ void CGS::Motd(int ClientID, const char* Text, ...)
 ######################################################################### */
 void CGS::AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priority, int LifeSpan)
 {
-	if (ClientID < 0 || ClientID >= MAX_PLAYERS)
+	if(ClientID < 0 || ClientID >= MAX_PLAYERS)
 		return;
 
 	if(m_aBroadcastStates[ClientID].m_TimedPriority > Priority)
@@ -510,10 +510,10 @@ void CGS::AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priori
 }
 
 // formatted broadcast
-void CGS::Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char *pText, ...)
+void CGS::Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char* pText, ...)
 {
 	const int Start = (ClientID < 0 ? 0 : ClientID);
-	const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID+1);
+	const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
 
 	va_list VarArgs;
 	va_start(VarArgs, pText);
@@ -531,7 +531,7 @@ void CGS::Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, cons
 }
 
 // formatted world broadcast
-void CGS::BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan, const char *pText, ...)
+void CGS::BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan, const char* pText, ...)
 {
 	va_list VarArgs;
 	va_start(VarArgs, pText);
@@ -551,7 +551,7 @@ void CGS::BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan
 // the tick of the broadcast and his life
 void CGS::BroadcastTick(int ClientID)
 {
-	if (ClientID < 0 || ClientID >= MAX_PLAYERS)
+	if(ClientID < 0 || ClientID >= MAX_PLAYERS)
 		return;
 
 	if(m_apPlayers[ClientID] && IsPlayerEqualWorld(ClientID))
@@ -562,9 +562,9 @@ void CGS::BroadcastTick(int ClientID)
 			// combine game information with game priority
 			if(rBroadcast.m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
 			{
-				char aAppendBuf[1024]{ };
+				char aAppendBuf[1024] { };
 				str_copy(aAppendBuf, rBroadcast.m_aTimedMessage, sizeof(aAppendBuf));
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(rBroadcast.m_aNextMessage, sizeof(rBroadcast.m_aNextMessage), m_apPlayers[ClientID]->m_PlayerFlags&PLAYERFLAG_CHATTING ? "\0" : aAppendBuf);
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(rBroadcast.m_aNextMessage, sizeof(rBroadcast.m_aNextMessage), m_apPlayers[ClientID]->m_PlayerFlags & PLAYERFLAG_CHATTING ? "\0" : aAppendBuf);
 			}
 			else
 			{
@@ -648,8 +648,8 @@ void CGS::SendMotd(int ClientID)
 void CGS::SendTuningParams(int ClientID)
 {
 	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-	int *pParams = (int *)&m_Tuning;
-	for(unsigned i = 0; i < sizeof(m_Tuning)/sizeof(int); i++)
+	int* pParams = (int*)&m_Tuning;
+	for(unsigned i = 0; i < sizeof(m_Tuning) / sizeof(int); i++)
 		Msg.AddInt(pParams[i]);
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
@@ -719,17 +719,17 @@ void CGS::OnInit(int WorldID)
 	m_pCommandProcessor = new CCommandProcessor(this);
 
 	// initialize cores
-	CMapItemLayerTilemap *pTileMap = m_pLayers->GameLayer();
-	CTile *pTiles = (CTile *)Kernel()->RequestInterface<IMap>(WorldID)->GetData(pTileMap->m_Data);
+	CMapItemLayerTilemap* pTileMap = m_pLayers->GameLayer();
+	CTile* pTiles = (CTile*)Kernel()->RequestInterface<IMap>(WorldID)->GetData(pTileMap->m_Data);
 	for(int y = 0; y < pTileMap->m_Height; y++)
 	{
 		for(int x = 0; x < pTileMap->m_Width; x++)
 		{
-			const int Index = pTiles[y*pTileMap->m_Width+x].m_Index;
+			const int Index = pTiles[y * pTileMap->m_Width + x].m_Index;
 			if(Index >= ENTITY_OFFSET)
 			{
-				const vec2 Pos(x*32.0f+16.0f, y*32.0f+16.0f);
-				m_pController->OnEntity(Index-ENTITY_OFFSET, Pos);
+				const vec2 Pos(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+				m_pController->OnEntity(Index - ENTITY_OFFSET, Pos);
 			}
 		}
 	}
@@ -755,9 +755,9 @@ void CGS::OnConsoleInit()
 	Console()->Register("afk_list", "", CFGFLAG_SERVER, ConListAfk, m_pServer, "List all afk players");
 	Console()->Register("is_afk", "i[cid]", CFGFLAG_SERVER, ConCheckAfk, m_pServer, "Check if player is afk");
 
-    Console()->Register("ban_acc", "i[cid]s[time]r[reason]", CFGFLAG_SERVER, ConBanAcc  , m_pServer, "Ban account, time format: d - days, h - hours, m - minutes, s - seconds, example: 3d15m");
-    Console()->Register("unban_acc", "i[banid]", CFGFLAG_SERVER, ConUnBanAcc  , m_pServer, "UnBan account, pass ban id from bans_acc");
-    Console()->Register("bans_acc", "", CFGFLAG_SERVER, ConBansAcc  , m_pServer, "Accounts bans");
+	Console()->Register("ban_acc", "i[cid]s[time]r[reason]", CFGFLAG_SERVER, ConBanAcc, m_pServer, "Ban account, time format: d - days, h - hours, m - minutes, s - seconds, example: 3d15m");
+	Console()->Register("unban_acc", "i[banid]", CFGFLAG_SERVER, ConUnBanAcc, m_pServer, "UnBan account, pass ban id from bans_acc");
+	Console()->Register("bans_acc", "", CFGFLAG_SERVER, ConBansAcc, m_pServer, "Accounts bans");
 }
 
 void CGS::OnTick()
@@ -856,10 +856,10 @@ void CGS::OnPostSnap()
 	m_Events.Clear();
 }
 
-void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
+void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 {
-	void *pRawMsg = m_NetObjHandler.SecureUnpackMsg(MsgID, pUnpacker);
-	CPlayer *pPlayer = m_apPlayers[ClientID];
+	void* pRawMsg = m_NetObjHandler.SecureUnpackMsg(MsgID, pUnpacker);
+	CPlayer* pPlayer = m_apPlayers[ClientID];
 
 	if(!pRawMsg)
 	{
@@ -876,13 +876,13 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 	{
 		if(MsgID == NETMSGTYPE_CL_SAY)
 		{
-			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastChat] && pPlayer->m_aPlayerTick[LastChat]+Server()->TickSpeed() > Server()->Tick())
+			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastChat] && pPlayer->m_aPlayerTick[LastChat] + Server()->TickSpeed() > Server()->Tick())
 				return;
 
 			pPlayer->m_aPlayerTick[LastChat] = Server()->Tick();
 
 			CNetMsg_Cl_Say* pMsg = (CNetMsg_Cl_Say*)pRawMsg;
-			if (!str_utf8_check(pMsg->m_pMessage))
+			if(!str_utf8_check(pMsg->m_pMessage))
 				return;
 
 			if(pMsg->m_pMessage[0] == '/')
@@ -895,8 +895,8 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{
-			CNetMsg_Cl_CallVote *pMsg = (CNetMsg_Cl_CallVote *)pRawMsg;
-			if (str_comp_nocase(pMsg->m_pType, "option") != 0 || Server()->Tick() < (pPlayer->m_aPlayerTick[LastVoteTry] + (Server()->TickSpeed() / 2)))
+			CNetMsg_Cl_CallVote* pMsg = (CNetMsg_Cl_CallVote*)pRawMsg;
+			if(str_comp_nocase(pMsg->m_pType, "option") != 0 || Server()->Tick() < (pPlayer->m_aPlayerTick[LastVoteTry] + (Server()->TickSpeed() / 2)))
 				return;
 
 			// post updated votes
@@ -922,7 +922,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
 		{
-			CNetMsg_Cl_Vote *pMsg = (CNetMsg_Cl_Vote *)pRawMsg;
+			CNetMsg_Cl_Vote* pMsg = (CNetMsg_Cl_Vote*)pRawMsg;
 			if(pPlayer->ParseItemsF3F4(pMsg->m_Vote))
 				return;
 		}
@@ -938,14 +938,14 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Team change is not allowed.");
 		}
 
-		else if (MsgID == NETMSGTYPE_CL_SETSPECTATORMODE)
+		else if(MsgID == NETMSGTYPE_CL_SETSPECTATORMODE)
 		{
 			return;
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_CHANGEINFO)
 		{
-			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastChangeInfo] 
+			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastChangeInfo]
 				&& pPlayer->m_aPlayerTick[LastChangeInfo] + Server()->TickSpeed() * g_Config.m_SvInfoChangeDelay > Server()->Tick())
 				return;
 
@@ -981,11 +981,11 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			Server()->ExpireServerInfo();
 		}
 
-		else if (MsgID == NETMSGTYPE_CL_EMOTICON)
+		else if(MsgID == NETMSGTYPE_CL_EMOTICON)
 		{
-			CNetMsg_Cl_Emoticon *pMsg = (CNetMsg_Cl_Emoticon *)pRawMsg;
+			CNetMsg_Cl_Emoticon* pMsg = (CNetMsg_Cl_Emoticon*)pRawMsg;
 
-			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastEmote] && pPlayer->m_aPlayerTick[LastEmote]+(Server()->TickSpeed() / 2) > Server()->Tick())
+			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastEmote] && pPlayer->m_aPlayerTick[LastEmote] + (Server()->TickSpeed() / 2) > Server()->Tick())
 				return;
 
 			pPlayer->m_aPlayerTick[LastEmote] = Server()->Tick();
@@ -995,9 +995,9 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			Mmo()->Skills()->ParseEmoticionSkill(pPlayer, pMsg->m_Emoticon);
 		}
 
-		else if (MsgID == NETMSGTYPE_CL_KILL)
+		else if(MsgID == NETMSGTYPE_CL_KILL)
 		{
-			if(pPlayer->m_aPlayerTick[LastKill] && pPlayer->m_aPlayerTick[LastKill]+Server()->TickSpeed()*3 > Server()->Tick())
+			if(pPlayer->m_aPlayerTick[LastKill] && pPlayer->m_aPlayerTick[LastKill] + Server()->TickSpeed() * 3 > Server()->Tick())
 				return;
 
 			Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Self kill is not allowed.");
@@ -1094,7 +1094,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 	}
 	else
 	{
-		if (MsgID == NETMSGTYPE_CL_STARTINFO)
+		if(MsgID == NETMSGTYPE_CL_STARTINFO)
 		{
 			if(!pPlayer || pPlayer->m_aPlayerTick[LastChangeInfo] != 0)
 				return;
@@ -1105,17 +1105,17 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(!pPlayer->IsAuthed())
 			{
 				CNetMsg_Cl_StartInfo* pMsg = (CNetMsg_Cl_StartInfo*)pRawMsg;
-				if (!str_utf8_check(pMsg->m_pName))
+				if(!str_utf8_check(pMsg->m_pName))
 				{
 					Server()->Kick(ClientID, "name is not valid utf8");
 					return;
 				}
-				if (!str_utf8_check(pMsg->m_pClan))
+				if(!str_utf8_check(pMsg->m_pClan))
 				{
 					Server()->Kick(ClientID, "clan is not valid utf8");
 					return;
 				}
-				if (!str_utf8_check(pMsg->m_pSkin))
+				if(!str_utf8_check(pMsg->m_pSkin))
 				{
 					Server()->Kick(ClientID, "skin is not valid utf8");
 					return;
@@ -1137,7 +1137,7 @@ void CGS::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			// client is ready to enter
 			CNetMsg_Sv_ReadyToEnter m;
 			Server()->SendPackMsg(&m, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
-			
+
 			Server()->ExpireServerInfo();
 		}
 	}
@@ -1147,7 +1147,7 @@ void CGS::OnClientConnected(int ClientID)
 {
 	if(!m_apPlayers[ClientID])
 	{
-		const int AllocMemoryCell = ClientID+m_WorldID*MAX_CLIENTS;
+		const int AllocMemoryCell = ClientID + m_WorldID * MAX_CLIENTS;
 		m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
 	}
 
@@ -1180,7 +1180,7 @@ void CGS::OnClientEnter(int ClientID)
 	Mmo()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 }
 
-void CGS::OnClientDrop(int ClientID, const char *pReason)
+void CGS::OnClientDrop(int ClientID, const char* pReason)
 {
 	if(!m_apPlayers[ClientID] || m_apPlayers[ClientID]->IsBot())
 		return;
@@ -1188,7 +1188,7 @@ void CGS::OnClientDrop(int ClientID, const char *pReason)
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
 
-	if ((Server()->ClientIngame(ClientID) || Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
+	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
 	{
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
@@ -1203,32 +1203,32 @@ void CGS::OnClientDrop(int ClientID, const char *pReason)
 	m_apPlayers[ClientID] = nullptr;
 }
 
-void CGS::OnClientDirectInput(int ClientID, void *pInput)
+void CGS::OnClientDirectInput(int ClientID, void* pInput)
 {
-	m_apPlayers[ClientID]->OnDirectInput((CNetObj_PlayerInput *)pInput);
+	m_apPlayers[ClientID]->OnDirectInput((CNetObj_PlayerInput*)pInput);
 
-	int Flags = ((CNetObj_PlayerInput *)pInput)->m_PlayerFlags;
+	int Flags = ((CNetObj_PlayerInput*)pInput)->m_PlayerFlags;
 	if((Flags & 256) || (Flags & 512))
 	{
 		Server()->Kick(ClientID, "please update your client or use DDNet client");
 	}
 }
 
-void CGS::OnClientPredictedInput(int ClientID, void *pInput)
+void CGS::OnClientPredictedInput(int ClientID, void* pInput)
 {
-	m_apPlayers[ClientID]->OnPredictedInput((CNetObj_PlayerInput *)pInput);
+	m_apPlayers[ClientID]->OnPredictedInput((CNetObj_PlayerInput*)pInput);
 }
 
 // change the world
 void CGS::PrepareClientChangeWorld(int ClientID)
 {
-	if (m_apPlayers[ClientID])
+	if(m_apPlayers[ClientID])
 	{
 		m_apPlayers[ClientID]->KillCharacter(WEAPON_WORLD);
 		delete m_apPlayers[ClientID];
 		m_apPlayers[ClientID] = nullptr;
 	}
-	const int AllocMemoryCell = ClientID+m_WorldID*MAX_CLIENTS;
+	const int AllocMemoryCell = ClientID + m_WorldID * MAX_CLIENTS;
 	m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
 }
 
@@ -1249,13 +1249,13 @@ bool CGS::IsClientMRPG(int ClientID) const
 
 int CGS::GetClientVersion(int ClientID) const
 {
-	IServer::CClientInfo Info = {0};
+	IServer::CClientInfo Info = { 0 };
 	Server()->GetClientInfo(ClientID, &Info);
 	return Info.m_DDNetVersion;
 }
 
-const char *CGS::Version() const { return GAME_VERSION; }
-const char *CGS::NetVersion() const { return GAME_NETVERSION; }
+const char* CGS::Version() const { return GAME_VERSION; }
+const char* CGS::NetVersion() const { return GAME_NETVERSION; }
 
 // clearing all data at the exit of the client necessarily call once enough
 void CGS::ClearClientData(int ClientID)
@@ -1298,7 +1298,7 @@ void CGS::ConItemList(IConsole::IResult* pResult, void* pUserData)
 }
 
 // give the item to the player
-void CGS::ConGiveItem(IConsole::IResult *pResult, void *pUserData)
+void CGS::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 {
 	const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS - 1);
 	const ItemIdentifier ItemID = pResult->GetInteger(1);
@@ -1309,10 +1309,10 @@ void CGS::ConGiveItem(IConsole::IResult *pResult, void *pUserData)
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
-	CPlayer *pPlayer = pSelf->GetPlayer(ClientID, true);
+	CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
 	if(pPlayer && CItemDescription::Data().find(ItemID) != CItemDescription::Data().end())
 	{
-		if (Mail == 0)
+		if(Mail == 0)
 		{
 			pPlayer->GetItem(ItemID)->Add(Value, 0, Enchant);
 			return;
@@ -1351,13 +1351,13 @@ void CGS::ConRemItem(IConsole::IResult* pResult, void* pUserData)
 	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
 	CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
-	if (pPlayer)
+	if(pPlayer)
 	{
 		pPlayer->GetItem(ItemID)->Remove(Value);
 	}
 }
 
-void CGS::ConSay(IConsole::IResult *pResult, void *pUserData)
+void CGS::ConSay(IConsole::IResult* pResult, void* pUserData)
 {
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
@@ -1365,7 +1365,7 @@ void CGS::ConSay(IConsole::IResult *pResult, void *pUserData)
 }
 
 // add a new bot player to the database
-void CGS::ConAddCharacter(IConsole::IResult *pResult, void *pUserData)
+void CGS::ConAddCharacter(IConsole::IResult* pResult, void* pUserData)
 {
 	const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS - 1);
 	IServer* pServer = (IServer*)pUserData;
@@ -1392,11 +1392,11 @@ void CGS::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData)
 void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 {
 	IServer* pServer = (IServer*)pUserData;
-    CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 
 	char aBuf[1024];
-    int Counter = 0;
-    for (int i = 0; i < MAX_PLAYERS; ++i) 
+	int Counter = 0;
+	for(int i = 0; i < MAX_PLAYERS; ++i)
 	{
 		// check client in-game
 		if(pServer->ClientIngame(i))
@@ -1411,11 +1411,11 @@ void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 				Counter++;
 			}
 		}
-    }
+	}
 
 	// total afk players
-    str_format(aBuf, sizeof(aBuf), "%d afk players in total", Counter);
-    pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
+	str_format(aBuf, sizeof(aBuf), "%d afk players in total", Counter);
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
 }
 
 void CGS::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
@@ -1447,7 +1447,7 @@ void CGS::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 {
 	const int ClientID = pResult->GetInteger(0);
 	IServer* pServer = (IServer*)pUserData;
-    CGS* pSelf = (CGS*)pServer->GameServerPlayer(ClientID);
+	CGS* pSelf = (CGS*)pServer->GameServerPlayer(ClientID);
 
 	// check valid timeperiod
 	TimePeriodData time(pResult->GetString(1));
@@ -1458,7 +1458,7 @@ void CGS::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 	}
 
 	// check player
-    CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
+	CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
 	if(!pPlayer)
 	{
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Player not found or isn't logged in");
@@ -1469,46 +1469,46 @@ void CGS::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 	pSelf->Mmo()->Account()->BanAccount(pPlayer, time, pResult->GetString(2));
 }
 
-void CGS::ConUnBanAcc(IConsole::IResult *pResult, void *pUserData)
+void CGS::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 {
-    IServer* pServer = (IServer*)pUserData;
-    CGS* pSelf = (CGS*)pServer->GameServer();
+	IServer* pServer = (IServer*)pUserData;
+	CGS* pSelf = (CGS*)pServer->GameServer();
 
 	// unban account by banid
-    pSelf->Mmo()->Account()->UnBanAccount(pResult->GetInteger(0));
+	pSelf->Mmo()->Account()->UnBanAccount(pResult->GetInteger(0));
 }
 
 void CGS::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 {
 	IServer* pServer = (IServer*)pUserData;
-    CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 
-    char aBuf[1024];
-    int Counter = 0;
-    for (const auto &p: pSelf->Mmo()->Account()->BansAccount()) 
+	char aBuf[1024];
+	int Counter = 0;
+	for(const auto& p : pSelf->Mmo()->Account()->BansAccount())
 	{
 		// write information about afk
-        str_format(aBuf, sizeof(aBuf), "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
-        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
+		str_format(aBuf, sizeof(aBuf), "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
 		Counter++;
 	}
 
 	// total bans
-    str_format(aBuf, sizeof(aBuf), "%d bans in total", Counter);
-    pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
+	str_format(aBuf, sizeof(aBuf), "%d bans in total", Counter);
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
 }
 
-void CGS::ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+void CGS::ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
 	if(pResult->NumArguments())
 	{
-		CGS *pSelf = (CGS *)pUserData;
+		CGS* pSelf = (CGS*)pUserData;
 		pSelf->SendMotd(-1);
 	}
 }
 
-void CGS::ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+void CGS::ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
 	if(pResult->NumArguments())
@@ -1530,7 +1530,7 @@ void CGS::ClearVotes(int ClientID)
 }
 
 // add a vote
-void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempInt, const int TempInt2)
+void CGS::AV(int ClientID, const char* pCmd, const char* pDesc, const int TempInt, const int TempInt2)
 {
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !m_apPlayers[ClientID])
 		return;
@@ -1554,7 +1554,7 @@ void CGS::AV(int ClientID, const char *pCmd, const char *pDesc, const int TempIn
 }
 
 // add formatted vote
-void CGS::AVL(int ClientID, const char *pCmd, const char *pText, ...)
+void CGS::AVL(int ClientID, const char* pCmd, const char* pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
@@ -1574,7 +1574,7 @@ void CGS::AVL(int ClientID, const char *pCmd, const char *pText, ...)
 }
 
 // add formatted vote with color
-void CGS::AVH(int ClientID, const int HiddenID, const char *pText, ...)
+void CGS::AVH(int ClientID, const int HiddenID, const char* pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
@@ -1583,8 +1583,8 @@ void CGS::AVH(int ClientID, const int HiddenID, const char *pText, ...)
 
 		const bool HiddenTab = (HiddenID >= TAB_STAT) ? m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) : false;
 		auto Symbols = [](int ID, const char* pValue, const char* pValue2) -> const char* {	return ID >= NUM_TAB_MENU ? (pValue) : (ID < NUM_TAB_MENU_INTERACTIVES ? (pValue2) : (pValue));	};
-		const char* pSymbols = Symbols(HiddenID, HiddenTab ? "► " : "▼ ", HiddenTab ?  "▼ " : "► ");
-		
+		const char* pSymbols = Symbols(HiddenID, HiddenTab ? "► " : "▼ ", HiddenTab ? "▼ " : "► ");
+
 		dynamic_string Buffer;
 
 		Buffer.append(pSymbols);
@@ -1599,7 +1599,7 @@ void CGS::AVH(int ClientID, const int HiddenID, const char *pText, ...)
 }
 
 // add formatted vote as menu
-void CGS::AVM(int ClientID, const char *pCmd, const int TempInt, const int HiddenID, const char* pText, ...)
+void CGS::AVM(int ClientID, const char* pCmd, const int TempInt, const int HiddenID, const char* pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
@@ -1621,7 +1621,7 @@ void CGS::AVM(int ClientID, const char *pCmd, const int TempInt, const int Hidde
 }
 
 // add formatted vote with multiple id's
-void CGS::AVD(int ClientID, const char *pCmd, const int TempInt, const int TempInt2, const int HiddenID, const char *pText, ...)
+void CGS::AVD(int ClientID, const char* pCmd, const int TempInt, const int TempInt2, const int HiddenID, const char* pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
@@ -1701,7 +1701,7 @@ void CGS::UpdateVotes(int ClientID, int MenuList)
 // information for unauthorized players
 void CGS::ShowVotesNewbieInformation(int ClientID)
 {
-	CPlayer *pPlayer = GetPlayer(ClientID);
+	CPlayer* pPlayer = GetPlayer(ClientID);
 	if(!pPlayer)
 		return;
 
@@ -1765,7 +1765,7 @@ void CGS::AddVotesBackpage(int ClientID)
 }
 
 // print player statistics
-void CGS::ShowVotesPlayerStats(CPlayer *pPlayer)
+void CGS::ShowVotesPlayerStats(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	AVH(ClientID, TAB_INFO_STAT, "Your main stats & chances{STR}", IsDungeon() ? " (Sync)" : "\0");
@@ -1804,9 +1804,9 @@ void CGS::AddVoteItemValue(int ClientID, ItemIdentifier ItemID, int HideID)
 }
 
 // vote parsing of all functions of action methods
-bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, const int VoteID2, int Get, const char *Text)
+bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* Text)
 {
-	CPlayer *pPlayer = GetPlayer(ClientID, false, true);
+	CPlayer* pPlayer = GetPlayer(ClientID, false, true);
 	if(!pPlayer)
 	{
 		Chat(ClientID, "Use it when you're not dead!");
@@ -1824,13 +1824,13 @@ bool CGS::ParsingVoteCommands(int ClientID, const char *CMD, const int VoteID, c
 		UpdateVotes(ClientID, VoteID);
 		return true;
 	}
-	if (PPSTR(CMD, "SORTEDTOP") == 0)
+	if(PPSTR(CMD, "SORTEDTOP") == 0)
 	{
 		pPlayer->m_aSortTabs[SORT_TOP] = VoteID;
 		StrongUpdateVotes(ClientID, MENU_TOP_LIST);
 		return true;
 	}
-	if (PPSTR(CMD, "SORTEDWIKIWORLD") == 0)
+	if(PPSTR(CMD, "SORTEDWIKIWORLD") == 0)
 	{
 		pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] = VoteID;
 		StrongUpdateVotes(ClientID, MENU_GUIDE_GRINDING);
@@ -1858,7 +1858,7 @@ int CGS::CreateBot(short BotType, int BotID, int SubID)
 	}
 
 	Server()->InitClientBot(BotClientID);
-	const int AllocMemoryCell = BotClientID+m_WorldID*MAX_CLIENTS;
+	const int AllocMemoryCell = BotClientID + m_WorldID * MAX_CLIENTS;
 	m_apPlayers[BotClientID] = new(AllocMemoryCell) CPlayerBot(this, BotClientID, BotID, SubID, BotType);
 	return BotClientID;
 }
@@ -1913,18 +1913,18 @@ void CGS::CreateRandomDropItem(vec2 Pos, int ClientID, float Chance, CItem DropI
 
 bool CGS::TakeItemCharacter(int ClientID)
 {
-	CPlayer *pPlayer = GetPlayer(ClientID, true, true);
+	CPlayer* pPlayer = GetPlayer(ClientID, true, true);
 	if(!pPlayer)
 		return false;
 
-    std::vector<CDropItem*> vDrops;
-    for (CEntity* item: m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 64, 64, CGameWorld::ENTTYPE_DROPITEM))
-        vDrops.push_back((CDropItem*)item);
+	std::vector<CDropItem*> vDrops;
+	for(CEntity* item : m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 64, 64, CGameWorld::ENTTYPE_DROPITEM))
+		vDrops.push_back((CDropItem*)item);
 
-    for (const auto &pDrop: vDrops)
-    {
-        if(pDrop && pDrop->TakeItem(ClientID)) { return true; }
-    }
+	for(const auto& pDrop : vDrops)
+	{
+		if(pDrop && pDrop->TakeItem(ClientID)) { return true; }
+	}
 	return false;
 }
 
@@ -1969,16 +1969,16 @@ void CGS::SendDayInfo(int ClientID)
 	}
 	else if(m_DayEnumType == MORNING_TYPE)
 	{
-		Chat(ClientID, "Daytime experience was downgraded to 100%");
+		Chat(ClientID, "Experience is now 100%");
 	}
 }
 
 int CGS::GetExperienceMultiplier(int Experience) const
 {
-	if(IsDungeon())
-		return translate_to_percent_rest(Experience, g_Config.m_SvMultiplierExpRaidDungeon);
-	return translate_to_percent_rest(Experience, m_MultiplierExp);
+	return IsDungeon() ? translate_to_percent_rest(Experience, g_Config.m_SvMultiplierExpRaidDungeon) : translate_to_percent_rest(Experience, m_MultiplierExp);
 }
+
+//Optimized
 
 void CGS::InitZones()
 {
@@ -2013,9 +2013,7 @@ bool CGS::IsPlayerEqualWorld(int ClientID, int WorldID) const
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return false;
 
-	if (WorldID <= -1)
-		return m_apPlayers[ClientID]->GetPlayerWorldID() == m_WorldID;
-	return m_apPlayers[ClientID]->GetPlayerWorldID() == WorldID;
+	return m_apPlayers[ClientID]->GetPlayerWorldID() == (WorldID <= -1 ? m_WorldID : WorldID);
 }
 
 bool CGS::IsPlayersNearby(vec2 Pos, float Distance) const
@@ -2028,4 +2026,4 @@ bool CGS::IsPlayersNearby(vec2 Pos, float Distance) const
 	return false;
 }
 
-IGameServer *CreateGameServer() { return new CGS; }
+IGameServer* CreateGameServer() { return new CGS; }

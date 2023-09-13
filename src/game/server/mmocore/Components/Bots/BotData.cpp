@@ -40,18 +40,15 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 			{
 				TaskRequiredItems Task;
 				Task.m_Item = CItem::FromJSON(p);
-				Task.m_Type = TaskRequiredItems::Type::DEFAULT;
 
 				if(Task.m_Item.IsValid())
 				{
 					if(std::string Type = p.value("type", "default"); Type == "pickup")
-					{
 						Task.m_Type = TaskRequiredItems::Type::PICKUP;
-					}
 					else if(Type == "show")
-					{
 						Task.m_Type = TaskRequiredItems::Type::SHOW;
-					}
+					else
+						Task.m_Type = TaskRequiredItems::Type::DEFAULT;
 
 					m_RequiredItems.push_back(Task);
 				}
@@ -75,58 +72,45 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 			}
 		}
 
-		// initilize move to
+		// Optimized
 		if(pJson.find("move_to") != pJson.end())
 		{
 			int LatestBiggerStep = 1;
-
 			for(auto& p : pJson["move_to"])
 			{
-				// initilize default
 				const vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
 				const bool Navigator = p.value("navigator", true);
 				const std::string TextChat = p.value("text", "\0").c_str();
 				TaskRequiredMoveTo::Types Type = TaskRequiredMoveTo::Types::MOVE_ONLY;
+				CItem PickUpItem {};
+				CItem RequiredItem {};
+				TaskRequiredMoveTo::DefeatMob DefeatMob {};
+				const std::string TextUseInChat = p.value("use_in_chat", "\0").c_str();
 
-				// initilize pick_up_item object
-				CItem PickUpItem{};
 				if(p.find("pick_up_item") != p.end())
 				{
 					PickUpItem = CItem::FromJSON(p["pick_up_item"]);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
-
-				// initilize required_item object
-				CItem RequiredItem{};
 				if(p.find("required_item") != p.end())
 				{
 					RequiredItem = CItem::FromJSON(p["required_item"]);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
-
-				// initilize defeat_mob object
-				TaskRequiredMoveTo::DefeatMob DefeatMob{};
 				if(p.find("defeat_mob") != p.end())
 				{
 					DefeatMob.m_BotID = p.value("id", 0);
 					DefeatMob.m_Value = p.value("value", 0);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
-
-				// initilize use chat type
-				const std::string TextUseInChat = p.value("use_in_chat", "\0").c_str();
 				if(!TextUseInChat.empty())
 				{
 					Type = TaskRequiredMoveTo::Types::USE_CHAT_MODE;
 				}
-
-				// steps can only be taken to increase the orderly 
 				if(Step > LatestBiggerStep)
 					LatestBiggerStep = Step;
-
-				// add element to container
 				if(total_size_vec2(Position) > 0.f)
 				{
 					TaskRequiredMoveTo Move;

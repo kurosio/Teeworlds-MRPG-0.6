@@ -60,17 +60,15 @@ void CQuest::InitSteps()
 	{
 		if(pStep.second.m_Bot.m_HasAction)
 		{
-			JsonQuestData["steps"].push_back(
-			{
-				{ "subbotid", pStep.second.m_Bot.m_SubBotID },
-				{ "state", pStep.second.m_StepComplete }
-			});
+			nlohmann::json StepData;
+			StepData["subbotid"] = pStep.second.m_Bot.m_SubBotID;
+			StepData["state"] = pStep.second.m_StepComplete;
 
 			if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
 			{
 				for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
 				{
-					JsonQuestData["steps"].back()["defeat"].push_back(
+					StepData["defeat"].push_back(
 						{
 							{ "id", p.m_BotID },
 							{ "count", 0 },
@@ -82,12 +80,14 @@ void CQuest::InitSteps()
 			{
 				for(size_t i = 0; i < pStep.second.m_Bot.m_RequiredMoveTo.size(); i++)
 				{
-					JsonQuestData["steps"].back()["move_to"].push_back(
+					StepData["move_to"].push_back(
 						{
 							{ "complete", false },
 						});
 				}
 			}
+
+			JsonQuestData["steps"].push_back(StepData);
 		}
 
 	}
@@ -188,15 +188,13 @@ bool CQuest::SaveSteps()
 	{
 		if(pStep.second.m_Bot.m_HasAction)
 		{
-			JsonQuestData["steps"].push_back(
-				{
-					{ "subbotid", pStep.second.m_Bot.m_SubBotID },
-					{ "state", pStep.second.m_StepComplete }
-				});
+			nlohmann::json stepData;
+			stepData["subbotid"] = pStep.second.m_Bot.m_SubBotID;
+			stepData["state"] = pStep.second.m_StepComplete;
 
 			for(auto& p : pStep.second.m_aMobProgress)
 			{
-				JsonQuestData["steps"].back()["defeat"].push_back(
+				stepData["defeat"].push_back(
 					{
 						{ "id", p.first },
 						{ "count", p.second },
@@ -205,11 +203,13 @@ bool CQuest::SaveSteps()
 
 			for(auto& p : pStep.second.m_aMoveToProgress)
 			{
-				JsonQuestData["steps"].back()["move_to"].push_back(
+				stepData["move_to"].push_back(
 					{
 						{ "complete", p },
 					});
 			}
+
+			JsonQuestData["steps"].push_back(stepData);
 		}
 	}
 
@@ -301,8 +301,8 @@ void CQuest::Finish()
 void CQuest::CheckAvailableNewStep()
 {
 	// check whether the active steps is complete
-	if(std::find_if(m_aPlayerSteps.begin(), m_aPlayerSteps.end(), [this](std::pair <const int, CPlayerQuestStep> &p)
-	{ return (p.second.m_Bot.m_Step == m_Step && !p.second.m_StepComplete && p.second.m_Bot.m_HasAction); }) != m_aPlayerSteps.end())
+	if(std::any_of(m_aPlayerSteps.begin(), m_aPlayerSteps.end(), [this](std::pair <const int, CPlayerQuestStep>& p)
+	{ return (p.second.m_Bot.m_Step == m_Step && !p.second.m_StepComplete && p.second.m_Bot.m_HasAction); }))
 		return;
 
 	m_Step++;
@@ -311,10 +311,13 @@ void CQuest::CheckAvailableNewStep()
 	bool FinalStep = true;
 	for(auto& pStepBot : m_aPlayerSteps)
 	{
-		if(!pStepBot.second.m_StepComplete && pStepBot.second.m_Bot.m_HasAction)
-			FinalStep = false;
+		if(!pStepBot.second.m_StepComplete)
+		{
+			if(pStepBot.second.m_Bot.m_HasAction)
+				FinalStep = false;
 
-		pStepBot.second.Update();
+			pStepBot.second.Update();
+		}
 	}
 
 	// finish the quest or update the step
@@ -323,7 +326,6 @@ void CQuest::CheckAvailableNewStep()
 		Finish();
 
 		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(m_ClientID);
-
 		pGS->StrongUpdateVotes(m_ClientID, MENU_JOURNAL_MAIN);
 		pGS->StrongUpdateVotes(m_ClientID, MENU_MAIN);
 	}

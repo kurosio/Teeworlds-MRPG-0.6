@@ -6,8 +6,8 @@
 
 class DBSet
 {
-	std::string m_Data{};
-	std::list < std::string > m_DataItems{};
+	std::string m_Data {};
+	std::list < std::string > m_DataItems {};
 
 public:
 	DBSet() = default;
@@ -18,22 +18,22 @@ public:
 		m_Data = pData;
 		if(!pData.empty())
 		{
-			size_t start;
-			size_t end = 0;
+			size_t start = 0;
+			size_t end;
 			std::string delim = ",";
 
-			while((start = pData.find_first_not_of(delim, end)) != std::string::npos)
+			while((end = pData.find(delim, start)) != std::string::npos)
 			{
-				end = pData.find(delim, start);
 				m_DataItems.push_back(pData.substr(start, end - start));
+				start = end + 1;
 			}
+			m_DataItems.push_back(pData.substr(start));
 		}
 	}
 
 	bool hasSet(const char* pSet) const
 	{
-		auto p = std::find_if(m_DataItems.begin(), m_DataItems.end(), [pSet](const std::string& item) { return item == pSet; });
-		return p != m_DataItems.end();
+		return std::find(m_DataItems.begin(), m_DataItems.end(), pSet) != m_DataItems.end();
 	}
 	std::list<std::string>& GetDataItems() { return m_DataItems; }
 };

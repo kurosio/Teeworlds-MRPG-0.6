@@ -12,25 +12,20 @@ using WorldDataPtr = std::shared_ptr< class CWorldData >;
 class CWorldSwapData
 {
 	int m_ID {};
-	vec2 m_Position[2] {};
-	int m_WorldID[2] {};
+	std::pair<vec2, vec2> m_Positions {};
+	std::pair<int, int> m_Worlds {};
 
 public:
 	CWorldSwapData() = default;
-	CWorldSwapData(int ID, std::pair <vec2, vec2 > Positions, std::pair < int, int > Worlds)
-	{
-		m_ID = ID;
-		m_Position[0] = Positions.first;
-		m_Position[1] = Positions.second;
-		m_WorldID[0] = Worlds.first;
-		m_WorldID[1] = Worlds.second;
-	}
+	CWorldSwapData(int ID, const std::pair <vec2, vec2 > Positions, const std::pair < int, int > Worlds)
+		: m_ID(ID), m_Positions(Positions), m_Worlds(Worlds)
+	{}
 
-	vec2 GetFirstSwapPosition() const { return m_Position[0]; }
-	vec2 GetSecondSwapPosition() const { return m_Position[1]; }
+	vec2 GetFirstSwapPosition() const { return m_Positions.first; }
+	vec2 GetSecondSwapPosition() const { return m_Positions.second; }
 
-	int GetFirstWorldID() const { return m_WorldID[0]; }
-	int GetSecondWorldID() const { return m_WorldID[1]; }
+	int GetFirstWorldID() const { return m_Worlds.first; }
+	int GetSecondWorldID() const { return m_Worlds.second; }
 };
 
 /*
@@ -38,11 +33,11 @@ public:
  */
 class CWorldData : public MultiworldIdentifiableStaticData< std::deque< WorldDataPtr > >
 {
-	WorldIdentifier m_ID{};
-	char m_aName[64]{};
-	int m_RequiredQuestID{};
-	int m_RespawnWorldID{};
-	std::deque < CWorldSwapData > m_Swappers{};
+	WorldIdentifier m_ID {};
+	char m_aName[64] {};
+	int m_RequiredQuestID {};
+	int m_RespawnWorldID {};
+	std::deque < CWorldSwapData > m_Swappers {};
 
 public:
 	CWorldData() = default;
@@ -60,7 +55,7 @@ public:
 	WorldIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_aName; }
 	class CQuestDescription* GetRequiredQuest() const;
-	CWorldData* GetRespawnWorld() ;
+	CWorldData* GetRespawnWorld();
 	CWorldSwapData* GetSwapperByPos(vec2 Pos);
 	std::deque <CWorldSwapData>& GetSwappers() { return m_Swappers; }
 };

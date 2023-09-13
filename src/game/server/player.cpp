@@ -17,10 +17,10 @@
 #include "mmocore/Components/Inventory/ItemData.h"
 #include "mmocore/Components/Skills/SkillData.h"
 
-MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
+MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 IServer* CPlayer::Server() const { return m_pGS->Server(); };
-CPlayer::CPlayer(CGS *pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
+CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 {
 	for(short& SortTab : m_aSortTabs)
 		SortTab = -1;
@@ -67,25 +67,23 @@ void CPlayer::Tick()
 	if(!IsAuthed())
 		return;
 
-	Server()->SetClientScore(m_ClientID, Acc().m_Level);
+	IServer::CClientInfo Info;
+	if(Server()->GetClientInfo(m_ClientID, &Info))
 	{
-		IServer::CClientInfo Info;
-		if (Server()->GetClientInfo(m_ClientID, &Info))
-		{
-			m_Latency.m_AccumMax = max(m_Latency.m_AccumMax, Info.m_Latency);
-			m_Latency.m_AccumMin = min(m_Latency.m_AccumMin, Info.m_Latency);
-		}
-
-		if (Server()->Tick() % Server()->TickSpeed() == 0)
-		{
-			m_Latency.m_Max = m_Latency.m_AccumMax;
-			m_Latency.m_Min = m_Latency.m_AccumMin;
-			m_Latency.m_AccumMin = 1000;
-			m_Latency.m_AccumMax = 0;
-		}
+		m_Latency.m_AccumMax = max(m_Latency.m_AccumMax, Info.m_Latency);
+		m_Latency.m_AccumMin = min(m_Latency.m_AccumMin, Info.m_Latency);
+		Server()->SetClientScore(m_ClientID, Acc().m_Level);
 	}
 
-	if (m_pCharacter)
+	if(Server()->Tick() % Server()->TickSpeed() == 0)
+	{
+		m_Latency.m_Max = m_Latency.m_AccumMax;
+		m_Latency.m_Min = m_Latency.m_AccumMin;
+		m_Latency.m_AccumMin = 1000;
+		m_Latency.m_AccumMax = 0;
+	}
+
+	if(m_pCharacter)
 	{
 		if(m_pCharacter->IsAlive())
 			m_ViewPos = m_pCharacter->GetPos();
@@ -95,7 +93,7 @@ void CPlayer::Tick()
 			m_pCharacter = nullptr;
 		}
 	}
-	else if (m_Spawned && m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3 <= Server()->Tick())
+	else if(m_Spawned && m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3 <= Server()->Tick())
 	{
 		TryRespawn();
 	}
@@ -111,7 +109,7 @@ void CPlayer::Tick()
 void CPlayer::PostTick()
 {
 	// update latency value
-	if (Server()->ClientIngame(m_ClientID) && IsAuthed())
+	if(Server()->ClientIngame(m_ClientID) && IsAuthed())
 		GetTempData().m_TempPing = m_Latency.m_Min;
 
 	EffectsTick();
@@ -183,7 +181,7 @@ void CPlayer::HandleTuningParams()
 	if(!(m_PrevTuningParams == m_NextTuningParams))
 	{
 		CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-		const int *pParams = reinterpret_cast<int*>(&m_NextTuningParams);
+		const int* pParams = reinterpret_cast<int*>(&m_NextTuningParams);
 		for(unsigned i = 0; i < sizeof(m_NextTuningParams) / sizeof(int); i++)
 		{
 			Msg.AddInt(pParams[i]);
@@ -198,7 +196,7 @@ void CPlayer::HandleTuningParams()
 void CPlayer::Snap(int SnappingClient)
 {
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, m_ClientID, sizeof(CNetObj_ClientInfo)));
-	if (!pClientInfo)
+	if(!pClientInfo)
 		return;
 
 	if(!(m_PlayerFlags & PLAYERFLAG_CHATTING) && Server()->Tick() < m_SnapHealthTick)
@@ -244,7 +242,7 @@ void CPlayer::Snap(int SnappingClient)
 	pClientInfo->m_ColorFeet = GetTeeInfo().m_ColorFeet;
 
 	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, m_ClientID, sizeof(CNetObj_PlayerInfo)));
-	if (!pPlayerInfo)
+	if(!pPlayerInfo)
 		return;
 
 	const bool localClient = m_ClientID == SnappingClient;
@@ -257,7 +255,7 @@ void CPlayer::Snap(int SnappingClient)
 	if(m_ClientID == SnappingClient && (GetTeam() == TEAM_SPECTATORS))
 	{
 		CNetObj_SpectatorInfo* pSpectatorInfo = static_cast<CNetObj_SpectatorInfo*>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, m_ClientID, sizeof(CNetObj_SpectatorInfo)));
-		if (!pSpectatorInfo)
+		if(!pSpectatorInfo)
 			return;
 
 		pSpectatorInfo->m_SpectatorID = -1;
@@ -302,7 +300,7 @@ void CPlayer::PostVoteList()
 	m_PostVotes = nullptr;
 }
 
-CCharacter *CPlayer::GetCharacter() const
+CCharacter* CPlayer::GetCharacter() const
 {
 	if(m_pCharacter && m_pCharacter->IsAlive())
 		return m_pCharacter;
@@ -356,17 +354,17 @@ void CPlayer::OnDisconnect()
 	KillCharacter();
 }
 
-void CPlayer::OnDirectInput(CNetObj_PlayerInput *pNewInput)
+void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
 	// update view pos
 	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
 		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
 
 	// reset input with chating
-	if(pNewInput->m_PlayerFlags&PLAYERFLAG_CHATTING)
+	if(pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING)
 	{
 		// skip the input if chat is active
-		if(m_PlayerFlags&PLAYERFLAG_CHATTING)
+		if(m_PlayerFlags & PLAYERFLAG_CHATTING)
 			return;
 
 		// reset input
@@ -400,10 +398,10 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *pNewInput)
 	}
 }
 
-void CPlayer::OnPredictedInput(CNetObj_PlayerInput *pNewInput) const
+void CPlayer::OnPredictedInput(CNetObj_PlayerInput* pNewInput) const
 {
 	// skip the input if chat is active
-	if((m_PlayerFlags&PLAYERFLAG_CHATTING) && (pNewInput->m_PlayerFlags&PLAYERFLAG_CHATTING))
+	if((m_PlayerFlags & PLAYERFLAG_CHATTING) && (pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING))
 		return;
 
 	if(m_pCharacter)
@@ -420,7 +418,7 @@ int CPlayer::GetTeam()
 /* #########################################################################
 	FUNCTIONS PLAYER HELPER
 ######################################################################### */
-void CPlayer::ProgressBar(const char *Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const
+void CPlayer::ProgressBar(const char* Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const
 {
 	char aBufBroadcast[128], aBufProgress[32];
 	const float GetLevelProgress = translate_to_percent((float)ExpNeed, (float)MyExp);
@@ -431,9 +429,9 @@ void CPlayer::ProgressBar(const char *Name, int MyLevel, int MyExp, int ExpNeed,
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, aBufBroadcast);
 }
 
-bool CPlayer::Upgrade(int Value, int *Upgrade, int *Useless, int Price, int MaximalUpgrade) const
+bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const
 {
-	const int UpgradeNeed = Price*Value;
+	const int UpgradeNeed = Price * Value;
 	if((*Upgrade + Value) > MaximalUpgrade)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_WARNING, 100, "Upgrade has a maximum level.");
@@ -456,13 +454,13 @@ bool CPlayer::Upgrade(int Value, int *Upgrade, int *Useless, int Price, int Maxi
 ######################################################################### */
 bool CPlayer::SpendCurrency(int Price, int ItemID)
 {
-	if (Price <= 0)
+	if(Price <= 0)
 		return true;
 
 	CPlayerItem* pItem = GetItem(ItemID);
 	if(pItem->GetValue() < Price)
 	{
-		GS()->Chat(m_ClientID,"Required {VAL}, but you have only {VAL} {STR}!", Price, pItem->GetValue(), pItem->Info()->GetName());
+		GS()->Chat(m_ClientID, "Required {VAL}, but you have only {VAL} {STR}!", Price, pItem->GetValue(), pItem->Info()->GetName());
 		return false;
 	}
 	return pItem->Remove(Price);
@@ -483,7 +481,7 @@ void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 
 bool CPlayer::IsActiveEffect(const char* Potion) const
 {
-	return CGS::ms_aEffects[m_ClientID].find(Potion) != CGS::ms_aEffects[m_ClientID].end();
+	return CGS::ms_aEffects[m_ClientID].count(Potion) > 0;
 }
 
 void CPlayer::ClearEffects()
@@ -491,7 +489,7 @@ void CPlayer::ClearEffects()
 	CGS::ms_aEffects[m_ClientID].clear();
 }
 
-const char *CPlayer::GetLanguage() const
+const char* CPlayer::GetLanguage() const
 {
 	return Server()->GetClientLanguage(m_ClientID);
 }
@@ -528,10 +526,10 @@ void CPlayer::AddExp(int Exp)
 	}
 	ProgressBar("Account", Acc().m_Level, Acc().m_Exp, ExpNeed(Acc().m_Level), Exp);
 
-	if (rand() % 5 == 0)
+	if(rand() % 5 == 0)
 		GS()->Mmo()->SaveAccount(this, SAVE_STATS);
 
-	if (Acc().IsGuild())
+	if(Acc().IsGuild())
 		GS()->Mmo()->Member()->AddExperience(Acc().m_GuildID);
 }
 
@@ -581,7 +579,7 @@ int64_t CPlayer::GetAfkTime() const
 	return m_Afk ? ((time_get() - m_LastPlaytime) / time_freq()) - g_Config.m_SvMaxAfkTime : 0;
 }
 
-void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAppendStr)
+void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr)
 {
 	if(!IsAuthed() || !m_pCharacter)
 		return;
@@ -594,7 +592,7 @@ void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAp
 	const int Mana = m_pCharacter->Mana();
 	const int Gold = GetItem(itGold)->GetValue();
 
-	char aRecastInfo[32]{};
+	char aRecastInfo[32] {};
 	if(m_aPlayerTick[PotionRecast] > Server()->Tick())
 	{
 		int Seconds = max(0, (m_aPlayerTick[PotionRecast] - Server()->Tick()) / Server()->TickSpeed());
@@ -602,7 +600,7 @@ void CPlayer::FormatBroadcastBasicStats(char *pBuffer, int Size, const char* pAp
 	}
 
 	str_format_progress_bar(aBufProgressBarExp, sizeof(aBufProgressBarExp), 100, LevelPercent, 10, ':', ' ');
-	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%s", 
+	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%s",
 		Acc().m_Level, aBufProgressBarExp, Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
 	for(int space = 150, c = str_length(pBuffer); c < Size && space; c++, space--)
 		pBuffer[c] = ' ';
@@ -618,14 +616,14 @@ void CPlayer::ShowInformationStats()
 ######################################################################### */
 bool CPlayer::ParseItemsF3F4(int Vote)
 {
-	if (!m_pCharacter)
+	if(!m_pCharacter)
 	{
 		GS()->Chat(m_ClientID, "Use it when you're not dead!");
 		return true;
 	}
 
 	// - - - - - F3- - - - - - -
-	if (Vote == 1)
+	if(Vote == 1)
 	{
 		if(m_RequestChangeNickname)
 		{
@@ -668,7 +666,7 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 	return false;
 }
 // vote parsing and improving statistics
-bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int VoteID2, int Get)
+bool CPlayer::ParseVoteUpgrades(const char* CMD, const int VoteID, const int VoteID2, int Get)
 {
 	if(PPSTR(CMD, "UPGRADE") == 0)
 	{
@@ -679,7 +677,7 @@ bool CPlayer::ParseVoteUpgrades(const char *CMD, const int VoteID, const int Vot
 		}
 		return true;
 	}
-	
+
 	if(PPSTR(CMD, "BACK") == 0)
 	{
 		// close other tabs after checked new
@@ -731,10 +729,10 @@ CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)
 CSkill* CPlayer::GetSkill(SkillIdentifier ID)
 {
 	dbg_assert(CSkillDescription::Data().find(ID) != CSkillDescription::Data().end(), "invalid referring to the CSkillData");
-	
+
 	if(CSkill::Data()[m_ClientID].find(ID) == CSkill::Data()[m_ClientID].end())
 	{
-		CSkill(ID, m_ClientID).Init({},{});
+		CSkill(ID, m_ClientID).Init({}, {});
 		return &CSkill::Data()[m_ClientID][ID];
 	}
 
@@ -758,7 +756,7 @@ int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
 	const auto Iter = std::find_if(CPlayerItem::Data()[m_ClientID].begin(), CPlayerItem::Data()[m_ClientID].end(), [EquipID, SkipItemID](const auto& p)
 	{
-		return (p.second.HasItem() && p.second.IsEquipped() && p.second.Info()->IsFunctional(EquipID) && p.first != SkipItemID); 
+		return (p.second.HasItem() && p.second.IsEquipped() && p.second.Info()->IsFunctional(EquipID) && p.first != SkipItemID);
 	});
 	return Iter != CPlayerItem::Data()[m_ClientID].end() ? Iter->first : -1;
 }
@@ -784,7 +782,7 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID)
 	}
 
 	// if the attribute has the value of player upgrades we sum up
-	if (pAtt->HasDatabaseField())
+	if(pAtt->HasDatabaseField())
 		Size += Acc().m_aStats[ID];
 
 	return Size;
@@ -807,9 +805,9 @@ float CPlayer::GetAttributePercent(AttributeIdentifier ID)
 int CPlayer::GetTypeAttributesSize(AttributeType Type)
 {
 	int Size = 0;
-	for (const auto& [ID, pAttribute] : CAttributeDescription::Data())
+	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
-		if (pAttribute->IsType(Type))
+		if(pAttribute->IsType(Type))
 			Size += GetAttributeSize(ID);
 	}
 	return Size;

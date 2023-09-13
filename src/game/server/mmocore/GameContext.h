@@ -292,10 +292,10 @@ class PotionTools
 public:
 	class Heal
 	{
-		int m_ItemID{};
-		std::string m_Effect{};
-		int m_Recovery{};
-		int m_Time{};
+		int m_ItemID {};
+		std::string m_Effect {};
+		int m_Recovery {};
+		int m_Time {};
 
 	public:
 		Heal() = delete;
@@ -413,28 +413,28 @@ struct CTeeInfo
 // attribute context
 enum class AttributeIdentifier : int
 {
-	SpreadShotgun			= 1,
-	SpreadGrenade			= 2,
-	SpreadRifle				= 3,
-    DMG						= 4,
-	AttackSPD				= 5,
- 	CritDMG					= 6,
-	Crit					= 7,
-    HP						= 8,
-	Lucky					= 9,
-	MP						= 10,
-	Vampirism				= 11,
-	AmmoRegen				= 12,
-	Ammo					= 13,
-	Efficiency				= 14,
-	Extraction				= 15,
-	HammerDMG				= 16,
-	GunDMG					= 17,
-	ShotgunDMG				= 18,
-	GrenadeDMG				= 19,
-	RifleDMG				= 20,
-	LuckyDropItem			= 21,
-	EidolonPWR				= 22,
+	SpreadShotgun = 1,
+	SpreadGrenade = 2,
+	SpreadRifle = 3,
+	DMG = 4,
+	AttackSPD = 5,
+	CritDMG = 6,
+	Crit = 7,
+	HP = 8,
+	Lucky = 9,
+	MP = 10,
+	Vampirism = 11,
+	AmmoRegen = 12,
+	Ammo = 13,
+	Efficiency = 14,
+	Extraction = 15,
+	HammerDMG = 16,
+	GunDMG = 17,
+	ShotgunDMG = 18,
+	GrenadeDMG = 19,
+	RifleDMG = 20,
+	LuckyDropItem = 21,
+	EidolonPWR = 22,
 	ATTRIBUTES_NUM,
 };
 
@@ -455,17 +455,17 @@ class JsonTools
 public:
 	static void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
 	{
-		try
+		if(!Data.empty())
 		{
-			if(!Data.empty())
+			try
 			{
 				nlohmann::json JsonData = nlohmann::json::parse(Data);
 				pFuncCallback(JsonData);
 			}
-		}
-		catch(nlohmann::json::exception& s)
-		{
-			dbg_msg("dialog error", "%s", s.what());
+			catch(nlohmann::json::exception& s)
+			{
+				dbg_msg("dialog error", "%s", s.what());
+			}
 		}
 	}
 };
@@ -473,7 +473,7 @@ public:
 class Instance
 {
 	friend class CServer;
-	inline static class IServer* m_pServer{};
+	inline static class IServer* m_pServer {};
 
 public:
 	static IServer* GetServer() { return m_pServer; }

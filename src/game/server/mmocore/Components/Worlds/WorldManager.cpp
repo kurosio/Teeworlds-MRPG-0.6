@@ -17,19 +17,22 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	while(pResSwap->next())
 	{
 		bool SecondLocalWorld = pResSwap->getInt("TwoWorldID") == GS()->GetWorldID();
-		std::pair Positions = {
-			SecondLocalWorld ? vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")) : vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")),
-			SecondLocalWorld ? vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")) : vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY"))
-		};
-		std::pair Worlds = {
-			SecondLocalWorld ? pResSwap->getInt("TwoWorldID") : pResSwap->getInt("WorldID"),
-			SecondLocalWorld ? pResSwap->getInt("WorldID") : pResSwap->getInt("TwoWorldID")
-		};
+		std::pair<vec2, vec2> Positions;
+		std::pair<int, int> Worlds;
+		if(SecondLocalWorld)
+		{
+			Positions = { vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")), vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")) };
+			Worlds = { pResSwap->getInt("TwoWorldID"), pResSwap->getInt("WorldID") };
+		}
+		else
+		{
+			Positions = { vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")), vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")) };
+			Worlds = { pResSwap->getInt("WorldID"), pResSwap->getInt("TwoWorldID") };
+		}
 
 		WorldIdentifier ID = pResSwap->getInt("ID");
 		WorldSwappers.push_back({ ID, Positions, Worlds });
 	}
-
 
 	/*
 	 * init world data
@@ -42,9 +45,9 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	{
 		int RespawnWorld = pRes->getInt("RespawnWorld");
 		int RequiredQuestID = pRes->getInt("RequiredQuestID");
-		CWorldData::CreateElement(WorldID)->Init(RespawnWorld, RequiredQuestID, WorldSwappers);
 
 		// update name world from json
+		CWorldData::CreateElement(WorldID)->Init(RespawnWorld, RequiredQuestID, WorldSwappers);
 		Database->Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
 		return;
 	}
@@ -87,9 +90,8 @@ void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 	{
 		const int NextRightWorldID = NodeSteps[1];
 		auto& rSwapers = CWorldData::Data()[CurrentWorldID]->GetSwappers();
-
-		if(const auto Iter = std::find_if(rSwapers.begin(), rSwapers.end(), [&](const CWorldSwapData& p)
-		{ return NextRightWorldID == p.GetSecondWorldID(); }); Iter != rSwapers.end())
+		const auto Iter = std::find_if(rSwapers.begin(), rSwapers.end(), [&](const CWorldSwapData& p) { return NextRightWorldID == p.GetSecondWorldID(); });
+		if(Iter != rSwapers.end())
 			*OutPos = (*Iter).GetFirstSwapPosition();
 
 		dbg_msg("cross-world pathfinder", "Found from %d to %d.", CurrentWorldID, NextRightWorldID);

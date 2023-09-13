@@ -35,18 +35,19 @@ void CQuestStepDescription::UpdateBot()
 	const bool ActiveStepBot = IsActiveStep(pGS);
 	if(ActiveStepBot && BotClientID <= -1)
 	{
-		//dbg_msg("quest sync", "quest to step bot active, but mob not found create");
+		dbg_msg("quest sync", "quest to step bot active, but mob not found create");
 		pGS->CreateBot(TYPE_BOT_QUEST, m_Bot.m_BotID, m_Bot.m_SubBotID);
 	}
 	// if the bot is not active for more than one player
 	if(!ActiveStepBot && BotClientID >= MAX_PLAYERS)
 	{
-		//dbg_msg("quest sync", "mob found, but quest to step not active on players");
+		dbg_msg("quest sync", "mob found, but quest to step not active on players");
 		delete pGS->m_apPlayers[BotClientID];
 		pGS->m_apPlayers[BotClientID] = nullptr;
 	}
 }
 
+//Optimized
 bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 {
 	const int QuestID = GetQuestID();
@@ -76,7 +77,6 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 	}
 	return false;
 }
-
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
 CGS* CPlayerQuestStep::GS() const
@@ -95,31 +95,28 @@ CPlayer* CPlayerQuestStep::GetPlayer() const
 
 void CPlayerQuestStep::Clear()
 {
+	m_aMobProgress.clear();
+	m_aMoveToProgress.clear();
+	m_ClientQuitting = true;
+	UpdateBot();
+
 	for(auto& pEnt : m_apEntitiesMoveTo)
 		delete pEnt;
 	for(auto& pEnt : m_apEntitiesNavigator)
 		delete pEnt;
-	
-	m_aMobProgress.clear();
-	m_aMoveToProgress.clear();
 	m_apEntitiesMoveTo.clear();
 	m_apEntitiesNavigator.clear();
-	m_ClientQuitting = true;
-	UpdateBot();
 }
 
+//Optimized
 int CPlayerQuestStep::GetNumberBlockedItem(int ItemID) const
 {
 	int Amount = 0;
-	if(!m_Bot.m_RequiredItems.empty())
+	for(auto& p : m_Bot.m_RequiredItems)
 	{
-		for(auto& p : m_Bot.m_RequiredItems)
-		{
-			if(p.m_Item.GetID() == ItemID)
-				Amount += p.m_Item.GetValue();
-		}
+		if(p.m_Item.GetID() == ItemID)
+			Amount += p.m_Item.GetValue();
 	}
-
 	return Amount;
 }
 
@@ -143,13 +140,10 @@ bool CPlayerQuestStep::IsComplete()
 		}
 	}
 
-	if(!m_aMoveToProgress.empty())
-	{
-		if(GetCountMoveToComplected() < (int)m_aMoveToProgress.size())
-			return false;
-	}
+	if(GetCountMoveToComplected() < (int)m_aMoveToProgress.size())
+		return false;
 
-	return true; 
+	return true;
 }
 
 bool CPlayerQuestStep::Finish()

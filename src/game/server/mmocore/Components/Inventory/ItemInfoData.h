@@ -20,16 +20,16 @@ public:
 private:
 	friend class CInventoryManager;
 
-	ItemIdentifier m_ID{};
-	char m_aName[32]{};
-	char m_aDescription[64]{};
-	ItemType m_Type{};
-	int m_Dysenthis{};
-	int m_InitialPrice{};
-	ItemFunctional m_Function{};
-	ContainerAttributes m_aAttributes{};
-	std::string m_Data{};
-	CRandomBox m_RandomBox{};
+	ItemIdentifier m_ID {};
+	char m_aName[32] {};
+	char m_aDescription[64] {};
+	ItemType m_Type {};
+	int m_Dysenthis {};
+	int m_InitialPrice {};
+	ItemFunctional m_Function {};
+	ContainerAttributes m_aAttributes {};
+	std::string m_Data {};
+	CRandomBox m_RandomBox {};
 
 public:
 	CItemDescription() = default;
@@ -45,10 +45,7 @@ public:
 			{
 				for(auto& p : pJson["random_box"])
 				{
-					int ItemID = p.value("item_id", -1);
-					int Value = p.value("value", 1);
-					float Chance = p.value("chance", 100.0f);
-					m_RandomBox.Add(ItemID, Value, Chance);
+					m_RandomBox.Add(p.value("item_id", -1), p.value("value", 1), p.value("chance", 100.0f));
 				}
 			}
 		});
