@@ -85,15 +85,14 @@ void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 	// search path and got first and second path
 	if(std::vector NodeSteps = m_PathFinderBFS.findPath(GS()->GetWorldID(), WorldID); NodeSteps.size() >= 2)
 	{
-		const int CurrWorldID = NodeSteps[0];
 		const int NextRightWorldID = NodeSteps[1];
-		auto& rSwapers = CWorldData::Data()[CurrWorldID]->GetSwappers();
+		auto& rSwapers = CWorldData::Data()[CurrentWorldID]->GetSwappers();
 
 		if(const auto Iter = std::find_if(rSwapers.begin(), rSwapers.end(), [&](const CWorldSwapData& p)
 		{ return NextRightWorldID == p.GetSecondWorldID(); }); Iter != rSwapers.end())
 			*OutPos = (*Iter).GetFirstSwapPosition();
 
-		dbg_msg("cross-world pathfinder", "Found from %d to %d.", CurrWorldID, NextRightWorldID);
+		dbg_msg("cross-world pathfinder", "Found from %d to %d.", CurrentWorldID, NextRightWorldID);
 	}
 }
 
