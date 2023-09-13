@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_BOT_DATA_H
 #define GAME_SERVER_COMPONENT_BOT_DATA_H
 
+#include <game/server/mmocore/Components/Inventory/ItemData.h>
 #include "DialogsData.h"
 
 /************************************************************************/
@@ -58,12 +59,7 @@ public:
 	std::string m_EventJsonData{};
 	std::vector<CDialogElem> m_aDialogs {};
 
-	struct RewardItems
-	{
-		int m_ItemID;
-		int m_Count;
-	};
-	std::deque < RewardItems > m_RewardItems;
+	CItemsContainer m_RewardItems;
 
 	struct TaskRequiredItems
 	{
@@ -74,8 +70,7 @@ public:
 			SHOW,
 		};
 
-		int m_ItemID{};
-		int m_Count{};
+		CItem m_Item{};
 		Type m_Type{};
 	};
 	std::deque < TaskRequiredItems > m_RequiredItems;
@@ -83,7 +78,7 @@ public:
 	struct TaskRequiredDefeat
 	{
 		int m_BotID{};
-		int m_Count{};
+		int m_Value{};
 	};
 	std::deque < TaskRequiredDefeat > m_RequiredDefeat;
 
@@ -95,25 +90,12 @@ public:
 			PRESS_FIRE,
 			USE_CHAT_MODE
 		};
-		struct PickupItem
-		{
-			int m_ID{};
-			int m_Count{};
-			bool Empty() const { return m_ID <= 0 || m_Count <= 0; }
-		};
-
-		struct RequiredItem
-		{
-			int m_ID{};
-			int m_Count{};
-			bool Empty() const { return m_ID <= 0 || m_Count <= 0; }
-		};
 
 		vec2 m_Position{};
 		int m_WorldID{};
 		int m_Step{};
-		PickupItem m_PickupItem{};
-		RequiredItem m_RequiredItem{};
+		CItem m_PickupItem {};
+		CItem m_RequiredItem {};
 		std::string m_aTextUseInChat{};
 		std::string m_aTextChat{};
 		bool m_Navigator{};

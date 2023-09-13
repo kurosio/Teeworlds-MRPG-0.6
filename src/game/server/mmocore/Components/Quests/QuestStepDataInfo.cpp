@@ -115,8 +115,8 @@ int CPlayerQuestStep::GetNumberBlockedItem(int ItemID) const
 	{
 		for(auto& p : m_Bot.m_RequiredItems)
 		{
-			if(p.m_ItemID == ItemID)
-				Amount += p.m_Count;
+			if(p.m_Item.GetID() == ItemID)
+				Amount += p.m_Item.GetValue();
 		}
 	}
 
@@ -129,7 +129,7 @@ bool CPlayerQuestStep::IsComplete()
 	{
 		for(auto& p : m_Bot.m_RequiredItems)
 		{
-			if(GetPlayer()->GetItem(p.m_ItemID)->GetValue() < p.m_Count)
+			if(GetPlayer()->GetItem(p.m_Item)->GetValue() < p.m_Item.GetValue())
 				return false;
 		}
 	}
@@ -194,48 +194,51 @@ void CPlayerQuestStep::PostFinish()
 		for(auto& pRequired : m_Bot.m_RequiredItems)
 		{
 			// show type element
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequired.m_Item);
+
 			if(pRequired.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW)
 			{
-				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(pRequired.m_ItemID)->Info()->GetName(), pRequired.m_Count, m_Bot.GetName());
+				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {STR}x{VAL} to the {STR}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 				continue;
 			}
 
 			// check for stress database
 			if(!m_Bot.m_RewardItems.empty())
 			{
-				for(auto& [m_ItemID, m_Count] : m_Bot.m_RewardItems)
+				for(auto& pRewardItem : m_Bot.m_RewardItems)
 				{
-					AntiDatabaseStress = (pRequired.m_ItemID == m_ItemID);
+					AntiDatabaseStress = (pRequired.m_Item.GetID() == pRewardItem.GetID());
 				}
 			}
 
 			// remove item
-			pPlayer->GetItem(pRequired.m_ItemID)->Remove(pRequired.m_Count);
-			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayer->GetItem(pRequired.m_ItemID)->Info()->GetName(), pRequired.m_Count, m_Bot.GetName());
+			pPlayerItem->Remove(pRequired.m_Item.GetValue());
+			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 		}
 	}
 
 	// reward item's
 	if(!m_Bot.m_RewardItems.empty())
 	{
-		for(auto& pReward : m_Bot.m_RewardItems)
+		for(auto& pRewardItem : m_Bot.m_RewardItems)
 		{
 			// under stress, add a delay
 			if(AntiDatabaseStress)
 			{
-				GS()->Mmo()->Item()->AddItemSleep(pPlayer->Acc().m_UserID, pReward.m_ItemID, pReward.m_Count, 300);
+				GS()->Mmo()->Item()->AddItemSleep(pPlayer->Acc().m_UserID, pRewardItem.GetID(), pRewardItem.GetValue(), 300);
 				continue;
 			}
 
 			// check for enchant item
-			if(pPlayer->GetItem(pReward.m_ItemID)->Info()->IsEnchantable() && pPlayer->GetItem(pReward.m_ItemID)->GetValue() >= 1)
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRewardItem);
+			if(pPlayerItem->Info()->IsEnchantable() && pPlayerItem->GetValue() >= 1)
 			{
-				GS()->SendInbox("System", pPlayer, "No place for item", "You already have this item, but we can't put it in inventory", pReward.m_ItemID, 1);
+				GS()->SendInbox("System", pPlayer, "No place for item", "You already have this item, but we can't put it in inventory", pRewardItem.GetID(), 1);
 				continue;
 			}
 
 			// give item
-			pPlayer->GetItem(pReward.m_ItemID)->Add(pReward.m_Count);
+			pPlayerItem->Add(pRewardItem.GetValue());
 		}
 	}
 
@@ -346,25 +349,25 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 
 	// create variety types
 	const int ClientID = pPlayer->GetCID();
-	for(auto& [m_ItemID, m_Count, m_Type] : m_Bot.m_RequiredItems)
+	for(auto& [RequiredItem, Type] : m_Bot.m_RequiredItems)
 	{
 		// TYPE Drop and Pick up
-		if(m_Type == QuestBotInfo::TaskRequiredItems::Type::PICKUP)
+		if(Type == QuestBotInfo::TaskRequiredItems::Type::PICKUP)
 		{
 			// check whether items are already available for pickup
 			for(CDropQuestItem* pHh = (CDropQuestItem*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DROPQUEST); pHh; pHh = (CDropQuestItem*)pHh->TypeNext())
 			{
-				if(pHh->m_ClientID == ClientID && pHh->m_QuestID == GetQuestID() && pHh->m_ItemID == m_ItemID && pHh->m_Step == GetStepPos())
+				if(pHh->m_ClientID == ClientID && pHh->m_QuestID == GetQuestID() && pHh->m_ItemID == RequiredItem.GetID() && pHh->m_Step == GetStepPos())
 					return;
 			}
 
 			// create items
-			const int Value = 3 + m_Count;
+			const int Value = 3 + RequiredItem.GetValue();
 			for(int i = 0; i < Value; i++)
 			{
 				vec2 Vel = vec2(frandom_num(-40.0f, 40.0f), frandom_num(-40.0f, 40.0f));
 				float AngleForce = Vel.x * (0.15f + frandom() * 0.1f);
-				new CDropQuestItem(&GS()->m_World, m_Bot.m_Position, Vel, AngleForce, m_ItemID, m_Count, GetQuestID(), GetStepPos(), ClientID);
+				new CDropQuestItem(&GS()->m_World, m_Bot.m_Position, Vel, AngleForce, RequiredItem.GetID(), RequiredItem.GetValue(), GetQuestID(), GetStepPos(), ClientID);
 			}
 		}
 
@@ -388,21 +391,21 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 		for(auto& p : m_Bot.m_RequiredDefeat)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "- Defeat {STR} ({INT}/{INT})", DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID], p.m_Count);
+			GS()->Server()->Localization()->Format(Buffer, pLang, "- Defeat {STR} ({INT}/{INT})", DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID], p.m_Value);
 		}
 	}
 
 	// show required items
 	if(!m_Bot.m_RequiredItems.empty())
 	{
-		for(auto& p : m_Bot.m_RequiredItems)
+		for(auto& pRequied : m_Bot.m_RequiredItems)
 		{
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(p.m_ItemID);
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequied.m_Item);
 			Buffer.append_at(Buffer.length(), "\n");
 
-			const char* pInteractiveType = p.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show" : "Need";
+			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show" : "Need";
 			GS()->Server()->Localization()->Format(Buffer, pLang, "- {STR} {STR} ({VAL}/{VAL})",
-				GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), p.m_Count);
+				GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pRequied.m_Item.GetValue());
 		}
 	}
 
@@ -412,7 +415,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 		for(auto& p : m_Bot.m_RewardItems)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "- Receive {STR} ({VAL})", pPlayer->GetItem(p.m_ItemID)->Info()->GetName(), p.m_Count);
+			GS()->Server()->Localization()->Format(Buffer, pLang, "- Receive {STR} ({VAL})", p.Info()->GetName(), p.GetValue());
 		}
 	}
 

@@ -8,7 +8,7 @@
 #define PERCENT_MAXIMUM_ENCHANT 40
 
 #include "AttributeData.h"
-#include "RandomBox.h"
+#include "RandomBox/RandomBoxData.h"
 
 using ItemIdentifier = int;
 
@@ -48,7 +48,7 @@ public:
 					int ItemID = p.value("item_id", -1);
 					int Value = p.value("value", 1);
 					float Chance = p.value("chance", 100.0f);
-					m_RandomBox.add(ItemID, Value, Chance);
+					m_RandomBox.Add(ItemID, Value, Chance);
 				}
 			}
 		});
@@ -74,7 +74,7 @@ public:
 	bool IsFunctional(ItemFunctional Functional) const { return m_Function == Functional; }
 	ItemType GetType() const { return m_Type; }
 	bool IsType(ItemType Type) const { return m_Type == Type; }
-	class CRandomBox* GetRandomBox() { return m_RandomBox.empty() ? nullptr : &m_RandomBox; }
+	class CRandomBox* GetRandomBox() { return m_RandomBox.Empty() ? nullptr : &m_RandomBox; }
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
 
 	bool IsEnchantable() const;

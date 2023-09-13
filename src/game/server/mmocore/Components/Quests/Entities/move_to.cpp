@@ -94,29 +94,29 @@ void CEntityMoveTo::Tick()
 		m_pPlayer->m_aLastMsg[0] = '\0';
 
 		// first required item
-		if(!m_pTaskMoveTo->m_RequiredItem.Empty())
+		if(m_pTaskMoveTo->m_RequiredItem.IsValid())
 		{
-			ItemIdentifier ItemID = m_pTaskMoveTo->m_RequiredItem.m_ID;
+			ItemIdentifier ItemID = m_pTaskMoveTo->m_RequiredItem.GetID();
+			int RequiredValue = m_pTaskMoveTo->m_RequiredItem.GetValue();
 
 			// check required value
-			int RequiredValue = m_pTaskMoveTo->m_RequiredItem.m_Count;
 			if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
 				return;
 
 			// remove item
-			CPlayerItem* pItem = m_pPlayer->GetItem(ItemID);
-			GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pItem->Info()->GetName(), RequiredValue);
+			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+			GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pPlayerItem->Info()->GetName(), RequiredValue);
 		}
 
 		// secound pickup item
-		if(!m_pTaskMoveTo->m_PickupItem.Empty())
+		if(m_pTaskMoveTo->m_PickupItem.IsValid())
 		{
-			ItemIdentifier ItemID = m_pTaskMoveTo->m_PickupItem.m_ID;
-			CPlayerItem* pItem = m_pPlayer->GetItem(ItemID);
+			ItemIdentifier ItemID = m_pTaskMoveTo->m_PickupItem.GetID();
+			int PickupValue = m_pTaskMoveTo->m_PickupItem.GetValue();
+			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
 
-			int PickupValue = m_pTaskMoveTo->m_PickupItem.m_Count;
-			GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pItem->Info()->GetName(), PickupValue);
-			pItem->Add(PickupValue);
+			GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
+			pPlayerItem->Add(PickupValue);
 		}
 
 		// finish success
@@ -145,20 +145,20 @@ void CEntityMoveTo::HandleBroadcastInformation() const
 
 	// text information
 	dynamic_string Buffer;
-	if(!pRequireItem.Empty())
+	if(pRequireItem.IsValid())
 	{
 		const char* pLang = m_pPlayer->GetLanguage();
-		CPlayerItem* pItem = m_pPlayer->GetItem(pRequireItem.m_ID);
+		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pRequireItem.GetID());
 
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Required [{STR}x{VAL}({VAL})]", pItem->Info()->GetName(), pRequireItem.m_Count, pItem->GetValue());
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Required [{STR}x{VAL}({VAL})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
 		Buffer.append("\n");
 	}
-	if(!pPickupItem.Empty())
+	if(pPickupItem.IsValid())
 	{
 		const char* pLang = m_pPlayer->GetLanguage();
-		CPlayerItem* pItem = m_pPlayer->GetItem(pPickupItem.m_ID);
+		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pPickupItem.GetID());
 
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Pick up [{STR}x{VAL}({VAL})]", pItem->Info()->GetName(), pPickupItem.m_Count, pItem->GetValue());
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Pick up [{STR}x{VAL}({VAL})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
 		Buffer.append("\n");
 	}
 

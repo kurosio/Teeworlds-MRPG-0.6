@@ -210,7 +210,7 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID) const
 				if(DataBotInfo::ms_aDataBot.find(p.m_BotID) != DataBotInfo::ms_aDataBot.end())
 				{
 					GS()->AVM(ClientID, "null", NOPE, HideID, "- Defeat {STR} [{INT}/{INT}]",
-						DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, rQuestStepDataInfo.m_aMobProgress[p.m_BotID], p.m_Count);
+						DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, rQuestStepDataInfo.m_aMobProgress[p.m_BotID], p.m_Value);
 					NoTasks = false;
 				}
 			}
@@ -219,11 +219,12 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID) const
 		// show required item's
 		if(!BotInfo.m_RequiredItems.empty())
 		{
-			for(auto& p : BotInfo.m_RequiredItems)
+			for(auto& pRequired : BotInfo.m_RequiredItems)
 			{
-				CPlayerItem* pPlayerItem = pPlayer->GetItem(p.m_ItemID);
-				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, p.m_Count);
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), ClapmItem, p.m_Count);
+				CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequired.m_Item);
+				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, pRequired.m_Item.GetValue());
+
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), ClapmItem, pRequired.m_Item.GetValue());
 				NoTasks = false;
 			}
 		}
@@ -231,10 +232,9 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID) const
 		// show reward item's
 		if(!BotInfo.m_RewardItems.empty())
 		{
-			for(auto& p : BotInfo.m_RewardItems)
+			for(auto& pRewardItem : BotInfo.m_RewardItems)
 			{
-				CItemDescription* pRewardItemInfo = GS()->GetItemInfo(p.m_ItemID);
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Receive {STR}x{VAL}", pRewardItemInfo->GetName(), p.m_Count);
+				GS()->AVM(ClientID, "null", NOPE, HideID, "- Receive {STR}x{VAL}", pRewardItem.Info()->GetName(), pRewardItem.GetValue());
 			}
 		}
 

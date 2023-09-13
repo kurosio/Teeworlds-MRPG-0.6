@@ -36,13 +36,16 @@ public:
 	virtual bool SetDurability(int Durability){ m_Durability = Durability; return true; }
 	virtual bool SetSettings(int Settings) { m_Settings = Settings; return true; }
 
+	// valid
+	bool IsValid() const { return m_ID > 0 && m_Value > 0; }
+
 	CItemDescription* Info() const { return &CItemDescription::Data()[m_ID]; }
 
 	std::string StringEnchantLevel() const { return Info()->StringEnchantLevel(m_Enchant); }
 
 	// helper functions
-	[[nodiscard]] static CItem FromJSON(const std::string& json);
-	[[nodiscard]] static CItemsContainer FromArrayJSON(const std::string& json);
+	[[nodiscard]] static CItem FromJSON(const nlohmann::json& json);
+	[[nodiscard]] static CItemsContainer FromArrayJSON(const nlohmann::json& json, const char* pField);
 };
 
 class CPlayerItem : public CItem, public MultiworldIdentifiableStaticData< std::map < int, std::map < int, CPlayerItem > > >

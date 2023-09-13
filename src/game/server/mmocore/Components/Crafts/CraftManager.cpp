@@ -15,9 +15,15 @@ void CCraftManager::OnInit()
 		int Price = pRes->getInt("Price");
 		int WorldID = pRes->getInt("WorldID");
 
-		CraftIdentifier ID = pRes->getInt("ID");
+		CItemsContainer RequiredIngredients {};
 		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
-		CCraftItem::CreateElement(ID)->Init(CItem::FromArrayJSON(JsonRequiredData), CItem(ItemID, ItemValue), Price, WorldID);
+		JsonTools::parseFromString(JsonRequiredData, [&](nlohmann::json& pJson)
+		{
+			RequiredIngredients = CItem::FromArrayJSON(pJson, "items");
+		});
+
+		CraftIdentifier ID = pRes->getInt("ID");
+		CCraftItem::CreateElement(ID)->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
 	}
 
 	Job()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());

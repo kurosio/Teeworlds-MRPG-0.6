@@ -38,39 +38,28 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 		{
 			for(auto& p : pJson["required_items"])
 			{
-				TaskRequiredItems::Type ParsedType = TaskRequiredItems::Type::DEFAULT;
+				TaskRequiredItems Task;
+				Task.m_Item = CItem::FromJSON(p);
+				Task.m_Type = TaskRequiredItems::Type::DEFAULT;
 
-				const int ItemID = p.value("id", -1);
-				const int Count = p.value("count", -1);
-				if(ItemID > 0 && Count > 0)
+				if(Task.m_Item.IsValid())
 				{
 					if(std::string Type = p.value("type", "default"); Type == "pickup")
 					{
-						ParsedType = TaskRequiredItems::Type::PICKUP;
+						Task.m_Type = TaskRequiredItems::Type::PICKUP;
 					}
 					else if(Type == "show")
 					{
-						ParsedType = TaskRequiredItems::Type::SHOW;
+						Task.m_Type = TaskRequiredItems::Type::SHOW;
 					}
 
-					m_RequiredItems.push_back({ ItemID, Count, ParsedType });
+					m_RequiredItems.push_back(Task);
 				}
 			}
 		}
 
 		// initilize reward items
-		if(pJson.find("reward_items") != pJson.end())
-		{
-			for(auto& p : pJson["reward_items"])
-			{
-				const int ItemID = p.value("id", -1);
-				const int Count = p.value("count", -1);
-				if(ItemID > 0 && Count > 0)
-				{
-					m_RewardItems.push_back({ ItemID, Count });
-				}
-			}
-		}
+		m_RewardItems = CItem::FromArrayJSON(pJson, "reward_items");
 
 		// initilize defeat bots
 		if(pJson.find("defeat_bots") != pJson.end())
@@ -78,10 +67,10 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 			for(auto& p : pJson["defeat_bots"])
 			{
 				const int BotID = p.value("id", -1);
-				const int Count = p.value("count", -1);
-				if(BotID > 0 && Count > 0)
+				const int Value = p.value("value", -1);
+				if(BotID > 0 && Value > 0)
 				{
-					m_RequiredDefeat.push_back({ BotID, Count });
+					m_RequiredDefeat.push_back({ BotID, Value });
 				}
 			}
 		}
@@ -102,22 +91,18 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 				TaskRequiredMoveTo::Types Type = TaskRequiredMoveTo::Types::MOVE_ONLY;
 
 				// initilize pick_up_item object
-				TaskRequiredMoveTo::PickupItem PickUpItem{};
+				CItem PickUpItem{};
 				if(p.find("pick_up_item") != p.end())
 				{
-					auto& PickUpItemJson = p["pick_up_item"];
-					PickUpItem.m_ID = PickUpItemJson.value("id", -1);
-					PickUpItem.m_Count = PickUpItemJson.value("count", 1);
+					PickUpItem = CItem::FromJSON(p["pick_up_item"]);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
 
 				// initilize required_item object
-				TaskRequiredMoveTo::RequiredItem RequiredItem{};
+				CItem RequiredItem{};
 				if(p.find("required_item") != p.end())
 				{
-					auto& RequiredItemJson = p["required_item"];
-					RequiredItem.m_ID = RequiredItemJson.value("id", -1);
-					RequiredItem.m_Count = RequiredItemJson.value("count", 1);
+					RequiredItem = CItem::FromJSON(p["required_item"]);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
 
@@ -130,9 +115,7 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 
 				// steps can only be taken to increase the orderly 
 				if(Step > LatestBiggerStep)
-				{
 					LatestBiggerStep = Step;
-				}
 
 				// add element to container
 				if(total_size_vec2(Position) > 0.f)

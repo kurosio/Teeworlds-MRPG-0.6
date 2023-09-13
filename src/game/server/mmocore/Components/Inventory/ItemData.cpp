@@ -175,7 +175,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// potion resurrection
-	else if(m_ID == itPotionResurrection && Remove(Value))
+	if(m_ID == itPotionResurrection && Remove(Value))
 	{
 		GetPlayer()->GetTempData().m_TempSafeSpawn = false;
 		GetPlayer()->GetTempData().m_TempHealth = GetPlayer()->GetStartHealth();
@@ -183,13 +183,13 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// ticket discount craft
-	else if(m_ID == itTicketDiscountCraft)
+	if(m_ID == itTicketDiscountCraft)
 	{
 		GS()->Chat(ClientID, "This item can only be used (Auto Use, and then craft).");
 		return true;
 	}
 	// survial capsule experience
-	else if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
+	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
@@ -197,7 +197,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// little bag gold
-	else if(m_ID == itLittleBagGold && Remove(Value))
+	if(m_ID == itLittleBagGold && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
@@ -205,7 +205,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// ticket reset for class stats
-	else if(m_ID == itTicketResetClassStats && Remove(Value))
+	if(m_ID == itTicketResetClassStats && Remove(Value))
 	{
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
@@ -227,7 +227,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// ticket reset for weapons stats
-	else if(m_ID == itTicketResetWeaponStats && Remove(Value))
+	if(m_ID == itTicketResetWeaponStats && Remove(Value))
 	{
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
@@ -258,14 +258,8 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 
-	else if(Info()->GetRandomBox())
-	{
-		Info()->GetRandomBox()->start(GetPlayer(), 5, this, Value);
-		return true;
-	}
-
 	// potion health regen
-	else if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal)
+	if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal)
 	{
 		if(GetPlayer()->m_aPlayerTick[PotionRecast] >= Server()->Tick())
 			return true;
@@ -279,6 +273,13 @@ bool CPlayerItem::Use(int Value)
 			GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
 			GS()->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 140.0f), vec2(), 70, pHeal->getEffect());
 		}
+		return true;
+	}
+
+	// or if it random box
+	if(Info()->GetRandomBox())
+	{
+		Info()->GetRandomBox()->Start(GetPlayer(), 5, this, Value);
 		return true;
 	}
 
@@ -343,44 +344,43 @@ bool CPlayerItem::Save()
 }
 
 // helper functions
-CItem CItem::FromJSON(const std::string& json)
+CItem CItem::FromJSON(const nlohmann::json& json)
 {
 	try
 	{
-		nlohmann::json JsonData = nlohmann::json::parse(json);
-		
-		ItemIdentifier ID = JsonData.value("id", 0);
-		int Value = JsonData.value("value", 0);
-		int Enchant = JsonData.value("enchant", 0);
-		int Durability = JsonData.value("durability", 0);
+		ItemIdentifier ID = json.value("id", 0);
+		int Value = json.value("value", 1);
+		int Enchant = json.value("enchant", 0);
+		int Durability = json.value("durability", 0);
 
 		CItem Item(ID, Value, Enchant, Durability);
 		return Item;
 	}
 	catch (nlohmann::json::exception& s)
 	{
-		dbg_msg("CItem(FromJSON)", "%s (json %s)", json.c_str(), s.what());
+		dbg_msg("CItem(FromJSON)", "%s (json %s)", json.dump().c_str(), s.what());
 	}
 
 	return {};
 }
 
-CItemsContainer CItem::FromArrayJSON(const std::string& json)
+CItemsContainer CItem::FromArrayJSON(const nlohmann::json& json, const char* pField)
 {
 	CItemsContainer Container;
 	try
 	{
-		nlohmann::json JsonData = nlohmann::json::parse(json);
-
-		for(auto& p : JsonData["items"])
+		if(json.find(pField) != json.end())
 		{
-			ItemIdentifier ID = p.value("id", 0);
-			int Value = p.value("value", 0);
-			int Enchant = p.value("enchant", 0);
-			int Durability = p.value("durability", 0);
+			for(auto& p : json[pField])
+			{
+				ItemIdentifier ID = p.value("id", 0);
+				int Value = p.value("value", 0);
+				int Enchant = p.value("enchant", 0);
+				int Durability = p.value("durability", 0);
 
-			CItem Item(ID, Value, Enchant, Durability);
-			Container.push_back(Item);
+				CItem Item(ID, Value, Enchant, Durability);
+				Container.push_back(Item);
+			}
 		}
 	}
 	catch (nlohmann::json::exception& s)
