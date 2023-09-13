@@ -106,6 +106,15 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
 
+				// initilize defeat_mob object
+				TaskRequiredMoveTo::DefeatMob DefeatMob{};
+				if(p.find("defeat_mob") != p.end())
+				{
+					DefeatMob.m_BotID = p.value("id", 0);
+					DefeatMob.m_Value = p.value("value", 0);
+					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
+				}
+
 				// initilize use chat type
 				const std::string TextUseInChat = p.value("use_in_chat", "\0").c_str();
 				if(!TextUseInChat.empty())
@@ -126,6 +135,7 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 					Move.m_Navigator = Navigator;
 					Move.m_PickupItem = PickUpItem;
 					Move.m_RequiredItem = RequiredItem;
+					Move.m_DefeatMob = DefeatMob;
 					Move.m_Position = Position;
 					Move.m_aTextChat = TextChat;
 					Move.m_aTextUseInChat = TextUseInChat;

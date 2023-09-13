@@ -6,8 +6,6 @@
 
 #include "game/server/gamecontext.h"
 
-std::list < CWorldSwapPosition > CWorldSwapPosition::ms_aWorldPositionLogic;
-
 void CWorldData::Init(int RespawnWorldID, int RequiredQuestID, const std::deque<CWorldSwapData>& Worlds)
 {
 	str_copy(m_aName, Server()->GetWorldName(m_ID), sizeof(m_aName));

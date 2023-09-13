@@ -65,17 +65,4 @@ public:
 	std::deque <CWorldSwapData>& GetSwappers() { return m_Swappers; }
 };
 
-
-/* for pathfined
- * Variant World Swap Positions
- */
-struct CWorldSwapPosition
-{
-	int m_BaseWorldID;
-	int m_FindWorldID;
-	vec2 m_Position;
-
-	static std::list< CWorldSwapPosition > ms_aWorldPositionLogic;
-};
-
 #endif

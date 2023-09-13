@@ -26,9 +26,6 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 			SecondLocalWorld ? pResSwap->getInt("WorldID") : pResSwap->getInt("TwoWorldID")
 		};
 
-		CWorldSwapPosition::ms_aWorldPositionLogic.push_back({ Worlds.first, Worlds.second, Positions.first });
-		CWorldSwapPosition::ms_aWorldPositionLogic.push_back({ Worlds.second, Worlds.first, Positions.second });
-
 		WorldIdentifier ID = pResSwap->getInt("ID");
 		WorldSwappers.push_back({ ID, Positions, Worlds });
 	}
@@ -66,78 +63,38 @@ int CWorldManager::GetWorldType() const
 
 void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 {
-	int StartWorldID = GS()->GetWorldID(); // start path
-	int EndWorldID = WorldID; // end path
-
-	// it's not search by world swappers : only set pos
-	if(StartWorldID == WorldID)
+	// there's no need to search for paths between worlds
+	int CurrentWorldID = GS()->GetWorldID();
+	if(CurrentWorldID == WorldID)
 	{
 		*OutPos = Pos;
 		return;
 	}
 
-	// nodes for check
-	struct CNodeWorlds
+	// initialize if not initialized 
+	if(!m_PathFinderBFS.isInitilized())
 	{
-		int m_Base{};
-		int m_Find{};
-	};
-	std::vector<CNodeWorlds> StablePath;
-	std::vector LastWorlds { StartWorldID };
-	std::map <int, bool> Checked { {StartWorldID, true} };
-
-	// search active nodes
-	while(StartWorldID != EndWorldID)
-	{
-		bool HasAction = false;
-
-		for(auto& [BaseID, FindID, Pos] : CWorldSwapPosition::ms_aWorldPositionLogic)
+		m_PathFinderBFS.init((int)CWorldData::Data().size());
+		for(const auto& pw : CWorldData::Data())
 		{
-			if(BaseID == StartWorldID && Checked.find(FindID) == Checked.end())
-			{
-				LastWorlds.push_back(BaseID);
-				StartWorldID = FindID;
-				Checked[StartWorldID] = true;
-
-				HasAction = true;
-				StablePath.push_back({ BaseID, FindID });
-				dbg_msg("test", "CHECK: %d -> %d", BaseID, FindID);
-
-				// end foreach : found
-				if(StartWorldID == EndWorldID)
-					break;
-			}
-		}
-
-		if(!HasAction)
-		{
-			// get failed node
-			auto Iter = std::find_if(StablePath.begin(), StablePath.end(), [LastWorlds, StartWorldID](CNodeWorlds& p)
-			{
-				return p.m_Base == LastWorlds.back() && p.m_Find == StartWorldID;
-			});
-			if(Iter == StablePath.end())
-			{
-				dbg_msg("test", "there is no path");
-				break;
-			}
-
-			// erase failed node
-			dbg_msg("test", "fail check tree erase");
-			StablePath.erase(Iter);
-			StartWorldID = LastWorlds.back();
-			LastWorlds.pop_back();
+			for(auto& p : pw->GetSwappers())
+				m_PathFinderBFS.addEdge(p.GetFirstWorldID(), p.GetSecondWorldID());
 		}
 	}
 
-	// get current node pos
-	auto Iter = std::find_if(CWorldSwapPosition::ms_aWorldPositionLogic.begin(), CWorldSwapPosition::ms_aWorldPositionLogic.end(), [&](const CWorldSwapPosition& pItem)
+	// search path and got first and second path
+	if(std::vector NodeSteps = m_PathFinderBFS.findPath(GS()->GetWorldID(), WorldID); NodeSteps.size() >= 2)
 	{
-		const CNodeWorlds NodeNearby = (int)StablePath.empty() ? CNodeWorlds() : StablePath.front();
-		return NodeNearby.m_Base == pItem.m_BaseWorldID && NodeNearby.m_Find == pItem.m_FindWorldID;
-	});
-	if(Iter != CWorldSwapPosition::ms_aWorldPositionLogic.end())
-		*OutPos = (*Iter).m_Position;
+		const int CurrWorldID = NodeSteps[0];
+		const int NextRightWorldID = NodeSteps[1];
+		auto& rSwapers = CWorldData::Data()[CurrWorldID]->GetSwappers();
+
+		if(const auto Iter = std::find_if(rSwapers.begin(), rSwapers.end(), [&](const CWorldSwapData& p)
+		{ return NextRightWorldID == p.GetSecondWorldID(); }); Iter != rSwapers.end())
+			*OutPos = (*Iter).GetFirstSwapPosition();
+
+		dbg_msg("cross-world pathfinder", "Found from %d to %d.", CurrWorldID, NextRightWorldID);
+	}
 }
 
 void CWorldManager::NotifyUnlockedZonesByQuest(CPlayer* pPlayer, int QuestID) const

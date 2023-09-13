@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_COMPONENT_WORLDSWAP_CORE_H
 #define GAME_SERVER_COMPONENT_WORLDSWAP_CORE_H
 
+#include <game/server/mmocore/Utils/PathFinderDoubleNode.h>
+
 #include <game/server/mmocore/MmoComponent.h>
 
 #include "WorldData.h"
@@ -12,8 +14,9 @@ class CWorldManager : public MmoComponent
 	~CWorldManager() override
 	{
 		CWorldData::Data().clear();
-		CWorldSwapPosition::ms_aWorldPositionLogic.clear();
-	};
+	}
+
+	PathFinderDoubleNode m_PathFinderBFS{};
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 
