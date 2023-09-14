@@ -87,8 +87,8 @@ void CEntityMoveTo::Tick()
 
 	// interact by text or press fire
 	QuestBotInfo::TaskRequiredMoveTo::Types Type = m_pTaskMoveTo->m_Type;
-	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE && PressedFire()
-		|| Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE && m_pTaskMoveTo->m_aTextUseInChat == m_pPlayer->m_aLastMsg)
+	if((Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE && PressedFire())
+		|| (Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE && m_pTaskMoveTo->m_aTextUseInChat == m_pPlayer->m_aLastMsg))
 	{
 		// clear last msg for correct check required item TODO: FIX (don't clear last msg)
 		m_pPlayer->m_aLastMsg[0] = '\0';
