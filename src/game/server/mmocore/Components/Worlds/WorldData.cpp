@@ -40,20 +40,17 @@ CWorldSwapData* CWorldData::GetSwapperByPos(vec2 Pos)
 {
 	auto pWorld = std::find_if(m_Swappers.begin(), m_Swappers.end(), [=](const CWorldSwapData& pItem)
 	{ return pItem.GetFirstWorldID() == m_ID && distance(pItem.GetFirstSwapPosition(), Pos) < 400; });
-	if(pWorld != m_Swappers.end())
-		return &(*pWorld);
-	return nullptr;
+	return (pWorld != m_Swappers.end()) ? &(*pWorld) : nullptr;
 }
 
 CQuestDescription* CWorldData::GetRequiredQuest() const
 {
-	if(CQuestDescription::Data().find(m_RequiredQuestID) != CQuestDescription::Data().end())
-		return &CQuestDescription::Data()[m_RequiredQuestID];
-	return nullptr;
+	const auto it = CQuestDescription::Data().find(m_RequiredQuestID);
+	return it != CQuestDescription::Data().end() ? &it->second : nullptr;
 }
 
-CWorldData* CWorldData::GetRespawnWorld() 
+CWorldData* CWorldData::GetRespawnWorld()
 {
-	auto p = std::find_if(Data().begin(), Data().end(), [this](const WorldDataPtr& p){return m_RespawnWorldID == p->GetID(); });
-	return p != Data().end() ? (*p).get() : nullptr;
+	auto p = std::find_if(Data().begin(), Data().end(), [this](const WorldDataPtr& p) { return m_RespawnWorldID == p->GetID(); });
+	return p != Data().end() ? p->get() : nullptr;
 }

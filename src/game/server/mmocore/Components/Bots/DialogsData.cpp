@@ -18,7 +18,7 @@
 
 void CDialogElem::Init(int BotID, std::string Text, bool Action)
 {
- 	// left side
+	// left side
 	const char* pBot = str_find_nocase(Text.c_str(), "[ls_");
 	if(int LeftDataBotID = 0; pBot != nullptr && sscanf(pBot, "[ls_%d]", &LeftDataBotID) && DataBotInfo::IsDataBotValid(LeftDataBotID))
 	{
@@ -89,12 +89,12 @@ int CDialogElem::GetClientIDByBotID(CGS* pGS, int CheckVisibleForCID, int BotID)
 		if(!pGS->m_apPlayers[i] || !pGS->m_apPlayers[i]->GetCharacter())
 			continue;
 
-		if(const CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(pGS->m_apPlayers[i]); 
+		if(const CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(pGS->m_apPlayers[i]);
 			pPlayerBot->GetBotID() == BotID && pPlayerBot->IsVisibleForClient(CheckVisibleForCID))
 		{
 			const CPlayer* pPlayer = pGS->m_apPlayers[CheckVisibleForCID];
-			if(const float Distance = distance(pPlayerBot->GetCharacter()->GetPos(), pPlayer->m_ViewPos); 
-				Distance < LastDistance)
+			const float Distance = distance(pPlayerBot->GetCharacter()->GetPos(), pPlayer->m_ViewPos);
+			if(Distance < LastDistance)
 			{
 				LastDistance = Distance;
 				CurrentPosCID = pPlayerBot->GetCID();
@@ -179,8 +179,11 @@ void CDialogElem::Show(CGS* pGS, int ClientID)
 
 CDialogElem* CPlayerDialog::GetCurrent() const
 {
-	std::vector <CDialogElem>* pDialogsVector = m_BotType == TYPE_BOT_QUEST ? 
-		&QuestBotInfo::ms_aQuestBot[m_MobID].m_aDialogs : &NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs;
+	std::vector <CDialogElem>* pDialogsVector;
+	if(m_BotType == TYPE_BOT_QUEST)
+		pDialogsVector = &QuestBotInfo::ms_aQuestBot[m_MobID].m_aDialogs;
+	else
+		pDialogsVector = &NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs;
 
 	if(m_Step < 0 || m_Step >= static_cast<int>(pDialogsVector->size()))
 		return nullptr;
@@ -226,7 +229,7 @@ void CPlayerDialog::Start(CPlayer* pPlayer, int BotCID)
 
 void CPlayerDialog::TickUpdate()
 {
-	if(!m_pPlayer || !m_pPlayer->GetCharacter() || m_BotCID < MAX_PLAYERS || !GS()->m_apPlayers[m_BotCID]  || !GS()->m_apPlayers[m_BotCID]->GetCharacter()
+	if(!m_pPlayer || !m_pPlayer->GetCharacter() || m_BotCID < MAX_PLAYERS || !GS()->m_apPlayers[m_BotCID] || !GS()->m_apPlayers[m_BotCID]->GetCharacter()
 		|| distance(m_pPlayer->m_ViewPos, GS()->m_apPlayers[m_BotCID]->GetCharacter()->GetPos()) > 180.0f)
 		Clear();
 }
@@ -243,7 +246,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	/*
 	 * Information format
 	 */
-	char aBufInformation[128]{};
+	char aBufInformation[128] {};
 	if(IsVanillaClient)
 	{
 		str_copy(aBufInformation, "F4 (vote no) - continue dialog\n\n\n", sizeof(aBufInformation));
@@ -252,7 +255,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	/*
 	 * Title format
 	 */
-	char aBufTittle[128]{};
+	char aBufTittle[128] {};
 	if(IsVanillaClient && m_BotType == TYPE_BOT_QUEST)
 	{
 		int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
@@ -288,7 +291,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	/*
 	 * Dialog format
 	 */
-	char aBufText[1024]{};
+	char aBufText[1024] {};
 	{
 		str_copy(aBufText, GS()->Server()->Localization()->Localize(m_pPlayer->GetLanguage(), pDialog->GetText()), sizeof(aBufText));
 

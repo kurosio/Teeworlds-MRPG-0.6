@@ -9,11 +9,13 @@
 constexpr auto TW_WAREHOUSE_TABLE = "tw_warehouses";
 constexpr auto TW_WAREHOUSE_ITEMS_TABLE = "tw_warehouse_items";
 
+// Optimized
 void CWarehouseManager::OnInit()
 {
 	// init warehouses
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_WAREHOUSE_TABLE);
-	while (pRes->next())
+	std::unordered_map< int, CWarehouse::ContainerTradingSlots > TradesSlots;
+	while(pRes->next())
 	{
 		WarehouseIdentifier ID = pRes->getInt("ID");
 		std::string Name = pRes->getString("Name").c_str();
@@ -26,7 +28,6 @@ void CWarehouseManager::OnInit()
 	}
 
 	// init trades slots
-	std::unordered_map< int , CWarehouse::ContainerTradingSlots > TradesSlots;
 	ResultPtr pResStore = Database->Execute<DB::SELECT>("*", TW_WAREHOUSE_ITEMS_TABLE);
 	while(pResStore->next())
 	{
@@ -75,12 +76,9 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(ReplaceMenu)
+	CCharacter* pChr = pPlayer->GetCharacter();
+	if(ReplaceMenu && pChr && pChr->IsAlive())
 	{
-		CCharacter* pChr = pPlayer->GetCharacter();
-		if(!pChr || !pChr->IsAlive())
-			return false;
-
 		if(pChr->GetHelper()->BoolIndex(TILE_SHOP_ZONE))
 		{
 			if(CWarehouse* pWarehouse = Job()->Warehouse()->GetWarehouse(pChr->m_Core.m_Pos))
@@ -94,8 +92,6 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 
 			return true;
 		}
-
-		return false;
 	}
 
 	return false;
@@ -110,11 +106,12 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		GS()->Chat(ClientID, "You repaired all items.");
 		return true;
 	}
-	
+
 	if(PPSTR(CMD, "SHOP_BUY") == 0)
 	{
 		if(BuyItem(pPlayer, VoteID, VoteID2))
 			GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
+		return true;
 	}
 
 	return false;
@@ -122,11 +119,12 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 
 CWarehouse* CWarehouseManager::GetWarehouse(vec2 Pos) const
 {
-	const auto pItem = std::find_if(CWarehouse::Data().begin(), CWarehouse::Data().end(), [Pos](const auto& pItem)
+	for(auto& pItem : CWarehouse::Data())
 	{
-		return (distance(pItem.second.GetPos(), Pos) < 200);
-	});
-	return pItem != CWarehouse::Data().end() ? &(*pItem).second : nullptr;
+		if(distance(pItem.second.GetPos(), Pos) < 200)
+			return &pItem.second;
+	}
+	return nullptr;
 }
 
 void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWarehouse) const
@@ -151,7 +149,7 @@ void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pW
 		const CItem* pItem = Trade.GetItem();
 
 		// show trade slot actions
-		if (pItem->Info()->IsEnchantable())
+		if(pItem->Info()->IsEnchantable())
 		{
 			const bool PlayerHasItem = pPlayer->GetItem(*pItem)->HasItem();
 
@@ -176,13 +174,13 @@ void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pW
 	GS()->AV(ClientID, "null");
 }
 
-bool CWarehouseManager::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier ID)
+bool CWarehouseManager::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier ID) const
 {
 	// finding a trade slot
 	CWarehouse::ContainerTradingSlots& pContainer = GS()->GetWarehouse(WarehouseID)->m_aTradingSlots;
 	auto Iter = std::find_if(pContainer.begin(), pContainer.end(), [ID](const CTradingSlot& p){ return p.GetID() == ID; });
-	CTradingSlot* pTradeSlot =  Iter != pContainer.end() ? &(*Iter) : nullptr;
-	if(!pTradeSlot)
+	CTradingSlot* pTradeSlot = Iter != pContainer.end() ? &(*Iter) : nullptr;
+	if(!pTradeSlot || !pTradeSlot->GetItem()->IsValid())
 		return false;
 
 	// check for enchantment
@@ -201,6 +199,6 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifi
 	// give trade slot for player
 	CItem* pTradeItem = pTradeSlot->GetItem();
 	pPlayerItem->Add(pTradeItem->GetValue(), 0, pTradeItem->GetEnchant());
-	GS()->Chat(ClientID, "You exchange {STR}x{VAL} to {STR}x{VAL}.", pTradeSlot->GetCurrency()->GetName(), pTradeSlot->GetPrice(), pTradeItem->Info()->GetName(), pTradeItem->GetValue());
+	GS()->Chat(ClientID, "You exchanged {STR}x{VAL} for {STR}x{VAL}.", pTradeSlot->GetCurrency()->GetName(), pTradeSlot->GetPrice(), pTradeItem->Info()->GetName(), pTradeItem->GetValue());
 	return true;
 }

@@ -21,11 +21,11 @@ public:
 		: m_ID(ID), m_Positions(Positions), m_Worlds(Worlds)
 	{}
 
-	vec2 GetFirstSwapPosition() const { return m_Positions.first; }
-	vec2 GetSecondSwapPosition() const { return m_Positions.second; }
+	vec2 GetFirstSwapPosition() const { return m_Positions.first; } // Get the first swap position
+	vec2 GetSecondSwapPosition() const { return m_Positions.second; } // Get the second swap position
 
-	int GetFirstWorldID() const { return m_Worlds.first; }
-	int GetSecondWorldID() const { return m_Worlds.second; }
+	int GetFirstWorldID() const { return m_Worlds.first; } // Get the first world ID
+	int GetSecondWorldID() const { return m_Worlds.second; } // Get the second world ID
 };
 
 /*

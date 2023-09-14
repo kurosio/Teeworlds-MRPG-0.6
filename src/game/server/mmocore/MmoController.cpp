@@ -26,7 +26,7 @@
 #include "Components/Worlds/WorldManager.h"
 
 
-MmoController::MmoController(CGS *pGameServer) : m_pGameServer(pGameServer)
+MmoController::MmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
 	m_Components.add(m_pQuest = new CQuestManager);
@@ -90,7 +90,7 @@ bool MmoController::OnMessage(int MsgID, void* pRawMsg, int ClientID)
 
 void MmoController::OnInitAccount(int ClientID)
 {
-	CPlayer *pPlayer = GS()->GetPlayer(ClientID);
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
@@ -100,7 +100,7 @@ void MmoController::OnInitAccount(int ClientID)
 
 bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 {
-	CPlayer *pPlayer = GS()->GetPlayer(ClientID);
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return true;
 
@@ -173,7 +173,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 			{
 				if(pAttribute->IsType(Type) && pAttribute->HasDatabaseField())
-					GS()->AVD(ClientID, "UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)", 
+					GS()->AVD(ClientID, "UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)",
 						pAttribute->GetName(), pPlayer->Acc().m_aStats[ID], pAttribute->GetUpgradePrice());
 			}
 		};
@@ -184,7 +184,6 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
 			GS()->AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
 		});
-		GS()->AV(ClientID, "null");
 
 		// Disciple of Tank
 		ShowAttributeVote(TAB_UPGR_TANK, AttributeType::Tank, [&](int HiddenID)
@@ -192,7 +191,6 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
 			GS()->AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
 		});
-		GS()->AV(ClientID, "null");
 
 		// Disciple of Healer
 		ShowAttributeVote(TAB_UPGR_HEALER, AttributeType::Healer, [&](int HiddenID)
@@ -201,7 +199,6 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			GS()->AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
 
 		});
-		GS()->AV(ClientID, "null");
 
 		// Upgrades Weapons and ammo
 		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeType::Weapon, [&](int HiddenID)
@@ -286,12 +283,12 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	return false;
 }
 
-bool MmoController::OnPlayerHandleTile(CCharacter *pChr, int IndexCollision)
+bool MmoController::OnPlayerHandleTile(CCharacter* pChr, int IndexCollision)
 {
 	if(!pChr || !pChr->IsAlive())
 		return true;
 
-	for(auto & pComponent : m_Components.m_paComponents)
+	for(auto& pComponent : m_Components.m_paComponents)
 	{
 		if(pComponent->OnHandleTile(pChr, IndexCollision))
 			return true;
@@ -299,7 +296,7 @@ bool MmoController::OnPlayerHandleTile(CCharacter *pChr, int IndexCollision)
 	return false;
 }
 
-bool MmoController::OnParsingVoteCommands(CPlayer *pPlayer, const char *CMD, const int VoteID, const int VoteID2, int Get, const char *GetText)
+bool MmoController::OnParsingVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	if(!pPlayer)
 		return true;
@@ -314,12 +311,12 @@ bool MmoController::OnParsingVoteCommands(CPlayer *pPlayer, const char *CMD, con
 
 void MmoController::ResetClientData(int ClientID)
 {
-	for (auto& pComponent : m_Components.m_paComponents)
+	for(auto& pComponent : m_Components.m_paComponents)
 		pComponent->OnResetClient(ClientID);
 }
 
 // saving account
-void MmoController::SaveAccount(CPlayer *pPlayer, int Table) const
+void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 {
 	if(!pPlayer->IsAuthed())
 		return;
@@ -408,7 +405,7 @@ void MmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalM
 	if(Type == ToplistType::GUILDS_LEVELING)
 	{
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT %d", Limit);
-		while (pRes->next())
+		while(pRes->next())
 		{
 			char NameGuild[64];
 			const int Rank = pRes->getRow();
@@ -422,10 +419,10 @@ void MmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalM
 				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
 		}
 	}
-	else if (Type == ToplistType::GUILDS_WEALTHY)
+	else if(Type == ToplistType::GUILDS_WEALTHY)
 	{
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT %d", Limit);
-		while (pRes->next())
+		while(pRes->next())
 		{
 			char NameGuild[64];
 			const int Rank = pRes->getRow();
@@ -438,10 +435,10 @@ void MmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalM
 				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
 		}
 	}
-	else if (Type == ToplistType::PLAYERS_LEVELING)
+	else if(Type == ToplistType::PLAYERS_LEVELING)
 	{
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT %d", Limit);
-		while (pRes->next())
+		while(pRes->next())
 		{
 			char Nick[64];
 			const int Rank = pRes->getRow();
@@ -456,10 +453,10 @@ void MmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalM
 
 		}
 	}
-	else if (Type == ToplistType::PLAYERS_WEALTHY)
+	else if(Type == ToplistType::PLAYERS_WEALTHY)
 	{
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT %d", (ItemIdentifier)itGold, Limit);
-		while (pRes->next())
+		while(pRes->next())
 		{
 			char Nick[64];
 			const int Rank = pRes->getRow();
@@ -541,7 +538,7 @@ void MmoController::ConAsyncLinesForTranslate()
 					return;
 				}
 			}
-			pJson["translation"].push_back({ { "key", pTextKey }, { "value", pTextKey }, { "hash", StrHash(HashingStr) }});
+			pJson["translation"].push_back({ { "key", pTextKey }, { "value", pTextKey }, { "hash", StrHash(HashingStr) } });
 		}
 		catch(nlohmann::json::exception& e)
 		{
@@ -574,7 +571,7 @@ void MmoController::ConAsyncLinesForTranslate()
 			int DialogNum = 0;
 			std::string UniqueID("diaqu" + std::to_string(pItem.first));
 			for(auto& pDialog : pItem.second.m_aDialogs)
-					PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
+				PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
 		}
 
 		for(auto& pItem : NpcBotInfo::ms_aNpcBot)
@@ -582,7 +579,7 @@ void MmoController::ConAsyncLinesForTranslate()
 			int DialogNum = 0;
 			std::string UniqueID("dianp" + std::to_string(pItem.first));
 			for(auto& pDialog : pItem.second.m_aDialogs)
-					PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
+				PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
 		}
 
 		for(auto& [ID, Aether] : CAether::Data())
@@ -625,7 +622,7 @@ void MmoController::ConAsyncLinesForTranslate()
 		}
 
 		// order non updated translated to up
-		std::sort(JsonData["translation"].begin(), JsonData["translation"].end(), [](nlohmann::json& pA, nlohmann::json& pB) 
+		std::sort(JsonData["translation"].begin(), JsonData["translation"].end(), [](nlohmann::json& pA, nlohmann::json& pB)
 		{ return pA["key"] == pA["value"] && pB["key"] != pB["value"]; });
 
 		// save file

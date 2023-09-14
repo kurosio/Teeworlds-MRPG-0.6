@@ -201,12 +201,14 @@ bool CSkill::Upgrade()
 		m_Level++;
 		Database->Execute<DB::UPDATE>("tw_accounts_skills", "Level = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_Level, m_ID, GetPlayer()->Acc().m_UserID);
 		GS()->Chat(ClientID, "Increased the skill [{STR} level to {INT}]", Info()->GetName(), m_Level);
-		return true;
+	}
+	else
+	{
+		m_Level = 1;
+		m_SelectedEmoticion = -1;
+		Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('%d', '%d', '1');", m_ID, GetPlayer()->Acc().m_UserID);
+		GS()->Chat(ClientID, "Learned a new skill [{STR}]", Info()->GetName());
 	}
 
-	m_Level = 1;
-	m_SelectedEmoticion = -1;
-	Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('%d', '%d', '1');", m_ID, GetPlayer()->Acc().m_UserID);
-	GS()->Chat(ClientID, "Learned a new skill [{STR}]", Info()->GetName());
 	return true;
 }

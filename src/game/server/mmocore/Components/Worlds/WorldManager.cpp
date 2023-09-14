@@ -19,6 +19,7 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 		bool SecondLocalWorld = pResSwap->getInt("TwoWorldID") == GS()->GetWorldID();
 		std::pair<vec2, vec2> Positions;
 		std::pair<int, int> Worlds;
+
 		if(SecondLocalWorld)
 		{
 			Positions = { vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")), vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")) };
@@ -39,7 +40,6 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	 */
 	const int WorldID = GS()->GetWorldID();
 	const CSqlString<32> cstrWorldName = CSqlString<32>(Server()->GetWorldName(WorldID));
-
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "enum_worlds", pWhereLocalWorld);
 	if(pRes->next())
 	{
@@ -59,10 +59,10 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 
 int CWorldManager::GetWorldType() const
 {
-	if(GS()->GetDungeonID())
-		return WORLD_DUNGEON;
-	return WORLD_STANDARD;
+	return GS()->GetDungeonID() ? WORLD_DUNGEON : WORLD_STANDARD;
 }
+
+//Optimized
 
 void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 {
@@ -86,7 +86,8 @@ void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 	}
 
 	// search path and got first and second path
-	if(std::vector NodeSteps = m_PathFinderBFS.findPath(GS()->GetWorldID(), WorldID); NodeSteps.size() >= 2)
+	std::vector NodeSteps = m_PathFinderBFS.findPath(GS()->GetWorldID(), WorldID);
+	if(NodeSteps.size() >= 2)
 	{
 		const int NextRightWorldID = NodeSteps[1];
 		auto& rSwapers = CWorldData::Data()[CurrentWorldID]->GetSwappers();
