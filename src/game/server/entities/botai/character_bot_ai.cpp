@@ -113,7 +113,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 
 	// dissalow damage from bot to bot except type eidolon
-	if(pFrom->GetBotType() != TYPE_BOT_EIDOLON)
+	if(pFrom->IsBot() && pFrom->GetBotType() != TYPE_BOT_EIDOLON)
 		return false;
 
 	// damage receive
@@ -716,17 +716,12 @@ void CCharacterBotAI::Move()
 		if(m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookedPlayer == -1)
 		{
 			vec2 HookVel = normalize(m_Core.m_HookPos - GetPos()) * GS()->Tuning()->m_HookDragAccel;
-			if(HookVel.y > 0)
-				HookVel.y *= 0.3f;
-			if((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0))
-				HookVel.x *= 0.95f;
-			else
-				HookVel.x *= 0.75f;
-
+			HookVel.y *= 0.3f;
+			HookVel.x *= (m_Input.m_Direction == 0 || (m_Input.m_Direction < 0 && HookVel.x > 0) || (m_Input.m_Direction > 0 && HookVel.x < 0)) ? 0.95f : 0.75f;
 			HookVel += vec2(0, 1) * GS()->Tuning()->m_Gravity;
 
 			float ps = dot(WayDir, HookVel);
-			if(ps > 0 || (WayDir.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < SERVER_TICK_SPEED + SERVER_TICK_SPEED / 2))
+			if(ps > 0 || (WayDir.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < 3 * SERVER_TICK_SPEED))
 				m_Input.m_Hook = 1;
 			if(m_Core.m_HookTick > 4 * SERVER_TICK_SPEED || length(m_Core.m_HookPos - GetPos()) < 20.0f)
 				m_Input.m_Hook = 0;
@@ -751,13 +746,8 @@ void CCharacterBotAI::Move()
 				if((GS()->Collision()->IntersectLine(GetPos(), Pos, &Pos, nullptr) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
 				{
 					vec2 HookVel = dir * GS()->Tuning()->m_HookDragAccel;
-					if(HookVel.y > 0)
-						HookVel.y *= 0.3f;
-					if((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0))
-						HookVel.x *= 0.95f;
-					else
-						HookVel.x *= 0.75f;
-
+					HookVel.y *= 0.3f;
+					HookVel.x *= (HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0) ? 0.95f : 0.75f;
 					HookVel += vec2(0, 1) * GS()->Tuning()->m_Gravity;
 
 					float ps = dot(WayDir, HookVel);
@@ -780,8 +770,7 @@ void CCharacterBotAI::Move()
 	// in case the bot stucks
 	if(m_Pos.x != m_PrevPos.x)
 		m_MoveTick = Server()->Tick();
-
-	if(m_Pos.x == m_PrevPos.x && Server()->Tick() - m_MoveTick > Server()->TickSpeed() / 2)
+	else if(Server()->Tick() - m_MoveTick > Server()->TickSpeed() / 2)
 	{
 		m_Input.m_Direction = -m_Input.m_Direction;
 		m_Input.m_Jump = 1;
