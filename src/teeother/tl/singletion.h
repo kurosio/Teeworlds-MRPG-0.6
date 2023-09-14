@@ -10,22 +10,19 @@ protected:
 	static std::unique_ptr<T> m_pSingleton;
 
 public:
-	virtual ~CSingleton() {}
+	virtual ~CSingleton() = default;
 
-	static T* Get() 
+	static T* Get()
 	{
-		if(!m_pSingleton.get())
+		if(!m_pSingleton)
 			m_pSingleton.reset(new T());
 		return m_pSingleton.get();
 	}
 
-	static void Delete()
+	static void Reset()
 	{
-		if(m_pSingleton.get())
-		{
-			T* pSingletion = m_pSingleton.release();
-			delete pSingletion;
-		}
+		if(m_pSingleton)
+			m_pSingleton.reset();
 	}
 };
 
