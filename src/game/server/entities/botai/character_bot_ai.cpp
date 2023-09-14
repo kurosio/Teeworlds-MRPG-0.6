@@ -819,12 +819,15 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(!GS()->m_apPlayers[i]
-			|| !GS()->m_apPlayers[i]->GetCharacter()
-			|| distance(m_Core.m_Pos, GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos) > Distance
-			|| GS()->Collision()->IntersectLineWithInvisible(GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos, m_Pos, nullptr, nullptr)
-			|| !GS()->IsPlayerEqualWorld(i))
+		if(!GS()->m_apPlayers[i] || !GS()->m_apPlayers[i]->GetCharacter())
 			continue;
+		if(distance(m_Core.m_Pos, GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos) > Distance)
+			continue;
+		if(GS()->Collision()->IntersectLineWithInvisible(GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos, m_Pos, nullptr, nullptr))
+			continue;
+		if(!GS()->IsPlayerEqualWorld(i))
+			continue;
+
 		return GS()->m_apPlayers[i];
 	}
 	return nullptr;
@@ -867,7 +870,10 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
 		if(!FinderCollised && pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pPlayer->GetAttributeSize(AttributeIdentifier::HP))
+		{
 			m_Target.Set(i, 100);
+			pPlayer = pFinderHard;
+		}
 	}
 
 	return pPlayer;
@@ -938,14 +944,22 @@ void CCharacterBotAI::EmotesAction(int EmotionStyle)
 
 	if(Server()->Tick() % (Server()->TickSpeed() * 3 + random_int() % 10) == 0)
 	{
-		if(EmotionStyle == EMOTE_BLINK)
-			SetEmote(EMOTE_BLINK, 1 + random_int() % 2, true);
-		else if(EmotionStyle == EMOTE_HAPPY)
-			SetEmote(EMOTE_HAPPY, 1 + random_int() % 2, true);
-		else if(EmotionStyle == EMOTE_ANGRY)
-			SetEmote(EMOTE_ANGRY, 1 + random_int() % 2, true);
-		else if(EmotionStyle == EMOTE_PAIN)
-			SetEmote(EMOTE_PAIN, 1 + random_int() % 2, true);
+		switch(EmotionStyle)
+		{
+			case EMOTE_BLINK:
+				SetEmote(EMOTE_BLINK, 1 + random_int() % 2, true);
+			break;
+			case EMOTE_HAPPY:
+				SetEmote(EMOTE_HAPPY, 1 + random_int() % 2, true);
+			break;
+			case EMOTE_ANGRY:
+				SetEmote(EMOTE_ANGRY, 1 + random_int() % 2, true);
+			break;
+			case EMOTE_PAIN:
+				SetEmote(EMOTE_PAIN, 1 + random_int() % 2, true);
+			break;
+			default: break;
+		}
 	}
 }
 
@@ -991,19 +1005,18 @@ bool CCharacterBotAI::FunctionNurseNPC()
 		PlayerFinding = true;
 
 		// health every sec
-		if(Server()->Tick() % Server()->TickSpeed() != 0)
-			continue;
+		if(Server()->Tick() % Server()->TickSpeed() == 0)
+		{
+			// increase health for player
+			int Health = max(pPlayer->GetStartHealth() / 20, 1);
+			new CHearth(&GS()->m_World, m_Pos, pPlayer, Health, pPlayer->GetCharacter()->m_Core.m_Vel);
+			m_Input.m_Direction = 0;
 
-		// increase health for player
-		int Health = max(pPlayer->GetStartHealth() / 20, 1);
-		new CHearth(&GS()->m_World, m_Pos, pPlayer, Health, pPlayer->GetCharacter()->m_Core.m_Vel);
-		m_Input.m_Direction = 0;
-
-		// information
-		vec2 DrawPosition = vec2(pPlayer->GetCharacter()->m_Core.m_Pos.x, pPlayer->GetCharacter()->m_Core.m_Pos.y - 90.0f);
-		str_format(aBuf, sizeof(aBuf), "%dHP", Health);
-		GS()->CreateText(nullptr, false, DrawPosition, vec2(0, 0), 40, aBuf);
+			// information
+			vec2 DrawPosition = vec2(pPlayer->GetCharacter()->m_Core.m_Pos.x, pPlayer->GetCharacter()->m_Core.m_Pos.y - 90.0f);
+			str_format(aBuf, sizeof(aBuf), "%dHP", Health);
+			GS()->CreateText(nullptr, false, DrawPosition, vec2(0, 0), 40, aBuf);
+		}
 	}
-
 	return PlayerFinding;
 }

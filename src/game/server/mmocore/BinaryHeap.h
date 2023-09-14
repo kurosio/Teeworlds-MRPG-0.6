@@ -33,7 +33,7 @@ public:
 	{
 		// Percolate up
 		int Hole = ++m_CurrentSize;
-		for (; Hole > 1 && Item < m_lItems[Hole / 2]; Hole /= 2)
+		for(; Hole > 1 && Item < m_lItems[Hole / 2]; Hole /= 2)
 			m_lItems[Hole] = m_lItems[Hole / 2];
 		m_lItems[Hole] = Item;
 	}
@@ -42,9 +42,9 @@ public:
 	{
 		int Index = 0;
 		// replace
-		for (int i = 0; i < m_CurrentSize; i++)
+		for(int i = 0; i < m_CurrentSize; i++)
 		{
-			if (Item == m_lItems[i])
+			if(Item == m_lItems[i])
 			{
 				m_lItems[i] = Item;
 				Index = i;
@@ -54,7 +54,7 @@ public:
 
 		// Percolate up
 		int Hole = Index;
-		for (; Hole > 1 && m_lItems[Index] < m_lItems[Hole / 2]; Hole /= 2)
+		for(; Hole > 1 && m_lItems[Index] < m_lItems[Hole / 2]; Hole /= 2)
 			m_lItems[Hole] = m_lItems[Hole / 2];
 		m_lItems[Hole] = m_lItems[Index];
 	}
@@ -80,15 +80,16 @@ private:
 		int Child;
 		T Tmp = m_lItems[Hole];
 
-		for (; Hole * 2 <= m_CurrentSize; Hole = Child)
+		while(Hole * 2 <= m_CurrentSize)
 		{
 			Child = Hole * 2;
-			if (Child != m_CurrentSize && m_lItems[Child + 1] < m_lItems[Child])
+			if(Child != m_CurrentSize && m_lItems[Child + 1] < m_lItems[Child])
 				Child++;
-			if (m_lItems[Child] < Tmp)
+			if(m_lItems[Child] < Tmp)
 				m_lItems[Hole] = m_lItems[Child];
 			else
 				break;
+			Hole = Child;
 		}
 		m_lItems[Hole] = Tmp;
 	}
