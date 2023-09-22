@@ -5,6 +5,9 @@
 
 #include <game/mapitems.h>
 
+#define _DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(clientid) GS()->Broadcast(clientid, BroadcastPriority::GAME_PRIORITY, 100, "You can see menu in the votes!")
+#define _DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(clientid) GS()->Broadcast(clientid, BroadcastPriority::GAME_PRIORITY, 100, "You have left the active zone!")
+
 class TileHandle
 {
 	bool m_Collide[MAX_TILES]{};

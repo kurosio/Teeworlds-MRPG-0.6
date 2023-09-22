@@ -40,13 +40,14 @@ bool CHouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLAYER_HOUSE))
 	{
+		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(ClientID);
 		GS()->Chat(ClientID, "You can see menu in the votes!");
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_PLAYER_HOUSE))
 	{
-		GS()->Chat(ClientID, "You have left the active zone. The menu has been restored!");
+		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(ClientID);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}

@@ -71,14 +71,14 @@ bool CAetherManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_AETHER_TELEPORT))
 	{
-		GS()->Chat(ClientID, "You can see menu in the votes!");
+		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(ClientID);
 		UnlockLocation(pChr->GetPlayer(), pChr->m_Core.m_Pos);
 		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_AETHER_TELEPORT))
 	{
-		GS()->Chat(ClientID, "You have left the active zone. The menu has been restored!");
+		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(ClientID);
 		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
