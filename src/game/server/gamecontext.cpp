@@ -82,20 +82,17 @@ class CCharacter* CGS::GetPlayerChar(int ClientID)
 		return nullptr;
 	return m_apPlayers[ClientID]->GetCharacter();
 }
-
 CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuthed, bool CheckCharacter)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return nullptr;
 
 	CPlayer* pPlayer = m_apPlayers[ClientID];
-	if((CheckAuthed && pPlayer->IsAuthed()) || !CheckAuthed)
-	{
-		if(CheckCharacter && !pPlayer->GetCharacter())
-			return nullptr;
-		return pPlayer;
-	}
-	return nullptr;
+	if(CheckAuthed && !pPlayer->IsAuthed())
+		return nullptr;
+	if(CheckCharacter && !pPlayer->GetCharacter())
+		return nullptr;
+	return pPlayer;
 }
 
 CPlayer* CGS::GetPlayerFromUserID(int AccountID)
@@ -139,22 +136,22 @@ CWarehouse* CGS::GetWarehouse(int ID) const
 CWorldData* CGS::GetWorldData(int ID) const
 {
 	int WorldID = ID == -1 ? GetWorldID() : ID;
-	auto p = std::find_if(CWorldData::Data().begin(), CWorldData::Data().end(), [WorldID](const WorldDataPtr& p){return WorldID == p->GetID(); });
+	const auto& p = std::find_if(CWorldData::Data().begin(), CWorldData::Data().end(), [WorldID](const WorldDataPtr& p){return WorldID == p->GetID(); });
 
 	return p != CWorldData::Data().end() ? (*p).get() : nullptr;
 }
 
 CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
 {
-	auto p = std::find_if(CEidolonInfoData::Data().begin(), CEidolonInfoData::Data().end(), [ItemID](CEidolonInfoData& p){ return p.GetItemID() == ItemID; });
+	const auto& p = std::find_if(CEidolonInfoData::Data().begin(), CEidolonInfoData::Data().end(), [ItemID](CEidolonInfoData& p){ return p.GetItemID() == ItemID; });
 	return p != CEidolonInfoData::Data().end() ? &(*p) : nullptr;
 }
 
 CFlyingPoint* CGS::CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
 {
-	CFlyingPoint* pFlying = new CFlyingPoint(&m_World, Pos, InitialVel, ClientID, FromID);
-	return pFlying;
+	return new CFlyingPoint(&m_World, Pos, InitialVel, ClientID, FromID);
 }
+
 
 /* #########################################################################
 	EVENTS
