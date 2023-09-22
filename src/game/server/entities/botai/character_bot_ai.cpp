@@ -18,9 +18,15 @@
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
-
-CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld) {}
-CCharacterBotAI::~CCharacterBotAI() = default;
+CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld)
+{
+	m_pAI = new CAIController(this);
+}
+CCharacterBotAI::~CCharacterBotAI()
+{
+	delete m_pAI;
+	m_pAI = nullptr;
+}
 
 int CCharacterBotAI::GetSnapFullID() const { return m_pBotPlayer->GetCID() * SNAPBOTS; }
 
@@ -29,10 +35,6 @@ bool CCharacterBotAI::Spawn(class CPlayer* pPlayer, vec2 Pos)
 	m_pBotPlayer = static_cast<CPlayerBot*>(pPlayer);
 	if(!CCharacter::Spawn(m_pBotPlayer, Pos))
 		return false;
-
-	// target init
-	m_Target.Reset();
-	m_Target.Init(this);
 
 	// bot types init
 	OnSpawnInitBotTypes();
@@ -126,9 +128,9 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	// if the bot doesn't have target player, set to from
-	if(pFrom->GetBotType() == TYPE_BOT_MOB && m_Target.IsEmpty())
+	if(pFrom->GetBotType() == TYPE_BOT_MOB && AI()->GetTarget()->IsEmpty())
 	{
-		m_Target.Set(From, 200);
+		AI()->GetTarget()->Set(From, 200);
 	}
 
 	// add (from player) to the list of those who caused damage
@@ -151,7 +153,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			}
 		}
 		m_aListDmgPlayers.clear();
-		m_Target.Reset();
+		AI()->GetTarget()->Reset();
 
 		// die
 		Die(From, Weapon);
@@ -395,13 +397,13 @@ void CCharacterBotAI::HandleBot()
 		// default bot mob
 		case TYPE_BOT_MOB:
 		{
-			m_Target.Tick();
+			AI()->GetTarget()->Tick();
 			EngineMobs();
 		} break;
 		// player eidolon
 		case TYPE_BOT_EIDOLON:
 		{
-			m_Target.Tick();
+			AI()->GetTarget()->Tick();
 			EngineEidolons();
 		} break;
 		// quest bot
@@ -524,7 +526,7 @@ void CCharacterBotAI::BehaviorTick()
 	MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
 
 	// sleepy behavior
-	if(m_Target.IsEmpty() && pMobBot->IsIncludedBehavior("Sleepy"))
+	if(AI()->GetTarget()->IsEmpty() && pMobBot->IsIncludedBehavior("Sleepy"))
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
@@ -599,19 +601,19 @@ void CCharacterBotAI::EngineEidolons()
 		// search target
 		if(const CPlayerBot* pEmenyPlayer = SearchMob(400.0f); pEmenyPlayer && pEmenyPlayer->GetCharacter())
 		{
-			m_Target.Set(pEmenyPlayer->GetCID(), 100);
+			AI()->GetTarget()->Set(pEmenyPlayer->GetCID(), 100);
 			m_pBotPlayer->m_TargetPos = pEmenyPlayer->GetCharacter()->GetPos();
 		}
 
 		// check player distance with active target
 		float Distance = distance(pOwner->m_ViewPos, m_Pos);
-		if(Distance > 400.0f && !m_Target.IsEmpty())
+		if(Distance > 400.0f && !AI()->GetTarget()->IsEmpty())
 		{
-			m_Target.Reset();
+			AI()->GetTarget()->Reset();
 		}
 
 		// side empty target
-		if(m_Target.IsEmpty())
+		if(AI()->GetTarget()->IsEmpty())
 		{
 			if(Distance < 128.0f)
 			{
@@ -682,7 +684,7 @@ void CCharacterBotAI::Move()
 	// check dissalow move
 	if(m_pBotPlayer->GetBotType() != TYPE_BOT_EIDOLON && IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
 	{
-		m_Target.SetType(TARGET_TYPE::LOST);
+		AI()->GetTarget()->SetType(TARGET_TYPE::LOST);
 		m_Input.m_Direction = -m_Input.m_Direction;
 		m_DoorHit = true;
 	}
@@ -781,8 +783,8 @@ void CCharacterBotAI::Move()
 
 void CCharacterBotAI::Fire()
 {
-	CPlayer* pPlayer = GS()->GetPlayer(m_Target.GetCID(), false, true);
-	if(m_Target.IsEmpty() || m_Target.IsCollised() || !pPlayer)
+	CPlayer* pPlayer = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
+	if(AI()->GetTarget()->IsEmpty() || AI()->GetTarget()->IsCollised() || !pPlayer)
 		return;
 
 	if((m_Input.m_Hook && m_Core.m_HookState == HOOK_IDLE) || m_ReloadTimer != 0)
@@ -836,42 +838,42 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 // finding a player among people who have the highest fury
 CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 {
-	if(m_Target.IsEmpty() && (GS()->IsDungeon() || random_int() % 30 == 0))
+	if(AI()->GetTarget()->IsEmpty() && (GS()->IsDungeon() || random_int() % 30 == 0))
 	{
 		CPlayer* pPlayer = SearchPlayer(Distance);
 		if(pPlayer && pPlayer->GetCharacter())
 		{
-			m_Target.Set(pPlayer->GetCID(), 100);
+			AI()->GetTarget()->Set(pPlayer->GetCID(), 100);
 		}
 
 		return pPlayer;
 	}
 
 	// strong warnings for reset target (position and world zone)
-	CPlayer* pPlayer = GS()->GetPlayer(m_Target.GetCID(), true, true);
-	if(!m_Target.IsEmpty() && (!pPlayer || (pPlayer && (distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(m_Target.GetCID())))))
-		m_Target.Reset();
+	CPlayer* pPlayer = GS()->GetPlayer(AI()->GetTarget()->GetCID(), true, true);
+	if(!AI()->GetTarget()->IsEmpty() && (!pPlayer || (pPlayer && (distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(AI()->GetTarget()->GetCID())))))
+		AI()->GetTarget()->Reset();
 
 	// non-hostile mobs
-	if(m_Target.IsEmpty() || !pPlayer)
+	if(AI()->GetTarget()->IsEmpty() || !pPlayer)
 		return nullptr;
 
 	// throw off the lifetime of a target
-	m_Target.UpdateCollised(GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->GetPos(), m_Pos, nullptr, nullptr));
+	AI()->GetTarget()->UpdateCollised(GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->GetPos(), m_Pos, nullptr, nullptr));
 
 	// looking for a stronger
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		// check the distance of the player
 		CPlayer* pFinderHard = GS()->GetPlayer(i, true, true);
-		if(m_Target.GetCID() == i || !pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)
+		if(AI()->GetTarget()->GetCID() == i || !pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)
 			continue;
 
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
 		if(!FinderCollised && pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pPlayer->GetAttributeSize(AttributeIdentifier::HP))
 		{
-			m_Target.Set(i, 100);
+			AI()->GetTarget()->Set(i, 100);
 			pPlayer = pFinderHard;
 		}
 	}

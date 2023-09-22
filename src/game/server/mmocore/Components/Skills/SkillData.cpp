@@ -160,7 +160,7 @@ bool CSkill::Use()
 
 			// check target upper agression
 			CCharacterBotAI* pCharacterBotAI = dynamic_cast<CCharacterBotAI*>(pPlayer->GetCharacter());
-			if(CPlayer* pPlayerAgr = GS()->GetPlayer(pCharacterBotAI->GetTarget()->GetCID(), false, true))
+			if(CPlayer* pPlayerAgr = GS()->GetPlayer(pCharacterBotAI->AI()->GetTarget()->GetCID(), false, true))
 			{
 				if(pPlayerAgr->GetStartHealth() > GetPlayer()->GetStartHealth())
 				{
@@ -170,7 +170,7 @@ bool CSkill::Use()
 			}
 
 			// set agression
-			pCharacterBotAI->GetTarget()->Set(ClientID, GetBonus());
+			pCharacterBotAI->AI()->GetTarget()->Set(ClientID, GetBonus());
 			GS()->CreatePlayerSpawn(pPlayer->GetCharacter()->GetPos());
 			pPlayer->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
 			GS()->CreateFlyingPoint(PlayerPosition, pPlayer->GetCharacter()->m_Core.m_Vel, i);

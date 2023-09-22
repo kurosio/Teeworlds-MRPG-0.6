@@ -35,9 +35,5 @@ void CGameControllerTutorial::Tick()
 
 bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 {
-	if(!pChr->GetPlayer()->IsBot())
-	{
-		pChr->CreateSnapProj(pChr->GetSnapFullID(), 3, WEAPON_HAMMER, true, true);
-	}
 	return IGameController::OnCharacterSpawn(pChr);
 }

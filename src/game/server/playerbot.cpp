@@ -332,7 +332,7 @@ void CPlayerBot::FakeSnap()
 Mood CPlayerBot::GetMoodState() const
 {
 	CCharacterBotAI* pChr = (CCharacterBotAI*)m_pCharacter;
-	if(GetBotType() == TYPE_BOT_MOB && pChr && !pChr->GetTarget()->IsEmpty())
+	if(GetBotType() == TYPE_BOT_MOB && pChr && !pChr->AI()->GetTarget()->IsEmpty())
 		return Mood::AGRESSED;
 	else if(GetBotType() == TYPE_BOT_NPC)
 		return Mood::FRIENDLY;
