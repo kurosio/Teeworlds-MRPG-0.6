@@ -10,11 +10,12 @@ class CEntityPathFinder : public CEntity
 public:
 	int m_ClientID;
 	int m_WorldID;
+	float m_AreaClipped;
 	bool* m_pComplete;
 	class CPlayer* m_pPlayer;
 	std::deque < CEntityPathFinder* >* m_apCollection;
 
-	CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection);
+	CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection);
 	~CEntityPathFinder() override;
 
 	void Tick() override;

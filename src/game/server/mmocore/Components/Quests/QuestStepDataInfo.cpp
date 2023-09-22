@@ -135,7 +135,7 @@ bool CPlayerQuestStep::IsComplete()
 	{
 		for(auto& [m_BotID, m_Count] : m_Bot.m_RequiredDefeat)
 		{
-			if(m_aMobProgress[m_BotID] < m_Count)
+			if(m_aMobProgress[m_BotID].m_Count < m_Count)
 				return false;
 		}
 	}
@@ -259,12 +259,15 @@ void CPlayerQuestStep::AppendDefeatProgress(int DefeatedBotID)
 	// check complecte mob
 	for(auto& [DefeatBotID, DefeatCount] : m_Bot.m_RequiredDefeat)
 	{
-		if(DefeatedBotID != DefeatBotID || m_aMobProgress[DefeatedBotID] >= DefeatCount)
+		if(DefeatedBotID != DefeatBotID || m_aMobProgress[DefeatedBotID].m_Count >= DefeatCount)
 			continue;
 
-		m_aMobProgress[DefeatedBotID]++;
-		if(m_aMobProgress[DefeatedBotID] >= DefeatCount)
+		m_aMobProgress[DefeatedBotID].m_Count++;
+		if(m_aMobProgress[DefeatedBotID].m_Count >= DefeatCount)
+		{
+			m_aMobProgress[DefeatBotID].m_Complete = true;
 			GS()->Chat(pPlayer->GetCID(), "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
+		}
 
 		pQuest->SaveSteps();
 		break;
@@ -284,18 +287,14 @@ void CPlayerQuestStep::UpdatePathNavigator()
 		return;
 
 	// navigator
-	pQuest->AddEntityMobNavigator(&m_Bot);
+	pQuest->AddEntityNPCNavigator(&m_Bot);
 }
 
 void CPlayerQuestStep::UpdateTaskMoveTo()
 {
 	// check default action
 	CPlayer* pPlayer = GetPlayer();
-	if(m_StepComplete || m_ClientQuitting || m_aMoveToProgress.empty() || !pPlayer || !pPlayer->GetCharacter())
-		return;
-
-	// only with received task
-	if(!m_TaskListReceived)
+	if(!m_TaskListReceived || m_StepComplete || m_ClientQuitting || !pPlayer || !pPlayer->GetCharacter())
 		return;
 
 	// check quest action
@@ -303,22 +302,35 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
 		return;
 
-	// check and add entities
-	const int CurrentStep = GetMoveToCurrentStepPos();
-	for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
+	// check and mark required mob's
+	for(auto& [DefeatBotID, DefeatCount] : m_Bot.m_RequiredDefeat)
 	{
-		// skip completed and not current step's
-		QuestBotInfo::TaskRequiredMoveTo& pRequired = m_Bot.m_RequiredMoveTo[i];
-		if(CurrentStep != pRequired.m_Step || m_aMoveToProgress[i])
+		if(m_aMobProgress[DefeatBotID].m_Count >= DefeatCount)
 			continue;
 
-		// add entity move to
-		if(pRequired.m_WorldID == pPlayer->GetPlayerWorldID())
-			AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i]);
+		if(const MobBotInfo* pMob = DataBotInfo::FindMobByBot(DefeatBotID))
+			AddEntityNavigator(pMob->m_Position, pMob->m_WorldID, 400.f, &m_aMobProgress[DefeatBotID].m_Complete);
+	}
 
-		// add entity path navigator
-		if(pRequired.m_Navigator)
-			AddEntityNavigator(pRequired.m_Position, pRequired.m_WorldID, &m_aMoveToProgress[i]);
+	// check and add entities
+	if(!m_aMoveToProgress.empty())
+	{
+		const int CurrentStep = GetMoveToCurrentStepPos();
+		for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
+		{
+			// skip completed and not current step's
+			QuestBotInfo::TaskRequiredMoveTo& pRequired = m_Bot.m_RequiredMoveTo[i];
+			if(CurrentStep != pRequired.m_Step || m_aMoveToProgress[i])
+				continue;
+
+			// add entity move to
+			if(pRequired.m_WorldID == pPlayer->GetPlayerWorldID())
+				AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i]);
+
+			// add entity path navigator
+			if(pRequired.m_Navigator)
+				AddEntityNavigator(pRequired.m_Position, pRequired.m_WorldID, 0.f, &m_aMoveToProgress[i]);
+		}
 	}
 }
 
@@ -478,7 +490,7 @@ CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequire
 	return pEntMoveTo;
 }
 
-CEntityPathFinder* CPlayerQuestStep::AddEntityNavigator(vec2 Position, int WorldID, bool* pComplete)
+CEntityPathFinder* CPlayerQuestStep::AddEntityNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete)
 {
 	CPlayer* pPlayer = GetPlayer();
 	if(!pComplete || (*pComplete) == true)
@@ -487,7 +499,7 @@ CEntityPathFinder* CPlayerQuestStep::AddEntityNavigator(vec2 Position, int World
 	const int ClientID = pPlayer->GetCID();
 	CEntityPathFinder* pEntMoveToFinder = FoundEntityNavigator(Position);
 	if(!pEntMoveToFinder)
-		pEntMoveToFinder = m_apEntitiesNavigator.emplace_back(new CEntityPathFinder(&GS()->m_World, Position, WorldID, ClientID, pComplete, &m_apEntitiesNavigator));
+		pEntMoveToFinder = m_apEntitiesNavigator.emplace_back(new CEntityPathFinder(&GS()->m_World, Position, WorldID, ClientID, AreaClipped, pComplete, &m_apEntitiesNavigator));
 
 	return pEntMoveToFinder;
 }

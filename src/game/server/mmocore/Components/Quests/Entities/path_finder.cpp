@@ -7,7 +7,7 @@
 
 #include <game/server/mmocore/GameEntities/Tools/path_navigator.h>
 
-CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection)
+CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos)
 {
 	vec2 GetterPos{0,0};
@@ -15,6 +15,7 @@ CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int
 
 	m_PosTo = GetterPos;
 	m_ClientID = ClientID;
+	m_AreaClipped = AreaClipped;
 	m_WorldID = WorldID;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_pComplete = pComplete;
@@ -60,7 +61,7 @@ void CEntityPathFinder::Tick()
 
 void CEntityPathFinder::Snap(int SnappingClient)
 {
-	if(m_ClientID != SnappingClient || !m_pPlayer || !m_pPlayer->GetCharacter())
+	if(m_ClientID != SnappingClient || !m_pPlayer || !m_pPlayer->GetCharacter() || (m_AreaClipped > 1.f && distance(m_PosTo, m_pPlayer->m_ViewPos) < m_AreaClipped))
 		return;
 
 	CNetObj_Pickup *pPickup = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));

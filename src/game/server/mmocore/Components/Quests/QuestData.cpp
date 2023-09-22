@@ -25,12 +25,12 @@ CPlayer* CQuest::GetPlayer() const
 
 CQuest::~CQuest()
 {
-	for(auto p : m_apEntityMobNavigator)
+	for(auto p : m_apEntityNPCNavigator)
 		delete p;
 	for(auto& p : m_aPlayerSteps)
 		p.second.Clear();
 
-	m_apEntityMobNavigator.clear();
+	m_apEntityNPCNavigator.clear();
 	m_aPlayerSteps.clear();
 }
 
@@ -72,6 +72,7 @@ void CQuest::InitSteps()
 						{
 							{ "id", p.m_BotID },
 							{ "count", 0 },
+							{"complete", false }
 						});
 				}
 			}
@@ -98,8 +99,12 @@ void CQuest::InitSteps()
 		if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
 		{
 			for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
-				pStep.second.m_aMobProgress[p.m_BotID] = 0;
+			{
+				pStep.second.m_aMobProgress[p.m_BotID].m_Count = 0;
+				pStep.second.m_aMobProgress[p.m_BotID].m_Complete = false;
+			}
 		}
+
 		int MoveToElementsSize = pStep.second.m_Bot.m_RequiredMoveTo.size();
 		pStep.second.m_aMoveToProgress.resize(MoveToElementsSize, false);
 
@@ -153,13 +158,19 @@ void CQuest::LoadSteps()
 		if(pStep.find("defeat") != pStep.end())
 		{
 			for(auto& p : pStep["defeat"])
-				m_aPlayerSteps[SubBotID].m_aMobProgress[p.value("id", 0)] = p.value("count", 0);
+			{
+				int ID = p.value("id", 0);
+				m_aPlayerSteps[SubBotID].m_aMobProgress[ID].m_Count = p.value("count", 0);
+				m_aPlayerSteps[SubBotID].m_aMobProgress[ID].m_Complete = p.value("complete", 0);
+			}
 		}
 
 		if(pStep.find("move_to") != pStep.end())
 		{
 			for(auto& p : pStep["move_to"])
+			{
 				m_aPlayerSteps[SubBotID].m_aMoveToProgress.push_back(p.value("complete", false));
+			}
 		}
 
 		m_aPlayerSteps[SubBotID].m_ClientQuitting = false;
@@ -197,7 +208,8 @@ bool CQuest::SaveSteps()
 				stepData["defeat"].push_back(
 					{
 						{ "id", p.first },
-						{ "count", p.second },
+						{ "count", p.second.m_Count },
+						{"complete", p.second.m_Complete }
 					});
 			}
 
@@ -335,9 +347,9 @@ void CQuest::CheckAvailableNewStep()
 	}
 }
 
-CStepPathFinder* CQuest::FoundEntityMobNavigator(int SubBotID) const
+CStepPathFinder* CQuest::FoundEntityNPCNavigator(int SubBotID) const
 {
-	for(const auto& pEnt : m_apEntityMobNavigator)
+	for(const auto& pEnt : m_apEntityNPCNavigator)
 	{
 		if(pEnt && pEnt->m_SubBotID == SubBotID)
 			return pEnt;
@@ -346,15 +358,15 @@ CStepPathFinder* CQuest::FoundEntityMobNavigator(int SubBotID) const
 	return nullptr;
 }
 
-CStepPathFinder* CQuest::AddEntityMobNavigator(QuestBotInfo* pBot)
+CStepPathFinder* CQuest::AddEntityNPCNavigator(QuestBotInfo* pBot)
 {
 	if(!pBot)
 		return nullptr;
 
-	CStepPathFinder* pPathFinder = FoundEntityMobNavigator(pBot->m_SubBotID);
+	CStepPathFinder* pPathFinder = FoundEntityNPCNavigator(pBot->m_SubBotID);
 	if(!pPathFinder)
 	{
-		pPathFinder = m_apEntityMobNavigator.emplace_back(new CStepPathFinder(&GS()->m_World, pBot->m_Position, m_ClientID, *pBot, &m_apEntityMobNavigator));
+		pPathFinder = m_apEntityNPCNavigator.emplace_back(new CStepPathFinder(&GS()->m_World, pBot->m_Position, m_ClientID, *pBot, &m_apEntityNPCNavigator));
 	}
 	return pPathFinder;
 }

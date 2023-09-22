@@ -19,6 +19,8 @@ public:
 
 	static bool IsDataBotValid(int BotID) { return (ms_aDataBot.find(BotID) != ms_aDataBot.end()); }
 	static std::map<int, DataBotInfo> ms_aDataBot;
+
+	static class MobBotInfo* FindMobByBot(int BotID);
 };
 
 /************************************************************************/

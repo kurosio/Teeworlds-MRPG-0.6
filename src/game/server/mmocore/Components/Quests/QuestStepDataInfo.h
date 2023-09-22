@@ -27,8 +27,14 @@ class CPlayerQuestStep : public CQuestStepDescription
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
 
+	struct MobProgressStatus
+	{
+		int m_Count;
+		bool m_Complete;
+	};
+
 public:
-	std::unordered_map < int /*BotID*/, int/*Count*/ > m_aMobProgress { };
+	std::unordered_map < int /*BotID*/, MobProgressStatus/*MobProgressStatus*/ > m_aMobProgress { };
 	std::deque < bool /* State */ > m_aMoveToProgress { };
 
 	int m_ClientID {};
@@ -60,7 +66,7 @@ public:
 	CEntityMoveTo* FoundEntityMoveTo(vec2 Position) const;
 	CEntityPathFinder* FoundEntityNavigator(vec2 Position) const;
 	CEntityMoveTo* AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete);
-	CEntityPathFinder* AddEntityNavigator(vec2 Position, int WorldID, bool* pComplete);
+	CEntityPathFinder* AddEntityNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete);
 };
 
 #endif

@@ -7,6 +7,21 @@ std::map< int, NpcBotInfo > NpcBotInfo::ms_aNpcBot;
 std::map< int, QuestBotInfo > QuestBotInfo::ms_aQuestBot;
 std::map< int, MobBotInfo > MobBotInfo::ms_aMobBot;
 
+
+/************************************************************************/
+/*  Global data bot                                               */
+/************************************************************************/
+MobBotInfo* DataBotInfo::FindMobByBot(int BotID)
+{
+	for(auto& p : MobBotInfo::ms_aMobBot)
+	{
+		if(p.second.m_BotID == BotID)
+			return &p.second;
+	}
+
+	return nullptr;
+}
+
 /************************************************************************/
 /*  Global data mob bot                                               */
 /************************************************************************/

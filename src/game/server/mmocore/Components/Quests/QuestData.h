@@ -13,7 +13,7 @@ class CQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map
 	int m_Step {};
 
 	std::map < int, CPlayerQuestStep > m_aPlayerSteps {};
-	std::deque < class CStepPathFinder* > m_apEntityMobNavigator{};
+	std::deque < class CStepPathFinder* > m_apEntityNPCNavigator{};
 
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
@@ -47,8 +47,8 @@ public:
 	CPlayerQuestStep* GetStepByMob(int MobID) { return &m_aPlayerSteps[MobID]; }
 
 	// steps path finder tools
-	class CStepPathFinder* FoundEntityMobNavigator(int SubBotID) const;
-	class CStepPathFinder* AddEntityMobNavigator(class QuestBotInfo* pBot);
+	class CStepPathFinder* FoundEntityNPCNavigator(int SubBotID) const;
+	class CStepPathFinder* AddEntityNPCNavigator(class QuestBotInfo* pBot);
 
 	// main
 	void CheckAvailableNewStep();
