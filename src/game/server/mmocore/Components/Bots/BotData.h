@@ -93,20 +93,13 @@ public:
 			USE_CHAT_MODE
 		};
 
-		struct DefeatMob
-		{
-			int m_BotID;
-			int m_Value;
-		};
-
 		vec2 m_Position{};
 		int m_WorldID{};
 		int m_Step{};
 		CItem m_PickupItem {};
 		CItem m_RequiredItem {};
-		DefeatMob m_DefeatMob {};
 		std::string m_aTextUseInChat{};
-		std::string m_aTextChat{};
+		std::string m_aEndText{};
 		bool m_Navigator{};
 		Types m_Type {};
 	};

@@ -59,7 +59,7 @@ void CCharacterBotAI::OnSpawnInitBotTypes()
 				}
 
 				if(!GS()->IsDungeon())
-					GS()->ChatWorldID(pMobBot->m_WorldID, "", "In your zone emerging {STR}!", pMobBot->GetName());
+					GS()->ChatWorldID(pMobBot->m_WorldID, nullptr, "In your zone emerging {STR}!", pMobBot->GetName());
 			}
 		} break;
 		case TYPE_BOT_QUEST:

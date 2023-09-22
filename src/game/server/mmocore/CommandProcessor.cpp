@@ -295,6 +295,7 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
 	pGS->Chat(ClientID, "/rules - server rules.");
 	pGS->Chat(ClientID, "/tutorial - training challenge.");
+	pGS->Chat(ClientID, "#<text> - perform an action.");
 	pGS->Chat(ClientID, "Another information see Wiki Page.");
 }
 

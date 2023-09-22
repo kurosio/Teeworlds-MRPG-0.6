@@ -74,9 +74,9 @@ void CEntityMoveTo::Tick()
 	// function by success
 	auto FuncSuccess = [this]()
 	{
-		if(!m_pTaskMoveTo->m_aTextChat.empty())
+		if(!m_pTaskMoveTo->m_aEndText.empty())
 		{
-			GS()->Chat(m_ClientID, m_pTaskMoveTo->m_aTextChat.c_str());
+			GS()->Chat(m_ClientID, m_pTaskMoveTo->m_aEndText.c_str());
 		}
 
 		(*m_pComplete) = true;

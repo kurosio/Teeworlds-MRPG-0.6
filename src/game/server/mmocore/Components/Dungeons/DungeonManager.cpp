@@ -132,7 +132,7 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 
 		pPlayer->GetTempData().m_TempAlreadyVotedDungeon = true;
 		pSearchPlayer->GetTempData().m_TempTankVotingDungeon++;
-		GS()->ChatWorldID(pPlayer->GetPlayerWorldID(), "[Dungeon]", "{STR} voted for {STR}.", Server()->ClientName(ClientID), Server()->ClientName(VoteID));
+		GS()->ChatWorldID(pPlayer->GetPlayerWorldID(), "Dungeon:", "{STR} voted for {STR}.", Server()->ClientName(ClientID), Server()->ClientName(VoteID));
 		GS()->StrongUpdateVotesForAll(pPlayer->m_CurrentVoteMenu);
 		return true;
 	}

@@ -430,7 +430,11 @@ void CGS::ChatWorldID(int WorldID, const char* Suffix, const char* pText, ...)
 		if(!pPlayer || !IsPlayerEqualWorld(i, WorldID))
 			continue;
 
-		Buffer.append(Suffix);
+		if(Suffix && Suffix[0] != '\0')
+		{
+			Buffer.append(Suffix);
+			Buffer.append(" ");
+		}
 		Server()->Localization()->Format_VL(Buffer, pPlayer->GetLanguage(), pText, VarArgs);
 
 		Msg.m_pMessage = Buffer.buffer();
@@ -882,9 +886,11 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(!str_utf8_check(pMsg->m_pMessage))
 				return;
 
-			if(pMsg->m_pMessage[0] == '/')
+			if(pMsg->m_pMessage[0] == '/') // commands
 				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
-			else
+			else if(pMsg->m_pMessage[0] == '#') // rp action
+				ChatWorldID(pPlayer->GetPlayerWorldID(), "Nearby:", "'{STR}' performed an act '{STR}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
+			else // chat
 				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
 
 			str_copy(pPlayer->m_aLastMsg, pMsg->m_pMessage, sizeof(pPlayer->m_aLastMsg));

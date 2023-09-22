@@ -98,33 +98,33 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
 				const bool Navigator = p.value("navigator", true);
-				const std::string TextChat = p.value("text", "\0").c_str();
 				TaskRequiredMoveTo::Types Type = TaskRequiredMoveTo::Types::MOVE_ONLY;
-				CItem PickUpItem {};
-				CItem RequiredItem {};
-				TaskRequiredMoveTo::DefeatMob DefeatMob {};
-				const std::string TextUseInChat = p.value("use_in_chat", "\0").c_str();
+				const std::string EndText = p.value("end_text", "\0");
 
+				// pickup item by array json
+				CItem PickUpItem {};
 				if(p.find("pick_up_item") != p.end())
 				{
 					PickUpItem = CItem::FromJSON(p["pick_up_item"]);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
+
+				// required item by array json
+				CItem RequiredItem {};
 				if(p.find("required_item") != p.end())
 				{
 					RequiredItem = CItem::FromJSON(p["required_item"]);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
-				if(p.find("defeat_mob") != p.end())
-				{
-					DefeatMob.m_BotID = p.value("id", 0);
-					DefeatMob.m_Value = p.value("value", 0);
-					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
-				}
+
+				// use text json element
+				std::string TextUseInChat = p.value("use_in_chat", "\0");
 				if(!TextUseInChat.empty())
 				{
+					TextUseInChat = std::string("#" + TextUseInChat);
 					Type = TaskRequiredMoveTo::Types::USE_CHAT_MODE;
 				}
+
 				if(Step > LatestBiggerStep)
 					LatestBiggerStep = Step;
 				if(total_size_vec2(Position) > 0.f)
@@ -135,9 +135,8 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 					Move.m_Navigator = Navigator;
 					Move.m_PickupItem = PickUpItem;
 					Move.m_RequiredItem = RequiredItem;
-					Move.m_DefeatMob = DefeatMob;
 					Move.m_Position = Position;
-					Move.m_aTextChat = TextChat;
+					Move.m_aEndText = EndText;
 					Move.m_aTextUseInChat = TextUseInChat;
 					Move.m_Type = Type;
 					m_RequiredMoveTo.push_back(Move);
