@@ -186,6 +186,7 @@ void IGameController::OnReset()
 // general
 void IGameController::Snap()
 {
+	// vanilla snap
 	CNetObj_GameInfo* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
 	if (!pGameInfoObj)
 		return;
@@ -197,11 +198,7 @@ void IGameController::Snap()
 	pGameInfoObj->m_RoundNum = 0;
 	pGameInfoObj->m_RoundCurrent = 1;
 
-	DDNetSnap();
-}
-
-void IGameController::DDNetSnap()
-{
+	// ddnet snap
 	CNetObj_GameInfoEx* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
 	if(!pGameInfoEx)
 		return;

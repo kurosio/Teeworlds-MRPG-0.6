@@ -37,3 +37,27 @@ bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 {
 	return IGameController::OnCharacterSpawn(pChr);
 }
+
+void CGameControllerTutorial::Snap()
+{
+	// vanilla snap
+	CNetObj_GameInfo* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
+	if(!pGameInfoObj)
+		return;
+
+	pGameInfoObj->m_GameFlags = m_GameFlags;
+	pGameInfoObj->m_GameStateFlags = 0;
+	pGameInfoObj->m_RoundStartTick = 0;
+	pGameInfoObj->m_WarmupTimer = 0;
+	pGameInfoObj->m_RoundNum = 0;
+	pGameInfoObj->m_RoundCurrent = 1;
+
+	// ddnet snap
+	CNetObj_GameInfoEx* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
+	if(!pGameInfoEx)
+		return;
+
+	pGameInfoEx->m_Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_EYE_WHEEL | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_PREDICT_VANILLA;
+	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE;
+	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
+}

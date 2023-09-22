@@ -9,9 +9,9 @@
 #include <game/gamecore.h>
 #include <game/layers.h>
 
-#include "gamemodes/dungeon.h"
-#include "gamemodes/main.h"
-#include "gamemodes/tutorial.h"
+#include "worldmodes/dungeon.h"
+#include "worldmodes/main.h"
+#include "worldmodes/tutorial.h"
 
 #include "mmocore/CommandProcessor.h"
 #include "mmocore/PathFinder.h"

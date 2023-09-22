@@ -14,5 +14,6 @@ public:
 	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override {}
 
 	bool OnCharacterSpawn(CCharacter* pChr) override;
+	void Snap() override;
 };
 #endif

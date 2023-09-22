@@ -63,7 +63,6 @@ public:
 
 	// general
 	virtual void Snap();
-	void DDNetSnap();
 	virtual void Tick();
 
 	bool CanSpawn(int SpawnType, vec2 *pPos, std::pair<vec2, float> LimiterSpread = std::make_pair(vec2(), -1.f)) const;

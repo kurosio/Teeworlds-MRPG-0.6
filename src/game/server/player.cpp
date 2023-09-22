@@ -4,7 +4,7 @@
 
 #include "gamecontext.h"
 #include "engine/shared/config.h"
-#include "gamemodes/dungeon.h"
+#include "worldmodes/dungeon.h"
 
 #include "mmocore/Components/Accounts/AccountManager.h"
 #include "mmocore/Components/Bots/BotManager.h"

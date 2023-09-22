@@ -5,7 +5,7 @@
 #include "gamecontext.h"
 
 #include "entities/botai/character_bot_ai.h"
-#include "gamemodes/dungeon.h"
+#include "worldmodes/dungeon.h"
 
 #include "mmocore/Components/Bots/BotManager.h"
 #include "mmocore/PathFinder.h"

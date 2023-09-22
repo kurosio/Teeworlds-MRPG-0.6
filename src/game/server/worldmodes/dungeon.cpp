@@ -145,7 +145,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		GS()->Chat(-1, "{STR} finished {STR}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
 
 		if(pBestPlayer)
-			GS()->Chat(-1, "Most Valuable {STR}. With help {VAL} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
+			GS()->Chat(-1, "Most Valuable '{STR}'. With help {VAL} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
@@ -457,13 +457,13 @@ void CGameControllerDungeon::SelectTankPlayer()
 	{
 		if(ChosenByPlayers)
 		{
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Tank is assigned to {STR} with {INT} votes!",
+			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Tank is assigned to '{STR}' with {INT} votes!",
 				Server()->ClientName(m_TankClientID), pTankPlayer->GetTempData().m_TempTankVotingDungeon);
 		}
 		else
 		{
 			const int StrengthTank = pTankPlayer->GetTypeAttributesSize(AttributeType::Tank);
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Tank {STR} assigned with class strength {VAL}p!",
+			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Tank '{STR}' assigned with class strength {VAL}p!",
 				Server()->ClientName(m_TankClientID), StrengthTank);
 		}
 	}
@@ -537,6 +537,7 @@ void CGameControllerDungeon::Tick()
 
 void CGameControllerDungeon::Snap()
 {
+	// vanilla snap
 	CNetObj_GameInfo* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
 	if(!pGameInfoObj)
 		return;
@@ -548,7 +549,14 @@ void CGameControllerDungeon::Snap()
 	pGameInfoObj->m_RoundNum = 0;
 	pGameInfoObj->m_RoundCurrent = 1;
 
-	DDNetSnap();
+	// ddnet snap
+	CNetObj_GameInfoEx* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
+	if(!pGameInfoEx)
+		return;
+
+	pGameInfoEx->m_Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_EYE_WHEEL | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_PREDICT_VANILLA;
+	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE | GAMEINFOFLAG2_HUD_HEALTH_ARMOR | GAMEINFOFLAG2_HUD_AMMO;
+	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
 }
 
 void CGameControllerDungeon::CreateLogic(int Type, int Mode, vec2 Pos, int ParseInt)
