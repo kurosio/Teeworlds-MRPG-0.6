@@ -9,8 +9,8 @@ std::map < int, CAccountTempData > CAccountTempData::ms_aPlayerTempData;
 
 CHouseData* CAccountData::GetHouse() const
 {
-	auto pHouse = std::find_if(CHouseData::Data().begin(), CHouseData::Data().end(), [this](const HouseDataPtr& p){ return p->GetAccountID() == m_UserID; });
-	return pHouse != CHouseData::Data().end() ? (*pHouse).get() : nullptr;
+	auto it = std::find_if(CHouseData::Data().begin(), CHouseData::Data().end(), [this](const auto& p) { return p->GetAccountID() == m_UserID; });
+	return it != CHouseData::Data().end() ? it->get() : nullptr;
 }
 
 bool CAccountData::HasHouse() const { return GetHouse() != nullptr; }

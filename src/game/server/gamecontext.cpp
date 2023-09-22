@@ -785,14 +785,11 @@ void CGS::OnTick()
 // Here we use functions that can have static data or functions that don't need to be called in all worlds
 void CGS::OnTickGlobal()
 {
+	// day type
 	if(m_DayEnumType != Server()->GetEnumTypeDay())
 	{
 		m_DayEnumType = Server()->GetEnumTypeDay();
-		if(m_DayEnumType == NIGHT_TYPE)
-			m_MultiplierExp = 100 + random_int() % 200;
-		else if(m_DayEnumType == MORNING_TYPE)
-			m_MultiplierExp = 100;
-
+		m_MultiplierExp = (m_DayEnumType == NIGHT_TYPE) ? 100 + random_int() % 200 : 100;
 		SendDayInfo(-1);
 	}
 
@@ -801,11 +798,11 @@ void CGS::OnTickGlobal()
 	{
 		std::deque<std::string> ChatMsg
 		{
-			{ "[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 1\", this will allow the voting menu not to close after clicking to vote." },
-			{ "[INFO] If you can't see the dialogs with NPCs, check in F1 console \"cl_motd_time\" so that the value is set." },
-			{ "[INFO] Information and data can be found in the call voting menu." },
-			{ "[INFO] The mod supports translation, you can find it in \"Call vote -> Settings -> Settings language\"." },
-			{ "[INFO] Don't know what to do? For example, try to find ways to improve your attributes, of which there are more than 25." },
+			"[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 1\", this will allow the voting menu not to close after clicking to vote.",
+			"[INFO] If you can't see the dialogs with NPCs, check in F1 console \"cl_motd_time\" so that the value is set.",
+			"[INFO] Information and data can be found in the call voting menu.",
+			"[INFO] The mod supports translation, you can find it in \"Call vote -> Settings -> Settings language\".",
+			"[INFO] Don't know what to do? For example, try to find ways to improve your attributes, of which there are more than 25."
 		};
 		Chat(-1, ChatMsg[random_int() % ChatMsg.size()].c_str());
 	}
@@ -1888,7 +1885,9 @@ void CGS::CreateDropBonuses(vec2 Pos, int Type, int Value, int NumDrop, vec2 For
 {
 	for(int i = 0; i < NumDrop; i++)
 	{
-		const vec2 Vel = Force + vec2(frandom() * 15.0f, frandom() * 15.0f);
+		vec2 Vel = Force;
+		Vel.x += frandom() * 15.0f;
+		Vel.y += frandom() * 15.0f;
 		new CDropBonuses(&m_World, Pos, Vel, Type, Value);
 	}
 }
@@ -1971,14 +1970,16 @@ void CGS::SendDayInfo(int ClientID)
 	{
 		Chat(ClientID, "Experience is now 100%");
 	}
+	else
+	{
+		Chat(ClientID, "Experience is unchanged");
+	}
 }
 
 int CGS::GetExperienceMultiplier(int Experience) const
 {
 	return IsDungeon() ? translate_to_percent_rest(Experience, g_Config.m_SvMultiplierExpRaidDungeon) : translate_to_percent_rest(Experience, m_MultiplierExp);
 }
-
-//Optimized
 
 void CGS::InitZones()
 {
@@ -2007,13 +2008,13 @@ void CGS::InitZones()
 		}
 	}
 }
-
 bool CGS::IsPlayerEqualWorld(int ClientID, int WorldID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return false;
 
-	return m_apPlayers[ClientID]->GetPlayerWorldID() == (WorldID <= -1 ? m_WorldID : WorldID);
+	int PlayerWorldID = m_apPlayers[ClientID]->GetPlayerWorldID();
+	return PlayerWorldID == (WorldID <= -1 ? m_WorldID : WorldID);
 }
 
 bool CGS::IsPlayersNearby(vec2 Pos, float Distance) const
@@ -2023,6 +2024,7 @@ bool CGS::IsPlayersNearby(vec2 Pos, float Distance) const
 		if(m_apPlayers[i] && IsPlayerEqualWorld(i) && distance(Pos, m_apPlayers[i]->m_ViewPos) <= Distance)
 			return true;
 	}
+
 	return false;
 }
 

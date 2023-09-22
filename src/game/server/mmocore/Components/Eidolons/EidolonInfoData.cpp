@@ -44,14 +44,12 @@ CEidolonInfoData::EidolonDescriptionList CEidolonInfoData::m_EidolonsInfoData =
 
 DataBotInfo* CEidolonInfoData::GetDataBot() const
 {
-	if(DataBotInfo::ms_aDataBot.find(m_DataBotID) != DataBotInfo::ms_aDataBot.end())
-		return &DataBotInfo::ms_aDataBot[m_DataBotID];
-	return nullptr;
+	auto it = DataBotInfo::ms_aDataBot.find(m_DataBotID);
+	return (it != DataBotInfo::ms_aDataBot.end()) ? &it->second : nullptr;
 }
 
 CItemDescription* CEidolonInfoData::GetItem() const
 {
-	if(CItemDescription::Data().find(m_ItemID) != CItemDescription::Data().end())
-		return &CItemDescription::Data()[m_ItemID];
-	return nullptr;
+	auto it = CItemDescription::Data().find(m_ItemID);
+	return (it != CItemDescription::Data().end()) ? &it->second : nullptr;
 }

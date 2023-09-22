@@ -6,6 +6,5 @@
 
 int CAuctionSlot::GetTaxPrice() const
 {
-	const int TaxPrice = max(1, translate_to_percent_rest(m_Price, g_Config.m_SvAuctionSlotTaxPrice));
-	return TaxPrice;
+	return max(1, translate_to_percent_rest(m_Price, g_Config.m_SvAuctionSlotTaxPrice));
 }

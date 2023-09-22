@@ -142,18 +142,18 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 bool CDungeonManager::IsDungeonWorld(int WorldID)
 {
 	return std::find_if(CDungeonData::ms_aDungeon.begin(), CDungeonData::ms_aDungeon.end(),
-	                    [WorldID](const std::pair<int, CDungeonData>& pDungeon) { return pDungeon.second.m_WorldID == WorldID; }) != CDungeonData::ms_aDungeon.end();
+		[WorldID](const std::pair<int, CDungeonData>& pDungeon) { return pDungeon.second.m_WorldID == WorldID; }) != CDungeonData::ms_aDungeon.end();
 }
 
-void CDungeonManager::SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayerDungeonRecord *pPlayerDungeonRecord)
+void CDungeonManager::SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayerDungeonRecord* pPlayerDungeonRecord)
 {
 	const int Seconds = pPlayerDungeonRecord->m_Time;
 	const float PassageHelp = pPlayerDungeonRecord->m_PassageHelp;
 
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE UserID = '%d' AND DungeonID = '%d'", pPlayer->Acc().m_UserID, DungeonID);
-	if (pRes->next())
+	if(pRes->next())
 	{
-		if (pRes->getInt("Seconds") > Seconds && pRes->getInt("PassageHelp") < PassageHelp)
+		if(pRes->getInt("Seconds") > Seconds && pRes->getInt("PassageHelp") < PassageHelp)
 			Database->Execute<DB::UPDATE>("tw_dungeons_records", "Seconds = '%d', PassageHelp = '%f' WHERE UserID = '%d' AND DungeonID = '%d'",
 				Seconds, PassageHelp, pPlayer->Acc().m_UserID, DungeonID);
 		return;
@@ -165,7 +165,7 @@ void CDungeonManager::ShowDungeonTop(CPlayer* pPlayer, int DungeonID, int HideID
 {
 	const int ClientID = pPlayer->GetCID();
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '%d' ORDER BY Seconds ASC LIMIT 5", DungeonID);
-	while (pRes->next())
+	while(pRes->next())
 	{
 		const int Rank = pRes->getRow();
 		const int UserID = pRes->getInt("UserID");
@@ -181,7 +181,7 @@ void CDungeonManager::ShowDungeonTop(CPlayer* pPlayer, int DungeonID, int HideID
 void CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 {
 	const int ClientID = pPlayer->GetCID();
-	for (const auto& dungeon : CDungeonData::ms_aDungeon)
+	for(const auto& dungeon : CDungeonData::ms_aDungeon)
 	{
 		if(dungeon.second.m_IsStory != Story)
 			continue;
@@ -218,12 +218,12 @@ void CDungeonManager::ShowTankVotingDungeon(CPlayer* pPlayer) const
 	}
 }
 
-void CDungeonManager::NotifyUnlockedDungeonsByQuest(CPlayer *pPlayer, int QuestID) const
+void CDungeonManager::NotifyUnlockedDungeonsByQuest(CPlayer* pPlayer, int QuestID) const
 {
 	const int ClientID = pPlayer->GetCID();
-	for (const auto& dungeon : CDungeonData::ms_aDungeon)
+	for(const auto& dungeon : CDungeonData::ms_aDungeon)
 	{
-		if (QuestID == dungeon.second.m_RequiredQuestID)
+		if(QuestID == dungeon.second.m_RequiredQuestID)
 			GS()->Chat(-1, "{STR} opened dungeon ({STR})!", Server()->ClientName(ClientID), dungeon.second.m_aName);
 	}
 }

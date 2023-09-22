@@ -6,12 +6,14 @@
 
 int CCraftItem::GetPrice(CPlayer* pPlayer) const
 {
-	if(!pPlayer)
-		return m_Price;
+	int Discount = 0;
 
-	int Discount = translate_to_percent_rest(m_Price, pPlayer->GetSkill(SkillCraftDiscount)->GetLevel());
-	if(pPlayer->GetItem(itTicketDiscountCraft)->IsEquipped())
-		Discount += translate_to_percent_rest(m_Price, 20);
+	if(pPlayer)
+	{
+		Discount = translate_to_percent_rest(m_Price, pPlayer->GetSkill(SkillCraftDiscount)->GetLevel());
+		if(pPlayer->GetItem(itTicketDiscountCraft)->IsEquipped())
+			Discount += translate_to_percent_rest(m_Price, 20);
+	}
 
 	return max(m_Price - Discount, 0);
 }

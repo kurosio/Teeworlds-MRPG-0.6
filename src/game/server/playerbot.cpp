@@ -10,9 +10,9 @@
 #include "mmocore/Components/Bots/BotManager.h"
 #include "mmocore/PathFinder.h"
 
-MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
+MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
-CPlayerBot::CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint)
+CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint)
 	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(SubBotID), m_BotHealth(0), m_LastPosTick(0)
 {
 	m_EidolonCID = -1;
@@ -107,11 +107,11 @@ int CPlayerBot::GetRespawnTick() const
 {
 	switch(m_BotType)
 	{
-	case TYPE_BOT_QUEST:
-	case TYPE_BOT_NPC:
-	case TYPE_BOT_EIDOLON:
+		case TYPE_BOT_QUEST:
+		case TYPE_BOT_NPC:
+		case TYPE_BOT_EIDOLON:
 		return m_aPlayerTick[Respawn];
-	default: 
+		default:
 		return m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3;
 	}
 }
@@ -287,13 +287,13 @@ void CPlayerBot::Snap(int SnappingClient)
 		return;
 
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, ID, sizeof(CNetObj_ClientInfo)));
-	if (!pClientInfo)
+	if(!pClientInfo)
 		return;
 
 	if(GetBotType() == TYPE_BOT_MOB)
 	{
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
-		
+
 		char aNameBuf[MAX_NAME_LENGTH];
 		str_format(aNameBuf, sizeof(aNameBuf), "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, clamp(PercentHP, 1, 100));
 		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
@@ -313,7 +313,7 @@ void CPlayerBot::Snap(int SnappingClient)
 	}
 
 	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, ID, sizeof(CNetObj_PlayerInfo)));
-	if (!pPlayerInfo)
+	if(!pPlayerInfo)
 		return;
 
 	const bool LocalClient = (m_ClientID == SnappingClient);
@@ -331,24 +331,17 @@ void CPlayerBot::FakeSnap()
 
 Mood CPlayerBot::GetMoodState() const
 {
-	if(GetBotType() == TYPE_BOT_MOB)
-	{
-		CCharacterBotAI *pChr = (CCharacterBotAI *)m_pCharacter;
-		if(pChr && !pChr->GetTarget()->IsEmpty())
-			return Mood::AGRESSED;
-
-		return Mood::ANGRY;
-	}
-
-	if(GetBotType() == TYPE_BOT_NPC)
+	CCharacterBotAI* pChr = (CCharacterBotAI*)m_pCharacter;
+	if(GetBotType() == TYPE_BOT_MOB && pChr && !pChr->GetTarget()->IsEmpty())
+		return Mood::AGRESSED;
+	else if(GetBotType() == TYPE_BOT_NPC)
 		return Mood::FRIENDLY;
-
-	if(GetBotType() == TYPE_BOT_EIDOLON)
+	else if(GetBotType() == TYPE_BOT_EIDOLON)
 		return Mood::FRIENDLY;
-
-	if(GetBotType() == TYPE_BOT_QUEST)
+	else if(GetBotType() == TYPE_BOT_QUEST)
 		return Mood::QUEST;
-	return Mood::NORMAL;
+	else
+		return Mood::NORMAL;
 }
 
 int CPlayerBot::GetBotLevel() const
@@ -359,10 +352,10 @@ int CPlayerBot::GetBotLevel() const
 bool CPlayerBot::IsActiveQuests(int SnapClientID) const
 {
 	CPlayer* pSnappingPlayer = GS()->m_apPlayers[SnapClientID];
-	if (SnapClientID >= MAX_PLAYERS || SnapClientID < 0 || !pSnappingPlayer)
+	if(SnapClientID >= MAX_PLAYERS || SnapClientID < 0 || !pSnappingPlayer)
 		return false;
 
-	if (m_BotType == TYPE_BOT_QUEST)
+	if(m_BotType == TYPE_BOT_QUEST)
 		return true;
 
 	if(m_BotType == TYPE_BOT_NPC)
@@ -385,9 +378,9 @@ int CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 
 const char* CPlayerBot::GetStatus() const
 {
-	if (m_BotType == TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[m_MobID].m_Boss)
+	if(m_BotType == TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[m_MobID].m_Boss)
 	{
-		if (GS()->IsDungeon())
+		if(GS()->IsDungeon())
 			return "Boss";
 		return "Raid";
 	}
@@ -402,18 +395,18 @@ const char* CPlayerBot::GetStatus() const
 	{
 		default:
 		case Mood::NORMAL:
-			return "\0";
-		case Mood::FRIENDLY: 
-			return "Friendly";
+		return "\0";
+		case Mood::FRIENDLY:
+		return "Friendly";
 		case Mood::QUEST:
 		{
 			const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 			return GS()->GetQuestInfo(QuestID)->GetName();
 		}
-		case Mood::ANGRY: 
-			return "Angry";
+		case Mood::ANGRY:
+		return "Angry";
 		case Mood::AGRESSED:
-			return "Aggressive";
+		return "Aggressive";
 	}
 }
 

@@ -36,7 +36,7 @@ void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, std::string& 
 		while((start = buffSets.find_first_not_of(delim, end)) != std::string::npos)
 		{
 			end = buffSets.find(delim, start);
-			m_Effects.push_back({ Chance, buffSets.substr(start, end - start), { Seconds, Range } });
+			m_Effects.emplace_back(Chance, buffSets.substr(start, end - start), std::make_pair(Seconds, Range));
 		}
 	}
 }
@@ -58,7 +58,8 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 
 				if(Task.m_Item.IsValid())
 				{
-					if(std::string Type = p.value("type", "default"); Type == "pickup")
+					std::string Type = p.value("type", "default");
+					if(Type == "pickup")
 						Task.m_Type = TaskRequiredItems::Type::PICKUP;
 					else if(Type == "show")
 						Task.m_Type = TaskRequiredItems::Type::SHOW;

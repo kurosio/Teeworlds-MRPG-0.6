@@ -25,7 +25,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	for(short& SortTab : m_aSortTabs)
 		SortTab = -1;
 
-	m_TutorialStep = 1;
 	m_EidolonCID = -1;
 	m_Spawned = true;
 	m_SnapHealthTick = 0;
@@ -37,6 +36,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
 	{
+		m_TutorialStep = 1;
 		m_LastVoteMenu = NOPE;
 		m_CurrentVoteMenu = MENU_MAIN;
 		m_MoodState = Mood::NORMAL;
