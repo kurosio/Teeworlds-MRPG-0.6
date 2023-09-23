@@ -18,11 +18,12 @@
 #define GREEN_COLOR vec3(15, 40, 15)
 #define LIGHT_GREEN_COLOR vec3(0, 16, 0)
 
-enum class EntLaserOrbiteType : short
+// laser orbite
+enum class EntLaserOrbiteType : unsigned char
 {
-	DEFAULT,
-	MOVE_LEFT,
-	MOVE_RIGHT,
+	DEFAULT, // Default value
+	MOVE_LEFT, // Move left value
+	MOVE_RIGHT, // Move right value
 };
 
 // mood type
@@ -37,12 +38,12 @@ enum class Mood : short
 };
 
 // jobs
-enum
+enum JobAccountStats
 {
 	JOB_LEVEL = 0,
 	JOB_EXPERIENCE = 1,
 	JOB_UPGRADES = 2,
-	NUM_JOB_ACCOUNTS_STATS,
+	NUM_JOB_ACCOUNTS_STATS
 };
 
 // player ticks
@@ -61,6 +62,7 @@ enum TickState
 	NUM_TICK,
 };
 
+// skills
 enum Skill
 {
 	SkillHeartTurret = 1,	// health recovery turret
@@ -73,13 +75,14 @@ enum Skill
 	SkillProvoke = 8, // provoke
 };
 
+// toplist types
 enum class ToplistType : int
 {
 	GUILDS_LEVELING,
 	GUILDS_WEALTHY,
 	PLAYERS_LEVELING,
 	PLAYERS_WEALTHY,
-	NUM_TOPLIST_TYPES,
+	NUM_TOPLIST_TYPES
 };
 
 // item functionals
@@ -104,6 +107,7 @@ enum ItemFunctional : int
 	NUM_FUNCTIONS,
 };
 
+// item types
 enum class ItemType : short
 {
 	TYPE_INVISIBLE = 0,
@@ -118,6 +122,7 @@ enum class ItemType : short
 	NUM_TYPES,
 };
 
+// quest state
 enum class QuestState : int
 {
 	NO_ACCEPT = 0,
@@ -125,22 +130,27 @@ enum class QuestState : int
 	FINISHED,
 };
 
+// npc functions
 enum FunctionsNPC
 {
 	FUNCTION_NPC_NURSE,
 	FUNCTION_NPC_GIVE_QUEST,
 };
 
+// menu list
 enum MenuList
 {
 	CUSTOM_MENU = -1,
 	MENU_MAIN = 1,
+
+	// Main menu options
+	MENU_EQUIPMENT,
 	MENU_INVENTORY,
 	MENU_INBOX,
 	MENU_UPGRADES,
 	MENU_SETTINGS,
-	MENU_GUIDE_GRINDING,
-	MENU_EQUIPMENT,
+
+	// Guild-related menus
 	MENU_GUILD,
 	MENU_GUILD_VIEW_PLAYERS,
 	MENU_GUILD_RANK,
@@ -149,15 +159,24 @@ enum MenuList
 	MENU_GUILD_FINDER,
 	MENU_GUILD_FINDER_VIEW_PLAYERS,
 	MENU_GUILD_HOUSE_DECORATION,
+
+	// House-related menus
 	MENU_HOUSE,
 	MENU_HOUSE_DECORATION,
 	MENU_HOUSE_PLANTS,
 	MENU_HOUSE_ACCESS_TO_DOOR,
+
+	// Eidolon Collection menus
 	MENU_EIDOLON_COLLECTION,
 	MENU_EIDOLON_COLLECTION_SELECTED,
+
+	// Journal menus
 	MENU_JOURNAL_MAIN,
 	MENU_JOURNAL_FINISHED,
 	MENU_JOURNAL_QUEST_INFORMATION,
+
+	// Other menus
+	MENU_GUIDE_GRINDING,
 	MENU_TOP_LIST,
 	MENU_DUNGEONS,
 	MENU_AUCTION_CREATE_SLOT,
@@ -279,9 +298,6 @@ enum
 	DECORATIONS_HOUSE = 0,
 	DECORATIONS_GUILD_HOUSE,
 
-	// bot dialogues
-	IS_TALKING_EMPTY = 999,
-
 	// max mails for page
 	MAILLETTER_MAX_CAPACITY = 30,
 };
@@ -321,17 +337,17 @@ private:
 	};
 };
 
-
-
+// access guild
 enum GuildAccess
 {
-	ACCESS_LEADER = -1,
-	ACCESS_NO,
-	ACCESS_INVITE_KICK,
-	ACCESS_UPGRADE_HOUSE,
-	ACCESS_FULL,
+	ACCESS_LEADER = -1,      // Leader has full control over the guild
+	ACCESS_NO,               // No access to guild functions
+	ACCESS_INVITE_KICK,      // Can invite or kick members but not upgrade the guild house
+	ACCESS_UPGRADE_HOUSE,    // Can upgrade the guild house but not invite or kick members
+	ACCESS_FULL              // Full access to all guild functions
 };
 
+// broadcast priority
 enum class BroadcastPriority
 {
 	LOWER,
@@ -344,21 +360,23 @@ enum class BroadcastPriority
 	VERY_IMPORTANT,
 };
 
+// spawn types
 enum SpawnTypes
 {
-	SPAWN_HUMAN = 0,
-	SPAWN_BOT = 1,
-	SPAWN_HUMAN_SAFE = 2,
-	SPAWN_NUM
+	SPAWN_HUMAN = 0,        // Spawn a human player
+	SPAWN_BOT = 1,          // Spawn a bot player
+	SPAWN_HUMAN_SAFE = 2,   // Spawn a human player in a safe location
+	SPAWN_NUM               // The total number of spawn types available
 };
 
+// bot types
 enum BotsTypes
 {
-	TYPE_BOT_MOB = 1,
-	TYPE_BOT_QUEST = 2,
-	TYPE_BOT_NPC = 3,
-	TYPE_BOT_FAKE = 4,
-	TYPE_BOT_EIDOLON = 5,
+	TYPE_BOT_MOB = 1,       // type for mob bots
+	TYPE_BOT_QUEST = 2,     // type for quest bots
+	TYPE_BOT_NPC = 3,       // type for NPC bots
+	TYPE_BOT_FAKE = 4,      // type for fake bots
+	TYPE_BOT_EIDOLON = 5,   // type for eidolon bots
 };
 
 enum
@@ -367,6 +385,7 @@ enum
 	SNAPBOTS = 2,
 };
 
+// save types
 enum SaveType
 {
 	SAVE_ACCOUNT,			// Save Login Password Data
@@ -379,12 +398,13 @@ enum SaveType
 	SAVE_LANGUAGE,			// Save Language Client
 };
 
+// world day types
 enum DayType
 {
-	NIGHT_TYPE = 1,
-	DAY_TYPE,
-	MORNING_TYPE,
-	EVENING_TYPE
+	NIGHT_TYPE = 0,
+	MORNING_TYPE = 1,
+	DAY_TYPE = 2,
+	EVENING_TYPE = 3
 };
 
 /*
@@ -404,66 +424,73 @@ enum CDataList
 // skin data
 struct CTeeInfo
 {
-	char m_aSkinName[64];
-	int m_UseCustomColor;
-	int m_ColorBody;
-	int m_ColorFeet;
+	char m_aSkinName[64]; // name of the skin
+	int m_UseCustomColor; // flag indicating whether custom colors are used
+	int m_ColorBody; // color value for the body part
+	int m_ColorFeet; // color value for the feet part
 };
 
-// attribute context
+// Attribute context
 enum class AttributeIdentifier : int
 {
-	SpreadShotgun = 1,
-	SpreadGrenade = 2,
-	SpreadRifle = 3,
-	DMG = 4,
-	AttackSPD = 5,
-	CritDMG = 6,
-	Crit = 7,
-	HP = 8,
-	Lucky = 9,
-	MP = 10,
-	Vampirism = 11,
-	AmmoRegen = 12,
-	Ammo = 13,
-	Efficiency = 14,
-	Extraction = 15,
-	HammerDMG = 16,
-	GunDMG = 17,
-	ShotgunDMG = 18,
-	GrenadeDMG = 19,
-	RifleDMG = 20,
-	LuckyDropItem = 21,
-	EidolonPWR = 22,
-	ATTRIBUTES_NUM,
+	SpreadShotgun = 1, // Attribute identifier for spread shotgun
+	SpreadGrenade = 2, // Attribute identifier for spread grenade
+	SpreadRifle = 3, // Attribute identifier for spread rifle
+	DMG = 4, // Attribute identifier for damage
+	AttackSPD = 5, // Attribute identifier for attack speed
+	CritDMG = 6, // Attribute identifier for critical damage
+	Crit = 7, // Attribute identifier for critical chance
+	HP = 8, // Attribute identifier for health points
+	Lucky = 9, // Attribute identifier for luck
+	MP = 10, // Attribute identifier for mana points
+	Vampirism = 11, // Attribute identifier for vampirism
+	AmmoRegen = 12, // Attribute identifier for ammo regeneration
+	Ammo = 13, // Attribute identifier for ammo
+	Efficiency = 14, // Attribute identifier for efficiency
+	Extraction = 15, // Attribute identifier for extraction
+	HammerDMG = 16, // Attribute identifier for hammer damage
+	GunDMG = 17, // Attribute identifier for gun damage
+	ShotgunDMG = 18, // Attribute identifier for shotgun damage
+	GrenadeDMG = 19, // Attribute identifier for grenade damage
+	RifleDMG = 20, // Attribute identifier for rifle damage
+	LuckyDropItem = 21, // Attribute identifier for lucky drop item
+	EidolonPWR = 22, // Attribute identifier for eidolon power
+	ATTRIBUTES_NUM, // The number of total attributes
 };
 
+// Enum class declaration for different attribute types
 enum class AttributeType : int
 {
-	Tank,
-	Healer,
-	Dps,
-	Weapon,
-	Hardtype,
-	Job,
-	Other,
+	Tank,      // Tank attribute
+	Healer,    // Healer attribute
+	Dps,       // Damage Per Second attribute
+	Weapon,    // Weapon attribute
+	Hardtype,  // Hard type attribute
+	Job,       // Job attribute
+	Other,     // Other attribute
 };
 
-// helpers
 class JsonTools
 {
 public:
+	// Define a static function called parseFromString that takes in a string Data and a callback function pFuncCallback as parameters
 	static void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
 	{
+		// Check data empty
 		if(!Data.empty())
 		{
 			try
 			{
+				// Parse the input string into a nlohmann::json object called JsonData
 				nlohmann::json JsonData = nlohmann::json::parse(Data);
+
+				// Call the callback function with JsonData as the parameter
 				pFuncCallback(JsonData);
 			}
+			// Catch any exceptions thrown during the parsing process and handle them
 			catch(nlohmann::json::exception& s)
 			{
+				// Output the error message to the debug log
 				dbg_msg("dialog error", "%s", s.what());
 			}
 		}
@@ -472,19 +499,30 @@ public:
 
 class Instance
 {
+	// Declare CServer as a friend of Instance class
 	friend class CServer;
+
+	// Declare a static member variable m_pServer as  pointer to IServer class
 	inline static class IServer* m_pServer {};
 
 public:
+	// Define a static member function GetServer that returns a pointer to IServer object
 	static IServer* GetServer() { return m_pServer; }
 };
 
+// This class is a template class that stores static data shared across multiple worlds.
+// It is intended to be inherited by other classes.
 class _StoreMultiworldIdentifiableStaticData
 {
+	// This pointer stores the instance of the server class.
+	// It is declared as inline static to allow for its initialization outside of the class.
 	inline static class IServer* m_pServer {};
 
 public:
+	// This method returns the instance of the server class.
 	class IServer* Server() const { return m_pServer; }
+
+	// This method initializes the instance of the server class.
 	static void Init(IServer* pServer) { m_pServer = pServer; }
 };
 
@@ -492,9 +530,12 @@ template < typename T >
 class MultiworldIdentifiableStaticData : public _StoreMultiworldIdentifiableStaticData
 {
 protected:
-	inline static T m_pData {};
+	// This static pointer stores the shared static data.
+	// It is declared as inline static to allow for its initialization outside of the class.
+	static inline T m_pData {};
 
 public:
+	// This method returns the shared static data.
 	static T& Data() { return m_pData; }
 };
 
