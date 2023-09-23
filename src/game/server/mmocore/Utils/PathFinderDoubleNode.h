@@ -7,6 +7,7 @@ class PathFinderDoubleNode
     bool m_initilized{};
     std::list<int>* m_adjLists{};
 
+    // Breadth-First Search Algorithm
     bool algoritmBFS(int startVertex, int endVertex, std::vector<int>& paPath) const
     {
         std::vector visited(m_numVertices, false);
@@ -52,27 +53,31 @@ class PathFinderDoubleNode
 public:
     PathFinderDoubleNode() = default;
 
-    void init(int vertices)
-    {
-        m_initilized = true;
-        m_numVertices = vertices;
-        m_adjLists = new std::list<int>[m_numVertices];
-    }
+	// initialize the graph with the given number of vertices
+	void init(int vertices)
+	{
+		m_initilized = true;
+		m_numVertices = vertices;
+		m_adjLists = new std::list<int>[m_numVertices];
+	}
 
-    void addEdge(int from, int to) const
-    {
-        m_adjLists[from].push_back(to);
-        m_adjLists[to].push_back(from);
-    }
+	// add an edge between two vertices (undirected)
+	void addEdge(int from, int to) const
+	{
+		m_adjLists[from].push_back(to);
+		m_adjLists[to].push_back(from);
+	}
 
-    std::vector<int> findPath(int startVertex, int endVertex) const
-    {
-        std::vector<int> path;
-        algoritmBFS(startVertex, endVertex, path);
-        return path;
-    }
+	// find a path from startVertex to endVertex using BFS algorithm
+	std::vector<int> findPath(int startVertex, int endVertex) const
+	{
+		std::vector<int> path;
+		algoritmBFS(startVertex, endVertex, path);
+		return path;
+	}
 
-    bool isInitilized() const { return m_initilized; }
+	// check if the graph is initialized
+	bool isInitilized() const { return m_initilized; }
 };
 
 #endif //GAME_SERVER_MMO_UTILS_TIME_PERIOD_DATA_H

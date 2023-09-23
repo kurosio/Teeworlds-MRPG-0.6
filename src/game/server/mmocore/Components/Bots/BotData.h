@@ -107,7 +107,7 @@ public:
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }
-	void InitTasks(std::string JsonData);
+	void InitTasks(const std::string& JsonData);
 
 	static std::map<int, QuestBotInfo> ms_aQuestBot;
 };

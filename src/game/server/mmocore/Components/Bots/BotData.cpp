@@ -44,21 +44,21 @@ void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, std::string& 
 /************************************************************************/
 /*  Global data quest bot                                               */
 /************************************************************************/
-void QuestBotInfo::InitTasks(std::string JsonData)
+void QuestBotInfo::InitTasks(const std::string& JsonData)
 {
-	JsonTools::parseFromString(JsonData, [&](nlohmann::json& pJson)
+	JsonTools::parseFromString(JsonData, [&](const nlohmann::json& pJson)
 	{
 		// initilize required items
-		if(pJson.find("required_items") != pJson.end())
+		if(pJson.contains("required_items"))
 		{
-			for(auto& p : pJson["required_items"])
+			for(const auto& p : pJson["required_items"])
 			{
 				TaskRequiredItems Task;
 				Task.m_Item = CItem::FromJSON(p);
 
 				if(Task.m_Item.IsValid())
 				{
-					std::string Type = p.value("type", "default");
+					const std::string Type = p.value("type", "default");
 					if(Type == "pickup")
 						Task.m_Type = TaskRequiredItems::Type::PICKUP;
 					else if(Type == "show")
@@ -75,9 +75,9 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 		m_RewardItems = CItem::FromArrayJSON(pJson, "reward_items");
 
 		// initilize defeat bots
-		if(pJson.find("defeat_bots") != pJson.end())
+		if(pJson.contains("defeat_bots"))
 		{
-			for(auto& p : pJson["defeat_bots"])
+			for(const auto& p : pJson["defeat_bots"])
 			{
 				const int BotID = p.value("id", -1);
 				const int Value = p.value("value", -1);
@@ -88,22 +88,22 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 			}
 		}
 
-		// Optimized
-		if(pJson.find("move_to") != pJson.end())
+		// initilize move to points
+		if(pJson.contains("move_to"))
 		{
 			int LatestBiggerStep = 1;
-			for(auto& p : pJson["move_to"])
+			for(const auto& p : pJson["move_to"])
 			{
 				const vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
 				const bool Navigator = p.value("navigator", true);
 				TaskRequiredMoveTo::Types Type = TaskRequiredMoveTo::Types::MOVE_ONLY;
-				const std::string EndText = p.value("end_text", "\0");
+				const std::string EndText = p.value("end_text", "");
 
 				// pickup item by array json
 				CItem PickUpItem {};
-				if(p.find("pick_up_item") != p.end())
+				if(p.contains("pick_up_item"))
 				{
 					PickUpItem = CItem::FromJSON(p["pick_up_item"]);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
@@ -111,17 +111,17 @@ void QuestBotInfo::InitTasks(std::string JsonData)
 
 				// required item by array json
 				CItem RequiredItem {};
-				if(p.find("required_item") != p.end())
+				if(p.contains("required_item"))
 				{
 					RequiredItem = CItem::FromJSON(p["required_item"]);
 					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
 				}
 
 				// use text json element
-				std::string TextUseInChat = p.value("use_in_chat", "\0");
+				std::string TextUseInChat = p.value("use_in_chat", "");
 				if(!TextUseInChat.empty())
 				{
-					TextUseInChat = std::string("#" + TextUseInChat);
+					TextUseInChat = "#" + TextUseInChat;
 					Type = TaskRequiredMoveTo::Types::USE_CHAT_MODE;
 				}
 
