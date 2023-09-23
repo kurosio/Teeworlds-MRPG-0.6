@@ -90,14 +90,37 @@ void CEntityMoveTo::Tick()
 	if((Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE && PressedFire())
 		|| (Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE && m_pTaskMoveTo->m_aTextUseInChat == m_pPlayer->m_aLastMsg))
 	{
+		QuestBotInfo::TaskRequiredMoveTo TaskData = *m_pTaskMoveTo;
+
 		// clear last msg for correct check required item TODO: FIX (don't clear last msg)
 		m_pPlayer->m_aLastMsg[0] = '\0';
 
-		// first required item
-		if(m_pTaskMoveTo->m_RequiredItem.IsValid())
+		// check complete quest step
+		if(TaskData.m_FinishQuestStepByEnd)
 		{
-			ItemIdentifier ItemID = m_pTaskMoveTo->m_RequiredItem.GetID();
-			int RequiredValue = m_pTaskMoveTo->m_RequiredItem.GetValue();
+			(*m_pComplete) = true; // for correct try finish quest step
+
+			if(!m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->IsComplete())
+			{
+				// quest step task information
+				char aBufQuestTask[256] {};
+				GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
+				str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
+				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
+				GS()->Chat(m_ClientID, "The tasks haven't been completed yet!");
+
+				(*m_pComplete) = false; // for correct try finish quest step
+				return;
+			}
+
+			(*m_pComplete) = false; // for correct try finish quest step
+		}
+
+		// first required item
+		if(TaskData.m_RequiredItem.IsValid())
+		{
+			ItemIdentifier ItemID = TaskData.m_RequiredItem.GetID();
+			int RequiredValue = TaskData.m_RequiredItem.GetValue();
 
 			// check required value
 			if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
@@ -109,10 +132,10 @@ void CEntityMoveTo::Tick()
 		}
 
 		// secound pickup item
-		if(m_pTaskMoveTo->m_PickupItem.IsValid())
+		if(TaskData.m_PickupItem.IsValid())
 		{
-			ItemIdentifier ItemID = m_pTaskMoveTo->m_PickupItem.GetID();
-			int PickupValue = m_pTaskMoveTo->m_PickupItem.GetValue();
+			ItemIdentifier ItemID = TaskData.m_PickupItem.GetID();
+			int PickupValue = TaskData.m_PickupItem.GetValue();
 			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
 
 			GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
@@ -121,16 +144,46 @@ void CEntityMoveTo::Tick()
 
 		// finish success
 		FuncSuccess();
+
+		// finish quest step
+		if(TaskData.m_FinishQuestStepByEnd)
+		{
+			m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->Finish();
+		}
 		return;
 	}
 
 	// only move it
 	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::MOVE_ONLY)
 	{
+		QuestBotInfo::TaskRequiredMoveTo TaskData = *m_pTaskMoveTo;
+
+		// try finish step with finish quest step by end
+		if(TaskData.m_FinishQuestStepByEnd)
+		{
+			(*m_pComplete) = true; // for correct try finish quest step
+
+			if(!m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->Finish())
+			{
+				// quest step task information
+				char aBufQuestTask[256] {};
+				GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
+				str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
+				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
+				GS()->Chat(m_ClientID, "The tasks haven't been completed yet!");
+
+				(*m_pComplete) = false; // for correct try finish quest step
+				return;
+			}
+
+			(*m_pComplete) = false; // for correct try finish quest step
+		}
+
 		// finish success
 		FuncSuccess();
 		return;
 	}
+
 
 	// handle broadcast
 	HandleBroadcastInformation();
@@ -165,7 +218,7 @@ void CEntityMoveTo::HandleBroadcastInformation() const
 	// select by type
 	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Open the chat and enter the text\n(without the brackets)\n'{STR}'\n{STR}", m_pTaskMoveTo->m_aTextUseInChat.c_str(), Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Perform the action by writing to the chat '{STR}'\n{STR}", m_pTaskMoveTo->m_aTextUseInChat.c_str(), Buffer.buffer());
 	}
 	else if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE)
 	{

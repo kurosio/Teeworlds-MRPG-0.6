@@ -11,7 +11,7 @@
 	{"type": 6, "info": "Move to the right side.", "posX": 28420, "posY": 2017 },
 	{"type": 8, "info": "Press TAB. Look at the list of players.", "integer": 8 },
 	{"type": 8, "info": "Using ESC. Open the menu.", "integer": 2 },
-	{"type": 9, "info": "Select the 'Call vote' tab.\nAfter select tab 'Settings' from the menu.\n\nThere you can find the basic settings of the player.\nAnd also the setting of modules on the character", "integer": 5 },
+	{"type": 9, "info": "Select the 'Call vote' tab.\nAfter select tab 'Settings' from the menu.\n\nThere you can find the basic settings of the player.\nAnd also the setting of modules on the character", "integer": 6 },
 	{"type": 9, "info": "Press 'Backpage'. To go back to the menu selection.", "integer": 1 },
 	{"type": 11, "info": "Talk to an NPC. And complete your first quest!\n\nUse 'Hammer Fire' - to start a dialog.\nUse 'F4 (Vote NO)' - to communicate during a dialog.", "integer": 1 }
 ] 

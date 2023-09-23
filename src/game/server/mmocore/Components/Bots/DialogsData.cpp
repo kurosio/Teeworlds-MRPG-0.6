@@ -459,15 +459,8 @@ void CPlayerDialog::PostNext()
 
 void CPlayerDialog::Clear()
 {
-	// clear var
-	m_Step = 0;
-	m_BotCID = -1;
-	m_BotType = -1;
-	m_MobID = -1;
-	ClearText();
-
 	// send information packet about clear
-	if(m_pPlayer)
+	if(m_pPlayer && m_BotCID != -1)
 	{
 		int ClientID = m_pPlayer->GetCID();
 		if(GS()->IsClientMRPG(ClientID))
@@ -480,6 +473,13 @@ void CPlayerDialog::Clear()
 		else
 			GS()->Motd(ClientID, "\0");
 	}
+
+	// clear var
+	m_Step = 0;
+	m_BotCID = -1;
+	m_BotType = -1;
+	m_MobID = -1;
+	ClearText();
 }
 
 void CPlayerDialog::DialogEvents() const

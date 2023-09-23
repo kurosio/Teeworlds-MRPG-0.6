@@ -101,7 +101,9 @@ public:
 		std::string m_aTextUseInChat{};
 		std::string m_aEndText{};
 		bool m_Navigator{};
+		bool m_FinishQuestStepByEnd{};
 		Types m_Type {};
+		int m_QuestBotID {};
 	};
 	std::deque < TaskRequiredMoveTo > m_RequiredMoveTo;
 
