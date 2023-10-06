@@ -13,7 +13,7 @@
 #include <game/server/mmocore/Components/Accounts/AccountManager.h>
 #include <game/server/mmocore/Components/Dungeons/DungeonManager.h>
 
-CGameControllerDungeon::CGameControllerDungeon(class CGS *pGS) : IGameController(pGS)
+CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS) : IGameController(pGS)
 {
 	m_GameFlags = 0;
 	m_DungeonID = GS()->GetDungeonID();
@@ -29,7 +29,7 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS *pGS) : IGameController
 
 	// key door construction
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_door", "WHERE DungeonID = '%d'", m_DungeonID);
-	while (pRes->next())
+	while(pRes->next())
 	{
 		const int DungeonBotID = pRes->getInt("BotID");
 		DoorPosition = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
@@ -39,7 +39,7 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS *pGS) : IGameController
 
 void CGameControllerDungeon::KillAllPlayers() const
 {
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CCharacter* pCharacter = GS()->GetPlayerChar(i);
 		if(pCharacter && GS()->IsPlayerEqualWorld(i, m_WorldID))
@@ -54,7 +54,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used when changing state to waiting
-	if (State == DUNGEON_WAITING)
+	if(State == DUNGEON_WAITING)
 	{
 		m_MaximumTick = 0;
 		m_FinishedTick = 0;
@@ -71,7 +71,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used when changing state to waiting start
-	else if (State == DUNGEON_WAITING_START)
+	else if(State == DUNGEON_WAITING_START)
 	{
 		m_SyncDungeon = GetSyncFactor();
 		m_StartingTick = Server()->TickSpeed() * g_Config.m_SvTimeWaitingsDungeon;
@@ -81,7 +81,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used when changing state to start
-	else if (State == DUNGEON_STARTED)
+	else if(State == DUNGEON_STARTED)
 	{
 		SelectTankPlayer();
 
@@ -99,7 +99,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used when changing state to waiting finish
-	else if (State == DUNGEON_WAITING_FINISH)
+	else if(State == DUNGEON_WAITING_FINISH)
 	{
 		m_SafeTick = 0;
 		m_FinishedTick = Server()->TickSpeed() * 20;
@@ -111,10 +111,10 @@ void CGameControllerDungeon::ChangeState(int State)
 		int BestPassageHelp = 0;
 		CPlayer* pBestPlayer = nullptr;
 
-		for (int i = 0; i < MAX_PLAYERS; i++)
+		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->m_apPlayers[i];
-			if (!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
+			if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 				continue;
 
 			// update finish time int sec
@@ -150,7 +150,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used when changing state to finished
-	else if (State == DUNGEON_FINISHED)
+	else if(State == DUNGEON_FINISHED)
 	{
 		SetMobsSpawn(false);
 		KillAllPlayers();
@@ -167,22 +167,22 @@ void CGameControllerDungeon::StateTick()
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// dungeon
-	if (Players < 1 && m_StateDungeon != DUNGEON_WAITING)
+	if(Players < 1 && m_StateDungeon != DUNGEON_WAITING)
 		ChangeState(DUNGEON_WAITING);
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used in tick when waiting
-	if (m_StateDungeon == DUNGEON_WAITING)
+	if(m_StateDungeon == DUNGEON_WAITING)
 	{
-		if (Players >= 1)
+		if(Players >= 1)
 			ChangeState(DUNGEON_WAITING_START);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used in the tick when the waiting started
-	else if (m_StateDungeon == DUNGEON_WAITING_START)
+	else if(m_StateDungeon == DUNGEON_WAITING_START)
 	{
-		if (m_StartingTick)
+		if(m_StartingTick)
 		{
 			// the ability to start prematurely on readiness
 			const int PlayersReadyState = PlayersReady();
@@ -214,36 +214,36 @@ void CGameControllerDungeon::StateTick()
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used in tick when dunegon is started
-	else if (m_StateDungeon == DUNGEON_STARTED)
+	else if(m_StateDungeon == DUNGEON_STARTED)
 	{
 		// update players time
-		for (int i = 0; i < MAX_PLAYERS; i++)
+		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->m_apPlayers[i];
-			if (!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
+			if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 				continue;
 
 			pPlayer->GetTempData().m_TempTimeDungeon++;
 		}
 
 		// security tick during which time the player will not return to the old world
-		if (m_SafeTick)
+		if(m_SafeTick)
 		{
 			m_SafeTick--;
-			if (!m_SafeTick)
+			if(!m_SafeTick)
 				GS()->ChatWorldID(m_WorldID, "Dungeon:", "The security timer is over, be careful!");
 		}
 
 		// finish the dungeon when the dungeon is successfully completed
-		if (LeftMobsToWin() <= 0)
+		if(LeftMobsToWin() <= 0)
 			ChangeState(DUNGEON_WAITING_FINISH);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used in the tick when the waiting is finished
-	else if (m_StateDungeon == DUNGEON_WAITING_FINISH)
+	else if(m_StateDungeon == DUNGEON_WAITING_FINISH)
 	{
-		if (m_FinishedTick)
+		if(m_FinishedTick)
 		{
 			const int Time = m_FinishedTick / Server()->TickSpeed();
 			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon ended {INT} sec!", Time);
@@ -251,7 +251,7 @@ void CGameControllerDungeon::StateTick()
 			m_FinishedTick--;
 		}
 
-		if (!m_FinishedTick)
+		if(!m_FinishedTick)
 			ChangeState(DUNGEON_FINISHED);
 	}
 }
@@ -266,7 +266,7 @@ void CGameControllerDungeon::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int
 	 */
 
 	// if it's tank passage get how got size damage
-	if(pFrom->IsBot() && pTo->m_MoodState ==  Mood::TANK)
+	if(pFrom->IsBot() && pTo->m_MoodState == Mood::TANK)
 	{
 		const int ClientID = pTo->GetCID();
 		m_Records[ClientID].m_PassageHelp += Damage;
@@ -342,17 +342,17 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 
 void CGameControllerDungeon::UpdateDoorKeyState()
 {
-	for (CLogicDungeonDoorKey* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
+	for(CLogicDungeonDoorKey* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
 		pDoor; pDoor = (CLogicDungeonDoorKey*)pDoor->TypeNext())
 	{
-		if (pDoor->SyncStateChanges())
+		if(pDoor->SyncStateChanges())
 			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Door creaking.. Opened door somewhere!");
 	}
 }
 
 void CGameControllerDungeon::ResetDoorKeyState()
 {
-	for (CLogicDungeonDoorKey* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
+	for(CLogicDungeonDoorKey* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
 		pDoor; pDoor = (CLogicDungeonDoorKey*)pDoor->TypeNext())
 		pDoor->ResetDoor();
 }
@@ -360,10 +360,10 @@ void CGameControllerDungeon::ResetDoorKeyState()
 int CGameControllerDungeon::CountMobs() const
 {
 	int CountMobs = 0;
-	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if (BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
+		if(BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
 			CountMobs++;
 	}
 	return CountMobs;
@@ -384,7 +384,7 @@ int CGameControllerDungeon::PlayersReady() const
 int CGameControllerDungeon::PlayersNum() const
 {
 	int ActivePlayers = 0;
-	for (int i = 0; i < MAX_PLAYERS; i++)
+	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(Server()->GetClientWorldID(i) == m_WorldID)
 			ActivePlayers++;
@@ -395,10 +395,10 @@ int CGameControllerDungeon::PlayersNum() const
 int CGameControllerDungeon::LeftMobsToWin() const
 {
 	int LeftMobs = 0;
-	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if (BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && BotPlayer->GetCharacter() && m_WorldID == BotPlayer->GetPlayerWorldID())
+		if(BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && BotPlayer->GetCharacter() && m_WorldID == BotPlayer->GetPlayerWorldID())
 			LeftMobs++;
 	}
 	return LeftMobs;
@@ -406,10 +406,10 @@ int CGameControllerDungeon::LeftMobsToWin() const
 
 void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 {
-	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if (BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
+		if(BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
 		{
 			BotPlayer->SetDungeonAllowedSpawn(AllowedSpawn);
 			if(!AllowedSpawn && BotPlayer->GetCharacter())
@@ -474,16 +474,25 @@ int CGameControllerDungeon::GetSyncFactor() const
 {
 	int MaxFactor = 0;
 	int MinFactor = std::numeric_limits<int>::max();
+	int BotCount = 0;
+
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		CPlayerBot* pBotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if(!pBotPlayer || pBotPlayer->GetBotType() != TYPE_BOT_MOB || pBotPlayer->GetPlayerWorldID() != m_WorldID)
-			continue;
-
-		const int LevelDisciple = pBotPlayer->GetAttributesSize();
-		MinFactor = min(MinFactor, LevelDisciple);
-		MaxFactor = max(MaxFactor, LevelDisciple);
+		if(pBotPlayer && pBotPlayer->GetBotType() == TYPE_BOT_MOB && pBotPlayer->GetPlayerWorldID() == m_WorldID)
+		{
+			const int LevelDisciple = pBotPlayer->GetAttributesSize();
+			MinFactor = min(MinFactor, LevelDisciple);
+			MaxFactor = max(MaxFactor, LevelDisciple);
+			BotCount++;
+		}
 	}
+
+	if(BotCount == 0)
+	{
+		return 0; // No bot's, return default value
+	}
+
 	return (MaxFactor + MinFactor) / 2;
 }
 
@@ -524,10 +533,10 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeI
 
 void CGameControllerDungeon::Tick()
 {
-	if (m_MaximumTick)
+	if(m_MaximumTick)
 	{
 		m_MaximumTick--;
-		if (!m_MaximumTick)
+		if(!m_MaximumTick)
 			ChangeState(DUNGEON_FINISHED);
 	}
 
@@ -579,8 +588,8 @@ bool CGameControllerDungeon::OnEntity(int Index, vec2 Pos)
 	return false;
 }
 
-DungeonDoor::DungeonDoor(CGameWorld *pGameWorld, vec2 Pos)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_DOOR, Pos)
+DungeonDoor::DungeonDoor(CGameWorld* pGameWorld, vec2 Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_DOOR, Pos)
 {
 	m_PosTo = GS()->Collision()->FindDirCollision(100, m_PosTo, 'y', '-');
 	m_Pos.y += 30;
@@ -591,10 +600,10 @@ DungeonDoor::DungeonDoor(CGameWorld *pGameWorld, vec2 Pos)
 
 void DungeonDoor::Tick()
 {
-	if (m_State >= DUNGEON_STARTED)
+	if(m_State >= DUNGEON_STARTED)
 		return;
 
-	for(CCharacter *pChar = (CCharacter*) GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter *)pChar->TypeNext())
+	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
 		vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
 		float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
@@ -608,16 +617,16 @@ void DungeonDoor::Tick()
 
 void DungeonDoor::Snap(int SnappingClient)
 {
-	if (m_State >= DUNGEON_STARTED || NetworkClipped(SnappingClient))
+	if(m_State >= DUNGEON_STARTED || NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
-	if (!pObj)
+	CNetObj_Laser* pObj = static_cast<CNetObj_Laser*>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
+	if(!pObj)
 		return;
 
 	pObj->m_X = int(m_Pos.x);
 	pObj->m_Y = int(m_Pos.y);
 	pObj->m_FromX = int(m_PosTo.x);
 	pObj->m_FromY = int(m_PosTo.y);
-	pObj->m_StartTick = Server()->Tick()-2;
+	pObj->m_StartTick = Server()->Tick() - 2;
 }

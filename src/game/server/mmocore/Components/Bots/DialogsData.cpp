@@ -393,10 +393,10 @@ void CPlayerDialog::Next()
 			}
 
 			GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
-		}
 
-		// run event
-		DialogEvents();
+			// run event complete task
+			DialogEvents(DIALOGEVENTCUR::ON_COMPLETE_TASK);
+		}
 	}
 
 	// next step
@@ -425,10 +425,10 @@ void CPlayerDialog::PostNext()
 			RunEndDialogEvent = m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish();
 		}
 
-		// clear and run post events
+		// clear and run end event
 		if(RunEndDialogEvent)
 		{
-			EndDialogEvents();
+			DialogEvents(DIALOGEVENTCUR::ON_END);
 		}
 		Clear();
 		return;
@@ -482,66 +482,82 @@ void CPlayerDialog::Clear()
 	ClearText();
 }
 
-void CPlayerDialog::DialogEvents() const
+void CPlayerDialog::DialogEvents(DIALOGEVENTCUR Pos) const
 {
 	std::string EventData {};
 	if(m_BotType == TYPE_BOT_QUEST)
-		EventData = QuestBotInfo::ms_aQuestBot[m_MobID].m_EventJsonData;
-
-	JsonTools::parseFromString(EventData, [this](nlohmann::json& pJson)
 	{
-		// Information event
-		int ClientID = m_pPlayer->GetCID();
-		if(pJson.find("chat") != pJson.end())
+		EventData = QuestBotInfo::ms_aQuestBot[m_MobID].m_EventJsonData;
+	}
+
+	JsonTools::parseFromString(EventData, [Pos, this](nlohmann::json& pJson)
+	{
+		const char* pElem = nullptr;
+		switch(Pos)
 		{
-			for(auto& p : pJson["chat"])
+			case DIALOGEVENTCUR::ON_RECIEVE_TASK: pElem = "on_recieve_task"; break;
+			case DIALOGEVENTCUR::ON_COMPLETE_TASK: pElem = "on_complete_task"; break;
+			default: pElem = "on_end"; break;
+		}
+
+		const auto& pEventObjectJson = pJson[pElem];
+		const int ClientID = m_pPlayer->GetCID();
+
+		// messages array
+		if(pEventObjectJson.contains("messages"))
+		{
+			const auto& pChatArrayJson = pEventObjectJson["messages"];
+
+			std::string Text;
+			for(const auto& p : pChatArrayJson)
 			{
-				std::string Text = p.value("text", "\0");
-				if(p.find("broadcast") != p.end() && p.value("broadcast", 0))
+				Text = p.value("text", "\0");
+
+				// broadcast type
+				if(p.contains("broadcast") && p.value("broadcast", false))
+				{
 					GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 300, Text.c_str());
-				else
+				}
+				else // chat type
+				{
 					GS()->Chat(ClientID, Text.c_str());
+				}
 			}
 		}
 
-		// Effect event
-		if(pJson.find("effect") != pJson.end())
+		// effect object
+		if(pEventObjectJson.contains("effect"))
 		{
-			auto pEffect = pJson["effect"];
-			std::string Effect = pEffect.value("name", "\0");
-			int Seconds = pEffect.value("seconds", 0);
+			const auto& pEffectObjectJson = pEventObjectJson["effect"];
 
+			std::string Effect = pEffectObjectJson.value("name", "\0");
+			int Seconds = pEffectObjectJson.value("seconds", 0);
 			if(!Effect.empty())
-				m_pPlayer->GiveEffect(Effect.c_str(), Seconds);
-		}
-	});
-}
-
-void CPlayerDialog::EndDialogEvents() const
-{
-	std::string EventData {};
-	if(m_BotType == TYPE_BOT_QUEST)
-		EventData = QuestBotInfo::ms_aQuestBot[m_MobID].m_EventJsonData;
-
-	// post event
-	JsonTools::parseFromString(EventData, [this](nlohmann::json& pJson)
-	{
-		// Teleport event
-		if(pJson.find("teleport") != pJson.end())
-		{
-			auto pTeleport = pJson["teleport"];
-			vec2 Position(pTeleport.value("x", -1.0f), pTeleport.value("y", -1.0f));
-
-			// change world
-			if(pTeleport.find("world_id") != pTeleport.end() && m_pPlayer->GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
 			{
-				m_pPlayer->GetTempData().m_TempTeleportPos = Position;
-				m_pPlayer->ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID));
-				return;
+				m_pPlayer->GiveEffect(Effect.c_str(), Seconds);
 			}
+		}
 
-			// or change position only
-			m_pPlayer->GetCharacter()->ChangePosition(Position);
+		// only by end
+		if(Pos == DIALOGEVENTCUR::ON_END)
+		{
+			// teleport object
+			if(pEventObjectJson.contains("teleport"))
+			{
+				const auto& pTeleport = pEventObjectJson["teleport"];
+				vec2 Position(pTeleport.value("x", -1.0f), pTeleport.value("y", -1.0f));
+
+				// change world
+				if(pTeleport.find("world_id") != pTeleport.end() && m_pPlayer->GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
+				{
+					m_pPlayer->GetTempData().m_TempTeleportPos = Position;
+					m_pPlayer->ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID));
+					return;
+				}
+
+				// or change position only
+				m_pPlayer->GetCharacter()->ChangePosition(Position);
+			}
 		}
 	});
 }
@@ -561,6 +577,9 @@ void CPlayerDialog::ShowCurrentDialog() const
 		{
 			pStep->m_TaskListReceived = true;
 			pStep->UpdateTaskMoveTo();
+
+			// run event recieve task
+			DialogEvents(DIALOGEVENTCUR::ON_RECIEVE_TASK);
 		}
 	}
 

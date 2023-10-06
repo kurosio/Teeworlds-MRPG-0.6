@@ -31,8 +31,8 @@ private:
 	void ClearText();
 
 	class CDialogElem* GetCurrent() const;
-	void DialogEvents() const;
-	void EndDialogEvents() const;
+	enum class DIALOGEVENTCUR { ON_RECIEVE_TASK, ON_COMPLETE_TASK, ON_END };
+	void DialogEvents(DIALOGEVENTCUR Pos) const;
 	void ShowCurrentDialog() const;
 	void PostNext();
 	void Clear();
