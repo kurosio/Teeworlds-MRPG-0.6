@@ -230,7 +230,7 @@ void CEntityMoveTo::HandleBroadcastInformation() const
 	// select by type
 	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Perform the action by writing to the chat '{STR}'\n{STR}", m_pTaskMoveTo->m_aTextUseInChat.c_str(), Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Send to the chat '{STR}'\n{STR}", m_pTaskMoveTo->m_aTextUseInChat.c_str(), Buffer.buffer());
 	}
 	else if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE)
 	{
