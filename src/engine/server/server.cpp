@@ -44,7 +44,6 @@ void CServer::CClient::Reset()
 	m_LastAckedSnapshot = -1;
 	m_LastInputTick = -1;
 	m_SnapRate = SNAPRATE_INIT;
-	m_Score = 0;
 	m_NextMapChunk = 0;
 }
 
@@ -772,6 +771,7 @@ int CServer::NewClientNoAuthCallback(int ClientID, void* pUser)
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
 	pThis->m_aClients[ClientID].m_aClan[0] = 0;
 	pThis->m_aClients[ClientID].m_Country = -1;
+	pThis->m_aClients[ClientID].m_Score = 0;
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
@@ -798,6 +798,7 @@ int CServer::NewClientCallback(int ClientID, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
 	pThis->m_aClients[ClientID].m_aClan[0] = 0;
 	pThis->m_aClients[ClientID].m_Country = -1;
+	pThis->m_aClients[ClientID].m_Score = 0;
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
@@ -1117,7 +1118,11 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				m_aClients[ClientID].m_State = CClient::STATE_READY;
 				SendConnectionReady(ClientID);
 				SendCapabilities(ClientID);
-				ExpireServerInfo();
+
+				if(!m_aClients[ClientID].m_IsChangesWorld)
+				{
+					ExpireServerInfo();
+				}
 			}
 		}
 		else if(MsgID == NETMSG_ENTERGAME)
@@ -1138,6 +1143,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 
 				m_aClients[ClientID].m_State = CClient::STATE_INGAME;
 				GameServer(WorldID)->OnClientEnter(ClientID);
+
 				ExpireServerInfo();
 			}
 		}

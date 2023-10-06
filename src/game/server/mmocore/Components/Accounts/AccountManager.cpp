@@ -129,6 +129,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char *Login,
 		pPlayer->Acc().m_Upgrade = pResAccount->getInt("Upgrade");
 		pPlayer->Acc().m_GuildRank = pResAccount->getInt("GuildRank");
 		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
+		Server()->SetClientScore(ClientID, pPlayer->Acc().m_Level);
 
 		//pPlayer->Acc().SetHouse(CHouseManager::GetHouseByAccountID(UserID));
 

@@ -1138,7 +1138,10 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			CNetMsg_Sv_ReadyToEnter m;
 			Server()->SendPackMsg(&m, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
 
-			Server()->ExpireServerInfo();
+			if(!pPlayer->IsAuthed())
+			{
+				Server()->ExpireServerInfo();
+			}
 		}
 	}
 }
