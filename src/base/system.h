@@ -955,7 +955,7 @@ void str_copy(char *dst, const char *src, int dst_size);
 
 
 void str_append_num(char* dst, const char* src, int dst_size, int num);
-int str_replace(char* line, const char* search, const char* replace);
+void str_replace(char* str, const char* from, const char* to);
 
 /*
 	Function: str_truncate
