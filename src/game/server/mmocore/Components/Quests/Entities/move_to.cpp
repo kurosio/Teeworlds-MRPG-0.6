@@ -10,11 +10,13 @@
 constexpr float s_Radius = 32.0f;
 constexpr unsigned int s_Particles = 4;
 
-CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool* pComplete, std::deque < CEntityMoveTo* >* apCollection)
+CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool* pComplete, 
+	std::deque < CEntityMoveTo* >* apCollection, bool IsCompletesStep)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, pTaskMoveTo->m_Position), m_QuestID(QuestID), m_ClientID(ClientID), m_pTaskMoveTo(pTaskMoveTo)
 {
 	m_pComplete = pComplete;
 	m_apCollection = apCollection;
+	m_CompletesStep = IsCompletesStep;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	GameWorld()->InsertEntity(this);
 
@@ -26,7 +28,9 @@ CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskReq
 CEntityMoveTo::~CEntityMoveTo()
 {
 	if(m_pPlayer && m_pPlayer->GetCharacter())
+	{
 		GS()->Mmo()->Quest()->UpdateSteps(m_pPlayer);
+	}
 
 	if(m_apCollection && !m_apCollection->empty())
 	{
@@ -74,6 +78,7 @@ void CEntityMoveTo::Tick()
 	// function by success
 	auto FuncSuccess = [this]()
 	{
+		// send chat text by end step
 		if(!m_pTaskMoveTo->m_aEndText.empty())
 		{
 			GS()->Chat(m_ClientID, m_pTaskMoveTo->m_aEndText.c_str());
@@ -84,6 +89,11 @@ void CEntityMoveTo::Tick()
 		GS()->CreateDeath(m_Pos, m_ClientID);
 		GameWorld()->DestroyEntity(this);
 	};
+
+	// is last element
+	const bool IsActiveCompletesQuestStep =
+		(m_CompletesStep ? std::count_if(m_apCollection->begin(), m_apCollection->end(), [&](const CEntityMoveTo* p)
+		{ return p->GetQuestID() == m_QuestID; }) == 1 : false);
 
 	// interact by text or press fire
 	QuestBotInfo::TaskRequiredMoveTo::Types Type = m_pTaskMoveTo->m_Type;
@@ -96,7 +106,7 @@ void CEntityMoveTo::Tick()
 		m_pPlayer->m_aLastMsg[0] = '\0';
 
 		// check complete quest step
-		if(TaskData.m_FinishQuestStepByEnd)
+		if(IsActiveCompletesQuestStep)
 		{
 			(*m_pComplete) = true; // for correct try finish quest step
 
@@ -116,37 +126,39 @@ void CEntityMoveTo::Tick()
 			(*m_pComplete) = false; // for correct try finish quest step
 		}
 
-		// first required item
-		if(TaskData.m_RequiredItem.IsValid())
 		{
-			ItemIdentifier ItemID = TaskData.m_RequiredItem.GetID();
-			int RequiredValue = TaskData.m_RequiredItem.GetValue();
+			// first required item
+			if(TaskData.m_RequiredItem.IsValid())
+			{
+				ItemIdentifier ItemID = TaskData.m_RequiredItem.GetID();
+				int RequiredValue = TaskData.m_RequiredItem.GetValue();
 
-			// check required value
-			if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
-				return;
+				// check required value
+				if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
+					return;
 
-			// remove item
-			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
-			GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pPlayerItem->Info()->GetName(), RequiredValue);
+				// remove item
+				CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+				GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pPlayerItem->Info()->GetName(), RequiredValue);
+			}
+
+			// secound pickup item
+			if(TaskData.m_PickupItem.IsValid())
+			{
+				ItemIdentifier ItemID = TaskData.m_PickupItem.GetID();
+				int PickupValue = TaskData.m_PickupItem.GetValue();
+				CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+
+				GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
+				pPlayerItem->Add(PickupValue);
+			}
+
+			// finish success
+			FuncSuccess();
 		}
-
-		// secound pickup item
-		if(TaskData.m_PickupItem.IsValid())
-		{
-			ItemIdentifier ItemID = TaskData.m_PickupItem.GetID();
-			int PickupValue = TaskData.m_PickupItem.GetValue();
-			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
-
-			GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
-			pPlayerItem->Add(PickupValue);
-		}
-
-		// finish success
-		FuncSuccess();
 
 		// finish quest step
-		if(TaskData.m_FinishQuestStepByEnd)
+		if(IsActiveCompletesQuestStep)
 		{
 			m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->Finish();
 		}
@@ -159,7 +171,7 @@ void CEntityMoveTo::Tick()
 		QuestBotInfo::TaskRequiredMoveTo TaskData = *m_pTaskMoveTo;
 
 		// try finish step with finish quest step by end
-		if(TaskData.m_FinishQuestStepByEnd)
+		if(IsActiveCompletesQuestStep)
 		{
 			(*m_pComplete) = true; // for correct try finish quest step
 

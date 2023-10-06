@@ -10,6 +10,7 @@ class CEntityMoveTo : public CEntity
 	int m_QuestID;
 	int m_ClientID;
 	bool* m_pComplete;
+	bool m_CompletesStep;
 	array < int > m_IDs;
 	std::deque < CEntityMoveTo* >* m_apCollection;
 	const QuestBotInfo::TaskRequiredMoveTo* m_pTaskMoveTo;
@@ -17,7 +18,7 @@ class CEntityMoveTo : public CEntity
 public:
 	class CPlayer* m_pPlayer;
 
-	CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection);
+	CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection, bool IsCompletesStep);
 	~CEntityMoveTo() override;
 
 	void Tick() override;

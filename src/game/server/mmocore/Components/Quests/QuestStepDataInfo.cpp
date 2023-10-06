@@ -485,7 +485,9 @@ CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequire
 	const int ClientID = pPlayer->GetCID();
 	CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pTaskMoveTo->m_Position);
 	if(!pEntMoveTo)
-		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, GetQuestID(), pComplete, &m_apEntitiesMoveTo));
+	{
+		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, GetQuestID(), pComplete, &m_apEntitiesMoveTo, m_Bot.IsMoveToCompletesQuestStep()));
+	}
 
 	return pEntMoveTo;
 }
@@ -499,7 +501,9 @@ CEntityPathFinder* CPlayerQuestStep::AddEntityNavigator(vec2 Position, int World
 	const int ClientID = pPlayer->GetCID();
 	CEntityPathFinder* pEntMoveToFinder = FoundEntityNavigator(Position);
 	if(!pEntMoveToFinder)
+	{
 		pEntMoveToFinder = m_apEntitiesNavigator.emplace_back(new CEntityPathFinder(&GS()->m_World, Position, WorldID, ClientID, AreaClipped, pComplete, &m_apEntitiesNavigator));
+	}
 
 	return pEntMoveToFinder;
 }

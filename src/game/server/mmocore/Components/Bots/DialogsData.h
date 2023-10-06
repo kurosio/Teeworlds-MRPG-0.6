@@ -33,12 +33,15 @@ private:
 	class CDialogElem* GetCurrent() const;
 	void DialogEvents() const;
 	void EndDialogEvents() const;
+	void ShowCurrentDialog() const;
 	void PostNext();
 	void Clear();
 };
 
 class CDialogElem
 {
+	friend class CPlayerDialog;
+
 	int m_LeftSide{};
 	int m_RightSide{};
 
@@ -51,10 +54,10 @@ class CDialogElem
 	int GetRightSide() const { return m_RightSide; }
 
 	int GetClientIDByBotID(class CGS* pGS, int CheckVisibleForCID, int BotID) const;
+	void Show(class CGS* pGS, int ClientID);
 
 public:
 	void Init(int BotID, std::string Text, bool Action);
-	void Show(class CGS* pGS, int ClientID);
 
 	const char* GetText() const { return m_Text.c_str(); }
 	bool IsEmptyDialog() const { return m_Text.empty(); }

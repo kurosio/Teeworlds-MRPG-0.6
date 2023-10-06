@@ -48,6 +48,8 @@ public:
 /************************************************************************/
 class QuestBotInfo
 {
+	bool m_MoveToCompletesQuestStep{};
+
 public:
 	char m_aGeneratedNickname[MAX_NAME_LENGTH]{};
 	vec2 m_Position{};
@@ -101,11 +103,12 @@ public:
 		std::string m_aTextUseInChat{};
 		std::string m_aEndText{};
 		bool m_Navigator{};
-		bool m_FinishQuestStepByEnd{};
 		Types m_Type {};
 		int m_QuestBotID {};
 	};
 	std::deque < TaskRequiredMoveTo > m_RequiredMoveTo;
+	bool IsMoveToCompletesQuestStep() const { return m_MoveToCompletesQuestStep; }
+
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }

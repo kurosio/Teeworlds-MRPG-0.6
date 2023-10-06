@@ -223,7 +223,7 @@ void CPlayerDialog::Start(CPlayer* pPlayer, int BotCID)
 	}
 	else
 	{
-		pDialog->Show(GS(), pPlayer->GetCID());
+		ShowCurrentDialog();
 	}
 }
 
@@ -388,7 +388,7 @@ void CPlayerDialog::Next()
 			if(!pQuest->GetStepByMob(m_MobID)->IsComplete())
 			{
 				GS()->Chat(ClientID, "The tasks haven't been completed yet!");
-				pDialog->Show(GS(), ClientID);
+				ShowCurrentDialog();
 				return;
 			}
 
@@ -454,7 +454,7 @@ void CPlayerDialog::PostNext()
 	}
 
 	// show next dialog
-	pCurrent->Show(GS(), m_pPlayer->GetCID());
+	ShowCurrentDialog();
 }
 
 void CPlayerDialog::Clear()
@@ -544,4 +544,26 @@ void CPlayerDialog::EndDialogEvents() const
 			m_pPlayer->GetCharacter()->ChangePosition(Position);
 		}
 	});
+}
+
+void CPlayerDialog::ShowCurrentDialog() const
+{
+	CDialogElem* pCurrent = GetCurrent();
+
+	// tasks receive
+	if(pCurrent->IsRequestAction())
+	{
+		int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+		CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+		CPlayerQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
+
+		if(!pStep->m_TaskListReceived)
+		{
+			pStep->m_TaskListReceived = true;
+			pStep->UpdateTaskMoveTo();
+		}
+	}
+
+	// show dialog
+	pCurrent->Show(GS(), m_pPlayer->GetCID());
 }

@@ -89,9 +89,9 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 		}
 
 		// initilize move to points
+		m_MoveToCompletesQuestStep = pJson.value("move_to_completes_quest_step", false);
 		if(pJson.contains("move_to"))
 		{
-			bool HasFinishQuestStepByEnd = false;
 			int LatestBiggerStep = 1;
 
 			for(const auto& p : pJson["move_to"])
@@ -102,7 +102,6 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				const bool Navigator = p.value("navigator", true);
 				TaskRequiredMoveTo::Types Type = TaskRequiredMoveTo::Types::MOVE_ONLY;
 				const std::string EndText = p.value("end_text", "");
-				const bool FinishQuestStepByEnd = p.value("finish_quest_step_by_end", false);
 
 				// pickup item by array json
 				CItem PickUpItem {};
@@ -137,11 +136,6 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				// add new move_to point
 				if(total_size_vec2(Position) > 0.f)
 				{
-					if(FinishQuestStepByEnd)
-					{
-						HasFinishQuestStepByEnd = true;
-					}
-
 					TaskRequiredMoveTo Move;
 					Move.m_WorldID = WorldID;
 					Move.m_Step = LatestBiggerStep;
@@ -152,17 +146,9 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					Move.m_aEndText = EndText;
 					Move.m_aTextUseInChat = TextUseInChat;
 					Move.m_Type = Type;
-					Move.m_FinishQuestStepByEnd = FinishQuestStepByEnd;
 					Move.m_QuestBotID = m_SubBotID;
 					m_RequiredMoveTo.push_back(Move);
 				}
-			}
-
-			// the final step is a unique entry
-			if(!m_RequiredMoveTo.empty() && HasFinishQuestStepByEnd)
-			{
-				std::sort(m_RequiredMoveTo.rbegin(), m_RequiredMoveTo.rend(), [](auto& p1, auto& p2){ return p1.m_FinishQuestStepByEnd && !p2.m_FinishQuestStepByEnd; });
-				m_RequiredMoveTo.back().m_Step = LatestBiggerStep + 1;
 			}
 		}
 	});
