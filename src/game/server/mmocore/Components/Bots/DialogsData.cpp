@@ -416,20 +416,19 @@ void CPlayerDialog::PostNext()
 	// is last dialog
 	if(!pCurrent)
 	{
-		bool RunEndDialogEvent = true;
-
 		// finish quest on last dialogue
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			RunEndDialogEvent = m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish();
+			bool RunEndDialogEvent = m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish();
+
+			// clear and run end event
+			if(RunEndDialogEvent)
+			{
+				DialogEvents(DIALOGEVENTCUR::ON_END);
+			}
 		}
 
-		// clear and run end event
-		if(RunEndDialogEvent)
-		{
-			DialogEvents(DIALOGEVENTCUR::ON_END);
-		}
 		Clear();
 		return;
 	}
@@ -567,19 +566,22 @@ void CPlayerDialog::ShowCurrentDialog() const
 	CDialogElem* pCurrent = GetCurrent();
 
 	// tasks receive
-	if(pCurrent->IsRequestAction())
+	if(m_BotType == TYPE_BOT_QUEST)
 	{
-		int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-		CPlayerQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
-
-		if(!pStep->m_TaskListReceived)
+		if(pCurrent->IsRequestAction())
 		{
-			pStep->m_TaskListReceived = true;
-			pStep->UpdateTaskMoveTo();
+			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+			CPlayerQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
 
-			// run event recieve task
-			DialogEvents(DIALOGEVENTCUR::ON_RECIEVE_TASK);
+			if(!pStep->m_TaskListReceived)
+			{
+				pStep->m_TaskListReceived = true;
+				pStep->UpdateTaskMoveTo();
+
+				// run event recieve task
+				DialogEvents(DIALOGEVENTCUR::ON_RECIEVE_TASK);
+			}
 		}
 	}
 
