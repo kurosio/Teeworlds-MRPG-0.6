@@ -7,22 +7,25 @@
 
 class CAuctionSlot
 {
-	CItem m_Item{};
-	int m_Price{};
+	CItem m_Item {};
+	int m_Price {};
 
 public:
+	// Default constructor
 	CAuctionSlot() = default;
+
+	// Parameterized constructor
 	CAuctionSlot(CItem Item, int Price) : m_Item(std::move(Item)), m_Price(Price) {}
 
+	// Setter methods for item and price
 	void SetItem(CItem Item) { m_Item = std::move(Item); }
 	void SetPrice(int Price) { m_Price = Price; }
 
-	CItem* GetItem() { return &m_Item; }
-	const CItem* GetItem() const { return &m_Item; }
-	int GetPrice() const { return m_Price; }
-
-	int GetTaxPrice() const;
+	// Getter methods for item and price
+	CItem* GetItem() { return &m_Item; }                           // Return a pointer to the item
+	const CItem* GetItem() const { return &m_Item; }               // Return a const pointer to the item (for const objects)
+	int GetPrice() const { return m_Price; }                       // Return the price
+	int GetTaxPrice() const;                                       // Declaration for a function to calculate the tax price
 };
-
 #endif
 

@@ -18,9 +18,9 @@ class CAIController
 	class CTargetSystem
 	{
 		int m_TargetID { -1 };
-		bool m_TargetCollised {};
-		int m_TargetAggression {};
-		TARGET_TYPE m_TargetType {};
+		bool m_IsCollised {};
+		int m_Aggression {};
+		TARGET_TYPE m_Type {};
 		CCharacterBotAI* m_pCharacter {};
 
 	public:
@@ -34,9 +34,9 @@ class CAIController
 			if(m_pCharacter)
 			{
 				m_TargetID = -1;
-				m_TargetAggression = 0;
-				m_TargetCollised = false;
-				m_TargetType = TARGET_TYPE::EMPTY;
+				m_Aggression = 0;
+				m_IsCollised = false;
+				m_Type = TARGET_TYPE::EMPTY;
 			}
 		}
 
@@ -44,23 +44,23 @@ class CAIController
 		{
 			if(m_pCharacter)
 			{
-				if(m_TargetType == TARGET_TYPE::LOST && m_TargetAggression)
+				if(m_Type == TARGET_TYPE::LOST && m_Aggression)
 				{
-					m_TargetAggression--;
-					if(!m_TargetAggression)
+					m_Aggression--;
+					if(!m_Aggression)
 						Reset();
 				}
 			}
 		}
 		int GetCID() const { return m_TargetID; }
-		int GetAggresion() const { return m_TargetAggression; }
+		int GetAggresion() const { return m_Aggression; }
 		void Set(int ClientID, int Aggression)
 		{
 			if(m_pCharacter && ClientID >= 0 && ClientID < MAX_CLIENTS)
 			{
 				m_TargetID = ClientID;
-				m_TargetAggression = Aggression;
-				m_TargetType = TARGET_TYPE::ACTIVE;
+				m_Aggression = Aggression;
+				m_Type = TARGET_TYPE::ACTIVE;
 			}
 		}
 
@@ -68,32 +68,32 @@ class CAIController
 		{
 			if(m_pCharacter)
 			{
-				m_TargetType = TargetType;
+				m_Type = TargetType;
 			}
 		}
 
 		bool IsEmpty() const { return m_TargetID <= -1; }
-		bool IsCollised() const { return m_TargetCollised; }
-		void UpdateCollised(bool Collised) { m_TargetCollised = Collised; }
+		bool IsCollised() const { return m_IsCollised; }
+		void UpdateCollised(bool Collised) { m_IsCollised = Collised; }
 	};
 
 public:
-    // Constructor
-    CAIController(CCharacterBotAI* pCharacter);
+	// Constructor
+	CAIController(CCharacterBotAI* pCharacter);
 
-    // Destructor
-    ~CAIController(){}
+	// Destructor
+	~CAIController(){}
 
 	// Function to get the entity character
-    CCharacterBotAI* GetCharacter() const { return m_pCharacter; };
+	CCharacterBotAI* GetCharacter() const { return m_pCharacter; };
 	CTargetSystem* GetTarget() { return &m_Target; }
 
-    // Function to process the action
-    //void ProcessHandle();
+	// Function to process the action
+	//void ProcessHandle();
 
 private:
-    // Pointer to the entity character
-    CCharacterBotAI* m_pCharacter;
+	// Pointer to the entity character
+	CCharacterBotAI* m_pCharacter;
 	CTargetSystem m_Target;
 };
 

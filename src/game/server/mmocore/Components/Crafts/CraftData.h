@@ -11,17 +11,16 @@ using CraftPtr = std::shared_ptr< class CCraftItem >;
 
 class CCraftItem : public MultiworldIdentifiableStaticData< std::deque< CraftPtr > >
 {
-private:
-	CraftIdentifier m_ID{};
-	CItem m_Item{};
+	CraftIdentifier m_ID {};
+	CItem m_Item {};
 	CItemsContainer m_RequiredItem;
-	int m_Price{};
-	int m_WorldID{};
+	int m_Price {};
+	int m_WorldID {};
 
 public:
+	CCraftItem() = default; // Default constructor for CCraftItem
 
-	CCraftItem() = default;
-
+	// Create a static function called CreateElement which creates a new CCraftItem object and adds it to the data container
 	static CraftPtr CreateElement(CraftIdentifier ID)
 	{
 		CCraftItem p;
@@ -29,6 +28,7 @@ public:
 		return m_pData.emplace_back(std::make_shared<CCraftItem>(p));
 	}
 
+	// Initialize the CCraftItem object with the required container for required items, crafted item, price, and world ID where can craft item
 	void Init(CItemsContainer RequiredContainer, CItem Item, int Price, int WorldID)
 	{
 		m_RequiredItem = std::move(RequiredContainer);
@@ -37,14 +37,14 @@ public:
 		m_WorldID = WorldID;
 	}
 
-	CraftIdentifier GetID() const { return m_ID; }
-	CItem* GetItem() { return &m_Item; }
-	const CItem* GetItem() const { return &m_Item; }
-	CItemsContainer& GetRequiredItems() { return m_RequiredItem; }
-	const CItemsContainer& GetRequiredItems() const { return m_RequiredItem; }
-	int GetPrice(class CPlayer * pPlayer) const;
-	int GetWorldID() const { return m_WorldID; }
+	// Getter methods for craft item
+	CraftIdentifier GetID() const { return m_ID; }                             // Get the ID of the craft item
+	CItem* GetItem() { return &m_Item; }                                       // Get a pointer to the crafted item
+	const CItem* GetItem() const { return &m_Item; }                           // Get a constant pointer to the crafted item
+	CItemsContainer& GetRequiredItems() { return m_RequiredItem; }             // Get a reference to the required items container
+	const CItemsContainer& GetRequiredItems() const { return m_RequiredItem; } // Get a constant reference to the required items container
+	int GetPrice(class CPlayer* pPlayer) const;                                // Get the price of the craft item for a given player
+	int GetWorldID() const { return m_WorldID; }                               // Get the world ID of the craft item
 };
-
 
 #endif
