@@ -335,7 +335,7 @@ void CPlayer::RefreshClanString()
 	char aBufClass[64];
 	str_format(aBufClass, sizeof(aBufClass), "%-*s | %dp", 10 - str_length(pClassName), pClassName, MaxAttributesPower);
 	Buffer.append(" | ");
-	Buffer.append(aBufClass);
+	Buffer.append(static_cast<const char*>(aBufClass));
 
 	// end format
 	str_format(m_aClanString, sizeof(m_aClanString), "%s", Buffer.buffer());

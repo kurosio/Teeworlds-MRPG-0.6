@@ -1976,10 +1976,6 @@ void CGS::SendDayInfo(int ClientID)
 	{
 		Chat(ClientID, "Experience is now 100%");
 	}
-	else
-	{
-		Chat(ClientID, "Experience is unchanged");
-	}
 }
 
 int CGS::GetExperienceMultiplier(int Experience) const
