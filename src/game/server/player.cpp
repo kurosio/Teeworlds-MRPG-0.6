@@ -216,25 +216,20 @@ void CPlayer::Snap(int SnappingClient)
 		StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
 	}
 
-	/*
-	 * 	if(Server()->Tick() % Server()->TickSpeed() / 2 == 0)
+	if(m_aPlayerTick[RefreshClanTitle] < Server()->Tick())
+	{
+		std::rotate(std::begin(m_aClanTitle), std::begin(m_aClanTitle) + str_utf8_forward(m_aClanTitle, 0), std::end(m_aClanTitle));
+
+		const int Size = str_utf8_fix_truncation(m_aClanTitle);
+		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aClanTitle[0] == '|') || (Size - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 6));
+		if(Size < 10)
 		{
-			constexpr int LIMIT_CLAN_TAB = 10;
-			str_format(m_aEndStatus, sizeof(m_aEndStatus), "%s : %s", GetStatus(), GS()->Mmo()->Member()->GetGuildRank(Acc().m_GuildID, Acc().m_GuildRank));
-
-			std::string EndStatus = m_aEndStatus;
-			std::rotate(std::begin(m_aEndStatus), std::begin(m_aEndStatus) + m_ClanMovePos, std::end(m_aEndStatus));
-			m_ClanMovePos += str_utf8_forward(m_aEndStatus, 0);
-
-			int Size = str_utf8_fix_truncation(m_aEndStatus);
-			if(Size - m_ClanMovePos < LIMIT_CLAN_TAB)
-				m_ClanMovePos = 0;
+			m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + Server()->TickSpeed();
+			RefreshClanString();
 		}
+	}
 
-		StrToInts(&pClientInfo->m_Clan0, 3, m_aEndStatus);
-	 */
-
-	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
+	StrToInts(&pClientInfo->m_Clan0, 3, m_aClanTitle);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
 	pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
@@ -292,6 +287,60 @@ void CPlayer::FakeSnap()
 	pSpectatorInfo->m_SpectatorID = -1;
 	pSpectatorInfo->m_X = m_ViewPos.x;
 	pSpectatorInfo->m_Y = m_ViewPos.y;
+}
+
+void CPlayer::RefreshClanString()
+{
+	if(!IsAuthed())
+	{
+		str_copy(m_aClanTitle, Server()->ClientClan(m_ClientID), sizeof(m_aClanTitle));
+		return;
+	}
+
+	dynamic_string Buffer {};
+
+	// location
+	Buffer.append(Server()->GetWorldName(GetPlayerWorldID()));
+
+	// guild
+	if(Acc().IsGuild())
+	{
+		Buffer.append(" | ");
+		Buffer.append(GS()->Mmo()->Member()->GuildName(Acc().m_GuildID));
+	}
+
+	// class
+	const int AttributesByType[3] = { GetTypeAttributesSize(AttributeType::Tank),
+										GetTypeAttributesSize(AttributeType::Healer), GetTypeAttributesSize(AttributeType::Dps) };
+
+	int MaxAttributesPower = 0;
+	AttributeType Class = AttributeType::Tank;
+	for(int i = 0; i < 3; i++)
+	{
+		if(AttributesByType[i] > MaxAttributesPower)
+		{
+			MaxAttributesPower = AttributesByType[i];
+			Class = static_cast<AttributeType>(i);
+		}
+	}
+
+	const char* pClassName;
+	switch(Class)
+	{
+		case AttributeType::Healer: pClassName = "Healer"; break;
+		case AttributeType::Dps: pClassName = "DPS"; break;
+		default: pClassName = "Tank"; break;
+	}
+
+	char aBufClass[64];
+	str_format(aBufClass, sizeof(aBufClass), "%s %dp", pClassName, MaxAttributesPower);
+	Buffer.append(" | ");
+	Buffer.append(aBufClass);
+
+	// end format
+	str_format(m_aClanTitle, sizeof(m_aClanTitle), "%s", Buffer.buffer());
+
+	Buffer.clear();
 }
 
 void CPlayer::PostVoteList()
@@ -825,13 +874,6 @@ int CPlayer::GetAttributesSize()
 void CPlayer::SetSnapHealthTick(int Sec)
 {
 	m_SnapHealthTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
-}
-
-const char* CPlayer::GetStatus() const
-{
-	if(IsAuthed() && Acc().IsGuild())
-		return GS()->Mmo()->Member()->GuildName(Acc().m_GuildID);
-	return Server()->ClientClan(m_ClientID);
 }
 
 void CPlayer::ChangeWorld(int WorldID)

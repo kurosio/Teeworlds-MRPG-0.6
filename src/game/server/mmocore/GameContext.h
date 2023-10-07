@@ -59,6 +59,7 @@ enum TickState
 	LastDialog,
 	LastRandomBox,
 	PotionRecast,
+	RefreshClanTitle,
 	NUM_TICK,
 };
 

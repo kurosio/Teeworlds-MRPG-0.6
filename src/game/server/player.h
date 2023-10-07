@@ -56,6 +56,7 @@ public:
 	vec2 m_ViewPos;
 	int m_PlayerFlags;
 	int m_aPlayerTick[TickState::NUM_TICK];
+	char m_aClanTitle[128];
 	Mood m_MoodState;
 
 	char m_aLastMsg[256];
@@ -119,6 +120,8 @@ public:
 	virtual void PostTick();
 	virtual void Snap(int SnappingClient);
 	virtual void FakeSnap();
+
+	void RefreshClanString();
 
 	void SetPostVoteListCallback(const std::function<void()> pFunc) { m_PostVotes = pFunc; }
 	bool IsActivePostVoteList() const { return m_PostVotes != nullptr; }
@@ -184,7 +187,6 @@ public:
 
 	void SetSnapHealthTick(int Sec);
 
-	virtual const char* GetStatus() const;
 	virtual Mood GetMoodState() const { return Mood::NORMAL; }
 	void ChangeWorld(int WorldID);
 };
