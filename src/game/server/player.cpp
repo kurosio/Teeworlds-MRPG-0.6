@@ -218,10 +218,10 @@ void CPlayer::Snap(int SnappingClient)
 
 	if(m_aPlayerTick[RefreshClanTitle] < Server()->Tick())
 	{
-		std::rotate(std::begin(m_aClanTitle), std::begin(m_aClanTitle) + str_utf8_forward(m_aClanTitle, 0), std::end(m_aClanTitle));
+		std::rotate(std::begin(m_aClanString), std::begin(m_aClanString) + str_utf8_forward(m_aClanString, 0), std::end(m_aClanString));
 
-		const int Size = str_utf8_fix_truncation(m_aClanTitle);
-		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aClanTitle[0] == '|') || (Size - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 6));
+		const int Size = str_utf8_fix_truncation(m_aClanString);
+		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aClanString[0] == '|') || (Size - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 6));
 		if(Size < 10)
 		{
 			m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + Server()->TickSpeed();
@@ -229,7 +229,7 @@ void CPlayer::Snap(int SnappingClient)
 		}
 	}
 
-	StrToInts(&pClientInfo->m_Clan0, 3, m_aClanTitle);
+	StrToInts(&pClientInfo->m_Clan0, 3, m_aClanString);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
 	pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
@@ -293,7 +293,7 @@ void CPlayer::RefreshClanString()
 {
 	if(!IsAuthed())
 	{
-		str_copy(m_aClanTitle, Server()->ClientClan(m_ClientID), sizeof(m_aClanTitle));
+		str_copy(m_aClanString, Server()->ClientClan(m_ClientID), sizeof(m_aClanString));
 		return;
 	}
 
@@ -333,12 +333,12 @@ void CPlayer::RefreshClanString()
 	}
 
 	char aBufClass[64];
-	str_format(aBufClass, sizeof(aBufClass), "%s %dp", pClassName, MaxAttributesPower);
+	str_format(aBufClass, sizeof(aBufClass), "%-*s | %dp", 10 - str_length(pClassName), pClassName, MaxAttributesPower);
 	Buffer.append(" | ");
 	Buffer.append(aBufClass);
 
 	// end format
-	str_format(m_aClanTitle, sizeof(m_aClanTitle), "%s", Buffer.buffer());
+	str_format(m_aClanString, sizeof(m_aClanString), "%s", Buffer.buffer());
 
 	Buffer.clear();
 }

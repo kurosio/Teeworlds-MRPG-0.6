@@ -56,7 +56,7 @@ public:
 	vec2 m_ViewPos;
 	int m_PlayerFlags;
 	int m_aPlayerTick[TickState::NUM_TICK];
-	char m_aClanTitle[128];
+	char m_aClanString[128];
 	Mood m_MoodState;
 
 	char m_aLastMsg[256];
