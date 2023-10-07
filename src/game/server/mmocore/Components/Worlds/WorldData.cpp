@@ -49,8 +49,8 @@ CQuestDescription* CWorldData::GetRequiredQuest() const
 	return it != CQuestDescription::Data().end() ? &it->second : nullptr;
 }
 
-CWorldData* CWorldData::GetRespawnWorld()
+CWorldData* CWorldData::GetRespawnWorld() const
 {
-	auto p = std::find_if(Data().begin(), Data().end(), [this](const WorldDataPtr& p) { return m_RespawnWorldID == p->GetID(); });
+	const auto p = std::find_if(Data().begin(), Data().end(), [this](const WorldDataPtr& p) { return m_RespawnWorldID == p->GetID(); });
 	return p != Data().end() ? p->get() : nullptr;
 }

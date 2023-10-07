@@ -31,8 +31,7 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 			Worlds = { pResSwap->getInt("WorldID"), pResSwap->getInt("TwoWorldID") };
 		}
 
-		WorldIdentifier ID = pResSwap->getInt("ID");
-		WorldSwappers.push_back({ ID, Positions, Worlds });
+		WorldSwappers.push_back({ Positions, Worlds });
 	}
 
 	/*
@@ -61,8 +60,6 @@ int CWorldManager::GetWorldType() const
 {
 	return GS()->GetDungeonID() ? WORLD_DUNGEON : WORLD_STANDARD;
 }
-
-//Optimized
 
 void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 {
