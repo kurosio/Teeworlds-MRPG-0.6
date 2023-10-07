@@ -193,8 +193,6 @@ public:
 	inline void clear() { BASE::buffer()[0] = 0; }
 	inline bool empty() const { return (BASE::buffer()[0] == 0); }
 
-	inline void copy(const char* pBuffer) { BASE::copy(pBuffer); }
-
 	template<typename STR>
 	inline void copy(const STR& str)
 	{
@@ -203,8 +201,6 @@ public:
 		else
 			BASE::copy(str);
 	}
-
-	inline void append(const char* pBuffer) { BASE::append_at(length(), pBuffer); }
 
 	template<typename STR>
 	inline void append(const STR& str)
@@ -215,8 +211,6 @@ public:
 			BASE::append_at(length(), str);
 	}
 
-	inline void append_num(const char* pBuffer, int num) { BASE::append_at_num(length(), pBuffer, num); }
-
 	template<typename STR>
 	inline void append_num(const STR& str, int num)
 	{
@@ -224,11 +218,6 @@ public:
 			BASE::append_at_num(length(), str.buffer(), num);
 		else
 			BASE::append_at_num(length(), str, num);
-	}
-
-	bool operator<(const char* buffer) const
-	{
-		return (str_comp(BASE::buffer(), buffer) < 0);
 	}
 
 	template<typename STR>
@@ -240,11 +229,6 @@ public:
 			return (str_comp(BASE::buffer(), str) < 0);
 	}
 
-	bool operator>(const char* buffer) const
-	{
-		return (str_comp(BASE::buffer(), buffer) > 0);
-	}
-
 	template<typename STR>
 	bool operator>(const STR& str) const
 	{
@@ -252,11 +236,6 @@ public:
 			return (str_comp(BASE::buffer(), str.buffer()) > 0);
 		else
 			return (str_comp(BASE::buffer(), str) > 0);
-	}
-
-	bool operator==(const char* buffer) const
-	{
-		return (str_comp(BASE::buffer(), buffer) == 0);
 	}
 
 	template<typename STR>
@@ -268,11 +247,6 @@ public:
 			return (str_comp(BASE::buffer(), str) == 0);
 	}
 
-	bool operator!=(const char* buffer) const
-	{
-		return (str_comp(BASE::buffer(), buffer) != 0);
-	}
-
 	template<typename STR>
 	bool operator!=(const STR& str) const
 	{
@@ -280,11 +254,6 @@ public:
 			return (str_comp(BASE::buffer(), str.buffer()) != 0);
 		else
 			return (str_comp(BASE::buffer(), str) != 0);
-	}
-
-	int comp_num(const char* str, int num) const
-	{
-		return (str_comp_num(BASE::buffer(), str, num) != 0);
 	}
 
 	template<typename STR>
