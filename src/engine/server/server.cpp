@@ -25,10 +25,13 @@
 
 #if defined(CONF_FAMILY_WINDOWS)
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <Windows.h>
 #endif
 
+#ifdef CONF_DISCORD
 #include "discord/discord_main.h"
+#endif
+
 #include "multi_worlds.h"
 #include "server_ban.h"
 
@@ -455,7 +458,7 @@ int CServer::GetClientVersion(int ClientID) const
 	if(ClientID == SERVER_DEMO_CLIENT)
 		return CLIENT_VERSIONNR;
 
-	CClientInfo Info;
+	CClientInfo Info{};
 	if(GetClientInfo(ClientID, &Info))
 		return Info.m_DDNetVersion;
 	return VERSION_NONE;
@@ -578,8 +581,7 @@ int CServer::SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask, int 
 	if(ClientID != -1 && (ClientID < 0 || ClientID >= MAX_PLAYERS || m_aClients[ClientID].m_State == CClient::STATE_EMPTY || m_aClients[ClientID].m_Quitting))
 		return 0;
 
-	CNetChunk Packet;
-	mem_zero(&Packet, sizeof(CNetChunk));
+	CNetChunk Packet{};
 	Packet.m_ClientID = ClientID;
 	Packet.m_pData = pMsg->Data();
 	Packet.m_DataSize = pMsg->Size();
@@ -593,7 +595,7 @@ int CServer::SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask, int 
 	{
 		if(ClientID == -1)
 		{
-			CPacker Pack;
+			CPacker Pack{};
 			if (RepackMsg(pMsg, Pack))
 				return -1;
 
@@ -666,8 +668,7 @@ void CServer::DoSnapshot(int WorldID)
 			char aData[CSnapshot::MAX_SIZE];
 			CSnapshot *pData = (CSnapshot *)aData; // Fix compiler warning for strict-aliasing
 			int SnapshotSize = m_SnapshotBuilder.Finish(pData);
-
-			int Crc = pData->Crc();
+			const unsigned Crc = pData->Crc();
 
 			// remove old snapshots
 			// keep 3 seconds worth of snapshots
@@ -699,11 +700,11 @@ void CServer::DoSnapshot(int WorldID)
 			if(int DeltaSize = m_SnapshotDelta.CreateDelta(pDeltashot, pData, aDeltaData))
 			{
 				// compress it
-				const int MaxSize = MAX_SNAPSHOT_PACKSIZE;
+				constexpr int MaxSize = MAX_SNAPSHOT_PACKSIZE;
 
 				char aCompData[CSnapshot::MAX_SIZE];
 				SnapshotSize = CVariableInt::Compress(aDeltaData, DeltaSize, aCompData, sizeof(aCompData));
-				int NumPackets = (SnapshotSize + MaxSize - 1) / MaxSize;
+				const int NumPackets = (SnapshotSize + MaxSize - 1) / MaxSize;
 
 				for(int n = 0, Left = SnapshotSize; Left > 0; n++)
 				{
@@ -849,7 +850,7 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientID].m_Country = -1;
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
-	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
+	pThis->m_aClients[ClientID].m_pRconCmdToSend = nullptr;
 	pThis->m_aClients[ClientID].m_OldWorldID = MAIN_WORLD_ID;
 	pThis->m_aClients[ClientID].m_WorldID = MAIN_WORLD_ID;
 	pThis->m_aClients[ClientID].m_IsChangesWorld = false;
@@ -1014,9 +1015,9 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 	// unpack msgid and system flag
 	int MsgID;
 	bool Sys;
-	CUuid Uuid;
+	CUuid Uuid{};
 
-	int Result = UnpackMessageID(&MsgID, &Sys, &Uuid, &Unpacker, &Packer);
+	const int Result = UnpackMessageID(&MsgID, &Sys, &Uuid, &Unpacker, &Packer);
 	if(Result == UNPACKMESSAGE_ERROR)
 	{
 		return;

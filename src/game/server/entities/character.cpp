@@ -386,8 +386,15 @@ void CCharacter::FireWeapon()
 			}
 			GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		} break;
+
 		case WEAPON_NINJA:
-			break;
+		{
+			m_Ninja.m_ActivationDir = Direction;
+			m_Ninja.m_CurrentMoveTime = g_pData->m_Weapons.m_Ninja.m_Movetime * Server()->TickSpeed() / 1000;
+			m_Ninja.m_OldVelAmount = length(m_Core.m_Vel);
+
+			GS()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
+		} break;
 	}
 
 	m_AttackTick = Server()->Tick();
@@ -404,6 +411,8 @@ void CCharacter::FireWeapon()
 
 void CCharacter::HandleWeapons()
 {
+	HandleNinja();
+
 	if(m_ReloadTimer)
 	{
 		m_ReloadTimer--;
@@ -423,6 +432,39 @@ void CCharacter::HandleWeapons()
 			const int RealAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo = min(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo + 1, RealAmmo);
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
+		}
+	}
+}
+
+void CCharacter::HandleNinja()
+{
+	if(m_Core.m_ActiveWeapon != WEAPON_NINJA)
+		return;
+
+	m_Ninja.m_CurrentMoveTime--;
+	if(m_Ninja.m_CurrentMoveTime == 0)
+	{
+		// reset velocity
+		m_Core.m_Vel = m_Ninja.m_ActivationDir * m_Ninja.m_OldVelAmount;
+	}
+	else if(m_Ninja.m_CurrentMoveTime > 0)
+	{
+		// Set velocity
+		m_Core.m_Vel = m_Ninja.m_ActivationDir * g_pData->m_Weapons.m_Ninja.m_Velocity;
+		GS()->Collision()->MoveBox(&m_Core.m_Pos, &m_Core.m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), 0.f);
+
+		// reset velocity so the client doesn't predict stuff
+		m_Core.m_Vel = vec2(0.f, 0.f);
+
+		int ClientID = m_pPlayer->GetCID();
+		const float Radius = GetProximityRadius() * 2.0f;
+		for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+		{
+			if(distance(pChar->m_Core.m_Pos, m_Core.m_Pos) < Radius)
+			{
+				if(pChar->GetPlayer()->GetCID() != ClientID && pChar->IsAllowedPVP(ClientID))
+					pChar->TakeDamage(vec2(0, -10.0f), 1, m_pPlayer->GetCID(), WEAPON_NINJA);
+			}
 		}
 	}
 }

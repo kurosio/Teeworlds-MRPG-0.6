@@ -114,13 +114,13 @@ struct CNetChunk
 {
 	// -1 means that it's a stateless packet
 	// 0 on the client means the server
-	int m_ClientID;
-	NETADDR m_Address; // only used when client_id == -1
-	int m_Flags;
-	int m_DataSize;
-	const void *m_pData;
+	int m_ClientID{-1};
+	NETADDR m_Address{}; // only used when client_id == -1
+	int m_Flags{};
+	int m_DataSize{};
+	const void *m_pData{};
 	// only used if the flags contain NETSENDFLAG_EXTENDED and NETSENDFLAG_CONNLESS
-	unsigned char m_aExtraData[4];
+	unsigned char m_aExtraData[4]{};
 };
 
 class CNetChunkHeader

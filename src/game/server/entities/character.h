@@ -18,6 +18,14 @@ class CCharacter : public CEntity
 	int m_LastWeapon;
 	int m_QueuedWeapon;
 
+	// ninja
+	struct
+	{
+		vec2 m_ActivationDir;
+		int m_CurrentMoveTime;
+		int m_OldVelAmount;
+	} m_Ninja;
+
 	// info for dead reckoning
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
@@ -61,6 +69,7 @@ protected:
 	CNetObj_PlayerInput m_LatestInput;
 
 	void HandleWeapons();
+	void HandleNinja();
 	void HandleTilesets(int *pIndex = nullptr);
 	void HandleEvent();
 	void HandleIndependentTuning();

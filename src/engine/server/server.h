@@ -8,11 +8,11 @@
 
 class CServer : public IServer
 {
-	class IConsole *m_pConsole;
-	class IStorageEngine *m_pStorage;
+	class IConsole *m_pConsole{};
+	class IStorageEngine *m_pStorage{};
 	class CMultiWorlds* m_pMultiWorlds;
 	class CServerBan* m_pServerBan;
-	class DiscordJob* m_pDiscord;
+	class DiscordJob* m_pDiscord{};
 
 public:
 	class IGameServer* GameServer(int WorldID = 0) override;
@@ -99,7 +99,7 @@ public:
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
-	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS];
+	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS]{};
 
 	CSnapshotDelta m_SnapshotDelta;
 	CSnapshotBuilder m_SnapshotBuilder;
@@ -107,11 +107,11 @@ public:
 	CNetServer m_NetServer;
 	CEcon m_Econ;
 
-	int64 m_GameStartTime;
+	int64 m_GameStartTime{};
 	int m_RunServer;
 	int m_RconClientID;
 	int m_RconAuthLevel;
-	int m_PrintCBIndex;
+	int m_PrintCBIndex{};
 	bool m_HeavyReload;
 
 	// map
@@ -119,8 +119,8 @@ public:
 	{
 		MAP_CHUNK_SIZE=NET_MAX_PAYLOAD-NET_MAX_CHUNKHEADERSIZE-4, // msg type
 	};
-	int m_MapChunksPerRequest;
-	int m_DataChunksPerRequest;
+	int m_MapChunksPerRequest{};
+	int m_DataChunksPerRequest{};
 
 	int m_RconPasswordSet;
 	int m_GeneratedRconPassword;
@@ -133,9 +133,9 @@ public:
 	// world time
 	int m_ShiftTime;
 	int m_LastShiftTick;
-	int m_WorldMinute;
-	int m_WorldHour;
-	bool m_IsNewMinute;
+	int m_WorldMinute{};
+	int m_WorldHour{};
+	bool m_IsNewMinute{};
 
 	int GetMinuteWorldTime() const override;
 	int GetHourWorldTime() const override;
