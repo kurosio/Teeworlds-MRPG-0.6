@@ -7,7 +7,7 @@
 #include "game/server/mmocore/GameEntities/decoration_houses.h"
 
 CGS* CHouseData::GS() const { return static_cast<CGS*>(Server()->GameServer(m_WorldID)); }
-CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerFromUserID(m_AccountID); }
+CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerByUserID(m_AccountID); }
 
 CHouseData::~CHouseData()
 {
@@ -113,7 +113,7 @@ void CHouseData::Buy(CPlayer* pPlayer)
 	if(pPlayer->SpendCurrency(m_Price))
 	{
 		// update data
-		m_AccountID = pPlayer->Acc().m_UserID;
+		m_AccountID = pPlayer->Acc().m_ID;
 		m_pDoorData->Close();
 		m_pBank->Reset();
 		Database->Execute<DB::UPDATE>("tw_houses", "UserID = '%d', HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);

@@ -26,7 +26,7 @@ void CAccountPlantManager::OnInitWorld(const char* pWhereLocalWorld)
 
 void CAccountPlantManager::OnInitAccount(CPlayer *pPlayer)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '%d'", pPlayer->Acc().m_ID);
 	if(pRes->next())
 	{
 		pPlayer->Acc().m_FarmingData.initFields(&pRes);
@@ -36,7 +36,7 @@ void CAccountPlantManager::OnInitAccount(CPlayer *pPlayer)
 	pPlayer->Acc().m_FarmingData(JOB_LEVEL, 1).m_Value = 1;
 	pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value = 0;
 	pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value = 0;
-	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('%d')", pPlayer->Acc().m_UserID);
+	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('%d')", pPlayer->Acc().m_ID);
 }
 
 int CAccountPlantManager::GetPlantLevel(vec2 Pos) const

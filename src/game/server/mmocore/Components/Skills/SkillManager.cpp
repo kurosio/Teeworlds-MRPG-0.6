@@ -27,7 +27,7 @@ void CSkillManager::OnInit()
 void CSkillManager::OnInitAccount(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Acc().m_ID);
 	while(pRes->next())
 	{
 		int Level = pRes->getInt("Level");

@@ -22,7 +22,7 @@ void CQuestManager::OnInit()
 void CQuestManager::OnInitAccount(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc().m_ID);
 	while(pRes->next())
 	{
 		QuestIdentifier ID = pRes->getInt("QuestID");

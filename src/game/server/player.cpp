@@ -597,7 +597,7 @@ bool CPlayer::GetHiddenMenu(int HideID) const
 bool CPlayer::IsAuthed() const
 {
 	if(GS()->Mmo()->Account()->IsActive(m_ClientID))
-		return Acc().m_UserID > 0;
+		return Acc().m_ID > 0;
 	return false;
 }
 

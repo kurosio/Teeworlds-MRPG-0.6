@@ -35,7 +35,7 @@ CQuest::~CQuest()
 }
 
 CQuestDescription* CQuest::Info() const { return &CQuestDescription::Data()[m_ID]; }
-std::string CQuest::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_UserID); }
+std::string CQuest::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_ID); }
 
 void CQuest::InitSteps()
 {
@@ -259,7 +259,7 @@ bool CQuest::Accept()
 
 	// init quest
 	m_State = QuestState::ACCEPT;
-	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Acc().m_UserID, m_State);
+	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Acc().m_ID, m_State);
 
 	// init steps
 	InitSteps();
@@ -285,7 +285,7 @@ void CQuest::Finish()
 
 	// finish quest
 	m_State = QuestState::FINISHED;
-	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, GetPlayer()->Acc().m_UserID);
+	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, GetPlayer()->Acc().m_ID);
 
 	// clear steps
 	ClearSteps();

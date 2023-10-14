@@ -27,7 +27,7 @@ void CAetherManager::OnInit()
 
 void CAetherManager::OnInitAccount(CPlayer *pPlayer)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Acc().m_ID);
 	while(pRes->next())
 	{
 		const int TeleportID = pRes->getInt("AetherID");
@@ -114,7 +114,7 @@ void CAetherManager::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
 			continue;
 
 		pPlayer->Acc().m_aAetherLocation[ID] = true;
-		Database->Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_UserID, ID);
+		Database->Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc().m_ID, ID);
 
 		GS()->Chat(ClientID, "You now have Aethernet access to the {STR}.", Aether.GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Now have Aethernet access to the {STR}.", Aether.GetName());

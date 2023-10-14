@@ -207,7 +207,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 			while(pRes->next())
 			{
 				const int UserID = pRes->getInt("ID");
-				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Acc().m_UserID))
+				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Acc().m_ID))
 					continue;
 
 				cPlayerName = pRes->getString("Nick").c_str();

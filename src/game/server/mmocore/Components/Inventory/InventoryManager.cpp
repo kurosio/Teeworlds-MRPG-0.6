@@ -81,7 +81,7 @@ void CInventoryManager::OnInit()
 void CInventoryManager::OnInitAccount(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc().m_ID);
 	while(pRes->next())
 	{
 		ItemIdentifier ItemID = pRes->getInt("ItemID");
@@ -272,7 +272,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 void CInventoryManager::RepairDurabilityItems(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_UserID);
+	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc().m_ID);
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
 		Item.m_Durability = 100;
 }
@@ -417,7 +417,7 @@ void CInventoryManager::AddItemSleep(int AccountID, ItemIdentifier ItemID, int V
 			std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
 
 		lock_sleep.lock();
-		CPlayer* pPlayer = GS()->GetPlayerFromUserID(AccountID);
+		CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID);
 		if(pPlayer)
 		{
 			pPlayer->GetItem(ItemID)->Add(Value);

@@ -76,13 +76,13 @@ CGS::~CGS()
 	delete m_pLayers;
 }
 
-class CCharacter* CGS::GetPlayerChar(int ClientID)
+class CCharacter* CGS::GetPlayerChar(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return nullptr;
 	return m_apPlayers[ClientID]->GetCharacter();
 }
-CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuthed, bool CheckCharacter)
+CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuthed, bool CheckCharacter) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return nullptr;
@@ -95,12 +95,12 @@ CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuthed, bool CheckCharacter)
 	return pPlayer;
 }
 
-CPlayer* CGS::GetPlayerFromUserID(int AccountID)
+CPlayer* CGS::GetPlayerByUserID(int AccountID) const
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GetPlayer(i, true);
-		if(pPlayer && pPlayer->Acc().m_UserID == AccountID)
+		if(pPlayer && pPlayer->Acc().m_ID == AccountID)
 			return pPlayer;
 	}
 	return nullptr;
@@ -359,7 +359,7 @@ void CGS::Chat(int ClientID, const char* pText, ...)
 // send to an authorized player
 bool CGS::ChatAccount(int AccountID, const char* pText, ...)
 {
-	CPlayer* pPlayer = GetPlayerFromUserID(AccountID);
+	CPlayer* pPlayer = GetPlayerByUserID(AccountID);
 	if(!pPlayer)
 		return false;
 
@@ -1939,7 +1939,7 @@ void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	SendInbox(pFrom, pPlayer->Acc().m_UserID, Name, Desc, ItemID, Value, Enchant);
+	SendInbox(pFrom, pPlayer->Acc().m_ID, Name, Desc, ItemID, Value, Enchant);
 }
 
 // send a message with or without the object using AccountID

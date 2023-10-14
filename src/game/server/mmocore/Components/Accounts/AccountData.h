@@ -12,7 +12,7 @@ struct CAccountData
 	char m_aLogin[64]{};
 	char m_aLastLogin[64]{};
 	char m_aLanguage[8]{};
-	int m_UserID{};
+	int m_ID{};
 	int m_Level{};
 	int m_Exp{};
 	int m_GuildID{};

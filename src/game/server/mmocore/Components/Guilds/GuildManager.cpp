@@ -152,7 +152,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 		const int SelectedUserID = VoteID;
-		if(pPlayer->Acc().m_UserID == SelectedUserID)
+		if(pPlayer->Acc().m_ID == SelectedUserID)
 		{
 			GS()->Chat(ClientID, "You can't give the rights to yourself!");
 			return true;
@@ -484,7 +484,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		if(pPlayer->SpendCurrency(Get))
 		{
 			AddMoneyBank(GuildID, Get);
-			Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildDeposit = GuildDeposit + '%d' WHERE ID = '%d'", Get, pPlayer->Acc().m_UserID);
+			Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildDeposit = GuildDeposit + '%d' WHERE ID = '%d'", Get, pPlayer->Acc().m_ID);
 			GS()->ChatGuild(GuildID, "{STR} deposit in treasury {VAL}gold.", Server()->ClientName(ClientID), Get);
 			AddHistoryGuild(GuildID, "'%s' added to bank %dgold.", Server()->ClientName(ClientID), Get);
 			GS()->StrongUpdateVotes(ClientID, MENU_GUILD);
@@ -667,7 +667,7 @@ bool CGuildManager::CheckMemberAccess(CPlayer *pPlayer, int Access) const
 {
 	const int GuildID = pPlayer->Acc().m_GuildID;
 	if(GuildID > 0 && CGuildData::ms_aGuild.find(GuildID) != CGuildData::ms_aGuild.end() &&
-		(CGuildData::ms_aGuild[GuildID].m_UserID == pPlayer->Acc().m_UserID ||
+		(CGuildData::ms_aGuild[GuildID].m_UserID == pPlayer->Acc().m_ID ||
 			(CGuildRankData::ms_aRankGuild.find(pPlayer->Acc().m_GuildRank) != CGuildRankData::ms_aRankGuild.end() &&
 				(CGuildRankData::ms_aRankGuild[pPlayer->Acc().m_GuildRank].m_Access == Access || CGuildRankData::ms_aRankGuild[pPlayer->Acc().m_GuildRank].m_Access ==
 					ACCESS_FULL))))
@@ -772,7 +772,7 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 
 	// initialize the guild
 	str_copy(CGuildData::ms_aGuild[InitID].m_aName, GuildName.cstr(), sizeof(CGuildData::ms_aGuild[InitID].m_aName));
-	CGuildData::ms_aGuild[InitID].m_UserID = pPlayer->Acc().m_UserID;
+	CGuildData::ms_aGuild[InitID].m_UserID = pPlayer->Acc().m_ID;
 	CGuildData::ms_aGuild[InitID].m_Level = 1;
 	CGuildData::ms_aGuild[InitID].m_Exp = 0;
 	CGuildData::ms_aGuild[InitID].m_Bank = 0;
@@ -782,8 +782,8 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	pPlayer->Acc().m_GuildID = InitID;
 
 	// we create a guild in the table
-	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID) VALUES ('%d', '%s', '%d')", InitID, GuildName.cstr(), pPlayer->Acc().m_UserID);
-	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = '%d' WHERE ID = '%d'", InitID, pPlayer->Acc().m_UserID);
+	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID) VALUES ('%d', '%s', '%d')", InitID, GuildName.cstr(), pPlayer->Acc().m_ID);
+	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = '%d' WHERE ID = '%d'", InitID, pPlayer->Acc().m_ID);
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
 	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
 }
@@ -844,7 +844,7 @@ bool CGuildManager::JoinGuild(int AccountID, int GuildID)
 	}
 
 	// we update and get the data
-	CPlayer *pPlayer = GS()->GetPlayerFromUserID(AccountID);
+	CPlayer *pPlayer = GS()->GetPlayerByUserID(AccountID);
 	if(pPlayer)
 	{
 		pPlayer->Acc().m_GuildID = GuildID;
@@ -876,7 +876,7 @@ void CGuildManager::ExitGuild(int AccountID)
 		AddHistoryGuild(GuildID, "'%s' exit or kicked.", Job()->PlayerName(AccountID));
 
 		// we update the player's information
-		CPlayer *pPlayer = GS()->GetPlayerFromUserID(AccountID);
+		CPlayer *pPlayer = GS()->GetPlayerByUserID(AccountID);
 		if(pPlayer)
 		{
 			pPlayer->Acc().m_GuildID = 0;
@@ -1180,7 +1180,7 @@ void CGuildManager::ChangeRankAccess(int RankID)
 // change player rank
 void CGuildManager::ChangePlayerRank(int AccountID, int RankID)
 {
-	CPlayer* pPlayer = GS()->GetPlayerFromUserID(AccountID);
+	CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID);
 	if(pPlayer)
 		pPlayer->Acc().m_GuildRank = RankID;
 
@@ -1242,7 +1242,7 @@ void CGuildManager::SendInviteGuild(int GuildID, CPlayer *pPlayer)
 		return;
 	}
 
-	const int UserID = pPlayer->Acc().m_UserID;
+	const int UserID = pPlayer->Acc().m_ID;
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_guilds_invites", "WHERE GuildID = '%d' AND UserID = '%d'",  GuildID, UserID);
 	if(pRes->rowsCount() >= 1)
 	{

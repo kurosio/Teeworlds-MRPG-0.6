@@ -27,7 +27,7 @@ bool CRandomBox::Start(CPlayer *pPlayer, int Seconds, CPlayerItem* pPlayerUsesIt
 		pPlayer->m_aPlayerTick[LastRandomBox] = pPlayer->GS()->Server()->Tick() + Seconds;
 		std::sort(m_VectorItems.begin(), m_VectorItems.end(), [](const StRandomItem& pLeft, const StRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
 
-		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc().m_UserID, Seconds, m_VectorItems, pPlayerUsesItem, UseValue);
+		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc().m_ID, Seconds, m_VectorItems, pPlayerUsesItem, UseValue);
 		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{STR}x{VAL}'.", pPlayerUsesItem->Info()->GetName(), UseValue);
 	}
 

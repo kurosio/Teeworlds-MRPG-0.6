@@ -67,9 +67,9 @@ public:
 	/* #########################################################################
 		HELPER PLAYER FUNCTION
 	######################################################################### */
-	class CCharacter *GetPlayerChar(int ClientID);
-	CPlayer *GetPlayer(int ClientID, bool CheckAuthed = false, bool CheckCharacter = false);
-	CPlayer *GetPlayerFromUserID(int AccountID);
+	class CCharacter *GetPlayerChar(int ClientID) const;
+	CPlayer *GetPlayer(int ClientID, bool CheckAuthed = false, bool CheckCharacter = false) const;
+	CPlayer *GetPlayerByUserID(int AccountID) const;
 	class CItemDescription* GetItemInfo(ItemIdentifier ItemID) const;
 	CQuestDescription* GetQuestInfo(QuestIdentifier QuestID) const;
 	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;

@@ -5,7 +5,7 @@
 #include "game/server/gamecontext.h"
 
 // house bank data
-CPlayer* CHouseBankData::GetPlayer() const { return m_pGS->GetPlayerFromUserID(*m_pAccountID); }
+CPlayer* CHouseBankData::GetPlayer() const { return m_pGS->GetPlayerByUserID(*m_pAccountID); }
 
 void CHouseBankData::Add(int Value)
 {
