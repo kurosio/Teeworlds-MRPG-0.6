@@ -66,8 +66,11 @@ CGS::~CGS()
 	m_Events.Clear();
 	for(auto& pEffects : ms_aEffects)
 		pEffects.clear();
-	for(auto* apPlayer : m_apPlayers)
+	for(auto& apPlayer : m_apPlayers)
+	{
 		delete apPlayer;
+		apPlayer = nullptr;
+	}
 
 	delete m_pController;
 	delete m_pMmoController;
