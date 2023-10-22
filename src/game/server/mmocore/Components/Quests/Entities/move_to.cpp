@@ -34,7 +34,7 @@ CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskReq
 	{
 		// Create a laser orbiting around the bot
 		EntLaserOrbiteType TypeOrbite = m_pTaskMoveTo->m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB ? EntLaserOrbiteType::DEFAULT : EntLaserOrbiteType::INSIDE_ORBITE_RANDOM_APPEND;
-		GS()->CreateLaserOrbite(this, 9, EntLaserOrbiteType::INSIDE_ORBITE_RANDOM_APPEND, 0.f, 800.f, LASERTYPE_RIFLE, CmaskOne(ClientID));
+		GS()->CreateLaserOrbite(this, 9, TypeOrbite, 0.f, 800.f, LASERTYPE_RIFLE, CmaskOne(ClientID));
 	}
 }
 
