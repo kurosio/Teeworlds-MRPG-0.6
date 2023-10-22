@@ -1265,7 +1265,8 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		if(pFrom->IsBot() && pFrom->GetBotType() == TYPE_BOT_EIDOLON)
 		{
 			// Enable damage from eidolon to mobs if the player is a bot and the bot type is TYPE_BOT_MOB or TYPE_BOT_QUEST_MOB
-			if(m_pPlayer->IsBot() && (m_pPlayer->GetBotType() == TYPE_BOT_MOB || m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB))
+			if(m_pPlayer->IsBot() && (m_pPlayer->GetBotType() == TYPE_BOT_MOB || 
+					(m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID])))
 			{
 				return true;
 			}
