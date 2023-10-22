@@ -199,32 +199,69 @@ void CPlayer::Snap(int SnappingClient)
 	if(!pClientInfo)
 		return;
 
+	// Check if the player is not currently chatting and the server tick is less than the snapshot health tick
 	if(!(m_PlayerFlags & PLAYERFLAG_CHATTING) && Server()->Tick() < m_SnapHealthTick)
 	{
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
-
 		char aHealthProgressBuf[6];
 		char aNicknameBuf[MAX_NAME_LENGTH];
 		char aEndNicknameBuf[MAX_NAME_LENGTH];
+
+		// Format the health progress string with the calculated percentage
 		str_format(aHealthProgressBuf, sizeof(aHealthProgressBuf), ":%d%%", clamp(PercentHP, 1, 100));
+
+		// Truncate the player's nickname to fit the available space, leaving room for the health progress string
 		str_utf8_truncate(aNicknameBuf, sizeof(aNicknameBuf), Server()->ClientName(m_ClientID), (int)((MAX_NAME_LENGTH - 1) - str_length(aHealthProgressBuf)));
+
+		// Concatenate the truncated nickname and the health progress string
 		str_format(aEndNicknameBuf, sizeof(aEndNicknameBuf), "%s%s", aNicknameBuf, aHealthProgressBuf);
+
+		// Convert the final nickname to integer values and store them in the client info structure
 		StrToInts(&pClientInfo->m_Name0, 4, aEndNicknameBuf);
 	}
 	else
 	{
-		StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
+		// Check if the player is authenticated and if the tick is a multiple of 10 seconds
+		if(IsAuthed() && Server()->Tick() % (Server()->TickSpeed() * 10) == 0)
+		{
+			// Set the refresh tick for nickname leveling to be 1 second in the future
+			m_aPlayerTick[RefreshNickLeveling] = Server()->Tick() + Server()->TickSpeed();
+		}
+
+		// Check if the player is authenticated and if the refresh tick for nickname leveling is in the future
+		if(IsAuthed() && m_aPlayerTick[RefreshNickLeveling] > Server()->Tick())
+		{
+			// Create a buffer for the new nickname with the format "Level - X", where X is the player's level
+			char aBufNicknameLeveling[MAX_NAME_LENGTH];
+			str_format(aBufNicknameLeveling, sizeof(aBufNicknameLeveling), "Level - %d", Acc().m_Level);
+
+			// Convert the new nickname to integer values and update the client info's m_Name0 field
+			StrToInts(&pClientInfo->m_Name0, 4, aBufNicknameLeveling);
+		}
+		else
+		{
+			// Convert the default nickname to integer values and update the client info's m_Name0 field
+			StrToInts(&pClientInfo->m_Name0, 4, Server()->ClientName(m_ClientID));
+		}
 	}
 
+	// Check if it's time to refresh the clan title
 	if(m_aPlayerTick[RefreshClanTitle] < Server()->Tick())
 	{
+		// Rotate the clan string by the length of the first character
+		int clanStringSize = str_utf8_fix_truncation(m_aClanString);
 		std::rotate(std::begin(m_aClanString), std::begin(m_aClanString) + str_utf8_forward(m_aClanString, 0), std::end(m_aClanString));
 
-		const int Size = str_utf8_fix_truncation(m_aClanString);
-		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aClanString[0] == '|') || (Size - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 6));
-		if(Size < 10)
+		// Set the next tick for refreshing the clan title
+		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aClanString[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 6));
+
+		// If the clan string size is less than 10
+		if(clanStringSize < 10)
 		{
+			// Set the next tick for refreshing the clan title to current tick + 1 second
 			m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + Server()->TickSpeed();
+
+			// Refresh the clan string
 			RefreshClanString();
 		}
 	}

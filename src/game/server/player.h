@@ -55,7 +55,7 @@ public:
 	CGS* GS() const { return m_pGS; }
 	vec2 m_ViewPos;
 	int m_PlayerFlags;
-	int m_aPlayerTick[TickState::NUM_TICK];
+	int m_aPlayerTick[NUM_TICK];
 	char m_aClanString[128];
 	Mood m_MoodState;
 

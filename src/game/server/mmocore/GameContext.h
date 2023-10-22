@@ -60,6 +60,7 @@ enum TickState
 	LastRandomBox,
 	PotionRecast,
 	RefreshClanTitle,
+	RefreshNickLeveling,
 	NUM_TICK,
 };
 
