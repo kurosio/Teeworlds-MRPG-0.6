@@ -240,16 +240,6 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 
 		GS()->m_World.RemoveEntity(this);
 		GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
-
-		// Check if the bot type is TYPE_BOT_QUEST_MOB and the killer is active for the client
-		if(BotType == TYPE_BOT_QUEST_MOB)
-		{
-			if(m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[Killer])
-			{
-				// Set the completion status for the killer to true
-				m_pBotPlayer->GetQuestBotMobInfo().m_CompleteClient[Killer] = true;
-			}
-		}
 	}
 }
 
@@ -259,9 +249,20 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	const int BotID = m_pBotPlayer->GetBotID();
 	const int SubID = m_pBotPlayer->GetBotMobID();
 
-	// quest mob progress
+	// Check if the bot type is TYPE_BOT_QUEST_MOB and the killer is active for the client
+	if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB)
+	{
+		if(m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[ClientID])
+		{
+			// Set the completion status for the killer to true
+			m_pBotPlayer->GetQuestBotMobInfo().m_CompleteClient[ClientID] = true;
+		}
+	}
+
+	// Check if the bot is a mob type
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
 	{
+		// Append defeat progress for the quest mob
 		GS()->Mmo()->Quest()->AppendDefeatProgress(pPlayer, BotID);
 	}
 
@@ -271,46 +272,45 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "You get reduced rewards, due to farming mobs afk.");
 		pPlayer->AddMoney(1);
 		GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, 1, Force);
+		return;
 	}
-	else
+
+	// grinding gold
+	const int Gold = max(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
+	pPlayer->AddMoney(Gold);
+
+	// grinding experience
+	const int ExperienceMob = max(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
+	const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
+	GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
+
+	// drop experience
+	const int ExperienceDrop = max(ExperienceWithMultiplier / 2, 1);
+	GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + random_int() % 2), Force);
+
+	// drop item's
+	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
+	for(int i = 0; i < 5; i++)
 	{
-		// grinding gold
-		const int Gold = max(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
-		pPlayer->AddMoney(Gold);
+		CItem DropItem;
+		DropItem.SetID(MobBotInfo::ms_aMobBot[SubID].m_aDropItem[i]);
+		DropItem.SetValue(MobBotInfo::ms_aMobBot[SubID].m_aValueItem[i]);
+		if(DropItem.GetID() <= 0 || DropItem.GetValue() <= 0)
+			continue;
 
-		// grinding experience
-		const int ExperienceMob = max(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
-		const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
-		GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
+		const float RandomDrop = clamp(MobBotInfo::ms_aMobBot[SubID].m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
+		const vec2 ForceRandom(centrelized_frandom(Force.x, Force.x / 4.0f), centrelized_frandom(Force.y, Force.y / 8.0f));
+		GS()->CreateRandomDropItem(m_Core.m_Pos, ClientID, RandomDrop, DropItem, ForceRandom);
+	}
 
-		// drop experience
-		const int ExperienceDrop = max(ExperienceWithMultiplier / 2, 1);
-		GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + random_int() % 2), Force);
-
-		// drop item's
-		const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
-		for(int i = 0; i < 5; i++)
-		{
-			CItem DropItem;
-			DropItem.SetID(MobBotInfo::ms_aMobBot[SubID].m_aDropItem[i]);
-			DropItem.SetValue(MobBotInfo::ms_aMobBot[SubID].m_aValueItem[i]);
-			if(DropItem.GetID() <= 0 || DropItem.GetValue() <= 0)
-				continue;
-
-			const float RandomDrop = clamp(MobBotInfo::ms_aMobBot[SubID].m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
-			const vec2 ForceRandom(centrelized_frandom(Force.x, Force.x / 4.0f), centrelized_frandom(Force.y, Force.y / 8.0f));
-			GS()->CreateRandomDropItem(m_Core.m_Pos, ClientID, RandomDrop, DropItem, ForceRandom);
-		}
-
-		// skill point
-		// TODO: balance depending on the difficulty, not just the level
-		const int CalculateSP = (pPlayer->Acc().m_Level > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + min(40, (pPlayer->Acc().m_Level - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
-		if(random_int() % CalculateSP == 0)
-		{
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
-			pPlayerItem->Add(1);
-			GS()->Chat(ClientID, "Skill points increased. Now ({INT}SP)", pPlayerItem->GetValue());
-		}
+	// skill point
+	// TODO: balance depending on the difficulty, not just the level
+	const int CalculateSP = (pPlayer->Acc().m_Level > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + min(40, (pPlayer->Acc().m_Level - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
+	if(random_int() % CalculateSP == 0)
+	{
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
+		pPlayerItem->Add(1);
+		GS()->Chat(ClientID, "Skill points increased. Now ({INT}SP)", pPlayerItem->GetValue());
 	}
 }
 
