@@ -132,9 +132,9 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				if(p.contains("defeat_mob"))
 				{
 					auto pDefeatJson = p["defeat_mob"];
-					DefeatDescription.m_BotID = pDefeatJson.value("bot_id", -1);
-					DefeatDescription.m_AttributePower = pDefeatJson.value("attribute_power", -1);
-					DefeatDescription.m_AttributeSpread = pDefeatJson.value("attribute_spread", -1);
+					DefeatDescription.m_BotID = pDefeatJson.value("id", -1);
+					DefeatDescription.m_AttributePower = pDefeatJson.value("attribute_power", 10);
+					DefeatDescription.m_AttributeSpread = pDefeatJson.value("attribute_spread", 0);
 					DefeatDescription.m_WorldID = pDefeatJson.value("world_id", m_WorldID);
 					Type = TaskRequiredMoveTo::Types::DEFEAT_MOB;
 				}
