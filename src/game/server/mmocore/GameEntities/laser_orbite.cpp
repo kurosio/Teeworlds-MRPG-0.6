@@ -5,11 +5,12 @@
 #include <game/server/gamecontext.h>
 
 CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f)), m_MoveType(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_Radius(Radius), m_pEntParent(pEntParent)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f), Radius), m_Type(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_pEntParent(pEntParent)
 {
 	m_Mask = Mask;
 	m_LaserType = LaserType;
-	m_AppendPos = vec2(centrelized_frandom(0.f, m_Radius / 1.2f), centrelized_frandom(0.f, m_Radius / 1.2f));
+	m_Pos = m_pEntParent ? m_pEntParent->GetPos() : vec2();
+	m_AppendPos = vec2(centrelized_frandom(0.f, GetProximityRadius() / 1.2f), centrelized_frandom(0.f, GetProximityRadius() / 1.2f));
 	GameWorld()->InsertEntity(this);
 
 	m_IDs.set_size(Amount);
@@ -35,7 +36,7 @@ void CLaserOrbite::Tick()
 
 	if(m_pEntParent)
 	{
-		if(m_MoveType == EntLaserOrbiteType::INSIDE_ORBITE_RANDOM_APPEND)
+		if(m_Type == EntLaserOrbiteType::INSIDE_ORBITE_RANDOM)
 			m_Pos = m_pEntParent->GetPos() + m_AppendPos;
 		else
 			m_Pos = m_pEntParent->GetPos();
@@ -48,17 +49,17 @@ vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const
 {
 	float AngleStart = 2.0f * pi;
 	float AngleStep = 2.0f * pi / (float)m_IDs.size();
-	if(m_MoveType == EntLaserOrbiteType::MOVE_LEFT)
+	if(m_Type == EntLaserOrbiteType::MOVE_LEFT)
 		AngleStart = -(AngleStart * (float)Server()->Tick() / (float)Server()->TickSpeed()) * m_MoveSpeed;
-	else if(m_MoveType == EntLaserOrbiteType::MOVE_RIGHT)
+	else if(m_Type == EntLaserOrbiteType::MOVE_RIGHT)
 		AngleStart = (AngleStart * (float)Server()->Tick() / (float)Server()->TickSpeed()) * m_MoveSpeed;
 
-	return { m_Radius * cos(AngleStart + AngleStep * (float)PosID), m_Radius * sin(AngleStart + AngleStep * (float)PosID) };
+	return { GetProximityRadius() * cos(AngleStart + AngleStep * (float)PosID), GetProximityRadius() * sin(AngleStart + AngleStep * (float)PosID) };
 }
 
 void CLaserOrbite::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient, m_Pos, m_Radius) || !CmaskIsSet(m_Mask, SnappingClient))
+	if(NetworkClipped(SnappingClient, m_Pos, GetProximityRadius()) || !CmaskIsSet(m_Mask, SnappingClient))
 		return;
 
 	if(const CPlayer* pPlayer = GS()->GetPlayer(m_ClientID); pPlayer && pPlayer->IsVisibleForClient(SnappingClient) != 2)

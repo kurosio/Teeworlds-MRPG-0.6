@@ -24,7 +24,8 @@ enum class EntLaserOrbiteType : unsigned char
 	DEFAULT, // Default value
 	MOVE_LEFT, // Move left value
 	MOVE_RIGHT, // Move right value
-	INSIDE_ORBITE_RANDOM_APPEND, // Inside orbite
+	INSIDE_ORBITE, // Inside orbite
+	INSIDE_ORBITE_RANDOM, // Inside orbite
 };
 
 // mood type

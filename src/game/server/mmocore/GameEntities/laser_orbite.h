@@ -13,13 +13,15 @@ public:
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
+	EntLaserOrbiteType GetType() const { return m_Type; }
+	CEntity* GetEntityParent() const { return m_pEntParent; }
+
 private:
 	array<int> m_IDs;
-	EntLaserOrbiteType m_MoveType {};
+	EntLaserOrbiteType m_Type {};
 	int m_ClientID {};
 	int m_LaserType {};
 	float m_MoveSpeed{};
-	float m_Radius{};
 	int64 m_Mask{};
 	vec2 m_AppendPos {};
 	CEntity* m_pEntParent{};
