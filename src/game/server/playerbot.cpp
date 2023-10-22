@@ -18,7 +18,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int Spaw
 	m_EidolonCID = -1;
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
-	m_BotStartHealth = m_BotType == TYPE_BOT_MOB ? CPlayerBot::GetAttributeSize(AttributeIdentifier::HP) : 10;
+	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
 }
 
 CPlayerBot::~CPlayerBot()

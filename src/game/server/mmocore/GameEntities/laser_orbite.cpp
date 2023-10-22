@@ -58,7 +58,7 @@ vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const
 
 void CLaserOrbite::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient, m_Pos) || !CmaskIsSet(m_Mask, SnappingClient))
+	if(NetworkClipped(SnappingClient, m_Pos, m_Radius) || !CmaskIsSet(m_Mask, SnappingClient))
 		return;
 
 	if(const CPlayer* pPlayer = GS()->GetPlayer(m_ClientID); pPlayer && pPlayer->IsVisibleForClient(SnappingClient) != 2)

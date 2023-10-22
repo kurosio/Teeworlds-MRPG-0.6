@@ -136,6 +136,7 @@ public:
 	*/
 	int NetworkClipped(int SnappingClient) const;
 	int NetworkClipped(int SnappingClient, vec2 CheckPos) const;
+	int NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius) const;
 
 	bool GameLayerClipped(vec2 CheckPos) const;
 };
