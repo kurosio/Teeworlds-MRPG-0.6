@@ -23,11 +23,31 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int Spaw
 
 CPlayerBot::~CPlayerBot()
 {
-	for(int i = 0; i < MAX_PLAYERS; i++)
-		DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive[i] = false;
+	// Set all elements in the m_aVisibleActive array of the DataBotInfo object at index m_BotID to 0
+	std::memset(DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive, 0, MAX_PLAYERS * sizeof(bool));
 
+	// Delete the m_pCharacter object and set it to nullptr
 	delete m_pCharacter;
 	m_pCharacter = nullptr;
+}
+
+// This method is used to initialize the quest bot mob info for the player bot
+// It takes an instance of CQuestBotMobInfo as a parameter
+void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
+{
+	// Check if the bot type is TYPE_BOT_QUEST_MOB
+	if(m_BotType == TYPE_BOT_QUEST_MOB)
+	{
+		// Assign the passed CQuestBotMobInfo instance to the member variable m_QuestMobInfo
+		m_QuestMobInfo = elem;
+
+		// Set all elements of m_ActiveForClient m_CompleteClient array to false
+		std::memset(m_QuestMobInfo.m_ActiveForClient, 0, MAX_PLAYERS * sizeof(bool));
+		std::memset(m_QuestMobInfo.m_CompleteClient, 0, MAX_PLAYERS * sizeof(bool));
+
+		// Update the attribute size of the player bot for the attribute identifier HP
+		m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
+	}
 }
 
 void CPlayerBot::Tick()

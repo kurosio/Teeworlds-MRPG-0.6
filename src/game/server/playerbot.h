@@ -42,7 +42,7 @@ public:
 	CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint);
 	~CPlayerBot() override;
 
-	void InitQuestBotMobInfo(CQuestBotMobInfo elem) { m_QuestMobInfo = elem; }
+	void InitQuestBotMobInfo(CQuestBotMobInfo elem);
 	CQuestBotMobInfo& GetQuestBotMobInfo() { return m_QuestMobInfo; }
 
 	int GetTeam() override { return TEAM_BLUE; }
