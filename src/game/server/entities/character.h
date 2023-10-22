@@ -62,6 +62,7 @@ protected:
 	int m_EmoteStop;
 	int m_Health;
 	int m_Mana;
+	vec2 m_SpawnPoint;
 
 	// these are non-heldback inputs
 	CNetObj_PlayerInput m_Input;

@@ -65,7 +65,7 @@ public:
 
 	CEntityMoveTo* FoundEntityMoveTo(vec2 Position) const;
 	CEntityPathFinder* FoundEntityNavigator(vec2 Position) const;
-	CEntityMoveTo* AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete);
+	CEntityMoveTo* AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete, class CPlayerBot* pDefeatMobPlayer = nullptr);
 	CEntityPathFinder* AddEntityNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete);
 };
 

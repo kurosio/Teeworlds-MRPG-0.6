@@ -19,14 +19,31 @@ class CPlayerBot : public CPlayer
 	bool m_BotActive;
 	int m_DungeonAllowedSpawn;
 
+	struct CQuestBotMobInfo
+	{
+		int m_QuestID;
+		int m_QuestStep;
+		int m_MoveToStep;
+		int m_AttributePower;
+		int m_AttributeSpread;
+		int m_WorldID;
+		vec2 m_Position;
+
+		bool m_ActiveForClient[MAX_PLAYERS]{};
+		bool m_CompleteClient[MAX_PLAYERS]{};
+	} m_QuestMobInfo;
+
 public:
 	int m_LastPosTick;
 	vec2 m_TargetPos;
 	vec2 m_OldTargetPos;
 	CPathFinderPrepared m_PathFinderData;
 
-	CPlayerBot(CGS *pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint);
+	CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint);
 	~CPlayerBot() override;
+
+	void InitQuestBotMobInfo(CQuestBotMobInfo elem) { m_QuestMobInfo = elem; }
+	CQuestBotMobInfo& GetQuestBotMobInfo() { return m_QuestMobInfo; }
 
 	int GetTeam() override { return TEAM_BLUE; }
 	bool IsBot() const override { return true; }
@@ -57,7 +74,7 @@ public:
 	void Snap(int SnappingClient) override;
 	void FakeSnap() override;
 
-	bool IsActive() const override {return m_BotActive;};
+	bool IsActive() const override { return m_BotActive; };
 
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
 

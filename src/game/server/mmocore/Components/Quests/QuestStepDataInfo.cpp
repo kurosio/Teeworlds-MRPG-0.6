@@ -325,7 +325,48 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 
 			// add entity move to
 			if(pRequired.m_WorldID == pPlayer->GetPlayerWorldID())
-				AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i]);
+			{
+				// add move to mob defeat point
+				CPlayerBot* pPlayerBot = nullptr;
+				if(pRequired.IsHasDefeatMob())
+				{
+					for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+					{
+						CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+						if(pPlBotSearch && pPlBotSearch->GetQuestBotMobInfo().m_QuestID == pQuest->GetID() &&
+							pPlBotSearch->GetQuestBotMobInfo().m_QuestStep == GetStepPos() &&
+							pPlBotSearch->GetQuestBotMobInfo().m_MoveToStep == CurrentStep)
+						{
+							pPlayerBot = pPlBotSearch;
+							break;
+						}
+					}
+
+					if(!pPlayerBot)
+					{
+						int MobClientID = GS()->CreateBot(TYPE_BOT_QUEST_MOB, pRequired.m_DefeatMobInfo.m_BotID, -1);
+						pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[MobClientID]);
+						pPlayerBot->InitQuestBotMobInfo(
+							{
+								GetQuestID(),
+								GetStepPos(),
+								CurrentStep,
+								pRequired.m_DefeatMobInfo.m_AttributePower,
+								pRequired.m_DefeatMobInfo.m_AttributeSpread,
+								pRequired.m_DefeatMobInfo.m_WorldID,
+								pRequired.m_Position
+							});
+
+						dbg_msg("test", "CREATE MOB QUEST");
+					}
+
+					pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[pPlayer->GetCID()] = true;
+					pPlayerBot->GetQuestBotMobInfo().m_CompleteClient[pPlayer->GetCID()] = false;
+				}
+
+				// add move to
+				AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i], pPlayerBot);
+			}
 
 			// add entity path navigator
 			if(pRequired.m_Navigator)
@@ -476,7 +517,7 @@ CEntityPathFinder* CPlayerQuestStep::FoundEntityNavigator(vec2 Position) const
 	return nullptr;
 }
 
-CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete)
+CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete, CPlayerBot* pDefeatMobPlayer)
 {
 	CPlayer* pPlayer = GetPlayer();
 	if(!pPlayer || !pTaskMoveTo || !pComplete || (*pComplete) == true)
@@ -486,7 +527,7 @@ CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequire
 	CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pTaskMoveTo->m_Position);
 	if(!pEntMoveTo)
 	{
-		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, GetQuestID(), pComplete, &m_apEntitiesMoveTo, m_Bot.IsMoveToCompletesQuestStep()));
+		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, GetQuestID(), pComplete, &m_apEntitiesMoveTo, m_Bot.IsMoveToCompletesQuestStep(), pDefeatMobPlayer));
 	}
 
 	return pEntMoveTo;

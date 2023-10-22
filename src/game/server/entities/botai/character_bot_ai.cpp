@@ -119,20 +119,25 @@ void CCharacterBotAI::OnSpawnInitBotTypes()
 			// Create a new CEidolon object with the specified parameters
 			new CEidolon(&GS()->m_World, m_Core.m_Pos, 0, ClientID, OwnerCID);
 		} break;
+		//
+		// Case for bot type TYPE_BOT_QUEST_MOB
+		{
+
+		} break;
 		default: break;
 	}
 }
 
 void CCharacterBotAI::GiveRandomEffects(int ClientID)
 {
-	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB)
-		return;
-
-	if(CPlayer* pPlayer = GS()->GetPlayer(ClientID); pPlayer && ClientID != m_pBotPlayer->GetCID())
+	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
 	{
-		const int MobID = m_pBotPlayer->GetBotMobID();
-		if(const CMobBuffDebuff* pBuff = MobBotInfo::ms_aMobBot[MobID].GetRandomEffect())
-			pPlayer->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
+		if(CPlayer* pPlayer = GS()->GetPlayer(ClientID); pPlayer && ClientID != m_pBotPlayer->GetCID())
+		{
+			const int MobID = m_pBotPlayer->GetBotMobID();
+			if(const CMobBuffDebuff* pBuff = MobBotInfo::ms_aMobBot[MobID].GetRandomEffect())
+				pPlayer->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
+		}
 	}
 }
 
@@ -142,93 +147,110 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if(!pFrom || !m_pBotPlayer->IsActive())
 		return false;
 
-	// dissalow for self damage except type mobs
-	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB)
-		return false;
-
-	// dissalow entered line damage
-	if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
-		return false;
-
-	// dissalow damage from bot to bot except type eidolon
-	if(pFrom->IsBot() && pFrom->GetBotType() != TYPE_BOT_EIDOLON)
-		return false;
-
-	// damage receive
-	CCharacter::TakeDamage(Force, Dmg, From, Weapon);
-
-	// for eidolon change from owner to owner eidolon
-	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
+	// allow damage for mob's
+	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB || m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB)
 	{
-		From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
-	}
+		// dissalow entered line damage
+		if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
+			return false;
 
-	// if the bot doesn't have target player, set to from
-	if(pFrom->GetBotType() == TYPE_BOT_MOB && AI()->GetTarget()->IsEmpty())
-	{
-		AI()->GetTarget()->Set(From, 200);
-	}
+		// dissalow damage from bot to bot except type eidolon
+		if(pFrom->IsBot() && pFrom->GetBotType() != TYPE_BOT_EIDOLON)
+			return false;
 
-	// add (from player) to the list of those who caused damage
-	if(!std::any_of(m_aListDmgPlayers.begin(), m_aListDmgPlayers.end(), [From](int ClientID){ return ClientID == From; }))
-		m_aListDmgPlayers.push_back(From);
+		// damage receive
+		CCharacter::TakeDamage(Force, Dmg, From, Weapon);
 
-	// verify death
-	if(m_Health <= 0)
-	{
-		// reward players
-		if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
+		// for eidolon change from owner to owner eidolon
+		if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
 		{
-			for(const auto& ClientID : m_aListDmgPlayers)
-			{
-				CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
-				if(!pPlayer || !GS()->IsPlayerEqualWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
-					continue;
-
-				RewardPlayer(pPlayer, Force);
-			}
+			From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
 		}
-		m_aListDmgPlayers.clear();
-		AI()->GetTarget()->Reset();
 
-		// die
-		Die(From, Weapon);
-		return false;
+		// if the bot doesn't have target player, set to from
+		if(pFrom->GetBotType() == TYPE_BOT_MOB && AI()->GetTarget()->IsEmpty())
+		{
+			AI()->GetTarget()->Set(From, 200);
+		}
+
+		// add (from player) to the list of those who caused damage
+		if(!std::any_of(m_aListDmgPlayers.begin(), m_aListDmgPlayers.end(), [From](int ClientID){ return ClientID == From; }))
+			m_aListDmgPlayers.push_back(From);
+
+		// verify death
+		if(m_Health <= 0)
+		{
+			// reward players
+			if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
+			{
+				for(const auto& ClientID : m_aListDmgPlayers)
+				{
+					CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
+					if(!pPlayer || !GS()->IsPlayerEqualWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
+						continue;
+
+					RewardPlayer(pPlayer, Force);
+				}
+			}
+			m_aListDmgPlayers.clear();
+			AI()->GetTarget()->Reset();
+
+			// die
+			Die(From, Weapon);
+			return false;
+		}
+
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 void CCharacterBotAI::Die(int Killer, int Weapon)
 {
-	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB || Killer < 0 || Killer > MAX_CLIENTS || !GS()->m_apPlayers[Killer])
+	if(Killer < 0 || Killer > MAX_CLIENTS || !GS()->m_apPlayers[Killer])
 		return;
 
-	m_Alive = false;
+	// only for mob's
+	int BotType = m_pBotPlayer->GetBotType();
+	if(BotType == TYPE_BOT_MOB || BotType == TYPE_BOT_QUEST_MOB)
+	{
+		m_Alive = false;
 
-	// a nice sound
-	int ClientID = m_pBotPlayer->GetCID();
-	const int SubBotID = m_pBotPlayer->GetBotMobID();
-	CPlayer* pPlayerKiller = GS()->m_apPlayers[Killer];
-	GS()->m_pController->OnCharacterDeath(this, pPlayerKiller, Weapon);
-	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
+		// a nice sound
+		int ClientID = m_pBotPlayer->GetCID();
+		const int SubBotID = m_pBotPlayer->GetBotMobID();
+		CPlayer* pPlayerKiller = GS()->m_apPlayers[Killer];
+		GS()->m_pController->OnCharacterDeath(this, pPlayerKiller, Weapon);
+		GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 
-	// send the kill message
-	CNetMsg_Sv_KillMsg Msg;
-	Msg.m_Killer = Killer;
-	Msg.m_Victim = ClientID;
-	Msg.m_Weapon = Weapon;
-	Msg.m_ModeSpecial = 0;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, pPlayerKiller->GetPlayerWorldID());
+		// send the kill message
+		CNetMsg_Sv_KillMsg Msg;
+		Msg.m_Killer = Killer;
+		Msg.m_Victim = ClientID;
+		Msg.m_Weapon = Weapon;
+		Msg.m_ModeSpecial = 0;
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, pPlayerKiller->GetPlayerWorldID());
 
-	// respawn
-	m_pBotPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick * Server()->TickSpeed();
-	m_pBotPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
-	m_pBotPlayer->m_Spawned = true;
-	GS()->CreateDeath(m_Pos, ClientID);
+		// respawn
+		m_pBotPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick * Server()->TickSpeed();
+		m_pBotPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
+		m_pBotPlayer->m_Spawned = true;
+		GS()->CreateDeath(m_Pos, ClientID);
 
-	GS()->m_World.RemoveEntity(this);
-	GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
+		GS()->m_World.RemoveEntity(this);
+		GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
+
+		// Check if the bot type is TYPE_BOT_QUEST_MOB and the killer is active for the client
+		if(BotType == TYPE_BOT_QUEST_MOB)
+		{
+			if(m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[Killer])
+			{
+				// Set the completion status for the killer to true
+				m_pBotPlayer->GetQuestBotMobInfo().m_CompleteClient[Killer] = true;
+			}
+		}
+	}
 }
 
 void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
@@ -239,7 +261,9 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// quest mob progress
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
+	{
 		GS()->Mmo()->Quest()->AppendDefeatProgress(pPlayer, BotID);
+	}
 
 	// reduce afk farming
 	if(pPlayer->IsAfk())
@@ -413,6 +437,12 @@ void CCharacterBotAI::Snap(int SnappingClient)
 		DDNetFlag(CHARACTERFLAG_SOLO, !(pOwner && pOwner->GetCID() == SnappingClient))
 			DDNetFlag(CHARACTERFLAG_COLLISION_DISABLED, true)
 	}
+	else if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB)
+	{
+		bool IsActiveForSnappingClient = m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[SnappingClient];
+		DDNetFlag(CHARACTERFLAG_SOLO, !IsActiveForSnappingClient)
+			DDNetFlag(CHARACTERFLAG_COLLISION_DISABLED, !IsActiveForSnappingClient)
+	}
 #undef DDNetFlag
 
 	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
@@ -436,6 +466,12 @@ void CCharacterBotAI::HandleBot()
 			AI()->GetTarget()->Tick();
 			EngineMobs();
 		} break;
+		// bot quest mob
+		case TYPE_BOT_QUEST_MOB:
+		{
+			AI()->GetTarget()->Tick();
+			EngineQuestMob();
+		} break;
 		// player eidolon
 		case TYPE_BOT_EIDOLON:
 		{
@@ -446,7 +482,7 @@ void CCharacterBotAI::HandleBot()
 		case TYPE_BOT_QUEST:
 		{
 			SetSafe();
-			EngineQuestMob();
+			EngineQuestNPC();
 		} break;
 		// npc bot
 		case TYPE_BOT_NPC:
@@ -500,7 +536,7 @@ void CCharacterBotAI::EngineNPC()
 }
 
 // interactive of Quest bots
-void CCharacterBotAI::EngineQuestMob()
+void CCharacterBotAI::EngineQuestNPC()
 {
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 		m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
@@ -555,19 +591,19 @@ void CCharacterBotAI::HandleTuning()
 
 void CCharacterBotAI::BehaviorTick()
 {
-	if(m_pBotPlayer->GetBotType() != TYPE_BOT_MOB)
-		return;
-
-	const int MobID = m_pBotPlayer->GetBotMobID();
-	MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
-
-	// sleepy behavior
-	if(AI()->GetTarget()->IsEmpty() && pMobBot->IsIncludedBehavior("Sleepy"))
+	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
 	{
-		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
+		const int MobID = m_pBotPlayer->GetBotMobID();
+		MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
+
+		// sleepy behavior
+		if(AI()->GetTarget()->IsEmpty() && pMobBot->IsIncludedBehavior("Sleepy"))
 		{
-			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_ZZZ);
-			SetEmote(EMOTE_BLINK, 1, false);
+			if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
+			{
+				GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_ZZZ);
+				SetEmote(EMOTE_BLINK, 1, false);
+			}
 		}
 	}
 }
@@ -687,6 +723,65 @@ void CCharacterBotAI::EngineEidolons()
 	HandleWeapons();
 }
 
+// interactive of Quest mobs
+void CCharacterBotAI::EngineQuestMob()
+{
+	bool MobMove = true;
+
+	// search target
+	CPlayer* pPlayer = SearchTankPlayer(1000.0f);
+	if(pPlayer && pPlayer->GetCharacter())
+	{
+		AI()->GetTarget()->Set(pPlayer->GetCID(), 100);
+		m_pBotPlayer->m_TargetPos = pPlayer->GetCharacter()->GetPos();
+	}
+
+	// check player distance with active target
+	float Distance = distance(m_SpawnPoint, m_Pos);
+	if(Distance > 800.0f)
+	{
+		ChangePosition(m_SpawnPoint);
+	}
+	else if(Distance > 400.0f && !AI()->GetTarget()->IsEmpty())
+	{
+		AI()->GetTarget()->Reset();
+	}
+
+	// side empty target
+	if(AI()->GetTarget()->IsEmpty())
+	{
+		if(Distance < 128.0f)
+		{
+			if(Server()->Tick() % Server()->TickSpeed() == 0)
+				m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+
+			m_pBotPlayer->m_TargetPos = vec2(0, 0);
+			m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
+			m_Input.m_Direction = 0;
+			MobMove = false;
+		}
+
+		// always with empty target / target pos it's owner
+		m_pBotPlayer->m_TargetPos = m_SpawnPoint;
+	}
+
+	// bot with weapons since it has spread.
+	if(MobMove)
+	{
+		ResetInput();
+		Fire();
+		ChangeWeapons();
+		Move();
+	}
+
+	m_PrevPos = m_Pos;
+	if(m_Input.m_Direction)
+		m_PrevDirection = m_Input.m_Direction;
+
+	EmotesAction(m_EmotionsStyle);
+	HandleWeapons();
+}
+
 void CCharacterBotAI::Move()
 {
 	// try get path finder updated data
@@ -718,11 +813,14 @@ void CCharacterBotAI::Move()
 		m_Input.m_Direction = m_PrevDirection;
 
 	// check dissalow move
-	if(m_pBotPlayer->GetBotType() != TYPE_BOT_EIDOLON && IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
+	if(m_pBotPlayer->GetBotType() != TYPE_BOT_EIDOLON && m_pBotPlayer->GetBotType() != TYPE_BOT_QUEST_MOB)
 	{
-		AI()->GetTarget()->SetType(TARGET_TYPE::LOST);
-		m_Input.m_Direction = -m_Input.m_Direction;
-		m_DoorHit = true;
+		if(IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
+		{
+			AI()->GetTarget()->SetType(TARGET_TYPE::LOST);
+			m_Input.m_Direction = -m_Input.m_Direction;
+			m_DoorHit = true;
+		}
 	}
 
 	// jumping
@@ -855,19 +953,34 @@ void CCharacterBotAI::SetAim(vec2 Dir)
 // searching for a player among people
 CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 {
+	// Loop through each player in the game
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
+		// Skip the iteration if the player or their character is not available
 		if(!GS()->m_apPlayers[i] || !GS()->m_apPlayers[i]->GetCharacter())
 			continue;
+
+		// Skip the iteration if the bot is a quest mob type and the player is not active for the bot
+		if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && !m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[i])
+			continue;
+
+		// Skip the iteration if the distance between the bot and the player's character is greater than the specified distance
 		if(distance(m_Core.m_Pos, GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos) > Distance)
 			continue;
+
+		// Skip the iteration if there is a collision between the bot and the player's character
 		if(GS()->Collision()->IntersectLineWithInvisible(GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos, m_Pos, nullptr, nullptr))
 			continue;
+
+		// Skip the iteration if the player is not in the same world as the bot
 		if(!GS()->IsPlayerEqualWorld(i))
 			continue;
 
+		// Return the player if all conditions are met
 		return GS()->m_apPlayers[i];
 	}
+
+	// Return null if no player is found that meets all the conditions
 	return nullptr;
 }
 
@@ -900,6 +1013,10 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 	// looking for a stronger
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
+		// Skip the iteration if the bot is a quest mob type and the player is not active for the bot
+		if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && !m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[i])
+			continue;
+
 		// check the distance of the player
 		CPlayer* pFinderHard = GS()->GetPlayer(i, true, true);
 		if(AI()->GetTarget()->GetCID() == i || !pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)

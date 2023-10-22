@@ -21,6 +21,7 @@ private:
 	float m_MoveSpeed{};
 	float m_Radius{};
 	int64 m_Mask{};
+	vec2 m_AppendPos {};
 	CEntity* m_pEntParent{};
 
 	vec2 UtilityOrbitePos(int PosID) const;

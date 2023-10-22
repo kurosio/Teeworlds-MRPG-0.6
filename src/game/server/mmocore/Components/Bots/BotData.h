@@ -92,7 +92,16 @@ public:
 		{
 			MOVE_ONLY,
 			PRESS_FIRE,
-			USE_CHAT_MODE
+			USE_CHAT_MODE,
+			DEFEAT_MOB,
+		};
+
+		struct DefeatMob
+		{
+			int m_BotID {};
+			int m_AttributePower {};
+			int m_AttributeSpread {};
+			int m_WorldID {};
 		};
 
 		vec2 m_Position{};
@@ -105,6 +114,9 @@ public:
 		bool m_Navigator{};
 		Types m_Type {};
 		int m_QuestBotID {};
+		DefeatMob m_DefeatMobInfo{};
+
+		bool IsHasDefeatMob() const { return m_DefeatMobInfo.m_BotID >= 1; };
 	};
 	std::deque < TaskRequiredMoveTo > m_RequiredMoveTo;
 	bool IsMoveToCompletesQuestStep() const { return m_MoveToCompletesQuestStep; }

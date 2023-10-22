@@ -58,6 +58,7 @@ private:
 	void EngineMobs();
 	void EngineEidolons();
 	void EngineQuestMob();
+	void EngineQuestNPC();
 	void HandleTuning() override;
 	void BehaviorTick();
 

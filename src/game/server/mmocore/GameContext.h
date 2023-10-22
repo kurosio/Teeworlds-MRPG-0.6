@@ -24,6 +24,7 @@ enum class EntLaserOrbiteType : unsigned char
 	DEFAULT, // Default value
 	MOVE_LEFT, // Move left value
 	MOVE_RIGHT, // Move right value
+	INSIDE_ORBITE_RANDOM_APPEND, // Inside orbite
 };
 
 // mood type
@@ -379,6 +380,7 @@ enum BotsTypes
 	TYPE_BOT_NPC = 3,       // type for NPC bots
 	TYPE_BOT_FAKE = 4,      // type for fake bots
 	TYPE_BOT_EIDOLON = 5,   // type for eidolon bots
+	TYPE_BOT_QUEST_MOB = 6, // type for quest mob bots
 };
 
 enum

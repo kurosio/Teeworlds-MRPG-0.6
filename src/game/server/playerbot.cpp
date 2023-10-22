@@ -118,7 +118,7 @@ int CPlayerBot::GetRespawnTick() const
 
 int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 {
-	if(m_BotType != TYPE_BOT_MOB && m_BotType != TYPE_BOT_EIDOLON)
+	if(m_BotType != TYPE_BOT_MOB && m_BotType != TYPE_BOT_EIDOLON && m_BotType != TYPE_BOT_QUEST_MOB)
 		return 10;
 
 	auto CalculateAttribute = [ID, this](int Power, int Spread, bool Boss) -> int
@@ -149,16 +149,37 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 		return SyncPercentSize;
 	};
 
+	// Initialize Size variable to 0
 	int Size = 0;
+
+	// Check if bot type is TYPE_BOT_EIDOLON
 	if(m_BotType == TYPE_BOT_EIDOLON)
 	{
+		// Check if game is in Dungeon mode
 		if(GS()->IsDungeon())
+		{
+			// Calculate Size based on sync factor
+			// Translate the sync factor to percent and then calculate the attribute
 			Size = CalculateAttribute(translate_to_percent_rest(max(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, false);
+		}
 		else
+		{
+			// Calculate Size based on Eidolon item ID
 			Size = CalculateAttribute(m_EidolonItemID, 1, false);
+		}
 	}
+	// Check if bot type is TYPE_BOT_MOB
 	else if(m_BotType == TYPE_BOT_MOB)
+	{
+		// Calculate Size based on Mob bot info
 		Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss);
+	}
+	// Check if bot type is TYPE_BOT_QUEST_MOB
+	else if(m_BotType == TYPE_BOT_QUEST_MOB)
+	{
+		// Calculate Size based on Quest Mob info
+		Size = CalculateAttribute(m_QuestMobInfo.m_AttributePower, m_QuestMobInfo.m_AttributeSpread, true);
+	}
 	return Size;
 }
 
@@ -215,6 +236,10 @@ void CPlayerBot::TryRespawn()
 			return;
 
 		SpawnPos = pOwner->GetCharacter()->GetPos();
+	}
+	else if(m_BotType == TYPE_BOT_QUEST_MOB)
+	{
+		SpawnPos = GetQuestBotMobInfo().m_Position;
 	}
 
 	// create character
@@ -290,7 +315,7 @@ void CPlayerBot::Snap(int SnappingClient)
 	if(!pClientInfo)
 		return;
 
-	if(GetBotType() == TYPE_BOT_MOB)
+	if(GetBotType() == TYPE_BOT_MOB || GetBotType() == TYPE_BOT_QUEST_MOB)
 	{
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
 
@@ -332,7 +357,7 @@ void CPlayerBot::FakeSnap()
 Mood CPlayerBot::GetMoodState() const
 {
 	CCharacterBotAI* pChr = (CCharacterBotAI*)m_pCharacter;
-	if(GetBotType() == TYPE_BOT_MOB && pChr && !pChr->AI()->GetTarget()->IsEmpty())
+	if((GetBotType() == TYPE_BOT_MOB || GetBotType() == TYPE_BOT_QUEST_MOB) && pChr && !pChr->AI()->GetTarget()->IsEmpty())
 		return Mood::AGRESSED;
 	else if(GetBotType() == TYPE_BOT_NPC)
 		return Mood::FRIENDLY;
@@ -385,6 +410,11 @@ const char* CPlayerBot::GetStatus() const
 		return "Raid";
 	}
 
+	if(m_BotType == TYPE_BOT_QUEST_MOB)
+	{
+		return "Quest mob";
+	}
+
 	if(m_BotType == TYPE_BOT_EIDOLON && GetEidolonOwner())
 	{
 		int OwnerID = GetEidolonOwner()->GetCID();
@@ -418,6 +448,8 @@ int CPlayerBot::GetPlayerWorldID() const
 		return NpcBotInfo::ms_aNpcBot[m_MobID].m_WorldID;
 	if(m_BotType == TYPE_BOT_EIDOLON)
 		return Server()->GetClientWorldID(m_MobID);
+	if(m_BotType == TYPE_BOT_QUEST_MOB)
+		return m_QuestMobInfo.m_WorldID;
 	return QuestBotInfo::ms_aQuestBot[m_MobID].m_WorldID;
 }
 
@@ -432,24 +464,45 @@ void CPlayerBot::HandlePathFinder()
 	if(!m_BotActive || !m_pCharacter || !m_pCharacter->IsAlive())
 		return;
 
+	// Check if the bot type is TYPE_BOT_MOB
 	if(GetBotType() == TYPE_BOT_MOB)
 	{
+		// Check if the target position is not (0, 0) and if the current server tick modulo (3 * m_ClientID) is 0
 		if(m_TargetPos != vec2(0, 0) && (Server()->Tick() + 3 * m_ClientID) % (Server()->TickSpeed()) == 0)
 		{
+			// Prepare the path finder data for default path finding
 			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
+		// If the target position is (0, 0) or the distance between the view position and the target position is less than 128.0f
 		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
 		{
+			// Set the last position tick to the current server tick plus a random time interval
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
+			// Prepare the path finder data for random path finding
 			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::RANDOM>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}
 
+	// Check if the bot type is TYPE_BOT_EIDOLON
 	else if(GetBotType() == TYPE_BOT_EIDOLON)
 	{
+		// Get the owner ID of the bot
 		int OwnerID = m_MobID;
+		// Check if the owner player exists and if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
 		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
 		{
+			// Prepare the path finder data for default path finding
+			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+		}
+	}
+
+	// Check if the bot type is TYPE_BOT_QUEST_MOB
+	else if(GetBotType() == TYPE_BOT_QUEST_MOB)
+	{
+		// Check if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
+		if(m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
+		{
+			// Prepare the path finder data for default path finding
 			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}

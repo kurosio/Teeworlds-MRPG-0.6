@@ -127,6 +127,18 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					Type = TaskRequiredMoveTo::Types::USE_CHAT_MODE;
 				}
 
+				// defeat mob json element
+				TaskRequiredMoveTo::DefeatMob DefeatDescription{};
+				if(p.contains("defeat_mob"))
+				{
+					auto pDefeatJson = p["defeat_mob"];
+					DefeatDescription.m_BotID = pDefeatJson.value("bot_id", -1);
+					DefeatDescription.m_AttributePower = pDefeatJson.value("attribute_power", -1);
+					DefeatDescription.m_AttributeSpread = pDefeatJson.value("attribute_spread", -1);
+					DefeatDescription.m_WorldID = pDefeatJson.value("world_id", m_WorldID);
+					Type = TaskRequiredMoveTo::Types::DEFEAT_MOB;
+				}
+
 				// update latest bigger step
 				if(Step > LatestBiggerStep)
 				{
@@ -147,6 +159,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					Move.m_aTextUseInChat = TextUseInChat;
 					Move.m_Type = Type;
 					Move.m_QuestBotID = m_SubBotID;
+					Move.m_DefeatMobInfo = DefeatDescription;
 					m_RequiredMoveTo.push_back(Move);
 				}
 			}
