@@ -1039,24 +1039,35 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 {
 	CPlayerBot* pBotPlayer = nullptr;
 
-	// looking for a stronger
+	// Looking for a stronger
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		// check active player bot
+		// Check active player bot
 		CPlayerBot* pSearchBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if(!pSearchBotPlayer || !pSearchBotPlayer->GetCharacter() || pSearchBotPlayer->GetBotType() != TYPE_BOT_MOB)
+		if(!pSearchBotPlayer || !pSearchBotPlayer->GetCharacter())
 			continue;
 
-		// check distance
-		if(distance(pSearchBotPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > Distance)
-			continue;
+		if(pSearchBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB || pSearchBotPlayer->GetBotType() == TYPE_BOT_MOB)
+		{
+			// Check if the bot player is an eidolon owner
+			if(m_pBotPlayer->GetEidolonOwner())
+			{
+				// Check if the bot player is of type "TYPE_BOT_QUEST_MOB" and if the quest bot mob is active for the client at index i
+				if(pSearchBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && !pSearchBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[m_pBotPlayer->GetEidolonOwner()->GetCID()])
+					continue;
+			}
 
-		// check walls and closed lines
-		if(GS()->Collision()->IntersectLineWithInvisible(pSearchBotPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
-			continue;
+			// Check distance
+			if(distance(pSearchBotPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > Distance)
+				continue;
 
-		pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		break;
+			// Check walls and closed lines
+			if(GS()->Collision()->IntersectLineWithInvisible(pSearchBotPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
+				continue;
+
+			pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+			break;
+		}
 	}
 
 	return pBotPlayer;
