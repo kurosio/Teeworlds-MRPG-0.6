@@ -45,7 +45,7 @@ public:
 		return CAccountData::ms_aData.find(ClientID) != CAccountData::ms_aData.end();
 	}
 
-	static std::string HashPassword(const char* pPassword, const char* pSalt);
+	static std::string HashPassword(const std::string& Password, const std::string& Salt);
 	void UseVoucher(int ClientID, const char* pVoucher) const;
 };
 
