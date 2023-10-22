@@ -27,25 +27,35 @@ class TutorialBase : public MultiworldIdentifiableStaticData< std::deque< Tutori
 	char m_aTextBuf[1024] {};
 
 public:
+	// Define a virtual destructor with default implementation.
 	virtual ~TutorialBase() = default;
 
+	// Define a template function Init that takes an integer Type, a const character pointer pText,
+	// and a template parameter CASTPOL.
 	template < typename CASTPOL >
 	static void Init(int Type, const char* pText, CASTPOL Data)
 	{
 		Data.m_TutorialType = (TutorialType)Type;
 		str_copy(Data.m_aTextBuf, pText, sizeof(Data.m_aTextBuf));
+
+		// Add new CASTPOL object constructed from Data to m_pData.
 		m_pData.push_back(new CASTPOL(Data));
 	}
 
+	// Define a member function GetTutorialType that returns m_TutorialType.
 	TutorialType GetTutorialType() const { return m_TutorialType; }
+
+	// Define a member function GetText that returns m_aTextBuf.
 	const char* GetText() const { return m_aTextBuf; }
 };
 
+// Define a template class named TutorialData with a variable number of template arguments Args
 template<typename... Args>
 class TutorialData final : public TutorialBase
 {
 public:
-	std::tuple< Args...> m_Data;
+	// Declare a tuple named m_Data that holds objects of types specified by Args
+	std::tuple<Args...> m_Data;
 };
 
 #endif
