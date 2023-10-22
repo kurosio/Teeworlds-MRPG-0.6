@@ -16,6 +16,8 @@
 
 #include "game/server/mmocore/PathFinder.h"
 
+#include "nurse_heart.h"
+
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld)
@@ -49,38 +51,72 @@ void CCharacterBotAI::OnSpawnInitBotTypes()
 	const int MobID = m_pBotPlayer->GetBotMobID();
 	switch(m_pBotPlayer->GetBotType())
 	{
+		//
+		// Check if the type of bot is TYPE_BOT_MOB
 		case TYPE_BOT_MOB:
 		{
+			// Get a pointer to the MobBotInfo object for the given MobID
 			MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
+
+			// Check if the mob bot is a boss
 			if(pMobBot->m_Boss)
 			{
-				for(int i = 0; i < 3; i++)
-				{
-					CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
-					CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
-				}
+				// Create 3 snap projectiles with type POWERUP_HEALTH and initial snap ID of 1
+				CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
 
+				// Create 3 snap projectiles with type WEAPON_HAMMER and initial snap ID of 1
+				CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
+
+				// Check if the game state is not a dungeon
 				if(!GS()->IsDungeon())
+				{
+					// Display a chat message in the world with the mob bot's name
 					GS()->ChatWorldID(pMobBot->m_WorldID, nullptr, "In your zone emerging {STR}!", pMobBot->GetName());
+				}
 			}
 		} break;
+		//
+		// Case for bot type TYPE_BOT_QUEST
 		case TYPE_BOT_QUEST:
 		{
+			// Get the quest bot info for the given MobID
 			QuestBotInfo* pQuestBot = &QuestBotInfo::ms_aQuestBot[MobID];
+
+			// Check if the quest bot has an action and create a laser orbite
 			if(pQuestBot->m_HasAction)
+			{
 				GS()->CreateLaserOrbite(ClientID, 5, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 64.f, LASERTYPE_SHOTGUN);
+			}
 		} break;
+		//
+		// Case for bot type TYPE_BOT_NPC
 		case TYPE_BOT_NPC:
 		{
+			// NpcBotInfo structure for the bot with MobID
 			NpcBotInfo* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobID];
+
+			// Get the Function value for the bot and check
 			const int Function = pNpcBot->m_Function;
 			if(Function == FUNCTION_NPC_GIVE_QUEST)
+			{
 				CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
+			}
+			else if(Function == FUNCTION_NPC_NURSE)
+			{
+				new CNurseHeart(GameWorld(), ClientID);
+			}
 		} break;
+		//
+		// Case for bot type TYPE_BOT_EIDOLON
 		case TYPE_BOT_EIDOLON:
 		{
+			// Set the m_Solo flag to true
 			m_Core.m_Solo = true;
+
+			// Get the CID of the owner of the bot
 			const int OwnerCID = m_pBotPlayer->GetEidolonOwner()->GetCID();
+
+			// Create a new CEidolon object with the specified parameters
 			new CEidolon(&GS()->m_World, m_Core.m_Pos, 0, ClientID, OwnerCID);
 		} break;
 		default: break;
@@ -949,16 +985,16 @@ void CCharacterBotAI::EmotesAction(int EmotionStyle)
 		switch(EmotionStyle)
 		{
 			case EMOTE_BLINK:
-				SetEmote(EMOTE_BLINK, 1 + random_int() % 2, true);
+			SetEmote(EMOTE_BLINK, 1 + random_int() % 2, true);
 			break;
 			case EMOTE_HAPPY:
-				SetEmote(EMOTE_HAPPY, 1 + random_int() % 2, true);
+			SetEmote(EMOTE_HAPPY, 1 + random_int() % 2, true);
 			break;
 			case EMOTE_ANGRY:
-				SetEmote(EMOTE_ANGRY, 1 + random_int() % 2, true);
+			SetEmote(EMOTE_ANGRY, 1 + random_int() % 2, true);
 			break;
 			case EMOTE_PAIN:
-				SetEmote(EMOTE_PAIN, 1 + random_int() % 2, true);
+			SetEmote(EMOTE_PAIN, 1 + random_int() % 2, true);
 			break;
 			default: break;
 		}
