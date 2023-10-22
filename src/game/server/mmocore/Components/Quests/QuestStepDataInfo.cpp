@@ -330,12 +330,12 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 				CPlayerBot* pPlayerBot = nullptr;
 				if(pRequired.IsHasDefeatMob())
 				{
-					for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+					for(int c = MAX_PLAYERS; c < MAX_CLIENTS; c++)
 					{
-						CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+						CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[c]);
 						if(pPlBotSearch && pPlBotSearch->GetQuestBotMobInfo().m_QuestID == pQuest->GetID() &&
 							pPlBotSearch->GetQuestBotMobInfo().m_QuestStep == GetStepPos() &&
-							pPlBotSearch->GetQuestBotMobInfo().m_MoveToStep == CurrentStep)
+							pPlBotSearch->GetQuestBotMobInfo().m_MoveToStep == i)
 						{
 							pPlayerBot = pPlBotSearch;
 							break;
@@ -350,7 +350,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 							{
 								GetQuestID(),
 								GetStepPos(),
-								CurrentStep,
+								i,
 								pRequired.m_DefeatMobInfo.m_AttributePower,
 								pRequired.m_DefeatMobInfo.m_AttributeSpread,
 								pRequired.m_DefeatMobInfo.m_WorldID,

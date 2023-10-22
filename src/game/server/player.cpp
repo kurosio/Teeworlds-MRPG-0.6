@@ -443,7 +443,7 @@ void CPlayer::OnDisconnect()
 void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
 	// update view pos
-	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
+ 	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
 		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
 
 	// reset input with chating
