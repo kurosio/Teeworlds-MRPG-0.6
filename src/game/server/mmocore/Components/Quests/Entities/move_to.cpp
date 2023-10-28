@@ -116,8 +116,10 @@ bool CEntityMoveTo::PressedFire() const
 
 void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, const std::function<bool()> pCallbackSuccesful)
 {
+	CQuest* pPlayerQuest = m_pPlayer->GetQuest(m_QuestID);
+	CPlayerQuestStep* pPlayerQuestStep = pPlayerQuest->GetStepByMob(TaskData.m_QuestBotID);
 	bool FailedFinish = !pCallbackSuccesful();
-	const bool IsLastElement = std::count_if(m_apCollection->begin(), m_apCollection->end(), [&](const CEntityMoveTo* p){ return p->GetQuestID() == m_QuestID; }) == 1;
+	const bool IsLastElement = (pPlayerQuestStep->GetCountMoveToComplected() == (pPlayerQuestStep->GetMoveToNum() - 1));
 	const bool AutoCompleteQuestStep = (m_AutoCompletesQuestStep ? IsLastElement : false);
 
 	// in case move it completes a quest step
@@ -127,7 +129,7 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 		(*m_pComplete) = true;
 
 		// check quest state
-		if(!m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->IsComplete())
+		if(!pPlayerQuestStep->IsComplete())
 		{
 			char aBufQuestTask[256] {};
 			GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
@@ -176,14 +178,14 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 		}
 
 		(*m_pComplete) = true;
-		m_pPlayer->GetQuest(m_QuestID)->SaveSteps();
+		pPlayerQuest->SaveSteps();
 		GS()->CreateDeath(m_Pos, m_ClientID);
 		GameWorld()->DestroyEntity(this);
 
 		// finish quest step
 		if(AutoCompleteQuestStep)
 		{
-			m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->Finish();
+			pPlayerQuestStep->Finish();
 		}
 	}
 }

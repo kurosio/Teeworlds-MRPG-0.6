@@ -56,6 +56,7 @@ public:
 	void UpdateTaskMoveTo();
 	void Update();
 
+	int GetMoveToNum() const;
 	int GetMoveToCurrentStepPos() const;
 	int GetCountMoveToComplected();
 

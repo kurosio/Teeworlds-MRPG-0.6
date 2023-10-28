@@ -506,6 +506,11 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	Buffer.clear();
 }
 
+int CPlayerQuestStep::GetMoveToNum() const
+{
+	return m_aMoveToProgress.size();
+}
+
 int CPlayerQuestStep::GetMoveToCurrentStepPos() const
 {
 	for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
