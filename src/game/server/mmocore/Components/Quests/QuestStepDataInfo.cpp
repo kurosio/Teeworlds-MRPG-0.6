@@ -365,28 +365,35 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 					pPlayerBot->GetQuestBotMobInfo().m_CompleteClient[pPlayer->GetCID()] = false;
 				}
 
-				// Add move to and orbite path navigator
-				CEntityMoveTo* pEntMoveTo = AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i], pPlayerBot);
-				if(!pRequired.m_Navigator || pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
+				// Check if there is a move-to entity at the required position
+				CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pRequired.m_Position);
+				if(!pEntMoveTo)
 				{
-					// Create orbite and navigator to it
-					float Radius;
-					CLaserOrbite* pEntOrbite;
+					// If there is no move-to entity, create a new one
+					pEntMoveTo = AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i], pPlayerBot);
 
-					// If the required task is to defeat a mob
-					if(pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
+					// Check if the required task is navigation or defeating a mob
+					if(!pRequired.m_Navigator || pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
 					{
-						Radius = 400.f;
-						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, 9, EntLaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
-					}
-					else
-					{
-						Radius = 800.f;
-						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, 12, EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
-					}
+						// Create orbital path and navigator for it
+						float Radius;
+						CLaserOrbite* pEntOrbite;
 
-					// Add navigator to the orbite
-					AddEntityNavigator(pEntOrbite->GetPos(), pRequired.m_WorldID, Radius, &m_aMoveToProgress[i]);
+						// If the required task is to defeat a mob, set a smaller radius for the orbit
+						if(pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
+						{
+							Radius = 400.f;
+							pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, 9, EntLaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
+						}
+						else
+						{
+							Radius = 800.f;
+							pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, 12, EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
+						}
+
+						// Add navigator to the orbital path
+						AddEntityNavigator(pEntOrbite->GetPos(), pRequired.m_WorldID, Radius, &m_aMoveToProgress[i]);
+					}
 				}
 			}
 
