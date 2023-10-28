@@ -184,9 +184,9 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64
 	}
 }
 
-void CGS::CreateHammerHit(vec2 Pos)
+void CGS::CreateHammerHit(vec2 Pos, int64 Mask)
 {
-	CNetEvent_HammerHit* pEvent = (CNetEvent_HammerHit*)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit));
+	CNetEvent_HammerHit* pEvent = (CNetEvent_HammerHit*)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit), Mask);
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;
@@ -241,9 +241,9 @@ void CGS::CreatePlayerSpawn(vec2 Pos, int64 Mask)
 	}
 }
 
-void CGS::CreateDeath(vec2 Pos, int ClientID)
+void CGS::CreateDeath(vec2 Pos, int ClientID, int64 Mask)
 {
-	CNetEvent_Death* pEvent = (CNetEvent_Death*)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death));
+	CNetEvent_Death* pEvent = (CNetEvent_Death*)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death), Mask);
 	if(pEvent)
 	{
 		pEvent->m_X = (int)Pos.x;

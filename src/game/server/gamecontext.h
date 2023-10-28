@@ -82,10 +82,10 @@ public:
 		EVENTS
 	######################################################################### */
 	void CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64 Mask = -1);
-	void CreateHammerHit(vec2 Pos);
+	void CreateHammerHit(vec2 Pos, int64 Mask = -1);
 	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage);
 	void CreatePlayerSpawn(vec2 Pos, int64 Mask = -1);
-	void CreateDeath(vec2 Pos, int ClientID);
+	void CreateDeath(vec2 Pos, int ClientID, int64 Mask = -1);
 	void CreateSound(vec2 Pos, int Sound, int64 Mask = -1);
 	void CreatePlayerSound(int ClientID, int Sound);
 

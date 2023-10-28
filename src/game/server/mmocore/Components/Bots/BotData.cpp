@@ -89,7 +89,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 		}
 
 		// initilize move to points
-		m_MoveToCompletesQuestStep = pJson.value("move_to_completes_quest_step", false);
+		m_AutoCompletesQuestStep = pJson.value("move_to_completes_quest_step", false);
 		if(pJson.contains("move_to"))
 		{
 			int LatestBiggerStep = 1;
@@ -100,43 +100,100 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
 				const bool Navigator = p.value("navigator", true);
-				TaskRequiredMoveTo::Types Type = TaskRequiredMoveTo::Types::MOVE_ONLY;
-				const std::string EndText = p.value("end_text", "");
+				const std::string CompletionText = p.value("completion_text", "");
 
-				// pickup item by array json
+				// initialize data flags
 				CItem PickUpItem {};
-				if(p.contains("pick_up_item"))
-				{
-					PickUpItem = CItem::FromJSON(p["pick_up_item"]);
-					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
-				}
-
-				// required item by array json
 				CItem RequiredItem {};
-				if(p.contains("required_item"))
+				TaskRequiredMoveTo::Interaction Interactive {};
+				TaskRequiredMoveTo::DefeatMob DefeatDescription {};
+				unsigned int Type = TaskRequiredMoveTo::Types::EMPTY;
 				{
-					RequiredItem = CItem::FromJSON(p["required_item"]);
-					Type = TaskRequiredMoveTo::Types::PRESS_FIRE;
-				}
+					// pickup item
+					if(p.contains("pick_up_item"))
+					{
+						// Create a CItem object from the "pick_up_item" json object and assign it to PickUpItem
+						PickUpItem = CItem::FromJSON(p["pick_up_item"]);
 
-				// use text json element
-				std::string TextUseInChat = p.value("use_in_chat", "");
-				if(!TextUseInChat.empty())
-				{
-					TextUseInChat = "#" + TextUseInChat;
-					Type = TaskRequiredMoveTo::Types::USE_CHAT_MODE;
-				}
+						// Set the PICKUP_ITEM flag in the Type variable
+						Type |= TaskRequiredMoveTo::Types::PICKUP_ITEM;
+					}
 
-				// defeat mob json element
-				TaskRequiredMoveTo::DefeatMob DefeatDescription{};
-				if(p.contains("defeat_mob"))
-				{
-					auto pDefeatJson = p["defeat_mob"];
-					DefeatDescription.m_BotID = pDefeatJson.value("id", -1);
-					DefeatDescription.m_AttributePower = pDefeatJson.value("attribute_power", 10);
-					DefeatDescription.m_AttributeSpread = pDefeatJson.value("attribute_spread", 0);
-					DefeatDescription.m_WorldID = pDefeatJson.value("world_id", m_WorldID);
-					Type = TaskRequiredMoveTo::Types::DEFEAT_MOB;
+					// required item
+					if(p.contains("required_item"))
+					{
+						// Create a CItem object from the "required_item" json object and assign it to RequiredItem
+						RequiredItem = CItem::FromJSON(p["required_item"]);
+
+						// Set the REQUIRED_ITEM flag in the Type variable
+						Type |= TaskRequiredMoveTo::Types::REQUIRED_ITEM;
+					}
+
+					// interaction
+					if(p.contains("interactive"))
+					{
+						// Retrieve the "interactive" element from the JSON object
+						auto pIntJson = p["interactive"];
+
+						// Retrieve the value of the "x" key from the "interactive" element
+						// If the key does not exist, use -1 as the default value
+						Interactive.m_Position.x = pIntJson.value("x", -1);
+
+						// Retrieve the value of the "y" key from the "interactive" element
+						// If the key does not exist, use -1 as the default value
+						Interactive.m_Position.y = pIntJson.value("y", -1);
+
+						// Check the current value of the "Type" variable
+						if(Type == TaskRequiredMoveTo::Types::EMPTY)
+						{
+							// If it is TaskRequiredMoveTo::Types::EMPTY, add TaskRequiredMoveTo::Types::INTERACTIVE to it
+							Type |= TaskRequiredMoveTo::Types::INTERACTIVE;
+						}
+						else if(Type == TaskRequiredMoveTo::Types::PICKUP_ITEM)
+						{
+							// If it is TaskRequiredMoveTo::Types::PICKUP_ITEM, set TaskRequiredMoveTo::Types::INTERACTIVE_PICKUP to it
+							Type = TaskRequiredMoveTo::Types::INTERACTIVE_PICKUP;
+						}
+						else if(Type == TaskRequiredMoveTo::Types::REQUIRED_ITEM)
+						{
+							// If it is TaskRequiredMoveTo::Types::REQUIRED_ITEM, set TaskRequiredMoveTo::Types::INTERACTIVE_REQUIRED to it
+							Type = TaskRequiredMoveTo::Types::INTERACTIVE_REQUIRED;
+						}
+					}
+					// defeat mob json element
+					else if(p.contains("defeat_mob"))
+					{
+						// Retrieve the "defeat_mob" element from the JSON object
+						auto pDefJson = p["defeat_mob"];
+
+						// Retrieve the value of the "id" key from the "defeat_mob" element
+						// If the key does not exist, use -1 as the default value
+						DefeatDescription.m_BotID = pDefJson.value("id", -1);
+
+						// Retrieve the value of the "attribute_power" key from the "defeat_mob" element
+						// If the key does not exist, use 10 as the default value
+						DefeatDescription.m_AttributePower = pDefJson.value("attribute_power", 10);
+
+						// Retrieve the value of the "attribute_spread" key from the "defeat_mob" element
+						// If the key does not exist, use 0 as the default value
+						DefeatDescription.m_AttributeSpread = pDefJson.value("attribute_spread", 0);
+
+						// Retrieve the value of the "world_id" key from the "defeat_mob" element
+						// If the key does not exist, use the value of m_WorldID as the default value
+						DefeatDescription.m_WorldID = pDefJson.value("world_id", m_WorldID);
+
+						// Check the current value of the "Type" variable
+						if(Type == TaskRequiredMoveTo::Types::EMPTY)
+						{
+							// If it is TaskRequiredMoveTo::Types::EMPTY, add TaskRequiredMoveTo::Types::DEFEAT_MOB to it
+							Type |= TaskRequiredMoveTo::Types::DEFEAT_MOB;
+						}
+						else if(Type == TaskRequiredMoveTo::Types::PICKUP_ITEM)
+						{
+							// If it is TaskRequiredMoveTo::Types::PICKUP_ITEM, set TaskRequiredMoveTo::Types::DEFEAT_MOB_PICKUP to it
+							Type = TaskRequiredMoveTo::Types::DEFEAT_MOB_PICKUP;
+						}
+					}
 				}
 
 				// update latest bigger step
@@ -155,10 +212,10 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					Move.m_PickupItem = PickUpItem;
 					Move.m_RequiredItem = RequiredItem;
 					Move.m_Position = Position;
-					Move.m_aEndText = EndText;
-					Move.m_aTextUseInChat = TextUseInChat;
-					Move.m_Type = Type;
+					Move.m_CompletionText = CompletionText;
+					Move.m_Type = max(Type, (unsigned int)TaskRequiredMoveTo::Types::MOVE_ONLY);
 					Move.m_QuestBotID = m_SubBotID;
+					Move.m_Interaction = Interactive;
 					Move.m_DefeatMobInfo = DefeatDescription;
 					m_RequiredMoveTo.push_back(Move);
 				}

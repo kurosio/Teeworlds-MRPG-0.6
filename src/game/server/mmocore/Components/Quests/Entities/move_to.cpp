@@ -10,13 +10,14 @@
 constexpr unsigned int s_Particles = 4;
 
 CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool* pComplete,
-	std::deque < CEntityMoveTo* >* apCollection, bool IsCompletesStep, CPlayerBot* pDefeatMobPlayer)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, pTaskMoveTo->m_Position), m_QuestID(QuestID), m_ClientID(ClientID), m_pTaskMoveTo(pTaskMoveTo)
+	std::deque < CEntityMoveTo* >* apCollection, bool AutoCompletesQuestStep, CPlayerBot* pDefeatMobPlayer)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, pTaskMoveTo->m_Position, 32.f), m_QuestID(QuestID), m_ClientID(ClientID), m_pTaskMoveTo(pTaskMoveTo)
 {
 	// Initialize base
+	m_Radius = GetProximityRadius();
 	m_pComplete = pComplete;
 	m_apCollection = apCollection;
-	m_CompletesStep = IsCompletesStep;
+	m_AutoCompletesQuestStep = AutoCompletesQuestStep;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_pDefeatMobPlayer = pDefeatMobPlayer;
 	GameWorld()->InsertEntity(this);
@@ -109,17 +110,90 @@ CEntityMoveTo::~CEntityMoveTo()
 
 bool CEntityMoveTo::PressedFire() const
 {
-	// only for press fire type
-	if(m_pTaskMoveTo->m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE)
+	if(!m_pPlayer || !m_pPlayer->GetCharacter())
+		return false;
+
+	if(m_pPlayer->GetCharacter()->m_ReloadTimer)
 	{
-		if(m_pPlayer->GetCharacter()->m_ReloadTimer)
-		{
-			m_pPlayer->GetCharacter()->m_ReloadTimer = 0;
-			return true;
-		}
+		m_pPlayer->GetCharacter()->m_ReloadTimer = 0;
+		return true;
 	}
 
 	return false;
+}
+
+void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, const std::function<bool()> pCallbackSuccesful)
+{
+	bool FailedFinish = !pCallbackSuccesful();
+	const bool IsLastElement = std::count_if(m_apCollection->begin(), m_apCollection->end(), [&](const CEntityMoveTo* p){ return p->GetQuestID() == m_QuestID; }) == 1;
+	const bool AutoCompleteQuestStep = (m_AutoCompletesQuestStep ? IsLastElement : false);
+
+	// in case move it completes a quest step
+	if(!FailedFinish && AutoCompleteQuestStep)
+	{
+		// START for correct try check current quest step
+		(*m_pComplete) = true;
+
+		// check quest state
+		if(!m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->IsComplete())
+		{
+			char aBufQuestTask[256] {};
+			GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
+			str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
+			GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
+			GS()->Chat(m_ClientID, "The tasks haven't been completed yet!");
+			FailedFinish = true;
+		}
+
+		// END for correct try check current quest step
+		(*m_pComplete) = false;
+	}
+
+	if(!FailedFinish)
+	{
+		// required item
+		if(TaskData.m_Type & QuestBotInfo::TaskRequiredMoveTo::Types::REQUIRED_ITEM && TaskData.m_RequiredItem.IsValid())
+		{
+			ItemIdentifier ItemID = TaskData.m_RequiredItem.GetID();
+			int RequiredValue = TaskData.m_RequiredItem.GetValue();
+
+			// check required value
+			if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
+				return;
+
+			// remove item
+			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+			GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pPlayerItem->Info()->GetName(), RequiredValue);
+		}
+
+		// pickup item
+		if(TaskData.m_Type & QuestBotInfo::TaskRequiredMoveTo::Types::PICKUP_ITEM && TaskData.m_PickupItem.IsValid())
+		{
+			ItemIdentifier ItemID = TaskData.m_PickupItem.GetID();
+			int PickupValue = TaskData.m_PickupItem.GetValue();
+			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+
+			GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
+			pPlayerItem->Add(PickupValue);
+		}
+
+		// finish success
+		if(!m_pTaskMoveTo->m_CompletionText.empty())
+		{
+			GS()->Chat(m_ClientID, m_pTaskMoveTo->m_CompletionText.c_str());
+		}
+
+		(*m_pComplete) = true;
+		m_pPlayer->GetQuest(m_QuestID)->SaveSteps();
+		GS()->CreateDeath(m_Pos, m_ClientID);
+		GameWorld()->DestroyEntity(this);
+
+		// finish quest step
+		if(AutoCompleteQuestStep)
+		{
+			m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->Finish();
+		}
+	}
 }
 
 void CEntityMoveTo::Tick()
@@ -133,172 +207,57 @@ void CEntityMoveTo::Tick()
 	}
 
 	// Check the type of the required move task
+	const unsigned Type = m_pTaskMoveTo->m_Type;
+
+	// distance for defeat mob larger
+	if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
+		m_Radius = 600.f;
+
 	// check distance to check complete
-	QuestBotInfo::TaskRequiredMoveTo::Types Type = m_pTaskMoveTo->m_Type;
-	m_Radius = (Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB ? 600.f : 32.f);
 	if(distance(m_pPlayer->m_ViewPos, m_Pos) > m_Radius)
 		return;
 
-	// function by success
-	auto FuncSuccess = [this]()
+	// Check if the Type includes the DEFEAT_MOB flag
+	if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
 	{
-		// send chat text by end step
-		if(!m_pTaskMoveTo->m_aEndText.empty())
+		Handler(*m_pTaskMoveTo, [this]
 		{
-			GS()->Chat(m_ClientID, m_pTaskMoveTo->m_aEndText.c_str());
-		}
-
-		(*m_pComplete) = true;
-		m_pPlayer->GetQuest(m_QuestID)->SaveSteps();
-		GS()->CreateDeath(m_Pos, m_ClientID);
-		GameWorld()->DestroyEntity(this);
-	};
-
-
-	// is last element
-	const bool IsActiveCompletesQuestStep =
-		(m_CompletesStep ? std::count_if(m_apCollection->begin(), m_apCollection->end(), [&](const CEntityMoveTo* p)
-	{ return p->GetQuestID() == m_QuestID; }) == 1 : false);
-
-	//
-	// interact by text or press fire
-	if((Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE && PressedFire())
-		|| (Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE && m_pTaskMoveTo->m_aTextUseInChat == m_pPlayer->m_aLastMsg))
-	{
-		QuestBotInfo::TaskRequiredMoveTo TaskData = *m_pTaskMoveTo;
-
-		// clear last msg for correct check required item TODO: FIX (don't clear last msg)
-		m_pPlayer->m_aLastMsg[0] = '\0';
-
-		// check complete quest step
-		if(IsActiveCompletesQuestStep)
-		{
-			(*m_pComplete) = true; // for correct try finish quest step
-
-			if(!m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->IsComplete())
-			{
-				// quest step task information
-				char aBufQuestTask[256] {};
-				GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
-				str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
-				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
-				GS()->Chat(m_ClientID, "The tasks haven't been completed yet!");
-
-				(*m_pComplete) = false; // for correct try finish quest step
-				return;
-			}
-
-			(*m_pComplete) = false; // for correct try finish quest step
-		}
-
-		{
-			// first required item
-			if(TaskData.m_RequiredItem.IsValid())
-			{
-				ItemIdentifier ItemID = TaskData.m_RequiredItem.GetID();
-				int RequiredValue = TaskData.m_RequiredItem.GetValue();
-
-				// check required value
-				if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
-					return;
-
-				// remove item
-				CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
-				GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pPlayerItem->Info()->GetName(), RequiredValue);
-			}
-
-			// secound pickup item
-			if(TaskData.m_PickupItem.IsValid())
-			{
-				ItemIdentifier ItemID = TaskData.m_PickupItem.GetID();
-				int PickupValue = TaskData.m_PickupItem.GetValue();
-				CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
-
-				GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
-				pPlayerItem->Add(PickupValue);
-			}
-
-			// finish success
-			FuncSuccess();
-		}
-
-		// finish quest step
-		if(IsActiveCompletesQuestStep)
-		{
-			m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->Finish();
-		}
-		return;
+			// Complete the task by defeating a mob
+			return m_pDefeatMobPlayer && m_pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID];
+		});
 	}
-
-	//
-	// only move it
-	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::MOVE_ONLY)
+	// Check if the Type includes the MOVE_ONLY flag
+	else if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::MOVE_ONLY)
 	{
-		QuestBotInfo::TaskRequiredMoveTo TaskData = *m_pTaskMoveTo;
-
-		// try finish step with finish quest step by end
-		if(IsActiveCompletesQuestStep)
+		Handler(*m_pTaskMoveTo, [this]
 		{
-			(*m_pComplete) = true; // for correct try finish quest step
-
-			if(!m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->Finish())
-			{
-				// quest step task information
-				char aBufQuestTask[256] {};
-				GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
-				str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
-				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
-				GS()->Chat(m_ClientID, "The tasks haven't been completed yet!");
-
-				(*m_pComplete) = false; // for correct try finish quest step
-				return;
-			}
-
-			(*m_pComplete) = false; // for correct try finish quest step
-		}
-
-		// finish success
-		FuncSuccess();
-		return;
+			// Complete the task by only moving
+			return true;
+		});
 	}
-
-	//
-	// If the type is "defeat mob"
-	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
+	// Check if the Type includes the INTERACTIVE flag
+	else if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::INTERACTIVE)
 	{
-		// Check if the player has defeated the required mob
-		if(m_pDefeatMobPlayer && m_pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID])
+		// mark
+		if(Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
 		{
-			QuestBotInfo::TaskRequiredMoveTo TaskData = *m_pTaskMoveTo;
-
-			// try finish step with finish quest step by end
-			if(IsActiveCompletesQuestStep)
-			{
-				(*m_pComplete) = true; // for correct try finish quest step
-
-				if(!m_pPlayer->GetQuest(m_QuestID)->GetStepByMob(TaskData.m_QuestBotID)->Finish())
-				{
-					// quest step task information
-					char aBufQuestTask[256] {};
-					GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
-					str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
-					GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
-					GS()->Chat(m_ClientID, "The tasks haven't been completed yet!");
-
-					m_pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID] = false;
-					(*m_pComplete) = false; // for correct try finish quest step
-					return;
-				}
-
-				(*m_pComplete) = false; // for correct try finish quest step
-			}
-
-			// finish success
-			FuncSuccess();
-			return;
+			GS()->CreateHammerHit(m_pTaskMoveTo->m_Interaction.m_Position, CmaskOne(m_ClientID));
 		}
 
-		return;
+		Handler(*m_pTaskMoveTo, [this]
+		{
+			// Complete the task by interacting
+			return PressedFire() && distance(m_pPlayer->GetCharacter()->GetMousePos(), m_pTaskMoveTo->m_Interaction.m_Position) < 48.f;
+		});
+	}
+	// Check if the Type includes the PICKUP_ITEM or REQUIRED_ITEM flags
+	else if(Type & (QuestBotInfo::TaskRequiredMoveTo::PICKUP_ITEM | QuestBotInfo::TaskRequiredMoveTo::REQUIRED_ITEM))
+	{
+		Handler(*m_pTaskMoveTo, [this]
+		{
+			// Complete the task by pressing "fire" button
+			return PressedFire();
+		});
 	}
 
 	// handle broadcast
@@ -311,6 +270,10 @@ void CEntityMoveTo::HandleBroadcastInformation() const
 	auto& pPickupItem = m_pTaskMoveTo->m_PickupItem;
 	auto& pRequireItem = m_pTaskMoveTo->m_RequiredItem;
 	const auto Type = m_pTaskMoveTo->m_Type;
+
+	// defeat mob skip
+	if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
+		return;
 
 	// text information
 	dynamic_string Buffer;
@@ -332,11 +295,11 @@ void CEntityMoveTo::HandleBroadcastInformation() const
 	}
 
 	// select by type
-	if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::USE_CHAT_MODE)
+	if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::INTERACTIVE)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Send to the chat '{STR}'\n{STR}", m_pTaskMoveTo->m_aTextUseInChat.c_str(), Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Click on the highlighted area to interact with it.\n{STR}", Buffer.buffer());
 	}
-	else if(Type == QuestBotInfo::TaskRequiredMoveTo::Types::PRESS_FIRE)
+	else if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::PICKUP_ITEM || Type & QuestBotInfo::TaskRequiredMoveTo::Types::REQUIRED_ITEM)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press 'Fire', to interact.\n{STR}", Buffer.buffer());
 	}

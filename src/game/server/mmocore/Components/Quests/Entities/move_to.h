@@ -7,21 +7,23 @@
 
 class CEntityMoveTo : public CEntity
 {
-	int m_QuestID;
+	class CPlayer* m_pPlayer;
 	int m_ClientID;
+
+	class CPlayerBot* m_pDefeatMobPlayer;
+
+	int m_QuestID;
 	bool* m_pComplete;
-	bool m_CompletesStep;
+	bool m_AutoCompletesQuestStep;
 	float m_Radius;
 	array < int > m_IDs;
 	std::deque < CEntityMoveTo* >* m_apCollection;
 	const QuestBotInfo::TaskRequiredMoveTo* m_pTaskMoveTo;
 
 public:
-	class CPlayer* m_pPlayer;
-	class CPlayerBot* m_pDefeatMobPlayer;
 
 	CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection, 
-		bool IsCompletesStep, class CPlayerBot* pDefeatMobPlayer = nullptr);
+		bool AutoCompletesQuestStep, class CPlayerBot* pDefeatMobPlayer = nullptr);
 	~CEntityMoveTo() override;
 
 	void Tick() override;
@@ -32,6 +34,9 @@ public:
 
 	int GetClientID() const { return m_ClientID; }
 	int GetQuestID() const { return m_QuestID; }
+
+private:
+	void Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, const std::function<bool()> pCallbackSuccesful);
 };
 
 #endif

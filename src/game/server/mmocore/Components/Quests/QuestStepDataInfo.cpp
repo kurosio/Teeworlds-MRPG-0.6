@@ -527,7 +527,7 @@ CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequire
 	CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pTaskMoveTo->m_Position);
 	if(!pEntMoveTo)
 	{
-		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, GetQuestID(), pComplete, &m_apEntitiesMoveTo, m_Bot.IsMoveToCompletesQuestStep(), pDefeatMobPlayer));
+		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, GetQuestID(), pComplete, &m_apEntitiesMoveTo, m_Bot.IsAutoCompletesQuestStep(), pDefeatMobPlayer));
 	}
 
 	return pEntMoveTo;
