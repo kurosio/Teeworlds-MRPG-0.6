@@ -233,6 +233,7 @@ public:
 
 	void CreateLaserOrbite(class CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64 Mask = -1);
 	void CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64 Mask = -1);
+	class CLaserOrbite* CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Radius, int LaserType = LASERTYPE_RIFLE, int64 Mask = -1);
 
 private:
 	void SendDayInfo(int ClientID);

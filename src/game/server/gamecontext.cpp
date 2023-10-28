@@ -1963,6 +1963,13 @@ void CGS::CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, f
 		new CLaserOrbite(&m_World, ClientID, nullptr, Amount, Type, Speed, Radius, LaserType, Mask);
 }
 
+CLaserOrbite* CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Radius, int LaserType, int64 Mask)
+{
+	if(pEntParent)
+		return new CLaserOrbite(&m_World, -1, pEntParent, Amount, Type, 0.f, Radius, LaserType, Mask);
+	return nullptr;
+}
+
 // send day information
 void CGS::SendDayInfo(int ClientID)
 {
