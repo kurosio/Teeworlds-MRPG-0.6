@@ -11,7 +11,7 @@ constexpr unsigned int s_Particles = 4;
 
 CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool* pComplete,
 	std::deque < CEntityMoveTo* >* apCollection, bool AutoCompletesQuestStep, CPlayerBot* pDefeatMobPlayer)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, pTaskMoveTo->m_Position, 32.f), m_QuestID(QuestID), m_ClientID(ClientID), m_pTaskMoveTo(pTaskMoveTo)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, pTaskMoveTo->m_Position, 32.f), m_ClientID(ClientID), m_QuestID(QuestID), m_pTaskMoveTo(pTaskMoveTo)
 {
 	// Initialize base
 	m_Radius = GetProximityRadius();
@@ -196,7 +196,7 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 
 		// if quest is completed, reset task and collection pointers they're cleared in the quest data
 		if(pPlayerQuest->IsCompleted())
-			Clear();
+			ClearPointers();
 	}
 }
 

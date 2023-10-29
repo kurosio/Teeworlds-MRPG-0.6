@@ -103,12 +103,12 @@ void CPlayerQuestStep::Clear()
 
 	for(auto& pEnt : m_apEntitiesMoveTo)
 	{
-		pEnt->Clear();
+		pEnt->ClearPointers();
 		pEnt->MarkForDestroy();
 	}
 	for(auto& pEnt : m_apEntitiesNavigator)
 	{
-		pEnt->Clear();
+		pEnt->ClearPointers();
 		pEnt->MarkForDestroy();
 	}
 
