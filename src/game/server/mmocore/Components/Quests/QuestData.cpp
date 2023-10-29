@@ -238,11 +238,9 @@ bool CQuest::SaveSteps()
 
 void CQuest::ClearSteps()
 {
-	// update status for bots
-	for(auto& pStep : m_aPlayerSteps)
-	{
-		pStep.second.Update();
-	}
+	// clear all data from player step
+	for(auto& p : m_aPlayerSteps)
+		p.second.Clear();
 
 	// clear and remove temp user quest data
 	m_aPlayerSteps.clear();

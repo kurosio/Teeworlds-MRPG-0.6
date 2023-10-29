@@ -361,7 +361,7 @@ int CQuestManager::GetClientComplectedQuestsSize(int ClientID) const
 	int Total = 0;
 	for(const auto& [QuestID, Data] : CQuest::Data()[ClientID])
 	{
-		if(Data.IsComplected())
+		if(Data.IsCompleted())
 			Total++;
 	}
 

@@ -187,6 +187,13 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 		{
 			pPlayerQuestStep->Finish();
 		}
+
+		// if quest is completed, reset task and collection pointers they're cleared in the quest data
+		if(pPlayerQuest->IsCompleted())
+		{
+			m_pTaskMoveTo = nullptr;
+			m_apCollection = nullptr;
+		}
 	}
 }
 
@@ -260,6 +267,10 @@ void CEntityMoveTo::Tick()
 
 void CEntityMoveTo::HandleBroadcastInformation() const
 {
+	// in case the quest ended in Handler
+	if(!m_pTaskMoveTo)
+		return;
+
 	// var
 	auto& pPickupItem = m_pTaskMoveTo->m_PickupItem;
 	auto& pRequireItem = m_pTaskMoveTo->m_RequiredItem;

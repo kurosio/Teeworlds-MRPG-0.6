@@ -36,7 +36,8 @@ public:
 	std::string GetJsonFileName() const;
 	QuestIdentifier GetID() const { return m_ID; }
 	QuestState GetState() const { return m_State; }
-	bool IsComplected() const { return m_State == QuestState::FINISHED; }
+	bool IsCompleted() const { return m_State == QuestState::FINISHED; }
+	bool IsActive() const { return m_State == QuestState::ACCEPT; }
 
 	// steps
 	void InitSteps();

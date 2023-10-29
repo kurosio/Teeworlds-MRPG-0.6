@@ -31,7 +31,7 @@ int CAccountManager::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 			CQuestDescription* pQuestInfo = GS()->GetWorldData(WorldID)->GetRequiredQuest();
 
 			// Check if the world is not a dungeon world and either the required quest is completed or the world has no required quest
-			return !Job()->Dungeon()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->GetID())->IsComplected()) || !pQuestInfo);
+			return !Job()->Dungeon()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->GetID())->IsCompleted()) || !pQuestInfo);
 		}
 		return false;
 	});
