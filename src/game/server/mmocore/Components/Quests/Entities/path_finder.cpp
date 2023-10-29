@@ -59,6 +59,11 @@ void CEntityPathFinder::Tick()
 	}
 }
 
+void CEntityPathFinder::ClearPointers()
+{
+	m_apCollection = nullptr;
+}
+
 void CEntityPathFinder::Snap(int SnappingClient)
 {
 	if(m_ClientID != SnappingClient || !m_pPlayer || !m_pPlayer->GetCharacter() || (m_AreaClipped > 1.f && distance(m_PosTo, m_pPlayer->m_ViewPos) < m_AreaClipped))

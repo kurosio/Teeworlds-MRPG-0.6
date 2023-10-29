@@ -102,9 +102,16 @@ void CPlayerQuestStep::Clear()
 	UpdateBot();
 
 	for(auto& pEnt : m_apEntitiesMoveTo)
-		delete pEnt;
+	{
+		pEnt->Clear();
+		pEnt->MarkForDestroy();
+	}
 	for(auto& pEnt : m_apEntitiesNavigator)
-		delete pEnt;
+	{
+		pEnt->Clear();
+		pEnt->MarkForDestroy();
+	}
+
 	m_apEntitiesMoveTo.clear();
 	m_apEntitiesNavigator.clear();
 }

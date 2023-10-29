@@ -114,6 +114,12 @@ bool CEntityMoveTo::PressedFire() const
 	return false;
 }
 
+void CEntityMoveTo::ClearPointers()
+{
+	m_apCollection = nullptr;
+	m_pTaskMoveTo = nullptr;
+}
+
 void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, const std::function<bool()> pCallbackSuccesful)
 {
 	CQuest* pPlayerQuest = m_pPlayer->GetQuest(m_QuestID);
@@ -190,10 +196,7 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 
 		// if quest is completed, reset task and collection pointers they're cleared in the quest data
 		if(pPlayerQuest->IsCompleted())
-		{
-			m_pTaskMoveTo = nullptr;
-			m_apCollection = nullptr;
-		}
+			Clear();
 	}
 }
 

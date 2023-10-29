@@ -35,6 +35,8 @@ public:
 	int GetClientID() const { return m_ClientID; }
 	int GetQuestID() const { return m_QuestID; }
 
+	void ClearPointers();
+
 private:
 	void Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, const std::function<bool()> pCallbackSuccesful);
 };

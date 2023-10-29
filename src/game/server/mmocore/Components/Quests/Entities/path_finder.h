@@ -7,7 +7,6 @@
 
 class CEntityPathFinder : public CEntity
 {
-public:
 	int m_ClientID;
 	int m_WorldID;
 	float m_AreaClipped;
@@ -15,12 +14,15 @@ public:
 	class CPlayer* m_pPlayer;
 	std::deque < CEntityPathFinder* >* m_apCollection;
 
+public:
 	CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection);
 	~CEntityPathFinder() override;
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
-	
+
+	void ClearPointers();
+
 	int GetClientID() const { return m_ClientID; }
 };
 
