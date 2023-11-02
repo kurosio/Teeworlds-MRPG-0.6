@@ -1,49 +1,75 @@
-#ifndef GAME_SERVER_MMO_UTILS_DBSET_H
-#define GAME_SERVER_MMO_UTILS_DBSET_H
+#ifndef GAME_SERVER_MMOCORE_UTILS_DBSET_H
+#define GAME_SERVER_MMOCORE_UTILS_DBSET_H
 
 #include <string>
-#include <list>
+#include <unordered_set>
 
 class DBSet
 {
-	std::string m_Data;
-	std::vector<std::string> m_DataItems;
+	// Create an empty string variable called m_Data to store the data
+	std::string m_Data {};
 
-public:
-	// Default constructor
-	DBSet() = default;
+	// Create an empty unordered_set variable called m_DataItems to store unique data items
+	std::unordered_set<std::string> m_DataItems {};
 
-	// Parameterized constructor
-	explicit DBSet(const std::string& pData) { Init(pData); }
-
-	// Initialize the DBSet with data
-	void Init(std::string pData)
+	// Initialize the function
+	void Init()
 	{
-		m_Data = std::move(pData);
+		// Check if m_Data is not empty
 		if(!m_Data.empty())
 		{
-			size_t start = 0;
-			size_t end;
-			std::string delim = ",";
+			// Set the delimiter as a comma
+			const std::string delimiter = ",";
 
-			// Split m_Data into m_DataItems using delimiter ','
-			while((end = m_Data.find(delim, start)) != std::string::npos)
+			// Set the starting and ending positions for finding the delimiter
+			size_t start = 0;
+			size_t end = m_Data.find(delimiter);
+
+			// Reserve memory for m_DataItems to avoid unnecessary reallocations
+			m_DataItems.reserve(m_Data.length() / delimiter.length() + 1);
+
+			// Continue looping until all delimiters are found
+			while(end != std::string::npos)
 			{
-				m_DataItems.push_back(m_Data.substr(start, end - start));
-				start = end + 1;
+				// Add a new item to m_DataItems by copying the substring between the start and end positions
+				m_DataItems.emplace(m_Data.data() + start, end - start);
+
+				// Update the start position to be after the current delimiter
+				start = end + delimiter.length();
+
+				// Find the next occurrence of the delimiter starting from the updated start position
+				end = m_Data.find(delimiter, start);
 			}
-			m_DataItems.push_back(m_Data.substr(start));
+
+			// Add the remaining substring as a new item to m_DataItems
+			m_DataItems.emplace(m_Data.data() + start);
 		}
 	}
 
-	// Check if a set exists in the DBSet
-	bool hasSet(const char* pSet) const
+public:
+	// Parameterized constructor that takes an lvalue reference to a string
+	DBSet(const std::string& pData) : m_Data(pData)
 	{
-		return std::find(m_DataItems.begin(), m_DataItems.end(), pSet) != m_DataItems.end();
+		Init();
 	}
 
-	// Get the data items in the DBSet
-	const std::vector<std::string>& GetDataItems() const { return m_DataItems; }
+	// Parameterized constructor that takes an rvalue reference to a string
+	DBSet(std::string&& pData) : m_Data(std::move(pData))
+	{
+		Init();
+	}
+
+	// Checks if a specific set exists in the data items collection.
+	bool hasSet(const std::string& pSet) const
+	{
+		return m_DataItems.find(pSet) != m_DataItems.end();
+	}
+
+	// Return a constant reference to the unordered_set<std::string> data member m_DataItems
+	const std::unordered_set<std::string>& GetDataItems() const
+	{
+		return m_DataItems;
+	}
 };
 
 #endif //GAME_SERVER_MMO_UTILS_DBSET_H
