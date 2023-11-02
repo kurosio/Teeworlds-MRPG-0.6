@@ -795,7 +795,7 @@ void CCharacterBotAI::Move()
 	// parse path finder data
 	int Index = -1;
 	int ActiveWayPoints = 0;
-	for(int i = 0; i < pData.m_Points.size() && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(pData.m_Points[i], m_Pos, nullptr, nullptr); i++)
+	for(int i = 0; i < (int)pData.m_Points.size() && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(pData.m_Points[i], m_Pos, nullptr, nullptr); i++)
 	{
 		Index = i;
 		ActiveWayPoints = i;
