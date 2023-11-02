@@ -15,36 +15,36 @@ public:
 	class CData
 	{
 	public:
-		int m_Size {};
 		TYPE m_Type {};
-		std::map<int, vec2> m_Points {};
+		std::unordered_map<int, vec2> m_Points {};
 
 		// Prepare the data
-		void Prepare(vec2* pTarget, vec2* pOldTarget)
+		void Prepare(vec2* pTarget, vec2* pOldTarget) const
 		{
-			// If both pointers are valid
-			if(pTarget && pOldTarget)
+			if(pTarget)
 			{
-				*pOldTarget = *pTarget;
+				// If both pointers are valid
+				if(pOldTarget)
+				{
+					*pOldTarget = *pTarget;
+				}
 
-			}
-
-			// If the target pointer is valid and the type is random
-			if(pTarget && m_Type == TYPE::RANDOM && m_Points.find(0) != m_Points.end())
-			{
-				*pTarget = m_Points[0];
+				// If the target pointer is valid and the type is random
+				if(m_Type == TYPE::RANDOM && m_Points.count(0) > 0)
+				{
+					*pTarget = m_Points.at(0);
+				}
 			}
 		}
 
 		// Clear the data
 		void Clear()
 		{
-			m_Size = -1;
 			m_Points.clear();
 		}
 
 		// Check if the data is empty
-		bool Empty() const { return m_Size <= 0; }
+		bool Empty() const { return m_Points.empty(); }
 	};
 
 	// Get() returns the data stored in the member variable m_Data

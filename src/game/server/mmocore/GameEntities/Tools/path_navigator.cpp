@@ -63,7 +63,7 @@ void CEntityPathNavigator::Tick()
 		{
 			m_StepPos++;
 
-			if(m_StepPos < m_Data.Get().m_Size)
+			if(m_StepPos < m_Data.Get().m_Points.size())
 			{
 				m_Pos = m_Data.Get().m_Points[m_StepPos];
 			}
@@ -83,7 +83,7 @@ void CEntityPathNavigator::Tick()
 	}
 
 	// checking
-	if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= m_Data.Get().m_Size)
+	if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= m_Data.Get().m_Points.size())
 	{
 		m_TickCountDown = Server()->Tick() + (Server()->TickSpeed() * 2);
 		m_Data.Get().Clear();

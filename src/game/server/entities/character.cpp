@@ -228,6 +228,16 @@ bool CCharacter::DecoInteractive()
 	return false;
 }
 
+void CCharacter::HandleReload()
+{
+	m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
+	if(m_LastNoAmmoSound + Server()->TickSpeed() <= Server()->Tick())
+	{
+		GS()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+		m_LastNoAmmoSound = Server()->Tick();
+	}
+}
+
 void CCharacter::FireWeapon()
 {
 	if(m_ReloadTimer != 0)
@@ -235,36 +245,36 @@ void CCharacter::FireWeapon()
 
 	DoWeaponSwitch();
 
-	// check if we gonna auto fire
-	bool FullAuto = false;
-	if(m_pPlayer->GetSkill(SkillMasterWeapon)->IsLearned())
-		FullAuto = true;
+	// Check if the player has pressed the fire button in the latest input, learned the "FullAuto" skill
+	bool FullAuto = m_pPlayer->GetSkill(SkillMasterWeapon)->IsLearned();
+	bool WillFire = CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses;
 
-	// check if we gonna fire
-	bool WillFire = false;
-	if(CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses)
-		WillFire = true;
-
+	// Check if the player has the FullAuto skill, the fire button is pressed, and there is ammo in the active weapon
 	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
-		WillFire = true;
-
-	if(!WillFire)
-		return;
-
-	const bool IsBot = m_pPlayer->IsBot();
-	if(!IsBot)
 	{
-		if(DecoInteractive())
-			return;
+		WillFire = true;
+	}
 
+	// If the player will not fire, return without taking any action
+	if(!WillFire)
+	{
+		return;
+	}
+
+	// Check if the player is not a bot
+	const bool IsCharBot = m_pPlayer->IsBot();
+	if(!IsCharBot)
+	{
+		// Check if the player can interact with decorations
+		if(DecoInteractive())
+		{
+			return;
+		}
+
+		// Check if the active weapon has no ammo
 		if(!m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 		{
-			m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
-			if(m_LastNoAmmoSound + Server()->TickSpeed() <= Server()->Tick())
-			{
-				GS()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
-				m_LastNoAmmoSound = Server()->Tick();
-			}
+			HandleReload();
 			return;
 		}
 	}
@@ -283,7 +293,7 @@ void CCharacter::FireWeapon()
 
 			bool Hits = false;
 			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(AttributeIdentifier::HammerDMG);
-			const float Radius = clamp(PlayerRadius / 5.0f, IsBot ? 1.7f : 3.2f, 8.0f);
+			const float Radius = clamp(PlayerRadius / 5.0f, IsCharBot ? 1.7f : 3.2f, 8.0f);
 			GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
 			CCharacter* apEnts[MAX_CLIENTS];
@@ -1265,8 +1275,8 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		if(pFrom->IsBot() && pFrom->GetBotType() == TYPE_BOT_EIDOLON)
 		{
 			// Enable damage from eidolon to mobs if the player is a bot and the bot type is TYPE_BOT_MOB or TYPE_BOT_QUEST_MOB
-			if(m_pPlayer->IsBot() && (m_pPlayer->GetBotType() == TYPE_BOT_MOB || 
-					(m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID])))
+			if(m_pPlayer->IsBot() && (m_pPlayer->GetBotType() == TYPE_BOT_MOB ||
+				(m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID])))
 			{
 				return true;
 			}
