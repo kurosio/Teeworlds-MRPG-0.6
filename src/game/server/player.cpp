@@ -365,9 +365,9 @@ void CPlayer::RefreshClanString()
 	const char* pClassName;
 	switch(Class)
 	{
-		case AttributeType::Healer: pClassName = "Healer"; break;
-		case AttributeType::Dps: pClassName = "DPS"; break;
-		default: pClassName = "Tank"; break;
+		case AttributeType::Healer: pClassName = "_Healer_"; break;
+		case AttributeType::Dps: pClassName = "_DPS_"; break;
+		default: pClassName = "_Tank_"; break;
 	}
 
 	char aBufClass[64];
