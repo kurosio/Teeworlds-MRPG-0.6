@@ -111,7 +111,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// Check if the player's m_ZoneInvertMenu variable is true
 		if(pPlayer->m_ZoneInvertMenu)
 		{
-			GS()->AVL(ClientID, "ZONE_INVERT_MENU", ">>>> Back to zone menu. >>>>");
+			GS()->AVL(ClientID, "ZONE_INVERT_MENU", "▶▶▶▶ Back to zone menu. ▶▶▶▶");
 			GS()->AV(ClientID, "null");
 			break;
 		}
@@ -119,12 +119,9 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// Call the function OnHandleMenulist of the pComponent object with the parameters pPlayer and Menulist
 		if(pComponent->OnHandleMenulist(pPlayer, Menulist, true))
 		{
-			// Display a notification to the client with the message "The main menu will return as soon as you leave this zone!"
-			GS()->AVL(ClientID, "null", "The main menu will return as soon as you leave this zone!");
-
 			// Display a notification to the client with the message "<<<< Back to player menu. <<<<"
 			GS()->AV(ClientID, "null");
-			GS()->AVL(ClientID, "ZONE_INVERT_MENU", "<<<< Back to player menu. <<<<");
+			GS()->AVL(ClientID, "ZONE_INVERT_MENU", "◀◀◀◀ Back to player menu. ◀◀◀◀");
 			return true;
 		}
 	}
