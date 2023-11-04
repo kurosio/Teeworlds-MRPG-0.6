@@ -5,31 +5,40 @@
 #include <game/server/gamecontext.h>
 #include "RandomBoxHandler.h"
 
-bool CRandomBox::Start(CPlayer *pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem, int UseValue)
+bool CRandomBox::Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem, int UseValue)
 {
+	// Check if player and item parameters are valid
 	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayerUsesItem || !pPlayerUsesItem->HasItem())
 		return false;
 
-	// check last random box
+	// Check if the last random box is still opening
 	if(pPlayer->m_aPlayerTick[LastRandomBox] > pPlayer->GS()->Server()->Tick())
 	{
 		pPlayer->GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "Wait until the last random box opens!");
 		return false;
 	}
 
-	// clamp use value for maximum
+	// Clamp use value to a maximum of 100
 	UseValue = min(100, UseValue);
 
-	// remove item and init box
+	// Remove the specified amount of items and initialize the box
 	if(pPlayerUsesItem->Remove(UseValue))
 	{
-		Seconds *= pPlayer->GS()->Server()->TickSpeed();
-		pPlayer->m_aPlayerTick[LastRandomBox] = pPlayer->GS()->Server()->Tick() + Seconds;
-		std::sort(m_VectorItems.begin(), m_VectorItems.end(), [](const StRandomItem& pLeft, const StRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
+		// Sort the vector of random items by chance
+		std::sort(m_VectorItems.begin(), m_VectorItems.end(), [](const CRandomItem& pLeft, const CRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
 
+		// Create a new instance of the random box randomizer entity
 		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc().m_ID, Seconds, m_VectorItems, pPlayerUsesItem, UseValue);
+
+		// Send a chat message to the player confirming the usage of the items
 		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{STR}x{VAL}'.", pPlayerUsesItem->Info()->GetName(), UseValue);
+
+		// Convert the duration from seconds to game ticks
+		Seconds *= pPlayer->GS()->Server()->TickSpeed();
+
+		// Set the tick when the last random box will finish opening
+		pPlayer->m_aPlayerTick[LastRandomBox] = pPlayer->GS()->Server()->Tick() + Seconds;
 	}
 
 	return true;
-};
+}

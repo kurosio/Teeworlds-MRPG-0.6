@@ -71,7 +71,7 @@ public:
 	bool IsFunctional(ItemFunctional Functional) const { return m_Function == Functional; }
 	ItemType GetType() const { return m_Type; }
 	bool IsType(ItemType Type) const { return m_Type == Type; }
-	class CRandomBox* GetRandomBox() { return m_RandomBox.Empty() ? nullptr : &m_RandomBox; }
+	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
 
 	bool IsEnchantable() const;

@@ -5,7 +5,7 @@
 
 #include <game/server/gamecontext.h>
 
-CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<StRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue)
+CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<CRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_RANDOM_BOX, pPlayer->m_ViewPos)
 {
 	m_UseValue = UseValue;
@@ -18,9 +18,9 @@ CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, C
 	GameWorld()->InsertEntity(this);
 }
 
-std::vector<StRandomItem>::iterator CEntityRandomBoxRandomizer::SelectRandomItem()
+std::vector<CRandomItem>::iterator CEntityRandomBoxRandomizer::SelectRandomItem()
 {
-	const auto iter = std::find_if(m_List.begin(), m_List.end(), [](const StRandomItem &pItem)
+	const auto iter = std::find_if(m_List.begin(), m_List.end(), [](const CRandomItem &pItem)
 	{
 		const float RandomDrop = frandom() * 100.0f;
 		return RandomDrop < pItem.m_Chance;
@@ -42,7 +42,7 @@ void CEntityRandomBoxRandomizer::Tick()
 		if(!m_LifeTime)
 		{
 			// function lambda for check allowed get or send it from inbox
-			auto GiveRandomItem = [&](StRandomItem& pItem)
+			auto GiveRandomItem = [&](CRandomItem& pItem)
 			{
 				// for enchantable
 				if(GS()->GetItemInfo(pItem.m_ItemID)->IsEnchantable())
@@ -77,7 +77,7 @@ void CEntityRandomBoxRandomizer::Tick()
 			};
 
 			// get list received items
-			struct ReceivedItem { StRandomItem RandomItem; int Coincidences; };
+			struct ReceivedItem { CRandomItem RandomItem; int Coincidences; };
 			std::list<ReceivedItem> aReceivedItems;
 
 			for(int i = 0; i < m_UseValue; i++)

@@ -14,12 +14,12 @@ class CEntityRandomBoxRandomizer : public CEntity
 	int m_PlayerAccountID;
 	CPlayer* m_pPlayer;
 	CPlayerItem* m_pPlayerUsesItem;
-	std::vector<StRandomItem> m_List;
+	std::vector<CRandomItem> m_List;
 
 public:
-	CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<StRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue);
+	CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<CRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue);
 
-	std::vector<StRandomItem>::iterator SelectRandomItem();
+	std::vector<CRandomItem>::iterator SelectRandomItem();
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 };
