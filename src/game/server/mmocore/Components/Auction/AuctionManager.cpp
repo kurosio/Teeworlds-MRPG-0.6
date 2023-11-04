@@ -282,6 +282,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 		//GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemInfo->GetDescription());
 		GS()->AVM(ClientID, "null", NOPE, HideID, "* Seller {STR}", Job()->PlayerName(UserID));
 		GS()->AVM(ClientID, "AUCTION_BUY", ID, HideID, "Buy Price {VAL} gold", Price);
+		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 		FoundItems = true;
 		++HideID;
 	}

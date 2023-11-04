@@ -168,6 +168,7 @@ void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pW
 
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItem->Info()->GetDescription());
 		GS()->AVD(ClientID, "SHOP_BUY", pWarehouse->GetID(), Trade.GetID(), HideID, "Buy {STR}x{VAL}", pItem->Info()->GetName(), pItem->GetValue());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 		HideID++;
 	}
 

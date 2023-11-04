@@ -164,6 +164,7 @@ void CSkillManager::ShowSkill(CPlayer *pPlayer, SkillIdentifier ID) const
 	{
 		GS()->AVM(ClientID, "SKILLLEARN", ID, HideID, "Learn {STR}", pSkill->Info()->GetName());
 	}
+	GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 }
 
 void CSkillManager::ParseEmoticionSkill(CPlayer *pPlayer, int EmoticionID)
