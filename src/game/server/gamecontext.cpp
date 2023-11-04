@@ -1767,7 +1767,7 @@ void CGS::AddVotesBackpage(int ClientID)
 		return;
 
 	AV(ClientID, "null");
-	AVL(ClientID, "BACK", "Backpage");
+	AVL(ClientID, "BACK", "◀◀◀◀ Backpage ◀◀◀◀");
 }
 
 // print player statistics
