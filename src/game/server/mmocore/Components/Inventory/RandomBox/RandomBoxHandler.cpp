@@ -5,74 +5,86 @@
 
 #include <game/server/gamecontext.h>
 
-CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, std::vector<CRandomItem> List, CPlayerItem* pPlayerUsesItem, int UseValue)
+CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, const std::vector<CRandomItem>& List, CPlayerItem* pPlayerUsesItem, int UseValue)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_RANDOM_BOX, pPlayer->m_ViewPos)
 {
-	m_UseValue = UseValue;
+	m_Used = UseValue;
 	m_LifeTime = LifeTime;
 	m_pPlayer = pPlayer;
-	m_PlayerAccountID = PlayerAccountID;
+	m_AccountID = PlayerAccountID;
 	m_pPlayerUsesItem = pPlayerUsesItem;
-	std::copy(List.begin(), List.end(), std::back_inserter(m_List));
+	m_aRandomItems = List;
 
 	GameWorld()->InsertEntity(this);
 }
 
+// This function selects a random item from the "m_aRandomItems" vector of CRandomItem objects
 std::vector<CRandomItem>::iterator CEntityRandomBoxRandomizer::SelectRandomItem()
 {
-	const auto iter = std::find_if(m_List.begin(), m_List.end(), [](const CRandomItem &pItem)
+	// Find the first item in the vector that meets the criteria specified by the lambda function
+	const auto iter = std::find_if(m_aRandomItems.begin(), m_aRandomItems.end(), [](const CRandomItem& pItem)
 	{
 		const float RandomDrop = frandom() * 100.0f;
 		return RandomDrop < pItem.m_Chance;
 	});
-	return iter != m_List.end() ? iter : std::prev(m_List.end());
+
+	// If any item was found, return the iterator pointing to it
+	// Otherwise, return an iterator pointing to the last item in the vector
+	return iter != m_aRandomItems.end() ? iter : std::prev(m_aRandomItems.end());
 }
 
 void CEntityRandomBoxRandomizer::Tick()
 {
+	// Check if m_LifeTime is zero or a multiple of the server tick speed
 	if(!m_LifeTime || m_LifeTime % Server()->TickSpeed() == 0)
 	{
-		auto iterrandom = SelectRandomItem();
+		// Select a random item
+		auto IterRandomElement = SelectRandomItem();
+
+		// Check if the player exists and if the player's character exists
 		if(m_pPlayer && m_pPlayer->GetCharacter())
 		{
-			const vec2 PlayerPosition = m_pPlayer->GetCharacter()->m_Core.m_Pos;
-			GS()->CreateText(nullptr, false, vec2(PlayerPosition.x, PlayerPosition.y - 80), vec2(0, -0.3f), 15, GS()->GetItemInfo(iterrandom->m_ItemID)->GetName());
+			const vec2 PlayerPos = m_pPlayer->GetCharacter()->m_Core.m_Pos;
+			GS()->CreateText(nullptr, false, vec2(PlayerPos.x, PlayerPos.y - 80), vec2(0, -0.3f), 15, GS()->GetItemInfo(IterRandomElement->m_ItemID)->GetName());
 		}
 
 		if(!m_LifeTime)
 		{
 			// function lambda for check allowed get or send it from inbox
-			auto GiveRandomItem = [&](CRandomItem& pItem)
+			auto GiveRandomItem = [&](const CRandomItem& RandItem)
 			{
-				// for enchantable
-				if(GS()->GetItemInfo(pItem.m_ItemID)->IsEnchantable())
+				// Check if the item is enchantable
+				if(GS()->GetItemInfo(RandItem.m_ItemID)->IsEnchantable())
 				{
-					for(int i = 0; i < pItem.m_Value; i++)
+					// Loop through the value of the random item
+					for(int i = 0; i < RandItem.m_Value; i++)
 					{
-						if(!m_pPlayer || m_pPlayer->GetItem(pItem.m_ItemID)->GetValue() >= 1)
+						// Check if the player doesn't exist or already has the item
+						if(!m_pPlayer || m_pPlayer->GetItem(RandItem.m_ItemID)->HasItem())
 						{
-							GS()->SendInbox("System", m_PlayerAccountID, "Random box", "Item was not received by you personally.", pItem.m_ItemID, 1);
+							// Send a message to the player's inbox stating the item was not received personally
+							GS()->SendInbox("System", m_AccountID, "Random box", "Item was not received by you personally.", RandItem.m_ItemID, 1);
 							continue;
 						}
 
-						if(m_pPlayer->GetItem(pItem.m_ItemID)->GetValue() <= 0)
-						{
-							m_pPlayer->GetItem(pItem.m_ItemID)->Add(1, 0, 0, false);
-							GS()->CreateDeath(m_pPlayer->m_ViewPos, m_pPlayer->GetCID());
-						}
-					}
-				}
-				else // default
-				{
-					if(!m_pPlayer)
-					{
-						GS()->SendInbox("System", m_PlayerAccountID, "Random box", "Item was not received by you personally.", pItem.m_ItemID, pItem.m_Value);
-					}
-					else
-					{
-						m_pPlayer->GetItem(pItem.m_ItemID)->Add(pItem.m_Value, 0, 0, false);
+						// Add the item to the player
+						m_pPlayer->GetItem(RandItem.m_ItemID)->Add(1, 0, 0, false);
 						GS()->CreateDeath(m_pPlayer->m_ViewPos, m_pPlayer->GetCID());
 					}
+				}
+				else // if the item is not enchantable
+				{
+					// Check if the player doesn't exist
+					if(!m_pPlayer)
+					{
+						// Send a message to the player's inbox stating the item was not received personally
+						GS()->SendInbox("System", m_AccountID, "Random box", "Item was not received by you personally.", RandItem.m_ItemID, RandItem.m_Value);
+						return;
+					}
+
+					// Add the item to the player
+					m_pPlayer->GetItem(RandItem.m_ItemID)->Add(RandItem.m_Value, 0, 0, false);
+					GS()->CreateDeath(m_pPlayer->m_ViewPos, m_pPlayer->GetCID());
 				}
 			};
 
@@ -80,33 +92,44 @@ void CEntityRandomBoxRandomizer::Tick()
 			struct ReceivedItem { CRandomItem RandomItem; int Coincidences; };
 			std::list<ReceivedItem> aReceivedItems;
 
-			for(int i = 0; i < m_UseValue; i++)
+			// Define a lambda function called "findMatchingItem"
+			auto findMatchingItem = [&IterRandomElement](const ReceivedItem& pItem)
 			{
-				auto iter = std::find_if(aReceivedItems.begin(), aReceivedItems.end(),[&iterrandom](const ReceivedItem& pItem)
-				{
-					return pItem.RandomItem.m_ItemID == iterrandom->m_ItemID;
-				});
+				return pItem.RandomItem.m_ItemID == IterRandomElement->m_ItemID;
+			};
 
+			// Iterate "m_Used" number of times
+			for(int i = 0; i < m_Used; i++)
+			{
+				// Find the first element in the vector "aReceivedItems" that satisfies the condition specified by the lambda function "findMatchingItem"
+				auto iter = std::find_if(aReceivedItems.begin(), aReceivedItems.end(), findMatchingItem);
+
+				// If an element was found
 				if(iter != aReceivedItems.end())
 				{
-					iter->RandomItem.m_Value += iterrandom->m_Value;
+					// Increment the values of the element's RandomItem member
+					iter->RandomItem.m_Value += IterRandomElement->m_Value;
 					iter->Coincidences++;
 				}
 				else
 				{
-					aReceivedItems.push_back({ *iterrandom, 1 });
+					// If no element was found, add a new element
+					aReceivedItems.push_back({ *IterRandomElement, 1 });
 				}
 
-				iterrandom = SelectRandomItem();
+				// Assign a new random item to IterRandomElement
+				IterRandomElement = SelectRandomItem();
 			}
-			
-			// got all random items
+
+			// Check if the player exists
 			if(m_pPlayer)
 			{
+				// Send a chat message
 				const char* pClientName = GS()->Server()->ClientName(m_pPlayer->GetCID());
 				GS()->Chat(-1, "---------------------------------");
-				GS()->Chat(-1, "{STR} uses '{STR}x{VAL}' and got:", pClientName, m_pPlayerUsesItem->Info()->GetName(), m_UseValue);
+				GS()->Chat(-1, "{STR} uses '{STR}x{VAL}' and got:", pClientName, m_pPlayerUsesItem->Info()->GetName(), m_Used);
 
+				// Iterate through all the received items / information
 				for(auto& pItem : aReceivedItems)
 				{
 					CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pItem.RandomItem.m_ItemID);
@@ -117,14 +140,18 @@ void CEntityRandomBoxRandomizer::Tick()
 			}
 			else
 			{
+				// Give the random items to the player offline
 				for(auto& pItem : aReceivedItems)
 					GiveRandomItem(pItem.RandomItem);
 			}
 
+			// Destroy the current entity
 			GameWorld()->DestroyEntity(this);
 			return;
 		}
 	}
+
+	// Decrement the lifetime variable.
 	m_LifeTime--;
 }
 

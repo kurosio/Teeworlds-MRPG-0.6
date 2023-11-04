@@ -24,12 +24,6 @@ bool CRandomBox::Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesIt
 	// Remove the specified amount of items and initialize the box
 	if(pPlayerUsesItem->Remove(UseValue))
 	{
-		// Sort the vector of random items by chance
-		std::sort(m_VectorItems.begin(), m_VectorItems.end(), [](const CRandomItem& pLeft, const CRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
-
-		// Create a new instance of the random box randomizer entity
-		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc().m_ID, Seconds, m_VectorItems, pPlayerUsesItem, UseValue);
-
 		// Send a chat message to the player confirming the usage of the items
 		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{STR}x{VAL}'.", pPlayerUsesItem->Info()->GetName(), UseValue);
 
@@ -38,6 +32,11 @@ bool CRandomBox::Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesIt
 
 		// Set the tick when the last random box will finish opening
 		pPlayer->m_aPlayerTick[LastRandomBox] = pPlayer->GS()->Server()->Tick() + Seconds;
+
+		// Sort the vector of random items by chance
+		// Create a new instance of the random box randomizer entity
+		std::sort(m_VectorItems.begin(), m_VectorItems.end(), [](const CRandomItem& pLeft, const CRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
+		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc().m_ID, Seconds, std::move(m_VectorItems), pPlayerUsesItem, UseValue);
 	}
 
 	return true;
