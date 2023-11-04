@@ -1830,6 +1830,12 @@ bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, c
 		UpdateVotes(ClientID, VoteID);
 		return true;
 	}
+	if(PPSTR(CMD, "ZONE_INVERT_MENU") == 0)
+	{
+		pPlayer->m_ZoneInvertMenu ^= true;
+		StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		return true;
+	}
 	if(PPSTR(CMD, "SORTEDTOP") == 0)
 	{
 		pPlayer->m_aSortTabs[SORT_TOP] = VoteID;

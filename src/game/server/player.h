@@ -77,6 +77,7 @@ public:
 	int m_TempMenuValue;
 	short m_CurrentVoteMenu;
 	short m_LastVoteMenu;
+	bool m_ZoneInvertMenu;
 	bool m_RequestChangeNickname;
 	int m_EidolonCID;
 

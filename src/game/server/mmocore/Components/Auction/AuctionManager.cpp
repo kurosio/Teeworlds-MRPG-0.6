@@ -19,14 +19,14 @@ bool CAuctionManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	const int ClientID = pPlayer->GetCID();
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_AUCTION))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(ClientID);
+		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 
 	if (pChr->GetHelper()->TileExit(IndexCollision, TILE_AUCTION))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(ClientID);
+		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}

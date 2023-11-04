@@ -59,13 +59,13 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	// shop zone
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_SHOP_ZONE))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(ClientID);
+		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_SHOP_ZONE))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(ClientID);
+		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
@@ -153,8 +153,8 @@ void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pW
 		{
 			const bool PlayerHasItem = pPlayer->GetItem(*pItem)->HasItem();
 
-			GS()->AVH(ClientID, HideID, "{STR}{STR} {STR} - {VAL} {STR}",
-				(PlayerHasItem ? "✔ " : "\0"), pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrencyItem->GetName());
+			GS()->AVH(ClientID, HideID, "({STR}){STR} {STR} - {VAL} {STR}",
+				(PlayerHasItem ? "✔" : "×"), pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrencyItem->GetName());
 
 			char aAttributes[128];
 			pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
@@ -162,8 +162,8 @@ void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pW
 		}
 		else
 		{
-			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) - {VAL} {STR}",
-				pItem->Info()->GetName(), pItem->GetValue(), pPlayer->GetItem(*pItem)->GetValue(), Price, pCurrencyItem->GetName());
+			GS()->AVH(ClientID, HideID, "({VAL}){STR}x{VAL} - {VAL} {STR}",
+				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), pItem->GetValue(), Price, pCurrencyItem->GetName());
 		}
 
 		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItem->Info()->GetDescription());

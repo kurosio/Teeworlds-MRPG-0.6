@@ -97,13 +97,13 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_HOUSE))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(ClientID);
+		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, MENU_MAIN);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_HOUSE))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(ClientID);
+		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, MENU_MAIN);
 		return true;
 	}

@@ -39,6 +39,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 		m_TutorialStep = 1;
 		m_LastVoteMenu = NOPE;
 		m_CurrentVoteMenu = MENU_MAIN;
+		m_ZoneInvertMenu = false;
 		m_MoodState = Mood::NORMAL;
 		Acc().m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);
