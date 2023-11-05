@@ -238,53 +238,80 @@ bool CPlayerQuest::SaveSteps()
 
 void CPlayerQuest::ClearSteps()
 {
-	// clear all data from player step
+	// Iterate through all player steps
 	for(auto& p : m_aPlayerSteps)
-		p.second.Clear();
+	{
+		// Clear the data of the player step
+		p.second.Clear(); 
+	}
 
-	// clear and remove temp user quest data
-	m_aPlayerSteps.clear();
+	// Clear the player steps map
+	m_aPlayerSteps.clear(); 
+
+	// Remove the temporary user quest data file
 	fs_remove(GetJsonFileName().c_str());
 }
 
+// Function to handle accepting a quest by the player
 bool CPlayerQuest::Accept()
 {
+	// Check if the quest state is not NO_ACCEPT and if there is a player
 	if(m_State != QuestState::NO_ACCEPT || !GetPlayer())
 		return false;
 
+	// Get the ID of the player
 	int ClientID = GetPlayer()->GetCID();
+
+	// Get the Game Server instance and cast it to CGS
 	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
-	// init quest
+	// Set the quest state to ACCEPT and insert the quest into the database
 	m_State = QuestState::ACCEPT;
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Acc().m_ID, m_State);
 
-	// init steps
+	// Initialize the quest steps
 	InitSteps();
 
-	// information
+	// Retrieve information about the quest
 	const int QuestsSize = Info()->GetQuestStorySize();
 	const int QuestPosition = Info()->GetQuestStoryPosition();
+
+	// Send quest information to the player
 	pGS->Chat(ClientID, "--- Quest story [{STR}] ({INT}/{INT})", Info()->GetStory(), QuestPosition, QuestsSize);
 	pGS->Chat(ClientID, "Name: \"{STR}\"", Info()->GetName());
 	pGS->Chat(ClientID, "Reward: \"Gold {VAL}, Experience {INT}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
+
+	// Broadcast quest accepted message to all players
 	pGS->Broadcast(ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Accepted");
+
+	// Create a sound effect for the player
 	pGS->CreatePlayerSound(ClientID, SOUND_CTF_GRAB_EN);
+
 	return true;
 }
 
 void CPlayerQuest::Refuse()
 {
+	// Check if the quest is in ACCEPT state and the player exists
 	if(m_State != QuestState::ACCEPT || !GetPlayer())
 		return;
 
+	// Clear the steps of the quest
 	ClearSteps();
+
+	// Set the state of the quest to NO_ACCEPT
 	m_State = QuestState::NO_ACCEPT;
+
+	// Remove the quest record from the database table "tw_accounts_quests"
+	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE ID = '%d'", m_ID);
 }
 
 void CPlayerQuest::Reset()
 {
+	// Set the quest state to NO_ACCEPT
 	m_State = QuestState::NO_ACCEPT;
+
+	// Clear the steps of the quest
 	ClearSteps();
 }
 
