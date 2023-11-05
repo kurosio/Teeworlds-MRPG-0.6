@@ -15,20 +15,25 @@ class CQuestDescription : public MultiworldIdentifiableStaticData < std::map< in
 	char m_aStoryLine[24]{};
 	int m_Gold{};
 	int m_Exp{};
-	DBSet m_Types{};
+	bool m_Daily{};
 
 public:
 	CQuestDescription() = default;
 	CQuestDescription(QuestIdentifier ID) : m_ID(ID) {}
 
-	void Init(const std::string& Name, const std::string& Story, std::string& Types, int Gold, int Exp)
+	void Init(const std::string& Name, const std::string& Story, int Gold, int Exp)
 	{
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aStoryLine, Story.c_str(), sizeof(m_aStoryLine));
 		m_Gold = Gold;
 		m_Exp = Exp;
-		m_Types = std::move(Types);
+		m_Daily = false;
 		m_pData[m_ID] = *this;
+	}
+
+	void PostInit(bool Daily)
+	{
+		m_Daily = Daily;
 	}
 
 	QuestIdentifier GetID() const { return m_ID; }
@@ -39,7 +44,6 @@ public:
 	int GetQuestStorySize() const;
 	int GetRewardGold() const { return m_Gold; }
 	int GetRewardExp() const { return m_Exp; }
-	bool IsDailyQuest() const { return m_Types.hasSet("Daily"); }
 
 	void InitPlayerDefaultSteps(int OwnerCID, std::map < int, CPlayerQuestStep >& pElem) const
 	{
@@ -52,6 +56,8 @@ public:
 			pElem[rStepID].m_aMobProgress.clear();
 		}
 	}
+
+	bool IsDaily() const { return m_Daily; }
 
 	// steps with array bot data on active step
 	std::unordered_map < int , CQuestStepDescription > m_StepsQuestBot;

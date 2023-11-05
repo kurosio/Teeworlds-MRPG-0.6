@@ -4,7 +4,8 @@
 
 #include <game/server/gamecontext.h>
 
-constexpr auto TW_QUESTS_DAILY_BOARD = "tw_quests_daily_board";
+constexpr auto TW_QUESTS_DAILY_BOARD = "tw_quests_daily_boards";
+constexpr auto TW_QUESTS_DAILY_BOARDS_LIST = "tw_quests_daily_board_list";
 
 // This function is called during the initialization of the Quest Manager object.
 void CQuestManager::OnInit()
@@ -17,27 +18,47 @@ void CQuestManager::OnInit()
 		QuestIdentifier ID = pRes->getInt("ID");
 		std::string Name = pRes->getString("Name").c_str();
 		std::string Story = pRes->getString("StoryLine").c_str();
-		std::string Types = pRes->getString("Types").c_str();
 		int Gold = pRes->getInt("Money");
 		int Exp = pRes->getInt("Exp");
 
 		// Initialize a CQuestDescription object with the retrieved values
-		CQuestDescription(ID).Init(Name, Story, Types, Gold, Exp);
+		CQuestDescription(ID).Init(Name, Story, Gold, Exp);
 	}
 
-	// Execute a SELECT query on the database and store the result pointer in pResDaily
-	ResultPtr pResDaily = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARD);
-	while(pResDaily->next())
+	// Create a container to store the daily quest data
+	std::unordered_map< int, CQuestsDailyBoard::ContainerDailyQuests > DailyQuests;
+
+	// Execute a SELECT query on the database and store the result pointer in pResBoard
+	ResultPtr pResBoard = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARD);
+	while(pResBoard->next())
 	{
 		// Retrieve the values for each column from the current row of the result set
-		QuestDailyBoardIdentifier ID = pResDaily->getInt("ID");
-		std::string Name = pResDaily->getString("Name").c_str();
-		vec2 Pos = vec2((float)pResDaily->getInt("PosX"), (float)pResDaily->getInt("PosY"));
-		int WorldID = pResDaily->getInt("WorldID");
+		QuestDailyBoardIdentifier ID = pResBoard->getInt("ID");
+		std::string Name = pResBoard->getString("Name").c_str();
+		vec2 Pos = vec2((float)pResBoard->getInt("PosX"), (float)pResBoard->getInt("PosY"));
+		int WorldID = pResBoard->getInt("WorldID");
 
 		// Initialize the daily quest with the server parameters
 		CQuestsDailyBoard(ID).Init(Name, Pos, WorldID);
 	}
+
+	// Execute a SELECT query on the database and store the result pointer in pResDailyQuest
+	ResultPtr pResDailyQuest = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARDS_LIST);
+	while(pResDailyQuest->next())
+	{
+		// Retrieve the values for each column from the current row of the result set
+		QuestIdentifier QuestID = pResDailyQuest->getInt("QuestID");
+		QuestDailyBoardIdentifier BoardID = pResDailyQuest->getInt("DailyBoardID");
+
+		// Push the quest information into the corresponding daily quest container
+		CQuestDescription* pQuestInfo = GS()->GetQuestInfo(QuestID);
+		pQuestInfo->PostInit(true);
+		DailyQuests[BoardID].push_back(*pQuestInfo);
+	}
+
+	// Update the daily quest information for each daily quest board
+	for(auto& [BoardID, DataContainer] : DailyQuests)
+		CQuestsDailyBoard::Data()[BoardID].m_DailyQuestsInfoList = DataContainer;
 }
 
 // This method is called when a player's account is initialized.
@@ -266,12 +287,20 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 	GS()->AV(ClientID, "null");
 }
 
+// This function displays the information about a specific quest
 void CQuestManager::ShowQuestID(CPlayer* pPlayer, int QuestID) const
 {
+	// Get the quest information for the given QuestID
 	CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
+
+	// If the quest is a daily ques
+	if(pQuestInfo->IsDaily())
+		return;
+
+	// Get the size of the quest's story and the current position in the story
+	// Display the quest information to the player using the AVD() function
 	const int QuestsSize = pQuestInfo->GetQuestStorySize();
 	const int QuestPosition = pQuestInfo->GetQuestStoryPosition();
-
 	GS()->AVD(pPlayer->GetCID(), "MENU", MENU_JOURNAL_QUEST_INFORMATION, QuestID, NOPE, "{INT}/{INT} {STR}: {STR}",
 		QuestPosition, QuestsSize, pQuestInfo->GetStory(), pQuestInfo->GetName());
 }
@@ -442,17 +471,24 @@ void CQuestManager::UpdateSteps(CPlayer* pPlayer)
 
 void CQuestManager::AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID)
 {
+	// Get the quest description for the quest with CheckQuestID
 	const CQuestDescription CheckingQuest = CQuestDescription::Data()[CheckQuestID];
+
+	// If the current quest is a daily quest, break out of the loop
+	if(CheckingQuest.IsDaily())
+		return;
+
+	// Loop through all quest descriptions
 	for(auto pQuestData = CQuestDescription::Data().find(CheckQuestID); pQuestData != CQuestDescription::Data().end(); ++pQuestData)
 	{
-		// search next quest story step
+		// Check if the story of the current quest description is the same as the story of CheckingQuest
 		if(str_comp_nocase(CheckingQuest.GetStory(), pQuestData->second.GetStory()) == 0)
 		{
-			// skip all if a quest story is found that is still active
+			// Check if the current quest is still active
 			if(pPlayer->GetQuest(pQuestData->first)->GetState() == QuestState::ACCEPT)
 				break;
 
-			// accept next quest step
+			// Accept the next quest step
 			if(pPlayer->GetQuest(pQuestData->first)->Accept())
 				break;
 		}
@@ -461,17 +497,26 @@ void CQuestManager::AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID)
 
 void CQuestManager::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 {
-	// check first quest story step search active quests
-	std::list < std::string /*stories was checked*/ > StoriesChecked;
+	// Create a list to store the stories that have been checked
+	std::list<std::string> StoriesChecked;
+
+	// Loop through each active quest for the player
 	for(const auto& pPlayerQuest : CPlayerQuest::Data()[pPlayer->GetCID()])
 	{
-		// allow accept next story quest only for complected some quest on story
+		// Check if the quest is finished, if not, skip it
 		if(pPlayerQuest.second.GetState() != QuestState::FINISHED)
 			continue;
 
-		// accept next story quest
-		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), [=](const std::string& stories)
+		// Check if the quest is a daily quest, if yes, skip it
+		if(pPlayerQuest.second.Info()->IsDaily())
+			continue;
+
+		// Check if the story of the quest has already been checked
+		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(),
+			[=](const std::string& stories)
 		{ return (str_comp_nocase(CQuestDescription::Data()[pPlayerQuest.first].GetStory(), stories.c_str()) == 0); });
+
+		// If the story has not been checked, add it to the checked list and accept the next story quest
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
 			StoriesChecked.emplace_front(CQuestDescription::Data()[pPlayerQuest.first].GetStory());
