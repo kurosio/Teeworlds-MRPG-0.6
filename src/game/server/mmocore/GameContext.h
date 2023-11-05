@@ -28,6 +28,15 @@ enum class EntLaserOrbiteType : unsigned char
 	INSIDE_ORBITE_RANDOM, // Inside orbite
 };
 
+// time period
+enum TIME_PERIOD
+{
+	DAILY_STAMP,
+	WEEK_STAMP,
+	MONTH_STAMP,
+	NUM_STAMPS
+};
+
 // mood type
 enum class Mood : short
 {
@@ -401,6 +410,7 @@ enum SaveType
 	SAVE_GUILD_DATA,		// Save Guild Data
 	SAVE_POSITION,			// Save Position Player
 	SAVE_LANGUAGE,			// Save Language Client
+	SAVE_TIME_PERIODS,		// Save Time Periods
 };
 
 // world day types

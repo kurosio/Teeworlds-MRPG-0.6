@@ -8,6 +8,13 @@
 
 struct CAccountData
 {
+	struct TimePeriods
+	{
+		struct tm m_DailyStamp {};
+		struct tm m_WeekStamp {};
+		struct tm m_MonthStamp {};
+	};
+
 	// main
 	char m_aLogin[64]{};
 	char m_aLastLogin[64]{};
@@ -17,6 +24,7 @@ struct CAccountData
 	int m_Exp{};
 	int m_GuildID{};
 	int m_GuildRank{};
+	TimePeriods m_Periods{};
 	std::list< int > m_aHistoryWorld{};
 
 	class CHouseData* GetHouse() const;

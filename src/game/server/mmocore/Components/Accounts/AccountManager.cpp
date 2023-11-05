@@ -169,6 +169,16 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
 		Server()->SetClientScore(ClientID, pPlayer->Acc().m_Level);
 
+		// update time periods
+		{
+			time_t DailyTm = pResAccount->getInt64("DailyStamp");
+			time_t WeekTm = pResAccount->getInt64("WeekStamp");
+			time_t MonthTm = pResAccount->getInt64("MonthStamp");
+			localtime_s(&pPlayer->Acc().m_Periods.m_DailyStamp, &DailyTm);
+			localtime_s(&pPlayer->Acc().m_Periods.m_WeekStamp, &WeekTm);
+			localtime_s(&pPlayer->Acc().m_Periods.m_MonthStamp, &MonthTm);
+		}
+
 		// Load player account upgrades data
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
@@ -255,6 +265,9 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// Set temp safe spawn
 	pPlayer->GetTempData().m_TempSafeSpawn = true;
+
+	// Hanlde time period
+	Job()->HanldePlayerTimePeriod(pPlayer);
 
 	// Change player's world ID to the latest correct world ID
 	const int LatestCorrectWorldID = GetHistoryLatestCorrectWorldID(pPlayer);
