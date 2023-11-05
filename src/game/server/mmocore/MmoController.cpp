@@ -329,7 +329,7 @@ void MmoController::ResetClientData(int ClientID)
 		pComponent->OnResetClient(ClientID);
 }
 
-void MmoController::HanldePlayerTimePeriod(CPlayer* pPlayer)
+void MmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 {
 	// Set a flag indicating whether time periods have been updated
 	std::vector<int> aPeriodsUpdated{};

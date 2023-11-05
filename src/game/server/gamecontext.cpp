@@ -796,17 +796,41 @@ void CGS::OnTick()
 // Here we use functions that can have static data or functions that don't need to be called in all worlds
 void CGS::OnTickGlobal()
 {
-	// day type
+	// Check if the day enum type has changed
 	if(m_DayEnumType != Server()->GetEnumTypeDay())
 	{
+		// Update the day enum type
 		m_DayEnumType = Server()->GetEnumTypeDay();
-		m_MultiplierExp = (m_DayEnumType == NIGHT_TYPE) ? 100 + random_int() % 200 : 100;
+
+		// Check if the day enum type is NIGHT_TYPE
+		if(m_DayEnumType == NIGHT_TYPE)
+		{
+			// Go through each player and handle their time period
+			for(int i = 0; i < MAX_PLAYERS; i++)
+			{
+				if(CPlayer* pPlayer = GetPlayer(i, true))
+					Mmo()->HandlePlayerTimePeriod(pPlayer);
+			}
+
+			// Set the experience multiplier to a random value within the range [100, 300)
+			m_MultiplierExp = 100 + random_int() % 200;
+		}
+		else
+		{
+			// Set the experience multiplier to 100
+			m_MultiplierExp = 100;
+		}
+
+		// Send the updated day information to all players
 		SendDayInfo(-1);
 	}
 
-	// chat messages
+	// This code sends periodic chat messages in the game server. The messages are displayed to all players. 
+	// The code executes every tick, which is determined by the server's tick speed and the specified chat message time interval.
+	// Check if the current tick is a multiple of the specified chat message time interval
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatMessageTime) == 0)
 	{
+		// Create a deque (double-ended queue) to hold the chat messages
 		std::deque<std::string> ChatMsg
 		{
 			"[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 1\", this will allow the voting menu not to close after clicking to vote.",
@@ -815,23 +839,39 @@ void CGS::OnTickGlobal()
 			"[INFO] The mod supports translation, you can find it in \"Call vote -> Settings -> Settings language\".",
 			"[INFO] Don't know what to do? For example, try to find ways to improve your attributes, of which there are more than 25."
 		};
+
+		// Select a random chat message from the deque and send it as a chat message to all players (-1)
 		Chat(-1, ChatMsg[random_int() % ChatMsg.size()].c_str());
 	}
 
+	// check if it's time to display the top message based on the configured interval
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatTopMessageTime) == 0)
 	{
+		// declare a variable to store the type of top list
 		const char* StrTypeName;
+		// generate a random top list type
 		ToplistType RandomType = (ToplistType)(random_int() % (int)ToplistType::NUM_TOPLIST_TYPES);
 
+		// determine the appropriate message based on the random top list type
 		switch(RandomType)
 		{
-			case ToplistType::GUILDS_LEVELING: StrTypeName = "---- [Top 5 guilds by leveling] ----"; break;
-			case ToplistType::GUILDS_WEALTHY: StrTypeName = "---- [Top 5 guilds by gold] ----"; break;
-			case ToplistType::PLAYERS_LEVELING: StrTypeName = "---- [Top 5 players by leveling] ----"; break;
-			default: StrTypeName = "---- [Top 5 players by gold] ----"; break;
+			case ToplistType::GUILDS_LEVELING:
+			StrTypeName = "---- [Top 5 guilds by leveling] ----";
+			break;
+			case ToplistType::GUILDS_WEALTHY:
+			StrTypeName = "---- [Top 5 guilds by gold] ----";
+			break;
+			case ToplistType::PLAYERS_LEVELING:
+			StrTypeName = "---- [Top 5 players by leveling] ----";
+			break;
+			default:
+			StrTypeName = "---- [Top 5 players by gold] ----";
+			break;
 		}
 
+		// display the top message in the chat
 		Chat(-1, StrTypeName);
+		// show the top list to all players
 		Mmo()->ShowTopList(-1, RandomType, true, 5);
 	}
 

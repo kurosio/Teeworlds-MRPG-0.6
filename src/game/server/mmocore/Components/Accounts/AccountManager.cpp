@@ -267,7 +267,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	pPlayer->GetTempData().m_TempSafeSpawn = true;
 
 	// Hanlde time period
-	Job()->HanldePlayerTimePeriod(pPlayer);
+	Job()->HandlePlayerTimePeriod(pPlayer);
 
 	// Change player's world ID to the latest correct world ID
 	const int LatestCorrectWorldID = GetHistoryLatestCorrectWorldID(pPlayer);

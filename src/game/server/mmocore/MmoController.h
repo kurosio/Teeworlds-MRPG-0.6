@@ -81,7 +81,7 @@ public:
 	void OnInitAccount(int ClientID);
 	bool OnParsingVoteCommands(CPlayer *pPlayer, const char *CMD, int VoteID, int VoteID2, int Get, const char *GetText);
 	void ResetClientData(int ClientID);
-	void HanldePlayerTimePeriod(CPlayer* pPlayer);
+	void HandlePlayerTimePeriod(CPlayer* pPlayer);
 
 	static void AsyncClientEnterMsgInfo(std::string ClientName, int ClientID);
 	void ConAsyncLinesForTranslate();
