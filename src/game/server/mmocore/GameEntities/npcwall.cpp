@@ -30,7 +30,9 @@ void CNPCWall::Tick()
 			continue;
 
 		int BotType = pChar->GetPlayer()->GetBotType();
-		if(((m_Flag & Flags::MOB_BOT && BotType == BotsTypes::TYPE_BOT_MOB) || (m_Flag & Flags::NPC_BOT && BotType == BotsTypes::TYPE_BOT_NPC) || (m_Flag & Flags::QUEST_BOT && BotType == BotsTypes::TYPE_BOT_QUEST)))
+		if(((m_Flag & Flags::MOB_BOT && BotType == BotsTypes::TYPE_BOT_MOB) 
+			|| (m_Flag & Flags::NPC_BOT && BotType == BotsTypes::TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pChar->GetPlayer()->GetBotMobID()].m_Function != FUNCTION_NPC_GUARDIAN)
+			|| (m_Flag & Flags::QUEST_BOT && BotType == BotsTypes::TYPE_BOT_QUEST)))
 		{
 			vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
 			const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);

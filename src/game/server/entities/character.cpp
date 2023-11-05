@@ -783,12 +783,14 @@ void CCharacter::Die(int Killer, int Weapon)
 		if(pKillerBot && pKillerBot->IsBot() && pKillerBot->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pKillerBot->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
 		{
 			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
-			int Arrest = translate_to_percent_rest(pItemGold->GetValue(), 5.f);
-			pItemGold->Remove(Arrest);
-
 			m_pPlayer->Acc().m_Relations = 0;
 			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
-			GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
+
+			int Arrest = translate_to_percent_rest(pItemGold->GetValue(), 10.f);
+			if(pItemGold->Remove(Arrest))
+			{
+				GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
+			}
 		}
 	}
 
