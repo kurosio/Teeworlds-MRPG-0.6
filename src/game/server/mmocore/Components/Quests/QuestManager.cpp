@@ -93,7 +93,7 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	return false;
 }
 
-void CQuestManager::OnPlayerCheckPeriod(CPlayer* pPlayer, TIME_PERIOD Period)
+void CQuestManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
 {
 	if(Period == TIME_PERIOD::DAILY_STAMP)
 	{

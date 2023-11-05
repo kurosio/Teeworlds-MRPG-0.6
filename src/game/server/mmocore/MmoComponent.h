@@ -31,7 +31,7 @@ private:
 	virtual bool OnHandleTile(class CCharacter* pChr, int IndexCollision) { return false; };
 	virtual bool OnHandleMenulist(class CPlayer* pPlayer, int Menulist, bool ReplaceMenu) { return false; };
 	virtual bool OnHandleVoteCommands(class CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText) { return false; }
-	virtual void OnPlayerCheckPeriod(class CPlayer* pPlayer, TIME_PERIOD Period) { return; }
+	virtual void OnPlayerHandleTimePeriod(class CPlayer* pPlayer, TIME_PERIOD Period) { return; }
 };
 
 #endif

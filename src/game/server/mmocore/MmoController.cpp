@@ -370,7 +370,7 @@ void MmoController::HanldePlayerTimePeriod(CPlayer* pPlayer)
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				component->OnPlayerCheckPeriod(pPlayer, TIME_PERIOD(periods));
+				component->OnPlayerHandleTimePeriod(pPlayer, TIME_PERIOD(periods));
 			}
 		}
 	}
