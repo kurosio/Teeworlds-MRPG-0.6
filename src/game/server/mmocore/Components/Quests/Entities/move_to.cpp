@@ -122,10 +122,10 @@ void CEntityMoveTo::ClearPointers()
 
 void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, const std::function<bool()> pCallbackSuccesful)
 {
-	CQuest* pPlayerQuest = m_pPlayer->GetQuest(m_QuestID);
-	CPlayerQuestStep* pPlayerQuestStep = pPlayerQuest->GetStepByMob(TaskData.m_QuestBotID);
+	CPlayerQuest* pQuest = m_pPlayer->GetQuest(m_QuestID);
+	CPlayerQuestStep* pQuestStep = pQuest->GetStepByMob(TaskData.m_QuestBotID);
 	bool FailedFinish = !pCallbackSuccesful();
-	const bool IsLastElement = (pPlayerQuestStep->GetCountMoveToComplected() == (pPlayerQuestStep->GetMoveToNum() - 1));
+	const bool IsLastElement = (pQuestStep->GetCountMoveToComplected() == (pQuestStep->GetMoveToNum() - 1));
 	const bool AutoCompleteQuestStep = (m_AutoCompletesQuestStep ? IsLastElement : false);
 
 	// in case move it completes a quest step
@@ -135,7 +135,7 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 		(*m_pComplete) = true;
 
 		// check quest state
-		if(!pPlayerQuestStep->IsComplete())
+		if(!pQuestStep->IsComplete())
 		{
 			char aBufQuestTask[256] {};
 			GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
@@ -184,18 +184,18 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 		}
 
 		(*m_pComplete) = true;
-		pPlayerQuest->SaveSteps();
+		pQuest->SaveSteps();
 		GS()->CreateDeath(m_Pos, m_ClientID);
 		GameWorld()->DestroyEntity(this);
 
 		// finish quest step
 		if(AutoCompleteQuestStep)
 		{
-			pPlayerQuestStep->Finish();
+			pQuestStep->Finish();
 		}
 
 		// if quest is completed, reset task and collection pointers they're cleared in the quest data
-		if(pPlayerQuest->IsCompleted())
+		if(pQuest->IsCompleted())
 			ClearPointers();
 	}
 }

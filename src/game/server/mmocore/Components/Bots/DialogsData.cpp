@@ -384,7 +384,7 @@ void CPlayerDialog::Next()
 			int ClientID = m_pPlayer->GetCID();
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 
-			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 			if(!pQuest->GetStepByMob(m_MobID)->IsComplete())
 			{
 				GS()->Chat(ClientID, "The tasks haven't been completed yet!");
@@ -439,7 +439,7 @@ void CPlayerDialog::PostNext()
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 			pQuest->GetStepByMob(m_MobID)->CreateVarietyTypesRequiredItems();
 
 			// tasks receive
@@ -571,7 +571,7 @@ void CPlayerDialog::ShowCurrentDialog() const
 		if(pCurrent->IsRequestAction())
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 			CPlayerQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
 
 			if(!pStep->m_TaskListReceived)

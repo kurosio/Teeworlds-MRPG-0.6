@@ -65,7 +65,7 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 			continue;
 
 		// skip some quest actions
-		CQuest* pQuest = pPlayer->GetQuest(QuestID);
+		CPlayerQuest* pQuest = pPlayer->GetQuest(QuestID);
 		if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != m_Bot.m_Step)
 			continue;
 
@@ -260,7 +260,7 @@ void CPlayerQuestStep::AppendDefeatProgress(int DefeatedBotID)
 		return;
 
 	// check quest action
-	CQuest* pQuest = pPlayer->GetQuest(GetQuestID());
+	CPlayerQuest* pQuest = pPlayer->GetQuest(GetQuestID());
 	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
 		return;
 
@@ -290,7 +290,7 @@ void CPlayerQuestStep::UpdatePathNavigator()
 		return;
 
 	// check quest action
-	CQuest* pQuest = pPlayer->GetQuest(GetQuestID());
+	CPlayerQuest* pQuest = pPlayer->GetQuest(GetQuestID());
 	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
 		return;
 
@@ -306,7 +306,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 		return;
 
 	// check quest action
-	CQuest* pQuest = pPlayer->GetQuest(GetQuestID());
+	CPlayerQuest* pQuest = pPlayer->GetQuest(GetQuestID());
 	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
 		return;
 
@@ -426,7 +426,7 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 		return;
 
 	// check quest action
-	CQuest* pQuest = pPlayer->GetQuest(GetQuestID());
+	CPlayerQuest* pQuest = pPlayer->GetQuest(GetQuestID());
 	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
 		return;
 

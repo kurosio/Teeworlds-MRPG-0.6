@@ -4,11 +4,16 @@
 
 #include <game/server/gamecontext.h>
 
+constexpr auto TW_QUESTS_DAILY_BOARD = "tw_quests_daily_board";
+
+// This function is called during the initialization of the Quest Manager object.
 void CQuestManager::OnInit()
 {
+	// Execute a SELECT query to retrieve all columns from the "tw_quests_list" table
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_quests_list");
 	while(pRes->next())
 	{
+		// Retrieve the values for each column from the current row of the result set
 		QuestIdentifier ID = pRes->getInt("ID");
 		std::string Name = pRes->getString("Name").c_str();
 		std::string Story = pRes->getString("StoryLine").c_str();
@@ -16,36 +21,90 @@ void CQuestManager::OnInit()
 		int Gold = pRes->getInt("Money");
 		int Exp = pRes->getInt("Exp");
 
+		// Initialize a CQuestDescription object with the retrieved values
 		CQuestDescription(ID).Init(Name, Story, Types, Gold, Exp);
+	}
+
+	// Execute a SELECT query on the database and store the result pointer in pResDaily
+	ResultPtr pResDaily = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARD);
+	while(pResDaily->next())
+	{
+		// Retrieve the values for each column from the current row of the result set
+		QuestDailyBoardIdentifier ID = pResDaily->getInt("ID");
+		std::string Name = pResDaily->getString("Name").c_str();
+		vec2 Pos = vec2((float)pResDaily->getInt("PosX"), (float)pResDaily->getInt("PosY"));
+		int WorldID = pResDaily->getInt("WorldID");
+
+		// Initialize the daily quest with the server parameters
+		CQuestsDailyBoard(ID).Init(Name, Pos, WorldID);
 	}
 }
 
+// This method is called when a player's account is initialized.
 void CQuestManager::OnInitAccount(CPlayer* pPlayer)
 {
+	// Get the client ID of the player
 	const int ClientID = pPlayer->GetCID();
+
+	// Execute a select query to fetch all rows from the "tw_accounts_quests" table where UserID is equal to the ID of the player's account
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc().m_ID);
 	while(pRes->next())
 	{
+		// Get the QuestID and Type values from the current row
 		QuestIdentifier ID = pRes->getInt("QuestID");
 		QuestState State = (QuestState)pRes->getInt("Type");
 
-		CQuest(ID, ClientID).Init(State);
+		// Initialize a new instance of CPlayerQuest with the QuestID and ClientID, and set its state to the retrieved Type value
+		CPlayerQuest(ID, ClientID).Init(State);
 	}
 }
 
 void CQuestManager::OnResetClient(int ClientID)
 {
-	CQuest::Data().erase(ClientID);
+	CPlayerQuest::Data().erase(ClientID);
+}
+
+bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+{
+	CPlayer* pPlayer = pChr->GetPlayer();
+	const int ClientID = pPlayer->GetCID();
+
+	// shop zone
+	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_QUEST_DAILY_BOARD))
+	{
+		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		return true;
+	}
+	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_QUEST_DAILY_BOARD))
+	{
+		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		return true;
+	}
+
+	return false;
 }
 
 bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(ReplaceMenu)
+	CCharacter* pChr = pPlayer->GetCharacter();
+	if(ReplaceMenu && pChr && pChr->IsAlive())
 	{
-		CCharacter* pChr = pPlayer->GetCharacter();
-		if(!pChr || !pChr->IsAlive())
-			return false;
+		if(pChr->GetHelper()->BoolIndex(TILE_QUEST_DAILY_BOARD))
+		{
+			if(CQuestsDailyBoard* pDailyBoard = GetDailyBoard(pChr->m_Core.m_Pos))
+			{
+				ShowDailyQuests(pChr->GetPlayer(), pDailyBoard);
+			}
+			else
+			{
+				GS()->AV(ClientID, "null", "Daily board don't work");
+			}
+
+			return true;
+		}
 
 		return false;
 	}
@@ -77,7 +136,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		const int QuestID = pPlayer->m_TempMenuValue;
 		CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 
-		pPlayer->GS()->Mmo()->Quest()->ShowQuestsActiveNPC(pPlayer, QuestID);
+		pPlayer->GS()->Mmo()->Quest()->ShowQuestActivesNPC(pPlayer, QuestID);
 		pPlayer->GS()->AV(ClientID, "null");
 		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pQuestInfo->GetName());
 		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pQuestInfo->GetRewardGold(), pQuestInfo->GetRewardExp());
@@ -184,9 +243,9 @@ void CQuestManager::ShowQuestID(CPlayer* pPlayer, int QuestID) const
 }
 
 // active npc information display
-void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID) const
+void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 {
-	CQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
+	CPlayerQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
 	const int ClientID = pPlayer->GetCID();
 	GS()->AVM(ClientID, "null", NOPE, NOPE, "Active NPC for current quests");
 
@@ -263,7 +322,7 @@ void CQuestManager::ShowQuestsActiveNPC(CPlayer* pPlayer, int QuestID) const
 void CQuestManager::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size)
 {
 	const int QuestID = pBot.m_QuestID;
-	CQuest* pQuest = pPlayer->GetQuest(QuestID);
+	CPlayerQuest* pQuest = pPlayer->GetQuest(QuestID);
 	CPlayerQuestStep* pStep = pQuest->GetStepByMob(pBot.m_SubBotID);
 	pStep->FormatStringTasks(aBufQuestTask, Size);
 }
@@ -272,7 +331,7 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
-	for(auto& pQuest : CQuest::Data()[ClientID])
+	for(auto& pQuest : CPlayerQuest::Data()[ClientID])
 	{
 		// only for accepted quests
 		if(pQuest.second.GetState() != QuestState::ACCEPT)
@@ -287,11 +346,51 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 	}
 }
 
+void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, const CQuestsDailyBoard* pBoard) const
+{
+	const int ClientID = pPlayer->GetCID();
+	GS()->AVH(ClientID, TAB_STORAGE, "Board :: {STR}", pBoard->GetName());
+
+	int HideID = NUM_TAB_MENU + CQuestsDailyBoard::Data().size() + 3200;
+	for(auto& pDailyQuestInfo : pBoard->m_DailyQuestsInfoList)
+	{
+		CPlayerQuest* pQuest = pPlayer->GetQuest(pDailyQuestInfo.GetID());
+		if(pQuest->IsCompleted())
+			continue;
+
+		// show trade slot actions
+		GS()->AVM(ClientID, "null", NOPE, HideID, "({STR}){STR}", (pQuest->IsActive() ? "v" : "x"), pDailyQuestInfo.GetName());
+		if(pQuest->IsActive())
+			GS()->AVM(ClientID, "ACCEPT_DAILY_QUEST", pDailyQuestInfo.GetID(), HideID, "Accept {STR}", pDailyQuestInfo.GetName());
+		else
+			GS()->AVM(ClientID, "REFUSE_DAILY_QUEST", pDailyQuestInfo.GetID(), HideID, "Refuse {STR}", pDailyQuestInfo.GetName());
+
+		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
+		HideID++;
+	}
+
+	GS()->AV(ClientID, "null");
+}
+
+// The function takes a parameter "Pos" of type "vec2" and returns a pointer to "CQuestsDailyBoard" object
+CQuestsDailyBoard* CQuestManager::GetDailyBoard(vec2 Pos) const
+{
+	// Iterate through the map "CQuestsDailyBoard::Data()"
+	for(auto it = CQuestsDailyBoard::Data().begin(); it != CQuestsDailyBoard::Data().end(); ++it)
+	{
+		// Check if the distance between the position of the current "CQuestsDailyBoard" object and the given "Pos" is less than 200
+		if(distance(it->second.GetPos(), Pos) < 200)
+			return &(it->second);
+	}
+
+	return nullptr;
+}
+
 void CQuestManager::UpdateSteps(CPlayer* pPlayer)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
-	for(auto& pQuest : CQuest::Data()[ClientID])
+	for(auto& pQuest : CPlayerQuest::Data()[ClientID])
 	{
 		if(pQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
@@ -326,11 +425,11 @@ void CQuestManager::AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID)
 	}
 }
 
-void CQuestManager::AcceptNextStoryQuestStep(CPlayer * pPlayer)
+void CQuestManager::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 {
 	// check first quest story step search active quests
 	std::list < std::string /*stories was checked*/ > StoriesChecked;
-	for(const auto& pPlayerQuest : CQuest::Data()[pPlayer->GetCID()])
+	for(const auto& pPlayerQuest : CPlayerQuest::Data()[pPlayer->GetCID()])
 	{
 		// allow accept next story quest only for complected some quest on story
 		if(pPlayerQuest.second.GetState() != QuestState::FINISHED)
@@ -351,7 +450,7 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const
 {
 	const int ClientID = pPlayer->GetCID();
 	int AvailableValue = pPlayer->GetItem(ItemID)->GetValue();
-	for(const auto& pQuest : CQuest::Data()[ClientID])
+	for(const auto& pQuest : CPlayerQuest::Data()[ClientID])
 	{
 		if(pQuest.second.GetState() != QuestState::ACCEPT)
 			continue;
@@ -368,7 +467,7 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const
 int CQuestManager::GetClientComplectedQuestsSize(int ClientID) const
 {
 	int Total = 0;
-	for(const auto& [QuestID, Data] : CQuest::Data()[ClientID])
+	for(const auto& [QuestID, Data] : CPlayerQuest::Data()[ClientID])
 	{
 		if(Data.IsCompleted())
 			Total++;

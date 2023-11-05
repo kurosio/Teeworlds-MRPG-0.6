@@ -5,7 +5,7 @@
 
 #include "QuestDataInfo.h"
 
-class CQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map <int, CQuest > > >
+class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map <int, CPlayerQuest > > >
 {
 	int m_ClientID {};
 	QuestIdentifier m_ID {};
@@ -21,15 +21,15 @@ class CQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map
 public:
 	friend class CQuestManager;
 
-	CQuest() = default;
-	CQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
-	~CQuest();
+	CPlayerQuest() = default;
+	CPlayerQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
+	~CPlayerQuest();
 
 	void Init(QuestState State)
 	{
 		m_State = State;
-		CQuest::m_pData[m_ClientID][m_ID] = *this;
-		CQuest::m_pData[m_ClientID][m_ID].LoadSteps();
+		CPlayerQuest::m_pData[m_ClientID][m_ID] = *this;
+		CPlayerQuest::m_pData[m_ClientID][m_ID].LoadSteps();
 	}
 
 	CQuestDescription* Info() const;

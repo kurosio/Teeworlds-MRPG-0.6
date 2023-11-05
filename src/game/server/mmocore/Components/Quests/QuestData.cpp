@@ -9,12 +9,12 @@
 
 #include "Entities/quest_mob_path_finder.h"
 
-CGS* CQuest::GS() const
+CGS* CPlayerQuest::GS() const
 {
 	return (CGS*)Server()->GameServerPlayer(m_ClientID);
 }
 
-CPlayer* CQuest::GetPlayer() const
+CPlayer* CPlayerQuest::GetPlayer() const
 {
 	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
 	{
@@ -23,7 +23,7 @@ CPlayer* CQuest::GetPlayer() const
 	return nullptr;
 }
 
-CQuest::~CQuest()
+CPlayerQuest::~CPlayerQuest()
 {
 	for(auto p : m_apEntityNPCNavigator)
 		delete p;
@@ -34,10 +34,10 @@ CQuest::~CQuest()
 	m_aPlayerSteps.clear();
 }
 
-CQuestDescription* CQuest::Info() const { return &CQuestDescription::Data()[m_ID]; }
-std::string CQuest::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_ID); }
+CQuestDescription* CPlayerQuest::Info() const { return &CQuestDescription::Data()[m_ID]; }
+std::string CPlayerQuest::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_ID); }
 
-void CQuest::InitSteps()
+void CPlayerQuest::InitSteps()
 {
 	if(m_State != QuestState::ACCEPT || !GetPlayer())
 		return;
@@ -121,7 +121,7 @@ void CQuest::InitSteps()
 	io_close(File);
 }
 
-void CQuest::LoadSteps()
+void CPlayerQuest::LoadSteps()
 {
 	// only for accept state
 	if(m_State != QuestState::ACCEPT)
@@ -186,7 +186,7 @@ void CQuest::LoadSteps()
 	}
 }
 
-bool CQuest::SaveSteps()
+bool CPlayerQuest::SaveSteps()
 {
 	// only for accept state
 	if(m_State != QuestState::ACCEPT)
@@ -236,7 +236,7 @@ bool CQuest::SaveSteps()
 	return true;
 }
 
-void CQuest::ClearSteps()
+void CPlayerQuest::ClearSteps()
 {
 	// clear all data from player step
 	for(auto& p : m_aPlayerSteps)
@@ -247,7 +247,7 @@ void CQuest::ClearSteps()
 	fs_remove(GetJsonFileName().c_str());
 }
 
-bool CQuest::Accept()
+bool CPlayerQuest::Accept()
 {
 	if(m_State != QuestState::NO_ACCEPT || !GetPlayer())
 		return false;
@@ -273,7 +273,7 @@ bool CQuest::Accept()
 	return true;
 }
 
-void CQuest::Finish()
+void CPlayerQuest::Finish()
 {
 	CPlayer* pPlayer = GetPlayer();
 	if(m_State != QuestState::ACCEPT || !pPlayer)
@@ -308,7 +308,7 @@ void CQuest::Finish()
 	pGS->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
 }
 
-void CQuest::CheckAvailableNewStep()
+void CPlayerQuest::CheckAvailableNewStep()
 {
 	// check whether the active steps is complete
 	if(std::any_of(m_aPlayerSteps.begin(), m_aPlayerSteps.end(), [this](std::pair <const int, CPlayerQuestStep>& p)
@@ -345,7 +345,7 @@ void CQuest::CheckAvailableNewStep()
 	}
 }
 
-CStepPathFinder* CQuest::FoundEntityNPCNavigator(int SubBotID) const
+CStepPathFinder* CPlayerQuest::FoundEntityNPCNavigator(int SubBotID) const
 {
 	for(const auto& pEnt : m_apEntityNPCNavigator)
 	{
@@ -356,7 +356,7 @@ CStepPathFinder* CQuest::FoundEntityNPCNavigator(int SubBotID) const
 	return nullptr;
 }
 
-CStepPathFinder* CQuest::AddEntityNPCNavigator(QuestBotInfo* pBot)
+CStepPathFinder* CPlayerQuest::AddEntityNPCNavigator(QuestBotInfo* pBot)
 {
 	if(!pBot)
 		return nullptr;

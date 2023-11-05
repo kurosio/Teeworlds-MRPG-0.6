@@ -81,9 +81,9 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 	{
 		if(pChr->GetHelper()->BoolIndex(TILE_SHOP_ZONE))
 		{
-			if(CWarehouse* pWarehouse = Job()->Warehouse()->GetWarehouse(pChr->m_Core.m_Pos))
+			if(CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos))
 			{
-				Job()->Warehouse()->ShowWarehouseMenu(pChr->GetPlayer(), pWarehouse);
+				ShowWarehouseMenu(pChr->GetPlayer(), pWarehouse);
 			}
 			else
 			{

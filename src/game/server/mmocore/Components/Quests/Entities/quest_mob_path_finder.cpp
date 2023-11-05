@@ -54,7 +54,7 @@ void CStepPathFinder::Tick()
 
 	const int QuestID = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_QuestID;
 	const int Step = QuestBotInfo::ms_aQuestBot[m_SubBotID].m_Step;
-	CQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+	CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 	if (pQuest->GetCurrentStepPos() != Step || pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepByMob(m_SubBotID)->m_StepComplete || pQuest->GetStepByMob(m_SubBotID)->m_ClientQuitting)
 	{
 		GS()->CreateDeath(m_Pos, m_ClientID);
