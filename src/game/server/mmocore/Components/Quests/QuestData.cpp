@@ -342,16 +342,20 @@ bool CPlayerQuest::Accept()
 	const int QuestPosition = Info()->GetQuestStoryPosition();
 
 	// Send quest information to the player
-	pGS->Chat(ClientID, "--- Quest story [{STR}] ({INT}/{INT})", Info()->GetStory(), QuestPosition, QuestsSize);
-	pGS->Chat(ClientID, "Name: \"{STR}\"", Info()->GetName());
-	pGS->Chat(ClientID, "Reward: \"Gold {VAL}, Experience {INT}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
+	if(Info()->IsDaily())
+	{
+		pGS->Chat(ClientID, "Daily quest: \"{STR}\" accepted!", Info()->GetName());
+	}
+	else
+	{
+		pGS->Chat(ClientID, "--- Quest story [{STR}] ({INT}/{INT})", Info()->GetStory(), QuestPosition, QuestsSize);
+		pGS->Chat(ClientID, "Name: \"{STR}\"", Info()->GetName());
+		pGS->Chat(ClientID, "Reward: \"Gold {VAL}, Experience {INT}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
+	}
 
-	// Broadcast quest accepted message to all players
+	// effect's
 	pGS->Broadcast(ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Accepted");
-
-	// Create a sound effect for the player
 	pGS->CreatePlayerSound(ClientID, SOUND_CTF_GRAB_EN);
-
 	return true;
 }
 
@@ -368,7 +372,7 @@ void CPlayerQuest::Refuse()
 	m_State = QuestState::NO_ACCEPT;
 
 	// Remove the quest record from the database table "tw_accounts_quests"
-	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID", m_ID, GetPlayer()->Acc().m_ID);
+	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Acc().m_ID);
 }
 
 void CPlayerQuest::Reset()
@@ -395,19 +399,30 @@ void CPlayerQuest::Finish()
 	// clear steps
 	ClearSteps();
 
-	// awards and write about completion
+	// Add the reward gold to the player's money and experience
 	pPlayer->AddMoney(Info()->GetRewardGold());
 	pPlayer->AddExp(Info()->GetRewardExp());
+
+	// Check if indicating a daily quest
 	if(Info()->IsDaily())
 	{
+		// Add the maximum number of Allied Seals that can be obtained from a daily quest to the player's item inventory
 		pPlayer->GetItem(itAlliedSeals)->Add(MAX_ALLIED_SEALS_BY_DAILY_QUEST);
-	}
-	pGS->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", pGS->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
-	pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
 
-	// notify whether the after quest has opened something new
-	pGS->Mmo()->WorldSwap()->NotifyUnlockedZonesByQuest(pPlayer, m_ID);
-	pGS->Mmo()->Dungeon()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
+		// Send a chat message to all players informing that the player has completed a daily quest
+		pGS->Chat(-1, "{STR} completed daily quest \"{STR}\".", pGS->Server()->ClientName(m_ClientID), Info()->GetName());
+		pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed daily quest ({STR})", Info()->GetName());
+	}
+	else
+	{
+		// Send a chat message to all players informing that the player has completed a regular quest
+		pGS->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", pGS->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
+		pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
+
+		// Notify the opened new zones and dungeons after completing the quest
+		pGS->Mmo()->WorldSwap()->NotifyUnlockedZonesByQuest(pPlayer, m_ID);
+		pGS->Mmo()->Dungeon()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
+	}
 
 	// save player stats and accept next story quest
 	pGS->Mmo()->SaveAccount(pPlayer, SAVE_STATS);
