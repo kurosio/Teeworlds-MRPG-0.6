@@ -257,7 +257,7 @@ void CQuestManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Perio
 		// Reset the daily quests for the specified player
 		for(auto& p : CQuestsDailyBoard::Data())
 		{
-			p.second.ResetDailyQuests(pPlayer);
+			p.second.ClearDailyQuests(pPlayer);
 		}
 
 		// Call the UpdateVotes function

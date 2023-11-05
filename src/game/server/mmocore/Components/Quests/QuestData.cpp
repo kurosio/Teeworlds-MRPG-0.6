@@ -9,47 +9,71 @@
 
 #include "Entities/quest_mob_path_finder.h"
 
+// Return the game server object associated with the player's client ID
 CGS* CPlayerQuest::GS() const
 {
+	// Cast the result of Server()->GameServerPlayer(m_ClientID) to a CGS pointer
 	return (CGS*)Server()->GameServerPlayer(m_ClientID);
 }
 
+// Get the player object associated with the player's client ID
 CPlayer* CPlayerQuest::GetPlayer() const
 {
+	// Check if the client ID is within the valid range
 	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
 	{
+		// Return the player object at the corresponding client ID
 		return GS()->m_apPlayers[m_ClientID];
 	}
+	// Return nullptr if the client ID is invalid
 	return nullptr;
 }
 
+// Destructor for CPlayerQuest
 CPlayerQuest::~CPlayerQuest()
 {
+	// Loop through each element in m_apEntityNPCNavigator and delete each pointer
 	for(auto p : m_apEntityNPCNavigator)
 		delete p;
+
+	// Loop through each element in m_aPlayerSteps and clear each element
 	for(auto& p : m_aPlayerSteps)
 		p.second.Clear();
 
+	// Clear the m_apEntityNPCNavigator vector
 	m_apEntityNPCNavigator.clear();
+
+	// Clear the m_aPlayerSteps map
 	m_aPlayerSteps.clear();
 }
 
-CQuestDescription* CPlayerQuest::Info() const { return &CQuestDescription::Data()[m_ID]; }
-std::string CPlayerQuest::GetJsonFileName() const { return Info()->GetJsonFileName(GetPlayer()->Acc().m_ID); }
+// Return a pointer to the CQuestDescription object corresponding to the quest ID of the player
+CQuestDescription* CPlayerQuest::Info() const
+{
+	return &CQuestDescription::Data()[m_ID];
+}
+
+// Return the JSON file name for the player quest based on the player's account ID
+std::string CPlayerQuest::GetJsonFileName() const
+{
+	return Info()->GetJsonFileName(GetPlayer()->Acc().m_ID);
+}
 
 void CPlayerQuest::InitSteps()
 {
+	// check if the quest state is not ACCEPT or if the player does not exist
 	if(m_State != QuestState::ACCEPT || !GetPlayer())
 		return;
 
-	// checking dir
+	// check if the "quest_tmp" directory does not exist
 	if(!fs_is_dir("server_data/quest_tmp"))
 	{
+		// create the directories if it does not exist
 		fs_makedir("server_data");
 		fs_makedir("server_data/quest_tmp");
 	}
 
-	// initialized quest steps
+	// initialize the quest steps
 	m_Step = 1;
 	Info()->InitPlayerDefaultSteps(m_ClientID, m_aPlayerSteps);
 
@@ -60,54 +84,67 @@ void CPlayerQuest::InitSteps()
 	{
 		if(pStep.second.m_Bot.m_HasAction)
 		{
+			// Create a JSON object called StepData
 			nlohmann::json StepData;
+
+			// Add values to the StepData object
 			StepData["subbotid"] = pStep.second.m_Bot.m_SubBotID;
 			StepData["state"] = pStep.second.m_StepComplete;
 
+			// Check if the RequiredDefeat vector is not empty
 			if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
 			{
+				// Iterate through each element in the RequiredDefeat vector
 				for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
 				{
-					StepData["defeat"].push_back(
-						{
-							{ "id", p.m_BotID },
-							{ "count", 0 },
-							{"complete", false }
+					// Create a JSON object for each required defeat
+					StepData["defeat"].push_back({
+						{"id", p.m_BotID},
+						{"count", 0},
+						{"complete", false}
 						});
 				}
 			}
 
+			// Check if the RequiredMoveTo vector is not empty
 			if(!pStep.second.m_Bot.m_RequiredMoveTo.empty())
 			{
+				// Iterate through each element in the RequiredMoveTo vector
 				for(size_t i = 0; i < pStep.second.m_Bot.m_RequiredMoveTo.size(); i++)
 				{
-					StepData["move_to"].push_back(
-						{
-							{ "complete", false },
+					// Create a JSON object for each required move
+					StepData["move_to"].push_back({
+						{"complete", false}
 						});
 				}
 			}
 
+			// Add the StepData object to the "steps" array in the JsonQuestData object
 			JsonQuestData["steps"].push_back(StepData);
 		}
 
 	}
 
-	// update step bot's and pre init
+	// Loop through each player step
 	for(auto& pStep : m_aPlayerSteps)
 	{
+		// Check if the step requires defeating certain bots
 		if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
 		{
+			// Loop through the bots that need to be defeated
 			for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
 			{
+				// Reset the count and completion status for the bot
 				pStep.second.m_aMobProgress[p.m_BotID].m_Count = 0;
 				pStep.second.m_aMobProgress[p.m_BotID].m_Complete = false;
 			}
 		}
 
+		// Initialize the size of the MoveToProgress array based on the number of required move-to elements
 		int MoveToElementsSize = pStep.second.m_Bot.m_RequiredMoveTo.size();
 		pStep.second.m_aMoveToProgress.resize(MoveToElementsSize, false);
 
+		// Update the player step
 		pStep.second.Update();
 	}
 
@@ -150,37 +187,53 @@ void CPlayerQuest::LoadSteps()
 	m_Step = JsonQuestData.value("current_step", 1);
 	for(auto& pStep : JsonQuestData["steps"])
 	{
+		// Get the value of SubBotID from pStep and assign it to the constant SubBotID
 		const int SubBotID = pStep.value("subbotid", 0);
+
+		// Set the StepComplete value of the corresponding player step in the m_aPlayerSteps array to the value of "state" in pStep
 		m_aPlayerSteps[SubBotID].m_StepComplete = pStep.value("state", false);
+
+		// If the StepComplete is true, skip the rest of the code and continue to the next iteration
 		if(m_aPlayerSteps[SubBotID].m_StepComplete)
 			continue;
 
+		// If "defeat" key exists in pStep
 		if(pStep.find("defeat") != pStep.end())
 		{
+			// Iterate through each element in the "defeat" array
 			for(auto& p : pStep["defeat"])
 			{
+				// Get the ID value from each element and assign it to ID
 				int ID = p.value("id", 0);
+				// Set the Count value of the corresponding mob progress in the m_aMobProgress array to the value of "count" in p
 				m_aPlayerSteps[SubBotID].m_aMobProgress[ID].m_Count = p.value("count", 0);
+				// Set the Complete value of the corresponding mob progress in the m_aMobProgress array to the value of "complete" in p
 				m_aPlayerSteps[SubBotID].m_aMobProgress[ID].m_Complete = p.value("complete", 0);
 			}
 		}
 
+		// If "move_to" key exists in pStep
 		if(pStep.find("move_to") != pStep.end())
 		{
+			// Iterate through each element in the "move_to" array
 			for(auto& p : pStep["move_to"])
 			{
+				// Add the value of "complete" in p to the m_aMoveToProgress array in the corresponding player step
 				m_aPlayerSteps[SubBotID].m_aMoveToProgress.push_back(p.value("complete", false));
 			}
 		}
 
+		// Set ClientQuitting value of the corresponding player step to false
 		m_aPlayerSteps[SubBotID].m_ClientQuitting = false;
 	}
 
-	// update step bot's
+	// Update the steps of the bot
 	for(auto& pStep : m_aPlayerSteps)
 	{
+		// If the current step is not complete
 		if(!pStep.second.m_StepComplete)
 		{
+			// Update the current step
 			pStep.second.Update();
 		}
 	}
@@ -188,7 +241,7 @@ void CPlayerQuest::LoadSteps()
 
 bool CPlayerQuest::SaveSteps()
 {
-	// only for accept state
+	// Check if the current state of the quest is not "ACCEPT"
 	if(m_State != QuestState::ACCEPT)
 		return false;
 
@@ -199,28 +252,40 @@ bool CPlayerQuest::SaveSteps()
 	{
 		if(pStep.second.m_Bot.m_HasAction)
 		{
+			// Creating a json object called stepData
 			nlohmann::json stepData;
+
+			// Assigning the value of m_SubBotID to the key "subbotid" in the stepData object
 			stepData["subbotid"] = pStep.second.m_Bot.m_SubBotID;
+
+			// Assigning the value of m_StepComplete to the key "state" in the stepData object
 			stepData["state"] = pStep.second.m_StepComplete;
 
+			// Looping through each key-value pair in the m_aMobProgress map of the pStep.second object
 			for(auto& p : pStep.second.m_aMobProgress)
 			{
+				// Creating a json object for each map entry in the m_aMobProgress map
+				// and adding it to the "defeat" array in the stepData object
 				stepData["defeat"].push_back(
 					{
-						{ "id", p.first },
-						{ "count", p.second.m_Count },
-						{"complete", p.second.m_Complete }
+						{ "id", p.first }, // Assigning the key "id" with the value of p.first (key from the map)
+						{ "count", p.second.m_Count }, // Assigning the key "count" with the value of p.second.m_Count (value from the map value)
+						{ "complete", p.second.m_Complete } // Assigning the key "complete" with the value of p.second.m_Complete (value from the map value)
 					});
 			}
 
+			// Looping through each value in the m_aMoveToProgress vector of the pStep.second object
 			for(auto& p : pStep.second.m_aMoveToProgress)
 			{
+				// Creating a json object for each value in the m_aMoveToProgress vector
+				// and adding it to the "move_to" array in the stepData object
 				stepData["move_to"].push_back(
 					{
-						{ "complete", p },
+						{ "complete", p }, // Assigning the key "complete" with the value of p (value from the vector element)
 					});
 			}
 
+			// Adding the stepData object to the "steps" array in the JsonQuestData object
 			JsonQuestData["steps"].push_back(stepData);
 		}
 	}
@@ -242,11 +307,11 @@ void CPlayerQuest::ClearSteps()
 	for(auto& p : m_aPlayerSteps)
 	{
 		// Clear the data of the player step
-		p.second.Clear(); 
+		p.second.Clear();
 	}
 
 	// Clear the player steps map
-	m_aPlayerSteps.clear(); 
+	m_aPlayerSteps.clear();
 
 	// Remove the temporary user quest data file
 	fs_remove(GetJsonFileName().c_str());
@@ -387,10 +452,15 @@ void CPlayerQuest::CheckAvailableNewStep()
 	}
 }
 
+// This function searches the array of EntityNPCNavigator for a specific SubBotID
+// It returns a pointer to the EntityNPCNavigator if found, otherwise it returns nullptr
+
 CStepPathFinder* CPlayerQuest::FoundEntityNPCNavigator(int SubBotID) const
 {
+	// Iterate through each EntityNPCNavigator pointer in the array
 	for(const auto& pEnt : m_apEntityNPCNavigator)
 	{
+		// Check if the pointer is not null and if its SubBotID matches the target SubBotID
 		if(pEnt && pEnt->m_SubBotID == SubBotID)
 			return pEnt;
 	}
@@ -398,15 +468,22 @@ CStepPathFinder* CPlayerQuest::FoundEntityNPCNavigator(int SubBotID) const
 	return nullptr;
 }
 
+// This method adds an NPC navigator to the player's quest
 CStepPathFinder* CPlayerQuest::AddEntityNPCNavigator(QuestBotInfo* pBot)
 {
+	// If the given bot information is invalid, return nullptr
 	if(!pBot)
 		return nullptr;
 
+	// Check if an NPC navigator for the given subBotID already exists
 	CStepPathFinder* pPathFinder = FoundEntityNPCNavigator(pBot->m_SubBotID);
+
+	// If an NPC navigator does not exist for the given subBotID, create a new one and add it to the navigator list
 	if(!pPathFinder)
 	{
 		pPathFinder = m_apEntityNPCNavigator.emplace_back(new CStepPathFinder(&GS()->m_World, pBot->m_Position, m_ClientID, *pBot, &m_apEntityNPCNavigator));
 	}
+
+	// Return the NPC navigator
 	return pPathFinder;
 }

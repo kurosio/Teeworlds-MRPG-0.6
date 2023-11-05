@@ -20,8 +20,8 @@ int CQuestsDailyBoard::QuestsAvailables(CPlayer* pPlayer)
 	return MAX_DAILY_QUESTS_BY_BOARD - Count;
 }
 
-// ResetDailyQuests function is a member function of the CQuestsDailyBoard class
-void CQuestsDailyBoard::ResetDailyQuests(CPlayer* pPlayer) const
+// ClearDailyQuests function is a member function of the CQuestsDailyBoard class
+void CQuestsDailyBoard::ClearDailyQuests(CPlayer* pPlayer) const
 {
 	// Iterate through each item in the m_DailyQuestsInfoList
 	for(auto& p : m_DailyQuestsInfoList)

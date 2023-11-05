@@ -43,7 +43,7 @@ public:
 	// Function checking accepted quests
 	int QuestsAvailables(class CPlayer* pPlayer);
 
-	void ResetDailyQuests(class CPlayer* pPlayer) const;
+	void ClearDailyQuests(class CPlayer* pPlayer) const;
 
 	// Function to retrieve the ID of the daily board
 	QuestDailyBoardIdentifier GetID() const { return m_ID; }
