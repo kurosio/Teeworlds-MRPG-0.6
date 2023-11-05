@@ -22,6 +22,7 @@ struct CAccountData
 	int m_ID{};
 	int m_Level{};
 	int m_Exp{};
+	int m_Relations{};
 	int m_GuildID{};
 	int m_GuildRank{};
 	TimePeriods m_Periods{};
@@ -29,6 +30,7 @@ struct CAccountData
 
 	class CHouseData* GetHouse() const;
 	bool HasHouse() const;
+	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; }
 
 	// upgrades
 	int m_Upgrade{};

@@ -32,7 +32,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_aPlayerTick[Die] = Server()->Tick();
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
-	m_Relevation = 0;
 
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
@@ -697,6 +696,15 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 void CPlayer::ShowInformationStats()
 {
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_BASIC_STATS, 100, "");
+}
+
+void CPlayer::IncreaseRelations(int Relevation) const
+{
+	if(IsAuthed() && !Acc().IsRelationshipsDeterioratedToMax())
+	{
+		Acc().m_Relations = min(Acc().m_Relations + Relevation, 100);
+		GS()->Chat(m_ClientID, "Relationships have deteriorated to {INT}%!", Acc().m_Relations);
+	}
 }
 
 /* #########################################################################

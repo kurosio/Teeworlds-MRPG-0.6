@@ -176,11 +176,9 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		}
 
 		// Check if the bot player's type is TYPE_BOT_NPC and the sender's relevation is less than 1000
-		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && pFrom->m_Relevation < 1000)
+		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
-			int IncreaseRelevation = rand() % 50;
-			pFrom->m_Relevation = min(pFrom->m_Relevation + IncreaseRelevation, 1000);
-			GS()->Chat(pFrom->GetCID(), "Relevance has been increased by {INT}. Now {INT} of 1000p.", IncreaseRelevation, pFrom->m_Relevation);
+			pFrom->IncreaseRelations(random_int() % 5);
 		}
 
 		// add (from player) to the list of those who caused damage
@@ -1014,7 +1012,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
 			// Check if the bot is a guardian NPC and the player is not active for the bot
-			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && GS()->m_apPlayers[i]->m_Relevation < 1000)
+			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !GS()->m_apPlayers[i]->Acc().IsRelationshipsDeterioratedToMax())
 			{
 				continue;
 			}
@@ -1297,7 +1295,6 @@ bool CCharacterBotAI::FunctionGuardian()
 	{
 		ResetInput();
 		Fire();
-		ChangeWeapons();
 		Move();
 	}
 

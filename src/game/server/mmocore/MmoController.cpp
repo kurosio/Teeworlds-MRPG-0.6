@@ -412,6 +412,10 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 		std::string Fields = pPlayer->Acc().m_MiningData.getUpdateField();
 		Database->Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_ID);
 	}
+	else if(Table == SAVE_RELEVATION)
+	{
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Relevation = '%d' WHERE ID = '%d'", pPlayer->Acc().m_Relations, pPlayer->Acc().m_ID);
+	}
 	else if(Table == SAVE_GUILD_DATA)
 	{
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Acc().m_GuildID, pPlayer->Acc().m_GuildRank, pPlayer->Acc().m_ID);

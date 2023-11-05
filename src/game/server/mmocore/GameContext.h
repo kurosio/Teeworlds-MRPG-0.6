@@ -404,6 +404,7 @@ enum SaveType
 	SAVE_PLANT_DATA,		// Save Plant Account
 	SAVE_MINER_DATA,		// Save Mining Account
 	SAVE_GUILD_DATA,		// Save Guild Data
+	SAVE_RELEVATION,		// Save Relevation
 	SAVE_POSITION,			// Save Position Player
 	SAVE_LANGUAGE,			// Save Language Client
 	SAVE_TIME_PERIODS,		// Save Time Periods

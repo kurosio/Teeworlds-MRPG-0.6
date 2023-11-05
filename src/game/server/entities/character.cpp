@@ -776,6 +776,22 @@ void CCharacter::Die(int Killer, int Weapon)
 		}
 	}
 
+	// guardian
+	if(Killer >= MAX_PLAYERS && Killer < MAX_CLIENTS)
+	{
+		CPlayerBot* pKillerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[Killer]);
+		if(pKillerBot && pKillerBot->IsBot() && pKillerBot->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pKillerBot->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
+		{
+			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+			int Arrest = translate_to_percent_rest(pItemGold->GetValue(), 5.f);
+			pItemGold->Remove(Arrest);
+
+			m_pPlayer->Acc().m_Relations = 0;
+			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELEVATION);
+			GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
+		}
+	}
+
 	// a nice sound
 	GS()->m_pController->OnCharacterDeath(this, GS()->m_apPlayers[Killer], Weapon);
 	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
