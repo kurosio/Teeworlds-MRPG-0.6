@@ -178,7 +178,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		// Check if the bot player's type is TYPE_BOT_NPC and the sender's relevation is less than 1000
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
-			pFrom->IncreaseRelations(random_int() % 5);
+			pFrom->IncreaseRelations(1 + (random_int() % 5));
 		}
 
 		// add (from player) to the list of those who caused damage
