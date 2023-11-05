@@ -71,6 +71,7 @@ private:
 
 	// Bots functions
 	bool FunctionNurseNPC();
+	bool FunctionGuardian();
 	bool BaseFunctionNPC();
 };
 

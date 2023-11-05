@@ -139,6 +139,7 @@ enum FunctionsNPC
 {
 	FUNCTION_NPC_NURSE,
 	FUNCTION_NPC_GIVE_QUEST,
+	FUNCTION_NPC_GUARDIAN,
 };
 
 // menu list

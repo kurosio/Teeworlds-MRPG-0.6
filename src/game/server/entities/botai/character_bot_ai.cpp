@@ -510,25 +510,44 @@ void CCharacterBotAI::HandleBot()
 // interactive of NPC
 void CCharacterBotAI::EngineNPC()
 {
+	// Get variables
 	const int MobID = m_pBotPlayer->GetBotMobID();
 	NpcBotInfo* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobID];
+	bool PlayerFinding = false;
+	int NpcFunction = pNpcBot->m_Function;
 
-	// emote actions
+	// check if the bot's function is set to NPC_GUARDIAN
+	if(NpcFunction == FUNCTION_NPC_GUARDIAN)
+	{
+		// call the FunctionGuardian to execute the corresponding actions
+		FunctionGuardian();
+		return;
+	}
+	// check if the bot's function is set to NPC_NURSE
+	else if(NpcFunction == FUNCTION_NPC_NURSE)
+	{
+		// call FunctionNurseNPC to find players
+		PlayerFinding = FunctionNurseNPC();
+	}
+	else
+	{
+		// call BaseFunctionNPC to find players
+		PlayerFinding = BaseFunctionNPC();
+	}
+
+	// Emote actions
 	EmotesAction(pNpcBot->m_Emote);
 
-	// direction eyes
+	// Direction eyes
+	// Every tick (once per second), change the vertical target of the NPC's eyes randomly between -4 and 4.
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
-		m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+		m_Input.m_TargetY = random_int() % 8 - random_int() % 4;
+
+	// Set the horizontal target of the NPC's eyes to the direction the NPC is facing multiplied by 10, plus 1.
 	m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
 
-	// functional
-	bool PlayerFinding;
-	if(pNpcBot->m_Function == FUNCTION_NPC_NURSE)
-		PlayerFinding = FunctionNurseNPC();
-	else
-		PlayerFinding = BaseFunctionNPC();
-
-	// walking for npc
+	// Walking for NPC
+	// If the NPC is not currently searching for a player and is not static (not stationary), then randomly change direction every 50 ticks.
 	if(!PlayerFinding && !pNpcBot->m_Static && random_int() % 50 == 0)
 	{
 		m_Input.m_Direction = -1 + (random_int() % 3);
@@ -1185,4 +1204,71 @@ bool CCharacterBotAI::FunctionNurseNPC()
 		}
 	}
 	return PlayerFinding;
+}
+
+bool CCharacterBotAI::FunctionGuardian()
+{
+	bool MobMove = true;
+
+	// Search for a tank player within a 1000 unit range
+	CPlayer* pPlayer = SearchTankPlayer(1000.0f);
+
+	// If a tank player is found and their revelation is less than 1000, or no player is found at all
+	if((pPlayer && pPlayer->m_Relevation < 1000) || !pPlayer || !pPlayer->GetCharacter())
+	{
+		// Search for a mob within a 600 unit range
+		pPlayer = SearchMob(600.f);
+	}
+
+	// Check if pPlayer exists and if pPlayer's character
+	if(pPlayer && pPlayer->GetCharacter())
+	{
+		// Set the target of the AI to pPlayer's CID with a priority of 100
+		AI()->GetTarget()->Set(pPlayer->GetCID(), 100);
+		m_pBotPlayer->m_TargetPos = pPlayer->GetCharacter()->GetPos();
+	}
+
+	// Calculate the distance between the spawn point and the current position
+	float Distance = distance(m_SpawnPoint, m_Pos);
+	if(AI()->GetTarget()->IsEmpty())
+	{
+		// If the active target is empty and the distance is greater than 800.0f
+		if(Distance > 800.0f)
+		{
+			// Change the position of the player to m_SpawnPoint
+			ChangePosition(m_SpawnPoint);
+		}
+
+		// Check if the distance is less than 128.0f 
+		if(Distance < 128.0f)
+		{
+			if(Server()->Tick() % Server()->TickSpeed() == 0)
+				m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+
+			m_pBotPlayer->m_TargetPos = vec2(0, 0);
+			m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
+			m_Input.m_Direction = 0;
+			MobMove = false;
+		}
+
+		// always with empty target / target pos it's owner
+		m_pBotPlayer->m_TargetPos = m_SpawnPoint;
+	}
+
+	// bot with weapons since it has spread.
+	if(MobMove)
+	{
+		ResetInput();
+		Fire();
+		ChangeWeapons();
+		Move();
+	}
+
+	m_PrevPos = m_Pos;
+	if(m_Input.m_Direction)
+		m_PrevDirection = m_Input.m_Direction;
+
+	EmotesAction(m_EmotionsStyle);
+	HandleWeapons();
+	return true;
 }

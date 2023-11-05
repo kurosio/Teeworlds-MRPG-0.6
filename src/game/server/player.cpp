@@ -33,6 +33,8 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 
+	m_Relevation = 10000;
+
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
 	{

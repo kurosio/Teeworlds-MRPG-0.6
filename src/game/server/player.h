@@ -58,6 +58,7 @@ public:
 	int m_aPlayerTick[NUM_TICK];
 	char m_aClanString[128];
 	Mood m_MoodState;
+	int m_Relevation;
 
 	char m_aLastMsg[256];
 	int m_TutorialStep;

@@ -526,4 +526,15 @@ void CPlayerBot::HandlePathFinder()
 			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}
+
+	// Check if the bot type is TYPE_BOT_NPC and the function is FUNCTION_NPC_GUARDIAN
+	else if(GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
+	{
+		// Check if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
+		if(m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
+		{
+			// Prepare the path finder data for default path finding
+			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+		}
+	}
 }
