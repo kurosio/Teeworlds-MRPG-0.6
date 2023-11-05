@@ -174,9 +174,9 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 			time_t DailyTm = pResAccount->getInt64("DailyStamp");
 			time_t WeekTm = pResAccount->getInt64("WeekStamp");
 			time_t MonthTm = pResAccount->getInt64("MonthStamp");
-			localtime_s(&pPlayer->Acc().m_Periods.m_DailyStamp, &DailyTm);
-			localtime_s(&pPlayer->Acc().m_Periods.m_WeekStamp, &WeekTm);
-			localtime_s(&pPlayer->Acc().m_Periods.m_MonthStamp, &MonthTm);
+			pPlayer->Acc().m_Periods.m_DailyStamp = *localtime(&DailyTm);
+			pPlayer->Acc().m_Periods.m_WeekStamp = *localtime(&WeekTm);
+			pPlayer->Acc().m_Periods.m_MonthStamp = *localtime(&MonthTm);
 		}
 
 		// Load player account upgrades data
