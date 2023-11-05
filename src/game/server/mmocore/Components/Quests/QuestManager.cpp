@@ -58,7 +58,9 @@ void CQuestManager::OnInit()
 
 	// Update the daily quest information for each daily quest board
 	for(auto& [BoardID, DataContainer] : DailyQuests)
+	{
 		CQuestsDailyBoard::Data()[BoardID].m_DailyQuestsInfoList = DataContainer;
+	}
 }
 
 // This method is called when a player's account is initialized.
@@ -204,6 +206,26 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
+	const int ClientID = pPlayer->GetCID();
+	if(PPSTR(CMD, "DAILY_QUEST_STATE") == 0)
+	{
+		// Get the quest associated with the specified VoteID for the player
+		CPlayerQuest* pQuest = pPlayer->GetQuest(VoteID);
+
+		// If there is no quest associated with the VoteID or the quest is already completed, return false
+		if(!pQuest || pQuest->IsCompleted())
+			return false;
+
+		// If the quest is active, refuse it. Otherwise, accept it.
+		if(pQuest->IsActive())
+			pQuest->Refuse();
+		else
+			pQuest->Accept();
+
+		// Return true to indicate the action was successful
+		return true;
+	}
+
 	return false;
 }
 
@@ -422,11 +444,8 @@ void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, const CQuestsDailyBoard* p
 			continue;
 
 		// show trade slot actions
-		GS()->AVM(ClientID, "null", NOPE, HideID, "({STR}){STR}", (pQuest->IsActive() ? "v" : "x"), pDailyQuestInfo.GetName());
-		if(pQuest->IsActive())
-			GS()->AVM(ClientID, "ACCEPT_DAILY_QUEST", pDailyQuestInfo.GetID(), HideID, "Accept {STR}", pDailyQuestInfo.GetName());
-		else
-			GS()->AVM(ClientID, "REFUSE_DAILY_QUEST", pDailyQuestInfo.GetID(), HideID, "Refuse {STR}", pDailyQuestInfo.GetName());
+		GS()->AVH(ClientID, HideID, "({STR}){STR}", (pQuest->IsActive() ? "v" : "x"), pDailyQuestInfo.GetName());
+		GS()->AVM(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), HideID, "{STR} {STR}", (pQuest->IsActive() ? "Refuse" : "Accept"), pDailyQuestInfo.GetName());
 
 		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 		HideID++;
@@ -472,24 +491,28 @@ void CQuestManager::UpdateSteps(CPlayer* pPlayer)
 void CQuestManager::AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID)
 {
 	// Get the quest description for the quest with CheckQuestID
-	const CQuestDescription CheckingQuest = CQuestDescription::Data()[CheckQuestID];
+	CQuestDescription* pVerifyQuestInfo = &CQuestDescription::Data()[CheckQuestID];
 
 	// If the current quest is a daily quest, break out of the loop
-	if(CheckingQuest.IsDaily())
+	if(pVerifyQuestInfo->IsDaily())
 		return;
 
 	// Loop through all quest descriptions
-	for(auto pQuestData = CQuestDescription::Data().find(CheckQuestID); pQuestData != CQuestDescription::Data().end(); ++pQuestData)
+	for(auto& [valQuestID, valQuestData] : CQuestDescription::Data())
 	{
 		// Check if the story of the current quest description is the same as the story of CheckingQuest
-		if(str_comp_nocase(CheckingQuest.GetStory(), pQuestData->second.GetStory()) == 0)
+		if(str_comp_nocase(pVerifyQuestInfo->GetStory(), valQuestData.GetStory()) == 0)
 		{
 			// Check if the current quest is still active
-			if(pPlayer->GetQuest(pQuestData->first)->GetState() == QuestState::ACCEPT)
+			if(pPlayer->GetQuest(valQuestID)->GetState() == QuestState::ACCEPT)
 				break;
 
+			// If the checking quest is a daily quest, break out of the loop
+			if(valQuestData.IsDaily())
+				continue;
+
 			// Accept the next quest step
-			if(pPlayer->GetQuest(pQuestData->first)->Accept())
+			if(pPlayer->GetQuest(valQuestID)->Accept())
 				break;
 		}
 	}

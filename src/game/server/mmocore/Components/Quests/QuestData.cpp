@@ -273,6 +273,15 @@ bool CPlayerQuest::Accept()
 	return true;
 }
 
+void CPlayerQuest::Refuse()
+{
+	if(m_State != QuestState::ACCEPT || !GetPlayer())
+		return;
+
+	ClearSteps();
+	m_State = QuestState::NO_ACCEPT;
+}
+
 void CPlayerQuest::Finish()
 {
 	CPlayer* pPlayer = GetPlayer();
