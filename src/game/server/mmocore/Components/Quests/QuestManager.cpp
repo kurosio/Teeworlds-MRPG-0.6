@@ -260,8 +260,9 @@ void CQuestManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Perio
 			p.second.ClearDailyQuests(pPlayer);
 		}
 
-		// Call the UpdateVotes function
-		GS()->Chat(ClientID, "The daily quests have been updated. Visit the quest board for new quests.");
+		// Call the UpdateVotes function to update the player's voting menu and send chat message
+		GS()->Chat(ClientID, "The daily quests have been updated.");
+		GS()->Chat(ClientID, "Visit the quest board for new quests!");
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 	}
 }
@@ -478,7 +479,7 @@ void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, CQuestsDailyBoard* pBoard)
 	// Send a message to the ui client with the name of the board they're currently on
 	GS()->AVH(ClientID, TAB_DAILY_BOARD, "{STR}", pBoard->GetName());
 	GS()->AVM(ClientID, "null", NOPE, TAB_DAILY_BOARD, "Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
-	GS()->AddVoteItemValue(ClientID, itActivityToken, TAB_DAILY_BOARD);
+	GS()->AddVoteItemValue(ClientID, itAlliedSeals, TAB_DAILY_BOARD);
 	GS()->AV(ClientID, "null");
 
 	int HideID = NUM_TAB_MENU + CQuestsDailyBoard::Data().size() + 3200;
@@ -500,7 +501,8 @@ void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, CQuestsDailyBoard* pBoard)
 
 		// Display the quest information to the player
 		GS()->AVH(ClientID, HideID, "({STR}){STR}", StateIndicator, QuestName);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Gold {VAL}, EXP {VAL}, Activity token 1", pDailyQuestInfo.GetRewardGold(), pDailyQuestInfo.GetRewardExp());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "Gold {VAL}, EXP {VAL}, {STR} {VAL}", pDailyQuestInfo.GetRewardGold(),
+			pDailyQuestInfo.GetRewardExp(), GS()->GetItemInfo(itAlliedSeals)->GetName(), (int)MAX_ALLIED_SEALS_BY_DAILY_QUEST);
 		GS()->AVD(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), HideID, "{STR} {STR}", ActionName, QuestName);
 		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 

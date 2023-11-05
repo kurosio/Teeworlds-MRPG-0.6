@@ -400,7 +400,7 @@ void CPlayerQuest::Finish()
 	pPlayer->AddExp(Info()->GetRewardExp());
 	if(Info()->IsDaily())
 	{
-		pPlayer->GetItem(itActivityToken)->Add(1);
+		pPlayer->GetItem(itAlliedSeals)->Add(MAX_ALLIED_SEALS_BY_DAILY_QUEST);
 	}
 	pGS->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", pGS->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
 	pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());

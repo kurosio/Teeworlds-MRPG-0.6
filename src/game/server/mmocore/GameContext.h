@@ -254,6 +254,7 @@ enum
 	STATS_MAX_FOR_ITEM = 2,					// maximum number of stats per item
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
 	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game. 
+	MAX_ALLIED_SEALS_BY_DAILY_QUEST = 100,	// maximum allied seals for each daily quest
 
 	// settings items
 	itModePVP = 22,						// PVP mode setting
@@ -283,7 +284,7 @@ enum
 	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
 	itTicketDiscountCraft = 24,			// Discount ticket for crafting
 	itRandomHomeDecoration = 26,		// Random home decor
-	itActivityToken = 30,				// Activity token
+	itAlliedSeals = 30,					// Allied seals
 	itEidolonOtohime = 57,				// Eidolon
 	itRandomRelicsBox = 58,				// Random Relics box
 	itEidolonMerrilee = 59,				// Eidolon
