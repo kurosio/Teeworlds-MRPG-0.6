@@ -66,18 +66,22 @@ void CQuestManager::OnResetClient(int ClientID)
 
 bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 {
+	// Get the player object client ID associated with the character object
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
 
-	// shop zone
+	// Check if the player entered the shop zone
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_QUEST_DAILY_BOARD))
 	{
+		// Send message about entering the shop zone to the player
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
+	// Check if the player exited the shop zone
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_QUEST_DAILY_BOARD))
 	{
+		// Send message about exiting the shop zone to the player
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
@@ -88,60 +92,90 @@ bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
 {
-	const int ClientID = pPlayer->GetCID();
+	// Retrieve the character object client ID associated with the player
 	CCharacter* pChr = pPlayer->GetCharacter();
-	if(ReplaceMenu && pChr && pChr->IsAlive())
+	const int ClientID = pPlayer->GetCID();
+
+	// Check if the ReplaceMenu flag is true
+	if(ReplaceMenu)
 	{
-		if(pChr->GetHelper()->BoolIndex(TILE_QUEST_DAILY_BOARD))
+		// Check if the player character is not null, alive, and has the TILE_QUEST_DAILY_BOARD helper index
+		if(pChr && pChr->IsAlive() && pChr->GetHelper()->BoolIndex(TILE_QUEST_DAILY_BOARD))
 		{
+			// Get the daily board for the player character's position
 			if(CQuestsDailyBoard* pDailyBoard = GetDailyBoard(pChr->m_Core.m_Pos))
 			{
+				// Show the daily quests to the player
 				ShowDailyQuests(pChr->GetPlayer(), pDailyBoard);
 			}
 			else
 			{
+				// Display an error message that the daily board is not working
 				GS()->AV(ClientID, "null", "Daily board don't work");
 			}
 
 			return true;
 		}
 
+		// Return false to indicate that the operation was not successful
 		return false;
 	}
 
+	// Check if the Menulist is equal to MENU_JOURNAL_MAIN
 	if(Menulist == MENU_JOURNAL_MAIN)
 	{
+		// Set the player's LastVoteMenu to MENU_MAIN
 		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
 
+		// Show the main list of quests to the player
 		ShowQuestsMainList(pPlayer);
 
+		// Add the Votes Backpage for the client
 		GS()->AddVotesBackpage(ClientID);
+
+		// Return true to indicate success
 		return true;
 	}
 
+	// Check if `Menulist` is equal to `MENU_JOURNAL_FINISHED`
 	if(Menulist == MENU_JOURNAL_FINISHED)
 	{
+		// Update the player's last vote menu to `MENU_JOURNAL_MAIN`
 		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
 
+		// Show the list of quests in the finished state for the player
 		ShowQuestsTabList(pPlayer, QuestState::FINISHED);
 
+		// Add the Backpage votes for the player's client ID
 		GS()->AddVotesBackpage(ClientID);
+
+		// Return true to indicate success
 		return true;
 	}
 
+	// If the Menulist is equal to MENU_JOURNAL_QUEST_INFORMATION, execute the following code
 	if(Menulist == MENU_JOURNAL_QUEST_INFORMATION)
 	{
+		// Set the LastVoteMenu of the player to MENU_JOURNAL_MAIN
 		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
 
+		// Get the quest information for the specified QuestID
 		const int QuestID = pPlayer->m_TempMenuValue;
 		CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 
+		// Show the active NPC for the quest to the player
 		pPlayer->GS()->Mmo()->Quest()->ShowQuestActivesNPC(pPlayer, QuestID);
+
+		// Add the vote information for the player's client
 		pPlayer->GS()->AV(ClientID, "null");
 		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pQuestInfo->GetName());
 		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pQuestInfo->GetRewardGold(), pQuestInfo->GetRewardExp());
 
+		// Add the votes back page to the player's client
 		pPlayer->GS()->AddVotesBackpage(ClientID);
+
+		// Return true to indicate success
+		return true;
 	}
 
 	return false;
