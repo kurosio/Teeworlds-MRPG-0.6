@@ -47,6 +47,9 @@ class DBSet
 	}
 
 public:
+	// Default
+	DBSet() = default;
+
 	// Parameterized constructor that takes an lvalue reference to a string
 	DBSet(const std::string& pData) : m_Data(pData)
 	{
@@ -57,6 +60,32 @@ public:
 	DBSet(std::string&& pData) : m_Data(std::move(pData))
 	{
 		Init();
+	}
+
+	// Assignment operator overload for assigning a std::string to a DBSet object
+	DBSet& operator=(const std::string& set)
+	{
+		// Create a temporary DBSet object with the given std::string
+		DBSet tmp(set);
+
+		// Move assign the temporary object to the current object using std::move
+		*this = std::move(tmp);
+
+		// Return the current object
+		return *this;
+	}
+
+	// Move assignment operator overload for assigning an rvalue std::string to a DBSet object
+	DBSet& operator=(std::string&& set)
+	{
+		// Move assign the rvalue std::string to the data member of the current object
+		m_Data = std::move(set);
+
+		// Initialize the current object (call the Init() function)
+		Init();
+
+		// Return the current object
+		return *this;
 	}
 
 	// Checks if a specific set exists in the data items collection.

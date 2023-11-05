@@ -12,10 +12,11 @@ void CQuestManager::OnInit()
 		QuestIdentifier ID = pRes->getInt("ID");
 		std::string Name = pRes->getString("Name").c_str();
 		std::string Story = pRes->getString("StoryLine").c_str();
+		std::string Types = pRes->getString("Types").c_str();
 		int Gold = pRes->getInt("Money");
 		int Exp = pRes->getInt("Exp");
 
-		CQuestDescription(ID).Init(Name, Story, Gold, Exp);
+		CQuestDescription(ID).Init(Name, Story, Types, Gold, Exp);
 	}
 }
 
