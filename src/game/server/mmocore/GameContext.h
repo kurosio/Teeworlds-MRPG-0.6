@@ -28,15 +28,6 @@ enum class EntLaserOrbiteType : unsigned char
 	INSIDE_ORBITE_RANDOM, // Inside orbite
 };
 
-// time period
-enum TIME_PERIOD
-{
-	DAILY_STAMP,
-	WEEK_STAMP,
-	MONTH_STAMP,
-	NUM_STAMPS
-};
-
 // mood type
 enum class Mood : short
 {

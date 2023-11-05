@@ -5,6 +5,14 @@
 
 #include <engine/server/sql_string_helpers.h>
 
+enum TIME_PERIOD
+{
+	DAILY_STAMP,
+	WEEK_STAMP,
+	MONTH_STAMP,
+	NUM_STAMPS
+};
+
 using namespace sqlstr;
 class MmoComponent
 {
