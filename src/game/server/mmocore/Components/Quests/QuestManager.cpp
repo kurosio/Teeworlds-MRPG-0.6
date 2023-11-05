@@ -217,7 +217,7 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			return true;
 
 		// Check if there are quests available for the player on the board
-		if(pBoard->IsQuestsAvailable(pPlayer))
+		if(!pBoard->IsQuestsAvailable(pPlayer))
 		{
 			// If there are more than 3 assignments per day that can be accepted, send a chat message to the client with the error message
 			GS()->Chat(ClientID, "More than 3 assignments per day cannot be accepted!");
