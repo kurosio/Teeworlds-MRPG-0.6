@@ -28,8 +28,8 @@ public:
 	void Init(QuestState State)
 	{
 		m_State = State;
-		CPlayerQuest::m_pData[m_ClientID][m_ID] = *this;
-		CPlayerQuest::m_pData[m_ClientID][m_ID].LoadSteps();
+		m_pData[m_ClientID][m_ID] = *this;
+		m_pData[m_ClientID][m_ID].LoadSteps();
 	}
 
 	CQuestDescription* Info() const;

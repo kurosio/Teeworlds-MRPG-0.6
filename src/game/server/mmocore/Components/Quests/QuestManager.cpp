@@ -217,10 +217,10 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			return true;
 
 		// Check if there are quests available for the player on the board
-		if(!pBoard->IsQuestsAvailable(pPlayer))
+		if(!pBoard->QuestsAvailables(pPlayer))
 		{
 			// If there are more than 3 assignments per day that can be accepted, send a chat message to the client with the error message
-			GS()->Chat(ClientID, "More than 3 assignments per day cannot be accepted!");
+			GS()->Chat(ClientID, "More than 3 assignments per day cannot be accepted / finished!");
 			return true;
 		}
 
@@ -248,6 +248,9 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 // This function is called when a player's time period changes in the quest manager
 void CQuestManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
 {
+	// Get the client ID of the player
+	int ClientID = pPlayer->GetCID();
+
 	// If the time period is set to DAILY_STAMP
 	if(Period == TIME_PERIOD::DAILY_STAMP)
 	{
@@ -256,6 +259,10 @@ void CQuestManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Perio
 		{
 			p.second.ResetDailyQuests(pPlayer);
 		}
+
+		// Call the UpdateVotes function
+		GS()->Chat(ClientID, "The daily quests have been updated. Visit the quest board for new quests.");
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 	}
 }
 
@@ -463,27 +470,43 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 	}
 }
 
-void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, const CQuestsDailyBoard* pBoard) const
+void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, CQuestsDailyBoard* pBoard) const
 {
+	// Get the client's ID
 	const int ClientID = pPlayer->GetCID();
-	GS()->AVH(ClientID, TAB_STORAGE, "Board :: {STR}", pBoard->GetName());
-	//GS()->AVM(ClientID, "null", NOPE, TAB_STORAGE, "Available quests: ({INT} of {INT})", pBoard->GetCountQuestsByState(pPlayer, ));
+
+	// Send a message to the ui client with the name of the board they're currently on
+	GS()->AVH(ClientID, TAB_DAILY_BOARD, "{STR}", pBoard->GetName());
+	GS()->AVM(ClientID, "null", NOPE, TAB_DAILY_BOARD, "Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
+	GS()->AV(ClientID, "null");
 
 	int HideID = NUM_TAB_MENU + CQuestsDailyBoard::Data().size() + 3200;
-	for(auto& pDailyQuestInfo : pBoard->m_DailyQuestsInfoList)
+	for(const auto& pDailyQuestInfo : pBoard->m_DailyQuestsInfoList)
 	{
-		CPlayerQuest* pQuest = pPlayer->GetQuest(pDailyQuestInfo.GetID());
+		// Get the quest using the daily quest info ID
+		const auto* pQuest = pPlayer->GetQuest(pDailyQuestInfo.GetID());
+
+		// If the quest is completed, skip to the next iteration
 		if(pQuest->IsCompleted())
 			continue;
 
-		// show trade slot actions
-		GS()->AVH(ClientID, HideID, "({STR}){STR}", (pQuest->IsActive() ? "v" : "x"), pDailyQuestInfo.GetName());
-		GS()->AVD(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), HideID, "{STR} {STR}", (pQuest->IsActive() ? "Refuse" : "Accept"), pDailyQuestInfo.GetName());
+		// Determine the state indicator and action name based on whether the quest is active or not
+		const char* StateIndicator = (pQuest->IsActive() ? "✔" : "×");
+		const char* ActionName = (pQuest->IsActive() ? "Refuse" : "Accept");
 
+		// Get the quest name from the daily quest info
+		const char* QuestName = pDailyQuestInfo.GetName();
+
+		// Display the quest information to the player
+		GS()->AVH(ClientID, HideID, "({STR}){STR}", StateIndicator, QuestName);
+		GS()->AVD(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), HideID, "{STR} {STR}", ActionName, QuestName);
 		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
-		HideID++;
+
+		// Increment the HideID for the next iteration
+		++HideID;
 	}
 
+	// Add space
 	GS()->AV(ClientID, "null");
 }
 

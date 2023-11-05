@@ -303,7 +303,7 @@ void CPlayerQuest::Refuse()
 	m_State = QuestState::NO_ACCEPT;
 
 	// Remove the quest record from the database table "tw_accounts_quests"
-	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE ID = '%d'", m_ID);
+	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID", m_ID, GetPlayer()->Acc().m_ID);
 }
 
 void CPlayerQuest::Reset()

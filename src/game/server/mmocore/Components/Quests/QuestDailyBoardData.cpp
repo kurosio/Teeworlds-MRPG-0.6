@@ -4,24 +4,20 @@
 
 #include <game/server/player.h>
 
-bool CQuestsDailyBoard::IsQuestsAvailable(CPlayer* pPlayer)
+// This function calculates the number of available daily quests for a player
+int CQuestsDailyBoard::QuestsAvailables(CPlayer* pPlayer)
 {
-	return (bool)(std::count_if(m_DailyQuestsInfoList.begin(), m_DailyQuestsInfoList.end(), [pPlayer](const auto& p)
+	// Initialize a count variable
+	int Count = std::count_if(m_DailyQuestsInfoList.begin(), m_DailyQuestsInfoList.end(), [pPlayer](const auto& p)
 	{
 		// Get the quest with the given ID from the player's quest list
 		CPlayerQuest* pQuest = pPlayer->GetQuest(p.GetID());
+		// Check if the quest's state is greater than or equal to ACCEPT
 		return pQuest->GetState() >= QuestState::ACCEPT;
-	}) < MAX_DAILY_QUESTS_BY_BOARD);
-}
-
-int CQuestsDailyBoard::GetCountQuestsByState(CPlayer* pPlayer, QuestState State) const
-{
-	return (int)std::count_if(m_DailyQuestsInfoList.begin(), m_DailyQuestsInfoList.end(), [pPlayer, &State](const auto& p)
-	{
-		// Get the quest with the given ID from the player's quest list
-		CPlayerQuest* pQuest = pPlayer->GetQuest(p.GetID());
-		return pQuest->GetState() == State;
 	});
+
+	// Return the remaining number of daily quests the player can accept
+	return MAX_DAILY_QUESTS_BY_BOARD - Count;
 }
 
 // ResetDailyQuests function is a member function of the CQuestsDailyBoard class

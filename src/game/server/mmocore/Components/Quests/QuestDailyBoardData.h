@@ -41,9 +41,7 @@ public:
 	}
 
 	// Function checking accepted quests
-	bool IsQuestsAvailable(class CPlayer* pPlayer);
-
-	int GetCountQuestsByState(class CPlayer* pPlayer, QuestState State) const;
+	int QuestsAvailables(class CPlayer* pPlayer);
 
 	void ResetDailyQuests(class CPlayer* pPlayer) const;
 
