@@ -74,6 +74,7 @@ public:
 	CQuestDescription* GetQuestInfo(QuestIdentifier QuestID) const;
 	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;
 	class CWarehouse* GetWarehouse(int ID) const;
+	class CQuestsDailyBoard* GetQuestDailyBoard(int ID) const;
 	class CWorldData* GetWorldData(int ID = -1) const;
 	class CEidolonInfoData* GetEidolonByItemID(ItemIdentifier ItemID) const;
 	/* [[nodiscard]] */class CFlyingPoint* CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, int FromID = -1);

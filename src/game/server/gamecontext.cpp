@@ -136,6 +136,13 @@ CWarehouse* CGS::GetWarehouse(int ID) const
 	return &CWarehouse::Data()[ID];
 }
 
+CQuestsDailyBoard* CGS::GetQuestDailyBoard(int ID) const
+{
+	dbg_assert(CQuestsDailyBoard::Data().find(ID) != CQuestsDailyBoard::Data().end(), "invalid referring to the CQuestsDailyBoard");
+
+	return &CQuestsDailyBoard::Data()[ID];
+}
+
 CWorldData* CGS::GetWorldData(int ID) const
 {
 	int WorldID = ID == -1 ? GetWorldID() : ID;

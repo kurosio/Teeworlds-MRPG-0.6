@@ -209,12 +209,27 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	const int ClientID = pPlayer->GetCID();
 	if(PPSTR(CMD, "DAILY_QUEST_STATE") == 0)
 	{
+		// Get the daily quest board for VoteID2
+		CQuestsDailyBoard* pBoard = GS()->GetQuestDailyBoard(VoteID2);
+
+		// If the daily quest board is not found, return true
+		if(!pBoard)
+			return true;
+
+		// Check if there are quests available for the player on the board
+		if(pBoard->IsQuestsAvailable(pPlayer))
+		{
+			// If there are more than 3 assignments per day that can be accepted, send a chat message to the client with the error message
+			GS()->Chat(ClientID, "More than 3 assignments per day cannot be accepted!");
+			return true;
+		}
+
 		// Get the quest associated with the specified VoteID for the player
 		CPlayerQuest* pQuest = pPlayer->GetQuest(VoteID);
 
-		// If there is no quest associated with the VoteID or the quest is already completed, return false
+		// If there is no quest associated with the VoteID or the quest is already completed, return true
 		if(!pQuest || pQuest->IsCompleted())
-			return false;
+			return true;
 
 		// If the quest is active, refuse it. Otherwise, accept it.
 		if(pQuest->IsActive())
@@ -222,28 +237,45 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		else
 			pQuest->Accept();
 
-		// Return true to indicate the action was successful
+		// Return true to indicate the action was successful and update votes
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 
 	return false;
 }
 
+// This function is called when a player's time period changes in the quest manager
 void CQuestManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
 {
+	// If the time period is set to DAILY_STAMP
 	if(Period == TIME_PERIOD::DAILY_STAMP)
 	{
-		dbg_msg("test", "update daily quest");
+		// Reset the daily quests for the specified player
+		for(auto& p : CQuestsDailyBoard::Data())
+		{
+			p.second.ResetDailyQuests(pPlayer);
+		}
 	}
 }
 
+// function to get the name of a quest state based on the given quest state
 static const char* GetStateName(QuestState State)
 {
+	// switch statement to check the value of the quest state
 	switch(State)
 	{
-		case QuestState::ACCEPT: return "Active";
-		case QuestState::FINISHED: return "Finished";
-		default: return "Not active";
+		// if the quest state is ACCEPT, return "Active"
+		case QuestState::ACCEPT:
+		return "Active";
+
+		// if the quest state is FINISHED, return "Finished"
+		case QuestState::FINISHED:
+		return "Finished";
+
+		// for any other quest state, return "Not active"
+		default:
+		return "Not active";
 	}
 }
 
@@ -435,6 +467,7 @@ void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, const CQuestsDailyBoard* p
 {
 	const int ClientID = pPlayer->GetCID();
 	GS()->AVH(ClientID, TAB_STORAGE, "Board :: {STR}", pBoard->GetName());
+	//GS()->AVM(ClientID, "null", NOPE, TAB_STORAGE, "Available quests: ({INT} of {INT})", pBoard->GetCountQuestsByState(pPlayer, ));
 
 	int HideID = NUM_TAB_MENU + CQuestsDailyBoard::Data().size() + 3200;
 	for(auto& pDailyQuestInfo : pBoard->m_DailyQuestsInfoList)
@@ -445,7 +478,7 @@ void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, const CQuestsDailyBoard* p
 
 		// show trade slot actions
 		GS()->AVH(ClientID, HideID, "({STR}){STR}", (pQuest->IsActive() ? "v" : "x"), pDailyQuestInfo.GetName());
-		GS()->AVM(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), HideID, "{STR} {STR}", (pQuest->IsActive() ? "Refuse" : "Accept"), pDailyQuestInfo.GetName());
+		GS()->AVD(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), HideID, "{STR} {STR}", (pQuest->IsActive() ? "Refuse" : "Accept"), pDailyQuestInfo.GetName());
 
 		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 		HideID++;

@@ -252,6 +252,7 @@ enum
 	MAX_INBOX_LIST = 30,					// maximum number of emails what is displayed
 	STATS_MAX_FOR_ITEM = 2,					// maximum number of stats per item
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
+	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game. 
 
 	// settings items
 	itModePVP = 22,						// PVP mode setting

@@ -55,6 +55,8 @@ public:
 	void CheckAvailableNewStep();
 	bool Accept();
 	void Refuse();
+	void Reset();
+
 private:
 	void Finish();
 };

@@ -282,6 +282,12 @@ void CPlayerQuest::Refuse()
 	m_State = QuestState::NO_ACCEPT;
 }
 
+void CPlayerQuest::Reset()
+{
+	m_State = QuestState::NO_ACCEPT;
+	ClearSteps();
+}
+
 void CPlayerQuest::Finish()
 {
 	CPlayer* pPlayer = GetPlayer();

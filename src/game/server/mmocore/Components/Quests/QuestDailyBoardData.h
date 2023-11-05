@@ -40,6 +40,13 @@ public:
 		m_pData[m_ID] = *this;
 	}
 
+	// Function checking accepted quests
+	bool IsQuestsAvailable(class CPlayer* pPlayer);
+
+	int GetCountQuestsByState(class CPlayer* pPlayer, QuestState State) const;
+
+	void ResetDailyQuests(class CPlayer* pPlayer) const;
+
 	// Function to retrieve the ID of the daily board
 	QuestDailyBoardIdentifier GetID() const { return m_ID; }
 
