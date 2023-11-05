@@ -787,7 +787,7 @@ void CCharacter::Die(int Killer, int Weapon)
 			pItemGold->Remove(Arrest);
 
 			m_pPlayer->Acc().m_Relations = 0;
-			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELEVATION);
+			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
 			GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
 		}
 	}
