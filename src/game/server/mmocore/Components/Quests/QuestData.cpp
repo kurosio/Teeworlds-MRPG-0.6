@@ -390,14 +390,18 @@ void CPlayerQuest::Finish()
 
 	// finish quest
 	m_State = QuestState::FINISHED;
-	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, GetPlayer()->Acc().m_ID);
+	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Acc().m_ID);
 
 	// clear steps
 	ClearSteps();
 
 	// awards and write about completion
-	GetPlayer()->AddMoney(Info()->GetRewardGold());
-	GetPlayer()->AddExp(Info()->GetRewardExp());
+	pPlayer->AddMoney(Info()->GetRewardGold());
+	pPlayer->AddExp(Info()->GetRewardExp());
+	if(Info()->IsDaily())
+	{
+		pPlayer->GetItem(itActivityToken)->Add(1);
+	}
 	pGS->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", pGS->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
 	pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
 

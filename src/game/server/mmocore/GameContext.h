@@ -283,6 +283,7 @@ enum
 	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
 	itTicketDiscountCraft = 24,			// Discount ticket for crafting
 	itRandomHomeDecoration = 26,		// Random home decor
+	itActivityToken = 30,				// Activity token
 	itEidolonOtohime = 57,				// Eidolon
 	itRandomRelicsBox = 58,				// Random Relics box
 	itEidolonMerrilee = 59,				// Eidolon

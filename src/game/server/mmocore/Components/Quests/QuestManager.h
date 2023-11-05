@@ -98,7 +98,7 @@ public:
 	void AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);
 	void AcceptNextStoryQuestStep(CPlayer* pPlayer);
 	int GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const;
-	int GetClientComplectedQuestsSize(int ClientID) const;
+	int GetCountComplectedQuests(int ClientID) const;
 };
 
 #endif

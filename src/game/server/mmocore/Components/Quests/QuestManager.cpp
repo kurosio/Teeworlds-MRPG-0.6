@@ -292,7 +292,7 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 
 	// information
 	const int TotalQuests = (int)CQuestDescription::Data().size();
-	const int TotalComplectedQuests = GetClientComplectedQuestsSize(ClientID);
+	const int TotalComplectedQuests = GetCountComplectedQuests(ClientID);
 	const int TotalIncomplectedQuests = TotalQuests - TotalComplectedQuests;
 	GS()->AVH(ClientID, TAB_INFO_STATISTIC_QUESTS, "Quests statistic");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total quests: {INT}", TotalQuests);
@@ -478,6 +478,7 @@ void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, CQuestsDailyBoard* pBoard)
 	// Send a message to the ui client with the name of the board they're currently on
 	GS()->AVH(ClientID, TAB_DAILY_BOARD, "{STR}", pBoard->GetName());
 	GS()->AVM(ClientID, "null", NOPE, TAB_DAILY_BOARD, "Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
+	GS()->AddVoteItemValue(ClientID, itActivityToken, TAB_DAILY_BOARD);
 	GS()->AV(ClientID, "null");
 
 	int HideID = NUM_TAB_MENU + CQuestsDailyBoard::Data().size() + 3200;
@@ -499,6 +500,7 @@ void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, CQuestsDailyBoard* pBoard)
 
 		// Display the quest information to the player
 		GS()->AVH(ClientID, HideID, "({STR}){STR}", StateIndicator, QuestName);
+		GS()->AVM(ClientID, "null", NOPE, HideID, "Gold {VAL}, EXP {VAL}, Activity token 1", pDailyQuestInfo.GetRewardGold(), pDailyQuestInfo.GetRewardExp());
 		GS()->AVD(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), HideID, "{STR} {STR}", ActionName, QuestName);
 		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 
@@ -622,14 +624,19 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const
 	return max(AvailableValue, 0);
 }
 
-int CQuestManager::GetClientComplectedQuestsSize(int ClientID) const
+// This function returns the count of completed quests for a specific client
+int CQuestManager::GetCountComplectedQuests(int ClientID) const
 {
+	// Initialize the total count of completed quests to 0
 	int Total = 0;
+
 	for(const auto& [QuestID, Data] : CPlayerQuest::Data()[ClientID])
 	{
+		// Check if the quest data is marked as completed
 		if(Data.IsCompleted())
 			Total++;
 	}
 
+	// Return the total count of completed quests
 	return Total;
 }
