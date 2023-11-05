@@ -125,82 +125,93 @@ void CPlayerBot::EffectsTick()
 
 int CPlayerBot::GetRespawnTick() const
 {
-	switch(m_BotType)
+	if(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
 	{
-		case TYPE_BOT_QUEST:
-		case TYPE_BOT_NPC:
-		case TYPE_BOT_EIDOLON:
-		return m_aPlayerTick[Respawn];
-		default:
-		return m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3;
+		return m_aPlayerTick[Respawn] * 2;
 	}
+
+	if(m_BotType == TYPE_BOT_QUEST || m_BotType == TYPE_BOT_NPC || m_BotType == TYPE_BOT_EIDOLON)
+	{
+		return m_aPlayerTick[Respawn];
+	}
+
+	return m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3;
 }
 
 int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 {
-	if(m_BotType != TYPE_BOT_MOB && m_BotType != TYPE_BOT_EIDOLON && m_BotType != TYPE_BOT_QUEST_MOB)
-		return 10;
-
-	auto CalculateAttribute = [ID, this](int Power, int Spread, bool Boss) -> int
+	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_EIDOLON || m_BotType == TYPE_BOT_QUEST_MOB ||
+		(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
-		// get stats from the bot's equipment
-		int Size = Power;
-		for(unsigned i = 0; i < NUM_EQUIPPED; i++)
+		auto CalculateAttribute = [ID, this](int Power, int Spread, bool Boss) -> int
 		{
-			const int ItemID = GetEquippedItemID((ItemFunctional)i);
-			if(ItemID > 0)
-				Size += GS()->GetItemInfo(ItemID)->GetInfoEnchantStats(ID);
-		}
+			// get stats from the bot's equipment
+			int Size = Power;
+			for(unsigned i = 0; i < NUM_EQUIPPED; i++)
+			{
+				const int ItemID = GetEquippedItemID((ItemFunctional)i);
+				if(ItemID > 0)
+					Size += GS()->GetItemInfo(ItemID)->GetInfoEnchantStats(ID);
+			}
 
-		// sync power mobs
-		float Percent = 100.0f;
-		CAttributeDescription* pAttribute = GS()->GetAttributeInfo(ID);
-		if(ID == AttributeIdentifier::SpreadShotgun || ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
-			Size = Spread;
-		else if(pAttribute->IsType(AttributeType::Healer))
-			Percent = 15.0f;
-		else if(pAttribute->IsType(AttributeType::Hardtype))
-			Percent = 5.0f;
+			// sync power mobs
+			float Percent = 100.0f;
+			CAttributeDescription* pAttribute = GS()->GetAttributeInfo(ID);
+			if(ID == AttributeIdentifier::SpreadShotgun || ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
+				Size = Spread;
+			else if(pAttribute->IsType(AttributeType::Healer))
+				Percent = 15.0f;
+			else if(pAttribute->IsType(AttributeType::Hardtype))
+				Percent = 5.0f;
 
-		if(Boss && ID != AttributeIdentifier::HP)
-			Percent /= 10.0f;
+			if(Boss && ID != AttributeIdentifier::HP)
+				Percent /= 10.0f;
 
-		const int SyncPercentSize = max(1, translate_to_percent_rest(Size, Percent));
-		return SyncPercentSize;
-	};
+			const int SyncPercentSize = max(1, translate_to_percent_rest(Size, Percent));
+			return SyncPercentSize;
+		};
 
-	// Initialize Size variable to 0
-	int Size = 0;
+		// Initialize Size variable to 0
+		int Size = 0;
 
-	// Check if bot type is TYPE_BOT_EIDOLON
-	if(m_BotType == TYPE_BOT_EIDOLON)
-	{
-		// Check if game is in Dungeon mode
-		if(GS()->IsDungeon())
+		// Check if bot type is TYPE_BOT_EIDOLON
+		if(m_BotType == TYPE_BOT_EIDOLON)
 		{
-			// Calculate Size based on sync factor
-			// Translate the sync factor to percent and then calculate the attribute
-			Size = CalculateAttribute(translate_to_percent_rest(max(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, false);
+			// Check if game is in Dungeon mode
+			if(GS()->IsDungeon())
+			{
+				// Calculate Size based on sync factor
+				// Translate the sync factor to percent and then calculate the attribute
+				Size = CalculateAttribute(translate_to_percent_rest(max(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, false);
+			}
+			else
+			{
+				// Calculate Size based on Eidolon item ID
+				Size = CalculateAttribute(m_EidolonItemID, 1, false);
+			}
 		}
-		else
+		// Check if bot type is TYPE_BOT_MOB
+		else if(m_BotType == TYPE_BOT_MOB)
 		{
-			// Calculate Size based on Eidolon item ID
-			Size = CalculateAttribute(m_EidolonItemID, 1, false);
+			// Calculate Size based on Mob bot info
+			Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss);
 		}
+		// Check if bot type is TYPE_BOT_QUEST_MOB
+		else if(m_BotType == TYPE_BOT_QUEST_MOB)
+		{
+			// Calculate Size based on Quest Mob info
+			Size = CalculateAttribute(m_QuestMobInfo.m_AttributePower, m_QuestMobInfo.m_AttributeSpread, true);
+		}
+		// Check if bot type is TYPE_BOT_NPC
+		else if(m_BotType == TYPE_BOT_NPC)
+		{
+			// Calculate Size based on Npc info
+			Size = CalculateAttribute(1000, 3, true);
+		}
+		return Size;
 	}
-	// Check if bot type is TYPE_BOT_MOB
-	else if(m_BotType == TYPE_BOT_MOB)
-	{
-		// Calculate Size based on Mob bot info
-		Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss);
-	}
-	// Check if bot type is TYPE_BOT_QUEST_MOB
-	else if(m_BotType == TYPE_BOT_QUEST_MOB)
-	{
-		// Calculate Size based on Quest Mob info
-		Size = CalculateAttribute(m_QuestMobInfo.m_AttributePower, m_QuestMobInfo.m_AttributeSpread, true);
-	}
-	return Size;
+
+	return 10;
 }
 
 void CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
@@ -335,7 +346,7 @@ void CPlayerBot::Snap(int SnappingClient)
 	if(!pClientInfo)
 		return;
 
-	if(GetBotType() == TYPE_BOT_MOB || GetBotType() == TYPE_BOT_QUEST_MOB)
+	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB || (m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
 
@@ -380,7 +391,12 @@ Mood CPlayerBot::GetMoodState() const
 	if((GetBotType() == TYPE_BOT_MOB || GetBotType() == TYPE_BOT_QUEST_MOB) && pChr && !pChr->AI()->GetTarget()->IsEmpty())
 		return Mood::AGRESSED;
 	else if(GetBotType() == TYPE_BOT_NPC)
-		return Mood::FRIENDLY;
+	{
+		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN && !pChr->AI()->GetTarget()->IsEmpty())
+			return Mood::AGRESSED;
+		else
+			return Mood::FRIENDLY;
+	}
 	else if(GetBotType() == TYPE_BOT_EIDOLON)
 		return Mood::FRIENDLY;
 	else if(GetBotType() == TYPE_BOT_QUEST)

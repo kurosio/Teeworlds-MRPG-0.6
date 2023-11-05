@@ -1276,7 +1276,8 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		{
 			// Enable damage from eidolon to mobs if the player is a bot and the bot type is TYPE_BOT_MOB or TYPE_BOT_QUEST_MOB
 			if(m_pPlayer->IsBot() && (m_pPlayer->GetBotType() == TYPE_BOT_MOB ||
-				(m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID])))
+				(m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID]) ||
+				(m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)))
 			{
 				return true;
 			}
@@ -1288,6 +1289,13 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		// OR if the damage is coming from another bot who is a quest mob, and the quest mob is active for the player, and the player is not a bot
 		if((m_pPlayer->IsBot() && m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID] && !pFrom->IsBot()) ||
 			(pFrom->IsBot() && pFrom->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(pFrom)->GetQuestBotMobInfo().m_ActiveForClient[m_pPlayer->GetCID()] && !m_pPlayer->IsBot()))
+		{
+			return true;
+		}
+
+		// Check if the player is an NPC bot and if it has the function of a guardian NPC
+		if((m_pPlayer->IsBot() && m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN) ||
+			(pFrom->IsBot() && pFrom->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pFrom->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN))
 		{
 			return true;
 		}
@@ -1393,6 +1401,7 @@ bool CCharacter::StartConversation(CPlayer* pTarget)
 		|| pTargetBot->GetBotType() == TYPE_BOT_QUEST_MOB
 		|| pTargetBot->GetBotType() == TYPE_BOT_EIDOLON
 		|| (pTarget->GetBotType() == TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[pTarget->GetBotMobID()].m_HasAction)
+		|| (pTarget->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pTarget->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
 		|| !pTargetBot->IsVisibleForClient(m_pPlayer->GetCID()))
 		return false;
 

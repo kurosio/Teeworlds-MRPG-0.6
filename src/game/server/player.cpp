@@ -32,8 +32,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_aPlayerTick[Die] = Server()->Tick();
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
-
-	m_Relevation = 10000;
+	m_Relevation = 0;
 
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)

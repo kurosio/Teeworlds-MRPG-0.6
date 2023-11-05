@@ -148,7 +148,8 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return false;
 
 	// allow damage for mob's
-	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB || m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB)
+	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB || m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB ||
+		(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
 		// dissalow entered line damage
 		if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
@@ -167,10 +168,19 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
 		}
 
-		// if the bot doesn't have target player, set to from
-		if(pFrom->GetBotType() == TYPE_BOT_MOB && AI()->GetTarget()->IsEmpty())
+		// Check if the bot is a MOB, quest MOB, or NPC and does not have a target player
+		if((pFrom->GetBotType() == TYPE_BOT_MOB || m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB) && AI()->GetTarget()->IsEmpty())
 		{
+			// Set the target to the "From" agressive of 200 units
 			AI()->GetTarget()->Set(From, 200);
+		}
+
+		// Check if the bot player's type is TYPE_BOT_NPC and the sender's relevation is less than 1000
+		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && pFrom->m_Relevation < 1000)
+		{
+			int IncreaseRelevation = rand() % 50;
+			pFrom->m_Relevation = min(pFrom->m_Relevation + IncreaseRelevation, 1000);
+			GS()->Chat(pFrom->GetCID(), "Relevance has been increased by {INT}. Now {INT} of 1000p.", IncreaseRelevation, pFrom->m_Relevation);
 		}
 
 		// add (from player) to the list of those who caused damage
@@ -487,17 +497,34 @@ void CCharacterBotAI::HandleBot()
 		// npc bot
 		case TYPE_BOT_NPC:
 		{
-			const int tx = m_Pos.x + m_Input.m_Direction * 45.0f;
-			if(tx < 0)
-				m_Input.m_Direction = 1;
-			else if(tx >= GS()->Collision()->GetWidth() * 32.0f)
-				m_Input.m_Direction = -1;
+			const int MobID = m_pBotPlayer->GetBotMobID();
+			NpcBotInfo& pNpcBot = NpcBotInfo::ms_aNpcBot[MobID];
 
-			m_LatestPrevInput = m_LatestInput;
-			m_LatestInput = m_Input;
+			if(pNpcBot.m_Function == FUNCTION_NPC_GUARDIAN)
+			{
+				AI()->GetTarget()->Tick();
+				EngineNPC();
+			}
+			else
+			{
+				const float tx = m_Pos.x + m_Input.m_Direction * 45.0f;
+				const float collisionWidth = GS()->Collision()->GetWidth() * 32.0f;
 
-			SetSafe();
-			EngineNPC();
+				if(tx < 0)
+				{
+					m_Input.m_Direction = 1;
+				}
+				else if(tx >= collisionWidth)
+				{
+					m_Input.m_Direction = -1;
+				}
+
+				m_LatestPrevInput = m_LatestInput;
+				m_LatestInput = m_Input;
+
+				SetSafe();
+				EngineNPC();
+			}
 		} break;
 		// unknown bot
 		default: break;
@@ -983,6 +1010,16 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && !m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[i])
 			continue;
 
+		// Check if the bot is a npc type
+		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
+		{
+			// Check if the bot is a guardian NPC and the player is not active for the bot
+			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && GS()->m_apPlayers[i]->m_Relevation < 1000)
+			{
+				continue;
+			}
+		}
+
 		// Skip the iteration if the distance between the bot and the player's character is greater than the specified distance
 		if(distance(m_Core.m_Pos, GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos) > Distance)
 			continue;
@@ -1214,7 +1251,7 @@ bool CCharacterBotAI::FunctionGuardian()
 	CPlayer* pPlayer = SearchTankPlayer(1000.0f);
 
 	// If a tank player is found and their revelation is less than 1000, or no player is found at all
-	if((pPlayer && pPlayer->m_Relevation < 1000) || !pPlayer || !pPlayer->GetCharacter())
+	if(!pPlayer || !pPlayer->GetCharacter())
 	{
 		// Search for a mob within a 600 unit range
 		pPlayer = SearchMob(600.f);
@@ -1237,15 +1274,15 @@ bool CCharacterBotAI::FunctionGuardian()
 		{
 			// Change the position of the player to m_SpawnPoint
 			ChangePosition(m_SpawnPoint);
+			AI()->GetTarget()->Reset();
 		}
 
 		// Check if the distance is less than 128.0f 
-		if(Distance < 128.0f)
+		if(Distance < 256.0f)
 		{
 			if(Server()->Tick() % Server()->TickSpeed() == 0)
 				m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
 
-			m_pBotPlayer->m_TargetPos = vec2(0, 0);
 			m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
 			m_Input.m_Direction = 0;
 			MobMove = false;
