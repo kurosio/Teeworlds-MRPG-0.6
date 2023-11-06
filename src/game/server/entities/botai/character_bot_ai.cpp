@@ -883,7 +883,8 @@ void CCharacterBotAI::Move()
 		m_Input.m_Direction = m_PrevDirection;
 
 	// check dissalow move
-	if(m_pBotPlayer->GetBotType() != TYPE_BOT_EIDOLON && m_pBotPlayer->GetBotType() != TYPE_BOT_QUEST_MOB)
+	int BotType = m_pBotPlayer->GetBotType();
+	if(BotType != TYPE_BOT_EIDOLON && BotType != TYPE_BOT_QUEST_MOB && BotType != TYPE_BOT_NPC)
 	{
 		if(IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE))
 		{
@@ -1124,16 +1125,22 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 	{
 		// Check active player bot
 		CPlayerBot* pSearchBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if(!pSearchBotPlayer || !pSearchBotPlayer->GetCharacter())
+		if(!pSearchBotPlayer || m_pBotPlayer->GetCID() == i || !pSearchBotPlayer->GetCharacter())
 			continue;
 
-		if(pSearchBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB || pSearchBotPlayer->GetBotType() == TYPE_BOT_MOB)
+		int SearchBotType = pSearchBotPlayer->GetBotType();
+		if(SearchBotType == TYPE_BOT_QUEST_MOB || SearchBotType == TYPE_BOT_MOB ||
+			(SearchBotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pSearchBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && m_pBotPlayer->GetBotType() != SearchBotType))
 		{
 			// Check if the bot player is an eidolon owner
 			if(m_pBotPlayer->GetEidolonOwner())
 			{
 				// Check if the bot player is of type "TYPE_BOT_QUEST_MOB" and if the quest bot mob is active for the client at index i
-				if(pSearchBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && !pSearchBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[m_pBotPlayer->GetEidolonOwner()->GetCID()])
+				if(SearchBotType == TYPE_BOT_QUEST_MOB && !pSearchBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[m_pBotPlayer->GetEidolonOwner()->GetCID()])
+					continue;
+
+				// Check if the search bot type is TYPE_BOT_NPC and the relationship with the eidolon owner is not deteriorated to the maximum level
+				if(SearchBotType == TYPE_BOT_NPC && !m_pBotPlayer->GetEidolonOwner()->Acc().IsRelationshipsDeterioratedToMax())
 					continue;
 			}
 
