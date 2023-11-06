@@ -171,6 +171,14 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
 		}
 
+		// Check if the bot player is of type NPC and the player interacting with the bot is not a bot itself
+		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && !pFrom->IsBot())
+		{
+			SetEmote(EMOTE_ANGRY, 1, true);
+			pFrom->IncreaseRelations(1 + random_int() % 8);
+			GS()->CreateDropBonuses(m_Core.m_Pos, 1, 1, (1 + random_int() % 2), Force);
+		}
+
 		// Check if the bot type of pFrom is TYPE_BOT_MOB and if the target of AI is empty
 		if(pFrom->GetBotType() == TYPE_BOT_MOB && AI()->GetTarget()->IsEmpty())
 		{

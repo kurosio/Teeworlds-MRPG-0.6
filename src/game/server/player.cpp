@@ -698,12 +698,13 @@ void CPlayer::ShowInformationStats()
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_BASIC_STATS, 100, "");
 }
 
-void CPlayer::IncreaseRelations(int Relevation) const
+void CPlayer::IncreaseRelations(int Relevation)
 {
 	if(IsAuthed() && !Acc().IsRelationshipsDeterioratedToMax())
 	{
 		Acc().m_Relations = min(Acc().m_Relations + Relevation, 100);
 		GS()->Chat(m_ClientID, "Relationships have deteriorated to {INT}%!", Acc().m_Relations);
+		GS()->Mmo()->SaveAccount(this, SAVE_RELATIONS);
 	}
 }
 

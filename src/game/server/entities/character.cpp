@@ -776,16 +776,22 @@ void CCharacter::Die(int Killer, int Weapon)
 		}
 	}
 
-	// guardian
+	// Check if the Killer is a valid player
 	if(Killer >= MAX_PLAYERS && Killer < MAX_CLIENTS)
 	{
+		// Cast the Killer player to CPlayerBot class
+		// Check if the Killer is a bot and its bot type is NPC
 		CPlayerBot* pKillerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[Killer]);
 		if(pKillerBot && pKillerBot->IsBot() && pKillerBot->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pKillerBot->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
 		{
+			// Get the Gold item from the player
 			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+
+			// Reset player's relations and save relations
 			m_pPlayer->Acc().m_Relations = 0;
 			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
 
+			// Translate the value of the Gold item to a percentage for arrest and remove arrest
 			int Arrest = translate_to_percent_rest(pItemGold->GetValue(), 10.f);
 			if(pItemGold->Remove(Arrest))
 			{

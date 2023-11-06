@@ -167,7 +167,7 @@ public:
 	static int ExpNeed(int Level);
 	void ShowInformationStats();
 
-	void IncreaseRelations(int Relations) const;
+	void IncreaseRelations(int Relations);
 
 	/* #########################################################################
 		FUNCTIONS PLAYER PARSING
