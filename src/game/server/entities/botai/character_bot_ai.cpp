@@ -92,18 +92,24 @@ void CCharacterBotAI::OnSpawnInitBotTypes()
 		// Case for bot type TYPE_BOT_NPC
 		case TYPE_BOT_NPC:
 		{
-			// NpcBotInfo structure for the bot with MobID
-			NpcBotInfo* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobID];
+			// Get the function of the NPC bot
+			const int Function = NpcBotInfo::ms_aNpcBot[MobID].m_Function;
 
-			// Get the Function value for the bot and check
-			const int Function = pNpcBot->m_Function;
+			// Check the function of the NPC bot and perform the corresponding action
 			if(Function == FUNCTION_NPC_GIVE_QUEST)
 			{
+				// Create a snapshot projectile with the given SnapFullID, type 3 (POWERUP_ARMOR), and without explosion and collision
 				CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
 			}
 			else if(Function == FUNCTION_NPC_NURSE)
 			{
+				// Create a new instance of CNurseHeart with the GameWorld and ClientID parameters
 				new CNurseHeart(GameWorld(), ClientID);
+			}
+			else if(Function == FUNCTION_NPC_GUARDIAN)
+			{
+				// Create a snapshot projectile with the given SnapFullID, type 2 (POWERUP_NINJA), and without explosion and collision
+				CreateSnapProj(GetSnapFullID(), 2, POWERUP_NINJA, false, false);
 			}
 		} break;
 		//
@@ -151,60 +157,63 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB || m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB ||
 		(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
-		// dissalow entered line damage
+		// Check for collision between the current character and another character
 		if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
 			return false;
 
-		// dissalow damage from bot to bot except type eidolon
-		if(pFrom->IsBot() && pFrom->GetBotType() != TYPE_BOT_EIDOLON)
-			return false;
-
-		// damage receive
+		// Function to handle character taking damage
 		CCharacter::TakeDamage(Force, Dmg, From, Weapon);
 
-		// for eidolon change from owner to owner eidolon
+		// Check if the type of pFrom is TYPE_BOT_EIDOLON
 		if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
 		{
+			// Cast pFrom to CPlayerBot* and get the Eidolon Owner's CID
 			From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
 		}
 
-		// Check if the bot is a MOB, quest MOB, or NPC and does not have a target player
-		if((pFrom->GetBotType() == TYPE_BOT_MOB || m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB) && AI()->GetTarget()->IsEmpty())
+		// Check if the bot type of pFrom is TYPE_BOT_MOB and if the target of AI is empty
+		if(pFrom->GetBotType() == TYPE_BOT_MOB && AI()->GetTarget()->IsEmpty())
 		{
-			// Set the target to the "From" agressive of 200 units
+			// Set the target of AI to the "From" bot with an aggression level of 200 units
 			AI()->GetTarget()->Set(From, 200);
 		}
 
-		// Check if the bot player's type is TYPE_BOT_NPC and the sender's relevation is less than 1000
-		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
-		{
-			pFrom->IncreaseRelations(1 + (random_int() % 5));
-		}
-
-		// add (from player) to the list of those who caused damage
+		// Check if the element "From" is already present in the vector m_aListDmgPlayers
 		if(!std::any_of(m_aListDmgPlayers.begin(), m_aListDmgPlayers.end(), [From](int ClientID){ return ClientID == From; }))
+		{
+			// If the element is not present, append it to the end of the vector
 			m_aListDmgPlayers.push_back(From);
+		}
 
 		// verify death
 		if(m_Health <= 0)
 		{
-			// reward players
+			// Reward players with damage
+			// Check if the weapon is not self or world
 			if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
 			{
 				for(const auto& ClientID : m_aListDmgPlayers)
 				{
+					// Check if the player object exists and is in the same world as the bot player
 					CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
 					if(!pPlayer || !GS()->IsPlayerEqualWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
 						continue;
 
+					// Reward the player with damage applied
 					RewardPlayer(pPlayer, Force);
 				}
 			}
+
+			// Clear the list of damaged players
 			m_aListDmgPlayers.clear();
+
+			// Reset the target of the AI
 			AI()->GetTarget()->Reset();
 
-			// die
+			// Die
 			Die(From, Weapon);
+
+			// Return false
 			return false;
 		}
 
@@ -221,9 +230,14 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 
 	// only for mob's
 	int BotType = m_pBotPlayer->GetBotType();
-	if(BotType == TYPE_BOT_MOB || BotType == TYPE_BOT_QUEST_MOB)
+	int MobID = m_pBotPlayer->GetBotMobID();
+	if(BotType == TYPE_BOT_MOB || BotType == TYPE_BOT_QUEST_MOB || (BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[MobID].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
 		m_Alive = false;
+
+		// Check if the bot player's type is TYPE_BOT_NPC and increase relations
+		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
+			GS()->m_apPlayers[Killer]->IncreaseRelations(1 + (random_int() % 5));
 
 		// a nice sound
 		int ClientID = m_pBotPlayer->GetCID();
@@ -241,7 +255,7 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, pPlayerKiller->GetPlayerWorldID());
 
 		// respawn
-		m_pBotPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + MobBotInfo::ms_aMobBot[SubBotID].m_RespawnTick * Server()->TickSpeed();
+		m_pBotPlayer->m_aPlayerTick[Respawn] = m_pBotPlayer->GetRespawnTick();
 		m_pBotPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
 		m_pBotPlayer->m_Spawned = true;
 		GS()->CreateDeath(m_Pos, ClientID);

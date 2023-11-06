@@ -75,6 +75,7 @@ public:
 	void FakeSnap() override;
 
 	bool IsActive() const override { return m_BotActive; };
+	int GetRespawnTick() const;
 
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
 
@@ -84,7 +85,6 @@ public:
 private:
 	std::unordered_map < std::string /* effect */, int /* seconds */ > m_aEffects;
 	void EffectsTick() override;
-	int GetRespawnTick() const;
 	void TryRespawn() override;
 
 	int GetBotLevel() const;

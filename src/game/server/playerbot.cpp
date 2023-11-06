@@ -125,6 +125,11 @@ void CPlayerBot::EffectsTick()
 
 int CPlayerBot::GetRespawnTick() const
 {
+	if(m_BotType == TYPE_BOT_MOB)
+	{
+		return m_aPlayerTick[Respawn] + Server()->TickSpeed() * MobBotInfo::ms_aMobBot[m_MobID].m_RespawnTick;
+	}
+
 	if(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
 	{
 		return m_aPlayerTick[Respawn] * 2;
