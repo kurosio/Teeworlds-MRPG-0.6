@@ -709,6 +709,13 @@ void CPlayer::IncreaseRelations(int Relevation)
 		// Display a chat message to the player indicating the new relationship level.
 		GS()->Chat(m_ClientID, "Relationships have deteriorated to {INT}%!", Acc().m_Relations);
 
+		// Check if the player's relations with other entities is greater than or equal to 100
+		if(Acc().m_Relations >= 100)
+		{
+			// Display a chat message to the player warning them that they are wanted as a felon
+			GS()->Chat(m_ClientID, "You're wanted as a felon. Beware of the guards!");
+		}
+
 		// Save the player's account data, specifically the relationship level.
 		GS()->Mmo()->SaveAccount(this, SAVE_RELATIONS);
 	}

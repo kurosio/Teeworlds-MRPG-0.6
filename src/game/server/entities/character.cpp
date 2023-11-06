@@ -757,6 +757,57 @@ bool CCharacter::IncreaseMana(int Amount)
 	return true;
 }
 
+void CCharacter::HandleRelationsAtDeath(int Killer) const
+{
+	// Get the client ID of the player
+	const int ClientID = m_pPlayer->GetCID();
+
+	// Check if the killer player exists
+	if(!GS()->m_apPlayers[Killer])
+		return;
+
+	// Get the pointer to the killer player object from the game state
+	CPlayer* pKiller = GS()->m_apPlayers[Killer];
+
+	// Check if the killer is a guardian bot
+	bool KillerIsGuardian = (pKiller->IsBot() && dynamic_cast<CPlayerBot*>(pKiller)->GetBotType() == TYPE_BOT_NPC &&
+		NpcBotInfo::ms_aNpcBot[dynamic_cast<CPlayerBot*>(pKiller)->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN);
+
+	// Check if the killer is a player
+	bool KillerIsPlayer = !pKiller->IsBot();
+
+	if(m_pPlayer->Acc().IsRelationshipsDeterioratedToMax() && (KillerIsGuardian || KillerIsPlayer))
+	{
+		// Get the Gold item from the player
+		CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+
+		// Reset player's relations and save relations
+		m_pPlayer->Acc().m_Relations = 0;
+		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
+
+		// Translate the value of the Gold item to a percentage for arrest and remove arrest
+		const int Arrest = translate_to_percent_rest(pItemGold->GetValue(), (float)MAX_ARREST_GOLD_BY_PERCENT);
+		if(pItemGold->Remove(Arrest))
+		{
+			// Check if the killer is not a bot
+			// And add the Arrest amount to the killer's gold item
+			if(KillerIsPlayer)
+			{
+				pKiller->GetItem(itGold)->Add(Arrest);
+				GS()->Chat(-1, "{STR} killed wanted {STR}. Reward {VAL} gold!", Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
+			}
+
+			// Send a chat message to the client with their arrest information
+			GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
+		}
+	}
+	else if(KillerIsPlayer)
+	{
+		// Increase the relations of the player identified by the "Killer" index by 25
+		pKiller->IncreaseRelations(25);
+	}
+}
+
 void CCharacter::Die(int Killer, int Weapon)
 {
 	m_Alive = false;
@@ -776,38 +827,8 @@ void CCharacter::Die(int Killer, int Weapon)
 		}
 	}
 
-	// Check if Killer exist
-	if(GS()->m_apPlayers[Killer])
-	{
-		// Check if the Killer is a bot
-		if(GS()->m_apPlayers[Killer]->IsBot())
-		{
-			// Cast the Killer player to CPlayerBot class
-			// Check if the Killer is a bot and its bot type is NPC
-			CPlayerBot* pKillerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[Killer]);
-			if(pKillerBot->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pKillerBot->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
-			{
-				// Get the Gold item from the player
-				CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
-
-				// Reset player's relations and save relations
-				m_pPlayer->Acc().m_Relations = 0;
-				GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
-
-				// Translate the value of the Gold item to a percentage for arrest and remove arrest
-				int Arrest = translate_to_percent_rest(pItemGold->GetValue(), 10.f);
-				if(pItemGold->Remove(Arrest))
-				{
-					GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
-				}
-			}
-		}
-		else
-		{
-			// Increase the relations of the player identified by the "Killer" index by 25
-			GS()->m_apPlayers[Killer]->IncreaseRelations(25);
-		}
-	}
+	// relationships
+	HandleRelationsAtDeath(Killer);
 
 	// a nice sound
 	GS()->m_pController->OnCharacterDeath(this, GS()->m_apPlayers[Killer], Weapon);

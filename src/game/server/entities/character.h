@@ -149,6 +149,7 @@ public:
 
 private:
 	bool StartConversation(CPlayer* pTarget);
+	void HandleRelationsAtDeath(int Killer) const;
 };
 
 #endif

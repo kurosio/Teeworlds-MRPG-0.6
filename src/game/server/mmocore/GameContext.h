@@ -256,6 +256,7 @@ enum
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
 	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game. 
 	MAX_ALLIED_SEALS_BY_DAILY_QUEST = 100,	// maximum allied seals for each daily quest
+	MAX_ARREST_GOLD_BY_PERCENT = 10,		// maximum arrest gold's by percent
 
 	// settings items
 	itModePVP = 22,						// PVP mode setting
