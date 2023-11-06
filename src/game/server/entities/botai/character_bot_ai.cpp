@@ -241,7 +241,6 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 
 		// a nice sound
 		int ClientID = m_pBotPlayer->GetCID();
-		const int SubBotID = m_pBotPlayer->GetBotMobID();
 		CPlayer* pPlayerKiller = GS()->m_apPlayers[Killer];
 		GS()->m_pController->OnCharacterDeath(this, pPlayerKiller, Weapon);
 		GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
@@ -255,7 +254,7 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, pPlayerKiller->GetPlayerWorldID());
 
 		// respawn
-		m_pBotPlayer->m_aPlayerTick[Respawn] = m_pBotPlayer->GetRespawnTick();
+		m_pBotPlayer->ResetRespawnTick();
 		m_pBotPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
 		m_pBotPlayer->m_Spawned = true;
 		GS()->CreateDeath(m_Pos, ClientID);

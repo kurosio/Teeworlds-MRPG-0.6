@@ -186,17 +186,19 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 				pPlayer->Acc().m_aStats[ID] = pResAccount->getInt(pAttribute->GetFieldName());
 		}
 
+		// Execute a database update query to update the "tw_accounts" table
+		// Set the LoginDate to the current timestamp and LoginIP to the client address
+		// The update query is executed on the row with the ID equal to the given UserID
+		char aAddrStr[64];
+		Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
+		Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '%s' WHERE ID = '%d'", aAddrStr, UserID);
+
 		// Send success messages to the client
 		GS()->Chat(ClientID, "- - - - - - - [Successful login!] - - - - - - -");
 		GS()->Chat(ClientID, "Don't forget that cl_motd_time must be set!");
 		GS()->Chat(ClientID, "Menu is available in call-votes!");
 		GS()->m_pController->DoTeamChange(pPlayer, false);
 		LoadAccount(pPlayer, true);
-
-		char aAddrStr[64];
-		Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
-		// Update login date and IP address in the database
-		Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '%s' WHERE ID = '%d'", aAddrStr, UserID);
 		return AccountCodeResult::AOP_LOGIN_OK; // Return login success
 	}
 
@@ -296,7 +298,7 @@ void CAccountManager::DiscordConnect(int ClientID, const char* pDID) const
 	GS()->Chat(ClientID, "Your Discord ID has been updated.");
 	GS()->Chat(ClientID, "Check the connection status in discord \"/connect\".");
 #endif
-}
+	}
 
 bool CAccountManager::ChangeNickname(int ClientID)
 {

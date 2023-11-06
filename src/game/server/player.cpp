@@ -28,8 +28,8 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_EidolonCID = -1;
 	m_Spawned = true;
 	m_SnapHealthTick = 0;
-	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
 	m_aPlayerTick[Die] = Server()->Tick();
+	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 

@@ -19,6 +19,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int Spaw
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
+	ResetRespawnTick();
 }
 
 CPlayerBot::~CPlayerBot()
@@ -85,7 +86,7 @@ void CPlayerBot::Tick()
 			HandlePathFinder();
 		}
 	}
-	else if(m_Spawned && GetRespawnTick() <= Server()->Tick())
+	else if(m_Spawned && m_aPlayerTick[Respawn] <= Server()->Tick())
 	{
 		m_BotActive = true;
 		TryRespawn();
@@ -123,24 +124,32 @@ void CPlayerBot::EffectsTick()
 	}
 }
 
-int CPlayerBot::GetRespawnTick() const
+void CPlayerBot::ResetRespawnTick()
 {
+	// If the bot type is TYPE_BOT_MOB
 	if(m_BotType == TYPE_BOT_MOB)
 	{
-		return m_aPlayerTick[Respawn] + Server()->TickSpeed() * MobBotInfo::ms_aMobBot[m_MobID].m_RespawnTick;
+		// Set the respawn tick for the bot using the MobBotInfo's respawn tick value
+		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * MobBotInfo::ms_aMobBot[m_MobID].m_RespawnTick;
 	}
-
-	if(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
+	// If the bot type is TYPE_BOT_NPC and the NPC bot's function is FUNCTION_NPC_GUARDIAN
+	else if(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
 	{
-		return m_aPlayerTick[Respawn] * 2;
+		// Set the respawn tick for the bot as the current server tick multiplied by 30
+		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * 30;
 	}
-
-	if(m_BotType == TYPE_BOT_QUEST || m_BotType == TYPE_BOT_NPC || m_BotType == TYPE_BOT_EIDOLON)
+	// If the bot type is TYPE_BOT_QUEST, TYPE_BOT_NPC, or TYPE_BOT_EIDOLON
+	else if(m_BotType == TYPE_BOT_QUEST || m_BotType == TYPE_BOT_NPC || m_BotType == TYPE_BOT_EIDOLON)
 	{
-		return m_aPlayerTick[Respawn];
+		// Set the respawn tick for the bot as the current server tick
+		m_aPlayerTick[Respawn] = Server()->Tick();
 	}
-
-	return m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3;
+	// For any other bot type
+	else
+	{
+		// Set the respawn tick for the bot as the current server tick plus 3 server ticks
+		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * 3;
+	}
 }
 
 int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
@@ -211,7 +220,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 		else if(m_BotType == TYPE_BOT_NPC)
 		{
 			// Calculate Size based on Npc info
-			Size = CalculateAttribute(1500, 0, true);
+			Size = CalculateAttribute(1600, 0, true);
 		}
 		return Size;
 	}

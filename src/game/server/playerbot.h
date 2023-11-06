@@ -75,7 +75,7 @@ public:
 	void FakeSnap() override;
 
 	bool IsActive() const override { return m_BotActive; };
-	int GetRespawnTick() const;
+	void ResetRespawnTick();
 
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
 
