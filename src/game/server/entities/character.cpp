@@ -763,7 +763,7 @@ void CCharacter::HandleRelationsAtDeath(int Killer) const
 	const int ClientID = m_pPlayer->GetCID();
 
 	// Check if the killer player exists
-	if(!GS()->m_apPlayers[Killer])
+	if(!GS()->m_apPlayers[Killer] || (Killer == ClientID))
 		return;
 
 	// Get the pointer to the killer player object from the game state

@@ -94,7 +94,7 @@ bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	const int ClientID = pPlayer->GetCID();
 
 	// Check if the player entered the shop zone
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_QUEST_DAILY_BOARD))
+	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_DAILY_BOARD))
 	{
 		// Send message about entering the shop zone to the player
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
@@ -102,7 +102,7 @@ bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 		return true;
 	}
 	// Check if the player exited the shop zone
-	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_QUEST_DAILY_BOARD))
+	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_DAILY_BOARD))
 	{
 		// Send message about exiting the shop zone to the player
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
@@ -123,13 +123,16 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(ReplaceMenu)
 	{
 		// Check if the player character is not null, alive, and has the TILE_QUEST_DAILY_BOARD helper index
-		if(pChr && pChr->IsAlive() && pChr->GetHelper()->BoolIndex(TILE_QUEST_DAILY_BOARD))
+		if(pChr && pChr->IsAlive() && pChr->GetHelper()->BoolIndex(TILE_DAILY_BOARD))
 		{
 			// Get the daily board for the player character's position
 			if(CQuestsDailyBoard* pDailyBoard = GetDailyBoard(pChr->m_Core.m_Pos))
 			{
 				// Show the daily quests to the player
-				ShowDailyQuests(pChr->GetPlayer(), pDailyBoard);
+				ShowDailyQuestsBoard(pChr->GetPlayer(), pDailyBoard);
+
+				// Show wanted players board
+				ShowWantedPlayersBoard(pChr->GetPlayer());
 			}
 			else
 			{
@@ -471,11 +474,40 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 	}
 }
 
-void CQuestManager::ShowDailyQuests(CPlayer* pPlayer, CQuestsDailyBoard* pBoard) const
+void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
+{
+	const int ClientID = pPlayer->GetCID();
+
+	int HideID = MAX_CLIENTS;
+	bool HasPlayers = false;
+	GS()->AVL(ClientID, "null", "# Wanted Players List");
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		CPlayer* pPlayer = GS()->GetPlayer(i, true);
+		if(pPlayer && pPlayer->Acc().IsRelationshipsDeterioratedToMax())
+		{
+			const int Reward = translate_to_percent_rest(pPlayer->GetItem(itGold)->GetValue(), (float)MAX_ARREST_GOLD_BY_PERCENT);
+			GS()->AVH(ClientID, HideID, "{STR} (Reward {VAL} gold)", Server()->ClientName(i), Reward);
+			GS()->AVM(ClientID, "null", NOPE, HideID, "Last seen: {STR}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
+			HasPlayers = true;
+			HideID++;
+		}
+	}
+
+	if(!HasPlayers)
+	{
+		GS()->AVM(ClientID, "null", NOPE, TAB_DAILY_BOARD_WANTED, "There are currently no wanted players");
+	}
+
+	// Add space
+	GS()->AV(ClientID, "null");
+}
+
+void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pBoard) const
 {
 	// Get the client's ID
 	const int ClientID = pPlayer->GetCID();
-
+	
 	// Send a message to the ui client with the name of the board they're currently on
 	GS()->AVH(ClientID, TAB_DAILY_BOARD, "{STR}", pBoard->GetName());
 	GS()->AVM(ClientID, "null", NOPE, TAB_DAILY_BOARD, "Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);

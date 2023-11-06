@@ -87,7 +87,8 @@ public:
 	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size);
 
 	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
-	void ShowDailyQuests(CPlayer* pPlayer, CQuestsDailyBoard* pBoard) const;
+	void ShowWantedPlayersBoard(CPlayer* pPlayer) const;
+	void ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pBoard) const;
 
 	// Function: GetDailyBoard
 	// Input: Pos - a 2D vector representing the position
