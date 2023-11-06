@@ -220,7 +220,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 		else if(m_BotType == TYPE_BOT_NPC)
 		{
 			// Calculate Size based on Npc info
-			Size = CalculateAttribute(1600, 0, true);
+			Size = CalculateAttribute(2000, 0, true);
 		}
 		return Size;
 	}
