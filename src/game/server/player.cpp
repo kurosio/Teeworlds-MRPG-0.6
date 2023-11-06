@@ -444,7 +444,7 @@ void CPlayer::OnDisconnect()
 void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
 	// update view pos
- 	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
+	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
 		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
 
 	// reset input with chating
@@ -700,10 +700,16 @@ void CPlayer::ShowInformationStats()
 
 void CPlayer::IncreaseRelations(int Relevation)
 {
+	// Check if the player is authenticated and if their relationship level is not already at the maximum.
 	if(IsAuthed() && !Acc().IsRelationshipsDeterioratedToMax())
 	{
+		// Increase the player's relationship level by the value of Relevation, up to a maximum of 100.
 		Acc().m_Relations = min(Acc().m_Relations + Relevation, 100);
+
+		// Display a chat message to the player indicating the new relationship level.
 		GS()->Chat(m_ClientID, "Relationships have deteriorated to {INT}%!", Acc().m_Relations);
+
+		// Save the player's account data, specifically the relationship level.
 		GS()->Mmo()->SaveAccount(this, SAVE_RELATIONS);
 	}
 }

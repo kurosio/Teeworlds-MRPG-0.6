@@ -776,27 +776,36 @@ void CCharacter::Die(int Killer, int Weapon)
 		}
 	}
 
-	// Check if the Killer is a valid player
-	if(Killer >= MAX_PLAYERS && Killer < MAX_CLIENTS)
+	// Check if Killer exist
+	if(GS()->m_apPlayers[Killer])
 	{
-		// Cast the Killer player to CPlayerBot class
-		// Check if the Killer is a bot and its bot type is NPC
-		CPlayerBot* pKillerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[Killer]);
-		if(pKillerBot && pKillerBot->IsBot() && pKillerBot->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pKillerBot->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
+		// Check if the Killer is a bot
+		if(GS()->m_apPlayers[Killer]->IsBot())
 		{
-			// Get the Gold item from the player
-			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
-
-			// Reset player's relations and save relations
-			m_pPlayer->Acc().m_Relations = 0;
-			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
-
-			// Translate the value of the Gold item to a percentage for arrest and remove arrest
-			int Arrest = translate_to_percent_rest(pItemGold->GetValue(), 10.f);
-			if(pItemGold->Remove(Arrest))
+			// Cast the Killer player to CPlayerBot class
+			// Check if the Killer is a bot and its bot type is NPC
+			CPlayerBot* pKillerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[Killer]);
+			if(pKillerBot->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pKillerBot->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
 			{
-				GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
+				// Get the Gold item from the player
+				CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+
+				// Reset player's relations and save relations
+				m_pPlayer->Acc().m_Relations = 0;
+				GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
+
+				// Translate the value of the Gold item to a percentage for arrest and remove arrest
+				int Arrest = translate_to_percent_rest(pItemGold->GetValue(), 10.f);
+				if(pItemGold->Remove(Arrest))
+				{
+					GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
+				}
 			}
+		}
+		else
+		{
+			// Increase the relations of the player identified by the "Killer" index by 25
+			GS()->m_apPlayers[Killer]->IncreaseRelations(25);
 		}
 	}
 
