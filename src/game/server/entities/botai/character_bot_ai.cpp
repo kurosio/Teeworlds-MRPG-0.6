@@ -733,6 +733,10 @@ void CCharacterBotAI::EngineMobs()
 void CCharacterBotAI::EngineEidolons()
 {
 	bool MobMove = true;
+
+	// reset input
+	ResetInput();
+
 	if(const CPlayer* pOwner = m_pBotPlayer->GetEidolonOwner(); pOwner && pOwner->GetCharacter())
 	{
 		// search target
@@ -774,7 +778,6 @@ void CCharacterBotAI::EngineEidolons()
 	// bot with weapons since it has spread.
 	if(MobMove)
 	{
-		ResetInput();
 		Fire();
 		ChangeWeapons();
 		Move();
@@ -792,6 +795,9 @@ void CCharacterBotAI::EngineEidolons()
 void CCharacterBotAI::EngineQuestMob()
 {
 	bool MobMove = true;
+
+	// reset input
+	ResetInput();
 
 	// search target
 	CPlayer* pPlayer = SearchTankPlayer(1000.0f);
@@ -833,7 +839,6 @@ void CCharacterBotAI::EngineQuestMob()
 	// bot with weapons since it has spread.
 	if(MobMove)
 	{
-		ResetInput();
 		Fire();
 		ChangeWeapons();
 		Move();
@@ -1266,6 +1271,9 @@ bool CCharacterBotAI::FunctionGuardian()
 {
 	bool MobMove = true;
 
+	// reset input
+	ResetInput();
+
 	// Search for a tank player within a 1000 unit range
 	CPlayer* pPlayer = SearchTankPlayer(1000.0f);
 
@@ -1314,7 +1322,6 @@ bool CCharacterBotAI::FunctionGuardian()
 	// bot with weapons since it has spread.
 	if(MobMove)
 	{
-		ResetInput();
 		Fire();
 		Move();
 	}
