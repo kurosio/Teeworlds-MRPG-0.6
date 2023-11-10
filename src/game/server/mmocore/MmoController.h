@@ -39,6 +39,7 @@ class MmoController
 	class CQuestManager *m_pQuest;
 	class CWarehouseManager *m_pWarehouse;
 	class CGuildManager* m_pGuild;
+	class CGroupManager* m_pGroup;
 	class CCraftManager* m_pCraft;
 	class CDungeonManager* m_pDungeon;
 	class CHouseManager* m_pHouse;
@@ -70,6 +71,7 @@ public:
 	CHouseManager* House() const { return m_pHouse; }
 	CMailBoxManager* Inbox() const { return m_pMailBox; }
 	CGuildManager* Member() const { return m_pGuild; }
+	CGroupManager* Group() const { return m_pGroup; }
 	CSkillManager* Skills() const { return m_pSkill; }
 	CWorldManager *WorldSwap() const { return m_pWorldSwap; }
 

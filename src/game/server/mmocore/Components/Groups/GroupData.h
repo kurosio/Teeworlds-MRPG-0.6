@@ -13,7 +13,7 @@ public:
 	GroupData() = default;
 	GroupData(GroupIdentifier ID) : m_ID(ID) { }
 
-	void Init(std::string AccessIdsList);
+	void Init(class DBSet&& SetAccountIDs);
 	bool Add(int AccountID);
 	bool Remove(int AccountID);
 	bool CheckGroup(int AccountID);

@@ -4,11 +4,10 @@
 
 #include "game/server/mmocore/Utils/DBSet.h"
 
-void GroupData::Init(std::string AccessIdsList)
+void GroupData::Init(DBSet&& SetAccountIDs)
 {
 	// init access list
-	DBSet m_Set(AccessIdsList);
-	for(auto& p : m_Set.GetDataItems())
+	for(auto& p : SetAccountIDs.GetDataItems())
 	{
 		if(int UID = std::atoi(p.c_str()); UID > 0)
 			m_AccountIds.push_back(UID);

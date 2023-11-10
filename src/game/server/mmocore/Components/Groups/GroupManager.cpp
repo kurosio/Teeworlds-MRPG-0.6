@@ -8,5 +8,12 @@
 
 void CGroupManager::OnInit()
 {
-
+	// Initialize a GroupData object with the GroupIdentifier and AccountIDs
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_groups");
+	while(pRes->next())
+	{
+		GroupIdentifier ID = pRes->getInt("ID");
+		std::string AccountIDs = pRes->getString("AccountIDs").c_str();
+		GroupData(ID).Init(AccountIDs);
+	}
 }

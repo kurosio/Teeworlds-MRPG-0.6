@@ -15,6 +15,7 @@
 #include "Components/Crafts/CraftManager.h"
 #include "Components/Dungeons/DungeonManager.h"
 #include "Components/Eidolons/EidolonManager.h"
+#include "Components/Groups/GroupManager.h"
 #include "Components/Guilds/GuildManager.h"
 #include "Components/Houses/HouseManager.h"
 #include "Components/Inventory/InventoryManager.h"
@@ -41,6 +42,7 @@ MmoController::MmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_Components.add(m_pWorldSwap = new CWorldManager);
 	m_Components.add(m_pHouse = new CHouseManager);
 	m_Components.add(m_pGuild = new CGuildManager);
+	m_Components.add(m_pGroup = new CGroupManager);
 	m_Components.add(m_pSkill = new CSkillManager);
 	m_Components.add(m_pTutorial = new CTutorialManager);
 	m_Components.add(m_pAccMain = new CAccountManager);
