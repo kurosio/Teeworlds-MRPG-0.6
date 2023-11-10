@@ -38,13 +38,13 @@ bool CCharacterBotAI::Spawn(class CPlayer* pPlayer, vec2 Pos)
 	if(!CCharacter::Spawn(m_pBotPlayer, Pos))
 		return false;
 
-	// bot types init
-	OnSpawnInitBotTypes();
+	// bot init
+	InitBot();
 
 	return true;
 }
 
-void CCharacterBotAI::OnSpawnInitBotTypes()
+void CCharacterBotAI::InitBot()
 {
 	// mob information
 	const int ClientID = m_pBotPlayer->GetCID();
@@ -976,7 +976,9 @@ void CCharacterBotAI::Move()
 
 	// in case the bot stucks
 	if(m_Pos.x != m_PrevPos.x)
+	{
 		m_MoveTick = Server()->Tick();
+	}
 	else if(Server()->Tick() - m_MoveTick > Server()->TickSpeed() / 2)
 	{
 		m_Input.m_Direction = -m_Input.m_Direction;

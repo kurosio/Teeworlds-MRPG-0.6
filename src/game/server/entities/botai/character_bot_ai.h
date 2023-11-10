@@ -15,7 +15,6 @@ class CCharacterBotAI : public CCharacter
 	class CAIController* m_pAI;
 
 	// bot ai
-	bool m_UseHookDissabled;
 	int m_MoveTick;
 	int m_PrevDirection;
 	vec2 m_PrevPos;
@@ -30,7 +29,7 @@ public:
 	CAIController* AI() const { return m_pAI; }
 
 private:
-	void OnSpawnInitBotTypes();
+	void InitBot();
 	bool Spawn(class CPlayer *pPlayer, vec2 Pos) override;
 	void Tick() override;
 	void TickDeferred() override;
