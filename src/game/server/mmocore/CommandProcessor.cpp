@@ -9,7 +9,9 @@
 #include <game/server/mmocore/Components/Guilds/GuildManager.h>
 #include <game/server/mmocore/Components/Houses/HouseManager.h>
 
-CCommandProcessor::CCommandProcessor(CGS *pGS)
+#include <game/server/mmocore/Components/Groups/GroupManager.h>
+
+CCommandProcessor::CCommandProcessor(CGS* pGS)
 {
 	m_pGS = pGS;
 	m_CommandManager.Init(m_pGS->Console(), this, nullptr, nullptr);
@@ -30,6 +32,9 @@ CCommandProcessor::CCommandProcessor(CGS *pGS)
 	AddCommand("pos", "", ConChatPosition, pServer, "");
 	AddCommand("sound", "i[sound]", ConChatSound, pServer, "");
 	AddCommand("effect", "s[effect] i[sec]", ConChatGiveEffect, pServer, "");
+
+	// group command
+	AddCommand("group", "?s[element] ?s[post]", ConGroup, pServer, "");
 
 	// game command
 	AddCommand("useitem", "i[item]", ConChatUseItem, pServer, "");
@@ -87,10 +92,10 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer)
+	if(!pPlayer)
 		return;
 
-	if (pPlayer->IsAuthed())
+	if(pPlayer->IsAuthed())
 	{
 		pGS->Chat(ClientID, "Sign out first before you create a new account.");
 		return;
@@ -111,12 +116,12 @@ void CCommandProcessor::ConChatDiscordConnect(IConsole::IResult* pResult, void* 
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
 	char aDiscordDID[32];
 	str_copy(aDiscordDID, pResult->GetString(0), sizeof(aDiscordDID));
-	if (str_length(aDiscordDID) > 30 || str_length(aDiscordDID) < 10)
+	if(str_length(aDiscordDID) > 30 || str_length(aDiscordDID) < 10)
 	{
 		pGS->Chat(ClientID, "Discord ID must contain 10-30 characters.");
 		return;
@@ -138,7 +143,7 @@ void CCommandProcessor::ConChatGuildExit(IConsole::IResult* pResult, void* pUser
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed() || !pPlayer->Acc().IsGuild())
+	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->Acc().IsGuild())
 		return;
 
 	const int AccountID = pPlayer->Acc().m_ID;
@@ -151,12 +156,12 @@ void CCommandProcessor::ConChatGuildCreate(IConsole::IResult* pResult, void* pUs
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed() || pPlayer->Acc().IsGuild())
+	if(!pPlayer || !pPlayer->IsAuthed() || pPlayer->Acc().IsGuild())
 		return;
 
 	char aGuildName[16];
 	str_copy(aGuildName, pResult->GetString(0), sizeof(aGuildName));
-	if (str_length(aGuildName) > 8 || str_length(aGuildName) < 3)
+	if(str_length(aGuildName) > 8 || str_length(aGuildName) < 3)
 	{
 		pGS->Chat(ClientID, "Guild name must contain 3-8 characters");
 		return;
@@ -171,14 +176,14 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
 	CHouseData* pHouse = pPlayer->Acc().GetHouse();
-    if(pHouse)
-	    pHouse->GetDoor()->Reverse();
-    else
-        pGS->Chat(pPlayer->GetCID(), "You don't own a house!");
+	if(pHouse)
+		pHouse->GetDoor()->Reverse();
+	else
+		pGS->Chat(pPlayer->GetCID(), "You don't own a house!");
 }
 
 void CCommandProcessor::ConChatSellHouse(IConsole::IResult* pResult, void* pUser)
@@ -187,7 +192,7 @@ void CCommandProcessor::ConChatSellHouse(IConsole::IResult* pResult, void* pUser
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
 	// check owner house id
@@ -208,7 +213,7 @@ void CCommandProcessor::ConChatPosition(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
+	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
 		return;
 
 	const int PosX = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.x) / 32;
@@ -223,7 +228,7 @@ void CCommandProcessor::ConChatSound(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
+	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
 		return;
 
 	const int SoundID = clamp(pResult->GetInteger(0), 0, 40);
@@ -241,13 +246,72 @@ void CCommandProcessor::ConChatGiveEffect(IConsole::IResult* pResult, void* pUse
 		pPlayer->GiveEffect(pResult->GetString(0), pResult->GetInteger(1));
 }
 
+void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	IServer* pServer = (IServer*)pUser;
+	CGS* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
+	if(pPlayer)
+	{
+		const char* pElem = pResult->GetString(0);
+		GroupData* pGroup = pPlayer->Acc().GetGroup();
+
+		if(!str_comp_nocase_num(pElem, "create", 6))
+		{
+			pGS->Mmo()->Group()->CreateGroup(pPlayer);
+			pGS->StrongUpdateVotesForAll(MENU_GROUP);
+			return;
+		}
+
+		if(!str_comp_nocase_num(pElem, "leave", 5))
+		{
+			if(pGroup)
+			{
+				pGroup->Remove(pGS, pPlayer->Acc().m_ID);
+				pGS->StrongUpdateVotesForAll(MENU_GROUP);
+			}
+
+			return;
+		}
+
+		// Group list
+		if(!str_comp_nocase_num(pElem, "list", 4))
+		{
+			// Get the GroupData associated with the player's account
+			if(pGroup)
+			{
+				pGS->Chat(ClientID, "---- YOUR GROUP LIST ----");
+				for(const auto& Account : pGroup->GetAccounts())
+				{
+					const char* Prefix = (pGroup->OwnerUID() == Account.first) ? "O: " : "\0";
+					const std::string Nickname = pGS->Mmo()->PlayerName(Account.first);
+
+					// Send a chat message to the client with the prefix (if owner) and the nickname
+					pGS->Chat(ClientID, "{STR}{STR}", Prefix, Nickname.c_str());
+				}
+			}
+
+			return;
+		}
+
+		const char* Status = (pGroup ? "in a group" : "not in a group");
+		pGS->Chat(ClientID, "---- GROUP COMMANDS ----");
+		pGS->Chat(ClientID, "Current status: {STR}!", Status);
+		pGS->Chat(ClientID, "/group create - create a new group");
+		pGS->Chat(ClientID, "/group list - group membership list");
+		pGS->Chat(ClientID, "/group leave - leave the group");
+	}
+}
+
 void CCommandProcessor::ConChatUseItem(IConsole::IResult* pResult, void* pUser)
 {
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
 	// check valid
@@ -267,7 +331,7 @@ void CCommandProcessor::ConChatUseSkill(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
 	// check valid
@@ -287,13 +351,14 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer)
+	if(!pPlayer)
 		return;
 
 	pGS->Chat(ClientID, "Command List / Help");
 	pGS->Chat(ClientID, "/register <name> <pass> - new account.");
 	pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
 	pGS->Chat(ClientID, "/rules - server rules.");
+	pGS->Chat(ClientID, "/group - group system.");
 	pGS->Chat(ClientID, "/tutorial - training challenge.");
 	pGS->Chat(ClientID, "#<text> - perform an action.");
 	pGS->Chat(ClientID, "Another information see Wiki Page.");
@@ -305,7 +370,7 @@ void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer)
+	if(!pPlayer)
 		return;
 
 	pGS->Chat(ClientID, "Server rules");
@@ -326,10 +391,10 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	if (pResult->NumArguments() != 1)
+	if(pResult->NumArguments() != 1)
 	{
 		pGS->Chat(ClientID, "Use: /voucher <voucher>", pPlayer);
 		return;
@@ -346,7 +411,7 @@ void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if (!pPlayer || !pPlayer->IsAuthed())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
 	if(pGS->IsPlayerEqualWorld(ClientID, TUTORIAL_WORLD_ID))
@@ -408,7 +473,7 @@ void CCommandProcessor::AddCommand(const char* pName, const char* pParams, ICons
 		dbg_msg("chat_cmd", "failed to add command: '/%s' :: WorldID %d", pName, m_pGS->GetWorldID());
 }
 
-void CCommandProcessor::LastChat(CPlayer *pPlayer)
+void CCommandProcessor::LastChat(CPlayer* pPlayer)
 {
 	if(pPlayer->m_aPlayerTick[TickState::LastChat] + GS()->Server()->TickSpeed() <= GS()->Server()->Tick())
 		pPlayer->m_aPlayerTick[TickState::LastChat] = GS()->Server()->Tick();

@@ -258,7 +258,6 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 		InitSettingsItem(
 			{
 				{ itHammer, 1 },
-				{ itModePVP, 1 },
 				{ itShowEquipmentDescription, 0 },
 				{ itShowCriticalDamage, 1 },
 				{ itShowQuestNavigator, 1 }

@@ -180,6 +180,9 @@ enum MenuList
 	MENU_JOURNAL_FINISHED,
 	MENU_JOURNAL_QUEST_INFORMATION,
 
+	// Group menus
+	MENU_GROUP,
+
 	// Other menus
 	MENU_GUIDE_GRINDING,
 	MENU_TOP_LIST,
@@ -216,6 +219,7 @@ enum TabHideList
 	TAB_LANGUAGES,
 	TAB_SETTINGS,
 	TAB_SETTINGS_MODULES,
+	TAB_GROUP_COMMANDS,
 	NUM_TAB_MENU_INTERACTIVES,
 
 	// start info
@@ -260,7 +264,6 @@ enum
 	MAX_ARREST_GOLD_BY_PERCENT = 10,		// maximum arrest gold's by percent
 
 	// settings items
-	itModePVP = 22,						// PVP mode setting
 	itShowEquipmentDescription = 25,	// Description setting
 	itShowCriticalDamage = 34,			// Critical damage setting
 	itShowQuestNavigator = 93,			// Show quest path when idle

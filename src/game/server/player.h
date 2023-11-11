@@ -10,6 +10,8 @@
 
 #include "entities/character.h"
 
+#include "vote_event_optional.h"
+
 enum
 {
 	WEAPON_SELF = -2, // self die
@@ -65,9 +67,9 @@ public:
 	StructLatency m_Latency;
 	StructLastAction m_LatestActivity;
 
-	/* #########################################################################
+	/* ==========================================================
 		VAR AND OBJECTS PLAYER MMO
-	######################################################################### */
+	========================================================== */
 	CTuningParams m_PrevTuningParams;
 	CTuningParams m_NextTuningParams;
 	CPlayerDialog m_Dialog;
@@ -80,10 +82,12 @@ public:
 	bool m_ZoneInvertMenu;
 	bool m_RequestChangeNickname;
 	int m_EidolonCID;
+	bool m_ActivedGroupColors;
+	int m_TickActivedGroupColors;
 
-	/* #########################################################################
+	/* ==========================================================
 		FUNCTIONS PLAYER ENGINE
-	######################################################################### */
+	========================================================== */
 public:
 	CPlayer(CGS* pGS, int ClientID);
 	virtual ~CPlayer();
@@ -136,25 +140,26 @@ public:
 private:
 	virtual void EffectsTick();
 	virtual void TryRespawn();
+	void HandleScoreboardColors();
 
 public:
-	CCharacter *GetCharacter() const;
+	CCharacter* GetCharacter() const;
 
 	void KillCharacter(int Weapon = WEAPON_WORLD);
 	void OnDisconnect();
-	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
-	void OnPredictedInput(CNetObj_PlayerInput *pNewInput) const;
+	void OnDirectInput(CNetObj_PlayerInput* pNewInput);
+	void OnPredictedInput(CNetObj_PlayerInput* pNewInput) const;
 
 	int GetCID() const { return m_ClientID; }
-	/* #########################################################################
+	/* ==========================================================
 		FUNCTIONS PLAYER HELPER
-	######################################################################### */
-	void ProgressBar(const char *Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const;
-	bool Upgrade(int Value, int *Upgrade, int *Useless, int Price, int MaximalUpgrade) const;
+	========================================================== */
+	void ProgressBar(const char* Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const;
+	bool Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const;
 
-	/* #########################################################################
+	/* ==========================================================
 		FUNCTIONS PLAYER ACCOUNT
-	######################################################################### */
+	========================================================== */
 	bool SpendCurrency(int Price, int ItemID = 1);
 	const char* GetLanguage() const;
 	void AddExp(int Exp);
@@ -169,15 +174,15 @@ public:
 
 	void IncreaseRelations(int Relations);
 
-	/* #########################################################################
+	/* ==========================================================
 		FUNCTIONS PLAYER PARSING
-	######################################################################### */
+	========================================================== */
 	bool ParseItemsF3F4(int Vote);
-  	bool ParseVoteUpgrades(const char *CMD, int VoteID, int VoteID2, int Get);
+	bool ParseVoteUpgrades(const char* CMD, int VoteID, int VoteID2, int Get);
 
-	/* #########################################################################
+	/* ==========================================================
 		FUNCTIONS PLAYER ITEMS
-	######################################################################### */
+	========================================================== */
 	class CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }
 	class CPlayerItem* GetItem(ItemIdentifier ID);
 	class CSkill* GetSkill(SkillIdentifier ID);
@@ -192,6 +197,36 @@ public:
 
 	virtual Mood GetMoodState() const { return Mood::NORMAL; }
 	void ChangeWorld(int WorldID);
+
+	/* ==========================================================
+	   VOTING OPTIONAL EVENT
+	========================================================== */
+	// Function: CreateVoteOptional
+	// Parameters:
+	//    - OptionID: an integer value representing the vote option
+	//    - OptionID2: an integer value representing the vote option
+	//    - Sec: an integer value representing the duration of the vote event
+	//    - pInformation: a pointer to a character array containing optional information for the vote
+	//    - ...: additional optional arguments for the information text format
+	// Return:
+	//    - a pointer to a CVoteEventOptional object representing the created vote event
+	CVoteEventOptional* CreateVoteOptional(int OptionID, int OptionID2, int Sec, const char* pInformation, ...);
+
+private:
+	std::queue<CVoteEventOptional> m_Optionals {};
+
+	// Function: RunEventOptional
+	// Parameters:
+	//    - Option: an integer value representing the selected option for the vote event
+	//    - pOptional: a pointer to a CVoteEventOptional object representing the vote event
+	// Description:
+	//    - Runs the selected optional vote event
+	void RunEventOptional(int Option, CVoteEventOptional* pOptional);
+
+	// Function: HandleVoteOptionals
+	// Description:
+	//    - Handles all the optional vote events
+	void HandleVoteOptionals();
 };
 
 #endif

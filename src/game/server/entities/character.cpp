@@ -10,6 +10,7 @@
 #include "projectile.h"
 
 #include <game/server/mmocore/Components/Bots/BotData.h>
+#include <game/server/mmocore/Components/Groups/GroupData.h>
 #include <game/server/mmocore/Components/Guilds/GuildManager.h>
 #include <game/server/mmocore/Components/Houses/HouseManager.h>
 #include <game/server/mmocore/Components/Quests/QuestManager.h>
@@ -17,6 +18,7 @@
 
 #include <game/server/mmocore/GameEntities/jobitems.h>
 #include <game/server/mmocore/GameEntities/snapfull.h>
+
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -1323,42 +1325,44 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
 
-	if(pFrom)
+	// Dissable damage, if pFrom is null or if either m_DamageDisabled or pFrom's character's m_DamageDisabled flag is true
+	if(!pFrom || (m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled))
+		return false;
+
+	// Check if the sender is a bot and the bot type is TYPE_BOT_EIDOLON
+	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
 	{
-		// Check if the sender is a bot and the bot type is TYPE_BOT_EIDOLON
-		if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
-		{
-			// Check if the player is a bot and if the bot type is either TYPE_BOT_MOB or TYPE_BOT_QUEST_MOB and is active for the specific client with ID FromID
-			// Also, check if the bot type is TYPE_BOT_NPC and the function of the NPC bot is FUNCTION_NPC_GUARDIAN
-			// If any of these conditions are true, return true, otherwise return false.
-			if(m_pPlayer->GetBotType() == TYPE_BOT_MOB ||
-				(m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID]) ||
-				(m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN))
-			{
-				return true;
-			}
-
-			return false;
-		}
-
-		// Allow damage if the player is a bot and is a quest mob, and the quest mob is active for the client, and the damage is coming from another player who is not a bot
-		// OR if the damage is coming from another bot who is a quest mob, and the quest mob is active for the player, and the player is not a bot
-		if((m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID] && !pFrom->IsBot()) ||
-			(pFrom->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(pFrom)->GetQuestBotMobInfo().m_ActiveForClient[m_pPlayer->GetCID()] && !m_pPlayer->IsBot()))
+		// Check if the player is a bot and if the bot type is either TYPE_BOT_MOB or TYPE_BOT_QUEST_MOB and is active for the specific client with ID FromID
+		// Also, check if the bot type is TYPE_BOT_NPC and the function of the NPC bot is FUNCTION_NPC_GUARDIAN
+		// If any of these conditions are true, return true, otherwise return false.
+		if(m_pPlayer->GetBotType() == TYPE_BOT_MOB ||
+			(m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID]) ||
+			(m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN))
 		{
 			return true;
 		}
 
-		// Check if the player or the sender is a NPC bot of type "Guardian"
-		if((m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN) ||
-			(pFrom->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pFrom->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN &&
-				(m_pPlayer->IsBot() || m_pPlayer->Acc().IsRelationshipsDeterioratedToMax())))
-		{
-			return true;
-		}
+		return false;
 	}
 
-	if(!pFrom || (m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled) || (m_pPlayer->IsBot() && pFrom->IsBot()))
+	// Allow damage if the player is a bot and is a quest mob, and the quest mob is active for the client, and the damage is coming from another player who is not a bot
+	// OR if the damage is coming from another bot who is a quest mob, and the quest mob is active for the player, and the player is not a bot
+	if((m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID] && !pFrom->IsBot()) ||
+		(pFrom->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(pFrom)->GetQuestBotMobInfo().m_ActiveForClient[m_pPlayer->GetCID()] && !m_pPlayer->IsBot()))
+	{
+		return true;
+	}
+
+	// Check if the player or the sender is a NPC bot of type "Guardian"
+	if((m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN) ||
+		(pFrom->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pFrom->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN &&
+			(m_pPlayer->IsBot() || m_pPlayer->Acc().IsRelationshipsDeterioratedToMax())))
+	{
+		return true;
+	}
+
+	// Dissable damage for From bot and current bot
+	if(m_pPlayer->IsBot() && pFrom->IsBot())
 		return false;
 
 	// pvp only for mobs
@@ -1372,10 +1376,6 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	// players anti pvp
 	if(!m_pPlayer->IsBot() && !pFrom->IsBot())
 	{
-		// anti settings pvp
-		if(!pFrom->GetItem(itModePVP)->IsEquipped() || !m_pPlayer->GetItem(itModePVP)->IsEquipped())
-			return false;
-
 		// anti pvp on safe world or dungeon
 		if(!GS()->IsAllowedPVP() || GS()->IsDungeon())
 			return false;
@@ -1383,13 +1383,14 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		// anti pvp for guild players
 		if(pFrom->Acc().m_GuildID > 0 && pFrom->Acc().m_GuildID == m_pPlayer->Acc().m_GuildID)
 			return false;
-	}
 
-	// anti pvp strong
-	const int FromAttributeLevel = pFrom->GetAttributesSize();
-	const int PlayerAttributeLevel = m_pPlayer->GetAttributesSize();
-	if(!pFrom->IsBot() && !m_pPlayer->IsBot() && ((FromAttributeLevel - PlayerAttributeLevel > g_Config.m_SvStrongAntiPVP) || (PlayerAttributeLevel - FromAttributeLevel > g_Config.m_SvStrongAntiPVP)))
-		return false;
+		// anti pvp for group players
+		{
+			GroupData* pGroup = m_pPlayer->Acc().GetGroup();
+			if(pGroup && pGroup->HasAccountID(pFrom->Acc().m_ID))
+				return false;
+		}
+	}
 
 	return true;
 }

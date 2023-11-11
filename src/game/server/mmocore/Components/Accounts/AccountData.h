@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 #define GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 
+// TODO: fully rework structures
+
 #include <game/server/mmocore/Components/Auction/AuctionData.h>
 #include <game/server/mmocore/Utils/FieldData.h>
 
@@ -25,11 +27,15 @@ struct CAccountData
 	int m_Relations{};
 	int m_GuildID{};
 	int m_GuildRank{};
+	int m_GroupID{};
 	TimePeriods m_Periods{};
 	std::list< int > m_aHistoryWorld{};
 
+	void InitGroup();
 	class CHouseData* GetHouse() const;
+	class GroupData* GetGroup() const;
 	bool HasHouse() const;
+	bool HasGroup() const { return GetGroup() != nullptr; }
 	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; }
 
 	// upgrades

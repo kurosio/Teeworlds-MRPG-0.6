@@ -16,10 +16,12 @@
 
 #include "mmocore/Components/Inventory/ItemData.h"
 #include "mmocore/Components/Skills/SkillData.h"
+#include "mmocore/Components/Groups/GroupData.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 IServer* CPlayer::Server() const { return m_pGS->Server(); };
+
 CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 {
 	for(short& SortTab : m_aSortTabs)
@@ -105,6 +107,12 @@ void CPlayer::Tick()
 	// post updated votes if player open menu
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU && IsActivePostVoteList())
 		PostVoteList();
+
+	// Call the function HandleVoteOptionals() to handle any optional vote features.
+	HandleVoteOptionals();
+
+	// This line of code calls the function HandleScoreboardColors() which is responsible for managing the colors of the scoreboard.
+	HandleScoreboardColors();
 }
 
 void CPlayer::PostTick()
@@ -174,6 +182,82 @@ void CPlayer::EffectsTick()
 		}
 
 		++pEffect;
+	}
+}
+
+void CPlayer::HandleScoreboardColors()
+{
+	if(m_TickActivedGroupColors > Server()->Tick())
+		return;
+
+	// If the player's flags include the PLAYERFLAG_SCOREBOARD flag
+	if(m_PlayerFlags & PLAYERFLAG_SCOREBOARD)
+	{
+		// If the active group colors have not been set yet
+		if(!m_ActivedGroupColors)
+		{
+			// Create two message packers: Msg and MsgLegacy
+			CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
+			CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
+			for(int i = 0; i < MAX_PLAYERS; i++)
+			{
+				// Get the player data
+				CPlayer* pPlayer = GS()->GetPlayer(i, true);
+				if(!pPlayer)
+					continue;
+
+				// Get the player's group data
+				GroupData* pGroup = pPlayer->Acc().GetGroup();
+				if(pGroup)
+				{
+					// Add the team color of the group to both message packers
+					Msg.AddInt(pGroup->GetTeamColor());
+					MsgLegacy.AddInt(pGroup->GetTeamColor());
+				}
+			}
+			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
+
+			// Get the client version of the player the client version is between VERSION_DDRACE and VERSION_DDNET_MSG_LEGACY
+			int ClientVersion = Server()->GetClientVersion(m_ClientID);
+			if(VERSION_DDRACE < ClientVersion && ClientVersion < VERSION_DDNET_MSG_LEGACY)
+				Server()->SendMsg(&MsgLegacy, MSGFLAG_VITAL, m_ClientID);
+
+			// Set the active group colors to true
+			m_ActivedGroupColors = true;
+			m_TickActivedGroupColors = Server()->Tick() + (Server()->TickSpeed() / 4);
+		}
+	}
+	// If the player flags do not have the PLAYERFLAG_SCOREBOARD flag
+	else if(m_PlayerFlags ^ PLAYERFLAG_SCOREBOARD)
+	{
+		// If group colors are active
+		if(m_ActivedGroupColors)
+		{
+			// Create two message packers: Msg and MsgLegacy
+			CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
+			CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
+			for(int i = 0; i < MAX_PLAYERS; i++)
+			{
+				// Get the player data
+				CPlayer* pPlayer = GS()->GetPlayer(i, true);
+				if(!pPlayer)
+					continue;
+
+				// Add the team color of the group to both message packers
+				Msg.AddInt(0);
+				MsgLegacy.AddInt(0);
+			}
+			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
+
+			// Get the client version of the player client version is between VERSION_DDRACE and VERSION_DDNET_MSG_LEGACY
+			int ClientVersion = Server()->GetClientVersion(m_ClientID);
+			if(VERSION_DDRACE < ClientVersion && ClientVersion < VERSION_DDNET_MSG_LEGACY)
+				Server()->SendMsg(&MsgLegacy, MSGFLAG_VITAL, m_ClientID);
+
+			// Set the active group colors to false
+			m_ActivedGroupColors = false;
+			m_TickActivedGroupColors = Server()->Tick() + (Server()->TickSpeed() / 4);
+		}
 	}
 }
 
@@ -345,6 +429,8 @@ void CPlayer::RefreshClanString()
 	{
 		Buffer.append(" | ");
 		Buffer.append(GS()->Mmo()->Member()->GuildName(Acc().m_GuildID));
+		Buffer.append(" : ");
+		Buffer.append(GS()->Mmo()->Member()->GetGuildRank(Acc().m_GuildID, Acc().m_GuildRank));
 	}
 
 	// class
@@ -732,6 +818,12 @@ bool CPlayer::ParseItemsF3F4(int Vote)
 		return true;
 	}
 
+	if(!m_Optionals.empty())
+	{
+		CVoteEventOptional* pOptional = &m_Optionals.front();
+		RunEventOptional(Vote, pOptional);
+	}
+
 	// - - - - - F3- - - - - - -
 	if(Vote == 1)
 	{
@@ -958,4 +1050,95 @@ int CPlayer::GetPlayerWorldID() const
 CTeeInfo& CPlayer::GetTeeInfo() const
 {
 	return Acc().m_TeeInfos;
+}
+
+// Function to create a vote event with optional parameters
+// Takes in a value, duration in seconds, information string, and variable arguments
+CVoteEventOptional* CPlayer::CreateVoteOptional(int OptionID, int OptionID2, int Sec, const char* pInformation, ...)
+{
+	// Create an instance of the CVoteEventOptional class
+	CVoteEventOptional Optional;
+	Optional.m_CloseTime = time_get() + time_freq() * Sec;
+	Optional.m_OptionID = OptionID;
+	Optional.m_OptionID2 = OptionID2;
+
+	// Format the information string using localization and variable arguments
+	va_list VarArgs;
+	va_start(VarArgs, pInformation);
+	dynamic_string Buffer;
+	Server()->Localization()->Format_VL(Buffer, GetLanguage(), pInformation, VarArgs);
+	Optional.m_Description = Buffer.buffer();
+	Buffer.clear();
+	va_end(VarArgs);
+
+	// Add the vote event to the list of optionals
+	m_Optionals.push(Optional);
+
+	// Return a pointer to the newly created vote event
+	return &m_Optionals.back();
+}
+
+// This function is a member function of the CPlayer class.
+// It is used to run an optional voting event for the player.
+void CPlayer::RunEventOptional(int Option, CVoteEventOptional* pOptional)
+{
+	// Check if pOptional pointer exists and its callback function returns true
+	if(pOptional)
+	{
+		// Call the callback function with arguments: this object, the value stored in pOptional, and the option casted to a bool
+		if(pOptional->m_Callback)
+			pOptional->m_Callback(this, pOptional->m_OptionID, pOptional->m_OptionID2, Option <= 0 ? false : true);
+
+		// Create a new network message to update the vote status
+		CNetMsg_Sv_VoteStatus Msg;
+		Msg.m_Total = 1;
+		Msg.m_Yes = (Option >= 1 ? 1 : 0);
+		Msg.m_No = (Option <= 0 ? 1 : 0);
+		Msg.m_Pass = 0;
+
+		// Send the network message to the client with the MSGFLAG_VITAL flag
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
+
+		// Set the close time of pOptional to half a second from the current time
+		pOptional->m_CloseTime = time_get() + (time_freq() / 2);
+	}
+}
+
+// Function to handle optional voting options for a player
+void CPlayer::HandleVoteOptionals()
+{
+	// If the list of optionals is empty, return
+	if(m_Optionals.empty())
+		return;
+
+	// Get a pointer to the first optional in the list
+	CVoteEventOptional* pOptional = &m_Optionals.front();
+
+	// If the optional is not already being processed
+	if(!pOptional->m_Working)
+	{
+		// Create a vote set message and send the message to the client
+		CNetMsg_Sv_VoteSet Msg;
+		Msg.m_Timeout = (pOptional->m_CloseTime - time_get()) / time_freq();
+		Msg.m_pDescription = pOptional->m_Description.c_str();
+		Msg.m_pReason = "\0";
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
+
+		// Mark the optional as being processed
+		pOptional->m_Working = true;
+	}
+
+	// If the closing time of the optional has not passed yet
+	if(pOptional->m_CloseTime < time_get())
+	{
+		// Create a vote set message with timeout 0 and send the message to the client
+		CNetMsg_Sv_VoteSet Msg;
+		Msg.m_Timeout = 0;
+		Msg.m_pDescription = "";
+		Msg.m_pReason = "";
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
+
+		// Remove the first optional from the list
+		m_Optionals.pop();
+	}
 }
