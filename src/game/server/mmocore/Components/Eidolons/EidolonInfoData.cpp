@@ -8,7 +8,7 @@
 CEidolonInfoData::EidolonDescriptionList CEidolonInfoData::m_EidolonsInfoData =
 {
 	{
-		itEidolonOtohime, 45,
+		itEidolonOtohime, 2,
 		{
 			"The shadow of the ocean. After discovering",
 			"the land by accident, she follows the you",
@@ -16,7 +16,7 @@ CEidolonInfoData::EidolonDescriptionList CEidolonInfoData::m_EidolonsInfoData =
 		}
 	},
 	{
-		itEidolonMerrilee, 46,
+		itEidolonMerrilee, 5,
 		{
 			"A sociable spirit, she loves to protect people.",
 			"While it's a bit vain, she takes great pride",
@@ -25,7 +25,7 @@ CEidolonInfoData::EidolonDescriptionList CEidolonInfoData::m_EidolonsInfoData =
 		}
 	},
 	{
-		itEidolonDryad, 58,
+		itEidolonDryad, 3,
 		{
 			"Dryads are green dryads with sea-green vines.",
 			"They have violet-colored flowers for hands and beady eyes.",
@@ -33,7 +33,7 @@ CEidolonInfoData::EidolonDescriptionList CEidolonInfoData::m_EidolonsInfoData =
 		}
 	},
 	{
-		itEidolonPigQueen, 6,
+		itEidolonPigQueen, 4,
 		{
 			"Perhaps the self-proclaimed queen of pigs.",
 			"It has a delicate pink color, likes to eat everything green.",

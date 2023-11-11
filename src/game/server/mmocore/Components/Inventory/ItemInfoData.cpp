@@ -79,6 +79,8 @@ bool CItemDescription::IsEnchantMaxLevel(int Enchant) const
 	return false;
 }
 
+bool CItemDescription::HasAttributes() const { return !m_aAttributes.empty(); }
+
 void CItemDescription::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const
 {
 	dynamic_string Buffer;

@@ -76,6 +76,7 @@ public:
 
 	bool IsEnchantable() const;
 	bool IsEnchantMaxLevel(int Enchant) const;
+	bool HasAttributes() const;
 
 	// equip modules types functions
 	int GetInfoEnchantStats(AttributeIdentifier ID) const;

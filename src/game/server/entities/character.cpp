@@ -1329,6 +1329,10 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	if(!pFrom || (m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled))
 		return false;
 
+	// Allow self damage without some item
+	if(FromID == m_pPlayer->GetCID() && !m_pPlayer->GetItem(itRingSelfine)->IsEquipped())
+		return true;
+
 	// Check if the sender is a bot and the bot type is TYPE_BOT_EIDOLON
 	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
 	{

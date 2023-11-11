@@ -361,9 +361,17 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 			const CPlayerItem ItemData = it.second;
 			if(ItemData.Info()->IsType(ItemType::TYPE_MODULE) && ItemData.GetValue() > 0)
 			{
-				char aAttributes[128];
-				ItemData.StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS_MODULES, "{STR}{STR} * {STR}", (ItemData.GetSettings() ? "✔" : "\0"), ItemData.Info()->GetName(), aAttributes);
+				char aAttributesInfo[128];
+				if(ItemData.Info()->HasAttributes())
+				{
+					ItemData.StrFormatAttributes(pPlayer, aAttributesInfo, sizeof(aAttributesInfo));
+				}
+				else
+				{
+					str_copy(aAttributesInfo, ItemData.Info()->GetDescription(), sizeof(aAttributesInfo));
+				}
+
+				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS_MODULES, "{STR}{STR} * {STR}", (ItemData.GetSettings() ? "✔" : "\0"), ItemData.Info()->GetName(), aAttributesInfo);
 				IsFoundModules = true;
 			}
 		}

@@ -54,8 +54,11 @@ void CInventoryManager::OnInit()
 				str_format(aAttributeValue, sizeof(aAttributeValue), "AttributeValue%d", i);
 
 				AttributeIdentifier AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
-				int AttributeValue = pRes->getInt(aAttributeValue);
-				aContainerAttributes.push_back({ AttributeID, AttributeValue });
+				if(AttributeID >= AttributeIdentifier::SpreadShotgun)
+				{
+					int AttributeValue = pRes->getInt(aAttributeValue);
+					aContainerAttributes.push_back({ AttributeID, AttributeValue });
+				}
 			}
 
 			CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, Data);
