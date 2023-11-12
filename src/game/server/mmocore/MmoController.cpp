@@ -335,7 +335,7 @@ void MmoController::ResetClientData(int ClientID)
 void MmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 {
 	// Set a flag indicating whether time periods have been updated
-	std::vector<int> aPeriodsUpdated{};
+	std::vector<int> aPeriodsUpdated {};
 
 	// Get the current time
 	time_t time_data = time(nullptr);
@@ -626,21 +626,14 @@ void MmoController::ConAsyncLinesForTranslate()
 	for(int i = 0; i < GS()->Server()->Localization()->m_pLanguages.size(); i++)
 	{
 		str_format(aDirLanguageFile, sizeof(aDirLanguageFile), "server_lang/%s.json", GS()->Server()->Localization()->m_pLanguages[i]->GetFilename());
-		IOHANDLE File = io_open(aDirLanguageFile, IOFLAG_READ);
-		if(!File)
+
+		// Check if a file is successfully loaded using the specified directory and store its content in the RawData variable
+		ByteArray RawData;
+		if(!Tools::Files::loadFile(aDirLanguageFile, &RawData))
 			continue;
 
-		const int FileSize = (int)io_length(File) + 1;
-		char* pFileData = (char*)malloc(FileSize);
-		mem_zero(pFileData, FileSize);
-		io_read(File, pFileData, FileSize);
-
-		// close and clear
-		nlohmann::json JsonData = nlohmann::json::parse(pFileData);
-		mem_free(pFileData);
-		io_close(File);
-
 		// insert database lines
+		nlohmann::json JsonData = nlohmann::json::parse((char*)RawData.data());
 		for(auto& pItem : QuestBotInfo::ms_aQuestBot)
 		{
 			int DialogNum = 0;
@@ -701,13 +694,8 @@ void MmoController::ConAsyncLinesForTranslate()
 		{ return pA["key"] == pA["value"] && pB["key"] != pB["value"]; });
 
 		// save file
-		File = io_open(aDirLanguageFile, IOFLAG_WRITE);
-		if(!File)
-			continue;
-
 		std::string Data = JsonData.dump(4);
-		io_write(File, Data.c_str(), Data.length());
-		io_close(File);
+		Tools::Files::saveFile(aDirLanguageFile, (void*)Data.data(), Data.size());
 	}
 
 	// end transaction

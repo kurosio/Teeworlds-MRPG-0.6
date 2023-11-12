@@ -2982,6 +2982,19 @@ int mem_comp(const void *a, const void *b, int size)
 	return memcmp(a,b,size);
 }
 
+int mem_has_null(const void* block, size_t size)
+{
+	const unsigned char* bytes = (const unsigned char*)block;
+	for(size_t i = 0; i < size; i++)
+	{
+		if(bytes[i] == 0)
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void net_stats(NETSTATS *stats_inout)
 {
 	*stats_inout = network_stats;

@@ -1755,11 +1755,10 @@ bool CServer::LoadMap(int ID)
 
 	// load complete map into memory for download
 	{
-		IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorageEngine::TYPE_ALL);
-		pMap->SetCurrentMapSize((int)io_length(File));
-		pMap->SetCurrentMapData((unsigned char *)mem_alloc(pMap->GetCurrentMapSize(), 1));
-		io_read(File, pMap->GetCurrentMapData(), pMap->GetCurrentMapSize());
-		io_close(File);
+		ByteArray BinaryData;
+		Tools::Files::loadFile(aBuf, &BinaryData);
+		pMap->SetCurrentMapSize((int)BinaryData.size());
+		pMap->SetCurrentMapData((unsigned char *)BinaryData.data());
 	}
 	return true;
 }
@@ -1822,8 +1821,9 @@ int CServer::Run()
 		return -1;
 	}
 	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
+	{
 		MultiWorlds()->GetWorld(i)->m_pGameServer->OnInit(i);
-
+	}	
 
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "----------------------------------------------------");
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "███╗   ███╗██████╗ ██████╗  ██████╗ ");

@@ -199,6 +199,18 @@ void mem_zero(void *block, unsigned size);
 */
 int mem_comp(const void *a, const void *b, int size);
 
+/**
+ * Checks whether a block of memory contains null bytes.
+ *
+ * @ingroup Memory
+ *
+ * @param block Pointer to the block to check for nulls.
+ * @param size Size of the block.
+ *
+ * @return true if the block has a null byte, false otherwise.
+ */
+int mem_has_null(const void* block, size_t size);
+
 /* Group: File IO */
 enum {
 	IOFLAG_READ = 1,
