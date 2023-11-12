@@ -201,19 +201,18 @@ void CPlayer::HandleScoreboardColors()
 			CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
-				// Get the player data
-				CPlayer* pPlayer = GS()->GetPlayer(i, true);
-				if(!pPlayer)
-					continue;
+				CPlayer* pPlayer = GS()->GetPlayer(i);
 
-				// Get the player's group data
-				GroupData* pGroup = pPlayer->Acc().GetGroup();
-				if(pGroup)
+				// Add the team color of the group to both message packers
+				if(pPlayer && pPlayer->Acc().GetGroup())
 				{
-					// Add the team color of the group to both message packers
-					Msg.AddInt(pGroup->GetTeamColor());
-					MsgLegacy.AddInt(pGroup->GetTeamColor());
+					Msg.AddInt(pPlayer->Acc().GetGroup()->GetTeamColor());
+					MsgLegacy.AddInt(pPlayer->Acc().GetGroup()->GetTeamColor());
+					continue;
 				}
+
+				Msg.AddInt(-1);
+				MsgLegacy.AddInt(-1);
 			}
 			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
