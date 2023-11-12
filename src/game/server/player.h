@@ -138,7 +138,7 @@ public:
 	void TryRemoveEidolon();
 
 private:
-	virtual void EffectsTick();
+	virtual void HandleEffects();
 	virtual void TryRespawn();
 	void HandleScoreboardColors();
 

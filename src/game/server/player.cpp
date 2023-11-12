@@ -110,19 +110,26 @@ void CPlayer::Tick()
 
 	// Call the function HandleVoteOptionals() to handle any optional vote features.
 	HandleVoteOptionals();
-
-	// This line of code calls the function HandleScoreboardColors() which is responsible for managing the colors of the scoreboard.
-	HandleScoreboardColors();
 }
 
 void CPlayer::PostTick()
 {
-	// update latency value
-	if(Server()->ClientIngame(m_ClientID) && IsAuthed())
-		GetTempData().m_TempPing = m_Latency.m_Min;
+	// Check if the user is authenticated
+	if(IsAuthed())
+	{
+		// update latency value
+		if(Server()->ClientIngame(m_ClientID))
+			GetTempData().m_TempPing = m_Latency.m_Min;
 
-	EffectsTick();
-	HandleTuningParams();
+		// Execute the effects tick function
+		HandleEffects();
+
+		// Handle tuning parameters
+		HandleTuningParams();
+	}
+
+	// Handle scoreboard colors
+	HandleScoreboardColors();
 }
 
 CPlayerBot* CPlayer::GetEidolon() const
@@ -166,7 +173,7 @@ void CPlayer::TryRemoveEidolon()
 }
 
 
-void CPlayer::EffectsTick()
+void CPlayer::HandleEffects()
 {
 	if(Server()->Tick() % Server()->TickSpeed() != 0 || CGS::ms_aEffects[m_ClientID].empty())
 		return;

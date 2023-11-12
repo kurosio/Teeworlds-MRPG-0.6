@@ -87,7 +87,7 @@ public:
 private:
 	std::unordered_map< int, std::unique_ptr<CPlayerItem> > m_Items {};
 	std::unordered_map < std::string /* effect */, int /* seconds */ > m_aEffects;
-	void EffectsTick() override;
+	void HandleEffects() override;
 	void TryRespawn() override;
 
 	int GetBotLevel() const;

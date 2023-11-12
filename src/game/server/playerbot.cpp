@@ -98,7 +98,7 @@ void CPlayerBot::PostTick()
 {
 	// update playerbot tick
 	HandleTuningParams();
-	EffectsTick();
+	HandleEffects();
 }
 
 CPlayer* CPlayerBot::GetEidolonOwner() const
@@ -124,7 +124,7 @@ CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
 	return it->second.get();
 }
 
-void CPlayerBot::EffectsTick()
+void CPlayerBot::HandleEffects()
 {
 	if(Server()->Tick() % Server()->TickSpeed() != 0 || m_aEffects.empty())
 		return;
