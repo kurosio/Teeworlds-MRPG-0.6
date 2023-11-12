@@ -557,17 +557,14 @@ void MmoController::AsyncClientEnterMsgInfo(std::string ClientName, int ClientID
 	{
 		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
-		// send information : CPlayer checked by Chat() : PlayerName and ClientID getter by copy. 
-		pGS->Chat(ClientID, "Welcome! A list of commands can be found using /cmdlist.");
-
 		if(!pRes->next())
 		{
-			pGS->Chat(ClientID, "You need to register using /register <login> <pass>.", PlayerName.cstr());
-			pGS->Chat(-1, "Apparently we have a new player {STR}!", PlayerName.cstr());
+			pGS->Chat(ClientID, "You need to register using /register <login> <pass>!");
+			pGS->Chat(-1, "Apparently, we have a new player, {STR}!", PlayerName.cstr());
 			return;
 		}
 
-		pGS->Chat(ClientID, "You need to login using /login <user> <pass>.", PlayerName.cstr());
+		pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
 	});
 }
 

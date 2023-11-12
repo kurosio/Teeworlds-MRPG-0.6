@@ -316,7 +316,7 @@ void CCharacter::FireWeapon()
 					Hits = true;
 
 					const int BotID = pTarget->GetPlayer()->GetBotID();
-					GS()->Chat(m_pPlayer->GetCID(), "You start speaking with {STR}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
+					GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {STR}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 					break;
 				}
 
@@ -815,11 +815,12 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				if(KillerIsPlayer)
 				{
 					pKiller->GetItem(itGold)->Add(Arrest);
-					GS()->Chat(-1, "{STR} killed wanted {STR}. Reward {VAL} gold!", Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
+					GS()->Chat(-1, "{STR} killed {STR}, who was wanted. The reward is {VAL} gold!", 
+						Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 				}
 
 				// Send a chat message to the client with their arrest information
-				GS()->Chat(ClientID, "Arrested gold by the treasury for {INT}%({VAL}) gold!", g_Config.m_SvArrestGoldAtDeath, Arrest);
+				GS()->Chat(ClientID, "Treasury confiscates {INT}%({VAL}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
 			}
 		}
 		else if(KillerIsPlayer)
@@ -844,7 +845,7 @@ void CCharacter::Die(int Killer, int Weapon)
 		const int RespawnWorldID = GS()->GetRespawnWorld();
 		if(RespawnWorldID >= 0 && GS()->m_apPlayers[Killer])
 		{
-			GS()->Chat(ClientID, "You have passed away, and you will be taken care of in {STR}.", Server()->GetWorldName(RespawnWorldID));
+			GS()->Chat(ClientID, "You've been defeated, and now you'll be healed in {STR}!", Server()->GetWorldName(RespawnWorldID));
 			m_pPlayer->GetTempData().m_TempSafeSpawn = true;
 		}
 	}
@@ -1436,7 +1437,7 @@ bool CCharacter::CheckFailMana(int Mana)
 {
 	if(m_Mana < Mana)
 	{
-		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 100, "No mana for use this or for maintenance.");
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 100, "Mana is required for the casting or continuation of this spell.");
 		return true;
 	}
 

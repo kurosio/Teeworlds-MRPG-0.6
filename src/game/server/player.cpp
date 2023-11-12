@@ -7,6 +7,7 @@
 #include "worldmodes/dungeon.h"
 
 #include "mmocore/Components/Accounts/AccountManager.h"
+#include "mmocore/Components/Accounts/AccountMinerManager.h"
 #include "mmocore/Components/Bots/BotManager.h"
 #include "mmocore/Components/Dungeons/DungeonData.h"
 #include "mmocore/Components/Eidolons/EidolonInfoData.h"
@@ -639,7 +640,7 @@ bool CPlayer::SpendCurrency(int Price, int ItemID)
 	CPlayerItem* pItem = GetItem(ItemID);
 	if(pItem->GetValue() < Price)
 	{
-		GS()->Chat(m_ClientID, "Required {VAL}, but you have only {VAL} {STR}!", Price, pItem->GetValue(), pItem->Info()->GetName());
+		GS()->Chat(m_ClientID, "Required {VAL}, but you only have {VAL} {STR}!", Price, pItem->GetValue(), pItem->Info()->GetName());
 		return false;
 	}
 	return pItem->Remove(Price);
@@ -799,13 +800,13 @@ void CPlayer::IncreaseRelations(int Relevation)
 		Acc().m_Relations = min(Acc().m_Relations + Relevation, 100);
 
 		// Display a chat message to the player indicating the new relationship level.
-		GS()->Chat(m_ClientID, "Relationships have deteriorated to {INT}%!", Acc().m_Relations);
+		GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {INT}%!", Acc().m_Relations);
 
 		// Check if the player's relations with other entities is greater than or equal to 100
 		if(Acc().m_Relations >= 100)
 		{
 			// Display a chat message to the player warning them that they are wanted as a felon
-			GS()->Chat(m_ClientID, "You're wanted as a felon. Beware of the guards!");
+			GS()->Chat(m_ClientID, "An esteemed criminal like yourself has become the target of an intense manhunt. Be on high alert, for the watchful gaze of vigilant guards is upon you!");
 		}
 
 		// Save the player's account data, specifically the relationship level.

@@ -46,7 +46,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	// Check if the length of the login and password is between 4 and 12 characters
 	if(str_length(Login) > 12 || str_length(Login) < 4 || str_length(Password) > 12 || str_length(Password) < 4)
 	{
-		GS()->Chat(ClientID, "Username / Password must contain 4-12 characters");
+		GS()->Chat(ClientID, "The username and password must each contain 4 - 12 characters.");
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS; // Return mismatch length symbols error
 	}
 
@@ -57,10 +57,8 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
 	if(pRes->next())
 	{
-		GS()->Chat(ClientID, "- - - - [Your nickname is already registered!] - - - -");
-		GS()->Chat(ClientID, "Your game nick is a unique identifier, and it has already been used.");
-		GS()->Chat(ClientID, "You can restore access by contacting support, or change nick.");
-		GS()->Chat(ClientID, "Discord group \"{STR}\".", g_Config.m_SvDiscordInviteLink);
+		GS()->Chat(ClientID, "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
+		GS()->Chat(ClientID, "Discord: \"{STR}\".", g_Config.m_SvDiscordInviteLink);
 		return AccountCodeResult::AOP_NICKNAME_ALREADY_EXIST; // Return nickname already exists error
 	}
 
@@ -85,8 +83,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	// Insert the account into the tw_accounts_data table with the ID and nickname values
 	Database->Execute<DB::INSERT, 100>("tw_accounts_data", "(ID, Nick) VALUES ('%d', '%s')", InitID, cClearNick.cstr());
 
-	GS()->Chat(ClientID, "- - - - - - - [Successful registered!] - - - - - - -");
-	GS()->Chat(ClientID, "Don't forget your data, have a nice game!");
+	GS()->Chat(ClientID, "- Registration complete! Don't forget to save your data.");
 	GS()->Chat(ClientID, "# Your nickname is a unique identifier.");
 	GS()->Chat(ClientID, "# Log in: \"/login {STR} {STR}\"", cClearLogin.cstr(), cClearPass.cstr());
 	return AccountCodeResult::AOP_REGISTER_OK; // Return registration success
@@ -106,7 +103,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 	if(LengthLogin > 12 || LengthLogin < 4 || LengthPassword > 12 || LengthPassword < 4)
 	{
 		// Send error message to the client
-		GS()->Chat(ClientID, "Username / Password must contain 4-12 characters");
+		GS()->Chat(ClientID, "The username and password must each contain 4 - 12 characters.");
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS; // Return mismatch length symbols error
 	}
 
@@ -134,7 +131,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 		if(!LoginSuccess)
 		{
 			// Send error message to the client
-			GS()->Chat(ClientID, "Wrong login or password.");
+			GS()->Chat(ClientID, "Oops, that doesn't seem to be the right login or password");
 			return AccountCodeResult::AOP_LOGIN_WRONG; // Return wrong login or password error
 		}
 
@@ -194,16 +191,14 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 		Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '%s' WHERE ID = '%d'", aAddrStr, UserID);
 
 		// Send success messages to the client
-		GS()->Chat(ClientID, "- - - - - - - [Successful login!] - - - - - - -");
-		GS()->Chat(ClientID, "Don't forget that cl_motd_time must be set!");
-		GS()->Chat(ClientID, "Menu is available in call-votes!");
+		GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
 		GS()->m_pController->DoTeamChange(pPlayer, false);
 		LoadAccount(pPlayer, true);
 		return AccountCodeResult::AOP_LOGIN_OK; // Return login success
 	}
 
 	// Send error message to the client
-	GS()->Chat(ClientID, "Your nickname was not found in the Database.");
+	GS()->Chat(ClientID, "Sorry, we couldn't locate your username in our system.");
 	return AccountCodeResult::AOP_NICKNAME_NOT_EXIST; // Return nickname not found error
 }
 
@@ -215,7 +210,8 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// Broadcast a message to the player with their current location
 	const int ClientID = pPlayer->GetCID();
-	GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 200, "You are located {STR} ({STR})", Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "Zone PVP" : "Safe zone"));
+	GS()->Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 200, "You are currently positioned at {STR}({STR})!",
+		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"));
 
 	// Check if it is not the first initialization
 	if(!FirstInitilize)
@@ -297,7 +293,7 @@ void CAccountManager::DiscordConnect(int ClientID, const char* pDID) const
 	GS()->Chat(ClientID, "Your Discord ID has been updated.");
 	GS()->Chat(ClientID, "Check the connection status in discord \"/connect\".");
 #endif
-	}
+}
 
 bool CAccountManager::ChangeNickname(int ClientID)
 {
@@ -344,7 +340,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		// game settings
-		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings becomes valid after death");
+		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings become valid after death.");
 		GS()->AVM(ClientID, "MENU", MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
@@ -378,7 +374,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 
 		// if no modules are found
 		if(!IsFoundModules)
-			GS()->AVM(ClientID, "null", NOPE, TAB_SETTINGS_MODULES, "The list of modules equipment is empty.");
+			GS()->AVM(ClientID, "null", NOPE, TAB_SETTINGS_MODULES, "The list of equipment modules is empty.");
 
 		GS()->AddVotesBackpage(ClientID);
 		return true;
