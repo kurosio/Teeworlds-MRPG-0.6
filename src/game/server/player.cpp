@@ -201,7 +201,7 @@ void CPlayer::HandleScoreboardColors()
 			CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
-				CPlayer* pPlayer = GS()->GetPlayer(i);
+				CPlayer* pPlayer = GS()->GetPlayer(i, true);
 
 				// Add the team color of the group to both message packers
 				if(pPlayer && pPlayer->Acc().GetGroup())
