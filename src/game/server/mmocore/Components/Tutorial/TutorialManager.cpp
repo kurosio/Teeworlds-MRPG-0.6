@@ -18,15 +18,11 @@ void CTutorialManager::OnInit()
 	}
 
 	// load file
-	IOHANDLE File = io_open(FILE_NAME_INITILIZER, IOFLAG_READ);
-	dbg_assert(File != nullptr, "tutorial file not found (\"server_data/tutorial_data.json\")");
+	ByteArray RawData;
+	Tools::FileResult Result = Tools::Files::loadFile(FILE_NAME_INITILIZER, &RawData);
+	dbg_assert(Result != Tools::ERROR_FILE, "tutorial file not found (\"server_data/tutorial_data.json\")");
 
-	const int FileSize = (int)io_length(File) + 1;
-	char* pFileData = (char*)malloc(FileSize);
-	mem_zero(pFileData, FileSize);
-	io_read(File, pFileData, FileSize);
-
-	JsonTools::parseFromString(pFileData, [&](nlohmann::json& pJson)
+	Tools::Json::parseFromString((char*)RawData.data(), [&](nlohmann::json& pJson)
 	{
 		for(auto& pStep : pJson)
 		{
@@ -50,9 +46,6 @@ void CTutorialManager::OnInit()
 			}
 		}
 	});
-
-	mem_free(pFileData);
-	io_close(File);
 }
 
 // Function to check events in the tutorial

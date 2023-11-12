@@ -488,31 +488,76 @@ enum class AttributeType : int
 	Other,     // Other attribute
 };
 
-class JsonTools
+using ByteArray = std::basic_string<std::byte>;
+namespace Tools
 {
-public:
-	// Define a static function called parseFromString that takes in a string Data and a callback function pFuncCallback as parameters
-	static void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
+	enum FileResult : int
 	{
-		// Check data empty
-		if(!Data.empty())
-		{
-			try
-			{
-				// Parse the input string into a nlohmann::json object called JsonData
-				nlohmann::json JsonData = nlohmann::json::parse(Data);
+		ERROR_FILE,
+		SUCCESSFUL,
+	};
 
-				// Call the callback function with JsonData as the parameter
-				pFuncCallback(JsonData);
-			}
-			// Catch any exceptions thrown during the parsing process and handle them
-			catch(nlohmann::json::exception& s)
+	class Json
+	{
+	public:
+		// Define a static function called parseFromString that takes in a string Data and a callback function pFuncCallback as parameters
+		static void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
+		{
+			// Check data empty
+			if(!Data.empty())
 			{
-				// Output the error message to the debug log
-				dbg_msg("dialog error", "%s", s.what());
+				try
+				{
+					// Parse the input string into a nlohmann::json object called JsonData
+					nlohmann::json JsonData = nlohmann::json::parse(Data);
+
+					// Call the callback function with JsonData as the parameter
+					pFuncCallback(JsonData);
+				}
+				// Catch any exceptions thrown during the parsing process and handle them
+				catch(nlohmann::json::exception& s)
+				{
+					// Output the error message to the debug log
+					dbg_msg("dialog error", "%s", s.what());
+				}
 			}
 		}
-	}
+	};
+
+	class Files
+	{
+	public:
+
+		static FileResult loadFile(const char* pFile, ByteArray* pData)
+		{
+			IOHANDLE File = io_open(pFile, IOFLAG_READ);
+			if(!File)
+				return ERROR_FILE;
+
+			pData->resize((unsigned)io_length(File));
+			io_read(File, (void*)pData->data(), (unsigned)pData->size());
+			io_close(File);
+			return SUCCESSFUL;
+		}
+
+		static FileResult saveFile(const char* pFile, void* pData, unsigned size)
+		{
+			IOHANDLE File = io_open(pFile, IOFLAG_WRITE);
+			if(!File)
+				return ERROR_FILE;
+
+			io_write(File, pData, size);
+			io_close(File);
+			return SUCCESSFUL;
+		}
+
+		static FileResult deleteFile(const char* pFile)
+		{
+			int Result = fs_remove(pFile);
+			return Result == 0 ? SUCCESSFUL : ERROR_FILE;
+		}
+
+	};
 };
 
 class Instance

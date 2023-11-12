@@ -489,7 +489,7 @@ void CPlayerDialog::DialogEvents(DIALOGEVENTCUR Pos) const
 		EventData = QuestBotInfo::ms_aQuestBot[m_MobID].m_EventJsonData;
 	}
 
-	JsonTools::parseFromString(EventData, [Pos, this](nlohmann::json& pJson)
+	Tools::Json::parseFromString(EventData, [Pos, this](nlohmann::json& pJson)
 	{
 		const char* pElem = nullptr;
 		switch(Pos)

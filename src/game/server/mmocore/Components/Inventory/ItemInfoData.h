@@ -38,7 +38,7 @@ public:
 	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes, std::string Data)
 	{
 		m_Data = Data;
-		JsonTools::parseFromString(m_Data, [this](nlohmann::json& pJson)
+		Tools::Json::parseFromString(m_Data, [this](nlohmann::json& pJson)
 		{
 			// Parse random box
 			if(pJson.find("random_box") != pJson.end())

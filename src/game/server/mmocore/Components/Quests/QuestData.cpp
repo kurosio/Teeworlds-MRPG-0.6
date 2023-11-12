@@ -149,13 +149,8 @@ void CPlayerQuest::InitSteps()
 	}
 
 	// save file
-	IOHANDLE File = io_open(GetJsonFileName().c_str(), IOFLAG_WRITE);
-	if(!File)
-		return;
-
 	std::string Data = JsonQuestData.dump();
-	io_write(File, Data.c_str(), (unsigned)Data.length());
-	io_close(File);
+	Tools::Files::saveFile(GetJsonFileName().c_str(), (void*)Data.data(), (unsigned)Data.size());
 }
 
 void CPlayerQuest::LoadSteps()
@@ -165,25 +160,18 @@ void CPlayerQuest::LoadSteps()
 		return;
 
 	// loading file is not open pereinitilized steps
-	IOHANDLE File = io_open(GetJsonFileName().c_str(), IOFLAG_READ);
-	if(!File)
+	ByteArray RawData;
+	if(!Tools::Files::loadFile(GetJsonFileName().c_str(), &RawData))
 	{
 		InitSteps();
 		return;
 	}
 
-	const int FileSize = (int)io_length(File) + 1;
-	char* pFileData = (char*)malloc(FileSize);
-	mem_zero(pFileData, FileSize);
-	io_read(File, pFileData, FileSize);
-
-	// close and clear
-	nlohmann::json JsonQuestData = nlohmann::json::parse(pFileData);
-	mem_free(pFileData);
-	io_close(File);
+	// init steps
+	Info()->InitPlayerDefaultSteps(m_ClientID, m_aPlayerSteps);
 
 	// loading steps
-	Info()->InitPlayerDefaultSteps(m_ClientID, m_aPlayerSteps);
+	nlohmann::json JsonQuestData = nlohmann::json::parse((char*)RawData.data());
 	m_Step = JsonQuestData.value("current_step", 1);
 	for(auto& pStep : JsonQuestData["steps"])
 	{
@@ -291,13 +279,8 @@ bool CPlayerQuest::SaveSteps()
 	}
 
 	// replace file
-	IOHANDLE File = io_open(GetJsonFileName().c_str(), IOFLAG_WRITE);
-	if(!File)
-		return false;
-
 	std::string Data = JsonQuestData.dump();
-	io_write(File, Data.c_str(), (unsigned)Data.length());
-	io_close(File);
+	Tools::Files::saveFile(GetJsonFileName().c_str(), Data.data(), (unsigned)Data.size());
 	return true;
 }
 
@@ -314,6 +297,7 @@ void CPlayerQuest::ClearSteps()
 	m_aPlayerSteps.clear();
 
 	// Remove the temporary user quest data file
+	Tools::Files::deleteFile(GetJsonFileName().c_str());
 	fs_remove(GetJsonFileName().c_str());
 }
 
