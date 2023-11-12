@@ -517,7 +517,7 @@ void CCharacter::HandleHookActions()
 	// explode hook
 	if((m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_GROUND && distance(m_Core.m_HookPos, m_Core.m_Pos) > 48.0f) || m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_PLAYER)
 	{
-		if(m_pPlayer->GetItem(itExplodeImpulseHook)->IsEquipped())
+		if(m_pPlayer->GetItem(itExplodeHook)->IsEquipped())
 			GS()->CreateExplosion(m_Core.m_HookPos, ClientID, WEAPON_GRENADE, 1);
 	}
 }

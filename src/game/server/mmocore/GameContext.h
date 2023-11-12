@@ -296,7 +296,7 @@ enum
 	itRandomRelicsBox = 58,				// Random Relics box
 	itEidolonMerrilee = 59,				// Eidolon
 	itPoisonHook = 64,					// Poison hook
-	itExplodeImpulseHook = 65,			// Explode hook
+	itExplodeHook = 65,					// Explode hook
 	itSpiderHook = 66,					// Spider hook
 	itEidolonDryad = 80,				// Eidolon
 	itEidolonPigQueen = 88,				// Eidolon
