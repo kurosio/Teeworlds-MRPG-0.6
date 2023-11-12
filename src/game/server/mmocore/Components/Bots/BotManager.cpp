@@ -56,6 +56,10 @@ void CBotManager::OnInit()
 		BotInfo.m_aEquipSlot[EQUIP_RAKE] = 0;
 		BotInfo.m_aEquipSlot[EQUIP_EIDOLON] = 0;
 
+		std::string EquippedModules = pRes->getString("EquippedModules").c_str();
+		if(!EquippedModules.empty())
+			BotInfo.m_EquippedModules = EquippedModules;
+
 		// load teeinfo
 		std::string JsonString = pRes->getString("JsonTeeInfo").c_str();
 		JsonTools::parseFromString(JsonString, [&](nlohmann::json& pJson)

@@ -247,8 +247,11 @@ void CCharacter::FireWeapon()
 
 	DoWeaponSwitch();
 
-	// Check if the player has pressed the fire button in the latest input, learned the "FullAuto" skill
-	bool FullAuto = m_pPlayer->GetSkill(SkillMasterWeapon)->IsLearned();
+	// Check if the character has learned the skill for using weapons in full auto mode
+	const bool IsCharBot = m_pPlayer->IsBot();
+	bool FullAuto = (IsCharBot || m_pPlayer->GetSkill(SkillMasterWeapon)->IsLearned());
+
+	// Check if the character will fire their weapon
 	bool WillFire = CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses;
 
 	// Check if the player has the FullAuto skill, the fire button is pressed, and there is ammo in the active weapon
@@ -264,7 +267,6 @@ void CCharacter::FireWeapon()
 	}
 
 	// Check if the player is not a bot
-	const bool IsCharBot = m_pPlayer->IsBot();
 	if(!IsCharBot)
 	{
 		// Check if the player can interact with decorations
@@ -1325,13 +1327,9 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
 
-	// Dissable damage, if pFrom is null or if either m_DamageDisabled or pFrom's character's m_DamageDisabled flag is true
-	if(!pFrom || (m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled))
+	// Check if pFrom is null or if damage is disabled for the object or if damage is disabled for the object's character and it is not a specific type of bot
+	if(!pFrom || m_DamageDisabled || (pFrom->GetCharacter()->m_DamageDisabled && pFrom->GetBotType() != TYPE_BOT_EIDOLON))
 		return false;
-
-	// Allow self damage without some item
-	if(FromID == m_pPlayer->GetCID() && !m_pPlayer->GetItem(itRingSelfine)->IsEquipped())
-		return true;
 
 	// Check if the sender is a bot and the bot type is TYPE_BOT_EIDOLON
 	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
@@ -1348,6 +1346,10 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 
 		return false;
 	}
+
+	// Allow self damage without some item
+	if(FromID == m_pPlayer->GetCID() && !m_pPlayer->GetItem(itRingSelfine)->IsEquipped())
+		return true;
 
 	// Allow damage if the player is a bot and is a quest mob, and the quest mob is active for the client, and the damage is coming from another player who is not a bot
 	// OR if the damage is coming from another bot who is a quest mob, and the quest mob is active for the player, and the player is not a bot

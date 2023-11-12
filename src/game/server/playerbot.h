@@ -82,7 +82,10 @@ public:
 	int m_EidolonItemID;
 	class CPlayer* GetEidolonOwner() const;
 
+	class CPlayerItem* GetItem(ItemIdentifier ID) override;
+
 private:
+	std::unordered_map< int, std::unique_ptr<CPlayerItem> > m_Items {};
 	std::unordered_map < std::string /* effect */, int /* seconds */ > m_aEffects;
 	void EffectsTick() override;
 	void TryRespawn() override;

@@ -6,6 +6,8 @@
 #include <game/server/mmocore/Components/Inventory/ItemData.h>
 #include "DialogsData.h"
 
+#include <game/server/mmocore/Utils/DBSet.h>
+
 /************************************************************************/
 /*  Global data information bot                                         */
 /************************************************************************/
@@ -16,6 +18,7 @@ public:
 	CTeeInfo m_TeeInfos {};
 	int m_aEquipSlot[NUM_EQUIPPED] {};
 	bool m_aVisibleActive[MAX_PLAYERS] {};
+	DBSet m_EquippedModules {};
 
 	static bool IsDataBotValid(int BotID) { return (ms_aDataBot.find(BotID) != ms_aDataBot.end()); }
 	static std::map<int, DataBotInfo> ms_aDataBot;

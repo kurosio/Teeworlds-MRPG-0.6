@@ -184,7 +184,7 @@ public:
 		FUNCTIONS PLAYER ITEMS
 	========================================================== */
 	class CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }
-	class CPlayerItem* GetItem(ItemIdentifier ID);
+	virtual class CPlayerItem* GetItem(ItemIdentifier ID);
 	class CSkill* GetSkill(SkillIdentifier ID);
 	class CPlayerQuest* GetQuest(QuestIdentifier ID);
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }

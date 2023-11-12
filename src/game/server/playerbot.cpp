@@ -19,6 +19,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int Spaw
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
+	m_Items.clear();
 	ResetRespawnTick();
 }
 
@@ -105,6 +106,22 @@ CPlayer* CPlayerBot::GetEidolonOwner() const
 	if(m_BotType != TYPE_BOT_EIDOLON || m_MobID < 0 || m_MobID >= MAX_PLAYERS)
 		return nullptr;
 	return GS()->m_apPlayers[m_MobID];
+}
+
+CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
+{
+	dbg_assert(CItemDescription::Data().find(ID) != CItemDescription::Data().end(), "invalid referring to the CPlayerItem (from playerbot.h)");
+
+	auto it = m_Items.find(ID);
+	if(it == m_Items.end())
+	{
+		if(DataBotInfo::ms_aDataBot[m_BotID].m_EquippedModules.hasSet(std::to_string(ID)))
+			it = m_Items.emplace(ID, std::make_unique<CPlayerItem>(ID, m_ClientID, 1, 0, 100, 1)).first;
+		else
+			it = m_Items.emplace(ID, std::make_unique<CPlayerItem>(ID, m_ClientID, 0, 0, 0, 0)).first;
+	}
+
+	return it->second.get();
 }
 
 void CPlayerBot::EffectsTick()
