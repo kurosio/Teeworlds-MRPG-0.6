@@ -791,40 +791,42 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
 		{
 			GS()->CreateDropItem(m_Pos, Killer, { itGold, LossGold }, Force);
-			GS()->Chat(ClientID, "You lost {INT}%({INT}) gold, killer {STR}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+			GS()->Chat(ClientID, "You lost {INT}%({VAL}) gold, killer {STR}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
 		}
 	}
 
 	// Relationship system
-	if(m_pPlayer->Acc().IsRelationshipsDeterioratedToMax() && (KillerIsGuardian || KillerIsPlayer))
 	{
-		// Get the Gold item from the player
-		CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
-
-		// Reset player's relations and save relations
-		m_pPlayer->Acc().m_Relations = 0;
-		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
-
-		// Translate the value of the Gold item to a percentage for arrest and remove arrest
-		const int Arrest = translate_to_percent_rest(pItemGold->GetValue(), (float)MAX_ARREST_GOLD_BY_PERCENT);
-		if(pItemGold->Remove(Arrest))
+		if(m_pPlayer->Acc().IsRelationshipsDeterioratedToMax() && (KillerIsGuardian || KillerIsPlayer))
 		{
-			// Check if the killer is not a bot
-			// And add the Arrest amount to the killer's gold item
-			if(KillerIsPlayer)
-			{
-				pKiller->GetItem(itGold)->Add(Arrest);
-				GS()->Chat(-1, "{STR} killed wanted {STR}. Reward {VAL} gold!", Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
-			}
+			// Get the Gold item from the player
+			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
 
-			// Send a chat message to the client with their arrest information
-			GS()->Chat(ClientID, "You were arrested by the treasury for {VAL} gold!", Arrest);
+			// Reset player's relations and save relations
+			m_pPlayer->Acc().m_Relations = 0;
+			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
+
+			// Translate the value of the Gold item to a percentage for arrest and remove arrest
+			const int Arrest = min(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+			if(Arrest > 0 && pItemGold->Remove(Arrest))
+			{
+				// Check if the killer is not a bot
+				// And add the Arrest amount to the killer's gold item
+				if(KillerIsPlayer)
+				{
+					pKiller->GetItem(itGold)->Add(Arrest);
+					GS()->Chat(-1, "{STR} killed wanted {STR}. Reward {VAL} gold!", Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
+				}
+
+				// Send a chat message to the client with their arrest information
+				GS()->Chat(ClientID, "Arrested gold by the treasury for {INT}%({VAL}) gold!", g_Config.m_SvArrestGoldAtDeath, Arrest);
+			}
 		}
-	}
-	else if(KillerIsPlayer)
-	{
-		// Increase the relations of the player identified by the "Killer" index by 25
-		pKiller->IncreaseRelations(25);
+		else if(KillerIsPlayer)
+		{
+			// Increase the relations of the player identified by the "Killer" index by 25
+			pKiller->IncreaseRelations(25);
+		}
 	}
 }
 

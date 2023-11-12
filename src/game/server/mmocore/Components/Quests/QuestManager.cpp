@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "QuestManager.h"
 
+#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 constexpr auto TW_QUESTS_DAILY_BOARD = "tw_quests_daily_boards";
@@ -486,7 +487,8 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 		CPlayer* pPlayer = GS()->GetPlayer(i, true);
 		if(pPlayer && pPlayer->Acc().IsRelationshipsDeterioratedToMax())
 		{
-			const int Reward = translate_to_percent_rest(pPlayer->GetItem(itGold)->GetValue(), (float)MAX_ARREST_GOLD_BY_PERCENT);
+			CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
+			const int Reward = min(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
 			GS()->AVH(ClientID, HideID, "{STR} (Reward {VAL} gold)", Server()->ClientName(i), Reward);
 			GS()->AVM(ClientID, "null", NOPE, HideID, "Last seen: {STR}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
 			HasPlayers = true;
