@@ -149,7 +149,7 @@ public:
 
 private:
 	bool StartConversation(CPlayer* pTarget);
-	void HandleRelationsAtDeath(int Killer) const;
+	void HandleEventsDeath(int Killer, vec2 Force) const;
 };
 
 #endif

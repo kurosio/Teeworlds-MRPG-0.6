@@ -761,7 +761,7 @@ bool CCharacter::IncreaseMana(int Amount)
 	return true;
 }
 
-void CCharacter::HandleRelationsAtDeath(int Killer) const
+void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 {
 	// Get the client ID of the player
 	const int ClientID = m_pPlayer->GetCID();
@@ -780,6 +780,22 @@ void CCharacter::HandleRelationsAtDeath(int Killer) const
 	// Check if the killer is a player
 	bool KillerIsPlayer = !pKiller->IsBot();
 
+	// Loss gold at death
+	if(g_Config.m_SvLossGoldAtDeath && KillerIsPlayer)
+	{
+		// Get the Gold item from the player
+		CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+		const int LossGold = min(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvLossGoldAtDeath), pItemGold->GetValue());
+
+		// Swap loss gold near Killer and Player
+		if(LossGold > 0 && pItemGold->Remove(LossGold))
+		{
+			GS()->CreateDropItem(m_Pos, Killer, { itGold, LossGold }, Force);
+			GS()->Chat(ClientID, "You lost {INT}%({INT}) gold, killer {STR}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+		}
+	}
+
+	// Relationship system
 	if(m_pPlayer->Acc().IsRelationshipsDeterioratedToMax() && (KillerIsGuardian || KillerIsPlayer))
 	{
 		// Get the Gold item from the player
@@ -830,9 +846,6 @@ void CCharacter::Die(int Killer, int Weapon)
 			m_pPlayer->GetTempData().m_TempSafeSpawn = true;
 		}
 	}
-
-	// relationships
-	HandleRelationsAtDeath(Killer);
 
 	// a nice sound
 	GS()->m_pController->OnCharacterDeath(this, GS()->m_apPlayers[Killer], Weapon);
@@ -954,6 +967,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 			return false;
 
 		m_Health = 0;
+		HandleEventsDeath(FromCID, Force);
 		Die(FromCID, Weapon);
 		return false;
 	}
