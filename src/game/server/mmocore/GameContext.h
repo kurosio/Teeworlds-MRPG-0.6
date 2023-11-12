@@ -53,9 +53,10 @@ enum TickState
 {
 	Die = 1,
 	Respawn,
-	LastKill,
+	LastSelfKill,
 	LastEmote,
 	LastChangeInfo,
+	LastChangeTeam,
 	LastChat,
 	LastVoteTry,
 	LastDialog,

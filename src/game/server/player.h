@@ -177,7 +177,7 @@ public:
 	/* ==========================================================
 		FUNCTIONS PLAYER PARSING
 	========================================================== */
-	bool ParseItemsF3F4(int Vote);
+	bool ParseVoteOptionResult(int Vote);
 	bool ParseVoteUpgrades(const char* CMD, int VoteID, int VoteID2, int Get);
 
 	/* ==========================================================

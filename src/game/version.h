@@ -14,6 +14,6 @@ extern const char *GIT_SHORTREV_HASH;
 
 // ~~ RELEASE PROTOCOL(CLIENT/SERVER SIDE) VERSION
 // in case of a change it will force to update the client when entering the server to the value that is specified here
-#define PROTOCOL_VERSION_MRPG 2000
+#define CURRENT_PROTOCOL_VERSION_MRPG 2000
 
 #endif

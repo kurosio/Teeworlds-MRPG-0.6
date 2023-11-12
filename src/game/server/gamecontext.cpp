@@ -906,9 +906,8 @@ void CGS::OnPostSnap()
 
 void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 {
+	// If the unpacking failed, print a debug message and return
 	void* pRawMsg = m_NetObjHandler.SecureUnpackMsg(MsgID, pUnpacker);
-	CPlayer* pPlayer = m_apPlayers[ClientID];
-
 	if(!pRawMsg)
 	{
 		if(g_Config.m_Debug)
@@ -917,74 +916,112 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			str_format(aBuf, sizeof(aBuf), "dropped weird message '%s' (%d), failed on '%s'", m_NetObjHandler.GetMsgName(MsgID), MsgID, m_NetObjHandler.FailedMsgOn());
 			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
 		}
+
 		return;
 	}
+
+	// If the player object does not exist (i.e., it is a null pointer), return without doing anything
+	CPlayer* pPlayer = m_apPlayers[ClientID];
+	if(!pPlayer)
+		return;
 
 	if(Server()->ClientIngame(ClientID))
 	{
 		if(MsgID == NETMSGTYPE_CL_SAY)
 		{
-			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastChat] && pPlayer->m_aPlayerTick[LastChat] + Server()->TickSpeed() > Server()->Tick())
+			// Check if the player has already sent a chat message during this server tick
+			if(pPlayer->m_aPlayerTick[LastChat] > Server()->Tick())
 				return;
 
-			pPlayer->m_aPlayerTick[LastChat] = Server()->Tick();
+			// Set the tick value for when the player can send another chat message
+			pPlayer->m_aPlayerTick[LastChat] = Server()->Tick() + Server()->TickSpeed();
 
+			// Check if the message contains valid UTF-8 characters
 			CNetMsg_Cl_Say* pMsg = (CNetMsg_Cl_Say*)pRawMsg;
 			if(!str_utf8_check(pMsg->m_pMessage))
 				return;
 
-			if(pMsg->m_pMessage[0] == '/') // commands
+			// If the first character is a forward slash, treat the message as a command
+			char firstChar = pMsg->m_pMessage[0];
+			if(firstChar == '/')
+			{
 				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
-			else if(pMsg->m_pMessage[0] == '#') // rp action
+			}
+			// If the first character is a pound sign, send a chat message to the world
+			else if(firstChar == '#')
+			{
 				ChatWorldID(pPlayer->GetPlayerWorldID(), "Nearby:", "'{STR}' performed an act '{STR}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
-			else // chat
+			}
+			// Otherwise, send a regular chat message
+			else
+			{
 				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
+			}
 
+			// Copy the contents of pMsg->m_pMessage to pPlayer->m_aLastMsg
 			str_copy(pPlayer->m_aLastMsg, pMsg->m_pMessage, sizeof(pPlayer->m_aLastMsg));
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{
+			// Check if the player has recently voted
+			if(pPlayer->m_aPlayerTick[LastVoteTry] > Server()->Tick())
+				return;
+
+			// Set a cooldown for voting
+			pPlayer->m_aPlayerTick[LastVoteTry] = Server()->Tick() + (Server()->TickSpeed() / 2);
+
+			// Checking if the vote type is "option"
 			CNetMsg_Cl_CallVote* pMsg = (CNetMsg_Cl_CallVote*)pRawMsg;
-			if(str_comp_nocase(pMsg->m_pType, "option") != 0 || Server()->Tick() < (pPlayer->m_aPlayerTick[LastVoteTry] + (Server()->TickSpeed() / 2)))
-				return;
-
-			// post updated votes
-			if(pPlayer->IsActivePostVoteList())
-				pPlayer->PostVoteList();
-
-			// search votes
-			pPlayer->m_aPlayerTick[LastVoteTry] = Server()->Tick();
-			const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
+			if(str_comp_nocase(pMsg->m_pType, "option") == 0)
 			{
-				return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
-			});
+				// If the player has an active post vote list, post it
+				if(pPlayer->IsActivePostVoteList())
+					pPlayer->PostVoteList();
 
-			if(iter != m_aPlayerVotes[ClientID].end())
-			{
-				const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
-				ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason);
-				return;
+				// Finding the vote option in the player's vote list
+				const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
+				{
+					return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
+				});
+
+				// If the vote option is found
+				if(iter != m_aPlayerVotes[ClientID].end())
+				{
+					// Parsing the vote commands with the provided values
+					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
+					ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason);
+					return;
+				}
 			}
-
-			UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
 		{
+			// Parse the vote items from the message using the ParseVoteOptionResult function
 			CNetMsg_Cl_Vote* pMsg = (CNetMsg_Cl_Vote*)pRawMsg;
-			if(pPlayer->ParseItemsF3F4(pMsg->m_Vote))
+			if(pPlayer->ParseVoteOptionResult(pMsg->m_Vote))
 				return;
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_SETTEAM)
 		{
+			// Check if the player has recently voted to change teams
+			if(pPlayer->m_aPlayerTick[LastChangeTeam] > Server()->Tick())
+				return;
+
+			// Set a cooldown for change teams
+			pPlayer->m_aPlayerTick[LastChangeTeam] = Server()->Tick() + Server()->TickSpeed();
+
+			// Check if the player is not authenticated
 			if(!pPlayer->IsAuthed())
 			{
+				// Display a broadcast message to the player informing them to register or login
 				Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "Use /register <name> <pass>\nOr /login <name> <pass>.");
 				return;
 			}
 
+			// Inform the player that team change is not allowed
 			Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Team change is not allowed.");
 		}
 
@@ -995,17 +1032,19 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		else if(MsgID == NETMSGTYPE_CL_CHANGEINFO)
 		{
-			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastChangeInfo]
-				&& pPlayer->m_aPlayerTick[LastChangeInfo] + Server()->TickSpeed() * g_Config.m_SvInfoChangeDelay > Server()->Tick())
+			// Check if the last info change for the player has not expired yet
+			if(pPlayer->m_aPlayerTick[LastChangeInfo] > Server()->Tick())
 				return;
 
+			// Set the tick at which the next info change can occur for the player
+			pPlayer->m_aPlayerTick[LastChangeInfo] = Server()->Tick() + (Server()->TickSpeed() * g_Config.m_SvInfoChangeDelay);
+
+			// Check if the clan name and skin name passed in the message are valid UTF-8 strings
 			CNetMsg_Cl_ChangeInfo* pMsg = (CNetMsg_Cl_ChangeInfo*)pRawMsg;
 			if(!str_utf8_check(pMsg->m_pClan) || !str_utf8_check(pMsg->m_pSkin))
 				return;
 
-			pPlayer->m_aPlayerTick[LastChangeInfo] = Server()->Tick();
-
-			// set infos
+			// Set tee info
 			if(pPlayer->IsAuthed())
 			{
 				if(str_comp(Server()->ClientName(ClientID), pMsg->m_pName) != 0)
@@ -1033,122 +1072,103 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		else if(MsgID == NETMSGTYPE_CL_EMOTICON)
 		{
-			CNetMsg_Cl_Emoticon* pMsg = (CNetMsg_Cl_Emoticon*)pRawMsg;
-
-			if(g_Config.m_SvSpamprotection && pPlayer->m_aPlayerTick[LastEmote] && pPlayer->m_aPlayerTick[LastEmote] + (Server()->TickSpeed() / 2) > Server()->Tick())
+			// Check if the player has already used an emoticon in the current tick
+			if(pPlayer->m_aPlayerTick[LastEmote] > Server()->Tick())
 				return;
 
-			pPlayer->m_aPlayerTick[LastEmote] = Server()->Tick();
+			// Set the player's last emoticon tick to the current tick plus half of the tick speed
+			pPlayer->m_aPlayerTick[LastEmote] = Server()->Tick() + (Server()->TickSpeed() / 2);
+
+			// Send the received emoticon to the client with the given ClientID
+			CNetMsg_Cl_Emoticon* pMsg = (CNetMsg_Cl_Emoticon*)pRawMsg;
 			SendEmoticon(ClientID, pMsg->m_Emoticon);
 
-			// parse skills from emoticons
+			// Parse any skills associated with the received emoticon for the player
 			Mmo()->Skills()->ParseEmoticionSkill(pPlayer, pMsg->m_Emoticon);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_KILL)
 		{
-			if(pPlayer->m_aPlayerTick[LastKill] && pPlayer->m_aPlayerTick[LastKill] + Server()->TickSpeed() * 3 > Server()->Tick())
+			// Check if the last self-kill for the player occurred within the last half second
+			if(pPlayer->m_aPlayerTick[LastSelfKill] > Server()->Tick())
 				return;
 
+			// Set the tick for the last self-kill to the current tick plus half a second
+			pPlayer->m_aPlayerTick[LastSelfKill] = Server()->Tick() + (Server()->TickSpeed() / 2);
+
+			// Broadcast a message to the client indicating that self-kill is not allowed
 			Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Self kill is not allowed.");
-			//pPlayer->m_PlayerTick[TickState::LastKill] = Server()->Tick();
-			//pPlayer->KillCharacter(WEAPON_SELF);
+			// pPlayer->KillCharacter(WEAPON_SELF);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_ISDDNETLEGACY)
 		{
+			// Get client information from the server
 			IServer::CClientInfo Info;
 			Server()->GetClientInfo(ClientID, &Info);
+
+			// Check if client has already provided DDNet version
 			if(Info.m_GotDDNetVersion)
-			{
 				return;
-			}
+
+			// Get DDNet version from the unpacker
 			int DDNetVersion = pUnpacker->GetInt();
+
+			// Check for errors or negative DDNet version to default if there were errors or negative version
 			if(pUnpacker->Error() || DDNetVersion < 0)
-			{
 				DDNetVersion = VERSION_DDRACE;
-			}
+
+			// Set the DDNet version for the client on the server side
 			Server()->SetClientDDNetVersion(ClientID, DDNetVersion);
-			//OnClientDDNetVersionKnown(ClientID);
 		}
 		else if(MsgID == NETMSGTYPE_CL_SHOWOTHERSLEGACY)
 		{
-			/*if(g_Config.m_SvShowOthers && !g_Config.m_SvShowOthersDefault)
-			{
-				CNetMsg_Cl_ShowOthersLegacy *pMsg = (CNetMsg_Cl_ShowOthersLegacy *)pRawMsg;
-				pPlayer->m_ShowOthers = pMsg->m_Show;
-			}*/
+			// empty
 		}
 		else if(MsgID == NETMSGTYPE_CL_SHOWOTHERS)
 		{
-			/*if(g_Config.m_SvShowOthers && !g_Config.m_SvShowOthersDefault)
-			{
-				CNetMsg_Cl_ShowOthers *pMsg = (CNetMsg_Cl_ShowOthers *)pRawMsg;
-				pPlayer->m_ShowOthers = pMsg->m_Show;
-			}*/
+			// empty
 		}
 		else if(MsgID == NETMSGTYPE_CL_SHOWDISTANCE)
 		{
-			//CNetMsg_Cl_ShowDistance *pMsg = (CNetMsg_Cl_ShowDistance *)pRawMsg;
-			//pPlayer->m_ShowDistance = vec2(pMsg->m_X, pMsg->m_Y);
+			// empty
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////
-	///////////// If the client has passed the test, the alternative is to use the client
+		///////////// If the client has passed the test, the alternative is to use the client
 		else if(MsgID == NETMSGTYPE_CL_ISMRPGSERVER)
 		{
-			/*
-				receive information about the client if the old version is written and prohibit the use of all client functions
-				to avoid crashes between package sizes
-			*/
+			// Cast the received raw message into a CNetMsg_Cl_IsMRPGServer object
 			CNetMsg_Cl_IsMRPGServer* pMsg = (CNetMsg_Cl_IsMRPGServer*)pRawMsg;
-			if(pMsg->m_Version != PROTOCOL_VERSION_MRPG)
+
+			// Check if the version of the message matches the protocol version defined as CURRENT_PROTOCOL_VERSION_MRPG
+			if(pMsg->m_Version != CURRENT_PROTOCOL_VERSION_MRPG)
 			{
+				// If the versions don't match, kick the client with a message to update their client
 				Server()->Kick(ClientID, "Update client use updater or download in discord.");
 				return;
 			}
 
+			// Set the client's state as an MRPG server
 			Server()->SetStateClientMRPG(ClientID, true);
 
-			// send check success message
+			// Send a check success message to the client
 			CNetMsg_Sv_AfterIsMRPGServer GoodCheck;
 			Server()->SendPackMsg(&GoodCheck, MSGFLAG_VITAL | MSGFLAG_FLUSH | MSGFLAG_NORECORD, ClientID);
-			dbg_msg("test", "client %d : mmo: yes", ClientID);
 		}
-		/*else if (MsgID == NETMSGTYPE_CL_SKINCHANGE)
-		{
-			if(pPlayer->m_aPlayerTick[TickState::LastChangeInfo] && pPlayer->m_aPlayerTick[TickState::LastChangeInfo]+Server()->TickSpeed()*5 > Server()->Tick())
-				return;
-
-			pPlayer->m_aPlayerTick[TickState::LastChangeInfo] = Server()->Tick();
-			CNetMsg_Cl_SkinChange *pMsg = (CNetMsg_Cl_SkinChange *)pRawMsg;
-
-			for(int p = 0; p < NUM_SKINPARTS; p++)
-			{
-				str_utf8_copy_num(pPlayer->Acc().m_aaSkinPartNames[p], pMsg->m_apSkinPartNames[p], sizeof(pPlayer->Acc().m_aaSkinPartNames[p]), MAX_SKIN_LENGTH);
-				pPlayer->Acc().m_aUseCustomColors[p] = pMsg->m_aUseCustomColors[p];
-				pPlayer->Acc().m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
-			}
-
-			// update all clients
-			for(int i = 0; i < MAX_CLIENTS; ++i)
-			{
-				if(!m_apPlayers[i] || Server()->GetClientProtocolVersion(i) < MIN_SKINCHANGE_CLIENTVERSION)
-					continue;
-
-				SendSkinChange(pPlayer->GetCID(), i);
-			}
-		}
-		else
+		/*else
 			Mmo()->OnMessage(MsgID, pRawMsg, ClientID);*/
 	}
 	else
 	{
 		if(MsgID == NETMSGTYPE_CL_STARTINFO)
 		{
-			if(!pPlayer || pPlayer->m_aPlayerTick[LastChangeInfo] != 0)
+			// This gives a initialize single used start info
+			// Check if the player's last change info tick is not zero
+			if(pPlayer->m_aPlayerTick[LastChangeInfo] != 0)
 				return;
 
+			// Set the player's last change info tick to the current server tick
 			pPlayer->m_aPlayerTick[LastChangeInfo] = Server()->Tick();
 
 			// set start infos

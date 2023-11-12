@@ -43,8 +43,6 @@ public:
 
 private:
 	void AddCommand(const char* pName, const char* pParams, IConsole::FCommandCallback pfnFunc, void* pUser, const char* pHelp);
-
-	void LastChat(class CPlayer* pPlayer);
 };
 
 #endif

@@ -810,7 +810,7 @@ void CPlayer::IncreaseRelations(int Relevation)
 /* #########################################################################
 	FUNCTIONS PLAYER PARSING
 ######################################################################### */
-bool CPlayer::ParseItemsF3F4(int Vote)
+bool CPlayer::ParseVoteOptionResult(int Vote)
 {
 	if(!m_pCharacter)
 	{

@@ -431,7 +431,6 @@ void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
 
 void CCommandProcessor::ChatCmd(const char* pMessage, CPlayer* pPlayer)
 {
-	LastChat(pPlayer);
 	const int ClientID = pPlayer->GetCID();
 
 	int Char = 0;
@@ -464,17 +463,15 @@ void CCommandProcessor::ChatCmd(const char* pMessage, CPlayer* pPlayer)
 	GS()->Chat(ClientID, "Command {STR} not found!", pMessage);
 }
 
+// Function to add a new command to the command processor
 void CCommandProcessor::AddCommand(const char* pName, const char* pParams, IConsole::FCommandCallback pfnFunc, void* pUser, const char* pHelp)
 {
+	// Register the command in the console
 	GS()->Console()->Register(pName, pParams, CFGFLAG_CHAT, pfnFunc, pUser, pHelp);
-	if(!m_CommandManager.AddCommand(pName, pHelp, pParams, pfnFunc, pUser))
-		dbg_msg("chat_cmd", "added command: '/%s' :: WorldID %d", pName, m_pGS->GetWorldID());
-	else
-		dbg_msg("chat_cmd", "failed to add command: '/%s' :: WorldID %d", pName, m_pGS->GetWorldID());
-}
 
-void CCommandProcessor::LastChat(CPlayer* pPlayer)
-{
-	if(pPlayer->m_aPlayerTick[TickState::LastChat] + GS()->Server()->TickSpeed() <= GS()->Server()->Tick())
-		pPlayer->m_aPlayerTick[TickState::LastChat] = GS()->Server()->Tick();
+	// Add the command to the command manager
+	bool Succesful = m_CommandManager.AddCommand(pName, pHelp, pParams, pfnFunc, pUser);
+
+	// Check if the command was added successfully
+	dbg_assert(!Succesful, "failed to add (chat - command)");
 }
