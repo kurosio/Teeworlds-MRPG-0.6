@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_COMPONENT_QUEST_DATA_H
 #define GAME_SERVER_COMPONENT_QUEST_DATA_H
 
+#define QUEST_PREFIX_DEBUG "quest_system"
+
 #include "QuestDataInfo.h"
 
 class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map <int, CPlayerQuest > > >

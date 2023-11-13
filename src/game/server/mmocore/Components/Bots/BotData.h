@@ -128,6 +128,7 @@ public:
 		CItem m_PickupItem {};
 		CItem m_RequiredItem {};
 		std::string m_CompletionText {};
+		std::string m_TaskName {};
 
 		int m_QuestBotID {};
 		DefeatMob m_DefeatMobInfo {};

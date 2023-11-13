@@ -101,6 +101,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				const int Step = p.value("step", 1);
 				const bool Navigator = p.value("navigator", true);
 				const std::string CompletionText = p.value("completion_text", "");
+				const std::string TaskName = p.value("task_name", "Demands a bit of action");
 
 				// initialize data flags
 				CItem PickUpItem {};
@@ -213,6 +214,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					Move.m_RequiredItem = RequiredItem;
 					Move.m_Position = Position;
 					Move.m_CompletionText = CompletionText;
+					Move.m_TaskName = TaskName;
 					Move.m_Type = max(Type, (unsigned int)TaskRequiredMoveTo::Types::MOVE_ONLY);
 					Move.m_QuestBotID = m_SubBotID;
 					Move.m_Interaction = Interactive;

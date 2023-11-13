@@ -203,11 +203,24 @@ void CPlayerQuest::LoadSteps()
 		// If "move_to" key exists in pStep
 		if(pStep.find("move_to") != pStep.end())
 		{
-			// Iterate through each element in the "move_to" array
-			for(auto& p : pStep["move_to"])
+			// Check if the size of the m_RequiredMoveTo vector in the m_Bot member of the m_aPlayerSteps vector at the index SubBotID is less than or equal to 0
+			int MoveToElementsSize = (int)m_aPlayerSteps[SubBotID].m_Bot.m_RequiredMoveTo.size();
+			if(MoveToElementsSize <= 0)
 			{
-				// Add the value of "complete" in p to the m_aMoveToProgress array in the corresponding player step
-				m_aPlayerSteps[SubBotID].m_aMoveToProgress.push_back(p.value("complete", false));
+				// Print a debug message andd call InitSteps
+				dbg_msg("quest system", "Reinitialization called... Player save file has a MoveTo value, but it is not present in the data!");
+				InitSteps();
+				return;
+			}
+
+			// Initialize the size of the MoveToProgress array based on the number of required move-to elements
+			m_aPlayerSteps[SubBotID].m_aMoveToProgress.resize(MoveToElementsSize, false);
+
+			// Iterate through each element in the "move_to" array of pStep
+			for(int p = 0; p < (int)pStep["move_to"].size(); p++)
+			{
+				// Set the corresponding index in m_aMoveToProgress array of m_aPlayerSteps to the "complete" value of pStep["move_to"][p]
+				m_aPlayerSteps[SubBotID].m_aMoveToProgress[p] = pStep["move_to"][p].value("complete", false);
 			}
 		}
 

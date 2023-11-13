@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "QuestStepDataInfo.h"
 
@@ -36,13 +36,13 @@ void CQuestStepDescription::UpdateBot()
 	const bool ActiveStepBot = IsActiveStep(pGS);
 	if(ActiveStepBot && BotClientID <= -1)
 	{
-		dbg_msg("quest sync", "quest to step bot active, but mob not found create");
+		dbg_msg(QUEST_PREFIX_DEBUG, "The mob was not found, but the quest step remains active for players.");
 		pGS->CreateBot(TYPE_BOT_QUEST, m_Bot.m_BotID, m_Bot.m_SubBotID);
 	}
 	// if the bot is not active for more than one player
 	if(!ActiveStepBot && BotClientID >= MAX_PLAYERS)
 	{
-		dbg_msg("quest sync", "mob found, but quest to step not active on players");
+		dbg_msg(QUEST_PREFIX_DEBUG, "The mob was found, but the quest step is not active for players.");
 		delete pGS->m_apPlayers[BotClientID];
 		pGS->m_apPlayers[BotClientID] = nullptr;
 	}
@@ -168,7 +168,7 @@ bool CPlayerQuestStep::Finish()
 		if(!pPlayer->GetQuest(QuestID)->SaveSteps())
 		{
 			GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
-			dbg_msg("quest step", "[quest step post finish] can't save file.");
+			dbg_msg(QUEST_PREFIX_DEBUG, "After completing the quest step, I am unable to save the file.");
 			m_StepComplete = false;
 		}
 
@@ -365,7 +365,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 								pRequired.m_Position
 							});
 
-						dbg_msg("test", "CREATE MOB QUEST");
+						dbg_msg(QUEST_PREFIX_DEBUG, "Creating a quest mob");
 					}
 
 					pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[pPlayer->GetCID()] = true;
@@ -465,50 +465,102 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!pPlayer)
 		return;
 
-	dynamic_string Buffer("\n\n");
+	dynamic_string Buffer("");
 	const char* pLang = pPlayer->GetLanguage();
 
 	// show required bots
 	if(!m_Bot.m_RequiredDefeat.empty())
 	{
+		Buffer.append_at(Buffer.length(), "\n\n");
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "# Slay enemies:"));
 		for(auto& p : m_Bot.m_RequiredDefeat)
 		{
+			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count == p.m_Value ? "☑" : "☐");
+
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "- Defeat {STR} ({INT}/{INT})", DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID], p.m_Value);
+			GS()->Server()->Localization()->Format(Buffer, pLang, "- {STR} Defeat {STR} ({INT}/{INT})",
+				pCompletePrefix, DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
 		}
 	}
 
 	// show required items
 	if(!m_Bot.m_RequiredItems.empty())
 	{
+		Buffer.append_at(Buffer.length(), "\n\n");
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "# Retrieve an item's:"));
 		for(auto& pRequied : m_Bot.m_RequiredItems)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequied.m_Item);
-			Buffer.append_at(Buffer.length(), "\n");
+			const char* pCompletePrefix = (pPlayerItem->GetValue() == pRequied.m_Item.GetValue() ? "☑" : "☐");
+			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show a" : "Require a";
 
-			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show" : "Need";
-			GS()->Server()->Localization()->Format(Buffer, pLang, "- {STR} {STR} ({VAL}/{VAL})",
-				GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pRequied.m_Item.GetValue());
-		}
-	}
-
-	// show reward items
-	if(!m_Bot.m_RewardItems.empty())
-	{
-		for(auto& p : m_Bot.m_RewardItems)
-		{
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "- Receive {STR} ({VAL})", p.Info()->GetName(), p.GetValue());
+			GS()->Server()->Localization()->Format(Buffer, pLang, "- {STR} {STR} {STR} ({VAL}/{VAL}).",
+				pCompletePrefix, GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pRequied.m_Item.GetValue());
 		}
 	}
 
 	// show move to
 	if(!m_Bot.m_RequiredMoveTo.empty())
 	{
-		Buffer.append_at(Buffer.length(), "\n");
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Requires some action ({VAL}/{VAL})", GetCountMoveToComplected(), m_Bot.m_RequiredMoveTo.size());
+		Buffer.append_at(Buffer.length(), "\n\n");
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "# Trigger some action's:"));
+
+		// Create an unordered map called m_Order with key type int and value type unordered_map<string, pair<int, int>> for special order task's
+		std::unordered_map<int /* step */, std::unordered_map<std::string /* task name */, std::pair<int /* complected */, int /* count */>>> m_Order;
+		m_Order.reserve(m_Bot.m_RequiredMoveTo.size());
+		for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
+		{
+			// If TaskMapID is empty, assign it the value "Demands a bit of action"
+			std::string TaskMapID = m_Bot.m_RequiredMoveTo[i].m_TaskName;
+
+			// If m_aMoveToProgress[i] is true, increment the first value of the pair in m_Order[Step][TaskMapID]
+			int Step = m_Bot.m_RequiredMoveTo[i].m_Step;
+			if(m_aMoveToProgress[i])
+				m_Order[Step][TaskMapID].first++;
+
+			// Increment the second value of the pair in m_Order[Step][TaskMapID]
+			m_Order[Step][TaskMapID].second++;
+		}
+
+		// Loop through each element in m_Order
+		for(auto& [Step, TaskMap] : m_Order)
+		{
+			// Loop through each element in TaskMap
+			for(auto& [Name, StepCount] : TaskMap)
+			{
+				// Append a newline character to Buffer
+				Buffer.append_at(Buffer.length(), "\n");
+
+				// Check for one task
+				const int& TaskNum = StepCount.second;
+				const int& TaskCompleted = StepCount.first;
+				const char* pCompletePrefix = (StepCount.first == StepCount.second ? "☑" : "☐");
+				if(TaskNum == 1)
+				{
+					GS()->Server()->Localization()->Format(Buffer, pLang, "- {INT}. {STR} {STR}.", Step, pCompletePrefix, Name.c_str());
+					continue;
+				}
+
+				// Multi task
+				GS()->Server()->Localization()->Format(Buffer, pLang, "- {INT}. {STR} {STR} ({INT}/{INT}).", Step, pCompletePrefix, Name.c_str(), TaskCompleted, TaskNum);
+			}
+		}
 	}
 
+	// show reward items
+	if(!m_Bot.m_RewardItems.empty())
+	{
+		Buffer.append_at(Buffer.length(), "\n\n");
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "# Reward for completing a task:"));
+		for(auto& p : m_Bot.m_RewardItems)
+		{
+			Buffer.append_at(Buffer.length(), "\n");
+			GS()->Server()->Localization()->Format(Buffer, pLang, "- Obtain a {STR} ({INT}).", p.Info()->GetName(), p.GetValue());
+		}
+	}
+
+	// Copy the contents of the buffer `Buffer` into the character array `aBufQuestTask`,
 	str_copy(aBufQuestTask, Buffer.buffer(), Size);
 	Buffer.clear();
 }

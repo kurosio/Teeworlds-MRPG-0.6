@@ -518,7 +518,9 @@ namespace Tools
 				catch(nlohmann::json::exception& s)
 				{
 					// Output the error message to the debug log
-					dbg_msg("dialog error", "%s", s.what());
+					char aBufError[2048];
+					str_format(aBufError, sizeof(aBufError), "[json parse] Invalid json: %s", s.what());
+					dbg_assert(false, aBufError);
 				}
 			}
 		}

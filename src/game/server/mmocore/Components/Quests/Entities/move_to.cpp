@@ -71,7 +71,7 @@ CEntityMoveTo::~CEntityMoveTo()
 			delete GS()->m_apPlayers[CID];
 			GS()->m_apPlayers[CID] = nullptr;
 
-			dbg_msg("test", "DELETE MOVE TO MOB");
+			dbg_msg(QUEST_PREFIX_DEBUG, "Delete questing mob");
 		}
 	}
 
@@ -137,7 +137,7 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 		// check quest state
 		if(!pQuestStep->IsComplete())
 		{
-			char aBufQuestTask[256] {};
+			char aBufQuestTask[512] {};
 			GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
 			str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
 			GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
