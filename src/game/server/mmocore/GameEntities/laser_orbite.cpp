@@ -9,7 +9,7 @@ CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntPa
 {
 	m_Mask = Mask;
 	m_LaserType = LaserType;
-	m_AppendPos = vec2(centrelized_frandom(0.f, GetProximityRadius() / 1.2f), centrelized_frandom(0.f, GetProximityRadius() / 1.2f));
+	m_AppendPos = vec2(centrelized_frandom(0.f, GetProximityRadius() / 1.5f), centrelized_frandom(0.f, GetProximityRadius() / 1.5f));
 	m_Pos = m_pEntParent ? m_pEntParent->GetPos() + (Type == EntLaserOrbiteType::INSIDE_ORBITE_RANDOM ? m_AppendPos : vec2(0.f,0.f)) : vec2(0.f, 0.f);
 	GameWorld()->InsertEntity(this);
 

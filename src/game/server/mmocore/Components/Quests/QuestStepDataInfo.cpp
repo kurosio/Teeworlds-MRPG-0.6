@@ -331,82 +331,85 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 			if(CurrentStep != pRequired.m_Step || m_aMoveToProgress[i])
 				continue;
 
-			// add entity move to
-			if(pRequired.m_WorldID == pPlayer->GetPlayerWorldID())
+			// Always creating navigator in other worlds 
+			if(pRequired.m_WorldID != pPlayer->GetPlayerWorldID())
 			{
-				// add move to mob defeat point
-				CPlayerBot* pPlayerBot = nullptr;
-				if(pRequired.IsHasDefeatMob())
-				{
-					for(int c = MAX_PLAYERS; c < MAX_CLIENTS; c++)
-					{
-						CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[c]);
-						if(pPlBotSearch && pPlBotSearch->GetQuestBotMobInfo().m_QuestID == pQuest->GetID() &&
-							pPlBotSearch->GetQuestBotMobInfo().m_QuestStep == GetStepPos() &&
-							pPlBotSearch->GetQuestBotMobInfo().m_MoveToStep == i)
-						{
-							pPlayerBot = pPlBotSearch;
-							break;
-						}
-					}
-
-					if(!pPlayerBot)
-					{
-						int MobClientID = GS()->CreateBot(TYPE_BOT_QUEST_MOB, pRequired.m_DefeatMobInfo.m_BotID, -1);
-						pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[MobClientID]);
-						pPlayerBot->InitQuestBotMobInfo(
-							{
-								GetQuestID(),
-								GetStepPos(),
-								i,
-								pRequired.m_DefeatMobInfo.m_AttributePower,
-								pRequired.m_DefeatMobInfo.m_AttributeSpread,
-								pRequired.m_DefeatMobInfo.m_WorldID,
-								pRequired.m_Position
-							});
-
-						dbg_msg(QUEST_PREFIX_DEBUG, "Creating a quest mob");
-					}
-
-					pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[pPlayer->GetCID()] = true;
-					pPlayerBot->GetQuestBotMobInfo().m_CompleteClient[pPlayer->GetCID()] = false;
-				}
-
-				// Check if there is a move-to entity at the required position
-				CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pRequired.m_Position);
-				if(!pEntMoveTo)
-				{
-					// If there is no move-to entity, create a new one
-					pEntMoveTo = AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i], pPlayerBot);
-
-					// Check if the required task is navigation or defeating a mob
-					if(!pRequired.m_Navigator || pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
-					{
-						// Create orbital path and navigator for it
-						float Radius;
-						CLaserOrbite* pEntOrbite;
-
-						// If the required task is to defeat a mob, set a smaller radius for the orbit
-						if(pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
-						{
-							Radius = 400.f;
-							pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, 9, EntLaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
-						}
-						else
-						{
-							Radius = 800.f;
-							pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, 12, EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
-						}
-
-						// Add navigator to the orbital path
-						AddEntityNavigator(pEntOrbite->GetPos(), pRequired.m_WorldID, Radius, &m_aMoveToProgress[i]);
-					}
-				}
+				AddEntityNavigator(pRequired.m_Position, pRequired.m_WorldID, 0.f, &m_aMoveToProgress[i]);
+				continue;
 			}
 
-			// add entity path navigator
-			if(pRequired.m_Navigator)
+			// Add move to point questing mob
+			CPlayerBot* pPlayerBot = nullptr;
+			if(pRequired.IsHasDefeatMob())
+			{
+				for(int c = MAX_PLAYERS; c < MAX_CLIENTS; c++)
+				{
+					CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[c]);
+					if(pPlBotSearch && pPlBotSearch->GetQuestBotMobInfo().m_QuestID == pQuest->GetID() &&
+						pPlBotSearch->GetQuestBotMobInfo().m_QuestStep == GetStepPos() &&
+						pPlBotSearch->GetQuestBotMobInfo().m_MoveToStep == i)
+					{
+						pPlayerBot = pPlBotSearch;
+						break;
+					}
+				}
+
+				if(!pPlayerBot)
+				{
+					int MobClientID = GS()->CreateBot(TYPE_BOT_QUEST_MOB, pRequired.m_DefeatMobInfo.m_BotID, -1);
+					pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[MobClientID]);
+					pPlayerBot->InitQuestBotMobInfo(
+						{
+							GetQuestID(),
+							GetStepPos(),
+							i,
+							pRequired.m_DefeatMobInfo.m_AttributePower,
+							pRequired.m_DefeatMobInfo.m_AttributeSpread,
+							pRequired.m_DefeatMobInfo.m_WorldID,
+							pRequired.m_Position
+						});
+
+					dbg_msg(QUEST_PREFIX_DEBUG, "Creating a quest mob");
+				}
+
+				pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[pPlayer->GetCID()] = true;
+				pPlayerBot->GetQuestBotMobInfo().m_CompleteClient[pPlayer->GetCID()] = false;
+			}
+
+			// Check if there is a move-to entity at the required position
+			CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pRequired.m_Position);
+			if(!pEntMoveTo)
+			{
+				// If there is no move-to entity, create a new one
+				pEntMoveTo = AddEntityMoveTo(&pRequired, &m_aMoveToProgress[i], pPlayerBot);
+
+				// Check if the required task is navigation or defeating a mob
+				if(!pRequired.m_Navigator || pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
+				{
+					// Create orbital path and navigator for it
+					float Radius;
+					CLaserOrbite* pEntOrbite;
+
+					// If the required task is to defeat a mob, set a smaller radius for the orbit
+					if(pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
+					{
+						Radius = 400.f;
+						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), EntLaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
+					}
+					else
+					{
+						Radius = 800.f;
+						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
+					}
+
+					// Add navigator to the orbital path
+					AddEntityNavigator(pEntOrbite->GetPos(), pRequired.m_WorldID, Radius, &m_aMoveToProgress[i]);
+					continue;
+				}
+
+				// Add navigator to the orbital path
 				AddEntityNavigator(pRequired.m_Position, pRequired.m_WorldID, 0.f, &m_aMoveToProgress[i]);
+			}
 		}
 	}
 }
