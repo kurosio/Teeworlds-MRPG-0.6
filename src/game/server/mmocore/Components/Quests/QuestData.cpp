@@ -341,7 +341,7 @@ bool CPlayerQuest::Accept()
 	// Send quest information to the player
 	if(Info()->IsDaily())
 	{
-		pGS->Chat(ClientID, "Daily quest: \"{STR}\" accepted!", Info()->GetName());
+		pGS->Chat(ClientID, "Daily quest: '{STR}' accepted!", Info()->GetName());
 	}
 	else
 	{

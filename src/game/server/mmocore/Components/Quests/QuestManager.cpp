@@ -224,7 +224,7 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		if(!pBoard->QuestsAvailables(pPlayer))
 		{
 			// If there are more than 3 assignments per day that can be accepted, send a chat message to the client with the error message
-			GS()->Chat(ClientID, "More than 3 assignments per day cannot be accepted / finished!");
+			GS()->Chat(ClientID, "More than 3 assignments per day cannot be accepted/finished.");
 			return true;
 		}
 
@@ -509,7 +509,7 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 {
 	// Get the client's ID
 	const int ClientID = pPlayer->GetCID();
-	
+
 	// Send a message to the ui client with the name of the board they're currently on
 	GS()->AVH(ClientID, TAB_DAILY_BOARD, "{STR}", pBoard->GetName());
 	GS()->AVM(ClientID, "null", NOPE, TAB_DAILY_BOARD, "Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);

@@ -319,7 +319,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 		CPlayer* pChatterPlayer = GetPlayer(ChatterClientID, true);
 		if(!pChatterPlayer || pChatterPlayer->Acc().m_GuildID <= 0)
 		{
-			Chat(ChatterClientID, "This chat is for guilds and team members!");
+			Chat(ChatterClientID, "This chat is for guilds and team members.");
 			return;
 		}
 
@@ -1882,7 +1882,7 @@ bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, c
 	CPlayer* pPlayer = GetPlayer(ClientID, false, true);
 	if(!pPlayer)
 	{
-		Chat(ClientID, "Use it when you're not dead!");
+		Chat(ClientID, "Deploy it while still alive!");
 		return true;
 	}
 
@@ -2048,16 +2048,22 @@ void CGS::SendDayInfo(int ClientID)
 {
 	if(ClientID == -1)
 	{
-		Chat(-1, "{STR} came!", Server()->GetStringTypeDay());
+		switch(m_DayEnumType)
+		{
+			case MORNING_TYPE: Chat(-1, "Rise and shine! The sun has made its triumphant return, banishing the darkness of night. It's time to face the challenges of a brand new day."); break;
+			case EVENING_TYPE: Chat(-1, "The sun has set, and the night sky has taken over."); break;
+			case NIGHT_TYPE: Chat(-1, "Night has fallen!"); break;
+			default:break;
+		}
 	}
 
 	if(m_DayEnumType == NIGHT_TYPE)
 	{
-		Chat(ClientID, "Nighttime experience was increased to {INT}%", m_MultiplierExp);
+		Chat(ClientID, "Nighttime adventure has been boosted by {INT}%!", m_MultiplierExp);
 	}
 	else if(m_DayEnumType == MORNING_TYPE)
 	{
-		Chat(ClientID, "Experience is now 100%");
+		Chat(ClientID, "Experience is now at 100%.");
 	}
 }
 
