@@ -8,43 +8,64 @@
 #include <game/server/mmocore/Components/Auction/AuctionData.h>
 #include <game/server/mmocore/Utils/FieldData.h>
 
-struct CAccountData
+class CHouseData;
+class GroupData;
+
+class CAccountData
 {
+	int m_ID {};
+
+	class CHouseData* m_pHouseData {};
+	class GroupData* m_pGroupData {};
+
+public:
+	void SetUniqueID(int ID); // Function to set the ID of an object
+	int GetID() const { return m_ID; } // Function to get the ID of an object
+
+	/*
+	 * Group function: house system
+	 */
+	void ReinitializeHouse(); // This function re-initializes the house object
+	CHouseData* GetHouse() const { return m_pHouseData; } // Get the house data for the current object
+	bool HasHouse() const { return m_pHouseData != nullptr; } // Check if the current object has house data
+
+	/*
+	 * Group function: group system
+	 */
+	void ReinitializeGroup(); // This function re-initializes the group object
+	GroupData* GetGroup() const { return m_pGroupData; }; // Get the group data for the current object
+	bool HasGroup() const { return m_pGroupData != nullptr; } // Check if the current object has group data
+
+
 	struct TimePeriods
 	{
-		struct tm m_DailyStamp {};
-		struct tm m_WeekStamp {};
-		struct tm m_MonthStamp {};
+		struct tm m_DailyStamp { };
+		struct tm m_WeekStamp { };
+		struct tm m_MonthStamp { };
 	};
 
 	// main
-	char m_aLogin[64]{};
-	char m_aLastLogin[64]{};
-	char m_aLanguage[8]{};
-	int m_ID{};
-	int m_Level{};
-	int m_Exp{};
-	int m_Relations{};
-	int m_GuildID{};
-	int m_GuildRank{};
-	int m_GroupID{};
-	TimePeriods m_Periods{};
-	std::list< int > m_aHistoryWorld{};
+	char m_aLogin[64] {};
+	char m_aLastLogin[64] {};
+	char m_aLanguage[8] {};
+	int m_Level {};
+	int m_Exp {};
+	int m_Relations {};
+	int m_GuildID {};
+	int m_GuildRank {};
+	TimePeriods m_Periods {};
+	std::list< int > m_aHistoryWorld {};
 
-	void InitGroup();
-	class CHouseData* GetHouse() const;
-	class GroupData* GetGroup() const;
-	bool HasHouse() const;
-	bool HasGroup() const { return GetGroup() != nullptr; }
+
 	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; }
 
 	// upgrades
-	int m_Upgrade{};
-	std::map< AttributeIdentifier, int > m_aStats{};
+	int m_Upgrade {};
+	std::map< AttributeIdentifier, int > m_aStats {};
 
-	CTeeInfo m_TeeInfos{};
-	int m_Team{};
-	std::map < int, bool > m_aAetherLocation{};
+	CTeeInfo m_TeeInfos {};
+	int m_Team {};
+	std::map < int, bool > m_aAetherLocation {};
 	bool IsGuild() const { return m_GuildID > 0; }
 
 	CFieldContainer m_MiningData

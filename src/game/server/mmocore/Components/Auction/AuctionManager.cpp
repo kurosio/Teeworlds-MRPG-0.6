@@ -169,7 +169,7 @@ void CAuctionManager::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuction
 	}
 
 	// check your slots
-	ResultPtr pResCheck2 = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().m_ID, g_Config.m_SvMaxAuctionPlayerSlots);
+	ResultPtr pResCheck2 = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().GetID(), g_Config.m_SvMaxAuctionPlayerSlots);
 	const int ValueSlot = (int)pResCheck2->rowsCount();
 	if(ValueSlot >= g_Config.m_SvMaxAuctionPlayerSlots)
 	{
@@ -187,7 +187,7 @@ void CAuctionManager::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuction
 	if(pPlayerItem->GetValue() >= pAuctionItem->GetValue() && pPlayerItem->Remove(pAuctionItem->GetValue()))
 	{
 		Database->Execute<DB::INSERT>(TW_AUCTION_TABLE, "(ItemID, Price, ItemValue, UserID, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
-			pAuctionItem->GetID(), pAuctionData->GetPrice(), pAuctionItem->GetValue(), pPlayer->Acc().m_ID, pAuctionItem->GetEnchant());
+			pAuctionItem->GetID(), pAuctionData->GetPrice(), pAuctionItem->GetValue(), pPlayer->Acc().GetID(), pAuctionItem->GetEnchant());
 
 		const int AvailableSlot = (g_Config.m_SvMaxAuctionPlayerSlots - ValueSlot) - 1;
 		GS()->Chat(-1, "{STR} created a slot [{STR}x{VAL}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pAuctionItem->GetValue());
@@ -212,7 +212,7 @@ bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
 	const int Enchant = pRes->getInt("Enchant");
 
 	// if it is a player slot then close the slot
-	if(UserID == pPlayer->Acc().m_ID)
+	if(UserID == pPlayer->Acc().GetID())
 	{
 		GS()->Chat(ClientID, "You closed auction slot!");
 		GS()->SendInbox("Auctionist", pPlayer, "Auction Alert", "You have bought a item, or canceled your slot", ItemID, Value, Enchant);

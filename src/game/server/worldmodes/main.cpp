@@ -45,9 +45,9 @@ bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
 	if(Index == ENTITY_PLANTS)
 	{
 		CHouseData* pHouse = GS()->Mmo()->House()->GetHouseByPlantPos(Pos);
-		if(pHouse && pHouse->GetPlantItemID() > 0)
+		if(pHouse && pHouse->GetPlantedItem()->GetID() > 0)
 		{
-			new CJobItems(&GS()->m_World, pHouse->GetPlantItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100, pHouse->GetID());
+			new CJobItems(&GS()->m_World, pHouse->GetPlantedItem()->GetID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100, pHouse->GetID());
 			return true;
 		}
 

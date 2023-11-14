@@ -103,8 +103,12 @@ CPlayer* CGS::GetPlayerByUserID(int AccountID) const
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GetPlayer(i, true);
-		if(pPlayer && pPlayer->Acc().m_ID == AccountID)
-			return pPlayer;
+		if(pPlayer && pPlayer->Acc().GetID() == AccountID)
+		{
+			int WorldID = pPlayer->GetPlayerWorldID();
+			CGS* pGS = (CGS*)Instance::GetServer()->GameServer(WorldID);
+			return pGS->GetPlayer(i, true);
+		}
 	}
 	return nullptr;
 }
@@ -2015,7 +2019,7 @@ void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	SendInbox(pFrom, pPlayer->Acc().m_ID, Name, Desc, ItemID, Value, Enchant);
+	SendInbox(pFrom, pPlayer->Acc().GetID(), Name, Desc, ItemID, Value, Enchant);
 }
 
 // send a message with or without the object using AccountID

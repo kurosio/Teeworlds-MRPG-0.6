@@ -5,14 +5,17 @@
 #include "game/server/gamecontext.h"
 #include "game/server/mmocore/Utils/DBSet.h"
 
+// This function initializes the GroupData object with the provided parameters
 void GroupData::Init(int OwnerUID, int Color, DBSet&& SetAccountIDs)
 {
 	// init access list
 	for(auto& p : SetAccountIDs.GetDataItems())
 	{
+		// Convert the data item to an integer
 		if(int UID = std::atoi(p.c_str()); UID > 0)
 		{
-			m_AccountIds[UID] = true;
+			// If the integer is greater than 0, add it to the access user IDs set
+			m_AccountIds.insert(UID);
 		}
 	}
 
@@ -21,40 +24,50 @@ void GroupData::Init(int OwnerUID, int Color, DBSet&& SetAccountIDs)
 	m_pData[m_ID] = *this;
 }
 
-bool GroupData::Add(class CGS* pGS, int AccountID)
+// Function to add AccountID
+bool GroupData::Add(int AccountID)
 {
-	// Verify if pGS exists and if the player with the specified AccountID exists in pGS
-	if(pGS && pGS->GetPlayerByUserID(AccountID))
+	// Get the game server instance and player
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServer();
+	CPlayer* pPlayer = pGS->GetPlayerByUserID(AccountID);
+
+	// Check if the player exists
+	if(pPlayer && pPlayer->Acc().GetGroup())
 	{
-		// Get a pointer to the player object using the AccountID
-		CPlayer* pPlayer = pGS->GetPlayerByUserID(AccountID);
-
-		// Check if the player is already part of a group
-		if(pPlayer->Acc().GetGroup())
-		{
-			// Send a chat message to the player indicating they are already in a group
-			pGS->ChatAccount(AccountID, "You're already in a group!");
-			return false;
-		}
-
-		// Update the player's Account's GroupID with the m_ID value
-		pPlayer->Acc().m_GroupID = m_ID;
+		// Send a chat message to the player indicating they are already in a group
+		pGS->ChatAccount(AccountID, "You're already in a group!");
+		return false;
 	}
 
-	// Search for the AccountID in the m_AccountIds
-	if(m_AccountIds.find(AccountID) != m_AccountIds.end())
-		return false;
+	// Add AccountID to the m_AccountIds set and check if it was already present
+	if(m_AccountIds.insert(AccountID).second)
+	{
+		// Check if the player exists
+		if(pPlayer)
+		{
+			// Reinitialize the player's group
+			pPlayer->Acc().ReinitializeGroup();
+		}
 
-	// If the AccountID is not found in the vector
-	// Add the AccountID to the m_AccountIds vector and save database
-	pGS->ChatAccount(AccountID, "You joined the group!");
-	m_AccountIds[AccountID] = true;
-	Save();
-	return true;
+		// Save changes
+		Save();
+
+		// Send a chat message to the player's account
+		pGS->ChatAccount(AccountID, "You joined the group!");
+		return true;
+	}
+
+	// Return false to indicate that the account was not added to the group
+	return false;
 }
 
-bool GroupData::Remove(class CGS* pGS, int AccountID)
+// Function to remove a group from the data based on the account ID
+bool GroupData::Remove(int AccountID)
 {
+	// Get the game server instance and player
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServer();
+	CPlayer* pPlayer = pGS->GetPlayerByUserID(AccountID);
+
 	// Check if the size of m_AccountIds is greater than 1 and if m_OwnerUID matches AccountID
 	if((int)m_AccountIds.size() > 1 && m_OwnerUID == AccountID)
 	{
@@ -63,81 +76,79 @@ bool GroupData::Remove(class CGS* pGS, int AccountID)
 		return false;
 	}
 
-	// Check if pGS and pGS->GetPlayerByUserID(AccountID) are both valid
-	if(pGS && pGS->GetPlayerByUserID(AccountID))
+	// Check if pPlayer exists and if the player is not in the group or is in a different group
+	if(pPlayer && (!pPlayer->Acc().GetGroup() || pPlayer->Acc().GetGroup()->GetID() != m_ID))
 	{
-		// Get the player with the specified AccountID and group data
-		CPlayer* pPlayer = pGS->GetPlayerByUserID(AccountID);
-		GroupData* pGroup = pPlayer->Acc().GetGroup();
-
-		// Check if the player is not in any group or if they are not in the specified group
-		if(!pGroup || pGroup->GetID() != m_ID)
-		{
-			// Send a message to the player indicating that they are not in the group
-			pGS->ChatAccount(AccountID, "You're not in the group!");
-			return false;
-		}
-
-		// Remove the player from the group by setting their group ID to -1
-		pPlayer->Acc().m_GroupID = -1;
+		// Send a chat message to the player's account indicating that they are not in the group
+		pGS->ChatAccount(AccountID, "You're not in the group!");
+		return false;
 	}
 
-	// Pass the AccountID and the message "You left the group!" as parameters to the function
-	pGS->ChatAccount(AccountID, "You left the group!");
-
-	// Find the specified account ID in the m_AccountIds vector
-	if(m_AccountIds.find(AccountID) != m_AccountIds.end())
+	// Check if the AccountID exists in m_AccountIds and erase it
+	if(m_AccountIds.erase(AccountID) > 0)
 	{
-		// Check if the size of the m_AccountIds vector is 1
-		if(m_AccountIds.size() == 1)
+		// Reinitialize the player's group
+		if(pPlayer)
 		{
-			// Send a chat message to notify the account with ID AccountID that the group was disbanded
-			pGS->ChatAccount(AccountID, "The group was disbanded.");
+			pPlayer->Acc().ReinitializeGroup();
 		}
 
-		// Remove the element from the m_AccountIds vector
-		m_AccountIds.erase(AccountID);
-
-		// If m_AccountIds is not empty
+		// If m_AccountIds is empty, disband the group
 		if(m_AccountIds.empty())
 		{
-			// Remove the group from the database and m_pData
-			Database->Execute<DB::REMOVE>("tw_groups", "WHERE ID = '%d'", m_ID);
-			m_pData.erase(m_ID);
-			return true;
+			// Send chat and disband group
+			pGS->ChatAccount(AccountID, "The group was disbanded.");
+			Disband();
+		}
+		else
+		{
+			// Save changes to the group
+			Save();
 		}
 
-		// Save the changes
-		Save();
+		// Send a chat message to the player's account
+		pGS->ChatAccount(AccountID, "You left the group.");
 		return true;
 	}
-
 	return false;
 }
 
-bool GroupData::Disband()
+// This function is used to disband a group of data.
+void GroupData::Disband()
 {
-	// Set for all accounts group id -1
-	for(auto& Account : GetAccounts())
+	// Create a copy of the account IDs in a set called ReinitilizedAccounts
+	const std::unordered_set<int> ReinitilizedAccounts = m_AccountIds;
+	// Clear the original account IDs set
+	m_AccountIds.clear();
+
+	// Reinitialize all accounts in the game
+	for(auto& AID : ReinitilizedAccounts)
 	{
+		// Get the game server instance and player
 		CGS* pGS = (CGS*)Instance::GetServer()->GameServer();
-		CPlayer* pPlayer = pGS->GetPlayerByUserID(Account.first);
+		CPlayer* pPlayer = pGS->GetPlayerByUserID(AID);
+
+		// Check if the player exists
 		if(pPlayer)
-			pPlayer->Acc().m_GroupID = -1;
+		{
+			// Reinitialize the player's group
+			pPlayer->Acc().ReinitializeGroup();
+		}
 	}
 
 	// Remove the group from the database and m_pData
-	Database->Execute<DB::REMOVE>("tw_groups", "WHERE ID = '%d'", m_ID);
+	Database->Execute<DB::REMOVE>(TW_GROUPS_TABLE, "WHERE ID = '%d'", m_ID);
 	m_pData.erase(m_ID);
-	return true;
 }
 
-void GroupData::ChangeOwner(CGS* pGS, int AccountID)
+// This function changes the owner of the group data to the specified account ID.
+void GroupData::ChangeOwner(int AccountID)
 {
 	// Check if the account ID was found
 	dbg_assert(m_AccountIds.find(AccountID) != m_AccountIds.end(), "[Group system] account not included inside accountids");
 
 	// Send chat messages to the previous owner and the new owner
+	CGS* pGS = (CGS*)Instance::GetServer()->GameServer();
 	pGS->ChatAccount(m_OwnerUID, "You've transferred ownership of the group!");
 	pGS->ChatAccount(AccountID, "You are now the new owner of the group!");
 
@@ -160,21 +171,28 @@ void GroupData::ChangeColor(int NewColor)
 
 void GroupData::Save() const
 {
-	// Create a string variable to store the account IDs in a comma-separated format
-	std::string StrAccountIDs("");
-	for(const auto& Account : m_AccountIds)
+	// Create a string variable to store the access data
+	std::string StrAccountIds;
+
+	// Reserve memory for the vector m_AccountIds to avoid frequent reallocation
+	StrAccountIds.reserve(m_AccountIds.size() * 8);
+
+	// Iterate through each user ID in the m_AccountIds unordered set
+	for(const auto& UID : m_AccountIds)
 	{
-		// Convert the account ID to a string and append it to the StrAccountIDs string with a comma
-		StrAccountIDs += std::to_string(Account.first) + ",";
+		// Convert the user ID to a string and append it to the AccountIds string
+		StrAccountIds += std::to_string(UID);
+		// Append a comma after each user ID
+		StrAccountIds += ',';
 	}
 
-	// Remove the last comma from the StrAccountIDs string if it is not empty
-	if(!StrAccountIDs.empty())
-	{
-		StrAccountIDs.pop_back();
-	}
+	// If the AccountIds string is not empty
+	if(!StrAccountIds.empty())
+		// Remove the last character (the extra comma) from the AccountIds string
+		StrAccountIds.pop_back();
 
-	// Update the "AccountIDs" column in the "tw_groups" table of the database with the updated StrAccountIDs string
+
+	// Update the "AccountIDs" column in the TW_GROUPS_TABLE table of the database with the updated StrAccountIDs string
 	// for the group with the specified ID (m_ID)
-	Database->Execute<DB::UPDATE>("tw_groups", "AccountIDs = '%s', OwnerUID = '%d', Color = '%d' WHERE ID = '%d'", StrAccountIDs.c_str(), m_OwnerUID, m_TeamColor, m_ID);
+	Database->Execute<DB::UPDATE>(TW_GROUPS_TABLE, "AccountIDs = '%s', OwnerUID = '%d', Color = '%d' WHERE ID = '%d'", StrAccountIds.c_str(), m_OwnerUID, m_TeamColor, m_ID);
 }

@@ -56,7 +56,7 @@ CQuestDescription* CPlayerQuest::Info() const
 // Return the JSON file name for the player quest based on the player's account ID
 std::string CPlayerQuest::GetJsonFileName() const
 {
-	return Info()->GetJsonFileName(GetPlayer()->Acc().m_ID);
+	return Info()->GetJsonFileName(GetPlayer()->Acc().GetID());
 }
 
 void CPlayerQuest::InitSteps()
@@ -329,7 +329,7 @@ bool CPlayerQuest::Accept()
 
 	// Set the quest state to ACCEPT and insert the quest into the database
 	m_State = QuestState::ACCEPT;
-	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Acc().m_ID, m_State);
+	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Acc().GetID(), m_State);
 
 	// Initialize the quest steps
 	InitSteps();
@@ -369,7 +369,7 @@ void CPlayerQuest::Refuse()
 	m_State = QuestState::NO_ACCEPT;
 
 	// Remove the quest record from the database table "tw_accounts_quests"
-	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Acc().m_ID);
+	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Acc().GetID());
 }
 
 void CPlayerQuest::Reset()
@@ -391,7 +391,7 @@ void CPlayerQuest::Finish()
 
 	// finish quest
 	m_State = QuestState::FINISHED;
-	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Acc().m_ID);
+	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Acc().GetID());
 
 	// clear steps
 	ClearSteps();

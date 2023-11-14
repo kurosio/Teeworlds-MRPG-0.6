@@ -227,7 +227,7 @@ void CPlayerQuestStep::PostFinish()
 			// under stress, add a delay
 			if(AntiDatabaseStress)
 			{
-				GS()->Mmo()->Item()->AddItemSleep(pPlayer->Acc().m_ID, pRewardItem.GetID(), pRewardItem.GetValue(), 300);
+				GS()->Mmo()->Item()->AddItemSleep(pPlayer->Acc().GetID(), pRewardItem.GetID(), pRewardItem.GetValue(), 300);
 				continue;
 			}
 

@@ -1410,7 +1410,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		// anti pvp for group players
 		{
 			GroupData* pGroup = m_pPlayer->Acc().GetGroup();
-			if(pGroup && pGroup->HasAccountID(pFrom->Acc().m_ID))
+			if(pGroup && pGroup->HasAccountID(pFrom->Acc().GetID()))
 				return false;
 		}
 	}

@@ -23,6 +23,9 @@ MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_C
 CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld)
 {
 	m_pAI = new CAIController(this);
+
+	// Reserve memory for the vector m_aListDmgPlayers to avoid frequent reallocations
+	m_aListDmgPlayers.reserve(MAX_CLIENTS);
 }
 CCharacterBotAI::~CCharacterBotAI()
 {
@@ -187,10 +190,10 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		}
 
 		// Check if the element "From" is already present in the vector m_aListDmgPlayers
-		if(!std::any_of(m_aListDmgPlayers.begin(), m_aListDmgPlayers.end(), [From](int ClientID){ return ClientID == From; }))
+		if(m_aListDmgPlayers.find(From) == m_aListDmgPlayers.end())
 		{
 			// If the element is not present, append it to the end of the vector
-			m_aListDmgPlayers.push_back(From);
+			m_aListDmgPlayers.insert(From);
 		}
 
 		// verify death

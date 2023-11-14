@@ -24,7 +24,7 @@ void CAccountMinerManager::OnInitWorld(const char* pWhereLocalWorld)
 
 void CAccountMinerManager::OnInitAccount(CPlayer* pPlayer)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Acc().m_ID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Acc().GetID());
 	if (pRes->next())
 	{
 		pPlayer->Acc().m_MiningData.initFields(&pRes);
@@ -35,7 +35,7 @@ void CAccountMinerManager::OnInitAccount(CPlayer* pPlayer)
 	pPlayer->Acc().m_MiningData(JOB_LEVEL, 1).m_Value = 1;
 	pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value = 0;
 	pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value = 0;
-	Database->Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc().m_ID);
+	Database->Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc().GetID());
 }
 
 int CAccountMinerManager::GetOreLevel(vec2 Pos) const

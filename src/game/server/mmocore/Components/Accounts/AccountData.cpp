@@ -8,33 +8,55 @@
 std::map < int, CAccountData > CAccountData::ms_aData;
 std::map < int, CAccountTempData > CAccountTempData::ms_aPlayerTempData;
 
-CHouseData* CAccountData::GetHouse() const
+// Set the ID of the account
+void CAccountData::SetUniqueID(int ID)
 {
-	auto it = std::find_if(CHouseData::Data().begin(), CHouseData::Data().end(), [this](const auto& p) { return p->GetAccountID() == m_ID; });
-	return it != CHouseData::Data().end() ? it->get() : nullptr;
+	// Check if the ID has already been set
+	dbg_assert(m_ID <= 0, "Unique AccountID cannot change the value more than 1 time");
+
+	// Set the ID
+	m_ID = ID;
+
+	// Initialize account data
+	ReinitializeHouse();
+	ReinitializeGroup();
 }
 
-void CAccountData::InitGroup()
+// This function initializes the house data for the account
+void CAccountData::ReinitializeHouse()
 {
-	for(auto& it : GroupData::Data())
+	// Iterate through all the house data objects
+	for(const auto& p : CHouseData::Data())
 	{
-		auto& Accounts = it.second.GetAccounts();
-		auto AccountIter = Accounts.find(m_ID);
-		if(AccountIter != Accounts.end())
+		// Check if the account ID of the house data object matches the account ID of the current account
+		if(p->GetAccountID() == m_ID)
 		{
-			m_GroupID = it.first;
-			return;
+			// Set the house data pointer of the account to the current house data object
+			m_pHouseData = p.get();
+			return; // Exit the function
 		}
 	}
 
-	m_GroupID = -1;
+	// If no matching house data object is found, set the house data pointer of the account to nullptr
+	m_pHouseData = nullptr;
 }
 
-GroupData* CAccountData::GetGroup() const
+// 
+void CAccountData::ReinitializeGroup()
 {
-	if(GroupData::Data().find(m_GroupID) != GroupData::Data().end())
-		return &GroupData::Data()[m_GroupID];
-	return nullptr;
-}
+	// Iterate through all the group data objects
+	for(auto& p : GroupData::Data())
+	{
+		// Check if the account ID of the group data object matches the account ID of the current account
+		auto& Accounts = p.second.GetAccounts();
+		if(Accounts.find(m_ID) != Accounts.end())
+		{
+			// Set the group data pointer of the account to the current group data object
+			m_pGroupData = &p.second;
+			return; // Exit the function
+		}
+	}
 
-bool CAccountData::HasHouse() const { return GetHouse() != nullptr; }
+	// If no matching group data object is found, set the group data pointer of the account to nullptr
+	m_pGroupData = nullptr;
+}

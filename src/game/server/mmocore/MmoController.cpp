@@ -155,10 +155,15 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		GS()->AVM(ClientID, "MENU", MENU_INBOX, TAB_PERSONAL, "Mailbox");
 		GS()->AVM(ClientID, "MENU", MENU_JOURNAL_MAIN, TAB_PERSONAL, "Journal");
 		if(pPlayer->Acc().HasHouse())
+		{
 			GS()->AVM(ClientID, "MENU", MENU_HOUSE, TAB_PERSONAL, "House");
+		}
+
 		GS()->AVM(ClientID, "MENU", MENU_GUILD_FINDER, TAB_PERSONAL, "Guild finder");
 		if(pPlayer->Acc().IsGuild())
+		{
 			GS()->AVM(ClientID, "MENU", MENU_GUILD, TAB_PERSONAL, "Guild");
+		}
 		GS()->AV(ClientID, "null");
 
 		// info menu
@@ -387,7 +392,7 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 
 	if(Table == SAVE_STATS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d' WHERE ID = '%d'", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d' WHERE ID = '%d'", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, pPlayer->Acc().GetID());
 	}
 	else if(Table == SAVE_UPGRADES)
 	{
@@ -402,46 +407,46 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 			}
 		}
 
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Acc().m_Upgrade, Buffer.buffer(), pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Acc().m_Upgrade, Buffer.buffer(), pPlayer->Acc().GetID());
 		Buffer.clear();
 	}
 	else if(Table == SAVE_PLANT_DATA)
 	{
 		std::string Fields = pPlayer->Acc().m_FarmingData.getUpdateField();
-		Database->Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().GetID());
 	}
 	else if(Table == SAVE_MINER_DATA)
 	{
 		std::string Fields = pPlayer->Acc().m_MiningData.getUpdateField();
-		Database->Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc().GetID());
 	}
 	else if(Table == SAVE_RELATIONS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Relations = '%d' WHERE ID = '%d'", pPlayer->Acc().m_Relations, pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Relations = '%d' WHERE ID = '%d'", pPlayer->Acc().m_Relations, pPlayer->Acc().GetID());
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Acc().m_GuildID, pPlayer->Acc().m_GuildRank, pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Acc().m_GuildID, pPlayer->Acc().m_GuildRank, pPlayer->Acc().GetID());
 	}
 	else if(Table == SAVE_POSITION)
 	{
 		const int LatestCorrectWorldID = Account()->GetHistoryLatestCorrectWorldID(pPlayer);
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pPlayer->Acc().GetID());
 	}
 	else if(Table == SAVE_TIME_PERIODS)
 	{
 		time_t Daily = mktime(&pPlayer->Acc().m_Periods.m_DailyStamp);
 		time_t Week = mktime(&pPlayer->Acc().m_Periods.m_WeekStamp);
 		time_t Month = mktime(&pPlayer->Acc().m_Periods.m_MonthStamp);
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '%d', WeekStamp = '%d', MonthStamp = '%d' WHERE ID = '%d'", Daily, Week, Month, pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '%d', WeekStamp = '%d', MonthStamp = '%d' WHERE ID = '%d'", Daily, Week, Month, pPlayer->Acc().GetID());
 	}
 	else if(Table == SAVE_LANGUAGE)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pPlayer->Acc().GetID());
 	}
 	else
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc().m_aLogin, pPlayer->Acc().m_ID);
+		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc().m_aLogin, pPlayer->Acc().GetID());
 	}
 }
 

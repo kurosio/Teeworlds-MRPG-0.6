@@ -9,7 +9,7 @@
 void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 {
 	// load house
-	const auto InitHouses = Database->Prepare<DB::SELECT>("*", "tw_houses", pWhereLocalWorld);
+	const auto InitHouses = Database->Prepare<DB::SELECT>("*", TW_HOUSES_TABLE, pWhereLocalWorld);
 	InitHouses->AtExecute([this](ResultPtr pRes)
 	{
 		while (pRes->next())
@@ -26,7 +26,7 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 			int WorldID = pRes->getInt("WorldID");
 			std::string AccessData = pRes->getString("AccessData").c_str();
 
-			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, DoorPos, PlantPos, PlantItemID, WorldID, AccessData);
+			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, DoorPos, PlantPos, CItem(PlantItemID, 1), WorldID, AccessData);
 		}
 		
 		Job()->ShowLoadingProgress("Houses", CHouseData::Data().size());
@@ -138,7 +138,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 		Job()->Item()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
 		GS()->AV(ClientID, "null");
-		pHouse->ShowDecorations();
+		pHouse->ShowDecorationList();
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -158,7 +158,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_PLANT, "Select an item and then click on 'To Plant'.");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Housing active plants: {STR}", GS()->GetItemInfo(pHouse->GetPlantItemID())->GetName());
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "Housing active plants: {STR}", pHouse->GetPlantedItem()->Info()->GetName());
 		GS()->Mmo()->Item()->ListInventory(ClientID, FUNCTION_PLANTS);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
@@ -207,7 +207,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 			while(pRes->next())
 			{
 				const int UserID = pRes->getInt("ID");
-				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Acc().m_ID))
+				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Acc().GetID()))
 					continue;
 
 				cPlayerName = pRes->getString("Nick").c_str();
@@ -424,7 +424,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		}
 
 		// check support for plant item's
-		if(pHouse->GetPlantItemID() <= 0)
+		if(!pHouse->GetPlantedItem()->IsValid())
 		{
 			GS()->Chat(ClientID, "Your home does not support plants!");
 			return true;

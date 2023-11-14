@@ -20,7 +20,7 @@ class CCharacterBotAI : public CCharacter
 	vec2 m_PrevPos;
 	vec2 m_WallPos;
 	int m_EmotionsStyle;
-	std::deque< int > m_aListDmgPlayers;
+	std::unordered_set< int > m_aListDmgPlayers;
 
 public:
 	CCharacterBotAI(CGameWorld* pWorld);

@@ -311,7 +311,7 @@ bool CPlayerItem::Save()
 {
 	if(GetPlayer() && GetPlayer()->IsAuthed())
 	{
-		int UserID = GetPlayer()->Acc().m_ID;
+		int UserID = GetPlayer()->Acc().GetID();
 		const auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", m_ID, UserID);
 		pResCheck->AtExecute([this, UserID](ResultPtr pRes)
 		{
@@ -327,7 +327,7 @@ bool CPlayerItem::Save()
 
 				// update an item
 				Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
-					m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc().m_ID, m_ID);
+					m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc().GetID(), m_ID);
 				return;
 			}
 

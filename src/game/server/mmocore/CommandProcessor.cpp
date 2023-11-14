@@ -146,7 +146,7 @@ void CCommandProcessor::ConChatGuildExit(IConsole::IResult* pResult, void* pUser
 	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->Acc().IsGuild())
 		return;
 
-	const int AccountID = pPlayer->Acc().m_ID;
+	const int AccountID = pPlayer->Acc().GetID();
 	pGS->Mmo()->Member()->ExitGuild(AccountID);
 }
 
@@ -269,7 +269,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		{
 			if(pGroup)
 			{
-				pGroup->Remove(pGS, pPlayer->Acc().m_ID);
+				pGroup->Remove(pPlayer->Acc().GetID());
 				pGS->StrongUpdateVotesForAll(MENU_GROUP);
 			}
 
@@ -283,10 +283,10 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 			if(pGroup)
 			{
 				pGS->Chat(ClientID, "---- YOUR GROUP LIST ----");
-				for(const auto& Account : pGroup->GetAccounts())
+				for(const auto& AID : pGroup->GetAccounts())
 				{
-					const char* Prefix = (pGroup->OwnerUID() == Account.first) ? "O: " : "\0";
-					const std::string Nickname = pGS->Mmo()->PlayerName(Account.first);
+					const char* Prefix = (pGroup->OwnerUID() == AID) ? "O: " : "\0";
+					const std::string Nickname = pGS->Mmo()->PlayerName(AID);
 
 					// Send a chat message to the client with the prefix (if owner) and the nickname
 					pGS->Chat(ClientID, "{STR}{STR}", Prefix, Nickname.c_str());
