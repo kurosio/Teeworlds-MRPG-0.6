@@ -798,7 +798,7 @@ void CDataFileWriter::Finish()
 	const size_t FileSize = SwapSize + DataSize;
 
 	if(DEBUG)
-		dbg_msg("datafile", "NumItemTypes=%d TypesSize=%llu ItemSize=%llu DataSize=%llu", NumItemTypes, TypesSize, ItemSize, DataSize);
+		dbg_msg("datafile", "NumItemTypes=%d TypesSize=%lu ItemSize=%lu DataSize=%lu", NumItemTypes, TypesSize, ItemSize, DataSize);
 
 	// This also ensures that SwapSize, ItemSize and DataSize are valid.
 	dbg_assert(FileSize <= (size_t)std::numeric_limits<int>::max(), "File size too large");
