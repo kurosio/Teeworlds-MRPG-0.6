@@ -544,6 +544,11 @@ int64_t time_freq();
  */
 int time_timestamp();
 
+int time_is_new_day(time_t savedStamp, time_t currentStamp);
+int time_is_new_week(time_t savedStamp, time_t currentStamp);
+int time_is_new_month(time_t savedStamp, time_t currentStamp);
+int time_is_new_year(time_t savedStamp, time_t currentStamp);
+
 /**
  * Retrieves the hours since midnight (0..23)
  *

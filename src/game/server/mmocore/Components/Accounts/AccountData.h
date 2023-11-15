@@ -49,9 +49,9 @@ public:
 
 	struct TimePeriods
 	{
-		struct tm m_DailyStamp { };
-		struct tm m_WeekStamp { };
-		struct tm m_MonthStamp { };
+		time_t m_DailyStamp { };
+		time_t m_WeekStamp { };
+		time_t m_MonthStamp { };
 	};
 
 	// main

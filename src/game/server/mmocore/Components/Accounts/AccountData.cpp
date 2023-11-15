@@ -22,11 +22,6 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	/*
 		Initialize object
 	*/
-
-	time_t DailyTm = pResult->getInt64("DailyStamp");
-	time_t WeekTm = pResult->getInt64("WeekStamp");
-	time_t MonthTm = pResult->getInt64("MonthStamp");
-
 	m_ID = ID;
 	str_copy(m_aLogin, pLogin, sizeof(m_aLogin));
 	str_copy(m_aLastLogin, LoginDate.c_str(), sizeof(m_aLastLogin));
@@ -41,9 +36,9 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 
 	// time periods
 	{
-		m_Periods.m_DailyStamp = *localtime(&DailyTm);
-		m_Periods.m_WeekStamp = *localtime(&WeekTm);
-		m_Periods.m_MonthStamp = *localtime(&MonthTm);
+		m_Periods.m_DailyStamp = pResult->getInt64("DailyStamp");
+		m_Periods.m_WeekStamp = pResult->getInt64("WeekStamp");
+		m_Periods.m_MonthStamp = pResult->getInt64("MonthStamp");
 	}
 
 	// upgrades data

@@ -343,27 +343,26 @@ void MmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 	std::vector<int> aPeriodsUpdated {};
 
 	// Get the current time
-	time_t time_data = time(nullptr);
-	struct tm* TimeInfoNow = localtime(&time_data);
+	time_t CurrentTimeStamp = time(nullptr);
 
-	// Check and update the daily time period
-	if(TimeInfoNow->tm_yday != pPlayer->Acc().m_Periods.m_DailyStamp.tm_yday)
+	// Check if it is a new day and update the daily time period if necessary
+	if(time_is_new_day(pPlayer->Acc().m_Periods.m_DailyStamp, CurrentTimeStamp))
 	{
-		pPlayer->Acc().m_Periods.m_DailyStamp = *TimeInfoNow;
+		pPlayer->Acc().m_Periods.m_DailyStamp = CurrentTimeStamp;
 		aPeriodsUpdated.push_back(TIME_PERIOD::DAILY_STAMP);
 	}
 
-	// Check and update the weekly time period
-	if(TimeInfoNow->tm_yday != pPlayer->Acc().m_Periods.m_WeekStamp.tm_yday && TimeInfoNow->tm_wday == 0)
+	// Check if it is a new week and update the weekly time period if necessary
+	if(time_is_new_week(pPlayer->Acc().m_Periods.m_WeekStamp, CurrentTimeStamp))
 	{
-		pPlayer->Acc().m_Periods.m_WeekStamp = *TimeInfoNow;
+		pPlayer->Acc().m_Periods.m_WeekStamp = CurrentTimeStamp;
 		aPeriodsUpdated.push_back(TIME_PERIOD::WEEK_STAMP);
 	}
 
-	// Check and update the monthly time period
-	if(TimeInfoNow->tm_mon != pPlayer->Acc().m_Periods.m_MonthStamp.tm_mon)
+	// Check if it is a new month and update the monthly time period if necessary
+	if(time_is_new_month(pPlayer->Acc().m_Periods.m_MonthStamp, CurrentTimeStamp))
 	{
-		pPlayer->Acc().m_Periods.m_MonthStamp = *TimeInfoNow;
+		pPlayer->Acc().m_Periods.m_MonthStamp = CurrentTimeStamp;
 		aPeriodsUpdated.push_back(TIME_PERIOD::MONTH_STAMP);
 	}
 
@@ -435,10 +434,11 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_TIME_PERIODS)
 	{
-		time_t Daily = mktime(&pPlayer->Acc().m_Periods.m_DailyStamp);
-		time_t Week = mktime(&pPlayer->Acc().m_Periods.m_WeekStamp);
-		time_t Month = mktime(&pPlayer->Acc().m_Periods.m_MonthStamp);
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '%d', WeekStamp = '%d', MonthStamp = '%d' WHERE ID = '%d'", Daily, Week, Month, pPlayer->Acc().GetID());
+		time_t Daily = pPlayer->Acc().m_Periods.m_DailyStamp;
+		time_t Week = pPlayer->Acc().m_Periods.m_WeekStamp;
+		time_t Month = pPlayer->Acc().m_Periods.m_MonthStamp;
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '%llu', WeekStamp = '%llu', MonthStamp = '%llu' WHERE ID = '%d'", 
+			Daily, Week, Month, pPlayer->Acc().GetID());
 	}
 	else if(Table == SAVE_LANGUAGE)
 	{

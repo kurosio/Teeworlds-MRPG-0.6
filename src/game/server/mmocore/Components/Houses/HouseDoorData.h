@@ -4,6 +4,7 @@
 #define GAME_SERVER_COMPONENT_HOUSE_DOOR_DATA_H
 #include <unordered_set>
 
+
 class CHouseDoorData
 {
 	friend class CHouseData;
@@ -12,7 +13,7 @@ class CHouseDoorData
 	class HouseDoor* m_pDoor {};
 
 	vec2 m_Pos {};
-	std::unordered_set<int> m_AccessUserIDs{};
+	std::unordered_set<int> m_AccessUserIDs {};
 
 public:
 	CHouseDoorData(class CGS* pGS, vec2 Pos, std::string AccessData, class CHouseData* pHouse);

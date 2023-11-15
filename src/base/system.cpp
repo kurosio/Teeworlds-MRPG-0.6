@@ -2121,6 +2121,55 @@ int time_timestamp()
 	return time(0);
 }
 
+int time_is_new_day(time_t savedStamp, time_t currentStamp)
+{
+	struct tm savedTime = *localtime(&savedStamp);
+	struct tm currentTime = *localtime(&currentStamp);
+
+	if(savedTime.tm_mday != currentTime.tm_mday ||
+		savedTime.tm_mon != currentTime.tm_mon ||
+		savedTime.tm_year != currentTime.tm_year)
+		return 1;
+
+	return 0;
+}
+
+int time_is_new_week(time_t savedStamp, time_t currentStamp)
+{
+	struct tm savedTime = *localtime(&savedStamp);
+	struct tm currentTime = *localtime(&currentStamp);
+
+	if(currentTime.tm_wday < savedTime.tm_wday ||
+		(currentTime.tm_wday == 0 && savedTime.tm_wday == 6) ||
+		(currentTime.tm_wday == savedTime.tm_wday + 1))
+		return 1;
+
+	return 0;
+}
+
+int time_is_new_month(time_t savedStamp, time_t currentStamp)
+{
+	struct tm savedTime = *localtime(&savedStamp);
+	struct tm currentTime = *localtime(&currentStamp);
+
+	if(savedTime.tm_mon != currentTime.tm_mon ||
+		savedTime.tm_year != currentTime.tm_year)
+		return 1;
+
+	return 0;
+}
+
+int time_is_new_year(time_t savedStamp, time_t currentStamp)
+{
+	struct tm savedTime = *localtime(&savedStamp);
+	struct tm currentTime = *localtime(&currentStamp);
+
+	if(savedTime.tm_year != currentTime.tm_year)
+		return 1;
+
+	return 0;
+}
+
 int time_houroftheday()
 {
 	time_t time_data;
