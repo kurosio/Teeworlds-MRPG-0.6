@@ -4,7 +4,6 @@
 #define GAME_SERVER_COMPONENT_HOUSE_DOOR_DATA_H
 #include <unordered_set>
 
-
 class CHouseDoorData
 {
 	friend class CHouseData;

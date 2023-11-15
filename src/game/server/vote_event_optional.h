@@ -6,6 +6,7 @@
 class CVoteEventOptional
 {
 	typedef void (*OptionEventCallback)(class CPlayer*, int, int, int);
+	OptionEventCallback m_Callback {}; // The callback function for the event
 
 public:
 	int m_OptionID {}; // The reserve id of the vote
@@ -13,10 +14,25 @@ public:
 	bool m_Working {}; // Indicates if the voting event is currently active
 	std::string m_Description {}; // The description of the voting event
 	time_t m_CloseTime {}; // The time when the voting event will close
-	OptionEventCallback m_Callback {}; // The callback function for the event
 
 	// This function registers a callback function for the voting event
 	void RegisterCallback(OptionEventCallback Callback) { m_Callback = std::move(Callback); }
+
+	// This function is used to run a callback function with the given parameters.
+	// It takes a pointer to a CPlayer object, a boolean state, and returns a boolean value.
+	bool Run(class CPlayer* pPlayer, bool State) const
+	{
+		// Check if the callback function is valid
+		if(m_Callback)
+		{
+			// Call the callback function with the given parameters
+			m_Callback(pPlayer, m_OptionID, m_OptionID2, State);
+			return true;
+		}
+
+		// Return false to indicate that the callback function was not called
+		return false;
+	}
 };
 
 #endif

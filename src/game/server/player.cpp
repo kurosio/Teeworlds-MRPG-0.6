@@ -1090,12 +1090,8 @@ CVoteEventOptional* CPlayer::CreateVoteOptional(int OptionID, int OptionID2, int
 void CPlayer::RunEventOptional(int Option, CVoteEventOptional* pOptional)
 {
 	// Check if pOptional pointer exists and its callback function returns true
-	if(pOptional)
+	if(pOptional && pOptional->Run(this, Option <= 0 ? false : true))
 	{
-		// Call the callback function with arguments: this object, the value stored in pOptional, and the option casted to a bool
-		if(pOptional->m_Callback)
-			pOptional->m_Callback(this, pOptional->m_OptionID, pOptional->m_OptionID2, Option <= 0 ? false : true);
-
 		// Create a new network message to update the vote status
 		CNetMsg_Sv_VoteStatus Msg;
 		Msg.m_Total = 1;
