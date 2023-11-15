@@ -475,10 +475,10 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RequiredDefeat.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- ✎ Slay enemies:"));
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Slay enemies:"));
 		for(auto& p : m_Bot.m_RequiredDefeat)
 		{
-			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count == p.m_Value ? "☑" : "☐");
+			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count == p.m_Value ? "\u2611" : "\u2610");
 
 			Buffer.append_at(Buffer.length(), "\n");
 			GS()->Server()->Localization()->Format(Buffer, pLang, "{STR} Defeat {STR} ({INT}/{INT})",
@@ -490,11 +490,11 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RequiredItems.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- ✎ Retrieve an item's:"));
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Retrieve an item's:"));
 		for(auto& pRequied : m_Bot.m_RequiredItems)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequied.m_Item);
-			const char* pCompletePrefix = (pPlayerItem->GetValue() == pRequied.m_Item.GetValue() ? "☑" : "☐");
+			const char* pCompletePrefix = (pPlayerItem->GetValue() == pRequied.m_Item.GetValue() ? "\u2611" : "\u2610");
 			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show a" : "Require a";
 
 			Buffer.append_at(Buffer.length(), "\n");
@@ -507,7 +507,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RequiredMoveTo.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- ✎ Trigger some action's:"));
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Trigger some action's:"));
 
 		// Create an unordered map called m_Order with key type int and value type unordered_map<string, pair<int, int>> for special order task's
 		std::unordered_map<int /* step */, std::unordered_map<std::string /* task name */, std::pair<int /* complected */, int /* count */>>> m_Order;
@@ -538,7 +538,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 				// Check for one task
 				const int& TaskNum = StepCount.second;
 				const int& TaskCompleted = StepCount.first;
-				const char* pCompletePrefix = (StepCount.first == StepCount.second ? "☑" : "☐");
+				const char* pCompletePrefix = (StepCount.first == StepCount.second ? "\u2611" : "\u2610");
 				if(TaskNum == 1)
 				{
 					GS()->Server()->Localization()->Format(Buffer, pLang, "{INT}. {STR} {STR}.", Step, pCompletePrefix, Name.c_str());
@@ -555,7 +555,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RewardItems.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- ✎ Reward for completing a task:"));
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Reward for completing a task:"));
 		for(auto& p : m_Bot.m_RewardItems)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
