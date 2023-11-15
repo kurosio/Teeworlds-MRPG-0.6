@@ -21,6 +21,7 @@ class CHouseManager : public MmoComponent
 	######################################################################### */
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
+	void OnTick() override;
 	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;

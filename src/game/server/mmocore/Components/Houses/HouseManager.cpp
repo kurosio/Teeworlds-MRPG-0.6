@@ -12,7 +12,7 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 	const auto InitHouses = Database->Prepare<DB::SELECT>("*", TW_HOUSES_TABLE, pWhereLocalWorld);
 	InitHouses->AtExecute([this](ResultPtr pRes)
 	{
-		while (pRes->next())
+		while(pRes->next())
 		{
 			HouseIdentifier ID = pRes->getInt("ID");
 			int AccountID = pRes->getInt("UserID");
@@ -21,16 +21,35 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 			int Bank = pRes->getInt("HouseBank");
 			vec2 Pos(pRes->getInt("PosX"), pRes->getInt("PosY"));
 			vec2 DoorPos(pRes->getInt("DoorX"), pRes->getInt("DoorY"));
+			vec2 TextPos(pRes->getInt("TextX"), pRes->getInt("TextY"));
 			vec2 PlantPos(pRes->getInt("PlantX"), pRes->getInt("PlantY"));
 			int PlantItemID = pRes->getInt("PlantID");
 			int WorldID = pRes->getInt("WorldID");
 			std::string AccessData = pRes->getString("AccessData").c_str();
 
-			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, DoorPos, PlantPos, CItem(PlantItemID, 1), WorldID, AccessData);
+			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, TextPos, DoorPos, PlantPos, CItem(PlantItemID, 1), WorldID, AccessData);
 		}
-		
+
 		Job()->ShowLoadingProgress("Houses", CHouseData::Data().size());
 	});
+}
+
+void CHouseManager::OnTick()
+{
+	// Check if the current world ID is not equal to the main world (once use House get instance object self world id) ID and current tick
+	if(GS()->GetWorldID() != MAIN_WORLD_ID || (Server()->Tick() % Server()->TickSpeed() != 0))
+		return;
+
+	// Calculate the remaining lifetime of a text update
+	int LifeTime = (Server()->TickSpeed() * 10) - 5;
+
+	// Get the house data
+	const auto& HouseData = CHouseData::Data();
+	for(const auto& p : HouseData)
+	{
+		// Update the text with the remaining lifetime
+		p->TextUpdate(LifeTime);
+	}
 }
 
 bool CHouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
@@ -253,7 +272,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		{
 			return true;
 		}
-		
+
 		// check player house
 		CHouseData* pHouse = pPlayer->Acc().GetHouse();
 		if(!pHouse)

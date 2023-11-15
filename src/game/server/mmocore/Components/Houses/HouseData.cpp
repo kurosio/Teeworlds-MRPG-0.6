@@ -193,6 +193,30 @@ void CHouseData::SetPlantItemID(ItemIdentifier ItemID)
 	}
 }
 
+void CHouseData::TextUpdate(int LifeTime)
+{
+	// Check if the last tick text update is greater than the current server tick
+	if(m_LastTickTextUpdated > Server()->Tick())
+		return;
+
+	// Check if there are players nearby the text position within a radius of 1000 units
+	if(GS()->IsPlayersNearby(m_TextPos, 1000.f))
+	{
+		// Check if the object has an owner
+		if(HasOwner())
+		{
+			std::string PlayerName = GS()->Mmo()->PlayerName(m_AccountID);
+			GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, PlayerName.c_str());
+		}
+		else
+		{
+			GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, "HOUSE");
+		}
+
+		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
+	}
+}
+
 // It is used to display the list of decorations in the house.
 void CHouseData::ShowDecorationList() const
 {

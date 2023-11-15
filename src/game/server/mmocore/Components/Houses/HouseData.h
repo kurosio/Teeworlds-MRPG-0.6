@@ -19,6 +19,7 @@ class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDa
 {
 	HouseIdentifier m_ID {};
 	vec2 m_Pos {};
+	vec2 m_TextPos {};
 	vec2 m_PlantPos {};
 
 	class CDecorationHouses* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
@@ -30,6 +31,8 @@ class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDa
 	int m_AccountID {};
 	int m_WorldID {};
 	int m_Price {};
+
+	int m_LastTickTextUpdated{};
 
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
@@ -45,18 +48,19 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, std::string ClassName, int Price, int Bank, vec2 Pos, vec2 HouseDoorPos, vec2 PlantPos, CItem&& PlantedItem, int WorldID, std::string AccessSet)
+	void Init(int AccountID, std::string ClassName, int Price, int Bank, vec2 Pos, vec2 TextPos, vec2 DoorPos, vec2 PlantPos, CItem&& PlantedItem, int WorldID, std::string AccessSet)
 	{
 		m_AccountID = AccountID;
 		str_copy(m_aClassName, ClassName.c_str(), sizeof(m_aClassName));
 		m_Price = Price;
 		m_Pos = Pos;
+		m_TextPos = TextPos;
 		m_PlantPos = PlantPos;
 		m_WorldID = WorldID;
 		m_PlantedItem = std::move(PlantedItem);
 
 		// door init
-		m_pDoorData = new CHouseDoorData(GS(), HouseDoorPos, std::move(AccessSet), this);
+		m_pDoorData = new CHouseDoorData(GS(), DoorPos, std::move(AccessSet), this);
 		if(m_AccountID <= 0)
 		{
 			m_pDoorData->Open();
@@ -117,6 +121,9 @@ public:
 
 	// Planting functions
 	void SetPlantItemID(ItemIdentifier ItemID);
+
+	// Text update house
+	void TextUpdate(int LifeTime);
 
 private:
 	// Function to initialize decorations
