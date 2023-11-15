@@ -305,7 +305,7 @@ void CEntityMoveTo::HandleBroadcastInformation() const
 	// select by type
 	if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::INTERACTIVE)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Click on the highlighted area to interact with it.\n{STR}", Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Please click on the highlighted area to interact with it.\n{STR}", Buffer.buffer());
 	}
 	else if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::PICKUP_ITEM || Type & QuestBotInfo::TaskRequiredMoveTo::Types::REQUIRED_ITEM)
 	{

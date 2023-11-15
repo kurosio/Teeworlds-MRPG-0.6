@@ -398,7 +398,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 					}
 					else
 					{
-						Radius = 800.f;
+						Radius = 400.f + frandom() * 2000.f;
 						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
 					}
 

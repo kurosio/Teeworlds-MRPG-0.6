@@ -231,7 +231,9 @@ void CPlayerDialog::TickUpdate()
 {
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || m_BotCID < MAX_PLAYERS || !GS()->m_apPlayers[m_BotCID] || !GS()->m_apPlayers[m_BotCID]->GetCharacter()
 		|| distance(m_pPlayer->m_ViewPos, GS()->m_apPlayers[m_BotCID]->GetCharacter()->GetPos()) > 180.0f)
+	{
 		Clear();
+	}
 }
 
 void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNickname, const char* pRightNickname)
@@ -259,7 +261,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	if(IsVanillaClient && m_BotType == TYPE_BOT_QUEST)
 	{
 		int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		str_format(aBufTittle, sizeof(aBufTittle), "* %s\n\n", GS()->GetQuestInfo(QuestID)->GetName());
+		str_format(aBufTittle, sizeof(aBufTittle), "\u2766 %s\n\n", GS()->GetQuestInfo(QuestID)->GetName());
 	}
 
 	/*

@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 
 CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f), Radius), m_Type(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_pEntParent(pEntParent)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f), (int)Radius), m_Type(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_pEntParent(pEntParent)
 {
 	m_Mask = Mask;
 	m_LaserType = LaserType;
@@ -80,7 +80,7 @@ void CLaserOrbite::Snap(int SnappingClient)
 			pObj->m_FromY = (int)PosStart.y;
 			pObj->m_ToX = (int)LastPosition.x;
 			pObj->m_ToY = (int)LastPosition.y;
-			pObj->m_StartTick = Server()->Tick() - 3;
+			pObj->m_StartTick = Server()->Tick() - 4;
 			pObj->m_Owner = m_ClientID;
 			pObj->m_Type = m_LaserType;
 		}
@@ -94,7 +94,7 @@ void CLaserOrbite::Snap(int SnappingClient)
 			pObj->m_FromY = (int)PosStart.y;
 			pObj->m_X = (int)LastPosition.x;
 			pObj->m_Y = (int)LastPosition.y;
-			pObj->m_StartTick = Server()->Tick() - 3;
+			pObj->m_StartTick = Server()->Tick() - 4;
 		}
 
 		LastPosition = PosStart;
