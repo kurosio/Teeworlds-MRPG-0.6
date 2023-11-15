@@ -475,13 +475,13 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RequiredDefeat.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "# Slay enemies:"));
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- ✎ Slay enemies:"));
 		for(auto& p : m_Bot.m_RequiredDefeat)
 		{
 			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count == p.m_Value ? "☑" : "☐");
 
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "- {STR} Defeat {STR} ({INT}/{INT})",
+			GS()->Server()->Localization()->Format(Buffer, pLang, "{STR} Defeat {STR} ({INT}/{INT})",
 				pCompletePrefix, DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
 		}
 	}
@@ -490,7 +490,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RequiredItems.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "# Retrieve an item's:"));
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- ✎ Retrieve an item's:"));
 		for(auto& pRequied : m_Bot.m_RequiredItems)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequied.m_Item);
@@ -498,7 +498,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show a" : "Require a";
 
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "- {STR} {STR} {STR} ({VAL}/{VAL}).",
+			GS()->Server()->Localization()->Format(Buffer, pLang, "{STR} {STR} {STR} ({VAL}/{VAL}).",
 				pCompletePrefix, GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pRequied.m_Item.GetValue());
 		}
 	}
@@ -507,7 +507,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RequiredMoveTo.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "# Trigger some action's:"));
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- ✎ Trigger some action's:"));
 
 		// Create an unordered map called m_Order with key type int and value type unordered_map<string, pair<int, int>> for special order task's
 		std::unordered_map<int /* step */, std::unordered_map<std::string /* task name */, std::pair<int /* complected */, int /* count */>>> m_Order;
@@ -541,12 +541,12 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 				const char* pCompletePrefix = (StepCount.first == StepCount.second ? "☑" : "☐");
 				if(TaskNum == 1)
 				{
-					GS()->Server()->Localization()->Format(Buffer, pLang, "- {INT}. {STR} {STR}.", Step, pCompletePrefix, Name.c_str());
+					GS()->Server()->Localization()->Format(Buffer, pLang, "{INT}. {STR} {STR}.", Step, pCompletePrefix, Name.c_str());
 					continue;
 				}
 
 				// Multi task
-				GS()->Server()->Localization()->Format(Buffer, pLang, "- {INT}. {STR} {STR} ({INT}/{INT}).", Step, pCompletePrefix, Name.c_str(), TaskCompleted, TaskNum);
+				GS()->Server()->Localization()->Format(Buffer, pLang, "{INT}. {STR} {STR} ({INT}/{INT}).", Step, pCompletePrefix, Name.c_str(), TaskCompleted, TaskNum);
 			}
 		}
 	}
@@ -555,11 +555,11 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!m_Bot.m_RewardItems.empty())
 	{
 		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "# Reward for completing a task:"));
+		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- ✎ Reward for completing a task:"));
 		for(auto& p : m_Bot.m_RewardItems)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "- Obtain a {STR} ({INT}).", p.Info()->GetName(), p.GetValue());
+			GS()->Server()->Localization()->Format(Buffer, pLang, "Obtain a {STR} ({INT}).", p.Info()->GetName(), p.GetValue());
 		}
 	}
 
