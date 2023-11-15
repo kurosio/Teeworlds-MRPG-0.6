@@ -14,28 +14,38 @@ class GroupData;
 class CAccountData
 {
 	int m_ID {};
+	char m_aLogin[64] {};
+	char m_aLastLogin[64] {};
 
 	class CHouseData* m_pHouseData {};
 	class GroupData* m_pGroupData {};
 
 public:
-	void SetUniqueID(int ID); // Function to set the ID of an object
+	/*
+	 * Group functions: initialize or uniques from function
+	 */
+	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult); // Function to initialize
 	int GetID() const { return m_ID; } // Function to get the ID of an object
 
 	/*
-	 * Group function: house system
+	 * Group functions: house system
 	 */
 	void ReinitializeHouse(); // This function re-initializes the house object
 	CHouseData* GetHouse() const { return m_pHouseData; } // Get the house data for the current object
 	bool HasHouse() const { return m_pHouseData != nullptr; } // Check if the current object has house data
 
 	/*
-	 * Group function: group system
+	 * Group functions: group system
 	 */
 	void ReinitializeGroup(); // This function re-initializes the group object
 	GroupData* GetGroup() const { return m_pGroupData; }; // Get the group data for the current object
 	bool HasGroup() const { return m_pGroupData != nullptr; } // Check if the current object has group data
 
+	/*
+	 * Group function: getters / setters
+	 */
+	const char* GetLogin() const { return m_aLogin; } // Get the login name as a const char pointer
+	const char* GetLastLoginDate() const { return m_aLastLogin; } // Get the last login date as a const char pointer
 
 	struct TimePeriods
 	{
@@ -45,9 +55,6 @@ public:
 	};
 
 	// main
-	char m_aLogin[64] {};
-	char m_aLastLogin[64] {};
-	char m_aLanguage[8] {};
 	int m_Level {};
 	int m_Exp {};
 	int m_Relations {};

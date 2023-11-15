@@ -94,112 +94,75 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 {
 	// Get the player associated with the client ID
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, false);
-	if(!pPlayer)
-		return AccountCodeResult::AOP_UNKNOWN; // If player does not exist, return unknown error
 
+	// Check if the player exists
+	if(!pPlayer)
+	{
+		// If player does not exist, return unknown error
+		return AccountCodeResult::AOP_UNKNOWN;
+	}
+
+	// Check if the length of the login is less than 4 or greater than 12, or if the length of the password is less than 4 or greater than 12
 	const int LengthLogin = str_length(Login);
 	const int LengthPassword = str_length(Password);
-	// Check if login and password lengths are valid
-	if(LengthLogin > 12 || LengthLogin < 4 || LengthPassword > 12 || LengthPassword < 4)
+	if(LengthLogin < 4 || LengthLogin > 12 || LengthPassword < 4 || LengthPassword > 12)
 	{
 		// Send error message to the client
 		GS()->Chat(ClientID, "The username and password must each contain 4 - 12 characters.");
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS; // Return mismatch length symbols error
 	}
 
-	// Convert login, password, and client name to normalized SQL strings
-	const CSqlString<32> cClearLogin = CSqlString<32>(Login);
-	const CSqlString<32> cClearPass = CSqlString<32>(Password);
-	const CSqlString<32> cClearNick = CSqlString<32>(Server()->ClientName(ClientID));
+	// Create a SQL strings
+	const auto sqlStrLogin = CSqlString<32>(Login);
+	const auto sqlStrPass = CSqlString<32>(Password);
+	const auto sqlStrNick = CSqlString<32>(Server()->ClientName(ClientID));
 
 	// Check if the nickname exists in the database
-	ResultPtr pResAccount = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
-	if(pResAccount->next())
+	ResultPtr pResAccount = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '%s'", sqlStrNick.cstr());
+	if(!pResAccount->next())
 	{
-		const int UserID = pResAccount->getInt("ID");
-		// Check if the given login and ID match in the database
-		ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt", "tw_accounts", "WHERE Username = '%s' AND ID = '%d'", cClearLogin.cstr(), UserID);
-
-		bool LoginSuccess = false;
-		if(pResCheck->next())
-		{
-			// Check if the given password matches the hashed password in the database
-			if(!str_comp(pResCheck->getString("Password").c_str(), HashPassword(cClearPass.cstr(), pResCheck->getString("PasswordSalt").c_str()).c_str()))
-				LoginSuccess = true;
-		}
-
-		if(!LoginSuccess)
-		{
-			// Send error message to the client
-			GS()->Chat(ClientID, "Oops, that doesn't seem to be the right login or password");
-			return AccountCodeResult::AOP_LOGIN_WRONG; // Return wrong login or password error
-		}
-
-		if(GS()->GetPlayerByUserID(UserID) != nullptr)
-		{
-			// Send error message to the client
-			GS()->Chat(ClientID, "The account is already in the game.");
-			return AccountCodeResult::AOP_ALREADY_IN_GAME; // Return already in game error
-		}
-
-		// Check if the account is banned
-		ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", UserID);
-		if(pResBan->next())
-		{
-			// Send error message to the client with the ban information
-			GS()->Chat(ClientID, "You account was suspended until \"{STR}\" with the reason of \"{STR}\"", pResBan->getString("BannedUntil").c_str(), pResBan->getString("Reason").c_str());
-			return AccountCodeResult::AOP_ACCOUNT_BANNED; // Return account banned error
-		}
-
-		// Set the client language and copy login and last login information to the player account
-		Server()->SetClientLanguage(ClientID, pResCheck->getString("Language").c_str());
-		str_copy(pPlayer->Acc().m_aLogin, cClearLogin.cstr(), sizeof(pPlayer->Acc().m_aLogin));
-		str_copy(pPlayer->Acc().m_aLastLogin, pResCheck->getString("LoginDate").c_str(), sizeof(pPlayer->Acc().m_aLastLogin));
-
-		// Update player account information from the database
-		pPlayer->Acc().SetUniqueID(UserID);
-		pPlayer->Acc().m_Level = pResAccount->getInt("Level");
-		pPlayer->Acc().m_Exp = pResAccount->getInt("Exp");
-		pPlayer->Acc().m_GuildID = pResAccount->getInt("GuildID");
-		pPlayer->Acc().m_Upgrade = pResAccount->getInt("Upgrade");
-		pPlayer->Acc().m_GuildRank = pResAccount->getInt("GuildRank");
-		pPlayer->Acc().m_aHistoryWorld.push_front(pResAccount->getInt("WorldID"));
-		Server()->SetClientScore(ClientID, pPlayer->Acc().m_Level);
-
-		// update time periods
-		{
-			time_t DailyTm = pResAccount->getInt64("DailyStamp");
-			time_t WeekTm = pResAccount->getInt64("WeekStamp");
-			time_t MonthTm = pResAccount->getInt64("MonthStamp");
-			pPlayer->Acc().m_Periods.m_DailyStamp = *localtime(&DailyTm);
-			pPlayer->Acc().m_Periods.m_WeekStamp = *localtime(&WeekTm);
-			pPlayer->Acc().m_Periods.m_MonthStamp = *localtime(&MonthTm);
-		}
-
-		// Load player account upgrades data
-		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
-		{
-			if(pAttribute->HasDatabaseField())
-				pPlayer->Acc().m_aStats[ID] = pResAccount->getInt(pAttribute->GetFieldName());
-		}
-
-		// Execute a database update query to update the "tw_accounts" table
-		// Set the LoginDate to the current timestamp and LoginIP to the client address
-		// The update query is executed on the row with the ID equal to the given UserID
-		char aAddrStr[64];
-		Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
-		Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '%s' WHERE ID = '%d'", aAddrStr, UserID);
-
-		// Send success messages to the client
-		GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
-		GS()->m_pController->DoTeamChange(pPlayer, false);
-		LoadAccount(pPlayer, true);
-		return AccountCodeResult::AOP_LOGIN_OK; // Return login success
+		// Send error message to the client
+		GS()->Chat(ClientID, "Sorry, we couldn't locate your username in our system.");
+		return AccountCodeResult::AOP_NICKNAME_NOT_EXIST; // Return nickname not found error
 	}
 
-	// Send error message to the client
-	GS()->Chat(ClientID, "Sorry, we couldn't locate your username in our system.");
-	return AccountCodeResult::AOP_NICKNAME_NOT_EXIST; // Return nickname not found error
+	// Check if the wrong login or password error
+	int UserID = pResAccount->getInt("ID"); // Get the ID from the account result
+	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt", "tw_accounts", "WHERE Username = '%s' AND ID = '%d'", sqlStrLogin.cstr(), UserID);
+	if(!pResCheck->next() || str_comp(pResCheck->getString("Password").c_str(), HashPassword(sqlStrPass.cstr(), pResCheck->getString("PasswordSalt").c_str()).c_str()) != 0)
+	{
+		// Send error message to the client
+		GS()->Chat(ClientID, "Oops, that doesn't seem to be the right login or password");
+		return AccountCodeResult::AOP_LOGIN_WRONG; // Return wrong login or password error
+	}
+
+	// Check if the account is banned
+	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", UserID);
+	if(pResBan->next())
+	{
+		// Send error message to the client with the ban information
+		GS()->Chat(ClientID, "You account was suspended until \"{STR}\" with the reason of \"{STR}\"", pResBan->getString("BannedUntil").c_str(), pResBan->getString("Reason").c_str());
+		return AccountCodeResult::AOP_ACCOUNT_BANNED; // Return account banned error
+	}
+
+	// Check if a player with the given UserID exists in the game state
+	if(GS()->GetPlayerByUserID(UserID) != nullptr)
+	{
+		// Send error message to the client
+		GS()->Chat(ClientID, "The account is already in the game.");
+		return AccountCodeResult::AOP_ALREADY_IN_GAME; // Return already in game error
+	}
+
+	// Update player account information from the database
+	std::string Language = pResCheck->getString("Language").c_str();
+	std::string LoginDate = pResCheck->getString("LoginDate").c_str();
+	pPlayer->Acc().Init(UserID, ClientID, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
+
+	// Send success messages to the client
+	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
+	GS()->m_pController->DoTeamChange(pPlayer, false);
+	LoadAccount(pPlayer, true);
+	return AccountCodeResult::AOP_LOGIN_OK;
 }
 
 void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)

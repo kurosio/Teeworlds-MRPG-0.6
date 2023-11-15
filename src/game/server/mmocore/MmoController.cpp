@@ -137,7 +137,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// statistics menu
 		const int ExpForLevel = pPlayer->ExpNeed(pPlayer->Acc().m_Level);
-		GS()->AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pPlayer->Acc().m_aLastLogin);
+		GS()->AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pPlayer->Acc().GetLastLoginDate());
 		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc().m_Level, pPlayer->Acc().m_Exp, ExpForLevel);
 		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
@@ -446,7 +446,7 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc().m_aLogin, pPlayer->Acc().GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc().GetLogin(), pPlayer->Acc().GetID());
 	}
 }
 
