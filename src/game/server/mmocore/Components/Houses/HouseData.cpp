@@ -198,18 +198,22 @@ void CHouseData::TextUpdate(int LifeTime)
 	if(m_LastTickTextUpdated > Server()->Tick())
 		return;
 
+	// Set the initial value of the variable "Name" to "HOUSE"
+	std::string Name = "HOUSE";
+
 	// Check if the object has an owner
 	if(HasOwner())
 	{
-		std::string PlayerName = GS()->Mmo()->PlayerName(m_AccountID);
-		GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, PlayerName.c_str());
-	}
-	else
-	{
-		GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, "HOUSE");
+		// If it has an owner, update the value of "Name" to the player's name
+		Name = Server()->GetAccountNickname(m_AccountID);
 	}
 
-	m_LastTickTextUpdated = Server()->Tick() + LifeTime;
+	// Create a text object with the given parameters
+	if(GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, Name.c_str()))
+	{
+		// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object
+		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
+	}
 }
 
 // It is used to display the list of decorations in the house.

@@ -97,7 +97,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	for(auto& AID : pGroup->GetAccounts())
 	{
 		// Get the player name for the account
-		std::string PlayerName = Job()->PlayerName(AID);
+		std::string PlayerName = Server()->GetAccountNickname(AID);
 		GS()->AVH(ClientID, HideID, "{STR}{STR}", (AID == pGroup->OwnerUID() ? "*" : "\0"), PlayerName.c_str());
 
 		// Check if the current player is the owner or if the account belongs to the current player

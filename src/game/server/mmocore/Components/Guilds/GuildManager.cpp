@@ -160,8 +160,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		CGuildData::ms_aGuild[GuildID].m_UserID = SelectedUserID;
 		Database->Execute<DB::UPDATE>("tw_guilds", "UserID = '%d' WHERE ID = '%d'", SelectedUserID, GuildID);
-		AddHistoryGuild(GuildID, "New guild leader '%s'.", Job()->PlayerName(SelectedUserID));
-		GS()->ChatGuild(GuildID, "Change leader {STR}->{STR}", Server()->ClientName(ClientID), Job()->PlayerName(SelectedUserID));
+		AddHistoryGuild(GuildID, "New guild leader '%s'.", Server()->GetAccountNickname(SelectedUserID));
+		GS()->ChatGuild(GuildID, "Change leader {STR}->{STR}", Server()->ClientName(ClientID), Server()->GetAccountNickname(SelectedUserID));
 		GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
 		return true;
 	}
@@ -825,7 +825,7 @@ void CGuildManager::DisbandGuild(int GuildID)
 
 bool CGuildManager::JoinGuild(int AccountID, int GuildID)
 {
-	const char *pPlayerName = Job()->PlayerName(AccountID);
+	const char *pPlayerName = Server()->GetAccountNickname(AccountID);
 	ResultPtr pResCheckJoin = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE ID = '%d' AND GuildID IS NOT NULL", AccountID);
 	if(pResCheckJoin->next())
 	{
@@ -872,8 +872,8 @@ void CGuildManager::ExitGuild(int AccountID)
 	{
 		// we write to the guild that the player has left the guild
 		const int GuildID = pResExit->getInt("GuildID");
-		GS()->ChatGuild(GuildID, "{STR} left the Guild!", Job()->PlayerName(AccountID));
-		AddHistoryGuild(GuildID, "'%s' exit or kicked.", Job()->PlayerName(AccountID));
+		GS()->ChatGuild(GuildID, "{STR} left the Guild!", Server()->GetAccountNickname(AccountID));
+		AddHistoryGuild(GuildID, "'%s' exit or kicked.", Server()->GetAccountNickname(AccountID));
 
 		// we update the player's information
 		CPlayer *pPlayer = GS()->GetPlayerByUserID(AccountID);
@@ -896,7 +896,7 @@ void CGuildManager::ShowMenuGuild(CPlayer *pPlayer) const
 	const int GuildID = pPlayer->Acc().m_GuildID;
 	const int GuildHouse = GetGuildHouseID(GuildID);
 	const int ExpNeed = computeExperience(CGuildData::ms_aGuild[GuildID].m_Level);
-	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", CGuildData::ms_aGuild[GuildID].m_aName, Job()->PlayerName(CGuildData::ms_aGuild[GuildID].m_UserID));
+	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", CGuildData::ms_aGuild[GuildID].m_aName, Server()->GetAccountNickname(CGuildData::ms_aGuild[GuildID].m_UserID));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", CGuildData::ms_aGuild[GuildID].m_Level, CGuildData::ms_aGuild[GuildID].m_Exp, ExpNeed);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::AVAILABLE_SLOTS, 0).m_Value);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", CGuildData::ms_aGuild[GuildID].m_Bank);
@@ -1251,7 +1251,7 @@ void CGuildManager::SendInviteGuild(int GuildID, CPlayer *pPlayer)
 	}
 
 	Database->Execute<DB::INSERT>("tw_guilds_invites", "(GuildID, UserID) VALUES ('%d', '%d')", GuildID, UserID);
-	GS()->ChatGuild(GuildID, "{STR} send invites to join our guilds", Job()->PlayerName(UserID));
+	GS()->ChatGuild(GuildID, "{STR} send invites to join our guilds", Server()->GetAccountNickname(UserID));
 	GS()->Chat(ClientID, "You sent a request to join the guild.");
 }
 
@@ -1263,7 +1263,7 @@ void CGuildManager::ShowInvitesGuilds(int ClientID, int GuildID)
 	while(pRes->next())
 	{
 		const int SenderID = pRes->getInt("UserID");
-		const char *PlayerName = Job()->PlayerName(SenderID);
+		const char *PlayerName = Server()->GetAccountNickname(SenderID);
 		GS()->AVH(ClientID, HideID, "Sender {STR} to join guilds", PlayerName);
 		{
 			GS()->AVM(ClientID, "MINVITEACCEPT", SenderID, HideID, "Accept {STR} to guild", PlayerName);
@@ -1297,7 +1297,7 @@ void CGuildManager::ShowFinderGuilds(int ClientID)
         const int PlayersCount = GetGuildPlayerValue(GuildID);
         cGuildName = pRes->getString("Name").c_str();
         GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} : Players [{INT}/{INT}]",
-                  cGuildName.cstr(), Job()->PlayerName(CGuildData::ms_aGuild[GuildID].m_UserID), PlayersCount, AvailableSlot);
+                  cGuildName.cstr(), Server()->GetAccountNickname(CGuildData::ms_aGuild[GuildID].m_UserID), PlayersCount, AvailableSlot);
         GS()->AVM(ClientID, "null", NOPE, HideID, "House: {STR} | Bank: {VAL} gold", (GetGuildHouseID(GuildID) <= 0 ? "No" : "Yes"), CGuildData::ms_aGuild[GuildID].m_Bank);
 
         GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, GuildID, HideID, "View player list");

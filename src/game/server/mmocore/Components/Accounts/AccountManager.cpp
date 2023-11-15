@@ -83,6 +83,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	// Insert the account into the tw_accounts_data table with the ID and nickname values
 	Database->Execute<DB::INSERT, 100>("tw_accounts_data", "(ID, Nick) VALUES ('%d', '%s')", InitID, cClearNick.cstr());
 
+	Server()->AddAccountNickname(InitID, cClearNick.cstr());
 	GS()->Chat(ClientID, "- Registration complete! Don't forget to save your data.");
 	GS()->Chat(ClientID, "# Your nickname is a unique identifier.");
 	GS()->Chat(ClientID, "# Log in: \"/login {STR} {STR}\"", cClearLogin.cstr(), cClearPass.cstr());
@@ -544,7 +545,7 @@ std::vector<CAccountManager::AccBan> CAccountManager::BansAccount()
 		int ID = pResBan->getInt("Id"); // Get the value of the "Id" column from the current row
 		int AccountID = pResBan->getInt("AccountId"); // Get the value of the "AccountId" column from the current row
 		std::string BannedUntil = pResBan->getString("BannedUntil").c_str(); // Get the value of the "BannedUntil" column from the current row
-		std::string PlayerNickname = MmoController::PlayerName(AccountID); // Get the player nickname using the AccountID
+		std::string PlayerNickname = Server()->GetAccountNickname(AccountID); // Get the player nickname using the AccountID
 		std::string Reason = pResBan->getString("Reason").c_str(); // Get the value of the "Reason" column from the current row
 
 		// Create an instance of the AccBan struct with the retrieved values and add it to the vector "out"

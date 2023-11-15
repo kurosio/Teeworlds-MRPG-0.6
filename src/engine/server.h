@@ -239,6 +239,9 @@ public:
 
 	virtual int* GetIdMap(int ClientID) = 0;
 
+	virtual void AddAccountNickname(int UID, std::string Nickname) = 0;
+	virtual const char* GetAccountNickname(int AccountID) = 0;
+
 	virtual void ExpireServerInfo() = 0;
 };
 

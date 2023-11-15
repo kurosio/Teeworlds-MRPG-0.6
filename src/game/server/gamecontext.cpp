@@ -1947,13 +1947,14 @@ int CGS::CreateBot(short BotType, int BotID, int SubID)
 }
 
 // create lol text in the world
-void CGS::CreateText(CEntity* pParent, bool Follow, vec2 Pos, vec2 Vel, int Lifespan, const char* pText)
+bool CGS::CreateText(CEntity* pParent, bool Follow, vec2 Pos, vec2 Vel, int Lifespan, const char* pText)
 {
 	if(!IsPlayersNearby(Pos, 800))
-		return;
+		return false;
 
 	CLoltext Text;
 	Text.Create(&m_World, pParent, Pos, Vel, Lifespan, pText, true, Follow);
+	return true;
 }
 
 // creates a particle of experience that follows the player

@@ -35,7 +35,7 @@ public:
 	bool ChangeNickname(int ClientID);
     bool BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason);
     bool UnBanAccount(int BanId);
-    static std::vector<AccBan> BansAccount();
+    std::vector<AccBan> BansAccount();
 
 	int GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const;
 	

@@ -206,7 +206,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You and your eidolon have full access");
 		for(auto& p : pHouseDoor->GetAccesses())
 		{
-			GS()->AVM(ClientID, "HOUSE_INVITED_LIST_REMOVE", p, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "Remove access from {STR}", GS()->Mmo()->PlayerName(p));
+			GS()->AVM(ClientID, "HOUSE_INVITED_LIST_REMOVE", p, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "Remove access from {STR}", Server()->GetAccountNickname(p));
 		}
 
 		// field to find player for append
@@ -515,7 +515,7 @@ void CHouseManager::ShowHouseMenu(CPlayer* pPlayer, CHouseData* pHouse)
 	const int ClientID = pPlayer->GetCID();
 
 	GS()->AVH(ClientID, TAB_INFO_HOUSE, "House {INT} . {STR}", ID, pHouse->GetClassName());
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE, "Owner House: {STR}", Job()->PlayerName(pHouse->GetAccountID()));
+	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE, "Owner House: {STR}", Server()->GetAccountNickname(pHouse->GetAccountID()));
 
 	GS()->AV(ClientID, "null");
 	GS()->AddVoteItemValue(ClientID, itGold);

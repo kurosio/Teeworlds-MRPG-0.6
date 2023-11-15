@@ -174,7 +174,7 @@ void CDungeonManager::ShowDungeonTop(CPlayer* pPlayer, int DungeonID, int HideID
 
 		const int Minutes = BaseSeconds / 60;
 		const int Seconds = BaseSeconds - (BaseSeconds / 60 * 60);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{INT}. {STR} | {INT}:{INT}min | {VAL}P", Rank, Job()->PlayerName(UserID), Minutes, Seconds, BasePassageHelp);
+		GS()->AVM(ClientID, "null", NOPE, HideID, "{INT}. {STR} | {INT}:{INT}min | {VAL}P", Rank, Server()->GetAccountNickname(UserID), Minutes, Seconds, BasePassageHelp);
 	}
 }
 

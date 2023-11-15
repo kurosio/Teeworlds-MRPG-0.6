@@ -89,7 +89,6 @@ public:
 	void ConAsyncLinesForTranslate();
 	//
 	void LoadLogicWorld() const;
-	static const char* PlayerName(int AccountID);
 	void SaveAccount(CPlayer *pPlayer, int Table) const;
 	void ShowLoadingProgress(const char* pLoading, int Size) const;
 	void ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalMode, int Limit) const;

@@ -461,18 +461,6 @@ void MmoController::LoadLogicWorld() const
 	}
 }
 
-char SaveNick[32];
-const char* MmoController::PlayerName(int AccountID)
-{
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Nick", "tw_accounts_data", "WHERE ID = '%d'", AccountID);
-	if(pRes->next())
-	{
-		str_copy(SaveNick, pRes->getString("Nick").c_str(), sizeof(SaveNick));
-		return SaveNick;
-	}
-	return "No found!";
-}
-
 void MmoController::ShowLoadingProgress(const char* pLoading, int Size) const
 {
 	char aLoadingBuf[128];
@@ -542,7 +530,7 @@ void MmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalM
 			const int Rank = pRes->getRow();
 			const int Gold = pRes->getInt("Value");
 			const int UserID = pRes->getInt("UserID");
-			str_copy(Nick, PlayerName(UserID), sizeof(Nick));
+			str_copy(Nick, Instance::GetServer()->GetAccountNickname(UserID), sizeof(Nick));
 
 			if(ChatGlobalMode)
 				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);

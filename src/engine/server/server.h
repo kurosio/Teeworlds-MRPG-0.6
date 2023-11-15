@@ -281,6 +281,13 @@ public:
 	void SnapSetStaticsize(int ItemType, int Size) override;
 
 	int* GetIdMap(int ClientID) override;
+
+	void AddAccountNickname(int UID, std::string Nickname) override;
+	const char* GetAccountNickname(int AccountID) override;
+
+private:
+	std::unordered_map< int, std::string > m_aAccountNicknames {};
+	void InitAllAccountNicknames();
 };
 
 #endif

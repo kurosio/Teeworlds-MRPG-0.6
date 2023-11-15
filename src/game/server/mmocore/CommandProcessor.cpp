@@ -286,7 +286,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 				for(const auto& AID : pGroup->GetAccounts())
 				{
 					const char* Prefix = (pGroup->OwnerUID() == AID) ? "O: " : "\0";
-					const std::string Nickname = pGS->Mmo()->PlayerName(AID);
+					const std::string Nickname = Instance::GetServer()->GetAccountNickname(AID);
 
 					// Send a chat message to the client with the prefix (if owner) and the nickname
 					pGS->Chat(ClientID, "{STR}{STR}", Prefix, Nickname.c_str());

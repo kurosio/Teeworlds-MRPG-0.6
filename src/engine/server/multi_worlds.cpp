@@ -92,7 +92,9 @@ void CMultiWorlds::Clear(bool Shutdown)
 	{
 		if(m_Worlds[i].m_pLoadedMap)
 		{
-			m_Worlds[i].m_pLoadedMap->Unload();
+			if(m_Worlds[i].m_pLoadedMap->IsLoaded())
+				m_Worlds[i].m_pLoadedMap->Unload();
+
 			if(Shutdown)
 			{
 				delete m_Worlds[i].m_pLoadedMap;
