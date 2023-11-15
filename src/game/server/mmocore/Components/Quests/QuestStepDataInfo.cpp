@@ -394,12 +394,12 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 					if(pRequired.m_Type == QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
 					{
 						Radius = 400.f;
-						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), EntLaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
+						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), EntLaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
 					}
 					else
 					{
 						Radius = 400.f + frandom() * 2000.f;
-						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_SHOTGUN, CmaskOne(pPlayer->GetCID()));
+						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
 					}
 
 					// Add navigator to the orbital path

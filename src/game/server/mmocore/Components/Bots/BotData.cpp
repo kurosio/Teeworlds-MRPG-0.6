@@ -101,7 +101,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				const int Step = p.value("step", 1);
 				const bool Navigator = p.value("navigator", true);
 				const std::string CompletionText = p.value("completion_text", "");
-				const std::string TaskName = p.value("task_name", "Demands a bit of action");
+				const std::string TaskName = p.value("name", "Demands a bit of action");
 
 				// initialize data flags
 				CItem PickUpItem {};

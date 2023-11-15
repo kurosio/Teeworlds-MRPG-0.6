@@ -205,7 +205,7 @@ void CPlayerQuest::LoadSteps()
 		{
 			// Check if the size of the m_RequiredMoveTo vector in the m_Bot member of the m_aPlayerSteps vector at the index SubBotID is less than or equal to 0
 			int MoveToElementsSize = (int)m_aPlayerSteps[SubBotID].m_Bot.m_RequiredMoveTo.size();
-			if(MoveToElementsSize <= 0)
+			if(MoveToElementsSize <= 0 || (MoveToElementsSize < (int)pStep["move_to"].size()))
 			{
 				// Print a debug message andd call InitSteps
 				dbg_msg("quest system", "Reinitialization called... Player save file has a MoveTo value, but it is not present in the data!");
