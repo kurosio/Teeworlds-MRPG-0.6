@@ -41,7 +41,7 @@ void CHouseManager::OnTick()
 		return;
 
 	// Calculate the remaining lifetime of a text update
-	int LifeTime = (Server()->TickSpeed() * 10) - 5;
+	int LifeTime = (Server()->TickSpeed() * 10);
 
 	// Get the house data
 	const auto& HouseData = CHouseData::Data();

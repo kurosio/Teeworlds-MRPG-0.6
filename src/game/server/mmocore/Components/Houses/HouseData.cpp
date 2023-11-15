@@ -6,7 +6,6 @@
 #include "game/server/mmocore/GameEntities/jobitems.h"
 #include "game/server/mmocore/GameEntities/decoration_houses.h"
 
-
 CGS* CHouseData::GS() const { return static_cast<CGS*>(Server()->GameServer(m_WorldID)); }
 CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerByUserID(m_AccountID); }
 
@@ -199,22 +198,18 @@ void CHouseData::TextUpdate(int LifeTime)
 	if(m_LastTickTextUpdated > Server()->Tick())
 		return;
 
-	// Check if there are players nearby the text position within a radius of 1000 units
-	if(GS()->IsPlayersNearby(m_TextPos, 1000.f))
+	// Check if the object has an owner
+	if(HasOwner())
 	{
-		// Check if the object has an owner
-		if(HasOwner())
-		{
-			std::string PlayerName = GS()->Mmo()->PlayerName(m_AccountID);
-			GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, PlayerName.c_str());
-		}
-		else
-		{
-			GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, "HOUSE");
-		}
-
-		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
+		std::string PlayerName = GS()->Mmo()->PlayerName(m_AccountID);
+		GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, PlayerName.c_str());
 	}
+	else
+	{
+		GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, "HOUSE");
+	}
+
+	m_LastTickTextUpdated = Server()->Tick() + LifeTime;
 }
 
 // It is used to display the list of decorations in the house.
