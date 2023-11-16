@@ -510,7 +510,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Trigger some action's:"));
 
 		// Create an unordered map called m_Order with key type int and value type unordered_map<string, pair<int, int>> for special order task's
-		std::unordered_map<int /* step */, std::unordered_map<std::string /* task name */, std::pair<int /* complected */, int /* count */>>> m_Order;
+		ska::unordered_map<int /* step */, ska::unordered_map<std::string /* task name */, std::pair<int /* complected */, int /* count */>>> m_Order;
 		m_Order.reserve(m_Bot.m_RequiredMoveTo.size());
 		for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
 		{

@@ -36,7 +36,7 @@
 #include "mmocore/Components/Worlds/WorldData.h"
 
 // static data that have the same value in different objects
-std::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
+ska::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
 int CGS::m_MultiplierExp = 100;
 
 CGS::CGS()

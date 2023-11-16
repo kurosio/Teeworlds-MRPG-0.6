@@ -61,7 +61,7 @@ public:
 	/* #########################################################################
 		SWAP GAMECONTEX DATA
 	######################################################################### */
-	static std::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
+	static ska::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
 	// - - - - - - - - - - - -
 
 	/* #########################################################################

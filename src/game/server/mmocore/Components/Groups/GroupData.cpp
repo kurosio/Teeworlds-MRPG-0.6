@@ -117,7 +117,7 @@ bool GroupData::Remove(int AccountID)
 void GroupData::Disband()
 {
 	// Create a copy of the account IDs in a set called ReinitilizedAccounts
-	const std::unordered_set<int> ReinitilizedAccounts = m_AccountIds;
+	const ska::unordered_set<int> ReinitilizedAccounts = m_AccountIds;
 	// Clear the original account IDs set
 	m_AccountIds.clear();
 

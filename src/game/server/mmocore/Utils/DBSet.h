@@ -10,7 +10,7 @@ class DBSet
 	std::string m_Data {};
 
 	// Create an empty unordered_set variable called m_DataItems to store unique data items
-	std::unordered_set<std::string> m_DataItems {};
+	ska::unordered_set<std::string> m_DataItems {};
 
 	// Initialize the function
 	void Init()
@@ -95,7 +95,7 @@ public:
 	}
 
 	// Return a constant reference to the unordered_set<std::string> data member m_DataItems
-	const std::unordered_set<std::string>& GetDataItems() const
+	const ska::unordered_set<std::string>& GetDataItems() const
 	{
 		return m_DataItems;
 	}

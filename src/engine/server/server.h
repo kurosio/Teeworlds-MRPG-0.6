@@ -8,23 +8,23 @@
 
 class CServer : public IServer
 {
-	class IConsole *m_pConsole{};
-	class IStorageEngine *m_pStorage{};
+	class IConsole* m_pConsole {};
+	class IStorageEngine* m_pStorage {};
 	class CMultiWorlds* m_pMultiWorlds;
 	class CServerBan* m_pServerBan;
-	class DiscordJob* m_pDiscord{};
+	class DiscordJob* m_pDiscord {};
 
 public:
 	class IGameServer* GameServer(int WorldID = 0) override;
 	class IGameServer* GameServerPlayer(int ClientID) override;
-	class IConsole *Console() const { return m_pConsole; }
-	class IStorageEngine*Storage() const { return m_pStorage; }
+	class IConsole* Console() const { return m_pConsole; }
+	class IStorageEngine* Storage() const { return m_pStorage; }
 	class CMultiWorlds* MultiWorlds() const { return m_pMultiWorlds; }
 
 	enum
 	{
 		MAX_RCONCMD_RATIO = 8,
-		MAX_RCONCMD_SEND=16,
+		MAX_RCONCMD_SEND = 16,
 	};
 
 	class CClient
@@ -83,7 +83,7 @@ public:
 
 		int m_NextMapChunk;
 		bool m_Quitting;
-		const IConsole::CCommandInfo *m_pRconCmdToSend;
+		const IConsole::CCommandInfo* m_pRconCmdToSend;
 
 		int m_ClientVersion;
 		bool m_IsClientMRPG;
@@ -99,7 +99,7 @@ public:
 	};
 
 	CClient m_aClients[MAX_CLIENTS];
-	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS]{};
+	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS] {};
 
 	CSnapshotDelta m_SnapshotDelta;
 	CSnapshotBuilder m_SnapshotBuilder;
@@ -107,20 +107,20 @@ public:
 	CNetServer m_NetServer;
 	CEcon m_Econ;
 
-	int64 m_GameStartTime{};
+	int64 m_GameStartTime {};
 	int m_RunServer;
 	int m_RconClientID;
 	int m_RconAuthLevel;
-	int m_PrintCBIndex{};
+	int m_PrintCBIndex {};
 	bool m_HeavyReload;
 
 	// map
 	enum
 	{
-		MAP_CHUNK_SIZE=NET_MAX_PAYLOAD-NET_MAX_CHUNKHEADERSIZE-4, // msg type
+		MAP_CHUNK_SIZE = NET_MAX_PAYLOAD - NET_MAX_CHUNKHEADERSIZE - 4, // msg type
 	};
-	int m_MapChunksPerRequest{};
-	int m_DataChunksPerRequest{};
+	int m_MapChunksPerRequest {};
+	int m_DataChunksPerRequest {};
 
 	int m_RconPasswordSet;
 	int m_GeneratedRconPassword;
@@ -133,9 +133,9 @@ public:
 	// world time
 	int m_ShiftTime;
 	int m_LastShiftTick;
-	int m_WorldMinute{};
-	int m_WorldHour{};
-	bool m_IsNewMinute{};
+	int m_WorldMinute {};
+	int m_WorldHour {};
+	bool m_IsNewMinute {};
 
 	int GetMinuteWorldTime() const override;
 	int GetHourWorldTime() const override;
@@ -146,8 +146,8 @@ public:
 	int GetEnumTypeDay() const override;
 
 	// basic
-	void SetClientName(int ClientID, const char *pName) override;
-	void SetClientClan(int ClientID, char const *pClan) override;
+	void SetClientName(int ClientID, const char* pName) override;
+	void SetClientClan(int ClientID, char const* pClan) override;
 	void SetClientCountry(int ClientID, int Country) override;
 	void SetClientScore(int ClientID, int Score) override;
 
@@ -163,12 +163,12 @@ public:
 	const char* GetWorldName(int WorldID) override;
 	int GetWorldsSize() const override;
 
-	void SendDiscordMessage(const char *pChannel, int Color, const char* pTitle, const char* pText) override;
-	void SendDiscordGenerateMessage(const char *pTitle, int AccountID, int Color = 0) override;
-	void UpdateDiscordStatus(const char *pStatus) override;
-    std::string EscapeDiscordMarkdown(const std::string &input) override;
+	void SendDiscordMessage(const char* pChannel, int Color, const char* pTitle, const char* pText) override;
+	void SendDiscordGenerateMessage(const char* pTitle, int AccountID, int Color = 0) override;
+	void UpdateDiscordStatus(const char* pStatus) override;
+	std::string EscapeDiscordMarkdown(const std::string& input) override;
 
-	void Kick(int ClientID, const char *pReason) override;
+	void Kick(int ClientID, const char* pReason) override;
 
 	int64 TickStartTime(int Tick) const;
 	int Init();
@@ -183,17 +183,17 @@ public:
 	bool IsBanned(int ClientID) override;
 	bool IsEmpty(int ClientID) const override;
 	void SetClientDDNetVersion(int ClientID, int DDNetVersion) override;
-	int GetClientInfo(int ClientID, CClientInfo *pInfo) const override;
-	void GetClientAddr(int ClientID, char *pAddrStr, int Size) const override;
+	int GetClientInfo(int ClientID, CClientInfo* pInfo) const override;
+	void GetClientAddr(int ClientID, char* pAddrStr, int Size) const override;
 
 	void SetStateClientMRPG(int ClientID, bool State) override;
 	bool GetStateClientMRPG(int ClientID) const override;
 
-	const char *ClientName(int ClientID) const override;
-	const char *ClientClan(int ClientID) const override;
+	const char* ClientName(int ClientID) const override;
+	const char* ClientClan(int ClientID) const override;
 	int ClientCountry(int ClientID) const override;
 	bool ClientIngame(int ClientID) const override;
-	
+
 	int GetClientVersion(int ClientID) const override;
 	int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1) override;
 
@@ -208,14 +208,14 @@ public:
 	void SendCapabilities(int ClientID);
 	void SendMap(int ClientID);
 	void SendConnectionReady(int ClientID);
-	void SendRconLine(int ClientID, const char *pLine);
-	static void SendRconLineAuthed(const char *pLine, void *pUser, bool Highlighted);
+	void SendRconLine(int ClientID, const char* pLine);
+	static void SendRconLineAuthed(const char* pLine, void* pUser, bool Highlighted);
 
-	void SendRconCmdAdd(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
-	void SendRconCmdRem(const IConsole::CCommandInfo *pCommandInfo, int ClientID);
+	void SendRconCmdAdd(const IConsole::CCommandInfo* pCommandInfo, int ClientID);
+	void SendRconCmdRem(const IConsole::CCommandInfo* pCommandInfo, int ClientID);
 	void UpdateClientRconCommands();
 
-	void ProcessClientPacket(CNetChunk *pPacket);
+	void ProcessClientPacket(CNetChunk* pPacket);
 
 	class CCache
 	{
@@ -255,20 +255,20 @@ public:
 
 	bool LoadMap(int ID);
 
-	void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
+	void InitRegister(CNetServer* pNetServer, IEngineMasterServer* pMasterServer, IConsole* pConsole);
 	int Run();
 
-	static void ConKick(IConsole::IResult *pResult, void *pUser);
-	static void ConStatus(IConsole::IResult *pResult, void *pUser);
-	static void ConShutdown(IConsole::IResult *pResult, void *pUser);
-	static void ConReload(IConsole::IResult *pResult, void *pUser);
-	static void ConLogout(IConsole::IResult *pResult, void *pUser);
+	static void ConKick(IConsole::IResult* pResult, void* pUser);
+	static void ConStatus(IConsole::IResult* pResult, void* pUser);
+	static void ConShutdown(IConsole::IResult* pResult, void* pUser);
+	static void ConReload(IConsole::IResult* pResult, void* pUser);
+	static void ConLogout(IConsole::IResult* pResult, void* pUser);
 
-	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainMaxclientsperipUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainModCommandUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainRconPasswordSet(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainSpecialInfoupdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
+	static void ConchainMaxclientsperipUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
+	static void ConchainModCommandUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
+	static void ConchainConsoleOutputLevelUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
+	static void ConchainRconPasswordSet(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 
 	void RegisterCommands();
 
@@ -277,7 +277,7 @@ public:
 
 	int SnapNewID() override;
 	void SnapFreeID(int ID) override;
-	void *SnapNewItem(int Type, int ID, int Size) override;
+	void* SnapNewItem(int Type, int ID, int Size) override;
 	void SnapSetStaticsize(int ItemType, int Size) override;
 
 	int* GetIdMap(int ClientID) override;
@@ -286,7 +286,7 @@ public:
 	const char* GetAccountNickname(int AccountID) override;
 
 private:
-	std::unordered_map< int, std::string > m_aAccountNicknames {};
+	ska::unordered_map<int, std::string> m_aAccountsNicknames{};
 	void InitAllAccountNicknames();
 };
 

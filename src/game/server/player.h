@@ -37,7 +37,7 @@ class CPlayer
 	};
 
 	int m_SnapHealthTick;
-	std::unordered_map < int, bool > m_aHiddenMenu;
+	ska::unordered_map < int, bool > m_aHiddenMenu;
 
 protected:
 	CCharacter* m_pCharacter;

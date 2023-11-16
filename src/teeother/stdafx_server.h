@@ -11,6 +11,9 @@
 #include <base/system.h>
 #include <game/server/mmocore/GameContext.h>
 #include <teeother/components/localization.h>
+#include <teeother/flat_hash_map/bytell_hash_map.h>
+#include <teeother/flat_hash_map/flat_hash_map.h>
+#include <teeother/flat_hash_map/unordered_map.h>
 
 #include <game/version.h>
 

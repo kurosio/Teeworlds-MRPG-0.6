@@ -12,7 +12,7 @@ class GroupData : public MultiworldIdentifiableStaticData< std::map< int, GroupD
 	GroupIdentifier m_ID {};
 	int m_OwnerUID {};
 	int m_TeamColor {};
-	std::unordered_set<int> m_AccountIds {};
+	ska::unordered_set<int> m_AccountIds {};
 
 public:
 	GroupData() = default;
@@ -52,7 +52,7 @@ public:
 	int OwnerUID() const { return m_OwnerUID; }
 
 	// Get a reference to the map of account IDs in the group
-	const std::unordered_set<int>& GetAccounts() const { return m_AccountIds; }
+	const ska::unordered_set<int>& GetAccounts() const { return m_AccountIds; }
 
 private:
 	void Save() const;

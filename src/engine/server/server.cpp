@@ -82,7 +82,7 @@ CServer::~CServer()
 	delete m_pDiscord;
 #endif
 	delete m_pMultiWorlds;
-	m_aAccountNicknames.clear();
+	m_aAccountsNicknames.clear();
 
 	Database->DisconnectConnectionHeap();
 }
@@ -1840,7 +1840,7 @@ int CServer::Run()
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██║╚██╔╝██║██╔══██╗██╔═══╝ ██║   ██║");
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██║ ╚═╝ ██║██║  ██║██║     ╚██████╔╝");
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "╚═╝     ╚═╝╚═╝  ╚═╝╚═╝      ╚═════╝ ");
-	str_format(aBuf, sizeof(aBuf), "initialized player nicknames: %d", m_aAccountNicknames.size());
+	str_format(aBuf, sizeof(aBuf), "initialized player nicknames: %d", m_aAccountsNicknames.size());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 	str_format(aBuf, sizeof(aBuf), "initialized worlds: %d", MultiWorlds()->GetSizeInitilized());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
@@ -2222,7 +2222,7 @@ int* CServer::GetIdMap(int ClientID)
 void CServer::InitAllAccountNicknames()
 {
 	// Check if the m_aAccountNicknames vector is not empty
-	if(!m_aAccountNicknames.empty())
+	if(!m_aAccountsNicknames.empty())
 	{
 		// If it is not empty, return and exit the function
 		return;
@@ -2233,7 +2233,7 @@ void CServer::InitAllAccountNicknames()
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data");
 
 	// Reserve memory in the m_aAccountNicknames vector to store the number of rows + reserve in the result
-	m_aAccountNicknames.reserve(pRes->rowsCount() + 10000);
+	m_aAccountsNicknames.reserve(pRes->rowsCount() + 10000);
 
 	// Iterate over each row in the result
 	while(pRes->next())
@@ -2246,14 +2246,14 @@ void CServer::InitAllAccountNicknames()
 
 void CServer::AddAccountNickname(int UID, std::string Nickname)
 {
-	m_aAccountNicknames.emplace(UID, Nickname);
+	m_aAccountsNicknames.emplace(UID, Nickname);
 }
 
 const char* CServer::GetAccountNickname(int AccountID)
 {
-	dbg_assert(m_aAccountNicknames.find(AccountID) != m_aAccountNicknames.end(), "invalid getter account nickname");
+	dbg_assert(m_aAccountsNicknames.find(AccountID) != m_aAccountsNicknames.end(), "invalid getter account nickname");
 
-	return m_aAccountNicknames[AccountID].c_str();
+	return m_aAccountsNicknames[AccountID].c_str();
 }
 
 static CServer* CreateServer() { return new CServer(); }
