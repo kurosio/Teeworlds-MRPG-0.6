@@ -108,9 +108,6 @@ void CPlayer::Tick()
 	// post updated votes if player open menu
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU && IsActivePostVoteList())
 		PostVoteList();
-
-	// Call the function HandleVoteOptionals() to handle any optional vote features.
-	HandleVoteOptionals();
 }
 
 void CPlayer::PostTick()
@@ -131,6 +128,9 @@ void CPlayer::PostTick()
 
 	// Handle scoreboard colors
 	HandleScoreboardColors();
+
+	// Call the function HandleVoteOptionals() to handle any optional vote features.
+	HandleVoteOptionals();
 }
 
 CPlayerBot* CPlayer::GetEidolon() const

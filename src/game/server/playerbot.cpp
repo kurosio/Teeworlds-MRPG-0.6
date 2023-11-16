@@ -419,21 +419,25 @@ void CPlayerBot::FakeSnap()
 Mood CPlayerBot::GetMoodState() const
 {
 	CCharacterBotAI* pChr = (CCharacterBotAI*)m_pCharacter;
+
 	if((GetBotType() == TYPE_BOT_MOB || GetBotType() == TYPE_BOT_QUEST_MOB) && pChr && !pChr->AI()->GetTarget()->IsEmpty())
-		return Mood::AGRESSED;
-	else if(GetBotType() == TYPE_BOT_NPC)
+		return Mood::ANGRY;
+
+	if(GetBotType() == TYPE_BOT_NPC)
 	{
 		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN && !pChr->AI()->GetTarget()->IsEmpty())
 			return Mood::AGRESSED;
-		else
-			return Mood::FRIENDLY;
-	}
-	else if(GetBotType() == TYPE_BOT_EIDOLON)
+
 		return Mood::FRIENDLY;
-	else if(GetBotType() == TYPE_BOT_QUEST)
+	}
+
+	if(GetBotType() == TYPE_BOT_EIDOLON)
+		return Mood::FRIENDLY;
+
+	if(GetBotType() == TYPE_BOT_QUEST)
 		return Mood::QUEST;
-	else
-		return Mood::NORMAL;
+
+	return Mood::NORMAL;
 }
 
 int CPlayerBot::GetBotLevel() const

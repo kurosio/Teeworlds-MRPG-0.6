@@ -1840,7 +1840,7 @@ int CServer::Run()
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██║╚██╔╝██║██╔══██╗██╔═══╝ ██║   ██║");
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██║ ╚═╝ ██║██║  ██║██║     ╚██████╔╝");
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "╚═╝     ╚═╝╚═╝  ╚═╝╚═╝      ╚═════╝ ");
-	str_format(aBuf, sizeof(aBuf), "initialized player nicknames: %d", m_aAccountsNicknames.size());
+	str_format(aBuf, sizeof(aBuf), "initialized player nicknames: %lu", m_aAccountsNicknames.size());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 	str_format(aBuf, sizeof(aBuf), "initialized worlds: %d", MultiWorlds()->GetSizeInitilized());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
