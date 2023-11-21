@@ -478,7 +478,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Slay enemies:"));
 		for(auto& p : m_Bot.m_RequiredDefeat)
 		{
-			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count == p.m_Value ? "\u2611" : "\u2610");
+			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count >= p.m_Value ? "\u2611" : "\u2610");
 
 			Buffer.append_at(Buffer.length(), "\n");
 			GS()->Server()->Localization()->Format(Buffer, pLang, "{STR} Defeat {STR} ({INT}/{INT})",
@@ -494,7 +494,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 		for(auto& pRequied : m_Bot.m_RequiredItems)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequied.m_Item);
-			const char* pCompletePrefix = (pPlayerItem->GetValue() == pRequied.m_Item.GetValue() ? "\u2611" : "\u2610");
+			const char* pCompletePrefix = (pPlayerItem->GetValue() >= pRequied.m_Item.GetValue() ? "\u2611" : "\u2610");
 			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show a" : "Require a";
 
 			Buffer.append_at(Buffer.length(), "\n");
@@ -538,7 +538,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 				// Check for one task
 				const int& TaskNum = StepCount.second;
 				const int& TaskCompleted = StepCount.first;
-				const char* pCompletePrefix = (StepCount.first == StepCount.second ? "\u2611" : "\u2610");
+				const char* pCompletePrefix = (TaskCompleted >= TaskNum ? "\u2611" : "\u2610");
 				if(TaskNum == 1)
 				{
 					GS()->Server()->Localization()->Format(Buffer, pLang, "{INT}. {STR} {STR}.", Step, pCompletePrefix, Name.c_str());

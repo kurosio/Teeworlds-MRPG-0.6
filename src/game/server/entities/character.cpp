@@ -552,16 +552,22 @@ bool CCharacter::RemoveWeapon(int Weapon)
 	return Reverse;
 }
 
+// This function sets the character's emote and its duration
 void CCharacter::SetEmote(int Emote, int Sec, bool StartEmoticion)
 {
+	// Check if the character is alive and the emote has stopped
 	if(m_Alive && m_EmoteStop < Server()->Tick())
 	{
+		// Set the emote type
 		m_EmoteType = Emote;
+		// Set the time when the emote should stop
 		m_EmoteStop = Server()->Tick() + Sec * Server()->TickSpeed();
 	}
 
+	// Check if the emoticion should be started
 	if(StartEmoticion)
 	{
+		// Send the corresponding emoticon based on the emote type
 		if(Emote == EMOTE_BLINK)
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_DOTDOT);
 		else if(Emote == EMOTE_HAPPY)
@@ -815,7 +821,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				if(KillerIsPlayer)
 				{
 					pKiller->GetItem(itGold)->Add(Arrest);
-					GS()->Chat(-1, "{STR} killed {STR}, who was wanted. The reward is {VAL} gold!", 
+					GS()->Chat(-1, "{STR} killed {STR}, who was wanted. The reward is {VAL} gold!",
 						Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 				}
 
