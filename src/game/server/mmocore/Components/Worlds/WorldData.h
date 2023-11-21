@@ -54,7 +54,7 @@ public:
 	}
 
 	// Initialize the CWorldData instance with the specified parameters
-	void Init(int RespawnWorldID, int RequiredQuestID, const std::deque <CWorldSwapData>& Worlds);
+	void Init(int RespawnWorldID, int RequiredQuestID, std::deque <CWorldSwapData>&& Worlds);
 
 	// Move the player to a different world
 	void Move(class CPlayer* pPlayer);

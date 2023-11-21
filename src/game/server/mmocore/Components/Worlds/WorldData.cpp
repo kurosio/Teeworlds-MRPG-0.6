@@ -6,12 +6,12 @@
 
 #include "game/server/gamecontext.h"
 
-void CWorldData::Init(int RespawnWorldID, int RequiredQuestID, const std::deque<CWorldSwapData>& Worlds)
+void CWorldData::Init(int RespawnWorldID, int RequiredQuestID, std::deque<CWorldSwapData>&& Worlds)
 {
 	str_copy(m_aName, Server()->GetWorldName(m_ID), sizeof(m_aName));
 	m_RequiredQuestID = RequiredQuestID;
 	m_RespawnWorldID = RespawnWorldID;
-	m_Swappers = Worlds;
+	m_Swappers = std::move(Worlds);
 }
 
 void CWorldData::Move(CPlayer* pPlayer)

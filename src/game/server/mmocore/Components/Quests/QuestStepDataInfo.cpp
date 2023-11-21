@@ -461,7 +461,6 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 	}
 }
 
-
 void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 {
 	CPlayer* pPlayer = GetPlayer();
@@ -570,7 +569,7 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 
 int CPlayerQuestStep::GetMoveToNum() const
 {
-	return m_aMoveToProgress.size();
+	return (int)m_aMoveToProgress.size();
 }
 
 int CPlayerQuestStep::GetMoveToCurrentStepPos() const
@@ -586,31 +585,39 @@ int CPlayerQuestStep::GetMoveToCurrentStepPos() const
 	return 1;
 }
 
+// This function returns the count of completed move steps in a player quest
 int CPlayerQuestStep::GetCountMoveToComplected()
 {
+	// Using std::count_if to count the number of elements in m_aMoveToProgress that satisfy the condition
+	// The condition is a lambda function that checks if the element is true
 	return (int)std::count_if(m_aMoveToProgress.begin(), m_aMoveToProgress.end(), [](const bool State){return State == true; });
 }
 
+// This function searches for a specific entity move-to object in the list of entities move-to objects
+// It takes a position as input and returns a pointer to the found entity move-to object, or nullptr if not found
 CEntityMoveTo* CPlayerQuestStep::FoundEntityMoveTo(vec2 Position) const
 {
-	for(const auto& pMove : m_apEntitiesMoveTo)
-	{
-		if(pMove && pMove->GetPos() == Position)
-			return pMove;
-	}
+	// Use std::find_if to iterate through the list of entities move-to objects
+	auto it = std::find_if(m_apEntitiesMoveTo.begin(), m_apEntitiesMoveTo.end(), [&](const auto& pMove) {
+		// Check if the current entity move-to object is valid and has the same position as the input
+		return pMove && pMove->GetPos() == Position;
+	});
 
-	return nullptr;
+	// If a matching entity move-to object is found, return a pointer to it. Otherwise, return nullptr
+	return (it != m_apEntitiesMoveTo.end()) ? *it : nullptr;
 }
 
+// Function to find the entity navigator with a specific position
 CEntityPathFinder* CPlayerQuestStep::FoundEntityNavigator(vec2 Position) const
 {
-	for(const auto& pPath : m_apEntitiesNavigator)
-	{
-		if(pPath && pPath->GetPosTo() == Position)
-			return pPath;
-	}
+	// Find the first entity navigator in the m_apEntitiesNavigator vector that has the same position as the input position
+	auto it = std::find_if(m_apEntitiesNavigator.begin(), m_apEntitiesNavigator.end(), [&](const auto& pPath) {
+		// Check if the entity navigator exists and its destination position is equal to the input position
+		return pPath && pPath->GetPosTo() == Position;
+	});
 
-	return nullptr;
+	// If an entity navigator with the specified position is found, return it. Otherwise, return nullptr.
+	return it != m_apEntitiesNavigator.end() ? *it : nullptr;
 }
 
 CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete, CPlayerBot* pDefeatMobPlayer)
