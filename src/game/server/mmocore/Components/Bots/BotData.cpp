@@ -99,6 +99,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				const vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
+				const float Cooldown = p.value("cooldown", 0.f);
 				const bool Navigator = p.value("navigator", true);
 				const std::string CompletionText = p.value("completion_text", "");
 				const std::string TaskName = p.value("name", "Demands a bit of action");
@@ -162,24 +163,24 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 						}
 					}
 					// defeat mob json element
-					else if(p.contains("defeat_mob"))
+					else if(p.contains("defeat_bot"))
 					{
-						// Retrieve the "defeat_mob" element from the JSON object
-						auto pDefJson = p["defeat_mob"];
+						// Retrieve the "defeat_bot" element from the JSON object
+						auto pDefJson = p["defeat_bot"];
 
-						// Retrieve the value of the "id" key from the "defeat_mob" element
+						// Retrieve the value of the "id" key from the "defeat_bot" element
 						// If the key does not exist, use -1 as the default value
 						DefeatDescription.m_BotID = pDefJson.value("id", -1);
 
-						// Retrieve the value of the "attribute_power" key from the "defeat_mob" element
+						// Retrieve the value of the "attribute_power" key from the "defeat_bot" element
 						// If the key does not exist, use 10 as the default value
 						DefeatDescription.m_AttributePower = pDefJson.value("attribute_power", 10);
 
-						// Retrieve the value of the "attribute_spread" key from the "defeat_mob" element
+						// Retrieve the value of the "attribute_spread" key from the "defeat_bot" element
 						// If the key does not exist, use 0 as the default value
 						DefeatDescription.m_AttributeSpread = pDefJson.value("attribute_spread", 0);
 
-						// Retrieve the value of the "world_id" key from the "defeat_mob" element
+						// Retrieve the value of the "world_id" key from the "defeat_bot" element
 						// If the key does not exist, use the value of m_WorldID as the default value
 						DefeatDescription.m_WorldID = pDefJson.value("world_id", m_WorldID);
 
@@ -210,6 +211,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					Move.m_WorldID = WorldID;
 					Move.m_Step = LatestBiggerStep;
 					Move.m_Navigator = Navigator;
+					Move.m_Cooldown = (int)(Cooldown * (float)SERVER_TICK_SPEED);
 					Move.m_PickupItem = PickUpItem;
 					Move.m_RequiredItem = RequiredItem;
 					Move.m_Position = Position;

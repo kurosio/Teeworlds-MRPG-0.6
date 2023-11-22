@@ -35,6 +35,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
+	m_Cooldown.Initilize(ClientID);
 
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
@@ -104,6 +105,7 @@ void CPlayer::Tick()
 
 	// update dialog
 	m_Dialog.TickUpdate();
+	m_Cooldown.Handler();
 
 	// post updated votes if player open menu
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU && IsActivePostVoteList())
@@ -600,12 +602,12 @@ int CPlayer::GetTeam()
 ######################################################################### */
 void CPlayer::ProgressBar(const char* Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const
 {
-	char aBufBroadcast[128], aBufProgress[32];
+	char aBufBroadcast[128];
 	const float GetLevelProgress = translate_to_percent((float)ExpNeed, (float)MyExp);
 	const float GetExpProgress = translate_to_percent((float)ExpNeed, (float)GivedExp);
 
-	str_format_progress_bar(aBufProgress, sizeof(aBufProgress), 100, (int)GetLevelProgress, 10, ':', ' ');
-	str_format(aBufBroadcast, sizeof(aBufBroadcast), "Lv%d %s%s %0.2f%%+%0.3f%%(%d)XP", MyLevel, Name, aBufProgress, GetLevelProgress, GetExpProgress, GivedExp);
+	std::string ProgressBar = Tools::String::progressBar(100, (int)GetLevelProgress, 10, ":", " ");
+	str_format(aBufBroadcast, sizeof(aBufBroadcast), "Lv%d %s[%s] %0.2f%%+%0.3f%%(%d)XP", MyLevel, Name, ProgressBar.c_str(), GetLevelProgress, GetExpProgress, GivedExp);
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, aBufBroadcast);
 }
 
@@ -764,7 +766,6 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	if(!IsAuthed() || !m_pCharacter)
 		return;
 
-	char aBufProgressBarExp[32];
 	const int LevelPercent = translate_to_percent(ExpNeed(Acc().m_Level), Acc().m_Exp);
 	const int MaximumHealth = GetStartHealth();
 	const int MaximumMana = GetStartMana();
@@ -779,9 +780,9 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
 	}
 
-	str_format_progress_bar(aBufProgressBarExp, sizeof(aBufProgressBarExp), 100, LevelPercent, 10, ':', ' ');
-	str_format(pBuffer, Size, "\n\n\n\n\nLv%d%s\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%s",
-		Acc().m_Level, aBufProgressBarExp, Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
+	std::string ProgressBar = Tools::String::progressBar(100, LevelPercent, 10, ":", " ");
+	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%s",
+		Acc().m_Level, ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
 	for(int space = 150, c = str_length(pBuffer); c < Size && space; c++, space--)
 		pBuffer[c] = ' ';
 }

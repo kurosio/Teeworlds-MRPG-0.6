@@ -555,8 +555,16 @@ bool CCharacter::RemoveWeapon(int Weapon)
 // This function sets the character's emote and its duration
 void CCharacter::SetEmote(int Emote, int Sec, bool StartEmoticion)
 {
+	// Reset by default emote
+	if(Emote == EMOTE_NORMAL)
+	{
+		m_EmoteType = EMOTE_NORMAL;
+		m_EmoteStop = -1;
+		return;
+	}
+
 	// Check if the character is alive and the emote has stopped
-	if(m_Alive && m_EmoteStop < Server()->Tick())
+	if(m_EmoteStop < Server()->Tick())
 	{
 		// Set the emote type
 		m_EmoteType = Emote;

@@ -2372,29 +2372,6 @@ int str_format(char* buffer, int buffer_size, const char* format, ...)
 	return str_utf8_fix_truncation(buffer);
 }
 
-void str_format_progress_bar(char* pbuffer, size_t buffer_size, int max_value, int current_value, int step, char to_value, char from_value)
-{
-	int a, b, i = 1;
-	const int sizec = 3 + max_value / step;
-	char* allocbuf = (char*)malloc(sizeof(char) * sizec);
-
-	current_value = clamp(current_value, 0, max_value);
-	allocbuf[0] = '[';
-	allocbuf[sizec - 2] = ']';
-	allocbuf[sizec - 1] = '\0';
-
-	a = current_value / step;
-	b = (max_value - current_value) / step;
-
-	for(int ai = 0; ai < a; ai++, i++)
-		allocbuf[i] = to_value;
-	for(int bi = 0; bi < b || i < sizec - 2; bi++, i++)
-		allocbuf[i] = from_value;
-
-	str_copy(pbuffer, allocbuf, buffer_size);
-	free(allocbuf);
-}
-
 /* makes sure that the string only contains the characters between 32 and 127 */
 void str_sanitize_strong(char *str_in)
 {

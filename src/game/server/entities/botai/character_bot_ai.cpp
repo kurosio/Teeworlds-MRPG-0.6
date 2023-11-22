@@ -705,15 +705,14 @@ void CCharacterBotAI::EngineMobs()
 		{
 			if(GS()->GetPlayer(ClientID, true))
 			{
-				char aBufProgress[32];
 				const int BotID = m_pBotPlayer->GetBotID();
 				const int Health = m_pBotPlayer->GetHealth();
 				const int StartHealth = m_pBotPlayer->GetStartHealth();
 				const float Percent = translate_to_percent((float)StartHealth, (float)Health);
 
-				str_format_progress_bar(aBufProgress, sizeof(aBufProgress), 100, (int)Percent, 10, ':', ' ');
+				std::string ProgressBar = Tools::String::progressBar(100, (int)Percent, 10, "\u25B0", "\u25B1");
 				GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{STR} {STR}({INT}/{INT})",
-					DataBotInfo::ms_aDataBot[BotID].m_aNameBot, aBufProgress, Health, StartHealth);
+					DataBotInfo::ms_aDataBot[BotID].m_aNameBot, ProgressBar.c_str(), Health, StartHealth);
 			}
 		}
 	}

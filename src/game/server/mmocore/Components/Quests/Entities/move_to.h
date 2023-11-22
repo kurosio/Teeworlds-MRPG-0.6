@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_MMOCORE_COMPONENTS_QUESTS_ENTITIES_MOVE_TO_H
 #define GAME_SERVER_MMOCORE_COMPONENTS_QUESTS_ENTITIES_MOVE_TO_H
@@ -21,7 +21,6 @@ class CEntityMoveTo : public CEntity
 	const QuestBotInfo::TaskRequiredMoveTo* m_pTaskMoveTo;
 
 public:
-
 	CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection, 
 		bool AutoCompletesQuestStep, class CPlayerBot* pDefeatMobPlayer = nullptr);
 	~CEntityMoveTo() override;
@@ -37,8 +36,8 @@ public:
 
 	void ClearPointers();
 
-private:
-	void Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, const std::function<bool()> pCallbackSuccesful);
+	void Handler(const std::function<bool()> pCallbackSuccesful);
+	void TryFinish(bool AutoCompleteQuestStep);
 };
 
 #endif

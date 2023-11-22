@@ -85,8 +85,8 @@ public:
 	class CPlayerItem* GetItem(ItemIdentifier ID) override;
 
 private:
-	std::unordered_map< int, std::unique_ptr<CPlayerItem> > m_Items {};
-	std::unordered_map < std::string /* effect */, int /* seconds */ > m_aEffects;
+	ska::unordered_map< int, std::unique_ptr<CPlayerItem> > m_Items {};
+	ska::unordered_map < std::string /* effect */, int /* seconds */ > m_aEffects;
 	void HandleEffects() override;
 	void TryRespawn() override;
 

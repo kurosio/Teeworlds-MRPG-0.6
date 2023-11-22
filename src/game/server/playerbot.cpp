@@ -19,7 +19,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int Spaw
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
-	m_Items.clear();
+	m_Items.reserve(CItemDescription::Data().size());
 	ResetRespawnTick();
 }
 

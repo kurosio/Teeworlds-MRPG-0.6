@@ -11,6 +11,7 @@
 #include "entities/character.h"
 
 #include "vote_event_optional.h"
+#include "mmocore/Cooldown.h"
 
 enum
 {
@@ -60,6 +61,7 @@ public:
 	int m_aPlayerTick[NUM_TICK];
 	char m_aClanString[128];
 	Mood m_MoodState;
+	CCooldown m_Cooldown {};
 
 	char m_aLastMsg[256];
 	int m_TutorialStep;

@@ -8,6 +8,7 @@
 #include "game/server/mmocore/Components/Quests/QuestManager.h"
 
 constexpr unsigned int s_Particles = 4;
+constexpr auto COOLDOWN_ACTION_NAME = "CEntityMoveTo::TryFinish";
 
 CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool* pComplete,
 	std::deque < CEntityMoveTo* >* apCollection, bool AutoCompletesQuestStep, CPlayerBot* pDefeatMobPlayer)
@@ -34,11 +35,17 @@ CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskReq
 CEntityMoveTo::~CEntityMoveTo()
 {
 	// Check if m_pPlayer and m_pPlayer's character exist
-	if(m_pPlayer && m_pPlayer->GetCharacter())
+	if(m_pPlayer)
 	{
+		// Reset countdown
+		if(m_pPlayer->m_Cooldown.IsCooldownActive(COOLDOWN_ACTION_NAME))
+			m_pPlayer->m_Cooldown.Reset();
+
 		// Update the steps of the quest for the player
-		GS()->Mmo()->Quest()->UpdateSteps(m_pPlayer);
+		if(m_pPlayer->GetCharacter())
+			GS()->Mmo()->Quest()->UpdateSteps(m_pPlayer);
 	}
+
 
 	// Check if m_pDefeatMobPlayer exists
 	if(m_pDefeatMobPlayer)
@@ -120,16 +127,16 @@ void CEntityMoveTo::ClearPointers()
 	m_pTaskMoveTo = nullptr;
 }
 
-void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, const std::function<bool()> pCallbackSuccesful)
+void CEntityMoveTo::Handler(const std::function<bool()> pCallbackSuccesful)
 {
 	CPlayerQuest* pQuest = m_pPlayer->GetQuest(m_QuestID);
-	CPlayerQuestStep* pQuestStep = pQuest->GetStepByMob(TaskData.m_QuestBotID);
+	CPlayerQuestStep* pQuestStep = pQuest->GetStepByMob(m_pTaskMoveTo->m_QuestBotID);
 	bool FailedFinish = !pCallbackSuccesful();
 	const bool IsLastElement = (pQuestStep->GetCountMoveToComplected() == (pQuestStep->GetMoveToNum() - 1));
 	const bool AutoCompleteQuestStep = (m_AutoCompletesQuestStep ? IsLastElement : false);
 
 	// in case move it completes a quest step
-	if(!FailedFinish && AutoCompleteQuestStep)
+	if(AutoCompleteQuestStep)
 	{
 		// START for correct try check current quest step
 		(*m_pComplete) = true;
@@ -138,7 +145,7 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 		if(!pQuestStep->IsComplete())
 		{
 			char aBufQuestTask[512] {};
-			GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[TaskData.m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
+			GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[m_pTaskMoveTo->m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
 			str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
 			GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
 			GS()->Chat(m_ClientID, "The tasks haven't been completed yet!");
@@ -149,54 +156,86 @@ void CEntityMoveTo::Handler(const QuestBotInfo::TaskRequiredMoveTo& TaskData, co
 		(*m_pComplete) = false;
 	}
 
+	// Check if the task has not failed to finish
 	if(!FailedFinish)
 	{
-		// required item
-		if(TaskData.m_Type & QuestBotInfo::TaskRequiredMoveTo::Types::REQUIRED_ITEM && TaskData.m_RequiredItem.IsValid())
+		// Check if the cooldown of the task is greater than 0
+		if(m_pTaskMoveTo->m_Cooldown > 0)
 		{
-			ItemIdentifier ItemID = TaskData.m_RequiredItem.GetID();
-			int RequiredValue = TaskData.m_RequiredItem.GetValue();
-
-			// check required value
-			if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
-				return;
-
-			// remove item
-			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
-			GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pPlayerItem->Info()->GetName(), RequiredValue);
+			// Check if the cooldown for the task is not already active
+			if(!m_pPlayer->m_Cooldown.IsCooldownActive(COOLDOWN_ACTION_NAME))
+			{
+				// Start the cooldown for the task
+				m_pPlayer->m_Cooldown.Start(m_pTaskMoveTo->m_Cooldown, COOLDOWN_ACTION_NAME, m_pTaskMoveTo->m_TaskName,
+					std::bind(&CEntityMoveTo::TryFinish, this, AutoCompleteQuestStep));
+			}
 		}
-
-		// pickup item
-		if(TaskData.m_Type & QuestBotInfo::TaskRequiredMoveTo::Types::PICKUP_ITEM && TaskData.m_PickupItem.IsValid())
+		else
 		{
-			ItemIdentifier ItemID = TaskData.m_PickupItem.GetID();
-			int PickupValue = TaskData.m_PickupItem.GetValue();
-			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
-
-			GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
-			pPlayerItem->Add(PickupValue);
+			// Try to finish the task immediately
+			TryFinish(AutoCompleteQuestStep);
 		}
+	}
+}
 
-		// finish success
-		if(!m_pTaskMoveTo->m_CompletionText.empty())
-		{
-			GS()->Chat(m_ClientID, m_pTaskMoveTo->m_CompletionText.c_str());
-		}
+void CEntityMoveTo::TryFinish(bool AutoCompleteQuestStep)
+{
+	const QuestBotInfo::TaskRequiredMoveTo& TaskData = *m_pTaskMoveTo;
+	CPlayerQuest* pQuest = m_pPlayer->GetQuest(m_QuestID);
+	CPlayerQuestStep* pQuestStep = pQuest->GetStepByMob(TaskData.m_QuestBotID);
 
-		(*m_pComplete) = true;
-		pQuest->SaveSteps();
-		GS()->CreateDeath(m_Pos, m_ClientID);
-		GameWorld()->DestroyEntity(this);
+	// required item
+	if(TaskData.m_Type & QuestBotInfo::TaskRequiredMoveTo::Types::REQUIRED_ITEM && TaskData.m_RequiredItem.IsValid())
+	{
+		ItemIdentifier ItemID = TaskData.m_RequiredItem.GetID();
+		int RequiredValue = TaskData.m_RequiredItem.GetValue();
 
-		// finish quest step
-		if(AutoCompleteQuestStep)
-		{
-			pQuestStep->Finish();
-		}
+		// check required value
+		if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
+			return;
 
-		// if quest is completed, reset task and collection pointers they're cleared in the quest data
-		if(pQuest->IsCompleted())
-			ClearPointers();
+		// remove item
+		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+		GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pPlayerItem->Info()->GetName(), RequiredValue);
+	}
+
+	// pickup item
+	if(TaskData.m_Type & QuestBotInfo::TaskRequiredMoveTo::Types::PICKUP_ITEM && TaskData.m_PickupItem.IsValid())
+	{
+		ItemIdentifier ItemID = TaskData.m_PickupItem.GetID();
+		int PickupValue = TaskData.m_PickupItem.GetValue();
+		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+
+		GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
+		pPlayerItem->Add(PickupValue);
+	}
+
+	// finish success
+	if(!m_pTaskMoveTo->m_CompletionText.empty())
+	{
+		GS()->Chat(m_ClientID, m_pTaskMoveTo->m_CompletionText.c_str());
+	}
+
+	// Set the complete flag to true
+	*m_pComplete = true;
+
+	// Save the quest steps
+	pQuest->SaveSteps();
+
+	// Create a death entity at the current position and destroy this entity
+	GS()->CreateDeath(m_Pos, m_ClientID);
+	GameWorld()->DestroyEntity(this);
+
+	// Finish the quest step if AutoCompleteQuestStep is true
+	if(AutoCompleteQuestStep)
+	{
+		pQuestStep->Finish();
+	}
+
+	// Reset the task and collection pointers if the quest is completed
+	if(pQuest->IsCompleted())
+	{
+		ClearPointers();
 	}
 }
 
@@ -224,7 +263,7 @@ void CEntityMoveTo::Tick()
 	// Check if the Type includes the DEFEAT_MOB flag
 	if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::DEFEAT_MOB)
 	{
-		Handler(*m_pTaskMoveTo, [this]
+		Handler([this]
 		{
 			// Complete the task by defeating a mob
 			return m_pDefeatMobPlayer && m_pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID];
@@ -233,7 +272,7 @@ void CEntityMoveTo::Tick()
 	// Check if the Type includes the MOVE_ONLY flag
 	else if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::MOVE_ONLY)
 	{
-		Handler(*m_pTaskMoveTo, [this]
+		Handler([this]
 		{
 			// Complete the task by only moving
 			return true;
@@ -248,7 +287,7 @@ void CEntityMoveTo::Tick()
 			GS()->CreateHammerHit(m_pTaskMoveTo->m_Interaction.m_Position, CmaskOne(m_ClientID));
 		}
 
-		Handler(*m_pTaskMoveTo, [this]
+		Handler([this]
 		{
 			// Complete the task by interacting
 			return PressedFire() && distance(m_pPlayer->GetCharacter()->GetMousePos(), m_pTaskMoveTo->m_Interaction.m_Position) < 48.f;
@@ -257,7 +296,7 @@ void CEntityMoveTo::Tick()
 	// Check if the Type includes the PICKUP_ITEM or REQUIRED_ITEM flags
 	else if(Type & (QuestBotInfo::TaskRequiredMoveTo::PICKUP_ITEM | QuestBotInfo::TaskRequiredMoveTo::REQUIRED_ITEM))
 	{
-		Handler(*m_pTaskMoveTo, [this]
+		Handler([this]
 		{
 			// Complete the task by pressing "fire" button
 			return PressedFire();

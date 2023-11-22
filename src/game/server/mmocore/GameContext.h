@@ -497,6 +497,26 @@ namespace Tools
 		SUCCESSFUL,
 	};
 
+	class String
+	{
+	public:
+		static std::string progressBar(int max_value, int current_value, int step, std::string UTF_fill_symbol, std::string UTF_empty_symbol)
+		{
+			std::string ProgressBar;
+			int numFilled = current_value / step;
+			int numEmpty = max_value / step - numFilled;
+			ProgressBar.reserve(numFilled + numEmpty);
+
+			for(int i = 0; i < numFilled; i++)
+				ProgressBar += UTF_fill_symbol;
+
+			for(int i = 0; i < numEmpty; i++)
+				ProgressBar += UTF_empty_symbol;
+
+			return ProgressBar;
+		}
+	};
+
 	class Json
 	{
 	public:
