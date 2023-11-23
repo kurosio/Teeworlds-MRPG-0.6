@@ -973,17 +973,12 @@ void CServer::SendRconLogLine(int ClientID, const CLogMessage* pMessage)
 	const char* pLine = pMessage->m_aLine;
 	const char* pStart = str_find(pLine, "<{");
 	const char* pEnd = pStart == NULL ? NULL : str_find(pStart + 2, "}>");
-	const char* pLineWithoutIps;
 	char aLine[512];
 	char aLineWithoutIps[512];
 	aLine[0] = '\0';
 	aLineWithoutIps[0] = '\0';
 
-	if(pStart == NULL || pEnd == NULL)
-	{
-		pLineWithoutIps = pLine;
-	}
-	else
+	if(pStart != NULL && pEnd != NULL)
 	{
 		str_append(aLine, pLine, pStart - pLine + 1);
 		str_append(aLine, pStart + 2, pStart - pLine + pEnd - pStart - 1);
@@ -994,7 +989,6 @@ void CServer::SendRconLogLine(int ClientID, const CLogMessage* pMessage)
 		str_append(aLineWithoutIps, pEnd + 2);
 
 		pLine = aLine;
-		pLineWithoutIps = aLineWithoutIps;
 	}
 
 	if(ClientID == -1)
