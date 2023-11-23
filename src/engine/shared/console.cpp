@@ -261,7 +261,7 @@ void CConsole::ParseArgsDescription(const char* pFormat, char* paBuffer, int Siz
 		const char* pDesc = 0;
 		if(c[1] == '[')
 		{
-			str_format(aDesc, sizeof(aDesc), "%.*s", strcspn(&c[2], "]"), &c[2]);
+			str_format(aDesc, sizeof(aDesc), "%.*s", (int)strcspn(&c[2], "]"), &c[2]);
 			pDesc = aDesc;
 			c += strcspn(c, "]") + 1;
 		}
@@ -1355,7 +1355,7 @@ void CConsole::Chain(const char* pName, FChainCommandCallback pfnChainFunc, void
 
 	// free memory, if already present
 	CChain* pChainUser = (CChain*)pCommand->m_pUserData;
-	if(std::memcmp(pChainUser, pChainInfo, sizeof(pChainUser)) == 0)
+	if(std::memcmp(pChainUser, pChainInfo, sizeof(CChain*)) == 0)
 	{
 		delete pChainInfo;
 		return;
