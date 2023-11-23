@@ -1355,7 +1355,7 @@ void CConsole::Chain(const char* pName, FChainCommandCallback pfnChainFunc, void
 
 	// free memory, if already present
 	CChain* pChainUser = (CChain*)pCommand->m_pUserData;
-	if(std::memcmp(pChainUser, pChainInfo, sizeof(CChain*)) == 0)
+	if(std::memcmp(pChainUser, pChainInfo, sizeof(CChain)) == 0)
 	{
 		delete pChainInfo;
 		return;
