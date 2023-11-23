@@ -781,10 +781,8 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	}
 
 	std::string ProgressBar = Tools::String::progressBar(100, LevelPercent, 10, ":", " ");
-	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%s",
+	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%-150s",
 		Acc().m_Level, ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
-	for(int space = 150, c = str_length(pBuffer); c < Size && space; c++, space--)
-		pBuffer[c] = ' ';
 }
 
 void CPlayer::ShowInformationStats()

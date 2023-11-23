@@ -109,7 +109,7 @@ public:
 	bool IsAfk() const { return m_Afk; }
 	int64_t GetAfkTime() const;
 
-	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr);
+	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0");
 
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; };

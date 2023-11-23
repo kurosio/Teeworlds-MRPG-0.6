@@ -45,9 +45,10 @@ CGS::CGS()
 	{
 		pBroadcastState.m_NoChangeTick = 0;
 		pBroadcastState.m_LifeSpanTick = 0;
-		pBroadcastState.m_aPrevMessage[0] = 0;
-		pBroadcastState.m_aNextMessage[0] = 0;
-		pBroadcastState.m_Priority = BroadcastPriority::LOWER;
+		pBroadcastState.m_NextMessage[0] = 0;
+		pBroadcastState.m_TimedMessage[0] = 0;
+		pBroadcastState.m_PrevMessage[0] = 0;
+		pBroadcastState.m_NextPriority = BroadcastPriority::LOWER;
 	}
 
 	for(auto& apPlayer : m_apPlayers)
@@ -516,12 +517,23 @@ void CGS::AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priori
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS)
 		return;
 
-	if(m_aBroadcastStates[ClientID].m_TimedPriority > Priority)
-		return;
+	if(LifeSpan > 0)
+	{
+		if(m_aBroadcastStates[ClientID].m_TimedPriority > Priority)
+			return;
 
-	str_copy(m_aBroadcastStates[ClientID].m_aTimedMessage, pText, sizeof(m_aBroadcastStates[ClientID].m_aTimedMessage));
-	m_aBroadcastStates[ClientID].m_LifeSpanTick = LifeSpan;
-	m_aBroadcastStates[ClientID].m_TimedPriority = Priority;
+		str_copy(m_aBroadcastStates[ClientID].m_TimedMessage, pText, sizeof(m_aBroadcastStates[ClientID].m_TimedMessage));
+		m_aBroadcastStates[ClientID].m_LifeSpanTick = LifeSpan;
+		m_aBroadcastStates[ClientID].m_TimedPriority = Priority;
+	}
+	else
+	{
+		if(m_aBroadcastStates[ClientID].m_NextPriority > Priority)
+			return;
+
+		str_copy(m_aBroadcastStates[ClientID].m_NextMessage, pText, sizeof(m_aBroadcastStates[ClientID].m_NextMessage));
+		m_aBroadcastStates[ClientID].m_NextPriority = Priority;
+	}
 }
 
 // formatted broadcast
@@ -566,72 +578,82 @@ void CGS::BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan
 // the tick of the broadcast and his life
 void CGS::BroadcastTick(int ClientID)
 {
+	// Check if the ClientID is valid
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS)
 		return;
 
+	// Check if the player exists and is in the same world
 	if(m_apPlayers[ClientID] && IsPlayerEqualWorld(ClientID))
 	{
-		CBroadcastState& rBroadcast = m_aBroadcastStates[ClientID];
-		if(rBroadcast.m_LifeSpanTick > 0 && rBroadcast.m_TimedPriority > rBroadcast.m_Priority)
+		// Get the broadcast state for the given client ID
+		CBroadcastState& Broadcast = m_aBroadcastStates[ClientID];
+
+		// Check if the broadcast has a lifespan and the timed priority is greater than the next priority
+		if(Broadcast.m_LifeSpanTick > 0 && Broadcast.m_TimedPriority > Broadcast.m_NextPriority)
 		{
-			// combine game information with game priority
-			if(rBroadcast.m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
+			// Copy the timed message to the next message buffer
+			str_copy(Broadcast.m_NextMessage, Broadcast.m_TimedMessage, sizeof(Broadcast.m_NextMessage));
+		}
+
+		//Send broadcast only if the message is different, or to fight auto-fading
+		if(str_comp(Broadcast.m_PrevMessage, Broadcast.m_NextMessage) != 0 || Broadcast.m_NoChangeTick > Server()->TickSpeed())
+		{
+			// Check if the timed priority of the broadcast is less than MAIN_INFORMATION
+			if(Broadcast.m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
 			{
-				char aAppendBuf[1024] { };
-				str_copy(aAppendBuf, rBroadcast.m_aTimedMessage, sizeof(aAppendBuf));
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(rBroadcast.m_aNextMessage, sizeof(rBroadcast.m_aNextMessage), m_apPlayers[ClientID]->m_PlayerFlags & PLAYERFLAG_CHATTING ? "\0" : aAppendBuf);
+				// Format the broadcast message with basic player stats and append pAppend
+				const char* pAppend = m_apPlayers[ClientID]->m_PlayerFlags & PLAYERFLAG_CHATTING ? "\0" : Broadcast.m_NextMessage;
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(Broadcast.m_aCompleteMsg, sizeof(Broadcast.m_aCompleteMsg), pAppend);
 			}
 			else
 			{
-				str_copy(rBroadcast.m_aNextMessage, rBroadcast.m_aTimedMessage, sizeof(rBroadcast.m_aNextMessage));
+				// Copy aBufAppend into the complete message buffer
+				str_copy(Broadcast.m_aCompleteMsg, Broadcast.m_NextMessage, sizeof(Broadcast.m_aCompleteMsg));
 			}
-		}
 
-		// send broadcast only if the message is different, or to fight auto-fading
-		if(rBroadcast.m_NoChangeTick > Server()->TickSpeed() || str_comp(m_aBroadcastStates[ClientID].m_aPrevMessage, m_aBroadcastStates[ClientID].m_aNextMessage) != 0)
-		{
+			// Create a broadcast net message and send
 			CNetMsg_Sv_Broadcast Msg;
-			Msg.m_pMessage = rBroadcast.m_aNextMessage;
+			Msg.m_pMessage = Broadcast.m_aCompleteMsg;
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-			str_copy(rBroadcast.m_aPrevMessage, rBroadcast.m_aNextMessage, sizeof(rBroadcast.m_aPrevMessage));
-			rBroadcast.m_NoChangeTick = 0;
+
+			// Reset the complete message buffer and no change tick
+			str_copy(Broadcast.m_PrevMessage, Broadcast.m_NextMessage, sizeof(Broadcast.m_PrevMessage));
+			Broadcast.m_aCompleteMsg[0] = '\0';
+			Broadcast.m_NoChangeTick = 0;
 		}
 		else
 		{
-			rBroadcast.m_NoChangeTick++;
+			// Update no change tick
+			Broadcast.m_NoChangeTick++;
 		}
 
-		// update broadcast state
-		if(rBroadcast.m_LifeSpanTick > 0)
-			rBroadcast.m_LifeSpanTick--;
-
-		if(rBroadcast.m_LifeSpanTick <= 0)
+		// Update broadcast state
+		if(Broadcast.m_LifeSpanTick > 0)
 		{
-			// show game information on a regular basis
-			if(m_apPlayers[ClientID]->IsAuthed())
-			{
-				m_aBroadcastStates[ClientID].m_LifeSpanTick = 1000;
-				m_aBroadcastStates[ClientID].m_TimedPriority = (BroadcastPriority::GAME_BASIC_STATS);
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(m_aBroadcastStates[ClientID].m_aTimedMessage, sizeof(m_aBroadcastStates[ClientID].m_aTimedMessage), "");
-			}
-			else
-			{
-				m_aBroadcastStates[ClientID].m_aTimedMessage[0] = 0;
-				m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
-			}
+			// Check if the lifespan tick is greater than 0
+			Broadcast.m_LifeSpanTick--;
 		}
-		rBroadcast.m_aNextMessage[0] = 0;
-		rBroadcast.m_Priority = BroadcastPriority::LOWER;
+
+		if(Broadcast.m_LifeSpanTick <= 0)
+		{
+			// Check if the lifespan tick is less than or equal to 0
+			Broadcast.m_TimedMessage[0] = 0;
+			Broadcast.m_TimedPriority = BroadcastPriority::LOWER;
+		}
+
+		Broadcast.m_NextMessage[0] = 0;
+		Broadcast.m_NextPriority = BroadcastPriority::LOWER;
 	}
 	else
 	{
+		// Full reset
 		m_aBroadcastStates[ClientID].m_NoChangeTick = 0;
 		m_aBroadcastStates[ClientID].m_LifeSpanTick = 0;
-		m_aBroadcastStates[ClientID].m_aPrevMessage[0] = 0;
-		m_aBroadcastStates[ClientID].m_aNextMessage[0] = 0;
-		m_aBroadcastStates[ClientID].m_aTimedMessage[0] = 0;
-		m_aBroadcastStates[ClientID].m_Priority = BroadcastPriority::LOWER;
+		m_aBroadcastStates[ClientID].m_NextPriority = BroadcastPriority::LOWER;
 		m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
+		m_aBroadcastStates[ClientID].m_PrevMessage[0] = 0;
+		m_aBroadcastStates[ClientID].m_NextMessage[0] = 0;
+		m_aBroadcastStates[ClientID].m_TimedMessage[0] = 0;
 	}
 }
 
