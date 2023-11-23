@@ -1696,7 +1696,7 @@ void CServer::UpdateRegisterServerInfo()
 			JsServerInfo["clients"].push_back(JsPlayerInfo);
 		}
 	}
-	log_info("test", "%s", JsServerInfo.dump().c_str());
+
 	m_pRegister->OnNewInfo(JsServerInfo.dump(-1).c_str());
 }
 
