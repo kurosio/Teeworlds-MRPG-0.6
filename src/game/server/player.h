@@ -172,8 +172,6 @@ public:
 	int GetStartTeam() const;
 
 	static int ExpNeed(int Level);
-	void ShowInformationStats();
-
 	void IncreaseRelations(int Relations);
 
 	/* ==========================================================

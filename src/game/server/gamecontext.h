@@ -118,6 +118,7 @@ private:
 		BroadcastPriority m_NextPriority;
 		char m_NextMessage[1024];
 		char m_aCompleteMsg[1024];
+		bool m_Updated;
 
 		int m_LifeSpanTick;
 		BroadcastPriority m_TimedPriority;
@@ -130,6 +131,7 @@ public:
 	void Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char *pText, ...);
 	void BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan, const char *pText, ...);
 	void BroadcastTick(int ClientID);
+	void MarkUpdatedBroadcast(int ClientID);
 
 	/* #########################################################################
 		PACKET MESSAGE FUNCTIONS

@@ -84,7 +84,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
 		GS()->UpdateVotes(m_pPlayer->GetCID(), m_pPlayer->m_CurrentVoteMenu);
-		m_pPlayer->ShowInformationStats();
+		GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	}
 
 	const bool Spawned = GS()->m_pController->OnCharacterSpawn(this);
@@ -759,7 +759,7 @@ bool CCharacter::IncreaseHealth(int Amount)
 
 	Amount = maximum(Amount, 1);
 	m_Health = clamp(m_Health + Amount, 0, m_pPlayer->GetStartHealth());
-	m_pPlayer->ShowInformationStats();
+	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	m_pPlayer->SetSnapHealthTick(2);
 	return true;
 }
@@ -771,7 +771,7 @@ bool CCharacter::IncreaseMana(int Amount)
 
 	Amount = maximum(Amount, 1);
 	m_Mana = clamp(m_Mana + Amount, 0, m_pPlayer->GetStartMana());
-	m_pPlayer->ShowInformationStats();
+	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	return true;
 }
 
@@ -958,7 +958,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	{
 		GS()->m_pController->OnCharacterDamage(pFrom, m_pPlayer, minimum(Dmg, m_Health));
 		m_Health -= Dmg;
-		m_pPlayer->ShowInformationStats();
+		GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 		m_pPlayer->SetSnapHealthTick(2);
 	}
 
@@ -1459,7 +1459,7 @@ bool CCharacter::CheckFailMana(int Mana)
 	if(m_Mana <= m_pPlayer->GetStartMana() / 5 && !m_pPlayer->IsActiveEffect("RegenMana") && m_pPlayer->GetItem(itPotionManaRegen)->IsEquipped())
 		m_pPlayer->GetItem(itPotionManaRegen)->Use(1);
 
-	m_pPlayer->ShowInformationStats();
+	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	return false;
 }
 

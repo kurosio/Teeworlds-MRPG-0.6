@@ -596,7 +596,7 @@ void CGS::BroadcastTick(int ClientID)
 		}
 
 		//Send broadcast only if the message is different, or to fight auto-fading
-		if(str_comp(Broadcast.m_PrevMessage, Broadcast.m_NextMessage) != 0 || Broadcast.m_NoChangeTick > Server()->TickSpeed())
+		if(Broadcast.m_Updated || str_comp(Broadcast.m_PrevMessage, Broadcast.m_NextMessage) != 0 || Broadcast.m_NoChangeTick < Server()->Tick())
 		{
 			// Check if the timed priority of the broadcast is less than MAIN_INFORMATION
 			if(Broadcast.m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
@@ -619,12 +619,8 @@ void CGS::BroadcastTick(int ClientID)
 			// Reset the complete message buffer and no change tick
 			str_copy(Broadcast.m_PrevMessage, Broadcast.m_NextMessage, sizeof(Broadcast.m_PrevMessage));
 			Broadcast.m_aCompleteMsg[0] = '\0';
-			Broadcast.m_NoChangeTick = 0;
-		}
-		else
-		{
-			// Update no change tick
-			Broadcast.m_NoChangeTick++;
+			Broadcast.m_Updated = false;
+			Broadcast.m_NoChangeTick = Server()->Tick() + (Server()->TickSpeed() * 3);
 		}
 
 		// Update broadcast state
@@ -647,14 +643,20 @@ void CGS::BroadcastTick(int ClientID)
 	else
 	{
 		// Full reset
-		m_aBroadcastStates[ClientID].m_NoChangeTick = 0;
 		m_aBroadcastStates[ClientID].m_LifeSpanTick = 0;
 		m_aBroadcastStates[ClientID].m_NextPriority = BroadcastPriority::LOWER;
 		m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
 		m_aBroadcastStates[ClientID].m_PrevMessage[0] = 0;
 		m_aBroadcastStates[ClientID].m_NextMessage[0] = 0;
 		m_aBroadcastStates[ClientID].m_TimedMessage[0] = 0;
+		m_aBroadcastStates[ClientID].m_Updated = false;
 	}
+}
+
+void CGS::MarkUpdatedBroadcast(int ClientID)
+{
+	if(ClientID >= 0 && ClientID < MAX_PLAYERS)
+		m_aBroadcastStates[ClientID].m_Updated = true;
 }
 
 /* #########################################################################

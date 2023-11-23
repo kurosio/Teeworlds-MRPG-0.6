@@ -155,7 +155,7 @@ bool CPlayerItem::Equip(bool SaveItem)
 	if(GetPlayer()->GetCharacter())
 		GetPlayer()->GetCharacter()->UpdateEquipingStats(m_ID);
 
-	GetPlayer()->ShowInformationStats();
+	GS()->MarkUpdatedBroadcast(m_ClientID);
 	return SaveItem ? Save() : true;
 }
 

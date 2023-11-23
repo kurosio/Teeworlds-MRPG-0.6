@@ -785,11 +785,6 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		Acc().m_Level, ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
 }
 
-void CPlayer::ShowInformationStats()
-{
-	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_BASIC_STATS, 100, "");
-}
-
 void CPlayer::IncreaseRelations(int Relevation)
 {
 	// Check if the player is authenticated and if their relationship level is not already at the maximum.
