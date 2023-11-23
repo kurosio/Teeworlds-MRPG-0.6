@@ -7,9 +7,17 @@
 #include <cmath>
 #include <cstdlib>
 
-using std::clamp;
-
 constexpr float pi = 3.1415926535897932384626433f;
+
+template <typename T>
+constexpr inline T clamp(T val, T min, T max)
+{
+	if(val < min)
+		return min;
+	if(val > max)
+		return max;
+	return val;
+}
 
 constexpr inline int round_to_int(float f)
 {

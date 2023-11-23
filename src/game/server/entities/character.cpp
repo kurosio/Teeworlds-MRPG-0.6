@@ -757,7 +757,7 @@ bool CCharacter::IncreaseHealth(int Amount)
 	if(m_Health >= m_pPlayer->GetStartHealth())
 		return false;
 
-	Amount = clamp(Amount, 1, Amount);
+	Amount = maximum(Amount, 1);
 	m_Health = clamp(m_Health + Amount, 0, m_pPlayer->GetStartHealth());
 	m_pPlayer->ShowInformationStats();
 	m_pPlayer->SetSnapHealthTick(2);
@@ -769,7 +769,7 @@ bool CCharacter::IncreaseMana(int Amount)
 	if(m_Mana >= m_pPlayer->GetStartMana())
 		return false;
 
-	Amount = clamp(Amount, 1, Amount);
+	Amount = maximum(Amount, 1);
 	m_Mana = clamp(m_Mana + Amount, 0, m_pPlayer->GetStartMana());
 	m_pPlayer->ShowInformationStats();
 	return true;
