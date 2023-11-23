@@ -75,8 +75,8 @@ void CPlayer::Tick()
 	IServer::CClientInfo Info;
 	if(Server()->GetClientInfo(m_ClientID, &Info))
 	{
-		m_Latency.m_AccumMax = max(m_Latency.m_AccumMax, Info.m_Latency);
-		m_Latency.m_AccumMin = min(m_Latency.m_AccumMin, Info.m_Latency);
+		m_Latency.m_AccumMax = maximum(m_Latency.m_AccumMax, Info.m_Latency);
+		m_Latency.m_AccumMin = minimum(m_Latency.m_AccumMin, Info.m_Latency);
 		Server()->SetClientScore(m_ClientID, Acc().m_Level);
 	}
 
@@ -507,7 +507,7 @@ void CPlayer::TryRespawn()
 
 	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
 	{
-		if(!GS()->IsDungeon() && total_size_vec2(GetTempData().m_TempTeleportPos) >= 1.0f)
+		if(!GS()->IsDungeon() && length_squared(GetTempData().m_TempTeleportPos) >= 1.0f)
 		{
 			SpawnPos = GetTempData().m_TempTeleportPos;
 			GetTempData().m_TempTeleportPos = vec2(-1, -1);
@@ -652,7 +652,7 @@ void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 {
 	if(m_pCharacter && m_pCharacter->IsAlive())
 	{
-		const float RandomChance = frandom() * 100.0f;
+		const float RandomChance = random_float(100.0f);
 		if(RandomChance < Chance)
 		{
 			GS()->Chat(m_ClientID, "You got the effect {STR} time {INT} seconds.", Potion, Sec);
@@ -776,7 +776,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	char aRecastInfo[32] {};
 	if(m_aPlayerTick[PotionRecast] > Server()->Tick())
 	{
-		int Seconds = max(0, (m_aPlayerTick[PotionRecast] - Server()->Tick()) / Server()->TickSpeed());
+		int Seconds = maximum(0, (m_aPlayerTick[PotionRecast] - Server()->Tick()) / Server()->TickSpeed());
 		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
 	}
 
@@ -798,7 +798,7 @@ void CPlayer::IncreaseRelations(int Relevation)
 	if(IsAuthed() && !Acc().IsRelationshipsDeterioratedToMax())
 	{
 		// Increase the player's relationship level by the value of Relevation, up to a maximum of 100.
-		Acc().m_Relations = min(Acc().m_Relations + Relevation, 100);
+		Acc().m_Relations = minimum(Acc().m_Relations + Relevation, 100);
 
 		// Display a chat message to the player indicating the new relationship level.
 		GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {INT}%!", Acc().m_Relations);
@@ -1004,11 +1004,11 @@ float CPlayer::GetAttributePercent(AttributeIdentifier ID)
 	int Size = GetAttributeSize(ID);
 
 	if(ID == AttributeIdentifier::Vampirism)
-		Percent = min(8.0f + (float)Size * 0.0015f, 30.0f);
+		Percent = minimum(8.0f + (float)Size * 0.0015f, 30.0f);
 	if(ID == AttributeIdentifier::Crit)
-		Percent = min(8.0f + (float)Size * 0.0015f, 30.0f);
+		Percent = minimum(8.0f + (float)Size * 0.0015f, 30.0f);
 	if(ID == AttributeIdentifier::Lucky)
-		Percent = min(5.0f + (float)Size * 0.0015f, 20.0f);
+		Percent = minimum(5.0f + (float)Size * 0.0015f, 20.0f);
 	return Percent;
 }
 

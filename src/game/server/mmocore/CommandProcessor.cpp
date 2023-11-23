@@ -127,7 +127,7 @@ void CCommandProcessor::ConChatDiscordConnect(IConsole::IResult* pResult, void* 
 		return;
 	}
 
-	if(!str_is_number(aDiscordDID))
+	if(!string_to_number(aDiscordDID, 0, std::numeric_limits<int>::max()))
 	{
 		pGS->Chat(ClientID, "Discord ID can only contain numbers.");
 		return;
@@ -470,8 +470,5 @@ void CCommandProcessor::AddCommand(const char* pName, const char* pParams, ICons
 	GS()->Console()->Register(pName, pParams, CFGFLAG_CHAT, pfnFunc, pUser, pHelp);
 
 	// Add the command to the command manager
-	bool Succesful = m_CommandManager.AddCommand(pName, pHelp, pParams, pfnFunc, pUser);
-
-	// Check if the command was added successfully
-	dbg_assert(!Succesful, "failed to add (chat - command)");
+	m_CommandManager.AddCommand(pName, pHelp, pParams, pfnFunc, pUser);
 }

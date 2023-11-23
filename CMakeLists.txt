@@ -333,7 +333,9 @@ endif()
 if(TARGET_OS STREQUAL "windows")
 #  set(PLATFORM_CLIENT)
 #  set(PLATFORM_CLIENT_LIBS opengl32 glu32 winmm)
-  set(PLATFORM_LIBS ws2_32) # Windows sockets
+  set(PLATFORM_LIBS)
+  list(APPEND PLATFORM_LIBS version ws2_32) # Windows sockets
+  list(APPEND PLATFORM_LIBS shlwapi) # PathIsRelativeW
 #elseif(TARGET_OS STREQUAL "mac")
 #  find_library(CARBON Carbon)
 #  find_library(COCOA Cocoa)
@@ -451,12 +453,10 @@ file(COPY server_lang DESTINATION .)
 
 set(COPY_FILES_SERVER
   #${ICU_COPY_FILES}
+  ${CURL_COPY_FILES}
   ${MYSQL_COPY_FILES}
   ${OPENSSL_COPY_FILES}
 )
-if(DISCORD_SERVER_COMPILE)
-  list(APPEND COPY_FILES_SERVER ${CURL_COPY_FILES})
-endif()
 
 file(COPY #${COPY_FILES_CLIENT} 
   ${COPY_FILES_SERVER} DESTINATION .)
@@ -519,6 +519,7 @@ chash("src/generated/nethash.cpp"
 )
 #generate_source("src/generated/client_data.cpp" "client_content_source")
 #generate_source("src/generated/client_data.h" "client_content_header")
+generate_source("src/generated/data_types.h" "content_types_header")
 generate_source("src/generated/protocol.cpp" "network_source")
 generate_source("src/generated/protocol.h" "network_header")
 generate_source("src/generated/server_data.cpp" "server_content_source")
@@ -632,6 +633,7 @@ set(ENGINE_GENERATED_SHARED src/generated/nethash.cpp src/generated/protocol.cpp
 file(GLOB GAME_SHARED "src/game/*.cpp" "src/game/*.h")
 
 set(GAME_GENERATED_SHARED
+  src/generated/data_types.h
   src/generated/git_revision.cpp
   src/generated/nethash.cpp
   src/generated/protocol.h
@@ -639,7 +641,7 @@ set(GAME_GENERATED_SHARED
 
 # Libraries & Deps
 set(DEPS ${DEP_JSON} ${DEP_MD5} ${ZLIB_DEP} ${DEP_PUGIXML})
-set(LIBS ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARY} ${PLATFORM_LIBS})
+set(LIBS ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARY} ${PLATFORM_LIBS})
 
 # Targets
 add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_SHARED} ${ENGINE_GENERATED_SHARED} ${BASE} )
@@ -817,12 +819,10 @@ if(SERVER_COMPILE)
 
   set(SERVER_INCLUDES_DIRS
     ${Boost_INCLUDE_DIRS}
-    #${ICU_INCLUDE_DIRS}
     ${MYSQL_INCLUDE_DIRS}
   )
   set(SERVER_LIBRARIES
     ${MYSQL_LIBRARIES}
-    #${ICU_LIBRARIES}
     ${DISCORD_SERVER_LIBS}
   )
   set(DEPS_SERVER ${DEPS})
@@ -1291,6 +1291,7 @@ foreach(target ${TARGETS_OWN})
   target_include_directories(${target} PRIVATE src)
   target_compile_definitions(${target} PRIVATE $<$<CONFIG:Debug>:CONF_DEBUG>)
   target_include_directories(${target} PRIVATE ${ZLIB_INCLUDE_DIRS})
+  target_include_directories(${target} PRIVATE ${CURL_INCLUDE_DIRS})
 
   if(OPENSSL_FOUND)
 	target_compile_definitions(${target} PRIVATE CONF_OPENSSL)

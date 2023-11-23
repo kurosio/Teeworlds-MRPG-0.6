@@ -25,7 +25,7 @@ inline int randomRangecount(int startrandom, int endrandom, int count)
 	int result = 0;
 	for(int i = 0; i < count; i++)
 	{
-		int random = startrandom + random_int() % (endrandom - startrandom);
+		int random = startrandom + rand() % (endrandom - startrandom);
 		result += random;
 	}
 	return result;
@@ -121,7 +121,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 
 bool CPlayerItem::Remove(int Value)
 {
-	Value = min(Value, m_Value);
+	Value = minimum(Value, m_Value);
 	if(Value <= 0 || !GetPlayer())
 		return false;
 
@@ -161,7 +161,7 @@ bool CPlayerItem::Equip(bool SaveItem)
 
 bool CPlayerItem::Use(int Value)
 {
-	Value = Info()->IsFunctional(FUNCTION_ONE_USED) ? 1 : min(Value, m_Value);
+	Value = Info()->IsFunctional(FUNCTION_ONE_USED) ? 1 : minimum(Value, m_Value);
 	if(Value <= 0 || !GetPlayer() || !GetPlayer()->IsAuthed())
 		return false;
 
@@ -288,7 +288,7 @@ bool CPlayerItem::Use(int Value)
 
 bool CPlayerItem::Drop(int Value)
 {
-	Value = min(Value, m_Value);
+	Value = minimum(Value, m_Value);
 	if(Value <= 0 || !GetPlayer() || !GetPlayer()->IsAuthed() || !GetPlayer()->GetCharacter())
 		return false;
 

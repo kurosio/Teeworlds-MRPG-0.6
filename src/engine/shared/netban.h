@@ -66,7 +66,7 @@ protected:
 		int m_Hash;
 		int m_HashIndex; // matching parts for ranges, 0 for addr
 
-		CNetHash() {}
+		CNetHash() = default;
 		CNetHash(const NETADDR *pAddr);
 		CNetHash(const CNetRange *pRange);
 
@@ -139,6 +139,8 @@ protected:
 		CBan<CDataType> *m_pFirstFree;
 		CBan<CDataType> *m_pFirstUsed;
 		int m_CountUsed;
+
+		void InsertUsed(CBan<CDataType> *pBan);
 	};
 
 	typedef CBanPool<NETADDR, 1> CBanAddrPool;
@@ -169,10 +171,10 @@ public:
 	};
 
 	class IConsole *Console() const { return m_pConsole; }
-	class IStorageEngine*Storage() const { return m_pStorage; }
+	class IStorageEngine *Storage() const { return m_pStorage; }
 
 	virtual ~CNetBan() {}
-	void Init(class IConsole *pConsole, class IStorageEngine*pStorage);
+	void Init(class IConsole *pConsole, class IStorageEngine *pStorage);
 	void Update();
 
 	virtual int BanAddr(const NETADDR *pAddr, int Seconds, const char *pReason);
@@ -181,7 +183,7 @@ public:
 	int UnbanByRange(const CNetRange *pRange);
 	int UnbanByIndex(int Index);
 	void UnbanAll();
-	bool IsBanned(const NETADDR *pAddr, char *pBuf, unsigned BufferSize) const;
+	bool IsBanned(const NETADDR *pOrigAddr, char *pBuf, unsigned BufferSize) const;
 
 	static void ConBan(class IConsole::IResult *pResult, void *pUser);
 	static void ConBanRange(class IConsole::IResult *pResult, void *pUser);
@@ -205,7 +207,7 @@ void CNetBan::MakeBanInfo(const CBan<T> *pBan, char *pBuf, unsigned BuffSize, in
 	// build type based part
 	char aBuf[256];
 	if(Type == MSGTYPE_PLAYER)
-		str_copy(aBuf, "You have been banned", sizeof(aBuf));
+		str_copy(aBuf, "You have been banned");
 	else
 	{
 		char aTemp[256];

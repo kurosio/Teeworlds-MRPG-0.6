@@ -19,24 +19,27 @@ void HouseDoor::Tick()
 {
 	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
-		const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if(Distance <= g_Config.m_SvDoorRadiusHit)
+		vec2 IntersectPos;
+		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 		{
-			// skip who has access to house door
-			if(m_pHouseDoor->HasAccess(pChar->GetPlayer()->Acc().GetID()))
-				continue;
-
-			// skip eidolon when owner has access
-			if(pChar->GetPlayer()->IsBot())
+			const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+			if(Distance <= g_Config.m_SvDoorRadiusHit)
 			{
-				CPlayerBot* pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
-				if(pPlayerBot->GetEidolonOwner() && m_pHouseDoor->HasAccess(pPlayerBot->GetEidolonOwner()->Acc().GetID()))
+				// skip who has access to house door
+				if(m_pHouseDoor->HasAccess(pChar->GetPlayer()->Acc().GetID()))
 					continue;
-			}
 
-			// hit door
-			pChar->m_DoorHit = true;
+				// skip eidolon when owner has access
+				if(pChar->GetPlayer()->IsBot())
+				{
+					CPlayerBot* pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
+					if(pPlayerBot->GetEidolonOwner() && m_pHouseDoor->HasAccess(pPlayerBot->GetEidolonOwner()->Acc().GetID()))
+						continue;
+				}
+
+				// hit door
+				pChar->m_DoorHit = true;
+			}
 		}
 	}
 }

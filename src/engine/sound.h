@@ -3,7 +3,8 @@
 #ifndef ENGINE_SOUND_H
 #define ENGINE_SOUND_H
 
-#include "kernel.h"
+#include <engine/kernel.h>
+#include <engine/storage.h>
 
 class ISound : public IInterface
 {
@@ -11,47 +12,100 @@ class ISound : public IInterface
 public:
 	enum
 	{
-		FLAG_LOOP=1,
-		FLAG_POS=2,
-		FLAG_ALL=3
+		FLAG_LOOP = 1 << 0,
+		FLAG_POS = 1 << 1,
+		FLAG_NO_PANNING = 1 << 2,
+		FLAG_PREVIEW = 1 << 3,
+		FLAG_ALL = FLAG_LOOP | FLAG_POS | FLAG_NO_PANNING | FLAG_PREVIEW,
 	};
 
-	class CSampleHandle
+	enum
+	{
+		SHAPE_CIRCLE,
+		SHAPE_RECTANGLE,
+	};
+
+	// unused
+	struct CSampleHandle
+	{
+		int m_SampleID;
+	};
+
+	struct CVoiceShapeCircle
+	{
+		float m_Radius;
+	};
+
+	struct CVoiceShapeRectangle
+	{
+		float m_Width;
+		float m_Height;
+	};
+
+	class CVoiceHandle
 	{
 		friend class ISound;
 		int m_Id;
-	public:
-		CSampleHandle()
-		: m_Id(-1)
-		{}
+		int m_Age;
 
-		bool IsValid() const { return Id() >= 0; }
+	public:
+		CVoiceHandle() :
+			m_Id(-1), m_Age(-1)
+		{
+		}
+
+		bool IsValid() const { return (Id() >= 0) && (Age() >= 0); }
 		int Id() const { return m_Id; }
+		int Age() const { return m_Age; }
+
+		bool operator==(const CVoiceHandle &Other) const { return m_Id == Other.m_Id && m_Age == Other.m_Age; }
 	};
 
 	virtual bool IsSoundEnabled() = 0;
 
-	virtual CSampleHandle LoadWV(const char *pFilename) = 0;
+	virtual int LoadOpus(const char *pFilename, int StorageType = IStorageEngine::TYPE_ALL) = 0;
+	virtual int LoadWV(const char *pFilename, int StorageType = IStorageEngine::TYPE_ALL) = 0;
+	virtual int LoadOpusFromMem(const void *pData, unsigned DataSize, bool FromEditor = false) = 0;
+	virtual int LoadWVFromMem(const void *pData, unsigned DataSize, bool FromEditor = false) = 0;
+	virtual void UnloadSample(int SampleID) = 0;
 
-	virtual void SetChannelVolume(int ChannelID, float Volume) = 0;
+	virtual float GetSampleTotalTime(int SampleID) = 0; // in s
+	virtual float GetSampleCurrentTime(int SampleID) = 0; // in s
+	virtual void SetSampleCurrentTime(int SampleID, float Time) = 0;
+
+	virtual void SetChannel(int ChannelID, float Volume, float Panning) = 0;
 	virtual void SetListenerPos(float x, float y) = 0;
-	virtual void SetMaxDistance(float Distance) = 0;
 
-	virtual int PlayAt(int ChannelID, CSampleHandle Sound, int Flags, float x, float y) = 0;
-	virtual int Play(int ChannelID, CSampleHandle Sound, int Flags) = 0;
-	virtual void Stop(CSampleHandle Sound) = 0;
+	virtual void SetVoiceVolume(CVoiceHandle Voice, float Volume) = 0;
+	virtual void SetVoiceFalloff(CVoiceHandle Voice, float Falloff) = 0;
+	virtual void SetVoiceLocation(CVoiceHandle Voice, float x, float y) = 0;
+	virtual void SetVoiceTimeOffset(CVoiceHandle Voice, float TimeOffset) = 0; // in s
+
+	virtual void SetVoiceCircle(CVoiceHandle Voice, float Radius) = 0;
+	virtual void SetVoiceRectangle(CVoiceHandle Voice, float Width, float Height) = 0;
+
+	virtual CVoiceHandle PlayAt(int ChannelID, int SampleID, int Flags, float x, float y) = 0;
+	virtual CVoiceHandle Play(int ChannelID, int SampleID, int Flags) = 0;
+	virtual void Pause(int SampleID) = 0;
+	virtual void Stop(int SampleID) = 0;
 	virtual void StopAll() = 0;
-	virtual bool IsPlaying(CSampleHandle Sound) = 0;
+	virtual void StopVoice(CVoiceHandle Voice) = 0;
+	virtual bool IsPlaying(int SampleID) = 0;
+
+	virtual void Mix(short *pFinalOut, unsigned Frames) = 0;
+	// useful for thread synchronization
+	virtual void PauseAudioDevice() = 0;
+	virtual void UnpauseAudioDevice() = 0;
 
 protected:
-	inline CSampleHandle CreateSampleHandle(int Index)
+	inline CVoiceHandle CreateVoiceHandle(int Index, int Age)
 	{
-		CSampleHandle Tex;
-		Tex.m_Id = Index;
-		return Tex;
+		CVoiceHandle Voice;
+		Voice.m_Id = Index;
+		Voice.m_Age = Age;
+		return Voice;
 	}
 };
-
 
 class IEngineSound : public ISound
 {
@@ -59,7 +113,7 @@ class IEngineSound : public ISound
 public:
 	virtual int Init() = 0;
 	virtual int Update() = 0;
-	virtual int Shutdown() = 0;
+	virtual void Shutdown() override = 0;
 };
 
 extern IEngineSound *CreateEngineSound();

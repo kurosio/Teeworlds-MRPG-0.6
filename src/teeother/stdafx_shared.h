@@ -21,6 +21,7 @@
 #include <base/math.h>
 #include <base/vmath.h>
 #include <base/threadpool.h>
+#include <base/tl/array.h>
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
 #include <teeother/tl/nlohmann_json.h>

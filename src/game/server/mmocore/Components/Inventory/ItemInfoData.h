@@ -66,7 +66,7 @@ public:
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }
-	int GetDysenthis(int Enchant) const { return m_Dysenthis ? (m_Dysenthis + (max(GetEnchantPrice(Enchant) / 4, 1) * Enchant)) : 0; }
+	int GetDysenthis(int Enchant) const { return m_Dysenthis ? (m_Dysenthis + (maximum(GetEnchantPrice(Enchant) / 4, 1) * Enchant)) : 0; }
 	ItemFunctional GetFunctional() const { return m_Function; }
 	bool IsFunctional(ItemFunctional Functional) const { return m_Function == Functional; }
 	ItemType GetType() const { return m_Type; }

@@ -12,46 +12,46 @@ class IInterface
 {
 	// friend with the kernel implementation
 	friend class CKernel;
-	IKernel* m_pKernel;
-protected:
-	IKernel* Kernel() const { return m_pKernel; }
-public:
-	IInterface() : m_pKernel(0) {}
-	virtual ~IInterface() {}
+	IKernel *m_pKernel;
 
-	//virtual unsigned InterfaceID() = 0;
-	//virtual const char *InterfaceName() = 0;
+protected:
+	IKernel *Kernel() { return m_pKernel; }
+
+public:
+	IInterface() :
+		m_pKernel(nullptr) {}
+	virtual void Shutdown() {}
+	virtual ~IInterface() {}
 };
 
 #define MACRO_INTERFACE(Name, ver) \
-	public: \
-		static const char *InterfaceName() { return Name; } \
-	private:
+public: \
+	static const char *InterfaceName() { return Name; } \
+\
+private:
 
-//virtual unsigned InterfaceID() { return INTERFACE_ID; }
-//virtual const char *InterfaceName() { return name; }
-
-
-// This kernel thingie makes the structure very flat and basiclly singletons.
+// This kernel thingie makes the structure very flat and basically singletons.
 // I'm not sure if this is a good idea but it works for now.
 class IKernel
 {
 	// hide the implementation
-	virtual bool RegisterInterfaceImpl(const char* InterfaceName, IInterface* pInterface, int ID = 0) = 0;
-	virtual bool ReregisterInterfaceImpl(const char* InterfaceName, IInterface* pInterface, int ID = 0) = 0;
-	virtual IInterface* RequestInterfaceImpl(const char* InterfaceName, int ID = 0) = 0;
+	virtual bool RegisterInterfaceImpl(const char *pInterfaceName, IInterface *pInterface, bool Destroy, int ID = 0) = 0;
+	virtual bool ReregisterInterfaceImpl(const char *pInterfaceName, IInterface *pInterface, int ID = 0) = 0;
+	virtual IInterface *RequestInterfaceImpl(const char *pInterfaceName, int ID = 0) = 0;
+
 public:
-	static IKernel* Create();
+	static IKernel *Create();
+	virtual void Shutdown() = 0;
 	virtual ~IKernel() {}
 
-	// templated access to handle pointer convertions and interface names
+	// templated access to handle pointer conversions and interface names
 	template<class TINTERFACE>
-	bool RegisterInterface(TINTERFACE* pInterface, int ID = 0)
+	bool RegisterInterface(TINTERFACE *pInterface, bool Destroy = true, int ID = 0)
 	{
-		return RegisterInterfaceImpl(TINTERFACE::InterfaceName(), pInterface, ID);
+		return RegisterInterfaceImpl(TINTERFACE::InterfaceName(), pInterface, Destroy, ID);
 	}
 	template<class TINTERFACE>
-	bool ReregisterInterface(TINTERFACE* pInterface, int ID = 0)
+	bool ReregisterInterface(TINTERFACE *pInterface, int ID = 0)
 	{
 		return ReregisterInterfaceImpl(TINTERFACE::InterfaceName(), pInterface, ID);
 	}
@@ -59,9 +59,9 @@ public:
 	// Usage example:
 	//		IMyInterface *pMyHandle = Kernel()->RequestInterface<IMyInterface>()
 	template<class TINTERFACE>
-	TINTERFACE* RequestInterface(int ID = 0)
+	TINTERFACE *RequestInterface(int ID = 0)
 	{
-		return reinterpret_cast<TINTERFACE*>(RequestInterfaceImpl(TINTERFACE::InterfaceName(), ID));
+		return reinterpret_cast<TINTERFACE *>(RequestInterfaceImpl(TINTERFACE::InterfaceName(), ID));
 	}
 };
 

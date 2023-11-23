@@ -196,16 +196,19 @@ CCharacter *CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 		if(p == pNotThis)
 			continue;
 
-		vec2 IntersectPos = closest_point_on_line(Pos0, Pos1, p->m_Pos);
-		float Len = distance(p->m_Pos, IntersectPos);
-		if(Len < p->m_ProximityRadius+Radius)
+		vec2 IntersectPos;
+		if(closest_point_on_line(Pos0, Pos1, p->m_Pos, IntersectPos))
 		{
-			Len = distance(Pos0, IntersectPos);
-			if(Len < ClosestLen)
+			float Len = distance(p->m_Pos, IntersectPos);
+			if(Len < p->m_ProximityRadius + Radius)
 			{
-				NewPos = IntersectPos;
-				ClosestLen = Len;
-				pClosest = p;
+				Len = distance(Pos0, IntersectPos);
+				if(Len < ClosestLen)
+				{
+					NewPos = IntersectPos;
+					ClosestLen = Len;
+					pClosest = p;
+				}
 			}
 		}
 	}
@@ -219,7 +222,7 @@ bool CGameWorld::IntersectClosestEntity(vec2 Pos, float Radius, int EnttypeID)
  	{
 		vec2 IntersectPos = pDoor->m_PosTo;
 		if(pDoor->m_Pos != pDoor->m_PosTo)
-			IntersectPos = closest_point_on_line(pDoor->m_Pos, pDoor->m_PosTo, Pos);
+			closest_point_on_line(pDoor->m_Pos, pDoor->m_PosTo, Pos, IntersectPos);
 		if (distance(IntersectPos, Pos) <= Radius)
 			return true;
 	}

@@ -4,7 +4,16 @@
 #define ENGINE_STORAGE_H
 
 #include <base/hash.h>
+
 #include "kernel.h"
+
+#include <set>
+#include <string>
+
+enum
+{
+	MAX_PATHS = 16
+};
 
 class IStorageEngine : public IInterface
 {
@@ -14,31 +23,56 @@ public:
 	{
 		TYPE_SAVE = 0,
 		TYPE_ALL = -1,
+		TYPE_ABSOLUTE = -2,
+		/**
+		 * Translates to TYPE_SAVE if a path is relative
+		 * and to TYPE_ABSOLUTE if a path is absolute.
+		 * Only usable with OpenFile, ReadFile, ReadFileStr,
+		 * GetCompletePath, FileExists and FolderExists.
+		 */
+		TYPE_SAVE_OR_ABSOLUTE = -3,
+		/**
+		 * Translates to TYPE_ALL if a path is relative
+		 * and to TYPE_ABSOLUTE if a path is absolute.
+		 * Only usable with OpenFile, ReadFile, ReadFileStr,
+		 * GetCompletePath, FileExists and FolderExists.
+		 */
+		TYPE_ALL_OR_ABSOLUTE = -4,
 
 		STORAGETYPE_BASIC = 0,
 		STORAGETYPE_SERVER,
 		STORAGETYPE_CLIENT,
 	};
-	typedef bool(*FCheckCallback)(IOHANDLE Handle, const void *pUserData);
 
-	virtual void ListDirectory(int Type, const char* pPath, FS_LISTDIR_CALLBACK pfnCallback, void* pUser) = 0;
-	virtual void ListDirectoryInfo(int Type, const char* pPath, FS_LISTDIR_INFO_CALLBACK pfnCallback, void* pUser) = 0;
-	virtual IOHANDLE OpenFile(const char *pFilename, int Flags, int Type, char *pBuffer = 0, int BufferSize = 0, FCheckCallback pfnCheckCB = 0, const void *pCheckCBData = 0) = 0;
+	virtual int NumPaths() const = 0;
+
+	virtual void ListDirectory(int Type, const char *pPath, FS_LISTDIR_CALLBACK pfnCallback, void *pUser) = 0;
+	virtual void ListDirectoryInfo(int Type, const char *pPath, FS_LISTDIR_CALLBACK_FILEINFO pfnCallback, void *pUser) = 0;
+	virtual IOHANDLE OpenFile(const char *pFilename, int Flags, int Type, char *pBuffer = nullptr, int BufferSize = 0) = 0;
+	virtual bool FileExists(const char *pFilename, int Type) = 0;
+	virtual bool FolderExists(const char *pFilename, int Type) = 0;
+	virtual bool ReadFile(const char *pFilename, int Type, void **ppResult, unsigned *pResultLen) = 0;
+	virtual char *ReadFileStr(const char *pFilename, int Type) = 0;
+	virtual bool CalculateHashes(const char *pFilename, int Type, SHA256_DIGEST *pSha256, unsigned *pCrc = nullptr) = 0;
 	virtual bool FindFile(const char *pFilename, const char *pPath, int Type, char *pBuffer, int BufferSize) = 0;
-	virtual bool FindFile(const char *pFilename, const char *pPath, int Type, char *pBuffer, int BufferSize, const SHA256_DIGEST *pWantedSha256, unsigned WantedCrc, unsigned WantedSize) = 0;
+	virtual size_t FindFiles(const char *pFilename, const char *pPath, int Type, std::set<std::string> *pEntries) = 0;
 	virtual bool RemoveFile(const char *pFilename, int Type) = 0;
-	virtual bool RenameFile(const char* pOldFilename, const char* pNewFilename, int Type) = 0;
+	virtual bool RemoveFolder(const char *pFilename, int Type) = 0;
+	virtual bool RenameFile(const char *pOldFilename, const char *pNewFilename, int Type) = 0;
 	virtual bool CreateFolder(const char *pFoldername, int Type) = 0;
 	virtual void GetCompletePath(int Type, const char *pDir, char *pBuffer, unsigned BufferSize) = 0;
-	virtual bool GetHashAndSize(const char *pFilename, int StorageType, SHA256_DIGEST *pSha256, unsigned *pCrc, unsigned *pSize) = 0;
 
 	virtual bool RemoveBinaryFile(const char *pFilename) = 0;
-	virtual bool RenameBinaryFile(const char* pOldFilename, const char* pNewFilename) = 0;
-	virtual const char* GetBinaryPath(const char *pDir, char *pBuffer, unsigned BufferSize) = 0;
+	virtual bool RenameBinaryFile(const char *pOldFilename, const char *pNewFilename) = 0;
+	virtual const char *GetBinaryPath(const char *pFilename, char *pBuffer, unsigned BufferSize) = 0;
+	virtual const char *GetBinaryPathAbsolute(const char *pFilename, char *pBuffer, unsigned BufferSize) = 0;
+
+	static void StripPathAndExtension(const char *pFilename, char *pBuffer, int BufferSize);
+	static const char *FormatTmpPath(char *aBuf, unsigned BufSize, const char *pPath);
 };
 
-IStorageEngine *CreateStorage(const char *pApplicationName, int StorageType, int NumArgs, const char **ppArguments);
-IStorageEngine *CreateTestStorage();
-
+extern IStorageEngine *CreateStorage(int StorageType, int NumArgs, const char **ppArguments);
+extern IStorageEngine *CreateLocalStorage();
+extern IStorageEngine *CreateTempStorage(const char *pDirectory);
 
 #endif

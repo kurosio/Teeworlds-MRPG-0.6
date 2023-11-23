@@ -46,7 +46,7 @@ void DiscordJob::onAddMember(SleepyDiscord::Snowflake<SleepyDiscord::Server> ser
 	ArrayWelcomes.push_back("Welcome, " + member.user.showMention() + ". We hope you're not coming to us without pizza!");
 	ArrayWelcomes.push_back("The raptor "+ member.user.showMention() + " appeared. Watch out!");
 
-	const int RandomMessage = random_int() % ArrayWelcomes.size();
+	const int RandomMessage = rand() % ArrayWelcomes.size();
 	SleepyDiscord::Embed EmbedWelcome;
 	EmbedWelcome.color = DC_INVISIBLE_GRAY;
 	EmbedWelcome.description = ArrayWelcomes[RandomMessage];
@@ -157,8 +157,7 @@ bool DiscordJob::SendGenerateMessage(SleepyDiscord::User UserRequestFrom, std::s
 
 bool DiscordJob::SendGenerateMessageAccountID(SleepyDiscord::User UserRequestFrom, std::string Channel, std::string Title, int AccountID, int Color)
 {
-	CGS* pGS = (CGS*)Server()->GameServer(MAIN_WORLD_ID);
-	const std::string Nickname(pGS->Mmo()->PlayerName(AccountID));
+	const std::string Nickname(Server()->GetAccountNickname(AccountID));
 	return SendGenerateMessage(UserRequestFrom, Channel, Title, Nickname, Color, false);
 }
 

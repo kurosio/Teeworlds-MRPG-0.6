@@ -3,114 +3,252 @@
 #ifndef ENGINE_SERVERBROWSER_H
 #define ENGINE_SERVERBROWSER_H
 
+#include <base/hash.h>
+#include <base/types.h>
+
+#include <engine/map.h>
 #include <engine/shared/protocol.h>
 
 #include "kernel.h"
 
-#define MMOTEE_INFO "mmotee-info.json"
-#define MMOTEE_INFO_TMP MMOTEE_INFO ".tmp"
+#include <unordered_set>
+#include <vector>
 
-/*
-	Structure: CServerInfo
-*/
+static constexpr const char *DDNET_INFO_FILE = "ddnet-info.json";
+static constexpr const char *DDNET_INFO_URL = "https://info.ddnet.org/info";
+
+class CUIElement;
+
 class CServerInfo
 {
 public:
-	/*
-		Structure: CInfoClient
-	*/
-	class CClient
+	enum
 	{
-	public:
-		char m_aName[MAX_NAME_ARRAY_SIZE];
-		char m_aClan[MAX_CLAN_ARRAY_SIZE];
-		int m_Country;
-		int m_Score;
-		int m_PlayerType;
+		LOC_UNKNOWN = 0,
+		LOC_AFRICA,
+		LOC_ASIA,
+		LOC_AUSTRALIA,
+		LOC_EUROPE,
+		LOC_NORTH_AMERICA,
+		LOC_SOUTH_AMERICA,
+		// Special case China because it has an exceptionally bad
+		// connection to the outside due to the Great Firewall of
+		// China:
+		// https://en.wikipedia.org/w/index.php?title=Great_Firewall&oldid=1019589632
+		LOC_CHINA,
+		NUM_LOCS,
+	};
 
-		int m_FriendState;
+	enum EClientScoreKind
+	{
+		CLIENT_SCORE_KIND_UNSPECIFIED,
+		CLIENT_SCORE_KIND_POINTS,
+		CLIENT_SCORE_KIND_TIME,
+		CLIENT_SCORE_KIND_TIME_BACKCOMPAT,
+	};
 
-		enum
-		{
-			PLAYERFLAG_SPEC=1,
-			PLAYERFLAG_BOT=2,
-			PLAYERFLAG_MASK=3,
-		};
+	enum ERankState
+	{
+		RANK_UNAVAILABLE,
+		RANK_RANKED,
+		RANK_UNRANKED,
 	};
 
 	enum
 	{
-		LEVEL_CASUAL = 0,
-		LEVEL_NORMAL = 1,
-		LEVEL_COMPETITIVE = 2,
-		NUM_SERVER_LEVELS = 3
+		MAX_COMMUNITY_ID_LENGTH = 32,
+		MAX_COMMUNITY_COUNTRY_LENGTH = 32,
+		MAX_COMMUNITY_TYPE_LENGTH = 32,
 	};
 
-	//int m_SortedIndex;
+	class CClient
+	{
+	public:
+		char m_aName[MAX_NAME_LENGTH];
+		char m_aClan[MAX_CLAN_LENGTH];
+		int m_Country;
+		int m_Score;
+		bool m_Player;
+		bool m_Afk;
+
+		// skin info
+		char m_aSkin[24 + 1];
+		bool m_CustomSkinColors;
+		int m_CustomSkinColorBody;
+		int m_CustomSkinColorFeet;
+
+		int m_FriendState;
+	};
+
 	int m_ServerIndex;
 
-	NETADDR m_NetAddr;
+	int m_Type;
+	uint64_t m_ReceivedPackets;
+	int m_NumReceivedClients;
+
+	int m_NumAddresses;
+	NETADDR m_aAddresses[MAX_SERVER_ADDRESSES];
 
 	int m_QuickSearchHit;
 	int m_FriendState;
+	int m_FriendNum;
 
 	int m_MaxClients;
 	int m_NumClients;
 	int m_MaxPlayers;
 	int m_NumPlayers;
-	int m_NumBotPlayers;
-	int m_NumBotSpectators;
 	int m_Flags;
-	int m_ServerLevel;
-	bool m_Favorite;
+	EClientScoreKind m_ClientScoreKind;
+	TRISTATE m_Favorite;
+	TRISTATE m_FavoriteAllowPing;
+	char m_aCommunityId[MAX_COMMUNITY_ID_LENGTH];
+	char m_aCommunityCountry[MAX_COMMUNITY_COUNTRY_LENGTH];
+	char m_aCommunityType[MAX_COMMUNITY_TYPE_LENGTH];
+	int m_Location;
+	bool m_LatencyIsEstimated;
 	int m_Latency; // in ms
+	ERankState m_HasRank;
 	char m_aGameType[16];
 	char m_aName[64];
-	char m_aHostname[128];
-	char m_aMap[32];
+	char m_aMap[MAX_MAP_LENGTH];
+	int m_MapCrc;
+	int m_MapSize;
 	char m_aVersion[32];
-	char m_aAddress[NETADDR_MAXSTRSIZE];
-	CClient m_aClients[MAX_CLIENTS];
+	char m_aAddress[MAX_SERVER_ADDRESSES * NETADDR_MAXSTRSIZE];
+	CClient m_aClients[SERVERINFO_MAX_CLIENTS];
+	int m_NumFilteredPlayers;
 
-	bool m_MRPG;
+	static int EstimateLatency(int Loc1, int Loc2);
+	static bool ParseLocation(int *pResult, const char *pString);
+	void InfoToString(char *pBuffer, int BufferSize) const;
 };
 
-class CServerFilterInfo
+class CCommunityCountryServer
+{
+	NETADDR m_Address;
+	char m_aTypeName[CServerInfo::MAX_COMMUNITY_TYPE_LENGTH];
+
+public:
+	CCommunityCountryServer(NETADDR Address, const char *pTypeName) :
+		m_Address(Address)
+	{
+		str_copy(m_aTypeName, pTypeName);
+	}
+
+	NETADDR Address() const { return m_Address; }
+	const char *TypeName() const { return m_aTypeName; }
+};
+
+class CCommunityCountry
+{
+	friend class CServerBrowser;
+
+	char m_aName[CServerInfo::MAX_COMMUNITY_COUNTRY_LENGTH];
+	int m_FlagId;
+	std::vector<CCommunityCountryServer> m_vServers;
+
+public:
+	CCommunityCountry(const char *pName, int FlagId) :
+		m_FlagId(FlagId)
+	{
+		str_copy(m_aName, pName);
+	}
+
+	const char *Name() const { return m_aName; }
+	int FlagId() const { return m_FlagId; }
+	const std::vector<CCommunityCountryServer> &Servers() const { return m_vServers; }
+};
+
+class CCommunityType
+{
+	char m_aName[CServerInfo::MAX_COMMUNITY_TYPE_LENGTH];
+
+public:
+	CCommunityType(const char *pName)
+	{
+		str_copy(m_aName, pName);
+	}
+
+	const char *Name() const { return m_aName; }
+};
+
+class CCommunityMap
+{
+	char m_aName[MAX_MAP_LENGTH];
+
+public:
+	CCommunityMap(const char *pName)
+	{
+		str_copy(m_aName, pName);
+	}
+
+	const char *Name() const { return m_aName; }
+
+	bool operator==(const CCommunityMap &Other) const
+	{
+		return str_comp(Name(), Other.Name()) == 0;
+	}
+
+	bool operator!=(const CCommunityMap &Other) const
+	{
+		return !(*this == Other);
+	}
+
+	struct SHash
+	{
+		size_t operator()(const CCommunityMap &Map) const
+		{
+			return str_quickhash(Map.Name());
+		}
+	};
+};
+
+class CCommunity
+{
+	friend class CServerBrowser;
+
+	char m_aId[CServerInfo::MAX_COMMUNITY_ID_LENGTH];
+	char m_aName[64];
+	SHA256_DIGEST m_IconSha256;
+	char m_aIconUrl[128];
+	std::vector<CCommunityCountry> m_vCountries;
+	std::vector<CCommunityType> m_vTypes;
+	bool m_HasFinishes = false;
+	std::unordered_set<CCommunityMap, CCommunityMap::SHash> m_FinishedMaps;
+
+public:
+	CCommunity(const char *pId, const char *pName, SHA256_DIGEST IconSha256, const char *pIconUrl) :
+		m_IconSha256(IconSha256)
+	{
+		str_copy(m_aId, pId);
+		str_copy(m_aName, pName);
+		str_copy(m_aIconUrl, pIconUrl);
+	}
+
+	const char *Id() const { return m_aId; }
+	const char *Name() const { return m_aName; }
+	const char *IconUrl() const { return m_aIconUrl; }
+	const SHA256_DIGEST &IconSha256() const { return m_IconSha256; }
+	const std::vector<CCommunityCountry> &Countries() const { return m_vCountries; }
+	const std::vector<CCommunityType> &Types() const { return m_vTypes; }
+	bool HasRanks() const { return m_HasFinishes; }
+	CServerInfo::ERankState HasRank(const char *pMap) const;
+};
+
+class IFilterList
 {
 public:
-	enum
-	{
-		MAX_GAMETYPES=8,
-	};
-	int m_SortHash;
-	int m_Ping;
-	int m_Country;
-	int m_ServerLevel;
-	char m_aGametype[MAX_GAMETYPES][16];
-	char m_aGametypeExclusive[MAX_GAMETYPES];
-	char m_aAddress[NETADDR_MAXSTRSIZE];
-
-	void ToggleLevel(int Level)
-	{
-		m_ServerLevel ^= 1 << Level;
-		if(m_ServerLevel == (1 << CServerInfo::NUM_SERVER_LEVELS)-1)
-		{
-			// Prevent filter that excludes everything
-			m_ServerLevel = 0;
-		}
-	}
-
-	int IsLevelFiltered(int Level) const
-	{
-		return m_ServerLevel & (1 << Level);
-	}
+	virtual void Add(const char *pElement) = 0;
+	virtual void Remove(const char *pElement) = 0;
+	virtual void Clear() = 0;
+	virtual bool Empty() const = 0;
+	virtual bool Filtered(const char *pElement) const = 0;
 };
 
 class IServerBrowser : public IInterface
 {
 	MACRO_INTERFACE("serverbrowser", 0)
 public:
-
 	/* Constants: Server Browser Sorting
 		SORT_NAME - Sort by name.
 		SORT_PING - Sort by ping.
@@ -118,75 +256,58 @@ public:
 		SORT_GAMETYPE - Sort by game type. DM, TDM etc.
 		SORT_NUMPLAYERS - Sort after how many players there are on the server.
 	*/
-	enum{
-		SORT_NAME=0,
+	enum
+	{
+		SORT_NAME = 0,
 		SORT_PING,
 		SORT_MAP,
 		SORT_GAMETYPE,
 		SORT_NUMPLAYERS,
 
-		QUICK_SERVERNAME=1,
-		QUICK_PLAYER=2,
-		QUICK_MAPNAME=4,
-		QUICK_GAMETYPE=8,
+		QUICK_SERVERNAME = 1,
+		QUICK_PLAYER = 2,
+		QUICK_MAPNAME = 4,
 
-		TYPE_INTERNET=0,
+		TYPE_INTERNET = 0,
 		TYPE_LAN,
+		TYPE_FAVORITES,
 		NUM_TYPES,
-
-		REFRESHFLAG_INTERNET=1,
-		REFRESHFLAG_LAN=2,
-
-		LAN_PORT_BEGIN = 8303,
-		LAN_PORT_END = 8310,
-
-		FLAG_PASSWORD=1,
-		FLAG_PURE=2,
-		FLAG_PUREMAP=4,
-		FLAG_TIMESCORE=8,
-
-		FILTER_BOTS=16,
-		FILTER_EMPTY=32,
-		FILTER_FULL=64,
-		FILTER_SPECTATORS=128,
-		FILTER_FRIENDS=256,
-		FILTER_PW=512,
-		FILTER_FAVORITE=1024,
-		FILTER_COMPAT_VERSION=2048,
-		FILTER_PURE=4096,
-		FILTER_PURE_MAP=8192,
-		FILTER_COUNTRY=16384,
-		FILTER_MRPG=32768
 	};
 
-	virtual int GetType() = 0;
-	virtual void SetType(int Type) = 0;
-	virtual void Refresh(int RefreshFlags) = 0;
+	static constexpr const char *COMMUNITY_DDNET = "ddnet";
+	static constexpr const char *COMMUNITY_NONE = "none";
+
+	static constexpr const char *SEARCH_EXCLUDE_TOKEN = ";";
+
+	virtual void Refresh(int Type) = 0;
+	virtual bool IsGettingServerlist() const = 0;
 	virtual bool IsRefreshing() const = 0;
-	virtual bool IsRefreshingMasters() const = 0;
-	virtual bool WasUpdated(bool Purge) = 0;
 	virtual int LoadingProgression() const = 0;
 
 	virtual int NumServers() const = 0;
-	virtual int NumPlayers() const = 0;
-	virtual int NumClients() const = 0;
-	virtual const CServerInfo *Get(int Index) const = 0;
 
-	virtual int NumSortedServers(int Index) const = 0;
-	virtual int NumSortedPlayers(int Index) const = 0;
-	virtual const CServerInfo *SortedGet(int FilterIndex, int Index) const = 0;
-	virtual const void *GetID(int FilterIndex, int Index) const = 0;
+	virtual int Players(const CServerInfo &Item) const = 0;
+	virtual int Max(const CServerInfo &Item) const = 0;
 
-	virtual void AddFavorite(const CServerInfo *pInfo) = 0;
-	virtual void RemoveFavorite(const CServerInfo *pInfo) = 0;
-	virtual void UpdateFavoriteState(CServerInfo *pInfo) = 0;
-	virtual void SetFavoritePassword(const char *pAddress, const char *pPassword) = 0;
-	virtual const char *GetFavoritePassword(const char *pAddress) = 0;
+	virtual int NumSortedServers() const = 0;
+	virtual int NumSortedPlayers() const = 0;
+	virtual const CServerInfo *SortedGet(int Index) const = 0;
 
-	virtual int AddFilter(const CServerFilterInfo *pFilterInfo) = 0;
-	virtual void SetFilter(int Index, const CServerFilterInfo *pFilterInfo) = 0;
-	virtual void GetFilter(int Index, CServerFilterInfo *pFilterInfo) = 0;
-	virtual void RemoveFilter(int Index) = 0;
+	virtual const std::vector<CCommunity> &Communities() const = 0;
+	virtual const CCommunity *Community(const char *pCommunityId) const = 0;
+	virtual std::vector<const CCommunity *> SelectedCommunities() const = 0;
+	virtual int64_t DDNetInfoUpdateTime() const = 0;
+
+	virtual IFilterList &CommunitiesFilter() = 0;
+	virtual IFilterList &CountriesFilter() = 0;
+	virtual IFilterList &TypesFilter() = 0;
+	virtual const IFilterList &CommunitiesFilter() const = 0;
+	virtual const IFilterList &CountriesFilter() const = 0;
+	virtual const IFilterList &TypesFilter() const = 0;
+	virtual void CleanFilters() = 0;
+
+	virtual int GetCurrentType() = 0;
+	virtual const char *GetTutorialServer() = 0;
 };
 
 #endif

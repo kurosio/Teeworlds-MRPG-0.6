@@ -23,10 +23,13 @@ void GuildDoor::Tick()
 		if(m_GuildID == pPlayer->Acc().m_GuildID)
 			continue;
 
-		vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
-		float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if(Distance <= g_Config.m_SvDoorRadiusHit)
-			pChar->m_DoorHit = true;
+		vec2 IntersectPos;
+		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
+		{
+			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+			if(Distance <= g_Config.m_SvDoorRadiusHit)
+				pChar->m_DoorHit = true;
+		}
 	}
 }
 

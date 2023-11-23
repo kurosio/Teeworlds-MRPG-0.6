@@ -55,7 +55,7 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
 
 	// Create a string with the player's account ID
-	int Color = 1 + random_int() % 63;
+	int Color = 1 + rand() % 63;
 	int OwnerUID = pPlayer->Acc().GetID();
 	std::string StrAccountIDs = std::to_string(OwnerUID);
 

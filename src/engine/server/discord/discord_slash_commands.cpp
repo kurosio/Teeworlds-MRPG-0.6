@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifdef CONF_DISCORD
+
 #include "discord_main.h"
 
 #include "discord_slash_commands.h"
@@ -361,9 +362,9 @@ void DiscordCommands::RegisterCommand(DiscordJob* pDiscord, std::string CommandI
 			else if(*pArgs == '[')
 			{
 				char aName[64];
-				str_format(aName, sizeof(aName), "%.*s", str_span(&pArgs[StringPos], "]"), &pArgs[StringPos]);
+				str_format(aName, sizeof(aName), "%.*s", strcspn(&pArgs[StringPos], "]"), &pArgs[StringPos]);
 				Option.at(HandledOption).name = aName;
-				pArgs += str_span(&pArgs[StringPos - 1], "]");
+				pArgs += strcspn(&pArgs[StringPos - 1], "]");
 				ValidArgs = true;
 			}
 

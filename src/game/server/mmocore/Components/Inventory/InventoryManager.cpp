@@ -193,7 +193,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		if(AvailableValue <= 0)
 			return true;
 
-		Get = min(AvailableValue, Get);
+		Get = minimum(AvailableValue, Get);
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
 		pPlayerItem->Drop(Get);
 
@@ -208,7 +208,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		if(AvailableValue <= 0)
 			return true;
 
-		Get = min(AvailableValue, Get);
+		Get = minimum(AvailableValue, Get);
 		pPlayer->GetItem(VoteID)->Use(Get);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
@@ -220,7 +220,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		if(AvailableValue <= 0)
 			return true;
 
-		Get = min(AvailableValue, Get);
+		Get = minimum(AvailableValue, Get);
 		CPlayerItem* pPlayerSelectedItem = pPlayer->GetItem(VoteID);
 		CPlayerItem* pPlayerMaterialItem = pPlayer->GetItem(itMaterial);
 		const int DesValue = pPlayerSelectedItem->GetDysenthis() * Get;
@@ -344,7 +344,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	{
 		if(CHouseData* pHouse = pPlayer->Acc().GetHouse(); pHouse && pHouse->GetPlantedItem()->GetID() != ItemID)
 		{
-			const int random_change = random_int() % 1500;
+			const int random_change = rand() % 1500;
 			GS()->AVD(ClientID, "PLANTING_HOUSE_SET", ItemID, random_change, HideID, "To plant at home (0.06%)");
 		}
 	}

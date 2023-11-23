@@ -170,7 +170,7 @@ CFlyingPoint* CGS::CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, in
 /* #########################################################################
 	EVENTS
 ######################################################################### */
-void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64 Mask)
+void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64_t Mask)
 {
 	float a = 3 * 3.14159f / 2 /* + Angle */;
 	//float a = get_angle(dir);
@@ -195,7 +195,7 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64
 	}
 }
 
-void CGS::CreateHammerHit(vec2 Pos, int64 Mask)
+void CGS::CreateHammerHit(vec2 Pos, int64_t Mask)
 {
 	CNetEvent_HammerHit* pEvent = (CNetEvent_HammerHit*)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit), Mask);
 	if(pEvent)
@@ -242,7 +242,7 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 	}
 }
 
-void CGS::CreatePlayerSpawn(vec2 Pos, int64 Mask)
+void CGS::CreatePlayerSpawn(vec2 Pos, int64_t Mask)
 {
 	CNetEvent_Spawn* ev = (CNetEvent_Spawn*)m_Events.Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn), Mask);
 	if(ev)
@@ -252,7 +252,7 @@ void CGS::CreatePlayerSpawn(vec2 Pos, int64 Mask)
 	}
 }
 
-void CGS::CreateDeath(vec2 Pos, int ClientID, int64 Mask)
+void CGS::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 {
 	CNetEvent_Death* pEvent = (CNetEvent_Death*)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death), Mask);
 	if(pEvent)
@@ -263,7 +263,7 @@ void CGS::CreateDeath(vec2 Pos, int ClientID, int64 Mask)
 	}
 }
 
-void CGS::CreateSound(vec2 Pos, int Sound, int64 Mask)
+void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
 	// fix for vanilla unterstand SoundID
 	if(Sound < 0 || Sound > 40)
@@ -817,7 +817,7 @@ void CGS::OnTickGlobal()
 			}
 
 			// Set the experience multiplier to a random value within the range [100, 300)
-			m_MultiplierExp = 100 + random_int() % 200;
+			m_MultiplierExp = 100 + rand() % 200;
 		}
 		else
 		{
@@ -845,7 +845,7 @@ void CGS::OnTickGlobal()
 		};
 
 		// Select a random chat message from the deque and send it as a chat message to all players (-1)
-		Chat(-1, ChatMsg[random_int() % ChatMsg.size()].c_str());
+		Chat(-1, ChatMsg[rand() % ChatMsg.size()].c_str());
 	}
 
 	// check if it's time to display the top message based on the configured interval
@@ -854,7 +854,7 @@ void CGS::OnTickGlobal()
 		// declare a variable to store the type of top list
 		const char* StrTypeName;
 		// generate a random top list type
-		ToplistType RandomType = (ToplistType)(random_int() % (int)ToplistType::NUM_TOPLIST_TYPES);
+		ToplistType RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
 
 		// determine the appropriate message based on the random top list type
 		switch(RandomType)
@@ -1294,6 +1294,23 @@ void CGS::OnClientDirectInput(int ClientID, void* pInput)
 void CGS::OnClientPredictedInput(int ClientID, void* pInput)
 {
 	m_apPlayers[ClientID]->OnPredictedInput((CNetObj_PlayerInput*)pInput);
+}
+
+void CGS::OnUpdatePlayerServerInfo(nlohmann::json* pJson, int ClientID)
+{
+	CPlayer* pPlayer = GetPlayer(ClientID);
+	if(!pPlayer)
+		return;
+
+	CTeeInfo& TeeInfo = m_apPlayers[ClientID]->GetTeeInfo();
+	(*pJson)["skin"]["name"] = TeeInfo.m_aSkinName;
+	if(TeeInfo.m_UseCustomColor)
+	{
+		(*pJson)["skin"]["color_body"] = TeeInfo.m_ColorBody;
+		(*pJson)["skin"]["color_feet"] = TeeInfo.m_ColorFeet;
+	}
+	(*pJson)["afk"] = false;
+	(*pJson)["team"] = m_apPlayers[ClientID]->GetTeam();
 }
 
 // change the world
@@ -1973,8 +1990,8 @@ void CGS::CreateDropBonuses(vec2 Pos, int Type, int Value, int NumDrop, vec2 For
 	for(int i = 0; i < NumDrop; i++)
 	{
 		vec2 Vel = Force;
-		Vel.x += frandom() * 15.0f;
-		Vel.y += frandom() * 15.0f;
+		Vel.x += random_float(15.0f);
+		Vel.y += random_float(15.0f);
 		new CDropBonuses(&m_World, Pos, Vel, Type, Value);
 	}
 }
@@ -1992,7 +2009,7 @@ void CGS::CreateDropItem(vec2 Pos, int ClientID, CItem DropItem, vec2 Force)
 // random drop of the item with percentage
 void CGS::CreateRandomDropItem(vec2 Pos, int ClientID, float Chance, CItem DropItem, vec2 Force)
 {
-	const float RandomDrop = frandom() * 100.0f;
+	const float RandomDrop = random_float(100.0f);
 	if(RandomDrop < Chance)
 		CreateDropItem(Pos, ClientID, DropItem, Force);
 }
@@ -2029,19 +2046,19 @@ void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const ch
 	Mmo()->Inbox()->SendInbox(pFrom, AccountID, Name, Desc, ItemID, Value, Enchant);
 }
 
-void CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask)
+void CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
 {
 	if(pEntParent)
 		new CLaserOrbite(&m_World, -1, pEntParent, Amount, Type, Speed, Radius, LaserType, Mask);
 }
 
-void CGS::CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask)
+void CGS::CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
 {
 	if(const CPlayer* pPlayer = GetPlayer(ClientID, false, true); pPlayer)
 		new CLaserOrbite(&m_World, ClientID, nullptr, Amount, Type, Speed, Radius, LaserType, Mask);
 }
 
-CLaserOrbite* CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Radius, int LaserType, int64 Mask)
+CLaserOrbite* CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Radius, int LaserType, int64_t Mask)
 {
 	if(pEntParent)
 		return new CLaserOrbite(&m_World, -1, pEntParent, Amount, Type, 0.f, Radius, LaserType, Mask);

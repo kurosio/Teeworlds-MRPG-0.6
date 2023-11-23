@@ -60,7 +60,7 @@ public:
 	void HandleTuningParams() override;
 	void UpdateTempData(int Health, int Mana) override { m_BotHealth = Health; }
 
-	int64 GetMaskVisibleForClients() const override;
+	int64_t GetMaskVisibleForClients() const override;
 	int IsVisibleForClient(int ClientID) const override;
 	int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetAttributeSize(AttributeIdentifier ID) override;

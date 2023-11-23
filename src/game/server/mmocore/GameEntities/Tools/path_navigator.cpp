@@ -8,7 +8,7 @@
 
 #include "game/server/mmocore/PathFinder.h"
 
-CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64 Mask)
+CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, FromPos)
 {
 	vec2 PosTo { 0, 0 };

@@ -10,7 +10,7 @@ CSleepyGravity::CSleepyGravity(CGameWorld *pGameWorld, CPlayer* pPlayer, int Ski
 	// transmitted arguments
 	m_pPlayer = pPlayer;
 	m_PowerLevel = PowerLevel;
-	m_Radius = min(200 + SkillBonus, 400);
+	m_Radius = minimum(200 + SkillBonus, 400);
 	m_LifeSpan = 10 * Server()->TickSpeed();
 	GameWorld()->InsertEntity(this);
 	for(int i = 0; i < NUM_IDS; i++)

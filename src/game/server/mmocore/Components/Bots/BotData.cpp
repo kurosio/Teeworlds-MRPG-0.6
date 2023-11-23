@@ -205,7 +205,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				}
 
 				// add new move_to point
-				if(total_size_vec2(Position) > 0.f)
+				if(length_squared(Position) > 0.f)
 				{
 					TaskRequiredMoveTo Move;
 					Move.m_WorldID = WorldID;
@@ -217,7 +217,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					Move.m_Position = Position;
 					Move.m_CompletionText = CompletionText;
 					Move.m_TaskName = TaskName;
-					Move.m_Type = max(Type, (unsigned int)TaskRequiredMoveTo::Types::MOVE_ONLY);
+					Move.m_Type = maximum(Type, (unsigned int)TaskRequiredMoveTo::Types::MOVE_ONLY);
 					Move.m_QuestBotID = m_SubBotID;
 					Move.m_Interaction = Interactive;
 					Move.m_DefeatMobInfo = DefeatDescription;

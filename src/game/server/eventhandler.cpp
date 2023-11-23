@@ -17,7 +17,7 @@ void CEventHandler::SetGameServer(CGS *pGameServer)
 	m_pGameServer = pGameServer;
 }
 
-void *CEventHandler::Create(int Type, int Size, int64 Mask)
+void *CEventHandler::Create(int Type, int Size, int64_t Mask)
 {
 	if(m_NumEvents == MAX_EVENTS)
 		return nullptr;

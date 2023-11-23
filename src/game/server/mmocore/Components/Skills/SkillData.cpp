@@ -43,7 +43,7 @@ bool CSkill::Use()
 
 	// mana check
 	CCharacter* pChr = GetPlayer()->GetCharacter();
-	const int ManaCost = max(1, translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost()));
+	const int ManaCost = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost()));
 	if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
 		return false;
 
@@ -109,7 +109,7 @@ bool CSkill::Use()
 				continue;
 
 			// create healt
-			const int PowerLevel = max(ManaCost + translate_to_percent_rest(ManaCost, min(GetBonus(), 100)), 1);
+			const int PowerLevel = maximum(ManaCost + translate_to_percent_rest(ManaCost, minimum(GetBonus(), 100)), 1);
 			new CHearth(&GS()->m_World, PlayerPosition, pPlayer, PowerLevel, pPlayer->GetCharacter()->m_Core.m_Vel, true);
 			GS()->CreateDeath(pPlayer->GetCharacter()->GetPos(), i);
 		}
@@ -127,7 +127,7 @@ bool CSkill::Use()
 				continue;
 
 			const int RealAmmo = 10 + pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
-			const int RestoreAmmo = translate_to_percent_rest(RealAmmo, min(GetBonus(), 100));
+			const int RestoreAmmo = translate_to_percent_rest(RealAmmo, minimum(GetBonus(), 100));
 			for(int j = WEAPON_GUN; j <= WEAPON_LASER; j++)
 			{
 				pPlayer->GetCharacter()->GiveWeapon(j, RestoreAmmo);

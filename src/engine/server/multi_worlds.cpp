@@ -6,7 +6,7 @@
 #include <engine/storage.h>
 #include <engine/external/json-parser/json.h>
 
-bool CMultiWorlds::Add(int WorldID, IKernel* pKernel, IServer *pServer)
+bool CMultiWorlds::Add(int WorldID, IKernel* pKernel)
 {
 	dbg_assert(WorldID < ENGINE_MAX_WORLDS, "exceeded pool of allocated memory for worlds");
 
@@ -23,16 +23,16 @@ bool CMultiWorlds::Add(int WorldID, IKernel* pKernel, IServer *pServer)
 	else // register
 	{
 		pNewWorld.m_pLoadedMap = CreateEngineMap();
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld.m_pLoadedMap, WorldID);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld.m_pLoadedMap), WorldID);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld.m_pGameServer, WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld.m_pLoadedMap, true, WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld.m_pLoadedMap), true, WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld.m_pGameServer, true, WorldID);
 	}
 
 	m_WasInitilized++;
 	return RegisterFail;
 }
 
-bool CMultiWorlds::LoadWorlds(IServer* pServer, IKernel* pKernel, IStorageEngine* pStorage, IConsole* pConsole)
+bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConsole* pConsole)
 {
 	// clear old worlds
 	Clear(false);
@@ -74,7 +74,7 @@ bool CMultiWorlds::LoadWorlds(IServer* pServer, IKernel* pKernel, IStorageEngine
 			const char* pPath = rStart[i]["path"];
 
 			// here set worlds name
-			Add(i, pKernel, pServer);
+			Add(i, pKernel);
 			str_copy(m_Worlds[i].m_aName, pWorldName, sizeof(m_Worlds[i].m_aName));
 			str_copy(m_Worlds[i].m_aPath, pPath, sizeof(m_Worlds[i].m_aPath));
 		}
@@ -93,7 +93,10 @@ void CMultiWorlds::Clear(bool Shutdown)
 		if(m_Worlds[i].m_pLoadedMap)
 		{
 			if(m_Worlds[i].m_pLoadedMap->IsLoaded())
+			{
 				m_Worlds[i].m_pLoadedMap->Unload();
+				m_Worlds[i].m_MapDetail.Clear();
+			}
 
 			if(Shutdown)
 			{

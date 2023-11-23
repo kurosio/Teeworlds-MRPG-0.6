@@ -2,17 +2,34 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef ENGINE_SERVER_SERVER_H
 #define ENGINE_SERVER_SERVER_H
+
+#include <engine/console.h>
 #include <engine/server.h>
 
+#include <engine/shared/econ.h>
+#include <engine/shared/network.h>
+#include <engine/shared/protocol.h>
+#include <engine/shared/snapshot.h>
 #include <engine/shared/uuid_manager.h>
+
+#include "cache.h"
+#include "snapshot_ids_pool.h"
 
 class CServer : public IServer
 {
+	enum
+	{
+		UNINITIALIZED = 0,
+		RUNNING = 1,
+		STOPPING = 2
+	};
+
 	class IConsole* m_pConsole {};
 	class IStorageEngine* m_pStorage {};
 	class CMultiWorlds* m_pMultiWorlds;
 	class CServerBan* m_pServerBan;
 	class DiscordJob* m_pDiscord {};
+	class IRegister* m_pRegister;
 
 public:
 	class IGameServer* GameServer(int WorldID = 0) override;
@@ -64,9 +81,10 @@ public:
 		CInput m_aInputs[200]; // TODO: handle input better
 		int m_CurrentInput;
 
-		// names update
 		char m_aName[MAX_NAME_LENGTH];
 		char m_aNameChangeRequest[MAX_NAME_LENGTH];
+		char m_aNameTransfersPrefix[MAX_NAME_LENGTH];
+
 		char m_aClan[MAX_CLAN_LENGTH];
 		char m_aLanguage[MAX_LANGUAGE_LENGTH];
 
@@ -76,10 +94,9 @@ public:
 		int m_Authed;
 		int m_AuthTries;
 
-		char m_aNameTransfersPrefix[MAX_NAME_LENGTH];
 		int m_WorldID;
 		int m_OldWorldID;
-		bool m_IsChangesWorld;
+		bool m_ChangeWorld;
 
 		int m_NextMapChunk;
 		bool m_Quitting;
@@ -107,7 +124,7 @@ public:
 	CNetServer m_NetServer;
 	CEcon m_Econ;
 
-	int64 m_GameStartTime {};
+	int64_t m_GameStartTime {};
 	int m_RunServer;
 	int m_RconClientID;
 	int m_RconAuthLevel;
@@ -119,13 +136,12 @@ public:
 	{
 		MAP_CHUNK_SIZE = NET_MAX_PAYLOAD - NET_MAX_CHUNKHEADERSIZE - 4, // msg type
 	};
-	int m_MapChunksPerRequest {};
-	int m_DataChunksPerRequest {};
 
 	int m_RconPasswordSet;
 	int m_GeneratedRconPassword;
 
-	CRegister m_Register;
+	std::shared_ptr<ILogger> m_pFileLogger = nullptr;
+	std::shared_ptr<ILogger> m_pStdoutLogger = nullptr;
 
 	CServer();
 	~CServer() override;
@@ -170,11 +186,12 @@ public:
 
 	void Kick(int ClientID, const char* pReason) override;
 
-	int64 TickStartTime(int Tick) const;
+	int64_t TickStartTime(int Tick) const;
 	int Init();
 
 	void InitRconPasswordIfUnset();
 
+	void SendLogLine(const CLogMessage* pMessage);
 	void SetRconCID(int ClientID) override;
 	int GetRconCID() const override;
 	int GetRconAuthLevel() const override;
@@ -195,11 +212,11 @@ public:
 	bool ClientIngame(int ClientID) const override;
 
 	int GetClientVersion(int ClientID) const override;
-	int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1) override;
+	int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1) override;
 
 	void DoSnapshot(int WorldID);
 
-	static int NewClientCallback(int ClientID, void* pUser, bool Sixup);
+	static int NewClientCallback(int ClientID, void* pUser);
 	static int NewClientNoAuthCallback(int ClientID, void* pUser);
 	static int DelClientCallback(int ClientID, const char* pReason, void* pUser);
 	static int ClientRejoinCallback(int ClientID, void* pUser);
@@ -209,7 +226,8 @@ public:
 	void SendMap(int ClientID);
 	void SendConnectionReady(int ClientID);
 	void SendRconLine(int ClientID, const char* pLine);
-	static void SendRconLineAuthed(const char* pLine, void* pUser, bool Highlighted);
+	// Accepts -1 as ClientID to mean "all clients with at least auth level admin"
+	void SendRconLogLine(int ClientID, const CLogMessage* pMessage);
 
 	void SendRconCmdAdd(const IConsole::CCommandInfo* pCommandInfo, int ClientID);
 	void SendRconCmdRem(const IConsole::CCommandInfo* pCommandInfo, int ClientID);
@@ -217,45 +235,23 @@ public:
 
 	void ProcessClientPacket(CNetChunk* pPacket);
 
-	class CCache
-	{
-	public:
-		class CCacheChunk
-		{
-		public:
-			CCacheChunk(const void* pData, int Size);
-			CCacheChunk(const CCacheChunk&) = delete;
-
-			int m_DataSize;
-			unsigned char m_aData[NET_MAX_PAYLOAD];
-		};
-
-		std::list<CCacheChunk> m_Cache;
-
-		CCache();
-		~CCache();
-
-		void AddChunk(const void* pData, int Size);
-		void Clear();
-	};
-	CCache m_aServerInfoCache[3 * 2];
+	CBrowserCache m_aServerInfoCache[3 * 2];
 	bool m_ServerInfoNeedsUpdate;
 	int64_t m_ServerInfoFirstRequest;
 	int m_ServerInfoNumRequests;
 
 	void ExpireServerInfo() override;
-	void CacheServerInfo(CCache* pCache, int Type, bool SendClients);
+	void CacheServerInfo(CBrowserCache* pCache, int Type, bool SendClients);
 	void SendServerInfo(const NETADDR* pAddr, int Token, int Type, bool SendClients);
-	void GetServerInfoSixup(CPacker* pPacker, int Token, bool SendClients);
 	bool RateLimitServerInfoConnless();
 	void SendServerInfoConnless(const NETADDR* pAddr, int Token, int Type);
+	void UpdateRegisterServerInfo();
 	void UpdateServerInfo(bool Resend = false);
 
 	void PumpNetwork();
 
 	bool LoadMap(int ID);
 
-	void InitRegister(CNetServer* pNetServer, IEngineMasterServer* pMasterServer, IConsole* pConsole);
 	int Run();
 
 	static void ConKick(IConsole::IResult* pResult, void* pUser);
@@ -267,8 +263,9 @@ public:
 	static void ConchainSpecialInfoupdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 	static void ConchainMaxclientsperipUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 	static void ConchainModCommandUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
-	static void ConchainConsoleOutputLevelUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 	static void ConchainRconPasswordSet(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
+	static void ConchainLoglevel(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
+	static void ConchainStdoutOutputLevel(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 
 	void RegisterCommands();
 
@@ -285,9 +282,12 @@ public:
 	void AddAccountNickname(int UID, std::string Nickname) override;
 	const char* GetAccountNickname(int AccountID) override;
 
+	void SetLoggers(std::shared_ptr<ILogger>&& pFileLogger, std::shared_ptr<ILogger>&& pStdoutLogger);
 private:
 	ska::unordered_map<int, std::string> m_aAccountsNicknames{};
-	void InitAllAccountNicknames();
+	void InitAccountNicknames();
 };
+
+extern CServer* CreateServer();
 
 #endif

@@ -1,69 +1,170 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <engine/map.h>
+#include "map.h"
+
+#include <base/log.h>
+
 #include <engine/storage.h>
+
 #include <game/mapitems.h>
-#include "datafile.h"
 
-class CMap : public IEngineMap
+CMap::CMap() = default;
+
+int CMap::GetDataSize(int Index) const
 {
-	int m_CurrentMapSize;
-	unsigned char* m_pCurrentMapData;
+	return m_DataFile.GetDataSize(Index);
+}
 
-	CDataFileReader m_DataFile;
-public:
-	CMap() : m_CurrentMapSize(0), m_pCurrentMapData(0x0) {}
-	~CMap()
+void *CMap::GetData(int Index)
+{
+	return m_DataFile.GetData(Index);
+}
+
+void *CMap::GetDataSwapped(int Index)
+{
+	return m_DataFile.GetDataSwapped(Index);
+}
+
+const char *CMap::GetDataString(int Index)
+{
+	return m_DataFile.GetDataString(Index);
+}
+
+void CMap::UnloadData(int Index)
+{
+	m_DataFile.UnloadData(Index);
+}
+
+int CMap::NumData() const
+{
+	return m_DataFile.NumData();
+}
+
+int CMap::GetItemSize(int Index)
+{
+	return m_DataFile.GetItemSize(Index);
+}
+
+void *CMap::GetItem(int Index, int *pType, int *pID)
+{
+	return m_DataFile.GetItem(Index, pType, pID);
+}
+
+void CMap::GetType(int Type, int *pStart, int *pNum)
+{
+	m_DataFile.GetType(Type, pStart, pNum);
+}
+
+int CMap::FindItemIndex(int Type, int ID)
+{
+	return m_DataFile.FindItemIndex(Type, ID);
+}
+
+void *CMap::FindItem(int Type, int ID)
+{
+	return m_DataFile.FindItem(Type, ID);
+}
+
+int CMap::NumItems() const
+{
+	return m_DataFile.NumItems();
+}
+
+bool CMap::Load(const char *pMapName)
+{
+	IStorageEngine *pStorage = Kernel()->RequestInterface<IStorageEngine>();
+	if(!pStorage)
+		return false;
+
+	// Ensure current datafile is not left in an inconsistent state if loading fails,
+	// by loading the new datafile separately first.
+	CDataFileReader NewDataFile;
+	if(!NewDataFile.Open(pStorage, pMapName, IStorageEngine::TYPE_ALL))
+		return false;
+
+	// Check version
+	const CMapItemVersion *pItem = (CMapItemVersion *)NewDataFile.FindItem(MAPITEMTYPE_VERSION, 0);
+	if(pItem == nullptr || pItem->m_Version != CMapItemVersion::CURRENT_VERSION)
 	{
-		mem_free(m_pCurrentMapData);
-		m_pCurrentMapData = 0x0;
+		log_error("map/load", "Error: map version not supported.");
+		NewDataFile.Close();
+		return false;
 	}
 
-	virtual void *GetData(int Index) { return m_DataFile.GetData(Index); }
-	virtual void *GetDataSwapped(int Index) { return m_DataFile.GetDataSwapped(Index); }
-	virtual void UnloadData(int Index) { m_DataFile.UnloadData(Index); }
-	virtual void *GetItem(int Index, int *pType, int *pID) { return m_DataFile.GetItem(Index, pType, pID); }
-	virtual void GetType(int Type, int *pStart, int *pNum) { m_DataFile.GetType(Type, pStart, pNum); }
-	virtual void *FindItem(int Type, int ID) { return m_DataFile.FindItem(Type, ID); }
-	virtual int NumItems() { return m_DataFile.NumItems(); }
-
-	virtual void SetCurrentMapSize(int Size) { m_CurrentMapSize = Size; }
-	virtual int GetCurrentMapSize() { return m_CurrentMapSize; }
-
-	virtual void SetCurrentMapData(unsigned char* CurrentMapData) { m_pCurrentMapData = CurrentMapData; }
-	virtual unsigned char* GetCurrentMapData() { return m_pCurrentMapData; }
-
-	virtual void Unload()
+	// Replace compressed tile layers with uncompressed ones
+	int GroupsStart, GroupsNum, LayersStart, LayersNum;
+	NewDataFile.GetType(MAPITEMTYPE_GROUP, &GroupsStart, &GroupsNum);
+	NewDataFile.GetType(MAPITEMTYPE_LAYER, &LayersStart, &LayersNum);
+	for(int g = 0; g < GroupsNum; g++)
 	{
-		m_DataFile.Close();
-
-		m_CurrentMapSize = 0;
-		mem_free(m_pCurrentMapData);
-		m_pCurrentMapData = 0x0;
+		const CMapItemGroup *pGroup = static_cast<CMapItemGroup *>(NewDataFile.GetItem(GroupsStart + g));
+		for(int l = 0; l < pGroup->m_NumLayers; l++)
+		{
+			CMapItemLayer *pLayer = static_cast<CMapItemLayer *>(NewDataFile.GetItem(LayersStart + pGroup->m_StartLayer + l));
+			if(pLayer->m_Type == LAYERTYPE_TILES)
+			{
+				CMapItemLayerTilemap *pTilemap = reinterpret_cast<CMapItemLayerTilemap *>(pLayer);
+				if(pTilemap->m_Version >= CMapItemLayerTilemap::TILE_SKIP_MIN_VERSION)
+				{
+					const size_t TilemapSize = (size_t)pTilemap->m_Width * pTilemap->m_Height * sizeof(CTile);
+					CTile *pTiles = static_cast<CTile *>(malloc(TilemapSize));
+					ExtractTiles(pTiles, (size_t)pTilemap->m_Width * pTilemap->m_Height, static_cast<CTile *>(NewDataFile.GetData(pTilemap->m_Data)), NewDataFile.GetDataSize(pTilemap->m_Data) / sizeof(CTile));
+					NewDataFile.ReplaceData(pTilemap->m_Data, reinterpret_cast<char *>(pTiles), TilemapSize);
+				}
+			}
+		}
 	}
 
-	virtual bool Load(const char *pMapName)
-	{
-		IStorageEngine* pStorage = Kernel()->RequestInterface<IStorageEngine>();
-		if (!pStorage)
-			return false;
-		return m_DataFile.Open(pStorage, pMapName, IStorageEngine::TYPE_ALL);
-	}
+	// Replace existing datafile with new datafile
+	m_DataFile.Close();
+	m_DataFile = std::move(NewDataFile);
+	return true;
+}
 
-	virtual bool IsLoaded()
-	{
-		return m_DataFile.IsOpen();
-	}
+void CMap::Unload()
+{
+	m_DataFile.Close();
+}
 
-	virtual SHA256_DIGEST Sha256()
-	{
-		return m_DataFile.Sha256();
-	}
+bool CMap::IsLoaded() const
+{
+	return m_DataFile.IsOpen();
+}
 
-	virtual unsigned Crc()
+IOHANDLE CMap::File() const
+{
+	return m_DataFile.File();
+}
+
+SHA256_DIGEST CMap::Sha256() const
+{
+	return m_DataFile.Sha256();
+}
+
+unsigned CMap::Crc() const
+{
+	return m_DataFile.Crc();
+}
+
+int CMap::MapSize() const
+{
+	return m_DataFile.MapSize();
+}
+
+void CMap::ExtractTiles(CTile *pDest, size_t DestSize, const CTile *pSrc, size_t SrcSize)
+{
+	size_t DestIndex = 0;
+	size_t SrcIndex = 0;
+	while(DestIndex < DestSize && SrcIndex < SrcSize)
 	{
-		return m_DataFile.Crc();
+		for(unsigned Counter = 0; Counter <= pSrc[SrcIndex].m_Skip && DestIndex < DestSize; Counter++)
+		{
+			pDest[DestIndex] = pSrc[SrcIndex];
+			pDest[DestIndex].m_Skip = 0;
+			DestIndex++;
+		}
+		SrcIndex++;
 	}
-};
+}
 
 extern IEngineMap *CreateEngineMap() { return new CMap; }

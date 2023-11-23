@@ -64,7 +64,7 @@ public:
 	virtual const char* GetClientNameChangeRequest(int ClientID) = 0;
 
 	virtual int GetClientVersion(int ClientID) const = 0;
-	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1) = 0;
+	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1) = 0;
 
 	bool Translate(int& Target, int Client)
 	{
@@ -99,7 +99,7 @@ public:
 	}
 
 	template<class T>
-	int SendPackMsg(const T* pMsg, int Flags, int ClientID, int64 Mask = -1, int WorldID = -1)
+	int SendPackMsg(const T* pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1)
 	{
 		int Result = 0;
 
@@ -120,10 +120,10 @@ public:
 	}
 
 	template<class T>
-	int SendPackMsgOne(const T* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	int SendPackMsgOne(const T* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
 	{
 		dbg_assert(ClientID != -1, "SendPackMsgOne called with -1");
-		CMsgPacker Packer(pMsg->MsgID(), false);
+		CMsgPacker Packer(pMsg->ms_MsgID, false);
 		if(pMsg->Pack(&Packer))
 			return -1;
 
@@ -131,12 +131,12 @@ public:
 	}
 
 	template<class T>
-	int SendPackMsgTranslate(const T* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	int SendPackMsgTranslate(const T* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
 	{
 		return SendPackMsgOne(pMsg, Flags, ClientID, Mask, WorldID);
 	}
 
-	int SendPackMsgTranslate(const CNetMsg_Sv_Dialog* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	int SendPackMsgTranslate(const CNetMsg_Sv_Dialog* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
 	{
 		CNetMsg_Sv_Dialog MsgCopy;
 		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
@@ -147,7 +147,7 @@ public:
 		return SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
 	}
 	
-	int SendPackMsgTranslate(const CNetMsg_Sv_Emoticon* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	int SendPackMsgTranslate(const CNetMsg_Sv_Emoticon* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
 	{
 		CNetMsg_Sv_Emoticon MsgCopy;
 		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
@@ -155,7 +155,7 @@ public:
 		return Translate(MsgCopy.m_ClientID, ClientID) && SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
 	}
 
-	int SendPackMsgTranslate(const CNetMsg_Sv_Chat* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	int SendPackMsgTranslate(const CNetMsg_Sv_Chat* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
 	{
 		CNetMsg_Sv_Chat MsgCopy;
 		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
@@ -172,7 +172,7 @@ public:
 	}
 
 	// translate KillMsg
-	int SendPackMsgTranslate(const CNetMsg_Sv_KillMsg* pMsg, int Flags, int ClientID, int64 Mask, int WorldID)
+	int SendPackMsgTranslate(const CNetMsg_Sv_KillMsg* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
 	{
 		CNetMsg_Sv_KillMsg MsgCopy;
 		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
@@ -280,6 +280,14 @@ public:
 	virtual const char *Version() const = 0;
 	virtual const char *NetVersion() const = 0;
 	virtual int GetRank(int AuthID) = 0;
+
+	/**
+	 * Used to report custom player info to master servers.
+	 *
+	 * @param aBuf Should be the json key values to add, starting with a ',' beforehand, like: ',"skin": "default", "team": 1'
+	 * @param i The client id.
+	 */
+	virtual void OnUpdatePlayerServerInfo(nlohmann::json* pJson, int ClientID) = 0;
 };
 
 extern IGameServer *CreateGameServer();

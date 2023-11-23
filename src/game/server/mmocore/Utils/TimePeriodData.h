@@ -13,10 +13,10 @@ class TimePeriodData {
 
     void validate()
     {
-        _seconds = max(0, _seconds);
-        _minutes = max(0, _minutes);
-        _hours = max(0, _hours);
-        _days = max(0, _days);
+        _seconds = maximum(0, _seconds);
+        _minutes = maximum(0, _minutes);
+        _hours = maximum(0, _hours);
+        _days = maximum(0, _days);
 
         _seconds = asSeconds();
 

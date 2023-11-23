@@ -364,8 +364,8 @@ void CEntityMoveTo::Snap(int SnappingClient)
 			return;
 
 		pObj->m_Type = WEAPON_HAMMER;
-		pObj->m_X = m_Pos.x + frandom_num(-m_Radius / 1.5f, m_Radius / 1.5f);
-		pObj->m_Y = m_Pos.y + frandom_num(-m_Radius / 1.5f, m_Radius / 1.5f);
+		pObj->m_X = m_Pos.x + random_float(-m_Radius / 1.5f, m_Radius / 1.5f);
+		pObj->m_Y = m_Pos.y + random_float(-m_Radius / 1.5f, m_Radius / 1.5f);
 		pObj->m_StartTick = Server()->Tick() - 3;
 	}
 }

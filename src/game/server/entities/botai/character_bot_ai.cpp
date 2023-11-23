@@ -178,8 +178,8 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && !pFrom->IsBot())
 		{
 			SetEmote(EMOTE_ANGRY, 1, true);
-			pFrom->IncreaseRelations(1 + random_int() % 8);
-			GS()->CreateDropBonuses(m_Core.m_Pos, 1, 1, (1 + random_int() % 2), Force);
+			pFrom->IncreaseRelations(1 + rand() % 8);
+			GS()->CreateDropBonuses(m_Core.m_Pos, 1, 1, (1 + rand() % 2), Force);
 		}
 
 		// Check if the bot type of pFrom is TYPE_BOT_MOB and if the target of AI is empty
@@ -248,7 +248,7 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 
 		// Check if the bot player's type is TYPE_BOT_NPC and increase relations
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
-			GS()->m_apPlayers[Killer]->IncreaseRelations(1 + (random_int() % 5));
+			GS()->m_apPlayers[Killer]->IncreaseRelations(1 + (rand() % 5));
 
 		// a nice sound
 		int ClientID = m_pBotPlayer->GetCID();
@@ -308,17 +308,17 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	}
 
 	// grinding gold
-	const int Gold = max(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
+	const int Gold = maximum(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
 	pPlayer->AddMoney(Gold);
 
 	// grinding experience
-	const int ExperienceMob = max(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
+	const int ExperienceMob = maximum(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
 	const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
 	GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
 
 	// drop experience
-	const int ExperienceDrop = max(ExperienceWithMultiplier / 2, 1);
-	GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + random_int() % 2), Force);
+	const int ExperienceDrop = maximum(ExperienceWithMultiplier / 2, 1);
+	GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + rand() % 2), Force);
 
 	// drop item's
 	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
@@ -337,8 +337,8 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// skill point
 	// TODO: balance depending on the difficulty, not just the level
-	const int CalculateSP = (pPlayer->Acc().m_Level > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + min(40, (pPlayer->Acc().m_Level - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
-	if(random_int() % CalculateSP == 0)
+	const int CalculateSP = (pPlayer->Acc().m_Level > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + minimum(40, (pPlayer->Acc().m_Level - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
+	if(rand() % CalculateSP == 0)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
 		pPlayerItem->Add(1);
@@ -348,9 +348,9 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 void CCharacterBotAI::ChangeWeapons()
 {
-	if(Server()->Tick() % (Server()->TickSpeed() * (1 + random_int() % 3)) == 0)
+	if(Server()->Tick() % (Server()->TickSpeed() * (1 + rand() % 3)) == 0)
 	{
-		int RandomWeapon = clamp(random_int() % 4, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
+		int RandomWeapon = clamp(rand() % 4, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
 		if(RandomWeapon == WEAPON_HAMMER || m_pBotPlayer->GetEquippedItemID((ItemFunctional)RandomWeapon))
 			m_Core.m_ActiveWeapon = RandomWeapon;
 	}
@@ -590,16 +590,16 @@ void CCharacterBotAI::EngineNPC()
 	// Direction eyes
 	// Every tick (once per second), change the vertical target of the NPC's eyes randomly between -4 and 4.
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
-		m_Input.m_TargetY = random_int() % 8 - random_int() % 4;
+		m_Input.m_TargetY = rand() % 8 - rand() % 4;
 
 	// Set the horizontal target of the NPC's eyes to the direction the NPC is facing multiplied by 10, plus 1.
 	m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
 
 	// Walking for NPC
 	// If the NPC is not currently searching for a player and is not static (not stationary), then randomly change direction every 50 ticks.
-	if(!PlayerFinding && !pNpcBot->m_Static && random_int() % 50 == 0)
+	if(!PlayerFinding && !pNpcBot->m_Static && rand() % 50 == 0)
 	{
-		m_Input.m_Direction = -1 + (random_int() % 3);
+		m_Input.m_Direction = -1 + (rand() % 3);
 	}
 }
 
@@ -607,7 +607,7 @@ void CCharacterBotAI::EngineNPC()
 void CCharacterBotAI::EngineQuestNPC()
 {
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
-		m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+		m_Input.m_TargetY = rand() % 4 - rand() % 8;
 	m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
 
 	// emote actions
@@ -764,7 +764,7 @@ void CCharacterBotAI::EngineEidolons()
 					ResetHook();
 
 				if(Server()->Tick() % Server()->TickSpeed() == 0)
-					m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+					m_Input.m_TargetY = rand() % 4 - rand() % 8;
 
 				m_pBotPlayer->m_TargetPos = vec2(0, 0);
 				m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
@@ -826,7 +826,7 @@ void CCharacterBotAI::EngineQuestMob()
 		if(Distance < 128.0f)
 		{
 			if(Server()->Tick() % Server()->TickSpeed() == 0)
-				m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+				m_Input.m_TargetY = rand() % 4 - rand() % 8;
 
 			m_pBotPlayer->m_TargetPos = vec2(0, 0);
 			m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
@@ -937,7 +937,7 @@ void CCharacterBotAI::Move()
 		}
 		else if(m_Core.m_HookState == HOOK_FLYING)
 			m_Input.m_Hook = 1;
-		else if(m_LatestInput.m_Hook == 0 && m_Core.m_HookState == HOOK_IDLE && random_int() % 3 == 0)
+		else if(m_LatestInput.m_Hook == 0 && m_Core.m_HookState == HOOK_IDLE && rand() % 3 == 0)
 		{
 			int NumDir = 45;
 			vec2 HookDir(0.0f, 0.0f);
@@ -1072,7 +1072,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 // finding a player among people who have the highest fury
 CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 {
-	if(AI()->GetTarget()->IsEmpty() && (GS()->IsDungeon() || random_int() % 30 == 0))
+	if(AI()->GetTarget()->IsEmpty() && (GS()->IsDungeon() || rand() % 30 == 0))
 	{
 		CPlayer* pPlayer = SearchPlayer(Distance);
 		if(pPlayer && pPlayer->GetCharacter())
@@ -1199,21 +1199,21 @@ void CCharacterBotAI::EmotesAction(int EmotionStyle)
 	if(EmotionStyle < EMOTE_PAIN || EmotionStyle > EMOTE_BLINK)
 		return;
 
-	if(Server()->Tick() % (Server()->TickSpeed() * 3 + random_int() % 10) == 0)
+	if(Server()->Tick() % (Server()->TickSpeed() * 3 + rand() % 10) == 0)
 	{
 		switch(EmotionStyle)
 		{
 			case EMOTE_BLINK:
-			SetEmote(EMOTE_BLINK, 1 + random_int() % 2, true);
+			SetEmote(EMOTE_BLINK, 1 + rand() % 2, true);
 			break;
 			case EMOTE_HAPPY:
-			SetEmote(EMOTE_HAPPY, 1 + random_int() % 2, true);
+			SetEmote(EMOTE_HAPPY, 1 + rand() % 2, true);
 			break;
 			case EMOTE_ANGRY:
-			SetEmote(EMOTE_ANGRY, 1 + random_int() % 2, true);
+			SetEmote(EMOTE_ANGRY, 1 + rand() % 2, true);
 			break;
 			case EMOTE_PAIN:
-			SetEmote(EMOTE_PAIN, 1 + random_int() % 2, true);
+			SetEmote(EMOTE_PAIN, 1 + rand() % 2, true);
 			break;
 			default: break;
 		}
@@ -1265,7 +1265,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 		if(Server()->Tick() % Server()->TickSpeed() == 0)
 		{
 			// increase health for player
-			int Health = max(pPlayer->GetStartHealth() / 20, 1);
+			int Health = maximum(pPlayer->GetStartHealth() / 20, 1);
 			new CHearth(&GS()->m_World, m_Pos, pPlayer, Health, pPlayer->GetCharacter()->m_Core.m_Vel);
 			m_Input.m_Direction = 0;
 
@@ -1319,7 +1319,7 @@ bool CCharacterBotAI::FunctionGuardian()
 		if(Distance < 256.0f)
 		{
 			if(Server()->Tick() % Server()->TickSpeed() == 0)
-				m_Input.m_TargetY = random_int() % 4 - random_int() % 8;
+				m_Input.m_TargetY = rand() % 4 - rand() % 8;
 
 			m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
 			m_Input.m_Direction = 0;

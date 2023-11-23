@@ -82,12 +82,12 @@ public:
 	/* #########################################################################
 		EVENTS
 	######################################################################### */
-	void CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64 Mask = -1);
-	void CreateHammerHit(vec2 Pos, int64 Mask = -1);
+	void CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64_t Mask = -1);
+	void CreateHammerHit(vec2 Pos, int64_t Mask = -1);
 	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage);
-	void CreatePlayerSpawn(vec2 Pos, int64 Mask = -1);
-	void CreateDeath(vec2 Pos, int ClientID, int64 Mask = -1);
-	void CreateSound(vec2 Pos, int Sound, int64 Mask = -1);
+	void CreatePlayerSpawn(vec2 Pos, int64_t Mask = -1);
+	void CreateDeath(vec2 Pos, int ClientID, int64_t Mask = -1);
+	void CreateSound(vec2 Pos, int Sound, int64_t Mask = -1);
 	void CreatePlayerSound(int ClientID, int Sound);
 
 	/* #########################################################################
@@ -159,6 +159,7 @@ public:
 	void OnClientDrop(int ClientID, const char *pReason) override;
 	void OnClientDirectInput(int ClientID, void *pInput) override;
 	void OnClientPredictedInput(int ClientID, void *pInput) override;
+	void OnUpdatePlayerServerInfo(nlohmann::json* pJson, int ClientID) override;
 	bool IsClientReady(int ClientID) const override;
 	bool IsClientPlayer(int ClientID) const override;
 	bool IsClientMRPG(int ClientID) const;
@@ -232,9 +233,9 @@ public:
 	void SendInbox(const char* pFrom, CPlayer *pPlayer, const char* Name, const char* Desc, ItemIdentifier ItemID = -1, int Value = -1, int Enchant = -1);
 	void SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, ItemIdentifier ItemID = -1, int Value = -1, int Enchant = -1);
 
-	void CreateLaserOrbite(class CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64 Mask = -1);
-	void CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64 Mask = -1);
-	class CLaserOrbite* CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Radius, int LaserType = LASERTYPE_RIFLE, int64 Mask = -1);
+	void CreateLaserOrbite(class CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1);
+	void CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1);
+	class CLaserOrbite* CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1);
 
 private:
 	void SendDayInfo(int ClientID);
@@ -258,9 +259,9 @@ private:
 	static int m_MultiplierExp;
 };
 
-inline int64 CmaskAll() { return -1; }
-inline int64 CmaskOne(int ClientID) { return (int64)1<<ClientID; }
-inline int64 CmaskAllExceptOne(int ClientID) { return CmaskAll()^CmaskOne(ClientID); }
-inline bool CmaskIsSet(int64 Mask, int ClientID) { return (Mask&CmaskOne(ClientID)) != 0; }
+inline int64_t CmaskAll() { return -1; }
+inline int64_t CmaskOne(int ClientID) { return (int64_t)1<<ClientID; }
+inline int64_t CmaskAllExceptOne(int ClientID) { return CmaskAll()^CmaskOne(ClientID); }
+inline bool CmaskIsSet(int64_t Mask, int ClientID) { return (Mask&CmaskOne(ClientID)) != 0; }
 
 #endif

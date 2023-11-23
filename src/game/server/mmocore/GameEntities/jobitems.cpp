@@ -96,7 +96,7 @@ bool CJobItems::Interaction(const char* pTool, AttributeIdentifier AttributeDmg,
 	}
 
 	// lower the durability
-	if(random_int() % 10 == 0)
+	if(rand() % 10 == 0)
 		pPlayerItem->SetDurability(Durability - 1);
 
 	// damage

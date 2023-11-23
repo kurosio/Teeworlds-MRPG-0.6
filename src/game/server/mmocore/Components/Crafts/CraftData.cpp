@@ -15,5 +15,5 @@ int CCraftItem::GetPrice(CPlayer* pPlayer) const
 			Discount += translate_to_percent_rest(m_Price, 20);
 	}
 
-	return max(m_Price - Discount, 0);
+	return maximum(m_Price - Discount, 0);
 }

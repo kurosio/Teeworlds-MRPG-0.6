@@ -13,7 +13,7 @@ int GetParallaxZoom(const CMapItemGroup *pGroup, const CMapItemGroupEx *pGroupEx
 
 int GetParallaxZoomDefault(int ParallaxX, int ParallaxY)
 {
-	return clamp(max(ParallaxX, ParallaxY), 0, 100);
+	return clamp(maximum(ParallaxX, ParallaxY), 0, 100);
 }
 
 void RegisterMapItemTypeUuids(CUuidManager *pManager)

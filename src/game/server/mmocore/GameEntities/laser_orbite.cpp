@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64 Mask)
+CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f), (int)Radius), m_Type(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_pEntParent(pEntParent)
 {
 	m_Mask = Mask;

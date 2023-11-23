@@ -39,7 +39,7 @@ void CSnapIDPool::RemoveFirstTimeout()
 
 int CSnapIDPool::NewID()
 {
-	int64 Now = time_get();
+	int64_t Now = time_get();
 
 	// process timed ids
 	while(m_FirstTimed != -1 && m_aIDs[m_FirstTimed].m_Timeout < Now)

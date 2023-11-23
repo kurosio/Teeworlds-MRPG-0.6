@@ -31,13 +31,14 @@ void CNetConnection::Reset(bool Rejoin)
 		m_State = NET_CONNSTATE_OFFLINE;
 		m_Token = -1;
 		m_SecurityToken = NET_SECURITY_TOKEN_UNKNOWN;
-		m_Sixup = false;
 	}
 
 	m_LastSendTime = 0;
 	m_LastRecvTime = 0;
 	//m_LastUpdateTime = 0;
 
+	mem_zero(&m_aConnectAddrs, sizeof(m_aConnectAddrs));
+	m_NumConnectAddrs = 0;
 	//mem_zero(&m_PeerAddr, sizeof(m_PeerAddr));
 	m_UnknownSeq = false;
 
@@ -53,7 +54,7 @@ const char *CNetConnection::ErrorString()
 
 void CNetConnection::SetError(const char *pString)
 {
-	str_copy(m_aErrorString, pString, sizeof(m_aErrorString));
+	str_copy(m_aErrorString, pString);
 }
 
 void CNetConnection::Init(NETSOCKET Socket, bool BlockCloseMsg)
@@ -68,7 +69,7 @@ void CNetConnection::Init(NETSOCKET Socket, bool BlockCloseMsg)
 
 void CNetConnection::AckChunks(int Ack)
 {
-	while(1)
+	while(true)
 	{
 		CNetChunkResend *pResend = m_Buffer.First();
 		if(!pResend)
@@ -94,7 +95,7 @@ int CNetConnection::Flush()
 
 	// send of the packets
 	m_Construct.m_Ack = m_Ack;
-	CNetBase::SendPacket(m_Socket, &m_PeerAddr, &m_Construct, m_SecurityToken, m_Sixup);
+	CNetBase::SendPacket(m_Socket, &m_PeerAddr, &m_Construct, m_SecurityToken);
 
 	// update send times
 	m_LastSendTime = time_get();
@@ -121,7 +122,7 @@ int CNetConnection::QueueChunkEx(int Flags, int DataSize, const void *pData, int
 	Header.m_Size = DataSize;
 	Header.m_Sequence = Sequence;
 	pChunkData = &m_Construct.m_aChunkData[m_Construct.m_DataSize];
-	pChunkData = Header.Pack(pChunkData, m_Sixup ? 6 : 4);
+	pChunkData = Header.Pack(pChunkData, 4);
 	mem_copy(pChunkData, pData, DataSize);
 	pChunkData += DataSize;
 
@@ -162,11 +163,21 @@ int CNetConnection::QueueChunk(int Flags, int DataSize, const void *pData)
 	return QueueChunkEx(Flags, DataSize, pData, m_Sequence);
 }
 
+void CNetConnection::SendConnect()
+{
+	// send the connect message
+	m_LastSendTime = time_get();
+	for(int i = 0; i < m_NumConnectAddrs; i++)
+	{
+		CNetBase::SendControlMsg(m_Socket, &m_aConnectAddrs[i], m_Ack, NET_CTRLMSG_CONNECT, SECURITY_TOKEN_MAGIC, sizeof(SECURITY_TOKEN_MAGIC), m_SecurityToken);
+	}
+}
+
 void CNetConnection::SendControl(int ControlMsg, const void *pExtra, int ExtraSize)
 {
 	// send the control message
 	m_LastSendTime = time_get();
-	CNetBase::SendControlMsg(m_Socket, &m_PeerAddr, m_Ack, ControlMsg, pExtra, ExtraSize, m_SecurityToken, m_Sixup);
+	CNetBase::SendControlMsg(m_Socket, &m_PeerAddr, m_Ack, ControlMsg, pExtra, ExtraSize, m_SecurityToken);
 }
 
 void CNetConnection::ResendChunk(CNetChunkResend *pResend)
@@ -181,17 +192,22 @@ void CNetConnection::Resend()
 		ResendChunk(pResend);
 }
 
-int CNetConnection::Connect(NETADDR *pAddr)
+int CNetConnection::Connect(const NETADDR *pAddr, int NumAddrs)
 {
 	if(State() != NET_CONNSTATE_OFFLINE)
 		return -1;
 
 	// init connection
 	Reset();
-	m_PeerAddr = *pAddr;
+	mem_zero(&m_PeerAddr, sizeof(m_PeerAddr));
+	for(int i = 0; i < NumAddrs; i++)
+	{
+		m_aConnectAddrs[i] = pAddr[i];
+	}
+	m_NumConnectAddrs = NumAddrs;
 	mem_zero(m_aErrorString, sizeof(m_aErrorString));
 	m_State = NET_CONNSTATE_CONNECT;
-	SendControl(NET_CTRLMSG_CONNECT, SECURITY_TOKEN_MAGIC, sizeof(SECURITY_TOKEN_MAGIC));
+	SendConnect();
 	return 0;
 }
 
@@ -214,14 +230,14 @@ void CNetConnection::Disconnect(const char *pReason)
 		{
 			m_aErrorString[0] = 0;
 			if(pReason)
-				str_copy(m_aErrorString, pReason, sizeof(m_aErrorString));
+				str_copy(m_aErrorString, pReason);
 		}
 	}
 
 	Reset();
 }
 
-void CNetConnection::DirectInit(NETADDR &Addr, SECURITY_TOKEN SecurityToken, SECURITY_TOKEN Token, bool Sixup)
+void CNetConnection::DirectInit(const NETADDR &Addr, SECURITY_TOKEN SecurityToken, SECURITY_TOKEN Token)
 {
 	Reset();
 
@@ -237,12 +253,17 @@ void CNetConnection::DirectInit(NETADDR &Addr, SECURITY_TOKEN SecurityToken, SEC
 
 	m_SecurityToken = SecurityToken;
 	m_Token = Token;
-	m_Sixup = Sixup;
 }
 
 int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr, SECURITY_TOKEN SecurityToken)
 {
-	if(!m_Sixup && State() != NET_CONNSTATE_OFFLINE && m_SecurityToken != NET_SECURITY_TOKEN_UNKNOWN && m_SecurityToken != NET_SECURITY_TOKEN_UNSUPPORTED)
+	// Disregard packets from the wrong address, unless we don't know our peer yet.
+	if(State() != NET_CONNSTATE_OFFLINE && State() != NET_CONNSTATE_CONNECT && *pAddr != m_PeerAddr)
+	{
+		return 0;
+	}
+
+	if(State() != NET_CONNSTATE_OFFLINE && m_SecurityToken != NET_SECURITY_TOKEN_UNKNOWN && m_SecurityToken != NET_SECURITY_TOKEN_UNSUPPORTED)
 	{
 		// supposed to have a valid token in this packet, check it
 		if(pPacket->m_DataSize < (int)sizeof(m_SecurityToken))
@@ -255,9 +276,6 @@ int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr, SECURITY_
 			return 0;
 		}
 	}
-
-	if(m_Sixup && SecurityToken != m_Token)
-		return 0;
 
 	// check if actual ack value is valid(own sequence..latest peer ack)
 	if(m_Sequence >= m_PeerAck)
@@ -285,7 +303,20 @@ int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr, SECURITY_
 
 		if(CtrlMsg == NET_CTRLMSG_CLOSE)
 		{
-			if(net_addr_comp(&m_PeerAddr, pAddr) == 0)
+			bool IsPeer;
+			if(m_State != NET_CONNSTATE_CONNECT)
+			{
+				IsPeer = m_PeerAddr == *pAddr;
+			}
+			else
+			{
+				IsPeer = false;
+				for(int i = 0; i < m_NumConnectAddrs; i++)
+				{
+					IsPeer = IsPeer || m_aConnectAddrs[i] == *pAddr;
+				}
+			}
+			if(IsPeer)
 			{
 				m_State = NET_CONNSTATE_ERROR;
 				m_RemoteClosed = 1;
@@ -294,7 +325,7 @@ int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr, SECURITY_
 				if(pPacket->m_DataSize > 1)
 				{
 					// make sure to sanitize the error string form the other party
-					str_utf8_copy(aStr, (char *)&pPacket->m_aChunkData[1], min(pPacket->m_DataSize, (int)sizeof(aStr)));
+					str_copy(aStr, (char *)&pPacket->m_aChunkData[1], minimum(pPacket->m_DataSize, (int)sizeof(aStr)));
 					str_sanitize_cc(aStr);
 				}
 
@@ -348,6 +379,7 @@ int CNetConnection::Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr, SECURITY_
 				// connection made
 				if(CtrlMsg == NET_CTRLMSG_CONNECTACCEPT)
 				{
+					m_PeerAddr = *pAddr;
 					if(m_SecurityToken == NET_SECURITY_TOKEN_UNKNOWN && pPacket->m_DataSize >= (int)(1 + sizeof(SECURITY_TOKEN_MAGIC) + sizeof(m_SecurityToken)) && !mem_comp(&pPacket->m_aChunkData[1], SECURITY_TOKEN_MAGIC, sizeof(SECURITY_TOKEN_MAGIC)))
 					{
 						m_SecurityToken = ToSecurityToken(&pPacket->m_aChunkData[1 + sizeof(SECURITY_TOKEN_MAGIC)]);
@@ -452,7 +484,7 @@ int CNetConnection::Update()
 	else if(State() == NET_CONNSTATE_CONNECT)
 	{
 		if(time_get() - m_LastSendTime > time_freq() / 2) // send a new connect every 500ms
-			SendControl(NET_CTRLMSG_CONNECT, SECURITY_TOKEN_MAGIC, sizeof(SECURITY_TOKEN_MAGIC));
+			SendConnect();
 	}
 	else if(State() == NET_CONNSTATE_PENDING)
 	{
@@ -463,7 +495,7 @@ int CNetConnection::Update()
 	return 0;
 }
 
-void CNetConnection::SetTimedOut(const NETADDR *pAddr, int Sequence, int Ack, SECURITY_TOKEN SecurityToken, CStaticRingBuffer<CNetChunkResend, NET_CONN_BUFFERSIZE> *pResendBuffer, bool Sixup)
+void CNetConnection::SetTimedOut(const NETADDR *pAddr, int Sequence, int Ack, SECURITY_TOKEN SecurityToken, CStaticRingBuffer<CNetChunkResend, NET_CONN_BUFFERSIZE> *pResendBuffer)
 {
 	int64_t Now = time_get();
 
@@ -478,7 +510,6 @@ void CNetConnection::SetTimedOut(const NETADDR *pAddr, int Sequence, int Ack, SE
 	m_LastRecvTime = Now;
 	m_LastUpdateTime = Now;
 	m_SecurityToken = SecurityToken;
-	m_Sixup = Sixup;
 
 	// copy resend buffer
 	m_Buffer.Init();

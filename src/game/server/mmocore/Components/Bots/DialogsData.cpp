@@ -218,7 +218,7 @@ void CPlayerDialog::Start(CPlayer* pPlayer, int BotCID)
 			"What a beautiful <time>. I don't have anything for you <player>.",
 			"<player> are you interested something? I'm sorry, don't want to talk right now."
 		};
-		MeaninglessDialog.Init(pPlayerBot->GetBotID(), pTalking[random_int() % 3], false);
+		MeaninglessDialog.Init(pPlayerBot->GetBotID(), pTalking[rand() % 3], false);
 		MeaninglessDialog.Show(GS(), pPlayer->GetCID());
 	}
 	else
@@ -287,7 +287,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 			PageNum = static_cast<int>(NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs.size());
 
 		const char* pNicknameTalked = IsSpeakAuthor ? "..." : (pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
-		str_format(aBufPosition, sizeof(aBufPosition), "\u2500\u2500\u2500\u2500 | %d of %d | %s.\n", (m_Step + 1), max(1, PageNum), pNicknameTalked);
+		str_format(aBufPosition, sizeof(aBufPosition), "\u2500\u2500\u2500\u2500 | %d of %d | %s.\n", (m_Step + 1), maximum(1, PageNum), pNicknameTalked);
 	}
 
 	/*

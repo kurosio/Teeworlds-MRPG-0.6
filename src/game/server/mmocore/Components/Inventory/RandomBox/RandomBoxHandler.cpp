@@ -24,7 +24,7 @@ std::vector<CRandomItem>::iterator CEntityRandomBoxRandomizer::SelectRandomItem(
 	// Find the first item in the vector that meets the criteria specified by the lambda function
 	const auto iter = std::find_if(m_aRandomItems.begin(), m_aRandomItems.end(), [](const CRandomItem& pItem)
 	{
-		const float RandomDrop = frandom() * 100.0f;
+		const float RandomDrop = random_float(100.0f);
 		return RandomDrop < pItem.m_Chance;
 	});
 

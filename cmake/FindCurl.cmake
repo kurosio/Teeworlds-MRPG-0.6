@@ -29,12 +29,9 @@ if(CURL_FOUND)
 
   if(CURL_BUNDLED AND TARGET_OS STREQUAL "windows")
     set(CURL_COPY_FILES
-      "${EXTRA_CURL_LIBDIR}/libcurl.dll"      
-	  "${EXTRA_CURL_LIBDIR}/libwinpthread-1.dll"
+      "${EXTRA_CURL_LIBDIR}/libcurl.dll"
+      "${EXTRA_CURL_LIBDIR}/zlib1.dll"
     )
-    if(TARGET_BITS EQUAL 32)
-	  list(APPEND CURL_COPY_FILES "${EXTRA_CURL_LIBDIR}/libgcc_s_sjlj-1.dll")
-	endif()
   else()
     set(CURL_COPY_FILES)
   endif()

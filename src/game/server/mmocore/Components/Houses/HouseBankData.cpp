@@ -60,7 +60,7 @@ void CHouseBankData::Take(int Value)
 		int Bank = pRes->getInt("HouseBank");
 
 		// Update the Value to be the minimum of Value and Bank
-		Value = min(Value, Bank);
+		Value = minimum(Value, Bank);
 
 		// If Value is greater than 0
 		if(Value > 0)

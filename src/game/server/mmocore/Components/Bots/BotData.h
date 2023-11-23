@@ -174,7 +174,7 @@ public:
 	{
 		int Range = std::get<RANGE>(m_Time);
 		int Time = std::get<SECONDS>(m_Time) - Range / 2;
-		return Time + random_int() % Range;
+		return Time + rand() % Range;
 	}
 	float getChance() const { return m_Chance; }
 };
@@ -211,7 +211,7 @@ public:
 
 	[[nodiscard]] CMobBuffDebuff* GetRandomEffect()
 	{
-		return m_Effects.empty() ? nullptr : &m_Effects[random_int() % m_Effects.size()];
+		return m_Effects.empty() ? nullptr : &m_Effects[rand() % m_Effects.size()];
 	}
 
 	void InitDebuffs(int Seconds, int Range, float Chance, std::string& buffSets);

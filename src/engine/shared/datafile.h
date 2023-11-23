@@ -21,8 +21,8 @@ enum
 // raw datafile access
 class CDataFileReader
 {
-	struct CDatafile* m_pDataFile;
-	void* GetDataImpl(int Index, bool Swap);
+	struct CDatafile *m_pDataFile;
+	void *GetDataImpl(int Index, bool Swap);
 	int GetFileDataSize(int Index) const;
 
 	int GetExternalItemType(int InternalType);
@@ -33,31 +33,31 @@ public:
 		m_pDataFile(nullptr) {}
 	~CDataFileReader() { Close(); }
 
-	CDataFileReader& operator=(CDataFileReader&& Other)
+	CDataFileReader &operator=(CDataFileReader &&Other)
 	{
 		m_pDataFile = Other.m_pDataFile;
 		Other.m_pDataFile = nullptr;
 		return *this;
 	}
 
-	bool Open(class IStorageEngine* pStorage, const char* pFilename, int StorageType);
+	bool Open(class IStorageEngine *pStorage, const char *pFilename, int StorageType);
 	bool Close();
 	bool IsOpen() const { return m_pDataFile != nullptr; }
 	IOHANDLE File() const;
 
 	int GetDataSize(int Index) const;
-	void* GetData(int Index);
-	void* GetDataSwapped(int Index); // makes sure that the data is 32bit LE ints when saved
-	const char* GetDataString(int Index);
-	void ReplaceData(int Index, char* pData, size_t Size); // memory for data must have been allocated with malloc
+	void *GetData(int Index);
+	void *GetDataSwapped(int Index); // makes sure that the data is 32bit LE ints when saved
+	const char *GetDataString(int Index);
+	void ReplaceData(int Index, char *pData, size_t Size); // memory for data must have been allocated with malloc
 	void UnloadData(int Index);
 	int NumData() const;
 
 	int GetItemSize(int Index) const;
-	void* GetItem(int Index, int* pType = nullptr, int* pID = nullptr);
-	void GetType(int Type, int* pStart, int* pNum);
+	void *GetItem(int Index, int *pType = nullptr, int *pID = nullptr);
+	void GetType(int Type, int *pStart, int *pNum);
 	int FindItemIndex(int Type, int ID);
-	void* FindItem(int Type, int ID);
+	void *FindItem(int Type, int ID);
 	int NumItems() const;
 
 	SHA256_DIGEST Sha256() const;
@@ -70,9 +70,9 @@ class CDataFileWriter
 {
 	struct CDataInfo
 	{
-		void* m_pUncompressedData;
+		void *m_pUncompressedData;
 		int m_UncompressedSize;
-		void* m_pCompressedData;
+		void *m_pCompressedData;
 		int m_CompressedSize;
 		int m_CompressionLevel;
 	};
@@ -84,7 +84,7 @@ class CDataFileWriter
 		int m_Size;
 		int m_Next;
 		int m_Prev;
-		void* m_pData;
+		void *m_pData;
 	};
 
 	struct CItemTypeInfo
@@ -110,7 +110,7 @@ class CDataFileWriter
 
 public:
 	CDataFileWriter();
-	CDataFileWriter(CDataFileWriter&& Other)
+	CDataFileWriter(CDataFileWriter &&Other)
 	{
 		m_File = Other.m_File;
 		Other.m_File = 0;
@@ -121,11 +121,11 @@ public:
 	}
 	~CDataFileWriter();
 
-	bool Open(class IStorageEngine* pStorage, const char* pFilename, int StorageType = IStorageEngine::TYPE_SAVE);
-	int AddItem(int Type, int ID, size_t Size, const void* pData);
-	int AddData(size_t Size, const void* pData, int CompressionLevel = Z_DEFAULT_COMPRESSION);
-	int AddDataSwapped(size_t Size, const void* pData);
-	int AddDataString(const char* pStr);
+	bool Open(class IStorageEngine *pStorage, const char *pFilename, int StorageType = IStorageEngine::TYPE_SAVE);
+	int AddItem(int Type, int ID, size_t Size, const void *pData);
+	int AddData(size_t Size, const void *pData, int CompressionLevel = Z_DEFAULT_COMPRESSION);
+	int AddDataSwapped(size_t Size, const void *pData);
+	int AddDataString(const char *pStr);
 	void Finish();
 };
 

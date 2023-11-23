@@ -101,7 +101,7 @@ void CServerBan::ConBanExt(IConsole::IResult* pResult, void* pUser)
 	const int Minutes = pResult->NumArguments() > 1 ? clamp(pResult->GetInteger(1), 0, 44640) : 30;
 	const char* pReason = pResult->NumArguments() > 2 ? pResult->GetString(2) : "No reason given";
 
-	if(str_is_number(pStr))
+	if(str_isallnum(pStr))
 	{
 		const int ClientID = str_toint(pStr);
 		if(pThis->Server()->IsEmpty(ClientID))

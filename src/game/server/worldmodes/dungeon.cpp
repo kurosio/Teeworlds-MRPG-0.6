@@ -431,7 +431,7 @@ void CGameControllerDungeon::SelectTankPlayer()
 			continue;
 
 		// random if the votes of several players are equal
-		if(MaximalVotes > 0 && pPlayer->GetTempData().m_TempTankVotingDungeon == MaximalVotes && random_int() % 2 == 0)
+		if(MaximalVotes > 0 && pPlayer->GetTempData().m_TempTankVotingDungeon == MaximalVotes && rand() % 2 == 0)
 			m_TankClientID = i;
 
 		// the player is selected by votes
@@ -482,8 +482,8 @@ int CGameControllerDungeon::GetSyncFactor() const
 		if(pBotPlayer && pBotPlayer->GetBotType() == TYPE_BOT_MOB && pBotPlayer->GetPlayerWorldID() == m_WorldID)
 		{
 			const int LevelDisciple = pBotPlayer->GetAttributesSize();
-			MinFactor = min(MinFactor, LevelDisciple);
-			MaxFactor = max(MaxFactor, LevelDisciple);
+			MinFactor = minimum(MinFactor, LevelDisciple);
+			MaxFactor = maximum(MaxFactor, LevelDisciple);
 			BotCount++;
 		}
 	}
@@ -514,21 +514,21 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeI
 			return 0;
 
 		const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
-		return max(AttributeSyncProcent, 1);
+		return maximum(AttributeSyncProcent, 1);
 	}
 
 	// - - - - - - - - -- - - -
 	// balance healer damage divides the average attribute into the number of players
 	const float ActiveAttribute = m_SyncDungeon / m_ActivePlayers;
 	if(Type == AttributeType::Healer)
-		Percent = min(25.0f + (m_ActivePlayers * 2.0f), 50.0f);
+		Percent = minimum(25.0f + (m_ActivePlayers * 2.0f), 50.0f);
 	else if(Type == AttributeType::Tank)
 		Percent = 5.0f;
 	else if(Type == AttributeType::Hardtype || Type == AttributeType::Dps)
 		Percent = 0.1f;
 
 	const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
-	return max(AttributeSyncProcent, 1);
+	return maximum(AttributeSyncProcent, 1);
 }
 
 void CGameControllerDungeon::Tick()
@@ -605,12 +605,15 @@ void DungeonDoor::Tick()
 
 	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
-		float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if(Distance <= (float)g_Config.m_SvDoorRadiusHit)
+		vec2 IntersectPos;
+		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 		{
-			pChar->m_DoorHit = true;
-			pChar->Die(pChar->GetPlayer()->GetCID(), WEAPON_WORLD);
+			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+			if(Distance <= (float)g_Config.m_SvDoorRadiusHit)
+			{
+				pChar->m_DoorHit = true;
+				pChar->Die(pChar->GetPlayer()->GetCID(), WEAPON_WORLD);
+			}
 		}
 	}
 }

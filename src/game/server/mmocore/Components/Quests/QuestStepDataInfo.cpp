@@ -398,7 +398,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 					}
 					else
 					{
-						Radius = 400.f + frandom() * 2000.f;
+						Radius = 400.f + random_float(2000.f);
 						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
 					}
 
@@ -451,8 +451,8 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 			const int Value = 3 + RequiredItem.GetValue();
 			for(int i = 0; i < Value; i++)
 			{
-				vec2 Vel = vec2(frandom_num(-40.0f, 40.0f), frandom_num(-40.0f, 40.0f));
-				float AngleForce = Vel.x * (0.15f + frandom() * 0.1f);
+				vec2 Vel = vec2(random_float(-40.0f, 40.0f), random_float(-40.0f, 40.0f));
+				float AngleForce = Vel.x * (0.15f + random_float(0.1f));
 				new CDropQuestItem(&GS()->m_World, m_Bot.m_Position, Vel, AngleForce, RequiredItem.GetID(), RequiredItem.GetValue(), GetQuestID(), GetStepPos(), ClientID);
 			}
 		}

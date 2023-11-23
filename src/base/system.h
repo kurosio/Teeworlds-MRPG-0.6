@@ -14,14 +14,27 @@
 #define __USE_GNU
 #endif
 
-#if defined(CONF_FAMILY_WINDOWS) && !defined(__GNUC__)
-    #pragma warning(disable : 4996) /* We have to figure it out. After importing the discord, there was a need*/
-#endif
+#include <chrono>
+#include <cinttypes>
+#include <cstdarg>
+#include <cstdint>
+#include <cstring>
+#include <ctime>
+#include <functional>
+#include <mutex>
+#include <string>
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <time.h>
+#ifdef __MINGW32__
+#undef PRId64
+#undef PRIu64
+#undef PRIX64
+#define PRId64 "I64d"
+#define PRIu64 "I64u"
+#define PRIX64 "I64X"
+#define PRIzu "Iu"
+#else
+#define PRIzu "zu"
+#endif
 
 #ifdef CONF_FAMILY_UNIX
 #include <sys/un.h>
@@ -32,8 +45,39 @@
 #include <sys/socket.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
+#if __cplusplus >= 201703L
+#define MAYBE_UNUSED [[maybe_unused]]
+#elif defined(__GNUC__)
+#define MAYBE_UNUSED __attribute__((unused))
+#else
+#define MAYBE_UNUSED
+#endif
+
+/**
+ * @defgroup Debug
+ *
+ * Utilities for debugging.
+ */
+
+/**
+ * @ingroup Debug
+ *
+ * Breaks into the debugger based on a test.
+ *
+ * @param test Result of the test.
+ * @param msg Message that should be printed if the test fails.
+ *
+ * @remark Also works in release mode.
+ *
+ * @see dbg_break
+ */
+#define dbg_assert(test, msg) dbg_assert_imp(__FILE__, __LINE__, test, msg)
+void dbg_assert_imp(const char *filename, int line, int test, const char *msg);
+
+#ifdef __clang_analyzer__
+#include <cassert>
+#undef dbg_assert
+#define dbg_assert(test, msg) assert(test)
 #endif
 
 #ifdef __GNUC__
@@ -42,162 +86,113 @@ extern "C" {
 #define GNUC_ATTRIBUTE(x)
 #endif
 
-/* Group: Debug */
-/*
+/**
+ * Checks whether the program is currently shutting down due to a failed
+ * assert.
+ *
+ * @ingroup Debug
+ *
+ * @return indication whether the program is currently shutting down due to a
+ * failed assert.
+ */
+bool dbg_assert_has_failed();
 
-	Function: dbg_assert
-		Breaks into the debugger based on a test.
-
-	Parameters:
-		test - Result of the test.
-		msg - Message that should be printed if the test fails.
-
-	Remarks:
-		Does nothing in release version of the library.
-
-	See Also:
-		<dbg_break>
-*/
-void dbg_assert(int test, const char *msg);
-#define dbg_assert(test,msg) dbg_assert_imp(__FILE__, __LINE__, test, msg)
-void dbg_assert_imp(const char *filename, int line, int test, const char *msg);
-
-
-#ifdef __clang_analyzer__
-#include <assert.h>
-#undef dbg_assert
-#define dbg_assert(test,msg) assert(test)
+/**
+ * Breaks into the debugger.
+ *
+ * @ingroup Debug
+ * @remark Also works in release mode.
+ *
+ * @see dbg_assert
+ */
+#if defined(__cplusplus)
+[[noreturn]]
 #endif
+void
+dbg_break();
 
-/*
-	Function: dbg_break
-		Breaks into the debugger.
+typedef std::function<void(const char *message)> DBG_ASSERT_HANDLER;
+void dbg_assert_set_handler(DBG_ASSERT_HANDLER handler);
 
-	Remarks:
-		Does nothing in release version of the library.
-
-	See Also:
-		<dbg_assert>
-*/
-void dbg_break();
-
-/*
-	Function: dbg_msg
-
-	Prints a debug message.
-
-	Parameters:
-		sys - A string that describes what system the message belongs to
-		fmt - A printf styled format string.
-
-	Remarks:
-		Does nothing in release version of the library.
-
-	See Also:
-		<dbg_assert>
-*/
+/**
+ * Prints a debug message.
+ *
+ * @ingroup Debug
+ *
+ * @param sys A string that describes what system the message belongs to.
+ * @param fmt A printf styled format string.
+ *
+ * @remark Also works in release mode.
+ *
+ * @see dbg_assert
+ */
 void dbg_msg(const char *sys, const char *fmt, ...)
-GNUC_ATTRIBUTE((format(printf, 2, 3)));
+	GNUC_ATTRIBUTE((format(printf, 2, 3)));
 
-/* Group: Memory */
+/**
+ * @defgroup Memory
+ * Memory management utilities.
+ */
 
-/*
-	Function: mem_alloc
-		Allocates memory.
+/**
+ * Copies a a memory block.
+ *
+ * @ingroup Memory
+ *
+ * @param dest Destination.
+ * @param source Source to copy.
+ * @param size Size of the block to copy.
+ *
+ * @remark This functions DOES NOT handle cases where the source and destination is overlapping.
+ *
+ * @see mem_move
+ */
+void mem_copy(void *dest, const void *source, size_t size);
 
-	Parameters:
-		size - Size of the needed block.
-		alignment - Alignment for the block.
+/**
+ * Copies a a memory block.
+ *
+ * @ingroup Memory
+ *
+ * @param dest Destination.
+ * @param source Source to copy.
+ * @param size Size of the block to copy.
+ *
+ * @remark This functions handles the cases where the source and destination is overlapping.
+ *
+ * @see mem_copy
+ */
+void mem_move(void *dest, const void *source, size_t size);
 
-	Returns:
-		Returns a pointer to the newly allocated block. Returns a
-		null pointer if the memory couldn't be allocated.
+/**
+ * Sets a complete memory block to 0.
+ *
+ * @ingroup Memory
+ *
+ * @param block Pointer to the block to zero out.
+ * @param size Size of the block.
+ */
+template<typename T>
+inline void mem_zero(T *block, size_t size)
+{
+	static_assert((std::is_trivially_constructible<T>::value && std::is_trivially_destructible<T>::value) || std::is_fundamental<T>::value);
+	memset(block, 0, size);
+}
 
-	Remarks:
-		- Passing 0 to size will allocated the smallest amount possible
-		and return a unique pointer.
-
-	See Also:
-		<mem_free>
-*/
-void *mem_alloc_debug(const char *filename, int line, unsigned size, unsigned alignment);
-#define mem_alloc(s,a) mem_alloc_debug(__FILE__, __LINE__, (s), (a))
-
-/*
-	Function: mem_free
-		Frees a block allocated through <mem_alloc>.
-
-	Remarks:
-		- In the debug version of the library the function will assert if
-		a non-valid block is passed, like a null pointer or a block that
-		isn't allocated.
-
-	See Also:
-		<mem_alloc>
-*/
-void mem_free(void *block);
-
-/*
-	Function: mem_copy
-		Copies a a memory block.
-
-	Parameters:
-		dest - Destination.
-		source - Source to copy.
-		size - Size of the block to copy.
-
-	Remarks:
-		- This functions DOES NOT handles cases where source and
-		destination is overlapping.
-
-	See Also:
-		<mem_move>
-*/
-void mem_copy(void *dest, const void *source, unsigned size);
-
-/*
-	Function: mem_move
-		Copies a a memory block
-
-	Parameters:
-		dest - Destination
-		source - Source to copy
-		size - Size of the block to copy
-
-	Remarks:
-		- This functions handles cases where source and destination
-		is overlapping
-
-	See Also:
-		<mem_copy>
-*/
-void mem_move(void *dest, const void *source, unsigned size);
-
-/*
-	Function: mem_zero
-		Sets a complete memory block to 0
-
-	Parameters:
-		block - Pointer to the block to zero out
-		size - Size of the block
-*/
-void mem_zero(void *block, unsigned size);
-
-/*
-	Function: mem_comp
-		Compares two blocks of memory
-
-	Parameters:
-		a - First block of data
-		b - Second block of data
-		size - Size of the data to compare
-
-	Returns:
-		<0 - Block a is lesser then block b
-		0 - Block a is equal to block b
-		>0 - Block a is greater then block b
-*/
-int mem_comp(const void *a, const void *b, int size);
+/**
+ * Compares two blocks of memory
+ *
+ * @ingroup Memory
+ *
+ * @param a First block of data
+ * @param b Second block of data
+ * @param size Size of the data to compare
+ *
+ * @return < 0 - Block a is less than block b.
+ * @return 0 - Block a is equal to block b.
+ * @return > 0 - Block a is greater than block b.
+ */
+int mem_comp(const void *a, const void *b, size_t size);
 
 /**
  * Checks whether a block of memory contains null bytes.
@@ -209,13 +204,23 @@ int mem_comp(const void *a, const void *b, int size);
  *
  * @return true if the block has a null byte, false otherwise.
  */
-int mem_has_null(const void* block, size_t size);
+bool mem_has_null(const void *block, size_t size);
 
-/* Group: File IO */
-enum {
+/**
+ * @defgroup File-IO
+ *
+ * I/O related operations.
+ */
+
+/**
+ * @ingroup File-IO
+ */
+enum
+{
 	IOFLAG_READ = 1,
 	IOFLAG_WRITE = 2,
-	IOFLAG_RANDOM = 4,
+	IOFLAG_APPEND = 4,
+	IOFLAG_SKIP_BOM = 8,
 
 	IOSEEK_START = 0,
 	IOSEEK_CUR = 1,
@@ -224,253 +229,400 @@ enum {
 	IO_MAX_PATH_LENGTH = 512,
 };
 
-typedef struct IOINTERNAL *IOHANDLE;
+typedef void *IOHANDLE;
 
-/*
-	Function: io_open
-		Opens a file.
-
-	Parameters:
-		filename - File to open.
-		flags - A set of flags. IOFLAG_READ, IOFLAG_WRITE, IOFLAG_RANDOM.
-
-	Returns:
-		Returns a handle to the file on success and 0 on failure.
-
-*/
+/**
+ * Opens a file.
+ *
+ * @ingroup File-IO
+ *
+ * @param File to open.
+ * @param flags A set of IOFLAG flags.
+ *
+ * @sa IOFLAG_READ, IOFLAG_WRITE, IOFLAG_APPEND, IOFLAG_SKIP_BOM.
+ *
+ * @return A handle to the file on success and 0 on failure.
+ *
+ */
 IOHANDLE io_open(const char *filename, int flags);
 
-/*
-	Function: io_read
-		Reads data into a buffer from a file.
-
-	Parameters:
-		io - Handle to the file to read data from.
-		buffer - Pointer to the buffer that will recive the data.
-		size - Number of bytes to read from the file.
-
-	Returns:
-		Number of bytes read.
-
-*/
+/**
+ * Reads data into a buffer from a file.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file to read data from.
+ * @param buffer Pointer to the buffer that will receive the data.
+ * @param size Number of bytes to read from the file.
+ *
+ * @return Number of bytes read.
+ *
+ */
 unsigned io_read(IOHANDLE io, void *buffer, unsigned size);
 
-/*
-	Function: io_unread_byte
-		"Unreads" a single byte, making it available for future read
-		operations.
+/**
+ * Reads the rest of the file into a buffer.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file to read data from.
+ * @param result Receives the file's remaining contents.
+ * @param result_len Receives the file's remaining length.
+ *
+ * @remark Does NOT guarantee that there are no internal null bytes.
+ * @remark The result must be freed after it has been used.
+ */
+void io_read_all(IOHANDLE io, void **result, unsigned *result_len);
 
-	Parameters:
-		io - Handle to the file to unread the byte from.
-		byte - Byte to unread.
+/**
+ * Reads the rest of the file into a zero-terminated buffer with
+ * no internal null bytes.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file to read data from.
+ *
+ * @return The file's remaining contents or null on failure.
+ *
+ * @remark Guarantees that there are no internal null bytes.
+ * @remark Guarantees that result will contain zero-termination.
+ * @remark The result must be freed after it has been used.
+ */
+char *io_read_all_str(IOHANDLE io);
 
-	Returns:
-		Returns 0 on success and 1 on failure.
+/**
+ * Skips data in a file.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ * @param size Number of bytes to skip.
+ *
+ * @return 0 on success.
+ */
+int io_skip(IOHANDLE io, int size);
 
-*/
-unsigned io_unread_byte(IOHANDLE io, unsigned char byte);
-
-/*
-	Function: io_skip
-		Skips data in a file.
-
-	Parameters:
-		io - Handle to the file.
-		size - Number of bytes to skip.
-
-	Returns:
-		Number of bytes skipped.
-*/
-unsigned io_skip(IOHANDLE io, int size);
-
-/*
-	Function: io_write
-		Writes data from a buffer to file.
-
-	Parameters:
-		io - Handle to the file.
-		buffer - Pointer to the data that should be written.
-		size - Number of bytes to write.
-
-	Returns:
-		Number of bytes written.
-*/
+/**
+ * Writes data from a buffer to file.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ * @param buffer Pointer to the data that should be written.
+ * @param size Number of bytes to write.
+ *
+ * @return Number of bytes written.
+ */
 unsigned io_write(IOHANDLE io, const void *buffer, unsigned size);
 
-/*
-	Function: io_write_newline
-		Writes newline to file.
+/**
+ * Writes a platform dependent newline to file.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ *
+ * @return true on success, false on failure.
+ */
+bool io_write_newline(IOHANDLE io);
 
-	Parameters:
-		io - Handle to the file.
-
-	Returns:
-		Number of bytes written.
-*/
-unsigned io_write_newline(IOHANDLE io);
-
-/*
-	Function: io_seek
-		Seeks to a specified offset in the file.
-
-	Parameters:
-		io - Handle to the file.
-		offset - Offset from pos to stop.
-		origin - Position to start searching from.
-
-	Returns:
-		Returns 0 on success.
-*/
+/**
+ * Seeks to a specified offset in the file.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ * @param offset Offset from pos to stop.
+ * @param origin Position to start searching from.
+ *
+ * @return 0 on success.
+ */
 int io_seek(IOHANDLE io, int offset, int origin);
 
-/*
-	Function: io_tell
-		Gets the current position in the file.
-
-	Parameters:
-		io - Handle to the file.
-
-	Returns:
-		Returns the current position. -1L if an error occured.
-*/
+/**
+ * Gets the current position in the file.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ *
+ * @return The current position. @c -1L if an error occurred.
+ */
 long int io_tell(IOHANDLE io);
 
-/*
-	Function: io_length
-		Gets the total length of the file. Resetting cursor to the beginning
-
-	Parameters:
-		io - Handle to the file.
-
-	Returns:
-		Returns the total size. -1L if an error occured.
-*/
+/**
+ * Gets the total length of the file. Resetting cursor to the beginning
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ *
+ * @return The total size. @c -1L if an error occurred.
+ */
 long int io_length(IOHANDLE io);
 
-/*
-	Function: io_close
-		Closes a file.
-
-	Parameters:
-		io - Handle to the file.
-
-	Returns:
-		Returns 0 on success.
-*/
+/**
+ * Closes a file.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ *
+ * @return 0 on success.
+ */
 int io_close(IOHANDLE io);
 
-/*
-	Function: io_flush
-		Empties all buffers and writes all pending data.
-
-	Parameters:
-		io - Handle to the file.
-
-	Returns:
-		Returns 0 on success.
-*/
+/**
+ * Empties all buffers and writes all pending data.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ *
+ * @return 0 on success.
+ */
 int io_flush(IOHANDLE io);
 
+/**
+ * Synchronize file changes to disk.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ *
+ * @return 0 on success.
+ */
+int io_sync(IOHANDLE io);
 
-/*
-	Function: io_stdin
-		Returns an <IOHANDLE> to the standard input.
-*/
+/**
+ * Checks whether an error occurred during I/O with the file.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ *
+ * @return nonzero on error, 0 otherwise.
+ */
+int io_error(IOHANDLE io);
+
+/**
+ * @ingroup File-IO
+ * @return An <IOHANDLE> to the standard input.
+ */
 IOHANDLE io_stdin();
 
-/*
-	Function: io_stdout
-		Returns an <IOHANDLE> to the standard output.
-*/
+/**
+ * @ingroup File-IO
+ * @return An <IOHANDLE> to the standard output.
+ */
 IOHANDLE io_stdout();
 
-/*
-	Function: io_stderr
-		Returns an <IOHANDLE> to the standard error.
-*/
+/**
+ * @ingroup File-IO
+ * @return An <IOHANDLE> to the standard error.
+ */
 IOHANDLE io_stderr();
 
+/**
+ * @ingroup File-IO
+ * @return An <IOHANDLE> to the current executable.
+ */
+IOHANDLE io_current_exe();
 
-/* Group: Threads */
+typedef struct ASYNCIO ASYNCIO;
 
-/*
-	Function: thread_sleep
-		Suspends the current thread for a given period.
+/**
+ * Wraps a @link IOHANDLE @endlink for asynchronous writing.
+ *
+ * @ingroup File-IO
+ *
+ * @param io Handle to the file.
+ *
+ * @return The handle for asynchronous writing.
+ *
+ */
+ASYNCIO *aio_new(IOHANDLE io);
 
-	Parameters:
-		milliseconds - Number of milliseconds to sleep.
-*/
-void thread_sleep(int milliseconds);
+/**
+ * Locks the ASYNCIO structure so it can't be written into by
+ * other threads.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ */
+void aio_lock(ASYNCIO *aio);
 
-/*
-	Function: thread_init
-		Creates a new thread.
+/**
+ * Unlocks the ASYNCIO structure after finishing the contiguous
+ * write.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ */
+void aio_unlock(ASYNCIO *aio);
 
-	Parameters:
-		threadfunc - Entry point for the new thread.
-		user - Pointer to pass to the thread.
-		name - name describing the use of the thread
-*/
-void *thread_init(void(*threadfunc)(void *), void *user, const char *name);
+/**
+ * Queues a chunk of data for writing.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ * @param buffer Pointer to the data that should be written.
+ * @param size Number of bytes to write.
+ */
+void aio_write(ASYNCIO *aio, const void *buffer, unsigned size);
 
-/*
-	Function: thread_wait
-		Waits for a thread to be done or destroyed.
+/**
+ * Queues a newline for writing.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ *
+ */
+void aio_write_newline(ASYNCIO *aio);
 
-	Parameters:
-		thread - Thread to wait for.
-*/
+/**
+ * Queues a chunk of data for writing. The ASYNCIO struct must be
+ * locked using @link aio_lock @endlink first.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ * @param buffer Pointer to the data that should be written.
+ * @param size Number of bytes to write.
+ *
+ */
+void aio_write_unlocked(ASYNCIO *aio, const void *buffer, unsigned size);
+
+/**
+ * Queues a newline for writing. The ASYNCIO struct must be locked
+ * using @link aio_lock @endlink first.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ *
+ */
+void aio_write_newline_unlocked(ASYNCIO *aio);
+
+/**
+ * Checks whether errors have occurred during the asynchronous
+ * writing.
+ *
+ * Call this function regularly to see if there are errors. Call
+ * this function after <aio_wait> to see if the process of writing
+ * to the file succeeded.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ *
+ * @eturn 0 if no error occurred, and nonzero on error.
+ *
+ */
+int aio_error(ASYNCIO *aio);
+
+/**
+ * Queues file closing.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ *
+ */
+void aio_close(ASYNCIO *aio);
+
+/**
+ * Wait for the asynchronous operations to complete.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ *
+ */
+void aio_wait(ASYNCIO *aio);
+
+/**
+ * Frees the resources associated to the asynchronous file handle.
+ *
+ * @ingroup File-IO
+ *
+ * @param aio Handle to the file.
+ *
+ */
+void aio_free(ASYNCIO *aio);
+
+/**
+ * @defgroup Threads
+ * Threading related functions.
+ *
+ * @see Locks
+ */
+
+/**
+ * Creates a new thread.
+ *
+ * @ingroup Threads
+ *
+ * @param threadfunc Entry point for the new thread.
+ * @param user Pointer to pass to the thread.
+ * @param name name describing the use of the thread
+ */
+void *thread_init(void (*threadfunc)(void *), void *user, const char *name);
+
+/**
+ * Waits for a thread to be done or destroyed.
+ *
+ * @ingroup Threads
+ *
+ * @param thread Thread to wait for.
+ */
 void thread_wait(void *thread);
 
-/*
-	Function: thread_destroy
-		Destroys a thread.
-
-	Parameters:
-		thread - Thread to destroy.
-*/
-void thread_destroy(void *thread);
-
-/*
-	Function: thread_yeild
-		Yeild the current threads execution slice.
-*/
+/**
+ * Yield the current threads execution slice.
+ *
+ * @ingroup Threads
+ */
 void thread_yield();
 
-/*
-	Function: thread_detach
-		Puts the thread in the detached thread, guaranteeing that
-		resources of the thread will be freed immediately when the
-		thread terminates.
-
-	Parameters:
-		thread - Thread to detach
-*/
+/**
+ * Puts the thread in the detached thread, guaranteeing that
+ * resources of the thread will be freed immediately when the
+ * thread terminates.
+ *
+ * @ingroup Threads
+ *
+ * @param thread Thread to detach
+ */
 void thread_detach(void *thread);
 
-/*
-	Function: cpu_relax
-		Lets the cpu relax a bit.
-*/
-void cpu_relax();
+/**
+ * Creates a new thread and if it succeeded detaches it.
+ *
+ * @ingroup Threads
+ *
+ * @param threadfunc Entry point for the new thread.
+ * @param user Pointer to pass to the thread.
+ * @param name Name describing the use of the thread
+ *
+ * @return true on success, false on failure.
+ */
+bool thread_init_and_detach(void (*threadfunc)(void *), void *user, const char *name);
 
-/* Group: Locks */
-typedef void* LOCK;
+/**
+ * @defgroup Semaphore
+ * @see Threads
+ */
 
-LOCK lock_create();
-void lock_destroy(LOCK lock);
-
-int lock_trylock(LOCK lock);
-void lock_wait(LOCK lock);
-void lock_unlock(LOCK lock);
-
-
-/* Group: Semaphores */
 #if defined(CONF_FAMILY_WINDOWS)
-typedef void* SEMAPHORE;
-#elif defined(CONF_PLATFORM_MACOSX)
+typedef void *SEMAPHORE;
+#elif defined(CONF_PLATFORM_MACOS)
 #include <semaphore.h>
-typedef sem_t* SEMAPHORE;
+typedef sem_t *SEMAPHORE;
 #elif defined(CONF_FAMILY_UNIX)
 #include <semaphore.h>
 typedef sem_t SEMAPHORE;
@@ -478,9 +630,21 @@ typedef sem_t SEMAPHORE;
 #error not implemented on this platform
 #endif
 
+/**
+ * @ingroup Semaphore
+ */
 void sphore_init(SEMAPHORE *sem);
+/**
+ * @ingroup Semaphore
+ */
 void sphore_wait(SEMAPHORE *sem);
+/**
+ * @ingroup Semaphore
+ */
 void sphore_signal(SEMAPHORE *sem);
+/**
+ * @ingroup Semaphore
+ */
 void sphore_destroy(SEMAPHORE *sem);
 
 /**
@@ -488,17 +652,10 @@ void sphore_destroy(SEMAPHORE *sem);
  *
  * Time utilities.
  */
-#ifdef __GNUC__
- /* if compiled with -pedantic-errors it will complain about long
-	 not being a C90 thing.
+
+/**
+ * @ingroup Time
  */
-__extension__ typedef long long int64;
-#else
-typedef long long int64;
-#endif
- /**
-  * @ingroup Time
-  */
 void set_new_tick();
 
 /**
@@ -544,6 +701,9 @@ int64_t time_freq();
  */
 int time_timestamp();
 
+/*
+ * Timers
+ */
 int time_is_new_day(time_t savedStamp, time_t currentStamp);
 int time_is_new_week(time_t savedStamp, time_t currentStamp);
 int time_is_new_month(time_t savedStamp, time_t currentStamp);
@@ -561,90 +721,88 @@ int time_houroftheday();
 /**
  * @ingroup Time
  */
-enum
+enum ETimeSeason
 {
 	SEASON_SPRING = 0,
 	SEASON_SUMMER,
 	SEASON_AUTUMN,
 	SEASON_WINTER,
+	SEASON_EASTER,
+	SEASON_HALLOWEEN,
+	SEASON_XMAS,
 	SEASON_NEWYEAR
 };
 
-
-/*
-	Function: time_season
-		Retrieves the current season of the year.
-	Returns:
-		one of the SEASON_* enum literals
-*/
-int time_season();
-
-/*
-	Function: time_isxmasday
-		Checks if it's xmas
-
-	Returns:
-		1 - if it's a xmas day
-		0 - if not
-*/
-int time_isxmasday();
-
-/*
-	Function: time_iseasterday
-		Checks if today is in between Good Friday and Easter Monday (Gregorian calendar)
-
-	Returns:
-		1 - if it's egg time
-		0 - if not
-*/
-int time_iseasterday();
+/**
+ * Retrieves the current season of the year.
+ *
+ * @ingroup Time
+ *
+ * @return One of the SEASON_* enum literals
+ *
+ * @see SEASON_SPRING
+ */
+ETimeSeason time_season();
 
 /**
  * @defgroup Network-General
  */
-typedef struct
-{
-	int type;
-	int ipv4sock;
-	int ipv6sock;
-	int web_ipv4sock;
-} NETSOCKET;
 
+/**
+ * @ingroup Network-General
+ */
+typedef struct NETSOCKET_INTERNAL *NETSOCKET;
+
+/**
+ * @ingroup Network-General
+ */
 enum
 {
 	NETADDR_MAXSTRSIZE = 1 + (8 * 4 + 7) + 1 + 1 + 5 + 1, // [XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX]:XXXXX
 
+	NETTYPE_LINK_BROADCAST = 4,
+
 	NETTYPE_INVALID = 0,
 	NETTYPE_IPV4 = 1,
 	NETTYPE_IPV6 = 2,
-	NETTYPE_LINK_BROADCAST = 4,
 	NETTYPE_WEBSOCKET_IPV4 = 8,
-	NETTYPE_ALL = NETTYPE_IPV4 | NETTYPE_IPV6 | NETTYPE_WEBSOCKET_IPV4
+
+	NETTYPE_ALL = NETTYPE_IPV4 | NETTYPE_IPV6 | NETTYPE_WEBSOCKET_IPV4,
+	NETTYPE_MASK = NETTYPE_ALL | NETTYPE_LINK_BROADCAST,
 };
 
-typedef struct
+/**
+ * @ingroup Network-General
+ */
+typedef struct NETADDR
 {
 	unsigned int type;
 	unsigned char ip[16];
 	unsigned short port;
+
+	bool operator==(const NETADDR &other) const;
+	bool operator!=(const NETADDR &other) const { return !(*this == other); }
 } NETADDR;
 
 #ifdef CONF_FAMILY_UNIX
+/**
+ * @ingroup Network-General
+ */
 typedef int UNIXSOCKET;
+/**
+ * @ingroup Network-General
+ */
 typedef struct sockaddr_un UNIXSOCKETADDR;
 #endif
-/*
-	Function: net_init
-		Initiates network functionality.
 
-	Returns:
-		Returns 0 on success,
-
-	Remarks:
-		You must call this function before using any other network
-		functions.
-*/
-int net_init(void);
+/**
+ * Initiates network functionality.
+ *
+ * @ingroup Network-General
+ *
+ * @remark You must call this function before using any other network functions.
+ */
+void net_init();
 
 /*
 	Function: net_host_lookup
@@ -654,68 +812,102 @@ int net_init(void);
 	Returns:
 		0 on success.
 */
-int net_host_lookup(const char* hostname, NETADDR* addr, int types);
+int net_host_lookup(const char *hostname, NETADDR *addr, int types);
+
+/**
+ * Compares two network addresses.
+ *
+ * @ingroup Network-General
+ *
+ * @param a Address to compare
+ * @param b Address to compare to.
+ *
+ * @return `< 0` - Address a is less than address b
+ * @return `0` - Address a is equal to address b
+ * @return `> 0` - Address a is greater than address b
+ */
+int net_addr_comp(const NETADDR *a, const NETADDR *b);
+
+/**
+ * Compares two network addresses ignoring port.
+ *
+ * @ingroup Network-General
+ *
+ * @param a Address to compare
+ * @param b Address to compare to.
+ *
+ * @return `< 0` - Address a is less than address b
+ * @return `0` - Address a is equal to address b
+ * @return `> 0` - Address a is greater than address b
+ */
+int net_addr_comp_noport(const NETADDR *a, const NETADDR *b);
+
+/**
+ * Turns a network address into a representative string.
+ *
+ * @ingroup Network-General
+ *
+ * @param addr Address to turn into a string.
+ * @param string Buffer to fill with the string.
+ * @param max_length Maximum size of the string.
+ * @param add_port add port to string or not
+ *
+ * @remark The string will always be zero terminated
+ */
+void net_addr_str(const NETADDR *addr, char *string, int max_length, int add_port);
+
+/**
+ * Turns url string into a network address struct.
+ * The url format is tw-0.6+udp://{ipaddr}[:{port}]
+ * ipaddr: can be ipv4 or ipv6
+ * port: is a optional internet protocol port
+ *
+ * This format is used for parsing the master server, be careful before changing it.
+ *
+ * Examples:
+ *   tw-0.6+udp://127.0.0.1
+ *   tw-0.6+udp://127.0.0.1:8303
+ *
+ * @param addr Address to fill in.
+ * @param string String to parse.
+ * @param host_buf Pointer to a buffer to write the host to
+ *                 It will include the port if one is included in the url
+ *                 It can also be set to NULL then it will be ignored
+ * @param host_buf_size Size of the host buffer or 0 if no host_buf pointer is given
+ *
+ * @return 0 on success,
+ *         positive if the input wasn't a valid DDNet URL,
+ *         negative if the input is a valid DDNet URL but the host part was not a valid IPv4/IPv6 address
+ */
+int net_addr_from_url(NETADDR *addr, const char *string, char *host_buf, size_t host_buf_size);
+
+/**
+ * Turns string into a network address.
+ *
+ * @param addr Address to fill in.
+ * @param string String to parse.
+ *
+ * @return 0 on success
+ */
+int net_addr_from_str(NETADDR *addr, const char *string);
+
+/**
+ * @defgroup Network-UDP
+ * @ingroup Network-General
+ */
 
 /*
-	Function: net_addr_comp
-		Compares two network addresses.
+	Function: net_socket_type
+		Determine a socket's type.
 
 	Parameters:
-		a - Address to compare
-		b - Address to compare to.
+		sock - Socket whose type should be determined.
 
 	Returns:
-		<0 - Address a is less than address b
-		0 - Address a is equal to address b
-		>0 - Address a is greater than address b
+		The socket type, a bitset of `NETTYPE_IPV4`, `NETTYPE_IPV6` and
+		`NETTYPE_WEBSOCKET_IPV4`.
 */
-int net_addr_comp(const NETADDR* a, const NETADDR* b);
-
-/*
-	Function: net_addr_comp_noport
-		Compares two network addresses ignoring port.
-
-	Parameters:
-		a - Address to compare
-		b - Address to compare to.
-
-	Returns:
-		<0 - Address a is less than address b
-		0 - Address a is equal to address b
-		>0 - Address a is greater than address b
-*/
-int net_addr_comp_noport(const NETADDR* a, const NETADDR* b);
-
-/*
-	Function: net_addr_str
-		Turns a network address into a representative string.
-
-	Parameters:
-		addr - Address to turn into a string.
-		string - Buffer to fill with the string.
-		max_length - Maximum size of the string.
-		add_port - add port to string or not
-
-	Remarks:
-		- The string will always be zero terminated
-
-*/
-void net_addr_str(const NETADDR* addr, char* string, int max_length, int add_port);
-
-/*
-	Function: net_addr_from_str
-		Turns string into a network address.
-
-	Returns:
-		0 on success
-
-	Parameters:
-		addr - Address to fill in.
-		string - String to parse.
-*/
-int net_addr_from_str(NETADDR* addr, const char* string);
-
-/* Group: Network UDP */
+int net_socket_type(NETSOCKET sock);
 
 /*
 	Function: net_udp_create
@@ -730,39 +922,20 @@ int net_addr_from_str(NETADDR* addr, const char* string);
 */
 NETSOCKET net_udp_create(NETADDR bindaddr);
 
-/*
-	Function: net_udp_send
-		Sends a packet over an UDP socket.
-
-	Parameters:
-		sock - Socket to use.
-		addr - Where to send the packet.
-		data - Pointer to the packet data to send.
-		size - Size of the packet.
-
-	Returns:
-		On success it returns the number of bytes sent. Returns -1
-		on error.
-*/
-int net_udp_send(NETSOCKET sock, const NETADDR* addr, const void* data, int size);
-
-#define VLEN 128
-#define PACKETSIZE 1400
-typedef struct
-{
-#ifdef CONF_PLATFORM_LINUX
-	int pos;
-	int size;
-	struct mmsghdr msgs[VLEN];
-	struct iovec iovecs[VLEN];
-	char bufs[VLEN][PACKETSIZE];
-	char sockaddrs[VLEN][128];
-#else
-	int dummy;
-#endif
-} MMSGS;
-
-void net_init_mmsgs(MMSGS* m);
+/**
+ * Sends a packet over an UDP socket.
+ *
+ * @ingroup Network-UDP
+ *
+ * @param sock Socket to use.
+ * @param addr Where to send the packet.
+ * @param data Pointer to the packet data to send.
+ * @param size Size of the packet.
+ *
+ * @return On success it returns the number of bytes sent. Returns -1
+ * on error.
+ */
+int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size);
 
 /*
 	Function: net_udp_recv
@@ -771,388 +944,452 @@ void net_init_mmsgs(MMSGS* m);
 	Parameters:
 		sock - Socket to use.
 		addr - Pointer to an NETADDR that will receive the address.
-		buffer - Pointer to a buffer that can be used to receive the data.
-		maxsize - Maximum size to receive.
-		data - Will get set to the actual data, might be the passed buffer or an internal one
+		data - Received data. Will be invalidated when this function is
+		called again.
 
 	Returns:
 		On success it returns the number of bytes received. Returns -1
 		on error.
 */
-int net_udp_recv(NETSOCKET sock, NETADDR* addr, void* buffer, int maxsize, MMSGS* m, unsigned char** data);
+int net_udp_recv(NETSOCKET sock, NETADDR *addr, unsigned char **data);
 
-/*
-	Function: net_udp_close
-		Closes an UDP socket.
-
-	Parameters:
-		sock - Socket to close.
-
-	Returns:
-		Returns 0 on success. -1 on error.
-*/
+/**
+ * Closes an UDP socket.
+ *
+ * @ingroup Network-UDP
+ *
+ * @param sock Socket to close.
+ *
+ * @return 0 on success. -1 on error.
+ */
 int net_udp_close(NETSOCKET sock);
 
-/* Group: Network TCP */
+/**
+ * @defgroup Network-TCP
+ * @ingroup Network-General
+ */
 
-/*
-	Function: net_tcp_create
-		Creates a TCP socket.
-
-	Parameters:
-		bindaddr - Address to bind the socket to.
-
-	Returns:
-		On success it returns an handle to the socket. On failure it returns NETSOCKET_INVALID.
-*/
+/**
+ * Creates a TCP socket.
+ *
+ * @ingroup Network-TCP
+ *
+ * @param bindaddr Address to bind the socket to.
+ *
+ * @return On success it returns an handle to the socket. On failure it returns NETSOCKET_INVALID.
+ */
 NETSOCKET net_tcp_create(NETADDR bindaddr);
 
-/*
-	Function: net_tcp_listen
-		Makes the socket start listening for new connections.
-
-	Parameters:
-		sock - Socket to start listen to.
-		backlog - Size of the queue of incoming connections to keep.
-
-	Returns:
-		Returns 0 on success.
-*/
+/**
+ * Makes the socket start listening for new connections.
+ *
+ * @ingroup Network-TCP
+ *
+ * @param sock Socket to start listen to.
+ * @param backlog Size of the queue of incoming connections to keep.
+ *
+ * @return 0 on success.
+ */
 int net_tcp_listen(NETSOCKET sock, int backlog);
 
-/*
-	Function: net_tcp_accept
-		Polls a listning socket for a new connection.
+/**
+ * Polls a listning socket for a new connection.
+ *
+ * @ingroup Network-TCP
+ *
+ * @param sock - Listning socket to poll.
+ * @param new_sock - Pointer to a socket to fill in with the new socket.
+ * @param addr - Pointer to an address that will be filled in the remote address (optional, can be NULL).
+ *
+ * @return A non-negative integer on success. Negative integer on failure.
+ */
+int net_tcp_accept(NETSOCKET sock, NETSOCKET *new_sock, NETADDR *addr);
 
-	Parameters:
-		sock - Listning socket to poll.
-		new_sock - Pointer to a socket to fill in with the new socket.
-		addr - Pointer to an address that will be filled in the remote address (optional, can be NULL).
+/**
+ * Connects one socket to another.
+ *
+ * @ingroup Network-TCP
+ *
+ * @param sock Socket to connect.
+ * @param addr Address to connect to.
+ *
+ * @return 0 on success.
+ *
+ */
+int net_tcp_connect(NETSOCKET sock, const NETADDR *addr);
 
-	Returns:
-		Returns a non-negative integer on success. Negative integer on failure.
-*/
-int net_tcp_accept(NETSOCKET sock, NETSOCKET* new_sock, NETADDR* addr);
+/**
+ * Sends data to a TCP stream.
+ *
+ * @ingroup Network-TCP
+ *
+ * @param sock Socket to send data to.
+ * @param data Pointer to the data to send.
+ * @param size Size of the data to send.
+ *
+ * @return Number of bytes sent. Negative value on failure.
+ */
+int net_tcp_send(NETSOCKET sock, const void *data, int size);
 
-/*
-	Function: net_tcp_connect
-		Connects one socket to another.
+/**
+ * Recvives data from a TCP stream.
+ *
+ * @ingroup Network-TCP
+ *
+ * @param sock Socket to recvive data from.
+ * @param data Pointer to a buffer to write the data to
+ * @param max_size Maximum of data to write to the buffer.
+ *
+ * @return Number of bytes recvived. Negative value on failure. When in
+ * non-blocking mode, it returns 0 when there is no more data to
+ * be fetched.
+ */
+int net_tcp_recv(NETSOCKET sock, void *data, int maxsize);
 
-	Parameters:
-		sock - Socket to connect.
-		addr - Address to connect to.
-
-	Returns:
-		Returns 0 on success.
-
-*/
-int net_tcp_connect(NETSOCKET sock, const NETADDR* addr);
-
-/*
-	Function: net_tcp_send
-		Sends data to a TCP stream.
-
-	Parameters:
-		sock - Socket to send data to.
-		data - Pointer to the data to send.
-		size - Size of the data to send.
-
-	Returns:
-		Number of bytes sent. Negative value on failure.
-*/
-int net_tcp_send(NETSOCKET sock, const void* data, int size);
-
-/*
-	Function: net_tcp_recv
-		Recvives data from a TCP stream.
-
-	Parameters:
-		sock - Socket to recvive data from.
-		data - Pointer to a buffer to write the data to
-		max_size - Maximum of data to write to the buffer.
-
-	Returns:
-		Number of bytes recvived. Negative value on failure. When in
-		non-blocking mode, it returns 0 when there is no more data to
-		be fetched.
-*/
-int net_tcp_recv(NETSOCKET sock, void* data, int maxsize);
-
-/*
-	Function: net_tcp_close
-		Closes a TCP socket.
-
-	Parameters:
-		sock - Socket to close.
-
-	Returns:
-		Returns 0 on success. Negative value on failure.
-*/
+/**
+ * Closes a TCP socket.
+ *
+ * @ingroup Network-TCP
+ *
+ * @param sock Socket to close.
+ *
+ * @return 0 on success. Negative value on failure.
+ */
 int net_tcp_close(NETSOCKET sock);
 
 #if defined(CONF_FAMILY_UNIX)
-/* Group: Network Unix Sockets */
+/**
+ * @defgroup Network-Unix-Sockets
+ * @ingroup Network-General
+ */
 
-/*
-	Function: net_unix_create_unnamed
-		Creates an unnamed unix datagram socket.
+/**
+ * Creates an unnamed unix datagram socket.
+ *
+ * @ingroup Network-Unix-Sockets
+ *
+ * @return On success it returns a handle to the socket. On failure it returns -1.
+ */
+UNIXSOCKET net_unix_create_unnamed();
 
-	Returns:
-		On success it returns a handle to the socket. On failure it returns -1.
-*/
-UNIXSOCKET net_unix_create_unnamed(void);
+/**
+ * Sends data to a Unix socket.
+ *
+ * @ingroup Network-Unix-Sockets
+ *
+ * @param sock Socket to use.
+ * @param addr Where to send the packet.
+ * @param data Pointer to the packet data to send.
+ * @param size Size of the packet.
+ *
+ * @return Number of bytes sent. Negative value on failure.
+ */
+int net_unix_send(UNIXSOCKET sock, UNIXSOCKETADDR *addr, void *data, int size);
 
-/*
-	Function: net_unix_send
-		Sends data to a Unix socket.
+/**
+ * Sets the unixsocketaddress for a path to a socket file.
+ *
+ * @ingroup Network-Unix-Sockets
+ *
+ * @param addr Pointer to the addressstruct to fill.
+ * @param path Path to the (named) unix socket.
+ */
+void net_unix_set_addr(UNIXSOCKETADDR *addr, const char *path);
 
-	Parameters:
-		sock - Socket to use.
-		addr - Where to send the packet.
-		data - Pointer to the packet data to send.
-		size - Size of the packet.
-
-	Returns:
-		Number of bytes sent. Negative value on failure.
-*/
-int net_unix_send(UNIXSOCKET sock, UNIXSOCKETADDR* addr, void* data, int size);
-
-/*
-	Function: net_unix_set_addr
-		Sets the unixsocketaddress for a path to a socket file.
-
-	Parameters:
-		addr - Pointer to the addressstruct to fill.
-		path - Path to the (named) unix socket.
-*/
-void net_unix_set_addr(UNIXSOCKETADDR* addr, const char* path);
-
-/*
-	Function: net_unix_close
-		Closes a Unix socket.
-
-	Parameters:
-		sock - Socket to close.
-*/
+/**
+ * Closes a Unix socket.
+ *
+ * @ingroup Network-Unix-Sockets
+ *
+ * @param sock Socket to close.
+ */
 void net_unix_close(UNIXSOCKET sock);
+
+#elif defined(CONF_FAMILY_WINDOWS)
+
+/**
+ * Formats a Windows error code as a human-readable string.
+ *
+ * @param error The Windows error code.
+ *
+ * @return A new std::string representing the error code.
+ */
+std::string windows_format_system_message(unsigned long error);
 
 #endif
 
-/* Group: Strings */
+/**
+ * @defgroup Strings
+ *
+ * String related functions.
+ */
 
-/*
-	Function: str_append
-		Appends a string to another.
-
-	Parameters:
-		dst - Pointer to a buffer that contains a string.
-		src - String to append.
-		dst_size - Size of the buffer of the dst string.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-		- Garantees that dst string will contain zero-termination.
-*/
+/**
+ * Appends a string to another.
+ *
+ * @ingroup Strings
+ *
+ * @param dst Pointer to a buffer that contains a string.
+ * @param src String to append.
+ * @param dst_size Size of the buffer of the dst string.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Guarantees that dst string will contain zero-termination.
+ */
 void str_append(char *dst, const char *src, int dst_size);
 
+/**
+ * Appends a string to a fixed-size array of chars.
+ *
+ * @ingroup Strings
+ *
+ * @param dst Array that shall receive the string.
+ * @param src String to append.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Guarantees that dst string will contain zero-termination.
+ */
+template<int N>
+void str_append(char (&dst)[N], const char *src)
+{
+	str_append(dst, src, N);
+}
+
+/**
+ * Copies a string to another.
+ *
+ * @ingroup Strings
+ *
+ * @param dst Pointer to a buffer that shall receive the string.
+ * @param src String to be copied.
+ * @param dst_size Size of the buffer dst.
+ *
+ * @return Length of written string, even if it has been truncated
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Guarantees that dst string will contain zero-termination.
+ */
+int str_copy(char *dst, const char *src, int dst_size);
+
+/**
+ * Copies a string to a fixed-size array of chars.
+ *
+ * @ingroup Strings
+ *
+ * @param dst Array that shall receive the string.
+ * @param src String to be copied.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Guarantees that dst string will contain zero-termination.
+ */
+template<int N>
+void str_copy(char (&dst)[N], const char *src)
+{
+	str_copy(dst, src, N);
+}
+
 /*
-	Function: str_copy
-		Copies a string to another.
-
-	Parameters:
-		dst - Pointer to a buffer that shall receive the string.
-		src - String to be copied.
-		dst_size - Size of the buffer dst.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-		- Garantees that dst string will contain zero-termination.
-*/
-void str_copy(char *dst, const char *src, int dst_size);
-
-
+ * String append num
+ */
 void str_append_num(char* dst, const char* src, int dst_size, int num);
+
+/*
+ * String replace
+ */
 void str_replace(char* str, const char* from, const char* to);
 
-/*
-	Function: str_truncate
-		Truncates a string to a given length.
+/**
+ * Truncates a utf8 encoded string to a given length.
+ *
+ * @ingroup Strings
+ *
+ * @param dst Pointer to a buffer that shall receive the string.
+ * @param dst_size Size of the buffer dst.
+ * @param str String to be truncated.
+ * @param truncation_len Maximum codepoints in the returned string.
+ *
+ * @remark The strings are treated as utf8-encoded zero-terminated strings.
+ * @remark Guarantees that dst string will contain zero-termination.
+ */
+void str_utf8_truncate(char *dst, int dst_size, const char *src, int truncation_len);
 
-	Parameters:
-		dst - Pointer to a buffer that shall receive the string.
-		dst_size - Size of the buffer dst.
-		src - String to be truncated.
-		truncation_len - Maximum length of the returned string (not
-		counting the zero termination).
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-		- Garantees that dst string will contain zero-termination.
-*/
+/**
+ * Truncates a string to a given length.
+ *
+ * @ingroup Strings
+ *
+ * @param dst Pointer to a buffer that shall receive the string.
+ * @param dst_size Size of the buffer dst.
+ * @param src String to be truncated.
+ * @param truncation_len Maximum length of the returned string (not
+ * counting the zero termination).
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Guarantees that dst string will contain zero-termination.
+ */
 void str_truncate(char *dst, int dst_size, const char *src, int truncation_len);
 
-/*
-	Function: str_length
-		Returns the length of a zero terminated string.
-
-	Parameters:
-		str - Pointer to the string.
-
-	Returns:
-		Length of string in bytes excluding the zero termination.
-*/
+/**
+ * Returns the length of a zero terminated string.
+ *
+ * @ingroup Strings
+ *
+ * @param str Pointer to the string.
+ *
+ * @return Length of string in bytes excluding the zero termination.
+ */
 int str_length(const char *str);
 
-/*
-	Function: str_format
-		Performs printf formating into a buffer.
+/**
+ * Performs printf formatting into a buffer.
+ *
+ * @ingroup Strings
+ *
+ * @param buffer Pointer to the buffer to receive the formatted string.
+ * @param buffer_size Size of the buffer.
+ * @param format printf formatting string.
+ * @param args The variable argument list.
+ *
+ * @return Length of written string, even if it has been truncated.
+ *
+ * @remark See the C manual for syntax for the printf formatting string.
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Guarantees that buffer string will contain zero-termination.
+ */
+int str_format_v(char *buffer, int buffer_size, const char *format, va_list args)
+	GNUC_ATTRIBUTE((format(printf, 3, 0)));
 
-	Parameters:
-		buffer - Pointer to the buffer to recive the formated string.
-		buffer_size - Size of the buffer.
-		format - printf formating string.
-		... - Parameters for the formating.
-
-	Remarks:
-		- See the C manual for syntax for the printf formating string.
-		- The strings are treated as zero-terminated strings.
-		- Garantees that dst string will contain zero-termination.
-*/
+/**
+ * Performs printf formatting into a buffer.
+ *
+ * @ingroup Strings
+ *
+ * @param buffer Pointer to the buffer to receive the formatted string.
+ * @param buffer_size Size of the buffer.
+ * @param format printf formatting string.
+ * @param ... Parameters for the formatting.
+ *
+ * @return Length of written string, even if it has been truncated.
+ *
+ * @remark See the C manual for syntax for the printf formatting string.
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Guarantees that buffer string will contain zero-termination.
+ */
 int str_format(char *buffer, int buffer_size, const char *format, ...)
-GNUC_ATTRIBUTE((format(printf, 3, 4)));
+	GNUC_ATTRIBUTE((format(printf, 3, 4)));
 
-/*
-	Function: str_sanitize_strong
-		Replaces all characters below 32 and above 127 with whitespace.
+/**
+ * Trims specific number of words at the start of a string.
+ *
+ * @ingroup Strings
+ *
+ * @param str String to trim the words from.
+ * @param words Count of words to trim.
+ *
+ * @return Trimmed string
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Leading whitespace is always trimmed.
+ */
+const char *str_trim_words(const char *str, int words);
 
-	Parameters:
-		str - String to sanitize.
+/**
+ * Check whether string has ASCII control characters.
+ *
+ * @ingroup Strings
+ *
+ * @param str String to check.
+ *
+ * @return Whether the string has ASCII control characters.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+bool str_has_cc(const char *str);
 
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
-void str_sanitize_strong(char *str);
-
-/*
-	Function: str_sanitize_cc
-		Replaces all characters below 32 with whitespace.
-
-	Parameters:
-		str - String to sanitize.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Replaces all characters below 32 with whitespace.
+ *
+ * @ingroup Strings
+ *
+ * @param str String to sanitize.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 void str_sanitize_cc(char *str);
 
-/*
-	Function: str_sanitize
-		Replaces all characters below 32 with whitespace with
-		exception to \t, \n and \r.
-
-	Parameters:
-		str - String to sanitize.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Replaces all characters below 32 with whitespace with
+ * exception to \t, \n and \r.
+ *
+ * @ingroup Strings
+ *
+ * @param str String to sanitize.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 void str_sanitize(char *str);
 
-/*
-	Function: str_sanitize_filename
-		Replaces all forbidden Windows/Unix characters with whitespace
-		or nothing if leading or trailing.
+/**
+ * Replaces all invalid filename characters with whitespace.
+ *
+ * @param str String to sanitize.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+void str_sanitize_filename(char *str);
 
-	Parameters:
-		str - String to sanitize.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
-char* str_sanitize_filename(char* aName);
-
-/*
-	Function: str_check_pathname
-		Check if the string contains '..' (parent directory) paths.
-
-	Parameters:
-		str - String to check.
-
-	Returns:
-		Returns 0 if the path is valid, -1 otherwise.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
-int str_check_pathname(const char* str);
-
-/*
-	Function: str_clean_whitespaces
-		Removes leading and trailing spaces and limits the use of multiple spaces.
-
-	Parameters:
-		str - String to clean up
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Removes leading and trailing spaces and limits the use of multiple spaces.
+ *
+ * @ingroup Strings
+ *
+ * @param str String to clean up
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 void str_clean_whitespaces(char *str);
 
-/*
-	Function: str_clean_whitespaces_simple
-		Removes leading and trailing spaces
-
-	Parameters:
-		str - String to clean up
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
-void str_clean_whitespaces_simple(char *str);
-
-/*
-	Function: str_skip_to_whitespace
-		Skips leading non-whitespace characters(all but ' ', '\t', '\n', '\r').
-
-	Parameters:
-		str - Pointer to the string.
-
-	Returns:
-		Pointer to the first whitespace character found
-		within the string.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Skips leading non-whitespace characters.
+ *
+ * @ingroup Strings
+ *
+ * @param str Pointer to the string.
+ *
+ * @return Pointer to the first whitespace character found
+ *		   within the string.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Whitespace is defined according to str_isspace.
+ */
 char *str_skip_to_whitespace(char *str);
 
-/*
-	Function: str_skip_to_whitespace_const
-		See str_skip_to_whitespace.
-*/
+/**
+ * @ingroup Strings
+ * @see str_skip_to_whitespace
+ */
 const char *str_skip_to_whitespace_const(const char *str);
 
-/*
-	Function: str_skip_whitespaces
-		Skips leading whitespace characters(' ', '\t', '\n', '\r').
-
-	Parameters:
-		str - Pointer to the string.
-
-	Returns:
-		Pointer to the first non-whitespace character found
-		within the string.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Skips leading whitespace characters.
+ *
+ * @ingroup Strings
+ *
+ * @param str Pointer to the string.
+ *
+ * Pointer to the first non-whitespace character found
+ * within the string.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Whitespace is defined according to str_isspace.
+ */
 char *str_skip_whitespaces(char *str);
 
-/*
-	Function: str_skip_whitespaces_const
-		See str_skip_whitespaces.
-*/
-const char* str_skip_whitespaces_const(const char* str);
+/**
+ * @ingroup Strings
+ * @see str_skip_whitespaces
+ */
+const char *str_skip_whitespaces_const(const char *str);
 
 /*
 	Function: stringtonumber
@@ -1160,135 +1397,144 @@ const char* str_skip_whitespaces_const(const char* str);
 */
 int string_to_number(const char* pmgs, int minimal, int maximal);
 
-/*
-	Function: str_comp_nocase
-		Compares to strings case insensitive.
-
-	Parameters:
-		a - String to compare.
-		b - String to compare.
-
-	Returns:
-		<0 - String a is lesser then string b
-		0 - String a is equal to string b
-		>0 - String a is greater then string b
-
-	Remarks:
-		- Only garanted to work with a-z/A-Z.
-		- The strings are treated as zero-terminated strings.
-*/
-int PPSTR(const char* a, const char* b);
+/**
+ * Compares to strings case insensitively.
+ *
+ * @ingroup Strings
+ *
+ * @param a String to compare.
+ * @param b String to compare.
+ *
+ * @return `< 0` - String a is less than string b
+ * @return `0` - String a is equal to string b
+ * @return `> 0` - String a is greater than string b
+ *
+ * @remark Only guaranteed to work with a-z/A-Z.
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int str_comp_nocase(const char *a, const char *b);
+inline int PPSTR(const char* a, const char* b) { return str_comp_nocase(a, b); }
 
-/*
-	Function: str_comp_nocase_num
-		Compares up to num characters of two strings case insensitive.
-
-	Parameters:
-		a - String to compare.
-		b - String to compare.
-		num - Maximum characters to compare
-
-	Returns:
-		<0 - String a is lesser than string b
-		0 - String a is equal to string b
-		>0 - String a is greater than string b
-
-	Remarks:
-		- Only garanted to work with a-z/A-Z.
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Compares up to num characters of two strings case insensitively.
+ *
+ * @ingroup Strings
+ *
+ * @param a String to compare.
+ * @param b String to compare.
+ * @param num Maximum characters to compare
+ *
+ * @return `< 0` - String a is less than string b
+ * @return `0` - String a is equal to string b
+ * @return `> 0` - String a is greater than string b
+ *
+ * @remark Only guaranteed to work with a-z/A-Z.
+ * (use str_utf8_comp_nocase_num for unicode support)
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int str_comp_nocase_num(const char *a, const char *b, int num);
 
-/*
-	Function: str_comp
-		Compares to strings case sensitive.
-
-	Parameters:
-		a - String to compare.
-		b - String to compare.
-
-	Returns:
-		<0 - String a is lesser then string b
-		0 - String a is equal to string b
-		>0 - String a is greater then string b
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Compares two strings case sensitive.
+ *
+ * @ingroup Strings
+ *
+ * @param a String to compare.
+ * @param b String to compare.
+ *
+ * @return `< 0` - String a is less than string b
+ * @return `0` - String a is equal to string b
+ * @return `> 0` - String a is greater than string b
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int str_comp(const char *a, const char *b);
 
-/*
-	Function: str_comp_num
-		Compares up to num characters of two strings case sensitive.
-
-	Parameters:
-		a - String to compare.
-		b - String to compare.
-		num - Maximum characters to compare
-
-	Returns:
-		<0 - String a is lesser then string b
-		0 - String a is equal to string b
-		>0 - String a is greater then string b
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Compares up to num characters of two strings case sensitive.
+ *
+ * @ingroup Strings
+ *
+ * @param a String to compare.
+ * @param b String to compare.
+ * @param num Maximum characters to compare
+ *
+ * @return `< 0` - String a is less than string b
+ * @return `0` - String a is equal to string b
+ * @return `> 0` - String a is greater than string b
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int str_comp_num(const char *a, const char *b, int num);
 
-/*
-	Function: str_comp_filenames
-		Compares two strings case sensitive, digit chars will be compared as numbers.
-
-	Parameters:
-		a - String to compare.
-		b - String to compare.
-
-	Returns:
-		<0 - String a is lesser then string b
-		0 - String a is equal to string b
-		>0 - String a is greater then string b
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Compares two strings case insensitive, digit chars will be compared as numbers.
+ *
+ * @ingroup Strings
+ *
+ * @param a String to compare.
+ * @param b String to compare.
+ *
+ * @return `< 0` - String a is less than string b
+ * @return `0` - String a is equal to string b
+ * @return `> 0` - String a is greater than string b
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int str_comp_filenames(const char *a, const char *b);
 
 /*
-	Function: str_startswith
-		Checks whether the string begins with a certain prefix.
+       Function: str_startswith_nocase
+               Checks case insensitive whether the string begins with a certain prefix.
 
-	Parameter:
-		str - String to check.
-		prefix - Prefix to look for.
+       Parameter:
+               str - String to check.
+               prefix - Prefix to look for.
 
-	Returns:
-		A pointer to the string str after the string prefix, or 0 if
-		the string prefix isn't a prefix of the string str.
+       Returns:
+               A pointer to the string str after the string prefix, or 0 if
+               the string prefix isn't a prefix of the string str.
 
-	Remarks:
-		- The strings are treated as zero-terminated strings.
+       Remarks:
+               - The strings are treated as zero-terminated strings.
 */
+const char *str_startswith_nocase(const char *str, const char *prefix);
+
+/**
+ * Checks case sensitive whether the string begins with a certain prefix.
+ *
+ * @ingroup Strings
+ *
+ * @param str String to check.
+ * @param prefix Prefix to look for.
+ *
+ * @return A pointer to the string str after the string prefix, or 0 if
+ *		   the string prefix isn't a prefix of the string str.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 const char *str_startswith(const char *str, const char *prefix);
 
 /*
-	Function: str_startswith_nocase
-		Checks case insensitive whether the string begins with a certain prefix.
-	Parameter:
-		str - String to check.
-		prefix - Prefix to look for.
-	Returns:
-		A pointer to the string str after the string prefix, or 0 if
-		the string prefix isn't a prefix of the string str.
-	Remarks:
-		- The strings are treated as zero-terminated strings.
+       Function: str_endswith_nocase
+               Checks case insensitive whether the string ends with a certain suffix.
+
+       Parameter:
+               str - String to check.
+               suffix - Suffix to look for.
+
+       Returns:
+               A pointer to the beginning of the suffix in the string str, or
+               0 if the string suffix isn't a suffix of the string str.
+
+       Remarks:
+               - The strings are treated as zero-terminated strings.
 */
-const char* str_startswith_nocase(const char* str, const char* prefix);
+const char *str_endswith_nocase(const char *str, const char *suffix);
 
 /*
 	Function: str_endswith
-		Checks whether the string ends with a certain suffix.
+		Checks case sensitive whether the string ends with a certain suffix.
 
 	Parameter:
 		str - String to check.
@@ -1303,23 +1549,61 @@ const char* str_startswith_nocase(const char* str, const char* prefix);
 */
 const char *str_endswith(const char *str, const char *suffix);
 
+/**
+ * Computes the edit distance between two strings.
+ *
+ * @param a First string for the edit distance.
+ * @param b Second string for the edit distance.
+ *
+ * @return The edit distance between the both strings.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+int str_utf8_dist(const char *a, const char *b);
+
+/**
+ * Computes the edit distance between two strings, allows buffers
+ * to be passed in.
+ *
+ * @ingroup Strings
+ *
+ * @param a - First string for the edit distance.
+ * @param b - Second string for the edit distance.
+ * @param buf - Buffer for the function.
+ * @param buf_len Length of the buffer, must be at least as long as
+ *				  twice the length of both strings combined plus two.
+ *
+ * @return The edit distance between the both strings.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+int str_utf8_dist_buffer(const char *a, const char *b, int *buf, int buf_len);
+
 /*
-	Function: str_endswith_nocase
-		Checks case insensitive whether the string ends with a certain suffix.
-	Parameter:
-		str - String to check.
-		suffix - Suffix to look for.
+	Function: str_utf32_dist_buffer
+		Computes the edit distance between two strings, allows buffers
+		to be passed in.
+
+	Parameters:
+		a - First string for the edit distance.
+		a_len - Length of the first string.
+		b - Second string for the edit distance.
+		b_len - Length of the second string.
+		buf - Buffer for the function.
+		buf_len - Length of the buffer, must be at least as long as
+		          the length of both strings combined plus two.
+
 	Returns:
-		A pointer to the beginning of the suffix in the string str, or
-		0 if the string suffix isn't a suffix of the string str.
+		The edit distance between the both strings.
+
 	Remarks:
 		- The strings are treated as zero-terminated strings.
 */
-const char* str_endswith_nocase(const char* str, const char* suffix);
+int str_utf32_dist_buffer(const int *a, int a_len, const int *b, int b_len, int *buf, int buf_len);
 
 /*
 	Function: str_find_nocase
-		Finds a string inside another string case insensitive.
+		Finds a string inside another string case insensitively.
 
 	Parameters:
 		haystack - String to search in
@@ -1327,10 +1611,11 @@ const char* str_endswith_nocase(const char* str, const char* suffix);
 
 	Returns:
 		A pointer into haystack where the needle was found.
-		Returns NULL of needle could not be found.
+		Returns NULL if needle could not be found.
 
 	Remarks:
-		- Only garanted to work with a-z/A-Z.
+		- Only guaranteed to work with a-z/A-Z.
+		  (use str_utf8_find_nocase for unicode support)
 		- The strings are treated as zero-terminated strings.
 */
 const char *str_find_nocase(const char *haystack, const char *needle);
@@ -1345,40 +1630,88 @@ const char *str_find_nocase(const char *haystack, const char *needle);
 
 	Returns:
 		A pointer into haystack where the needle was found.
-		Returns NULL of needle could not be found.
+		Returns NULL if needle could not be found.
 
 	Remarks:
 		- The strings are treated as zero-terminated strings.
 */
 const char *str_find(const char *haystack, const char *needle);
 
+/**
+ * Finds the last occurrence of a character
+ *
+ * @ingroup Strings
+ *
+ * @param haystack String to search in
+ * @param needle Character to search for
 
-/*
-	Function: str_hex
-		Takes a datablock and generates a hex string of it, with spaces
-		between bytes.
-	Parameters:
-		dst - Buffer to fill with hex data
-		dst_size - size of the buffer
-		data - Data to turn into hex
-		data - Size of the data
-	Remarks:
-		- The destination buffer will be zero-terminated
-*/
+ * @return A pointer into haystack where the needle was found.
+ * Returns NULL if needle could not be found.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark The zero-terminator character can also be found with this function.
+ */
+const char *str_rchr(const char *haystack, char needle);
+
+/**
+ * Counts the number of occurrences of a character in a string.
+ *
+ * @ingroup Strings
+ *
+ * @param haystack String to count in
+ * @param needle Character to count
+
+ * @return The number of characters in the haystack string matching
+ * the needle character.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark The number of zero-terminator characters cannot be counted.
+ */
+int str_countchr(const char *haystack, char needle);
+
+/**
+ * Takes a datablock and generates a hex string of it, with spaces between bytes.
+ *
+ * @param dst Buffer to fill with hex data.
+ * @param dst_size Size of the buffer (at least 3 * data_size + 1 to contain all data).
+ * @param data Data to turn into hex.
+ * @param data_size Size of the data.
+ *
+ * @remark The destination buffer will be zero-terminated.
+ */
 void str_hex(char *dst, int dst_size, const void *data, int data_size);
+
+/**
+ * Takes a datablock and generates a hex string of it, in the C style array format,
+ * i.e. with bytes formatted in 0x00-0xFF notation and commas with spaces between the bytes.
+ * The output can be split over multiple lines by specifying the maximum number of bytes
+ * that should be printed per line.
+ *
+ * @param dst Buffer to fill with hex data.
+ * @param dst_size Size of the buffer (at least 6 * data_size + 1 to contain all data).
+ * @param data Data to turn into hex.
+ * @param data_size Size of the data.
+ * @param bytes_per_line After this many printed bytes a newline will be printed.
+ *
+ * @remark The destination buffer will be zero-terminated.
+ */
+void str_hex_cstyle(char *dst, int dst_size, const void *data, int data_size, int bytes_per_line = 12);
 
 /*
 	Function: str_hex_decode
 		Takes a hex string *without spaces between bytes* and returns a
 		byte array.
+
 	Parameters:
 		dst - Buffer for the byte array
 		dst_size - size of the buffer
 		data - String to decode
+
 	Returns:
 		2 - String doesn't exactly fit the buffer
 		1 - Invalid character in string
 		0 - Success
+
 	Remarks:
 		- The contents of the buffer is only valid on success
 */
@@ -1387,11 +1720,13 @@ int str_hex_decode(void *dst, int dst_size, const char *src);
 /*
 	Function: str_base64
 		Takes a datablock and generates the base64 encoding of it.
+
 	Parameters:
 		dst - Buffer to fill with base64 data
 		dst_size - Size of the buffer
 		data - Data to turn into base64
 		data - Size of the data
+
 	Remarks:
 		- The destination buffer will be zero-terminated
 */
@@ -1401,29 +1736,20 @@ void str_base64(char *dst, int dst_size, const void *data, int data_size);
 	Function: str_base64_decode
 		Takes a base64 string without any whitespace and correct
 		padding and returns a byte array.
+
 	Parameters:
 		dst - Buffer for the byte array
 		dst_size - Size of the buffer
 		data - String to decode
+
 	Returns:
 		<0 - Error
 		>= 0 - Success, length of the resulting byte buffer
+
 	Remarks:
 		- The contents of the buffer is only valid on success
 */
 int str_base64_decode(void *dst, int dst_size, const char *data);
-
-/*
-	Function: str_is_number
-		Check if the string contains only digits.
-	Parameters:
-		str - String to check.
-	Returns:
-		Returns 1 if it's a number, 0 otherwise.
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
-int str_is_number(const char* pstr);
 
 /*
 	Function: str_timestamp
@@ -1437,183 +1763,323 @@ int str_is_number(const char* pstr);
 		- Guarantees that buffer string will contain zero-termination.
 */
 void str_timestamp(char *buffer, int buffer_size);
-void str_timestamp_format(char* buffer, int buffer_size, const char* format)
-GNUC_ATTRIBUTE((format(strftime, 3, 0)));
-void str_timestamp_ex(time_t time, char* buffer, int buffer_size, const char* format)
-GNUC_ATTRIBUTE((format(strftime, 4, 0)));
-
-/*
-	Function: str_span
-		Returns the length of the minimum initial segment that doesn't contain characters in set
-	Parameters:
-		str - String to search in
-		set - Set of characters to stop on
-	Remarks:
-		- Also stops on '\0'
-*/
-int str_span(const char* str, const char* set);
+void str_timestamp_format(char *buffer, int buffer_size, const char *format)
+	GNUC_ATTRIBUTE((format(strftime, 3, 0)));
+void str_timestamp_ex(time_t time, char *buffer, int buffer_size, const char *format)
+	GNUC_ATTRIBUTE((format(strftime, 4, 0)));
 
 #define FORMAT_TIME "%H:%M:%S"
 #define FORMAT_SPACE "%Y-%m-%d %H:%M:%S"
 #define FORMAT_NOSPACE "%Y-%m-%d_%H-%M-%S"
 
-/* Group: Filesystem */
+enum
+{
+	TIME_DAYS,
+	TIME_HOURS,
+	TIME_MINS,
+	TIME_HOURS_CENTISECS,
+	TIME_MINS_CENTISECS,
+};
 
 /*
-	Function: fs_listdir
-		Lists the files in a directory
+	Function: str_times
+		Formats a time string.
 
 	Parameters:
-		dir - Directory to list
-		cb - Callback function to call for each entry
-		type - Type of the directory
-		user - Pointer to give to the callback
+		centisecs - Time in centiseconds, minimum value clamped to 0
+		format - Format of the time string, see enum above, for example TIME_DAYS
+		buffer - Pointer to a buffer that shall receive the time stamp string.
+		buffer_size - Size of the buffer.
 
 	Returns:
-		Always returns 0.
-*/
-typedef int (*FS_LISTDIR_CALLBACK)(const char* name, int is_dir, int dir_type, void* user);
-typedef int (*FS_LISTDIR_INFO_CALLBACK)(const char* name, time_t date, int is_dir, int dir_type, void* user);
-int fs_listdir(const char* dir, FS_LISTDIR_CALLBACK cb, int type, void* user);
-int fs_listdir_info(const char* dir, FS_LISTDIR_INFO_CALLBACK cb, int type, void* user);
-
-/*
-	Function: fs_makedir
-		Creates a directory
-
-	Parameters:
-		path - Directory to create
-
-	Returns:
-		Returns 0 on success. Negative value on failure.
+		Number of bytes written, -1 on invalid format or buffer_size <= 0
 
 	Remarks:
-		Does not create several directories if needed. "a/b/c" will result
-		in a failure if b or a does not exist.
+		- Guarantees that buffer string will contain zero-termination, assuming
+		  buffer_size > 0.
 */
+int str_time(int64_t centisecs, int format, char *buffer, int buffer_size);
+int str_time_float(float secs, int format, char *buffer, int buffer_size);
+
+/*
+	Function: str_escape
+		Escapes \ and " characters in a string.
+
+	Parameters:
+		dst - Destination array pointer, gets increased, will point to
+		      the terminating null.
+		src - Source array
+		end - End of destination array
+*/
+void str_escape(char **dst, const char *src, const char *end);
+
+/**
+ * @defgroup Filesystem
+ *
+ * Utilities for accessing the file system.
+ */
+
+/**
+ * Lists the files and folders in a directory.
+ *
+ * @ingroup Filesystem
+ *
+ * @param dir Directory to list.
+ * @param cb Callback function to call for each entry.
+ * @param type Type of the directory.
+ * @param user Pointer to give to the callback.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+typedef int (*FS_LISTDIR_CALLBACK)(const char *name, int is_dir, int dir_type, void *user);
+void fs_listdir(const char *dir, FS_LISTDIR_CALLBACK cb, int type, void *user);
+
+typedef struct
+{
+	const char *m_pName;
+	time_t m_TimeCreated; // seconds since UNIX Epoch
+	time_t m_TimeModified; // seconds since UNIX Epoch
+} CFsFileInfo;
+
+/**
+ * Lists the files and folders in a directory and gets additional file information.
+ *
+ * @ingroup Filesystem
+ *
+ * @param dir Directory to list.
+ * @param cb Callback function to call for each entry.
+ * @param type Type of the directory.
+ * @param user Pointer to give to the callback.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+typedef int (*FS_LISTDIR_CALLBACK_FILEINFO)(const CFsFileInfo *info, int is_dir, int dir_type, void *user);
+void fs_listdir_fileinfo(const char *dir, FS_LISTDIR_CALLBACK_FILEINFO cb, int type, void *user);
+
+/**
+ * Creates a directory.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path Directory to create.
+ *
+ * @return 0 on success. Negative value on failure.
+ *
+ * @remark Does not create several directories if needed. "a/b/c" will
+ * result in a failure if b or a does not exist.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int fs_makedir(const char *path);
 
-/*
-	Function: fs_makedir_rec_for
-		Recursively create directories for a file
-	Parameters:
-		path - File for which to create directories
-	Returns:
-		Returns 0 on success. Negative value on failure.
-*/
+/**
+ * Removes a directory.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path Directory to remove.
+ *
+ * @return 0 on success. Negative value on failure.
+ *
+ * @remark Cannot remove a non-empty directory.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+int fs_removedir(const char *path);
+
+/**
+ * Recursively create directories for a file.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path - File for which to create directories.
+ *
+ * @return 0 on success. Negative value on failure.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int fs_makedir_rec_for(const char *path);
 
-/*
-	Function: fs_makedir_recursive
-		Recursively create directories
-
-	Parameters:
-		path - Path to create
-
-	Returns:
-		Returns 0 on success. Negative value on failure.
-*/
-int fs_makedir_recursive(const char *path);
-
-
-/*
-	Function: fs_storage_path
-		Fetches per user configuration directory.
-
-	Returns:
-		Returns 0 on success. Negative value on failure.
-
-	Remarks:
-		- Returns ~/.appname on UNIX based systems
-		- Returns ~/Library/Applications Support/appname on Mac OS X
-		- Returns %APPDATA%/Appname on Windows based systems
-*/
+/**
+ * Fetches per user configuration directory.
+ *
+ * @ingroup Filesystem
+ *
+ * @param appname Name of the application.
+ * @param path Buffer that will receive the storage path.
+ * @param max Size of the buffer.
+ *
+ * @return 0 on success. Negative value on failure.
+ *
+ * @remark Returns ~/.appname on UNIX based systems.
+ * @remark Returns ~/Library/Applications Support/appname on macOS.
+ * @remark Returns %APPDATA%/Appname on Windows based systems.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int fs_storage_path(const char *appname, char *path, int max);
 
-/*
-	Function: fs_is_dir
-		Checks if directory exists
+/**
+ * Checks if a file exists.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path the path to check.
+ *
+ * @return 1 if a file with the given path exists,
+ * 0 on failure or if the file does not exist.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+int fs_is_file(const char *path);
 
-	Returns:
-		Returns 1 on success, 0 on failure.
-*/
+/**
+ * Checks if a folder exists.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path the path to check.
+ *
+ * @return 1 if a folder with the given path exists,
+ * 0 on failure or if the folder does not exist.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int fs_is_dir(const char *path);
 
+/**
+ * Checks whether a given path is relative or absolute.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path Path to check.
+ *
+ * @return 1 if relative, 0 if absolute.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
+int fs_is_relative_path(const char *path);
 
-/*
-	Function: fs_getmtime
-		Gets the modification time of a file
-*/
-time_t fs_getmtime(const char* path);
-
-/*
-	Function: fs_chdir
-		Changes current working directory
-
-	Returns:
-		Returns 0 on success, 1 on failure.
-*/
+/**
+ * Changes the current working directory.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path New working directory path.
+ *
+ * @return 0 on success, 1 on failure.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int fs_chdir(const char *path);
 
-/*
-	Function: fs_getcwd
-		Gets the current working directory.
-
-	Returns:
-		Returns a pointer to the buffer on success, 0 on failure.
-*/
+/**
+ * Gets the current working directory.
+ *
+ * @ingroup Filesystem
+ *
+ * @param buffer Buffer that will receive the current working directory.
+ * @param buffer_size Size of the buffer.
+ *
+ * @return Pointer to the buffer on success, nullptr on failure.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 char *fs_getcwd(char *buffer, int buffer_size);
 
-/*
-	Function: fs_parent_dir
-		Get the parent directory of a directory
+/**
+ * Gets the name of a file or folder specified by a path,
+ * i.e. the last segment of the path.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path Path from which to retrieve the filename.
+ *
+ * @return Filename of the path.
+ *
+ * @remark Supports forward and backward slashes as path segment separator.
+ * @remark No distinction between files and folders is being made.
+ * @remark The strings are treated as zero-terminated strings.
+ */
+const char *fs_filename(const char *path);
 
-	Parameters:
-		path - The directory string
+/**
+ * Splits a filename into name (without extension) and file extension.
+ *
+ * @ingroup Filesystem
+ *
+ * @param filename The filename to split.
+ * @param name Buffer that will receive the name without extension, may be nullptr.
+ * @param name_size Size of the name buffer (ignored if name is nullptr).
+ * @param extension Buffer that will receive the extension, may be nullptr.
+ * @param extension_size Size of the extension buffer (ignored if extension is nullptr).
+ *
+ * @remark Does NOT handle forward and backward slashes.
+ * @remark No distinction between files and folders is being made.
+ * @remark The strings are treated as zero-terminated strings.
+ */
+void fs_split_file_extension(const char *filename, char *name, size_t name_size, char *extension = nullptr, size_t extension_size = 0);
 
-	Returns:
-		Returns 0 on success, 1 on failure.
-
-	Remarks:
-		- The string is treated as zero-terminated string.
-*/
+/**
+ * Get the parent directory of a directory.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path Path of the directory. The parent will be store in this buffer as well.
+ *
+ * @return 0 on success, 1 on failure.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int fs_parent_dir(char *path);
 
-/*
-	Function: fs_remove
-		Deletes the file with the specified name.
-
-	Parameters:
-		filename - The file to delete
-
-	Returns:
-		Returns 0 on success, 1 on failure.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Deletes a file.
+ *
+ * @ingroup Filesystem
+ *
+ * @param filename Path of the file to delete.
+ *
+ * @return 0 on success, 1 on failure.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Returns an error if the path specifies a directory name.
+ */
 int fs_remove(const char *filename);
 
-/*
-	Function: fs_rename
-		Renames the file or directory. If the paths differ the file will be moved.
-
-	Parameters:
-		oldname - The actual name
-		newname - The new name
-
-	Returns:
-		Returns 0 on success, 1 on failure.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-*/
+/**
+ * Renames the file or directory. If the paths differ the file will be moved.
+ *
+ * @ingroup Filesystem
+ *
+ * @param oldname The current path of a file or directory.
+ * @param newname The new path for the file or directory.
+ *
+ * @return 0 on success, 1 on failure.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ */
 int fs_rename(const char *oldname, const char *newname);
+
+/**
+ * Gets the creation and the last modification date of a file or directory.
+ *
+ * @ingroup Filesystem
+ *
+ * @param name Path of a file or directory.
+ * @param created Pointer where the creation time will be stored.
+ * @param modified Pointer where the modification time will be stored.
+ *
+ * @return 0 on success, non-zero on failure.
+ *
+ * @remark The strings are treated as zero-terminated strings.
+ * @remark Returned time is in seconds since UNIX Epoch.
+ */
+int fs_file_time(const char *name, time_t *created, time_t *modified);
 
 /*
 	Group: Undocumented
 */
-
 
 /*
 	Function: net_tcp_connect_non_blocking
@@ -1652,61 +2118,196 @@ int net_would_block();
 
 int net_socket_read_wait(NETSOCKET sock, int time);
 
+/*
+	Function: open_link
+		Opens a link in the browser.
+
+	Parameters:
+		link - The link to open in a browser.
+
+	Returns:
+		Returns 1 on success, 0 on failure.
+
+	Remarks:
+		This may not be called with untrusted input or it'll result in arbitrary code execution, especially on Windows.
+*/
+int open_link(const char *link);
+
+/*
+	Function: open_file
+		Opens a file or directory with default program.
+
+	Parameters:
+		path - The path to open.
+
+	Returns:
+		Returns 1 on success, 0 on failure.
+
+	Remarks:
+		This may not be called with untrusted input or it'll result in arbitrary code execution, especially on Windows.
+*/
+int open_file(const char *path);
+
+/**
+ * Swaps the endianness of data. Each element is swapped individually by reversing its bytes.
+ *
+ * @param data Pointer to data to be swapped.
+ * @param elem_size Size in bytes of each element.
+ * @param num Number of elements.
+ *
+ * @remark The caller must ensure that the data is at least `elem_size * num` bytes in size.
+ */
 void swap_endian(void *data, unsigned elem_size, unsigned num);
-
-
-typedef void (*DBG_LOGGER)(const char *line);
-void dbg_logger(DBG_LOGGER logger);
-
-void dbg_logger_stdout();
-void dbg_logger_debugger();
-void dbg_logger_file(const char *filename);
-
-#if defined(CONF_FAMILY_WINDOWS)
-void dbg_console_init();
-void dbg_console_cleanup();
-#endif
 
 typedef struct
 {
-	int sent_packets;
-	int sent_bytes;
-	int recv_packets;
-	int recv_bytes;
+	uint64_t sent_packets;
+	uint64_t sent_bytes;
+	uint64_t recv_packets;
+	uint64_t recv_bytes;
 } NETSTATS;
-
 
 void net_stats(NETSTATS *stats);
 
 int str_toint(const char *str);
+int str_toint_base(const char *str, int base);
+unsigned long str_toulong_base(const char *str, int base);
+int64_t str_toint64_base(const char *str, int base = 10);
 float str_tofloat(const char *str);
+
+void str_from_int(int value, char *buffer, size_t buffer_size);
+
+template<size_t N>
+void str_from_int(int value, char (&dst)[N])
+{
+	str_from_int(value, dst, N);
+}
+
+/**
+ * Determines whether a character is whitespace.
+ *
+ * @ingroup Strings
+ *
+ * @param c the character to check
+ *
+ * @return 1 if the character is whitespace, 0 otherwise.
+ *
+ * @remark The following characters are considered whitespace: ' ', '\n', '\r', '\t'
+ */
 int str_isspace(char c);
+
 char str_uppercase(char c);
+
 int str_isallnum(const char *str);
+
+int str_isallnum_hex(const char *str);
+
 unsigned str_quickhash(const char *str);
 
 enum
 {
-	UTF8_BYTE_LENGTH = 4
+	/**
+	 * The maximum bytes necessary to encode one Unicode codepoint with UTF-8.
+	 */
+	UTF8_BYTE_LENGTH = 4,
 };
+
+int str_utf8_to_skeleton(const char *str, int *buf, int buf_len);
+
+/*
+	Function: str_utf8_comp_confusable
+		Compares two strings for visual appearance.
+
+	Parameters:
+		str1 - String to compare.
+		str2 - String to compare.
+
+	Returns:
+		0 if the strings are confusable.
+		!=0 otherwise.
+*/
+int str_utf8_comp_confusable(const char *str1, const char *str2);
+
+/*
+	Function: str_utf8_tolower
+		Converts the given Unicode codepoint to lowercase (locale insensitive).
+
+	Parameters:
+		code - Unicode codepoint to convert.
+
+	Returns:
+		Lowercase codepoint
+*/
+int str_utf8_tolower(int code);
+
+/*
+	Function: str_utf8_comp_nocase
+		Compares two utf8 strings case insensitively.
+
+	Parameters:
+		a - String to compare.
+		b - String to compare.
+
+	Returns:
+		<0 - String a is less than string b
+		0 - String a is equal to string b
+		>0 - String a is greater than string b
+*/
+int str_utf8_comp_nocase(const char *a, const char *b);
+
+/*
+	Function: str_utf8_comp_nocase_num
+		Compares up to num bytes of two utf8 strings case insensitively.
+
+	Parameters:
+		a - String to compare.
+		b - String to compare.
+		num - Maximum bytes to compare
+
+	Returns:
+		<0 - String a is less than string b
+		0 - String a is equal to string b
+		>0 - String a is greater than string b
+*/
+int str_utf8_comp_nocase_num(const char *a, const char *b, int num);
+
+/*
+	Function: str_utf8_find_nocase
+		Finds a utf8 string inside another utf8 string case insensitively.
+
+	Parameters:
+		haystack - String to search in
+		needle - String to search for
+        end - A pointer that will be set to a pointer into haystack directly behind the
+            last character where the needle was found. Will be set to nullptr if needle
+            could not be found. Optional parameter.
+
+	Returns:
+		A pointer into haystack where the needle was found.
+		Returns NULL if needle could not be found.
+
+	Remarks:
+		- The strings are treated as zero-terminated strings.
+*/
+const char *str_utf8_find_nocase(const char *haystack, const char *needle, const char **end = nullptr);
+
+/*
+	Function: str_utf8_isspace
+		Checks whether the given Unicode codepoint renders as space.
+
+	Parameters:
+		code - Unicode codepoint to check.
+
+	Returns:
+		0 if the codepoint does not render as space, != 0 if it does.
+*/
+int str_utf8_isspace(int code);
 
 int str_utf8_isstart(char c);
 
 /*
-	Function: str_utf8_is_whitespace
-		Check if the unicode is an utf8 whitespace.
-
-	Parameters:
-		code - unicode.
-
-	Returns:
-		Returns 1 on success, 0 on failure.
-*/
-int str_utf8_is_whitespace(int code);
-
-/*
 	Function: str_utf8_skip_whitespaces
-		Skips leading utf8 whitespace characters.
+		Skips leading characters that render as spaces.
 
 	Parameters:
 		str - Pointer to the string.
@@ -1721,14 +2322,18 @@ int str_utf8_is_whitespace(int code);
 const char *str_utf8_skip_whitespaces(const char *str);
 
 /*
-	Function: str_utf8_trim_whitespaces_right
-		Clears trailing utf8 whitespace characters from a string.
+	Function: str_utf8_trim_right
+		Removes trailing characters that render as spaces by modifying
+		the string in-place.
+
 	Parameters:
-		str - Pointer to the string.
+		param - Pointer to the string.
+
 	Remarks:
 		- The strings are treated as zero-terminated strings.
+		- The string is modified in-place.
 */
-void str_utf8_trim_whitespaces_right(char *str);
+void str_utf8_trim_right(char *param);
 
 /*
 	Function: str_utf8_rewind
@@ -1757,12 +2362,7 @@ int str_utf8_rewind(const char *str, int cursor);
 	Parameters:
 		str - utf8 string
 */
-int str_utf8_fix_truncation(char* str);
-
-/*
-	Function: Pfffff
-*/
-void str_translation_utf8_to_cp(char *str);
+int str_utf8_fix_truncation(char *str);
 
 /*
 	Function: str_utf8_forward
@@ -1782,16 +2382,17 @@ int str_utf8_forward(const char *str, int cursor);
 
 /*
 	Function: str_utf8_decode
-		Decodes an utf8 character
+		Decodes a utf8 codepoint
 
 	Parameters:
-		ptr - pointer to an utf8 string. this pointer will be moved forward
+		ptr - Pointer to a utf8 string. This pointer will be moved forward.
 
 	Returns:
-		Unicode value for the character. -1 for invalid characters and 0 for end of string.
+		The Unicode codepoint. -1 for invalid input and 0 for end of string.
 
 	Remarks:
 		- This function will also move the pointer forward.
+		- You may call this function again after an error occurred.
 */
 int str_utf8_decode(const char **ptr);
 
@@ -1800,7 +2401,7 @@ int str_utf8_decode(const char **ptr);
 		Encode an utf8 character
 
 	Parameters:
-		ptr - Pointer to a buffer that should recive the data. Should be able to hold at least 4 bytes.
+		ptr - Pointer to a buffer that should receive the data. Should be able to hold at least 4 bytes.
 
 	Returns:
 		Number of bytes put into the buffer.
@@ -1809,39 +2410,6 @@ int str_utf8_decode(const char **ptr);
 		- Does not do zero termination of the string.
 */
 int str_utf8_encode(char *ptr, int chr);
-
-
-/*
-	Function: str_utf8_truncate
-		Truncates a utf8 encoded string to a given length.
-
-	Parameters:
-		dst - Pointer to a buffer that shall receive the string.
-		dst_size - Size of the buffer dst.
-		str - String to be truncated.
-		truncation_len - Maximum codepoints in the returned string.
-
-	Remarks:
-		- The strings are treated as utf8-encoded zero-terminated strings.
-		- Guarantees that dst string will contain zero-termination.
-*/
-void str_utf8_truncate(char* dst, int dst_size, const char* src, int truncation_len);
-
-/*
-	Function: str_utf8_copy
-		Copies a utf8 string to a buffer.
-
-	Parameters:
-		dst - Pointer to a buffer that shall receive the string.
-		src - utf8 string to be copied.
-		dst_size - Size of the buffer dst.
-
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-		- Guarantees that dst string will contain zero-termination.
-		- Guarantees that dst always contains a valid utf8 string.
-*/
-void str_utf8_copy(char* dst, const char* src, int dst_size);
 
 /*
 	Function: str_utf8_check
@@ -1860,116 +2428,66 @@ void str_utf8_copy(char* dst, const char* src, int dst_size);
 int str_utf8_check(const char *str);
 
 /*
-	Function: str_utf8_copy_num
-		Copies a number of utf8 characters from one string to another.
-	Parameters:
-		dst - Pointer to a buffer that shall receive the string.
-		src - String to be copied.
-		dst_size - Size of the buffer dst.
-		num - maximum number of utf8 characters to be copied.
-	Remarks:
-		- The strings are treated as zero-terminated strings.
-		- Garantees that dst string will contain zero-termination.
-*/
-void str_utf8_copy_num(char* dst, const char* src, int dst_size, int num);
-
-/*
 	Function: str_utf8_stats
-		Determines the byte size and utf8 character count of a string.
+		Determines the byte size and utf8 character count of a utf8 string.
+
 	Parameters:
 		str - Pointer to the string.
 		max_size - Maximum number of bytes to count.
+		max_count - Maximum number of utf8 characters to count.
 		size - Pointer to store size (number of non-zero bytes) of the string.
 		count - Pointer to store count of utf8 characters of the string.
+
 	Remarks:
-		- Assumes nothing about the encoding of the string.
-		  It's the users responsibility to make sure the bounds are aligned.
+		- The string is treated as zero-terminated utf8 string.
+		- It's the user's responsibility to make sure the bounds are aligned.
 */
-void str_utf8_stats(const char* str, int max_size, int* size, int* count);
+void str_utf8_stats(const char *str, size_t max_size, size_t max_count, size_t *size, size_t *count);
+
+/**
+ * Converts a byte offset of a utf8 string to the utf8 character offset.
+ *
+ * @param text Pointer to the string.
+ * @param byte_offset Offset in bytes.
+ *
+ * @return Offset in utf8 characters. Clamped to the maximum length of the string in utf8 characters.
+ *
+ * @remark The string is treated as a zero-terminated utf8 string.
+ * @remark It's the user's responsibility to make sure the bounds are aligned.
+ */
+size_t str_utf8_offset_bytes_to_chars(const char *str, size_t byte_offset);
+
+/**
+ * Converts a utf8 character offset of a utf8 string to the byte offset.
+ *
+ * @param text Pointer to the string.
+ * @param char_offset Offset in utf8 characters.
+ *
+ * @return Offset in bytes. Clamped to the maximum length of the string in bytes.
+ *
+ * @remark The string is treated as a zero-terminated utf8 string.
+ * @remark It's the user's responsibility to make sure the bounds are aligned.
+ */
+size_t str_utf8_offset_chars_to_bytes(const char *str, size_t char_offset);
 
 /*
-	Function: shell_execute
-		Executes a given file.
+	Function: Pfffff
 */
-void shell_execute(const char *file);
-
-/*
-	Function: os_is_winxp_or_lower
-		Checks whether the program runs on Windows XP or lower.
-	Returns:
-		1 - Windows XP or lower.
-		0 - Higher Windows version, Linux, macOS, etc.
-*/
-int os_is_winxp_or_lower();
-
-/*
-	Function: uint32_from_be
-		Reads a 32-bit big-endian coded integer from 4 bytes of data.
-	Parameters:
-		bytes - Pointer to the bytes to interpret.
-	Returns:
-		The read integer.
-*/
-inline unsigned uint32_from_be(const void* bytes)
-{
-	const unsigned char* b = (const unsigned char*)bytes;
-	return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
-}
-
-/*
-	Function: uint32_to_be
-		Writes a 32-bit integer into 4 bytes of data, coded as
-		big-endian.
-	Parameters:
-		bytes - The place to write the integer to.
-		integer - The integer to write.
-*/
-inline void uint32_to_be(void* bytes, unsigned integer)
-{
-	unsigned char* b = (unsigned char*)bytes;
-	b[0] = (integer & 0xff000000) >> 24;
-	b[1] = (integer & 0x00ff0000) >> 16;
-	b[2] = (integer & 0x0000ff00) >> 8;
-	b[3] = (integer & 0x000000ff) >> 0;
-}
-
-/*
-	Function: secure_random_init
-		Initializes the secure random module.
-		You *MUST* check the return value of this function.
-
-	Returns:
-		0 - Initialization succeeded.
-		1 - Initialization failed.
-*/
-int secure_random_init();
-
-
-/*
-*/
-int secure_rand();
-
-
-/*
-	Function: secure_random_fill
-		Fills the buffer with the specified amount of random bytes.
-
-	Parameters:
-		bytes - Pointer to the start of the buffer.
-		length - Length of the buffer.
-*/
-void secure_random_fill(void *bytes, unsigned length);
+void str_translation_utf8_to_cp(char* str);
 
 /*
 	Function: str_next_token
 		Writes the next token after str into buf, returns the rest of the string.
+
 	Parameters:
 		str - Pointer to string.
 		delim - Delimiter for tokenization.
 		buffer - Buffer to store token in.
 		buffer_size - Size of the buffer.
+
 	Returns:
 		Pointer to rest of the string.
+
 	Remarks:
 		- The token is always null-terminated.
 */
@@ -1990,99 +2508,110 @@ const char *str_next_token(const char *str, const char *delim, char *buffer, int
 */
 int str_in_list(const char *list, const char *delim, const char *needle);
 
-/*
-	Function: bytes_be_to_int
-		Packs 4 big endian bytes into an int
-
-	Returns:
-		The packed int
-
-	Remarks:
-		- Assumes the passed array is 4 bytes
-		- Assumes int is 4 bytes
-*/
-int bytes_be_to_int(const unsigned char *bytes);
-
-/*
-	Function: int_to_bytes_be
-		Packs an int into 4 big endian bytes
-
-	Remarks:
-		- Assumes the passed array is 4 bytes
-		- Assumes int is 4 bytes
-*/
-void int_to_bytes_be(unsigned char *bytes, int value);
-
-/*
-	Function: bytes_be_to_uint
-		Packs 4 big endian bytes into an unsigned
-
-	Returns:
-		The packed unsigned
-
-	Remarks:
-		- Assumes the passed array is 4 bytes
-		- Assumes unsigned is 4 bytes
-*/
+/**
+ * Packs 4 big endian bytes into an unsigned.
+ *
+ * @param bytes Pointer to an array of bytes that will be packed.
+ *
+ * @return The packed unsigned.
+ *
+ * @remark Assumes the passed array is least 4 bytes in size.
+ * @remark Assumes unsigned is 4 bytes in size.
+ *
+ * @see uint_to_bytes_be
+ */
 unsigned bytes_be_to_uint(const unsigned char *bytes);
 
-/*
-	Function: uint_to_bytes_be
-		Packs an unsigned into 4 big endian bytes
-
-	Remarks:
-		- Assumes the passed array is 4 bytes
-		- Assumes unsigned is 4 bytes
-*/
+/**
+ * Packs an unsigned into 4 big endian bytes.
+ *
+ * @param bytes Pointer to an array where the bytes will be stored.
+ * @param value The values that will be packed into the array.
+ *
+ * @remark Assumes the passed array is least 4 bytes in size.
+ * @remark Assumes unsigned is 4 bytes in size.
+ *
+ * @see bytes_be_to_uint
+ */
 void uint_to_bytes_be(unsigned char *bytes, unsigned value);
 
 /*
 	Function: pid
-		Gets the process ID of the current process
+		Returns the pid of the current process.
 
 	Returns:
-		The process ID of the current process.
+		pid of the current process
 */
 int pid();
 
 /*
-	Function: bytes_be_to_uint
-		Packs 4 big endian bytes into an unsigned
-	Returns:
-		The packed unsigned
-	Remarks:
-		- Assumes the passed array is 4 bytes
-		- Assumes unsigned is 4 bytes
-*/
-unsigned bytes_be_to_uint(const unsigned char* bytes);
-
-/*
-	Function: uint_to_bytes_be
-		Packs an unsigned into 4 big endian bytes
-	Remarks:
-		- Assumes the passed array is 4 bytes
-		- Assumes unsigned is 4 bytes
-*/
-void uint_to_bytes_be(unsigned char* bytes, unsigned value);
-
-/*
-	Function: open_link
-		Opens a link in the browser.
+	Function: cmdline_fix
+		Fixes the command line arguments to be encoded in UTF-8 on all
+		systems.
 
 	Parameters:
-		link - The link to open in a browser.
-
-	Returns:
-		Returns 1 on success, 0 on failure.
+		argc - A pointer to the argc parameter that was passed to the main function.
+		argv - A pointer to the argv parameter that was passed to the main function.
 
 	Remarks:
-		This may not be called with untrusted input or it'll result in arbitrary code execution.
+		- You need to call cmdline_free once you're no longer using the
+		results.
 */
-int open_link(const char* link);
+void cmdline_fix(int *argc, const char ***argv);
+
+/*
+	Function: cmdline_free
+		Frees memory that was allocated by cmdline_fix.
+
+	Parameters:
+		argc - The argc obtained from cmdline_fix.
+		argv - The argv obtained from cmdline_fix.
+
+*/
+void cmdline_free(int argc, const char **argv);
+
+#if defined(CONF_FAMILY_WINDOWS)
+typedef void *PROCESS;
+constexpr PROCESS INVALID_PROCESS = nullptr;
+#else
+typedef pid_t PROCESS;
+constexpr PROCESS INVALID_PROCESS = 0;
+#endif
+
+/*
+	Function: shell_execute
+		Executes a given file.
+
+	Returns:
+		handle/pid of the new process
+*/
+PROCESS shell_execute(const char *file);
+
+/*
+	Function: kill_process
+		Sends kill signal to a process.
+
+	Parameters:
+		process - handle/pid of the process
+
+	Returns:
+		0 - Error
+		1 - Success
+*/
+int kill_process(PROCESS process);
+
+/**
+ * Checks if a process is alive.
+ * 
+ * @param process Handle/PID of the process.
+ * 
+ * @return bool Returns true if the process is currently running, false if the process is not running (dead).
+ */
+bool is_process_alive(PROCESS process);
 
 /*
 	Function: generate_password
-		Generates a null-termineted password of length `2 *
+		Generates a null-terminated password of length `2 *
 		random_length`.
 
 	Parameters:
@@ -2091,7 +2620,28 @@ int open_link(const char* link);
 		random - Pointer to a randomly-initialized array of shorts.
 		random_length - Length of the short array.
 */
-void generate_password(char* buffer, unsigned length, unsigned short* random, unsigned random_length);
+void generate_password(char *buffer, unsigned length, const unsigned short *random, unsigned random_length);
+
+/*
+	Function: secure_random_init
+		Initializes the secure random module.
+		You *MUST* check the return value of this function.
+
+	Returns:
+		0 - Initialization succeeded.
+		1 - Initialization failed.
+*/
+int secure_random_init();
+
+/*
+	Function: secure_random_uninit
+		Uninitializes the secure random module.
+
+	Returns:
+		0 - Uninitialization succeeded.
+		1 - Uninitialization failed.
+*/
+int secure_random_uninit();
 
 /*
 	Function: secure_random_password
@@ -2106,10 +2656,226 @@ void generate_password(char* buffer, unsigned length, unsigned short* random, un
 		length - Length of the buffer.
 		pw_length - Length of the desired password.
 */
-void secure_random_password(char* buffer, unsigned length, unsigned pw_length);
+void secure_random_password(char *buffer, unsigned length, unsigned pw_length);
 
-#ifdef __cplusplus
-}
+/*
+	Function: secure_random_fill
+		Fills the buffer with the specified amount of random bytes.
+
+	Parameters:
+		buffer - Pointer to the start of the buffer.
+		length - Length of the buffer.
+*/
+void secure_random_fill(void *bytes, unsigned length);
+
+/*
+	Function: secure_rand
+		Returns random int (replacement for rand()).
+*/
+int secure_rand();
+
+/*
+	Function: secure_rand_below
+		Returns a random nonnegative integer below the given number,
+		with a uniform distribution.
+
+	Parameters:
+		below - Upper limit (exclusive) of integers to return.
+*/
+int secure_rand_below(int below);
+
+/**
+ * Returns a human-readable version string of the operating system.
+ *
+ * @param version Buffer to use for the output.
+ * @param length Length of the output buffer.
+ *
+ * @return true on success, false on failure.
+ */
+bool os_version_str(char *version, size_t length);
+
+/**
+ * Returns a string of the preferred locale of the user / operating system.
+ * The string conforms to [RFC 3066](https://www.ietf.org/rfc/rfc3066.txt)
+ * and only contains the characters `a`-`z`, `A`-`Z`, `0`-`9` and `-`.
+ * If the preferred locale could not be determined this function
+ * falls back to the locale `"en-US"`.
+ *
+ * @param locale Buffer to use for the output.
+ * @param length Length of the output buffer.
+ *
+ * @remark The destination buffer will be zero-terminated.
+ */
+void os_locale_str(char *locale, size_t length);
+
+#if defined(CONF_EXCEPTION_HANDLING)
+void init_exception_handler();
+void set_exception_handler_log_file(const char *log_file_path);
 #endif
+
+/**
+ * Fetches a sample from a high resolution timer and converts it in nanoseconds.
+ *
+ * @ingroup Time
+ *
+ * @return Current value of the timer in nanoseconds.
+ */
+std::chrono::nanoseconds time_get_nanoseconds();
+
+int net_socket_read_wait(NETSOCKET sock, std::chrono::nanoseconds nanoseconds);
+
+/**
+ * Fixes the command line arguments to be encoded in UTF-8 on all systems.
+ * This is a RAII wrapper for cmdline_fix and cmdline_free.
+ */
+class CCmdlineFix
+{
+	int m_Argc;
+	const char **m_ppArgv;
+
+public:
+	CCmdlineFix(int *pArgc, const char ***pppArgv)
+	{
+		cmdline_fix(pArgc, pppArgv);
+		m_Argc = *pArgc;
+		m_ppArgv = *pppArgv;
+	}
+	~CCmdlineFix()
+	{
+		cmdline_free(m_Argc, m_ppArgv);
+	}
+};
+
+#if defined(CONF_FAMILY_WINDOWS)
+/**
+ * Converts a utf8 encoded string to a wide character string
+ * for use with the Windows API.
+ *
+ * @param str The utf8 encoded string to convert.
+ *
+ * @return The argument as a wide character string.
+ *
+ * @remark The argument string must be zero-terminated.
+ */
+std::wstring windows_utf8_to_wide(const char *str);
+
+/**
+ * Converts a wide character string obtained from the Windows API
+ * to a utf8 encoded string.
+ *
+ * @param wide_str The wide character string to convert.
+ *
+ * @return The argument as a utf8 encoded string.
+ *
+ * @remark The argument string must be zero-terminated.
+ */
+std::string windows_wide_to_utf8(const wchar_t *wide_str);
+
+/**
+ * This is a RAII wrapper to initialize/uninitialize the Windows COM library,
+ * which may be necessary for using the open_file and open_link functions.
+ * Must be used on every thread. It's automatically used on threads created
+ * with thread_init. Pass true to the constructor on threads that own a
+ * window (i.e. pump a message queue).
+ */
+class CWindowsComLifecycle
+{
+public:
+	CWindowsComLifecycle(bool HasWindow);
+	~CWindowsComLifecycle();
+};
+
+/**
+ * Registers a protocol handler.
+ *
+ * @ingroup Shell
+ *
+ * @param protocol_name The name of the protocol.
+ * @param executable The absolute path of the executable that will be associated with the protocol.
+ * @param updated Pointer to a variable that will be set to true, iff the shell needs to be updated.
+ *
+ * @return true on success, false on failure.
+ *
+ * @remark The caller must later call shell_update, iff the shell needs to be updated.
+ */
+bool shell_register_protocol(const char *protocol_name, const char *executable, bool *updated);
+
+/**
+ * Registers a file extension.
+ *
+ * @ingroup Shell
+ *
+ * @param extension The file extension, including the leading dot.
+ * @param description A readable description for the file extension.
+ * @param executable_name A unique name that will used to describe the application.
+ * @param executable The absolute path of the executable that will be associated with the file extension.
+ * @param updated Pointer to a variable that will be set to true, iff the shell needs to be updated.
+ *
+ * @return true on success, false on failure.
+ *
+ * @remark The caller must later call shell_update, iff the shell needs to be updated.
+ */
+bool shell_register_extension(const char *extension, const char *description, const char *executable_name, const char *executable, bool *updated);
+
+/**
+ * Registers an application.
+ *
+ * @ingroup Shell
+ *
+ * @param name Readable name of the application.
+ * @param executable The absolute path of the executable being registered.
+ * @param updated Pointer to a variable that will be set to true, iff the shell needs to be updated.
+ *
+ * @return true on success, false on failure.
+ *
+ * @remark The caller must later call shell_update, iff the shell needs to be updated.
+ */
+bool shell_register_application(const char *name, const char *executable, bool *updated);
+
+/**
+ * Unregisters a protocol or file extension handler.
+ *
+ * @ingroup Shell
+ *
+ * @param shell_class The shell class to delete.
+ * For protocols this is the name of the protocol.
+ * For file extensions this is the program ID associated with the file extension.
+ * @param updated Pointer to a variable that will be set to true, iff the shell needs to be updated.
+ *
+ * @return true on success, false on failure.
+ *
+ * @remark The caller must later call shell_update, iff the shell needs to be updated.
+ */
+bool shell_unregister_class(const char *shell_class, bool *updated);
+
+/**
+ * Unregisters an application.
+ *
+ * @ingroup Shell
+ *
+ * @param executable The absolute path of the executable being unregistered.
+ * @param updated Pointer to a variable that will be set to true, iff the shell needs to be updated.
+ *
+ * @return true on success, false on failure.
+ *
+ * @remark The caller must later call shell_update, iff the shell needs to be updated.
+ */
+bool shell_unregister_application(const char *executable, bool *updated);
+
+/**
+ * Notifies the system that a protocol or file extension has been changed and the shell needs to be updated.
+ *
+ * @ingroup Shell
+ *
+ * @remark This is a potentially expensive operation, so it should only be called when necessary.
+ */
+void shell_update();
+#endif
+
+template<>
+struct std::hash<NETADDR>
+{
+	size_t operator()(const NETADDR &Addr) const noexcept;
+};
 
 #endif

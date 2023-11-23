@@ -3,40 +3,32 @@
 #ifndef BASE_MATH_H
 #define BASE_MATH_H
 
-#include <math.h>
-#include <stdlib.h>
-#include <type_traits> // cxx inc
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 
-template <typename T>
-T clamp(T val, T min, T max)
+using std::clamp;
+
+constexpr float pi = 3.1415926535897932384626433f;
+
+constexpr inline int round_to_int(float f)
 {
-	if(val < min)
-		return min;
-	if(val > max)
-		return max;
-	return val;
+	return f > 0 ? (int)(f + 0.5f) : (int)(f - 0.5f);
 }
 
-inline float sign(float f)
+constexpr inline int round_truncate(float f)
 {
-	return f<0.0f?-1.0f:1.0f;
-}
-
-inline int round_to_int(float f)
-{
-	if(f > 0)
-		return (int)(f+0.5f);
-	return (int)(f-0.5f);
+	return (int)f;
 }
 
 template<typename T, typename TB>
-T mix(const T a, const T b, TB amount)
+constexpr inline T mix(const T a, const T b, TB amount)
 {
-	return a + (b-a)*amount;
+	return a + (b - a) * amount;
 }
 
 template<typename T, typename TB>
-T bezier(const T p0, const T p1, const T p2, const T p3, TB amount)
+inline T bezier(const T p0, const T p1, const T p2, const T p3, TB amount)
 {
 	// De-Casteljau Algorithm
 	const T c10 = mix(p0, p1, amount);
@@ -49,55 +41,125 @@ T bezier(const T p0, const T p1, const T p2, const T p3, TB amount)
 	return mix(c20, c21, amount); // c30
 }
 
-inline int random_int() { return (((rand() & 0xffff) << 16) | (rand() & 0xffff)) & 0x7FFFFFFF; };
-inline int random_num(int min, int max) { return (random_int() % (max - min + 1)) + min; }
-inline float frandom() { return rand()/(float)(RAND_MAX); }
-inline float frandom_num(float min, float max) { return (frandom() * (max - min)) + min; }
-inline float centrelized_frandom(float center, float range) { return (center - range) + (frandom() * (range * 2.0f)); }
-
-// float to fixed
-inline int f2fx(float v) { return (int)(v*(float)(1<<10)); }
-inline float fx2f(int v) { return v*(1.0f/(1<<10)); }
-
-// int to fixed
-inline int i2fx(int v) { return v<<10; }
-inline int fx2i(int v) { return v>>10; }
-
-inline int gcd(int a, int b)
+inline float random_float()
 {
-	while(b != 0)
-	{
-		int c = a % b;
-		a = b;
-		b = c;
-	}
-	return a;
+	return rand() / (float)(RAND_MAX);
 }
 
-class fxp
+inline float random_float(float min, float max)
 {
-	int value;
-public:
-	void set(int v) { value = v; }
-	int get() const { return value; }
-	fxp &operator = (int v) { value = v<<10; return *this; }
-	fxp &operator = (float v) { value = (int)(v*(float)(1<<10)); return *this; }
-	operator float() const { return value/(float)(1<<10); }
-};
+	return min + random_float() * (max - min);
+}
 
-const float pi = 3.1415926535897932384626433f;
+inline float random_float(float max)
+{
+	return random_float(0.0f, max);
+}
 
-// ODR (one-definition rule) states that there must be exactly one definition of a variable, function, class, enum or template
-template <typename T> T min(T a, T b) { return a<b?a:b; }
-template <typename T> T max(T a, T b) { return a>b?a:b; }
-template <typename T> T max(T a, T b, T c) { return max(max(a, b), c); }
-template <typename T> T absolute(T a) { return a<T(0)?-a:a; }
+inline float centrelized_frandom(float center, float range) { return (center - range) + (random_float(range * 2.0f)); }
+
+inline float random_angle()
+{
+	return 2.0f * pi * (rand() / std::nextafter((float)RAND_MAX, std::numeric_limits<float>::max()));
+}
+
+constexpr int fxpscale = 1 << 10;
+
+// float to fixed
+constexpr inline int f2fx(float v)
+{
+	return round_to_int(v * fxpscale);
+}
+constexpr inline float fx2f(int v)
+{
+	return v / (float)fxpscale;
+}
+
+// int to fixed
+constexpr inline int i2fx(int v)
+{
+	return v * fxpscale;
+}
+constexpr inline int fx2i(int v)
+{
+	return v / fxpscale;
+}
 
 inline unsigned long long computeExperience(unsigned Level)
 {
 	if(Level == 1)
 		return 18;
 	return Level * (static_cast<unsigned long long>(Level) - 1) * 24;
+}
+
+class fxp
+{
+	int value;
+
+public:
+	void set(int v)
+	{
+		value = v;
+	}
+	int get() const
+	{
+		return value;
+	}
+	fxp &operator=(int v)
+	{
+		value = i2fx(v);
+		return *this;
+	}
+	fxp &operator=(float v)
+	{
+		value = f2fx(v);
+		return *this;
+	}
+	operator int() const
+	{
+		return fx2i(value);
+	}
+	operator float() const
+	{
+		return fx2f(value);
+	}
+};
+
+template<typename T>
+constexpr inline T minimum(T a, T b)
+{
+	return std::min(a, b);
+}
+template<typename T>
+constexpr inline T minimum(T a, T b, T c)
+{
+	return std::min(std::min(a, b), c);
+}
+template<typename T>
+constexpr inline T maximum(T a, T b)
+{
+	return std::max(a, b);
+}
+template<typename T>
+constexpr inline T maximum(T a, T b, T c)
+{
+	return std::max(std::max(a, b), c);
+}
+template<typename T>
+constexpr inline T absolute(T a)
+{
+	return a < T(0) ? -a : a;
+}
+
+template<typename T>
+constexpr inline T in_range(T a, T lower, T upper)
+{
+	return lower <= a && a <= upper;
+}
+template<typename T>
+constexpr inline T in_range(T a, T upper)
+{
+	return in_range(a, 0, upper);
 }
 
 // percents
@@ -108,7 +170,7 @@ template <typename T> // derive from the number of percent e.g. ((100, 10%) = 10
 PercentArithmetic<T> translate_to_percent_rest(T value, float percent) { return (T)(((double)value / 100.0f) * (T)percent); }
 
 template <typename T> // add to the number a percentage e.g. ((100, 10%) = 110)
-PercentArithmetic<T> add_percent_to_source(T *pvalue, float percent)
+PercentArithmetic<T> add_percent_to_source(T* pvalue, float percent)
 {
 	*pvalue = ((T)((double)*pvalue) * (1.0f + ((T)percent / 100.0f)));
 	return (T)(*pvalue);

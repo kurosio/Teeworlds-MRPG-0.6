@@ -90,19 +90,22 @@ void CLogicWallFire::Tick()
 
 	for(CLogicWallWall *p = (CLogicWallWall*) GameWorld()->FindFirst(CGameWorld::ENTTYPE_EYESWALL); p; p = (CLogicWallWall *)p->TypeNext())
 	{
-		vec2 IntersectPos = closest_point_on_line(p->GetPos(), p->GetTo(), m_Pos);
-		if(distance(m_Pos, IntersectPos) < 15)
+		vec2 IntersectPos;
+		if(closest_point_on_line(p->GetPos(), p->GetTo(), m_Pos, IntersectPos))
 		{
-			p->TakeDamage();
-			GS()->CreateText(NULL, false, m_Pos, vec2(0, 0), 100, std::to_string(p->GetHealth()).c_str());
-			if(p->GetHealth() <= 0)
+			if(distance(m_Pos, IntersectPos) < 15)
 			{
-				pLogicWall->SetDestroy(120);
-				p->SetDestroy(120);
-			}
+				p->TakeDamage();
+				GS()->CreateText(NULL, false, m_Pos, vec2(0, 0), 100, std::to_string(p->GetHealth()).c_str());
+				if(p->GetHealth() <= 0)
+				{
+					pLogicWall->SetDestroy(120);
+					p->SetDestroy(120);
+				}
 
-			GameWorld()->DestroyEntity(this);
-			return;
+				GameWorld()->DestroyEntity(this);
+				return;
+			}
 		}
 	}
 	m_Pos += m_Dir*2.0f;
@@ -158,10 +161,13 @@ void CLogicWallWall::Tick()
 	{
 		for (CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
-			vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
-			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-			if (Distance <= g_Config.m_SvDoorRadiusHit)
-				pChar->m_DoorHit = true;
+			vec2 IntersectPos;
+			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
+			{
+				float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+				if(Distance <= g_Config.m_SvDoorRadiusHit)
+					pChar->m_DoorHit = true;
+			}
 		}
 	}
 }
@@ -263,12 +269,15 @@ void CLogicDoorKey::Tick()
 		if (pPlayer->GetItem(m_ItemID)->GetValue())
 			continue;
 
-		vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
-		float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if (Distance <= g_Config.m_SvDoorRadiusHit)
+		vec2 IntersectPos;
+		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 		{
-			pChar->m_DoorHit = true;
-			GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GAME_WARNING, 100, "You need {STR}", GS()->GetItemInfo(m_ItemID)->GetName());
+			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+			if(Distance <= g_Config.m_SvDoorRadiusHit)
+			{
+				pChar->m_DoorHit = true;
+				GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GAME_WARNING, 100, "You need {STR}", GS()->GetItemInfo(m_ItemID)->GetName());
+			}
 		}
 	}
 }
@@ -313,10 +322,13 @@ void CLogicDungeonDoorKey::Tick()
 
 	for (CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
-		float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if (Distance <= 64.0f)
-			pChar->m_DoorHit = true;
+		vec2 IntersectPos;
+		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
+		{
+			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+			if(Distance <= 64.0f)
+				pChar->m_DoorHit = true;
+		}
 	}
 }
 

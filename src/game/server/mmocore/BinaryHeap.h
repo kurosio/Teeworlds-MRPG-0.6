@@ -1,7 +1,6 @@
 /* Binary heap class for pathfind by Sushi */
 #ifndef GAME_SERVER_BINARYHEAP_H
 #define GAME_SERVER_BINARYHEAP_H
-#include <base/tl/array.h>
 
 template <class T>
 class CBinaryHeap

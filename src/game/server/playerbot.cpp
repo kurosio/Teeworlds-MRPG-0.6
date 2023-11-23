@@ -198,7 +198,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 			if(Boss && ID != AttributeIdentifier::HP)
 				Percent /= 10.0f;
 
-			const int SyncPercentSize = max(1, translate_to_percent_rest(Size, Percent));
+			const int SyncPercentSize = maximum(1, translate_to_percent_rest(Size, Percent));
 			return SyncPercentSize;
 		};
 
@@ -213,7 +213,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 			{
 				// Calculate Size based on sync factor
 				// Translate the sync factor to percent and then calculate the attribute
-				Size = CalculateAttribute(translate_to_percent_rest(max(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, false);
+				Size = CalculateAttribute(translate_to_percent_rest(maximum(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, false);
 			}
 			else
 			{
@@ -250,7 +250,7 @@ void CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
 	if(!m_pCharacter || !m_pCharacter->IsAlive())
 		return;
 
-	const float RandomChance = frandom() * 100.0f;
+	const float RandomChance = random_float(100.0f);
 	if(RandomChance < Chance)
 		m_aEffects[Potion] = Sec;
 }
@@ -311,9 +311,9 @@ void CPlayerBot::TryRespawn()
 	GS()->CreatePlayerSpawn(SpawnPos, GetMaskVisibleForClients());
 }
 
-int64 CPlayerBot::GetMaskVisibleForClients() const
+int64_t CPlayerBot::GetMaskVisibleForClients() const
 {
-	int64 Mask = CmaskOne(m_ClientID);
+	int64_t Mask = CmaskOne(m_ClientID);
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(IsVisibleForClient(i))
@@ -548,7 +548,7 @@ void CPlayerBot::HandlePathFinder()
 		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
 		{
 			// Set the last position tick to the current server tick plus a random time interval
-			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + random_int() % 4);
+			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + rand() % 4);
 			// Prepare the path finder data for random path finding
 			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::RANDOM>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}

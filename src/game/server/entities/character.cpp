@@ -62,8 +62,8 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = &m_Core;
 
 	m_ReckoningTick = 0;
-	mem_zero(&m_SendCore, sizeof(m_SendCore));
-	mem_zero(&m_ReckoningCore, sizeof(m_ReckoningCore));
+	m_SendCore = {};
+	m_ReckoningTick = {};
 	GS()->m_World.InsertEntity(this);
 	m_Alive = true;
 	m_NumInputs = 0;
@@ -355,14 +355,14 @@ void CCharacter::FireWeapon()
 		case WEAPON_SHOTGUN:
 		{
 			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
-			const int ShotSpread = min(2 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadShotgun), 36);
+			const int ShotSpread = minimum(2 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadShotgun), 36);
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread);
 			for(int i = 1; i <= ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
 				const float a = angle(Direction) + Spreading;
-				const float Speed = (float)GS()->Tuning()->m_ShotgunSpeeddiff + frandom() * 0.2f;
+				const float Speed = (float)GS()->Tuning()->m_ShotgunSpeeddiff + random_float(0.2f);
 				new CProjectile(GameWorld(), WEAPON_SHOTGUN, m_pPlayer->GetCID(), ProjStartPos,
 					vec2(cosf(a), sinf(a)) * Speed,
 					(int)(Server()->TickSpeed() * GS()->Tuning()->m_ShotgunLifetime),
@@ -374,7 +374,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_GRENADE:
 		{
-			const int ShotSpread = min(1 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadGrenade), 21);
+			const int ShotSpread = minimum(1 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadGrenade), 21);
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread);
 			for(int i = 1; i < ShotSpread; ++i)
@@ -392,7 +392,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_LASER:
 		{
-			const int ShotSpread = min(1 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadRifle), 36);
+			const int ShotSpread = minimum(1 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadRifle), 36);
 			for(int i = 1; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
@@ -438,14 +438,14 @@ void CCharacter::HandleWeapons()
 
 	if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo >= 0)
 	{
-		const int AmmoRegenTime = (m_Core.m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (max(5000 - m_AmmoRegen, 1000)) / 10);
+		const int AmmoRegenTime = (m_Core.m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (maximum(5000 - m_AmmoRegen, 1000)) / 10);
 		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() + AmmoRegenTime;
 
 		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart <= Server()->Tick())
 		{
 			const int RealAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
-			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo = min(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo + 1, RealAmmo);
+			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo = minimum(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo + 1, RealAmmo);
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 		}
 	}
@@ -505,7 +505,7 @@ void CCharacter::HandleHookActions()
 		// spider hook
 		if(m_Core.m_HookState == HOOK_FLYING && m_pPlayer->GetItem(itSpiderHook)->IsEquipped())
 		{
-			float Distance = min((float)m_pPlayer->m_NextTuningParams.m_HookLength - m_pPlayer->m_NextTuningParams.m_HookFireSpeed, distance(GetMousePos(), m_Core.m_Pos));
+			float Distance = minimum((float)m_pPlayer->m_NextTuningParams.m_HookLength - m_pPlayer->m_NextTuningParams.m_HookFireSpeed, distance(GetMousePos(), m_Core.m_Pos));
 			if(distance(m_Core.m_Pos, m_Core.m_HookPos) > Distance)
 			{
 				m_Core.m_HookState = HOOK_GRABBED;
@@ -538,7 +538,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 	if(m_Core.m_aWeapons[WeaponID].m_Ammo >= MaximumAmmo)
 		return false;
 
-	const int GotAmmo = IsHammer ? -1 : m_Core.m_aWeapons[WeaponID].m_Got ? min(m_Core.m_aWeapons[WeaponID].m_Ammo + Ammo, MaximumAmmo) : min(Ammo, MaximumAmmo);
+	const int GotAmmo = IsHammer ? -1 : m_Core.m_aWeapons[WeaponID].m_Got ? minimum(m_Core.m_aWeapons[WeaponID].m_Ammo + Ammo, MaximumAmmo) : minimum(Ammo, MaximumAmmo);
 	m_Core.m_aWeapons[WeaponID].m_Got = true;
 	m_Core.m_aWeapons[WeaponID].m_Ammo = GotAmmo;
 	return true;
@@ -579,9 +579,9 @@ void CCharacter::SetEmote(int Emote, int Sec, bool StartEmoticion)
 		if(Emote == EMOTE_BLINK)
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_DOTDOT);
 		else if(Emote == EMOTE_HAPPY)
-			GS()->SendEmoticon(m_pPlayer->GetCID(), (random_int() % 2 == 0 ? (int)EMOTICON_HEARTS : (int)EMOTICON_EYES));
+			GS()->SendEmoticon(m_pPlayer->GetCID(), (rand() % 2 == 0 ? (int)EMOTICON_HEARTS : (int)EMOTICON_EYES));
 		else if(Emote == EMOTE_ANGRY)
-			GS()->SendEmoticon(m_pPlayer->GetCID(), (EMOTICON_SPLATTEE + random_int() % 3));
+			GS()->SendEmoticon(m_pPlayer->GetCID(), (EMOTICON_SPLATTEE + rand() % 3));
 		else if(Emote == EMOTE_PAIN)
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_DROP);
 	}
@@ -799,7 +799,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	{
 		// Get the Gold item from the player
 		CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
-		const int LossGold = min(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvLossGoldAtDeath), pItemGold->GetValue());
+		const int LossGold = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvLossGoldAtDeath), pItemGold->GetValue());
 
 		// Swap loss gold near Killer and Player
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
@@ -821,7 +821,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
 
 			// Translate the value of the Gold item to a percentage for arrest and remove arrest
-			const int Arrest = min(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+			const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
 			if(Arrest > 0 && pItemGold->Remove(Arrest))
 			{
 				// Check if the killer is not a bot
@@ -897,7 +897,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	if(!IsAllowedPVP(FromCID))
 		return false;
 
-	Dmg = (FromCID == m_pPlayer->GetCID() ? max(1, Dmg / 2) : max(1, Dmg));
+	Dmg = (FromCID == m_pPlayer->GetCID() ? maximum(1, Dmg / 2) : maximum(1, Dmg));
 
 	int CritDamage = 0;
 	CPlayer* pFrom = GS()->GetPlayer(FromCID);
@@ -918,28 +918,28 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		Dmg += EnchantBonus;
 
 		// vampirism replenish your health
-		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Vampirism) > frandom() * 100.0f)
+		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Vampirism) > random_float(100.0f))
 		{
-			const int Recovery = max(1, Dmg / 2);
+			const int Recovery = maximum(1, Dmg / 2);
 			GS()->Chat(FromCID, ":: Vampirism stolen: {INT}HP.", Recovery);
 			pFrom->GetCharacter()->IncreaseHealth(Recovery);
 			GS()->SendEmoticon(FromCID, EMOTICON_DROP);
 		}
 
 		// miss out on damage
-		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Lucky) > frandom() * 100.0f)
+		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Lucky) > random_float(100.0f))
 		{
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_HEARTS);
 			return false;
 		}
 
 		// critical damage
-		if(Dmg && !pFrom->IsBot() && m_pPlayer->GetAttributePercent(AttributeIdentifier::Crit) > frandom() * 100.0f)
+		if(Dmg && !pFrom->IsBot() && m_pPlayer->GetAttributePercent(AttributeIdentifier::Crit) > random_float(100.0f))
 		{
-			CritDamage = 100 + max(pFrom->GetAttributeSize(AttributeIdentifier::CritDMG), 1);
+			CritDamage = 100 + maximum(pFrom->GetAttributeSize(AttributeIdentifier::CritDMG), 1);
 			const float CritDamageFormula = (float)Dmg + ((float)CritDamage * ((float)Dmg / 100.0f));
 			const float CritRange = (CritDamageFormula + (CritDamageFormula / 2.0f) / 2.0f);
-			Dmg = (int)CritDamageFormula + random_int() % (int)CritRange;
+			Dmg = (int)CritDamageFormula + rand() % (int)CritRange;
 
 			pFrom->GetCharacter()->SetEmote(EMOTE_ANGRY, 2, true);
 		}
@@ -947,7 +947,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		// fix quick killer spread players
 		if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon != WEAPON_HAMMER &&
 			distance(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos) < ms_PhysSize + 90.0f)
-			Dmg = max(1, Dmg / 3);
+			Dmg = maximum(1, Dmg / 3);
 
 		// give effects from player or bot to who got damage
 		pFrom->GetCharacter()->GiveRandomEffects(m_pPlayer->GetCID());
@@ -956,7 +956,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	const int OldHealth = m_Health;
 	if(Dmg)
 	{
-		GS()->m_pController->OnCharacterDamage(pFrom, m_pPlayer, min(Dmg, m_Health));
+		GS()->m_pController->OnCharacterDamage(pFrom, m_pPlayer, minimum(Dmg, m_Health));
 		m_Health -= Dmg;
 		m_pPlayer->ShowInformationStats();
 		m_pPlayer->SetSnapHealthTick(2);
@@ -1155,9 +1155,9 @@ void CCharacter::HandleEvent()
 	if(m_Event == TILE_EVENT_PARTY)
 	{
 		SetEmote(EMOTE_HAPPY, 1, false);
-		if(random_int() % 50 == 0)
+		if(rand() % 50 == 0)
 		{
-			GS()->SendEmoticon(m_pPlayer->GetCID(), 1 + random_int() % 2);
+			GS()->SendEmoticon(m_pPlayer->GetCID(), 1 + rand() % 2);
 			GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
 		}
 	}

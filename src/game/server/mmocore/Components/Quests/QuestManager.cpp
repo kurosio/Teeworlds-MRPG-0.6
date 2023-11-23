@@ -488,7 +488,7 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 		if(pPlayer && pPlayer->Acc().IsRelationshipsDeterioratedToMax())
 		{
 			CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
-			const int Reward = min(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+			const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
 			GS()->AVH(ClientID, HideID, "{STR} (Reward {VAL} gold)", Server()->ClientName(i), Reward);
 			GS()->AVM(ClientID, "null", NOPE, HideID, "Last seen: {STR}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
 			HasPlayers = true;
@@ -657,7 +657,7 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const
 				AvailableValue -= pStepBot.second.GetNumberBlockedItem(ItemID);
 		}
 	}
-	return max(AvailableValue, 0);
+	return maximum(AvailableValue, 0);
 }
 
 // This function returns the count of completed quests for a specific client

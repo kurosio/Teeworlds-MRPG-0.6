@@ -48,7 +48,7 @@ class CDialogElem
 	std::string m_Text {};
 
 	bool m_Request{};
-	int64 m_Flags{};
+	int64_t m_Flags{};
 
 	int GetLeftSide() const { return m_LeftSide; }
 	int GetRightSide() const { return m_RightSide; }
@@ -62,7 +62,7 @@ public:
 	const char* GetText() const { return m_Text.c_str(); }
 	bool IsEmptyDialog() const { return m_Text.empty(); }
 	bool IsRequestAction() const { return m_Request; }
-	int64 GetFlag() const { return m_Flags; }
+	int64_t GetFlag() const { return m_Flags; }
 };
 
 #endif

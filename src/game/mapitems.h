@@ -172,6 +172,12 @@ struct CMapItemLayer
 
 struct CMapItemLayerTilemap
 {
+	enum
+	{
+		CURRENT_VERSION = 3,
+		TILE_SKIP_MIN_VERSION = 4, // supported for loading but not saving
+	};
+
 	CMapItemLayer m_Layer;
 	int m_Version;
 
@@ -211,6 +217,11 @@ struct CMapItemLayerQuads
 
 struct CMapItemVersion
 {
+	enum
+	{
+		CURRENT_VERSION = 1
+	};
+
 	int m_Version;
 };
 

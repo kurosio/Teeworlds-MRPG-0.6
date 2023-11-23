@@ -8,7 +8,7 @@
 //
 // Example:
 //
-// 1) `i-unfreeze-you@ddnet.tw`
+// 1) `i-unfreeze-you@ddnet.org`
 // 2) `creeper@minetee`
 //
 // The first example applies if you own the `ddnet.org` domain, that is, if you
@@ -32,5 +32,4 @@ UUID(NETMSG_PONGEX, "pong@ddnet.tw")
 UUID(NETMSG_CHECKSUM_REQUEST, "checksum-request@ddnet.tw")
 UUID(NETMSG_CHECKSUM_RESPONSE, "checksum-response@ddnet.tw")
 UUID(NETMSG_CHECKSUM_ERROR, "checksum-error@ddnet.tw")
-
-// teehistorian
+UUID(NETMSG_REDIRECT, "redirect@ddnet.org")

@@ -47,7 +47,7 @@ WorldType = ["STANDARD", "DUNGEON"]
 ChatModes = ["NONE", "ALL", "TEAM"]
 
 RawHeader = '''
-#include <engine/shared/protocol_ex.h>
+#include <engine/shared/teehistorian_ex.h>
 
 enum
 {

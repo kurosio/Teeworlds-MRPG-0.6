@@ -19,7 +19,7 @@ bool CRandomBox::Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesIt
 	}
 
 	// Clamp use value to a maximum of 100
-	UseValue = min(100, UseValue);
+	UseValue = minimum(100, UseValue);
 
 	// Remove the specified amount of items and initialize the box
 	if(pPlayerUsesItem->Remove(UseValue))

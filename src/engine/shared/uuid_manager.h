@@ -17,7 +17,7 @@ enum
 
 struct CUuid
 {
-	unsigned char m_aData[16]{};
+	unsigned char m_aData[16];
 
 	bool operator==(const CUuid &Other) const;
 	bool operator!=(const CUuid &Other) const;

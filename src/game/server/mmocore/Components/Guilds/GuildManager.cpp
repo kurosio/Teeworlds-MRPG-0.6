@@ -799,7 +799,7 @@ void CGuildManager::DisbandGuild(int GuildID)
 
 	const int HouseID = GetGuildHouseID(GuildID);
 	const int LeaderUID = CGuildData::ms_aGuild[GuildID].m_UserID;
-	const int ReturnsGold = max(1, CGuildData::ms_aGuild[GuildID].m_Bank);
+	const int ReturnsGold = maximum(1, CGuildData::ms_aGuild[GuildID].m_Bank);
 
 	if(HouseID > 0)
 		SellGuildHouse(GuildID);
@@ -1015,7 +1015,7 @@ void CGuildManager::AddExperience(int GuildID)
 		AddHistoryGuild(GuildID, "Guild raised level to '%d'.", CGuildData::ms_aGuild[GuildID].m_Level);
 	}
 
-	if(random_int()%10 == 2 || UpdateTable)
+	if(rand()%10 == 2 || UpdateTable)
 		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Level, CGuildData::ms_aGuild[GuildID].m_Exp, GuildID);
 }
 

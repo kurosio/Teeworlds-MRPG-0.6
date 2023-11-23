@@ -43,9 +43,9 @@ void CEidolon::Tick()
 	{
 		if(distance(MoveTo, m_Pos) < 10.0f || GS()->Collision()->CheckPoint(MoveTo) || GS()->Collision()->IntersectLine(MoveTo, pEidolon->GetCharacter()->GetPos(), nullptr, nullptr))
 		{
-			m_MoveTo.x = frandom_num(-96, 96);
-			m_MoveTo.y = frandom_num(-96, 96);
-			m_TickMove = Server()->Tick() + random_int() % Server()->TickSpeed();
+			m_MoveTo.x = random_float(-96, 96);
+			m_MoveTo.y = random_float(-96, 96);
+			m_TickMove = Server()->Tick() + rand() % Server()->TickSpeed();
 			MoveTo = pEidolon->GetCharacter()->GetPos() + m_MoveTo;
 		}
 	}

@@ -34,13 +34,16 @@ void CNPCWall::Tick()
 			|| (m_Flag & Flags::NPC_BOT && BotType == BotsTypes::TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pChar->GetPlayer()->GetBotMobID()].m_Function != FUNCTION_NPC_GUARDIAN)
 			|| (m_Flag & Flags::QUEST_BOT && BotType == BotsTypes::TYPE_BOT_QUEST)))
 		{
-			vec2 IntersectPos = closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos);
-			const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-			if(Distance <= g_Config.m_SvDoorRadiusHit * 3)
+			vec2 IntersectPos;
+			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 			{
-				if(Distance <= g_Config.m_SvDoorRadiusHit)
-					pChar->m_DoorHit = true;
-				m_Active = true;
+				const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+				if(Distance <= g_Config.m_SvDoorRadiusHit * 3)
+				{
+					if(Distance <= g_Config.m_SvDoorRadiusHit)
+						pChar->m_DoorHit = true;
+					m_Active = true;
+				}
 			}
 		}
 	}

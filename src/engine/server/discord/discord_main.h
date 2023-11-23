@@ -5,6 +5,7 @@
 
 #ifdef CONF_DISCORD
 
+#include <base/hash.h>
 #include <sleepy_discord/websocketpp_websocket.h>
 
 typedef std::function<void()> DiscordTask;
