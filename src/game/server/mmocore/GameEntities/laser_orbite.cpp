@@ -54,7 +54,9 @@ vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const
 	else if(m_Type == EntLaserOrbiteType::MOVE_RIGHT)
 		AngleStart = (AngleStart * (float)Server()->Tick() / (float)Server()->TickSpeed()) * m_MoveSpeed;
 
-	return { GetProximityRadius() * cos(AngleStart + AngleStep * (float)PosID), GetProximityRadius() * sin(AngleStart + AngleStep * (float)PosID) };
+	float X = GetProximityRadius() * cos(AngleStart + AngleStep * (float)PosID);
+	float Y = GetProximityRadius() * sin(AngleStart + AngleStep * (float)PosID);
+	return { X, Y };
 }
 
 void CLaserOrbite::Snap(int SnappingClient)
