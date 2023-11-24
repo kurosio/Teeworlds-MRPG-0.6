@@ -128,11 +128,11 @@ void CPlayer::PostTick()
 		HandleTuningParams();
 	}
 
-	// Handle scoreboard colors
-	HandleScoreboardColors();
-
 	// Call the function HandleVoteOptionals() to handle any optional vote features.
 	HandleVoteOptionals();
+
+	// Handle scoreboard colors
+	HandleScoreboardColors();
 }
 
 CPlayerBot* CPlayer::GetEidolon() const
@@ -209,7 +209,7 @@ void CPlayer::HandleScoreboardColors()
 			// Create two message packers: Msg and MsgLegacy
 			CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
 			CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
-			for(int i = 0; i < MAX_PLAYERS; i++)
+			for(int i = 0; i < VANILLA_MAX_CLIENTS; i++)
 			{
 				CPlayer* pPlayer = GS()->GetPlayer(i, true);
 
@@ -218,11 +218,12 @@ void CPlayer::HandleScoreboardColors()
 				{
 					Msg.AddInt(pPlayer->Acc().GetGroup()->GetTeamColor());
 					MsgLegacy.AddInt(pPlayer->Acc().GetGroup()->GetTeamColor());
-					continue;
 				}
-
-				Msg.AddInt(-1);
-				MsgLegacy.AddInt(-1);
+				else
+				{
+					Msg.AddInt(0);
+					MsgLegacy.AddInt(0);
+				}
 			}
 			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
@@ -237,7 +238,7 @@ void CPlayer::HandleScoreboardColors()
 		}
 	}
 	// If the player flags do not have the PLAYERFLAG_SCOREBOARD flag
-	else if(m_PlayerFlags ^ PLAYERFLAG_SCOREBOARD)
+	else
 	{
 		// If group colors are active
 		if(m_ActivedGroupColors)
@@ -245,13 +246,8 @@ void CPlayer::HandleScoreboardColors()
 			// Create two message packers: Msg and MsgLegacy
 			CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
 			CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
-			for(int i = 0; i < MAX_PLAYERS; i++)
+			for(int i = 0; i < VANILLA_MAX_CLIENTS; i++)
 			{
-				// Get the player data
-				CPlayer* pPlayer = GS()->GetPlayer(i, true);
-				if(!pPlayer)
-					continue;
-
 				// Add the team color of the group to both message packers
 				Msg.AddInt(0);
 				MsgLegacy.AddInt(0);
