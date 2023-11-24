@@ -150,7 +150,7 @@ void CPlayerQuest::InitSteps()
 
 	// save file
 	std::string Data = JsonQuestData.dump();
-	Tools::Files::saveFile(GetJsonFileName().c_str(), (void*)Data.data(), (unsigned)Data.size());
+	Tools::Files::saveFile(GetJsonFileName().c_str(), Data.data(), (unsigned)Data.size());
 }
 
 void CPlayerQuest::LoadSteps()

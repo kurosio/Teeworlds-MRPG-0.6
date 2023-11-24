@@ -557,13 +557,16 @@ namespace Tools
 				return ERROR_FILE;
 
 			pData->resize((unsigned)io_length(File));
-			io_read(File, (void*)pData->data(), (unsigned)pData->size());
+			io_read(File, pData->data(), (unsigned)pData->size());
 			io_close(File);
 			return SUCCESSFUL;
 		}
 
-		static FileResult saveFile(const char* pFile, void* pData, unsigned size)
+		static FileResult saveFile(const char* pFile, const void* pData, unsigned size)
 		{
+			// delete old file
+			deleteFile(pFile);
+
 			IOHANDLE File = io_open(pFile, IOFLAG_WRITE);
 			if(!File)
 				return ERROR_FILE;
