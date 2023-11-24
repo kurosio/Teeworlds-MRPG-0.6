@@ -46,7 +46,7 @@ CStepPathFinder::~CStepPathFinder()
 
 void CStepPathFinder::Tick()
 {
-	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !length_squared(m_PosTo))
+	if(!m_pPlayer || !m_pPlayer->GetCharacter() || is_negative_vec(m_PosTo))
 	{
 		GameWorld()->DestroyEntity(this);
 		return;

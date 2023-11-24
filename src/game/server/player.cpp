@@ -505,18 +505,26 @@ void CPlayer::TryRespawn()
 		SpawnType = SPAWN_HUMAN_SAFE;
 	}
 
+	// Check if the controller allows spawning of the given spawn type at the specified position
 	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
 	{
-		if(!GS()->IsDungeon() && length_squared(GetTempData().m_TempTeleportPos) >= 1.0f)
+		// Check if self-coordinated spawning is possible
+		bool TrySelfCordSpawn = !is_negative_vec(GetTempData().m_TempTeleportPos) && !GS()->Collision()->CheckPoint(GetTempData().m_TempTeleportPos);
+
+		// If not in a dungeon and self-coordinated spawning is possible, use the temporary teleport position as the spawn position
+		if(!GS()->IsDungeon() && TrySelfCordSpawn)
 		{
+			// Reset the temporary teleport position
 			SpawnPos = GetTempData().m_TempTeleportPos;
-			GetTempData().m_TempTeleportPos = vec2(-1, -1);
+			GetTempData().m_TempTeleportPos = vec2(-1, -1); 
 		}
 
+		// Create a new character object at the allocated memory cell
 		const int AllocMemoryCell = MAX_CLIENTS * GS()->GetWorldID() + m_ClientID;
 		m_pCharacter = new(AllocMemoryCell) CCharacter(&GS()->m_World);
 		m_pCharacter->Spawn(this, SpawnPos);
 		GS()->CreatePlayerSpawn(SpawnPos);
+
 		m_Spawned = false;
 	}
 }

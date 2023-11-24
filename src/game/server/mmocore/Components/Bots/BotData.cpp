@@ -205,7 +205,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				}
 
 				// add new move_to point
-				if(length_squared(Position) > 0.f)
+				if(!is_negative_vec(Position))
 				{
 					TaskRequiredMoveTo Move;
 					Move.m_WorldID = WorldID;
