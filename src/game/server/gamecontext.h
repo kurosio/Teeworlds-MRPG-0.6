@@ -40,7 +40,7 @@ class CGS : public IGameServer
 	int m_WorldID;
 	int m_DungeonID;
 	int m_RespawnWorldID;
-	inline static CVoteEventOptionalContainer m_Optionals[MAX_CLIENTS] {};
+	inline static CVoteEventOptionalContainer m_Optionals[MAX_PLAYERS] {};
 
 public:
 	IServer *Server() const { return m_pServer; }
@@ -64,7 +64,11 @@ public:
 	/* #########################################################################
 		SWAP GAMECONTEX DATA
 	######################################################################### */
-	CVoteEventOptionalContainer& GetVoteOptionalContainer(int ClientID) { return m_Optionals[ClientID]; }
+	CVoteEventOptionalContainer& GetVoteOptionalContainer(int ClientID)
+	{
+		dbg_assert(ClientID >= 0 && ClientID < MAX_PLAYERS, "CVoteEventOptionalContainer out of bounds");
+		return m_Optionals[ClientID];
+	}
 	static ska::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
 	// - - - - - - - - - - - -
 
