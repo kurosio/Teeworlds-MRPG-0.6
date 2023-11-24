@@ -822,9 +822,9 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 		return true;
 	}
 
-	if(!m_Optionals.empty())
+	if(!GS()->GetVoteOptionalContainer(m_ClientID).empty())
 	{
-		CVoteEventOptional* pOptional = &m_Optionals.front();
+		CVoteEventOptional* pOptional = &GS()->GetVoteOptionalContainer(m_ClientID).front();
 		RunEventOptional(Vote, pOptional);
 	}
 
@@ -1076,10 +1076,10 @@ CVoteEventOptional* CPlayer::CreateVoteOptional(int OptionID, int OptionID2, int
 	va_end(VarArgs);
 
 	// Add the vote event to the list of optionals
-	m_Optionals.push(Optional);
+	GS()->GetVoteOptionalContainer(m_ClientID).push(Optional);
 
 	// Return a pointer to the newly created vote event
-	return &m_Optionals.back();
+	return &GS()->GetVoteOptionalContainer(m_ClientID).back();
 }
 
 // This function is a member function of the CPlayer class.
@@ -1108,11 +1108,11 @@ void CPlayer::RunEventOptional(int Option, CVoteEventOptional* pOptional)
 void CPlayer::HandleVoteOptionals()
 {
 	// If the list of optionals is empty, return
-	if(m_Optionals.empty())
+	if(GS()->GetVoteOptionalContainer(m_ClientID).empty())
 		return;
 
 	// Get a pointer to the first optional in the list
-	CVoteEventOptional* pOptional = &m_Optionals.front();
+	CVoteEventOptional* pOptional = &GS()->GetVoteOptionalContainer(m_ClientID).front();
 
 	// If the optional is not already being processed
 	if(!pOptional->m_Working)
@@ -1139,6 +1139,6 @@ void CPlayer::HandleVoteOptionals()
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
 		// Remove the first optional from the list
-		m_Optionals.pop();
+		GS()->GetVoteOptionalContainer(m_ClientID).pop();
 	}
 }

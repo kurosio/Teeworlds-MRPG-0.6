@@ -20,6 +20,8 @@
 
 class CGS : public IGameServer
 {
+	using CVoteEventOptionalContainer = std::queue<CVoteEventOptional>;
+
 	/* #########################################################################
 		VAR AND OBJECT GAMECONTEX DATA
 	######################################################################### */
@@ -38,6 +40,7 @@ class CGS : public IGameServer
 	int m_WorldID;
 	int m_DungeonID;
 	int m_RespawnWorldID;
+	inline static CVoteEventOptionalContainer m_Optionals[MAX_CLIENTS] {};
 
 public:
 	IServer *Server() const { return m_pServer; }
@@ -61,6 +64,7 @@ public:
 	/* #########################################################################
 		SWAP GAMECONTEX DATA
 	######################################################################### */
+	CVoteEventOptionalContainer& GetVoteOptionalContainer(int ClientID) { return m_Optionals[ClientID]; }
 	static ska::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
 	// - - - - - - - - - - - -
 

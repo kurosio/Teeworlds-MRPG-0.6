@@ -213,8 +213,6 @@ public:
 	CVoteEventOptional* CreateVoteOptional(int OptionID, int OptionID2, int Sec, const char* pInformation, ...);
 
 private:
-	inline static std::queue<CVoteEventOptional> m_Optionals {};
-
 	// Function: RunEventOptional
 	// Parameters:
 	//    - Option: an integer value representing the selected option for the vote event
