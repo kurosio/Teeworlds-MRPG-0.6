@@ -323,11 +323,10 @@ void CPlayer::Snap(int SnappingClient)
 		}
 
 		// Check if the player is authenticated and if the refresh tick for nickname leveling is in the future
-		if(IsAuthed() && m_aPlayerTick[RefreshNickLeveling] > Server()->Tick())
+		if(IsAuthed() && m_aPlayerTick[RefreshNickLeveling] > Server()->Tick() && !(m_PlayerFlags & PLAYERFLAG_CHATTING))
 		{
-			// Create a buffer for the new nickname with the format "Level - X", where X is the player's level
 			char aBufNicknameLeveling[MAX_NAME_LENGTH];
-			str_format(aBufNicknameLeveling, sizeof(aBufNicknameLeveling), "Level - %d", Acc().m_Level);
+			str_format(aBufNicknameLeveling, sizeof(aBufNicknameLeveling), "Lv%d %.4s...", Acc().m_Level, Server()->ClientName(m_ClientID));
 
 			// Convert the new nickname to integer values and update the client info's m_Name0 field
 			StrToInts(&pClientInfo->m_Name0, 4, aBufNicknameLeveling);
