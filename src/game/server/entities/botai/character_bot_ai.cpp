@@ -1102,20 +1102,20 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && !m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[i])
 			continue;
 
-		// Check if the bot is a npc type
-		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
-		{
-			// Check if the bot is a guardian NPC and the player is not active for the bot
-			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !GS()->m_apPlayers[i]->Acc().IsRelationshipsDeterioratedToMax())
-			{
-				continue;
-			}
-		}
-
 		// check the distance of the player
 		CPlayer* pFinderHard = GS()->GetPlayer(i, true, true);
 		if(AI()->GetTarget()->GetCID() == i || !pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)
 			continue;
+
+		// Check if the bot is a npc type
+		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
+		{
+			// Check if the bot is a guardian NPC and the player is not active for the bot
+			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !pFinderHard->Acc().IsRelationshipsDeterioratedToMax())
+			{
+				continue;
+			}
+		}
 
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
