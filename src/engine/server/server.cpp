@@ -974,9 +974,7 @@ void CServer::SendRconLogLine(int ClientID, const CLogMessage* pMessage)
 	const char* pStart = str_find(pLine, "<{");
 	const char* pEnd = pStart == NULL ? NULL : str_find(pStart + 2, "}>");
 	char aLine[512];
-	char aLineWithoutIps[512];
 	aLine[0] = '\0';
-	aLineWithoutIps[0] = '\0';
 
 	if(pStart != NULL && pEnd != NULL)
 	{
@@ -984,16 +982,12 @@ void CServer::SendRconLogLine(int ClientID, const CLogMessage* pMessage)
 		str_append(aLine, pStart + 2, pStart - pLine + pEnd - pStart - 1);
 		str_append(aLine, pEnd + 2);
 
-		str_append(aLineWithoutIps, pLine, pStart - pLine + 1);
-		str_append(aLineWithoutIps, "XXX");
-		str_append(aLineWithoutIps, pEnd + 2);
-
 		pLine = aLine;
 	}
 
 	if(ClientID == -1)
 	{
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			if(m_aClients[i].m_State != CClient::STATE_EMPTY && m_aClients[i].m_Authed >= AUTHED_ADMIN)
 				SendRconLine(i, pLine);
