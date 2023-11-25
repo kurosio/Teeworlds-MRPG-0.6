@@ -24,7 +24,7 @@ bool CMultiWorlds::Add(int WorldID, IKernel* pKernel)
 	{
 		pNewWorld.m_pLoadedMap = CreateEngineMap();
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld.m_pLoadedMap, true, WorldID);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld.m_pLoadedMap), true, WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld.m_pLoadedMap), false, WorldID);
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld.m_pGameServer, true, WorldID);
 	}
 
