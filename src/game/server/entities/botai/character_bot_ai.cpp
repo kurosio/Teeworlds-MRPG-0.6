@@ -419,8 +419,15 @@ void CCharacterBotAI::TickDeferred()
 
 void CCharacterBotAI::Snap(int SnappingClient)
 {
+	// Get the ID of the bot player
 	int ID = m_pBotPlayer->GetCID();
-	if(NetworkClipped(SnappingClient) || !Server()->Translate(ID, SnappingClient) || !m_pBotPlayer->IsVisibleForClient(SnappingClient))
+
+	// Check if the bot player is not active or not active for the snapping client
+	if(!m_pBotPlayer->IsActive() || !m_pBotPlayer->IsActiveForClient(SnappingClient))
+		return;
+
+	// Check if the bot player is network clipped or if the ID could not be translated for the snapping client
+	if(NetworkClipped(SnappingClient) || !Server()->Translate(ID, SnappingClient))
 		return;
 
 	// Character
@@ -1180,7 +1187,7 @@ bool CCharacterBotAI::SearchPlayersToTalk()
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		// check for visible client
-		if(!m_pBotPlayer->IsVisibleForClient(i))
+		if(!m_pBotPlayer->IsActive() || !m_pBotPlayer->IsActiveForClient(i))
 			continue;
 
 		// check active player near bot

@@ -112,8 +112,8 @@ public:
 	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0");
 
 	virtual void HandleTuningParams();
-	virtual int64_t GetMaskVisibleForClients() const { return -1; };
-	virtual int IsVisibleForClient(int ClientID) const { return 2; }
+	virtual int64_t GetMaskVisibleForClients() const { return -1; }
+	virtual int IsActiveForClient(int ClientID) const { return 2; }
 	virtual int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
 	virtual int GetAttributeSize(AttributeIdentifier ID);
 	float GetAttributePercent(AttributeIdentifier ID);

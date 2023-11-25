@@ -62,6 +62,8 @@ private:
 
 	CEntity *m_pNextTraverseEntity;
 	CEntity *m_apFirstEntityTypes[NUM_ENTTYPES];
+	ska::unordered_set<int> m_aMarkedBotsActive;
+	ska::unordered_map<int, bool> m_aBotsActive;
 
 	class CGS *m_pGS;
 	class IServer *m_pServer;
@@ -79,6 +81,7 @@ public:
 
 	void SetGameServer(CGS *pGS);
 	void UpdatePlayerMaps();
+	bool IsBotActive(int ClientID) { return m_aBotsActive[ClientID]; }
 
 	CEntity *FindFirst(int Type);
 

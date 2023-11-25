@@ -1497,7 +1497,8 @@ bool CCharacter::StartConversation(CPlayer* pTarget)
 		|| pTargetBot->GetBotType() == TYPE_BOT_EIDOLON
 		|| (pTarget->GetBotType() == TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[pTarget->GetBotMobID()].m_HasAction)
 		|| (pTarget->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pTarget->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
-		|| !pTargetBot->IsVisibleForClient(m_pPlayer->GetCID()))
+		|| !pTargetBot->IsActive()
+		|| !pTargetBot->IsActiveForClient(m_pPlayer->GetCID()))
 		return false;
 
 	m_pPlayer->m_Dialog.Start(m_pPlayer, pTarget->GetCID());

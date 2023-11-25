@@ -90,7 +90,7 @@ int CDialogElem::GetClientIDByBotID(CGS* pGS, int CheckVisibleForCID, int BotID)
 			continue;
 
 		if(const CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(pGS->m_apPlayers[i]);
-			pPlayerBot->GetBotID() == BotID && pPlayerBot->IsVisibleForClient(CheckVisibleForCID))
+			pPlayerBot->GetBotID() == BotID && pPlayerBot->IsActiveForClient(CheckVisibleForCID))
 		{
 			const CPlayer* pPlayer = pGS->m_apPlayers[CheckVisibleForCID];
 			const float Distance = distance(pPlayerBot->GetCharacter()->GetPos(), pPlayer->m_ViewPos);

@@ -54,42 +54,58 @@ void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 
 void CPlayerBot::Tick()
 {
-	m_BotActive = false;
+	// Check if the character is not active
+	if(!IsActive())
+	{
+		// Check if the character is not spawned and the respawn tick has passed
+		if(!m_pCharacter && m_Spawned && m_aPlayerTick[Respawn] <= Server()->Tick())
+		{
+			// Try to respawn the character
+			TryRespawn();
+		}
 
+		// Exit the function
+		return;
+	}
+
+	// Check if m_pCharacter exists and if it is not alive
 	if(m_pCharacter && !m_pCharacter->IsAlive())
 	{
 		delete m_pCharacter;
 		m_pCharacter = nullptr;
 	}
 
+	// Check if the character exists
 	if(m_pCharacter)
 	{
-		m_BotActive = GS()->IsPlayersNearby(m_pCharacter->GetPos(), 1000.0f);
-
-		// update eidolon position
+		// Update eidolon position
 		if(m_BotType == TYPE_BOT_EIDOLON)
 		{
-			m_BotActive = m_BotActive && GetEidolonOwner();
-			if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && !m_BotActive)
+			// Check if there is a valid owner for the eidolon and if the eidolon is not active
+			if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && distance(pOwner->m_ViewPos, m_ViewPos) > 1000.f)
 			{
+				// Get the position of the owner and change position
 				vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
 				m_pCharacter->m_DoorHit = false;
 				m_pCharacter->ChangePosition(OwnerPos);
+
+				// Set the velocity and direction of the character to the owner's velocity and direction
 				m_pCharacter->m_Core.m_Vel = pOwner->GetCharacter()->m_Core.m_Vel;
 				m_pCharacter->m_Core.m_Direction = pOwner->GetCharacter()->m_Core.m_Direction;
-				m_BotActive = true;
+				m_pCharacter->m_Core.m_Input = pOwner->GetCharacter()->m_Core.m_Input;
 			}
 		}
 
-		if(m_pCharacter->IsAlive() && m_BotActive)
+		// Check if the character is alive
+		if(m_pCharacter->IsAlive())
 		{
 			m_ViewPos = m_pCharacter->GetPos();
 			HandlePathFinder();
 		}
 	}
+	// Respawn the bot if it has been spawned and the respawn tick has been reached
 	else if(m_Spawned && m_aPlayerTick[Respawn] <= Server()->Tick())
 	{
-		m_BotActive = true;
 		TryRespawn();
 	}
 }
@@ -139,6 +155,11 @@ void CPlayerBot::HandleEffects()
 		}
 		++pEffect;
 	}
+}
+
+bool CPlayerBot::IsActive() const
+{
+	return GS()->m_World.IsBotActive(m_ClientID);
 }
 
 void CPlayerBot::ResetRespawnTick()
@@ -313,12 +334,21 @@ void CPlayerBot::TryRespawn()
 
 int64_t CPlayerBot::GetMaskVisibleForClients() const
 {
+	// Initialize the mask with the client ID
 	int64_t Mask = CmaskOne(m_ClientID);
+
+	// Loop through all players
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(IsVisibleForClient(i))
+		// Check if the player is active for the client
+		if(IsActiveForClient(i))
+		{
+			// Add the player's ID to the mask
 			Mask |= CmaskOne(i);
+		}
 	}
+
+	// Return the final mask
 	return Mask;
 }
 
@@ -327,10 +357,10 @@ int64_t CPlayerBot::GetMaskVisibleForClients() const
 	1 - is active draw only bot
 	2 - is active draw bot and entities
 */
-int CPlayerBot::IsVisibleForClient(int ClientID) const
+int CPlayerBot::IsActiveForClient(int ClientID) const
 {
 	CPlayer* pSnappingPlayer = GS()->m_apPlayers[ClientID];
-	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer || !m_BotActive)
+	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer)
 		return 0;
 
 	if(m_BotType == TYPE_BOT_QUEST)
@@ -369,8 +399,15 @@ void CPlayerBot::HandleTuningParams()
 
 void CPlayerBot::Snap(int SnappingClient)
 {
+	// Get the client ID
 	int ID = m_ClientID;
-	if(!Server()->Translate(ID, SnappingClient) || !IsVisibleForClient(SnappingClient))
+
+	// Translate the client ID to the corresponding snapping client
+	if(!Server()->Translate(ID, SnappingClient))
+		return;
+
+	// Check if the game is active or if it is active for the snapping client
+	if(!IsActive() || !IsActiveForClient(SnappingClient))
 		return;
 
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, ID, sizeof(CNetObj_ClientInfo)));
@@ -532,7 +569,7 @@ CTeeInfo& CPlayerBot::GetTeeInfo() const
 
 void CPlayerBot::HandlePathFinder()
 {
-	if(!m_BotActive || !m_pCharacter || !m_pCharacter->IsAlive())
+	if(!IsActive() || !m_pCharacter || !m_pCharacter->IsAlive())
 		return;
 
 	// Check if the bot type is TYPE_BOT_MOB

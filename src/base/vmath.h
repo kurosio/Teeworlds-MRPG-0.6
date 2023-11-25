@@ -90,9 +90,17 @@ constexpr inline vector2_base<T> rotate(const vector2_base<T>& a, float angle)
 }
 
 template<typename T>
-inline T distance(const vector2_base<T> a, const vector2_base<T>& b)
+constexpr inline T distance(const vector2_base<T> a, const vector2_base<T>& b)
 {
 	return length(a - b);
+}
+
+template<typename T>
+constexpr inline T distance_squared(const vector2_base<T>& a, const vector2_base<T>& b)
+{
+	float dx = a.x - b.x;
+	float dy = a.y - b.y;
+	return dx * dx + dy * dy;
 }
 
 template<typename T>

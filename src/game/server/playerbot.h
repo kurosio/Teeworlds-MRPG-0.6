@@ -16,7 +16,6 @@ class CPlayerBot : public CPlayer
 	int m_MobID;
 	int m_BotHealth;
 	int m_BotStartHealth;
-	bool m_BotActive;
 	int m_DungeonAllowedSpawn;
 
 	struct CQuestBotMobInfo
@@ -61,7 +60,7 @@ public:
 	void UpdateTempData(int Health, int Mana) override { m_BotHealth = Health; }
 
 	int64_t GetMaskVisibleForClients() const override;
-	int IsVisibleForClient(int ClientID) const override;
+	int IsActiveForClient(int ClientID) const override;
 	int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetAttributeSize(AttributeIdentifier ID) override;
 
@@ -74,7 +73,7 @@ public:
 	void Snap(int SnappingClient) override;
 	void FakeSnap() override;
 
-	bool IsActive() const override { return m_BotActive; };
+	bool IsActive() const override;
 	void ResetRespawnTick();
 
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }

@@ -94,7 +94,7 @@ void CSnapFull::Snap(int SnappingClient)
 
 	// skip non interactive bot
 	CPlayer* pOwner = GS()->m_apPlayers[m_ClientID];
-	if(pOwner->IsVisibleForClient(SnappingClient) != 2)
+	if(pOwner->IsActiveForClient(SnappingClient) != 2)
 		return;
 
 	const float AngleStart = (2.0f * pi * Server()->Tick()/static_cast<float>(Server()->TickSpeed()))/3.0f;
