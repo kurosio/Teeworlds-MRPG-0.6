@@ -308,9 +308,9 @@ void CGameWorld::UpdatePlayerMaps()
 
 			// Calculate the distance between the player's view position and the bot's position
 			float Distance = distance(pPlayer->m_ViewPos, pBotPlayer->GetCharacter()->m_Pos);
-			if(Distance > g_Config.m_SvMapDistanceActveBot)
+			if(Distance > (float)g_Config.m_SvMapDistanceActveBot)
 			{
-				// If the distance is greater than 1000, set the distance to a very large value and skip to the next player
+				// If the distance is greater
 				m_aBotsActive[j] = false;
 				Dist[j].first = 1e10;
 				continue;
