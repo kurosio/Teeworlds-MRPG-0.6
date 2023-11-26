@@ -2,7 +2,7 @@
 
 #include "server.h"
 
-constexpr size_t MAX_PENDING_MSG_SHIRK = 1000;
+constexpr size_t MAX_PENDING_MSG_SHIRK = 300;
 std::atomic_bool grequest_update {false};
 
 CServerLogger::CServerLogger(CServer *pServer) :
