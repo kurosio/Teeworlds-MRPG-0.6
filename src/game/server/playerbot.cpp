@@ -613,8 +613,7 @@ void CPlayerBot::HandlePathFinder()
 			m_PathFinderData.Get().Clear();
 
 			// Prepare the path finder data for default path finding
-			if(GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos))
-				dbg_msg("test", "starting prepare for: %d", m_ClientID);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}
 
@@ -627,8 +626,7 @@ void CPlayerBot::HandlePathFinder()
 			m_PathFinderData.Get().Clear();
 
 			// Prepare the path finder data for default path finding
-			if(GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos))
-				dbg_msg("test", "starting prepare");
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}
 }
