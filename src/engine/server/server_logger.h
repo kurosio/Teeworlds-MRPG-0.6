@@ -16,6 +16,10 @@ class CServerLogger : public ILogger
 public:
 	CServerLogger(CServer *pServer);
 	void Log(const CLogMessage *pMessage) override REQUIRES(!m_PendingLock);
+
+	// confusions, when working off the only logs from the thread
+	void Update();
+
 	// Must be called from the main thread!
 	void OnServerDeletion();
 };

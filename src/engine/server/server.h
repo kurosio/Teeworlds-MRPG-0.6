@@ -248,11 +248,11 @@ public:
 	void UpdateRegisterServerInfo();
 	void UpdateServerInfo(bool Resend = false);
 
-	void PumpNetwork();
+	void PumpNetwork(bool PacketWaiting);
 
 	bool LoadMap(int ID);
 
-	int Run();
+	int Run(ILogger* pLogger);
 
 	static void ConKick(IConsole::IResult* pResult, void* pUser);
 	static void ConStatus(IConsole::IResult* pResult, void* pUser);

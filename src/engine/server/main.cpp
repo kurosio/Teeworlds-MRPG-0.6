@@ -173,7 +173,7 @@ int main(int argc, const char** argv)
 
 	// run the server
 	dbg_msg("server", "starting...");
-	int Ret = pServer->Run();
+	int Ret = pServer->Run(pServerLogger.get());
 
 	pServerLogger->OnServerDeletion();
 	// free

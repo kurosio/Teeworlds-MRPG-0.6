@@ -37,6 +37,7 @@
 
 #include "multi_worlds.h"
 #include "server_ban.h"
+#include "server_logger.h"
 
 void CServer::CClient::Reset()
 {
@@ -974,7 +975,7 @@ void CServer::SendRconLogLine(int ClientID, const CLogMessage* pMessage)
 	const char* pStart = str_find(pLine, "<{");
 	const char* pEnd = pStart == nullptr ? nullptr : str_find(pStart + 2, "}>");
 
-	char aLine[512]{};
+	char aLine[512] {};
 	if(pStart != nullptr && pEnd != nullptr)
 	{
 		str_append(aLine, pLine, pStart - pLine + 1);
@@ -1379,51 +1380,54 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 	}
 }
 
-void CServer::PumpNetwork()
+void CServer::PumpNetwork(bool PacketWaiting)
 {
 	CNetChunk Packet;
 	SECURITY_TOKEN ResponseToken;
 
 	m_NetServer.Update();
 
-	// process packets
-	while(m_NetServer.Recv(&Packet, &ResponseToken))
+	if(PacketWaiting)
 	{
-		if(Packet.m_ClientID == -1)
+		// process packets
+		while(m_NetServer.Recv(&Packet, &ResponseToken))
 		{
-			if(ResponseToken == NET_SECURITY_TOKEN_UNKNOWN && m_pRegister->OnPacket(&Packet))
-				continue;
-
+			if(Packet.m_ClientID == -1)
 			{
-				int ExtraToken = 0;
-				int Type = -1;
-				if(Packet.m_DataSize >= (int)sizeof(SERVERBROWSE_GETINFO) + 1 &&
-					mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
-				{
-					if(Packet.m_Flags & NETSENDFLAG_EXTENDED)
-					{
-						Type = SERVERINFO_EXTENDED;
-						ExtraToken = (Packet.m_aExtraData[0] << 8) | Packet.m_aExtraData[1];
-					}
-					else
-						Type = SERVERINFO_VANILLA;
-				}
-				else if(Packet.m_DataSize >= (int)sizeof(SERVERBROWSE_GETINFO_64_LEGACY) + 1 &&
-					mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO_64_LEGACY, sizeof(SERVERBROWSE_GETINFO_64_LEGACY)) == 0)
-				{
-					Type = SERVERINFO_64_LEGACY;
-				}
+				if(ResponseToken == NET_SECURITY_TOKEN_UNKNOWN && m_pRegister->OnPacket(&Packet))
+					continue;
 
-				if(Type != -1)
 				{
-					int Token = ((unsigned char*)Packet.m_pData)[sizeof(SERVERBROWSE_GETINFO)];
-					Token |= ExtraToken << 8;
-					SendServerInfoConnless(&Packet.m_Address, Token, Type);
+					int ExtraToken = 0;
+					int Type = -1;
+					if(Packet.m_DataSize >= (int)sizeof(SERVERBROWSE_GETINFO) + 1 &&
+						mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO)) == 0)
+					{
+						if(Packet.m_Flags & NETSENDFLAG_EXTENDED)
+						{
+							Type = SERVERINFO_EXTENDED;
+							ExtraToken = (Packet.m_aExtraData[0] << 8) | Packet.m_aExtraData[1];
+						}
+						else
+							Type = SERVERINFO_VANILLA;
+					}
+					else if(Packet.m_DataSize >= (int)sizeof(SERVERBROWSE_GETINFO_64_LEGACY) + 1 &&
+						mem_comp(Packet.m_pData, SERVERBROWSE_GETINFO_64_LEGACY, sizeof(SERVERBROWSE_GETINFO_64_LEGACY)) == 0)
+					{
+						Type = SERVERINFO_64_LEGACY;
+					}
+
+					if(Type != -1)
+					{
+						int Token = ((unsigned char*)Packet.m_pData)[sizeof(SERVERBROWSE_GETINFO)];
+						Token |= ExtraToken << 8;
+						SendServerInfoConnless(&Packet.m_Address, Token, Type);
+					}
 				}
 			}
+			else
+				ProcessClientPacket(&Packet);
 		}
-		else
-			ProcessClientPacket(&Packet);
 	}
 
 	m_pServerBan->Update();
@@ -1830,7 +1834,7 @@ bool CServer::LoadMap(int ID)
 	return true;
 }
 
-int CServer::Run()
+int CServer::Run(ILogger* pLogger)
 {
 	if(m_RunServer == UNINITIALIZED)
 		m_RunServer = RUNNING;
@@ -1941,23 +1945,29 @@ int CServer::Run()
 
 	// start game
 	{
+		bool NonActive = false;
+		bool PacketWaiting = false;
+		CServerLogger* pServerLogger = static_cast<CServerLogger*>(pLogger);
+
 		m_GameStartTime = time_get();
 
 		UpdateServerInfo();
 		while(m_RunServer < STOPPING)
 		{
+			if(NonActive)
+			{
+				PumpNetwork(PacketWaiting);
+			}
+
+			set_new_tick();
+
 			int64_t t = time_get();
 			bool NewTicks = false;
-			bool ShouldSnap = false;
-			bool ExistsPlayers = false;
 
 			while(t > TickStartTime(m_CurrentGameTick + 1))
 			{
-				NewTicks = true;
-
 				m_CurrentGameTick++;
-				if((m_CurrentGameTick % 2) == 0)
-					ShouldSnap = true;
+				NewTicks = true;
 
 				// apply new input
 				for(int c = 0; c < MAX_PLAYERS; c++)
@@ -1965,7 +1975,6 @@ int CServer::Run()
 					if(m_aClients[c].m_State == CClient::STATE_EMPTY)
 						continue;
 
-					ExistsPlayers = true;
 					for(auto& m_aInput : m_aClients[c].m_aInputs)
 					{
 						if(m_aInput.m_GameTick == Tick())
@@ -2009,84 +2018,126 @@ int CServer::Run()
 
 			if(NewTicks)
 			{
-				// heavy reset server ((24 * 60) * 60) * SERVER_TICK_SPEED = 4320000 tick in day i think
-				if((!ExistsPlayers && m_CurrentGameTick > (g_Config.m_SvHardresetAfterDays * 4320000)) || m_HeavyReload)
+				// Check if the server is non-active and if the current game tick has exceeded the specified number of days for a hard reset, or if a heavy reload is requested.
+				if((NonActive && m_CurrentGameTick > (g_Config.m_SvHardresetAfterDays * 4320000)) || m_HeavyReload)
 				{
 					m_CurrentGameTick = 0;
 					m_GameStartTime = time_get();
 					m_ServerInfoFirstRequest = 0;
 					SetOffsetWorldTime(0);
 
+					// Check if the worlds were loaded successfully
 					if(!MultiWorlds()->LoadWorlds(Kernel(), Storage(), Console()))
 					{
+						// If not, log an error message
 						log_error("server", "interfaces for heavy reload could not be updated.");
 						return -1;
 					}
 
+					// iterate through all initialized worlds
 					for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 					{
-						// load map data
+						// load map data for the current world
 						if(!LoadMap(i))
 						{
+							// if the map fails to load, print an error message and return -1
 							str_format(aBuf, sizeof(aBuf), "%s the map is not loaded.", MultiWorlds()->GetWorld(i)->m_aPath);
 							Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 							return -1;
 						}
 					}
 
+					// check if heavy reload is needed
 					if(m_HeavyReload)
 					{
 						// reload players
 						for(int ClientID = 0; ClientID < MAX_PLAYERS; ClientID++)
 						{
+							// skip clients that are not fully connected
 							if(m_aClients[ClientID].m_State <= CClient::STATE_AUTH)
 								continue;
 
+							// reset client data
 							m_aClients[ClientID].Reset();
 							m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 							m_aClients[ClientID].m_ChangeWorld = false;
+
+							// send map to client
 							SendMap(ClientID);
 						}
 
+						// reset heavy reload flag
 						m_HeavyReload = false;
 					}
 					else
 					{
+						// initialize the game
 						Init();
 					}
 
-					// reinit gamecontext
+					// Reinitialize the game context for each initialized world
 					for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 					{
 						IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->m_pGameServer;
 						pGameServer->OnInit(i);
 					}
 
+					// Update the server information
 					UpdateServerInfo(true);
+
+					// Print a message to the console indicating that a server was reloaded heavily
 					Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "A server was heavy reload.");
 				}
 				else
 				{
-					// snap game
-					if(g_Config.m_SvHighBandwidth || ShouldSnap)
+					// check if the server has high bandwidth or if the current game tick is even
+					if(g_Config.m_SvHighBandwidth || (m_CurrentGameTick % 2) == 0)
 					{
+						// perform a snapshot
 						for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 							DoSnapshot(i);
 					}
+
+					// update client RCON commands
 					UpdateClientRconCommands();
 				}
 			}
 
-			// master server stuff
+			// Perform updates
 			m_pRegister->Update();
+			pServerLogger->Update();
 
+			// Check if the server info needs to be updated
 			if(m_ServerInfoNeedsUpdate)
 				UpdateServerInfo();
 
-			PumpNetwork();
+			// Check if the server is not in a non-active state
+			if(!NonActive)
+			{
+				// Pump the network to process any waiting packets
+				PumpNetwork(PacketWaiting);
+			}
 
-			// wait for incomming data
-			net_socket_read_wait(m_NetServer.Socket(), clamp(int((TickStartTime(m_CurrentGameTick + 1) - time_get()) * 1000 / time_freq()), 1, 1000 / SERVER_TICK_SPEED / 2));
+			// Check if the server is in a non-active state
+			NonActive = std::none_of(std::begin(m_aClients), std::end(m_aClients), [](const auto& client) { return client.m_State != CClient::STATE_EMPTY; });
+
+			// Wait for incoming data if the server is in a non-active state
+			if(NonActive)
+			{
+				// Wait for incoming data with a timeout of 1000000 microseconds (1 second)
+				PacketWaiting = net_socket_read_wait(m_NetServer.Socket(), 1000000);
+			}
+			else
+			{
+				// Set a new tick and calculate the time until the next tick
+				set_new_tick();
+				auto t = time_get();
+				auto x = (TickStartTime(m_CurrentGameTick + 1) - t) * 1000000 / time_freq() + 1;
+
+				// Wait for incoming data with a timeout of x microseconds
+				// If x is greater than 0, otherwise set PacketWaiting to true
+				PacketWaiting = x > 0 ? net_socket_read_wait(m_NetServer.Socket(), x) : true;
+			}
 		}
 	}
 
