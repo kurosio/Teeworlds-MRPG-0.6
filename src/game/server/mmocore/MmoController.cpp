@@ -540,20 +540,20 @@ void MmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalM
 	}
 }
 
-void MmoController::AsyncClientEnterMsgInfo(std::string ClientName, int ClientID)
+void MmoController::AsyncClientEnterMsgInfo(const std::string ClientName, int ClientID)
 {
 	CSqlString<MAX_NAME_LENGTH> PlayerName(ClientName.c_str());
 
 	// create new thread
 	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '%s'", PlayerName.cstr());
-	AsyncEnterRes->AtExecute([PlayerName, ClientID](ResultPtr pRes)
+	AsyncEnterRes->AtExecute([PlayerName = std::string(PlayerName.cstr()), ClientID](ResultPtr pRes)
 	{
 		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
 
 		if(!pRes->next())
 		{
 			pGS->Chat(ClientID, "You need to register using /register <login> <pass>!");
-			pGS->Chat(-1, "Apparently, we have a new player, {STR}!", PlayerName.cstr());
+			pGS->Chat(-1, "Apparently, we have a new player, {STR}!", PlayerName.c_str());
 			return;
 		}
 

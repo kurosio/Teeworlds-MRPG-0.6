@@ -4,8 +4,6 @@
 namespace sqlstr
 {
 
-void FuzzyString(char *pString, int size);
-
 // anti SQL injection
 void ClearString(char *pString, int size = 32);
 

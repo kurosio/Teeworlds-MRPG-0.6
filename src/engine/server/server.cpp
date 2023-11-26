@@ -972,11 +972,10 @@ void CServer::SendRconLogLine(int ClientID, const CLogMessage* pMessage)
 {
 	const char* pLine = pMessage->m_aLine;
 	const char* pStart = str_find(pLine, "<{");
-	const char* pEnd = pStart == NULL ? NULL : str_find(pStart + 2, "}>");
-	char aLine[512];
-	aLine[0] = '\0';
+	const char* pEnd = pStart == nullptr ? nullptr : str_find(pStart + 2, "}>");
 
-	if(pStart != NULL && pEnd != NULL)
+	char aLine[512]{};
+	if(pStart != nullptr && pEnd != nullptr)
 	{
 		str_append(aLine, pLine, pStart - pLine + 1);
 		str_append(aLine, pStart + 2, pStart - pLine + pEnd - pStart - 1);
@@ -990,13 +989,17 @@ void CServer::SendRconLogLine(int ClientID, const CLogMessage* pMessage)
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			if(m_aClients[i].m_State != CClient::STATE_EMPTY && m_aClients[i].m_Authed >= AUTHED_ADMIN)
+			{
 				SendRconLine(i, pLine);
+			}
 		}
 	}
 	else
 	{
 		if(m_aClients[ClientID].m_State != CClient::STATE_EMPTY)
+		{
 			SendRconLine(ClientID, pLine);
+		}
 	}
 }
 
@@ -2194,7 +2197,7 @@ void CServer::ConLogout(IConsole::IResult* pResult, void* pUser)
 }
 
 // Function to update special server info
-	void CServer::ConchainSpecialInfoupdate(IConsole::IResult * pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
+void CServer::ConchainSpecialInfoupdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	// Call the callback function with the given result and user data
 	pfnCallback(pResult, pCallbackUserData);
@@ -2210,7 +2213,7 @@ void CServer::ConLogout(IConsole::IResult* pResult, void* pUser)
 }
 
 // Function to update the maximum clients per IP
-void CServer::ConchainMaxclientsperipUpdate(IConsole::IResult * pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
+void CServer::ConchainMaxclientsperipUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	// Call the callback function with the given result and user data
 	pfnCallback(pResult, pCallbackUserData);
@@ -2224,7 +2227,7 @@ void CServer::ConchainMaxclientsperipUpdate(IConsole::IResult * pResult, void* p
 }
 
 // Function to update a mod command
-void CServer::ConchainModCommandUpdate(IConsole::IResult * pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
+void CServer::ConchainModCommandUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	// Check if there are two arguments in the result
 	if(pResult->NumArguments() == 2)
@@ -2267,7 +2270,7 @@ void CServer::ConchainModCommandUpdate(IConsole::IResult * pResult, void* pUserD
 }
 
 // Function to update the RCON password
-void CServer::ConchainRconPasswordSet(IConsole::IResult * pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
+void CServer::ConchainRconPasswordSet(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	// Call the callback function with the given result and user data
 	pfnCallback(pResult, pCallbackUserData);
@@ -2281,7 +2284,7 @@ void CServer::ConchainRconPasswordSet(IConsole::IResult * pResult, void* pUserDa
 }
 
 // Function to update the log level
-void CServer::ConchainLoglevel(IConsole::IResult * pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
+void CServer::ConchainLoglevel(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	// Cast the user data to CServer*
 	CServer* pSelf = (CServer*)pUserData;
@@ -2297,7 +2300,7 @@ void CServer::ConchainLoglevel(IConsole::IResult * pResult, void* pUserData, ICo
 }
 
 // Function to update the stdout output level
-void CServer::ConchainStdoutOutputLevel(IConsole::IResult * pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
+void CServer::ConchainStdoutOutputLevel(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	// Cast the user data to CServer*
 	CServer* pSelf = (CServer*)pUserData;
@@ -2449,7 +2452,7 @@ const char* CServer::GetAccountNickname(int AccountID)
 }
 
 // This function sets the loggers for the server
-void CServer::SetLoggers(std::shared_ptr<ILogger> && pFileLogger, std::shared_ptr<ILogger> && pStdoutLogger)
+void CServer::SetLoggers(std::shared_ptr<ILogger>&& pFileLogger, std::shared_ptr<ILogger>&& pStdoutLogger)
 {
 	// Set the file logger for the server
 	m_pFileLogger = pFileLogger;
