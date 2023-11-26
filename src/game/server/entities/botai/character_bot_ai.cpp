@@ -878,7 +878,7 @@ void CCharacterBotAI::EngineQuestMob()
 void CCharacterBotAI::Move()
 {
 	// try get path finder updated data
-	GS()->PathFinder()->SyncHandler()->TryMarkAndUpdatePreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
+	GS()->PathFinder()->Handle()->TryGetPreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
 
 	CPathFinderPrepared::CData& pData = m_pBotPlayer->m_PathFinderData.Get();
 
@@ -894,7 +894,7 @@ void CCharacterBotAI::Move()
 		ActiveWayPoints = i;
 	}
 
-	vec2 WayDir = vec2(0, 0);
+	vec2 WayDir = m_pBotPlayer->m_TargetPos;
 	if(Index > -1)
 		WayDir = normalize(pData.m_Points[Index] - GetPos());
 
@@ -1007,6 +1007,21 @@ void CCharacterBotAI::Move()
 		m_Input.m_Direction = -m_Input.m_Direction;
 		m_Input.m_Jump = 1;
 		m_MoveTick = Server()->Tick();
+	}
+
+	// Check if the path finder data is prepared
+	if(m_pBotPlayer->m_PathFinderData.IsPrepared())
+	{
+		// Get the last position from the path finder data
+		vec2 LastPos = m_pBotPlayer->m_PathFinderData.Get().GetLastPos();
+
+		// Check if the distance between the target position and the last position is greater than 300 units
+		// or if there is a collision between the target position and the last position
+		if(distance(m_pBotPlayer->m_TargetPos, LastPos) > 300.f || GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->m_TargetPos, LastPos, nullptr, nullptr))
+		{
+			// Clear the path finder data
+			m_pBotPlayer->m_PathFinderData.Get().Clear();
+		}
 	}
 }
 

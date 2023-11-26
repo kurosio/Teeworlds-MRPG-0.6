@@ -16,7 +16,7 @@
  * There is no danger of working with unprepared data.
  */
 
-// player object
+ // player object
 class CPathFinder
 {
 	// handler
@@ -42,24 +42,23 @@ class CPathFinder
 		static CPathFinderPrepared::CData CallbackRandomRadiusWaypoint(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
 
 	public:
-		explicit CHandler(CPathFinder* pPathFinder)
-		{
-			m_pPathFinder = pPathFinder;
-		}
+		explicit CHandler(CPathFinder* pPathFinder) : m_pPathFinder(pPathFinder) {}
 
-		/*
-		 * Prepares the data to CPathFinderPrepared
-		 * creates a task with a smart pointer and passes it to the thread
-		 */
-		template<CPathFinderPrepared::TYPE type>
-		void Prepare(CPathFinderPrepared* pPrepare, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
+		// This function is a template function that prepares a path finder for a specific type of path finding algorithm.
+		// The function takes a pointer to a CPathFinderPrepared object, the starting position, the search position, and an optional radius parameter.
+		// The function returns a boolean value indicating whether the preparation was successful or not.
+		template<CPathFinderPrepared::Type type>
+		bool Prepare(CPathFinderPrepared* pPrepare, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
 		{
-			// first need done old task
-			if(!pPrepare->m_FutureData.valid())
+			// Check if an old task needs to be done
+			bool IsRequiredPrepare = pPrepare->IsRequiredPrepare();
+			if(IsRequiredPrepare)
 			{
+				// Create a shared pointer with the necessary arguments
 				auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ m_pPathFinder, StartPos, SearchPos, Radius }));
 
-				if constexpr(type == CPathFinderPrepared::TYPE::RANDOM)
+				// Enqueue the task based on the type
+				if constexpr(type == CPathFinderPrepared::RANDOM)
 				{
 					pPrepare->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
 				}
@@ -68,16 +67,27 @@ class CPathFinder
 					pPrepare->m_FutureData = m_Pool.enqueue(&CallbackFindPath, Handle);
 				}
 			}
+
+			return IsRequiredPrepare;
 		}
 
-		/*
-		 * After use TryMarkAndUpdatePreparedData with True, prepared future data will be cleared, signaling the possibility of preparing 
-		 */
-		bool TryMarkAndUpdatePreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
+
+		// Function: TryGetPreparedData
+		// Returns: bool
+		// Parameters:
+		// - pPrepare: A pointer to a CPathFinderPrepared object that will be populated with prepared data if available.
+		// - pTarget (optional): A pointer to a vec2 object that will be populated with the target position if available.
+		// - pOldTarget (optional): A pointer to a vec2 object that will be populated with the old target position if available.
+		// 
+		// This function attempts to retrieve prepared data for pathfinding. If prepared data is available, it populates the pPrepare object with the data and returns true.
+		// If pTarget is provided, it also populates the pTarget object with the target position and returns true.
+		// If pOldTarget is provided, it also populates the pOldTarget object with the old target position and returns true.
+		// If prepared data is not available, it returns false.
+		bool TryGetPreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
 	};
 
 	friend class CHandler;
-	CHandler* m_pHandler{};
+	CHandler* m_pHandler {};
 
 public:
 	CPathFinder(CLayers* Layers, class CCollision* Collision);
@@ -105,7 +115,7 @@ public:
 
 	std::mutex m_mtxLimitedOnceUse;
 	int GetIndex(int XPos, int YPos) const;
-	CHandler* SyncHandler() const { return m_pHandler; }
+	CHandler* Handle() const { return m_pHandler; }
 
 	vec2 GetRandomWaypoint();
 	vec2 GetRandomWaypointRadius(vec2 Pos, float Radius);
@@ -123,8 +133,8 @@ private:
 		END = -4,
 	};
 
-	CLayers *m_pLayers;
-	CCollision *m_pCollision;
+	CLayers* m_pLayers;
+	CCollision* m_pCollision;
 
 	array<CNode> m_lNodes;
 

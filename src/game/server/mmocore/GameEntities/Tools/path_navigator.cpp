@@ -9,7 +9,7 @@
 #include "game/server/mmocore/PathFinder.h"
 
 CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, FromPos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, FromPos)
 {
 	vec2 PosTo { 0, 0 };
 	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, SearchPos, &PosTo);
@@ -20,7 +20,6 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pPar
 	m_pParent = pParent;
 	m_Projectile = Projectile;
 	m_StartByCreating = StartByCreating;
-	GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_Data, m_Pos, m_PosTo);
 	GameWorld()->InsertEntity(this);
 }
 
@@ -37,16 +36,21 @@ void CEntityPathNavigator::Tick()
 	if(m_TickCountDown > Server()->Tick())
 		return;
 
-	// update prepared data by required
-	if(m_Data.IsRequiredUpdatePreparedData())
+	// Check if enough time has passed since the last idle tick and if the distance between the parent's position and the target position is greater than 240 units
+	if(m_TickLastIdle < Server()->Tick() && distance(m_pParent->GetPos(), m_PosTo) > 240.f)
 	{
-		if(m_TickLastIdle < Server()->Tick() && distance(m_pParent->GetPos(), m_PosTo) > 240.f)
+		// Prepare the data for path finding using the default method in the path finder handle
+		if(GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_Data, m_pParent->GetPos(), m_PosTo))
 		{
+			// Reset the step position
 			m_StepPos = 0;
-			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_Data, m_pParent->GetPos(), m_PosTo);
-			GS()->PathFinder()->SyncHandler()->TryMarkAndUpdatePreparedData(&m_Data);
 		}
+	}
 
+	// Check if the path finder has prepared data available
+	if(!GS()->PathFinder()->Handle()->TryGetPreparedData(&m_Data))
+	{
+		// If not, return from the function
 		return;
 	}
 

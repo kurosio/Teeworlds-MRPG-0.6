@@ -266,7 +266,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackFindPath(const std::sh
 
 		// initilize for future data
 		CPathFinderPrepared::CData Data;
-		Data.m_Type = CPathFinderPrepared::TYPE::DEFAULT;
+		Data.m_Type = CPathFinderPrepared::DEFAULT;
 		Data.m_Points.reserve(pPathFinder->m_FinalSize);
 		for(int i = pPathFinder->m_FinalSize - 1, j = 0; i >= 0; i--, j++)
 		{
@@ -295,7 +295,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(c
 
 		// initilize for future data
 		CPathFinderPrepared::CData Data;
-		Data.m_Type = CPathFinderPrepared::TYPE::RANDOM;
+		Data.m_Type = CPathFinderPrepared::RANDOM;
 		Data.m_Points[0] = vec2(TargetPos.x * 32, TargetPos.y * 32);
 		return Data;
 	}
@@ -303,7 +303,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(c
 	return{};
 }
 
-bool CPathFinder::CHandler::TryMarkAndUpdatePreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget, vec2* pOldTarget)
+bool CPathFinder::CHandler::TryGetPreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget, vec2* pOldTarget)
 {
 	// check future status
 	if(pPrepare && pPrepare->m_FutureData.valid() && pPrepare->m_FutureData.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
@@ -312,8 +312,7 @@ bool CPathFinder::CHandler::TryMarkAndUpdatePreparedData(CPathFinderPrepared* pP
 		pPrepare->m_Data = pPrepare->m_FutureData.get();
 		pPrepare->m_Data.Prepare(pTarget, pOldTarget);
 		pPrepare->m_FutureData = {};
-		return true;
 	}
 
-	return false;
+	return pPrepare && !pPrepare->m_Data.Empty();
 }

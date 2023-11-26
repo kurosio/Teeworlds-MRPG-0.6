@@ -569,17 +569,17 @@ CTeeInfo& CPlayerBot::GetTeeInfo() const
 
 void CPlayerBot::HandlePathFinder()
 {
-	if(!IsActive() || !m_pCharacter || !m_pCharacter->IsAlive())
+	if(!IsActive() || !m_pCharacter || !m_pCharacter->IsAlive() || !m_PathFinderData.IsRequiredPrepare())
 		return;
 
 	// Check if the bot type is TYPE_BOT_MOB
 	if(GetBotType() == TYPE_BOT_MOB)
 	{
 		// Check if the target position is not (0, 0) and if the current server tick modulo (3 * m_ClientID) is 0
-		if(m_TargetPos != vec2(0, 0) && (Server()->Tick() + 3 * m_ClientID) % (Server()->TickSpeed()) == 0)
+		if(m_TargetPos != vec2(0, 0))
 		{
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 		// If the target position is (0, 0) or the distance between the view position and the target position is less than 128.0f
 		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
@@ -587,7 +587,7 @@ void CPlayerBot::HandlePathFinder()
 			// Set the last position tick to the current server tick plus a random time interval
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + rand() % 4);
 			// Prepare the path finder data for random path finding
-			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::RANDOM>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::RANDOM>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}
 
@@ -597,10 +597,10 @@ void CPlayerBot::HandlePathFinder()
 		// Get the owner ID of the bot
 		int OwnerID = m_MobID;
 		// Check if the owner player exists and if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
-		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
+		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0))
 		{
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
 		}
 	}
 
@@ -608,10 +608,13 @@ void CPlayerBot::HandlePathFinder()
 	else if(GetBotType() == TYPE_BOT_QUEST_MOB)
 	{
 		// Check if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
-		if(m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
+		if(m_TargetPos != vec2(0, 0))
 		{
+			m_PathFinderData.Get().Clear();
+
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			if(GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos))
+				dbg_msg("test", "starting prepare for: %d", m_ClientID);
 		}
 	}
 
@@ -619,10 +622,13 @@ void CPlayerBot::HandlePathFinder()
 	else if(GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
 	{
 		// Check if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
-		if(m_TargetPos != vec2(0, 0) && Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
+		if(m_TargetPos != vec2(0, 0))
 		{
+			m_PathFinderData.Get().Clear();
+
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->SyncHandler()->Prepare<CPathFinderPrepared::TYPE::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			if(GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos))
+				dbg_msg("test", "starting prepare");
 		}
 	}
 }
