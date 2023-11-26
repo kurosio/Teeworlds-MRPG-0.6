@@ -366,15 +366,29 @@ bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 
 void CCharacterBotAI::Tick()
 {
-	// check active this bot
-	if(!m_pBotPlayer->IsActive() || !IsAlive())
+	// Check if this bot is alive
+	if(!IsAlive())
 		return;
 
-	// check safe area
+	// Check if the bot player is active
+	if(!m_pBotPlayer->IsActive())
+	{
+		// Disable collision, hook hit, and damage
+		m_Core.m_CollisionDisabled = true;
+		m_Core.m_HookHitDisabled = true;
+		m_DamageDisabled = true;
+		return;
+	}
+
+	// Reset the safe state of the player
 	ResetSafe();
 
+	// Check if the player's current position is within a safe area or if the player is of type EIDOLON
 	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA) || m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
+	{
+		// Set the safe state of the player
 		SetSafe();
+	}
 
 	// engine bots
 	HandleBot();
