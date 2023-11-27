@@ -115,7 +115,7 @@ public:
 	void SetEnd(vec2 Pos);
 
 	std::mutex m_mtxLimitedOnceUse;
-	int GetIndex(int XPos, int YPos) const;
+	int GetIndex(int x, int y) const;
 	CHandler* Handle() const { return m_pHandler; }
 
 	vec2 GetRandomWaypoint();

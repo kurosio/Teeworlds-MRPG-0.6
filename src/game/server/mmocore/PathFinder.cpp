@@ -73,10 +73,7 @@ void CPathFinder::Init()
 
 void CPathFinder::SetStart(vec2 Pos)
 {
-	int StartX = clamp((int)(Pos.x / 32.0f), 0, m_LayerWidth - 1);
-	int StartY = clamp((int)(Pos.y / 32.0f), 0, m_LayerHeight - 1);
-
-	int Index = GetIndex(StartX, StartY);
+	int Index = GetIndex(Pos.x, Pos.y);
 	m_lNodes[Index].m_Parent = START;
 	m_lNodes[Index].m_IsClosed = true;
 	m_ClosedNodes++;
@@ -85,23 +82,23 @@ void CPathFinder::SetStart(vec2 Pos)
 
 void CPathFinder::SetEnd(vec2 Pos)
 {
-	int EndX = clamp((int)(Pos.x / 32.0f), 0, m_LayerWidth - 1);
-	int EndY = clamp((int)(Pos.y / 32.0f), 0, m_LayerHeight - 1);
-
-	int Index = GetIndex(EndX, EndY);
+	int Index = GetIndex(Pos.x, Pos.y);
 	m_lNodes[Index].m_Parent = END;
 	m_EndIndex = Index;
 }
 
 
-int CPathFinder::GetIndex(int XPos, int YPos) const
+int CPathFinder::GetIndex(int x, int y) const
 {
-	return XPos + m_pLayers->GameLayer()->m_Width * YPos;
+	int Nx = clamp(x / 32, 0, m_LayerWidth - 1);
+	int Ny = clamp(y / 32, 0, m_LayerHeight - 1);
+	return Ny * m_LayerWidth + Nx;
 }
 
 void CPathFinder::FindPath()
 {
 	int CurrentIndex = m_StartIndex;
+	dbg_msg("test", "start i: %d | end i: %d", m_StartIndex, m_EndIndex);
 	if (m_StartIndex > -1 && m_EndIndex > -1)
 	{
 		while (m_ClosedNodes < MAX_WAY_CALC && m_lNodes[CurrentIndex].m_ID != m_EndIndex)
@@ -130,9 +127,9 @@ void CPathFinder::FindPath()
 						WorkingIndex = CurrentIndex - m_LayerWidth;
 				}
 
-				if (WorkingIndex > -1 && !m_lNodes[WorkingIndex].m_IsCol && !m_lNodes[WorkingIndex].m_IsClosed)
+				if(WorkingIndex > -1 && !m_lNodes[WorkingIndex].m_IsCol && !m_lNodes[WorkingIndex].m_IsClosed)
 				{
-					if (!m_lNodes[WorkingIndex].m_IsOpen)
+					if(!m_lNodes[WorkingIndex].m_IsOpen)
 					{
 						// set its parent
 						m_lNodes[WorkingIndex].m_Parent = CurrentIndex;
@@ -149,7 +146,7 @@ void CPathFinder::FindPath()
 					else
 					{
 						// recalculate the G and F Value
-						if (m_lNodes[WorkingIndex].m_G > m_lNodes[CurrentIndex].m_G + 1)
+						if(m_lNodes[WorkingIndex].m_G > m_lNodes[CurrentIndex].m_G + 1)
 						{
 							// set new parent
 							m_lNodes[WorkingIndex].m_Parent = CurrentIndex;
@@ -165,7 +162,7 @@ void CPathFinder::FindPath()
 			}
 
 			if (m_Open.GetSize() < 1)
-				return;
+				break;
 
 			// get Lowest F from heap and set new CurrentIndex
 			CurrentIndex = m_Open.GetMin()->m_ID;
