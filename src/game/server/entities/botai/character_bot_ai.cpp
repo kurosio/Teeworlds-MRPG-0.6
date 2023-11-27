@@ -877,33 +877,47 @@ void CCharacterBotAI::EngineQuestMob()
 
 void CCharacterBotAI::Move()
 {
-	// try get path finder updated data
+	// Try to get the prepared data for the path finder
+	CPathFinderPrepared::CData& pData = m_pBotPlayer->m_PathFinderData.Get();
 	GS()->PathFinder()->Handle()->TryGetPreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
 
-	CPathFinderPrepared::CData& pData = m_pBotPlayer->m_PathFinderData.Get();
-
-	// update aim
+	// Update the aim of the bot player by calculating the direction vector from the current position to the target position
 	SetAim(m_pBotPlayer->m_TargetPos - m_Pos);
 
-	// parse path finder data
-	int Index = -1;
-	int ActiveWayPoints = 0;
+	// Initialize variables
+	int Index = -1; // Index of the last valid waypoint
+	int ActiveWayPoints = 4; // Number of active waypoints
+	vec2 WayDir = m_pBotPlayer->m_TargetPos; // Set WayDir to the target position of the bot player
 	for(int i = 0; i < (int)pData.m_Points.size() && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(pData.m_Points[i], m_Pos, nullptr, nullptr); i++)
 	{
-		Index = i;
-		ActiveWayPoints = i;
+		Index = i; // Update the Index variable with the current i value
+		ActiveWayPoints = i; // Update the ActiveWayPoints variable with the current i value
 	}
 
-	vec2 WayDir = m_pBotPlayer->m_TargetPos;
+	// If the given index is valid
 	if(Index > -1)
+	{
 		WayDir = normalize(pData.m_Points[Index] - GetPos());
+	}
 
+	// If the x component of WayDir is negative and there are more than 3 active waypoints
 	if(WayDir.x < 0 && ActiveWayPoints > 3)
+	{
+		// Set the direction input to -1 (left)
 		m_Input.m_Direction = -1;
+	}
+	// If the x component of WayDir is positive and there are more than 3 active waypoints
 	else if(WayDir.x > 0 && ActiveWayPoints > 3)
+	{
+		// Set the direction input to 1 (right)
 		m_Input.m_Direction = 1;
+	}
+	// Otherwise
 	else
+	{
+		// Set the direction input to the previous direction
 		m_Input.m_Direction = m_PrevDirection;
+	}
 
 	// check dissalow move
 	int BotType = m_pBotPlayer->GetBotType();
@@ -1007,21 +1021,6 @@ void CCharacterBotAI::Move()
 		m_Input.m_Direction = -m_Input.m_Direction;
 		m_Input.m_Jump = 1;
 		m_MoveTick = Server()->Tick();
-	}
-
-	// Check if the path finder data is prepared
-	if(m_pBotPlayer->m_PathFinderData.IsPrepared())
-	{
-		// Get the last position from the path finder data
-		vec2 LastPos = m_pBotPlayer->m_PathFinderData.Get().GetLastPos();
-
-		// Check if the distance between the target position and the last position is greater than 300 units
-		// or if there is a collision between the target position and the last position
-		if(distance(m_pBotPlayer->m_TargetPos, LastPos) > 300.f || GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->m_TargetPos, LastPos, nullptr, nullptr))
-		{
-			// Clear the path finder data
-			m_pBotPlayer->m_PathFinderData.Get().Clear();
-		}
 	}
 }
 

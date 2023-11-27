@@ -307,7 +307,7 @@ void CGameWorld::UpdatePlayerMaps()
 			}
 
 			// Calculate the distance between the player's view position and the bot's position
-			float Distance = distance(pPlayer->m_ViewPos, pBotPlayer->GetCharacter()->m_Pos);
+			float Distance = distance(pPlayer->m_ViewPos, pBotPlayer->GetCharacter()->m_Core.m_Pos);
 			if(Distance > (float)g_Config.m_SvMapDistanceActveBot)
 			{
 				// If the distance is greater

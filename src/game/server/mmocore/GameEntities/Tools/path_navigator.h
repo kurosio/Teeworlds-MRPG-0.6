@@ -21,6 +21,9 @@ class CEntityPathNavigator : public CEntity
 
 public:
 	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask = -1);
+	bool PreparedPathData();
+
+	ska::unordered_map<int, vec2> getFinishedContainer(ska::unordered_map<int, vec2>& pathContainer);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

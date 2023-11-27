@@ -44,21 +44,23 @@ class CPathFinder
 	public:
 		explicit CHandler(CPathFinder* pPathFinder) : m_pPathFinder(pPathFinder) {}
 
-		// This function is a template function that prepares a path finder for a specific type of path finding algorithm.
-		// The function takes a pointer to a CPathFinderPrepared object, the starting position, the search position, and an optional radius parameter.
-		// The function returns a boolean value indicating whether the preparation was successful or not.
+		// This function prepares the path finder for a search by creating a future task and storing it in the provided CPathFinderPrepared object.
+		// The type template parameter determines the type of search to be performed.
+		// The function returns true if the preparation is starting, meaning that a new future task is created.
+		// Otherwise, it returns false, indicating that the preparation is already in progress.
 		template<CPathFinderPrepared::Type type>
 		bool Prepare(CPathFinderPrepared* pPrepare, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
 		{
-			// Check if an old task needs to be done
-			bool IsRequiredPrepare = pPrepare->IsRequiredPrepare();
-			if(IsRequiredPrepare)
+			bool StartingPrepare = !pPrepare->m_FutureData.valid(); 
+
+			// Check if the preparation is starting
+			if(StartingPrepare)
 			{
-				// Create a shared pointer with the necessary arguments
+				// Create a shared pointer to a HandleArgsPack object with the necessary arguments for the callback function
 				auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ m_pPathFinder, StartPos, SearchPos, Radius }));
 
-				// Enqueue the task based on the type
-				if constexpr(type == CPathFinderPrepared::RANDOM)
+				// Enqueue a future task based on the type of search
+				if constexpr(type == CPathFinderPrepared::Type::RANDOM)
 				{
 					pPrepare->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
 				}
@@ -68,9 +70,8 @@ class CPathFinder
 				}
 			}
 
-			return IsRequiredPrepare;
+			return StartingPrepare;
 		}
-
 
 		// Function: TryGetPreparedData
 		// Returns: bool

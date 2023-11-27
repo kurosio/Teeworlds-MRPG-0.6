@@ -249,7 +249,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackFindPath(const std::sh
 {
 	HandleArgsPack* pHandle = pHandleData.get();
 
-	if(pHandle && pHandle->IsValid() && length(pHandle->m_StartFrom) > 0 && length(pHandle->m_Search) > 0)
+	if(pHandle && pHandle->IsValid() && !is_negative_vec(pHandle->m_StartFrom) && !is_negative_vec(pHandle->m_Search))
 	{
 		// guard element, path finder working only with one item TODO: rework
 		std::lock_guard QueueLock { pHandle->m_PathFinder->m_mtxLimitedOnceUse };
@@ -283,7 +283,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(c
 {
 	HandleArgsPack* pHandle = pHandleData.get();
 
-	if(pHandle && pHandle->IsValid() && length(pHandle->m_StartFrom) > 0)
+	if(pHandle && pHandle->IsValid() && !is_negative_vec(pHandle->m_StartFrom))
 	{
 		// guard element, path finder working only with one item TODO: rework
 		std::lock_guard QueueLock { pHandle->m_PathFinder->m_mtxLimitedOnceUse };

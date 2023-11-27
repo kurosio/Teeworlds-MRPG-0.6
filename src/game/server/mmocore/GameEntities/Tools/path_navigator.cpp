@@ -23,54 +23,55 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pPar
 	GameWorld()->InsertEntity(this);
 }
 
-void CEntityPathNavigator::Tick()
+bool CEntityPathNavigator::PreparedPathData()
 {
-	// check
-	if(!m_pParent || m_pParent->IsMarkedForDestroy())
-	{
-		GameWorld()->DestroyEntity(this);
-		return;
-	}
-
-	// countdown
-	if(m_TickCountDown > Server()->Tick())
-		return;
-
 	// Check if enough time has passed since the last idle tick and if the distance between the parent's position and the target position is greater than 240 units
-	if(m_TickLastIdle < Server()->Tick() && distance(m_pParent->GetPos(), m_PosTo) > 240.f)
+	if(m_Data.IsRequiredPrepare() && m_TickLastIdle < Server()->Tick() && distance(m_pParent->GetPos(), m_PosTo) > 240.f)
 	{
 		// Prepare the data for path finding using the default method in the path finder handle
-		if(GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_Data, m_pParent->GetPos(), m_PosTo))
-		{
-			// Reset the step position
-			m_StepPos = 0;
-		}
+		GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_Data, m_pParent->GetPos(), m_PosTo);
+		m_StepPos = 0;
 	}
 
 	// Check if the path finder has prepared data available
 	if(!GS()->PathFinder()->Handle()->TryGetPreparedData(&m_Data))
+		return false;
+
+	return true;
+}
+
+void CEntityPathNavigator::Tick()
+{
+	// Check if the entity's parent is null or marked for destruction
+	if(!m_pParent || m_pParent->IsMarkedForDestroy())
 	{
-		// If not, return from the function
+		// Destroy the entity and return
+		GameWorld()->DestroyEntity(this);
 		return;
 	}
+
+	// Check if the countdown has not reached the current tick or if the path data is not prepared
+	if(m_TickCountDown > Server()->Tick() || !PreparedPathData())
+		return;
 
 	// valid data
 	if(m_Projectile)
 	{
+		if(is_negative_vec(m_Pos))
+		{
+			m_Pos = m_Data.Get().m_Points[m_StepPos];
+			m_StepPos++;
+		}
+
 		// smooth movement
-		const vec2 Dir = m_Data.Get().m_Points.find(m_StepPos + 1) != m_Data.Get().m_Points.end()
-			? normalize(m_Data.Get().m_Points[m_StepPos + 1] - m_Pos) : vec2 {};
+		const vec2 Dir = normalize(m_Data.Get().m_Points[m_StepPos] - m_Pos);
 		m_Pos += Dir * 5.f;
 
 		// update timer by steps
 		if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
 		{
-			m_StepPos++;
-
-			if(m_StepPos < (int)m_Data.Get().m_Points.size())
-			{
-				m_Pos = m_Data.Get().m_Points[m_StepPos];
-			}
+			m_Pos = m_Data.Get().m_Points[m_StepPos];
+			m_StepPos = minimum(m_StepPos + 1, (int)m_Data.Get().m_Points.size() - 1);
 		}
 	}
 	else
@@ -81,8 +82,8 @@ void CEntityPathNavigator::Tick()
 		// update timer by steps
 		if(Server()->Tick() % (Server()->TickSpeed() / 15) == 0)
 		{
-			m_StepPos++;
 			GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, false, m_Mask);
+			m_StepPos = minimum(m_StepPos + 1, (int)m_Data.Get().m_Points.size() - 1);
 		}
 	}
 

@@ -54,6 +54,13 @@ void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 
 void CPlayerBot::Tick()
 {
+	// Check if m_pCharacter exists and if it is not alive
+	if(m_pCharacter && !m_pCharacter->IsAlive())
+	{
+		delete m_pCharacter;
+		m_pCharacter = nullptr;
+	}
+
 	// Check if the character is not active
 	if(!IsActive())
 	{
@@ -66,13 +73,6 @@ void CPlayerBot::Tick()
 
 		// Exit the function
 		return;
-	}
-
-	// Check if m_pCharacter exists and if it is not alive
-	if(m_pCharacter && !m_pCharacter->IsAlive())
-	{
-		delete m_pCharacter;
-		m_pCharacter = nullptr;
 	}
 
 	// Check if the character exists
@@ -569,7 +569,7 @@ CTeeInfo& CPlayerBot::GetTeeInfo() const
 
 void CPlayerBot::HandlePathFinder()
 {
-	if(!IsActive() || !m_pCharacter || !m_pCharacter->IsAlive() || !m_PathFinderData.IsRequiredPrepare())
+	if(!IsActive() || !m_pCharacter || !m_pCharacter->IsAlive())
 		return;
 
 	// Check if the bot type is TYPE_BOT_MOB
@@ -579,15 +579,15 @@ void CPlayerBot::HandlePathFinder()
 		if(m_TargetPos != vec2(0, 0))
 		{
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 		// If the target position is (0, 0) or the distance between the view position and the target position is less than 128.0f
-		else if(m_TargetPos == vec2(0, 0) || distance(m_ViewPos, m_TargetPos) < 128.0f)
+		else if(m_TargetPos == vec2(0, 0) || distance(m_pCharacter->m_Core.m_Pos, m_TargetPos) < 128.0f)
 		{
 			// Set the last position tick to the current server tick plus a random time interval
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + rand() % 4);
 			// Prepare the path finder data for random path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::RANDOM>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::RANDOM>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 
@@ -600,7 +600,7 @@ void CPlayerBot::HandlePathFinder()
 		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0))
 		{
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 
@@ -613,7 +613,7 @@ void CPlayerBot::HandlePathFinder()
 			m_PathFinderData.Get().Clear();
 
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 
@@ -626,7 +626,7 @@ void CPlayerBot::HandlePathFinder()
 			m_PathFinderData.Get().Clear();
 
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_ViewPos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 }

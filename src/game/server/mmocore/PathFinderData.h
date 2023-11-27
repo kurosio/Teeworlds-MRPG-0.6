@@ -18,6 +18,27 @@ public:
 		Type m_Type {};
 		ska::unordered_map<int, vec2> m_Points {};
 
+		/*
+		ska::unordered_map<int, vec2> CEntityPathNavigator::getFinishedContainer(ska::unordered_map<int, vec2>& pathContainer)
+		{
+			ska::unordered_map<int, vec2> prepareContainer;
+			prepareContainer.emplace(0, pathContainer[0]);
+
+			vec2 Back = prepareContainer[0];
+			for(int i = 0; i < (int)pathContainer.size(); i++)
+			{
+				if(GS()->Collision()->IntersectLineWithInvisible(Back, pathContainer[i], nullptr, nullptr))
+				{
+					prepareContainer.emplace(prepareContainer.size(), pathContainer[i - 1]);
+					Back = pathContainer[i];
+				}
+			}
+
+			prepareContainer.emplace(prepareContainer.size(), pathContainer.at((int)pathContainer.size() - 1));
+			return prepareContainer;
+		}
+		 */
+
 		// Prepare the data
 		void Prepare(vec2* pTarget, vec2* pOldTarget) const
 		{
@@ -41,7 +62,7 @@ public:
 		vec2 GetLastPos() const
 		{
 			// Get the index of the last point in the vector
-			size_t LastIndex = m_Points.size() - 1;
+			int LastIndex = maximum(0, (int)m_Points.size() - 1);
 
 			// Check if the last index exists in the vector
 			if(m_Points.find(LastIndex) != m_Points.end())
