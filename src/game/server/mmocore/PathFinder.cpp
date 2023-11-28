@@ -24,9 +24,9 @@ CPathFinder::CPathFinder(CLayers* Layers, CCollision* Collision) : m_pLayers(Lay
 	m_Open.SetSize(4 * MAX_WAY_CALC);
 
 	int ID = 0;
-	for (int i = 0; i < m_LayerHeight; i++)
+	for(int i = 0; i < m_LayerHeight; i++)
 	{
-		for (int j = 0; j < m_LayerWidth; j++)
+		for(int j = 0; j < m_LayerWidth; j++)
 		{
 			CNode Node;
 			Node.m_Pos = vec2(j, i);
@@ -35,12 +35,11 @@ CPathFinder::CPathFinder(CLayers* Layers, CCollision* Collision) : m_pLayers(Lay
 			Node.m_G = 0;
 			Node.m_H = 0;
 			Node.m_F = 0;
-			Node.m_IsClosed = false;
 			Node.m_IsOpen = false;
-			if (m_pCollision->CheckPoint(j * 32 + 16, i * 32 + 16))
-				Node.m_IsCol = true;
+			if(m_pCollision->CheckPoint((float)j * 32.f + 16.f, (float)i * 32.f + 16.f))
+				Node.m_IsClosed = true;
 			else
-				Node.m_IsCol = false;
+				Node.m_IsClosed = false;
 
 			// add the node to the list
 			m_lMap[i * m_LayerWidth + j] = Node;
@@ -97,71 +96,42 @@ int CPathFinder::GetIndex(int x, int y) const
 
 void CPathFinder::FindPath()
 {
+	std::priority_queue<CNode> openList;
+
 	int CurrentIndex = m_StartIndex;
-	dbg_msg("test", "start i: %d | end i: %d", m_StartIndex, m_EndIndex);
-	if (m_StartIndex > -1 && m_EndIndex > -1)
+	if(m_StartIndex > -1 && m_EndIndex > -1)
 	{
-		while (m_ClosedNodes < MAX_WAY_CALC && m_lNodes[CurrentIndex].m_ID != m_EndIndex)
+		while(m_ClosedNodes < MAX_WAY_CALC && m_lNodes[CurrentIndex].m_ID != m_EndIndex)
 		{
-			for (int i = 0; i < 4; i++)
+			const int neighborOffsets[8] = { 1, -1, m_LayerWidth, -m_LayerWidth, m_LayerWidth + 1, -m_LayerWidth + 1, m_LayerWidth - 1, -m_LayerWidth - 1 };
+			for(int neighbor = 0; neighbor < 8; neighbor++)
 			{
-				// get the working index
-				int WorkingIndex = -1;
-
-				switch (i)
+				int WorkingIndex = CurrentIndex + neighborOffsets[neighbor];
+				if(WorkingIndex >= 0 && !m_lNodes[WorkingIndex].m_IsClosed)
 				{
-				case 0:
-					if (CurrentIndex + 1 < m_lNodes.size())
-						WorkingIndex = CurrentIndex + 1;
-					break;
-				case 1:
-					if (CurrentIndex - 1 >= 0)
-						WorkingIndex = CurrentIndex - 1;
-					break;
-				case 2:
-					if (CurrentIndex + m_LayerWidth < m_lNodes.size())
-						WorkingIndex = CurrentIndex + m_LayerWidth;
-					break;
-				case 3:
-					if (CurrentIndex - m_LayerWidth >= 0)
-						WorkingIndex = CurrentIndex - m_LayerWidth;
-				}
-
-				if(WorkingIndex > -1 && !m_lNodes[WorkingIndex].m_IsCol && !m_lNodes[WorkingIndex].m_IsClosed)
-				{
-					if(!m_lNodes[WorkingIndex].m_IsOpen)
+					CNode& WorkingNode = m_lNodes[WorkingIndex];
+					if(!WorkingNode.m_IsOpen)
 					{
-						// set its parent
-						m_lNodes[WorkingIndex].m_Parent = CurrentIndex;
+						WorkingNode.m_Parent = CurrentIndex;
+						WorkingNode.m_G = m_lNodes[CurrentIndex].m_G + 1;
+						WorkingNode.m_H = std::abs(WorkingNode.m_Pos.x - m_lNodes[m_EndIndex].m_Pos.x) + std::abs(WorkingNode.m_Pos.y - m_lNodes[m_EndIndex].m_Pos.y);
+						WorkingNode.m_F = WorkingNode.m_G + WorkingNode.m_H;
+						WorkingNode.m_IsOpen = true;
 
-						// calculate the important values
-						m_lNodes[WorkingIndex].m_G = m_lNodes[CurrentIndex].m_G + 1;
-						m_lNodes[WorkingIndex].m_H = (abs((int)(m_lNodes[WorkingIndex].m_Pos.x - m_lNodes[m_EndIndex].m_Pos.x)) + abs((int)(m_lNodes[WorkingIndex].m_Pos.y - m_lNodes[m_EndIndex].m_Pos.y)));
-						m_lNodes[WorkingIndex].m_F = m_lNodes[WorkingIndex].m_G + m_lNodes[WorkingIndex].m_H;
-
-						m_lNodes[WorkingIndex].m_IsOpen = true;
-
-						m_Open.Insert(m_lNodes[WorkingIndex]);
+						m_Open.Insert(WorkingNode);
 					}
-					else
+					else if(WorkingNode.m_G > m_lNodes[CurrentIndex].m_G + 1)
 					{
-						// recalculate the G and F Value
-						if(m_lNodes[WorkingIndex].m_G > m_lNodes[CurrentIndex].m_G + 1)
-						{
-							// set new parent
-							m_lNodes[WorkingIndex].m_Parent = CurrentIndex;
+						WorkingNode.m_Parent = CurrentIndex;
+						WorkingNode.m_G = m_lNodes[CurrentIndex].m_G + 1;
+						WorkingNode.m_F = WorkingNode.m_G + WorkingNode.m_H;
 
-							// important values (H value wont change)
-							m_lNodes[WorkingIndex].m_G = m_lNodes[CurrentIndex].m_G + 1;
-							m_lNodes[WorkingIndex].m_F = m_lNodes[WorkingIndex].m_G + m_lNodes[WorkingIndex].m_H;
-
-							m_Open.Replace(m_lNodes[WorkingIndex]);
-						}
+						m_Open.Replace(WorkingNode);
 					}
 				}
 			}
 
-			if (m_Open.GetSize() < 1)
+			if(m_Open.GetSize() < 1)
 				break;
 
 			// get Lowest F from heap and set new CurrentIndex
@@ -176,7 +146,7 @@ void CPathFinder::FindPath()
 		}
 
 		// go backwards and return final path :-O
-		while (m_lNodes[CurrentIndex].m_ID != m_StartIndex)
+		while(m_lNodes[CurrentIndex].m_ID != m_StartIndex)
 		{
 			m_lFinalPath[m_FinalSize] = m_lNodes[CurrentIndex];
 			m_FinalSize++;
@@ -190,18 +160,18 @@ void CPathFinder::FindPath()
 vec2 CPathFinder::GetRandomWaypoint()
 {
 	array<vec2> lPossibleWaypoints;
-	for (int i = 0; i < m_LayerHeight; i++)
+	for(int i = 0; i < m_LayerHeight; i++)
 	{
-		for (int j = 0; j < m_LayerWidth; j++)
+		for(int j = 0; j < m_LayerWidth; j++)
 		{
-			if (m_lMap[i * m_LayerWidth + j].m_IsClosed || m_lMap[i * m_LayerWidth + j].m_IsCol)
+			if(m_lMap[i * m_LayerWidth + j].m_IsClosed)
 				continue;
 
 			lPossibleWaypoints.add(m_lMap[i * m_LayerWidth + j].m_Pos);
 		}
 	}
 
-	if (lPossibleWaypoints.size())
+	if(lPossibleWaypoints.size())
 	{
 		int Rand = secure_rand() % lPossibleWaypoints.size();
 		return lPossibleWaypoints[Rand];
@@ -222,7 +192,7 @@ vec2 CPathFinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
 	{
 		for(int j = StartX; j < EndX; j++)
 		{
-			if(m_lMap[i * m_LayerWidth + j].m_IsClosed || m_lMap[i * m_LayerWidth + j].m_IsCol)
+			if(m_lMap[i * m_LayerWidth + j].m_IsClosed)
 				continue;
 
 			lPossibleWaypoints.add(m_lMap[i * m_LayerWidth + j].m_Pos);

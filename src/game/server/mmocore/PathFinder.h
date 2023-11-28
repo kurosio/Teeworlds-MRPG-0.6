@@ -51,7 +51,7 @@ class CPathFinder
 		template<CPathFinderPrepared::Type type>
 		bool Prepare(CPathFinderPrepared* pPrepare, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
 		{
-			bool StartingPrepare = !pPrepare->m_FutureData.valid(); 
+			bool StartingPrepare = !pPrepare->m_FutureData.valid();
 
 			// Check if the preparation is starting
 			if(StartingPrepare)
@@ -99,15 +99,21 @@ public:
 		vec2 m_Pos;
 		int m_Parent;
 		int m_ID;
+
+		// Declare a variable to store the cost from the start node to the current node (G value)
 		int m_G;
+
+		// Declare a variable to store the estimated cost from the current node to the goal node (H value)
 		int m_H;
+
+		// Declare a variable to store the total cost of the node (F value)
 		int m_F;
-		bool m_IsCol;
+
 		bool m_IsClosed;
 		bool m_IsOpen;
 
 		bool operator<(const CNode& Other) const { return (this->m_F < Other.m_F); }
-		bool operator==(const CNode& Other) const { return (this->m_ID < Other.m_ID); }
+		bool operator==(const CNode& Other) const { return (this->m_ID == Other.m_ID); }
 	};
 
 	void Init();
