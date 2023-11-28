@@ -96,17 +96,17 @@ int CPathFinder::GetIndex(int x, int y) const
 
 void CPathFinder::FindPath()
 {
-	std::priority_queue<CNode> openList;
-
 	int CurrentIndex = m_StartIndex;
 	if(m_StartIndex > -1 && m_EndIndex > -1)
 	{
 		while(m_ClosedNodes < MAX_WAY_CALC && m_lNodes[CurrentIndex].m_ID != m_EndIndex)
 		{
-			const int neighborOffsets[8] = { 1, -1, m_LayerWidth, -m_LayerWidth, m_LayerWidth + 1, -m_LayerWidth + 1, m_LayerWidth - 1, -m_LayerWidth - 1 };
-			for(int neighbor = 0; neighbor < 8; neighbor++)
+			// TODO ADD: offset by dist for corrects working with direction
+
+			const int neighborOffsets[/*8*/4] = { 1, -1, m_LayerWidth, -m_LayerWidth/*, m_LayerWidth + 1, -m_LayerWidth + 1, m_LayerWidth - 1, -m_LayerWidth - 1*/ };
+			for (const int neighborOffset : neighborOffsets)
 			{
-				int WorkingIndex = CurrentIndex + neighborOffsets[neighbor];
+				int WorkingIndex = CurrentIndex + neighborOffset;
 				if(WorkingIndex >= 0 && !m_lNodes[WorkingIndex].m_IsClosed)
 				{
 					CNode& WorkingNode = m_lNodes[WorkingIndex];

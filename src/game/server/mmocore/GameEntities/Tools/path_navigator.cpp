@@ -65,10 +65,10 @@ void CEntityPathNavigator::Tick()
 
 		// smooth movement
 		const vec2 Dir = normalize(m_Data.Get().m_Points[m_StepPos] - m_Pos);
-		m_Pos += Dir * 5.f;
+		m_Pos += Dir * 4.f;
 
 		// update timer by steps
-		if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
+		if(Server()->Tick() % (Server()->TickSpeed() / 8) == 0)
 		{
 			m_Pos = m_Data.Get().m_Points[m_StepPos];
 			m_StepPos = minimum(m_StepPos + 1, (int)m_Data.Get().m_Points.size() - 1);
@@ -80,7 +80,7 @@ void CEntityPathNavigator::Tick()
 		m_Pos = m_Data.Get().m_Points[m_StepPos];
 
 		// update timer by steps
-		if(Server()->Tick() % (Server()->TickSpeed() / 15) == 0)
+		if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
 		{
 			GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, false, m_Mask);
 			m_StepPos = minimum(m_StepPos + 1, (int)m_Data.Get().m_Points.size() - 1);
