@@ -54,58 +54,48 @@ void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 
 void CPlayerBot::Tick()
 {
-	// Check if m_pCharacter exists and if it is not alive
-	if(m_pCharacter && !m_pCharacter->IsAlive())
-	{
-		delete m_pCharacter;
-		m_pCharacter = nullptr;
-	}
-
-	// Check if the character is not active
-	if(!IsActive())
-	{
-		// Check if the character is not spawned and the respawn tick has passed
-		if(!m_pCharacter && m_Spawned && m_aPlayerTick[Respawn] <= Server()->Tick())
-		{
-			// Try to respawn the character
-			TryRespawn();
-		}
-
-		// Exit the function
-		return;
-	}
-
-	// Check if the character exists
+	// Check if the character is valid
 	if(m_pCharacter)
 	{
-		// Update eidolon position
-		if(m_BotType == TYPE_BOT_EIDOLON)
-		{
-			// Check if there is a valid owner for the eidolon and if the eidolon is not active
-			if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && distance(pOwner->m_ViewPos, m_ViewPos) > 1000.f)
-			{
-				// Get the position of the owner and change position
-				vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
-				m_pCharacter->m_DoorHit = false;
-				m_pCharacter->ChangePosition(OwnerPos);
-
-				// Set the velocity and direction of the character to the owner's velocity and direction
-				m_pCharacter->m_Core.m_Vel = pOwner->GetCharacter()->m_Core.m_Vel;
-				m_pCharacter->m_Core.m_Direction = pOwner->GetCharacter()->m_Core.m_Direction;
-				m_pCharacter->m_Core.m_Input = pOwner->GetCharacter()->m_Core.m_Input;
-			}
-		}
-
 		// Check if the character is alive
 		if(m_pCharacter->IsAlive())
 		{
-			m_ViewPos = m_pCharacter->GetPos();
-			HandlePathFinder();
+			// Check if the bot type is TYPE_BOT_EIDOLON
+			if(m_BotType == TYPE_BOT_EIDOLON)
+			{
+				// Get the eidolon owner
+				if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && distance(pOwner->m_ViewPos, m_ViewPos) > 1000.f)
+				{
+					// Teleport the bot to the owner's position
+					vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
+					m_pCharacter->m_DoorHit = false;
+					m_pCharacter->ChangePosition(OwnerPos);
+
+					// Copy the owner's velocity, direction, and input to the bot
+					m_pCharacter->m_Core.m_Vel = pOwner->GetCharacter()->m_Core.m_Vel;
+					m_pCharacter->m_Core.m_Direction = pOwner->GetCharacter()->m_Core.m_Direction;
+					m_pCharacter->m_Core.m_Input = pOwner->GetCharacter()->m_Core.m_Input;
+				}
+			}
+
+			// Check if the bot is active
+			if(IsActive())
+			{
+				m_ViewPos = m_pCharacter->GetPos();
+				HandlePathFinder();
+			}
+		}
+		else
+		{
+			// Delete the character and set it to nullptr
+			delete m_pCharacter;
+			m_pCharacter = nullptr;
 		}
 	}
-	// Respawn the bot if it has been spawned and the respawn tick has been reached
-	else if(m_Spawned && m_aPlayerTick[Respawn] <= Server()->Tick())
+	// If the bot is spawned and the respawn tick has passed
+	else if(m_WantSpawn && m_aPlayerTick[Respawn] <= Server()->Tick())
 	{
+		// Try to respawn the bot
 		TryRespawn();
 	}
 }

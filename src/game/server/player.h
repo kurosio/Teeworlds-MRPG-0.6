@@ -76,7 +76,7 @@ public:
 	CTuningParams m_NextTuningParams;
 	CPlayerDialog m_Dialog;
 
-	bool m_Spawned;
+	bool m_WantSpawn;
 	short m_aSortTabs[NUM_SORT_TAB];
 	int m_TempMenuValue;
 	short m_CurrentVoteMenu;

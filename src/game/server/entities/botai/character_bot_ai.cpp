@@ -267,7 +267,7 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 		// respawn
 		m_pBotPlayer->ResetRespawnTick();
 		m_pBotPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
-		m_pBotPlayer->m_Spawned = true;
+		m_pBotPlayer->m_WantSpawn = true;
 		GS()->CreateDeath(m_Pos, ClientID);
 
 		GS()->m_World.RemoveEntity(this);

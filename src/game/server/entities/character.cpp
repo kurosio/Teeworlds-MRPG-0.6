@@ -879,7 +879,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	// respawn
 	m_pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
 	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
-	m_pPlayer->m_Spawned = true;
+	m_pPlayer->m_WantSpawn = true;
 	GS()->m_World.RemoveEntity(this);
 	GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
 	GS()->CreateDeath(m_Pos, ClientID);

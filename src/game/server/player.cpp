@@ -29,7 +29,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 		SortTab = -1;
 
 	m_EidolonCID = -1;
-	m_Spawned = true;
+	m_WantSpawn = true;
 	m_SnapHealthTick = 0;
 	m_aPlayerTick[Die] = Server()->Tick();
 	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
@@ -98,7 +98,7 @@ void CPlayer::Tick()
 			m_pCharacter = nullptr;
 		}
 	}
-	else if(m_Spawned && m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3 <= Server()->Tick())
+	else if(m_WantSpawn && m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3 <= Server()->Tick())
 	{
 		TryRespawn();
 	}
@@ -520,7 +520,7 @@ void CPlayer::TryRespawn()
 		m_pCharacter->Spawn(this, SpawnPos);
 		GS()->CreatePlayerSpawn(SpawnPos);
 
-		m_Spawned = false;
+		m_WantSpawn = false;
 	}
 }
 
