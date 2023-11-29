@@ -383,7 +383,6 @@ void CGameWorld::UpdatePlayerMaps()
 	m_aBotsActive.clear();
 	for(auto markedID : m_aMarkedBotsActive)
 	{
-		dbg_msg("test", "active: %d", markedID);
 		m_aBotsActive[markedID] = true;
 	}
 
