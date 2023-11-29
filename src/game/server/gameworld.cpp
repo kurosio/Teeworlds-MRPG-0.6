@@ -301,7 +301,6 @@ void CGameWorld::UpdatePlayerMaps()
 			if(!Server()->ClientIngame(j) || !pBotPlayer || !pBotPlayer->GetCharacter())
 			{
 				// If not, set the distance to a very large value and skip to the next player
-				m_aBotsActive[j] = false;
 				Dist[j].first = 1e10;
 				continue;
 			}
@@ -311,7 +310,6 @@ void CGameWorld::UpdatePlayerMaps()
 			if(Distance > (float)g_Config.m_SvMapDistanceActveBot)
 			{
 				// If the distance is greater
-				m_aBotsActive[j] = false;
 				Dist[j].first = 1e10;
 				continue;
 			}
@@ -320,7 +318,6 @@ void CGameWorld::UpdatePlayerMaps()
 			if(!pBotPlayer->IsActiveForClient(ClientID))
 			{
 				// Set the distance to a very large value to indicate that the bot is not visible
-				m_aBotsActive[j] = false;
 				Dist[j].first = 1e10;
 			}
 			else
@@ -329,12 +326,8 @@ void CGameWorld::UpdatePlayerMaps()
 				Dist[j].first = 0;
 				Dist[j].first += Distance;
 
-				// Check if the bot at index j is not active
-				if(!m_aBotsActive[j])
-				{
-					// marked active bots
-					m_aMarkedBotsActive.insert(j);
-				}
+				// marked active bots
+				m_aMarkedBotsActive.insert(j);
 			}
 		}
 
@@ -387,8 +380,10 @@ void CGameWorld::UpdatePlayerMaps()
 	}
 
 	// Loop through each marked ID in the m_aMarkedBotsActive array
+	m_aBotsActive.clear();
 	for(auto markedID : m_aMarkedBotsActive)
 	{
+		dbg_msg("test", "active: %d", markedID);
 		m_aBotsActive[markedID] = true;
 	}
 
