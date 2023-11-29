@@ -50,11 +50,18 @@ void CEntityPathNavigator::Tick()
 		return;
 	}
 
-	// Check if the countdown has not reached the current tick or if the path data is not prepared
-	if(m_TickCountDown > Server()->Tick() || !PreparedPathData())
-		return;
+	// Check if the countdown has reached its limit and if the path data is prepared
+	if(m_TickCountDown < Server()->Tick() && PreparedPathData())
+	{
+		// Move the object
+		Move();
 
-	// valid data
+	}
+}
+
+void CEntityPathNavigator::Move()
+{
+	// move by projectile
 	if(m_Projectile)
 	{
 		if(is_negative_vec(m_Pos))
@@ -64,32 +71,33 @@ void CEntityPathNavigator::Tick()
 		}
 
 		// smooth movement
-		const vec2 Dir = normalize(m_Data.Get().m_Points[m_StepPos] - m_Pos);
-		m_Pos += Dir * 4.f;
+		m_Pos += normalize(m_Data.Get().m_Points[m_StepPos] - m_Pos) * 4.f;
 
 		// update timer by steps
 		if(Server()->Tick() % (Server()->TickSpeed() / 8) == 0)
 		{
 			m_Pos = m_Data.Get().m_Points[m_StepPos];
-			m_StepPos = minimum(m_StepPos + 1, (int)m_Data.Get().m_Points.size() - 1);
+			m_StepPos++;
 		}
+
+		return;
 	}
-	else
+
+	// default move
+	m_Pos = m_Data.Get().m_Points[m_StepPos];
+
+	// update timer by steps
+	if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
 	{
-		// movement
-		m_Pos = m_Data.Get().m_Points[m_StepPos];
-
-		// update timer by steps
-		if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
-		{
-			GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, false, m_Mask);
-			m_StepPos = minimum(m_StepPos + 1, (int)m_Data.Get().m_Points.size() - 1);
-		}
+		GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, false, m_Mask);
+		m_StepPos++;
 	}
 
-	// checking
+	// Check if the distance between the parent's position and the object's position is greater than 800.0f
+	// or if the step position is greater than or equal to the number of points in the path data
 	if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= (int)m_Data.Get().m_Points.size())
 	{
+		// Set the countdown to the current tick plus 2 seconds
 		m_TickCountDown = Server()->Tick() + (Server()->TickSpeed() * 2);
 		m_Data.Get().Clear();
 		m_StartByCreating = false;
@@ -125,3 +133,4 @@ void CEntityPathNavigator::PostSnap()
 		m_LastPos = m_pParent->GetPos();
 	}
 }
+
