@@ -164,14 +164,12 @@ public:
 	========================================================== */
 	bool SpendCurrency(int Price, int ItemID = 1);
 	const char* GetLanguage() const;
-	void AddExp(int Exp);
 	void AddMoney(int Money);
 
 	bool GetHiddenMenu(int HideID) const;
 	bool IsAuthed() const;
 	int GetStartTeam() const;
 
-	static int ExpNeed(int Level);
 	void IncreaseRelations(int Relations);
 
 	/* ==========================================================
@@ -188,7 +186,7 @@ public:
 	class CSkill* GetSkill(SkillIdentifier ID);
 	class CPlayerQuest* GetQuest(QuestIdentifier ID);
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
-	CAccountData& Acc() const { return CAccountData::ms_aData[m_ClientID]; }
+	CAccountData* Acc() const { return &CAccountData::ms_aData[m_ClientID]; }
 
 	int GetTypeAttributesSize(AttributeType Type);
 	int GetAttributesSize();

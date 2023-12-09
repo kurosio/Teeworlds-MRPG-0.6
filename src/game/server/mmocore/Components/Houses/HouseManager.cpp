@@ -99,7 +99,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	{
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->AVL(ClientID, "null", "You not owner home!");
@@ -142,7 +142,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_HOUSE_DECORATION)
 	{
 		pPlayer->m_LastVoteMenu = MENU_HOUSE;
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->AVL(ClientID, "null", "You not owner home!");
@@ -166,7 +166,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	{
 		pPlayer->m_LastVoteMenu = MENU_HOUSE;
 
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->AVL(ClientID, "null", "You not owner home!");
@@ -187,7 +187,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	{
 		pPlayer->m_LastVoteMenu = MENU_HOUSE;
 
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->AVL(ClientID, "null", "You not owner home!");
@@ -226,7 +226,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 			while(pRes->next())
 			{
 				const int UserID = pRes->getInt("ID");
-				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Acc().GetID()))
+				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Acc()->GetID()))
 					continue;
 
 				cPlayerName = pRes->getString("Nick").c_str();
@@ -274,7 +274,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		}
 
 		// check player house
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -297,7 +297,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "HOUSE_SELL") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -320,7 +320,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "HOUSE_BANK_ADD") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -343,7 +343,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "HOUSE_BANK_TAKE") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -366,7 +366,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "HOUSE_DOOR") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -382,7 +382,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "DECORATION_HOUSE_ADD") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -413,7 +413,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "DECORATION_HOUSE_DELETE") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -435,7 +435,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "PLANTING_HOUSE_SET") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Acc().GetHouse();
+		CHouseData* pHouse = pPlayer->Acc()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -486,7 +486,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "HOUSE_INVITED_LIST_ADD") == 0)
 	{
 		const int UserID = VoteID;
-		if(CHouseData* pHouse = pPlayer->Acc().GetHouse())
+		if(CHouseData* pHouse = pPlayer->Acc()->GetHouse())
 			pHouse->GetDoor()->AddAccess(UserID);
 
 		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
@@ -496,7 +496,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "HOUSE_INVITED_LIST_REMOVE") == 0)
 	{
 		const int UserID = VoteID;
-		if(CHouseData* pHouse = pPlayer->Acc().GetHouse())
+		if(CHouseData* pHouse = pPlayer->Acc()->GetHouse())
 			pHouse->GetDoor()->RemoveAccess(UserID);
 
 		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);

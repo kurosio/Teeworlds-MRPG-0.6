@@ -60,7 +60,7 @@ void CMailBoxManager::GetInformationInbox(CPlayer *pPlayer)
 	bool EmptyMailBox = true;
 	const int ClientID = pPlayer->GetCID();
 	int HideID = (int)(NUM_TAB_MENU + CItemDescription::Data().size() + 200);
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc().GetID(), MAILLETTER_MAX_CAPACITY);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE UserID = '%d' LIMIT %d", pPlayer->Acc()->GetID(), MAILLETTER_MAX_CAPACITY);
 	while(pRes->next())
 	{
 		// get the information to create an object

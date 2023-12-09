@@ -12,7 +12,6 @@
 #include "mmocore/Components/Dungeons/DungeonData.h"
 #include "mmocore/Components/Eidolons/EidolonInfoData.h"
 #include "mmocore/Components/Guilds/GuildManager.h"
-#include "mmocore/Components/Houses/HouseData.h"
 #include "mmocore/Components/Quests/QuestManager.h"
 
 #include "mmocore/Components/Inventory/ItemData.h"
@@ -45,7 +44,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 		m_CurrentVoteMenu = MENU_MAIN;
 		m_ZoneInvertMenu = false;
 		m_MoodState = Mood::NORMAL;
-		Acc().m_Team = GetStartTeam();
+		Acc()->m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);
 
 		m_Afk = false;
@@ -77,7 +76,7 @@ void CPlayer::Tick()
 	{
 		m_Latency.m_AccumMax = maximum(m_Latency.m_AccumMax, Info.m_Latency);
 		m_Latency.m_AccumMin = minimum(m_Latency.m_AccumMin, Info.m_Latency);
-		Server()->SetClientScore(m_ClientID, Acc().m_Level);
+		Server()->SetClientScore(m_ClientID, Acc()->GetLevel());
 	}
 
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
@@ -214,10 +213,10 @@ void CPlayer::HandleScoreboardColors()
 				CPlayer* pPlayer = GS()->GetPlayer(i, true);
 
 				// Add the team color of the group to both message packers
-				if(pPlayer && pPlayer->Acc().GetGroup())
+				if(pPlayer && pPlayer->Acc()->GetGroup())
 				{
-					Msg.AddInt(pPlayer->Acc().GetGroup()->GetTeamColor());
-					MsgLegacy.AddInt(pPlayer->Acc().GetGroup()->GetTeamColor());
+					Msg.AddInt(pPlayer->Acc()->GetGroup()->GetTeamColor());
+					MsgLegacy.AddInt(pPlayer->Acc()->GetGroup()->GetTeamColor());
 				}
 				else
 				{
@@ -322,7 +321,7 @@ void CPlayer::Snap(int SnappingClient)
 		if(IsAuthed() && m_aPlayerTick[RefreshNickLeveling] > Server()->Tick() && !(m_PlayerFlags & PLAYERFLAG_CHATTING))
 		{
 			char aBufNicknameLeveling[MAX_NAME_LENGTH];
-			str_format(aBufNicknameLeveling, sizeof(aBufNicknameLeveling), "Lv%d %.4s...", Acc().m_Level, Server()->ClientName(m_ClientID));
+			str_format(aBufNicknameLeveling, sizeof(aBufNicknameLeveling), "Lv%d %.4s...", Acc()->GetLevel(), Server()->ClientName(m_ClientID));
 
 			// Convert the new nickname to integer values and update the client info's m_Name0 field
 			StrToInts(&pClientInfo->m_Name0, 4, aBufNicknameLeveling);
@@ -371,7 +370,7 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_ClientID = m_ClientID;
 	pPlayerInfo->m_Team = GetTeam();
 	pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
-	pPlayerInfo->m_Score = Acc().m_Level;
+	pPlayerInfo->m_Score = Acc()->GetLevel();
 
 	if(m_ClientID == SnappingClient && (GetTeam() == TEAM_SPECTATORS))
 	{
@@ -429,12 +428,12 @@ void CPlayer::RefreshClanString()
 	Buffer.append(Server()->GetWorldName(GetPlayerWorldID()));
 
 	// guild
-	if(Acc().IsGuild())
+	if(Acc()->IsGuild())
 	{
 		Buffer.append(" | ");
-		Buffer.append(GS()->Mmo()->Member()->GuildName(Acc().m_GuildID));
+		Buffer.append(GS()->Mmo()->Member()->GuildName(Acc()->m_GuildID));
 		Buffer.append(" : ");
-		Buffer.append(GS()->Mmo()->Member()->GetGuildRank(Acc().m_GuildID, Acc().m_GuildRank));
+		Buffer.append(GS()->Mmo()->Member()->GetGuildRank(Acc()->m_GuildID, Acc()->m_GuildRank));
 	}
 
 	// class
@@ -596,7 +595,7 @@ void CPlayer::OnPredictedInput(CNetObj_PlayerInput* pNewInput) const
 int CPlayer::GetTeam()
 {
 	if(GS()->Mmo()->Account()->IsActive(m_ClientID))
-		return Acc().m_Team;
+		return Acc()->m_Team;
 	return TEAM_SPECTATORS;
 }
 
@@ -685,39 +684,6 @@ void CPlayer::UpdateTempData(int Health, int Mana)
 	GetTempData().m_TempMana = Mana;
 }
 
-void CPlayer::AddExp(int Exp)
-{
-	Acc().m_Exp += Exp;
-	while(Acc().m_Exp >= ExpNeed(Acc().m_Level))
-	{
-		Acc().m_Exp -= ExpNeed(Acc().m_Level);
-		Acc().m_Level++;
-		Acc().m_Upgrade += 1;
-
-		if(m_pCharacter)
-		{
-			GS()->CreateDeath(m_pCharacter->m_Core.m_Pos, m_ClientID);
-			GS()->CreateSound(m_pCharacter->m_Core.m_Pos, 4);
-			GS()->CreateText(m_pCharacter, false, vec2(0, -40), vec2(0, -1), 30, "level up");
-		}
-
-		GS()->Chat(m_ClientID, "Congratulations. You attain level {INT}!", Acc().m_Level);
-		if(Acc().m_Exp < ExpNeed(Acc().m_Level))
-		{
-			GS()->StrongUpdateVotes(m_ClientID, MENU_MAIN);
-			GS()->Mmo()->SaveAccount(this, SAVE_STATS);
-			GS()->Mmo()->SaveAccount(this, SAVE_UPGRADES);
-		}
-	}
-	ProgressBar("Account", Acc().m_Level, Acc().m_Exp, ExpNeed(Acc().m_Level), Exp);
-
-	if(rand() % 5 == 0)
-		GS()->Mmo()->SaveAccount(this, SAVE_STATS);
-
-	if(Acc().IsGuild())
-		GS()->Mmo()->Member()->AddExperience(Acc().m_GuildID);
-}
-
 void CPlayer::AddMoney(int Money)
 {
 	GetItem(itGold)->Add(Money);
@@ -733,7 +699,7 @@ bool CPlayer::GetHiddenMenu(int HideID) const
 bool CPlayer::IsAuthed() const
 {
 	if(GS()->Mmo()->Account()->IsActive(m_ClientID))
-		return Acc().GetID() > 0;
+		return Acc()->GetID() > 0;
 	return false;
 }
 
@@ -742,11 +708,6 @@ int CPlayer::GetStartTeam() const
 	if(IsAuthed())
 		return TEAM_RED;
 	return TEAM_SPECTATORS;
-}
-
-int CPlayer::ExpNeed(int Level)
-{
-	return computeExperience(Level);
 }
 
 int CPlayer::GetStartHealth()
@@ -769,7 +730,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	if(!IsAuthed() || !m_pCharacter)
 		return;
 
-	const int LevelPercent = translate_to_percent(ExpNeed(Acc().m_Level), Acc().m_Exp);
+	const int LevelPercent = translate_to_percent((int)computeExperience(Acc()->GetLevel()), Acc()->GetExperience());
 	const int MaximumHealth = GetStartHealth();
 	const int MaximumMana = GetStartMana();
 	const int Health = m_pCharacter->Health();
@@ -785,22 +746,22 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 
 	std::string ProgressBar = Tools::String::progressBar(100, LevelPercent, 10, ":", " ");
 	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%-150s",
-		Acc().m_Level, ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
+		Acc()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
 }
 
 void CPlayer::IncreaseRelations(int Relevation)
 {
 	// Check if the player is authenticated and if their relationship level is not already at the maximum.
-	if(IsAuthed() && !Acc().IsRelationshipsDeterioratedToMax())
+	if(IsAuthed() && !Acc()->IsRelationshipsDeterioratedToMax())
 	{
 		// Increase the player's relationship level by the value of Relevation, up to a maximum of 100.
-		Acc().m_Relations = minimum(Acc().m_Relations + Relevation, 100);
+		Acc()->m_Relations = minimum(Acc()->m_Relations + Relevation, 100);
 
 		// Display a chat message to the player indicating the new relationship level.
-		GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {INT}%!", Acc().m_Relations);
+		GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {INT}%!", Acc()->m_Relations);
 
 		// Check if the player's relations with other entities is greater than or equal to 100
-		if(Acc().m_Relations >= 100)
+		if(Acc()->m_Relations >= 100)
 		{
 			// Display a chat message to the player warning them that they are wanted as a felon
 			GS()->Chat(m_ClientID, "An esteemed criminal like yourself has become the target of an intense manhunt. Be on high alert, for the watchful gaze of vigilant guards is upon you!");
@@ -876,7 +837,7 @@ bool CPlayer::ParseVoteUpgrades(const char* CMD, const int VoteID, const int Vot
 {
 	if(PPSTR(CMD, "UPGRADE") == 0)
 	{
-		if(Upgrade(Get, &Acc().m_aStats[(AttributeIdentifier)VoteID], &Acc().m_Upgrade, VoteID2, 1000))
+		if(Upgrade(Get, &Acc()->m_aStats[(AttributeIdentifier)VoteID], &Acc()->m_Upgrade, VoteID2, 1000))
 		{
 			GS()->Mmo()->SaveAccount(this, SAVE_UPGRADES);
 			GS()->UpdateVotes(m_ClientID, MENU_UPGRADES);
@@ -989,7 +950,7 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID)
 
 	// if the attribute has the value of player upgrades we sum up
 	if(pAtt->HasDatabaseField())
-		Size += Acc().m_aStats[ID];
+		Size += Acc()->m_aStats[ID];
 
 	return Size;
 }
@@ -1042,7 +1003,7 @@ void CPlayer::ChangeWorld(int WorldID)
 	GetTempData().m_TempTimeDungeon = 0;
 
 	// change worlds
-	Acc().m_aHistoryWorld.push_front(WorldID);
+	Acc()->m_aHistoryWorld.push_front(WorldID);
 	Server()->ChangeWorld(m_ClientID, WorldID);
 }
 
@@ -1053,7 +1014,7 @@ int CPlayer::GetPlayerWorldID() const
 
 CTeeInfo& CPlayer::GetTeeInfo() const
 {
-	return Acc().m_TeeInfos;
+	return Acc()->m_TeeInfos;
 }
 
 // Function to create a vote event with optional parameters

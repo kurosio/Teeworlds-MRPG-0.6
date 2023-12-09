@@ -36,7 +36,7 @@ bool CRandomBox::Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesIt
 		// Sort the vector of random items by chance
 		// Create a new instance of the random box randomizer entity
 		std::sort(m_VectorItems.begin(), m_VectorItems.end(), [](const CRandomItem& pLeft, const CRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
-		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc().GetID(), Seconds, std::move(m_VectorItems), pPlayerUsesItem, UseValue);
+		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Acc()->GetID(), Seconds, std::move(m_VectorItems), pPlayerUsesItem, UseValue);
 	}
 
 	return true;

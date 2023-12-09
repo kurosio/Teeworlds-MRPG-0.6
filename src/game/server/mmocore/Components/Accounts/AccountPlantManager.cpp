@@ -26,17 +26,17 @@ void CAccountPlantManager::OnInitWorld(const char* pWhereLocalWorld)
 
 void CAccountPlantManager::OnInitAccount(CPlayer *pPlayer)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '%d'", pPlayer->Acc().GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '%d'", pPlayer->Acc()->GetID());
 	if(pRes->next())
 	{
-		pPlayer->Acc().m_FarmingData.initFields(&pRes);
+		pPlayer->Acc()->m_FarmingData.initFields(&pRes);
 		return;
 	}
 
-	pPlayer->Acc().m_FarmingData(JOB_LEVEL, 1).m_Value = 1;
-	pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value = 0;
-	pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value = 0;
-	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('%d')", pPlayer->Acc().GetID());
+	pPlayer->Acc()->m_FarmingData(JOB_LEVEL, 1).m_Value = 1;
+	pPlayer->Acc()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value = 0;
+	pPlayer->Acc()->m_FarmingData(JOB_UPGRADES, 0).m_Value = 0;
+	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('%d')", pPlayer->Acc()->GetID());
 }
 
 int CAccountPlantManager::GetPlantLevel(vec2 Pos) const
@@ -63,10 +63,10 @@ int CAccountPlantManager::GetPlantHealth(vec2 Pos) const
 //void CAccountPlantManager::ShowMenu(CPlayer* pPlayer) const
 //{
 //	const int ClientID = pPlayer->GetCID();
-//	const int JobLevel = pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value;
-//	const int JobExperience = pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value;
-//	const int JobUpgrades = pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value;
-//	const int JobUpgrQuantity = pPlayer->Acc().m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value;
+//	const int JobLevel = pPlayer->Acc()->m_FarmingData(JOB_LEVEL, 0).m_Value;
+//	const int JobExperience = pPlayer->Acc()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value;
+//	const int JobUpgrades = pPlayer->Acc()->m_FarmingData(JOB_UPGRADES, 0).m_Value;
+//	const int JobUpgrQuantity = pPlayer->Acc()->m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value;
 //	const int ExperienceNeed = computeExperience(JobLevel);
 //
 //	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Plants Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
@@ -97,14 +97,14 @@ void CAccountPlantManager::Work(CPlayer* pPlayer, int Level)
 {
 	const int ClientID = pPlayer->GetCID();
 	const int MultiplierExperience = computeExperience(Level) / g_Config.m_SvPlantingIncreaseLevel;
-	pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value += clamp(MultiplierExperience, 1, MultiplierExperience);
+	pPlayer->Acc()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value += clamp(MultiplierExperience, 1, MultiplierExperience);
 
-	int ExperienceNeed = computeExperience(pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value);
-	for (; pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value >= ExperienceNeed; )
+	int ExperienceNeed = computeExperience(pPlayer->Acc()->m_FarmingData(JOB_LEVEL, 0).m_Value);
+	for (; pPlayer->Acc()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value >= ExperienceNeed; )
 	{
-		pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value -= ExperienceNeed;
-		pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value++;
-		pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value++;
+		pPlayer->Acc()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value -= ExperienceNeed;
+		pPlayer->Acc()->m_FarmingData(JOB_LEVEL, 0).m_Value++;
+		pPlayer->Acc()->m_FarmingData(JOB_UPGRADES, 0).m_Value++;
 
 		if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())
 		{
@@ -113,11 +113,11 @@ void CAccountPlantManager::Work(CPlayer* pPlayer, int Level)
 			GS()->CreateText(pPlayer->GetCharacter(), false, vec2(0, -40), vec2(0, -1), 40, "plants up");
 		}
 
-		ExperienceNeed = computeExperience(pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value);
-		GS()->Chat(ClientID, "Plants Level UP. Now Level {INT}!", pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value);
+		ExperienceNeed = computeExperience(pPlayer->Acc()->m_FarmingData(JOB_LEVEL, 0).m_Value);
+		GS()->Chat(ClientID, "Plants Level UP. Now Level {INT}!", pPlayer->Acc()->m_FarmingData(JOB_LEVEL, 0).m_Value);
 	}
 
-	pPlayer->ProgressBar("Plants", pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value, pPlayer->Acc().m_FarmingData(JOB_EXPERIENCE, 0).m_Value, ExperienceNeed, MultiplierExperience);
+	pPlayer->ProgressBar("Plants", pPlayer->Acc()->m_FarmingData(JOB_LEVEL, 0).m_Value, pPlayer->Acc()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value, ExperienceNeed, MultiplierExperience);
 	Job()->SaveAccount(pPlayer, SAVE_PLANT_DATA);
 }
 
@@ -126,7 +126,7 @@ bool CAccountPlantManager::OnHandleVoteCommands(CPlayer *pPlayer, const char *CM
 	const int ClientID = pPlayer->GetCID();
 	if(PPSTR(CMD, "PLANTUPGRADE") == 0)
 	{
-		if(pPlayer->Upgrade(Get, &pPlayer->Acc().m_FarmingData(VoteID, 0).m_Value, &pPlayer->Acc().m_FarmingData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
+		if(pPlayer->Upgrade(Get, &pPlayer->Acc()->m_FarmingData(VoteID, 0).m_Value, &pPlayer->Acc()->m_FarmingData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
 		{
 			GS()->Mmo()->SaveAccount(pPlayer, SAVE_PLANT_DATA);
 			GS()->StrongUpdateVotes(ClientID, MENU_UPGRADES);

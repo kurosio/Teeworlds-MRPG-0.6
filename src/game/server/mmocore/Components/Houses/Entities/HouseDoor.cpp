@@ -26,14 +26,14 @@ void HouseDoor::Tick()
 			if(Distance <= g_Config.m_SvDoorRadiusHit)
 			{
 				// skip who has access to house door
-				if(m_pHouseDoor->HasAccess(pChar->GetPlayer()->Acc().GetID()))
+				if(m_pHouseDoor->HasAccess(pChar->GetPlayer()->Acc()->GetID()))
 					continue;
 
 				// skip eidolon when owner has access
 				if(pChar->GetPlayer()->IsBot())
 				{
 					CPlayerBot* pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
-					if(pPlayerBot->GetEidolonOwner() && m_pHouseDoor->HasAccess(pPlayerBot->GetEidolonOwner()->Acc().GetID()))
+					if(pPlayerBot->GetEidolonOwner() && m_pHouseDoor->HasAccess(pPlayerBot->GetEidolonOwner()->Acc()->GetID()))
 						continue;
 				}
 

@@ -24,18 +24,18 @@ void CAccountMinerManager::OnInitWorld(const char* pWhereLocalWorld)
 
 void CAccountMinerManager::OnInitAccount(CPlayer* pPlayer)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Acc().GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Acc()->GetID());
 	if (pRes->next())
 	{
-		pPlayer->Acc().m_MiningData.initFields(&pRes);
-		dbg_msg("test", "%s", pPlayer->Acc().m_MiningData.getUpdateField().c_str());
+		pPlayer->Acc()->m_MiningData.initFields(&pRes);
+		dbg_msg("test", "%s", pPlayer->Acc()->m_MiningData.getUpdateField().c_str());
 		return;
 	}
 
-	pPlayer->Acc().m_MiningData(JOB_LEVEL, 1).m_Value = 1;
-	pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value = 0;
-	pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value = 0;
-	Database->Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc().GetID());
+	pPlayer->Acc()->m_MiningData(JOB_LEVEL, 1).m_Value = 1;
+	pPlayer->Acc()->m_MiningData(JOB_EXPERIENCE, 0).m_Value = 0;
+	pPlayer->Acc()->m_MiningData(JOB_UPGRADES, 0).m_Value = 0;
+	Database->Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Acc()->GetID());
 }
 
 int CAccountMinerManager::GetOreLevel(vec2 Pos) const
@@ -62,9 +62,9 @@ int CAccountMinerManager::GetOreHealth(vec2 Pos) const
 //void CAccountMinerManager::ShowMenu(CPlayer *pPlayer) const
 //{
 //	const int ClientID = pPlayer->GetCID();
-//	const int JobLevel = pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value;
-//	const int JobExperience = pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value;
-//	const int JobUpgrades = pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value;
+//	const int JobLevel = pPlayer->Acc()->m_MiningData(JOB_LEVEL, 0).m_Value;
+//	const int JobExperience = pPlayer->Acc()->m_MiningData(JOB_EXPERIENCE, 0).m_Value;
+//	const int JobUpgrades = pPlayer->Acc()->m_MiningData(JOB_UPGRADES, 0).m_Value;
 //	const int ExperienceNeed = computeExperience(JobLevel);
 //
 //	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Miner Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
@@ -95,14 +95,14 @@ void CAccountMinerManager::Work(CPlayer *pPlayer, int Level)
 {
 	const int ClientID = pPlayer->GetCID();
 	const int MultiplierExperience = computeExperience(Level) / g_Config.m_SvMiningIncreaseLevel;
-	pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value += clamp(MultiplierExperience, 1, MultiplierExperience);
+	pPlayer->Acc()->m_MiningData(JOB_EXPERIENCE, 0).m_Value += clamp(MultiplierExperience, 1, MultiplierExperience);
 
-	int ExperienceNeed = computeExperience(pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value);
-	for( ; pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value >= ExperienceNeed; )
+	int ExperienceNeed = computeExperience(pPlayer->Acc()->m_MiningData(JOB_LEVEL, 0).m_Value);
+	for( ; pPlayer->Acc()->m_MiningData(JOB_EXPERIENCE, 0).m_Value >= ExperienceNeed; )
 	{
-		pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value -= ExperienceNeed;
-		pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value++;
-		pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value++;
+		pPlayer->Acc()->m_MiningData(JOB_EXPERIENCE, 0).m_Value -= ExperienceNeed;
+		pPlayer->Acc()->m_MiningData(JOB_LEVEL, 0).m_Value++;
+		pPlayer->Acc()->m_MiningData(JOB_UPGRADES, 0).m_Value++;
 
 		if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())
 		{
@@ -111,12 +111,12 @@ void CAccountMinerManager::Work(CPlayer *pPlayer, int Level)
 			GS()->CreateText(pPlayer->GetCharacter(), false, vec2(0, -40), vec2(0, -1), 40, "miner up");
 		}
 
-		const int NewLevel = pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value;
+		const int NewLevel = pPlayer->Acc()->m_MiningData(JOB_LEVEL, 0).m_Value;
 		ExperienceNeed = computeExperience(NewLevel);
 		GS()->Chat(ClientID, "Miner Level UP. Now Level {INT}!", NewLevel);
 	}
 
-	pPlayer->ProgressBar("Miner", pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value, pPlayer->Acc().m_MiningData(JOB_EXPERIENCE, 0).m_Value, ExperienceNeed, MultiplierExperience);
+	pPlayer->ProgressBar("Miner", pPlayer->Acc()->m_MiningData(JOB_LEVEL, 0).m_Value, pPlayer->Acc()->m_MiningData(JOB_EXPERIENCE, 0).m_Value, ExperienceNeed, MultiplierExperience);
 	Job()->SaveAccount(pPlayer, SAVE_MINER_DATA);
 }
 
@@ -126,7 +126,7 @@ bool CAccountMinerManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CM
 	const int ClientID = pPlayer->GetCID();
 	if (PPSTR(CMD, "MINERUPGRADE") == 0)
 	{
-		if (pPlayer->Upgrade(Get, &pPlayer->Acc().m_MiningData(VoteID, 0).m_Value, &pPlayer->Acc().m_MiningData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
+		if (pPlayer->Upgrade(Get, &pPlayer->Acc()->m_MiningData(VoteID, 0).m_Value, &pPlayer->Acc()->m_MiningData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
 		{
 			GS()->Mmo()->SaveAccount(pPlayer, SAVE_MINER_DATA);
 			GS()->StrongUpdateVotes(ClientID, MENU_UPGRADES);

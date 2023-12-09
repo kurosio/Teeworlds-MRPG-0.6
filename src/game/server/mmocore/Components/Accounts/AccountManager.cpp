@@ -23,7 +23,7 @@ int CAccountManager::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 	// - The world data exists
 	// - The world is not a dungeon world
 	// - The required quest for the world is completed or the world has no required quest
-	const auto pWorldIterator = std::find_if(pPlayer->Acc().m_aHistoryWorld.begin(), pPlayer->Acc().m_aHistoryWorld.end(), [=](int WorldID)
+	const auto pWorldIterator = std::find_if(pPlayer->Acc()->m_aHistoryWorld.begin(), pPlayer->Acc()->m_aHistoryWorld.end(), [=](int WorldID)
 	{
 		if(GS()->GetWorldData(WorldID))
 		{
@@ -37,7 +37,7 @@ int CAccountManager::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 	});
 
 	// Return the world ID if a correct world ID is found, otherwise return the main world ID
-	return pWorldIterator != pPlayer->Acc().m_aHistoryWorld.end() ? *pWorldIterator : MAIN_WORLD_ID;
+	return pWorldIterator != pPlayer->Acc()->m_aHistoryWorld.end() ? *pWorldIterator : MAIN_WORLD_ID;
 }
 
 // Register an account for a client with the given parameters
@@ -157,7 +157,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 	// Update player account information from the database
 	std::string Language = pResCheck->getString("Language").c_str();
 	std::string LoginDate = pResCheck->getString("LoginDate").c_str();
-	pPlayer->Acc().Init(UserID, ClientID, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
+	pPlayer->Acc()->Init(UserID, pPlayer, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
 
 	// Send success messages to the client
 	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
@@ -172,6 +172,9 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	if(!pPlayer || !pPlayer->IsAuthed() || !GS()->IsPlayerEqualWorld(pPlayer->GetCID()))
 		return;
 
+	// Update account context pointer
+	pPlayer->Acc()->UpdatePointer(pPlayer);
+
 	// Broadcast a message to the player with their current location
 	const int ClientID = pPlayer->GetCID();
 	GS()->Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 200, "You are currently positioned at {STR}({STR})!",
@@ -182,7 +185,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	{
 		// Get the number of unread letters in the player's inbox
 		// Send a chat message to the player informing them about their unread letters
-		if(const int Letters = Job()->Inbox()->GetMailLettersSize(pPlayer->Acc().GetID()); Letters > 0)
+		if(const int Letters = Job()->Inbox()->GetMailLettersSize(pPlayer->Acc()->GetID()); Letters > 0)
 			GS()->Chat(ClientID, "You have {INT} unread letters!", Letters);
 
 		// Update the player's votes and show the main menu
@@ -194,12 +197,12 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	Job()->OnInitAccount(ClientID);
 
 	// Send information about log in
-	const int Rank = GetRank(pPlayer->Acc().GetID());
+	const int Rank = GetRank(pPlayer->Acc()->GetID());
 	GS()->Chat(-1, "{STR} logged to account. Rank #{INT}", Server()->ClientName(ClientID), Rank);
 #ifdef CONF_DISCORD
 	char aLoginBuf[64];
-	str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in Account ID %d", Server()->ClientName(ClientID), pPlayer->Acc().GetID());
-	Server()->SendDiscordGenerateMessage(aLoginBuf, pPlayer->Acc().GetID());
+	str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in Account ID %d", Server()->ClientName(ClientID), pPlayer->Acc()->GetID());
+	Server()->SendDiscordGenerateMessage(aLoginBuf, pPlayer->Acc()->GetID());
 #endif
 
 	/* Initialize static settings items' data */
@@ -252,7 +255,7 @@ void CAccountManager::DiscordConnect(int ClientID, const char* pDID) const
 	Database->Execute<DB::UPDATE>("tw_accounts_data", "DiscordID = 'null' WHERE DiscordID = '%s'", cDiscordID.cstr());
 
 	// connect the player discord id
-	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "DiscordID = '%s' WHERE ID = '%d'", cDiscordID.cstr(), pPlayer->Acc().GetID());
+	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "DiscordID = '%s' WHERE ID = '%d'", cDiscordID.cstr(), pPlayer->Acc()->GetID());
 
 	GS()->Chat(ClientID, "Your Discord ID has been updated.");
 	GS()->Chat(ClientID, "Check the connection status in discord \"/connect\".");
@@ -271,7 +274,7 @@ bool CAccountManager::ChangeNickname(int ClientID)
 	if(pRes->next())
 		return false;
 
-	Database->Execute<DB::UPDATE>("tw_accounts_data", "Nick = '%s' WHERE ID = '%d'", cClearNick.cstr(), pPlayer->Acc().GetID());
+	Database->Execute<DB::UPDATE>("tw_accounts_data", "Nick = '%s' WHERE ID = '%d'", cClearNick.cstr(), pPlayer->Acc()->GetID());
 	Server()->SetClientName(ClientID, Server()->GetClientNameChangeRequest(ClientID));
 	return true;
 }
@@ -437,7 +440,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 
 	char aSelect[256];
 	const CSqlString<32> cVoucherCode = CSqlString<32>(pVoucher);
-	str_format(aSelect, sizeof(aSelect), "v.*, IF((SELECT r.ID FROM tw_voucher_redeemed r WHERE CASE v.Multiple WHEN 1 THEN r.VoucherID = v.ID AND r.UserID = %d ELSE r.VoucherID = v.ID END) IS NULL, FALSE, TRUE) AS used", pPlayer->Acc().GetID());
+	str_format(aSelect, sizeof(aSelect), "v.*, IF((SELECT r.ID FROM tw_voucher_redeemed r WHERE CASE v.Multiple WHEN 1 THEN r.VoucherID = v.ID AND r.UserID = %d ELSE r.VoucherID = v.ID END) IS NULL, FALSE, TRUE) AS used", pPlayer->Acc()->GetID());
 
 	ResultPtr pResVoucher = Database->Execute<DB::SELECT>(aSelect, "tw_voucher v", "WHERE v.Code = '%s'", cVoucherCode.cstr());
 	if(pResVoucher->next())
@@ -457,11 +460,11 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 			const int Upgrade = JsonData.value("upgrade", 0);
 
 			if(Exp > 0)
-				pPlayer->AddExp(Exp);
+				pPlayer->Acc()->AddExperience(Exp);
 			if(Money > 0)
 				pPlayer->AddMoney(Money);
 			if(Upgrade > 0)
-				pPlayer->Acc().m_Upgrade += Upgrade;
+				pPlayer->Acc()->m_Upgrade += Upgrade;
 
 			if(JsonData.find("items") != JsonData.end() && JsonData["items"].is_array())
 			{
@@ -477,7 +480,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 			GS()->Mmo()->SaveAccount(pPlayer, SAVE_STATS);
 			GS()->Mmo()->SaveAccount(pPlayer, SAVE_UPGRADES);
 
-			Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Acc().GetID(), (int)time(0));
+			Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Acc()->GetID(), (int)time(0));
 			GS()->Chat(ClientID, "You have successfully redeemed the voucher '{STR}'.", pVoucher);
 		}
 
@@ -491,7 +494,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 bool CAccountManager::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason)
 {
 	// Check if the account is already banned
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", pPlayer->Acc().GetID());
+	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", pPlayer->Acc()->GetID());
 	if(pResBan->next())
 	{
 		// Print message and return false if the account is already banned
@@ -501,7 +504,7 @@ bool CAccountManager::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const st
 
 	// Ban the account
 	Database->Execute<DB::INSERT>("tw_accounts_bans", "(AccountId, BannedUntil, Reason) VALUES (%d, %s, '%s')",
-		pPlayer->Acc().GetID(), std::string("current_timestamp + " + Time.asSqlInterval()).c_str(), Reason.c_str());
+		pPlayer->Acc()->GetID(), std::string("current_timestamp + " + Time.asSqlInterval()).c_str(), Reason.c_str());
 	GS()->Server()->Kick(pPlayer->GetCID(), "Your account was banned");
 
 	// Print success message and return true

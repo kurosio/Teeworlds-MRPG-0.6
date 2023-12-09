@@ -8,23 +8,32 @@
 #include <game/server/mmocore/Components/Auction/AuctionData.h>
 #include <game/server/mmocore/Utils/FieldData.h>
 
+class CGS;
+class CPlayer;
 class CHouseData;
 class GroupData;
 
 class CAccountData
 {
 	int m_ID {};
+	int m_ClientID {};
 	char m_aLogin[64] {};
 	char m_aLastLogin[64] {};
 
-	class CHouseData* m_pHouseData {};
-	class GroupData* m_pGroupData {};
+	int m_Level {};
+	int m_Exp {};
+	CHouseData* m_pHouseData {};
+	GroupData* m_pGroupData {};
 
+	CPlayer* m_pPlayer {};
+	CGS* GS() const;
+	CPlayer* GetPlayer() const { return m_pPlayer; };
 public:
 	/*
 	 * Group functions: initialize or uniques from function
 	 */
-	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult); // Function to initialize
+	void Init(int ID, CPlayer* pPlayer, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult); // Function to initialize
+	void UpdatePointer(CPlayer* pPlayer);
 	int GetID() const { return m_ID; } // Function to get the ID of an object
 
 	/*
@@ -38,7 +47,7 @@ public:
 	 * Group functions: group system
 	 */
 	void ReinitializeGroup(); // This function re-initializes the group object
-	GroupData* GetGroup() const { return m_pGroupData; }; // Get the group data for the current object
+	GroupData* GetGroup() const { return m_pGroupData; } // Get the group data for the current object
 	bool HasGroup() const { return m_pGroupData != nullptr; } // Check if the current object has group data
 
 	/*
@@ -54,15 +63,20 @@ public:
 		time_t m_MonthStamp { };
 	};
 
+	void AddExperience(int Experience);
+
 	// main
-	int m_Level {};
-	int m_Exp {};
+	int GetLevel() const { return m_Level; }
+	int GetExperience() const { return m_Exp; }
 	int m_Relations {};
 	int m_GuildID {};
 	int m_GuildRank {};
+	int m_PrisonSeconds {};
 	TimePeriods m_Periods {};
 	std::list< int > m_aHistoryWorld {};
 
+	void Prison(int Seconds);
+	bool IsPrisoned() const { return m_PrisonSeconds > 0; }
 
 	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; }
 

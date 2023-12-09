@@ -202,7 +202,7 @@ bool CCharacter::DecoInteractive()
 
 		if(InteractiveType == DECORATIONS_HOUSE)
 		{
-			CHouseData* pHouse = m_pPlayer->Acc().GetHouse();
+			CHouseData* pHouse = m_pPlayer->Acc()->GetHouse();
 			if(pHouse && pHouse->AddDecoration(DecoID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You have added {STR} to your house!", GS()->GetItemInfo(DecoID)->GetName());
@@ -211,7 +211,7 @@ bool CCharacter::DecoInteractive()
 		}
 		else if(InteractiveType == DECORATIONS_GUILD_HOUSE)
 		{
-			const int GuildID = m_pPlayer->Acc().m_GuildID;
+			const int GuildID = m_pPlayer->Acc()->m_GuildID;
 			if(GS()->Mmo()->Member()->AddDecorationHouse(DecoID, GuildID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You have added {STR} to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
@@ -811,13 +811,13 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 
 	// Relationship system
 	{
-		if(m_pPlayer->Acc().IsRelationshipsDeterioratedToMax() && (KillerIsGuardian || KillerIsPlayer))
+		if(m_pPlayer->Acc()->IsRelationshipsDeterioratedToMax() && (KillerIsGuardian || KillerIsPlayer))
 		{
 			// Get the Gold item from the player
 			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
 
 			// Reset player's relations and save relations
-			m_pPlayer->Acc().m_Relations = 0;
+			m_pPlayer->Acc()->m_Relations = 0;
 			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
 
 			// Translate the value of the Gold item to a percentage for arrest and remove arrest
@@ -1393,7 +1393,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	// Check if the player or the sender is a NPC bot of type "Guardian"
 	if((m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN) ||
 		(pFrom->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pFrom->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN &&
-			(m_pPlayer->IsBot() || m_pPlayer->Acc().IsRelationshipsDeterioratedToMax())))
+			(m_pPlayer->IsBot() || m_pPlayer->Acc()->IsRelationshipsDeterioratedToMax())))
 	{
 		return true;
 	}
@@ -1418,13 +1418,13 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 			return false;
 
 		// anti pvp for guild players
-		if(pFrom->Acc().m_GuildID > 0 && pFrom->Acc().m_GuildID == m_pPlayer->Acc().m_GuildID)
+		if(pFrom->Acc()->m_GuildID > 0 && pFrom->Acc()->m_GuildID == m_pPlayer->Acc()->m_GuildID)
 			return false;
 
 		// anti pvp for group players
 		{
-			GroupData* pGroup = m_pPlayer->Acc().GetGroup();
-			if(pGroup && pGroup->HasAccountID(pFrom->Acc().GetID()))
+			GroupData* pGroup = m_pPlayer->Acc()->GetGroup();
+			if(pGroup && pGroup->HasAccountID(pFrom->Acc()->GetID()))
 				return false;
 		}
 	}

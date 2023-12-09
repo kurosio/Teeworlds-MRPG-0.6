@@ -193,7 +193,7 @@ bool CPlayerItem::Use(int Value)
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
-		GetPlayer()->AddExp(Getting);
+		GetPlayer()->Acc()->AddExperience(Getting);
 		return true;
 	}
 	// little bag gold
@@ -210,19 +210,19 @@ bool CPlayerItem::Use(int Value)
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(pAttribute->HasDatabaseField() && GetPlayer()->Acc().m_aStats[ID] > 0)
+			if(pAttribute->HasDatabaseField() && GetPlayer()->Acc()->m_aStats[ID] > 0)
 			{
 				// skip weapon spreading
 				if(pAttribute->IsType(AttributeType::Weapon))
 					continue;
 
-				BackUpgrades += GetPlayer()->Acc().m_aStats[ID] * pAttribute->GetUpgradePrice();
-				GetPlayer()->Acc().m_aStats[ID] = 0;
+				BackUpgrades += GetPlayer()->Acc()->m_aStats[ID] * pAttribute->GetUpgradePrice();
+				GetPlayer()->Acc()->m_aStats[ID] = 0;
 			}
 		}
 
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
-		GetPlayer()->Acc().m_Upgrade += BackUpgrades;
+		GetPlayer()->Acc()->m_Upgrade += BackUpgrades;
 		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
 		return true;
 	}
@@ -232,28 +232,28 @@ bool CPlayerItem::Use(int Value)
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(pAttribute->HasDatabaseField() && GetPlayer()->Acc().m_aStats[ID] > 0)
+			if(pAttribute->HasDatabaseField() && GetPlayer()->Acc()->m_aStats[ID] > 0)
 			{
 				// skip all stats allow only weapons
 				if(pAttribute->GetType() != AttributeType::Weapon)
 					continue;
 
-				int UpgradeValue = GetPlayer()->Acc().m_aStats[ID];
+				int UpgradeValue = GetPlayer()->Acc()->m_aStats[ID];
 				if(ID == AttributeIdentifier::SpreadShotgun)
-					UpgradeValue = GetPlayer()->Acc().m_aStats[ID] - 3;
+					UpgradeValue = GetPlayer()->Acc()->m_aStats[ID] - 3;
 				else if(ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
-					UpgradeValue = GetPlayer()->Acc().m_aStats[ID] - 1;
+					UpgradeValue = GetPlayer()->Acc()->m_aStats[ID] - 1;
 
 				if(UpgradeValue <= 0)
 					continue;
 
 				BackUpgrades += UpgradeValue * pAttribute->GetUpgradePrice();
-				GetPlayer()->Acc().m_aStats[ID] -= UpgradeValue;
+				GetPlayer()->Acc()->m_aStats[ID] -= UpgradeValue;
 			}
 		}
 
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
-		GetPlayer()->Acc().m_Upgrade += BackUpgrades;
+		GetPlayer()->Acc()->m_Upgrade += BackUpgrades;
 		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
 		return true;
 	}
@@ -311,7 +311,7 @@ bool CPlayerItem::Save()
 {
 	if(GetPlayer() && GetPlayer()->IsAuthed())
 	{
-		int UserID = GetPlayer()->Acc().GetID();
+		int UserID = GetPlayer()->Acc()->GetID();
 		const auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", m_ID, UserID);
 		pResCheck->AtExecute([this, UserID](ResultPtr pRes)
 		{
@@ -327,7 +327,7 @@ bool CPlayerItem::Save()
 
 				// update an item
 				Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
-					m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc().GetID(), m_ID);
+					m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Acc()->GetID(), m_ID);
 				return;
 			}
 

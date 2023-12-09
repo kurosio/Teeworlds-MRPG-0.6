@@ -71,7 +71,7 @@ void CQuestManager::OnInitAccount(CPlayer* pPlayer)
 	const int ClientID = pPlayer->GetCID();
 
 	// Execute a select query to fetch all rows from the "tw_accounts_quests" table where UserID is equal to the ID of the player's account
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc().GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Acc()->GetID());
 	while(pRes->next())
 	{
 		// Get the QuestID and Type values from the current row
@@ -485,7 +485,7 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GS()->GetPlayer(i, true);
-		if(pPlayer && pPlayer->Acc().IsRelationshipsDeterioratedToMax())
+		if(pPlayer && pPlayer->Acc()->IsRelationshipsDeterioratedToMax())
 		{
 			CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
 			const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());

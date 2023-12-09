@@ -112,7 +112,7 @@ bool CJobItems::Interaction(const char* pTool, AttributeIdentifier AttributeDmg,
 
 void CJobItems::MiningWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorkedItem)
 {
-	if(Interaction("Pickaxe", AttributeIdentifier::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, pPlayer->Acc().m_MiningData(JOB_LEVEL, 0).m_Value))
+	if(Interaction("Pickaxe", AttributeIdentifier::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, pPlayer->Acc()->m_MiningData(JOB_LEVEL, 0).m_Value))
 	{
 		GS()->Mmo()->MinerAcc()->Work(pPlayer, m_Level);
 		pWorkedItem.Add(1+ rand()%2);
@@ -122,7 +122,7 @@ void CJobItems::MiningWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorkedI
 
 void CJobItems::FarmingWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorkedItem)
 {
-	if(Interaction("Rake", AttributeIdentifier::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, pPlayer->Acc().m_FarmingData(JOB_LEVEL, 0).m_Value))
+	if(Interaction("Rake", AttributeIdentifier::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, pPlayer->Acc()->m_FarmingData(JOB_LEVEL, 0).m_Value))
 	{
 		GS()->Mmo()->PlantsAcc()->Work(pPlayer, m_Level);
 		pWorkedItem.Add(1 + rand() % 2);

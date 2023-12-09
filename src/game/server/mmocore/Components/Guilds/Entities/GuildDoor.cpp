@@ -20,7 +20,7 @@ void GuildDoor::Tick()
 	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
 		CPlayer* pPlayer = pChar->GetPlayer();
-		if(m_GuildID == pPlayer->Acc().m_GuildID)
+		if(m_GuildID == pPlayer->Acc()->m_GuildID)
 			continue;
 
 		vec2 IntersectPos;

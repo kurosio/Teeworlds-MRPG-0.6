@@ -104,7 +104,7 @@ CPlayer* CGS::GetPlayerByUserID(int AccountID) const
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GetPlayer(i, true);
-		if(pPlayer && pPlayer->Acc().GetID() == AccountID)
+		if(pPlayer && pPlayer->Acc()->GetID() == AccountID)
 		{
 			int WorldID = pPlayer->GetPlayerWorldID();
 			CGS* pGS = (CGS*)Instance::GetServer()->GameServer(WorldID);
@@ -322,7 +322,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 	else if(Mode == CHAT_TEAM)
 	{
 		CPlayer* pChatterPlayer = GetPlayer(ChatterClientID, true);
-		if(!pChatterPlayer || pChatterPlayer->Acc().m_GuildID <= 0)
+		if(!pChatterPlayer || pChatterPlayer->Acc()->m_GuildID <= 0)
 		{
 			Chat(ChatterClientID, "This chat is for guilds and team members.");
 			return;
@@ -333,11 +333,11 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 
 		// send chat to guild team
 		Msg.m_Team = 1;
-		const int GuildID = pChatterPlayer->Acc().m_GuildID;
+		const int GuildID = pChatterPlayer->Acc()->m_GuildID;
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pSearchPlayer = GetPlayer(i, true);
-			if(pSearchPlayer && pSearchPlayer->Acc().m_GuildID == GuildID)
+			if(pSearchPlayer && pSearchPlayer->Acc()->m_GuildID == GuildID)
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
 		}
 	}
@@ -411,7 +411,7 @@ void CGS::ChatGuild(int GuildID, const char* pText, ...)
 	dynamic_string Buffer;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Acc().IsGuild() && pPlayer->Acc().m_GuildID == GuildID)
+		if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Acc()->IsGuild() && pPlayer->Acc()->m_GuildID == GuildID)
 		{
 			Buffer.append("[Guild]");
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
@@ -1223,10 +1223,10 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				Server()->SetClientClan(ClientID, pMsg->m_pClan);
 				Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
-				str_copy(pPlayer->Acc().m_TeeInfos.m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->Acc().m_TeeInfos.m_aSkinName));
-				pPlayer->Acc().m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
-				pPlayer->Acc().m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
-				pPlayer->Acc().m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+				str_copy(pPlayer->Acc()->m_TeeInfos.m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->Acc()->m_TeeInfos.m_aSkinName));
+				pPlayer->Acc()->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
+				pPlayer->Acc()->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
+				pPlayer->Acc()->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
 			}
 
 			// send clear vote options
@@ -1910,7 +1910,7 @@ void CGS::ShowVotesPlayerStats(CPlayer* pPlayer)
 	}
 
 	AV(ClientID, "null");
-	AVM(ClientID, "null", NOPE, NOPE, "# Player Upgrade Point: {INT}P", pPlayer->Acc().m_Upgrade);
+	AVM(ClientID, "null", NOPE, NOPE, "# Player Upgrade Point: {INT}P", pPlayer->Acc()->m_Upgrade);
 	AV(ClientID, "null");
 }
 
@@ -2004,7 +2004,7 @@ void CGS::CreateParticleExperience(vec2 Pos, int ClientID, int Experience, vec2 
 	CFlyingPoint* pPoint = CreateFlyingPoint(Pos, Force, ClientID);
 	pPoint->Register([Experience](CFlyingPoint*, CPlayer*, CPlayer* pPlayer)
 	{
-		pPlayer->AddExp(Experience);
+		pPlayer->Acc()->AddExperience(Experience);
 	});
 }
 
@@ -2061,7 +2061,7 @@ void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	SendInbox(pFrom, pPlayer->Acc().GetID(), Name, Desc, ItemID, Value, Enchant);
+	SendInbox(pFrom, pPlayer->Acc()->GetID(), Name, Desc, ItemID, Value, Enchant);
 }
 
 // send a message with or without the object using AccountID
