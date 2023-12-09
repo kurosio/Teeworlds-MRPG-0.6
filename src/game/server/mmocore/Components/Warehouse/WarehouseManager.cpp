@@ -194,7 +194,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifi
 	}
 
 	// purchase
-	if(!pPlayer->SpendCurrency(pTradeSlot->GetPrice(), pTradeSlot->GetCurrency()->GetID()))
+	if(!pPlayer->Account()->SpendCurrency(pTradeSlot->GetPrice(), pTradeSlot->GetCurrency()->GetID()))
 		return false;
 
 	// give trade slot for player

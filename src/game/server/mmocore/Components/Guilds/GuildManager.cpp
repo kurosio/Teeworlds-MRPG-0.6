@@ -481,7 +481,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		if(pPlayer->SpendCurrency(Get))
+		if(pPlayer->Account()->SpendCurrency(Get))
 		{
 			AddMoneyBank(GuildID, Get);
 			Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildDeposit = GuildDeposit + '%d' WHERE ID = '%d'", Get, pPlayer->Account()->GetID());

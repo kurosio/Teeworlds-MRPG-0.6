@@ -128,46 +128,90 @@ void CAccountData::Prison(int Seconds)
 
 }
 
+// Add experience to the account
 void CAccountData::AddExperience(int Value)
 {
+	// Check if the player is valid
 	if(!m_pPlayer)
 		return;
 
+	// Increase the experience value
 	m_Exp += Value;
+
+	// Check if the experience is enough to level up
 	while(m_Exp >= (int)computeExperience(m_Level))
 	{
+		// Reduce the experience and increase the level
 		m_Exp -= (int)computeExperience(m_Level);
 		m_Level++;
 		m_Upgrade += 1;
 
+		// Check if the player has a character
 		if(CCharacter* pChar = m_pPlayer->GetCharacter())
 		{
+			// Create death effect, sound, and level up text
 			GS()->CreateDeath(pChar->m_Core.m_Pos, m_ClientID);
 			GS()->CreateSound(pChar->m_Core.m_Pos, 4);
 			GS()->CreateText(pChar, false, vec2(0, -40), vec2(0, -1), 30, "level up");
 		}
 
+		// Display level up message
 		GS()->Chat(m_ClientID, "Congratulations. You attain level {INT}!", m_Level);
+
+		// Check if the experience is not enough for the next level
 		if(m_Exp < (int)computeExperience(m_Level))
 		{
+			// Update votes, save stats, and save upgrades
 			GS()->StrongUpdateVotes(m_ClientID, MENU_MAIN);
 			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);
 			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_UPGRADES);
 		}
 	}
+
+	// Update the progress bar
 	m_pPlayer->ProgressBar("Account", m_Level, m_Exp, (int)computeExperience(m_Level), Value);
 
+	// Randomly save the account stats
 	if(rand() % 5 == 0)
 	{
 		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);
 	}
 
+	// Add experience to the guild member
 	if(IsGuild())
 		GS()->Mmo()->Member()->AddExperience(m_GuildID);
 }
 
+// Add gold to the account
 void CAccountData::AddGold(int Value) const
 {
+	// Check if the player is valid
 	if(m_pPlayer)
 		m_pPlayer->GetItem(itGold)->Add(Value);
+}
+
+// This function checks if the player has enough currency to spend and deducts the price from their currency item
+bool CAccountData::SpendCurrency(int Price, int CurrencyItemID) const
+{
+	// Check if the player is valid
+	if(!m_pPlayer)
+		return false;
+
+	// Check if the price is zero or negative, in which case the player can spend it for free
+	if(Price <= 0)
+		return true;
+
+	// Get the currency item from the player's inventory
+	CPlayerItem* pCurrencyItem = m_pPlayer->GetItem(CurrencyItemID);
+
+	// Check if the player has enough currency to spend
+	if(pCurrencyItem->GetValue() < Price)
+	{
+		// Display a message to the player indicating that they don't have enough currency
+		GS()->Chat(m_ClientID, "Required {VAL}, but you only have {VAL} {STR}!", Price, pCurrencyItem->GetValue(), pCurrencyItem->Info()->GetName());
+		return false;
+	}
+
+	// Deduct the price from the player's currency item
+	return pCurrencyItem->Remove(Price);
 }

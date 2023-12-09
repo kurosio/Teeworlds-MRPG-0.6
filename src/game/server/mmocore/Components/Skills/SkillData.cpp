@@ -191,7 +191,7 @@ bool CSkill::Upgrade()
 	if(!GetPlayer() || !GetPlayer()->IsAuthed() || m_Level >= Info()->GetMaxLevel())
 		return false;
 
-	if(!GetPlayer()->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
+	if(!GetPlayer()->Account()->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
 		return false;
 
 	const int ClientID = GetPlayer()->GetCID();

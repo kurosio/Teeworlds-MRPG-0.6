@@ -162,7 +162,6 @@ public:
 	/* ==========================================================
 		FUNCTIONS PLAYER ACCOUNT
 	========================================================== */
-	bool SpendCurrency(int Price, int ItemID = 1);
 	const char* GetLanguage() const;
 
 	bool GetHiddenMenu(int HideID) const;

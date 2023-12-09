@@ -138,7 +138,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 
 	// we are already organizing the crafting
 	const int Price = pCraft->GetPrice(pPlayer);
-	if(!pPlayer->SpendCurrency(Price))
+	if(!pPlayer->Account()->SpendCurrency(Price))
 		return;
 
 	// delete ticket if equipped

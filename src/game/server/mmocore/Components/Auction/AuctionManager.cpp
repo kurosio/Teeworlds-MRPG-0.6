@@ -178,7 +178,7 @@ void CAuctionManager::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuction
 	}
 
 	// take a tax from the player for the slot
-	if(!pPlayer->SpendCurrency(pAuctionData->GetTaxPrice()))
+	if(!pPlayer->Account()->SpendCurrency(pAuctionData->GetTaxPrice()))
 		return;
 
 	// pick up the item and add a slot
@@ -228,7 +228,7 @@ bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
 	}
 
 	// player purchasing
-	if(!pPlayer->SpendCurrency(Price))
+	if(!pPlayer->Account()->SpendCurrency(Price))
 		return false;
 
 	// information & exchange item

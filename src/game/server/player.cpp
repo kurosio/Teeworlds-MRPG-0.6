@@ -636,20 +636,6 @@ bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int Maxi
 /* #########################################################################
 	FUNCTIONS PLAYER ACCOUNT
 ######################################################################### */
-bool CPlayer::SpendCurrency(int Price, int ItemID)
-{
-	if(Price <= 0)
-		return true;
-
-	CPlayerItem* pItem = GetItem(ItemID);
-	if(pItem->GetValue() < Price)
-	{
-		GS()->Chat(m_ClientID, "Required {VAL}, but you only have {VAL} {STR}!", Price, pItem->GetValue(), pItem->Info()->GetName());
-		return false;
-	}
-	return pItem->Remove(Price);
-}
-
 void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 {
 	if(m_pCharacter && m_pCharacter->IsAlive())

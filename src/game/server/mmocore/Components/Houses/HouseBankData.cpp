@@ -27,7 +27,7 @@ void CHouseBankData::Add(int Value)
 		int HouseID = pRes->getInt("ID");
 
 		// Check if the player has enough currency to spend the specified value
-		if(pPlayer->SpendCurrency(Value))
+		if(pPlayer->Account()->SpendCurrency(Value))
 		{
 			// Update the value of the HouseBank column in the TW_HOUSES_TABLE by adding the specified value to the current value
 			m_Bank = pRes->getInt("HouseBank") + Value;

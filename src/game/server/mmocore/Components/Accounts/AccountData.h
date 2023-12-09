@@ -64,6 +64,7 @@ public:
 	void Prison(int Seconds); // Puts the player in prison for the specified number of seconds
 	void AddExperience(int Value); // Adds the specified value to the player's experience points
 	void AddGold(int Value) const; // Adds the specified value to the player's gold (currency)
+	bool SpendCurrency(int Price, int CurrencyItemID = 1) const; // Returns a boolean value indicating whether the currency was successfully spent or not.
 
 	struct TimePeriods
 	{

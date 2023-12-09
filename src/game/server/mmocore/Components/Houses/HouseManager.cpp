@@ -451,7 +451,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 
 		// try set new plant item
 		ItemIdentifier TryItemID = VoteID;
-		if(pPlayer->SpendCurrency(1, TryItemID))
+		if(pPlayer->Account()->SpendCurrency(1, TryItemID))
 		{
 			const int ChanceSuccesful = VoteID2;
 			if(ChanceSuccesful != 0)

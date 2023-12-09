@@ -44,7 +44,7 @@ bool CAetherManager::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, con
 	{
 		AetherIdentifier AetherID = VoteID;
 		const int Price = VoteID2;
-		if(Price > 0 && !pPlayer->SpendCurrency(Price))
+		if(Price > 0 && !pPlayer->Account()->SpendCurrency(Price))
 			return true;
 
 		CAether* pAether = &CAether::Data()[AetherID];

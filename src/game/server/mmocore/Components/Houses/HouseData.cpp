@@ -116,7 +116,7 @@ void CHouseData::Buy(CPlayer* pPlayer)
 	}
 
 	// buy house
-	if(pPlayer->SpendCurrency(m_Price))
+	if(pPlayer->Account()->SpendCurrency(m_Price))
 	{
 		// update data
 		m_AccountID = pPlayer->Account()->GetID();

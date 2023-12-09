@@ -249,7 +249,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		}
 
 		const int Price = pPlayerItem->GetEnchantPrice();
-		if(!pPlayer->SpendCurrency(Price, itMaterial))
+		if(!pPlayer->Account()->SpendCurrency(Price, itMaterial))
 			return true;
 
 		const int EnchantLevel = pPlayerItem->GetEnchant() + 1;

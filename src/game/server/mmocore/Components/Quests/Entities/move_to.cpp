@@ -191,7 +191,7 @@ void CEntityMoveTo::TryFinish(bool AutoCompleteQuestStep)
 		int RequiredValue = TaskData.m_RequiredItem.GetValue();
 
 		// check required value
-		if(!m_pPlayer->SpendCurrency(RequiredValue, ItemID))
+		if(!m_pPlayer->Account()->SpendCurrency(RequiredValue, ItemID))
 			return;
 
 		// remove item
