@@ -253,10 +253,10 @@ void CBotManager::ConAddCharacterBot(int ClientID, const char* pCharacter)
 		return;
 
 	nlohmann::json JsonTeeInfo;
-	JsonTeeInfo["skin"] = pPlayer->Acc()->m_TeeInfos.m_aSkinName;
-	JsonTeeInfo["custom_color"] = pPlayer->Acc()->m_TeeInfos.m_UseCustomColor;
-	JsonTeeInfo["color_body"] = pPlayer->Acc()->m_TeeInfos.m_ColorBody;
-	JsonTeeInfo["color_feet"] = pPlayer->Acc()->m_TeeInfos.m_ColorFeet;
+	JsonTeeInfo["skin"] = pPlayer->Account()->m_TeeInfos.m_aSkinName;
+	JsonTeeInfo["custom_color"] = pPlayer->Account()->m_TeeInfos.m_UseCustomColor;
+	JsonTeeInfo["color_body"] = pPlayer->Account()->m_TeeInfos.m_ColorBody;
+	JsonTeeInfo["color_feet"] = pPlayer->Account()->m_TeeInfos.m_ColorFeet;
 
 	// check the nick
 	CSqlString<16> cNick = CSqlString<16>(pCharacter);

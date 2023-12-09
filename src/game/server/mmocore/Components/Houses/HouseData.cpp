@@ -17,7 +17,7 @@ CHouseData::~CHouseData()
 	if(pPlayer)
 	{
 		m_AccountID = -1;
-		pPlayer->Acc()->ReinitializeHouse();
+		pPlayer->Account()->ReinitializeHouse();
 	}
 
 	// Delete the CHouseData
@@ -102,7 +102,7 @@ void CHouseData::Buy(CPlayer* pPlayer)
 	const int ClientID = pPlayer->GetCID();
 
 	// Check if the player has a house
-	if(pPlayer->Acc()->HasHouse())
+	if(pPlayer->Account()->HasHouse())
 	{
 		GS()->Chat(ClientID, "You already have a home.");
 		return;
@@ -119,10 +119,10 @@ void CHouseData::Buy(CPlayer* pPlayer)
 	if(pPlayer->SpendCurrency(m_Price))
 	{
 		// update data
-		m_AccountID = pPlayer->Acc()->GetID();
+		m_AccountID = pPlayer->Account()->GetID();
 		m_pDoorData->Close();
 		m_pBank->Reset();
-		pPlayer->Acc()->ReinitializeHouse();
+		pPlayer->Account()->ReinitializeHouse();
 		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '%d', HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
 
 		// send information
@@ -152,7 +152,7 @@ void CHouseData::Sell()
 	m_AccountID = -1;
 	if(pPlayer)
 	{
-		pPlayer->Acc()->ReinitializeHouse();
+		pPlayer->Account()->ReinitializeHouse();
 	}
 	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_ID);
 

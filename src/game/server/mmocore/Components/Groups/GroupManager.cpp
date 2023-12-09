@@ -31,7 +31,7 @@ void CGroupManager::OnInitAccount(CPlayer* pPlayer)
 {
 	// Call the ReinitializeGroup() method of the player's account object 
 	// to initialize the group data for the account
-	pPlayer->Acc()->ReinitializeGroup();
+	pPlayer->Account()->ReinitializeGroup();
 }
 
 // Function to create a group for a player
@@ -44,7 +44,7 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 		return nullptr;
 
 	// Check if the player is already in a group
-	if(pPlayer->Acc()->GetGroup())
+	if(pPlayer->Account()->GetGroup())
 	{
 		GS()->Chat(pPlayer->GetCID(), "You're already in a group!");
 		return nullptr;
@@ -56,7 +56,7 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 
 	// Create a string with the player's account ID
 	int Color = 1 + rand() % 63;
-	int OwnerUID = pPlayer->Acc()->GetID();
+	int OwnerUID = pPlayer->Account()->GetID();
 	std::string StrAccountIDs = std::to_string(OwnerUID);
 
 	// Insert the new group into the database
@@ -64,7 +64,7 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 
 	// Initialize the group data
 	GroupData(InitID).Init(OwnerUID, Color, StrAccountIDs);
-	pPlayer->Acc()->ReinitializeGroup();
+	pPlayer->Account()->ReinitializeGroup();
 
 	// Inform the player that the group was created
 	GS()->Chat(pPlayer->GetCID(), "The group was created!");
@@ -83,7 +83,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	GS()->AV(ClientID, "null");
 
 	// Check if the player does not have a group
-	if(!pPlayer->Acc()->GetGroup())
+	if(!pPlayer->Account()->GetGroup())
 	{
 		// Show the option to create a new group in the clients available votes list
 		GS()->AVL(ClientID, "GROUP_CREATE", "Create a new group.");
@@ -92,8 +92,8 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 
 	// Group list for interaction
 	int HideID = 3200;
-	GroupData* pGroup = pPlayer->Acc()->GetGroup();
-	bool IsOwner = pGroup->OwnerUID() == pPlayer->Acc()->GetID();
+	GroupData* pGroup = pPlayer->Account()->GetGroup();
+	bool IsOwner = pGroup->OwnerUID() == pPlayer->Account()->GetID();
 	for(auto& AID : pGroup->GetAccounts())
 	{
 		// Get the player name for the account
@@ -101,7 +101,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		GS()->AVH(ClientID, HideID, "{STR}{STR}", (AID == pGroup->OwnerUID() ? "*" : "\0"), PlayerName.c_str());
 
 		// Check if the current player is the owner or if the account belongs to the current player
-		if(!IsOwner || (AID == pPlayer->Acc()->GetID()))
+		if(!IsOwner || (AID == pPlayer->Account()->GetID()))
 		{
 			// Add the only player name to the group list
 			GS()->AVM(ClientID, "null", NOPE, HideID, "Interaction is not available", PlayerName.c_str());
@@ -125,7 +125,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		GS()->AVL(ClientID, "GROUP_CHANGE_COLOR", "Change the colour: ({INT}) current", pGroup->GetTeamColor());
 		GS()->AVL(ClientID, "GROUP_DISBAND", "Disband group");
 	}
-	GS()->AVM(ClientID, "GROUP_KICK", pPlayer->Acc()->GetID(), NOPE, "Leave the group");
+	GS()->AVM(ClientID, "GROUP_KICK", pPlayer->Account()->GetID(), NOPE, "Leave the group");
 	GS()->AV(ClientID, "null");
 
 	// Player list for invition
@@ -138,7 +138,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 			continue;
 
 		// If the searched player does not belong to any group, send them an invitation
-		GroupData* pSearchGroup = pSearchPlayer->Acc()->GetGroup();
+		GroupData* pSearchGroup = pSearchPlayer->Account()->GetGroup();
 		if(!pSearchGroup)
 		{
 			GS()->AVD(ClientID, "GROUP_INVITE", i, GroupID, NOPE, "Invite {STR}", Server()->ClientName(i));
@@ -193,7 +193,7 @@ static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int OptionID, int 
 		pGS->Chat(InvitedCID, "{STR} accepted your invitation!", pGS->Server()->ClientName(ClientID));
 
 		// Add the player to the group
-		GroupData::Data()[GroupID].Add(pPlayer->Acc()->GetID());
+		GroupData::Data()[GroupID].Add(pPlayer->Account()->GetID());
 	}
 	else
 	{
@@ -229,7 +229,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		if(pInvitedPlayer)
 		{
 			// Check if the player being invited already belongs to another group
-			if(pInvitedPlayer->Acc()->HasGroup())
+			if(pInvitedPlayer->Account()->HasGroup())
 			{
 				GS()->Chat(ClientID, "This player is already in another group.");
 				return true;
@@ -255,7 +255,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		const int AccountID = VoteID;
 
 		// Get the group data of the player's account
-		GroupData* pGroup = pPlayer->Acc()->GetGroup();
+		GroupData* pGroup = pPlayer->Account()->GetGroup();
 
 		// If the player is in a group
 		if(pGroup)
@@ -277,7 +277,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		const int AccountID = VoteID;
 
 		// Get the player's group
-		GroupData* pGroup = pPlayer->Acc()->GetGroup();
+		GroupData* pGroup = pPlayer->Account()->GetGroup();
 		if(pGroup) // If the player has a group
 		{
 			// Remove the account from the group
@@ -300,7 +300,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		}
 
 		// Get the player's group data
-		GroupData* pGroup = pPlayer->Acc()->GetGroup();
+		GroupData* pGroup = pPlayer->Account()->GetGroup();
 
 		// If the player is in a group
 		if(pGroup)
@@ -319,10 +319,10 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "GROUP_DISBAND") == 0)
 	{
 		// Get the group data of the player's account
-		GroupData* pGroup = pPlayer->Acc()->GetGroup();
+		GroupData* pGroup = pPlayer->Account()->GetGroup();
 
 		// Check if the player has a group and if they are the owner of the group
-		if(pGroup && pGroup->OwnerUID() == pPlayer->Acc()->GetID())
+		if(pGroup && pGroup->OwnerUID() == pPlayer->Account()->GetID())
 		{
 			// Disband the group
 			pGroup->Disband();

@@ -143,10 +143,10 @@ void CCommandProcessor::ConChatGuildExit(IConsole::IResult* pResult, void* pUser
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->Acc()->IsGuild())
+	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->Account()->IsGuild())
 		return;
 
-	const int AccountID = pPlayer->Acc()->GetID();
+	const int AccountID = pPlayer->Account()->GetID();
 	pGS->Mmo()->Member()->ExitGuild(AccountID);
 }
 
@@ -156,7 +156,7 @@ void CCommandProcessor::ConChatGuildCreate(IConsole::IResult* pResult, void* pUs
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(!pPlayer || !pPlayer->IsAuthed() || pPlayer->Acc()->IsGuild())
+	if(!pPlayer || !pPlayer->IsAuthed() || pPlayer->Account()->IsGuild())
 		return;
 
 	char aGuildName[16];
@@ -179,7 +179,7 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	CHouseData* pHouse = pPlayer->Acc()->GetHouse();
+	CHouseData* pHouse = pPlayer->Account()->GetHouse();
 	if(pHouse)
 		pHouse->GetDoor()->Reverse();
 	else
@@ -196,7 +196,7 @@ void CCommandProcessor::ConChatSellHouse(IConsole::IResult* pResult, void* pUser
 		return;
 
 	// check owner house id
-	CHouseData* pHouse = pPlayer->Acc()->GetHouse();
+	CHouseData* pHouse = pPlayer->Account()->GetHouse();
 	if(!pHouse)
 	{
 		pGS->Chat(ClientID, "You have no home.");
@@ -256,7 +256,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 	if(pPlayer)
 	{
 		const char* pElem = pResult->GetString(0);
-		GroupData* pGroup = pPlayer->Acc()->GetGroup();
+		GroupData* pGroup = pPlayer->Account()->GetGroup();
 
 		if(!str_comp_nocase_num(pElem, "create", 6))
 		{
@@ -269,7 +269,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		{
 			if(pGroup)
 			{
-				pGroup->Remove(pPlayer->Acc()->GetID());
+				pGroup->Remove(pPlayer->Account()->GetID());
 				pGS->StrongUpdateVotesForAll(MENU_GROUP);
 			}
 

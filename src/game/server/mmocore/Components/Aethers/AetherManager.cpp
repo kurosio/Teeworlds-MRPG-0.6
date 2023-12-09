@@ -27,11 +27,11 @@ void CAetherManager::OnInit()
 
 void CAetherManager::OnInitAccount(CPlayer *pPlayer)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Acc()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
 		const int TeleportID = pRes->getInt("AetherID");
-		pPlayer->Acc()->m_aAetherLocation[TeleportID] = true;
+		pPlayer->Account()->m_aAetherLocation[TeleportID] = true;
 	}
 }
 
@@ -110,11 +110,11 @@ void CAetherManager::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
 	const int ClientID = pPlayer->GetCID();
 	for (const auto& [ID, Aether] : CAether::Data())
 	{
-		if (distance(Aether.GetPosition(), Pos) > 100 || pPlayer->Acc()->m_aAetherLocation.find(ID) != pPlayer->Acc()->m_aAetherLocation.end())
+		if (distance(Aether.GetPosition(), Pos) > 100 || pPlayer->Account()->m_aAetherLocation.find(ID) != pPlayer->Account()->m_aAetherLocation.end())
 			continue;
 
-		pPlayer->Acc()->m_aAetherLocation[ID] = true;
-		Database->Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Acc()->GetID(), ID);
+		pPlayer->Account()->m_aAetherLocation[ID] = true;
+		Database->Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Account()->GetID(), ID);
 
 		GS()->Chat(ClientID, "You now have Aethernet access to the {STR}.", Aether.GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Now have Aethernet access to the {STR}.", Aether.GetName());
@@ -130,19 +130,19 @@ void CAetherManager::ShowList(CCharacter* pChar) const
 	GS()->AV(ClientID, "null");
 
 	GS()->AVH(ClientID, TAB_AETHER, "Available aethers");
-	if(Job()->Member()->GetGuildHouseID(pPlayer->Acc()->m_GuildID) >= 1)
+	if(Job()->Member()->GetGuildHouseID(pPlayer->Account()->m_GuildID) >= 1)
 	{
 		GS()->AVM(ClientID, "MSPAWN", NOPE, TAB_AETHER, "Move to Guild House - free");
 	}
 
-	if(pPlayer->Acc()->HasHouse())
+	if(pPlayer->Account()->HasHouse())
 	{
 		GS()->AVM(ClientID, "HOUSE_SPAWN", NOPE, TAB_AETHER, "Move to Your House - free");
 	}
 
 	for (const auto& [ID, Aether] : CAether::Data())
 	{
-		if (pPlayer->Acc()->m_aAetherLocation.find(ID) == pPlayer->Acc()->m_aAetherLocation.end())
+		if (pPlayer->Account()->m_aAetherLocation.find(ID) == pPlayer->Account()->m_aAetherLocation.end())
 			continue;
 
 		const bool LocalTeleport = (GS()->IsPlayerEqualWorld(ClientID, Aether.GetWorldID()) && distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120);

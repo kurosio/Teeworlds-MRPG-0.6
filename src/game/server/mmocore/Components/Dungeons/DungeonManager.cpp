@@ -79,7 +79,7 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 			return true;
 		}
 
-		if(pPlayer->Acc()->GetLevel() < CDungeonData::ms_aDungeon[VoteID].m_Level)
+		if(pPlayer->Account()->GetLevel() < CDungeonData::ms_aDungeon[VoteID].m_Level)
 		{
 			GS()->Chat(ClientID, "Your level is low to pass this dungeon!");
 			GS()->StrongUpdateVotes(ClientID, MenuList::MENU_DUNGEONS);
@@ -150,15 +150,15 @@ void CDungeonManager::SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayer
 	const int Seconds = pPlayerDungeonRecord->m_Time;
 	const float PassageHelp = pPlayerDungeonRecord->m_PassageHelp;
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE UserID = '%d' AND DungeonID = '%d'", pPlayer->Acc()->GetID(), DungeonID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE UserID = '%d' AND DungeonID = '%d'", pPlayer->Account()->GetID(), DungeonID);
 	if(pRes->next())
 	{
 		if(pRes->getInt("Seconds") > Seconds && pRes->getInt("PassageHelp") < PassageHelp)
 			Database->Execute<DB::UPDATE>("tw_dungeons_records", "Seconds = '%d', PassageHelp = '%f' WHERE UserID = '%d' AND DungeonID = '%d'",
-				Seconds, PassageHelp, pPlayer->Acc()->GetID(), DungeonID);
+				Seconds, PassageHelp, pPlayer->Account()->GetID(), DungeonID);
 		return;
 	}
-	Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Seconds, PassageHelp) VALUES ('%d', '%d', '%d', '%f')", pPlayer->Acc()->GetID(), DungeonID, Seconds, PassageHelp);
+	Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Seconds, PassageHelp) VALUES ('%d', '%d', '%d', '%f')", pPlayer->Account()->GetID(), DungeonID, Seconds, PassageHelp);
 }
 
 void CDungeonManager::ShowDungeonTop(CPlayer* pPlayer, int DungeonID, int HideID) const

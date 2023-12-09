@@ -33,5 +33,5 @@ void CQuestsDailyBoard::ClearDailyQuests(CPlayer* pPlayer) const
 
 	// Delete entries from the tw_accounts_quests table where UserID matches pPlayer's ID,
 	// and QuestID matches the QuestID in tw_quests_daily_board_list table.
-	Database->Execute<DB::OTHER>("DELETE tw_accounts_quests.* FROM tw_accounts_quests JOIN tw_quests_daily_board_list ON tw_quests_daily_board_list.QuestID = tw_accounts_quests.QuestID WHERE tw_accounts_quests.UserID = '%d';", pPlayer->Acc()->GetID());
+	Database->Execute<DB::OTHER>("DELETE tw_accounts_quests.* FROM tw_accounts_quests JOIN tw_quests_daily_board_list ON tw_quests_daily_board_list.QuestID = tw_accounts_quests.QuestID WHERE tw_accounts_quests.UserID = '%d';", pPlayer->Account()->GetID());
 }

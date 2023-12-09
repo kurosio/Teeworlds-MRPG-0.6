@@ -45,7 +45,7 @@ void CDropBonuses::Tick()
 		// experience
 		if(m_Type == POWERUP_ARMOR)
 		{
-			pChar->GetPlayer()->Acc()->AddExperience(m_Value);
+			pChar->GetPlayer()->Account()->AddExperience(m_Value);
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_ARMOR);
 		}
 

@@ -337,7 +337,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// skill point
 	// TODO: balance depending on the difficulty, not just the level
-	const int CalculateSP = (pPlayer->Acc()->GetLevel() > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + minimum(40, (pPlayer->Acc()->GetLevel() - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
+	const int CalculateSP = (pPlayer->Account()->GetLevel() > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + minimum(40, (pPlayer->Account()->GetLevel() - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
 	if(rand() % CalculateSP == 0)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
@@ -1078,7 +1078,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
 			// Check if the bot is a guardian NPC and the player is not active for the bot
-			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !GS()->m_apPlayers[i]->Acc()->IsRelationshipsDeterioratedToMax())
+			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !GS()->m_apPlayers[i]->Account()->IsRelationshipsDeterioratedToMax())
 			{
 				continue;
 			}
@@ -1146,7 +1146,7 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
 			// Check if the bot is a guardian NPC and the player is not active for the bot
-			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !pFinderHard->Acc()->IsRelationshipsDeterioratedToMax())
+			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !pFinderHard->Account()->IsRelationshipsDeterioratedToMax())
 			{
 				continue;
 			}
@@ -1189,7 +1189,7 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 					continue;
 
 				// Check if the search bot type is TYPE_BOT_NPC and the relationship with the eidolon owner is not deteriorated to the maximum level
-				if(SearchBotType == TYPE_BOT_NPC && !m_pBotPlayer->GetEidolonOwner()->Acc()->IsRelationshipsDeterioratedToMax())
+				if(SearchBotType == TYPE_BOT_NPC && !m_pBotPlayer->GetEidolonOwner()->Account()->IsRelationshipsDeterioratedToMax())
 					continue;
 			}
 

@@ -136,9 +136,9 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		// statistics menu
-		const int ExpForLevel = computeExperience(pPlayer->Acc()->GetLevel());
-		GS()->AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pPlayer->Acc()->GetLastLoginDate());
-		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Acc()->GetLevel(), pPlayer->Acc()->GetExperience(), ExpForLevel);
+		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
+		GS()->AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pPlayer->Account()->GetLastLoginDate());
+		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
 		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
 		GS()->AV(ClientID, "null");
@@ -147,20 +147,20 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		GS()->AVH(ClientID, TAB_PERSONAL, "☪ SUB MENU PERSONAL");
 		GS()->AVM(ClientID, "MENU", MENU_INVENTORY, TAB_PERSONAL, "Inventory");
 		GS()->AVM(ClientID, "MENU", MENU_EQUIPMENT, TAB_PERSONAL, "Equipment");
-		GS()->AVM(ClientID, "MENU", MENU_UPGRADES, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Acc()->m_Upgrade);
+		GS()->AVM(ClientID, "MENU", MENU_UPGRADES, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
 		GS()->AVM(ClientID, "MENU", MENU_EIDOLON_COLLECTION, TAB_PERSONAL, "Eidolon Collection");
 		GS()->AVM(ClientID, "MENU", MENU_DUNGEONS, TAB_PERSONAL, "Dungeons");
 		GS()->AVM(ClientID, "MENU", MENU_GROUP, TAB_PERSONAL, "Group");
 		GS()->AVM(ClientID, "MENU", MENU_SETTINGS, TAB_PERSONAL, "Settings");
 		GS()->AVM(ClientID, "MENU", MENU_INBOX, TAB_PERSONAL, "Mailbox");
 		GS()->AVM(ClientID, "MENU", MENU_JOURNAL_MAIN, TAB_PERSONAL, "Journal");
-		if(pPlayer->Acc()->HasHouse())
+		if(pPlayer->Account()->HasHouse())
 		{
 			GS()->AVM(ClientID, "MENU", MENU_HOUSE, TAB_PERSONAL, "House");
 		}
 
 		GS()->AVM(ClientID, "MENU", MENU_GUILD_FINDER, TAB_PERSONAL, "Guild finder");
-		if(pPlayer->Acc()->IsGuild())
+		if(pPlayer->Account()->IsGuild())
 		{
 			GS()->AVM(ClientID, "MENU", MENU_GUILD, TAB_PERSONAL, "Guild");
 		}
@@ -193,7 +193,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			{
 				if(pAttribute->IsType(Type) && pAttribute->HasDatabaseField())
 					GS()->AVD(ClientID, "UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)",
-						pAttribute->GetName(), pPlayer->Acc()->m_aStats[ID], pAttribute->GetUpgradePrice());
+						pAttribute->GetName(), pPlayer->Account()->m_aStats[ID], pAttribute->GetUpgradePrice());
 			}
 		};
 		GS()->AV(ClientID, "null");
@@ -346,23 +346,23 @@ void MmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 	time_t CurrentTimeStamp = time(nullptr);
 
 	// Check if it is a new day and update the daily time period if necessary
-	if(time_is_new_day(pPlayer->Acc()->m_Periods.m_DailyStamp, CurrentTimeStamp))
+	if(time_is_new_day(pPlayer->Account()->m_Periods.m_DailyStamp, CurrentTimeStamp))
 	{
-		pPlayer->Acc()->m_Periods.m_DailyStamp = CurrentTimeStamp;
+		pPlayer->Account()->m_Periods.m_DailyStamp = CurrentTimeStamp;
 		aPeriodsUpdated.push_back(TIME_PERIOD::DAILY_STAMP);
 	}
 
 	// Check if it is a new week and update the weekly time period if necessary
-	if(time_is_new_week(pPlayer->Acc()->m_Periods.m_WeekStamp, CurrentTimeStamp))
+	if(time_is_new_week(pPlayer->Account()->m_Periods.m_WeekStamp, CurrentTimeStamp))
 	{
-		pPlayer->Acc()->m_Periods.m_WeekStamp = CurrentTimeStamp;
+		pPlayer->Account()->m_Periods.m_WeekStamp = CurrentTimeStamp;
 		aPeriodsUpdated.push_back(TIME_PERIOD::WEEK_STAMP);
 	}
 
 	// Check if it is a new month and update the monthly time period if necessary
-	if(time_is_new_month(pPlayer->Acc()->m_Periods.m_MonthStamp, CurrentTimeStamp))
+	if(time_is_new_month(pPlayer->Account()->m_Periods.m_MonthStamp, CurrentTimeStamp))
 	{
-		pPlayer->Acc()->m_Periods.m_MonthStamp = CurrentTimeStamp;
+		pPlayer->Account()->m_Periods.m_MonthStamp = CurrentTimeStamp;
 		aPeriodsUpdated.push_back(TIME_PERIOD::MONTH_STAMP);
 	}
 
@@ -391,7 +391,7 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 
 	if(Table == SAVE_STATS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d' WHERE ID = '%d'", pPlayer->Acc()->GetLevel(), pPlayer->Acc()->GetExperience(), pPlayer->Acc()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d' WHERE ID = '%d'", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), pPlayer->Account()->GetID());
 	}
 	else if(Table == SAVE_UPGRADES)
 	{
@@ -401,52 +401,52 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 			if(pAttribute->HasDatabaseField())
 			{
 				char aBuf[64];
-				str_format(aBuf, sizeof(aBuf), ", %s = '%d' ", pAttribute->GetFieldName(), pPlayer->Acc()->m_aStats[ID]);
+				str_format(aBuf, sizeof(aBuf), ", %s = '%d' ", pAttribute->GetFieldName(), pPlayer->Account()->m_aStats[ID]);
 				Buffer.append_at(Buffer.length(), aBuf);
 			}
 		}
 
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Acc()->m_Upgrade, Buffer.buffer(), pPlayer->Acc()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pPlayer->Account()->m_Upgrade, Buffer.buffer(), pPlayer->Account()->GetID());
 		Buffer.clear();
 	}
 	else if(Table == SAVE_PLANT_DATA)
 	{
-		std::string Fields = pPlayer->Acc()->m_FarmingData.getUpdateField();
-		Database->Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc()->GetID());
+		std::string Fields = pPlayer->Account()->m_FarmingData.getUpdateField();
+		Database->Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Account()->GetID());
 	}
 	else if(Table == SAVE_MINER_DATA)
 	{
-		std::string Fields = pPlayer->Acc()->m_MiningData.getUpdateField();
-		Database->Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Acc()->GetID());
+		std::string Fields = pPlayer->Account()->m_MiningData.getUpdateField();
+		Database->Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pPlayer->Account()->GetID());
 	}
 	else if(Table == SAVE_RELATIONS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Relations = '%d' WHERE ID = '%d'", pPlayer->Acc()->m_Relations, pPlayer->Acc()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Relations = '%d' WHERE ID = '%d'", pPlayer->Account()->m_Relations, pPlayer->Account()->GetID());
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Acc()->m_GuildID, pPlayer->Acc()->m_GuildRank, pPlayer->Acc()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pPlayer->Account()->m_GuildID, pPlayer->Account()->m_GuildRank, pPlayer->Account()->GetID());
 	}
 	else if(Table == SAVE_POSITION)
 	{
 		const int LatestCorrectWorldID = Account()->GetHistoryLatestCorrectWorldID(pPlayer);
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pPlayer->Acc()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pPlayer->Account()->GetID());
 	}
 	else if(Table == SAVE_TIME_PERIODS)
 	{
-		time_t Daily = pPlayer->Acc()->m_Periods.m_DailyStamp;
-		time_t Week = pPlayer->Acc()->m_Periods.m_WeekStamp;
-		time_t Month = pPlayer->Acc()->m_Periods.m_MonthStamp;
+		time_t Daily = pPlayer->Account()->m_Periods.m_DailyStamp;
+		time_t Week = pPlayer->Account()->m_Periods.m_WeekStamp;
+		time_t Month = pPlayer->Account()->m_Periods.m_MonthStamp;
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '%llu', WeekStamp = '%llu', MonthStamp = '%llu' WHERE ID = '%d'", 
-			Daily, Week, Month, pPlayer->Acc()->GetID());
+			Daily, Week, Month, pPlayer->Account()->GetID());
 	}
 	else if(Table == SAVE_LANGUAGE)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pPlayer->Acc()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pPlayer->Account()->GetID());
 	}
 	else
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Acc()->GetLogin(), pPlayer->Acc()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pPlayer->Account()->GetLogin(), pPlayer->Account()->GetID());
 	}
 }
 

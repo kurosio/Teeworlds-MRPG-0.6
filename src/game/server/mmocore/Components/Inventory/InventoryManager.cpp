@@ -84,7 +84,7 @@ void CInventoryManager::OnInit()
 void CInventoryManager::OnInitAccount(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Acc()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
 		ItemIdentifier ItemID = pRes->getInt("ItemID");
@@ -275,7 +275,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 void CInventoryManager::RepairDurabilityItems(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Acc()->GetID());
+	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Account()->GetID());
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
 		Item.m_Durability = 100;
 }
@@ -342,7 +342,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	}
 	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANTS)
 	{
-		if(CHouseData* pHouse = pPlayer->Acc()->GetHouse(); pHouse && pHouse->GetPlantedItem()->GetID() != ItemID)
+		if(CHouseData* pHouse = pPlayer->Account()->GetHouse(); pHouse && pHouse->GetPlantedItem()->GetID() != ItemID)
 		{
 			const int random_change = rand() % 1500;
 			GS()->AVD(ClientID, "PLANTING_HOUSE_SET", ItemID, random_change, HideID, "To plant at home (0.06%)");

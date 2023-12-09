@@ -32,7 +32,7 @@ bool GroupData::Add(int AccountID)
 	CPlayer* pPlayer = pGS->GetPlayerByUserID(AccountID);
 
 	// Check if the player exists
-	if(pPlayer && pPlayer->Acc()->GetGroup())
+	if(pPlayer && pPlayer->Account()->GetGroup())
 	{
 		// Send a chat message to the player indicating they are already in a group
 		pGS->ChatAccount(AccountID, "You're already in a group!");
@@ -46,7 +46,7 @@ bool GroupData::Add(int AccountID)
 		if(pPlayer)
 		{
 			// Reinitialize the player's group
-			pPlayer->Acc()->ReinitializeGroup();
+			pPlayer->Account()->ReinitializeGroup();
 		}
 
 		// Save changes
@@ -77,7 +77,7 @@ bool GroupData::Remove(int AccountID)
 	}
 
 	// Check if pPlayer exists and if the player is not in the group or is in a different group
-	if(pPlayer && (!pPlayer->Acc()->GetGroup() || pPlayer->Acc()->GetGroup()->GetID() != m_ID))
+	if(pPlayer && (!pPlayer->Account()->GetGroup() || pPlayer->Account()->GetGroup()->GetID() != m_ID))
 	{
 		// Send a chat message to the player's account indicating that they are not in the group
 		pGS->ChatAccount(AccountID, "You're not in the group!");
@@ -90,7 +90,7 @@ bool GroupData::Remove(int AccountID)
 		// Reinitialize the player's group
 		if(pPlayer)
 		{
-			pPlayer->Acc()->ReinitializeGroup();
+			pPlayer->Account()->ReinitializeGroup();
 		}
 
 		// If m_AccountIds is empty, disband the group
@@ -132,7 +132,7 @@ void GroupData::Disband()
 		if(pPlayer)
 		{
 			// Reinitialize the player's group
-			pPlayer->Acc()->ReinitializeGroup();
+			pPlayer->Account()->ReinitializeGroup();
 		}
 	}
 
