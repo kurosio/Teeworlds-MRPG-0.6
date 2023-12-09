@@ -92,6 +92,9 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 	case ENTITY_SPAWN_SAFE:
 		m_aaSpawnPoints[SPAWN_HUMAN_SAFE][m_aNumSpawnPoints[SPAWN_HUMAN_SAFE]++] = Pos;
 		break;
+	case ENTITY_SPAWN_PRISON:
+		m_aaSpawnPoints[SPAWN_HUMAN_PRISON][m_aNumSpawnPoints[SPAWN_HUMAN_PRISON]++] = Pos;
+		break;
 	case ENTITY_ARMOR_1:
 		Type = POWERUP_ARMOR;
 		break;

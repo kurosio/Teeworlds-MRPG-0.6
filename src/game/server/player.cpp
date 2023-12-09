@@ -487,7 +487,12 @@ void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
 	int SpawnType = SPAWN_HUMAN;
-	if(GetTempData().m_TempSafeSpawn)
+	if(Account()->IsPrisoned())
+	{
+		// TODO REWORK MOVE TO PRISONED WORLD
+		SpawnType = SPAWN_HUMAN_PRISON;
+	}
+	else if(GetTempData().m_TempSafeSpawn)
 	{
 		const int SafezoneWorldID = GS()->GetRespawnWorld();
 		if(SafezoneWorldID >= 0 && !GS()->IsPlayerEqualWorld(m_ClientID, SafezoneWorldID))

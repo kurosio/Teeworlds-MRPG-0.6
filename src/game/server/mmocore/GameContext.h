@@ -381,6 +381,7 @@ enum SpawnTypes
 	SPAWN_HUMAN = 0,        // Spawn a human player
 	SPAWN_BOT = 1,          // Spawn a bot player
 	SPAWN_HUMAN_SAFE = 2,   // Spawn a human player in a safe location
+	SPAWN_HUMAN_PRISON = 3, // Spawn a human prison
 	SPAWN_NUM               // The total number of spawn types available
 };
 
