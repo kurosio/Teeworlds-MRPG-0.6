@@ -35,6 +35,7 @@ class CCharacter : public CEntity
 	void HandleWeaponSwitch();
 	void DoWeaponSwitch();
 	void HandleHookActions();
+	void HandlePrison() const;
 	bool InteractiveHammer(vec2 Direction, vec2 ProjStartPos);
 	//void InteractiveGun(vec2 Direction, vec2 ProjStartPos);
 	//void InteractiveShotgun(vec2 Direction, vec2 ProjStartPos);

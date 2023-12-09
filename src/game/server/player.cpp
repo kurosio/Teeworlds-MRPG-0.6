@@ -754,7 +754,7 @@ void CPlayer::IncreaseRelations(int Relevation)
 		}
 
 		// Save the player's account data, specifically the relationship level.
-		GS()->Mmo()->SaveAccount(this, SAVE_RELATIONS);
+		GS()->Mmo()->SaveAccount(this, SAVE_SOCIAL_STATUS);
 	}
 }
 

@@ -121,11 +121,36 @@ void CAccountData::ReinitializeGroup()
 	m_pGroupData = nullptr;
 }
 
-void CAccountData::Prison(int Seconds)
+// This function is used to imprison a player for a certain number of seconds
+void CAccountData::Imprison(int Seconds)
 {
+	// Check if the player is valid
 	if(!m_pPlayer)
 		return;
 
+	// Check if the player has a character and kill the player's character
+	if(m_pPlayer->GetCharacter())
+		m_pPlayer->KillCharacter();
+
+	// Set the prison seconds and send a chat message to all players indicating that the player has been imprisoned
+	m_PrisonSeconds = Seconds;
+	GS()->Chat(-1, "Player {STR}, has been imprisoned for {INT} seconds.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()), Seconds);
+	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+}
+
+void CAccountData::Unprison()
+{
+	// Check if the player is valid
+	if(!m_pPlayer)
+		return;
+
+	// Check if the player has a character and kill the player's character
+	if(m_pPlayer->GetCharacter())
+		m_pPlayer->KillCharacter();
+
+	m_PrisonSeconds = -1;
+	GS()->Chat(-1, "{STR} were released from prison.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()));
+	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
 // Add experience to the account

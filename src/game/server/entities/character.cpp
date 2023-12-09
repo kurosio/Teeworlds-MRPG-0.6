@@ -522,6 +522,39 @@ void CCharacter::HandleHookActions()
 	}
 }
 
+// This function is responsible for handling the prison state of a character.
+void CCharacter::HandlePrison() const
+{
+	// Check if the player's account is not in prison
+	if(!m_pPlayer->Account()->IsPrisoned())
+		return;
+
+	// Check if the server tick is a multiple of the tick speed
+	if(Server()->Tick() % Server()->TickSpeed() == 0)
+	{
+		// Get the client ID of the player
+		int ClientID = m_pPlayer->GetCID();
+
+		// Decrease the prison seconds for the player's account
+		m_pPlayer->Account()->m_PrisonSeconds--;
+
+		// Broadcast a message to the player indicating the remaining prison seconds
+		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "In '{INT}' seconds, you'll be released from jail.", m_pPlayer->Account()->m_PrisonSeconds);
+
+		// check if the player is not currently in prison
+		if(!m_pPlayer->Account()->m_PrisonSeconds)
+		{
+			// if not in prison, unprison the player
+			m_pPlayer->Account()->Unprison();
+		}
+		// if player is in prison, check if it's time to save their account's social status
+		else if(Server()->Tick() % (Server()->TickSpeed() * 10) == 0)
+		{
+			// if it's time to save, call the SaveAccount function with the SAVE_SOCIAL_STATUS flag
+			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+		}
+	}
+}
 
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
@@ -818,7 +851,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 
 			// Reset player's relations and save relations
 			m_pPlayer->Account()->m_Relations = 0;
-			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_RELATIONS);
+			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 
 			// Translate the value of the Gold item to a percentage for arrest and remove arrest
 			const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
@@ -835,6 +868,9 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 
 				// Send a chat message to the client with their arrest information
 				GS()->Chat(ClientID, "Treasury confiscates {INT}%({VAL}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
+
+				// Imprison
+				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 100);
 			}
 		}
 		else if(KillerIsPlayer)
@@ -1352,6 +1388,7 @@ void CCharacter::HandlePlayer()
 	// handle
 	HandleEvent();
 	HandleHookActions();
+	HandlePrison();
 }
 
 bool CCharacter::IsAllowedPVP(int FromID) const
