@@ -62,6 +62,7 @@ public:
 	char m_aClanString[128];
 	Mood m_MoodState;
 	CCooldown m_Cooldown {};
+	vec2 m_PrisonedPosition {};
 
 	char m_aLastMsg[256];
 	int m_TutorialStep;
@@ -143,6 +144,7 @@ private:
 	virtual void HandleEffects();
 	virtual void TryRespawn();
 	void HandleScoreboardColors();
+	void HandlePrison();
 
 public:
 	CCharacter* GetCharacter() const;

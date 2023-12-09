@@ -39,7 +39,6 @@ class CGS : public IGameServer
 
 	int m_WorldID;
 	int m_DungeonID;
-	int m_RespawnWorldID;
 	inline static CVoteEventOptionalContainer m_Optionals[MAX_PLAYERS] {};
 
 public:
@@ -260,8 +259,6 @@ public:
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 
 	bool IsPlayersNearby(vec2 Pos, float Distance) const;
-	int GetRespawnWorld() const { return m_RespawnWorldID; }
-
 private:
 	void InitZones();
 

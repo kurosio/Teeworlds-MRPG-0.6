@@ -460,7 +460,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		const int WorldID = CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID;
 		if(!GS()->IsPlayerEqualWorld(ClientID, WorldID))
 		{
-			pPlayer->GetTempData().m_TempTeleportPos = Position;
+			pPlayer->GetTempData().SetTeleportPosition(Position);
 			pPlayer->ChangeWorld(WorldID);
 			return true;
 		}

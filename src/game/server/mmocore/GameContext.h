@@ -283,7 +283,6 @@ enum
 	itTinyHealthPotion = 15,			// Tiny health potion
 	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
 	itLittleBagGold = 17,				// Gives 10-50 gold
-	itPotionResurrection = 18,			// Resurrection potion :: UNUSED
 	itExplosiveGun = 19,				// Explosion for gun
 	itExplosiveShotgun = 20,			// Explosion for shotgun
 	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
@@ -380,7 +379,7 @@ enum SpawnTypes
 {
 	SPAWN_HUMAN = 0,        // Spawn a human player
 	SPAWN_BOT = 1,          // Spawn a bot player
-	SPAWN_HUMAN_SAFE = 2,   // Spawn a human player in a safe location
+	SPAWN_HUMAN_TREATMENT = 2,   // Spawn a human player in a safe location
 	SPAWN_HUMAN_PRISON = 3, // Spawn a human prison
 	SPAWN_NUM               // The total number of spawn types available
 };
@@ -411,7 +410,7 @@ enum SaveType
 	SAVE_PLANT_DATA,		// Save Plant Account
 	SAVE_MINER_DATA,		// Save Mining Account
 	SAVE_GUILD_DATA,		// Save Guild Data
-	SAVE_SOCIAL_STATUS,			// Save Relations
+	SAVE_SOCIAL_STATUS,		// Save Social status
 	SAVE_POSITION,			// Save Position Player
 	SAVE_LANGUAGE,			// Save Language Client
 	SAVE_TIME_PERIODS,		// Save Time Periods

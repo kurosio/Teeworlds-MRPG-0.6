@@ -6,11 +6,12 @@
 
 #include "game/server/gamecontext.h"
 
-void CWorldData::Init(int RespawnWorldID, int RequiredQuestID, std::deque<CWorldSwapData>&& Worlds)
+void CWorldData::Init(int RespawnWorldID, int JailWorldID, int RequiredQuestID, std::deque<CWorldSwapData>&& Worlds)
 {
 	str_copy(m_aName, Server()->GetWorldName(m_ID), sizeof(m_aName));
 	m_RequiredQuestID = RequiredQuestID;
 	m_RespawnWorldID = RespawnWorldID;
+	m_JailWorldID = JailWorldID;
 	m_Swappers = std::move(Worlds);
 }
 
@@ -32,7 +33,7 @@ void CWorldData::Move(CPlayer* pPlayer)
 		return;
 	}
 
-	pPlayer->GetTempData().m_TempTeleportPos = pSwapper->GetSecondSwapPosition();
+	pPlayer->GetTempData().SetTeleportPosition(pSwapper->GetSecondSwapPosition());
 	pPlayer->ChangeWorld(pSwapper->GetSecondWorldID());
 }
 
@@ -51,6 +52,16 @@ CQuestDescription* CWorldData::GetRequiredQuest() const
 
 CWorldData* CWorldData::GetRespawnWorld() const
 {
-	const auto p = std::find_if(Data().begin(), Data().end(), [this](const WorldDataPtr& p) { return m_RespawnWorldID == p->GetID(); });
-	return p != Data().end() ? p->get() : nullptr;
+	if(m_RespawnWorldID < 0 || m_RespawnWorldID > Data().size())
+		return nullptr;
+
+	return Data()[m_RespawnWorldID].get();
+}
+
+CWorldData* CWorldData::GetJailWorld() const
+{
+	if(m_JailWorldID < 0 || m_JailWorldID > Data().size())
+		return nullptr;
+
+	return Data()[m_JailWorldID].get();
 }

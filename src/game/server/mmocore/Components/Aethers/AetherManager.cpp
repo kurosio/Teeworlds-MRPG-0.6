@@ -51,7 +51,7 @@ bool CAetherManager::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, con
 		vec2 Position = pAether->GetPosition();
 		if(!GS()->IsPlayerEqualWorld(ClientID, pAether->GetWorldID()))
 		{
-			pPlayer->GetTempData().m_TempTeleportPos = Position;
+			pPlayer->GetTempData().SetTeleportPosition(Position);
 			pPlayer->ChangeWorld(pAether->GetWorldID());
 			return true;
 		}

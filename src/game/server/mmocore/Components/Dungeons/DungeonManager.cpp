@@ -88,7 +88,7 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 
 		if(!GS()->IsDungeon())
 		{
-			pPlayer->GetTempData().m_TempTeleportPos = pPlayer->GetCharacter()->m_Core.m_Pos;
+			pPlayer->GetTempData().SetTeleportPosition(pPlayer->GetCharacter()->m_Core.m_Pos);
 			GS()->Mmo()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
 		}
 

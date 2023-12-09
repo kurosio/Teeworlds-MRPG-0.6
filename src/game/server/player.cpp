@@ -17,6 +17,7 @@
 #include "mmocore/Components/Inventory/ItemData.h"
 #include "mmocore/Components/Skills/SkillData.h"
 #include "mmocore/Components/Groups/GroupData.h"
+#include "mmocore/Components/Worlds/WorldData.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -125,6 +126,9 @@ void CPlayer::PostTick()
 
 		// Handle tuning parameters
 		HandleTuningParams();
+
+		// Handle prison
+		HandlePrison();
 	}
 
 	// Call the function HandleVoteOptionals() to handle any optional vote features.
@@ -261,6 +265,45 @@ void CPlayer::HandleScoreboardColors()
 			// Set the active group colors to false
 			m_ActivedGroupColors = false;
 			m_TickActivedGroupColors = Server()->Tick() + (Server()->TickSpeed() / 4);
+		}
+	}
+}
+
+// This function is responsible for handling the prison state of a character.
+void CPlayer::HandlePrison()
+{
+	// Check if the account is not prisoned or if the character is not available
+	if(!Account()->IsPrisoned() || !GetCharacter())
+		return;
+
+	// Check if the player is not in the jail world or is too far away from their prisoned position
+	if(GetPlayerWorldID() != GS()->GetWorldData()->GetJailWorld()->GetID() || distance(m_ViewPos, GetTempData().m_PrisonedPosition) > 1000.f)
+	{
+		// Change the character's position to the prisoned position
+		GetCharacter()->ChangePosition(GetTempData().m_PrisonedPosition);
+		GS()->Chat(m_ClientID, "You are not allowed to leave the prison!");
+	}
+
+	// Check if the server tick is a multiple of the tick speed
+	if(Server()->Tick() % Server()->TickSpeed() == 0)
+	{
+		// Decrease the prison seconds for the player's account
+		Account()->m_PrisonSeconds--;
+
+		// Broadcast a message to the player indicating the remaining prison seconds
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "In '{INT} seconds', you'll be released from jail.", Account()->m_PrisonSeconds);
+
+		// check if the player is not currently in prison
+		if(!Account()->m_PrisonSeconds)
+		{
+			// if not in prison, unprison the player
+			Account()->Unprison();
+		}
+		// if player is in prison, check if it's time to save their account's social status
+		else if(Server()->Tick() % (Server()->TickSpeed() * 10) == 0)
+		{
+			// if it's time to save, call the SaveAccount function with the SAVE_SOCIAL_STATUS flag
+			GS()->Mmo()->SaveAccount(this, SAVE_SOCIAL_STATUS);
 		}
 	}
 }
@@ -485,37 +528,59 @@ CCharacter* CPlayer::GetCharacter() const
 
 void CPlayer::TryRespawn()
 {
+	// Declare a variable to store the spawn position
 	vec2 SpawnPos;
-	int SpawnType = SPAWN_HUMAN;
+	int SpawnType = SPAWN_HUMAN; // Default base spawn
+
+	// Check if the player's account is in prison
 	if(Account()->IsPrisoned())
 	{
-		// TODO REWORK MOVE TO PRISONED WORLD
-		SpawnType = SPAWN_HUMAN_PRISON;
-	}
-	else if(GetTempData().m_TempSafeSpawn)
-	{
-		const int SafezoneWorldID = GS()->GetRespawnWorld();
-		if(SafezoneWorldID >= 0 && !GS()->IsPlayerEqualWorld(m_ClientID, SafezoneWorldID))
+		// Check if the jail world ID is valid and the player is not already in the jail world
+		const int JailWorldID = GS()->GetWorldData()->GetJailWorld()->GetID();
+		if(JailWorldID >= 0 && !GS()->IsPlayerEqualWorld(m_ClientID, JailWorldID))
 		{
-			ChangeWorld(SafezoneWorldID);
+			// Change the player's world to the jail world
+			ChangeWorld(JailWorldID);
 			return;
 		}
 
-		SpawnType = SPAWN_HUMAN_SAFE;
+		// Set the spawn type to human prison
+		SpawnType = SPAWN_HUMAN_PRISON;
+	}
+	// Check if the last killed by weapon is not WEAPON_WORLD
+	else if(GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
+	{
+		// Check if the respawn world ID is valid and the player is not already in the respawn world
+		const int RespawnWorldID = GS()->GetWorldData()->GetRespawnWorld()->GetID();
+		if(RespawnWorldID >= 0 && !GS()->IsPlayerEqualWorld(m_ClientID, RespawnWorldID))
+		{
+			// Change the player's world to the respawn world
+			ChangeWorld(RespawnWorldID);
+			return;
+		}
+
+		// Set the spawn type to human treatment
+		SpawnType = SPAWN_HUMAN_TREATMENT;
 	}
 
 	// Check if the controller allows spawning of the given spawn type at the specified position
 	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
 	{
 		// Check if self-coordinated spawning is possible
-		bool TrySelfCordSpawn = !is_negative_vec(GetTempData().m_TempTeleportPos) && !GS()->Collision()->CheckPoint(GetTempData().m_TempTeleportPos);
+		vec2 TeleportPosition = GetTempData().GetTeleportPosition();
+		bool TrySelfCordSpawn = !is_negative_vec(TeleportPosition) && !GS()->Collision()->CheckPoint(TeleportPosition);
 
-		// If not in a dungeon and self-coordinated spawning is possible, use the temporary teleport position as the spawn position
-		if(!GS()->IsDungeon() && TrySelfCordSpawn)
+		// If the spawn type is SPAWN_HUMAN_PRISON
+		if(SpawnType == SPAWN_HUMAN_PRISON)
 		{
-			// Reset the temporary teleport position
-			SpawnPos = GetTempData().m_TempTeleportPos;
-			GetTempData().m_TempTeleportPos = vec2(-1, -1); 
+			// Set the prisoned position to the spawn position
+			GetTempData().m_PrisonedPosition = SpawnPos;
+		}
+		// If the game state is not a dungeon and the TrySelfCordSpawn is true
+		else if(!GS()->IsDungeon() && TrySelfCordSpawn)
+		{
+			// Set the spawn position to the teleport position
+			SpawnPos = TeleportPosition;
 		}
 
 		// Create a new character object at the allocated memory cell
@@ -523,6 +588,7 @@ void CPlayer::TryRespawn()
 		m_pCharacter = new(AllocMemoryCell) CCharacter(&GS()->m_World);
 		m_pCharacter->Spawn(this, SpawnPos);
 		GS()->CreatePlayerSpawn(SpawnPos);
+		GetTempData().ClearTeleportPosition();
 
 		m_WantSpawn = false;
 	}

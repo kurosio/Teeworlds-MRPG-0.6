@@ -174,14 +174,6 @@ bool CPlayerItem::Use(int Value)
 		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
 		return true;
 	}
-	// potion resurrection
-	if(m_ID == itPotionResurrection && Remove(Value))
-	{
-		GetPlayer()->GetTempData().m_TempSafeSpawn = false;
-		GetPlayer()->GetTempData().m_TempHealth = GetPlayer()->GetStartHealth();
-		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
-		return true;
-	}
 	// ticket discount craft
 	if(m_ID == itTicketDiscountCraft)
 	{

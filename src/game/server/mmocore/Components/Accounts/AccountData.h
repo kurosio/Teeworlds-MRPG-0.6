@@ -110,6 +110,8 @@ public:
 
 struct CAccountTempData
 {
+	vec2 m_PrisonedPosition;
+	int m_LastKilledByWeapon;
 	int m_TempDecoractionID;
 	int m_TempDecorationType;
 	int m_TempID3;
@@ -128,17 +130,20 @@ struct CAccountTempData
 	int m_TempMana;
 	int m_TempPing;
 
-	// save pos teleport
-	bool m_TempSafeSpawn;
-	vec2 m_TempTeleportPos;
-
 	// dungeon
 	int m_TempTimeDungeon;
 	bool m_TempDungeonReady;
 	int m_TempTankVotingDungeon;
 	bool m_TempAlreadyVotedDungeon;
 
+	void SetTeleportPosition(vec2 Position) { m_TempTeleportPos = Position; }
+	vec2 GetTeleportPosition() const { return m_TempTeleportPos; }
+	void ClearTeleportPosition() { m_TempTeleportPos = { -1, -1 }; }
+
 	static std::map < int, CAccountTempData > ms_aPlayerTempData;
+
+private:
+	vec2 m_TempTeleportPos{};
 };
 
 #endif

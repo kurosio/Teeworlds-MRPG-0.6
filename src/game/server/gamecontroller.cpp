@@ -13,7 +13,7 @@
 	For modes that each map can have one of them
 */
 
-IGameController::IGameController(CGS *pGS)
+IGameController::IGameController(CGS* pGS)
 {
 	m_pGS = pGS;
 	m_GameFlags = 0;
@@ -27,7 +27,7 @@ void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage
 {
 }
 
-void IGameController::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int Weapon)
+void IGameController::OnCharacterDeath(CCharacter* pVictim, CPlayer* pKiller, int Weapon)
 {
 	// eidolons
 	pVictim->GetPlayer()->TryRemoveEidolon();
@@ -40,7 +40,7 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	{
 		pChr->IncreaseHealth(pChr->GetPlayer()->GetStartHealth());
 		pChr->GiveWeapon(WEAPON_HAMMER, -1);
-		for(int i = WEAPON_GUN; i < NUM_WEAPONS-1; i++)
+		for(int i = WEAPON_GUN; i < NUM_WEAPONS - 1; i++)
 			pChr->GiveWeapon(i, 10);
 		return true;
 	}
@@ -49,11 +49,16 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	int StartHealth = pChr->GetPlayer()->GetStartHealth();
 	if(!GS()->IsDungeon())
 	{
+		// Check if the player's health is greater than 0
 		if(pChr->GetPlayer()->GetHealth() > 0)
-			StartHealth = pChr->GetPlayer()->GetHealth();
-		else if(pChr->GetPlayer()->GetTempData().m_TempSafeSpawn == true)
 		{
-			pChr->GetPlayer()->GetTempData().m_TempSafeSpawn = false;
+			// If yes, set the StartHealth variable to the player's current health
+			StartHealth = pChr->GetPlayer()->GetHealth();
+		}
+		// Check if the player's last killed by weapon is not WEAPON_WORLD
+		else if(pChr->GetPlayer()->GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
+		{
+			// Divide the StartHealth variable by 2
 			StartHealth /= 2;
 		}
 	}
@@ -83,37 +88,37 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 	int SubType = 0;
 	switch(Index)
 	{
-	case ENTITY_SPAWN:
+		case ENTITY_SPAWN:
 		m_aaSpawnPoints[SPAWN_HUMAN][m_aNumSpawnPoints[SPAWN_HUMAN]++] = Pos;
 		break;
-	case ENTITY_SPAWN_MOBS:
+		case ENTITY_SPAWN_MOBS:
 		m_aaSpawnPoints[SPAWN_BOT][m_aNumSpawnPoints[SPAWN_BOT]++] = Pos;
 		break;
-	case ENTITY_SPAWN_SAFE:
-		m_aaSpawnPoints[SPAWN_HUMAN_SAFE][m_aNumSpawnPoints[SPAWN_HUMAN_SAFE]++] = Pos;
+		case ENTITY_SPAWN_SAFE:
+		m_aaSpawnPoints[SPAWN_HUMAN_TREATMENT][m_aNumSpawnPoints[SPAWN_HUMAN_TREATMENT]++] = Pos;
 		break;
-	case ENTITY_SPAWN_PRISON:
+		case ENTITY_SPAWN_PRISON:
 		m_aaSpawnPoints[SPAWN_HUMAN_PRISON][m_aNumSpawnPoints[SPAWN_HUMAN_PRISON]++] = Pos;
 		break;
-	case ENTITY_ARMOR_1:
+		case ENTITY_ARMOR_1:
 		Type = POWERUP_ARMOR;
 		break;
-	case ENTITY_HEALTH_1:
+		case ENTITY_HEALTH_1:
 		Type = POWERUP_HEALTH;
 		break;
-	case ENTITY_PICKUP_SHOTGUN:
+		case ENTITY_PICKUP_SHOTGUN:
 		Type = POWERUP_WEAPON;
 		SubType = WEAPON_SHOTGUN;
 		break;
-	case ENTITY_PICKUP_GRENADE:
+		case ENTITY_PICKUP_GRENADE:
 		Type = POWERUP_WEAPON;
 		SubType = WEAPON_GRENADE;
 		break;
-	case ENTITY_PICKUP_LASER:
+		case ENTITY_PICKUP_LASER:
 		Type = POWERUP_WEAPON;
 		SubType = WEAPON_LASER;
 		break;
-	default: break;
+		default: break;
 	}
 
 	if(Type != -1)
@@ -149,7 +154,7 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 	return false;
 }
 
-void IGameController::OnPlayerConnect(CPlayer *pPlayer)
+void IGameController::OnPlayerConnect(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	if(Server()->ClientIngame(ClientID) && pPlayer->GetPlayerWorldID() == GS()->GetWorldID())
@@ -161,7 +166,7 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 	}
 }
 
-void IGameController::OnPlayerDisconnect(CPlayer *pPlayer)
+void IGameController::OnPlayerDisconnect(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	if(Server()->ClientIngame(ClientID) && pPlayer->GetPlayerWorldID() == GS()->GetWorldID())
@@ -175,14 +180,14 @@ void IGameController::OnPlayerDisconnect(CPlayer *pPlayer)
 	pPlayer->OnDisconnect();
 }
 
-void IGameController::OnPlayerInfoChange(CPlayer *pPlayer, int WorldID) {}
+void IGameController::OnPlayerInfoChange(CPlayer* pPlayer, int WorldID) {}
 
 void IGameController::OnReset()
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(GS()->m_apPlayers[i])
-			GS()->m_apPlayers[i]->m_aPlayerTick[TickState::Respawn] = Server()->Tick()+Server()->TickSpeed()/2;
+			GS()->m_apPlayers[i]->m_aPlayerTick[TickState::Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
 	}
 }
 
@@ -191,7 +196,7 @@ void IGameController::Snap()
 {
 	// vanilla snap
 	CNetObj_GameInfo* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
-	if (!pGameInfoObj)
+	if(!pGameInfoObj)
 		return;
 
 	pGameInfoObj->m_GameFlags = m_GameFlags;
@@ -215,36 +220,36 @@ void IGameController::Tick() { }
 
 void IGameController::UpdateGameInfo(int ClientID)
 {
-/*	CNetMsg_Sv_GameInfo GameInfoMsg;
-	GameInfoMsg.m_GameFlags = m_GameFlags;
-	GameInfoMsg.m_ScoreLimit = 0;
-	GameInfoMsg.m_TimeLimit = 0;
-	GameInfoMsg.m_MatchNum = 0;
-	GameInfoMsg.m_MatchCurrent = 0;
+	/*	CNetMsg_Sv_GameInfo GameInfoMsg;
+		GameInfoMsg.m_GameFlags = m_GameFlags;
+		GameInfoMsg.m_ScoreLimit = 0;
+		GameInfoMsg.m_TimeLimit = 0;
+		GameInfoMsg.m_MatchNum = 0;
+		GameInfoMsg.m_MatchCurrent = 0;
 
-	if(ClientID == -1)
-	{
-		for(int i = 0; i < MAX_PLAYERS; ++i)
+		if(ClientID == -1)
 		{
-			if(!GS()->m_apPlayers[i] || !Server()->ClientIngame(i))
-				continue;
+			for(int i = 0; i < MAX_PLAYERS; ++i)
+			{
+				if(!GS()->m_apPlayers[i] || !Server()->ClientIngame(i))
+					continue;
 
-			if((!GS()->IsMmoClient(i) && Server()->GetClientProtocolVersion(i) < MIN_RACE_CLIENTVERSION))
+				if((!GS()->IsMmoClient(i) && Server()->GetClientProtocolVersion(i) < MIN_RACE_CLIENTVERSION))
+					GameInfoMsg.m_GameFlags &= ~GAMEFLAG_RACE;
+
+				Server()->SendPackMsg(&GameInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i, Server()->GetClientWorldID(ClientID));
+			}
+		}
+		else
+		{
+			if((!GS()->IsMmoClient(ClientID) && Server()->GetClientProtocolVersion(ClientID) < MIN_RACE_CLIENTVERSION))
 				GameInfoMsg.m_GameFlags &= ~GAMEFLAG_RACE;
 
-			Server()->SendPackMsg(&GameInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i, Server()->GetClientWorldID(ClientID));
-		}
-	}
-	else
-	{
-		if((!GS()->IsMmoClient(ClientID) && Server()->GetClientProtocolVersion(ClientID) < MIN_RACE_CLIENTVERSION))
-			GameInfoMsg.m_GameFlags &= ~GAMEFLAG_RACE;
-
-		Server()->SendPackMsg(&GameInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ClientID, Server()->GetClientWorldID(ClientID));
-	}*/
+			Server()->SendPackMsg(&GameInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ClientID, Server()->GetClientWorldID(ClientID));
+		}*/
 }
 
-bool IGameController::CanSpawn(int SpawnType, vec2 *pOutPos, std::pair<vec2, float> LimiterSpread) const
+bool IGameController::CanSpawn(int SpawnType, vec2* pOutPos, std::pair<vec2, float> LimiterSpread) const
 {
 	if(SpawnType < SPAWN_HUMAN || SpawnType >= SPAWN_NUM)
 		return false;
@@ -256,10 +261,10 @@ bool IGameController::CanSpawn(int SpawnType, vec2 *pOutPos, std::pair<vec2, flo
 	return Eval.m_Got;
 }
 
-float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const
+float IGameController::EvaluateSpawnPos(CSpawnEval* pEval, vec2 Pos) const
 {
 	float Score = 0.0f;
-	for(const CCharacter *pC = dynamic_cast<CCharacter *>(GS()->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER)); pC; pC = (CCharacter *)pC->TypeNext())
+	for(const CCharacter* pC = dynamic_cast<CCharacter*>(GS()->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER)); pC; pC = (CCharacter*)pC->TypeNext())
 	{
 		// team mates are not as dangerous as enemies
 		float Scoremod = 1.0f;
@@ -267,19 +272,19 @@ float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const
 			Scoremod = 0.5f;
 
 		const float d = distance(Pos, pC->GetPos());
-		Score += Scoremod * (d == 0.f ? 1000000000.0f : 1.0f/d);
+		Score += Scoremod * (d == 0.f ? 1000000000.0f : 1.0f / d);
 	}
 
 	return Score;
 }
 
-void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int SpawnType, std::pair<vec2, float> LimiterSpread) const
+void IGameController::EvaluateSpawnType(CSpawnEval* pEval, int SpawnType, std::pair<vec2, float> LimiterSpread) const
 {
 	// get spawn point
 	for(int i = 0; i < m_aNumSpawnPoints[SpawnType]; i++)
 	{
 		// check if the position is occupado
-		CCharacter *aEnts[MAX_CLIENTS];
+		CCharacter* aEnts[MAX_CLIENTS];
 		int Num = GS()->m_World.FindEntities(m_aaSpawnPoints[SpawnType][i], 64, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 		vec2 Positions[5] = { vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f) };
 		int Result = -1;
@@ -293,8 +298,8 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int SpawnType, std::p
 			for(int c = 0; c < Num; ++c)
 			{
 				if(
-					GS()->Collision()->CheckPoint(m_aaSpawnPoints[SpawnType][i]+Positions[Index]) ||
-					distance(aEnts[c]->GetPos(), m_aaSpawnPoints[SpawnType][i]+Positions[Index]) <= aEnts[c]->GetProximityRadius())
+					GS()->Collision()->CheckPoint(m_aaSpawnPoints[SpawnType][i] + Positions[Index]) ||
+					distance(aEnts[c]->GetPos(), m_aaSpawnPoints[SpawnType][i] + Positions[Index]) <= aEnts[c]->GetProximityRadius())
 				{
 					Result = -1;
 					break;
@@ -304,7 +309,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int SpawnType, std::p
 		if(Result == -1)
 			continue; // try next spawn point
 
-		const vec2 P = m_aaSpawnPoints[SpawnType][i]+Positions[Result];
+		const vec2 P = m_aaSpawnPoints[SpawnType][i] + Positions[Result];
 		const float S = EvaluateSpawnPos(pEval, P);
 		if(!pEval->m_Got || pEval->m_Score > S)
 		{
@@ -315,7 +320,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int SpawnType, std::p
 	}
 }
 
-void IGameController::DoTeamChange(CPlayer *pPlayer, bool DoChatMsg)
+void IGameController::DoTeamChange(CPlayer* pPlayer, bool DoChatMsg)
 {
 	const int ClientID = pPlayer->GetCID();
 	const int Team = pPlayer->GetStartTeam();
@@ -323,6 +328,7 @@ void IGameController::DoTeamChange(CPlayer *pPlayer, bool DoChatMsg)
 		return;
 
 	pPlayer->Account()->m_Team = Team;
+	pPlayer->GetTempData().m_LastKilledByWeapon = WEAPON_WORLD;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", ClientID, Server()->ClientName(ClientID), Team);

@@ -39,6 +39,7 @@ class CWorldData : public MultiworldIdentifiableStaticData< std::deque< WorldDat
 	char m_aName[64] {};
 	int m_RequiredQuestID {};
 	int m_RespawnWorldID {};
+	int m_JailWorldID {};
 	std::deque < CWorldSwapData > m_Swappers {};
 
 public:
@@ -54,7 +55,7 @@ public:
 	}
 
 	// Initialize the CWorldData instance with the specified parameters
-	void Init(int RespawnWorldID, int RequiredQuestID, std::deque <CWorldSwapData>&& Worlds);
+	void Init(int RespawnWorldID, int JailWorldID, int RequiredQuestID, std::deque <CWorldSwapData>&& Worlds);
 
 	// Move the player to a different world
 	void Move(class CPlayer* pPlayer);
@@ -63,7 +64,8 @@ public:
 	WorldIdentifier GetID() const { return m_ID; }                     // Return the identifier of the world
 	const char* GetName() const { return m_aName; }                    // Return the name of the world
 	class CQuestDescription* GetRequiredQuest() const;                 // Return the required quest for the world
-	CWorldData* GetRespawnWorld() const;                                     // Return the respawn world data
+	CWorldData* GetRespawnWorld() const;                               // Return the respawn world data
+	CWorldData* GetJailWorld() const;                                  // Return the respawn world data
 	CWorldSwapData* GetSwapperByPos(vec2 Pos);                         // Return the world swapper data based on a position
 	std::deque <CWorldSwapData>& GetSwappers() { return m_Swappers; }  // Return the collection of world swappers
 };

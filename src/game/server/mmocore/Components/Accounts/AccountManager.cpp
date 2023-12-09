@@ -227,9 +227,6 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 			});
 	}
 
-	// Set temp safe spawn
-	pPlayer->GetTempData().m_TempSafeSpawn = true;
-
 	// Hanlde time period
 	Job()->HandlePlayerTimePeriod(pPlayer);
 

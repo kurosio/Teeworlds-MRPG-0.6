@@ -522,40 +522,6 @@ void CCharacter::HandleHookActions()
 	}
 }
 
-// This function is responsible for handling the prison state of a character.
-void CCharacter::HandlePrison() const
-{
-	// Check if the player's account is not in prison
-	if(!m_pPlayer->Account()->IsPrisoned())
-		return;
-
-	// Check if the server tick is a multiple of the tick speed
-	if(Server()->Tick() % Server()->TickSpeed() == 0)
-	{
-		// Get the client ID of the player
-		int ClientID = m_pPlayer->GetCID();
-
-		// Decrease the prison seconds for the player's account
-		m_pPlayer->Account()->m_PrisonSeconds--;
-
-		// Broadcast a message to the player indicating the remaining prison seconds
-		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "In '{INT}' seconds, you'll be released from jail.", m_pPlayer->Account()->m_PrisonSeconds);
-
-		// check if the player is not currently in prison
-		if(!m_pPlayer->Account()->m_PrisonSeconds)
-		{
-			// if not in prison, unprison the player
-			m_pPlayer->Account()->Unprison();
-		}
-		// if player is in prison, check if it's time to save their account's social status
-		else if(Server()->Tick() % (Server()->TickSpeed() * 10) == 0)
-		{
-			// if it's time to save, call the SaveAccount function with the SAVE_SOCIAL_STATUS flag
-			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
-		}
-	}
-}
-
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
 	const int WeaponID = clamp(Weapon, (int)WEAPON_HAMMER, (int)WEAPON_NINJA);
@@ -685,7 +651,7 @@ void CCharacter::Tick()
 	// check allowed world for player
 	if(CheckAllowedWorld())
 	{
-		m_pPlayer->GetTempData().m_TempTeleportPos = vec2(-1, -1);
+		m_pPlayer->GetTempData().ClearTeleportPosition();
 		GS()->Chat(m_pPlayer->GetCID(), "This chapter is still closed.");
 		GS()->Chat(m_pPlayer->GetCID(), "You were magically transported to the first zone!");
 		m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
@@ -870,7 +836,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				GS()->Chat(ClientID, "Treasury confiscates {INT}%({VAL}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
 
 				// Imprison
-				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 100);
+				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 10);
 			}
 		}
 		else if(KillerIsPlayer)
@@ -883,20 +849,22 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 
 void CCharacter::Die(int Killer, int Weapon)
 {
+	m_pPlayer->GetTempData().m_LastKilledByWeapon = Weapon;
 	m_Alive = false;
 
-	// change to safe zone
 	const int ClientID = m_pPlayer->GetCID();
-	if(Weapon != WEAPON_WORLD && !GS()->IsDungeon())
+	if(Weapon != WEAPON_WORLD)
 	{
+		// Clear all effects on the player
 		m_pPlayer->ClearEffects();
 		m_pPlayer->UpdateTempData(0, 0);
 
-		const int RespawnWorldID = GS()->GetRespawnWorld();
+		// Get the ID of the respawn world if the RespawnWorldID is valid and if the killer player exists
+		const int RespawnWorldID = GS()->GetWorldData()->GetRespawnWorld()->GetID();
 		if(RespawnWorldID >= 0 && GS()->m_apPlayers[Killer])
 		{
+			// Send a chat message to the client indicating that they have been defeated and will be healed in the specified respawn world
 			GS()->Chat(ClientID, "You've been defeated, and now you'll be healed in {STR}!", Server()->GetWorldName(RespawnWorldID));
-			m_pPlayer->GetTempData().m_TempSafeSpawn = true;
 		}
 	}
 
@@ -1388,7 +1356,6 @@ void CCharacter::HandlePlayer()
 	// handle
 	HandleEvent();
 	HandleHookActions();
-	HandlePrison();
 }
 
 bool CCharacter::IsAllowedPVP(int FromID) const

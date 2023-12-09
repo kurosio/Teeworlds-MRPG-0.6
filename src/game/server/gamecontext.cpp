@@ -2122,7 +2122,6 @@ void CGS::InitZones()
 {
 	m_DungeonID = 0;
 	m_AllowedPVP = false;
-	m_RespawnWorldID = GetWorldData()->GetRespawnWorld()->GetID();
 	m_DayEnumType = Server()->GetEnumTypeDay();
 
 	// with mobs allow pvp zone

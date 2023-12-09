@@ -43,17 +43,18 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	if(pRes->next())
 	{
 		int RespawnWorld = pRes->getInt("RespawnWorld");
+		int JailWorld = pRes->getInt("JailWorld");
 		int RequiredQuestID = pRes->getInt("RequiredQuestID");
 
 		// update name world from json
-		CWorldData::CreateElement(WorldID)->Init(RespawnWorld, RequiredQuestID, std::move(WorldSwappers));
+		CWorldData::CreateElement(WorldID)->Init(RespawnWorld, JailWorld, RequiredQuestID, std::move(WorldSwappers));
 		Database->Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
 	}
 	else
 	{
 		// create new world data
-		CWorldData::CreateElement(WorldID)->Init(WorldID, -1, std::move(WorldSwappers));
-		Database->Execute<DB::INSERT>("enum_worlds", "(WorldID, Name, RespawnWorld) VALUES ('%d', '%s', '%d')", WorldID, cstrWorldName.cstr(), WorldID);
+		CWorldData::CreateElement(WorldID)->Init(WorldID, WorldID, -1, std::move(WorldSwappers));
+		Database->Execute<DB::INSERT>("enum_worlds", "(WorldID, Name, RespawnWorld, JailWorld) VALUES ('%d', '%s', '%d')", WorldID, cstrWorldName.cstr(), WorldID, WorldID);
 	}
 }
 
