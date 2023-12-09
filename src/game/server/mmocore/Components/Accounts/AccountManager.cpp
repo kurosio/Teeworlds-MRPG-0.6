@@ -462,7 +462,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 			if(Exp > 0)
 				pPlayer->Account()->AddExperience(Exp);
 			if(Money > 0)
-				pPlayer->AddMoney(Money);
+				pPlayer->Account()->AddGold(Money);
 			if(Upgrade > 0)
 				pPlayer->Account()->m_Upgrade += Upgrade;
 

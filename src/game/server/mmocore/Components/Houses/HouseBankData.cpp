@@ -66,7 +66,7 @@ void CHouseBankData::Take(int Value)
 		if(Value > 0)
 		{
 			// Add Value to the player's money
-			pPlayer->AddMoney(Value);
+			pPlayer->Account()->AddGold(Value);
 
 			// Update the m_Bank variable to be Bank minus Value
 			m_Bank = Bank - Value;

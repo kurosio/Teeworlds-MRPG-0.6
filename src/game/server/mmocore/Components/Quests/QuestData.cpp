@@ -397,7 +397,7 @@ void CPlayerQuest::Finish()
 	ClearSteps();
 
 	// Add the reward gold to the player's money and experience
-	pPlayer->AddMoney(Info()->GetRewardGold());
+	pPlayer->Account()->AddGold(Info()->GetRewardGold());
 	pPlayer->Account()->AddExperience(Info()->GetRewardExp());
 
 	// Check if indicating a daily quest

@@ -128,12 +128,12 @@ void CAccountData::Prison(int Seconds)
 
 }
 
-void CAccountData::AddExperience(int Experience)
+void CAccountData::AddExperience(int Value)
 {
 	if(!m_pPlayer)
 		return;
 
-	m_Exp += Experience;
+	m_Exp += Value;
 	while(m_Exp >= (int)computeExperience(m_Level))
 	{
 		m_Exp -= (int)computeExperience(m_Level);
@@ -155,7 +155,7 @@ void CAccountData::AddExperience(int Experience)
 			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_UPGRADES);
 		}
 	}
-	m_pPlayer->ProgressBar("Account", m_Level, m_Exp, (int)computeExperience(m_Level), Experience);
+	m_pPlayer->ProgressBar("Account", m_Level, m_Exp, (int)computeExperience(m_Level), Value);
 
 	if(rand() % 5 == 0)
 	{
@@ -164,4 +164,10 @@ void CAccountData::AddExperience(int Experience)
 
 	if(IsGuild())
 		GS()->Mmo()->Member()->AddExperience(m_GuildID);
+}
+
+void CAccountData::AddGold(int Value) const
+{
+	if(m_pPlayer)
+		m_pPlayer->GetItem(itGold)->Add(Value);
 }

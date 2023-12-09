@@ -164,7 +164,6 @@ public:
 	========================================================== */
 	bool SpendCurrency(int Price, int ItemID = 1);
 	const char* GetLanguage() const;
-	void AddMoney(int Money);
 
 	bool GetHiddenMenu(int HideID) const;
 	bool IsAuthed() const;

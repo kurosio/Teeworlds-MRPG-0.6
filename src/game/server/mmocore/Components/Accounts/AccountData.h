@@ -53,8 +53,17 @@ public:
 	/*
 	 * Group function: getters / setters
 	 */
-	const char* GetLogin() const { return m_aLogin; } // Get the login name as a const char pointer
-	const char* GetLastLoginDate() const { return m_aLastLogin; } // Get the last login date as a const char pointer
+	int GetLevel() const { return m_Level; } // Returns the level of the player
+	int GetExperience() const { return m_Exp; } // Returns the experience points of the player
+	const char* GetLogin() const { return m_aLogin; } // Returns the login name of the player as a const char pointer
+	const char* GetLastLoginDate() const { return m_aLastLogin; } // Returns the last login date of the player as a const char pointer
+
+	bool IsPrisoned() const { return m_PrisonSeconds > 0; } // Checks if the player is currently in prison
+	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; } // Checks if the player's relationships have deteriorated to the maximum level
+
+	void Prison(int Seconds); // Puts the player in prison for the specified number of seconds
+	void AddExperience(int Value); // Adds the specified value to the player's experience points
+	void AddGold(int Value) const; // Adds the specified value to the player's gold (currency)
 
 	struct TimePeriods
 	{
@@ -63,22 +72,13 @@ public:
 		time_t m_MonthStamp { };
 	};
 
-	void AddExperience(int Experience);
-
 	// main
-	int GetLevel() const { return m_Level; }
-	int GetExperience() const { return m_Exp; }
 	int m_Relations {};
 	int m_GuildID {};
 	int m_GuildRank {};
 	int m_PrisonSeconds {};
 	TimePeriods m_Periods {};
 	std::list< int > m_aHistoryWorld {};
-
-	void Prison(int Seconds);
-	bool IsPrisoned() const { return m_PrisonSeconds > 0; }
-
-	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; }
 
 	// upgrades
 	int m_Upgrade {};

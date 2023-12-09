@@ -201,7 +201,7 @@ bool CPlayerItem::Use(int Value)
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
-		GetPlayer()->AddMoney(Getting);
+		GetPlayer()->Account()->AddGold(Getting);
 		return true;
 	}
 	// ticket reset for class stats

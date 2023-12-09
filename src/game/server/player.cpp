@@ -684,11 +684,6 @@ void CPlayer::UpdateTempData(int Health, int Mana)
 	GetTempData().m_TempMana = Mana;
 }
 
-void CPlayer::AddMoney(int Money)
-{
-	GetItem(itGold)->Add(Money);
-}
-
 bool CPlayer::GetHiddenMenu(int HideID) const
 {
 	if(m_aHiddenMenu.find(HideID) != m_aHiddenMenu.end())
