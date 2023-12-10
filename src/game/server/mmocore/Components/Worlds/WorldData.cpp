@@ -52,7 +52,7 @@ CQuestDescription* CWorldData::GetRequiredQuest() const
 
 CWorldData* CWorldData::GetRespawnWorld() const
 {
-	if(m_RespawnWorldID < 0 || m_RespawnWorldID > Data().size())
+	if(m_RespawnWorldID < 0 || m_RespawnWorldID > (int)Data().size())
 		return nullptr;
 
 	return Data()[m_RespawnWorldID].get();
@@ -60,7 +60,7 @@ CWorldData* CWorldData::GetRespawnWorld() const
 
 CWorldData* CWorldData::GetJailWorld() const
 {
-	if(m_JailWorldID < 0 || m_JailWorldID > Data().size())
+	if(m_JailWorldID < 0 || m_JailWorldID >(int)Data().size())
 		return nullptr;
 
 	return Data()[m_JailWorldID].get();
