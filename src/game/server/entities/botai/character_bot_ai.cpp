@@ -179,8 +179,11 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		{
 			SetEmote(EMOTE_ANGRY, 1, true);
 			pFrom->IncreaseRelations(1 + rand() % 8);
-			GS()->CreateDropBonuses(m_Core.m_Pos, 1, 1, (1 + rand() % 2), Force);
 		}
+
+		// Random create experience point's
+		if(rand() % 10 == 0)
+			GS()->CreateDropBonuses(m_Core.m_Pos, 1, 1, 1, Force);
 
 		// Check if the bot type of pFrom is TYPE_BOT_MOB and if the target of AI is empty
 		if(pFrom->GetBotType() == TYPE_BOT_MOB && AI()->GetTarget()->IsEmpty())
