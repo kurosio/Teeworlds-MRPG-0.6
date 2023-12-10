@@ -137,7 +137,7 @@ void CAccountData::Imprison(int Seconds)
 	{
 		// Set the prison seconds and send a chat message to all players indicating that the player has been imprisoned
 		m_PrisonSeconds = Seconds;
-		GS()->Chat(-1, "Player {STR}, has been imprisoned for {INT} seconds.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()), Seconds);
+		GS()->Chat(-1, "{STR}, has been imprisoned for {INT} seconds.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()), Seconds);
 		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 	}
 }

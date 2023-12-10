@@ -300,7 +300,7 @@ void CPlayer::HandlePrison()
 		Account()->m_PrisonSeconds--;
 
 		// Broadcast a message to the player indicating the remaining prison seconds
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "In '{INT} seconds', you'll be released from jail.", Account()->m_PrisonSeconds);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "You will regain your freedom in {INT} seconds as you are being released from prison.", Account()->m_PrisonSeconds);
 
 		// check if the player is not currently in prison
 		if(!Account()->m_PrisonSeconds)

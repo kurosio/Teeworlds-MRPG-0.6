@@ -858,14 +858,6 @@ void CCharacter::Die(int Killer, int Weapon)
 		// Clear all effects on the player
 		m_pPlayer->ClearEffects();
 		m_pPlayer->UpdateTempData(0, 0);
-
-		// Get the ID of the respawn world if the RespawnWorldID is valid and if the killer player exists
-		const int RespawnWorldID = GS()->GetWorldData()->GetRespawnWorld()->GetID();
-		if(RespawnWorldID >= 0 && GS()->m_apPlayers[Killer])
-		{
-			// Send a chat message to the client indicating that they have been defeated and will be healed in the specified respawn world
-			GS()->Chat(ClientID, "You've been defeated, and now you'll be healed in {STR}!", Server()->GetWorldName(RespawnWorldID));
-		}
 	}
 
 	// a nice sound
