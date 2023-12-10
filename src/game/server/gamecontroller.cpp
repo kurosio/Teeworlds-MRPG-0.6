@@ -49,18 +49,8 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	int StartHealth = pChr->GetPlayer()->GetStartHealth();
 	if(!GS()->IsDungeon())
 	{
-		// Check if the player's health is greater than 0
-		if(pChr->GetPlayer()->GetHealth() > 0)
-		{
-			// If yes, set the StartHealth variable to the player's current health
-			StartHealth = pChr->GetPlayer()->GetHealth();
-		}
-		// Check if the player's last killed by weapon is not WEAPON_WORLD
-		else if(pChr->GetPlayer()->GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
-		{
-			// Divide the StartHealth variable by 2
-			StartHealth /= 2;
-		}
+		// If the player's health is greater than 0, set StartHealth to the player's health otherwise, set StartHealth to half of its current value
+		StartHealth = (pChr->GetPlayer()->GetHealth() > 0 ? pChr->GetPlayer()->GetHealth() : (StartHealth / 2));
 	}
 	pChr->IncreaseHealth(StartHealth);
 
