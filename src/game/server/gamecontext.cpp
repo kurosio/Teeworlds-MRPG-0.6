@@ -753,7 +753,6 @@ void CGS::OnInit(int WorldID)
 	{
 		m_pController = new CGameControllerMain(this);
 	}
-	m_pController->CanSpawn(SPAWN_HUMAN_PRISON, &m_JailPosition);
 
 	// command processor
 	m_pCommandProcessor = new CCommandProcessor(this);
@@ -773,6 +772,7 @@ void CGS::OnInit(int WorldID)
 			}
 		}
 	}
+	m_pController->CanSpawn(SPAWN_HUMAN_PRISON, &m_JailPosition);
 
 	// initialize pathfinder
 	m_pPathFinder = new CPathFinder(m_pLayers, &m_Collision);

@@ -286,7 +286,7 @@ void CPlayer::HandlePrison()
 	}
 
 	// Check if the distance between the player's view position and the jail position is greater than 1000 units
-	if(distance(m_ViewPos, GS()->GetJailPosition()) > 1000.f)
+	if(distance(m_pCharacter->m_Core.m_Pos, GS()->GetJailPosition()) > 1000.f)
 	{
 		// Move the player to the jail position
 		GetCharacter()->ChangePosition(GS()->GetJailPosition());
