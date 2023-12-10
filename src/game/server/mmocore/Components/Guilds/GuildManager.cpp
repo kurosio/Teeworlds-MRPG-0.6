@@ -108,15 +108,15 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 		return true;
 	}
 
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_CHAIRS))
+	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_CHAIR))
 	{
 		return true;
 	}
-	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_CHAIRS))
+	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_CHAIR))
 	{
 		return true;
 	}
-	if(pChr->GetHelper()->BoolIndex(TILE_GUILD_CHAIRS))
+	if(pChr->GetHelper()->BoolIndex(TILE_GUILD_CHAIR))
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() * 5) == 0)
 		{

@@ -1140,10 +1140,24 @@ void CCharacter::HandleTilesets(int* pIndex)
 	}
 
 	// water effect enter exit
+	int ClientID = m_pPlayer->GetCID();
 	if(m_pHelper->TileEnter(Tile, TILE_WATER) || m_pHelper->TileExit(Tile, TILE_WATER))
 	{
-		GS()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+		GS()->CreateDeath(m_Core.m_Pos, ClientID);
 	}
+
+	// chairs
+	if(GetHelper()->TileEnter(Tile, TILE_CHAIR))
+	{
+		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(ClientID));
+	}
+	else if(GetHelper()->TileExit(Tile, TILE_CHAIR))
+	{
+		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(ClientID));
+	}
+
+	if(GetHelper()->BoolIndex(TILE_CHAIR))
+		m_pPlayer->Account()->HandleChair();
 }
 
 void CCharacter::HandleEvent()

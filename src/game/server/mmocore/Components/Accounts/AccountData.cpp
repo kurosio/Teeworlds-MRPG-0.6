@@ -2,8 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "AccountData.h"
 
-#include "game/server/gamecontext.h"
-#include "game/server/mmocore/Components/Houses/HouseData.h"
+#include <engine/shared/config.h>
+
+#include <game/server/gamecontext.h>
+#include <game/server/mmocore/Components/Houses/HouseData.h>
 #include <game/server/mmocore/Components/Groups/GroupData.h>
 
 #include <game/server/mmocore/Components/Guilds/GuildManager.h>
@@ -41,6 +43,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_Upgrade = pResult->getInt("Upgrade");
 	m_GuildRank = pResult->getInt("GuildRank");
 	m_PrisonSeconds = pResult->getInt("PrisonSeconds");
+	m_DailyChairGolds = pResult->getInt("DailyChairGolds");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 
 	// time periods
@@ -119,6 +122,23 @@ void CAccountData::ReinitializeGroup()
 
 	// If no matching group data object is found, set the group data pointer of the account to nullptr
 	m_pGroupData = nullptr;
+}
+
+// This function returns the daily limit of gold that a player can obtain from chairs
+int CAccountData::GetLimitDailyChairGolds() const
+{
+	// Check if the player exists
+	if(m_pPlayer)
+	{
+		// Calculate the daily limit based on the player's item value
+		// The limit is 300 gold plus either 50 times the value of the player's AlliedSeals item or 10000, whichever is higher
+		return 300 + maximum(m_pPlayer->GetItem(itAlliedSeals)->GetValue(), g_Config.m_SvMaxIncreasedChairGolds);
+	}
+	else
+	{
+		// If the player does not exist, return 0 as the daily limit
+		return 0;
+	}
 }
 
 // This function is used to imprison a player for a certain number of seconds
@@ -243,4 +263,51 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID) const
 
 	// Deduct the price from the player's currency item
 	return pCurrencyItem->Remove(Price);
+}
+
+// Reset daily chair golds
+void CAccountData::ResetDailyChairGolds()
+{
+	// Check if the player is valid
+	if(!m_pPlayer)
+		return;
+
+	// Reset the daily chair golds to 0
+	m_DailyChairGolds = 0; 
+	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+}
+
+void CAccountData::HandleChair()
+{
+	// Check if the player is valid
+	if(!m_pPlayer)
+		return;
+
+	// Check if the current tick is not a multiple of the tick speed multiplied by 5
+	IServer* pServer = Instance::GetServer();
+	if(pServer->Tick() % (pServer->TickSpeed() * 5) != 0)
+		return;
+
+	int ExpValue = 1;
+	int GoldValue = clamp(1, 0, GetLimitDailyChairGolds() - GetCurrentDailyChairGolds());
+
+	// TODO: Add special upgrades item's
+
+	// Add the experience value to the player's experience
+	AddExperience(ExpValue);
+
+	// If gold was gained
+	if(GoldValue > 0)
+	{
+		AddGold(GoldValue); // Add the gold value to the player's gold
+		m_DailyChairGolds += GoldValue; // Increase the daily gold count
+		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS); // Save the player's account
+	}
+
+	// Broadcast the information about the gold and experience gained, as well as the current limits and counts
+	std::string aExpBuf = "+" + std::to_string(ExpValue);
+	std::string aGoldBuf = (GoldValue > 0) ? "+" + std::to_string(GoldValue) : "limit";
+	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
+		"Gold {VAL} | {STR} (daily limit {VAL} of {VAL}) : Experience {VAL}/{VAL} | {STR}\nThe limit and count is increased with special items!",
+		m_pPlayer->GetItem(itGold)->GetValue(), aGoldBuf.c_str(), GetCurrentDailyChairGolds(), GetLimitDailyChairGolds(), m_Exp, computeExperience(m_Level), aExpBuf.c_str());
 }

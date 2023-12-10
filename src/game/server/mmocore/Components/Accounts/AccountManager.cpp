@@ -416,6 +416,19 @@ void CAccountManager::OnResetClient(int ClientID)
 	CAccountData::ms_aData.erase(ClientID);
 }
 
+void CAccountManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
+{
+	// Get the client ID of the player
+	int ClientID = pPlayer->GetCID();
+
+	// If the time period is set to DAILY_STAMP
+	if(Period == TIME_PERIOD::DAILY_STAMP)
+	{
+		pPlayer->Account()->ResetDailyChairGolds();
+		GS()->Chat(ClientID, "The gold limit in the chair has been updated.");
+	}
+}
+
 std::string CAccountManager::HashPassword(const std::string& Password, const std::string& Salt)
 {
 	std::string plaintext = Salt + Password + Salt;

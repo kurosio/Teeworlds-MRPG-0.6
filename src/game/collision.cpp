@@ -67,7 +67,8 @@ void CCollision::Init(class CLayers *pLayers)
 		case TILE_SHOP_ZONE:
 		case TILE_CRAFT_ZONE:
 		case TILE_AETHER_TELEPORT:
-		case TILE_GUILD_CHAIRS:
+		case TILE_GUILD_CHAIR:
+		case TILE_CHAIR:
 		case TILE_WORLD_SWAP:
 			m_pTiles[i].m_Index = COLFLAG_SAFE_AREA;
 			m_pTiles[i].m_Reserved = static_cast<char>(Index);

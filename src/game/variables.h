@@ -111,6 +111,7 @@ MACRO_CONFIG_INT(SvPlantingIncreaseLevel, sv_planting_increase_level, 80, 0, 100
 MACRO_CONFIG_INT(SvMultiplierExpRaidDungeon, sv_multiplier_exp_raid_dungeon, 150, 100, 1000, CFGFLAG_SERVER, "Dungeon experience multiplier")
 MACRO_CONFIG_INT(SvLossGoldAtDeath, sv_loss_gold_at_death, 5, 0, 100, CFGFLAG_SERVER, "Gold loss on death from a player in %")
 MACRO_CONFIG_INT(SvArrestGoldAtDeath, sv_arrest_gold_at_death, 30, 0, 100, CFGFLAG_SERVER, "Gold loss on death from the kill list")
+MACRO_CONFIG_INT(SvMaxIncreasedChairGolds, sv_max_increased_chair_golds, 10000, 1000, 10000000, CFGFLAG_SERVER, "Max can increased chair golds by multiplier")
 
 MACRO_CONFIG_INT(SvStrongGold, sv_strong_gold, 2, 0, 5, CFGFLAG_SERVER, "Level mobs / strong gold")
 MACRO_CONFIG_INT(SvStrongAntiPVP, sv_strong_anti_pvp, 50, 0, 10000, CFGFLAG_SERVER, "Anti-PVP Difference classing leveling for denied.")

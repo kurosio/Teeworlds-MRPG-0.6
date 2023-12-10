@@ -19,6 +19,7 @@ class CAccountData
 	int m_ClientID {};
 	char m_aLogin[64] {};
 	char m_aLastLogin[64] {};
+	int m_DailyChairGolds {};
 
 	int m_Level {};
 	int m_Exp {};
@@ -57,6 +58,8 @@ public:
 	int GetExperience() const { return m_Exp; } // Returns the experience points of the player
 	const char* GetLogin() const { return m_aLogin; } // Returns the login name of the player as a const char pointer
 	const char* GetLastLoginDate() const { return m_aLastLogin; } // Returns the last login date of the player as a const char pointer
+	int GetCurrentDailyChairGolds() const { return m_DailyChairGolds; } // Returns current daily chair golds
+	int GetLimitDailyChairGolds() const; // Returns the daily limit of gold that a player can obtain from chairs
 
 	bool IsPrisoned() const { return m_PrisonSeconds > 0; } // Checks if the player is currently in prison
 	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; } // Checks if the player's relationships have deteriorated to the maximum level
@@ -66,6 +69,9 @@ public:
 	void AddExperience(int Value); // Adds the specified value to the player's experience points
 	void AddGold(int Value) const; // Adds the specified value to the player's gold (currency)
 	bool SpendCurrency(int Price, int CurrencyItemID = 1) const; // Returns a boolean value indicating whether the currency was successfully spent or not.
+	void ResetDailyChairGolds(); // Reset daily getting chair golds
+
+	void HandleChair();
 
 	struct TimePeriods
 	{
