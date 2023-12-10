@@ -137,7 +137,6 @@ void CAccountData::Imprison(int Seconds)
 	{
 		// Set the prison seconds and send a chat message to all players indicating that the player has been imprisoned
 		m_PrisonSeconds = Seconds;
-		m_pPlayer->GetTempData().m_PrisonedPosition = SpawnPos;
 		GS()->Chat(-1, "Player {STR}, has been imprisoned for {INT} seconds.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()), Seconds);
 		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 	}
@@ -154,7 +153,6 @@ void CAccountData::Unprison()
 		m_pPlayer->GetCharacter()->Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 
 	m_PrisonSeconds = -1;
-	m_pPlayer->GetTempData().m_PrisonedPosition = { -1,-1 };
 	GS()->Chat(-1, "{STR} were released from prison.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()));
 	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }

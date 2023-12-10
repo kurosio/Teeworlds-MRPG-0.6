@@ -276,11 +276,20 @@ void CPlayer::HandlePrison()
 	if(!Account()->IsPrisoned() || !GetCharacter())
 		return;
 
-	// Check if the player is not in the jail world or is too far away from their prisoned position
-	if(GetPlayerWorldID() != GS()->GetWorldData()->GetJailWorld()->GetID() || distance(m_ViewPos, GetTempData().m_PrisonedPosition) > 1000.f)
+	// Check if the player is not already in the jail world
+	int JailWorldID = GS()->GetWorldData()->GetJailWorld()->GetID();
+	if(GetPlayerWorldID() != JailWorldID)
 	{
-		// Change the character's position to the prisoned position
-		GetCharacter()->ChangePosition(GetTempData().m_PrisonedPosition);
+		// Change the player's world to the jail world
+		ChangeWorld(JailWorldID);
+		return;
+	}
+
+	// Check if the distance between the player's view position and the jail position is greater than 1000 units
+	if(distance(m_ViewPos, GS()->GetJailPosition()) > 1000.f)
+	{
+		// Move the player to the jail position
+		GetCharacter()->ChangePosition(GS()->GetJailPosition());
 		GS()->Chat(m_ClientID, "You are not allowed to leave the prison!");
 	}
 
@@ -535,15 +544,6 @@ void CPlayer::TryRespawn()
 	// Check if the player's account is in prison
 	if(Account()->IsPrisoned())
 	{
-		// Check if the jail world ID is valid and the player is not already in the jail world
-		const int JailWorldID = GS()->GetWorldData()->GetJailWorld()->GetID();
-		if(JailWorldID >= 0 && !GS()->IsPlayerEqualWorld(m_ClientID, JailWorldID))
-		{
-			// Change the player's world to the jail world
-			ChangeWorld(JailWorldID);
-			return;
-		}
-
 		// Set the spawn type to human prison
 		SpawnType = SPAWN_HUMAN_PRISON;
 	}
@@ -570,14 +570,8 @@ void CPlayer::TryRespawn()
 		vec2 TeleportPosition = GetTempData().GetTeleportPosition();
 		bool TrySelfCordSpawn = !is_negative_vec(TeleportPosition) && !GS()->Collision()->CheckPoint(TeleportPosition);
 
-		// If the spawn type is SPAWN_HUMAN_PRISON
-		if(SpawnType == SPAWN_HUMAN_PRISON)
-		{
-			// Set the prisoned position to the spawn position
-			GetTempData().m_PrisonedPosition = SpawnPos;
-		}
 		// If the game state is not a dungeon and the TrySelfCordSpawn is true
-		else if(!GS()->IsDungeon() && TrySelfCordSpawn)
+		if(!GS()->IsDungeon() && TrySelfCordSpawn)
 		{
 			// Set the spawn position to the teleport position
 			SpawnPos = TeleportPosition;

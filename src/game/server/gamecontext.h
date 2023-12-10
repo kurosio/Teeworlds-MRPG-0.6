@@ -257,6 +257,7 @@ public:
 	int GetExperienceMultiplier(int Experience) const;
 	bool IsPlayerEqualWorld(int ClientID, int WorldID = -1) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
+	vec2 GetJailPosition() const { return m_JailPosition; }
 
 	bool IsPlayersNearby(vec2 Pos, float Distance) const;
 private:
@@ -264,6 +265,7 @@ private:
 
 	bool m_AllowedPVP;
 	int m_DayEnumType;
+	vec2 m_JailPosition;
 	static int m_MultiplierExp;
 };
 

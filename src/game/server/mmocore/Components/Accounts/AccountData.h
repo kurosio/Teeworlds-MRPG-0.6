@@ -110,7 +110,6 @@ public:
 
 struct CAccountTempData
 {
-	vec2 m_PrisonedPosition;
 	int m_LastKilledByWeapon;
 	int m_TempDecoractionID;
 	int m_TempDecorationType;
