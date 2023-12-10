@@ -283,10 +283,11 @@ enum
 	itTinyHealthPotion = 15,			// Tiny health potion
 	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
 	itLittleBagGold = 17,				// Gives 10-50 gold
+	itDamageEqualizer = 18,				// Module for dissable self dmg
 	itExplosiveGun = 19,				// Explosion for gun
 	itExplosiveShotgun = 20,			// Explosion for shotgun
 	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
-	itRingSelfine = 22,					// Ring Selfine dissabled self damage
+	itRingSelfine = 22,					// Reserve
 	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
 	itTicketDiscountCraft = 24,			// Discount ticket for crafting
 	itRandomHomeDecoration = 26,		// Random home decor

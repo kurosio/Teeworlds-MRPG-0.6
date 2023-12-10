@@ -1354,6 +1354,10 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
 
+	// Dissable self damage without some item
+	if(FromID == m_pPlayer->GetCID() && m_pPlayer->GetItem(itDamageEqualizer)->IsEquipped())
+		return false;
+
 	// Check if pFrom is null or if damage is disabled for the object or if damage is disabled for the object's character and it is not a specific type of bot
 	if(!pFrom || m_DamageDisabled || (pFrom->GetCharacter()->m_DamageDisabled && pFrom->GetBotType() != TYPE_BOT_EIDOLON))
 		return false;
@@ -1373,10 +1377,6 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 
 		return false;
 	}
-
-	// Allow self damage without some item
-	if(FromID == m_pPlayer->GetCID() && !m_pPlayer->GetItem(itRingSelfine)->IsEquipped())
-		return true;
 
 	// Allow damage if the player is a bot and is a quest mob, and the quest mob is active for the client, and the damage is coming from another player who is not a bot
 	// OR if the damage is coming from another bot who is a quest mob, and the quest mob is active for the player, and the player is not a bot
@@ -1413,15 +1413,19 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		if(!GS()->IsAllowedPVP() || GS()->IsDungeon())
 			return false;
 
-		// anti pvp for guild players
-		if(pFrom->Account()->m_GuildID > 0 && pFrom->Account()->m_GuildID == m_pPlayer->Account()->m_GuildID)
-			return false;
-
-		// anti pvp for group players
+		// only for unself player
+		if(FromID != m_pPlayer->GetCID())
 		{
-			GroupData* pGroup = m_pPlayer->Account()->GetGroup();
-			if(pGroup && pGroup->HasAccountID(pFrom->Account()->GetID()))
+			// anti pvp for guild players
+			if(pFrom->Account()->m_GuildID > 0 && pFrom->Account()->m_GuildID == m_pPlayer->Account()->m_GuildID)
 				return false;
+
+			// anti pvp for group players
+			{
+				GroupData* pGroup = m_pPlayer->Account()->GetGroup();
+				if(pGroup && pGroup->HasAccountID(pFrom->Account()->GetID()))
+					return false;
+			}
 		}
 	}
 
