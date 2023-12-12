@@ -20,6 +20,7 @@ class CCharacterBotAI : public CCharacter
 	vec2 m_PrevPos;
 	vec2 m_WallPos;
 	int m_EmotionsStyle;
+	ska::unordered_map< int, vec2 > m_aPath;
 	ska::unordered_set< int > m_aListDmgPlayers;
 
 public:

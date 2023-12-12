@@ -877,8 +877,8 @@ void CCharacterBotAI::EngineQuestMob()
 void CCharacterBotAI::Move()
 {
 	// Try to get the prepared data for the path finder
-	CPathFinderPrepared::CData& pData = m_pBotPlayer->m_PathFinderData.Get();
-	GS()->PathFinder()->Handle()->TryGetPreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos);
+	if(GS()->PathFinder()->Handle()->TryGetPreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos))
+		m_aPath = m_pBotPlayer->m_PathFinderData.Get().m_Points;
 
 	// Update the aim of the bot player by calculating the direction vector from the current position to the target position
 	SetAim(m_pBotPlayer->m_TargetPos - m_Pos);
@@ -887,7 +887,7 @@ void CCharacterBotAI::Move()
 	int Index = -1; // Index of the last valid waypoint
 	int ActiveWayPoints = 4; // Number of active waypoints
 	vec2 WayDir = m_pBotPlayer->m_TargetPos; // Set WayDir to the target position of the bot player
-	for(int i = 0; i < (int)pData.m_Points.size() && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(pData.m_Points[i], m_Pos, nullptr, nullptr); i++)
+	for(int i = 0; i < (int)m_aPath.size() && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_aPath[i], m_Pos, nullptr, nullptr); i++)
 	{
 		Index = i; // Update the Index variable with the current i value
 		ActiveWayPoints = i; // Update the ActiveWayPoints variable with the current i value
@@ -896,7 +896,7 @@ void CCharacterBotAI::Move()
 	// If the given index is valid
 	if(Index > -1)
 	{
-		WayDir = pData.m_Points[Index];
+		WayDir = m_aPath[Index];
 	}
 
 	// Accuracy
