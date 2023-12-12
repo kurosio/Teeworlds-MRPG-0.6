@@ -1371,6 +1371,10 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	if(!pFrom || FromID == m_pPlayer->GetCID() && m_pPlayer->GetItem(itDamageEqualizer)->IsEquipped())
 		return false;
 
+	// Check if damage is disabled for the current object or the object it is interacting with
+	if(m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled)
+		return false;
+
 	// Check if the player or the sender is a NPC bot of type "Guardian"
 	if((m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN) ||
 		(pFrom->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pFrom->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN &&
@@ -1379,9 +1383,13 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		return true;
 	}
 
-	// Check if pFrom is null or if damage is disabled for the object or if damage is disabled for the object's character and it is not a specific type of bot
-	if(m_DamageDisabled || (pFrom->GetCharacter()->m_DamageDisabled && pFrom->GetBotType() != TYPE_BOT_EIDOLON))
-		return false;
+	// Allow damage if the player is a bot and is a quest mob, and the quest mob is active for the client, and the damage is coming from another player who is not a bot
+	// OR if the damage is coming from another bot who is a quest mob, and the quest mob is active for the player, and the player is not a bot
+	if((m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID] && !pFrom->IsBot()) ||
+		(pFrom->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(pFrom)->GetQuestBotMobInfo().m_ActiveForClient[m_pPlayer->GetCID()] && !m_pPlayer->IsBot()))
+	{
+		return true;
+	}
 
 	// Check if the sender is a bot and the bot type is TYPE_BOT_EIDOLON
 	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
@@ -1397,14 +1405,6 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		}
 
 		return false;
-	}
-
-	// Allow damage if the player is a bot and is a quest mob, and the quest mob is active for the client, and the damage is coming from another player who is not a bot
-	// OR if the damage is coming from another bot who is a quest mob, and the quest mob is active for the player, and the player is not a bot
-	if((m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID] && !pFrom->IsBot()) ||
-		(pFrom->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(pFrom)->GetQuestBotMobInfo().m_ActiveForClient[m_pPlayer->GetCID()] && !m_pPlayer->IsBot()))
-	{
-		return true;
 	}
 
 	// Dissable damage for From bot and current bot

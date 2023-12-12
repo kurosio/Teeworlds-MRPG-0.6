@@ -1086,6 +1086,10 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 			}
 		}
 
+		// Check if the player's character has damage disabled
+		if(GS()->m_apPlayers[i]->GetCharacter()->m_DamageDisabled)
+			continue;
+
 		// Skip the iteration if the distance between the bot and the player's character is greater than the specified distance
 		if(distance(m_Core.m_Pos, GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos) > Distance)
 			continue;
@@ -1144,6 +1148,10 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 		if(AI()->GetTarget()->GetCID() == i || !pFinderHard || distance(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > 800.0f)
 			continue;
 
+		// Check if the player's character has damage disabled
+		if(pFinderHard->GetCharacter()->m_DamageDisabled)
+			continue;
+
 		// Check if the bot is a npc type
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
@@ -1192,6 +1200,10 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 
 				// Check if the search bot type is TYPE_BOT_NPC and the relationship with the eidolon owner is not deteriorated to the maximum level
 				if(SearchBotType == TYPE_BOT_NPC && !m_pBotPlayer->GetEidolonOwner()->Account()->IsRelationshipsDeterioratedToMax())
+					continue;
+
+				// Check if the eidolon owner has a character and if the character is damage disabled
+				if(m_pBotPlayer->GetEidolonOwner()->GetCharacter() && m_pBotPlayer->GetEidolonOwner()->GetCharacter()->m_DamageDisabled)
 					continue;
 			}
 
