@@ -582,7 +582,6 @@ void CCharacterBotAI::EngineNPC()
 	// Get variables
 	const int MobID = m_pBotPlayer->GetBotMobID();
 	NpcBotInfo* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobID];
-	bool PlayerFinding = false;
 	int NpcFunction = pNpcBot->m_Function;
 
 	// check if the bot's function is set to NPC_GUARDIAN
@@ -592,8 +591,10 @@ void CCharacterBotAI::EngineNPC()
 		FunctionGuardian();
 		return;
 	}
+
 	// check if the bot's function is set to NPC_NURSE
-	else if(NpcFunction == FUNCTION_NPC_NURSE)
+	bool PlayerFinding = false;
+	if(NpcFunction == FUNCTION_NPC_NURSE)
 	{
 		// call FunctionNurseNPC to find players
 		PlayerFinding = FunctionNurseNPC();
@@ -1128,6 +1129,20 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 	CPlayer* pPlayer = GS()->GetPlayer(AI()->GetTarget()->GetCID(), true, true);
 	if(!AI()->GetTarget()->IsEmpty() && (!pPlayer || (pPlayer && (distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(AI()->GetTarget()->GetCID())))))
 		AI()->GetTarget()->Reset();
+
+	// Check if the target player exists and if their character is damage disabled
+	CPlayer* pTarget = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
+	if(pTarget && pTarget->GetCharacter()->m_DamageDisabled)
+	{
+		// If the target is not lost, send a question emoticon
+		if(AI()->GetTarget()->GetType() != TARGET_TYPE::LOST)
+		{
+			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_QUESTION);
+			AI()->GetTarget()->SetType(TARGET_TYPE::LOST);
+		}
+
+		return nullptr;
+	}
 
 	// non-hostile mobs
 	if(AI()->GetTarget()->IsEmpty() || !pPlayer)

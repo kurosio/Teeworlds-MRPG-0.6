@@ -52,6 +52,7 @@ class CAIController
 				}
 			}
 		}
+		TARGET_TYPE GetType() const { return m_Type; }
 		int GetCID() const { return m_TargetID; }
 		int GetAggresion() const { return m_Aggression; }
 		void Set(int ClientID, int Aggression)
