@@ -713,7 +713,9 @@ void CCharacterBotAI::EngineMobs()
 		Fire();
 	}
 	else if(Server()->Tick() > m_pBotPlayer->m_LastPosTick)
+	{
 		m_pBotPlayer->m_TargetPos = vec2(0, 0);
+	}
 
 	// behavior
 	BehaviorTick();
@@ -798,9 +800,10 @@ void CCharacterBotAI::EngineEidolons()
 	}
 
 	// bot with weapons since it has spread.
+	if(!AI()->GetTarget()->IsEmpty())
+		Fire();
 	if(MobMove)
 	{
-		Fire();
 		ChangeWeapons();
 		Move();
 	}
@@ -845,11 +848,7 @@ void CCharacterBotAI::EngineQuestMob()
 	{
 		if(Distance < 128.0f)
 		{
-			if(Server()->Tick() % Server()->TickSpeed() == 0)
-				m_Input.m_TargetY = rand() % 4 - rand() % 8;
-
 			m_pBotPlayer->m_TargetPos = vec2(0, 0);
-			m_Input.m_TargetX = (m_Input.m_Direction * 10 + 1);
 			m_Input.m_Direction = 0;
 			MobMove = false;
 		}
@@ -859,9 +858,10 @@ void CCharacterBotAI::EngineQuestMob()
 	}
 
 	// bot with weapons since it has spread.
+	if(!AI()->GetTarget()->IsEmpty())
+		Fire();
 	if(MobMove)
 	{
-		Fire();
 		ChangeWeapons();
 		Move();
 	}
@@ -896,8 +896,11 @@ void CCharacterBotAI::Move()
 	// If the given index is valid
 	if(Index > -1)
 	{
-		WayDir = normalize(pData.m_Points[Index] - GetPos());
+		WayDir = pData.m_Points[Index];
 	}
+
+	// Accuracy
+	WayDir = normalize(WayDir - m_Core.m_Pos);
 
 	// If the x component of WayDir is negative and there are more than 3 active waypoints
 	if(WayDir.x < 0 && ActiveWayPoints > 3)
@@ -950,15 +953,15 @@ void CCharacterBotAI::Move()
 
 	// jump over character
 	vec2 IntersectPos;
-	CCharacter* pChar = GameWorld()->IntersectCharacter(GetPos(), GetPos() + vec2(m_Input.m_Direction, 0) * 128, 16.0f, IntersectPos, (CCharacter*)this);
-	if(pChar && (pChar->GetPos().x < GetPos().x || !pChar->GetPlayer()->IsBot()))
+	CCharacter* pChar = GameWorld()->IntersectCharacter(m_Core.m_Pos, m_Core.m_Pos + vec2(m_Input.m_Direction, 0) * 128, 16.0f, IntersectPos, (CCharacter*)this);
+	if(pChar && (IntersectPos.x < m_Core.m_Pos.x || !pChar->GetPlayer()->IsBot()))
 		m_Input.m_Jump = 1;
 
 	if(ActiveWayPoints > 2 && !m_Input.m_Hook && (WayDir.x != 0 || WayDir.y != 0))
 	{
 		if(m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookedPlayer == -1)
 		{
-			vec2 HookVel = normalize(m_Core.m_HookPos - GetPos()) * GS()->Tuning()->m_HookDragAccel;
+			vec2 HookVel = normalize(m_Core.m_HookPos - m_Core.m_Pos) * GS()->Tuning()->m_HookDragAccel;
 			HookVel.y *= 0.3f;
 			HookVel.x *= (m_Input.m_Direction == 0 || (m_Input.m_Direction < 0 && HookVel.x > 0) || (m_Input.m_Direction > 0 && HookVel.x < 0)) ? 0.95f : 0.75f;
 			HookVel += vec2(0, 1) * GS()->Tuning()->m_Gravity;

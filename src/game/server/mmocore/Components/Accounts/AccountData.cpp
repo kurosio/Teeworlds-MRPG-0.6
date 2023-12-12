@@ -145,7 +145,7 @@ int CAccountData::GetLimitDailyChairGolds() const
 void CAccountData::IncreaseRelations(int Relevation)
 {
 	// Check if the player is valid and if their relationship level is not already at the maximum.
-	if(!m_pPlayer || !IsRelationshipsDeterioratedToMax())
+	if(!m_pPlayer || IsRelationshipsDeterioratedToMax())
 		return;
 
 	// Increase the player's relationship level by the value of Relevation, up to a maximum of 100.
