@@ -141,6 +141,30 @@ int CAccountData::GetLimitDailyChairGolds() const
 	}
 }
 
+// This function increases the relations of an account by a given value
+void CAccountData::IncreaseRelations(int Relevation)
+{
+	// Check if the player is valid and if their relationship level is not already at the maximum.
+	if(!m_pPlayer || !IsRelationshipsDeterioratedToMax())
+		return;
+
+	// Increase the player's relationship level by the value of Relevation, up to a maximum of 100.
+	m_Relations = minimum(m_Relations + Relevation, 100);
+
+	// Display a chat message to the player indicating the new relationship level.
+	GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {INT}%!", m_Relations);
+
+	// Check if the player's relations with other entities is greater than or equal to 100
+	if(m_Relations >= 100)
+	{
+		// Display a chat message to the player warning them that they are wanted as a felon
+		GS()->Chat(m_ClientID, "An esteemed criminal like yourself has become the target of an intense manhunt. Be on high alert, for the watchful gaze of vigilant guards is upon you!");
+	}
+
+	// Save the player's account data, specifically the relationship level.
+	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+}
+
 // This function is used to imprison a player for a certain number of seconds
 void CAccountData::Imprison(int Seconds)
 {
@@ -273,7 +297,18 @@ void CAccountData::ResetDailyChairGolds()
 		return;
 
 	// Reset the daily chair golds to 0
-	m_DailyChairGolds = 0; 
+	m_DailyChairGolds = 0;
+	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+}
+
+void CAccountData::ResetRelations()
+{
+	// Check if the player is valid
+	if(!m_pPlayer)
+		return;
+
+	// Reset player's relations and save relations
+	m_Relations = 0;
 	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 

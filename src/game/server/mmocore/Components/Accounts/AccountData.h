@@ -20,6 +20,7 @@ class CAccountData
 	char m_aLogin[64] {};
 	char m_aLastLogin[64] {};
 	int m_DailyChairGolds {};
+	int m_Relations {};
 
 	int m_Level {};
 	int m_Exp {};
@@ -60,16 +61,19 @@ public:
 	const char* GetLastLoginDate() const { return m_aLastLogin; } // Returns the last login date of the player as a const char pointer
 	int GetCurrentDailyChairGolds() const { return m_DailyChairGolds; } // Returns current daily chair golds
 	int GetLimitDailyChairGolds() const; // Returns the daily limit of gold that a player can obtain from chairs
+	int GetRelations() const { return m_Relations; } // Returns the relations
 
 	bool IsPrisoned() const { return m_PrisonSeconds > 0; } // Checks if the player is currently in prison
 	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; } // Checks if the player's relationships have deteriorated to the maximum level
 
+	void IncreaseRelations(int Relations); // This function increases the relations of an account by a given value
 	void Imprison(int Seconds); // Puts the player in prison for the specified number of seconds
 	void Unprison(); // Release the player from prison
 	void AddExperience(int Value); // Adds the specified value to the player's experience points
 	void AddGold(int Value) const; // Adds the specified value to the player's gold (currency)
 	bool SpendCurrency(int Price, int CurrencyItemID = 1) const; // Returns a boolean value indicating whether the currency was successfully spent or not.
 	void ResetDailyChairGolds(); // Reset daily getting chair golds
+	void ResetRelations(); // Reset relations
 
 	void HandleChair();
 
@@ -81,7 +85,6 @@ public:
 	};
 
 	// main
-	int m_Relations {};
 	int m_GuildID {};
 	int m_GuildRank {};
 	int m_PrisonSeconds {};

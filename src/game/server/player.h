@@ -62,7 +62,6 @@ public:
 	char m_aClanString[128];
 	Mood m_MoodState;
 	CCooldown m_Cooldown {};
-	vec2 m_PrisonedPosition {};
 
 	char m_aLastMsg[256];
 	int m_TutorialStep;
@@ -169,8 +168,6 @@ public:
 	bool GetHiddenMenu(int HideID) const;
 	bool IsAuthed() const;
 	int GetStartTeam() const;
-
-	void IncreaseRelations(int Relations);
 
 	/* ==========================================================
 		FUNCTIONS PLAYER PARSING

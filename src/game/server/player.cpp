@@ -795,29 +795,6 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
 }
 
-void CPlayer::IncreaseRelations(int Relevation)
-{
-	// Check if the player is authenticated and if their relationship level is not already at the maximum.
-	if(IsAuthed() && !Account()->IsRelationshipsDeterioratedToMax())
-	{
-		// Increase the player's relationship level by the value of Relevation, up to a maximum of 100.
-		Account()->m_Relations = minimum(Account()->m_Relations + Relevation, 100);
-
-		// Display a chat message to the player indicating the new relationship level.
-		GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {INT}%!", Account()->m_Relations);
-
-		// Check if the player's relations with other entities is greater than or equal to 100
-		if(Account()->m_Relations >= 100)
-		{
-			// Display a chat message to the player warning them that they are wanted as a felon
-			GS()->Chat(m_ClientID, "An esteemed criminal like yourself has become the target of an intense manhunt. Be on high alert, for the watchful gaze of vigilant guards is upon you!");
-		}
-
-		// Save the player's account data, specifically the relationship level.
-		GS()->Mmo()->SaveAccount(this, SAVE_SOCIAL_STATUS);
-	}
-}
-
 /* #########################################################################
 	FUNCTIONS PLAYER PARSING
 ######################################################################### */
@@ -965,13 +942,23 @@ CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID)
 	return &CPlayerQuest::Data()[m_ClientID][ID];
 }
 
+// This function returns the ID of the equipped item with the specified functionality, excluding the specified item ID.
 int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
-	const auto Iter = std::find_if(CPlayerItem::Data()[m_ClientID].begin(), CPlayerItem::Data()[m_ClientID].end(), [EquipID, SkipItemID](const auto& p)
+	// Iterate through each item
+	const auto& playerItems = CPlayerItem::Data()[m_ClientID];
+	for(const auto& [itemID, item] : playerItems)
 	{
-		return (p.second.HasItem() && p.second.IsEquipped() && p.second.Info()->IsFunctional(EquipID) && p.first != SkipItemID);
-	});
-	return Iter != CPlayerItem::Data()[m_ClientID].end() ? Iter->first : -1;
+		// Check if the item has an item and is equipped and has the specified functionality and is not the excluded item
+		if(item.HasItem() && item.IsEquipped() && item.Info()->IsFunctional(EquipID) && itemID != SkipItemID)
+		{
+			// Return the item ID
+			return itemID;
+		}
+	}
+
+	// Return -1 if no equipped item with the specified functionality was found
+	return -1;
 }
 
 int CPlayer::GetAttributeSize(AttributeIdentifier ID)

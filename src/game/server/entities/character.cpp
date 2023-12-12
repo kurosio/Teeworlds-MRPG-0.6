@@ -816,8 +816,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
 
 			// Reset player's relations and save relations
-			m_pPlayer->Account()->m_Relations = 0;
-			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+			m_pPlayer->Account()->ResetRelations();
 
 			// Translate the value of the Gold item to a percentage for arrest and remove arrest
 			const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
@@ -836,13 +835,13 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				GS()->Chat(ClientID, "Treasury confiscates {INT}%({VAL}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
 
 				// Imprison
-				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 10);
+				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 100);
 			}
 		}
 		else if(KillerIsPlayer)
 		{
 			// Increase the relations of the player identified by the "Killer" index by 25
-			pKiller->IncreaseRelations(25);
+			pKiller->Account()->IncreaseRelations(25);
 		}
 	}
 }

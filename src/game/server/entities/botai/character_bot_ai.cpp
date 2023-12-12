@@ -178,7 +178,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && !pFrom->IsBot())
 		{
 			SetEmote(EMOTE_ANGRY, 1, true);
-			pFrom->IncreaseRelations(1 + rand() % 8);
+			pFrom->Account()->IncreaseRelations(1 + rand() % 8);
 		}
 
 		// Random create experience point's
@@ -248,10 +248,6 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 	if(BotType == TYPE_BOT_MOB || BotType == TYPE_BOT_QUEST_MOB || (BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[MobID].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
 		m_Alive = false;
-
-		// Check if the bot player's type is TYPE_BOT_NPC and increase relations
-		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
-			GS()->m_apPlayers[Killer]->IncreaseRelations(1 + (rand() % 5));
 
 		// a nice sound
 		int ClientID = m_pBotPlayer->GetCID();
