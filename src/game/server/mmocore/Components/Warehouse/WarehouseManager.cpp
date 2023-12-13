@@ -121,7 +121,7 @@ CWarehouse* CWarehouseManager::GetWarehouse(vec2 Pos) const
 {
 	for(auto& pItem : CWarehouse::Data())
 	{
-		if(distance(pItem.second.GetPos(), Pos) < 200)
+		if(distance(pItem.second.GetPos(), Pos) < 320)
 			return &pItem.second;
 	}
 	return nullptr;

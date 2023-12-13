@@ -2494,12 +2494,13 @@ void CServer::AddAccountNickname(int UID, std::string Nickname)
 // It takes an AccountID as input parameter and returns the corresponding nickname.
 const char* CServer::GetAccountNickname(int AccountID)
 {
-	// Check if the account ID exists in the map of account nicknames.
-	// If the account ID is not found, an assertion error is thrown.
-	dbg_assert(m_aAccountsNicknames.find(AccountID) != m_aAccountsNicknames.end(), "invalid getter account nickname");
+	if(m_aAccountsNicknames.find(AccountID) != m_aAccountsNicknames.end())
+	{
+		// Return the nickname associated with the account ID.
+		return m_aAccountsNicknames[AccountID].c_str();
+	}
 
-	// Return the nickname associated with the account ID.
-	return m_aAccountsNicknames[AccountID].c_str();
+	return "Empty";
 }
 
 // This function sets the loggers for the server
