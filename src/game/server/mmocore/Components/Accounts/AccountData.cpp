@@ -131,8 +131,8 @@ int CAccountData::GetLimitDailyChairGolds() const
 	if(m_pPlayer)
 	{
 		// Calculate the daily limit based on the player's item value
-		// The limit is 300 gold plus either 50 times the value of the player's AlliedSeals item or 10000, whichever is higher
-		return 300 + minimum(m_pPlayer->GetItem(itAlliedSeals)->GetValue(), g_Config.m_SvMaxIncreasedChairGolds);
+		// The limit is 300 gold plus either 50 times the value of the player's AlliedSeals item or by config, whichever is higher
+		return 300 + minimum(m_pPlayer->GetItem(itPermissionExceedLimits)->GetValue(), g_Config.m_SvMaxIncreasedChairGolds);
 	}
 	else
 	{
