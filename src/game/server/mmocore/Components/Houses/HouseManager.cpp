@@ -178,7 +178,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AV(ClientID, "null");
 
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Housing active plants: {STR}", pHouse->GetPlantedItem()->Info()->GetName());
-		GS()->Mmo()->Item()->ListInventory(ClientID, FUNCTION_PLANTS);
+		GS()->Mmo()->Item()->ListInventory(ClientID, FUNCTION_PLANT);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}

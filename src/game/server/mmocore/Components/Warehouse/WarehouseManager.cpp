@@ -70,6 +70,20 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 		return true;
 	}
 
+	// selling zone
+	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_ORE_SELL) || pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLANT_SELL))
+	{
+		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		return true;
+	}
+	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_ORE_SELL) || pChr->GetHelper()->TileExit(IndexCollision, TILE_PLANT_SELL))
+	{
+		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		return true;
+	}
+
 	return false;
 }
 
@@ -92,6 +106,18 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 
 			return true;
 		}
+
+		if(pChr->GetHelper()->BoolIndex(TILE_ORE_SELL))
+		{
+			Job()->Item()->ShowSellingItemsByFunction(pPlayer, FUNCTION_MINER);
+			return true;
+		}
+
+		if(pChr->GetHelper()->BoolIndex(TILE_PLANT_SELL))
+		{
+			Job()->Item()->ShowSellingItemsByFunction(pPlayer, FUNCTION_PLANT);
+			return true;
+		}
 	}
 
 	return false;
@@ -111,6 +137,34 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	{
 		if(BuyItem(pPlayer, VoteID, VoteID2))
 			GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
+		return true;
+	}
+
+	if(PPSTR(CMD, "SELL_ITEM") == 0)
+	{
+		// Set the item identifier to VoteID
+		ItemIdentifier ID = VoteID;
+
+		// If the available value is less than or equal to 0, return true
+		int AvailableValue = Job()->Item()->GetUnfrozenItemValue(pPlayer, ID);
+		if(AvailableValue <= 0)
+			return true;
+
+		// Set Get to the minimum value between Get and AvailableValue
+		Get = minimum(Get, AvailableValue);
+
+		int Price = VoteID2;
+		int CountPrice = Get * Price;
+
+		// If the player's account has enough currency to spend, proceed with the transaction
+		if(pPlayer->Account()->SpendCurrency(Get, ID))
+		{
+			// Add the total price to the player's gold
+			pPlayer->Account()->AddGold(CountPrice);
+			GS()->Chat(ClientID, "You sold {STR}x{VAL} for {VAL} gold.", GS()->GetItemInfo(ID)->GetName(), Get, CountPrice);
+			GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
+		}
+
 		return true;
 	}
 

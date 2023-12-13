@@ -308,6 +308,32 @@ int CInventoryManager::GetUnfrozenItemValue(CPlayer *pPlayer, ItemIdentifier Ite
 	return AvailableValue;
 }
 
+void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctional Type) const
+{
+	const int ClientID = pPlayer->GetCID();
+
+	// show base shop functions
+	GS()->AVH(ClientID, TAB_STORAGE, "Sale of items from the list is available!");
+	GS()->AVM(ClientID, "REPAIR_ITEMS", NOPE, TAB_STORAGE, "Repair all items - FREE");
+
+	// show currency
+	GS()->AV(ClientID, "null");
+	GS()->AddVoteItemValue(ClientID);
+	GS()->AV(ClientID, "null");
+
+	// show selling list
+	for(auto& [ID, Item] : CItemDescription::Data())
+	{
+		if(Item.GetFunctional() != Type)
+			continue;
+
+		int Price = maximum(1, Item.GetInitialPrice());
+		GS()->AVD(ClientID, "SELL_ITEM", ID, Price, NOPE, "[{VAL}] Sell {STR} ({VAL} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
+	}
+
+	GS()->AV(ClientID, "null");
+}
+
 void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlayer, bool Dress)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -340,7 +366,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 		GS()->AVM(ClientID, "null", NOPE, HideID, "Bind command '/useitem {INT}'", ItemID);
 		GS()->AVM(ClientID, "IUSE", ItemID, HideID, "Use");
 	}
-	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANTS)
+	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANT)
 	{
 		if(CHouseData* pHouse = pPlayer->Account()->GetHouse(); pHouse && pHouse->GetPlantedItem()->GetID() != ItemID)
 		{

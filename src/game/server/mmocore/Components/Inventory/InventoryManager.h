@@ -28,6 +28,8 @@ public:
 	void ItemSelected(class CPlayer* pPlayer, const CPlayerItem& pItemPlayer, bool Dress = false);
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, ItemIdentifier ItemID) const;
 
+	void ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctional Type) const;
+
 	void RepairDurabilityItems(class CPlayer *pPlayer);
 	int GetCountItemsType(class CPlayer* pPlayer, ItemType Type) const;
 
