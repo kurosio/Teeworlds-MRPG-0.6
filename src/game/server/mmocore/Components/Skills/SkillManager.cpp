@@ -51,7 +51,7 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		if (!pChr || !pChr->IsAlive())
 			return false;
 
-		if (pChr->GetHelper()->BoolIndex(TILE_LEARN_SKILL))
+		if (pChr->GetHelper()->BoolIndex(TILE_SKILL_ZONE))
 		{
 			const int ClientID = pPlayer->GetCID();
 			GS()->AVH(ClientID, TAB_INFO_SKILL, "Skill Learn Information");
@@ -77,13 +77,13 @@ bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
 
-	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_LEARN_SKILL))
+	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_SKILL_ZONE))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
-	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_LEARN_SKILL))
+	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_SKILL_ZONE))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);

@@ -63,7 +63,7 @@ void CCollision::Init(class CLayers *pLayers)
 		case TILE_GUILD_HOUSE:
 		case TILE_AUCTION:
 		case TILE_PLAYER_HOUSE:
-		case TILE_LEARN_SKILL:
+		case TILE_SKILL_ZONE:
 		case TILE_SHOP_ZONE:
 		case TILE_CRAFT_ZONE:
 		case TILE_AETHER_TELEPORT:
