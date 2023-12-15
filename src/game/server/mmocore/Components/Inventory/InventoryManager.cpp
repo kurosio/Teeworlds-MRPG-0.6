@@ -116,7 +116,7 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "After, need select item to interact");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, "Inventory tabs");
+		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, "\u205C Inventory tabs");
 		int SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_USED);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_USED, TAB_INVENTORY_SELECT, "Used ({INT})", SizeItems);
 
@@ -149,7 +149,7 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EQUIP, "SELECT tab and select armor.");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_EQUIP_SELECT, "Equipment");
+		GS()->AVH(ClientID, TAB_EQUIP_SELECT, "\u2604 Equipment");
 		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor", "Eidolon" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{

@@ -1278,14 +1278,18 @@ void CGuildManager::ShowInvitesGuilds(int ClientID, int GuildID)
 void CGuildManager::ShowFinderGuilds(int ClientID)
 {
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-    if (pPlayer->Account()->IsGuild())
-        GS()->AVL(ClientID, "null", "You already in guild '{STR}'!", CGuildData::ms_aGuild[pPlayer->Account()->m_GuildID].m_aName);
-    else
-        GS()->AVL(ClientID, "null", "You are not in guild!");
-    GS()->AV(ClientID, "null", "Use reason how Value.");
-    GS()->AV(ClientID, "null", "Example: Find guild: [], in reason name.");
+	if(pPlayer->Account()->IsGuild())
+	{
+		GS()->AVL(ClientID, "null", "\u02DA\u029A\u2665\u025E\u02DA You already in guild '{STR}'!", CGuildData::ms_aGuild[pPlayer->Account()->m_GuildID].m_aName);
+		GS()->AV(ClientID, "null");
+	}
+
+	GS()->AV(ClientID, "null", "Use reason how Value.");
+    GS()->AV(ClientID, "null", "Example: Find guild: \u300E\u300F, in reason name.");
     GS()->AV(ClientID, "null");
-    GS()->AVM(ClientID, "MINVITENAME", 1, NOPE, "Find guild: {STR}", pPlayer->GetTempData().m_aGuildSearchBuf);
+	GS()->AV(ClientID, "null", "\u270E Search for a guild by name.");
+    GS()->AVM(ClientID, "MINVITENAME", 1, NOPE, "Find guild: \u300E{STR}\u300F", pPlayer->GetTempData().m_aGuildSearchBuf);
+	GS()->AV(ClientID, "null");
 
     int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1800;
     CSqlString<64> cGuildName = CSqlString<64>(pPlayer->GetTempData().m_aGuildSearchBuf);
@@ -1296,15 +1300,19 @@ void CGuildManager::ShowFinderGuilds(int ClientID)
         const int AvailableSlot = pRes->getInt("AvailableSlots");
         const int PlayersCount = GetGuildPlayerValue(GuildID);
         cGuildName = pRes->getString("Name").c_str();
-        GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} : Players [{INT}/{INT}]",
-                  cGuildName.cstr(), Server()->GetAccountNickname(CGuildData::ms_aGuild[GuildID].m_UserID), PlayersCount, AvailableSlot);
-        GS()->AVM(ClientID, "null", NOPE, HideID, "House: {STR} | Bank: {VAL} gold", (GetGuildHouseID(GuildID) <= 0 ? "No" : "Yes"), CGuildData::ms_aGuild[GuildID].m_Bank);
 
-        GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, GuildID, HideID, "View player list");
+    	GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} ({INT} of {INT} players)", cGuildName.cstr(), Server()->GetAccountNickname(CGuildData::ms_aGuild[GuildID].m_UserID), PlayersCount, AvailableSlot);
+		if(GetGuildHouseID(GuildID) > 0)
+			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild has its own house");
+		else
+			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild doesn't have its own house");
+    	GS()->AVM(ClientID, "null", NOPE, HideID, "* Accumulations are: {VAL} gold's", CGuildData::ms_aGuild[GuildID].m_Bank);
 
+    	GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, GuildID, HideID, "View player list");
         GS()->AVM(ClientID, "MINVITESEND", GuildID, HideID, "Send request to join {STR}", cGuildName.cstr());
         HideID++;
     }
+
     GS()->AddVotesBackpage(ClientID);
 }
 

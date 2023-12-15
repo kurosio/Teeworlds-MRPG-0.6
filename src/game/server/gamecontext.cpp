@@ -1701,8 +1701,7 @@ void CGS::AVH(int ClientID, const int HiddenID, const char* pText, ...)
 		va_start(VarArgs, pText);
 
 		const bool HiddenTab = (HiddenID >= TAB_STAT) ? m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) : false;
-		auto Symbols = [](int ID, const char* pValue, const char* pValue2) -> const char* {	return ID >= NUM_TAB_MENU ? (pValue) : (ID < NUM_TAB_MENU_INTERACTIVES ? (pValue2) : (pValue));	};
-		const char* pSymbols = Symbols(HiddenID, HiddenTab ? "► " : "▼ ", HiddenTab ? "▼ " : "► ");
+		const char* pSymbols = HiddenTab ? "\u21BA " : "\u27A4 ";
 
 		dynamic_string Buffer;
 
@@ -1887,7 +1886,7 @@ void CGS::AddVotesBackpage(int ClientID)
 void CGS::ShowVotesPlayerStats(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	AVH(ClientID, TAB_INFO_STAT, "Your main stats & chances{STR}", IsDungeon() ? " (Sync)" : "\0");
+	AVH(ClientID, TAB_INFO_STAT, "Attributes & chances{STR}", IsDungeon() ? " (Sync)" : "\0");
 	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
 		if(!pAttribute->HasDatabaseField())
@@ -1902,16 +1901,16 @@ void CGS::ShowVotesPlayerStats(CPlayer* pPlayer)
 		{
 			char aBuf[64];
 			str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
-			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "* {INT} - {STR} {STR}", Size, pAttribute->GetName(), aBuf);
+			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "\u2508\u27A4 ({INT}) - {STR} {STR}", Size, pAttribute->GetName(), aBuf);
 		}
 		else
 		{
-			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "* {INT} - {STR}", Size, pAttribute->GetName());
+			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "\u2508\u27A4 ({INT}) - {STR}", Size, pAttribute->GetName());
 		}
 	}
 
 	AV(ClientID, "null");
-	AVM(ClientID, "null", NOPE, NOPE, "# Player Upgrade Point: {INT}P", pPlayer->Account()->m_Upgrade);
+	AVM(ClientID, "null", NOPE, NOPE, "\u02D7\u02CF\u02CB \u2605 \u02CE\u02CA\u02D7 Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
 	AV(ClientID, "null");
 }
 

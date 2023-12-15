@@ -38,11 +38,11 @@ bool CDungeonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "View the fastest players on the passage");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVL(ClientID, "null", "Story dungeon's");
+		GS()->AVL(ClientID, "null", "\u262C Story dungeon's");
 		ShowDungeonsList(pPlayer, true);
 		GS()->AV(ClientID, "null");
 
-		GS()->AVL(ClientID, "null", "Alternative story dungeon's");
+		GS()->AVL(ClientID, "null", "\u274A Alternative story dungeon's");
 		ShowDungeonsList(pPlayer, false);
 
 		if(GS()->IsDungeon())

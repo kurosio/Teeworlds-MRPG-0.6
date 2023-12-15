@@ -37,7 +37,7 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 		GS()->AV(ClientID, "null");
 
 		std::pair EidolonSize = GetEidolonsSize(ClientID);
-		GS()->AVH(ClientID, TAB_EIDOLONS, "My eidolons (own {INT} out of {INT}).", EidolonSize.first, EidolonSize.second);
+		GS()->AVH(ClientID, TAB_EIDOLONS, "\u2727 My eidolons (own {INT} out of {INT}).", EidolonSize.first, EidolonSize.second);
 		for(auto& pEidolon : CEidolonInfoData::Data())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolon.GetItemID());

@@ -304,7 +304,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
 		// game settings
-		GS()->AVH(ClientID, TAB_SETTINGS, "Some of the settings become valid after death.");
+		GS()->AVH(ClientID, TAB_SETTINGS, "\u2692 Some of the settings become valid after death.");
 		GS()->AVM(ClientID, "MENU", MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
@@ -315,7 +315,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 		// equipment modules
 		bool IsFoundModules = false;
 		GS()->AV(ClientID, "null");
-		GS()->AVH(ClientID, TAB_SETTINGS_MODULES, "Modules settings");
+		GS()->AVH(ClientID, TAB_SETTINGS_MODULES, "\u2694 Modules settings");
 		for(const auto& it : CPlayerItem::Data()[ClientID])
 		{
 			const CPlayerItem ItemData = it.second;

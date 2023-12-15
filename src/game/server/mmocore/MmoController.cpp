@@ -145,31 +145,31 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// personal menu
 		GS()->AVH(ClientID, TAB_PERSONAL, "☪ SUB MENU PERSONAL");
-		GS()->AVM(ClientID, "MENU", MENU_INVENTORY, TAB_PERSONAL, "Inventory");
-		GS()->AVM(ClientID, "MENU", MENU_EQUIPMENT, TAB_PERSONAL, "Equipment");
-		GS()->AVM(ClientID, "MENU", MENU_UPGRADES, TAB_PERSONAL, "Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
-		GS()->AVM(ClientID, "MENU", MENU_EIDOLON_COLLECTION, TAB_PERSONAL, "Eidolon Collection");
-		GS()->AVM(ClientID, "MENU", MENU_DUNGEONS, TAB_PERSONAL, "Dungeons");
-		GS()->AVM(ClientID, "MENU", MENU_GROUP, TAB_PERSONAL, "Group");
-		GS()->AVM(ClientID, "MENU", MENU_SETTINGS, TAB_PERSONAL, "Settings");
-		GS()->AVM(ClientID, "MENU", MENU_INBOX, TAB_PERSONAL, "Mailbox");
-		GS()->AVM(ClientID, "MENU", MENU_JOURNAL_MAIN, TAB_PERSONAL, "Journal");
+		GS()->AVM(ClientID, "MENU", MENU_INVENTORY, TAB_PERSONAL, "\u205C Inventory");
+		GS()->AVM(ClientID, "MENU", MENU_EQUIPMENT, TAB_PERSONAL, "\u2604 Equipment");
+		GS()->AVM(ClientID, "MENU", MENU_UPGRADES, TAB_PERSONAL, "\u2657 Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
+		GS()->AVM(ClientID, "MENU", MENU_EIDOLON_COLLECTION, TAB_PERSONAL, "\u2727 Eidolon Collection");
+		GS()->AVM(ClientID, "MENU", MENU_DUNGEONS, TAB_PERSONAL, "\u262C Dungeons");
+		GS()->AVM(ClientID, "MENU", MENU_GROUP, TAB_PERSONAL, "\u2042 Group");
+		GS()->AVM(ClientID, "MENU", MENU_SETTINGS, TAB_PERSONAL, "\u2692 Settings");
+		GS()->AVM(ClientID, "MENU", MENU_INBOX, TAB_PERSONAL, "\u2709 Mailbox");
+		GS()->AVM(ClientID, "MENU", MENU_JOURNAL_MAIN, TAB_PERSONAL, "\u270D Journal");
 		if(pPlayer->Account()->HasHouse())
 		{
-			GS()->AVM(ClientID, "MENU", MENU_HOUSE, TAB_PERSONAL, "House");
+			GS()->AVM(ClientID, "MENU", MENU_HOUSE, TAB_PERSONAL, "\u2302 House");
 		}
 
-		GS()->AVM(ClientID, "MENU", MENU_GUILD_FINDER, TAB_PERSONAL, "Guild finder");
+		GS()->AVM(ClientID, "MENU", MENU_GUILD_FINDER, TAB_PERSONAL, "\u20AA Guild finder");
 		if(pPlayer->Account()->IsGuild())
 		{
-			GS()->AVM(ClientID, "MENU", MENU_GUILD, TAB_PERSONAL, "Guild");
+			GS()->AVM(ClientID, "MENU", MENU_GUILD, TAB_PERSONAL, "\u32E1 Guild");
 		}
 		GS()->AV(ClientID, "null");
 
 		// info menu
 		GS()->AVH(ClientID, TAB_INFORMATION, "√ SUB MENU INFORMATION");
-		GS()->AVM(ClientID, "MENU", MENU_GUIDE_GRINDING, TAB_INFORMATION, "Wiki / Grinding Guide ");
-		GS()->AVM(ClientID, "MENU", MENU_TOP_LIST, TAB_INFORMATION, "Ranking guilds and players");
+		GS()->AVM(ClientID, "MENU", MENU_GUIDE_GRINDING, TAB_INFORMATION, "\u10D3 Wiki / Grinding Guide ");
+		GS()->AVM(ClientID, "MENU", MENU_TOP_LIST, TAB_INFORMATION, "\u21F0 Ranking guilds and players");
 		return true;
 	}
 
@@ -186,7 +186,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		GS()->ShowVotesPlayerStats(pPlayer);
 
 		// lambda function for easy use
-		auto ShowAttributeVote = [&](int HiddenID, AttributeType Type, std::function<void(int HiddenID)> pFunc)
+		auto ShowAttributeVote = [&](int HiddenID, AttributeType Type, std::function<void(int)> pFunc)
 		{
 			pFunc(HiddenID);
 			for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
@@ -202,7 +202,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		ShowAttributeVote(TAB_UPGR_DPS, AttributeType::Dps, [&](int HiddenID)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
-			GS()->AVH(ClientID, HiddenID, "Disciple of War. Level Power {INT}", Range);
+			GS()->AVH(ClientID, HiddenID, "\u2694 Disciple of War. Level Power {INT}", Range);
 		});
 		GS()->AV(ClientID, "null");
 
@@ -210,7 +210,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		ShowAttributeVote(TAB_UPGR_TANK, AttributeType::Tank, [&](int HiddenID)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
-			GS()->AVH(ClientID, HiddenID, "Disciple of Tank. Level Power {INT}", Range);
+			GS()->AVH(ClientID, HiddenID, "\u262E Disciple of Tank. Level Power {INT}", Range);
 		});
 		GS()->AV(ClientID, "null");
 
@@ -218,7 +218,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		ShowAttributeVote(TAB_UPGR_HEALER, AttributeType::Healer, [&](int HiddenID)
 		{
 			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Healer);
-			GS()->AVH(ClientID, HiddenID, "Disciple of Healer. Level Power {INT}", Range);
+			GS()->AVH(ClientID, HiddenID, "\u2042 Disciple of Healer. Level Power {INT}", Range);
 		});
 		GS()->AV(ClientID, "null");
 
