@@ -181,7 +181,7 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 
 	CHouseData* pHouse = pPlayer->Account()->GetHouse();
 	if(pHouse)
-		pHouse->GetDoor()->Reverse();
+		pHouse->GetDoor()->ReverseAll();
 	else
 		pGS->Chat(pPlayer->GetCID(), "You don't own a house!");
 }

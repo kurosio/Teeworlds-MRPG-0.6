@@ -20,14 +20,14 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 			int Price = pRes->getInt("Price");
 			int Bank = pRes->getInt("HouseBank");
 			vec2 Pos(pRes->getInt("PosX"), pRes->getInt("PosY"));
-			vec2 DoorPos(pRes->getInt("DoorX"), pRes->getInt("DoorY"));
 			vec2 TextPos(pRes->getInt("TextX"), pRes->getInt("TextY"));
 			vec2 PlantPos(pRes->getInt("PlantX"), pRes->getInt("PlantY"));
 			int PlantItemID = pRes->getInt("PlantID");
 			int WorldID = pRes->getInt("WorldID");
 			std::string AccessData = pRes->getString("AccessData").c_str();
+			std::string JsonDoorData = pRes->getString("JsonDoorsData").c_str();
 
-			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, TextPos, DoorPos, PlantPos, CItem(PlantItemID, 1), WorldID, AccessData);
+			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, TextPos, PlantPos, CItem(PlantItemID, 1), WorldID, std::move(AccessData), std::move(JsonDoorData));
 		}
 
 		Job()->ShowLoadingProgress("Houses", CHouseData::Data().size());
@@ -107,23 +107,28 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		}
 
 		HouseIdentifier ID = pHouse->GetID();
-		bool StateDoor = pHouse->GetDoor()->GetState();
 
-		GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR} Door [{STR}]", ID, pHouse->GetClassName(), StateDoor ? "Closed" : "Opened");
+		GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR}", ID, pHouse->GetClassName());
 		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/doorhouse - interactive with door.");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_HOUSE_SAFE_INTERACTIVE, "◍ House safe is: {VAL} Gold", pHouse->GetBank()->Get());
+		GS()->AVH(ClientID, TAB_HOUSE_SAFE_INTERACTIVE, "\u2727 House safe is: {VAL} Gold", pHouse->GetBank()->Get());
 		GS()->AddVoteItemValue(ClientID, itGold, TAB_HOUSE_SAFE_INTERACTIVE);
 		GS()->AVM(ClientID, "HOUSE_BANK_ADD", 1, TAB_HOUSE_SAFE_INTERACTIVE, "Add gold. (Amount in a reason)");
 		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, TAB_HOUSE_SAFE_INTERACTIVE, "Take gold. (Amount in a reason)");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_HOUSE_MANAGING, "▤ Managing your home");
-		GS()->AVM(ClientID, "HOUSE_SPAWN", ID, TAB_HOUSE_MANAGING, "Teleport to your house");
-		GS()->AVM(ClientID, "HOUSE_DOOR", ID, TAB_HOUSE_MANAGING, "Change state door to [\"{STR}\"]", StateDoor ? "Open" : "Closed");
-		GS()->AVM(ClientID, "HOUSE_SELL", ID, TAB_HOUSE_MANAGING, "Sell your house (in reason 777)");
+		GS()->AVH(ClientID, TAB_HOUSE_DOORS, "\u2747 The house has {VAL} door's", pHouse->GetDoor()->GetDoors().size());
+		for(auto& [UniqueDoorID, DoorData] : pHouse->GetDoor()->GetDoors())
+		{
+			bool StateDoor = DoorData.GetState();
+			GS()->AVM(ClientID, "HOUSE_DOOR", UniqueDoorID, TAB_HOUSE_DOORS, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData.GetName());
+		}
+		GS()->AV(ClientID, "null");
 
+		GS()->AVH(ClientID, TAB_HOUSE_MANAGING, "\u2697 Managing your home");
+		GS()->AVM(ClientID, "HOUSE_SPAWN", ID, TAB_HOUSE_MANAGING, "Teleport to your house");
+		GS()->AVM(ClientID, "HOUSE_SELL", ID, TAB_HOUSE_MANAGING, "Sell your house (in reason 777)");
 		if(GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
 		{
 			GS()->AVM(ClientID, "MENU", MENU_HOUSE_ACCESS_TO_DOOR, TAB_HOUSE_MANAGING, "Settings up accesses to your door");
@@ -374,7 +379,8 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		}
 
 		// reverse door house
-		pHouse->GetDoor()->Reverse();
+		int UniqueDoorID = VoteID;
+		pHouse->GetDoor()->Reverse(UniqueDoorID);
 		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE);
 		return true;
 	}

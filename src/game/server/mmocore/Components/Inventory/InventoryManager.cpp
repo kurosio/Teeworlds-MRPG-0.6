@@ -322,6 +322,7 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 	GS()->AV(ClientID, "null");
 
 	// show selling list
+	GS()->AVL(ClientID, "null", "\u2747 Selling targeted items");
 	for(auto& [ID, Item] : CItemDescription::Data())
 	{
 		if(Item.GetFunctional() != Type)

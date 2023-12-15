@@ -9,27 +9,44 @@ class CHouseDoorData
 	friend class CHouseData;
 	class CGS* m_pGS {};
 	class CHouseData* m_pHouse {};
-	class HouseDoor* m_pDoor {};
 
-	vec2 m_Pos {};
-	std::unordered_set<int> m_AccessUserIDs {};
+	class CHouseDoorInfo
+	{
+		friend class CHouseDoorData;
+		std::string m_Name {};
+		class HouseDoor* m_pDoor{};
+		vec2 m_Pos{};
+
+	public:
+		CHouseDoorInfo() = default;
+		CHouseDoorInfo(std::string&& Name, vec2 Pos) : m_Name(std::move(Name)), m_Pos(Pos) {}
+
+		const char* GetName() const { return m_Name.c_str(); }
+		bool GetState() const { return m_pDoor != nullptr; }
+		vec2 GetPos() const { return m_Pos; }
+	};
+	ska::unordered_map<int, CHouseDoorInfo> m_apDoors {};
+	ska::unordered_set<int> m_AccessUserIDs {};
 
 public:
-	CHouseDoorData(class CGS* pGS, vec2 Pos, std::string AccessData, class CHouseData* pHouse);
+	CHouseDoorData(class CGS* pGS, std::string&& AccessData, std::string&& JsonDoorData, class CHouseData* pHouse);
 	~CHouseDoorData();
 
-	const vec2& GetPos() const { return m_Pos; }
-	bool GetState() const { return m_pDoor; }
-	std::unordered_set<int>& GetAccesses() { return m_AccessUserIDs; }
+	ska::unordered_set<int>& GetAccesses() { return m_AccessUserIDs; }
+	ska::unordered_map<int, CHouseDoorInfo>& GetDoors() { return m_apDoors; }
 
 	void AddAccess(int UserID);
 	void RemoveAccess(int UserID);
 	bool HasAccess(int UserID);
 	int GetAvailableAccessSlots() const;
 
-	void Open();
-	void Close();
-	void Reverse();
+	void Open(int UniqueDoorID);
+	void Close(int UniqueDoorID);
+	void Reverse(int UniqueDoorID);
+
+	void OpenAll();
+	void CloseAll();
+	void ReverseAll();
 
 private:
 	void SaveAccessList() const;

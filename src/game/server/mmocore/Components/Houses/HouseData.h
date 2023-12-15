@@ -48,7 +48,7 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, std::string ClassName, int Price, int Bank, vec2 Pos, vec2 TextPos, vec2 DoorPos, vec2 PlantPos, CItem&& PlantedItem, int WorldID, std::string AccessSet)
+	void Init(int AccountID, std::string ClassName, int Price, int Bank, vec2 Pos, vec2 TextPos, vec2 PlantPos, CItem&& PlantedItem, int WorldID, std::string&& AccessSet, std::string&& JsonDoorData)
 	{
 		m_AccountID = AccountID;
 		str_copy(m_aClassName, ClassName.c_str(), sizeof(m_aClassName));
@@ -60,8 +60,8 @@ public:
 		m_PlantedItem = std::move(PlantedItem);
 
 		// door init
-		m_pDoorData = new CHouseDoorData(GS(), DoorPos, std::move(AccessSet), this);
-		m_pDoorData->Close();
+		m_pDoorData = new CHouseDoorData(GS(), std::move(AccessSet), std::move(JsonDoorData), this);
+		m_pDoorData->CloseAll();
 		
 		// bank init
 		m_pBank = new CHouseBankData(GS(), &m_AccountID, Bank);

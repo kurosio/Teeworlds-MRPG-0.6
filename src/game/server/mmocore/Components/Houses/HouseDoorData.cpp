@@ -8,13 +8,32 @@
 #include <game/server/mmocore/Utils/DBSet.h>
 #include <game/server/gamecontext.h>
 
-CHouseDoorData::CHouseDoorData(CGS* pGS, vec2 Pos, std::string AccessData, CHouseData* pHouse)
-	: m_pGS(pGS), m_pHouse(pHouse), m_Pos(Pos)
+CHouseDoorData::CHouseDoorData(CGS* pGS, std::string&& AccessData, std::string&& JsonDoorData, CHouseData* pHouse)
+	: m_pGS(pGS), m_pHouse(pHouse)
 {
 	// Reserve memory for the unordered set m_AccessUserIDs to avoid frequent reallocation
 	m_AccessUserIDs.reserve(MAX_HOUSE_INVITED_PLAYERS);
 
-	// Initialize access list
+	// Parse the JSON string using the Tools::Json::parseFromString function
+	Tools::Json::parseFromString(JsonDoorData, [&](const nlohmann::json& pJsonArray)
+	{
+		int UniqueID = 0;
+		m_apDoors.reserve(pJsonArray.size());
+		for(const auto& pJsonDoor : pJsonArray)
+		{
+			// Check if the door name is not empty
+			std::string DoorName = pJsonDoor.value("name", "");
+			vec2 Pos = vec2(pJsonDoor.value("x", 0), pJsonDoor.value("y", 0));
+			if(!DoorName.empty())
+			{
+				// Add the door data to the m_apDoors map using the door name as the key
+				m_apDoors.emplace(UniqueID, CHouseDoorInfo(std::string(DoorName), Pos));
+				UniqueID++;
+			}
+		}
+	});
+
+	//Initialize access list
 	DBSet m_Set(AccessData);
 	for(auto& p : m_Set.GetDataItems())
 	{
@@ -30,42 +49,74 @@ CHouseDoorData::CHouseDoorData(CGS* pGS, vec2 Pos, std::string AccessData, CHous
 // Destructor for the CHouseDoorData class
 CHouseDoorData::~CHouseDoorData()
 {
-	delete m_pDoor;
+	for(auto p : m_apDoors)
+	{
+		delete p.second.m_pDoor;
+	}
+
+	m_apDoors.clear();
 }
 
 // Open the house door
-void CHouseDoorData::Open()
+void CHouseDoorData::Open(int UniqueDoorID)
 {
 	// Check if the door exists
-	if(m_pDoor)
+	if(m_apDoors.find(UniqueDoorID) != m_apDoors.end() && m_apDoors[UniqueDoorID].m_pDoor)
 	{
 		// Delete the door object
-		delete m_pDoor;
-		m_pDoor = nullptr;
+		delete m_apDoors[UniqueDoorID].m_pDoor;
+		m_apDoors[UniqueDoorID].m_pDoor = nullptr;
 	}
 }
 
 // This function is used to close the house door.
-void CHouseDoorData::Close()
+void CHouseDoorData::Close(int UniqueDoorID)
 {
 	// Check if the door object is not already created.
-	if(!m_pDoor)
+	if(m_apDoors.find(UniqueDoorID) != m_apDoors.end() && !m_apDoors[UniqueDoorID].m_pDoor)
 	{
 		// Create a new HouseDoor object and assign it to m_pDoor.
-		m_pDoor = new HouseDoor(&m_pGS->m_World, m_Pos, this);
+		m_apDoors[UniqueDoorID].m_pDoor = new HouseDoor(&m_pGS->m_World, m_apDoors[UniqueDoorID].m_Pos, this);
 	}
 }
 
 // This function is used to reverse the state of the house door
-void CHouseDoorData::Reverse()
+void CHouseDoorData::Reverse(int UniqueDoorID)
 {
+	if(m_apDoors.find(UniqueDoorID) == m_apDoors.end())
+		return;
+
 	// Check if the door pointer is not null
-	if(m_pDoor)
+	if(m_apDoors[UniqueDoorID].m_pDoor)
 		// If the door is currently closed, open it
-		Open();
+		Open(UniqueDoorID);
 	else
 		// If the door is currently open, close it
-		Close();
+		Close(UniqueDoorID);
+}
+
+// Function to open all doors in the house
+void CHouseDoorData::OpenAll()
+{
+	// Iterate through all doors in the house
+	for(auto& p : m_apDoors)
+		Open(p.first);
+}
+
+// Function to close all doors in the house
+void CHouseDoorData::CloseAll()
+{
+	// Iterate through all doors in the house
+	for(auto& p : m_apDoors)
+		Close(p.first);
+}
+
+// Function to reverse the state of all doors in the house
+void CHouseDoorData::ReverseAll()
+{
+	// Iterate through all doors in the house
+	for(auto& p : m_apDoors)
+		Reverse(p.first);
 }
 
 void CHouseDoorData::AddAccess(int UserID)
