@@ -94,8 +94,8 @@ bool CAccountMinerManager::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
 void CAccountMinerManager::Work(CPlayer *pPlayer, int Level)
 {
 	const int ClientID = pPlayer->GetCID();
-	const int MultiplierExperience = computeExperience(Level) / g_Config.m_SvMiningIncreaseLevel;
-	pPlayer->Account()->m_MiningData(JOB_EXPERIENCE, 0).m_Value += clamp(MultiplierExperience, 1, MultiplierExperience);
+	const int MultiplierExperience = maximum(1, (int)computeExperience(Level) / g_Config.m_SvMiningIncreaseLevel);
+	pPlayer->Account()->m_MiningData(JOB_EXPERIENCE, 0).m_Value += MultiplierExperience;
 
 	int ExperienceNeed = computeExperience(pPlayer->Account()->m_MiningData(JOB_LEVEL, 0).m_Value);
 	for( ; pPlayer->Account()->m_MiningData(JOB_EXPERIENCE, 0).m_Value >= ExperienceNeed; )

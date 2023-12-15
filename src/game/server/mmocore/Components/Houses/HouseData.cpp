@@ -147,7 +147,7 @@ void CHouseData::Sell()
 	GS()->SendInbox("System", m_AccountID, "House is sold", "Your house is sold !", itGold, Price, 0);
 
 	// Update the house data
-	m_pDoorData->Open();
+	m_pDoorData->Close();
 	m_pBank->Reset();
 	m_AccountID = -1;
 	if(pPlayer)

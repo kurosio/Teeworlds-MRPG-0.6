@@ -61,14 +61,7 @@ public:
 
 		// door init
 		m_pDoorData = new CHouseDoorData(GS(), DoorPos, std::move(AccessSet), this);
-		if(m_AccountID <= 0)
-		{
-			m_pDoorData->Open();
-		}
-		else
-		{
-			m_pDoorData->Close();
-		}
+		m_pDoorData->Close();
 		
 		// bank init
 		m_pBank = new CHouseBankData(GS(), &m_AccountID, Bank);
