@@ -40,9 +40,9 @@ public:
 	bool HasAccess(int UserID);
 	int GetAvailableAccessSlots() const;
 
-	void Open(int UniqueDoorID);
-	void Close(int UniqueDoorID);
-	void Reverse(int UniqueDoorID);
+	void Open(int Number);
+	void Close(int Number);
+	void Reverse(int Number);
 
 	void OpenAll();
 	void CloseAll();

@@ -109,7 +109,8 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		HouseIdentifier ID = pHouse->GetID();
 
 		GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR}", ID, pHouse->GetClassName());
-		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/doorhouse - interactive with door.");
+		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/hdoor - interactive with door.");
+		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/hsell - sell house.");
 		GS()->AV(ClientID, "null");
 
 		GS()->AVH(ClientID, TAB_HOUSE_SAFE_INTERACTIVE, "\u2727 House safe is: {VAL} Gold", pHouse->GetBank()->Get());
@@ -118,11 +119,11 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, TAB_HOUSE_SAFE_INTERACTIVE, "Take gold. (Amount in a reason)");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_HOUSE_DOORS, "\u2747 The house has {VAL} door's", pHouse->GetDoor()->GetDoors().size());
-		for(auto& [UniqueDoorID, DoorData] : pHouse->GetDoor()->GetDoors())
+		GS()->AVH(ClientID, TAB_HOUSE_DOORS, "\u2747 House has {VAL} controlled door's", pHouse->GetDoor()->GetDoors().size());
+		for(auto& [Number, DoorData] : pHouse->GetDoor()->GetDoors())
 		{
 			bool StateDoor = DoorData.GetState();
-			GS()->AVM(ClientID, "HOUSE_DOOR", UniqueDoorID, TAB_HOUSE_DOORS, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData.GetName());
+			GS()->AVM(ClientID, "HOUSE_DOOR", Number, TAB_HOUSE_DOORS, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData.GetName());
 		}
 		GS()->AV(ClientID, "null");
 
