@@ -54,7 +54,7 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	{
 		// create new world data
 		CWorldData::CreateElement(WorldID)->Init(WorldID, WorldID, -1, std::move(WorldSwappers));
-		Database->Execute<DB::INSERT>("enum_worlds", "(WorldID, Name, RespawnWorld, JailWorld) VALUES ('%d', '%s', '%d')", WorldID, cstrWorldName.cstr(), WorldID, WorldID);
+		Database->Execute<DB::INSERT>("enum_worlds", "(WorldID, Name, RespawnWorld, JailWorld) VALUES ('%d', '%s', '%d', '%d')", WorldID, cstrWorldName.cstr(), WorldID, WorldID);
 	}
 }
 
