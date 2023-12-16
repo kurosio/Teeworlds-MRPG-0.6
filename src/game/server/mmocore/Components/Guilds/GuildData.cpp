@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildData.h"
 
-#include "engine/server.h"
+#include <game/server/gamecontext.h>
 
 std::map < int, CGuildHouseData > CGuildHouseData::ms_aHouseGuild;
 
@@ -36,4 +36,9 @@ void CGuildData::InitRanks()
 
 		m_aRanks.emplace_back(new CGuildRankData(RID, std::move(Rank), Access, this));
 	}
+}
+
+
+void CGuildData::AddExperience(int Experience)
+{
 }

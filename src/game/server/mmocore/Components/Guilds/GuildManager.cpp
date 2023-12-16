@@ -26,7 +26,7 @@ void CGuildManager::OnInit()
 			int Score = pRes->getInt("Score");
 
 			CGuildData::CreateElement(ID)->Init(Name, Level, Experience, Score, OwnerUID, Bank);
-	});
+	}
 
 	Job()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
 }
@@ -1003,35 +1003,6 @@ void CGuildManager::AddExperience(int GuildID)
 		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Level, CGuildData::ms_aGuild[GuildID].m_Exp, GuildID);
 }
 
-bool CGuildManager::AddMoneyBank(int GuildID, int Money)
-{
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Bank", "tw_guilds", "WHERE ID = '%d'", GuildID);
-	if(!pRes->next())
-		return false;
-
-	// add money
-	CGuildData::ms_aGuild[GuildID].m_Bank = pRes->getInt("Bank") + Money;
-	Database->Execute<DB::UPDATE>("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
-	return true;
-}
-
-bool CGuildManager::RemoveMoneyBank(int GuildID, int Money)
-{
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Bank", "tw_guilds", "WHERE ID = '%d'", GuildID);
-	if(!pRes->next())
-		return false;
-
-	// check if the bank has enough to pay
-	CGuildData::ms_aGuild[GuildID].m_Bank = pRes->getInt("Bank");
-	if(Money > CGuildData::ms_aGuild[GuildID].m_Bank)
-		return false;
-
-	// payment
-	CGuildData::ms_aGuild[GuildID].m_Bank -= Money;
-	Database->Execute<DB::UPDATE>("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
-	return true;
-}
-
 // purchase of upgrade maximum number of slots
 bool CGuildManager::UpgradeGuild(int GuildID, int Field)
 {
@@ -1092,41 +1063,6 @@ int CGuildManager::FindGuildRank(int GuildID, const char *Rank) const
 /* #########################################################################
 	FUNCTIONS MEMBER RANK MEMBER
 ######################################################################### */
-// add rank
-void CGuildManager::AddRank(int GuildID, const char *Rank)
-{
-	const int FindRank = FindGuildRank(GuildID, Rank);
-	if(CGuildRankData::ms_aRankGuild.find(FindRank) != CGuildRankData::ms_aRankGuild.end())
-		return GS()->ChatGuild(GuildID, "Found this rank in your table, change name");
-
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_guilds_ranks", "WHERE GuildID = '%d'", GuildID);
-	if(pRes->rowsCount() >= 5) return;
-
-	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_guilds_ranks", "ORDER BY ID DESC LIMIT 1");
-	const int InitID = pResID->next() ? pResID->getInt("ID")+1 : 1; // thread save ? hm need for table all time auto increment = 1; NEED FIX IT
-
-	CSqlString<64> cGuildRank = CSqlString<64>(Rank);
-	Database->Execute<DB::INSERT>("tw_guilds_ranks", "(ID, GuildID, Name) VALUES ('%d', '%d', '%s')", InitID, GuildID, cGuildRank.cstr());
-	GS()->ChatGuild(GuildID, "Creates new rank [{STR}]!", Rank);
-	AddHistoryGuild(GuildID, "Added new rank '%s'.", Rank);
-
-	CGuildRankData::ms_aRankGuild[InitID].m_GuildID = GuildID;
-	str_copy(CGuildRankData::ms_aRankGuild[InitID].m_aRank, Rank, sizeof(CGuildRankData::ms_aRankGuild[InitID].m_aRank));
-}
-
-// unrank
-void CGuildManager::DeleteRank(int RankID, int GuildID)
-{
-	if(CGuildRankData::ms_aRankGuild.find(RankID) != CGuildRankData::ms_aRankGuild.end())
-	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildRank = NULL WHERE GuildRank = '%d' AND GuildID = '%d'", RankID, GuildID);
-		Database->Execute<DB::REMOVE>("tw_guilds_ranks", "WHERE ID = '%d' AND GuildID = '%d'", RankID, GuildID);
-		GS()->ChatGuild(GuildID, "Rank [{STR}] succesful delete", CGuildRankData::ms_aRankGuild[RankID].m_aRank);
-		AddHistoryGuild(GuildID, "Deleted rank '%s'.", CGuildRankData::ms_aRankGuild[RankID].m_aRank);
-		CGuildRankData::ms_aRankGuild.erase(RankID);
-	}
-}
-
 // change rank
 void CGuildManager::ChangeRank(int RankID, int GuildID, const char *NewRank)
 {
@@ -1142,22 +1078,6 @@ void CGuildManager::ChangeRank(int RankID, int GuildID, const char *NewRank)
 		GS()->ChatGuild(GuildID, "Rank [{STR}] changes to [{STR}]", CGuildRankData::ms_aRankGuild[RankID].m_aRank, NewRank);
 		AddHistoryGuild(GuildID, "Rank '%s' changes to '%s'.", CGuildRankData::ms_aRankGuild[RankID].m_aRank, NewRank);
 		str_copy(CGuildRankData::ms_aRankGuild[RankID].m_aRank, NewRank, sizeof(CGuildRankData::ms_aRankGuild[RankID].m_aRank));
-	}
-}
-
-// change access rank
-void CGuildManager::ChangeRankAccess(int RankID)
-{
-	if(CGuildRankData::ms_aRankGuild.find(RankID) != CGuildRankData::ms_aRankGuild.end())
-	{
-		CGuildRankData::ms_aRankGuild[RankID].m_Access++;
-		if(CGuildRankData::ms_aRankGuild[RankID].m_Access > ACCESS_FULL)
-			CGuildRankData::ms_aRankGuild[RankID].m_Access = ACCESS_NO;
-
-		const int GuildID = CGuildRankData::ms_aRankGuild[RankID].m_GuildID;
-		AddHistoryGuild(GuildID, "Rank '%s' access updated to '%s'.", CGuildRankData::ms_aRankGuild[RankID].m_aRank, AccessNames(CGuildRankData::ms_aRankGuild[RankID].m_Access));
-		Database->Execute<DB::UPDATE>("tw_guilds_ranks", "Access = '%d' WHERE ID = '%d' AND GuildID = '%d'", CGuildRankData::ms_aRankGuild[RankID].m_Access, RankID, GuildID);
-		GS()->ChatGuild(GuildID, "Rank [{STR}] changes [{STR}]!", CGuildRankData::ms_aRankGuild[RankID].m_aRank, AccessNames(CGuildRankData::ms_aRankGuild[RankID].m_Access));
 	}
 }
 
@@ -1315,6 +1235,17 @@ void CGuildManager::ShowHistoryGuild(int ClientID, int GuildID)
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "{STR}", aBuf);
 	}
 	GS()->AddVotesBackpage(ClientID);
+
+
+	CGuildData* p;
+	p->GetBank()->Add();
+	p->GetHistory()->Add("POPKA {STR}", "2301203");
+	CGuildRankData* pRank = p->GetRanks()->Get("SDasd");
+	if(pRank)
+	{
+		pRank->ChangeName("Soska");
+		pRank->ChangeAccess(ACCESS_FULL);
+	}
 }
 
 // add to the guild history

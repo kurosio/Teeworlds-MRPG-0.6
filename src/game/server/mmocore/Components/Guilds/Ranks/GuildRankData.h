@@ -3,12 +3,14 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_RANK_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_RANK_DATA_H
 
+class CGS;
 class CGuildData;
 using GuildRankIdentifier = int;
-using GuildRankContainer = std::deque<class CGuildRankData*>;
 
 class CGuildRankData
 {
+	CGS* GS() const;
+
 	GuildRankIdentifier m_ID {};
 	std::string m_Rank{};
 	int m_Access{};
@@ -19,12 +21,11 @@ public:
 	CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, int Access, CGuildData* pGuild);
 
 	GuildRankIdentifier GetID() const { return m_ID; }
+	const char* GetName() const { return m_Rank.c_str(); }
 	const char* GetAccessName();
 
 	void ChangeName(std::string NewRank);
 	void ChangeAccess(int Access);
-
-
 };
 
 #endif

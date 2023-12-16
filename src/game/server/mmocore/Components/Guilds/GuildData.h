@@ -2,18 +2,27 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_COMPONENT_GUILD_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_DATA_H
-
-#include "GuildBankData.h"
-#include "GuildRankData.h"
 #include <game/server/mmocore/Utils/FieldData.h>
 
+#include "GuildHistoryLogData.h"
+#include "GuildBankData.h"
+
+#include "Ranks/GuildRanksController.h"
+
 #define TW_GUILD_TABLE "tw_guilds"
+#define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
 
 using GuildIdentifier = int;
 using GuildDataPtr = std::shared_ptr< class CGuildData >;
 
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDataPtr > >
 {
+	friend class CGuildRanksController;
+	friend class CGuildRankData;
+	friend class CGuildBankData;
+
+	CGS* GS() const;
+
 	enum
 	{
 		AVAILABLE_SLOTS = 0,
@@ -34,10 +43,11 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 	int m_Experience {};
 	int m_Score {};
 
-	CGuildBankData* m_pBank {};
-	GuildRankContainer m_aRanks{};
-
-	CGS* GS() const;
+	CGuildBankController* m_pBank {};
+	CGuildHistoryController* m_pHistory {};
+	CGuildRanksController* m_pRanks {};
+	// decorations
+	// history
 
 public:
 	CGuildData() = default;
@@ -58,18 +68,24 @@ public:
 		m_Experience = Experience;
 		m_Score = Score;
 
-		// bank init
-		m_pBank = new CGuildBankData(GS(), &m_AccountID, Bank);
-
-		// init ranks
-		InitRanks();
+		// components init
+		m_pBank = new CGuildBankController(Bank, this);
+		m_pRanks = new CGuildRanksController(this);
+		m_pHistory = new CGuildHistoryController(this);
 	}
 
 	GuildIdentifier GetID() const { return m_ID; }
-	GuildRankContainer& GetRanks() { return m_aRanks; }
+	CGuildBankController* GetBank() const { return m_pBank; }
+	CGuildHistoryController* GetHistory() const { return m_pHistory; }
+	CGuildRanksController* GetRanks() const { return m_pRanks; }
 
-private:
-	void InitRanks();
+	const char* GetName() const { return m_Name.c_str(); }
+	int GetOwnerUID() const { return m_OwnerUID; }
+	int GetLevel() const { return m_Level; }
+	int GetExperience() const { return m_Experience;}
+	int GetScore() const { return m_Score; }
+
+	void AddExperience(int Experience);
 
 };
 

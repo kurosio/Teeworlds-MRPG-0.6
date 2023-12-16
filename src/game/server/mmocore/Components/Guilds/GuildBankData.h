@@ -8,7 +8,7 @@ class CPlayer;
 class CGuildData;
 
 // This class represents the bank data for a guild in a game
-class CGuildBankData
+class CGuildBankController
 {
 	CGuildData* m_pGuild {};
 	int m_Bank {};
@@ -17,7 +17,7 @@ class CGuildBankData
 
 public:
 	// Constructor that initializes the bank data with the game server, account ID, and initial bank value
-	CGuildBankData(int Bank, CGuildData* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
+	CGuildBankController(int Bank, CGuildData* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
 
 	// Returns the current bank value
 	int Get() const { return m_Bank; }

@@ -12,7 +12,6 @@ class CGuildManager : public MmoComponent
 {
 	~CGuildManager() override
 	{
-		CGuildData::ms_aGuild.clear();
 		CGuildHouseData::ms_aHouseGuild.clear();
 	};
 
@@ -47,8 +46,6 @@ private:
 
 public:
 	void AddExperience(int GuildID);
-	bool AddMoneyBank(int GuildID, int Money);
-	bool RemoveMoneyBank(int GuildID, int Money);
 	bool UpgradeGuild(int GuildID, int Field);
 	bool AddDecorationHouse(int ItemID, int GuildID, vec2 Position);
 
@@ -62,10 +59,6 @@ public:
 	int FindGuildRank(int GuildID, const char *Rank) const;
 
 private:
-	void AddRank(int GuildID, const char *Rank);
-	void DeleteRank(int RankID, int GuildID);
-	void ChangeRank(int RankID, int GuildID, const char *NewRank);
-	void ChangeRankAccess(int RankID);
 	void ChangePlayerRank(int AccountID, int RankID);
 	void ShowMenuRank(CPlayer *pPlayer);
 

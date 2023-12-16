@@ -5,9 +5,9 @@
 #include <game/server/gamecontext.h>
 #include "GuildData.h"
 
-CGS* CGuildBankData::GS() const { return m_pGuild->GS(); }
+CGS* CGuildBankController::GS() const { return m_pGuild->GS(); }
 
-void CGuildBankData::Add(int Value, CPlayer* pPlayer)
+void CGuildBankController::Add(int Value, CPlayer* pPlayer)
 {
 	if(pPlayer)
 	{
@@ -26,7 +26,7 @@ void CGuildBankData::Add(int Value, CPlayer* pPlayer)
 	}
 }
 
-void CGuildBankData::Take(int Value, CPlayer* pPlayer)
+void CGuildBankController::Take(int Value, CPlayer* pPlayer)
 {
 	if(pPlayer)
 	{
