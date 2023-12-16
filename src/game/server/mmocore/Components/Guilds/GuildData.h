@@ -11,6 +11,23 @@
 using GuildIdentifier = int;
 using GuildDataPtr = std::shared_ptr< class CGuildData >;
 
+class CGuildRankData
+{
+	std::string m_Rank{};
+	int m_Access{};
+	CGuildData* m_pGuild{};
+
+public:
+	CGuildRankData() = delete;
+	CGuildRankData(std::string Rank, int Access, CGuildData* pGuild);
+
+	void ChangeAccess(int Access)
+	{
+		m_Access = Access;
+	}
+};
+
+
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDataPtr > >
 {
 	enum
@@ -32,7 +49,9 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 	int m_Level {};
 	int m_Experience {};
 	int m_Score {};
+
 	CGuildBankData* m_pBank {};
+	std::deque<CGuildRankData> m_aRanks{};
 
 public:
 	CGuildData() = default;
@@ -56,6 +75,10 @@ public:
 		// bank init
 		m_pBank = new CGuildBankData(GS(), &m_AccountID, Bank);
 	}
+
+	void InitRanks();
+	std::deque<CGuildRankData>& GetRanks() { return m_aRanks; }
+
 };
 
 struct CGuildHouseData
@@ -75,13 +98,5 @@ struct CGuildHouseData
 	static std::map < int, CGuildHouseData > ms_aHouseGuild;
 };
 
-struct CGuildRankData
-{
-	char m_aRank[32];
-	int m_GuildID;
-	int m_Access;
-
-	static std::map < int, CGuildRankData > ms_aRankGuild;
-};
 
 #endif
