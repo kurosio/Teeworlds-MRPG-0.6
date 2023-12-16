@@ -4,15 +4,28 @@
 #define GAME_SERVER_COMPONENT_HOUSE_ENTITIES_DOOR_H
 #include <game/server/entity.h>
 
-class HouseDoor : public CEntity
+class CEntityHouseDoor : public CEntity
 {
-	class CHouseDoorData* m_pHouseDoor;
+	enum States
+	{
+		CLOSED,
+		OPENED
+	};
+
+	class CHouseData* m_pHouse {};
+	class CHouseDoor* m_pDoorInfo {};
+	int m_State {};
+	vec2 m_PosControll {};
 
 public:
-	HouseDoor(CGameWorld* pGameWorld, vec2 Pos, CHouseDoorData* pHouseDoor);
+	CEntityHouseDoor(CGameWorld* pGameWorld, vec2 Pos, class CHouseDoor* pDoorInfo, class CHouseData* pHouse);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
+
+	void Open() { m_State = OPENED; }
+	void Close() { m_State = CLOSED; }
+	bool IsClosed() const { return m_State == CLOSED; }
 };
 
 #endif

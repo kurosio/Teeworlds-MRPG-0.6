@@ -6,7 +6,7 @@
 
 #include "HouseData.h"
 
-class HouseDoor;
+class CEntityHouseDoor;
 class CDecorationHouses;
 
 class CHouseManager : public MmoComponent

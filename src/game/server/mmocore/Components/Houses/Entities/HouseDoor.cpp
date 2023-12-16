@@ -5,56 +5,99 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
-#include "game/server/mmocore/Components/Houses/HouseDoorData.h"
+#include "game/server/mmocore/Components/Houses/HouseData.h"
 
-HouseDoor::HouseDoor(CGameWorld* pGameWorld, vec2 Pos, CHouseDoorData* pHouseDoor)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_pHouseDoor(pHouseDoor)
+CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, vec2 Pos, CHouseDoor* pDoorInfo, CHouseData* pHouse)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_pHouse(pHouse), m_pDoorInfo(pDoorInfo)
 {
-	m_Pos.y += 30;
 	m_PosTo = GS()->Collision()->FindDirCollision(100, m_PosTo, 'y', '-');
+	m_PosControll = Pos;
+	m_State = CLOSED;
+	GS()->CreateLaserOrbite(this, 4, EntLaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);
 	GameWorld()->InsertEntity(this);
 }
 
-void HouseDoor::Tick()
+void CEntityHouseDoor::Tick()
 {
-	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+	// Get the UID of the owner of the house
+	int OwnerUID = m_pHouse->GetAccountID();
+
+	// Check if the player object exists and if the player has a character
+	CPlayer* pPlayer = GS()->GetPlayerByUserID(OwnerUID);
+	if(pPlayer && pPlayer->GetCharacter())
 	{
-		vec2 IntersectPos;
-		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
+		// Check if the distance between the control position and the mouse position of the character is less than 64.0f
+		CCharacter* pChar = pPlayer->GetCharacter();
+		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
 		{
-			const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-			if(Distance <= g_Config.m_SvDoorRadiusHit)
+			// Check if the character's reload timer is active
+			if(pChar->m_ReloadTimer)
 			{
-				// skip who has access to house door
-				if(m_pHouseDoor->HasAccess(pChar->GetPlayer()->Account()->GetID()))
-					continue;
+				// Check the state of the door and perform the corresponding action
+				if(m_State == OPENED)
+					Close();
+				else
+					Open();
+			}
 
-				// skip eidolon when owner has access
-				if(pChar->GetPlayer()->IsBot())
+			// Check if the current tick is divisible by the tick speed of the server
+			if(Server()->Tick() % Server()->TickSpeed() == 0)
+			{
+				// Broadcast a game information message to the player and hammer hit effect at the position of the door control
+				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 50, "Use 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
+				GS()->CreateHammerHit(m_PosControll, CmaskOne(pPlayer->GetCID()));
+			}
+		}
+	}
+
+	// Check if the door is opened
+	if(m_State == CLOSED)
+	{
+		// Loop through all characters in the game world
+		for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+		{
+			vec2 IntersectPos;
+
+			// Find the closest point on the line from the door position to the destination position to the character's position
+			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
+			{
+				// Calculate the distance between the intersect point and the character's position
+				const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+
+				// Check if the distance is within the door radius hit limit
+				if(Distance <= g_Config.m_SvDoorRadiusHit)
 				{
-					CPlayerBot* pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
-					if(pPlayerBot->GetEidolonOwner() && m_pHouseDoor->HasAccess(pPlayerBot->GetEidolonOwner()->Account()->GetID()))
+					// Skip characters who have access to the house door
+					if(m_pHouse->GetDoorsController()->HasAccess(pChar->GetPlayer()->Account()->GetID()))
 						continue;
-				}
 
-				// hit door
-				pChar->m_DoorHit = true;
+					// Skip eidolon when the owner has access
+					if(pChar->GetPlayer()->IsBot())
+					{
+						CPlayerBot* pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
+						if(pPlayerBot->GetEidolonOwner() && m_pHouse->GetDoorsController()->HasAccess(pPlayerBot->GetEidolonOwner()->Account()->GetID()))
+							continue;
+					}
+
+					// Set the character's door hit flag to true
+					pChar->m_DoorHit = true;
+				}
 			}
 		}
 	}
 }
 
-void HouseDoor::Snap(int SnappingClient)
+void CEntityHouseDoor::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient))
+	if(NetworkClipped(SnappingClient) || m_State == OPENED)
 		return;
 
 	if(GS()->GetClientVersion(SnappingClient) >= VERSION_DDNET_MULTI_LASER)
 	{
-		CNetObj_DDNetLaser *pObj = static_cast<CNetObj_DDNetLaser *>(Server()->SnapNewItem(NETOBJTYPE_DDNETLASER, GetID(), sizeof(CNetObj_DDNetLaser)));
+		CNetObj_DDNetLaser* pObj = static_cast<CNetObj_DDNetLaser*>(Server()->SnapNewItem(NETOBJTYPE_DDNETLASER, GetID(), sizeof(CNetObj_DDNetLaser)));
 		if(!pObj)
 			return;
-			
+
 		pObj->m_ToX = int(m_Pos.x);
 		pObj->m_ToY = int(m_Pos.y);
 		pObj->m_FromX = int(m_PosTo.x);
@@ -65,10 +108,10 @@ void HouseDoor::Snap(int SnappingClient)
 	}
 	else
 	{
-		CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
+		CNetObj_Laser* pObj = static_cast<CNetObj_Laser*>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
 		if(!pObj)
 			return;
-			
+
 		pObj->m_X = int(m_Pos.x);
 		pObj->m_Y = int(m_Pos.y);
 		pObj->m_FromX = int(m_PosTo.x);

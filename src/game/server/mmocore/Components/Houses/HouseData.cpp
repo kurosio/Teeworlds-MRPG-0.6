@@ -21,7 +21,7 @@ CHouseData::~CHouseData()
 	}
 
 	// Delete the CHouseData
-	delete m_pDoorData;
+	delete m_pDoorsController;
 	delete m_pBank;
 	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
 		delete m_apDecorations[i];
@@ -120,7 +120,7 @@ void CHouseData::Buy(CPlayer* pPlayer)
 	{
 		// update data
 		m_AccountID = pPlayer->Account()->GetID();
-		m_pDoorData->CloseAll();
+		m_pDoorsController->CloseAll();
 		m_pBank->Reset();
 		pPlayer->Account()->ReinitializeHouse();
 		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '%d', HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
@@ -147,7 +147,7 @@ void CHouseData::Sell()
 	GS()->SendInbox("System", m_AccountID, "House is sold", "Your house is sold !", itGold, Price, 0);
 
 	// Update the house data
-	m_pDoorData->CloseAll();
+	m_pDoorsController->CloseAll();
 	m_pBank->Reset();
 	m_AccountID = -1;
 	if(pPlayer)

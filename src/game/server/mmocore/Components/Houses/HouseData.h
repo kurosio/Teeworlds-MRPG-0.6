@@ -6,7 +6,7 @@
 #include <game/server/mmocore/Components/Inventory/ItemData.h>
 
 #include "HouseBankData.h"
-#include "HouseDoorData.h"
+#include "HouseDoorsController.h"
 
 #define TW_HOUSES_TABLE "tw_houses"
 #define TW_HOUSES_DECORATION_TABLE "tw_houses_decorations"
@@ -23,7 +23,7 @@ class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDa
 	vec2 m_PlantPos {};
 
 	class CDecorationHouses* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
-	CHouseDoorData* m_pDoorData {};
+	CHouseDoorsController* m_pDoorsController {};
 	CHouseBankData* m_pBank {};
 	CItem m_PlantedItem {};
 
@@ -60,8 +60,7 @@ public:
 		m_PlantedItem = std::move(PlantedItem);
 
 		// door init
-		m_pDoorData = new CHouseDoorData(GS(), std::move(AccessSet), std::move(JsonDoorData), this);
-		m_pDoorData->CloseAll();
+		m_pDoorsController = new CHouseDoorsController(GS(), std::move(AccessSet), std::move(JsonDoorData), this);
 		
 		// bank init
 		m_pBank = new CHouseBankData(GS(), &m_AccountID, Bank);
@@ -98,7 +97,7 @@ public:
 	CItem* GetPlantedItem() { return &m_PlantedItem; }
 
 	// Return a pointer to the door data of the house
-	CHouseDoorData* GetDoor() const { return m_pDoorData; }
+	CHouseDoorsController* GetDoorsController() const { return m_pDoorsController; }
 
 	// Return a pointer to the bank data of the house
 	CHouseBankData* GetBank() const { return m_pBank; }

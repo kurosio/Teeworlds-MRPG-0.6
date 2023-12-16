@@ -191,7 +191,7 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 
 	// Get the command element from the command result and hose door data
 	const std::string pElem = pResult->GetString(0);
-	CHouseDoorData* pDoorController = pHouse->GetDoor();
+	CHouseDoorsController* pDoorController = pHouse->GetDoorsController();
 
 	// If the command element is "list", list all the doors in the house
 	if(pElem.compare(0, 4, "list") == 0)
@@ -199,8 +199,8 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 		pGS->Chat(ClientID, "\u2218\u208A\u2727\u2500\u2500\u2500\u2500\u2500 Door list \u2500\u2500\u2500\u2500\u2500\u2727\u208A\u2218");
 		for(const auto& [Number, Door] : pDoorController->GetDoors())
 		{
-			bool State = pDoorController->GetDoors()[Number].GetState();
-			pGS->Chat(ClientID, "Number: {INT}. Name: {STR} ({STR})", Number, Door.GetName(), State ? "closed" : "opened");
+			bool State = pDoorController->GetDoors()[Number]->IsClosed();
+			pGS->Chat(ClientID, "Number: {INT}. Name: {STR} ({STR})", Number, Door->GetName(), State ? "closed" : "opened");
 		}
 		return;
 	}
@@ -239,16 +239,16 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 	if(pElem.compare(0, 7, "reverse") == 0)
 	{
 		// Check if the door ID is valid
-		if(pHouse->GetDoor()->GetDoors().find(Number) == pHouse->GetDoor()->GetDoors().end())
+		if(pHouse->GetDoorsController()->GetDoors().find(Number) == pHouse->GetDoorsController()->GetDoors().end())
 		{
 			pGS->Chat(pPlayer->GetCID(), "Number is either not listed or such a door does not exist.");
 			return;
 		}
 
-		pHouse->GetDoor()->Reverse(Number);
+		pHouse->GetDoorsController()->Reverse(Number);
 		pGS->UpdateVotes(ClientID, MENU_HOUSE);
-		bool State = pDoorController->GetDoors()[Number].GetState();
-		pGS->Chat(pPlayer->GetCID(), "Door {STR}(Number {INT}) was {STR}!", pDoorController->GetDoors()[Number].GetName(), Number, State ? "closed" : "opened");
+		bool State = pDoorController->GetDoors()[Number]->IsClosed();
+		pGS->Chat(pPlayer->GetCID(), "Door {STR}(Number {INT}) was {STR}!", pDoorController->GetDoors()[Number]->GetName(), Number, State ? "closed" : "opened");
 		return;
 	}
 

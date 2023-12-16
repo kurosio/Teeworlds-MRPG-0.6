@@ -119,11 +119,11 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, TAB_HOUSE_SAFE_INTERACTIVE, "Take gold. (Amount in a reason)");
 		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_HOUSE_DOORS, "\u2747 House has {VAL} controlled door's", pHouse->GetDoor()->GetDoors().size());
-		for(auto& [Number, DoorData] : pHouse->GetDoor()->GetDoors())
+		GS()->AVH(ClientID, TAB_HOUSE_DOORS, "\u2747 House has {VAL} controlled door's", pHouse->GetDoorsController()->GetDoors().size());
+		for(auto& [Number, DoorData] : pHouse->GetDoorsController()->GetDoors())
 		{
-			bool StateDoor = DoorData.GetState();
-			GS()->AVM(ClientID, "HOUSE_DOOR", Number, TAB_HOUSE_DOORS, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData.GetName());
+			bool StateDoor = DoorData->IsClosed();
+			GS()->AVM(ClientID, "HOUSE_DOOR", Number, TAB_HOUSE_DOORS, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData->GetName());
 		}
 		GS()->AV(ClientID, "null");
 
@@ -207,7 +207,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AV(ClientID, "null");
 
 		// show active access players to house
-		CHouseDoorData* pHouseDoor = pHouse->GetDoor();
+		CHouseDoorsController* pHouseDoor = pHouse->GetDoorsController();
 		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You can add {INT} player's.", pHouseDoor->GetAvailableAccessSlots());
 		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You and your eidolon have full access");
 		for(auto& p : pHouseDoor->GetAccesses())
@@ -218,12 +218,11 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		// field to find player for append
 		GS()->AV(ClientID, "null");
 		GS()->AV(ClientID, "null", "Use reason. The entered value can be a partial.");
-		GS()->AV(ClientID, "null", "Example: Find player: [], in reason nickname.");
-		GS()->AVM(ClientID, "HOUSE_INVITED_LIST_FIND", 1, NOPE, "Find player: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		GS()->AVM(ClientID, "HOUSE_INVITED_LIST_FIND", 1, NOPE, "Find player: \u300E{STR}\u300F", pPlayer->GetTempData().m_aPlayerSearchBuf);
 		GS()->AV(ClientID, "null");
 
 		// search result
-		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Search result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Search result by \u300E{STR}\u300F", pPlayer->GetTempData().m_aPlayerSearchBuf);
 		if(pPlayer->GetTempData().m_aPlayerSearchBuf[0] != '\0')
 		{
 			bool Found = false;
@@ -381,7 +380,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 
 		// reverse door house
 		int UniqueDoorID = VoteID;
-		pHouse->GetDoor()->Reverse(UniqueDoorID);
+		pHouse->GetDoorsController()->Reverse(UniqueDoorID);
 		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE);
 		return true;
 	}
@@ -494,7 +493,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		const int UserID = VoteID;
 		if(CHouseData* pHouse = pPlayer->Account()->GetHouse())
-			pHouse->GetDoor()->AddAccess(UserID);
+			pHouse->GetDoorsController()->AddAccess(UserID);
 
 		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
 		return true;
@@ -504,7 +503,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		const int UserID = VoteID;
 		if(CHouseData* pHouse = pPlayer->Account()->GetHouse())
-			pHouse->GetDoor()->RemoveAccess(UserID);
+			pHouse->GetDoorsController()->RemoveAccess(UserID);
 
 		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
 		return true;
