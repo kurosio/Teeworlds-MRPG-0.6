@@ -4,29 +4,13 @@
 #define GAME_SERVER_COMPONENT_GUILD_DATA_H
 
 #include "GuildBankData.h"
+#include "GuildRankData.h"
 #include <game/server/mmocore/Utils/FieldData.h>
 
 #define TW_GUILD_TABLE "tw_guilds"
 
 using GuildIdentifier = int;
 using GuildDataPtr = std::shared_ptr< class CGuildData >;
-
-class CGuildRankData
-{
-	std::string m_Rank{};
-	int m_Access{};
-	CGuildData* m_pGuild{};
-
-public:
-	CGuildRankData() = delete;
-	CGuildRankData(std::string Rank, int Access, CGuildData* pGuild);
-
-	void ChangeAccess(int Access)
-	{
-		m_Access = Access;
-	}
-};
-
 
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDataPtr > >
 {
@@ -51,7 +35,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 	int m_Score {};
 
 	CGuildBankData* m_pBank {};
-	std::deque<CGuildRankData> m_aRanks{};
+	GuildRankContainer m_aRanks{};
 
 public:
 	CGuildData() = default;
@@ -76,9 +60,10 @@ public:
 		m_pBank = new CGuildBankData(GS(), &m_AccountID, Bank);
 	}
 
-	void InitRanks();
-	std::deque<CGuildRankData>& GetRanks() { return m_aRanks; }
+	GuildIdentifier GetID() const { return m_ID; }
 
+	void InitRanks();
+	GuildRankContainer& GetRanks() { return m_aRanks; }
 };
 
 struct CGuildHouseData

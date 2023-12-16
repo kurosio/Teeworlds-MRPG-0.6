@@ -14,7 +14,6 @@ class CGuildManager : public MmoComponent
 	{
 		CGuildData::ms_aGuild.clear();
 		CGuildHouseData::ms_aHouseGuild.clear();
-		CGuildRankData::ms_aRankGuild.clear();
 	};
 
 	std::map < int, CDecorationHouses* > m_DecorationHouse;
@@ -27,7 +26,6 @@ class CGuildManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 
 private:
-	void LoadGuildRank(int GuildID);
 	void TickHousingText();
 
 public:

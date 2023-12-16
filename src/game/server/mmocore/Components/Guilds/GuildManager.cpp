@@ -12,19 +12,6 @@
 
 #include <cstdarg>
 
-void CGuildManager::LoadGuildRank(int GuildID)
-{
-	// rank loading
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_ranks", "WHERE ID > '0' AND GuildID = '%d'", GuildID);
-	while(pRes->next())
-	{
-		int ID = pRes->getInt("ID");
-		CGuildRankData::ms_aRankGuild[ID].m_GuildID = GuildID;
-		CGuildRankData::ms_aRankGuild[ID].m_Access = pRes->getInt("Access");
-		str_copy(CGuildRankData::ms_aRankGuild[ID].m_aRank, pRes->getString("Name").c_str(), sizeof(CGuildRankData::ms_aRankGuild[ID].m_aRank));
-	}
-}
-
 void CGuildManager::OnInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds");
