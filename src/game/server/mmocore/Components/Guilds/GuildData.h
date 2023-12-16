@@ -3,9 +3,15 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_DATA_H
 
+#include "GuildBankData.h"
 #include <game/server/mmocore/Utils/FieldData.h>
 
-struct CGuildData
+#define TW_GUILD_TABLE "tw_guilds"
+
+using GuildIdentifier = int;
+using GuildDataPtr = std::shared_ptr< class CGuildData >;
+
+class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDataPtr > >
 {
 	enum
 	{
@@ -20,14 +26,36 @@ struct CGuildData
 		CFieldData<int>{CHAIR_EXPERIENCE, "ChairExperience", "Chair experience"},
 	};
 
-	char m_aName[32];
-	int m_Level;
-	int m_Exp;
-	int m_UserID;
-	int m_Bank;
-	int m_Score;
+	GuildIdentifier m_ID {};
+	std::string m_Name {};
+	int m_OwnerUID {};
+	int m_Level {};
+	int m_Experience {};
+	int m_Score {};
+	CGuildBankData* m_pBank {};
 
-	static std::map< int, CGuildData > ms_aGuild;
+public:
+	CGuildData() = default;
+	~CGuildData();
+
+	static GuildDataPtr CreateElement(GuildIdentifier ID)
+	{
+		GuildDataPtr pData = std::make_shared<CGuildData>();
+		pData->m_ID = ID;
+		return m_pData.emplace_back(std::move(pData));
+	}
+
+	void Init(std::string Name, int Level, int Experience, int Score, int OwnerUID, int Bank)
+	{
+		m_Name = Name;
+		m_OwnerUID = OwnerUID;
+		m_Level = Level;
+		m_Experience = Experience;
+		m_Score = Score;
+
+		// bank init
+		m_pBank = new CGuildBankData(GS(), &m_AccountID, Bank);
+	}
 };
 
 struct CGuildHouseData

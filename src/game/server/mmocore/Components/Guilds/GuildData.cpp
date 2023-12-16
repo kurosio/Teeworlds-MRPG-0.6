@@ -2,6 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildData.h"
 
-std::map < int, CGuildData > CGuildData::ms_aGuild;
 std::map < int, CGuildHouseData > CGuildHouseData::ms_aHouseGuild;
 std::map < int, CGuildRankData > CGuildRankData::ms_aRankGuild;
+
+CGuildData::~CGuildData()
+{
+	delete m_pBank;
+}

@@ -27,24 +27,21 @@ void CGuildManager::LoadGuildRank(int GuildID)
 
 void CGuildManager::OnInit()
 {
-	const auto InitGuilds = Database->Prepare<DB::SELECT>("*", "tw_guilds");
-	InitGuilds->AtExecute([this](ResultPtr pRes)
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds");
+	while(pRes->next())
 	{
-		while (pRes->next())
-		{
-			int GuildID = pRes->getInt("ID");
-			CGuildData::ms_aGuild[GuildID].m_UserID = pRes->getInt("UserID");
-			CGuildData::ms_aGuild[GuildID].m_Level = pRes->getInt("Level");
-			CGuildData::ms_aGuild[GuildID].m_Exp = pRes->getInt("Experience");
-			CGuildData::ms_aGuild[GuildID].m_Bank = pRes->getInt("Bank");
-			CGuildData::ms_aGuild[GuildID].m_Score = pRes->getInt("Score");
-			str_copy(CGuildData::ms_aGuild[GuildID].m_aName, pRes->getString("Name").c_str(), sizeof(CGuildData::ms_aGuild[GuildID].m_aName));
+			GuildIdentifier ID = pRes->getInt("ID");
+			std::string Name = pRes->getString("Name").c_str();
+			int OwnerUID = pRes->getInt("UserID");
+			int Level = pRes->getInt("Level");
+			int Experience = pRes->getInt("Experience");
+			int Bank = pRes->getInt("Bank");
+			int Score = pRes->getInt("Score");
 
-			CGuildData::ms_aGuild[GuildID].m_UpgradeData.initFields(&pRes);
-			LoadGuildRank(GuildID);
-		}
-		Job()->ShowLoadingProgress("Guilds", CGuildData::ms_aGuild.size());
+			CGuildData::CreateElement(ID)->Init(Name, Level, Experience, Score, OwnerUID, Bank);
 	});
+
+	Job()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
 }
 
 void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)

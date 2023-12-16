@@ -40,13 +40,8 @@ void CEntityHouseDoor::Tick()
 					Open();
 			}
 
-			// Check if the current tick is divisible by the tick speed of the server
-			if(Server()->Tick() % Server()->TickSpeed() == 0)
-			{
-				// Broadcast a game information message to the player and hammer hit effect at the position of the door control
-				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 50, "Use 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
-				GS()->CreateHammerHit(m_PosControll, CmaskOne(pPlayer->GetCID()));
-			}
+			// Broadcast a game information message to the player and hammer hit effect at the position of the door control
+			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 10, "Use 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
 		}
 	}
 
