@@ -2,59 +2,50 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildBankData.h"
 
-#include "game/server/gamecontext.h"
+#include <game/server/gamecontext.h>
 #include "GuildData.h"
 
-CPlayer* CGuildBankData::GetPlayer() const { return m_pGS->GetPlayerByUserID(*m_pAccountID); }
+CGS* CGuildBankData::GS() const { return m_pGuild->GS(); }
 
-void CGuildBankData::Add(int Value)
+void CGuildBankData::Add(int Value, CPlayer* pPlayer)
 {
-	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
-
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, HouseBank", TW_GUILD_TABLE, "WHERE UserID = '%d'", *m_pAccountID);
-
-	if(pRes->next())
+	if(pPlayer)
 	{
-		int HouseID = pRes->getInt("ID");
-
-		if(pPlayer->Account()->SpendCurrency(Value))
+		ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILD_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
+		if(pRes->next())
 		{
-			m_Bank = pRes->getInt("HouseBank") + Value;
-			Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "HouseBank = '%d' WHERE ID = '%d'", m_Bank, HouseID);
+			if(pPlayer->Account()->SpendCurrency(Value))
+			{
+				m_Bank = pRes->getInt("Bank") + Value;
+				Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
 
-			int ClientID = pPlayer->GetCID();
-			m_pGS->Chat(ClientID, "You put {VAL} gold in the safe, now {VAL}!", Value, m_Bank);
+				int ClientID = pPlayer->GetCID();
+				GS()->Chat(ClientID, "You put {VAL} gold in the safe, now {VAL}!", Value, m_Bank);
+			}
 		}
 	}
 }
 
-void CGuildBankData::Take(int Value)
+void CGuildBankData::Take(int Value, CPlayer* pPlayer)
 {
-	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
-
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, HouseBank", TW_GUILD_TABLE, "WHERE UserID = '%d'", *m_pAccountID);
-	if(pRes->next())
+	if(pPlayer)
 	{
-		int ClientID = pPlayer->GetCID();
-
-		int HouseID = pRes->getInt("ID");
-		int Bank = pRes->getInt("HouseBank");
-
-		Value = minimum(Value, Bank);
-
-		if(Value > 0)
+		ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILD_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
+		if(pRes->next())
 		{
-			pPlayer->Account()->AddGold(Value);
+			int ClientID = pPlayer->GetCID();
 
-			m_Bank = Bank - Value;
+			int Bank = pRes->getInt("Bank");
+			Value = minimum(Value, Bank);
+			if(Value > 0)
+			{
+				pPlayer->Account()->AddGold(Value);
 
-			Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "HouseBank = '%d' WHERE ID = '%d'", m_Bank, HouseID);
+				m_Bank = Bank - Value;
 
-			m_pGS->Chat(ClientID, "You take {VAL} gold in the safe {VAL}!", Value, m_Bank);
+				Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
+				GS()->Chat(ClientID, "You take {VAL} gold in the safe {VAL}!", Value, m_Bank);
+			}
 		}
 	}
 }

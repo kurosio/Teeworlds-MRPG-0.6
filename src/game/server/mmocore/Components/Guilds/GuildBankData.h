@@ -3,29 +3,30 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_BANK_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_BANK_DATA_H
 
+class CGS;
+class CPlayer;
+class CGuildData;
 
 // This class represents the bank data for a guild in a game
 class CGuildBankData
 {
-	class CGS* m_pGS;
-	int* m_pAccountID {};
+	CGuildData* m_pGuild {};
 	int m_Bank {};
 
-	// Returns the player associated with the house
-	class CPlayer* GetPlayer() const;
+	CGS* GS() const;
 
 public:
 	// Constructor that initializes the bank data with the game server, account ID, and initial bank value
-	CGuildBankData(CGS* pGS, int* pAccountID, int Bank) : m_pGS(pGS), m_pAccountID(pAccountID), m_Bank(Bank) {}
+	CGuildBankData(int Bank, CGuildData* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
 
 	// Returns the current bank value
 	int Get() const { return m_Bank; }
 
 	// Adds the specified value to the bank
-	void Add(int Value);
+	void Add(int Value, CPlayer* pPlayer);
 
 	// Takes the specified value from the bank
-	void Take(int Value);
+	void Take(int Value, CPlayer* pPlayer);
 
 	// Resets the bank value to 0
 	void Reset() { m_Bank = 0; }

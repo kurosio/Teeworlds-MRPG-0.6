@@ -4,9 +4,7 @@
 
 #include "GuildData.h"
 
-std::map < int, CGuildHouseData > CGuildHouseData::ms_aHouseGuild;
-
-CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string Rank, int Access, CGuildData* pGuild) : m_ID(RID), m_Rank(Rank), m_Access(Access)
+CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, int Access, CGuildData* pGuild) : m_ID(RID), m_Rank(std::move(Rank)), m_Access(Access)
 {
 	m_pGuild = pGuild;
 }
@@ -14,7 +12,7 @@ CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string Rank, int Ac
 void CGuildRankData::ChangeName(std::string NewRank)
 {
 	GuildIdentifier GuildID = m_pGuild->GetID();
-	if(std::count_if(m_pGuild->GetRanks().begin(), m_pGuild->GetRanks().end(), [&NewRank](CGuildRankData* pRank) {return pRank->m_Rank == NewRank; }))
+	if(std::count_if(m_pGuild->GetRanks().begin(), m_pGuild->GetRanks().end(), [&NewRank](const CGuildRankData* pRank) {return pRank->m_Rank == NewRank; }))
 	{
 		GS()->ChatGuild(GuildID, "A rank with that name is already used");
 		return;

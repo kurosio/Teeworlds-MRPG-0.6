@@ -37,6 +37,8 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 	CGuildBankData* m_pBank {};
 	GuildRankContainer m_aRanks{};
 
+	CGS* GS() const;
+
 public:
 	CGuildData() = default;
 	~CGuildData();
@@ -58,12 +60,17 @@ public:
 
 		// bank init
 		m_pBank = new CGuildBankData(GS(), &m_AccountID, Bank);
+
+		// init ranks
+		InitRanks();
 	}
 
 	GuildIdentifier GetID() const { return m_ID; }
-
-	void InitRanks();
 	GuildRankContainer& GetRanks() { return m_aRanks; }
+
+private:
+	void InitRanks();
+
 };
 
 struct CGuildHouseData

@@ -16,12 +16,7 @@ class CGuildRankData
 
 public:
 	CGuildRankData() = delete;
-	CGuildRankData(GuildRankIdentifier RID, std::string Rank, int Access, CGuildData* pGuild);
-
-	/*void ChangeAccess(int Access)
-	{
-		m_Access = Access;
-	}*/
+	CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, int Access, CGuildData* pGuild);
 
 	GuildRankIdentifier GetID() const { return m_ID; }
 	const char* GetAccessName();

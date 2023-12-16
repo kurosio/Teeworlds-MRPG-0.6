@@ -2,7 +2,19 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildData.h"
 
+#include "engine/server.h"
+
 std::map < int, CGuildHouseData > CGuildHouseData::ms_aHouseGuild;
+
+CGS* CGuildData::GS() const
+{
+	if(/*does not house*/ true)
+	{
+		return (CGS*)Instance::GetServer()->GameServer();
+	}
+
+	return nullptr;
+}
 
 CGuildData::~CGuildData()
 {
@@ -22,6 +34,6 @@ void CGuildData::InitRanks()
 		std::string Rank = pRes->getString("Name").c_str();
 		int Access = pRes->getInt("Access");
 
-		m_aRanks.emplace_back(new CGuildRankData(RID, Rank, Access, this));
+		m_aRanks.emplace_back(new CGuildRankData(RID, std::move(Rank), Access, this));
 	}
 }
