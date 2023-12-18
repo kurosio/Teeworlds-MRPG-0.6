@@ -4,10 +4,9 @@
 #define GAME_SERVER_COMPONENT_GUILD_DATA_H
 #include <game/server/mmocore/Utils/FieldData.h>
 
-#include "GuildHistoryLogData.h"
-#include "GuildBankData.h"
-
-#include "Ranks/GuildRanksController.h"
+#include "Manager/GuildHistoryLogManager.h"
+#include "Manager/GuildBankManager.h"
+#include "Manager/Ranks/GuildRanksManager.h"
 
 #define TW_GUILD_TABLE "tw_guilds"
 #define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
@@ -46,8 +45,6 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 	CGuildBankController* m_pBank {};
 	CGuildHistoryController* m_pHistory {};
 	CGuildRanksController* m_pRanks {};
-	// decorations
-	// history
 
 public:
 	CGuildData() = default;
@@ -75,9 +72,9 @@ public:
 	}
 
 	GuildIdentifier GetID() const { return m_ID; }
-	CGuildBankController* GetBank() const { return m_pBank; }
-	CGuildHistoryController* GetHistory() const { return m_pHistory; }
-	CGuildRanksController* GetRanks() const { return m_pRanks; }
+	CGuildBankController* Bank() const { return m_pBank; }
+	CGuildHistoryController* History() const { return m_pHistory; }
+	CGuildRanksController* Ranks() const { return m_pRanks; }
 
 	const char* GetName() const { return m_Name.c_str(); }
 	int GetOwnerUID() const { return m_OwnerUID; }

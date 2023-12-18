@@ -18,26 +18,10 @@ CGS* CGuildData::GS() const
 
 CGuildData::~CGuildData()
 {
-	for(auto& pRank : m_aRanks)
-		delete pRank;
-
+	delete m_pHistory;
+	delete m_pRanks;
 	delete m_pBank;
 }
-
-void CGuildData::InitRanks()
-{
-	// rank loading
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_ranks", "WHERE GuildID = '%d'", m_ID);
-	while(pRes->next())
-	{
-		GuildRankIdentifier RID = pRes->getInt("ID");
-		std::string Rank = pRes->getString("Name").c_str();
-		int Access = pRes->getInt("Access");
-
-		m_aRanks.emplace_back(new CGuildRankData(RID, std::move(Rank), Access, this));
-	}
-}
-
 
 void CGuildData::AddExperience(int Experience)
 {

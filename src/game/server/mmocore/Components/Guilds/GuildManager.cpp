@@ -1238,31 +1238,14 @@ void CGuildManager::ShowHistoryGuild(int ClientID, int GuildID)
 
 
 	CGuildData* p;
-	p->GetBank()->Add();
-	p->GetHistory()->Add("POPKA {STR}", "2301203");
-	CGuildRankData* pRank = p->GetRanks()->Get("SDasd");
+	p->Bank()->Add();
+	p->History()->Add("POPKA {STR}", "2301203");
+	CGuildRankData* pRank = p->Ranks()->Get("SDasd");
 	if(pRank)
 	{
 		pRank->ChangeName("Soska");
 		pRank->ChangeAccess(ACCESS_FULL);
 	}
-}
-
-// add to the guild history
-void CGuildManager::AddHistoryGuild(int GuildID, const char *Buffer, ...)
-{
-	char aBuf[512];
-	va_list VarArgs;
-	va_start(VarArgs, Buffer);
-	#if defined(CONF_FAMILY_WINDOWS)
-		_vsnprintf(aBuf, sizeof(aBuf), Buffer, VarArgs);
-	#else
-		vsnprintf(aBuf, sizeof(aBuf), Buffer, VarArgs);
-	#endif
-	va_end(VarArgs);
-
-	CSqlString<64> cBuf = CSqlString<64>(aBuf);
-	Database->Execute<DB::INSERT>("tw_guilds_history", "(GuildID, Text) VALUES ('%d', '%s')", GuildID, cBuf.cstr());
 }
 
 /* #########################################################################

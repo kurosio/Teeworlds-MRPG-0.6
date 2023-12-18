@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_GUILD_RANKS_CONTROLLER_H
-#define GAME_SERVER_COMPONENT_GUILD_RANKS_CONTROLLER_H
+#ifndef GAME_SERVER_COMPONENT_GUILD_RANKS_MANAGER_H
+#define GAME_SERVER_COMPONENT_GUILD_RANKS_MANAGER_H
 
 #include "GuildRankData.h"
 
@@ -21,7 +21,7 @@ public:
 	CGuildRanksController(CGuildData* pGuild);
 	~CGuildRanksController();
 
-	GuildRankContainer& GetRanks() { return m_aRanks; }
+	GuildRankContainer& GetContainer() { return m_aRanks; }
 
 	bool Add(std::string Rank);
 	bool Delete(std::string Rank);

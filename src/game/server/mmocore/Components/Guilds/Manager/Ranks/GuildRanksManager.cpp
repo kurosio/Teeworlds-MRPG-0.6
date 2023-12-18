@@ -1,11 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "GuildRankData.h"
+#include "GuildRanksManager.h"
 
 #include <game/server/gamecontext.h>
+#include "GuildRankData.h"
 
-#include "GuildRanksController.h"
-#include "../GuildData.h"
+#include <game/server/mmocore/Components/Guilds/GuildData.h>
 
 CGS* CGuildRanksController::GS() const
 {
@@ -70,7 +70,7 @@ bool CGuildRanksController::Delete(std::string Rank)
 		Database->Execute<DB::REMOVE>("tw_guilds_ranks", "WHERE ID = '%d' AND GuildID = '%d'", (*Iter)->GetID(), GuildID);
 
 		GS()->ChatGuild(GuildID, "Rank [{STR}] succesful delete", Rank.c_str());
-		GetRanks().erase(Iter);
+		GetContainer().erase(Iter);
 		return true;
 	}
 

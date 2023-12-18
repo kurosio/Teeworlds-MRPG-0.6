@@ -2,10 +2,9 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <varargs.h>
 #include <engine/server/sql_string_helpers.h>
+#include "GuildHistoryLogManager.h"
 
-#include "GuildData.h"
-
-#include "GuildHistoryLogData.h"
+#include "../GuildData.h"
 
 GuildHistoryContainer&& CGuildHistoryController::GetLogs() const
 {

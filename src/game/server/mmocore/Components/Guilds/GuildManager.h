@@ -71,8 +71,6 @@ private:
 	void SendInviteGuild(int GuildID, CPlayer* pPlayer);
 
 	void ShowHistoryGuild(int ClientID, int GuildID);
-	static void AddHistoryGuild(int GuildID, const char *Buffer, ...);
-
 public:
 	int GetHouseGuildID(int HouseID) const;
 	int GetHouseWorldID(int HouseID) const;
