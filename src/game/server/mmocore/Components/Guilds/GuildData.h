@@ -83,7 +83,6 @@ public:
 	int GetScore() const { return m_Score; }
 
 	void AddExperience(int Experience);
-
 };
 
 struct CGuildHouseData
