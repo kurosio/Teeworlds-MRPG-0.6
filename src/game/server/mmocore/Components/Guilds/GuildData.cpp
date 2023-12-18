@@ -4,8 +4,6 @@
 
 #include <game/server/gamecontext.h>
 
-std::map < int, CGuildHouseData > CGuildHouseData::ms_aHouseGuild;
-
 CGS* CGuildData::GS() const
 {
 	if(/*does not house*/ true)

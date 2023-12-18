@@ -3,30 +3,33 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 
+#include "Manager/Doors/GuildHouseDoorsController.h"
+#include "Manager/Decorations/GuildHouseDecorationsManager.h"
+
+using GuildHouseIdentifier = int;
 using GuildHouseDataPtr = std::shared_ptr< class CGuildHouseData >;
+
+class CGuildData;
 
 class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < GuildHouseDataPtr > >
 {
-	int m_ID;
-	int m_PosX;
-	int m_PosY;
-	int m_DoorX;
-	int m_DoorY;
-	int m_TextX;
-	int m_TextY;
-	int m_WorldID;
-	int m_Price;
-	int m_Payment;
-	int m_GuildID;
-	class GuildDoor* m_pDoor;
+	CGuildData* m_pGuild {};
+	GuildHouseIdentifier m_ID{};
+	vec2 m_Pos{};
+	vec2 m_TextPos{};
+	int m_Price {};
+	int m_WorldID{};
+
+	CGuildHouseDoorsController* m_pDoors {};
+	CGuildHouseDecorationManager* m_pDecorations {};
 
 public:
 	CGuildHouseData() = default;
 	~CGuildHouseData();
 
-	static GuildHouseDataPtr CreateElement(GuildIdentifier ID)
+	static GuildHouseDataPtr CreateElement(GuildHouseIdentifier ID)
 	{
-		GuildHouseDataPtr pData = std::make_shared<CGuildData>();
+		GuildHouseDataPtr pData = std::make_shared<CGuildHouseData>();
 		pData->m_ID = ID;
 		return m_pData.emplace_back(std::move(pData));
 	}

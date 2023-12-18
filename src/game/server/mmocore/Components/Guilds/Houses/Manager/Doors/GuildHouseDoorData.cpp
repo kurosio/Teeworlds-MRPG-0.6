@@ -4,7 +4,7 @@
 #include "HouseData.h"
 
 // Constructor for CHouseDoor class
-CHouseDoor::CHouseDoor(CGameWorld* pWorld, CHouseData* pHouse, std::string&& Name, vec2 Pos)
+CGuildHouseDoor::CGuildHouseDoor(CGameWorld* pWorld, CHouseData* pHouse, std::string&& Name, vec2 Pos)
 	: m_Name(std::move(Name)), m_Pos(Pos)
 {
 	// Create a new CEntityHouseDoor object and assign it to m_pDoor
@@ -12,7 +12,7 @@ CHouseDoor::CHouseDoor(CGameWorld* pWorld, CHouseData* pHouse, std::string&& Nam
 }
 
 // Destructor for CHouseDoor class
-CHouseDoor::~CHouseDoor()
+CGuildHouseDoor::~CGuildHouseDoor()
 {
 	// Delete the CEntityHouseDoor object and set m_pDoor to nullptr
 	delete m_pDoor;
@@ -20,19 +20,19 @@ CHouseDoor::~CHouseDoor()
 }
 
 // Check if the door is closed
-bool CHouseDoor::IsClosed() const
+bool CGuildHouseDoor::IsClosed() const
 {
 	return m_pDoor->IsClosed();
 }
 
 // Open the door
-void CHouseDoor::Open() const
+void CGuildHouseDoor::Open() const
 {
 	m_pDoor->Open();
 }
 
 // Close the door
-void CHouseDoor::Close() const
+void CGuildHouseDoor::Close() const
 {
 	m_pDoor->Close();
 }

@@ -85,22 +85,4 @@ public:
 	void AddExperience(int Experience);
 };
 
-struct CGuildHouseData
-{
-	int m_PosX;
-	int m_PosY;
-	int m_DoorX;
-	int m_DoorY;
-	int m_TextX;
-	int m_TextY;
-	int m_WorldID;
-	int m_Price;
-	int m_Payment;
-	int m_GuildID;
-	class GuildDoor* m_pDoor;
-
-	static std::map < int, CGuildHouseData > ms_aHouseGuild;
-};
-
-
 #endif
