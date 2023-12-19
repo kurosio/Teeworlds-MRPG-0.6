@@ -24,7 +24,7 @@ public:
 	GuildRankContainer& GetContainer() { return m_aRanks; }
 
 	bool Add(std::string Rank);
-	bool Delete(std::string Rank);
+	bool Remove(std::string Rank);
 	CGuildRankData* Get(std::string Rank) const;
 
 private:

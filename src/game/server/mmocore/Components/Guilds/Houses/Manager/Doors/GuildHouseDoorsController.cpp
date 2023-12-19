@@ -7,7 +7,7 @@
 #include <game/server/mmocore/Utils/DBSet.h>
 #include <game/server/gamecontext.h>
 
-CGuildHouseDoorsManager::CGuildHouseDoorsManager(CGS* pGS, std::string&& JsonDoorData, CGuildHouseData* pHouse)
+CGuildHouseDoorsController::CGuildHouseDoorsController(CGS* pGS, std::string&& JsonDoorData, CGuildHouseData* pHouse)
 	: m_pGS(pGS), m_pHouse(pHouse)
 {
 	// Parse the JSON string using the Tools::Json::parseFromString function initialize doors
@@ -31,7 +31,7 @@ CGuildHouseDoorsManager::CGuildHouseDoorsManager(CGS* pGS, std::string&& JsonDoo
 }
 
 // Destructor for the CHouseDoorsController class
-CGuildHouseDoorsManager::~CGuildHouseDoorsManager()
+CGuildHouseDoorsController::~CGuildHouseDoorsController()
 {
 	for(auto& p : m_apDoors)
 		delete p.second;
@@ -40,7 +40,7 @@ CGuildHouseDoorsManager::~CGuildHouseDoorsManager()
 }
 
 // Function to open a specific door by its number
-void CGuildHouseDoorsManager::Open(int Number)
+void CGuildHouseDoorsController::Open(int Number)
 {
 	// Open the door
 	if(m_apDoors.find(Number) != m_apDoors.end())
@@ -48,7 +48,7 @@ void CGuildHouseDoorsManager::Open(int Number)
 }
 
 // Function to close a specific door by its number
-void CGuildHouseDoorsManager::Close(int Number)
+void CGuildHouseDoorsController::Close(int Number)
 {
 	// Close the door
 	if(m_apDoors.find(Number) != m_apDoors.end())
@@ -56,7 +56,7 @@ void CGuildHouseDoorsManager::Close(int Number)
 }
 
 // Function to reverse the state of a specific door by its number
-void CGuildHouseDoorsManager::Reverse(int Number)
+void CGuildHouseDoorsController::Reverse(int Number)
 {
 	// Check if the door exists in the map
 	if(m_apDoors.find(Number) == m_apDoors.end())
@@ -70,7 +70,7 @@ void CGuildHouseDoorsManager::Reverse(int Number)
 }
 
 // Function to open all doors
-void CGuildHouseDoorsManager::OpenAll()
+void CGuildHouseDoorsController::OpenAll()
 {
 	// Open the state of the door by its number in iterate
 	for(auto& p : m_apDoors)
@@ -78,7 +78,7 @@ void CGuildHouseDoorsManager::OpenAll()
 }
 
 // Function to close all doors
-void CGuildHouseDoorsManager::CloseAll()
+void CGuildHouseDoorsController::CloseAll()
 {
 	// Close the state of the door by its number in iterate
 	for(auto& p : m_apDoors)
@@ -86,7 +86,7 @@ void CGuildHouseDoorsManager::CloseAll()
 }
 
 // Function to reverse the state of all doors
-void CGuildHouseDoorsManager::ReverseAll()
+void CGuildHouseDoorsController::ReverseAll()
 {
 	// Reverse the state of the door by its number in iterate
 	for(auto& p : m_apDoors)

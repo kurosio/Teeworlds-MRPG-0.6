@@ -6,6 +6,58 @@
 
 CGS* CGuildData::GS() const
 {
+	/*
+	 * STRUCTURE TESTING
+	 */
+	CGuildData* pGuild;
+
+	// members
+	pGuild->GetMembers()->Join(2); // TODO: BY STATUS
+	pGuild->GetMembers()->Kick(2); // TODO: BY STATUS
+	for(auto& p : pGuild->GetMembers()->GetContainer())
+	{
+		p->GetAccountID();
+		p->GetDeposit();
+		p->GetRankID();
+	}
+
+	// rank's
+	pGuild->GetRanks()->Add("Chucka");
+	pGuild->GetRanks()->Get("Chucka");
+	pGuild->GetRanks()->Remove("Chucka");
+	for(auto& p : pGuild->GetRanks()->GetContainer())
+	{
+		p->GetName();
+		p->ChangeAccess(ACCESS_NO);
+		p->ChangeName("PornoHub")
+	}
+
+	// bank
+	pGuild->GetBank()->Add(100, /*by player*/);
+	pGuild->GetBank()->Take(100, /*by player*/);
+	pGuild->GetBank()->Get();
+
+	// history
+	pGuild->GetHistory()->Add("%s changes access for rank '{STR}'", "Popa", "Co-leader");
+	for(auto& p : pGuild->GetHistory()->GetLogs())
+	{
+		p.m_Log;
+		p.m_Time;
+	}
+
+	// house's
+	CGuildHouseData* pHouse = pGuild->GetHouse();
+	for(auto& [DoorID, pDoor] : pHouse->GetDoors()->GetContainer())
+	{
+		pDoor->Close();
+		pDoor->Open();
+		pDoor->IsClosed();
+		pDoor->GetName();
+		pDoor->GetPos();
+	}
+	// TODO: ADD COMING
+
+
 	if(/*does not house*/ true)
 	{
 		return (CGS*)Instance::GetServer()->GameServer();

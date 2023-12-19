@@ -19,7 +19,7 @@ CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, int 
 void CGuildRankData::ChangeName(std::string NewRank)
 {
 	GuildIdentifier GuildID = m_pGuild->GetID();
-	if(std::count_if(m_pGuild->Ranks()->GetContainer().begin(), m_pGuild->Ranks()->GetContainer().end(), [&NewRank](const CGuildRankData* pRank) {return pRank->m_Rank == NewRank; }))
+	if(std::count_if(m_pGuild->GetRanks()->GetContainer().begin(), m_pGuild->GetRanks()->GetContainer().end(), [&NewRank](const CGuildRankData* pRank) {return pRank->m_Rank == NewRank; }))
 	{
 		GS()->ChatGuild(GuildID, "A rank with that name is already used");
 		return;

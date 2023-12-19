@@ -22,7 +22,7 @@ class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < Gu
 	int m_Price {};
 	int m_WorldID{};
 
-	CGuildHouseDoorsManager* m_pDoors {};
+	CGuildHouseDoorsController* m_pDoors {};
 	CGuildHouseDecorationManager* m_pDecorations {};
 
 public:
@@ -45,9 +45,12 @@ public:
 		m_WorldID = WorldID;
 
 		// components
-		new CGuildHouseDoorsManager(GS(), std::move(JsonDoorsData), this);
-		new CGuildHouseDecorationManager();
+		m_pDoors = new CGuildHouseDoorsController(GS(), std::move(JsonDoorsData), this);
+		m_pDecorations = new CGuildHouseDecorationManager();
 	}
+
+	CGuildHouseDoorsController* GetDoors() const { return m_pDoors; }
+	CGuildHouseDecorationManager* GetDecorations() const { return m_pDecorations; }
 
 	void SetGuild(CGuildData* pGuild);
 };

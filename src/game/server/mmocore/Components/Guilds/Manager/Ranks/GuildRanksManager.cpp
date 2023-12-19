@@ -60,7 +60,7 @@ bool CGuildRanksController::Add(std::string Rank)
 	return true;
 }
 
-bool CGuildRanksController::Delete(std::string Rank)
+bool CGuildRanksController::Remove(std::string Rank)
 {
 	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank){ return pRank->GetName() == Rank; });
 	if(Iter != m_aRanks.end())

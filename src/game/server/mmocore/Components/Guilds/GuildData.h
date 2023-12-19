@@ -78,9 +78,9 @@ public:
 	}
 
 	GuildIdentifier GetID() const { return m_ID; }
-	CGuildBankController* Bank() const { return m_pBank; }
-	CGuildHistoryController* History() const { return m_pHistory; }
-	CGuildRanksController* Ranks() const { return m_pRanks; }
+	CGuildBankController* GetBank() const { return m_pBank; }
+	CGuildHistoryController* GetHistory() const { return m_pHistory; }
+	CGuildRanksController* GetRanks() const { return m_pRanks; }
 	CGuildHouseData* GetHouse() const { return m_pHouse; }
 	CGuildMembersController* GetMembers() const { return m_pMembers; }
 

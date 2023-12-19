@@ -1099,7 +1099,7 @@ void CGuildManager::ShowMenuRank(CPlayer *pPlayer)
 		GS()->AVH(ClientID, HideID, "Rank [{STR}]", mr.second.m_aRank);
 		GS()->AVM(ClientID, "MRANKSET", mr.first, HideID, "Change rank name to ({STR})", pPlayer->GetTempData().m_aRankGuildBuf);
 		GS()->AVM(ClientID, "MRANKACCESS", mr.first, HideID, "Access rank ({STR})", AccessNames(mr.second.m_Access));
-		GS()->AVM(ClientID, "MRANKDELETE", mr.first, HideID, "Delete this rank");
+		GS()->AVM(ClientID, "MRANKDELETE", mr.first, HideID, "Remove this rank");
 	}
 	GS()->AddVotesBackpage(ClientID);
 }
@@ -1220,9 +1220,9 @@ void CGuildManager::ShowHistoryGuild(int ClientID, int GuildID)
 
 
 	CGuildData* p;
-	p->Bank()->Add();
-	p->History()->Add("POPKA {STR}", "2301203");
-	CGuildRankData* pRank = p->Ranks()->Get("SDasd");
+	p->GetBank()->Add();
+	p->GetHistory()->Add("POPKA {STR}", "2301203");
+	CGuildRankData* pRank = p->GetRanks()->Get("SDasd");
 	if(pRank)
 	{
 		pRank->ChangeName("Soska");
