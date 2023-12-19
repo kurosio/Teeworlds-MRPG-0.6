@@ -1,14 +1,15 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "Entities/HouseDoor.h"
-#include "HouseData.h"
+#include "GuildHouseDoorData.h"
+
+#include <game/server/mmocore/Components/Guilds/Entities/GuildDoor.h>
 
 // Constructor for CHouseDoor class
-CGuildHouseDoor::CGuildHouseDoor(CGameWorld* pWorld, CHouseData* pHouse, std::string&& Name, vec2 Pos)
+CGuildHouseDoor::CGuildHouseDoor(CGameWorld* pWorld, CGuildHouseData* pHouse, std::string&& Name, vec2 Pos)
 	: m_Name(std::move(Name)), m_Pos(Pos)
 {
 	// Create a new CEntityHouseDoor object and assign it to m_pDoor
-	m_pDoor = new CEntityHouseDoor(pWorld, Pos, this, pHouse);
+	m_pDoor = new CEntityGuildDoor(pWorld, Pos, this, pHouse);
 }
 
 // Destructor for CHouseDoor class

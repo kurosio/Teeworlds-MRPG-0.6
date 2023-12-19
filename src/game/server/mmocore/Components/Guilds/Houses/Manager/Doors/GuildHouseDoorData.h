@@ -3,20 +3,20 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_HOUSE_DOOR_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_HOUSE_DOOR_DATA_H
 
-class CHouseData;
 class CGameWorld;
-class CEntityHouseDoor;
-class CHouseDoorsController;
+class CGuildHouseData;
+class CEntityGuildDoor;
+class CGuildHouseDoorsController;
 
 class CGuildHouseDoor
 {
-	friend CHouseDoorsController;
+	friend CGuildHouseDoorsController;
 	std::string m_Name {};
-	CEntityHouseDoor* m_pDoor {};
+	CEntityGuildDoor* m_pDoor {};
 	vec2 m_Pos {};
 
 public:
-	CGuildHouseDoor(CGameWorld* pWorld, CHouseData* pHouse, std::string&& Name, vec2 Pos);
+	CGuildHouseDoor(CGameWorld* pWorld, CGuildHouseData* pHouse, std::string&& Name, vec2 Pos);
 	~CGuildHouseDoor();
 
 	const char* GetName() const { return m_Name.c_str(); }

@@ -11,9 +11,9 @@ class CGuildHouseData;
 // The CHouseDoorsController class is responsible for managing the doors of a house
 class CGuildHouseDoorsManager
 {
-	friend class CHouseData; // CHouseData class has access to private members of CHouseDoorsController
+	friend class CGuildHouseData; // CGuildHouseData class has access to private members of CHouseDoorsController
 	CGS* m_pGS {}; // Pointer to the game state object
-	CHouseData* m_pHouse {}; // Pointer to the house data object
+	CGuildHouseData* m_pHouse {}; // Pointer to the house data object
 
 	ska::unordered_map<int, CGuildHouseDoor*> m_apDoors {}; // Map of door numbers to CHouseDoor objects
 
