@@ -21,6 +21,11 @@ CGuildData::~CGuildData()
 	delete m_pBank;
 }
 
+void CGuildData::SetHouse(CGuildHouseData* pHouse)
+{
+	m_pHouse = pHouse;
+}
+
 void CGuildData::AddExperience(int Experience)
 {
 }

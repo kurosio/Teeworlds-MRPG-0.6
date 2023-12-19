@@ -7,6 +7,7 @@
 #include "Manager/GuildHistoryLogManager.h"
 #include "Manager/GuildBankManager.h"
 #include "Manager/Ranks/GuildRanksManager.h"
+#include "Houses/GuildHouseData.h"
 
 #define TW_GUILD_TABLE "tw_guilds"
 #define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
@@ -45,6 +46,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 	CGuildBankController* m_pBank {};
 	CGuildHistoryController* m_pHistory {};
 	CGuildRanksController* m_pRanks {};
+	CGuildHouseData* m_pHouse{};
 
 public:
 	CGuildData() = default;
@@ -82,6 +84,7 @@ public:
 	int GetExperience() const { return m_Experience;}
 	int GetScore() const { return m_Score; }
 
+	void SetHouse(CGuildHouseData* pHouse);
 	void AddExperience(int Experience);
 };
 

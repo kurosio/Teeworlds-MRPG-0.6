@@ -6,26 +6,26 @@
 #include "GuildHouseDoorData.h"
 
 class CGS;
-class CHouseData;
+class CGuildHouseData;
 
 // The CHouseDoorsController class is responsible for managing the doors of a house
-class CGuildHouseDoorsController
+class CGuildHouseDoorsManager
 {
 	friend class CHouseData; // CHouseData class has access to private members of CHouseDoorsController
 	CGS* m_pGS {}; // Pointer to the game state object
 	CHouseData* m_pHouse {}; // Pointer to the house data object
 
-	ska::unordered_map<int, CHouseDoor*> m_apDoors {}; // Map of door numbers to CHouseDoor objects
+	ska::unordered_map<int, CGuildHouseDoor*> m_apDoors {}; // Map of door numbers to CHouseDoor objects
 
 public:
 	// Constructor
-	CGuildHouseDoorsController(CGS* pGS, std::string&& JsonDoorData, CHouseData* pHouse);
+	CGuildHouseDoorsManager(CGS* pGS, std::string&& JsonDoorData, CGuildHouseData* pHouse);
 
 	// Destructor
-	~CGuildHouseDoorsController();
+	~CGuildHouseDoorsManager();
 
 	// Getters
-	ska::unordered_map<int, CHouseDoor*>& GetDoors() { return m_apDoors; } // Get the map of door numbers to CHouseDoor objects
+	ska::unordered_map<int, CGuildHouseDoor*>& GetDoors() { return m_apDoors; } // Get the map of door numbers to CHouseDoor objects
 
 	// Door control methods
 	void Open(int Number); // Open a specific door

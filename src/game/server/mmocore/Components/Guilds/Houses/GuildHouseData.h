@@ -13,14 +13,16 @@ class CGuildData;
 
 class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < GuildHouseDataPtr > >
 {
+	CGS* GS() const;
+
 	CGuildData* m_pGuild {};
 	GuildHouseIdentifier m_ID{};
-	vec2 m_Pos{};
-	vec2 m_TextPos{};
+	vec2 m_Position{};
+	vec2 m_TextPosisiton{};
 	int m_Price {};
 	int m_WorldID{};
 
-	CGuildHouseDoorsController* m_pDoors {};
+	CGuildHouseDoorsManager* m_pDoors {};
 	CGuildHouseDecorationManager* m_pDecorations {};
 
 public:
@@ -34,9 +36,20 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init()
+	void Init(CGuildData* pGuild, int Price, vec2 Position, vec2 TextPosition, int WorldID, std::string&& JsonDoorsData)
 	{
+		m_pGuild = pGuild;
+		m_Price = Price;
+		m_Position = Position;
+		m_TextPosisiton = TextPosition;
+		m_WorldID = WorldID;
+
+		// components
+		new CGuildHouseDoorsManager(GS(), std::move(JsonDoorsData), this);
+		new CGuildHouseDecorationManager();
 	}
+
+	void SetGuild(CGuildData* pGuild);
 };
 
 #endif

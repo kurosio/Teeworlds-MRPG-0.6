@@ -34,40 +34,21 @@ void CGuildManager::OnInit()
 void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 {
 	// load houses
-	const auto InitGuildHouses = Database->Prepare<DB::SELECT>("*", "tw_guilds_houses", pWhereLocalWorld);
-	InitGuildHouses->AtExecute([this](ResultPtr pRes)
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_houses");
+	while(pRes->next())
 	{
-		while (pRes->next())
-		{
-			int HouseID = pRes->getInt("ID");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX = pRes->getInt("DoorX");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY = pRes->getInt("DoorY");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID = pRes->getInt("GuildID");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_PosX = pRes->getInt("PosX");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_PosY = pRes->getInt("PosY");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_Price = pRes->getInt("Price");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID = pRes->getInt("WorldID");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_TextX = pRes->getInt("TextX");
-			CGuildHouseData::ms_aHouseGuild[HouseID].m_TextY = pRes->getInt("TextY");
-			if (CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID > 0 && !CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor)
-			{
-				CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = 0;
-				CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = new GuildDoor(&GS()->m_World, vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX, CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY), CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID);
-			}
-		}
-		Job()->ShowLoadingProgress("Houses", CGuildHouseData::ms_aHouseGuild.size());
-	});
+		GuildHouseIdentifier ID = pRes->getInt("ID");
+		GuildIdentifier GuildID = pRes->getInt("GuildID");
+		int WorldID = pRes->getInt("WorldID");
+		int Price = pRes->getInt("Price");
+		vec2 TextPos = vec2(pRes->getInt("TextX"), pRes->getInt("TextY"));
+		std::string JsonDoorsData = pRes->getString("JsonDoorsData");
+		auto IterGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&GuildID](const CGuildData* p){ return p->GetID() == GuildID; });
+		CGuildData* pGuild = IterGuild != CGuildData::Data().end() ? IterGuild->get() : nullptr;
 
-	const auto InitGuildHouseDecorations = Database->Prepare<DB::SELECT>("*", "tw_guilds_decorations", pWhereLocalWorld);
-	InitGuildHouseDecorations->AtExecute([this](ResultPtr pRes)
-	{
-		while (pRes->next())
-		{
-			const int ID = pRes->getInt("ID");
-			m_DecorationHouse[ID] = new CDecorationHouses(&GS()->m_World, vec2(pRes->getInt("PosX"), pRes->getInt("PosY")), pRes->getInt("HouseID"), ID, pRes->getInt("ItemID"));
-		}
-		Job()->ShowLoadingProgress("Guilds Houses Decorations", m_DecorationHouse.size());
-	});
+		CGuildHouseData::CreateElement(ID)->Init()
+	}
+	Job()->ShowLoadingProgress("Houses", CGuildHouseData::ms_aHouseGuild.size());
 }
 void CGuildManager::OnTick()
 {
