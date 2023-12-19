@@ -19,6 +19,7 @@ public:
 
 	int GetAccountID() const { return m_AccountID; }
 	int GetDeposit() const { return m_Deposit; }
+	GuildRankIdentifier GetRankID() const { return m_RankID; }
 };
 
 #endif

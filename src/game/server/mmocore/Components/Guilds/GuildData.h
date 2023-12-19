@@ -4,6 +4,7 @@
 #define GAME_SERVER_COMPONENT_GUILD_DATA_H
 #include <game/server/mmocore/Utils/FieldData.h>
 
+#include "Manager/Members/GuildMembersManager.h"
 #include "Manager/GuildHistoryLogManager.h"
 #include "Manager/GuildBankManager.h"
 #include "Manager/Ranks/GuildRanksManager.h"
@@ -17,6 +18,7 @@ using GuildDataPtr = std::shared_ptr< class CGuildData >;
 
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDataPtr > >
 {
+	friend class CGuildMembersController;
 	friend class CGuildRanksController;
 	friend class CGuildRankData;
 	friend class CGuildBankData;
@@ -46,6 +48,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 	CGuildBankController* m_pBank {};
 	CGuildHistoryController* m_pHistory {};
 	CGuildRanksController* m_pRanks {};
+	CGuildMembersController* m_pMembers {};
 	CGuildHouseData* m_pHouse{};
 
 public:
@@ -71,6 +74,7 @@ public:
 		m_pBank = new CGuildBankController(Bank, this);
 		m_pRanks = new CGuildRanksController(this);
 		m_pHistory = new CGuildHistoryController(this);
+		m_pMembers = new CGuildMembersController(this);
 	}
 
 	GuildIdentifier GetID() const { return m_ID; }
@@ -78,6 +82,7 @@ public:
 	CGuildHistoryController* History() const { return m_pHistory; }
 	CGuildRanksController* Ranks() const { return m_pRanks; }
 	CGuildHouseData* GetHouse() const { return m_pHouse; }
+	CGuildMembersController* GetMembers() const { return m_pMembers; }
 
 	const char* GetName() const { return m_Name.c_str(); }
 	int GetOwnerUID() const { return m_OwnerUID; }

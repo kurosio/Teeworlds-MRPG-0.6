@@ -3,13 +3,21 @@
 #include "GuildMembersManager.h"
 
 #include <game/server/mmocore/Components/Guilds/GuildData.h>
+#include <game/server/gamecontext.h>
 
-CGuildMembersManager::CGuildMembersManager(CGuildData* pGuild) : m_pGuild(pGuild)
+CGS* CGuildMembersController::GS() const
 {
-	m_apMembers.reserve(MAX_GUILD_PLAYERS);
+	return m_pGuild->GS();
 }
 
-CGuildMembersManager::~CGuildMembersManager()
+CGuildMembersController::CGuildMembersController(CGuildData* pGuild) : m_pGuild(pGuild)
+{
+	m_apMembers.reserve(MAX_GUILD_PLAYERS);
+
+	CGuildMembersController::InitMembers();
+}
+
+CGuildMembersController::~CGuildMembersController()
 {
 	for(auto pMember : m_apMembers)
 		delete pMember;
@@ -18,26 +26,38 @@ CGuildMembersManager::~CGuildMembersManager()
 	m_apMembers.shrink_to_fit();
 }
 
-bool CGuildMembersManager::Kick(int AccountID)
+bool CGuildMembersController::Kick(int AccountID)
 {
 	CGuildMemberData* pMember = GetMember(AccountID);
 	if(pMember == nullptr)
 		return false;
 
 	m_apMembers.erase(std::remove_if(m_apMembers.begin(), m_apMembers.end(), [&pMember](CGuildMemberData* p){return p == pMember; }), m_apMembers.end());
+
+	CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID);
+	if(pPlayer)
+	{
+		pPlayer->Account()->ReinitializeGuild();
+	}
 	return true;
 }
 
-bool CGuildMembersManager::Join(int AccountID)
+bool CGuildMembersController::Join(int AccountID)
 {
 	if(GetMember(AccountID) != nullptr)
 		return false;
 
 	m_apMembers.push_back(new CGuildMemberData(m_pGuild, AccountID));
+
+	CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID);
+	if(pPlayer)
+	{
+		pPlayer->Account()->ReinitializeGuild();
+	}
 	return true;
 }
 
-void CGuildMembersManager::InitMembers()
+void CGuildMembersController::InitMembers()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE GuildID = '%d'", m_pGuild->GetID());
 	while(pRes->next())
@@ -50,7 +70,7 @@ void CGuildMembersManager::InitMembers()
 	}
 }
 
-CGuildMemberData* CGuildMembersManager::GetMember(int AccountID)
+CGuildMemberData* CGuildMembersController::GetMember(int AccountID)
 {
 	auto IterMember = std::find_if(m_apMembers.begin(), m_apMembers.end(), 
 		[&AccountID](const CGuildMemberData* pMember){return pMember->GetAccountID() == AccountID; });

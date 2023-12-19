@@ -12,6 +12,7 @@ class CGS;
 class CPlayer;
 class CHouseData;
 class GroupData;
+class CGuildData;
 
 class CAccountData
 {
@@ -24,8 +25,9 @@ class CAccountData
 
 	int m_Level {};
 	int m_Exp {};
-	CHouseData* m_pHouseData {};
-	GroupData* m_pGroupData {};
+	CHouseData* m_pHouseData{};
+	GroupData* m_pGroupData{};
+	CGuildData* m_pGuildData{};
 
 	CPlayer* m_pPlayer {};
 	CGS* GS() const;
@@ -51,6 +53,13 @@ public:
 	void ReinitializeGroup(); // This function re-initializes the group object
 	GroupData* GetGroup() const { return m_pGroupData; } // Get the group data for the current object
 	bool HasGroup() const { return m_pGroupData != nullptr; } // Check if the current object has group data
+
+	/*
+	 * Group functions: guild system
+	 */
+	void ReinitializeGuild();
+	CGuildData* GetGuild() const { return m_pGuildData; }
+	bool HasGuild() const { return m_pGuildData != nullptr; }
 
 	/*
 	 * Group function: getters / setters
@@ -85,7 +94,6 @@ public:
 	};
 
 	// main
-	int m_GuildID {};
 	int m_GuildRank {};
 	int m_PrisonSeconds {};
 	TimePeriods m_Periods {};
@@ -98,7 +106,6 @@ public:
 	CTeeInfo m_TeeInfos {};
 	int m_Team {};
 	std::map < int, bool > m_aAetherLocation {};
-	bool IsGuild() const { return m_GuildID > 0; }
 
 	CFieldContainer m_MiningData
 	{

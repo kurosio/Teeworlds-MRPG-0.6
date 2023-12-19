@@ -10,6 +10,8 @@ using CGuildMembersContainer = std::vector<CGuildMemberData*>;
 
 class CGuildMembersController
 {
+	CGS* GS() const;
+
 	CGuildData* m_pGuild {};
 	CGuildMembersContainer m_apMembers {};
 
@@ -17,7 +19,7 @@ public:
 	CGuildMembersController(CGuildData* pGuild);
 	~CGuildMembersController();
 
-	CGuildMembersContainer& GetMembers() { return m_apMembers; }
+	CGuildMembersContainer& GetContainer() { return m_apMembers; }
 
 	bool Kick(int AccountID);
 	bool Join(int AccountID);

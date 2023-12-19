@@ -39,7 +39,6 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	// base data
 	m_Level = pResult->getInt("Level");
 	m_Exp = pResult->getInt("Exp");
-	m_GuildID = pResult->getInt("GuildID");
 	m_Upgrade = pResult->getInt("Upgrade");
 	m_GuildRank = pResult->getInt("GuildRank");
 	m_PrisonSeconds = pResult->getInt("PrisonSeconds");
@@ -75,6 +74,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	*/
 	ReinitializeHouse();
 	ReinitializeGroup();
+	ReinitializeGuild();
 }
 
 void CAccountData::UpdatePointer(CPlayer* pPlayer)
@@ -122,6 +122,25 @@ void CAccountData::ReinitializeGroup()
 
 	// If no matching group data object is found, set the group data pointer of the account to nullptr
 	m_pGroupData = nullptr;
+}
+
+void CAccountData::ReinitializeGuild()
+{
+	// Iterate through all the group data objects
+	for(auto& p : CGuildData::Data())
+	{
+		// Check if the account ID of the group data object matches the account ID of the current account
+		auto& Accounts = p->GetMembers()->GetContainer();
+		auto Iter = std::find_if(Accounts.begin(), Accounts.end(), [this](const CGuildMemberData* p){ return p->GetAccountID() == m_ID; });
+		if(Iter != Accounts.end())
+		{
+			m_pGuildData = p.get();
+			return;
+		}
+	}
+
+	// If no matching group data object is found, set the group data pointer of the account to nullptr
+	m_pGuildData = nullptr;
 }
 
 // This function returns the daily limit of gold that a player can obtain from chairs
@@ -251,8 +270,10 @@ void CAccountData::AddExperience(int Value)
 	}
 
 	// Add experience to the guild member
-	if(IsGuild())
-		GS()->Mmo()->Member()->AddExperience(m_GuildID);
+	if(HasGuild())
+	{
+		m_pGuildData->AddExperience(1);
+	}
 }
 
 // Add gold to the account

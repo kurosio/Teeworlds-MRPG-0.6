@@ -41,14 +41,15 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		GuildIdentifier GuildID = pRes->getInt("GuildID");
 		int WorldID = pRes->getInt("WorldID");
 		int Price = pRes->getInt("Price");
-		vec2 TextPos = vec2(pRes->getInt("TextX"), pRes->getInt("TextY"));
+		vec2 Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
+		vec2 TextPosition = vec2(pRes->getInt("TextX"), pRes->getInt("TextY"));
 		std::string JsonDoorsData = pRes->getString("JsonDoorsData");
 		auto IterGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&GuildID](const CGuildData* p){ return p->GetID() == GuildID; });
 		CGuildData* pGuild = IterGuild != CGuildData::Data().end() ? IterGuild->get() : nullptr;
 
-		CGuildHouseData::CreateElement(ID)->Init()
+		CGuildHouseData::CreateElement(ID)->Init(pGuild, Price, Position, TextPosition, WorldID, std::move(JsonDoorsData));
 	}
-	Job()->ShowLoadingProgress("Houses", CGuildHouseData::ms_aHouseGuild.size());
+	Job()->ShowLoadingProgress("Houses", CGuildHouseData::Data().size());
 }
 void CGuildManager::OnTick()
 {
@@ -90,8 +91,8 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 			if(HouseID <= 0 || GuildID <= 0)
 				return true;
 
-			const int Exp = CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::CHAIR_EXPERIENCE, 0).m_Value;
-			pPlayer->Account()->AddExperience(Exp);
+			//const int Exp = CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::CHAIR_EXPERIENCE, 0).m_Value;
+			//pPlayer->Account()->AddExperience(Exp);
 		}
 		return true;
 	}
