@@ -16,6 +16,9 @@ class CGuildMemberData
 
 public:
 	CGuildMemberData(CGuildData* pGuild, int AccountID, GuildRankIdentifier = -1, int Deposit = 0);
+
+	int GetAccountID() const { return m_AccountID; }
+	int GetDeposit() const { return m_Deposit; }
 };
 
 #endif

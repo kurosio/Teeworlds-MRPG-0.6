@@ -6,7 +6,7 @@
 
 #include "GuildData.h"
 
-class GuildDoor;
+class CEntityGuildDoor;
 class CDecorationHouses;
 class CGuildManager : public MmoComponent
 {

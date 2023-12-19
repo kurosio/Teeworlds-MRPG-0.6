@@ -2,12 +2,57 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildMembersManager.h"
 
-CGuildMembersController::CGuildMembersController(CGuildData* pGuild) : m_pGuild(pGuild)
+#include <game/server/mmocore/Components/Guilds/GuildData.h>
+
+CGuildMembersManager::CGuildMembersManager(CGuildData* pGuild) : m_pGuild(pGuild)
 {
-	m_aMembers.reserve(MAX_GUILD_PLAYERS);
+	m_apMembers.reserve(MAX_GUILD_PLAYERS);
 }
 
-void CGuildMembersController::InitMembers()
+CGuildMembersManager::~CGuildMembersManager()
 {
+	for(auto pMember : m_apMembers)
+		delete pMember;
 
+	m_apMembers.clear();
+	m_apMembers.shrink_to_fit();
+}
+
+bool CGuildMembersManager::Kick(int AccountID)
+{
+	CGuildMemberData* pMember = GetMember(AccountID);
+	if(pMember == nullptr)
+		return false;
+
+	m_apMembers.erase(std::remove_if(m_apMembers.begin(), m_apMembers.end(), [&pMember](CGuildMemberData* p){return p == pMember; }), m_apMembers.end());
+	return true;
+}
+
+bool CGuildMembersManager::Join(int AccountID)
+{
+	if(GetMember(AccountID) != nullptr)
+		return false;
+
+	m_apMembers.push_back(new CGuildMemberData(m_pGuild, AccountID));
+	return true;
+}
+
+void CGuildMembersManager::InitMembers()
+{
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE GuildID = '%d'", m_pGuild->GetID());
+	while(pRes->next())
+	{
+		int UID = pRes->getInt("ID");
+		GuildRankIdentifier Rank = pRes->getInt("GuildRank");
+		int Deposit = pRes->getInt("GuildDeposit");
+
+		m_apMembers.push_back(new CGuildMemberData(m_pGuild, UID, Rank, Deposit));
+	}
+}
+
+CGuildMemberData* CGuildMembersManager::GetMember(int AccountID)
+{
+	auto IterMember = std::find_if(m_apMembers.begin(), m_apMembers.end(), 
+		[&AccountID](const CGuildMemberData* pMember){return pMember->GetAccountID() == AccountID; });
+	return IterMember != m_apMembers.end() ? *IterMember : nullptr;
 }

@@ -1402,7 +1402,7 @@ bool CGuildManager::ChangeStateDoor(int GuildID)
 		CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = 0;
 	}
 	else
-		CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = new GuildDoor(&GS()->m_World, vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX, CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY), GuildID);
+		CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = new CEntityGuildDoor(&GS()->m_World, vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX, CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY), GuildID);
 
 	const bool StateDoor = (bool)(CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor);
 	GS()->ChatGuild(GuildID, "{STR} the house for others.", (StateDoor ? "closed" : "opened"));

@@ -6,20 +6,25 @@
 #include "GuildMemberData.h"
 
 class CGuildData;
-using CGuildMembersContainer = std::vector<CGuildMemberData>;
+using CGuildMembersContainer = std::vector<CGuildMemberData*>;
 
 class CGuildMembersController
 {
 	CGuildData* m_pGuild {};
-	CGuildMembersContainer m_aMembers {};
+	CGuildMembersContainer m_apMembers {};
 
 public:
 	CGuildMembersController(CGuildData* pGuild);
+	~CGuildMembersController();
 
-	CGuildMembersContainer& GetMembers() { return m_aMembers; }
+	CGuildMembersContainer& GetMembers() { return m_apMembers; }
+
+	bool Kick(int AccountID);
+	bool Join(int AccountID);
 
 private:
 	void InitMembers();
+	CGuildMemberData* GetMember(int AccountID);
 };
 
 #endif

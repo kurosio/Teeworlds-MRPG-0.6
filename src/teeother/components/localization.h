@@ -4,7 +4,7 @@
 #include <teeother/tl/hashtable.h>
 
 /*
- * TODO: Add plural rules example {RP:{INT}:{STR}} or {PR:{INT}:player} use rules from lang files
+ * TODO: Join plural rules example {RP:{INT}:{STR}} or {PR:{INT}:player} use rules from lang files
  */
 
 class CLocalization
