@@ -77,6 +77,7 @@ public:
 	CGuildBankController* Bank() const { return m_pBank; }
 	CGuildHistoryController* History() const { return m_pHistory; }
 	CGuildRanksController* Ranks() const { return m_pRanks; }
+	CGuildHouseData* GetHouse() const { return m_pHouse; }
 
 	const char* GetName() const { return m_Name.c_str(); }
 	int GetOwnerUID() const { return m_OwnerUID; }

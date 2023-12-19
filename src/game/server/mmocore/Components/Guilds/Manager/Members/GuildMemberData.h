@@ -3,11 +3,11 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_MEMBER_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_MEMBER_DATA_H
 
-#include "../Ranks/GuildRanksManager.h"
+#include "../Ranks/GuildRankData.h"
 
 class CGuildData;
 
-class CGuildMember
+class CGuildMemberData
 {
 	CGuildData* m_pGuild {};
 	GuildRankIdentifier m_RankID{};
@@ -15,7 +15,7 @@ class CGuildMember
 	int m_Deposit {};
 
 public:
-	CGuildMember(CGuildData* pGuild, int AccountID, GuildRankIdentifier = -1, int Deposit = 0);
+	CGuildMemberData(CGuildData* pGuild, int AccountID, GuildRankIdentifier = -1, int Deposit = 0);
 };
 
 #endif

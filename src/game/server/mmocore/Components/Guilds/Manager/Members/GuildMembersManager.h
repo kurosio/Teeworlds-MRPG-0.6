@@ -5,8 +5,21 @@
 
 #include "GuildMemberData.h"
 
+class CGuildData;
+using CGuildMembersContainer = std::vector<CGuildMemberData>;
+
 class CGuildMembersController
 {
+	CGuildData* m_pGuild {};
+	CGuildMembersContainer m_aMembers {};
+
+public:
+	CGuildMembersController(CGuildData* pGuild);
+
+	CGuildMembersContainer& GetMembers() { return m_aMembers; }
+
+private:
+	void InitMembers();
 };
 
 #endif
