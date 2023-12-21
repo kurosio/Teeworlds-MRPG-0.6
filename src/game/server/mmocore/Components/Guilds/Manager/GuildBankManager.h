@@ -33,6 +33,8 @@ public:
 	// Value: The amount of currency to take
 	// pByPlayer: The player who is taking the currency
 	void Take(int Value, CPlayer* pByPlayer);
+
+	bool Spend(int Value);
 };
 
 #endif

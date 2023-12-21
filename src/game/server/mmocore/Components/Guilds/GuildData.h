@@ -18,6 +18,7 @@ using GuildDataPtr = std::shared_ptr< class CGuildData >;
 
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDataPtr > >
 {
+	friend class CGuildHouseData;
 	friend class CGuildMembersController;
 	friend class CGuildRanksController;
 	friend class CGuildBankController;
@@ -90,7 +91,9 @@ public:
 	int GetScore() const { return m_Score; }
 	bool HasHouse() const { return m_pHouse != nullptr; }
 
-	void SetHouse(CGuildHouseData* pHouse);
+	bool BuyHouse(int HouseID);
+	bool SellHouse();
+
 	void AddExperience(int Experience);
 };
 

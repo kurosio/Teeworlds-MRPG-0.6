@@ -1292,36 +1292,7 @@ int CGuildManager::GetGuildHouseID(int GuildID) const
 // buying a guild house
 void CGuildManager::BuyGuildHouse(int GuildID, int HouseID)
 {
-	// check if the guild has a house
-	if(GetGuildHouseID(GuildID) > 0)
-	{
-		GS()->ChatGuild(GuildID, "Your Guild can't have 2 houses. Purchase canceled!");
-		return;
-	}
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_houses", "WHERE ID = '%d' AND GuildID IS NULL", HouseID);
-	if(pRes->next())
-	{
-		const int Price = pRes->getInt("Price");
-		if(CGuildData::ms_aGuild[GuildID].m_Bank < Price)
-		{
-			GS()->ChatGuild(GuildID, "This Guild house requires {VAL}gold!", Price);
-			return;
-		}
-		CGuildData::ms_aGuild[GuildID].m_Bank -= Price;
-		Database->Execute<DB::UPDATE>("tw_guilds", "Bank = '%d' WHERE ID = '%d'", CGuildData::ms_aGuild[GuildID].m_Bank, GuildID);
-
-		CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID = GuildID;
-		Database->Execute<DB::UPDATE>("tw_guilds_houses", "GuildID = '%d' WHERE ID = '%d'", GuildID, HouseID);
-
-		const char* WorldName = Server()->GetWorldName(CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID);
-		GS()->Chat(-1, "{STR} bought guild house on {STR}!", GuildName(GuildID), WorldName);
-		GS()->ChatDiscord(DC_SERVER_INFO, "Information", "{STR} bought guild house on {STR}!", GuildName(GuildID), WorldName);
-		AddHistoryGuild(GuildID, "Bought a house on '%s'.", WorldName);
-		return;
-	}
-
-	GS()->ChatGuild(GuildID, "House has already been purchased!");
 }
 
 // guild house sale

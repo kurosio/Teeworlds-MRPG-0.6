@@ -49,3 +49,20 @@ void CGuildBankController::Take(int Value, CPlayer* pByPlayer)
 		}
 	}
 }
+
+bool CGuildBankController::Spend(int Value)
+{
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILD_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
+	if(pRes->next())
+	{
+		int Bank = pRes->getInt("Bank");
+		if(Bank >= Value)
+		{
+			m_Bank = Bank - Value;
+			Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
+			return true;
+		}
+	}
+
+	return false;
+}

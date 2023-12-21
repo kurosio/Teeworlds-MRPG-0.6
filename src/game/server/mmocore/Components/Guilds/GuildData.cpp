@@ -66,9 +66,73 @@ CGuildData::~CGuildData()
 	delete m_pBank;
 }
 
-void CGuildData::SetHouse(CGuildHouseData* pHouse)
+bool CGuildData::BuyHouse(int HouseID)
 {
-	m_pHouse = pHouse;
+	// check if the guild has a house
+	if(m_pHouse != nullptr)
+	{
+		GS()->ChatGuild(m_ID, "Your Guild can't have 2 houses. Purchase canceled!");
+		return false;
+	}
+
+	// check valid house
+	auto IterHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&HouseID](const CGuildHouseData* p){ return p->GetID() == HouseID; });
+	if(IterHouse == CGuildHouseData::Data().end())
+	{
+		GS()->ChatGuild(m_ID, "The house is unavailable.");
+		return false;
+	}
+
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES, "WHERE ID = '%d' AND GuildID IS NULL", HouseID);
+	if(pRes->next())
+	{
+		const int Price = pRes->getInt("Price");
+		if(!GetBank()->Spend(Price))
+		{
+			GS()->ChatGuild(m_ID, "This Guild house requires {VAL}gold!", Price);
+			return false;
+		}
+
+		m_pHouse = IterHouse->get();
+		m_pHouse->SetGuild(this);
+		Database->Execute<DB::UPDATE>("tw_guilds_houses", "GuildID = '%d' WHERE ID = '%d'", m_ID, HouseID);
+
+		const char* WorldName = Server()->GetWorldName(m_pHouse->GetWorldID());
+		GS()->Chat(-1, "{STR} bought guild house on {STR}!", GetName(), WorldName);
+		GS()->ChatDiscord(DC_SERVER_INFO, "Information", "{STR} bought guild house on {STR}!", GetName(), WorldName);
+		return true;
+	}
+
+	GS()->ChatGuild(m_ID, "House has already been purchased!");
+	return false;
+}
+
+bool CGuildData::SellHouse()
+{
+	if(m_pHouse == nullptr)
+	{
+		GS()->ChatGuild(m_ID, "Your Guild doesn't have a home!");
+		return false;
+	}
+
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_guilds_houses", "WHERE ID = '%d' AND GuildID IS NOT NULL", m_pHouse->GetID());
+	if(pRes->next())
+	{
+		Database->Execute<DB::UPDATE>("tw_guilds_houses", "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
+
+		const int ReturnedGold = CGuildHouseData::ms_aHouseGuild[HouseID].m_Price;
+		GS()->SendInbox("System", CGuildData::ms_aGuild[GuildID].m_UserID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
+
+		GS()->ChatGuild(GuildID, "House sold, {VAL}gold returned to leader", ReturnedGold);
+		AddHistoryGuild(GuildID, "Lost a house on '%s'.", Server()->GetWorldName(CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID));
+	}
+
+	if(CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor)
+	{
+		delete CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor;
+		CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = 0;
+	}
+	CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID = -1;
 }
 
 void CGuildData::AddExperience(int Experience)

@@ -16,5 +16,5 @@ CGuildHouseData::~CGuildHouseData()
 void CGuildHouseData::SetGuild(CGuildData* pGuild)
 {
 	m_pGuild = pGuild;
-	m_pGuild->SetHouse(this);
+	m_pGuild->m_pHouse = this;
 }
