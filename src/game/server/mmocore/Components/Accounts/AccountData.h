@@ -60,6 +60,7 @@ public:
 	void ReinitializeGuild();
 	CGuildData* GetGuild() const { return m_pGuildData; }
 	bool HasGuild() const { return m_pGuildData != nullptr; }
+	bool SameGuild(int ClientID) const;
 
 	/*
 	 * Group function: getters / setters

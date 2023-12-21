@@ -12,7 +12,10 @@ class CGuildManager : public MmoComponent
 {
 	~CGuildManager() override
 	{
-		CGuildHouseData::ms_aHouseGuild.clear();
+		CGuildData::Data().clear();
+		CGuildData::Data().shrink_to_fit();
+		CGuildHouseData::Data().clear();
+		CGuildHouseData::Data().shrink_to_fit();
 	};
 
 	std::map < int, CDecorationHouses* > m_DecorationHouse;
@@ -83,7 +86,6 @@ public:
 	void BuyGuildHouse(int GuildID, int HouseID);
 	void SellGuildHouse(int GuildID);
 	void ShowBuyHouse(CPlayer *pPlayer, int HouseID);
-	bool ChangeStateDoor(int GuildID);
 };
 
 #endif

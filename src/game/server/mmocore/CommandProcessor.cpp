@@ -143,7 +143,7 @@ void CCommandProcessor::ConChatGuildExit(IConsole::IResult* pResult, void* pUser
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->Account()->IsGuild())
+	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->Account()->HasGuild())
 		return;
 
 	const int AccountID = pPlayer->Account()->GetID();

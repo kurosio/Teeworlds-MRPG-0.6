@@ -11,15 +11,15 @@ class CGuildHouseData;
 // The CHouseDoorsController class is responsible for managing the doors of a house
 class CGuildHouseDoorsController
 {
-	friend class CGuildHouseData; // CGuildHouseData class has access to private members of CHouseDoorsController
-	CGS* m_pGS {}; // Pointer to the game state object
-	CGuildHouseData* m_pHouse {}; // Pointer to the house data object
+	CGS* GS() const;
+
+	CGuildHouseData* m_pHouse {};
 
 	ska::unordered_map<int, CGuildHouseDoor*> m_apDoors {}; // Map of door numbers to CHouseDoor objects
 
 public:
 	// Constructor
-	CGuildHouseDoorsController(CGS* pGS, std::string&& JsonDoorData, CGuildHouseData* pHouse);
+	CGuildHouseDoorsController(std::string&& JsonDoorData, CGuildHouseData* pHouse);
 
 	// Destructor
 	~CGuildHouseDoorsController();

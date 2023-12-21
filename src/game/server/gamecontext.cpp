@@ -322,7 +322,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 	else if(Mode == CHAT_TEAM)
 	{
 		CPlayer* pChatterPlayer = GetPlayer(ChatterClientID, true);
-		if(!pChatterPlayer || pChatterPlayer->Account()->m_GuildID <= 0)
+		if(!pChatterPlayer || !pChatterPlayer->Account()->HasGuild())
 		{
 			Chat(ChatterClientID, "This chat is for guilds and team members.");
 			return;
@@ -333,11 +333,10 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 
 		// send chat to guild team
 		Msg.m_Team = 1;
-		const int GuildID = pChatterPlayer->Account()->m_GuildID;
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pSearchPlayer = GetPlayer(i, true);
-			if(pSearchPlayer && pSearchPlayer->Account()->m_GuildID == GuildID)
+			if(pSearchPlayer && pChatterPlayer->Account()->SameGuild(i))
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
 		}
 	}
@@ -411,7 +410,7 @@ void CGS::ChatGuild(int GuildID, const char* pText, ...)
 	dynamic_string Buffer;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->IsGuild() && pPlayer->Account()->m_GuildID == GuildID)
+		if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->GetID() == GuildID)
 		{
 			Buffer.append("[Guild]");
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);

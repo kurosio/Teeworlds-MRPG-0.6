@@ -6,6 +6,9 @@
 #include "Manager/Doors/GuildHouseDoorsController.h"
 #include "Manager/Decorations/GuildHouseDecorationsManager.h"
 
+#define TW_GUILD_HOUSES "tw_guilds_houses"
+#define TW_GUILD_HOUSES_DECORATION_TABLE "tw_guilds_decorations"
+
 using GuildHouseIdentifier = int;
 using GuildHouseDataPtr = std::shared_ptr< class CGuildHouseData >;
 
@@ -13,6 +16,9 @@ class CGuildData;
 
 class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < GuildHouseDataPtr > >
 {
+	friend class CGuildHouseDoorsController;
+	friend class CGuildHouseDecorationManager;
+
 	CGS* GS() const;
 
 	CGuildData* m_pGuild {};
@@ -45,12 +51,15 @@ public:
 		m_WorldID = WorldID;
 
 		// components
-		m_pDoors = new CGuildHouseDoorsController(GS(), std::move(JsonDoorsData), this);
-		m_pDecorations = new CGuildHouseDecorationManager();
+		m_pDoors = new CGuildHouseDoorsController(std::move(JsonDoorsData), this);
+		m_pDecorations = new CGuildHouseDecorationManager(this);
 	}
 
 	CGuildHouseDoorsController* GetDoors() const { return m_pDoors; }
 	CGuildHouseDecorationManager* GetDecorations() const { return m_pDecorations; }
+
+	int GetWorldID() const { return m_WorldID; }
+	vec2 GetPos() const { return m_Position; }
 
 	void SetGuild(CGuildData* pGuild);
 };

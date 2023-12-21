@@ -7,8 +7,9 @@
 #include <game/server/mmocore/Utils/DBSet.h>
 #include <game/server/gamecontext.h>
 
-CGuildHouseDoorsController::CGuildHouseDoorsController(CGS* pGS, std::string&& JsonDoorData, CGuildHouseData* pHouse)
-	: m_pGS(pGS), m_pHouse(pHouse)
+CGS* CGuildHouseDoorsController::GS() const { return m_pHouse->GS(); }
+
+CGuildHouseDoorsController::CGuildHouseDoorsController(std::string&& JsonDoorData, CGuildHouseData* pHouse) : m_pHouse(pHouse)
 {
 	// Parse the JSON string using the Tools::Json::parseFromString function initialize doors
 	Tools::Json::parseFromString(JsonDoorData, [&](const nlohmann::json& pJsonArray)
@@ -23,7 +24,7 @@ CGuildHouseDoorsController::CGuildHouseDoorsController(CGS* pGS, std::string&& J
 			if(!DoorName.empty())
 			{
 				// Add the door data to the m_apDoors map using the door name as the key
-				m_apDoors.emplace(Number, new CGuildHouseDoor(&pGS->m_World, pHouse, std::string(DoorName), Pos));
+				m_apDoors.emplace(Number, new CGuildHouseDoor(&GS()->m_World, pHouse, std::string(DoorName), Pos));
 				Number++;
 			}
 		}

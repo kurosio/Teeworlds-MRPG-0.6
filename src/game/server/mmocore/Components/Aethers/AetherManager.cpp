@@ -130,7 +130,7 @@ void CAetherManager::ShowList(CCharacter* pChar) const
 	GS()->AV(ClientID, "null");
 
 	GS()->AVH(ClientID, TAB_AETHER, "Available aethers");
-	if(Job()->Member()->GetGuildHouseID(pPlayer->Account()->m_GuildID) >= 1)
+	if(pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->HasHouse())
 	{
 		GS()->AVM(ClientID, "MSPAWN", NOPE, TAB_AETHER, "Move to Guild House - free");
 	}

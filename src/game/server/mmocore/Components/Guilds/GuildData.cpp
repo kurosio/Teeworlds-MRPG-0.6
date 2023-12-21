@@ -7,8 +7,6 @@
 CGS* CGuildData::GS() const
 {
 	/*
-	 * STRUCTURE TESTING
-	 */
 	CGuildData* pGuild;
 
 	// members
@@ -33,8 +31,8 @@ CGS* CGuildData::GS() const
 	}
 
 	// bank
-	pGuild->GetBank()->Add(100, /*by player*/);
-	pGuild->GetBank()->Take(100, /*by player*/);
+	pGuild->GetBank()->Add(100, );
+	pGuild->GetBank()->Take(100, );
 	pGuild->GetBank()->Get();
 
 	// history
@@ -56,14 +54,9 @@ CGS* CGuildData::GS() const
 		pDoor->GetPos();
 	}
 	// TODO: ADD COMING
+	*/
 
-
-	if(/*does not house*/ true)
-	{
-		return (CGS*)Instance::GetServer()->GameServer();
-	}
-
-	return nullptr;
+	return (CGS*)Instance::GetServer()->GameServer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : MAIN_WORLD_ID);
 }
 
 CGuildData::~CGuildData()

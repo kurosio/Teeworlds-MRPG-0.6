@@ -1384,28 +1384,3 @@ void CGuildManager::ShowBuyHouse(CPlayer *pPlayer, int HouseID)
 	}
 	GS()->AV(ClientID, "null");
 }
-
-bool CGuildManager::ChangeStateDoor(int GuildID)
-{
-	const int HouseID = GetGuildHouseID(GuildID);
-	if(CGuildHouseData::ms_aHouseGuild.find(HouseID) == CGuildHouseData::ms_aHouseGuild.end())
-		return false;
-
-	if(CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID != GS()->GetWorldID())
-	{
-		GS()->ChatGuild(GuildID, "Change state door can only near your house.");
-		return false;
-	}
-
-	if(CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor)
-	{
-		delete CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor;
-		CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = 0;
-	}
-	else
-		CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = new CEntityGuildDoor(&GS()->m_World, vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorX, CGuildHouseData::ms_aHouseGuild[HouseID].m_DoorY), GuildID);
-
-	const bool StateDoor = (bool)(CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor);
-	GS()->ChatGuild(GuildID, "{STR} the house for others.", (StateDoor ? "closed" : "opened"));
-	return true;
-}

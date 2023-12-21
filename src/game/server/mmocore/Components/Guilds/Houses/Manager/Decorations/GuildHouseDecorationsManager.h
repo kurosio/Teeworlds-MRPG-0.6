@@ -3,9 +3,36 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_HOUSE_DECORATIONS_MANAGER_H
 #define GAME_SERVER_COMPONENT_GUILD_HOUSE_DECORATIONS_MANAGER_H
 
+#include "GuildHouseDecorationData.h"
+
+class CGS;
+class CPlayer;
+class CGuildHouseData;
+class CGuildHouseDecoration;
+
+using HouseDecorationIdentifier = int;
+using HouseDecorationsContainer = std::vector<CGuildHouseDecoration*>;
+
 class CGuildHouseDecorationManager
 {
+	CGS* GS() const;
+
+	CGuildHouseData* m_pHouse {};
+	CGuildHouseDecoration* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
+
 public:
+	CGuildHouseDecorationManager() = delete;
+	CGuildHouseDecorationManager(CGuildHouseData* pHouse);
+	~CGuildHouseDecorationManager();
+	
+	bool Add(int ItemID, vec2 Pos, CPlayer* pPlayerBy);
+	bool Remove(HouseDecorationIdentifier DecoID);
+
+	HouseDecorationsContainer&& GetContainer() const;
+
+
+private:
+	void InitDecorations();
 };
 
 #endif

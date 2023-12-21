@@ -5,10 +5,7 @@
 #include "engine/server.h"
 #include "game/server/mmocore/Components/Guilds/GuildData.h"
 
-CGS* CGuildHouseData::GS() const
-{
-	return (CGS*)Instance::GetServer()->GameServer(m_WorldID);
-}
+CGS* CGuildHouseData::GS() const { return (CGS*)Instance::GetServer()->GameServer(m_WorldID); }
 
 CGuildHouseData::~CGuildHouseData()
 {

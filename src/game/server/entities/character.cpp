@@ -211,8 +211,8 @@ bool CCharacter::DecoInteractive()
 		}
 		else if(InteractiveType == DECORATIONS_GUILD_HOUSE)
 		{
-			const int GuildID = m_pPlayer->Account()->m_GuildID;
-			if(GS()->Mmo()->Member()->AddDecorationHouse(DecoID, GuildID, GetMousePos()))
+			CGuildData* pGuild = m_pPlayer->Account()->GetGuild();
+			if(pGuild && pGuild->GetHouse() && pGuild->GetHouse()->GetDecorations()->Add(DecoID, GuildID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You have added {STR} to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
@@ -1430,7 +1430,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		if(FromID != m_pPlayer->GetCID())
 		{
 			// anti pvp for guild players
-			if(pFrom->Account()->m_GuildID > 0 && pFrom->Account()->m_GuildID == m_pPlayer->Account()->m_GuildID)
+			if(m_pPlayer->Account()->SameGuild(FromID))
 				return false;
 
 			// anti pvp for group players

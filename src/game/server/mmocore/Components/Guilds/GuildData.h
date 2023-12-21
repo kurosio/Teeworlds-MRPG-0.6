@@ -20,8 +20,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 {
 	friend class CGuildMembersController;
 	friend class CGuildRanksController;
-	friend class CGuildRankData;
-	friend class CGuildBankData;
+	friend class CGuildBankController;
 
 	CGS* GS() const;
 
@@ -89,6 +88,7 @@ public:
 	int GetLevel() const { return m_Level; }
 	int GetExperience() const { return m_Experience;}
 	int GetScore() const { return m_Score; }
+	bool HasHouse() const { return m_pHouse != nullptr; }
 
 	void SetHouse(CGuildHouseData* pHouse);
 	void AddExperience(int Experience);

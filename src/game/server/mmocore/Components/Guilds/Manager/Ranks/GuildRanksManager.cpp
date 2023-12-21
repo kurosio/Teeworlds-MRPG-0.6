@@ -44,14 +44,13 @@ bool CGuildRanksController::Add(std::string Rank)
 	if(std::count_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank) { return std::string(pRank->GetName()) == Rank; }))
 		return false;
 
-	GuildIdentifier GuildID = m_pGuild->GetID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_guilds_ranks", "WHERE GuildID = '%d'", GuildID);
-	if(pRes->rowsCount() < 5)
+	if(m_aRanks.size() >= 5)
 		return false;
 
 	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_guilds_ranks", "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // thread save ? hm need for table all time auto increment = 1; NEED FIX IT
 
+	GuildIdentifier GuildID = m_pGuild->GetID();
 	CSqlString<64> cGuildRank = CSqlString<64>(Rank.c_str());
 	Database->Execute<DB::INSERT>("tw_guilds_ranks", "(ID, GuildID, Name) VALUES ('%d', '%d', '%s')", InitID, GuildID, cGuildRank.cstr());
 	GS()->ChatGuild(GuildID, "Creates new rank [{STR}]!", Rank);
@@ -70,7 +69,7 @@ bool CGuildRanksController::Remove(std::string Rank)
 		Database->Execute<DB::REMOVE>("tw_guilds_ranks", "WHERE ID = '%d' AND GuildID = '%d'", (*Iter)->GetID(), GuildID);
 
 		GS()->ChatGuild(GuildID, "Rank [{STR}] succesful delete", Rank.c_str());
-		GetContainer().erase(Iter);
+		m_aRanks.erase(Iter);
 		return true;
 	}
 

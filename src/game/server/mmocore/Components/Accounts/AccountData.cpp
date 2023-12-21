@@ -143,6 +143,16 @@ void CAccountData::ReinitializeGuild()
 	m_pGuildData = nullptr;
 }
 
+// Check if the account is in the same guild as the specified client ID
+bool CAccountData::SameGuild(int ClientID) const
+{
+    if (!m_pGuildData)
+        return false;
+
+    CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+    return pPlayer && pPlayer->Account()->GetGuild() && pPlayer->Account()->GetGuild()->GetID() == m_pGuildData->GetID();
+}
+
 // This function returns the daily limit of gold that a player can obtain from chairs
 int CAccountData::GetLimitDailyChairGolds() const
 {
