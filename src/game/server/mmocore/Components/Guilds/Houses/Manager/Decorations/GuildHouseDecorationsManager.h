@@ -8,17 +8,17 @@
 class CGS;
 class CPlayer;
 class CGuildHouseData;
-class CGuildHouseDecoration;
+class CDecorationHouses;
 
 using HouseDecorationIdentifier = int;
-using HouseDecorationsContainer = std::vector<CGuildHouseDecoration*>;
+using HouseDecorationsContainer = std::vector<CDecorationHouses*>;
 
 class CGuildHouseDecorationManager
 {
 	CGS* GS() const;
 
 	CGuildHouseData* m_pHouse {};
-	CGuildHouseDecoration* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
+	CDecorationHouses* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
 
 public:
 	CGuildHouseDecorationManager() = delete;
@@ -32,7 +32,7 @@ public:
 
 
 private:
-	void InitDecorations();
+	void Init();
 };
 
 #endif

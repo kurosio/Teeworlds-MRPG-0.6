@@ -58,6 +58,7 @@ public:
 	CGuildHouseDoorsController* GetDoors() const { return m_pDoors; }
 	CGuildHouseDecorationManager* GetDecorations() const { return m_pDecorations; }
 
+	GuildHouseIdentifier GetID() const { return m_ID; }
 	int GetWorldID() const { return m_WorldID; }
 	vec2 GetPos() const { return m_Position; }
 
