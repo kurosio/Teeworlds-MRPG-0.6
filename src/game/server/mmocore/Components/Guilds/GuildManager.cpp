@@ -1233,14 +1233,6 @@ void CGuildManager::ShowHistoryGuild(int ClientID, int GuildID)
 /* #########################################################################
 	GET CHECK MEMBER HOUSING MEMBER
 ######################################################################### */
-// guild house
-int CGuildManager::GetHouseGuildID(int HouseID) const
-{
-	if(CGuildHouseData::ms_aHouseGuild.find(HouseID) != CGuildHouseData::ms_aHouseGuild.end())
-		return CGuildHouseData::ms_aHouseGuild.at(HouseID).m_GuildID;
-	return -1;
-}
-
 int CGuildManager::GetHouseWorldID(int HouseID) const
 {
 	if (CGuildHouseData::ms_aHouseGuild.find(HouseID) != CGuildHouseData::ms_aHouseGuild.end())
@@ -1263,20 +1255,10 @@ int CGuildManager::GetPosHouseID(vec2 Pos) const
 	return -1;
 }
 
-bool CGuildManager::GetGuildDoor(int GuildID) const
+CGuildHouseData* CGuildManager::GetGuildHouseByPos(vec2 Pos) const
 {
-	const int HouseID = GetGuildHouseID(GuildID);
-	if(HouseID > 0 && CGuildHouseData::ms_aHouseGuild.find(HouseID) != CGuildHouseData::ms_aHouseGuild.end())
-		return (bool)CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor;
-	return false;
-}
-
-vec2 CGuildManager::GetPositionHouse(int GuildID) const
-{
-	const int HouseID = GetGuildHouseID(GuildID);
-	if(HouseID > 0 && CGuildHouseData::ms_aHouseGuild.find(HouseID) != CGuildHouseData::ms_aHouseGuild.end())
-		return vec2(CGuildHouseData::ms_aHouseGuild[HouseID].m_PosX, CGuildHouseData::ms_aHouseGuild[HouseID].m_PosY);
-	return vec2(0, 0);
+	auto itHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&Pos](CGuildHouseData* p){ return distance(Pos, p->GetPos()) < 360.f; });
+	return itHouse != CGuildHouseData::Data().end() ? itHouse->get() : nullptr;
 }
 
 int CGuildManager::GetGuildHouseID(int GuildID) const
@@ -1298,31 +1280,7 @@ void CGuildManager::BuyGuildHouse(int GuildID, int HouseID)
 // guild house sale
 void CGuildManager::SellGuildHouse(int GuildID)
 {
-	const int HouseID = GetGuildHouseID(GuildID);
-	if(HouseID <= 0)
-	{
-		GS()->ChatGuild(GuildID, "Your Guild doesn't have a home!");
-		return;
-	}
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_guilds_houses", "WHERE ID = '%d' AND GuildID IS NOT NULL", HouseID);
-	if(pRes->next())
-	{
-		Database->Execute<DB::UPDATE>("tw_guilds_houses", "GuildID = NULL WHERE ID = '%d'", HouseID);
-
-		const int ReturnedGold = CGuildHouseData::ms_aHouseGuild[HouseID].m_Price;
-		GS()->SendInbox("System", CGuildData::ms_aGuild[GuildID].m_UserID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
-
-		GS()->ChatGuild(GuildID, "House sold, {VAL}gold returned to leader", ReturnedGold);
-		AddHistoryGuild(GuildID, "Lost a house on '%s'.", Server()->GetWorldName(CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID));
-	}
-
-	if(CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor)
-	{
-		delete CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor;
-		CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = 0;
-	}
-	CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID = -1;
 }
 
 void CGuildManager::ShowBuyHouse(CPlayer *pPlayer, int HouseID)

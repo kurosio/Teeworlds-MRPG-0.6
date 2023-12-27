@@ -77,10 +77,10 @@ private:
 public:
 	int GetHouseGuildID(int HouseID) const;
 	int GetHouseWorldID(int HouseID) const;
-	int GetPosHouseID(vec2 Pos) const;
+
+	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
 
 	bool GetGuildDoor(int GuildID) const;
-	vec2 GetPositionHouse(int GuildID) const;
 	int GetGuildHouseID(int GuildID) const;
 
 	void BuyGuildHouse(int GuildID, int HouseID);

@@ -61,6 +61,8 @@ public:
 	GuildHouseIdentifier GetID() const { return m_ID; }
 	int GetWorldID() const { return m_WorldID; }
 	vec2 GetPos() const { return m_Position; }
+	int GetPrice() const { return m_Price; }
+	bool IsPurchased() const { return m_pGuild != nullptr; }
 
 	void SetGuild(CGuildData* pGuild);
 };

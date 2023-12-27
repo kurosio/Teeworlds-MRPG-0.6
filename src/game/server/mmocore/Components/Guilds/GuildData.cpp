@@ -115,24 +115,28 @@ bool CGuildData::SellHouse()
 		return false;
 	}
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_guilds_houses", "WHERE ID = '%d' AND GuildID IS NOT NULL", m_pHouse->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", TW_GUILD_HOUSES, "WHERE ID = '%d' AND GuildID IS NOT NULL", m_pHouse->GetID());
 	if(pRes->next())
 	{
-		Database->Execute<DB::UPDATE>("tw_guilds_houses", "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
+		Database->Execute<DB::UPDATE>(TW_GUILD_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
 
-		const int ReturnedGold = CGuildHouseData::ms_aHouseGuild[HouseID].m_Price;
-		GS()->SendInbox("System", CGuildData::ms_aGuild[GuildID].m_UserID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
+		const int ReturnedGold = m_pHouse->GetPrice();
+		GS()->SendInbox("System", m_OwnerUID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
 
-		GS()->ChatGuild(GuildID, "House sold, {VAL}gold returned to leader", ReturnedGold);
-		AddHistoryGuild(GuildID, "Lost a house on '%s'.", Server()->GetWorldName(CGuildHouseData::ms_aHouseGuild[HouseID].m_WorldID));
+		GS()->ChatGuild(m_ID, "House sold, {VAL}gold returned to leader", ReturnedGold);
+		m_pHistory->Add("Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
+
+		m_pHouse->GetDoors()->CloseAll();
+		m_pHouse->SetGuild(nullptr);
+		m_pHouse = nullptr;
+		return true;
 	}
 
-	if(CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor)
-	{
-		delete CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor;
-		CGuildHouseData::ms_aHouseGuild[HouseID].m_pDoor = 0;
-	}
-	CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID = -1;
+	GS()->ChatGuild(m_ID, "Your Guild doesn't have a home!");
+	m_pHouse->GetDoors()->CloseAll();
+	m_pHouse->SetGuild(nullptr);
+	m_pHouse = nullptr;
+	return false;
 }
 
 void CGuildData::AddExperience(int Experience)
