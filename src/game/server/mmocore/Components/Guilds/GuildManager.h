@@ -73,19 +73,12 @@ private:
 	void ShowFinderGuilds(int ClientID);
 	void SendInviteGuild(int GuildID, CPlayer* pPlayer);
 
-	void ShowHistoryGuild(int ClientID, int GuildID);
+	void ShowHistoryGuild(int ClientID);
 public:
-	int GetHouseGuildID(int HouseID) const;
-	int GetHouseWorldID(int HouseID) const;
-
 	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
+	CGuildData* GetGuildByID(GuildIdentifier ID) const;
 
-	bool GetGuildDoor(int GuildID) const;
-	int GetGuildHouseID(int GuildID) const;
-
-	void BuyGuildHouse(int GuildID, int HouseID);
-	void SellGuildHouse(int GuildID);
-	void ShowBuyHouse(CPlayer *pPlayer, int HouseID);
+	void ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse);
 };
 
 #endif

@@ -1164,9 +1164,10 @@ void CGuildManager::ShowInvitesGuilds(int ClientID, int GuildID)
 void CGuildManager::ShowFinderGuilds(int ClientID)
 {
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(pPlayer->Account()->IsGuild())
+	if(pPlayer->Account()->HasGuild())
 	{
-		GS()->AVL(ClientID, "null", "\u02DA\u029A\u2665\u025E\u02DA You already in guild '{STR}'!", CGuildData::ms_aGuild[pPlayer->Account()->m_GuildID].m_aName);
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		GS()->AVL(ClientID, "null", "\u02DA\u029A\u2665\u025E\u02DA You already in guild '{STR}'!", pGuild->GetName());
 		GS()->AV(ClientID, "null");
 	}
 
@@ -1206,84 +1207,48 @@ void CGuildManager::ShowFinderGuilds(int ClientID)
 	FUNCTIONS MEMBER HISTORY MEMBER
 ######################################################################### */
 // list of stories
-void CGuildManager::ShowHistoryGuild(int ClientID, int GuildID)
+void CGuildManager::ShowHistoryGuild(int ClientID)
 {
-	// looking for the entire history of the guild in the database
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer || !pPlayer->Account()->HasGuild())
+		return;
+
 	char aBuf[128];
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_history", "WHERE GuildID = '%d' ORDER BY ID DESC LIMIT 20", GuildID);
-	while(pRes->next())
+	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	GuildHistoryContainer aHistory = std::move(pGuild->GetHistory()->GetLogs());
+	for(auto& pLog : aHistory)
 	{
-		str_format(aBuf, sizeof(aBuf), "[%s] %s", pRes->getString("Time").c_str(), pRes->getString("Text").c_str());
+		str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Log.c_str());
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "{STR}", aBuf);
 	}
+
 	GS()->AddVotesBackpage(ClientID);
-
-
-	CGuildData* p;
-	p->GetBank()->Add();
-	p->GetHistory()->Add("POPKA {STR}", "2301203");
-	CGuildRankData* pRank = p->GetRanks()->Get("SDasd");
-	if(pRank)
-	{
-		pRank->ChangeName("Soska");
-		pRank->ChangeAccess(ACCESS_FULL);
-	}
 }
 
 /* #########################################################################
 	GET CHECK MEMBER HOUSING MEMBER
 ######################################################################### */
-int CGuildManager::GetHouseWorldID(int HouseID) const
-{
-	if (CGuildHouseData::ms_aHouseGuild.find(HouseID) != CGuildHouseData::ms_aHouseGuild.end())
-		return CGuildHouseData::ms_aHouseGuild.at(HouseID).m_GuildID;
-	return -1;
-}
-
-// search by position
-int CGuildManager::GetPosHouseID(vec2 Pos) const
-{
-	for(const auto& m: CGuildHouseData::ms_aHouseGuild)
-	{
-		if (m.second.m_WorldID != GS()->GetWorldID())
-			continue;
-
-		vec2 PositionHouse = vec2(m.second.m_PosX, m.second.m_PosY);
-		if(distance(Pos, PositionHouse) < 1000)
-			return m.first;
-	}
-	return -1;
-}
-
 CGuildHouseData* CGuildManager::GetGuildHouseByPos(vec2 Pos) const
 {
-	auto itHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&Pos](CGuildHouseData* p){ return distance(Pos, p->GetPos()) < 360.f; });
+	auto itHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&Pos, this](CGuildHouseData* p)
+	{
+		return GS()->GetWorldID() == p->GetWorldID() && distance(Pos, p->GetPos()) < 360.f;
+	});
+
 	return itHouse != CGuildHouseData::Data().end() ? itHouse->get() : nullptr;
 }
 
-int CGuildManager::GetGuildHouseID(int GuildID) const
+CGuildData* CGuildManager::GetGuildByID(GuildIdentifier ID) const
 {
-	for(const auto& imh : CGuildHouseData::ms_aHouseGuild)
+	auto itGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&ID](CGuildHouseData* p)
 	{
-		if(GuildID > 0 && GuildID == imh.second.m_GuildID)
-			return imh.first;
-	}
-	return -1;
+		return p->GetID() == ID;
+	});
+
+	return itGuild != CGuildData::Data().end() ? itGuild->get() : nullptr;
 }
 
-// buying a guild house
-void CGuildManager::BuyGuildHouse(int GuildID, int HouseID)
-{
-
-}
-
-// guild house sale
-void CGuildManager::SellGuildHouse(int GuildID)
-{
-
-}
-
-void CGuildManager::ShowBuyHouse(CPlayer *pPlayer, int HouseID)
+void CGuildManager::ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse)
 {
 	const int ClientID = pPlayer->GetCID();
 	GS()->AVH(ClientID, TAB_INFO_GUILD_HOUSE, "Information Member Housing");
@@ -1291,25 +1256,24 @@ void CGuildManager::ShowBuyHouse(CPlayer *pPlayer, int HouseID)
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE, "In the intervals of time will be paid house");
 	GS()->AV(ClientID, "null");
 
-	// check player guild
-	if(pPlayer->Account()->IsGuild())
+	if(pPlayer->Account()->HasGuild())
 	{
-		const int GuildBank = CGuildData::ms_aGuild[pPlayer->Account()->m_GuildID].m_Bank;
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", GuildBank);
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", pGuild->GetBank()->Get());
 	}
 
-	// check valid house
-	if(CGuildHouseData::ms_aHouseGuild.find(HouseID) == CGuildHouseData::ms_aHouseGuild.end())
+	if(!pHouse)
 	{
 		GS()->AVL(ClientID, "null", "This house is not for sale yet");
+		return;
 	}
-	else
+
+	if(pHouse->IsPurchased())
 	{
-		const int GuildHouseOwner = CGuildHouseData::ms_aHouseGuild[HouseID].m_GuildID;
-		if(GuildHouseOwner > 0)
-			GS()->AVM(ClientID, "null", NOPE, NOPE, "Guild owner house: {STR}", CGuildData::ms_aGuild[GuildHouseOwner].m_aName);
-		else
-			GS()->AVM(ClientID, "BUYMEMBERHOUSE", HouseID, NOPE, "Buy this guild house! Price: {VAL}", CGuildHouseData::ms_aHouseGuild[HouseID].m_Price);
+		CGuildData* pGuild = pHouse->GetGuild();
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "Guild owner house: {STR}", pGuild->GetName());
+		return;
 	}
-	GS()->AV(ClientID, "null");
+
+	GS()->AVM(ClientID, "BUYMEMBERHOUSE", pHouse->GetID(), NOPE, "Buy this guild house! Price: {VAL}", pHouse->GetPrice());
 }

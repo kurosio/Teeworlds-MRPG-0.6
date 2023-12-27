@@ -44,17 +44,18 @@ public:
 
 	void Init(CGuildData* pGuild, int Price, vec2 Position, vec2 TextPosition, int WorldID, std::string&& JsonDoorsData)
 	{
-		m_pGuild = pGuild;
 		m_Price = Price;
 		m_Position = Position;
 		m_TextPosisiton = TextPosition;
 		m_WorldID = WorldID;
+		SetGuild(pGuild);
 
 		// components
 		m_pDoors = new CGuildHouseDoorsController(std::move(JsonDoorsData), this);
 		m_pDecorations = new CGuildHouseDecorationManager(this);
 	}
 
+	CGuildData* GetGuild() const { return m_pGuild; }
 	CGuildHouseDoorsController* GetDoors() const { return m_pDoors; }
 	CGuildHouseDecorationManager* GetDecorations() const { return m_pDecorations; }
 

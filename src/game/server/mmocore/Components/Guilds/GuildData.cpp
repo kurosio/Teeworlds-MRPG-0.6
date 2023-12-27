@@ -109,6 +109,7 @@ bool CGuildData::BuyHouse(int HouseID)
 
 bool CGuildData::SellHouse()
 {
+	// check is not has house
 	if(m_pHouse == nullptr)
 	{
 		GS()->ChatGuild(m_ID, "Your Guild doesn't have a home!");
