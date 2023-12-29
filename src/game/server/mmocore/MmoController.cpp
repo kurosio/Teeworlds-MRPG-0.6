@@ -160,7 +160,7 @@ bool MmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		}
 
 		GS()->AVM(ClientID, "MENU", MENU_GUILD_FINDER, TAB_PERSONAL, "\u20AA Guild finder");
-		if(pPlayer->Account()->IsGuild())
+		if(pPlayer->Account()->HasGuild())
 		{
 			GS()->AVM(ClientID, "MENU", MENU_GUILD, TAB_PERSONAL, "\u32E1 Guild");
 		}
@@ -428,7 +428,14 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pAcc->m_GuildID, pAcc->m_GuildRank, pAcc->GetID());
+		if(pAcc->HasGuild())
+		{
+			Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pAcc->GetGuild()->GetID(), pAcc->m_GuildRank, pAcc->GetID());
+		}
+		else
+		{
+			Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = 'NULL', GuildRank = 'NULL' WHERE ID = '%d'", pAcc->GetID());
+		}
 	}
 	else if(Table == SAVE_POSITION)
 	{

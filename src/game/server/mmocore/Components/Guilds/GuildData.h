@@ -20,6 +20,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 {
 	friend class CGuildHouseData;
 	friend class CGuildMembersController;
+	friend class CGuildRankData;
 	friend class CGuildRanksController;
 	friend class CGuildBankController;
 

@@ -27,48 +27,12 @@ class CGuildManager : public MmoComponent
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 
-private:
-	void TickHousingText();
-
 public:
-	int SearchGuildByName(const char* pGuildName) const;
-
-	const char *GuildName(int GuildID) const;
-	int GetMemberAccess(CPlayer *pPlayer) const;
-	bool CheckMemberAccess(CPlayer *pPlayer, int Access = GuildAccess::ACCESS_LEADER) const;
-	int GetMemberChairBonus(int GuildID, int Field) const;
-
 	void CreateGuild(CPlayer *pPlayer, const char *pGuildName);
-	void DisbandGuild(int GuildID);
-	bool JoinGuild(int AccountID, int GuildID);
-	void ExitGuild(int AccountID);
 
 private:
-	void ShowMenuGuild(CPlayer *pPlayer) const;
-	void ShowGuildPlayers(CPlayer *pPlayer, int GuildID);
-
-public:
-	void AddExperience(int GuildID);
-	bool UpgradeGuild(int GuildID, int Field);
-	bool AddDecorationHouse(int ItemID, int GuildID, vec2 Position);
-
-private:
-	bool DeleteDecorationHouse(int ID);
-	void ShowDecorationList(CPlayer* pPlayer);
-
-public:
-	const char *AccessNames(int Access);
-	const char *GetGuildRank(int GuildID, int RankID);
-	int FindGuildRank(int GuildID, const char *Rank) const;
-
-private:
-	void ChangePlayerRank(int AccountID, int RankID);
 	void ShowMenuRank(CPlayer *pPlayer);
 
-public:
-	static int GetGuildPlayerValue(int GuildID);
-
-private:
 	void ShowInvitesGuilds(int ClientID, int GuildID);
 	void ShowFinderGuilds(int ClientID);
 	void SendInviteGuild(int GuildID, CPlayer* pPlayer);

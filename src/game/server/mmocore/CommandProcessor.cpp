@@ -147,7 +147,7 @@ void CCommandProcessor::ConChatGuildExit(IConsole::IResult* pResult, void* pUser
 		return;
 
 	const int AccountID = pPlayer->Account()->GetID();
-	pGS->Mmo()->Member()->ExitGuild(AccountID);
+	//pGS->Mmo()->Member()->ExitGuild(AccountID);
 }
 
 void CCommandProcessor::ConChatGuildCreate(IConsole::IResult* pResult, void* pUser)
@@ -156,7 +156,7 @@ void CCommandProcessor::ConChatGuildCreate(IConsole::IResult* pResult, void* pUs
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(!pPlayer || !pPlayer->IsAuthed() || pPlayer->Account()->IsGuild())
+	if(!pPlayer || !pPlayer->IsAuthed() || pPlayer->Account()->HasGuild())
 		return;
 
 	char aGuildName[16];

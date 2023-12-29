@@ -17,6 +17,11 @@ CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, vec2 Pos, CGuildHouse
 	GameWorld()->InsertEntity(this);
 }
 
+CEntityGuildDoor::~CEntityGuildDoor()
+{
+	
+}
+
 void CEntityGuildDoor::Tick()
 {
 	// Get the UID of the owner of the house

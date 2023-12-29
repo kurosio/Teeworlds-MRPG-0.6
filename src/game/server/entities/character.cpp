@@ -212,7 +212,7 @@ bool CCharacter::DecoInteractive()
 		else if(InteractiveType == DECORATIONS_GUILD_HOUSE)
 		{
 			CGuildData* pGuild = m_pPlayer->Account()->GetGuild();
-			if(pGuild && pGuild->GetHouse() && pGuild->GetHouse()->GetDecorations()->Add(DecoID, GuildID, GetMousePos()))
+			/*if(pGuild && pGuild->GetHouse() && pGuild->GetHouse()->GetDecorations()->Add(DecoID, GuildID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You have added {STR} to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
@@ -221,7 +221,7 @@ bool CCharacter::DecoInteractive()
 			{
 				GS()->Chat(ClientID, "The maximum distance between the House and the Decoration is {INT} blocks!", g_Config.m_SvLimitDecoration);
 				GS()->Chat(ClientID, "Setting object reset, use repeat!");
-			}
+			}*/
 		}
 
 		GS()->UpdateVotes(ClientID, m_pPlayer->m_LastVoteMenu);
@@ -1452,9 +1452,9 @@ bool CCharacter::CheckAllowedWorld() const
 		CQuestDescription* pQuestInfo = GS()->GetWorldData()->GetRequiredQuest();
 		if(pQuestInfo && !m_pPlayer->GetQuest(pQuestInfo->GetID())->IsCompleted())
 		{
-			const int CheckHouseID = GS()->Mmo()->Member()->GetPosHouseID(m_Core.m_Pos);
-			if(CheckHouseID <= 0)
-				return true;
+			//const int CheckHouseID = GS()->Mmo()->Member()->GetPosHouseID(m_Core.m_Pos);
+			//if(CheckHouseID <= 0)
+			//	return true;
 		}
 	}
 	return false;

@@ -480,12 +480,14 @@ void CPlayer::RefreshClanString()
 	Buffer.append(Server()->GetWorldName(GetPlayerWorldID()));
 
 	// guild
-	if(Account()->IsGuild())
+	if(Account()->HasGuild())
 	{
+		CGuildData* pGuild = Account()->GetGuild();
+
 		Buffer.append(" | ");
-		Buffer.append(GS()->Mmo()->Member()->GuildName(Account()->m_GuildID));
+		Buffer.append(pGuild->GetName());
 		Buffer.append(" : ");
-		Buffer.append(GS()->Mmo()->Member()->GetGuildRank(Account()->m_GuildID, Account()->m_GuildRank));
+		Buffer.append("TODO BY RANK ID");
 	}
 
 	// class

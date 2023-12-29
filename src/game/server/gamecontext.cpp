@@ -1444,7 +1444,7 @@ void CGS::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 	const char* pGuildName = pResult->GetString(0);
-	const int GuildID = pSelf->Mmo()->Member()->SearchGuildByName(pGuildName);
+	/*const int GuildID = pSelf->Mmo()->Member()->SearchGuildByName(pGuildName);
 
 	char aBuf[256];
 	if(GuildID <= 0)
@@ -1456,7 +1456,7 @@ void CGS::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 
 	str_format(aBuf, sizeof(aBuf), "Guild with identifier %d and by the name of %s has been disbanded.", GuildID, pGuildName);
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "disbandguild", aBuf);
-	pSelf->Mmo()->Member()->DisbandGuild(GuildID);
+	pSelf->Mmo()->Member()->DisbandGuild(GuildID);*/
 }
 
 void CGS::ConRemItem(IConsole::IResult* pResult, void* pUserData)

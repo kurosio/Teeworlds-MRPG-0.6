@@ -76,7 +76,7 @@ bool CGuildData::BuyHouse(int HouseID)
 	}
 
 	// check valid house
-	auto IterHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&HouseID](const CGuildHouseData* p){ return p->GetID() == HouseID; });
+	auto IterHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&HouseID](const GuildHouseDataPtr p){ return p->GetID() == HouseID; });
 	if(IterHouse == CGuildHouseData::Data().end())
 	{
 		GS()->ChatGuild(m_ID, "The house is unavailable.");
