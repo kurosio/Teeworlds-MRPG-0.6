@@ -353,12 +353,12 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	const int InitID = pResID->next() ? pResID->getInt("ID")+1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
 
 	// initialize the guild
-	CGuildData::CreateElement(InitID)->Init(GuildName.cstr(), 1, 0, 0, pPlayer->Account()->GetID(), 0);
-	pPlayer->Account()->ReinitializeGuild();
+	GuildDataPtr pGuild = CGuildData::CreateElement(InitID);
+	pGuild->Init(GuildName.cstr(), 1, 0, 0, pPlayer->Account()->GetID(), 0);
+	pGuild->GetMembers()->Join(pPlayer->Account()->GetID());
 
 	// we create a guild in the table
 	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID) VALUES ('%d', '%s', '%d')", InitID, GuildName.cstr(), pPlayer->Account()->GetID());
-	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = '%d' WHERE ID = '%d'", InitID, pPlayer->Account()->GetID());
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
 	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
 }

@@ -39,6 +39,8 @@ bool CGuildMembersController::Kick(int AccountID)
 	{
 		pPlayer->Account()->ReinitializeGuild();
 	}
+
+	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = 'NULL', GuildDeposit = '0', GuildRank = 'NULL' WHERE ID = '%d'", AccountID);
 	return true;
 }
 
@@ -54,12 +56,14 @@ bool CGuildMembersController::Join(int AccountID)
 	{
 		pPlayer->Account()->ReinitializeGuild();
 	}
+
+	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = '%d', GuildDeposit = '0', GuildRank = 'NULL' WHERE ID = '%d'", m_pGuild->GetID(), AccountID);
 	return true;
 }
 
 void CGuildMembersController::InitMembers()
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE GuildID = '%d'", m_pGuild->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, GuildRank, GuildDeposit", "tw_accounts_data", "WHERE GuildID = '%d'", m_pGuild->GetID());
 	while(pRes->next())
 	{
 		int UID = pRes->getInt("ID");
