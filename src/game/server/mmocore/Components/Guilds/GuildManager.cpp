@@ -19,13 +19,14 @@ void CGuildManager::OnInit()
 	{
 			GuildIdentifier ID = pRes->getInt("ID");
 			std::string Name = pRes->getString("Name").c_str();
+			std::string MembersData = pRes->getString("Members").c_str();
 			int OwnerUID = pRes->getInt("UserID");
 			int Level = pRes->getInt("Level");
 			int Experience = pRes->getInt("Experience");
 			int Bank = pRes->getInt("Bank");
 			int Score = pRes->getInt("Score");
 
-			CGuildData::CreateElement(ID)->Init(Name, Level, Experience, Score, OwnerUID, Bank);
+			CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), Level, Experience, Score, OwnerUID, Bank);
 	}
 
 	Job()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
@@ -334,7 +335,7 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 
 	// we check the availability of the guild's name
 	CSqlString<64> GuildName(pGuildName);
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_guilds", "WHERE Name = '%s'", GuildName.cstr());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", TW_GUILD_TABLE, "WHERE Name = '%s'", GuildName.cstr());
 	if(pRes->next())
 	{
 		GS()->Chat(ClientID, "This guild name already useds!");
@@ -354,11 +355,12 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 
 	// initialize the guild
 	GuildDataPtr pGuild = CGuildData::CreateElement(InitID);
-	pGuild->Init(GuildName.cstr(), 1, 0, 0, pPlayer->Account()->GetID(), 0);
-	pGuild->GetMembers()->Join(pPlayer->Account()->GetID());
+	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":0}]})";
+	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), 1, 0, 0, pPlayer->Account()->GetID(), 0);
+	pPlayer->Account()->ReinitializeGuild();
 
 	// we create a guild in the table
-	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID) VALUES ('%d', '%s', '%d')", InitID, GuildName.cstr(), pPlayer->Account()->GetID());
+	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID, Members) VALUES ('%d', '%s', '%d', '%s')", InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
 	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
 }

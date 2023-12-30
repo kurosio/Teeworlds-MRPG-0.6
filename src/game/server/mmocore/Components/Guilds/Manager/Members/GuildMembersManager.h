@@ -16,16 +16,18 @@ class CGuildMembersController
 	CGuildMembersContainer m_apMembers {};
 
 public:
-	CGuildMembersController(CGuildData* pGuild);
+	CGuildMembersController(CGuildData* pGuild, std::string&& MembersData);
 	~CGuildMembersController();
 
 	CGuildMembersContainer& GetContainer() { return m_apMembers; }
 
 	bool Kick(int AccountID);
 	bool Join(int AccountID);
+	void Save() const;
 
 private:
-	void InitMembers();
+	void Init(std::string&& MembersData);
+
 	CGuildMemberData* GetMember(int AccountID);
 };
 

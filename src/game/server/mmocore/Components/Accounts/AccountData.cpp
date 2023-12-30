@@ -40,7 +40,6 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_Level = pResult->getInt("Level");
 	m_Exp = pResult->getInt("Exp");
 	m_Upgrade = pResult->getInt("Upgrade");
-	m_GuildRank = pResult->getInt("GuildRank");
 	m_PrisonSeconds = pResult->getInt("PrisonSeconds");
 	m_DailyChairGolds = pResult->getInt("DailyChairGolds");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));

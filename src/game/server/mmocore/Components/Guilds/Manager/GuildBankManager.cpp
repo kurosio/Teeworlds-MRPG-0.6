@@ -21,6 +21,7 @@ void CGuildBankController::Add(int Value, CPlayer* pByPlayer)
 
 				int ClientID = pByPlayer->GetCID();
 				GS()->Chat(ClientID, "You put {VAL} gold in the safe, now {VAL}!", Value, m_Bank);
+				m_pGuild->GetMembers()->Save();
 			}
 		}
 	}
@@ -45,6 +46,7 @@ void CGuildBankController::Take(int Value, CPlayer* pByPlayer)
 
 				Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
 				GS()->Chat(ClientID, "You take {VAL} gold in the safe {VAL}!", Value, m_Bank);
+				m_pGuild->GetMembers()->Save();
 			}
 		}
 	}

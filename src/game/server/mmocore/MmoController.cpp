@@ -428,14 +428,7 @@ void MmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{
-		if(pAcc->HasGuild())
-		{
-			Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = '%d', GuildRank = '%d' WHERE ID = '%d'", pAcc->GetGuild()->GetID(), pAcc->m_GuildRank, pAcc->GetID());
-		}
-		else
-		{
-			Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildID = 'NULL', GuildRank = 'NULL' WHERE ID = '%d'", pAcc->GetID());
-		}
+		//
 	}
 	else if(Table == SAVE_POSITION)
 	{

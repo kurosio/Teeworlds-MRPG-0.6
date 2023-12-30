@@ -5,16 +5,13 @@
 #include <game/server/mmocore/Components/Guilds/GuildData.h>
 #include <game/server/gamecontext.h>
 
-CGS* CGuildMembersController::GS() const
-{
-	return m_pGuild->GS();
-}
+CGS* CGuildMembersController::GS() const { return m_pGuild->GS(); }
 
-CGuildMembersController::CGuildMembersController(CGuildData* pGuild) : m_pGuild(pGuild)
+CGuildMembersController::CGuildMembersController(CGuildData* pGuild, std::string&& MembersData) : m_pGuild(pGuild)
 {
 	m_apMembers.reserve(MAX_GUILD_PLAYERS);
 
-	CGuildMembersController::InitMembers();
+	CGuildMembersController::Init(std::move(MembersData));
 }
 
 CGuildMembersController::~CGuildMembersController()
@@ -33,14 +30,10 @@ bool CGuildMembersController::Kick(int AccountID)
 		return false;
 
 	m_apMembers.erase(std::remove_if(m_apMembers.begin(), m_apMembers.end(), [&pMember](CGuildMemberData* p){return p == pMember; }), m_apMembers.end());
-
-	CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID);
-	if(pPlayer)
-	{
+	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
 		pPlayer->Account()->ReinitializeGuild();
-	}
 
-	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = 'NULL', GuildDeposit = '0', GuildRank = 'NULL' WHERE ID = '%d'", AccountID);
+	Save();
 	return true;
 }
 
@@ -50,28 +43,43 @@ bool CGuildMembersController::Join(int AccountID)
 		return false;
 
 	m_apMembers.push_back(new CGuildMemberData(m_pGuild, AccountID));
-
-	CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID);
-	if(pPlayer)
-	{
+	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
 		pPlayer->Account()->ReinitializeGuild();
-	}
 
-	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "GuildID = '%d', GuildDeposit = '0', GuildRank = 'NULL' WHERE ID = '%d'", m_pGuild->GetID(), AccountID);
+	Save();
 	return true;
 }
 
-void CGuildMembersController::InitMembers()
+void CGuildMembersController::Init(std::string&& MembersData)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, GuildRank, GuildDeposit", "tw_accounts_data", "WHERE GuildID = '%d'", m_pGuild->GetID());
-	while(pRes->next())
-	{
-		int UID = pRes->getInt("ID");
-		GuildRankIdentifier Rank = pRes->getInt("GuildRank");
-		int Deposit = pRes->getInt("GuildDeposit");
+	dbg_assert(m_apMembers.empty(), "");
 
-		m_apMembers.push_back(new CGuildMemberData(m_pGuild, UID, Rank, Deposit));
+	Tools::Json::parseFromString(std::move(MembersData), [this](nlohmann::json& pJson)
+	{
+		for(auto& pMember : pJson["members"])
+		{
+			int UID = pMember.value("id", -1);
+			int RID = pMember.value("rank_id", -1);
+			int Deposit = pMember.value("deposit", 0);
+
+			m_apMembers.push_back(new CGuildMemberData(m_pGuild, UID, RID, Deposit));
+		}
+	});
+}
+
+void CGuildMembersController::Save() const
+{
+	nlohmann::json MembersData;
+	for(auto& pMember : m_apMembers)
+	{
+		nlohmann::json memberData;
+		memberData["id"] = pMember->GetAccountID();
+		memberData["rank_id"] = pMember->GetRankID();
+		memberData["deposit"] = pMember->GetDeposit();
+		MembersData["members"].push_back(memberData);
 	}
+
+	Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "MembersData = '%s' WHERE ID = '%d'", MembersData.dump().c_str(), m_pGuild->GetID());
 }
 
 CGuildMemberData* CGuildMembersController::GetMember(int AccountID)
