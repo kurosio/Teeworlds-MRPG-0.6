@@ -13,6 +13,7 @@ class CPlayer;
 class CHouseData;
 class GroupData;
 class CGuildData;
+class CGuildMemberData;
 
 class CAccountData
 {
@@ -59,6 +60,7 @@ public:
 	 */
 	void ReinitializeGuild();
 	CGuildData* GetGuild() const { return m_pGuildData; }
+	CGuildMemberData* GetGuildAccountSlot() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }
 	bool SameGuild(int ClientID) const;
 

@@ -9,45 +9,45 @@ CGS* CGuildMembersController::GS() const { return m_pGuild->GS(); }
 
 CGuildMembersController::CGuildMembersController(CGuildData* pGuild, std::string&& MembersData) : m_pGuild(pGuild)
 {
-	m_apMembers.reserve(MAX_GUILD_PLAYERS);
-
 	CGuildMembersController::Init(std::move(MembersData));
 }
 
 CGuildMembersController::~CGuildMembersController()
 {
 	for(auto pMember : m_apMembers)
-		delete pMember;
+		delete pMember.second;
 
 	m_apMembers.clear();
-	m_apMembers.shrink_to_fit();
-}
-
-bool CGuildMembersController::Kick(int AccountID)
-{
-	CGuildMemberData* pMember = GetMember(AccountID);
-	if(pMember == nullptr)
-		return false;
-
-	m_apMembers.erase(std::remove_if(m_apMembers.begin(), m_apMembers.end(), [&pMember](CGuildMemberData* p){return p == pMember; }), m_apMembers.end());
-	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
-		pPlayer->Account()->ReinitializeGuild();
-
-	Save();
-	return true;
 }
 
 bool CGuildMembersController::Join(int AccountID)
 {
-	if(GetMember(AccountID) != nullptr)
-		return false;
+	if(m_apMembers.find(AccountID) == m_apMembers.end())
+	{
+		m_apMembers[AccountID] = new CGuildMemberData(m_pGuild, AccountID);
+		if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
+			pPlayer->Account()->ReinitializeGuild();
 
-	m_apMembers.push_back(new CGuildMemberData(m_pGuild, AccountID));
-	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
-		pPlayer->Account()->ReinitializeGuild();
+		Save();
+		return true;
+	}
 
-	Save();
-	return true;
+	return false;
+}
+
+bool CGuildMembersController::Kick(int AccountID)
+{
+	if(auto Iter = m_apMembers.find(AccountID); Iter != m_apMembers.end())
+	{
+		m_apMembers.erase(Iter);
+		if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
+			pPlayer->Account()->ReinitializeGuild();
+
+		Save();
+		return true;
+	}
+
+	return false;
 }
 
 void CGuildMembersController::Init(std::string&& MembersData)
@@ -59,10 +59,12 @@ void CGuildMembersController::Init(std::string&& MembersData)
 		for(auto& pMember : pJson["members"])
 		{
 			int UID = pMember.value("id", -1);
-			int RID = pMember.value("rank_id", -1);
-			int Deposit = pMember.value("deposit", 0);
-
-			m_apMembers.push_back(new CGuildMemberData(m_pGuild, UID, RID, Deposit));
+			if(UID > 0 && m_apMembers.find(UID) == m_apMembers.end())
+			{
+				int RID = pMember.value("rank_id", -1);
+				int Deposit = pMember.value("deposit", 0);
+				m_apMembers[UID] = (new CGuildMemberData(m_pGuild, UID, RID, Deposit));
+			}
 		}
 	});
 }
@@ -70,10 +72,10 @@ void CGuildMembersController::Init(std::string&& MembersData)
 void CGuildMembersController::Save() const
 {
 	nlohmann::json MembersData;
-	for(auto& pMember : m_apMembers)
+	for(auto& [UID, pMember] : m_apMembers)
 	{
 		nlohmann::json memberData;
-		memberData["id"] = pMember->GetAccountID();
+		memberData["id"] = UID;
 		memberData["rank_id"] = pMember->GetRankID();
 		memberData["deposit"] = pMember->GetDeposit();
 		MembersData["members"].push_back(memberData);
@@ -84,7 +86,5 @@ void CGuildMembersController::Save() const
 
 CGuildMemberData* CGuildMembersController::GetMember(int AccountID)
 {
-	auto IterMember = std::find_if(m_apMembers.begin(), m_apMembers.end(), 
-		[&AccountID](const CGuildMemberData* pMember){return pMember->GetAccountID() == AccountID; });
-	return IterMember != m_apMembers.end() ? *IterMember : nullptr;
+	return m_apMembers.find(AccountID) != m_apMembers.end() ? m_apMembers[AccountID] : nullptr;
 }

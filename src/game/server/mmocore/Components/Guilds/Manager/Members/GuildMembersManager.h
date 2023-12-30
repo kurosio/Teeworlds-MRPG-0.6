@@ -6,7 +6,7 @@
 #include "GuildMemberData.h"
 
 class CGuildData;
-using CGuildMembersContainer = std::vector<CGuildMemberData*>;
+using CGuildMembersContainer = std::map<int, CGuildMemberData*>;
 
 class CGuildMembersController
 {
@@ -19,16 +19,16 @@ public:
 	CGuildMembersController(CGuildData* pGuild, std::string&& MembersData);
 	~CGuildMembersController();
 
+	CGuildMemberData* GetMember(int AccountID);
 	CGuildMembersContainer& GetContainer() { return m_apMembers; }
 
-	bool Kick(int AccountID);
 	bool Join(int AccountID);
+	bool Kick(int AccountID);
 	void Save() const;
 
 private:
 	void Init(std::string&& MembersData);
 
-	CGuildMemberData* GetMember(int AccountID);
 };
 
 #endif

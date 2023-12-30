@@ -130,8 +130,7 @@ void CAccountData::ReinitializeGuild()
 	{
 		// Check if the account ID of the group data object matches the account ID of the current account
 		auto& Accounts = p->GetMembers()->GetContainer();
-		auto Iter = std::find_if(Accounts.begin(), Accounts.end(), [this](const CGuildMemberData* p){ return p->GetAccountID() == m_ID; });
-		if(Iter != Accounts.end())
+		if(Accounts.find(m_ID) != Accounts.end())
 		{
 			m_pGuildData = p.get();
 			return;
@@ -142,10 +141,15 @@ void CAccountData::ReinitializeGuild()
 	m_pGuildData = nullptr;
 }
 
+CGuildMemberData* CAccountData::GetGuildAccountSlot() const
+{
+	return m_pGuildData ? m_pGuildData->GetMembers()->GetMember(m_ID) : nullptr;
+}
+
 // Check if the account is in the same guild as the specified client ID
 bool CAccountData::SameGuild(int ClientID) const
 {
-    if (!m_pGuildData)
+    if(!m_pGuildData)
         return false;
 
     CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
