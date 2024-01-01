@@ -65,13 +65,17 @@ void CGuildRanksController::InitDefaultRank()
 	}
 }
 
-bool CGuildRanksController::Add(std::string Rank)
+CGuildRanksController::STATE CGuildRanksController::Add(std::string Rank)
 {
 	if(std::count_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank) { return std::string(pRank->GetName()) == Rank; }))
-		return false;
+	{
+		return STATE::ADD_ALREADY_EXISTS;
+	}
 
 	if(m_aRanks.size() >= 5)
-		return false;
+	{
+		return STATE::ADD_LIMIT_HAS_REACHED;
+	}
 
 	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_guilds_ranks", "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // thread save ? hm need for table all time auto increment = 1; NEED FIX IT
@@ -82,28 +86,30 @@ bool CGuildRanksController::Add(std::string Rank)
 	GS()->ChatGuild(GuildID, "Creates new rank [{STR}]!", Rank);
 
 	m_aRanks.emplace_back(new CGuildRankData(InitID, std::move(Rank), ACCESS_NO, m_pGuild));
-	return true;
+	return STATE::SUCCESSFUL;
 }
 
-bool CGuildRanksController::Remove(std::string Rank)
+CGuildRanksController::STATE CGuildRanksController::Remove(std::string Rank)
 {
 	CGuildRankData* pRank = Get(Rank);
 	if(pRank == m_pDefaultRank)
-		return false;
-
-	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank){ return pRank->GetName() == Rank; });
-	if(Iter != m_aRanks.end())
 	{
-		GuildIdentifier GuildID = m_pGuild->GetID();
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildRank = NULL WHERE GuildRank = '%d' AND GuildID = '%d'", (*Iter)->GetID(), GuildID);
-		Database->Execute<DB::REMOVE>("tw_guilds_ranks", "WHERE ID = '%d' AND GuildID = '%d'", (*Iter)->GetID(), GuildID);
-
-		GS()->ChatGuild(GuildID, "Rank [{STR}] succesful delete", Rank.c_str());
-		m_aRanks.erase(Iter);
-		return true;
+		return STATE::REMOVE_RANK_IS_DEFAULT;
 	}
 
-	return false;
+	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank){ return pRank->GetName() == Rank; });
+	if(Iter == m_aRanks.end())
+	{
+		return STATE::REMOVE_RANK_DOES_NOT_EXIST;
+	}
+
+	GuildIdentifier GuildID = m_pGuild->GetID();
+	Database->Execute<DB::UPDATE>("tw_accounts_data", "GuildRank = NULL WHERE GuildRank = '%d' AND GuildID = '%d'", (*Iter)->GetID(), GuildID);
+	Database->Execute<DB::REMOVE>("tw_guilds_ranks", "WHERE ID = '%d' AND GuildID = '%d'", (*Iter)->GetID(), GuildID);
+
+	GS()->ChatGuild(GuildID, "Rank [{STR}] succesful delete", Rank.c_str());
+	m_aRanks.erase(Iter);
+	return STATE::SUCCESSFUL;
 }
 
 CGuildRankData* CGuildRanksController::Get(std::string Rank) const

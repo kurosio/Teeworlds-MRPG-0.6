@@ -20,22 +20,22 @@ CGuildMembersController::~CGuildMembersController()
 	m_apMembers.clear();
 }
 
-bool CGuildMembersController::Join(int AccountID)
+CGuildMembersController::STATE CGuildMembersController::Join(int AccountID)
 {
-	if(m_apMembers.find(AccountID) == m_apMembers.end())
+	if(m_apMembers.find(AccountID) != m_apMembers.end())
 	{
-		m_apMembers[AccountID] = new CGuildMemberData(m_pGuild, AccountID, m_pGuild->GetRanks()->GetDefaultRank());
-		if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
-			pPlayer->Account()->ReinitializeGuild();
-
-		Save();
-		return true;
+		return STATE::JOIN_ALREADY_IN_GUILD;
 	}
 
-	return false;
+	m_apMembers[AccountID] = new CGuildMemberData(m_pGuild, AccountID, m_pGuild->GetRanks()->GetDefaultRank());
+	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
+		pPlayer->Account()->ReinitializeGuild();
+
+	Save();
+	return STATE::SUCCESSFUL;
 }
 
-bool CGuildMembersController::Kick(int AccountID)
+CGuildMembersController::STATE CGuildMembersController::Kick(int AccountID)
 {
 	if(auto Iter = m_apMembers.find(AccountID); Iter != m_apMembers.end())
 	{
@@ -44,10 +44,10 @@ bool CGuildMembersController::Kick(int AccountID)
 			pPlayer->Account()->ReinitializeGuild();
 
 		Save();
-		return true;
+		return STATE::SUCCESSFUL;
 	}
 
-	return false;
+	return STATE::KICK_DOES_NOT_EXIST;
 }
 
 void CGuildMembersController::Init(std::string&& MembersData)
