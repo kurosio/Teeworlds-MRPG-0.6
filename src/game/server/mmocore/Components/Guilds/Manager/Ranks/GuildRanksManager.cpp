@@ -72,7 +72,7 @@ CGuildRanksController::STATE CGuildRanksController::Add(std::string Rank)
 		return STATE::ADD_ALREADY_EXISTS;
 	}
 
-	if(m_aRanks.size() >= 5)
+	if(m_aRanks.size() >= MAX_GUILD_RANK_NUM)
 	{
 		return STATE::ADD_LIMIT_HAS_REACHED;
 	}

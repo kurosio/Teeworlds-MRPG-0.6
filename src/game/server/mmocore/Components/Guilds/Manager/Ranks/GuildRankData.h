@@ -38,6 +38,8 @@ public:
 
 	// Method to change the access level of the guild rank
 	void ChangeAccess(int Access);
+
+	bool CheckAccess(int Access);
 };
 
 #endif

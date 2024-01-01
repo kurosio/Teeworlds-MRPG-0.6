@@ -131,11 +131,6 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
-	if(PPSTR(CMD, "MRANKCREATE") == 0)
-	{
-		return true;
-	}
-
 	if(PPSTR(CMD, "MRANKSET") == 0)
 	{
 		return true;
@@ -208,8 +203,50 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	{
 		return true;
 	}
-	if(PPSTR(CMD, "MRANKNAME") == 0)
+
+	if(PPSTR(CMD, "RANK_NAME_FIELD") == 0)
 	{
+		if(PPSTR(GetText, "NULL") == 0)
+		{
+			GS()->Chat(ClientID, "Please use a different name.");
+			return true;
+		}
+
+		str_copy(pPlayer->GetTempData().m_aRankGuildBuf, GetText, sizeof(pPlayer->GetTempData().m_aRankGuildBuf));
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+		return true;
+	}
+
+	if(PPSTR(CMD, "RANK_CREATE") == 0)
+	{
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(ACCESS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		const int LengthRank = str_length(pPlayer->GetTempData().m_aRankGuildBuf);
+		if(LengthRank < 2 || LengthRank > 16)
+		{
+			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
+			return true;
+		}
+
+		CGuildRanksController::STATE State = pPlayer->Account()->GetGuild()->GetRanks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
+		if(State == CGuildRanksController::STATE::ADD_ALREADY_EXISTS)
+		{
+			GS()->Chat(ClientID, "The rank name already exists");
+			return true;
+		}
+
+		if(State == CGuildRanksController::STATE::ADD_LIMIT_HAS_REACHED)
+		{
+			GS()->Chat(ClientID, "Rank limit reached, {INT} out of {INT}", (int)MAX_GUILD_RANK_NUM, (int)MAX_GUILD_RANK_NUM);
+			return true;
+		}
+
+		GS()->Chat(ClientID, "The rank '{STR}' has been successfully added!", pPlayer->GetTempData().m_aRankGuildBuf);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
 		return true;
 	}
 
@@ -368,7 +405,7 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 
 void CGuildManager::ShowMenuGuild(CPlayer* pPlayer)
 {
-	if(!pPlayer->Account()->HasGuild())
+	if(!pPlayer || !pPlayer->Account()->HasGuild())
 		return;
 
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
@@ -437,8 +474,6 @@ void CGuildManager::ShowMenuRank(CPlayer *pPlayer)
 		return;
 
 	const int ClientID = pPlayer->GetCID();
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1300;
 
 	pPlayer->m_LastVoteMenu = MENU_GUILD;
 	GS()->AV(ClientID, "null", "Use reason how enter Value, Click fields!");
@@ -446,11 +481,12 @@ void CGuildManager::ShowMenuRank(CPlayer *pPlayer)
 	GS()->AV(ClientID, "null", "For leader access full, ignored ranks");
 	GS()->AV(ClientID, "null", "- - - - - - - - - -");
 	GS()->AV(ClientID, "null", "- Maximal 5 ranks for one guild");
-	GS()->AVM(ClientID, "MRANKNAME", 1, NOPE, "Name rank: {STR}", pPlayer->GetTempData().m_aRankGuildBuf);
-	GS()->AVM(ClientID, "MRANKCREATE", 1, NOPE, "Create new rank");
+	GS()->AVM(ClientID, "RANK_NAME_FIELD", 1, NOPE, "Name rank: {STR}", pPlayer->GetTempData().m_aRankGuildBuf);
+	GS()->AVM(ClientID, "RANK_CREATE", 1, NOPE, "Create new rank");
 	GS()->AV(ClientID, "null");
 
-	for(auto pRank : pGuild->GetRanks()->GetContainer())
+	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1300;
+	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
 	{
 		GuildRankIdentifier ID = pRank->GetID();
 		GS()->AVH(ClientID, HideID, "Rank [{STR}]", pRank->GetName());

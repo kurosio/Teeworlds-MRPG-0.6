@@ -142,4 +142,26 @@ bool CGuildData::SellHouse()
 
 void CGuildData::AddExperience(int Experience)
 {
+	m_Experience += Experience;
+
+	bool UpdateTable = false;
+	int ExperienceNeed = (int)computeExperience(m_Level);
+	while(m_Experience >= ExperienceNeed)
+	{
+		m_Experience -= ExperienceNeed;
+		m_Level++;
+
+		ExperienceNeed = (int)computeExperience(m_Level);
+		if(m_Experience < ExperienceNeed)
+			UpdateTable = true;
+
+		GS()->Chat(-1, "Guild {STR} raised the level up to {INT}", GetName(), m_Level);
+		GS()->ChatDiscord(DC_SERVER_INFO, "Information", "Guild {STR} raised the level up to {INT}", GetName(), m_Level);
+		m_pHistory->Add("Guild raised level to '%d'.", m_Level);
+	}
+
+	if(rand() % 10 == 2 || UpdateTable)
+	{
+		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", m_Level, m_Experience, m_ID);
+	}
 }
