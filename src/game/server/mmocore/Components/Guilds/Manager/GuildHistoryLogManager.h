@@ -6,7 +6,7 @@
 // Define the structure for storing guild history log data
 struct GuildHistoryLogData
 {
-	std::string m_Log {}; // The log message
+	std::string m_Text {}; // The log message
 	std::string m_Time {}; // The time when the log was added
 };
 
@@ -25,7 +25,7 @@ public:
 	CGuildHistoryController(CGuildData* pGuild) : m_pGuild(pGuild) {}
 
 	// Get the guild history logs
-	GuildHistoryContainer&& GetLogs() const;
+	GuildHistoryContainer GetLogs() const;
 
 	// Add a log message to the guild history
 	void Add(const char* pBuffer, ...) const;

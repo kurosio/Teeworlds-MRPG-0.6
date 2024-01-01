@@ -38,7 +38,7 @@ private:
 	void ShowFinderGuilds(int ClientID);
 	void SendInviteGuild(int GuildID, CPlayer* pPlayer);
 
-	void ShowHistoryGuild(int ClientID);
+	void ShowHistoryGuild(int ClientID) const;
 public:
 	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
 	CGuildData* GetGuildByID(GuildIdentifier ID) const;

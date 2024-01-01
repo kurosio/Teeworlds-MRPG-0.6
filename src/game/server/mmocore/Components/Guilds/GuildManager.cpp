@@ -380,7 +380,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_GUILD_HISTORY)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
-		//ShowHistoryGuild(ClientID, pPlayer->Account()->m_GuildID);
+		ShowHistoryGuild(ClientID);
 		return true;
 	}
 
@@ -552,14 +552,15 @@ void CGuildManager::ShowMenuRank(CPlayer *pPlayer)
 	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
 	{
 		GuildRankIdentifier ID = pRank->GetID();
-		bool IsDefaultRank = pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank();
+		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank());
+		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetAccessName());
 
-		GS()->AVH(ClientID, HideID, "Rank [{STR}] {STR}", pRank->GetName(), IsDefaultRank ? " - Default" : "\0");
+		GS()->AVH(ClientID, HideID, "Rank [{STR}] {STR}", pRank->GetName(), StrAppendRankInfo.c_str());
 		GS()->AVM(ClientID, "RANK_RENAME", ID, HideID, "Rename to ({STR})", pPlayer->GetTempData().m_aRankGuildBuf);
 
 		if(!IsDefaultRank)
 		{
-			GS()->AVM(ClientID, "RANK_ACCESS", ID, HideID, "Access ({STR})", pRank->GetAccessName());
+			GS()->AVM(ClientID, "RANK_ACCESS", ID, HideID, "Change access", pRank->GetAccessName());
 			GS()->AVM(ClientID, "RANK_REMOVE", ID, HideID, "Remove");
 		}
 		HideID++;
@@ -661,19 +662,26 @@ void CGuildManager::ShowFinderGuilds(int ClientID)
 	FUNCTIONS MEMBER HISTORY MEMBER
 ######################################################################### */
 // list of stories
-void CGuildManager::ShowHistoryGuild(int ClientID)
+void CGuildManager::ShowHistoryGuild(int ClientID) const
 {
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer || !pPlayer->Account()->HasGuild())
 		return;
 
-	char aBuf[128];
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	GuildHistoryContainer aHistory = std::move(pGuild->GetHistory()->GetLogs());
-	for(auto& pLog : aHistory)
+	GuildHistoryContainer aHistory = pGuild->GetHistory()->GetLogs();
+	if(!aHistory.empty())
 	{
-		str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Log.c_str());
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "{STR}", aBuf);
+		char aBuf[128];
+		for(auto& pLog : aHistory)
+		{
+			str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Text.c_str());
+			GS()->AVM(ClientID, "null", NOPE, NOPE, "{STR}", aBuf);
+		}
+	}
+	else
+	{
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "Log is empty");
 	}
 
 	GS()->AddVotesBackpage(ClientID);

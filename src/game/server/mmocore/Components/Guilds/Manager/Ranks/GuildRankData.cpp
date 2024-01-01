@@ -11,36 +11,44 @@ CGS* CGuildRankData::GS() const
 	return m_pGuild->GS();
 }
 
-CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, int Access, CGuildData* pGuild) : m_ID(RID), m_Rank(std::move(Rank)), m_Access(Access)
+CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, GuildRankAccess Access, CGuildData* pGuild) : m_ID(RID), m_Rank(std::move(Rank)), m_Access(Access)
 {
 	m_pGuild = pGuild;
 }
 
 GUILD_RANK_RESULT CGuildRankData::ChangeName(std::string NewRank)
 {
-	GuildIdentifier GuildID = m_pGuild->GetID();
-	if(std::count_if(m_pGuild->GetRanks()->GetContainer().begin(), m_pGuild->GetRanks()->GetContainer().end(), [&NewRank](const CGuildRankData* pRank) {return pRank->m_Rank == NewRank; }))
+	auto cstrNewRank = CSqlString<64>(NewRank.c_str());
+
+	// check already used name
+	if(std::count_if(m_pGuild->GetRanks()->GetContainer().begin(), m_pGuild->GetRanks()->GetContainer().end(),
+		[&cstrNewRank](const CGuildRankData* pRank) {return str_comp(pRank->m_Rank.c_str(), cstrNewRank.cstr()) == 0; }))
 	{
 		return GUILD_RANK_RESULT::RENAME_ALREADY_NAME_EXISTS;
 	}
 
-	CSqlString<64> cNewRank = CSqlString<64>(NewRank.c_str());
-	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Name = '%s' WHERE ID = '%d' AND GuildID = '%d'", cNewRank.cstr(), m_ID, GuildID);
-	m_Rank = NewRank;
+	// update name
+	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Name = '%s' WHERE ID = '%d'", cstrNewRank.cstr(), m_ID);
+	m_Rank = cstrNewRank.cstr();
 	return GUILD_RANK_RESULT::SUCCESSFUL;
 }
 
 void CGuildRankData::ChangeAccess()
 {
-	m_Access++;
-	if(m_Access >= RIGHTS_NUM)
-	{
-		m_Access = RIGHTS_DEFAULT;
-	}
+	if(m_Access >= RIGHTS_FULL)
+		SetAccess(RIGHTS_DEFAULT);
+	else
+		SetAccess((GuildRankAccess)(m_Access + 1));
+}
 
+void CGuildRankData::SetAccess(GuildRankAccess Access)
+{
+	// set access
+	m_Access = (GuildRankAccess)clamp((int)Access, (int)RIGHTS_DEFAULT, (int)RIGHTS_FULL);
+
+	// save
 	GuildIdentifier GuildID = m_pGuild->GetID();
-	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Access = '%d' WHERE ID = '%d' AND GuildID = '%d'", m_Access, m_ID, GuildID);
-
+	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Access = '%d' WHERE ID = '%d'", m_Access, m_ID);
 	GS()->ChatGuild(GuildID, "Rank '{STR}' new rights '{STR}'!", m_Rank.c_str(), GetAccessName());
 }
 

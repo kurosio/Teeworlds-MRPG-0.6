@@ -41,13 +41,13 @@ class CGuildRankData
 
 	GuildRankIdentifier m_ID {};
 	std::string m_Rank {};
-	int m_Access {};
+	GuildRankAccess m_Access {};
 	CGuildData* m_pGuild {};
 
 public:
 	// Constructor
 	CGuildRankData() = delete;
-	CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, int Access, CGuildData* pGuild);
+	CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, GuildRankAccess Access, CGuildData* pGuild);
 
 	// Getter for the guild rank identifier
 	GuildRankIdentifier GetID() const { return m_ID; }
@@ -63,6 +63,7 @@ public:
 
 	// Method to change the access level of the guild rank
 	void ChangeAccess();
+	void SetAccess(GuildRankAccess Access);
 	bool CheckAccess(CPlayer* pPlayer, GuildRankAccess Access) const;
 };
 

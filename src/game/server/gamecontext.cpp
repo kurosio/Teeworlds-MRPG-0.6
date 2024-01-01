@@ -412,7 +412,7 @@ void CGS::ChatGuild(int GuildID, const char* pText, ...)
 	{
 		if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->GetID() == GuildID)
 		{
-			Buffer.append("[Guild]");
+			Buffer.append("Guild | ");
 			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
 
 			Msg.m_pMessage = Buffer.buffer();

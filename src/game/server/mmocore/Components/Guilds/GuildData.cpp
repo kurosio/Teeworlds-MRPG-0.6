@@ -39,7 +39,7 @@ CGS* CGuildData::GS() const
 	pGuild->GetHistory()->Add("%s changes access for rank '{STR}'", "Popa", "Co-leader");
 	for(auto& p : pGuild->GetHistory()->GetLogs())
 	{
-		p.m_Log;
+		p.m_Text;
 		p.m_Time;
 	}
 

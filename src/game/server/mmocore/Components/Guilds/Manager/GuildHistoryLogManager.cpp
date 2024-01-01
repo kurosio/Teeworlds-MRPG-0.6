@@ -7,7 +7,7 @@
 #include "../GuildData.h"
 
 // Function to get guild logs
-GuildHistoryContainer&& CGuildHistoryController::GetLogs() const
+GuildHistoryContainer CGuildHistoryController::GetLogs() const
 {
 	// Create a container to hold guild logs
 	GuildHistoryContainer Logs;
@@ -23,7 +23,7 @@ GuildHistoryContainer&& CGuildHistoryController::GetLogs() const
 	}
 
 	// Return the container of guild logs
-	return std::move(Logs);
+	return Logs;
 }
 
 // Function to add a guild log
