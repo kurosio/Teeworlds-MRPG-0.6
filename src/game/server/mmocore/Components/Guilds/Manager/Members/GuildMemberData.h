@@ -23,6 +23,7 @@ public:
 
 	CGuildRankData* GetRank() const;
 	bool SetRank(GuildRankIdentifier RankID);
+	bool SetRank(CGuildRankData* pRank);
 };
 
 #endif

@@ -28,6 +28,7 @@ GUILD_RANK_RESULT CGuildRankData::ChangeName(std::string NewRank)
 	}
 
 	// update name
+	m_pGuild->GetHistory()->Add("renamed rank '%s' to '%s'", m_Rank.c_str(), cstrNewRank.cstr());
 	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Name = '%s' WHERE ID = '%d'", cstrNewRank.cstr(), m_ID);
 	m_Rank = cstrNewRank.cstr();
 	return GUILD_RANK_RESULT::SUCCESSFUL;

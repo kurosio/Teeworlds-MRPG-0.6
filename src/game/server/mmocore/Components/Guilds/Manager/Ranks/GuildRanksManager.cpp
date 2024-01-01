@@ -97,7 +97,7 @@ GUILD_RANK_RESULT CGuildRanksController::Add(std::string Rank)
 
 	// information
 	GS()->ChatGuild(GuildID, "New rank is created [{STR}]!", cstrRank.cstr());
-	m_pGuild->GetHistory()->Add("removed rank '%s'", cstrRank.cstr());
+	m_pGuild->GetHistory()->Add("added rank '%s'", cstrRank.cstr());
 	return GUILD_RANK_RESULT::SUCCESSFUL;
 }
 

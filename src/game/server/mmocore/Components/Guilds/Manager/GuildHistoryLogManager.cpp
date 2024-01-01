@@ -19,7 +19,7 @@ GuildHistoryContainer CGuildHistoryController::GetLogs() const
 	while(pRes->next())
 	{
 		// Create a log object and populate it with time and text values from the database
-		Logs.push_back({ pRes->getString("Time").c_str(), pRes->getString("Text").c_str() });
+		Logs.push_back({ pRes->getString("Text").c_str(), pRes->getString("Time").c_str() });
 	}
 
 	// Return the container of guild logs

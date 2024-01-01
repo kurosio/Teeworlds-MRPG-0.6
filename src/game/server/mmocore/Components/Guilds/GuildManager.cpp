@@ -356,7 +356,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_GUILD_FINDER_VIEW_PLAYERS)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD_FINDER;
-		//ShowGuildPlayers(pPlayer, pPlayer->m_TempMenuValue);
+		ShowPlayerlist(pPlayer, pPlayer->m_TempMenuValue);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -371,7 +371,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_GUILD_VIEW_PLAYERS)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
-		//ShowGuildPlayers(pPlayer, pPlayer->Account()->m_GuildID);
+		ShowPlayerlist(pPlayer);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -414,6 +414,90 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		return true;
 	}
 	return false;
+}
+
+void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
+{
+	if(!pPlayer || !pPlayer->Account()->HasGuild())
+		return;
+
+	int HideID = START_SELF_HIDE_ID;
+	int ClientID = pPlayer->GetCID();
+	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuildRankData* pSelfRankAccess = pPlayer->Account()->GetGuildAccountSlot()->GetRank();
+
+	// show player's list of guild
+	GS()->AVL(ClientID, "null", "List players of {STR}", pGuild->GetName());
+	for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
+	{
+		CGuildMemberData* pMemberSlot = pIterMember.second;
+		const int MemberUID = pMemberSlot->GetAccountID();
+
+		// member player slot
+		GS()->AVH(ClientID, HideID, "{STR} {STR} Deposit: {VAL}", pMemberSlot->GetRank()->GetName(), Server()->GetAccountNickname(MemberUID), pMemberSlot->GetDeposit());
+		{
+			bool AllowedInteractiveWithPlayers = false;
+
+			// leader access
+			if(pSelfRankAccess->CheckAccess(pPlayer, RIGHTS_LEADER))
+			{
+				for(auto& pRank : pGuild->GetRanks()->GetContainer())
+				{
+					if(pMemberSlot->GetRank()->GetID() != pRank->GetID())
+					{
+						GS()->AVD(ClientID, "RANK_CHANGE_PLAYER", MemberUID, pRank->GetID(), HideID, "Change rank to: {STR}", pRank->GetName()/*, &pRank.second.m_Access > 0 ? "*" : ""*/);
+					}
+				}
+
+				GS()->AVM(ClientID, "GUILD_GIVE_LEADER", MemberUID, HideID, "Give Leader (in reason 134)");
+				AllowedInteractiveWithPlayers = true;
+			}
+
+			// invite & kick access
+			if(pSelfRankAccess->CheckAccess(pPlayer, RIGHTS_INVITE_KICK))
+			{
+				GS()->AVM(ClientID, "GUILD_KICK_PLAYER", MemberUID, HideID, "Kick");
+				AllowedInteractiveWithPlayers = true;
+			}
+
+			// does not access for interactive with player
+			if(!AllowedInteractiveWithPlayers)
+			{
+				GS()->AVM(ClientID, "null", MemberUID, HideID, "You don't have rights to interact");
+			}
+		}
+
+		HideID++;
+	}
+}
+
+void CGuildManager::ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const
+{
+	if(!pPlayer)
+		return;
+
+	// show more information
+	if(pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->GetID() == ID)
+	{
+		ShowPlayerlist(pPlayer);
+		return;
+	}
+
+	// show simple information
+	auto pIterGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&ID](GuildDataPtr pData) { return pData->GetID() == ID; });
+	if((*pIterGuild))
+	{
+		int HideID = START_SELF_HIDE_ID;
+		int ClientID = pPlayer->GetCID();
+
+		GS()->AVL(ClientID, "null", "List players of {STR}", (*pIterGuild)->GetName());
+		for(auto& pIterMember : (*pIterGuild)->GetMembers()->GetContainer())
+		{
+			CGuildMemberData* pMemberSlot = pIterMember.second;
+			GS()->AVL(ClientID, "null", "{STR} {STR} Deposit: {VAL}", pMemberSlot->GetRank()->GetName(), Server()->GetAccountNickname(pMemberSlot->GetAccountID()), pMemberSlot->GetDeposit());
+			HideID++;
+		}
+	}
 }
 
 /* #########################################################################

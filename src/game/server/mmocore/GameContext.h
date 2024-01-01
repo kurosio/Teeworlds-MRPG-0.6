@@ -245,6 +245,8 @@ enum TabHideList
 	TAB_INFO_EQUIP,
 	TAB_INFO_STATISTIC_QUESTS,
 	NUM_TAB_MENU,
+
+	START_SELF_HIDE_ID = 1000,
 };
 
 // primary

@@ -23,6 +23,15 @@ bool CGuildMemberData::SetRank(GuildRankIdentifier RankID)
 	if(!pRank)
 		return false;
 
+	SetRank(pRank);
+	return true;
+}
+
+bool CGuildMemberData::SetRank(CGuildRankData* pRank)
+{
+	if(!pRank)
+		return false;
+
 	m_pRank = pRank;
 	m_pGuild->GetMembers()->Save();
 	return true;
