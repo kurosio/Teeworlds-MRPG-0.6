@@ -26,13 +26,6 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 
 	CGS* GS() const;
 
-	enum
-	{
-		AVAILABLE_SLOTS = 0,
-		CHAIR_EXPERIENCE = 1,
-		NUM_GUILD_UPGRADES,
-	};
-
 	CFieldContainer m_UpgradeData
 	{
 		CFieldData<int>{AVAILABLE_SLOTS, "AvailableSlots", "Available slots"},
@@ -53,6 +46,13 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDa
 	CGuildHouseData* m_pHouse{};
 
 public:
+	enum
+	{
+		AVAILABLE_SLOTS = 0,
+		CHAIR_EXPERIENCE = 1,
+		NUM_GUILD_UPGRADES,
+	};
+
 	CGuildData() = default;
 	~CGuildData();
 
@@ -84,6 +84,7 @@ public:
 	CGuildRanksController* GetRanks() const { return m_pRanks; }
 	CGuildHouseData* GetHouse() const { return m_pHouse; }
 	CGuildMembersController* GetMembers() const { return m_pMembers; }
+	CFieldContainer& GetUpgrades() { return m_UpgradeData; }
 
 	const char* GetName() const { return m_Name.c_str(); }
 	int GetOwnerUID() const { return m_OwnerUID; }

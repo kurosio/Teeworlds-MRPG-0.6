@@ -31,6 +31,7 @@ public:
 	void CreateGuild(CPlayer *pPlayer, const char *pGuildName);
 
 private:
+	void ShowMenuGuild(CPlayer* pPlayer);
 	void ShowMenuRank(CPlayer *pPlayer);
 
 	void ShowInvitesGuilds(int ClientID, int GuildID);

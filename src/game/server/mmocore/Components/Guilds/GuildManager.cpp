@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildManager.h"
 
@@ -264,7 +264,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_GUILD)
 	{
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
-		//ShowMenuGuild(pPlayer);
+		ShowMenuGuild(pPlayer);
 		return true;
 	}
 
@@ -364,6 +364,67 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID, Members) VALUES ('%d', '%s', '%d', '%s')", InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
 	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
+}
+
+void CGuildManager::ShowMenuGuild(CPlayer* pPlayer)
+{
+	if(!pPlayer->Account()->HasGuild())
+		return;
+
+	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	int ClientID = pPlayer->GetCID();
+	int GuildID = pGuild->GetID();
+	bool HasHouse = pGuild->HasHouse();
+	int ExpNeed = computeExperience(pGuild->GetLevel());
+
+	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", pGuild->GetName(), Server()->GetAccountNickname(pGuild->GetOwnerUID()));
+	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
+	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", pGuild->GetUpgrades()(CGuildData::AVAILABLE_SLOTS, 0).m_Value);
+	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", pGuild->GetBank()->Get());
+	GS()->AV(ClientID, "null");
+	//
+	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
+	GS()->AVL(ClientID, "MMONEY", "Add gold guild bank. (Amount in a reason)", pGuild->GetName());
+	GS()->AV(ClientID, "null");
+	//
+	GS()->AVL(ClientID, "null", "▤ Guild system");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_VIEW_PLAYERS, NOPE, "List of players");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_HISTORY, NOPE, "History of activity");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank settings");
+	if(HasHouse)
+	{
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "⌂ Housing system");
+		GS()->AVM(ClientID, "MENU", MENU_GUILD_HOUSE_DECORATION, NOPE, "Settings Decoration(s)");
+		//GS()->AVL(ClientID, "MDOOR", "Change state (\"{STR}\")", GetGuildDoor(GuildID) ? "OPEN" : "CLOSED");
+		GS()->AVL(ClientID, "MSPAWN", "Teleport to guild house");
+		GS()->AVL(ClientID, "MHOUSESELL", "Sell your guild house (in reason 7177)");
+	}
+	GS()->AV(ClientID, "null");
+	//
+	GS()->AVL(ClientID, "null", "✖ Disband guild");
+	GS()->AVL(ClientID, "null", "Gold spent on upgrades will not be refunded");
+	GS()->AVL(ClientID, "null", "All gold will be returned to the leader only");
+	GS()->AVL(ClientID, "MDISBAND", "Disband guild (in reason 55428)");
+	GS()->AV(ClientID, "null");
+	//
+	GS()->AVL(ClientID, "null", "☆ Guild upgrades");
+	if(HasHouse)
+	{
+		for(int i = CGuildData::CHAIR_EXPERIENCE; i < CGuildData::NUM_GUILD_UPGRADES; i++)
+		{
+			const char* pUpgradeName = pGuild->GetUpgrades()(i, 0).getDescription();
+			const int PriceUpgrade = pGuild->GetUpgrades()(i, 0).m_Value * g_Config.m_SvPriceUpgradeGuildAnother;
+			GS()->AVM(ClientID, "MUPGRADE", i, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgradeName, pGuild->GetUpgrades()(i, 0).m_Value, PriceUpgrade);
+		}
+	}
+
+	const char* pUpgradeName = pGuild->GetUpgrades()(CGuildData::AVAILABLE_SLOTS, 0).getDescription();
+	const int UpgradeValue = pGuild->GetUpgrades()(CGuildData::AVAILABLE_SLOTS, 0).m_Value;
+	const int PriceUpgrade = UpgradeValue * g_Config.m_SvPriceUpgradeGuildSlot;
+	GS()->AVM(ClientID, "MUPGRADE", CGuildData::AVAILABLE_SLOTS, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgradeName, UpgradeValue, PriceUpgrade);
+	GS()->AddVotesBackpage(ClientID);
 }
 
 /* #########################################################################
