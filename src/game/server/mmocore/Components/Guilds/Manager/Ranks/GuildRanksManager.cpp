@@ -65,16 +65,16 @@ void CGuildRanksController::InitDefaultRank()
 	}
 }
 
-CGuildRanksController::STATE CGuildRanksController::Add(std::string Rank)
+GUILD_RANK_RESULT CGuildRanksController::Add(std::string Rank)
 {
 	if(std::count_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank) { return std::string(pRank->GetName()) == Rank; }))
 	{
-		return STATE::ADD_ALREADY_EXISTS;
+		return GUILD_RANK_RESULT::ADD_ALREADY_EXISTS;
 	}
 
 	if(m_aRanks.size() >= MAX_GUILD_RANK_NUM)
 	{
-		return STATE::ADD_LIMIT_HAS_REACHED;
+		return GUILD_RANK_RESULT::ADD_LIMIT_HAS_REACHED;
 	}
 
 	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_guilds_ranks", "ORDER BY ID DESC LIMIT 1");
@@ -85,22 +85,22 @@ CGuildRanksController::STATE CGuildRanksController::Add(std::string Rank)
 	Database->Execute<DB::INSERT>("tw_guilds_ranks", "(ID, GuildID, Name) VALUES ('%d', '%d', '%s')", InitID, GuildID, cGuildRank.cstr());
 	GS()->ChatGuild(GuildID, "Creates new rank [{STR}]!", Rank);
 
-	m_aRanks.emplace_back(new CGuildRankData(InitID, std::move(Rank), ACCESS_NO, m_pGuild));
-	return STATE::SUCCESSFUL;
+	m_aRanks.emplace_back(new CGuildRankData(InitID, std::move(Rank), RIGHTS_DEFAULT, m_pGuild));
+	return GUILD_RANK_RESULT::SUCCESSFUL;
 }
 
-CGuildRanksController::STATE CGuildRanksController::Remove(std::string Rank)
+GUILD_RANK_RESULT CGuildRanksController::Remove(std::string Rank)
 {
 	CGuildRankData* pRank = Get(Rank);
 	if(pRank == m_pDefaultRank)
 	{
-		return STATE::REMOVE_RANK_IS_DEFAULT;
+		return GUILD_RANK_RESULT::REMOVE_RANK_IS_DEFAULT;
 	}
 
 	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank){ return pRank->GetName() == Rank; });
 	if(Iter == m_aRanks.end())
 	{
-		return STATE::REMOVE_RANK_DOES_NOT_EXIST;
+		return GUILD_RANK_RESULT::REMOVE_RANK_DOES_NOT_EXIST;
 	}
 
 	GuildIdentifier GuildID = m_pGuild->GetID();
@@ -109,7 +109,7 @@ CGuildRanksController::STATE CGuildRanksController::Remove(std::string Rank)
 
 	GS()->ChatGuild(GuildID, "Rank [{STR}] succesful delete", Rank.c_str());
 	m_aRanks.erase(Iter);
-	return STATE::SUCCESSFUL;
+	return GUILD_RANK_RESULT::SUCCESSFUL;
 }
 
 CGuildRankData* CGuildRanksController::Get(std::string Rank) const

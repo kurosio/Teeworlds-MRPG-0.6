@@ -21,16 +21,6 @@ class CGuildRanksController
 	CGuildData* m_pGuild{};
 
 public:
-	enum class STATE : int
-	{
-		ADD_LIMIT_HAS_REACHED,
-		ADD_ALREADY_EXISTS,
-
-		REMOVE_RANK_IS_DEFAULT,
-		REMOVE_RANK_DOES_NOT_EXIST,
-
-		SUCCESSFUL
-	};
 
 	// Constructor 
 	CGuildRanksController() = delete;
@@ -43,10 +33,10 @@ public:
 	GuildRankContainer& GetContainer() { return m_aRanks; }
 
 	// Function to add a new guild rank
-	STATE Add(std::string Rank);
+	GUILD_RANK_RESULT Add(std::string Rank);
 
 	// Function to remove an existing guild rank
-	STATE Remove(std::string Rank);
+	GUILD_RANK_RESULT Remove(std::string Rank);
 
 	// Function to get a guild rank by its name
 	CGuildRankData* Get(std::string Rank) const;

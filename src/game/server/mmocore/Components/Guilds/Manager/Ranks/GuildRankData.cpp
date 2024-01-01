@@ -16,37 +16,52 @@ CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, int 
 	m_pGuild = pGuild;
 }
 
-void CGuildRankData::ChangeName(std::string NewRank)
+GUILD_RANK_RESULT CGuildRankData::ChangeName(std::string NewRank)
 {
 	GuildIdentifier GuildID = m_pGuild->GetID();
 	if(std::count_if(m_pGuild->GetRanks()->GetContainer().begin(), m_pGuild->GetRanks()->GetContainer().end(), [&NewRank](const CGuildRankData* pRank) {return pRank->m_Rank == NewRank; }))
 	{
-		GS()->ChatGuild(GuildID, "A rank with that name is already used");
-		return;
+		return GUILD_RANK_RESULT::RENAME_ALREADY_NAME_EXISTS;
 	}
 
 	CSqlString<64> cNewRank = CSqlString<64>(NewRank.c_str());
 	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Name = '%s' WHERE ID = '%d' AND GuildID = '%d'", cNewRank.cstr(), m_ID, GuildID);
 	m_Rank = NewRank;
+	return GUILD_RANK_RESULT::SUCCESSFUL;
 }
 
-void CGuildRankData::ChangeAccess(int Access)
+void CGuildRankData::ChangeAccess()
 {
-	// change access rank
-	m_Access = Access;
+	m_Access++;
+	if(m_Access >= RIGHTS_NUM)
+	{
+		m_Access = RIGHTS_DEFAULT;
+	}
 
 	GuildIdentifier GuildID = m_pGuild->GetID();
 	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Access = '%d' WHERE ID = '%d' AND GuildID = '%d'", m_Access, m_ID, GuildID);
-	GS()->ChatGuild(GuildID, "Rank [{STR}] changes [{STR}]!", m_Rank, GetAccessName());
+
+	GS()->ChatGuild(GuildID, "Rank '{STR}' new rights '{STR}'!", m_Rank.c_str(), GetAccessName());
 }
 
-const char* CGuildRankData::GetAccessName()
+bool CGuildRankData::CheckAccess(CPlayer* pPlayer, GuildRankAccess Access) const
 {
-	switch(m_Access)
-	{
-		default: return "No Access";
-		case ACCESS_INVITE_KICK: return "Access Invite Kick";
-		case ACCESS_UPGRADE_HOUSE: return "Access Upgrades & House";
-		case ACCESS_FULL: return "Full Access";
-	}
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return false;
+
+	if(m_pGuild->GetOwnerUID() == pPlayer->Account()->GetID())
+		return true;
+
+	return m_Access & Access;
+}
+
+const char* CGuildRankData::GetAccessName() const
+{
+	if(m_Access == RIGHTS_INVITE_KICK)
+		return "Invite & kick";
+	if(m_Access == RIGHTS_UPGRADES_HOUSE)
+		return "Upgrade & house door's";
+	if(m_Access == RIGHTS_FULL)
+		return "Full";
+	return "Default";
 }

@@ -131,20 +131,12 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
-	if(PPSTR(CMD, "MRANKSET") == 0)
-	{
-		return true;
-	}
 
 	if(PPSTR(CMD, "MRANKDELETE") == 0)
 	{
 		return true;
 	}
 
-	if(PPSTR(CMD, "MRANKACCESS") == 0)
-	{
-		return true;
-	}
 
 	if(PPSTR(CMD, "MRANKCHANGE") == 0)
 	{
@@ -219,7 +211,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 	if(PPSTR(CMD, "RANK_CREATE") == 0)
 	{
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(ACCESS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -232,20 +224,91 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		CGuildRanksController::STATE State = pPlayer->Account()->GetGuild()->GetRanks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
-		if(State == CGuildRanksController::STATE::ADD_ALREADY_EXISTS)
+		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
+		if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
+		{
+			GS()->Chat(ClientID, "The rank '{STR}' has been successfully added!", pPlayer->GetTempData().m_aRankGuildBuf);
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+		}
+		else if(Result == GUILD_RANK_RESULT::ADD_ALREADY_EXISTS)
 		{
 			GS()->Chat(ClientID, "The rank name already exists");
-			return true;
 		}
-
-		if(State == CGuildRanksController::STATE::ADD_LIMIT_HAS_REACHED)
+		else if(Result == GUILD_RANK_RESULT::ADD_LIMIT_HAS_REACHED)
 		{
 			GS()->Chat(ClientID, "Rank limit reached, {INT} out of {INT}", (int)MAX_GUILD_RANK_NUM, (int)MAX_GUILD_RANK_NUM);
+		}
+
+		return true;
+	}
+
+	if(PPSTR(CMD, "RANK_RENAME") == 0)
+	{
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
 		}
 
-		GS()->Chat(ClientID, "The rank '{STR}' has been successfully added!", pPlayer->GetTempData().m_aRankGuildBuf);
+		const int RankID = VoteID;
+		const int LengthRank = str_length(pPlayer->GetTempData().m_aRankGuildBuf);
+		if(LengthRank < 2 || LengthRank > 16)
+		{
+			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
+			return true;
+		}
+
+		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID)->ChangeName(pPlayer->GetTempData().m_aRankGuildBuf);
+		if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
+		{
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+		}
+		else if(Result == GUILD_RANK_RESULT::RENAME_ALREADY_NAME_EXISTS)
+		{
+			GS()->Chat(ClientID, "The name is already in use by another rank");
+		}
+
+		return true;
+	}
+
+	if(PPSTR(CMD, "RANK_REMOVE") == 0)
+	{
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		const int RankID = VoteID;
+		CGuildRankData* pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Remove(pRank->GetName());
+		if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
+		{
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+		}
+		else if(Result == GUILD_RANK_RESULT::REMOVE_RANK_IS_DEFAULT)
+		{
+			GS()->Chat(ClientID, "You can't remove default rank");
+		}
+		else if(Result == GUILD_RANK_RESULT::REMOVE_RANK_DOES_NOT_EXIST)
+		{
+			GS()->Chat(ClientID, "There is no such rank");
+		}
+
+		return true;
+	}
+
+	if(PPSTR(CMD, "RANK_ACCESS") == 0)
+	{
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		const int RankID = VoteID;
+		CGuildRankData* pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		pRank->ChangeAccess();
 		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
 		return true;
 	}
@@ -489,10 +552,16 @@ void CGuildManager::ShowMenuRank(CPlayer *pPlayer)
 	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
 	{
 		GuildRankIdentifier ID = pRank->GetID();
-		GS()->AVH(ClientID, HideID, "Rank [{STR}]", pRank->GetName());
-		GS()->AVM(ClientID, "MRANKSET", ID, HideID, "Change rank name to ({STR})", pPlayer->GetTempData().m_aRankGuildBuf);
-		GS()->AVM(ClientID, "MRANKACCESS", ID, HideID, "Access rank ({STR})", pRank->GetAccessName());
-		GS()->AVM(ClientID, "MRANKDELETE", ID, HideID, "Remove this rank");
+		bool IsDefaultRank = pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank();
+
+		GS()->AVH(ClientID, HideID, "Rank [{STR}] {STR}", pRank->GetName(), IsDefaultRank ? " - Default" : "\0");
+		GS()->AVM(ClientID, "RANK_RENAME", ID, HideID, "Rename to ({STR})", pPlayer->GetTempData().m_aRankGuildBuf);
+
+		if(!IsDefaultRank)
+		{
+			GS()->AVM(ClientID, "RANK_ACCESS", ID, HideID, "Access ({STR})", pRank->GetAccessName());
+			GS()->AVM(ClientID, "RANK_REMOVE", ID, HideID, "Remove");
+		}
 		HideID++;
 	}
 
