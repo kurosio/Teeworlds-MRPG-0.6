@@ -20,13 +20,14 @@ void CGuildManager::OnInit()
 			GuildIdentifier ID = pRes->getInt("ID");
 			std::string Name = pRes->getString("Name").c_str();
 			std::string MembersData = pRes->getString("Members").c_str();
+			GuildRankIdentifier DefaultRankID = pRes->getInt("DefaultRankID");
 			int OwnerUID = pRes->getInt("UserID");
 			int Level = pRes->getInt("Level");
 			int Experience = pRes->getInt("Experience");
 			int Bank = pRes->getInt("Bank");
 			int Score = pRes->getInt("Score");
 
-			CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), Level, Experience, Score, OwnerUID, Bank);
+			CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, OwnerUID, Bank);
 	}
 
 	Job()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
@@ -356,7 +357,7 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	// initialize the guild
 	GuildDataPtr pGuild = CGuildData::CreateElement(InitID);
 	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":0}]})";
-	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), 1, 0, 0, pPlayer->Account()->GetID(), 0);
+	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0);
 	pPlayer->Account()->ReinitializeGuild();
 
 	// we create a guild in the table

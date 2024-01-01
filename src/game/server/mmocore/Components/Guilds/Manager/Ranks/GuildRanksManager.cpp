@@ -12,20 +12,21 @@ CGS* CGuildRanksController::GS() const
 	return m_pGuild->GS();
 }
 
-CGuildRanksController::CGuildRanksController(CGuildData* pGuild)
+CGuildRanksController::CGuildRanksController(CGuildData* pGuild, GuildRankIdentifier DefaultID)
 	: m_pGuild(pGuild)
 {
-	Init();
+	Init(DefaultID);
 }
 
 CGuildRanksController::~CGuildRanksController()
 {
+	m_pDefaultRank = nullptr;
 	for(auto& p : m_aRanks)
 		delete p;
 	m_aRanks.clear();
 }
 
-void CGuildRanksController::Init()
+void CGuildRanksController::Init(GuildRankIdentifier DefaultID)
 {
 	// rank loading
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_ranks", "WHERE GuildID = '%d'", m_pGuild->GetID());
@@ -34,8 +35,33 @@ void CGuildRanksController::Init()
 		GuildRankIdentifier RID = pRes->getInt("ID");
 		std::string Rank = pRes->getString("Name").c_str();
 		int Access = pRes->getInt("Access");
+		if(DefaultID == RID)
+		{
+			m_pDefaultRank = m_aRanks.emplace_back(new CGuildRankData(RID, std::forward<std::string>(Rank), Access, m_pGuild));
+		}
+		else
+		{
+			m_aRanks.emplace_back(new CGuildRankData(RID, std::forward<std::string>(Rank), Access, m_pGuild));
+		}
+	}
 
-		m_aRanks.emplace_back(new CGuildRankData(RID, std::move(Rank), Access, m_pGuild));
+	InitDefaultRank();
+}
+
+void CGuildRanksController::InitDefaultRank()
+{
+	// initilize default rank
+	if(!m_pDefaultRank)
+	{
+		if(!m_aRanks.empty())
+		{
+			m_pDefaultRank = m_aRanks.back();
+		}
+		else
+		{
+			Add("Member");
+			m_pDefaultRank = Get("Member");
+		}
 	}
 }
 
@@ -61,6 +87,10 @@ bool CGuildRanksController::Add(std::string Rank)
 
 bool CGuildRanksController::Remove(std::string Rank)
 {
+	CGuildRankData* pRank = Get(Rank);
+	if(pRank == m_pDefaultRank)
+		return false;
+
 	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank){ return pRank->GetName() == Rank; });
 	if(Iter != m_aRanks.end())
 	{
@@ -79,5 +109,11 @@ bool CGuildRanksController::Remove(std::string Rank)
 CGuildRankData* CGuildRanksController::Get(std::string Rank) const
 {
 	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank){ return pRank->GetName() == Rank; });
+	return Iter != m_aRanks.end() ? *Iter : nullptr;
+}
+
+CGuildRankData* CGuildRanksController::Get(GuildRankIdentifier ID) const
+{
+	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [&ID](const CGuildRankData* pRank){ return pRank->GetID() == ID; });
 	return Iter != m_aRanks.end() ? *Iter : nullptr;
 }

@@ -4,8 +4,28 @@
 
 #include <game/server/gamecontext.h>
 
-CGuildMemberData::CGuildMemberData(CGuildData* pGuild, int AccountID, GuildRankIdentifier RankID, int Deposit) : m_pGuild(pGuild), m_AccountID(AccountID)
+#include "game/server/mmocore/Components/Guilds/GuildData.h"
+
+CGuildMemberData::CGuildMemberData(CGuildData* pGuild, int AccountID, CGuildRankData* pRank, int Deposit) : m_pGuild(pGuild), m_AccountID(AccountID)
 {
-	m_RankID = RankID;
+	m_pRank = pRank == nullptr ? pGuild->GetRanks()->GetDefaultRank() : pRank;
 	m_Deposit = Deposit;
 }
+
+CGuildRankData* CGuildMemberData::GetRank() const
+{
+	return m_pRank;
+}
+
+bool CGuildMemberData::SetRank(GuildRankIdentifier RankID)
+{
+	CGuildRankData* pRank = m_pGuild->GetRanks()->Get(RankID);
+	if(!pRank)
+		return false;
+
+	m_pRank = pRank;
+	m_pGuild->GetMembers()->Save();
+	return true;
+}
+
+

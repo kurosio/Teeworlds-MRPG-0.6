@@ -16,13 +16,14 @@ class CGuildRanksController
 	// Pointer to the game server
 	CGS* GS() const;
 
-	GuildRankContainer m_aRanks;
-	CGuildData* m_pGuild;
+	CGuildRankData* m_pDefaultRank{};
+	GuildRankContainer m_aRanks{};
+	CGuildData* m_pGuild{};
 
 public:
 	// Constructor 
 	CGuildRanksController() = delete;
-	CGuildRanksController(CGuildData* pGuild);
+	CGuildRanksController(CGuildData* pGuild, GuildRankIdentifier DefaultID);
 
 	// Destructor
 	~CGuildRanksController();
@@ -38,10 +39,19 @@ public:
 
 	// Function to get a guild rank by its name
 	CGuildRankData* Get(std::string Rank) const;
+	
+	// Function to get a guild rank by its id
+	CGuildRankData* Get(GuildRankIdentifier ID) const;
+
+	// Function get default rank
+	CGuildRankData* GetDefaultRank() const { return m_pDefaultRank; };
 
 private:
 	// Function to initialize the guild ranks
-	void Init();
+	void Init(GuildRankIdentifier DefaultID);
+
+	// Function to initialize the default guild rank
+	void InitDefaultRank();
 };
 
 

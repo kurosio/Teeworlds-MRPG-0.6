@@ -63,7 +63,7 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(std::string Name, std::string&& MembersData, int Level, int Experience, int Score, int OwnerUID, int Bank)
+	void Init(std::string Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int OwnerUID, int Bank)
 	{
 		m_Name = Name;
 		m_OwnerUID = OwnerUID;
@@ -73,7 +73,7 @@ public:
 
 		// components init
 		m_pBank = new CGuildBankController(Bank, this);
-		m_pRanks = new CGuildRanksController(this);
+		m_pRanks = new CGuildRanksController(this, DefaultRankID);
 		m_pHistory = new CGuildHistoryController(this);
 		m_pMembers = new CGuildMembersController(this, std::move(MembersData));
 	}

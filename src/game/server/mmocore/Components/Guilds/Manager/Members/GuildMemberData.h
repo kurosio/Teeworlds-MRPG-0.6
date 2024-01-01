@@ -6,20 +6,23 @@
 #include "../Ranks/GuildRankData.h"
 
 class CGuildData;
+class CGuildRankData;
 
 class CGuildMemberData
 {
 	CGuildData* m_pGuild {};
-	GuildRankIdentifier m_RankID{};
+	CGuildRankData* m_pRank {};
 	int m_AccountID {};
 	int m_Deposit {};
 
 public:
-	CGuildMemberData(CGuildData* pGuild, int AccountID, GuildRankIdentifier = -1, int Deposit = 0);
+	CGuildMemberData(CGuildData* pGuild, int AccountID, CGuildRankData* pRank, int Deposit = 0);
 
 	int GetAccountID() const { return m_AccountID; }
 	int GetDeposit() const { return m_Deposit; }
-	GuildRankIdentifier GetRankID() const { return m_RankID; }
+
+	CGuildRankData* GetRank() const;
+	bool SetRank(GuildRankIdentifier RankID);
 };
 
 #endif
