@@ -16,22 +16,14 @@ class CGuildMembersController
 	CGuildMembersContainer m_apMembers {};
 
 public:
-	enum class STATE : int
-	{
-		JOIN_ALREADY_IN_GUILD,
-		KICK_DOES_NOT_EXIST,
-
-		SUCCESSFUL
-	};
-
 	CGuildMembersController(CGuildData* pGuild, std::string&& MembersData);
 	~CGuildMembersController();
 
 	CGuildMemberData* GetMember(int AccountID);
 	CGuildMembersContainer& GetContainer() { return m_apMembers; }
 
-	STATE Join(int AccountID);
-	STATE Kick(int AccountID);
+	GUILD_MEMBER_RESULT Join(int AccountID);
+	GUILD_MEMBER_RESULT Kick(int AccountID);
 	void Save() const;
 
 private:

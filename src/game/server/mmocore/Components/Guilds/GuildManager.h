@@ -30,10 +30,12 @@ class CGuildManager : public MmoComponent
 	void ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const;
 
 public:
-	void CreateGuild(CPlayer *pPlayer, const char *pGuildName);
+	void Create(CPlayer *pPlayer, const char *pGuildName) const;
+
+	void Disband(GuildIdentifier GuildID) const;
 
 private:
-	void ShowMenuGuild(CPlayer* pPlayer);
+	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowMenuRank(CPlayer *pPlayer);
 
 	void ShowInvitesGuilds(int ClientID, int GuildID);

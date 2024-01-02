@@ -14,40 +14,50 @@ CGuildMembersController::CGuildMembersController(CGuildData* pGuild, std::string
 
 CGuildMembersController::~CGuildMembersController()
 {
-	for(auto pMember : m_apMembers)
-		delete pMember.second;
+	for(auto pIterMember : m_apMembers)
+	{
+		delete pIterMember.second;
+		pIterMember.second = nullptr;
+	}
 
 	m_apMembers.clear();
 }
 
-CGuildMembersController::STATE CGuildMembersController::Join(int AccountID)
+GUILD_MEMBER_RESULT CGuildMembersController::Join(int AccountID)
 {
 	if(m_apMembers.find(AccountID) != m_apMembers.end())
 	{
-		return STATE::JOIN_ALREADY_IN_GUILD;
+		return GUILD_MEMBER_RESULT::JOIN_ALREADY_IN_GUILD;
 	}
 
 	m_apMembers[AccountID] = new CGuildMemberData(m_pGuild, AccountID, m_pGuild->GetRanks()->GetDefaultRank());
+
 	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
+	{
 		pPlayer->Account()->ReinitializeGuild();
+	}
 
 	Save();
-	return STATE::SUCCESSFUL;
+	return GUILD_MEMBER_RESULT::SUCCESSFUL;
 }
 
-CGuildMembersController::STATE CGuildMembersController::Kick(int AccountID)
+GUILD_MEMBER_RESULT CGuildMembersController::Kick(int AccountID)
 {
 	if(auto Iter = m_apMembers.find(AccountID); Iter != m_apMembers.end())
 	{
+		delete (*Iter).second;
 		m_apMembers.erase(Iter);
+
 		if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
+		{
 			pPlayer->Account()->ReinitializeGuild();
+		}
 
 		Save();
-		return STATE::SUCCESSFUL;
+		return GUILD_MEMBER_RESULT::SUCCESSFUL;
 	}
 
-	return STATE::KICK_DOES_NOT_EXIST;
+	return GUILD_MEMBER_RESULT::KICK_DOES_NOT_EXIST;
 }
 
 void CGuildMembersController::Init(std::string&& MembersData)
@@ -81,7 +91,8 @@ void CGuildMembersController::Save() const
 		MembersData["members"].push_back(memberData);
 	}
 
-	Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "MembersData = '%s' WHERE ID = '%d'", MembersData.dump().c_str(), m_pGuild->GetID());
+	Database->Execute<DB::UPDATE, 300>(TW_GUILD_TABLE, "DefaultRankID = '%d', Members = '%s' WHERE ID = '%d'", 
+		m_pGuild->GetRanks()->GetDefaultRank()->GetID(), MembersData.dump().c_str(), m_pGuild->GetID());
 }
 
 CGuildMemberData* CGuildMembersController::GetMember(int AccountID)

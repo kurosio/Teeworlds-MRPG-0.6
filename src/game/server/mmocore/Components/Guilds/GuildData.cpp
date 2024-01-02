@@ -61,6 +61,7 @@ CGS* CGuildData::GS() const
 
 CGuildData::~CGuildData()
 {
+	delete m_pMembers;
 	delete m_pHistory;
 	delete m_pRanks;
 	delete m_pBank;

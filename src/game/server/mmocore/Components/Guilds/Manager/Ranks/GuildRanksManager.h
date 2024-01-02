@@ -47,12 +47,13 @@ public:
 	// Function get default rank
 	CGuildRankData* GetDefaultRank() const { return m_pDefaultRank; };
 
+	// Function to initialize the default guild rank
+	void UpdateDefaultRank();
+
 private:
+
 	// Function to initialize the guild ranks
 	void Init(GuildRankIdentifier DefaultID);
-
-	// Function to initialize the default guild rank
-	void InitDefaultRank();
 };
 
 

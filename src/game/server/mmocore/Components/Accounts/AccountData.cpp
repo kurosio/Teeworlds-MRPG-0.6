@@ -123,17 +123,20 @@ void CAccountData::ReinitializeGroup()
 	m_pGroupData = nullptr;
 }
 
-void CAccountData::ReinitializeGuild()
+void CAccountData::ReinitializeGuild(bool SetNull)
 {
-	// Iterate through all the group data objects
-	for(auto& p : CGuildData::Data())
+	if(!SetNull)
 	{
-		// Check if the account ID of the group data object matches the account ID of the current account
-		auto& Accounts = p->GetMembers()->GetContainer();
-		if(Accounts.find(m_ID) != Accounts.end())
+		// Iterate through all the group data objects
+		for(auto pGuild : CGuildData::Data())
 		{
-			m_pGuildData = p.get();
-			return;
+			// Check if the account ID of the group data object matches the account ID of the current account
+			auto& pMembers = pGuild->GetMembers()->GetContainer();
+			if(pMembers.find(m_ID) != pMembers.end() && pMembers.at(m_ID) != nullptr)
+			{
+				m_pGuildData = pGuild;
+				return;
+			}
 		}
 	}
 

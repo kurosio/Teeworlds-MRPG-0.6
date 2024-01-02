@@ -12,13 +12,15 @@
 
 #define TW_GUILD_TABLE "tw_guilds"
 #define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
+#define TW_GUILDS_HISTORY_TABLE "tw_guilds_history"
+#define TW_GUILDS_INVITES_TABLE "tw_guilds_invites"
 
 using GuildIdentifier = int;
-using GuildDataPtr = std::shared_ptr< class CGuildData >;
 
-class CGuildData : public MultiworldIdentifiableStaticData< std::deque < GuildDataPtr > >
+class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildData* > >
 {
 	friend class CGuildHouseData;
+	friend class CGuildMemberData;
 	friend class CGuildMembersController;
 	friend class CGuildRankData;
 	friend class CGuildRanksController;
@@ -56,9 +58,9 @@ public:
 	CGuildData() = default;
 	~CGuildData();
 
-	static GuildDataPtr CreateElement(GuildIdentifier ID)
+	static CGuildData* CreateElement(GuildIdentifier ID)
 	{
-		GuildDataPtr pData = std::make_shared<CGuildData>();
+		auto pData = new CGuildData;
 		pData->m_ID = ID;
 		return m_pData.emplace_back(std::move(pData));
 	}
@@ -72,10 +74,12 @@ public:
 		m_Score = Score;
 
 		// components init
+		m_pHistory = new CGuildHistoryController(this);
 		m_pBank = new CGuildBankController(Bank, this);
 		m_pRanks = new CGuildRanksController(this, DefaultRankID);
-		m_pHistory = new CGuildHistoryController(this);
 		m_pMembers = new CGuildMembersController(this, std::move(MembersData));
+
+		m_pRanks->UpdateDefaultRank();
 	}
 
 	GuildIdentifier GetID() const { return m_ID; }

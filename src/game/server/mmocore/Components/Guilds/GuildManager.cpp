@@ -46,9 +46,8 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		vec2 Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
 		vec2 TextPosition = vec2(pRes->getInt("TextX"), pRes->getInt("TextY"));
 		std::string JsonDoorsData = pRes->getString("JsonDoorsData");
-		auto IterGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&GuildID](const GuildDataPtr p){ return p->GetID() == GuildID; });
-		CGuildData* pGuild = IterGuild != CGuildData::Data().end() ? IterGuild->get() : nullptr;
 
+		CGuildData* pGuild = GetGuildByID(GuildID);
 		CGuildHouseData::CreateElement(ID)->Init(pGuild, Price, Position, TextPosition, WorldID, std::move(JsonDoorsData));
 	}
 	Job()->ShowLoadingProgress("Houses", CGuildHouseData::Data().size());
@@ -126,12 +125,6 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
-	if(PPSTR(CMD, "MDISBAND") == 0)
-	{
-		return true;
-	}
-
-
 	if(PPSTR(CMD, "MRANKDELETE") == 0)
 	{
 		return true;
@@ -191,8 +184,69 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	{
 		return true;
 	}
-	if(PPSTR(CMD, "MMONEY") == 0)
+
+	if(PPSTR(CMD, "GUILD_DISBAND") == 0)
 	{
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		if(Get != 55428)
+		{
+			GS()->Chat(ClientID, "Random Touch Security Code has not been entered correctly.");
+			return true;
+		}
+
+		Disband(pPlayer->Account()->GetGuild()->GetID());
+		return true;
+	}
+
+	if(PPSTR(CMD, "GUILD_KICK") == 0)
+	{
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(VoteID);
+		if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
+		{
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
+		}
+		else if(Result == GUILD_MEMBER_RESULT::KICK_DOES_NOT_EXIST)
+		{
+			GS()->Chat(ClientID, "The player is no longer on the guild membership lists");
+		}
+
+		return true;
+	}
+
+	if(PPSTR(CMD, "GUILD_ADD_GOLD") == 0)
+	{
+		if(!pPlayer->Account()->HasGuild())
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		if(Get < 100)
+		{
+			GS()->Chat(ClientID, "Minimum number is 100 gold.");
+			return true;
+		}
+
+		CGuildMemberData* pMember = pPlayer->Account()->GetGuildAccountSlot();
+		if(pMember->DepositInBank(Get))
+		{
+			CGuildData* pGuild = pPlayer->Account()->GetGuild();
+			GS()->ChatGuild(pGuild->GetID(), "{STR} deposit in bank {VAL}gold.", Server()->ClientName(ClientID), Get);
+			pGuild->GetHistory()->Add("'%s' added to bank %d gold.", Server()->ClientName(ClientID), Get);
+			GS()->StrongUpdateVotes(ClientID, MENU_GUILD);
+		}
+
 		return true;
 	}
 
@@ -364,7 +418,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_GUILD)
 	{
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
-		ShowMenuGuild(pPlayer);
+		ShowMenu(pPlayer);
 		return true;
 	}
 
@@ -484,17 +538,17 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const
 	}
 
 	// show simple information
-	auto pIterGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&ID](GuildDataPtr pData) { return pData->GetID() == ID; });
-	if((*pIterGuild))
+	if(CGuildData* pGuild = GetGuildByID(ID))
 	{
 		int HideID = START_SELF_HIDE_ID;
 		int ClientID = pPlayer->GetCID();
 
-		GS()->AVL(ClientID, "null", "List players of {STR}", (*pIterGuild)->GetName());
-		for(auto& pIterMember : (*pIterGuild)->GetMembers()->GetContainer())
+		GS()->AVL(ClientID, "null", "List players of {STR}", pGuild->GetName());
+		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 		{
 			CGuildMemberData* pMemberSlot = pIterMember.second;
-			GS()->AVL(ClientID, "null", "{STR} {STR} Deposit: {VAL}", pMemberSlot->GetRank()->GetName(), Server()->GetAccountNickname(pMemberSlot->GetAccountID()), pMemberSlot->GetDeposit());
+			GS()->AVL(ClientID, "null", "{STR} {STR} Deposit: {VAL}", 
+				pMemberSlot->GetRank()->GetName(), Server()->GetAccountNickname(pMemberSlot->GetAccountID()), pMemberSlot->GetDeposit());
 			HideID++;
 		}
 	}
@@ -503,12 +557,10 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const
 /* #########################################################################
 	FUNCTIONS MEMBER MEMBER
 ######################################################################### */
-void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
+void CGuildManager::Create(CPlayer *pPlayer, const char *pGuildName) const
 {
 	if(!pPlayer)
-	{
 		return;
-	}
 
 	// check whether we are already in the guild
 	const int ClientID = pPlayer->GetCID();
@@ -539,25 +591,60 @@ void CGuildManager::CreateGuild(CPlayer *pPlayer, const char *pGuildName)
 	const int InitID = pResID->next() ? pResID->getInt("ID")+1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
 
 	// initialize the guild
-	GuildDataPtr pGuild = CGuildData::CreateElement(InitID);
 	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":0}]})";
+
+	CGuildData* pGuild = CGuildData::CreateElement(InitID);
 	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0);
 	pPlayer->Account()->ReinitializeGuild();
 
 	// we create a guild in the table
-	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID, Members) VALUES ('%d', '%s', '%d', '%s')", InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
+	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID, Members) VALUES ('%d', '%s', '%d', '%s')", 
+		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
 	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
 }
 
-void CGuildManager::ShowMenuGuild(CPlayer* pPlayer)
+void CGuildManager::Disband(GuildIdentifier ID) const
+{
+	// find iterator for erasing
+	auto pIterGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&ID](CGuildData* pGuild) { return pGuild->GetID() == ID; });
+	if(!(*pIterGuild))
+		return;
+
+	// game functions pre disband
+	CGuildData* pGuild = (*pIterGuild);
+	if(pGuild->HasHouse())
+	{
+		//pGuild->GetHouse()->Sell();
+	}
+
+	const int ReturnsGold = maximum(1, pGuild->GetBank()->Get());
+	GS()->SendInbox("System", pGuild->GetOwnerUID(), "Your guild was disbanded.", "We returned some gold from your guild.", itGold, ReturnsGold);
+	GS()->Chat(-1, "The {STR} guild has been disbanded.", pGuild->GetName());
+
+	// erase from database
+	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
+	Database->Execute<DB::REMOVE>(TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
+	Database->Execute<DB::REMOVE>(TW_GUILDS_RANKS_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
+	Database->Execute<DB::REMOVE>(TW_GUILD_TABLE, "WHERE ID = '%d'", pGuild->GetID());
+
+	// erase guild
+	if(pIterGuild != CGuildData::Data().end())
+	{
+		delete (*pIterGuild);
+		CGuildData::Data().erase(pIterGuild);
+		pGuild = nullptr;
+	}
+}
+
+
+void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 {
 	if(!pPlayer || !pPlayer->Account()->HasGuild())
 		return;
 
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
 	int ClientID = pPlayer->GetCID();
-	int GuildID = pGuild->GetID();
 	bool HasHouse = pGuild->HasHouse();
 	int ExpNeed = computeExperience(pGuild->GetLevel());
 
@@ -568,7 +655,7 @@ void CGuildManager::ShowMenuGuild(CPlayer* pPlayer)
 	GS()->AV(ClientID, "null");
 	//
 	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
-	GS()->AVL(ClientID, "MMONEY", "Add gold guild bank. (Amount in a reason)", pGuild->GetName());
+	GS()->AVL(ClientID, "GUILD_ADD_GOLD", "Add gold guild bank. (Amount in a reason)", pGuild->GetName());
 	GS()->AV(ClientID, "null");
 	//
 	GS()->AVL(ClientID, "null", "▤ Guild system");
@@ -590,7 +677,7 @@ void CGuildManager::ShowMenuGuild(CPlayer* pPlayer)
 	GS()->AVL(ClientID, "null", "✖ Disband guild");
 	GS()->AVL(ClientID, "null", "Gold spent on upgrades will not be refunded");
 	GS()->AVL(ClientID, "null", "All gold will be returned to the leader only");
-	GS()->AVL(ClientID, "MDISBAND", "Disband guild (in reason 55428)");
+	GS()->AVL(ClientID, "GUILD_DISBAND", "Disband guild (in reason 55428)");
 	GS()->AV(ClientID, "null");
 	//
 	GS()->AVL(ClientID, "null", "☆ Guild upgrades");
@@ -786,12 +873,12 @@ CGuildHouseData* CGuildManager::GetGuildHouseByPos(vec2 Pos) const
 
 CGuildData* CGuildManager::GetGuildByID(GuildIdentifier ID) const
 {
-	auto itGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&ID](GuildDataPtr p)
+	auto itGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&ID](CGuildData* p)
 	{
 		return p->GetID() == ID;
 	});
 
-	return itGuild != CGuildData::Data().end() ? itGuild->get() : nullptr;
+	return itGuild != CGuildData::Data().end() ? (*itGuild) : nullptr;
 }
 
 void CGuildManager::ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse)

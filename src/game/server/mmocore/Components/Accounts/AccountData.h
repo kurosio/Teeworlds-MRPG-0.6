@@ -58,7 +58,7 @@ public:
 	/*
 	 * Group functions: guild system
 	 */
-	void ReinitializeGuild();
+	void ReinitializeGuild(bool SetNull = false);
 	CGuildData* GetGuild() const { return m_pGuildData; }
 	CGuildMemberData* GetGuildAccountSlot() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }

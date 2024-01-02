@@ -22,18 +22,8 @@ public:
 	CGuildBankController(int Bank, CGuildData* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
 
 	// Get the current amount of currency in the bank
+	void Set(int Value);
 	int Get() const { return m_Bank; }
-
-	// Add currency to the bank
-	// Value: The amount of currency to add
-	// pByPlayer: The player who is adding the currency
-	void Add(int Value, CPlayer* pByPlayer);
-
-	// Take currency from the bank
-	// Value: The amount of currency to take
-	// pByPlayer: The player who is taking the currency
-	void Take(int Value, CPlayer* pByPlayer);
-
 	bool Spend(int Value);
 };
 

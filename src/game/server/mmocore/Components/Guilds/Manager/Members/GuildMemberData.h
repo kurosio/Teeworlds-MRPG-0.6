@@ -8,8 +8,18 @@
 class CGuildData;
 class CGuildRankData;
 
+enum class GUILD_MEMBER_RESULT : int
+{
+	JOIN_ALREADY_IN_GUILD,
+	KICK_DOES_NOT_EXIST,
+
+	SUCCESSFUL
+};
+
 class CGuildMemberData
 {
+	CGS* GS() const;
+
 	CGuildData* m_pGuild {};
 	CGuildRankData* m_pRank {};
 	int m_AccountID {};
@@ -17,6 +27,7 @@ class CGuildMemberData
 
 public:
 	CGuildMemberData(CGuildData* pGuild, int AccountID, CGuildRankData* pRank, int Deposit = 0);
+	~CGuildMemberData();
 
 	int GetAccountID() const { return m_AccountID; }
 	int GetDeposit() const { return m_Deposit; }
@@ -24,6 +35,9 @@ public:
 	CGuildRankData* GetRank() const;
 	bool SetRank(GuildRankIdentifier RankID);
 	bool SetRank(CGuildRankData* pRank);
+
+	bool DepositInBank(int Golds);
+	bool WithdrawFromBank(int Golds);
 };
 
 #endif

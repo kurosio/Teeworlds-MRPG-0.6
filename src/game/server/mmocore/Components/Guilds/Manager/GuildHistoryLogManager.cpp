@@ -15,7 +15,7 @@ GuildHistoryContainer CGuildHistoryController::GetLogs() const
 	Logs.reserve(20);
 
 	// Execute a select query to fetch guild logs from the database
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_history", "WHERE GuildID = '%d' ORDER BY ID DESC LIMIT 20", m_pGuild->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '%d' ORDER BY ID DESC LIMIT 20", m_pGuild->GetID());
 	while(pRes->next())
 	{
 		// Create a log object and populate it with time and text values from the database

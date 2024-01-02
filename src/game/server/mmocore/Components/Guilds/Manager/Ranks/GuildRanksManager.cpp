@@ -20,11 +20,10 @@ CGuildRanksController::CGuildRanksController(CGuildData* pGuild, GuildRankIdenti
 
 CGuildRanksController::~CGuildRanksController()
 {
-	m_pDefaultRank = nullptr;
-
-	for(auto& p : m_aRanks)
+	for(auto p : m_aRanks)
 		delete p;
 
+	m_pDefaultRank = nullptr;
 	m_aRanks.clear();
 }
 
@@ -47,28 +46,34 @@ void CGuildRanksController::Init(GuildRankIdentifier DefaultID)
 			m_aRanks.emplace_back(new CGuildRankData(RID, std::forward<std::string>(Rank), Access, m_pGuild));
 		}
 	}
-
-	InitDefaultRank();
 }
 
-void CGuildRanksController::InitDefaultRank()
+void CGuildRanksController::UpdateDefaultRank()
 {
 	// initilize default rank
-	if(!m_pDefaultRank)
-	{
-		if(!m_aRanks.empty())
-		{
-			m_pDefaultRank = m_aRanks.back();
-			m_pDefaultRank->SetAccess(RIGHTS_DEFAULT);
-		}
-		else
-		{
-			Add("Member");
-			m_pDefaultRank = Get("Member");
-		}
+	if(m_pDefaultRank)
+		return;
 
-		Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "DefaultRankID = '%d' WHERE ID = '%d'", m_pDefaultRank->GetID(), m_pGuild->GetID());
+	if(!m_aRanks.empty())
+	{
+		m_pDefaultRank = m_aRanks.back();
+		m_pDefaultRank->SetAccess(RIGHTS_DEFAULT);
 	}
+	else
+	{
+		Add("Member");
+		m_pDefaultRank = Get("Member");
+	}
+
+	// set for member without rank default rank
+	for(auto& pIterMember : m_pGuild->GetMembers()->GetContainer())
+	{
+		CGuildMemberData* pMember = pIterMember.second;
+		if(!pMember->GetRank())
+			pMember->SetRank(m_pDefaultRank);
+	}
+
+	m_pGuild->GetMembers()->Save();
 }
 
 GUILD_RANK_RESULT CGuildRanksController::Add(std::string Rank)

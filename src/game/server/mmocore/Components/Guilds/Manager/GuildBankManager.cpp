@@ -7,49 +7,10 @@
 
 CGS* CGuildBankController::GS() const { return m_pGuild->GS(); }
 
-void CGuildBankController::Add(int Value, CPlayer* pByPlayer)
+void CGuildBankController::Set(int Value)
 {
-	if(pByPlayer)
-	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILD_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
-		if(pRes->next())
-		{
-			if(pByPlayer->Account()->SpendCurrency(Value))
-			{
-				m_Bank = pRes->getInt("Bank") + Value;
-				Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
-
-				int ClientID = pByPlayer->GetCID();
-				GS()->Chat(ClientID, "You put {VAL} gold in the safe, now {VAL}!", Value, m_Bank);
-				m_pGuild->GetMembers()->Save();
-			}
-		}
-	}
-}
-
-void CGuildBankController::Take(int Value, CPlayer* pByPlayer)
-{
-	if(pByPlayer)
-	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILD_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
-		if(pRes->next())
-		{
-			int ClientID = pByPlayer->GetCID();
-
-			int Bank = pRes->getInt("Bank");
-			Value = minimum(Value, Bank);
-			if(Value > 0)
-			{
-				pByPlayer->Account()->AddGold(Value);
-
-				m_Bank = Bank - Value;
-
-				Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
-				GS()->Chat(ClientID, "You take {VAL} gold in the safe {VAL}!", Value, m_Bank);
-				m_pGuild->GetMembers()->Save();
-			}
-		}
-	}
+	m_Bank = Value;
+	Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
 }
 
 bool CGuildBankController::Spend(int Value)
