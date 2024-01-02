@@ -43,6 +43,11 @@ GUILD_MEMBER_RESULT CGuildMembersController::Join(int AccountID)
 
 GUILD_MEMBER_RESULT CGuildMembersController::Kick(int AccountID)
 {
+	if(m_pGuild->GetOwnerUID() == AccountID)
+	{
+		return GUILD_MEMBER_RESULT::CANT_KICK_LEADER;
+	}
+
 	if(auto Iter = m_apMembers.find(AccountID); Iter != m_apMembers.end())
 	{
 		delete (*Iter).second;
@@ -51,6 +56,7 @@ GUILD_MEMBER_RESULT CGuildMembersController::Kick(int AccountID)
 		if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
 		{
 			pPlayer->Account()->ReinitializeGuild();
+			GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
 		}
 
 		Save();

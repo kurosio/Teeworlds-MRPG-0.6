@@ -31,18 +31,18 @@ class CGuildManager : public MmoComponent
 
 public:
 	void Create(CPlayer *pPlayer, const char *pGuildName) const;
-
 	void Disband(GuildIdentifier GuildID) const;
 
 private:
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowMenuRank(CPlayer *pPlayer);
+	void ShowFinder(int ClientID);
+
 
 	void ShowInvitesGuilds(int ClientID, int GuildID);
-	void ShowFinderGuilds(int ClientID);
 	void SendInviteGuild(int GuildID, CPlayer* pPlayer);
 
-	void ShowHistoryGuild(int ClientID) const;
+	void ShowHistory(int ClientID) const;
 public:
 	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
 	CGuildData* GetGuildByID(GuildIdentifier ID) const;

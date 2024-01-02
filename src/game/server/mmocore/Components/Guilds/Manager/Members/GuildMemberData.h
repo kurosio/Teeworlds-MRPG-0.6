@@ -11,7 +11,9 @@ class CGuildRankData;
 enum class GUILD_MEMBER_RESULT : int
 {
 	JOIN_ALREADY_IN_GUILD,
+
 	KICK_DOES_NOT_EXIST,
+	CANT_KICK_LEADER,
 
 	SUCCESSFUL
 };
