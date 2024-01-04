@@ -282,13 +282,6 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		const int LengthRank = str_length(pPlayer->GetTempData().m_aRankGuildBuf);
-		if(LengthRank < 2 || LengthRank > 16)
-		{
-			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
-			return true;
-		}
-
 		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
 		if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
@@ -320,15 +313,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		const int RankID = VoteID;
-		const int LengthRank = str_length(pPlayer->GetTempData().m_aRankGuildBuf);
-		if(LengthRank < 2 || LengthRank > 16)
-		{
-			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
-			return true;
-		}
-
-		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID)->Rename(pPlayer->GetTempData().m_aRankGuildBuf);
+		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(VoteID)->Rename(pPlayer->GetTempData().m_aRankGuildBuf);
 		if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
 			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
