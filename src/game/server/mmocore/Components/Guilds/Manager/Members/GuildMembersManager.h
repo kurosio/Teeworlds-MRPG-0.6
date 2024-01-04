@@ -1,5 +1,3 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_COMPONENT_GUILD_MEMBERS_CONTROLLER_H
 #define GAME_SERVER_COMPONENT_GUILD_MEMBERS_CONTROLLER_H
 
@@ -19,16 +17,24 @@ public:
 	CGuildMembersController(CGuildData* pGuild, std::string&& MembersData);
 	~CGuildMembersController();
 
+	// Get a guild member by account ID
 	CGuildMemberData* GetMember(int AccountID);
+
+	// Get the guild members container
 	CGuildMembersContainer& GetContainer() { return m_apMembers; }
 
+	// Join a guild by account ID
 	GUILD_MEMBER_RESULT Join(int AccountID);
+
+	// Kick a guild member by account ID
 	GUILD_MEMBER_RESULT Kick(int AccountID);
+
+	// Save the guild members data
 	void Save() const;
 
 private:
+	// Initialize the guild members controller
 	void Init(std::string&& MembersData);
-
 };
 
 #endif

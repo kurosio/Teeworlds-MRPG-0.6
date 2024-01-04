@@ -9,34 +9,30 @@ class CPlayer;
 class CGuildData;
 using GuildRankIdentifier = int;
 
-// access guild
+// Define an enum for the different levels of guild rank access
 enum GuildRankAccess
 {
-	RIGHTS_LEADER = -1,
-	RIGHTS_DEFAULT = 0,
-	RIGHTS_INVITE_KICK,
-	RIGHTS_UPGRADES_HOUSE,
-	RIGHTS_FULL,
-	RIGHTS_NUM,
+	RIGHTS_LEADER = -1,           // Highest level of access, reserved for guild leader
+	RIGHTS_DEFAULT = 0,           // Default level of access for new members
+	RIGHTS_INVITE_KICK,           // Access to invite and kick members
+	RIGHTS_UPGRADES_HOUSE,        // Access to upgrade guild house
+	RIGHTS_FULL,                  // Full access to all guild functions
+	RIGHTS_NUM,                   // Total number of access levels
 };
 
+// Define an enum class for the different results of guild rank operations
 enum class GUILD_RANK_RESULT : int
 {
-	ADD_LIMIT_HAS_REACHED,
-	ADD_ALREADY_EXISTS,
-
-	REMOVE_RANK_IS_DEFAULT,
-	REMOVE_RANK_DOES_NOT_EXIST,
-
-	RENAME_ALREADY_NAME_EXISTS,
-
-	SUCCESSFUL
+	ADD_LIMIT_HAS_REACHED,        // Cannot add more ranks, limit has been reached
+	ADD_ALREADY_EXISTS,           // Rank with the same name already exists
+	REMOVE_RANK_IS_DEFAULT,       // Cannot remove default rank
+	REMOVE_RANK_DOES_NOT_EXIST,   // Rank to be removed does not exist
+	RENAME_ALREADY_NAME_EXISTS,   // Cannot rename rank, name already exists
+	SUCCESSFUL                    // Operation was successful
 };
 
-// This class represents the data of a guild rank
 class CGuildRankData
 {
-	// Pointer to the game server
 	CGS* GS() const;
 
 	GuildRankIdentifier m_ID {};
@@ -45,26 +41,29 @@ class CGuildRankData
 	CGuildData* m_pGuild {};
 
 public:
-	// Constructor
 	CGuildRankData() = delete;
 	CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, GuildRankAccess Access, CGuildData* pGuild);
 
-	// Getter for the guild rank identifier
+	// Get the unique identifier of the guild rank
 	GuildRankIdentifier GetID() const { return m_ID; }
 
-	// Getter for the guild rank name
+	// Get the name of the guild rank
 	const char* GetName() const { return m_Rank.c_str(); }
 
-	// Getter for the access level name
+	// Get the name of the access level of the guild rank
 	const char* GetAccessName() const;
 
-	// Method to change the name of the guild rank
+	// Change the name of the guild rank
 	GUILD_RANK_RESULT ChangeName(std::string NewRank);
 
-	// Method to change the access level of the guild rank
+	// Change the access level of the guild rank
 	void ChangeAccess();
+
+	// Set the access level of the guild rank
 	void SetAccess(GuildRankAccess Access);
-	bool CheckAccess(CPlayer* pPlayer, GuildRankAccess Access) const;
+
+	// Get the rank access
+	const GuildRankAccess& GetAccess() const { return m_Access;}
 };
 
 #endif

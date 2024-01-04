@@ -4,9 +4,9 @@
 #define GAME_SERVER_COMPONENT_GUILD_DATA_H
 #include <game/server/mmocore/Utils/FieldData.h>
 
-#include "Manager/Members/GuildMembersManager.h"
-#include "Manager/GuildHistoryLogManager.h"
 #include "Manager/GuildBankManager.h"
+#include "Manager/GuildHistoryLogManager.h"
+#include "Manager/Members/GuildMembersManager.h"
 #include "Manager/Ranks/GuildRanksManager.h"
 #include "Houses/GuildHouseData.h"
 
@@ -65,7 +65,7 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(std::string Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int OwnerUID, int Bank)
+	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int OwnerUID, int Bank)
 	{
 		m_Name = Name;
 		m_OwnerUID = OwnerUID;

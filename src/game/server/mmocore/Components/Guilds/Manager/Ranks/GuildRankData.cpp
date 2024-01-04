@@ -11,8 +11,9 @@ CGS* CGuildRankData::GS() const
 	return m_pGuild->GS();
 }
 
-CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, GuildRankAccess Access, CGuildData* pGuild) : m_ID(RID), m_Rank(std::move(Rank)), m_Access(Access)
+CGuildRankData::CGuildRankData(GuildRankIdentifier RID, std::string&& Rank, GuildRankAccess Access, CGuildData* pGuild) : m_ID(RID), m_Rank(std::move(Rank))
 {
+	m_Access = Access;
 	m_pGuild = pGuild;
 }
 
@@ -51,17 +52,6 @@ void CGuildRankData::SetAccess(GuildRankAccess Access)
 	GuildIdentifier GuildID = m_pGuild->GetID();
 	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Access = '%d' WHERE ID = '%d'", m_Access, m_ID);
 	GS()->ChatGuild(GuildID, "Rank '{STR}' new rights '{STR}'!", m_Rank.c_str(), GetAccessName());
-}
-
-bool CGuildRankData::CheckAccess(CPlayer* pPlayer, GuildRankAccess Access) const
-{
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return false;
-
-	if(m_pGuild->GetOwnerUID() == pPlayer->Account()->GetID())
-		return true;
-
-	return m_Access & Access;
 }
 
 const char* CGuildRankData::GetAccessName() const

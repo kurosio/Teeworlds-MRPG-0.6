@@ -187,7 +187,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 	if(PPSTR(CMD, "GUILD_DISBAND") == 0)
 	{
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -205,7 +205,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 	if(PPSTR(CMD, "GUILD_KICK_PLAYER") == 0)
 	{
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -276,7 +276,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 	if(PPSTR(CMD, "RANK_CREATE") == 0)
 	{
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -309,7 +309,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 	if(PPSTR(CMD, "RANK_RENAME") == 0)
 	{
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -338,7 +338,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 	if(PPSTR(CMD, "RANK_REMOVE") == 0)
 	{
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -365,7 +365,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 	if(PPSTR(CMD, "RANK_ACCESS") == 0)
 	{
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->GetRank()->CheckAccess(pPlayer, RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -489,7 +489,7 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
 	int HideID = START_SELF_HIDE_ID;
 	int ClientID = pPlayer->GetCID();
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	CGuildRankData* pSelfRankAccess = pPlayer->Account()->GetGuildAccountSlot()->GetRank();
+	CGuildMemberData* pSelfMemberSlot = pPlayer->Account()->GetGuildAccountSlot();
 
 	// show player's list of guild
 	GS()->AVL(ClientID, "null", "Membership list of {STR}", pGuild->GetName());
@@ -505,7 +505,7 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
 			bool AllowedInteractiveWithPlayers = false;
 
 			// leader access
-			if(pSelfRankAccess->CheckAccess(pPlayer, RIGHTS_LEADER))
+			if(pSelfMemberSlot->CheckAccess(RIGHTS_LEADER))
 			{
 				for(auto& pRank : pGuild->GetRanks()->GetContainer())
 				{
@@ -525,7 +525,7 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
 			}
 
 			// invite & kick access
-			if(pSelfRankAccess->CheckAccess(pPlayer, RIGHTS_INVITE_KICK))
+			if(pSelfMemberSlot->CheckAccess(RIGHTS_INVITE_KICK))
 			{
 				if(!IsSelfMemberSlotAction)
 				{
@@ -608,7 +608,7 @@ void CGuildManager::Create(CPlayer *pPlayer, const char *pGuildName) const
 
 	// get ID for initialization
 	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_guilds", "ORDER BY ID DESC LIMIT 1");
-	const int InitID = pResID->next() ? pResID->getInt("ID")+1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
+	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
 
 	// initialize the guild
 	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":0}]})";

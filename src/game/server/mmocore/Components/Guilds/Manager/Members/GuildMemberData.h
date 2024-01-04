@@ -5,17 +5,19 @@
 
 #include "../Ranks/GuildRankData.h"
 
+// Include necessary headers
 class CGuildData;
 class CGuildRankData;
 
+// Enum for guild member results
 enum class GUILD_MEMBER_RESULT : int
 {
-	JOIN_ALREADY_IN_GUILD,
+	JOIN_ALREADY_IN_GUILD,      // Result when a member tries to join a guild they are already a part of
 
-	KICK_DOES_NOT_EXIST,
-	CANT_KICK_LEADER,
+	KICK_DOES_NOT_EXIST,        // Result when trying to kick a member who does not exist
+	CANT_KICK_LEADER,           // Result when trying to kick the guild leader
 
-	SUCCESSFUL
+	SUCCESSFUL                  // Result when the operation is successful
 };
 
 class CGuildMemberData
@@ -31,15 +33,29 @@ public:
 	CGuildMemberData(CGuildData* pGuild, int AccountID, CGuildRankData* pRank, int Deposit = 0);
 	~CGuildMemberData();
 
+	// Get the account ID of the guild member
 	int GetAccountID() const { return m_AccountID; }
+
+	// Get the amount of gold deposited by the guild member
 	int GetDeposit() const { return m_Deposit; }
 
-	CGuildRankData* GetRank() const;
+	// Get the rank of the guild member
+	CGuildRankData* GetRank() const { return m_pRank; }
+
+	// Set the rank of the guild member using the rank ID
 	bool SetRank(GuildRankIdentifier RankID);
+
+	// Set the rank of the guild member using a rank object
 	bool SetRank(CGuildRankData* pRank);
 
+	// Deposit gold in the guild bank
 	bool DepositInBank(int Golds);
+
+	// Withdraw gold from the guild bank
 	bool WithdrawFromBank(int Golds);
+
+	// Check if a member has the required access level
+	bool CheckAccess(GuildRankAccess RequiredAccess) const;
 };
 
 #endif
