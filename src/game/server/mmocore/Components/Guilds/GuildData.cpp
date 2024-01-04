@@ -35,7 +35,7 @@ GUILD_RESULT CGuildData::BuyHouse(int HouseID)
 	if(pRes->next())
 	{
 		const int Price = pRes->getInt("Price");
-		if(!Bank()->Spend(Price))
+		if(!GetBank()->Spend(Price))
 		{
 			return GUILD_RESULT::BUY_HOUSE_NOT_ENOUGH_GOLD;
 		}
@@ -66,7 +66,7 @@ bool CGuildData::SellHouse()
 		Database->Execute<DB::UPDATE>(TW_GUILD_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
 
 		const int ReturnedGold = m_pHouse->GetPrice();
-		GS()->SendInbox("System", m_LeaderUID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
+		GS()->SendInbox("System", m_OwnerUID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
 
 		GS()->ChatGuild(m_ID, "House sold, {VAL}gold returned to leader", ReturnedGold);
 		m_pHistory->Add("Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
@@ -81,7 +81,7 @@ bool CGuildData::SellHouse()
 
 GUILD_RESULT CGuildData::SetNewLeader(int AccountID)
 {
-	if(AccountID == m_LeaderUID)
+	if(AccountID == m_OwnerUID)
 	{
 		return GUILD_RESULT::SET_LEADER_PLAYER_ALREADY_LEADER;
 	}
@@ -91,10 +91,10 @@ GUILD_RESULT CGuildData::SetNewLeader(int AccountID)
 		return GUILD_RESULT::SET_LEADER_NON_GUILD_PLAYER;
 	}
 
-	m_LeaderUID = AccountID;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LeaderUID = '%d' WHERE ID = '%d'", m_LeaderUID, m_ID);
+	m_OwnerUID = AccountID;
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "UserID = '%d' WHERE ID = '%d'", m_OwnerUID, m_ID);
 
-	const char* pNickNewLeader = Instance::GetServer()->GetAccountNickname(m_LeaderUID);
+	const char* pNickNewLeader = Instance::GetServer()->GetAccountNickname(m_OwnerUID);
 	m_pHistory->Add("New guild leader '%s'", pNickNewLeader);
 	GS()->ChatGuild(m_ID, "New guild leader '{STR}'", pNickNewLeader);
 	return GUILD_RESULT::SUCCESSFUL;

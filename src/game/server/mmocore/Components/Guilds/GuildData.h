@@ -48,7 +48,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 
 	GuildIdentifier m_ID {};
 	std::string m_Name {};
-	int m_LeaderUID {};
+	int m_OwnerUID {};
 	int m_Level {};
 	int m_Experience {};
 	int m_Score {};
@@ -80,7 +80,7 @@ public:
 	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int OwnerUID, int Bank)
 	{
 		m_Name = Name;
-		m_LeaderUID = OwnerUID;
+		m_OwnerUID = OwnerUID;
 		m_Level = Level;
 		m_Experience = Experience;
 		m_Score = Score;
@@ -95,15 +95,15 @@ public:
 	}
 
 	GuildIdentifier GetID() const { return m_ID; }
-	CGuildBankController* Bank() const { return m_pBank; }
-	CGuildHistoryController* History() const { return m_pHistory; }
-	CGuildRanksController* Ranks() const { return m_pRanks; }
-	CGuildHouseData* House() const { return m_pHouse; }
-	CGuildMembersController* Members() const { return m_pMembers; }
+	CGuildBankController* GetBank() const { return m_pBank; }
+	CGuildHistoryController* GetHistory() const { return m_pHistory; }
+	CGuildRanksController* GetRanks() const { return m_pRanks; }
+	CGuildHouseData* GetHouse() const { return m_pHouse; }
+	CGuildMembersController* GetMembers() const { return m_pMembers; }
 	CFieldContainer& GetUpgrades() { return m_UpgradeData; }
 
 	const char* GetName() const { return m_Name.c_str(); }
-	int GetLeaderUID() const { return m_LeaderUID; }
+	int GetOwnerUID() const { return m_OwnerUID; }
 	int GetLevel() const { return m_Level; }
 	int GetExperience() const { return m_Experience;}
 	int GetScore() const { return m_Score; }

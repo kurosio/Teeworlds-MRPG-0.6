@@ -16,7 +16,7 @@ CGuildMemberData::CGuildMemberData(CGuildData* pGuild, int AccountID, CGuildRank
 	m_Deposit = Deposit;
 
 	// If the given rank is null, set the member's rank to the default rank of the guild
-	m_pRank = pRank == nullptr ? pGuild->Ranks()->GetDefaultRank() : pRank;
+	m_pRank = pRank == nullptr ? pGuild->GetRanks()->GetDefaultRank() : pRank;
 }
 
 // Destructor for CGuildMemberData
@@ -34,7 +34,7 @@ CGuildMemberData::~CGuildMemberData()
 bool CGuildMemberData::SetRank(GuildRankIdentifier RankID)
 {
 	// Get the rank object from the guild's ranks using the given rank ID
-	CGuildRankData* pRank = m_pGuild->Ranks()->Get(RankID);
+	CGuildRankData* pRank = m_pGuild->GetRanks()->Get(RankID);
 	if(!pRank)
 		return false;
 
@@ -55,8 +55,8 @@ bool CGuildMemberData::SetRank(CGuildRankData* pRank)
 	m_pRank = pRank;
 
 	// Save the member data and add a history entry for the rank change
-	m_pGuild->Members()->Save();
-	m_pGuild->History()->Add("%s rank changed to %s", Instance::GetServer()->GetAccountNickname(m_AccountID), m_pRank->GetName());
+	m_pGuild->GetMembers()->Save();
+	m_pGuild->GetHistory()->Add("%s rank changed to %s", Instance::GetServer()->GetAccountNickname(m_AccountID), m_pRank->GetName());
 	return true;
 }
 
@@ -77,13 +77,13 @@ bool CGuildMemberData::DepositInBank(int Golds)
 		{
 			// Increase the member's deposit and the guild bank value
 			m_Deposit += Golds;
-			m_pGuild->Bank()->Set(pRes->getInt("Bank") + Golds);
-			Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_pGuild->Bank()->Get(), m_pGuild->GetID());
+			m_pGuild->GetBank()->Set(pRes->getInt("Bank") + Golds);
+			Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_pGuild->GetBank()->Get(), m_pGuild->GetID());
 
 			// Send a chat message to the player indicating the successful deposit and the new bank value
 			int ClientID = pPlayer->GetCID();
-			GS()->Chat(ClientID, "You put {VAL} gold in the safe, now {VAL}!", Golds, m_pGuild->Bank()->Get());
-			m_pGuild->Members()->Save();
+			GS()->Chat(ClientID, "You put {VAL} gold in the safe, now {VAL}!", Golds, m_pGuild->GetBank()->Get());
+			m_pGuild->GetMembers()->Save();
 			return true;
 		}
 	}
@@ -113,11 +113,11 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 			// Decrease the member's deposit, add the withdrawn gold to the player's account, and decrease the guild bank value
 			m_Deposit -= Golds;
 			pPlayer->Account()->AddGold(Golds);
-			m_pGuild->Bank()->Set(Bank - Golds);
+			m_pGuild->GetBank()->Set(Bank - Golds);
 
 			// Send a chat message to the player indicating the successful withdrawal and the new bank value
-			GS()->Chat(ClientID, "You take {VAL} gold in the safe {VAL}!", Golds, m_pGuild->Bank()->Get());
-			m_pGuild->Members()->Save();
+			GS()->Chat(ClientID, "You take {VAL} gold in the safe {VAL}!", Golds, m_pGuild->GetBank()->Get());
+			m_pGuild->GetMembers()->Save();
 			return true;
 		}
 	}
@@ -128,6 +128,6 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 // Check if a member has the required access level
 bool CGuildMemberData::CheckAccess(GuildRankAccess RequiredAccess) const
 {
-	return (m_pGuild->GetLeaderUID() == m_AccountID || m_pRank->GetAccess() == RequiredAccess
+	return (m_pGuild->GetOwnerUID() == m_AccountID || m_pRank->GetAccess() == RequiredAccess
 		|| (m_pRank->GetAccess() == ACCESS_FULL && RequiredAccess != ACCESS_LEADER));
 }
