@@ -18,7 +18,7 @@ public:
 	~CGuildMembersController();
 
 	// Get a guild member by account ID
-	CGuildMemberData* GetMember(int AccountID);
+	CGuildMemberData* Get(int AccountID);
 
 	// Get the guild members container
 	CGuildMembersContainer& GetContainer() { return m_apMembers; }

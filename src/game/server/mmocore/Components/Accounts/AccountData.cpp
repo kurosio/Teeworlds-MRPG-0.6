@@ -144,9 +144,9 @@ void CAccountData::ReinitializeGuild(bool SetNull)
 	m_pGuildData = nullptr;
 }
 
-CGuildMemberData* CAccountData::GetGuildAccountSlot() const
+CGuildMemberData* CAccountData::GetGuildMemberData() const
 {
-	return m_pGuildData ? m_pGuildData->GetMembers()->GetMember(m_ID) : nullptr;
+	return m_pGuildData ? m_pGuildData->GetMembers()->Get(m_ID) : nullptr;
 }
 
 // Check if the account is in the same guild as the specified client ID

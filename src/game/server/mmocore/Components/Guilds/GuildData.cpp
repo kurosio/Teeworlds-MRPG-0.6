@@ -14,21 +14,21 @@ CGuildData::~CGuildData()
 	delete m_pBank;
 }
 
-bool CGuildData::BuyHouse(int HouseID)
+GUILD_RESULT CGuildData::BuyHouse(int HouseID)
 {
-	// check if the guild has a house
 	if(m_pHouse != nullptr)
 	{
-		GS()->ChatGuild(m_ID, "Your Guild can't have 2 houses. Purchase canceled!");
-		return false;
+		return GUILD_RESULT::BUY_HOUSE_ALREADY_HAVE;
 	}
 
-	// check valid house
-	auto IterHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&HouseID](const GuildHouseDataPtr p){ return p->GetID() == HouseID; });
+	auto IterHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&HouseID](const GuildHouseDataPtr p)
+	{
+		return p->GetID() == HouseID;
+	});
+
 	if(IterHouse == CGuildHouseData::Data().end())
 	{
-		GS()->ChatGuild(m_ID, "The house is unavailable.");
-		return false;
+		return GUILD_RESULT::BUY_HOUSE_UNAVAILABLE;
 	}
 
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES, "WHERE ID = '%d' AND GuildID IS NULL", HouseID);
@@ -37,30 +37,26 @@ bool CGuildData::BuyHouse(int HouseID)
 		const int Price = pRes->getInt("Price");
 		if(!GetBank()->Spend(Price))
 		{
-			GS()->ChatGuild(m_ID, "This Guild house requires {VAL}gold!", Price);
-			return false;
+			return GUILD_RESULT::BUY_HOUSE_NOT_ENOUGH_GOLD;
 		}
 
 		m_pHouse = IterHouse->get();
 		m_pHouse->SetGuild(this);
-		Database->Execute<DB::UPDATE>("tw_guilds_houses", "GuildID = '%d' WHERE ID = '%d'", m_ID, HouseID);
+		Database->Execute<DB::UPDATE>(TW_GUILD_HOUSES, "GuildID = '%d' WHERE ID = '%d'", m_ID, HouseID);
 
 		const char* WorldName = Server()->GetWorldName(m_pHouse->GetWorldID());
 		GS()->Chat(-1, "{STR} bought guild house on {STR}!", GetName(), WorldName);
 		GS()->ChatDiscord(DC_SERVER_INFO, "Information", "{STR} bought guild house on {STR}!", GetName(), WorldName);
-		return true;
+		return GUILD_RESULT::SUCCESSFUL;
 	}
 
-	GS()->ChatGuild(m_ID, "House has already been purchased!");
-	return false;
+	return GUILD_RESULT::BUY_HOUSE_ALREADY_PURCHASED;
 }
 
 bool CGuildData::SellHouse()
 {
-	// check is not has house
 	if(m_pHouse == nullptr)
 	{
-		GS()->ChatGuild(m_ID, "Your Guild doesn't have a home!");
 		return false;
 	}
 
@@ -78,14 +74,30 @@ bool CGuildData::SellHouse()
 		m_pHouse->GetDoors()->CloseAll();
 		m_pHouse->SetGuild(nullptr);
 		m_pHouse = nullptr;
-		return true;
 	}
 
-	GS()->ChatGuild(m_ID, "Your Guild doesn't have a home!");
-	m_pHouse->GetDoors()->CloseAll();
-	m_pHouse->SetGuild(nullptr);
-	m_pHouse = nullptr;
-	return false;
+	return true;
+}
+
+GUILD_RESULT CGuildData::SetLeader(int AccountID)
+{
+	if(AccountID == m_OwnerUID)
+	{
+		return GUILD_RESULT::SET_LEADER_PLAYER_ALREADY_LEADER;
+	}
+
+	if(!m_pMembers->Get(AccountID))
+	{
+		return GUILD_RESULT::SET_LEADER_NON_GUILD_PLAYER;
+	}
+
+	m_OwnerUID = AccountID;
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "UserID = '%d' WHERE ID = '%d'", m_OwnerUID, m_ID);
+
+	const char* pNickNewLeader = Instance::GetServer()->GetAccountNickname(m_OwnerUID);
+	m_pHistory->Add("New guild leader '%s'", pNickNewLeader);
+	GS()->ChatGuild(m_ID, "New guild leader '{STR}'", pNickNewLeader);
+	return GUILD_RESULT::SUCCESSFUL;
 }
 
 void CGuildData::AddExperience(int Experience)
@@ -104,7 +116,6 @@ void CGuildData::AddExperience(int Experience)
 			UpdateTable = true;
 
 		GS()->Chat(-1, "Guild {STR} raised the level up to {INT}", GetName(), m_Level);
-		GS()->ChatDiscord(DC_SERVER_INFO, "Information", "Guild {STR} raised the level up to {INT}", GetName(), m_Level);
 		m_pHistory->Add("Guild raised level to '%d'.", m_Level);
 	}
 

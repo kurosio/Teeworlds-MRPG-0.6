@@ -10,12 +10,24 @@
 #include "Manager/Ranks/GuildRanksManager.h"
 #include "Houses/GuildHouseData.h"
 
-#define TW_GUILD_TABLE "tw_guilds"
+#define TW_GUILDS_TABLE "tw_guilds"
 #define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
 #define TW_GUILDS_HISTORY_TABLE "tw_guilds_history"
 #define TW_GUILDS_INVITES_TABLE "tw_guilds_invites"
 
 using GuildIdentifier = int;
+
+// Enum for guild member results
+enum class GUILD_RESULT : int
+{
+	BUY_HOUSE_ALREADY_HAVE,
+	BUY_HOUSE_UNAVAILABLE,
+	BUY_HOUSE_ALREADY_PURCHASED,
+	BUY_HOUSE_NOT_ENOUGH_GOLD,
+	SET_LEADER_PLAYER_ALREADY_LEADER,
+	SET_LEADER_NON_GUILD_PLAYER,
+	SUCCESSFUL
+};
 
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildData* > >
 {
@@ -97,8 +109,10 @@ public:
 	int GetScore() const { return m_Score; }
 	bool HasHouse() const { return m_pHouse != nullptr; }
 
-	bool BuyHouse(int HouseID);
+	GUILD_RESULT BuyHouse(int HouseID);
 	bool SellHouse();
+
+	GUILD_RESULT SetLeader(int AccountID);
 
 	void AddExperience(int Experience);
 };

@@ -487,7 +487,7 @@ void CPlayer::RefreshClanString()
 		Buffer.append(" | ");
 		Buffer.append(pGuild->GetName());
 		Buffer.append(" : ");
-		Buffer.append(Account()->GetGuildAccountSlot()->GetRank()->GetName());
+		Buffer.append(Account()->GetGuildMemberData()->GetRank()->GetName());
 	}
 
 	// class

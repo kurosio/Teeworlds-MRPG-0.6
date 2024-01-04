@@ -60,7 +60,7 @@ public:
 	 */
 	void ReinitializeGuild(bool SetNull = false);
 	CGuildData* GetGuild() const { return m_pGuildData; }
-	CGuildMemberData* GetGuildAccountSlot() const;
+	CGuildMemberData* GetGuildMemberData() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }
 	bool SameGuild(int ClientID) const;
 

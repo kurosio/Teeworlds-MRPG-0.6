@@ -124,12 +124,12 @@ void CGuildMembersController::Save() const
 	}
 
 	// Update the guild data in the database
-	Database->Execute<DB::UPDATE, 300>(TW_GUILD_TABLE, "DefaultRankID = '%d', Members = '%s' WHERE ID = '%d'",
+	Database->Execute<DB::UPDATE, 300>(TW_GUILDS_TABLE, "DefaultRankID = '%d', Members = '%s' WHERE ID = '%d'",
 		m_pGuild->GetRanks()->GetDefaultRank()->GetID(), MembersData.dump().c_str(), m_pGuild->GetID());
 }
 
 // Get a member by account ID
-CGuildMemberData* CGuildMembersController::GetMember(int AccountID)
+CGuildMemberData* CGuildMembersController::Get(int AccountID)
 {
 	return m_apMembers.find(AccountID) != m_apMembers.end() ? m_apMembers[AccountID] : nullptr;
 }

@@ -69,7 +69,7 @@ bool CGuildMemberData::DepositInBank(int Golds)
 		return false;
 
 	// Get the bank value from the guild table in the database
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILD_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILDS_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
 	if(pRes->next())
 	{
 		// If the player has enough gold to deposit
@@ -78,7 +78,7 @@ bool CGuildMemberData::DepositInBank(int Golds)
 			// Increase the member's deposit and the guild bank value
 			m_Deposit += Golds;
 			m_pGuild->GetBank()->Set(pRes->getInt("Bank") + Golds);
-			Database->Execute<DB::UPDATE>(TW_GUILD_TABLE, "Bank = '%d' WHERE ID = '%d'", m_pGuild->GetBank()->Get(), m_pGuild->GetID());
+			Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_pGuild->GetBank()->Get(), m_pGuild->GetID());
 
 			// Send a chat message to the player indicating the successful deposit and the new bank value
 			int ClientID = pPlayer->GetCID();
@@ -100,7 +100,7 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 		return false;
 
 	// Get the bank value from the guild table in the database
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILD_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILDS_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
 	if(pRes->next())
 	{
 		int ClientID = pPlayer->GetCID();
