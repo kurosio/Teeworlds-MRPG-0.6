@@ -30,22 +30,27 @@ CGuildMembersController::~CGuildMembersController()
 // Join a guild
 GUILD_MEMBER_RESULT CGuildMembersController::Join(int AccountID)
 {
-	// Check if the player is already in the guild
+	// Check if the member is already in the guild
 	if(m_apMembers.find(AccountID) != m_apMembers.end())
 	{
 		return GUILD_MEMBER_RESULT::JOIN_ALREADY_IN_GUILD;
 	}
 
-	// Create a new member data object and add it to the member list
+	// Create a new guild member data and add it to the guild members map
 	m_apMembers[AccountID] = new CGuildMemberData(m_pGuild, AccountID, m_pGuild->GetRanks()->GetDefaultRank());
 
-	// Reinitialize the guild for the player
+	// Reinitialize the guild for the player if they are online
 	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
 	{
 		pPlayer->Account()->ReinitializeGuild();
 	}
 
-	// Save the guild data
+	// Add a join message to the guild history and send chat message
+	const char* pNickname = Instance::GetServer()->GetAccountNickname(AccountID);
+	m_pGuild->GetHistory()->Add("'%s' has joined the guild.", pNickname);
+	GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' has joined the guild!", pNickname);
+
+	// Save the guild members data
 	Save();
 	return GUILD_MEMBER_RESULT::SUCCESSFUL;
 }
@@ -72,6 +77,11 @@ GUILD_MEMBER_RESULT CGuildMembersController::Kick(int AccountID)
 			pPlayer->Account()->ReinitializeGuild();
 			GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
 		}
+
+		// Add a left message to the guild history and send chat message
+		const char* pNickname = Instance::GetServer()->GetAccountNickname(AccountID);
+		m_pGuild->GetHistory()->Add("'%s' has left the guild.", pNickname);
+		GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' has left the guild!", pNickname);
 
 		// Save the guild data
 		Save();

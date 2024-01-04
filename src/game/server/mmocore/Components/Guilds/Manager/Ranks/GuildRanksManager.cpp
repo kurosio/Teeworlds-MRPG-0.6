@@ -68,8 +68,8 @@ void CGuildRanksController::UpdateDefaultRank()
 	}
 	else
 	{
-		Add("Member");
-		m_pDefaultRank = Get("Member");
+		Add("Newbie");
+		m_pDefaultRank = Get("Newbie");
 	}
 
 	// Set the default rank for all guild members who do not have a rank
