@@ -185,6 +185,30 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
+	if(PPSTR(CMD, "GUILD_CHANGE_PLAYER_RANK") == 0)
+	{
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->CheckAccess(RIGHTS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		const int& MemberUID = VoteID;
+		const GuildRankIdentifier& RankID = VoteID2;
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuildMemberData* pInterMember = pGuild->GetMembers()->GetMember(MemberUID);
+
+		if(!pInterMember || !pInterMember->SetRank(RankID))
+		{
+			GS()->Chat(ClientID, "Set a player's rank failed, try again later");
+			return true;
+		}
+
+		GS()->ChatGuild(pGuild->GetID(), "{STR} rank changed to {STR}.", Server()->GetAccountNickname(MemberUID), pInterMember->GetRank()->GetName());
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
+		return true;
+	}
+
 	if(PPSTR(CMD, "GUILD_DISBAND") == 0)
 	{
 		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildAccountSlot()->CheckAccess(RIGHTS_LEADER))
@@ -506,7 +530,8 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
 				{
 					if(pMemberSlot->GetRank()->GetID() != pRank->GetID())
 					{
-						GS()->AVD(ClientID, "RANK_CHANGE_PLAYER", MemberUID, pRank->GetID(), HideID, "Change rank to: {STR}", pRank->GetName()/*, &pRank.second.m_Access > 0 ? "*" : ""*/);
+						GS()->AVD(ClientID, "GUILD_CHANGE_PLAYER_RANK", MemberUID, pRank->GetID(), HideID, "Change rank to: {STR}", 
+							pRank->GetName(), pRank->GetAccess() > RIGHTS_DEFAULT ? "*" : "");
 						AllowedInteractiveWithPlayers = true;
 					}
 				}

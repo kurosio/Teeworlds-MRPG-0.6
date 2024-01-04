@@ -44,14 +44,19 @@ bool CGuildMemberData::SetRank(GuildRankIdentifier RankID)
 }
 
 // Set the rank of the member
+// This function sets the rank of a guild member
 bool CGuildMemberData::SetRank(CGuildRankData* pRank)
 {
+	// Check if the rank is valid
 	if(!pRank)
 		return false;
 
-	// Set the member's rank to the given rank
+	// Set the member's rank
 	m_pRank = pRank;
+
+	// Save the member data and add a history entry for the rank change
 	m_pGuild->GetMembers()->Save();
+	m_pGuild->GetHistory()->Add("%s rank changed to %s", Instance::GetServer()->GetAccountNickname(m_AccountID), m_pRank->GetName());
 	return true;
 }
 
@@ -123,6 +128,6 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 // Check if a member has the required access level
 bool CGuildMemberData::CheckAccess(GuildRankAccess RequiredAccess) const
 {
-	return (m_pGuild->GetOwnerUID() == m_AccountID || m_pRank->GetAccess() == RequiredAccess 
+	return (m_pGuild->GetOwnerUID() == m_AccountID || m_pRank->GetAccess() == RequiredAccess
 		|| (m_pRank->GetAccess() == ACCESS_FULL && RequiredAccess != ACCESS_LEADER));
 }
