@@ -224,7 +224,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		const int& MemberUID = VoteID;
 		const GuildRankIdentifier& RankID = VoteID2;
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		CGuildMemberData* pInterMember = pGuild->GetMembers()->Get(MemberUID);
+		CGuildMemberData* pInterMember = pGuild->Members()->Get(MemberUID);
 
 		if(!pInterMember || !pInterMember->SetRank(RankID))
 		{
@@ -269,7 +269,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(VoteID);
+		GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->Members()->Kick(VoteID);
 		if(Result == GUILD_MEMBER_RESULT::CANT_KICK_LEADER)
 		{
 			GS()->Chat(ClientID, "You can't kick a leader");
@@ -306,7 +306,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		{
 			CGuildData* pGuild = pPlayer->Account()->GetGuild();
 			GS()->ChatGuild(pGuild->GetID(), "{STR} deposit in bank {VAL}gold.", Server()->ClientName(ClientID), Get);
-			pGuild->GetHistory()->Add("'%s' added to bank %d gold.", Server()->ClientName(ClientID), Get);
+			pGuild->History()->Add("'%s' added to bank %d gold.", Server()->ClientName(ClientID), Get);
 			GS()->StrongUpdateVotes(ClientID, MENU_GUILD);
 		}
 
@@ -334,7 +334,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
+		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->Ranks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
 		if(Result == GUILD_RANK_RESULT::ADD_ALREADY_EXISTS)
 		{
 			GS()->Chat(ClientID, "The rank name already exists");
@@ -365,7 +365,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(VoteID)->Rename(pPlayer->GetTempData().m_aRankGuildBuf);
+		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->Ranks()->Get(VoteID)->Rename(pPlayer->GetTempData().m_aRankGuildBuf);
 		if(Result == GUILD_RANK_RESULT::RENAME_ALREADY_NAME_EXISTS)
 		{
 			GS()->Chat(ClientID, "The name is already in use by another rank");
@@ -392,9 +392,9 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		const int& RankID = VoteID;
-		CGuildRankData* pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		CGuildRankData* pRank = pPlayer->Account()->GetGuild()->Ranks()->Get(RankID);
 
-		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Remove(pRank->GetName());
+		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->Ranks()->Remove(pRank->GetName());
 		if(Result == GUILD_RANK_RESULT::REMOVE_RANK_IS_DEFAULT)
 		{
 			GS()->Chat(ClientID, "You can't remove default rank");
@@ -420,7 +420,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		const int& RankID = VoteID;
-		CGuildRankData* pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		CGuildRankData* pRank = pPlayer->Account()->GetGuild()->Ranks()->Get(RankID);
 
 		pRank->ChangeAccess();
 		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
@@ -542,7 +542,7 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
 
 	// show player's list of guild
 	GS()->AVL(ClientID, "null", "Membership list of {STR}", pGuild->GetName());
-	for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
+	for(auto& pIterMember : pGuild->Members()->GetContainer())
 	{
 		CGuildMemberData* pMemberSlot = pIterMember.second;
 		const int MemberUID = pMemberSlot->GetAccountID();
@@ -556,7 +556,7 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
 			// leader access
 			if(pSelfMemberSlot->CheckAccess(RIGHTS_LEADER))
 			{
-				for(auto& pRank : pGuild->GetRanks()->GetContainer())
+				for(auto& pRank : pGuild->Ranks()->GetContainer())
 				{
 					if(pMemberSlot->GetRank()->GetID() != pRank->GetID())
 					{
@@ -614,7 +614,7 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const
 		int ClientID = pPlayer->GetCID();
 
 		GS()->AVL(ClientID, "null", "Membership list of {STR}", pGuild->GetName());
-		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
+		for(auto& pIterMember : pGuild->Members()->GetContainer())
 		{
 			CGuildMemberData* pMemberSlot = pIterMember.second;
 			GS()->AVL(ClientID, "null", "{STR} {STR} Deposit: {VAL}", 
@@ -668,7 +668,7 @@ void CGuildManager::Create(CPlayer *pPlayer, const char *pGuildName) const
 	pPlayer->Account()->ReinitializeGuild();
 
 	// we create a guild in the table
-	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID, Members) VALUES ('%d', '%s', '%d', '%s')", 
+	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, LeaderUID, Members) VALUES ('%d', '%s', '%d', '%s')", 
 		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
 	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
@@ -685,11 +685,11 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	CGuildData* pGuild = (*pIterGuild);
 	if(pGuild->HasHouse())
 	{
-		//pGuild->GetHouse()->Sell();
+		//pGuild->House()->Sell();
 	}
 
-	const int ReturnsGold = maximum(1, pGuild->GetBank()->Get());
-	GS()->SendInbox("System", pGuild->GetOwnerUID(), "Your guild was disbanded.", "We returned some gold from your guild.", itGold, ReturnsGold);
+	const int ReturnsGold = maximum(1, pGuild->Bank()->Get());
+	GS()->SendInbox("System", pGuild->GetLeaderUID(), "Your guild was disbanded.", "We returned some gold from your guild.", itGold, ReturnsGold);
 	GS()->Chat(-1, "The {STR} guild has been disbanded.", pGuild->GetName());
 
 	// erase from database
@@ -718,10 +718,10 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	bool HasHouse = pGuild->HasHouse();
 	int ExpNeed = computeExperience(pGuild->GetLevel());
 
-	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", pGuild->GetName(), Server()->GetAccountNickname(pGuild->GetOwnerUID()));
+	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", pGuild->GetName(), Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", pGuild->GetUpgrades()(CGuildData::AVAILABLE_SLOTS, 0).m_Value);
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", pGuild->GetBank()->Get());
+	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", pGuild->Bank()->Get());
 	GS()->AV(ClientID, "null");
 	//
 	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
@@ -790,10 +790,10 @@ void CGuildManager::ShowMenuRank(CPlayer *pPlayer)
 	GS()->AV(ClientID, "null");
 
 	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1300;
-	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
+	for(auto pRank : pPlayer->Account()->GetGuild()->Ranks()->GetContainer())
 	{
 		GuildRankIdentifier ID = pRank->GetID();
-		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank());
+		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->Ranks()->GetDefaultRank());
 		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetAccessName());
 
 		GS()->AVH(ClientID, HideID, "Rank [{STR}] {STR}", pRank->GetName(), StrAppendRankInfo.c_str());
@@ -877,8 +877,8 @@ void CGuildManager::ShowFinder(int ClientID)
 	for(auto& pGuild : CGuildData::Data())
 	{
 		int AvailableSlots = 20; // TODO
-		int PlayersNum = pGuild->GetMembers()->GetContainer().size();
-		int OwnerUID = pGuild->GetOwnerUID();
+		int PlayersNum = pGuild->Members()->GetContainer().size();
+		int OwnerUID = pGuild->GetLeaderUID();
 
 		GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} ({INT} of {INT} players)", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID), PlayersNum, AvailableSlots);
 		if(pGuild->HasHouse())
@@ -889,7 +889,7 @@ void CGuildManager::ShowFinder(int ClientID)
 		{
 			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild doesn't have its own house");
 		}
-		GS()->AVM(ClientID, "null", NOPE, HideID, "* Accumulations are: {VAL} gold's", pGuild->GetBank()->Get());
+		GS()->AVM(ClientID, "null", NOPE, HideID, "* Accumulations are: {VAL} gold's", pGuild->Bank()->Get());
 
 		GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, pGuild->GetID(), HideID, "View player list");
 		GS()->AVM(ClientID, "MINVITESEND", pGuild->GetID(), HideID, "Send request to join {STR}", pGuild->GetName());
@@ -910,7 +910,7 @@ void CGuildManager::ShowHistory(int ClientID) const
 		return;
 
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	GuildHistoryContainer aHistory = pGuild->GetHistory()->GetLogs();
+	GuildHistoryContainer aHistory = pGuild->History()->GetLogs();
 	if(!aHistory.empty())
 	{
 		char aBuf[128];
@@ -962,7 +962,7 @@ void CGuildManager::ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse)
 	if(pPlayer->Account()->HasGuild())
 	{
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", pGuild->GetBank()->Get());
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", pGuild->Bank()->Get());
 	}
 
 	if(!pHouse)

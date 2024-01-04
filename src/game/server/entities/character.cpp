@@ -212,7 +212,7 @@ bool CCharacter::DecoInteractive()
 		else if(InteractiveType == DECORATIONS_GUILD_HOUSE)
 		{
 			CGuildData* pGuild = m_pPlayer->Account()->GetGuild();
-			/*if(pGuild && pGuild->GetHouse() && pGuild->GetHouse()->GetDecorations()->Add(DecoID, GuildID, GetMousePos()))
+			/*if(pGuild && pGuild->House() && pGuild->House()->GetDecorations()->Add(DecoID, GuildID, GetMousePos()))
 			{
 				GS()->Chat(ClientID, "You have added {STR} to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
