@@ -196,7 +196,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		const int& MemberUID = VoteID;
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 
-		GUILD_RESULT Result = pGuild->SetLeader(MemberUID);
+		GUILD_RESULT Result = pGuild->SetNewLeader(MemberUID);
 		if(Result == GUILD_RESULT::SET_LEADER_NON_GUILD_PLAYER)
 		{
 			GS()->Chat(ClientID, "The player is not a member of your guild");

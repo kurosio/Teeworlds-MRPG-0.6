@@ -112,7 +112,7 @@ public:
 	GUILD_RESULT BuyHouse(int HouseID);
 	bool SellHouse();
 
-	GUILD_RESULT SetLeader(int AccountID);
+	GUILD_RESULT SetNewLeader(int AccountID);
 
 	void AddExperience(int Experience);
 };

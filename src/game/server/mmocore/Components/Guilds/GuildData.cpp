@@ -79,7 +79,7 @@ bool CGuildData::SellHouse()
 	return true;
 }
 
-GUILD_RESULT CGuildData::SetLeader(int AccountID)
+GUILD_RESULT CGuildData::SetNewLeader(int AccountID)
 {
 	if(AccountID == m_OwnerUID)
 	{
