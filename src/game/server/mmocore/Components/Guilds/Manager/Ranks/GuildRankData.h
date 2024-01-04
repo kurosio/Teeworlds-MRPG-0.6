@@ -28,6 +28,7 @@ enum class GUILD_RANK_RESULT : int
 	REMOVE_RANK_IS_DEFAULT,       // Cannot remove default rank
 	REMOVE_RANK_DOES_NOT_EXIST,   // Rank to be removed does not exist
 	RENAME_ALREADY_NAME_EXISTS,   // Cannot rename rank, name already exists
+	WRONG_NUMBER_OF_CHAR_IN_NAME, // Wrong number of characters in the name
 	SUCCESSFUL                    // Operation was successful
 };
 
@@ -54,7 +55,7 @@ public:
 	const char* GetAccessName() const;
 
 	// Change the name of the guild rank
-	GUILD_RANK_RESULT ChangeName(std::string NewRank);
+	GUILD_RANK_RESULT Rename(std::string NewRank);
 
 	// Change the access level of the guild rank
 	void ChangeAccess();
@@ -63,7 +64,7 @@ public:
 	void SetAccess(GuildRankAccess Access);
 
 	// Get the rank access
-	const GuildRankAccess& GetAccess() const { return m_Access;}
+	const GuildRankAccess& GetAccess() const { return m_Access; }
 };
 
 #endif

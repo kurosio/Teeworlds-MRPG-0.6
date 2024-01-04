@@ -303,6 +303,11 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		{
 			GS()->Chat(ClientID, "Rank limit reached, {INT} out of {INT}", (int)MAX_GUILD_RANK_NUM, (int)MAX_GUILD_RANK_NUM);
 		}
+		else if(Result == GUILD_RANK_RESULT::WRONG_NUMBER_OF_CHAR_IN_NAME)
+		{
+			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
+			GS()->Chat(ClientID, "You may be using unauthorized characters in the name, like '");
+		}
 
 		return true;
 	}
@@ -323,7 +328,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID)->ChangeName(pPlayer->GetTempData().m_aRankGuildBuf);
+		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID)->Rename(pPlayer->GetTempData().m_aRankGuildBuf);
 		if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
 			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
@@ -331,6 +336,11 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		else if(Result == GUILD_RANK_RESULT::RENAME_ALREADY_NAME_EXISTS)
 		{
 			GS()->Chat(ClientID, "The name is already in use by another rank");
+		}
+		else if(Result == GUILD_RANK_RESULT::WRONG_NUMBER_OF_CHAR_IN_NAME)
+		{
+			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
+			GS()->Chat(ClientID, "You may be using unauthorized characters in the name, like '");
 		}
 
 		return true;
