@@ -128,6 +128,6 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 // Check if a member has the required access level
 bool CGuildMemberData::CheckAccess(GuildRankAccess RequiredAccess) const
 {
-	return (m_pGuild->GetOwnerUID() == m_AccountID || m_pRank->GetAccess() == RequiredAccess
+	return (m_pGuild->GetLeaderUID() == m_AccountID || m_pRank->GetAccess() == RequiredAccess
 		|| (m_pRank->GetAccess() == ACCESS_FULL && RequiredAccess != ACCESS_LEADER));
 }

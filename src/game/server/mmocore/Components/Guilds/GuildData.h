@@ -48,7 +48,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 
 	GuildIdentifier m_ID {};
 	std::string m_Name {};
-	int m_OwnerUID {};
+	int m_LeaderUID {};
 	int m_Level {};
 	int m_Experience {};
 	int m_Score {};
@@ -77,10 +77,10 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int OwnerUID, int Bank)
+	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank)
 	{
 		m_Name = Name;
-		m_OwnerUID = OwnerUID;
+		m_LeaderUID = LeaderUID;
 		m_Level = Level;
 		m_Experience = Experience;
 		m_Score = Score;
@@ -103,7 +103,7 @@ public:
 	CFieldContainer& GetUpgrades() { return m_UpgradeData; }
 
 	const char* GetName() const { return m_Name.c_str(); }
-	int GetOwnerUID() const { return m_OwnerUID; }
+	int GetLeaderUID() const { return m_LeaderUID; }
 	int GetLevel() const { return m_Level; }
 	int GetExperience() const { return m_Experience;}
 	int GetScore() const { return m_Score; }

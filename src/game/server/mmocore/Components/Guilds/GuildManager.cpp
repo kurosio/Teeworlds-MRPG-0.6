@@ -21,13 +21,13 @@ void CGuildManager::OnInit()
 			std::string Name = pRes->getString("Name").c_str();
 			std::string MembersData = pRes->getString("Members").c_str();
 			GuildRankIdentifier DefaultRankID = pRes->getInt("DefaultRankID");
-			int OwnerUID = pRes->getInt("UserID");
+			int LeaderUID = pRes->getInt("LeaderUID");
 			int Level = pRes->getInt("Level");
 			int Experience = pRes->getInt("Experience");
 			int Bank = pRes->getInt("Bank");
 			int Score = pRes->getInt("Score");
 
-			CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, OwnerUID, Bank);
+			CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank);
 	}
 
 	Job()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
@@ -657,7 +657,7 @@ void CGuildManager::Create(CPlayer *pPlayer, const char *pGuildName) const
 	}
 
 	// get ID for initialization
-	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_guilds", "ORDER BY ID DESC LIMIT 1");
+	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_GUILDS_TABLE, "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
 
 	// initialize the guild
@@ -668,7 +668,7 @@ void CGuildManager::Create(CPlayer *pPlayer, const char *pGuildName) const
 	pPlayer->Account()->ReinitializeGuild();
 
 	// we create a guild in the table
-	Database->Execute<DB::INSERT>("tw_guilds", "(ID, Name, UserID, Members) VALUES ('%d', '%s', '%d', '%s')", 
+	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('%d', '%s', '%d', '%s')",
 		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
 	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
@@ -689,7 +689,7 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	}
 
 	const int ReturnsGold = maximum(1, pGuild->GetBank()->Get());
-	GS()->SendInbox("System", pGuild->GetOwnerUID(), "Your guild was disbanded.", "We returned some gold from your guild.", itGold, ReturnsGold);
+	GS()->SendInbox("System", pGuild->GetLeaderUID(), "Your guild was disbanded.", "We returned some gold from your guild.", itGold, ReturnsGold);
 	GS()->Chat(-1, "The {STR} guild has been disbanded.", pGuild->GetName());
 
 	// erase from database
@@ -718,7 +718,7 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	bool HasHouse = pGuild->HasHouse();
 	int ExpNeed = computeExperience(pGuild->GetLevel());
 
-	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", pGuild->GetName(), Server()->GetAccountNickname(pGuild->GetOwnerUID()));
+	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", pGuild->GetName(), Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", pGuild->GetUpgrades()(CGuildData::AVAILABLE_SLOTS, 0).m_Value);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", pGuild->GetBank()->Get());
@@ -878,7 +878,7 @@ void CGuildManager::ShowFinder(int ClientID)
 	{
 		int AvailableSlots = 20; // TODO
 		int PlayersNum = pGuild->GetMembers()->GetContainer().size();
-		int OwnerUID = pGuild->GetOwnerUID();
+		int OwnerUID = pGuild->GetLeaderUID();
 
 		GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} ({INT} of {INT} players)", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID), PlayersNum, AvailableSlots);
 		if(pGuild->HasHouse())
