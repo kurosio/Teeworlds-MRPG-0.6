@@ -6,19 +6,18 @@
 
 #include "GuildData.h"
 
-class CEntityGuildDoor;
-class CDecorationHouses;
 class CGuildManager : public MmoComponent
 {
 	~CGuildManager() override
 	{
+		for(const auto pGuild : CGuildData::Data())
+			delete pGuild;
+
 		CGuildData::Data().clear();
 		CGuildData::Data().shrink_to_fit();
 		CGuildHouseData::Data().clear();
 		CGuildHouseData::Data().shrink_to_fit();
 	};
-
-	std::map < int, CDecorationHouses* > m_DecorationHouse;
 
 	void OnInit() override;
 	void OnInitWorld(const char* pWhereLocalWorld) override;
@@ -26,8 +25,6 @@ class CGuildManager : public MmoComponent
 	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
-	void ShowPlayerlist(CPlayer* pPlayer) const;
-	void ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const;
 
 public:
 	void Create(CPlayer *pPlayer, const char *pGuildName) const;
@@ -35,17 +32,17 @@ public:
 
 private:
 	void ShowMenu(CPlayer* pPlayer) const;
-	void ShowMenuRank(CPlayer *pPlayer);
-	void ShowFinder(int ClientID);
-
-
-	void ShowInvitesGuilds(int ClientID, int GuildID);
-	void SendInviteGuild(int GuildID, CPlayer* pPlayer);
-
+	void ShowRanksSettings(CPlayer *pPlayer);
+	void ShowFinder(int ClientID) const;
 	void ShowHistory(int ClientID) const;
+	void ShowPlayerlist(CPlayer* pPlayer) const;
+	void ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const;
+	void ShowRequests(int ClientID) const;
+
 public:
 	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
 	CGuildData* GetGuildByID(GuildIdentifier ID) const;
+	bool IsAccountMemberGuild(int AccountID) const;
 
 	void ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse);
 };

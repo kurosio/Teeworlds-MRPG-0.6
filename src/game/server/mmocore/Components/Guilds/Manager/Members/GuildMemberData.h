@@ -9,17 +9,6 @@
 class CGuildData;
 class CGuildRankData;
 
-// Enum for guild member results
-enum class GUILD_MEMBER_RESULT : int
-{
-	JOIN_ALREADY_IN_GUILD,      // Result when a member tries to join a guild they are already a part of
-
-	KICK_DOES_NOT_EXIST,        // Result when trying to kick a member who does not exist
-	CANT_KICK_LEADER,           // Result when trying to kick the guild leader
-
-	SUCCESSFUL                  // Result when the operation is successful
-};
-
 class CGuildMemberData
 {
 	CGS* GS() const;

@@ -124,3 +124,11 @@ void CGuildData::AddExperience(int Experience)
 		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", m_Level, m_Experience, m_ID);
 	}
 }
+
+bool CGuildData::IsAccountMemberGuild(int AccountID)
+{
+	return std::any_of(CGuildData::Data().begin(), CGuildData::Data().end(), [&AccountID](const CGuildData* p)
+	{
+		return p->GetMembers()->Get(AccountID) != nullptr;
+	});
+}

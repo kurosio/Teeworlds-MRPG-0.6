@@ -34,10 +34,11 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 	friend class CGuildHouseData;
 	friend class CGuildMemberData;
 	friend class CGuildMembersController;
+	friend class CGuildRequestsController;
 	friend class CGuildRankData;
 	friend class CGuildRanksController;
 	friend class CGuildBankController;
-
+	
 	CGS* GS() const;
 
 	CFieldContainer m_UpgradeData
@@ -115,6 +116,8 @@ public:
 	GUILD_RESULT SetNewLeader(int AccountID);
 
 	void AddExperience(int Experience);
+
+	static bool IsAccountMemberGuild(int AccountID);
 };
 
 #endif

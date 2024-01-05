@@ -11,6 +11,8 @@ CGS* CGuildMembersController::GS() const { return m_pGuild->GS(); }
 // Constructor
 CGuildMembersController::CGuildMembersController(CGuildData* pGuild, std::string&& MembersData) : m_pGuild(pGuild)
 {
+	m_pRequests = new CGuildRequestsController(pGuild);
+
 	CGuildMembersController::Init(std::move(MembersData));
 }
 
@@ -24,6 +26,7 @@ CGuildMembersController::~CGuildMembersController()
 		pIterMember.second = nullptr;
 	}
 
+	delete m_pRequests;
 	m_apMembers.clear();
 }
 
@@ -31,7 +34,7 @@ CGuildMembersController::~CGuildMembersController()
 GUILD_MEMBER_RESULT CGuildMembersController::Join(int AccountID)
 {
 	// Check if the member is already in the guild
-	if(m_apMembers.find(AccountID) != m_apMembers.end())
+	if(m_apMembers.find(AccountID) != m_apMembers.end() || CGuildData::IsAccountMemberGuild(AccountID))
 	{
 		return GUILD_MEMBER_RESULT::JOIN_ALREADY_IN_GUILD;
 	}
