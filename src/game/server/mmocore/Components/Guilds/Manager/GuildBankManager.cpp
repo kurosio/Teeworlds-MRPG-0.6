@@ -5,15 +5,15 @@
 #include <game/server/gamecontext.h>
 #include "../GuildData.h"
 
-CGS* CGuildBankController::GS() const { return m_pGuild->GS(); }
+CGS* CGuildBankManager::GS() const { return m_pGuild->GS(); }
 
-void CGuildBankController::Set(int Value)
+void CGuildBankManager::Set(int Value)
 {
 	m_Bank = Value;
 	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
 }
 
-bool CGuildBankController::Spend(int Value)
+bool CGuildBankManager::Spend(int Value)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILDS_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
 	if(pRes->next())

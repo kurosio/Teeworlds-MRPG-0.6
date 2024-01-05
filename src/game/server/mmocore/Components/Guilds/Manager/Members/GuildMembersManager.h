@@ -5,7 +5,7 @@
 #include "GuildMemberData.h"
 
 class CGuildData;
-class CGuildRequestsController;
+class CGuildRequestsManager;
 using CGuildMembersContainer = std::map<int, CGuildMemberData*>;
 
 // Enum for guild member results
@@ -22,20 +22,20 @@ enum class GUILD_MEMBER_RESULT : int
 	SUCCESSFUL                  // Result when the operation is successful
 };
 
-class CGuildMembersController
+class CGuildMembersManager
 {
 	CGS* GS() const;
 
 	CGuildData* m_pGuild {};
-	CGuildRequestsController* m_pRequests {};
+	CGuildRequestsManager* m_pRequests {};
 	CGuildMembersContainer m_apMembers {};
 
 public:
-	CGuildMembersController(CGuildData* pGuild, std::string&& MembersData);
-	~CGuildMembersController();
+	CGuildMembersManager(CGuildData* pGuild, std::string&& MembersData);
+	~CGuildMembersManager();
 
 	// Returns the pointer to the controller requests to join
-	CGuildRequestsController* GetRequests() const { return m_pRequests; }
+	CGuildRequestsManager* GetRequests() const { return m_pRequests; }
 
 	// Get a guild member by account ID
 	CGuildMemberData* Get(int AccountID);

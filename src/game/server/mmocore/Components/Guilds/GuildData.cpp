@@ -21,7 +21,7 @@ GUILD_RESULT CGuildData::BuyHouse(int HouseID)
 		return GUILD_RESULT::BUY_HOUSE_ALREADY_HAVE;
 	}
 
-	auto IterHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&HouseID](const GuildHouseDataPtr p)
+	auto IterHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&HouseID](const CGuildHouseData* p)
 	{
 		return p->GetID() == HouseID;
 	});
@@ -31,7 +31,7 @@ GUILD_RESULT CGuildData::BuyHouse(int HouseID)
 		return GUILD_RESULT::BUY_HOUSE_UNAVAILABLE;
 	}
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES, "WHERE ID = '%d' AND GuildID IS NULL", HouseID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES, "WHERE ID = '%d'", HouseID);
 	if(pRes->next())
 	{
 		const int Price = pRes->getInt("Price");
@@ -40,13 +40,9 @@ GUILD_RESULT CGuildData::BuyHouse(int HouseID)
 			return GUILD_RESULT::BUY_HOUSE_NOT_ENOUGH_GOLD;
 		}
 
-		m_pHouse = IterHouse->get();
-		m_pHouse->SetGuild(this);
+		m_pHouse = *IterHouse;
+		m_pHouse->UpdateGuild(this);
 		Database->Execute<DB::UPDATE>(TW_GUILD_HOUSES, "GuildID = '%d' WHERE ID = '%d'", m_ID, HouseID);
-
-		const char* WorldName = Server()->GetWorldName(m_pHouse->GetWorldID());
-		GS()->Chat(-1, "{STR} bought guild house on {STR}!", GetName(), WorldName);
-		GS()->ChatDiscord(DC_SERVER_INFO, "Information", "{STR} bought guild house on {STR}!", GetName(), WorldName);
 		return GUILD_RESULT::SUCCESSFUL;
 	}
 
@@ -60,22 +56,15 @@ bool CGuildData::SellHouse()
 		return false;
 	}
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", TW_GUILD_HOUSES, "WHERE ID = '%d' AND GuildID IS NOT NULL", m_pHouse->GetID());
-	if(pRes->next())
-	{
-		Database->Execute<DB::UPDATE>(TW_GUILD_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
+	const int ReturnedGold = m_pHouse->GetPrice();
+	GS()->SendInbox("System", m_LeaderUID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
+	GS()->ChatGuild(m_ID, "House sold, {VAL}gold returned to leader", ReturnedGold);
+	m_pHistory->Add("Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
 
-		const int ReturnedGold = m_pHouse->GetPrice();
-		GS()->SendInbox("System", m_LeaderUID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
-
-		GS()->ChatGuild(m_ID, "House sold, {VAL}gold returned to leader", ReturnedGold);
-		m_pHistory->Add("Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
-
-		m_pHouse->GetDoors()->CloseAll();
-		m_pHouse->SetGuild(nullptr);
-		m_pHouse = nullptr;
-	}
-
+	Database->Execute<DB::UPDATE>(TW_GUILD_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
+	m_pHouse->GetDoors()->CloseAll();
+	m_pHouse->UpdateGuild(nullptr);
+	m_pHouse = nullptr;
 	return true;
 }
 

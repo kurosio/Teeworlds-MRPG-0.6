@@ -3,15 +3,17 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_REQUEST_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_REQUEST_DATA_H
 
+// This class represents data for a guild request
 class CGuildRequestData
 {
 	int m_FromUID;
 
 public:
 	CGuildRequestData() = delete;
-	CGuildRequestData(int FromUID) : m_FromUID(FromUID) {};
+	CGuildRequestData(int FromUID) noexcept : m_FromUID(FromUID) {}
 
-	int GetFromUID() const { return m_FromUID; }
+	// Getter method for retrieving the FromUID member variable
+	int GetFromUID() const noexcept { return m_FromUID; }
 };
 
 

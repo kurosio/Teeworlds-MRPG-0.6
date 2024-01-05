@@ -957,17 +957,14 @@ void CGuildManager::ShowHistory(int ClientID) const
 	GS()->AddVotesBackpage(ClientID);
 }
 
-/* #########################################################################
-	GET CHECK MEMBER HOUSING MEMBER
-######################################################################### */
 CGuildHouseData* CGuildManager::GetGuildHouseByPos(vec2 Pos) const
 {
-	auto itHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&Pos, this](GuildHouseDataPtr p)
+	auto itHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&Pos, this](const CGuildHouseData* p)
 	{
 		return GS()->GetWorldID() == p->GetWorldID() && distance(Pos, p->GetPos()) < 360.f;
 	});
 
-	return itHouse != CGuildHouseData::Data().end() ? itHouse->get() : nullptr;
+	return itHouse != CGuildHouseData::Data().end() ? *itHouse : nullptr;
 }
 
 CGuildData* CGuildManager::GetGuildByID(GuildIdentifier ID) const

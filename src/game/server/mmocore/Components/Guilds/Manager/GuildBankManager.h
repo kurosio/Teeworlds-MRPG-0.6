@@ -9,7 +9,7 @@ class CPlayer;
 class CGuildData;
 
 // This class represents a controller for a guild bank
-class CGuildBankController
+class CGuildBankManager
 {
 	// Returns a pointer to the game server
 	CGS* GS() const;
@@ -19,7 +19,7 @@ class CGuildBankController
 
 public:
 	// Constructor
-	CGuildBankController(int Bank, CGuildData* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
+	CGuildBankManager(int Bank, CGuildData* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
 
 	// Get the current amount of currency in the bank
 	void Set(int Value);

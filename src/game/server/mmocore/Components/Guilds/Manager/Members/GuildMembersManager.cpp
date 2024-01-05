@@ -6,18 +6,18 @@
 #include <game/server/gamecontext.h>
 
 // Get the game server
-CGS* CGuildMembersController::GS() const { return m_pGuild->GS(); }
+CGS* CGuildMembersManager::GS() const { return m_pGuild->GS(); }
 
 // Constructor
-CGuildMembersController::CGuildMembersController(CGuildData* pGuild, std::string&& MembersData) : m_pGuild(pGuild)
+CGuildMembersManager::CGuildMembersManager(CGuildData* pGuild, std::string&& MembersData) : m_pGuild(pGuild)
 {
-	m_pRequests = new CGuildRequestsController(pGuild);
+	m_pRequests = new CGuildRequestsManager(pGuild);
 
-	CGuildMembersController::Init(std::move(MembersData));
+	CGuildMembersManager::Init(std::move(MembersData));
 }
 
 // Destructor
-CGuildMembersController::~CGuildMembersController()
+CGuildMembersManager::~CGuildMembersManager()
 {
 	// Delete all member data objects
 	for(auto pIterMember : m_apMembers)
@@ -31,7 +31,7 @@ CGuildMembersController::~CGuildMembersController()
 }
 
 // Join a guild
-GUILD_MEMBER_RESULT CGuildMembersController::Join(int AccountID)
+GUILD_MEMBER_RESULT CGuildMembersManager::Join(int AccountID)
 {
 	// Check if the member is already in the guild
 	if(m_apMembers.find(AccountID) != m_apMembers.end() || CGuildData::IsAccountMemberGuild(AccountID))
@@ -59,7 +59,7 @@ GUILD_MEMBER_RESULT CGuildMembersController::Join(int AccountID)
 }
 
 // Kick a member from the guild
-GUILD_MEMBER_RESULT CGuildMembersController::Kick(int AccountID)
+GUILD_MEMBER_RESULT CGuildMembersManager::Kick(int AccountID)
 {
 	// Check if the player is the guild leader
 	if(m_pGuild->GetLeaderUID() == AccountID)
@@ -95,7 +95,7 @@ GUILD_MEMBER_RESULT CGuildMembersController::Kick(int AccountID)
 }
 
 // Initialize the guild members from a JSON string
-void CGuildMembersController::Init(std::string&& MembersData)
+void CGuildMembersManager::Init(std::string&& MembersData)
 {
 	// Assert by empty
 	dbg_assert(m_apMembers.empty(), "");
@@ -123,7 +123,7 @@ void CGuildMembersController::Init(std::string&& MembersData)
 }
 
 // Save the guild members to the database
-void CGuildMembersController::Save() const
+void CGuildMembersManager::Save() const
 {
 	// Create a JSON object for the member data
 	nlohmann::json MembersData;
@@ -142,7 +142,7 @@ void CGuildMembersController::Save() const
 }
 
 // Get a member by account ID
-CGuildMemberData* CGuildMembersController::Get(int AccountID)
+CGuildMemberData* CGuildMembersManager::Get(int AccountID)
 {
 	return m_apMembers.find(AccountID) != m_apMembers.end() ? m_apMembers[AccountID] : nullptr;
 }

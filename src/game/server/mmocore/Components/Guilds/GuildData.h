@@ -33,11 +33,11 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 {
 	friend class CGuildHouseData;
 	friend class CGuildMemberData;
-	friend class CGuildMembersController;
-	friend class CGuildRequestsController;
+	friend class CGuildMembersManager;
+	friend class CGuildRequestsManager;
 	friend class CGuildRankData;
-	friend class CGuildRanksController;
-	friend class CGuildBankController;
+	friend class CGuildRanksManager;
+	friend class CGuildBankManager;
 	
 	CGS* GS() const;
 
@@ -54,10 +54,10 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 	int m_Experience {};
 	int m_Score {};
 
-	CGuildBankController* m_pBank {};
+	CGuildBankManager* m_pBank {};
 	CGuildHistoryController* m_pHistory {};
-	CGuildRanksController* m_pRanks {};
-	CGuildMembersController* m_pMembers {};
+	CGuildRanksManager* m_pRanks {};
+	CGuildMembersManager* m_pMembers {};
 	CGuildHouseData* m_pHouse{};
 
 public:
@@ -86,21 +86,21 @@ public:
 		m_Experience = Experience;
 		m_Score = Score;
 
-		// components init
+			// components init
 		m_pHistory = new CGuildHistoryController(this);
-		m_pBank = new CGuildBankController(Bank, this);
-		m_pRanks = new CGuildRanksController(this, DefaultRankID);
-		m_pMembers = new CGuildMembersController(this, std::move(MembersData));
+		m_pBank = new CGuildBankManager(Bank, this);
+		m_pRanks = new CGuildRanksManager(this, DefaultRankID);
+		m_pMembers = new CGuildMembersManager(this, std::move(MembersData));
 
 		m_pRanks->UpdateDefaultRank();
 	}
 
 	GuildIdentifier GetID() const { return m_ID; }
-	CGuildBankController* GetBank() const { return m_pBank; }
+	CGuildBankManager* GetBank() const { return m_pBank; }
 	CGuildHistoryController* GetHistory() const { return m_pHistory; }
-	CGuildRanksController* GetRanks() const { return m_pRanks; }
+	CGuildRanksManager* GetRanks() const { return m_pRanks; }
 	CGuildHouseData* GetHouse() const { return m_pHouse; }
-	CGuildMembersController* GetMembers() const { return m_pMembers; }
+	CGuildMembersManager* GetMembers() const { return m_pMembers; }
 	CFieldContainer& GetUpgrades() { return m_UpgradeData; }
 
 	const char* GetName() const { return m_Name.c_str(); }

@@ -10,12 +10,14 @@ class CGuildManager : public MmoComponent
 {
 	~CGuildManager() override
 	{
+		for(const auto pHouse : CGuildHouseData::Data())
+			delete pHouse;
 		for(const auto pGuild : CGuildData::Data())
 			delete pGuild;
 
 		CGuildData::Data().clear();
-		CGuildData::Data().shrink_to_fit();
 		CGuildHouseData::Data().clear();
+		CGuildData::Data().shrink_to_fit();
 		CGuildHouseData::Data().shrink_to_fit();
 	};
 

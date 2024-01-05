@@ -11,7 +11,7 @@ class CGuildData;
 using GuildRankContainer = std::deque<class CGuildRankData*>;
 
 // This class is a controller for managing guild ranks
-class CGuildRanksController
+class CGuildRanksManager
 {
 	// Pointer to the game server
 	CGS* GS() const;
@@ -23,11 +23,11 @@ class CGuildRanksController
 public:
 
 	// Constructor 
-	CGuildRanksController() = delete;
-	CGuildRanksController(CGuildData* pGuild, GuildRankIdentifier DefaultID);
+	CGuildRanksManager() = delete;
+	CGuildRanksManager(CGuildData* pGuild, GuildRankIdentifier DefaultID);
 
 	// Destructor
-	~CGuildRanksController();
+	~CGuildRanksManager();
 
 	// Function to get the container of guild ranks
 	GuildRankContainer& GetContainer() { return m_aRanks; }

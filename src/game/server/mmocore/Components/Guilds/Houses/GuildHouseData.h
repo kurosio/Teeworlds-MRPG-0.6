@@ -9,12 +9,10 @@
 #define TW_GUILD_HOUSES "tw_guilds_houses"
 #define TW_GUILD_HOUSES_DECORATION_TABLE "tw_guilds_decorations"
 
-using GuildHouseIdentifier = int;
-using GuildHouseDataPtr = std::shared_ptr< class CGuildHouseData >;
-
 class CGuildData;
+using GuildHouseIdentifier = int;
 
-class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < GuildHouseDataPtr > >
+class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < CGuildHouseData* > >
 {
 	friend class CGuildHouseDoorsController;
 	friend class CGuildHouseDecorationManager;
@@ -35,9 +33,9 @@ public:
 	CGuildHouseData() = default;
 	~CGuildHouseData();
 
-	static GuildHouseDataPtr CreateElement(GuildHouseIdentifier ID)
+	static CGuildHouseData* CreateElement(GuildHouseIdentifier ID)
 	{
-		GuildHouseDataPtr pData = std::make_shared<CGuildHouseData>();
+		auto pData = new CGuildHouseData;
 		pData->m_ID = ID;
 		return m_pData.emplace_back(std::move(pData));
 	}
@@ -48,7 +46,7 @@ public:
 		m_Position = Position;
 		m_TextPosisiton = TextPosition;
 		m_WorldID = WorldID;
-		SetGuild(pGuild);
+		UpdateGuild(pGuild);
 
 		// components
 		m_pDoors = new CGuildHouseDoorsController(std::move(JsonDoorsData), this);
@@ -65,7 +63,7 @@ public:
 	int GetPrice() const { return m_Price; }
 	bool IsPurchased() const { return m_pGuild != nullptr; }
 
-	void SetGuild(CGuildData* pGuild);
+	void UpdateGuild(CGuildData* pGuild);
 };
 
 #endif

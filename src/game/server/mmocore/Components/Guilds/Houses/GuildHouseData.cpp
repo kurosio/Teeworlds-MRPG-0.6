@@ -13,7 +13,7 @@ CGuildHouseData::~CGuildHouseData()
 	delete m_pDoors;
 }
 
-void CGuildHouseData::SetGuild(CGuildData* pGuild)
+void CGuildHouseData::UpdateGuild(CGuildData* pGuild)
 {
 	m_pGuild = pGuild;
 	m_pGuild->m_pHouse = this;

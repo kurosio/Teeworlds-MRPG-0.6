@@ -7,18 +7,18 @@
 
 #include <game/server/mmocore/Components/Guilds/GuildData.h>
 
-CGS* CGuildRanksController::GS() const { return m_pGuild->GS(); }
+CGS* CGuildRanksManager::GS() const { return m_pGuild->GS(); }
 
-// Constructor for CGuildRanksController
-CGuildRanksController::CGuildRanksController(CGuildData* pGuild, GuildRankIdentifier DefaultID)
+// Constructor for CGuildRanksManager
+CGuildRanksManager::CGuildRanksManager(CGuildData* pGuild, GuildRankIdentifier DefaultID)
 	: m_pGuild(pGuild)
 {
 	// Initialize the guild ranks controller
-	CGuildRanksController::Init(DefaultID);
+	CGuildRanksManager::Init(DefaultID);
 }
 
-// Destructor for CGuildRanksController
-CGuildRanksController::~CGuildRanksController()
+// Destructor for CGuildRanksManager
+CGuildRanksManager::~CGuildRanksManager()
 {
 	// Delete all the rank data objects
 	for(auto p : m_aRanks)
@@ -30,7 +30,7 @@ CGuildRanksController::~CGuildRanksController()
 }
 
 // Initialize the guild ranks controller
-void CGuildRanksController::Init(GuildRankIdentifier DefaultID)
+void CGuildRanksManager::Init(GuildRankIdentifier DefaultID)
 {
 	// Execute a database query to get the rank data for the guild
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_ranks", "WHERE GuildID = '%d'", m_pGuild->GetID());
@@ -54,7 +54,7 @@ void CGuildRanksController::Init(GuildRankIdentifier DefaultID)
 }
 
 // Update the default rank for the guild
-void CGuildRanksController::UpdateDefaultRank()
+void CGuildRanksManager::UpdateDefaultRank()
 {
 	// If the default rank already exists, return
 	if(m_pDefaultRank)
@@ -85,7 +85,7 @@ void CGuildRanksController::UpdateDefaultRank()
 }
 
 // Add a new rank to the guild
-GUILD_RANK_RESULT CGuildRanksController::Add(const std::string& Rank)
+GUILD_RANK_RESULT CGuildRanksManager::Add(const std::string& Rank)
 {
 	// Create a CSqlString object for the rank name
 	auto cstrRank = CSqlString<64>(Rank.c_str());
@@ -126,7 +126,7 @@ GUILD_RANK_RESULT CGuildRanksController::Add(const std::string& Rank)
 }
 
 // Remove a rank from the guild
-GUILD_RANK_RESULT CGuildRanksController::Remove(const std::string& Rank)
+GUILD_RANK_RESULT CGuildRanksManager::Remove(const std::string& Rank)
 {
 	// Create a CSqlString object for the rank name
 	auto cstrRank = CSqlString<64>(Rank.c_str());
@@ -168,14 +168,14 @@ GUILD_RANK_RESULT CGuildRanksController::Remove(const std::string& Rank)
 }
 
 // Get a rank by its name
-CGuildRankData* CGuildRanksController::Get(const std::string& Rank) const
+CGuildRankData* CGuildRanksManager::Get(const std::string& Rank) const
 {
 	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CGuildRankData* pRank){ return pRank->GetName() == Rank; });
 	return Iter != m_aRanks.end() ? *Iter : nullptr;
 }
 
 // Get a rank by its ID
-CGuildRankData* CGuildRanksController::Get(GuildRankIdentifier ID) const
+CGuildRankData* CGuildRanksManager::Get(GuildRankIdentifier ID) const
 {
 	auto Iter = std::find_if(m_aRanks.begin(), m_aRanks.end(), [ID](const CGuildRankData* pRank){ return pRank->GetID() == ID; });
 	return Iter != m_aRanks.end() ? *Iter : nullptr;

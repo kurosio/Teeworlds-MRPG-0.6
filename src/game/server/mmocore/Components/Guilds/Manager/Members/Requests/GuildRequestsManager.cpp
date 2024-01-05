@@ -6,16 +6,16 @@
 #include <game/server/gamecontext.h>
 
 // Get the game server
-CGS* CGuildRequestsController::GS() const { return m_pGuild->GS(); }
+CGS* CGuildRequestsManager::GS() const { return m_pGuild->GS(); }
 
 // Constructor
-CGuildRequestsController::CGuildRequestsController(CGuildData* pGuild) : m_pGuild(pGuild)
+CGuildRequestsManager::CGuildRequestsManager(CGuildData* pGuild) : m_pGuild(pGuild)
 {
-	CGuildRequestsController::Init();
+	CGuildRequestsManager::Init();
 }
 
 // Destructor
-CGuildRequestsController::~CGuildRequestsController()
+CGuildRequestsManager::~CGuildRequestsManager()
 {
 	for(auto p : m_aRequestsJoin)
 		delete p;
@@ -23,7 +23,7 @@ CGuildRequestsController::~CGuildRequestsController()
 	m_aRequestsJoin.clear();
 }
 
-void CGuildRequestsController::Init()
+void CGuildRequestsManager::Init()
 {
 	// Execute a database query to get the rank data for the guild
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d'", m_pGuild->GetID());
@@ -35,7 +35,7 @@ void CGuildRequestsController::Init()
 	}
 }
 
-GUILD_MEMBER_RESULT CGuildRequestsController::Request(int FromUID)
+GUILD_MEMBER_RESULT CGuildRequestsManager::Request(int FromUID)
 {
 	// Check if the invite already exists in the guild's invites container
 	if(std::find_if(m_aRequestsJoin.begin(), m_aRequestsJoin.end(),
@@ -55,7 +55,7 @@ GUILD_MEMBER_RESULT CGuildRequestsController::Request(int FromUID)
 	return GUILD_MEMBER_RESULT::SUCCESSFUL;
 }
 
-GUILD_MEMBER_RESULT CGuildRequestsController::Accept(int UserID, const CGuildMemberData* pFromMember)
+GUILD_MEMBER_RESULT CGuildRequestsManager::Accept(int UserID, const CGuildMemberData* pFromMember)
 {
 	// Find the request with the given UserID in the m_aRequestsJoin vector
 	auto Iter = std::find_if(m_aRequestsJoin.begin(), m_aRequestsJoin.end(), [&UserID](const CGuildRequestData* pRequest)
@@ -91,7 +91,7 @@ GUILD_MEMBER_RESULT CGuildRequestsController::Accept(int UserID, const CGuildMem
 	return Result;
 }
 
-void CGuildRequestsController::Deny(int UserID, const CGuildMemberData* pFromMember)
+void CGuildRequestsManager::Deny(int UserID, const CGuildMemberData* pFromMember)
 {
 	// Find the request in m_aRequestsJoin that matches the UserID
 	auto Iter = std::find_if(m_aRequestsJoin.begin(), m_aRequestsJoin.end(), [&UserID](const CGuildRequestData* pRank)
