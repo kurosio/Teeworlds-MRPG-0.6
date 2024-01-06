@@ -6,7 +6,7 @@
 #include "Manager/Doors/GuildHouseDoorsController.h"
 #include "Manager/Decorations/GuildHouseDecorationsManager.h"
 
-#define TW_GUILD_HOUSES "tw_guilds_houses"
+#define TW_GUILDS_HOUSES "tw_guilds_houses"
 #define TW_GUILD_HOUSES_DECORATION_TABLE "tw_guilds_decorations"
 
 class CGuildData;
@@ -33,7 +33,7 @@ public:
 	CGuildHouseData() = default;
 	~CGuildHouseData();
 
-	static CGuildHouseData* CreateElement(GuildHouseIdentifier ID)
+	static CGuildHouseData* CreateElement(const GuildHouseIdentifier& ID)
 	{
 		auto pData = new CGuildHouseData;
 		pData->m_ID = ID;

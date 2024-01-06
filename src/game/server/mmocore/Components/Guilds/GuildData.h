@@ -71,7 +71,7 @@ public:
 	CGuildData() = default;
 	~CGuildData();
 
-	static CGuildData* CreateElement(GuildIdentifier ID)
+	static CGuildData* CreateElement(const GuildIdentifier& ID)
 	{
 		auto pData = new CGuildData;
 		pData->m_ID = ID;
@@ -86,12 +86,11 @@ public:
 		m_Experience = Experience;
 		m_Score = Score;
 
-			// components init
+		// components init
 		m_pHistory = new CGuildHistoryController(this);
 		m_pBank = new CGuildBankManager(Bank, this);
 		m_pRanks = new CGuildRanksManager(this, DefaultRankID);
 		m_pMembers = new CGuildMembersManager(this, std::move(MembersData));
-
 		m_pRanks->UpdateDefaultRank();
 	}
 
@@ -110,10 +109,9 @@ public:
 	int GetScore() const { return m_Score; }
 	bool HasHouse() const { return m_pHouse != nullptr; }
 
+	GUILD_RESULT SetNewLeader(int AccountID);
 	GUILD_RESULT BuyHouse(int HouseID);
 	bool SellHouse();
-
-	GUILD_RESULT SetNewLeader(int AccountID);
 
 	void AddExperience(int Experience);
 

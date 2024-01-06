@@ -42,11 +42,12 @@ private:
 	void ShowRequests(int ClientID) const;
 
 public:
+	CGuildHouseData* GetGuildHouseByID(const GuildHouseIdentifier& ID) const;
 	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
 	CGuildData* GetGuildByID(GuildIdentifier ID) const;
 	bool IsAccountMemberGuild(int AccountID) const;
 
-	void ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse);
+	void ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse) const;
 };
 
 #endif

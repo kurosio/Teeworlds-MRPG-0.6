@@ -26,7 +26,7 @@ CGuildMemberData::~CGuildMemberData()
 	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(m_AccountID))
 	{
 		pPlayer->Account()->ReinitializeGuild(true);
-		GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
+		pPlayer->GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
 	}
 }
 

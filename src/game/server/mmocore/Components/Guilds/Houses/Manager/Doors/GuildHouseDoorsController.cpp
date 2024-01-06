@@ -4,31 +4,13 @@
 
 #include <game/server/mmocore/Components/Guilds/Houses/GuildHouseData.h>
 
-#include <game/server/mmocore/Utils/DBSet.h>
 #include <game/server/gamecontext.h>
 
 CGS* CGuildHouseDoorsController::GS() const { return m_pHouse->GS(); }
 
 CGuildHouseDoorsController::CGuildHouseDoorsController(std::string&& JsonDoorData, CGuildHouseData* pHouse) : m_pHouse(pHouse)
 {
-	// Parse the JSON string using the Tools::Json::parseFromString function initialize doors
-	Tools::Json::parseFromString(JsonDoorData, [&](const nlohmann::json& pJsonArray)
-	{
-		int Number = 1;
-		m_apDoors.reserve(pJsonArray.size());
-		for(const auto& pJsonDoor : pJsonArray)
-		{
-			// Check if the door name is not empty
-			std::string DoorName = pJsonDoor.value("name", "");
-			vec2 Pos = vec2(pJsonDoor.value("x", 0), pJsonDoor.value("y", 0));
-			if(!DoorName.empty())
-			{
-				// Add the door data to the m_apDoors map using the door name as the key
-				m_apDoors.emplace(Number, new CGuildHouseDoor(&GS()->m_World, pHouse, std::string(DoorName), Pos));
-				Number++;
-			}
-		}
-	});
+	CGuildHouseDoorsController::Init(std::move(JsonDoorData), pHouse);
 }
 
 // Destructor for the CHouseDoorsController class
@@ -92,4 +74,26 @@ void CGuildHouseDoorsController::ReverseAll()
 	// Reverse the state of the door by its number in iterate
 	for(auto& p : m_apDoors)
 		Reverse(p.first);
+}
+
+void CGuildHouseDoorsController::Init(std::string&& JsonDoorData, CGuildHouseData* pHouse)
+{
+	// Parse the JSON string using the Tools::Json::parseFromString function initialize doors
+	Tools::Json::parseFromString(JsonDoorData, [&](const nlohmann::json& pJsonArray)
+	{
+		int Number = 1;
+		m_apDoors.reserve(pJsonArray.size());
+		for(const auto& pJsonDoor : pJsonArray)
+		{
+			// Check if the door name is not empty
+			std::string DoorName = pJsonDoor.value("name", "");
+			vec2 Pos = vec2(pJsonDoor.value("x", 0), pJsonDoor.value("y", 0));
+			if(!DoorName.empty())
+			{
+				// Add the door data to the m_apDoors map using the door name as the key
+				m_apDoors.emplace(Number, new CGuildHouseDoor(&GS()->m_World, pHouse, std::string(DoorName), Pos));
+				Number++;
+			}
+		}
+	});
 }

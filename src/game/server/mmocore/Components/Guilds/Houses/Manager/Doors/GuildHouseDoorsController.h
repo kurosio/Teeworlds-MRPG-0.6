@@ -8,24 +8,19 @@
 class CGS;
 class CGuildHouseData;
 
-// The CHouseDoorsController class is responsible for managing the doors of a house
 class CGuildHouseDoorsController
 {
 	CGS* GS() const;
 
 	CGuildHouseData* m_pHouse {};
-
-	ska::unordered_map<int, CGuildHouseDoor*> m_apDoors {}; // Map of door numbers to CHouseDoor objects
+	ska::unordered_map<int, CGuildHouseDoor*> m_apDoors {};
 
 public:
-	// Constructor
+	CGuildHouseDoorsController() = delete;
 	CGuildHouseDoorsController(std::string&& JsonDoorData, CGuildHouseData* pHouse);
-
-	// Destructor
 	~CGuildHouseDoorsController();
 
-	// Getters
-	ska::unordered_map<int, CGuildHouseDoor*>& GetContainer() { return m_apDoors; } // Get the map of door numbers to CHouseDoor objects
+	ska::unordered_map<int, CGuildHouseDoor*>& GetContainer() { return m_apDoors; }
 
 	// Door control methods
 	void Open(int Number); // Open a specific door
@@ -35,5 +30,8 @@ public:
 	void OpenAll(); // Open all doors
 	void CloseAll(); // Close all doors
 	void ReverseAll(); // Reverse the state of all doors
+
+private:
+	void Init(std::string&& JsonDoorData, CGuildHouseData* pHouse);
 };
 #endif

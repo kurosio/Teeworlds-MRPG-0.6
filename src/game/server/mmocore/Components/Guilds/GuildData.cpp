@@ -16,34 +16,43 @@ CGuildData::~CGuildData()
 
 GUILD_RESULT CGuildData::BuyHouse(int HouseID)
 {
+	// Check if the guild already has a house
 	if(m_pHouse != nullptr)
 	{
 		return GUILD_RESULT::BUY_HOUSE_ALREADY_HAVE;
 	}
 
+	// Find the house data with the specified HouseID
 	auto IterHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&HouseID](const CGuildHouseData* p)
 	{
 		return p->GetID() == HouseID;
 	});
 
+	// Check if the house data was found
 	if(IterHouse == CGuildHouseData::Data().end())
 	{
 		return GUILD_RESULT::BUY_HOUSE_UNAVAILABLE;
 	}
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES, "WHERE ID = '%d'", HouseID);
+	// Retrieve the price of the house from the database
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HOUSES, "WHERE ID = '%d'", HouseID);
 	if(pRes->next())
 	{
 		const int Price = pRes->getInt("Price");
+
+		// Check if the guild has enough gold to purchase the house
 		if(!GetBank()->Spend(Price))
 		{
 			return GUILD_RESULT::BUY_HOUSE_NOT_ENOUGH_GOLD;
 		}
 
+		// Assign the house to the guild
 		m_pHouse = *IterHouse;
 		m_pHouse->UpdateGuild(this);
-		Database->Execute<DB::UPDATE>(TW_GUILD_HOUSES, "GuildID = '%d' WHERE ID = '%d'", m_ID, HouseID);
-		return GUILD_RESULT::SUCCESSFUL;
+
+		// Update the GuildID of the house in the database
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = '%d' WHERE ID = '%d'", m_ID, HouseID);
+		return GUILD_RESULT::SUCCESSFUL; // Return success code
 	}
 
 	return GUILD_RESULT::BUY_HOUSE_ALREADY_PURCHASED;
@@ -61,7 +70,7 @@ bool CGuildData::SellHouse()
 	GS()->ChatGuild(m_ID, "House sold, {VAL}gold returned to leader", ReturnedGold);
 	m_pHistory->Add("Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
 
-	Database->Execute<DB::UPDATE>(TW_GUILD_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
 	m_pHouse->GetDoors()->CloseAll();
 	m_pHouse->UpdateGuild(nullptr);
 	m_pHouse = nullptr;
