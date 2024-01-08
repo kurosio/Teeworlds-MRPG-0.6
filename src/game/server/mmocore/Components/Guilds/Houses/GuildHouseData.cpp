@@ -15,9 +15,9 @@ CGuildHouseData::~CGuildHouseData()
 
 void CGuildHouseData::UpdateGuild(CGuildData* pGuild)
 {
+	m_pGuild = pGuild;
 	if(m_pGuild)
 	{
 		m_pGuild->m_pHouse = this;
 	}
-	m_pGuild = pGuild;
 }

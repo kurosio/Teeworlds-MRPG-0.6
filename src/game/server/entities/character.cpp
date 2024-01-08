@@ -188,7 +188,7 @@ void CCharacter::HandleWeaponSwitch()
 	DoWeaponSwitch();
 }
 
-bool CCharacter::DecoInteractive()
+bool CCharacter::ActionAddDecoration()
 {
 	const int ClientID = m_pPlayer->GetCID();
 	if(m_pPlayer->GetTempData().m_TempDecoractionID > 0)
@@ -212,16 +212,11 @@ bool CCharacter::DecoInteractive()
 		else if(InteractiveType == DECORATIONS_GUILD_HOUSE)
 		{
 			CGuildData* pGuild = m_pPlayer->Account()->GetGuild();
-			/*if(pGuild && pGuild->GetHouse() && pGuild->GetHouse()->GetDecorations()->Add(DecoID, GuildID, GetMousePos()))
+			if(pGuild && pGuild->HasHouse() && pGuild->GetHouse()->GetDecorations()->Add(DecoID, GetMousePos(), m_pPlayer))
 			{
-				GS()->Chat(ClientID, "You have added {STR} to your guild house!", GS()->GetItemInfo(DecoID)->GetName());
+				GS()->Chat(ClientID, "You have added {STR} to your house!", GS()->GetItemInfo(DecoID)->GetName());
 				m_pPlayer->GetItem(DecoID)->Remove(1);
 			}
-			else
-			{
-				GS()->Chat(ClientID, "The maximum distance between the House and the Decoration is {INT} blocks!", g_Config.m_SvLimitDecoration);
-				GS()->Chat(ClientID, "Setting object reset, use repeat!");
-			}*/
 		}
 
 		GS()->UpdateVotes(ClientID, m_pPlayer->m_LastVoteMenu);
@@ -270,7 +265,7 @@ void CCharacter::FireWeapon()
 	if(!IsCharBot)
 	{
 		// Check if the player can interact with decorations
-		if(DecoInteractive())
+		if(ActionAddDecoration())
 		{
 			return;
 		}

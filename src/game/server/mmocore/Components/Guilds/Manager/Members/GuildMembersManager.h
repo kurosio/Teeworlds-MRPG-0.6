@@ -18,6 +18,7 @@ enum class GUILD_MEMBER_RESULT : int
 
 	REQUEST_ALREADY_SEND,
 
+	NO_AVAILABLE_SLOTS,			// Result no available slots
 	UNDEFINED_ERROR,			// Result wher undefined error
 	SUCCESSFUL                  // Result when the operation is successful
 };
@@ -48,6 +49,9 @@ public:
 
 	// Kick a guild member by account ID
 	GUILD_MEMBER_RESULT Kick(int AccountID);
+
+	bool HasFreeSlots() const;
+	std::pair<int, int> GetCurrentSlots() const;
 
 	// Save the guild members data
 	void Save() const;

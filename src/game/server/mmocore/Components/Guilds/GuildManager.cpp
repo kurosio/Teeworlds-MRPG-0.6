@@ -23,7 +23,7 @@ void CGuildManager::OnInit()
 		int Bank = pRes->getInt("Bank");
 		int Score = pRes->getInt("Score");
 
-		CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank);
+		CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, &pRes);
 	}
 
 	Job()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
@@ -47,6 +47,7 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 
 	Job()->ShowLoadingProgress("Guild houses", CGuildHouseData::Data().size());
 }
+
 void CGuildManager::OnTick()
 {
 	//TickHousingText();
@@ -87,7 +88,7 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 			//if(HouseID <= 0 || GuildID <= 0)
 			//	return true;
 
-			//const int Exp = CGuildData::ms_aGuild[GuildID].m_UpgradeData(CGuildData::CHAIR_EXPERIENCE, 0).m_Value;
+			//const int Exp = CGuildData::ms_aGuild[GuildID].m_UpgradesData(CGuildData::CHAIR_EXPERIENCE, 0).m_Value;
 			//pPlayer->Account()->AddExperience(Exp);
 		}
 		return true;
@@ -103,11 +104,6 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	// -------------------------------------
 	// ACCESS RANK: Upgrade house functions
 	if(PPSTR(CMD, "MDOOR") == 0)
-	{
-		return true;
-	}
-
-	if(PPSTR(CMD, "MUPGRADE") == 0)
 	{
 		return true;
 	}
@@ -414,6 +410,10 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		{
 			GS()->Chat(ClientID, "The player is already in a guild");
 		}
+		else if(Result == GUILD_MEMBER_RESULT::NO_AVAILABLE_SLOTS)
+		{
+			GS()->Chat(ClientID, "No guild slots available.");
+		}
 		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
 		{
 			GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
@@ -461,9 +461,13 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		{
 			GS()->Chat(ClientID, "You have already sent a request to this guild.");
 		}
+		else if(Result == GUILD_MEMBER_RESULT::NO_AVAILABLE_SLOTS)
+		{
+			GS()->Chat(ClientID, "No guild slots available.");
+		}
 		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
 		{
-			GS()->Chat(ClientID, "You sent a request to join the {STR} guild", pGuild->GetName());
+			GS()->Chat(ClientID, "You sent a request to join the {STR} guild.", pGuild->GetName());
 		}
 		return true;
 	}
@@ -521,6 +525,26 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 			GS()->StrongUpdateVotesForAll(MENU_GUILD);
 		}
+	}
+
+	if(PPSTR(CMD, "GUILD_UPGRADE") == 0)
+	{
+		// Check if the player has a guild or has the right to invite/kick members
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild->Upgrade(VoteID))
+		{
+			GS()->Chat(ClientID, "Your guild doesn't have enough gold.");
+			return true;
+		}
+
+		GS()->StrongUpdateVotesForAll(MENU_GUILD);
+		return true;
 	}
 
 	return false;
@@ -757,7 +781,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":0}]})";
 
 	CGuildData* pGuild = CGuildData::CreateElement(InitID);
-	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0);
+	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, nullptr);
 	pPlayer->Account()->ReinitializeGuild();
 
 	// we create a guild in the table
@@ -814,53 +838,49 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	bool HasHouse = pGuild->HasHouse();
 	int ExpNeed = computeExperience(pGuild->GetLevel());
 
-	GS()->AVH(ClientID, TAB_GUILD_STAT, "Name: {STR} : Leader {STR}", pGuild->GetName(), Server()->GetAccountNickname(pGuild->GetLeaderUID()));
+	GS()->AVH(ClientID, TAB_GUILD_STAT, "\u2747 Information about {STR}", pGuild->GetName());
+	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", pGuild->GetUpgrades()(CGuildData::AVAILABLE_SLOTS, 0).m_Value);
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Guild Bank: {VAL}gold", pGuild->GetBank()->Get());
+	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->m_Value);
 	GS()->AV(ClientID, "null");
 	//
-	GS()->AVL(ClientID, "null", "◍ Your gold: {VAL}gold", pPlayer->GetItem(itGold)->GetValue());
-	GS()->AVL(ClientID, "GUILD_DEPOSIT_GOLD", "Deposit gold to bank. (Amount in a reason)", pGuild->GetName());
+	GS()->AVL(ClientID, "null", "\u2727 Your: {VAL} | Bank: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
+	GS()->AVL(ClientID, "GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)", pGuild->GetName());
 	GS()->AV(ClientID, "null");
 	//
-	GS()->AVL(ClientID, "null", "▤ Guild system");
+	GS()->AVL(ClientID, "null", "\u262B Guild Management");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_VIEW_PLAYERS, NOPE, "Membership list");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_HISTORY, NOPE, "History of activity");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank settings");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank management");
 	if(HasHouse)
 	{
 		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "⌂ Housing system");
-		GS()->AVM(ClientID, "MENU", MENU_GUILD_HOUSE_DECORATION, NOPE, "Settings Decoration(s)");
+		GS()->AVL(ClientID, "null", "\u2302 House Management");
+		GS()->AVM(ClientID, "MENU", MENU_GUILD_HOUSE_DECORATION, NOPE, "Customizing decorations");
 		//GS()->AVL(ClientID, "MDOOR", "Change state (\"{STR}\")", GetGuildDoor(GuildID) ? "OPEN" : "CLOSED");
-		GS()->AVL(ClientID, "MSPAWN", "Teleport to guild house");
-		GS()->AVL(ClientID, "GUILD_HOUSE_SELL", "Sell guild house (in reason 7177)");
+		GS()->AVL(ClientID, "MSPAWN", "Move to the house");
+		GS()->AVL(ClientID, "GUILD_HOUSE_SELL", "Sell the house");
 	}
 	GS()->AV(ClientID, "null");
 	//
-	GS()->AVL(ClientID, "null", "✖ Disband guild");
+	GS()->AVL(ClientID, "null", "\u2716 Disband guild");
 	GS()->AVL(ClientID, "null", "Gold spent on upgrades will not be refunded");
 	GS()->AVL(ClientID, "null", "All gold will be returned to the leader only");
-	GS()->AVL(ClientID, "GUILD_DISBAND", "Disband guild (in reason 55428)");
+	GS()->AVL(ClientID, "GUILD_DISBAND", "Disband (reason 55428)");
 	GS()->AV(ClientID, "null");
 	//
 	GS()->AVL(ClientID, "null", "☆ Guild upgrades");
-	if(HasHouse)
+	for(int i = CGuildData::UPGRADE_AVAILABLE_SLOTS; i < CGuildData::NUM_GUILD_UPGRADES; i++)
 	{
-		for(int i = CGuildData::CHAIR_EXPERIENCE; i < CGuildData::NUM_GUILD_UPGRADES; i++)
-		{
-			const char* pUpgradeName = pGuild->GetUpgrades()(i, 0).getDescription();
-			const int PriceUpgrade = pGuild->GetUpgrades()(i, 0).m_Value * g_Config.m_SvPriceUpgradeGuildAnother;
-			GS()->AVM(ClientID, "MUPGRADE", i, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgradeName, pGuild->GetUpgrades()(i, 0).m_Value, PriceUpgrade);
-		}
+		if(i == CGuildData::UPGRADE_CHAIR_EXPERIENCE && !HasHouse)
+			continue;
+
+		const auto* pUpgrade = pGuild->GetUpgrades(i);
+		int Price = pUpgrade->m_Value * (i == CGuildData::UPGRADE_AVAILABLE_SLOTS ? g_Config.m_SvPriceUpgradeGuildSlot : g_Config.m_SvPriceUpgradeGuildAnother);
+		GS()->AVM(ClientID, "GUILD_UPGRADE", i, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 	}
 
-	const char* pUpgradeName = pGuild->GetUpgrades()(CGuildData::AVAILABLE_SLOTS, 0).getDescription();
-	const int UpgradeValue = pGuild->GetUpgrades()(CGuildData::AVAILABLE_SLOTS, 0).m_Value;
-	const int PriceUpgrade = UpgradeValue * g_Config.m_SvPriceUpgradeGuildSlot;
-	GS()->AVM(ClientID, "MUPGRADE", CGuildData::AVAILABLE_SLOTS, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgradeName, UpgradeValue, PriceUpgrade);
 	GS()->AddVotesBackpage(ClientID);
 }
 
@@ -954,20 +974,19 @@ void CGuildManager::ShowFinder(int ClientID) const
 	}
 
 	GS()->AV(ClientID, "null", "Use reason how Value.");
-	GS()->AV(ClientID, "null", "Example: Find guild: \u300E\u300F, in reason name.");
+	GS()->AV(ClientID, "null", "Example: Find guild: [], in reason name.");
 	GS()->AV(ClientID, "null");
 	GS()->AV(ClientID, "null", "\u270E Search for a guild by name.");
-	GS()->AVM(ClientID, "MINVITENAME", 1, NOPE, "Find guild: \u300E{STR}\u300F", pPlayer->GetTempData().m_aGuildSearchBuf);
+	GS()->AVM(ClientID, "MINVITENAME", 1, NOPE, "Find guild: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
 	GS()->AV(ClientID, "null");
 
 	int HideID = START_SELF_HIDE_ID;
 	for(auto& pGuild : CGuildData::Data())
 	{
-		int AvailableSlots = 20; // TODO
-		int PlayersNum = (int)pGuild->GetMembers()->GetContainer().size();
 		int OwnerUID = pGuild->GetLeaderUID();
+		auto [UsedSlots, MaxSlots] = pGuild->GetMembers()->GetCurrentSlots();
 
-		GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} ({INT} of {INT} players)", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID), PlayersNum, AvailableSlots);
+		GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} ({INT} of {INT} players)", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID), UsedSlots, MaxSlots);
 		if(pGuild->HasHouse())
 		{
 			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild has its own house");

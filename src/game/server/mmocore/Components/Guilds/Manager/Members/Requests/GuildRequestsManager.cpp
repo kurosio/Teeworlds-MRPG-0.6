@@ -42,6 +42,12 @@ GUILD_MEMBER_RESULT CGuildRequestsManager::Request(int FromUID)
 		[&FromUID](const CGuildRequestData* p){ return p->GetFromUID() == FromUID; }) != m_aRequestsJoin.end())
 		return GUILD_MEMBER_RESULT::REQUEST_ALREADY_SEND;
 
+	// Check if the guild's member list has free slots
+	if(!m_pGuild->GetMembers()->HasFreeSlots())
+	{
+		return GUILD_MEMBER_RESULT::NO_AVAILABLE_SLOTS;
+	}
+
 	// Add the invite to the guild's history and send a chat message
 	const char* pFromNickname = Instance::GetServer()->GetAccountNickname(FromUID);
 	m_pGuild->GetHistory()->Add("invitation to join from '%s'.", pFromNickname);

@@ -27,10 +27,11 @@ class CFieldData
 	size_t m_UniqueID{};
 	char m_aFieldName[128] = {};
 	char m_aDescription[128] = {};
+	int m_Group{};
 
 public:
-	CFieldData() = default;
-	CFieldData(size_t UniqueID, const char* pFieldName, const char* pDescription) { init(UniqueID, pFieldName, pDescription); }
+	CFieldData() = delete;
+	CFieldData(size_t UniqueID, const char* pFieldName, const char* pDescription, T DefaultValue = {}) : m_Value(DefaultValue) { init(UniqueID, pFieldName, pDescription); }
 
 	T m_Value{};
 
@@ -40,8 +41,9 @@ public:
 		m_UniqueID = UniqueID;
 		str_copy(m_aFieldName, pFieldName, sizeof(m_aFieldName));
 		str_copy(m_aDescription, pDescription, sizeof(m_aDescription));
-		m_Value = T(); // default constructor
 	}
+
+	const T& getValue() const { return m_Value; }
 	const char* getFieldName() const { return m_aFieldName; };
 	const char* getDescription() const { return m_aDescription; }
 };
@@ -94,22 +96,25 @@ public:
 
 	void initFields(ResultPtr* pRes)
 	{
-		for(auto& p : m_VariantsData)
+		if(pRes != nullptr)
 		{
-			std::visit([&pRes](auto&& arg)
+			for(auto& p : m_VariantsData)
 			{
-				using T = std::decay_t<decltype(arg)>;
-				if constexpr(std::is_same_v<T, CFieldData<int>>)
-					arg.m_Value = pRes->get()->getInt(arg.getFieldName());
-				else if constexpr(std::is_same_v<T, CFieldData<float>>)
-					arg.m_Value = static_cast<float>(pRes->get()->getDouble(arg.getFieldName()));
-				else if constexpr(std::is_same_v<T, CFieldData<double>>)
-					arg.m_Value = pRes->get()->getDouble(arg.getFieldName());
-				else if constexpr(std::is_same_v<T, CFieldData<std::string>>)
-					arg.m_Value = pRes->get()->getString(arg.getFieldName());
-				else
-					dbg_assert(always_false_v<T>, "non-exhaustive visitor!");
-			}, p);
+				std::visit([&pRes](auto&& arg)
+				{
+					using T = std::decay_t<decltype(arg)>;
+					if constexpr(std::is_same_v<T, CFieldData<int>>)
+						arg.m_Value = pRes->get()->getInt(arg.getFieldName());
+					else if constexpr(std::is_same_v<T, CFieldData<float>>)
+						arg.m_Value = static_cast<float>(pRes->get()->getDouble(arg.getFieldName()));
+					else if constexpr(std::is_same_v<T, CFieldData<double>>)
+						arg.m_Value = pRes->get()->getDouble(arg.getFieldName());
+					else if constexpr(std::is_same_v<T, CFieldData<std::string>>)
+						arg.m_Value = pRes->get()->getString(arg.getFieldName());
+					else
+						dbg_assert(always_false_v<T>, "non-exhaustive visitor!");
+				}, p);
+			}
 		}
 	}
 };

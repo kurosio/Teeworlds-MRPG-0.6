@@ -39,6 +39,12 @@ GUILD_MEMBER_RESULT CGuildMembersManager::Join(int AccountID)
 		return GUILD_MEMBER_RESULT::JOIN_ALREADY_IN_GUILD;
 	}
 
+	// Check if there are free slots available in the guild
+	if(!HasFreeSlots())
+	{
+		return GUILD_MEMBER_RESULT::NO_AVAILABLE_SLOTS;
+	}
+
 	// Create a new guild member data and add it to the guild members map
 	m_apMembers[AccountID] = new CGuildMemberData(m_pGuild, AccountID, m_pGuild->GetRanks()->GetDefaultRank());
 
@@ -92,6 +98,16 @@ GUILD_MEMBER_RESULT CGuildMembersManager::Kick(int AccountID)
 	}
 
 	return GUILD_MEMBER_RESULT::KICK_DOES_NOT_EXIST;
+}
+
+bool CGuildMembersManager::HasFreeSlots() const
+{
+	return (int)m_apMembers.size() < m_pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->getValue();
+}
+
+std::pair<int, int> CGuildMembersManager::GetCurrentSlots() const
+{
+	return std::pair((int)m_apMembers.size(), m_pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->getValue());
 }
 
 // Initialize the guild members from a JSON string

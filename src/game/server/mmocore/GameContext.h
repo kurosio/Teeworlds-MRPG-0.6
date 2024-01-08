@@ -265,9 +265,13 @@ enum
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
 	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game. 
 	MAX_ALLIED_SEALS_BY_DAILY_QUEST = 100,	// maximum allied seals for each daily quest
+
+	// guild
 	MAX_GUILD_PLAYERS = 20,					// maximum guild player's
 	MAX_GUILD_RANK_NUM = 5,					// maximum guild rank's
-	
+	DEFAULT_GUILD_AVAILABLE_SLOTS = 2,		// default available slots
+	DEFAULT_GUILD_CHAIR = 1,				// default chair boost
+
 	// settings items
 	itShowEquipmentDescription = 25,	// Description setting
 	itShowCriticalDamage = 34,			// Critical damage setting

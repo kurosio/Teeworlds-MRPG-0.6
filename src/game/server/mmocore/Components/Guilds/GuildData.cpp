@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildData.h"
 
+#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 CGS* CGuildData::GS() const { return (CGS*)Instance::GetServer()->GameServer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : MAIN_WORLD_ID); }
@@ -12,6 +13,95 @@ CGuildData::~CGuildData()
 	delete m_pHistory;
 	delete m_pRanks;
 	delete m_pBank;
+}
+
+bool CGuildData::Upgrade(int Type)
+{
+	// Check if the Type is within the valid range
+	if(Type < UPGRADE_AVAILABLE_SLOTS || Type >= NUM_GUILD_UPGRADES)
+		return false;
+
+	// Get a pointer to the upgrade data and price for the specified Type
+	auto* pUpgradeData = &m_UpgradesData(Type, 0);
+	int Price = GetUpgradePrice(Type);
+
+	// Check if the guild has enough money to spend on the upgrade
+	if(m_pBank->Spend(Price))
+	{
+		// Increase the value of the upgrade by 1
+		pUpgradeData->m_Value += 1;
+		Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "%s = '%d' WHERE ID = '%d'", pUpgradeData->getFieldName(), pUpgradeData->m_Value, m_ID);
+
+		// Add and send a history entry for the upgrade
+		m_pHistory->Add("'%s' upgraded to %d level", pUpgradeData->getDescription(), pUpgradeData->m_Value);
+		GS()->ChatGuild(m_ID, "'{STR}' upgraded to {VAL} level", pUpgradeData->getDescription(), pUpgradeData->m_Value);
+		return true;
+	}
+
+	return false;
+}
+
+void CGuildData::AddExperience(int Experience)
+{
+	// Increase the guild's experience by the given amount
+	m_Experience += Experience;
+
+	// Variable to track if the guild's table needs to be updated
+	bool UpdateTable = false;
+
+	// Calculate the experience needed to level up
+	int ExperienceNeed = (int)computeExperience(m_Level);
+
+	// Check if the guild's experience is enough to level up
+	while(m_Experience >= ExperienceNeed)
+	{
+		// Increase the guild's level & subtract the experience needed to level up from the guild's experience
+		m_Experience -= ExperienceNeed;
+		m_Level++;
+
+		// Calculate the new experience needed to level up
+		ExperienceNeed = (int)computeExperience(m_Level);
+
+		// Add a history and send a chat message to the server indicating the guild's level up
+		GS()->Chat(-1, "Guild {STR} raised the level up to {INT}", GetName(), m_Level);
+		m_pHistory->Add("Guild raised level to '%d'.", m_Level);
+		UpdateTable = true;
+	}
+
+	// Check if a random chance or the need to update the table is met
+	if(rand() % 10 == 2 || UpdateTable)
+	{
+		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", m_Level, m_Experience, m_ID);
+	}
+}
+
+GUILD_RESULT CGuildData::SetNewLeader(int AccountID)
+{
+	// Check if the given AccountID is already the leader of the guild
+	if(AccountID == m_LeaderUID)
+	{
+		return GUILD_RESULT::SET_LEADER_PLAYER_ALREADY_LEADER;
+	}
+
+	// Check if the given AccountID is a member of the guild
+	if(!m_pMembers->Get(AccountID))
+	{
+		return GUILD_RESULT::SET_LEADER_NON_GUILD_PLAYER;
+	}
+
+	// Update data
+	m_LeaderUID = AccountID;
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LeaderUID = '%d' WHERE ID = '%d'", m_LeaderUID, m_ID);
+
+	// Get the nickname of the new guild leader
+	const char* pNickNewLeader = Instance::GetServer()->GetAccountNickname(m_LeaderUID);
+
+	// Add a new entry and send chat message to the guild history indicating the change of leader
+	m_pHistory->Add("New guild leader '%s'", pNickNewLeader);
+	GS()->ChatGuild(m_ID, "New guild leader '{STR}'", pNickNewLeader);
+
+	// Return a success code
+	return GUILD_RESULT::SUCCESSFUL;
 }
 
 GUILD_RESULT CGuildData::BuyHouse(int HouseID)
@@ -60,67 +150,38 @@ GUILD_RESULT CGuildData::BuyHouse(int HouseID)
 
 bool CGuildData::SellHouse()
 {
-	if(m_pHouse == nullptr)
+	// Check if the guild house is not null
+	if(m_pHouse != nullptr)
 	{
-		return false;
+		// Send an inbox message to the guild leader
+		const int ReturnedGold = m_pHouse->GetPrice();
+		GS()->SendInbox("System", m_LeaderUID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
+
+		// Add a history entry and send a chat message for losing a guild house
+		m_pHistory->Add("Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
+		GS()->ChatGuild(m_ID, "House sold, {VAL}gold returned to leader", ReturnedGold);
+
+		// Update the database to remove the guild ID from the guild house
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
+
+		// Reset house pointers
+		m_pHouse->GetDoors()->CloseAll();
+		m_pHouse->UpdateGuild(nullptr);
+		m_pHouse = nullptr;
+		return true;
 	}
 
-	const int ReturnedGold = m_pHouse->GetPrice();
-	GS()->SendInbox("System", m_LeaderUID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
-	GS()->ChatGuild(m_ID, "House sold, {VAL}gold returned to leader", ReturnedGold);
-	m_pHistory->Add("Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
-
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
-	m_pHouse->GetDoors()->CloseAll();
-	m_pHouse->UpdateGuild(nullptr);
-	m_pHouse = nullptr;
-	return true;
+	return false;
 }
 
-GUILD_RESULT CGuildData::SetNewLeader(int AccountID)
+int CGuildData::GetUpgradePrice(int Type)
 {
-	if(AccountID == m_LeaderUID)
-	{
-		return GUILD_RESULT::SET_LEADER_PLAYER_ALREADY_LEADER;
-	}
+	// Check if the Type is within the valid range
+	if(Type < UPGRADE_AVAILABLE_SLOTS || Type >= NUM_GUILD_UPGRADES)
+		return 0;
 
-	if(!m_pMembers->Get(AccountID))
-	{
-		return GUILD_RESULT::SET_LEADER_NON_GUILD_PLAYER;
-	}
-
-	m_LeaderUID = AccountID;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LeaderUID = '%d' WHERE ID = '%d'", m_LeaderUID, m_ID);
-
-	const char* pNickNewLeader = Instance::GetServer()->GetAccountNickname(m_LeaderUID);
-	m_pHistory->Add("New guild leader '%s'", pNickNewLeader);
-	GS()->ChatGuild(m_ID, "New guild leader '{STR}'", pNickNewLeader);
-	return GUILD_RESULT::SUCCESSFUL;
-}
-
-void CGuildData::AddExperience(int Experience)
-{
-	m_Experience += Experience;
-
-	bool UpdateTable = false;
-	int ExperienceNeed = (int)computeExperience(m_Level);
-	while(m_Experience >= ExperienceNeed)
-	{
-		m_Experience -= ExperienceNeed;
-		m_Level++;
-
-		ExperienceNeed = (int)computeExperience(m_Level);
-		if(m_Experience < ExperienceNeed)
-			UpdateTable = true;
-
-		GS()->Chat(-1, "Guild {STR} raised the level up to {INT}", GetName(), m_Level);
-		m_pHistory->Add("Guild raised level to '%d'.", m_Level);
-	}
-
-	if(rand() % 10 == 2 || UpdateTable)
-	{
-		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", m_Level, m_Experience, m_ID);
-	}
+	// Return the calculated price
+	return m_UpgradesData(Type, 0).m_Value * (Type == UPGRADE_AVAILABLE_SLOTS ? g_Config.m_SvPriceUpgradeGuildSlot : g_Config.m_SvPriceUpgradeGuildAnother);
 }
 
 bool CGuildData::IsAccountMemberGuild(int AccountID)

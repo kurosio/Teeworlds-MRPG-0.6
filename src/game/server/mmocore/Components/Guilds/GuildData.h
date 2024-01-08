@@ -29,6 +29,7 @@ enum class GUILD_RESULT : int
 	SUCCESSFUL
 };
 
+
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildData* > >
 {
 	friend class CGuildHouseData;
@@ -41,18 +42,18 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 	
 	CGS* GS() const;
 
-	CFieldContainer m_UpgradeData
-	{
-		CFieldData<int>{AVAILABLE_SLOTS, "AvailableSlots", "Available slots"},
-		CFieldData<int>{CHAIR_EXPERIENCE, "ChairExperience", "Chair experience"},
-	};
-
 	GuildIdentifier m_ID {};
 	std::string m_Name {};
 	int m_LeaderUID {};
 	int m_Level {};
 	int m_Experience {};
 	int m_Score {};
+
+	CFieldContainer m_UpgradesData
+	{
+		CFieldData<int> { UPGRADE_AVAILABLE_SLOTS, "AvailableSlots", "Available slots", DEFAULT_GUILD_AVAILABLE_SLOTS },
+		CFieldData<int> { UPGRADE_CHAIR_EXPERIENCE, "ChairExperience", "Chair experience", DEFAULT_GUILD_CHAIR },
+	};
 
 	CGuildBankManager* m_pBank {};
 	CGuildHistoryController* m_pHistory {};
@@ -63,8 +64,8 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 public:
 	enum
 	{
-		AVAILABLE_SLOTS = 0,
-		CHAIR_EXPERIENCE = 1,
+		UPGRADE_AVAILABLE_SLOTS = 0,
+		UPGRADE_CHAIR_EXPERIENCE = 1,
 		NUM_GUILD_UPGRADES,
 	};
 
@@ -75,16 +76,17 @@ public:
 	{
 		auto pData = new CGuildData;
 		pData->m_ID = ID;
-		return m_pData.emplace_back(std::move(pData));
+		return m_pData.emplace_back(pData);
 	}
 
-	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank)
+	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank, ResultPtr* pRes)
 	{
 		m_Name = Name;
 		m_LeaderUID = LeaderUID;
 		m_Level = Level;
 		m_Experience = Experience;
 		m_Score = Score;
+		m_UpgradesData.initFields(pRes);
 
 		// components init
 		m_pHistory = new CGuildHistoryController(this);
@@ -100,7 +102,7 @@ public:
 	CGuildRanksManager* GetRanks() const { return m_pRanks; }
 	CGuildHouseData* GetHouse() const { return m_pHouse; }
 	CGuildMembersManager* GetMembers() const { return m_pMembers; }
-	CFieldContainer& GetUpgrades() { return m_UpgradeData; }
+	CFieldData<int>* GetUpgrades(int Type) { return &m_UpgradesData(Type, 0); }
 
 	const char* GetName() const { return m_Name.c_str(); }
 	int GetLeaderUID() const { return m_LeaderUID; }
@@ -108,13 +110,16 @@ public:
 	int GetExperience() const { return m_Experience;}
 	int GetScore() const { return m_Score; }
 	bool HasHouse() const { return m_pHouse != nullptr; }
+	int GetUpgradePrice(int Type);
 
-	GUILD_RESULT SetNewLeader(int AccountID);
-	GUILD_RESULT BuyHouse(int HouseID);
-	bool SellHouse();
+	bool Upgrade(int Type);
 
 	void AddExperience(int Experience);
+	GUILD_RESULT SetNewLeader(int AccountID);
 
+	GUILD_RESULT BuyHouse(int HouseID);
+	bool SellHouse();
+	
 	static bool IsAccountMemberGuild(int AccountID);
 };
 
