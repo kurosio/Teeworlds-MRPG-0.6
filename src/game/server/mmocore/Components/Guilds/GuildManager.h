@@ -36,7 +36,7 @@ private:
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowRanksSettings(CPlayer *pPlayer);
 	void ShowFinder(int ClientID) const;
-	void ShowHistory(int ClientID) const;
+	void ShowLog(int ClientID) const;
 	void ShowPlayerlist(CPlayer* pPlayer) const;
 	void ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const;
 	void ShowRequests(int ClientID) const;

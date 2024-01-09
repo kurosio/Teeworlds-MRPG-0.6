@@ -1,13 +1,13 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <varargs.h>
-#include "GuildLogManager.h"
+#include "GuildLoggerManager.h"
 
 #include <engine/server/sql_string_helpers.h>
 #include "../GuildData.h"
 
 // Function to get guild logs
-GuildLogContainer CGuildLogManager::GetLogs() const
+GuildLogContainer CGuildLoggerManager::GetContainer() const
 {
 	// Create a container to hold guild logs
 	GuildLogContainer Logs;
@@ -27,7 +27,7 @@ GuildLogContainer CGuildLogManager::GetLogs() const
 }
 
 // Function to add a guild log
-void CGuildLogManager::Add(const char* pBuffer, ...) const
+void CGuildLoggerManager::Add(const char* pBuffer, ...) const
 {
 	char aBuf[512];
 	va_list VarArgs;

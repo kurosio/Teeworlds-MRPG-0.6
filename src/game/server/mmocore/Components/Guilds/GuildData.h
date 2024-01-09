@@ -5,7 +5,7 @@
 #include <game/server/mmocore/Utils/FieldData.h>
 
 #include "Manager/GuildBankManager.h"
-#include "Manager/GuildLogManager.h"
+#include "Manager/GuildLoggerManager.h"
 #include "Manager/Members/GuildMembersManager.h"
 #include "Manager/Ranks/GuildRanksManager.h"
 #include "Houses/GuildHouseData.h"
@@ -56,7 +56,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 	};
 
 	CGuildBankManager* m_pBank {};
-	CGuildLogManager* m_pHistory {};
+	CGuildLoggerManager* m_pLogger {};
 	CGuildRanksManager* m_pRanks {};
 	CGuildMembersManager* m_pMembers {};
 	CGuildHouseData* m_pHouse {};
@@ -89,7 +89,7 @@ public:
 		m_UpgradesData.initFields(pRes);
 
 		// components init
-		m_pHistory = new CGuildLogManager(this);
+		m_pLogger = new CGuildLoggerManager(this);
 		m_pBank = new CGuildBankManager(Bank, this);
 		m_pRanks = new CGuildRanksManager(this, DefaultRankID);
 		m_pMembers = new CGuildMembersManager(this, std::move(MembersData));
@@ -99,7 +99,7 @@ public:
 	// getters
 	GuildIdentifier GetID() const { return m_ID; }
 	CGuildBankManager* GetBank() const { return m_pBank; }
-	CGuildLogManager* GetHistory() const { return m_pHistory; }
+	CGuildLoggerManager* GetLogger() const { return m_pLogger; }
 	CGuildRanksManager* GetRanks() const { return m_pRanks; }
 	CGuildHouseData* GetHouse() const { return m_pHouse; }
 	CGuildMembersManager* GetMembers() const { return m_pMembers; }

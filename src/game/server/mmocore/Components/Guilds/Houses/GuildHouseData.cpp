@@ -22,7 +22,7 @@ void CGuildHouseData::TextUpdate(int LifeTime)
 		return;
 
 	// Set the initial value of the variable "Name" to "HOUSE"
-	std::string Name = "GUILD HOUSE";
+	std::string Name = "FREE GUILD HOUSE";
 
 	// Check if the object has an owner
 	if(IsPurchased())

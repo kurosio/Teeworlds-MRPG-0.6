@@ -616,7 +616,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_GUILD_HISTORY)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
-		ShowHistory(ClientID);
+		ShowLog(ClientID);
 		return true;
 	}
 
@@ -1059,18 +1059,18 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouseData* pHouse) cons
 	}
 }
 
-void CGuildManager::ShowHistory(int ClientID) const
+void CGuildManager::ShowLog(int ClientID) const
 {
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer || !pPlayer->Account()->HasGuild())
 		return;
 
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	GuildLogContainer aHistory = pGuild->GetHistory()->GetLogs();
-	if(!aHistory.empty())
+	GuildLogContainer aLogs = pGuild->GetLogger()->GetContainer();
+	if(!aLogs.empty())
 	{
 		char aBuf[128];
-		for(auto& pLog : aHistory)
+		for(auto& pLog : aLogs)
 		{
 			str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Text.c_str());
 			GS()->AVM(ClientID, "null", NOPE, NOPE, "{STR}", aBuf);

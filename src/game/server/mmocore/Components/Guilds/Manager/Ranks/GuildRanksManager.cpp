@@ -68,7 +68,8 @@ void CGuildRanksManager::UpdateDefaultRank()
 	}
 	else
 	{
-		Add("Newbie");
+		GUILD_RANK_RESULT Result = Add("Newbie");
+		dbg_assert(Result == GUILD_RANK_RESULT::SUCCESSFUL, "guild cannot initialize a default rank");
 		m_pDefaultRank = Get("Newbie");
 	}
 
@@ -77,7 +78,10 @@ void CGuildRanksManager::UpdateDefaultRank()
 	{
 		CGuildMemberData* pMember = pIterMember.second;
 		if(!pMember->GetRank())
-			pMember->SetRank(m_pDefaultRank);
+		{
+			bool Status = pMember->SetRank(m_pDefaultRank);
+			dbg_assert(Status, "guild cannot set a default rank for member");
+		}
 	}
 
 	// Save the guild members
@@ -121,7 +125,7 @@ GUILD_RANK_RESULT CGuildRanksManager::Add(const std::string& Rank)
 
 	// Send information to the game server and update the guild history
 	GS()->ChatGuild(GuildID, "New rank is created [{STR}]!", cstrRank.cstr());
-	m_pGuild->GetHistory()->Add("added rank '%s'", cstrRank.cstr());
+	m_pGuild->GetLogger()->Add("added rank '%s'", cstrRank.cstr());
 	return GUILD_RANK_RESULT::SUCCESSFUL;
 }
 
@@ -153,7 +157,10 @@ GUILD_RANK_RESULT CGuildRanksManager::Remove(const std::string& Rank)
 	for(auto& pMember : m_pGuild->GetMembers()->GetContainer())
 	{
 		if((*Iter)->GetID() == pMember.second->GetRank()->GetID())
-			pMember.second->SetRank(m_pDefaultRank->GetID());
+		{
+			bool Status = pMember.second->SetRank(m_pDefaultRank->GetID());
+			dbg_assert(Status, "guild cannot set a default rank for member");
+		}
 	}
 
 	// Remove the rank from the database and delete the rank data object
@@ -163,7 +170,7 @@ GUILD_RANK_RESULT CGuildRanksManager::Remove(const std::string& Rank)
 
 	// Send information to the game server and update the guild history
 	GS()->ChatGuild(m_pGuild->GetID(), "Rank [{STR}] succesful delete", cstrRank.cstr());
-	m_pGuild->GetHistory()->Add("removed rank '%s'", cstrRank.cstr());
+	m_pGuild->GetLogger()->Add("removed rank '%s'", cstrRank.cstr());
 	return GUILD_RANK_RESULT::SUCCESSFUL;
 }
 
