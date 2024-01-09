@@ -22,8 +22,9 @@ void CGuildManager::OnInit()
 		int Experience = pRes->getInt("Experience");
 		int Bank = pRes->getInt("Bank");
 		int Score = pRes->getInt("Score");
+		int64_t LogFlag = pRes->getInt64("LogFlag");
 
-		CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, &pRes);
+		CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
 	}
 
 	Job()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
@@ -560,6 +561,25 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
+	if(PPSTR(CMD, "GUILD_LOGGER_SET") == 0)
+	{
+		// Check if the player has a guild or has the right to invite/kick members
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// Set the log flag to the value of VoteID
+		const int& Logflag = VoteID;
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+
+		// Set the logger of the guild data to the log flag
+		pGuild->GetLogger()->SetActivityFlag(Logflag);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_LOGS);
+		return true;
+	}
+
 	return false;
 }
 
@@ -613,10 +633,10 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	}
 
 
-	if(Menulist == MENU_GUILD_HISTORY)
+	if(Menulist == MENU_GUILD_LOGS)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
-		ShowLog(ClientID);
+		ShowLogs(ClientID);
 		return true;
 	}
 
@@ -794,7 +814,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":0}]})";
 
 	CGuildData* pGuild = CGuildData::CreateElement(InitID);
-	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, nullptr);
+	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, -1, nullptr);
 	pPlayer->Account()->ReinitializeGuild();
 
 	// we create a guild in the table
@@ -864,7 +884,7 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	GS()->AVL(ClientID, "null", "\u262B Guild Management");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_VIEW_PLAYERS, NOPE, "Membership list");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_HISTORY, NOPE, "History of activity");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_LOGS, NOPE, "Logs of activity");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank management");
 	if(HasHouse)
 	{
@@ -1059,13 +1079,30 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouseData* pHouse) cons
 	}
 }
 
-void CGuildManager::ShowLog(int ClientID) const
+void CGuildManager::ShowLogs(int ClientID) const
 {
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer || !pPlayer->Account()->HasGuild())
 		return;
 
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuildLoggerManager* pLogger = pGuild->GetLogger();
+
+	// settings
+#define FLAG_STATUS(flag) pLogger->IsActivityFlagSet(flag) ? "\u2714" : "x"
+	GS()->AVH(ClientID, TAB_GUILD_LOG_SETTINGS, "Guild activity log settings");
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_GUILD_FULL, TAB_GUILD_LOG_SETTINGS, "[{STR}] Full changes", FLAG_STATUS(LOGFLAG_GUILD_FULL));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_GUILD_MAIN_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Main changes", FLAG_STATUS(LOGFLAG_GUILD_MAIN_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_MEMBERS_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Members changes", FLAG_STATUS(LOGFLAG_MEMBERS_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_BANK_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Bank changes", FLAG_STATUS(LOGFLAG_BANK_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_RANKS_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Ranks changes", FLAG_STATUS(LOGFLAG_RANKS_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_UPGRADES_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Upgrades changes", FLAG_STATUS(LOGFLAG_UPGRADES_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_MAIN_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] House main changes", FLAG_STATUS(LOGFLAG_HOUSE_MAIN_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_DOORS_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] House doors changes", FLAG_STATUS(LOGFLAG_HOUSE_DOORS_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_DECORATIONS_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] House decorations changes", FLAG_STATUS(LOGFLAG_HOUSE_DECORATIONS_CHANGES));
+	GS()->AV(ClientID, "null");
+#undef FLAG_STATUS
+
 	GuildLogContainer aLogs = pGuild->GetLogger()->GetContainer();
 	if(!aLogs.empty())
 	{

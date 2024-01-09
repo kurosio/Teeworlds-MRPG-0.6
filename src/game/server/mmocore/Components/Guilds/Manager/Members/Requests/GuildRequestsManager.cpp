@@ -50,7 +50,7 @@ GUILD_MEMBER_RESULT CGuildRequestsManager::Request(int FromUID)
 
 	// Add the invite to the guild's history and send a chat message
 	const char* pFromNickname = Instance::GetServer()->GetAccountNickname(FromUID);
-	m_pGuild->GetLogger()->Add("invitation to join from '%s'.", pFromNickname);
+	m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "invitation to join from '%s'.", pFromNickname);
 	GS()->ChatGuild(m_pGuild->GetID(), "invitation to join from '{STR}'.", pFromNickname);
 
 	// Create a new invite data object and add it to the guild's invites container
@@ -89,7 +89,7 @@ GUILD_MEMBER_RESULT CGuildRequestsManager::Accept(int UserID, const CGuildMember
 		const char* pByNickname = Instance::GetServer()->GetAccountNickname(pFromMember->GetAccountID());
 
 		// Add a history entry and send a guild chat message
-		m_pGuild->GetLogger()->Add("'%s' accepted invitation from '%s'.", pByNickname, pFromNickname);
+		m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "'%s' accepted invitation from '%s'.", pByNickname, pFromNickname);
 		GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' accepted invitation from '{STR}'.", pByNickname, pFromNickname);
 	}
 
@@ -119,7 +119,7 @@ void CGuildRequestsManager::Deny(int UserID, const CGuildMemberData* pFromMember
 			const char* pByNickname = Instance::GetServer()->GetAccountNickname(pFromMember->GetAccountID());
 
 			// Add a history entry and send a guild chat message
-			m_pGuild->GetLogger()->Add("'%s' denied invitation from '%s'.", pByNickname, pFromNickname);
+			m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "'%s' denied invitation from '%s'.", pByNickname, pFromNickname);
 			GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' denied invitation from '{STR}'.", pByNickname, pFromNickname);
 		}
 

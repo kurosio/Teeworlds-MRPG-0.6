@@ -79,7 +79,7 @@ public:
 		return m_pData.emplace_back(pData);
 	}
 
-	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank, ResultPtr* pRes)
+	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank, int64_t Logflag, ResultPtr* pRes)
 	{
 		m_Name = Name;
 		m_LeaderUID = LeaderUID;
@@ -89,7 +89,7 @@ public:
 		m_UpgradesData.initFields(pRes);
 
 		// components init
-		m_pLogger = new CGuildLoggerManager(this);
+		m_pLogger = new CGuildLoggerManager(this, Logflag);
 		m_pBank = new CGuildBankManager(Bank, this);
 		m_pRanks = new CGuildRanksManager(this, DefaultRankID);
 		m_pMembers = new CGuildMembersManager(this, std::move(MembersData));
