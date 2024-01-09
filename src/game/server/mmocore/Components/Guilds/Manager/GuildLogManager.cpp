@@ -1,16 +1,16 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <varargs.h>
-#include <engine/server/sql_string_helpers.h>
-#include "GuildHistoryLogManager.h"
+#include "GuildLogManager.h"
 
+#include <engine/server/sql_string_helpers.h>
 #include "../GuildData.h"
 
 // Function to get guild logs
-GuildHistoryContainer CGuildHistoryController::GetLogs() const
+GuildLogContainer CGuildLogManager::GetLogs() const
 {
 	// Create a container to hold guild logs
-	GuildHistoryContainer Logs;
+	GuildLogContainer Logs;
 	// Reserve space for 20 logs
 	Logs.reserve(20);
 
@@ -27,7 +27,7 @@ GuildHistoryContainer CGuildHistoryController::GetLogs() const
 }
 
 // Function to add a guild log
-void CGuildHistoryController::Add(const char* pBuffer, ...) const
+void CGuildLogManager::Add(const char* pBuffer, ...) const
 {
 	char aBuf[512];
 	va_list VarArgs;
@@ -40,6 +40,6 @@ void CGuildHistoryController::Add(const char* pBuffer, ...) const
 	va_end(VarArgs);
 
 	// Execute an insert query to add the guild log to the database
-	sqlstr::CSqlString<64> cBuf = sqlstr::CSqlString<64>(aBuf);
+	const sqlstr::CSqlString<64> cBuf = sqlstr::CSqlString<64>(aBuf);
 	Database->Execute<DB::INSERT>("tw_guilds_history", "(GuildID, Text) VALUES ('%d', '%s')", m_pGuild->GetID(), cBuf.cstr());
 }

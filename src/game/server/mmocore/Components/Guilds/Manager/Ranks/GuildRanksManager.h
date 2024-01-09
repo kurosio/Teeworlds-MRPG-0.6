@@ -33,10 +33,10 @@ public:
 	GuildRankContainer& GetContainer() { return m_aRanks; }
 
 	// Function to add a new guild rank
-	GUILD_RANK_RESULT Add(const std::string& Rank);
+	[[nodiscard]] GUILD_RANK_RESULT Add(const std::string& Rank);
 
 	// Function to remove an existing guild rank
-	GUILD_RANK_RESULT Remove(const std::string& Rank);
+	[[nodiscard]] GUILD_RANK_RESULT Remove(const std::string& Rank);
 
 	// Function to get a guild rank by its name
 	CGuildRankData* Get(const std::string& Rank) const;

@@ -1,10 +1,10 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_GUILD_HISTORY_LOG_MANAGER_H
-#define GAME_SERVER_COMPONENT_GUILD_HISTORY_LOG_MANAGER_H
+#ifndef GAME_SERVER_COMPONENT_GUILD_LOG_MANAGER_H
+#define GAME_SERVER_COMPONENT_GUILD_LOG_MANAGER_H
 
 // Define the structure for storing guild history log data
-struct GuildHistoryLogData
+struct GuildLogData
 {
 	std::string m_Text {}; // The log message
 	std::string m_Time {}; // The time when the log was added
@@ -12,20 +12,20 @@ struct GuildHistoryLogData
 
 // Forward declaration and alias
 class CGuildData;
-using GuildHistoryContainer = std::vector<GuildHistoryLogData>;
+using GuildLogContainer = std::vector<GuildLogData>;
 
-// Define the CGuildHistoryController class
-class CGuildHistoryController
+// Define the CGuildLogManager class
+class CGuildLogManager
 {
 	CGuildData* m_pGuild {};
 
 public:
 	// Constructor's
-	CGuildHistoryController() = delete;
-	CGuildHistoryController(CGuildData* pGuild) : m_pGuild(pGuild) {}
+	CGuildLogManager() = delete;
+	CGuildLogManager(CGuildData* pGuild) : m_pGuild(pGuild) {}
 
 	// Get the guild history logs
-	GuildHistoryContainer GetLogs() const;
+	GuildLogContainer GetLogs() const;
 
 	// Add a log message to the guild history
 	void Add(const char* pBuffer, ...) const;

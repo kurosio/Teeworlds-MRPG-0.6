@@ -11,8 +11,10 @@ CGS* CGuildMembersManager::GS() const { return m_pGuild->GS(); }
 // Constructor
 CGuildMembersManager::CGuildMembersManager(CGuildData* pGuild, std::string&& MembersData) : m_pGuild(pGuild)
 {
+	// Create a new instance of CGuildRequestsManager with pGuild as the parameter
 	m_pRequests = new CGuildRequestsManager(pGuild);
 
+	// Initialize CGuildMembersManager with MembersData using std::move to transfer ownership
 	CGuildMembersManager::Init(std::move(MembersData));
 }
 

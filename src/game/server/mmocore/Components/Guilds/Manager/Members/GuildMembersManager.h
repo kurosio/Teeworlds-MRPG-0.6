@@ -4,22 +4,20 @@
 #include "Requests/GuildRequestsManager.h"
 #include "GuildMemberData.h"
 
+// Forward declaration and alias
 class CGuildData;
 class CGuildRequestsManager;
 using CGuildMembersContainer = std::map<int, CGuildMemberData*>;
 
-// Enum for guild member results
+// Enum class for representing different results of guild member operations
 enum class GUILD_MEMBER_RESULT : int
 {
 	JOIN_ALREADY_IN_GUILD,      // Result when a member tries to join a guild they are already a part of
-
 	KICK_DOES_NOT_EXIST,        // Result when trying to kick a member who does not exist
 	CANT_KICK_LEADER,           // Result when trying to kick the guild leader
-
-	REQUEST_ALREADY_SEND,
-
-	NO_AVAILABLE_SLOTS,			// Result no available slots
-	UNDEFINED_ERROR,			// Result wher undefined error
+	REQUEST_ALREADY_SEND,       // Result when a member tries to send a join request to a guild they have already sent a request to
+	NO_AVAILABLE_SLOTS,         // Result when there are no available slots in the guild for new members
+	UNDEFINED_ERROR,            // Result when an undefined error occurs during the operation
 	SUCCESSFUL                  // Result when the operation is successful
 };
 
@@ -45,12 +43,15 @@ public:
 	CGuildMembersContainer& GetContainer() { return m_apMembers; }
 
 	// Join a guild by account ID
-	GUILD_MEMBER_RESULT Join(int AccountID);
+	[[nodiscard]] GUILD_MEMBER_RESULT Join(int AccountID);
 
 	// Kick a guild member by account ID
-	GUILD_MEMBER_RESULT Kick(int AccountID);
+	[[nodiscard]] GUILD_MEMBER_RESULT Kick(int AccountID);
 
+	// This function checks if there are any free slots available
 	bool HasFreeSlots() const;
+
+	// This function returns the current number of slots being used and the total number of slots
 	std::pair<int, int> GetCurrentSlots() const;
 
 	// Save the guild members data

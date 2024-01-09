@@ -5,7 +5,7 @@
 #include <game/server/mmocore/Utils/FieldData.h>
 
 #include "Manager/GuildBankManager.h"
-#include "Manager/GuildHistoryLogManager.h"
+#include "Manager/GuildLogManager.h"
 #include "Manager/Members/GuildMembersManager.h"
 #include "Manager/Ranks/GuildRanksManager.h"
 #include "Houses/GuildHouseData.h"
@@ -15,20 +15,20 @@
 #define TW_GUILDS_HISTORY_TABLE "tw_guilds_history"
 #define TW_GUILDS_INVITES_TABLE "tw_guilds_invites"
 
+// Forward declaration and alias
 using GuildIdentifier = int;
 
-// Enum for guild member results
+// This enum class represents the possible results of guild operations
 enum class GUILD_RESULT : int
 {
-	BUY_HOUSE_ALREADY_HAVE,
-	BUY_HOUSE_UNAVAILABLE,
-	BUY_HOUSE_ALREADY_PURCHASED,
-	BUY_HOUSE_NOT_ENOUGH_GOLD,
-	SET_LEADER_PLAYER_ALREADY_LEADER,
-	SET_LEADER_NON_GUILD_PLAYER,
-	SUCCESSFUL
+	BUY_HOUSE_ALREADY_HAVE,                // The guild already owns a house and cannot buy another one
+	BUY_HOUSE_UNAVAILABLE,                 // The house is not available for purchase
+	BUY_HOUSE_ALREADY_PURCHASED,           // The house has already been purchased by another player
+	BUY_HOUSE_NOT_ENOUGH_GOLD,             // The guild does not have enough gold to buy the house
+	SET_LEADER_PLAYER_ALREADY_LEADER,      // The player is already the leader of the guild
+	SET_LEADER_NON_GUILD_PLAYER,           // The player is not a member of the guild
+	SUCCESSFUL                             // The guild operation was successful
 };
-
 
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildData* > >
 {
@@ -39,7 +39,7 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 	friend class CGuildRankData;
 	friend class CGuildRanksManager;
 	friend class CGuildBankManager;
-	
+
 	CGS* GS() const;
 
 	GuildIdentifier m_ID {};
@@ -56,10 +56,10 @@ class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildD
 	};
 
 	CGuildBankManager* m_pBank {};
-	CGuildHistoryController* m_pHistory {};
+	CGuildLogManager* m_pHistory {};
 	CGuildRanksManager* m_pRanks {};
 	CGuildMembersManager* m_pMembers {};
-	CGuildHouseData* m_pHouse{};
+	CGuildHouseData* m_pHouse {};
 
 public:
 	enum
@@ -89,37 +89,37 @@ public:
 		m_UpgradesData.initFields(pRes);
 
 		// components init
-		m_pHistory = new CGuildHistoryController(this);
+		m_pHistory = new CGuildLogManager(this);
 		m_pBank = new CGuildBankManager(Bank, this);
 		m_pRanks = new CGuildRanksManager(this, DefaultRankID);
 		m_pMembers = new CGuildMembersManager(this, std::move(MembersData));
 		m_pRanks->UpdateDefaultRank();
 	}
 
+	// getters
 	GuildIdentifier GetID() const { return m_ID; }
 	CGuildBankManager* GetBank() const { return m_pBank; }
-	CGuildHistoryController* GetHistory() const { return m_pHistory; }
+	CGuildLogManager* GetHistory() const { return m_pHistory; }
 	CGuildRanksManager* GetRanks() const { return m_pRanks; }
 	CGuildHouseData* GetHouse() const { return m_pHouse; }
 	CGuildMembersManager* GetMembers() const { return m_pMembers; }
 	CFieldData<int>* GetUpgrades(int Type) { return &m_UpgradesData(Type, 0); }
-
 	const char* GetName() const { return m_Name.c_str(); }
 	int GetLeaderUID() const { return m_LeaderUID; }
 	int GetLevel() const { return m_Level; }
-	int GetExperience() const { return m_Experience;}
+	int GetExperience() const { return m_Experience; }
 	int GetScore() const { return m_Score; }
 	bool HasHouse() const { return m_pHouse != nullptr; }
 	int GetUpgradePrice(int Type);
 
-	bool Upgrade(int Type);
-
+	// functions
 	void AddExperience(int Experience);
-	GUILD_RESULT SetNewLeader(int AccountID);
+	[[nodiscard]] bool Upgrade(int Type);
+	[[nodiscard]] GUILD_RESULT SetNewLeader(int AccountID);
+	[[nodiscard]] GUILD_RESULT BuyHouse(int HouseID);
+	[[nodiscard]] bool SellHouse();
 
-	GUILD_RESULT BuyHouse(int HouseID);
-	bool SellHouse();
-	
+	// global functions
 	static bool IsAccountMemberGuild(int AccountID);
 };
 

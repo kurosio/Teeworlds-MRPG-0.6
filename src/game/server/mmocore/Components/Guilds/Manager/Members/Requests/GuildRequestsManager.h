@@ -3,6 +3,7 @@
 
 #include "GuildRequestData.h"
 
+// Forward declaration and alias
 class CGS;
 class CGuildData;
 class CGuildMemberData;
@@ -26,10 +27,10 @@ public:
 	const GuildRequestsContainer& GetContainer() const { return m_aRequestsJoin; }
 
 	// Method for requesting to join the guild
-	GUILD_MEMBER_RESULT Request(int FromUID);
+	[[nodiscard]] GUILD_MEMBER_RESULT Request(int FromUID);
 
 	// Method for accepting a join request
-	GUILD_MEMBER_RESULT Accept(int UserID, const CGuildMemberData* pFromMember = nullptr);
+	[[nodiscard]] GUILD_MEMBER_RESULT Accept(int UserID, const CGuildMemberData* pFromMember = nullptr);
 
 	// Method for denying a join request
 	void Deny(int UserID, const CGuildMemberData* pFromMember = nullptr);

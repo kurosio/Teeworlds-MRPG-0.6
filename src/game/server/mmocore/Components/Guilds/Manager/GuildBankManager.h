@@ -22,9 +22,11 @@ public:
 	CGuildBankManager(int Bank, CGuildData* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
 
 	// Get the current amount of currency in the bank
+	const int& Get() const { return m_Bank; }
+
+	// Spend and set
 	void Set(int Value);
-	int Get() const { return m_Bank; }
-	bool Spend(int Value);
+	[[nodiscard]] bool Spend(int Value);
 };
 
 #endif

@@ -5,7 +5,7 @@
 
 #include "../Ranks/GuildRankData.h"
 
-// Include necessary headers
+// Forward declaration and alias
 class CGuildData;
 class CGuildRankData;
 
@@ -32,19 +32,19 @@ public:
 	CGuildRankData* GetRank() const { return m_pRank; }
 
 	// Set the rank of the guild member using the rank ID
-	bool SetRank(GuildRankIdentifier RankID);
+	[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);
 
 	// Set the rank of the guild member using a rank object
-	bool SetRank(CGuildRankData* pRank);
+	[[nodiscard]] bool SetRank(CGuildRankData* pRank);
 
 	// Deposit gold in the guild bank
-	bool DepositInBank(int Golds);
+	[[nodiscard]] bool DepositInBank(int Golds);
 
 	// Withdraw gold from the guild bank
-	bool WithdrawFromBank(int Golds);
+	[[nodiscard]] bool WithdrawFromBank(int Golds);
 
 	// Check if a member has the required access level
-	bool CheckAccess(GuildRankAccess RequiredAccess) const;
+	[[nodiscard]] bool CheckAccess(GuildRankAccess RequiredAccess) const;
 };
 
 #endif

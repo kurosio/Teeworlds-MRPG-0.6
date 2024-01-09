@@ -55,7 +55,7 @@ public:
 	const char* GetAccessName() const;
 
 	// Change the name of the guild rank
-	GUILD_RANK_RESULT Rename(std::string NewRank);
+	[[nodiscard]] GUILD_RANK_RESULT Rename(std::string NewRank);
 
 	// Change the access level of the guild rank
 	void ChangeAccess();

@@ -39,8 +39,7 @@ bool CGuildMemberData::SetRank(GuildRankIdentifier RankID)
 		return false;
 
 	// Set the member's rank to the given rank
-	SetRank(pRank);
-	return true;
+	return SetRank(pRank);
 }
 
 // Set the rank of the member

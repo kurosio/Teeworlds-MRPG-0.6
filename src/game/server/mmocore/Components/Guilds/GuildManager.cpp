@@ -50,7 +50,20 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 
 void CGuildManager::OnTick()
 {
-	//TickHousingText();
+	// Check if the current world ID is not equal to the main world (once use House get instance object self world id) ID and current tick
+	if(GS()->GetWorldID() != MAIN_WORLD_ID || (Server()->Tick() % Server()->TickSpeed() != 0))
+		return;
+
+	// Calculate the remaining lifetime of a text update
+	int LifeTime = (Server()->TickSpeed() * 10);
+
+	// Get the house data
+	const auto& HouseData = CGuildHouseData::Data();
+	for(const auto& p : HouseData)
+	{
+		// Update the text with the remaining lifetime
+		p->TextUpdate(LifeTime);
+	}
 }
 
 bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
@@ -802,9 +815,9 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	CGuildData* pGuild = (*pIterGuild);
 
 	// If the guild has a house, sell it
-	if(pGuild->HasHouse())
+	if(pGuild->SellHouse())
 	{
-		pGuild->SellHouse();
+		GS()->Chat(-1, "The guild {STR} has lost house.", pGuild->GetName());
 	}
 
 	// Calculate the amount of gold to return to the guild leader
@@ -1053,7 +1066,7 @@ void CGuildManager::ShowHistory(int ClientID) const
 		return;
 
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	GuildHistoryContainer aHistory = pGuild->GetHistory()->GetLogs();
+	GuildLogContainer aHistory = pGuild->GetHistory()->GetLogs();
 	if(!aHistory.empty())
 	{
 		char aBuf[128];
