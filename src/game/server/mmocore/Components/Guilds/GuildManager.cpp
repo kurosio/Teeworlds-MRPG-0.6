@@ -454,7 +454,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
-	if(PPSTR(CMD, "GUILD_FINDER_SEARCH_FIELD"))
+	if(PPSTR(CMD, "GUILD_FINDER_SEARCH_FIELD") == 0)
 	{
 		// Check if the input text is "NULL"
 		if(PPSTR(GetText, "NULL") == 0)
@@ -685,6 +685,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
+
 	return false;
 }
 
