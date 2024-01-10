@@ -841,7 +841,7 @@ void CGS::OnTickGlobal()
 			}
 
 			// Set the experience multiplier to a random value within the range [100, 300)
-			m_MultiplierExp = 100 + rand() % 200;
+			m_MultiplierExp = 100 + maximum(20, rand() % 200);
 		}
 		else
 		{
