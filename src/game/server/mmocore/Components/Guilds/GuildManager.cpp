@@ -454,6 +454,24 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
+	if(PPSTR(CMD, "GUILD_FINDER_SEARCH_FIELD"))
+	{
+		// Check if the input text is "NULL"
+		if(PPSTR(GetText, "NULL") == 0)
+		{
+			// If it is "NULL", send a chat message to the client
+			GS()->Chat(ClientID, "Please use a different name.");
+			return true;
+		}
+
+		// Copy the input text to the player's temporary data buffer
+		str_copy(pPlayer->GetTempData().m_aGuildSearchBuf, GetText, sizeof(pPlayer->GetTempData().m_aGuildSearchBuf));
+
+		// Update the votes for the client and open the guild finder menu
+		GS()->UpdateVotes(ClientID, MENU_GUILD_FINDER);
+		return true;
+	}
+
 	if(PPSTR(CMD, "GUILD_JOIN_REQUEST") == 0)
 	{
 		// Check if the player already has a guild
@@ -957,16 +975,14 @@ void CGuildManager::ShowRanksSettings(CPlayer* pPlayer)
 
 void CGuildManager::ShowRequests(int ClientID) const
 {
-	// Get the player object for the given client ID
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-
 	// If the player object doesn't exist or the player doesn't have a guild, return
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer || !pPlayer->Account()->HasGuild())
 		return;
 
 	// Get the guild object for the player's account
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	GuildRequestsContainer aRequest = pGuild->GetMembers()->GetRequests()->GetContainer();
+	const GuildRequestsContainer& aRequest = pGuild->GetMembers()->GetRequests()->GetContainer();
 
 	// If there are requests in the container
 	if(!aRequest.empty())
@@ -998,7 +1014,10 @@ void CGuildManager::ShowRequests(int ClientID) const
 
 void CGuildManager::ShowFinder(int ClientID) const
 {
+	// Get the player
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+
+	// Check if the player already has a guild
 	if(pPlayer->Account()->HasGuild())
 	{
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
@@ -1006,20 +1025,27 @@ void CGuildManager::ShowFinder(int ClientID) const
 		GS()->AV(ClientID, "null");
 	}
 
+	// Show instructions to the player
 	GS()->AV(ClientID, "null", "Use reason how Value.");
 	GS()->AV(ClientID, "null", "Example: Find guild: [], in reason name.");
 	GS()->AV(ClientID, "null");
+
+	// Show search option
 	GS()->AV(ClientID, "null", "\u270E Search for a guild by name.");
-	GS()->AVM(ClientID, "MINVITENAME", 1, NOPE, "Find guild: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
+	GS()->AVM(ClientID, "GUILD_FINDER_SEARCH_FIELD", 1, NOPE, "Find guild: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
 	GS()->AV(ClientID, "null");
 
+	// Iterate through all guilds
 	int HideID = START_SELF_HIDE_ID;
 	for(auto& pGuild : CGuildData::Data())
 	{
 		int OwnerUID = pGuild->GetLeaderUID();
 		auto [UsedSlots, MaxSlots] = pGuild->GetMembers()->GetCurrentSlots();
 
+		// Show guild information
 		GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} ({INT} of {INT} players)", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID), UsedSlots, MaxSlots);
+
+		// Show whether the guild has its own house or not
 		if(pGuild->HasHouse())
 		{
 			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild has its own house");
@@ -1028,7 +1054,11 @@ void CGuildManager::ShowFinder(int ClientID) const
 		{
 			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild doesn't have its own house");
 		}
+
+		// Show guild bank balance
 		GS()->AVM(ClientID, "null", NOPE, HideID, "* Accumulations are: {VAL} gold's", pGuild->GetBank()->Get());
+
+		// Show options to view player list and send join request
 		GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, pGuild->GetID(), HideID, "View player list");
 		if(!pPlayer->Account()->HasGuild())
 		{
@@ -1038,86 +1068,100 @@ void CGuildManager::ShowFinder(int ClientID) const
 		HideID++;
 	}
 
+	// Add votes to the player's back page
 	GS()->AddVotesBackpage(ClientID);
 }
 
 void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouseData* pHouse) const
 {
+	// Check if player is valid
 	if(!pPlayer)
 	{
 		return;
 	}
 
 	const int ClientID = pPlayer->GetCID();
-	GS()->AVH(ClientID, TAB_INFO_GUILD_HOUSE, "Information Member Housing");
+
+	// Show information about guild house
+	GS()->AVH(ClientID, TAB_INFO_GUILD_HOUSE, "Information guild house");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE, "Buying a house you will need to constantly the Treasury");
 	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE, "In the intervals of time will be paid house");
 	GS()->AV(ClientID, "null");
 
+	// Check if house is available for sale
 	if(!pHouse)
 	{
 		GS()->AVL(ClientID, "null", "This house is not for sale yet");
 		return;
 	}
 
+	// Check if house is already purchased
 	if(pHouse->IsPurchased())
 	{
 		CGuildData* pGuild = pHouse->GetGuild();
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Guild owner house: {STR}", pGuild->GetName());
+		GS()->AVM(ClientID, "null", NOPE, NOPE, "House owned by the guild: {STR}", pGuild->GetName());
 		return;
 	}
 
+	// Check if player has a guild
 	if(pPlayer->Account()->HasGuild())
 	{
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", pGuild->GetBank()->Get());
 
+		// Check if player has leader rights in the guild
 		if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
 		{
-			GS()->AVM(ClientID, "GUILD_HOUSE_BUY", pHouse->GetID(), NOPE, "Buy this guild house! Price: {VAL}", pHouse->GetPrice());
+			GS()->AVM(ClientID, "GUILD_HOUSE_BUY", pHouse->GetID(), NOPE, "Purchase this guild house! Cost: {VAL} golds", pHouse->GetPrice());
 		}
 	}
 }
 
+// Function to show guild logs for a specific player
 void CGuildManager::ShowLogs(int ClientID) const
 {
+	// If player does not exist or does not have a guild, return
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer || !pPlayer->Account()->HasGuild())
 		return;
 
+	// Get the guild data and logger for the player's guild
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
 	CGuildLoggerManager* pLogger = pGuild->GetLogger();
 
-	// settings
-#define FLAG_STATUS(flag) pLogger->IsActivityFlagSet(flag) ? "\u2714" : "x"
+	// Display guild activity log settings to the player
+	auto flagStatus = [&](int flag) { return pLogger->IsActivityFlagSet(flag) ? "[\u2714]" : "[\u2715]"; };
 	GS()->AVH(ClientID, TAB_GUILD_LOG_SETTINGS, "Guild activity log settings");
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_GUILD_FULL, TAB_GUILD_LOG_SETTINGS, "[{STR}] Full changes", FLAG_STATUS(LOGFLAG_GUILD_FULL));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_GUILD_MAIN_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Main changes", FLAG_STATUS(LOGFLAG_GUILD_MAIN_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_MEMBERS_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Members changes", FLAG_STATUS(LOGFLAG_MEMBERS_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_BANK_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Bank changes", FLAG_STATUS(LOGFLAG_BANK_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_RANKS_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Ranks changes", FLAG_STATUS(LOGFLAG_RANKS_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_UPGRADES_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] Upgrades changes", FLAG_STATUS(LOGFLAG_UPGRADES_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_MAIN_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] House main changes", FLAG_STATUS(LOGFLAG_HOUSE_MAIN_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_DOORS_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] House doors changes", FLAG_STATUS(LOGFLAG_HOUSE_DOORS_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_DECORATIONS_CHANGES, TAB_GUILD_LOG_SETTINGS, "[{STR}] House decorations changes", FLAG_STATUS(LOGFLAG_HOUSE_DECORATIONS_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_GUILD_FULL, TAB_GUILD_LOG_SETTINGS, "{STR} Full changes", flagStatus(LOGFLAG_GUILD_FULL));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_GUILD_MAIN_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Main changes", flagStatus(LOGFLAG_GUILD_MAIN_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_MEMBERS_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Members changes", flagStatus(LOGFLAG_MEMBERS_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_BANK_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Bank changes", flagStatus(LOGFLAG_BANK_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_RANKS_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Ranks changes", flagStatus(LOGFLAG_RANKS_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_UPGRADES_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Upgrades changes", flagStatus(LOGFLAG_UPGRADES_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_MAIN_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} House main changes", flagStatus(LOGFLAG_HOUSE_MAIN_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_DOORS_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} House doors changes", flagStatus(LOGFLAG_HOUSE_DOORS_CHANGES));
+	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_DECORATIONS_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} House decorations changes", flagStatus(LOGFLAG_HOUSE_DECORATIONS_CHANGES));
 	GS()->AV(ClientID, "null");
-#undef FLAG_STATUS
 
-	GuildLogContainer aLogs = pGuild->GetLogger()->GetContainer();
+	// If logs exist, display them to the player
+	const GuildLogContainer& aLogs = pGuild->GetLogger()->GetContainer();
 	if(!aLogs.empty())
 	{
 		char aBuf[128];
-		for(auto& pLog : aLogs)
+		for(const auto& pLog : aLogs)
 		{
+			// Format the log entry and display it
 			str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Text.c_str());
 			GS()->AVM(ClientID, "null", NOPE, NOPE, "{STR}", aBuf);
 		}
 	}
 	else
 	{
+		// If logs are empty, display a message to the player
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Log is empty");
 	}
 
+	// Add the votes backpage for the player
 	GS()->AddVotesBackpage(ClientID);
 }
 

@@ -32,15 +32,11 @@ enum class GUILD_RESULT : int
 
 class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildData* > >
 {
-	friend class CGuildHouseData;
-	friend class CGuildMemberData;
-	friend class CGuildMembersManager;
-	friend class CGuildRequestsManager;
-	friend class CGuildRankData;
-	friend class CGuildRanksManager;
-	friend class CGuildBankManager;
-
+public:
 	CGS* GS() const;
+
+private:
+	friend class CGuildHouseData;
 
 	GuildIdentifier m_ID {};
 	std::string m_Name {};
