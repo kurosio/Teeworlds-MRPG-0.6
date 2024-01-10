@@ -166,7 +166,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
 		}
 		return true;
 	}
@@ -194,7 +194,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// Update the votes for all players to refresh the guild view players menu
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
 		return true;
 	}
 
@@ -247,7 +247,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
 		}
 		return true;
 	}
@@ -430,7 +430,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_VIEW_PLAYERS);
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
 			GS()->StrongUpdateVotesForAll(MENU_GUILD_INVITES);
 		}
 		return true;
@@ -627,11 +627,10 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_FINDER_VIEW_PLAYERS)
+	if(Menulist == MENU_GUILD_FINDER_MEMBERSHIP_LIST)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD_FINDER;
 		ShowPlayerlist(pPlayer, pPlayer->m_TempMenuValue);
-		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
 
@@ -642,11 +641,10 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_VIEW_PLAYERS)
+	if(Menulist == MENU_GUILD_MEMBERSHIP_LIST)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
 		ShowPlayerlist(pPlayer);
-		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
 
@@ -764,6 +762,9 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
 
 		HideID++;
 	}
+
+	// Add the votes backpage for the player
+	GS()->AddVotesBackpage(ClientID);
 }
 
 void CGuildManager::ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const
@@ -779,10 +780,10 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const
 	}
 
 	// show simple information
+	int ClientID = pPlayer->GetCID();
 	if(CGuildData* pGuild = GetGuildByID(ID))
 	{
 		int HideID = START_SELF_HIDE_ID;
-		int ClientID = pPlayer->GetCID();
 
 		GS()->AVL(ClientID, "null", "Membership list of {STR}", pGuild->GetName());
 		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
@@ -793,6 +794,9 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const
 			HideID++;
 		}
 	}
+
+	// Add the votes backpage for the player
+	GS()->AddVotesBackpage(ClientID);
 }
 
 void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
@@ -900,7 +904,7 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	GS()->AV(ClientID, "null");
 	//
 	GS()->AVL(ClientID, "null", "\u262B Guild Management");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_VIEW_PLAYERS, NOPE, "Membership list");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_MEMBERSHIP_LIST, NOPE, "Membership list");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_LOGS, NOPE, "Logs of activity");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank management");
@@ -1050,16 +1054,12 @@ void CGuildManager::ShowFinder(int ClientID) const
 		{
 			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild has its own house");
 		}
-		else
-		{
-			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild doesn't have its own house");
-		}
 
 		// Show guild bank balance
 		GS()->AVM(ClientID, "null", NOPE, HideID, "* Accumulations are: {VAL} gold's", pGuild->GetBank()->Get());
 
 		// Show options to view player list and send join request
-		GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_VIEW_PLAYERS, pGuild->GetID(), HideID, "View player list");
+		GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_MEMBERSHIP_LIST, pGuild->GetID(), HideID, "Membership list");
 		if(!pPlayer->Account()->HasGuild())
 		{
 			GS()->AVD(ClientID, "GUILD_JOIN_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), HideID, "Send request to join {STR}", pGuild->GetName());
