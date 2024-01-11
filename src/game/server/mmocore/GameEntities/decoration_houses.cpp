@@ -9,8 +9,8 @@
 #include <game/server/mmocore/Components/Inventory/InventoryManager.h>
 
 // Constructor for the CDrawingData class in the CEntityHouseDecoration namespace
-// Takes a pointer to a CPlayer object, a HouseType enum value, a vec2 Position, and a float Radius as parameters
-CEntityHouseDecoration::CDrawingData::CDrawingData(CPlayer* pPlayer, HouseType Type, vec2 Position, float Radius)
+// Takes a pointer to a CPlayer object, a DrawingType enum value, a vec2 Position, and a float Radius as parameters
+CEntityHouseDecoration::CDrawingData::CDrawingData(CPlayer* pPlayer, DrawingType Type, vec2 Position, float Radius)
 	: m_pPlayer(pPlayer), m_Type(Type)
 {
 	// Set the member variables
@@ -43,11 +43,12 @@ int CEntityHouseDecoration::CDrawingData::PrevItemPos()
 	return m_vFullDecorationItemlist[m_ItemPos];
 }
 
-CEntityHouseDecoration::CEntityHouseDecoration(CGameWorld* pGameWorld, vec2 Pos, int UniqueID, int ItemID)
+CEntityHouseDecoration::CEntityHouseDecoration(CGameWorld* pGameWorld, vec2 Pos, int UniqueID, int GroupID, int ItemID)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DECOHOUSE, Pos)
 {
 	m_UniqueID = UniqueID;
 	m_ItemID = ItemID;
+	m_GroupID = GroupID;
 	m_pDrawing = nullptr;
 	CEntityHouseDecoration::ReinitilizeSnappingIDs();
 	GameWorld()->InsertEntity(this);
@@ -66,7 +67,7 @@ CEntityHouseDecoration::~CEntityHouseDecoration()
 
 // This function starts the drawing mode for a house decoration entity
 // It takes a pointer to a player, the type of house decoration, the position of the decoration, and the radius of the decoration
-void CEntityHouseDecoration::StartDrawingMode(CPlayer* pPlayer, HouseType Type, const vec2& HousePos, float Radius)
+void CEntityHouseDecoration::StartDrawingMode(CPlayer* pPlayer, DrawingType Type, const vec2& CenterPos, float Radius)
 {
 	// Check if the player pointer is valid and if there is no ongoing drawing
 	if(pPlayer && !m_pDrawing)
@@ -81,8 +82,8 @@ void CEntityHouseDecoration::StartDrawingMode(CPlayer* pPlayer, HouseType Type, 
 		const int& ClientID = pPlayer->GetCID();
 
 		// Create a new drawing data object and laser orbite and assign it to the m_pDrawing pointer
-		m_pDrawing = new CDrawingData(pPlayer, Type, HousePos, Radius);
-		m_pDrawing->m_pLaserOrbite = new CLaserOrbite(GameWorld(), HousePos, 15, EntLaserOrbiteType::INSIDE_ORBITE, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(ClientID));
+		m_pDrawing = new CDrawingData(pPlayer, Type, CenterPos, Radius);
+		m_pDrawing->m_pLaserOrbite = new CLaserOrbite(GameWorld(), CenterPos, 15, EntLaserOrbiteType::INSIDE_ORBITE, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(ClientID));
 	}
 }
 
@@ -145,40 +146,93 @@ void CEntityHouseDecoration::Tick()
 			return;
 		}
 
+		// Check if the vote yes key is clicked
+		if(pPlayer->IsClickedKey(KEY_EVENT_VOTE_YES))
+		{
+			m_pDrawing->m_EraseMode ^= true;
+			GS()->Chat(ClientID, "Switching mode to '{STR}'.", m_pDrawing->m_EraseMode ? "Erase mode" : "Drawing mode");
+		}
+
 		// Check if the fire hammer key is clicked
 		if(pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 		{
-			if(m_pDrawing->m_Type == HouseType::DEFAULT)
+			if(m_pDrawing->m_Type == DrawingType::HOUSE)
 			{
-				if(CHouseData* pHouse = pPlayer->Account()->GetHouse(); pHouse && pHouse->AddDecoration(this))
+				if(CHouseData* pHouse = pPlayer->Account()->GetHouse(); pHouse)
 				{
-					GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
-					pPlayer->GetItem(m_ItemID)->Remove(1);
-					m_pDrawing->m_Working = false;
+					if(m_pDrawing->m_EraseMode)
+					{
+						if(const auto pEntity = FindByGroupID(pHouse->GetID()))
+						{
+							m_ItemID = pEntity->GetItemID();
+							pPlayerItem = pPlayer->GetItem(m_ItemID);
+							if(pHouse->RemoveDecoration(pEntity->GetUniqueID()))
+							{
+								GS()->Chat(ClientID, "You returned to the inventory {STR}!", pPlayerItem->Info()->GetName());
+								pPlayerItem->Add(1);
+							}
+						}
+					}
+					else if(pHouse->AddDecoration(this))
+					{
+						GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
+						pPlayerItem->Remove(1);
+						m_pDrawing->m_Working = false;
+
+					}
 				}
 			}
-			else if(m_pDrawing->m_Type == HouseType::GUILD)
+			else if(m_pDrawing->m_Type == DrawingType::GUILD_HOUSE)
 			{
-				if(CGuildData* pGuild = pPlayer->Account()->GetGuild(); pGuild && pGuild->HasHouse() && pGuild->GetHouse()->GetDecorations()->Add(this))
+				if(CGuildData* pGuild = pPlayer->Account()->GetGuild(); pGuild && pGuild->HasHouse())
 				{
-					GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
-					pPlayer->GetItem(m_ItemID)->Remove(1);
-					m_pDrawing->m_Working = false;
+					if(m_pDrawing->m_EraseMode)
+					{
+						if(const auto pEntity = FindByGroupID(pGuild->GetHouse()->GetID()))
+						{
+							m_ItemID = pEntity->GetItemID();
+							pPlayerItem = pPlayer->GetItem(m_ItemID);
+							if(pGuild->GetHouse()->GetDecorations()->Remove(pEntity->GetUniqueID()))
+							{
+								GS()->Chat(ClientID, "You returned to the inventory {STR}!", pPlayerItem->Info()->GetName());
+								pPlayerItem->Add(1);
+							}
+						}
+					}
+					else if(pGuild->GetHouse()->GetDecorations()->Add(this))
+					{
+						GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
+						pPlayerItem->Remove(1);
+						m_pDrawing->m_Working = false;
+
+					}
 				}
 			}
 		}
 
 		// broadcast
-		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: {STR} (has {VAL})"
-			"\nKey 'fire hammer' - add selected decoration"
-			"\nKey 'menu' - cancel drawing mode"
-			"\nKey 'prev, next weapon' - switch decoration",
-			pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+		if(m_pDrawing->m_EraseMode)
+		{
+			GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: Erase mode"
+				"\nKey 'fire hammer' - remove decoration"
+				"\nKey 'menu' - cancel drawing mode"
+				"\nKey 'vote yes' - drawing mode",
+				pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+		}
+		else
+		{
+			GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: {STR} (has {VAL})"
+				"\nKey 'fire hammer' - add selected decoration"
+				"\nKey 'menu' - cancel drawing mode"
+				"\nKey 'prev, next weapon' - switch decoration"
+				"\nKey 'vote yes' - erase mode",
+				pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+		}
 	}
 
 	if(!m_pDrawing->m_Working)
 	{
-		auto* pEntDeco = new CEntityHouseDecoration(GameWorld(), m_Pos, m_UniqueID, m_ItemID);
+		auto* pEntDeco = new CEntityHouseDecoration(GameWorld(), m_Pos, m_UniqueID, m_GroupID, m_ItemID);
 		pEntDeco->StartDrawingMode(pPlayer, m_pDrawing->m_Type, m_pDrawing->m_Position, m_pDrawing->m_Radius);
 		delete m_pDrawing;
 		m_pDrawing = nullptr;
@@ -205,6 +259,11 @@ void CEntityHouseDecoration::Snap(int SnappingClient)
 		default:
 		Type = POWERUP_HEALTH;
 		break;
+	}
+
+	if(m_pDrawing && m_pDrawing->m_EraseMode)
+	{
+		Type = WEAPON_HAMMER;
 	}
 
 	ObjectType Objtype = GetObjectType();
@@ -285,4 +344,12 @@ void CEntityHouseDecoration::ReinitilizeSnappingIDs()
 			ID = Server()->SnapNewID();
 		}
 	}
+}
+
+CEntityHouseDecoration* CEntityHouseDecoration::FindByGroupID(int GroupID)
+{
+	auto pEntity = (CEntityHouseDecoration*)GS()->m_World.ClosestEntity(m_Pos, 20.0f, CGameWorld::ENTTYPE_DECOHOUSE, this);
+	if(!pEntity || pEntity->GetGroupID() != GroupID)
+		return nullptr;
+	return pEntity;
 }

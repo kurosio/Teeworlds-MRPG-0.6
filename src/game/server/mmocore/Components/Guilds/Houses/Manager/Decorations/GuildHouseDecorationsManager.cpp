@@ -30,8 +30,8 @@ bool CGuildHouseDecorationManager::StartDrawing(const int& ItemID, CPlayer* pPla
 		return false;
 
 	const vec2& MousePos = pPlayer->GetCharacter()->GetMousePos();
-	auto* pEntity = new CEntityHouseDecoration(&GS()->m_World, MousePos, -1, ItemID);
-	pEntity->StartDrawingMode(pPlayer, HouseType::GUILD, m_pHouse->GetPos(), 900.f);
+	auto* pEntity = new CEntityHouseDecoration(&GS()->m_World, MousePos, -1, m_pHouse->GetID(), ItemID);
+	pEntity->StartDrawingMode(pPlayer, DrawingType::GUILD_HOUSE, m_pHouse->GetPos(), 900.f);
 	return true;
 }
 
@@ -45,8 +45,9 @@ void CGuildHouseDecorationManager::Init()
 
 		int UniqueID = pRes->getInt("ID");
 		int ItemID = pRes->getInt("ItemID");
+		GuildHouseIdentifier HouseID = pRes->getInt("HouseID");
 		vec2 DecorationPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		m_apDecorations.push_back(new CEntityHouseDecoration(&GS()->m_World, DecorationPos, UniqueID, ItemID));
+		m_apDecorations.push_back(new CEntityHouseDecoration(&GS()->m_World, DecorationPos, UniqueID, HouseID, ItemID));
 	}
 }
 

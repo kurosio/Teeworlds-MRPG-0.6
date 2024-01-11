@@ -7,10 +7,10 @@ class CPlayer;
 class CLaserOrbite;
 
 // Enumeration for the type of a house
-enum class HouseType : int
+enum class DrawingType : int
 {
-	DEFAULT,               // Default type of house
-	GUILD                  // Guild type of house
+	HOUSE,                       // Default type of house
+	GUILD_HOUSE                  // Guild type of house
 };
 
 class CEntityHouseDecoration : public CEntity
@@ -21,7 +21,7 @@ class CEntityHouseDecoration : public CEntity
 	{
 	public:
 		CDrawingData() = delete;
-		CDrawingData(CPlayer* pPlayer, HouseType Type, vec2 Position, float Radius);
+		CDrawingData(CPlayer* pPlayer, DrawingType Type, vec2 Position, float Radius);
 		~CDrawingData();
 
 		int m_ItemPos {};
@@ -30,7 +30,8 @@ class CEntityHouseDecoration : public CEntity
 		vec2 m_Position {};
 		float m_Radius {};
 		bool m_Working {};
-		HouseType m_Type{};
+		bool m_EraseMode {};
+		DrawingType m_Type{};
 
 		int NextItemPos();
 		int PrevItemPos();
@@ -38,19 +39,19 @@ class CEntityHouseDecoration : public CEntity
 
 	CDrawingData* m_pDrawing{};
 	int m_UniqueID {};
-	int m_HouseID {};
+	int m_GroupID {};
 	int m_ItemID {};
 	std::vector<int> m_vIDs {};
 
 public:
-	CEntityHouseDecoration(CGameWorld* pGameWorld, vec2 Pos, int UniqueID, int ItemID);
+	CEntityHouseDecoration(CGameWorld* pGameWorld, vec2 Pos, int UniqueID, int GroupID, int ItemID);
 	~CEntityHouseDecoration() override;
 
 	void SetUniqueID(int UniqueID) { m_UniqueID = UniqueID; }
-	void StartDrawingMode(CPlayer* pPlayer, HouseType Type, const vec2& HousePos, float Radius);
+	void StartDrawingMode(CPlayer* pPlayer, DrawingType Type, const vec2& CenterPos, float Radius);
 
 	int GetUniqueID() const { return m_UniqueID; }
-	int GetHouseID() const { return m_HouseID; }
+	int GetGroupID() const { return m_GroupID; }
 	int GetItemID() const { return m_ItemID; }
 
 	void Tick() override;
@@ -63,9 +64,11 @@ private:
 		OBJ_PROJECTILE,
 		OBJ_LASER,
 	};
+
 	int GetIDsNum() const;
 	ObjectType GetObjectType() const;
 	void ReinitilizeSnappingIDs();
+	CEntityHouseDecoration* FindByGroupID(int GroupID);
 };
 
 #endif

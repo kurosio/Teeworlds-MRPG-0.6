@@ -38,8 +38,9 @@ void CHouseData::InitDecorations()
 			{
 				int UniqueID = pRes->getInt("ID");
 				int ItemID = pRes->getInt("ItemID");
+				HouseIdentifier HouseID = pRes->getInt("HouseID");
 				vec2 DecorationPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-				m_apDecorations[i] = new CEntityHouseDecoration(&GS()->m_World, DecorationPos, UniqueID, ItemID);
+				m_apDecorations[i] = new CEntityHouseDecoration(&GS()->m_World, DecorationPos, UniqueID, HouseID, ItemID);
 				break;
 			}
 		}
