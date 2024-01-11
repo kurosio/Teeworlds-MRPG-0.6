@@ -18,7 +18,7 @@ class CGuildHouseDecorationManager
 	CGS* GS() const;
 
 	CGuildHouseData* m_pHouse {};
-	CEntityHouseDecoration* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
+	HouseDecorationsContainer m_apDecorations {};
 
 public:
 	CGuildHouseDecorationManager() = delete;
@@ -29,7 +29,8 @@ public:
 	bool Add(CEntityHouseDecoration* pEntity);
 	bool Remove(HouseDecorationIdentifier ID);
 
-	HouseDecorationsContainer&& GetContainer() const;
+	const HouseDecorationsContainer& GetContainer() const { return m_apDecorations; };
+	bool HasFreeSlots() const { return (int)m_apDecorations.size() < (int)MAX_DECORATIONS_HOUSE; }
 
 private:
 	void Init();

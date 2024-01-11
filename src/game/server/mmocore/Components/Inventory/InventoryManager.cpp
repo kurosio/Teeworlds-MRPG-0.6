@@ -20,7 +20,7 @@ bool ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, c
 		else if constexpr(std::is_same_v<T, ItemFunctional>)
 			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsFunctional(Type);
 
-		if(ActivateCallback) 
+		if(ActivateCallback)
 		{
 			pFunc(ItemData);
 			Found = true;
@@ -35,7 +35,7 @@ void CInventoryManager::OnInit()
 	const auto InitItemsList = Database->Prepare<DB::SELECT>("*", "tw_items_list");
 	InitItemsList->AtExecute([](ResultPtr pRes)
 	{
-		while (pRes->next())
+		while(pRes->next())
 		{
 			const int ID = pRes->getInt("ID");
 			std::string Name = pRes->getString("Name").c_str();
@@ -47,7 +47,7 @@ void CInventoryManager::OnInit()
 			int Dysenthis = pRes->getInt("Desynthesis");
 
 			CItemDescription::ContainerAttributes aContainerAttributes;
-			for (int i = 0; i < STATS_MAX_FOR_ITEM; i++)
+			for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
 			{
 				char aAttributeID[32], aAttributeValue[32];
 				str_format(aAttributeID, sizeof(aAttributeID), "Attribute%d", i);
@@ -68,7 +68,7 @@ void CInventoryManager::OnInit()
 	const auto InitAttributes = Database->Prepare<DB::SELECT>("*", "tw_attributs");
 	InitAttributes->AtExecute([](ResultPtr pRes)
 	{
-		while (pRes->next())
+		while(pRes->next())
 		{
 			const AttributeIdentifier ID = (AttributeIdentifier)pRes->getInt("ID");
 			std::string Name = pRes->getString("Name").c_str();
@@ -81,7 +81,7 @@ void CInventoryManager::OnInit()
 	});
 }
 
-void CInventoryManager::OnInitAccount(CPlayer *pPlayer)
+void CInventoryManager::OnInitAccount(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
@@ -122,7 +122,7 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_CRAFT, TAB_INVENTORY_SELECT, "Craft ({INT})", SizeItems);
-		
+
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP);
 		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_EQUIP, TAB_INVENTORY_SELECT, "Equipment ({INT})", SizeItems);
 
@@ -272,12 +272,25 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	return false;
 }
 
-void CInventoryManager::RepairDurabilityItems(CPlayer *pPlayer)
+void CInventoryManager::RepairDurabilityItems(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Account()->GetID());
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
 		Item.m_Durability = 100;
+}
+
+std::vector<int> CInventoryManager::GetItemIDsByType(ItemType Type) const
+{
+	std::vector<int> ItemIDs {};
+
+	for(const auto& [ID, pInfo] : CItemDescription::Data())
+	{
+		if(pInfo.IsType(Type))
+			ItemIDs.push_back(ID);
+	}
+
+	return ItemIDs;
 }
 
 void CInventoryManager::ListInventory(int ClientID, ItemType Type)
@@ -297,7 +310,7 @@ void CInventoryManager::ListInventory(int ClientID, ItemFunctional Type)
 		GS()->AVL(ClientID, "null", "There are no items in this tab");
 }
 
-int CInventoryManager::GetUnfrozenItemValue(CPlayer *pPlayer, ItemIdentifier ItemID) const
+int CInventoryManager::GetUnfrozenItemValue(CPlayer* pPlayer, ItemIdentifier ItemID) const
 {
 	const int AvailableValue = Job()->Quest()->GetUnfrozenItemValue(pPlayer, ItemID);
 	if(AvailableValue <= 0 && pPlayer->GetItem(ItemID)->HasItem())
@@ -343,7 +356,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	const char* pNameItem = pItemPlayer.Info()->GetName();
 
 	// overwritten or not
-	if (pItemPlayer.Info()->IsEnchantable())
+	if(pItemPlayer.Info()->IsEnchantable())
 	{
 		GS()->AVH(ClientID, HideID, "{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.StringEnchantLevel().c_str());
 
@@ -362,7 +375,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	}
 
 	// functional by function
-	if (pItemPlayer.Info()->m_Function == FUNCTION_ONE_USED || pItemPlayer.Info()->m_Function == FUNCTION_USED)
+	if(pItemPlayer.Info()->m_Function == FUNCTION_ONE_USED || pItemPlayer.Info()->m_Function == FUNCTION_USED)
 	{
 		GS()->AVM(ClientID, "null", NOPE, HideID, "Bind command '/useitem {INT}'", ItemID);
 		GS()->AVM(ClientID, "IUSE", ItemID, HideID, "Use");
@@ -377,12 +390,12 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	}
 
 	// functional by type
-	if (pItemPlayer.Info()->m_Type == ItemType::TYPE_POTION)
+	if(pItemPlayer.Info()->m_Type == ItemType::TYPE_POTION)
 	{
 		GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "Auto use - {STR}", (pItemPlayer.m_Settings ? "Enable" : "Disable"));
 
 	}
-	else if (pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION)
+	else if(pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION)
 	{
 		GS()->AVM(ClientID, "DECORATION_HOUSE_ADD", ItemID, HideID, "Start drawing near house", pNameItem);
 		GS()->AVM(ClientID, "GUILD_HOUSE_ADD_DECORATION", ItemID, HideID, "Start drawing near guild house", pNameItem);
@@ -396,17 +409,17 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	}
 
 	// enchant
-	if (pItemPlayer.Info()->IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
+	if(pItemPlayer.Info()->IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
 	{
 		const int Price = pItemPlayer.GetEnchantPrice();
 		GS()->AVM(ClientID, "IENCHANT", ItemID, HideID, "Enchant ({VAL}m)", Price);
 	}
 
 	// not allowed drop equipped hammer
-	if (ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
+	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
 		// dysenthis
-		if (pItemPlayer.GetDysenthis() > 0)
+		if(pItemPlayer.GetDysenthis() > 0)
 		{
 			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble (+{VAL}m)", pItemPlayer.GetDysenthis());
 		}
@@ -425,7 +438,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	GS()->AVM(ClientID, "null", -1, HideID, "");
 }
 
-int CInventoryManager::GetCountItemsType(CPlayer *pPlayer, ItemType Type) const
+int CInventoryManager::GetCountItemsType(CPlayer* pPlayer, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
 	return (int)std::count_if(CPlayerItem::Data()[ClientID].begin(), CPlayerItem::Data()[ClientID].end(), [Type](auto& pItem)

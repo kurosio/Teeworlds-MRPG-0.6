@@ -308,8 +308,8 @@ enum
 	itTicketGuild = 8,					// Ticket for the creation of the guild
 	itSkillPoint = 9,					// Skillpoint
 	itDecoArmor = 10,					// Shield Decoration
-	itEliteDecoHeart = 11,				// Elite Heart Decoration
-	itEliteDecoNinja = 12,				// Elite Ninja Decoration
+	itDecoHeartElite = 11,				// Elite Heart Decoration
+	itDecoNinjaElite = 12,				// Elite Ninja Decoration
 	itDecoHeart = 13,					// Decoration Heart
 	itPotionManaRegen = 14,				// Mana regeneration potion
 	itTinyHealthPotion = 15,			// Tiny health potion

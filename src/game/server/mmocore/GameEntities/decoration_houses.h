@@ -15,6 +15,8 @@ enum class HouseType : int
 
 class CEntityHouseDecoration : public CEntity
 {
+	inline static std::vector<int> m_vFullDecorationItemlist {};
+
 	class CDrawingData
 	{
 	public:
@@ -22,27 +24,23 @@ class CEntityHouseDecoration : public CEntity
 		CDrawingData(CPlayer* pPlayer, HouseType Type, vec2 Position, float Radius);
 		~CDrawingData();
 
+		int m_ItemPos {};
 		CPlayer* m_pPlayer {};
 		CLaserOrbite* m_pLaserOrbite {};
 		vec2 m_Position {};
 		float m_Radius {};
 		bool m_Working {};
-		bool m_Cancel {};
 		HouseType m_Type{};
+
+		int NextItemPos();
+		int PrevItemPos();
 	};
 
-	CDrawingData* m_pDrawing;
+	CDrawingData* m_pDrawing{};
 	int m_UniqueID {};
 	int m_HouseID {};
 	int m_ItemID {};
-
-	enum
-	{
-		PERSPECT = 1,
-		BODY,
-		NUM_IDS,
-	};
-	int m_IDs[NUM_IDS] {};
+	std::vector<int> m_vIDs {};
 
 public:
 	CEntityHouseDecoration(CGameWorld* pGameWorld, vec2 Pos, int UniqueID, int ItemID);
@@ -59,7 +57,15 @@ public:
 	void Snap(int SnappingClient) override;
 
 private:
-	int GetObjectType(bool Projectile) const;
+	enum ObjectType
+	{
+		OBJ_PICKUP,
+		OBJ_PROJECTILE,
+		OBJ_LASER,
+	};
+	int GetIDsNum() const;
+	ObjectType GetObjectType() const;
+	void ReinitilizeSnappingIDs();
 };
 
 #endif
