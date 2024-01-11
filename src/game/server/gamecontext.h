@@ -172,9 +172,11 @@ public:
 	void OnUpdatePlayerServerInfo(nlohmann::json* pJson, int ClientID) override;
 	bool IsClientReady(int ClientID) const override;
 	bool IsClientPlayer(int ClientID) const override;
+	bool IsClientCharacterExist(int ClientID) const override;
 	bool IsClientMRPG(int ClientID) const;
 	bool PlayerExists(int ClientID) const override { return m_apPlayers[ClientID]; }
 
+	void* GetLastInput(int ClientID) const override;
 	int GetClientVersion(int ClientID) const;
 	const char *Version() const override;
 	const char *NetVersion() const override;

@@ -384,8 +384,8 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	}
 	else if (pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION)
 	{
-		GS()->AVM(ClientID, "DECORATION_HOUSE_ADD", ItemID, HideID, "Add {STR} to your house", pNameItem);
-		GS()->AVM(ClientID, "DECOGUILDSTART", ItemID, HideID, "Add {STR} to your guild house", pNameItem);
+		GS()->AVM(ClientID, "DECORATION_HOUSE_ADD", ItemID, HideID, "Start drawing near house", pNameItem);
+		GS()->AVM(ClientID, "GUILD_HOUSE_ADD_DECORATION", ItemID, HideID, "Start drawing near guild house", pNameItem);
 	}
 	else if(pItemPlayer.Info()->m_Type == ItemType::TYPE_EQUIP || pItemPlayer.Info()->m_Function == FUNCTION_SETTINGS)
 	{

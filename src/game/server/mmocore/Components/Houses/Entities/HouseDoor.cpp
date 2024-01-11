@@ -31,7 +31,7 @@ void CEntityHouseDoor::Tick()
 		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
 		{
 			// Check if the character's reload timer is active
-			if(pChar->m_ReloadTimer)
+			if(pChar->GetPlayer()->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 			{
 				// Check the state of the door and perform the corresponding action
 				if(m_State == OPENED)
@@ -41,7 +41,7 @@ void CEntityHouseDoor::Tick()
 			}
 
 			// Broadcast a game information message to the player and hammer hit effect at the position of the door control
-			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 10, "Use 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
+			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
 		}
 	}
 

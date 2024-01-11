@@ -18,6 +18,27 @@
 #define GREEN_COLOR vec3(15, 40, 15)
 #define LIGHT_GREEN_COLOR vec3(0, 16, 0)
 
+// This enum represents different action keys that can be used in a program
+enum InputEventKey
+{
+	KEY_EVENT_FIRE,
+	KEY_EVENT_FIRE_HAMMER,
+	KEY_EVENT_FIRE_GUN,
+	KEY_EVENT_FIRE_SHOTGUN,
+	KEY_EVENT_FIRE_GRENADE,
+	KEY_EVENT_FIRE_LASER,
+	KEY_EVENT_FIRE_NINJA,
+	KEY_EVENT_VOTE_YES,
+	KEY_EVENT_VOTE_NO,
+	KEY_EVENT_SCOREBOARD,
+	KEY_EVENT_CHAT,
+	KEY_EVENT_JUMP,
+	KEY_EVENT_HOOK,
+	KEY_EVENT_NEXT_WEAPON,
+	KEY_EVENT_PREV_WEAPON,
+	KEY_EVENT_MENU
+};
+
 // laser orbite
 enum class EntLaserOrbiteType : unsigned char
 {

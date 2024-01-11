@@ -4,13 +4,37 @@
 
 #include <game/server/gamecontext.h>
 
-CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, vec2(0.f, 0.f), (int)Radius), m_Type(Type), m_ClientID(pEntParent ? -1 : ClientID), m_MoveSpeed(Speed), m_pEntParent(pEntParent)
+CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
+	: CEntity(pGameWorld, CGameWorld::ENTYPE_LASER_ORBITE, Position, Radius)
 {
+	m_Type = Type;
+	m_ClientID = -1;
+	m_pEntParent = nullptr;
+	m_MoveSpeed = Speed;
 	m_Mask = Mask;
 	m_LaserType = LaserType;
-	m_AppendPos = vec2(centrelized_frandom(0.f, GetProximityRadius() / 1.5f), centrelized_frandom(0.f, GetProximityRadius() / 1.5f));
-	m_Pos = m_pEntParent ? m_pEntParent->GetPos() + (Type == EntLaserOrbiteType::INSIDE_ORBITE_RANDOM ? m_AppendPos : vec2(0.f,0.f)) : vec2(0.f, 0.f);
+	GameWorld()->InsertEntity(this);
+
+	m_IDs.set_size(Amount);
+	for(int i = 0; i < m_IDs.size(); i++)
+		m_IDs[i] = Server()->SnapNewID();
+}
+
+CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
+	: CEntity(pGameWorld, CGameWorld::ENTYPE_LASER_ORBITE, vec2(0.f, 0.f), (int)Radius)
+{
+	m_Type = Type;
+	m_ClientID = ClientID;
+	m_pEntParent = pEntParent;
+	m_MoveSpeed = Speed;
+	m_Mask = Mask;
+	m_LaserType = LaserType;
+
+	if(m_pEntParent)
+	{
+		m_AppendPos = vec2(centrelized_frandom(0.f, GetProximityRadius() / 1.5f), centrelized_frandom(0.f, GetProximityRadius() / 1.5f));
+		m_Pos = pEntParent->GetPos() + (Type == EntLaserOrbiteType::INSIDE_ORBITE_RANDOM ? m_AppendPos : vec2(0.f, 0.f));
+	}
 	GameWorld()->InsertEntity(this);
 
 	m_IDs.set_size(Amount);
@@ -28,7 +52,7 @@ CLaserOrbite::~CLaserOrbite()
 void CLaserOrbite::Tick()
 {
 	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID, false, true);
-	if((m_ClientID < 0 && (m_pEntParent == nullptr || m_pEntParent->IsMarkedForDestroy())) || (m_ClientID >= 0 && !pPlayer))
+	if((m_ClientID >= 0 && !pPlayer) || (m_pEntParent && m_pEntParent->IsMarkedForDestroy()))
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -42,7 +66,9 @@ void CLaserOrbite::Tick()
 			m_Pos = m_pEntParent->GetPos();
 	}
 	else if(m_ClientID >= 0 && pPlayer)
+	{
 		m_Pos = pPlayer->GetCharacter()->m_Core.m_Pos;
+	}
 }
 
 vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const

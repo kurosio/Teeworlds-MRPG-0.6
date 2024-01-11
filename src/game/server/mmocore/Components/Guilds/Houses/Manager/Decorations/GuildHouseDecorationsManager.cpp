@@ -25,6 +25,17 @@ CGuildHouseDecorationManager::~CGuildHouseDecorationManager()
 	}
 }
 
+bool CGuildHouseDecorationManager::StartDrawing(const int& ItemID, CPlayer* pPlayer)
+{
+	if(!pPlayer || !pPlayer->GetCharacter())
+		return false;
+
+	const vec2& MousePos = pPlayer->GetCharacter()->GetMousePos();
+	auto* pEntity = new CEntityHouseDecoration(&GS()->m_World, MousePos, -1, ItemID);
+	pEntity->StartDrawingMode(pPlayer, HouseType::GUILD, m_pHouse->GetPos(), 900.f);
+	return true;
+}
+
 void CGuildHouseDecorationManager::Init()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE WorldID = '%d' AND HouseID = '%d'", GS()->GetWorldID(), m_pHouse->GetID());
@@ -37,22 +48,25 @@ void CGuildHouseDecorationManager::Init()
 				int DecorationID = pRes->getInt("ID");
 				int ItemID = pRes->getInt("ItemID");
 				vec2 DecorationPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-				m_apDecorations[i] = new CDecorationHouses(&GS()->m_World, DecorationPos, m_pHouse->GetID(), DecorationID, ItemID);
+				m_apDecorations[i] = new CEntityHouseDecoration(&GS()->m_World, DecorationPos, DecorationID, ItemID);
 				break;
 			}
 		}
 	}
 }
 
-bool CGuildHouseDecorationManager::Add(int ItemID, vec2 Position, CPlayer* pPlayerBy)
+bool CGuildHouseDecorationManager::Add(CEntityHouseDecoration* pEntity)
 {
-	if(!pPlayerBy)
+	if(!pEntity)
 		return false;
 
+	const ItemIdentifier& ItemID = pEntity->GetItemID();
+	const vec2& EntityPos = pEntity->GetPos();
+
 	// Check if the distance between the current position house and the given position (Position) is greater than 400.0f
-	if(distance(m_pHouse->GetPos(), Position) > 400.0f)
+	if(distance(m_pHouse->GetPos(), EntityPos) > 900.f)
 	{
-		GS()->Chat(pPlayerBy->GetCID(), "There is too much distance from home!");
+		//GS()->Chat(pPlayerBy->GetCID(), "There is too much distance from home!");
 		return false;
 	}
 
@@ -65,32 +79,33 @@ bool CGuildHouseDecorationManager::Add(int ItemID, vec2 Position, CPlayer* pPlay
 			ResultPtr pRes2 = Database->Execute<DB::SELECT>("ID", TW_GUILD_HOUSES_DECORATION_TABLE, "ORDER BY ID DESC LIMIT 1");
 			const int InitID = pRes2->next() ? pRes2->getInt("ID") + 1 : 1;
 			Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ID, ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')", 
-				InitID, ItemID, m_pHouse->GetID(), (int)Position.x, (int)Position.y, GS()->GetWorldID());
+				InitID, ItemID, m_pHouse->GetID(), (int)EntityPos.x, (int)EntityPos.y, GS()->GetWorldID());
 
 			// Create new decoration on gameworld
-			m_apDecorations[i] = new CDecorationHouses(&GS()->m_World, Position, pPlayerBy->Account()->GetID(), InitID, ItemID);
+			pEntity->SetUniqueID(InitID);
+			m_apDecorations[i] = pEntity;
 			return true;
 		}
 	}
 
 	// Send what all decoration slots occupied
-	GS()->Chat(pPlayerBy->GetCID(), "All decoration slots have been occupied.");
+	//GS()->Chat(pPlayerBy->GetCID(), "All decoration slots have been occupied.");
 	return false;
 }
 
-bool CGuildHouseDecorationManager::Remove(HouseDecorationIdentifier DecoID)
+bool CGuildHouseDecorationManager::Remove(HouseDecorationIdentifier ID)
 {
 	// Remove decoration
 	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
 	{
-		if(m_apDecorations[i] && m_apDecorations[i]->GetDecorationID() == DecoID)
+		if(m_apDecorations[i] && m_apDecorations[i]->GetUniqueID() == ID)
 		{
 			// Delete from gameworld
 			delete m_apDecorations[i];
 			m_apDecorations[i] = nullptr;
 
 			// Remove from database
-			Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE ID = '%d'", DecoID);
+			Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE ID = '%d'", ID);
 			return true;
 		}
 	}

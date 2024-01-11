@@ -38,7 +38,7 @@ class CPlayer
 	};
 
 	int m_SnapHealthTick;
-	ska::unordered_map < int, bool > m_aHiddenMenu;
+	ska::unordered_map<int, bool> m_aHiddenMenu;
 
 protected:
 	CCharacter* m_pCharacter;
@@ -51,7 +51,6 @@ protected:
 	bool m_Afk;
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
-	CNetObj_PlayerInput* m_pLastInput;
 	std::function<void()> m_PostVotes;
 
 public:
@@ -91,6 +90,8 @@ public:
 		FUNCTIONS PLAYER ENGINE
 	========================================================== */
 public:
+	CNetObj_PlayerInput* m_pLastInput;
+
 	CPlayer(CGS* pGS, int ClientID);
 	virtual ~CPlayer();
 
@@ -174,6 +175,7 @@ public:
 	========================================================== */
 	bool ParseVoteOptionResult(int Vote);
 	bool ParseVoteUpgrades(const char* CMD, int VoteID, int VoteID2, int Get);
+	bool IsClickedKey(int KeyID) const;
 
 	/* ==========================================================
 		FUNCTIONS PLAYER ITEMS

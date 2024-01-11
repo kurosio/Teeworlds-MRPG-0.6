@@ -193,32 +193,6 @@ bool CCharacter::ActionAddDecoration()
 	const int ClientID = m_pPlayer->GetCID();
 	if(m_pPlayer->GetTempData().m_TempDecoractionID > 0)
 	{
-		const int DecoID = m_pPlayer->GetTempData().m_TempDecoractionID;
-		const int InteractiveType = m_pPlayer->GetTempData().m_TempDecorationType;
-		m_pPlayer->GetTempData().m_TempDecoractionID = -1;
-		m_pPlayer->GetTempData().m_TempDecorationType = -1;
-		if(m_pPlayer->GetItem(DecoID)->GetValue() <= 0 || GS()->GetItemInfo(DecoID)->GetType() != ItemType::TYPE_DECORATION)
-			return false;
-
-		if(InteractiveType == DECORATIONS_HOUSE)
-		{
-			CHouseData* pHouse = m_pPlayer->Account()->GetHouse();
-			if(pHouse && pHouse->AddDecoration(DecoID, GetMousePos()))
-			{
-				GS()->Chat(ClientID, "You have added {STR} to your house!", GS()->GetItemInfo(DecoID)->GetName());
-				m_pPlayer->GetItem(DecoID)->Remove(1);
-			}
-		}
-		else if(InteractiveType == DECORATIONS_GUILD_HOUSE)
-		{
-			CGuildData* pGuild = m_pPlayer->Account()->GetGuild();
-			if(pGuild && pGuild->HasHouse() && pGuild->GetHouse()->GetDecorations()->Add(DecoID, GetMousePos(), m_pPlayer))
-			{
-				GS()->Chat(ClientID, "You have added {STR} to your house!", GS()->GetItemInfo(DecoID)->GetName());
-				m_pPlayer->GetItem(DecoID)->Remove(1);
-			}
-		}
-
 		GS()->UpdateVotes(ClientID, m_pPlayer->m_LastVoteMenu);
 		return true;
 	}

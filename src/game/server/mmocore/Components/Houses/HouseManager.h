@@ -7,7 +7,7 @@
 #include "HouseData.h"
 
 class CEntityHouseDoor;
-class CDecorationHouses;
+class CEntityHouseDecoration;
 
 class CHouseManager : public MmoComponent
 {

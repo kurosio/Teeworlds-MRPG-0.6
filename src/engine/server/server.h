@@ -32,8 +32,8 @@ class CServer : public IServer
 	class IRegister* m_pRegister;
 
 public:
-	class IGameServer* GameServer(int WorldID = 0) override;
-	class IGameServer* GameServerPlayer(int ClientID) override;
+	class IGameServer* GameServer(int WorldID = 0) const override;
+	class IGameServer* GameServerPlayer(int ClientID) const override;
 	class IConsole* Console() const { return m_pConsole; }
 	class IStorageEngine* Storage() const { return m_pStorage; }
 	class CMultiWorlds* MultiWorlds() const { return m_pMultiWorlds; }
@@ -87,6 +87,7 @@ public:
 
 		char m_aClan[MAX_CLAN_LENGTH];
 		char m_aLanguage[MAX_LANGUAGE_LENGTH];
+		ska::unordered_set<int> m_aActionKeys;
 
 		int m_Version;
 		int m_Country;
@@ -162,6 +163,9 @@ public:
 	int GetEnumTypeDay() const override;
 
 	// basic
+	void ParseInputClickedKeys(int ClientID, void* pInputData);
+	void SetKeyClick(int ClientID, int KeyID) override;
+	bool IsKeyClicked(int ClientID, int KeyID) override;
 	void SetClientName(int ClientID, const char* pName) override;
 	void SetClientClan(int ClientID, char const* pClan) override;
 	void SetClientCountry(int ClientID, int Country) override;
@@ -172,7 +176,7 @@ public:
 
 	bool IsClientChangesWorld(int ClientID) override;
 	void ChangeWorld(int ClientID, int NewWorldID) override;
-	int GetClientWorldID(int ClientID) override;
+	int GetClientWorldID(int ClientID) const override;
 
 	void SetClientLanguage(int ClientID, const char* pLanguage) override;
 	const char* GetClientLanguage(int ClientID) const override;

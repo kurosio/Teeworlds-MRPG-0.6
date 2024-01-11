@@ -7,6 +7,7 @@
 class CLaserOrbite : public CEntity
 {
 public:
+	CLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask);
 	CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask);
 	~CLaserOrbite() override;
 

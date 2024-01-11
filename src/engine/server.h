@@ -30,8 +30,8 @@ protected:
 
 public:
 	// static std::mutex m_aMutexPlayerDataSafe[MAX_CLIENTS];
-	virtual class IGameServer* GameServer(int WorldID = 0) = 0;
-	virtual class IGameServer* GameServerPlayer(int ClientID) = 0;
+	virtual class IGameServer* GameServer(int WorldID = 0) const = 0;
+	virtual class IGameServer* GameServerPlayer(int ClientID) const = 0;
 
 	class CLocalization* m_pLocalization;
 	inline class CLocalization* Localization() const { return m_pLocalization; }
@@ -194,6 +194,8 @@ public:
 	virtual int GetEnumTypeDay() const = 0;
 
 	// main client functions
+	virtual void SetKeyClick(int ClientID, int KeyID) = 0;
+	virtual bool IsKeyClicked(int ClientID, int KeyID) = 0;
 	virtual void SetClientName(int ClientID, char const *pName) = 0;
 	virtual void SetClientClan(int ClientID, char const *pClan) = 0;
 	virtual void SetClientCountry(int ClientID, int Country) = 0;
@@ -201,7 +203,7 @@ public:
 
 	virtual bool IsClientChangesWorld(int ClientID) = 0;
 	virtual void ChangeWorld(int ClientID, int NewWorldID) = 0;
-	virtual int GetClientWorldID(int ClientID) = 0;
+	virtual int GetClientWorldID(int ClientID) const = 0;
 	virtual const char* GetWorldName(int WorldID) = 0;
 	virtual int GetWorldsSize() const = 0;
 
@@ -271,6 +273,8 @@ public:
 	virtual void OnClientDirectInput(int ClientID, void *pInput) = 0;
 	virtual void OnClientPredictedInput(int ClientID, void *pInput) = 0;
 
+	virtual void* GetLastInput(int ClientID) const = 0;
+	virtual bool IsClientCharacterExist(int ClientID) const = 0;
 	virtual bool IsClientReady(int ClientID) const = 0;
 	virtual bool IsClientPlayer(int ClientID) const = 0;
 	virtual bool PlayerExists(int ClientID) const = 0;

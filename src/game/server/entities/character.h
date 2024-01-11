@@ -57,6 +57,7 @@ protected:
 	int m_NumInputs;
 	int m_TriggeredEvents;
 	int m_LastAction;
+	int m_ReloadTimer;
 
 	int m_AttackTick;
 	int m_EmoteType;
@@ -138,7 +139,6 @@ public:
 	// allow perm
 	bool m_DamageDisabled;
 	int m_AmmoRegen;
-	int m_ReloadTimer;
 	bool m_SafeAreaForTick;
 
 	vec2 m_OldPos;

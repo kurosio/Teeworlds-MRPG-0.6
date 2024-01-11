@@ -112,13 +112,7 @@ bool CEntityMoveTo::PressedFire() const
 	if(!m_pPlayer || !m_pPlayer->GetCharacter())
 		return false;
 
-	if(m_pPlayer->GetCharacter()->m_ReloadTimer)
-	{
-		m_pPlayer->GetCharacter()->m_ReloadTimer = 0;
-		return true;
-	}
-
-	return false;
+	return m_pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER);
 }
 
 void CEntityMoveTo::ClearPointers()
@@ -344,11 +338,11 @@ void CEntityMoveTo::HandleBroadcastInformation() const
 	// select by type
 	if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::INTERACTIVE)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Please click on the highlighted area to interact with it.\n{STR}", Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Please click with hammer on the highlighted area to interact with it.\n{STR}", Buffer.buffer());
 	}
 	else if(Type & QuestBotInfo::TaskRequiredMoveTo::Types::PICKUP_ITEM || Type & QuestBotInfo::TaskRequiredMoveTo::Types::REQUIRED_ITEM)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press 'Fire', to interact.\n{STR}", Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press hammer 'Fire', to interact.\n{STR}", Buffer.buffer());
 	}
 }
 

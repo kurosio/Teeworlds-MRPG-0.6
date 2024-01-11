@@ -36,20 +36,26 @@ void CHouseData::InitDecorations()
 		{
 			if(!m_apDecorations[i])
 			{
-				int DecorationID = pRes->getInt("ID");
+				int UniqueID = pRes->getInt("ID");
 				int ItemID = pRes->getInt("ItemID");
 				vec2 DecorationPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-				m_apDecorations[i] = new CDecorationHouses(&GS()->m_World, DecorationPos, m_ID, DecorationID, ItemID);
+				m_apDecorations[i] = new CEntityHouseDecoration(&GS()->m_World, DecorationPos, UniqueID, ItemID);
 				break;
 			}
 		}
 	}
 }
 
-bool CHouseData::AddDecoration(ItemIdentifier ItemID, vec2 Position)
+bool CHouseData::AddDecoration(CEntityHouseDecoration* pEntity)
 {
+	if(!pEntity)
+		return false;
+
+	const ItemIdentifier& ItemID = pEntity->GetItemID();
+	const vec2& EntityPos = pEntity->GetPos();
+
 	// Check if the distance between the current position house and the given position (Position) is greater than 400.0f
-	if(distance(m_Pos, Position) > 400.0f)
+	if(distance(m_Pos, EntityPos) > 400.0f)
 	{
 		GS()->Chat(GetPlayer()->GetCID(), "There is too much distance from home!");
 		return false;
@@ -63,10 +69,11 @@ bool CHouseData::AddDecoration(ItemIdentifier ItemID, vec2 Position)
 			// Insert to last identifier and got it
 			ResultPtr pRes2 = Database->Execute<DB::SELECT>("ID", TW_HOUSES_DECORATION_TABLE, "ORDER BY ID DESC LIMIT 1");
 			const int InitID = pRes2->next() ? pRes2->getInt("ID") + 1 : 1;
-			Database->Execute<DB::INSERT>(TW_HOUSES_DECORATION_TABLE, "(ID, ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')", InitID, ItemID, m_ID, (int)Position.x, (int)Position.y, GS()->GetWorldID());
+			Database->Execute<DB::INSERT>(TW_HOUSES_DECORATION_TABLE, "(ID, ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')", InitID, ItemID, m_ID, (int)EntityPos.x, (int)EntityPos.y, GS()->GetWorldID());
 
 			// Create new decoration on gameworld
-			m_apDecorations[i] = new CDecorationHouses(&GS()->m_World, Position, m_AccountID, InitID, ItemID);
+			pEntity->SetUniqueID(InitID);
+			m_apDecorations[i] = pEntity;
 			return true;
 		}
 	}
@@ -81,7 +88,7 @@ bool CHouseData::RemoveDecoration(HouseDecorationIdentifier DecoID)
 	// Remove decoration
 	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
 	{
-		if(m_apDecorations[i] && m_apDecorations[i]->GetDecorationID() == DecoID)
+		if(m_apDecorations[i] && m_apDecorations[i]->GetUniqueID() == DecoID)
 		{
 			// Delete from gameworld
 			delete m_apDecorations[i];
@@ -232,7 +239,7 @@ void CHouseData::ShowDecorationList() const
 	{
 		if(m_apDecorations[i])
 		{
-			const int DecoID = m_apDecorations[i]->GetDecorationID();
+			const int DecoID = m_apDecorations[i]->GetUniqueID();
 			const vec2 DecoPos = m_apDecorations[i]->GetPos();
 			CItemDescription* pItemDecoration = GS()->GetItemInfo(m_apDecorations[i]->GetItemID());
 			GS()->AVD(ClientID, "DECORATION_HOUSE_DELETE", DecoID, pItemDecoration->GetID(), 1, "[Slot {INT}]: {STR} (x: {INT} y: {INT})", i + 1,

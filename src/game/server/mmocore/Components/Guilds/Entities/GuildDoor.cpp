@@ -31,7 +31,7 @@ void CEntityGuildDoor::Tick()
 		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
 		{
 			// Check if the character's reload timer is active
-			if(pChar->m_ReloadTimer)
+			if(pChar->GetPlayer()->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 			{
 				// Check the state of the door
 				if(m_State == OPENED)
@@ -42,7 +42,7 @@ void CEntityGuildDoor::Tick()
 
 			// Broadcast a game information message to the client
 			const int& ClientID = pChar->GetPlayer()->GetCID();
-			GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
+			GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
 		}
 
 		// Check if the door is closed

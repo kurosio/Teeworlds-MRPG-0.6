@@ -542,6 +542,49 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
+	if(PPSTR(CMD, "GUILD_HOUSE_ADD_DECORATION") == 0)
+	{
+		// Check if the player has a guild or has the right to invite/kick members
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// check player house
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuildHouseData* pHouse = pGuild->GetHouse();
+
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "You do not have your own home!");
+			return true;
+		}
+
+		// check distance between player and house
+		if(distance(pHouse->GetPos(), pPlayer->GetCharacter()->m_Core.m_Pos) > 600)
+		{
+			GS()->Chat(ClientID, "You have a lot of distance between you and the house, try to get closer!");
+			return true;
+		}
+
+		// start custom vote
+		GS()->StartCustomVotes(ClientID, MENU_GUILD_HOUSE_DECORATION);
+		GS()->AV(ClientID, "null", "Please close vote and press Left Mouse,");
+		GS()->AV(ClientID, "null", "on position where add decoration!");
+		GS()->AddVotesBackpage(ClientID);
+		GS()->EndCustomVotes(ClientID);
+		// end custom vote
+
+		// set temp data
+		if(pHouse->GetDecorations()->StartDrawing(VoteID, pPlayer))
+		{
+			GS()->Chat(ClientID, "You start drawing mode!");
+		}
+		return true;
+	}
+
+
 	if(PPSTR(CMD, "GUILD_HOUSE_SELL") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members

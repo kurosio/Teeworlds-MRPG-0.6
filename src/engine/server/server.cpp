@@ -53,6 +53,7 @@ void CServer::CClient::Reset()
 	m_SnapRate = SNAPRATE_INIT;
 	m_Score = -1;
 	m_NextMapChunk = 0;
+	m_aActionKeys.clear();
 }
 
 CServer::CServer()
@@ -95,14 +96,14 @@ CServer::~CServer()
 	Database->DisconnectConnectionHeap();
 }
 
-IGameServer* CServer::GameServer(int WorldID)
+IGameServer* CServer::GameServer(int WorldID) const
 {
 	if(!MultiWorlds()->IsValid(WorldID))
 		return MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_pGameServer;
 	return MultiWorlds()->GetWorld(WorldID)->m_pGameServer;
 }
 
-IGameServer* CServer::GameServerPlayer(int ClientID)
+IGameServer* CServer::GameServerPlayer(int ClientID) const
 {
 	return GameServer(GetClientWorldID(ClientID));
 }
@@ -169,6 +170,60 @@ int CServer::GetEnumTypeDay() const
 	if(m_WorldHour >= 6 && m_WorldHour < 13) return MORNING_TYPE;
 	if(m_WorldHour >= 13 && m_WorldHour < 19) return DAY_TYPE;
 	return EVENING_TYPE;
+}
+
+void CServer::ParseInputClickedKeys(int ClientID, void* pInputData)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
+		return;
+
+	const int& WorldID = m_aClients[ClientID].m_WorldID;
+	const CNetObj_PlayerInput* pNewInput = (CNetObj_PlayerInput*)pInputData;
+	const CNetObj_PlayerInput* pLastInput = (CNetObj_PlayerInput*)GameServer(WorldID)->GetLastInput(ClientID);
+	if(pNewInput && pLastInput && GameServer(WorldID)->IsClientCharacterExist(ClientID))
+	{
+		if(pNewInput->m_PlayerFlags & PLAYERFLAG_IN_MENU && !(pLastInput->m_PlayerFlags & PLAYERFLAG_IN_MENU))
+		{
+			SetKeyClick(ClientID, KEY_EVENT_MENU);
+		}
+
+		if(pNewInput->m_PlayerFlags & PLAYERFLAG_SCOREBOARD && !(pLastInput->m_PlayerFlags & PLAYERFLAG_SCOREBOARD))
+		{
+			SetKeyClick(ClientID, KEY_EVENT_SCOREBOARD);
+		}
+
+		if(pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING && !(pLastInput->m_PlayerFlags & PLAYERFLAG_CHATTING))
+		{
+			SetKeyClick(ClientID, KEY_EVENT_CHAT);
+		}
+
+		if(!pLastInput->m_Jump && pNewInput->m_Jump)
+		{
+			SetKeyClick(ClientID, KEY_EVENT_JUMP);
+		}
+
+		if(!pLastInput->m_Hook && pNewInput->m_Hook)
+		{
+			SetKeyClick(ClientID, KEY_EVENT_HOOK);
+		}
+		// todo add wanted weapon
+	}
+}
+
+void CServer::SetKeyClick(int ClientID, int KeyID)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
+		return;
+
+	m_aClients[ClientID].m_aActionKeys.emplace(KeyID);
+}
+
+bool CServer::IsKeyClicked(int ClientID, int KeyID)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
+		return false;
+
+	return m_aClients[ClientID].m_aActionKeys.find(KeyID) != m_aClients[ClientID].m_aActionKeys.end();
 }
 
 void CServer::SetClientName(int ClientID, const char* pName)
@@ -282,7 +337,7 @@ void CServer::ChangeWorld(int ClientID, int NewWorldID)
 	SendMap(ClientID);
 }
 
-int CServer::GetClientWorldID(int ClientID)
+int CServer::GetClientWorldID(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
 		return MAIN_WORLD_ID;
@@ -1237,6 +1292,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 			if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
 			{
 				const int WorldID = m_aClients[ClientID].m_WorldID;
+				ParseInputClickedKeys(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
 				GameServer(WorldID)->OnClientDirectInput(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
 			}
 		}
@@ -2096,6 +2152,17 @@ int CServer::Run(ILogger* pLogger)
 						// perform a snapshot
 						for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 							DoSnapshot(i);
+					}
+
+					// Loop through all players
+					for(int c = 0; c < MAX_PLAYERS; c++)
+					{
+						// Check if the player is in the game and has any action keys
+						if(m_aClients[c].m_State == CClient::STATE_INGAME && !m_aClients[c].m_aActionKeys.empty())
+						{
+							// Clear the action keys for the player
+							m_aClients[c].m_aActionKeys.clear();
+						}
 					}
 
 					// update client RCON commands

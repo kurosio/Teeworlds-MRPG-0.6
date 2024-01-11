@@ -22,7 +22,7 @@ class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDa
 	vec2 m_TextPos {};
 	vec2 m_PlantPos {};
 
-	class CDecorationHouses* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
+	class CEntityHouseDecoration* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
 	CHouseDoorsController* m_pDoorsController {};
 	CHouseBankData* m_pBank {};
 	CItem m_PlantedItem {};
@@ -103,7 +103,7 @@ public:
 	CHouseBankData* GetBank() const { return m_pBank; }
 
 	// A decoration functions
-	bool AddDecoration(ItemIdentifier ItemID, vec2 Pos);
+	bool AddDecoration(CEntityHouseDecoration* pEntity);
 	bool RemoveDecoration(HouseDecorationIdentifier DecoID);
 	void ShowDecorationList() const;
 

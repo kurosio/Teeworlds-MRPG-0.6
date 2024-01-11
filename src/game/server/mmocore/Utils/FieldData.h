@@ -27,7 +27,6 @@ class CFieldData
 	size_t m_UniqueID{};
 	char m_aFieldName[128] = {};
 	char m_aDescription[128] = {};
-	int m_Group{};
 
 public:
 	CFieldData() = delete;

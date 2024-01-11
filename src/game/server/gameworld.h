@@ -54,6 +54,8 @@ public:
 		ENTYPE_SLEEPYLINE,
 		ENTYPE_NOCTIS_TELEPORT,
 
+		ENTYPE_LASER_ORBITE, // always end
+
 		NUM_ENTTYPES
 	};
 

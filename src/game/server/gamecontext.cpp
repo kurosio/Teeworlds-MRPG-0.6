@@ -1019,7 +1019,6 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 					// Parsing the vote commands with the provided values
 					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
 					ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason);
-					return;
 				}
 			}
 		}
@@ -1027,9 +1026,17 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 		else if(MsgID == NETMSGTYPE_CL_VOTE)
 		{
 			// Parse the vote items from the message using the ParseVoteOptionResult function
-			CNetMsg_Cl_Vote* pMsg = (CNetMsg_Cl_Vote*)pRawMsg;
-			if(pPlayer->ParseVoteOptionResult(pMsg->m_Vote))
-				return;
+			const auto pMsg = (CNetMsg_Cl_Vote*)pRawMsg;
+			if(pMsg->m_Vote == 1)
+			{
+				Server()->SetKeyClick(ClientID, KEY_EVENT_VOTE_YES);
+			}
+			else if(pMsg->m_Vote == 0)
+			{
+				Server()->SetKeyClick(ClientID, KEY_EVENT_VOTE_NO);
+			}
+
+			pPlayer->ParseVoteOptionResult(pMsg->m_Vote);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_SETTEAM)
@@ -1352,17 +1359,30 @@ void CGS::PrepareClientChangeWorld(int ClientID)
 
 bool CGS::IsClientReady(int ClientID) const
 {
-	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->m_aPlayerTick[LastChangeInfo] > 0;
+	CPlayer* pPlayer = GetPlayer(ClientID);
+	return pPlayer && pPlayer->m_aPlayerTick[LastChangeInfo] > 0;
 }
 
 bool CGS::IsClientPlayer(int ClientID) const
 {
-	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+	CPlayer* pPlayer = GetPlayer(ClientID);
+	return pPlayer && pPlayer->GetTeam() == TEAM_SPECTATORS ? false : true;
+}
+
+bool CGS::IsClientCharacterExist(int ClientID) const
+{
+	return GetPlayer(ClientID, false, true) != nullptr;
 }
 
 bool CGS::IsClientMRPG(int ClientID) const
 {
 	return Server()->GetStateClientMRPG(ClientID) || (ClientID >= MAX_PLAYERS && ClientID < MAX_CLIENTS);
+}
+
+void* CGS::GetLastInput(int ClientID) const
+{
+	CPlayer* pPlayer = GetPlayer(ClientID);
+	return pPlayer ? (void*)pPlayer->m_pLastInput : nullptr;
 }
 
 int CGS::GetClientVersion(int ClientID) const

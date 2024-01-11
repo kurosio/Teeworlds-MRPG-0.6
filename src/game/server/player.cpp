@@ -88,6 +88,63 @@ void CPlayer::Tick()
 		m_Latency.m_AccumMax = 0;
 	}
 
+	/*if(IsClickedKey(KEY_EVENT_FIRE_HAMMER))
+	{
+		dbg_msg("test", "fire hammer clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_FIRE_GUN))
+	{
+		dbg_msg("test", "fire gun clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_FIRE_SHOTGUN))
+	{
+		dbg_msg("test", "fire shotgun clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_FIRE_GRENADE))
+	{
+		dbg_msg("test", "fire grenade clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_FIRE_LASER))
+	{
+		dbg_msg("test", "fire laser clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_VOTE_YES))
+	{
+		dbg_msg("test", "vote yes clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_VOTE_NO))
+	{
+		dbg_msg("test", "vote no clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_MENU))
+	{
+		dbg_msg("test", "menu clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_JUMP))
+	{
+		dbg_msg("test", "jump clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_SCOREBOARD))
+	{
+		dbg_msg("test", "scoreboard clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_CHAT))
+	{
+		dbg_msg("test", "chat clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_HOOK))
+	{
+		dbg_msg("test", "hook clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_NEXT_WEAPON))
+	{
+		dbg_msg("test", "next weapon clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_PREV_WEAPON))
+	{
+		dbg_msg("test", "prev weapon clicked");
+	}*/
+
 	if(m_pCharacter)
 	{
 		if(m_pCharacter->IsAlive())
@@ -611,6 +668,43 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
 		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
 
+	if(m_pCharacter && m_pCharacter->IsAlive())
+	{
+		// Check if the "Fire" button has been pressed
+		if(CountInput(m_pLastInput->m_Fire, pNewInput->m_Fire).m_Presses)
+		{
+			// Set the "Fire" key as clicked
+			Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE);
+
+			// Set the corresponding key as clicked based on the active weapon
+			const int& ActiveWeapon = m_pCharacter->m_Core.m_ActiveWeapon;
+			if(ActiveWeapon == WEAPON_HAMMER)
+				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_HAMMER);
+			else if(ActiveWeapon == WEAPON_GUN)
+				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_GUN);
+			else if(ActiveWeapon == WEAPON_SHOTGUN)
+				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_SHOTGUN);
+			else if(ActiveWeapon == WEAPON_GRENADE)
+				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_GRENADE);
+			else if(ActiveWeapon == WEAPON_LASER)
+				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_LASER);
+			else if(ActiveWeapon == WEAPON_NINJA)
+				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_NINJA);
+		}
+
+		// Check if the next weapon button was pressed
+		if(CountInput(m_pLastInput->m_NextWeapon, pNewInput->m_NextWeapon).m_Presses)
+		{
+			Server()->SetKeyClick(m_ClientID, KEY_EVENT_NEXT_WEAPON);
+		}
+
+		// Check if the previous weapon button was pressed
+		if(CountInput(m_pLastInput->m_PrevWeapon, pNewInput->m_PrevWeapon).m_Presses)
+		{
+			Server()->SetKeyClick(m_ClientID, KEY_EVENT_PREV_WEAPON);
+		}
+	}
+
 	// reset input with chating
 	if(pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING)
 	{
@@ -903,6 +997,11 @@ bool CPlayer::ParseVoteUpgrades(const char* CMD, const int VoteID, const int Vot
 		return true;
 	}
 	return false;
+}
+
+bool CPlayer::IsClickedKey(int KeyID) const
+{
+	return Server()->IsKeyClicked(m_ClientID, KeyID);
 }
 
 CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)

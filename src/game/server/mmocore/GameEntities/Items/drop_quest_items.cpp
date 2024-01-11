@@ -55,17 +55,15 @@ void CDropQuestItem::Tick()
 	// pickup
 	if (pPlayer->GetCharacter() && distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos) < 32.0f)
 	{
-		if (pPlayer->GetCharacter()->m_ReloadTimer)
+		if (pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 		{
 			pItem->Add(1);
-			pPlayer->GetCharacter()->m_ReloadTimer = 0;
 			GS()->Chat(m_ClientID, "You got {STR}.", pItem->Info()->GetName());
-
 			GameWorld()->DestroyEntity(this);
 			return;
 		}
 
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press 'Fire', to pick up an item");
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press hammer 'Fire', to pick up an item");
 	}
 
 	m_LifeSpan--;
