@@ -121,37 +121,34 @@ void CEntityHouseDecoration::Tick()
 			return;
 		}
 
-		if(m_pDrawing->m_Type == HouseType::DEFAULT)
+		if(pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 		{
-			if(CHouseData* pHouse = pPlayer->Account()->GetHouse(); pHouse)
+			if(m_pDrawing->m_Type == HouseType::DEFAULT)
 			{
-				if(pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER) && pHouse->AddDecoration(this))
+				if(CHouseData* pHouse = pPlayer->Account()->GetHouse(); pHouse && pHouse->AddDecoration(this))
 				{
 					GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
 					pPlayer->GetItem(m_ItemID)->Remove(1);
 					m_pDrawing->m_Working = false;
 				}
-
-				// broadcast
 			}
-		}
-		else if(m_pDrawing->m_Type == HouseType::GUILD)
-		{
-			if(CGuildData* pGuild = pPlayer->Account()->GetGuild(); pGuild && pGuild->HasHouse())
+			else if(m_pDrawing->m_Type == HouseType::GUILD)
 			{
-				if(pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER) && pGuild->GetHouse()->GetDecorations()->Add(this))
+				if(CGuildData* pGuild = pPlayer->Account()->GetGuild(); pGuild && pGuild->HasHouse() && pGuild->GetHouse()->GetDecorations()->Add(this))
 				{
 					GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
 					pPlayer->GetItem(m_ItemID)->Remove(1);
 					m_pDrawing->m_Working = false;
 				}
-
-				GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Drawing with: {STR} (has {VAL})",
-					pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
-				// broadcast
 			}
 		}
 
+		// broadcast
+		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: {STR} (has {VAL})"
+			"\nKey 'fire hammer' - add current decoration"
+			"\nKey 'menu' - cancel drawing mode"
+			"\nKey 'prev, next weapon' - switch decoration",
+			pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 	}
 
 	if(!m_pDrawing->m_Working)
