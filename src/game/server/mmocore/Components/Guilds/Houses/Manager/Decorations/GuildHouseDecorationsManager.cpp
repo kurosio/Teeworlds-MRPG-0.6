@@ -31,8 +31,7 @@ bool CGuildHouseDecorationManager::StartDrawing(const int& ItemID, CPlayer* pPla
 
 	const vec2& MousePos = pPlayer->GetCharacter()->GetMousePos();
 	auto* pEntity = new CEntityHouseDecoration(&GS()->m_World, MousePos, -1, m_pHouse->GetID(), ItemID);
-	pEntity->RegisterDrawToolCallback(&CGuildHouseDecorationManager::DrawToolCallback, m_pHouse);
-	pEntity->StartDrawingMode(pPlayer, m_pHouse->GetPos(), 900.f);
+	pEntity->StartDrawingMode(&CGuildHouseDecorationManager::DrawToolCallback, m_pHouse, pPlayer, m_pHouse->GetPos(), 900.f);
 	return true;
 }
 

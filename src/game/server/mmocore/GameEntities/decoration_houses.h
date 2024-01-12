@@ -29,12 +29,12 @@ class CEntityHouseDecoration : public CEntity
 		bool m_EraseMode {};
 		CLaserOrbite* m_pZoneOrbite {};
 		CLaserOrbite* m_pEraseOrbite {};
+		EventDrawTool m_ToolEvent {};
 
 		int NextItemPos();
 		int PrevItemPos();
 	};
 
-	EventDrawTool m_DrawToolEvent{};
 	CDrawingData* m_pDrawing{};
 	int m_UniqueID {};
 	int m_GroupID {};
@@ -46,12 +46,7 @@ public:
 	~CEntityHouseDecoration() override;
 
 	void SetUniqueID(int UniqueID) { m_UniqueID = UniqueID; }
-	void RegisterDrawToolCallback(DrawToolCallback Callback, void* pUser)
-	{
-		m_DrawToolEvent.m_Callback = Callback;
-		m_DrawToolEvent.m_pData = pUser;
-	};
-	void StartDrawingMode(CPlayer* pPlayer, const vec2& CenterPos, float Radius);
+	void StartDrawingMode(DrawToolCallback Callback, void* pCallbackData, CPlayer* pPlayer, const vec2& CenterPos, float Radius);
 
 	int GetUniqueID() const { return m_UniqueID; }
 	int GetGroupID() const { return m_GroupID; }

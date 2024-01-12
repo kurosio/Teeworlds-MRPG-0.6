@@ -13,19 +13,16 @@
 CEntityHouseDecoration::CDrawingData::CDrawingData(CPlayer* pPlayer, vec2 Position, float Radius)
 	: m_pPlayer(pPlayer)
 {
-	// Set the member variables
 	m_Position = Position;
 	m_Radius = Radius;
 	m_pZoneOrbite = nullptr;
+	m_pEraseOrbite = nullptr;
 	m_Working = true;
 }
 
 // Destructor for the CDrawingData class in the CEntityHouseDecoration namespace
 CEntityHouseDecoration::CDrawingData::~CDrawingData()
 {
-	m_pPlayer = nullptr;
-
-	// Delete the m_pZoneOrbite object
 	delete m_pZoneOrbite;
 	delete m_pEraseOrbite;
 }
@@ -70,7 +67,7 @@ CEntityHouseDecoration::~CEntityHouseDecoration()
 
 // This function starts the drawing mode for a house decoration entity
 // It takes a pointer to a player, the type of house decoration, the position of the decoration, and the radius of the decoration
-void CEntityHouseDecoration::StartDrawingMode(CPlayer* pPlayer, const vec2& CenterPos, float Radius)
+void CEntityHouseDecoration::StartDrawingMode(DrawToolCallback Callback, void* pCallbackData, CPlayer* pPlayer, const vec2& CenterPos, float Radius)
 {
 	// Check if the player pointer is valid and if there is no ongoing drawing
 	if(pPlayer && !m_pDrawing)
@@ -86,6 +83,8 @@ void CEntityHouseDecoration::StartDrawingMode(CPlayer* pPlayer, const vec2& Cent
 
 		// Create a new drawing data object and laser orbite and assign it to the m_pDrawing pointer
 		m_pDrawing = new CDrawingData(pPlayer, CenterPos, Radius);
+		m_pDrawing->m_ToolEvent.m_Callback = Callback;
+		m_pDrawing->m_ToolEvent.m_pData = pCallbackData;
 		m_pDrawing->m_pZoneOrbite = new CLaserOrbite(GameWorld(), CenterPos, 15, EntLaserOrbiteType::INSIDE_ORBITE, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(ClientID));
 	}
 }
@@ -93,7 +92,7 @@ void CEntityHouseDecoration::StartDrawingMode(CPlayer* pPlayer, const vec2& Cent
 void CEntityHouseDecoration::Tick()
 {
 	// If m_pDrawing is null, return
-	if(!m_pDrawing || IsMarkedForDestroy())
+	if(!m_pDrawing)
 		return;
 
 	// Get the player from m_pDrawing
@@ -164,7 +163,7 @@ void CEntityHouseDecoration::Tick()
 			}
 			else if(!m_pDrawing->m_pEraseOrbite)
 			{
-				m_pDrawing->m_pEraseOrbite = new CLaserOrbite(GameWorld(), -1, this, 4, EntLaserOrbiteType::INSIDE_ORBITE, 0.1f, 32.f, LASERTYPE_DOOR, -1);
+				m_pDrawing->m_pEraseOrbite = new CLaserOrbite(GameWorld(), -1, this, 4, EntLaserOrbiteType::INSIDE_ORBITE, 0.1f, 32.f, LASERTYPE_SHOTGUN, -1);
 			}
 			GS()->Chat(ClientID, "Switching mode to '{STR}'.", m_pDrawing->m_EraseMode ? "Erase mode" : "Drawing mode");
 		}
@@ -177,14 +176,14 @@ void CEntityHouseDecoration::Tick()
 			{
 				if(const auto pEntity = FindByGroupID(m_GroupID))
 				{
-					if(m_DrawToolEvent.m_Callback(true, pEntity, pPlayer, pEntity->GetItemID(), m_DrawToolEvent.m_pData))
+					if(m_pDrawing->m_ToolEvent.m_Callback(true, pEntity, pPlayer, pEntity->GetItemID(), m_pDrawing->m_ToolEvent.m_pData))
 					{
 						pEntity->MarkForDestroy();
 					}
 				}
 			}
 			// Check if erase mode is disabled
-			else if(m_DrawToolEvent.m_Callback(false, this, pPlayer, m_ItemID, m_DrawToolEvent.m_pData))
+			else if(m_pDrawing->m_ToolEvent.m_Callback(false, this, pPlayer, m_ItemID, m_pDrawing->m_ToolEvent.m_pData))
 			{
 				m_pDrawing->m_Working = false;
 			}
@@ -212,10 +211,9 @@ void CEntityHouseDecoration::Tick()
 
 	if(!m_pDrawing->m_Working)
 	{
+		m_pDrawing->m_Working = true;
 		auto* pEntDeco = new CEntityHouseDecoration(GameWorld(), m_Pos, m_UniqueID, m_GroupID, m_ItemID);
-		pEntDeco->RegisterDrawToolCallback(m_DrawToolEvent.m_Callback, m_DrawToolEvent.m_pData);
-		pEntDeco->StartDrawingMode(pPlayer, m_pDrawing->m_Position, m_pDrawing->m_Radius);
-		delete m_pDrawing;
+		tl_swap(pEntDeco->m_pDrawing, m_pDrawing);
 		m_pDrawing = nullptr;
 	}
 }
