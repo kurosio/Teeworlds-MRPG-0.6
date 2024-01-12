@@ -213,7 +213,7 @@ void CEntityHouseDecoration::Tick()
 	if(!m_pDrawing->m_Working)
 	{
 		auto* pEntDeco = new CEntityHouseDecoration(GameWorld(), m_Pos, m_UniqueID, m_GroupID, m_ItemID);
-		pEntDeco->RegisterDrawTool(m_DrawToolEvent.m_Callback, m_DrawToolEvent.m_pData);
+		pEntDeco->RegisterDrawToolCallback(m_DrawToolEvent.m_Callback, m_DrawToolEvent.m_pData);
 		pEntDeco->StartDrawingMode(pPlayer, m_pDrawing->m_Position, m_pDrawing->m_Radius);
 		delete m_pDrawing;
 		m_pDrawing = nullptr;
