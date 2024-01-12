@@ -112,6 +112,10 @@ void CEntityHouseDecoration::Tick()
 
 	if(m_pDrawing->m_Working)
 	{
+		Server()->BlockDefaultInput(ClientID, KEY_EVENT_FIRE);
+		Server()->BlockDefaultInput(ClientID, KEY_EVENT_NEXT_WEAPON);
+		Server()->BlockDefaultInput(ClientID, KEY_EVENT_PREV_WEAPON);
+
 		// Set position by the current character mouse position
 		m_Pos = pCharacter->GetMousePos();
 
@@ -213,7 +217,7 @@ void CEntityHouseDecoration::Tick()
 	{
 		m_pDrawing->m_Working = true;
 		auto* pEntDeco = new CEntityHouseDecoration(GameWorld(), m_Pos, m_UniqueID, m_GroupID, m_ItemID);
-		tl_swap(pEntDeco->m_pDrawing, m_pDrawing);
+		std::swap(pEntDeco->m_pDrawing, m_pDrawing);
 		m_pDrawing = nullptr;
 	}
 }
@@ -323,7 +327,7 @@ void CEntityHouseDecoration::ReinitilizeSnappingIDs()
 
 CEntityHouseDecoration* CEntityHouseDecoration::FindByGroupID(int GroupID)
 {
-	auto pEntity = (CEntityHouseDecoration*)GS()->m_World.ClosestEntity(m_Pos, 20.0f, CGameWorld::ENTTYPE_DECOHOUSE, this);
+	auto pEntity = (CEntityHouseDecoration*)GS()->m_World.ClosestEntity(m_Pos, 32.0f, CGameWorld::ENTTYPE_DECOHOUSE, this);
 	if(!pEntity || pEntity->GetGroupID() != GroupID)
 		return nullptr;
 	return pEntity;

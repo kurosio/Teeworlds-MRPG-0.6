@@ -88,7 +88,27 @@ void CPlayer::Tick()
 		m_Latency.m_AccumMax = 0;
 	}
 
-	/*if(IsClickedKey(KEY_EVENT_FIRE_HAMMER))
+	if(IsClickedKey(KEY_EVENT_WANTED_HAMMER))
+	{
+		dbg_msg("test", "want hammer clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_WANTED_GUN))
+	{
+		dbg_msg("test", "want gun clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_WANTED_SHOTGUN))
+	{
+		dbg_msg("test", "want shotgun clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_WANTED_GRENADE))
+	{
+		dbg_msg("test", "want grenade clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_WANTED_LASER))
+	{
+		dbg_msg("test", "want laser clicked");
+	}
+	if(IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 	{
 		dbg_msg("test", "fire hammer clicked");
 	}
@@ -143,7 +163,7 @@ void CPlayer::Tick()
 	if(IsClickedKey(KEY_EVENT_PREV_WEAPON))
 	{
 		dbg_msg("test", "prev weapon clicked");
-	}*/
+	}
 
 	if(m_pCharacter)
 	{
@@ -673,35 +693,33 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 		// Check if the "Fire" button has been pressed
 		if(CountInput(m_pLastInput->m_Fire, pNewInput->m_Fire).m_Presses)
 		{
-			// Set the "Fire" key as clicked
-			Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE);
+			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_FIRE);
 
 			// Set the corresponding key as clicked based on the active weapon
 			const int& ActiveWeapon = m_pCharacter->m_Core.m_ActiveWeapon;
-			if(ActiveWeapon == WEAPON_HAMMER)
-				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_HAMMER);
-			else if(ActiveWeapon == WEAPON_GUN)
-				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_GUN);
-			else if(ActiveWeapon == WEAPON_SHOTGUN)
-				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_SHOTGUN);
-			else if(ActiveWeapon == WEAPON_GRENADE)
-				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_GRENADE);
-			else if(ActiveWeapon == WEAPON_LASER)
-				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_LASER);
-			else if(ActiveWeapon == WEAPON_NINJA)
-				Server()->SetKeyClick(m_ClientID, KEY_EVENT_FIRE_NINJA);
+			Server()->AppendEventKeyClick(m_ClientID, 1 << (KEY_EVENT_FIRE + ActiveWeapon));
 		}
 
 		// Check if the next weapon button was pressed
 		if(CountInput(m_pLastInput->m_NextWeapon, pNewInput->m_NextWeapon).m_Presses)
 		{
-			Server()->SetKeyClick(m_ClientID, KEY_EVENT_NEXT_WEAPON);
+			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_NEXT_WEAPON);
 		}
 
 		// Check if the previous weapon button was pressed
 		if(CountInput(m_pLastInput->m_PrevWeapon, pNewInput->m_PrevWeapon).m_Presses)
 		{
-			Server()->SetKeyClick(m_ClientID, KEY_EVENT_PREV_WEAPON);
+			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_PREV_WEAPON);
+		}
+
+		// Check if the wanted weapon button was pressed
+		if(m_pLastInput->m_WantedWeapon != pNewInput->m_WantedWeapon)
+		{
+			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_WANTED_WEAPON);
+
+			// Set the corresponding key as clicked based on the wanted weapon
+			const int Weapon = pNewInput->m_WantedWeapon - 1;
+			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_WANTED_WEAPON << (Weapon + 1));
 		}
 	}
 

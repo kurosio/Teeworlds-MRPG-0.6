@@ -87,7 +87,8 @@ public:
 
 		char m_aClan[MAX_CLAN_LENGTH];
 		char m_aLanguage[MAX_LANGUAGE_LENGTH];
-		ska::unordered_set<int> m_aActionKeys;
+		int64_t m_aActionEventKeys;
+		int64_t m_aBlockedInputKeys;
 
 		int m_Version;
 		int m_Country;
@@ -162,10 +163,14 @@ public:
 	const char* GetStringTypeDay() const override;
 	int GetEnumTypeDay() const override;
 
-	// basic
+	// input
 	void ParseInputClickedKeys(int ClientID, void* pInputData);
-	void SetKeyClick(int ClientID, int KeyID) override;
+	void AppendEventKeyClick(int ClientID, int KeyID) override;
 	bool IsKeyClicked(int ClientID, int KeyID) override;
+	void BlockDefaultInput(int ClientID, int KeyID) override;
+	bool IsDefaultInputBlocked(int ClientID, int KeyID) override;
+
+	// basic
 	void SetClientName(int ClientID, const char* pName) override;
 	void SetClientClan(int ClientID, char const* pClan) override;
 	void SetClientCountry(int ClientID, int Country) override;

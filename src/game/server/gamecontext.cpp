@@ -1029,11 +1029,11 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			const auto pMsg = (CNetMsg_Cl_Vote*)pRawMsg;
 			if(pMsg->m_Vote == 1)
 			{
-				Server()->SetKeyClick(ClientID, KEY_EVENT_VOTE_YES);
+				Server()->AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_YES);
 			}
 			else if(pMsg->m_Vote == 0)
 			{
-				Server()->SetKeyClick(ClientID, KEY_EVENT_VOTE_NO);
+				Server()->AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_NO);
 			}
 
 			pPlayer->ParseVoteOptionResult(pMsg->m_Vote);

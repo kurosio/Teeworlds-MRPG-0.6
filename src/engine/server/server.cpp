@@ -53,7 +53,8 @@ void CServer::CClient::Reset()
 	m_SnapRate = SNAPRATE_INIT;
 	m_Score = -1;
 	m_NextMapChunk = 0;
-	m_aActionKeys.clear();
+	m_aBlockedInputKeys = 0;
+	m_aActionEventKeys = 0;
 }
 
 CServer::CServer()
@@ -184,38 +185,38 @@ void CServer::ParseInputClickedKeys(int ClientID, void* pInputData)
 	{
 		if(pNewInput->m_PlayerFlags & PLAYERFLAG_IN_MENU && !(pLastInput->m_PlayerFlags & PLAYERFLAG_IN_MENU))
 		{
-			SetKeyClick(ClientID, KEY_EVENT_MENU);
+			AppendEventKeyClick(ClientID, KEY_EVENT_MENU);
 		}
 
 		if(pNewInput->m_PlayerFlags & PLAYERFLAG_SCOREBOARD && !(pLastInput->m_PlayerFlags & PLAYERFLAG_SCOREBOARD))
 		{
-			SetKeyClick(ClientID, KEY_EVENT_SCOREBOARD);
+			AppendEventKeyClick(ClientID, KEY_EVENT_SCOREBOARD);
 		}
 
 		if(pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING && !(pLastInput->m_PlayerFlags & PLAYERFLAG_CHATTING))
 		{
-			SetKeyClick(ClientID, KEY_EVENT_CHAT);
+			AppendEventKeyClick(ClientID, KEY_EVENT_CHAT);
 		}
 
 		if(!pLastInput->m_Jump && pNewInput->m_Jump)
 		{
-			SetKeyClick(ClientID, KEY_EVENT_JUMP);
+			AppendEventKeyClick(ClientID, KEY_EVENT_JUMP);
 		}
 
 		if(!pLastInput->m_Hook && pNewInput->m_Hook)
 		{
-			SetKeyClick(ClientID, KEY_EVENT_HOOK);
+			AppendEventKeyClick(ClientID, KEY_EVENT_HOOK);
 		}
-		// todo add wanted weapon
 	}
 }
 
-void CServer::SetKeyClick(int ClientID, int KeyID)
+void CServer::AppendEventKeyClick(int ClientID, int KeyID)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
 		return;
 
-	m_aClients[ClientID].m_aActionKeys.emplace(KeyID);
+	if((m_aClients[ClientID].m_aActionEventKeys & KeyID) == 0)
+		m_aClients[ClientID].m_aActionEventKeys |= KeyID;
 }
 
 bool CServer::IsKeyClicked(int ClientID, int KeyID)
@@ -223,7 +224,24 @@ bool CServer::IsKeyClicked(int ClientID, int KeyID)
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
 		return false;
 
-	return m_aClients[ClientID].m_aActionKeys.find(KeyID) != m_aClients[ClientID].m_aActionKeys.end();
+	return m_aClients[ClientID].m_aActionEventKeys & KeyID;
+}
+
+void CServer::BlockDefaultInput(int ClientID, int KeyID)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
+		return;
+
+	if((m_aClients[ClientID].m_aBlockedInputKeys & KeyID) == 0)
+		m_aClients[ClientID].m_aBlockedInputKeys |= KeyID;
+}
+
+bool CServer::IsDefaultInputBlocked(int ClientID, int KeyID)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
+		return false;
+
+	return m_aClients[ClientID].m_aBlockedInputKeys & KeyID;
 }
 
 void CServer::SetClientName(int ClientID, const char* pName)
@@ -1294,6 +1312,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 				const int WorldID = m_aClients[ClientID].m_WorldID;
 				ParseInputClickedKeys(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
 				GameServer(WorldID)->OnClientDirectInput(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
+				m_aClients[ClientID].m_aBlockedInputKeys = 0;
 			}
 		}
 		else if(MsgID == NETMSG_RCON_CMD)
@@ -2158,10 +2177,10 @@ int CServer::Run(ILogger* pLogger)
 					for(int c = 0; c < MAX_PLAYERS; c++)
 					{
 						// Check if the player is in the game and has any action keys
-						if(m_aClients[c].m_State == CClient::STATE_INGAME && !m_aClients[c].m_aActionKeys.empty())
+						if(m_aClients[c].m_State == CClient::STATE_INGAME)
 						{
 							// Clear the action keys for the player
-							m_aClients[c].m_aActionKeys.clear();
+							m_aClients[c].m_aActionEventKeys = 0;
 						}
 					}
 

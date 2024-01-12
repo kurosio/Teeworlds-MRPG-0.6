@@ -193,9 +193,13 @@ public:
 	virtual const char* GetStringTypeDay() const = 0;
 	virtual int GetEnumTypeDay() const = 0;
 
-	// main client functions
-	virtual void SetKeyClick(int ClientID, int KeyID) = 0;
+	// input
+	virtual void AppendEventKeyClick(int ClientID, int KeyID) = 0;
 	virtual bool IsKeyClicked(int ClientID, int KeyID) = 0;
+	virtual void BlockDefaultInput(int ClientID, int KeyID) = 0;
+	virtual bool IsDefaultInputBlocked(int ClientID, int KeyID) = 0;
+
+	// main client functions
 	virtual void SetClientName(int ClientID, char const *pName) = 0;
 	virtual void SetClientClan(int ClientID, char const *pClan) = 0;
 	virtual void SetClientCountry(int ClientID, int Country) = 0;

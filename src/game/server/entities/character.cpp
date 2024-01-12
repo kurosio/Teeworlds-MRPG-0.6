@@ -573,6 +573,16 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
 	mem_copy(&m_LatestInput, pNewInput, sizeof(m_LatestInput));
+
+	if(Server()->IsDefaultInputBlocked(m_pPlayer->GetCID(), KEY_EVENT_FIRE))
+		m_LatestPrevInput.m_Fire = m_LatestInput.m_Fire;
+	
+	if(Server()->IsDefaultInputBlocked(m_pPlayer->GetCID(), KEY_EVENT_NEXT_WEAPON))
+		m_LatestPrevInput.m_NextWeapon = m_LatestInput.m_NextWeapon;
+	
+	if(Server()->IsDefaultInputBlocked(m_pPlayer->GetCID(), KEY_EVENT_PREV_WEAPON))
+		m_LatestPrevInput.m_PrevWeapon = m_LatestInput.m_PrevWeapon;
+
 	m_NumInputs++;
 
 	// it is not allowed to aim in the center

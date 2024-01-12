@@ -15,13 +15,13 @@ class CEntityHouseDecoration : public CEntity
 
 	class CDrawingData
 	{
+		int m_ItemPos {};
 
 	public:
 		CDrawingData() = delete;
 		CDrawingData(CPlayer* pPlayer, vec2 Position, float Radius);
 		~CDrawingData();
 
-		int m_ItemPos {};
 		CPlayer* m_pPlayer {};
 		vec2 m_Position {};
 		float m_Radius {};
