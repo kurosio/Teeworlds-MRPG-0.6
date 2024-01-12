@@ -7,7 +7,9 @@
 
 class CGS;
 class CPlayer;
+class CPlayerItem;
 class CGuildHouseData;
+class CDrawingData;
 class CEntityHouseDecoration;
 
 using HouseDecorationIdentifier = int;
@@ -27,10 +29,12 @@ public:
 
 	bool StartDrawing(const int& ItemID, CPlayer* pPlayer);
 	bool Add(CEntityHouseDecoration* pEntity);
-	bool Remove(HouseDecorationIdentifier ID);
+	bool Remove(CEntityHouseDecoration* pEntity);
 
 	const HouseDecorationsContainer& GetContainer() const { return m_apDecorations; };
 	bool HasFreeSlots() const { return (int)m_apDecorations.size() < (int)MAX_DECORATIONS_HOUSE; }
+
+	static bool DrawToolCallback(bool EraseMode, CEntityHouseDecoration* pEntity, CPlayer* pPlayer, int DecorationItemID, void* pUser);
 
 private:
 	void Init();

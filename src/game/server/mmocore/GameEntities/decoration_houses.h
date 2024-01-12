@@ -4,39 +4,37 @@
 
 // Forward declaration and alias
 class CPlayer;
+class CPlayerItem;
 class CLaserOrbite;
-
-// Enumeration for the type of a house
-enum class DrawingType : int
-{
-	HOUSE,                       // Default type of house
-	GUILD_HOUSE                  // Guild type of house
-};
 
 class CEntityHouseDecoration : public CEntity
 {
 	inline static std::vector<int> m_vFullDecorationItemlist {};
+	typedef bool (*DrawToolCallback)(bool, CEntityHouseDecoration*, CPlayer*, int, void*);
+	typedef struct { void* m_pData; DrawToolCallback m_Callback; } EventDrawTool;
 
 	class CDrawingData
 	{
+
 	public:
 		CDrawingData() = delete;
-		CDrawingData(CPlayer* pPlayer, DrawingType Type, vec2 Position, float Radius);
+		CDrawingData(CPlayer* pPlayer, vec2 Position, float Radius);
 		~CDrawingData();
 
 		int m_ItemPos {};
 		CPlayer* m_pPlayer {};
-		CLaserOrbite* m_pLaserOrbite {};
 		vec2 m_Position {};
 		float m_Radius {};
 		bool m_Working {};
 		bool m_EraseMode {};
-		DrawingType m_Type{};
+		CLaserOrbite* m_pZoneOrbite {};
+		CLaserOrbite* m_pEraseOrbite {};
 
 		int NextItemPos();
 		int PrevItemPos();
 	};
 
+	EventDrawTool m_DrawToolEvent{};
 	CDrawingData* m_pDrawing{};
 	int m_UniqueID {};
 	int m_GroupID {};
@@ -48,7 +46,12 @@ public:
 	~CEntityHouseDecoration() override;
 
 	void SetUniqueID(int UniqueID) { m_UniqueID = UniqueID; }
-	void StartDrawingMode(CPlayer* pPlayer, DrawingType Type, const vec2& CenterPos, float Radius);
+	void RegisterDrawToolCallback(DrawToolCallback Callback, void* pUser)
+	{
+		m_DrawToolEvent.m_Callback = Callback;
+		m_DrawToolEvent.m_pData = pUser;
+	};
+	void StartDrawingMode(CPlayer* pPlayer, const vec2& CenterPos, float Radius);
 
 	int GetUniqueID() const { return m_UniqueID; }
 	int GetGroupID() const { return m_GroupID; }
@@ -56,6 +59,7 @@ public:
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
+	CEntityHouseDecoration* FindByGroupID(int GroupID);
 
 private:
 	enum ObjectType
@@ -68,7 +72,6 @@ private:
 	int GetIDsNum() const;
 	ObjectType GetObjectType() const;
 	void ReinitilizeSnappingIDs();
-	CEntityHouseDecoration* FindByGroupID(int GroupID);
 };
 
 #endif

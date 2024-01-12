@@ -31,8 +31,38 @@ bool CGuildHouseDecorationManager::StartDrawing(const int& ItemID, CPlayer* pPla
 
 	const vec2& MousePos = pPlayer->GetCharacter()->GetMousePos();
 	auto* pEntity = new CEntityHouseDecoration(&GS()->m_World, MousePos, -1, m_pHouse->GetID(), ItemID);
-	pEntity->StartDrawingMode(pPlayer, DrawingType::GUILD_HOUSE, m_pHouse->GetPos(), 900.f);
+	pEntity->RegisterDrawTool(&CGuildHouseDecorationManager::DrawToolCallback, m_pHouse);
+	pEntity->StartDrawingMode(pPlayer, m_pHouse->GetPos(), 900.f);
 	return true;
+}
+
+bool CGuildHouseDecorationManager::DrawToolCallback(bool EraseMode, CEntityHouseDecoration* pEntity, CPlayer* pPlayer, int DecorationItemID, void* pUser)
+{
+	// Check if pPlayer or pHouse is null
+	auto pHouse = (CGuildHouseData*)pUser;
+	if(!pPlayer || !pHouse)
+		return false;
+
+	// Get the player item with the given DecorationItemID
+	CPlayerItem* pPlayerItem = pPlayer->GetItem(DecorationItemID);
+
+	// If EraseMode is true and the decoration is successfully removed from the house
+	if(EraseMode && pHouse->GetDecorations()->Remove(pEntity))
+	{
+		pPlayer->GS()->Chat(pPlayer->GetCID(), "You returned {STR} to your inventory!", pPlayerItem->Info()->GetName());
+		pPlayerItem->Add(1);
+		return true;
+	}
+
+	// If EraseMode is false and the decoration is successfully added to the house
+	if(!EraseMode && pHouse->GetDecorations()->Add(pEntity))
+	{
+		pPlayer->GS()->Chat(pPlayer->GetCID(), "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
+		pPlayerItem->Remove(1);
+		return true;
+	}
+
+	return false;
 }
 
 void CGuildHouseDecorationManager::Init()
@@ -54,7 +84,9 @@ void CGuildHouseDecorationManager::Init()
 bool CGuildHouseDecorationManager::Add(CEntityHouseDecoration* pEntity)
 {
 	if(!pEntity)
+	{
 		return false;
+	}
 
 	const ItemIdentifier& ItemID = pEntity->GetItemID();
 	const vec2& EntityPos = pEntity->GetPos();
@@ -85,23 +117,35 @@ bool CGuildHouseDecorationManager::Add(CEntityHouseDecoration* pEntity)
 	return false;
 }
 
-bool CGuildHouseDecorationManager::Remove(HouseDecorationIdentifier ID)
+bool CGuildHouseDecorationManager::Remove(CEntityHouseDecoration* pEntity)
 {
-	auto iterDecoration = std::find_if(m_apDecorations.begin(), m_apDecorations.end(), [&ID](const CEntityHouseDecoration* p)
+	// Check if the entity pointer is null
+	if(!pEntity)
 	{
-		return p->GetUniqueID() == ID;
+		return false;
+	}
+
+	// Find the decoration in the list of decorations
+	auto iterDecoration = std::find_if(m_apDecorations.begin(), m_apDecorations.end(), [&pEntity](const CEntityHouseDecoration* p)
+	{
+		return p->GetUniqueID() == pEntity->GetUniqueID();
 	});
 
+	// If the decoration is found
 	if(iterDecoration != m_apDecorations.end())
 	{
-		// Delete from gameworld
-		delete *iterDecoration;
+		// Get the unique ID of the decoration
+		const int UniqueID = (*iterDecoration)->GetUniqueID();
+
+		// Delete the decoration from the game world
+		(*iterDecoration)->MarkForDestroy();
 		m_apDecorations.erase(iterDecoration);
 
-		// Remove from database
-		Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE ID = '%d'", ID);
+		// Remove the decoration from the database
+		Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE ID = '%d'", UniqueID);
 		return true;
 	}
 
+	// If the decoration is not found, return false
 	return false;
 }
