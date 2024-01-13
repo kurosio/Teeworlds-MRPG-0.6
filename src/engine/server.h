@@ -196,8 +196,8 @@ public:
 	// input
 	virtual void AppendEventKeyClick(int ClientID, int KeyID) = 0;
 	virtual bool IsKeyClicked(int ClientID, int KeyID) = 0;
-	virtual void BlockDefaultInput(int ClientID, int KeyID) = 0;
-	virtual bool IsDefaultInputBlocked(int ClientID, int KeyID) = 0;
+	virtual void BlockInputGroup(int ClientID, int64_t FlagBlockedGroup) = 0;
+	virtual bool IsInputGroupBlocked(int ClientID, int64_t FlagBlockedGroup) = 0;
 
 	// main client functions
 	virtual void SetClientName(int ClientID, char const *pName) = 0;

@@ -112,9 +112,9 @@ void CEntityHouseDecoration::Tick()
 
 	if(m_pDrawing->m_Working)
 	{
-		Server()->BlockDefaultInput(ClientID, KEY_EVENT_FIRE);
-		Server()->BlockDefaultInput(ClientID, KEY_EVENT_NEXT_WEAPON);
-		Server()->BlockDefaultInput(ClientID, KEY_EVENT_PREV_WEAPON);
+		Server()->BlockInputGroup(ClientID, KEY_EVENT_FIRE);
+		Server()->BlockInputGroup(ClientID, KEY_EVENT_NEXT_WEAPON);
+		Server()->BlockInputGroup(ClientID, KEY_EVENT_PREV_WEAPON);
 
 		// Set position by the current character mouse position
 		m_Pos = pCharacter->GetMousePos();

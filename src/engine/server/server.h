@@ -167,8 +167,8 @@ public:
 	void ParseInputClickedKeys(int ClientID, void* pInputData);
 	void AppendEventKeyClick(int ClientID, int KeyID) override;
 	bool IsKeyClicked(int ClientID, int KeyID) override;
-	void BlockDefaultInput(int ClientID, int KeyID) override;
-	bool IsDefaultInputBlocked(int ClientID, int KeyID) override;
+	void BlockInputGroup(int ClientID, int64_t FlagBlockedGroup) override;
+	bool IsInputGroupBlocked(int ClientID, int64_t FlagBlockedGroup) override;
 
 	// basic
 	void SetClientName(int ClientID, const char* pName) override;

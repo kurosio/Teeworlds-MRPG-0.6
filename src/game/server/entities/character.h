@@ -131,7 +131,6 @@ public:
 
 	// input
 	vec2 GetMousePos() const { return m_Core.m_Pos + vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY); }
-	int m_Jumped;
 
 	// the player core for the physics
 	CCharacterCore m_Core;
@@ -140,7 +139,6 @@ public:
 	bool m_DamageDisabled;
 	int m_AmmoRegen;
 	bool m_SafeAreaForTick;
-
 	vec2 m_OldPos;
 	vec2 m_OlderPos;
 	bool m_DoorHit;

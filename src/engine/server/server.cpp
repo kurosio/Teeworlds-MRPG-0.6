@@ -227,21 +227,21 @@ bool CServer::IsKeyClicked(int ClientID, int KeyID)
 	return m_aClients[ClientID].m_aActionEventKeys & KeyID;
 }
 
-void CServer::BlockDefaultInput(int ClientID, int KeyID)
+void CServer::BlockInputGroup(int ClientID, int64_t FlagBlockedGroup)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
 		return;
 
-	if((m_aClients[ClientID].m_aBlockedInputKeys & KeyID) == 0)
-		m_aClients[ClientID].m_aBlockedInputKeys |= KeyID;
+	if((m_aClients[ClientID].m_aBlockedInputKeys & FlagBlockedGroup) == 0)
+		m_aClients[ClientID].m_aBlockedInputKeys |= FlagBlockedGroup;
 }
 
-bool CServer::IsDefaultInputBlocked(int ClientID, int KeyID)
+bool CServer::IsInputGroupBlocked(int ClientID, int64_t FlagBlockedGroup)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
 		return false;
 
-	return m_aClients[ClientID].m_aBlockedInputKeys & KeyID;
+	return m_aClients[ClientID].m_aBlockedInputKeys & FlagBlockedGroup;
 }
 
 void CServer::SetClientName(int ClientID, const char* pName)

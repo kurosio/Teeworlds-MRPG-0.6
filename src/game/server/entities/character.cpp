@@ -573,16 +573,6 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
 	mem_copy(&m_LatestInput, pNewInput, sizeof(m_LatestInput));
-
-	if(Server()->IsDefaultInputBlocked(m_pPlayer->GetCID(), KEY_EVENT_FIRE))
-		m_LatestPrevInput.m_Fire = m_LatestInput.m_Fire;
-	
-	if(Server()->IsDefaultInputBlocked(m_pPlayer->GetCID(), KEY_EVENT_NEXT_WEAPON))
-		m_LatestPrevInput.m_NextWeapon = m_LatestInput.m_NextWeapon;
-	
-	if(Server()->IsDefaultInputBlocked(m_pPlayer->GetCID(), KEY_EVENT_PREV_WEAPON))
-		m_LatestPrevInput.m_PrevWeapon = m_LatestInput.m_PrevWeapon;
-
 	m_NumInputs++;
 
 	// it is not allowed to aim in the center
@@ -591,8 +581,11 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 
 	if(m_NumInputs > 1 && m_pPlayer->GetTeam() != TEAM_SPECTATORS)
 	{
-		HandleWeaponSwitch();
-		FireWeapon();
+		if(!Server()->IsInputGroupBlocked(m_pPlayer->GetCID(), BLOCK_INPUT_GROUP_CHANGE_WEAPON))
+			HandleWeaponSwitch();
+
+		if(!Server()->IsInputGroupBlocked(m_pPlayer->GetCID(), BLOCK_INPUT_GROUP_FIRE))
+			FireWeapon();
 	}
 
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
@@ -986,6 +979,10 @@ void CCharacter::Snap(int SnappingClient)
 	if(!pCharacter)
 		return;
 
+	// Check if the default input is blocked for the player
+	const bool BlockingInputChangeWeapon = Server()->IsInputGroupBlocked(m_pPlayer->GetCID(), BLOCK_INPUT_GROUP_CHANGE_WEAPON);
+	const bool BlockingInputFireWeapon = Server()->IsInputGroupBlocked(m_pPlayer->GetCID(), BLOCK_INPUT_GROUP_FIRE);
+
 	// write down the m_Core
 	if(!m_ReckoningTick || GS()->m_World.m_Paused)
 	{
@@ -1052,33 +1049,33 @@ void CCharacter::Snap(int SnappingClient)
 		return;
 
 	pDDNetCharacter->m_Flags = 0;
-#define DDNetFlag(flag, check) if(check) { pDDNetCharacter->m_Flags |= (flag); }
-	DDNetFlag(CHARACTERFLAG_SOLO, m_Core.m_Solo)
-		DDNetFlag(CHARACTERFLAG_SUPER, m_Core.m_Super)
-		DDNetFlag(CHARACTERFLAG_ENDLESS_HOOK, m_Core.m_EndlessHook)
-		DDNetFlag(CHARACTERFLAG_ENDLESS_JUMP, m_Core.m_EndlessJump)
-		DDNetFlag(CHARACTERFLAG_JETPACK, m_Core.m_Jetpack)
-		DDNetFlag(CHARACTERFLAG_COLLISION_DISABLED, (m_Core.m_CollisionDisabled || !(bool)m_pPlayer->m_NextTuningParams.m_PlayerCollision))
-		DDNetFlag(CHARACTERFLAG_HOOK_HIT_DISABLED, (m_Core.m_HookHitDisabled || !(bool)m_pPlayer->m_NextTuningParams.m_PlayerHooking))
-		DDNetFlag(CHARACTERFLAG_HAMMER_HIT_DISABLED, m_Core.m_HammerHitDisabled)
-		DDNetFlag(CHARACTERFLAG_SHOTGUN_HIT_DISABLED, m_Core.m_ShotgunHitDisabled)
-		DDNetFlag(CHARACTERFLAG_GRENADE_HIT_DISABLED, m_Core.m_GrenadeHitDisabled)
-		DDNetFlag(CHARACTERFLAG_LASER_HIT_DISABLED, m_Core.m_LaserHitDisabled)
-		DDNetFlag(CHARACTERFLAG_TELEGUN_GUN, m_Core.m_HasTelegunGun)
-		DDNetFlag(CHARACTERFLAG_TELEGUN_GRENADE, m_Core.m_HasTelegunGrenade)
-		DDNetFlag(CHARACTERFLAG_TELEGUN_LASER, m_Core.m_HasTelegunLaser)
-		DDNetFlag(CHARACTERFLAG_WEAPON_HAMMER, m_Core.m_aWeapons[WEAPON_HAMMER].m_Got)
-		DDNetFlag(CHARACTERFLAG_WEAPON_GUN, m_Core.m_aWeapons[WEAPON_GUN].m_Got)
-		DDNetFlag(CHARACTERFLAG_WEAPON_SHOTGUN, m_Core.m_aWeapons[WEAPON_SHOTGUN].m_Got)
-		DDNetFlag(CHARACTERFLAG_WEAPON_GRENADE, m_Core.m_aWeapons[WEAPON_GRENADE].m_Got)
-		DDNetFlag(CHARACTERFLAG_WEAPON_LASER, m_Core.m_aWeapons[WEAPON_LASER].m_Got)
-		DDNetFlag(CHARACTERFLAG_WEAPON_NINJA, m_Core.m_ActiveWeapon == WEAPON_NINJA)
-		DDNetFlag(CHARACTERFLAG_MOVEMENTS_DISABLED, m_Core.m_LiveFrozen)
-		DDNetFlag(CHARACTERFLAG_IN_FREEZE, m_Core.m_IsInFreeze)
-		DDNetFlag(CHARACTERFLAG_PRACTICE_MODE, false)
-#undef DDNetFlag
 
-		pDDNetCharacter->m_FreezeEnd = 0;
+	auto DDNetFlag = [&](int flag, bool check) { if(check) pDDNetCharacter->m_Flags |= flag; };
+	DDNetFlag(CHARACTERFLAG_SUPER, m_Core.m_Super);
+	DDNetFlag(CHARACTERFLAG_ENDLESS_HOOK, m_Core.m_EndlessHook);
+	DDNetFlag(CHARACTERFLAG_ENDLESS_JUMP, m_Core.m_EndlessJump);
+	DDNetFlag(CHARACTERFLAG_JETPACK, m_Core.m_Jetpack);
+	DDNetFlag(CHARACTERFLAG_COLLISION_DISABLED, (m_Core.m_CollisionDisabled || !(bool)m_pPlayer->m_NextTuningParams.m_PlayerCollision));
+	DDNetFlag(CHARACTERFLAG_HOOK_HIT_DISABLED, (m_Core.m_HookHitDisabled || !(bool)m_pPlayer->m_NextTuningParams.m_PlayerHooking));
+	DDNetFlag(CHARACTERFLAG_TELEGUN_GUN, m_Core.m_HasTelegunGun);
+	DDNetFlag(CHARACTERFLAG_TELEGUN_GRENADE, m_Core.m_HasTelegunGrenade);
+	DDNetFlag(CHARACTERFLAG_TELEGUN_LASER, m_Core.m_HasTelegunLaser);
+	DDNetFlag(CHARACTERFLAG_WEAPON_HAMMER, BlockingInputChangeWeapon ? false : m_Core.m_aWeapons[WEAPON_HAMMER].m_Got);
+	DDNetFlag(CHARACTERFLAG_WEAPON_GUN, BlockingInputChangeWeapon ? false : m_Core.m_aWeapons[WEAPON_GUN].m_Got);
+	DDNetFlag(CHARACTERFLAG_WEAPON_SHOTGUN, BlockingInputChangeWeapon ? false : m_Core.m_aWeapons[WEAPON_SHOTGUN].m_Got);
+	DDNetFlag(CHARACTERFLAG_WEAPON_GRENADE, BlockingInputChangeWeapon ? false : m_Core.m_aWeapons[WEAPON_GRENADE].m_Got);
+	DDNetFlag(CHARACTERFLAG_WEAPON_LASER, BlockingInputChangeWeapon ? false : m_Core.m_aWeapons[WEAPON_LASER].m_Got);
+	DDNetFlag(CHARACTERFLAG_WEAPON_NINJA, BlockingInputChangeWeapon ? false : m_Core.m_ActiveWeapon == WEAPON_NINJA);
+	DDNetFlag(CHARACTERFLAG_HAMMER_HIT_DISABLED, BlockingInputFireWeapon ? true : m_Core.m_HammerHitDisabled);
+	DDNetFlag(CHARACTERFLAG_SHOTGUN_HIT_DISABLED, BlockingInputFireWeapon ? true : m_Core.m_ShotgunHitDisabled);
+	DDNetFlag(CHARACTERFLAG_GRENADE_HIT_DISABLED, BlockingInputFireWeapon ? true : m_Core.m_GrenadeHitDisabled);
+	DDNetFlag(CHARACTERFLAG_LASER_HIT_DISABLED, BlockingInputFireWeapon ? true : m_Core.m_LaserHitDisabled);
+	DDNetFlag(CHARACTERFLAG_SOLO, m_Core.m_Solo);
+	DDNetFlag(CHARACTERFLAG_MOVEMENTS_DISABLED, m_Core.m_LiveFrozen);
+	DDNetFlag(CHARACTERFLAG_IN_FREEZE, m_Core.m_IsInFreeze);
+	DDNetFlag(CHARACTERFLAG_PRACTICE_MODE, BlockingInputFireWeapon);
+
+	pDDNetCharacter->m_FreezeEnd = 0;
 	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
 	pDDNetCharacter->m_TeleCheckpoint = 0;
 	pDDNetCharacter->m_StrongWeakID = 0; // ???
