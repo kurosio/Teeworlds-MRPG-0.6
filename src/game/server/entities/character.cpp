@@ -581,10 +581,21 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 
 	if(m_NumInputs > 1 && m_pPlayer->GetTeam() != TEAM_SPECTATORS)
 	{
-		if(!Server()->IsInputGroupBlocked(m_pPlayer->GetCID(), BLOCK_INPUT_GROUP_CHANGE_WEAPON))
+		if(Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_HAMMER))
+			m_Core.m_ActiveWeapon = WEAPON_HAMMER;
+		else if(Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_GUN))
+			m_Core.m_ActiveWeapon = WEAPON_GUN;
+		else if(Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_SHOTGUN))
+			m_Core.m_ActiveWeapon = WEAPON_SHOTGUN;
+		else if(Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_GRENADE))
+			m_Core.m_ActiveWeapon = WEAPON_GRENADE;
+		else if(Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_LASER))
+			m_Core.m_ActiveWeapon = WEAPON_LASER;
+		else if(!Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_WEAPON))
 			HandleWeaponSwitch();
 
-		if(!Server()->IsInputGroupBlocked(m_pPlayer->GetCID(), BLOCK_INPUT_GROUP_FIRE))
+		// Check if the input group for firing weapon is not blocked for the player
+		if(!Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FIRE))
 			FireWeapon();
 	}
 
@@ -980,8 +991,8 @@ void CCharacter::Snap(int SnappingClient)
 		return;
 
 	// Check if the default input is blocked for the player
-	const bool BlockingInputChangeWeapon = Server()->IsInputGroupBlocked(m_pPlayer->GetCID(), BLOCK_INPUT_GROUP_CHANGE_WEAPON);
-	const bool BlockingInputFireWeapon = Server()->IsInputGroupBlocked(m_pPlayer->GetCID(), BLOCK_INPUT_GROUP_FIRE);
+	const bool BlockingInputChangeWeapon = Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_WEAPON);
+	const bool BlockingInputFireWeapon = Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FIRE);
 
 	// write down the m_Core
 	if(!m_ReckoningTick || GS()->m_World.m_Paused)

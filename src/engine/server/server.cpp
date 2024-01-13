@@ -236,7 +236,7 @@ void CServer::BlockInputGroup(int ClientID, int64_t FlagBlockedGroup)
 		m_aClients[ClientID].m_aBlockedInputKeys |= FlagBlockedGroup;
 }
 
-bool CServer::IsInputGroupBlocked(int ClientID, int64_t FlagBlockedGroup)
+bool CServer::IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
 		return false;

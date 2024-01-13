@@ -112,9 +112,8 @@ void CEntityHouseDecoration::Tick()
 
 	if(m_pDrawing->m_Working)
 	{
-		Server()->BlockInputGroup(ClientID, KEY_EVENT_FIRE);
-		Server()->BlockInputGroup(ClientID, KEY_EVENT_NEXT_WEAPON);
-		Server()->BlockInputGroup(ClientID, KEY_EVENT_PREV_WEAPON);
+		// blocking input
+		Server()->BlockInputGroup(ClientID, BLOCK_INPUT_FREEZE_GUN | BLOCK_INPUT_FIRE);
 
 		// Set position by the current character mouse position
 		m_Pos = pCharacter->GetMousePos();
@@ -173,7 +172,7 @@ void CEntityHouseDecoration::Tick()
 		}
 
 		// Check if the fire hammer key is clicked
-		if(pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
+		if(pPlayer->IsClickedKey(KEY_EVENT_FIRE_GUN))
 		{
 			// Check if erase mode is enabled
 			if(m_pDrawing->m_EraseMode)

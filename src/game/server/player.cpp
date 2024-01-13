@@ -88,8 +88,6 @@ void CPlayer::Tick()
 		m_Latency.m_AccumMax = 0;
 	}
 
-	Server()->BlockInputGroup(m_ClientID, BLOCK_INPUT_GROUP_FULL_WEAPON);
-
 	if(m_pCharacter)
 	{
 		if(m_pCharacter->IsAlive())

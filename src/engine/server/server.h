@@ -168,7 +168,7 @@ public:
 	void AppendEventKeyClick(int ClientID, int KeyID) override;
 	bool IsKeyClicked(int ClientID, int KeyID) override;
 	void BlockInputGroup(int ClientID, int64_t FlagBlockedGroup) override;
-	bool IsInputGroupBlocked(int ClientID, int64_t FlagBlockedGroup) override;
+	bool IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup) override;
 
 	// basic
 	void SetClientName(int ClientID, const char* pName) override;

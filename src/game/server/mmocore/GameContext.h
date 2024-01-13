@@ -18,9 +18,10 @@
 #define GREEN_COLOR vec3(15, 40, 15)
 #define LIGHT_GREEN_COLOR vec3(0, 16, 0)
 
-// This enum represents different action keys that can be used in a program
-enum InputEventKey
+// Enum for input events related to key presses
+enum InputEvents
 {
+	// Key events for firing different weapons
 	KEY_EVENT_FIRE = 1 << 0,
 	KEY_EVENT_FIRE_HAMMER = 1 << 1,
 	KEY_EVENT_FIRE_GUN = 1 << 2,
@@ -28,12 +29,20 @@ enum InputEventKey
 	KEY_EVENT_FIRE_GRENADE = 1 << 4,
 	KEY_EVENT_FIRE_LASER = 1 << 5,
 	KEY_EVENT_FIRE_NINJA = 1 << 6,
+
+	// Key events for voting
 	KEY_EVENT_VOTE_YES = 1 << 7,
 	KEY_EVENT_VOTE_NO = 1 << 8,
+
+	// Key event for player states
 	KEY_EVENT_SCOREBOARD = 1 << 9,
 	KEY_EVENT_CHAT = 1 << 10,
+
+	// Key events for player actions
 	KEY_EVENT_JUMP = 1 << 11,
 	KEY_EVENT_HOOK = 1 << 12,
+
+	// Key events for changing weapons
 	KEY_EVENT_NEXT_WEAPON = 1 << 13,
 	KEY_EVENT_PREV_WEAPON = 1 << 14,
 	KEY_EVENT_MENU = 1 << 15,
@@ -44,11 +53,16 @@ enum InputEventKey
 	KEY_EVENT_WANTED_GRENADE = 1 << 20,
 	KEY_EVENT_WANTED_LASER = 1 << 21,
 
-	// blocking states
-	BLOCK_INPUT_GROUP_CHANGE_WEAPON = KEY_EVENT_PREV_WEAPON | KEY_EVENT_NEXT_WEAPON | KEY_EVENT_WANTED_WEAPON,
-	BLOCK_INPUT_GROUP_FIRE = KEY_EVENT_FIRE,
-	BLOCK_INPUT_GROUP_FULL_WEAPON = BLOCK_INPUT_GROUP_CHANGE_WEAPON | BLOCK_INPUT_GROUP_FIRE,
-};
+	// Blocking states for input events
+	BLOCK_INPUT_FREEZE_WEAPON = 1 << 0,
+	BLOCK_INPUT_FREEZE_HAMMER = 1 << 1,
+	BLOCK_INPUT_FREEZE_GUN = 1 << 2,
+	BLOCK_INPUT_FREEZE_SHOTGUN = 1 << 3,
+	BLOCK_INPUT_FREEZE_GRENADE = 1 << 4,
+	BLOCK_INPUT_FREEZE_LASER = 1 << 5,
+	BLOCK_INPUT_FIRE = 1 << 6,
+	BLOCK_INPUT_FULL_WEAPON = BLOCK_INPUT_FREEZE_WEAPON | BLOCK_INPUT_FIRE,
+}; 
 
 // laser orbite
 enum class EntLaserOrbiteType : unsigned char
