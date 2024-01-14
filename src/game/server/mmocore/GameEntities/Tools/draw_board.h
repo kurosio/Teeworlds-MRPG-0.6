@@ -50,10 +50,9 @@ public:
 	CBrush(CPlayer* pPlayer, CEntityDrawboard* pBoard, DrawboardEvent* pToolEvent);
 	~CBrush();
 
-	bool OnUpdate();
-
 private:
 	void InitBrushCollection();
+	bool OnUpdate();
 
 	void Draw();
 	void Erase();

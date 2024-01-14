@@ -107,7 +107,7 @@ void CBrush::SendBroadcast() const
 	const CItemDescription* pItem = GS()->GetItemInfo(*m_BrushItem);
 	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: {STR} | {STR}"
 		"\n{STR}"
-		"\n\n\"Fire\" add item"
+		"\n\n- \"Fire\" add item"
 		"\n- \"Hook\" erase item"
 		"\n- \"Menu\" end drawing"
 		"\n- \"Prev, Next\" - switch item"
@@ -211,14 +211,15 @@ CEntityDrawboard::CEntityDrawboard(CGameWorld* pGameWorld, vec2 Pos, float Radiu
 
 CEntityDrawboard::~CEntityDrawboard()
 {
+	if(m_pOrbite)
+		delete m_pOrbite;
 	for(const auto& pBrush : m_vBrushes)
-	{
 		delete pBrush;
-	}
 	for(const auto& pEntity : m_vEntities)
-	{
 		delete pEntity;
-	}
+
+	m_vBrushes.clear();
+	m_vEntities.clear();
 }
 
 void CEntityDrawboard::RegisterEvent(DrawboardToolCallback Callback, void* pUser)
