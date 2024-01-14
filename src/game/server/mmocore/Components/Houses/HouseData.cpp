@@ -2,9 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "HouseData.h"
 
-#include "game/server/gamecontext.h"
-#include "game/server/mmocore/GameEntities/jobitems.h"
-#include "game/server/mmocore/GameEntities/decoration_houses.h"
+#include <game/server/gamecontext.h>
+
+#include <game/server/mmocore/GameEntities/jobitems.h>
+#include <game/server/mmocore/GameEntities/Tools/draw_board.h>
 
 CGS* CHouseData::GS() const { return static_cast<CGS*>(Server()->GameServer(m_WorldID)); }
 CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerByUserID(m_AccountID); }
@@ -21,87 +22,96 @@ CHouseData::~CHouseData()
 	}
 
 	// Delete the CHouseData
+	delete m_pDrawBoard;
 	delete m_pDoorsController;
 	delete m_pBank;
-	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
-		delete m_apDecorations[i];
 }
 
 void CHouseData::InitDecorations()
 {
+	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_Pos, 900.f);
+	m_pDrawBoard->RegisterEvent(&CHouseData::DrawboardToolEventCallback, this);
+	m_pDrawBoard->SetFlags(DRAWBOARDFLAG_PLAYER_ITEMS);
+
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_DECORATION_TABLE, "WHERE WorldID = '%d' AND HouseID = '%d'", GS()->GetWorldID(), m_ID);
 	while(pRes->next())
 	{
-		for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
-		{
-			if(!m_apDecorations[i])
-			{
-				int UniqueID = pRes->getInt("ID");
-				int ItemID = pRes->getInt("ItemID");
-				HouseIdentifier HouseID = pRes->getInt("HouseID");
-				vec2 DecorationPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-				m_apDecorations[i] = new CEntityHouseDecoration(&GS()->m_World, DecorationPos, UniqueID, HouseID, ItemID);
-				break;
-			}
-		}
+		int ItemID = pRes->getInt("ItemID");
+		vec2 Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
+		m_pDrawBoard->AddPoint(Pos, ItemID);
 	}
 }
 
-bool CHouseData::AddDecoration(CEntityHouseDecoration* pEntity)
+bool CHouseData::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, EntityPoint* pPoint, void* pUser)
 {
-	if(!pEntity)
+	const auto pHouse = (CHouseData*)pUser;
+	if(!pPlayer || !pHouse)
 		return false;
 
-	const ItemIdentifier& ItemID = pEntity->GetItemID();
+	const int& ClientID = pPlayer->GetCID();
+
+	if(pPoint)
+	{
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
+		if(Event == DrawboardToolEvent::ON_POINT_ADD)
+		{
+			if(pHouse->AddDecoration(pPoint))
+			{
+				pHouse->GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
+				return true;
+			}
+
+			return false;
+		}
+
+		if(Event == DrawboardToolEvent::ON_POINT_ERASE)
+		{
+			if(pHouse->RemoveDecoration(pPoint))
+			{
+				pHouse->GS()->Chat(ClientID, "You have removed {STR} from your house!", pPlayerItem->Info()->GetName());
+				return true;
+			}
+
+			return false;
+		}
+	}
+
+	if(Event == DrawboardToolEvent::ON_END)
+	{
+		pHouse->GS()->Chat(ClientID, "You have finished decorating your house!");
+		return true;
+	}
+
+	return true;
+}
+
+bool CHouseData::AddDecoration(EntityPoint* pPoint)
+{
+	if(!pPoint || !pPoint->m_pEntity)
+		return false;
+
+	if(!pPoint || !pPoint->m_pEntity)
+		return false;
+
+	const CEntity* pEntity = pPoint->m_pEntity;
+	const ItemIdentifier& ItemID = pPoint->m_ItemID;
 	const vec2& EntityPos = pEntity->GetPos();
 
-	// Check if the distance between the current position house and the given position (Position) is greater than 400.0f
-	if(distance(m_Pos, EntityPos) > 400.0f)
-	{
-		GS()->Chat(GetPlayer()->GetCID(), "There is too much distance from home!");
-		return false;
-	}
-
-	// Add decoration
-	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
-	{
-		if(!m_apDecorations[i])
-		{
-			// Insert to last identifier and got it
-			ResultPtr pRes2 = Database->Execute<DB::SELECT>("ID", TW_HOUSES_DECORATION_TABLE, "ORDER BY ID DESC LIMIT 1");
-			const int InitID = pRes2->next() ? pRes2->getInt("ID") + 1 : 1;
-			Database->Execute<DB::INSERT>(TW_HOUSES_DECORATION_TABLE, "(ID, ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')", InitID, ItemID, m_ID, (int)EntityPos.x, (int)EntityPos.y, GS()->GetWorldID());
-
-			// Create new decoration on gameworld
-			pEntity->SetUniqueID(InitID);
-			m_apDecorations[i] = pEntity;
-			return true;
-		}
-	}
-
-	// Send what all decoration slots occupied
-	GS()->Chat(GetPlayer()->GetCID(), "All decoration slots have been occupied.");
-	return false;
+	// Insert to last identifier and got it
+	Database->Execute<DB::INSERT>(TW_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d')",
+		ItemID, m_ID, round_to_int(EntityPos.x), round_to_int(EntityPos.y), GS()->GetWorldID());
+	return true;
 }
 
-bool CHouseData::RemoveDecoration(HouseDecorationIdentifier DecoID)
+bool CHouseData::RemoveDecoration(EntityPoint* pPoint)
 {
-	// Remove decoration
-	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
-	{
-		if(m_apDecorations[i] && m_apDecorations[i]->GetUniqueID() == DecoID)
-		{
-			// Delete from gameworld
-			delete m_apDecorations[i];
-			m_apDecorations[i] = nullptr;
+	if(!pPoint || !pPoint->m_pEntity)
+		return false;
 
-			// Remove from database
-			Database->Execute<DB::REMOVE>(TW_HOUSES_DECORATION_TABLE, "WHERE ID = '%d'", DecoID);
-			return true;
-		}
-	}
-
-	return false;
+	// Remove the decoration from the database
+	Database->Execute<DB::REMOVE>(TW_HOUSES_DECORATION_TABLE, "WHERE HouseID = '%d' AND ItemID = '%d' AND PosX = '%d' AND PosY = '%d'",
+		m_ID, pPoint->m_ItemID, round_to_int(pPoint->m_pEntity->GetPos().x), round_to_int(pPoint->m_pEntity->GetPos().y));
+	return true;
 }
 
 // This function represents the action of a player buying a house in the game.
@@ -227,31 +237,5 @@ void CHouseData::TextUpdate(int LifeTime)
 // It is used to display the list of decorations in the house.
 void CHouseData::ShowDecorationList() const
 {
-	// If the player object does not exist, return
-	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
 
-	int ClientID = pPlayer->GetCID();
-	GS()->AVL(ClientID, "null", "Select item for to put in inventory.");
-
-	bool Found = false;
-	for(int i = 0; i < MAX_DECORATIONS_HOUSE; i++)
-	{
-		if(m_apDecorations[i])
-		{
-			const int DecoID = m_apDecorations[i]->GetUniqueID();
-			const vec2 DecoPos = m_apDecorations[i]->GetPos();
-			CItemDescription* pItemDecoration = GS()->GetItemInfo(m_apDecorations[i]->GetItemID());
-			GS()->AVD(ClientID, "DECORATION_HOUSE_DELETE", DecoID, pItemDecoration->GetID(), 1, "[Slot {INT}]: {STR} (x: {INT} y: {INT})", i + 1,
-				pItemDecoration->GetName(), (int)DecoPos.x / 32, (int)DecoPos.y / 32);
-			Found = true;
-		}
-	}
-
-	// Check if the variable "Found" is false
-	if(!Found)
-	{
-		GS()->AVL(ClientID, "null", "There are no decorations in your house.");
-	}
 }

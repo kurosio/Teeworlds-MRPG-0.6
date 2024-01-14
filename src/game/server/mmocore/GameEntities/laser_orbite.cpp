@@ -129,3 +129,14 @@ void CLaserOrbite::Snap(int SnappingClient)
 	}
 }
 
+void CLaserOrbite::AddClientMask(int ClientID)
+{
+		m_Mask |= CmaskOne(ClientID);
+}
+
+void CLaserOrbite::RemoveClientMask(int ClientID)
+{
+		m_Mask &= ~CmaskOne(ClientID);
+}
+
+

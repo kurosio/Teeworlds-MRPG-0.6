@@ -60,6 +60,7 @@ CGS::CGS()
 	m_pCommandProcessor = nullptr;
 	m_pPathFinder = nullptr;
 	m_pLayers = nullptr;
+	pDrawBoard = nullptr;
 }
 
 CGS::~CGS()

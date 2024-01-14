@@ -18,6 +18,7 @@
 #include "mmocore/Components/Skills/SkillData.h"
 #include "mmocore/Components/Groups/GroupData.h"
 #include "mmocore/Components/Worlds/WorldData.h"
+#include "mmocore/GameEntities/Tools/draw_board.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -67,6 +68,7 @@ CPlayer::~CPlayer()
 /* #########################################################################
 	FUNCTIONS PLAYER ENGINE
 ######################################################################### */
+
 void CPlayer::Tick()
 {
 	if(!IsAuthed())
@@ -91,7 +93,10 @@ void CPlayer::Tick()
 	if(m_pCharacter)
 	{
 		if(m_pCharacter->IsAlive())
+		{
 			m_ViewPos = m_pCharacter->GetPos();
+
+		}
 		else
 		{
 			delete m_pCharacter;
@@ -537,6 +542,32 @@ CCharacter* CPlayer::GetCharacter() const
 	return nullptr;
 }
 
+bool BoardHandlerCallback(DrawboardToolEvent Event, CPlayer* pPlayer, EntityPoint* pPoint, void* pUser)
+{
+	if(Event == DrawboardToolEvent::ON_START)
+	{
+		dbg_msg("draw", "on start");
+		return true;
+	}
+	else if(Event == DrawboardToolEvent::ON_END)
+	{
+		dbg_msg("draw", "on end");
+		return true;
+	}
+	else if(Event == DrawboardToolEvent::ON_POINT_ADD)
+	{
+		dbg_msg("draw", "on draw");
+		return true;
+	}
+	else if(Event == DrawboardToolEvent::ON_POINT_ERASE)
+	{
+		dbg_msg("draw", "on erase");
+		return true;
+	}
+
+	return true;
+}
+
 void CPlayer::TryRespawn()
 {
 	// Declare a variable to store the spawn position
@@ -585,6 +616,14 @@ void CPlayer::TryRespawn()
 		m_pCharacter->Spawn(this, SpawnPos);
 		GS()->CreatePlayerSpawn(SpawnPos);
 		GetTempData().ClearTeleportPosition();
+
+		if(!GS()->pDrawBoard)
+		{
+			GS()->pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pCharacter->m_Core.m_Pos, 600.f);
+			GS()->pDrawBoard->RegisterEvent(&BoardHandlerCallback, this);
+		}
+		if(GS()->pDrawBoard && GS()->pDrawBoard->StartDrawing(this))
+			dbg_msg("start draw!", "start draw!");
 
 		m_WantSpawn = false;
 	}

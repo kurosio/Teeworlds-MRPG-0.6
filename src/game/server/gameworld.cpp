@@ -168,7 +168,8 @@ void CGameWorld::Tick()
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-			pEnt->Tick();
+			if(!pEnt->m_TickUpdateFreezed)
+				pEnt->Tick();
 			pEnt = m_pNextTraverseEntity;
 		}
 
@@ -176,7 +177,8 @@ void CGameWorld::Tick()
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-			pEnt->TickDeferred();
+			if(!pEnt->m_TickUpdateFreezed)
+				pEnt->TickDeferred();
 			pEnt = m_pNextTraverseEntity;
 		}
 

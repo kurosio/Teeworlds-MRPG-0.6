@@ -18,6 +18,14 @@
 #define GREEN_COLOR vec3(15, 40, 15)
 #define LIGHT_GREEN_COLOR vec3(0, 16, 0)
 
+enum class DrawboardToolEvent : int
+{
+	ON_START,
+	ON_POINT_ADD,
+	ON_POINT_ERASE,
+	ON_END,
+};
+
 // Enum for input events related to key presses
 enum InputEvents
 {
@@ -61,6 +69,7 @@ enum InputEvents
 	BLOCK_INPUT_FREEZE_GRENADE = 1 << 4,
 	BLOCK_INPUT_FREEZE_LASER = 1 << 5,
 	BLOCK_INPUT_FIRE = 1 << 6,
+	BLOCK_INPUT_HOOK = 1 << 7,
 	BLOCK_INPUT_FULL_WEAPON = BLOCK_INPUT_FREEZE_WEAPON | BLOCK_INPUT_FIRE,
 }; 
 
@@ -332,10 +341,6 @@ enum
 	itMaterial = 7,						// Scraping material
 	itTicketGuild = 8,					// Ticket for the creation of the guild
 	itSkillPoint = 9,					// Skillpoint
-	itDecoArmor = 10,					// Shield Decoration
-	itDecoHeartElite = 11,				// Elite Heart Decoration
-	itDecoNinjaElite = 12,				// Elite Ninja Decoration
-	itDecoHeart = 13,					// Decoration Heart
 	itPotionManaRegen = 14,				// Mana regeneration potion
 	itTinyHealthPotion = 15,			// Tiny health potion
 	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
@@ -358,6 +363,13 @@ enum
 	itEidolonDryad = 80,				// Eidolon
 	itEidolonPigQueen = 88,				// Eidolon
 	itAdventurersBadge = 92,			// The adventurer's badge
+
+	// decoration items
+	itPickupHealth = 10,					// Pickup heart
+	itPickupArmor = 13,					// Pickup armor
+	itPickupShotgun = 11,				// Pickup shotgun
+	itPickupGrenade = 12,				// Pickup grenade
+	itPickupLaser = 94,				    // Pickup laser
 
 	// all sorting sheets that exist on the server
 	SORT_INVENTORY = 0,

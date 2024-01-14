@@ -26,6 +26,7 @@ private:
 
 	int m_ID;
 	int m_ObjType;
+	int m_TickUpdateFreezed;
 
 	/*
 		Variable: m_ProximityRadius
@@ -58,19 +59,22 @@ public:
 
 	/* Objects */
 	class CGameWorld *GameWorld() const { return m_pGameWorld; }
-	class CGS *GS() const { return m_pGameWorld->GS(); }
-	class IServer *Server() const { return m_pGameWorld->Server(); }
+	class CGS *GS() const				{ return m_pGameWorld->GS(); }
+	class IServer *Server() const		{ return m_pGameWorld->Server(); }
 
 	/* Getters */
-	CEntity *TypeNext() const { return m_pNextTypeEntity; }
-	CEntity *TypePrev() const { return m_pPrevTypeEntity; }
+	CEntity *TypeNext() const			{ return m_pNextTypeEntity; }
+	CEntity *TypePrev() const			{ return m_pPrevTypeEntity; }
 	const vec2 &GetPos() const			{ return m_Pos; }
-	const vec2 &GetPosTo() const			{ return m_PosTo; }
+	const vec2 &GetPosTo() const		{ return m_PosTo; }
 	float GetProximityRadius() const	{ return m_ProximityRadius; }
 	bool IsMarkedForDestroy() const		{ return m_MarkedForDestroy; }
 
 	/* Setters */
 	void MarkForDestroy()				{ m_MarkedForDestroy = true; }
+	void SetPos(vec2 Pos)				{ m_Pos = Pos; }
+	void SetPosTo(vec2 Pos)				{ m_PosTo = Pos; }
+	void TickUpdateFreeze(bool Freeze)	{ m_TickUpdateFreezed = Freeze; }
 
 	/* Other functions */
 

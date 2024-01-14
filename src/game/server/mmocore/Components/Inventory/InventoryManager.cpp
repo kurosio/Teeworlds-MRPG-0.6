@@ -280,7 +280,7 @@ void CInventoryManager::RepairDurabilityItems(CPlayer* pPlayer)
 		Item.m_Durability = 100;
 }
 
-std::vector<int> CInventoryManager::GetItemIDsByType(ItemType Type) const
+std::vector<int> CInventoryManager::GetItemIDsCollection(ItemType Type) const
 {
 	std::vector<int> ItemIDs {};
 

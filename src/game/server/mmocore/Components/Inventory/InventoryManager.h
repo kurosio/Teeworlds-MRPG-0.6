@@ -22,7 +22,7 @@ class CInventoryManager : public MmoComponent
 	bool OnHandleMenulist(class CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 
 public:
-	std::vector<int> GetItemIDsByType(ItemType Type) const;
+	std::vector<int> GetItemIDsCollection(ItemType Type) const;
 
 	// primary
 	void ListInventory(int ClientID, ItemType Type);

@@ -385,6 +385,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		return true;
 	}
 
+	/*
 	if(PPSTR(CMD, "DECORATION_HOUSE_ADD") == 0)
 	{
 		// check player house
@@ -437,6 +438,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 
 		return true;
 	}
+	*/
 
 	if(PPSTR(CMD, "PLANTING_HOUSE_SET") == 0)
 	{

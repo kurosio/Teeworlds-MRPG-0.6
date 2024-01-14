@@ -1,27 +1,36 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildHouseDecorationsManager.h"
-#include <game/server/gamecontext.h>
 
-#include "game/server/mmocore/GameEntities/decoration_houses.h"
 #include <game/server/mmocore/Components/Guilds/Houses/GuildHouseData.h>
+#include <game/server/mmocore/GameEntities/Tools/draw_board.h>
+#include <game/server/gamecontext.h>
 
 CGS* CGuildHouseDecorationManager::GS() const { return m_pHouse->GS(); }
 
 CGuildHouseDecorationManager::CGuildHouseDecorationManager(CGuildHouseData* pHouse) : m_pHouse(pHouse)
 {
-	m_apDecorations.reserve(MAX_DECORATIONS_HOUSE);
+	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pHouse->GetPos(), 900.f);
+	m_pDrawBoard->RegisterEvent(&CGuildHouseDecorationManager::DrawboardToolEventCallback, m_pHouse);
+	m_pDrawBoard->SetFlags(DRAWBOARDFLAG_PLAYER_ITEMS);
+
 	CGuildHouseDecorationManager::Init();
 }
 
 CGuildHouseDecorationManager::~CGuildHouseDecorationManager()
 {
-	for(auto p : m_apDecorations)
+	delete m_pDrawBoard;
+}
+
+void CGuildHouseDecorationManager::Init() const
+{
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE WorldID = '%d' AND HouseID = '%d'", GS()->GetWorldID(), m_pHouse->GetID());
+	while(pRes->next())
 	{
-		delete p;
+		int ItemID = pRes->getInt("ItemID");
+		vec2 Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
+		m_pDrawBoard->AddPoint(Pos, ItemID);
 	}
-	m_apDecorations.clear();
-	m_apDecorations.shrink_to_fit();
 }
 
 bool CGuildHouseDecorationManager::StartDrawing(const int& ItemID, CPlayer* pPlayer)
@@ -29,122 +38,75 @@ bool CGuildHouseDecorationManager::StartDrawing(const int& ItemID, CPlayer* pPla
 	if(!pPlayer || !pPlayer->GetCharacter())
 		return false;
 
-	const vec2& MousePos = pPlayer->GetCharacter()->GetMousePos();
-	auto* pEntity = new CEntityHouseDecoration(&GS()->m_World, MousePos, -1, m_pHouse->GetID(), ItemID);
-	pEntity->StartDrawingMode(&CGuildHouseDecorationManager::DrawToolCallback, m_pHouse, pPlayer, m_pHouse->GetPos(), 900.f);
+	m_pDrawBoard->StartDrawing(pPlayer);
 	return true;
 }
 
-bool CGuildHouseDecorationManager::DrawToolCallback(bool EraseMode, CEntityHouseDecoration* pEntity, CPlayer* pPlayer, int DecorationItemID, void* pUser)
+bool CGuildHouseDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, EntityPoint* pPoint, void* pUser)
 {
-	// Check if pPlayer or pHouse is null
-	auto pHouse = (CGuildHouseData*)pUser;
+	const auto pHouse = (CGuildHouseData*)pUser;
 	if(!pPlayer || !pHouse)
 		return false;
 
-	// Get the player item with the given DecorationItemID
-	CPlayerItem* pPlayerItem = pPlayer->GetItem(DecorationItemID);
+	const int& ClientID = pPlayer->GetCID();
 
-	// If EraseMode is true and the decoration is successfully removed from the house
-	if(EraseMode && pHouse->GetDecorations()->Remove(pEntity))
+	if(pPoint)
 	{
-		pPlayer->GS()->Chat(pPlayer->GetCID(), "You returned {STR} to your inventory!", pPlayerItem->Info()->GetName());
-		pPlayerItem->Add(1);
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
+		if(Event == DrawboardToolEvent::ON_POINT_ADD)
+		{
+			if(pHouse->GetDecorations()->Add(pPoint))
+			{
+				pHouse->GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
+				return true;
+			}
+
+			return false;
+		}
+
+		if(Event == DrawboardToolEvent::ON_POINT_ERASE)
+		{
+			if(pHouse->GetDecorations()->Remove(pPoint))
+			{
+				pHouse->GS()->Chat(ClientID, "You have removed {STR} from your house!", pPlayerItem->Info()->GetName());
+				return true;
+			}
+
+			return false;
+		}
+	}
+
+	if(Event == DrawboardToolEvent::ON_END)
+	{
+		pHouse->GS()->Chat(ClientID, "You have finished decorating your house!");
 		return true;
 	}
 
-	// If EraseMode is false and the decoration is successfully added to the house
-	if(!EraseMode && pHouse->GetDecorations()->Add(pEntity))
-	{
-		pPlayer->GS()->Chat(pPlayer->GetCID(), "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
-		pPlayerItem->Remove(1);
-		return true;
-	}
-
-	return false;
+	return true;
 }
 
-void CGuildHouseDecorationManager::Init()
+bool CGuildHouseDecorationManager::Add(const EntityPoint* pPoint) const
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE WorldID = '%d' AND HouseID = '%d'", GS()->GetWorldID(), m_pHouse->GetID());
-	while(pRes->next())
-	{
-		if(!HasFreeSlots())
-			break;
-
-		int UniqueID = pRes->getInt("ID");
-		int ItemID = pRes->getInt("ItemID");
-		GuildHouseIdentifier HouseID = pRes->getInt("HouseID");
-		vec2 DecorationPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		m_apDecorations.push_back(new CEntityHouseDecoration(&GS()->m_World, DecorationPos, UniqueID, HouseID, ItemID));
-	}
-}
-
-bool CGuildHouseDecorationManager::Add(CEntityHouseDecoration* pEntity)
-{
-	if(!pEntity)
-	{
+	if(!pPoint || !pPoint->m_pEntity)
 		return false;
-	}
 
-	const ItemIdentifier& ItemID = pEntity->GetItemID();
+	const CEntity* pEntity = pPoint->m_pEntity;
+	const ItemIdentifier& ItemID = pPoint->m_ItemID;
 	const vec2& EntityPos = pEntity->GetPos();
 
-	// Check if the distance between the current position house and the given position (Position) is greater than 400.0f
-	if(distance(m_pHouse->GetPos(), EntityPos) > 900.f)
-	{
-		//GS()->Chat(pPlayerBy->GetCID(), "There is too much distance from home!");
-		return false;
-	}
-
-	if(HasFreeSlots())
-	{
-		// Insert to last identifier and got it
-		ResultPtr pRes2 = Database->Execute<DB::SELECT>("ID", TW_GUILD_HOUSES_DECORATION_TABLE, "ORDER BY ID DESC LIMIT 1");
-		const int InitID = pRes2->next() ? pRes2->getInt("ID") + 1 : 1;
-		Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ID, ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
-			InitID, ItemID, m_pHouse->GetID(), (int)EntityPos.x, (int)EntityPos.y, GS()->GetWorldID());
-
-		// Create new decoration on gameworld
-		pEntity->SetUniqueID(InitID);
-		m_apDecorations.push_back(pEntity);
-		return true;
-	}
-
-	// Send what all decoration slots occupied
-	//GS()->Chat(pPlayerBy->GetCID(), "All decoration slots have been occupied.");
-	return false;
+	// Insert to last identifier and got it
+	Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d')",
+		ItemID, m_pHouse->GetID(), round_to_int(EntityPos.x), round_to_int(EntityPos.y), GS()->GetWorldID());
+	return true;
 }
 
-bool CGuildHouseDecorationManager::Remove(CEntityHouseDecoration* pEntity)
+bool CGuildHouseDecorationManager::Remove(const EntityPoint* pPoint) const
 {
-	// Check if the entity pointer is null
-	if(!pEntity)
-	{
+	if(!pPoint || !pPoint->m_pEntity)
 		return false;
-	}
 
-	// Find the decoration in the list of decorations
-	auto iterDecoration = std::find_if(m_apDecorations.begin(), m_apDecorations.end(), [&pEntity](const CEntityHouseDecoration* p)
-	{
-		return p->GetUniqueID() == pEntity->GetUniqueID();
-	});
-
-	// If the decoration is found
-	if(iterDecoration != m_apDecorations.end())
-	{
-		// Get the unique ID of the decoration
-		const int UniqueID = (*iterDecoration)->GetUniqueID();
-
-		// Delete the decoration from the game world
-		(*iterDecoration)->MarkForDestroy();
-		m_apDecorations.erase(iterDecoration);
-
-		// Remove the decoration from the database
-		Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE ID = '%d'", UniqueID);
-		return true;
-	}
-
-	// If the decoration is not found, return false
-	return false;
+	// Remove the decoration from the database
+	Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE HouseID = '%d' AND ItemID = '%d' AND PosX = '%d' AND PosY = '%d'", 
+		m_pHouse->GetID(), pPoint->m_ItemID, round_to_int(pPoint->m_pEntity->GetPos().x), round_to_int(pPoint->m_pEntity->GetPos().y));
+	return true;
 }

@@ -599,6 +599,16 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 			FireWeapon();
 	}
 
+	if(Server()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_HOOK))
+	{
+		CTuningParams* pTuningParams = &m_pPlayer->m_NextTuningParams;
+		pTuningParams->m_HookLength = 0.0f;
+		pTuningParams->m_HookFireSpeed = 0.0f;
+		pTuningParams->m_HookDragSpeed = 0.0f;
+		pTuningParams->m_HookDragAccel = 0.0f;
+		ResetHook();
+	}
+
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
 }
 

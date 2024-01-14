@@ -11,6 +11,8 @@
 #define TW_HOUSES_TABLE "tw_houses"
 #define TW_HOUSES_DECORATION_TABLE "tw_houses_decorations"
 
+class EntityPoint;
+class CEntityDrawboard;
 using HouseIdentifier = int;
 using HouseDecorationIdentifier = int;
 using HouseDataPtr = std::shared_ptr< class CHouseData >;
@@ -22,7 +24,7 @@ class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDa
 	vec2 m_TextPos {};
 	vec2 m_PlantPos {};
 
-	class CEntityHouseDecoration* m_apDecorations[MAX_DECORATIONS_HOUSE] {};
+	CEntityDrawboard* m_pDrawBoard {};
 	CHouseDoorsController* m_pDoorsController {};
 	CHouseBankData* m_pBank {};
 	CItem m_PlantedItem {};
@@ -103,8 +105,9 @@ public:
 	CHouseBankData* GetBank() const { return m_pBank; }
 
 	// A decoration functions
-	bool AddDecoration(CEntityHouseDecoration* pEntity);
-	bool RemoveDecoration(HouseDecorationIdentifier DecoID);
+	static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, EntityPoint* pPoint, void* pUser);
+	bool AddDecoration(EntityPoint* pPoint);
+	bool RemoveDecoration(EntityPoint* pPoint);
 	void ShowDecorationList() const;
 
 	// House functions

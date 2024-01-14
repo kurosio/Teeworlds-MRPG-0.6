@@ -5,7 +5,6 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/mmocore/GameEntities/decoration_houses.h>
 #include <game/server/mmocore/Components/Inventory/InventoryManager.h>
 
 void CGuildManager::OnInit()

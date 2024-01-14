@@ -14,6 +14,9 @@ public:
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
+	void AddClientMask(int ClientID);
+	void RemoveClientMask(int ClientID);
+
 	EntLaserOrbiteType GetType() const { return m_Type; }
 	CEntity* GetEntityParent() const { return m_pEntParent; }
 
