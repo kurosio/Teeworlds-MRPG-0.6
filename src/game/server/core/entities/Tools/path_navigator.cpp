@@ -6,7 +6,7 @@
 
 #include <game/server/core/components/Worlds/WorldManager.h>
 
-#include "game/server/core/utilities/PathFinder.h"
+#include "game/server/core/utilities/pathfinder.h"
 
 CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, FromPos)

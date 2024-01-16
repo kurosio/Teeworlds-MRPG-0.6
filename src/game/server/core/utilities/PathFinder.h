@@ -1,6 +1,6 @@
-#ifndef GAME_PATHFIND_H
-#define GAME_PATHFIND_H
-#include "PathFinderData.h"
+#ifndef GAME_SERVER_CORE_UTILITIES_PATHFINDER_H
+#define GAME_SERVER_CORE_UTILITIES_PATHFINDER_H
+#include "pathfinder_data.h"
 
 #include <game/layers.h>
 #include <game/server/core/tools/binaryheap.h>

@@ -5,7 +5,7 @@
 
 #include <game/server/entity.h>
 
-#include "game/server/core/utilities/PathFinderData.h"
+#include "game/server/core/utilities/pathfinder_data.h"
 
 class CEntityPathNavigator : public CEntity
 {

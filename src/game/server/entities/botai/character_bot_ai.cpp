@@ -14,7 +14,7 @@
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/Quests/QuestManager.h>
 
-#include "game/server/core/utilities/PathFinder.h"
+#include "game/server/core/utilities/pathfinder.h"
 
 #include "nurse_heart.h"
 

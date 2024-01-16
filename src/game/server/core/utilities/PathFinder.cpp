@@ -1,5 +1,5 @@
 /* Pathfind class by Sushi */
-#include "PathFinder.h"
+#include "pathfinder.h"
 
 #include <game/collision.h>
 #include <game/layers.h>

@@ -5,7 +5,7 @@
 
 #include "player.h"
 
-#include "core/utilities/PathFinderData.h"
+#include "core/utilities/pathfinder_data.h"
 
 class CPlayerBot : public CPlayer
 {

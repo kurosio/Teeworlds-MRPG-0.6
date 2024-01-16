@@ -11,7 +11,7 @@
 #include "entities/character.h"
 
 #include "vote_event_optional.h"
-#include "core/utilities/Cooldown.h"
+#include "core/utilities/cooldown.h"
 
 enum
 {

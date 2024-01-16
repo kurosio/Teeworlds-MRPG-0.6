@@ -1,4 +1,4 @@
-﻿#include "Cooldown.h"
+﻿#include "cooldown.h"
 
 #include <game/server/gamecontext.h>
 #include <generated/protocol.h>

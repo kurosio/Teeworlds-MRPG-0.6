@@ -8,7 +8,7 @@
 #include "worldmodes/dungeon.h"
 
 #include "core/components/Bots/BotManager.h"
-#include "core/utilities/PathFinder.h"
+#include "core/utilities/pathfinder.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 

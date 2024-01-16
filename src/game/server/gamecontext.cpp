@@ -14,7 +14,7 @@
 #include "worldmodes/tutorial.h"
 
 #include "core/command_processor.h"
-#include "core/utilities/PathFinder.h"
+#include "core/utilities/pathfinder.h"
 #include "core/entities/loltext.h"
 #include "core/entities/Items/drop_bonuses.h"
 #include "core/entities/Items/drop_items.h"
