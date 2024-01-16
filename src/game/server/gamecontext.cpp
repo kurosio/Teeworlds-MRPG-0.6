@@ -13,27 +13,27 @@
 #include "worldmodes/main.h"
 #include "worldmodes/tutorial.h"
 
-#include "mmocore/CommandProcessor.h"
-#include "mmocore/PathFinder.h"
-#include "mmocore/GameEntities/loltext.h"
-#include "mmocore/GameEntities/Items/drop_bonuses.h"
-#include "mmocore/GameEntities/Items/drop_items.h"
-#include "mmocore/GameEntities/laser_orbite.h"
+#include "core/command_processor.h"
+#include "core/utilities/PathFinder.h"
+#include "core/entities/loltext.h"
+#include "core/entities/Items/drop_bonuses.h"
+#include "core/entities/Items/drop_items.h"
+#include "core/entities/laser_orbite.h"
 
-#include "mmocore/Components/Accounts/AccountManager.h"
-#include "mmocore/Components/Bots/BotManager.h"
-#include "mmocore/Components/Dungeons/DungeonManager.h"
-#include "mmocore/Components/Mails/MailBoxManager.h"
-#include "mmocore/Components/Guilds/GuildManager.h"
-#include "mmocore/Components/Houses/HouseManager.h"
-#include "mmocore/Components/Quests/QuestManager.h"
-#include "mmocore/Components/Skills/SkillManager.h"
+#include "core/components/Accounts/AccountManager.h"
+#include "core/components/Bots/BotManager.h"
+#include "core/components/Dungeons/DungeonManager.h"
+#include "core/components/Mails/MailBoxManager.h"
+#include "core/components/Guilds/GuildManager.h"
+#include "core/components/Houses/HouseManager.h"
+#include "core/components/Quests/QuestManager.h"
+#include "core/components/Skills/SkillManager.h"
 
 #include <cstdarg>
 
-#include "mmocore/Components/Eidolons/EidolonInfoData.h"
-#include "mmocore/Components/Warehouse/WarehouseData.h"
-#include "mmocore/Components/Worlds/WorldData.h"
+#include "core/components/Eidolons/EidolonInfoData.h"
+#include "core/components/Warehouse/WarehouseData.h"
+#include "core/components/Worlds/WorldData.h"
 
 // static data that have the same value in different objects
 ska::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
@@ -736,7 +736,7 @@ void CGS::OnInit(int WorldID)
 	m_pLayers = new CLayers();
 	m_pLayers->Init(Kernel(), WorldID);
 	m_Collision.Init(m_pLayers);
-	m_pMmoController = new MmoController(this);
+	m_pMmoController = new CMmoController(this);
 	m_pMmoController->LoadLogicWorld();
 
 	InitZones();
@@ -1278,7 +1278,7 @@ void CGS::OnClientEnter(int ClientID)
 		Chat(-1, "{STR} entered and joined the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 
-		MmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
+		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 
 		SendDayInfo(ClientID);
 		ShowVotesNewbieInformation(ClientID);
@@ -1525,7 +1525,7 @@ void CGS::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData)
 	CGS* pSelf = (CGS*)pServer->GameServer();
 
 	// dump
-	std::thread(&MmoController::ConAsyncLinesForTranslate, pSelf->m_pMmoController).detach();
+	std::thread(&CMmoController::ConAsyncLinesForTranslate, pSelf->m_pMmoController).detach();
 }
 
 void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)

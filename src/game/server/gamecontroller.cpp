@@ -6,7 +6,7 @@
 #include "gamecontext.h"
 
 #include "entities/pickup.h"
-#include "mmocore/GameEntities/npcwall.h"
+#include "core/entities/npcwall.h"
 
 /*
 	Here you need to put it in order make more events

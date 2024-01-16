@@ -3,15 +3,15 @@
 #ifndef GAME_SERVER_PLAYER_H
 #define GAME_SERVER_PLAYER_H
 
-#include "mmocore/Components/Accounts/AccountData.h"
-#include "mmocore/Components/Inventory/ItemData.h"
-#include "mmocore/Components/Quests/QuestData.h"
-#include "mmocore/Components/Skills/SkillData.h"
+#include "core/components/Accounts/AccountData.h"
+#include "core/components/Inventory/ItemData.h"
+#include "core/components/Quests/QuestData.h"
+#include "core/components/Skills/SkillData.h"
 
 #include "entities/character.h"
 
 #include "vote_event_optional.h"
-#include "mmocore/Cooldown.h"
+#include "core/utilities/Cooldown.h"
 
 enum
 {

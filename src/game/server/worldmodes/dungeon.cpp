@@ -6,12 +6,12 @@
 #include <game/server/entity.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/mmocore/GameEntities/npcwall.h>
-#include <game/server/mmocore/GameEntities/Logics/logicwall.h>
+#include <game/server/core/entities/npcwall.h>
+#include <game/server/core/entities/Logics/logicwall.h>
 #include <teeother/system/string.h>
 
-#include <game/server/mmocore/Components/Accounts/AccountManager.h>
-#include <game/server/mmocore/Components/Dungeons/DungeonManager.h>
+#include <game/server/core/components/Accounts/AccountManager.h>
+#include <game/server/core/components/Dungeons/DungeonManager.h>
 
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS) : IGameController(pGS)
 {

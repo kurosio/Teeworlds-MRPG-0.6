@@ -3,12 +3,12 @@
 #include "main.h"
 
 #include <game/server/gamecontext.h>
-#include <game/server/mmocore/GameEntities/jobitems.h>
-#include <game/server/mmocore/GameEntities/Logics/logicwall.h>
+#include <game/server/core/entities/jobitems.h>
+#include <game/server/core/entities/Logics/logicwall.h>
 
-#include <game/server/mmocore/Components/Accounts/AccountMinerManager.h>
-#include <game/server/mmocore/Components/Accounts/AccountPlantManager.h>
-#include <game/server/mmocore/Components/Houses/HouseManager.h>
+#include <game/server/core/components/Accounts/AccountMinerManager.h>
+#include <game/server/core/components/Accounts/AccountPlantManager.h>
+#include <game/server/core/components/Houses/HouseManager.h>
 
 CGameControllerMain::CGameControllerMain(class CGS *pGS)
 : IGameController(pGS)

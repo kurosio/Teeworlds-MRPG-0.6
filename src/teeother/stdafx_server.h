@@ -9,7 +9,7 @@
 
 // custom something that is subject to less changes is introduced
 #include <base/system.h>
-#include <game/server/mmocore/GameContext.h>
+#include <game/server/core/mmo_context.h>
 #include <teeother/components/localization.h>
 #include <teeother/flat_hash_map/bytell_hash_map.h>
 #include <teeother/flat_hash_map/flat_hash_map.h>

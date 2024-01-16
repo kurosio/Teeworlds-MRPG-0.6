@@ -6,7 +6,7 @@
 #include <game/server/entity.h>
 #include <game/server/gamecontroller.h>
 
-#include <game/server/mmocore/Components/Dungeons/DungeonData.h>
+#include <game/server/core/components/Dungeons/DungeonData.h>
 
 enum DungeonState
 {

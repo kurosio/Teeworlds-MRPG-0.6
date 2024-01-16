@@ -6,19 +6,19 @@
 #include "engine/shared/config.h"
 #include "worldmodes/dungeon.h"
 
-#include "mmocore/Components/Accounts/AccountManager.h"
-#include "mmocore/Components/Accounts/AccountMinerManager.h"
-#include "mmocore/Components/Bots/BotManager.h"
-#include "mmocore/Components/Dungeons/DungeonData.h"
-#include "mmocore/Components/Eidolons/EidolonInfoData.h"
-#include "mmocore/Components/Guilds/GuildManager.h"
-#include "mmocore/Components/Quests/QuestManager.h"
+#include "core/components/Accounts/AccountManager.h"
+#include "core/components/Accounts/AccountMinerManager.h"
+#include "core/components/Bots/BotManager.h"
+#include "core/components/Dungeons/DungeonData.h"
+#include "core/components/Eidolons/EidolonInfoData.h"
+#include "core/components/Guilds/GuildManager.h"
+#include "core/components/Quests/QuestManager.h"
 
-#include "mmocore/Components/Inventory/ItemData.h"
-#include "mmocore/Components/Skills/SkillData.h"
-#include "mmocore/Components/Groups/GroupData.h"
-#include "mmocore/Components/Worlds/WorldData.h"
-#include "mmocore/GameEntities/Tools/draw_board.h"
+#include "core/components/Inventory/ItemData.h"
+#include "core/components/Skills/SkillData.h"
+#include "core/components/Groups/GroupData.h"
+#include "core/components/Worlds/WorldData.h"
+#include "core/entities/Tools/draw_board.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -542,7 +542,7 @@ CCharacter* CPlayer::GetCharacter() const
 	return nullptr;
 }
 
-bool BoardHandlerCallback(DrawboardToolEvent Event, CPlayer* pPlayer, EntityPoint* pPoint, void* pUser)
+bool BoardHandlerCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
 {
 	if(Event == DrawboardToolEvent::ON_START)
 	{

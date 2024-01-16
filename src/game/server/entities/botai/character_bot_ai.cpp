@@ -8,13 +8,13 @@
 
 #include <game/collision.h>
 
-#include <game/server/mmocore/GameEntities/Eidolons/base.h>
-#include <game/server/mmocore/Components/Skills/Entities/HealthTurret/hearth.h> // for nurse
+#include <game/server/core/entities/Eidolons/base.h>
+#include <game/server/core/components/Skills/Entities/HealthTurret/hearth.h> // for nurse
 
-#include <game/server/mmocore/Components/Bots/BotData.h>
-#include <game/server/mmocore/Components/Quests/QuestManager.h>
+#include <game/server/core/components/Bots/BotData.h>
+#include <game/server/core/components/Quests/QuestManager.h>
 
-#include "game/server/mmocore/PathFinder.h"
+#include "game/server/core/utilities/PathFinder.h"
 
 #include "nurse_heart.h"
 

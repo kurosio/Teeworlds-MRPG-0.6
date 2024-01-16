@@ -5,7 +5,7 @@
 
 #include "player.h"
 
-#include "mmocore/PathFinderData.h"
+#include "core/utilities/PathFinderData.h"
 
 class CPlayerBot : public CPlayer
 {

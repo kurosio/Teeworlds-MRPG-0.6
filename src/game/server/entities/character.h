@@ -4,7 +4,7 @@
 #define GAME_SERVER_ENTITIES_CHARACTER_H
 #include <game/server/entity.h>
 
-#include "../mmocore/TileHandle.h"
+#include "../core/tiles_handler.h"
 
 class CCharacter : public CEntity
 {

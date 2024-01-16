@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include "game/server/mmocore/Components/Tutorial/TutorialManager.h"
+#include "game/server/core/components/Tutorial/TutorialManager.h"
 
 CGameControllerTutorial::CGameControllerTutorial(class CGS* pGS)
 	: IGameController(pGS)

@@ -15,8 +15,8 @@
 #include "player.h"
 #include "playerbot.h"
 
-#include "mmocore/GameEntities/Tools/flying_point.h"
-#include "mmocore/MmoController.h"
+#include "core/entities/Tools/flying_point.h"
+#include "core/mmo_controller.h"
 
 class CGS : public IGameServer
 {
@@ -30,7 +30,7 @@ class CGS : public IGameServer
 	class CPathFinder* m_pPathFinder;
 	class IStorageEngine* m_pStorage;
 	class CCommandProcessor* m_pCommandProcessor;
-	class MmoController* m_pMmoController;
+	class CMmoController* m_pMmoController;
 	class CLayers* m_pLayers;
 
 	CCollision m_Collision;
@@ -44,7 +44,7 @@ class CGS : public IGameServer
 public:
 	IServer *Server() const { return m_pServer; }
 	IConsole* Console() const { return m_pConsole; }
-	MmoController* Mmo() const { return m_pMmoController; }
+	CMmoController* Mmo() const { return m_pMmoController; }
 	IStorageEngine* Storage() const { return m_pStorage; }
 	CCommandProcessor* CommandProcessor() const { return m_pCommandProcessor; }
 	class CEntityDrawboard* pDrawBoard;

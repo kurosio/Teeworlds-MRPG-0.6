@@ -7,8 +7,8 @@
 #include "entities/botai/character_bot_ai.h"
 #include "worldmodes/dungeon.h"
 
-#include "mmocore/Components/Bots/BotManager.h"
-#include "mmocore/PathFinder.h"
+#include "core/components/Bots/BotManager.h"
+#include "core/utilities/PathFinder.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
