@@ -3,14 +3,14 @@
 #ifndef GAME_SERVER_COMPONENT_WORLDSWAP_CORE_H
 #define GAME_SERVER_COMPONENT_WORLDSWAP_CORE_H
 
-#include <game/server/core/utilities/pathfinder_vertex_bfs>
+#include <game/server/core/utilities/pathfinder_vertex.h>
 #include <game/server/core/mmo_component.h>
 
 #include "WorldData.h"
 
 class CWorldManager : public MmoComponent
 {
-	PathFinderDoubleNode m_PathFinderBFS {};
+	PathFinderVertex m_PathFinderBFS {};
 
 	~CWorldManager() override
 	{

@@ -1,7 +1,8 @@
 #ifndef GAME_SERVER_CORE_UTILITIES_PATHFINDER_VERTEX_H
 #define GAME_SERVER_CORE_UTILITIES_PATHFINDER_VERTEX_H
 
-class PathFinderDoubleNode
+// vertex graph
+class PathFinderVertex
 {
     int m_numVertices{};
     bool m_initilized{};
@@ -51,7 +52,7 @@ class PathFinderDoubleNode
     }
 
 public:
-    PathFinderDoubleNode() = default;
+    PathFinderVertex() = default;
 
 	// initialize the graph with the given number of vertices
 	void init(int vertices)
