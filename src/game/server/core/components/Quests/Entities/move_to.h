@@ -8,8 +8,6 @@
 class CEntityMoveTo : public CEntity
 {
 	class CPlayer* m_pPlayer;
-	int m_ClientID;
-
 	class CPlayerBot* m_pDefeatMobPlayer;
 
 	int m_QuestID;
@@ -31,7 +29,6 @@ public:
 	void HandleBroadcastInformation() const;
 	bool PressedFire() const;
 
-	int GetClientID() const { return m_ClientID; }
 	int GetQuestID() const { return m_QuestID; }
 
 	void ClearPointers();

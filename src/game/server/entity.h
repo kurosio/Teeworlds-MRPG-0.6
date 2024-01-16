@@ -46,13 +46,14 @@ protected:
 	*/
 	vec2 m_Pos;
 	vec2 m_PosTo;
+	int m_ClientID;
 
 	/* Getters */
 	int GetID() const					{ return m_ID; }
 
 public:
 	/* Constructor */
-	CEntity(CGameWorld *pGameWorld, int Objtype, vec2 Pos, int ProximityRadius=0);
+	CEntity(CGameWorld *pGameWorld, int Objtype, vec2 Pos, int ProximityRadius=0, int ClientID = -1);
 
 	/* Destructor */
 	virtual ~CEntity();
@@ -75,6 +76,10 @@ public:
 	void SetPos(vec2 Pos)				{ m_Pos = Pos; }
 	void SetPosTo(vec2 Pos)				{ m_PosTo = Pos; }
 	void TickUpdateFreeze(bool Freeze)	{ m_TickUpdateFreezed = Freeze; }
+	void SetClientID(int ClientID)		{ m_ClientID = ClientID; }
+
+	/* Getters */
+	int GetClientID() const 			{ return m_ClientID; }
 
 	/* Other functions */
 
@@ -141,6 +146,8 @@ public:
 	int NetworkClipped(int SnappingClient) const;
 	int NetworkClipped(int SnappingClient, vec2 CheckPos) const;
 	int NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius) const;
+
+	bool IsClientEntityFullSnapping(int SnappingClient) const;
 
 	bool GameLayerClipped(vec2 CheckPos) const;
 };

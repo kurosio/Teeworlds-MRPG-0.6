@@ -60,7 +60,7 @@ public:
 	void UpdateTempData(int Health, int Mana) override { m_BotHealth = Health; }
 
 	int64_t GetMaskVisibleForClients() const override;
-	int IsActiveForClient(int ClientID) const override;
+	StateSnapping IsActiveForClient(int ClientID) const override;
 	int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetAttributeSize(AttributeIdentifier ID) override;
 

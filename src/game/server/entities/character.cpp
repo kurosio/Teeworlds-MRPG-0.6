@@ -11,20 +11,18 @@
 
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/Groups/GroupData.h>
-#include <game/server/core/components/Guilds/GuildManager.h>
-#include <game/server/core/components/Houses/HouseManager.h>
 #include <game/server/core/components/Quests/QuestManager.h>
 #include <game/server/core/components/Worlds/WorldData.h>
 
 #include <game/server/core/entities/jobitems.h>
-#include <game/server/core/entities/snapfull.h>
-
+#include <game/server/core/entities/multiple_orbite.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 CCharacter::CCharacter(CGameWorld* pWorld)
 	: CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER, vec2(0, 0), ms_PhysSize)
 {
+	m_pMultipleOrbite = nullptr;
 	m_pHelper = new TileHandle();
 	m_DoorHit = false;
 	m_Health = 0;
@@ -33,14 +31,13 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 
 CCharacter::~CCharacter()
 {
-	delete m_pHelper;
-	m_pHelper = nullptr;
-	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
-}
+	if(m_pMultipleOrbite)
+	{
+		delete m_pMultipleOrbite;
+	}
 
-int CCharacter::GetSnapFullID() const
-{
-	return m_pPlayer->GetCID() * SNAPPLAYER;
+	delete m_pHelper;
+	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
 }
 
 bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
@@ -489,6 +486,17 @@ void CCharacter::HandleHookActions()
 		if(m_pPlayer->GetItem(itExplodeHook)->IsEquipped())
 			GS()->CreateExplosion(m_Core.m_HookPos, ClientID, WEAPON_GRENADE, 1);
 	}
+}
+
+void CCharacter::AddMultipleOrbite(int Amount, int Type, int Subtype)
+{
+	if(!m_pMultipleOrbite)
+	{
+		m_pMultipleOrbite = new CMultipleOrbite(GameWorld(), this);
+		m_pMultipleOrbite->SetClientID(m_pPlayer->GetCID());
+	}
+
+	m_pMultipleOrbite->Add(Amount, Type, Subtype);
 }
 
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
@@ -1513,26 +1521,4 @@ bool CCharacter::StartConversation(CPlayer* pTarget)
 
 	m_pPlayer->m_Dialog.Start(m_pPlayer, pTarget->GetCID());
 	return true;
-}
-
-// decoration player's
-void CCharacter::CreateSnapProj(int SnapID, int Value, int TypeID, bool Dynamic, bool Projectile)
-{
-	CSnapFull* pSnapItem = (CSnapFull*)GameWorld()->ClosestEntity(m_Pos, 300, CGameWorld::ENTTYPE_SNAPEFFECT, nullptr);
-	if(pSnapItem && pSnapItem->GetOwner() == m_pPlayer->GetCID())
-	{
-		pSnapItem->AddItem(Value, TypeID, Projectile, Dynamic, SnapID);
-		return;
-	}
-	new CSnapFull(&GS()->m_World, m_Core.m_Pos, SnapID, m_pPlayer->GetCID(), Value, TypeID, Dynamic, Projectile);
-}
-
-void CCharacter::RemoveSnapProj(int Value, int SnapID, bool Effect)
-{
-	CSnapFull* pSnapItem = (CSnapFull*)GameWorld()->ClosestEntity(m_Pos, 300, CGameWorld::ENTTYPE_SNAPEFFECT, nullptr);
-	if(pSnapItem && pSnapItem->GetOwner() == m_pPlayer->GetCID())
-	{
-		pSnapItem->RemoveItem(Value, SnapID, Effect);
-		return;
-	}
 }

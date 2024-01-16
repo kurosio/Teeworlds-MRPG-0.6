@@ -6,6 +6,8 @@
 
 #include "../core/tiles_handler.h"
 
+class CMultipleOrbite;
+
 class CCharacter : public CEntity
 {
 	MACRO_ALLOC_POOL_ID()
@@ -52,6 +54,8 @@ protected:
 	bool m_Alive;
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 
+	CMultipleOrbite* m_pMultipleOrbite;
+
 	// last tick that the player took any action ie some input
 	int m_LastNoAmmoSound;
 	int m_NumInputs;
@@ -89,7 +93,6 @@ public:
 	CPlayer *GetPlayer() const { return m_pPlayer; }
 	TileHandle *GetHelper() const { return m_pHelper; }
 
-	virtual int GetSnapFullID() const;
 	void Tick() override;
 	void TickDeferred() override;
 	void Snap(int SnappingClient) override;
@@ -119,11 +122,10 @@ public:
 	int Mana() const { return m_Mana; }
 	int Health() const { return m_Health; }
 
+	void AddMultipleOrbite(int Amount, int Type, int Subtype);
+
 	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
-
-	void CreateSnapProj(int SnapID, int Value, int TypeID, bool Dynamic, bool Projectile);
-	void RemoveSnapProj(int Value, int SnapID, bool Effect = false);
 
 	void ChangePosition(vec2 NewPos);
 	void ResetDoorPos();

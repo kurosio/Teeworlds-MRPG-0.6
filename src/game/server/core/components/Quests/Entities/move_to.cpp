@@ -12,7 +12,7 @@ constexpr auto COOLDOWN_ACTION_NAME = "CEntityMoveTo::TryFinish";
 
 CEntityMoveTo::CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool* pComplete,
 	std::deque < CEntityMoveTo* >* apCollection, bool AutoCompletesQuestStep, CPlayerBot* pDefeatMobPlayer)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, pTaskMoveTo->m_Position, 32.f), m_ClientID(ClientID), m_QuestID(QuestID), m_pTaskMoveTo(pTaskMoveTo)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, pTaskMoveTo->m_Position, 32.f, ClientID), m_QuestID(QuestID), m_pTaskMoveTo(pTaskMoveTo)
 {
 	// Initialize base
 	m_Radius = GetProximityRadius();

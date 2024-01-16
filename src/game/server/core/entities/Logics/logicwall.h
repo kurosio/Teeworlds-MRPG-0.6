@@ -8,7 +8,6 @@ class CPlayer;
 
 class CLogicWallLine : public CEntity
 {
-	int m_ClientID;
 	bool m_Spawned;
 
 public:
@@ -16,7 +15,6 @@ public:
 	virtual void Snap(int SnappingClient);
 	virtual void Tick();
 	void Respawn(bool Spawn);
-	void SetClientID(int ClientID);
 };
 
 class CLogicWall : public CEntity

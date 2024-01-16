@@ -8,13 +8,12 @@
 #include <game/server/core/entities/Tools/path_navigator.h>
 
 CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos, 0, ClientID)
 {
 	vec2 GetterPos{0,0};
 	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, SearchPos, &GetterPos);
 
 	m_PosTo = GetterPos;
-	m_ClientID = ClientID;
 	m_AreaClipped = AreaClipped;
 	m_WorldID = WorldID;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);

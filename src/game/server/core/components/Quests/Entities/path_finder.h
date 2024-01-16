@@ -7,7 +7,6 @@
 
 class CEntityPathFinder : public CEntity
 {
-	int m_ClientID;
 	int m_WorldID;
 	float m_AreaClipped;
 	bool* m_pComplete;
@@ -22,8 +21,6 @@ public:
 	void Snap(int SnappingClient) override;
 
 	void ClearPointers();
-
-	int GetClientID() const { return m_ClientID; }
 };
 
 #endif

@@ -39,7 +39,6 @@ private:
 	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon) override;
 	void Die(int Killer, int Weapon) override;
 	bool GiveWeapon(int Weapon, int GiveAmmo) override;
-	int GetSnapFullID() const override;
 
 	void RewardPlayer(CPlayer *pPlayer, vec2 ForceDies) const;
 

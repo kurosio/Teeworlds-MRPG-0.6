@@ -17,6 +17,7 @@
 #include "game/server/core/utilities/pathfinder.h"
 
 #include "nurse_heart.h"
+#include "game/server/core/entities/multiple_orbite.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -32,8 +33,6 @@ CCharacterBotAI::~CCharacterBotAI()
 	delete m_pAI;
 	m_pAI = nullptr;
 }
-
-int CCharacterBotAI::GetSnapFullID() const { return m_pBotPlayer->GetCID() * SNAPBOTS; }
 
 bool CCharacterBotAI::Spawn(class CPlayer* pPlayer, vec2 Pos)
 {
@@ -64,11 +63,8 @@ void CCharacterBotAI::InitBot()
 			// Check if the mob bot is a boss
 			if(pMobBot->m_Boss)
 			{
-				// Create 3 snap projectiles with type POWERUP_HEALTH and initial snap ID of 1
-				CreateSnapProj(GetSnapFullID(), 1, POWERUP_HEALTH, true, false);
-
-				// Create 3 snap projectiles with type WEAPON_HAMMER and initial snap ID of 1
-				CreateSnapProj(GetSnapFullID(), 1, WEAPON_HAMMER, false, true);
+				AddMultipleOrbite(1, POWERUP_HEALTH, 0);
+				AddMultipleOrbite(1, POWERUP_ARMOR, 0);
 
 				// Check if the game state is not a dungeon
 				if(!GS()->IsDungeon())
@@ -101,8 +97,7 @@ void CCharacterBotAI::InitBot()
 			// Check the function of the NPC bot and perform the corresponding action
 			if(Function == FUNCTION_NPC_GIVE_QUEST)
 			{
-				// Create a snapshot projectile with the given SnapFullID, type 3 (POWERUP_ARMOR), and without explosion and collision
-				CreateSnapProj(GetSnapFullID(), 3, POWERUP_ARMOR, false, false);
+				AddMultipleOrbite(3, POWERUP_ARMOR, 0);
 			}
 			else if(Function == FUNCTION_NPC_NURSE)
 			{
@@ -111,8 +106,7 @@ void CCharacterBotAI::InitBot()
 			}
 			else if(Function == FUNCTION_NPC_GUARDIAN)
 			{
-				// Create a snapshot projectile with the given SnapFullID, type 2 (POWERUP_NINJA), and without explosion and collision
-				CreateSnapProj(GetSnapFullID(), 2, POWERUP_NINJA, false, false);
+				AddMultipleOrbite(2, POWERUP_NINJA, POWERUP_WEAPON);
 			}
 		} break;
 		//

@@ -3,7 +3,7 @@
 #include "entity.h"
 #include "gamecontext.h"
 
-CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int ProximityRadius)
+CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int ProximityRadius, int ClientID)
 {
 	m_pGameWorld = pGameWorld;
 
@@ -13,6 +13,7 @@ CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int ProximityRad
 	m_ID = Server()->SnapNewID();
 	m_ObjType = ObjType;
 
+	m_ClientID = ClientID;
 	m_ProximityRadius = ProximityRadius;
 	m_MarkedForDestroy = false;
 
@@ -52,7 +53,24 @@ int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius) con
 	if(distance(pPlayer->m_ViewPos, CheckPos) > (1100.0f + radiusOffset))
 		return 1;
 
+	if(!IsClientEntityFullSnapping(SnappingClient))
+		return 1;
+
 	return 0;
+}
+
+bool CEntity::IsClientEntityFullSnapping(int SnappingClient) const
+{
+	// Check if the client ID is within the valid range
+	if(m_ClientID >= 0 && m_ClientID < MAX_CLIENTS)
+	{
+		// Get the player object corresponding to the client ID
+		CPlayer* pPlayer = GS()->m_apPlayers[m_ClientID];
+		if(pPlayer->IsActiveForClient(SnappingClient) != STATE_SNAPPING_FULL)
+			return false;
+	}
+
+	return true;
 }
 
 bool CEntity::GameLayerClipped(vec2 CheckPos) const

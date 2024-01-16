@@ -9,13 +9,12 @@
 #include <game/server/core/entities/Tools/path_navigator.h>
 
 CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos, 0, ClientID)
 {
 	vec2 PosTo{0,0};
 	GS()->Mmo()->WorldSwap()->FindPosition(QuestBot.m_WorldID, SearchPos, &PosTo);
 
 	m_PosTo = PosTo;
-	m_ClientID = ClientID;
 	m_apCollection = apCollection;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_SubBotID = QuestBot.m_SubBotID;

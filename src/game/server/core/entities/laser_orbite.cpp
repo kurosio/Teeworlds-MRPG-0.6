@@ -90,9 +90,6 @@ void CLaserOrbite::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient, m_Pos, GetProximityRadius()) || !CmaskIsSet(m_Mask, SnappingClient))
 		return;
 
-	if(const CPlayer* pPlayer = GS()->GetPlayer(m_ClientID); pPlayer && pPlayer->IsActiveForClient(SnappingClient) != 2)
-		return;
-
 	vec2 LastPosition = m_Pos + UtilityOrbitePos(m_IDs.size() - 1);
 	for(int i = 0; i < m_IDs.size(); i++)
 	{

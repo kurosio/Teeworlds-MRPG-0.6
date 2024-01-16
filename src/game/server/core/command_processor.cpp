@@ -11,6 +11,21 @@
 
 #include <game/server/core/components/Groups/GroupManager.h>
 
+void ConAddMultipleOrbite(IConsole::IResult* pResult, void* pUserData)
+{
+	IServer* pServer = (IServer*)pUserData;
+	CGS* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(pResult->GetClientID()));
+
+	CPlayer* pPlayer = pGS->m_apPlayers[pResult->GetClientID()];
+	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->GetCharacter())
+		return;
+
+	const int Orbite = pResult->GetInteger(0);
+	const int Type = pResult->GetInteger(1);
+	const int Subtype = pResult->GetInteger(2);
+	pPlayer->GetCharacter()->AddMultipleOrbite(Orbite, Type, Subtype);
+}
+
 CCommandProcessor::CCommandProcessor(CGS* pGS)
 {
 	m_pGS = pGS;
@@ -47,6 +62,10 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("cmdlist", "", ConChatCmdList, pServer, "");
 	AddCommand("help", "", ConChatCmdList, pServer, "");
 	AddCommand("rules", "", ConChatRules, pServer, "");
+
+	AddCommand("add_multiple_orbite", "i[orbite] i[type] i[subtype]", ConAddMultipleOrbite, pServer, "");
+
+	// discord command
 #ifdef CONF_DISCORD
 	AddCommand("discord_connect", "s[DID]", ConChatDiscordConnect, pServer, "");
 #endif

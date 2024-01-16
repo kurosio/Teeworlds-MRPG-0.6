@@ -11,7 +11,6 @@ class CStepPathFinder : public CEntity
 	std::deque < CStepPathFinder* >* m_apCollection;
 
 public:
-	int m_ClientID;
 	int m_SubBotID;
 	class CPlayer* m_pPlayer;
 
@@ -20,8 +19,6 @@ public:
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
-	
-	int GetClientID() const { return m_ClientID; }
 };
 
 #endif

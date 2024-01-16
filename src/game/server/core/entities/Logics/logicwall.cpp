@@ -201,7 +201,6 @@ CLogicWallLine::CLogicWallLine(CGameWorld *pGameWorld, vec2 Pos)
 	GameWorld()->InsertEntity(this);
 }
 void CLogicWallLine::Respawn(bool Spawn) { m_Spawned = Spawn; }
-void CLogicWallLine::SetClientID(int ClientID) { m_ClientID = ClientID; }
 
 void CLogicWallLine::Tick()
 {

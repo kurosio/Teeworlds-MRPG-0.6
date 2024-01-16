@@ -19,6 +19,13 @@ enum
 	WEAPON_WORLD = -1, // swap world etc
 };
 
+enum StateSnapping
+{
+	STATE_SNAPPING_NONE = 0,
+	STATE_SNAPPING_ONLY_ME,
+	STATE_SNAPPING_FULL,
+};
+
 class CPlayer
 {
 	MACRO_ALLOC_POOL_ID()
@@ -114,7 +121,7 @@ public:
 
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
-	virtual int IsActiveForClient(int ClientID) const { return 2; }
+	virtual StateSnapping IsActiveForClient(int ClientID) const { return STATE_SNAPPING_FULL; }
 	virtual int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
 	virtual int GetAttributeSize(AttributeIdentifier ID);
 	float GetAttributePercent(AttributeIdentifier ID);
