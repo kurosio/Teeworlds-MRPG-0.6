@@ -73,7 +73,7 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int PosID) const
 
 void CMultipleOrbite::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient))
+	if(NetworkClipped(SnappingClient, true))
 		return;
 
 	int Pos = 0;

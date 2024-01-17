@@ -62,7 +62,7 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 
 bool CItemDescription::IsEnchantable() const
 {
-	return std::any_of(std::begin(m_aAttributes), std::end(m_aAttributes), [](const CAttribute &p){return p.GetValue() > 0; });
+	return !m_aAttributes.empty();
 }
 
 bool CItemDescription::IsEnchantMaxLevel(int Enchant) const

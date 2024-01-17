@@ -39,6 +39,12 @@ int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, bool FreezeUnsnap
 
 int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius, bool FreezeUnsnapped)
 {
+	if(!m_TickFreezeCheckStarted && FreezeUnsnapped)
+	{
+		m_TickFreeze = true;
+		m_TickFreezeCheckStarted = true;
+	}
+
 	if(SnappingClient == -1)
 		return NetworkClippedResultImpl<0>(FreezeUnsnapped);
 

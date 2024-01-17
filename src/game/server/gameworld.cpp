@@ -177,7 +177,7 @@ void CGameWorld::Tick()
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-			if(!pEnt->m_TickUpdateFreezed)
+			if(!pEnt->m_TickFreeze)
 				pEnt->Tick();
 			pEnt = m_pNextTraverseEntity;
 		}
@@ -186,13 +186,17 @@ void CGameWorld::Tick()
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-			if(!pEnt->m_TickUpdateFreezed)
+			if(pEnt->m_TickFreeze)
+			{
+				pEnt->m_TickFreezeCheckStarted = false;
+				pEnt->m_TickFreeze = false;
+			}
+			else
 				pEnt->TickDeferred();
 			pEnt = m_pNextTraverseEntity;
 		}
 
 	RemoveEntities();
-
 	UpdatePlayerMaps();
 }
 
@@ -392,7 +396,7 @@ void CGameWorld::UpdatePlayerMaps()
 
 	// Loop through each marked ID in the m_aMarkedBotsActive array
 	m_aBotsActive.clear();
-	for(auto markedID : m_aMarkedBotsActive)
+	for(auto& markedID : m_aMarkedBotsActive)
 	{
 		m_aBotsActive[markedID] = true;
 	}

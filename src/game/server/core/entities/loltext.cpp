@@ -24,7 +24,11 @@ void CLolPlasma::Tick()
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
-	m_Pos = (m_pParent ? m_pParent->GetPos() : vec2(0.0f, 0.0f)) + m_StartOff + (m_LocalPos += m_Vel);
+
+	if(GameWorld()->ExistEntity(m_pParent))
+		m_Pos = m_pParent->GetPos();
+	else
+		m_Pos = vec2(0.0f, 0.0f) + m_StartOff + (m_LocalPos += m_Vel);
 }
 
 void CLolPlasma::Snap(int SnappingClient)
@@ -336,7 +340,7 @@ void CLoltext::Create(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, vec2 V
 	if(pParent && !Follow)
 	{
 		CurPos += pParent->GetPos();
-		pParent = 0;
+		pParent = nullptr;
 	}
 
 	char c;

@@ -26,7 +26,8 @@ private:
 
 	int m_ID;
 	int m_ObjType;
-	int m_TickUpdateFreezed;
+	int m_TickFreeze;
+	bool m_TickFreezeCheckStarted;
 
 	/*
 		Variable: m_ProximityRadius
@@ -75,7 +76,7 @@ public:
 	void MarkForDestroy()				{ m_MarkedForDestroy = true; }
 	void SetPos(vec2 Pos)				{ m_Pos = Pos; }
 	void SetPosTo(vec2 Pos)				{ m_PosTo = Pos; }
-	void TickUpdateFreeze(bool State)	{ m_TickUpdateFreezed = State; }
+	void TickFreeze()					{ m_TickFreeze = true; }
 	void SetClientID(int ClientID)		{ m_ClientID = ClientID; }
 
 	/* Getters */
@@ -151,10 +152,8 @@ private:
 	template<int Result>
 	int NetworkClippedResultImpl(bool FreezeUnsnapped)
 	{
-		if(FreezeUnsnapped)
-			m_TickUpdateFreezed = (Result == 1);
-		else
-			m_TickUpdateFreezed = false;
+		if(FreezeUnsnapped && Result == 0)
+			m_TickFreeze = false;
 		return Result;
 	}
 public:

@@ -128,6 +128,7 @@ bool CBrush::UpdatePosition()
 		m_Position = NewPos;
 	}
 	m_pEntity->SetPos(m_Position);
+	m_pEntity->TickFreeze();
 	return distance(m_Position, m_pBoard->GetPos()) <= m_pBoard->m_Radius;
 }
 
@@ -141,7 +142,6 @@ void CBrush::UpdateEntity()
 	}
 
 	m_pEntity = CreateEntityBrushItem(&GS()->m_World, *m_BrushItem, m_Position);
-	m_pEntity->TickUpdateFreeze(true);
 }
 
 void CBrush::Draw()
@@ -159,7 +159,6 @@ void CBrush::Draw()
 		return;
 	}
 
-	m_pEntity->TickUpdateFreeze(false);
 	m_pEntity = nullptr;
 	UpdateEntity();
 }
