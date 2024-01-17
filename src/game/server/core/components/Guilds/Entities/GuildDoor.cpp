@@ -29,19 +29,28 @@ void CEntityGuildDoor::Tick()
 		// Check if the distance between the position of the control and the mouse position of the character is less than 24.0f
 		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
 		{
-			// Check if the character's reload timer is active
-			if(pChar->GetPlayer()->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
-			{
-				// Check the state of the door
-				if(m_State == OPENED)
-					Close();
-				else
-					Open();
-			}
-
-			// Broadcast a game information message to the client
 			const int& ClientID = pChar->GetPlayer()->GetCID();
-			GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
+			CGuildData* pCharGuild = pChar->GetPlayer()->Account()->GetGuild();
+			if(pCharGuild && m_pHouse->GetGuild() && pCharGuild->GetID() == m_pHouse->GetGuild()->GetID() 
+				&& pChar->GetPlayer()->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+			{
+				if(pChar->GetPlayer()->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
+				{
+					// Check the state of the door
+					if(m_State == OPENED)
+						Close();
+					else
+						Open();
+				}
+
+				// Broadcast a game information message to the client
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
+			}
+			else
+			{
+				// Broadcast a game information message to the client
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "You do not have access to '{STR}' door!", m_pDoorInfo->GetName());
+			}
 		}
 
 		// Check if the door is closed
