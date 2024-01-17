@@ -105,12 +105,12 @@ void CGuildRequestsManager::Deny(int UserID, const CGuildMemberData* pFromMember
 		return pRank->GetFromUID() == UserID;
 	});
 
-	// Remove the request from the database
-	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d' AND UserID = '%d'", m_pGuild->GetID(), (*Iter)->GetFromUID());
-
 	// If the request was found
 	if(Iter != m_aRequestsJoin.end())
 	{
+		// Remove the request from the database
+		Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d' AND UserID = '%d'", m_pGuild->GetID(), (*Iter)->GetFromUID());
+
 		// If pFromMember exists
 		if(pFromMember)
 		{
