@@ -69,6 +69,8 @@ private:
 	ska::unordered_set<int> m_aMarkedBotsActive;
 	ska::unordered_map<int, bool> m_aBotsActive;
 
+	ska::flat_hash_set<CEntity*> m_apEntitiesCollection;
+
 	class CGS *m_pGS;
 	class IServer *m_pServer;
 
@@ -88,6 +90,8 @@ public:
 	bool IsBotActive(int ClientID) { return m_aBotsActive[ClientID]; }
 
 	CEntity *FindFirst(int Type);
+
+	bool ExistEntity(CEntity* pEnt) const;
 
 	/*
 		Function: find_entities

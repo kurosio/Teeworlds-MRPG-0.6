@@ -1021,17 +1021,11 @@ private:
 
         operator iterator()
         {
-            if (it->control_bytes[index % BlockSize] == Constants::magic_for_empty)
-                return ++iterator{it, index};
-            else
-                return { it, index };
+            return ++iterator { it, index };
         }
         operator const_iterator()
         {
-            if (it->control_bytes[index % BlockSize] == Constants::magic_for_empty)
-                return ++iterator{it, index};
-            else
-                return { it, index };
+            return ++iterator { it, index };
         }
     };
 };

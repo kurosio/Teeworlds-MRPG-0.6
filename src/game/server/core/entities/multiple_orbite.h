@@ -23,6 +23,7 @@ public:
 	void Tick() override;
 
 	void Add(int Value, int Type, int Subtype);
+	void Remove(int Value, int Type, int Subtype);
 
 private:
 	vec2 UtilityOrbitePos(int PosID) const;

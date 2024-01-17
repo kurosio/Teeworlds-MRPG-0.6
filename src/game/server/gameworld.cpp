@@ -17,6 +17,8 @@ CGameWorld::CGameWorld() : m_pNextTraverseEntity(nullptr), m_Paused(false)
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 		m_apFirstEntityTypes[i] = nullptr;
 
+	m_apEntitiesCollection.max_load_factor(0.8f);
+	m_apEntitiesCollection.reserve(NUM_ENTITIES * MAX_CLIENTS * 5);
 	m_aMarkedBotsActive.reserve(MAX_PLAYERS);
 	m_aBotsActive.reserve(MAX_PLAYERS);
 }
@@ -38,6 +40,11 @@ void CGameWorld::SetGameServer(CGS* pGS)
 CEntity* CGameWorld::FindFirst(int Type)
 {
 	return Type < 0 || Type >= NUM_ENTTYPES ? nullptr : m_apFirstEntityTypes[Type];
+}
+
+bool CGameWorld::ExistEntity(CEntity* pEnt) const
+{
+	return pEnt && m_apEntitiesCollection.find(pEnt) != m_apEntitiesCollection.end();
 }
 
 int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity** ppEnts, int Max, int Type)
@@ -91,6 +98,7 @@ void CGameWorld::InsertEntity(CEntity* pEnt)
 	pEnt->m_pNextTypeEntity = m_apFirstEntityTypes[pEnt->m_ObjType];
 	pEnt->m_pPrevTypeEntity = nullptr;
 	m_apFirstEntityTypes[pEnt->m_ObjType] = pEnt;
+	m_apEntitiesCollection.emplace(pEnt);
 }
 
 void CGameWorld::DestroyEntity(CEntity* pEnt)
@@ -118,6 +126,7 @@ void CGameWorld::RemoveEntity(CEntity* pEnt)
 
 	pEnt->m_pNextTypeEntity = nullptr;
 	pEnt->m_pPrevTypeEntity = nullptr;
+	m_apEntitiesCollection.erase(pEnt);
 }
 
 //

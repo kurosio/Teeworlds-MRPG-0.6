@@ -32,9 +32,27 @@ void CMultipleOrbite::Add(int Value, int Type, int Subtype)
 	}
 }
 
+void CMultipleOrbite::Remove(int Value, int Type, int Subtype)
+{
+	int Count = 0;
+	for(auto it = m_Items.begin(); it != m_Items.end() && Count < Value;)
+	{
+		if(it->m_Type == Type && it->m_Subtype == Subtype)
+		{
+			Server()->SnapFreeID(it->m_ID);
+			it = m_Items.erase(it);
+			Count++;
+		}
+		else
+		{
+			++it;
+		}
+	}
+}
+
 void CMultipleOrbite::Tick()
 {
-	if(!m_pParent || m_pParent->IsMarkedForDestroy())
+	if(!GameWorld()->ExistEntity(m_pParent))
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -43,6 +61,7 @@ void CMultipleOrbite::Tick()
 	m_Pos = m_pParent->GetPos();
 }
 
+// optimize it
 vec2 CMultipleOrbite::UtilityOrbitePos(int PosID) const
 {
 	float AngleStep = 2.0f * pi / (float)m_Items.size();
