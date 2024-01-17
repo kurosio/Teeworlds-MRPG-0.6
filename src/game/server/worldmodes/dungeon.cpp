@@ -6,7 +6,7 @@
 #include <game/server/entity.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/entities/npcwall.h>
+#include <game/server/core/entities/botwall.h>
 #include <game/server/core/entities/Logics/logicwall.h>
 #include <teeother/system/string.h>
 
@@ -591,8 +591,7 @@ bool CGameControllerDungeon::OnEntity(int Index, vec2 Pos)
 DungeonDoor::DungeonDoor(CGameWorld* pGameWorld, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_DOOR, Pos)
 {
-	m_PosTo = GS()->Collision()->FindDirCollision(100, m_PosTo, 'y', '-');
-	m_Pos.y += 30;
+	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo);
 	m_State = DUNGEON_WAITING;
 
 	GameWorld()->InsertEntity(this);

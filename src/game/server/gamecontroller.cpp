@@ -6,7 +6,7 @@
 #include "gamecontext.h"
 
 #include "entities/pickup.h"
-#include "core/entities/npcwall.h"
+#include "core/entities/botwall.h"
 
 /*
 	Here you need to put it in order make more events
@@ -118,25 +118,29 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 	}
 
 	// BOT'S WALLS
-	if(Index == ENTITY_NPC_WALLUP)
+	if(Index == ENTITY_NPC_WALL_UP)
 	{
-		new CNPCWall(&GS()->m_World, Pos, false, CNPCWall::Flags::FRIENDLY_BOT);
+		vec2 Direction = vec2(0, -1);
+		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_FRIENDLY_BOT);
 		return true;
 	}
 
-	if(Index == ENTITY_NPC_WALLLEFT)
+	if(Index == ENTITY_NPC_WALL_LEFT)
 	{
-		new CNPCWall(&GS()->m_World, Pos, true, CNPCWall::Flags::FRIENDLY_BOT);
+		vec2 Direction = vec2(1, 0);
+		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_FRIENDLY_BOT);
 		return true;
 	}
-	if(Index == ENTITY_MOB_WALLUP)
+	if(Index == ENTITY_MOB_WALL_UP)
 	{
-		new CNPCWall(&GS()->m_World, Pos, false, CNPCWall::Flags::AGRESSED_BOT);
+		vec2 Direction = vec2(0, -1);
+		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGRESSED_BOT);
 		return true;
 	}
-	if(Index == ENTITY_MOB_WALLLEFT)
+	if(Index == ENTITY_MOB_WALL_LEFT)
 	{
-		new CNPCWall(&GS()->m_World, Pos, true, CNPCWall::Flags::AGRESSED_BOT);
+		vec2 Direction = vec2(1, 0);
+		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGRESSED_BOT);
 		return true;
 	}
 

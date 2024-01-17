@@ -10,7 +10,7 @@
 CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, vec2 Pos, CHouseDoor* pDoorInfo, CHouseData* pHouse)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_pHouse(pHouse), m_pDoorInfo(pDoorInfo)
 {
-	m_PosTo = GS()->Collision()->FindDirCollision(100, m_PosTo, 'y', '-');
+	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
 	m_PosControll = Pos;
 	m_State = CLOSED;
 	GS()->CreateLaserOrbite(this, 4, EntLaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);

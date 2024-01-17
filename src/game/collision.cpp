@@ -285,35 +285,22 @@ bool CCollision::IntersectLineColFlag(vec2 Pos0, vec2 Pos1, vec2* pOutCollision,
 	return false;
 }
 
-// Cord 'X','x' or 'Y','y' | SumSymbol '+' or '-'
-vec2 CCollision::FindDirCollision(int CheckNum, vec2 SourceVec, char Cord, char SumSymbol) const
+/* another */
+void CCollision::Wallline(int DepthTiles, vec2 Direction, vec2* pPos, vec2* pPosTo, bool OffsetStartlineOneTile) const
 {
-	const bool IsCordinateX= (bool)(Cord == 'x' || Cord == 'X');
-	const bool IsCordinateY= (bool)(Cord == 'y' || Cord == 'Y');
-	if((SumSymbol == '-' || SumSymbol == '+') && (IsCordinateX || IsCordinateY))
+	if(pPos && pPosTo)
 	{
-		for(int i = 0; i < CheckNum; i++)
+		vec2 DirPos = Direction * ((float)DepthTiles * 32.f);
+		if(!IntersectLine(*pPos, *pPos + DirPos, nullptr, pPosTo))
 		{
-			if(SumSymbol == '-')
-			{
-				if(IsCordinateX)
-					SourceVec.x -= i;
-				else if(IsCordinateY)
-					SourceVec.y -= i;
-			}
-			else if(SumSymbol == '+')
-			{
-				if(IsCordinateX)
-					SourceVec.x += i;
-				else if(IsCordinateY)
-					SourceVec.y += i;
-			}
-			int ColFlag = GetCollisionAt(SourceVec.x, SourceVec.y);
-			if(ColFlag & COLFLAG_SOLID || ColFlag & COLFLAG_NOHOOK || ColFlag & COLFLAG_DEATH)
-				break;
+			*pPosTo = (*pPos + DirPos);
+		}
+
+		if(OffsetStartlineOneTile)
+		{
+			*pPos -= Direction * 30;
 		}
 	}
-	return SourceVec;
 }
 /* end another */
 

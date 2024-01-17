@@ -4,19 +4,21 @@
 #define GAME_SERVER_ENTITIES_NPCWALL_H
 #include <game/server/entity.h>
 
-class CNPCWall : public CEntity
+class CBotWall : public CEntity
 {
 public:
 	enum Flags
 	{
-		NPC_BOT = 1 << 0,
-		QUEST_BOT = 1 << 1,
-		MOB_BOT = 1 << 2,
-		FRIENDLY_BOT = NPC_BOT|QUEST_BOT,
-		AGRESSED_BOT = MOB_BOT
+		WALLLINEFLAG_NPC_BOT = 1 << 0,
+		WALLLINEFLAG_QUEST_BOT = 1 << 1,
+		WALLLINEFLAG_MOB_BOT = 1 << 2,
+
+		WALLLINEFLAG_FRIENDLY_BOT = WALLLINEFLAG_NPC_BOT|WALLLINEFLAG_QUEST_BOT,
+		WALLLINEFLAG_AGRESSED_BOT = WALLLINEFLAG_MOB_BOT
 	};
 
-	CNPCWall(CGameWorld *pGameWorld, vec2 Pos, bool Left, int Flag);
+	CBotWall(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, int Flag);
+	void HitCharacter(CCharacter* pChar);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

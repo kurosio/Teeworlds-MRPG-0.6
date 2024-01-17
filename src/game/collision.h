@@ -55,7 +55,7 @@ public:
 	}
 
 	int GetParseTilesAt(float x, float y) const { return GetParseTile(round_to_int(x), round_to_int(y)); }
-	vec2 FindDirCollision(int CheckNum, vec2 SourceVec, char Cord, char SumSymbol) const;
+	void Wallline(int DepthTiles, vec2 Direction, vec2* pPos, vec2* pPosTo, bool OffsetStartlineOneTile = true) const;
 
 	int GetWidth() const { return m_Width; };
 	int GetHeight() const { return m_Height; };
