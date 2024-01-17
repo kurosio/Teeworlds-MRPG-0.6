@@ -27,36 +27,33 @@ CEntity::~CEntity()
 	Server()->SnapFreeID(m_ID);
 }
 
-int CEntity::NetworkClipped(int SnappingClient) const
+int CEntity::NetworkClipped(int SnappingClient, bool FreezeUnsnapped)
 {
-	return NetworkClipped(SnappingClient, m_Pos);
+	return NetworkClipped(SnappingClient, m_Pos, FreezeUnsnapped);
 }
 
-int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos) const
+int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, bool FreezeUnsnapped)
 {
-	return NetworkClipped(SnappingClient, CheckPos, 0.f);
+	return NetworkClipped(SnappingClient, CheckPos, 0.f, FreezeUnsnapped);
 }
 
-int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius) const
+int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius, bool FreezeUnsnapped)
 {
 	if(SnappingClient == -1)
-		return 0;
+		return NetworkClippedResultImpl<0>(FreezeUnsnapped);
 
 	const CPlayer* pPlayer = GS()->m_apPlayers[SnappingClient];
 	const float dx = pPlayer->m_ViewPos.x - CheckPos.x;
 	const float dy = pPlayer->m_ViewPos.y - CheckPos.y;
-
 	const float radiusOffset = Radius / 2.f;
+
 	if(absolute(dx) > (1000.0f + radiusOffset) || absolute(dy) > (800.0f + radiusOffset))
-		return 1;
+		return NetworkClippedResultImpl<1>(FreezeUnsnapped);
 
-	if(distance(pPlayer->m_ViewPos, CheckPos) > (1100.0f + radiusOffset))
-		return 1;
+	if(distance(pPlayer->m_ViewPos, CheckPos) > (1100.0f + radiusOffset) || !IsClientEntityFullSnapping(SnappingClient))
+		return NetworkClippedResultImpl<1>(FreezeUnsnapped);
 
-	if(!IsClientEntityFullSnapping(SnappingClient))
-		return 1;
-
-	return 0;
+	return NetworkClippedResultImpl<0>(FreezeUnsnapped);
 }
 
 bool CEntity::IsClientEntityFullSnapping(int SnappingClient) const

@@ -75,7 +75,7 @@ public:
 	void MarkForDestroy()				{ m_MarkedForDestroy = true; }
 	void SetPos(vec2 Pos)				{ m_Pos = Pos; }
 	void SetPosTo(vec2 Pos)				{ m_PosTo = Pos; }
-	void TickUpdateFreeze(bool Freeze)	{ m_TickUpdateFreezed = Freeze; }
+	void TickUpdateFreeze(bool State)	{ m_TickUpdateFreezed = State; }
 	void SetClientID(int ClientID)		{ m_ClientID = ClientID; }
 
 	/* Getters */
@@ -143,12 +143,23 @@ public:
 		Returns:
 			Non-zero if the entity doesn't have to be in the snapshot.
 	*/
-	int NetworkClipped(int SnappingClient) const;
-	int NetworkClipped(int SnappingClient, vec2 CheckPos) const;
-	int NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius) const;
+	int NetworkClipped(int SnappingClient, bool FreezeUnsnapped = false);
+	int NetworkClipped(int SnappingClient, vec2 CheckPos, bool FreezeUnsnapped = false);
+	int NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius, bool FreezeUnsnapped = false);
+
+private:
+	template<int Result>
+	int NetworkClippedResultImpl(bool FreezeUnsnapped)
+	{
+		if(FreezeUnsnapped)
+			m_TickUpdateFreezed = (Result == 1);
+		else
+			m_TickUpdateFreezed = false;
+		return Result;
+	}
+public:
 
 	bool IsClientEntityFullSnapping(int SnappingClient) const;
-
 	bool GameLayerClipped(vec2 CheckPos) const;
 };
 
