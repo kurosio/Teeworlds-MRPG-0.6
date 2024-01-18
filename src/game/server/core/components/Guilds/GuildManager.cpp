@@ -450,6 +450,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Deny the request from the specified UID
 		pGuild->GetMembers()->GetRequests()->Deny(RequestFromUID, pPlayer->Account()->GetGuildMemberData());
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_INVITES);
 		return true;
 	}
 
