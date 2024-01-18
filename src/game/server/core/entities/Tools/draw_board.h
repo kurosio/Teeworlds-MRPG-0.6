@@ -60,7 +60,7 @@ private:
 	void NextItem();
 	void PrevItem();
 
-	void HandleInput();
+	bool HandleInput();
 	void SendBroadcast() const;
 	void UpdateEntity();
 	bool UpdatePosition();

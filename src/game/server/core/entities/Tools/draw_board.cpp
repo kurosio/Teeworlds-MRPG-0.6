@@ -64,11 +64,10 @@ bool CBrush::OnUpdate()
 	}
 
 	SendBroadcast();
-	HandleInput();
-	return true;
+	return HandleInput();
 }
 
-void CBrush::HandleInput()
+bool CBrush::HandleInput()
 {
 	const int& ClientID = m_pPlayer->GetCID();
 	Server()->BlockInputGroup(ClientID, BLOCK_INPUT_FREEZE_GUN | BLOCK_INPUT_FIRE | BLOCK_INPUT_HOOK);
@@ -83,8 +82,9 @@ void CBrush::HandleInput()
 		PrevItem();
 	else if(Server()->IsKeyClicked(ClientID, KEY_EVENT_SCOREBOARD))
 		SwitchMode();
-	//else if(Server()->IsKeyClicked(ClientID, KEY_EVENT_MENU))
-		//m_pBoard->EndDrawing(m_pPlayer);
+	else if(Server()->IsKeyClicked(ClientID, KEY_EVENT_MENU))
+		return false;
+	return true;
 }
 
 void CBrush::SendBroadcast() const
