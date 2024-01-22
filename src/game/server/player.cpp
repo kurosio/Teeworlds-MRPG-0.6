@@ -74,20 +74,27 @@ void CPlayer::Tick()
 	if(!IsAuthed())
 		return;
 
-	IServer::CClientInfo Info;
-	if(Server()->GetClientInfo(m_ClientID, &Info))
+	// do latency stuff
 	{
-		m_Latency.m_AccumMax = maximum(m_Latency.m_AccumMax, Info.m_Latency);
-		m_Latency.m_AccumMin = minimum(m_Latency.m_AccumMin, Info.m_Latency);
-		Server()->SetClientScore(m_ClientID, Account()->GetLevel());
-	}
+		int Latency = Server()->GetClientLatency(m_ClientID);
+		if(Latency > 0)
+		{
+			m_Latency.m_Accum += Latency;
+			m_Latency.m_AccumMax = maximum(m_Latency.m_AccumMax, Latency);
+			m_Latency.m_AccumMin = minimum(m_Latency.m_AccumMin, Latency);
+		}
+		// each second
+		if(Server()->Tick() % Server()->TickSpeed() == 0)
+		{
+			m_Latency.m_Avg = m_Latency.m_Accum / Server()->TickSpeed();
+			m_Latency.m_Max = m_Latency.m_AccumMax;
+			m_Latency.m_Min = m_Latency.m_AccumMin;
+			m_Latency.m_Accum = 0;
+			m_Latency.m_AccumMin = 1000;
+			m_Latency.m_AccumMax = 0;
+		}
 
-	if(Server()->Tick() % Server()->TickSpeed() == 0)
-	{
-		m_Latency.m_Max = m_Latency.m_AccumMax;
-		m_Latency.m_Min = m_Latency.m_AccumMin;
-		m_Latency.m_AccumMin = 1000;
-		m_Latency.m_AccumMax = 0;
+		Server()->SetClientScore(m_ClientID, Account()->GetLevel());
 	}
 
 	if(m_pCharacter)

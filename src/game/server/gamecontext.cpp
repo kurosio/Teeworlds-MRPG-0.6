@@ -172,9 +172,9 @@ CFlyingPoint* CGS::CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, in
 /* #########################################################################
 	EVENTS
 ######################################################################### */
-void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, int64_t Mask)
+void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float Angle, int64_t Mask)
 {
-	float a = 3 * 3.14159f / 2 /* + Angle */;
+	float a = 3 * pi / 2 + Angle;
 	//float a = get_angle(dir);
 	float s = a - pi / 3;
 	float e = a + pi / 3;

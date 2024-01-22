@@ -219,6 +219,7 @@ public:
 	const char* ClientClan(int ClientID) const override;
 	int ClientCountry(int ClientID) const override;
 	bool ClientIngame(int ClientID) const override;
+	int GetClientLatency(int ClientID) const override;
 
 	int GetClientVersion(int ClientID) const override;
 	int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1) override;

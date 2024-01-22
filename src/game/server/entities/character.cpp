@@ -1115,7 +1115,6 @@ void CCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_FreezeStart = m_Core.m_FreezeStart;
 	pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;
 	pDDNetCharacter->m_TargetY = m_Core.m_Input.m_TargetY;
-
 }
 
 void CCharacter::PostSnap()

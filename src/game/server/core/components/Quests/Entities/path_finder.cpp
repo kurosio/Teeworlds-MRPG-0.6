@@ -67,7 +67,7 @@ void CEntityPathFinder::Snap(int SnappingClient)
 {
 	if(m_ClientID != SnappingClient || !m_pPlayer || !m_pPlayer->GetCharacter() || (m_AreaClipped > 1.f && distance(m_PosTo, m_pPlayer->m_ViewPos) < m_AreaClipped))
 		return;
-
+	
 	CNetObj_Pickup *pPickup = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
 	if(pPickup)
 	{

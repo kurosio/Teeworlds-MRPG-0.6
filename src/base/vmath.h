@@ -137,6 +137,12 @@ constexpr inline float angle(const vector2_base<float>& a)
 	return result;
 }
 
+inline float angle(const vector2_base<float>& a, const vector2_base<float>& b)
+{
+	float result = std::atan2(b.y - a.y, b.x - a.x) * 180 / pi;
+	return result < 0 ? result + 360 : result;
+}
+
 template<typename T>
 constexpr inline vector2_base<T> normalize_pre_length(const vector2_base<T>& v, T len)
 {

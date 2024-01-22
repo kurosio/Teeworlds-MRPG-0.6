@@ -89,7 +89,7 @@ void CEntityPathNavigator::Move()
 	// update timer by steps
 	if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
 	{
-		GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, false, m_Mask);
+		GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, false, 0.f, m_Mask);
 		m_StepPos++;
 	}
 

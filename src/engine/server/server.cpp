@@ -620,6 +620,14 @@ bool CServer::ClientIngame(int ClientID) const
 	return ClientID >= 0 && ClientID < MAX_CLIENTS && m_aClients[ClientID].m_State == CClient::STATE_INGAME;
 }
 
+int CServer::GetClientLatency(int ClientID) const
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State != CClient::STATE_INGAME)
+		return 0;
+
+	return m_aClients[ClientID].m_Latency;
+}
+
 void CServer::InitRconPasswordIfUnset()
 {
 	if(m_RconPasswordSet)
