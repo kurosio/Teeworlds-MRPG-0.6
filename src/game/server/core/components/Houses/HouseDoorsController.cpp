@@ -11,7 +11,7 @@ CHouseDoorsController::CHouseDoorsController(CGS* pGS, std::string&& AccessData,
 	: m_pGS(pGS), m_pHouse(pHouse)
 {
 	// Reserve memory for the unordered set m_AccessUserIDs to avoid frequent reallocation
-	m_AccessUserIDs.reserve(MAX_HOUSE_INVITED_PLAYERS);
+	m_AccessUserIDs.reserve(MAX_HOUSE_DOOR_INVITED_PLAYERS);
 
 	// Parse the JSON string using the Tools::Json::parseFromString function initialize doors
 	Tools::Json::parseFromString(JsonDoorData, [&](const nlohmann::json& pJsonArray)
@@ -111,7 +111,7 @@ void CHouseDoorsController::ReverseAll()
 void CHouseDoorsController::AddAccess(int UserID)
 {
 	// Check if the size of the m_AccessUserIDs set is greater than or equal to the maximum number of invited players allowed
-	if(m_AccessUserIDs.size() >= MAX_HOUSE_INVITED_PLAYERS)
+	if(m_AccessUserIDs.size() >= MAX_HOUSE_DOOR_INVITED_PLAYERS)
 	{
 		m_pGS->ChatAccount(m_pHouse->GetAccountID(), "You have reached the limit of the allowed players!");
 		return;
@@ -154,7 +154,7 @@ bool CHouseDoorsController::HasAccess(int UserID)
 int CHouseDoorsController::GetAvailableAccessSlots() const
 {
 	// Calculate the number of available access slots by subtracting the number of current access users from the maximum allowed invited players
-	return (int)MAX_HOUSE_INVITED_PLAYERS - (int)m_AccessUserIDs.size();
+	return (int)MAX_HOUSE_DOOR_INVITED_PLAYERS - (int)m_AccessUserIDs.size();
 }
 
 void CHouseDoorsController::SaveAccessList() const

@@ -496,25 +496,25 @@ void CPlayer::RefreshClanString()
 	}
 
 	// class
-	const int AttributesByType[3] = { GetTypeAttributesSize(AttributeType::Tank),
-										GetTypeAttributesSize(AttributeType::Healer), GetTypeAttributesSize(AttributeType::Dps) };
+	const int AttributesByType[3] = { GetTypeAttributesSize(AttributeGroup::Tank),
+										GetTypeAttributesSize(AttributeGroup::Healer), GetTypeAttributesSize(AttributeGroup::Dps) };
 
 	int MaxAttributesPower = 0;
-	AttributeType Class = AttributeType::Tank;
+	AttributeGroup Class = AttributeGroup::Tank;
 	for(int i = 0; i < 3; i++)
 	{
 		if(AttributesByType[i] > MaxAttributesPower)
 		{
 			MaxAttributesPower = AttributesByType[i];
-			Class = static_cast<AttributeType>(i);
+			Class = static_cast<AttributeGroup>(i);
 		}
 	}
 
 	const char* pClassName;
 	switch(Class)
 	{
-		case AttributeType::Healer: pClassName = "_Healer_"; break;
-		case AttributeType::Dps: pClassName = "_DPS_"; break;
+		case AttributeGroup::Healer: pClassName = "_Healer_"; break;
+		case AttributeGroup::Dps: pClassName = "_DPS_"; break;
 		default: pClassName = "_Tank_"; break;
 	}
 
@@ -1083,12 +1083,12 @@ float CPlayer::GetAttributePercent(AttributeIdentifier ID)
 	return Percent;
 }
 
-int CPlayer::GetTypeAttributesSize(AttributeType Type)
+int CPlayer::GetTypeAttributesSize(AttributeGroup Type)
 {
 	int Size = 0;
 	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
-		if(pAttribute->IsType(Type))
+		if(pAttribute->IsGroup(Type))
 			Size += GetAttributeSize(ID);
 	}
 	return Size;

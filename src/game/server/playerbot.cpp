@@ -201,9 +201,9 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 			CAttributeDescription* pAttribute = GS()->GetAttributeInfo(ID);
 			if(ID == AttributeIdentifier::SpreadShotgun || ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
 				Size = Spread;
-			else if(pAttribute->IsType(AttributeType::Healer))
+			else if(pAttribute->IsGroup(AttributeGroup::Healer))
 				Percent = 15.0f;
-			else if(pAttribute->IsType(AttributeType::Hardtype))
+			else if(pAttribute->IsGroup(AttributeGroup::Hardtype))
 				Percent = 5.0f;
 
 			if(Boss && ID != AttributeIdentifier::HP)

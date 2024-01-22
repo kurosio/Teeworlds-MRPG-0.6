@@ -10,7 +10,7 @@ class CAttributeDescription : public MultiworldIdentifiableStaticData< std::map 
 	char m_aName[32]{};
 	char m_aFieldName[32]{};
 	AttributeIdentifier m_ID{};
-	AttributeType m_Type{};
+	AttributeGroup m_Group{};
 	int m_UpgradePrice{};
 
 public:
@@ -23,20 +23,20 @@ public:
 		return m_pData[ID];
 	}
 
-	void Init(const std::string& Name, const std::string& FieldName, int UpgradePrice, AttributeType Type)
+	void Init(const std::string& Name, const std::string& FieldName, int UpgradePrice, AttributeGroup Group)
 	{
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aFieldName, FieldName.c_str(), sizeof(m_aFieldName));
 		m_UpgradePrice = UpgradePrice;
-		m_Type = Type;
+		m_Group = Group;
 	}
 
 	const char* GetName() const { return m_aName; }
 	const char* GetFieldName() const { return m_aFieldName; }
 	bool HasDatabaseField() const { return m_aFieldName[0] != '\0' && m_UpgradePrice > 0; }
 	int GetUpgradePrice() const { return m_UpgradePrice; }
-	bool IsType(AttributeType Type) const { return m_Type == Type; }
-	AttributeType GetType() const { return m_Type; }
+	bool IsGroup(AttributeGroup Type) const { return m_Group == Type; }
+	AttributeGroup GetGroup() const { return m_Group; }
 };
 
 class CAttribute

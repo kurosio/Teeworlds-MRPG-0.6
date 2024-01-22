@@ -139,5 +139,5 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 bool CGuildMemberData::CheckAccess(GuildRankAccess RequiredAccess) const
 {
 	return (m_pGuild->GetLeaderUID() == m_AccountID || m_pRank->GetAccess() == RequiredAccess
-		|| (m_pRank->GetAccess() == ACCESS_FULL && RequiredAccess != ACCESS_LEADER));
+		|| (m_pRank->GetAccess() == RIGHTS_FULL && RequiredAccess != RIGHTS_LEADER));
 }

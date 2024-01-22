@@ -536,7 +536,7 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 		// Display the quest information to the player
 		GS()->AVH(ClientID, HideID, "({STR}){STR}", StateIndicator, QuestName);
 		GS()->AVM(ClientID, "null", NOPE, HideID, "Gold {VAL}, EXP {VAL}, {STR} {VAL}", pDailyQuestInfo.GetRewardGold(),
-			pDailyQuestInfo.GetRewardExp(), GS()->GetItemInfo(itAlliedSeals)->GetName(), (int)MAX_ALLIED_SEALS_BY_DAILY_QUEST);
+			pDailyQuestInfo.GetRewardExp(), GS()->GetItemInfo(itAlliedSeals)->GetName(), (int)ALLIED_SEALS_BY_DAILY_QUEST);
 		GS()->AVD(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), HideID, "{STR} {STR}", ActionName, QuestName);
 		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 

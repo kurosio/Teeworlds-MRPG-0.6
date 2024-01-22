@@ -194,7 +194,7 @@ public:
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
 	CAccountData* Account() const { return &CAccountData::ms_aData[m_ClientID]; }
 
-	int GetTypeAttributesSize(AttributeType Type);
+	int GetTypeAttributesSize(AttributeGroup Type);
 	int GetAttributesSize();
 
 	void SetSnapHealthTick(int Sec);

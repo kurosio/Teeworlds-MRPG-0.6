@@ -21,8 +21,12 @@ bool CGuildData::Upgrade(int Type)
 	if(Type < UPGRADE_AVAILABLE_SLOTS || Type >= NUM_GUILD_UPGRADES)
 		return false;
 
-	// Get a pointer to the upgrade data and price for the specified Type
+	// Check if the type is UPGRADE_AVAILABLE_SLOTS and the value of the first upgrade data is greater than or equal to MAX_GUILD_SLOTS
 	auto* pUpgradeData = &m_UpgradesData(Type, 0);
+	if(Type == UPGRADE_AVAILABLE_SLOTS && m_UpgradesData(Type, 0).m_Value >= MAX_GUILD_SLOTS)
+		return false;
+
+	// Get a pointer to the upgrade data and price for the specified Type
 	int Price = GetUpgradePrice(Type);
 
 	// Check if the guild has enough money to spend on the upgrade

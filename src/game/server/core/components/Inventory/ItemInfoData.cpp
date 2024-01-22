@@ -39,14 +39,14 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 		if(Att.HasValue())
 		{
 			int UpgradePrice;
-			AttributeType Type = Att.Info()->GetType();
+			AttributeGroup Type = Att.Info()->GetGroup();
 
 			// strength stats
-			if(Type == AttributeType::Hardtype)
+			if(Type == AttributeGroup::Hardtype)
 				UpgradePrice = maximum(80, Att.Info()->GetUpgradePrice()) * 55;
 
 			// weapon and job stats
-			else if(Type == AttributeType::Job || Type == AttributeType::Weapon || Att.GetID() == AttributeIdentifier::LuckyDropItem)
+			else if(Type == AttributeGroup::Job || Type == AttributeGroup::Weapon || Att.GetID() == AttributeIdentifier::LuckyDropItem)
 				UpgradePrice = maximum(100, Att.Info()->GetUpgradePrice()) * 55;
 
 			// other stats

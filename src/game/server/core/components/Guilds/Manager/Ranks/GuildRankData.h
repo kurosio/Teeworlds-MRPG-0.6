@@ -9,17 +9,6 @@ class CPlayer;
 class CGuildData;
 using GuildRankIdentifier = int;
 
-// Define an enum for the different levels of guild rank access
-enum GuildRankAccess
-{
-	RIGHTS_LEADER = -1,           // Highest level of access, reserved for guild leader
-	RIGHTS_DEFAULT = 0,           // Default level of access for new members
-	RIGHTS_INVITE_KICK,           // Access to invite and kick members
-	RIGHTS_UPGRADES_HOUSE,        // Access to upgrade guild house
-	RIGHTS_FULL,                  // Full access to all guild functions
-	RIGHTS_NUM,                   // Total number of access levels
-};
-
 // Define an enum class for the different results of guild rank operations
 enum class GUILD_RANK_RESULT : int
 {

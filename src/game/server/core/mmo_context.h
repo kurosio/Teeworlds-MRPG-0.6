@@ -297,20 +297,20 @@ enum
 		Basic kernel server settings
 		This is where the most basic server settings are stored
 	*/
-	MAX_HOUSE_INVITED_PLAYERS = 3,			// maximum player what can have access for house door
-	MAX_DECORATIONS_HOUSE = 20,				// maximum decorations for houses
+	MAX_HOUSE_DOOR_INVITED_PLAYERS = 3,		// maximum player what can have access for house door
+	MAX_HOUSE_DECORATIONS = 20,				// maximum decorations for houses
 	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
-	MAX_INBOX_LIST = 30,					// maximum number of emails what is displayed
-	STATS_MAX_FOR_ITEM = 2,					// maximum number of stats per item
+	MAILLETTER_MAX_CAPACITY = 20,			// maximum number of emails what is displayed
+	MAX_ATTRIBUTES_FOR_ITEM = 2,			// maximum number of stats per item
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
 	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game. 
-	MAX_ALLIED_SEALS_BY_DAILY_QUEST = 100,	// maximum allied seals for each daily quest
+	ALLIED_SEALS_BY_DAILY_QUEST = 100,		// maximum allied seals for each daily quest
 
 	// guild
-	MAX_GUILD_PLAYERS = 20,					// maximum guild player's
+	MAX_GUILD_SLOTS = 20,					// maximum guild player's
 	MAX_GUILD_RANK_NUM = 5,					// maximum guild rank's
-	MAX_GUILD_LOGS_NUM = 30,				// maximum guild log's
+	MAX_GUILD_LOGS_NUM = 50,				// maximum guild log's
 	DEFAULT_GUILD_AVAILABLE_SLOTS = 2,		// default available slots
 	DEFAULT_GUILD_CHAIR = 1,				// default chair boost
 
@@ -366,9 +366,6 @@ enum
 	// type of decorations
 	DECORATIONS_HOUSE = 0,
 	DECORATIONS_GUILD_HOUSE,
-
-	// max mails for page
-	MAILLETTER_MAX_CAPACITY = 30,
 };
 
 // todo use template class 
@@ -406,14 +403,15 @@ private:
 	};
 };
 
-// access guild
-enum GuildAccess
+// Define an enum for the different levels of guild rank access
+enum GuildRankAccess
 {
-	ACCESS_LEADER = -1,      // Leader has full control over the guild
-	ACCESS_NO,               // No access to guild functions
-	ACCESS_INVITE_KICK,      // Can invite or kick members but not upgrade the guild house
-	ACCESS_UPGRADE_HOUSE,    // Can upgrade the guild house but not invite or kick members
-	ACCESS_FULL              // Full access to all guild functions
+	RIGHTS_LEADER = -1,           // Highest level of access, reserved for guild leader
+	RIGHTS_DEFAULT = 0,           // Default level of access for new members
+	RIGHTS_INVITE_KICK,           // Access to invite and kick members
+	RIGHTS_UPGRADES_HOUSE,        // Access to upgrade guild house
+	RIGHTS_FULL,                  // Full access to all guild functions
+	RIGHTS_NUM,                   // Total number of access levels
 };
 
 // broadcast priority
@@ -448,12 +446,6 @@ enum BotsTypes
 	TYPE_BOT_FAKE = 4,      // type for fake bots
 	TYPE_BOT_EIDOLON = 5,   // type for eidolon bots
 	TYPE_BOT_QUEST_MOB = 6, // type for quest mob bots
-};
-
-enum
-{
-	SNAPPLAYER = 1,
-	SNAPBOTS = 2,
 };
 
 // save types
@@ -503,36 +495,8 @@ struct CTeeInfo
 	int m_ColorFeet; // color value for the feet part
 };
 
-// Attribute context
-enum class AttributeIdentifier : int
-{
-	SpreadShotgun = 1, // Attribute identifier for spread shotgun
-	SpreadGrenade = 2, // Attribute identifier for spread grenade
-	SpreadRifle = 3, // Attribute identifier for spread rifle
-	DMG = 4, // Attribute identifier for damage
-	AttackSPD = 5, // Attribute identifier for attack speed
-	CritDMG = 6, // Attribute identifier for critical damage
-	Crit = 7, // Attribute identifier for critical chance
-	HP = 8, // Attribute identifier for health points
-	Lucky = 9, // Attribute identifier for luck
-	MP = 10, // Attribute identifier for mana points
-	Vampirism = 11, // Attribute identifier for vampirism
-	AmmoRegen = 12, // Attribute identifier for ammo regeneration
-	Ammo = 13, // Attribute identifier for ammo
-	Efficiency = 14, // Attribute identifier for efficiency
-	Extraction = 15, // Attribute identifier for extraction
-	HammerDMG = 16, // Attribute identifier for hammer damage
-	GunDMG = 17, // Attribute identifier for gun damage
-	ShotgunDMG = 18, // Attribute identifier for shotgun damage
-	GrenadeDMG = 19, // Attribute identifier for grenade damage
-	RifleDMG = 20, // Attribute identifier for rifle damage
-	LuckyDropItem = 21, // Attribute identifier for lucky drop item
-	EidolonPWR = 22, // Attribute identifier for eidolon power
-	ATTRIBUTES_NUM, // The number of total attributes
-};
-
 // Enum class declaration for different attribute types
-enum class AttributeType : int
+enum class AttributeGroup : int
 {
 	Tank,      // Tank attribute
 	Healer,    // Healer attribute
@@ -541,6 +505,34 @@ enum class AttributeType : int
 	Hardtype,  // Hard type attribute
 	Job,       // Job attribute
 	Other,     // Other attribute
+};
+
+// Attribute context
+enum class AttributeIdentifier : int
+{
+	SpreadShotgun = 1,           // Attribute identifier for spread shotgun
+	SpreadGrenade = 2,           // Attribute identifier for spread grenade
+	SpreadRifle = 3,             // Attribute identifier for spread rifle
+	DMG = 4,                     // Attribute identifier for damage
+	AttackSPD = 5,               // Attribute identifier for attack speed
+	CritDMG = 6,                 // Attribute identifier for critical damage
+	Crit = 7,                    // Attribute identifier for critical chance
+	HP = 8,                      // Attribute identifier for health points
+	Lucky = 9,                   // Attribute identifier for luck
+	MP = 10,                     // Attribute identifier for mana points
+	Vampirism = 11,              // Attribute identifier for vampirism
+	AmmoRegen = 12,              // Attribute identifier for ammo regeneration
+	Ammo = 13,                   // Attribute identifier for ammo
+	Efficiency = 14,             // Attribute identifier for efficiency
+	Extraction = 15,             // Attribute identifier for extraction
+	HammerDMG = 16,              // Attribute identifier for hammer damage
+	GunDMG = 17,                 // Attribute identifier for gun damage
+	ShotgunDMG = 18,             // Attribute identifier for shotgun damage
+	GrenadeDMG = 19,             // Attribute identifier for grenade damage
+	RifleDMG = 20,               // Attribute identifier for rifle damage
+	LuckyDropItem = 21,          // Attribute identifier for lucky drop item
+	EidolonPWR = 22,             // Attribute identifier for eidolon power
+	ATTRIBUTES_NUM,              // The number of total attributes
 };
 
 using ByteArray = std::basic_string<std::byte>;

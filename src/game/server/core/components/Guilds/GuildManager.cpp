@@ -615,7 +615,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 		if(!pGuild->Upgrade(VoteID))
 		{
-			GS()->Chat(ClientID, "Your guild doesn't have enough gold.");
+			GS()->Chat(ClientID, "Your guild does not have enough gold, or the maximum upgrade level has been reached.");
 			return true;
 		}
 
@@ -937,11 +937,13 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	int ClientID = pPlayer->GetCID();
 	bool HasHouse = pGuild->HasHouse();
 	int ExpNeed = computeExperience(pGuild->GetLevel());
+	const int MemberUsedSlots = pGuild->GetMembers()->GetContainer().size();
+	const int MemberMaxSlots = pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->m_Value;
 
 	GS()->AVH(ClientID, TAB_GUILD_STAT, "\u2747 Information about {STR}", pGuild->GetName());
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Maximal available player count: {INT}", pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->m_Value);
+	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Members: {INT} of {INT}", MemberUsedSlots, MemberMaxSlots);
 	GS()->AV(ClientID, "null");
 	//
 	GS()->AVL(ClientID, "null", "\u2727 Your: {VAL} | Bank: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());

@@ -186,12 +186,12 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		GS()->ShowVotesPlayerStats(pPlayer);
 
 		// lambda function for easy use
-		auto ShowAttributeVote = [&](int HiddenID, AttributeType Type, std::function<void(int)> pFunc)
+		auto ShowAttributeVote = [&](int HiddenID, AttributeGroup Type, std::function<void(int)> pFunc)
 		{
 			pFunc(HiddenID);
 			for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 			{
-				if(pAttribute->IsType(Type) && pAttribute->HasDatabaseField())
+				if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
 					GS()->AVD(ClientID, "UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)",
 						pAttribute->GetName(), pPlayer->Account()->m_aStats[ID], pAttribute->GetUpgradePrice());
 			}
@@ -199,31 +199,31 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		GS()->AV(ClientID, "null");
 
 		// Disciple of War
-		ShowAttributeVote(TAB_UPGR_DPS, AttributeType::Dps, [&](int HiddenID)
+		ShowAttributeVote(TAB_UPGR_DPS, AttributeGroup::Dps, [&](int HiddenID)
 		{
-			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Dps);
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeGroup::Dps);
 			GS()->AVH(ClientID, HiddenID, "\u2694 Disciple of War. Level Power {INT}", Range);
 		});
 		GS()->AV(ClientID, "null");
 
 		// Disciple of Tank
-		ShowAttributeVote(TAB_UPGR_TANK, AttributeType::Tank, [&](int HiddenID)
+		ShowAttributeVote(TAB_UPGR_TANK, AttributeGroup::Tank, [&](int HiddenID)
 		{
-			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Tank);
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeGroup::Tank);
 			GS()->AVH(ClientID, HiddenID, "\u262E Disciple of Tank. Level Power {INT}", Range);
 		});
 		GS()->AV(ClientID, "null");
 
 		// Disciple of Healer
-		ShowAttributeVote(TAB_UPGR_HEALER, AttributeType::Healer, [&](int HiddenID)
+		ShowAttributeVote(TAB_UPGR_HEALER, AttributeGroup::Healer, [&](int HiddenID)
 		{
-			const int Range = pPlayer->GetTypeAttributesSize(AttributeType::Healer);
+			const int Range = pPlayer->GetTypeAttributesSize(AttributeGroup::Healer);
 			GS()->AVH(ClientID, HiddenID, "\u2042 Disciple of Healer. Level Power {INT}", Range);
 		});
 		GS()->AV(ClientID, "null");
 
 		// Upgrades Weapons and ammo
-		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeType::Weapon, [&](int HiddenID)
+		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeGroup::Weapon, [&](int HiddenID)
 		{
 			GS()->AVH(ClientID, HiddenID, "Upgrades Weapons / Ammo");
 		});

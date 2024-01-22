@@ -205,7 +205,7 @@ bool CPlayerItem::Use(int Value)
 			if(pAttribute->HasDatabaseField() && GetPlayer()->Account()->m_aStats[ID] > 0)
 			{
 				// skip weapon spreading
-				if(pAttribute->IsType(AttributeType::Weapon))
+				if(pAttribute->IsGroup(AttributeGroup::Weapon))
 					continue;
 
 				BackUpgrades += GetPlayer()->Account()->m_aStats[ID] * pAttribute->GetUpgradePrice();
@@ -227,7 +227,7 @@ bool CPlayerItem::Use(int Value)
 			if(pAttribute->HasDatabaseField() && GetPlayer()->Account()->m_aStats[ID] > 0)
 			{
 				// skip all stats allow only weapons
-				if(pAttribute->GetType() != AttributeType::Weapon)
+				if(pAttribute->GetGroup() != AttributeGroup::Weapon)
 					continue;
 
 				int UpgradeValue = GetPlayer()->Account()->m_aStats[ID];

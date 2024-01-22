@@ -47,7 +47,7 @@ void CInventoryManager::OnInit()
 			int Dysenthis = pRes->getInt("Desynthesis");
 
 			CItemDescription::ContainerAttributes aContainerAttributes;
-			for(int i = 0; i < STATS_MAX_FOR_ITEM; i++)
+			for(int i = 0; i < MAX_ATTRIBUTES_FOR_ITEM; i++)
 			{
 				char aAttributeID[32], aAttributeValue[32];
 				str_format(aAttributeID, sizeof(aAttributeID), "Attribute%d", i);
@@ -74,9 +74,9 @@ void CInventoryManager::OnInit()
 			std::string Name = pRes->getString("Name").c_str();
 			std::string FieldName = pRes->getString("FieldName").c_str();
 			int UpgradePrice = pRes->getInt("Price");
-			AttributeType Type = (AttributeType)pRes->getInt("Type");
+			AttributeGroup Group = (AttributeGroup)pRes->getInt("Group");
 
-			CAttributeDescription::CreateElement(ID)->Init(Name, FieldName, UpgradePrice, Type);
+			CAttributeDescription::CreateElement(ID)->Init(Name, FieldName, UpgradePrice, Group);
 		}
 	});
 }

@@ -50,7 +50,7 @@ public:
 	const GuildLogContainer& GetContainer() const { return m_aLogs; };
 
 	// Add a log message to the guild history
-	void Add(int64_t CheckFlag, const char* pBuffer, ...);
+	void Add(int64_t LogFlag, const char* pBuffer, ...);
 
 private:
 	void InitLogs();

@@ -33,9 +33,9 @@ bool CGuildLoggerManager::IsActivityFlagSet(int64_t Flag) const
 }
 
 // Function to add a guild log
-void CGuildLoggerManager::Add(int64_t CheckFlag, const char* pBuffer, ...)
+void CGuildLoggerManager::Add(int64_t LogFlag, const char* pBuffer, ...)
 {
-	if(CheckFlag & m_Logflag)
+	if(LogFlag & m_Logflag)
 	{
 		// Initialize the variable argument list
 		char aBuf[512];

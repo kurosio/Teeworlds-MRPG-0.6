@@ -404,7 +404,7 @@ void CPlayerQuest::Finish()
 	if(Info()->IsDaily())
 	{
 		// Add the maximum number of Allied Seals that can be obtained from a daily quest to the player's item inventory
-		pPlayer->GetItem(itAlliedSeals)->Add(MAX_ALLIED_SEALS_BY_DAILY_QUEST);
+		pPlayer->GetItem(itAlliedSeals)->Add(ALLIED_SEALS_BY_DAILY_QUEST);
 
 		// Send a chat message to all players informing that the player has completed a daily quest
 		pGS->Chat(-1, "{STR} completed daily quest \"{STR}\".", pGS->Server()->ClientName(m_ClientID), Info()->GetName());
