@@ -54,8 +54,6 @@ protected:
 	bool m_Alive;
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 
-	CMultipleOrbite* m_pMultipleOrbite;
-
 	// last tick that the player took any action ie some input
 	int m_LastNoAmmoSound;
 	int m_NumInputs;
@@ -69,6 +67,7 @@ protected:
 	int m_Health;
 	int m_Mana;
 	vec2 m_SpawnPoint;
+	CMultipleOrbite* m_pMultipleOrbite;
 
 	// these are non-heldback inputs
 	CNetObj_PlayerInput m_Input;

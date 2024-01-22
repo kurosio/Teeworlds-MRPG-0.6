@@ -112,10 +112,10 @@ public:
 	virtual	int GetPlayerWorldID() const;
 	virtual CTeeInfo& GetTeeInfo() const;
 
-	virtual int GetStartHealth();
-	int GetStartMana();
-	virtual	int GetHealth() { return GetTempData().m_TempHealth; }
-	virtual	int GetMana() { return GetTempData().m_TempMana; }
+	virtual int GetStartHealth() const;
+	int GetStartMana() const;
+	virtual	int GetHealth() const { return GetTempData().m_TempHealth; }
+	virtual	int GetMana() const { return GetTempData().m_TempMana; }
 	bool IsAfk() const { return m_Afk; }
 	int64_t GetAfkTime() const;
 
@@ -125,7 +125,7 @@ public:
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
 	virtual StateSnapping IsActiveForClient(int ClientID) const { return STATE_SNAPPING_FULL; }
 	virtual int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
-	virtual int GetAttributeSize(AttributeIdentifier ID);
+	virtual int GetAttributeSize(AttributeIdentifier ID) const;
 	float GetAttributePercent(AttributeIdentifier ID);
 	virtual void UpdateTempData(int Health, int Mana);
 
@@ -150,6 +150,7 @@ public:
 	void TryRemoveEidolon();
 
 private:
+	virtual void GetFormatedName(char* aBuffer, int BufferSize);
 	virtual void HandleEffects();
 	virtual void TryRespawn();
 	void HandleScoreboardColors();

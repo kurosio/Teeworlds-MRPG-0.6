@@ -141,7 +141,9 @@ void CBotManager::InitNPCBots(const char* pWhereLocalWorld)
 		NpcBot.m_Function = pRes->getInt("Function");
 		NpcBot.m_GiveQuestID = pRes->getInt("GiveQuestID");
 		if(NpcBot.m_GiveQuestID > 0)
+		{
 			NpcBot.m_Function = FUNCTION_NPC_GIVE_QUEST;
+		}
 
 		// dialog initilizer
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();

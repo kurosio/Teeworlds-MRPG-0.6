@@ -31,11 +31,7 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 
 CCharacter::~CCharacter()
 {
-	if(m_pMultipleOrbite)
-	{
-		delete m_pMultipleOrbite;
-	}
-
+	/* multiple orbite destroyed inside self */
 	delete m_pHelper;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
 }

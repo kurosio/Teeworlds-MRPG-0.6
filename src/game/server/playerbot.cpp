@@ -180,7 +180,7 @@ void CPlayerBot::ResetRespawnTick()
 	}
 }
 
-int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
+int CPlayerBot::GetAttributeSize(AttributeIdentifier ID) const
 {
 	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_EIDOLON || m_BotType == TYPE_BOT_QUEST_MOB ||
 		(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
@@ -248,7 +248,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID)
 		else if(m_BotType == TYPE_BOT_NPC)
 		{
 			// Calculate Size based on Npc info
-			Size = CalculateAttribute(2000, 0, true);
+			Size = CalculateAttribute(10, 0, true);
 		}
 		return Size;
 	}
@@ -431,20 +431,21 @@ void CPlayerBot::Snap(int SnappingClient)
 	if(!pClientInfo)
 		return;
 
+	char aNameBuf[MAX_NAME_LENGTH];
+	GetFormatedName(aNameBuf, sizeof(aNameBuf));
+	StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
 	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB || (m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
-		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
+		const float Progress = translate_to_percent((float)GetStartHealth(), (float)GetHealth());
 
-		char aNameBuf[MAX_NAME_LENGTH];
-		str_format(aNameBuf, sizeof(aNameBuf), "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, clamp(PercentHP, 1, 100));
-		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
+		std::string ProgressBar = Tools::String::progressBar(100, (int)Progress, 33, "\u25B0", "\u25B1");
+		StrToInts(&pClientInfo->m_Clan0, 3, ProgressBar.c_str());
 	}
 	else
 	{
-		StrToInts(&pClientInfo->m_Name0, 4, DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot);
+		StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	}
 
-	StrToInts(&pClientInfo->m_Clan0, 3, GetStatus());
 	pClientInfo->m_Country = 0;
 	{
 		StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
@@ -472,24 +473,30 @@ void CPlayerBot::FakeSnap()
 
 Mood CPlayerBot::GetMoodState() const
 {
-	CCharacterBotAI* pChr = (CCharacterBotAI*)m_pCharacter;
+	CCharacterBotAI* pChar = (CCharacterBotAI*)m_pCharacter;
+	if(!pChar)
+		return Mood::NORMAL;
 
-	if((GetBotType() == TYPE_BOT_MOB || GetBotType() == TYPE_BOT_QUEST_MOB) && pChr && !pChr->AI()->GetTarget()->IsEmpty())
+	if(GetBotType() == TYPE_BOT_MOB && !pChar->AI()->GetTarget()->IsEmpty())
 		return Mood::ANGRY;
-
-	if(GetBotType() == TYPE_BOT_NPC)
-	{
-		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN && !pChr->AI()->GetTarget()->IsEmpty())
-			return Mood::AGRESSED;
-
-		return Mood::FRIENDLY;
-	}
+	
+	if(GetBotType() == TYPE_BOT_QUEST_MOB && !pChar->AI()->GetTarget()->IsEmpty())
+		return Mood::ANGRY;
 
 	if(GetBotType() == TYPE_BOT_EIDOLON)
 		return Mood::FRIENDLY;
 
 	if(GetBotType() == TYPE_BOT_QUEST)
 		return Mood::QUEST;
+
+	if(GetBotType() == TYPE_BOT_NPC)
+	{
+		bool IsGuardian = NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN;
+		if(IsGuardian && !pChar->AI()->GetTarget()->IsEmpty())
+			return Mood::AGRESSED;
+
+		return Mood::FRIENDLY;
+	}
 
 	return Mood::NORMAL;
 }
@@ -501,8 +508,8 @@ int CPlayerBot::GetBotLevel() const
 
 bool CPlayerBot::IsActiveQuests(int SnapClientID) const
 {
-	CPlayer* pSnappingPlayer = GS()->m_apPlayers[SnapClientID];
-	if(SnapClientID >= MAX_PLAYERS || SnapClientID < 0 || !pSnappingPlayer)
+	CPlayer* pSnappingPlayer = GS()->GetPlayer(SnapClientID);
+	if(!pSnappingPlayer)
 		return false;
 
 	if(m_BotType == TYPE_BOT_QUEST)
@@ -516,7 +523,21 @@ bool CPlayerBot::IsActiveQuests(int SnapClientID) const
 
 		return false;
 	}
+
 	return false;
+}
+
+void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
+{
+	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB || (m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
+	{
+		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
+		str_format(aBuffer, BufferSize, "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, clamp(PercentHP, 1, 100));
+	}
+	else
+	{
+		str_format(aBuffer, BufferSize, "%s", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot);
+	}
 }
 
 int CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
@@ -530,14 +551,12 @@ const char* CPlayerBot::GetStatus() const
 {
 	if(m_BotType == TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[m_MobID].m_Boss)
 	{
-		if(GS()->IsDungeon())
-			return "Boss";
-		return "Raid";
+		return GS()->IsDungeon() ? "Boss" : "Raid";
 	}
 
 	if(m_BotType == TYPE_BOT_QUEST_MOB)
 	{
-		return "Quest mob";
+		return "Questing mob";
 	}
 
 	if(m_BotType == TYPE_BOT_EIDOLON && GetEidolonOwner())
@@ -549,33 +568,29 @@ const char* CPlayerBot::GetStatus() const
 	switch(GetMoodState())
 	{
 		default:
-		case Mood::NORMAL:
-		return "\0";
-		case Mood::FRIENDLY:
-		return "Friendly";
+		case Mood::NORMAL: return "\0";
+		case Mood::FRIENDLY: return "Friendly";
 		case Mood::QUEST:
 		{
 			const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 			return GS()->GetQuestInfo(QuestID)->GetName();
 		}
-		case Mood::ANGRY:
-		return "Angry";
-		case Mood::AGRESSED:
-		return "Aggressive";
+		case Mood::ANGRY: return "Angry";
+		case Mood::AGRESSED: return "Aggressive";
 	}
 }
 
 int CPlayerBot::GetPlayerWorldID() const
 {
-	if(m_BotType == TYPE_BOT_MOB)
-		return MobBotInfo::ms_aMobBot[m_MobID].m_WorldID;
-	if(m_BotType == TYPE_BOT_NPC)
-		return NpcBotInfo::ms_aNpcBot[m_MobID].m_WorldID;
-	if(m_BotType == TYPE_BOT_EIDOLON)
-		return Server()->GetClientWorldID(m_MobID);
-	if(m_BotType == TYPE_BOT_QUEST_MOB)
-		return m_QuestMobInfo.m_WorldID;
-	return QuestBotInfo::ms_aQuestBot[m_MobID].m_WorldID;
+	switch (m_BotType)
+	{
+		case TYPE_BOT_MOB: return MobBotInfo::ms_aMobBot[m_MobID].m_WorldID;
+		case TYPE_BOT_QUEST_MOB: return m_QuestMobInfo.m_WorldID;
+		case TYPE_BOT_NPC: return NpcBotInfo::ms_aNpcBot[m_MobID].m_WorldID;
+		case TYPE_BOT_EIDOLON: return Server()->GetClientWorldID(m_MobID);
+		case TYPE_BOT_QUEST: return QuestBotInfo::ms_aQuestBot[m_MobID].m_WorldID;
+		default: return -1;
+	}
 }
 
 CTeeInfo& CPlayerBot::GetTeeInfo() const

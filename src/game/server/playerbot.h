@@ -52,9 +52,9 @@ public:
 	int GetPlayerWorldID() const override;
 	CTeeInfo& GetTeeInfo() const override;
 
-	int GetStartHealth() override { return m_BotStartHealth; };
-	int GetHealth() override { return m_BotHealth; }
-	int GetMana() override { return 999; }
+	int GetStartHealth() const override { return m_BotStartHealth; };
+	int GetHealth() const override { return m_BotHealth; }
+	int GetMana() const override { return 999; }
 
 	void HandleTuningParams() override;
 	void UpdateTempData(int Health, int Mana) override { m_BotHealth = Health; }
@@ -62,7 +62,7 @@ public:
 	int64_t GetMaskVisibleForClients() const override;
 	StateSnapping IsActiveForClient(int ClientID) const override;
 	int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
-	int GetAttributeSize(AttributeIdentifier ID) override;
+	int GetAttributeSize(AttributeIdentifier ID) const override;
 
 	void GiveEffect(const char* Potion, int Sec, float Chance = 100.0f) override;
 	bool IsActiveEffect(const char* Potion) const override;
@@ -86,13 +86,15 @@ public:
 private:
 	ska::unordered_map< int, std::unique_ptr<CPlayerItem> > m_Items {};
 	ska::unordered_map < std::string /* effect */, int /* seconds */ > m_aEffects;
-	void HandleEffects() override;
-	void TryRespawn() override;
 
+	void GetFormatedName(char* aBuffer, int BufferSize) override;
 	int GetBotLevel() const;
-	const char* GetStatus() const;
 	Mood GetMoodState() const override;
 	bool IsActiveQuests(int SnapClientID) const;
+	const char* GetStatus() const;
+
+	void TryRespawn() override;
+	void HandleEffects() override;
 
 	/***********************************************************************************/
 	/*  Thread path finderdon't want to secure m_TargetPos, or m_WayPoints with mutex  */
