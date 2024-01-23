@@ -30,7 +30,7 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, TextPos, PlantPos, CItem(PlantItemID, 1), WorldID, std::move(AccessData), std::move(JsonDoorData));
 		}
 
-		Job()->ShowLoadingProgress("Houses", CHouseData::Data().size());
+		Core()->ShowLoadingProgress("Houses", CHouseData::Data().size());
 	});
 }
 
@@ -161,7 +161,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: SELECT down your decorations");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "and press (Back to inventory).");
 
-		Job()->Item()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
+		Core()->InventoryManager()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
 		GS()->AV(ClientID, "null");
 		pHouse->ShowDecorationList();
 		GS()->AddVotesBackpage(ClientID);
@@ -184,7 +184,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AV(ClientID, "null");
 
 		GS()->AVM(ClientID, "null", NOPE, NOPE, "Housing active plants: {STR}", pHouse->GetPlantedItem()->Info()->GetName());
-		GS()->Mmo()->Item()->ListInventory(ClientID, FUNCTION_PLANT);
+		GS()->Core()->InventoryManager()->ListInventory(ClientID, FUNCTION_PLANT);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -389,7 +389,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "DECORATION_HOUSE_ADD") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Account()->GetHouse();
+		CHouseData* pHouse = pPlayer->AccountManager()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");
@@ -420,7 +420,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "DECORATION_HOUSE_DELETE") == 0)
 	{
 		// check player house
-		CHouseData* pHouse = pPlayer->Account()->GetHouse();
+		CHouseData* pHouse = pPlayer->AccountManager()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "You do not have your own home!");

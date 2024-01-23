@@ -12,7 +12,7 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pPar
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, FromPos)
 {
 	vec2 PosTo { 0, 0 };
-	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, SearchPos, &PosTo);
+	GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos, &PosTo);
 
 	m_Mask = Mask;
 	m_PosTo = PosTo;

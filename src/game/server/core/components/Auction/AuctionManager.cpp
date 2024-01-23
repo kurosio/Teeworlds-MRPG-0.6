@@ -129,7 +129,7 @@ bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 
 	if(PPSTR(CMD, "AUCTION_SLOT") == 0)
 	{
-		int AvailableValue = Job()->Item()->GetUnfrozenItemValue(pPlayer, VoteID);
+		int AvailableValue = Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, VoteID);
 		if(AvailableValue <= 0)
 			return true;
 		

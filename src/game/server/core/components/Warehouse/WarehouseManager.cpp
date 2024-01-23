@@ -109,13 +109,13 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 
 		if(pChr->GetHelper()->BoolIndex(TILE_ORE_SELL))
 		{
-			Job()->Item()->ShowSellingItemsByFunction(pPlayer, FUNCTION_MINER);
+			Core()->InventoryManager()->ShowSellingItemsByFunction(pPlayer, FUNCTION_MINER);
 			return true;
 		}
 
 		if(pChr->GetHelper()->BoolIndex(TILE_PLANT_SELL))
 		{
-			Job()->Item()->ShowSellingItemsByFunction(pPlayer, FUNCTION_PLANT);
+			Core()->InventoryManager()->ShowSellingItemsByFunction(pPlayer, FUNCTION_PLANT);
 			return true;
 		}
 	}
@@ -128,7 +128,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	const int ClientID = pPlayer->GetCID();
 	if(PPSTR(CMD, "REPAIR_ITEMS") == 0)
 	{
-		Job()->Item()->RepairDurabilityItems(pPlayer);
+		Core()->InventoryManager()->RepairDurabilityItems(pPlayer);
 		GS()->Chat(ClientID, "You repaired all items.");
 		return true;
 	}
@@ -146,7 +146,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		ItemIdentifier ID = VoteID;
 
 		// If the available value is less than or equal to 0, return true
-		int AvailableValue = Job()->Item()->GetUnfrozenItemValue(pPlayer, ID);
+		int AvailableValue = Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, ID);
 		if(AvailableValue <= 0)
 			return true;
 

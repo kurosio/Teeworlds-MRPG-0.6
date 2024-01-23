@@ -43,7 +43,7 @@ CEntityMoveTo::~CEntityMoveTo()
 
 		// Update the steps of the quest for the player
 		if(m_pPlayer->GetCharacter())
-			GS()->Mmo()->Quest()->UpdateSteps(m_pPlayer);
+			GS()->Core()->QuestManager()->UpdateSteps(m_pPlayer);
 	}
 
 
@@ -139,7 +139,7 @@ void CEntityMoveTo::Handler(const std::function<bool()> pCallbackSuccesful)
 		if(!pQuestStep->IsComplete())
 		{
 			char aBufQuestTask[512] {};
-			GS()->Mmo()->Quest()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[m_pTaskMoveTo->m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
+			GS()->Core()->QuestManager()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[m_pTaskMoveTo->m_QuestBotID], aBufQuestTask, sizeof(aBufQuestTask));
 			str_append(aBufQuestTask, "\n### List of tasks to be completed. ###", sizeof(aBufQuestTask));
 			GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, aBufQuestTask);
 			GS()->Chat(m_ClientID, "The tasks haven't been completed yet!");

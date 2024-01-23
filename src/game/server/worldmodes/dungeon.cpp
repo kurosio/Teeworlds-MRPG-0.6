@@ -133,7 +133,7 @@ void CGameControllerDungeon::ChangeState(int State)
 			Buffer.append(Server()->ClientName(i));
 
 			// save record and reset time for client
-			GS()->Mmo()->Dungeon()->SaveDungeonRecord(pPlayer, m_DungeonID, &m_Records[i]);
+			GS()->Core()->DungeonManager()->SaveDungeonRecord(pPlayer, m_DungeonID, &m_Records[i]);
 			GS()->m_apPlayers[i]->GetTempData().m_TempTimeDungeon = 0;
 			m_Records[i].Reset();
 		}
@@ -314,7 +314,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 			{
 				GS()->Chat(ClientID, "You were thrown out of dungeon!");
 
-				const int LatestCorrectWorldID = GS()->Mmo()->Account()->GetHistoryLatestCorrectWorldID(pChr->GetPlayer());
+				const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetHistoryLatestCorrectWorldID(pChr->GetPlayer());
 				pChr->GetPlayer()->ChangeWorld(LatestCorrectWorldID);
 				return false;
 			}

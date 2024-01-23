@@ -63,10 +63,10 @@ int CAccountPlantManager::GetPlantHealth(vec2 Pos) const
 //void CAccountPlantManager::ShowMenu(CPlayer* pPlayer) const
 //{
 //	const int ClientID = pPlayer->GetCID();
-//	const int JobLevel = pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value;
-//	const int JobExperience = pPlayer->Account()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value;
-//	const int JobUpgrades = pPlayer->Account()->m_FarmingData(JOB_UPGRADES, 0).m_Value;
-//	const int JobUpgrQuantity = pPlayer->Account()->m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value;
+//	const int JobLevel = pPlayer->AccountManager()->m_FarmingData(JOB_LEVEL, 0).m_Value;
+//	const int JobExperience = pPlayer->AccountManager()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value;
+//	const int JobUpgrades = pPlayer->AccountManager()->m_FarmingData(JOB_UPGRADES, 0).m_Value;
+//	const int JobUpgrQuantity = pPlayer->AccountManager()->m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value;
 //	const int ExperienceNeed = computeExperience(JobLevel);
 //
 //	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Plants Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
@@ -118,7 +118,7 @@ void CAccountPlantManager::Work(CPlayer* pPlayer, int Level)
 	}
 
 	pPlayer->ProgressBar("Plants", pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value, pPlayer->Account()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value, ExperienceNeed, MultiplierExperience);
-	Job()->SaveAccount(pPlayer, SAVE_PLANT_DATA);
+	Core()->SaveAccount(pPlayer, SAVE_PLANT_DATA);
 }
 
 bool CAccountPlantManager::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, const int VoteID, const int VoteID2, int Get, const char *GetText)
@@ -128,7 +128,7 @@ bool CAccountPlantManager::OnHandleVoteCommands(CPlayer *pPlayer, const char *CM
 	{
 		if(pPlayer->Upgrade(Get, &pPlayer->Account()->m_FarmingData(VoteID, 0).m_Value, &pPlayer->Account()->m_FarmingData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
 		{
-			GS()->Mmo()->SaveAccount(pPlayer, SAVE_PLANT_DATA);
+			GS()->Core()->SaveAccount(pPlayer, SAVE_PLANT_DATA);
 			GS()->StrongUpdateVotes(ClientID, MENU_UPGRADES);
 		}
 		return true;

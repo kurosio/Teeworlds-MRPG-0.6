@@ -6,7 +6,7 @@
 
 using namespace sqlstr;
 
-bool CMailBoxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText)
+bool CMailboxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
 	if(PPSTR(CMD, "MAIL") == 0)
@@ -26,7 +26,7 @@ bool CMailBoxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, in
 	return false;
 }
 
-bool CMailBoxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CMailboxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
 {
 	const int ClientID = pPlayer->GetCID();
 	if(ReplaceMenu)
@@ -46,7 +46,7 @@ bool CMailBoxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 }
 
 // check whether messages are available
-int CMailBoxManager::GetMailLettersSize(int AccountID)
+int CMailboxManager::GetMailLettersSize(int AccountID)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_mailbox", "WHERE UserID = '%d'", AccountID);
 	const int MailValue = pRes->rowsCount();
@@ -54,7 +54,7 @@ int CMailBoxManager::GetMailLettersSize(int AccountID)
 }
 
 // show a list of mails
-void CMailBoxManager::GetInformationInbox(CPlayer *pPlayer)
+void CMailboxManager::GetInformationInbox(CPlayer *pPlayer)
 {
 	int ShowLetterID = 0;
 	bool EmptyMailBox = true;
@@ -94,7 +94,7 @@ void CMailBoxManager::GetInformationInbox(CPlayer *pPlayer)
 }
 
 // sending a mail to a player
-void CMailBoxManager::SendInbox(const char* pFrom, int AccountID, const char* pName, const char* pDesc, int ItemID, int Value, int Enchant)
+void CMailboxManager::SendInbox(const char* pFrom, int AccountID, const char* pName, const char* pDesc, int ItemID, int Value, int Enchant)
 {
 	// clear str and connection
 	const CSqlString<64> cName = CSqlString<64>(pName);
@@ -122,7 +122,7 @@ void CMailBoxManager::SendInbox(const char* pFrom, int AccountID, const char* pN
 		 cName.cstr(), cDesc.cstr(), ItemID, Value, Enchant, AccountID, cFrom.cstr());
 }
 
-bool CMailBoxManager::SendInbox(const char* pFrom, const char* pNickname, const char* pName, const char* pDesc, int ItemID, int Value, int Enchant)
+bool CMailboxManager::SendInbox(const char* pFrom, const char* pNickname, const char* pName, const char* pDesc, int ItemID, int Value, int Enchant)
 {
 	const CSqlString<64> cName = CSqlString<64>(pNickname);
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '%s'", cName.cstr());
@@ -135,7 +135,7 @@ bool CMailBoxManager::SendInbox(const char* pFrom, const char* pNickname, const 
 	return false;
 }
 
-void CMailBoxManager::AcceptMailLetter(CPlayer* pPlayer, int MailLetterID)
+void CMailboxManager::AcceptMailLetter(CPlayer* pPlayer, int MailLetterID)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ItemID, ItemValue, Enchant", "tw_accounts_mailbox", "WHERE ID = '%d'", MailLetterID);
 	if(pRes->next())
@@ -163,12 +163,12 @@ void CMailBoxManager::AcceptMailLetter(CPlayer* pPlayer, int MailLetterID)
 	}
 }
 
-void CMailBoxManager::DeleteMailLetter(int MailLetterID)
+void CMailboxManager::DeleteMailLetter(int MailLetterID)
 {
 	Database->Execute<DB::REMOVE>("tw_accounts_mailbox", "WHERE ID = '%d'", MailLetterID);
 }
 
-void CMailBoxManager::SetReadState(int MailLetterID, bool State)
+void CMailboxManager::SetReadState(int MailLetterID, bool State)
 {
 	Database->Execute<DB::UPDATE>("tw_accounts_mailbox", "IsRead='%d' WHERE ID = '%d'", State, MailLetterID);
 }

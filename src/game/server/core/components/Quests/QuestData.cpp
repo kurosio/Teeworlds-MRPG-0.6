@@ -417,13 +417,13 @@ void CPlayerQuest::Finish()
 		pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
 
 		// Notify the opened new zones and dungeons after completing the quest
-		pGS->Mmo()->WorldSwap()->NotifyUnlockedZonesByQuest(pPlayer, m_ID);
-		pGS->Mmo()->Dungeon()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
+		pGS->Core()->WorldManager()->NotifyUnlockedZonesByQuest(pPlayer, m_ID);
+		pGS->Core()->DungeonManager()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
 	}
 
 	// save player stats and accept next story quest
-	pGS->Mmo()->SaveAccount(pPlayer, SAVE_STATS);
-	pGS->Mmo()->Quest()->AcceptNextStoryQuest(pPlayer, m_ID);
+	pGS->Core()->SaveAccount(pPlayer, SAVE_STATS);
+	pGS->Core()->QuestManager()->AcceptNextStoryQuest(pPlayer, m_ID);
 
 	// effect's
 	pGS->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Complete");

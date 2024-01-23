@@ -24,7 +24,7 @@ protected:
 
 	CGS* GS() const { return m_GameServer; }
 	IServer* Server() const { return m_pServer; }
-	CMmoController* Job() const { return m_Job; }
+	CMmoController* Core() const { return m_Job; }
 
 public:
 	virtual ~MmoComponent() {}

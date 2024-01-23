@@ -12,7 +12,7 @@ CStepPathFinder::CStepPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int Cli
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos, 0, ClientID)
 {
 	vec2 PosTo{0,0};
-	GS()->Mmo()->WorldSwap()->FindPosition(QuestBot.m_WorldID, SearchPos, &PosTo);
+	GS()->Core()->WorldManager()->FindPosition(QuestBot.m_WorldID, SearchPos, &PosTo);
 
 	m_PosTo = PosTo;
 	m_apCollection = apCollection;

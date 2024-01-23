@@ -48,7 +48,7 @@ CBrush::~CBrush()
 
 void CBrush::InitBrushCollection()
 {
-	m_vBrushItemsCollection = GS()->Mmo()->Item()->GetItemIDsCollection(ItemType::TYPE_DECORATION);
+	m_vBrushItemsCollection = GS()->Core()->InventoryManager()->GetItemIDsCollection(ItemType::TYPE_DECORATION);
 	m_BrushItem = m_vBrushItemsCollection.begin();
 }
 

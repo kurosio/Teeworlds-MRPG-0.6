@@ -17,37 +17,40 @@ class CMmoController
 	public:
 		void add(class MmoComponent *pComponent)
 		{
- 			m_pacomponents.push_back(pComponent);
+			m_vComponents.emplace(pComponent);
 		}
 
 		void free()
 		{
-			for(auto* pComponent : m_pacomponents)
+			for(auto* pComponent : m_vComponents)
+			{
 				delete pComponent;
-			m_pacomponents.clear();
+			}
+			m_vComponents.clear();
+			m_vComponents.shrink_to_fit();
 		}
 
-		std::list < class MmoComponent *> m_pacomponents;
+		ska::flat_hash_set< MmoComponent* > m_vComponents;
 	};
-	CStack m_components;
+	CStack m_System;
 
-	class CAccountManager*m_pAccMain;
-	class CBotManager *m_pBotsInfo;
-	class CInventoryManager *m_pItemWork;
-	class CAccountMinerManager *m_pAccMiner;
-	class CAccountPlantManager *m_pAccPlant;
-	class CQuestManager *m_pQuest;
-	class CWarehouseManager *m_pWarehouse;
-	class CGuildManager* m_pGuild;
-	class CGroupManager* m_pGroup;
-	class CCraftManager* m_pCraft;
-	class CDungeonManager* m_pDungeon;
-	class CHouseManager* m_pHouse;
-	class CMailBoxManager* m_pMailBox;
-	class CSkillManager* m_pSkill;
-	class CTutorialManager* m_pTutorial;
-	class CWorldManager* m_pWorldSwap;
-	class CEidolonManager* m_pEidolon;
+	class CAccountManager* m_pAccountManager;
+	class CBotManager* m_pBotManager;
+	class CInventoryManager *m_pInventoryManager;
+	class CAccountMinerManager *m_pAccountMinerManager;
+	class CAccountPlantManager *m_pAccountPlantManager;
+	class CQuestManager *m_pQuestManager;
+	class CWarehouseManager *m_pWarehouseManager;
+	class CGuildManager* m_pGuildManager;
+	class CGroupManager* m_pGroupManager;
+	class CCraftManager* m_pCraftManager;
+	class CDungeonManager* m_pDungeonManager;
+	class CHouseManager* m_pHouseManager;
+	class CMailboxManager* m_pMailboxManager;
+	class CSkillManager* m_pSkillManager;
+	class CTutorialManager* m_pTutorialManager;
+	class CWorldManager* m_pWorldManager;
+	class CEidolonManager* m_pEidolonManager;
 
 public:
 	explicit CMmoController(CGS *pGameServer);
@@ -56,24 +59,24 @@ public:
 	CGS *m_pGameServer;
 	CGS *GS() const { return m_pGameServer; }
 
-	CAccountManager *Account() const { return m_pAccMain; }
-	CBotManager *BotsData() const { return m_pBotsInfo; }
-	CInventoryManager *Item() const { return m_pItemWork; }
-	CAccountMinerManager *MinerAcc() const { return m_pAccMiner; }
-	CAccountPlantManager *PlantsAcc() const { return m_pAccPlant; }
-	CQuestManager *Quest() const { return m_pQuest; }
-	CWarehouseManager *Warehouse() const { return m_pWarehouse; }
-	CEidolonManager* Eidolons() const { return m_pEidolon; }
-	CTutorialManager* Tutorial() const { return m_pTutorial; }
+	CAccountManager* AccountManager() const { return m_pAccountManager; }
+	CBotManager* BotManager() const { return m_pBotManager; }
+	CInventoryManager* InventoryManager() const { return m_pInventoryManager; }
+	CAccountMinerManager* AccountMinerManager() const { return m_pAccountMinerManager; }
+	CAccountPlantManager* AccountPlantManager() const { return m_pAccountPlantManager; }
+	CQuestManager* QuestManager() const { return m_pQuestManager; }
+	CWarehouseManager* WarehouseManager() const { return m_pWarehouseManager; }
+	CEidolonManager* EidolonManager() const { return m_pEidolonManager; }
+	CTutorialManager* TutorialManager() const { return m_pTutorialManager; }
 
-	CCraftManager* Craft() const { return m_pCraft; }
-	CDungeonManager* Dungeon() const { return m_pDungeon; }
-	CHouseManager* House() const { return m_pHouse; }
-	CMailBoxManager* Inbox() const { return m_pMailBox; }
-	CGuildManager* Member() const { return m_pGuild; }
-	CGroupManager* Group() const { return m_pGroup; }
-	CSkillManager* Skills() const { return m_pSkill; }
-	CWorldManager *WorldSwap() const { return m_pWorldSwap; }
+	CCraftManager* CraftManager() const { return m_pCraftManager; }
+	CDungeonManager* DungeonManager() const { return m_pDungeonManager; }
+	CHouseManager* HouseManager() const { return m_pHouseManager; }
+	CMailboxManager* MailboxManager() const { return m_pMailboxManager; }
+	CGuildManager* GuildManager() const { return m_pGuildManager; }
+	CGroupManager* GroupManager() const { return m_pGroupManager; }
+	CSkillManager* SkillManager() const { return m_pSkillManager; }
+	CWorldManager *WorldManager() const { return m_pWorldManager; }
 
 	// global systems
 	void OnTick();

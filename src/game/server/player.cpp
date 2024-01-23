@@ -367,7 +367,7 @@ void CPlayer::HandlePrison()
 		else if(Server()->Tick() % (Server()->TickSpeed() * 10) == 0)
 		{
 			// if it's time to save, call the SaveAccount function with the SAVE_SOCIAL_STATUS flag
-			GS()->Mmo()->SaveAccount(this, SAVE_SOCIAL_STATUS);
+			GS()->Core()->SaveAccount(this, SAVE_SOCIAL_STATUS);
 		}
 	}
 }
@@ -740,7 +740,7 @@ void CPlayer::OnPredictedInput(CNetObj_PlayerInput* pNewInput) const
 
 int CPlayer::GetTeam()
 {
-	if(GS()->Mmo()->Account()->IsActive(m_ClientID))
+	if(GS()->Core()->AccountManager()->IsActive(m_ClientID))
 		return Account()->m_Team;
 	return TEAM_SPECTATORS;
 }
@@ -825,7 +825,7 @@ bool CPlayer::GetHiddenMenu(int HideID) const
 
 bool CPlayer::IsAuthed() const
 {
-	if(GS()->Mmo()->Account()->IsActive(m_ClientID))
+	if(GS()->Core()->AccountManager()->IsActive(m_ClientID))
 		return Account()->GetID() > 0;
 	return false;
 }
@@ -898,7 +898,7 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 	{
 		if(m_RequestChangeNickname)
 		{
-			if(GS()->Mmo()->Account()->ChangeNickname(m_ClientID))
+			if(GS()->Core()->AccountManager()->ChangeNickname(m_ClientID))
 				GS()->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 300, "Your nickname has been successfully updated");
 			else
 				GS()->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 300, "This nickname is already in use");
@@ -943,7 +943,7 @@ bool CPlayer::ParseVoteUpgrades(const char* CMD, const int VoteID, const int Vot
 	{
 		if(Upgrade(Get, &Account()->m_aStats[(AttributeIdentifier)VoteID], &Account()->m_Upgrade, VoteID2, 1000))
 		{
-			GS()->Mmo()->SaveAccount(this, SAVE_UPGRADES);
+			GS()->Core()->SaveAccount(this, SAVE_UPGRADES);
 			GS()->UpdateVotes(m_ClientID, MENU_UPGRADES);
 		}
 		return true;

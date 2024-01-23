@@ -312,7 +312,7 @@ void CInventoryManager::ListInventory(int ClientID, ItemFunctional Type)
 
 int CInventoryManager::GetUnfrozenItemValue(CPlayer* pPlayer, ItemIdentifier ItemID) const
 {
-	const int AvailableValue = Job()->Quest()->GetUnfrozenItemValue(pPlayer, ItemID);
+	const int AvailableValue = Core()->QuestManager()->GetUnfrozenItemValue(pPlayer, ItemID);
 	if(AvailableValue <= 0 && pPlayer->GetItem(ItemID)->HasItem())
 	{
 		GS()->Chat(pPlayer->GetCID(), "'{STR}' frozen for some quest.", pPlayer->GetItem(ItemID)->Info()->GetName());

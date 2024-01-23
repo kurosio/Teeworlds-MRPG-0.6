@@ -44,14 +44,14 @@ bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
 
 	if(Index == ENTITY_PLANTS)
 	{
-		CHouseData* pHouse = GS()->Mmo()->House()->GetHouseByPlantPos(Pos);
+		CHouseData* pHouse = GS()->Core()->HouseManager()->GetHouseByPlantPos(Pos);
 		if(pHouse && pHouse->GetPlantedItem()->GetID() > 0)
 		{
 			new CJobItems(&GS()->m_World, pHouse->GetPlantedItem()->GetID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100, pHouse->GetID());
 			return true;
 		}
 
-		const int ItemID = GS()->Mmo()->PlantsAcc()->GetPlantItemID(Pos), Level = GS()->Mmo()->PlantsAcc()->GetPlantLevel(Pos);
+		const int ItemID = GS()->Core()->AccountPlantManager()->GetPlantItemID(Pos), Level = GS()->Core()->AccountPlantManager()->GetPlantLevel(Pos);
 		if(ItemID > 0)
 			new CJobItems(&GS()->m_World, ItemID, Level, Pos, CJobItems::JOB_ITEM_FARMING, 100);
 
@@ -60,10 +60,10 @@ bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
 
 	if(Index == ENTITY_MINER)
 	{
-		const int ItemID = GS()->Mmo()->MinerAcc()->GetOreItemID(Pos), Level = GS()->Mmo()->MinerAcc()->GetOreLevel(Pos);
+		const int ItemID = GS()->Core()->AccountMinerManager()->GetOreItemID(Pos), Level = GS()->Core()->AccountMinerManager()->GetOreLevel(Pos);
 		if(ItemID > 0)
 		{
-			const int Health = GS()->Mmo()->MinerAcc()->GetOreHealth(Pos);
+			const int Health = GS()->Core()->AccountMinerManager()->GetOreHealth(Pos);
 			new CJobItems(&GS()->m_World, ItemID, Level, Pos, CJobItems::JOB_ITEM_MINING, Health);
 		}
 

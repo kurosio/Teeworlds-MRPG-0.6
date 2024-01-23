@@ -72,8 +72,8 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	{
 		m_pPlayer->m_MoodState = m_pPlayer->GetMoodState();
 
-		GS()->Mmo()->Quest()->UpdateSteps(m_pPlayer);
-		GS()->Mmo()->Quest()->AcceptNextStoryQuestStep(m_pPlayer);
+		GS()->Core()->QuestManager()->UpdateSteps(m_pPlayer);
+		GS()->Core()->QuestManager()->AcceptNextStoryQuestStep(m_pPlayer);
 
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
 		GS()->UpdateVotes(m_pPlayer->GetCID(), m_pPlayer->m_CurrentVoteMenu);
@@ -1119,7 +1119,7 @@ void CCharacter::HandleTilesets(int* pIndex)
 		(*pIndex) = Tile;
 	}
 
-	if(!m_pPlayer->IsBot() && GS()->Mmo()->OnPlayerHandleTile(this, Tile))
+	if(!m_pPlayer->IsBot() && GS()->Core()->OnPlayerHandleTile(this, Tile))
 		return;
 
 	// next for all bots & players
@@ -1444,7 +1444,7 @@ bool CCharacter::CheckAllowedWorld() const
 		CQuestDescription* pQuestInfo = GS()->GetWorldData()->GetRequiredQuest();
 		if(pQuestInfo && !m_pPlayer->GetQuest(pQuestInfo->GetID())->IsCompleted())
 		{
-			//const int CheckHouseID = GS()->Mmo()->Member()->GetPosHouseID(m_Core.m_Pos);
+			//const int CheckHouseID = GS()->Core()->Member()->GetPosHouseID(m_Core.m_Pos);
 			//if(CheckHouseID <= 0)
 			//	return true;
 		}

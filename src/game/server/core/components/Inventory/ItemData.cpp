@@ -110,7 +110,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		GS()->Chat(-1, "{STR} got of the {STR}.", GS()->Server()->ClientName(ClientID), Info()->GetName());
 		if(Info()->IsFunctional(EQUIP_EIDOLON))
 		{
-			std::pair EidolonSize = GS()->Mmo()->Eidolons()->GetEidolonsSize(ClientID);
+			std::pair EidolonSize = GS()->Core()->EidolonManager()->GetEidolonsSize(ClientID);
 			GS()->Chat(-1, "{STR} has a collection {INT} out of {INT} eidolons.", GS()->Server()->ClientName(ClientID), EidolonSize.first, EidolonSize.second);
 		}
 	}
@@ -215,7 +215,7 @@ bool CPlayerItem::Use(int Value)
 
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
 		GetPlayer()->Account()->m_Upgrade += BackUpgrades;
-		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
+		GS()->Core()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
 		return true;
 	}
 	// ticket reset for weapons stats
@@ -246,7 +246,7 @@ bool CPlayerItem::Use(int Value)
 
 		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
 		GetPlayer()->Account()->m_Upgrade += BackUpgrades;
-		GS()->Mmo()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
+		GS()->Core()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
 		return true;
 	}
 

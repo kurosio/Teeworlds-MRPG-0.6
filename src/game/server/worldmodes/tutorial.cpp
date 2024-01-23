@@ -23,7 +23,7 @@ void CGameControllerTutorial::Tick()
 		{
 			if(CPlayer* pPlayer = GS()->GetPlayer(i, true, true); pPlayer)
 			{
-				CTutorialManager* pTutorialManager = GS()->Mmo()->Tutorial();
+				CTutorialManager* pTutorialManager = GS()->Core()->TutorialManager();
 				pTutorialManager->HandleTutorial(pPlayer);
 
 				if(pPlayer->m_TutorialStep >= pTutorialManager->GetSize() && !pPlayer->GetItem(itAdventurersBadge)->HasItem())

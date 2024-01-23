@@ -31,7 +31,7 @@ int CAccountManager::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 			CQuestDescription* pQuestInfo = GS()->GetWorldData(WorldID)->GetRequiredQuest();
 
 			// Check if the world is not a dungeon world and either the required quest is completed or the world has no required quest
-			return !Job()->Dungeon()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->GetID())->IsCompleted()) || !pQuestInfo);
+			return !Core()->DungeonManager()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->GetID())->IsCompleted()) || !pQuestInfo);
 		}
 		return false;
 	});
@@ -185,7 +185,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	{
 		// Get the number of unread letters in the player's inbox
 		// Send a chat message to the player informing them about their unread letters
-		if(const int Letters = Job()->Inbox()->GetMailLettersSize(pPlayer->Account()->GetID()); Letters > 0)
+		if(const int Letters = Core()->MailboxManager()->GetMailLettersSize(pPlayer->Account()->GetID()); Letters > 0)
 			GS()->Chat(ClientID, "You have {INT} unread letters!", Letters);
 
 		// Update the player's votes and show the main menu
@@ -194,15 +194,15 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	}
 
 	// If it is the first initialization, initialize the player's job account
-	Job()->OnInitAccount(ClientID);
+	Core()->OnInitAccount(ClientID);
 
 	// Send information about log in
 	const int Rank = GetRank(pPlayer->Account()->GetID());
 	GS()->Chat(-1, "{STR} logged to account. Rank #{INT}", Server()->ClientName(ClientID), Rank);
 #ifdef CONF_DISCORD
 	char aLoginBuf[64];
-	str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in Account ID %d", Server()->ClientName(ClientID), pPlayer->Account()->GetID());
-	Server()->SendDiscordGenerateMessage(aLoginBuf, pPlayer->Account()->GetID());
+	str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in AccountManager ID %d", Server()->ClientName(ClientID), pPlayer->AccountManager()->GetID());
+	Server()->SendDiscordGenerateMessage(aLoginBuf, pPlayer->AccountManager()->GetID());
 #endif
 
 	/* Initialize static settings items' data */
@@ -228,7 +228,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	}
 
 	// Hanlde time period
-	Job()->HandlePlayerTimePeriod(pPlayer);
+	Core()->HandlePlayerTimePeriod(pPlayer);
 
 	// Change player's world ID to the latest correct world ID
 	const int LatestCorrectWorldID = GetHistoryLatestCorrectWorldID(pPlayer);
@@ -252,7 +252,7 @@ void CAccountManager::DiscordConnect(int ClientID, const char* pDID) const
 	Database->Execute<DB::UPDATE>("tw_accounts_data", "DiscordID = 'null' WHERE DiscordID = '%s'", cDiscordID.cstr());
 
 	// connect the player discord id
-	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "DiscordID = '%s' WHERE ID = '%d'", cDiscordID.cstr(), pPlayer->Account()->GetID());
+	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "DiscordID = '%s' WHERE ID = '%d'", cDiscordID.cstr(), pPlayer->AccountManager()->GetID());
 
 	GS()->Chat(ClientID, "Your Discord ID has been updated.");
 	GS()->Chat(ClientID, "Check the connection status in discord \"/connect\".");
@@ -403,7 +403,7 @@ bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		GS()->StrongUpdateVotes(ClientID, MENU_SELECT_LANGUAGE);
 
 		// Save the account's language
-		Job()->SaveAccount(pPlayer, SAVE_LANGUAGE);
+		Core()->SaveAccount(pPlayer, SAVE_LANGUAGE);
 		return true;
 	}
 
@@ -487,8 +487,8 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 				}
 			}
 
-			GS()->Mmo()->SaveAccount(pPlayer, SAVE_STATS);
-			GS()->Mmo()->SaveAccount(pPlayer, SAVE_UPGRADES);
+			GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
+			GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 
 			Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Account()->GetID(), (int)time(0));
 			GS()->Chat(ClientID, "You have successfully redeemed the voucher '{STR}'.", pVoucher);

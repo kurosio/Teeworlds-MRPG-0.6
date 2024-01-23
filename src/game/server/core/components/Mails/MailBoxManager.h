@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_MAIL_CORE_H
 #include <game/server/core/mmo_component.h>
 
-class CMailBoxManager : public MmoComponent
+class CMailboxManager : public MmoComponent
 {
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;

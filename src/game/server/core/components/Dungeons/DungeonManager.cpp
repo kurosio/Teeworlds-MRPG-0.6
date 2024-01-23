@@ -89,7 +89,7 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		if(!GS()->IsDungeon())
 		{
 			pPlayer->GetTempData().SetTeleportPosition(pPlayer->GetCharacter()->m_Core.m_Pos);
-			GS()->Mmo()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
+			GS()->Core()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
 		}
 
 		GS()->Chat(-1, "{STR} joined to Dungeon {STR}!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[VoteID].m_aName);
@@ -101,7 +101,7 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 	// dungeon exit
 	else if(PPSTR(CMD, "DUNGEONEXIT") == 0)
 	{
-		const int LatestCorrectWorldID = Job()->Account()->GetHistoryLatestCorrectWorldID(pPlayer);
+		const int LatestCorrectWorldID = Core()->AccountManager()->GetHistoryLatestCorrectWorldID(pPlayer);
 		pPlayer->ChangeWorld(LatestCorrectWorldID);
 		return true;
 	}

@@ -21,7 +21,7 @@ void CAetherManager::OnInit()
 			CAether(ID).Init(pRes->getString("Name").c_str(), Pos, WorldID);
 		}
 
-		Job()->ShowLoadingProgress("Aethers", CAether::Data().size());
+		Core()->ShowLoadingProgress("Aethers", CAether::Data().size());
 	});
 }
 

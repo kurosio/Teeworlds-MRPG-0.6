@@ -259,7 +259,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
 	{
 		// Append defeat progress for the quest mob
-		GS()->Mmo()->Quest()->AppendDefeatProgress(pPlayer, BotID);
+		GS()->Core()->QuestManager()->AppendDefeatProgress(pPlayer, BotID);
 	}
 
 	// reduce afk farming
@@ -719,7 +719,7 @@ void CCharacterBotAI::EngineMobs()
 	HandleWeapons();
 }
 
-// interactive of Eidolons
+// interactive of EidolonManager
 void CCharacterBotAI::EngineEidolons()
 {
 	bool MobMove = true;

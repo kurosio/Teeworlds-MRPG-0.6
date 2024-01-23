@@ -191,7 +191,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 
 		// Show the active NPC for the quest to the player
-		pPlayer->GS()->Mmo()->Quest()->ShowQuestActivesNPC(pPlayer, QuestID);
+		pPlayer->GS()->Core()->QuestManager()->ShowQuestActivesNPC(pPlayer, QuestID);
 
 		// Add the vote information for the player's client
 		pPlayer->GS()->AV(ClientID, "null");

@@ -819,7 +819,7 @@ void CGS::OnTick()
 		}
 	}
 
-	Mmo()->OnTick();
+	Core()->OnTick();
 }
 
 // Here we use functions that can have static data or functions that don't need to be called in all worlds
@@ -838,7 +838,7 @@ void CGS::OnTickGlobal()
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
 				if(CPlayer* pPlayer = GetPlayer(i, true))
-					Mmo()->HandlePlayerTimePeriod(pPlayer);
+					Core()->HandlePlayerTimePeriod(pPlayer);
 			}
 
 			// Set the experience multiplier to a random value within the range [100, 300)
@@ -901,7 +901,7 @@ void CGS::OnTickGlobal()
 		// display the top message in the chat
 		Chat(-1, StrTypeName);
 		// show the top list to all players
-		Mmo()->ShowTopList(-1, RandomType, true, 5);
+		Core()->ShowTopList(-1, RandomType, true, 5);
 	}
 
 	// discord status
@@ -1120,7 +1120,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			SendEmoticon(ClientID, pMsg->m_Emoticon);
 
 			// Parse any skills associated with the received emoticon for the player
-			Mmo()->Skills()->ParseEmoticionSkill(pPlayer, pMsg->m_Emoticon);
+			Core()->SkillManager()->ParseEmoticionSkill(pPlayer, pMsg->m_Emoticon);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_KILL)
@@ -1193,7 +1193,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			Server()->SendPackMsg(&GoodCheck, MSGFLAG_VITAL | MSGFLAG_FLUSH | MSGFLAG_NORECORD, ClientID);
 		}
 		/*else
-			Mmo()->OnMessage(MsgID, pRawMsg, ClientID);*/
+			Core()->OnMessage(MsgID, pRawMsg, ClientID);*/
 	}
 	else
 	{
@@ -1285,8 +1285,8 @@ void CGS::OnClientEnter(int ClientID)
 		return;
 	}
 
-	Mmo()->Account()->LoadAccount(pPlayer, false);
-	Mmo()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
+	Core()->AccountManager()->LoadAccount(pPlayer, false);
+	Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 }
 
 void CGS::OnClientDrop(int ClientID, const char* pReason)
@@ -1305,7 +1305,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 
 		Chat(-1, "{STR} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
-		Mmo()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
+		Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 	}
 
 	delete m_apPlayers[ClientID];
@@ -1399,7 +1399,7 @@ const char* CGS::NetVersion() const { return GAME_NETVERSION; }
 // clearing all data at the exit of the client necessarily call once enough
 void CGS::ClearClientData(int ClientID)
 {
-	Mmo()->ResetClientData(ClientID);
+	Core()->ResetClientData(ClientID);
 	m_aPlayerVotes[ClientID].clear();
 	ms_aEffects[ClientID].clear();
 
@@ -1410,7 +1410,7 @@ void CGS::ClearClientData(int ClientID)
 
 int CGS::GetRank(int AccountID)
 {
-	return Mmo()->Account()->GetRank(AccountID);
+	return Core()->AccountManager()->GetRank(AccountID);
 }
 
 /* #########################################################################
@@ -1466,7 +1466,7 @@ void CGS::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 	const char* pGuildName = pResult->GetString(0);
-	CGuildData* pGuild = pSelf->Mmo()->Member()->GetGuildByName(pGuildName);
+	CGuildData* pGuild = pSelf->Core()->GuildManager()->GetGuildByName(pGuildName);
 
 	if(!pGuild)
 	{
@@ -1477,7 +1477,7 @@ void CGS::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 
 	str_format(aBuf, sizeof(aBuf), "Guild with identifier %d and by the name of %s has been disbanded.", pGuild->GetID(), pGuildName);
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "disbandguild", aBuf);
-	pSelf->Mmo()->Member()->Disband(pGuild->GetID());
+	pSelf->Core()->GuildManager()->Disband(pGuild->GetID());
 }
 
 void CGS::ConRemItem(IConsole::IResult* pResult, void* pUserData)
@@ -1515,7 +1515,7 @@ void CGS::ConAddCharacter(IConsole::IResult* pResult, void* pUserData)
 		return;
 
 	// add a new kind of bot
-	pSelf->Mmo()->BotsData()->ConAddCharacterBot(ClientID, pResult->GetString(1));
+	pSelf->Core()->BotManager()->ConAddCharacterBot(ClientID, pResult->GetString(1));
 }
 
 // dump dialogs for translate
@@ -1605,7 +1605,7 @@ void CGS::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 	}
 
 	// ban account
-	pSelf->Mmo()->Account()->BanAccount(pPlayer, time, pResult->GetString(2));
+	pSelf->Core()->AccountManager()->BanAccount(pPlayer, time, pResult->GetString(2));
 }
 
 void CGS::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
@@ -1614,7 +1614,7 @@ void CGS::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 	CGS* pSelf = (CGS*)pServer->GameServer();
 
 	// unban account by banid
-	pSelf->Mmo()->Account()->UnBanAccount(pResult->GetInteger(0));
+	pSelf->Core()->AccountManager()->UnBanAccount(pResult->GetInteger(0));
 }
 
 void CGS::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
@@ -1624,7 +1624,7 @@ void CGS::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 
 	char aBuf[1024];
 	int Counter = 0;
-	for(const auto& p : pSelf->Mmo()->Account()->BansAccount())
+	for(const auto& p : pSelf->Core()->AccountManager()->BansAccount())
 	{
 		// write information about afk
 		str_format(aBuf, sizeof(aBuf), "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
@@ -1818,7 +1818,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	// parse votes
 	pPlayer->m_CurrentVoteMenu = Menulist;
 	pGS->ClearVotes(ClientID);
-	pGS->Mmo()->OnPlayerHandleMainMenu(ClientID, Menulist);
+	pGS->Core()->OnPlayerHandleMainMenu(ClientID, Menulist);
 
 	// send parsed votes
 	for(auto& p : pGS->m_aPlayerVotes[ClientID])
@@ -1985,7 +1985,7 @@ bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, c
 
 	// parsing everything else
 	const CSqlString<64> FormatText = sqlstr::CSqlString<64>(Text);
-	return Mmo()->OnParsingVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, FormatText.cstr());
+	return Core()->OnParsingVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, FormatText.cstr());
 }
 
 /* #########################################################################
@@ -2087,7 +2087,7 @@ void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const
 // send a message with or without the object using AccountID
 void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, ItemIdentifier ItemID, int Value, int Enchant)
 {
-	Mmo()->Inbox()->SendInbox(pFrom, AccountID, Name, Desc, ItemID, Value, Enchant);
+	Core()->MailboxManager()->SendInbox(pFrom, AccountID, Name, Desc, ItemID, Value, Enchant);
 }
 
 void CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)

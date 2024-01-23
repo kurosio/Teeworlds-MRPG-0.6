@@ -183,7 +183,7 @@ void IGameController::OnPlayerDisconnect(CPlayer* pPlayer)
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
-		GS()->Mmo()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
+		GS()->Core()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
 	}
 
 	pPlayer->OnDisconnect();

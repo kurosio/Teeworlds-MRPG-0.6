@@ -44,7 +44,7 @@ class CGS : public IGameServer
 public:
 	IServer *Server() const { return m_pServer; }
 	IConsole* Console() const { return m_pConsole; }
-	CMmoController* Mmo() const { return m_pMmoController; }
+	CMmoController* Core() const { return m_pMmoController; }
 	IStorageEngine* Storage() const { return m_pStorage; }
 	CCommandProcessor* CommandProcessor() const { return m_pCommandProcessor; }
 	class CEntityDrawboard* pDrawBoard;

@@ -11,7 +11,7 @@ CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos, 0, ClientID)
 {
 	vec2 GetterPos{0,0};
-	GS()->Mmo()->WorldSwap()->FindPosition(WorldID, SearchPos, &GetterPos);
+	GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos, &GetterPos);
 
 	m_PosTo = GetterPos;
 	m_AreaClipped = AreaClipped;

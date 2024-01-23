@@ -26,7 +26,7 @@ void CGuildManager::OnInit()
 		CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
 	}
 
-	Job()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
+	Core()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
 }
 
 void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
@@ -45,7 +45,7 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		CGuildHouseData::CreateElement(ID)->Init(pGuild, Price, Position, TextPosition, GS()->GetWorldID(), std::move(JsonDoorsData));
 	}
 
-	Job()->ShowLoadingProgress("Guild houses", CGuildHouseData::Data().size());
+	Core()->ShowLoadingProgress("Guild houses", CGuildHouseData::Data().size());
 }
 
 void CGuildManager::OnTick()
@@ -102,7 +102,7 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 			//	return true;
 
 			//const int Exp = CGuildData::ms_aGuild[GuildID].m_UpgradesData(CGuildData::CHAIR_EXPERIENCE, 0).m_Value;
-			//pPlayer->Account()->AddExperience(Exp);
+			//pPlayer->AccountManager()->AddExperience(Exp);
 		}
 		return true;
 	}
@@ -723,7 +723,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: SELECT down your decorations");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "and press (Back to inventory).");
 
-		Job()->Item()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
+		Core()->InventoryManager()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
 		GS()->AV(ClientID, "null");
 		//ShowDecorationList(pPlayer);
 		GS()->AddVotesBackpage(ClientID);

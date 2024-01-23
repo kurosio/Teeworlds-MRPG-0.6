@@ -53,7 +53,7 @@ void CJobItems::Work(int ClientID)
 		return;
 
 	// not allowed un owner house job
-	CHouseData* pHouse = GS()->Mmo()->House()->GetHouse(m_HouseID);
+	CHouseData* pHouse = GS()->Core()->HouseManager()->GetHouse(m_HouseID);
 	if(pHouse && !pHouse->HasOwner())
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "It is forbidden to pick plants without the owner!");
@@ -114,7 +114,7 @@ void CJobItems::MiningWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorkedI
 {
 	if(Interaction("Pickaxe", AttributeIdentifier::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, pPlayer->Account()->m_MiningData(JOB_LEVEL, 0).m_Value))
 	{
-		GS()->Mmo()->MinerAcc()->Work(pPlayer, m_Level);
+		GS()->Core()->AccountMinerManager()->Work(pPlayer, m_Level);
 		pWorkedItem.Add(1+ rand()%2);
 		SetSpawn(20);
 	}
@@ -124,7 +124,7 @@ void CJobItems::FarmingWork(int ClientID, CPlayer* pPlayer, CPlayerItem& pWorked
 {
 	if(Interaction("Rake", AttributeIdentifier::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value))
 	{
-		GS()->Mmo()->PlantsAcc()->Work(pPlayer, m_Level);
+		GS()->Core()->AccountPlantManager()->Work(pPlayer, m_Level);
 		pWorkedItem.Add(1 + rand() % 2);
 		SetSpawn(20);		
 	}

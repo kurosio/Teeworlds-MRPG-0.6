@@ -26,7 +26,7 @@ void CCraftManager::OnInit()
 		CCraftItem::CreateElement(ID)->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
 	}
 
-	Job()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
+	Core()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
 }
 
 bool CCraftManager::OnHandleTile(CCharacter* pChr, int IndexCollision)

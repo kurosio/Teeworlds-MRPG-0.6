@@ -78,7 +78,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 
 void CAccountData::UpdatePointer(CPlayer* pPlayer)
 {
-	dbg_assert(m_pPlayer != nullptr, "Account pointer must always exist");
+	dbg_assert(m_pPlayer != nullptr, "AccountManager pointer must always exist");
 
 	m_pPlayer = pPlayer;
 	m_ClientID = pPlayer->GetCID();
@@ -197,7 +197,7 @@ void CAccountData::IncreaseRelations(int Relevation)
 	}
 
 	// Save the player's account data, specifically the relationship level.
-	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
 // This function is used to imprison a player for a certain number of seconds
@@ -217,7 +217,7 @@ void CAccountData::Imprison(int Seconds)
 		// Set the prison seconds and send a chat message to all players indicating that the player has been imprisoned
 		m_PrisonSeconds = Seconds;
 		GS()->Chat(-1, "{STR}, has been imprisoned for {INT} seconds.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()), Seconds);
-		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 	}
 }
 
@@ -233,7 +233,7 @@ void CAccountData::Unprison()
 
 	m_PrisonSeconds = -1;
 	GS()->Chat(-1, "{STR} were released from prison.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()));
-	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
 // Add experience to the account
@@ -271,18 +271,18 @@ void CAccountData::AddExperience(int Value)
 		{
 			// Update votes, save stats, and save upgrades
 			GS()->StrongUpdateVotes(m_ClientID, MENU_MAIN);
-			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);
-			GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_UPGRADES);
+			GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+			GS()->Core()->SaveAccount(m_pPlayer, SAVE_UPGRADES);
 		}
 	}
 
 	// Update the progress bar
-	m_pPlayer->ProgressBar("Account", m_Level, m_Exp, (int)computeExperience(m_Level), Value);
+	m_pPlayer->ProgressBar("AccountManager", m_Level, m_Exp, (int)computeExperience(m_Level), Value);
 
 	// Randomly save the account stats
 	if(rand() % 5 == 0)
 	{
-		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_STATS);
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
 	}
 
 	// Add experience to the guild member
@@ -335,7 +335,7 @@ void CAccountData::ResetDailyChairGolds()
 
 	// Reset the daily chair golds to 0
 	m_DailyChairGolds = 0;
-	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
 void CAccountData::ResetRelations()
@@ -346,7 +346,7 @@ void CAccountData::ResetRelations()
 
 	// Reset player's relations and save relations
 	m_Relations = 0;
-	GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
+	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
 void CAccountData::HandleChair()
@@ -373,7 +373,7 @@ void CAccountData::HandleChair()
 	{
 		AddGold(GoldValue); // Add the gold value to the player's gold
 		m_DailyChairGolds += GoldValue; // Increase the daily gold count
-		GS()->Mmo()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS); // Save the player's account
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS); // Save the player's account
 	}
 
 	// Broadcast the information about the gold and experience gained, as well as the current limits and counts

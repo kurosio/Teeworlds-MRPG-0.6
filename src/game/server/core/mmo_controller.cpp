@@ -30,27 +30,27 @@
 CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
-	m_components.add(m_pQuest = new CQuestManager);
-	m_components.add(m_pBotsInfo = new CBotManager);
-	m_components.add(m_pItemWork = new CInventoryManager);
-	m_components.add(m_pCraft = new CCraftManager);
-	m_components.add(m_pWarehouse = new CWarehouseManager);
-	m_components.add(new CAuctionManager);
-	m_components.add(m_pEidolon = new CEidolonManager);
-	m_components.add(m_pDungeon = new CDungeonManager);
-	m_components.add(new CAetherManager);
-	m_components.add(m_pWorldSwap = new CWorldManager);
-	m_components.add(m_pHouse = new CHouseManager);
-	m_components.add(m_pGuild = new CGuildManager);
-	m_components.add(m_pGroup = new CGroupManager);
-	m_components.add(m_pSkill = new CSkillManager);
-	m_components.add(m_pTutorial = new CTutorialManager);
-	m_components.add(m_pAccMain = new CAccountManager);
-	m_components.add(m_pAccMiner = new CAccountMinerManager);
-	m_components.add(m_pAccPlant = new CAccountPlantManager);
-	m_components.add(m_pMailBox = new CMailBoxManager);
+	m_System.add(m_pQuestManager = new CQuestManager);
+	m_System.add(m_pBotManager = new CBotManager);
+	m_System.add(m_pInventoryManager = new CInventoryManager);
+	m_System.add(m_pCraftManager = new CCraftManager);
+	m_System.add(m_pWarehouseManager = new CWarehouseManager);
+	m_System.add(new CAuctionManager);
+	m_System.add(m_pEidolonManager = new CEidolonManager);
+	m_System.add(m_pDungeonManager = new CDungeonManager);
+	m_System.add(new CAetherManager);
+	m_System.add(m_pWorldManager = new CWorldManager);
+	m_System.add(m_pHouseManager = new CHouseManager);
+	m_System.add(m_pGuildManager = new CGuildManager);
+	m_System.add(m_pGroupManager = new CGroupManager);
+	m_System.add(m_pSkillManager = new CSkillManager);
+	m_System.add(m_pTutorialManager = new CTutorialManager);
+	m_System.add(m_pAccountManager = new CAccountManager);
+	m_System.add(m_pAccountMinerManager = new CAccountMinerManager);
+	m_System.add(m_pAccountPlantManager = new CAccountPlantManager);
+	m_System.add(m_pMailboxManager = new CMailboxManager);
 
-	for(auto& pComponent : m_components.m_pacomponents)
+	for(auto& pComponent : m_System.m_vComponents)
 	{
 		pComponent->m_Job = this;
 		pComponent->m_GameServer = pGameServer;
@@ -67,12 +67,12 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 
 CMmoController::~CMmoController()
 {
-	m_components.free();
+	m_System.free();
 }
 
 void CMmoController::OnTick()
 {
-	for(auto& pComponent : m_components.m_pacomponents)
+	for(auto& pComponent : m_System.m_vComponents)
 		pComponent->OnTick();
 }
 
@@ -80,7 +80,7 @@ bool CMmoController::OnMessage(int MsgID, void* pRawMsg, int ClientID)
 {
 	if(GS()->Server()->ClientIngame(ClientID) && GS()->GetPlayer(ClientID))
 	{
-		for(auto& pComponent : m_components.m_pacomponents)
+		for(auto& pComponent : m_System.m_vComponents)
 		{
 			if(pComponent->OnMessage(MsgID, pRawMsg, ClientID))
 				return true;
@@ -96,7 +96,7 @@ void CMmoController::OnInitAccount(int ClientID)
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	for(auto& pComponent : m_components.m_pacomponents)
+	for(auto& pComponent : m_System.m_vComponents)
 		pComponent->OnInitAccount(pPlayer);
 }
 
@@ -108,7 +108,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 	// ----------------------------------------
 	// check replaced votes
-	for(auto& pComponent : m_components.m_pacomponents)
+	for(auto& pComponent : m_System.m_vComponents)
 	{
 		// Check if the player's m_ZoneInvertMenu variable is true
 		if(pPlayer->m_ZoneInvertMenu)
@@ -282,9 +282,9 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		else
 		{
 			const int WorldID = pPlayer->m_aSortTabs[SORT_GUIDE_WORLD];
-			const bool ActiveMob = BotsData()->ShowGuideDropByWorld(WorldID, pPlayer);
-			const bool ActivePlant = PlantsAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
-			const bool ActiveOre = MinerAcc()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActiveMob = BotManager()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActivePlant = AccountPlantManager()->ShowGuideDropByWorld(WorldID, pPlayer);
+			const bool ActiveOre = AccountMinerManager()->ShowGuideDropByWorld(WorldID, pPlayer);
 			if(!ActiveMob && !ActivePlant && !ActiveOre)
 				GS()->AVL(ClientID, "null", "There are no drops in the selected area.");
 		}
@@ -295,7 +295,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 	// ----------------------------------------
 	// check append votes
-	for(auto& pComponent : m_components.m_pacomponents)
+	for(auto& pComponent : m_System.m_vComponents)
 	{
 		if(pComponent->OnHandleMenulist(pPlayer, Menulist, false))
 			return true;
@@ -310,7 +310,7 @@ bool CMmoController::OnPlayerHandleTile(CCharacter* pChr, int IndexCollision)
 	if(!pChr || !pChr->IsAlive())
 		return true;
 
-	for(auto& pComponent : m_components.m_pacomponents)
+	for(auto& pComponent : m_System.m_vComponents)
 	{
 		if(pComponent->OnHandleTile(pChr, IndexCollision))
 			return true;
@@ -323,7 +323,7 @@ bool CMmoController::OnParsingVoteCommands(CPlayer* pPlayer, const char* CMD, co
 	if(!pPlayer)
 		return true;
 
-	for(auto& pComponent : m_components.m_pacomponents)
+	for(auto& pComponent : m_System.m_vComponents)
 	{
 		if(pComponent->OnHandleVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, GetText))
 			return true;
@@ -333,7 +333,7 @@ bool CMmoController::OnParsingVoteCommands(CPlayer* pPlayer, const char* CMD, co
 
 void CMmoController::ResetClientData(int ClientID)
 {
-	for(auto& pComponent : m_components.m_pacomponents)
+	for(auto& pComponent : m_System.m_vComponents)
 		pComponent->OnResetClient(ClientID);
 }
 
@@ -373,7 +373,7 @@ void CMmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 		SaveAccount(pPlayer, SAVE_TIME_PERIODS);
 
 		// Check time periods for all components
-		for(const auto& component : m_components.m_pacomponents)
+		for(const auto& component : m_System.m_vComponents)
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
@@ -432,7 +432,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_POSITION)
 	{
-		const int LatestCorrectWorldID = Account()->GetHistoryLatestCorrectWorldID(pPlayer);
+		const int LatestCorrectWorldID = AccountManager()->GetHistoryLatestCorrectWorldID(pPlayer);
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pAcc->GetID());
 	}
 	else if(Table == SAVE_TIME_PERIODS)

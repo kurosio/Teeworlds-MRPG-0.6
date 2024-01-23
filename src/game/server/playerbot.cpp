@@ -386,7 +386,7 @@ StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 			return STATE_SNAPPING_NONE;
 
 		// Check if the NPC's function is to give a quest and if the player has already accepted the quest
-		const int GivesQuest = GS()->Mmo()->BotsData()->GetQuestNPC(m_MobID);
+		const int GivesQuest = GS()->Core()->BotManager()->GetQuestNPC(m_MobID);
 		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GIVE_QUEST
 			&& pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NO_ACCEPT)
 			return STATE_SNAPPING_ONLY_CHARACTER;

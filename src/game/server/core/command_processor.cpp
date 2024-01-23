@@ -101,7 +101,7 @@ void CCommandProcessor::ConChatLogin(IConsole::IResult* pResult, void* pUser)
 		str_copy(aUsername, pResult->GetString(0), sizeof(aUsername));
 		str_copy(aPassword, pResult->GetString(1), sizeof(aPassword));
 
-		pGS->Mmo()->Account()->LoginAccount(ClientID, aUsername, aPassword);
+		pGS->Core()->AccountManager()->LoginAccount(ClientID, aUsername, aPassword);
 	}
 }
 
@@ -125,7 +125,7 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 	str_copy(aUsername, pResult->GetString(0), sizeof(aUsername));
 	str_copy(aPassword, pResult->GetString(1), sizeof(aPassword));
 
-	pGS->Mmo()->Account()->RegisterAccount(ClientID, aUsername, aPassword);
+	pGS->Core()->AccountManager()->RegisterAccount(ClientID, aUsername, aPassword);
 }
 
 #ifdef CONF_DISCORD
@@ -152,7 +152,7 @@ void CCommandProcessor::ConChatDiscordConnect(IConsole::IResult* pResult, void* 
 		return;
 	}
 
-	pGS->Mmo()->Account()->DiscordConnect(ClientID, aDiscordDID);
+	pGS->Core()->AccountManager()->DiscordConnect(ClientID, aDiscordDID);
 }
 #endif
 
@@ -198,7 +198,7 @@ void CCommandProcessor::ConChatGuildCreate(IConsole::IResult* pResult, void* pUs
 		return;
 	}
 
-	pGS->Mmo()->Member()->Create(pPlayer, aGuildName);
+	pGS->Core()->GuildManager()->Create(pPlayer, aGuildName);
 }
 
 void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser)
@@ -372,7 +372,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 	if(pElem.compare(0, 6, "create") == 0)
 	{
 		// Create a group for the player
-		pGS->Mmo()->Group()->CreateGroup(pPlayer);
+		pGS->Core()->GroupManager()->CreateGroup(pPlayer);
 		pGS->StrongUpdateVotesForAll(MENU_GROUP);
 		return;
 	}
@@ -520,7 +520,7 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 
 	char aVoucher[32];
 	str_copy(aVoucher, pResult->GetString(0), sizeof(aVoucher));
-	pGS->Mmo()->Account()->UseVoucher(ClientID, aVoucher);
+	pGS->Core()->AccountManager()->UseVoucher(ClientID, aVoucher);
 }
 
 void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
