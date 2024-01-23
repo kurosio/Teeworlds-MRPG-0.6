@@ -7,22 +7,17 @@ if(NOT CMAKE_CROSSCOMPILING)
   )
 
   if(MYSQL_CONFIG)
-    exec_program(${MYSQL_CONFIG}
-      ARGS --include
-      OUTPUT_VARIABLE MY_TMP
-    )
-
+    execute_process(COMMAND ${MYSQL_CONFIG} --include OUTPUT_VARIABLE MY_TMP)
     string(REGEX REPLACE "-I([^ ]*)( .*)?" "\\1" MY_TMP "${MY_TMP}")
-
     set(MYSQL_CONFIG_INCLUDE_DIR ${MY_TMP} CACHE FILEPATH INTERNAL)
 
-    exec_program(${MYSQL_CONFIG}
+    execute_process(COMMAND ${MYSQL_CONFIG} --libs_r OUTPUT_VARIABLE MY_TMP)
+    execute_process(${MYSQL_CONFIG}
       ARGS --libs_r
       OUTPUT_VARIABLE MY_TMP
     )
 
     set(MYSQL_CONFIG_LIBRARIES "")
-
     string(REGEX MATCHALL "-l[^ ]*" MYSQL_LIB_LIST "${MY_TMP}")
     foreach(LIB ${MYSQL_LIB_LIST})
       string(REGEX REPLACE "[ ]*-l([^ ]*)" "\\1" LIB "${LIB}")
@@ -30,7 +25,6 @@ if(NOT CMAKE_CROSSCOMPILING)
     endforeach()
 
     set(MYSQL_CONFIG_LIBRARY_PATH "")
-
     string(REGEX MATCHALL "-L[^ ]*" MYSQL_LIBDIR_LIST "${MY_TMP}")
     foreach(LIB ${MYSQL_LIBDIR_LIST})
       string(REGEX REPLACE "[ ]*-L([^ ]*)" "\\1" LIB "${LIB}")
