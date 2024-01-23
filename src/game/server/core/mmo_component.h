@@ -19,12 +19,12 @@ class MmoComponent
 protected:
 	class CGS* m_GameServer;
 	class IServer* m_pServer;
-	class CMmoController* m_Job;
+	class CMmoController* m_Core;
 	friend CMmoController; // provide access for the controller
 
 	CGS* GS() const { return m_GameServer; }
 	IServer* Server() const { return m_pServer; }
-	CMmoController* Core() const { return m_Job; }
+	CMmoController* Core() const { return m_Core; }
 
 public:
 	virtual ~MmoComponent() {}

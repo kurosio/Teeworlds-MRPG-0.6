@@ -52,7 +52,7 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 
 	for(auto& pComponent : m_System.m_vComponents)
 	{
-		pComponent->m_Job = this;
+		pComponent->m_Core = this;
 		pComponent->m_GameServer = pGameServer;
 		pComponent->m_pServer = pGameServer->Server();
 
