@@ -1360,7 +1360,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
 
 	// Dissable self damage without some item
-	if(!pFrom || FromID == m_pPlayer->GetCID() && m_pPlayer->GetItem(itDamageEqualizer)->IsEquipped())
+	if(!pFrom || (FromID == m_pPlayer->GetCID() && m_pPlayer->GetItem(itDamageEqualizer)->IsEquipped()))
 		return false;
 
 	// Check if damage is disabled for the current object or the object it is interacting with

@@ -120,8 +120,8 @@ bool CBrush::UpdatePosition()
 	vec2 NewPos = m_pPlayer->GetCharacter()->GetMousePos();
 	if(m_Flags & BRUSHFLAG_CELL_POSITION)
 	{
-		m_Position.x = (float)((round_to_int(NewPos.x) / 32) * 32) + 16;
-		m_Position.y = (float)((round_to_int(NewPos.y) / 32) * 32) + 16;
+		m_Position.x = (float)(round_to_int(NewPos.x) / 32 * 32) + 16.f;
+		m_Position.y = (float)(round_to_int(NewPos.y) / 32 * 32) + 16.f;
 	}
 	else
 	{
