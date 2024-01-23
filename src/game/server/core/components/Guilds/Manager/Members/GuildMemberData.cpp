@@ -109,7 +109,6 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 	ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILDS_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
 	if(pRes->next())
 	{
-		int ClientID = pPlayer->GetCID();
 		int Bank = pRes->getInt("Bank");
 
 		// Make sure the requested withdrawal amount is not greater than the available bank value
