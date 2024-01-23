@@ -101,7 +101,7 @@ void CBrush::SendBroadcast() const
 	}
 
 	char aBufSpaces[140];
-	str_format(aBufSpaces, sizeof(aBufSpaces), "%-*s", sizeof(aBufSpaces) - 1, " ");
+	str_format(aBufSpaces, sizeof(aBufSpaces), "%-*s", (int)sizeof(aBufSpaces) - 1, " ");
 	aBufSpaces[sizeof(aBufSpaces) - 1] = '\0';
 
 	const CItemDescription* pItem = GS()->GetItemInfo(*m_BrushItem);
