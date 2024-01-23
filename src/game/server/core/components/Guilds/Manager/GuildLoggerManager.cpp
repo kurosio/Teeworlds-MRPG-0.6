@@ -1,6 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <stdarg.h>
 #include "GuildLoggerManager.h"
 
 #include <engine/server/sql_string_helpers.h>
@@ -8,7 +7,7 @@
 
 CGuildLoggerManager::CGuildLoggerManager(CGuildData* pGuild, int64_t Logflag) : m_pGuild(pGuild)
 {
-	m_Logflag = Logflag < 0 ? LOGFLAG_GUILD_FULL : Logflag;
+	m_Logflag = Logflag < 0 ? (int64_t)LOGFLAG_GUILD_FULL : Logflag;
 
 	CGuildLoggerManager::InitLogs();
 }
