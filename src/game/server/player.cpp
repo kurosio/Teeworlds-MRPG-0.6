@@ -31,7 +31,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 
 	m_EidolonCID = -1;
 	m_WantSpawn = true;
-	m_SnapHealthTick = 0;
+	m_SnapHealthNicknameTick = 0;
 	m_aPlayerTick[Die] = Server()->Tick();
 	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
 	m_PrevTuningParams = *pGS->Tuning();
@@ -68,7 +68,7 @@ CPlayer::~CPlayer()
 void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 {
 	// Check if the player is not currently chatting and the server tick is less than the snapshot health tick
-	if(!(m_PlayerFlags & PLAYERFLAG_CHATTING) && Server()->Tick() < m_SnapHealthTick)
+	if(!(m_PlayerFlags & PLAYERFLAG_CHATTING) && Server()->Tick() < m_SnapHealthNicknameTick)
 	{
 		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
 		char aHealthProgressBuf[6];
@@ -185,6 +185,12 @@ void CPlayer::PostTick()
 
 	// Handle scoreboard colors
 	HandleScoreboardColors();
+}
+
+void CPlayer::PrepareRespawnTick()
+{
+	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
+	m_WantSpawn = true;
 }
 
 CPlayerBot* CPlayer::GetEidolon() const
@@ -1104,7 +1110,7 @@ int CPlayer::GetAttributesSize()
 
 void CPlayer::SetSnapHealthTick(int Sec)
 {
-	m_SnapHealthTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
+	m_SnapHealthNicknameTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
 }
 
 void CPlayer::ChangeWorld(int WorldID)

@@ -46,7 +46,7 @@ class CPlayer
 		int m_TargetY;
 	};
 
-	int m_SnapHealthTick;
+	int m_SnapHealthNicknameTick;
 	ska::unordered_map<int, bool> m_aHiddenMenu;
 
 protected:
@@ -145,6 +145,7 @@ public:
 	void PostVoteList();
 
 	virtual bool IsActive() const { return true; }
+	virtual void PrepareRespawnTick();
 	class CPlayerBot* GetEidolon() const;
 	void TryCreateEidolon();
 	void TryRemoveEidolon();

@@ -46,7 +46,7 @@ public:
 
 	bool OnEntity(int Index, vec2 Pos) override;
 	void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) override;
-	void OnCharacterDeath(class CCharacter* pVictim, class CPlayer* pKiller, int Weapon) override;
+	void OnCharacterDeath(class CPlayer* pVictim, class CPlayer* pKiller, int Weapon) override;
 	bool OnCharacterSpawn(class CCharacter* pChr) override;
 	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override;
 	int GetAttributeDungeonSync(const CPlayer* pPlayer, AttributeIdentifier ID) const;

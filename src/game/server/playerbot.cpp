@@ -20,7 +20,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int Spaw
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
 	m_Items.reserve(CItemDescription::Data().size());
-	ResetRespawnTick();
+	PrepareRespawnTick();
 }
 
 CPlayerBot::~CPlayerBot()
@@ -152,7 +152,7 @@ bool CPlayerBot::IsActive() const
 	return GS()->m_World.IsBotActive(m_ClientID);
 }
 
-void CPlayerBot::ResetRespawnTick()
+void CPlayerBot::PrepareRespawnTick()
 {
 	// If the bot type is TYPE_BOT_MOB
 	if(m_BotType == TYPE_BOT_MOB)
@@ -178,6 +178,9 @@ void CPlayerBot::ResetRespawnTick()
 		// Set the respawn tick for the bot as the current server tick plus 3 server ticks
 		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * 3;
 	}
+
+	// Set the want spawn variable to true
+	m_WantSpawn = true;
 }
 
 int CPlayerBot::GetAttributeSize(AttributeIdentifier ID) const

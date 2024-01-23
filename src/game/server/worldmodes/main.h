@@ -15,5 +15,6 @@ public:
 	bool OnEntity(int Index, vec2 Pos) override;
 	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override;
 
+	void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) override;
 };
 #endif

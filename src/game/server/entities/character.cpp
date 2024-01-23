@@ -845,19 +845,12 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 
 void CCharacter::Die(int Killer, int Weapon)
 {
-	m_pPlayer->GetTempData().m_LastKilledByWeapon = Weapon;
 	m_Alive = false;
 
 	const int ClientID = m_pPlayer->GetCID();
-	if(Weapon != WEAPON_WORLD)
-	{
-		// Clear all effects on the player
-		m_pPlayer->ClearEffects();
-		m_pPlayer->UpdateTempData(0, 0);
-	}
 
 	// a nice sound
-	GS()->m_pController->OnCharacterDeath(this, GS()->m_apPlayers[Killer], Weapon);
+	GS()->m_pController->OnCharacterDeath(m_pPlayer, GS()->m_apPlayers[Killer], Weapon);
 	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 
 	// send the kill message
@@ -869,9 +862,8 @@ void CCharacter::Die(int Killer, int Weapon)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, m_pPlayer->GetPlayerWorldID());
 
 	// respawn
-	m_pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
 	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
-	m_pPlayer->m_WantSpawn = true;
+	m_pPlayer->PrepareRespawnTick();
 	GS()->m_World.RemoveEntity(this);
 	GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
 	GS()->CreateDeath(m_Pos, ClientID);

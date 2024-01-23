@@ -18,9 +18,9 @@ CGameWorld::CGameWorld() : m_pNextTraverseEntity(nullptr), m_Paused(false)
 		m_apFirstEntityTypes[i] = nullptr;
 
 	m_apEntitiesCollection.max_load_factor(0.8f);
-	m_apEntitiesCollection.reserve(NUM_ENTITIES * MAX_CLIENTS * 5);
-	m_aMarkedBotsActive.reserve(MAX_PLAYERS);
-	m_aBotsActive.reserve(MAX_PLAYERS);
+	m_apEntitiesCollection.reserve(static_cast<size_t>(NUM_ENTITIES * MAX_CLIENTS * 5));
+	m_aMarkedBotsActive.reserve(MAX_CLIENTS);
+	m_aBotsActive.reserve(MAX_CLIENTS);
 }
 
 CGameWorld::~CGameWorld()

@@ -27,10 +27,25 @@ void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage
 {
 }
 
-void IGameController::OnCharacterDeath(CCharacter* pVictim, CPlayer* pKiller, int Weapon)
+void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
-	// eidolons
-	pVictim->GetPlayer()->TryRemoveEidolon();
+	if(pVictim->IsBot())
+	{
+		//CPlayerBot* pVictimBot = static_cast<CPlayerBot*>(pVictim);
+
+	}
+	else
+	{
+		pVictim->TryRemoveEidolon();
+		pVictim->GetTempData().m_LastKilledByWeapon = Weapon;
+
+		// Clear all effects on the player
+		if(Weapon != WEAPON_WORLD)
+		{
+			pVictim->ClearEffects();
+			pVictim->UpdateTempData(0, 0);
+		}
+	}
 }
 
 bool IGameController::OnCharacterSpawn(CCharacter* pChr)

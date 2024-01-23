@@ -74,7 +74,7 @@ public:
 	void FakeSnap() override;
 
 	bool IsActive() const override;
-	void ResetRespawnTick();
+	void PrepareRespawnTick() override;
 
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
 

@@ -280,18 +280,14 @@ void CGameControllerDungeon::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int
 	}
 }
 
-void CGameControllerDungeon::OnCharacterDeath(CCharacter* pVictim, CPlayer* pKiller, int Weapon)
+void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
 	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 
-	/*
-	 * Commentary, here will be introduced counting of killed mobs and the percentage of passing
-	 */
-	if(pKiller && pVictim)
+	if(pVictim->IsBot())
 	{
-		const int KillerID = pKiller->GetCID();
-		const int VictimID = pVictim->GetPlayer()->GetCID();
-		if(KillerID != VictimID && pVictim->GetPlayer()->IsBot() && pVictim->GetPlayer()->GetBotType() == TYPE_BOT_MOB)
+		CPlayerBot* pVictimBot = static_cast<CPlayerBot*>(pVictim);
+		if(pKiller->GetCID() != pVictim->GetCID() && pVictimBot->GetBotType() == TYPE_BOT_MOB)
 		{
 			const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
 			CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;

@@ -72,3 +72,8 @@ bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
 
 	return false;
 }
+
+void CGameControllerMain::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
+{
+	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
+}
