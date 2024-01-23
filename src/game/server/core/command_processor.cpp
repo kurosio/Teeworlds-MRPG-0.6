@@ -57,8 +57,8 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("tutorial", "", ConChatTutorial, pServer, "");
 
 	// information command
-	AddCommand("cmdlist", "", ConChatCmdList, pServer, "");
-	AddCommand("help", "", ConChatCmdList, pServer, "");
+	AddCommand("cmdlist", "?i[page]", ConChatCmdList, pServer, "");
+	AddCommand("help", "?i[page]", ConChatCmdList, pServer, "");
 	AddCommand("rules", "", ConChatRules, pServer, "");
 
 	AddCommand("add_multiple_orbite", "i[orbite] i[type] i[subtype]", ConAddMultipleOrbite, pServer, "");
@@ -406,7 +406,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		}
 
 		// Display the group list for the player
-		pGS->Chat(ClientID, "\u2218\u208A\u2727\u2500\u2500\u2500\u2500\u2500 Group list \u2500\u2500\u2500\u2500\u2500\u2727\u208A\u2218");
+		pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Group list \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
 		for(const auto& AID : pGroup->GetAccounts())
 		{
 			const char* Prefix = (pGroup->OwnerUID() == AID) ? "O: " : "\0";
@@ -417,7 +417,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 	}
 
 	const char* Status = (pGroup ? "in a group" : "not in a group");
-	pGS->Chat(ClientID, "\u2218\u208A\u2727\u2500\u2500\u2500\u2500\u2500 Group management \u2500\u2500\u2500\u2500\u2500\u2727\u208A\u2218");
+	pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Group system \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
 	pGS->Chat(ClientID, "Current status: {STR}!", Status);
 	pGS->Chat(ClientID, "/group create - create a new group");
 	pGS->Chat(ClientID, "/group list - group membership list");
@@ -473,14 +473,26 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 	if(!pPlayer)
 		return;
 
-	pGS->Chat(ClientID, "Command List / Help");
-	pGS->Chat(ClientID, "/register <name> <pass> - new account.");
-	pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
-	pGS->Chat(ClientID, "/rules - server rules.");
-	pGS->Chat(ClientID, "/group - group system.");
-	pGS->Chat(ClientID, "/tutorial - training challenge.");
-	pGS->Chat(ClientID, "#<text> - perform an action.");
-	pGS->Chat(ClientID, "Another information see Wiki Page.");
+	constexpr int MaxPage = 2;
+	const int Page = clamp(pResult->GetInteger(0), 1, MaxPage);
+	pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501 Command List [{INT} of {INT}] page \u2501\u2501\u2501\u2501\u2513", Page, MaxPage);
+	if(Page == 1)
+	{
+		pGS->Chat(ClientID, "/register <name> <pass> - new account.");
+		pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
+		pGS->Chat(ClientID, "/rules - server rules.");
+		pGS->Chat(ClientID, "/tutorial - training challenge.");
+		pGS->Chat(ClientID, "/voucher <voucher> - get voucher special items.");
+		pGS->Chat(ClientID, "/useskill <uid> - use skill by uid.");
+		pGS->Chat(ClientID, "/useitem <uid> - use item by uid.");
+	}
+	else if(Page == 2)
+	{
+		pGS->Chat(ClientID, "/group - group system.");
+		pGS->Chat(ClientID, "/guild - guild system.");
+		pGS->Chat(ClientID, "/house - house system.");
+		pGS->Chat(ClientID, "#<text> - perform an action.");
+	}
 }
 
 void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
