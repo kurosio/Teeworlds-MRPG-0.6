@@ -14,10 +14,8 @@ class CCommandProcessor
 	/************************************************************************/
 	static void ConChatLogin(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatRegister(IConsole::IResult* pResult, void* pUserData);
-	static void ConChatGuildExit(IConsole::IResult* pResult, void* pUserData);
-	static void ConChatGuildCreate(IConsole::IResult* pResult, void* pUserData);
-	static void ConChatDoorHouse(IConsole::IResult* pResult, void* pUserData);
-	static void ConChatSellHouse(IConsole::IResult* pResult, void* pUserData);
+	static void ConChatGuild(IConsole::IResult* pResult, void* pUserData);
+	static void ConChatHouse(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatPosition(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatSound(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatGiveEffect(IConsole::IResult* pResult, void* pUserData);

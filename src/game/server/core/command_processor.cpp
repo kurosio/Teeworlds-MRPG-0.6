@@ -36,12 +36,10 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("register", "s[username] s[password]", ConChatRegister, pServer, "");
 
 	// guild commands
-	AddCommand("gexit", "", ConChatGuildExit, pServer, "");
-	AddCommand("gcreate", "r[guildname]", ConChatGuildCreate, pServer, "");
+	AddCommand("guild", "?s[element] ?s[name]", ConChatGuild, pServer, "");
 
 	// house commands
-	AddCommand("hdoor", "?s[element] ?i[number]", ConChatDoorHouse, pServer, "");
-	AddCommand("hsell", "", ConChatSellHouse, pServer, "");
+	AddCommand("house", "?s[element] ?s[subelement] ?i[number]", ConChatHouse, pServer, "");
 
 	// admin command
 	AddCommand("pos", "", ConChatPosition, pServer, "");
@@ -156,52 +154,60 @@ void CCommandProcessor::ConChatDiscordConnect(IConsole::IResult* pResult, void* 
 }
 #endif
 
-void CCommandProcessor::ConChatGuildExit(IConsole::IResult* pResult, void* pUser)
+void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 {
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->Account()->HasGuild())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	const int AccountID = pPlayer->Account()->GetID();
-	GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID);
-	if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
+	// If the command element is "leave", leave the guild
+	const std::string pElem = pResult->GetString(0);
+	if(pElem.compare(0, 5, "leave") == 0)
 	{
-		pGS->Chat(ClientID, "You have left the guild.");
+		if(!pPlayer->Account()->HasGuild())
+		{
+			pGS->Chat(ClientID, "You are not in the guild.");
+			return;
+		}
+
+		const int AccountID = pPlayer->Account()->GetID();
+		GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID);
+		if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
+		{
+			pGS->Chat(ClientID, "You have left the guild.");
+		}
+		else if(Result == GUILD_MEMBER_RESULT::KICK_IS_OWNER)
+		{
+			pGS->Chat(ClientID, "You cannot leave the guild because you are the owner.");
+		}
+		return;
 	}
-	else if(Result == GUILD_MEMBER_RESULT::KICK_DOES_NOT_EXIST)
+
+	// If the command element is "create", create a new guild
+	std::string Guildname = pResult->GetString(1);
+	if(pElem.compare(0, 6, "create") == 0)
 	{
-		pGS->Chat(ClientID, "You are not in the guild.");
+		if(Guildname.length() > 8 || Guildname.length() < 3)
+		{
+			pGS->Chat(ClientID, "Guild name must contain 3-8 characters");
+			return;
+		}
+
+		pGS->Core()->GuildManager()->Create(pPlayer, Guildname.c_str());
+		return;
 	}
-	else if(Result == GUILD_MEMBER_RESULT::KICK_IS_OWNER)
-	{
-		pGS->Chat(ClientID, "You cannot leave the guild because you are the owner.");
-	}
+
+	// Guild command list
+	pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Guild system \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+	pGS->Chat(ClientID, "/guild create <name> - create a new guild");
+	pGS->Chat(ClientID, "/guild leave - leave the guild");
+
 }
 
-void CCommandProcessor::ConChatGuildCreate(IConsole::IResult* pResult, void* pUser)
-{
-	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
-
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(!pPlayer || !pPlayer->IsAuthed() || pPlayer->Account()->HasGuild())
-		return;
-
-	char aGuildName[16];
-	str_copy(aGuildName, pResult->GetString(0), sizeof(aGuildName));
-	if(str_length(aGuildName) > 8 || str_length(aGuildName) < 3)
-	{
-		pGS->Chat(ClientID, "Guild name must contain 3-8 characters");
-		return;
-	}
-
-	pGS->Core()->GuildManager()->Create(pPlayer, aGuildName);
-}
-
-void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser)
+void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 {
 	// Get the game server associated with the client ID
 	const int ClientID = pResult->GetClientID();
@@ -220,96 +226,91 @@ void CCommandProcessor::ConChatDoorHouse(IConsole::IResult* pResult, void* pUser
 		return;
 	}
 
-	// Get the command element from the command result and hose door data
+	// If the command element is "sell", sell the house to the state
 	const std::string pElem = pResult->GetString(0);
-	CHouseDoorsController* pDoorController = pHouse->GetDoorsController();
-
-	// If the command element is "list", list all the doors in the house
-	if(pElem.compare(0, 4, "list") == 0)
+	if(pElem.compare(0, 4, "sell") == 0)
 	{
-		pGS->Chat(ClientID, "\u2218\u208A\u2727\u2500\u2500\u2500\u2500\u2500 Door list \u2500\u2500\u2500\u2500\u2500\u2727\u208A\u2218");
-		for(const auto& [Number, Door] : pDoorController->GetDoors())
+		pHouse->Sell();
+		return;
+	}
+
+	// If the command element is "doors", settings for the doors of the house
+	const std::string pSubElem = pResult->GetString(1);
+	if(pElem.compare(0, 5, "doors") == 0)
+	{
+		CHouseDoorsController* pDoorController = pHouse->GetDoorsController();
+
+		// If the command element is "list", list all the doors in the house
+		if(pSubElem.compare(0, 4, "list") == 0)
 		{
-			bool State = pDoorController->GetDoors()[Number]->IsClosed();
-			pGS->Chat(ClientID, "Number: {INT}. Name: {STR} ({STR})", Number, Door->GetName(), State ? "closed" : "opened");
-		}
-		return;
-	}
-
-	// If the command element is "open_all", open all door's
-	if(pElem.compare(0, 8, "open_all") == 0)
-	{
-		pDoorController->OpenAll();
-		pGS->UpdateVotes(ClientID, MENU_HOUSE);
-		pGS->Chat(pPlayer->GetCID(), "All the doors of the house were open!");
-		return;
-	}
-
-	// If the command element is "close_all", close all door's
-	if(pElem.compare(0, 9, "close_all") == 0)
-	{
-		pDoorController->CloseAll();
-		pGS->UpdateVotes(ClientID, MENU_HOUSE);
-		pGS->Chat(pPlayer->GetCID(), "All the doors of the house were closed!");
-		return;
-	}
-
-	// If the command element is "reverse_all", reverse all door's
-	if(pElem.compare(0, 11, "reverse_all") == 0)
-	{
-		pDoorController->ReverseAll();
-		pGS->UpdateVotes(ClientID, MENU_HOUSE);
-		pGS->Chat(pPlayer->GetCID(), "All the doors of the house were reversed!");
-		return;
-	}
-
-	// Get the door ID from the command result
-	int Number = pResult->GetInteger(1);
-
-	// If the command element is "reverse", reverse the state of the specified door
-	if(pElem.compare(0, 7, "reverse") == 0)
-	{
-		// Check if the door ID is valid
-		if(pHouse->GetDoorsController()->GetDoors().find(Number) == pHouse->GetDoorsController()->GetDoors().end())
-		{
-			pGS->Chat(pPlayer->GetCID(), "Number is either not listed or such a door does not exist.");
+			pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Door list \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+			for(const auto& [Number, Door] : pDoorController->GetDoors())
+			{
+				bool State = pDoorController->GetDoors()[Number]->IsClosed();
+				pGS->Chat(ClientID, "Number: {INT}. Name: {STR} ({STR})", Number, Door->GetName(), State ? "closed" : "opened");
+			}
 			return;
 		}
 
-		pHouse->GetDoorsController()->Reverse(Number);
-		pGS->UpdateVotes(ClientID, MENU_HOUSE);
-		bool State = pDoorController->GetDoors()[Number]->IsClosed();
-		pGS->Chat(pPlayer->GetCID(), "Door {STR}(Number {INT}) was {STR}!", pDoorController->GetDoors()[Number]->GetName(), Number, State ? "closed" : "opened");
+		// If the command element is "open_all", open all door's
+		if(pSubElem.compare(0, 8, "open_all") == 0)
+		{
+			pDoorController->OpenAll();
+			pGS->UpdateVotes(ClientID, MENU_HOUSE);
+			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were open!");
+			return;
+		}
+
+		// If the command element is "close_all", close all door's
+		if(pSubElem.compare(0, 9, "close_all") == 0)
+		{
+			pDoorController->CloseAll();
+			pGS->UpdateVotes(ClientID, MENU_HOUSE);
+			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were closed!");
+			return;
+		}
+
+		// If the command element is "reverse_all", reverse all door's
+		if(pSubElem.compare(0, 11, "reverse_all") == 0)
+		{
+			pDoorController->ReverseAll();
+			pGS->UpdateVotes(ClientID, MENU_HOUSE);
+			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were reversed!");
+			return;
+		}
+
+		// Get the door ID from the command result
+		int Number = pResult->GetInteger(2);
+
+		// If the command element is "reverse", reverse the state of the specified door
+		if(pSubElem.compare(0, 7, "reverse") == 0)
+		{
+			// Check if the door ID is valid
+			if(pHouse->GetDoorsController()->GetDoors().find(Number) == pHouse->GetDoorsController()->GetDoors().end())
+			{
+				pGS->Chat(pPlayer->GetCID(), "Number is either not listed or such a door does not exist.");
+				return;
+			}
+
+			pHouse->GetDoorsController()->Reverse(Number);
+			pGS->UpdateVotes(ClientID, MENU_HOUSE);
+			bool State = pDoorController->GetDoors()[Number]->IsClosed();
+			pGS->Chat(pPlayer->GetCID(), "Door {STR}(Number {INT}) was {STR}!", pDoorController->GetDoors()[Number]->GetName(), Number, State ? "closed" : "opened");
+			return;
+		}
+
+		pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Door controls \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+		pGS->Chat(ClientID, "/house doors list - list door's and ids");
+		pGS->Chat(ClientID, "/house doors open_all - open all door's");
+		pGS->Chat(ClientID, "/house doors close_all - close all door's");
+		pGS->Chat(ClientID, "/house doors reverse_all - reverse all door's");
+		pGS->Chat(ClientID, "/house doors reverse <number> - reverse door by id");
 		return;
 	}
 
-	pGS->Chat(ClientID, "\u2218\u208A\u2727\u2500\u2500\u2500\u2500\u2500 Door controls \u2500\u2500\u2500\u2500\u2500\u2727\u208A\u2218");
-	pGS->Chat(ClientID, "/hdoor list - list door's and ids");
-	pGS->Chat(ClientID, "/hdoor open_all - open all door's");
-	pGS->Chat(ClientID, "/hdoor close_all - close all door's");
-	pGS->Chat(ClientID, "/hdoor reverse_all - reverse all door's");
-	pGS->Chat(ClientID, "/hdoor reverse <number> - reverse door by id");
-}
-
-void CCommandProcessor::ConChatSellHouse(IConsole::IResult* pResult, void* pUser)
-{
-	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
-
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
-
-	// check owner house id
-	CHouseData* pHouse = pPlayer->Account()->GetHouse();
-	if(!pHouse)
-	{
-		pGS->Chat(ClientID, "You have no home.");
-		return;
-	}
-
-	// sell house
-	pHouse->Sell();
+	pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 House system \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+	pGS->Chat(ClientID, "/house doors - settings door's");
+	pGS->Chat(ClientID, "/house sell - sell the house to the state");
 }
 
 void CCommandProcessor::ConChatPosition(IConsole::IResult* pResult, void* pUser)

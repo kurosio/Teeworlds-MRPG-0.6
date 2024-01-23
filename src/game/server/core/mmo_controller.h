@@ -17,7 +17,7 @@ class CMmoController
 	public:
 		void add(class MmoComponent *pComponent)
 		{
-			m_vComponents.emplace(pComponent);
+			m_vComponents.push_back(pComponent);
 		}
 
 		void free()
@@ -30,7 +30,7 @@ class CMmoController
 			m_vComponents.shrink_to_fit();
 		}
 
-		ska::flat_hash_set< MmoComponent* > m_vComponents;
+		std::vector< MmoComponent* > m_vComponents;
 	};
 	CStack m_System;
 
