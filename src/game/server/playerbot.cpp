@@ -325,7 +325,7 @@ void CPlayerBot::TryRespawn()
 int64_t CPlayerBot::GetMaskVisibleForClients() const
 {
 	// Initialize the mask with the client ID
-	int64_t Mask = CmaskOne(m_ClientID);
+	int64_t Mask = 0;
 
 	// Loop through all players
 	for(int i = 0; i < MAX_PLAYERS; i++)
@@ -349,10 +349,7 @@ StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 
 	// Check if the client ID is valid and if the snapping player exists
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer)
-	{
-		// Return none state if the conditions are not met
 		return STATE_SNAPPING_NONE;
-	}
 
 	// Check if the bot type is quest bot
 	if(m_BotType == TYPE_BOT_QUEST)
@@ -360,21 +357,15 @@ StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 		// Check if the quest state for the snapping player is not ACCEPT
 		const QuestIdentifier QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 		if(pSnappingPlayer->GetQuest(QuestID)->GetState() != QuestState::ACCEPT)
-		{
 			return STATE_SNAPPING_NONE;
-		}
 
 		// Check if the current step of the quest bot is not the same as the current step of the snapping player's quest
 		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_Step != pSnappingPlayer->GetQuest(QuestID)->GetCurrentStepPos()))
-		{
 			return STATE_SNAPPING_NONE;
-		}
 
 		// Check if the step for the bot mob in the snapping player's quest is already completed
 		if(pSnappingPlayer->GetQuest(QuestID)->GetStepByMob(GetBotMobID())->m_StepComplete)
-		{
 			return STATE_SNAPPING_NONE;
-		}
 
 		// Set the visible active state for the snapping player to true
 		DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive[ClientID] = true;
@@ -385,21 +376,17 @@ StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 	{
 		// Check if the function of the NPC bot is NPC_GUARDIAN
 		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
-		{
 			return STATE_SNAPPING_FULL;
-		}
 
 		// Check if the visible active state for the snapping player is already true
 		if(DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive[ClientID])
-		{
 			return STATE_SNAPPING_NONE;
-		}
 
-		// Check if no active quests are available for the snapping player
-		if(!IsActiveQuests(ClientID))
-		{
-			return STATE_SNAPPING_ONLY_ME;
-		}
+		// Check if the NPC's function is to give a quest and if the player has already accepted the quest
+		const int GivesQuest = GS()->Mmo()->BotsData()->GetQuestNPC(m_MobID);
+		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GIVE_QUEST
+			&& pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NO_ACCEPT)
+			return STATE_SNAPPING_ONLY_CHARACTER;
 	}
 
 	// Return full state as the default state
@@ -479,7 +466,7 @@ Mood CPlayerBot::GetMoodState() const
 
 	if(GetBotType() == TYPE_BOT_MOB && !pChar->AI()->GetTarget()->IsEmpty())
 		return Mood::ANGRY;
-	
+
 	if(GetBotType() == TYPE_BOT_QUEST_MOB && !pChar->AI()->GetTarget()->IsEmpty())
 		return Mood::ANGRY;
 
@@ -504,27 +491,6 @@ Mood CPlayerBot::GetMoodState() const
 int CPlayerBot::GetBotLevel() const
 {
 	return (m_BotType == TYPE_BOT_MOB ? MobBotInfo::ms_aMobBot[m_MobID].m_Level : 1);
-}
-
-bool CPlayerBot::IsActiveQuests(int SnapClientID) const
-{
-	CPlayer* pSnappingPlayer = GS()->GetPlayer(SnapClientID);
-	if(!pSnappingPlayer)
-		return false;
-
-	if(m_BotType == TYPE_BOT_QUEST)
-		return true;
-
-	if(m_BotType == TYPE_BOT_NPC)
-	{
-		const int GivesQuest = GS()->Mmo()->BotsData()->GetQuestNPC(m_MobID);
-		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GIVE_QUEST && pSnappingPlayer->GetQuest(GivesQuest)->GetState() == QuestState::NO_ACCEPT)
-			return true;
-
-		return false;
-	}
-
-	return false;
 }
 
 void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
@@ -582,7 +548,7 @@ const char* CPlayerBot::GetStatus() const
 
 int CPlayerBot::GetPlayerWorldID() const
 {
-	switch (m_BotType)
+	switch(m_BotType)
 	{
 		case TYPE_BOT_MOB: return MobBotInfo::ms_aMobBot[m_MobID].m_WorldID;
 		case TYPE_BOT_QUEST_MOB: return m_QuestMobInfo.m_WorldID;

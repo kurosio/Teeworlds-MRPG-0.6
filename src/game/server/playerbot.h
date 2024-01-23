@@ -90,7 +90,6 @@ private:
 	void GetFormatedName(char* aBuffer, int BufferSize) override;
 	int GetBotLevel() const;
 	Mood GetMoodState() const override;
-	bool IsActiveQuests(int SnapClientID) const;
 	const char* GetStatus() const;
 
 	void TryRespawn() override;
