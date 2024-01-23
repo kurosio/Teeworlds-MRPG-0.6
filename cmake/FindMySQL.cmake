@@ -12,11 +12,6 @@ if(NOT CMAKE_CROSSCOMPILING)
     set(MYSQL_CONFIG_INCLUDE_DIR ${MY_TMP} CACHE FILEPATH INTERNAL)
 
     execute_process(COMMAND ${MYSQL_CONFIG} --libs_r OUTPUT_VARIABLE MY_TMP)
-    execute_process(${MYSQL_CONFIG}
-      ARGS --libs_r
-      OUTPUT_VARIABLE MY_TMP
-    )
-
     set(MYSQL_CONFIG_LIBRARIES "")
     string(REGEX MATCHALL "-l[^ ]*" MYSQL_LIB_LIST "${MY_TMP}")
     foreach(LIB ${MYSQL_LIB_LIST})
