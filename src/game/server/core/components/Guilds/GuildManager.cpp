@@ -236,7 +236,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Attempt to kick the player from the guild
 		GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(VoteID);
-		if(Result == GUILD_MEMBER_RESULT::CANT_KICK_LEADER)
+		if(Result == GUILD_MEMBER_RESULT::KICK_IS_OWNER)
 		{
 			GS()->Chat(ClientID, "You can't kick a leader");
 		}

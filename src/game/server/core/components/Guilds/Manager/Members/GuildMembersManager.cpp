@@ -72,7 +72,7 @@ GUILD_MEMBER_RESULT CGuildMembersManager::Kick(int AccountID)
 	// Check if the player is the guild leader
 	if(m_pGuild->GetLeaderUID() == AccountID)
 	{
-		return GUILD_MEMBER_RESULT::CANT_KICK_LEADER;
+		return GUILD_MEMBER_RESULT::KICK_IS_OWNER;
 	}
 
 	// Check if the player is a member of the guild

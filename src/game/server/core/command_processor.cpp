@@ -166,7 +166,19 @@ void CCommandProcessor::ConChatGuildExit(IConsole::IResult* pResult, void* pUser
 		return;
 
 	const int AccountID = pPlayer->Account()->GetID();
-	//pGS->Mmo()->Member()->ExitGuild(AccountID);
+	GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID);
+	if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
+	{
+		pGS->Chat(ClientID, "You have left the guild.");
+	}
+	else if(Result == GUILD_MEMBER_RESULT::KICK_DOES_NOT_EXIST)
+	{
+		pGS->Chat(ClientID, "You are not in the guild.");
+	}
+	else if(Result == GUILD_MEMBER_RESULT::KICK_IS_OWNER)
+	{
+		pGS->Chat(ClientID, "You cannot leave the guild because you are the owner.");
+	}
 }
 
 void CCommandProcessor::ConChatGuildCreate(IConsole::IResult* pResult, void* pUser)

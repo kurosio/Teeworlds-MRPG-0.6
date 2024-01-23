@@ -14,7 +14,7 @@ enum class GUILD_MEMBER_RESULT : int
 {
 	JOIN_ALREADY_IN_GUILD,      // Result when a member tries to join a guild they are already a part of
 	KICK_DOES_NOT_EXIST,        // Result when trying to kick a member who does not exist
-	CANT_KICK_LEADER,           // Result when trying to kick the guild leader
+	KICK_IS_OWNER,              // Result when trying to kick the guild leader
 	REQUEST_ALREADY_SEND,       // Result when a member tries to send a join request to a guild they have already sent a request to
 	NO_AVAILABLE_SLOTS,         // Result when there are no available slots in the guild for new members
 	UNDEFINED_ERROR,            // Result when an undefined error occurs during the operation
