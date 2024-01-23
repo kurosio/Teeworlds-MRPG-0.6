@@ -1242,6 +1242,16 @@ CGuildData* CGuildManager::GetGuildByID(GuildIdentifier ID) const
 	return itGuild != CGuildData::Data().end() ? (*itGuild) : nullptr;
 }
 
+CGuildData* CGuildManager::GetGuildByName(const char* pGuildname) const
+{
+	auto itGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&pGuildname](CGuildData* p)
+	{
+		return str_comp_nocase(p->GetName(), pGuildname) == 0;
+	});
+
+	return itGuild != CGuildData::Data().end() ? (*itGuild) : nullptr;
+}
+
 bool CGuildManager::IsAccountMemberGuild(int AccountID) const
 {
 	return CGuildData::IsAccountMemberGuild(AccountID);

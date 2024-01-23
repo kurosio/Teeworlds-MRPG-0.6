@@ -45,6 +45,7 @@ public:
 	CGuildHouseData* GetGuildHouseByID(const GuildHouseIdentifier& ID) const;
 	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
 	CGuildData* GetGuildByID(GuildIdentifier ID) const;
+	CGuildData* GetGuildByName(const char* pGuildname) const;
 	bool IsAccountMemberGuild(int AccountID) const;
 
 	void ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse) const;
