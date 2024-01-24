@@ -44,10 +44,10 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	{
 		int RespawnWorld = pRes->getInt("RespawnWorld");
 		int JailWorld = pRes->getInt("JailWorld");
-		int RequiredQuestID = pRes->getInt("RequiredQuestID");
+		int RequiredLevel = pRes->getInt("RequiredLevel");
 
 		// update name world from json
-		CWorldData::CreateElement(WorldID)->Init(RespawnWorld, JailWorld, RequiredQuestID, std::move(WorldSwappers));
+		CWorldData::CreateElement(WorldID)->Init(RespawnWorld, JailWorld, RequiredLevel, std::move(WorldSwappers));
 		Database->Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
 	}
 	else
@@ -98,12 +98,14 @@ void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 	}
 }
 
-void CWorldManager::NotifyUnlockedZonesByQuest(CPlayer* pPlayer, int QuestID) const
+void CWorldManager::NotifyUnlockedZonesByLeveling(CPlayer* pPlayer, int Level) const
 {
 	const int ClientID = pPlayer->GetCID();
 	for(const auto& pData : CWorldData::Data())
 	{
-		if(pData->GetRequiredQuest() && pData->GetRequiredQuest()->GetID() == QuestID)
-			GS()->Chat(-1, "{STR} opened zone ({STR})!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
+		if(pPlayer->Account()->GetLevel() == Level)
+		{
+			GS()->Chat(-1, "{STR} initiated area ({STR})!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
+		}
 	}
 }

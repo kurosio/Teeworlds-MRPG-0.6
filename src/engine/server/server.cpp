@@ -298,6 +298,14 @@ const char* CServer::GetClientNameChangeRequest(int ClientID)
 	return m_aClients[ClientID].m_aNameChangeRequest;
 }
 
+const char* CServer::Localize(int ClientID, const char* pText)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
+		return nullptr;
+
+	return m_pLocalization->Localize(m_aClients[ClientID].m_aLanguage, pText);
+}
+
 void CServer::SetClientLanguage(int ClientID, const char* pLanguage)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)

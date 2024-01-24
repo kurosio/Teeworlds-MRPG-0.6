@@ -585,6 +585,31 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
+	if(PPSTR(CMD, "GUILD_HOUSE_DOOR") == 0)
+	{
+		// Check if the player has a guild or has the right to invite/kick members
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// check player house
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuildHouseData* pHouse = pGuild->GetHouse();
+
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "You do not have your own home!");
+			return true;
+		}
+
+		// reverse door house
+		int UniqueDoorID = VoteID;
+		pHouse->GetDoors()->Reverse(UniqueDoorID);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD);
+		return true;
+	}
 
 	if(PPSTR(CMD, "GUILD_HOUSE_SELL") == 0)
 	{
@@ -957,12 +982,21 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank management");
 	if(HasHouse)
 	{
+		CGuildHouseData* pHouse = pGuild->GetHouse();
+
 		GS()->AV(ClientID, "null");
 		GS()->AVL(ClientID, "null", "\u2302 House Management");
 		GS()->AVM(ClientID, "MENU", MENU_GUILD_HOUSE_DECORATION, NOPE, "Customizing");
-		//GS()->AVL(ClientID, "MDOOR", "Change state (\"{STR}\")", GetGuildDoor(GuildID) ? "OPEN" : "CLOSED");
 		GS()->AVL(ClientID, "MSPAWN", "Move to the house");
 		GS()->AVL(ClientID, "GUILD_HOUSE_SELL", "Sell the house");
+
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "\u2747 House has {VAL} controlled door's", (int)pHouse->GetDoors()->GetContainer().size());
+		for(auto& [Number, DoorData] : pHouse->GetDoors()->GetContainer())
+		{
+			bool StateDoor = DoorData->IsClosed();
+			GS()->AVM(ClientID, "GUILD_HOUSE_DOOR", Number, NOPE, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData->GetName());
+		}
 	}
 	GS()->AV(ClientID, "null");
 	//

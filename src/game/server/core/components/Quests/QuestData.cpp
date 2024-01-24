@@ -3,9 +3,7 @@
 #include "QuestManager.h"
 
 #include <game/server/gamecontext.h>
-
 #include <game/server/core/components/Dungeons/DungeonManager.h>
-#include <game/server/core/components/Worlds/WorldManager.h>
 
 #include "Entities/quest_mob_path_finder.h"
 
@@ -417,7 +415,6 @@ void CPlayerQuest::Finish()
 		pGS->ChatDiscord(DC_SERVER_INFO, pGS->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
 
 		// Notify the opened new zones and dungeons after completing the quest
-		pGS->Core()->WorldManager()->NotifyUnlockedZonesByQuest(pPlayer, m_ID);
 		pGS->Core()->DungeonManager()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
 	}
 

@@ -90,7 +90,7 @@ void CCommandProcessor::ConChatLogin(IConsole::IResult* pResult, void* pUser)
 	{
 		if(pPlayer->IsAuthed())
 		{
-			pGS->Chat(ClientID, "You're already signed in.");
+			pGS->Chat(ClientID, "You're already signed in!");
 			return;
 		}
 
@@ -169,7 +169,7 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 	{
 		if(!pPlayer->Account()->HasGuild())
 		{
-			pGS->Chat(ClientID, "You are not in the guild.");
+			pGS->Chat(ClientID, "You are not in the guild!");
 			return;
 		}
 
@@ -177,7 +177,7 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 		GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID);
 		if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
 		{
-			pGS->Chat(ClientID, "You have left the guild.");
+			pGS->Chat(ClientID, "You have left the guild!");
 		}
 		else if(Result == GUILD_MEMBER_RESULT::KICK_IS_OWNER)
 		{
@@ -247,7 +247,8 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			for(const auto& [Number, Door] : pDoorController->GetDoors())
 			{
 				bool State = pDoorController->GetDoors()[Number]->IsClosed();
-				pGS->Chat(ClientID, "Number: {INT}. Name: {STR} ({STR})", Number, Door->GetName(), State ? "closed" : "opened");
+				pGS->Chat(ClientID, "Number: {INT}. Name: {STR} ({STR})", 
+					Number, Door->GetName(), State ? Instance::GetServer()->Localize(ClientID, "closed") : Instance::GetServer()->Localize(ClientID, "opened"));
 			}
 			return;
 		}
@@ -406,7 +407,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		}
 
 		// Display the group list for the player
-		pGS->Chat(ClientID, "{STR} Group list {STR}", Tools::Aesthetic::B_PILLAR(8, false), Tools::Aesthetic::B_PILLAR(8, true));
+		pGS->Chat(ClientID, "{STR} Group membership list {STR}", Tools::Aesthetic::B_PILLAR(5, false), Tools::Aesthetic::B_PILLAR(5, true));
 		for(const auto& AID : pGroup->GetAccounts())
 		{
 			const char* Prefix = (pGroup->OwnerUID() == AID) ? "O: " : "\0";
@@ -416,7 +417,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		return;
 	}
 
-	const char* Status = (pGroup ? "in a group" : "not in a group");
+	const char* Status = (pGroup ? pServer->Localize(ClientID, "in a group") : pServer->Localize(ClientID, "not in a group"));
 	pGS->Chat(ClientID, "{STR} Group system {STR}", Tools::Aesthetic::B_PILLAR(8, false), Tools::Aesthetic::B_PILLAR(8, true));
 	pGS->Chat(ClientID, "Current status: {STR}!", Status);
 	pGS->Chat(ClientID, "/group create - create a new group");
@@ -504,7 +505,8 @@ void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
 	if(!pPlayer)
 		return;
 
-	pGS->Chat(ClientID, "Server rules");
+	// translate to russian
+	pGS->Chat(ClientID, "{STR} Server rules {STR}", Tools::Aesthetic::B_FLOWER(false), Tools::Aesthetic::B_FLOWER(true));
 	pGS->Chat(ClientID, "- Don't use racist words");
 	pGS->Chat(ClientID, "- Don't spam messages");
 	pGS->Chat(ClientID, "- Don't block other players");

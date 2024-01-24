@@ -27,7 +27,7 @@ public:
 	void FindPosition(int WorldID, vec2 Pos, vec2* OutPos);
 
 	// Notify the player of unlocked zones by a given quest
-	void NotifyUnlockedZonesByQuest(CPlayer* pPlayer, int QuestID) const;
+	void NotifyUnlockedZonesByLeveling(CPlayer* pPlayer, int QuestID) const;
 };
 
 #endif

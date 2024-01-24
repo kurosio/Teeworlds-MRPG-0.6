@@ -612,8 +612,8 @@ namespace Tools
 			return Impl::AestheticText(nullptr, post ? "\u00B7 \u203B" : "\u203B \u00B7", "\u2500", iter, post)->m_aData;
 		}
 		// Example: ✯¸.•*•✿✿•*•.¸✯
-		inline const char* B_FLOWER(int iter, bool post) {
-			return Impl::AestheticText(post ? "\u273F\u2022*\u2022.\u00B8\u272F" : "\u272F\u00B8.\u2022*\u2022\u273F", nullptr, nullptr, iter, false)->m_aData;
+		inline const char* B_FLOWER(bool post) {
+			return Impl::AestheticText(post ? "\u273F\u2022*\u2022.\u00B8\u272F" : "\u272F\u00B8.\u2022*\u2022\u273F", nullptr, nullptr, 0, false)->m_aData;
 		}
 		// Example: ──⇌ • • ⇋──
 		inline const char* B_CONFIDENT(int iter, bool post) {
@@ -652,8 +652,8 @@ namespace Tools
 
 		/* SYMBOL SMILIES */
 		// Example: 『•✎•』
-		inline const char* S_EDIT() {
-			return Impl::AestheticText("\u300E\u2022\u270E\u2022\u300F", nullptr, nullptr, 0, false)->m_aData;
+		inline const char* S_EDIT(const char* pBody) {
+			return Impl::AestheticText(std::string("\u300E " + std::string(pBody) + " \u300F").c_str(), nullptr, nullptr, 0, false)->m_aData;
 		}
 		// Example: ᴄᴏᴍᴘʟᴇᴛᴇ!
 		inline const char* S_COMPLETE() {

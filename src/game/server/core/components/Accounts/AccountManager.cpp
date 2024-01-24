@@ -7,10 +7,7 @@
 
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 #include <game/server/core/components/Mails/MailBoxManager.h>
-#include <game/server/core/components/Quests/QuestManager.h>
 #include <game/server/core/components/Worlds/WorldData.h>
-
-#include <game/server/core/components/Houses/HouseManager.h>
 
 #include <base/hash_ctxt.h>
 
@@ -18,21 +15,18 @@
 // The function takes a pointer to a CPlayer object as an argument
 int CAccountManager::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 {
-	// Find the first correct world ID in the player's history world list
-	// The correct world ID is the one that meets the following conditions:
-	// - The world data exists
-	// - The world is not a dungeon world
-	// - The required quest for the world is completed or the world has no required quest
+	// Find the first element in the range [pPlayer->Account()->m_aHistoryWorld.begin(), pPlayer->Account()->m_aHistoryWorld.end()]
+	// that satisfies the condition specified by the lambda function
 	const auto pWorldIterator = std::find_if(pPlayer->Account()->m_aHistoryWorld.begin(), pPlayer->Account()->m_aHistoryWorld.end(), [=](int WorldID)
 	{
+		// Return true if the world is not a dungeon world and the player's level is greater than or equal to the required level
 		if(GS()->GetWorldData(WorldID))
 		{
-			// Get the required quest for the world
-			CQuestDescription* pQuestInfo = GS()->GetWorldData(WorldID)->GetRequiredQuest();
-
-			// Check if the world is not a dungeon world and either the required quest is completed or the world has no required quest
-			return !Core()->DungeonManager()->IsDungeonWorld(WorldID) && ((pQuestInfo && pPlayer->GetQuest(pQuestInfo->GetID())->IsCompleted()) || !pQuestInfo);
+			int RequiredLevel = GS()->GetWorldData(WorldID)->GetRequiredLevel();
+			return !Core()->DungeonManager()->IsDungeonWorld(WorldID) && pPlayer->Account()->GetLevel() >= RequiredLevel;
 		}
+
+		// Return false if the world data for the given WorldID does not exist
 		return false;
 	});
 

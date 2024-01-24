@@ -183,6 +183,7 @@ public:
 	void ChangeWorld(int ClientID, int NewWorldID) override;
 	int GetClientWorldID(int ClientID) const override;
 
+	const char* Localize(int ClientID, const char* pText) override;
 	void SetClientLanguage(int ClientID, const char* pLanguage) override;
 	const char* GetClientLanguage(int ClientID) const override;
 	const char* GetWorldName(int WorldID) override;

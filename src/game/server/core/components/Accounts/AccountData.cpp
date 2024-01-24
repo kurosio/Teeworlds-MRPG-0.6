@@ -9,6 +9,7 @@
 #include <game/server/core/components/Groups/GroupData.h>
 
 #include <game/server/core/components/Guilds/GuildManager.h>
+#include <game/server/core/components/Worlds/WorldManager.h>
 
 std::map < int, CAccountData > CAccountData::ms_aData;
 std::map < int, CAccountTempData > CAccountTempData::ms_aPlayerTempData;
@@ -265,6 +266,9 @@ void CAccountData::AddExperience(int Value)
 
 		// Display level up message
 		GS()->Chat(m_ClientID, "Congratulations. You attain level {INT}!", m_Level);
+
+		// Notify the player about unlocked
+		GS()->Core()->WorldManager()->NotifyUnlockedZonesByLeveling(m_pPlayer, m_ID);
 
 		// Check if the experience is not enough for the next level
 		if(m_Exp < (int)computeExperience(m_Level))

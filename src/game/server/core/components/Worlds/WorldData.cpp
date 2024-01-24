@@ -6,10 +6,10 @@
 
 #include "game/server/gamecontext.h"
 
-void CWorldData::Init(int RespawnWorldID, int JailWorldID, int RequiredQuestID, std::deque<CWorldSwapData>&& Worlds)
+void CWorldData::Init(int RespawnWorldID, int JailWorldID, int RequiredLevel, std::deque<CWorldSwapData>&& Worlds)
 {
 	str_copy(m_aName, Server()->GetWorldName(m_ID), sizeof(m_aName));
-	m_RequiredQuestID = RequiredQuestID;
+	m_RequiredLevel = RequiredLevel;
 	m_RespawnWorldID = RespawnWorldID;
 	m_JailWorldID = JailWorldID;
 	m_Swappers = std::move(Worlds);
@@ -27,9 +27,9 @@ void CWorldData::Move(CPlayer* pPlayer)
 
 	int ClientID = pPlayer->GetCID();
 	CWorldData* pSecondWorldData = pGS->GetWorldData(pSwapper->GetSecondWorldID());
-	if(pSecondWorldData && pSecondWorldData->GetRequiredQuest() && !pPlayer->GetQuest(pSecondWorldData->GetRequiredQuest()->GetID())->IsCompleted())
+	if(pSecondWorldData && pPlayer->Account()->GetLevel() < m_RequiredLevel)
 	{
-		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Requires quest completion '{STR}'!", pSecondWorldData->GetRequiredQuest()->GetName());
+		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "You must be at least level {INT} to moved!", m_RequiredLevel);
 		return;
 	}
 
@@ -44,15 +44,9 @@ CWorldSwapData* CWorldData::GetSwapperByPos(vec2 Pos)
 	return (pWorld != m_Swappers.end()) ? &(*pWorld) : nullptr;
 }
 
-CQuestDescription* CWorldData::GetRequiredQuest() const
-{
-	const auto it = CQuestDescription::Data().find(m_RequiredQuestID);
-	return it != CQuestDescription::Data().end() ? &it->second : nullptr;
-}
-
 CWorldData* CWorldData::GetRespawnWorld() const
 {
-	if(m_RespawnWorldID < 0 || m_RespawnWorldID > (int)Data().size())
+	if(m_RespawnWorldID < 0 || m_RespawnWorldID >(int)Data().size())
 		return nullptr;
 
 	return Data()[m_RespawnWorldID].get();
