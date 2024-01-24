@@ -1118,6 +1118,8 @@ std::string windows_format_system_message(unsigned long error);
 
 #endif
 
+void str_utf8_reverse(char* string);
+
 /**
  * @defgroup Strings
  *

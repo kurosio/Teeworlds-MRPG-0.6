@@ -1460,6 +1460,7 @@ std::string windows_format_system_message(unsigned long error)
 	LocalFree(wide_message);
 	return message;
 }
+
 #endif
 
 static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, int sockaddrlen)
@@ -2717,6 +2718,31 @@ ETimeSeason time_season()
 		dbg_assert(false, "Invalid month");
 		dbg_break();
 	}
+}
+
+static inline void str_reverse_impl(char* start, char* end)
+{
+	while(start < end)
+	{
+		char c = *start;
+		*start++ = *end;
+		*end-- = c;
+	}
+}
+
+static inline char* str_reverse_utf8_char_impl(char* start)
+{
+	char* end = start;
+	while((end[1] & 0xC0) == 0x80) end++;
+	str_reverse_impl(start, end);
+	return(end + 1);
+}
+
+void str_utf8_reverse(char* string)
+{
+	char* end = string;
+	while(*end) end = str_reverse_utf8_char_impl(end);
+	str_reverse_impl(string, end - 1);
 }
 
 void str_append(char *dst, const char *src, int dst_size)

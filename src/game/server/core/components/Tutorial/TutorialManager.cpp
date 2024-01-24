@@ -19,8 +19,8 @@ void CTutorialManager::OnInit()
 
 	// load file
 	ByteArray RawData;
-	Tools::FileResult Result = Tools::Files::loadFile(FILE_NAME_INITILIZER, &RawData);
-	dbg_assert(Result != Tools::ERROR_FILE, "tutorial file not found (\"server_data/tutorial_data.json\")");
+	Tools::Files::Result Result = Tools::Files::loadFile(FILE_NAME_INITILIZER, &RawData);
+	dbg_assert(Result != Tools::Files::Result::ERROR_FILE, "tutorial file not found (\"server_data/tutorial_data.json\")");
 
 	Tools::Json::parseFromString((char*)RawData.data(), [&](nlohmann::json& pJson)
 	{

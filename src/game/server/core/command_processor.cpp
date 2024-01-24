@@ -1,4 +1,4 @@
-#include <engine/console.h>
+﻿#include <engine/console.h>
 #include "command_processor.h"
 
 #include <engine/server.h>
@@ -201,7 +201,7 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 	}
 
 	// Guild command list
-	pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Guild system \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+	pGS->Chat(ClientID, "{STR} Guild system {STR}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
 	pGS->Chat(ClientID, "/guild create <name> - create a new guild");
 	pGS->Chat(ClientID, "/guild leave - leave the guild");
 
@@ -243,7 +243,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		// If the command element is "list", list all the doors in the house
 		if(pSubElem.compare(0, 4, "list") == 0)
 		{
-			pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Door list \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+			pGS->Chat(ClientID, "{STR} Door list {STR}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
 			for(const auto& [Number, Door] : pDoorController->GetDoors())
 			{
 				bool State = pDoorController->GetDoors()[Number]->IsClosed();
@@ -299,7 +299,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			return;
 		}
 
-		pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Door controls \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+		pGS->Chat(ClientID, "{STR} Door controls {STR}", Tools::Aesthetic::B_PILLAR(6, false), Tools::Aesthetic::B_PILLAR(6, true));
 		pGS->Chat(ClientID, "/house doors list - list door's and ids");
 		pGS->Chat(ClientID, "/house doors open_all - open all door's");
 		pGS->Chat(ClientID, "/house doors close_all - close all door's");
@@ -308,7 +308,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		return;
 	}
 
-	pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 House system \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+	pGS->Chat(ClientID, "{STR} House system {STR}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
 	pGS->Chat(ClientID, "/house doors - settings door's");
 	pGS->Chat(ClientID, "/house sell - sell the house to the state");
 }
@@ -406,7 +406,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		}
 
 		// Display the group list for the player
-		pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Group list \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+		pGS->Chat(ClientID, "{STR} Group list {STR}", Tools::Aesthetic::B_PILLAR(8, false), Tools::Aesthetic::B_PILLAR(8, true));
 		for(const auto& AID : pGroup->GetAccounts())
 		{
 			const char* Prefix = (pGroup->OwnerUID() == AID) ? "O: " : "\0";
@@ -417,7 +417,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 	}
 
 	const char* Status = (pGroup ? "in a group" : "not in a group");
-	pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501 Group system \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513");
+	pGS->Chat(ClientID, "{STR} Group system {STR}", Tools::Aesthetic::B_PILLAR(8, false), Tools::Aesthetic::B_PILLAR(8, true));
 	pGS->Chat(ClientID, "Current status: {STR}!", Status);
 	pGS->Chat(ClientID, "/group create - create a new group");
 	pGS->Chat(ClientID, "/group list - group membership list");
@@ -475,7 +475,7 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 
 	constexpr int MaxPage = 2;
 	const int Page = clamp(pResult->GetInteger(0), 1, MaxPage);
-	pGS->Chat(ClientID, "\u250F\u2501\u2501\u2501\u2501 Command List [{INT} of {INT}] page \u2501\u2501\u2501\u2501\u2513", Page, MaxPage);
+	pGS->Chat(ClientID, "{STR} Command list [{INT} of {INT}] {STR}", Tools::Aesthetic::B_PILLAR(6, false), Page, MaxPage, Tools::Aesthetic::B_PILLAR(6, true));
 	if(Page == 1)
 	{
 		pGS->Chat(ClientID, "/register <name> <pass> - new account.");
