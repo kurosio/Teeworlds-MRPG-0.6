@@ -91,9 +91,10 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	}
 
 	// Group list for interaction
-	int HideID = 3200;
+	int HideID = START_SELF_HIDE_ID;
 	GroupData* pGroup = pPlayer->Account()->GetGroup();
 	bool IsOwner = pGroup->OwnerUID() == pPlayer->Account()->GetID();
+	GS()->AVL(ClientID, "null", "\u2735 Members {INT} of {INT}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
 	for(auto& AID : pGroup->GetAccounts())
 	{
 		// Get the player name for the account
@@ -119,6 +120,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	GS()->AV(ClientID, "null");
 
 	// Show group some interactions
+	GS()->AVL(ClientID, "null", "\u273D Group Management");
 	if(IsOwner)
 	{
 		// Display a message to change the colour of the group
@@ -129,7 +131,8 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	GS()->AV(ClientID, "null");
 
 	// Player list for invition
-	GroupIdentifier GroupID = pGroup->GetID();
+	bool FoundInvition = false;
+	GS()->AVL(ClientID, "null", "\u2605 Players for invitation");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		// If the player does not exist, continue to the next iteration
@@ -142,7 +145,12 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		if(!pSearchGroup)
 		{
 			GS()->AVM(ClientID, "GROUP_INVITE", i, NOPE, "Invite {STR}", Server()->ClientName(i));
+			FoundInvition = true;
 		}
+	}
+	if(!FoundInvition)
+	{
+		GS()->AVL(ClientID, "null", "No players available");
 	}
 }
 
