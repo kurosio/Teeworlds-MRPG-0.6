@@ -39,6 +39,14 @@ bool GroupData::Add(int AccountID)
 		return false;
 	}
 
+	// Check if the size of m_AccountIds is greater than or equal to MAX_GROUP_MEMBERS
+	if(IsFull())
+	{
+		// Send a chat message to the player indicating that the group is full
+		pGS->ChatAccount(AccountID, "The group is full!");
+		return false;
+	}
+
 	// Add AccountID to the m_AccountIds set and check if it was already present
 	if(m_AccountIds.insert(AccountID).second)
 	{
@@ -53,7 +61,7 @@ bool GroupData::Add(int AccountID)
 		Save();
 
 		// Send a chat message to the player's account
-		pGS->ChatAccount(AccountID, "You joined the group!");
+		pGS->ChatAccount(AccountID, "You have become a member of the group!");
 		return true;
 	}
 
@@ -80,7 +88,7 @@ bool GroupData::Remove(int AccountID)
 	if(pPlayer && (!pPlayer->Account()->GetGroup() || pPlayer->Account()->GetGroup()->GetID() != m_ID))
 	{
 		// Send a chat message to the player's account indicating that they are not in the group
-		pGS->ChatAccount(AccountID, "You're not in the group!");
+		pGS->ChatAccount(AccountID, "You're not in a group!");
 		return false;
 	}
 

@@ -281,7 +281,7 @@ void CAccountData::AddExperience(int Value)
 	}
 
 	// Update the progress bar
-	m_pPlayer->ProgressBar("AccountManager", m_Level, m_Exp, (int)computeExperience(m_Level), Value);
+	m_pPlayer->ProgressBar("Account", m_Level, m_Exp, (int)computeExperience(m_Level), Value);
 
 	// Randomly save the account stats
 	if(rand() % 5 == 0)
@@ -384,6 +384,6 @@ void CAccountData::HandleChair()
 	std::string aExpBuf = "+" + std::to_string(ExpValue);
 	std::string aGoldBuf = (GoldValue > 0) ? "+" + std::to_string(GoldValue) : "limit";
 	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
-		"Gold {VAL} | {STR} (daily limit {VAL} of {VAL}) : Experience {VAL}/{VAL} | {STR}\nThe limit and count is increased with special items!",
+		"Gold {VAL} : {STR} (daily limit {VAL} of {VAL})\nExp {VAL}/{VAL} : {STR}\nThe limit and count is increased with special items!",
 		m_pPlayer->GetItem(itGold)->GetValue(), aGoldBuf.c_str(), GetCurrentDailyChairGolds(), GetLimitDailyChairGolds(), m_Exp, computeExperience(m_Level), aExpBuf.c_str());
 }

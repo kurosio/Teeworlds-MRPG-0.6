@@ -298,6 +298,7 @@ enum
 		Basic kernel server settings
 		This is where the most basic server settings are stored
 	*/
+	MAX_GROUP_MEMBERS = 4,					// maximum number of players in a group
 	MAX_HOUSE_DOOR_INVITED_PLAYERS = 3,		// maximum player what can have access for house door
 	MAX_HOUSE_DECORATIONS = 20,				// maximum decorations for houses
 	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change

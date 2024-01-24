@@ -67,7 +67,7 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 	pPlayer->Account()->ReinitializeGroup();
 
 	// Inform the player that the group was created
-	GS()->Chat(pPlayer->GetCID(), "The group was created!");
+	GS()->Chat(pPlayer->GetCID(), "The formation of the group took place!");
 	return &GroupData::Data()[InitID];
 }
 
@@ -78,7 +78,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	int ClientID = pPlayer->GetCID();
 
 	// Group information
-	GS()->AVH(ClientID, TAB_GROUP_COMMANDS, "‼ Group commands");
+	GS()->AVH(ClientID, TAB_GROUP_COMMANDS, "Group commands");
 	GS()->AVM(ClientID, "null", NOPE, TAB_GROUP_COMMANDS, "/group - get all sub commands");
 	GS()->AV(ClientID, "null");
 
@@ -122,7 +122,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	if(IsOwner)
 	{
 		// Display a message to change the colour of the group
-		GS()->AVL(ClientID, "GROUP_CHANGE_COLOR", "Change the colour: ({INT}) current", pGroup->GetTeamColor());
+		GS()->AVL(ClientID, "GROUP_CHANGE_COLOR", "Change the colour: ({INT})", pGroup->GetTeamColor());
 		GS()->AVL(ClientID, "GROUP_DISBAND", "Disband group");
 	}
 	GS()->AVM(ClientID, "GROUP_KICK", pPlayer->Account()->GetID(), NOPE, "Leave the group");
@@ -141,14 +141,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		GroupData* pSearchGroup = pSearchPlayer->Account()->GetGroup();
 		if(!pSearchGroup)
 		{
-			GS()->AVD(ClientID, "GROUP_INVITE", i, GroupID, NOPE, "Invite {STR}", Server()->ClientName(i));
-			continue;
-		}
-
-		// If the searched player belongs to a different group, send them a message indicating so
-		if(pSearchGroup->GetID() != GroupID)
-		{
-			GS()->AVM(ClientID, "nope", NOPE, NOPE, "{STR} (another group)", Server()->ClientName(i));
+			GS()->AVM(ClientID, "GROUP_INVITE", i, NOPE, "Invite {STR}", Server()->ClientName(i));
 		}
 	}
 }
@@ -222,11 +215,29 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	if(PPSTR(CMD, "GROUP_INVITE") == 0)
 	{
 		const int InvitedCID = VoteID;
-		const int GroupID = VoteID2;
+		GroupData* pGroup = pPlayer->Account()->GetGroup();
+		GroupIdentifier GroupID = pGroup->GetID();
+
+		if(!pGroup)
+		{
+			GS()->Chat(ClientID, "You're not in a group!");
+			return true;
+		}
+
+		if(pGroup->OwnerUID() != pPlayer->Account()->GetID())
+		{
+			GS()->Chat(ClientID, "You're not the owner of the group!");
+			return true;
+		}
+
+		if(pGroup->IsFull())
+		{
+			GS()->Chat(ClientID, "The group is full!");
+			return true;
+		}
 
 		// Check if the player being invited exists
-		CPlayer* pInvitedPlayer = GS()->GetPlayer(InvitedCID, true);
-		if(pInvitedPlayer)
+		if(CPlayer* pInvitedPlayer = GS()->GetPlayer(InvitedCID, true))
 		{
 			// Check if the player being invited already belongs to another group
 			if(pInvitedPlayer->Account()->HasGroup())
@@ -236,14 +247,14 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			}
 
 			// Create vote optional
-			CVoteEventOptional* pOption = pInvitedPlayer->CreateVoteOptional(ClientID, GroupID, 15, "Join to {STR} group?", Server()->ClientName(ClientID));
+			CVoteEventOptional* pOption = pInvitedPlayer->CreateVoteOptional(ClientID, GroupID, 15, Server()->Localize(ClientID, "Join to {STR} group?"), Server()->ClientName(ClientID));
 			pOption->RegisterCallback(CallbackVoteOptionalGroupInvite);
 
 			// Send a chat message to the player inviting them to join the group
 			GS()->Chat(ClientID, "You've invited {STR} to join your group!", Server()->ClientName(InvitedCID));
 
 			// Send chat messages to the player being invited informing them of the invitation and how to join the group
-			GS()->Chat(InvitedCID, "You have been invited by the players {STR} to join the group.", Server()->ClientName(ClientID));
+			GS()->Chat(InvitedCID, "You have been invited by the {STR} to join the group.", Server()->ClientName(ClientID));
 		}
 		return true;
 	}
@@ -295,7 +306,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		if(Get <= 1 || Get > 63)
 		{
-			GS()->Chat(ClientID, "Write a number between 2 and 63 in the reason!");
+			GS()->Chat(ClientID, "Please provide a numerical value within the range of 2 to 63 in your response.");
 			return true;
 		}
 

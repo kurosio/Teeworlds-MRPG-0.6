@@ -16,7 +16,10 @@ class GroupData : public MultiworldIdentifiableStaticData< std::map< int, GroupD
 
 public:
 	GroupData() = default;
-	GroupData(GroupIdentifier ID) : m_ID(ID) { }
+	GroupData(GroupIdentifier ID) : m_ID(ID)
+	{
+		m_AccountIds.reserve(MAX_GROUP_MEMBERS);
+	}
 
 	// Initialize the group with the owner's UID, color, and a set of account IDs
 	void Init(int OwnerUID, int Color, class DBSet&& SetAccountIDs);
@@ -31,6 +34,8 @@ public:
 
 	// Disband the group, removing all accounts and resetting the owner and color
 	void Disband();
+
+	bool IsFull() const { return (int)m_AccountIds.size() >= (int)MAX_GROUP_MEMBERS; }
 
 	// Check if the group has a specific account ID
 	// Returns true if the account ID is in the group, false otherwise
