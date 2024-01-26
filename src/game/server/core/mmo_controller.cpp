@@ -642,7 +642,7 @@ void CMmoController::ConAsyncLinesForTranslate()
 				PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
 		}
 
-		for(auto& [ID, Aether] : CAether::Data())
+		for(auto& [ID, Aether] : CAetherData::Data())
 		{
 			PushingDialogs(JsonData, Aether.GetName(), "aeth", ID);
 		}

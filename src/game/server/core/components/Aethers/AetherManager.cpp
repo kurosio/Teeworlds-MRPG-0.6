@@ -9,25 +9,25 @@
 
 void CAetherManager::OnInit()
 {
-	const auto InitAethers = Database->Prepare<DB::SELECT>("*", "tw_aethers");
+	const auto InitAethers = Database->Prepare<DB::SELECT>("*", TW_AETHERS);
 	InitAethers->AtExecute([this](ResultPtr pRes)
 	{
-		while (pRes->next())
+		while(pRes->next())
 		{
 			vec2 Pos = vec2(pRes->getInt("TeleX"), pRes->getInt("TeleY"));
 			int WorldID = pRes->getInt("WorldID");
 
 			AetherIdentifier ID = pRes->getInt("ID");
-			CAether(ID).Init(pRes->getString("Name").c_str(), Pos, WorldID);
+			CAetherData(ID).Init(pRes->getString("Name").c_str(), Pos, WorldID);
 		}
 
-		Core()->ShowLoadingProgress("Aethers", CAether::Data().size());
+		Core()->ShowLoadingProgress("Aethers", CAetherData::Data().size());
 	});
 }
 
-void CAetherManager::OnInitAccount(CPlayer *pPlayer)
+void CAetherManager::OnInitAccount(CPlayer* pPlayer)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_aethers", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_ACCOUNTS_AETHERS, "WHERE UserID = '%d'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
 		const int TeleportID = pRes->getInt("AetherID");
@@ -35,27 +35,35 @@ void CAetherManager::OnInitAccount(CPlayer *pPlayer)
 	}
 }
 
-bool CAetherManager::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, const int VoteID, const int VoteID2, int Get, const char *GetText)
+bool CAetherManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// teleport
 	if(PPSTR(CMD, "TELEPORT") == 0)
 	{
 		AetherIdentifier AetherID = VoteID;
-		const int Price = VoteID2;
+		const int& Price = VoteID2;
+
+		// Check if Price is greater than 0 and if the player has enough currency to spend
 		if(Price > 0 && !pPlayer->Account()->SpendCurrency(Price))
 			return true;
 
-		CAether* pAether = &CAether::Data()[AetherID];
+		// Check if pAether is null
+		CAetherData* pAether = GetAether(AetherID);
+		if(!pAether)
+			return true;
+
+		// Check if the player is in a different world than pAether
 		vec2 Position = pAether->GetPosition();
 		if(!GS()->IsPlayerEqualWorld(ClientID, pAether->GetWorldID()))
 		{
+			// Change the player's world to pAether's world
 			pPlayer->GetTempData().SetTeleportPosition(Position);
 			pPlayer->ChangeWorld(pAether->GetWorldID());
 			return true;
 		}
 
+		// Change the player's position to pAether's position
 		pPlayer->GetCharacter()->ChangePosition(Position);
 		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
@@ -69,14 +77,16 @@ bool CAetherManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
 
-	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_AETHER_TELEPORT))
+	// Check if the character enters the Aether teleport tile
+	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_AETHER_TELEPORT))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
 		UnlockLocation(pChr->GetPlayer(), pChr->m_Core.m_Pos);
 		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
-	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_AETHER_TELEPORT))
+	// Check if the character exits the Aether teleport tile
+	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_AETHER_TELEPORT))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
 		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
@@ -88,13 +98,13 @@ bool CAetherManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 bool CAetherManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
 {
-	if (ReplaceMenu)
+	if(ReplaceMenu)
 	{
 		CCharacter* pChr = pPlayer->GetCharacter();
-		if (!pChr || !pChr->IsAlive())
+		if(!pChr || !pChr->IsAlive())
 			return false;
 
-		if (pChr->GetHelper()->BoolIndex(TILE_AETHER_TELEPORT))
+		if(pChr->GetHelper()->BoolIndex(TILE_AETHER_TELEPORT))
 		{
 			ShowList(pChr);
 			return true;
@@ -105,16 +115,16 @@ bool CAetherManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 	return false;
 }
 
-void CAetherManager::UnlockLocation(CPlayer *pPlayer, vec2 Pos)
+void CAetherManager::UnlockLocation(CPlayer* pPlayer, vec2 Pos) const
 {
 	const int ClientID = pPlayer->GetCID();
-	for (const auto& [ID, Aether] : CAether::Data())
+	for(const auto& [ID, Aether] : CAetherData::Data())
 	{
-		if (distance(Aether.GetPosition(), Pos) > 100 || pPlayer->Account()->m_aAetherLocation.find(ID) != pPlayer->Account()->m_aAetherLocation.end())
+		if(distance(Aether.GetPosition(), Pos) > 100 || pPlayer->Account()->m_aAetherLocation.find(ID) != pPlayer->Account()->m_aAetherLocation.end())
 			continue;
 
 		pPlayer->Account()->m_aAetherLocation[ID] = true;
-		Database->Execute<DB::INSERT>("tw_accounts_aethers", "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Account()->GetID(), ID);
+		Database->Execute<DB::INSERT>(TW_ACCOUNTS_AETHERS, "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Account()->GetID(), ID);
 
 		GS()->Chat(ClientID, "You now have Aethernet access to the {STR}.", Aether.GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Now have Aethernet access to the {STR}.", Aether.GetName());
@@ -140,13 +150,13 @@ void CAetherManager::ShowList(CCharacter* pChar) const
 		GS()->AVM(ClientID, "HOUSE_SPAWN", NOPE, TAB_AETHER, "Move to Your House - free");
 	}
 
-	for (const auto& [ID, Aether] : CAether::Data())
+	for(const auto& [ID, Aether] : CAetherData::Data())
 	{
-		if (pPlayer->Account()->m_aAetherLocation.find(ID) == pPlayer->Account()->m_aAetherLocation.end())
+		if(pPlayer->Account()->m_aAetherLocation.find(ID) == pPlayer->Account()->m_aAetherLocation.end())
 			continue;
 
 		const bool LocalTeleport = (GS()->IsPlayerEqualWorld(ClientID, Aether.GetWorldID()) && distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120);
-		if (LocalTeleport)
+		if(LocalTeleport)
 			continue;
 
 		const int Price = g_Config.m_SvPriceTeleport * (Aether.GetWorldID() + 1);
@@ -154,4 +164,13 @@ void CAetherManager::ShowList(CCharacter* pChar) const
 	}
 
 	GS()->AV(ClientID, "null");
+}
+
+CAetherData* CAetherManager::GetAether(int AetherID) const
+{
+	const auto it = CAetherData::Data().find(AetherID);
+	if(it == CAetherData::Data().end())
+		return nullptr;
+
+	return &it->second;
 }

@@ -15,12 +15,12 @@ void CGroupManager::OnInit()
 	{
 		// Get the values of the columns for the current row
 		GroupIdentifier ID = pRes->getInt("ID");
-		int OwnerUID = pRes->getInt("OwnerUID");
+		int LeaderUID = pRes->getInt("LeaderUID");
 		int TeamColor = pRes->getInt("Color");
 		std::string StrAccountIDs = pRes->getString("AccountIDs").c_str();
 
 		// Initialize a GroupData object with the retrieved values
-		GroupData(ID).Init(OwnerUID, TeamColor, StrAccountIDs);
+		GroupData(ID).Init(LeaderUID, TeamColor, StrAccountIDs);
 	}
 }
 
@@ -51,24 +51,34 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 	}
 
 	// Get the highest group ID from the database
-	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_groups", "ORDER BY ID DESC LIMIT 1");
+	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_GROUPS_TABLE, "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
 
 	// Create a string with the player's account ID
 	int Color = 1 + rand() % 63;
-	int OwnerUID = pPlayer->Account()->GetID();
-	std::string StrAccountIDs = std::to_string(OwnerUID);
+	int LeaderUID = pPlayer->Account()->GetID();
+	std::string StrAccountIDs = std::to_string(LeaderUID);
 
 	// Insert the new group into the database
-	Database->Execute<DB::INSERT>("tw_groups", "(ID, OwnerUID, Color, AccountIDs) VALUES ('%d', '%d', '%d', '%s')", InitID, OwnerUID, Color, StrAccountIDs.c_str());
+	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, LeaderUID, Color, AccountIDs) VALUES ('%d', '%d', '%d', '%s')", InitID, LeaderUID, Color, StrAccountIDs.c_str());
 
 	// Initialize the group data
-	GroupData(InitID).Init(OwnerUID, Color, StrAccountIDs);
+	GroupData(InitID).Init(LeaderUID, Color, StrAccountIDs);
 	pPlayer->Account()->ReinitializeGroup();
 
 	// Inform the player that the group was created
 	GS()->Chat(pPlayer->GetCID(), "The formation of the group took place!");
 	return &GroupData::Data()[InitID];
+}
+
+GroupData* CGroupManager::GetGroupByID(GroupIdentifier ID) const
+{
+	// Check if the group ID exists in the group data
+	if(GroupData::Data().find(ID) == GroupData::Data().end())
+		return nullptr;
+
+	// Return a pointer to the group data
+	return &GroupData::Data()[ID];
 }
 
 // Function to display the group menu for a player
@@ -93,13 +103,13 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	// Group list for interaction
 	int HideID = START_SELF_HIDE_ID;
 	GroupData* pGroup = pPlayer->Account()->GetGroup();
-	bool IsOwner = pGroup->OwnerUID() == pPlayer->Account()->GetID();
+	bool IsOwner = pGroup->GetLeaderUID() == pPlayer->Account()->GetID();
 	GS()->AVL(ClientID, "null", "\u2735 Members {INT} of {INT}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
 	for(auto& AID : pGroup->GetAccounts())
 	{
 		// Get the player name for the account
 		std::string PlayerName = Server()->GetAccountNickname(AID);
-		GS()->AVH(ClientID, HideID, "{STR}{STR}", (AID == pGroup->OwnerUID() ? "*" : "\0"), PlayerName.c_str());
+		GS()->AVH(ClientID, HideID, "{STR}{STR}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
 
 		// Check if the current player is the owner or if the account belongs to the current player
 		if(!IsOwner || (AID == pPlayer->Account()->GetID()))
@@ -183,7 +193,8 @@ static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int OptionID, int 
 	int& GroupID = OptionID2;
 
 	// Check if the group ID exists in the group data
-	if(GroupData::Data().find(GroupID) == GroupData::Data().end())
+	GroupData* pGroup = pGS->Core()->GroupManager()->GetGroupByID(GroupID);
+	if(!pGroup)
 		return;
 
 	// Check the selected option
@@ -194,7 +205,7 @@ static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int OptionID, int 
 		pGS->Chat(InvitedCID, "{STR} accepted your invitation!", pGS->Server()->ClientName(ClientID));
 
 		// Add the player to the group
-		GroupData::Data()[GroupID].Add(pPlayer->Account()->GetID());
+		pGroup->Add(pPlayer->Account()->GetID());
 	}
 	else
 	{
@@ -232,7 +243,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			return true;
 		}
 
-		if(pGroup->OwnerUID() != pPlayer->Account()->GetID())
+		if(pGroup->GetLeaderUID() != pPlayer->Account()->GetID())
 		{
 			GS()->Chat(ClientID, "You're not the owner of the group!");
 			return true;
@@ -280,7 +291,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		if(pGroup)
 		{
 			// Change the owner of the group to the specified AccountID
-			pGroup->ChangeOwner(AccountID);
+			pGroup->ChangeLeader(AccountID);
 
 			// Update the votes for all players
 			GS()->StrongUpdateVotesForAll(MENU_GROUP);
@@ -341,7 +352,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		GroupData* pGroup = pPlayer->Account()->GetGroup();
 
 		// Check if the player has a group and if they are the owner of the group
-		if(pGroup && pGroup->OwnerUID() == pPlayer->Account()->GetID())
+		if(pGroup && pGroup->GetLeaderUID() == pPlayer->Account()->GetID())
 		{
 			// Disband the group
 			pGroup->Disband();

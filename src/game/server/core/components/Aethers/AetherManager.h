@@ -10,7 +10,7 @@ class CAetherManager : public MmoComponent
 {
 	~CAetherManager() override
 	{
-		CAether::Data().clear();
+		CAetherData::Data().clear();
 	};
 
 	void OnInit() override;
@@ -19,8 +19,9 @@ class CAetherManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
-	void UnlockLocation(CPlayer* pPlayer, vec2 Pos);
+	void UnlockLocation(CPlayer* pPlayer, vec2 Pos) const;
 	void ShowList(CCharacter* pChar) const;
+	CAetherData* GetAether(int AetherID) const;
 };
 
 #endif
