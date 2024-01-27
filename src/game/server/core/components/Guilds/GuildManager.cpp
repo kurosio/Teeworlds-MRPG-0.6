@@ -149,44 +149,9 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 	if(PPSTR(CMD, "GUILD_HOUSE_DECORATION") == 0)
 	{
-		// Check if the player has a guild
-		if(!pPlayer->Account()->HasGuild())
+		// Check if the player has a guild or if they have the access rights to upgrade the house
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
 		{
-						GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
-			return true;
-		}
-
-		// Check if the guild has a house
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild->HasHouse())
-		{
-						GS()->Chat(ClientID, "Your guild does not have a house.");
-			return true;
-		}
-
-		// Check if the player is in a different world than pAether
-		CGuildHouseData* pHouse = pGuild->GetHouse();
-		if(!GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
-		{
-						// Change the player's world to pAether's world
-			pPlayer->GetTempData().SetTeleportPosition(pHouse->GetPos());
-			pPlayer->ChangeWorld(pHouse->GetWorldID());
-			return true;
-		}
-
-		// Change the player's position to pAether's position
-		pPlayer->GetCharacter()->ChangePosition(pHouse->GetPos());
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
-		return true;
-	
-	}
-
-	if(PPSTR(CMD, "GUILD_SET_NEW_LEADER") == 0)
-	{
-		// Check if the player has access to set a new guild leader
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
-		{
-			// Inform the player that they have no access or are not a member of the guild
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
 		}
@@ -207,6 +172,37 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		else
 		{
 			GS()->Chat(ClientID, "You can't draw decorations.");
+		}
+		return true;
+	}
+
+	if(PPSTR(CMD, "GUILD_SET_NEW_LEADER") == 0)
+	{
+		// Check if the player has access to set a new guild leader
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		{
+			// Inform the player that they have no access or are not a member of the guild
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// Get the member UID, guild data for the new leader
+		const int& MemberUID = VoteID;
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+
+		// Set the new leader for the guild and get the result
+		GUILD_RESULT Result = pGuild->SetNewLeader(MemberUID);
+		if(Result == GUILD_RESULT::SET_LEADER_NON_GUILD_PLAYER)
+		{
+			GS()->Chat(ClientID, "The player is not a member of your guild");
+		}
+		else if(Result == GUILD_RESULT::SET_LEADER_PLAYER_ALREADY_LEADER)
+		{
+			GS()->Chat(ClientID, "The player is already a leader");
+		}
+		else if(Result == GUILD_RESULT::SUCCESSFUL)
+		{
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
 		}
 		return true;
 	}
