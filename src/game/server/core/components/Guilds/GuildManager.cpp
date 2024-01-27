@@ -581,7 +581,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
-	if(PPSTR(CMD, "GUILD_HOUSE_PLANTZONE_TRY") == 0)
+	if(PPSTR(CMD, "GUILD_HOUSE_PLANT_ZONE_TRY") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
 		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
@@ -590,46 +590,66 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
+		const int& Useds = maximum(1, Get);
 		const int& PlantzoneID = VoteID;
 		const ItemIdentifier& ItemID = VoteID2;
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 		CGuildHouseData* pHouse = pGuild->GetHouse();
 
+		// Check if the guild does not have a house
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "Your guild does not have a house.");
 			return true;
 		}
 
+		// Check if pPlantzone is null or undefined
 		CGuildHousePlantzoneData* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
-
 		if(!pPlantzone)
 		{
-			GS()->Chat(ClientID, "Plantzone not found.");
+			GS()->Chat(ClientID, "Plant zone not found.");
 			return true;
 		}
 
+		// Check if the ItemID of the plant matches the ItemID of the plant zone
 		if(ItemID == pPlantzone->GetItemID())
 		{
 			GS()->Chat(ClientID, "This plant is already planted.");
 			return true;
 		}
 
-		if(pPlayer->Account()->SpendCurrency(1, ItemID))
+		// Check if the player has enough currency to spend
+		if(pPlayer->Account()->SpendCurrency(Useds, ItemID))
 		{
+			// Check if the chance result is successful
+			bool Success = false;
 			Chance result(0.025f);
-			if(!result())
+			for(int i = 0; i < Useds && !Success; i++)
 			{
+				if(result())
+				{
+					Success = true;
+					break;
+				}
+
+				// Update the chance result for the next attempt
+				result.Update();
+			}
+
+			// Check if the planting was successful
+			if(!Success)
+			{
+				// If not successful, inform the client that they failed to plant the plant
 				GS()->Chat(ClientID, "You failed to plant the plant.");
 			}
 			else
 			{
-
+				// Change the item in the plant zone to the planted item
 				GS()->Chat(ClientID, "You have successfully planted the plant.");
 				pPlantzone->ChangeItem(ItemID);
 			}
 
-			GS()->UpdateVotes(ClientID, MENU_GUILD_HOUSE_PLANTZONE_SELECTED);
+			GS()->StrongUpdateVotes(ClientID, MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED);
 		}
 
 		return true;
@@ -732,7 +752,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		if(pChr->GetHelper()->BoolIndex(TILE_GUILD_HOUSE))
 		{
 			CGuildHouseData* pHouse = GetGuildHouseByPos(pChr->m_Core.m_Pos);
-			ShowBuyHouse(pPlayer, pHouse);
+			ShowBuyHouse(ClientID, pHouse);
 			return true;
 		}
 
@@ -749,21 +769,21 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_GUILD_FINDER_MEMBERSHIP_LIST)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD_FINDER;
-		ShowPlayerlist(pPlayer, pPlayer->m_TempMenuValue);
+		ShowMembershipList(ClientID, pPlayer->m_TempMenuValue);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD)
 	{
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
-		ShowMenu(pPlayer);
+		ShowMenu(ClientID);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD_MEMBERSHIP_LIST)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
-		ShowPlayerlist(pPlayer);
+		ShowMembershipList(ClientID);
 		return true;
 	}
 
@@ -778,7 +798,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_GUILD_RANK)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
-		ShowRanksSettings(pPlayer);
+		ShowRanksSettings(ClientID);
 		return true;
 	}
 
@@ -789,57 +809,33 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_HOUSE_PLANTZONE_SELECTED)
+	if(Menulist == MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
-
-		const int& PlantzoneID = pPlayer->m_TempMenuValue;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pGuild->GetHouse() || !pGuild->GetHouse()->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID))
-		{
-			GS()->AddVotesBackpage(ClientID);
-			return true;
-		}
-
-		CGuildHouseData* pHouse = pGuild->GetHouse();
-		CGuildHousePlantzoneData* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
-		CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
-		GS()->AVL(ClientID, "null", "\u3041 Select plant zone: {STR}", pPlantzone->GetName());
-		GS()->AVL(ClientID, "null", "Planted: {STR}", pItem->GetName());
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "\u3044 Possible items for planting");
-
-		bool IsEmpty = true;
-		std::vector<ItemIdentifier> vPlantItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ItemFunctional::FUNCTION_PLANT);
-		for(auto& ID : vPlantItems)
-		{
-			CPlayerItem* pItem = pPlayer->GetItem(ID);
-			if(pItem->HasItem())
-			{
-				GS()->AVD(ClientID, "GUILD_HOUSE_PLANTZONE_TRY", PlantzoneID, ID, NOPE, "Try plant {STR} (has {VAL})", pItem->Info()->GetName(), pItem->GetValue());
-				IsEmpty = false;
-			}
-		}
-		if(IsEmpty)
-			GS()->AVL(ClientID, "null", "You have no plants for planting");
-
-		GS()->AddVotesBackpage(ClientID);
+		ShowPlantZone(ClientID, pPlayer->m_TempMenuValue);
 		return true;
 	}
 
 	return false;
 }
 
-void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
+void CGuildManager::ShowMembershipList(int ClientID) const
 {
-	// Check if the player or the player's account has a guild
-	if(!pPlayer || !pPlayer->Account()->HasGuild())
+	// If the player object does not exist, return from the function
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer)
 		return;
+
+	// If the player is not in a guild
+	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+	{
+		GS()->AddVotesBackpage(ClientID);
+		return;
+	}
 
 	// Initialize variables
 	int HideID = START_SELF_HIDE_ID;
-	int ClientID = pPlayer->GetCID();
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
 	CGuildMemberData* pPlayerMember = pPlayer->Account()->GetGuildMemberData();
 
 	// Print the membership list of the guild
@@ -909,20 +905,21 @@ void CGuildManager::ShowPlayerlist(CPlayer* pPlayer) const
 	GS()->AddVotesBackpage(ClientID);
 }
 
-void CGuildManager::ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const
+void CGuildManager::ShowMembershipList(int ClientID, GuildIdentifier ID) const
 {
+	// If the player object does not exist, return from the function
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer)
 		return;
 
 	// show more information
 	if(pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->GetID() == ID)
 	{
-		ShowPlayerlist(pPlayer);
+		ShowMembershipList(ClientID);
 		return;
 	}
 
 	// show simple information
-	int ClientID = pPlayer->GetCID();
 	if(CGuildData* pGuild = GetGuildByID(ID))
 	{
 		int HideID = START_SELF_HIDE_ID;
@@ -1025,13 +1022,21 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 }
 
 
-void CGuildManager::ShowMenu(CPlayer* pPlayer) const
+void CGuildManager::ShowMenu(int ClientID) const
 {
-	if(!pPlayer || !pPlayer->Account()->HasGuild())
+	// If the player object does not exist, return from the function
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer)
 		return;
 
+	// If the player is not in a guild
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	int ClientID = pPlayer->GetCID();
+	if(!pGuild)
+	{
+		GS()->AddVotesBackpage(ClientID);
+		return;
+	}
+
 	bool HasHouse = pGuild->HasHouse();
 	int ExpNeed = computeExperience(pGuild->GetLevel());
 	const int MemberUsedSlots = pGuild->GetMembers()->GetContainer().size();
@@ -1067,20 +1072,28 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 		GS()->AVL(ClientID, "GUILD_HOUSE_SPAWN", "Move to the house");
 		GS()->AVL(ClientID, "GUILD_HOUSE_SELL", "Sell the house");
 
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "\u2747 House has {VAL} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
-		for(auto& [Number, DoorData] : pHouse->GetDoorManager()->GetContainer())
+		// guild house doors
+		if(!pHouse->GetDoorManager()->GetContainer().empty())
 		{
-			bool StateDoor = DoorData->IsClosed();
-			GS()->AVM(ClientID, "GUILD_HOUSE_DOOR", Number, NOPE, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData->GetName());
+			GS()->AV(ClientID, "null");
+			GS()->AVL(ClientID, "null", "\u2743 House has {VAL} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
+			for(auto& [Number, DoorData] : pHouse->GetDoorManager()->GetContainer())
+			{
+				bool StateDoor = DoorData->IsClosed();
+				GS()->AVM(ClientID, "GUILD_HOUSE_DOOR", Number, NOPE, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData->GetName());
+			}
 		}
 
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "\u2743 House has {VAL} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
-		for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
+		// guild house plant zones
+		if(!pHouse->GetPlantzonesManager()->GetContainer().empty())
 		{
-			GS()->AVD(ClientID, "MENU", MENU_GUILD_HOUSE_PLANTZONE_SELECTED, ID, NOPE, "Plant zone {STR} / {STR}",
-				Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
+			GS()->AV(ClientID, "null");
+			GS()->AVL(ClientID, "null", "\u2741 House has {VAL} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+			for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
+			{
+				GS()->AVD(ClientID, "MENU", MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED, ID, NOPE, "Plant zone {STR} / {STR}",
+					Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
+			}
 		}
 	}
 
@@ -1107,14 +1120,22 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	GS()->AddVotesBackpage(ClientID);
 }
 
-void CGuildManager::ShowRanksSettings(CPlayer* pPlayer) const
+void CGuildManager::ShowRanksSettings(int ClientID) const
 {
-	if(!pPlayer || !pPlayer->Account()->HasGuild())
+	// If the player object does not exist, return from the function
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer)
 		return;
 
-	const int ClientID = pPlayer->GetCID();
+	// If the player is not in a guild
+	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+	{
+		GS()->AddVotesBackpage(ClientID);
+		return;
+	}
 
-	pPlayer->m_LastVoteMenu = MENU_GUILD;
+	// Guild rank information
 	GS()->AV(ClientID, "null", "Use reason how enter Value, Click fields!");
 	GS()->AV(ClientID, "null", "Example: Name rank: [], in reason name, and use this");
 	GS()->AV(ClientID, "null", "For leader access full, ignored ranks");
@@ -1124,6 +1145,7 @@ void CGuildManager::ShowRanksSettings(CPlayer* pPlayer) const
 	GS()->AVM(ClientID, "GUILD_RANK_CREATE", 1, NOPE, "Create new rank");
 	GS()->AV(ClientID, "null");
 
+	// Guild rank list
 	int HideID = START_SELF_HIDE_ID;
 	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
 	{
@@ -1142,21 +1164,27 @@ void CGuildManager::ShowRanksSettings(CPlayer* pPlayer) const
 		HideID++;
 	}
 
+	// Add the votes to the player's back page
 	GS()->AddVotesBackpage(ClientID);
 }
 
 void CGuildManager::ShowRequests(int ClientID) const
 {
-	// If the player object doesn't exist or the player doesn't have a guild, return
+	// If the player object does not exist, return from the function
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer || !pPlayer->Account()->HasGuild())
+	if(!pPlayer)
 		return;
 
-	// Get the guild object for the player's account
+	// If the player is not in a guild
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	const GuildRequestsContainer& aRequest = pGuild->GetMembers()->GetRequests()->GetContainer();
+	if(!pGuild)
+	{
+		GS()->AddVotesBackpage(ClientID);
+		return;
+	}
 
 	// If there are requests in the container
+	const GuildRequestsContainer& aRequest = pGuild->GetMembers()->GetRequests()->GetContainer();
 	if(!aRequest.empty())
 	{
 		// Start with a hide ID and iterate through each request in the container
@@ -1184,10 +1212,61 @@ void CGuildManager::ShowRequests(int ClientID) const
 	GS()->AddVotesBackpage(ClientID);
 }
 
+void CGuildManager::ShowPlantZone(int ClientID, int PlantzoneID) const
+{
+	// Check player
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer)
+		return;
+
+	// Check some guild data
+	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild || !pGuild->GetHouse() || !pGuild->GetHouse()->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID))
+	{
+		GS()->AddVotesBackpage(ClientID);
+		return;
+	}
+
+	// information
+	GS()->AVH(ClientID, TAB_INFO_GUILD_HOUSE_PLANT_ZONE, "Plant zones information");
+	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE_PLANT_ZONE, "You can plant some kind of plantation.");
+	GS()->AV(ClientID, "null");
+
+	// settings
+	CGuildHouseData* pHouse = pGuild->GetHouse();
+	CGuildHousePlantzoneData* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
+	CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
+	GS()->AVL(ClientID, "null", "\u3041 Select plant zone: {STR}", pPlantzone->GetName());
+	GS()->AVL(ClientID, "null", "Planted: {STR}", pItem->GetName());
+	GS()->AV(ClientID, "null");
+	GS()->AVL(ClientID, "null", "\u3044 Possible items for planting");
+
+	bool IsEmpty = true;
+	std::vector<ItemIdentifier> vPlantItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ItemFunctional::FUNCTION_PLANT);
+	for(auto& ID : vPlantItems)
+	{
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
+		if(pPlayerItem->HasItem())
+		{
+			GS()->AVD(ClientID, "GUILD_HOUSE_PLANT_ZONE_TRY", PlantzoneID, ID, NOPE, "Try plant {STR} (has {VAL})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+			IsEmpty = false;
+		}
+	}
+	if(IsEmpty)
+	{
+		GS()->AVL(ClientID, "null", "You have no plants for planting");
+	}
+
+	// Add the votes to the player's back page
+	GS()->AddVotesBackpage(ClientID);
+}
+
 void CGuildManager::ShowFinder(int ClientID) const
 {
-	// Get the player
+	// If the player object does not exist, return from the function
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer)
+		return;
 
 	// Check if the player already has a guild
 	if(pPlayer->Account()->HasGuild())
@@ -1240,15 +1319,12 @@ void CGuildManager::ShowFinder(int ClientID) const
 	GS()->AddVotesBackpage(ClientID);
 }
 
-void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouseData* pHouse) const
+void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 {
-	// Check if player is valid
+	// If the player object does not exist, return from the function
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer)
-	{
 		return;
-	}
-
-	const int ClientID = pPlayer->GetCID();
 
 	// Show information about guild house
 	GS()->AVH(ClientID, TAB_INFO_GUILD_HOUSE, "Information guild house");
@@ -1278,11 +1354,9 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouseData* pHouse) cons
 		return;
 	}
 
-	// Check if player has a guild
+	// Check if player has leader rights in the guild
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
 	GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", pGuild->GetBank()->Get());
-
-	// Check if player has leader rights in the guild
 	if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
 		GS()->AVM(ClientID, "GUILD_HOUSE_BUY", pHouse->GetID(), NOPE, "Purchase this guild house! Cost: {VAL} golds", pHouse->GetPrice());
 	else
@@ -1294,11 +1368,18 @@ void CGuildManager::ShowLogs(int ClientID) const
 {
 	// If player does not exist or does not have a guild, return
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer || !pPlayer->Account()->HasGuild())
+	if(!pPlayer)
 		return;
 
-	// Get the guild data and logger for the player's guild
+	// Check some guild data
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+	{
+		GS()->AddVotesBackpage(ClientID);
+		return;
+	}
+
+	// Get the logger for the player's guild
 	CGuildLoggerManager* pLogger = pGuild->GetLogger();
 
 	// Display guild activity log settings to the player

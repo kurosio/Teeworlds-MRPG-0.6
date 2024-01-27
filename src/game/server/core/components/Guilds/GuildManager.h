@@ -33,13 +33,15 @@ public:
 	void Disband(GuildIdentifier GuildID) const;
 
 private:
-	void ShowMenu(CPlayer* pPlayer) const;
-	void ShowRanksSettings(CPlayer *pPlayer) const;
+	void ShowMenu(int ClientID) const;
+	void ShowRanksSettings(int ClientID) const;
 	void ShowFinder(int ClientID) const;
 	void ShowLogs(int ClientID) const;
-	void ShowPlayerlist(CPlayer* pPlayer) const;
-	void ShowPlayerlist(CPlayer* pPlayer, GuildIdentifier ID) const;
+	void ShowMembershipList(int ClientID) const;
+	void ShowMembershipList(int ClientID, GuildIdentifier ID) const;
 	void ShowRequests(int ClientID) const;
+	void ShowPlantZone(int ClientID, int PlantzoneID) const;
+	void ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const;
 
 public:
 	CGuildHouseData* GetGuildHouseByID(const GuildHouseIdentifier& ID) const;
@@ -49,7 +51,6 @@ public:
 	CGuildHousePlantzoneData* GetGuildHousePlantzoneByPos(vec2 Pos) const;
 	bool IsAccountMemberGuild(int AccountID) const;
 
-	void ShowBuyHouse(CPlayer *pPlayer, CGuildHouseData* pHouse) const;
 };
 
 #endif
