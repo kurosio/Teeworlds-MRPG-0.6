@@ -114,28 +114,38 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// -------------------------------------
-	// ACCESS RANK: Upgrade house functions
-	if(PPSTR(CMD, "MDOOR") == 0)
+	if(PPSTR(CMD, "GUILD_HOUSE_SPAWN") == 0)
 	{
-		return true;
-	}
+		// Check if the player has a guild
+		if(!pPlayer->Account()->HasGuild())
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
 
-	if(PPSTR(CMD, "DECOGUILDSTART") == 0)
-	{
-		return true;
-	}
+		// Check if the guild has a house
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild->HasHouse())
+		{
+			GS()->Chat(ClientID, "Your guild does not have a house.");
+			return true;
+		}
 
-	if(PPSTR(CMD, "DECOGUILDDELETE") == 0)
-	{
-		return true;
-	}
+		CGuildHouseData* pHouse = pGuild->GetHouse();
+		vec2 HousePosition = pHouse->GetPos();
 
+		// Check if the player is in a different world than pAether
+		if(!GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
+		{
+			// Change the player's world to pAether's world
+			pPlayer->GetTempData().SetTeleportPosition(HousePosition);
+			pPlayer->ChangeWorld(pHouse->GetWorldID());
+			return true;
+		}
 
-	// -------------------------------------
-	// ACCESS RANK: Full access functions
-	if(PPSTR(CMD, "MSPAWN") == 0)
-	{
+		// Change the player's position to pAether's position
+		pPlayer->GetCharacter()->ChangePosition(HousePosition);
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
 
@@ -558,7 +568,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		if(!pHouse)
 		{
-			GS()->Chat(ClientID, "You do not have your own home!");
+			GS()->Chat(ClientID, "Your guild does not have a house.");
 			return true;
 		}
 
@@ -600,7 +610,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		if(!pHouse)
 		{
-			GS()->Chat(ClientID, "You do not have your own home!");
+			GS()->Chat(ClientID, "Your guild does not have a house.");
 			return true;
 		}
 
@@ -987,7 +997,7 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 		GS()->AV(ClientID, "null");
 		GS()->AVL(ClientID, "null", "\u2302 House Management");
 		GS()->AVM(ClientID, "MENU", MENU_GUILD_HOUSE_DECORATION, NOPE, "Customizing");
-		GS()->AVL(ClientID, "MSPAWN", "Move to the house");
+		GS()->AVL(ClientID, "GUILD_HOUSE_SPAWN", "Move to the house");
 		GS()->AVL(ClientID, "GUILD_HOUSE_SELL", "Sell the house");
 
 		GS()->AV(ClientID, "null");

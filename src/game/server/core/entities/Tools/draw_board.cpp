@@ -4,7 +4,7 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Inventory/InventoryManager.h>
 
-#include "../laser_orbite.h"
+#include "laser_orbite.h"
 #include <game/server/entities/pickup.h>
 
 IServer* CBrush::Server() const { return m_pBoard->Server(); }

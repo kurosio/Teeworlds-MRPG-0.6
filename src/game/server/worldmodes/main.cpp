@@ -3,8 +3,8 @@
 #include "main.h"
 
 #include <game/server/gamecontext.h>
-#include <game/server/core/entities/jobitems.h>
-#include <game/server/core/entities/Logics/logicwall.h>
+#include <game/server/core/entities/items/jobitems.h>
+#include <game/server/core/entities/logic/logicwall.h>
 
 #include <game/server/core/components/Accounts/AccountMinerManager.h>
 #include <game/server/core/components/Accounts/AccountPlantManager.h>

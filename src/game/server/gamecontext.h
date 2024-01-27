@@ -15,7 +15,7 @@
 #include "player.h"
 #include "playerbot.h"
 
-#include "core/entities/Tools/flying_point.h"
+#include "core/entities/tools/flying_point.h"
 #include "core/mmo_controller.h"
 
 class CGS : public IGameServer

@@ -6,8 +6,8 @@
 #include <game/server/entity.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/entities/botwall.h>
-#include <game/server/core/entities/Logics/logicwall.h>
+#include <game/server/core/entities/logic/botwall.h>
+#include <game/server/core/entities/logic/logicwall.h>
 #include <teeother/system/string.h>
 
 #include <game/server/core/components/Accounts/AccountManager.h>

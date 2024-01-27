@@ -11,11 +11,9 @@
 CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, FromPos)
 {
-	vec2 PosTo { 0, 0 };
-	GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos, &PosTo);
+	GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos, &m_PosTo);
 
 	m_Mask = Mask;
-	m_PosTo = PosTo;
 	m_StepPos = 0;
 	m_pParent = pParent;
 	m_Projectile = Projectile;
@@ -42,10 +40,9 @@ bool CEntityPathNavigator::PreparedPathData()
 
 void CEntityPathNavigator::Tick()
 {
-	// Check if the entity's parent is null or marked for destruction
-	if(!m_pParent || m_pParent->IsMarkedForDestroy())
+	// Check if the entity's parent is exist
+	if(!GameWorld()->ExistEntity(m_pParent))
 	{
-		// Destroy the entity and return
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
@@ -55,9 +52,19 @@ void CEntityPathNavigator::Tick()
 	{
 		// Move the object
 		Move();
-
 	}
 }
+
+void CEntityPathNavigator::TickDeferred()
+{
+	// update last position
+	if(m_LastPos != m_pParent->GetPos() && m_TickLastIdle != -1 && !m_StartByCreating)
+	{
+		m_TickLastIdle = Server()->Tick() + (Server()->TickSpeed() * 3);
+	}
+	m_LastPos = m_pParent->GetPos();
+}
+
 
 void CEntityPathNavigator::Move()
 {
@@ -83,24 +90,24 @@ void CEntityPathNavigator::Move()
 		return;
 	}
 
-	// default move
-	m_Pos = m_Data.Get().m_Points[m_StepPos];
-
 	// update timer by steps
 	if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
 	{
-		GS()->CreateDamage(vec2(m_Pos.x - 32.f, m_Pos.y - 64.f), -1, 1, false, 0.f, m_Mask);
-		m_StepPos++;
-	}
+		m_Pos = m_Data.Get().m_Points[m_StepPos];
 
-	// Check if the distance between the parent's position and the object's position is greater than 800.0f
-	// or if the step position is greater than or equal to the number of points in the path data
-	if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= (int)m_Data.Get().m_Points.size())
-	{
-		// Set the countdown to the current tick plus 2 seconds
-		m_TickCountDown = Server()->Tick() + (Server()->TickSpeed() * 2);
-		m_Data.Get().Clear();
-		m_StartByCreating = false;
+		vec2 Corrector(32.f, 64.f);
+		GS()->CreateDamage(m_Pos - Corrector, -1, 1, false, 0.f, m_Mask);
+		m_StepPos++;
+
+		// Check if the distance between the parent's position and the object's position is greater than 800.0f
+		// or if the step position is greater than or equal to the number of points in the path data
+		if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= (int)m_Data.Get().m_Points.size())
+		{
+			// Set the countdown to the current tick plus 2 seconds
+			m_TickCountDown = Server()->Tick() + (Server()->TickSpeed() * 2);
+			m_Data.Get().Clear();
+			m_StartByCreating = false;
+		}
 	}
 }
 
@@ -120,17 +127,3 @@ void CEntityPathNavigator::Snap(int SnappingClient)
 		pObj->m_Type = WEAPON_HAMMER;
 	}
 }
-
-void CEntityPathNavigator::PostSnap()
-{
-	// update last position
-	if(m_pParent)
-	{
-		if(m_LastPos != m_pParent->GetPos() && m_TickLastIdle != -1 && !m_StartByCreating)
-		{
-			m_TickLastIdle = Server()->Tick() + (Server()->TickSpeed() * 3);
-		}
-		m_LastPos = m_pParent->GetPos();
-	}
-}
-

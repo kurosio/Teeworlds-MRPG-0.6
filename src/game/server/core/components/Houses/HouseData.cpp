@@ -4,8 +4,8 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/entities/jobitems.h>
-#include <game/server/core/entities/Tools/draw_board.h>
+#include <game/server/core/entities/items/jobitems.h>
+#include <game/server/core/entities/tools/draw_board.h>
 
 CGS* CHouseData::GS() const { return static_cast<CGS*>(Server()->GameServer(m_WorldID)); }
 CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerByUserID(m_AccountID); }

@@ -6,7 +6,7 @@
 #include "gamecontext.h"
 
 #include "entities/pickup.h"
-#include "core/entities/botwall.h"
+#include "core/entities/logic/botwall.h"
 
 /*
 	Here you need to put it in order make more events

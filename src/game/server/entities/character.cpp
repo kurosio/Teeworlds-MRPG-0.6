@@ -14,8 +14,8 @@
 #include <game/server/core/components/Quests/QuestManager.h>
 #include <game/server/core/components/Worlds/WorldData.h>
 
-#include <game/server/core/entities/jobitems.h>
-#include <game/server/core/entities/multiple_orbite.h>
+#include <game/server/core/entities/items/jobitems.h>
+#include <game/server/core/entities/tools/multiple_orbite.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 

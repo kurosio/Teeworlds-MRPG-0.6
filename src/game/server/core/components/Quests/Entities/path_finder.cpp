@@ -5,7 +5,7 @@
 #include <game/server/core/components/Worlds/WorldManager.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/entities/Tools/path_navigator.h>
+#include <game/server/core/entities/tools/path_navigator.h>
 
 CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos, 0, ClientID)

@@ -15,10 +15,10 @@
 
 #include "core/command_processor.h"
 #include "core/utilities/pathfinder.h"
-#include "core/entities/loltext.h"
-#include "core/entities/Items/drop_bonuses.h"
-#include "core/entities/Items/drop_items.h"
-#include "core/entities/laser_orbite.h"
+#include "core/entities/items/drop_bonuses.h"
+#include "core/entities/items/drop_items.h"
+#include "core/entities/tools/loltext.h"
+#include "core/entities/tools/laser_orbite.h"
 
 #include "core/components/Accounts/AccountManager.h"
 #include "core/components/Bots/BotManager.h"

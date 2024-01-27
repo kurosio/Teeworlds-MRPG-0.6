@@ -8,16 +8,15 @@
 
 #include <game/collision.h>
 
-#include <game/server/core/entities/Eidolons/base.h>
 #include <game/server/core/components/Skills/Entities/HealthTurret/hearth.h> // for nurse
-
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/Quests/QuestManager.h>
 
-#include "game/server/core/utilities/pathfinder.h"
+#include <game/server/core/entities/eidolons/base.h>
+#include <game/server/core/entities/tools/multiple_orbite.h>
+#include <game/server/core/utilities/pathfinder.h>
 
 #include "nurse_heart.h"
-#include "game/server/core/entities/multiple_orbite.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 

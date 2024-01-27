@@ -5,11 +5,12 @@
 #include <game/server/gamecontext.h>
 #include <teeother/system/string.h>
 
-#include <game/server/core/entities/Items/drop_quest_items.h>
 #include <game/server/core/components/Inventory/InventoryManager.h>
 #include "QuestManager.h"
 
-#include <game/server/core/entities/laser_orbite.h>
+#include <game/server/core/entities/items/drop_quest_items.h>
+#include <game/server/core/entities/tools/laser_orbite.h>
+
 #include "Entities/move_to.h"
 #include "Entities/path_finder.h"
 

@@ -27,7 +27,7 @@ public:
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
-	void PostSnap() override;
+	void TickDeferred() override;
 
 private:
 	void Move();
