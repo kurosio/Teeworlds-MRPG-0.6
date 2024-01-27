@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 
+#include "Manager/Plantings/GuildHousePlantzonesManager.h"
 #include "Manager/Doors/GuildHouseDoorsController.h"
 #include "Manager/Decorations/GuildHouseDecorationsManager.h"
 
@@ -14,6 +15,7 @@ using GuildHouseIdentifier = int;
 
 class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < CGuildHouseData* > >
 {
+	friend class CGuildHousePlantzonesManager;
 	friend class CGuildHouseDoorsController;
 	friend class CGuildHouseDecorationManager;
 
@@ -31,6 +33,7 @@ class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < CG
 
 	CGuildHouseDoorsController* m_pDoors {};
 	CGuildHouseDecorationManager* m_pDecorations {};
+	CGuildHousePlantzonesManager* m_pPlantzones {};
 
 public:
 	CGuildHouseData() = default;
@@ -43,16 +46,16 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuildData* pGuild, int Price, int WorldID, std::string&& JsProperties)
+	void Init(CGuildData* pGuild, int Price, int WorldID, std::string&& JsPlantzones, std::string&& JsProperties)
 	{
 		m_Price = Price;
 		m_WorldID = WorldID;
 
-		InitProperties(std::move(JsProperties));
+		InitProperties(std::move(JsPlantzones), std::move(JsProperties));
 		UpdateGuild(pGuild);
 	}
 
-	void InitProperties(std::string&& Properties);
+	void InitProperties(std::string&& Plantzones, std::string&& Properties);
 
 	CGuildData* GetGuild() const { return m_pGuild; }
 	CGuildHouseDoorsController* GetDoors() const { return m_pDoors; }

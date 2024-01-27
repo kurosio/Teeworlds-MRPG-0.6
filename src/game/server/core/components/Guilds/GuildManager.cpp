@@ -37,10 +37,11 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		GuildHouseIdentifier ID = pRes->getInt("ID");
 		GuildIdentifier GuildID = pRes->getInt("GuildID");
 		int Price = pRes->getInt("Price");
+		std::string JsPlantzones = pRes->getString("Plantzones").c_str();
 		std::string JsPropersties = pRes->getString("Properties").c_str();
 
 		CGuildData* pGuild = GetGuildByID(GuildID);
-		CGuildHouseData::CreateElement(ID)->Init(pGuild, Price, GS()->GetWorldID(), std::move(JsPropersties));
+		CGuildHouseData::CreateElement(ID)->Init(pGuild, Price, GS()->GetWorldID(), std::move(JsPlantzones), std::move(JsPropersties));
 	}
 
 	Core()->ShowLoadingProgress("Guild houses", CGuildHouseData::Data().size());

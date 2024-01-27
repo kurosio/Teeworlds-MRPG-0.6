@@ -15,8 +15,11 @@ CGuildHouseData::~CGuildHouseData()
 	delete m_pDoors;
 }
 
-void CGuildHouseData::InitProperties(std::string&& Properties)
+void CGuildHouseData::InitProperties(std::string&& Plantzones, std::string&& Properties)
 {
+	// Asserts
+	dbg_assert(Properties.length() > 0, "The properties string is empty");
+
 	// Parse the JSON string
 	Tools::Json::parseFromString(Properties, [this](nlohmann::json& pJson)
 	{
@@ -56,7 +59,12 @@ void CGuildHouseData::InitProperties(std::string&& Properties)
 		}
 	});
 
+	// Create a new instance of CGuildHousePlantzonesManager and assign it to m_pPlantzones
+	// The CGuildHousePlantzonesManager will handle all the plantzones for the guild house.
+	m_pPlantzones = new CGuildHousePlantzonesManager(this, std::move(Plantzones));
+
 	// Asserts
+	dbg_assert(m_pPlantzones != nullptr, "The house plantzones manager is null");
 	dbg_assert(m_pDecorations != nullptr, "The house decorations manager is null");
 	dbg_assert(m_pDoors != nullptr, "The house doors manager is null");
 }
