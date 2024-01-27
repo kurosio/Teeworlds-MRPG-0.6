@@ -21,7 +21,7 @@ CGuildHouseDecorationManager::~CGuildHouseDecorationManager()
 void CGuildHouseDecorationManager::Init()
 {
 	// Create a new instance of CEntityDrawboard and pass the world and house position as parameters
-	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pHouse->GetPos(), 900.f);
+	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pHouse->GetPos(), m_pHouse->GetRadius());
 	m_pDrawBoard->RegisterEvent(&CGuildHouseDecorationManager::DrawboardToolEventCallback, m_pHouse);
 	m_pDrawBoard->SetFlags(DRAWBOARDFLAG_PLAYER_ITEMS);
 

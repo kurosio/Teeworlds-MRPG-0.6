@@ -8,10 +8,7 @@
 
 CGS* CGuildHouseDoorsController::GS() const { return m_pHouse->GS(); }
 
-CGuildHouseDoorsController::CGuildHouseDoorsController(std::string&& JsonDoorData, CGuildHouseData* pHouse) : m_pHouse(pHouse)
-{
-	CGuildHouseDoorsController::Init(std::move(JsonDoorData), pHouse);
-}
+CGuildHouseDoorsController::CGuildHouseDoorsController(CGuildHouseData* pHouse) : m_pHouse(pHouse) {}
 
 // Destructor for the CHouseDoorsController class
 CGuildHouseDoorsController::~CGuildHouseDoorsController()
@@ -76,24 +73,22 @@ void CGuildHouseDoorsController::ReverseAll()
 		Reverse(p.first);
 }
 
-void CGuildHouseDoorsController::Init(std::string&& JsonDoorData, CGuildHouseData* pHouse)
+void CGuildHouseDoorsController::AddDoor(const char* pDoorname, vec2 Position)
 {
-	// Parse the JSON string using the Tools::Json::parseFromString function initialize doors
-	Tools::Json::parseFromString(JsonDoorData, [&](const nlohmann::json& pJsonArray)
+	// Add the door to the m_apDoors map using the door name as the key
+	m_apDoors.emplace(m_apDoors.size() + 1, new CGuildHouseDoor(&GS()->m_World, m_pHouse, std::string(pDoorname), Position));
+}
+
+void CGuildHouseDoorsController::RemoveDoor(const char* pDoorname, vec2 Position)
+{
+	auto iter = std::find_if(m_apDoors.begin(), m_apDoors.end(), [&](const std::pair<int, CGuildHouseDoor*>& p)
 	{
-		int Number = 1;
-		m_apDoors.reserve(pJsonArray.size());
-		for(const auto& pJsonDoor : pJsonArray)
-		{
-			// Check if the door name is not empty
-			std::string DoorName = pJsonDoor.value("name", "");
-			vec2 Pos = vec2(pJsonDoor.value("x", 0), pJsonDoor.value("y", 0));
-			if(!DoorName.empty())
-			{
-				// Add the door data to the m_apDoors map using the door name as the key
-				m_apDoors.emplace(Number, new CGuildHouseDoor(&GS()->m_World, pHouse, std::string(DoorName), Pos));
-				Number++;
-			}
-		}
+		return p.second->GetName() == pDoorname && p.second->GetPos() == Position;
 	});
+
+	if(iter != m_apDoors.end())
+	{
+		delete iter->second;
+		m_apDoors.erase(iter);
+	}
 }

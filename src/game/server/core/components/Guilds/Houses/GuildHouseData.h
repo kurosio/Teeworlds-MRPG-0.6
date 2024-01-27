@@ -21,8 +21,9 @@ class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < CG
 
 	CGuildData* m_pGuild {};
 	GuildHouseIdentifier m_ID{};
+	float m_Radius {};
 	vec2 m_Position{};
-	vec2 m_TextPos{};
+	vec2 m_TextPosition{};
 	int m_Price {};
 	int m_WorldID{};
 
@@ -42,18 +43,20 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuildData* pGuild, int Price, vec2 Position, vec2 TextPosition, int WorldID, std::string&& JsonDoorsData)
+	void Init(CGuildData* pGuild, int Price, int WorldID, std::string&& JsProperties)
 	{
 		m_Price = Price;
-		m_Position = Position;
-		m_TextPos = TextPosition;
 		m_WorldID = WorldID;
-		UpdateGuild(pGuild);
 
 		// components
-		m_pDoors = new CGuildHouseDoorsController(std::move(JsonDoorsData), this);
+		m_pDoors = new CGuildHouseDoorsController(this);
 		m_pDecorations = new CGuildHouseDecorationManager(this);
+
+		InitProperties(std::move(JsProperties));
+		UpdateGuild(pGuild);
 	}
+
+	void InitProperties(std::string&& Properties);
 
 	CGuildData* GetGuild() const { return m_pGuild; }
 	CGuildHouseDoorsController* GetDoors() const { return m_pDoors; }
@@ -62,6 +65,7 @@ public:
 	GuildHouseIdentifier GetID() const { return m_ID; }
 	int GetWorldID() const { return m_WorldID; }
 	vec2 GetPos() const { return m_Position; }
+	float GetRadius() const { return m_Radius; }
 	int GetPrice() const { return m_Price; }
 	bool IsPurchased() const { return m_pGuild != nullptr; }
 

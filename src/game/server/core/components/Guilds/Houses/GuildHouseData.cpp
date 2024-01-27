@@ -15,6 +15,40 @@ CGuildHouseData::~CGuildHouseData()
 	delete m_pDoors;
 }
 
+void CGuildHouseData::InitProperties(std::string&& Properties)
+{
+	// Parse the JSON string
+	Tools::Json::parseFromString(Properties, [this](nlohmann::json& pJson)
+	{
+		if(pJson.find("pos") != pJson.end())
+		{
+			auto pHousePosData = pJson["pos"];
+			m_Position.x = (float)pHousePosData.value("x", 0);
+			m_Position.y = (float)pHousePosData.value("y", 0);
+			m_Radius = (float)pHousePosData.value("radius", 0);
+		}
+
+		if(pJson.find("text_pos") != pJson.end())
+		{
+			auto pTextPosData = pJson["text_pos"];
+			m_TextPosition.x = (float)pTextPosData.value("x", 0);
+			m_TextPosition.y = (float)pTextPosData.value("y", 0);
+		}
+
+		if(pJson.find("doors") != pJson.end())
+		{
+			auto pDoorsData = pJson["doors"];
+			for(const auto& pDoor : pDoorsData)
+			{
+				// Check if the door name is not empty
+				std::string DoorName = pDoor.value("name", "");
+				vec2 DoorPosition = vec2(pDoor.value("x", 0), pDoor.value("y", 0));
+				m_pDoors->AddDoor(DoorName.c_str(), DoorPosition);
+			}
+		}
+	});
+}
+
 void CGuildHouseData::TextUpdate(int LifeTime)
 {
 	// Check if the last tick text update is greater than the current server tick
@@ -32,7 +66,7 @@ void CGuildHouseData::TextUpdate(int LifeTime)
 	}
 
 	// Create a text object with the given parameters
-	if(GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, Name.c_str()))
+	if(GS()->CreateText(nullptr, false, m_TextPosition, {}, LifeTime - 5, Name.c_str()))
 	{
 		// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object
 		m_LastTickTextUpdated = Server()->Tick() + LifeTime;

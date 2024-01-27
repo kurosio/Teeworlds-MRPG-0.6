@@ -37,12 +37,10 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		GuildHouseIdentifier ID = pRes->getInt("ID");
 		GuildIdentifier GuildID = pRes->getInt("GuildID");
 		int Price = pRes->getInt("Price");
-		vec2 Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		vec2 TextPosition = vec2(pRes->getInt("TextX"), pRes->getInt("TextY"));
-		std::string JsonDoorsData = pRes->getString("JsonDoorsData").c_str();
+		std::string JsPropersties = pRes->getString("Properties").c_str();
 
 		CGuildData* pGuild = GetGuildByID(GuildID);
-		CGuildHouseData::CreateElement(ID)->Init(pGuild, Price, Position, TextPosition, GS()->GetWorldID(), std::move(JsonDoorsData));
+		CGuildHouseData::CreateElement(ID)->Init(pGuild, Price, GS()->GetWorldID(), std::move(JsPropersties));
 	}
 
 	Core()->ShowLoadingProgress("Guild houses", CGuildHouseData::Data().size());
@@ -1047,7 +1045,7 @@ void CGuildManager::ShowRanksSettings(CPlayer* pPlayer) const
 	GS()->AVM(ClientID, "GUILD_RANK_CREATE", 1, NOPE, "Create new rank");
 	GS()->AV(ClientID, "null");
 
-	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 1300;
+	int HideID = START_SELF_HIDE_ID;
 	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
 	{
 		GuildRankIdentifier ID = pRank->GetID();
@@ -1270,7 +1268,7 @@ CGuildHouseData* CGuildManager::GetGuildHouseByPos(vec2 Pos) const
 {
 	auto itHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&Pos, this](const CGuildHouseData* p)
 	{
-		return GS()->GetWorldID() == p->GetWorldID() && distance(Pos, p->GetPos()) < 360.f;
+		return GS()->GetWorldID() == p->GetWorldID() && distance(Pos, p->GetPos()) < p->GetRadius();
 	});
 
 	return itHouse != CGuildHouseData::Data().end() ? *itHouse : nullptr;

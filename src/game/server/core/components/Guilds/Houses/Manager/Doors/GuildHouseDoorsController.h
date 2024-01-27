@@ -17,7 +17,7 @@ class CGuildHouseDoorsController
 
 public:
 	CGuildHouseDoorsController() = delete;
-	CGuildHouseDoorsController(std::string&& JsonDoorData, CGuildHouseData* pHouse);
+	CGuildHouseDoorsController(CGuildHouseData* pHouse);
 	~CGuildHouseDoorsController();
 
 	ska::unordered_map<int, CGuildHouseDoor*>& GetContainer() { return m_apDoors; }
@@ -31,7 +31,7 @@ public:
 	void CloseAll(); // Close all doors
 	void ReverseAll(); // Reverse the state of all doors
 
-private:
-	void Init(std::string&& JsonDoorData, CGuildHouseData* pHouse);
+	void AddDoor(const char* pDoorname, vec2 Position);
+	void RemoveDoor(const char* pDoorname, vec2 Position);
 };
 #endif
