@@ -147,6 +147,40 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
+	if(PPSTR(CMD, "GUILD_HOUSE_DECORATION") == 0)
+	{
+		// Check if the player has a guild
+		if(!pPlayer->Account()->HasGuild())
+		{
+						GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// Check if the guild has a house
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild->HasHouse())
+		{
+						GS()->Chat(ClientID, "Your guild does not have a house.");
+			return true;
+		}
+
+		// Check if the player is in a different world than pAether
+		CGuildHouseData* pHouse = pGuild->GetHouse();
+		if(!GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
+		{
+						// Change the player's world to pAether's world
+			pPlayer->GetTempData().SetTeleportPosition(pHouse->GetPos());
+			pPlayer->ChangeWorld(pHouse->GetWorldID());
+			return true;
+		}
+
+		// Change the player's position to pAether's position
+		pPlayer->GetCharacter()->ChangePosition(pHouse->GetPos());
+		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		return true;
+	
+	}
+
 	if(PPSTR(CMD, "GUILD_SET_NEW_LEADER") == 0)
 	{
 		// Check if the player has access to set a new guild leader
@@ -157,23 +191,22 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		// Get the member UID, guild data for the new leader
-		const int& MemberUID = VoteID;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuildHouseData* pHouse = pPlayer->Account()->GetGuild()->GetHouse();
 
-		// Set the new leader for the guild and get the result
-		GUILD_RESULT Result = pGuild->SetNewLeader(MemberUID);
-		if(Result == GUILD_RESULT::SET_LEADER_NON_GUILD_PLAYER)
+		if(!pHouse)
 		{
-			GS()->Chat(ClientID, "The player is not a member of your guild");
+			GS()->Chat(ClientID, "Your guild does not have a house.");
+			return true;
 		}
-		else if(Result == GUILD_RESULT::SET_LEADER_PLAYER_ALREADY_LEADER)
+
+		bool Result = pHouse->GetDecorations()->StartDrawing(pPlayer);
+		if(Result)
 		{
-			GS()->Chat(ClientID, "The player is already a leader");
+			GS()->Chat(ClientID, "You can now draw decorations.");
 		}
-		else if(Result == GUILD_RESULT::SUCCESSFUL)
+		else
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
+			GS()->Chat(ClientID, "You can't draw decorations.");
 		}
 		return true;
 	}
@@ -1192,18 +1225,22 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouseData* pHouse) cons
 		return;
 	}
 
-	// Check if player has a guild
-	if(pPlayer->Account()->HasGuild())
+	// Check if house is already purchased
+	if(!pPlayer->Account()->HasGuild())
 	{
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", pGuild->GetBank()->Get());
-
-		// Check if player has leader rights in the guild
-		if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
-		{
-			GS()->AVM(ClientID, "GUILD_HOUSE_BUY", pHouse->GetID(), NOPE, "Purchase this guild house! Cost: {VAL} golds", pHouse->GetPrice());
-		}
+		GS()->AVL(ClientID, "null", "You need to be in a guild to buy a house");
+		return;
 	}
+
+	// Check if player has a guild
+	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", pGuild->GetBank()->Get());
+
+	// Check if player has leader rights in the guild
+	if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		GS()->AVM(ClientID, "GUILD_HOUSE_BUY", pHouse->GetID(), NOPE, "Purchase this guild house! Cost: {VAL} golds", pHouse->GetPrice());
+	else
+		GS()->AVL(ClientID, "null", "You need to be the leader rights");
 }
 
 // Function to show guild logs for a specific player

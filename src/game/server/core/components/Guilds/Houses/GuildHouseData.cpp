@@ -25,7 +25,7 @@ void CGuildHouseData::InitProperties(std::string&& Properties)
 			auto pHousePosData = pJson["pos"];
 			m_Position.x = (float)pHousePosData.value("x", 0);
 			m_Position.y = (float)pHousePosData.value("y", 0);
-			m_Radius = (float)pHousePosData.value("radius", 0);
+			m_Radius = (float)pHousePosData.value("radius", 300);
 		}
 
 		if(pJson.find("text_pos") != pJson.end())
@@ -41,9 +41,9 @@ void CGuildHouseData::InitProperties(std::string&& Properties)
 			for(const auto& pDoor : pDoorsData)
 			{
 				// Check if the door name is not empty
-				std::string DoorName = pDoor.value("name", "");
-				vec2 DoorPosition = vec2(pDoor.value("x", 0), pDoor.value("y", 0));
-				m_pDoors->AddDoor(DoorName.c_str(), DoorPosition);
+				std::string Doorname = pDoor.value("name", "");
+				vec2 Position = vec2(pDoor.value("x", 0), pDoor.value("y", 0));
+				m_pDoors->AddDoor(Doorname.c_str(), Position);
 			}
 		}
 	});
