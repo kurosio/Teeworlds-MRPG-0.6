@@ -32,17 +32,24 @@ CGuildHousePlantzonesManager::~CGuildHousePlantzonesManager()
 
 void CGuildHousePlantzonesManager::AddPlantzone(CGuildHousePlantzoneData&& Plantzone)
 {
-	m_vPlantzones.push_back(std::forward<CGuildHousePlantzoneData>(Plantzone));
+	m_vPlantzones.emplace(m_vPlantzones.size() + 1, std::forward<CGuildHousePlantzoneData>(Plantzone));
 }
 
-const CGuildHousePlantzoneData* CGuildHousePlantzonesManager::GetPlantzone(vec2 Pos) const
+CGuildHousePlantzoneData* CGuildHousePlantzonesManager::GetPlantzoneByPos(vec2 Pos)
 {
-	for(const auto& p : m_vPlantzones)
+	for(auto& p : m_vPlantzones)
 	{
-		if(distance(p.GetPos(), Pos) <= p.GetRadius())
-			return &p;
+		if(distance(p.second.GetPos(), Pos) <= p.second.GetRadius())
+			return &p.second;
 	}
+
 	return nullptr;
+}
+
+CGuildHousePlantzoneData* CGuildHousePlantzonesManager::GetPlantzoneByID(int ID)
+{
+	auto it = m_vPlantzones.find(ID);
+	return it != m_vPlantzones.end() ? &it->second : nullptr;
 }
 
 void CGuildHousePlantzonesManager::Save() const
@@ -53,11 +60,11 @@ void CGuildHousePlantzonesManager::Save() const
 	{
 		// Create a JSON object to store data for each plant zone
 		nlohmann::json plantzoneData;
-		plantzoneData["name"] = p.GetName();
-		plantzoneData["x"] = round_to_int(p.GetPos().x);
-		plantzoneData["y"] = round_to_int(p.GetPos().y);
-		plantzoneData["item_id"] = p.GetItemID();
-		plantzoneData["radius"] = round_to_int(p.GetRadius());
+		plantzoneData["name"] = p.second.GetName();
+		plantzoneData["x"] = round_to_int(p.second.GetPos().x);
+		plantzoneData["y"] = round_to_int(p.second.GetPos().y);
+		plantzoneData["item_id"] = p.second.GetItemID();
+		plantzoneData["radius"] = round_to_int(p.second.GetRadius());
 		Plantzones.push_back(plantzoneData);
 	}
 

@@ -84,19 +84,6 @@ void CGuildHouseData::TextUpdate(int LifeTime)
 		Name = m_pGuild->GetName();
 
 	// Create a text object with the given parameters
-	for(auto& pPlantzone : m_pPlantzones->GetContainer())
-	{
-		ItemIdentifier ItemID = pPlantzone.GetItemID();
-		CItemDescription* pItemDesc = GS()->GetItemInfo(ItemID);
-
-		if(GS()->CreateText(nullptr, false, pPlantzone.GetPos() - vec2(0, 100), { }, LifeTime - 5, pItemDesc->GetName()))
-		{
-			// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object
-			m_LastTickTextUpdated = Server()->Tick() + LifeTime;
-		}
-	}
-
-	// Create a text object with the given parameters
 	if(GS()->CreateText(nullptr, false, m_TextPosition, {}, LifeTime - 5, Name.c_str()))
 	{
 		// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object

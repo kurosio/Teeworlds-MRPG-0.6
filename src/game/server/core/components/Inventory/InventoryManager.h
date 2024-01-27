@@ -23,6 +23,7 @@ class CInventoryManager : public MmoComponent
 
 public:
 	std::vector<int> GetItemIDsCollection(ItemType Type) const;
+	std::vector<int> GetItemIDsCollectionByFunction(ItemFunctional Type) const;
 
 	// primary
 	void ListInventory(int ClientID, ItemType Type);

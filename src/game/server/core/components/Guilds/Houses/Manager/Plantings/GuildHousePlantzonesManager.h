@@ -15,17 +15,18 @@ class CGuildHousePlantzonesManager
 	CGS* GS() const;
 
 	CGuildHouseData* m_pHouse {};
-	std::vector<CGuildHousePlantzoneData> m_vPlantzones{};
+	std::unordered_map<int, CGuildHousePlantzoneData> m_vPlantzones{};
 
 public:
 	CGuildHousePlantzonesManager() = delete;
 	CGuildHousePlantzonesManager(CGuildHouseData* pHouse, std::string&& JsPlantzones);
 	~CGuildHousePlantzonesManager();
 
-	std::vector<CGuildHousePlantzoneData>& GetContainer() { return m_vPlantzones; }
+	std::unordered_map<int, CGuildHousePlantzoneData>& GetContainer() { return m_vPlantzones; }
 
 	void AddPlantzone(CGuildHousePlantzoneData&& Plantzone);
-	const CGuildHousePlantzoneData* GetPlantzone(vec2 Pos) const;
+	CGuildHousePlantzoneData* GetPlantzoneByPos(vec2 Pos);
+	CGuildHousePlantzoneData* GetPlantzoneByID(int ID);
 
 private:
 	void Save() const;

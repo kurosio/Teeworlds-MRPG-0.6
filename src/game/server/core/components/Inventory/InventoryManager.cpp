@@ -293,6 +293,19 @@ std::vector<int> CInventoryManager::GetItemIDsCollection(ItemType Type) const
 	return ItemIDs;
 }
 
+std::vector<int> CInventoryManager::GetItemIDsCollectionByFunction(ItemFunctional Type) const
+{
+	std::vector<int> ItemIDs {};
+
+	for(const auto& [ID, pInfo] : CItemDescription::Data())
+	{
+		if(pInfo.IsFunctional(Type))
+			ItemIDs.push_back(ID);
+	}
+
+	return ItemIDs;
+}
+
 void CInventoryManager::ListInventory(int ClientID, ItemType Type)
 {
 	if(Type >= ItemType::TYPE_USED && Type < ItemType::NUM_TYPES)

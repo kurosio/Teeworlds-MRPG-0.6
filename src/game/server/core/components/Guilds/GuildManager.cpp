@@ -581,7 +581,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
-	if(PPSTR(CMD, "GUILD_HOUSE_DECORATION_EDIT") == 0)
+	if(PPSTR(CMD, "GUILD_HOUSE_PLANTZONE_TRY") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
 		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
@@ -590,7 +590,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		// check player house
+		const int& PlantzoneID = VoteID;
+		const ItemIdentifier& ItemID = VoteID2;
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 		CGuildHouseData* pHouse = pGuild->GetHouse();
 
@@ -600,26 +601,37 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		// check distance between player and house
-		if(distance(pHouse->GetPos(), pPlayer->GetCharacter()->m_Core.m_Pos) > 600)
+		CGuildHousePlantzoneData* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
+
+		if(!pPlantzone)
 		{
-			GS()->Chat(ClientID, "You have a lot of distance between you and the house, try to get closer!");
+			GS()->Chat(ClientID, "Plantzone not found.");
 			return true;
 		}
 
-		// start custom vote
-		GS()->StartCustomVotes(ClientID, MENU_GUILD_HOUSE_DECORATION);
-		GS()->AV(ClientID, "null", "Please close vote and press Left Mouse,");
-		GS()->AV(ClientID, "null", "on position where add decoration!");
-		GS()->AddVotesBackpage(ClientID);
-		GS()->EndCustomVotes(ClientID);
-		// end custom vote
-
-		// set temp data
-		if(pHouse->GetDecorationManager()->StartDrawing(pPlayer))
+		if(ItemID == pPlantzone->GetItemID())
 		{
-			GS()->Chat(ClientID, "You start drawing mode!");
+			GS()->Chat(ClientID, "This plant is already planted.");
+			return true;
 		}
+
+		if(pPlayer->Account()->SpendCurrency(1, ItemID))
+		{
+			Chance result(0.025f);
+			if(!result())
+			{
+				GS()->Chat(ClientID, "You failed to plant the plant.");
+			}
+			else
+			{
+
+				GS()->Chat(ClientID, "You have successfully planted the plant.");
+				pPlantzone->ChangeItem(ItemID);
+			}
+
+			GS()->UpdateVotes(ClientID, MENU_GUILD_HOUSE_PLANTZONE_SELECTED);
+		}
+
 		return true;
 	}
 
@@ -789,6 +801,44 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		Core()->InventoryManager()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
 		GS()->AV(ClientID, "null");
 		//ShowDecorationList(pPlayer);
+		GS()->AddVotesBackpage(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_GUILD_HOUSE_PLANTZONE_SELECTED)
+	{
+		pPlayer->m_LastVoteMenu = MENU_GUILD;
+
+		const int& PlantzoneID = pPlayer->m_TempMenuValue;
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild || !pGuild->GetHouse() || !pGuild->GetHouse()->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID))
+		{
+			GS()->AddVotesBackpage(ClientID);
+			return true;
+		}
+
+		CGuildHouseData* pHouse = pGuild->GetHouse();
+		CGuildHousePlantzoneData* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
+		CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
+		GS()->AVL(ClientID, "null", "\u3041 Select plant zone: {STR}", pPlantzone->GetName());
+		GS()->AVL(ClientID, "null", "Planted: {STR}", pItem->GetName());
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "\u3044 Possible items for planting");
+
+		bool IsEmpty = true;
+		std::vector<ItemIdentifier> vPlantItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ItemFunctional::FUNCTION_PLANT);
+		for(auto& ID : vPlantItems)
+		{
+			CPlayerItem* pItem = pPlayer->GetItem(ID);
+			if(pItem->HasItem())
+			{
+				GS()->AVD(ClientID, "GUILD_HOUSE_PLANTZONE_TRY", PlantzoneID, ID, NOPE, "Try plant {STR} (has {VAL})", pItem->Info()->GetName(), pItem->GetValue());
+				IsEmpty = false;
+			}
+		}
+		if(IsEmpty)
+			GS()->AVL(ClientID, "null", "You have no plants for planting");
+
 		GS()->AddVotesBackpage(ClientID);
 		return true;
 	}
@@ -1035,6 +1085,11 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 			bool StateDoor = DoorData->IsClosed();
 			GS()->AVM(ClientID, "GUILD_HOUSE_DOOR", Number, NOPE, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData->GetName());
 		}
+
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "\u2743 House has {VAL} plantzone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+		for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
+			GS()->AVD(ClientID, "MENU", MENU_GUILD_HOUSE_PLANTZONE_SELECTED, ID, NOPE, "{STR} / {STR}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
 	}
 	GS()->AV(ClientID, "null");
 	//
@@ -1334,8 +1389,8 @@ CGuildHousePlantzoneData* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos) c
 	{
 		for(auto& Plantzone : p->GetPlantzonesManager()->GetContainer())
 		{
-			if(distance(Pos, Plantzone.GetPos()) < Plantzone.GetRadius())
-				return &Plantzone;
+			if(distance(Pos, Plantzone.second.GetPos()) < Plantzone.second.GetRadius())
+				return &Plantzone.second;
 		}
 	}
 

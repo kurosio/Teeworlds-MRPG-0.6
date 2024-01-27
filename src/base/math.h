@@ -170,6 +170,17 @@ constexpr inline T in_range(T a, T upper)
 	return in_range(a, 0, upper);
 }
 
+class Chance
+{
+	bool m_State;
+	float m_Chance;
+
+public:
+	Chance(float chance) : m_Chance(chance) { Update(); }
+	bool Update() { return m_State = random_float(100.0f) <= m_Chance; }
+	bool operator()() const { return m_State; }
+};
+
 // percents
 template < typename T> // char is arithmetic type we must exclude it 'a' / 'd' etc
 using PercentArithmetic = typename std::enable_if < std::is_arithmetic  < T >::value && !std::is_same < T, char >::value, T >::type;
