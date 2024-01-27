@@ -28,9 +28,7 @@ public:
 	~CGuildHouseDecorationManager();
 
 	bool StartDrawing(CPlayer* pPlayer) const;
-
-	//const HouseDecorationsContainer& GetContainer() const { return m_apDecorations; };
-	//bool HasFreeSlots() const { return (int)m_apDecorations.size() < (int)MAX_HOUSE_DECORATIONS; }
+	bool HasFreeSlots() const;
 
 private:
 	void Init();

@@ -6,8 +6,6 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/entities/items/jobitems.h>
-
 CGS* CGuildHousePlantzonesManager::GS() const { return m_pHouse->GS(); }
 
 CGuildHousePlantzonesManager::CGuildHousePlantzonesManager(CGuildHouseData* pHouse, std::string&& JsPlantzones) : m_pHouse(pHouse)
@@ -21,7 +19,7 @@ CGuildHousePlantzonesManager::CGuildHousePlantzonesManager(CGuildHouseData* pHou
 			vec2 Position = vec2(pPlantzone.value("x", 0), pPlantzone.value("y", 0));
 			int ItemID = pPlantzone.value("item_id", 0);
 			float Radius = pPlantzone.value("radius", 100);
-			AddPlantzone({ Plantname.c_str(), ItemID, Position, Radius });
+			AddPlantzone({this, Plantname.c_str(), ItemID, Position, Radius });
 		}
 	});
 }

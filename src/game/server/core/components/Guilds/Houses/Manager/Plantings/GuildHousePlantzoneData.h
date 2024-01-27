@@ -4,9 +4,11 @@
 #define GAME_SERVER_COMPONENT_GUILD_HOUSE_PLANTZONE_DATA_H
 
 class CJobItems;
+class CGuildHousePlantzonesManager;
 
 class CGuildHousePlantzoneData
 {
+	CGuildHousePlantzonesManager* m_pManager {};
 	std::string m_Name {};
 	int m_ItemID{};
 	vec2 m_Pos{};
@@ -15,9 +17,9 @@ class CGuildHousePlantzoneData
 
 public:
 	CGuildHousePlantzoneData() = delete;
-	CGuildHousePlantzoneData(std::string&& Name, int ItemID, vec2 Pos, float Radius)
+	CGuildHousePlantzoneData(CGuildHousePlantzonesManager* pManager, std::string&& Name, int ItemID, vec2 Pos, float Radius) : m_pManager(pManager)
 	{
-		m_Name = Name;
+		m_Name = std::move(Name);
 		m_ItemID = ItemID;
 		m_Pos = Pos;
 		m_Radius = Radius;
@@ -29,6 +31,7 @@ public:
 	vec2 GetPos() const { return m_Pos; }
 	std::vector<CJobItems*>& GetContainer() { return m_vPlants; }
 
+	void ChangeItem(int ItemID) const;
 	void Add(CJobItems* pItem) { m_vPlants.push_back(pItem); }
 	void Remove(CJobItems* pItem) { m_vPlants.erase(std::remove(m_vPlants.begin(), m_vPlants.end(), pItem), m_vPlants.end()); }
 };

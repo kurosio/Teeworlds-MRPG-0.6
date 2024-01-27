@@ -28,7 +28,6 @@ class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < CG
 	vec2 m_TextPosition{};
 	int m_Price {};
 	int m_WorldID{};
-
 	int m_LastTickTextUpdated {};
 
 	CGuildHouseDoorManager* m_pDoors {};
@@ -63,14 +62,13 @@ public:
 	CGuildHousePlantzonesManager* GetPlantzonesManager() const { return m_pPlantzones; }
 
 	GuildHouseIdentifier GetID() const { return m_ID; }
-	int GetWorldID() const { return m_WorldID; }
 	vec2 GetPos() const { return m_Position; }
 	float GetRadius() const { return m_Radius; }
+	int GetWorldID() const { return m_WorldID; }
 	int GetPrice() const { return m_Price; }
 	bool IsPurchased() const { return m_pGuild != nullptr; }
 
 	void TextUpdate(int LifeTime);
-
 	void UpdateGuild(CGuildData* pGuild);
 };
 

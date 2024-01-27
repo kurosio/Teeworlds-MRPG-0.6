@@ -44,6 +44,11 @@ bool CGuildHouseDecorationManager::StartDrawing(CPlayer* pPlayer) const
 	return m_pDrawBoard->StartDrawing(pPlayer);
 }
 
+bool CGuildHouseDecorationManager::HasFreeSlots() const
+{
+	return m_pDrawBoard->GetEntityPoints().size() < (int)MAX_DECORATIONS_PER_HOUSE;
+}
+
 bool CGuildHouseDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
 {
 	const auto pHouse = (CGuildHouseData*)pUser;
@@ -57,6 +62,12 @@ bool CGuildHouseDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
 		if(Event == DrawboardToolEvent::ON_POINT_ADD)
 		{
+			if(!pHouse->GetDecorationManager()->HasFreeSlots())
+			{
+				pHouse->GS()->Chat(ClientID, "You have reached the maximum number of decorations for your house!");
+				return false;
+			}
+
 			if(pHouse->GetDecorationManager()->Add(pPoint))
 			{
 				pHouse->GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());

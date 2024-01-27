@@ -300,7 +300,7 @@ enum
 	*/
 	MAX_GROUP_MEMBERS = 4,					// maximum number of players in a group
 	MAX_HOUSE_DOOR_INVITED_PLAYERS = 3,		// maximum player what can have access for house door
-	MAX_HOUSE_DECORATIONS = 20,				// maximum decorations for houses
+	MAX_DECORATIONS_PER_HOUSE = 20,				// maximum decorations for houses
 	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
 	MAILLETTER_MAX_CAPACITY = 20,			// maximum number of emails what is displayed

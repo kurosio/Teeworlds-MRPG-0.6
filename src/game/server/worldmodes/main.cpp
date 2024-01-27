@@ -54,9 +54,9 @@ bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
 			return true;
 		}
 
-		if(const CGuildHousePlantzoneData* pPlantzone = GS()->Core()->GuildManager()->GetGuildHousePlantzoneByPos(Pos))
+		if(CGuildHousePlantzoneData* pPlantzone = GS()->Core()->GuildManager()->GetGuildHousePlantzoneByPos(Pos))
 		{
-			new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100);
+			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
 			return true;
 		}
 

@@ -10,6 +10,8 @@ class CGuildHouseData;
 
 class CGuildHousePlantzonesManager
 {
+	friend class CGuildHousePlantzoneData;
+
 	CGS* GS() const;
 
 	CGuildHouseData* m_pHouse {};
@@ -18,6 +20,7 @@ class CGuildHousePlantzonesManager
 public:
 	CGuildHousePlantzonesManager() = delete;
 	CGuildHousePlantzonesManager(CGuildHouseData* pHouse, std::string&& JsPlantzones);
+	~CGuildHousePlantzonesManager();
 
 	std::vector<CGuildHousePlantzoneData>& GetContainer() { return m_vPlantzones; }
 

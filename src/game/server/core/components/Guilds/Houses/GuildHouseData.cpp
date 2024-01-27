@@ -18,24 +18,25 @@ CGuildHouseData::~CGuildHouseData()
 
 void CGuildHouseData::InitProperties(std::string&& Plantzones, std::string&& Properties)
 {
-	// Asserts
+	// Assert important values
 	dbg_assert(Properties.length() > 0, "The properties string is empty");
 
 	// Parse the JSON string
 	Tools::Json::parseFromString(Properties, [this](nlohmann::json& pJson)
 	{
-		if(pJson.find("pos") != pJson.end())
-		{
-			auto pHousePosData = pJson["pos"];
-			m_Position.x = (float)pHousePosData.value("x", 0);
-			m_Position.y = (float)pHousePosData.value("y", 0);
-			m_Radius = (float)pHousePosData.value("radius", 300);
+		// Assert for important properties
+		dbg_assert(pJson.find("pos") != pJson.end(), "The importal properties value is empty");
 
-			// Create a new instance of CGuildHouseDecorationManager and assign it to m_pDecorations
-			// The CGuildHouseDecorationManager will handle all the decorations for the guild house.
-			m_pDecorations = new CGuildHouseDecorationManager(this);
-		}
+		auto pHousePosData = pJson["pos"];
+		m_Position.x = (float)pHousePosData.value("x", 0);
+		m_Position.y = (float)pHousePosData.value("y", 0);
+		m_Radius = (float)pHousePosData.value("radius", 300);
 
+		// Create a new instance of CGuildHouseDecorationManager and assign it to m_pDecorations
+		// The CGuildHouseDecorationManager will handle all the decorations for the guild house.
+		m_pDecorations = new CGuildHouseDecorationManager(this);
+
+		// Initialize text position
 		if(pJson.find("text_pos") != pJson.end())
 		{
 			auto pTextPosData = pJson["text_pos"];
@@ -43,6 +44,7 @@ void CGuildHouseData::InitProperties(std::string&& Plantzones, std::string&& Pro
 			m_TextPosition.y = (float)pTextPosData.value("y", 0);
 		}
 
+		// Initialize doors
 		if(pJson.find("doors") != pJson.end())
 		{
 			// Create a new instance of CGuildHouseDoorManager and assign it to m_pDoors
@@ -73,17 +75,25 @@ void CGuildHouseData::InitProperties(std::string&& Plantzones, std::string&& Pro
 void CGuildHouseData::TextUpdate(int LifeTime)
 {
 	// Check if the last tick text update is greater than the current server tick
-	if(m_LastTickTextUpdated > Server()->Tick())
+	if(is_negative_vec(m_TextPosition) || m_LastTickTextUpdated > Server()->Tick())
 		return;
 
-	// Set the initial value of the variable "Name" to "HOUSE"
+	// Set the initial value of the variable "Name"
 	std::string Name = "FREE GUILD HOUSE";
-
-	// Check if the object has an owner
 	if(IsPurchased())
-	{
-		// If it has an owner, update the value of "Name" to the player's name
 		Name = m_pGuild->GetName();
+
+	// Create a text object with the given parameters
+	for(auto& pPlantzone : m_pPlantzones->GetContainer())
+	{
+		ItemIdentifier ItemID = pPlantzone.GetItemID();
+		CItemDescription* pItemDesc = GS()->GetItemInfo(ItemID);
+
+		if(GS()->CreateText(nullptr, false, pPlantzone.GetPos() - vec2(0, 100), { }, LifeTime - 5, pItemDesc->GetName()))
+		{
+			// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object
+			m_LastTickTextUpdated = Server()->Tick() + LifeTime;
+		}
 	}
 
 	// Create a text object with the given parameters
