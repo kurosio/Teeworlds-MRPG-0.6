@@ -10,6 +10,9 @@
 #include <game/server/core/components/Accounts/AccountPlantManager.h>
 #include <game/server/core/components/Houses/HouseManager.h>
 
+#include "game/server/core/components/Guilds/GuildManager.h"
+#include "game/server/core/components/Guilds/Houses/Manager/Plantings/GuildHousePlantzoneData.h"
+
 CGameControllerMain::CGameControllerMain(class CGS *pGS)
 : IGameController(pGS)
 {
@@ -44,16 +47,18 @@ bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
 
 	if(Index == ENTITY_PLANTS)
 	{
-		CHouseData* pHouse = GS()->Core()->HouseManager()->GetHouseByPlantPos(Pos);
-		if(pHouse && pHouse->GetPlantedItem()->GetID() > 0)
+		const int ItemID = GS()->Core()->AccountPlantManager()->GetPlantItemID(Pos), Level = GS()->Core()->AccountPlantManager()->GetPlantLevel(Pos);
+		if(ItemID > 0)
 		{
-			new CJobItems(&GS()->m_World, pHouse->GetPlantedItem()->GetID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100, pHouse->GetID());
+			new CJobItems(&GS()->m_World, ItemID, Level, Pos, CJobItems::JOB_ITEM_FARMING, 100);
 			return true;
 		}
 
-		const int ItemID = GS()->Core()->AccountPlantManager()->GetPlantItemID(Pos), Level = GS()->Core()->AccountPlantManager()->GetPlantLevel(Pos);
-		if(ItemID > 0)
-			new CJobItems(&GS()->m_World, ItemID, Level, Pos, CJobItems::JOB_ITEM_FARMING, 100);
+		if(const CGuildHousePlantzoneData* pPlantzone = GS()->Core()->GuildManager()->GetGuildHousePlantzoneByPos(Pos))
+		{
+			new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100);
+			return true;
+		}
 
 		return true;
 	}

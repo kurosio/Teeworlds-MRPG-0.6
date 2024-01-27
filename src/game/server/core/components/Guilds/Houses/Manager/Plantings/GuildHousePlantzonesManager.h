@@ -18,13 +18,13 @@ class CGuildHousePlantzonesManager
 public:
 	CGuildHousePlantzonesManager() = delete;
 	CGuildHousePlantzonesManager(CGuildHouseData* pHouse, std::string&& JsPlantzones);
-	~CGuildHousePlantzonesManager();
 
 	std::vector<CGuildHousePlantzoneData>& GetContainer() { return m_vPlantzones; }
 
 	void AddPlantzone(CGuildHousePlantzoneData&& Plantzone);
+	const CGuildHousePlantzoneData* GetPlantzone(vec2 Pos) const;
 
 private:
-	void Save();
+	void Save() const;
 };
 #endif

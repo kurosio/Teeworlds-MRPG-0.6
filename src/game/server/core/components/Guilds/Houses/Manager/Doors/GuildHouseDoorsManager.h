@@ -8,7 +8,7 @@
 class CGS;
 class CGuildHouseData;
 
-class CGuildHouseDoorsController
+class CGuildHouseDoorManager
 {
 	CGS* GS() const;
 
@@ -16,9 +16,9 @@ class CGuildHouseDoorsController
 	ska::unordered_map<int, CGuildHouseDoor*> m_apDoors {};
 
 public:
-	CGuildHouseDoorsController() = delete;
-	CGuildHouseDoorsController(CGuildHouseData* pHouse);
-	~CGuildHouseDoorsController();
+	CGuildHouseDoorManager() = delete;
+	CGuildHouseDoorManager(CGuildHouseData* pHouse);
+	~CGuildHouseDoorManager();
 
 	ska::unordered_map<int, CGuildHouseDoor*>& GetContainer() { return m_apDoors; }
 

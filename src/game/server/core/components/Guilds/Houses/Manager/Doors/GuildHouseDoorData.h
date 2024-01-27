@@ -6,11 +6,11 @@
 class CGameWorld;
 class CGuildHouseData;
 class CEntityGuildDoor;
-class CGuildHouseDoorsController;
+class CGuildHouseDoorManager;
 
 class CGuildHouseDoor
 {
-	friend CGuildHouseDoorsController;
+	friend CGuildHouseDoorManager;
 	std::string m_Name {};
 	CEntityGuildDoor* m_pDoor {};
 	vec2 m_Pos {};

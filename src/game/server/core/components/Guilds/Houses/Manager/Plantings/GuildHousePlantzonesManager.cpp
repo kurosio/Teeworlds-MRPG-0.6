@@ -34,27 +34,20 @@ CGuildHousePlantzonesManager::~CGuildHousePlantzonesManager()
 
 void CGuildHousePlantzonesManager::AddPlantzone(CGuildHousePlantzoneData&& Plantzone)
 {
-	// Check for update and set new plant itemid
-	bool Updated = false;
-	for(auto* pPlant = (CJobItems*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_JOBITEMS); pPlant; pPlant = (CJobItems*)pPlant->TypeNext())
-	{
-		if(distance(pPlant->GetPos(), Plantzone.GetPos()) <= Plantzone.GetRadius())
-		{
-			pPlant->m_HouseID = m_pHouse->GetID();
-			pPlant->m_ItemID = Plantzone.GetItemID();
-			Updated = true;
-		}
-	}
-
-	// Save data
-	if(Updated)
-	{
-		m_vPlantzones.push_back(std::forward<CGuildHousePlantzoneData>(Plantzone));
-		Save();
-	}
+	m_vPlantzones.push_back(std::forward<CGuildHousePlantzoneData>(Plantzone));
 }
 
-void CGuildHousePlantzonesManager::Save()
+const CGuildHousePlantzoneData* CGuildHousePlantzonesManager::GetPlantzone(vec2 Pos) const
+{
+	for(const auto& p : m_vPlantzones)
+	{
+		if(distance(p.GetPos(), Pos) <= p.GetRadius())
+			return &p;
+	}
+	return nullptr;
+}
+
+void CGuildHousePlantzonesManager::Save() const
 {
 	// Create a JSON object to store plant zones data
 	nlohmann::json Plantzones;

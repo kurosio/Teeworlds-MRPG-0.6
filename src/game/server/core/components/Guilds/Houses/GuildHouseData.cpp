@@ -11,6 +11,7 @@ CGS* CGuildHouseData::GS() const { return (CGS*)Instance::GetServer()->GameServe
 
 CGuildHouseData::~CGuildHouseData()
 {
+	delete m_pPlantzones;
 	delete m_pDecorations;
 	delete m_pDoors;
 }
@@ -44,9 +45,9 @@ void CGuildHouseData::InitProperties(std::string&& Plantzones, std::string&& Pro
 
 		if(pJson.find("doors") != pJson.end())
 		{
-			// Create a new instance of CGuildHouseDoorsController and assign it to m_pDoors
+			// Create a new instance of CGuildHouseDoorManager and assign it to m_pDoors
 			// The CGuildHouseDecorationManager will handle all the doors for the guild house.
-			m_pDoors = new CGuildHouseDoorsController(this);
+			m_pDoors = new CGuildHouseDoorManager(this);
 
 			auto pDoorsData = pJson["doors"];
 			for(const auto& pDoor : pDoorsData)

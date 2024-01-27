@@ -165,7 +165,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		bool Result = pHouse->GetDecorations()->StartDrawing(pPlayer);
+		bool Result = pHouse->GetDecorationManager()->StartDrawing(pPlayer);
 		if(Result)
 		{
 			GS()->Chat(ClientID, "You can now draw decorations.");
@@ -616,7 +616,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		// end custom vote
 
 		// set temp data
-		if(pHouse->GetDecorations()->StartDrawing(pPlayer))
+		if(pHouse->GetDecorationManager()->StartDrawing(pPlayer))
 		{
 			GS()->Chat(ClientID, "You start drawing mode!");
 		}
@@ -644,7 +644,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// reverse door house
 		int UniqueDoorID = VoteID;
-		pHouse->GetDoors()->Reverse(UniqueDoorID);
+		pHouse->GetDoorManager()->Reverse(UniqueDoorID);
 		GS()->StrongUpdateVotesForAll(MENU_GUILD);
 		return true;
 	}
@@ -1029,8 +1029,8 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 		GS()->AVL(ClientID, "GUILD_HOUSE_SELL", "Sell the house");
 
 		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "\u2747 House has {VAL} controlled door's", (int)pHouse->GetDoors()->GetContainer().size());
-		for(auto& [Number, DoorData] : pHouse->GetDoors()->GetContainer())
+		GS()->AVL(ClientID, "null", "\u2747 House has {VAL} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
+		for(auto& [Number, DoorData] : pHouse->GetDoorManager()->GetContainer())
 		{
 			bool StateDoor = DoorData->IsClosed();
 			GS()->AVM(ClientID, "GUILD_HOUSE_DOOR", Number, NOPE, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData->GetName());
@@ -1326,6 +1326,20 @@ CGuildData* CGuildManager::GetGuildByName(const char* pGuildname) const
 	});
 
 	return itGuild != CGuildData::Data().end() ? (*itGuild) : nullptr;
+}
+
+CGuildHousePlantzoneData* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos) const
+{
+	for(auto& p : CGuildHouseData::Data())
+	{
+		for(auto& Plantzone : p->GetPlantzonesManager()->GetContainer())
+		{
+			if(distance(Pos, Plantzone.GetPos()) < Plantzone.GetRadius())
+				return &Plantzone;
+		}
+	}
+
+	return nullptr;
 }
 
 bool CGuildManager::IsAccountMemberGuild(int AccountID) const

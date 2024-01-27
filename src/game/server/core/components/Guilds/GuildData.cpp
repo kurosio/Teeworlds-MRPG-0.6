@@ -173,7 +173,7 @@ bool CGuildData::SellHouse()
 		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
 
 		// Reset house pointers
-		m_pHouse->GetDoors()->CloseAll();
+		m_pHouse->GetDoorManager()->CloseAll();
 		m_pHouse->UpdateGuild(nullptr);
 		m_pHouse = nullptr;
 		return true;

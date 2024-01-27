@@ -57,7 +57,7 @@ bool CGuildHouseDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
 		if(Event == DrawboardToolEvent::ON_POINT_ADD)
 		{
-			if(pHouse->GetDecorations()->Add(pPoint))
+			if(pHouse->GetDecorationManager()->Add(pPoint))
 			{
 				pHouse->GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
 				return true;
@@ -68,7 +68,7 @@ bool CGuildHouseDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent
 
 		if(Event == DrawboardToolEvent::ON_POINT_ERASE)
 		{
-			if(pHouse->GetDecorations()->Remove(pPoint))
+			if(pHouse->GetDecorationManager()->Remove(pPoint))
 			{
 				pHouse->GS()->Chat(ClientID, "You have removed {STR} from your house!", pPlayerItem->Info()->GetName());
 				return true;
