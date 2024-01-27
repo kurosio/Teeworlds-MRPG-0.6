@@ -47,7 +47,6 @@ public:
 	CMmoController* Core() const { return m_pMmoController; }
 	IStorageEngine* Storage() const { return m_pStorage; }
 	CCommandProcessor* CommandProcessor() const { return m_pCommandProcessor; }
-	class CEntityDrawboard* pDrawBoard;
 
 	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }

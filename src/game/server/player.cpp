@@ -547,32 +547,6 @@ CCharacter* CPlayer::GetCharacter() const
 	return nullptr;
 }
 
-bool BoardHandlerCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
-{
-	if(Event == DrawboardToolEvent::ON_START)
-	{
-		dbg_msg("draw", "on start");
-		return true;
-	}
-	else if(Event == DrawboardToolEvent::ON_END)
-	{
-		dbg_msg("draw", "on end");
-		return true;
-	}
-	else if(Event == DrawboardToolEvent::ON_POINT_ADD)
-	{
-		dbg_msg("draw", "on draw");
-		return true;
-	}
-	else if(Event == DrawboardToolEvent::ON_POINT_ERASE)
-	{
-		dbg_msg("draw", "on erase");
-		return true;
-	}
-
-	return true;
-}
-
 void CPlayer::TryRespawn()
 {
 	// Declare a variable to store the spawn position
@@ -621,15 +595,6 @@ void CPlayer::TryRespawn()
 		m_pCharacter->Spawn(this, SpawnPos);
 		GS()->CreatePlayerSpawn(SpawnPos);
 		GetTempData().ClearTeleportPosition();
-
-		if(!GS()->pDrawBoard)
-		{
-			GS()->pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pCharacter->m_Core.m_Pos, 600.f);
-			GS()->pDrawBoard->RegisterEvent(&BoardHandlerCallback, this);
-		}
-		if(GS()->pDrawBoard && GS()->pDrawBoard->StartDrawing(this))
-			dbg_msg("start draw!", "start draw!");
-
 		m_WantSpawn = false;
 	}
 }
