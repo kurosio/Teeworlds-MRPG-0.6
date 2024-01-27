@@ -789,22 +789,6 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_HOUSE_DECORATION)
-	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD;
-		GS()->AVH(ClientID, TAB_INFO_DECORATION, "Decorations Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Add: SELECT your item in list. SELECT (Add to house),");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "later press (ESC) and mouse select position");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: SELECT down your decorations");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "and press (Back to inventory).");
-
-		Core()->InventoryManager()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
-		GS()->AV(ClientID, "null");
-		//ShowDecorationList(pPlayer);
-		GS()->AddVotesBackpage(ClientID);
-		return true;
-	}
-
 	if(Menulist == MENU_GUILD_HOUSE_PLANTZONE_SELECTED)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
@@ -1053,28 +1037,33 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 	const int MemberUsedSlots = pGuild->GetMembers()->GetContainer().size();
 	const int MemberMaxSlots = pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->m_Value;
 
+	// guild information
 	GS()->AVH(ClientID, TAB_GUILD_STAT, "\u2747 Information about {STR}", pGuild->GetName());
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Members: {INT} of {INT}", MemberUsedSlots, MemberMaxSlots);
+
+	// guild deposit
 	GS()->AV(ClientID, "null");
-	//
 	GS()->AVL(ClientID, "null", "\u2727 Your: {VAL} | Bank: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
 	GS()->AVL(ClientID, "GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)", pGuild->GetName());
+
+	// guild management
 	GS()->AV(ClientID, "null");
-	//
 	GS()->AVL(ClientID, "null", "\u262B Guild Management");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_MEMBERSHIP_LIST, NOPE, "Membership list");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_LOGS, NOPE, "Logs of activity");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank management");
+
+	// guild append house menu
 	if(HasHouse)
 	{
 		CGuildHouseData* pHouse = pGuild->GetHouse();
 
 		GS()->AV(ClientID, "null");
 		GS()->AVL(ClientID, "null", "\u2302 House Management");
-		GS()->AVM(ClientID, "MENU", MENU_GUILD_HOUSE_DECORATION, NOPE, "Customizing");
+		GS()->AVL(ClientID, "GUILD_HOUSE_DECORATION", "Decoration editor");
 		GS()->AVL(ClientID, "GUILD_HOUSE_SPAWN", "Move to the house");
 		GS()->AVL(ClientID, "GUILD_HOUSE_SELL", "Sell the house");
 
@@ -1087,18 +1076,23 @@ void CGuildManager::ShowMenu(CPlayer* pPlayer) const
 		}
 
 		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "\u2743 House has {VAL} plantzone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+		GS()->AVL(ClientID, "null", "\u2743 House has {VAL} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
 		for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
-			GS()->AVD(ClientID, "MENU", MENU_GUILD_HOUSE_PLANTZONE_SELECTED, ID, NOPE, "{STR} / {STR}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
+		{
+			GS()->AVD(ClientID, "MENU", MENU_GUILD_HOUSE_PLANTZONE_SELECTED, ID, NOPE, "Plant zone {STR} / {STR}",
+				Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
+		}
 	}
+
+	// guild disband
 	GS()->AV(ClientID, "null");
-	//
 	GS()->AVL(ClientID, "null", "\u2716 Disband guild");
 	GS()->AVL(ClientID, "null", "Gold spent on upgrades will not be refunded");
 	GS()->AVL(ClientID, "null", "All gold will be returned to the leader only");
 	GS()->AVL(ClientID, "GUILD_DISBAND", "Disband (reason 55428)");
+
+	// guild upgrades
 	GS()->AV(ClientID, "null");
-	//
 	GS()->AVL(ClientID, "null", "☆ Guild upgrades");
 	for(int i = CGuildData::UPGRADE_AVAILABLE_SLOTS; i < CGuildData::NUM_GUILD_UPGRADES; i++)
 	{
