@@ -48,10 +48,6 @@ public:
 		m_Price = Price;
 		m_WorldID = WorldID;
 
-		// components
-		m_pDoors = new CGuildHouseDoorsController(this);
-		m_pDecorations = new CGuildHouseDecorationManager(this);
-
 		InitProperties(std::move(JsProperties));
 		UpdateGuild(pGuild);
 	}

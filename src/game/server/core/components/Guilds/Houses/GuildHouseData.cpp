@@ -26,6 +26,10 @@ void CGuildHouseData::InitProperties(std::string&& Properties)
 			m_Position.x = (float)pHousePosData.value("x", 0);
 			m_Position.y = (float)pHousePosData.value("y", 0);
 			m_Radius = (float)pHousePosData.value("radius", 300);
+
+			// Create a new instance of CGuildHouseDecorationManager and assign it to m_pDecorations
+			// The CGuildHouseDecorationManager will handle all the decorations for the guild house.
+			m_pDecorations = new CGuildHouseDecorationManager(this);
 		}
 
 		if(pJson.find("text_pos") != pJson.end())
@@ -37,6 +41,10 @@ void CGuildHouseData::InitProperties(std::string&& Properties)
 
 		if(pJson.find("doors") != pJson.end())
 		{
+			// Create a new instance of CGuildHouseDoorsController and assign it to m_pDoors
+			// The CGuildHouseDecorationManager will handle all the doors for the guild house.
+			m_pDoors = new CGuildHouseDoorsController(this);
+
 			auto pDoorsData = pJson["doors"];
 			for(const auto& pDoor : pDoorsData)
 			{
@@ -47,6 +55,10 @@ void CGuildHouseData::InitProperties(std::string&& Properties)
 			}
 		}
 	});
+
+	// Asserts
+	dbg_assert(m_pDecorations != nullptr, "The house decorations manager is null");
+	dbg_assert(m_pDoors != nullptr, "The house doors manager is null");
 }
 
 void CGuildHouseData::TextUpdate(int LifeTime)
