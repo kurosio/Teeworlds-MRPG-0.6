@@ -104,6 +104,7 @@ MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_auction_max_slots, 50, 10, 300, CFGFLAG_S
 // member group
 MACRO_CONFIG_INT(SvPriceUpgradeGuildSlot, sv_price_member_slot, 4100, 100, 9000000, CFGFLAG_SERVER, "Price for upgrade member slots")
 MACRO_CONFIG_INT(SvPriceUpgradeGuildAnother, sv_price_member_another, 16800, 100, 9000000, CFGFLAG_SERVER, "Price for upgrade member another")
+MACRO_CONFIG_INT(SvGuildWarDuration, sv_guild_war_duration, 30, 1, 240, CFGFLAG_SERVER, "Guild war duration in minutes")
 
 // leveling
 MACRO_CONFIG_INT(SvKillmobsIncreaseLevel, sv_kill_mobs_increase_level, 500, 0, 1000, CFGFLAG_SERVER, "Kill mobs of own level to increase.")

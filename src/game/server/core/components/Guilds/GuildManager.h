@@ -14,11 +14,15 @@ class CGuildManager : public MmoComponent
 			delete pHouse;
 		for(const auto pGuild : CGuildData::Data())
 			delete pGuild;
+		for(const auto pWar : CGuildWarHandler::Data())
+			delete pWar;
 
 		CGuildData::Data().clear();
 		CGuildHouseData::Data().clear();
+		CGuildWarHandler::Data().clear();
 		CGuildData::Data().shrink_to_fit();
 		CGuildHouseData::Data().shrink_to_fit();
+		CGuildWarHandler::Data().shrink_to_fit();
 	};
 
 	void OnInit() override;
@@ -28,6 +32,8 @@ class CGuildManager : public MmoComponent
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 	void OnHandleTimePeriod(TIME_PERIOD Period) override;
+
+	void InitWars() const;
 
 public:
 	void Create(CPlayer *pPlayer, const char *pGuildName) const;

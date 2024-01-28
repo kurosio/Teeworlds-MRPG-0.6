@@ -26,6 +26,8 @@ void CGuildManager::OnInit()
 		CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
 	}
 
+	InitWars();
+
 	Core()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
 }
 
@@ -52,6 +54,10 @@ void CGuildManager::OnTick()
 	// Check if the current world ID is not equal to the main world (once use House get instance object self world id) ID and current tick
 	if(GS()->GetWorldID() != MAIN_WORLD_ID || (Server()->Tick() % Server()->TickSpeed() != 0))
 		return;
+
+	// Loop through all guild war handlers in the CGuildWarHandler::Data() container
+	for(auto& pWarHandler : CGuildWarHandler::Data())
+		pWarHandler->Tick();
 
 	// Calculate the remaining lifetime of a text update
 	int LifeTime = (Server()->TickSpeed() * 10);
@@ -581,6 +587,38 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
+	if(PPSTR(CMD, "GUILD_DECLARE_WAR") == 0)
+	{
+		// Check if the player has a guild or has the right to declare war
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+		// Check if the player is trying to declare war on their own guild
+		if(pPlayer->Account()->GetGuild()->GetID() == VoteID)
+		{
+			GS()->Chat(ClientID, "You can't declare war on your own guild.");
+			return true;
+		}
+
+		// Get the guild ID, guild data using the guild ID and account ID from the vote
+		const GuildIdentifier& ID = VoteID;
+		CGuildData* pGuild = GetGuildByID(ID);
+		dbg_assert(pGuild != nullptr, "GUILD_DECLARE_WAR - guild data is empty");
+
+		if(pPlayer->Account()->GetGuild()->StartWar(pGuild))
+		{
+			dbg_msg("guild", "war created");
+		}
+		else
+		{
+			dbg_msg("guild", "war not created");
+		}
+
+		return true;
+	}
+
 	if(PPSTR(CMD, "GUILD_HOUSE_PLANT_ZONE_TRY") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
@@ -827,6 +865,36 @@ void CGuildManager::OnHandleTimePeriod(TIME_PERIOD Period)
 	// Call the TimePeriodEvent function for each guild passing the Period parameter
 	for(auto& pGuild : CGuildData::Data())
 		pGuild->TimePeriodEvent(Period);
+}
+
+void CGuildManager::InitWars() const
+{
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_WARS_TABLE);
+	if(pRes->next())
+	{
+		// Get the ID of the guild that is not the current guild
+		const int GuildID1 = pRes->getInt("GuildID1");
+		const int GuildID2 = pRes->getInt("GuildID1");
+
+		// Get scores
+		const int Score1 = pRes->getInt("Score1");
+		const int Score2 = pRes->getInt("Score2");
+
+		// Get time until
+		const time_t TimeUntilEnd = pRes->getInt64("TimeUntilEnd");
+
+		// Get the pointer to the guild data
+		CGuildData* pGuild1 = GetGuildByID(GuildID1);
+		CGuildData* pGuild2 = GetGuildByID(GuildID2);
+		dbg_assert(pGuild1 != nullptr, "GUILD_WAR - guild data is empty");
+		dbg_assert(pGuild2 != nullptr, "GUILD_WAR - guild data is empty");
+
+		// Create instance
+		CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
+		CGuildWarData* pWarData = new CGuildWarData(pGuild1, pGuild2, Score1);
+		CGuildWarData* pTargetWarData = new CGuildWarData(pGuild2, pGuild1, Score2);
+		pWarHandler->Init(pWarData, pTargetWarData, TimeUntilEnd);
+	}
 }
 
 void CGuildManager::ShowMembershipList(int ClientID) const

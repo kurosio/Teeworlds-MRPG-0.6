@@ -9,6 +9,7 @@
 #include "Manager/Members/GuildMembersManager.h"
 #include "Manager/Ranks/GuildRanksManager.h"
 #include "Houses/GuildHouseData.h"
+#include "War/GuildWarData.h"
 
 #define TW_GUILDS_TABLE "tw_guilds"
 #define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
@@ -17,6 +18,7 @@
 
 // Forward declaration and alias
 using GuildIdentifier = int;
+class CGuildWarData;
 
 // This enum class represents the possible results of guild operations
 enum class GUILD_RESULT : int
@@ -36,6 +38,7 @@ public:
 	CGS* GS() const;
 
 private:
+	friend class CGuildWarData;
 	friend class CGuildHouseData;
 
 	GuildIdentifier m_ID {};
@@ -51,6 +54,7 @@ private:
 		DBField<int> { UPGRADE_CHAIR_EXPERIENCE, "ChairExperience", "Chair experience", DEFAULT_GUILD_CHAIR },
 	};
 
+	CGuildWarData* m_pWar {};
 	CGuildBankManager* m_pBank {};
 	CGuildLoggerManager* m_pLogger {};
 	CGuildRanksManager* m_pRanks {};
@@ -115,6 +119,10 @@ public:
 	[[nodiscard]] GUILD_RESULT BuyHouse(int HouseID);
 	[[nodiscard]] bool SellHouse();
 	void TimePeriodEvent(TIME_PERIOD Period);
+
+	// war
+	bool StartWar(CGuildData* pTargetGuild);
+	CGuildWarData* GetWar() const { return m_pWar; };
 
 	// global functions
 	static bool IsAccountMemberGuild(int AccountID);
