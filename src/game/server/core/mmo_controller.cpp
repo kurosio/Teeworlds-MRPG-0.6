@@ -74,6 +74,10 @@ void CMmoController::OnTick()
 {
 	for(auto& pComponent : m_System.m_vComponents)
 		pComponent->OnTick();
+
+	// Check if the current tick is a multiple of the time period check time
+	if(GS()->Server()->Tick() % ((GS()->Server()->Tick() * 60) * g_Config.m_SvTimePeriodCheckTime) == 0)
+		HandleTimePeriod();
 }
 
 bool CMmoController::OnMessage(int MsgID, void* pRawMsg, int ClientID)
@@ -337,6 +341,68 @@ void CMmoController::ResetClientData(int ClientID)
 		pComponent->OnResetClient(ClientID);
 }
 
+void CMmoController::HandleTimePeriod() const
+{
+	// Declare a current timestamp, byte array to store raw data
+	ByteArray RawData {};
+	time_t CurrentTimeStamp = time(nullptr);
+
+	// Load the file "time_periods.cfg" and store the result in a variable
+	Tools::Files::Result Result = Tools::Files::loadFile("time_periods.cfg", &RawData);
+	if(Result == Tools::Files::Result::ERROR_FILE)
+	{
+		// Save the data to the file "time_periods.cfg"
+		std::string Data = std::to_string(CurrentTimeStamp) + "\n" + std::to_string(CurrentTimeStamp) + "\n" + std::to_string(CurrentTimeStamp);
+		Tools::Files::saveFile("time_periods.cfg", Data.data(), (unsigned)Data.size());
+		return;
+	}
+
+	// Declare variables to store timestamps for daily, weekly, and monthly data
+	time_t DailyStamp, WeekStamp, MonthStamp;
+	std::string Data = std::string((char*)RawData.data(), RawData.size());
+	std::sscanf(Data.c_str(), "%llu\n%llu\n%llu", &DailyStamp, &WeekStamp, &MonthStamp);
+
+	// Set a flag indicating whether time periods have been updated
+	std::vector<int> aPeriodsUpdated {};
+
+	// Check if the current time is a new day
+	if(time_is_new_day(DailyStamp, CurrentTimeStamp))
+	{
+		DailyStamp = CurrentTimeStamp;
+		aPeriodsUpdated.push_back(TIME_PERIOD::DAILY_STAMP);
+	}
+
+	// Check if the current time is a new week
+	if(time_is_new_week(WeekStamp, CurrentTimeStamp))
+	{
+		WeekStamp = CurrentTimeStamp;
+		aPeriodsUpdated.push_back(TIME_PERIOD::WEEK_STAMP);
+	}
+
+	// Check if the current time is a new month
+	if(time_is_new_month(MonthStamp, CurrentTimeStamp))
+	{
+		MonthStamp = CurrentTimeStamp;
+		aPeriodsUpdated.push_back(TIME_PERIOD::MONTH_STAMP);
+	}
+
+	// If any time period has been updated
+	if(!aPeriodsUpdated.empty())
+	{
+		std::string Data = std::to_string(DailyStamp) + "\n" + std::to_string(WeekStamp) + "\n" + std::to_string(MonthStamp);
+		Tools::Files::saveFile("time_periods.cfg", Data.data(), (unsigned)Data.size());
+
+		// Check time periods for all components
+		for(const auto& component : m_System.m_vComponents)
+		{
+			for(const auto& periods : aPeriodsUpdated)
+			{
+				component->OnHandleTimePeriod(TIME_PERIOD(periods));
+			}
+		}
+	}
+}
+
 void CMmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 {
 	// Set a flag indicating whether time periods have been updated
@@ -423,7 +489,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_SOCIAL_STATUS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Relations = '%d', PrisonSeconds = '%d', DailyChairGolds = '%d' WHERE ID = '%d'", 
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Relations = '%d', PrisonSeconds = '%d', DailyChairGolds = '%d' WHERE ID = '%d'",
 			pAcc->GetRelations(), pAcc->m_PrisonSeconds, pAcc->GetCurrentDailyChairGolds(), pAcc->GetID());
 	}
 	else if(Table == SAVE_GUILD_DATA)

@@ -114,6 +114,7 @@ public:
 	[[nodiscard]] GUILD_RESULT SetNewLeader(int AccountID);
 	[[nodiscard]] GUILD_RESULT BuyHouse(int HouseID);
 	[[nodiscard]] bool SellHouse();
+	void TimePeriodEvent(TIME_PERIOD Period);
 
 	// global functions
 	static bool IsAccountMemberGuild(int AccountID);

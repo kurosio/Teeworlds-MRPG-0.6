@@ -12,6 +12,14 @@ enum class DrawboardToolEvent : int
 	ON_END,
 };
 
+enum TIME_PERIOD
+{
+	DAILY_STAMP,
+	WEEK_STAMP,
+	MONTH_STAMP,
+	NUM_STAMPS
+};
+
 // Enum for input events related to key presses
 enum InputEvents
 {

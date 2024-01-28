@@ -22,11 +22,9 @@ public:
 	CGuildMemberData(CGuildData* pGuild, int AccountID, CGuildRankData* pRank, int Deposit = 0);
 	~CGuildMemberData();
 
-	// Get the account ID of the guild member
-	int GetAccountID() const { return m_AccountID; }
-
-	// Get the amount of gold deposited by the guild member
-	int GetDeposit() const { return m_Deposit; }
+	int GetAccountID() const { return m_AccountID; } // Get the account ID of the guild member
+	int GetDeposit() const { return m_Deposit; } // Get the amount of gold deposited by the guild member
+	void SetDeposit(int Deposit) { m_Deposit = Deposit; } // Set the amount of gold deposited by the guild member
 
 	// Get the rank of the guild member
 	CGuildRankData* GetRank() const { return m_pRank; }

@@ -182,6 +182,39 @@ bool CGuildData::SellHouse()
 	return false;
 }
 
+void CGuildData::TimePeriodEvent(TIME_PERIOD Period)
+{
+	if(Period == TIME_PERIOD::DAILY_STAMP)
+	{
+		// Check if the guild has a house
+		if(m_pHouse != nullptr)
+		{
+			// Check if the guild has enough money to pay the rent
+			if(!m_pBank->Spend(m_pHouse->GetRentPrice()) && SellHouse())
+			{
+				// Send a chat message and log to the guild notifying them that their guild house rent has been paid
+				GS()->ChatGuild(m_ID, "Your guild house rent has expired, has been sold.");
+				m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has expired, has been sold.");
+				GS()->StrongUpdateVotesForAll(MENU_GUILD);
+				return;
+			}
+
+			// Send a chat message and log to the guild notifying them that their guild house rent has been paid
+			GS()->ChatGuild(m_ID, "Your guild house rent has been paid.");
+			m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has been paid.");
+		}
+	}
+	else if(Period == TIME_PERIOD::WEEK_STAMP)
+	{
+		// Reset the deposits of the guild members
+		m_pMembers->ResetDeposits();
+
+		// Send a chat message to the guild members
+		GS()->ChatGuild(m_ID, "Membership deposits have been reset.");
+		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Membership deposits have been reset.");
+	}
+}
+
 int CGuildData::GetUpgradePrice(int Type)
 {
 	// Check if the Type is within the valid range

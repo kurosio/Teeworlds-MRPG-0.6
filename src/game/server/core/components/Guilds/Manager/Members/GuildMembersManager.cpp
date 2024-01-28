@@ -112,6 +112,20 @@ std::pair<int, int> CGuildMembersManager::GetCurrentSlots() const
 	return std::pair((int)m_apMembers.size(), m_pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->getValue());
 }
 
+// This function resets the deposit amount for all guild members
+void CGuildMembersManager::ResetDeposits()
+{
+	// Iterate through each member in the member list
+	for(auto& [UID, pMember] : m_apMembers)
+	{
+		// Set the deposit amount for the member to 0
+		pMember->SetDeposit(0);
+	}
+
+	// Save the updated member list
+	Save();
+}
+
 // Initialize the guild members from a JSON string
 void CGuildMembersManager::Init(std::string&& MembersData)
 {

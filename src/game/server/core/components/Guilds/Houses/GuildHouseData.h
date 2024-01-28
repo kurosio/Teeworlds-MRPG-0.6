@@ -66,6 +66,8 @@ public:
 	float GetRadius() const { return m_Radius; }
 	int GetWorldID() const { return m_WorldID; }
 	int GetPrice() const { return m_Price; }
+	int GetRentPrice() const;
+	void GetRentTimeStamp(char* aBuffer, size_t Size) const;
 	bool IsPurchased() const { return m_pGuild != nullptr; }
 
 	void TextUpdate(int LifeTime);

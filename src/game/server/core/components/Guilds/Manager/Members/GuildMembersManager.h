@@ -54,6 +54,9 @@ public:
 	// This function returns the current number of slots being used and the total number of slots
 	std::pair<int, int> GetCurrentSlots() const;
 
+	// This function is used to reset all deposits to zero.
+	void ResetDeposits();
+
 	// Save the guild members data
 	void Save() const;
 

@@ -627,10 +627,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			for(int i = 0; i < Useds && !Success; i++)
 			{
 				if(result())
-				{
 					Success = true;
-					break;
-				}
 
 				// Update the chance result for the next attempt
 				result.Update();
@@ -817,6 +814,13 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	}
 
 	return false;
+}
+
+void CGuildManager::OnHandleTimePeriod(TIME_PERIOD Period)
+{
+	// Call the TimePeriodEvent function for each guild passing the Period parameter
+	for(auto& pGuild : CGuildData::Data())
+		pGuild->TimePeriodEvent(Period);
 }
 
 void CGuildManager::ShowMembershipList(int ClientID) const
@@ -1047,6 +1051,16 @@ void CGuildManager::ShowMenu(int ClientID) const
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Members: {INT} of {INT}", MemberUsedSlots, MemberMaxSlots);
+
+	if(HasHouse)
+	{
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "\u2679 House rent price per day: {VAL} golds", pGuild->GetHouse()->GetRentPrice());
+
+		char aBufTimeStamp[64];
+		pGuild->GetHouse()->GetRentTimeStamp(aBufTimeStamp, sizeof(aBufTimeStamp));
+		GS()->AVL(ClientID, "null", "Approximate rental time: {STR}", aBufTimeStamp);
+	}
 
 	// guild deposit
 	GS()->AV(ClientID, "null");
@@ -1339,6 +1353,10 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 		return;
 	}
 
+	// Show information about the house
+	GS()->AVL(ClientID, "null", "Plant zones: {INT} / Doors: {INT}", (int)pHouse->GetPlantzonesManager()->GetContainer().size(), (int)pHouse->GetDoorManager()->GetContainer().size());
+	GS()->AVL(ClientID, "null", "Rent price: {VAL} gold", pHouse->GetRentPrice());
+
 	// Check if house is already purchased
 	if(pHouse->IsPurchased())
 	{
@@ -1356,7 +1374,7 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 
 	// Check if player has leader rights in the guild
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	GS()->AVM(ClientID, "null", NOPE, NOPE, "Your guild have {VAL} Gold", pGuild->GetBank()->Get());
+	GS()->AVM(ClientID, "null", NOPE, NOPE, "Guild bank: {VAL} gold", pGuild->GetBank()->Get());
 	if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
 		GS()->AVM(ClientID, "GUILD_HOUSE_BUY", pHouse->GetID(), NOPE, "Purchase this guild house! Cost: {VAL} golds", pHouse->GetPrice());
 	else

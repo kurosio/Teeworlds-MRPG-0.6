@@ -72,6 +72,29 @@ void CGuildHouseData::InitProperties(std::string&& Plantzones, std::string&& Pro
 	dbg_assert(m_pDoors != nullptr, "The house doors manager is null");
 }
 
+int CGuildHouseData::GetRentPrice() const
+{
+	int DoorCount = (int)GetDoorManager()->GetContainer().size();
+	int PlantzoneCount = (int)GetPlantzonesManager()->GetContainer().size();
+	return (int)m_Radius + (DoorCount * 200) + (PlantzoneCount * 500);
+}
+
+void CGuildHouseData::GetRentTimeStamp(char* aBuffer, size_t Size) const
+{
+	if(IsPurchased())
+	{
+		int Bank = m_pGuild->GetBank()->Get();
+		int Days = maximum(1, Bank) / GetRentPrice();
+		time_t currentTimestamp = time(nullptr);
+		tm desiredTime = *localtime(&currentTimestamp);
+		desiredTime.tm_hour = 23;
+		desiredTime.tm_min = 59;
+		desiredTime.tm_sec = 00;
+		time_t desiredTimestamp = mktime(&desiredTime) + (static_cast<long long>(Days) * 86400);
+		str_timestamp_ex(desiredTimestamp, aBuffer, Size, FORMAT_SPACE);
+	}
+}
+
 void CGuildHouseData::TextUpdate(int LifeTime)
 {
 	// Check if the last tick text update is greater than the current server tick

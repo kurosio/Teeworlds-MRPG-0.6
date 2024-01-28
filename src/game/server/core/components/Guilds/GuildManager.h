@@ -27,6 +27,7 @@ class CGuildManager : public MmoComponent
 	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
+	void OnHandleTimePeriod(TIME_PERIOD Period) override;
 
 public:
 	void Create(CPlayer *pPlayer, const char *pGuildName) const;
