@@ -126,6 +126,19 @@ void CGuildMembersManager::ResetDeposits()
 	Save();
 }
 
+int CGuildMembersManager::GetOnlinePlayersCount() const
+{
+	int Count = 0;
+	for(auto& [UID, pMember] : m_apMembers)
+	{
+		if(GS()->GetPlayerByUserID(UID))
+		{
+			Count++;
+		}
+	}
+	return Count;
+}
+
 // Initialize the guild members from a JSON string
 void CGuildMembersManager::Init(std::string&& MembersData)
 {

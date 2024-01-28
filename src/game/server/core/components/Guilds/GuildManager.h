@@ -43,6 +43,7 @@ private:
 	void ShowRequests(int ClientID) const;
 	void ShowPlantZone(int ClientID, int PlantzoneID) const;
 	void ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const;
+	void ShowDeclareWar(int ClientID) const;
 
 public:
 	CGuildHouseData* GetGuildHouseByID(const GuildHouseIdentifier& ID) const;

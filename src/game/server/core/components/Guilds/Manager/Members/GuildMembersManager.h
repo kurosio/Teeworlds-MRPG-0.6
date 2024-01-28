@@ -48,14 +48,12 @@ public:
 	// Kick a guild member by account ID
 	[[nodiscard]] GUILD_MEMBER_RESULT Kick(int AccountID);
 
-	// This function checks if there are any free slots available
-	bool HasFreeSlots() const;
-
-	// This function returns the current number of slots being used and the total number of slots
-	std::pair<int, int> GetCurrentSlots() const;
-
 	// This function is used to reset all deposits to zero.
 	void ResetDeposits();
+
+	std::pair<int, int> GetCurrentSlots() const; // This function returns the current number of slots being used and the total number of slots
+	bool HasFreeSlots() const; // This function checks if there are any free slots available
+	int GetOnlinePlayersCount() const; // This function is used to get online players.
 
 	// Save the guild members data
 	void Save() const;

@@ -784,11 +784,17 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		return true;
 	}
 
-
 	if(Menulist == MENU_GUILD_LOGS)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
 		ShowLogs(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_GUILD_WAR)
+	{
+		pPlayer->m_LastVoteMenu = MENU_GUILD;
+		ShowDeclareWar(ClientID);
 		return true;
 	}
 
@@ -843,7 +849,7 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 	CGuildMemberData* pPlayerMember = pPlayer->Account()->GetGuildMemberData();
 
 	// Print the membership list of the guild
-	GS()->AVL(ClientID, "null", "Membership list of {STR}", pGuild->GetName());
+	GS()->AVL(ClientID, "null", "\u2635 Membership list of {STR}", pGuild->GetName());
 
 	// Loop through each member in the guild
 	for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
@@ -928,7 +934,7 @@ void CGuildManager::ShowMembershipList(int ClientID, GuildIdentifier ID) const
 	{
 		int HideID = START_SELF_HIDE_ID;
 
-		GS()->AVL(ClientID, "null", "Membership list of {STR}", pGuild->GetName());
+		GS()->AVL(ClientID, "null", "\u2635 Membership list of {STR}", pGuild->GetName());
 		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 		{
 			CGuildMemberData* pMember = pIterMember.second;
@@ -1074,6 +1080,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_LOGS, NOPE, "Logs of activity");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank management");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_WAR, NOPE, "Declare guild war");
 
 	// guild append house menu
 	if(HasHouse)
@@ -1379,6 +1386,36 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 		GS()->AVM(ClientID, "GUILD_HOUSE_BUY", pHouse->GetID(), NOPE, "Purchase this guild house! Cost: {VAL} golds", pHouse->GetPrice());
 	else
 		GS()->AVL(ClientID, "null", "You need to be the leader rights");
+}
+
+void CGuildManager::ShowDeclareWar(int ClientID) const
+{
+	// If player does not exist or does not have a guild, return
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer)
+		return;
+
+	// Check some guild data
+	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+	{
+		GS()->AddVotesBackpage(ClientID);
+		return;
+	}
+
+	// TODO
+	GS()->AVL(ClientID, "null", "\u2646 Declare war on another guild");
+	GS()->AVL(ClientID, "null", "Cooldown: {INT} minutes", 10);
+
+	GS()->AV(ClientID, "null");
+	GS()->AVL(ClientID, "null", "\u2631 List of guilds to declare war");
+	for(auto& p : CGuildData::Data())
+	{
+		if(p->GetID() == pGuild->GetID())
+			continue;
+
+		GS()->AVM(ClientID, "GUILD_DECLARE_WAR", p->GetID(), NOPE, "Declare war with {STR} (online {INT} players)", p->GetName(), p->GetMembers()->GetOnlinePlayersCount());
+	}
 }
 
 // Function to show guild logs for a specific player

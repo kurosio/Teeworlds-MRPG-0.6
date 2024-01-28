@@ -76,7 +76,7 @@ void CMmoController::OnTick()
 		pComponent->OnTick();
 
 	// Check if the current tick is a multiple of the time period check time
-	if(GS()->Server()->Tick() % ((GS()->Server()->Tick() * 60) * g_Config.m_SvTimePeriodCheckTime) == 0)
+	if(GS()->Server()->Tick() % ((GS()->Server()->TickSpeed() * 60) * g_Config.m_SvTimePeriodCheckTime) == 0)
 		HandleTimePeriod();
 }
 

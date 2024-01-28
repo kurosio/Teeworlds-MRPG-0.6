@@ -26,23 +26,14 @@ public:
 	int GetDeposit() const { return m_Deposit; } // Get the amount of gold deposited by the guild member
 	void SetDeposit(int Deposit) { m_Deposit = Deposit; } // Set the amount of gold deposited by the guild member
 
-	// Get the rank of the guild member
-	CGuildRankData* GetRank() const { return m_pRank; }
+	CGuildRankData* GetRank() const { return m_pRank; } // Get the rank of the guild member
+	[[nodiscard]] bool SetRank(GuildRankIdentifier RankID); // Set the rank of the guild member using the rank ID
+	[[nodiscard]] bool SetRank(CGuildRankData* pRank); // Set the rank of the guild member using a rank object
 
-	// Set the rank of the guild member using the rank ID
-	[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);
-
-	// Set the rank of the guild member using a rank object
-	[[nodiscard]] bool SetRank(CGuildRankData* pRank);
-
-	// Deposit gold in the guild bank
-	[[nodiscard]] bool DepositInBank(int Golds);
-
-	// Withdraw gold from the guild bank
-	[[nodiscard]] bool WithdrawFromBank(int Golds);
-
-	// Check if a member has the required access level
-	[[nodiscard]] bool CheckAccess(GuildRankAccess RequiredAccess) const;
+	[[nodiscard]] bool DepositInBank(int Golds); // Deposit gold in the guild bank
+	[[nodiscard]] bool WithdrawFromBank(int Golds); // Withdraw gold from the guild bank
+	
+	[[nodiscard]] bool CheckAccess(GuildRankAccess RequiredAccess) const; // Check if a member has the required access level
 };
 
 #endif
