@@ -32,6 +32,12 @@ CGuildWarHandler::~CGuildWarHandler()
 	dbg_msg("test", "deleting war handler");
 }
 
+void CGuildWarHandler::FormatTimeLeft(char* pBuf, int Size) const
+{
+	time_t TimeLeft = m_TimeUntilEnd - time(nullptr);
+	str_format(pBuf, Size, "%02dh %02dm", (int)TimeLeft / 3600, (int)(TimeLeft / 60) % 60);
+}
+
 void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilEnd)
 {
 	m_pWarData = { new CGuildWarData(WarData1), new CGuildWarData(WarData2) };
@@ -42,7 +48,7 @@ void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& 
 	m_TimeUntilEnd = TimeUntilEnd;
 
 	Database->Execute<DB::INSERT>(TW_GUILDS_WARS_TABLE, "(TimeUntilEnd, GuildID1, GuildID2) VALUES ('%llu', '%d', '%d')", 
-		TimeUntilEnd, m_pWarData.first->m_pGuild->GetID(), m_pWarData.second->m_pGuild->GetID());
+		m_TimeUntilEnd, m_pWarData.first->m_pGuild->GetID(), m_pWarData.second->m_pGuild->GetID());
 	dbg_msg("test", "creating war handler");
 }
 

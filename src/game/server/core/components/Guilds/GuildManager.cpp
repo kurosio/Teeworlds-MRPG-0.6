@@ -27,7 +27,6 @@ void CGuildManager::OnInit()
 	}
 
 	InitWars();
-
 	Core()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
 }
 
@@ -616,6 +615,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			dbg_msg("guild", "war not created");
 		}
 
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_WAR);
 		return true;
 	}
 
@@ -1480,15 +1480,38 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 	GS()->AVL(ClientID, "null", "\u2646 Declare war on another guild");
 	GS()->AVL(ClientID, "null", "Cooldown: {INT} minutes", 10);
 
-	GS()->AV(ClientID, "null");
-	GS()->AVL(ClientID, "null", "\u2631 List of guilds to declare war");
-	for(auto& p : CGuildData::Data())
+	if(pGuild->GetWar())
 	{
-		if(p->GetID() == pGuild->GetID())
-			continue;
+		CGuildWarData* pWar = pGuild->GetWar();
+		CGuildData* pTargetGuild = pWar->GetTargetGuild();
 
-		GS()->AVM(ClientID, "GUILD_DECLARE_WAR", p->GetID(), NOPE, "Declare war with {STR} (online {INT} players)", p->GetName(), p->GetMembers()->GetOnlinePlayersCount());
+		char aBufTimeLeft[64];
+		pWar->GetHandler()->FormatTimeLeft(aBufTimeLeft, sizeof(aBufTimeLeft));
+
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "War with the guild: {STR}", pTargetGuild->GetName());
+		GS()->AVL(ClientID, "null", "Time until the end of the war: {STR}", aBufTimeLeft);
+		GS()->AVL(ClientID, "null", "Score: {INT}(your) / {INT}(enemy)", pWar->GetScore(), pTargetGuild->GetWar()->GetScore());
 	}
+	else
+	{
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "You can declare war on another guild");
+		GS()->AVL(ClientID, "null", "To do this, select the guild from the list below");
+
+		GS()->AV(ClientID, "null");
+		GS()->AVL(ClientID, "null", "\u2631 List of guilds to declare war");
+		for(auto& p : CGuildData::Data())
+		{
+			if(p->GetID() == pGuild->GetID())
+				continue;
+
+			GS()->AVM(ClientID, "GUILD_DECLARE_WAR", p->GetID(), NOPE, "Declare war with {STR} (online {INT} players)", p->GetName(), p->GetMembers()->GetOnlinePlayersCount());
+		}
+	}
+
+	// Add the votes backpage for the player
+	GS()->AddVotesBackpage(ClientID);
 }
 
 // Function to show guild logs for a specific player

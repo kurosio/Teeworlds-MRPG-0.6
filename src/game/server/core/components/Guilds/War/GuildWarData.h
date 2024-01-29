@@ -21,6 +21,7 @@ public:
 	CGuildWarData(CGuildData* pGuild, CGuildData* pTargetGuild, int Score = 0);
 
 	CGuildWarHandler* GetHandler() const { return m_pWarHandler; }
+	CGuildData* GetTargetGuild() const { return m_pTargetGuild; }
 	CGuildData* GetGuild() const { return m_pGuild; }
 	int GetScore() const { return m_Score; }
 	void AddScore(int Score);
@@ -41,6 +42,7 @@ public:
 		return m_pData.emplace_back(pData);
 	}
 
+	void FormatTimeLeft(char* pBuf, int Size) const;
 	void Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilEnd);
 	std::pair<CGuildWarData* , CGuildWarData*> GetWarData() const { return m_pWarData; }
 
