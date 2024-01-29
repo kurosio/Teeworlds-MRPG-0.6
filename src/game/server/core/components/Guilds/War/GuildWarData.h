@@ -19,8 +19,8 @@ class CGuildWarData
 
 public:
 	CGuildWarData(CGuildData* pGuild, CGuildData* pTargetGuild, int Score = 0);
-	~CGuildWarData();
 
+	CGuildWarHandler* GetHandler() const { return m_pWarHandler; }
 	CGuildData* GetGuild() const { return m_pGuild; }
 	int GetScore() const { return m_Score; }
 	void AddScore(int Score);
@@ -41,14 +41,7 @@ public:
 		return m_pData.emplace_back(pData);
 	}
 
-	void Init(CGuildWarData* pWarData1, CGuildWarData* pWarData2, time_t TimeUntilEnd)
-	{
-		m_pWarData = { pWarData1, pWarData2 };
-		m_pWarData.first->m_pWarHandler = this;
-		m_pWarData.second->m_pWarHandler = this;
-		m_TimeUntilEnd = TimeUntilEnd;
-	}
-
+	void Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilEnd);
 	std::pair<CGuildWarData* , CGuildWarData*> GetWarData() const { return m_pWarData; }
 
 	void Tick();

@@ -891,9 +891,7 @@ void CGuildManager::InitWars() const
 
 		// Create instance
 		CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
-		CGuildWarData* pWarData = new CGuildWarData(pGuild1, pGuild2, Score1);
-		CGuildWarData* pTargetWarData = new CGuildWarData(pGuild2, pGuild1, Score2);
-		pWarHandler->Init(pWarData, pTargetWarData, TimeUntilEnd);
+		pWarHandler->Init({ pGuild1, pGuild2, Score1 }, { pGuild2, pGuild1, Score2 }, TimeUntilEnd);
 	}
 }
 
@@ -1072,6 +1070,13 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 
 	// Get a pointer to the guild
 	CGuildData* pGuild = (*pIterGuild);
+
+	// End guild wars for disbanded guild
+	if(pGuild->GetWar() && pGuild->GetWar()->GetHandler())
+	{
+		pGuild->GetWar()->GetHandler()->End();
+
+	}
 
 	// If the guild has a house, sell it
 	if(pGuild->SellHouse())

@@ -38,7 +38,7 @@ public:
 	CGS* GS() const;
 
 private:
-	friend class CGuildWarData;
+	friend class CGuildWarHandler;
 	friend class CGuildHouseData;
 
 	GuildIdentifier m_ID {};

@@ -7,26 +7,43 @@
 CGuildWarData::CGuildWarData(CGuildData* pGuild, CGuildData* pTargetGuild, int Score)
 {
 	m_pGuild = pGuild;
-	m_pGuild->m_pWar = this;
 	m_pTargetGuild = pTargetGuild;
 	m_Score = Score;
-}
-
-CGuildWarData::~CGuildWarData()
-{
-	m_pGuild->m_pWar = nullptr;
-}
-
-CGuildWarHandler::~CGuildWarHandler()
-{
-	delete m_pWarData.first;
-	delete m_pWarData.second;
 }
 
 void CGuildWarData::AddScore(int Score)
 {
 	m_Score += Score;
-	m_pWarHandler->Save();
+
+	if(m_pWarHandler)
+		m_pWarHandler->Save();
+}
+
+CGuildWarHandler::~CGuildWarHandler()
+{
+	if(m_pWarData.first->m_pGuild)
+		m_pWarData.first->m_pGuild->m_pWar = nullptr;
+	if(m_pWarData.second->m_pGuild)
+		m_pWarData.second->m_pGuild->m_pWar = nullptr;
+
+	delete m_pWarData.first;
+	delete m_pWarData.second;
+
+	dbg_msg("test", "deleting war handler");
+}
+
+void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilEnd)
+{
+	m_pWarData = { new CGuildWarData(WarData1), new CGuildWarData(WarData2) };
+	m_pWarData.first->m_pWarHandler = this;
+	m_pWarData.second->m_pWarHandler = this;
+	m_pWarData.first->m_pGuild->m_pWar = m_pWarData.first;
+	m_pWarData.second->m_pGuild->m_pWar = m_pWarData.first;
+	m_TimeUntilEnd = TimeUntilEnd;
+
+	Database->Execute<DB::INSERT>(TW_GUILDS_WARS_TABLE, "(TimeUntilEnd, GuildID1, GuildID2) VALUES ('%llu', '%d', '%d')", 
+		TimeUntilEnd, m_pWarData.first->m_pGuild->GetID(), m_pWarData.second->m_pGuild->GetID());
+	dbg_msg("test", "creating war handler");
 }
 
 void CGuildWarHandler::Tick()
@@ -52,12 +69,13 @@ void CGuildWarHandler::End()
 	}
 
 	// here reward count
+	dbg_msg("test", "ending war handler");
 	delete this;
 	return;
 }
 
 void CGuildWarHandler::Save() const
 {
-	Database->Execute<DB::UPDATE>(TW_GUILDS_WARS_TABLE, "%llu = '%d', Score1 = '%d', Score2 = '%d' WHERE ID = '%d'", 
-		m_TimeUntilEnd, m_pWarData.first->GetScore(), m_pWarData.second->GetScore());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_WARS_TABLE, "TimeUntilEnd = '%llu', Score1 = '%d', Score2 = '%d' WHERE GuildID1 = '%d' AND GuildID2 = '%d'", 
+		m_TimeUntilEnd, m_pWarData.first->GetScore(), m_pWarData.second->GetScore(), m_pWarData.first->GetGuild()->GetID(), m_pWarData.second->GetGuild()->GetID());
 }

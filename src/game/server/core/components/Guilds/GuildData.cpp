@@ -219,15 +219,10 @@ bool CGuildData::StartWar(CGuildData* pTargetGuild)
 {
 	if(!pTargetGuild || pTargetGuild->GetWar() || GetWar())
 		return false;
-
 	
 	CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
-	CGuildWarData* pWarData = new CGuildWarData(this, pTargetGuild, 0);
-	CGuildWarData* pTargetWarData = new CGuildWarData(pTargetGuild, this, 0);
-
 	time_t TimeUntilEnd = time(nullptr) + (g_Config.m_SvGuildWarDuration * 60);
-	pWarHandler->Init(pWarData, pTargetWarData, TimeUntilEnd);
-	Database->Execute<DB::INSERT>(TW_GUILDS_WARS_TABLE, "(TimeUntilEnd, GuildID1, GuildID2) VALUES ('%llu', '%d', '%d')", TimeUntilEnd, m_ID, pTargetGuild->GetID());
+	pWarHandler->Init({ this, pTargetGuild, 0 }, { pTargetGuild, this, 0 }, TimeUntilEnd);
 	return true;
 }
 
