@@ -181,17 +181,6 @@ void CCharacter::HandleWeaponSwitch()
 	DoWeaponSwitch();
 }
 
-bool CCharacter::ActionAddDecoration()
-{
-	const int ClientID = m_pPlayer->GetCID();
-	if(m_pPlayer->GetTempData().m_TempDecoractionID > 0)
-	{
-		GS()->UpdateVotes(ClientID, m_pPlayer->m_LastVoteMenu);
-		return true;
-	}
-	return false;
-}
-
 void CCharacter::HandleReload()
 {
 	m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
@@ -231,12 +220,6 @@ void CCharacter::FireWeapon()
 	// Check if the player is not a bot
 	if(!IsCharBot)
 	{
-		// Check if the player can interact with decorations
-		if(ActionAddDecoration())
-		{
-			return;
-		}
-
 		// Check if the active weapon has no ammo
 		if(!m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 		{
@@ -258,8 +241,7 @@ void CCharacter::FireWeapon()
 			}
 
 			bool Hits = false;
-			const float PlayerRadius = (float)m_pPlayer->GetAttributeSize(AttributeIdentifier::HammerDMG);
-			const float Radius = clamp(PlayerRadius / 5.0f, IsCharBot ? 1.7f : 3.2f, 8.0f);
+			constexpr float Radius = 3.2f;
 			GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
 			CCharacter* apEnts[MAX_CLIENTS];

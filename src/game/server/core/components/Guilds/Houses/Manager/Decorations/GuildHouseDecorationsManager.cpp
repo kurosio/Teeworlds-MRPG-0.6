@@ -3,7 +3,7 @@
 #include "GuildHouseDecorationsManager.h"
 
 #include <game/server/core/components/Guilds/Houses/GuildHouseData.h>
-#include <game/server/core/entities/Tools/draw_board.h>
+#include <game/server/core/entities/tools/draw_board.h>
 #include <game/server/gamecontext.h>
 
 CGS* CGuildHouseDecorationManager::GS() const { return m_pHouse->GS(); }

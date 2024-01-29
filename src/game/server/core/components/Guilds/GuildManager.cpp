@@ -1153,7 +1153,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_LOGS, NOPE, "Logs of activity");
 	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank management");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_WAR, NOPE, "Declare guild war");
+	GS()->AVM(ClientID, "MENU", MENU_GUILD_WAR, NOPE, "Guild wars");
 
 	// guild append house menu
 	if(HasHouse)

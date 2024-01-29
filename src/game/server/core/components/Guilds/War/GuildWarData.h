@@ -48,7 +48,6 @@ public:
 
 	void Tick();
 	void End();
-
 	void Save() const;
 };
 

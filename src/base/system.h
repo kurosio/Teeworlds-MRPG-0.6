@@ -2475,7 +2475,7 @@ size_t str_utf8_offset_chars_to_bytes(const char *str, size_t char_offset);
 /*
 	Function: Pfffff
 */
-void str_translation_utf8_to_cp(char* str);
+void str_translation_cyrlic_to_latin(char* str);
 
 /*
 	Function: str_next_token

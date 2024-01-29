@@ -42,7 +42,6 @@ class CCharacter : public CEntity
 	//void InteractiveShotgun(vec2 Direction, vec2 ProjStartPos);
 	//void InteractiveGrenade(vec2 Direction, vec2 ProjStartPos);
 	//void InteractiveRifle(vec2 Direction, vec2 ProjStartPos);
-	bool ActionAddDecoration();
 	virtual void HandleTuning();
 	void HandleBuff(CTuningParams* TuningParams);
 	void HandlePlayer();
