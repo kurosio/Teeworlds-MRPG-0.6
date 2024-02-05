@@ -5,11 +5,11 @@
 
 #include <game/server/gamecontroller.h>
 
-class CGameControllerMain : public IGameController
+class CGameControllerDefault : public IGameController
 {
 public:
 
-	CGameControllerMain(class CGS *pGameServer);
+	CGameControllerDefault(class CGS *pGameServer);
 
 	void Tick() override;
 	bool OnEntity(int Index, vec2 Pos) override;

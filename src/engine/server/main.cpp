@@ -95,6 +95,7 @@ int main(int argc, const char** argv)
 	init_exception_handler();
 #endif
 
+	CConectionPool::Initilize();
 	CServer* pServer = CreateServer();
 	pServer->SetLoggers(pFutureFileLogger, std::move(pStdoutLogger));
 
@@ -125,7 +126,6 @@ int main(int argc, const char** argv)
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pConsole);
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pStorage);
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pConfigManager);
-		RegisterFail = RegisterFail || !pServer->MultiWorlds()->LoadWorlds(pKernel, pStorage, pConsole);
 
 		if(RegisterFail)
 		{
@@ -147,6 +147,12 @@ int main(int argc, const char** argv)
 	// register all console commands
 	pServer->RegisterCommands();
 	pConsole->ExecuteFile(AUTOEXEC_FILE);
+
+	if(!pServer->MultiWorlds()->LoadWorlds(pKernel, pStorage, pConsole))
+	{
+		dbg_msg("server", "failed to load worlds");
+		return -1;
+	}
 
 	// parse the command line arguments
 	if(argc > 1)
@@ -181,6 +187,6 @@ int main(int argc, const char** argv)
 	delete pKernel;
 
 	secure_random_uninit();
-
+	CConectionPool::Free();
 	return Ret;
 }

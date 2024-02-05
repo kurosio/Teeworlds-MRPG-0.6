@@ -8,9 +8,15 @@
 
 class CAetherManager : public MmoComponent
 {
+	inline static ska::unordered_map<int, std::deque<CAetherData*>> ms_vpAetherGroupCollector {};
+
 	~CAetherManager() override
 	{
+		for(auto& pAether : CAetherData::Data())
+			delete pAether;
 		CAetherData::Data().clear();
+		CAetherData::Data().shrink_to_fit();
+		ms_vpAetherGroupCollector.clear();
 	};
 
 	void OnInit() override;
@@ -19,9 +25,10 @@ class CAetherManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
-	void UnlockLocation(CPlayer* pPlayer, vec2 Pos) const;
-	void ShowList(CCharacter* pChar) const;
-	CAetherData* GetAether(int AetherID) const;
+	void ShowMenu(CCharacter* pChar) const;
+	void UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const;
+	CAetherData* GetAetherByID(int AetherID) const;
+	CAetherData* GetAetherByPos(vec2 Pos) const;
 };
 
 #endif

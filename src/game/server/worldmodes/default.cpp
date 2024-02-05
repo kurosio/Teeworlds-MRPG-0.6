@@ -1,6 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "main.h"
+#include "default.h"
 
 #include <game/server/gamecontext.h>
 #include <game/server/core/entities/items/jobitems.h>
@@ -13,18 +13,18 @@
 #include "game/server/core/components/Guilds/GuildManager.h"
 #include "game/server/core/components/Guilds/Houses/Manager/Plantings/GuildHousePlantzoneData.h"
 
-CGameControllerMain::CGameControllerMain(class CGS *pGS)
+CGameControllerDefault::CGameControllerDefault(class CGS *pGS)
 : IGameController(pGS)
 {
 	m_GameFlags = 0;
 }
 
-void CGameControllerMain::Tick()
+void CGameControllerDefault::Tick()
 {
 	IGameController::Tick();
 }
 
-void CGameControllerMain::CreateLogic(int Type, int Mode, vec2 Pos, int ParseInt)
+void CGameControllerDefault::CreateLogic(int Type, int Mode, vec2 Pos, int ParseInt)
 {
 	if(Type == 1)
 	{
@@ -40,7 +40,7 @@ void CGameControllerMain::CreateLogic(int Type, int Mode, vec2 Pos, int ParseInt
 	}
 }
 
-bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
+bool CGameControllerDefault::OnEntity(int Index, vec2 Pos)
 {
 	if(IGameController::OnEntity(Index, Pos))
 		return true;
@@ -78,7 +78,7 @@ bool CGameControllerMain::OnEntity(int Index, vec2 Pos)
 	return false;
 }
 
-void CGameControllerMain::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
+void CGameControllerDefault::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
 	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 }

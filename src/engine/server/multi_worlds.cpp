@@ -4,28 +4,69 @@
 #include <engine/map.h>
 #include <engine/server.h>
 #include <engine/storage.h>
-#include <engine/external/json-parser/json.h>
 
-bool CMultiWorlds::Add(int WorldID, IKernel* pKernel)
+CMapDetail::~CMapDetail()
 {
-	dbg_assert(WorldID < ENGINE_MAX_WORLDS, "exceeded pool of allocated memory for worlds");
+	Unload();
+	delete m_pMap;
+}
 
-	CWorldGameServer& pNewWorld = m_Worlds[WorldID];
-	pNewWorld.m_pGameServer = CreateGameServer();
+bool CMapDetail::Load(IStorageEngine* pStorage)
+{
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "maps/%s", m_pWorldDetail->GetPath());
+
+	if(!m_pMap->Load(aBuf))
+		return false;
+
+	// load complete map into memory for download
+	{
+		void* pData;
+		unsigned int Size;
+		pStorage->ReadFile(aBuf, IStorageEngine::TYPE_ALL, &pData, &Size);
+		m_apData = (unsigned char*)pData;
+		m_aSha256 = m_pMap->Sha256();
+		m_aCrc = m_pMap->Crc();
+	}
+
+	return true;
+}
+
+void CMapDetail::Unload()
+{
+	if(m_pMap && m_pMap->IsLoaded())
+	{
+		m_pMap->Unload();
+		m_aSize = 0;
+		m_aCrc = 0;
+		m_aSha256 = {};
+		free(m_apData);
+	}
+}
+
+CWorld::~CWorld()
+{
+	delete m_pGameServer;
+	delete m_pMapDetail;
+}
+
+bool CMultiWorlds::Init(CWorld* pNewWorld, IKernel* pKernel)
+{
+	pNewWorld->m_pGameServer = CreateGameServer();
 
 	bool RegisterFail = false;
 	if(m_NextIsReloading) // reregister
 	{
-		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(pNewWorld.m_pLoadedMap, WorldID);
-		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(static_cast<IMap*>(pNewWorld.m_pLoadedMap), WorldID);
-		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(pNewWorld.m_pGameServer, WorldID);
+		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(pNewWorld->m_pMapDetail->m_pMap, pNewWorld->m_WorldID);
+		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(static_cast<IMap*>(pNewWorld->m_pMapDetail->m_pMap), pNewWorld->m_WorldID);
+		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(pNewWorld->m_pGameServer, pNewWorld->m_WorldID);
 	}
 	else // register
 	{
-		pNewWorld.m_pLoadedMap = CreateEngineMap();
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld.m_pLoadedMap, true, WorldID);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld.m_pLoadedMap), false, WorldID);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld.m_pGameServer, true, WorldID);
+		pNewWorld->m_pMapDetail->m_pMap = CreateEngineMap();
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pMapDetail->m_pMap, true, pNewWorld->m_WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld->m_pMapDetail->m_pMap), false, pNewWorld->m_WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pGameServer, true, pNewWorld->m_WorldID);
 	}
 
 	m_WasInitilized++;
@@ -37,52 +78,25 @@ bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConso
 	// clear old worlds
 	Clear(false);
 
-	// read file data into buffer
-	char aFileBuf[512];
-	str_format(aFileBuf, sizeof(aFileBuf), "maps/worlds.json");
-	const IOHANDLE File = pStorage->OpenFile(aFileBuf, IOFLAG_READ, IStorageEngine::TYPE_ALL);
-	if(!File)
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_worlds");
+	while(pRes->next())
 	{
-		pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "maps/worlds.json", "Probably deleted or error when the file is invalid.");
-		return false;
-	}
-	
-	const int FileSize = (int)io_length(File);
-	char* pFileData = (char*)malloc(FileSize);
-	io_read(File, pFileData, FileSize);
-	io_close(File);
+		const int WorldID = pRes->getInt("WorldID");
+		dbg_assert(WorldID < ENGINE_MAX_WORLDS, "exceeded pool of allocated memory for worlds");
 
-	// parse json data
-	json_settings JsonSettings;
-	mem_zero(&JsonSettings, sizeof(JsonSettings));
-	char aError[256];
-	json_value* pJsonData = json_parse_ex(&JsonSettings, pFileData, FileSize, aError);
-	free(pFileData);
-	if(pJsonData == nullptr)
-	{
-		pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "worlds.json", aError);
-		return false;
-	}
-	
-	// extract data
-	const json_value& rStart = (*pJsonData)["worlds"];
-	if(rStart.type == json_array)
-	{
-		for(unsigned i = 0; i < rStart.u.array.length; ++i)
-		{
-			const char* pWorldName = rStart[i]["name"];
-			const char* pPath = rStart[i]["path"];
+		std::string Name = pRes->getString("Name").c_str();
+		std::string Path = pRes->getString("Path").c_str();
+		std::string Type = pRes->getString("Type").c_str();
+		int RespawnWorldID = pRes->getInt("RespawnWorldID");
+		int JailWorldID = pRes->getInt("JailWorldID");
+		int RequiredLevel = pRes->getInt("RequiredLevel");
 
-			// here set worlds name
-			Add(i, pKernel);
-			str_copy(m_Worlds[i].m_aName, pWorldName, sizeof(m_Worlds[i].m_aName));
-			str_copy(m_Worlds[i].m_aPath, pPath, sizeof(m_Worlds[i].m_aPath));
-		}
+		CWorldDetail WorldDetail(Type, RespawnWorldID, JailWorldID, RequiredLevel);
+		m_apWorlds[WorldID] = new CWorld(WorldID, Name, Path, std::move(WorldDetail));
+		Init(m_apWorlds[WorldID], pKernel);
 	}
 
-	// clean up
 	m_NextIsReloading = true;
-	json_value_free(pJsonData);
 	return true;
 }
 
@@ -90,23 +104,17 @@ void CMultiWorlds::Clear(bool Shutdown)
 {
 	for(int i = 0; i < m_WasInitilized; i++)
 	{
-		if(m_Worlds[i].m_pLoadedMap)
+		if(Shutdown)
 		{
-			if(m_Worlds[i].m_pLoadedMap->IsLoaded())
-			{
-				m_Worlds[i].m_pLoadedMap->Unload();
-				m_Worlds[i].m_MapDetail.Clear();
-			}
-
-			if(Shutdown)
-			{
-				delete m_Worlds[i].m_pLoadedMap;
-				m_Worlds[i].m_pLoadedMap = nullptr;
-			}
+			delete m_apWorlds[i];
+			continue;
 		}
-		
-		delete m_Worlds[i].m_pGameServer;
-		m_Worlds[i].m_pGameServer = nullptr;
+	
+		m_apWorlds[i]->m_pMapDetail->Unload();
+
+		delete m_apWorlds[i]->m_pGameServer;
+		m_apWorlds[i]->m_pGameServer = nullptr;
 	}
+
 	m_WasInitilized = 0;
 }

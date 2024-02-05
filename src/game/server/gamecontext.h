@@ -15,6 +15,7 @@
 #include "player.h"
 #include "playerbot.h"
 
+#include "core/utilities/vote_wrapper.h"
 #include "core/entities/tools/flying_point.h"
 #include "core/mmo_controller.h"
 
@@ -207,13 +208,12 @@ private:
 	/* #########################################################################
 		VOTING MMO GAMECONTEXT TODO: rework fully
 	######################################################################### */
-	std::deque<CVoteOptions> m_aPlayerVotes[MAX_PLAYERS];
 	static void CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool PrepareCustom);
 
 public:
 	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1);
 	void AVL(int ClientID, const char *pCmd, const char *pText, ...);
-	void AVH(int ClientID, int HiddenID, const char *pText, ...);
+	void AVH(int ClientID, int HiddenID, const char *pText, ...) {};
 	void AVM(int ClientID, const char *pCmd, int TempInt, int HiddenID, const char* pText, ...);
 	void AVD(int ClientID, const char *pCmd, int TempInt, int TempInt2, int HiddenID, const char *pText, ...);
 

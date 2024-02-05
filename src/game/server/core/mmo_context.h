@@ -4,6 +4,13 @@
 #define GAME_SERVER_CORE_MMO_CONTEXT_H
 #include "teeother/flat_hash_map/flat_hash_map.h"
 
+enum class WorldType : int
+{
+	Default,
+	Dungeon,
+	Tutorial,
+};
+
 enum class DrawboardToolEvent : int
 {
 	ON_START,
@@ -208,13 +215,13 @@ enum MenuList
 	// Guild-related menus
 	MENU_GUILD,
 	MENU_GUILD_MEMBERSHIP_LIST,
-	MENU_GUILD_RANK,
+	MENU_GUILD_RANKS,
 	MENU_GUILD_INVITES,
 	MENU_GUILD_LOGS,
 	MENU_GUILD_FINDER,
 	MENU_GUILD_FINDER_MEMBERSHIP_LIST,
 	MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED,
-	MENU_GUILD_WAR,
+	MENU_GUILD_WARS,
 
 	// House-related menus
 	MENU_HOUSE,
@@ -234,8 +241,11 @@ enum MenuList
 	// Group menus
 	MENU_GROUP,
 
-	// Other menus
+	// Grinding
 	MENU_GUIDE_GRINDING,
+	MENU_GUIDE_GRINDING_SELECT,
+
+	// Other menus
 	MENU_TOP_LIST,
 	MENU_DUNGEONS,
 	MENU_AUCTION_CREATE_SLOT,
@@ -584,6 +594,7 @@ namespace Tools
 				Detail m_Detail {};
 				char m_aData[256] {};
 			};
+
 			struct CompareAestheticDetail
 			{
 				bool operator()(const AestheticImpl::Detail& D1, const char* pUnique, const char* pRUnique, const char* pSnake, int SnakesIter, bool Post) const

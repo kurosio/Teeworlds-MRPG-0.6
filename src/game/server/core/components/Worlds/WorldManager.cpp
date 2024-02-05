@@ -37,30 +37,12 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	/*
 	 * init world data
 	 */
-	const int WorldID = GS()->GetWorldID();
-	const CSqlString<32> cstrWorldName = CSqlString<32>(Server()->GetWorldName(WorldID));
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "enum_worlds", pWhereLocalWorld);
-	if(pRes->next())
+	for(int i = 0; i < Server()->GetWorldsSize(); i++)
 	{
-		int RespawnWorld = pRes->getInt("RespawnWorld");
-		int JailWorld = pRes->getInt("JailWorld");
-		int RequiredLevel = pRes->getInt("RequiredLevel");
-
-		// update name world from json
-		CWorldData::CreateElement(WorldID)->Init(RespawnWorld, JailWorld, RequiredLevel, std::move(WorldSwappers));
-		Database->Execute<DB::UPDATE>("enum_worlds", "Name = '%s' WHERE WorldID = '%d'", cstrWorldName.cstr(), WorldID);
+		CWorldDetail* pDetail = Server()->GetWorldDetail(i);
+		dbg_assert(pDetail != nullptr, "detail data inside world initilized invalid");
+		CWorldData::CreateElement(i)->Init(pDetail->GetRespawnWorldID(), pDetail->GetJailWorldID(), pDetail->GetRequiredLevel(), std::move(WorldSwappers));
 	}
-	else
-	{
-		// create new world data
-		CWorldData::CreateElement(WorldID)->Init(WorldID, WorldID, -1, std::move(WorldSwappers));
-		Database->Execute<DB::INSERT>("enum_worlds", "(WorldID, Name, RespawnWorld, JailWorld) VALUES ('%d', '%s', '%d', '%d')", WorldID, cstrWorldName.cstr(), WorldID, WorldID);
-	}
-}
-
-int CWorldManager::GetWorldType() const
-{
-	return GS()->GetDungeonID() ? WORLD_DUNGEON : WORLD_STANDARD;
 }
 
 void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)

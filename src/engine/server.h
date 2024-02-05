@@ -5,6 +5,7 @@
 
 #include "kernel.h"
 #include "message.h"
+#include <engine/shared/world_detail.h>
 
 #define DC_SERVER_INFO 13872503
 #define DC_PLAYER_INFO 1346299
@@ -210,6 +211,8 @@ public:
 	virtual void ChangeWorld(int ClientID, int NewWorldID) = 0;
 	virtual int GetClientWorldID(int ClientID) const = 0;
 	virtual const char* GetWorldName(int WorldID) = 0;
+	virtual CWorldDetail* GetWorldDetail(int WorldID) = 0;
+	virtual bool IsWorldType(int WorldID, WorldType Type) const = 0;
 	virtual int GetWorldsSize() const = 0;
 
 	virtual const char* Localize(int ClientID, const char* pText) = 0;

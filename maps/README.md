@@ -4,3 +4,6 @@
 
 - Don't forget to add the prefix that ID has world
 - Don't move worlds in the worlds.json list, at the moment we can't drag the entire base under his ID
+
+# 05.02.2024
+- Move from json to database (Reason: for the double work)

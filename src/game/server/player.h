@@ -26,6 +26,13 @@ enum StateSnapping
 	STATE_SNAPPING_FULL,
 };
 
+class CVoteGroupHidden
+{
+public:
+	bool m_Value {};
+	int m_Type {};
+};
+
 class CPlayer
 {
 	MACRO_ALLOC_POOL_ID()
@@ -47,7 +54,7 @@ class CPlayer
 	};
 
 	int m_SnapHealthNicknameTick;
-	ska::unordered_map<int, bool> m_aHiddenMenu;
+	ska::unordered_map<int, CVoteGroupHidden> m_aHiddenGroup;
 
 protected:
 	CCharacter* m_pCharacter;
@@ -177,7 +184,9 @@ public:
 	========================================================== */
 	const char* GetLanguage() const;
 
-	bool GetHiddenMenu(int HideID) const;
+	CVoteGroupHidden* EmplaceHidden(size_t Hash, int Type);
+	CVoteGroupHidden* GetHidden(size_t Hash);
+
 	bool IsAuthed() const;
 	int GetStartTeam() const;
 

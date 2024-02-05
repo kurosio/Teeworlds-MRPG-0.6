@@ -100,8 +100,8 @@ CServer::~CServer()
 IGameServer* CServer::GameServer(int WorldID) const
 {
 	if(!MultiWorlds()->IsValid(WorldID))
-		return MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_pGameServer;
-	return MultiWorlds()->GetWorld(WorldID)->m_pGameServer;
+		return MultiWorlds()->GetWorld(MAIN_WORLD_ID)->GameServer();
+	return MultiWorlds()->GetWorld(WorldID)->GameServer();
 }
 
 IGameServer* CServer::GameServerPlayer(int ClientID) const
@@ -322,12 +322,25 @@ bool CServer::IsClientChangesWorld(int ClientID)
 	return m_aClients[ClientID].m_ChangeWorld && m_aClients[ClientID].m_State >= CClient::STATE_CONNECTING && m_aClients[ClientID].m_State < CClient::STATE_INGAME;
 }
 
-
 const char* CServer::GetWorldName(int WorldID)
 {
 	if(!MultiWorlds()->IsValid(WorldID))
 		return "invalid";
-	return MultiWorlds()->GetWorld(WorldID)->m_aName;
+	return MultiWorlds()->GetWorld(WorldID)->GetName();
+}
+
+CWorldDetail* CServer::GetWorldDetail(int WorldID)
+{
+	if(!MultiWorlds()->IsValid(WorldID))
+		return nullptr;
+	return MultiWorlds()->GetWorld(WorldID)->GetDetail();
+}
+
+bool CServer::IsWorldType(int WorldID, WorldType Type) const
+{
+	if(!MultiWorlds()->IsValid(WorldID))
+		return false;
+	return MultiWorlds()->GetWorld(WorldID)->GetDetail()->GetType() == Type;
 }
 
 int CServer::GetWorldsSize() const
@@ -946,7 +959,7 @@ int CServer::DelClientCallback(int ClientID, const char* pReason, void* pUser)
 
 		for(int i = 0; i < pThis->MultiWorlds()->GetSizeInitilized(); i++)
 		{
-			IGameServer* pGameServer = pThis->MultiWorlds()->GetWorld(i)->m_pGameServer;
+			IGameServer* pGameServer = pThis->MultiWorlds()->GetWorld(i)->GameServer();
 			pGameServer->OnClientDrop(ClientID, pReason);
 		}
 
@@ -974,9 +987,9 @@ int CServer::DelClientCallback(int ClientID, const char* pReason, void* pUser)
 void CServer::SendMapData(int ClientID, int Chunk)
 {
 	const int WorldID = m_aClients[ClientID].m_WorldID;
-	unsigned int CurrentMapSize = MultiWorlds()->GetWorld(WorldID)->m_MapDetail.m_aSize;
-	unsigned char* pCurrentMapData = MultiWorlds()->GetWorld(WorldID)->m_MapDetail.m_apData;
-	const unsigned Crc = MultiWorlds()->GetWorld(WorldID)->m_MapDetail.m_aCrc;
+	unsigned int CurrentMapSize = MultiWorlds()->GetWorld(WorldID)->MapDetail()->GetSize();
+	unsigned char* pCurrentMapData = MultiWorlds()->GetWorld(WorldID)->MapDetail()->GetData();
+	const unsigned Crc = MultiWorlds()->GetWorld(WorldID)->MapDetail()->GetCrc();
 
 	unsigned int ChunkSize = 1024 - 128;
 	const unsigned int Offset = Chunk * ChunkSize;
@@ -1019,16 +1032,16 @@ void CServer::SendCapabilities(int ClientID)
 void CServer::SendMap(int ClientID)
 {
 	const int WorldID = m_aClients[ClientID].m_WorldID;
-	const char* pWorldName = MultiWorlds()->GetWorld(WorldID)->m_aName;
-	const CMapDetail& MapDetail = MultiWorlds()->GetWorld(WorldID)->m_MapDetail;
+	const char* pWorldName = MultiWorlds()->GetWorld(WorldID)->GetName();
+	CMapDetail* pMapDetail = MultiWorlds()->GetWorld(WorldID)->MapDetail();
 
 	{
-		SHA256_DIGEST Sha256 = MapDetail.m_aSha256;
+		SHA256_DIGEST Sha256 = pMapDetail->GetSha256();
 		CMsgPacker Msg(NETMSG_MAP_DETAILS, true);
 		Msg.AddString(pWorldName, 0);
 		Msg.AddRaw(&Sha256.data, sizeof(Sha256.data));
-		Msg.AddInt(MapDetail.m_aCrc);
-		Msg.AddInt(MapDetail.m_aSize);
+		Msg.AddInt(pMapDetail->GetCrc());
+		Msg.AddInt(pMapDetail->GetSize());
 		Msg.AddString("", 0); // HTTPS map download URL
 		SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 	}
@@ -1037,8 +1050,8 @@ void CServer::SendMap(int ClientID)
 
 		CMsgPacker Msg(NETMSG_MAP_CHANGE, true);
 		Msg.AddString(pWorldName, 0);
-		Msg.AddInt(MapDetail.m_aCrc);
-		Msg.AddInt(MapDetail.m_aSize);
+		Msg.AddInt(pMapDetail->GetCrc());
+		Msg.AddInt(pMapDetail->GetSize());
 		SendMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
 	}
 
@@ -1236,7 +1249,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 					const int WorldID = m_aClients[ClientID].m_WorldID;
 					for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 					{
-						IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->m_pGameServer;
+						IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->GameServer();
 						pGameServer->PrepareClientChangeWorld(ClientID);
 					}
 					GameServer(WorldID)->OnClientConnected(ClientID);
@@ -1588,8 +1601,8 @@ void CServer::CacheServerInfo(CBrowserCache* pCache, int Type, bool SendClients)
 
 	if(Type == SERVERINFO_EXTENDED)
 	{
-		ADD_INT(p, MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_MapDetail.m_aCrc);
-		ADD_INT(p, MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_MapDetail.m_aSize);
+		ADD_INT(p, MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetCrc());
+		ADD_INT(p, MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetSize());
 	}
 
 	// gametype
@@ -1756,7 +1769,7 @@ void CServer::UpdateRegisterServerInfo()
 	int MaxClients = maximum((int)MAX_PLAYERS, ClientCount);
 	char aMapSha256[SHA256_MAXSTRSIZE];
 
-	sha256_str(MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_MapDetail.m_aSha256, aMapSha256, sizeof(aMapSha256));
+	sha256_str(MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetSha256(), aMapSha256, sizeof(aMapSha256));
 
 	nlohmann::json JsServerInfo;
 	JsServerInfo["max_clients"] = MaxClients;
@@ -1767,7 +1780,7 @@ void CServer::UpdateRegisterServerInfo()
 
 	JsServerInfo["map"]["name"] = "Multiworld";
 	JsServerInfo["map"]["sha256"] = aMapSha256;
-	JsServerInfo["map"]["size"] = MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_MapDetail.m_aSize;
+	JsServerInfo["map"]["size"] = MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetSize();
 
 	JsServerInfo["version"] = GameServer()->Version();
 	JsServerInfo["game_type"] = "MRPG";
@@ -1902,27 +1915,10 @@ void CServer::SendServerInfoConnless(const NETADDR* pAddr, int Token, int Type)
 
 bool CServer::LoadMap(int ID)
 {
-	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "maps/%s", MultiWorlds()->GetWorld(ID)->m_aPath);
-
-	IEngineMap* pMap = MultiWorlds()->GetWorld(ID)->m_pLoadedMap;
-	if(!pMap->Load(aBuf))
+	if(!MultiWorlds()->GetWorld(ID) || !MultiWorlds()->GetWorld(ID)->MapDetail())
 		return false;
 
-	// reinit snapshot ids
-	m_IDPool.TimeoutIDs();
-
-	// load complete map into memory for download
-	{
-		CMapDetail& MapDetail = MultiWorlds()->GetWorld(ID)->m_MapDetail;
-
-		void* pData;
-		Storage()->ReadFile(aBuf, IStorageEngine::TYPE_ALL, &pData, &MapDetail.m_aSize);
-		MapDetail.m_apData = (unsigned char*)pData;
-		MapDetail.m_aSha256 = pMap->Sha256();
-		MapDetail.m_aCrc = pMap->Crc();
-	}
-	return true;
+	return MultiWorlds()->GetWorld(ID)->MapDetail()->Load(m_pStorage);
 }
 
 int CServer::Run(ILogger* pLogger)
@@ -1931,7 +1927,6 @@ int CServer::Run(ILogger* pLogger)
 		m_RunServer = RUNNING;
 
 	// initilize
-	CConectionPool::Initilize();
 	Instance::m_pServer = static_cast<IServer*>(this);
 
 	// loading maps to memory
@@ -1940,7 +1935,7 @@ int CServer::Run(ILogger* pLogger)
 	{
 		if(!LoadMap(i))
 		{
-			dbg_msg("server", "%s the map is not loaded...", MultiWorlds()->GetWorld(i)->m_aPath);
+			dbg_msg("server", "%s the map is not loaded...", MultiWorlds()->GetWorld(i)->GetPath());
 			return -1;
 		}
 	}
@@ -1995,7 +1990,7 @@ int CServer::Run(ILogger* pLogger)
 	// initilize game server
 	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 	{
-		MultiWorlds()->GetWorld(i)->m_pGameServer->OnInit(i);
+		MultiWorlds()->GetWorld(i)->GameServer()->OnInit(i);
 	}
 
 	// initilize nicknames
@@ -2099,10 +2094,10 @@ int CServer::Run(ILogger* pLogger)
 					}
 				}
 
-				MultiWorlds()->GetWorld(MAIN_WORLD_ID)->m_pGameServer->OnTickGlobal();
+				MultiWorlds()->GetWorld(MAIN_WORLD_ID)->GameServer()->OnTickGlobal();
 				for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 				{
-					IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->m_pGameServer;
+					IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->GameServer();
 					pGameServer->OnTick();
 				}
 			}
@@ -2132,7 +2127,7 @@ int CServer::Run(ILogger* pLogger)
 						if(!LoadMap(i))
 						{
 							// if the map fails to load, print an error message and return -1
-							str_format(aBuf, sizeof(aBuf), "%s the map is not loaded.", MultiWorlds()->GetWorld(i)->m_aPath);
+							str_format(aBuf, sizeof(aBuf), "%s the map is not loaded.", MultiWorlds()->GetWorld(i)->GetPath());
 							Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 							return -1;
 						}
@@ -2169,7 +2164,7 @@ int CServer::Run(ILogger* pLogger)
 					// Reinitialize the game context for each initialized world
 					for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 					{
-						IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->m_pGameServer;
+						IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->GameServer();
 						pGameServer->OnInit(i);
 					}
 
@@ -2499,7 +2494,7 @@ void CServer::RegisterCommands()
 
 	// Initialize console commands in sub parts
 	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
-		MultiWorlds()->GetWorld(i)->m_pGameServer->OnConsoleInit();
+		MultiWorlds()->GetWorld(i)->GameServer()->OnConsoleInit();
 }
 
 // This function initializes a client bot for the server

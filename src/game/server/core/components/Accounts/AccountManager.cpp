@@ -297,66 +297,65 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 	{
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
+		// information
+		CVoteWrapper VSettingsInfo(ClientID, HIDE_DEFAULT_CLOSE, "Settings Information");
+		VSettingsInfo.Add("Some of the settings become valid after death.");
+		VSettingsInfo.Add("Here you can change the settings of your account.");
+		CVoteWrapper::AddEmptyline(ClientID);
+
 		// game settings
-		GS()->AVH(ClientID, TAB_SETTINGS, "\u2692 Some of the settings become valid after death.");
-		GS()->AVM(ClientID, "MENU", MENU_SELECT_LANGUAGE, TAB_SETTINGS, "Settings language");
+		CVoteWrapper VMainSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2699 Main settings");
+		VMainSettings.Add(MENU_SELECT_LANGUAGE, "Settings language");
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
 			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
-				GS()->AVM(ClientID, "ISETTINGS", ItemID, TAB_SETTINGS, "[{STR}] {STR}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
+				VMainSettings.AddOption("ISETTINGS", ItemID, "[{STR}] {STR}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
 		}
+		CVoteWrapper::AddEmptyline(ClientID);
 
 		// equipment modules
-		bool IsFoundModules = false;
-		GS()->AV(ClientID, "null");
-		GS()->AVH(ClientID, TAB_SETTINGS_MODULES, "\u2694 Modules settings");
-		for(const auto& it : CPlayerItem::Data()[ClientID])
+		CVoteWrapper VModulesSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2694 Modules settings");
+		for(auto& iter : CPlayerItem::Data()[ClientID])
 		{
-			const CPlayerItem ItemData = it.second;
-			if(ItemData.Info()->IsType(ItemType::TYPE_MODULE) && ItemData.GetValue() > 0)
-			{
-				char aAttributesInfo[128];
-				if(ItemData.Info()->HasAttributes())
-				{
-					ItemData.StrFormatAttributes(pPlayer, aAttributesInfo, sizeof(aAttributesInfo));
-				}
-				else
-				{
-					str_copy(aAttributesInfo, ItemData.Info()->GetDescription(), sizeof(aAttributesInfo));
-				}
+			CPlayerItem* pPlayerItem = &iter.second;
+			CItemDescription* pItemInfo = pPlayerItem->Info();
+			if(!pItemInfo->IsType(ItemType::TYPE_MODULE) || !pPlayerItem->HasItem())
+				continue;
 
-				GS()->AVM(ClientID, "ISETTINGS", it.first, TAB_SETTINGS_MODULES, "{STR}{STR} * {STR}", (ItemData.GetSettings() ? "✔" : "\0"), ItemData.Info()->GetName(), aAttributesInfo);
-				IsFoundModules = true;
-			}
+			char aAttributesInfo[128];
+			if(pItemInfo->HasAttributes())
+				pPlayerItem->StrFormatAttributes(pPlayer, aAttributesInfo, sizeof(aAttributesInfo));
+			else
+				str_copy(aAttributesInfo, pItemInfo->GetDescription(), sizeof(aAttributesInfo));
+
+			VModulesSettings.AddOption("ISETTINGS", pItemInfo->GetID(), "{STR}{STR} * {STR}", 
+				pPlayerItem->IsEquipped() ? "✔" : "\0", pItemInfo->GetName(), aAttributesInfo);
 		}
+		VModulesSettings.AddIf(VModulesSettings.IsEmpty(), "The list of equipment modules is empty.");
 
-		// if no modules are found
-		if(!IsFoundModules)
-			GS()->AVM(ClientID, "null", NOPE, TAB_SETTINGS_MODULES, "The list of equipment modules is empty.");
-
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
 	// Language selection
 	if(Menulist == MENU_SELECT_LANGUAGE)
 	{
-		// Save the last vote menu as SETTINGS
 		pPlayer->m_LastVoteMenu = MENU_SETTINGS;
 
-		// Display the languages information
-		GS()->AVH(ClientID, TAB_INFO_LANGUAGES, "Languages Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Here you can choose the language.");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LANGUAGES, "Note: translation is not complete.");
-		GS()->AV(ClientID, "null");
+		// language information
+		CVoteWrapper VLanguageInfo(ClientID, HIDE_DEFAULT_CLOSE, "Languages Information");
+		VLanguageInfo.Add("Here you can choose the language.");
+		VLanguageInfo.Add("Note: translation is not complete.");
+		CVoteWrapper::AddEmptyline(ClientID);
 
-		// Get the player's current language
+		// active language
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
+		CVoteWrapper VLanguage(ClientID, BORDER_STRICT_BOLD);
+		VLanguage.Add("Active language: [{STR}]", pPlayerLanguage);
+		VLanguage.AddEmptyline();
 
-		// Display the active language
-		GS()->AVH(ClientID, TAB_LANGUAGES, "Active language: [{STR}]", pPlayerLanguage);
-
-		// Iterate through each language
+		// languages
+		CVoteWrapper VLanguages(ClientID, HIDE_DEFAULT_OPEN, "Available languages");
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{
 			// Do not show the language that is already selected by the player in the selection lists
@@ -365,13 +364,10 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 
 			// Add language selection
 			const char* pLanguageName = Server()->Localization()->m_pLanguages[i]->GetName();
-			GS()->AVM(ClientID, "SELECTLANGUAGE", i, TAB_LANGUAGES, "SELECT language \"{STR}\"", pLanguageName);
+			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{STR}\"", pLanguageName);
 		}
 
-		// Add the votes backpage
-		GS()->AddVotesBackpage(ClientID);
-
-		// Return true to indicate that the code execution is successful
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 	return false;
@@ -384,7 +380,7 @@ bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 	const int ClientID = pPlayer->GetCID();
 
 	// Check if the command is "SELECTLANGUAGE"
-	if(PPSTR(CMD, "SELECTLANGUAGE") == 0)
+	if(PPSTR(CMD, "SELECT_LANGUAGE") == 0)
 	{
 		// Set the client's language to the selected language from the localization object
 		const char* pSelectedLanguage = Server()->Localization()->m_pLanguages[VoteID]->GetFilename();

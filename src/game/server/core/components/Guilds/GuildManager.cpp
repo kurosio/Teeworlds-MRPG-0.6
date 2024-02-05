@@ -333,7 +333,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		str_copy(pPlayer->GetTempData().m_aRankGuildBuf, GetText, sizeof(pPlayer->GetTempData().m_aRankGuildBuf));
 
 		// Update the votes for all players to refresh the guild rank menu
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
 		return true;
 	}
 
@@ -364,7 +364,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
 			GS()->Chat(ClientID, "The rank '{STR}' has been successfully added!", pPlayer->GetTempData().m_aRankGuildBuf);
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
 		}
 		return true;
 	}
@@ -391,7 +391,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
 		}
 		return true;
 	}
@@ -421,7 +421,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
 		}
 		return true;
 	}
@@ -443,7 +443,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		pRank->ChangeAccess();
 
 		// Update the votes for all players in the guild rank menu
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANK);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
 		return true;
 	}
 
@@ -615,7 +615,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			dbg_msg("guild", "war not created");
 		}
 
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_WAR);
+		GS()->StrongUpdateVotesForAll(MENU_GUILD_WARS);
 		return true;
 	}
 
@@ -829,14 +829,14 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_WAR)
+	if(Menulist == MENU_GUILD_WARS)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
 		ShowDeclareWar(ClientID);
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_RANK)
+	if(Menulist == MENU_GUILD_RANKS)
 	{
 		pPlayer->m_LastVoteMenu = MENU_GUILD;
 		ShowRanksSettings(ClientID);
@@ -1126,81 +1126,80 @@ void CGuildManager::ShowMenu(int ClientID) const
 	const int MemberMaxSlots = pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->m_Value;
 
 	// guild information
-	GS()->AVH(ClientID, TAB_GUILD_STAT, "\u2747 Information about {STR}", pGuild->GetName());
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
-	GS()->AVM(ClientID, "null", NOPE, TAB_GUILD_STAT, "Members: {INT} of {INT}", MemberUsedSlots, MemberMaxSlots);
+	CVoteWrapper VInfo(ClientID, HIDE_DEFAULT_OPEN, "\u2747 Information about {STR}", pGuild->GetName());
+	VInfo.Add("Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
+	VInfo.Add("Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
+	VInfo.Add("Members: {INT} of {INT}", MemberUsedSlots, MemberMaxSlots);
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	if(HasHouse)
 	{
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "\u2679 House rent price per day: {VAL} golds", pGuild->GetHouse()->GetRentPrice());
-
 		char aBufTimeStamp[64];
+		CVoteWrapper VRent(ClientID);
+		VRent.Add("\u2679 House rent price per day: {VAL} golds", pGuild->GetHouse()->GetRentPrice());
 		pGuild->GetHouse()->GetRentTimeStamp(aBufTimeStamp, sizeof(aBufTimeStamp));
-		GS()->AVL(ClientID, "null", "Approximate rental time: {STR}", aBufTimeStamp);
+		VRent.Add("Approximate rental time: {STR}", aBufTimeStamp);
+		CVoteWrapper::AddEmptyline(ClientID);
 	}
 
 	// guild deposit
-	GS()->AV(ClientID, "null");
-	GS()->AVL(ClientID, "null", "\u2727 Your: {VAL} | Bank: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
-	GS()->AVL(ClientID, "GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)", pGuild->GetName());
+	CVoteWrapper VDeposit(ClientID, HIDE_DEFAULT_OPEN, "\u2727 Your: {VAL} | Bank: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
+	VDeposit.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	// guild management
-	GS()->AV(ClientID, "null");
-	GS()->AVL(ClientID, "null", "\u262B Guild Management");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_MEMBERSHIP_LIST, NOPE, "Membership list");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_INVITES, NOPE, "Requests membership");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_LOGS, NOPE, "Logs of activity");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_RANK, NOPE, "Rank management");
-	GS()->AVM(ClientID, "MENU", MENU_GUILD_WAR, NOPE, "Guild wars");
+	CVoteWrapper VManagement(ClientID, HIDE_DEFAULT_OPEN, "\u262B Guild Management");
+	VManagement.Add(MENU_GUILD_MEMBERSHIP_LIST, "Membership list");
+	VManagement.Add(MENU_GUILD_INVITES, "Requests membership");
+	VManagement.Add(MENU_GUILD_LOGS, "Logs of activity");
+	VManagement.Add(MENU_GUILD_RANKS, "Rank management");
+	VManagement.Add(MENU_GUILD_WARS, "Guild wars");
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	// guild append house menu
 	if(HasHouse)
 	{
 		CGuildHouseData* pHouse = pGuild->GetHouse();
 
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "\u2302 House Management");
-		GS()->AVL(ClientID, "GUILD_HOUSE_DECORATION", "Decoration editor");
-		GS()->AVL(ClientID, "GUILD_HOUSE_SPAWN", "Move to the house");
-		GS()->AVL(ClientID, "GUILD_HOUSE_SELL", "Sell the house");
+		CVoteWrapper VHouse(ClientID, HIDE_DEFAULT_OPEN, "\u2302 House Management");
+		VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor");
+		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
+		VHouse.AddOption("GUILD_HOUSE_SELL", "Sell the house");
+		CVoteWrapper::AddEmptyline(ClientID);
 
 		// guild house doors
 		if(!pHouse->GetDoorManager()->GetContainer().empty())
 		{
-			GS()->AV(ClientID, "null");
-			GS()->AVL(ClientID, "null", "\u2743 House has {VAL} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
+			CVoteWrapper VDoors(ClientID, HIDE_DEFAULT_OPEN, "\u2743 House has {VAL} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
 			for(auto& [Number, DoorData] : pHouse->GetDoorManager()->GetContainer())
 			{
 				bool StateDoor = DoorData->IsClosed();
-				GS()->AVM(ClientID, "GUILD_HOUSE_DOOR", Number, NOPE, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData->GetName());
+				VDoors.AddOption("GUILD_HOUSE_DOOR", Number, "Door {STR} {STR}", StateDoor ? "Open" : "Close", DoorData->GetName());
 			}
+			CVoteWrapper::AddEmptyline(ClientID);
 		}
 
 		// guild house plant zones
 		if(!pHouse->GetPlantzonesManager()->GetContainer().empty())
 		{
-			GS()->AV(ClientID, "null");
-			GS()->AVL(ClientID, "null", "\u2741 House has {VAL} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+			CVoteWrapper VPlantZones(ClientID, HIDE_DEFAULT_OPEN, "\u2741 House has {VAL} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
 			for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
 			{
-				GS()->AVD(ClientID, "MENU", MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED, ID, NOPE, "Plant zone {STR} / {STR}",
-					Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
+				VPlantZones.Add(MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED, ID, "Plant zone {STR} / {STR}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
 			}
+			CVoteWrapper::AddEmptyline(ClientID);
 		}
 	}
 
 	// guild disband
-	GS()->AV(ClientID, "null");
-	GS()->AVL(ClientID, "null", "\u2716 Disband guild");
-	GS()->AVL(ClientID, "null", "Gold spent on upgrades will not be refunded");
-	GS()->AVL(ClientID, "null", "All gold will be returned to the leader only");
-	GS()->AVL(ClientID, "GUILD_DISBAND", "Disband (reason 55428)");
+	CVoteWrapper VDisband(ClientID, HIDE_DEFAULT_OPEN, "\u2716 Disband guild");
+	VDisband.Add("Gold spent on upgrades will not be refunded");
+	VDisband.Add("All gold will be returned to the leader only");
+	VDisband.AddOption("GUILD_DISBAND", "Disband. (reason 55428)");
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	// guild upgrades
-	GS()->AV(ClientID, "null");
-	GS()->AVL(ClientID, "null", "☆ Guild upgrades");
+	CVoteWrapper VUpgrades(ClientID, HIDE_DEFAULT_OPEN, "\u2730 Guild upgrades");
 	for(int i = CGuildData::UPGRADE_AVAILABLE_SLOTS; i < CGuildData::NUM_GUILD_UPGRADES; i++)
 	{
 		if(i == CGuildData::UPGRADE_CHAIR_EXPERIENCE && !HasHouse)
@@ -1208,10 +1207,9 @@ void CGuildManager::ShowMenu(int ClientID) const
 
 		const auto* pUpgrade = pGuild->GetUpgrades(i);
 		int Price = pUpgrade->m_Value * (i == CGuildData::UPGRADE_AVAILABLE_SLOTS ? g_Config.m_SvPriceUpgradeGuildSlot : g_Config.m_SvPriceUpgradeGuildAnother);
-		GS()->AVM(ClientID, "GUILD_UPGRADE", i, NOPE, "Upgrade {STR} ({INT}) {VAL}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
+		VUpgrades.AddOption("GUILD_UPGRADE", i, "Upgrade {STR} ({INT}) {VAL}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 	}
-
-	GS()->AddVotesBackpage(ClientID);
+	CVoteWrapper::AddBackpage(ClientID);
 }
 
 void CGuildManager::ShowRanksSettings(int ClientID) const
@@ -1225,41 +1223,38 @@ void CGuildManager::ShowRanksSettings(int ClientID) const
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
 	{
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return;
 	}
 
 	// Guild rank information
-	GS()->AV(ClientID, "null", "Use reason how enter Value, Click fields!");
-	GS()->AV(ClientID, "null", "Example: Name rank: [], in reason name, and use this");
-	GS()->AV(ClientID, "null", "For leader access full, ignored ranks");
-	GS()->AV(ClientID, "null", "- - - - - - - - - -");
-	GS()->AV(ClientID, "null", "- Maximal 5 ranks for one guild");
-	GS()->AVM(ClientID, "GUILD_RANK_NAME_FIELD", 1, NOPE, "Name rank: {STR}", pPlayer->GetTempData().m_aRankGuildBuf);
-	GS()->AVM(ClientID, "GUILD_RANK_CREATE", 1, NOPE, "Create new rank");
-	GS()->AV(ClientID, "null");
+	CVoteWrapper VRanks(ClientID, HIDE_DEFAULT_CLOSE, "\u2622 Rank management (Information)");
+	VRanks.Add("Use reason how enter Value, Click fields!");
+	VRanks.Add("Example: Name rank: [], in reason name, and use this");
+	VRanks.Add("For leader access full, ignored ranks");
+	VRanks.Add("Maximal 5 ranks for one guild");
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	CVoteWrapper VRankSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2312 Rank management (Settings)");
+	VRankSettings.AddOption("GUILD_RANK_NAME_FIELD", "Name rank: {STR}", pPlayer->GetTempData().m_aRankGuildBuf);
+	VRankSettings.AddOption("GUILD_RANK_CREATE", "Create new rank");
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	// Guild rank list
-	int HideID = START_SELF_HIDE_ID;
 	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
 	{
 		GuildRankIdentifier ID = pRank->GetID();
 		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank());
 		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetAccessName());
 
-		GS()->AVH(ClientID, HideID, "Rank [{STR}] {STR}", pRank->GetName(), StrAppendRankInfo.c_str());
-		GS()->AVM(ClientID, "GUILD_RANK_RENAME", ID, HideID, "Rename to ({STR})", pPlayer->GetTempData().m_aRankGuildBuf);
-
-		if(!IsDefaultRank)
-		{
-			GS()->AVM(ClientID, "GUILD_RANK_ACCESS", ID, HideID, "Change access", pRank->GetAccessName());
-			GS()->AVM(ClientID, "GUILD_RANK_REMOVE", ID, HideID, "Remove");
-		}
-		HideID++;
+		CVoteWrapper VRank(ClientID, HIDE_UNIQUE, "\u2312 Rank [{STR}] {STR}", pRank->GetName(), StrAppendRankInfo.c_str());
+		VRank.AddOption("GUILD_RANK_RENAME", ID, "Rename to ({STR})", pPlayer->GetTempData().m_aRankGuildBuf);
+		VRank.AddIfOption(!IsDefaultRank, "GUILD_RANK_ACCESS", ID, "Change access", pRank->GetAccessName());
+		VRank.AddIfOption(!IsDefaultRank, "GUILD_RANK_REMOVE", ID, "Remove");
 	}
 
 	// Add the votes to the player's back page
-	GS()->AddVotesBackpage(ClientID);
+	CVoteWrapper::AddBackpage(ClientID);
 }
 
 void CGuildManager::ShowRequests(int ClientID) const
@@ -1273,7 +1268,7 @@ void CGuildManager::ShowRequests(int ClientID) const
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
 	{
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return;
 	}
 
@@ -1281,29 +1276,21 @@ void CGuildManager::ShowRequests(int ClientID) const
 	const GuildRequestsContainer& aRequest = pGuild->GetMembers()->GetRequests()->GetContainer();
 	if(!aRequest.empty())
 	{
-		// Start with a hide ID and iterate through each request in the container
-		int HideID = START_SELF_HIDE_ID;
 		for(const auto& pRequest : aRequest)
 		{
-			// Show a vote to accept or deny the request
-			GS()->AVH(ClientID, HideID, "{STR} request to join", Server()->GetAccountNickname(pRequest->GetFromUID()));
-			{
-				GS()->AVM(ClientID, "GUILD_REQUESTS_ACCEPT", pRequest->GetFromUID(), HideID, "Accept");
-				GS()->AVM(ClientID, "GUILD_REQUESTS_DENY", pRequest->GetFromUID(), HideID, "Deny");
-			}
-
-			// Increment the hide ID
-			HideID++;
+			CVoteWrapper VRequest(ClientID, HIDE_UNIQUE, "Request from {STR}", Server()->GetAccountNickname(pRequest->GetFromUID()));
+			VRequest.AddOption("GUILD_REQUESTS_ACCEPT", pRequest->GetFromUID(), "Accept");
+			VRequest.AddOption("GUILD_REQUESTS_DENY", pRequest->GetFromUID(), "Deny");
 		}
 	}
 	else
 	{
 		// Show a message indicating that there are no requests
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Requests is empty");
+		CVoteWrapper(ClientID).Add("Requests is empty");
 	}
 
 	// Add the votes to the player's back page
-	GS()->AddVotesBackpage(ClientID);
+	CVoteWrapper::AddBackpage(ClientID);
 }
 
 void CGuildManager::ShowPlantZone(int ClientID, int PlantzoneID) const
@@ -1317,42 +1304,38 @@ void CGuildManager::ShowPlantZone(int ClientID, int PlantzoneID) const
 	CGuildData* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild || !pGuild->GetHouse() || !pGuild->GetHouse()->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID))
 	{
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return;
 	}
 
 	// information
-	GS()->AVH(ClientID, TAB_INFO_GUILD_HOUSE_PLANT_ZONE, "Plant zones information");
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE_PLANT_ZONE, "You can plant some kind of plantation.");
-	GS()->AV(ClientID, "null");
+	CVoteWrapper VPlantInfo(ClientID, HIDE_DEFAULT_CLOSE, "\u2741 Plant zones information");
+	VPlantInfo.Add("You can plant some kind of plantation.");
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	// settings
 	CGuildHouseData* pHouse = pGuild->GetHouse();
 	CGuildHousePlantzoneData* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
 	CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
-	GS()->AVL(ClientID, "null", "\u3041 Select plant zone: {STR}", pPlantzone->GetName());
-	GS()->AVL(ClientID, "null", "Planted: {STR}", pItem->GetName());
-	GS()->AV(ClientID, "null");
-	GS()->AVL(ClientID, "null", "\u3044 Possible items for planting");
+	CVoteWrapper VPlantSettings(ClientID, BORDER_STRICT_BOLD);
+	VPlantSettings.Add("\u2741 Plant zone: {STR}", pPlantzone->GetName());
+	VPlantSettings.Add("Planted: {STR}", pItem->GetName());
+	VPlantSettings.AddEmptyline();
 
-	bool IsEmpty = true;
-	std::vector<ItemIdentifier> vPlantItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ItemFunctional::FUNCTION_PLANT);
-	for(auto& ID : vPlantItems)
+	// items
+	CVoteWrapper VPlantItems(ClientID, HIDE_DEFAULT_OPEN, "\u2741 Possible items for planting");
+	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ItemFunctional::FUNCTION_PLANT);
+	for(auto& ID : vItems)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
 		if(pPlayerItem->HasItem())
-		{
-			GS()->AVD(ClientID, "GUILD_HOUSE_PLANT_ZONE_TRY", PlantzoneID, ID, NOPE, "Try plant {STR} (has {VAL})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
-			IsEmpty = false;
-		}
+			VPlantItems.AddOption("GUILD_HOUSE_PLANT_ZONE_TRY", PlantzoneID, ID, "Try plant {STR} (has {VAL})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 	}
-	if(IsEmpty)
-	{
-		GS()->AVL(ClientID, "null", "You have no plants for planting");
-	}
+	if(VPlantItems.IsEmpty())
+		VPlantItems.Add("You have no plants for planting");
 
 	// Add the votes to the player's back page
-	GS()->AddVotesBackpage(ClientID);
+	CVoteWrapper::AddBackpage(ClientID);
 }
 
 void CGuildManager::ShowFinder(int ClientID) const
@@ -1370,43 +1353,28 @@ void CGuildManager::ShowFinder(int ClientID) const
 		GS()->AV(ClientID, "null");
 	}
 
-	// Show instructions to the player
-	GS()->AV(ClientID, "null", "Use reason how Value.");
-	GS()->AV(ClientID, "null", "Example: Find guild: [], in reason name.");
-	GS()->AV(ClientID, "null");
-
 	// Show search option
-	GS()->AV(ClientID, "null", "\u270E Search for a guild by name.");
-	GS()->AVM(ClientID, "GUILD_FINDER_SEARCH_FIELD", 1, NOPE, "Find guild: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
-	GS()->AV(ClientID, "null");
+	CVoteWrapper VSearch(ClientID, BORDER_STRICT_BOLD);
+	VSearch.Add("\u270E Search for a guild by name");
+	VSearch.Add("Use reason how Value.");
+	VSearch.Add("Example: Find guild: [], in reason name.");
+	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Find guild: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
+	VSearch.AddEmptyline();
 
 	// Iterate through all guilds
-	int HideID = START_SELF_HIDE_ID;
 	for(auto& pGuild : CGuildData::Data())
 	{
 		int OwnerUID = pGuild->GetLeaderUID();
 		auto [UsedSlots, MaxSlots] = pGuild->GetMembers()->GetCurrentSlots();
 
 		// Show guild information
-		GS()->AVH(ClientID, HideID, "{STR} : Leader {STR} ({INT} of {INT} players)", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID), UsedSlots, MaxSlots);
-
-		// Show whether the guild has its own house or not
-		if(pGuild->HasHouse())
-		{
-			GS()->AVM(ClientID, "null", NOPE, HideID, "* The guild has its own house");
-		}
-
-		// Show guild bank balance
-		GS()->AVM(ClientID, "null", NOPE, HideID, "* Accumulations are: {VAL} gold's", pGuild->GetBank()->Get());
-
-		// Show options to view player list and send join request
-		GS()->AVD(ClientID, "MENU", MENU_GUILD_FINDER_MEMBERSHIP_LIST, pGuild->GetID(), HideID, "Membership list");
-		if(!pPlayer->Account()->HasGuild())
-		{
-			GS()->AVD(ClientID, "GUILD_JOIN_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), HideID, "Send request to join {STR}", pGuild->GetName());
-		}
-
-		HideID++;
+		CVoteWrapper VGuild(ClientID, HIDE_UNIQUE, "Guild: {STR}", pGuild->GetName());
+		VGuild.Add("Leader: {STR}", Server()->GetAccountNickname(OwnerUID));
+		VGuild.Add("Members: {INT} of {INT}", UsedSlots, MaxSlots);
+		VGuild.Add("Has house: {STR}", pGuild->HasHouse() ? "Yes" : "No");
+		VGuild.Add("Guild bank: {VAL} golds", pGuild->GetBank()->Get());
+		VGuild.Add(MENU_GUILD_FINDER_MEMBERSHIP_LIST, "Membership list");
+		VGuild.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_JOIN_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
 	}
 
 	// Add votes to the player's back page
@@ -1421,44 +1389,44 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 		return;
 
 	// Show information about guild house
-	GS()->AVH(ClientID, TAB_INFO_GUILD_HOUSE, "Information guild house");
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE, "Buying a house you will need to constantly the Treasury");
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_GUILD_HOUSE, "In the intervals of time will be paid house");
-	GS()->AV(ClientID, "null");
+	CVoteWrapper VHouseInfo(ClientID, HIDE_DEFAULT_CLOSE, "Information guild house");
+	VHouseInfo.Add("Buying a house you will need to constantly the Treasury");
+	VHouseInfo.Add("In the intervals of time will be paid house");
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	// Check if house is available for sale
+	CVoteWrapper VHouse(ClientID, HIDE_DEFAULT_OPEN, "House detail information");
 	if(!pHouse)
 	{
-		GS()->AVL(ClientID, "null", "This house is not for sale yet");
+		VHouse.Add("This house is not for sale yet");
 		return;
 	}
 
-	// Show information about the house
-	GS()->AVL(ClientID, "null", "Plant zones: {INT} / Doors: {INT}", (int)pHouse->GetPlantzonesManager()->GetContainer().size(), (int)pHouse->GetDoorManager()->GetContainer().size());
-	GS()->AVL(ClientID, "null", "Rent price: {VAL} gold", pHouse->GetRentPrice());
+	VHouse.Add("House price: {VAL} gold", pHouse->GetPrice());
+	VHouse.Add("House rent price per day: {VAL} gold", pHouse->GetRentPrice());
+	VHouse.Add("House has {VAL} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+	VHouse.Add("House has {VAL} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
+	VHouse.Add("House owned by: {STR}", pHouse->GetOwnerName());
+	CVoteWrapper::AddEmptyline(ClientID);
 
-	// Check if house is already purchased
-	if(pHouse->IsPurchased())
+	// Check if house is not purchased
+	if(!pHouse->IsPurchased())
 	{
-		CGuildData* pGuild = pHouse->GetGuild();
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "House owned by the guild: {STR}", pGuild->GetName());
-		return;
-	}
+		// Check if the player does not have a guild
+		if(!pPlayer->Account()->HasGuild())
+		{
+			CVoteWrapper(ClientID).Add("You need to be in a guild to buy a house");
+			return;
+		}
 
-	// Check if house is already purchased
-	if(!pPlayer->Account()->HasGuild())
-	{
-		GS()->AVL(ClientID, "null", "You need to be in a guild to buy a house");
-		return;
+		// Check if player has leader rights in the guild
+		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CVoteWrapper VBuyHouse(ClientID, HIDE_DEFAULT_OPEN, "Guild bank: {VAL} gold", pGuild->GetBank()->Get());
+		if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+			VBuyHouse.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase this guild house! Cost: {VAL} golds", pHouse->GetPrice());
+		else
+			VBuyHouse.Add("You need to be the leader rights");
 	}
-
-	// Check if player has leader rights in the guild
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
-	GS()->AVM(ClientID, "null", NOPE, NOPE, "Guild bank: {VAL} gold", pGuild->GetBank()->Get());
-	if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
-		GS()->AVM(ClientID, "GUILD_HOUSE_BUY", pHouse->GetID(), NOPE, "Purchase this guild house! Cost: {VAL} golds", pHouse->GetPrice());
-	else
-		GS()->AVL(ClientID, "null", "You need to be the leader rights");
 }
 
 void CGuildManager::ShowDeclareWar(int ClientID) const
@@ -1477,8 +1445,10 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 	}
 
 	// TODO
-	GS()->AVL(ClientID, "null", "\u2646 Declare war on another guild");
-	GS()->AVL(ClientID, "null", "Cooldown: {INT} minutes", 10);
+	CVoteWrapper VWar(ClientID);
+	VWar.Add("\u2646 Declare war on another guild");
+	VWar.Add("Cooldown: {INT} minutes", 10);
+	VWar.AddEmptyline();
 
 	if(pGuild->GetWar())
 	{
@@ -1488,30 +1458,31 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 		char aBufTimeLeft[64];
 		pWar->GetHandler()->FormatTimeLeft(aBufTimeLeft, sizeof(aBufTimeLeft));
 
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "War with the guild: {STR}", pTargetGuild->GetName());
-		GS()->AVL(ClientID, "null", "Time until the end of the war: {STR}", aBufTimeLeft);
-		GS()->AVL(ClientID, "null", "Score: {INT}(your) / {INT}(enemy)", pWar->GetScore(), pTargetGuild->GetWar()->GetScore());
+		VWar.Add("War with the guild: {STR}", pTargetGuild->GetName());
+		VWar.Add("Time until the end of the war: {STR}", aBufTimeLeft);
+		VWar.Add("Score: {INT}(your) / {INT}(enemy)", pWar->GetScore(), pTargetGuild->GetWar()->GetScore());
 	}
 	else
 	{
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "You can declare war on another guild");
-		GS()->AVL(ClientID, "null", "To do this, select the guild from the list below");
+		VWar.Add("You can declare war on another guild");
+		VWar.Add("To do this, select the guild from the list below");
+		VWar.AddEmptyline();
 
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "\u2631 List of guilds to declare war");
+		CVoteWrapper VWarList(ClientID, "List of guilds to declare war");
 		for(auto& p : CGuildData::Data())
 		{
-			if(p->GetID() == pGuild->GetID())
-				continue;
+			if(p->GetID() != pGuild->GetID())
+				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{STR} (online {INT} players)", p->GetName(), p->GetMembers()->GetOnlinePlayersCount());
+		}
 
-			GS()->AVM(ClientID, "GUILD_DECLARE_WAR", p->GetID(), NOPE, "Declare war with {STR} (online {INT} players)", p->GetName(), p->GetMembers()->GetOnlinePlayersCount());
+		if(VWarList.IsEmpty())
+		{
+			VWar.Add("No guilds available for war");
 		}
 	}
 
 	// Add the votes backpage for the player
-	GS()->AddVotesBackpage(ClientID);
+	CVoteWrapper::AddBackpage(ClientID);
 }
 
 // Function to show guild logs for a specific player
@@ -1535,19 +1506,20 @@ void CGuildManager::ShowLogs(int ClientID) const
 
 	// Display guild activity log settings to the player
 	auto flagStatus = [&](int flag) { return pLogger->IsActivityFlagSet(flag) ? "[\u2714]" : "[\u2715]"; };
-	GS()->AVH(ClientID, TAB_GUILD_LOG_SETTINGS, "Guild activity log settings");
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_GUILD_FULL, TAB_GUILD_LOG_SETTINGS, "{STR} Full changes", flagStatus(LOGFLAG_GUILD_FULL));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_GUILD_MAIN_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Main changes", flagStatus(LOGFLAG_GUILD_MAIN_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_MEMBERS_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Members changes", flagStatus(LOGFLAG_MEMBERS_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_BANK_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Bank changes", flagStatus(LOGFLAG_BANK_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_RANKS_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Ranks changes", flagStatus(LOGFLAG_RANKS_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_UPGRADES_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} Upgrades changes", flagStatus(LOGFLAG_UPGRADES_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_MAIN_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} House main changes", flagStatus(LOGFLAG_HOUSE_MAIN_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_DOORS_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} House doors changes", flagStatus(LOGFLAG_HOUSE_DOORS_CHANGES));
-	GS()->AVM(ClientID, "GUILD_LOGGER_SET", LOGFLAG_HOUSE_DECORATIONS_CHANGES, TAB_GUILD_LOG_SETTINGS, "{STR} House decorations changes", flagStatus(LOGFLAG_HOUSE_DECORATIONS_CHANGES));
-	GS()->AV(ClientID, "null");
+	CVoteWrapper VLogger(ClientID, HIDE_DEFAULT_OPEN, "Activity log settings");
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_GUILD_FULL, "Full changes {STR}", flagStatus(LOGFLAG_GUILD_FULL));
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_GUILD_MAIN_CHANGES, "Main changes {STR}", flagStatus(LOGFLAG_GUILD_MAIN_CHANGES));
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_MEMBERS_CHANGES, "Members changes {STR}", flagStatus(LOGFLAG_MEMBERS_CHANGES));
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_BANK_CHANGES, "Bank changes {STR}", flagStatus(LOGFLAG_BANK_CHANGES));
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_RANKS_CHANGES, "Ranks changes {STR}", flagStatus(LOGFLAG_RANKS_CHANGES));
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_UPGRADES_CHANGES, "Upgrades changes {STR}", flagStatus(LOGFLAG_UPGRADES_CHANGES));
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_HOUSE_MAIN_CHANGES, "House main changes {STR}", flagStatus(LOGFLAG_HOUSE_MAIN_CHANGES));
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_HOUSE_DOORS_CHANGES, "House doors changes {STR}", flagStatus(LOGFLAG_HOUSE_DOORS_CHANGES));
+	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_HOUSE_DECORATIONS_CHANGES, "House decorations changes {STR}", flagStatus(LOGFLAG_HOUSE_DECORATIONS_CHANGES));
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	// If logs exist, display them to the player
+	CVoteWrapper VLogs(ClientID, HIDE_DEFAULT_OPEN, "Logs");
 	const GuildLogContainer& aLogs = pGuild->GetLogger()->GetContainer();
 	if(!aLogs.empty())
 	{
@@ -1556,17 +1528,17 @@ void CGuildManager::ShowLogs(int ClientID) const
 		{
 			// Format the log entry and display it
 			str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Text.c_str());
-			GS()->AVM(ClientID, "null", NOPE, NOPE, "{STR}", aBuf);
+			VLogs.Add("{STR}", aBuf);
 		}
 	}
 	else
 	{
 		// If logs are empty, display a message to the player
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Log is empty");
+		VLogs.Add("Log is empty");
 	}
 
 	// Add the votes backpage for the player
-	GS()->AddVotesBackpage(ClientID);
+	CVoteWrapper::AddBackpage(ClientID);
 }
 
 CGuildHouseData* CGuildManager::GetGuildHouseByID(const GuildHouseIdentifier& ID) const

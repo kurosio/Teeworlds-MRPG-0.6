@@ -3,8 +3,6 @@
 #ifndef GAME_VOTING_H
 #define GAME_VOTING_H
 
-#include <functional>
-
 enum
 {
 	VOTE_DESC_LENGTH=256,
@@ -39,13 +37,14 @@ struct CVoteOptionServer
 	char m_aCommand[1];
 };
 
-class CVoteOptions
+class CVoteOption
 {
 public:
+	CVoteOption() = default;
 	char m_aDescription[VOTE_DESC_LENGTH];
 	char m_aCommand[VOTE_CMD_LENGTH];
-	int m_TempID;
-	int m_TempID2;
+	int m_SettingID;
+	int m_SettingID2;
 };
 
 #endif

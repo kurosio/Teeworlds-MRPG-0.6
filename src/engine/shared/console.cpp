@@ -412,6 +412,31 @@ void CConsole::InitChecksum(CChecksumData* pData) const
 	}
 }
 
+void CConsole::PrintF(int Level, const char* pFrom, const char* pStr, ...)
+{
+	va_list VarArgs;
+	va_start(VarArgs, pStr);
+	LEVEL LogLevel = IConsole::ToLogLevel(Level);
+	log_log_v(LogLevel, pFrom, pStr, VarArgs);
+	va_end(VarArgs);
+}
+
+void CConsole::PrintF(ColorRGBA PrintColor, int Level, const char* pFrom, const char* pStr, ...)
+{
+	va_list VarArgs;
+	va_start(VarArgs, pStr);
+	LEVEL LogLevel = IConsole::ToLogLevel(Level);
+	if(g_Config.m_ConsoleEnableColors && mem_comp(&PrintColor, &gs_ConsoleDefaultColor, sizeof(ColorRGBA)) != 0)
+	{
+		log_log_color_v(LogLevel, ColorToLogColor(PrintColor), pFrom, pStr, VarArgs);
+	}
+	else
+	{
+		log_log_v(LogLevel, pFrom, pStr, VarArgs);
+	}
+	va_end(VarArgs);
+}
+
 int CConsole::ParseCommandArgs(const char* pArgs, const char* pFormat, FCommandCallback pfnCallback, void* pContext)
 {
 	CResult Result;

@@ -44,7 +44,7 @@ enum class DB
 	va_end(ap);                                 \
 	(output) = buffer;                          \
 }
-#define Database CConectionPool::GetInstance().get()
+#define Database CConectionPool::GetInstance()
 inline std::recursive_mutex g_SqlThreadRecursiveLock;
 
 /*
@@ -59,22 +59,31 @@ using CallbackUpdatePtr = std::function<void()>;
  */
 class CConectionPool
 {
-	using InstanceCConectionPoolPtr = std::unique_ptr<CConectionPool>;
+	inline static CConectionPool* m_ptrInstance {};
+
 public:
-	// initilize
-	static void Initilize();
-	static std::shared_ptr<CConectionPool> GetInstance();
+	static void Initilize()
+	{
+		if(!m_ptrInstance)
+			m_ptrInstance = new CConectionPool();
+	}
+	static void Free()
+	{
+		delete m_ptrInstance;
+		m_ptrInstance = nullptr;
+	}
+	static CConectionPool* GetInstance() { return m_ptrInstance; };
+
 
 private:
 	CConectionPool();
 
-	std::shared_ptr<Connection> CreateConnection();
-	std::shared_ptr<Connection> GetConnection();
-	void ReleaseConnection(std::shared_ptr<Connection> pConnection);
-	void DisconnectConnection(std::shared_ptr<Connection> pConnection);
+	Connection* CreateConnection();
+	Connection* GetConnection();
+	void ReleaseConnection(Connection* pConnection);
+	void DisconnectConnection(Connection* pConnection);
 
-	static std::shared_ptr<CConectionPool> m_ptrInstance;
-	std::list<std::shared_ptr<Connection>> m_ConnList;
+	std::list< Connection* > m_ConnList;
 	Driver* m_pDriver;
 
 public:
@@ -112,7 +121,7 @@ private:
 
 			g_SqlThreadRecursiveLock.lock();
 			Database->m_pDriver->threadInit();
-			std::shared_ptr<Connection> pConnection = Database->GetConnection();
+			Connection* pConnection = Database->GetConnection();
 			ResultPtr pResult = nullptr;
 			try
 			{
@@ -124,14 +133,14 @@ private:
 			{
 				pError = e.what();
 			}
-			Database->ReleaseConnection(pConnection);
+			Database->ReleaseConnection(std::move(pConnection));
 			Database->m_pDriver->threadEnd();
 			g_SqlThreadRecursiveLock.unlock();
 
 			if (pError != nullptr)
 				dbg_msg("SQL", "%s", pError);
 
-			return pResult;
+			return std::move(pResult);
 		}
 
 		void AtExecute(const CallbackResultPtr& pCallbackResult)
@@ -142,7 +151,7 @@ private:
 
 				g_SqlThreadRecursiveLock.lock();
 				Database->m_pDriver->threadInit();
-				std::shared_ptr<Connection> pConnection = Database->GetConnection();
+				Connection* pConnection = Database->GetConnection();
 				try
 				{
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
@@ -157,7 +166,7 @@ private:
 				{
 					pError = e.what();
 				}
-				Database->ReleaseConnection(pConnection);
+				Database->ReleaseConnection(std::move(pConnection));
 				Database->m_pDriver->threadEnd();
 				g_SqlThreadRecursiveLock.unlock();
 
@@ -196,7 +205,7 @@ private:
 
 				g_SqlThreadRecursiveLock.lock();
 				Database->m_pDriver->threadInit();
-				std::shared_ptr<Connection> pConnection = Database->GetConnection();
+				Connection* pConnection = Database->GetConnection();
 				try
 				{
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
@@ -211,7 +220,7 @@ private:
 				{
 					pError = e.what();
 				}
-				Database->ReleaseConnection(pConnection);
+				Database->ReleaseConnection(std::move(pConnection));
 				Database->m_pDriver->threadEnd();
 				g_SqlThreadRecursiveLock.unlock();
 
@@ -238,18 +247,18 @@ private:
 	// - - - - - - - - - - - - - - - -
 	// select
 	// - - - - - - - - - - - - - - - -
-	static std::shared_ptr<CResultSelect> PrepareQuerySelect(DB Type, const char* pSelect, const char* pTable, std::string strQuery)
+	static std::unique_ptr<CResultSelect> PrepareQuerySelect(DB Type, const char* pSelect, const char* pTable, std::string strQuery)
 	{
 		CResultSelect Data;
 		Data.m_Query = std::string("SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + strQuery + ";");
 		Data.m_TypeQuery = Type;
 
-		return std::make_shared<CResultSelect>(Data);
+		return std::make_unique<CResultSelect>(Data);
 	}
 
 public:
 	template<DB T>
-	static std::enable_if_t<T == DB::SELECT, std::shared_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
+	static std::enable_if_t<T == DB::SELECT, std::unique_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
@@ -272,18 +281,18 @@ public:
 	// custom
 	// - - - - - - - - - - - - - - - -
 private:
-	static std::shared_ptr<CResultQueryCustom> PrepareQueryCustom(DB Type, std::string strQuery)
+	static std::unique_ptr<CResultQueryCustom> PrepareQueryCustom(DB Type, std::string strQuery)
 	{
 		CResultQueryCustom Data;
 		Data.m_Query = std::string(strQuery + ";");
 		Data.m_TypeQuery = Type;
 
-		return std::make_shared<CResultQueryCustom>(Data);
+		return std::make_unique<CResultQueryCustom>(Data);
 	}
 
 public:
 	template<DB T>
-	static std::enable_if_t<T == DB::OTHER, std::shared_ptr<CResultQueryCustom>> Prepare(const char* pBuffer, ...)
+	static std::enable_if_t<T == DB::OTHER, std::unique_ptr<CResultQueryCustom>> Prepare(const char* pBuffer, ...)
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
@@ -306,7 +315,7 @@ public:
 	// insert : update : delete
 	// - - - - - - - - - - - - - - - -
 private:
-	static std::shared_ptr<CResultQuery> PrepareQueryInsertUpdateDelete(DB Type, const char* pTable, std::string strQuery)
+	static std::unique_ptr<CResultQuery> PrepareQueryInsertUpdateDelete(DB Type, const char* pTable, std::string strQuery)
 	{
 		CResultQuery Data;
 		Data.m_TypeQuery = Type;
@@ -317,12 +326,12 @@ private:
 		else if(Type == DB::REMOVE)
 			Data.m_Query = std::string("DELETE FROM " + std::string(pTable) + " " + strQuery + ";");
 
-		return std::make_shared<CResultQuery>(Data);
+		return std::make_unique<CResultQuery>(Data);
 	}
 
 public:
 	template<DB T>
-	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), std::shared_ptr<CResultQuery>> Prepare(const char* pTable, const char* pBuffer, ...)
+	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), std::unique_ptr<CResultQuery>> Prepare(const char* pTable, const char* pBuffer, ...)
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);

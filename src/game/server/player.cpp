@@ -59,7 +59,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 
 CPlayer::~CPlayer()
 {
-	m_aHiddenMenu.clear();
+	m_aHiddenGroup.clear();
 	delete m_pLastInput;
 	delete m_pCharacter;
 	m_pCharacter = nullptr;
@@ -781,11 +781,21 @@ void CPlayer::UpdateTempData(int Health, int Mana)
 	GetTempData().m_TempMana = Mana;
 }
 
-bool CPlayer::GetHiddenMenu(int HideID) const
+CVoteGroupHidden* CPlayer::EmplaceHidden(size_t Hash, int Type)
 {
-	if(m_aHiddenMenu.find(HideID) != m_aHiddenMenu.end())
-		return m_aHiddenMenu.at(HideID);
-	return false;
+	bool Value = false;
+	if(Type & HIDE_DEFAULT_CLOSE || Type & HIDE_UNIQUE)
+		Value = true;
+
+	m_aHiddenGroup.emplace(Hash, std::forward<CVoteGroupHidden>({ Value, Type }));
+	return &m_aHiddenGroup.at(Hash);
+}
+
+CVoteGroupHidden* CPlayer::GetHidden(size_t Hash)
+{
+	if(m_aHiddenGroup.find(Hash) != m_aHiddenGroup.end())
+		return &m_aHiddenGroup.at(Hash);
+	return nullptr;
 }
 
 bool CPlayer::IsAuthed() const
@@ -917,32 +927,26 @@ bool CPlayer::ParseVoteUpgrades(const char* CMD, const int VoteID, const int Vot
 	if(PPSTR(CMD, "BACK") == 0)
 	{
 		// close other tabs after checked new
-		for(auto& [ID, Value] : m_aHiddenMenu)
-		{
-			if(ID > NUM_TAB_MENU)
-				Value = false;
-		}
-
+		m_aHiddenGroup.clear();
 		GS()->UpdateVotes(m_ClientID, m_LastVoteMenu);
 		return true;
 	}
 
 	if(PPSTR(CMD, "HIDDEN") == 0)
 	{
-		if(VoteID < TAB_STAT)
-			return true;
-
-		// close other tabs after checked new
-		for(auto& [ID, Value] : m_aHiddenMenu)
+		CVoteGroupHidden* pHidden = GetHidden(VoteID);
+		if(pHidden && pHidden->m_Type & HIDE_UNIQUE)
 		{
-			if((ID > NUM_TAB_MENU && VoteID > NUM_TAB_MENU && ID != VoteID))
-				Value = false;
+			for(auto& [ID, Hide] : m_aHiddenGroup)
+			{
+				if(Hide.m_Type & HIDE_UNIQUE && ID != VoteID)
+				{
+					Hide.m_Value = true;
+				}
+			}
 		}
 
-		m_aHiddenMenu[VoteID] ^= true;
-		if(m_aHiddenMenu[VoteID] == false)
-			m_aHiddenMenu.erase(VoteID);
-
+		m_aHiddenGroup[VoteID].m_Value ^= true;
 		GS()->StrongUpdateVotes(m_ClientID, m_CurrentVoteMenu);
 		return true;
 	}

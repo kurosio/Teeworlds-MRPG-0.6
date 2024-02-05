@@ -95,6 +95,13 @@ void CGuildHouseData::GetRentTimeStamp(char* aBuffer, size_t Size) const
 	}
 }
 
+const char* CGuildHouseData::GetOwnerName() const
+{
+	if(!m_pGuild)
+		return "FREE GUILD HOUSE";
+	return m_pGuild->GetName();
+}
+
 void CGuildHouseData::TextUpdate(int LifeTime)
 {
 	// Check if the last tick text update is greater than the current server tick

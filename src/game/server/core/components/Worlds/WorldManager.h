@@ -20,9 +20,6 @@ class CWorldManager : public MmoComponent
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 
 public:
-	// Get the type of world
-	int GetWorldType() const;
-
 	// Find the position of a world given its ID
 	void FindPosition(int WorldID, vec2 Pos, vec2* OutPos);
 

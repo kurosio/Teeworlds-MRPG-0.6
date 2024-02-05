@@ -187,6 +187,8 @@ public:
 	void SetClientLanguage(int ClientID, const char* pLanguage) override;
 	const char* GetClientLanguage(int ClientID) const override;
 	const char* GetWorldName(int WorldID) override;
+	CWorldDetail* GetWorldDetail(int WorldID) override;
+	bool IsWorldType(int WorldID, WorldType Type) const override;
 	int GetWorldsSize() const override;
 
 	void SendDiscordMessage(const char* pChannel, int Color, const char* pTitle, const char* pText) override;

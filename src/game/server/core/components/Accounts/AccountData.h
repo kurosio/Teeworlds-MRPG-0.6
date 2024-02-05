@@ -17,6 +17,8 @@ class CGuildMemberData;
 
 class CAccountData
 {
+	ska::unordered_set< int > m_aAetherLocation {};
+
 	int m_ID {};
 	int m_ClientID {};
 	char m_aLogin[64] {};
@@ -86,8 +88,13 @@ public:
 	bool SpendCurrency(int Price, int CurrencyItemID = 1) const; // Returns a boolean value indicating whether the currency was successfully spent or not.
 	void ResetDailyChairGolds(); // Reset daily getting chair golds
 	void ResetRelations(); // Reset relations
-
 	void HandleChair();
+
+	// Aethers
+	bool IsUnlockedAether(int AetherID) const { return m_aAetherLocation.find(AetherID) != m_aAetherLocation.end(); }
+	void AddAether(int AetherID) { m_aAetherLocation.insert(AetherID); }
+	void RemoveAether(int AetherID) { m_aAetherLocation.erase(AetherID); }
+	ska::unordered_set< int >& GetAetherLocation() { return m_aAetherLocation; }
 
 	struct TimePeriods
 	{
@@ -108,7 +115,6 @@ public:
 
 	CTeeInfo m_TeeInfos {};
 	int m_Team {};
-	std::map < int, bool > m_aAetherLocation {};
 
 	DBFieldContainer m_MiningData
 	{

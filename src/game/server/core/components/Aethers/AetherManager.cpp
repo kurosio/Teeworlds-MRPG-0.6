@@ -9,20 +9,25 @@
 
 void CAetherManager::OnInit()
 {
-	const auto InitAethers = Database->Prepare<DB::SELECT>("*", TW_AETHERS);
-	InitAethers->AtExecute([this](ResultPtr pRes)
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AETHERS);
+	while(pRes->next())
 	{
-		while(pRes->next())
+		std::string Name = pRes->getString("Name").c_str();
+		vec2 Pos = vec2(pRes->getInt("TeleX"), pRes->getInt("TeleY"));
+		int WorldID = pRes->getInt("WorldID");
+
+		AetherIdentifier ID = pRes->getInt("ID");
+		CAetherData::CreateElement(ID)->Init(Name.c_str(), Pos, WorldID);
+	}
+
+	if(ms_vpAetherGroupCollector.empty())
+	{
+		for(const auto& pAether : CAetherData::Data())
 		{
-			vec2 Pos = vec2(pRes->getInt("TeleX"), pRes->getInt("TeleY"));
-			int WorldID = pRes->getInt("WorldID");
-
-			AetherIdentifier ID = pRes->getInt("ID");
-			CAetherData(ID).Init(pRes->getString("Name").c_str(), Pos, WorldID);
+			int WorldID = pAether->GetWorldID();
+			ms_vpAetherGroupCollector[WorldID].push_back(pAether);
 		}
-
-		Core()->ShowLoadingProgress("Aethers", CAetherData::Data().size());
-	});
+	}
 }
 
 void CAetherManager::OnInitAccount(CPlayer* pPlayer)
@@ -30,16 +35,17 @@ void CAetherManager::OnInitAccount(CPlayer* pPlayer)
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_ACCOUNTS_AETHERS, "WHERE UserID = '%d'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
-		const int TeleportID = pRes->getInt("AetherID");
-		pPlayer->Account()->m_aAetherLocation[TeleportID] = true;
+		AetherIdentifier ID = pRes->getInt("AetherID");
+		pPlayer->Account()->AddAether(ID);
 	}
+
 }
 
 bool CAetherManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	if(PPSTR(CMD, "TELEPORT") == 0)
+	if(PPSTR(CMD, "AETHER_TELEPORT") == 0)
 	{
 		AetherIdentifier AetherID = VoteID;
 		const int& Price = VoteID2;
@@ -49,7 +55,7 @@ bool CAetherManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, con
 			return true;
 
 		// Check if pAether is null
-		CAetherData* pAether = GetAether(AetherID);
+		CAetherData* pAether = GetAetherByID(AetherID);
 		if(!pAether)
 			return true;
 
@@ -81,7 +87,7 @@ bool CAetherManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_AETHER_TELEPORT))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		UnlockLocation(pChr->GetPlayer(), pChr->m_Core.m_Pos);
+		UnlockLocationByPos(pChr->GetPlayer(), pChr->m_Core.m_Pos);
 		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
 		return true;
 	}
@@ -106,7 +112,7 @@ bool CAetherManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 
 		if(pChr->GetHelper()->BoolIndex(TILE_AETHER_TELEPORT))
 		{
-			ShowList(pChr);
+			ShowMenu(pChr);
 			return true;
 		}
 		return false;
@@ -115,62 +121,76 @@ bool CAetherManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repla
 	return false;
 }
 
-void CAetherManager::UnlockLocation(CPlayer* pPlayer, vec2 Pos) const
-{
-	const int ClientID = pPlayer->GetCID();
-	for(const auto& [ID, Aether] : CAetherData::Data())
-	{
-		if(distance(Aether.GetPosition(), Pos) > 100 || pPlayer->Account()->m_aAetherLocation.find(ID) != pPlayer->Account()->m_aAetherLocation.end())
-			continue;
-
-		pPlayer->Account()->m_aAetherLocation[ID] = true;
-		Database->Execute<DB::INSERT>(TW_ACCOUNTS_AETHERS, "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Account()->GetID(), ID);
-
-		GS()->Chat(ClientID, "You now have Aethernet access to the {STR}.", Aether.GetName());
-		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Now have Aethernet access to the {STR}.", Aether.GetName());
-		return;
-	}
-}
-
-void CAetherManager::ShowList(CCharacter* pChar) const
+void CAetherManager::ShowMenu(CCharacter* pChar) const
 {
 	CPlayer* pPlayer = pChar->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
-	GS()->AddVoteItemValue(ClientID);
-	GS()->AV(ClientID, "null");
 
-	GS()->AVH(ClientID, TAB_AETHER, "Available aethers");
-	if(pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->HasHouse())
-	{
-		GS()->AVM(ClientID, "GUILD_HOUSE_SPAWN", NOPE, TAB_AETHER, "Move to Guild House - free");
-	}
+	CVoteWrapper VAetherInfo(ClientID, BORDER_STRICT_BOLD);
+	VAetherInfo.AddItemValue();
+	VAetherInfo.AddIfOption(pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->HasHouse(), "GUILD_HOUSE_SPAWN", "Move to Guild house - free");
+	VAetherInfo.AddIfOption(pPlayer->Account()->HasHouse(), "HOUSE_SPAWN", "Move to your House - free");
+	VAetherInfo.AddEmptyline();
 
-	if(pPlayer->Account()->HasHouse())
+	for(auto& [WorldID, vAethers] : ms_vpAetherGroupCollector)
 	{
-		GS()->AVM(ClientID, "HOUSE_SPAWN", NOPE, TAB_AETHER, "Move to Your House - free");
-	}
-
-	for(const auto& [ID, Aether] : CAetherData::Data())
-	{
-		if(pPlayer->Account()->m_aAetherLocation.find(ID) == pPlayer->Account()->m_aAetherLocation.end())
+		CGS* pGS = (CGS*)Server()->GameServer(WorldID);
+		if(WorldID == TUTORIAL_WORLD_ID || pGS->IsDungeon() || vAethers.empty())
 			continue;
 
-		const bool LocalTeleport = (GS()->IsPlayerEqualWorld(ClientID, Aether.GetWorldID()) && distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120);
-		if(LocalTeleport)
-			continue;
+		/*int UnlockedPlayerZoneAethers = 0;
+		CVoteWrapper VAethers(ClientID, HIDE_DEFAULT_OPEN | BORDER_SIMPLE, "{STR} : Shared aethers", Server()->GetWorldName(WorldID));
+		for(const auto& Aether : vAethers)
+		{
+			if(pPlayer->Account()->m_aAetherLocation.find(Aether.GetID()) != pPlayer->Account()->m_aAetherLocation.end())
+			{
+				if(GS()->IsPlayerEqualWorld(ClientID, Aether.GetWorldID()) && distance(pPlayer->GetCharacter()->m_Core.m_Pos, Aether.GetPosition()) < 120)
+					continue;
 
-		const int Price = g_Config.m_SvPriceTeleport * (Aether.GetWorldID() + 1);
-		GS()->AVD(ClientID, "TELEPORT", ID, Price, TAB_AETHER, "{STR} : {STR} - {VAL}gold", Aether.GetName(), Server()->GetWorldName(Aether.GetWorldID()), Price);
+				const int Price = g_Config.m_SvPriceTeleport * (Aether.GetWorldID() + 1);
+				VAethers.AddOption("AETHER_TELEPORT", Aether.GetID(), Price, "{STR} - {VAL}gold", Aether.GetName(), Price);
+				UnlockedPlayerZoneAethers++;
+			}
+			else
+			{
+				VAethers.AddOption("AETHER_TELEPORT", -1, "{STR} - (locked)", Aether.GetName());
+			}
+		}
+		VAethers.AddIf(VAethers.IsEmpty(), "No Aethers available.");
+		VAethers.Add("Unlocked {INT} of {INT} zone aethers.", UnlockedPlayerZoneAethers, vAethers.size());
+		CVoteWrapper::AddEmptyline(ClientID);*/
 	}
-
-	GS()->AV(ClientID, "null");
 }
 
-CAetherData* CAetherManager::GetAether(int AetherID) const
+void CAetherManager::UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const
 {
-	const auto it = CAetherData::Data().find(AetherID);
-	if(it == CAetherData::Data().end())
-		return nullptr;
+	const int ClientID = pPlayer->GetCID();
 
-	return &it->second;
+	CAetherData* pAether = GetAetherByPos(Pos);
+	if(pAether && !pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
+	{
+		Database->Execute<DB::INSERT>(TW_ACCOUNTS_AETHERS, "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Account()->GetID(), pAether->GetID());
+
+		pPlayer->Account()->AddAether(pAether->GetID());
+		GS()->Chat(ClientID, "You now have Aethernet access to the {STR}.", pAether->GetName());
+		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Now have Aethernet access to the {STR}.", pAether->GetName());
+	}
+}
+
+CAetherData* CAetherManager::GetAetherByID(int AetherID) const
+{
+	const auto& iter = std::find_if(CAetherData::Data().begin(), CAetherData::Data().end(), [AetherID](const CAetherData* pAether)
+	{
+		return pAether->GetID() == AetherID;
+	});
+	return iter != CAetherData::Data().end() ? *iter : nullptr;
+}
+
+CAetherData* CAetherManager::GetAetherByPos(vec2 Pos) const
+{
+	const auto& iter = std::find_if(CAetherData::Data().begin(), CAetherData::Data().end(), [Pos](const CAetherData* pAether)
+	{
+		return distance(pAether->GetPosition(), Pos) < 100;
+	});
+	return iter != CAetherData::Data().end() ? *iter : nullptr;
 }

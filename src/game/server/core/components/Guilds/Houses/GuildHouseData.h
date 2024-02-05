@@ -69,6 +69,7 @@ public:
 	int GetRentPrice() const;
 	void GetRentTimeStamp(char* aBuffer, size_t Size) const;
 	bool IsPurchased() const { return m_pGuild != nullptr; }
+	const char* GetOwnerName() const;
 
 	void TextUpdate(int LifeTime);
 	void UpdateGuild(CGuildData* pGuild);

@@ -10,7 +10,7 @@
 #include <game/layers.h>
 
 #include "worldmodes/dungeon.h"
-#include "worldmodes/main.h"
+#include "worldmodes/default.h"
 #include "worldmodes/tutorial.h"
 
 #include "core/command_processor.h"
@@ -740,19 +740,6 @@ void CGS::OnInit(int WorldID)
 
 	InitZones();
 
-	if(m_WorldID == TUTORIAL_WORLD_ID)
-	{
-		m_pController = new CGameControllerTutorial(this);
-	}
-	else if(IsDungeon()) // dungeon game controller
-	{
-		m_pController = new CGameControllerDungeon(this);
-	}
-	else // default game controller
-	{
-		m_pController = new CGameControllerMain(this);
-	}
-
 	// command processor
 	m_pCommandProcessor = new CCommandProcessor(this);
 
@@ -1008,17 +995,17 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 					pPlayer->PostVoteList();
 
 				// Finding the vote option in the player's vote list
-				const auto& iter = std::find_if(m_aPlayerVotes[ClientID].begin(), m_aPlayerVotes[ClientID].end(), [pMsg](const CVoteOptions& vote)
+				const auto& iter = std::find_if(CVoteWrapper::Data()[ClientID].begin(), CVoteWrapper::Data()[ClientID].end(), [pMsg](const CVoteOption& vote)
 				{
 					return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
 				});
 
 				// If the vote option is found
-				if(iter != m_aPlayerVotes[ClientID].end())
+				if(iter != CVoteWrapper::Data()[ClientID].end())
 				{
 					// Parsing the vote commands with the provided values
 					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
-					ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_TempID, iter->m_TempID2, InteractiveValue, pMsg->m_pReason);
+					ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_SettingID, iter->m_SettingID2, InteractiveValue, pMsg->m_pReason);
 				}
 			}
 		}
@@ -1399,7 +1386,7 @@ const char* CGS::NetVersion() const { return GAME_NETVERSION; }
 void CGS::ClearClientData(int ClientID)
 {
 	Core()->ResetClientData(ClientID);
-	m_aPlayerVotes[ClientID].clear();
+	CVoteWrapper::Data()[ClientID].clear();
 	ms_aEffects[ClientID].clear();
 
 	// clear active snap bots for player
@@ -1660,7 +1647,7 @@ void CGS::ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IC
 ######################################################################### */
 void CGS::ClearVotes(int ClientID)
 {
-	m_aPlayerVotes[ClientID].clear();
+	CVoteWrapper::Data()[ClientID].clear();
 
 	// send vote options
 	CNetMsg_Sv_VoteClearOptions ClearMsg;
@@ -1675,22 +1662,24 @@ void CGS::AV(int ClientID, const char* pCmd, const char* pDesc, const int TempIn
 
 	char aBufDesc[VOTE_DESC_LENGTH];
 	str_copy(aBufDesc, pDesc, sizeof(aBufDesc));
+	auto& vPlayerVotes = CVoteWrapper::Data()[ClientID];
+
 	if(const auto pReplaceIndent = "\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014"; aBufDesc[0] == '\0'
-		&& !m_aPlayerVotes[ClientID].empty() && str_comp(m_aPlayerVotes[ClientID].back().m_aDescription, pReplaceIndent) != 0)
+		&& !vPlayerVotes.empty() && str_comp(vPlayerVotes.back().m_aDescription, pReplaceIndent) != 0)
 	{
 		str_copy(aBufDesc, pReplaceIndent, sizeof(aBufDesc));
 	}
 	else if(str_comp(m_apPlayers[ClientID]->GetLanguage(), "ru") == 0 || str_comp(m_apPlayers[ClientID]->GetLanguage(), "uk") == 0)
 		str_translation_cyrlic_to_latin(aBufDesc);
 
-	CVoteOptions Vote;
+	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, aBufDesc, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
-	Vote.m_TempID = TempInt;
-	Vote.m_TempID2 = TempInt2;
+	Vote.m_SettingID = TempInt;
+	Vote.m_SettingID2 = TempInt2;
 
 	if(Vote.m_aDescription[0] != '\0')
-		m_aPlayerVotes[ClientID].emplace_back(Vote);
+		vPlayerVotes.emplace_back(Vote);
 }
 
 // add formatted vote
@@ -1713,38 +1702,14 @@ void CGS::AVL(int ClientID, const char* pCmd, const char* pText, ...)
 	}
 }
 
-// add formatted vote with color
-void CGS::AVH(int ClientID, const int HiddenID, const char* pText, ...)
-{
-	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
-	{
-		va_list VarArgs;
-		va_start(VarArgs, pText);
-
-		const bool HiddenTab = (HiddenID >= TAB_STAT) ? m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) : false;
-		const char* pSymbols = HiddenTab ? "\u21BA " : "\u27A4 ";
-
-		dynamic_string Buffer;
-
-		Buffer.append(pSymbols);
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		if(HiddenID > TAB_SETTINGS_MODULES && HiddenID < NUM_TAB_MENU) { Buffer.append(" (Press me for help)"); }
-
-		AV(ClientID, "HIDDEN", Buffer.buffer(), HiddenID, -1);
-
-		Buffer.clear();
-		va_end(VarArgs);
-	}
-}
-
 // add formatted vote as menu
 void CGS::AVM(int ClientID, const char* pCmd, const int TempInt, const int HiddenID, const char* pText, ...)
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
-		if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
-			(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
-			return;
+		//if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
+		//	(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
+		//	return;
 
 		va_list VarArgs;
 		va_start(VarArgs, pText);
@@ -1764,9 +1729,9 @@ void CGS::AVD(int ClientID, const char* pCmd, const int TempInt, const int TempI
 {
 	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
 	{
-		if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
-			(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
-			return;
+		//if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
+		//	(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
+		//	return;
 
 		va_list VarArgs;
 		va_start(VarArgs, pText);
@@ -1804,10 +1769,11 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 		return;
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(3));
+	const auto& vPlayerVotes = CVoteWrapper::Data()[ClientID];
 	if(Menulist == CUSTOM_MENU && PrepareCustom)
 	{
 		// send parsed votes
-		for(auto& p : pGS->m_aPlayerVotes[ClientID])
+		for(auto& p : vPlayerVotes)
 		{
 			CNetMsg_Sv_VoteOptionAdd OptionMsg;
 			OptionMsg.m_pDescription = p.m_aDescription;
@@ -1822,7 +1788,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	pGS->Core()->OnPlayerHandleMainMenu(ClientID, Menulist);
 
 	// send parsed votes
-	for(auto& p : pGS->m_aPlayerVotes[ClientID])
+	for(auto& p : vPlayerVotes)
 	{
 		CNetMsg_Sv_VoteOptionAdd OptionMsg;
 		OptionMsg.m_pDescription = p.m_aDescription;
@@ -1844,36 +1810,23 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	if(!pPlayer)
 		return;
 
-#define TI(_text) AVL(ClientID, "null", _text)
-	TI("#### Hi, new adventurer! ####");
-	TI("This server is a mmo server. You'll have to finish");
-	TI("quests to continue the game. In these quests,");
-	TI("you'll have to get items to give to quest npcs.");
-	TI("To get a quest, you need to talk to NPCs.");
-	TI("You talk to them by hammering them.");
-	TI("You give these items by talking them again. ");
-	TI("Hearts and Shields around you show the position");
-	TI("quests' npcs. Hearts show Main quest, Shields show Others.");
-	TI("Don't ask other people to give you the items,");
-	TI("but you can ask for some help. Keep in mind that");
-	TI("it is hard for everyone too. You can see that your shield");
-	TI("(below your health bar) doesn't protect you,");
-	TI("it's because it's not shield, it's mana.");
-	TI("It is used for active skills, which you will need to buy");
-	TI("in the future. Active skills use mana, but they use %% of mana.");
-	AV(ClientID, "null");
-	TI("#### The upgrades now ####");
-	TI("- DMG : Damage");
-	TI("- Dexterity : Shooting speed");
-	TI("- Crit Dmg : Damage dealt by critical hits");
-	TI("- Direct Crit Dmg : Critical chance");
-	TI("- Hardness : Health");
-	TI("- Lucky : Chance to avoid damage");
-	TI("- Piety : Mana");
-	TI("- Vampirism : Damage dealt converted into health");
-	TI("All things you need is in Vote.");
-	TI("Good game !");
-#undef TI
+	CVoteWrapper VWelcome(ClientID, HIDE_DEFAULT_OPEN, "#### Hi, new adventurer! ####");
+	VWelcome.Add("This server is a mmo server. You'll have to finish");
+	VWelcome.Add("quests to continue the game. In these quests,");
+	VWelcome.Add("you'll have to get items to give to quest npcs.");
+	VWelcome.Add("To get a quest, you need to talk to NPCs.");
+	VWelcome.Add("You talk to them by hammering them.");
+	VWelcome.Add("You give these items by talking them again. ");
+	VWelcome.Add("Hearts and Shields around you show the position");
+	VWelcome.Add("quests' npcs. Hearts show Main quest, Shields show Others.");
+	VWelcome.Add("Don't ask other people to give you the items,");
+	VWelcome.Add("but you can ask for some help. Keep in mind that");
+	VWelcome.Add("it is hard for everyone too. You can see that your shield");
+	VWelcome.Add("(below your health bar) doesn't protect you,");
+	VWelcome.Add("it's because it's not shield, it's mana.");
+	VWelcome.Add("It is used for active skills, which you will need to buy");
+	VWelcome.Add("in the future. Active skills use mana, but they use %% of mana.");
+	CVoteWrapper::AddEmptyline(ClientID);
 }
 
 // strong update votes variability of the data
@@ -1907,32 +1860,8 @@ void CGS::AddVotesBackpage(int ClientID)
 void CGS::ShowVotesPlayerStats(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	AVH(ClientID, TAB_INFO_STAT, "Attributes & chances{STR}", IsDungeon() ? " (Sync)" : "\0");
-	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
-	{
-		if(!pAttribute->HasDatabaseField())
-			continue;
 
-		// if upgrades are cheap, they have a division of statistics
-		const int Size = pPlayer->GetAttributeSize(ID);
 
-		// percent data TODO: extract percent attributes
-		float Percent = pPlayer->GetAttributePercent(ID);
-		if(Percent)
-		{
-			char aBuf[64];
-			str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
-			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "\u2508\u27A4 ({INT}) - {STR} {STR}", Size, pAttribute->GetName(), aBuf);
-		}
-		else
-		{
-			AVM(ClientID, "null", NOPE, TAB_INFO_STAT, "\u2508\u27A4 ({INT}) - {STR}", Size, pAttribute->GetName());
-		}
-	}
-
-	AV(ClientID, "null");
-	AVM(ClientID, "null", NOPE, NOPE, "\u02D7\u02CF\u02CB \u2605 \u02CE\u02CA\u02D7 Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
-	AV(ClientID, "null");
 }
 
 // display information by currency
@@ -2141,31 +2070,33 @@ int CGS::GetExperienceMultiplier(int Experience) const
 
 void CGS::InitZones()
 {
-	m_DungeonID = 0;
-	m_AllowedPVP = false;
 	m_DayEnumType = Server()->GetEnumTypeDay();
 
-	// with mobs allow pvp zone
-	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+	// initilize world type
+	const char* pWorldType;
+	CWorldDetail* pWorldDetail = Server()->GetWorldDetail(m_WorldID);
+	if(pWorldDetail->GetType() == WorldType::Dungeon)
 	{
-		if(m_apPlayers[i] && m_apPlayers[i]->GetBotType() == TYPE_BOT_MOB && m_apPlayers[i]->GetPlayerWorldID() == m_WorldID)
-		{
-			m_AllowedPVP = true;
-			break;
-		}
+		m_pController = new CGameControllerDungeon(this);
+		pWorldType = "Dungeon";
+		m_AllowedPVP = false;
+	}
+	else if(pWorldDetail->GetType() == WorldType::Tutorial)
+	{
+		m_pController = new CGameControllerTutorial(this);
+		pWorldType = "Tutorial";
+		m_AllowedPVP = false;
+	}
+	else
+	{
+		m_pController = new CGameControllerDefault(this);
+		pWorldType = "Default";
 	}
 
-	// init dungeon zone
-	for(const auto& [ID, Dungeon] : CDungeonData::ms_aDungeon)
-	{
-		if(m_WorldID == Dungeon.m_WorldID)
-		{
-			m_DungeonID = ID;
-			m_AllowedPVP = false;
-			break;
-		}
-	}
+	const char* pStatePVP = m_AllowedPVP ? "yes" : "no";
+	Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "world init", "%s(ID: %d) | %s | PvP: %s", Server()->GetWorldName(m_WorldID), m_WorldID, pWorldType, pStatePVP);
 }
+
 bool CGS::IsPlayerEqualWorld(int ClientID, int WorldID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])

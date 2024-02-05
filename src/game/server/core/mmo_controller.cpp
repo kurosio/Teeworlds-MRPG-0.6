@@ -117,8 +117,8 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// Check if the player's m_ZoneInvertMenu variable is true
 		if(pPlayer->m_ZoneInvertMenu)
 		{
-			GS()->AVL(ClientID, "ZONE_INVERT_MENU", "▶▶▶▶ Back to zone menu. ▶▶▶▶");
-			GS()->AV(ClientID, "null");
+			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "▶▶▶▶ Back to zone menu. ▶▶▶▶");
+			CVoteWrapper::AddEmptyline(ClientID);
 			break;
 		}
 
@@ -126,8 +126,8 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		if(pComponent->OnHandleMenulist(pPlayer, Menulist, true))
 		{
 			// Display a notification to the client with the message "<<<< Back to player menu. <<<<"
-			GS()->AV(ClientID, "null");
-			GS()->AVL(ClientID, "ZONE_INVERT_MENU", "◀◀◀◀ Back to player menu. ◀◀◀◀");
+			CVoteWrapper::AddEmptyline(ClientID);
+			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "◀◀◀◀ Back to player menu. ◀◀◀◀");
 			return true;
 		}
 	}
@@ -141,39 +141,32 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// statistics menu
 		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
-		GS()->AVH(ClientID, TAB_STAT, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pPlayer->Account()->GetLastLoginDate());
-		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Level {INT} : Exp {INT}/{INT}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
-		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
-		GS()->AVM(ClientID, "null", NOPE, TAB_STAT, "Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
-		GS()->AV(ClientID, "null");
+		CVoteWrapper VMain(ClientID, HIDE_DEFAULT_OPEN, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pPlayer->Account()->GetLastLoginDate());
+		VMain.Add("Level {INT} : Exp {INT}/{INT}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
+		VMain.Add("Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
+		VMain.Add("Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
+		CVoteWrapper::AddEmptyline(ClientID);
 
 		// personal menu
-		GS()->AVH(ClientID, TAB_PERSONAL, "☪ SUB MENU PERSONAL");
-		GS()->AVM(ClientID, "MENU", MENU_INVENTORY, TAB_PERSONAL, "\u205C Inventory");
-		GS()->AVM(ClientID, "MENU", MENU_EQUIPMENT, TAB_PERSONAL, "\u2604 Equipment");
-		GS()->AVM(ClientID, "MENU", MENU_UPGRADES, TAB_PERSONAL, "\u2657 Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
-		GS()->AVM(ClientID, "MENU", MENU_EIDOLON_COLLECTION, TAB_PERSONAL, "\u2727 Eidolon Collection");
-		GS()->AVM(ClientID, "MENU", MENU_DUNGEONS, TAB_PERSONAL, "\u262C Dungeons");
-		GS()->AVM(ClientID, "MENU", MENU_GROUP, TAB_PERSONAL, "\u2042 Group");
-		GS()->AVM(ClientID, "MENU", MENU_SETTINGS, TAB_PERSONAL, "\u2692 Settings");
-		GS()->AVM(ClientID, "MENU", MENU_INBOX, TAB_PERSONAL, "\u2709 Mailbox");
-		GS()->AVM(ClientID, "MENU", MENU_JOURNAL_MAIN, TAB_PERSONAL, "\u270D Journal");
-		if(pPlayer->Account()->HasHouse())
-		{
-			GS()->AVM(ClientID, "MENU", MENU_HOUSE, TAB_PERSONAL, "\u2302 House");
-		}
-
-		GS()->AVM(ClientID, "MENU", MENU_GUILD_FINDER, TAB_PERSONAL, "\u20AA Guild finder");
-		if(pPlayer->Account()->HasGuild())
-		{
-			GS()->AVM(ClientID, "MENU", MENU_GUILD, TAB_PERSONAL, "\u32E1 Guild");
-		}
-		GS()->AV(ClientID, "null");
+		CVoteWrapper VPersonal(ClientID, HIDE_DEFAULT_OPEN, "☪ PERSONAL");
+		VPersonal.Add(MENU_INVENTORY, "\u205C Inventory");
+		VPersonal.Add(MENU_EQUIPMENT, "\u2604 Equipment");
+		VPersonal.Add(MENU_UPGRADES, "\u2657 Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
+		VPersonal.Add(MENU_EIDOLON_COLLECTION, "\u2727 Eidolon Collection");
+		VPersonal.Add(MENU_DUNGEONS, "\u262C Dungeons");
+		VPersonal.Add(MENU_GROUP, "\u2042 Group");
+		VPersonal.Add(MENU_SETTINGS, "\u2692 Settings");
+		VPersonal.Add(MENU_INBOX, "\u2709 Mailbox");
+		VPersonal.Add(MENU_JOURNAL_MAIN, "\u270D Journal");
+		VPersonal.AddIf(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
+		VPersonal.Add(MENU_GUILD_FINDER, "\u20AA Guild finder");
+		VPersonal.AddIf(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");
+		CVoteWrapper::AddEmptyline(ClientID);
 
 		// info menu
-		GS()->AVH(ClientID, TAB_INFORMATION, "√ SUB MENU INFORMATION");
-		GS()->AVM(ClientID, "MENU", MENU_GUIDE_GRINDING, TAB_INFORMATION, "\u10D3 Wiki / Grinding Guide ");
-		GS()->AVM(ClientID, "MENU", MENU_TOP_LIST, TAB_INFORMATION, "\u21F0 Ranking guilds and players");
+		CVoteWrapper VInfo(ClientID, HIDE_DEFAULT_OPEN, "☪ INFORMATION");
+		VInfo.Add(MENU_GUIDE_GRINDING, "\u10D3 Wiki / Grinding Guide ");
+		VInfo.Add(MENU_TOP_LIST, "\u21F0 Ranking guilds and players");
 		return true;
 	}
 
@@ -182,57 +175,67 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	{
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
-		GS()->AVH(ClientID, TAB_INFO_UPGR, "Upgrades Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_UPGR, "Select upgrades type in Reason, write count.");
-		GS()->AV(ClientID, "null");
+		// information
+		CVoteWrapper VUpgradesInfo(ClientID, HIDE_DEFAULT_CLOSE, "Upgrades Information");
+		VUpgradesInfo.Add("Select upgrades type in Reason, write count.");
+		VUpgradesInfo.AddEmptyline();
 
-		// show player stats
-		GS()->ShowVotesPlayerStats(pPlayer);
+		// upgrade point
+		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper(ClientID).Add("Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
+		CVoteWrapper::AddEmptyline(ClientID);
 
 		// lambda function for easy use
-		auto ShowAttributeVote = [&](int HiddenID, AttributeGroup Type, std::function<void(int)> pFunc)
+		auto AddUpgradeGroupToWrapper([&](AttributeGroup Type, CVoteWrapper* pWrapper)
 		{
-			pFunc(HiddenID);
-			for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
+			for(auto& [ID, pAttribute] : CAttributeDescription::Data())
 			{
 				if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
-					GS()->AVD(ClientID, "UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), HiddenID, "{STR} {INT}P (Price {INT}P)",
+				{
+					// if upgrades are cheap, they have a division of statistics
+					const int AttributeSize = pPlayer->GetAttributeSize(ID);
+
+					// percent data TODO: extract percent attributes
+					char aBuf[64]{};
+					float Percent = pPlayer->GetAttributePercent(ID);
+					if(Percent)
+					{
+						str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
+					}
+					pWrapper->Add("\u2508\u2508 {STR} - {INT}{STR}", pAttribute->GetName(), AttributeSize, aBuf);
+				}
+			}
+
+			for(auto& [ID, pAttribute] : CAttributeDescription::Data())
+			{
+				if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
+					pWrapper->AddOption("UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), "{STR} - {INT} (cost {INT} point)",
 						pAttribute->GetName(), pPlayer->Account()->m_aStats[ID], pAttribute->GetUpgradePrice());
 			}
-		};
-		GS()->AV(ClientID, "null");
+		});
 
 		// Disciple of War
-		ShowAttributeVote(TAB_UPGR_DPS, AttributeGroup::Dps, [&](int HiddenID)
-		{
-			const int Range = pPlayer->GetTypeAttributesSize(AttributeGroup::Dps);
-			GS()->AVH(ClientID, HiddenID, "\u2694 Disciple of War. Level Power {INT}", Range);
-		});
-		GS()->AV(ClientID, "null");
+		CVoteWrapper VUpgrDPS(ClientID, BORDER_STRICT_BOLD, "\u2694 Disciple of War : Strength {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Dps));
+		AddUpgradeGroupToWrapper(AttributeGroup::Dps, &VUpgrDPS);
+		VUpgrDPS.AddEmptyline();
 
 		// Disciple of Tank
-		ShowAttributeVote(TAB_UPGR_TANK, AttributeGroup::Tank, [&](int HiddenID)
-		{
-			const int Range = pPlayer->GetTypeAttributesSize(AttributeGroup::Tank);
-			GS()->AVH(ClientID, HiddenID, "\u262E Disciple of Tank. Level Power {INT}", Range);
-		});
-		GS()->AV(ClientID, "null");
+		CVoteWrapper VUpgrTANK(ClientID, BORDER_STRICT_BOLD, "\u2699 Disciple of Tank : Endurance {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Tank));
+		AddUpgradeGroupToWrapper(AttributeGroup::Tank, &VUpgrTANK);
+		VUpgrTANK.AddEmptyline();
 
 		// Disciple of Healer
-		ShowAttributeVote(TAB_UPGR_HEALER, AttributeGroup::Healer, [&](int HiddenID)
-		{
-			const int Range = pPlayer->GetTypeAttributesSize(AttributeGroup::Healer);
-			GS()->AVH(ClientID, HiddenID, "\u2042 Disciple of Healer. Level Power {INT}", Range);
-		});
-		GS()->AV(ClientID, "null");
+		CVoteWrapper VUpgrHEALER(ClientID, BORDER_STRICT_BOLD, "\u2696 Disciple of Healer : Power {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Healer));
+		AddUpgradeGroupToWrapper(AttributeGroup::Healer, &VUpgrHEALER);
+		VUpgrHEALER.AddEmptyline();
 
 		// Upgrades Weapons and ammo
-		ShowAttributeVote(TAB_UPGR_WEAPON, AttributeGroup::Weapon, [&](int HiddenID)
-		{
-			GS()->AVH(ClientID, HiddenID, "Upgrades Weapons / Ammo");
-		});
+		CVoteWrapper VUpgrWeapon(ClientID, BORDER_STRICT_BOLD, "\u2690 Upgrades Weapons / Ammo");
+		AddUpgradeGroupToWrapper(AttributeGroup::Weapon, &VUpgrWeapon);
+		VUpgrWeapon.AddEmptyline();
 
-		GS()->AddVotesBackpage(ClientID);
+		// Add back page
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -265,35 +268,43 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	{
 		pPlayer->m_LastVoteMenu = MENU_MAIN;
 
-		GS()->AVH(ClientID, TAB_INFO_LOOT, "Grinding Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_LOOT, "You can look mobs, plants, and ores.");
-		GS()->AV(ClientID, "null");
-		GS()->AVL(ClientID, "null", "Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
-		GS()->AV(ClientID, "null");
+		// information
+		CVoteWrapper VGrindingInfo(ClientID, HIDE_DEFAULT_CLOSE, "Grinding Information");
+		VGrindingInfo.Add("You can look mobs, plants, and ores.");
+		CVoteWrapper::AddEmptyline(ClientID);
+
+		CVoteWrapper VDiscordInfo(ClientID, BORDER_STRICT_BOLD);
+		VDiscordInfo.Add("Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
+		VDiscordInfo.AddEmptyline();
 
 		// show all world's
+		CVoteWrapper VGrindingSelect(ClientID, HIDE_DEFAULT_OPEN, "Select a zone to view information");
 		for(int ID = MAIN_WORLD_ID; ID < GS()->Server()->GetWorldsSize(); ID++)
-		{
-			GS()->AVM(ClientID, "SORTEDWIKIWORLD", ID, NOPE, GS()->Server()->GetWorldName(ID));
-		}
-		GS()->AV(ClientID, "null");
+			VGrindingSelect.Add(MENU_GUIDE_GRINDING_SELECT, ID, "{STR}", GS()->Server()->GetWorldName(ID));
 
-		// selected zone
-		if(pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] < 0)
-		{
-			GS()->AVL(ClientID, "null", "Select a zone to view information");
-		}
-		else
-		{
-			const int WorldID = pPlayer->m_aSortTabs[SORT_GUIDE_WORLD];
-			const bool ActiveMob = BotManager()->ShowGuideDropByWorld(WorldID, pPlayer);
-			const bool ActivePlant = AccountPlantManager()->ShowGuideDropByWorld(WorldID, pPlayer);
-			const bool ActiveOre = AccountMinerManager()->ShowGuideDropByWorld(WorldID, pPlayer);
-			if(!ActiveMob && !ActivePlant && !ActiveOre)
-				GS()->AVL(ClientID, "null", "There are no drops in the selected area.");
-		}
+		// add back page
+		CVoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
 
-		GS()->AddVotesBackpage(ClientID);
+	// grinding guide selected
+	if(Menulist == MENU_GUIDE_GRINDING_SELECT)
+	{
+		pPlayer->m_LastVoteMenu = MENU_GUIDE_GRINDING;
+
+		const int WorldID = pPlayer->m_TempMenuValue;
+		CVoteWrapper VGrinding(ClientID, BORDER_STRICT_BOLD);
+		VGrinding.Add("Selected zone: {STR}", GS()->Server()->GetWorldName(WorldID));
+		VGrinding.AddEmptyline();
+
+		CVoteWrapper VGrindingMobs(ClientID, HIDE_DEFAULT_OPEN, "Zone guides");
+		const bool ActiveMob = BotManager()->ShowGuideDropByWorld(WorldID, pPlayer);
+		const bool ActivePlant = AccountPlantManager()->ShowGuideDropByWorld(WorldID, pPlayer);
+		const bool ActiveOre = AccountMinerManager()->ShowGuideDropByWorld(WorldID, pPlayer);
+		if(!ActiveMob && !ActivePlant && !ActiveOre)
+			VGrindingMobs.Add("There are no drops in the selected area.");
+
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -708,9 +719,9 @@ void CMmoController::ConAsyncLinesForTranslate()
 				PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
 		}
 
-		for(auto& [ID, Aether] : CAetherData::Data())
+		for(auto& pAether : CAetherData::Data())
 		{
-			PushingDialogs(JsonData, Aether.GetName(), "aeth", ID);
+			PushingDialogs(JsonData, pAether->GetName(), "aeth", pAether->GetID());
 		}
 
 		for(auto& [ID, pAttribute] : CAttributeDescription::Data())

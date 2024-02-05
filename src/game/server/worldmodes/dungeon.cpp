@@ -16,11 +16,15 @@
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS) : IGameController(pGS)
 {
 	m_GameFlags = 0;
-	m_DungeonID = GS()->GetDungeonID();
 	m_WorldID = GS()->GetWorldID();
-
 	m_ActivePlayers = 0;
 	m_TankClientID = -1;
+
+	// init dungeon zone
+	auto iter = std::find_if(CDungeonData::ms_aDungeon.begin(), CDungeonData::ms_aDungeon.end(), [&](const std::pair<int, CDungeonData>& pDungeon)
+	{ return pDungeon.second.m_WorldID == m_WorldID; });
+	dbg_assert(iter != CDungeonData::ms_aDungeon.end(), "dungeon world type not found dungeon data");
+	m_DungeonID = iter->first;
 
 	// door creation to start
 	vec2 DoorPosition = vec2(CDungeonData::ms_aDungeon[m_DungeonID].m_DoorX, CDungeonData::ms_aDungeon[m_DungeonID].m_DoorY);
