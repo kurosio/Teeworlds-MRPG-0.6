@@ -301,7 +301,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 		CVoteWrapper VSettingsInfo(ClientID, HIDE_DEFAULT_CLOSE, "Settings Information");
 		VSettingsInfo.Add("Some of the settings become valid after death.");
 		VSettingsInfo.Add("Here you can change the settings of your account.");
-		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 
 		// game settings
 		CVoteWrapper VMainSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2699 Main settings");
@@ -311,7 +311,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
 				VMainSettings.AddOption("ISETTINGS", ItemID, "[{STR}] {STR}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
 		}
-		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 
 		// equipment modules
 		CVoteWrapper VModulesSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2694 Modules settings");
@@ -346,13 +346,13 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 		CVoteWrapper VLanguageInfo(ClientID, HIDE_DEFAULT_CLOSE, "Languages Information");
 		VLanguageInfo.Add("Here you can choose the language.");
 		VLanguageInfo.Add("Note: translation is not complete.");
-		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 
 		// active language
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
 		CVoteWrapper VLanguage(ClientID, BORDER_STRICT_BOLD);
 		VLanguage.Add("Active language: [{STR}]", pPlayerLanguage);
-		VLanguage.AddEmptyline();
+		VLanguage.AddLine();
 
 		// languages
 		CVoteWrapper VLanguages(ClientID, HIDE_DEFAULT_OPEN, "Available languages");

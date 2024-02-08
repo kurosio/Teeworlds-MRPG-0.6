@@ -22,10 +22,8 @@
 
 #include "core/components/Accounts/AccountManager.h"
 #include "core/components/Bots/BotManager.h"
-#include "core/components/Dungeons/DungeonManager.h"
 #include "core/components/Mails/MailBoxManager.h"
 #include "core/components/Guilds/GuildManager.h"
-#include "core/components/Houses/HouseManager.h"
 #include "core/components/Quests/QuestManager.h"
 #include "core/components/Skills/SkillManager.h"
 
@@ -34,6 +32,7 @@
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/Warehouse/WarehouseData.h"
 #include "core/components/Worlds/WorldData.h"
+#include "core/utilities/vote_wrapper.h"
 
 // static data that have the same value in different objects
 ska::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
@@ -994,18 +993,11 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				if(pPlayer->IsActivePostVoteList())
 					pPlayer->PostVoteList();
 
-				// Finding the vote option in the player's vote list
-				const auto& iter = std::find_if(CVoteWrapper::Data()[ClientID].begin(), CVoteWrapper::Data()[ClientID].end(), [pMsg](const CVoteOption& vote)
-				{
-					return (str_comp_nocase(pMsg->m_pValue, vote.m_aDescription) == 0);
-				});
-
-				// If the vote option is found
-				if(iter != CVoteWrapper::Data()[ClientID].end())
+				if(CVoteOption* pActionVote = CVoteWrapper::GetOptionVoteByAction(ClientID, pMsg->m_pValue))
 				{
 					// Parsing the vote commands with the provided values
 					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
-					ParsingVoteCommands(ClientID, iter->m_aCommand, iter->m_SettingID, iter->m_SettingID2, InteractiveValue, pMsg->m_pReason);
+					ParsingVoteCommands(ClientID, pActionVote->m_aCommand, pActionVote->m_SettingID, pActionVote->m_SettingID2, InteractiveValue, pMsg->m_pReason);
 				}
 			}
 		}
@@ -1664,22 +1656,22 @@ void CGS::AV(int ClientID, const char* pCmd, const char* pDesc, const int TempIn
 	str_copy(aBufDesc, pDesc, sizeof(aBufDesc));
 	auto& vPlayerVotes = CVoteWrapper::Data()[ClientID];
 
-	if(const auto pReplaceIndent = "\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014"; aBufDesc[0] == '\0'
+	/*if(const auto pReplaceIndent = "\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014"; aBufDesc[0] == '\0'
 		&& !vPlayerVotes.empty() && str_comp(vPlayerVotes.back().m_aDescription, pReplaceIndent) != 0)
 	{
 		str_copy(aBufDesc, pReplaceIndent, sizeof(aBufDesc));
 	}
 	else if(str_comp(m_apPlayers[ClientID]->GetLanguage(), "ru") == 0 || str_comp(m_apPlayers[ClientID]->GetLanguage(), "uk") == 0)
 		str_translation_cyrlic_to_latin(aBufDesc);
-
+		*/
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, aBufDesc, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_SettingID = TempInt;
 	Vote.m_SettingID2 = TempInt2;
 
-	if(Vote.m_aDescription[0] != '\0')
-		vPlayerVotes.emplace_back(Vote);
+	//if(Vote.m_aDescription[0] != '\0')
+	//	vPlayerVotes.emplace_back(Vote);
 }
 
 // add formatted vote
@@ -1773,12 +1765,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	if(Menulist == CUSTOM_MENU && PrepareCustom)
 	{
 		// send parsed votes
-		for(auto& p : vPlayerVotes)
-		{
-			CNetMsg_Sv_VoteOptionAdd OptionMsg;
-			OptionMsg.m_pDescription = p.m_aDescription;
-			pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-		}
+		CVoteWrapper::RebuildVotes(ClientID);
 		return;
 	}
 
@@ -1786,14 +1773,7 @@ void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool Prepare
 	pPlayer->m_CurrentVoteMenu = Menulist;
 	pGS->ClearVotes(ClientID);
 	pGS->Core()->OnPlayerHandleMainMenu(ClientID, Menulist);
-
-	// send parsed votes
-	for(auto& p : vPlayerVotes)
-	{
-		CNetMsg_Sv_VoteOptionAdd OptionMsg;
-		OptionMsg.m_pDescription = p.m_aDescription;
-		pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-	}
+	CVoteWrapper::RebuildVotes(ClientID);
 }
 
 void CGS::UpdateVotes(int ClientID, int MenuList)
@@ -1826,7 +1806,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	VWelcome.Add("it's because it's not shield, it's mana.");
 	VWelcome.Add("It is used for active skills, which you will need to buy");
 	VWelcome.Add("in the future. Active skills use mana, but they use %% of mana.");
-	CVoteWrapper::AddEmptyline(ClientID);
+	CVoteWrapper::AddLine(ClientID);
 }
 
 // strong update votes variability of the data
@@ -1854,14 +1834,6 @@ void CGS::AddVotesBackpage(int ClientID)
 
 	AV(ClientID, "null");
 	AVL(ClientID, "BACK", "◀◀◀◀ Backpage ◀◀◀◀");
-}
-
-// print player statistics
-void CGS::ShowVotesPlayerStats(CPlayer* pPlayer)
-{
-	const int ClientID = pPlayer->GetCID();
-
-
 }
 
 // display information by currency
@@ -2094,7 +2066,7 @@ void CGS::InitZones()
 	}
 
 	const char* pStatePVP = m_AllowedPVP ? "yes" : "no";
-	Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "world init", "%s(ID: %d) | %s | PvP: %s", Server()->GetWorldName(m_WorldID), m_WorldID, pWorldType, pStatePVP);
+	dbg_msg("world init", "%s(ID: %d) | %s | PvP: %s", Server()->GetWorldName(m_WorldID), m_WorldID, pWorldType, pStatePVP);
 }
 
 bool CGS::IsPlayerEqualWorld(int ClientID, int WorldID) const

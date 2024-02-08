@@ -37,14 +37,4 @@ struct CVoteOptionServer
 	char m_aCommand[1];
 };
 
-class CVoteOption
-{
-public:
-	CVoteOption() = default;
-	char m_aDescription[VOTE_DESC_LENGTH];
-	char m_aCommand[VOTE_CMD_LENGTH];
-	int m_SettingID;
-	int m_SettingID2;
-};
-
 #endif

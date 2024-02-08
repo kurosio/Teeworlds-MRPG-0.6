@@ -7,6 +7,7 @@
 
 void CCraftManager::OnInit()
 {
+	// load crafts
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_crafts_list");
 	while(pRes->next())
 	{
@@ -52,56 +53,45 @@ bool CCraftManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
 {
 	// sort by function
-	std::sort(CCraftItem::Data().begin(), CCraftItem::Data().end(), [](const CraftPtr& p1, const CraftPtr& p2)
+	std::sort(CCraftItem::Data().begin(), CCraftItem::Data().end(), [](const CCraftItem* p1, const CCraftItem* p2)
 	{
 		return p1->GetItem()->Info()->GetFunctional() > p2->GetItem()->Info()->GetFunctional();
 	});
 
-	bool IsEmpty = true;
 	const int ClientID = pPlayer->GetCID();
 
+	CVoteWrapper VCraftList(ClientID, BORDER_SIMPLE, TypeName);
 	for(const auto& pCraft: CCraftItem::Data())
 	{
 		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 		if(pCraftItemInfo->GetType() != Type || pCraft->GetWorldID() != GS()->GetWorldID())
 			continue;
-
-		if(IsEmpty)
-		{
-			GS()->AVL(ClientID, "null", "{STR}", TypeName);
-			IsEmpty = false;
-		}
-
+		
 		CraftIdentifier ID = pCraft->GetID();
 		ItemIdentifier ItemID = pCraft->GetItem()->GetID();
 		const int Price = pCraft->GetPrice(pPlayer);
-		const int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + ID;
 
+		CVoteWrapper VCraftItem(ClientID, HIDE_UNIQUE|BORDER_STRICT, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		if(pCraftItemInfo->IsEnchantable())
 		{
-			GS()->AVH(ClientID, HideID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
-
 			char aAttributes[128];
 			pCraftItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
-			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", aAttributes);
+			VCraftItem.Add(aAttributes);
 		}
 		else
 		{
-			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) :: {VAL} gold", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), pPlayer->GetItem(ItemID)->GetValue(), Price);
+			VCraftItem.Add("{STR}x{VAL} ({VAL}) :: {VAL} gold", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), pPlayer->GetItem(ItemID)->GetValue(), Price);
 		}
-		//GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pCraftItemInfo->GetDescription());
 
 		for(auto& RequiredItem: pCraft->GetRequiredItems())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(RequiredItem.GetID());
-			GS()->AVM(ClientID, "null", NOPE, HideID, "* {STR} {VAL}({VAL})", pPlayerItem->Info()->GetName(), RequiredItem.GetValue(), pPlayerItem->GetValue());
+			VCraftItem.Add("* {STR} {VAL}({VAL})", pPlayerItem->Info()->GetName(), RequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
 
-		GS()->AVM(ClientID, "CRAFT", ID, HideID, "Craft {STR}", pCraftItemInfo->GetName());
+		VCraftItem.Add("CRAFT", ID, "Craft {STR}", pCraftItemInfo->GetName());
 	}
-
-	if(!IsEmpty)
-		GS()->AV(ClientID, "null");
+	CVoteWrapper::AddLine(ClientID);
 }
 
 void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
@@ -215,8 +205,6 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 CCraftItem* CCraftManager::GetCraftByID(CraftIdentifier ID) const
 {
-	auto p = std::find_if(CCraftItem::Data().begin(), CCraftItem::Data().end(), [ID](const CraftPtr& p){ return p->GetID() == ID; });
-	if(p != CCraftItem::Data().end())
-		return p->get();
-	return nullptr;
+	auto iter = std::find_if(CCraftItem::Data().begin(), CCraftItem::Data().end(), [ID](const CCraftItem* p){ return p->GetID() == ID; });
+	return iter != CCraftItem::Data().end() ? *iter : nullptr;
 }

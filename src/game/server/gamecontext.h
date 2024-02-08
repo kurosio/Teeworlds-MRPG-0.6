@@ -228,7 +228,6 @@ public:
 	void StrongUpdateVotes(int ClientID, int MenuList);
 	void StrongUpdateVotesForAll(int MenuList);
 	void AddVotesBackpage(int ClientID);
-	void ShowVotesPlayerStats(CPlayer *pPlayer);
 	void AddVoteItemValue(int ClientID, ItemIdentifier ItemID = itGold, int HideID = NOPE);
 	bool ParsingVoteCommands(int ClientID, const char *CMD, int VoteID, int VoteID2, int Get, const char *Text);
 

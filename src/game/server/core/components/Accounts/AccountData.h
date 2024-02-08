@@ -94,7 +94,7 @@ public:
 	bool IsUnlockedAether(int AetherID) const { return m_aAetherLocation.find(AetherID) != m_aAetherLocation.end(); }
 	void AddAether(int AetherID) { m_aAetherLocation.insert(AetherID); }
 	void RemoveAether(int AetherID) { m_aAetherLocation.erase(AetherID); }
-	ska::unordered_set< int >& GetAetherLocation() { return m_aAetherLocation; }
+	ska::unordered_set< int >& GetAethers() { return m_aAetherLocation; }
 
 	struct TimePeriods
 	{

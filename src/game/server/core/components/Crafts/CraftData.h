@@ -7,9 +7,7 @@
 
 using CraftIdentifier = int;
 
-using CraftPtr = std::shared_ptr< class CCraftItem >;
-
-class CCraftItem : public MultiworldIdentifiableStaticData< std::deque< CraftPtr > >
+class CCraftItem : public MultiworldIdentifiableStaticData< std::deque<CCraftItem*> >
 {
 	CraftIdentifier m_ID {};
 	CItem m_Item {};
@@ -18,14 +16,14 @@ class CCraftItem : public MultiworldIdentifiableStaticData< std::deque< CraftPtr
 	int m_WorldID {};
 
 public:
-	CCraftItem() = default; // Default constructor for CCraftItem
+	// Constructor with AetherIdentifier parameter
+	explicit CCraftItem(CraftIdentifier ID) : m_ID(ID) {}
 
 	// Create a static function called CreateElement which creates a new CCraftItem object and adds it to the data container
-	static CraftPtr CreateElement(CraftIdentifier ID)
+	static CCraftItem* CreateElement(CraftIdentifier ID)
 	{
-		CCraftItem p;
-		p.m_ID = ID;
-		return m_pData.emplace_back(std::make_shared<CCraftItem>(p));
+		auto pData = new CCraftItem(ID);
+		return m_pData.emplace_back(pData);
 	}
 
 	// Initialize the CCraftItem object with the required container for required items, crafted item, price, and world ID where can craft item

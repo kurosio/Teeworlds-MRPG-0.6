@@ -10,7 +10,7 @@
 #include "components/Accounts/AccountMinerManager.h"
 #include "components/Accounts/AccountPlantManager.h"
 #include "components/Auction/AuctionManager.h"
-#include "components/Aethers/AetherManager.h"
+#include "components/aethernet/aethernet_manager.h"
 #include "components/Bots/BotManager.h"
 #include "components/Crafts/CraftManager.h"
 #include "components/Dungeons/DungeonManager.h"
@@ -38,7 +38,7 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_System.add(new CAuctionManager);
 	m_System.add(m_pEidolonManager = new CEidolonManager);
 	m_System.add(m_pDungeonManager = new CDungeonManager);
-	m_System.add(new CAetherManager);
+	m_System.add(new CAethernetManager);
 	m_System.add(m_pWorldManager = new CWorldManager);
 	m_System.add(m_pHouseManager = new CHouseManager);
 	m_System.add(m_pGuildManager = new CGuildManager);
@@ -118,7 +118,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		if(pPlayer->m_ZoneInvertMenu)
 		{
 			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "▶▶▶▶ Back to zone menu. ▶▶▶▶");
-			CVoteWrapper::AddEmptyline(ClientID);
+			CVoteWrapper::AddLine(ClientID);
 			break;
 		}
 
@@ -126,7 +126,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		if(pComponent->OnHandleMenulist(pPlayer, Menulist, true))
 		{
 			// Display a notification to the client with the message "<<<< Back to player menu. <<<<"
-			CVoteWrapper::AddEmptyline(ClientID);
+			CVoteWrapper::AddLine(ClientID);
 			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "◀◀◀◀ Back to player menu. ◀◀◀◀");
 			return true;
 		}
@@ -145,7 +145,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VMain.Add("Level {INT} : Exp {INT}/{INT}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
 		VMain.Add("Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VMain.Add("Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
-		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 
 		// personal menu
 		CVoteWrapper VPersonal(ClientID, HIDE_DEFAULT_OPEN, "☪ PERSONAL");
@@ -161,7 +161,9 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.AddIf(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
 		VPersonal.Add(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		VPersonal.AddIf(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");
-		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper::AddLine(ClientID);
+		CVoteWrapper::AddLine(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 
 		// info menu
 		CVoteWrapper VInfo(ClientID, HIDE_DEFAULT_OPEN, "☪ INFORMATION");
@@ -178,12 +180,12 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// information
 		CVoteWrapper VUpgradesInfo(ClientID, HIDE_DEFAULT_CLOSE, "Upgrades Information");
 		VUpgradesInfo.Add("Select upgrades type in Reason, write count.");
-		VUpgradesInfo.AddEmptyline();
+		VUpgradesInfo.AddLine();
 
 		// upgrade point
-		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 		CVoteWrapper(ClientID).Add("Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
-		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 
 		// lambda function for easy use
 		auto AddUpgradeGroupToWrapper([&](AttributeGroup Type, CVoteWrapper* pWrapper)
@@ -217,22 +219,22 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// Disciple of War
 		CVoteWrapper VUpgrDPS(ClientID, BORDER_STRICT_BOLD, "\u2694 Disciple of War : Strength {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Dps));
 		AddUpgradeGroupToWrapper(AttributeGroup::Dps, &VUpgrDPS);
-		VUpgrDPS.AddEmptyline();
+		VUpgrDPS.AddLine();
 
 		// Disciple of Tank
 		CVoteWrapper VUpgrTANK(ClientID, BORDER_STRICT_BOLD, "\u2699 Disciple of Tank : Endurance {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Tank));
 		AddUpgradeGroupToWrapper(AttributeGroup::Tank, &VUpgrTANK);
-		VUpgrTANK.AddEmptyline();
+		VUpgrTANK.AddLine();
 
 		// Disciple of Healer
 		CVoteWrapper VUpgrHEALER(ClientID, BORDER_STRICT_BOLD, "\u2696 Disciple of Healer : Power {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Healer));
 		AddUpgradeGroupToWrapper(AttributeGroup::Healer, &VUpgrHEALER);
-		VUpgrHEALER.AddEmptyline();
+		VUpgrHEALER.AddLine();
 
 		// Upgrades Weapons and ammo
 		CVoteWrapper VUpgrWeapon(ClientID, BORDER_STRICT_BOLD, "\u2690 Upgrades Weapons / Ammo");
 		AddUpgradeGroupToWrapper(AttributeGroup::Weapon, &VUpgrWeapon);
-		VUpgrWeapon.AddEmptyline();
+		VUpgrWeapon.AddLine();
 
 		// Add back page
 		CVoteWrapper::AddBackpage(ClientID);
@@ -271,11 +273,11 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// information
 		CVoteWrapper VGrindingInfo(ClientID, HIDE_DEFAULT_CLOSE, "Grinding Information");
 		VGrindingInfo.Add("You can look mobs, plants, and ores.");
-		CVoteWrapper::AddEmptyline(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 
 		CVoteWrapper VDiscordInfo(ClientID, BORDER_STRICT_BOLD);
 		VDiscordInfo.Add("Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
-		VDiscordInfo.AddEmptyline();
+		VDiscordInfo.AddLine();
 
 		// show all world's
 		CVoteWrapper VGrindingSelect(ClientID, HIDE_DEFAULT_OPEN, "Select a zone to view information");
@@ -295,7 +297,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		const int WorldID = pPlayer->m_TempMenuValue;
 		CVoteWrapper VGrinding(ClientID, BORDER_STRICT_BOLD);
 		VGrinding.Add("Selected zone: {STR}", GS()->Server()->GetWorldName(WorldID));
-		VGrinding.AddEmptyline();
+		VGrinding.AddLine();
 
 		CVoteWrapper VGrindingMobs(ClientID, HIDE_DEFAULT_OPEN, "Zone guides");
 		const bool ActiveMob = BotManager()->ShowGuideDropByWorld(WorldID, pPlayer);
