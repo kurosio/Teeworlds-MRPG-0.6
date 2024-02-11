@@ -306,16 +306,16 @@ public:
 namespace Instance
 {
 	// Declare a static member variable m_pServer as  pointer to IServer class
-	inline static class IServer* g_pServer {};
+	struct Data { inline static class IServer* g_pServer; };
 
 	// Define a static member function Server that returns a pointer to IServer object
-	static IServer* Server() { return g_pServer; }
+	static IServer* Server() { return Data::g_pServer; }
 
 	// Define a static member function GameServerPlayer that returns a pointer to IGameServer object
-	static IGameServer* GameServerPlayer(int ClientID = -1) { return g_pServer->GameServerPlayer(ClientID); }
+	static IGameServer* GameServerPlayer(int ClientID = -1) { return Data::g_pServer->GameServerPlayer(ClientID); }
 
 	// Define a static member function GameServerPlayer that returns a pointer to IGameServer object
-	static IGameServer* GameServer(int WorldID = MAIN_WORLD_ID) { return g_pServer->GameServer(WorldID); }
+	static IGameServer* GameServer(int WorldID = MAIN_WORLD_ID) { return Data::g_pServer->GameServer(WorldID); }
 };
 
 extern IGameServer *CreateGameServer();

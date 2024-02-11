@@ -153,7 +153,7 @@ void CPlayer::Tick()
 
 	// post updated votes if player open menu
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU)
-		m_VotesData.RunVoteUpdater();
+		m_VotesData.ApplyVoteUpdaterData();
 }
 
 void CPlayer::PostTick()

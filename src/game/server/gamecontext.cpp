@@ -990,7 +990,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(str_comp_nocase(pMsg->m_pType, "option") == 0)
 			{
 				// If the player has an active post vote list, post it
-				pPlayer->m_VotesData.RunVoteUpdater();
+				pPlayer->m_VotesData.ApplyVoteUpdaterData();
 
 				if(CVoteOption* pActionVote = CVoteWrapper::GetOptionVoteByAction(ClientID, pMsg->m_pValue))
 				{

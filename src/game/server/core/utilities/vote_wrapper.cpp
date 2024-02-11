@@ -196,7 +196,7 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 					const int& Flags = pItem->m_Flags;
 					auto pFront = &pItem->m_vpVotelist.front();
 					auto pBack = &pItem->m_vpVotelist.back();
-					
+
 					// Append border to the vote option (can outside but)
 					dynamic_string Buffer;
 					if(&(*iter) == pFront)
@@ -302,33 +302,41 @@ void CVotePlayerData::ResetHidden(int MenuID)
 	}
 }
 
-// Function to update the current votes for a player
-void CVotePlayerData::CallbackUpdateVotes(CVotePlayerData* pData, int MenuID, bool PrepareCustom)
+// This function is responsible for updating the vote data for a player in a separate thread.
+void CVotePlayerData::ThreadVoteUpdater(CVotePlayerData* pData)
 {
-	if(!pData->m_pPlayer || !pData->m_pGS)
+	// Required sleep for to work properly and correct output of texts and data
+	std::this_thread::sleep_for(std::chrono::milliseconds(5));
+	if(!pData || !pData->m_pPlayer)
 		return;
 
-	// parse votes
-	std::this_thread::sleep_for(std::chrono::milliseconds(3));
-	int ClientID = pData->m_pPlayer->GetCID();
-	pData->SetCurrentMenuID(MenuID);
-	pData->ClearVotes();
-	pData->m_pGS->Core()->OnPlayerHandleMainMenu(ClientID, MenuID);
-	CVoteWrapper::RebuildVotes(ClientID);
+	// TODO: Same prepared vote thread update
+	pData->m_VoteUpdaterStatus.store(STATE_UPDATER::DONE);
 }
 
-void CVotePlayerData::RunVoteUpdater()
+// This function applies the vote updater data to the player's vote data
+void CVotePlayerData::ApplyVoteUpdaterData() 
 {
-	if(m_PostVotes)
+	if(m_VoteUpdaterStatus == STATE_UPDATER::DONE)
 	{
-		m_PostVotes();
-		m_PostVotes = nullptr;
+		ClearVotes();
+		int ClientID = m_pPlayer->GetCID();
+		m_pGS->Core()->OnPlayerHandleMainMenu(ClientID, m_CurrentMenuID);
+		CVoteWrapper::RebuildVotes(ClientID);
+		m_VoteUpdaterStatus.store(STATE_UPDATER::WAITING);
 	}
 }
 
 void CVotePlayerData::UpdateVotes(int MenuID)
 {
-	m_pPlayer->m_VotesData.m_PostVotes = std::bind(&CallbackUpdateVotes, this, MenuID, false);
+	m_CurrentMenuID = MenuID;
+
+	if(m_VoteUpdaterStatus == STATE_UPDATER::WAITING)
+	{
+		m_VoteUpdaterStatus.store(STATE_UPDATER::RUNNING);
+		m_VoteUpdater = std::thread(&CVotePlayerData::ThreadVoteUpdater, this);
+		m_VoteUpdater.detach();
+	}
 }
 
 void CVotePlayerData::UpdateVotesIf(int MenuID)
@@ -387,7 +395,7 @@ bool CVotePlayerData::ParsingDefaultSystemCommands(const char* CMD, const int Vo
 			}
 
 			// Toggle the value of the hidden vote group
-			pHidden->m_Value ^= true;
+			pHidden->m_Value = !pHidden->m_Value;
 			UpdateCurrentVotes();
 		}
 		return true;

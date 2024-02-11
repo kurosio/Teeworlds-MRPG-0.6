@@ -298,17 +298,19 @@ class CVotePlayerData
 
 	CGS* m_pGS {};
 	CPlayer* m_pPlayer {};
-	int m_CurrentMenuID {};
 	int m_LastMenuID{};
+	int m_CurrentMenuID { };
 	int m_TempMenuInteger {};
-	std::function<void()> m_PostVotes{};
+	std::thread m_VoteUpdater {};
+	enum class STATE_UPDATER { WAITING, RUNNING, DONE };
+	std::atomic<STATE_UPDATER> m_VoteUpdaterStatus{ STATE_UPDATER::WAITING };
 	ska::unordered_map<int, ska::unordered_map<int, VoteGroupHidden>> m_aHiddenGroup{};
 
 	VoteGroupHidden* EmplaceHidden(int ID, int Type);
 	VoteGroupHidden* GetHidden(int ID);
 	void ResetHidden(int MenuID);
 	void ResetHidden() { ResetHidden(m_CurrentMenuID); }
-	static void CallbackUpdateVotes(CVotePlayerData* pData, int MenuID, bool PrepareCustom);
+	static void ThreadVoteUpdater(CVotePlayerData* pData);
 
 public:
 	CVotePlayerData()
@@ -318,11 +320,12 @@ public:
 
 	~CVotePlayerData()
 	{
-		ClearVotes();
+		if(m_VoteUpdater.joinable())
+			m_VoteUpdater.join();
 
+		ClearVotes();
 		m_pGS = nullptr;
 		m_pPlayer = nullptr;
-		m_PostVotes = nullptr;
 		m_aHiddenGroup.clear();
 	}
 
@@ -332,7 +335,7 @@ public:
 		m_pPlayer = pPlayer;
 	}
 
-	void RunVoteUpdater();
+	void ApplyVoteUpdaterData();
 	void UpdateVotes(int MenuID);
 	void UpdateVotesIf(int MenuID);
 	void UpdateCurrentVotes() { UpdateVotes(m_CurrentMenuID); }

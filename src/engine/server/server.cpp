@@ -1927,7 +1927,7 @@ int CServer::Run(ILogger* pLogger)
 		m_RunServer = RUNNING;
 
 	// initilize
-	Instance::g_pServer = static_cast<IServer*>(this);
+	Instance::Data::g_pServer = static_cast<IServer*>(this);
 
 	// loading maps to memory
 	char aBuf[256];
