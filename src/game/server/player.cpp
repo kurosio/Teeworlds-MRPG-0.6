@@ -883,21 +883,6 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 	}
 	return false;
 }
-// vote parsing and improving statistics
-bool CPlayer::ParseVoteUpgrades(const char* CMD, const int VoteID, const int VoteID2, int Get)
-{
-	if(PPSTR(CMD, "UPGRADE") == 0)
-	{
-		if(Upgrade(Get, &Account()->m_aStats[(AttributeIdentifier)VoteID], &Account()->m_Upgrade, VoteID2, 1000))
-		{
-			GS()->Core()->SaveAccount(this, SAVE_UPGRADES);
-			m_VotesData.UpdateVotes(MENU_UPGRADES);
-		}
-		return true;
-	}
-
-	return false;
-}
 
 bool CPlayer::IsClickedKey(int KeyID) const
 {

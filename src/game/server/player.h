@@ -176,7 +176,6 @@ public:
 		FUNCTIONS PLAYER PARSING
 	========================================================== */
 	bool ParseVoteOptionResult(int Vote);
-	bool ParseVoteUpgrades(const char* CMD, int VoteID, int VoteID2, int Get);
 	bool IsClickedKey(int KeyID) const;
 
 	/* ==========================================================

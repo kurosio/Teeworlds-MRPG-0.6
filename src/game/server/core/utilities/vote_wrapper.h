@@ -30,6 +30,7 @@ class CVoteOption
 public:
 	char m_aDescription[VOTE_DESC_LENGTH] {};
 	char m_aCommand[VOTE_CMD_LENGTH] {};
+	int m_Level {};
 	int m_SettingID { -1 };
 	int m_SettingID2 { -1 };
 	bool m_Line { false };
@@ -49,6 +50,7 @@ class CVoteGroup
 	int m_GroupID {};
 	int m_Flags {};
 	int m_ClientID {};
+	int m_CurrentLevel {};
 
 	CVoteGroup(int ClientID, int Flags);
 
@@ -112,7 +114,6 @@ public:
 		return *this;
 	}
 
-
 	bool IsEmpty() const { return m_pGroup->IsEmpty(); }
 
 	/*
@@ -138,6 +139,18 @@ public:
 		const auto pVoteGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
 		pVoteGroup->AddItemValueImpl(ItemID);
 		m_pData[ClientID].push_back(pVoteGroup);
+	}
+
+	/*
+	 * Group level
+	 */
+	CVoteWrapper& IncreaseLevel() noexcept {
+		m_pGroup->m_CurrentLevel++;
+		return *this;
+	}
+	CVoteWrapper& DecreaseLevel() noexcept {
+		m_pGroup->m_CurrentLevel--;
+		return *this;
 	}
 
 	/*

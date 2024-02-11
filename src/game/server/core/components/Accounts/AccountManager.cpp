@@ -393,6 +393,16 @@ bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		return true;
 	}
 
+	if(PPSTR(CMD, "UPGRADE") == 0)
+	{
+		if(pPlayer->Upgrade(Get, &pPlayer->Account()->m_aStats[(AttributeIdentifier)VoteID], &pPlayer->Account()->m_Upgrade, VoteID2, 1000))
+		{
+			GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
+			pPlayer->m_VotesData.UpdateVotes(MENU_UPGRADES);
+		}
+		return true;
+	}
+
 	return false;
 }
 

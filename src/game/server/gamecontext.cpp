@@ -1801,10 +1801,7 @@ bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, c
 
 	if(pPlayer->m_VotesData.ParsingDefaultSystemCommands(CMD, VoteID, VoteID2, Get, Text))
 		return true;
-
-	if(pPlayer->ParseVoteUpgrades(CMD, VoteID, VoteID2, Get))
-		return true;
-
+	
 	// parsing everything else
 	const CSqlString<64> FormatText = sqlstr::CSqlString<64>(Text);
 	return Core()->OnParsingVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, FormatText.cstr());

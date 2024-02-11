@@ -6,11 +6,11 @@ const char* VOTE_LINE_DEF = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2
 
 namespace Border
 {
-	enum BorderSymbol { Beggin, Middle, MiddleOption, End, Num };
-	inline constexpr const char* g_pSimpleBorder[Num] = { "\u256D", "\u2502", "\u251C", "\u2570" };
-	inline constexpr const char* g_pDoubleBorder[Num] = { "\u2554", "\u2551", "\u2560", "\u255A" };
-	inline constexpr const char* g_pStrictBorder[Num] = { "\u250C", "\u2502", "\u251C", "\u2514" };
-	inline constexpr const char* g_pStrictBoldBorder[Num] = { "\u250F", "\u2503", "\u2523", "\u2517" };
+	enum BorderSymbol { Beggin, Middle, MiddleOption, Level, End, Num };
+	inline constexpr const char* g_pSimpleBorder[Num] = { "\u256D", "\u2502", "\u251C", "\u2500", "\u2570" };
+	inline constexpr const char* g_pDoubleBorder[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
+	inline constexpr const char* g_pStrictBorder[Num] = { "\u250C", "\u2502", "\u251C", "\u2500", "\u2514" };
+	inline constexpr const char* g_pStrictBoldBorder[Num] = { "\u250F", "\u2503", "\u2523", "\u2501", "\u2517" };
 
 	static constexpr const char* get(BorderSymbol Border, int Flags)
 	{
@@ -28,6 +28,7 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	int ClientWorldID = pServer->GetClientWorldID(m_ClientID);
 	m_pGS = (CGS*)pServer->GameServer(ClientWorldID);
 	m_GroupID = (int)CVoteWrapper::Data()[m_ClientID].size();
+	m_CurrentLevel = 0;
 }
 
 // Function to add a vote title implementation with variable arguments
@@ -112,6 +113,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_SettingID = Settings1;
 	Vote.m_SettingID2 = Settings2;
+	Vote.m_Level = m_Level;
 
 	// Add the VoteOption to the player's votes
 	m_GroupSize++;
@@ -209,31 +211,31 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 				CVotePlayerData::VoteGroupHidden* pHidden = pPlayer->m_VotesData.GetHidden(pItem->m_GroupID);
 				if(!pHidden || (pHidden && !pHidden->m_Value))
 				{
-					char aRebuildedBuf[VOTE_DESC_LENGTH];
 					const int& Flags = pItem->m_Flags;
 					auto itpFront = &pItem->m_vpVotelist.front();
 					auto itpBack = &pItem->m_vpVotelist.back();
 
+					// Append border to the vote option
+					dynamic_string Buffer;
 					if(str_comp((*iter).m_aDescription, itpFront->m_aDescription) == 0)
-					{
-						const char* pAppend = (str_comp((*iter).m_aDescription, VOTE_LINE_DEF) != 0 && str_comp((*iter).m_aCommand, "null") == 0) ? " " : "\0";
-						str_format(aRebuildedBuf, sizeof(aRebuildedBuf), "%s%s%s", get(Border::Beggin, Flags), pAppend, (*iter).m_aDescription);
-					}
+						Buffer.append(get(Border::Beggin, Flags));
 					else if(str_comp((*iter).m_aDescription, itpBack->m_aDescription) == 0)
-					{
-						const char* pAppend = (str_comp((*iter).m_aDescription, VOTE_LINE_DEF) != 0 && str_comp((*iter).m_aCommand, "null") == 0) ? " " : "\0";
-						str_format(aRebuildedBuf, sizeof(aRebuildedBuf), "%s%s%s", get(Border::End, Flags), pAppend, (*iter).m_aDescription);
-					}
-					else if(str_comp((*iter).m_aCommand, "null") == 0)
-					{
-						str_format(aRebuildedBuf, sizeof(aRebuildedBuf), "%s %s", get(Border::Middle, Flags), (*iter).m_aDescription);
-					}
+						Buffer.append(get(Border::End, Flags));
+					else if(str_comp((*iter).m_aCommand, "null") == 0 && (*iter).m_Level <= 0)
+						Buffer.append(get(Border::Middle, Flags));
 					else
-					{
-						str_format(aRebuildedBuf, sizeof(aRebuildedBuf), "%s%s", get(Border::MiddleOption, Flags), (*iter).m_aDescription);
-					}
+						Buffer.append(get(Border::MiddleOption, Flags));
 
-					str_copy((*iter).m_aDescription, aRebuildedBuf, sizeof((*iter).m_aDescription));
+					for(int i = 0; i < (*iter).m_Level; i++)
+						Buffer.append(get(Border::Level, Flags));
+
+					if(str_comp((*iter).m_aDescription, VOTE_LINE_DEF) != 0 && str_comp((*iter).m_aCommand, "null") == 0)
+						Buffer.append(" ");
+
+					// Save changes
+					char aRebuildBuffer[VOTE_DESC_LENGTH];
+					str_copy(aRebuildBuffer, (*iter).m_aDescription, sizeof(aRebuildBuffer));
+					str_format((*iter).m_aDescription, sizeof((*iter).m_aDescription), "%s%s", Buffer.buffer(), aRebuildBuffer);
 				}
 			}
 
