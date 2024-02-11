@@ -113,7 +113,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_SettingID = Settings1;
 	Vote.m_SettingID2 = Settings2;
-	Vote.m_Level = m_Level;
+	Vote.m_Level = m_CurrentLevel;
 
 	// Add the VoteOption to the player's votes
 	m_GroupSize++;
