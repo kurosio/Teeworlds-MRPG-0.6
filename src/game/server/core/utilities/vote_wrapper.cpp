@@ -169,6 +169,19 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	if(!pPlayer)
 		return;
 
+	// If the player has no votes, give a chance to come back
+	// Code format: {INT}x{INT} (CurrentMenuID, LastMenuID)
+	if(m_pData[ClientID].empty())
+	{
+		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
+		CVoteWrapper VError(ClientID, VWFLAG_BSTYLE_SIMPLE, "Error");
+		VError.Add("The voting list is empty").BeginDepthList().Add("Probably a server error").EndDepthList()
+			.Add("Report the error code #{INT}x{INT}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
+		pVotesData->SetLastMenuID(MENU_MAIN);
+		CVoteWrapper::AddBackpage(ClientID);
+	}
+
+	// Rebuild the vote options
 	CVoteOption* pLastVoteOption = nullptr;
 	for(auto pItem : m_pData[ClientID])
 	{
@@ -315,7 +328,7 @@ void CVotePlayerData::ThreadVoteUpdater(CVotePlayerData* pData)
 }
 
 // This function applies the vote updater data to the player's vote data
-void CVotePlayerData::ApplyVoteUpdaterData() 
+void CVotePlayerData::ApplyVoteUpdaterData()
 {
 	if(m_VoteUpdaterStatus == STATE_UPDATER::DONE)
 	{
