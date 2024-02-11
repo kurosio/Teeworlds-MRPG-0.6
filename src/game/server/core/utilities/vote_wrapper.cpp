@@ -31,7 +31,7 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 }
 
 // Function to add a vote title implementation with variable arguments
-void CVoteGroup::AddVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...)
+void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...)
 {
 	// Check if the player is valid
 	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
@@ -70,7 +70,10 @@ void CVoteGroup::AddVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	Vote.m_SettingID2 = SettingsID2;
 
 	// Add the VoteOption to the player's votes
-	m_vpVotelist.emplace_back(Vote);
+	if(m_vpVotelist.empty())
+		m_vpVotelist.emplace_back(Vote);
+	else
+		m_vpVotelist.front() = Vote;
 }
 
 // Function to add a vote implementation with variable arguments

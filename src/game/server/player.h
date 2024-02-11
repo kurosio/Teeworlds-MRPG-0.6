@@ -86,7 +86,6 @@ public:
 	CPlayerDialog m_Dialog;
 
 	bool m_WantSpawn;
-	short m_aSortTabs[NUM_SORT_TAB];
 	bool m_RequestChangeNickname;
 	int m_EidolonCID;
 	bool m_ActivedGroupColors;

@@ -1802,18 +1802,6 @@ bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, c
 	if(pPlayer->m_VotesData.ParsingDefaultSystemCommands(CMD, VoteID, VoteID2, Get, Text))
 		return true;
 
-	if(PPSTR(CMD, "SORTEDTOP") == 0)
-	{
-		pPlayer->m_aSortTabs[SORT_TOP] = VoteID;
-		pPlayer->m_VotesData.UpdateCurrentVotes();
-		return true;
-	}
-	if(PPSTR(CMD, "SORTEDWIKIWORLD") == 0)
-	{
-		pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] = VoteID;
-		pPlayer->m_VotesData.UpdateCurrentVotes();
-		return true;
-	}
 	if(pPlayer->ParseVoteUpgrades(CMD, VoteID, VoteID2, Get))
 		return true;
 

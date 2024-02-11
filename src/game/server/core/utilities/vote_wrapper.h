@@ -54,7 +54,7 @@ class CVoteGroup
 
 	bool IsEmpty() const { return m_GroupSize <= 0; }
 
-	void AddVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...);
+	void SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...);
 	void AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...);
 	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
 
@@ -82,20 +82,36 @@ public:
 	}
 
 	template<typename ... Args>
-	CVoteWrapper(int ClientID, const std::string& TitleText, Args&& ... argsfmt)
+	CVoteWrapper(int ClientID, const char* pTitle, Args&& ... argsfmt)
 	{
 		m_pGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
-		m_pGroup->AddVoteTitleImpl("null", NOPE, NOPE, TitleText.c_str(), std::forward<Args>(argsfmt)...);
+		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, pTitle, std::forward<Args>(argsfmt)...);
 		m_pData[ClientID].push_back(m_pGroup);
 	}
 
 	template<typename ... Args>
-	CVoteWrapper(int ClientID, int Flags, const std::string& TitleText, Args&& ... argsfmt)
+	CVoteWrapper(int ClientID, int Flags, const char* pTitle, Args&& ... argsfmt)
 	{
 		m_pGroup = new CVoteGroup(ClientID, Flags);
-		m_pGroup->AddVoteTitleImpl("null", NOPE, NOPE, TitleText.c_str(), std::forward<Args>(argsfmt)...);
+		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, pTitle, std::forward<Args>(argsfmt)...);
 		m_pData[ClientID].push_back(m_pGroup);
 	}
+
+	/*
+	 * Post initilize title
+	 */
+	template<typename ... Args>
+	CVoteWrapper& SetTitle(const char* pTitle, Args&& ... argsfmt) noexcept {
+		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, pTitle, std::forward<Args>(argsfmt)...);
+		return *this;
+	}
+	template<typename ... Args>
+	CVoteWrapper& SetTitle(int Flags, const char* pTitle, Args&& ... argsfmt) noexcept {
+		m_pGroup->m_Flags = Flags;
+		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, pTitle, std::forward<Args>(argsfmt)...);
+		return *this;
+	}
+
 
 	bool IsEmpty() const { return m_pGroup->IsEmpty(); }
 

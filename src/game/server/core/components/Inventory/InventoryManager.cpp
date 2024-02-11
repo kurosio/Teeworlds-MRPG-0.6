@@ -103,63 +103,62 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MenuList::MENU_INVENTORY)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-		GS()->AVH(ClientID, TAB_INFO_INVENTORY, "Inventory Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "Choose the type of items you want to show");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "After, need select item to interact");
-		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_INVENTORY_SELECT, "\u205C Inventory tabs");
+		CVoteWrapper VInventoryInfo(ClientID, HIDE_DEFAULT_OPEN, "\u205C Inventory Information");
+		VInventoryInfo.Add("Choose the type of items you want to show");
+		VInventoryInfo.Add("After, need select item to interact");
+		VInventoryInfo.AddLine();
+
+		CVoteWrapper VInventoryTabs(ClientID, HIDE_DEFAULT_OPEN, "\u205C Inventory tabs");
 		int SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_USED);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_USED, TAB_INVENTORY_SELECT, "Used ({INT})", SizeItems);
-
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "Used ({INT})", SizeItems);
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_CRAFT, TAB_INVENTORY_SELECT, "Craft ({INT})", SizeItems);
-
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "Craft ({INT})", SizeItems);
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_EQUIP, TAB_INVENTORY_SELECT, "Equipment ({INT})", SizeItems);
-
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_EQUIP, "Equipment ({INT})", SizeItems);
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_MODULE);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_MODULE, TAB_INVENTORY_SELECT, "Modules ({INT})", SizeItems);
-
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_MODULE, "Modules ({INT})", SizeItems);
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_POTION);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_POTION, TAB_INVENTORY_SELECT, "Potion ({INT})", SizeItems);
-
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_POTION, "Potion ({INT})", SizeItems);
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_OTHER);
-		GS()->AVM(ClientID, "SORTEDINVENTORY", (int)ItemType::TYPE_OTHER, TAB_INVENTORY_SELECT, "Other ({INT})", SizeItems);
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "Other ({INT})", SizeItems);
+		VInventoryTabs.AddLine();
 
-		if(pPlayer->m_aSortTabs[SORT_INVENTORY] >= 0)
-			ListInventory(ClientID, (ItemType)pPlayer->m_aSortTabs[SORT_INVENTORY]);
+		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
+			ListInventory(ClientID, (ItemType)pPlayer->m_VotesData.GetMenuTemporaryInteger());
 
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
 	if(Menulist == MenuList::MENU_EQUIPMENT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-		GS()->AVH(ClientID, TAB_INFO_EQUIP, "Equip / Armor Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EQUIP, "SELECT tab and select armor.");
-		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_EQUIP_SELECT, "\u2604 Equipment");
+		CVoteWrapper VEquipInfo(ClientID, HIDE_DEFAULT_OPEN, "\u2604 Equipment Information");
+		VEquipInfo.Add("Select the type of equipment you want to show");
+		VEquipInfo.Add("After, need select item to interact");
+		VEquipInfo.AddLine();
+
+		CVoteWrapper VEquipTabs(ClientID, HIDE_DEFAULT_OPEN, "\u2604 Equipment tabs");
 		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor", "Eidolon" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
 			ItemIdentifier ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
 			if(ItemID <= 0 || !pPlayer->GetItem(ItemID)->IsEquipped())
 			{
-				GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} not equipped", paTypeNames[i]);
+				VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{STR} not equipped", paTypeNames[i]);
 				continue;
 			}
 
 			char aAttributes[128];
 			pPlayer->GetItem(ItemID)->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-			GS()->AVM(ClientID, "SORTEDEQUIP", i, TAB_EQUIP_SELECT, "{STR} * {STR}", pPlayer->GetItem(ItemID)->Info()->GetName(), aAttributes);
+			VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{STR} * {STR}", paTypeNames[i], aAttributes);
 		}
 
 		// show and sort equipment
-		if(pPlayer->m_aSortTabs[SORT_EQUIPING] >= 0)
-			ListInventory(ClientID, (ItemFunctional)pPlayer->m_aSortTabs[SORT_EQUIPING]);
+		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() > 0)
+			ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetMenuTemporaryInteger());
 
 		GS()->AddVotesBackpage(ClientID);
 		return true;
@@ -171,13 +170,6 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
-
-	if(PPSTR(CMD, "SORTEDINVENTORY") == 0)
-	{
-		pPlayer->m_aSortTabs[SORT_INVENTORY] = VoteID;
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
-		return true;
-	}
 
 	if(PPSTR(CMD, "IDROP") == 0)
 	{
@@ -251,13 +243,6 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		pPlayerItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
 		GS()->Chat(-1, "{STR} enchant {STR} {STR} {STR}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str(), aAttributes);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
-		return true;
-	}
-
-	if(PPSTR(CMD, "SORTEDEQUIP") == 0)
-	{
-		pPlayer->m_aSortTabs[SORT_EQUIPING] = VoteID;
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
 		return true;
 	}
 
@@ -357,90 +342,66 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 {
 	const int ClientID = pPlayer->GetCID();
 	const ItemIdentifier ItemID = pItemPlayer.GetID();
-	const int HideID = NUM_TAB_MENU + ItemID;
 	const char* pNameItem = pItemPlayer.Info()->GetName();
 
-	// overwritten or not
+	CVoteWrapper VItem(ClientID, HIDE_UNIQUE);
+
+	// name description
 	if(pItemPlayer.Info()->IsEnchantable())
 	{
-		GS()->AVH(ClientID, HideID, "{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.StringEnchantLevel().c_str());
-
-		if(Dress && pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped())
-			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDescription());
+		VItem.SetTitle("{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.StringEnchantLevel().c_str());
 
 		char aAttributes[64];
 		pItemPlayer.StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", aAttributes);
+		VItem.AddIf(aAttributes[0] != '\0', "{STR}", aAttributes);
 	}
 	else
 	{
-		GS()->AVH(ClientID, HideID, "{STR}{STR} x{VAL}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.m_Value);
-		if(pItemPlayer.Info()->m_Type != ItemType::TYPE_CRAFT && pItemPlayer.Info()->m_Type != ItemType::TYPE_OTHER)
-			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemPlayer.Info()->GetDescription());
+		VItem.SetTitle("{STR}{STR} x{VAL}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.m_Value);
 	}
+	VItem.AddIf(Dress && pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped(), "{STR}", pItemPlayer.Info()->GetDescription());
 
-	// functional by function
-	if(pItemPlayer.Info()->m_Function == FUNCTION_ONE_USED || pItemPlayer.Info()->m_Function == FUNCTION_USED)
-	{
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Bind command '/useitem {INT}'", ItemID);
-		GS()->AVM(ClientID, "IUSE", ItemID, HideID, "Use");
-	}
-	else if(pItemPlayer.Info()->m_Function == FUNCTION_PLANT)
-	{
-		if(CHouseData* pHouse = pPlayer->Account()->GetHouse(); pHouse && pHouse->GetPlantedItem()->GetID() != ItemID)
-		{
-			const int random_change = rand() % 1500;
-			GS()->AVD(ClientID, "PLANTING_HOUSE_SET", ItemID, random_change, HideID, "To plant at home (0.06%)");
-		}
-	}
+	// is used item
+	bool IsUsed = pItemPlayer.Info()->m_Function == FUNCTION_ONE_USED || pItemPlayer.Info()->m_Function == FUNCTION_USED;
+	VItem.AddIfOption(IsUsed, "IUSE", ItemID, "Use");
 
-	// functional by type
-	if(pItemPlayer.Info()->m_Type == ItemType::TYPE_POTION)
-	{
-		GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, "Auto use - {STR}", (pItemPlayer.m_Settings ? "Enable" : "Disable"));
+	// is planting item
+	bool IsPlantItem = pItemPlayer.Info()->m_Function == FUNCTION_PLANT;
+	VItem.AddIfOption(IsPlantItem, "PLANTING_HOUSE_SET", ItemID, "To plant at home (0.06%)");
 
-	}
-	else if(pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION)
+	// is potion
+	bool IsPotion = pItemPlayer.Info()->m_Type == ItemType::TYPE_POTION;
+	VItem.AddIfOption(IsPotion, "ISETTINGS", ItemID, "Auto use - {STR}", (pItemPlayer.m_Settings ? "Enable" : "Disable"));
+
+	// is decoration
+	bool IsDeco = pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION;
+	VItem.AddIfOption(IsDeco, "DECORATION_HOUSE_ADD", ItemID, "Start drawing near house");
+	VItem.AddIfOption(IsDeco, "GUILD_HOUSE_DECORATION", ItemID, "Start drawing near guild house");
+
+	// is equipped
+	bool IsEquipped = pItemPlayer.Info()->m_Type == ItemType::TYPE_EQUIP || pItemPlayer.Info()->m_Function == FUNCTION_SETTINGS;
+	if(IsEquipped)
 	{
-		GS()->AVM(ClientID, "DECORATION_HOUSE_ADD", ItemID, HideID, "Start drawing near house", pNameItem);
-		GS()->AVM(ClientID, "GUILD_HOUSE_DECORATION", ItemID, HideID, "Start drawing near guild house", pNameItem);
-	}
-	else if(pItemPlayer.Info()->m_Type == ItemType::TYPE_EQUIP || pItemPlayer.Info()->m_Function == FUNCTION_SETTINGS)
-	{
-		if((pItemPlayer.Info()->m_Function == EQUIP_HAMMER && pItemPlayer.IsEquipped()))
-			GS()->AVM(ClientID, "null", NOPE, HideID, "You can not undress equipping hammer", pNameItem);
+		if(pItemPlayer.Info()->m_Function == EQUIP_HAMMER && pItemPlayer.IsEquipped())
+			VItem.Add("You can not undress equipping hammer");
 		else
-			GS()->AVM(ClientID, "ISETTINGS", ItemID, HideID, (pItemPlayer.m_Settings ? "Undress" : "Equip"));
+			VItem.AddOption("ISETTINGS", ItemID, (pItemPlayer.m_Settings ? "Undress" : "Equip"));
 	}
 
-	// enchant
+	// is enchantable
 	if(pItemPlayer.Info()->IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
 	{
 		const int Price = pItemPlayer.GetEnchantPrice();
-		GS()->AVM(ClientID, "IENCHANT", ItemID, HideID, "Enchant ({VAL}m)", Price);
+		VItem.AddOption("IENCHANT", ItemID, "Enchant ({VAL}m)", Price);
 	}
 
 	// not allowed drop equipped hammer
 	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
-		// dysenthis
-		if(pItemPlayer.GetDysenthis() > 0)
-		{
-			GS()->AVM(ClientID, "IDESYNTHESIS", ItemID, HideID, "Disassemble (+{VAL}m)", pItemPlayer.GetDysenthis());
-		}
-
-		// auction
-		if(pItemPlayer.Info()->m_InitialPrice > 0)
-		{
-			GS()->AVM(ClientID, "AUCTION_SLOT", ItemID, HideID, "Sell at auction");
-		}
-
-		// drop
-		GS()->AVM(ClientID, "IDROP", ItemID, HideID, "Drop");
+		VItem.AddIfOption(pItemPlayer.GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItemPlayer.GetDysenthis(), "Disassemble (+{VAL}m)");
+		VItem.AddIfOption(pItemPlayer.Info()->m_InitialPrice > 0, "AUCTION_SLOT", ItemID, "Sell at auction");
+		VItem.AddOption("IDROP", ItemID, "Drop");
 	}
-
-	// add escape
-	GS()->AVM(ClientID, "null", -1, HideID, "");
 }
 
 int CInventoryManager::GetCountItemsType(CPlayer* pPlayer, ItemType Type) const
