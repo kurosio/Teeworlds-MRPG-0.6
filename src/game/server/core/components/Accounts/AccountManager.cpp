@@ -284,13 +284,9 @@ int CAccountManager::GetRank(int AccountID)
 	return -1;
 }
 
-bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(ReplaceMenu)
-	{
-		return false;
-	}
 
 	// settings
 	if(Menulist == MENU_SETTINGS)
@@ -305,7 +301,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 
 		// game settings
 		CVoteWrapper VMainSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2699 Main settings");
-		VMainSettings.Add(MENU_SELECT_LANGUAGE, "Settings language");
+		VMainSettings.AddMenu(MENU_SETTINGS_LANGUAGE_SELECT, "Settings language");
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
 			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
@@ -338,7 +334,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 	}
 
 	// Language selection
-	if(Menulist == MENU_SELECT_LANGUAGE)
+	if(Menulist == MENU_SETTINGS_LANGUAGE_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
@@ -390,7 +386,7 @@ bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		GS()->Chat(ClientID, "You have chosen a language \"{STR}\".", pSelectedLanguage);
 
 		// Update the votes menu for the client
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_SELECT_LANGUAGE);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_SETTINGS_LANGUAGE_SELECT);
 
 		// Save the account's language
 		Core()->SaveAccount(pPlayer, SAVE_LANGUAGE);

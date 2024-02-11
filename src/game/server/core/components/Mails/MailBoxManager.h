@@ -7,7 +7,7 @@
 class CMailboxManager : public MmoComponent
 {
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
+	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 
 public:
 	int GetMailLettersSize(int AccountID);

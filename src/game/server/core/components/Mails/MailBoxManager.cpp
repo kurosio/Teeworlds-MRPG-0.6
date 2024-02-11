@@ -26,11 +26,9 @@ bool CMailboxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, in
 	return false;
 }
 
-bool CMailboxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CMailboxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(ReplaceMenu)
-		return false;
 
 	if(Menulist == MenuList::MENU_INBOX)
 	{

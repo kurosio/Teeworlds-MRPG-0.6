@@ -92,8 +92,6 @@ public:
 	bool m_ActivedGroupColors;
 	int m_TickActivedGroupColors;
 
-	bool m_ZoneInvertMenu;
-	int m_ZoneMenuSelectedID;
 	/* ==========================================================
 		FUNCTIONS PLAYER ENGINE
 	========================================================== */

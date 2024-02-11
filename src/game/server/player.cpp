@@ -36,7 +36,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
-	m_ZoneMenuSelectedID = -1;
 	m_Cooldown.Initilize(ClientID);
 	m_VotesData.Initilize(m_pGS, this);
 
@@ -44,7 +43,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	if(m_ClientID < MAX_PLAYERS)
 	{
 		m_TutorialStep = 1;
-		m_ZoneInvertMenu = false;
 		m_MoodState = Mood::NORMAL;
 		Account()->m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);

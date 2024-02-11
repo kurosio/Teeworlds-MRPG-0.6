@@ -96,11 +96,9 @@ void CInventoryManager::OnResetClient(int ClientID)
 	CPlayerItem::Data().erase(ClientID);
 }
 
-bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(ReplaceMenu)
-		return false;
 
 	if(Menulist == MenuList::MENU_INVENTORY)
 	{

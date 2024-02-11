@@ -11,7 +11,7 @@ class CEidolonManager : public MmoComponent
 	int m_EidolonItemSelected[MAX_PLAYERS] {};
 
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu) override;
+	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 
 public:
 	// return eidolon size by pair (first player collection / second maximum eidolons)

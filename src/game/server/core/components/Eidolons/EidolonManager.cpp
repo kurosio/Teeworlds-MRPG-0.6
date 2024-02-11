@@ -23,11 +23,9 @@ bool CEidolonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, in
 	return false;
 }
 
-bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(ReplaceMenu)
-		return false;
 
 	if(Menulist == MENU_EIDOLON_COLLECTION)
 	{

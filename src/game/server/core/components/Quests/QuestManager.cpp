@@ -98,54 +98,44 @@ bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_DAILY_BOARD))
 	{
 		// Send message about entering the shop zone to the player
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_DAILY_BOARD);
 		return true;
 	}
 	// Check if the player exited the shop zone
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_DAILY_BOARD))
 	{
 		// Send message about exiting the shop zone to the player
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
 	return false;
 }
 
-bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	// Retrieve the character object client ID associated with the player
 	CCharacter* pChr = pPlayer->GetCharacter();
 	const int ClientID = pPlayer->GetCID();
 
-	// Check if the ReplaceMenu flag is true
-	if(ReplaceMenu)
+	if(Menulist == MENU_DAILY_BOARD)
 	{
-		// Check if the player character is not null, alive, and has the TILE_QUEST_DAILY_BOARD helper index
-		if(pChr && pChr->IsAlive() && pChr->GetHelper()->BoolIndex(TILE_DAILY_BOARD))
+		// Get the daily board for the player character's position
+		if(CQuestsDailyBoard* pDailyBoard = GetDailyBoard(pChr->m_Core.m_Pos))
 		{
-			// Get the daily board for the player character's position
-			if(CQuestsDailyBoard* pDailyBoard = GetDailyBoard(pChr->m_Core.m_Pos))
-			{
-				// Show the daily quests to the player
-				ShowDailyQuestsBoard(pChr->GetPlayer(), pDailyBoard);
+			// Show the daily quests to the player
+			ShowDailyQuestsBoard(pChr->GetPlayer(), pDailyBoard);
 
-				// Show wanted players board
-				ShowWantedPlayersBoard(pChr->GetPlayer());
-			}
-			else
-			{
-				// Display an error message that the daily board is not working
-				GS()->AV(ClientID, "null", "Daily board don't work");
-			}
-
-			return true;
+			// Show wanted players board
+			ShowWantedPlayersBoard(pChr->GetPlayer());
+		}
+		else
+		{
+			// Display an error message that the daily board is not working
+			GS()->AV(ClientID, "null", "Daily board don't work");
 		}
 
-		// Return false to indicate that the operation was not successful
-		return false;
+		return true;
 	}
 
 	// Check if the Menulist is equal to MENU_JOURNAL_MAIN

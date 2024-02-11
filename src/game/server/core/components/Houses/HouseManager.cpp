@@ -59,41 +59,21 @@ bool CHouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLAYER_HOUSE))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_HOUSE_BUY);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_PLAYER_HOUSE))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
 	return false;
 }
 
-bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(ReplaceMenu)
-	{
-		CCharacter* pChr = pPlayer->GetCharacter();
-		if(!pChr || !pChr->IsAlive())
-		{
-			return false;
-		}
-
-		if(pChr->GetHelper()->BoolIndex(TILE_PLAYER_HOUSE))
-		{
-			if(CHouseData* pHouse = GetHouseByPos(pChr->m_Core.m_Pos))
-				ShowHouseMenu(pPlayer, pHouse);
-
-			return true;
-		}
-		return false;
-	}
-
 
 	if(Menulist == MENU_HOUSE)
 	{
@@ -250,6 +230,15 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 		// back page
 		GS()->AddVotesBackpage(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_HOUSE_BUY)
+	{
+		CCharacter* pChr = pPlayer->GetCharacter();
+		if(CHouseData* pHouse = GetHouseByPos(pChr->m_Core.m_Pos))
+			ShowHouseMenu(pPlayer, pHouse);
+
 		return true;
 	}
 

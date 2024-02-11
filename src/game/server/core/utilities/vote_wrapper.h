@@ -161,29 +161,34 @@ public:
 			m_pGroup->AddVoteImpl("null", NOPE, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
+
+	template<typename ... Args>
+	CVoteWrapper& Add(const char* pText, Args&& ... argsfmt) {
+		return AddIf(true, pText, std::forward<Args>(argsfmt)...);
+	}
+
+	/*
+	 * Menu group
+	 */
 	template <typename ... Args>
-	CVoteWrapper& AddIf(bool Checker, int MenuID, const char* pText, Args&& ... argsfmt) {
+	CVoteWrapper& AddIfMenu(bool Checker, int MenuID, const char* pText, Args&& ... argsfmt) {
 		if(Checker)
 			m_pGroup->AddVoteImpl("MENU", MenuID, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddIf(bool Checker, int MenuID, int InteractID, const char* pText, Args&& ... argsfmt) {
+	CVoteWrapper& AddIfMenu(bool Checker, int MenuID, int GroupInteractID, const char* pText, Args&& ... argsfmt) {
 		if(Checker)
-			m_pGroup->AddVoteImpl("MENU", MenuID, InteractID, pText, std::forward<Args>(argsfmt)...);
+			m_pGroup->AddVoteImpl("MENU", MenuID, GroupInteractID, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template<typename ... Args>
-	CVoteWrapper& Add(const char* pText, Args&& ... argsfmt) {
-		return AddIf(true, pText, std::forward<Args>(argsfmt)...);
+	CVoteWrapper& AddMenu(int MenuID, const char* pText, Args&& ... argsfmt) {
+		return AddIfMenu(true, MenuID, pText, std::forward<Args>(argsfmt)...);
 	}
 	template<typename ... Args>
-	CVoteWrapper& Add(int MenuID, const char* pText, Args&& ... argsfmt) {
-		return AddIf(true, MenuID, pText, std::forward<Args>(argsfmt)...);
-	}
-	template<typename ... Args>
-	CVoteWrapper& Add(int MenuID, int InteractID, const char* pText, Args&& ... argsfmt) {
-		return AddIf(true, MenuID, InteractID, pText, std::forward<Args>(argsfmt)...);
+	CVoteWrapper& AddMenu(int MenuID, int GroupInteractID, const char* pText, Args&& ... argsfmt) {
+		return AddIfMenu(true, MenuID, GroupInteractID, pText, std::forward<Args>(argsfmt)...);
 	}
 
 	/*

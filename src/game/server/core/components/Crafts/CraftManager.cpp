@@ -42,14 +42,12 @@ bool CCraftManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_CRAFT_ZONE))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_CRAFT_LIST);
 		return true;
 	}
 	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_CRAFT_ZONE))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 	return false;
@@ -130,45 +128,38 @@ bool CCraftManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	return false;
 }
 
-bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-	if (ReplaceMenu)
+
+	if(Menulist == MENU_CRAFT_LIST)
 	{
-		CCharacter* pChr = pPlayer->GetCharacter();
-		if(!pChr || !pChr->IsAlive())
-			return false;
+		// show craft list
+		CVoteWrapper VCraftInfo(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2692 Crafting Information");
+		VCraftInfo.Add("If you will not have enough items for crafting");
+		VCraftInfo.Add("You will write those and the amount that is still required");
+		VCraftInfo.AddItemValue();
+		VCraftInfo.AddLine();
 
-		if(pChr->GetHelper()->BoolIndex(TILE_CRAFT_ZONE))
-		{
-			// show craft item
-			if(pPlayer->m_ZoneMenuSelectedID > 0)
-			{
-				int CraftID = pPlayer->m_ZoneMenuSelectedID;
-				ShowCraftItem(pPlayer, GetCraftByID(CraftID));
-				return true;
-			}
+		// show craft tabs
+		ShowCraftList(pPlayer, "Can be used's", ItemType::TYPE_USED);
+		ShowCraftList(pPlayer, "Potion's", ItemType::TYPE_POTION);
+		ShowCraftList(pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
+		ShowCraftList(pPlayer, "Module's", ItemType::TYPE_MODULE);
+		ShowCraftList(pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
+		ShowCraftList(pPlayer, "Craft's", ItemType::TYPE_CRAFT);
+		ShowCraftList(pPlayer, "Other's", ItemType::TYPE_OTHER);
+		ShowCraftList(pPlayer, "Quest and all the rest's", ItemType::TYPE_INVISIBLE);
+		return true;
+	}
 
-			// show craft list
-			CVoteWrapper VCraftInfo(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2692 Crafting Information");
-			VCraftInfo.Add("If you will not have enough items for crafting");
-			VCraftInfo.Add("You will write those and the amount that is still required");
-			VCraftInfo.AddItemValue();
-			CVoteWrapper::AddLine(ClientID);
+	if(Menulist == MENU_CRAFT_SELECTED)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_CRAFT_LIST);
 
-			// show craft tabs
-			ShowCraftList(pPlayer, "Can be used's", ItemType::TYPE_USED);
-			ShowCraftList(pPlayer, "Potion's", ItemType::TYPE_POTION);
-			ShowCraftList(pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
-			ShowCraftList(pPlayer, "Module's", ItemType::TYPE_MODULE);
-			ShowCraftList(pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
-			ShowCraftList(pPlayer, "Craft's", ItemType::TYPE_CRAFT);
-			ShowCraftList(pPlayer, "Other's", ItemType::TYPE_OTHER);
-			ShowCraftList(pPlayer, "Quest and all the rest's", ItemType::TYPE_INVISIBLE);
-			return true;
-		}
-
-		return false;
+		int CraftID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
+		ShowCraftItem(pPlayer, GetCraftByID(CraftID));
+		return true;
 	}
 
 	return false;
@@ -226,11 +217,13 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 
 		if(pCraftItemInfo->IsEnchantable())
 		{
-			VCraftList.AddOption("ZONE_SELECT", ID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
+			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "{STR}{STR} - {VAL} gold", 
+				(pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		}
 		else
 		{
-			VCraftList.AddOption("ZONE_SELECT", ID, "[{VAL}]{STR}x{INT} - {VAL} gold", pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
+			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "[{VAL}]{STR}x{INT} - {VAL} gold",
+				pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}
 

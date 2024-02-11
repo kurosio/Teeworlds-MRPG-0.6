@@ -310,22 +310,15 @@ void CVotePlayerData::ResetHidden(int MenuID)
 	}
 }
 
-
+// Function to update the current votes for a player
 void CVotePlayerData::CallbackUpdateVotes(CVotePlayerData* pData, int MenuID, bool PrepareCustom)
 {
 	if(!pData->m_pPlayer || !pData->m_pGS)
 		return;
 
+	// parse votes
 	std::this_thread::sleep_for(std::chrono::milliseconds(3));
 	int ClientID = pData->m_pPlayer->GetCID();
-	if(MenuID == CUSTOM_MENU && PrepareCustom)
-	{
-		// send parsed votes
-		CVoteWrapper::RebuildVotes(ClientID);
-		return;
-	}
-
-	// parse votes
 	pData->SetCurrentMenuID(MenuID);
 	pData->ClearVotes();
 	pData->m_pGS->Core()->OnPlayerHandleMainMenu(ClientID, MenuID);
@@ -377,37 +370,9 @@ bool CVotePlayerData::ParsingDefaultSystemCommands(const char* CMD, const int Vo
 		return true;
 	}
 
-	// Check if the command is "SELECT"
-	if(PPSTR(CMD, "ZONE_SELECT") == 0)
-	{
-		m_pPlayer->m_ZoneMenuSelectedID = VoteID;
-		UpdateCurrentVotes();
-		return true;
-	}
-
-	// Check if the command is "ZONE_INVERT_MENU"
-	if(PPSTR(CMD, "ZONE_INVERT_MENU") == 0)
-	{
-		// Toggle the zone invert menu flag for the player
-		m_pPlayer->m_ZoneInvertMenu ^= true;
-
-		// Update the votes for the player
-		ResetHidden();
-		UpdateCurrentVotes();
-		return true;
-	}
-
 	// Check if the command is "BACK"
 	if(PPSTR(CMD, "BACK") == 0)
 	{
-		// Check if the selected ID is greater than or equal to 0
-		if(m_pPlayer->m_ZoneMenuSelectedID >= 0)
-		{
-			m_pPlayer->m_ZoneMenuSelectedID = -1;
-			UpdateCurrentVotes();
-			return true;
-		}
-
 		// Update the votes for the player
 		UpdateVotes(m_LastMenuID);
 		return true;

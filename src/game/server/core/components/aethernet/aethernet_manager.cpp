@@ -115,37 +115,26 @@ bool CAethernetManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	// Check if the character enters the Aether teleport tile
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_AETHER_TELEPORT))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AETHERNET_LIST);
 		UnlockLocationByPos(pChr->GetPlayer(), pChr->m_Core.m_Pos);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	// Check if the character exits the Aether teleport tile
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_AETHER_TELEPORT))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
 	return false;
 }
 
-bool CAethernetManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CAethernetManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
-	if(ReplaceMenu)
+	if(Menulist == MENU_AETHERNET_LIST)
 	{
-		CCharacter* pChr = pPlayer->GetCharacter();
-		if(!pChr || !pChr->IsAlive())
-			return false;
-
-		// Check if the player has access to the Aether teleport tile
-		if(pChr->GetHelper()->BoolIndex(TILE_AETHER_TELEPORT))
-		{
-			ShowMenu(pChr);
-			return true;
-		}
-		return false;
+		ShowMenu(pPlayer->GetCharacter());
+		return true;
 	}
 
 	return false;

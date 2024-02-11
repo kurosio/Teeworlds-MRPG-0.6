@@ -19,39 +19,30 @@ bool CAuctionManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	const int ClientID = pPlayer->GetCID();
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_AUCTION))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AUCTION_LIST);
 		return true;
 	}
 
 	if (pChr->GetHelper()->TileExit(IndexCollision, TILE_AUCTION))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
 	return false;
 }
 
-bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(ReplaceMenu)
-	{
-		CCharacter* pChr = pPlayer->GetCharacter();
-		if(!pChr || !pChr->IsAlive())
-			return false;
 
-		if(pChr->GetHelper()->BoolIndex(TILE_AUCTION))
-		{
-			ShowAuction(pPlayer);
-			return true;
-		}
-		return false;
+	if(Menulist == MENU_AUCTION_LIST)
+	{
+		ShowAuction(pPlayer);
+		return true;
 	}
 
-	if(Menulist == MenuList::MENU_AUCTION_CREATE_SLOT)
+	if(Menulist == MENU_AUCTION_CREATE_SLOT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_INVENTORY);
 

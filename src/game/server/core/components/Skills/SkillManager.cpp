@@ -43,32 +43,25 @@ void CSkillManager::OnResetClient(int ClientID)
 	CSkill::Data().erase(ClientID);
 }
 
-bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
-	if (ReplaceMenu)
+	if(Menulist == MENU_SKILLS_LEARN_LIST)
 	{
-		CCharacter* pChr = pPlayer->GetCharacter();
-		if (!pChr || !pChr->IsAlive())
-			return false;
+		const int ClientID = pPlayer->GetCID();
+		GS()->AVH(ClientID, TAB_INFO_SKILL, "Skill Learn Information");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "Here you can learn passive and active skills");
+		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "You can bind active skill any button using the console");
+		GS()->AV(ClientID, "null");
+		GS()->AddVoteItemValue(ClientID, itSkillPoint);
+		GS()->AV(ClientID, "null");
 
-		if (pChr->GetHelper()->BoolIndex(TILE_SKILL_ZONE))
-		{
-			const int ClientID = pPlayer->GetCID();
-			GS()->AVH(ClientID, TAB_INFO_SKILL, "Skill Learn Information");
-			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "Here you can learn passive and active skills");
-			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "You can bind active skill any button using the console");
-			GS()->AV(ClientID, "null");
-			GS()->AddVoteItemValue(ClientID, itSkillPoint);
-			GS()->AV(ClientID, "null");
-
-			ShowMailSkillList(pPlayer, SKILL_TYPE_TANK);
-			ShowMailSkillList(pPlayer, SKILL_TYPE_DPS);
-			ShowMailSkillList(pPlayer, SKILL_TYPE_HEALER);
-			ShowMailSkillList(pPlayer, SKILL_TYPE_IMPROVEMENTS);
-			return true;
-		}
-		return false;
+		ShowMailSkillList(pPlayer, SKILL_TYPE_TANK);
+		ShowMailSkillList(pPlayer, SKILL_TYPE_DPS);
+		ShowMailSkillList(pPlayer, SKILL_TYPE_HEALER);
+		ShowMailSkillList(pPlayer, SKILL_TYPE_IMPROVEMENTS);
+		return true;
 	}
+
 	return false;
 }
 
@@ -79,14 +72,12 @@ bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_SKILL_ZONE))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_SKILLS_LEARN_LIST);
 		return true;
 	}
 	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_SKILL_ZONE))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 	return false;

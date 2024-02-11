@@ -59,54 +59,51 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	// shop zone
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_SHOP_ZONE))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_WAREHOUSE_SHOPPING_LIST);
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_SHOP_ZONE))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
 	// selling zone
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_ORE_SELL) || pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLANT_SELL))
 	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_WAREHOUSE_SELLING_LIST);
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_ORE_SELL) || pChr->GetHelper()->TileExit(IndexCollision, TILE_PLANT_SELL))
 	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
 	return false;
 }
 
-bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 	CCharacter* pChr = pPlayer->GetCharacter();
-	if(ReplaceMenu && pChr && pChr->IsAlive())
-	{
-		if(pChr->GetHelper()->BoolIndex(TILE_SHOP_ZONE))
-		{
-			if(CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos))
-			{
-				ShowWarehouseMenu(pChr->GetPlayer(), pWarehouse);
-			}
-			else
-			{
-				GS()->AV(ClientID, "null", "Warehouse don't work");
-			}
 
-			return true;
+	if(Menulist == MENU_WAREHOUSE_SHOPPING_LIST)
+	{
+		if(CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos))
+		{
+			ShowWarehouseMenu(pChr->GetPlayer(), pWarehouse);
+		}
+		else
+		{
+			GS()->AV(ClientID, "null", "Warehouse don't work");
 		}
 
+		return true;
+	}
+
+	if(Menulist == MENU_WAREHOUSE_SELLING_LIST)
+	{
 		if(pChr->GetHelper()->BoolIndex(TILE_ORE_SELL))
 		{
 			Core()->InventoryManager()->ShowSellingItemsByFunction(pPlayer, FUNCTION_MINER);
@@ -118,6 +115,8 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 			Core()->InventoryManager()->ShowSellingItemsByFunction(pPlayer, FUNCTION_PLANT);
 			return true;
 		}
+
+		return true;
 	}
 
 	return false;

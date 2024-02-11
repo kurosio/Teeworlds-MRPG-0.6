@@ -164,12 +164,9 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	}
 }
 
-bool CGroupManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool ReplaceMenu)
+bool CGroupManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-
-	if(ReplaceMenu)
-		return false;
 
 	if(Menulist == MENU_GROUP)
 	{
