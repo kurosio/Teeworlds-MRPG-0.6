@@ -171,7 +171,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	if(!pCraft || pCraft->GetWorldID() != GS()->GetWorldID())
 		return;
 
-	CVoteWrapper VCraftItem(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2692 Information about craft");
+	CVoteWrapper VCraftItem(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2692 Detail information about craft");
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 	VCraftItem.Add("Crafting: {STR}x{VAL}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
 	VCraftItem.Add("{STR}", pCraftItemInfo->GetDescription());
@@ -181,20 +181,32 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		pCraftItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
 		VCraftItem.Add(aAttributes);
 	}
-	CVoteWrapper::AddLine(ClientID);
+	VCraftItem.AddLine();
+	CVoteWrapper::AddEmptyline(ClientID);
 
-	CVoteWrapper VCraftRequired(ClientID, HIDE_DEFAULT_OPEN, "Required items");
-	for(auto& pRequiredItem : pCraft->GetRequiredItems())
+	// add craft reciepts
+	CVoteWrapper VCraftElement(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT, "Craft: {STR}", pCraftItemInfo->GetName());
+	VCraftElement.Add("Required items:");
 	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
-		bool Has = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
-		VCraftRequired.Add("* {STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
+		VCraftElement.BeginDepthList();
+		for(auto& pRequiredItem : pCraft->GetRequiredItems())
+		{
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
+			bool Has = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
+			VCraftElement.Add("* {STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
+		}
+		VCraftElement.EndDepthList();
 	}
-	CVoteWrapper::AddLine(ClientID);
+	VCraftElement.AddLine();
+	VCraftElement.AddItemValue();
+	{
+		VCraftElement.BeginDepthList();
+		VCraftElement.AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({VAL} gold)", pCraft->GetPrice(pPlayer));
+		VCraftElement.EndDepthList();
+	}
+	VCraftElement.AddLine();
 
-	CVoteWrapper VCraft(ClientID);
-	VCraft.AddItemValue();
-	VCraft.AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({VAL} gold)", pCraft->GetPrice(pPlayer));
+	// add backpage
 	CVoteWrapper::AddBackpage(ClientID);
 }
 

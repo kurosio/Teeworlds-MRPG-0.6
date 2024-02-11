@@ -28,7 +28,7 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	int ClientWorldID = pServer->GetClientWorldID(m_ClientID);
 	m_pGS = (CGS*)pServer->GameServer(ClientWorldID);
 	m_GroupID = (int)CVoteWrapper::Data()[m_ClientID].size();
-	m_CurrentLevel = 0;
+	m_CurrentDepth = 0;
 }
 
 // Function to add a vote title implementation with variable arguments
@@ -113,7 +113,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_SettingID = Settings1;
 	Vote.m_SettingID2 = Settings2;
-	Vote.m_Level = m_CurrentLevel;
+	Vote.m_Depth = m_CurrentDepth;
 
 	// Add the VoteOption to the player's votes
 	m_GroupSize++;
@@ -212,22 +212,27 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 				if(!pHidden || (pHidden && !pHidden->m_Value))
 				{
 					const int& Flags = pItem->m_Flags;
-					auto itpFront = &pItem->m_vpVotelist.front();
-					auto itpBack = &pItem->m_vpVotelist.back();
-
-					// Append border to the vote option
+					auto pFront = &pItem->m_vpVotelist.front();
+					auto pBack = &pItem->m_vpVotelist.back();
+					
+					// Append border to the vote option (can outside but)
 					dynamic_string Buffer;
-					if(str_comp((*iter).m_aDescription, itpFront->m_aDescription) == 0)
+					if(&(*iter) == pFront)
 						Buffer.append(get(Border::Beggin, Flags));
-					else if(str_comp((*iter).m_aDescription, itpBack->m_aDescription) == 0)
+					else if(&(*iter) == pBack)
 						Buffer.append(get(Border::End, Flags));
-					else if(str_comp((*iter).m_aCommand, "null") == 0 && (*iter).m_Level <= 0)
+					else if(str_comp((*iter).m_aCommand, "null") == 0 && (*iter).m_Depth <= 0 && !(*iter).m_Line)
 						Buffer.append(get(Border::Middle, Flags));
 					else
 						Buffer.append(get(Border::MiddleOption, Flags));
 
-					for(int i = 0; i < (*iter).m_Level; i++)
-						Buffer.append(get(Border::Level, Flags));
+					// Display the level of the vote option
+					// Dissable for line is a line as it is
+					if(!(*iter).m_Line)
+					{
+						for(int i = 0; i < (*iter).m_Depth; i++)
+							Buffer.append(get(Border::Level, Flags));
+					}
 
 					if(str_comp((*iter).m_aDescription, VOTE_LINE_DEF) != 0 && str_comp((*iter).m_aCommand, "null") == 0)
 						Buffer.append(" ");
