@@ -27,7 +27,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 
 	// Get the server instance
 	int ClientID = pPlayer->GetCID();
-	IServer* pServer = Instance::GetServer();
+	IServer* pServer = Instance::Server();
 
 	/*
 		Initialize object
@@ -217,7 +217,7 @@ void CAccountData::Imprison(int Seconds)
 	{
 		// Set the prison seconds and send a chat message to all players indicating that the player has been imprisoned
 		m_PrisonSeconds = Seconds;
-		GS()->Chat(-1, "{STR}, has been imprisoned for {INT} seconds.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()), Seconds);
+		GS()->Chat(-1, "{STR}, has been imprisoned for {INT} seconds.", Instance::Server()->ClientName(m_pPlayer->GetCID()), Seconds);
 		GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 	}
 }
@@ -233,7 +233,7 @@ void CAccountData::Unprison()
 		m_pPlayer->GetCharacter()->Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 
 	m_PrisonSeconds = -1;
-	GS()->Chat(-1, "{STR} were released from prison.", Instance::GetServer()->ClientName(m_pPlayer->GetCID()));
+	GS()->Chat(-1, "{STR} were released from prison.", Instance::Server()->ClientName(m_pPlayer->GetCID()));
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
@@ -360,7 +360,7 @@ void CAccountData::HandleChair()
 		return;
 
 	// Check if the current tick is not a multiple of the tick speed multiplied by 5
-	IServer* pServer = Instance::GetServer();
+	IServer* pServer = Instance::Server();
 	if(pServer->Tick() % (pServer->TickSpeed() * 5) != 0)
 		return;
 

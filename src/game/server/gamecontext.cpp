@@ -106,7 +106,7 @@ CPlayer* CGS::GetPlayerByUserID(int AccountID) const
 		if(pPlayer && pPlayer->Account()->GetID() == AccountID)
 		{
 			int WorldID = pPlayer->GetPlayerWorldID();
-			CGS* pGS = (CGS*)Instance::GetServer()->GameServer(WorldID);
+			CGS* pGS = (CGS*)Instance::GameServer(WorldID);
 			return pGS->GetPlayer(i, true);
 		}
 	}
@@ -1738,7 +1738,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	if(!pPlayer)
 		return;
 
-	CVoteWrapper VWelcome(ClientID, HIDE_DEFAULT_OPEN, "#### Hi, new adventurer! ####");
+	CVoteWrapper VWelcome(ClientID, VWFLAG_DEFAULT_OPEN, "#### Hi, new adventurer! ####");
 	VWelcome.Add("This server is a mmo server. You'll have to finish");
 	VWelcome.Add("quests to continue the game. In these quests,");
 	VWelcome.Add("you'll have to get items to give to quest npcs.");

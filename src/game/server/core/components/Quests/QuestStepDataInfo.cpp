@@ -18,7 +18,7 @@
 // ################# GLOBAL STEP STRUCTURE ######################
 void CQuestStepDescription::UpdateBot()
 {
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServer(m_Bot.m_WorldID);
+	CGS* pGS = (CGS*)Instance::GameServer(m_Bot.m_WorldID);
 	if(!pGS)
 		return;
 
@@ -83,7 +83,7 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 // ################# PLAYER STEP STRUCTURE ######################
 CGS* CPlayerQuestStep::GS() const
 {
-	return (CGS*)Instance::GetServer()->GameServerPlayer(m_ClientID);
+	return (CGS*)Instance::GameServer(m_ClientID);
 }
 
 CPlayer* CPlayerQuestStep::GetPlayer() const

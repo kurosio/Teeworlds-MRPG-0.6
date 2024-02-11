@@ -8,7 +8,7 @@ void CCooldown::Start(int Time, std::string UniqueName, std::string Name, CCoold
 	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS)
 		return;
 
-	CGS* pGS = (CGS*)(Instance::GetServer()->GameServerPlayer(m_ClientID));
+	CGS* pGS = (CGS*)(Instance::GameServerPlayer(m_ClientID));
 	if(CPlayer* pPlayer = pGS->GetPlayer(m_ClientID, true, true))
 	{
 		m_StartPos = pPlayer->m_ViewPos;
@@ -45,8 +45,7 @@ void CCooldown::Handler()
 	}
 
 	// Get server instance and player data
-	IServer* pServer = Instance::GetServer();
-	CGS* pGS = (CGS*)pServer->GameServerPlayer(m_ClientID);
+	CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 	CPlayer* pPlayer = pGS->GetPlayer(m_ClientID, true, true);
 	if(!pPlayer)
 	{
@@ -75,6 +74,7 @@ void CCooldown::Handler()
 	}
 
 	// Check if a certain amount of ticks has passed
+	IServer* pServer = Instance::Server();
 	if(pServer->Tick() % (pServer->TickSpeed() / 25) == 0)
 	{
 		// Check if player has moved too far from the starting position

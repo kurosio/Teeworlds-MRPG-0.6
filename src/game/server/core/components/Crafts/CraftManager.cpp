@@ -135,7 +135,7 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_CRAFT_LIST)
 	{
 		// show craft list
-		CVoteWrapper VCraftInfo(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2692 Crafting Information");
+		CVoteWrapper VCraftInfo(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_STRICT_BOLD, "\u2692 Crafting Information");
 		VCraftInfo.Add("If you will not have enough items for crafting");
 		VCraftInfo.Add("You will write those and the amount that is still required");
 		VCraftInfo.AddItemValue();
@@ -171,7 +171,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	if(!pCraft || pCraft->GetWorldID() != GS()->GetWorldID())
 		return;
 
-	CVoteWrapper VCraftItem(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2692 Detail information about craft");
+	CVoteWrapper VCraftItem(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_STRICT_BOLD, "\u2692 Detail information about craft");
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 	VCraftItem.Add("Crafting: {STR}x{VAL}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
 	VCraftItem.Add("{STR}", pCraftItemInfo->GetDescription());
@@ -185,7 +185,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// add craft reciepts
-	CVoteWrapper VCraftElement(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT, "Craft: {STR}", pCraftItemInfo->GetName());
+	CVoteWrapper VCraftElement(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_STRICT, "Craft: {STR}", pCraftItemInfo->GetName());
 	VCraftElement.Add("Required items:");
 	{
 		VCraftElement.BeginDepthList();
@@ -207,6 +207,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	VCraftElement.AddLine();
 
 	// add backpage
+	CVoteWrapper::AddEmptyline(ClientID);
 	CVoteWrapper::AddBackpage(ClientID);
 }
 
@@ -216,7 +217,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 	if(std::all_of(CCraftItem::Data().begin(), CCraftItem::Data().end(), [Type](const CCraftItem* p){ return p->GetItem()->Info()->GetType() != Type; }))
 		return;
 
-	CVoteWrapper VCraftList(ClientID, HIDE_DEFAULT_OPEN, TypeName);
+	CVoteWrapper VCraftList(ClientID, VWFLAG_DEFAULT_OPEN, TypeName);
 	for(const auto& pCraft : CCraftItem::Data())
 	{
 		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();

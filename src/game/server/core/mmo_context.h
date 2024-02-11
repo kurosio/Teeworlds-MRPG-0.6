@@ -794,19 +794,6 @@ namespace Tools
 	}
 }
 
-class Instance
-{
-	// Declare CServer as a friend of Instance class
-	friend class CServer;
-
-	// Declare a static member variable m_pServer as  pointer to IServer class
-	inline static class IServer* m_pServer {};
-
-public:
-	// Define a static member function GetServer that returns a pointer to IServer object
-	static IServer* GetServer() { return m_pServer; }
-};
-
 // This class is a template class that stores static data shared across multiple worlds.
 // It is intended to be inherited by other classes.
 class _StoreMultiworldIdentifiableStaticData

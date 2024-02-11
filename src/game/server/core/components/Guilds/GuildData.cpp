@@ -5,7 +5,7 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
-CGS* CGuildData::GS() const { return (CGS*)Instance::GetServer()->GameServer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : MAIN_WORLD_ID); }
+CGS* CGuildData::GS() const { return (CGS*)Instance::GameServerPlayer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : MAIN_WORLD_ID); }
 
 CGuildData::~CGuildData()
 {
@@ -98,7 +98,7 @@ GUILD_RESULT CGuildData::SetNewLeader(int AccountID)
 	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LeaderUID = '%d' WHERE ID = '%d'", m_LeaderUID, m_ID);
 
 	// Get the nickname of the new guild leader
-	const char* pNickNewLeader = Instance::GetServer()->GetAccountNickname(m_LeaderUID);
+	const char* pNickNewLeader = Instance::Server()->GetAccountNickname(m_LeaderUID);
 
 	// Add a new entry and send chat message to the guild history indicating the change of leader
 	m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "New guild leader '%s'", pNickNewLeader);

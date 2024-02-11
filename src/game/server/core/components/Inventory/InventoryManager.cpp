@@ -104,12 +104,12 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VInventoryInfo(ClientID, HIDE_DEFAULT_OPEN, "\u205C Inventory Information");
+		CVoteWrapper VInventoryInfo(ClientID, VWFLAG_DEFAULT_OPEN, "\u205C Inventory Information");
 		VInventoryInfo.Add("Choose the type of items you want to show");
 		VInventoryInfo.Add("After, need select item to interact");
 		VInventoryInfo.AddLine();
 
-		CVoteWrapper VInventoryTabs(ClientID, HIDE_DEFAULT_OPEN, "\u205C Inventory tabs");
+		CVoteWrapper VInventoryTabs(ClientID, VWFLAG_DEFAULT_OPEN, "\u205C Inventory tabs");
 		int SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_USED);
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "Used ({INT})", SizeItems);
 		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT);
@@ -135,12 +135,12 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VEquipInfo(ClientID, HIDE_DEFAULT_OPEN, "\u2604 Equipment Information");
+		CVoteWrapper VEquipInfo(ClientID, VWFLAG_DEFAULT_OPEN, "\u2604 Equipment Information");
 		VEquipInfo.Add("Select the type of equipment you want to show");
 		VEquipInfo.Add("After, need select item to interact");
 		VEquipInfo.AddLine();
 
-		CVoteWrapper VEquipTabs(ClientID, HIDE_DEFAULT_OPEN, "\u2604 Equipment tabs");
+		CVoteWrapper VEquipTabs(ClientID, VWFLAG_DEFAULT_OPEN, "\u2604 Equipment tabs");
 		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor", "Eidolon" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
@@ -344,7 +344,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 	const ItemIdentifier ItemID = pItemPlayer.GetID();
 	const char* pNameItem = pItemPlayer.Info()->GetName();
 
-	CVoteWrapper VItem(ClientID, HIDE_UNIQUE);
+	CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE);
 
 	// name description
 	if(pItemPlayer.Info()->IsEnchantable())

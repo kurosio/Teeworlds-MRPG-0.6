@@ -9,7 +9,7 @@
 bool GroupData::Add(int AccountID)
 {
 	// Get the game server instance and player
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServer();
+	CGS* pGS = (CGS*)Instance::Server()->GameServer();
 	CPlayer* pPlayer = pGS->GetPlayerByUserID(AccountID);
 
 	// Check if the player exists
@@ -54,7 +54,7 @@ bool GroupData::Add(int AccountID)
 bool GroupData::Remove(int AccountID)
 {
 	// Get the game server instance and player
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServer();
+	CGS* pGS = (CGS*)Instance::Server()->GameServer();
 	CPlayer* pPlayer = pGS->GetPlayerByUserID(AccountID);
 
 	// Check if the size of m_vAccountIds is greater than 1 and if m_LeaderUID matches AccountID
@@ -112,7 +112,7 @@ void GroupData::Disband()
 	for(auto& AID : ReinitilizedAccounts)
 	{
 		// Get the game server instance and player
-		CGS* pGS = (CGS*)Instance::GetServer()->GameServer();
+		CGS* pGS = (CGS*)Instance::Server()->GameServer();
 		CPlayer* pPlayer = pGS->GetPlayerByUserID(AID);
 
 		// Check if the player exists
@@ -135,7 +135,7 @@ void GroupData::ChangeLeader(int AccountID)
 	dbg_assert(m_vAccountIds.find(AccountID) != m_vAccountIds.end(), "[Group system] account not included inside accountids");
 
 	// Send chat messages to the previous owner and the new owner
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServer();
+	CGS* pGS = (CGS*)Instance::Server()->GameServer();
 	pGS->ChatAccount(m_LeaderUID, "You've transferred ownership of the group!");
 	pGS->ChatAccount(AccountID, "You are now the new owner of the group!");
 

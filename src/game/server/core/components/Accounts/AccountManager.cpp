@@ -294,13 +294,13 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// information
-		CVoteWrapper VSettingsInfo(ClientID, HIDE_DEFAULT_CLOSE, "Settings Information");
+		CVoteWrapper VSettingsInfo(ClientID, VWFLAG_DEFAULT_CLOSE, "Settings Information");
 		VSettingsInfo.Add("Some of the settings become valid after death.");
 		VSettingsInfo.Add("Here you can change the settings of your account.");
 		CVoteWrapper::AddLine(ClientID);
 
 		// game settings
-		CVoteWrapper VMainSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2699 Main settings");
+		CVoteWrapper VMainSettings(ClientID, VWFLAG_DEFAULT_OPEN, "\u2699 Main settings");
 		VMainSettings.AddMenu(MENU_SETTINGS_LANGUAGE_SELECT, "Settings language");
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
@@ -310,7 +310,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CVoteWrapper::AddLine(ClientID);
 
 		// equipment modules
-		CVoteWrapper VModulesSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2694 Modules settings");
+		CVoteWrapper VModulesSettings(ClientID, VWFLAG_DEFAULT_OPEN, "\u2694 Modules settings");
 		for(auto& iter : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &iter.second;
@@ -339,19 +339,19 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// language information
-		CVoteWrapper VLanguageInfo(ClientID, HIDE_DEFAULT_CLOSE, "Languages Information");
+		CVoteWrapper VLanguageInfo(ClientID, VWFLAG_DEFAULT_CLOSE, "Languages Information");
 		VLanguageInfo.Add("Here you can choose the language.");
 		VLanguageInfo.Add("Note: translation is not complete.");
 		CVoteWrapper::AddLine(ClientID);
 
 		// active language
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
-		CVoteWrapper VLanguage(ClientID, BORDER_STRICT_BOLD);
+		CVoteWrapper VLanguage(ClientID, VWFLAG_BSTYLE_STRICT_BOLD);
 		VLanguage.Add("Active language: [{STR}]", pPlayerLanguage);
 		VLanguage.AddLine();
 
 		// languages
-		CVoteWrapper VLanguages(ClientID, HIDE_DEFAULT_OPEN, "Available languages");
+		CVoteWrapper VLanguages(ClientID, VWFLAG_DEFAULT_OPEN, "Available languages");
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{
 			// Do not show the language that is already selected by the player in the selection lists

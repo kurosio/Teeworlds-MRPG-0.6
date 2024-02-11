@@ -323,7 +323,7 @@ bool CPlayerQuest::Accept()
 	int ClientID = GetPlayer()->GetCID();
 
 	// Get the Game Server instance and cast it to CGS
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(ClientID);
+	CGS* pGS = (CGS*)Instance::GameServerPlayer(ClientID);
 
 	// Set the quest state to ACCEPT and insert the quest into the database
 	m_State = QuestState::ACCEPT;
@@ -385,7 +385,7 @@ void CPlayerQuest::Finish()
 	if(m_State != QuestState::ACCEPT || !pPlayer)
 		return;
 
-	CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(m_ClientID);
+	CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 
 	// finish quest
 	m_State = QuestState::FINISHED;
@@ -455,7 +455,7 @@ void CPlayerQuest::CheckAvailableNewStep()
 	{
 		Finish();
 
-		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(m_ClientID);
+		CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 		CPlayer* pPlayer = pGS->GetPlayer(m_ClientID);
 		if(pPlayer)
 		{

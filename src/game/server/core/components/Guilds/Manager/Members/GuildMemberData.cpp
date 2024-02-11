@@ -54,7 +54,7 @@ bool CGuildMemberData::SetRank(CGuildRankData* pRank)
 	m_pRank = pRank;
 
 	// Send a chat message to the player about changed rank
-	const char* pNickname = Instance::GetServer()->GetAccountNickname(m_AccountID);
+	const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 	m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "%s rank changed to %s", pNickname, m_pRank->GetName());
 	GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' rank changed to '{STR}'!", pNickname, m_pRank->GetName());
 
@@ -84,7 +84,7 @@ bool CGuildMemberData::DepositInBank(int Golds)
 			Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_pGuild->GetBank()->Get(), m_pGuild->GetID());
 
 			// Send a chat message to the player indicating the successful deposit and the new bank value
-			const char* pNickname = Instance::GetServer()->GetAccountNickname(m_AccountID);
+			const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 			m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' deposit '%d' in the guild safe.", pNickname, Golds);
 			GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' deposit {VAL} gold in the safe, now {VAL}!", pNickname, Golds, m_pGuild->GetBank()->Get());
 
@@ -121,7 +121,7 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 			m_pGuild->GetBank()->Set(Bank - Golds);
 
 			// Send a chat message to the player indicating the successful withdrawal and the new bank value
-			const char* pNickname = Instance::GetServer()->GetAccountNickname(m_AccountID);
+			const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 			m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' withdrawn '%d' from the guild safe.", pNickname, Golds);
 			GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' withdrawn {VAL} gold from the safe, now {VAL}!", pNickname, Golds, m_pGuild->GetBank()->Get());
 

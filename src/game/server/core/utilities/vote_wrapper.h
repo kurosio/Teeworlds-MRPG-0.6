@@ -14,15 +14,15 @@ typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallb
 
 enum
 {
-	FLAG_DISABLED = 0,
-	HIDE_DEFAULT_OPEN = 1 << 1,
-	HIDE_DEFAULT_CLOSE = 1 << 2,
-	HIDE_UNIQUE = 1 << 3,
+	VWFLAG_DISABLED = 0,
+	VWFLAG_DEFAULT_OPEN = 1 << 1,
+	VWFLAG_DEFAULT_CLOSE = 1 << 2,
+	VWFLAG_UNIQUE = 1 << 3,
 
-	BORDER_SIMPLE = 1 << 4,      // example: ╭ │ ╰
-	DOUBLE_BORDER = 1 << 5,      // example: ╔ ═ ╚
-	BORDER_STRICT = 1 << 6,      // example: ┌ │ └
-	BORDER_STRICT_BOLD = 1 << 7, // example: ┏ ┃ ┗
+	VWFLAG_BSTYLE_SIMPLE = 1 << 4,      // example: ╭ │ ╰
+	VWFLAG_BSTYLE_DOUBLE = 1 << 5,      // example: ╔ ═ ╚
+	VWFLAG_BSTYLE_STRICT = 1 << 6,      // example: ┌ │ └
+	VWFLAG_BSTYLE_STRICT_BOLD = 1 << 7, // example: ┏ ┃ ┗
 };
 
 class CVoteOption
@@ -73,12 +73,14 @@ class CVoteWrapper : public MultiworldIdentifiableStaticData<std::map<int, std::
 public:
 	CVoteWrapper(int ClientID)
 	{
-		m_pGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
+		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
+		m_pGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
 		m_pData[ClientID].push_back(m_pGroup);
 	}
 
 	CVoteWrapper(int ClientID, int Flags)
 	{
+		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 		m_pGroup = new CVoteGroup(ClientID, Flags);
 		m_pData[ClientID].push_back(m_pGroup);
 	}
@@ -86,7 +88,8 @@ public:
 	template<typename ... Args>
 	CVoteWrapper(int ClientID, const char* pTitle, Args&& ... argsfmt)
 	{
-		m_pGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
+		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
+		m_pGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
 		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, pTitle, std::forward<Args>(argsfmt)...);
 		m_pData[ClientID].push_back(m_pGroup);
 	}
@@ -94,6 +97,7 @@ public:
 	template<typename ... Args>
 	CVoteWrapper(int ClientID, int Flags, const char* pTitle, Args&& ... argsfmt)
 	{
+		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 		m_pGroup = new CVoteGroup(ClientID, Flags);
 		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, pTitle, std::forward<Args>(argsfmt)...);
 		m_pData[ClientID].push_back(m_pGroup);
@@ -120,23 +124,23 @@ public:
 	 * Global static data
 	 */
 	static void AddLine(int ClientID) noexcept {
-		const auto pVoteGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
+		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
 		pVoteGroup->AddLineImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
 	static void AddBackpage(int ClientID) noexcept {
-		const auto pVoteGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
+		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
 		pVoteGroup->AddBackpageImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
 	static void AddEmptyline(int ClientID) noexcept {
-		const auto pVoteGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
+		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
 		pVoteGroup->AddEmptylineImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
 	static void AddItemValue(int ClientID, int ItemID = itGold) noexcept
 	{
-		const auto pVoteGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
+		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
 		pVoteGroup->AddItemValueImpl(ItemID);
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
@@ -289,7 +293,7 @@ class CVotePlayerData
 	struct VoteGroupHidden
 	{
 		bool m_Value {};
-		int m_Type {};
+		int m_Flag {};
 	};
 
 	CGS* m_pGS {};
@@ -297,14 +301,13 @@ class CVotePlayerData
 	int m_CurrentMenuID {};
 	int m_LastMenuID{};
 	int m_TempMenuInteger {};
-	std::function<void()> m_PostVotes;
+	std::function<void()> m_PostVotes{};
 	ska::unordered_map<int, ska::unordered_map<int, VoteGroupHidden>> m_aHiddenGroup{};
 
 	VoteGroupHidden* EmplaceHidden(int ID, int Type);
 	VoteGroupHidden* GetHidden(int ID);
 	void ResetHidden(int MenuID);
 	void ResetHidden() { ResetHidden(m_CurrentMenuID); }
-
 	static void CallbackUpdateVotes(CVotePlayerData* pData, int MenuID, bool PrepareCustom);
 
 public:

@@ -57,7 +57,7 @@ GUILD_MEMBER_RESULT CGuildMembersManager::Join(int AccountID)
 	}
 
 	// Add a join message to the guild history and send chat message
-	const char* pNickname = Instance::GetServer()->GetAccountNickname(AccountID);
+	const char* pNickname = Instance::Server()->GetAccountNickname(AccountID);
 	m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "'%s' has joined the guild.", pNickname);
 	GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' has joined the guild!", pNickname);
 
@@ -90,7 +90,7 @@ GUILD_MEMBER_RESULT CGuildMembersManager::Kick(int AccountID)
 		}
 
 		// Add a left message to the guild history and send chat message
-		const char* pNickname = Instance::GetServer()->GetAccountNickname(AccountID);
+		const char* pNickname = Instance::Server()->GetAccountNickname(AccountID);
 		m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "'%s' has left the guild.", pNickname);
 		GS()->ChatGuild(m_pGuild->GetID(), "'{STR}' has left the guild!", pNickname);
 

@@ -248,7 +248,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			{
 				bool State = pDoorController->GetDoors()[Number]->IsClosed();
 				pGS->Chat(ClientID, "Number: {INT}. Name: {STR} ({STR})", 
-					Number, Door->GetName(), State ? Instance::GetServer()->Localize(ClientID, "closed") : Instance::GetServer()->Localize(ClientID, "opened"));
+					Number, Door->GetName(), State ? Instance::Server()->Localize(ClientID, "closed") : Instance::Server()->Localize(ClientID, "opened"));
 			}
 			return;
 		}
@@ -411,7 +411,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		for(const auto& AID : pGroup->GetAccounts())
 		{
 			const char* Prefix = (pGroup->GetLeaderUID() == AID) ? "O: " : "\0";
-			const std::string Nickname = Instance::GetServer()->GetAccountNickname(AID);
+			const std::string Nickname = Instance::Server()->GetAccountNickname(AID);
 			pGS->Chat(ClientID, "{STR}{STR}", Prefix, Nickname.c_str());
 		}
 		return;
