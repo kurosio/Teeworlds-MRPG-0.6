@@ -226,11 +226,11 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 
 		if(pCraftItemInfo->IsEnchantable())
 		{
-			VCraftList.AddZoneSelect(ID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
+			VCraftList.AddOption("ZONE_SELECT", ID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		}
 		else
 		{
-			VCraftList.AddZoneSelect(ID, "[{VAL}]{STR}x{INT} - {VAL} gold", pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
+			VCraftList.AddOption("ZONE_SELECT", ID, "[{VAL}]{STR}x{INT} - {VAL} gold", pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}
 

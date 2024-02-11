@@ -32,7 +32,6 @@ public:
 	char m_aCommand[VOTE_CMD_LENGTH] {};
 	int m_SettingID { -1 };
 	int m_SettingID2 { -1 };
-	bool m_Title { false };
 	bool m_Line { false };
 	VoteOptionCallback m_Callback {};
 };
@@ -46,18 +45,18 @@ class CVoteGroup
 	CGS* m_pGS {};
 	CGS* GS() const { return m_pGS; }
 
-	int m_ButtonSize {};
+	int m_GroupSize {};
 	int m_GroupID {};
 	int m_Flags {};
 	int m_ClientID {};
 
 	CVoteGroup(int ClientID, int Flags);
 
-	bool IsEmpty() const { return m_ButtonSize <= 0; }
+	bool IsEmpty() const { return m_GroupSize <= 0; }
 
 	void AddVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...);
 	void AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...);
-	void SetCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
+	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
 
 	void AddLineImpl();
 	void AddEmptylineImpl();
@@ -227,34 +226,20 @@ public:
 	template<typename ... Args>
 	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, const char* pText, Args&& ... argsfmt) {
 		m_pGroup->AddVoteImpl("CALLBACK_IMPL", NOPE, NOPE, pText, std::forward<Args>(argsfmt)...);
-		m_pGroup->SetCallback(CallbackImpl, pUser);
+		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
 		return *this;
 	}
 	template<typename ... Args>
 	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Settings1, const char* pText, Args&& ... argsfmt) {
 		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Settings1, NOPE, pText, std::forward<Args>(argsfmt)...);
-		m_pGroup->SetCallback(CallbackImpl, pUser);
+		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
 		return *this;
 	}
 	template<typename ... Args>
 	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt) {
 		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Settings1, Settings2, pText, std::forward<Args>(argsfmt)...);
-		m_pGroup->SetCallback(CallbackImpl, pUser);
+		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
 		return *this;
-	}
-
-	/*
-	 * Selected group
-	 */
-	template <typename ... Args>
-	CVoteWrapper& AddIfZoneSelect(bool Checker, int SelectedID, const char* pText, Args&& ... argsfmt) {
-		if(Checker)
-			m_pGroup->AddVoteImpl("ZONE_SELECT", SelectedID, NOPE, pText, std::forward<Args>(argsfmt)...);
-		return *this;
-	}
-	template<typename ... Args>
-	CVoteWrapper& AddZoneSelect(int SelectedID, const char* pText, Args&& ... argsfmt) {
-		return AddIfZoneSelect(true, SelectedID, pText, std::forward<Args>(argsfmt)...);
 	}
 
 	// Rebuild votes
@@ -286,9 +271,6 @@ class CVotePlayerData
 	void ResetHidden(int MenuID);
 	void ResetHidden() { ResetHidden(m_CurrentMenuID); }
 
-	ska::unordered_map<int, VoteGroupHidden>& GetHiddenGroup() { return m_aHiddenGroup[m_CurrentMenuID]; }
-	ska::unordered_map<int, VoteGroupHidden>& GetHiddenGroup(int MenuID) { return m_aHiddenGroup[MenuID]; }
-	ska::unordered_map<int, ska::unordered_map<int, VoteGroupHidden>>& GetAllHiddenGroup() { return m_aHiddenGroup; }
 	static void CallbackUpdateVotes(CVotePlayerData* pData, int MenuID, bool PrepareCustom);
 
 public:

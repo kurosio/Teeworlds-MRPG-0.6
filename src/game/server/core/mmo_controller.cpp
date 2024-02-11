@@ -117,16 +117,17 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// Check if the player's m_ZoneInvertMenu variable is true
 		if(pPlayer->m_ZoneInvertMenu)
 		{
-			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "\u21AA Zone menu. \u21AA");
-			CVoteWrapper::AddLine(ClientID);
+			CVoteWrapper ZoneInvert(ClientID, "You are in the active zone!");
+			ZoneInvert.AddLine();
 			break;
 		}
 
 		// Call the function OnHandleMenulist of the pComponent object with the parameters pPlayer and Menulist
 		if(pComponent->OnHandleMenulist(pPlayer, Menulist, true))
 		{
-			CVoteWrapper::AddLine(ClientID);
-			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "\u21A9 Player menu. \u21A9");
+			CVoteWrapper ZoneInvert(ClientID);
+			ZoneInvert.AddLine();
+			ZoneInvert.AddOption("ZONE_INVERT_MENU", "\u21A9 Player menu. \u21A9");
 			return true;
 		}
 	}
@@ -144,7 +145,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VMain.Add("Level {INT} : Exp {INT}/{INT}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
 		VMain.Add("Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VMain.Add("Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
-		CVoteWrapper::AddLine(ClientID);
+		VMain.AddLine();
 
 		// personal menu
 		CVoteWrapper VPersonal(ClientID, HIDE_DEFAULT_OPEN, "☪ PERSONAL");
@@ -160,7 +161,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.AddIf(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
 		VPersonal.Add(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		VPersonal.AddIf(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");
-		CVoteWrapper::AddLine(ClientID);
+		VPersonal.AddLine();
 
 		// info menu
 		CVoteWrapper VInfo(ClientID, HIDE_DEFAULT_OPEN, "☪ INFORMATION");
@@ -180,9 +181,9 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VUpgradesInfo.AddLine();
 
 		// upgrade point
-		CVoteWrapper::AddLine(ClientID);
-		CVoteWrapper(ClientID).Add("Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
-		CVoteWrapper::AddLine(ClientID);
+		CVoteWrapper VUpgradePoint(ClientID);
+		VUpgradePoint.Add("Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
+		VUpgradePoint.AddLine();
 
 		// lambda function for easy use
 		auto AddUpgradeGroupToWrapper([&](AttributeGroup Type, CVoteWrapper* pWrapper)
@@ -248,7 +249,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VTopSelect.Add(MENU_TOP_LIST, (int)ToplistType::GUILDS_WEALTHY, "Top 10 guilds wealthy");
 		VTopSelect.Add(MENU_TOP_LIST, (int)ToplistType::PLAYERS_LEVELING, "Top 10 players leveling");
 		VTopSelect.Add(MENU_TOP_LIST, (int)ToplistType::PLAYERS_WEALTHY, "Top 10 players wealthy");
-		CVoteWrapper::AddLine(ClientID);
+		VTopSelect.AddLine();
 
 		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetMenuTemporaryInteger(); TemporaryInteger >= 0)
 			ShowTopList(ClientID, (ToplistType)TemporaryInteger, false, 10);

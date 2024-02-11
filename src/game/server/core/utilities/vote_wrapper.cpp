@@ -68,7 +68,6 @@ void CVoteGroup::AddVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_SettingID = SettingsID1;
 	Vote.m_SettingID2 = SettingsID2;
-	Vote.m_Title = true;
 
 	// Add the VoteOption to the player's votes
 	m_vpVotelist.emplace_back(Vote);
@@ -112,7 +111,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	Vote.m_SettingID2 = Settings2;
 
 	// Add the VoteOption to the player's votes
-	m_ButtonSize++;
+	m_GroupSize++;
 	m_vpVotelist.emplace_back(Vote);
 }
 

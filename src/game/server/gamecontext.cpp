@@ -1754,7 +1754,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	VWelcome.Add("it's because it's not shield, it's mana.");
 	VWelcome.Add("It is used for active skills, which you will need to buy");
 	VWelcome.Add("in the future. Active skills use mana, but they use %% of mana.");
-	CVoteWrapper::AddLine(ClientID);
+	VWelcome.AddLine();
 }
 
 // strong update votes variability of the data
