@@ -95,7 +95,7 @@ bool CAethernetManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 			{
 				// Change the player's position to the Aether's position
 				pPlayer->GetCharacter()->ChangePosition(Position);
-				GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+				pPlayer->m_VotesData.UpdateCurrentVotes();
 			}
 
 			// Inform the player that they have been teleported to the Aether
@@ -117,14 +117,14 @@ bool CAethernetManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
 		UnlockLocationByPos(pChr->GetPlayer(), pChr->m_Core.m_Pos);
-		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	// Check if the character exits the Aether teleport tile
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_AETHER_TELEPORT))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 

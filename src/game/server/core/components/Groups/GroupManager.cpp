@@ -173,7 +173,8 @@ bool CGroupManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 	if(Menulist == MENU_GROUP)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
+
 		ShowGroupMenu(pPlayer);
 		GS()->AddVotesBackpage(ClientID);
 		return true;
@@ -226,7 +227,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		if(CreateGroup(pPlayer))
 		{
 			// Update votes for all players with the GROUP menu
-			GS()->StrongUpdateVotesForAll(MENU_GROUP);
+			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 		return true;
 	}
@@ -294,7 +295,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			pGroup->ChangeLeader(AccountID);
 
 			// Update the votes for all players
-			GS()->StrongUpdateVotesForAll(MENU_GROUP);
+			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 
 		return true;
@@ -314,7 +315,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			pGroup->Remove(AccountID);
 
 			// Update votes for all players in the menu GROUP
-			GS()->StrongUpdateVotesForAll(MENU_GROUP);
+			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 
 		return true; // Return true to indicate success
@@ -339,7 +340,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			pGroup->ChangeColor(Get);
 
 			// Update the votes for all players in the group menu
-			GS()->StrongUpdateVotesForAll(MENU_GROUP);
+			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 
 		return true;
@@ -358,7 +359,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			pGroup->Disband();
 
 			// Update votes for all players for the group menu
-			GS()->StrongUpdateVotesForAll(MENU_GROUP);
+			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 
 		return true;

@@ -20,14 +20,14 @@ bool CAuctionManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_AUCTION))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
 	if (pChr->GetHelper()->TileExit(IndexCollision, TILE_AUCTION))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -53,7 +53,7 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 
 	if(Menulist == MenuList::MENU_AUCTION_CREATE_SLOT)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MENU_INVENTORY;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_INVENTORY);
 
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
 		CItem* pAuctionItem = pAuctionData->GetItem();
@@ -90,7 +90,7 @@ bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 	if(PPSTR(CMD, "AUCTION_BUY") == 0)
 	{
 		if(BuyItem(pPlayer, VoteID))
-			GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
+			pPlayer->m_VotesData.UpdateVotes(MenuList::MENU_MAIN);
 		return true;
 	}
 
@@ -111,7 +111,7 @@ bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 			pAuctionData->SetPrice(MinimalPrice);
 
 		pAuctionData->GetItem()->SetValue(Get);
-		GS()->StrongUpdateVotes(ClientID, MenuList::MENU_AUCTION_CREATE_SLOT);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 
@@ -123,7 +123,7 @@ bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 			Get = MinimalPrice;
 
 		pAuctionData->SetPrice(Get);
-		GS()->StrongUpdateVotes(ClientID, MenuList::MENU_AUCTION_CREATE_SLOT);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 
@@ -135,7 +135,7 @@ bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
 		pAuctionData->SetItem({ VoteID, 0, pPlayer->GetItem(VoteID)->GetEnchant(), 0, 0});
-		GS()->UpdateVotes(ClientID, MenuList::MENU_AUCTION_CREATE_SLOT);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 
@@ -146,10 +146,10 @@ bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		if(pPlayerItem->GetValue() >= pAuctionData->GetItem()->GetValue() && pAuctionData->GetPrice() >= 10)
 		{
 			CreateAuctionSlot(pPlayer, pAuctionData);
-			GS()->UpdateVotes(ClientID, MenuList::MENU_INVENTORY);
+			pPlayer->m_VotesData.UpdateVotes(MenuList::MENU_INVENTORY);
 			return true;
 		}
-		GS()->StrongUpdateVotes(ClientID, MenuList::MENU_AUCTION_CREATE_SLOT);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 

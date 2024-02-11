@@ -60,13 +60,13 @@ bool CHouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLAYER_HOUSE))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_PLAYER_HOUSE))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -97,7 +97,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 	if(Menulist == MENU_HOUSE)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		CHouseData* pHouse = pPlayer->Account()->GetHouse();
 		if(!pHouse)
@@ -147,7 +147,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 	if(Menulist == MENU_HOUSE_DECORATION)
 	{
-		pPlayer->m_LastVoteMenu = MENU_HOUSE;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_HOUSE);
 		CHouseData* pHouse = pPlayer->Account()->GetHouse();
 		if(!pHouse)
 		{
@@ -170,7 +170,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 	if(Menulist == MENU_HOUSE_PLANTS)
 	{
-		pPlayer->m_LastVoteMenu = MENU_HOUSE;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_HOUSE);
 
 		CHouseData* pHouse = pPlayer->Account()->GetHouse();
 		if(!pHouse)
@@ -191,7 +191,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 	if(Menulist == MENU_HOUSE_ACCESS_TO_DOOR)
 	{
-		pPlayer->m_LastVoteMenu = MENU_HOUSE;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_HOUSE);
 
 		CHouseData* pHouse = pPlayer->Account()->GetHouse();
 		if(!pHouse)
@@ -318,7 +318,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 
 		// sell house
 		pHouse->Sell();
-		GS()->UpdateVotes(ClientID, MENU_MAIN);
+		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return true;
 	}
 
@@ -341,7 +341,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 
 		// add gold to house bank
 		pHouse->GetBank()->Add(Get);
-		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE);
 		return true;
 	}
 
@@ -364,7 +364,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 
 		// take gold from house bank
 		pHouse->GetBank()->Take(Get);
-		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE);
 		return true;
 	}
 
@@ -381,7 +381,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		// reverse door house
 		int UniqueDoorID = VoteID;
 		pHouse->GetDoorsController()->Reverse(UniqueDoorID);
-		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE);
 		return true;
 	}
 
@@ -465,13 +465,13 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			if(ChanceSuccesful != 0)
 			{
 				GS()->Chat(ClientID, "Unfortunately plant did not take root!");
-				GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+				pPlayer->m_VotesData.UpdateCurrentVotes();
 				return true;
 			}
 
 			GS()->Chat(-1, "Congratulations {STR}, planted at home {STR}!", Server()->ClientName(ClientID), GS()->GetItemInfo(TryItemID)->GetName());
 			pHouse->SetPlantItemID(TryItemID);
-			GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
 		return true;
@@ -487,7 +487,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		}
 
 		str_copy(pPlayer->GetTempData().m_aPlayerSearchBuf, GetText, sizeof(pPlayer->GetTempData().m_aPlayerSearchBuf));
-		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_ACCESS_TO_DOOR);
 		return true;
 	}
 
@@ -497,7 +497,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		if(CHouseData* pHouse = pPlayer->Account()->GetHouse())
 			pHouse->GetDoorsController()->AddAccess(UserID);
 
-		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_ACCESS_TO_DOOR);
 		return true;
 	}
 
@@ -507,7 +507,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		if(CHouseData* pHouse = pPlayer->Account()->GetHouse())
 			pHouse->GetDoorsController()->RemoveAccess(UserID);
 
-		GS()->StrongUpdateVotes(ClientID, MENU_HOUSE_ACCESS_TO_DOOR);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_ACCESS_TO_DOOR);
 		return true;
 	}
 

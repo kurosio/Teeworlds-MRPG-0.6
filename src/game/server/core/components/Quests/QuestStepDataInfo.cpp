@@ -250,7 +250,7 @@ void CPlayerQuestStep::PostFinish()
 	UpdateBot();
 
 	pPlayer->GetQuest(GetQuestID())->CheckAvailableNewStep();
-	GS()->StrongUpdateVotes(ClientID, MENU_JOURNAL_MAIN);
+	pPlayer->m_VotesData.UpdateVotesIf(MENU_JOURNAL_MAIN);
 }
 
 void CPlayerQuestStep::AppendDefeatProgress(int DefeatedBotID)

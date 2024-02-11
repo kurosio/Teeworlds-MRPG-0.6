@@ -36,8 +36,8 @@ bool CDropItem::TakeItem(int ClientID)
 			pPlayerItem->Equip(false);
 
 		GS()->Chat(ClientID, "You now own {STR}{STR}", pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str());
-		GS()->StrongUpdateVotes(ClientID, MENU_INVENTORY);
-		GS()->StrongUpdateVotes(ClientID, MENU_EQUIPMENT);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
 		pPlayerItem->Save();
 		return true;
 	}
@@ -45,8 +45,8 @@ bool CDropItem::TakeItem(int ClientID)
 	// simple subject delivery
 	pPlayerItem->Add(m_DropItem.GetValue(), 0, m_DropItem.GetEnchant());
 	GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 10, "\0");
-	GS()->StrongUpdateVotes(ClientID, MENU_INVENTORY);
-	GS()->StrongUpdateVotes(ClientID, MENU_EQUIPMENT);
+	pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
+	pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
 	GameWorld()->DestroyEntity(this);
 	return true;
 }

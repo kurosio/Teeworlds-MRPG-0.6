@@ -183,7 +183,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 			GS()->Chat(ClientID, "You have {INT} unread letters!", Letters);
 
 		// Update the player's votes and show the main menu
-		GS()->UpdateVotes(ClientID, MENU_MAIN);
+		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return;
 	}
 
@@ -295,7 +295,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 	// settings
 	if(Menulist == MENU_SETTINGS)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// information
 		CVoteWrapper VSettingsInfo(ClientID, HIDE_DEFAULT_CLOSE, "Settings Information");
@@ -340,7 +340,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 	// Language selection
 	if(Menulist == MENU_SELECT_LANGUAGE)
 	{
-		pPlayer->m_LastVoteMenu = MENU_SETTINGS;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// language information
 		CVoteWrapper VLanguageInfo(ClientID, HIDE_DEFAULT_CLOSE, "Languages Information");
@@ -390,7 +390,7 @@ bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		GS()->Chat(ClientID, "You have chosen a language \"{STR}\".", pSelectedLanguage);
 
 		// Update the votes menu for the client
-		GS()->StrongUpdateVotes(ClientID, MENU_SELECT_LANGUAGE);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_SELECT_LANGUAGE);
 
 		// Save the account's language
 		Core()->SaveAccount(pPlayer, SAVE_LANGUAGE);

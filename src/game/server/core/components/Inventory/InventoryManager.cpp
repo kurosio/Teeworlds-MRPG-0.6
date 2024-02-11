@@ -32,53 +32,47 @@ bool ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, c
 using namespace sqlstr;
 void CInventoryManager::OnInit()
 {
-	const auto InitItemsList = Database->Prepare<DB::SELECT>("*", "tw_items_list");
-	InitItemsList->AtExecute([](ResultPtr pRes)
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_items_list");
+	while(pRes->next())
 	{
-		while(pRes->next())
-		{
-			const int ID = pRes->getInt("ID");
-			std::string Name = pRes->getString("Name").c_str();
-			std::string Description = pRes->getString("Description").c_str();
-			std::string Data = pRes->getString("Data").c_str();
-			ItemType Type = (ItemType)pRes->getInt("Type");
-			ItemFunctional Function = (ItemFunctional)pRes->getInt("Function");
-			int InitialPrice = pRes->getInt("InitialPrice");
-			int Dysenthis = pRes->getInt("Desynthesis");
+		const int ID = pRes->getInt("ID");
+		std::string Name = pRes->getString("Name").c_str();
+		std::string Description = pRes->getString("Description").c_str();
+		std::string Data = pRes->getString("Data").c_str();
+		ItemType Type = (ItemType)pRes->getInt("Type");
+		ItemFunctional Function = (ItemFunctional)pRes->getInt("Function");
+		int InitialPrice = pRes->getInt("InitialPrice");
+		int Dysenthis = pRes->getInt("Desynthesis");
 
-			CItemDescription::ContainerAttributes aContainerAttributes;
-			for(int i = 0; i < MAX_ATTRIBUTES_FOR_ITEM; i++)
+		CItemDescription::ContainerAttributes aContainerAttributes;
+		for(int i = 0; i < MAX_ATTRIBUTES_FOR_ITEM; i++)
+		{
+			char aAttributeID[32], aAttributeValue[32];
+			str_format(aAttributeID, sizeof(aAttributeID), "Attribute%d", i);
+			str_format(aAttributeValue, sizeof(aAttributeValue), "AttributeValue%d", i);
+
+			AttributeIdentifier AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
+			int AttributeValue = pRes->getInt(aAttributeValue);
+			if(AttributeID >= AttributeIdentifier::SpreadShotgun && AttributeValue > 0)
 			{
-				char aAttributeID[32], aAttributeValue[32];
-				str_format(aAttributeID, sizeof(aAttributeID), "Attribute%d", i);
-				str_format(aAttributeValue, sizeof(aAttributeValue), "AttributeValue%d", i);
-
-				AttributeIdentifier AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
-				int AttributeValue = pRes->getInt(aAttributeValue);
-				if(AttributeID >= AttributeIdentifier::SpreadShotgun && AttributeValue > 0)
-				{
-					aContainerAttributes.push_back({ AttributeID, AttributeValue });
-				}
+				aContainerAttributes.push_back({ AttributeID, AttributeValue });
 			}
-
-			CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, Data);
 		}
-	});
 
-	const auto InitAttributes = Database->Prepare<DB::SELECT>("*", "tw_attributs");
-	InitAttributes->AtExecute([](ResultPtr pRes)
+		CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, Data);
+	}
+
+	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributs");
+	while(pResAtt->next())
 	{
-		while(pRes->next())
-		{
-			const AttributeIdentifier ID = (AttributeIdentifier)pRes->getInt("ID");
-			std::string Name = pRes->getString("Name").c_str();
-			std::string FieldName = pRes->getString("FieldName").c_str();
-			int UpgradePrice = pRes->getInt("Price");
-			AttributeGroup Group = (AttributeGroup)pRes->getInt("Group");
+		const AttributeIdentifier ID = (AttributeIdentifier)pResAtt->getInt("ID");
+		std::string Name = pResAtt->getString("Name").c_str();
+		std::string FieldName = pResAtt->getString("FieldName").c_str();
+		int UpgradePrice = pResAtt->getInt("Price");
+		AttributeGroup Group = (AttributeGroup)pResAtt->getInt("Group");
 
-			CAttributeDescription::CreateElement(ID)->Init(Name, FieldName, UpgradePrice, Group);
-		}
-	});
+		CAttributeDescription::CreateElement(ID)->Init(Name, FieldName, UpgradePrice, Group);
+	}
 }
 
 void CInventoryManager::OnInitAccount(CPlayer* pPlayer)
@@ -110,7 +104,7 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 
 	if(Menulist == MenuList::MENU_INVENTORY)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		GS()->AVH(ClientID, TAB_INFO_INVENTORY, "Inventory Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "Choose the type of items you want to show");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_INVENTORY, "After, need select item to interact");
@@ -144,7 +138,7 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Re
 
 	if(Menulist == MenuList::MENU_EQUIPMENT)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		GS()->AVH(ClientID, TAB_INFO_EQUIP, "Equip / Armor Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EQUIP, "SELECT tab and select armor.");
 		GS()->AV(ClientID, "null");
@@ -183,7 +177,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	if(PPSTR(CMD, "SORTEDINVENTORY") == 0)
 	{
 		pPlayer->m_aSortTabs[SORT_INVENTORY] = VoteID;
-		GS()->StrongUpdateVotes(ClientID, MenuList::MENU_INVENTORY);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
 		return true;
 	}
 
@@ -198,7 +192,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		pPlayerItem->Drop(Get);
 
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {STR}x{VAL}", pPlayerItem->Info()->GetName(), Get);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -210,7 +204,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 
 		Get = minimum(AvailableValue, Get);
 		pPlayer->GetItem(VoteID)->Use(Get);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -227,7 +221,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
 			GS()->Chat(ClientID, "Disassemble {STR}x{VAL}.", pPlayerSelectedItem->Info()->GetName(), Get);
-			GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
 	}
@@ -235,7 +229,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	if(PPSTR(CMD, "ISETTINGS") == 0)
 	{
 		pPlayer->GetItem(VoteID)->Equip();
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -258,14 +252,14 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		char aAttributes[128];
 		pPlayerItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
 		GS()->Chat(-1, "{STR} enchant {STR} {STR} {STR}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str(), aAttributes);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
 	if(PPSTR(CMD, "SORTEDEQUIP") == 0)
 	{
 		pPlayer->m_aSortTabs[SORT_EQUIPING] = VoteID;
-		GS()->StrongUpdateVotes(ClientID, MenuList::MENU_EQUIPMENT);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
 		return true;
 	}
 

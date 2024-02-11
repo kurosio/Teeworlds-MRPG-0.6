@@ -76,7 +76,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 		GS()->Core()->QuestManager()->AcceptNextStoryQuestStep(m_pPlayer);
 
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
-		GS()->UpdateVotes(m_pPlayer->GetCID(), m_pPlayer->m_CurrentVoteMenu);
+		m_pPlayer->m_VotesData.UpdateCurrentVotes();
 		GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	}
 

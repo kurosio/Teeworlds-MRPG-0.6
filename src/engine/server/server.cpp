@@ -2491,10 +2491,6 @@ void CServer::RegisterCommands()
 
 	// Initialize server ban
 	m_pServerBan->InitServerBan(Console(), Storage(), this, &m_NetServer);
-
-	// Initialize console commands in sub parts
-	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
-		MultiWorlds()->GetWorld(i)->GameServer()->OnConsoleInit();
 }
 
 // This function initializes a client bot for the server

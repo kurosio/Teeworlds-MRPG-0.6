@@ -12,6 +12,7 @@
 
 #include "vote_event_optional.h"
 #include "core/utilities/cooldown.h"
+#include "core/utilities/vote_wrapper.h"
 
 enum
 {
@@ -24,13 +25,6 @@ enum StateSnapping
 	STATE_SNAPPING_NONE = 0,
 	STATE_SNAPPING_ONLY_CHARACTER,
 	STATE_SNAPPING_FULL,
-};
-
-class CVoteGroupHidden
-{
-public:
-	bool m_Value {};
-	int m_Type {};
 };
 
 class CPlayer
@@ -54,7 +48,6 @@ class CPlayer
 	};
 
 	int m_SnapHealthNicknameTick;
-	ska::unordered_map<int, CVoteGroupHidden> m_aHiddenGroup;
 
 protected:
 	CCharacter* m_pCharacter;
@@ -77,6 +70,7 @@ public:
 	char m_aClanString[128];
 	Mood m_MoodState;
 	CCooldown m_Cooldown {};
+	CVotePlayerData m_VotesData;
 
 	char m_aLastMsg[256];
 	int m_TutorialStep;
@@ -93,15 +87,13 @@ public:
 
 	bool m_WantSpawn;
 	short m_aSortTabs[NUM_SORT_TAB];
-	int m_TempMenuValue;
-	short m_CurrentVoteMenu;
-	short m_LastVoteMenu;
-	bool m_ZoneInvertMenu;
 	bool m_RequestChangeNickname;
 	int m_EidolonCID;
 	bool m_ActivedGroupColors;
 	int m_TickActivedGroupColors;
 
+	bool m_ZoneInvertMenu;
+	int m_ZoneMenuSelectedID;
 	/* ==========================================================
 		FUNCTIONS PLAYER ENGINE
 	========================================================== */
@@ -147,10 +139,6 @@ public:
 
 	void RefreshClanString();
 
-	void SetPostVoteListCallback(const std::function<void()> pFunc) { m_PostVotes = pFunc; }
-	bool IsActivePostVoteList() const { return m_PostVotes != nullptr; }
-	void PostVoteList();
-
 	virtual bool IsActive() const { return true; }
 	virtual void PrepareRespawnTick();
 	class CPlayerBot* GetEidolon() const;
@@ -183,9 +171,6 @@ public:
 		FUNCTIONS PLAYER ACCOUNT
 	========================================================== */
 	const char* GetLanguage() const;
-
-	CVoteGroupHidden* EmplaceHidden(size_t Hash, int Type);
-	CVoteGroupHidden* GetHidden(size_t Hash);
 
 	bool IsAuthed() const;
 	int GetStartTeam() const;

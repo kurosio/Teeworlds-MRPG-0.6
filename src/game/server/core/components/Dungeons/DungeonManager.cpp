@@ -32,7 +32,7 @@ bool CDungeonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 
 	if(Menulist == MenuList::MENU_DUNGEONS)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		GS()->AVH(ClientID, TAB_INFO_DUNGEON, "Dungeons Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "In this section you can choose a dungeon");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "View the fastest players on the passage");
@@ -69,20 +69,20 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		if(GS()->IsPlayerEqualWorld(ClientID, CDungeonData::ms_aDungeon[VoteID].m_WorldID))
 		{
 			GS()->Chat(ClientID, "You are already in this dungeon!");
-			GS()->StrongUpdateVotes(ClientID, MenuList::MENU_DUNGEONS);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			return true;
 		}
 		if(CDungeonData::ms_aDungeon[VoteID].IsDungeonPlaying())
 		{
 			GS()->Chat(ClientID, "At the moment players are passing this dungeon!");
-			GS()->StrongUpdateVotes(ClientID, MenuList::MENU_DUNGEONS);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			return true;
 		}
 
 		if(pPlayer->Account()->GetLevel() < CDungeonData::ms_aDungeon[VoteID].m_Level)
 		{
 			GS()->Chat(ClientID, "Your level is low to pass this dungeon!");
-			GS()->StrongUpdateVotes(ClientID, MenuList::MENU_DUNGEONS);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			return true;
 		}
 
@@ -112,28 +112,28 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		CPlayer* pSearchPlayer = GS()->GetPlayer(VoteID, true);
 		if(!pSearchPlayer)
 		{
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
 			return true;
 		}
 
 		if(VoteID == ClientID)
 		{
 			GS()->Chat(ClientID, "You can't vote for yourself!");
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
 			return true;
 		}
 
 		if(pPlayer->GetTempData().m_TempAlreadyVotedDungeon)
 		{
 			GS()->Chat(ClientID, "You already voted!");
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
 			return true;
 		}
 
 		pPlayer->GetTempData().m_TempAlreadyVotedDungeon = true;
 		pSearchPlayer->GetTempData().m_TempTankVotingDungeon++;
 		GS()->ChatWorldID(pPlayer->GetPlayerWorldID(), "Dungeon:", "{STR} voted for {STR}.", Server()->ClientName(ClientID), Server()->ClientName(VoteID));
-		GS()->StrongUpdateVotesForAll(pPlayer->m_CurrentVoteMenu);
+		GS()->UpdateVotesIfForAll(pPlayer->m_VotesData.GetCurrentMenuID());
 		return true;
 	}
 	return false;

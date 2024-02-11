@@ -36,14 +36,14 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
+	m_ZoneMenuSelectedID = -1;
 	m_Cooldown.Initilize(ClientID);
+	m_VotesData.Initilize(m_pGS, this);
 
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
 	{
 		m_TutorialStep = 1;
-		m_LastVoteMenu = NOPE;
-		m_CurrentVoteMenu = MENU_MAIN;
 		m_ZoneInvertMenu = false;
 		m_MoodState = Mood::NORMAL;
 		Account()->m_Team = GetStartTeam();
@@ -59,7 +59,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 
 CPlayer::~CPlayer()
 {
-	m_aHiddenGroup.clear();
+	CVoteWrapper::Data()[m_ClientID].clear();
 	delete m_pLastInput;
 	delete m_pCharacter;
 	m_pCharacter = nullptr;
@@ -157,8 +157,8 @@ void CPlayer::Tick()
 	m_Cooldown.Handler();
 
 	// post updated votes if player open menu
-	if(m_PlayerFlags & PLAYERFLAG_IN_MENU && IsActivePostVoteList())
-		PostVoteList();
+	if(m_PlayerFlags & PLAYERFLAG_IN_MENU)
+		m_VotesData.RunVoteUpdater();
 }
 
 void CPlayer::PostTick()
@@ -534,12 +534,6 @@ void CPlayer::RefreshClanString()
 	Buffer.clear();
 }
 
-void CPlayer::PostVoteList()
-{
-	m_PostVotes();
-	m_PostVotes = nullptr;
-}
-
 CCharacter* CPlayer::GetCharacter() const
 {
 	if(m_pCharacter && m_pCharacter->IsAlive())
@@ -781,23 +775,6 @@ void CPlayer::UpdateTempData(int Health, int Mana)
 	GetTempData().m_TempMana = Mana;
 }
 
-CVoteGroupHidden* CPlayer::EmplaceHidden(size_t Hash, int Type)
-{
-	bool Value = false;
-	if(Type & HIDE_DEFAULT_CLOSE || Type & HIDE_UNIQUE)
-		Value = true;
-
-	m_aHiddenGroup.emplace(Hash, std::forward<CVoteGroupHidden>({ Value, Type }));
-	return &m_aHiddenGroup.at(Hash);
-}
-
-CVoteGroupHidden* CPlayer::GetHidden(size_t Hash)
-{
-	if(m_aHiddenGroup.find(Hash) != m_aHiddenGroup.end())
-		return &m_aHiddenGroup.at(Hash);
-	return nullptr;
-}
-
 bool CPlayer::IsAuthed() const
 {
 	if(GS()->Core()->AccountManager()->IsActive(m_ClientID))
@@ -919,37 +896,11 @@ bool CPlayer::ParseVoteUpgrades(const char* CMD, const int VoteID, const int Vot
 		if(Upgrade(Get, &Account()->m_aStats[(AttributeIdentifier)VoteID], &Account()->m_Upgrade, VoteID2, 1000))
 		{
 			GS()->Core()->SaveAccount(this, SAVE_UPGRADES);
-			GS()->UpdateVotes(m_ClientID, MENU_UPGRADES);
+			m_VotesData.UpdateVotes(MENU_UPGRADES);
 		}
 		return true;
 	}
 
-	if(PPSTR(CMD, "BACK") == 0)
-	{
-		// close other tabs after checked new
-		m_aHiddenGroup.clear();
-		GS()->UpdateVotes(m_ClientID, m_LastVoteMenu);
-		return true;
-	}
-
-	if(PPSTR(CMD, "HIDDEN") == 0)
-	{
-		CVoteGroupHidden* pHidden = GetHidden(VoteID);
-		if(pHidden && pHidden->m_Type & HIDE_UNIQUE)
-		{
-			for(auto& [ID, Hide] : m_aHiddenGroup)
-			{
-				if(Hide.m_Type & HIDE_UNIQUE && ID != VoteID)
-				{
-					Hide.m_Value = true;
-				}
-			}
-		}
-
-		m_aHiddenGroup[VoteID].m_Value ^= true;
-		GS()->StrongUpdateVotes(m_ClientID, m_CurrentVoteMenu);
-		return true;
-	}
 	return false;
 }
 

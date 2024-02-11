@@ -44,7 +44,7 @@ void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& 
 	m_pWarData.first->m_pWarHandler = this;
 	m_pWarData.second->m_pWarHandler = this;
 	m_pWarData.first->m_pGuild->m_pWar = m_pWarData.first;
-	m_pWarData.second->m_pGuild->m_pWar = m_pWarData.first;
+	m_pWarData.second->m_pGuild->m_pWar = m_pWarData.second;
 	m_TimeUntilEnd = TimeUntilEnd;
 
 	Database->Execute<DB::INSERT>(TW_GUILDS_WARS_TABLE, "(TimeUntilEnd, GuildID1, GuildID2) VALUES ('%llu', '%d', '%d')", 

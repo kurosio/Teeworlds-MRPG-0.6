@@ -456,8 +456,12 @@ void CPlayerQuest::CheckAvailableNewStep()
 		Finish();
 
 		CGS* pGS = (CGS*)Instance::GetServer()->GameServerPlayer(m_ClientID);
-		pGS->StrongUpdateVotes(m_ClientID, MENU_JOURNAL_MAIN);
-		pGS->StrongUpdateVotes(m_ClientID, MENU_MAIN);
+		CPlayer* pPlayer = pGS->GetPlayer(m_ClientID);
+		if(pPlayer)
+		{
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_JOURNAL_MAIN);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
+		}
 	}
 	else
 	{

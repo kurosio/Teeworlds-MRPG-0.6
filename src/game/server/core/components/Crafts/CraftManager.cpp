@@ -27,71 +27,32 @@ void CCraftManager::OnInit()
 		CCraftItem::CreateElement(ID)->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
 	}
 
-	Core()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
-}
-
-bool CCraftManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
-{
-	CPlayer* pPlayer = pChr->GetPlayer();
-	const int ClientID = pPlayer->GetCID();
-
-	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_CRAFT_ZONE))
-	{
-		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
-		return true;
-	}
-	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_CRAFT_ZONE))
-	{
-		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
-		return true;
-	}
-	return false;
-}
-
-void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
-{
 	// sort by function
 	std::sort(CCraftItem::Data().begin(), CCraftItem::Data().end(), [](const CCraftItem* p1, const CCraftItem* p2)
 	{
 		return p1->GetItem()->Info()->GetFunctional() > p2->GetItem()->Info()->GetFunctional();
 	});
 
-	const int ClientID = pPlayer->GetCID();
+	Core()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
+}
 
-	CVoteWrapper VCraftList(ClientID, BORDER_SIMPLE, TypeName);
-	for(const auto& pCraft: CCraftItem::Data())
+bool CCraftManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+{
+	CPlayer* pPlayer = pChr->GetPlayer();
+
+	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_CRAFT_ZONE))
 	{
-		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
-		if(pCraftItemInfo->GetType() != Type || pCraft->GetWorldID() != GS()->GetWorldID())
-			continue;
-		
-		CraftIdentifier ID = pCraft->GetID();
-		ItemIdentifier ItemID = pCraft->GetItem()->GetID();
-		const int Price = pCraft->GetPrice(pPlayer);
-
-		CVoteWrapper VCraftItem(ClientID, HIDE_UNIQUE|BORDER_STRICT, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
-		if(pCraftItemInfo->IsEnchantable())
-		{
-			char aAttributes[128];
-			pCraftItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
-			VCraftItem.Add(aAttributes);
-		}
-		else
-		{
-			VCraftItem.Add("{STR}x{VAL} ({VAL}) :: {VAL} gold", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), pPlayer->GetItem(ItemID)->GetValue(), Price);
-		}
-
-		for(auto& RequiredItem: pCraft->GetRequiredItems())
-		{
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(RequiredItem.GetID());
-			VCraftItem.Add("* {STR} {VAL}({VAL})", pPlayerItem->Info()->GetName(), RequiredItem.GetValue(), pPlayerItem->GetValue());
-		}
-
-		VCraftItem.Add("CRAFT", ID, "Craft {STR}", pCraftItemInfo->GetName());
+		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
 	}
-	CVoteWrapper::AddLine(ClientID);
+	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_CRAFT_ZONE))
+	{
+		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+	return false;
 }
 
 void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
@@ -155,7 +116,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 		GS()->Chat(ClientID, "You crafted [{STR}x{VAL}].", pPlayerCraftItem->Info()->GetName(), CraftGetValue);
 	}
 
-	GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 
 bool CCraftManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
@@ -175,18 +136,27 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if (ReplaceMenu)
 	{
 		CCharacter* pChr = pPlayer->GetCharacter();
-		if (!pChr || !pChr->IsAlive())
+		if(!pChr || !pChr->IsAlive())
 			return false;
 
-		if (pChr->GetHelper()->BoolIndex(TILE_CRAFT_ZONE))
+		if(pChr->GetHelper()->BoolIndex(TILE_CRAFT_ZONE))
 		{
-			GS()->AVH(ClientID, TAB_INFO_CRAFT, "Crafting Information");
-			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_CRAFT, "If you will not have enough items for crafting");
-			GS()->AVM(ClientID, "null", NOPE, TAB_INFO_CRAFT, "You will write those and the amount that is still required");
-			GS()->AV(ClientID, "null");
-			GS()->AddVoteItemValue(ClientID);
-			GS()->AV(ClientID, "null");
+			// show craft item
+			if(pPlayer->m_ZoneMenuSelectedID > 0)
+			{
+				int CraftID = pPlayer->m_ZoneMenuSelectedID;
+				ShowCraftItem(pPlayer, GetCraftByID(CraftID));
+				return true;
+			}
 
+			// show craft list
+			CVoteWrapper VCraftInfo(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2692 Crafting Information");
+			VCraftInfo.Add("If you will not have enough items for crafting");
+			VCraftInfo.Add("You will write those and the amount that is still required");
+			VCraftInfo.AddItemValue();
+			CVoteWrapper::AddLine(ClientID);
+
+			// show craft tabs
 			ShowCraftList(pPlayer, "Can be used's", ItemType::TYPE_USED);
 			ShowCraftList(pPlayer, "Potion's", ItemType::TYPE_POTION);
 			ShowCraftList(pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
@@ -197,10 +167,74 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 			ShowCraftList(pPlayer, "Quest and all the rest's", ItemType::TYPE_INVISIBLE);
 			return true;
 		}
+
 		return false;
 	}
 
 	return false;
+}
+
+void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
+{
+	const int ClientID = pPlayer->GetCID();
+	if(!pCraft || pCraft->GetWorldID() != GS()->GetWorldID())
+		return;
+
+	CVoteWrapper VCraftItem(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2692 Information about craft");
+	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
+	VCraftItem.Add("Crafting: {STR}x{VAL}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
+	VCraftItem.Add("{STR}", pCraftItemInfo->GetDescription());
+	if(pCraftItemInfo->IsEnchantable())
+	{
+		char aAttributes[128];
+		pCraftItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
+		VCraftItem.Add(aAttributes);
+	}
+	CVoteWrapper::AddLine(ClientID);
+
+	CVoteWrapper VCraftRequired(ClientID, HIDE_DEFAULT_OPEN, "Required items");
+	for(auto& pRequiredItem : pCraft->GetRequiredItems())
+	{
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
+		bool Has = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
+		VCraftRequired.Add("* {STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
+	}
+	CVoteWrapper::AddLine(ClientID);
+
+	CVoteWrapper VCraft(ClientID);
+	VCraft.AddItemValue();
+	VCraft.AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({VAL} gold)", pCraft->GetPrice(pPlayer));
+	CVoteWrapper::AddBackpage(ClientID);
+}
+
+void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
+{
+	const int ClientID = pPlayer->GetCID();
+	if(std::all_of(CCraftItem::Data().begin(), CCraftItem::Data().end(), [Type](const CCraftItem* p){ return p->GetItem()->Info()->GetType() != Type; }))
+		return;
+
+	CVoteWrapper VCraftList(ClientID, HIDE_DEFAULT_OPEN, TypeName);
+	for(const auto& pCraft : CCraftItem::Data())
+	{
+		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
+		if(pCraftItemInfo->GetType() != Type || pCraft->GetWorldID() != GS()->GetWorldID())
+			continue;
+
+		CraftIdentifier ID = pCraft->GetID();
+		ItemIdentifier ItemID = pCraft->GetItem()->GetID();
+		const int Price = pCraft->GetPrice(pPlayer);
+
+		if(pCraftItemInfo->IsEnchantable())
+		{
+			VCraftList.AddZoneSelect(ID, "{STR}{STR} - {VAL} gold", (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
+		}
+		else
+		{
+			VCraftList.AddZoneSelect(ID, "[{VAL}]{STR}x{INT} - {VAL} gold", pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
+		}
+	}
+
+	CVoteWrapper::AddLine(ClientID);
 }
 
 CCraftItem* CCraftManager::GetCraftByID(CraftIdentifier ID) const

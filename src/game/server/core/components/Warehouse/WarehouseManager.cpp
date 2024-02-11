@@ -60,13 +60,13 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_SHOP_ZONE))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_SHOP_ZONE))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -74,13 +74,13 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_ORE_SELL) || pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLANT_SELL))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_ORE_SELL) || pChr->GetHelper()->TileExit(IndexCollision, TILE_PLANT_SELL))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -136,7 +136,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	if(PPSTR(CMD, "SHOP_BUY") == 0)
 	{
 		if(BuyItem(pPlayer, VoteID, VoteID2))
-			GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
+			pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return true;
 	}
 
@@ -162,7 +162,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 			// Add the total price to the player's gold
 			pPlayer->Account()->AddGold(CountPrice);
 			GS()->Chat(ClientID, "You sold {STR}x{VAL} for {VAL} gold.", GS()->GetItemInfo(ID)->GetName(), Get, CountPrice);
-			GS()->UpdateVotes(ClientID, MenuList::MENU_MAIN);
+			pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		}
 
 		return true;

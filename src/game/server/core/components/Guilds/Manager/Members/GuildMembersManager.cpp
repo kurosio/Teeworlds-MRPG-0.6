@@ -86,7 +86,7 @@ GUILD_MEMBER_RESULT CGuildMembersManager::Kick(int AccountID)
 		if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
 		{
 			pPlayer->Account()->ReinitializeGuild();
-			GS()->UpdateVotes(pPlayer->GetCID(), MENU_MAIN);
+			pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		}
 
 		// Add a left message to the guild history and send chat message

@@ -129,7 +129,7 @@ bool CAccountPlantManager::OnHandleVoteCommands(CPlayer *pPlayer, const char *CM
 		if(pPlayer->Upgrade(Get, &pPlayer->Account()->m_FarmingData(VoteID, 0).m_Value, &pPlayer->Account()->m_FarmingData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
 		{
 			GS()->Core()->SaveAccount(pPlayer, SAVE_PLANT_DATA);
-			GS()->StrongUpdateVotes(ClientID, MENU_UPGRADES);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_UPGRADES);
 		}
 		return true;
 	}

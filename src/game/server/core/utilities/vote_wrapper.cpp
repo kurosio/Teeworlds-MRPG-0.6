@@ -7,13 +7,12 @@ const char* VOTE_LINE_DEF = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2
 namespace Border
 {
 	enum BorderSymbol { Beggin, Middle, MiddleOption, End, Num };
+	inline constexpr const char* g_pSimpleBorder[Num] = { "\u256D", "\u2502", "\u251C", "\u2570" };
+	inline constexpr const char* g_pDoubleBorder[Num] = { "\u2554", "\u2551", "\u2560", "\u255A" };
+	inline constexpr const char* g_pStrictBorder[Num] = { "\u250C", "\u2502", "\u251C", "\u2514" };
+	inline constexpr const char* g_pStrictBoldBorder[Num] = { "\u250F", "\u2503", "\u2523", "\u2517" };
 
-	inline constexpr const char* g_pSimpleBorder[Num] = { "╭", "│", "├", "╰" };
-	inline constexpr const char* g_pDoubleBorder[Num] = { "╔", "║", "╠", "╚" };
-	inline constexpr const char* g_pStrictBorder[Num] = { "┌", "│", "├", "└" };
-	inline constexpr const char* g_pStrictBoldBorder[Num] = { "┏", "┃", "┣", "┗" };
-
-	constexpr const char* get(BorderSymbol Border, int Flags)
+	static constexpr const char* get(BorderSymbol Border, int Flags)
 	{
 		if(Flags & BORDER_SIMPLE) { return g_pSimpleBorder[Border]; }
 		if(Flags & DOUBLE_BORDER) { return g_pDoubleBorder[Border]; }
@@ -23,18 +22,12 @@ namespace Border
 	}
 }
 
-// This function calculates the hash value for a given string and stores it in the specified output array.
-inline constexpr void HasherVoteGroup(const char* pStr, int* Out) noexcept
-{
-	*Out = 0;
-	while(*pStr) { *Out = *Out << 1 ^ *pStr++; }
-}
-
 CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID)
 {
 	IServer* pServer = Instance::GetServer();
 	int ClientWorldID = pServer->GetClientWorldID(m_ClientID);
 	m_pGS = (CGS*)pServer->GameServer(ClientWorldID);
+	m_GroupID = (int)CVoteWrapper::Data()[m_ClientID].size();
 }
 
 // Function to add a vote title implementation with variable arguments
@@ -55,13 +48,9 @@ void CVoteGroup::AddVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	const char* pAppend = "\0";
 	if(m_Flags & (HIDE_DEFAULT_CLOSE | HIDE_DEFAULT_OPEN | HIDE_UNIQUE))
 	{
-		// Hash the buffer and set pHidden to the result
-		HasherVoteGroup(Buffer.buffer(), &m_GroupHash);
-		const bool HiddenTab = pPlayer->EmplaceHidden(m_GroupHash, m_Flags)->m_Value;
-
-		// Set pAppend based on the value of HiddenTab
+		const bool HiddenTab = pPlayer->m_VotesData.EmplaceHidden(m_GroupID, m_Flags)->m_Value;
 		pAppend = HiddenTab ? "\u21BA " : "\u27A4 ";
-		SettingsID1 = m_GroupHash;
+		SettingsID1 = m_GroupID;
 		pCmd = "HIDDEN";
 	}
 
@@ -94,7 +83,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 
 	// Get the player hidden vote object associated with the client ID
 	CPlayer* pPlayer = GS()->m_apPlayers[m_ClientID];
-	CVoteGroupHidden* pHidden = pPlayer->GetHidden(m_GroupHash);
+	CVotePlayerData::VoteGroupHidden* pHidden = pPlayer->m_VotesData.GetHidden(m_GroupID);
 
 	// Check if the hidden vote object exists and if its value is true
 	if(pHidden && pHidden->m_Value)
@@ -108,7 +97,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	va_end(VarArgs);
 
 	char aBufText[VOTE_DESC_LENGTH];
-	str_format(aBufText, sizeof(aBufText), "%s%s", str_comp(pCmd, "null") != 0 ? "╾ " : "\0", Buffer.buffer());
+	str_format(aBufText, sizeof(aBufText), "%s%s", str_comp(pCmd, "null") != 0 ? "\u257E " : "\0", Buffer.buffer());
 	Buffer.clear();
 
 	// Check if the player's language is "ru" or "uk" and convert aBufText to Latin if true
@@ -153,7 +142,7 @@ void CVoteGroup::AddBackpageImpl()
 		// Create a new VoteOption with the values
 		CVoteOption Vote;
 		str_copy(Vote.m_aDescription, "\u21A9 Backpage", sizeof(Vote.m_aDescription));
-		str_copy(Vote.m_aCommand, "back", sizeof(Vote.m_aCommand));
+		str_copy(Vote.m_aCommand, "BACK", sizeof(Vote.m_aCommand));
 
 		// Add the VoteOption to the player's votes
 		AddLineImpl();
@@ -194,10 +183,13 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	if(!pPlayer)
 		return;
 
-	bool BorderNext = false;
 	CVoteOption* pLastVoteOption = nullptr;
 	for(auto pItem : m_pData[ClientID])
 	{
+		// Add empty vote for empty hidden group
+		if(pItem->IsEmpty() && pItem->m_Flags & (HIDE_UNIQUE | HIDE_DEFAULT_CLOSE | HIDE_DEFAULT_OPEN))
+			pItem->AddVoteImpl("null", NOPE, NOPE, "The options group is empty");
+
 		for(auto iter = pItem->m_vpVotelist.begin(); iter != pItem->m_vpVotelist.end();)
 		{
 			// There should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
@@ -212,7 +204,7 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 			if(pItem->m_Flags & (BORDER_SIMPLE | DOUBLE_BORDER | BORDER_STRICT | BORDER_STRICT_BOLD))
 			{
 				// Skip the vote option if the player has hidden the vote option
-				CVoteGroupHidden* pHidden = pPlayer->GetHidden(pItem->m_GroupHash);
+				CVotePlayerData::VoteGroupHidden* pHidden = pPlayer->m_VotesData.GetHidden(pItem->m_GroupID);
 				if(!pHidden || (pHidden && !pHidden->m_Value))
 				{
 					char aRebuildedBuf[VOTE_DESC_LENGTH];
@@ -277,4 +269,173 @@ CVoteOption* CVoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActi
 
 	// If no matching vote option is found, return nullptr
 	return nullptr;
+}
+
+// Function to create or update a hidden vote group
+CVotePlayerData::VoteGroupHidden* CVotePlayerData::EmplaceHidden(int ID, int Type)
+{
+	// Check if the vote group already exists and has the same type
+	auto& CurrentHidden = m_aHiddenGroup[m_CurrentMenuID];
+	if(CurrentHidden.find(ID) != CurrentHidden.end() && CurrentHidden[ID].m_Type == Type)
+		return &CurrentHidden[ID];
+
+	bool Value = (Type & HIDE_DEFAULT_CLOSE) || (Type & HIDE_UNIQUE);
+	CurrentHidden[ID] = { Value, Type };
+	return &CurrentHidden[ID];
+}
+
+// Function to get a hidden vote group
+CVotePlayerData::VoteGroupHidden* CVotePlayerData::GetHidden(int ID)
+{
+	auto& CurrentHidden = m_aHiddenGroup[m_CurrentMenuID];
+	auto it = CurrentHidden.find(ID);
+	if(it != CurrentHidden.end())
+		return &it->second;
+
+	return nullptr;
+}
+
+// Function to reset the hidden vote groups for a menu
+void CVotePlayerData::ResetHidden(int MenuID)
+{
+	// If the hidden group is empty, return
+	auto& HiddenGroup = m_aHiddenGroup[MenuID];
+	if(HiddenGroup.empty())
+		return;
+
+	// Iterate over each hidden vote group
+	for(auto& [ID, Hide] : HiddenGroup)
+	{
+		if(Hide.m_Type & HIDE_UNIQUE)
+			Hide.m_Value = true;
+	}
+}
+
+
+void CVotePlayerData::CallbackUpdateVotes(CVotePlayerData* pData, int MenuID, bool PrepareCustom)
+{
+	if(!pData->m_pPlayer || !pData->m_pGS)
+		return;
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(3));
+	int ClientID = pData->m_pPlayer->GetCID();
+	if(MenuID == CUSTOM_MENU && PrepareCustom)
+	{
+		// send parsed votes
+		CVoteWrapper::RebuildVotes(ClientID);
+		return;
+	}
+
+	// parse votes
+	pData->SetCurrentMenuID(MenuID);
+	pData->ClearVotes();
+	pData->m_pGS->Core()->OnPlayerHandleMainMenu(ClientID, MenuID);
+	CVoteWrapper::RebuildVotes(ClientID);
+}
+
+void CVotePlayerData::RunVoteUpdater()
+{
+	if(m_PostVotes)
+	{
+		m_PostVotes();
+		m_PostVotes = nullptr;
+	}
+}
+
+void CVotePlayerData::UpdateVotes(int MenuID)
+{
+	m_pPlayer->m_VotesData.m_PostVotes = std::bind(&CallbackUpdateVotes, this, MenuID, false);
+}
+
+void CVotePlayerData::UpdateVotesIf(int MenuID)
+{
+	if(m_CurrentMenuID == MenuID)
+		UpdateVotes(MenuID);
+}
+
+void CVotePlayerData::ClearVotes() const
+{
+	int ClientID = m_pPlayer->GetCID();
+	CVoteWrapper::Data()[ClientID].clear();
+
+	// send vote options
+	CNetMsg_Sv_VoteClearOptions ClearMsg;
+	Instance::GetServer()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
+}
+
+// Function to parse default system commands
+bool CVotePlayerData::ParsingDefaultSystemCommands(const char* CMD, const int VoteID, const int VoteID2, int Get, const char* Text)
+{
+	// Check if the command is "MENU"
+	if(PPSTR(CMD, "MENU") == 0)
+	{
+		// Set the temporary menu integer to the specified value
+		m_TempMenuInteger = VoteID2;
+
+		// Update the votes for the player
+		ResetHidden(VoteID);
+		UpdateVotes(VoteID);
+		return true;
+	}
+
+	// Check if the command is "SELECT"
+	if(PPSTR(CMD, "ZONE_SELECT") == 0)
+	{
+		m_pPlayer->m_ZoneMenuSelectedID = VoteID;
+		UpdateCurrentVotes();
+		return true;
+	}
+
+	// Check if the command is "ZONE_INVERT_MENU"
+	if(PPSTR(CMD, "ZONE_INVERT_MENU") == 0)
+	{
+		// Toggle the zone invert menu flag for the player
+		m_pPlayer->m_ZoneInvertMenu ^= true;
+
+		// Update the votes for the player
+		ResetHidden();
+		UpdateCurrentVotes();
+		return true;
+	}
+
+	// Check if the command is "BACK"
+	if(PPSTR(CMD, "BACK") == 0)
+	{
+		// Check if the selected ID is greater than or equal to 0
+		if(m_pPlayer->m_ZoneMenuSelectedID >= 0)
+		{
+			m_pPlayer->m_ZoneMenuSelectedID = -1;
+			UpdateCurrentVotes();
+			return true;
+		}
+
+		// Update the votes for the player
+		UpdateVotes(m_LastMenuID);
+		return true;
+	}
+
+	// Check if the command is "HIDDEN"
+	if(PPSTR(CMD, "HIDDEN") == 0)
+	{
+		// If the hidden vote group does not exist, return true
+		if(VoteGroupHidden* pHidden = GetHidden(VoteID))
+		{
+			// If the hidden vote group has the HIDE_UNIQUE flag and its ID is not the specified ID, set its value to true
+			if(pHidden->m_Type & HIDE_UNIQUE)
+			{
+				for(auto& [ID, Hide] : m_aHiddenGroup[m_CurrentMenuID])
+				{
+					if(Hide.m_Type & HIDE_UNIQUE && ID != VoteID)
+						Hide.m_Value = true;
+				}
+			}
+
+			// Toggle the value of the hidden vote group
+			pHidden->m_Value ^= true;
+			UpdateCurrentVotes();
+		}
+		return true;
+	}
+
+	return false;
 }

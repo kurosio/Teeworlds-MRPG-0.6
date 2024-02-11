@@ -15,8 +15,8 @@ bool CEidolonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, in
 	{
 		m_EidolonItemSelected[ClientID] = VoteID;
 
-		pPlayer->m_TempMenuValue = MENU_EIDOLON_COLLECTION_SELECTED;
-		GS()->UpdateVotes(ClientID, MENU_EIDOLON_COLLECTION_SELECTED);
+		//pPlayer->m_TempMenuValue = MENU_EIDOLON_COLLECTION_SELECTED;
+		pPlayer->m_VotesData.UpdateVotes(MENU_EIDOLON_COLLECTION_SELECTED);
 		return true;
 	}
 
@@ -31,7 +31,7 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 
 	if(Menulist == MENU_EIDOLON_COLLECTION)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		GS()->AVH(ClientID, TAB_INFO_EIDOLONS, "Eidolon Collection Information");
 		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EIDOLONS, "Here you can see your collection of eidolons.");
 		GS()->AV(ClientID, "null");
@@ -52,7 +52,7 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 
 	if(Menulist == MENU_EIDOLON_COLLECTION_SELECTED)
 	{
-		pPlayer->m_LastVoteMenu = MENU_EIDOLON_COLLECTION;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_EIDOLON_COLLECTION);
 
 		if(CEidolonInfoData* pEidolonInfo = GS()->GetEidolonByItemID(m_EidolonItemSelected[ClientID]))
 		{

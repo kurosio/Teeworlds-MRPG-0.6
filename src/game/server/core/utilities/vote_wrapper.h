@@ -9,6 +9,9 @@ class CGS;
 class CPlayer;
 class CVoteGroupHidden;
 
+typedef void (*VoteOptionCallbackImpl)(CPlayer*, int, std::string, void*);
+typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallback;
+
 enum
 {
 	FLAG_DISABLED = 0,
@@ -31,6 +34,7 @@ public:
 	int m_SettingID2 { -1 };
 	bool m_Title { false };
 	bool m_Line { false };
+	VoteOptionCallback m_Callback {};
 };
 
 class CVoteGroup
@@ -43,16 +47,17 @@ class CVoteGroup
 	CGS* GS() const { return m_pGS; }
 
 	int m_ButtonSize {};
-	int m_GroupHash {};
+	int m_GroupID {};
 	int m_Flags {};
 	int m_ClientID {};
 
 	CVoteGroup(int ClientID, int Flags);
 
-	bool IsEmpty() const { return m_ButtonSize <= 0; };
+	bool IsEmpty() const { return m_ButtonSize <= 0; }
 
 	void AddVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...);
 	void AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...);
+	void SetCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
 
 	void AddLineImpl();
 	void AddEmptylineImpl();
@@ -113,6 +118,12 @@ public:
 		pVoteGroup->AddEmptylineImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
+	static void AddItemValue(int ClientID, int ItemID = itGold) noexcept
+	{
+		const auto pVoteGroup = new CVoteGroup(ClientID, FLAG_DISABLED);
+		pVoteGroup->AddItemValueImpl(ItemID);
+		m_pData[ClientID].push_back(pVoteGroup);
+	}
 
 	/*
 	 * Tools options group
@@ -133,14 +144,6 @@ public:
 	CVoteWrapper& AddEmptyline(){
 		return AddIfEmptyline(true);
 	}
-	CVoteWrapper& AddIfBackpage(bool Checker) noexcept {
-		if(Checker)
-			m_pGroup->AddBackpageImpl();
-		return *this;
-	}
-	CVoteWrapper& AddBackpage() noexcept {
-		return AddIfBackpage(true);
-	}
 	CVoteWrapper& AddIfItemValue(bool Checker, int ItemID = itGold) noexcept {
 		if(Checker)
 			m_pGroup->AddItemValueImpl(ItemID);
@@ -154,73 +157,176 @@ public:
 	 * Default group
 	 */
 	template<typename ... Args>
-	CVoteWrapper& AddIf(bool Checker, const std::string& Text, Args&& ... argsfmt) {
+	CVoteWrapper& AddIf(bool Checker, const char* pText, Args&& ... argsfmt) {
 		if(Checker)
-			m_pGroup->AddVoteImpl("null", NOPE, NOPE, Text.c_str(), std::forward<Args>(argsfmt)...);
+			m_pGroup->AddVoteImpl("null", NOPE, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddIf(bool Checker, int MenuID, const std::string& Text, Args&& ... argsfmt) {
+	CVoteWrapper& AddIf(bool Checker, int MenuID, const char* pText, Args&& ... argsfmt) {
 		if(Checker)
-			m_pGroup->AddVoteImpl("MENU", MenuID, NOPE, Text.c_str(), std::forward<Args>(argsfmt)...);
+			m_pGroup->AddVoteImpl("MENU", MenuID, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddIf(bool Checker, int MenuID, int InteractID, const std::string& Text, Args&& ... argsfmt) {
+	CVoteWrapper& AddIf(bool Checker, int MenuID, int InteractID, const char* pText, Args&& ... argsfmt) {
 		if(Checker)
-			m_pGroup->AddVoteImpl("MENU", MenuID, InteractID, Text.c_str(), std::forward<Args>(argsfmt)...);
+			m_pGroup->AddVoteImpl("MENU", MenuID, InteractID, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template<typename ... Args>
-	CVoteWrapper& Add(const std::string& Text, Args&& ... argsfmt) {
-		return AddIf(true, Text, std::forward<Args>(argsfmt)...);
+	CVoteWrapper& Add(const char* pText, Args&& ... argsfmt) {
+		return AddIf(true, pText, std::forward<Args>(argsfmt)...);
 	}
 	template<typename ... Args>
-	CVoteWrapper& Add(int MenuID, const std::string& Text, Args&& ... argsfmt) {
-		return AddIf(true, MenuID, Text, std::forward<Args>(argsfmt)...);
+	CVoteWrapper& Add(int MenuID, const char* pText, Args&& ... argsfmt) {
+		return AddIf(true, MenuID, pText, std::forward<Args>(argsfmt)...);
 	}
 	template<typename ... Args>
-	CVoteWrapper& Add(int MenuID, int InteractID, const std::string& Text, Args&& ... argsfmt) {
-		return AddIf(true, MenuID, InteractID, Text, std::forward<Args>(argsfmt)...);
+	CVoteWrapper& Add(int MenuID, int InteractID, const char* pText, Args&& ... argsfmt) {
+		return AddIf(true, MenuID, InteractID, pText, std::forward<Args>(argsfmt)...);
 	}
 
 	/*
 	 * Option group
 	 */
 	template <typename ... Args>
-	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, const std::string& Text, Args&& ... argsfmt) {
+	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, const char* pText, Args&& ... argsfmt) {
 		if(Checker)
-			m_pGroup->AddVoteImpl(pCmd, NOPE, NOPE, Text.c_str(), std::forward<Args>(argsfmt)...);
+			m_pGroup->AddVoteImpl(pCmd, NOPE, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, int Settings1, const std::string& Text, Args&& ... argsfmt) {
+	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, int Settings1, const char* pText, Args&& ... argsfmt) {
 		if(Checker)
-			m_pGroup->AddVoteImpl(pCmd, Settings1, NOPE, Text.c_str(), std::forward<Args>(argsfmt)...);
+			m_pGroup->AddVoteImpl(pCmd, Settings1, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, int Settings1, int Settings2, const std::string& Text, Args&& ... argsfmt) {
+	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt) {
 		if(Checker)
-			m_pGroup->AddVoteImpl(pCmd, Settings1, Settings2, Text.c_str(), std::forward<Args>(argsfmt)...);
+			m_pGroup->AddVoteImpl(pCmd, Settings1, Settings2, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddOption(const char* pCmd, const std::string& Text, Args&& ... argsfmt) {
-		return AddIfOption(true, pCmd, Text, std::forward<Args>(argsfmt)...);
+	CVoteWrapper& AddOption(const char* pCmd, const char* pText, Args&& ... argsfmt) {
+		return AddIfOption(true, pCmd, pText, std::forward<Args>(argsfmt)...);
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddOption(const char* pCmd, int Settings1, const std::string& Text, Args&& ... argsfmt) {
-		return AddIfOption(true, pCmd, Settings1, Text, std::forward<Args>(argsfmt)...);
+	CVoteWrapper& AddOption(const char* pCmd, int Settings1, const char* pText, Args&& ... argsfmt) {
+		return AddIfOption(true, pCmd, Settings1, pText, std::forward<Args>(argsfmt)...);
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddOption(const char* pCmd, int Settings1, int Settings2, const std::string& Text, Args&& ... argsfmt) {
-		return AddIfOption(true, pCmd, Settings1, Settings2, Text, std::forward<Args>(argsfmt)...);
+	CVoteWrapper& AddOption(const char* pCmd, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt) {
+		return AddIfOption(true, pCmd, Settings1, Settings2, pText, std::forward<Args>(argsfmt)...);
+	}
+
+	/*
+	 * Option callback group
+	 */
+	template<typename ... Args>
+	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, const char* pText, Args&& ... argsfmt) {
+		m_pGroup->AddVoteImpl("CALLBACK_IMPL", NOPE, NOPE, pText, std::forward<Args>(argsfmt)...);
+		m_pGroup->SetCallback(CallbackImpl, pUser);
+		return *this;
+	}
+	template<typename ... Args>
+	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Settings1, const char* pText, Args&& ... argsfmt) {
+		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Settings1, NOPE, pText, std::forward<Args>(argsfmt)...);
+		m_pGroup->SetCallback(CallbackImpl, pUser);
+		return *this;
+	}
+	template<typename ... Args>
+	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt) {
+		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Settings1, Settings2, pText, std::forward<Args>(argsfmt)...);
+		m_pGroup->SetCallback(CallbackImpl, pUser);
+		return *this;
+	}
+
+	/*
+	 * Selected group
+	 */
+	template <typename ... Args>
+	CVoteWrapper& AddIfZoneSelect(bool Checker, int SelectedID, const char* pText, Args&& ... argsfmt) {
+		if(Checker)
+			m_pGroup->AddVoteImpl("ZONE_SELECT", SelectedID, NOPE, pText, std::forward<Args>(argsfmt)...);
+		return *this;
+	}
+	template<typename ... Args>
+	CVoteWrapper& AddZoneSelect(int SelectedID, const char* pText, Args&& ... argsfmt) {
+		return AddIfZoneSelect(true, SelectedID, pText, std::forward<Args>(argsfmt)...);
 	}
 
 	// Rebuild votes
 	static void RebuildVotes(int ClientID);
 	static CVoteOption* GetOptionVoteByAction(int ClientID, const char* pActionName);
+};
+
+class CVotePlayerData
+{
+	friend class CVoteGroup;
+	friend class CVoteWrapper;
+
+	struct VoteGroupHidden
+	{
+		bool m_Value {};
+		int m_Type {};
+	};
+
+	CGS* m_pGS {};
+	CPlayer* m_pPlayer {};
+	int m_CurrentMenuID {};
+	int m_LastMenuID{};
+	int m_TempMenuInteger {};
+	std::function<void()> m_PostVotes;
+	ska::unordered_map<int, ska::unordered_map<int, VoteGroupHidden>> m_aHiddenGroup{};
+
+	VoteGroupHidden* EmplaceHidden(int ID, int Type);
+	VoteGroupHidden* GetHidden(int ID);
+	void ResetHidden(int MenuID);
+	void ResetHidden() { ResetHidden(m_CurrentMenuID); }
+
+	ska::unordered_map<int, VoteGroupHidden>& GetHiddenGroup() { return m_aHiddenGroup[m_CurrentMenuID]; }
+	ska::unordered_map<int, VoteGroupHidden>& GetHiddenGroup(int MenuID) { return m_aHiddenGroup[MenuID]; }
+	ska::unordered_map<int, ska::unordered_map<int, VoteGroupHidden>>& GetAllHiddenGroup() { return m_aHiddenGroup; }
+	static void CallbackUpdateVotes(CVotePlayerData* pData, int MenuID, bool PrepareCustom);
+
+public:
+	CVotePlayerData()
+	{
+		m_CurrentMenuID = MENU_MAIN;
+	}
+
+	~CVotePlayerData()
+	{
+		ClearVotes();
+
+		m_pGS = nullptr;
+		m_pPlayer = nullptr;
+		m_PostVotes = nullptr;
+		m_aHiddenGroup.clear();
+	}
+
+	void Initilize(CGS* pGS, CPlayer* pPlayer)
+	{
+		m_pGS = pGS;
+		m_pPlayer = pPlayer;
+	}
+
+	void RunVoteUpdater();
+	void UpdateVotes(int MenuID);
+	void UpdateVotesIf(int MenuID);
+	void UpdateCurrentVotes() { UpdateVotes(m_CurrentMenuID); }
+	void ClearVotes() const;
+
+	void SetCurrentMenuID(int MenuID) { m_CurrentMenuID = MenuID; }
+	int GetCurrentMenuID() const { return m_CurrentMenuID; }
+	int GetMenuTemporaryInteger() const { return m_TempMenuInteger; }
+
+	void SetLastMenuID(int MenuID) { m_LastMenuID = MenuID; }
+	int GetLastMenuID() const { return m_LastMenuID; }
+
+	bool ParsingDefaultSystemCommands(const char* CMD, const int VoteID, const int VoteID2, int Get, const char* Text);
 };
 
 #endif

@@ -325,13 +325,14 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		}
 		else
 		{
-			// update vote menu for players
+			// update vote menu for player
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
-				if(!GS()->m_apPlayers[i] || !GS()->IsPlayerEqualWorld(i, m_WorldID))
+				CPlayer* pPlayer = GS()->m_apPlayers[i];
+				if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 					continue;
 
-				GS()->StrongUpdateVotes(i, MENU_DUNGEONS);
+				pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			}
 		}
 	}

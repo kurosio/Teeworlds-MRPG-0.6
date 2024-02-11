@@ -8,7 +8,8 @@
 #define _DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(player) GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You can see menu in the votes!")
 #define _DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(player) \
 									GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You have left the active zone!"); \
-									player->m_ZoneInvertMenu = false
+									player->m_ZoneInvertMenu = false; \
+									player->m_ZoneMenuSelectedID = -1
 
 class TileHandle
 {

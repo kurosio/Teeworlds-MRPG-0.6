@@ -118,7 +118,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 		// Define a lambda function to check if the player has the specified vote menu open
 		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep, [&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->m_CurrentVoteMenu == std::get<0>(pTutorial->m_Data);
+			return pPlayer->m_VotesData.GetCurrentMenuID() == std::get<0>(pTutorial->m_Data);
 		});
 	}
 

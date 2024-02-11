@@ -195,7 +195,7 @@ void CGuildData::TimePeriodEvent(TIME_PERIOD Period)
 				// Send a chat message and log to the guild notifying them that their guild house rent has been paid
 				GS()->ChatGuild(m_ID, "Your guild house rent has expired, has been sold.");
 				m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has expired, has been sold.");
-				GS()->StrongUpdateVotesForAll(MENU_GUILD);
+				GS()->UpdateVotesIfForAll(MENU_GUILD);
 				return;
 			}
 

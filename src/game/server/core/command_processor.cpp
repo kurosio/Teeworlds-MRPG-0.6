@@ -257,7 +257,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		if(pSubElem.compare(0, 8, "open_all") == 0)
 		{
 			pDoorController->OpenAll();
-			pGS->UpdateVotes(ClientID, MENU_HOUSE);
+			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were open!");
 			return;
 		}
@@ -266,7 +266,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		if(pSubElem.compare(0, 9, "close_all") == 0)
 		{
 			pDoorController->CloseAll();
-			pGS->UpdateVotes(ClientID, MENU_HOUSE);
+			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were closed!");
 			return;
 		}
@@ -275,7 +275,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		if(pSubElem.compare(0, 11, "reverse_all") == 0)
 		{
 			pDoorController->ReverseAll();
-			pGS->UpdateVotes(ClientID, MENU_HOUSE);
+			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were reversed!");
 			return;
 		}
@@ -294,7 +294,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			}
 
 			pHouse->GetDoorsController()->Reverse(Number);
-			pGS->UpdateVotes(ClientID, MENU_HOUSE);
+			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			bool State = pDoorController->GetDoors()[Number]->IsClosed();
 			pGS->Chat(pPlayer->GetCID(), "Door {STR}(Number {INT}) was {STR}!", pDoorController->GetDoors()[Number]->GetName(), Number, State ? "closed" : "opened");
 			return;
@@ -375,7 +375,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 	{
 		// Create a group for the player
 		pGS->Core()->GroupManager()->CreateGroup(pPlayer);
-		pGS->StrongUpdateVotesForAll(MENU_GROUP);
+		pGS->UpdateVotesIfForAll(MENU_GROUP);
 		return;
 	}
 
@@ -392,7 +392,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 
 		// Remove the player from the group
 		pGroup->Remove(pPlayer->Account()->GetID());
-		pGS->StrongUpdateVotesForAll(MENU_GROUP);
+		pGS->UpdateVotesIfForAll(MENU_GROUP);
 		return;
 	}
 

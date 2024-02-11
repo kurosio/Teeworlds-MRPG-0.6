@@ -78,13 +78,13 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_HOUSE))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, MENU_MAIN);
+		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_HOUSE))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, MENU_MAIN);
+		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return true;
 	}
 
@@ -149,7 +149,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Change the player's position to pAether's position
 		pPlayer->GetCharacter()->ChangePosition(HousePosition);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -208,7 +208,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
 		}
 		return true;
 	}
@@ -236,7 +236,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// Update the votes for all players to refresh the guild view players menu
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
 		return true;
 	}
 
@@ -289,7 +289,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
 		}
 		return true;
 	}
@@ -315,7 +315,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		// Deposit the specified amount in the guild bank
 		if(pMember->DepositInBank(Get))
 		{
-			GS()->StrongUpdateVotes(ClientID, MENU_GUILD);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD);
 		}
 		return true;
 	}
@@ -333,7 +333,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		str_copy(pPlayer->GetTempData().m_aRankGuildBuf, GetText, sizeof(pPlayer->GetTempData().m_aRankGuildBuf));
 
 		// Update the votes for all players to refresh the guild rank menu
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
 		return true;
 	}
 
@@ -364,7 +364,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
 			GS()->Chat(ClientID, "The rank '{STR}' has been successfully added!", pPlayer->GetTempData().m_aRankGuildBuf);
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
 		}
 		return true;
 	}
@@ -391,7 +391,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
 		}
 		return true;
 	}
@@ -421,7 +421,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
 		}
 		return true;
 	}
@@ -443,7 +443,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		pRank->ChangeAccess();
 
 		// Update the votes for all players in the guild rank menu
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_RANKS);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
 		return true;
 	}
 
@@ -472,8 +472,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
 		{
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
-			GS()->StrongUpdateVotesForAll(MENU_GUILD_INVITES);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_INVITES);
 		}
 		return true;
 	}
@@ -493,8 +493,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Deny the request from the specified UID
 		pGuild->GetMembers()->GetRequests()->Deny(RequestFromUID, pPlayer->Account()->GetGuildMemberData());
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_MEMBERSHIP_LIST);
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_INVITES);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_INVITES);
 		return true;
 	}
 
@@ -512,7 +512,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		str_copy(pPlayer->GetTempData().m_aGuildSearchBuf, GetText, sizeof(pPlayer->GetTempData().m_aGuildSearchBuf));
 
 		// Update the votes for the client and open the guild finder menu
-		GS()->UpdateVotes(ClientID, MENU_GUILD_FINDER);
+		pPlayer->m_VotesData.UpdateVotes(MENU_GUILD_FINDER);
 		return true;
 	}
 
@@ -579,8 +579,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GUILD_RESULT::SUCCESSFUL)
 		{
-			GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
-			GS()->StrongUpdateVotesForAll(MENU_GUILD);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+			GS()->UpdateVotesIfForAll(MENU_GUILD);
 		}
 
 		return true;
@@ -615,7 +615,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			dbg_msg("guild", "war not created");
 		}
 
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_WARS);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_WARS);
 		return true;
 	}
 
@@ -684,7 +684,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 				pPlantzone->ChangeItem(ItemID);
 			}
 
-			GS()->StrongUpdateVotes(ClientID, MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED);
 		}
 
 		return true;
@@ -712,7 +712,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		// reverse door house
 		int UniqueDoorID = VoteID;
 		pHouse->GetDoorManager()->Reverse(UniqueDoorID);
-		GS()->StrongUpdateVotesForAll(MENU_GUILD);
+		GS()->UpdateVotesIfForAll(MENU_GUILD);
 		return true;
 	}
 
@@ -728,8 +728,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 		if(pGuild->SellHouse())
 		{
-			GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
-			GS()->StrongUpdateVotesForAll(MENU_GUILD);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+			GS()->UpdateVotesIfForAll(MENU_GUILD);
 		}
 	}
 
@@ -749,7 +749,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		GS()->StrongUpdateVotesForAll(MENU_GUILD);
+		GS()->UpdateVotesIfForAll(MENU_GUILD);
 		return true;
 	}
 
@@ -768,7 +768,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Set the logger of the guild data to the log flag
 		pGuild->GetLogger()->SetActivityFlag(Logflag);
-		GS()->StrongUpdateVotesForAll(MENU_GUILD_LOGS);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_LOGS);
 		return true;
 	}
 
@@ -796,64 +796,64 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 
 	if(Menulist == MENU_GUILD_FINDER)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		ShowFinder(ClientID);
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_FINDER_MEMBERSHIP_LIST)
+	if(Menulist == MENU_GUILD_FINDER_DETAIL_INFORMATION)
 	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD_FINDER;
-		ShowMembershipList(ClientID, pPlayer->m_TempMenuValue);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_FINDER);
+		ShowFinderDetailInformation(ClientID, pPlayer->m_VotesData.GetMenuTemporaryInteger());
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		ShowMenu(ClientID);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD_MEMBERSHIP_LIST)
 	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowMembershipList(ClientID);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD_LOGS)
 	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowLogs(ClientID);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD_WARS)
 	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowDeclareWar(ClientID);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD_RANKS)
 	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowRanksSettings(ClientID);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD_INVITES)
 	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowRequests(ClientID);
 		return true;
 	}
 
 	if(Menulist == MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED)
 	{
-		pPlayer->m_LastVoteMenu = MENU_GUILD;
-		ShowPlantZone(ClientID, pPlayer->m_TempMenuValue);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
+		ShowPlantZone(ClientID, pPlayer->m_VotesData.GetMenuTemporaryInteger());
 		return true;
 	}
 
@@ -910,9 +910,17 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 		return;
 	}
 
-	// Initialize variables
+	// Membership information
+	auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
+	CVoteWrapper VMembershipInfo(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2723 Membership information", pGuild->GetName());
+	VMembershipInfo.Add("\u2723 Guild name: {STR}", pGuild->GetName());
+	VMembershipInfo.Add("Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
+	VMembershipInfo.Add("Members: {INT} of {INT}", CurrentSlots.first, CurrentSlots.second);
+	CVoteWrapper::AddLine(ClientID);
+
+	// Membership list
+	CVoteWrapper(ClientID).Add("\u2635 Membership list of {STR}", pGuild->GetName());
 	CGuildMemberData* pPlayerMember = pPlayer->Account()->GetGuildMemberData();
-	CVoteWrapper(ClientID, "\u2635 Membership list of {STR}", pGuild->GetName());
 	for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 	{
 		CGuildMemberData* pMember = pIterMember.second;
@@ -920,7 +928,7 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 		const char* pNickname = Server()->GetAccountNickname(MemberUID);
 
 		// Print the member's rank, account nickname, and deposit
-		CVoteWrapper VMember(ClientID, HIDE_UNIQUE, "{STR} {STR} Deposit: {VAL}", pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
+		CVoteWrapper VMember(ClientID, HIDE_UNIQUE|BORDER_SIMPLE, "{STR} {STR} Deposit: {VAL}", pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
 		const bool IsSelfSlot = pPlayer->Account()->GetID() == pMember->GetAccountID();
 
 		// Check if the player has leader rights
@@ -955,31 +963,31 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 	CVoteWrapper::AddBackpage(ClientID);
 }
 
-void CGuildManager::ShowMembershipList(int ClientID, GuildIdentifier ID) const
+void CGuildManager::ShowFinderDetailInformation(int ClientID, GuildIdentifier ID) const
 {
 	// If the player object does not exist, return from the function
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer)
 		return;
 
-	// show more information
-	if(pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->GetID() == ID)
-	{
-		ShowMembershipList(ClientID);
-		return;
-	}
-
-	// show simple information
 	if(CGuildData* pGuild = GetGuildByID(ID))
 	{
-		int HideID = START_SELF_HIDE_ID;
+		// Detail information
+		auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
+		CVoteWrapper VMembershipInfo(ClientID, HIDE_DEFAULT_OPEN | BORDER_STRICT_BOLD, "\u2723 Membership information", pGuild->GetName());
+		VMembershipInfo.Add("\u2723 Guild name: {STR}", pGuild->GetName());
+		VMembershipInfo.Add("Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
+		VMembershipInfo.Add("Members: {INT} of {INT}", CurrentSlots.first, CurrentSlots.second);
+		VMembershipInfo.Add("Has house: {STR}", pGuild->HasHouse() ? "Yes" : "No");
+		VMembershipInfo.Add("Guild bank: {VAL} golds", pGuild->GetBank()->Get());
+		CVoteWrapper::AddLine(ClientID);
 
-		CVoteWrapper(ClientID, "\u2635 Membership list of {STR}", pGuild->GetName());
+		// Memberlist
+		CVoteWrapper VMemberlist(ClientID, HIDE_DEFAULT_OPEN | BORDER_SIMPLE, "\u2635 Membership list of {STR}", pGuild->GetName());
 		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 		{
 			CGuildMemberData* pMember = pIterMember.second;
-			CVoteWrapper(ClientID, "{STR} {STR} Deposit: {VAL}", pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
-			HideID++;
+			VMemberlist.Add("{STR} {STR} Deposit: {VAL}", pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
 		}
 	}
 
@@ -1031,7 +1039,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('%d', '%s', '%d', '%s')",
 		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
 	GS()->Chat(-1, "New guilds [{STR}] have been created!", GuildName.cstr());
-	GS()->StrongUpdateVotes(ClientID, MENU_MAIN);
+	pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
 }
 
 void CGuildManager::Disband(GuildIdentifier ID) const
@@ -1098,8 +1106,8 @@ void CGuildManager::ShowMenu(int ClientID) const
 	const int MemberUsedSlots = pGuild->GetMembers()->GetContainer().size();
 	const int MemberMaxSlots = pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->m_Value;
 
-	// guild information
-	CVoteWrapper VInfo(ClientID, HIDE_DEFAULT_OPEN, "\u2747 Information about {STR}", pGuild->GetName());
+	// Guild information
+	CVoteWrapper VInfo(ClientID, HIDE_DEFAULT_OPEN|BORDER_SIMPLE, "\u2747 Information about {STR}", pGuild->GetName());
 	VInfo.Add("Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Level: {INT} Experience: {INT}/{INT}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	VInfo.Add("Members: {INT} of {INT}", MemberUsedSlots, MemberMaxSlots);
@@ -1107,6 +1115,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 
 	if(HasHouse)
 	{
+		// Rent information
 		char aBufTimeStamp[64];
 		CVoteWrapper VRent(ClientID);
 		VRent.Add("\u2679 House rent price per day: {VAL} golds", pGuild->GetHouse()->GetRentPrice());
@@ -1115,12 +1124,12 @@ void CGuildManager::ShowMenu(int ClientID) const
 		CVoteWrapper::AddLine(ClientID);
 	}
 
-	// guild deposit
+	// Guild deposit
 	CVoteWrapper VDeposit(ClientID, HIDE_DEFAULT_OPEN, "\u2727 Your: {VAL} | Bank: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
 	VDeposit.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 	CVoteWrapper::AddLine(ClientID);
 
-	// guild management
+	// Guild management
 	CVoteWrapper VManagement(ClientID, HIDE_DEFAULT_OPEN, "\u262B Guild Management");
 	VManagement.Add(MENU_GUILD_MEMBERSHIP_LIST, "Membership list");
 	VManagement.Add(MENU_GUILD_INVITES, "Requests membership");
@@ -1129,18 +1138,19 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VManagement.Add(MENU_GUILD_WARS, "Guild wars");
 	CVoteWrapper::AddLine(ClientID);
 
-	// guild append house menu
+	// Guild append house menu
 	if(HasHouse)
 	{
 		CGuildHouseData* pHouse = pGuild->GetHouse();
 
+		// House management
 		CVoteWrapper VHouse(ClientID, HIDE_DEFAULT_OPEN, "\u2302 House Management");
 		VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor");
 		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
 		VHouse.AddOption("GUILD_HOUSE_SELL", "Sell the house");
 		CVoteWrapper::AddLine(ClientID);
 
-		// guild house doors
+		// House doors
 		if(!pHouse->GetDoorManager()->GetContainer().empty())
 		{
 			CVoteWrapper VDoors(ClientID, HIDE_DEFAULT_OPEN, "\u2743 House has {VAL} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
@@ -1152,7 +1162,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 			CVoteWrapper::AddLine(ClientID);
 		}
 
-		// guild house plant zones
+		// House plant zones
 		if(!pHouse->GetPlantzonesManager()->GetContainer().empty())
 		{
 			CVoteWrapper VPlantZones(ClientID, HIDE_DEFAULT_OPEN, "\u2741 House has {VAL} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
@@ -1164,14 +1174,14 @@ void CGuildManager::ShowMenu(int ClientID) const
 		}
 	}
 
-	// guild disband
+	// Guild disband
 	CVoteWrapper VDisband(ClientID, HIDE_DEFAULT_OPEN, "\u2716 Disband guild");
 	VDisband.Add("Gold spent on upgrades will not be refunded");
 	VDisband.Add("All gold will be returned to the leader only");
 	VDisband.AddOption("GUILD_DISBAND", "Disband. (reason 55428)");
 	CVoteWrapper::AddLine(ClientID);
 
-	// guild upgrades
+	// Guild upgrades
 	CVoteWrapper VUpgrades(ClientID, HIDE_DEFAULT_OPEN, "\u2730 Guild upgrades");
 	for(int i = CGuildData::UPGRADE_AVAILABLE_SLOTS; i < CGuildData::NUM_GUILD_UPGRADES; i++)
 	{
@@ -1201,14 +1211,14 @@ void CGuildManager::ShowRanksSettings(int ClientID) const
 	}
 
 	// Guild rank information
-	CVoteWrapper VRanks(ClientID, HIDE_DEFAULT_CLOSE, "\u2622 Rank management (Information)");
+	CVoteWrapper VRanks(ClientID, HIDE_DEFAULT_CLOSE|BORDER_SIMPLE, "\u2324 Rank management (Information)");
 	VRanks.Add("Use reason how enter Value, Click fields!");
 	VRanks.Add("Example: Name rank: [], in reason name, and use this");
 	VRanks.Add("For leader access full, ignored ranks");
 	VRanks.Add("Maximal 5 ranks for one guild");
 	CVoteWrapper::AddLine(ClientID);
 
-	CVoteWrapper VRankSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2312 Rank management (Settings)");
+	CVoteWrapper VRankSettings(ClientID, HIDE_DEFAULT_OPEN, "\u2743 Rank management (Settings)");
 	VRankSettings.AddOption("GUILD_RANK_NAME_FIELD", "Name rank: {STR}", pPlayer->GetTempData().m_aRankGuildBuf);
 	VRankSettings.AddOption("GUILD_RANK_CREATE", "Create new rank");
 	CVoteWrapper::AddLine(ClientID);
@@ -1220,7 +1230,7 @@ void CGuildManager::ShowRanksSettings(int ClientID) const
 		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank());
 		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetAccessName());
 
-		CVoteWrapper VRank(ClientID, HIDE_UNIQUE, "\u2312 Rank [{STR}] {STR}", pRank->GetName(), StrAppendRankInfo.c_str());
+		CVoteWrapper VRank(ClientID, HIDE_UNIQUE|BORDER_SIMPLE, "\u2742 Rank [{STR}] {STR}", pRank->GetName(), StrAppendRankInfo.c_str());
 		VRank.AddOption("GUILD_RANK_RENAME", ID, "Rename to ({STR})", pPlayer->GetTempData().m_aRankGuildBuf);
 		VRank.AddIfOption(!IsDefaultRank, "GUILD_RANK_ACCESS", ID, "Change access", pRank->GetAccessName());
 		VRank.AddIfOption(!IsDefaultRank, "GUILD_RANK_REMOVE", ID, "Remove");
@@ -1322,15 +1332,12 @@ void CGuildManager::ShowFinder(int ClientID) const
 	if(pPlayer->Account()->HasGuild())
 	{
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		CVoteWrapper VHasGuild(ClientID, BORDER_STRICT_BOLD);
-		VHasGuild.Add("\u02DA\u029A\u2665\u025E\u02DA You already in guild '{STR}'!", pGuild->GetName());
-		VHasGuild.Add("You can leave the guild to join another one.");
-		VHasGuild.AddOption("GUILD_LEAVE", "Leave the guild");
-		VHasGuild.AddLine();
+		CVoteWrapper(ClientID).Add("\u02DA\u029A\u2665\u025E\u02DA You already in guild '{STR}'!", pGuild->GetName());
+		CVoteWrapper::AddLine(ClientID);
 	}
 
 	// Show search option
-	CVoteWrapper VSearch(ClientID, HIDE_DEFAULT_CLOSE|BORDER_SIMPLE, "\u270E Search for a guild by name");
+	CVoteWrapper VSearch(ClientID, HIDE_DEFAULT_CLOSE|BORDER_STRICT, "\u270E Search for a guild by name");
 	VSearch.Add("Use reason how Value.");
 	VSearch.Add("Example: Find guild: [], in reason name.");
 	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Find guild: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
@@ -1343,12 +1350,10 @@ void CGuildManager::ShowFinder(int ClientID) const
 		auto [UsedSlots, MaxSlots] = pGuild->GetMembers()->GetCurrentSlots();
 
 		// Show guild information
-		CVoteWrapper VGuild(ClientID, HIDE_UNIQUE, "Guild: {STR}", pGuild->GetName());
+		CVoteWrapper VGuild(ClientID, HIDE_UNIQUE|BORDER_SIMPLE, "Guild: {STR}", pGuild->GetName());
 		VGuild.Add("Leader: {STR}", Server()->GetAccountNickname(OwnerUID));
 		VGuild.Add("Members: {INT} of {INT}", UsedSlots, MaxSlots);
-		VGuild.Add("Has house: {STR}", pGuild->HasHouse() ? "Yes" : "No");
-		VGuild.Add("Guild bank: {VAL} golds", pGuild->GetBank()->Get());
-		VGuild.Add(MENU_GUILD_FINDER_MEMBERSHIP_LIST, "Membership list");
+		VGuild.Add(MENU_GUILD_FINDER_DETAIL_INFORMATION, pGuild->GetID(), "Detail information");
 		VGuild.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_JOIN_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
 	}
 
@@ -1481,7 +1486,7 @@ void CGuildManager::ShowLogs(int ClientID) const
 
 	// Display guild activity log settings to the player
 	auto flagStatus = [&](int flag) { return pLogger->IsActivityFlagSet(flag) ? "[\u2714]" : "[\u2715]"; };
-	CVoteWrapper VLogger(ClientID, HIDE_DEFAULT_OPEN, "Activity log settings");
+	CVoteWrapper VLogger(ClientID, HIDE_DEFAULT_OPEN|BORDER_SIMPLE, "Activity log settings");
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_GUILD_FULL, "Full changes {STR}", flagStatus(LOGFLAG_GUILD_FULL));
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_GUILD_MAIN_CHANGES, "Main changes {STR}", flagStatus(LOGFLAG_GUILD_MAIN_CHANGES));
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_MEMBERS_CHANGES, "Members changes {STR}", flagStatus(LOGFLAG_MEMBERS_CHANGES));
@@ -1493,23 +1498,15 @@ void CGuildManager::ShowLogs(int ClientID) const
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_HOUSE_DECORATIONS_CHANGES, "House decorations changes {STR}", flagStatus(LOGFLAG_HOUSE_DECORATIONS_CHANGES));
 	CVoteWrapper::AddLine(ClientID);
 
-	// If logs exist, display them to the player
-	CVoteWrapper VLogs(ClientID, HIDE_DEFAULT_OPEN, "Logs");
+	// Logs
+	char aBuf[128];
+	CVoteWrapper VLogs(ClientID, HIDE_DEFAULT_CLOSE, "Logs");
 	const GuildLogContainer& aLogs = pGuild->GetLogger()->GetContainer();
-	if(!aLogs.empty())
+	for(const auto& pLog : aLogs)
 	{
-		char aBuf[128];
-		for(const auto& pLog : aLogs)
-		{
-			// Format the log entry and display it
-			str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Text.c_str());
-			VLogs.Add("{STR}", aBuf);
-		}
-	}
-	else
-	{
-		// If logs are empty, display a message to the player
-		VLogs.Add("Log is empty");
+		// Format the log entry and display it
+		str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Text.c_str());
+		VLogs.Add("{STR}", aBuf);
 	}
 
 	// Add the votes backpage for the player

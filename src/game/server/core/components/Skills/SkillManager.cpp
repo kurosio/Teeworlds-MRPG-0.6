@@ -80,13 +80,13 @@ bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_SKILL_ZONE))
 	{
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_SKILL_ZONE))
 	{
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	return false;
@@ -100,7 +100,7 @@ bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		const int SkillID = VoteID;
 		if (pPlayer->GetSkill(SkillID)->Upgrade())
-			GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -108,7 +108,7 @@ bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		const int SkillID = VoteID;
 		pPlayer->GetSkill(SkillID)->SelectNextControlEmote();
-		GS()->StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	return false;

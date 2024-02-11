@@ -12,14 +12,14 @@ bool CMailboxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, in
 	if(PPSTR(CMD, "MAIL") == 0)
 	{
 		AcceptMailLetter(pPlayer, VoteID);
-		GS()->StrongUpdateVotes(ClientID, MenuList::MENU_INBOX);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_INBOX);
 		return true;
 	}
 
 	if(PPSTR(CMD, "DELETE_MAIL") == 0)
 	{
 		DeleteMailLetter(VoteID);
-		GS()->StrongUpdateVotes(ClientID, MenuList::MENU_INBOX);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_INBOX);
 		return true;
 	}
 
@@ -34,7 +34,7 @@ bool CMailboxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Repl
 
 	if(Menulist == MenuList::MENU_INBOX)
 	{
-		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		GS()->AddVotesBackpage(ClientID);
 		GS()->AV(ClientID, "null");

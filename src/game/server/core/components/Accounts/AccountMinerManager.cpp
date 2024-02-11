@@ -129,7 +129,7 @@ bool CAccountMinerManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CM
 		if (pPlayer->Upgrade(Get, &pPlayer->Account()->m_MiningData(VoteID, 0).m_Value, &pPlayer->Account()->m_MiningData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
 		{
 			GS()->Core()->SaveAccount(pPlayer, SAVE_MINER_DATA);
-			GS()->StrongUpdateVotes(ClientID, MENU_UPGRADES);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_UPGRADES);
 		}
 		return true;
 	}

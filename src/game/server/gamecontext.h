@@ -15,7 +15,6 @@
 #include "player.h"
 #include "playerbot.h"
 
-#include "core/utilities/vote_wrapper.h"
 #include "core/entities/tools/flying_point.h"
 #include "core/mmo_controller.h"
 
@@ -206,9 +205,8 @@ private:
 	static void ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	/* #########################################################################
-		VOTING MMO GAMECONTEXT TODO: rework fully
+		VOTING MMO GAMECONTEXT
 	######################################################################### */
-	static void CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool PrepareCustom);
 
 public:
 	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1);
@@ -218,15 +216,10 @@ public:
 	void AVD(int ClientID, const char *pCmd, int TempInt, int TempInt2, int HiddenID, const char *pText, ...);
 
 private:
-	void ClearVotes(int ClientID);
 	void ShowVotesNewbieInformation(int ClientID);
 
 public:
-	void StartCustomVotes(int ClientID, int LastVoteMenu);
-	void EndCustomVotes(int ClientID);
-	void UpdateVotes(int ClientID, int MenuList);
-	void StrongUpdateVotes(int ClientID, int MenuList);
-	void StrongUpdateVotesForAll(int MenuList);
+	void UpdateVotesIfForAll(int MenuList);
 	void AddVotesBackpage(int ClientID);
 	void AddVoteItemValue(int ClientID, ItemIdentifier ItemID = itGold, int HideID = NOPE);
 	bool ParsingVoteCommands(int ClientID, const char *CMD, int VoteID, int VoteID2, int Get, const char *Text);

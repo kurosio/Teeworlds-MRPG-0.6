@@ -274,7 +274,7 @@ void CAccountData::AddExperience(int Value)
 		if(m_Exp < (int)computeExperience(m_Level))
 		{
 			// Update votes, save stats, and save upgrades
-			GS()->StrongUpdateVotes(m_ClientID, MENU_MAIN);
+			m_pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
 			GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
 			GS()->Core()->SaveAccount(m_pPlayer, SAVE_UPGRADES);
 		}

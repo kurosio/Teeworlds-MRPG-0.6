@@ -99,7 +99,7 @@ bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	{
 		// Send message about entering the shop zone to the player
 		_DEF_TILE_ENTER_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	// Check if the player exited the shop zone
@@ -107,7 +107,7 @@ bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	{
 		// Send message about exiting the shop zone to the player
 		_DEF_TILE_EXIT_ZONE_SEND_MSG_INFO(pPlayer);
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -152,7 +152,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_JOURNAL_MAIN)
 	{
 		// Set the player's LastVoteMenu to MENU_MAIN
-		pPlayer->m_LastVoteMenu = MenuList::MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// Show the main list of quests to the player
 		ShowQuestsMainList(pPlayer);
@@ -168,7 +168,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_JOURNAL_FINISHED)
 	{
 		// Update the player's last vote menu to `MENU_JOURNAL_MAIN`
-		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_JOURNAL_MAIN);
 
 		// Show the list of quests in the finished state for the player
 		ShowQuestsTabList(pPlayer, QuestState::FINISHED);
@@ -184,10 +184,10 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist, bool Replac
 	if(Menulist == MENU_JOURNAL_QUEST_INFORMATION)
 	{
 		// Set the LastVoteMenu of the player to MENU_JOURNAL_MAIN
-		pPlayer->m_LastVoteMenu = MENU_JOURNAL_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_JOURNAL_MAIN);
 
 		// Get the quest information for the specified QuestID
-		const int QuestID = pPlayer->m_TempMenuValue;
+		const int QuestID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
 		CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 
 		// Show the active NPC for the quest to the player
@@ -242,7 +242,7 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			pQuest->Accept();
 
 		// Return true to indicate the action was successful and update votes
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
@@ -267,7 +267,7 @@ void CQuestManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Perio
 		// Call the UpdateVotes function to update the player's voting menu and send chat message
 		GS()->Chat(ClientID, "The daily quests have been updated.");
 		GS()->Chat(ClientID, "Visit the quest board for new quests!");
-		GS()->UpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 	}
 }
 

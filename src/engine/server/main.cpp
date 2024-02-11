@@ -154,6 +154,10 @@ int main(int argc, const char** argv)
 		return -1;
 	}
 
+	// Initialize console commands in sub parts
+	for(int i = 0; i < pServer->MultiWorlds()->GetSizeInitilized(); i++)
+		pServer->MultiWorlds()->GetWorld(i)->GameServer()->OnConsoleInit();
+
 	// parse the command line arguments
 	if(argc > 1)
 	{

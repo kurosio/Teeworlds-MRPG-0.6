@@ -990,14 +990,16 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(str_comp_nocase(pMsg->m_pType, "option") == 0)
 			{
 				// If the player has an active post vote list, post it
-				if(pPlayer->IsActivePostVoteList())
-					pPlayer->PostVoteList();
+				pPlayer->m_VotesData.RunVoteUpdater();
 
 				if(CVoteOption* pActionVote = CVoteWrapper::GetOptionVoteByAction(ClientID, pMsg->m_pValue))
 				{
 					// Parsing the vote commands with the provided values
 					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
-					ParsingVoteCommands(ClientID, pActionVote->m_aCommand, pActionVote->m_SettingID, pActionVote->m_SettingID2, InteractiveValue, pMsg->m_pReason);
+					if(pActionVote->m_Callback.m_Impl)
+						pActionVote->m_Callback.m_Impl(pPlayer, InteractiveValue, pMsg->m_pReason, pActionVote->m_Callback.m_pData);
+					else
+						ParsingVoteCommands(ClientID, pActionVote->m_aCommand, pActionVote->m_SettingID, pActionVote->m_SettingID2, InteractiveValue, pMsg->m_pReason);
 				}
 			}
 		}
@@ -1216,7 +1218,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			}
 
 			// send clear vote options
-			ClearVotes(ClientID);
+			pPlayer->m_VotesData.ClearVotes();
 
 			// client is ready to enter
 			CNetMsg_Sv_ReadyToEnter m;
@@ -1637,15 +1639,6 @@ void CGS::ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IC
 /* #########################################################################
 	VOTING MMO GAMECONTEXT
 ######################################################################### */
-void CGS::ClearVotes(int ClientID)
-{
-	CVoteWrapper::Data()[ClientID].clear();
-
-	// send vote options
-	CNetMsg_Sv_VoteClearOptions ClearMsg;
-	Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
-}
-
 // add a vote
 void CGS::AV(int ClientID, const char* pCmd, const char* pDesc, const int TempInt, const int TempInt2)
 {
@@ -1738,51 +1731,6 @@ void CGS::AVD(int ClientID, const char* pCmd, const int TempInt, const int TempI
 	}
 }
 
-void CGS::StartCustomVotes(int ClientID, int LastVoteMenu)
-{
-	// start without thread
-	if(CPlayer* pPlayer = GetPlayer(ClientID, true))
-	{
-		pPlayer->m_CurrentVoteMenu = CUSTOM_MENU;
-		pPlayer->m_LastVoteMenu = LastVoteMenu;
-		ClearVotes(ClientID);
-	}
-}
-
-void CGS::EndCustomVotes(int ClientID)
-{
-	CallbackUpdateVotes(this, ClientID, CUSTOM_MENU, true);
-}
-
-void CGS::CallbackUpdateVotes(CGS* pGS, int ClientID, int Menulist, bool PrepareCustom)
-{
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(3));
-	const auto& vPlayerVotes = CVoteWrapper::Data()[ClientID];
-	if(Menulist == CUSTOM_MENU && PrepareCustom)
-	{
-		// send parsed votes
-		CVoteWrapper::RebuildVotes(ClientID);
-		return;
-	}
-
-	// parse votes
-	pPlayer->m_CurrentVoteMenu = Menulist;
-	pGS->ClearVotes(ClientID);
-	pGS->Core()->OnPlayerHandleMainMenu(ClientID, Menulist);
-	CVoteWrapper::RebuildVotes(ClientID);
-}
-
-void CGS::UpdateVotes(int ClientID, int MenuList)
-{
-	// unfully safe
-	if(m_apPlayers[ClientID])
-		m_apPlayers[ClientID]->SetPostVoteListCallback(std::bind(&CallbackUpdateVotes, this, ClientID, MenuList, false));
-}
-
 // information for unauthorized players
 void CGS::ShowVotesNewbieInformation(int ClientID)
 {
@@ -1810,19 +1758,12 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 }
 
 // strong update votes variability of the data
-void CGS::StrongUpdateVotes(int ClientID, int MenuList)
-{
-	if(m_apPlayers[ClientID] && m_apPlayers[ClientID]->m_CurrentVoteMenu == MenuList)
-		UpdateVotes(ClientID, MenuList);
-}
-
-// strong update votes variability of the data
-void CGS::StrongUpdateVotesForAll(int MenuList)
+void CGS::UpdateVotesIfForAll(int MenuList)
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(m_apPlayers[i] && m_apPlayers[i]->m_CurrentVoteMenu == MenuList)
-			UpdateVotes(i, MenuList);
+		if(m_apPlayers[i] && m_apPlayers[i]->m_VotesData.GetCurrentMenuID() == MenuList)
+			m_apPlayers[i]->m_VotesData.UpdateVotes(MenuList);
 	}
 }
 
@@ -1858,28 +1799,19 @@ bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, c
 
 	CreatePlayerSound(ClientID, SOUND_BODY_LAND);
 
-	if(PPSTR(CMD, "MENU") == 0)
-	{
-		pPlayer->m_TempMenuValue = VoteID2;
-		UpdateVotes(ClientID, VoteID);
+	if(pPlayer->m_VotesData.ParsingDefaultSystemCommands(CMD, VoteID, VoteID2, Get, Text))
 		return true;
-	}
-	if(PPSTR(CMD, "ZONE_INVERT_MENU") == 0)
-	{
-		pPlayer->m_ZoneInvertMenu ^= true;
-		StrongUpdateVotes(ClientID, pPlayer->m_CurrentVoteMenu);
-		return true;
-	}
+
 	if(PPSTR(CMD, "SORTEDTOP") == 0)
 	{
 		pPlayer->m_aSortTabs[SORT_TOP] = VoteID;
-		StrongUpdateVotes(ClientID, MENU_TOP_LIST);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	if(PPSTR(CMD, "SORTEDWIKIWORLD") == 0)
 	{
 		pPlayer->m_aSortTabs[SORT_GUIDE_WORLD] = VoteID;
-		StrongUpdateVotes(ClientID, MENU_GUIDE_GRINDING);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 	if(pPlayer->ParseVoteUpgrades(CMD, VoteID, VoteID2, Get))

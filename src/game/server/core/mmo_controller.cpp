@@ -117,7 +117,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// Check if the player's m_ZoneInvertMenu variable is true
 		if(pPlayer->m_ZoneInvertMenu)
 		{
-			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "▶▶▶▶ Back to zone menu. ▶▶▶▶");
+			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "\u21AA Zone menu. \u21AA");
 			CVoteWrapper::AddLine(ClientID);
 			break;
 		}
@@ -125,9 +125,8 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// Call the function OnHandleMenulist of the pComponent object with the parameters pPlayer and Menulist
 		if(pComponent->OnHandleMenulist(pPlayer, Menulist, true))
 		{
-			// Display a notification to the client with the message "<<<< Back to player menu. <<<<"
 			CVoteWrapper::AddLine(ClientID);
-			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "◀◀◀◀ Back to player menu. ◀◀◀◀");
+			CVoteWrapper(ClientID).AddOption("ZONE_INVERT_MENU", "\u21A9 Player menu. \u21A9");
 			return true;
 		}
 	}
@@ -137,7 +136,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// main menu
 	if(Menulist == MENU_MAIN)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// statistics menu
 		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
@@ -162,8 +161,6 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.Add(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		VPersonal.AddIf(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");
 		CVoteWrapper::AddLine(ClientID);
-		CVoteWrapper::AddLine(ClientID);
-		CVoteWrapper::AddLine(ClientID);
 
 		// info menu
 		CVoteWrapper VInfo(ClientID, HIDE_DEFAULT_OPEN, "☪ INFORMATION");
@@ -175,7 +172,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// player upgrades
 	if(Menulist == MENU_UPGRADES)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// information
 		CVoteWrapper VUpgradesInfo(ClientID, HIDE_DEFAULT_CLOSE, "Upgrades Information");
@@ -244,31 +241,26 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// top list
 	if(Menulist == MENU_TOP_LIST)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		GS()->AVH(ClientID, TAB_INFO_TOP, "Ranking Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_TOP, "Here you can see top server Guilds, Players.");
-		GS()->AV(ClientID, "null");
+		CVoteWrapper VTopSelect(ClientID, HIDE_DEFAULT_OPEN|BORDER_STRICT_BOLD, "Select a type of ranking");
+		VTopSelect.Add(MENU_TOP_LIST, (int)ToplistType::GUILDS_LEVELING, "Top 10 guilds leveling");
+		VTopSelect.Add(MENU_TOP_LIST, (int)ToplistType::GUILDS_WEALTHY, "Top 10 guilds wealthy");
+		VTopSelect.Add(MENU_TOP_LIST, (int)ToplistType::PLAYERS_LEVELING, "Top 10 players leveling");
+		VTopSelect.Add(MENU_TOP_LIST, (int)ToplistType::PLAYERS_WEALTHY, "Top 10 players wealthy");
+		CVoteWrapper::AddLine(ClientID);
 
-		GS()->AVM(ClientID, "SORTEDTOP", (int)ToplistType::GUILDS_LEVELING, NOPE, "Top 10 guilds leveling");
-		GS()->AVM(ClientID, "SORTEDTOP", (int)ToplistType::GUILDS_WEALTHY, NOPE, "Top 10 guilds wealthy");
-		GS()->AVM(ClientID, "SORTEDTOP", (int)ToplistType::PLAYERS_LEVELING, NOPE, "Top 10 players leveling");
-		GS()->AVM(ClientID, "SORTEDTOP", (int)ToplistType::PLAYERS_WEALTHY, NOPE, "Top 10 players wealthy");
+		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetMenuTemporaryInteger(); TemporaryInteger >= 0)
+			ShowTopList(ClientID, (ToplistType)TemporaryInteger, false, 10);
 
-		if(pPlayer->m_aSortTabs[SORT_TOP] >= 0)
-		{
-			GS()->AV(ClientID, "null", "\0");
-			ShowTopList(ClientID, (ToplistType)pPlayer->m_aSortTabs[SORT_TOP], false, 10);
-		}
-
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
 	// grinding guide
 	if(Menulist == MENU_GUIDE_GRINDING)
 	{
-		pPlayer->m_LastVoteMenu = MENU_MAIN;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// information
 		CVoteWrapper VGrindingInfo(ClientID, HIDE_DEFAULT_CLOSE, "Grinding Information");
@@ -292,20 +284,16 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// grinding guide selected
 	if(Menulist == MENU_GUIDE_GRINDING_SELECT)
 	{
-		pPlayer->m_LastVoteMenu = MENU_GUIDE_GRINDING;
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUIDE_GRINDING);
 
-		const int WorldID = pPlayer->m_TempMenuValue;
+		const int WorldID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
 		CVoteWrapper VGrinding(ClientID, BORDER_STRICT_BOLD);
 		VGrinding.Add("Selected zone: {STR}", GS()->Server()->GetWorldName(WorldID));
 		VGrinding.AddLine();
 
-		CVoteWrapper VGrindingMobs(ClientID, HIDE_DEFAULT_OPEN, "Zone guides");
 		const bool ActiveMob = BotManager()->ShowGuideDropByWorld(WorldID, pPlayer);
 		const bool ActivePlant = AccountPlantManager()->ShowGuideDropByWorld(WorldID, pPlayer);
 		const bool ActiveOre = AccountMinerManager()->ShowGuideDropByWorld(WorldID, pPlayer);
-		if(!ActiveMob && !ActivePlant && !ActiveOre)
-			VGrindingMobs.Add("There are no drops in the selected area.");
-
 		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -551,21 +539,39 @@ void CMmoController::ShowLoadingProgress(const char* pLoading, int Size) const
 
 void CMmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalMode, int Limit) const
 {
+	struct RecordData
+	{
+		int m_Rank{};
+		int m_Level{};
+		int m_Exp{};
+		int m_Gold{};
+		char m_aName[64]{};
+	};
+	std::vector<RecordData> vRecords {};
+
 	if(Type == ToplistType::GUILDS_LEVELING)
 	{
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT %d", Limit);
 		while(pRes->next())
 		{
-			char NameGuild[64];
-			const int Rank = pRes->getRow();
-			const int Level = pRes->getInt("Level");
-			const int Experience = pRes->getInt("Experience");
-			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
+			RecordData Data;
+			Data.m_Rank = pRes->getRow();
+			Data.m_Level = pRes->getInt("Level");
+			Data.m_Exp = pRes->getInt("Experience");
+			str_copy(Data.m_aName, pRes->getString("Name").c_str(), sizeof(Data.m_aName));
+			vRecords.push_back(Data);
+		}
 
-			if(ChatGlobalMode)
-				GS()->Chat(-1, "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
-			else
-				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
+		if(ChatGlobalMode)
+		{
+			for(auto& p: vRecords)
+				GS()->Chat(-1, "{INT}. {STR} :: Level {INT} : Exp {INT}", p.m_Rank, p.m_aName, p.m_Level, p.m_Exp);
+		}
+		else
+		{
+			CVoteWrapper VTopList(ClientID, HIDE_DEFAULT_OPEN|BORDER_SIMPLE, "Top 10 guilds leveling");
+			for(auto& p : vRecords)
+				VTopList.Add("{INT}. {STR} :: Level {INT} : Exp {INT}", p.m_Rank, p.m_aName, p.m_Level, p.m_Exp);
 		}
 	}
 	else if(Type == ToplistType::GUILDS_WEALTHY)
@@ -573,15 +579,23 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobal
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT %d", Limit);
 		while(pRes->next())
 		{
-			char NameGuild[64];
-			const int Rank = pRes->getRow();
-			const int Gold = pRes->getInt("Bank");
-			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
+			RecordData Data;
+			Data.m_Rank = pRes->getRow();
+			Data.m_Gold = pRes->getInt("Bank");
+			str_copy(Data.m_aName, pRes->getString("Name").c_str(), sizeof(Data.m_aName));
+			vRecords.push_back(Data);
+		}
 
-			if(ChatGlobalMode)
-				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
-			else
-				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
+		if(ChatGlobalMode)
+		{
+			for(auto& p : vRecords)
+				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", p.m_Rank, p.m_aName, p.m_Gold);
+		}
+		else
+		{
+			CVoteWrapper VTopList(ClientID, HIDE_DEFAULT_OPEN|BORDER_SIMPLE, "Top 10 guilds wealthy");
+			for(auto& p : vRecords)
+				VTopList.Add("{INT}. {STR} :: Gold {VAL}", p.m_Rank, p.m_aName, p.m_Gold);
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_LEVELING)
@@ -589,17 +603,24 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobal
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT %d", Limit);
 		while(pRes->next())
 		{
-			char Nick[64];
-			const int Rank = pRes->getRow();
-			const int Level = pRes->getInt("Level");
-			const int Experience = pRes->getInt("Exp");
-			str_copy(Nick, pRes->getString("Nick").c_str(), sizeof(Nick));
+			RecordData Data;
+			Data.m_Rank = pRes->getRow();
+			Data.m_Level = pRes->getInt("Level");
+			Data.m_Exp = pRes->getInt("Exp");
+			str_copy(Data.m_aName, pRes->getString("Nick").c_str(), sizeof(Data.m_aName));
+			vRecords.push_back(Data);
+		}
 
-			if(ChatGlobalMode)
-				GS()->Chat(-1, "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
-			else
-				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
-
+		if(ChatGlobalMode)
+		{
+			for(auto& p : vRecords)
+				GS()->Chat(-1, "{INT}. {STR} :: Level {INT} : Exp {INT}", p.m_Rank, p.m_aName, p.m_Level, p.m_Exp);
+		}
+		else
+		{
+			CVoteWrapper VTopList(ClientID, HIDE_DEFAULT_OPEN|BORDER_SIMPLE, "Top 10 players leveling");
+			for(auto& p : vRecords)
+				VTopList.Add("{INT}. {STR} :: Level {INT} : Exp {INT}", p.m_Rank, p.m_aName, p.m_Level, p.m_Exp);
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_WEALTHY)
@@ -607,16 +628,24 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobal
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT %d", (ItemIdentifier)itGold, Limit);
 		while(pRes->next())
 		{
-			char Nick[64];
-			const int Rank = pRes->getRow();
-			const int Gold = pRes->getInt("Value");
-			const int UserID = pRes->getInt("UserID");
-			str_copy(Nick, Instance::GetServer()->GetAccountNickname(UserID), sizeof(Nick));
+			RecordData Data;
+			Data.m_Rank = pRes->getRow();
+			Data.m_Gold = pRes->getInt("Value");
+			Data.m_Exp = pRes->getInt("UserID");
+			str_copy(Data.m_aName, Instance::GetServer()->GetAccountNickname(Data.m_Exp), sizeof(Data.m_aName));
+			vRecords.push_back(Data);
+		}
 
-			if(ChatGlobalMode)
-				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
-			else
-				GS()->AVL(ClientID, "null", "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
+		if(ChatGlobalMode)
+		{
+			for(auto& p : vRecords)
+				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", p.m_Rank, p.m_aName, p.m_Gold);
+		}
+		else
+		{
+			CVoteWrapper VTopList(ClientID, HIDE_DEFAULT_OPEN|BORDER_SIMPLE, "Top 10 players wealthy");
+			for(auto& p : vRecords)
+				VTopList.Add("{INT}. {STR} :: Gold {VAL}", p.m_Rank, p.m_aName, p.m_Gold);
 		}
 	}
 }
