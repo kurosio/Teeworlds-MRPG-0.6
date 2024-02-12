@@ -28,7 +28,7 @@ public:
 	// primary
 	void ListInventory(int ClientID, ItemType Type);
 	void ListInventory(int ClientID, ItemFunctional Type);
-	void ItemSelected(class CPlayer* pPlayer, const CPlayerItem& pItemPlayer, bool Dress = false);
+	void ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem);
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, ItemIdentifier ItemID) const;
 
 	void ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctional Type) const;

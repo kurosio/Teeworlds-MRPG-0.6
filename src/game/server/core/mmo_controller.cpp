@@ -158,14 +158,14 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VMain.AddLine();
 
 		// personal menu
-		CVoteWrapper VPersonal(ClientID, VWFLAG_DEFAULT_OPEN, "☪ PERSONAL");
+		CVoteWrapper VPersonal(ClientID, VWFLAG_DEFAULT_OPEN, "\u262A PERSONAL");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
-		VPersonal.AddMenu(MENU_EQUIPMENT, "\u2604 Equipment");
+		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
 		VPersonal.AddMenu(MENU_EIDOLON_COLLECTION, "\u2727 Eidolon Collection");
 		VPersonal.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
 		VPersonal.AddMenu(MENU_GROUP, "\u2042 Group");
-		VPersonal.AddMenu(MENU_SETTINGS, "\u2692 Settings");
+		VPersonal.AddMenu(MENU_SETTINGS, "\u2699 Settings");
 		VPersonal.AddMenu(MENU_INBOX, "\u2709 Mailbox");
 		VPersonal.AddMenu(MENU_JOURNAL_MAIN, "\u270D Journal");
 		VPersonal.AddIfMenu(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
@@ -174,7 +174,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.AddLine();
 
 		// info menu
-		CVoteWrapper VInfo(ClientID, VWFLAG_DEFAULT_OPEN, "☪ INFORMATION");
+		CVoteWrapper VInfo(ClientID, VWFLAG_DEFAULT_OPEN, "\u262A INFORMATION");
 		VInfo.AddMenu(MENU_GUIDE_GRINDING, "\u10D3 Wiki / Grinding Guide ");
 		VInfo.AddMenu(MENU_TOP_LIST, "\u21F0 Ranking guilds and players");
 		return true;

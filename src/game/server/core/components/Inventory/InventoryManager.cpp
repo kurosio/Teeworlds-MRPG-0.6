@@ -9,7 +9,7 @@
 #include <game/server/core/components/Quests/QuestManager.h>
 
 template < typename T >
-bool ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, const std::function<void(const CPlayerItem&)> pFunc)
+void ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, const std::function<void(const CPlayerItem&)> pFunc)
 {
 	bool Found = false;
 	for(const auto& [ItemID, ItemData] : paItems)
@@ -21,12 +21,8 @@ bool ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, c
 			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsFunctional(Type);
 
 		if(ActivateCallback)
-		{
 			pFunc(ItemData);
-			Found = true;
-		}
 	}
-	return Found;
 }
 
 using namespace sqlstr;
@@ -104,24 +100,18 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VInventoryInfo(ClientID, VWFLAG_DEFAULT_OPEN, "\u205C Inventory Information");
+		CVoteWrapper VInventoryInfo(ClientID, VWFLAG_DEFAULT_OPEN, "Inventory Information");
 		VInventoryInfo.Add("Choose the type of items you want to show");
 		VInventoryInfo.Add("After, need select item to interact");
 		VInventoryInfo.AddLine();
 
-		CVoteWrapper VInventoryTabs(ClientID, VWFLAG_DEFAULT_OPEN, "\u205C Inventory tabs");
-		int SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_USED);
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "Used ({INT})", SizeItems);
-		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT);
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "Craft ({INT})", SizeItems);
-		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP);
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_EQUIP, "Equipment ({INT})", SizeItems);
-		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_MODULE);
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_MODULE, "Modules ({INT})", SizeItems);
-		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_POTION);
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_POTION, "Potion ({INT})", SizeItems);
-		SizeItems = GetCountItemsType(pPlayer, ItemType::TYPE_OTHER);
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "Other ({INT})", SizeItems);
+		CVoteWrapper VInventoryTabs(ClientID, VWFLAG_DEFAULT_OPEN, "\u262A Inventory tabs");
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "\u270C Used ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_USED));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "\u2692 Craft ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_EQUIP, "\u26B0 Equipment ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_MODULE, "\u2693 Modules ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_MODULE));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_POTION, "\u26B1 Potion ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_POTION));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "\u26C3 Other ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_OTHER));
 		VInventoryTabs.AddLine();
 
 		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
@@ -160,7 +150,7 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() > 0)
 			ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetMenuTemporaryInteger());
 
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -285,19 +275,18 @@ std::vector<int> CInventoryManager::GetItemIDsCollectionByFunction(ItemFunctiona
 
 void CInventoryManager::ListInventory(int ClientID, ItemType Type)
 {
-	if(Type >= ItemType::TYPE_USED && Type < ItemType::NUM_TYPES)
+	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
 	{
-		GS()->AV(ClientID, "null");
-		if(!ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
-			GS()->AVL(ClientID, "null", "There are no items in this tab");
-	}
+		ItemSelected(GS()->m_apPlayers[ClientID], &pItem);
+	});
 }
 
 void CInventoryManager::ListInventory(int ClientID, ItemFunctional Type)
 {
-	GS()->AV(ClientID, "null");
-	if(!ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem){ ItemSelected(GS()->m_apPlayers[ClientID], pItem); }))
-		GS()->AVL(ClientID, "null", "There are no items in this tab");
+	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
+	{
+		ItemSelected(GS()->m_apPlayers[ClientID], &pItem);
+	});
 }
 
 int CInventoryManager::GetUnfrozenItemValue(CPlayer* pPlayer, ItemIdentifier ItemID) const
@@ -338,68 +327,68 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 	GS()->AV(ClientID, "null");
 }
 
-void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemPlayer, bool Dress)
+void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 {
 	const int ClientID = pPlayer->GetCID();
-	const ItemIdentifier ItemID = pItemPlayer.GetID();
-	const char* pNameItem = pItemPlayer.Info()->GetName();
+	const ItemIdentifier ItemID = pItem->GetID();
+	CItemDescription* pInfo = pItem->Info();
 
-	CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE);
+	CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE|VWFLAG_BSTYLE_SIMPLE);
 
 	// name description
-	if(pItemPlayer.Info()->IsEnchantable())
+	if(pInfo->IsEnchantable())
 	{
-		VItem.SetTitle("{STR}{STR} {STR}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.StringEnchantLevel().c_str());
+		VItem.SetTitle("{STR}{STR} {STR}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->StringEnchantLevel().c_str());
 
 		char aAttributes[64];
-		pItemPlayer.StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
+		pItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
 		VItem.AddIf(aAttributes[0] != '\0', "{STR}", aAttributes);
 	}
 	else
 	{
-		VItem.SetTitle("{STR}{STR} x{VAL}", (pItemPlayer.m_Settings ? "✔ " : "\0"), pNameItem, pItemPlayer.m_Value);
+		VItem.SetTitle("{STR}{STR} x{VAL}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
 	}
-	VItem.AddIf(Dress && pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped(), "{STR}", pItemPlayer.Info()->GetDescription());
+	VItem.AddIf(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped(), "{STR}", pInfo->GetDescription());
 
 	// is used item
-	bool IsUsed = pItemPlayer.Info()->m_Function == FUNCTION_ONE_USED || pItemPlayer.Info()->m_Function == FUNCTION_USED;
+	bool IsUsed = pInfo->m_Function == FUNCTION_ONE_USED || pInfo->m_Function == FUNCTION_USED;
 	VItem.AddIfOption(IsUsed, "IUSE", ItemID, "Use");
 
 	// is planting item
-	bool IsPlantItem = pItemPlayer.Info()->m_Function == FUNCTION_PLANT;
+	bool IsPlantItem = pInfo->m_Function == FUNCTION_PLANT;
 	VItem.AddIfOption(IsPlantItem, "PLANTING_HOUSE_SET", ItemID, "To plant at home (0.06%)");
 
 	// is potion
-	bool IsPotion = pItemPlayer.Info()->m_Type == ItemType::TYPE_POTION;
-	VItem.AddIfOption(IsPotion, "ISETTINGS", ItemID, "Auto use - {STR}", (pItemPlayer.m_Settings ? "Enable" : "Disable"));
+	bool IsPotion = pInfo->m_Type == ItemType::TYPE_POTION;
+	VItem.AddIfOption(IsPotion, "ISETTINGS", ItemID, "Auto use - {STR}", (pItem->m_Settings ? "Enable" : "Disable"));
 
 	// is decoration
-	bool IsDeco = pItemPlayer.Info()->m_Type == ItemType::TYPE_DECORATION;
+	bool IsDeco = pInfo->m_Type == ItemType::TYPE_DECORATION;
 	VItem.AddIfOption(IsDeco, "DECORATION_HOUSE_ADD", ItemID, "Start drawing near house");
 	VItem.AddIfOption(IsDeco, "GUILD_HOUSE_DECORATION", ItemID, "Start drawing near guild house");
 
 	// is equipped
-	bool IsEquipped = pItemPlayer.Info()->m_Type == ItemType::TYPE_EQUIP || pItemPlayer.Info()->m_Function == FUNCTION_SETTINGS;
+	bool IsEquipped = pInfo->m_Type == ItemType::TYPE_EQUIP || pInfo->m_Function == FUNCTION_SETTINGS;
 	if(IsEquipped)
 	{
-		if(pItemPlayer.Info()->m_Function == EQUIP_HAMMER && pItemPlayer.IsEquipped())
+		if(pInfo->m_Function == EQUIP_HAMMER && pItem->IsEquipped())
 			VItem.Add("You can not undress equipping hammer");
 		else
-			VItem.AddOption("ISETTINGS", ItemID, (pItemPlayer.m_Settings ? "Undress" : "Equip"));
+			VItem.AddOption("ISETTINGS", ItemID, (pItem->m_Settings ? "Undress" : "Equip"));
 	}
 
 	// is enchantable
-	if(pItemPlayer.Info()->IsEnchantable() && !pItemPlayer.IsEnchantMaxLevel())
+	if(pInfo->IsEnchantable() && !pItem->IsEnchantMaxLevel())
 	{
-		const int Price = pItemPlayer.GetEnchantPrice();
+		const int Price = pItem->GetEnchantPrice();
 		VItem.AddOption("IENCHANT", ItemID, "Enchant ({VAL}m)", Price);
 	}
 
 	// not allowed drop equipped hammer
 	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
-		VItem.AddIfOption(pItemPlayer.GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItemPlayer.GetDysenthis(), "Disassemble (+{VAL}m)");
-		VItem.AddIfOption(pItemPlayer.Info()->m_InitialPrice > 0, "AUCTION_SLOT", ItemID, "Sell at auction");
+		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{VAL}m)");
+		VItem.AddIfOption(pInfo->m_InitialPrice > 0, "AUCTION_SLOT", ItemID, "Sell at auction");
 		VItem.AddOption("IDROP", ItemID, "Drop");
 	}
 }
@@ -407,7 +396,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem& pItemP
 int CInventoryManager::GetCountItemsType(CPlayer* pPlayer, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
-	return (int)std::count_if(CPlayerItem::Data()[ClientID].begin(), CPlayerItem::Data()[ClientID].end(), [Type](auto& pItem)
+	return (int)std::count_if(CPlayerItem::Data()[ClientID].cbegin(), CPlayerItem::Data()[ClientID].cend(), [Type](auto pItem)
 	{
 		return pItem.second.HasItem() && pItem.second.Info()->IsType(Type);
 	});

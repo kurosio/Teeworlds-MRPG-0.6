@@ -43,9 +43,9 @@ private:
 	void ShowMenu(int ClientID) const;
 	void ShowRanksSettings(int ClientID) const;
 	void ShowFinder(int ClientID) const;
+	void ShowFinderDetailInformation(int ClientID, GuildIdentifier ID) const;
 	void ShowLogs(int ClientID) const;
 	void ShowMembershipList(int ClientID) const;
-	void ShowFinderDetailInformation(int ClientID, GuildIdentifier ID) const;
 	void ShowRequests(int ClientID) const;
 	void ShowPlantZone(int ClientID, int PlantzoneID) const;
 	void ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const;

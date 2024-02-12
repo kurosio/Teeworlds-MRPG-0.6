@@ -89,7 +89,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 
 	// Group information
 	CVoteWrapper VGroupCmd(ClientID, VWFLAG_DEFAULT_CLOSE, "Group commands");
-	VGroupCmd.Add("/group Get all sub commands");
+	VGroupCmd.Add("- /group Get all sub commands");
 	VGroupCmd.AddLine();
 
 	// Group management

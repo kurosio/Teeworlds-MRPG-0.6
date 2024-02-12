@@ -956,38 +956,6 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 	CVoteWrapper::AddBackpage(ClientID);
 }
 
-void CGuildManager::ShowFinderDetailInformation(int ClientID, GuildIdentifier ID) const
-{
-	// If the player object does not exist, return from the function
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
-
-	if(CGuildData* pGuild = GetGuildByID(ID))
-	{
-		// Detail information
-		auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
-		CVoteWrapper VMembershipInfo(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_STRICT_BOLD, "\u2723 Membership information", pGuild->GetName());
-		VMembershipInfo.Add("\u2723 Guild name: {STR}", pGuild->GetName());
-		VMembershipInfo.Add("Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
-		VMembershipInfo.Add("Members: {INT} of {INT}", CurrentSlots.first, CurrentSlots.second);
-		VMembershipInfo.Add("Has house: {STR}", pGuild->HasHouse() ? "Yes" : "No");
-		VMembershipInfo.Add("Guild bank: {VAL} golds", pGuild->GetBank()->Get());
-		CVoteWrapper::AddLine(ClientID);
-
-		// Memberlist
-		CVoteWrapper VMemberlist(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_SIMPLE, "\u2635 Membership list of {STR}", pGuild->GetName());
-		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
-		{
-			CGuildMemberData* pMember = pIterMember.second;
-			VMemberlist.Add("{STR} {STR} Deposit: {VAL}", pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
-		}
-	}
-
-	// Add the votes backpage for the player
-	CVoteWrapper::AddBackpage(ClientID);
-}
-
 void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 {
 	if(!pPlayer)
@@ -1323,36 +1291,72 @@ void CGuildManager::ShowFinder(int ClientID) const
 	if(!pPlayer)
 		return;
 
+	CVoteWrapper VInfo(ClientID, VWFLAG_DEFAULT_CLOSE, "Guild finder information");
+	VInfo.Add("You can find a guild by name or select from the list");
+	VInfo.AddLine();
+
 	// Check if the player already has a guild
 	if(pPlayer->Account()->HasGuild())
 	{
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		CVoteWrapper(ClientID).Add("\u02DA\u029A\u2665\u025E\u02DA You already in guild '{STR}'!", pGuild->GetName());
+		CVoteWrapper(ClientID).Add("You already in guild '{STR}'!", pGuild->GetName());
 		CVoteWrapper::AddLine(ClientID);
 	}
 
 	// Show search option
-	CVoteWrapper VSearch(ClientID, VWFLAG_DEFAULT_CLOSE|VWFLAG_BSTYLE_STRICT, "\u270E Search for a guild by name");
-	VSearch.Add("Use reason how Value.");
-	VSearch.Add("Example: Find guild: [], in reason name.");
-	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Find guild: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
+	CVoteWrapper VSearch(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_STRICT_BOLD, "\u2732 Guild finder");
+	VSearch.Add("Find guild by name:");
+	VSearch.BeginDepthList();
+	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Field: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
+	VSearch.EndDepthList();
 	VSearch.AddLine();
 
 	// Iterate through all guilds
+	VSearch.Add("Guild list:");
+	VSearch.BeginDepthList();
 	for(auto& pGuild : CGuildData::Data())
 	{
 		int OwnerUID = pGuild->GetLeaderUID();
-		auto [UsedSlots, MaxSlots] = pGuild->GetMembers()->GetCurrentSlots();
-
-		// Show guild information
-		CVoteWrapper VGuild(ClientID, VWFLAG_UNIQUE|VWFLAG_BSTYLE_SIMPLE, "Guild: {STR}", pGuild->GetName());
-		VGuild.Add("Leader: {STR}", Server()->GetAccountNickname(OwnerUID));
-		VGuild.Add("Members: {INT} of {INT}", UsedSlots, MaxSlots);
-		VGuild.AddMenu(MENU_GUILD_FINDER_SELECTED, pGuild->GetID(), "Detail information");
-		VGuild.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_JOIN_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
+		VSearch.AddMenu(MENU_GUILD_FINDER_SELECTED, pGuild->GetID(), "{STR} (leader {STR})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
 	}
+	VSearch.EndDepthList();
+	VSearch.AddLine();
 
 	// Add votes to the player's back page
+	CVoteWrapper::AddBackpage(ClientID);
+}
+
+void CGuildManager::ShowFinderDetailInformation(int ClientID, GuildIdentifier ID) const
+{
+	// If the player object does not exist, return from the function
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer)
+		return;
+
+	if(CGuildData* pGuild = GetGuildByID(ID))
+	{
+		// Detail information
+		auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
+		CVoteWrapper VInfo(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_STRICT_BOLD, "\u2723 Membership information", pGuild->GetName());
+		VInfo.Add("Guild name: {STR}", pGuild->GetName());
+		VInfo.Add("Leader: {STR}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
+		VInfo.Add("Members: {INT} of {INT}", CurrentSlots.first, CurrentSlots.second);
+		VInfo.Add("Has house: {STR}", pGuild->HasHouse() ? "Yes" : "No");
+		VInfo.Add("Guild bank: {VAL} golds", pGuild->GetBank()->Get());
+		VInfo.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_JOIN_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
+		VInfo.AddLine();
+
+		// Memberlist
+		CVoteWrapper VMemberlist(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_SIMPLE, "\u2635 Membership list of {STR}", pGuild->GetName());
+		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
+		{
+			CGuildMemberData* pMember = pIterMember.second;
+			VMemberlist.Add("{STR} {STR} Deposit: {VAL}", pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
+		}
+		VMemberlist.AddLine();
+	}
+
+	// Add the votes backpage for the player
 	CVoteWrapper::AddBackpage(ClientID);
 }
 
