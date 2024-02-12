@@ -22,8 +22,7 @@ bool CMapDetail::Load(IStorageEngine* pStorage)
 	// load complete map into memory for download
 	{
 		void* pData;
-		unsigned int Size;
-		pStorage->ReadFile(aBuf, IStorageEngine::TYPE_ALL, &pData, &Size);
+		pStorage->ReadFile(aBuf, IStorageEngine::TYPE_ALL, &pData, &m_aSize);
 		m_apData = (unsigned char*)pData;
 		m_aSha256 = m_pMap->Sha256();
 		m_aCrc = m_pMap->Crc();
@@ -97,7 +96,7 @@ bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConso
 			str_copy(m_apWorlds[WorldID]->m_aName, Name.c_str(), sizeof(m_apWorlds[WorldID]->m_aName));
 			str_copy(m_apWorlds[WorldID]->m_aPath, Path.c_str(), sizeof(m_apWorlds[WorldID]->m_aPath));
 			m_apWorlds[WorldID]->m_WorldID = WorldID;
-			m_apWorlds[WorldID]->m_Detail = std::move(WorldDetail);
+			m_apWorlds[WorldID]->m_Detail = WorldDetail;
 		}
 		else
 		{
