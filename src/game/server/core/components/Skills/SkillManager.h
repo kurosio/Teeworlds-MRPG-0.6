@@ -25,7 +25,7 @@ public:
 	void ParseEmoticionSkill(CPlayer* pPlayer, int EmoticionID);
 
 private:
-	void ShowMailSkillList(CPlayer* pPlayer, SkillType Type) const;
+	void ShowSkillTypeList(CPlayer* pPlayer, SkillType Type) const;
 	void ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const;
 };
 

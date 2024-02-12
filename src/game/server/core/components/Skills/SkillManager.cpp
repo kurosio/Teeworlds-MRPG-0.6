@@ -48,21 +48,82 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_SKILLS_LEARN_LIST)
 	{
 		const int ClientID = pPlayer->GetCID();
-		GS()->AVH(ClientID, TAB_INFO_SKILL, "Skill Learn Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "Here you can learn passive and active skills");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_SKILL, "You can bind active skill any button using the console");
-		GS()->AV(ClientID, "null");
-		GS()->AddVoteItemValue(ClientID, itSkillPoint);
-		GS()->AV(ClientID, "null");
+		const char* pTypename[] = { "Improving", "Healing", "Attacking", "Defensive" };
 
-		ShowMailSkillList(pPlayer, SKILL_TYPE_TANK);
-		ShowMailSkillList(pPlayer, SKILL_TYPE_DPS);
-		ShowMailSkillList(pPlayer, SKILL_TYPE_HEALER);
-		ShowMailSkillList(pPlayer, SKILL_TYPE_IMPROVEMENTS);
+		// information
+		CVoteWrapper VInfo(ClientID, VWFLAG_DEFAULT_CLOSE, "Skill master information");
+		VInfo.Add("Here you can learn passive and active skills");
+		VInfo.Add("You can bind active skill any button using the console");
+		VInfo.AddLine();
+
+		CVoteWrapper::AddItemValue(ClientID, itSkillPoint);
+
+		// Skill types
+		CVoteWrapper VTypes(ClientID, VWFLAG_DEFAULT_OPEN|VWFLAG_BSTYLE_STRICT_BOLD, "Skill types");
+		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_TANK, pTypename[SKILL_TYPE_TANK]);
+		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_DPS, pTypename[SKILL_TYPE_DPS]);
+		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_HEALER, pTypename[SKILL_TYPE_HEALER]);
+		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_IMPROVEMENTS, pTypename[SKILL_TYPE_IMPROVEMENTS]);
+		VTypes.AddLine();
+
+		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() > 0)
+		{
+			int SelectedType = clamp(pPlayer->m_VotesData.GetMenuTemporaryInteger(), (int)SKILL_TYPE_IMPROVEMENTS, (int)NUM_SKILL_TYPES - 1);
+			ShowSkillTypeList(pPlayer, (SkillType)SelectedType);
+		}
+
 		return true;
 	}
 
 	return false;
+}
+
+void CSkillManager::ShowSkillTypeList(CPlayer* pPlayer, SkillType Type) const
+{
+	for(const auto& [ID, Skill] : CSkillDescription::Data())
+	{
+		if(Skill.m_Type == Type)
+			ShowSkill(pPlayer, ID);
+	}
+}
+
+void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
+{
+	const int ClientID = pPlayer->GetCID();
+	CSkill* pSkill = pPlayer->GetSkill(ID);
+	CSkillDescription* pInfo = pSkill->Info();
+
+	const bool IsLearned = pSkill->IsLearned();
+	const bool IsPassive = pInfo->IsPassive();
+	const bool IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	CVoteWrapper VSkill(ClientID, VWFLAG_UNIQUE|VWFLAG_BSTYLE_SIMPLE, "{STR} - {INT}SP {STR}", pInfo->GetName(), pInfo->GetPriceSP(), IsMaximumLevel ? "(max)" : "");
+	VSkill.Add("Description:");
+	{
+		VSkill.BeginDepthList();
+		VSkill.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
+		VSkill.EndDepthList();
+	}
+	VSkill.AddLine();
+	VSkill.Add("Main:");
+	{
+		VSkill.BeginDepthList();
+		VSkill.Add("Level: {INT}/{INT}", pSkill->GetLevel(), pInfo->GetMaxLevel());
+		VSkill.Add("{INT} {STR} (each level +{INT})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
+		VSkill.AddIf(!IsPassive, "Mana required {INT}%", pInfo->GetPercentageCost());
+		VSkill.EndDepthList();
+	}
+	VSkill.AddIf(!IsPassive && IsLearned, "Usage:");
+	{
+		VSkill.BeginDepthList();
+		VSkill.AddIf(!IsPassive && IsLearned, "F1 Bind: (bind 'key' say \"/useskill {INT}\")", ID);
+		VSkill.AddIf(!IsPassive && IsLearned, "Used on {STR}", pSkill->GetSelectedEmoticonName());
+		VSkill.EndDepthList();
+	}
+	VSkill.AddLine();
+	VSkill.AddIfOption(!IsMaximumLevel, "SKILL_LEARN", "Learn", ID);
+	VSkill.AddLine();
 }
 
 bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
@@ -87,7 +148,7 @@ bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 {
 	const int ClientID = pPlayer->GetCID();
 
-	if (PPSTR(CMD, "SKILLLEARN") == 0)
+	if (PPSTR(CMD, "SKILL_LEARN") == 0)
 	{
 		const int SkillID = VoteID;
 		if (pPlayer->GetSkill(SkillID)->Upgrade())
@@ -103,59 +164,6 @@ bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		return true;
 	}
 	return false;
-}
-
-void CSkillManager::ShowMailSkillList(CPlayer *pPlayer, SkillType Type) const
-{
-	const int ClientID = pPlayer->GetCID();
-	const char* pSkillTypeName[NUM_SKILL_TYPES] = { "Improving", "Healing", "Attacking", "Defensive" };
-
-	GS()->AVL(ClientID, "null", "{STR} skill's", pSkillTypeName[Type]);
-	for (const auto& [ID, Skill] : CSkillDescription::Data())
-	{
-		if(Skill.m_Type == Type)
-			ShowSkill(pPlayer, ID);
-	}
-	GS()->AV(ClientID, "null");
-}
-
-void CSkillManager::ShowSkill(CPlayer *pPlayer, SkillIdentifier ID) const
-{
-	const int ClientID = pPlayer->GetCID();
-	CSkill* pSkill = pPlayer->GetSkill(ID);
-
-	const int HideID = NUM_TAB_MENU + ID;
-	const bool IsPassive = pSkill->Info()->IsPassive();
-	const bool IsMaximumLevel = pSkill->GetLevel() >= pSkill->Info()->GetMaxLevel();
-
-	GS()->AVH(ClientID, HideID, "{STR} - {INT}SP ({INT}/{INT})", pSkill->Info()->GetName(), pSkill->Info()->GetPriceSP(), pSkill->GetLevel(), pSkill->Info()->GetMaxLevel());
-	GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pSkill->Info()->GetDescription());
-	if(!IsMaximumLevel)
-	{
-		const int NewBonus = pSkill->GetBonus() + pSkill->Info()->GetBoostDefault();
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Next level {INT} {STR}", NewBonus, pSkill->Info()->GetBoostName());
-	}
-	else
-	{
-		const int ActiveBonus = pSkill->GetBonus();
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Max level {INT} {STR}", ActiveBonus, pSkill->Info()->GetBoostName());
-	}
-
-	if(!IsPassive)
-	{
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Mana required {INT}%", pSkill->Info()->GetPercentageCost());
-		if(pSkill->IsLearned())
-		{
-			GS()->AVM(ClientID, "null", NOPE, HideID, "F1 Bind: (bind 'key' say \"/useskill {INT}\")", ID);
-			GS()->AVM(ClientID, "SKILLCHANGEEMOTICION", ID, HideID, "Used on {STR}", pSkill->GetSelectedEmoticonName());
-		}
-	}
-
-	if(!IsMaximumLevel)
-	{
-		GS()->AVM(ClientID, "SKILLLEARN", ID, HideID, "Learn {STR}", pSkill->Info()->GetName());
-	}
-	GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
 }
 
 void CSkillManager::ParseEmoticionSkill(CPlayer *pPlayer, int EmoticionID)
