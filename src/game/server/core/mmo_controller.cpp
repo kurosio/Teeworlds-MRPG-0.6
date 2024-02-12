@@ -227,8 +227,10 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::PLAYERS_WEALTHY, "Top 10 players wealthy");
 		VTopSelect.AddLine();
 
+		CVoteWrapper VTopList(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_STRICT_BOLD);
 		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetMenuTemporaryInteger(); TemporaryInteger >= 0)
-			ShowTopList(ClientID, (ToplistType)TemporaryInteger, false, 10);
+			ShowTopList(ClientID, (ToplistType)TemporaryInteger, 10, &VTopList);
+		VTopList.AddLine();
 
 		CVoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -514,115 +516,85 @@ void CMmoController::ShowLoadingProgress(const char* pLoading, int Size) const
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "LOAD DB", aLoadingBuf);
 }
 
-void CMmoController::ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalMode, int Limit) const
+void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, CVoteWrapper* pWrapper) const
 {
-	struct RecordData
-	{
-		int m_Rank{};
-		int m_Level{};
-		int m_Exp{};
-		int m_Gold{};
-		char m_aName[64]{};
-	};
-	std::vector<RecordData> vRecords {};
-
 	if(Type == ToplistType::GUILDS_LEVELING)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT %d", Limit);
+		if(pWrapper)
+			pWrapper->SetTitle("Top 10 guilds leveling");
+
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT %d", Rows);
 		while(pRes->next())
 		{
-			RecordData Data;
-			Data.m_Rank = pRes->getRow();
-			Data.m_Level = pRes->getInt("Level");
-			Data.m_Exp = pRes->getInt("Experience");
-			str_copy(Data.m_aName, pRes->getString("Name").c_str(), sizeof(Data.m_aName));
-			vRecords.push_back(Data);
-		}
+			char NameGuild[64];
+			const int Rank = pRes->getRow();
+			const int Level = pRes->getInt("Level");
+			const int Experience = pRes->getInt("Experience");
+			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
 
-		if(ChatGlobalMode)
-		{
-			for(auto& p: vRecords)
-				GS()->Chat(-1, "{INT}. {STR} :: Level {INT} : Exp {INT}", p.m_Rank, p.m_aName, p.m_Level, p.m_Exp);
-		}
-		else
-		{
-			CVoteWrapper VTopList(ClientID, VWFLAG_DEFAULT_OPEN|VWFLAG_BSTYLE_SIMPLE, "Top 10 guilds leveling");
-			for(auto& p : vRecords)
-				VTopList.Add("{INT}. {STR} :: Level {INT} : Exp {INT}", p.m_Rank, p.m_aName, p.m_Level, p.m_Exp);
+			if(pWrapper)
+				pWrapper->Add("{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
+			else
+				GS()->Chat(ClientID, "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
 		}
 	}
 	else if(Type == ToplistType::GUILDS_WEALTHY)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT %d", Limit);
+		if(pWrapper)
+			pWrapper->SetTitle("Top 10 guilds wealthy");
+
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT %d", Rows);
 		while(pRes->next())
 		{
-			RecordData Data;
-			Data.m_Rank = pRes->getRow();
-			Data.m_Gold = pRes->getInt("Bank");
-			str_copy(Data.m_aName, pRes->getString("Name").c_str(), sizeof(Data.m_aName));
-			vRecords.push_back(Data);
-		}
+			char NameGuild[64];
+			const int Rank = pRes->getRow();
+			const int Gold = pRes->getInt("Bank");
+			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
 
-		if(ChatGlobalMode)
-		{
-			for(auto& p : vRecords)
-				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", p.m_Rank, p.m_aName, p.m_Gold);
-		}
-		else
-		{
-			CVoteWrapper VTopList(ClientID, VWFLAG_DEFAULT_OPEN|VWFLAG_BSTYLE_SIMPLE, "Top 10 guilds wealthy");
-			for(auto& p : vRecords)
-				VTopList.Add("{INT}. {STR} :: Gold {VAL}", p.m_Rank, p.m_aName, p.m_Gold);
+			if(pWrapper)
+				pWrapper->Add("{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
+			else
+				GS()->Chat(ClientID, "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_LEVELING)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT %d", Limit);
+		if(pWrapper)
+			pWrapper->SetTitle("Top 10 players leveling");
+
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT %d", Rows);
 		while(pRes->next())
 		{
-			RecordData Data;
-			Data.m_Rank = pRes->getRow();
-			Data.m_Level = pRes->getInt("Level");
-			Data.m_Exp = pRes->getInt("Exp");
-			str_copy(Data.m_aName, pRes->getString("Nick").c_str(), sizeof(Data.m_aName));
-			vRecords.push_back(Data);
-		}
+			char Nick[64];
+			const int Rank = pRes->getRow();
+			const int Level = pRes->getInt("Level");
+			const int Experience = pRes->getInt("Exp");
+			str_copy(Nick, pRes->getString("Nick").c_str(), sizeof(Nick));
 
-		if(ChatGlobalMode)
-		{
-			for(auto& p : vRecords)
-				GS()->Chat(-1, "{INT}. {STR} :: Level {INT} : Exp {INT}", p.m_Rank, p.m_aName, p.m_Level, p.m_Exp);
-		}
-		else
-		{
-			CVoteWrapper VTopList(ClientID, VWFLAG_DEFAULT_OPEN|VWFLAG_BSTYLE_SIMPLE, "Top 10 players leveling");
-			for(auto& p : vRecords)
-				VTopList.Add("{INT}. {STR} :: Level {INT} : Exp {INT}", p.m_Rank, p.m_aName, p.m_Level, p.m_Exp);
+			if(pWrapper)
+				pWrapper->Add("{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
+			else
+				GS()->Chat(ClientID, "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_WEALTHY)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT %d", (ItemIdentifier)itGold, Limit);
+		if(pWrapper)
+			pWrapper->SetTitle("Top 10 players wealthy");
+
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT %d", (ItemIdentifier)itGold, Rows);
 		while(pRes->next())
 		{
-			RecordData Data;
-			Data.m_Rank = pRes->getRow();
-			Data.m_Gold = pRes->getInt("Value");
-			Data.m_Exp = pRes->getInt("UserID");
-			str_copy(Data.m_aName, Instance::Server()->GetAccountNickname(Data.m_Exp), sizeof(Data.m_aName));
-			vRecords.push_back(Data);
-		}
+			char Nick[64];
+			const int Rank = pRes->getRow();
+			const int Gold = pRes->getInt("Value");
+			const int UserID = pRes->getInt("UserID");
+			str_copy(Nick, Instance::Server()->GetAccountNickname(UserID), sizeof(Nick));
 
-		if(ChatGlobalMode)
-		{
-			for(auto& p : vRecords)
-				GS()->Chat(-1, "{INT}. {STR} :: Gold {VAL}", p.m_Rank, p.m_aName, p.m_Gold);
-		}
-		else
-		{
-			CVoteWrapper VTopList(ClientID, VWFLAG_DEFAULT_OPEN|VWFLAG_BSTYLE_SIMPLE, "Top 10 players wealthy");
-			for(auto& p : vRecords)
-				VTopList.Add("{INT}. {STR} :: Gold {VAL}", p.m_Rank, p.m_aName, p.m_Gold);
+			if(pWrapper)
+				pWrapper->Add("{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
+			else
+				GS()->Chat(ClientID, "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
 		}
 	}
 }

@@ -26,7 +26,9 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 {
 	m_pGS = (CGS*)Instance::GameServerPlayer(ClientID);
 	m_GroupID = (int)CVoteWrapper::Data()[m_ClientID].size();
+	m_TitleIsSet = false;
 	m_CurrentDepth = 0;
+	m_GroupSize = 0;
 }
 
 // Function to add a vote title implementation with variable arguments
@@ -68,11 +70,16 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	Vote.m_SettingID = SettingsID1;
 	Vote.m_SettingID2 = SettingsID2;
 
-	// Add the VoteOption to the player's votes
-	if(m_vpVotelist.empty())
-		m_vpVotelist.emplace_back(Vote);
+	// Add title to front or update the title if it already exists
+	if(m_vpVotelist.empty() || !m_TitleIsSet)
+	{
+		m_TitleIsSet = true;
+		m_vpVotelist.push_front(Vote);
+	}
 	else
+	{
 		m_vpVotelist.front() = Vote;
+	}
 }
 
 // Function to add a vote implementation with variable arguments

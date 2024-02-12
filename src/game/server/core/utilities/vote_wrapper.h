@@ -46,6 +46,7 @@ class CVoteGroup
 	CGS* m_pGS {};
 	CGS* GS() const { return m_pGS; }
 
+	bool m_TitleIsSet {};
 	int m_GroupSize {};
 	int m_GroupID {};
 	int m_Flags {};
@@ -55,6 +56,7 @@ class CVoteGroup
 	CVoteGroup(int ClientID, int Flags);
 
 	bool IsEmpty() const { return m_GroupSize <= 0; }
+	bool IsTitleSet() const { return m_TitleIsSet; }
 
 	void SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...);
 	void AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...);
@@ -119,6 +121,7 @@ public:
 	}
 
 	bool IsEmpty() const { return m_pGroup->IsEmpty(); }
+	bool IsTittleSet() const { return m_pGroup->IsTitleSet(); }
 
 	/*
 	 * Global static data

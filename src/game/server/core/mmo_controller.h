@@ -95,7 +95,7 @@ public:
 	void LoadLogicWorld() const;
 	void SaveAccount(CPlayer *pPlayer, int Table) const;
 	void ShowLoadingProgress(const char* pLoading, int Size) const;
-	void ShowTopList(int ClientID, ToplistType Type, bool ChatGlobalMode, int Limit) const;
+	void ShowTopList(int ClientID, ToplistType Type, int Rows, class CVoteWrapper* pWrapper = nullptr) const;
 };
 
 #endif

@@ -886,7 +886,7 @@ void CGS::OnTickGlobal()
 		// display the top message in the chat
 		Chat(-1, StrTypeName);
 		// show the top list to all players
-		Core()->ShowTopList(-1, RandomType, true, 5);
+		Core()->ShowTopList(-1, RandomType, 5);
 	}
 
 	// discord status
