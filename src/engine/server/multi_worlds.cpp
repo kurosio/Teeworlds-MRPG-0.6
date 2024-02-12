@@ -79,7 +79,7 @@ bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConso
 	Clear(false);
 
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_worlds");
-	while(pRes->next())
+ 	while(pRes->next())
 	{
 		const int WorldID = pRes->getInt("WorldID");
 		dbg_assert(WorldID < ENGINE_MAX_WORLDS, "exceeded pool of allocated memory for worlds");
@@ -92,8 +92,19 @@ bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConso
 		int RequiredLevel = pRes->getInt("RequiredLevel");
 
 		CWorldDetail WorldDetail(Type, RespawnWorldID, JailWorldID, RequiredLevel);
-		m_apWorlds[WorldID] = new CWorld(WorldID, Name, Path, std::move(WorldDetail));
+		if(m_apWorlds[WorldID])
+		{
+			str_copy(m_apWorlds[WorldID]->m_aName, Name.c_str(), sizeof(m_apWorlds[WorldID]->m_aName));
+			str_copy(m_apWorlds[WorldID]->m_aPath, Path.c_str(), sizeof(m_apWorlds[WorldID]->m_aPath));
+			m_apWorlds[WorldID]->m_WorldID = WorldID;
+			m_apWorlds[WorldID]->m_Detail = std::move(WorldDetail);
+		}
+		else
+		{
+			m_apWorlds[WorldID] = new CWorld(WorldID, Name, Path, std::move(WorldDetail));
+		}
 		Init(m_apWorlds[WorldID], pKernel);
+
 	}
 
 	m_NextIsReloading = true;
