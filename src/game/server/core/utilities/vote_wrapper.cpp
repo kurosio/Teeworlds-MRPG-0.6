@@ -133,6 +133,7 @@ void CVoteGroup::AddLineImpl()
 	Vote.m_Line = true;
 
 	// Add the VoteOption to the player's votes
+	m_GroupSize++;
 	m_vpVotelist.emplace_back(Vote);
 }
 
