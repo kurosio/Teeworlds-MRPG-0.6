@@ -7,10 +7,10 @@ const char* VOTE_LINE_DEF = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2
 namespace Border
 {
 	enum BorderSymbol { Beggin, Middle, MiddleOption, Level, End, Num };
-	inline constexpr const char* g_pSimpleBorder[Num] = { "\u256D", "\u2502", "\u251C", "\u2500", "\u2570" };
+	inline constexpr const char* g_pSimpleBorder[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
 	inline constexpr const char* g_pDoubleBorder[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
-	inline constexpr const char* g_pStrictBorder[Num] = { "\u250C", "\u2502", "\u251C", "\u2500", "\u2514" };
-	inline constexpr const char* g_pStrictBoldBorder[Num] = { "\u250F", "\u2503", "\u2523", "\u2501", "\u2517" };
+	inline constexpr const char* g_pStrictBorder[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
+	inline constexpr const char* g_pStrictBoldBorder[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
 
 	static constexpr const char* get(BorderSymbol Border, int Flags)
 	{
@@ -193,8 +193,11 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	for(auto pItem : m_pData[ClientID])
 	{
 		// Add empty vote for empty hidden group
-		if(pItem->IsEmpty() && pItem->m_Flags & (VWFLAG_UNIQUE | VWFLAG_DEFAULT_CLOSE | VWFLAG_DEFAULT_OPEN))
-			pItem->AddVoteImpl("null", NOPE, NOPE, "The options group is empty");
+		if(pItem->IsEmpty() && pItem->m_TitleIsSet)
+		{
+			pItem->m_Flags = VWFLAG_DISABLED;
+			pItem->AddVoteImpl("null", NOPE, NOPE, "The list is empty");
+		}
 
 		for(auto iter = pItem->m_vpVotelist.begin(); iter != pItem->m_vpVotelist.end();)
 		{

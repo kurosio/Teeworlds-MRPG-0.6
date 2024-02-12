@@ -1449,11 +1449,6 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 			if(p->GetID() != pGuild->GetID())
 				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{STR} (online {INT} players)", p->GetName(), p->GetMembers()->GetOnlinePlayersCount());
 		}
-
-		if(VWarList.IsEmpty())
-		{
-			VWar.Add("No guilds available for war");
-		}
 	}
 
 	// Add the votes backpage for the player

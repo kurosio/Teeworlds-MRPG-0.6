@@ -26,6 +26,40 @@
 #include "components/Warehouse/WarehouseManager.h"
 #include "components/Worlds/WorldManager.h"
 
+inline static void AppendUpgradesWrapper(CPlayer* pPlayer, AttributeGroup Type, CVoteWrapper* pWrapper)
+{
+	pWrapper->Add("Total statistics:");
+	pWrapper->BeginDepthList();
+	for(auto& [ID, pAttribute] : CAttributeDescription::Data())
+	{
+		if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
+		{
+			// if upgrades are cheap, they have a division of statistics
+			const int AttributeSize = pPlayer->GetAttributeSize(ID);
+
+			// percent data TODO: extract percent attributes
+			char aBuf[64] {};
+			float Percent = pPlayer->GetAttributePercent(ID);
+			if(Percent)
+			{
+				str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
+			}
+			pWrapper->Add("{STR} - {INT}{STR}", pAttribute->GetName(), AttributeSize, aBuf);
+		}
+	}
+	pWrapper->EndDepthList();
+	pWrapper->AddLine();
+
+	pWrapper->Add("Upgrading:");
+	pWrapper->BeginDepthList();
+	for(auto& [ID, pAttribute] : CAttributeDescription::Data())
+	{
+		if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
+			pWrapper->AddOption("UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), "{STR} - {INT} (cost {INT} point)",
+				pAttribute->GetName(), pPlayer->Account()->m_aStats[ID], pAttribute->GetUpgradePrice());
+	}
+	pWrapper->EndDepthList();
+}
 
 CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 {
@@ -151,64 +185,43 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
+		const char* paGroupNames[] = {
+			Instance::Localize(ClientID, "\u2699 Disciple of Tank"),
+			Instance::Localize(ClientID, "\u2696 Disciple of Healer"),
+			Instance::Localize(ClientID, "\u2694 Disciple of War"),
+			Instance::Localize(ClientID, " \u2690 Weapons / Ammo")
+		};
+
 		// information
-		CVoteWrapper VUpgradesInfo(ClientID, VWFLAG_DEFAULT_CLOSE, "Upgrades Information");
-		VUpgradesInfo.Add("Select upgrades type in Reason, write count.");
-		VUpgradesInfo.AddLine();
+		CVoteWrapper VUpgrInfo(ClientID, VWFLAG_DEFAULT_CLOSE, "Upgrades Information");
+		VUpgrInfo.Add("You can upgrade your character's statistics.");
+		VUpgrInfo.Add("Each update costs differently point.");
+		VUpgrInfo.Add("You can get points by leveling up.");
+		VUpgrInfo.AddLine();
 
 		// upgrade point
-		CVoteWrapper VUpgradePoint(ClientID);
-		VUpgradePoint.Add("Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
-		VUpgradePoint.AddLine();
+		CVoteWrapper VUpgrPoint(ClientID);
+		VUpgrPoint.Add("Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
+		VUpgrPoint.AddLine();
 
-		// lambda function for easy use
-		auto AddUpgradeGroupToWrapper([&](AttributeGroup Type, CVoteWrapper* pWrapper)
+		// upgrade group's
+		CVoteWrapper VUpgrGroupSelect(ClientID, VWFLAG_DEFAULT_OPEN, "Select a type of upgrades");
+		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
+		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
+		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
+		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Weapon, paGroupNames[(int)AttributeGroup::Weapon]);
+		VUpgrGroupSelect.AddLine();
+
+		// Upgrades by group
+		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
 		{
-			for(auto& [ID, pAttribute] : CAttributeDescription::Data())
-			{
-				if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
-				{
-					// if upgrades are cheap, they have a division of statistics
-					const int AttributeSize = pPlayer->GetAttributeSize(ID);
+			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetMenuTemporaryInteger(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
+			const char* pGroupName = paGroupNames[(int)Group];
 
-					// percent data TODO: extract percent attributes
-					char aBuf[64]{};
-					float Percent = pPlayer->GetAttributePercent(ID);
-					if(Percent)
-					{
-						str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
-					}
-					pWrapper->Add("\u2508\u2508 {STR} - {INT}{STR}", pAttribute->GetName(), AttributeSize, aBuf);
-				}
-			}
-
-			for(auto& [ID, pAttribute] : CAttributeDescription::Data())
-			{
-				if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
-					pWrapper->AddOption("UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), "{STR} - {INT} (cost {INT} point)",
-						pAttribute->GetName(), pPlayer->Account()->m_aStats[ID], pAttribute->GetUpgradePrice());
-			}
-		});
-
-		// Disciple of War
-		CVoteWrapper VUpgrDPS(ClientID, VWFLAG_BSTYLE_STRICT_BOLD, "\u2694 Disciple of War : Strength {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Dps));
-		AddUpgradeGroupToWrapper(AttributeGroup::Dps, &VUpgrDPS);
-		VUpgrDPS.AddLine();
-
-		// Disciple of Tank
-		CVoteWrapper VUpgrTANK(ClientID, VWFLAG_BSTYLE_STRICT_BOLD, "\u2699 Disciple of Tank : Endurance {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Tank));
-		AddUpgradeGroupToWrapper(AttributeGroup::Tank, &VUpgrTANK);
-		VUpgrTANK.AddLine();
-
-		// Disciple of Healer
-		CVoteWrapper VUpgrHEALER(ClientID, VWFLAG_BSTYLE_STRICT_BOLD, "\u2696 Disciple of Healer : Power {VAL}", pPlayer->GetTypeAttributesSize(AttributeGroup::Healer));
-		AddUpgradeGroupToWrapper(AttributeGroup::Healer, &VUpgrHEALER);
-		VUpgrHEALER.AddLine();
-
-		// Upgrades Weapons and ammo
-		CVoteWrapper VUpgrWeapon(ClientID, VWFLAG_BSTYLE_STRICT_BOLD, "\u2690 Upgrades Weapons / Ammo");
-		AddUpgradeGroupToWrapper(AttributeGroup::Weapon, &VUpgrWeapon);
-		VUpgrWeapon.AddLine();
+			CVoteWrapper VUpgrGroup(ClientID, VWFLAG_DEFAULT_OPEN | VWFLAG_BSTYLE_STRICT_BOLD, "{STR} : Strength {VAL}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
+			AppendUpgradesWrapper(pPlayer, Group, &VUpgrGroup);
+			VUpgrGroup.AddLine();
+		}
 
 		// Add back page
 		CVoteWrapper::AddBackpage(ClientID);
@@ -220,7 +233,11 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VTopSelect(ClientID, VWFLAG_DEFAULT_OPEN|VWFLAG_BSTYLE_STRICT_BOLD, "Select a type of ranking");
+		CVoteWrapper VTopInfo(ClientID, VWFLAG_DEFAULT_CLOSE, "Top List Information");
+		VTopInfo.Add("You can view the top 10 players and guilds.");
+		VTopInfo.AddLine();
+
+		CVoteWrapper VTopSelect(ClientID, VWFLAG_DEFAULT_OPEN, "Select a type of ranking");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::GUILDS_LEVELING, "Top 10 guilds leveling");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::GUILDS_WEALTHY, "Top 10 guilds wealthy");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::PLAYERS_LEVELING, "Top 10 players leveling");

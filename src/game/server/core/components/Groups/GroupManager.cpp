@@ -88,80 +88,47 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	int ClientID = pPlayer->GetCID();
 
 	// Group information
-	GS()->AVH(ClientID, TAB_GROUP_COMMANDS, "Group commands");
-	GS()->AVM(ClientID, "null", NOPE, TAB_GROUP_COMMANDS, "/group - get all sub commands");
-	GS()->AV(ClientID, "null");
+	CVoteWrapper VGroupCmd(ClientID, VWFLAG_DEFAULT_CLOSE, "Group commands");
+	VGroupCmd.Add("/group Get all sub commands");
+	VGroupCmd.AddLine();
 
-	// Check if the player does not have a group
-	if(!pPlayer->Account()->GetGroup())
+	// Group management
+	GroupData* pGroup = pPlayer->Account()->GetGroup();
+	CVoteWrapper VGroup(ClientID, VWFLAG_DEFAULT_OPEN|VWFLAG_BSTYLE_STRICT_BOLD, "\u273D Group Management");
+	if(!pGroup)
 	{
-		// Show the option to create a new group in the clients available votes list
-		GS()->AVL(ClientID, "GROUP_CREATE", "Create a new group.");
+		VGroup.AddOption("GROUP_CREATE", "Create a group");
+		VGroup.AddLine();
 		return;
 	}
+	const bool IsOwner = pGroup->GetLeaderUID() == pPlayer->Account()->GetID();
+	VGroup.AddIfOption(IsOwner, "GROUP_CHANGE_COLOR", "Change the colour: ({INT})", pGroup->GetTeamColor());
+	VGroup.AddIfOption(IsOwner, "GROUP_DISBAND", "Disband group");
+	VGroup.AddOption("GROUP_KICK", pPlayer->Account()->GetID(), "Leave the group");
+	VGroup.AddLine();
 
-	// Group list for interaction
-	int HideID = START_SELF_HIDE_ID;
-	GroupData* pGroup = pPlayer->Account()->GetGroup();
-	bool IsOwner = pGroup->GetLeaderUID() == pPlayer->Account()->GetID();
-	GS()->AVL(ClientID, "null", "\u2735 Members {INT} of {INT}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
+	// Group membership list
+	CVoteWrapper(ClientID).Add("\u2735 Members {INT} of {INT}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
 	for(auto& AID : pGroup->GetAccounts())
 	{
-		// Get the player name for the account
 		std::string PlayerName = Server()->GetAccountNickname(AID);
-		GS()->AVH(ClientID, HideID, "{STR}{STR}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
-
-		// Check if the current player is the owner or if the account belongs to the current player
-		if(!IsOwner || (AID == pPlayer->Account()->GetID()))
-		{
-			// Add the only player name to the group list
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Interaction is not available", PlayerName.c_str());
-		}
-		else
-		{
-			// Add the options
-			GS()->AVM(ClientID, "GROUP_KICK", AID, HideID, "Kick {STR}", PlayerName.c_str());
-			GS()->AVM(ClientID, "GROUP_CHANGE_OWNER", AID, HideID, "Transfer ownership {STR}", PlayerName.c_str());
-		}
-
-		// Increment the value of HideID by 1
-		HideID++;
+		bool HasInteraction = IsOwner && AID != pPlayer->Account()->GetID();
+		CVoteWrapper VMember(ClientID, VWFLAG_UNIQUE, "{STR}{STR}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
+		VMember.AddIfOption(HasInteraction, "GROUP_KICK", AID, "Kick {STR}", PlayerName.c_str());
+		VMember.AddIfOption(HasInteraction, "GROUP_CHANGE_OWNER", AID, "Transfer ownership {STR}", PlayerName.c_str());
 	}
-	GS()->AV(ClientID, "null");
+	CVoteWrapper::AddLine(ClientID);
 
-	// Show group some interactions
-	GS()->AVL(ClientID, "null", "\u273D Group Management");
-	if(IsOwner)
-	{
-		// Display a message to change the colour of the group
-		GS()->AVL(ClientID, "GROUP_CHANGE_COLOR", "Change the colour: ({INT})", pGroup->GetTeamColor());
-		GS()->AVL(ClientID, "GROUP_DISBAND", "Disband group");
-	}
-	GS()->AVM(ClientID, "GROUP_KICK", pPlayer->Account()->GetID(), NOPE, "Leave the group");
-	GS()->AV(ClientID, "null");
-
-	// Player list for invition
-	bool FoundInvition = false;
-	GS()->AVL(ClientID, "null", "\u2605 Players for invitation");
+	// Group player invites
+	CVoteWrapper VGroupInvites(ClientID, VWFLAG_BSTYLE_SIMPLE|VWFLAG_DEFAULT_CLOSE, "\u2605 Players for invitation");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		// If the player does not exist, continue to the next iteration
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
-		if(!pSearchPlayer)
-			continue;
+		if(pSearchPlayer && !pSearchPlayer->Account()->GetGroup())
+			VGroupInvites.AddOption("GROUP_INVITE", i, "Invite {STR}", Server()->ClientName(i));
+	}
 
-		// If the searched player does not belong to any group, send them an invitation
-		GroupData* pSearchGroup = pSearchPlayer->Account()->GetGroup();
-		if(!pSearchGroup)
-		{
-			GS()->AVM(ClientID, "GROUP_INVITE", i, NOPE, "Invite {STR}", Server()->ClientName(i));
-			FoundInvition = true;
-		}
-	}
-	if(!FoundInvition)
-	{
-		GS()->AVL(ClientID, "null", "No players available");
-	}
+	CVoteWrapper::AddBackpage(ClientID);
 }
 
 bool CGroupManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)

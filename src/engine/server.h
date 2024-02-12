@@ -316,6 +316,9 @@ namespace Instance
 
 	// Define a static member function GameServerPlayer that returns a pointer to IGameServer object
 	static IGameServer* GameServer(int WorldID = MAIN_WORLD_ID) { return Data::g_pServer->GameServer(WorldID); }
+
+	// Define a static member function Localization that returns a pointer to Localize text
+	static const char* Localize(int ClientID, const char* pText) { return Data::g_pServer->Localize(ClientID, pText); }
 };
 
 extern IGameServer *CreateGameServer();
