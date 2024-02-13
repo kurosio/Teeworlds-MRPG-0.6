@@ -254,12 +254,9 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	{
 		for(auto iter = pItem->m_vpVotelist.begin(); iter != pItem->m_vpVotelist.end();)
 		{
-			auto pBack = &pItem->m_vpVotelist.back();
-			auto pFront = &pItem->m_vpVotelist.front();
-
 			// There should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
-			// Rebuild the vote option to have an empty line aesthetic
-			if(pLastVoteOption && pLastVoteOption->m_Line && (*iter).m_Line)
+			// Rebuild the vote option to have an line aesthetic
+			if(auto nextIter = std::next(iter); nextIter != pItem->m_vpVotelist.end() && iter->m_Line && nextIter->m_Line)
 			{
 				iter = pItem->m_vpVotelist.erase(iter);
 				continue;
@@ -272,6 +269,8 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 				if(!pItem->IsHidden())
 				{
 					const int& Flags = pItem->m_Flags;
+					auto pBack = &pItem->m_vpVotelist.back();
+					auto pFront = &pItem->m_vpVotelist.front();
 
 					// Append border to the vote option (can outside but)
 					dynamic_string Buffer;
