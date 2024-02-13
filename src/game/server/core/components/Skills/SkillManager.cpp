@@ -54,7 +54,6 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Skill master information");
 		VInfo.Add("Here you can learn passive and active skills");
 		VInfo.Add("You can bind active skill any button using the console");
-		CVoteWrapper::AddLine(ClientID);
 
 		CVoteWrapper::AddItemValue(ClientID, itSkillPoint);
 

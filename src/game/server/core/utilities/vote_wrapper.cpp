@@ -233,11 +233,18 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 		}
 
 		// Group separator with line
-		if(pItem->m_Flags & VWFLAG_SEPARATE && pItem->IsHidden() && pItem != m_pData[ClientID].back())
+		if(pItem->m_Flags & VWFLAG_SEPARATE && pItem != m_pData[ClientID].back())
 		{
-			auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
-			pVoteGroup->AddLineImpl();
-			iterItem = m_pData[ClientID].insert(std::next(iterItem), pVoteGroup);
+			if(pItem->IsHidden())
+			{
+				auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+				pVoteGroup->AddLineImpl();
+				iterItem = m_pData[ClientID].insert(std::next(iterItem), pVoteGroup);
+			}
+			else if(!pItem->m_vpVotelist.empty() && !pItem->m_vpVotelist.back().m_Line)
+			{
+				pItem->AddLineImpl();
+			}
 		}
 	}
 
