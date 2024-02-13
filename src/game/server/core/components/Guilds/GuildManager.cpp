@@ -951,6 +951,31 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 		// Check if there are no available actions for the member
 		VMember.AddIf(VMember.IsEmpty(), "No available actions on the player");
 	}
+	CVoteWrapper::AddEmptyline(ClientID);
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	CVoteWrapper TestWrap(ClientID, VWFLAG_CLOSED | VWFLAG_STYLE_STRICT_BOLD);
+	TestWrap.AddLine();
+	TestWrap.Add("Deposit gold to the guild bank");
+	TestWrap.AddLine();
+
+	CVoteWrapper TestWrap2(ClientID, VWFLAG_CLOSED | VWFLAG_STYLE_STRICT_BOLD);
+	TestWrap2.AddLine();
+	TestWrap2.Add("Deposit gold to the guild bank");
+	TestWrap2.AddLine();
+
+	CVoteWrapper::AddEmptyline(ClientID);
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	CVoteWrapper TestWrap3(ClientID,  VWFLAG_STYLE_STRICT_BOLD);
+	TestWrap3.AddLine();
+	TestWrap3.Add("Deposit gold to the guild bank");
+	TestWrap3.AddLine();
+
+	CVoteWrapper TestWrap4(ClientID,  VWFLAG_STYLE_STRICT_BOLD);
+	TestWrap4.AddLine();
+	TestWrap4.Add("Deposit gold to the guild bank");
+	TestWrap4.AddLine();
 
 	// Add the votes backpage for the player
 	CVoteWrapper::AddBackpage(ClientID);

@@ -25,7 +25,7 @@ namespace Border
 CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID)
 {
 	m_pGS = (CGS*)Instance::GameServerPlayer(ClientID);
-	m_GroupID = (int)CVoteWrapper::Data()[m_ClientID].size();
+	m_GroupID = (int)CVoteWrapper::Data()[ClientID].size();
 	m_TitleIsSet = false;
 	m_CurrentDepth = 0;
 	m_GroupSize = 0;
@@ -221,94 +221,88 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	}
 
 	// Prepare group for hidden vote
-	for(auto iterItem = m_pData[ClientID].begin(); iterItem != m_pData[ClientID].end(); ++iterItem)
+	CVoteOption* pLastVoteOption = nullptr;
+	for(auto iterGroup = m_pData[ClientID].cbegin(); iterGroup != m_pData[ClientID].cend(); ++iterGroup)
 	{
-		CVoteGroup* pItem = *iterItem;
+		CVoteGroup* pGroup = *iterGroup;
 
 		// if the group is an expandable list type, it is empty if there is no element in it
-		if(pItem->m_TitleIsSet && pItem->IsEmpty() && !pItem->IsHidden())
+		if(pGroup->m_TitleIsSet && pGroup->IsEmpty() && !pGroup->IsHidden())
 		{
-			pItem->m_Flags = VWFLAG_DISABLED;
-			pItem->AddVoteImpl("null", NOPE, NOPE, "The list is empty");
+			pGroup->m_Flags = VWFLAG_DISABLED;
+			pGroup->AddVoteImpl("null", NOPE, NOPE, "The list is empty");
 		}
 
 		// Group separator with line
-		if(pItem->m_Flags & VWFLAG_SEPARATE && pItem != m_pData[ClientID].back())
+		if(pGroup->m_Flags & VWFLAG_SEPARATE && pGroup != m_pData[ClientID].back())
 		{
-			if(pItem->IsHidden())
+			if(pGroup->IsHidden())
 			{
 				auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
 				pVoteGroup->AddLineImpl();
-				iterItem = m_pData[ClientID].insert(std::next(iterItem), pVoteGroup);
+				iterGroup = std::prev(m_pData[ClientID].insert(std::next(iterGroup), pVoteGroup));
 			}
-			else if(!pItem->m_vpVotelist.empty() && !pItem->m_vpVotelist.back().m_Line)
+			else if(!pGroup->m_vpVotelist.empty() && !pGroup->m_vpVotelist.back().m_Line)
+				pGroup->AddLineImpl();
+		}
+
+		// There should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
+		for(auto iterVote = pGroup->m_vpVotelist.begin(); iterVote != pGroup->m_vpVotelist.end();)
+		{
+			if(pLastVoteOption && pLastVoteOption->m_Line && (*iterVote).m_Line)
 			{
-				pItem->AddLineImpl();
+				iterVote = pGroup->m_vpVotelist.erase(iterVote);
+				continue;
 			}
+			pLastVoteOption = &(*iterVote);
+			++iterVote;
 		}
 	}
 
 	// Rebuild the votes from group
-	CVoteOption* pLastVoteOption = nullptr;
-	for(const auto pItem : m_pData[ClientID])
+	for(auto pGroup : m_pData[ClientID])
 	{
-		for(auto iter = pItem->m_vpVotelist.begin(); iter != pItem->m_vpVotelist.end();)
+		for(auto iterVote = pGroup->m_vpVotelist.begin(); iterVote != pGroup->m_vpVotelist.end(); ++iterVote)
 		{
-			// There should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
-			// Rebuild the vote option to have an line aesthetic
-			if(auto nextIter = std::next(iter); nextIter != pItem->m_vpVotelist.end() && iter->m_Line && nextIter->m_Line)
-			{
-				iter = pItem->m_vpVotelist.erase(iter);
-				continue;
-			}
-
 			// Rebuild the vote options to aesthetic style
-			if(pItem->m_Flags & (VWFLAG_STYLE_SIMPLE | VWFLAG_STYLE_DOUBLE | VWFLAG_STYLE_STRICT | VWFLAG_STYLE_STRICT_BOLD))
+			if(pGroup->m_Flags & (VWFLAG_STYLE_SIMPLE | VWFLAG_STYLE_DOUBLE | VWFLAG_STYLE_STRICT | VWFLAG_STYLE_STRICT_BOLD) && !pGroup->IsHidden())
 			{
-				// Skip the vote option if the player has hidden the vote option
-				if(!pItem->IsHidden())
+				const int& Flags = pGroup->m_Flags;
+				auto pBack = &pGroup->m_vpVotelist.back();
+				auto pFront = &pGroup->m_vpVotelist.front();
+
+				// Append border to the vote option (can outside but)
+				dynamic_string Buffer;
+				if(&(*iterVote) == pFront)
+					Buffer.append(get(Border::Beggin, Flags));
+				else if(&(*iterVote) == pBack)
+					Buffer.append(get(Border::End, Flags));
+				else if(str_comp((*iterVote).m_aCommand, "null") == 0 && (*iterVote).m_Depth <= 0 && !(*iterVote).m_Line)
+					Buffer.append(get(Border::Middle, Flags));
+				else
+					Buffer.append(get(Border::MiddleOption, Flags));
+
+				// Display the level of the vote option
+				// Dissable for line is a line as it is
+				if(!(*iterVote).m_Line && (*iterVote).m_Depth > 0)
 				{
-					const int& Flags = pItem->m_Flags;
-					auto pBack = &pItem->m_vpVotelist.back();
-					auto pFront = &pItem->m_vpVotelist.front();
-
-					// Append border to the vote option (can outside but)
-					dynamic_string Buffer;
-					if(&(*iter) == pFront)
-						Buffer.append(get(Border::Beggin, Flags));
-					else if(&(*iter) == pBack)
-						Buffer.append(get(Border::End, Flags));
-					else if(str_comp((*iter).m_aCommand, "null") == 0 && (*iter).m_Depth <= 0 && !(*iter).m_Line)
-						Buffer.append(get(Border::Middle, Flags));
-					else
-						Buffer.append(get(Border::MiddleOption, Flags));
-
-					// Display the level of the vote option
-					// Dissable for line is a line as it is
-					if(!(*iter).m_Line && (*iter).m_Depth > 0)
-					{
-						for(int i = 0; i < (*iter).m_Depth; i++)
-							Buffer.append(get(Border::Level, Flags));
-					}
-
-					if(str_comp((*iter).m_aDescription, VOTE_LINE_DEF) != 0 && str_comp((*iter).m_aCommand, "null") == 0)
-						Buffer.append(" ");
-
-					// Save changes
-					char aRebuildBuffer[VOTE_DESC_LENGTH];
-					str_copy(aRebuildBuffer, (*iter).m_aDescription, sizeof(aRebuildBuffer));
-					str_format((*iter).m_aDescription, sizeof((*iter).m_aDescription), "%s%s", Buffer.buffer(), aRebuildBuffer);
+					for(int i = 0; i < (*iterVote).m_Depth; i++)
+						Buffer.append(get(Border::Level, Flags));
 				}
+
+				if(str_comp((*iterVote).m_aDescription, VOTE_LINE_DEF) != 0 && str_comp((*iterVote).m_aCommand, "null") == 0)
+					Buffer.append(" ");
+
+				// Save changes
+				char aRebuildBuffer[VOTE_DESC_LENGTH];
+				str_copy(aRebuildBuffer, (*iterVote).m_aDescription, sizeof(aRebuildBuffer));
+				str_format((*iterVote).m_aDescription, sizeof((*iterVote).m_aDescription), "%s%s", Buffer.buffer(), aRebuildBuffer);
 			}
 
 			// Send the vote option to the client
 			CNetMsg_Sv_VoteOptionAdd OptionMsg;
-			OptionMsg.m_pDescription = (*iter).m_aDescription;
+			OptionMsg.m_pDescription = (*iterVote).m_aDescription;
 			pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
-
-			// Set the last vote option to the current vote option
-			pLastVoteOption = &(*iter);
-			++iter;
 		}
 	}
 }
