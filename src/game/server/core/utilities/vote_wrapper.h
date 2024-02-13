@@ -14,15 +14,24 @@ typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallb
 
 enum
 {
-	VWFLAG_DISABLED = 0,
-	VWFLAG_DEFAULT_OPEN = 1 << 1,
-	VWFLAG_DEFAULT_CLOSE = 1 << 2,
-	VWFLAG_UNIQUE = 1 << 3,
+	VWFLAG_DISABLED          = 0, // regular title group
 
-	VWFLAG_BSTYLE_SIMPLE = 1 << 4,      // example: ╭ │ ╰
-	VWFLAG_BSTYLE_DOUBLE = 1 << 5,      // example: ╔ ═ ╚
-	VWFLAG_BSTYLE_STRICT = 1 << 6,      // example: ┌ │ └
-	VWFLAG_BSTYLE_STRICT_BOLD = 1 << 7, // example: ┏ ┃ ┗
+	// settings
+	VWFLAG_SEPARATE          = 1 << 1, // separates the end and the beginning of the new group by a line
+
+	// styles
+	VWFLAG_STYLE_SIMPLE      = 1 << 2, // example: ╭ │ ╰
+	VWFLAG_STYLE_DOUBLE      = 1 << 3, // example: ╔ ═ ╚
+	VWFLAG_STYLE_STRICT      = 1 << 4, // example: ┌ │ └
+	VWFLAG_STYLE_STRICT_BOLD = 1 << 5, // example: ┏ ┃ ┗
+
+	// hidden
+	VWFLAG_OPEN              = 1 << 6, // default open group
+	VWFLAG_CLOSED            = 1 << 7, // default close group
+	VWFLAG_UNIQUE            = 1 << 8, // default close group toggle unique groups 
+	VWFLAG_SEPARATE_OPEN     = VWFLAG_OPEN | VWFLAG_SEPARATE, // default open group with separate
+	VWFLAG_SEPARATE_CLOSED   = VWFLAG_CLOSED | VWFLAG_SEPARATE, // default close group with separate
+	VWFLAG_SEPARATE_UNIQUE   = VWFLAG_UNIQUE | VWFLAG_SEPARATE, // default close group with separate
 };
 
 class CVoteOption
@@ -57,6 +66,7 @@ class CVoteGroup
 
 	bool IsEmpty() const { return m_GroupSize <= 0; }
 	bool IsTitleSet() const { return m_TitleIsSet; }
+	bool IsHidden() const;
 
 	void SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...);
 	void AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...);
@@ -66,6 +76,7 @@ class CVoteGroup
 	void AddEmptylineImpl();
 	void AddBackpageImpl();
 	void AddItemValueImpl(int ItemID);
+
 };
 
 class CVoteWrapper : public MultiworldIdentifiableStaticData<std::map<int, std::deque<CVoteGroup*>>>

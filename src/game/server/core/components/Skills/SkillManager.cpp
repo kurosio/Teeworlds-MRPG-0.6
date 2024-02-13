@@ -51,15 +51,15 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		const char* pTypename[] = { "Improving", "Healing", "Attacking", "Defensive" };
 
 		// information
-		CVoteWrapper VInfo(ClientID, VWFLAG_DEFAULT_CLOSE, "Skill master information");
+		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Skill master information");
 		VInfo.Add("Here you can learn passive and active skills");
 		VInfo.Add("You can bind active skill any button using the console");
-		VInfo.AddLine();
+		CVoteWrapper::AddLine(ClientID);
 
 		CVoteWrapper::AddItemValue(ClientID, itSkillPoint);
 
 		// Skill types
-		CVoteWrapper VTypes(ClientID, VWFLAG_DEFAULT_OPEN|VWFLAG_BSTYLE_STRICT_BOLD, "Skill types");
+		CVoteWrapper VTypes(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_STRICT_BOLD, "Skill types");
 		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_TANK, pTypename[SKILL_TYPE_TANK]);
 		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_DPS, pTypename[SKILL_TYPE_DPS]);
 		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_HEALER, pTypename[SKILL_TYPE_HEALER]);
@@ -69,7 +69,7 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() > 0)
 		{
 			int SelectedType = clamp(pPlayer->m_VotesData.GetMenuTemporaryInteger(), (int)SKILL_TYPE_IMPROVEMENTS, (int)NUM_SKILL_TYPES - 1);
-			ShowSkillTypeList(pPlayer, (SkillType)SelectedType);
+			ShowSkillsByType(pPlayer, (SkillType)SelectedType);
 		}
 
 		return true;
@@ -78,16 +78,16 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-void CSkillManager::ShowSkillTypeList(CPlayer* pPlayer, SkillType Type) const
+void CSkillManager::ShowSkillsByType(CPlayer* pPlayer, SkillType Type) const
 {
 	for(const auto& [ID, Skill] : CSkillDescription::Data())
 	{
 		if(Skill.m_Type == Type)
-			ShowSkill(pPlayer, ID);
+			ShowDetailSkill(pPlayer, ID);
 	}
 }
 
-void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
+void CSkillManager::ShowDetailSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 {
 	const int ClientID = pPlayer->GetCID();
 	CSkill* pSkill = pPlayer->GetSkill(ID);
@@ -96,9 +96,8 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	const bool IsLearned = pSkill->IsLearned();
 	const bool IsPassive = pInfo->IsPassive();
 	const bool IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
-	CVoteWrapper::AddEmptyline(ClientID);
 
-	CVoteWrapper VSkill(ClientID, VWFLAG_UNIQUE|VWFLAG_BSTYLE_SIMPLE, "{STR} - {INT}SP {STR}", pInfo->GetName(), pInfo->GetPriceSP(), IsMaximumLevel ? "(max)" : "");
+	CVoteWrapper VSkill(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE, "{STR} - {INT}SP {STR}", pInfo->GetName(), pInfo->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
 	VSkill.Add("Description:");
 	{
 		VSkill.BeginDepthList();
@@ -114,6 +113,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 		VSkill.AddIf(!IsPassive, "Mana required {INT}%", pInfo->GetPercentageCost());
 		VSkill.EndDepthList();
 	}
+	VSkill.AddLine();
 	VSkill.AddIf(!IsPassive && IsLearned, "Usage:");
 	{
 		VSkill.BeginDepthList();
@@ -122,7 +122,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 		VSkill.EndDepthList();
 	}
 	VSkill.AddLine();
-	VSkill.AddIfOption(!IsMaximumLevel, "SKILL_LEARN", "Learn", ID);
+	VSkill.AddIfOption(!IsMaximumLevel, "SKILL_LEARN", ID, "Learn");
 	VSkill.AddLine();
 }
 

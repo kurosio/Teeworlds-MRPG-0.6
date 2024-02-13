@@ -14,10 +14,10 @@ namespace Border
 
 	static constexpr const char* get(BorderSymbol Border, int Flags)
 	{
-		if(Flags & VWFLAG_BSTYLE_SIMPLE) { return g_pSimpleBorder[Border]; }
-		if(Flags & VWFLAG_BSTYLE_DOUBLE) { return g_pDoubleBorder[Border]; }
-		if(Flags & VWFLAG_BSTYLE_STRICT) { return g_pStrictBorder[Border]; }
-		if(Flags & VWFLAG_BSTYLE_STRICT_BOLD) { return g_pStrictBoldBorder[Border]; }
+		if(Flags & VWFLAG_STYLE_SIMPLE) { return g_pSimpleBorder[Border]; }
+		if(Flags & VWFLAG_STYLE_DOUBLE) { return g_pDoubleBorder[Border]; }
+		if(Flags & VWFLAG_STYLE_STRICT) { return g_pStrictBorder[Border]; }
+		if(Flags & VWFLAG_STYLE_STRICT_BOLD) { return g_pStrictBoldBorder[Border]; }
 		return "";
 	}
 }
@@ -47,7 +47,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	va_end(VarArgs);
 
 	const char* pAppend = "\0";
-	if(m_Flags & (VWFLAG_DEFAULT_CLOSE | VWFLAG_DEFAULT_OPEN | VWFLAG_UNIQUE))
+	if(m_Flags & (VWFLAG_CLOSED | VWFLAG_OPEN | VWFLAG_UNIQUE))
 	{
 		const bool HiddenTab = pPlayer->m_VotesData.EmplaceHidden(m_GroupID, m_Flags)->m_Value;
 		pAppend = HiddenTab ? "\u21BA " : "\u27A4 ";
@@ -87,12 +87,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 {
 	// Check if the player is valid
 	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
-	if(!pPlayer)
-		return;
-
-	// Check if the hidden vote object exists and if its value is true
-	CVotePlayerData::VoteGroupHidden* pHidden = pPlayer->m_VotesData.GetHidden(m_GroupID);
-	if(pHidden && pHidden->m_Value)
+	if(!pPlayer || IsHidden())
 		return;
 
 	// Format the text using the player's language and additional arguments
@@ -126,6 +121,10 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 // This function is used to add a line
 void CVoteGroup::AddLineImpl()
 {
+	// Check player and hidden status
+	if(!GS()->GetPlayer(m_ClientID) || IsHidden())
+		return;
+
 	// Create a new VoteOption with the values
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, VOTE_LINE_DEF, sizeof(Vote.m_aDescription));
@@ -140,6 +139,10 @@ void CVoteGroup::AddLineImpl()
 // This function adds the implementation for the AddBackpage method in the CVoteGroup class.
 void CVoteGroup::AddBackpageImpl()
 {
+	// Check player and hidden status
+	if(!GS()->GetPlayer(m_ClientID) || IsHidden())
+		return;
+
 	// Create a new VoteOption with the values
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, "\u21A9 Backpage", sizeof(Vote.m_aDescription));
@@ -153,7 +156,11 @@ void CVoteGroup::AddBackpageImpl()
 // This function adds an empty line
 void CVoteGroup::AddEmptylineImpl()
 {
-	// Check if the last player vote is an line
+	// Check player and hidden status
+	if(!GS()->GetPlayer(m_ClientID) || IsHidden())
+		return;
+
+	// Create a new VoteOption with the values
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, "\0", sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "null", sizeof(Vote.m_aCommand));
@@ -165,9 +172,33 @@ void CVoteGroup::AddEmptylineImpl()
 // Function to add an item value information to the CVoteGroup
 void CVoteGroup::AddItemValueImpl(int ItemID)
 {
-	if(CPlayer* pPlayer = GS()->GetPlayer(m_ClientID))
-		AddVoteImpl("null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName());
+	// Check player and hidden status
+	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
+	if(!pPlayer || IsHidden())
+		return;
+
+	AddVoteImpl("null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName());
 }
+
+// Function for check hidden status
+bool CVoteGroup::IsHidden() const
+{
+	// For special flags hidden does not used
+	if(m_Flags & (VWFLAG_CLOSED | VWFLAG_OPEN | VWFLAG_UNIQUE))
+	{
+		// Check if the player is valid
+		if(CPlayer* pPlayer = m_pGS->GetPlayer(m_ClientID))
+		{
+			// Check if the hidden vote object exists and if its value is true
+			CVotePlayerData::VoteGroupHidden* pHidden = pPlayer->m_VotesData.GetHidden(m_GroupID);
+			return pHidden && pHidden->m_Value;
+		}
+	}
+
+	// Default it's openned
+	return false;
+}
+
 
 // This function is responsible for rebuilding the votes for a specific client.
 void CVoteWrapper::RebuildVotes(int ClientID)
@@ -182,26 +213,43 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	if(m_pData[ClientID].empty())
 	{
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
-		CVoteWrapper VError(ClientID, VWFLAG_BSTYLE_SIMPLE, "Error");
+		CVoteWrapper VError(ClientID, VWFLAG_STYLE_SIMPLE, "Error");
 		VError.Add("The voting list is empty").BeginDepthList().Add("Probably a server error").EndDepthList()
 			.Add("Report the error code #{INT}x{INT}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
 		pVotesData->SetLastMenuID(MENU_MAIN);
 		CVoteWrapper::AddBackpage(ClientID);
 	}
 
-	// Rebuild the vote options
-	CVoteOption* pLastVoteOption = nullptr;
-	for(auto pItem : m_pData[ClientID])
+	// Prepare group for hidden vote
+	for(auto iterItem = m_pData[ClientID].begin(); iterItem != m_pData[ClientID].end(); ++iterItem)
 	{
-		// Add empty vote for empty hidden group
-		if(pItem->IsEmpty() && pItem->m_TitleIsSet)
+		CVoteGroup* pItem = *iterItem;
+
+		// if the group is an expandable list type, it is empty if there is no element in it
+		if(pItem->m_TitleIsSet && pItem->IsEmpty() && !pItem->IsHidden())
 		{
 			pItem->m_Flags = VWFLAG_DISABLED;
 			pItem->AddVoteImpl("null", NOPE, NOPE, "The list is empty");
 		}
 
+		// Group separator with line
+		if(pItem->m_Flags & VWFLAG_SEPARATE && pItem->IsHidden() && pItem != m_pData[ClientID].back())
+		{
+			auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+			pVoteGroup->AddLineImpl();
+			iterItem = m_pData[ClientID].insert(std::next(iterItem), pVoteGroup);
+		}
+	}
+
+	// Rebuild the votes from group
+	CVoteOption* pLastVoteOption = nullptr;
+	for(const auto pItem : m_pData[ClientID])
+	{
 		for(auto iter = pItem->m_vpVotelist.begin(); iter != pItem->m_vpVotelist.end();)
 		{
+			auto pBack = &pItem->m_vpVotelist.back();
+			auto pFront = &pItem->m_vpVotelist.front();
+
 			// There should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
 			// Rebuild the vote option to have an empty line aesthetic
 			if(pLastVoteOption && pLastVoteOption->m_Line && (*iter).m_Line)
@@ -211,15 +259,12 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 			}
 
 			// Rebuild the vote options to aesthetic style
-			if(pItem->m_Flags & (VWFLAG_BSTYLE_SIMPLE | VWFLAG_BSTYLE_DOUBLE | VWFLAG_BSTYLE_STRICT | VWFLAG_BSTYLE_STRICT_BOLD))
+			if(pItem->m_Flags & (VWFLAG_STYLE_SIMPLE | VWFLAG_STYLE_DOUBLE | VWFLAG_STYLE_STRICT | VWFLAG_STYLE_STRICT_BOLD))
 			{
 				// Skip the vote option if the player has hidden the vote option
-				CVotePlayerData::VoteGroupHidden* pHidden = pPlayer->m_VotesData.GetHidden(pItem->m_GroupID);
-				if(!pHidden || (pHidden && !pHidden->m_Value))
+				if(!pItem->IsHidden())
 				{
 					const int& Flags = pItem->m_Flags;
-					auto pFront = &pItem->m_vpVotelist.front();
-					auto pBack = &pItem->m_vpVotelist.back();
 
 					// Append border to the vote option (can outside but)
 					dynamic_string Buffer;
@@ -273,7 +318,7 @@ CVoteOption* CVoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActi
 	{
 		auto iter = std::find_if(iterGroup->m_vpVotelist.begin(), iterGroup->m_vpVotelist.end(), [pActionName](const CVoteOption& vote)
 		{
-			return (str_comp_nocase(pActionName, vote.m_aDescription) == 0);
+			return str_comp(pActionName, vote.m_aDescription) == 0;
 		});
 
 		if(iter != iterGroup->m_vpVotelist.end())
@@ -294,7 +339,7 @@ CVotePlayerData::VoteGroupHidden* CVotePlayerData::EmplaceHidden(int ID, int Typ
 	if(CurrentHidden.find(ID) != CurrentHidden.end() && CurrentHidden[ID].m_Flag == Type)
 		return &CurrentHidden[ID];
 
-	bool Value = (Type & VWFLAG_DEFAULT_CLOSE) || (Type & VWFLAG_UNIQUE);
+	bool Value = (Type & VWFLAG_CLOSED) || (Type & VWFLAG_UNIQUE);
 	CurrentHidden[ID] = { Value, Type };
 	return &CurrentHidden[ID];
 }

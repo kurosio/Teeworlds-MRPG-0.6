@@ -1738,7 +1738,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	if(!pPlayer)
 		return;
 
-	CVoteWrapper VWelcome(ClientID, VWFLAG_DEFAULT_OPEN, "#### Hi, new adventurer! ####");
+	CVoteWrapper VWelcome(ClientID, VWFLAG_SEPARATE_OPEN, "#### Hi, new adventurer! ####");
 	VWelcome.Add("This server is a mmo server. You'll have to finish");
 	VWelcome.Add("quests to continue the game. In these quests,");
 	VWelcome.Add("you'll have to get items to give to quest npcs.");
@@ -1754,7 +1754,6 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	VWelcome.Add("it's because it's not shield, it's mana.");
 	VWelcome.Add("It is used for active skills, which you will need to buy");
 	VWelcome.Add("in the future. Active skills use mana, but they use %% of mana.");
-	VWelcome.AddLine();
 }
 
 // strong update votes variability of the data

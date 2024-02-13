@@ -24,6 +24,15 @@ CPlayer* CSkill::GetPlayer() const
 	return nullptr;
 }
 
+std::string CSkill::GetStringLevelStatus() const
+{
+	if(!IsLearned())
+		return "(not learned)";
+	if(m_Level < Info()->GetMaxLevel())
+		return "(" + std::to_string(m_Level) + " of " + std::to_string(Info()->GetMaxLevel()) + ")";
+	return "(max)";
+}
+
 void CSkill::SelectNextControlEmote()
 {
 	if(!GetPlayer() || !GetPlayer()->IsAuthed())

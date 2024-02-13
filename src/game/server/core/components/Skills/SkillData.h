@@ -35,6 +35,7 @@ public:
 	int GetLevel() const { return m_Level; }
 	int GetBonus() const { return m_Level * Info()->GetBoostDefault(); }
 	const char* GetSelectedEmoticonName() const { return Info()->GetEmoticonName(m_SelectedEmoticion); }
+	std::string GetStringLevelStatus() const;
 
 	void SelectNextControlEmote();
 	bool Upgrade();
