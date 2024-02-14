@@ -121,20 +121,11 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_DAILY_BOARD)
 	{
 		// Get the daily board for the player character's position
-		if(CQuestsDailyBoard* pDailyBoard = GetDailyBoard(pChr->m_Core.m_Pos))
-		{
-			// Show the daily quests to the player
-			ShowDailyQuestsBoard(pChr->GetPlayer(), pDailyBoard);
+		CQuestsDailyBoard* pDailyBoard = GetDailyBoard(pChr->m_Core.m_Pos);
+		ShowDailyQuestsBoard(pChr->GetPlayer(), pDailyBoard);
 
-			// Show wanted players board
-			ShowWantedPlayersBoard(pChr->GetPlayer());
-		}
-		else
-		{
-			// Display an error message that the daily board is not working
-			GS()->AV(ClientID, "null", "Daily board don't work");
-		}
-
+		// Show wanted players board
+		ShowWantedPlayersBoard(pChr->GetPlayer());
 		return true;
 	}
 
@@ -469,30 +460,22 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 {
 	const int ClientID = pPlayer->GetCID();
 
-	int HideID = MAX_CLIENTS;
-	bool HasPlayers = false;
-	GS()->AVL(ClientID, "null", "# Wanted Players List");
+	CVoteWrapper VWanted(ClientID, VWFLAG_SEPARATE_CLOSED|VWFLAG_STYLE_SIMPLE, "Wanted players list");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GS()->GetPlayer(i, true);
-		if(pPlayer && pPlayer->Account()->IsRelationshipsDeterioratedToMax())
+		if(!pPlayer || !pPlayer->Account()->IsRelationshipsDeterioratedToMax())
+			continue;
+
+		CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
+		const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+		VWanted.Add("{STR} (Reward {VAL} gold)", Server()->ClientName(i), Reward);
 		{
-			CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
-			const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
-			GS()->AVH(ClientID, HideID, "{STR} (Reward {VAL} gold)", Server()->ClientName(i), Reward);
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Last seen: {STR}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
-			HasPlayers = true;
-			HideID++;
+			VWanted.BeginDepthList();
+			VWanted.Add("Last seen: {STR}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
+			VWanted.EndDepthList();
 		}
 	}
-
-	if(!HasPlayers)
-	{
-		GS()->AVM(ClientID, "null", NOPE, TAB_DAILY_BOARD_WANTED, "There are currently no wanted players");
-	}
-
-	// Add space
-	GS()->AV(ClientID, "null");
 }
 
 void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pBoard) const
@@ -500,42 +483,47 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 	// Get the client's ID
 	const int ClientID = pPlayer->GetCID();
 
-	// Send a message to the ui client with the name of the board they're currently on
-	GS()->AVH(ClientID, TAB_DAILY_BOARD, "{STR}", pBoard->GetName());
-	GS()->AVM(ClientID, "null", NOPE, TAB_DAILY_BOARD, "Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
-	GS()->AddVoteItemValue(ClientID, itAlliedSeals, TAB_DAILY_BOARD);
-	GS()->AV(ClientID, "null");
+	// Check if the pBoard variable is null
+	if(!pBoard)
+	{
+		CVoteWrapper(ClientID).Add("Daily board don't work");
+		return;
+	}
 
-	int HideID = NUM_TAB_MENU + CQuestsDailyBoard::Data().size() + 3200;
+	// Daily board information
+	CVoteWrapper VDailyBoard(ClientID, VWFLAG_STYLE_STRICT_BOLD, "Daily board: {STR}", pBoard->GetName());
+	VDailyBoard.Add("Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
+	VDailyBoard.AddItemValue(itAlliedSeals);
+	VDailyBoard.AddLine();
+
 	for(const auto& pDailyQuestInfo : pBoard->m_DailyQuestsInfoList)
 	{
-		// Get the quest using the daily quest info ID
-		const auto* pQuest = pPlayer->GetQuest(pDailyQuestInfo.GetID());
-
 		// If the quest is completed, skip to the next iteration
+		const auto* pQuest = pPlayer->GetQuest(pDailyQuestInfo.GetID());
 		if(pQuest->IsCompleted())
 			continue;
 
 		// Determine the state indicator and action name based on whether the quest is active or not
 		const char* StateIndicator = (pQuest->IsActive() ? "✔" : "×");
 		const char* ActionName = (pQuest->IsActive() ? "Refuse" : "Accept");
-
-		// Get the quest name from the daily quest info
 		const char* QuestName = pDailyQuestInfo.GetName();
 
 		// Display the quest information to the player
-		GS()->AVH(ClientID, HideID, "({STR}){STR}", StateIndicator, QuestName);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "Gold {VAL}, EXP {VAL}, {STR} {VAL}", pDailyQuestInfo.GetRewardGold(),
-			pDailyQuestInfo.GetRewardExp(), GS()->GetItemInfo(itAlliedSeals)->GetName(), (int)ALLIED_SEALS_BY_DAILY_QUEST);
-		GS()->AVD(ClientID, "DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), HideID, "{STR} {STR}", ActionName, QuestName);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
-
-		// Increment the HideID for the next iteration
-		++HideID;
+		CVoteWrapper VQuest(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE, "({STR}) {STR}", StateIndicator, QuestName);
+		VQuest.Add("Reward:");
+		{
+			VQuest.BeginDepthList();
+			VQuest.Add("Gold: {VAL}", pDailyQuestInfo.GetRewardGold());
+			VQuest.Add("Exp: {VAL}", pDailyQuestInfo.GetRewardExp());
+			VQuest.Add("{STR}: {VAL}", GS()->GetItemInfo(itAlliedSeals)->GetName(), (int)ALLIED_SEALS_BY_DAILY_QUEST);
+			VQuest.EndDepthList();
+		}
+		VQuest.AddLine();
+		VQuest.AddOption("DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), "{STR} quest", ActionName);
+		VQuest.AddLine();
 	}
 
-	// Add space
-	GS()->AV(ClientID, "null");
+	CVoteWrapper::AddLine(ClientID);
 }
 
 // The function takes a parameter "Pos" of type "vec2" and returns a pointer to "CQuestsDailyBoard" object

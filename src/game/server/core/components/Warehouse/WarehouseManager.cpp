@@ -191,9 +191,9 @@ void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pW
 	VShop.AddLine();
 	VShop.AddItemValue(pWarehouse->GetCurrency()->GetID());
 	VShop.AddLine();
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	// show trade list
-	CVoteWrapper(ClientID).Add("Trading list");
 	for(auto& Trade : pWarehouse->m_aTradingSlots)
 	{
 		int Price = Trade.GetPrice();

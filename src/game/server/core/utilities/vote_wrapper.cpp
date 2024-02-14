@@ -230,10 +230,7 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 
 		// if the group is an expandable list type, it is empty if there is no element in it
 		if(pGroup->m_TitleIsSet && pGroup->IsEmpty() && !pGroup->IsHidden())
-		{
-			pGroup->m_Flags = VWFLAG_DISABLED;
 			pGroup->AddVoteImpl("null", NOPE, NOPE, "The list is empty");
-		}
 
 		// Group separator with line
 		if(pGroup->m_Flags & VWFLAG_SEPARATE && pGroup != m_pData[ClientID].back())
