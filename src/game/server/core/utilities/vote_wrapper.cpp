@@ -199,7 +199,6 @@ bool CVoteGroup::IsHidden() const
 	return false;
 }
 
-
 // This function is responsible for rebuilding the votes for a specific client.
 void CVoteWrapper::RebuildVotes(int ClientID)
 {
@@ -214,8 +213,11 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	{
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
 		CVoteWrapper VError(ClientID, VWFLAG_STYLE_SIMPLE, "Error");
-		VError.Add("The voting list is empty").BeginDepthList().Add("Probably a server error").EndDepthList()
-			.Add("Report the error code #{INT}x{INT}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
+		VError.Add("The voting list is empty")
+			.BeginDepthList()
+				.Add("Probably a server error")
+			.EndDepthList()
+		.Add("Report the error code #{INT}x{INT}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
 		pVotesData->SetLastMenuID(MENU_MAIN);
 		CVoteWrapper::AddBackpage(ClientID);
 	}
@@ -243,7 +245,9 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 				iterGroup = std::prev(m_pData[ClientID].insert(std::next(iterGroup), pVoteGroup));
 			}
 			else if(!pGroup->m_vpVotelist.empty() && !pGroup->m_vpVotelist.back().m_Line)
+			{
 				pGroup->AddLineImpl();
+			}
 		}
 
 		// There should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
@@ -260,9 +264,9 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	}
 
 	// Rebuild the votes from group
-	for(auto pGroup : m_pData[ClientID])
+	for(const auto pGroup : m_pData[ClientID])
 	{
-		for(auto iterVote = pGroup->m_vpVotelist.begin(); iterVote != pGroup->m_vpVotelist.end(); ++iterVote)
+		for(auto& Option : pGroup->m_vpVotelist)
 		{
 			// Rebuild the vote options to aesthetic style
 			if(pGroup->m_Flags & (VWFLAG_STYLE_SIMPLE | VWFLAG_STYLE_DOUBLE | VWFLAG_STYLE_STRICT | VWFLAG_STYLE_STRICT_BOLD) && !pGroup->IsHidden())
@@ -273,35 +277,35 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 
 				// Append border to the vote option (can outside but)
 				dynamic_string Buffer;
-				if(&(*iterVote) == pFront)
+				if(&Option == pFront)
 					Buffer.append(get(Border::Beggin, Flags));
-				else if(&(*iterVote) == pBack)
+				else if(&Option == pBack)
 					Buffer.append(get(Border::End, Flags));
-				else if(str_comp((*iterVote).m_aCommand, "null") == 0 && (*iterVote).m_Depth <= 0 && !(*iterVote).m_Line)
+				else if(str_comp(Option.m_aCommand, "null") == 0 && Option.m_Depth <= 0 && !Option.m_Line)
 					Buffer.append(get(Border::Middle, Flags));
 				else
 					Buffer.append(get(Border::MiddleOption, Flags));
 
 				// Display the level of the vote option
 				// Dissable for line is a line as it is
-				if(!(*iterVote).m_Line && (*iterVote).m_Depth > 0)
+				if(!Option.m_Line && Option.m_Depth > 0)
 				{
-					for(int i = 0; i < (*iterVote).m_Depth; i++)
+					for(int i = 0; i < Option.m_Depth; i++)
 						Buffer.append(get(Border::Level, Flags));
 				}
 
-				if(str_comp((*iterVote).m_aDescription, VOTE_LINE_DEF) != 0 && str_comp((*iterVote).m_aCommand, "null") == 0)
+				if(str_comp(Option.m_aDescription, VOTE_LINE_DEF) != 0 && str_comp(Option.m_aCommand, "null") == 0)
 					Buffer.append(" ");
 
 				// Save changes
 				char aRebuildBuffer[VOTE_DESC_LENGTH];
-				str_copy(aRebuildBuffer, (*iterVote).m_aDescription, sizeof(aRebuildBuffer));
-				str_format((*iterVote).m_aDescription, sizeof((*iterVote).m_aDescription), "%s%s", Buffer.buffer(), aRebuildBuffer);
+				str_copy(aRebuildBuffer, Option.m_aDescription, sizeof(aRebuildBuffer));
+				str_format(Option.m_aDescription, sizeof(Option.m_aDescription), "%s%s", Buffer.buffer(), aRebuildBuffer);
 			}
 
 			// Send the vote option to the client
 			CNetMsg_Sv_VoteOptionAdd OptionMsg;
-			OptionMsg.m_pDescription = (*iterVote).m_aDescription;
+			OptionMsg.m_pDescription = Option.m_aDescription;
 			pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
 		}
 	}
