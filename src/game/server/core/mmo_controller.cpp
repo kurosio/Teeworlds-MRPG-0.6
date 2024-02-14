@@ -762,7 +762,7 @@ void CMmoController::ConAsyncLinesForTranslate()
 
 		for(auto& pItem : CWarehouse::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.GetName(), "stnm", pItem.first);
+			PushingDialogs(JsonData, pItem->GetName(), "stnm", pItem->GetID());
 		}
 
 		for(auto& pItem : CHouseData::Data())

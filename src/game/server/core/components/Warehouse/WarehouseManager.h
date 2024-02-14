@@ -10,6 +10,8 @@ class CWarehouseManager : public MmoComponent
 {
 	~CWarehouseManager() override
 	{
+		for(auto pData : CWarehouse::Data())
+			delete pData;
 		CWarehouse::Data().clear();
 	}
 
@@ -18,11 +20,12 @@ class CWarehouseManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
-	void ShowWarehouseMenu(CPlayer *pPlayer, const CWarehouse* pWarehouse) const;
-	bool BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier ID) const;
+	void ShowWarehouseTradingList(CPlayer *pPlayer, const CWarehouse* pWarehouse) const;
+	bool BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID) const;
 
 public:
 	CWarehouse* GetWarehouse(vec2 Pos) const;
+	CWarehouse* GetWarehouse(WarehouseIdentifier ID) const;
 };
 
 #endif

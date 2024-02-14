@@ -9,12 +9,11 @@
 constexpr auto TW_WAREHOUSE_TABLE = "tw_warehouses";
 constexpr auto TW_WAREHOUSE_ITEMS_TABLE = "tw_warehouse_items";
 
-// Optimized
 void CWarehouseManager::OnInit()
 {
 	// init warehouses
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_WAREHOUSE_TABLE);
-	std::unordered_map< int, CWarehouse::ContainerTradingSlots > TradesSlots;
+	std::unordered_map< int, ContainerTradingList > TradesSlots;
 	while(pRes->next())
 	{
 		WarehouseIdentifier ID = pRes->getInt("ID");
@@ -24,7 +23,7 @@ void CWarehouseManager::OnInit()
 		int WorldID = pRes->getInt("WorldID");
 
 		// init by server
-		CWarehouse(ID).Init(Name, Pos, Currency, WorldID);
+		CWarehouse::CreateElement(ID)->Init(Name, Pos, Currency, WorldID);
 	}
 
 	// init trades slots
@@ -34,21 +33,23 @@ void CWarehouseManager::OnInit()
 		TradeIdentifier ID = pResStore->getInt("ID");
 		ItemIdentifier ItemID = pResStore->getInt("ItemID");
 		int ItemValue = pResStore->getInt("ItemValue");
-		ItemIdentifier RequiredItemID = pResStore->getInt("RequiredItemID");
-		int Price = pResStore->getInt("Price");
 		int Enchant = pResStore->getInt("Enchant");
+		int Price = pResStore->getInt("Price");
 		int WarehouseID = pResStore->getInt("WarehouseID");
 
 		// init by server
-		CTradingSlot TradeSlot(ID);
-		std::shared_ptr<CItem> pItem = std::make_shared<CItem>(CItem(ItemID, ItemValue, Enchant));
-		TradeSlot.Init(pItem, &CItemDescription::Data()[RequiredItemID], Price);
+		CTradeSlot TradeSlot(ID);
+		auto pItem = new CItem(ItemID, ItemValue, Enchant);
+		TradeSlot.Init(pItem, Price);
 		TradesSlots[WarehouseID].push_back(TradeSlot);
 	}
 
 	// init trades slots for warehouses
 	for(auto& [WarehouseID, DataContainer] : TradesSlots)
-		CWarehouse::Data()[WarehouseID].m_aTradingSlots = DataContainer;
+	{
+		CWarehouse* pWarehouse = GetWarehouse(WarehouseID);
+		pWarehouse->InitTradingList(DataContainer);
+	}
 }
 
 bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
@@ -85,17 +86,18 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
-	const int ClientID = pPlayer->GetCID();
 	CCharacter* pChr = pPlayer->GetCharacter();
 
+	// shopping type
 	if(Menulist == MENU_WAREHOUSE_SHOPPING_LIST)
 	{
 		CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos);
-		ShowWarehouseMenu(pChr->GetPlayer(), pWarehouse);
+		ShowWarehouseTradingList(pChr->GetPlayer(), pWarehouse);
 
 		return true;
 	}
 
+	// selling type
 	if(Menulist == MENU_WAREHOUSE_SELLING_LIST)
 	{
 		if(pChr->GetHelper()->BoolIndex(TILE_ORE_SELL))
@@ -126,10 +128,17 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		return true;
 	}
 
-	if(PPSTR(CMD, "SHOP_BUY") == 0)
+	if(PPSTR(CMD, "BUY_ITEM") == 0)
 	{
-		if(BuyItem(pPlayer, VoteID, VoteID2))
+		const WarehouseIdentifier& WarehouseID = VoteID;
+		const TradeIdentifier& TradeID = VoteID2;
+
+		CWarehouse* pWarehouse = GetWarehouse(WarehouseID);
+		if(BuyItem(pPlayer, pWarehouse, TradeID))
+		{
 			pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
+		}
+
 		return true;
 	}
 
@@ -164,17 +173,8 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	return false;
 }
 
-CWarehouse* CWarehouseManager::GetWarehouse(vec2 Pos) const
-{
-	for(auto& pItem : CWarehouse::Data())
-	{
-		if(distance(pItem.second.GetPos(), Pos) < 320)
-			return &pItem.second;
-	}
-	return nullptr;
-}
-
-void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pWarehouse) const
+// Displaying the trading list of the warehouse
+void CWarehouseManager::ShowWarehouseTradingList(CPlayer* pPlayer, const CWarehouse* pWarehouse) const
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -194,58 +194,77 @@ void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pW
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// show trade list
-	for(auto& Trade : pWarehouse->m_aTradingSlots)
+	for(auto& Trade : pWarehouse->GetTradingList())
 	{
-		int Price = Trade.GetPrice();
-		const CItemDescription* pCurrencyItem = Trade.GetCurrency();
-		const CItem* pItem = Trade.GetItem();
+		CItemDescription* pCurrency = pWarehouse->GetCurrency();
+		CItem* pTrade = Trade.GetTradeItem();
+		const int& Price = Trade.GetPrice();
 
 		CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE);
-		if(pItem->Info()->IsEnchantable())
+		if(pTrade->Info()->IsEnchantable())
 		{
-			const bool PlayerHasItem = pPlayer->GetItem(*pItem)->HasItem();
+			const bool PlayerHasItem = pPlayer->GetItem(*pTrade)->HasItem();
 			VItem.SetTitle("({STR}){STR} {STR} - {VAL} {STR}", (PlayerHasItem ? "✔" : "×"), 
-				pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrencyItem->GetName());
+				pTrade->Info()->GetName(), pTrade->StringEnchantLevel().c_str(), Price, pCurrency->GetName());
 
 			char aAttributes[128];
-			pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
+			pTrade->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pTrade->GetEnchant());
 			VItem.Add("* {STR}", aAttributes);
 		}
 		else
 		{
 			VItem.SetTitle("({VAL}){STR}x{VAL} - {VAL} {STR}",
-				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), pItem->GetValue(), Price, pCurrencyItem->GetName());
+				pPlayer->GetItem(*pTrade)->GetValue(), pTrade->Info()->GetName(), pTrade->GetValue(), Price, pCurrency->GetName());
 		}
-		VItem.Add(Instance::Localize(ClientID, pItem->Info()->GetDescription()));
-		VItem.Add("Buy {STR}x{VAL}", pItem->Info()->GetName(), pItem->GetValue());
+		VItem.Add(Instance::Localize(ClientID, pTrade->Info()->GetDescription()));
+		VItem.AddOption("BUY_ITEM", pWarehouse->GetID(), Trade.GetID(), "Buy {STR}x{VAL}", pTrade->Info()->GetName(), pTrade->GetValue());
 	}
 }
 
-bool CWarehouseManager::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier ID) const
+// Buying an item from a warehouse
+bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID) const
 {
-	// finding a trade slot
-	CWarehouse::ContainerTradingSlots& pContainer = GS()->GetWarehouse(WarehouseID)->m_aTradingSlots;
-	auto Iter = std::find_if(pContainer.begin(), pContainer.end(), [ID](const CTradingSlot& p){ return p.GetID() == ID; });
-	CTradingSlot* pTradeSlot = Iter != pContainer.end() ? &(*Iter) : nullptr;
-	if(!pTradeSlot || !pTradeSlot->GetItem()->IsValid())
+	// Finding a warehouse by ID
+	if(!pWarehouse || !pWarehouse->GetTradeSlot(ID))
 		return false;
 
-	// check for enchantment
+	// Finding a trade slot by ID
+	CTradeSlot* pTradeSlot = pWarehouse->GetTradeSlot(ID);
+	CPlayerItem* pPlayerItem = pPlayer->GetItem(pTradeSlot->GetTradeItem()->GetID());
+
+	// Check if the player has an item in the backpack and the item is enchantable
 	const int ClientID = pPlayer->GetCID();
-	CPlayerItem* pPlayerItem = pPlayer->GetItem(pTradeSlot->GetItem()->GetID());
 	if(pPlayerItem->HasItem() && pPlayerItem->Info()->IsEnchantable())
 	{
 		GS()->Chat(ClientID, "Enchant item maximal count x1 in a backpack!");
 		return false;
 	}
 
-	// purchase
-	if(!pPlayer->Account()->SpendCurrency(pTradeSlot->GetPrice(), pTradeSlot->GetCurrency()->GetID()))
-		return false;
+	// Purchase of an item
+	if(pPlayer->Account()->SpendCurrency(pTradeSlot->GetPrice(), pWarehouse->GetCurrency()->GetID()))
+	{
+		CItem* pTradeItem = pTradeSlot->GetTradeItem();
+		pPlayerItem->Add(pTradeItem->GetValue(), 0, pTradeItem->GetEnchant());
+		GS()->Chat(ClientID, "You exchanged {STR}x{VAL} for {STR}x{VAL}.", 
+			pWarehouse->GetCurrency()->GetName(), pTradeSlot->GetPrice(), pTradeItem->Info()->GetName(), pTradeItem->GetValue());
+		return true;
+	}
 
-	// give trade slot for player
-	CItem* pTradeItem = pTradeSlot->GetItem();
-	pPlayerItem->Add(pTradeItem->GetValue(), 0, pTradeItem->GetEnchant());
-	GS()->Chat(ClientID, "You exchanged {STR}x{VAL} for {STR}x{VAL}.", pTradeSlot->GetCurrency()->GetName(), pTradeSlot->GetPrice(), pTradeItem->Info()->GetName(), pTradeItem->GetValue());
-	return true;
+	// Failed to purchase an item
+	return false;
+}
+
+// Finding a warehouse by position
+CWarehouse* CWarehouseManager::GetWarehouse(vec2 Pos) const
+{
+	auto iter = std::find_if(CWarehouse::Data().begin(), CWarehouse::Data().end(), [Pos](const CWarehouse* pItem)
+		{ return distance(pItem->GetPos(), Pos) < 320; });
+	return iter != CWarehouse::Data().end() ? *iter : nullptr;
+}
+
+// Finding a warehouse by ID
+CWarehouse* CWarehouseManager::GetWarehouse(WarehouseIdentifier ID) const
+{
+	auto iter = std::find_if(CWarehouse::Data().begin(), CWarehouse::Data().end(), [ID](const CWarehouse* pItem){ return pItem->GetID() == ID; });
+	return iter != CWarehouse::Data().end() ? *iter : nullptr;
 }

@@ -133,13 +133,6 @@ CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const
 	return CAttributeDescription::Data()[ID].get();
 }
 
-CWarehouse* CGS::GetWarehouse(int ID) const
-{
-	dbg_assert(CWarehouse::Data().find(ID) != CWarehouse::Data().end(), "invalid referring to the CWarehouse");
-
-	return &CWarehouse::Data()[ID];
-}
-
 CQuestsDailyBoard* CGS::GetQuestDailyBoard(int ID) const
 {
 	dbg_assert(CQuestsDailyBoard::Data().find(ID) != CQuestsDailyBoard::Data().end(), "invalid referring to the CQuestsDailyBoard");
