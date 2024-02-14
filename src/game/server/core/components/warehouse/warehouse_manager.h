@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_WAREHOUSE_CORE_H
 #include <game/server/core/mmo_component.h>
 
-#include "WarehouseData.h"
+#include "warehouse_data.h"
 
 class CWarehouseManager : public MmoComponent
 {

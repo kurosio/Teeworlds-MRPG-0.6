@@ -23,7 +23,7 @@
 #include "components/Quests/QuestManager.h"
 #include "components/Skills/SkillManager.h"
 #include "components/Tutorial/TutorialManager.h"
-#include "components/Warehouse/WarehouseManager.h"
+#include "components/warehouse/warehouse_manager.h"
 #include "components/Worlds/WorldManager.h"
 
 inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, CVoteWrapper* pWrapper)
