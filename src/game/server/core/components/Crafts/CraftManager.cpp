@@ -138,7 +138,7 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CVoteWrapper VCraftInfo(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
 		VCraftInfo.Add("If you will not have enough items for crafting");
 		VCraftInfo.Add("You will write those and the amount that is still required");
-		VCraftInfo.AddItemValue();
+		VCraftInfo.AddItemValue(itGold);
 		VCraftInfo.AddLine();
 
 		// show craft tabs
@@ -198,7 +198,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		VCraftElement.EndDepthList();
 	}
 	VCraftElement.AddLine();
-	VCraftElement.AddItemValue();
+	VCraftElement.AddItemValue(itGold);
 	{
 		VCraftElement.BeginDepthList();
 		VCraftElement.AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({VAL} gold)", pCraft->GetPrice(pPlayer));

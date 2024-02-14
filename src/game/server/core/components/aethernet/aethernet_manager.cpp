@@ -148,7 +148,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 	// Default aether menu
 	CVoteWrapper VAether(ClientID, VWFLAG_STYLE_STRICT_BOLD, "Aethernet information");
 	VAether.Add("Total unlocked aethers: {VAL} of {VAL}.", pPlayer->Account()->GetAethers().size(), CAetherData::Data().size());
-	VAether.AddItemValue();
+	VAether.AddItemValue(itGold);
 	VAether.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 

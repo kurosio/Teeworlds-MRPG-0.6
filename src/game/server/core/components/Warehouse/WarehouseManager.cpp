@@ -90,14 +90,8 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 	if(Menulist == MENU_WAREHOUSE_SHOPPING_LIST)
 	{
-		if(CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos))
-		{
-			ShowWarehouseMenu(pChr->GetPlayer(), pWarehouse);
-		}
-		else
-		{
-			GS()->AV(ClientID, "null", "Warehouse don't work");
-		}
+		CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos);
+		ShowWarehouseMenu(pChr->GetPlayer(), pWarehouse);
 
 		return true;
 	}
@@ -184,48 +178,47 @@ void CWarehouseManager::ShowWarehouseMenu(CPlayer* pPlayer, const CWarehouse* pW
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// show base shop functions
-	GS()->AVH(ClientID, TAB_STORAGE, "Shop :: {STR}", pWarehouse->GetName());
-	GS()->AVM(ClientID, "REPAIR_ITEMS", NOPE, TAB_STORAGE, "Repair all items - FREE");
+	// Check if the pWarehouse object is null
+	if(!pWarehouse)
+	{
+		CVoteWrapper(ClientID).Add("Warehouse don't work");
+		return;
+	}
 
-	// show currency
-	GS()->AV(ClientID, "null");
-	GS()->AddVoteItemValue(ClientID, pWarehouse->GetCurrency()->GetID());
-	GS()->AV(ClientID, "null");
+	// show base shop functions
+	CVoteWrapper VShop(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE, "Warehouse :: {STR}", pWarehouse->GetName());
+	VShop.Add("Repair all items - FREE", "REPAIR_ITEMS");
+	VShop.AddLine();
+	VShop.AddItemValue(pWarehouse->GetCurrency()->GetID());
+	VShop.AddLine();
 
 	// show trade list
-	int HideID = NUM_TAB_MENU + CItemDescription::Data().size() + 300;
+	CVoteWrapper(ClientID).Add("Trading list");
 	for(auto& Trade : pWarehouse->m_aTradingSlots)
 	{
 		int Price = Trade.GetPrice();
 		const CItemDescription* pCurrencyItem = Trade.GetCurrency();
 		const CItem* pItem = Trade.GetItem();
 
-		// show trade slot actions
+		CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE);
 		if(pItem->Info()->IsEnchantable())
 		{
 			const bool PlayerHasItem = pPlayer->GetItem(*pItem)->HasItem();
-
-			GS()->AVH(ClientID, HideID, "({STR}){STR} {STR} - {VAL} {STR}",
-				(PlayerHasItem ? "✔" : "×"), pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrencyItem->GetName());
+			VItem.SetTitle("({STR}){STR} {STR} - {VAL} {STR}", (PlayerHasItem ? "✔" : "×"), 
+				pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrencyItem->GetName());
 
 			char aAttributes[128];
 			pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
-			GS()->AVM(ClientID, "null", NOPE, HideID, "* {STR}", aAttributes);
+			VItem.Add("* {STR}", aAttributes);
 		}
 		else
 		{
-			GS()->AVH(ClientID, HideID, "({VAL}){STR}x{VAL} - {VAL} {STR}",
+			VItem.SetTitle("({VAL}){STR}x{VAL} - {VAL} {STR}",
 				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), pItem->GetValue(), Price, pCurrencyItem->GetName());
 		}
-
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItem->Info()->GetDescription());
-		GS()->AVD(ClientID, "SHOP_BUY", pWarehouse->GetID(), Trade.GetID(), HideID, "Buy {STR}x{VAL}", pItem->Info()->GetName(), pItem->GetValue());
-		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
-		HideID++;
+		VItem.Add(Instance::Localize(ClientID, pItem->Info()->GetDescription()));
+		VItem.Add("Buy {STR}x{VAL}", pItem->Info()->GetName(), pItem->GetValue());
 	}
-
-	GS()->AV(ClientID, "null");
 }
 
 bool CWarehouseManager::BuyItem(CPlayer* pPlayer, int WarehouseID, TradeIdentifier ID) const

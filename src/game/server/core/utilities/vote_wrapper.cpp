@@ -25,33 +25,34 @@ namespace Border
 CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID)
 {
 	m_pGS = (CGS*)Instance::GameServerPlayer(ClientID);
-	m_GroupID = (int)CVoteWrapper::Data()[ClientID].size();
 	m_TitleIsSet = false;
 	m_CurrentDepth = 0;
 	m_GroupSize = 0;
+	m_HiddenID = (int)CVoteWrapper::Data()[ClientID].size();
+	m_pPlayer = m_pGS->GetPlayer(ClientID);
+	dbg_assert(m_pPlayer != nullptr, "player is null");
 }
 
 // Function to add a vote title implementation with variable arguments
 void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...)
 {
 	// Check if the player is valid
-	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
-	if(!pPlayer)
+	if(!m_pPlayer)
 		return;
 
 	// Format the text using the player's language and additional arguments
 	va_list VarArgs;
 	va_start(VarArgs, pText);
 	dynamic_string Buffer;
-	Instance::Server()->Localization()->Format_VL(Buffer, pPlayer->GetLanguage(), pText, VarArgs);
+	Instance::Server()->Localization()->Format_VL(Buffer, m_pPlayer->GetLanguage(), pText, VarArgs);
 	va_end(VarArgs);
 
 	const char* pAppend = "\0";
 	if(m_Flags & (VWFLAG_CLOSED | VWFLAG_OPEN | VWFLAG_UNIQUE))
 	{
-		const bool HiddenTab = pPlayer->m_VotesData.EmplaceHidden(m_GroupID, m_Flags)->m_Value;
+		const bool HiddenTab = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags)->m_Value;
 		pAppend = HiddenTab ? "\u21BA " : "\u27A4 ";
-		SettingsID1 = m_GroupID;
+		SettingsID1 = m_HiddenID;
 		pCmd = "HIDDEN";
 	}
 
@@ -60,7 +61,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	Buffer.clear();
 
 	// Check if the player's language is "ru" or "uk" and convert aBufText to Latin if true
-	if(str_comp(pPlayer->GetLanguage(), "ru") == 0 || str_comp(pPlayer->GetLanguage(), "uk") == 0)
+	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
 		str_translation_cyrlic_to_latin(aBufText);
 
 	// Create a new VoteOption with the values from aBufText, pCmd, SettingsID1, and SettingsID2
@@ -86,15 +87,14 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...)
 {
 	// Check if the player is valid
-	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
-	if(!pPlayer || IsHidden())
+	if(!m_pPlayer || IsHidden())
 		return;
 
 	// Format the text using the player's language and additional arguments
 	va_list VarArgs;
 	va_start(VarArgs, pText);
 	dynamic_string Buffer;
-	Instance::Server()->Localization()->Format_VL(Buffer, pPlayer->GetLanguage(), pText, VarArgs);
+	Instance::Server()->Localization()->Format_VL(Buffer, m_pPlayer->GetLanguage(), pText, VarArgs);
 	va_end(VarArgs);
 
 	char aBufText[VOTE_DESC_LENGTH];
@@ -102,7 +102,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	Buffer.clear();
 
 	// Check if the player's language is "ru" or "uk" and convert aBufText to Latin if true
-	if(str_comp(pPlayer->GetLanguage(), "ru") == 0 || str_comp(pPlayer->GetLanguage(), "uk") == 0)
+	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
 		str_translation_cyrlic_to_latin(aBufText);
 
 	// Create a new VoteOption with the values from aBufText, pCmd, Settings1, and Settings2
@@ -122,7 +122,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 void CVoteGroup::AddLineImpl()
 {
 	// Check player and hidden status
-	if(!GS()->GetPlayer(m_ClientID) || IsHidden())
+	if(!m_pPlayer || IsHidden())
 		return;
 
 	// Create a new VoteOption with the values
@@ -140,7 +140,7 @@ void CVoteGroup::AddLineImpl()
 void CVoteGroup::AddBackpageImpl()
 {
 	// Check player and hidden status
-	if(!GS()->GetPlayer(m_ClientID) || IsHidden())
+	if(!m_pPlayer || IsHidden())
 		return;
 
 	// Create a new VoteOption with the values
@@ -187,10 +187,10 @@ bool CVoteGroup::IsHidden() const
 	if(m_Flags & (VWFLAG_CLOSED | VWFLAG_OPEN | VWFLAG_UNIQUE))
 	{
 		// Check if the player is valid
-		if(CPlayer* pPlayer = m_pGS->GetPlayer(m_ClientID))
+		if(m_pPlayer)
 		{
 			// Check if the hidden vote object exists and if its value is true
-			CVotePlayerData::VoteGroupHidden* pHidden = pPlayer->m_VotesData.GetHidden(m_GroupID);
+			CVotePlayerData::VoteGroupHidden* pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
 			return pHidden && pHidden->m_Value;
 		}
 	}

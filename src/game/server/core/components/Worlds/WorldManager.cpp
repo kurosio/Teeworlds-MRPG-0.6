@@ -22,16 +22,18 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 
 		if(SecondLocalWorld)
 		{
-			Positions = { vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")), vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")) };
+			Positions = { vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")),
+						  vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")) };
 			Worlds = { pResSwap->getInt("TwoWorldID"), pResSwap->getInt("WorldID") };
 		}
 		else
 		{
-			Positions = { vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")), vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")) };
+			Positions = { vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")),
+						  vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")) };
 			Worlds = { pResSwap->getInt("WorldID"), pResSwap->getInt("TwoWorldID") };
 		}
 
-		WorldSwappers.push_back({ Positions, Worlds });
+		WorldSwappers.emplace_back(std::move(Positions), std::move(Worlds));
 	}
 
 	/*

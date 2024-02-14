@@ -53,11 +53,12 @@ class CVoteGroup
 	std::deque<CVoteOption> m_vpVotelist {};
 
 	CGS* m_pGS {};
+	CPlayer* m_pPlayer {};
 	CGS* GS() const { return m_pGS; }
 
 	bool m_TitleIsSet {};
 	int m_GroupSize {};
-	int m_GroupID {};
+	int m_HiddenID {};
 	int m_Flags {};
 	int m_ClientID {};
 	int m_CurrentDepth {};
@@ -91,7 +92,8 @@ public:
 		m_pData[ClientID].push_back(m_pGroup);
 	}
 
-	CVoteWrapper(int ClientID, int Flags)
+	template <typename T = int>
+	CVoteWrapper(int ClientID, T Flags)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 		m_pGroup = new CVoteGroup(ClientID, Flags);
@@ -152,7 +154,7 @@ public:
 		pVoteGroup->AddEmptylineImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
-	static void AddItemValue(int ClientID, int ItemID = itGold) noexcept
+	static void AddItemValue(int ClientID, int ItemID) noexcept
 	{
 		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
 		pVoteGroup->AddItemValueImpl(ItemID);
@@ -190,13 +192,9 @@ public:
 	CVoteWrapper& AddEmptyline(){
 		return AddIfEmptyline(true);
 	}
-	CVoteWrapper& AddIfItemValue(bool Checker, int ItemID = itGold) noexcept {
-		if(Checker)
-			m_pGroup->AddItemValueImpl(ItemID);
+	CVoteWrapper& AddItemValue(int ItemID) noexcept {
+		m_pGroup->AddItemValueImpl(ItemID);
 		return *this;
-	}
-	CVoteWrapper& AddItemValue(int ItemID = itGold) noexcept {
-		return AddIfItemValue(ItemID);
 	}
 
 	/*
