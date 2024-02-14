@@ -20,9 +20,9 @@ class CDungeonManager : public MmoComponent
 public:
 	static bool IsDungeonWorld(int WorldID);
 	static void SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayerDungeonRecord *pPlayerDungeonRecord);
-	void ShowDungeonTop(CPlayer* pPlayer, int DungeonID, int HideID) const;
-	void ShowDungeonsList(CPlayer* pPlayer, bool Story) const;
+	void InsertVotesDungeonTop(int DungeonID, class CVoteWrapper* pWrapper) const;
+	bool ShowDungeonsList(CPlayer* pPlayer, bool Story) const;
 	void NotifyUnlockedDungeonsByQuest(CPlayer* pPlayer, int QuestID) const;
-	void ShowTankVotingDungeon(CPlayer* pPlayer) const;
+	void ShowInsideDungeonMenu(CPlayer* pPlayer) const;
 };
 #endif

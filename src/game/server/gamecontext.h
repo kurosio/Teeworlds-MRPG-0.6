@@ -38,7 +38,6 @@ class CGS : public IGameServer
 	CTuningParams m_Tuning;
 
 	int m_WorldID;
-	int m_DungeonID;
 	inline static CVoteEventOptionalContainer m_Optionals[MAX_PLAYERS] {};
 
 public:
@@ -246,8 +245,7 @@ private:
 
 public:
 	int GetWorldID() const { return m_WorldID; }
-	int GetDungeonID() const { return m_DungeonID; }
-	bool IsDungeon() const { return (m_DungeonID > 0); }
+	bool IsWorldType(WorldType Type) const;
 	int GetExperienceMultiplier(int Experience) const;
 	bool IsPlayerEqualWorld(int ClientID, int WorldID = -1) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }

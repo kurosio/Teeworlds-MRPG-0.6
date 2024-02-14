@@ -66,7 +66,7 @@ void CCharacterBotAI::InitBot()
 				AddMultipleOrbite(1, POWERUP_ARMOR, 0);
 
 				// Check if the game state is not a dungeon
-				if(!GS()->IsDungeon())
+				if(!GS()->IsWorldType(WorldType::Dungeon))
 				{
 					// Display a chat message in the world with the mob bot's name
 					GS()->ChatWorldID(pMobBot->m_WorldID, nullptr, "In your zone emerging {STR}!", pMobBot->GetName());
@@ -1078,7 +1078,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 // finding a player among people who have the highest fury
 CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 {
-	if(AI()->GetTarget()->IsEmpty() && (GS()->IsDungeon() || rand() % 30 == 0))
+	if(AI()->GetTarget()->IsEmpty() && (GS()->IsWorldType(WorldType::Dungeon) || rand() % 30 == 0))
 	{
 		CPlayer* pPlayer = SearchPlayer(Distance);
 		if(pPlayer && pPlayer->GetCharacter())

@@ -1951,9 +1951,14 @@ void CGS::SendDayInfo(int ClientID)
 	}
 }
 
+bool CGS::IsWorldType(WorldType Type) const
+{
+	return Server()->IsWorldType(m_WorldID, Type);
+}
+
 int CGS::GetExperienceMultiplier(int Experience) const
 {
-	return IsDungeon() ? translate_to_percent_rest(Experience, g_Config.m_SvMultiplierExpRaidDungeon) : translate_to_percent_rest(Experience, m_MultiplierExp);
+	return IsWorldType(WorldType::Dungeon) ? translate_to_percent_rest(Experience, g_Config.m_SvMultiplierExpRaidDungeon) : translate_to_percent_rest(Experience, m_MultiplierExp);
 }
 
 void CGS::InitZones()

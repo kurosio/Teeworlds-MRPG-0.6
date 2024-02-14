@@ -223,7 +223,7 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID) const
 		if(m_BotType == TYPE_BOT_EIDOLON)
 		{
 			// Check if game is in Dungeon mode
-			if(GS()->IsDungeon())
+			if(GS()->IsWorldType(WorldType::Dungeon))
 			{
 				// Calculate Size based on sync factor
 				// Translate the sync factor to percent and then calculate the attribute
@@ -286,7 +286,7 @@ void CPlayerBot::TryRespawn()
 	if(m_BotType == TYPE_BOT_MOB)
 	{
 		// close spawn mobs on non allowed spawn dungeon
-		if(GS()->IsDungeon() && !m_DungeonAllowedSpawn)
+		if(GS()->IsWorldType(WorldType::Dungeon) && !m_DungeonAllowedSpawn)
 			return;
 
 		const vec2 MobRespawnPosition = MobBotInfo::ms_aMobBot[m_MobID].m_Position;
@@ -294,7 +294,7 @@ void CPlayerBot::TryRespawn()
 			return;
 
 		// reset spawn mobs on non allowed spawn dungeon
-		if(GS()->IsDungeon() && m_DungeonAllowedSpawn)
+		if(GS()->IsWorldType(WorldType::Dungeon) && m_DungeonAllowedSpawn)
 			m_DungeonAllowedSpawn = false;
 	}
 	else if(m_BotType == TYPE_BOT_NPC)
@@ -520,7 +520,7 @@ const char* CPlayerBot::GetStatus() const
 {
 	if(m_BotType == TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[m_MobID].m_Boss)
 	{
-		return GS()->IsDungeon() ? "Boss" : "Raid";
+		return GS()->IsWorldType(WorldType::Dungeon) ? "Boss" : "Raid";
 	}
 
 	if(m_BotType == TYPE_BOT_QUEST_MOB)

@@ -572,7 +572,7 @@ void CPlayer::TryRespawn()
 		bool TrySelfCordSpawn = !is_negative_vec(TeleportPosition) && !GS()->Collision()->CheckPoint(TeleportPosition);
 
 		// If the game state is not a dungeon and the TrySelfCordSpawn is true
-		if(!GS()->IsDungeon() && TrySelfCordSpawn)
+		if(!GS()->IsWorldType(WorldType::Dungeon) && TrySelfCordSpawn)
 		{
 			// Set the spawn position to the teleport position
 			SpawnPos = TeleportPosition;
@@ -854,9 +854,9 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 			return true;
 		}
 
-		if(GS()->IsDungeon())
+		if(GS()->IsWorldType(WorldType::Dungeon))
 		{
-			const int DungeonID = GS()->GetDungeonID();
+			const int DungeonID = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetDungeonID();
 			if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
 			{
 				GetTempData().m_TempDungeonReady ^= true;
@@ -951,10 +951,11 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID) const
 {
 	// if the best tank class is selected among the players we return the sync dungeon stats
 	const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID);
-	if(GS()->IsDungeon() && pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[GS()->GetDungeonID()].IsDungeonPlaying())
+	if(GS()->IsWorldType(WorldType::Dungeon))
 	{
 		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
-		return pDungeon->GetAttributeDungeonSync(this, ID);
+		if(pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[pDungeon->GetDungeonID()].IsDungeonPlaying())
+			return pDungeon->GetAttributeDungeonSync(this, ID);
 	}
 
 	// get all attributes from items

@@ -388,7 +388,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
 		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{VAL}m)");
-		VItem.AddIfOption(pInfo->m_InitialPrice > 0, "AUCTION_SLOT", ItemID, "Sell at auction");
+		VItem.AddIfOption(pInfo->m_InitialPrice > 0, "AUCTION_CREATE", ItemID, "Sell at auction");
 		VItem.AddOption("IDROP", ItemID, "Drop");
 	}
 }

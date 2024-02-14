@@ -51,24 +51,31 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 		const int SlotValue = pAuctionItem->GetValue();
 		const int SlotEnchant = pAuctionItem->GetEnchant();
-
-		GS()->AVH(ClientID, TAB_INFO_AUCTION_BIND, "Information Auction Slot");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_AUCTION_BIND, "The reason for write the number for each row");
-		GS()->AV(ClientID, "null");
-
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Tax for creating a slot: {VAL}gold", pAuctionData->GetTaxPrice());
-		if(SlotEnchant > 0)
-		{
-			GS()->AVM(ClientID, "null", NOPE, NOPE, "Warning selling enchanted: +{INT}", SlotEnchant);
-		}
-
 		const ItemIdentifier SlotItemID = pAuctionItem->GetID();
 		const int SlotPrice = pAuctionData->GetPrice();
-		GS()->AVM(ClientID, "AUCTION_COUNT", SlotItemID, NOPE, "Item Value: {VAL}", SlotValue);
-		GS()->AVM(ClientID, "AUCTION_PRICE", SlotItemID, NOPE, "Item Price: {VAL}", SlotPrice);
-		GS()->AV(ClientID, "null");
-		GS()->AVM(ClientID, "AUCTION_ACCEPT", SlotItemID, NOPE, "Add {STR}x{VAL} {VAL}gold", pAuctionItem->Info()->GetName(), SlotValue, SlotPrice);
-		GS()->AddVotesBackpage(ClientID);
+
+		CVoteWrapper(ClientID).Add("The reason for write the number for each row");
+		CVoteWrapper::AddEmptyline(ClientID);
+
+		CVoteWrapper VSlot(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "Auction slot for {STR}", pAuctionItem->Info()->GetName());
+		VSlot.Add("Description:");
+		{
+			VSlot.BeginDepthList();
+			VSlot.Add("Tax for creating a slot: {VAL}gold", pAuctionData->GetTaxPrice());
+			VSlot.AddIf(SlotEnchant > 0, "Warning selling enchanted: +{INT}", SlotEnchant);
+			VSlot.EndDepthList();
+		}
+		VSlot.AddLine();
+		VSlot.Add("Interaction:");
+		{
+			VSlot.BeginDepthList();
+			VSlot.AddOption("AUCTION_COUNT", SlotItemID, "Select the number of items: {VAL}.", SlotValue);
+			VSlot.AddOption("AUCTION_PRICE", SlotItemID, "Set the price: {VAL}.", SlotPrice);
+			VSlot.AddOption("AUCTION_ACCEPT", SlotItemID, "Accept the offer.");
+			VSlot.EndDepthList();
+		}
+
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 	return false;
@@ -118,7 +125,7 @@ bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTION_SLOT") == 0)
+	if(PPSTR(CMD, "AUCTION_CREATE") == 0)
 	{
 		int AvailableValue = Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, VoteID);
 		if(AvailableValue <= 0)
@@ -126,7 +133,7 @@ bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
 		pAuctionData->SetItem({ VoteID, 0, pPlayer->GetItem(VoteID)->GetEnchant(), 0, 0});
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
+		pPlayer->m_VotesData.UpdateVotes(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 
@@ -236,14 +243,14 @@ bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
 void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	GS()->AVH(ClientID, TAB_INFO_AUCTION, "Auction Information");
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_AUCTION, "To create a slot, see inventory item interact.");
-	GS()->AV(ClientID, "null");
-	GS()->AddVoteItemValue(ClientID);
-	GS()->AV(ClientID, "null");
 
-	bool FoundItems = false;
-	int HideID = (int)(NUM_TAB_MENU + CItemDescription::Data().size() + 400);
+	CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Auction Information");
+	VInfo.Add("To create a slot, see inventory item interact.");
+	CVoteWrapper::AddLine(ClientID);
+	GS()->AddVoteItemValue(ClientID);
+	CVoteWrapper::AddLine(ClientID);
+
+	bool Found = false;
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 ORDER BY Price");
 	while(pRes->next())
 	{
@@ -255,30 +262,28 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 		const int UserID = pRes->getInt("UserID");
 		CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
 
+		CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE);
 		if(pItemInfo->IsEnchantable())
 		{
-			GS()->AVH(ClientID, HideID, "{STR}{STR} {STR} - {VAL} gold",
+			VItem.SetTitle("{STR}{STR} {STR} - {VAL} gold",
 				(pPlayer->GetItem(ItemID)->GetValue() > 0 ? "✔ " : "\0"), pItemInfo->GetName(), pItemInfo->StringEnchantLevel(Enchant).c_str(), Price);
 
 			char aAttributes[128];
 			pItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), Enchant);
-			GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", aAttributes);
+			VItem.Add(aAttributes);
 		}
 		else
 		{
-			GS()->AVH(ClientID, HideID, "{STR}x{VAL} ({VAL}) - {VAL} gold",
-				pItemInfo->GetName(), ItemValue, pPlayer->GetItem(ItemID)->GetValue(), Price);
+			VItem.SetTitle("{STR}x{VAL} ({VAL}) - {VAL} gold", pItemInfo->GetName(), ItemValue, pPlayer->GetItem(ItemID)->GetValue(), Price);
 		}
 
-		//GS()->AVM(ClientID, "null", NOPE, HideID, "{STR}", pItemInfo->GetDescription());
-		GS()->AVM(ClientID, "null", NOPE, HideID, "* Seller {STR}", Server()->GetAccountNickname(UserID));
-		GS()->AVM(ClientID, "AUCTION_BUY", ID, HideID, "Buy Price {VAL} gold", Price);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "\0");
-		FoundItems = true;
-		++HideID;
+		VItem.Add("Seller: {STR}", Server()->GetAccountNickname(UserID));
+		VItem.AddOption("AUCTION_BUY", ID, "Buy this item ({VAL} gold).", Price);
+		Found = true;
 	}
-	if(!FoundItems)
-		GS()->AVL(ClientID, "null", "Currently there are no products.");
 
-	GS()->AV(ClientID, "null");
+	if(!Found)
+	{
+		CVoteWrapper(ClientID).Add("Currently there are no products.");
+	}
 }

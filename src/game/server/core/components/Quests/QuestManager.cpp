@@ -280,18 +280,18 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 	const int TotalQuests = (int)CQuestDescription::Data().size();
 	const int TotalComplectedQuests = GetCountComplectedQuests(ClientID);
 	const int TotalIncomplectedQuests = TotalQuests - TotalComplectedQuests;
-	GS()->AVH(ClientID, TAB_INFO_STATISTIC_QUESTS, "Quests statistic");
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total quests: {INT}", TotalQuests);
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total complected quests: {INT}", TotalComplectedQuests);
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_STATISTIC_QUESTS, "Total incomplete quests: {INT}", TotalIncomplectedQuests);
-	GS()->AV(ClientID, "null");
+
+	CVoteWrapper VInfo(ClientID, VWFLAG_STYLE_STRICT, "Quests statistic");
+	VInfo.Add("Total quests: {INT}", TotalQuests);
+	VInfo.Add("Total complected quests: {INT}", TotalComplectedQuests);
+	VInfo.Add("Total incomplete quests: {INT}", TotalIncomplectedQuests);
 
 	// tabs with quests
 	ShowQuestsTabList(pPlayer, QuestState::ACCEPT);
 	ShowQuestsTabList(pPlayer, QuestState::NO_ACCEPT);
 
 	// show the completed menu
-	GS()->AVM(ClientID, "MENU", MENU_JOURNAL_FINISHED, NOPE, "List of completed quests");
+	CVoteWrapper(ClientID).AddMenu(MENU_JOURNAL_FINISHED, "List of completed quests");
 }
 
 void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
@@ -370,7 +370,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		CPlayerQuestStep& rQuestStepDataInfo = pPlayerQuest->m_aPlayerSteps[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest->GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest->GetState() == QuestState::FINISHED) ? "✔ " : "\0");
 
-		GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
+		//GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
 		if(pPlayerQuest->GetState() != QuestState::ACCEPT)

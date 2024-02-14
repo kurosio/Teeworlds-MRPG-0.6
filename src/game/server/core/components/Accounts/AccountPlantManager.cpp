@@ -72,24 +72,42 @@ int CAccountPlantManager::GetPlantHealth(vec2 Pos) const
 //	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Plants Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
 //}
 
-bool CAccountPlantManager::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
+bool CAccountPlantManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
 {
 	bool Found = false;
 	const int ClientID = pPlayer->GetCID();
-	
+
 	for(const auto& [ID, Plant] : ms_aPlants)
 	{
-		if (WorldID == Plant.m_WorldID)
+		if(WorldID != Plant.m_WorldID)
+			continue;
+
+		const vec2 Pos = Plant.m_Position / 32.0f;
+		CVoteWrapper VPlant(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE, "Plant {STR}", GS()->GetItemInfo(Plant.m_ItemID)->GetName());
 		{
-			const int HideID = (NUM_TAB_MENU + ID) << 0x10;
-			const vec2 Pos = Plant.m_Position / 32.0f;
-			CItemDescription* pItemInfo = GS()->GetItemInfo(Plant.m_ItemID);
-			GS()->AVH(ClientID, HideID, "Plant {STR} [x{INT} y{INT}]", pItemInfo->GetName(), Plant.m_StartHealth, (int)Pos.x, (int)Pos.y);
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Level: {INT} | Health: {INT}P", Plant.m_Level, Plant.m_StartHealth);
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Distance of distribution: {INT}P", Plant.m_Distance);
-			Found = true;
+			VPlant.BeginDepthList();
+			VPlant.Add("Location:");
+			{
+				VPlant.BeginDepthList();
+				VPlant.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
+				VPlant.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
+				VPlant.EndDepthList();
+			}
+			VPlant.AddLine();
+			VPlant.Add("Description");
+			{
+				VPlant.BeginDepthList();
+				VPlant.Add("Level: {INT}", Plant.m_Level);
+				VPlant.Add("Health: {INT}P", Plant.m_StartHealth);
+				VPlant.Add("Distance of distribution: {INT}P", Plant.m_Distance);
+				VPlant.EndDepthList();
+			}
+			VPlant.EndDepthList();
 		}
+		VPlant.AddLine();
+		Found = true;
 	}
+
 	return Found;
 }
 

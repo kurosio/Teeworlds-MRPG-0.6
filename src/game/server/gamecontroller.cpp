@@ -62,7 +62,7 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 
 	// Health
 	int StartHealth = pChr->GetPlayer()->GetStartHealth();
-	if(!GS()->IsDungeon())
+	if(!GS()->IsWorldType(WorldType::Dungeon))
 	{
 		// If the player's health is greater than 0, set StartHealth to the player's health otherwise, set StartHealth to half of its current value
 		StartHealth = (pChr->GetPlayer()->GetHealth() > 0 ? pChr->GetPlayer()->GetHealth() : (StartHealth / 2));

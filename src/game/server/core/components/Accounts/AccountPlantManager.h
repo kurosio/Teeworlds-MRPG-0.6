@@ -34,7 +34,7 @@ public:
 	//void ShowMenu(CPlayer* pPlayer) const;
 	void Work(CPlayer* pPlayer, int Level);
 	
-	bool ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer);
+	bool InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID);
 };
 
 #endif

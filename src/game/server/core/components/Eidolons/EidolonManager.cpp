@@ -30,21 +30,23 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_EIDOLON_COLLECTION)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-		GS()->AVH(ClientID, TAB_INFO_EIDOLONS, "Eidolon Collection Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_EIDOLONS, "Here you can see your collection of eidolons.");
-		GS()->AV(ClientID, "null");
+
+		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Eidolon Collection Information");
+		VInfo.Add("Here you can see your collection of eidolons.");
+		VInfo.AddLine();
 
 		std::pair EidolonSize = GetEidolonsSize(ClientID);
-		GS()->AVH(ClientID, TAB_EIDOLONS, "\u2727 My eidolons (own {INT} out of {INT}).", EidolonSize.first, EidolonSize.second);
+		CVoteWrapper VEidolon(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE, "\u2727 My eidolons (own {INT} out of {INT}).", EidolonSize.first, EidolonSize.second);
+
 		for(auto& pEidolon : CEidolonInfoData::Data())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolon.GetItemID());
 			const char* pCollectedInfo = (pPlayerItem->HasItem() ? "✔" : "\0");
 			const char* pUsedAtMoment = pPlayerItem->IsEquipped() ? Server()->Localization()->Localize(pPlayer->GetLanguage(), "[summoned by you]") : "\0";
-			GS()->AVM(ClientID, "EIDOLON_SELECT", pEidolon.GetItemID(), TAB_EIDOLONS, "{STR} {STR} {STR}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
+			VEidolon.AddMenu(MENU_EIDOLON_COLLECTION_SELECTED, pEidolon.GetItemID(), "{STR} {STR} {STR}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
 		}
 
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -52,30 +54,36 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_EIDOLON_COLLECTION);
 
-		if(CEidolonInfoData* pEidolonInfo = GS()->GetEidolonByItemID(m_EidolonItemSelected[ClientID]))
+		int EidolonID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
+		if(CEidolonInfoData* pEidolonInfo = GS()->GetEidolonByItemID(EidolonID))
 		{
-			GS()->AVH(ClientID, TAB_EIDOLON_DESCRIPTION, "Descriptions of eidolon ({STR})", pEidolonInfo->GetDataBot()->m_aNameBot);
-			for(auto& Line : pEidolonInfo->GetLinesDescription())
-				GS()->AVM(ClientID, "null", NOPE, TAB_EIDOLON_DESCRIPTION, Line.c_str());
 			char aAttributeBonus[128];
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
 			pPlayerItem->StrFormatAttributes(pPlayer, aAttributeBonus, sizeof(aAttributeBonus));
-			GS()->AVM(ClientID, "null", NOPE, TAB_EIDOLON_DESCRIPTION, aAttributeBonus);
-			GS()->AV(ClientID, "null");
 
-			GS()->AVH(ClientID, TAB_EIDOLON_UNLOCKING_ENHANCEMENTS, "Unlocking Enhancements.");
-			GS()->AVM(ClientID, "null", NOPE, TAB_EIDOLON_UNLOCKING_ENHANCEMENTS, "Available soon.");
-			GS()->AV(ClientID, "null");
+			CVoteWrapper VDesc(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "Descriptions of eidolon ({STR})", pEidolonInfo->GetDataBot()->m_aNameBot);
+			for(auto& Line : pEidolonInfo->GetLinesDescription())
+				VDesc.Add(Line.c_str());
+			VDesc.AddLine();
+			VDesc.Add(aAttributeBonus);
+			VDesc.AddLine();
+
+			CVoteWrapper VEnchancement(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "Unlocking Enhancements");
+			VEnchancement.Add("Available soon.");
+			VEnchancement.AddLine();
 
 			if(pPlayerItem->HasItem())
 			{
 				const char* pStateSummon = Server()->Localization()->Localize(pPlayer->GetLanguage(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
-				GS()->AVM(ClientID, "ISETTINGS", pEidolonInfo->GetItemID(), NOPE, "{STR} {STR}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
+				CVoteWrapper(ClientID).AddOption("ISETTINGS", pEidolonInfo->GetItemID(), NOPE, "{STR} {STR}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
 			}
 			else
-				GS()->AVL(ClientID, "null", "To summon it, you must first get it");
+			{
+				CVoteWrapper(ClientID).Add("To summon it, you must first get it");
+			}
 		}
-		GS()->AddVotesBackpage(ClientID);
+
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 

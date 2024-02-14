@@ -258,14 +258,14 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
+		// discord information
+		CVoteWrapper VDiscordInfo(ClientID, VWFLAG_STYLE_STRICT_BOLD);
+		VDiscordInfo.AddLine().Add("Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink).AddLine();
+
 		// information
 		CVoteWrapper VGrindingInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Grinding Information");
 		VGrindingInfo.Add("You can look mobs, plants, and ores.");
 		VGrindingInfo.AddLine();
-
-		CVoteWrapper VDiscordInfo(ClientID, VWFLAG_STYLE_STRICT_BOLD);
-		VDiscordInfo.Add("Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink);
-		VDiscordInfo.AddLine();
 
 		// show all world's
 		CVoteWrapper VGrindingSelect(ClientID, VWFLAG_SEPARATE_OPEN, "Select a zone to view information");
@@ -283,13 +283,28 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUIDE_GRINDING);
 
 		const int WorldID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
-		CVoteWrapper VGrinding(ClientID, VWFLAG_STYLE_STRICT_BOLD);
-		VGrinding.Add("Selected zone: {STR}", GS()->Server()->GetWorldName(WorldID));
-		VGrinding.AddLine();
 
-		const bool ActiveMob = BotManager()->ShowGuideDropByWorld(WorldID, pPlayer);
-		const bool ActivePlant = AccountPlantManager()->ShowGuideDropByWorld(WorldID, pPlayer);
-		const bool ActiveOre = AccountMinerManager()->ShowGuideDropByWorld(WorldID, pPlayer);
+		// ores information detail
+		CVoteWrapper VOres(ClientID, VWFLAG_STYLE_STRICT_BOLD);
+		VOres.AddLine().Add("Ores from ({STR})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		if(!AccountMinerManager()->InsertItemsDetailVotes(pPlayer, WorldID))
+			CVoteWrapper(ClientID).Add("No ores in this world");
+		CVoteWrapper::AddEmptyline(ClientID);
+
+		// plant information detail
+		CVoteWrapper VPlant(ClientID, VWFLAG_STYLE_STRICT_BOLD);
+		VPlant.AddLine().Add("Plant from ({STR})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		if(!AccountPlantManager()->InsertItemsDetailVotes(pPlayer, WorldID))
+			CVoteWrapper(ClientID).Add("No plants in this world");
+		CVoteWrapper::AddEmptyline(ClientID);
+
+		// mobs information detail
+		CVoteWrapper VMobs(ClientID, VWFLAG_STYLE_STRICT_BOLD);
+		VMobs.AddLine().Add("Mob from ({STR})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		if(!BotManager()->InsertItemsDetailVotes(pPlayer, WorldID))
+			CVoteWrapper(ClientID).Add("No mobs in this world");
+		CVoteWrapper::AddEmptyline(ClientID);
+
 		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

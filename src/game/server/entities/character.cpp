@@ -855,7 +855,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 {
 	// force
 	m_Core.m_Vel += Force;
-	const float MaximumVel = GS()->IsDungeon() ? 16.0f : 24.0f;
+	const float MaximumVel = GS()->IsWorldType(WorldType::Dungeon) ? 16.0f : 24.0f;
 	if(length(m_Core.m_Vel) > MaximumVel)
 		m_Core.m_Vel = normalize(m_Core.m_Vel) * MaximumVel;
 
@@ -1397,7 +1397,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	if(!m_pPlayer->IsBot() && !pFrom->IsBot())
 	{
 		// anti pvp on safe world or dungeon
-		if(!GS()->IsAllowedPVP() || GS()->IsDungeon())
+		if(!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon))
 			return false;
 
 		// only for unself player

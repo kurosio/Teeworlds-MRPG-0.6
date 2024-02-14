@@ -6,6 +6,8 @@
 
 #include <game/server/core/components/Accounts/AccountManager.h>
 
+#include "game/server/worldmodes/dungeon.h"
+
 void CDungeonManager::OnInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons");
@@ -29,26 +31,25 @@ bool CDungeonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MenuList::MENU_DUNGEONS)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-		GS()->AVH(ClientID, TAB_INFO_DUNGEON, "Dungeons Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "In this section you can choose a dungeon");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DUNGEON, "View the fastest players on the passage");
-		GS()->AV(ClientID, "null");
 
-		GS()->AVL(ClientID, "null", "\u262C Story dungeon's");
-		ShowDungeonsList(pPlayer, true);
-		GS()->AV(ClientID, "null");
+		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Dungeons Information");
+		VInfo.Add("In this section you can choose a dungeon");
+		VInfo.Add("View the fastest players on the passage");
 
-		GS()->AVL(ClientID, "null", "\u274A Alternative story dungeon's");
-		ShowDungeonsList(pPlayer, false);
+		CVoteWrapper::AddLine(ClientID);
+		CVoteWrapper(ClientID).Add("\u262C Story dungeon's");
+		if(!ShowDungeonsList(pPlayer, true))
+			CVoteWrapper(ClientID).Add("No dungeons available at the moment!");
 
-		if(GS()->IsDungeon())
-		{
-			GS()->AV(ClientID, "null");
-			ShowTankVotingDungeon(pPlayer);
-			GS()->AV(ClientID, "null");
-			GS()->AVL(ClientID, "DUNGEONEXIT", "Exit dungeon {STR} (warning)", CDungeonData::ms_aDungeon[GS()->GetDungeonID()].m_aName);
-		}
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddLine(ClientID);
+		CVoteWrapper(ClientID).Add("\u274A Alternative story dungeon's");
+		if(!ShowDungeonsList(pPlayer, false))
+			CVoteWrapper(ClientID).Add("No dungeons available at the moment!");
+
+		CVoteWrapper::AddLine(ClientID);
+		ShowInsideDungeonMenu(pPlayer);
+
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 	return false;
@@ -82,7 +83,7 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 			return true;
 		}
 
-		if(!GS()->IsDungeon())
+		if(!GS()->IsWorldType(WorldType::Dungeon))
 		{
 			pPlayer->GetTempData().SetTeleportPosition(pPlayer->GetCharacter()->m_Core.m_Pos);
 			GS()->Core()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
@@ -157,9 +158,8 @@ void CDungeonManager::SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayer
 	Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Seconds, PassageHelp) VALUES ('%d', '%d', '%d', '%f')", pPlayer->Account()->GetID(), DungeonID, Seconds, PassageHelp);
 }
 
-void CDungeonManager::ShowDungeonTop(CPlayer* pPlayer, int DungeonID, int HideID) const
+void CDungeonManager::InsertVotesDungeonTop(int DungeonID, CVoteWrapper* pWrapper) const
 {
-	const int ClientID = pPlayer->GetCID();
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '%d' ORDER BY Seconds ASC LIMIT 5", DungeonID);
 	while(pRes->next())
 	{
@@ -170,48 +170,63 @@ void CDungeonManager::ShowDungeonTop(CPlayer* pPlayer, int DungeonID, int HideID
 
 		const int Minutes = BaseSeconds / 60;
 		const int Seconds = BaseSeconds - (BaseSeconds / 60 * 60);
-		GS()->AVM(ClientID, "null", NOPE, HideID, "{INT}. {STR} | {INT}:{INT}min | {VAL}P", Rank, Server()->GetAccountNickname(UserID), Minutes, Seconds, BasePassageHelp);
+		pWrapper->Add("{INT}. {STR} | {INT}:{INT}min | {VAL}P", Rank, Server()->GetAccountNickname(UserID), Minutes, Seconds, BasePassageHelp);
 	}
 }
 
-void CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
+bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 {
+	bool Found = false;
 	const int ClientID = pPlayer->GetCID();
 	for(const auto& dungeon : CDungeonData::ms_aDungeon)
 	{
 		if(dungeon.second.m_IsStory != Story)
 			continue;
 
-		const int HideID = 7500 + dungeon.first;
-		GS()->AVH(ClientID, HideID, "Lvl{INT} {STR} : Players {INT} : {STR} [{INT}%]",
-			dungeon.second.m_Level, dungeon.second.m_aName, dungeon.second.m_Players, (dungeon.second.IsDungeonPlaying() ? "Active dungeon" : "Waiting players"), dungeon.second.m_Progress);
+		CVoteWrapper VDungeon(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE, "Lvl{INT} {STR} : Players {INT} : {STR} [{INT}%]",
+			dungeon.second.m_Level, dungeon.second.m_aName, dungeon.second.m_Players, 
+			(dungeon.second.IsDungeonPlaying() ? "Active dungeon" : "Waiting players"), dungeon.second.m_Progress);
 
-		ShowDungeonTop(pPlayer, dungeon.first, HideID);
+		InsertVotesDungeonTop(dungeon.first, &VDungeon);
 
 		const int NeededQuestID = dungeon.second.m_RequiredQuestID;
 		if(NeededQuestID <= 0 || pPlayer->GetQuest(NeededQuestID)->IsCompleted())
-			GS()->AVM(ClientID, "DUNGEONJOIN", dungeon.first, HideID, "Join dungeon {STR}", dungeon.second.m_aName);
+		{
+			VDungeon.AddOption("DUNGEONJOIN", dungeon.first, "Join dungeon {STR}", dungeon.second.m_aName);
+		}
 		else
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Need to complete quest {STR}", pPlayer->GetQuest(NeededQuestID)->Info()->GetName());
+		{
+			VDungeon.Add("Need to complete quest {STR}", pPlayer->GetQuest(NeededQuestID)->Info()->GetName());
+		}
+		Found = true;
 	}
+
+	return Found;
 }
 
-void CDungeonManager::ShowTankVotingDungeon(CPlayer* pPlayer) const
+void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 {
-	if(!GS()->IsDungeon())
+	if(!GS()->IsWorldType(WorldType::Dungeon))
 		return;
 
 	const int ClientID = pPlayer->GetCID();
-	const int DungeonWorldID = CDungeonData::ms_aDungeon[GS()->GetDungeonID()].m_WorldID;
-	GS()->AVL(ClientID, "null", "Voting for the choice of tank!");
+	CGameControllerDungeon* pController = (CGameControllerDungeon*)GS()->m_pController;
+	int DungeonID = pController->GetDungeonID();
+	const int DungeonWorldID = CDungeonData::ms_aDungeon[DungeonID].m_WorldID;
+
+	CVoteWrapper VPlayers(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE, "Voting for the choice of tank!");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
 		if(!pSearchPlayer || pSearchPlayer->GetPlayerWorldID() != DungeonWorldID)
 			continue;
 
-		GS()->AVM(ClientID, "DUNGEONVOTE", i, NOPE, "Vote for {STR} (Votes: {INT})", Server()->ClientName(i), pSearchPlayer->GetTempData().m_TempTankVotingDungeon);
+		VPlayers.AddOption("DUNGEONVOTE", i, "Vote for {STR} (Votes: {INT})", Server()->ClientName(i), pSearchPlayer->GetTempData().m_TempTankVotingDungeon);
 	}
+
+	// exit from dungeon
+	CVoteWrapper::AddLine(ClientID);
+	CVoteWrapper(ClientID).AddOption("DUNGEONEXIT", "Exit dungeon {STR} (warning)", CDungeonData::ms_aDungeon[DungeonID].m_aName);
 }
 
 void CDungeonManager::NotifyUnlockedDungeonsByQuest(CPlayer* pPlayer, int QuestID) const

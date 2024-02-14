@@ -70,24 +70,42 @@ int CAccountMinerManager::GetOreHealth(vec2 Pos) const
 //	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Miner Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
 //}
 
-bool CAccountMinerManager::ShowGuideDropByWorld(int WorldID, CPlayer* pPlayer)
+bool CAccountMinerManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 {
 	bool Found = false;
 	const int ClientID = pPlayer->GetCID();
-	
+
 	for(const auto& [ID, Ore] : ms_aOre)
 	{
-		if (WorldID == Ore.m_WorldID)
+		if(WorldID != Ore.m_WorldID)
+			continue;
+
+		const vec2 Pos = Ore.m_Position / 32.0f;
+		CVoteWrapper VOres(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE, "Ore {STR}", GS()->GetItemInfo(Ore.m_ItemID)->GetName());
 		{
-			const int HideID = (NUM_TAB_MENU + ID) << 0x10;
-			const vec2 Pos = Ore.m_Position / 32.0f;
-			CItemDescription* pItemInfo = GS()->GetItemInfo(Ore.m_ItemID);
-			GS()->AVH(ClientID, HideID, "Ore {STR} [x{INT} y{INT}]", pItemInfo->GetName(), Ore.m_StartHealth, (int)Pos.x, (int)Pos.y);
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Level: {INT} | Health: {INT}P", Ore.m_Level, Ore.m_StartHealth);
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Distance of distribution: {INT}P", Ore.m_Distance);
-			Found = true;
+			VOres.BeginDepthList();
+			VOres.Add("Location:");
+			{
+				VOres.BeginDepthList();
+				VOres.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
+				VOres.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
+				VOres.EndDepthList();
+			}
+			VOres.AddLine();
+			VOres.Add("Description");
+			{
+				VOres.BeginDepthList();
+				VOres.Add("Level: {INT}", Ore.m_Level);
+				VOres.Add("Health: {INT}P", Ore.m_StartHealth);
+				VOres.Add("Distance of distribution: {INT}P", Ore.m_Distance);
+				VOres.EndDepthList();
+			}
+			VOres.EndDepthList();
 		}
+		VOres.AddLine();
+		Found = true;
 	}
+
 	return Found;
 }
 
