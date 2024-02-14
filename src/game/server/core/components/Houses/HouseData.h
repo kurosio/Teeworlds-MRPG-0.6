@@ -105,10 +105,10 @@ public:
 	CHouseBankData* GetBank() const { return m_pBank; }
 
 	// A decoration functions
+	bool StartDrawing() const;
 	static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser);
 	bool AddDecoration(const EntityPoint* pPoint) const;
 	bool RemoveDecoration(const EntityPoint* pPoint) const;
-	void ShowDecorationList() const;
 
 	// House functions
 	void Buy(CPlayer* pPlayer);

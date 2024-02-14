@@ -318,7 +318,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 			{
 				GS()->Chat(ClientID, "You were thrown out of dungeon!");
 
-				const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetHistoryLatestCorrectWorldID(pChr->GetPlayer());
+				const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetLastVisitedWorldID(pChr->GetPlayer());
 				pChr->GetPlayer()->ChangeWorld(LatestCorrectWorldID);
 				return false;
 			}

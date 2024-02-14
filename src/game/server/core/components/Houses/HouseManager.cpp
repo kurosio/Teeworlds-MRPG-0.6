@@ -82,69 +82,52 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CHouseData* pHouse = pPlayer->Account()->GetHouse();
 		if(!pHouse)
 		{
-			GS()->AVL(ClientID, "null", "You not owner home!");
+			CVoteWrapper::AddBackpage(ClientID);
 			return true;
 		}
 
+		// information
 		HouseIdentifier ID = pHouse->GetID();
+		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "House stats {INT} Class {STR}", ID, pHouse->GetClassName());
+		VInfo.Add("/hdoor - interactive with door.");
+		VInfo.Add("/hsell - sell house.");
+		VInfo.AddLine();
 
-		GS()->AVH(ClientID, TAB_HOUSE_STAT, "House stats {INT} Class {STR}", ID, pHouse->GetClassName());
-		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/hdoor - interactive with door.");
-		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_STAT, "/hsell - sell house.");
-		GS()->AV(ClientID, "null");
+		// House deposit
+		CVoteWrapper VDeposit(ClientID, VWFLAG_SEPARATE_OPEN, "\u2727 Your: {VAL} | Safe: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pHouse->GetBank()->Get());
+		VDeposit.AddOption("HOUSE_BANK_ADD", "Add. (Amount in a reason)");
+		VDeposit.AddOption("HOUSE_BANK_TAKE", "Take. (Amount in a reason)");
+		VDeposit.AddLine();
 
-		GS()->AVH(ClientID, TAB_HOUSE_SAFE_INTERACTIVE, "\u2727 House safe is: {VAL} Gold", pHouse->GetBank()->Get());
-		GS()->AddVoteItemValue(ClientID, itGold, TAB_HOUSE_SAFE_INTERACTIVE);
-		GS()->AVM(ClientID, "HOUSE_BANK_ADD", 1, TAB_HOUSE_SAFE_INTERACTIVE, "Add gold. (Amount in a reason)");
-		GS()->AVM(ClientID, "HOUSE_BANK_TAKE", 1, TAB_HOUSE_SAFE_INTERACTIVE, "Take gold. (Amount in a reason)");
-		GS()->AV(ClientID, "null");
-
-		GS()->AVH(ClientID, TAB_HOUSE_DOORS, "\u2747 House has {VAL} controlled door's", pHouse->GetDoorsController()->GetDoors().size());
-		for(auto& [Number, DoorData] : pHouse->GetDoorsController()->GetDoors())
+		// House doors
+		if(!pHouse->GetDoorsController()->GetDoors().empty())
 		{
-			bool StateDoor = DoorData->IsClosed();
-			GS()->AVM(ClientID, "HOUSE_DOOR", Number, TAB_HOUSE_DOORS, "{STR} {STR} door", StateDoor ? "Open" : "Close", DoorData->GetName());
+			CVoteWrapper VDoors(ClientID, VWFLAG_SEPARATE_OPEN, "\u2743 House has {VAL} controlled door's", (int)pHouse->GetDoorsController()->GetDoors().size());
+			for(auto& [Number, DoorData] : pHouse->GetDoorsController()->GetDoors())
+			{
+				bool StateDoor = DoorData->IsClosed();
+				VDoors.AddOption("HOUSE_DOOR", Number, "Door {STR} {STR}", StateDoor ? "Open" : "Close", DoorData->GetName());
+			}
+			VDoors.AddLine();
 		}
-		GS()->AV(ClientID, "null");
 
-		GS()->AVH(ClientID, TAB_HOUSE_MANAGING, "\u2697 Managing your home");
-		GS()->AVM(ClientID, "HOUSE_SPAWN", ID, TAB_HOUSE_MANAGING, "Teleport to your house");
-		GS()->AVM(ClientID, "HOUSE_SELL", ID, TAB_HOUSE_MANAGING, "Sell your house (in reason 777)");
+		// House invited list
+		CVoteWrapper VManagement(ClientID, VWFLAG_SEPARATE_OPEN, "\u2697 Managing your home");
+		VManagement.AddOption("HOUSE_SPAWN", "Teleport to your house");
+		VManagement.AddOption("HOUSE_SELL", "Sell your house (in reason 777)");
+		VManagement.AddOption("HOUSE_DECORATION", "Decoration editor");
+
 		if(GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
 		{
-			GS()->AVM(ClientID, "MENU", MENU_HOUSE_ACCESS_TO_DOOR, TAB_HOUSE_MANAGING, "Settings up accesses to your door");
-			GS()->AVM(ClientID, "MENU", MENU_HOUSE_DECORATION, TAB_HOUSE_MANAGING, "Settings your decorations");
-			GS()->AVM(ClientID, "MENU", MENU_HOUSE_PLANTS, TAB_HOUSE_MANAGING, "Settings your plants");
+			VManagement.AddMenu(MENU_HOUSE_ACCESS_TO_DOOR, "Settings up accesses to your door's");
+			VManagement.AddMenu(MENU_HOUSE_PLANTS, "Settings your plants");
 		}
 		else
 		{
-			GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_MANAGING, "More settings allow, only on house zone");
+			VManagement.Add("null", "More settings allow, only on house zone!");
 		}
 
-		GS()->AddVotesBackpage(ClientID);
-		return true;
-	}
-
-	if(Menulist == MENU_HOUSE_DECORATION)
-	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_HOUSE);
-		CHouseData* pHouse = pPlayer->Account()->GetHouse();
-		if(!pHouse)
-		{
-			GS()->AVL(ClientID, "null", "You not owner home!");
-			return true;
-		}
-
-		GS()->AVH(ClientID, TAB_INFO_DECORATION, "Decorations Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Add: SELECT your item in list. SELECT (Add to house),");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "later press (ESC) and mouse select position");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "Return in inventory: SELECT down your decorations");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_DECORATION, "and press (Back to inventory).");
-
-		Core()->InventoryManager()->ListInventory(ClientID, ItemType::TYPE_DECORATION);
-		GS()->AV(ClientID, "null");
-		pHouse->ShowDecorationList();
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -155,17 +138,36 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CHouseData* pHouse = pPlayer->Account()->GetHouse();
 		if(!pHouse)
 		{
-			GS()->AVL(ClientID, "null", "You not owner home!");
+			CVoteWrapper(ClientID).Add("You not owner home!");
 			return true;
 		}
 
-		GS()->AVH(ClientID, TAB_INFO_HOUSE_PLANT, "Plants Information");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_PLANT, "Select an item and then click on 'To Plant'.");
-		GS()->AV(ClientID, "null");
+		// information
+		CVoteWrapper VPlantInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "\u2741 Plant zones information");
+		VPlantInfo.Add("You can plant some kind of plantation.");
+		CVoteWrapper::AddLine(ClientID);
 
-		GS()->AVM(ClientID, "null", NOPE, NOPE, "Housing active plants: {STR}", pHouse->GetPlantedItem()->Info()->GetName());
-		GS()->Core()->InventoryManager()->ListInventory(ClientID, FUNCTION_PLANT);
-		GS()->AddVotesBackpage(ClientID);
+		// settings
+		CItemDescription* pItem = GS()->GetItemInfo(pHouse->GetPlantedItem()->GetID());
+		CVoteWrapper VPlantSettings(ClientID, VWFLAG_STYLE_STRICT_BOLD);
+		VPlantSettings.Add("\u2741 Plant zone: default");
+		VPlantSettings.Add("Planted: {STR}", pItem->GetName());
+		VPlantSettings.AddLine();
+
+		// items
+		CVoteWrapper VPlantItems(ClientID, VWFLAG_SEPARATE_OPEN, "\u2741 Possible items for planting");
+		std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ItemFunctional::FUNCTION_PLANT);
+		for(auto& ID : vItems)
+		{
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
+			if(pPlayerItem->HasItem())
+				VPlantItems.AddOption("HOUSE_PLANT_ZONE_TRY", ID, "Try plant {STR} (has {VAL})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+		}
+		if(VPlantItems.IsEmpty())
+			VPlantItems.Add("You have no plants for planting");
+
+		// Add the votes to the player's back page
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -176,60 +178,68 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CHouseData* pHouse = pPlayer->Account()->GetHouse();
 		if(!pHouse)
 		{
-			GS()->AVL(ClientID, "null", "You not owner home!");
+			CVoteWrapper(ClientID).Add("You not owner home!");
 			return true;
 		}
 
 		// information
-		GS()->AVH(ClientID, TAB_INFO_HOUSE_INVITES_TO_DOOR, "Player's access to door.");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_INVITES_TO_DOOR, "You can add a limited number of players who can");
-		GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE_INVITES_TO_DOOR, "enter the house regardless of door status");
-		GS()->AV(ClientID, "null");
+		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "\u2697 Access to door's");
+		VInfo.Add("You can manage access to your door's.");
+		VInfo.Add("Add a limited number of players who can");
+		VInfo.Add("enter the house regardless of door status");
+		VInfo.AddLine();
 
 		// show active access players to house
 		CHouseDoorsController* pHouseDoor = pHouse->GetDoorsController();
-		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You can add {INT} player's.", pHouseDoor->GetAvailableAccessSlots());
-		GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "You and your eidolon have full access");
-		for(auto& p : pHouseDoor->GetAccesses())
+		CVoteWrapper VAccess(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE);
+		VAccess.Add("Permits have been granted:");
 		{
-			GS()->AVM(ClientID, "HOUSE_INVITED_LIST_REMOVE", p, TAB_HOUSE_ACCESS_TO_DOOR_REMOVE, "Remove access from {STR}", Server()->GetAccountNickname(p));
+			VAccess.BeginDepthList();
+			VAccess.Add("You and your eidolon have full access");
+			for(auto& p : pHouseDoor->GetAccesses())
+				VAccess.AddOption("HOUSE_INVITED_LIST_REMOVE", p, "Remove access from {STR}", Server()->GetAccountNickname(p));
+			VAccess.EndDepthList();
 		}
-
-		// field to find player for append
-		GS()->AV(ClientID, "null");
-		GS()->AV(ClientID, "null", "Use reason. The entered value can be a partial.");
-		GS()->AVM(ClientID, "HOUSE_INVITED_LIST_FIND", 1, NOPE, "Find player: \u300E{STR}\u300F", pPlayer->GetTempData().m_aPlayerSearchBuf);
-		GS()->AV(ClientID, "null");
 
 		// search result
-		GS()->AVH(ClientID, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Search result by \u300E{STR}\u300F", pPlayer->GetTempData().m_aPlayerSearchBuf);
-		if(pPlayer->GetTempData().m_aPlayerSearchBuf[0] != '\0')
+		CVoteWrapper VSearch(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE, "Search result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		VSearch.Add("You can add {INT} player's:", pHouseDoor->GetAvailableAccessSlots());
 		{
-			bool Found = false;
-			CSqlString<64> cPlayerName = CSqlString<64>(pPlayer->GetTempData().m_aPlayerSearchBuf);
-			ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick LIKE '%%%s%%' LIMIT 20", cPlayerName.cstr());
-			while(pRes->next())
-			{
-				const int UserID = pRes->getInt("ID");
-				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Account()->GetID()))
-					continue;
-
-				cPlayerName = pRes->getString("Nick").c_str();
-				GS()->AVM(ClientID, "HOUSE_INVITED_LIST_ADD", UserID, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Give access for {STR}", cPlayerName.cstr());
-				Found = true;
-			}
-			if(!Found)
-			{
-				GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Players for the request {STR} not found!", pPlayer->GetTempData().m_aPlayerSearchBuf);
-			}
+			VSearch.BeginDepthList();
+			VSearch.Add("Use reason. The entered value can be a partial.");
+			VSearch.AddOption("HOUSE_INVITED_LIST_FIND", "Find player: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+			VSearch.EndDepthList();
 		}
-		else
+		VSearch.AddLine();
+		VSearch.Add("Search result: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
 		{
-			GS()->AVM(ClientID, "null", NOPE, TAB_HOUSE_ACCESS_TO_DOOR_ADD, "Set the reason for the search field");
+			VSearch.BeginDepthList();
+			if(pPlayer->GetTempData().m_aPlayerSearchBuf[0] != '\0')
+			{
+				bool Found = false;
+				CSqlString<64> cPlayerName = CSqlString<64>(pPlayer->GetTempData().m_aPlayerSearchBuf);
+				ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick LIKE '%%%s%%' LIMIT 20", cPlayerName.cstr());
+				while(pRes->next())
+				{
+					const int UserID = pRes->getInt("ID");
+					if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Account()->GetID()))
+						continue;
+
+					cPlayerName = pRes->getString("Nick").c_str();
+					VSearch.AddOption("HOUSE_INVITED_LIST_ADD", UserID, "Give access for {STR}", cPlayerName.cstr());
+					Found = true;
+				}
+
+				if(!Found)
+					VSearch.Add("null", "Players for the request {STR} not found!", pPlayer->GetTempData().m_aPlayerSearchBuf);
+			}
+			else
+				VSearch.Add("Set the reason for the search field");
+			VSearch.EndDepthList();
 		}
 
 		// back page
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -237,7 +247,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		CCharacter* pChr = pPlayer->GetCharacter();
 		if(CHouseData* pHouse = GetHouseByPos(pChr->m_Core.m_Pos))
-			ShowHouseMenu(pPlayer, pHouse);
+			ShowBuyHouse(pPlayer, pHouse);
 
 		return true;
 	}
@@ -254,6 +264,83 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		if(CHouseData* pHouse = GetHouse(HouseID))
 		{
 			pHouse->Buy(pPlayer);
+		}
+
+		return true;
+	}
+
+	if(PPSTR(CMD, "HOUSE_DECORATION") == 0)
+	{
+		// check player house
+		CHouseData* pHouse = pPlayer->Account()->GetHouse();
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "You do not have your own home!");
+			return true;
+		}
+
+		bool Result = pHouse->StartDrawing();
+		if(Result)
+		{
+			GS()->Chat(ClientID, "You can now draw decorations.");
+		}
+		else
+		{
+			GS()->Chat(ClientID, "You can't draw decorations.");
+		}
+		return true;
+	}
+
+	if(PPSTR(CMD, "HOUSE_PLANT_ZONE_TRY") == 0)
+	{
+		// check player house
+		CHouseData* pHouse = pPlayer->Account()->GetHouse();
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "You do not have your own home!");
+			return true;
+		}
+
+		const int& Useds = maximum(1, Get);
+		const int& PlantzoneID = VoteID;
+		const ItemIdentifier& ItemID = VoteID2;
+
+		// Check if the ItemID of the plant matches the ItemID of the plant zone
+		if(ItemID == pHouse->GetPlantedItem()->GetID())
+		{
+			GS()->Chat(ClientID, "This plant is already planted.");
+			return true;
+		}
+
+		// Check if the player has enough currency to spend
+		if(pPlayer->Account()->SpendCurrency(Useds, ItemID))
+		{
+			// Check if the chance result is successful
+			bool Success = false;
+			Chance result(0.025f);
+			for(int i = 0; i < Useds && !Success; i++)
+			{
+				if(result())
+					Success = true;
+
+				// Update the chance result for the next attempt
+				result.Update();
+			}
+
+			// Check if the planting was successful
+			if(!Success)
+			{
+				// If not successful, inform the client that they failed to plant the plant
+				GS()->Chat(ClientID, "You failed to plant the plant.");
+			}
+			else
+			{
+				// Change the item in the plant zone to the planted item
+				GS()->Chat(ClientID, "You have successfully planted the plant.");
+				pHouse->SetPlantItemID(ItemID);
+			}
+
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_PLANTS);
 		}
 
 		return true;
@@ -506,28 +593,29 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 /* #########################################################################
 	MENUS HOUSES
 ######################################################################### */
-void CHouseManager::ShowHouseMenu(CPlayer* pPlayer, CHouseData* pHouse)
+void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse)
 {
 	HouseIdentifier ID = pHouse->GetID();
 	const int ClientID = pPlayer->GetCID();
+	const char* pStrHouseOwner = pHouse->HasOwner() ? Instance::Server()->GetAccountNickname(pHouse->GetAccountID()) : "No owner";
 
-	GS()->AVH(ClientID, TAB_INFO_HOUSE, "House {INT} . {STR}", ID, pHouse->GetClassName());
-	GS()->AVM(ClientID, "null", NOPE, TAB_INFO_HOUSE, "Owner House: {STR}", Server()->GetAccountNickname(pHouse->GetAccountID()));
+	CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "House information");
+	VInfo.Add("You can buy this house for {VAL} gold.", pHouse->GetPrice());
+	VInfo.AddLine();
 
-	GS()->AV(ClientID, "null");
-	GS()->AddVoteItemValue(ClientID, itGold);
-	GS()->AV(ClientID, "null");
+	// detail information
+	CVoteWrapper VDetail(ClientID, VWFLAG_SEPARATE_OPEN, "Detail information about house.", ID, pHouse->GetClassName());
+	VDetail.Add("House owned by: {STR}", pStrHouseOwner);
+	VDetail.Add("House price: {VAL} gold", pHouse->GetPrice());
+	VDetail.Add("House class: {STR}", pHouse->GetClassName());
+	VDetail.AddLine();
 
+	CVoteWrapper VBuy(ClientID, VWFLAG_SEPARATE_OPEN, "You have {VAL} golds.", pPlayer->GetItem(itGold)->GetValue());
 	if(pHouse->GetAccountID() <= 0)
-	{
-		GS()->AVM(ClientID, "HOUSE_BUY", ID, NOPE, "Buy this house. Price {VAL}gold", pHouse->GetPrice());
-	}
+		VBuy.AddOption("HOUSE_BUY", ID, "Buy this house. Price {VAL}gold", pHouse->GetPrice());
 	else
-	{
-		GS()->AVM(ClientID, "null", ID, NOPE, "This house has already been purchased!");
-	}
-
-	GS()->AV(ClientID, "null");
+		VBuy.Add("This house has already been purchased!");
+	VBuy.AddLine();
 }
 
 CHouseData* CHouseManager::GetHouseByAccountID(int AccountID)

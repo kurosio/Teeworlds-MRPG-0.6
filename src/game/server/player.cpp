@@ -975,7 +975,7 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID) const
 	return Size;
 }
 
-float CPlayer::GetAttributePercent(AttributeIdentifier ID)
+float CPlayer::GetAttributePercent(AttributeIdentifier ID) const
 {
 	float Percent = 0.0f;
 	int Size = GetAttributeSize(ID);

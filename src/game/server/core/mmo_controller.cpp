@@ -26,7 +26,7 @@
 #include "components/Warehouse/WarehouseManager.h"
 #include "components/Worlds/WorldManager.h"
 
-inline static void AppendUpgradesWrapper(CPlayer* pPlayer, AttributeGroup Type, CVoteWrapper* pWrapper)
+inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, CVoteWrapper* pWrapper)
 {
 	pWrapper->Add("Total statistics:");
 	pWrapper->BeginDepthList();
@@ -219,7 +219,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			const char* pGroupName = paGroupNames[(int)Group];
 
 			CVoteWrapper VUpgrGroup(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_STRICT_BOLD, "{STR} : Strength {VAL}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
-			AppendUpgradesWrapper(pPlayer, Group, &VUpgrGroup);
+			InsertUpgradesVotes(pPlayer, Group, &VUpgrGroup);
 			VUpgrGroup.AddLine();
 		}
 
@@ -381,21 +381,21 @@ void CMmoController::HandleTimePeriod() const
 	if(time_is_new_day(DailyStamp, CurrentTimeStamp))
 	{
 		DailyStamp = CurrentTimeStamp;
-		aPeriodsUpdated.push_back(TIME_PERIOD::DAILY_STAMP);
+		aPeriodsUpdated.push_back(DAILY_STAMP);
 	}
 
 	// Check if the current time is a new week
 	if(time_is_new_week(WeekStamp, CurrentTimeStamp))
 	{
 		WeekStamp = CurrentTimeStamp;
-		aPeriodsUpdated.push_back(TIME_PERIOD::WEEK_STAMP);
+		aPeriodsUpdated.push_back(WEEK_STAMP);
 	}
 
 	// Check if the current time is a new month
 	if(time_is_new_month(MonthStamp, CurrentTimeStamp))
 	{
 		MonthStamp = CurrentTimeStamp;
-		aPeriodsUpdated.push_back(TIME_PERIOD::MONTH_STAMP);
+		aPeriodsUpdated.push_back(MONTH_STAMP);
 	}
 
 	// If any time period has been updated
@@ -427,21 +427,21 @@ void CMmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 	if(time_is_new_day(pPlayer->Account()->m_Periods.m_DailyStamp, CurrentTimeStamp))
 	{
 		pPlayer->Account()->m_Periods.m_DailyStamp = CurrentTimeStamp;
-		aPeriodsUpdated.push_back(TIME_PERIOD::DAILY_STAMP);
+		aPeriodsUpdated.push_back(DAILY_STAMP);
 	}
 
 	// Check if it is a new week and update the weekly time period if necessary
 	if(time_is_new_week(pPlayer->Account()->m_Periods.m_WeekStamp, CurrentTimeStamp))
 	{
 		pPlayer->Account()->m_Periods.m_WeekStamp = CurrentTimeStamp;
-		aPeriodsUpdated.push_back(TIME_PERIOD::WEEK_STAMP);
+		aPeriodsUpdated.push_back(WEEK_STAMP);
 	}
 
 	// Check if it is a new month and update the monthly time period if necessary
 	if(time_is_new_month(pPlayer->Account()->m_Periods.m_MonthStamp, CurrentTimeStamp))
 	{
 		pPlayer->Account()->m_Periods.m_MonthStamp = CurrentTimeStamp;
-		aPeriodsUpdated.push_back(TIME_PERIOD::MONTH_STAMP);
+		aPeriodsUpdated.push_back(MONTH_STAMP);
 	}
 
 	// If any time period has been updated
@@ -455,7 +455,7 @@ void CMmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				component->OnPlayerHandleTimePeriod(pPlayer, TIME_PERIOD(periods));
+				component->OnPlayerHandleTimePeriod(pPlayer, static_cast<TIME_PERIOD>(periods));
 			}
 		}
 	}
@@ -510,7 +510,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_POSITION)
 	{
-		const int LatestCorrectWorldID = AccountManager()->GetHistoryLatestCorrectWorldID(pPlayer);
+		const int LatestCorrectWorldID = AccountManager()->GetLastVisitedWorldID(pPlayer);
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pAcc->GetID());
 	}
 	else if(Table == SAVE_TIME_PERIODS)

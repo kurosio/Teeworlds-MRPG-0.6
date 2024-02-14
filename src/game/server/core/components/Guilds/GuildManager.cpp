@@ -1406,11 +1406,11 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 		return;
 	}
 
+	VHouse.Add("House owned by: {STR}", pHouse->GetOwnerName());
 	VHouse.Add("House price: {VAL} gold", pHouse->GetPrice());
 	VHouse.Add("House rent price per day: {VAL} gold", pHouse->GetRentPrice());
 	VHouse.Add("House has {VAL} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
 	VHouse.Add("House has {VAL} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
-	VHouse.Add("House owned by: {STR}", pHouse->GetOwnerName());
 	CVoteWrapper::AddLine(ClientID);
 
 	// Check if house is not purchased

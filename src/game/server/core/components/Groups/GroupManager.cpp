@@ -140,7 +140,7 @@ bool CGroupManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		ShowGroupMenu(pPlayer);
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 

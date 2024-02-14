@@ -209,18 +209,12 @@ private:
 
 public:
 	void AV(int ClientID , const char *pCmd, const char *pDesc = "\0", int TempInt = -1, int TempInt2 = -1);
-	void AVL(int ClientID, const char *pCmd, const char *pText, ...);
-	void AVH(int ClientID, int HiddenID, const char *pText, ...) {};
-	void AVM(int ClientID, const char *pCmd, int TempInt, int HiddenID, const char* pText, ...);
-	void AVD(int ClientID, const char *pCmd, int TempInt, int TempInt2, int HiddenID, const char *pText, ...);
 
 private:
 	void ShowVotesNewbieInformation(int ClientID);
 
 public:
 	void UpdateVotesIfForAll(int MenuList);
-	void AddVotesBackpage(int ClientID);
-	void AddVoteItemValue(int ClientID, ItemIdentifier ItemID = itGold, int HideID = NOPE);
 	bool ParsingVoteCommands(int ClientID, const char *CMD, int VoteID, int VoteID2, int Get, const char *Text);
 
 	/* #########################################################################

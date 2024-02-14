@@ -246,9 +246,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 
 	CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Auction Information");
 	VInfo.Add("To create a slot, see inventory item interact.");
-	CVoteWrapper::AddLine(ClientID);
-	GS()->AddVoteItemValue(ClientID);
-	CVoteWrapper::AddLine(ClientID);
+	VInfo.AddLine();
 
 	bool Found = false;
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 ORDER BY Price");

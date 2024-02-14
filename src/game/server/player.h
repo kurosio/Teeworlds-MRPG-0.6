@@ -122,7 +122,7 @@ public:
 	virtual StateSnapping IsActiveForClient(int ClientID) const { return STATE_SNAPPING_FULL; }
 	virtual int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
 	virtual int GetAttributeSize(AttributeIdentifier ID) const;
-	float GetAttributePercent(AttributeIdentifier ID);
+	float GetAttributePercent(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);
 
 	virtual void GiveEffect(const char* Potion, int Sec, float Chance = 100.0f);

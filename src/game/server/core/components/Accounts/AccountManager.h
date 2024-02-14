@@ -38,7 +38,7 @@ public:
     bool UnBanAccount(int BanId);
     std::vector<AccBan> BansAccount();
 
-	int GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const;
+	int GetLastVisitedWorldID(CPlayer* pPlayer) const;
 	
 	static int GetRank(int AccountID);
 	static bool IsActive(int ClientID)

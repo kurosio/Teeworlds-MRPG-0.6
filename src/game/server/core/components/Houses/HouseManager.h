@@ -29,7 +29,7 @@ class CHouseManager : public MmoComponent
 	/* #########################################################################
 		MENUS HOUSES
 	######################################################################### */
-	void ShowHouseMenu(CPlayer* pPlayer, CHouseData* pHouse);
+	void ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse);
 
 	/* #########################################################################
 		GET CHECK HOUSES

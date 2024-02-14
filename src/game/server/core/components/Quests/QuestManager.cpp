@@ -139,7 +139,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		ShowQuestsMainList(pPlayer);
 
 		// Add the Votes Backpage for the client
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 
 		// Return true to indicate success
 		return true;
@@ -155,7 +155,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		ShowQuestsTabList(pPlayer, QuestState::FINISHED);
 
 		// Add the Backpage votes for the player's client ID
-		GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 
 		// Return true to indicate success
 		return true;
@@ -175,12 +175,14 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->GS()->Core()->QuestManager()->ShowQuestActivesNPC(pPlayer, QuestID);
 
 		// Add the vote information for the player's client
+		/*
 		pPlayer->GS()->AV(ClientID, "null");
 		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pQuestInfo->GetName());
 		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pQuestInfo->GetRewardGold(), pQuestInfo->GetRewardExp());
+		*/
 
 		// Add the votes back page to the player's client
-		pPlayer->GS()->AddVotesBackpage(ClientID);
+		CVoteWrapper::AddBackpage(ClientID);
 
 		// Return true to indicate success
 		return true;
@@ -297,7 +299,7 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 {
 	const int ClientID = pPlayer->GetCID();
-	GS()->AVL(ClientID, "null", "{STR} quests", GetStateName(State));
+	CVoteWrapper(ClientID).Add("{STR} quests", GetStateName(State));
 
 	// check first quest story step
 	bool IsEmptyList = true;
@@ -329,9 +331,10 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 	// if the quest list is empty
 	if(IsEmptyList)
 	{
-		GS()->AV(ClientID, "null", "List of quests is empty");
+		CVoteWrapper(ClientID).Add("List of quests is empty");
 	}
-	GS()->AV(ClientID, "null");
+
+	CVoteWrapper::AddLine(ClientID);
 }
 
 // This function displays the information about a specific quest
@@ -348,7 +351,7 @@ void CQuestManager::ShowQuestID(CPlayer* pPlayer, int QuestID) const
 	// Display the quest information to the player using the AVD() function
 	const int QuestsSize = pQuestInfo->GetQuestStorySize();
 	const int QuestPosition = pQuestInfo->GetQuestStoryPosition();
-	GS()->AVD(pPlayer->GetCID(), "MENU", MENU_JOURNAL_QUEST_INFORMATION, QuestID, NOPE, "{INT}/{INT} {STR}: {STR}",
+	CVoteWrapper(pPlayer->GetCID()).AddMenu(MENU_JOURNAL_QUEST_INFORMATION, QuestID, "{INT}/{INT} {STR}: {STR}",
 		QuestPosition, QuestsSize, pQuestInfo->GetStory(), pQuestInfo->GetName());
 }
 
@@ -357,25 +360,25 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 {
 	CPlayerQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
 	const int ClientID = pPlayer->GetCID();
-	GS()->AVM(ClientID, "null", NOPE, NOPE, "Active NPC for current quests");
 
+	CVoteWrapper(ClientID).Add("Active NPC for current quests");
 	for(auto& pStepBot : CQuestDescription::Data()[QuestID].m_StepsQuestBot)
 	{
 		const QuestBotInfo& BotInfo = pStepBot.second.m_Bot;
 		if(!BotInfo.m_HasAction)
 			continue;
 
-		const int HideID = (NUM_TAB_MENU + BotInfo.m_SubBotID);
 		const vec2 Pos = BotInfo.m_Position / 32.0f;
 		CPlayerQuestStep& rQuestStepDataInfo = pPlayerQuest->m_aPlayerSteps[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest->GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest->GetState() == QuestState::FINISHED) ? "✔ " : "\0");
 
-		//GS()->AVH(ClientID, HideID, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
+		CVoteWrapper VStep(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", 
+			pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
 		if(pPlayerQuest->GetState() != QuestState::ACCEPT)
 		{
-			GS()->AVM(ClientID, "null", NOPE, HideID, "Quest been completed, or not accepted!");
+			VStep.Add("Quest been completed, or not accepted!");
 			continue;
 		}
 
@@ -387,8 +390,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 			{
 				if(DataBotInfo::ms_aDataBot.find(p.m_BotID) != DataBotInfo::ms_aDataBot.end())
 				{
-					GS()->AVM(ClientID, "null", NOPE, HideID, "- Defeat {STR} [{INT}/{INT}]",
-						DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, rQuestStepDataInfo.m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
+					VStep.Add("- Defeat {STR} [{INT}/{INT}]", DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, rQuestStepDataInfo.m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
 					NoTasks = false;
 				}
 			}
@@ -402,7 +404,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 				CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequired.m_Item);
 				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, pRequired.m_Item.GetValue());
 
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Item {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), ClapmItem, pRequired.m_Item.GetValue());
+				VStep.Add("- Item {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), ClapmItem, pRequired.m_Item.GetValue());
 				NoTasks = false;
 			}
 		}
@@ -412,19 +414,19 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		{
 			for(auto& pRewardItem : BotInfo.m_RewardItems)
 			{
-				GS()->AVM(ClientID, "null", NOPE, HideID, "- Receive {STR}x{VAL}", pRewardItem.Info()->GetName(), pRewardItem.GetValue());
+				VStep.Add("- Receive {STR}x{VAL}", pRewardItem.Info()->GetName(), pRewardItem.GetValue());
 			}
 		}
 
 		// show move to
 		if(!BotInfo.m_RequiredMoveTo.empty())
 		{
-			GS()->AVM(ClientID, "null", NOPE, HideID, "- Some action is required");
+			VStep.Add("- Some action is required");
 		}
 
 		if(NoTasks)
 		{
-			GS()->AVM(ClientID, "null", NOPE, HideID, "You just need to talk.");
+			VStep.Add("- No task");
 		}
 	}
 }

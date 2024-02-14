@@ -305,26 +305,25 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 	const int ClientID = pPlayer->GetCID();
 
 	// show base shop functions
-	GS()->AVH(ClientID, TAB_STORAGE, "Sale of items from the list is available!");
-	GS()->AVM(ClientID, "REPAIR_ITEMS", NOPE, TAB_STORAGE, "Repair all items - FREE");
+	CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Selling item's");
+	VInfo.Add("You can sell items from the list");
+	VInfo.AddLine();
 
-	// show currency
-	GS()->AV(ClientID, "null");
-	GS()->AddVoteItemValue(ClientID);
-	GS()->AV(ClientID, "null");
-
-	// show selling list
-	GS()->AVL(ClientID, "null", "\u2747 Selling targeted items");
-	for(auto& [ID, Item] : CItemDescription::Data())
+	CVoteWrapper VItems(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE, "Sale of items from the list is available!");
+	VItems.Add("Choose the item you want to sell");
 	{
-		if(Item.GetFunctional() != Type)
-			continue;
+		VItems.BeginDepthList();
+		for(auto& [ID, Item] : CItemDescription::Data())
+		{
+			if(Item.GetFunctional() != Type)
+				continue;
 
-		int Price = maximum(1, Item.GetInitialPrice());
-		GS()->AVD(ClientID, "SELL_ITEM", ID, Price, NOPE, "[{VAL}] Sell {STR} ({VAL} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
+			int Price = maximum(1, Item.GetInitialPrice());
+			VItems.AddOption("SELL_ITEM", ID, Price, "[{VAL}] Sell {STR} ({VAL} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
+		}
+		VItems.EndDepthList();
 	}
-
-	GS()->AV(ClientID, "null");
+	VItems.AddLine();
 }
 
 void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)

@@ -71,7 +71,7 @@ bool CAethernetManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 			GS()->Chat(ClientID, "Aether not found.");
 			return true;
 		}
-
+		
 		// Check if the player does not have access to the Aether
 		if(!pPlayer->Account()->IsUnlockedAether(AetherID))
 		{

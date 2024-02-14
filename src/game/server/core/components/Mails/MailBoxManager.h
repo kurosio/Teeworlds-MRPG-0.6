@@ -16,9 +16,8 @@ public:
 	bool SendInbox(const char* pFrom, const char* pNickname, const char* pName, const char* pDesc, int ItemID = -1, int Value = -1, int Enchant = -1);
 
 private:
-	void DeleteMailLetter(int MailLetterID);
-	void AcceptMailLetter(CPlayer* pPlayer, int MailLetterID);
-	void SetReadState(int MailLetterID, bool State);
+	void DeleteLetter(int MailLetterID);
+	void AcceptLetter(CPlayer* pPlayer, int MailLetterID);
 };
 
 #endif

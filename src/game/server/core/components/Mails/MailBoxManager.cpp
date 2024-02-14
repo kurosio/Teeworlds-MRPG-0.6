@@ -8,17 +8,16 @@ using namespace sqlstr;
 
 bool CMailboxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText)
 {
-	const int ClientID = pPlayer->GetCID();
 	if(PPSTR(CMD, "MAIL") == 0)
 	{
-		AcceptMailLetter(pPlayer, VoteID);
+		AcceptLetter(pPlayer, VoteID);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_INBOX);
 		return true;
 	}
 
 	if(PPSTR(CMD, "DELETE_MAIL") == 0)
 	{
-		DeleteMailLetter(VoteID);
+		DeleteLetter(VoteID);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_INBOX);
 		return true;
 	}
@@ -34,8 +33,8 @@ bool CMailboxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		GS()->AddVotesBackpage(ClientID);
-		GS()->AV(ClientID, "null");
+		CVoteWrapper::AddBackpage(ClientID);
+		CVoteWrapper::AddLine(ClientID);
 		GetInformationInbox(pPlayer);
 		return true;
 	}
@@ -137,40 +136,41 @@ bool CMailboxManager::SendInbox(const char* pFrom, const char* pNickname, const 
 	return false;
 }
 
-void CMailboxManager::AcceptMailLetter(CPlayer* pPlayer, int MailLetterID)
+void CMailboxManager::AcceptLetter(CPlayer* pPlayer, int MailLetterID)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ItemID, ItemValue, Enchant", "tw_accounts_mailbox", "WHERE ID = '%d'", MailLetterID);
 	if(pRes->next())
 	{
 		// get informed about the mail
-		const int ItemID = pRes->getInt("ItemID");
-		const int ItemValue = pRes->getInt("ItemValue");
-		if(ItemID <= 0 || ItemValue <= 0)
+		ItemIdentifier ItemID = pRes->getInt("ItemID");
+		int Value = pRes->getInt("ItemValue");
+
+		// attached letter
+		if(ItemID > 0 && Value > 0)
 		{
-			DeleteMailLetter(MailLetterID);
+			// recieve
+			CPlayerItem* pItem = pPlayer->GetItem(ItemID);
+			CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
+
+			if(pItemInfo->IsEnchantable() && pItem->HasItem())
+			{
+				GS()->Chat(pPlayer->GetCID(), "Enchant item maximal count x1 in a backpack!");
+				return;
+			}
+
+			const int Enchant = pRes->getInt("Enchant");
+			pItem->Add(Value, 0, Enchant);
+			GS()->Chat(pPlayer->GetCID(), "You received an attached item [{STR}].", GS()->GetItemInfo(ItemID)->GetName());
+			DeleteLetter(MailLetterID);
 			return;
 		}
 
-		// recieve
-		if(GS()->GetItemInfo(ItemID)->IsEnchantable() && pPlayer->GetItem(ItemID)->HasItem())
-		{
-			GS()->Chat(pPlayer->GetCID(), "Enchant item maximal count x1 in a backpack!");
-			return;
-		}
-
-		const int Enchant = pRes->getInt("Enchant");
-		pPlayer->GetItem(ItemID)->Add(ItemValue, 0, Enchant);
-		GS()->Chat(pPlayer->GetCID(), "You received an attached item [{STR}].", GS()->GetItemInfo(ItemID)->GetName());
-		DeleteMailLetter(MailLetterID);
+		// is empty letter
+		DeleteLetter(MailLetterID);
 	}
 }
 
-void CMailboxManager::DeleteMailLetter(int MailLetterID)
+void CMailboxManager::DeleteLetter(int MailLetterID)
 {
 	Database->Execute<DB::REMOVE>("tw_accounts_mailbox", "WHERE ID = '%d'", MailLetterID);
-}
-
-void CMailboxManager::SetReadState(int MailLetterID, bool State)
-{
-	Database->Execute<DB::UPDATE>("tw_accounts_mailbox", "IsRead='%d' WHERE ID = '%d'", State, MailLetterID);
 }

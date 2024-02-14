@@ -98,7 +98,7 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 	// dungeon exit
 	else if(PPSTR(CMD, "DUNGEONEXIT") == 0)
 	{
-		const int LatestCorrectWorldID = Core()->AccountManager()->GetHistoryLatestCorrectWorldID(pPlayer);
+		const int LatestCorrectWorldID = Core()->AccountManager()->GetLastVisitedWorldID(pPlayer);
 		pPlayer->ChangeWorld(LatestCorrectWorldID);
 		return true;
 	}

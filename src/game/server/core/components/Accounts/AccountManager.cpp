@@ -13,7 +13,7 @@
 
 // This function returns the latest correct world ID from the player's history world list
 // The function takes a pointer to a CPlayer object as an argument
-int CAccountManager::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
+int CAccountManager::GetLastVisitedWorldID(CPlayer* pPlayer) const
 {
 	// Find the first element in the range [pPlayer->Account()->m_aHistoryWorld.begin(), pPlayer->Account()->m_aHistoryWorld.end()]
 	// that satisfies the condition specified by the lambda function
@@ -23,7 +23,7 @@ int CAccountManager::GetHistoryLatestCorrectWorldID(CPlayer* pPlayer) const
 		if(GS()->GetWorldData(WorldID))
 		{
 			int RequiredLevel = GS()->GetWorldData(WorldID)->GetRequiredLevel();
-			return !Core()->DungeonManager()->IsDungeonWorld(WorldID) && pPlayer->Account()->GetLevel() >= RequiredLevel;
+			return !Server()->IsWorldType(WorldID, WorldType::Dungeon) && pPlayer->Account()->GetLevel() >= RequiredLevel;
 		}
 
 		// Return false if the world data for the given WorldID does not exist
@@ -225,7 +225,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	Core()->HandlePlayerTimePeriod(pPlayer);
 
 	// Change player's world ID to the latest correct world ID
-	const int LatestCorrectWorldID = GetHistoryLatestCorrectWorldID(pPlayer);
+	const int LatestCorrectWorldID = GetLastVisitedWorldID(pPlayer);
 	if(LatestCorrectWorldID != GS()->GetWorldID())
 	{
 		pPlayer->ChangeWorld(LatestCorrectWorldID);

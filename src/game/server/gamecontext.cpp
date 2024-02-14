@@ -1639,98 +1639,6 @@ void CGS::ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IC
 /* #########################################################################
 	VOTING MMO GAMECONTEXT
 ######################################################################### */
-// add a vote
-void CGS::AV(int ClientID, const char* pCmd, const char* pDesc, const int TempInt, const int TempInt2)
-{
-	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !m_apPlayers[ClientID])
-		return;
-
-	char aBufDesc[VOTE_DESC_LENGTH];
-	str_copy(aBufDesc, pDesc, sizeof(aBufDesc));
-	auto& vPlayerVotes = CVoteWrapper::Data()[ClientID];
-
-	/*if(const auto pReplaceIndent = "\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014"; aBufDesc[0] == '\0'
-		&& !vPlayerVotes.empty() && str_comp(vPlayerVotes.back().m_aDescription, pReplaceIndent) != 0)
-	{
-		str_copy(aBufDesc, pReplaceIndent, sizeof(aBufDesc));
-	}
-	else if(str_comp(m_apPlayers[ClientID]->GetLanguage(), "ru") == 0 || str_comp(m_apPlayers[ClientID]->GetLanguage(), "uk") == 0)
-		str_translation_cyrlic_to_latin(aBufDesc);
-		*/
-	CVoteOption Vote;
-	str_copy(Vote.m_aDescription, aBufDesc, sizeof(Vote.m_aDescription));
-	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
-	Vote.m_SettingID = TempInt;
-	Vote.m_SettingID2 = TempInt2;
-
-	//if(Vote.m_aDescription[0] != '\0')
-	//	vPlayerVotes.emplace_back(Vote);
-}
-
-// add formatted vote
-void CGS::AVL(int ClientID, const char* pCmd, const char* pText, ...)
-{
-	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
-	{
-		va_list VarArgs;
-		va_start(VarArgs, pText);
-
-		dynamic_string Buffer;
-		if(str_comp(pCmd, "null") != 0)
-			Buffer.append("- ");
-
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		AV(ClientID, pCmd, Buffer.buffer());
-		Buffer.clear();
-
-		va_end(VarArgs);
-	}
-}
-
-// add formatted vote as menu
-void CGS::AVM(int ClientID, const char* pCmd, const int TempInt, const int HiddenID, const char* pText, ...)
-{
-	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
-	{
-		//if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
-		//	(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
-		//	return;
-
-		va_list VarArgs;
-		va_start(VarArgs, pText);
-
-		dynamic_string Buffer;
-		if(TempInt != NOPE) { Buffer.append("- "); }
-
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		AV(ClientID, pCmd, Buffer.buffer(), TempInt);
-		Buffer.clear();
-		va_end(VarArgs);
-	}
-}
-
-// add formatted vote with multiple id's
-void CGS::AVD(int ClientID, const char* pCmd, const int TempInt, const int TempInt2, const int HiddenID, const char* pText, ...)
-{
-	if(ClientID >= 0 && ClientID < MAX_PLAYERS && m_apPlayers[ClientID])
-	{
-		//if((!m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID > TAB_SETTINGS_MODULES) ||
-		//	(m_apPlayers[ClientID]->GetHiddenMenu(HiddenID) && HiddenID <= TAB_SETTINGS_MODULES))
-		//	return;
-
-		va_list VarArgs;
-		va_start(VarArgs, pText);
-
-		dynamic_string Buffer;
-		if(TempInt != NOPE) { Buffer.append("- "); }
-
-		Server()->Localization()->Format_VL(Buffer, m_apPlayers[ClientID]->GetLanguage(), pText, VarArgs);
-		AV(ClientID, pCmd, Buffer.buffer(), TempInt, TempInt2);
-		Buffer.clear();
-		va_end(VarArgs);
-	}
-}
-
 // information for unauthorized players
 void CGS::ShowVotesNewbieInformation(int ClientID)
 {
@@ -1764,23 +1672,6 @@ void CGS::UpdateVotesIfForAll(int MenuList)
 		if(m_apPlayers[i] && m_apPlayers[i]->m_VotesData.GetCurrentMenuID() == MenuList)
 			m_apPlayers[i]->m_VotesData.UpdateVotes(MenuList);
 	}
-}
-
-// the back button adds a back button to the menu (But remember to specify the last menu ID).
-void CGS::AddVotesBackpage(int ClientID)
-{
-	if(!m_apPlayers[ClientID])
-		return;
-
-	AV(ClientID, "null");
-	AVL(ClientID, "BACK", "◀◀◀◀ Backpage ◀◀◀◀");
-}
-
-// display information by currency
-void CGS::AddVoteItemValue(int ClientID, ItemIdentifier ItemID, int HideID)
-{
-	if(CPlayer* pPlayer = GetPlayer(ClientID); pPlayer)
-		AVM(ClientID, "null", NOPE, HideID, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GetItemInfo(ItemID)->GetName());
 }
 
 // vote parsing of all functions of action methods

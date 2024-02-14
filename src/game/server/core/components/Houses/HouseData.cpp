@@ -42,6 +42,15 @@ void CHouseData::InitDecorations()
 	}
 }
 
+bool CHouseData::StartDrawing() const
+{
+	CPlayer* pPlayer = GS()->GetPlayerByUserID(m_AccountID);
+	if(!pPlayer)
+		return false;
+
+	return m_pDrawBoard->StartDrawing(pPlayer);
+}
+
 bool CHouseData::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
 {
 	const auto pHouse = (CHouseData*)pUser;
@@ -229,10 +238,4 @@ void CHouseData::TextUpdate(int LifeTime)
 		// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object
 		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
 	}
-}
-
-// It is used to display the list of decorations in the house.
-void CHouseData::ShowDecorationList() const
-{
-
 }
