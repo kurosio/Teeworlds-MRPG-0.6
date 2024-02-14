@@ -192,10 +192,10 @@ void CWarehouseManager::ShowWarehouseTradingList(CPlayer* pPlayer, const CWareho
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// show trade list
-	for(auto Trade : pWarehouse->GetTradingList())
+	for(auto& Trade : pWarehouse->GetTradingList())
 	{
 		CItemDescription* pCurrency = pWarehouse->GetCurrency();
-		CItem* pTrade = Trade.GetTradeItem();
+		const CItem* pTrade = Trade.GetTradeItem();
 		const int& Price = Trade.GetPrice();
 
 		CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE);
