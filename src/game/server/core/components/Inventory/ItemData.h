@@ -37,7 +37,7 @@ public:
 	virtual bool SetSettings(int Settings) { m_Settings = Settings; return true; }
 
 	// valid
-	bool IsValid() const { return m_ID > 0 && m_Value > 0; }
+	bool IsValid() const { return CItemDescription::Data().find(m_ID) != CItemDescription::Data().end() && m_Value > 0; }
 
 	CItemDescription* Info() const { return &CItemDescription::Data()[m_ID]; }
 

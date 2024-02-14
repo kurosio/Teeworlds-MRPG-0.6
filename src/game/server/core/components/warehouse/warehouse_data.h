@@ -8,6 +8,12 @@ using TradeIdentifier = int;
 
 #include <game/server/core/components/Inventory/ItemData.h>
 
+enum class WarehouseType : int
+{
+	Shop,
+	Selling
+};
+
 /*
  * Trading slot
  */
@@ -33,11 +39,12 @@ public:
 using ContainerTradingList = std::deque<CTradeSlot>;
 class CWarehouse : public MultiworldIdentifiableStaticData< std::deque< CWarehouse* > >
 {
-	WarehouseIdentifier m_ID{};
-	char m_aName[32]{};
-	vec2 m_Pos{};
-	int m_Currency{};
-	int m_WorldID{};
+	WarehouseIdentifier m_ID {};
+	WarehouseType m_Type {};
+	char m_aName[32] {};
+	vec2 m_Pos {};
+	int m_Currency {};
+	int m_WorldID {};
 	ContainerTradingList m_aTradingList {};
 
 public:
@@ -51,20 +58,23 @@ public:
 	}
 
 	// Initialize the warehouse
-	void Init(const std::string& Name, vec2 Pos, int Currency, int WorldID)
+	void Init(const std::string& Name, const std::string& Properties, vec2 Pos, int Currency, int WorldID)
 	{
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		m_Pos = Pos;
 		m_Currency = Currency;
 		m_WorldID = WorldID;
+		InitProperties(Properties);
 	}
 
+	void InitProperties(const std::string& JsonProperties);
 	void InitTradingList(const ContainerTradingList& DataContainer) noexcept
 	{
 		m_aTradingList = DataContainer;
 	}
 
 	WarehouseIdentifier GetID() const { return m_ID; }
+	WarehouseType GetType() const { return m_Type; }
 	const char* GetName() const { return m_aName; }
 	vec2 GetPos() const { return m_Pos; }
 	CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_Currency]; }

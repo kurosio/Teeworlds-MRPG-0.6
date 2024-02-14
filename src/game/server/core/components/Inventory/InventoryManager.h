@@ -22,8 +22,8 @@ class CInventoryManager : public MmoComponent
 	bool OnHandleMenulist(class CPlayer* pPlayer, int Menulist) override;
 
 public:
-	std::vector<int> GetItemIDsCollection(ItemType Type) const;
-	std::vector<int> GetItemIDsCollectionByFunction(ItemFunctional Type) const;
+	static std::vector<int> GetItemIDsCollection(ItemType Type);
+	static std::vector<int> GetItemIDsCollectionByFunction(ItemFunctional Type);
 
 	// primary
 	void ListInventory(int ClientID, ItemType Type);

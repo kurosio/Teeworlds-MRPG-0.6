@@ -20,8 +20,11 @@ class CWarehouseManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
-	void ShowWarehouseTradingList(CPlayer *pPlayer, const CWarehouse* pWarehouse) const;
+	void ShowWarehouseSellingList(CPlayer* pPlayer, const CWarehouse* pWarehouse) const;
+	void ShowWarehouseTradingList(CPlayer* pPlayer, const CWarehouse* pWarehouse) const;
+	void ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehouse) const;
 	bool BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID) const;
+	bool SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID, int Value) const;
 
 public:
 	CWarehouse* GetWarehouse(vec2 Pos) const;
