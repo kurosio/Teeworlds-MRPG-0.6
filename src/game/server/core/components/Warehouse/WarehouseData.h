@@ -14,23 +14,17 @@ using TradeIdentifier = int;
 class CTradeSlot
 {
 	TradeIdentifier m_ID {};
-	CItem* m_pTradeItem {};
+	CItem m_TradeItem {};
 	int m_Price {};
 
 public:
-	CTradeSlot() = default;
-	CTradeSlot(TradeIdentifier ID) : m_ID(ID) {}
-
-	// Initialize the trading slot
-	void Init(CItem* pItem, int Price)
-	{
-		m_pTradeItem = pItem;
-		m_Price = Price;
-	}
+	CTradeSlot() = delete;
+	CTradeSlot(TradeIdentifier ID, CItem&& pItem, int Price) : m_ID(ID), m_TradeItem(std::move(pItem)), m_Price(Price) {}
 
 	TradeIdentifier GetID() const { return m_ID; }
-	CItem* GetTradeItem() const { return m_pTradeItem; }
 	int GetPrice() const { return m_Price; }
+	CItem* GetTradeItem() { return &m_TradeItem; }
+	const CItem* GetTradeItem() const { return &m_TradeItem; }
 };
 
 /*

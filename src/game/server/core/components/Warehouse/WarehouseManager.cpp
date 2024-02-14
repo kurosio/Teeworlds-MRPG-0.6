@@ -38,10 +38,8 @@ void CWarehouseManager::OnInit()
 		int WarehouseID = pResStore->getInt("WarehouseID");
 
 		// init by server
-		CTradeSlot TradeSlot(ID);
-		auto pItem = new CItem(ItemID, ItemValue, Enchant);
-		TradeSlot.Init(pItem, Price);
-		TradesSlots[WarehouseID].push_back(TradeSlot);
+		CItem TradeItem(ItemID, ItemValue, Enchant);
+		TradesSlots[WarehouseID].push_back({ID, std::move(TradeItem), Price});
 	}
 
 	// init trades slots for warehouses
@@ -194,7 +192,7 @@ void CWarehouseManager::ShowWarehouseTradingList(CPlayer* pPlayer, const CWareho
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// show trade list
-	for(auto& Trade : pWarehouse->GetTradingList())
+	for(auto Trade : pWarehouse->GetTradingList())
 	{
 		CItemDescription* pCurrency = pWarehouse->GetCurrency();
 		CItem* pTrade = Trade.GetTradeItem();
