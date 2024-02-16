@@ -2745,6 +2745,17 @@ void str_utf8_reverse(char* string)
 	str_reverse_impl(string, end - 1);
 }
 
+const char* str_lower(char* string)
+{
+	while(*string)
+	{
+		if(*string >= 'A' && *string <= 'Z')
+			*string += 32;
+		string++;
+	}
+	return string;
+}
+
 void str_append(char *dst, const char *src, int dst_size)
 {
 	int s = str_length(dst);

@@ -1123,6 +1123,17 @@ void str_utf8_reverse(char* string);
 /**
  * @defgroup Strings
  *
+ * String related functions
+ */
+
+ /*
+  * String replace to lower case A-Z
+  */
+const char* str_lower(char* string);
+
+/**
+ * @defgroup Strings
+ *
  * String related functions.
  */
 

@@ -32,7 +32,7 @@ bool CDungeonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Dungeons Information");
+		CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Dungeons Information");
 		VInfo.Add("In this section you can choose a dungeon");
 		VInfo.Add("View the fastest players on the passage");
 
@@ -183,7 +183,7 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 		if(dungeon.second.m_IsStory != Story)
 			continue;
 
-		CVoteWrapper VDungeon(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE, "Lvl{INT} {STR} : Players {INT} : {STR} [{INT}%]",
+		CVoteWrapper VDungeon(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "Lvl{INT} {STR} : Players {INT} : {STR} [{INT}%]",
 			dungeon.second.m_Level, dungeon.second.m_aName, dungeon.second.m_Players, 
 			(dungeon.second.IsDungeonPlaying() ? "Active dungeon" : "Waiting players"), dungeon.second.m_Progress);
 
@@ -214,7 +214,7 @@ void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 	int DungeonID = pController->GetDungeonID();
 	const int DungeonWorldID = CDungeonData::ms_aDungeon[DungeonID].m_WorldID;
 
-	CVoteWrapper VPlayers(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE, "Voting for the choice of tank!");
+	CVoteWrapper VPlayers(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Voting for the choice of tank!");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);

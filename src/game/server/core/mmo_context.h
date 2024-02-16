@@ -231,8 +231,8 @@ enum MenuList
 	MENU_HOUSE_BUY,
 
 	// Warehouse
-	MENU_WAREHOUSE_SHOPPING_LIST,
-	MENU_WAREHOUSE_SELLING_LIST,
+	MENU_WAREHOUSE,
+	MENU_WAREHOUSE_BUY_ITEM_SELECTED,
 
 	// Eidolon Collection menus
 	MENU_EIDOLON_COLLECTION,
@@ -366,7 +366,7 @@ enum
 	itGold = 1,							// Money ordinary currency
 	itHammer = 2,						// Equipment Hammers
 	itMaterial = 7,						// Scraping material
-	itTicketGuild = 8,					// Ticket for the creation of the guild
+	itProduct = 8,						// Scraping material
 	itSkillPoint = 9,					// Skillpoint
 	itPotionManaRegen = 14,				// Mana regeneration potion
 	itTinyHealthPotion = 15,			// Tiny health potion
@@ -390,6 +390,7 @@ enum
 	itEidolonDryad = 80,				// Eidolon
 	itEidolonPigQueen = 88,				// Eidolon
 	itAdventurersBadge = 92,			// The adventurer's badge
+	itTicketGuild = 95,					// Ticket for the creation of the guild
 
 	// decoration items
 	itPickupHealth = 10,					// Pickup heart

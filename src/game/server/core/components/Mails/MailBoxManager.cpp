@@ -72,7 +72,7 @@ void CMailboxManager::GetInformationInbox(CPlayer *pPlayer)
 		// add vote menu
 		CItemDescription* pItemAttach = GS()->GetItemInfo(ItemID);
 
-		CVoteWrapper VLetter(ClientID, VWFLAG_UNIQUE, "✉ Letter({INT}) {STR}", ShowLetterID, pRes->getString("Name").c_str());
+		CVoteWrapper VLetter(ClientID, VWF_UNIQUE, "✉ Letter({INT}) {STR}", ShowLetterID, pRes->getString("Name").c_str());
 		VLetter.Add(pDescription);
 
 		if(ItemID <= 0 || ItemValue <= 0)

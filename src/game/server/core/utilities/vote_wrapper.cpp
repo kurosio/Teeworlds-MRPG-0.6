@@ -14,10 +14,10 @@ namespace Border
 
 	static constexpr const char* get(BorderSymbol Border, int Flags)
 	{
-		if(Flags & VWFLAG_STYLE_SIMPLE) { return g_pSimpleBorder[Border]; }
-		if(Flags & VWFLAG_STYLE_DOUBLE) { return g_pDoubleBorder[Border]; }
-		if(Flags & VWFLAG_STYLE_STRICT) { return g_pStrictBorder[Border]; }
-		if(Flags & VWFLAG_STYLE_STRICT_BOLD) { return g_pStrictBoldBorder[Border]; }
+		if(Flags & VWF_STYLE_SIMPLE) { return g_pSimpleBorder[Border]; }
+		if(Flags & VWF_STYLE_DOUBLE) { return g_pDoubleBorder[Border]; }
+		if(Flags & VWF_STYLE_STRICT) { return g_pStrictBorder[Border]; }
+		if(Flags & VWF_STYLE_STRICT_BOLD) { return g_pStrictBoldBorder[Border]; }
 		return "";
 	}
 }
@@ -48,7 +48,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	va_end(VarArgs);
 
 	const char* pAppend = "\0";
-	if(m_Flags & (VWFLAG_CLOSED | VWFLAG_OPEN | VWFLAG_UNIQUE))
+	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
 	{
 		const bool HiddenTab = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags)->m_Value;
 		pAppend = HiddenTab ? "\u21BA " : "\u27A4 ";
@@ -184,7 +184,7 @@ void CVoteGroup::AddItemValueImpl(int ItemID)
 bool CVoteGroup::IsHidden() const
 {
 	// For special flags hidden does not used
-	if(m_Flags & (VWFLAG_CLOSED | VWFLAG_OPEN | VWFLAG_UNIQUE))
+	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
 	{
 		// Check if the player is valid
 		if(m_pPlayer)
@@ -212,7 +212,7 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	if(m_pData[ClientID].empty())
 	{
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
-		CVoteWrapper VError(ClientID, VWFLAG_STYLE_SIMPLE, "Error");
+		CVoteWrapper VError(ClientID, VWF_STYLE_SIMPLE, "Error");
 		VError.Add("The voting list is empty")
 			.BeginDepthList()
 				.Add("Probably a server error")
@@ -233,11 +233,11 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 			pGroup->AddVoteImpl("null", NOPE, NOPE, "The list is empty");
 
 		// Group separator with line
-		if(pGroup->m_Flags & VWFLAG_SEPARATE && pGroup != m_pData[ClientID].back())
+		if(pGroup->m_Flags & VWF_SEPARATE && pGroup != m_pData[ClientID].back())
 		{
 			if(pGroup->IsHidden())
 			{
-				auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+				auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 				pVoteGroup->AddLineImpl();
 				iterGroup = std::prev(m_pData[ClientID].insert(std::next(iterGroup), pVoteGroup));
 			}
@@ -266,7 +266,7 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 		for(auto& Option : pGroup->m_vpVotelist)
 		{
 			// Rebuild the vote options to aesthetic style
-			if(pGroup->m_Flags & (VWFLAG_STYLE_SIMPLE | VWFLAG_STYLE_DOUBLE | VWFLAG_STYLE_STRICT | VWFLAG_STYLE_STRICT_BOLD) && !pGroup->IsHidden())
+			if(pGroup->m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD) && !pGroup->IsHidden())
 			{
 				const int& Flags = pGroup->m_Flags;
 				auto pBack = &pGroup->m_vpVotelist.back();
@@ -340,7 +340,7 @@ CVotePlayerData::VoteGroupHidden* CVotePlayerData::EmplaceHidden(int ID, int Typ
 	if(CurrentHidden.find(ID) != CurrentHidden.end() && CurrentHidden[ID].m_Flag == Type)
 		return &CurrentHidden[ID];
 
-	bool Value = (Type & VWFLAG_CLOSED) || (Type & VWFLAG_UNIQUE);
+	bool Value = (Type & VWF_CLOSED) || (Type & VWF_UNIQUE);
 	CurrentHidden[ID] = { Value, Type };
 	return &CurrentHidden[ID];
 }
@@ -367,7 +367,7 @@ void CVotePlayerData::ResetHidden(int MenuID)
 	// Iterate over each hidden vote group
 	for(auto& [ID, Hide] : HiddenGroup)
 	{
-		if(Hide.m_Flag & VWFLAG_UNIQUE)
+		if(Hide.m_Flag & VWF_UNIQUE)
 			Hide.m_Value = true;
 	}
 }
@@ -454,12 +454,12 @@ bool CVotePlayerData::ParsingDefaultSystemCommands(const char* CMD, const int Vo
 		// If the hidden vote group does not exist, return true
 		if(VoteGroupHidden* pHidden = GetHidden(VoteID))
 		{
-			// If the hidden vote group has the VWFLAG_UNIQUE flag and its ID is not the specified ID, set its value to true
-			if(pHidden->m_Flag & VWFLAG_UNIQUE)
+			// If the hidden vote group has the VWF_UNIQUE flag and its ID is not the specified ID, set its value to true
+			if(pHidden->m_Flag & VWF_UNIQUE)
 			{
 				for(auto& [ID, Hide] : m_aHiddenGroup[m_CurrentMenuID])
 				{
-					if(Hide.m_Flag & VWFLAG_UNIQUE && ID != VoteID)
+					if(Hide.m_Flag & VWF_UNIQUE && ID != VoteID)
 						Hide.m_Value = true;
 				}
 			}

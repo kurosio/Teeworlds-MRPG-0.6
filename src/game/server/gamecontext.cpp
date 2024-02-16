@@ -1639,7 +1639,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	if(!pPlayer)
 		return;
 
-	CVoteWrapper VWelcome(ClientID, VWFLAG_SEPARATE_OPEN, "#### Hi, new adventurer! ####");
+	CVoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN, "#### Hi, new adventurer! ####");
 	VWelcome.Add("This server is a mmo server. You'll have to finish");
 	VWelcome.Add("quests to continue the game. In these quests,");
 	VWelcome.Add("you'll have to get items to give to quest npcs.");

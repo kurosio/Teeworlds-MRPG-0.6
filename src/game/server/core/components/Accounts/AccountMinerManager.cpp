@@ -81,7 +81,7 @@ bool CAccountMinerManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
 			continue;
 
 		const vec2 Pos = Ore.m_Position / 32.0f;
-		CVoteWrapper VOres(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE, "Ore {STR}", GS()->GetItemInfo(Ore.m_ItemID)->GetName());
+		CVoteWrapper VOres(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Ore {STR}", GS()->GetItemInfo(Ore.m_ItemID)->GetName());
 		{
 			VOres.BeginDepthList();
 			VOres.Add("Location:");

@@ -283,7 +283,7 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 	const int TotalComplectedQuests = GetCountComplectedQuests(ClientID);
 	const int TotalIncomplectedQuests = TotalQuests - TotalComplectedQuests;
 
-	CVoteWrapper VInfo(ClientID, VWFLAG_STYLE_STRICT, "Quests statistic");
+	CVoteWrapper VInfo(ClientID, VWF_STYLE_STRICT, "Quests statistic");
 	VInfo.Add("Total quests: {INT}", TotalQuests);
 	VInfo.Add("Total complected quests: {INT}", TotalComplectedQuests);
 	VInfo.Add("Total incomplete quests: {INT}", TotalIncomplectedQuests);
@@ -372,7 +372,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		CPlayerQuestStep& rQuestStepDataInfo = pPlayerQuest->m_aPlayerSteps[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest->GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest->GetState() == QuestState::FINISHED) ? "✔ " : "\0");
 
-		CVoteWrapper VStep(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", 
+		CVoteWrapper VStep(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", 
 			pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
@@ -462,7 +462,7 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 {
 	const int ClientID = pPlayer->GetCID();
 
-	CVoteWrapper VWanted(ClientID, VWFLAG_SEPARATE_CLOSED|VWFLAG_STYLE_SIMPLE, "Wanted players list");
+	CVoteWrapper VWanted(ClientID, VWF_SEPARATE_CLOSED|VWF_STYLE_SIMPLE, "Wanted players list");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GS()->GetPlayer(i, true);
@@ -493,7 +493,7 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 	}
 
 	// Daily board information
-	CVoteWrapper VDailyBoard(ClientID, VWFLAG_STYLE_STRICT_BOLD, "Daily board: {STR}", pBoard->GetName());
+	CVoteWrapper VDailyBoard(ClientID, VWF_STYLE_STRICT_BOLD, "Daily board: {STR}", pBoard->GetName());
 	VDailyBoard.Add("Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
 	VDailyBoard.AddItemValue(itAlliedSeals);
 	VDailyBoard.AddLine();
@@ -511,7 +511,7 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 		const char* QuestName = pDailyQuestInfo.GetName();
 
 		// Display the quest information to the player
-		CVoteWrapper VQuest(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE, "({STR}) {STR}", StateIndicator, QuestName);
+		CVoteWrapper VQuest(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "({STR}) {STR}", StateIndicator, QuestName);
 		VQuest.Add("Reward:");
 		{
 			VQuest.BeginDepthList();

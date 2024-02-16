@@ -14,24 +14,24 @@ typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallb
 
 enum
 {
-	VWFLAG_DISABLED          = 0, // regular title group
+	VWF_DISABLED          = 0, // regular title group
 
 	// settings
-	VWFLAG_SEPARATE          = 1 << 1, // separates the end and the beginning of the new group by a line
+	VWF_SEPARATE          = 1 << 1, // separates the end and the beginning of the new group by a line
 
 	// styles
-	VWFLAG_STYLE_SIMPLE      = 1 << 2, // example: ╭ │ ╰
-	VWFLAG_STYLE_DOUBLE      = 1 << 3, // example: ╔ ═ ╚
-	VWFLAG_STYLE_STRICT      = 1 << 4, // example: ┌ │ └
-	VWFLAG_STYLE_STRICT_BOLD = 1 << 5, // example: ┏ ┃ ┗
+	VWF_STYLE_SIMPLE      = 1 << 2, // example: ╭ │ ╰
+	VWF_STYLE_DOUBLE      = 1 << 3, // example: ╔ ═ ╚
+	VWF_STYLE_STRICT      = 1 << 4, // example: ┌ │ └
+	VWF_STYLE_STRICT_BOLD = 1 << 5, // example: ┏ ┃ ┗
 
 	// hidden
-	VWFLAG_OPEN              = 1 << 6, // default open group
-	VWFLAG_CLOSED            = 1 << 7, // default close group
-	VWFLAG_UNIQUE            = 1 << 8, // default close group toggle unique groups 
-	VWFLAG_SEPARATE_OPEN     = VWFLAG_OPEN | VWFLAG_SEPARATE, // default open group with separate
-	VWFLAG_SEPARATE_CLOSED   = VWFLAG_CLOSED | VWFLAG_SEPARATE, // default close group with separate
-	VWFLAG_SEPARATE_UNIQUE   = VWFLAG_UNIQUE | VWFLAG_SEPARATE, // default close group with separate
+	VWF_OPEN              = 1 << 6, // default open group
+	VWF_CLOSED            = 1 << 7, // default close group
+	VWF_UNIQUE            = 1 << 8, // default close group toggle unique groups 
+	VWF_SEPARATE_OPEN     = VWF_OPEN | VWF_SEPARATE, // default open group with separate
+	VWF_SEPARATE_CLOSED   = VWF_CLOSED | VWF_SEPARATE, // default close group with separate
+	VWF_SEPARATE_UNIQUE   = VWF_UNIQUE | VWF_SEPARATE, // default close group with separate
 };
 
 class CVoteOption
@@ -88,7 +88,7 @@ public:
 	CVoteWrapper(int ClientID)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
-		m_pGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+		m_pGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		m_pData[ClientID].push_back(m_pGroup);
 	}
 
@@ -104,7 +104,7 @@ public:
 	CVoteWrapper(int ClientID, const char* pTitle, Args&& ... argsfmt)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
-		m_pGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+		m_pGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, pTitle, std::forward<Args>(argsfmt)...);
 		m_pData[ClientID].push_back(m_pGroup);
 	}
@@ -140,23 +140,23 @@ public:
 	 * Global static data
 	 */
 	static void AddLine(int ClientID) noexcept {
-		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddLineImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
 	static void AddBackpage(int ClientID) noexcept {
-		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddBackpageImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
 	static void AddEmptyline(int ClientID) noexcept {
-		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddEmptylineImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
 	static void AddItemValue(int ClientID, int ItemID) noexcept
 	{
-		const auto pVoteGroup = new CVoteGroup(ClientID, VWFLAG_DISABLED);
+		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddItemValueImpl(ItemID);
 		m_pData[ClientID].push_back(pVoteGroup);
 	}

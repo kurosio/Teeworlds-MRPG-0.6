@@ -100,12 +100,12 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VInventoryInfo(ClientID, VWFLAG_SEPARATE_OPEN, "Inventory Information");
+		CVoteWrapper VInventoryInfo(ClientID, VWF_SEPARATE_OPEN, "Inventory Information");
 		VInventoryInfo.Add("Choose the type of items you want to show");
 		VInventoryInfo.Add("After, need select item to interact");
 		VInventoryInfo.AddLine();
 
-		CVoteWrapper VInventoryTabs(ClientID, VWFLAG_SEPARATE_OPEN, "\u262A Inventory tabs");
+		CVoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE_OPEN, "\u262A Inventory tabs");
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "\u270C Used ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_USED));
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "\u2692 Craft ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT));
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_EQUIP, "\u26B0 Equipment ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP));
@@ -125,12 +125,12 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VEquipInfo(ClientID, VWFLAG_SEPARATE_OPEN, "\u2604 Equipment Information");
+		CVoteWrapper VEquipInfo(ClientID, VWF_SEPARATE_OPEN, "\u2604 Equipment Information");
 		VEquipInfo.Add("Select the type of equipment you want to show");
 		VEquipInfo.Add("After, need select item to interact");
 		VEquipInfo.AddLine();
 
-		CVoteWrapper VEquipTabs(ClientID, VWFLAG_SEPARATE_OPEN, "\u2604 Equipment tabs");
+		CVoteWrapper VEquipTabs(ClientID, VWF_SEPARATE_OPEN, "\u2604 Equipment tabs");
 		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor", "Eidolon" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
@@ -305,11 +305,11 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 	const int ClientID = pPlayer->GetCID();
 
 	// show base shop functions
-	CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Selling item's");
+	CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Selling item's");
 	VInfo.Add("You can sell items from the list");
 	VInfo.AddLine();
 
-	CVoteWrapper VItems(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE, "Sale of items from the list is available!");
+	CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Sale of items from the list is available!");
 	VItems.Add("Choose the item you want to sell");
 	{
 		VItems.BeginDepthList();
@@ -332,7 +332,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	const ItemIdentifier ItemID = pItem->GetID();
 	CItemDescription* pInfo = pItem->Info();
 
-	CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE);
+	CVoteWrapper VItem(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE);
 
 	// name description
 	if(pInfo->IsEnchantable())

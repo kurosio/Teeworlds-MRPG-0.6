@@ -219,7 +219,7 @@ bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 			continue;
 
 		const vec2 Pos = Mob.m_Position / 32.0f;
-		CVoteWrapper VMob(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE, "Mob {STR}", Mob.GetName());
+		CVoteWrapper VMob(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Mob {STR}", Mob.GetName());
 		{
 			VMob.BeginDepthList();
 			VMob.Add("Location:");

@@ -88,13 +88,13 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 		// information
 		HouseIdentifier ID = pHouse->GetID();
-		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "House stats {INT} Class {STR}", ID, pHouse->GetClassName());
+		CVoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "House stats {INT} Class {STR}", ID, pHouse->GetClassName());
 		VInfo.Add("/hdoor - interactive with door.");
 		VInfo.Add("/hsell - sell house.");
 		VInfo.AddLine();
 
 		// House deposit
-		CVoteWrapper VDeposit(ClientID, VWFLAG_SEPARATE_OPEN, "\u2727 Your: {VAL} | Safe: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pHouse->GetBank()->Get());
+		CVoteWrapper VDeposit(ClientID, VWF_SEPARATE_OPEN, "\u2727 Your: {VAL} | Safe: {VAL} golds", pPlayer->GetItem(itGold)->GetValue(), pHouse->GetBank()->Get());
 		VDeposit.AddOption("HOUSE_BANK_ADD", "Add. (Amount in a reason)");
 		VDeposit.AddOption("HOUSE_BANK_TAKE", "Take. (Amount in a reason)");
 		VDeposit.AddLine();
@@ -102,7 +102,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		// House doors
 		if(!pHouse->GetDoorsController()->GetDoors().empty())
 		{
-			CVoteWrapper VDoors(ClientID, VWFLAG_SEPARATE_OPEN, "\u2743 House has {VAL} controlled door's", (int)pHouse->GetDoorsController()->GetDoors().size());
+			CVoteWrapper VDoors(ClientID, VWF_SEPARATE_OPEN, "\u2743 House has {VAL} controlled door's", (int)pHouse->GetDoorsController()->GetDoors().size());
 			for(auto& [Number, DoorData] : pHouse->GetDoorsController()->GetDoors())
 			{
 				bool StateDoor = DoorData->IsClosed();
@@ -112,7 +112,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		}
 
 		// House invited list
-		CVoteWrapper VManagement(ClientID, VWFLAG_SEPARATE_OPEN, "\u2697 Managing your home");
+		CVoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN, "\u2697 Managing your home");
 		VManagement.AddOption("HOUSE_SPAWN", "Teleport to your house");
 		VManagement.AddOption("HOUSE_SELL", "Sell your house (in reason 777)");
 		VManagement.AddOption("HOUSE_DECORATION", "Decoration editor");
@@ -143,19 +143,19 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		}
 
 		// information
-		CVoteWrapper VPlantInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "\u2741 Plant zones information");
+		CVoteWrapper VPlantInfo(ClientID, VWF_SEPARATE_CLOSED, "\u2741 Plant zones information");
 		VPlantInfo.Add("You can plant some kind of plantation.");
 		CVoteWrapper::AddLine(ClientID);
 
 		// settings
 		CItemDescription* pItem = GS()->GetItemInfo(pHouse->GetPlantedItem()->GetID());
-		CVoteWrapper VPlantSettings(ClientID, VWFLAG_STYLE_STRICT_BOLD);
+		CVoteWrapper VPlantSettings(ClientID, VWF_STYLE_STRICT_BOLD);
 		VPlantSettings.Add("\u2741 Plant zone: default");
 		VPlantSettings.Add("Planted: {STR}", pItem->GetName());
 		VPlantSettings.AddLine();
 
 		// items
-		CVoteWrapper VPlantItems(ClientID, VWFLAG_SEPARATE_OPEN, "\u2741 Possible items for planting");
+		CVoteWrapper VPlantItems(ClientID, VWF_SEPARATE_OPEN, "\u2741 Possible items for planting");
 		std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ItemFunctional::FUNCTION_PLANT);
 		for(auto& ID : vItems)
 		{
@@ -183,7 +183,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		}
 
 		// information
-		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "\u2697 Access to door's");
+		CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "\u2697 Access to door's");
 		VInfo.Add("You can manage access to your door's.");
 		VInfo.Add("Add a limited number of players who can");
 		VInfo.Add("enter the house regardless of door status");
@@ -191,7 +191,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 		// show active access players to house
 		CHouseDoorsController* pHouseDoor = pHouse->GetDoorsController();
-		CVoteWrapper VAccess(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE);
+		CVoteWrapper VAccess(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE);
 		VAccess.Add("Permits have been granted:");
 		{
 			VAccess.BeginDepthList();
@@ -202,7 +202,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		}
 
 		// search result
-		CVoteWrapper VSearch(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_SIMPLE, "Search result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		CVoteWrapper VSearch(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Search result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
 		VSearch.Add("You can add {INT} player's:", pHouseDoor->GetAvailableAccessSlots());
 		{
 			VSearch.BeginDepthList();
@@ -599,18 +599,18 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse)
 	const int ClientID = pPlayer->GetCID();
 	const char* pStrHouseOwner = pHouse->HasOwner() ? Instance::Server()->GetAccountNickname(pHouse->GetAccountID()) : "No owner";
 
-	CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "House information");
+	CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "House information");
 	VInfo.Add("You can buy this house for {VAL} gold.", pHouse->GetPrice());
 	VInfo.AddLine();
 
 	// detail information
-	CVoteWrapper VDetail(ClientID, VWFLAG_SEPARATE_OPEN, "Detail information about house.", ID, pHouse->GetClassName());
+	CVoteWrapper VDetail(ClientID, VWF_SEPARATE_OPEN, "Detail information about house.", ID, pHouse->GetClassName());
 	VDetail.Add("House owned by: {STR}", pStrHouseOwner);
 	VDetail.Add("House price: {VAL} gold", pHouse->GetPrice());
 	VDetail.Add("House class: {STR}", pHouse->GetClassName());
 	VDetail.AddLine();
 
-	CVoteWrapper VBuy(ClientID, VWFLAG_SEPARATE_OPEN, "You have {VAL} golds.", pPlayer->GetItem(itGold)->GetValue());
+	CVoteWrapper VBuy(ClientID, VWF_SEPARATE_OPEN, "You have {VAL} golds.", pPlayer->GetItem(itGold)->GetValue());
 	if(pHouse->GetAccountID() <= 0)
 		VBuy.AddOption("HOUSE_BUY", ID, "Buy this house. Price {VAL}gold", pHouse->GetPrice());
 	else

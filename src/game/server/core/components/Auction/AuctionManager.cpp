@@ -57,7 +57,7 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CVoteWrapper(ClientID).Add("The reason for write the number for each row");
 		CVoteWrapper::AddEmptyline(ClientID);
 
-		CVoteWrapper VSlot(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "Auction slot for {STR}", pAuctionItem->Info()->GetName());
+		CVoteWrapper VSlot(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {STR}", pAuctionItem->Info()->GetName());
 		VSlot.Add("Description:");
 		{
 			VSlot.BeginDepthList();
@@ -244,7 +244,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Auction Information");
+	CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Auction Information");
 	VInfo.Add("To create a slot, see inventory item interact.");
 	VInfo.AddLine();
 
@@ -260,7 +260,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 		const int UserID = pRes->getInt("UserID");
 		CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
 
-		CVoteWrapper VItem(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE);
+		CVoteWrapper VItem(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE);
 		if(pItemInfo->IsEnchantable())
 		{
 			VItem.SetTitle("{STR}{STR} {STR} - {VAL} gold",

@@ -51,14 +51,14 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		const char* pTypename[] = { "Improving", "Healing", "Attacking", "Defensive" };
 
 		// information
-		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Skill master information");
+		CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Skill master information");
 		VInfo.Add("Here you can learn passive and active skills");
 		VInfo.Add("You can bind active skill any button using the console");
 
 		CVoteWrapper::AddItemValue(ClientID, itSkillPoint);
 
 		// Skill types
-		CVoteWrapper VTypes(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_STRICT_BOLD, "Skill types");
+		CVoteWrapper VTypes(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_STRICT_BOLD, "Skill types");
 		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_TANK, pTypename[SKILL_TYPE_TANK]);
 		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_DPS, pTypename[SKILL_TYPE_DPS]);
 		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_HEALER, pTypename[SKILL_TYPE_HEALER]);
@@ -96,7 +96,7 @@ void CSkillManager::ShowDetailSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	const bool IsPassive = pInfo->IsPassive();
 	const bool IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
 
-	CVoteWrapper VSkill(ClientID, VWFLAG_UNIQUE|VWFLAG_STYLE_SIMPLE, "{STR} - {INT}SP {STR}", pInfo->GetName(), pInfo->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
+	CVoteWrapper VSkill(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{STR} - {INT}SP {STR}", pInfo->GetName(), pInfo->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
 	VSkill.Add("Description:");
 	{
 		VSkill.BeginDepthList();

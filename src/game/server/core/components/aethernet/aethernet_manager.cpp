@@ -146,7 +146,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 	const int ClientID = pPlayer->GetCID();
 
 	// Default aether menu
-	CVoteWrapper VAether(ClientID, VWFLAG_STYLE_STRICT_BOLD, "Aethernet information");
+	CVoteWrapper VAether(ClientID, VWF_STYLE_STRICT_BOLD, "Aethernet information");
 	VAether.Add("Total unlocked aethers: {VAL} of {VAL}.", pPlayer->Account()->GetAethers().size(), CAetherData::Data().size());
 	VAether.AddItemValue(itGold);
 	VAether.AddLine();
@@ -156,7 +156,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 	for(auto& [WorldID, vAethers] : s_vpAetherSortedList)
 	{
 		int UnlockedPlayerZoneAethers = 0;
-		CVoteWrapper VAetherElem(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "{STR} : Aethernet", Server()->GetWorldName(WorldID));
+		CVoteWrapper VAetherElem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{STR} : Aethernet", Server()->GetWorldName(WorldID));
 
 		VAetherElem.BeginDepthList();
 		for(const auto& pAether : vAethers)

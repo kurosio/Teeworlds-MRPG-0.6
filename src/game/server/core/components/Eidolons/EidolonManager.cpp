@@ -31,12 +31,12 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VInfo(ClientID, VWFLAG_SEPARATE_CLOSED, "Eidolon Collection Information");
+		CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Eidolon Collection Information");
 		VInfo.Add("Here you can see your collection of eidolons.");
 		VInfo.AddLine();
 
 		std::pair EidolonSize = GetEidolonsSize(ClientID);
-		CVoteWrapper VEidolon(ClientID, VWFLAG_UNIQUE | VWFLAG_STYLE_SIMPLE, "\u2727 My eidolons (own {INT} out of {INT}).", EidolonSize.first, EidolonSize.second);
+		CVoteWrapper VEidolon(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "\u2727 My eidolons (own {INT} out of {INT}).", EidolonSize.first, EidolonSize.second);
 
 		for(auto& pEidolon : CEidolonInfoData::Data())
 		{
@@ -61,14 +61,14 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
 			pPlayerItem->StrFormatAttributes(pPlayer, aAttributeBonus, sizeof(aAttributeBonus));
 
-			CVoteWrapper VDesc(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "Descriptions of eidolon ({STR})", pEidolonInfo->GetDataBot()->m_aNameBot);
+			CVoteWrapper VDesc(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Descriptions of eidolon ({STR})", pEidolonInfo->GetDataBot()->m_aNameBot);
 			for(auto& Line : pEidolonInfo->GetLinesDescription())
 				VDesc.Add(Line.c_str());
 			VDesc.AddLine();
 			VDesc.Add(aAttributeBonus);
 			VDesc.AddLine();
 
-			CVoteWrapper VEnchancement(ClientID, VWFLAG_SEPARATE_OPEN | VWFLAG_STYLE_SIMPLE, "Unlocking Enhancements");
+			CVoteWrapper VEnchancement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Unlocking Enhancements");
 			VEnchancement.Add("Available soon.");
 			VEnchancement.AddLine();
 

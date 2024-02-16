@@ -88,13 +88,13 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	int ClientID = pPlayer->GetCID();
 
 	// Group information
-	CVoteWrapper VGroupCmd(ClientID, VWFLAG_SEPARATE_CLOSED, "Group commands");
+	CVoteWrapper VGroupCmd(ClientID, VWF_SEPARATE_CLOSED, "Group commands");
 	VGroupCmd.Add("- /group Get all sub commands");
 	VGroupCmd.AddLine();
 
 	// Group management
 	GroupData* pGroup = pPlayer->Account()->GetGroup();
-	CVoteWrapper VGroup(ClientID, VWFLAG_SEPARATE_OPEN|VWFLAG_STYLE_STRICT_BOLD, "\u273D Group Management");
+	CVoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_STRICT_BOLD, "\u273D Group Management");
 	if(!pGroup)
 	{
 		VGroup.AddOption("GROUP_CREATE", "Create a group");
@@ -113,14 +113,14 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	{
 		std::string PlayerName = Server()->GetAccountNickname(AID);
 		bool HasInteraction = IsOwner && AID != pPlayer->Account()->GetID();
-		CVoteWrapper VMember(ClientID, VWFLAG_UNIQUE, "{STR}{STR}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
+		CVoteWrapper VMember(ClientID, VWF_UNIQUE, "{STR}{STR}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
 		VMember.AddIfOption(HasInteraction, "GROUP_KICK", AID, "Kick {STR}", PlayerName.c_str());
 		VMember.AddIfOption(HasInteraction, "GROUP_CHANGE_OWNER", AID, "Transfer ownership {STR}", PlayerName.c_str());
 	}
 	CVoteWrapper::AddLine(ClientID);
 
 	// Group player invites
-	CVoteWrapper VGroupInvites(ClientID, VWFLAG_STYLE_SIMPLE|VWFLAG_SEPARATE_CLOSED, "\u2605 Players for invitation");
+	CVoteWrapper VGroupInvites(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE_CLOSED, "\u2605 Players for invitation");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
