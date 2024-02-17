@@ -41,6 +41,7 @@ void CTutorialManager::OnInit()
 				TutorialBase::Init(Type, pStep.value("info", "\0").c_str(), Tutorial);
 			}
 		}
+		dbg_msg("tutorial", "tutorial data loaded (size: '%llu')", TutorialBase::Data().size());
 	});
 }
 

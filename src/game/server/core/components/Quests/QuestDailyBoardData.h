@@ -11,7 +11,7 @@ using QuestDailyBoardIdentifier = int;
 class CQuestsDailyBoard : public MultiworldIdentifiableStaticData< std::map< int, CQuestsDailyBoard > >
 {
 public:
-	using ContainerDailyQuests = std::deque<CQuestDescription>;
+	using ContainerDailyQuests = std::deque<CQuestDescription*>;
 
 private:
 	QuestDailyBoardIdentifier m_ID {};
@@ -20,7 +20,7 @@ private:
 	int m_WorldID {};
 
 public:
-	ContainerDailyQuests m_DailyQuestsInfoList {};
+	ContainerDailyQuests m_vpDailyQuests {};
 
 	// Default constructor for CQuestsDailyBoard class
 	CQuestsDailyBoard() = default;

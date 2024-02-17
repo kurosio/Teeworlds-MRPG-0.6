@@ -184,7 +184,7 @@ public:
 	class CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }
 	virtual class CPlayerItem* GetItem(ItemIdentifier ID);
 	class CSkill* GetSkill(SkillIdentifier ID);
-	class CPlayerQuest* GetQuest(QuestIdentifier ID);
+	class CPlayerQuest* GetQuest(QuestIdentifier ID) const;
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
 	CAccountData* Account() const { return &CAccountData::ms_aData[m_ClientID]; }
 

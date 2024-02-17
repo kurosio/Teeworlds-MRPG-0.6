@@ -8,10 +8,10 @@
 int CQuestsDailyBoard::QuestsAvailables(CPlayer* pPlayer)
 {
 	// Initialize a count variable
-	int Count = std::count_if(m_DailyQuestsInfoList.begin(), m_DailyQuestsInfoList.end(), [pPlayer](const auto& p)
+	int Count = std::count_if(m_vpDailyQuests.begin(), m_vpDailyQuests.end(), [pPlayer](const auto& p)
 	{
 		// Get the quest with the given ID from the player's quest list
-		CPlayerQuest* pQuest = pPlayer->GetQuest(p.GetID());
+		CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
 		// Check if the quest's state is greater than or equal to ACCEPT
 		return pQuest->GetState() >= QuestState::ACCEPT;
 	});
@@ -23,11 +23,11 @@ int CQuestsDailyBoard::QuestsAvailables(CPlayer* pPlayer)
 // ClearDailyQuests function is a member function of the CQuestsDailyBoard class
 void CQuestsDailyBoard::ClearDailyQuests(CPlayer* pPlayer) const
 {
-	// Iterate through each item in the m_DailyQuestsInfoList
-	for(auto& p : m_DailyQuestsInfoList)
+	// Iterate through each item in the m_vpDailyQuests
+	for(auto& p : m_vpDailyQuests)
 	{
 		// Get the quest with the corresponding ID from the player's quest list and reset player quest
-		CPlayerQuest* pQuest = pPlayer->GetQuest(p.GetID());
+		CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
 		pQuest->Reset();
 	}
 

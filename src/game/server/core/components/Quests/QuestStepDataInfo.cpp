@@ -16,11 +16,9 @@
 
 // ##############################################################
 // ################# GLOBAL STEP STRUCTURE ######################
-void CQuestStepDescription::UpdateBot()
+void CQuestStepBase::UpdateBot() const
 {
 	CGS* pGS = (CGS*)Instance::GameServer(m_Bot.m_WorldID);
-	if(!pGS)
-		return;
 
 	// check it's if there's a active bot
 	int BotClientID = -1;
@@ -34,7 +32,7 @@ void CQuestStepDescription::UpdateBot()
 	}
 
 	// seek if all players have an active bot
-	const bool ActiveStepBot = IsActiveStep(pGS);
+	const bool ActiveStepBot = IsActiveStep();
 	if(ActiveStepBot && BotClientID <= -1)
 	{
 		dbg_msg(QUEST_PREFIX_DEBUG, "The mob was not found, but the quest step remains active for players.");
@@ -49,10 +47,10 @@ void CQuestStepDescription::UpdateBot()
 	}
 }
 
-//Optimized
-bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
+bool CQuestStepBase::IsActiveStep() const
 {
-	const int QuestID = GetQuestID();
+	CGS* pGS = (CGS*)Instance::GameServer(m_Bot.m_WorldID);
+	const int QuestID = m_Bot.m_QuestID;
 	const int SubBotID = m_Bot.m_SubBotID;
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
@@ -71,7 +69,7 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 			continue;
 
 		// skip some step actions
-		CPlayerQuestStep* pStep = pQuest->GetStepByMob(SubBotID);
+		CQuestStep* pStep = pQuest->GetStepByMob(SubBotID);
 		if(pStep->m_StepComplete || pStep->m_ClientQuitting)
 			continue;
 
@@ -81,21 +79,10 @@ bool CQuestStepDescription::IsActiveStep(CGS* pGS) const
 }
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
-CGS* CPlayerQuestStep::GS() const
-{
-	return (CGS*)Instance::GameServer(m_ClientID);
-}
+CGS* CQuestStep::GS() const { return (CGS*)Instance::GameServerPlayer(m_ClientID); }
+CPlayer* CQuestStep::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
 
-CPlayer* CPlayerQuestStep::GetPlayer() const
-{
-	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
-	{
-		return GS()->m_apPlayers[m_ClientID];
-	}
-	return nullptr;
-}
-
-void CPlayerQuestStep::Clear()
+void CQuestStep::Clear()
 {
 	m_aMobProgress.clear();
 	m_aMoveToProgress.clear();
@@ -118,7 +105,7 @@ void CPlayerQuestStep::Clear()
 }
 
 //Optimized
-int CPlayerQuestStep::GetNumberBlockedItem(int ItemID) const
+int CQuestStep::GetNumberBlockedItem(int ItemID) const
 {
 	int Amount = 0;
 	for(auto& p : m_Bot.m_RequiredItems)
@@ -129,7 +116,7 @@ int CPlayerQuestStep::GetNumberBlockedItem(int ItemID) const
 	return Amount;
 }
 
-bool CPlayerQuestStep::IsComplete()
+bool CQuestStep::IsComplete()
 {
 	if(!m_Bot.m_RequiredItems.empty())
 	{
@@ -155,7 +142,7 @@ bool CPlayerQuestStep::IsComplete()
 	return true;
 }
 
-bool CPlayerQuestStep::Finish()
+bool CQuestStep::Finish()
 {
 	CPlayer* pPlayer = GetPlayer();
 
@@ -165,7 +152,7 @@ bool CPlayerQuestStep::Finish()
 		// save file or dissable post finish
 		m_StepComplete = true;
 
-		const int QuestID = GetQuestID();
+		const int QuestID = m_Bot.m_QuestID;
 		if(!pPlayer->GetQuest(QuestID)->SaveSteps())
 		{
 			GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
@@ -185,7 +172,7 @@ bool CPlayerQuestStep::Finish()
 	return false;
 }
 
-void CPlayerQuestStep::PostFinish()
+void CQuestStep::PostFinish()
 {
 	bool AntiDatabaseStress = false;
 	CPlayer* pPlayer = GetPlayer();
@@ -249,11 +236,11 @@ void CPlayerQuestStep::PostFinish()
 	DataBotInfo::ms_aDataBot[m_Bot.m_BotID].m_aVisibleActive[ClientID] = false;
 	UpdateBot();
 
-	pPlayer->GetQuest(GetQuestID())->CheckAvailableNewStep();
+	pPlayer->GetQuest(m_Bot.m_QuestID)->CheckAvailableNewStep();
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_JOURNAL_MAIN);
 }
 
-void CPlayerQuestStep::AppendDefeatProgress(int DefeatedBotID)
+void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 {
 	// check default action
 	CPlayer* pPlayer = GetPlayer();
@@ -261,8 +248,8 @@ void CPlayerQuestStep::AppendDefeatProgress(int DefeatedBotID)
 		return;
 
 	// check quest action
-	CPlayerQuest* pQuest = pPlayer->GetQuest(GetQuestID());
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
+	CPlayerQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != m_Bot.m_Step)
 		return;
 
 	// check complecte mob
@@ -283,7 +270,7 @@ void CPlayerQuestStep::AppendDefeatProgress(int DefeatedBotID)
 	}
 }
 
-void CPlayerQuestStep::UpdatePathNavigator()
+void CQuestStep::UpdatePathNavigator()
 {
 	// check default action
 	CPlayer* pPlayer = GetPlayer();
@@ -291,15 +278,15 @@ void CPlayerQuestStep::UpdatePathNavigator()
 		return;
 
 	// check quest action
-	CPlayerQuest* pQuest = pPlayer->GetQuest(GetQuestID());
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
+	CPlayerQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != m_Bot.m_Step)
 		return;
 
 	// navigator
 	pQuest->AddEntityNPCNavigator(&m_Bot);
 }
 
-void CPlayerQuestStep::UpdateTaskMoveTo()
+void CQuestStep::UpdateTaskMoveTo()
 {
 	// check default action
 	CPlayer* pPlayer = GetPlayer();
@@ -307,8 +294,8 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 		return;
 
 	// check quest action
-	CPlayerQuest* pQuest = pPlayer->GetQuest(GetQuestID());
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
+	CPlayerQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != m_Bot.m_Step)
 		return;
 
 	// check and mark required mob's
@@ -347,7 +334,7 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 				{
 					CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[c]);
 					if(pPlBotSearch && pPlBotSearch->GetQuestBotMobInfo().m_QuestID == pQuest->GetID() &&
-						pPlBotSearch->GetQuestBotMobInfo().m_QuestStep == GetStepPos() &&
+						pPlBotSearch->GetQuestBotMobInfo().m_QuestStep == m_Bot.m_Step &&
 						pPlBotSearch->GetQuestBotMobInfo().m_MoveToStep == i)
 					{
 						pPlayerBot = pPlBotSearch;
@@ -361,8 +348,8 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 					pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[MobClientID]);
 					pPlayerBot->InitQuestBotMobInfo(
 						{
-							GetQuestID(),
-							GetStepPos(),
+							m_Bot.m_QuestID,
+							m_Bot.m_Step,
 							i,
 							pRequired.m_DefeatMobInfo.m_AttributePower,
 							pRequired.m_DefeatMobInfo.m_AttributeSpread,
@@ -415,14 +402,14 @@ void CPlayerQuestStep::UpdateTaskMoveTo()
 	}
 }
 
-void CPlayerQuestStep::Update()
+void CQuestStep::Update()
 {
 	UpdateBot();
 	UpdatePathNavigator();
 	UpdateTaskMoveTo();
 }
 
-void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
+void CQuestStep::CreateVarietyTypesRequiredItems()
 {
 	// check default action
 	CPlayer* pPlayer = GetPlayer();
@@ -430,8 +417,8 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 		return;
 
 	// check quest action
-	CPlayerQuest* pQuest = pPlayer->GetQuest(GetQuestID());
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != GetStepPos())
+	CPlayerQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
+	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetCurrentStepPos() != m_Bot.m_Step)
 		return;
 
 	// create variety types
@@ -444,7 +431,7 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 			// check whether items are already available for pickup
 			for(CDropQuestItem* pHh = (CDropQuestItem*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DROPQUEST); pHh; pHh = (CDropQuestItem*)pHh->TypeNext())
 			{
-				if(pHh->m_ClientID == ClientID && pHh->m_QuestID == GetQuestID() && pHh->m_ItemID == RequiredItem.GetID() && pHh->m_Step == GetStepPos())
+				if(pHh->m_ClientID == ClientID && pHh->m_QuestID == m_Bot.m_QuestID && pHh->m_ItemID == RequiredItem.GetID() && pHh->m_Step == m_Bot.m_Step)
 					return;
 			}
 
@@ -454,7 +441,7 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 			{
 				vec2 Vel = vec2(random_float(-40.0f, 40.0f), random_float(-40.0f, 40.0f));
 				float AngleForce = Vel.x * (0.15f + random_float(0.1f));
-				new CDropQuestItem(&GS()->m_World, m_Bot.m_Position, Vel, AngleForce, RequiredItem.GetID(), RequiredItem.GetValue(), GetQuestID(), GetStepPos(), ClientID);
+				new CDropQuestItem(&GS()->m_World, m_Bot.m_Position, Vel, AngleForce, RequiredItem.GetID(), RequiredItem.GetValue(), m_Bot.m_QuestID, m_Bot.m_Step, ClientID);
 			}
 		}
 
@@ -462,7 +449,7 @@ void CPlayerQuestStep::CreateVarietyTypesRequiredItems()
 	}
 }
 
-void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
+void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 {
 	CPlayer* pPlayer = GetPlayer();
 	if(!pPlayer)
@@ -567,12 +554,12 @@ void CPlayerQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	Buffer.clear();
 }
 
-int CPlayerQuestStep::GetMoveToNum() const
+int CQuestStep::GetMoveToNum() const
 {
 	return (int)m_aMoveToProgress.size();
 }
 
-int CPlayerQuestStep::GetMoveToCurrentStepPos() const
+int CQuestStep::GetMoveToCurrentStepPos() const
 {
 	for(int i = 0; i < (int)m_Bot.m_RequiredMoveTo.size(); i++)
 	{
@@ -586,7 +573,7 @@ int CPlayerQuestStep::GetMoveToCurrentStepPos() const
 }
 
 // This function returns the count of completed move steps in a player quest
-int CPlayerQuestStep::GetCountMoveToComplected()
+int CQuestStep::GetCountMoveToComplected()
 {
 	// Using std::count_if to count the number of elements in m_aMoveToProgress that satisfy the condition
 	// The condition is a lambda function that checks if the element is true
@@ -595,7 +582,7 @@ int CPlayerQuestStep::GetCountMoveToComplected()
 
 // This function searches for a specific entity move-to object in the list of entities move-to objects
 // It takes a position as input and returns a pointer to the found entity move-to object, or nullptr if not found
-CEntityMoveTo* CPlayerQuestStep::FoundEntityMoveTo(vec2 Position) const
+CEntityMoveTo* CQuestStep::FoundEntityMoveTo(vec2 Position) const
 {
 	// Use std::find_if to iterate through the list of entities move-to objects
 	auto it = std::find_if(m_apEntitiesMoveTo.begin(), m_apEntitiesMoveTo.end(), [&](const auto& pMove) {
@@ -608,7 +595,7 @@ CEntityMoveTo* CPlayerQuestStep::FoundEntityMoveTo(vec2 Position) const
 }
 
 // Function to find the entity navigator with a specific position
-CEntityPathFinder* CPlayerQuestStep::FoundEntityNavigator(vec2 Position) const
+CEntityPathFinder* CQuestStep::FoundEntityNavigator(vec2 Position) const
 {
 	// Find the first entity navigator in the m_apEntitiesNavigator vector that has the same position as the input position
 	auto it = std::find_if(m_apEntitiesNavigator.begin(), m_apEntitiesNavigator.end(), [&](const auto& pPath) {
@@ -620,7 +607,7 @@ CEntityPathFinder* CPlayerQuestStep::FoundEntityNavigator(vec2 Position) const
 	return it != m_apEntitiesNavigator.end() ? *it : nullptr;
 }
 
-CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete, CPlayerBot* pDefeatMobPlayer)
+CEntityMoveTo* CQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete, CPlayerBot* pDefeatMobPlayer)
 {
 	CPlayer* pPlayer = GetPlayer();
 	if(!pPlayer || !pTaskMoveTo || !pComplete || (*pComplete) == true)
@@ -630,13 +617,13 @@ CEntityMoveTo* CPlayerQuestStep::AddEntityMoveTo(const QuestBotInfo::TaskRequire
 	CEntityMoveTo* pEntMoveTo = FoundEntityMoveTo(pTaskMoveTo->m_Position);
 	if(!pEntMoveTo)
 	{
-		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, GetQuestID(), pComplete, &m_apEntitiesMoveTo, m_Bot.IsAutoCompletesQuestStep(), pDefeatMobPlayer));
+		pEntMoveTo = m_apEntitiesMoveTo.emplace_back(new CEntityMoveTo(&GS()->m_World, pTaskMoveTo, ClientID, m_Bot.m_QuestID, pComplete, &m_apEntitiesMoveTo, m_Bot.IsAutoCompletesQuestStep(), pDefeatMobPlayer));
 	}
 
 	return pEntMoveTo;
 }
 
-CEntityPathFinder* CPlayerQuestStep::AddEntityNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete)
+CEntityPathFinder* CQuestStep::AddEntityNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete)
 {
 	CPlayer* pPlayer = GetPlayer();
 	if(!pComplete || (*pComplete) == true)

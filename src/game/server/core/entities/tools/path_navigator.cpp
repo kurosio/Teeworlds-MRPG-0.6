@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/components/Worlds/WorldManager.h>
+#include <game/server/core/components/worlds/world_manager.h>
 
 #include "game/server/core/utilities/pathfinder.h"
 

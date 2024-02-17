@@ -9,7 +9,7 @@
 #include <game/server/core/components/Groups/GroupData.h>
 
 #include <game/server/core/components/Guilds/GuildManager.h>
-#include <game/server/core/components/Worlds/WorldManager.h>
+#include <game/server/core/components/worlds/world_manager.h>
 
 std::map < int, CAccountData > CAccountData::ms_aData;
 std::map < int, CAccountTempData > CAccountTempData::ms_aPlayerTempData;

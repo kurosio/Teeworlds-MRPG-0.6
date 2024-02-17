@@ -96,7 +96,7 @@ class CWarehouse : public MultiworldIdentifiableStaticData<std::deque<CWarehouse
 	int m_Currency {};
 	int m_WorldID {};
 	CStorage m_Storage {};
-	ContainerTradingList m_aTradingList {};
+	ContainerTradingList m_vTradingList {};
 
 public:
 	CWarehouse() = default;
@@ -121,7 +121,7 @@ public:
 
 	CStorage& Storage() { return m_Storage; }
 	CTrade* GetTrade(TradeIdentifier ID);
-	const ContainerTradingList& GetTradingList() const { return m_aTradingList; }
+	const ContainerTradingList& GetTradingList() const { return m_vTradingList; }
 };
 
 #endif

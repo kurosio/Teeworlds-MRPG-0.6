@@ -17,10 +17,19 @@ class CQuestManager : public MmoComponent
 	// Destructor which overrides the base class destructor
 	~CQuestManager() override
 	{
-		// Clear the data in CQuestDescription
+		// Clear the quest description data
+		for(auto& pItem : CQuestDescription::Data())
+		{
+			delete pItem.second;
+		}
 		CQuestDescription::Data().clear();
 
-		// Clear the data in CPlayerQuest
+		// Clear the player quest data
+		for(auto& pContainer : CPlayerQuest::Data())
+		{
+			for(auto& pQuest : pContainer.second)
+				delete pQuest.second;
+		}
 		CPlayerQuest::Data().clear();
 	}
 

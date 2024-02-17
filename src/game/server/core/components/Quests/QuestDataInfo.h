@@ -3,23 +3,33 @@
 #ifndef GAME_SERVER_COMPONENT_QUEST_DATA_INFO_H
 #define GAME_SERVER_COMPONENT_QUEST_DATA_INFO_H
 
-#include <game/server/core/tools/dbset.h>
 #include "QuestStepDataInfo.h"
 
 using QuestIdentifier = int;
 
-class CQuestDescription : public MultiworldIdentifiableStaticData < std::map< int, CQuestDescription > >
+enum
+{
+	QF_NONE = 0,
+	QF_DAILY = 1 << 0,
+};
+
+class CQuestDescription : public MultiworldIdentifiableStaticData < std::map< int, CQuestDescription* > >
 {
 	QuestIdentifier m_ID{};
 	char m_aName[24]{};
 	char m_aStoryLine[24]{};
 	int m_Gold{};
 	int m_Exp{};
-	bool m_Daily{};
+	int m_Flags{};
 
 public:
-	CQuestDescription() = default;
 	CQuestDescription(QuestIdentifier ID) : m_ID(ID) {}
+
+	static CQuestDescription* CreateElement(QuestIdentifier ID)
+	{
+		const auto pData = new CQuestDescription(ID);
+		return m_pData[ID] = pData;
+	}
 
 	void Init(const std::string& Name, const std::string& Story, int Gold, int Exp)
 	{
@@ -27,17 +37,16 @@ public:
 		str_copy(m_aStoryLine, Story.c_str(), sizeof(m_aStoryLine));
 		m_Gold = Gold;
 		m_Exp = Exp;
-		m_Daily = false;
-		m_pData[m_ID] = *this;
+		m_Flags = QF_NONE;
 	}
 
-	void PostInit(bool Daily)
+	void MarkDaily()
 	{
-		m_Daily = Daily;
+		m_Flags |= QF_DAILY;
 	}
 
 	QuestIdentifier GetID() const { return m_ID; }
-	std::string GetJsonFileName(int AccountID) const;
+	std::string GetDataFilename(int AccountID) const;
 	const char* GetName() const { return m_aName; }
 	const char* GetStory() const { return m_aStoryLine; }
 	int GetQuestStoryPosition() const;
@@ -45,22 +54,12 @@ public:
 	int GetRewardGold() const { return m_Gold; }
 	int GetRewardExp() const { return m_Exp; }
 
-	void InitPlayerDefaultSteps(int OwnerCID, std::map < int, CPlayerQuestStep >& pElem) const
-	{
-		for(const auto& [rStepID, rStepData] : m_StepsQuestBot)
-		{
-			pElem[rStepID].m_ClientID = OwnerCID;
-			pElem[rStepID].m_Bot = rStepData.m_Bot;
-			pElem[rStepID].m_StepComplete = false;
-			pElem[rStepID].m_ClientQuitting = false;
-			pElem[rStepID].m_aMobProgress.clear();
-		}
-	}
-
-	bool IsDaily() const { return m_Daily; }
+	void PreparePlayerQuestSteps(int ClientID, std::map < int, CQuestStep >* pElem) const;
+	bool IsHasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
+	bool IsDaily() const { return IsHasFlag(QF_DAILY); }
 
 	// steps with array bot data on active step
-	std::unordered_map < int , CQuestStepDescription > m_StepsQuestBot;
+	std::unordered_map < int, CQuestStepBase > m_StepsQuestBot;
 };
 
 #endif

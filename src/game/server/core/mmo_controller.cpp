@@ -756,8 +756,8 @@ void CMmoController::ConAsyncLinesForTranslate()
 
 		for(auto& pItem : CQuestDescription::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.GetName(), "qudn", pItem.first);
-			PushingDialogs(JsonData, pItem.second.GetStory(), "qusn", pItem.first);
+			PushingDialogs(JsonData, pItem.second->GetName(), "qudn", pItem.first);
+			PushingDialogs(JsonData, pItem.second->GetStory(), "qusn", pItem.first);
 		}
 
 		for(auto& pItem : CWarehouse::Data())

@@ -17,7 +17,7 @@
 #include "core/components/Inventory/ItemData.h"
 #include "core/components/Skills/SkillData.h"
 #include "core/components/Groups/GroupData.h"
-#include "core/components/Worlds/WorldData.h"
+#include "core/components/worlds/world_data.h"
 #include "core/entities/tools/draw_board.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
@@ -915,17 +915,12 @@ CSkill* CPlayer::GetSkill(SkillIdentifier ID)
 	return &CSkill::Data()[m_ClientID][ID];
 }
 
-CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID)
+CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 {
 	dbg_assert(CQuestDescription::Data().find(ID) != CQuestDescription::Data().end(), "invalid referring to the CPlayerQuest");
-
 	if(CPlayerQuest::Data()[m_ClientID].find(ID) == CPlayerQuest::Data()[m_ClientID].end())
-	{
-		CPlayerQuest(ID, m_ClientID).Init({});
-		return &CPlayerQuest::Data()[m_ClientID][ID];
-	}
-
-	return &CPlayerQuest::Data()[m_ClientID][ID];
+		CPlayerQuest::CreateElement(ID, m_ClientID);
+	return CPlayerQuest::Data()[m_ClientID][ID];
 }
 
 // This function returns the ID of the equipped item with the specified functionality, excluding the specified item ID.

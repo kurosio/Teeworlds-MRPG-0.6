@@ -445,7 +445,7 @@ void CPlayerDialog::PostNext()
 			pQuest->GetStepByMob(m_MobID)->CreateVarietyTypesRequiredItems();
 
 			// tasks receive
-			CPlayerQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
+			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
 			if(!pStep->m_TaskListReceived)
 			{
 				pStep->m_TaskListReceived = true;
@@ -574,7 +574,7 @@ void CPlayerDialog::ShowCurrentDialog() const
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-			CPlayerQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
+			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
 
 			if(!pStep->m_TaskListReceived)
 			{

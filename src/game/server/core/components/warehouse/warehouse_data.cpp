@@ -24,7 +24,6 @@ void CWarehouse::Init(const std::string& Name, const std::string& Properties, ve
 
 void CWarehouse::InitProperties(const std::string& Properties)
 {
-	dbg_msg("warehouse", "Warehouse '%s' is initializing...", m_aName);
 	dbg_assert(Properties.length() > 0, "The properties string is empty");
 	Tools::Json::parseFromString(Properties, [this](nlohmann::json& pJson)
 	{
@@ -61,9 +60,9 @@ void CWarehouse::InitProperties(const std::string& Properties)
 
 					for(const auto& ItemID : vItems)
 					{
-						auto ID = (int)m_aTradingList.size();
+						auto ID = (int)m_vTradingList.size();
 						if(CItem Item(ItemID, 1, 0); Item.IsValid() && Item.Info()->GetInitialPrice() > 0)
-							m_aTradingList.emplace_back(ID, std::move(Item), Item.Info()->GetInitialPrice());
+							m_vTradingList.emplace_back(ID, std::move(Item), Item.Info()->GetInitialPrice());
 					}
 				}
 			}
@@ -74,14 +73,14 @@ void CWarehouse::InitProperties(const std::string& Properties)
 				auto pJsonItems = pJson["items"];
 				for(const auto& pItem : pJsonItems)
 				{
-					auto ID = (int)m_aTradingList.size();
+					auto ID = (int)m_vTradingList.size();
 					const int& ItemID = pItem.value("id", -1);
 					const int& Value = pItem.value("value", 1);
 					const int& Enchant = pItem.value("enchant", 0);
 					const int& Price = pItem.value("price", 0);
 
 					if(CItem Item(ItemID, Value, Enchant); Item.IsValid() && Price > 0)
-						m_aTradingList.emplace_back(ID, std::move(Item), Price);
+						m_vTradingList.emplace_back(ID, std::move(Item), Price);
 				}
 			}
 		}
@@ -99,8 +98,8 @@ void CWarehouse::InitProperties(const std::string& Properties)
 			m_Storage.m_TextPos = TextPos;
 		}
 
-		dbg_msg("warehouse", "Warehouse '%s' has been initialized. (Storage: '%s' Type: '%s').", 
-			m_aName, IsHasFlag(WF_STORAGE) ? "Yes" : "No", IsHasFlag(WF_BUY) ? "Buy" : "Sell");
+		dbg_msg("warehouse", "'%s' has been initialized. (storage: '%s' type: '%s' size: '%llu')", 
+			m_aName, IsHasFlag(WF_STORAGE) ? "Yes" : "No", IsHasFlag(WF_BUY) ? "Buy" : "Sell", m_vTradingList.size());
 		m_Properties = std::move(pJson);
 	});
 }
@@ -118,8 +117,8 @@ void CWarehouse::SaveProperties()
 
 CTrade* CWarehouse::GetTrade(int ID)
 {
-	auto iter = std::find_if(m_aTradingList.begin(), m_aTradingList.end(), [ID](const CTrade& Trade) { return Trade.GetID() == ID; });
-	return iter != m_aTradingList.end() ? &(*iter) : nullptr;
+	auto iter = std::find_if(m_vTradingList.begin(), m_vTradingList.end(), [ID](const CTrade& Trade) { return Trade.GetID() == ID; });
+	return iter != m_vTradingList.end() ? &(*iter) : nullptr;
 }
 
 /*

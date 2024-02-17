@@ -124,7 +124,7 @@ void CEntityMoveTo::ClearPointers()
 void CEntityMoveTo::Handler(const std::function<bool()> pCallbackSuccesful)
 {
 	CPlayerQuest* pQuest = m_pPlayer->GetQuest(m_QuestID);
-	CPlayerQuestStep* pQuestStep = pQuest->GetStepByMob(m_pTaskMoveTo->m_QuestBotID);
+	CQuestStep* pQuestStep = pQuest->GetStepByMob(m_pTaskMoveTo->m_QuestBotID);
 	bool FailedFinish = !pCallbackSuccesful();
 	const bool IsLastElement = (pQuestStep->GetCountMoveToComplected() == (pQuestStep->GetMoveToNum() - 1));
 	const bool AutoCompleteQuestStep = (m_AutoCompletesQuestStep ? IsLastElement : false);
@@ -176,7 +176,7 @@ void CEntityMoveTo::TryFinish(bool AutoCompleteQuestStep)
 {
 	const QuestBotInfo::TaskRequiredMoveTo& TaskData = *m_pTaskMoveTo;
 	CPlayerQuest* pQuest = m_pPlayer->GetQuest(m_QuestID);
-	CPlayerQuestStep* pQuestStep = pQuest->GetStepByMob(TaskData.m_QuestBotID);
+	CQuestStep* pQuestStep = pQuest->GetStepByMob(TaskData.m_QuestBotID);
 
 	// required item
 	if(TaskData.m_Type & QuestBotInfo::TaskRequiredMoveTo::Types::REQUIRED_ITEM && TaskData.m_RequiredItem.IsValid())

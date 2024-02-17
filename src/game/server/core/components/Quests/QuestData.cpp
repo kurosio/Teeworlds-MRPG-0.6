@@ -1,31 +1,14 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <engine/external/xml/pugixml.hpp>
+
 #include "QuestManager.h"
 
+#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 
 #include "Entities/quest_mob_path_finder.h"
-
-// Return the game server object associated with the player's client ID
-CGS* CPlayerQuest::GS() const
-{
-	// Cast the result of Server()->GameServerPlayer(m_ClientID) to a CGS pointer
-	return (CGS*)Server()->GameServerPlayer(m_ClientID);
-}
-
-// Get the player object associated with the player's client ID
-CPlayer* CPlayerQuest::GetPlayer() const
-{
-	// Check if the client ID is within the valid range
-	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
-	{
-		// Return the player object at the corresponding client ID
-		return GS()->m_apPlayers[m_ClientID];
-	}
-	// Return nullptr if the client ID is invalid
-	return nullptr;
-}
 
 // Destructor for CPlayerQuest
 CPlayerQuest::~CPlayerQuest()
@@ -34,30 +17,23 @@ CPlayerQuest::~CPlayerQuest()
 	for(auto p : m_apEntityNPCNavigator)
 		delete p;
 
-	// Loop through each element in m_aPlayerSteps and clear each element
-	for(auto& p : m_aPlayerSteps)
+	// Loop through each element in m_vSteps and clear each element
+	for(auto& p : m_vSteps)
 		p.second.Clear();
 
 	// Clear the m_apEntityNPCNavigator vector
 	m_apEntityNPCNavigator.clear();
 
-	// Clear the m_aPlayerSteps map
-	m_aPlayerSteps.clear();
+	// Clear the m_vSteps map
+	m_vSteps.clear();
 }
 
-// Return a pointer to the CQuestDescription object corresponding to the quest ID of the player
-CQuestDescription* CPlayerQuest::Info() const
-{
-	return &CQuestDescription::Data()[m_ID];
-}
+CGS* CPlayerQuest::GS() const { return (CGS*)Instance::GameServerPlayer(m_ClientID); }
+CPlayer* CPlayerQuest::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
+CQuestDescription* CPlayerQuest::Info() const { return CQuestDescription::Data()[m_ID]; }
+std::string CPlayerQuest::GetDataFilename() const { return Info()->GetDataFilename(GetPlayer()->Account()->GetID()); }
 
-// Return the JSON file name for the player quest based on the player's account ID
-std::string CPlayerQuest::GetJsonFileName() const
-{
-	return Info()->GetJsonFileName(GetPlayer()->Account()->GetID());
-}
-
-void CPlayerQuest::InitSteps()
+void CPlayerQuest::InitDefaultSteps()
 {
 	// check if the quest state is not ACCEPT or if the player does not exist
 	if(m_State != QuestState::ACCEPT || !GetPlayer())
@@ -73,12 +49,12 @@ void CPlayerQuest::InitSteps()
 
 	// initialize the quest steps
 	m_Step = 1;
-	Info()->InitPlayerDefaultSteps(m_ClientID, m_aPlayerSteps);
+	Info()->PreparePlayerQuestSteps(m_ClientID, &m_vSteps);
 
 	// json structuring
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
-	for(auto& pStep : m_aPlayerSteps)
+	for(auto& pStep : m_vSteps)
 	{
 		if(pStep.second.m_Bot.m_HasAction)
 		{
@@ -120,11 +96,10 @@ void CPlayerQuest::InitSteps()
 			// Add the StepData object to the "steps" array in the JsonQuestData object
 			JsonQuestData["steps"].push_back(StepData);
 		}
-
 	}
 
 	// Loop through each player step
-	for(auto& pStep : m_aPlayerSteps)
+	for(auto& pStep : m_vSteps)
 	{
 		// Check if the step requires defeating certain bots
 		if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
@@ -148,94 +123,102 @@ void CPlayerQuest::InitSteps()
 
 	// save file
 	std::string Data = JsonQuestData.dump();
-	Tools::Files::saveFile(GetJsonFileName().c_str(), Data.data(), (unsigned)Data.size());
+	Tools::Files::saveFile(GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
 }
 
-void CPlayerQuest::LoadSteps()
+bool CPlayerQuest::InitSteps()
 {
 	// only for accept state
 	if(m_State != QuestState::ACCEPT)
-		return;
+		return false;
 
 	// loading file is not open pereinitilized steps
 	ByteArray RawData;
-	if(!Tools::Files::loadFile(GetJsonFileName().c_str(), &RawData))
+	if(!Tools::Files::loadFile(GetDataFilename().c_str(), &RawData))
 	{
-		InitSteps();
-		return;
+		InitDefaultSteps();
+		return false;
 	}
 
 	// init steps
-	Info()->InitPlayerDefaultSteps(m_ClientID, m_aPlayerSteps);
+	Info()->PreparePlayerQuestSteps(m_ClientID, &m_vSteps);
 
 	// loading steps
 	nlohmann::json JsonQuestData = nlohmann::json::parse((char*)RawData.data());
 	m_Step = JsonQuestData.value("current_step", 1);
+
+	// check if the size of the "steps" array in JsonQuestData is not equal to the size of the m_aPlayerSteps array
+	if(JsonQuestData["steps"].size() != m_vSteps.size())
+	{
+		InitDefaultSteps();
+		return false;
+	}
+
+	// iterate through each element in the "steps" array of JsonQuestData
 	for(auto& pStep : JsonQuestData["steps"])
 	{
 		// Get the value of SubBotID from pStep and assign it to the constant SubBotID
 		const int SubBotID = pStep.value("subbotid", 0);
-
-		// Set the StepComplete value of the corresponding player step in the m_aPlayerSteps array to the value of "state" in pStep
-		m_aPlayerSteps[SubBotID].m_StepComplete = pStep.value("state", false);
+		m_vSteps[SubBotID].m_StepComplete = pStep.value("state", false);
 
 		// If the StepComplete is true, skip the rest of the code and continue to the next iteration
-		if(m_aPlayerSteps[SubBotID].m_StepComplete)
+		if(m_vSteps[SubBotID].m_StepComplete)
 			continue;
 
 		// If "defeat" key exists in pStep
 		if(pStep.find("defeat") != pStep.end())
 		{
+			// If the size of the "defeat" array in pStep is not equal to the size of the m_aMobProgress map of the corresponding player step
+			if(pStep["defeat"].size() != m_vSteps[SubBotID].m_Bot.m_RequiredDefeat.size())
+			{
+				dbg_msg("quest system", "Reinitialization called... Player save file has a defeat value, but it is not present in the data!");
+				InitDefaultSteps();
+				return false;
+			}
+
 			// Iterate through each element in the "defeat" array
 			for(auto& p : pStep["defeat"])
 			{
-				// Get the ID value from each element and assign it to ID
 				int ID = p.value("id", 0);
-				// Set the Count value of the corresponding mob progress in the m_aMobProgress array to the value of "count" in p
-				m_aPlayerSteps[SubBotID].m_aMobProgress[ID].m_Count = p.value("count", 0);
-				// Set the Complete value of the corresponding mob progress in the m_aMobProgress array to the value of "complete" in p
-				m_aPlayerSteps[SubBotID].m_aMobProgress[ID].m_Complete = p.value("complete", 0);
+				m_vSteps[SubBotID].m_aMobProgress[ID].m_Count = p.value("count", 0);
+				m_vSteps[SubBotID].m_aMobProgress[ID].m_Complete = p.value("complete", 0);
 			}
 		}
 
 		// If "move_to" key exists in pStep
 		if(pStep.find("move_to") != pStep.end())
 		{
-			// Check if the size of the m_RequiredMoveTo vector in the m_Bot member of the m_aPlayerSteps vector at the index SubBotID is less than or equal to 0
-			int MoveToElementsSize = (int)m_aPlayerSteps[SubBotID].m_Bot.m_RequiredMoveTo.size();
-			if(MoveToElementsSize <= 0 || (MoveToElementsSize < (int)pStep["move_to"].size()))
+			// Check if the size of the "move_to" array of pStep is not equal to the size of the m_aPlayerSteps[SubBotID].m_Bot.m_RequiredMoveTo vector
+			int TotalMoveToSize = m_vSteps[SubBotID].m_Bot.m_RequiredMoveTo.size();
+			if(pStep["move_to"].size() != TotalMoveToSize)
 			{
-				// Print a debug message andd call InitSteps
-				dbg_msg("quest system", "Reinitialization called... Player save file has a MoveTo value, but it is not present in the data!");
-				InitSteps();
-				return;
+				dbg_msg("quest system", "Reinitialization called... Player save file has a move_to value, but it is not present in the data!");
+				InitDefaultSteps();
+				return false;
 			}
 
 			// Initialize the size of the MoveToProgress array based on the number of required move-to elements
-			m_aPlayerSteps[SubBotID].m_aMoveToProgress.resize(MoveToElementsSize, false);
-
-			// Iterate through each element in the "move_to" array of pStep
+			m_vSteps[SubBotID].m_aMoveToProgress.resize(TotalMoveToSize, false);
 			for(int p = 0; p < (int)pStep["move_to"].size(); p++)
-			{
-				// Set the corresponding index in m_aMoveToProgress array of m_aPlayerSteps to the "complete" value of pStep["move_to"][p]
-				m_aPlayerSteps[SubBotID].m_aMoveToProgress[p] = pStep["move_to"][p].value("complete", false);
-			}
+				m_vSteps[SubBotID].m_aMoveToProgress[p] = pStep["move_to"][p].value("complete", false);
 		}
 
 		// Set ClientQuitting value of the corresponding player step to false
-		m_aPlayerSteps[SubBotID].m_ClientQuitting = false;
+		m_vSteps[SubBotID].m_ClientQuitting = false;
 	}
 
 	// Update the steps of the bot
-	for(auto& pStep : m_aPlayerSteps)
+	for(auto& pStep : m_vSteps)
 	{
 		// If the current step is not complete
 		if(!pStep.second.m_StepComplete)
-		{
-			// Update the current step
 			pStep.second.Update();
-		}
 	}
+
+	// save file
+	std::string Data = JsonQuestData.dump();
+	Tools::Files::saveFile(GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
+	return true;
 }
 
 bool CPlayerQuest::SaveSteps()
@@ -247,7 +230,7 @@ bool CPlayerQuest::SaveSteps()
 	// json structuring
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_Step;
-	for(auto& pStep : m_aPlayerSteps)
+	for(auto& pStep : m_vSteps)
 	{
 		if(pStep.second.m_Bot.m_HasAction)
 		{
@@ -291,25 +274,25 @@ bool CPlayerQuest::SaveSteps()
 
 	// replace file
 	std::string Data = JsonQuestData.dump();
-	Tools::Files::saveFile(GetJsonFileName().c_str(), Data.data(), (unsigned)Data.size());
+	Tools::Files::saveFile(GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
 	return true;
 }
 
 void CPlayerQuest::ClearSteps()
 {
 	// Iterate through all player steps
-	for(auto& p : m_aPlayerSteps)
+	for(auto& p : m_vSteps)
 	{
 		// Clear the data of the player step
 		p.second.Clear();
 	}
 
 	// Clear the player steps map
-	m_aPlayerSteps.clear();
+	m_vSteps.clear();
 
 	// Remove the temporary user quest data file
-	Tools::Files::deleteFile(GetJsonFileName().c_str());
-	fs_remove(GetJsonFileName().c_str());
+	Tools::Files::deleteFile(GetDataFilename().c_str());
+	fs_remove(GetDataFilename().c_str());
 }
 
 // Function to handle accepting a quest by the player
@@ -330,7 +313,7 @@ bool CPlayerQuest::Accept()
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Account()->GetID(), m_State);
 
 	// Initialize the quest steps
-	InitSteps();
+	InitDefaultSteps();
 
 	// Retrieve information about the quest
 	const int QuestsSize = Info()->GetQuestStorySize();
@@ -363,10 +346,8 @@ void CPlayerQuest::Refuse()
 	// Clear the steps of the quest
 	ClearSteps();
 
-	// Set the state of the quest to NO_ACCEPT
+	// Set the state of the quest to NO_ACCEPT and erase from database
 	m_State = QuestState::NO_ACCEPT;
-
-	// Remove the quest record from the database table "tw_accounts_quests"
 	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Account()->GetID());
 }
 
@@ -382,10 +363,11 @@ void CPlayerQuest::Reset()
 void CPlayerQuest::Finish()
 {
 	CPlayer* pPlayer = GetPlayer();
+	CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+
+	// check if the quest state is not ACCEPT or if the player does not exist
 	if(m_State != QuestState::ACCEPT || !pPlayer)
 		return;
-
-	CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 
 	// finish quest
 	m_State = QuestState::FINISHED;
@@ -402,7 +384,7 @@ void CPlayerQuest::Finish()
 	if(Info()->IsDaily())
 	{
 		// Add the maximum number of Allied Seals that can be obtained from a daily quest to the player's item inventory
-		pPlayer->GetItem(itAlliedSeals)->Add(ALLIED_SEALS_BY_DAILY_QUEST);
+		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestAlliedSealsReward);
 
 		// Send a chat message to all players informing that the player has completed a daily quest
 		pGS->Chat(-1, "{STR} completed daily quest \"{STR}\".", pGS->Server()->ClientName(m_ClientID), Info()->GetName());
@@ -431,7 +413,7 @@ void CPlayerQuest::Finish()
 void CPlayerQuest::CheckAvailableNewStep()
 {
 	// check whether the active steps is complete
-	if(std::any_of(m_aPlayerSteps.begin(), m_aPlayerSteps.end(), [this](std::pair <const int, CPlayerQuestStep>& p)
+	if(std::any_of(m_vSteps.begin(), m_vSteps.end(), [this](std::pair <const int, CQuestStep>& p)
 	{ return (p.second.m_Bot.m_Step == m_Step && !p.second.m_StepComplete && p.second.m_Bot.m_HasAction); }))
 		return;
 
@@ -439,7 +421,7 @@ void CPlayerQuest::CheckAvailableNewStep()
 
 	// check if all steps have been completed
 	bool FinalStep = true;
-	for(auto& pStepBot : m_aPlayerSteps)
+	for(auto& pStepBot : m_vSteps)
 	{
 		if(!pStepBot.second.m_StepComplete)
 		{
@@ -471,7 +453,6 @@ void CPlayerQuest::CheckAvailableNewStep()
 
 // This function searches the array of EntityNPCNavigator for a specific SubBotID
 // It returns a pointer to the EntityNPCNavigator if found, otherwise it returns nullptr
-
 CStepPathFinder* CPlayerQuest::FoundEntityNPCNavigator(int SubBotID) const
 {
 	// Iterate through each EntityNPCNavigator pointer in the array

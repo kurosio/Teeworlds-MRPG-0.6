@@ -23,7 +23,7 @@ void CQuestManager::OnInit()
 		int Exp = pRes->getInt("Exp");
 
 		// Initialize a CQuestDescription object with the retrieved values
-		CQuestDescription(ID).Init(Name, Story, Gold, Exp);
+		CQuestDescription::CreateElement(ID)->Init(Name, Story, Gold, Exp);
 	}
 
 	// Create a container to store the daily quest data
@@ -53,14 +53,14 @@ void CQuestManager::OnInit()
 
 		// Push the quest information into the corresponding daily quest container
 		CQuestDescription* pQuestInfo = GS()->GetQuestInfo(QuestID);
-		pQuestInfo->PostInit(true);
-		DailyQuests[BoardID].push_back(*pQuestInfo);
+		pQuestInfo->MarkDaily();
+		DailyQuests[BoardID].push_back(pQuestInfo);
 	}
 
 	// Update the daily quest information for each daily quest board
 	for(auto& [BoardID, DataContainer] : DailyQuests)
 	{
-		CQuestsDailyBoard::Data()[BoardID].m_DailyQuestsInfoList = DataContainer;
+		CQuestsDailyBoard::Data()[BoardID].m_vpDailyQuests = DataContainer;
 	}
 }
 
@@ -79,7 +79,7 @@ void CQuestManager::OnInitAccount(CPlayer* pPlayer)
 		QuestState State = (QuestState)pRes->getInt("Type");
 
 		// Initialize a new instance of CPlayerQuest with the QuestID and ClientID, and set its state to the retrieved Type value
-		CPlayerQuest(ID, ClientID).Init(State);
+		CPlayerQuest::CreateElement(ID, ClientID)->Init(State);
 	}
 }
 
@@ -211,10 +211,8 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			return true;
 		}
 
-		// Get the quest associated with the specified VoteID for the player
-		CPlayerQuest* pQuest = pPlayer->GetQuest(VoteID);
-
 		// If there is no quest associated with the VoteID or the quest is already completed, return true
+		CPlayerQuest* pQuest = pPlayer->GetQuest(VoteID);
 		if(!pQuest || pQuest->IsCompleted())
 			return true;
 
@@ -316,13 +314,15 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 			continue;
 		}
 
-		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), [pStory = pQuestInfo.GetStory()](const std::string& stories)
+		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), 
+			[pStory = pQuestInfo->GetStory()](const std::string& stories)
 		{
 			return (str_comp_nocase(pStory, stories.c_str()) == 0);
 		});
+
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
-			StoriesChecked.emplace_back(CQuestDescription::Data()[ID].GetStory());
+			StoriesChecked.emplace_back(pQuestInfo->GetStory());
 			ShowQuestID(pPlayer, ID);
 			IsEmptyList = false;
 		}
@@ -362,14 +362,14 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 	const int ClientID = pPlayer->GetCID();
 
 	CVoteWrapper(ClientID).Add("Active NPC for current quests");
-	for(auto& pStepBot : CQuestDescription::Data()[QuestID].m_StepsQuestBot)
+	for(auto& pStepBot : CQuestDescription::Data()[QuestID]->m_StepsQuestBot)
 	{
 		const QuestBotInfo& BotInfo = pStepBot.second.m_Bot;
 		if(!BotInfo.m_HasAction)
 			continue;
 
 		const vec2 Pos = BotInfo.m_Position / 32.0f;
-		CPlayerQuestStep& rQuestStepDataInfo = pPlayerQuest->m_aPlayerSteps[pStepBot.first];
+		CQuestStep& rQuestStepDataInfo = pPlayerQuest->m_vSteps[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest->GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest->GetState() == QuestState::FINISHED) ? "✔ " : "\0");
 
 		CVoteWrapper VStep(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", 
@@ -435,7 +435,7 @@ void CQuestManager::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char
 {
 	const int QuestID = pBot.m_QuestID;
 	CPlayerQuest* pQuest = pPlayer->GetQuest(QuestID);
-	CPlayerQuestStep* pStep = pQuest->GetStepByMob(pBot.m_SubBotID);
+	CQuestStep* pStep = pQuest->GetStepByMob(pBot.m_SubBotID);
 	pStep->FormatStringTasks(aBufQuestTask, Size);
 }
 
@@ -443,16 +443,16 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
-	for(auto& pQuest : CPlayerQuest::Data()[ClientID])
+	for(auto& [ID, pQuest] : CPlayerQuest::Data()[ClientID])
 	{
 		// only for accepted quests
-		if(pQuest.second.GetState() != QuestState::ACCEPT)
+		if(pQuest->GetState() != QuestState::ACCEPT)
 			continue;
 
 		// check current steps and append
-		for(auto& pStepBot : pQuest.second.m_aPlayerSteps)
+		for(auto& pStepBot : pQuest->m_vSteps)
 		{
-			if(pQuest.second.GetCurrentStepPos() == pStepBot.second.m_Bot.m_Step)
+			if(pQuest->GetCurrentStepPos() == pStepBot.second.m_Bot.m_Step)
 				pStepBot.second.AppendDefeatProgress(DefeatedBotID);
 		}
 	}
@@ -498,30 +498,30 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 	VDailyBoard.AddItemValue(itAlliedSeals);
 	VDailyBoard.AddLine();
 
-	for(const auto& pDailyQuestInfo : pBoard->m_DailyQuestsInfoList)
+	for(const auto& pDailyQuestInfo : pBoard->m_vpDailyQuests)
 	{
 		// If the quest is completed, skip to the next iteration
-		const auto* pQuest = pPlayer->GetQuest(pDailyQuestInfo.GetID());
+		const auto* pQuest = pPlayer->GetQuest(pDailyQuestInfo->GetID());
 		if(pQuest->IsCompleted())
 			continue;
 
 		// Determine the state indicator and action name based on whether the quest is active or not
 		const char* StateIndicator = (pQuest->IsActive() ? "✔" : "×");
 		const char* ActionName = (pQuest->IsActive() ? "Refuse" : "Accept");
-		const char* QuestName = pDailyQuestInfo.GetName();
+		const char* QuestName = pDailyQuestInfo->GetName();
 
 		// Display the quest information to the player
 		CVoteWrapper VQuest(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "({STR}) {STR}", StateIndicator, QuestName);
 		VQuest.Add("Reward:");
 		{
 			VQuest.BeginDepthList();
-			VQuest.Add("Gold: {VAL}", pDailyQuestInfo.GetRewardGold());
-			VQuest.Add("Exp: {VAL}", pDailyQuestInfo.GetRewardExp());
-			VQuest.Add("{STR}: {VAL}", GS()->GetItemInfo(itAlliedSeals)->GetName(), (int)ALLIED_SEALS_BY_DAILY_QUEST);
+			VQuest.Add("Gold: {VAL}", pDailyQuestInfo->GetRewardGold());
+			VQuest.Add("Exp: {VAL}", pDailyQuestInfo->GetRewardExp());
+			VQuest.Add("{STR}: {VAL}", GS()->GetItemInfo(itAlliedSeals)->GetName(), g_Config.m_SvDailyQuestAlliedSealsReward);
 			VQuest.EndDepthList();
 		}
 		VQuest.AddLine();
-		VQuest.AddOption("DAILY_QUEST_STATE", pDailyQuestInfo.GetID(), pBoard->GetID(), "{STR} quest", ActionName);
+		VQuest.AddOption("DAILY_QUEST_STATE", pDailyQuestInfo->GetID(), pBoard->GetID(), "{STR} quest", ActionName);
 		VQuest.AddLine();
 	}
 
@@ -546,17 +546,17 @@ void CQuestManager::UpdateSteps(CPlayer* pPlayer)
 {
 	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
-	for(auto& pQuest : CPlayerQuest::Data()[ClientID])
+	for(auto& [ID, pQuest] : CPlayerQuest::Data()[ClientID])
 	{
-		if(pQuest.second.GetState() != QuestState::ACCEPT)
+		if(pQuest->GetState() != QuestState::ACCEPT)
 			continue;
 
-		for(auto& pStepBot : pQuest.second.m_aPlayerSteps)
+		for(auto& [MobID, Step] : pQuest->m_vSteps)
 		{
-			if(pQuest.second.GetCurrentStepPos() == pStepBot.second.m_Bot.m_Step)
+			if(pQuest->GetCurrentStepPos() == Step.m_Bot.m_Step)
 			{
-				pStepBot.second.UpdatePathNavigator();
-				pStepBot.second.UpdateTaskMoveTo();
+				Step.UpdatePathNavigator();
+				Step.UpdateTaskMoveTo();
 			}
 		}
 	}
@@ -564,30 +564,25 @@ void CQuestManager::UpdateSteps(CPlayer* pPlayer)
 
 void CQuestManager::AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID)
 {
-	// Get the quest description for the quest with CheckQuestID
-	CQuestDescription* pVerifyQuestInfo = &CQuestDescription::Data()[CheckQuestID];
-
-	// If the current quest is a daily quest, break out of the loop
-	if(pVerifyQuestInfo->IsDaily())
+	// Check if the quest with CheckQuestID is a daily quest
+	CQuestDescription* pVerifyQuestInfo = GS()->GetQuestInfo(CheckQuestID);
+	if(!pVerifyQuestInfo || pVerifyQuestInfo->IsDaily())
 		return;
 
 	// Loop through all quest descriptions
-	for(auto& [valQuestID, valQuestData] : CQuestDescription::Data())
+	for(auto& [valQuestID, pQuestInfo] : CQuestDescription::Data())
 	{
 		// Check if the story of the current quest description is the same as the story of CheckingQuest
-		if(str_comp_nocase(pVerifyQuestInfo->GetStory(), valQuestData.GetStory()) == 0)
+		if(str_comp_nocase(pVerifyQuestInfo->GetStory(), pQuestInfo->GetStory()) == 0)
 		{
-			// Check if the current quest is still active
-			if(pPlayer->GetQuest(valQuestID)->GetState() == QuestState::ACCEPT)
-				break;
-
-			// If the checking quest is a daily quest, break out of the loop
-			if(valQuestData.IsDaily())
+			CPlayerQuest* pQuest = pPlayer->GetQuest(valQuestID);
+			if(pQuestInfo->IsDaily() || pQuest->GetState() == QuestState::FINISHED)
 				continue;
 
-			// Accept the next quest step
-			if(pPlayer->GetQuest(valQuestID)->Accept())
+			if(pQuest->GetState() == QuestState::ACCEPT)
 				break;
+
+			pQuest->Accept();
 		}
 	}
 }
@@ -598,26 +593,29 @@ void CQuestManager::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 	std::list<std::string> StoriesChecked;
 
 	// Loop through each active quest for the player
-	for(const auto& pPlayerQuest : CPlayerQuest::Data()[pPlayer->GetCID()])
+	for(const auto& [ID, pQuest] : CPlayerQuest::Data()[pPlayer->GetCID()])
 	{
 		// Check if the quest is finished, if not, skip it
-		if(pPlayerQuest.second.GetState() != QuestState::FINISHED)
+		CQuestDescription* pQuestInfo = GS()->GetQuestInfo(ID);
+		if(pQuest->GetState() != QuestState::FINISHED)
 			continue;
 
 		// Check if the quest is a daily quest, if yes, skip it
-		if(pPlayerQuest.second.Info()->IsDaily())
+		if(pQuestInfo->IsDaily())
 			continue;
 
 		// Check if the story of the quest has already been checked
 		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(),
-			[=](const std::string& stories)
-		{ return (str_comp_nocase(CQuestDescription::Data()[pPlayerQuest.first].GetStory(), stories.c_str()) == 0); });
+			[pQuestInfo](const std::string& stories)
+			{
+				return (str_comp_nocase(pQuestInfo->GetStory(), stories.c_str()) == 0);
+			});
 
 		// If the story has not been checked, add it to the checked list and accept the next story quest
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
-			StoriesChecked.emplace_front(CQuestDescription::Data()[pPlayerQuest.first].GetStory());
-			AcceptNextStoryQuest(pPlayer, pPlayerQuest.first);
+			StoriesChecked.emplace_front(pQuestInfo->GetStory());
+			AcceptNextStoryQuest(pPlayer, ID);
 		}
 	}
 }
@@ -626,12 +624,12 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const
 {
 	const int ClientID = pPlayer->GetCID();
 	int AvailableValue = pPlayer->GetItem(ItemID)->GetValue();
-	for(const auto& pQuest : CPlayerQuest::Data()[ClientID])
+	for(const auto& [ID, pQuest] : CPlayerQuest::Data()[ClientID])
 	{
-		if(pQuest.second.GetState() != QuestState::ACCEPT)
+		if(pQuest->GetState() != QuestState::ACCEPT)
 			continue;
 
-		for(auto& pStepBot : pQuest.second.m_aPlayerSteps)
+		for(auto& pStepBot : pQuest->m_vSteps)
 		{
 			if(!pStepBot.second.m_StepComplete)
 				AvailableValue -= pStepBot.second.GetNumberBlockedItem(ItemID);
@@ -646,10 +644,10 @@ int CQuestManager::GetCountComplectedQuests(int ClientID) const
 	// Initialize the total count of completed quests to 0
 	int Total = 0;
 
-	for(const auto& [QuestID, Data] : CPlayerQuest::Data()[ClientID])
+	for(const auto& [ID, pQuest] : CPlayerQuest::Data()[ClientID])
 	{
 		// Check if the quest data is marked as completed
-		if(Data.IsCompleted())
+		if(pQuest->IsCompleted())
 			Total++;
 	}
 

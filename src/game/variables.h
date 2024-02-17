@@ -96,6 +96,7 @@ MACRO_CONFIG_INT(SvInactiveKick, sv_inactivekick, 2, 0, 3, CFGFLAG_SERVER, "How 
 MACRO_CONFIG_INT(SvAetherFee, sv_aether_fee, 12, 0, 10000, CFGFLAG_SERVER, "Price for teleport * world distance")
 MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERVER, "Door radius hit.")
 MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50, 10, 100000, CFGFLAG_SERVER, "The size of the product is how much the player can wear.")
+MACRO_CONFIG_INT(SvDailyQuestAlliedSealsReward, sv_daily_quest_allied_seals_reward, 100, 5, 100000, CFGFLAG_SERVER, "Reward allied seals each daily quest.")
 
 // auction
 MACRO_CONFIG_INT(SvMaxAuctionPlayerSlots, sv_max_auction_player_slots, 5, 1, 1000, CFGFLAG_SERVER, "Max player auction slots")

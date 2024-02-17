@@ -8,21 +8,22 @@
 class CGS;
 class CPlayer;
 
-// ##############################################################
-// ################# GLOBAL STEP STRUCTURE ######################
-class CQuestStepDescription
+/*
+ * Quest step
+ */
+class CQuestStepBase
 {
 public:
 	QuestBotInfo m_Bot{};
-	void UpdateBot();
-	bool IsActiveStep(CGS* pGS) const;
-	int GetQuestID() const { return m_Bot.m_QuestID; }
-	int GetStepPos() const { return m_Bot.m_Step; }
+	virtual void UpdateBot() const;
+
+private:
+	bool IsActiveStep() const;
 };
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
-class CPlayerQuestStep : public CQuestStepDescription
+class CQuestStep : public CQuestStepBase
 {
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
