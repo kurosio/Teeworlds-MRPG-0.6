@@ -91,7 +91,7 @@ void CWarehouse::InitProperties(const std::string& Properties)
 		{
 			dbg_assert(pJson.contains("storage"), "the flags is specified as having a storage, but it is impossible to initialize it");
 			auto JsonStorage = pJson["storage"];
-			bool Value = JsonStorage.value("value", 0);
+			int Value = JsonStorage.value("value", 0);
 			vec2 TextPos = vec2(JsonStorage.value("x", 0), JsonStorage.value("y", 0));
 
 			m_Storage.m_pWarehouse = this;
@@ -107,7 +107,7 @@ void CWarehouse::InitProperties(const std::string& Properties)
 
 void CWarehouse::SaveProperties()
 {
-	if(IsHasFlag(WF_STORAGE) && m_Properties.contains("storage"))
+	if(IsHasFlag(WF_STORAGE))
 	{
 		auto& JsonStorage = m_Properties["storage"];
 		JsonStorage["value"] = m_Storage.GetValue();

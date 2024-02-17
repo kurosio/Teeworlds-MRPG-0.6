@@ -89,7 +89,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 			VStorage.BeginDepthList();
 			VStorage.Add("You can load and unload products in stores");
 			VStorage.Add("Maximum of {INT} products with you", g_Config.m_SvWarehouseProductsCanTake);
-			VStorage.Add("Unloading rate 1 product - 1 gold");
+			VStorage.Add("Loading rate 1 product - 1 gold");
 			VStorage.EndDepthList();
 		}
 		VStorage.AddLine();
@@ -203,15 +203,24 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	VWant.AddLine();
 
 	// Show status
+	bool Status = true;
 	if(pItem->Info()->IsEnchantable() && HasItem)
-		VWant.Add("You can't buy more than one item");
-	else if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
-		VWant.Add("Not enough products to buy");
-	else if(pPlayer->GetItem(itGold)->GetValue() < pTrade->GetPrice())
-		VWant.Add("Not enough gold to buy");
-	else
-		VWant.AddOption("WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Yes");
+	{
+		VWant.Add("- You can't buy more than one item");
+		Status = false;
+	}
+	if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
+	{
+		VWant.Add("- Not enough products to buy");
+		Status = false;
+	}
+	if(pPlayer->GetItem(itGold)->GetValue() < pTrade->GetPrice())
+	{
+		VWant.Add("- Not enough gold to buy");
+		Status = false;
+	}
 
+	VWant.AddIfOption(Status, "WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Yes");
 	VWant.AddMenu(MENU_WAREHOUSE, "Back");
 	VWant.AddLine();
 }
@@ -339,7 +348,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		}
 
 		// Unloading products from the warehouse
-		int Value = minimum(pWarehouse->Storage().GetValue(), g_Config.m_SvWarehouseProductsCanTake);
+		int Value = minimum(pWarehouse->Storage().GetValue(), g_Config.m_SvWarehouseProductsCanTake - pProducts->GetValue());
 		if(pWarehouse->Storage().Remove(Value))
 		{
 			pProducts->Add(Value);
