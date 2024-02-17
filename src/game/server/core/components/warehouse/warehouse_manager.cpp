@@ -205,7 +205,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	// Show status
 	if(pItem->Info()->IsEnchantable() && HasItem)
 		VWant.Add("You can't buy more than one item");
-	else if(pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
+	else if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
 		VWant.Add("Not enough products to buy");
 	else if(pPlayer->GetItem(itGold)->GetValue() < pTrade->GetPrice())
 		VWant.Add("Not enough gold to buy");
