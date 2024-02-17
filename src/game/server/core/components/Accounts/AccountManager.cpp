@@ -7,7 +7,7 @@
 
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 #include <game/server/core/components/Mails/MailBoxManager.h>
-#include <game/server/core/components/Worlds/WorldData.h>
+#include <game/server/core/components/worlds/world_data.h>
 
 #include <base/hash_ctxt.h>
 

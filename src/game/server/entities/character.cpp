@@ -12,7 +12,7 @@
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/Groups/GroupData.h>
 #include <game/server/core/components/Quests/QuestManager.h>
-#include <game/server/core/components/Worlds/WorldData.h>
+#include <game/server/core/components/worlds/world_data.h>
 
 #include <game/server/core/entities/items/jobitems.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>

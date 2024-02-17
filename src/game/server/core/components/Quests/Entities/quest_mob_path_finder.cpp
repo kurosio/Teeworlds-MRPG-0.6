@@ -3,7 +3,7 @@
 #include <game/server/core/components/Bots/BotData.h>
 #include "quest_mob_path_finder.h"
 
-#include <game/server/core/components/Worlds/WorldManager.h>
+#include <game/server/core/components/worlds/world_manager.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/entities/tools/path_navigator.h>

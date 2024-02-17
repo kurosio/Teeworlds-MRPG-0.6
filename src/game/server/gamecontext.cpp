@@ -31,7 +31,7 @@
 
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/warehouse/warehouse_data.h"
-#include "core/components/Worlds/WorldData.h"
+#include "core/components/worlds/world_data.h"
 #include "core/utilities/vote_wrapper.h"
 
 // static data that have the same value in different objects

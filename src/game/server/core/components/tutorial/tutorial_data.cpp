@@ -1,3 +1,3 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "TutorialData.h"
+#include "tutorial_data.h"

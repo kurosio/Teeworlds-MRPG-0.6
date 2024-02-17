@@ -1,8 +1,7 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "TutorialManager.h"
-
-#include "TutorialData.h"
+#include "tutorial_manager.h"
+#include "tutorial_data.h"
 
 #include <game/server/gamecontext.h>
 
@@ -28,20 +27,17 @@ void CTutorialManager::OnInit()
 		{
 			if(const int Type = pStep.value("type", 0); (1 << Type) & (int)TutorialType::TUTORIAL_VECTOR_ONE)
 			{
-				TutorialData<vec2> Tutorial;
-				Tutorial.m_Data = std::make_tuple(vec2(pStep.value("posX", 0), pStep.value("posY", 0)));
+				TutorialData Tutorial(vec2(pStep.value("posX", 0), pStep.value("posY", 0)));
 				TutorialBase::Init(Type, pStep.value("info", "\0").c_str(), Tutorial);
 			}
 			else if((1 << Type) & (int)TutorialType::TUTORIAL_INTEGER_ONE)
 			{
-				TutorialData<int> Tutorial;
-				Tutorial.m_Data = pStep.value("integer", 0);
+				TutorialData Tutorial(pStep.value("integer", 0));
 				TutorialBase::Init(Type, pStep.value("info", "\0").c_str(), Tutorial);
 			}
 			else if((1 << Type) & (int)TutorialType::TUTORIAL_STRING_ONE)
 			{
-				TutorialData<std::string> Tutorial;
-				Tutorial.m_Data = pStep.value("string", "\0");
+				TutorialData Tutorial(pStep.value("string", "\0"));
 				TutorialBase::Init(Type, pStep.value("info", "\0").c_str(), Tutorial);
 			}
 		}
@@ -88,7 +84,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 		// Define a lambda function to check if the player has moved to the specified position
 		EventChecker<TutorialData<vec2>>(TutorialBase::Data(), pPlayer, PlayerStep, [&](const TutorialData<vec2>* pTutorial)
 		{
-			return distance(std::get<0>(pTutorial->m_Data), pPlayer->m_ViewPos) < 100;
+			return distance(pTutorial->m_Data, pPlayer->m_ViewPos) < 100;
 		});
 	}
 
@@ -98,7 +94,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 		// Define a lambda function to check if the player has equipped the specified item
 		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep, [&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->GetItem(std::get<0>(pTutorial->m_Data))->IsEquipped();
+			return pPlayer->GetItem(pTutorial->m_Data)->IsEquipped();
 		});
 	}
 
@@ -108,7 +104,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 		// Define a lambda function to check if the player has the specified player flag
 		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep, [&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->m_PlayerFlags & std::get<0>(pTutorial->m_Data);
+			return pPlayer->m_PlayerFlags & pTutorial->m_Data;
 		});
 	}
 
@@ -118,7 +114,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 		// Define a lambda function to check if the player has the specified vote menu open
 		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep, [&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->m_VotesData.GetCurrentMenuID() == std::get<0>(pTutorial->m_Data);
+			return pPlayer->m_VotesData.GetCurrentMenuID() == pTutorial->m_Data;
 		});
 	}
 
@@ -128,7 +124,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 		// Define a lambda function to check if the player has accepted the specified quest
 		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep, [&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->GetQuest(std::get<0>(pTutorial->m_Data))->GetState() >= QuestState::ACCEPT;
+			return pPlayer->GetQuest(pTutorial->m_Data)->GetState() >= QuestState::ACCEPT;
 		});
 	}
 
@@ -138,7 +134,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 		// Define a lambda function to check if the player has finished the specified quest
 		EventChecker<TutorialData<int>>(TutorialBase::Data(), pPlayer, PlayerStep, [&](const TutorialData<int>* pTutorial)
 		{
-			return pPlayer->GetQuest(std::get<0>(pTutorial->m_Data))->GetState() == QuestState::FINISHED;
+			return pPlayer->GetQuest(pTutorial->m_Data)->GetState() == QuestState::FINISHED;
 		});
 	}
 
@@ -148,7 +144,7 @@ void CTutorialManager::HandleTutorial(CPlayer* pPlayer) const
 		// Define a lambda function to check if the player has received the specified chat message
 		EventChecker<TutorialData<std::string>>(TutorialBase::Data(), pPlayer, PlayerStep, [&](const TutorialData<std::string>* pTutorial)
 		{
-			return str_comp(pPlayer->m_aLastMsg, std::get<0>(pTutorial->m_Data).c_str()) == 0;
+			return str_comp(pPlayer->m_aLastMsg, pTutorial->m_Data.c_str()) == 0;
 		});
 	}
 }

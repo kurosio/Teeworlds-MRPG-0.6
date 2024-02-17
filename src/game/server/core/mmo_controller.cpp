@@ -22,9 +22,9 @@
 #include "components/Mails/MailBoxManager.h"
 #include "components/Quests/QuestManager.h"
 #include "components/Skills/SkillManager.h"
-#include "components/Tutorial/TutorialManager.h"
+#include "components/tutorial/tutorial_manager.h"
 #include "components/warehouse/warehouse_manager.h"
-#include "components/Worlds/WorldManager.h"
+#include "components/worlds/world_manager.h"
 
 inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, CVoteWrapper* pWrapper)
 {

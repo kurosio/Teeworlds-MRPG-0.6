@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "engine/server.h"
 
-#include "WorldData.h"
+#include "world_data.h"
 
 #include "game/server/gamecontext.h"
 

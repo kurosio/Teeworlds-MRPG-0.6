@@ -50,12 +50,15 @@ public:
 };
 
 // Define a template class named TutorialData with a variable number of template arguments Args
-template<typename... Args>
+template<typename T>
 class TutorialData final : public TutorialBase
 {
 public:
+	explicit TutorialData(T&& Data) : m_Data(std::forward<T>(Data)) {}
+	explicit TutorialData(const T& Data) : m_Data(Data) {}
+
 	// Declare a tuple named m_Data that holds objects of types specified by Args
-	std::tuple<Args...> m_Data;
+	T m_Data;
 };
 
 #endif

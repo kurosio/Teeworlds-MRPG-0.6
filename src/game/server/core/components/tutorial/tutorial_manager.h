@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_TUTORIAL_EVENT_CORE_H
 #include <game/server/core/mmo_component.h>
 
-#include "TutorialData.h"
+#include "tutorial_data.h"
 
 class CTutorialManager : public MmoComponent
 {

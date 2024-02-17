@@ -6,7 +6,7 @@
 #include <game/server/core/utilities/pathfinder_vertex.h>
 #include <game/server/core/mmo_component.h>
 
-#include "WorldData.h"
+#include "world_data.h"
 
 class CWorldManager : public MmoComponent
 {

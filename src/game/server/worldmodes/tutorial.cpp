@@ -2,9 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "tutorial.h"
 
+#include <game/server/core/components/tutorial/tutorial_manager.h>
 #include <game/server/gamecontext.h>
-
-#include "game/server/core/components/Tutorial/TutorialManager.h"
 
 CGameControllerTutorial::CGameControllerTutorial(class CGS* pGS)
 	: IGameController(pGS)
