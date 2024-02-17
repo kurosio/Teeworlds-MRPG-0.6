@@ -74,7 +74,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 
 	// show base shop functions
-	CVoteWrapper VShop(ClientID, VWF_SEPARATE_CLOSED | VWF_STYLE_SIMPLE, "Warehouse :: {STR}", pWarehouse->GetName());
+	CVoteWrapper VShop(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Warehouse :: {STR}", pWarehouse->GetName());
 	VShop.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
 	VShop.AddLine();
 	VShop.AddItemValue(pWarehouse->GetCurrency()->GetID());
@@ -83,7 +83,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
-		CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Storage");
+		CVoteWrapper VStorage(ClientID, VWF_SEPARATE_CLOSED | VWF_STYLE_SIMPLE, "Warehouse storage");
 		VStorage.Add("Information:");
 		{
 			VStorage.BeginDepthList();
