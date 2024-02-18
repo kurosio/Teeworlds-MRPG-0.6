@@ -214,7 +214,7 @@ void CEntityMoveTo::TryFinish(bool AutoCompleteQuestStep)
 	*m_pComplete = true;
 
 	// Save the quest steps
-	pQuest->SaveSteps();
+	pQuest->m_Datafile.Save();
 
 	// Create a death entity at the current position and destroy this entity
 	GS()->CreateDeath(m_Pos, m_ClientID);

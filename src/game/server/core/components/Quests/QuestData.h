@@ -7,10 +7,26 @@
 
 #include "QuestDataInfo.h"
 
+class CPlayerQuest;
+class QuestDatafile
+{
+	CPlayerQuest* m_pQuest;
+
+public:
+	void Init(CPlayerQuest* pQuest) { m_pQuest = pQuest; }
+	void Create();
+	void Load();
+	bool Save();
+	void Delete();
+};
+
 class CGS;
 class CPlayer;
 class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map <int, CPlayerQuest* > > >
 {
+	friend class QuestDatafile;
+	friend class CQuestManager;
+
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
@@ -23,7 +39,7 @@ class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, st
 	std::deque < class CStepPathFinder* > m_apEntityNPCNavigator{};
 
 public:
-	friend class CQuestManager;
+	QuestDatafile m_Datafile{};
 
 	CPlayerQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
 	~CPlayerQuest();
@@ -38,7 +54,10 @@ public:
 	void Init(QuestState State)
 	{
 		m_State = State;
-		InitSteps();
+		Info()->PreparePlayerQuestSteps(m_ClientID, &m_vSteps);
+
+		m_Datafile.Init(this);
+		m_Datafile.Load();
 	}
 
 	CQuestDescription* Info() const;
@@ -48,10 +67,6 @@ public:
 	bool IsActive() const { return m_State == QuestState::ACCEPT; }
 
 	// steps
-	void InitDefaultSteps();
-	bool InitSteps();
-	bool SaveSteps();
-	void ClearSteps();
 	int GetCurrentStepPos() const { return m_Step; }
 	CQuestStep* GetStepByMob(int MobID) { return &m_vSteps[MobID]; }
 
@@ -69,5 +84,6 @@ private:
 	std::string GetDataFilename() const;
 	void Finish();
 };
+
 
 #endif

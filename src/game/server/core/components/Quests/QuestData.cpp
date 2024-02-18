@@ -33,268 +33,6 @@ CPlayer* CPlayerQuest::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
 CQuestDescription* CPlayerQuest::Info() const { return CQuestDescription::Data()[m_ID]; }
 std::string CPlayerQuest::GetDataFilename() const { return Info()->GetDataFilename(GetPlayer()->Account()->GetID()); }
 
-void CPlayerQuest::InitDefaultSteps()
-{
-	// check if the quest state is not ACCEPT or if the player does not exist
-	if(m_State != QuestState::ACCEPT || !GetPlayer())
-		return;
-
-	// check if the "quest_tmp" directory does not exist
-	if(!fs_is_dir("server_data/quest_tmp"))
-	{
-		// create the directories if it does not exist
-		fs_makedir("server_data");
-		fs_makedir("server_data/quest_tmp");
-	}
-
-	// initialize the quest steps
-	m_Step = 1;
-	Info()->PreparePlayerQuestSteps(m_ClientID, &m_vSteps);
-
-	// json structuring
-	nlohmann::json JsonQuestData;
-	JsonQuestData["current_step"] = m_Step;
-	for(auto& pStep : m_vSteps)
-	{
-		if(pStep.second.m_Bot.m_HasAction)
-		{
-			// Create a JSON object called StepData
-			nlohmann::json StepData;
-
-			// Add values to the StepData object
-			StepData["subbotid"] = pStep.second.m_Bot.m_SubBotID;
-			StepData["state"] = pStep.second.m_StepComplete;
-
-			// Check if the RequiredDefeat vector is not empty
-			if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
-			{
-				// Iterate through each element in the RequiredDefeat vector
-				for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
-				{
-					// Create a JSON object for each required defeat
-					StepData["defeat"].push_back({
-						{"id", p.m_BotID},
-						{"count", 0},
-						{"complete", false}
-						});
-				}
-			}
-
-			// Check if the RequiredMoveTo vector is not empty
-			if(!pStep.second.m_Bot.m_RequiredMoveTo.empty())
-			{
-				// Iterate through each element in the RequiredMoveTo vector
-				for(size_t i = 0; i < pStep.second.m_Bot.m_RequiredMoveTo.size(); i++)
-				{
-					// Create a JSON object for each required move
-					StepData["move_to"].push_back({
-						{"complete", false}
-						});
-				}
-			}
-
-			// Add the StepData object to the "steps" array in the JsonQuestData object
-			JsonQuestData["steps"].push_back(StepData);
-		}
-	}
-
-	// Loop through each player step
-	for(auto& pStep : m_vSteps)
-	{
-		// Check if the step requires defeating certain bots
-		if(!pStep.second.m_Bot.m_RequiredDefeat.empty())
-		{
-			// Loop through the bots that need to be defeated
-			for(auto& p : pStep.second.m_Bot.m_RequiredDefeat)
-			{
-				// Reset the count and completion status for the bot
-				pStep.second.m_aMobProgress[p.m_BotID].m_Count = 0;
-				pStep.second.m_aMobProgress[p.m_BotID].m_Complete = false;
-			}
-		}
-
-		// Initialize the size of the MoveToProgress array based on the number of required move-to elements
-		int MoveToElementsSize = pStep.second.m_Bot.m_RequiredMoveTo.size();
-		pStep.second.m_aMoveToProgress.resize(MoveToElementsSize, false);
-
-		// Update the player step
-		pStep.second.Update();
-	}
-
-	// save file
-	std::string Data = JsonQuestData.dump();
-	Tools::Files::saveFile(GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
-}
-
-bool CPlayerQuest::InitSteps()
-{
-	// only for accept state
-	if(m_State != QuestState::ACCEPT)
-		return false;
-
-	// loading file is not open pereinitilized steps
-	ByteArray RawData;
-	if(!Tools::Files::loadFile(GetDataFilename().c_str(), &RawData))
-	{
-		InitDefaultSteps();
-		return false;
-	}
-
-	// init steps
-	Info()->PreparePlayerQuestSteps(m_ClientID, &m_vSteps);
-
-	// loading steps
-	nlohmann::json JsonQuestData = nlohmann::json::parse((char*)RawData.data());
-	m_Step = JsonQuestData.value("current_step", 1);
-
-	// check if the size of the "steps" array in JsonQuestData is not equal to the size of the m_aPlayerSteps array
-	if(JsonQuestData["steps"].size() != m_vSteps.size())
-	{
-		InitDefaultSteps();
-		return false;
-	}
-
-	// iterate through each element in the "steps" array of JsonQuestData
-	for(auto& pStep : JsonQuestData["steps"])
-	{
-		// Get the value of SubBotID from pStep and assign it to the constant SubBotID
-		const int SubBotID = pStep.value("subbotid", 0);
-		m_vSteps[SubBotID].m_StepComplete = pStep.value("state", false);
-
-		// If the StepComplete is true, skip the rest of the code and continue to the next iteration
-		if(m_vSteps[SubBotID].m_StepComplete)
-			continue;
-
-		// If "defeat" key exists in pStep
-		if(pStep.find("defeat") != pStep.end())
-		{
-			// If the size of the "defeat" array in pStep is not equal to the size of the m_aMobProgress map of the corresponding player step
-			if(pStep["defeat"].size() != m_vSteps[SubBotID].m_Bot.m_RequiredDefeat.size())
-			{
-				dbg_msg("quest system", "Reinitialization called... Player save file has a defeat value, but it is not present in the data!");
-				InitDefaultSteps();
-				return false;
-			}
-
-			// Iterate through each element in the "defeat" array
-			for(auto& p : pStep["defeat"])
-			{
-				int ID = p.value("id", 0);
-				m_vSteps[SubBotID].m_aMobProgress[ID].m_Count = p.value("count", 0);
-				m_vSteps[SubBotID].m_aMobProgress[ID].m_Complete = p.value("complete", 0);
-			}
-		}
-
-		// If "move_to" key exists in pStep
-		if(pStep.find("move_to") != pStep.end())
-		{
-			// Check if the size of the "move_to" array of pStep is not equal to the size of the m_aPlayerSteps[SubBotID].m_Bot.m_RequiredMoveTo vector
-			int TotalMoveToSize = m_vSteps[SubBotID].m_Bot.m_RequiredMoveTo.size();
-			if(pStep["move_to"].size() != TotalMoveToSize)
-			{
-				dbg_msg("quest system", "Reinitialization called... Player save file has a move_to value, but it is not present in the data!");
-				InitDefaultSteps();
-				return false;
-			}
-
-			// Initialize the size of the MoveToProgress array based on the number of required move-to elements
-			m_vSteps[SubBotID].m_aMoveToProgress.resize(TotalMoveToSize, false);
-			for(int p = 0; p < (int)pStep["move_to"].size(); p++)
-				m_vSteps[SubBotID].m_aMoveToProgress[p] = pStep["move_to"][p].value("complete", false);
-		}
-
-		// Set ClientQuitting value of the corresponding player step to false
-		m_vSteps[SubBotID].m_ClientQuitting = false;
-	}
-
-	// Update the steps of the bot
-	for(auto& pStep : m_vSteps)
-	{
-		// If the current step is not complete
-		if(!pStep.second.m_StepComplete)
-			pStep.second.Update();
-	}
-
-	// save file
-	std::string Data = JsonQuestData.dump();
-	Tools::Files::saveFile(GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
-	return true;
-}
-
-bool CPlayerQuest::SaveSteps()
-{
-	// Check if the current state of the quest is not "ACCEPT"
-	if(m_State != QuestState::ACCEPT)
-		return false;
-
-	// json structuring
-	nlohmann::json JsonQuestData;
-	JsonQuestData["current_step"] = m_Step;
-	for(auto& pStep : m_vSteps)
-	{
-		if(pStep.second.m_Bot.m_HasAction)
-		{
-			// Creating a json object called stepData
-			nlohmann::json stepData;
-
-			// Assigning the value of m_SubBotID to the key "subbotid" in the stepData object
-			stepData["subbotid"] = pStep.second.m_Bot.m_SubBotID;
-
-			// Assigning the value of m_StepComplete to the key "state" in the stepData object
-			stepData["state"] = pStep.second.m_StepComplete;
-
-			// Looping through each key-value pair in the m_aMobProgress map of the pStep.second object
-			for(auto& p : pStep.second.m_aMobProgress)
-			{
-				// Creating a json object for each map entry in the m_aMobProgress map
-				// and adding it to the "defeat" array in the stepData object
-				stepData["defeat"].push_back(
-					{
-						{ "id", p.first }, // Assigning the key "id" with the value of p.first (key from the map)
-						{ "count", p.second.m_Count }, // Assigning the key "count" with the value of p.second.m_Count (value from the map value)
-						{ "complete", p.second.m_Complete } // Assigning the key "complete" with the value of p.second.m_Complete (value from the map value)
-					});
-			}
-
-			// Looping through each value in the m_aMoveToProgress vector of the pStep.second object
-			for(auto& p : pStep.second.m_aMoveToProgress)
-			{
-				// Creating a json object for each value in the m_aMoveToProgress vector
-				// and adding it to the "move_to" array in the stepData object
-				stepData["move_to"].push_back(
-					{
-						{ "complete", p }, // Assigning the key "complete" with the value of p (value from the vector element)
-					});
-			}
-
-			// Adding the stepData object to the "steps" array in the JsonQuestData object
-			JsonQuestData["steps"].push_back(stepData);
-		}
-	}
-
-	// replace file
-	std::string Data = JsonQuestData.dump();
-	Tools::Files::saveFile(GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
-	return true;
-}
-
-void CPlayerQuest::ClearSteps()
-{
-	// Iterate through all player steps
-	for(auto& p : m_vSteps)
-	{
-		// Clear the data of the player step
-		p.second.Clear();
-	}
-
-	// Clear the player steps map
-	m_vSteps.clear();
-
-	// Remove the temporary user quest data file
-	Tools::Files::deleteFile(GetDataFilename().c_str());
-	fs_remove(GetDataFilename().c_str());
-}
-
 // Function to handle accepting a quest by the player
 bool CPlayerQuest::Accept()
 {
@@ -313,7 +51,9 @@ bool CPlayerQuest::Accept()
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Account()->GetID(), m_State);
 
 	// Initialize the quest steps
-	InitDefaultSteps();
+	m_Step = 1;
+	Info()->PreparePlayerQuestSteps(ClientID, &m_vSteps);
+	m_Datafile.Create();
 
 	// Retrieve information about the quest
 	const int QuestsSize = Info()->GetQuestStorySize();
@@ -344,7 +84,7 @@ void CPlayerQuest::Refuse()
 		return;
 
 	// Clear the steps of the quest
-	ClearSteps();
+	m_Datafile.Delete();
 
 	// Set the state of the quest to NO_ACCEPT and erase from database
 	m_State = QuestState::NO_ACCEPT;
@@ -357,7 +97,7 @@ void CPlayerQuest::Reset()
 	m_State = QuestState::NO_ACCEPT;
 
 	// Clear the steps of the quest
-	ClearSteps();
+	m_Datafile.Delete();
 }
 
 void CPlayerQuest::Finish()
@@ -374,7 +114,7 @@ void CPlayerQuest::Finish()
 	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Account()->GetID());
 
 	// clear steps
-	ClearSteps();
+	m_Datafile.Delete();
 
 	// Add the reward gold to the player's money and experience
 	pPlayer->Account()->AddGold(Info()->GetRewardGold());
@@ -447,7 +187,7 @@ void CPlayerQuest::CheckAvailableNewStep()
 	}
 	else
 	{
-		SaveSteps();
+		m_Datafile.Save();
 	}
 }
 
@@ -484,4 +224,200 @@ CStepPathFinder* CPlayerQuest::AddEntityNPCNavigator(QuestBotInfo* pBot)
 
 	// Return the NPC navigator
 	return pPathFinder;
+}
+
+/*
+ * QuestDatafile
+ */
+void QuestDatafile::Create()
+{
+	// check if the quest state is not ACCEPT or if the player does not exist
+	if(!m_pQuest || m_pQuest->m_State != QuestState::ACCEPT || !m_pQuest->GetPlayer())
+		return;
+
+	// check if the "directories" does not exist
+	if(!fs_is_dir("server_data/quest_tmp"))
+	{
+		fs_makedir("server_data");
+		fs_makedir("server_data/quest_tmp");
+	}
+
+	// json structuring
+	nlohmann::json JsonQuestData;
+	JsonQuestData["current_step"] = m_pQuest->m_Step;
+	for(auto& [MobID, Step] : m_pQuest->m_vSteps)
+	{
+		if(Step.m_Bot.m_HasAction)
+		{
+			// Add values to the StepData object
+			auto& StepData = JsonQuestData["steps"];
+			StepData["subbotid"] = Step.m_Bot.m_SubBotID;
+			StepData["state"] = Step.m_StepComplete;
+
+			// Check if the RequiredDefeat vector is not empty
+			if(!Step.m_Bot.m_RequiredDefeat.empty())
+			{
+				for(auto& p : Step.m_Bot.m_RequiredDefeat)
+					StepData["defeat"].push_back({ {"id", p.m_BotID}, {"count", 0}, {"complete", false} });
+			}
+
+			// Check if the RequiredMoveTo vector is not empty
+			if(!Step.m_Bot.m_RequiredMoveTo.empty())
+			{
+				for(size_t i = 0; i < Step.m_Bot.m_RequiredMoveTo.size(); i++)
+					StepData["move_to"].push_back({ {"complete", false} });
+			}
+		}
+	}
+
+	// Loop through each player step
+	for(auto& StepPr : m_pQuest->m_vSteps)
+	{
+		int MoveToElementsSize = StepPr.second.m_Bot.m_RequiredMoveTo.size();
+		StepPr.second.m_aMoveToProgress.resize(MoveToElementsSize, false);
+
+		// Update the player step
+		StepPr.second.Update();
+	}
+
+	// save file
+	std::string Data = JsonQuestData.dump();
+	Tools::Files::saveFile(m_pQuest->GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
+}
+
+void QuestDatafile::Load()
+{
+	// only for accept state
+	if(!m_pQuest || m_pQuest->m_State != QuestState::ACCEPT)
+		return;
+
+	// loading file is not open pereinitilized steps
+	ByteArray RawData;
+	if(!Tools::Files::loadFile(m_pQuest->GetDataFilename().c_str(), &RawData))
+	{
+		Create();
+		return;
+	}
+
+	// loading steps
+	nlohmann::json JsonQuestData = nlohmann::json::parse((char*)RawData.data());
+	m_pQuest->m_Step = JsonQuestData.value("current_step", 1);
+
+	// Check defferent size of steps
+	if(JsonQuestData["steps"].size() != m_pQuest->m_vSteps.size())
+	{
+		dbg_msg("quest system", "Reinitialization... Player save file has a different size of steps!");
+		Create();
+		return;
+	}
+
+	// iterate through each element in the "steps" array of JsonQuestData
+	for(auto& pStep : JsonQuestData["steps"])
+	{
+		// Get the value of SubBotID from pStep and assign it to the constant SubBotID
+		const int SubBotID = pStep.value("subbotid", 0);
+		m_pQuest->m_vSteps[SubBotID].m_StepComplete = pStep.value("state", false);
+		if(m_pQuest->m_vSteps[SubBotID].m_StepComplete)
+			continue;
+
+		// If "defeat" key exists in pStep
+		if(pStep.contains("defeat"))
+		{
+			// If the size of the "defeat" array in pStep is not equal to the size of the m_aMobProgress map of the corresponding player step
+			if(pStep["defeat"].size() != m_pQuest->m_vSteps[SubBotID].m_Bot.m_RequiredDefeat.size())
+			{
+				dbg_msg("quest system", "Reinitialization... Player save file has a defeat value, but it is not present in the data!");
+				Create();
+				return;
+			}
+
+			// Iterate through each element in the "defeat" array
+			for(auto& p : pStep["defeat"])
+			{
+				int ID = p.value("id", 0);
+				m_pQuest->m_vSteps[SubBotID].m_aMobProgress[ID].m_Count = p.value("count", 0);
+				m_pQuest->m_vSteps[SubBotID].m_aMobProgress[ID].m_Complete = p.value("complete", 0);
+			}
+		}
+
+		// If "move_to" key exists in pStep
+		if(pStep.contains("move_to"))
+		{
+			// Check if the size of the "move_to" array of pStep is not equal to the size of the m_aPlayerSteps[SubBotID].m_Bot.m_RequiredMoveTo vector
+			size_t TotalMoveToSize = m_pQuest->m_vSteps[SubBotID].m_Bot.m_RequiredMoveTo.size();
+			if(pStep["move_to"].size() != TotalMoveToSize)
+			{
+				dbg_msg("quest system", "Reinitialization... Player save file has a move_to value, but it is not present in the data!");
+				Create();
+				return;
+			}
+
+			// Initialize the size of the MoveToProgress array based on the number of required move-to elements
+			m_pQuest->m_vSteps[SubBotID].m_aMoveToProgress.resize(TotalMoveToSize, false);
+			for(int p = 0; p < (int)pStep["move_to"].size(); p++)
+				m_pQuest->m_vSteps[SubBotID].m_aMoveToProgress[p] = pStep["move_to"][p].value("complete", false);
+		}
+
+		// Set ClientQuitting value of the corresponding player step to false
+		m_pQuest->m_vSteps[SubBotID].m_ClientQuitting = false;
+	}
+
+	// Update the steps of the bot
+	for(auto& pStep : m_pQuest->m_vSteps)
+	{
+		// If the current step is not complete
+		if(!pStep.second.m_StepComplete)
+			pStep.second.Update();
+	}
+
+	// save file
+	std::string Data = JsonQuestData.dump();
+	Tools::Files::saveFile(m_pQuest->GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
+}
+
+bool QuestDatafile::Save()
+{
+	// Check if the current state of the quest is not "ACCEPT"
+	if(!m_pQuest || m_pQuest->m_State != QuestState::ACCEPT)
+		return false;
+
+	// json structuring
+	nlohmann::json JsonQuestData;
+	JsonQuestData["current_step"] = m_pQuest->m_Step;
+	for(auto& pStep : m_pQuest->m_vSteps)
+	{
+		if(pStep.second.m_Bot.m_HasAction)
+		{
+			auto& StepData = JsonQuestData["steps"];
+			StepData["subbotid"] = pStep.second.m_Bot.m_SubBotID;
+			StepData["state"] = pStep.second.m_StepComplete;
+
+			// Looping through each key-value pair in the m_aMobProgress map of the pStep.second object
+			for(auto& p : pStep.second.m_aMobProgress)
+				StepData["defeat"].push_back({ { "id", p.first }, { "count", p.second.m_Count }, { "complete", p.second.m_Complete } });
+
+			// Looping through each value in the m_aMoveToProgress vector of the pStep.second object
+			for(auto& p : pStep.second.m_aMoveToProgress)
+				StepData["move_to"].push_back({ { "complete", p } });
+		}
+	}
+
+	// replace file
+	std::string Data = JsonQuestData.dump();
+	auto Result = Tools::Files::saveFile(m_pQuest->GetDataFilename().c_str(), Data.data(), (unsigned)Data.size());
+	return (Result == Tools::Files::Result::SUCCESSFUL);
+}
+
+void QuestDatafile::Delete()
+{
+	if(!m_pQuest)
+		return;
+
+	for(auto& p : m_pQuest->m_vSteps)
+		p.second.Clear();
+	m_pQuest->m_vSteps.clear();
+
+	// Remove the temporary user quest data file
+	Tools::Files::deleteFile(m_pQuest->GetDataFilename().c_str());
+	fs_remove(m_pQuest->GetDataFilename().c_str());
 }

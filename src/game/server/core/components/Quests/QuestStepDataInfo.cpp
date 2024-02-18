@@ -153,7 +153,7 @@ bool CQuestStep::Finish()
 		m_StepComplete = true;
 
 		const int QuestID = m_Bot.m_QuestID;
-		if(!pPlayer->GetQuest(QuestID)->SaveSteps())
+		if(!pPlayer->GetQuest(QuestID)->m_Datafile.Save())
 		{
 			GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
 			dbg_msg(QUEST_PREFIX_DEBUG, "After completing the quest step, I am unable to save the file.");
@@ -265,7 +265,7 @@ void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 			GS()->Chat(pPlayer->GetCID(), "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
 		}
 
-		pQuest->SaveSteps();
+		pQuest->m_Datafile.Save();
 		break;
 	}
 }
