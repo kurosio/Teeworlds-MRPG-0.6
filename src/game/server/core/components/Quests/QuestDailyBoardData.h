@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_QUEST_DAILY_BOARD_DATA_H
 #define GAME_SERVER_COMPONENT_QUEST_DAILY_BOARD_DATA_H
 
-#include "QuestDataInfo.h"
+#include "quest_desc_data.h"
 
 using QuestDailyBoardIdentifier = int;
 

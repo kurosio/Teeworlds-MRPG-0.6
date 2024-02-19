@@ -9,6 +9,13 @@ class CGS;
 class CPlayer;
 
 /*
+ * Structure:
+ * - array steps (1..10)
+ *		- array mobs (by ids)
+ * - current position
+ */	
+
+/*
  * Quest step
  */
 class CQuestStepBase
@@ -62,13 +69,11 @@ public:
 	int GetCountMoveToComplected();
 
 	// steps path finder tools
-	std::deque < class CEntityMoveTo* > m_apEntitiesMoveTo {};
-	std::deque < class CEntityPathFinder* > m_apEntitiesNavigator {};
+	std::deque < class CEntityQuestAction* > m_vpEntitiesAction {};
+	std::deque < class CEntityPathArrow* > m_apEntitiesNavigator {};
 
-	CEntityMoveTo* FoundEntityMoveTo(vec2 Position) const;
-	CEntityPathFinder* FoundEntityNavigator(vec2 Position) const;
-	CEntityMoveTo* AddEntityMoveTo(const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, bool* pComplete, class CPlayerBot* pDefeatMobPlayer = nullptr);
-	CEntityPathFinder* AddEntityNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete);
+	CEntityQuestAction* UpdateEntityQuestAction(bool* pMarkIsNewItem, const QuestBotInfo::TaskAction& TaskMoveTo, bool* pComplete, class CPlayerBot* pDefeatMobPlayer = nullptr);
+	CEntityPathArrow* UpdateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete);
 };
 
 #endif

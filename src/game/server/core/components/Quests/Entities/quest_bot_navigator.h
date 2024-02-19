@@ -5,17 +5,13 @@
 
 #include <game/server/entity.h>
 
-class CStepPathFinder : public CEntity
+class CQuestBotNavigator : public CEntity
 {
-	bool m_MainScenario;
-	std::deque < CStepPathFinder* >* m_apCollection;
-
 public:
-	int m_SubBotID;
+	int m_QuestBotID;
 	class CPlayer* m_pPlayer;
 
-	CStepPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int ClientID, QuestBotInfo QuestBot, std::deque < CStepPathFinder* >* apCollection);
-	~CStepPathFinder() override;
+	CQuestBotNavigator(CGameWorld* pGameWorld, int ClientID, const QuestBotInfo& Bot);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

@@ -5,7 +5,7 @@
 
 #include <game/server/entity.h>
 
-class CEntityMoveTo : public CEntity
+class CEntityQuestAction : public CEntity
 {
 	class CPlayer* m_pPlayer;
 	class CPlayerBot* m_pDefeatMobPlayer;
@@ -15,26 +15,22 @@ class CEntityMoveTo : public CEntity
 	bool m_AutoCompletesQuestStep;
 	float m_Radius;
 	array < int > m_IDs;
-	std::deque < CEntityMoveTo* >* m_apCollection;
-	const QuestBotInfo::TaskRequiredMoveTo* m_pTaskMoveTo;
+	const QuestBotInfo::TaskAction* m_pTaskMoveTo;
 
 public:
-	CEntityMoveTo(CGameWorld* pGameWorld, const QuestBotInfo::TaskRequiredMoveTo* pTaskMoveTo, int ClientID, int QuestID, bool *pComplete, std::deque < CEntityMoveTo* >* apCollection, 
+	CEntityQuestAction(CGameWorld* pGameWorld, const QuestBotInfo::TaskAction& TaskMoveTo, int ClientID, int QuestID, bool *pComplete, 
 		bool AutoCompletesQuestStep, class CPlayerBot* pDefeatMobPlayer = nullptr);
-	~CEntityMoveTo() override;
+	~CEntityQuestAction() override;
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
 	void HandleBroadcastInformation() const;
 	bool PressedFire() const;
-
 	int GetQuestID() const { return m_QuestID; }
 
-	void ClearPointers();
-
-	void Handler(const std::function<bool()> pCallbackSuccesful);
-	void TryFinish(bool AutoCompleteQuestStep);
+	void Handler(const std::function<bool()>& pCallbackSuccesful);
+	void TryFinish();
 };
 
 #endif

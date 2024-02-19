@@ -25,12 +25,18 @@ class CQuestDescription : public MultiworldIdentifiableStaticData < std::map< in
 public:
 	CQuestDescription(QuestIdentifier ID) : m_ID(ID) {}
 
+	/*
+	 * Create a new instance of the quest description
+	 */
 	static CQuestDescription* CreateElement(QuestIdentifier ID)
 	{
 		const auto pData = new CQuestDescription(ID);
 		return m_pData[ID] = pData;
 	}
 
+	/*
+	 * Initialize the quest description
+	 */
 	void Init(const std::string& Name, const std::string& Story, int Gold, int Exp)
 	{
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
@@ -40,26 +46,80 @@ public:
 		m_Flags = QF_NONE;
 	}
 
-	void MarkDaily()
-	{
-		m_Flags |= QF_DAILY;
-	}
+	/*
+	 * Mark quest as daily
+	 *
+	 */
+	void MarkDaily() { m_Flags |= QF_DAILY; }
 
+	/*
+	 * Get ID of the quest
+	 *
+	 */
 	QuestIdentifier GetID() const { return m_ID; }
+
+	/*
+	 * Get filename of the quest data
+	 *	 
+	 */
 	std::string GetDataFilename(int AccountID) const;
+
+	/*
+	 * Get name of the quest
+	 *	 
+	 */
 	const char* GetName() const { return m_aName; }
+
+	/*
+	 * Get storyline of the quest
+	 *
+	 */
 	const char* GetStory() const { return m_aStoryLine; }
-	int GetQuestStoryPosition() const;
-	int GetQuestStorySize() const;
+
+	/*
+	 * Get position of quests storyline
+	 *
+	 */
+	int GetStoryQuestPosition() const;
+
+	/*
+	 * Get size of quests storyline
+	 *	 
+	 */
+	int GetStoryQuestsNum() const;
+
+	/*
+	 * Get reward of the quest Gold
+	 *
+	 */
 	int GetRewardGold() const { return m_Gold; }
+
+	/*
+	 * Get reward of the quest Exp
+	 *	 
+	 */
 	int GetRewardExp() const { return m_Exp; }
 
-	void PreparePlayerQuestSteps(int ClientID, std::map < int, CQuestStep >* pElem) const;
+	/*
+	 * Prepare player steps
+	 *
+	 */
+	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem);
+
+	/*
+	 * Is has flag
+	 *	 
+	 */
 	bool IsHasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
+
+	/*
+	 * Is daily quest
+	 *
+	 */
 	bool IsDaily() const { return IsHasFlag(QF_DAILY); }
 
 	// steps with array bot data on active step
-	std::unordered_map < int, CQuestStepBase > m_StepsQuestBot;
+	std::map < int, std::deque<CQuestStepBase> > m_vSteps;
 };
 
 #endif

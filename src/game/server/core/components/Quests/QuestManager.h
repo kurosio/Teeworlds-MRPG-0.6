@@ -5,7 +5,7 @@
 #include <game/server/core/mmo_component.h>
 
 #include "QuestDailyBoardData.h"
-#include "QuestData.h"
+#include "quest_data.h"
 
 /*
  * CQuestManager class is a subclass of MmoComponent class.
@@ -104,7 +104,7 @@ public:
 	// Return: a pointer to a CQuestsDailyBoard object
 	CQuestsDailyBoard* GetDailyBoard(vec2 Pos) const;
 
-	void UpdateSteps(CPlayer* pPlayer);
+	void Update(CPlayer* pPlayer);
 	void AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);
 	void AcceptNextStoryQuestStep(CPlayer* pPlayer);
 	int GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const;

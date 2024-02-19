@@ -99,10 +99,10 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 
 		// load from database
 		QuestBotInfo QuestBot;
-		QuestBot.m_SubBotID = MobID;
+		QuestBot.m_ID = MobID;
 		QuestBot.m_QuestID = QuestID;
 		QuestBot.m_BotID = pRes->getInt("BotID");
-		QuestBot.m_Step = pRes->getInt("Step");
+		QuestBot.m_StepPos = pRes->getInt("Step");
 		QuestBot.m_WorldID = pRes->getInt("WorldID");
 		QuestBot.m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
 		QuestBot.m_EventJsonData = pRes->getString("EventData").c_str();
@@ -117,11 +117,14 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_HasAction = lAction;
 		QuestBot.m_aDialogs = aDialogs;
 
+		// initilize quest steps
+		CQuestStepBase Base;
+		Base.m_Bot = QuestBot;
+		GS()->GetQuestInfo(QuestID)->m_vSteps[QuestBot.m_StepPos].push_back(Base);
+
 		// initilize
 		QuestBotInfo::ms_aQuestBot[MobID] = std::move(QuestBot);
-
 		dbg_assert(GS()->GetQuestInfo(QuestID) != nullptr, "QuestID is not valid");
-		GS()->GetQuestInfo(QuestID)->m_StepsQuestBot[MobID].m_Bot = QuestBotInfo::ms_aQuestBot[MobID];
 	}
 }
 

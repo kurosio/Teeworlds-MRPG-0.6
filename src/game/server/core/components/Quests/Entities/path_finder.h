@@ -5,22 +5,18 @@
 
 #include <game/server/entity.h>
 
-class CEntityPathFinder : public CEntity
+class CEntityPathArrow : public CEntity
 {
 	int m_WorldID;
 	float m_AreaClipped;
 	bool* m_pComplete;
 	class CPlayer* m_pPlayer;
-	std::deque < CEntityPathFinder* >* m_apCollection;
 
 public:
-	CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection);
-	~CEntityPathFinder() override;
+	CEntityPathArrow(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
-
-	void ClearPointers();
 };
 
 #endif

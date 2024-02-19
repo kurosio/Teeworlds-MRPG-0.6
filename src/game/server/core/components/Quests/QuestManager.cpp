@@ -217,7 +217,7 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			return true;
 
 		// If the quest is active, refuse it. Otherwise, accept it.
-		if(pQuest->IsActive())
+		if(pQuest->IsAccepted())
 			pQuest->Refuse();
 		else
 			pQuest->Accept();
@@ -349,8 +349,8 @@ void CQuestManager::ShowQuestID(CPlayer* pPlayer, int QuestID) const
 
 	// Get the size of the quest's story and the current position in the story
 	// Display the quest information to the player using the AVD() function
-	const int QuestsSize = pQuestInfo->GetQuestStorySize();
-	const int QuestPosition = pQuestInfo->GetQuestStoryPosition();
+	const int QuestsSize = pQuestInfo->GetStoryQuestsNum();
+	const int QuestPosition = pQuestInfo->GetStoryQuestPosition();
 	CVoteWrapper(pPlayer->GetCID()).AddMenu(MENU_JOURNAL_QUEST_INFORMATION, QuestID, "{INT}/{INT} {STR}: {STR}",
 		QuestPosition, QuestsSize, pQuestInfo->GetStory(), pQuestInfo->GetName());
 }
@@ -362,7 +362,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 	const int ClientID = pPlayer->GetCID();
 
 	CVoteWrapper(ClientID).Add("Active NPC for current quests");
-	for(auto& pStepBot : CQuestDescription::Data()[QuestID]->m_StepsQuestBot)
+	/*for(auto& pStepBot : CQuestDescription::Data()[QuestID]->m_vSteps)
 	{
 		const QuestBotInfo& BotInfo = pStepBot.second.m_Bot;
 		if(!BotInfo.m_HasAction)
@@ -373,7 +373,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		const char* pSymbol = (((pPlayerQuest->GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest->GetState() == QuestState::FINISHED) ? "✔ " : "\0");
 
 		CVoteWrapper VStep(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", 
-			pSymbol, BotInfo.m_Step, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
+			pSymbol, BotInfo.m_StepPos, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
 		if(pPlayerQuest->GetState() != QuestState::ACCEPT)
@@ -384,9 +384,9 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 
 		// show required defeat
 		bool NoTasks = true;
-		if(!BotInfo.m_RequiredDefeat.empty())
+		if(!BotInfo.m_vRequiredDefeat.empty())
 		{
-			for(auto& p : BotInfo.m_RequiredDefeat)
+			for(auto& p : BotInfo.m_vRequiredDefeat)
 			{
 				if(DataBotInfo::ms_aDataBot.find(p.m_BotID) != DataBotInfo::ms_aDataBot.end())
 				{
@@ -397,9 +397,9 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		}
 
 		// show required item's
-		if(!BotInfo.m_RequiredItems.empty())
+		if(!BotInfo.m_vRequiredItems.empty())
 		{
-			for(auto& pRequired : BotInfo.m_RequiredItems)
+			for(auto& pRequired : BotInfo.m_vRequiredItems)
 			{
 				CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequired.m_Item);
 				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, pRequired.m_Item.GetValue());
@@ -419,7 +419,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		}
 
 		// show move to
-		if(!BotInfo.m_RequiredMoveTo.empty())
+		if(!BotInfo.m_vRequiredMoveAction.empty())
 		{
 			VStep.Add("- Some action is required");
 		}
@@ -428,14 +428,14 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		{
 			VStep.Add("- No task");
 		}
-	}
+	}*/
 }
 
 void CQuestManager::QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size)
 {
 	const int QuestID = pBot.m_QuestID;
 	CPlayerQuest* pQuest = pPlayer->GetQuest(QuestID);
-	CQuestStep* pStep = pQuest->GetStepByMob(pBot.m_SubBotID);
+	CQuestStep* pStep = pQuest->GetStepByMob(pBot.m_ID);
 	pStep->FormatStringTasks(aBufQuestTask, Size);
 }
 
@@ -451,10 +451,7 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 
 		// check current steps and append
 		for(auto& pStepBot : pQuest->m_vSteps)
-		{
-			if(pQuest->GetCurrentStepPos() == pStepBot.second.m_Bot.m_Step)
-				pStepBot.second.AppendDefeatProgress(DefeatedBotID);
-		}
+			pStepBot.AppendDefeatProgress(DefeatedBotID);
 	}
 }
 
@@ -506,8 +503,8 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 			continue;
 
 		// Determine the state indicator and action name based on whether the quest is active or not
-		const char* StateIndicator = (pQuest->IsActive() ? "✔" : "×");
-		const char* ActionName = (pQuest->IsActive() ? "Refuse" : "Accept");
+		const char* StateIndicator = (pQuest->IsAccepted() ? "✔" : "×");
+		const char* ActionName = (pQuest->IsAccepted() ? "Refuse" : "Accept");
 		const char* QuestName = pDailyQuestInfo->GetName();
 
 		// Display the quest information to the player
@@ -542,23 +539,15 @@ CQuestsDailyBoard* CQuestManager::GetDailyBoard(vec2 Pos) const
 	return nullptr;
 }
 
-void CQuestManager::UpdateSteps(CPlayer* pPlayer)
+void CQuestManager::Update(CPlayer* pPlayer)
 {
-	// TODO Optimize algoritm check complected steps
 	const int ClientID = pPlayer->GetCID();
 	for(auto& [ID, pQuest] : CPlayerQuest::Data()[ClientID])
 	{
 		if(pQuest->GetState() != QuestState::ACCEPT)
 			continue;
 
-		for(auto& [MobID, Step] : pQuest->m_vSteps)
-		{
-			if(pQuest->GetCurrentStepPos() == Step.m_Bot.m_Step)
-			{
-				Step.UpdatePathNavigator();
-				Step.UpdateTaskMoveTo();
-			}
-		}
+		pQuest->Update();
 	}
 }
 
@@ -629,11 +618,11 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const
 		if(pQuest->GetState() != QuestState::ACCEPT)
 			continue;
 
-		for(auto& pStepBot : pQuest->m_vSteps)
+		/*for(auto& pStepBot : pQuest->m_vSteps)
 		{
 			if(!pStepBot.second.m_StepComplete)
 				AvailableValue -= pStepBot.second.GetNumberBlockedItem(ItemID);
-		}
+		}*/
 	}
 	return maximum(AvailableValue, 0);
 }

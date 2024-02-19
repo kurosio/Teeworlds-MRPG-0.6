@@ -38,7 +38,7 @@ public:
 	vec2 m_OldTargetPos;
 	CPathFinderPrepared m_PathFinderData;
 
-	CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint);
+	CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPoint);
 	~CPlayerBot() override;
 
 	void InitQuestBotMobInfo(CQuestBotMobInfo elem);

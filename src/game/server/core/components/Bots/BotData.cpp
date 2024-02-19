@@ -66,7 +66,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					else
 						Task.m_Type = TaskRequiredItems::Type::DEFAULT;
 
-					m_RequiredItems.push_back(Task);
+					m_vRequiredItems.push_back(Task);
 				}
 			}
 		}
@@ -83,7 +83,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				const int Value = p.value("value", -1);
 				if(BotID > 0 && Value > 0)
 				{
-					m_RequiredDefeat.push_back({ BotID, Value });
+					m_vRequiredDefeat.push_back({ BotID, Value });
 				}
 			}
 		}
@@ -107,9 +107,9 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				// initialize data flags
 				CItem PickUpItem {};
 				CItem RequiredItem {};
-				TaskRequiredMoveTo::Interaction Interactive {};
-				TaskRequiredMoveTo::DefeatMob DefeatDescription {};
-				unsigned int Type = TaskRequiredMoveTo::Types::EMPTY;
+				TaskAction::Interaction Interactive {};
+				TaskAction::DefeatMob DefeatDescription {};
+				unsigned int Type = TaskAction::Types::EMPTY;
 				{
 					// pickup item
 					if(p.contains("pick_up_item"))
@@ -118,7 +118,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 						PickUpItem = CItem::FromJSON(p["pick_up_item"]);
 
 						// Set the PICKUP_ITEM flag in the Type variable
-						Type |= TaskRequiredMoveTo::Types::PICKUP_ITEM;
+						Type |= TaskAction::Types::PICKUP_ITEM;
 					}
 
 					// required item
@@ -128,7 +128,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 						RequiredItem = CItem::FromJSON(p["required_item"]);
 
 						// Set the REQUIRED_ITEM flag in the Type variable
-						Type |= TaskRequiredMoveTo::Types::REQUIRED_ITEM;
+						Type |= TaskAction::Types::REQUIRED_ITEM;
 					}
 
 					// interaction
@@ -146,20 +146,20 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 						Interactive.m_Position.y = pIntJson.value("y", -1);
 
 						// Check the current value of the "Type" variable
-						if(Type == TaskRequiredMoveTo::Types::EMPTY)
+						if(Type == TaskAction::Types::EMPTY)
 						{
-							// If it is TaskRequiredMoveTo::Types::EMPTY, add TaskRequiredMoveTo::Types::INTERACTIVE to it
-							Type |= TaskRequiredMoveTo::Types::INTERACTIVE;
+							// If it is TaskAction::Types::EMPTY, add TaskAction::Types::INTERACTIVE to it
+							Type |= TaskAction::Types::INTERACTIVE;
 						}
-						else if(Type == TaskRequiredMoveTo::Types::PICKUP_ITEM)
+						else if(Type == TaskAction::Types::PICKUP_ITEM)
 						{
-							// If it is TaskRequiredMoveTo::Types::PICKUP_ITEM, set TaskRequiredMoveTo::Types::INTERACTIVE_PICKUP to it
-							Type = TaskRequiredMoveTo::Types::INTERACTIVE_PICKUP;
+							// If it is TaskAction::Types::PICKUP_ITEM, set TaskAction::Types::INTERACTIVE_PICKUP to it
+							Type = TaskAction::Types::INTERACTIVE_PICKUP;
 						}
-						else if(Type == TaskRequiredMoveTo::Types::REQUIRED_ITEM)
+						else if(Type == TaskAction::Types::REQUIRED_ITEM)
 						{
-							// If it is TaskRequiredMoveTo::Types::REQUIRED_ITEM, set TaskRequiredMoveTo::Types::INTERACTIVE_REQUIRED to it
-							Type = TaskRequiredMoveTo::Types::INTERACTIVE_REQUIRED;
+							// If it is TaskAction::Types::REQUIRED_ITEM, set TaskAction::Types::INTERACTIVE_REQUIRED to it
+							Type = TaskAction::Types::INTERACTIVE_REQUIRED;
 						}
 					}
 					// defeat mob json element
@@ -185,15 +185,15 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 						DefeatDescription.m_WorldID = pDefJson.value("world_id", m_WorldID);
 
 						// Check the current value of the "Type" variable
-						if(Type == TaskRequiredMoveTo::Types::EMPTY)
+						if(Type == TaskAction::Types::EMPTY)
 						{
-							// If it is TaskRequiredMoveTo::Types::EMPTY, add TaskRequiredMoveTo::Types::DEFEAT_MOB to it
-							Type |= TaskRequiredMoveTo::Types::DEFEAT_MOB;
+							// If it is TaskAction::Types::EMPTY, add TaskAction::Types::DEFEAT_MOB to it
+							Type |= TaskAction::Types::DEFEAT_MOB;
 						}
-						else if(Type == TaskRequiredMoveTo::Types::PICKUP_ITEM)
+						else if(Type == TaskAction::Types::PICKUP_ITEM)
 						{
-							// If it is TaskRequiredMoveTo::Types::PICKUP_ITEM, set TaskRequiredMoveTo::Types::DEFEAT_MOB_PICKUP to it
-							Type = TaskRequiredMoveTo::Types::DEFEAT_MOB_PICKUP;
+							// If it is TaskAction::Types::PICKUP_ITEM, set TaskAction::Types::DEFEAT_MOB_PICKUP to it
+							Type = TaskAction::Types::DEFEAT_MOB_PICKUP;
 						}
 					}
 				}
@@ -207,7 +207,7 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 				// add new move_to point
 				if(!is_negative_vec(Position))
 				{
-					TaskRequiredMoveTo Move;
+					TaskAction Move;
 					Move.m_WorldID = WorldID;
 					Move.m_Step = LatestBiggerStep;
 					Move.m_Navigator = Navigator;
@@ -217,11 +217,11 @@ void QuestBotInfo::InitTasks(const std::string& JsonData)
 					Move.m_Position = Position;
 					Move.m_CompletionText = CompletionText;
 					Move.m_TaskName = TaskName;
-					Move.m_Type = maximum(Type, (unsigned int)TaskRequiredMoveTo::Types::MOVE_ONLY);
-					Move.m_QuestBotID = m_SubBotID;
+					Move.m_Type = maximum(Type, (unsigned int)TaskAction::Types::MOVE_ONLY);
+					Move.m_QuestBotID = m_ID;
 					Move.m_Interaction = Interactive;
 					Move.m_DefeatMobInfo = DefeatDescription;
-					m_RequiredMoveTo.push_back(Move);
+					m_vRequiredMoveAction.push_back(Move);
 				}
 			}
 		}

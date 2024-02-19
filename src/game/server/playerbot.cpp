@@ -12,8 +12,8 @@
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
-CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int SubBotID, int SpawnPoint)
-	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(SubBotID), m_BotHealth(0), m_LastPosTick(0)
+CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPoint)
+	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(MobID), m_BotHealth(0), m_LastPosTick(0)
 {
 	m_EidolonCID = -1;
 	m_OldTargetPos = vec2(0, 0);
@@ -363,7 +363,7 @@ StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 			return STATE_SNAPPING_NONE;
 
 		// Check if the current step of the quest bot is not the same as the current step of the snapping player's quest
-		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_Step != pSnappingPlayer->GetQuest(QuestID)->GetCurrentStepPos()))
+		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_StepPos != pSnappingPlayer->GetQuest(QuestID)->GetStepPos()))
 			return STATE_SNAPPING_NONE;
 
 		// Check if the step for the bot mob in the snapping player's quest is already completed

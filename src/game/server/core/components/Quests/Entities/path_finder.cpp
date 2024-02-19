@@ -7,8 +7,8 @@
 
 #include <game/server/core/entities/tools/path_navigator.h>
 
-CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete, std::deque < CEntityPathFinder* >* apCollection)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos, 0, ClientID)
+CEntityPathArrow::CEntityPathArrow(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos, 0, ClientID)
 {
 	vec2 GetterPos{0,0};
 	GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos, &GetterPos);
@@ -18,32 +18,14 @@ CEntityPathFinder::CEntityPathFinder(CGameWorld* pGameWorld, vec2 SearchPos, int
 	m_WorldID = WorldID;
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	m_pComplete = pComplete;
-	m_apCollection = apCollection;
 	GameWorld()->InsertEntity(this);
 
 	// quest navigator finder
 	if(m_pPlayer && m_pPlayer->GetItem(itShowQuestNavigator)->IsEquipped())
-	{
 		new CEntityPathNavigator(&GS()->m_World, this, true, m_pPlayer->m_ViewPos, SearchPos, WorldID, true, CmaskOne(ClientID));
-	}
 }
 
-CEntityPathFinder::~CEntityPathFinder()
-{
-	if(m_apCollection && !m_apCollection->empty())
-	{
-		for(auto it = m_apCollection->begin(); it != m_apCollection->end(); ++it)
-		{
-			if(mem_comp((*it), this, sizeof(CEntityPathFinder)) == 0)
-			{
-				m_apCollection->erase(it);
-				break;
-			}
-		}
-	}
-}
-
-void CEntityPathFinder::Tick()
+void CEntityPathArrow::Tick()
 {
 	if(!m_pPlayer || !m_pPlayer->GetCharacter() || is_negative_vec(m_PosTo))
 	{
@@ -58,12 +40,7 @@ void CEntityPathFinder::Tick()
 	}
 }
 
-void CEntityPathFinder::ClearPointers()
-{
-	m_apCollection = nullptr;
-}
-
-void CEntityPathFinder::Snap(int SnappingClient)
+void CEntityPathArrow::Snap(int SnappingClient)
 {
 	if(m_ClientID != SnappingClient || !m_pPlayer || !m_pPlayer->GetCharacter() || (m_AreaClipped > 1.f && distance(m_PosTo, m_pPlayer->m_ViewPos) < m_AreaClipped))
 		return;

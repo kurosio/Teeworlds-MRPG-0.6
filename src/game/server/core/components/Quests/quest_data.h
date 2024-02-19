@@ -5,12 +5,12 @@
 
 #define QUEST_PREFIX_DEBUG "quest_system"
 
-#include "QuestDataInfo.h"
+#include "quest_desc_data.h"
 
 class CPlayerQuest;
 class QuestDatafile
 {
-	CPlayerQuest* m_pQuest;
+	CPlayerQuest* m_pQuest{};
 
 public:
 	void Init(CPlayerQuest* pQuest) { m_pQuest = pQuest; }
@@ -26,63 +26,121 @@ class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, st
 {
 	friend class QuestDatafile;
 	friend class CQuestManager;
-
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
+	std::deque<CQuestStep> m_vSteps {};
+	std::deque < class CQuestBotNavigator* > m_vpEntityBotNavigator {};
 	int m_ClientID {};
 	QuestIdentifier m_ID {};
 	QuestState m_State {};
 	int m_Step {};
 
-	std::map < int, CQuestStep > m_vSteps {};
-	std::deque < class CStepPathFinder* > m_apEntityNPCNavigator{};
-
 public:
 	QuestDatafile m_Datafile{};
-
-	CPlayerQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
+	CPlayerQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID), m_Step(1) { m_ID = ID; }
 	~CPlayerQuest();
 
+	/*
+	 * Create a new instance of the quest
+	 *
+	 */
 	static CPlayerQuest* CreateElement(QuestIdentifier ID, int ClientID)
 	{
 		dbg_assert(CQuestDescription::Data().find(ID) != CQuestDescription::Data().end(), "Quest ID not found");
 		const auto pData = new CPlayerQuest(ID, ClientID);
+		pData->m_Datafile.Init(pData);
 		return m_pData[ClientID][ID] = pData;
 	}
 
+	/*
+	 * Initialize the quest
+	 *
+	 */
 	void Init(QuestState State)
 	{
 		m_State = State;
-		Info()->PreparePlayerQuestSteps(m_ClientID, &m_vSteps);
-
-		m_Datafile.Init(this);
 		m_Datafile.Load();
 	}
 
+	/*
+	 * Get the quest description
+	 *
+	 */
 	CQuestDescription* Info() const;
-	QuestIdentifier GetID() const { return m_ID; }
-	QuestState GetState() const { return m_State; }
-	bool IsCompleted() const { return m_State == QuestState::FINISHED; }
-	bool IsActive() const { return m_State == QuestState::ACCEPT; }
 
-	// steps
-	int GetCurrentStepPos() const { return m_Step; }
-	CQuestStep* GetStepByMob(int MobID) { return &m_vSteps[MobID]; }
+	/*
+	 * Get the quest identifier
+	 *
+	 */
+	QuestIdentifier GetID() const { return m_ID; }
+
+	/*
+	 * Get the quest state
+	 *
+	 */
+	QuestState GetState() const { return m_State; }
+
+	/*
+	 * Check if the quest is completed
+	 *
+	 */
+	bool IsCompleted() const { return m_State == QuestState::FINISHED; }
+
+	/*
+	 * Check if the quest is accepted
+	 *
+	 */
+	bool IsAccepted() const { return m_State == QuestState::ACCEPT; }
+
+	/*
+	 * Check the quest has unfinished steps on the current position
+	 *
+	 */
+	bool HasUnfinishedSteps() const;
+
+	/*
+	 * Get the current step position
+	 *
+	 */
+	int GetStepPos() const { return m_Step; }
+
+	/*
+	 * Get the step by quest mob id
+	 *
+	 */
+	CQuestStep* GetStepByMob(int MobID);
 
 	// steps path finder tools
-	class CStepPathFinder* FoundEntityNPCNavigator(int SubBotID) const;
-	class CStepPathFinder* AddEntityNPCNavigator(class QuestBotInfo* pBot);
+	CQuestBotNavigator* UpdateEntityQuestBotNavigator(const QuestBotInfo& Bot);
 
-	// main
-	void CheckAvailableNewStep();
+	/*
+	 * Update the quest and all steps
+	 *
+	 */
+	void Update();
+
+	/*
+	 * Accept the quest and set the state to 'Accepted'
+	 *
+	 */
 	bool Accept();
+
+	/*
+	 * Reset all datas of the quest and refuse it to state 'No accepted'
+	 *
+	 */
 	void Refuse();
+
+	/*
+	 * Reset all datas of the quest save state
+	 *	 
+	 */
 	void Reset();
 
 private:
+	void UpdateStepPosition();
 	std::string GetDataFilename() const;
-	void Finish();
 };
 
 

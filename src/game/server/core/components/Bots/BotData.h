@@ -57,10 +57,10 @@ public:
 	char m_aGeneratedNickname[MAX_NAME_LENGTH] {};
 	vec2 m_Position {};
 	int m_QuestID {};
-	int m_Step {};
+	int m_StepPos {};
 	int m_WorldID {};
 	int m_BotID {};
-	int m_SubBotID {};
+	int m_ID {};
 	bool m_GenerateNick {};
 	bool m_HasAction {};
 	std::string m_EventJsonData {};
@@ -80,16 +80,16 @@ public:
 		CItem m_Item {};
 		Type m_Type {};
 	};
-	std::deque < TaskRequiredItems > m_RequiredItems;
+	std::deque < TaskRequiredItems > m_vRequiredItems;
 
 	struct TaskRequiredDefeat
 	{
 		int m_BotID {};
 		int m_Value {};
 	};
-	std::deque < TaskRequiredDefeat > m_RequiredDefeat;
+	std::deque < TaskRequiredDefeat > m_vRequiredDefeat;
 
-	struct TaskRequiredMoveTo
+	struct TaskAction
 	{
 		enum Types : unsigned int
 		{
@@ -138,7 +138,7 @@ public:
 		bool IsHasDefeatMob() const { return m_DefeatMobInfo.m_BotID >= 1; };
 	};
 
-	std::deque < TaskRequiredMoveTo > m_RequiredMoveTo;
+	std::deque < TaskAction > m_vRequiredMoveAction;
 	bool IsAutoCompletesQuestStep() const { return m_AutoCompletesQuestStep; }
 
 
