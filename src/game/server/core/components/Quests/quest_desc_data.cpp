@@ -28,11 +28,7 @@ void CQuestDescription::PreparePlayerSteps(int StepPos, int ClientID, std::deque
 {
 	// clear old steps
 	if(!(*pElem).empty())
-	{
-		for(auto& Step : *pElem)
-			Step.Clear();
 		(*pElem).clear();
-	}
 
 	// prepare new steps
 	for(const auto& Step : m_vSteps[StepPos])

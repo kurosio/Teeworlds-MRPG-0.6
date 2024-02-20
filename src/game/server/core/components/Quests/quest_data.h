@@ -26,6 +26,7 @@ class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, st
 {
 	friend class QuestDatafile;
 	friend class CQuestManager;
+
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
@@ -36,9 +37,13 @@ class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, st
 	int m_Step {};
 
 public:
-	QuestDatafile m_Datafile{};
 	CPlayerQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID), m_Step(1) { m_ID = ID; }
 	~CPlayerQuest();
+
+	/*
+	 * Datafile for the quest
+	 */
+	QuestDatafile m_Datafile {};
 
 	/*
 	 * Create a new instance of the quest

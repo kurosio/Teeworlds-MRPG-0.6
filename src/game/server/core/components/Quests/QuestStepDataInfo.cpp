@@ -86,15 +86,9 @@ CPlayer* CQuestStep::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
 CQuestStep::~CQuestStep()
 {
 	m_ClientQuitting = true;
+	
+	CQuestStepBase::UpdateBot();
 	UpdatePathNavigator();
-}
-
-void CQuestStep::Clear()
-{
-	m_aMobProgress.clear();
-	m_aMoveToProgress.clear();
-	m_ClientQuitting = true;
-	UpdateBot();
 
 	// clear the move actions
 	m_vpEntitiesAction.erase(std::remove_if(m_vpEntitiesAction.begin(), m_vpEntitiesAction.end(),
@@ -109,9 +103,11 @@ void CQuestStep::Clear()
 	for(auto& pEnt : m_apEntitiesNavigator)
 		pEnt->MarkForDestroy();
 	m_apEntitiesNavigator.clear();
+
+	m_aMobProgress.clear();
+	m_aMoveToProgress.clear();
 }
 
-//Optimized
 int CQuestStep::GetNumberBlockedItem(int ItemID) const
 {
 	int Amount = 0;

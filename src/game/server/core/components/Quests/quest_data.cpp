@@ -14,8 +14,6 @@ std::string CPlayerQuest::GetDataFilename() const { return Info()->GetDataFilena
 CPlayerQuest::~CPlayerQuest()
 {
 	// Clear steps
-	for(auto& Step : m_vSteps)
-		Step.Clear();
 	m_vSteps.clear();
 }
 
@@ -323,8 +321,6 @@ void QuestDatafile::Delete()
 	if(!m_pQuest)
 		return;
 
-	for(auto& Step : m_pQuest->m_vSteps)
-		Step.Clear();
 	m_pQuest->m_vSteps.clear();
 
 	// Remove the temporary user quest data file

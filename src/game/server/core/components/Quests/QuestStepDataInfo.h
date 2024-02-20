@@ -55,7 +55,6 @@ public:
 	bool m_ClientQuitting{};
 	bool m_TaskListReceived{};
 
-	void Clear();
 	int GetNumberBlockedItem(int ItemID) const;
 	bool IsComplete();
 	bool Finish();
