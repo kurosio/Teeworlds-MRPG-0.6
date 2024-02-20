@@ -9,6 +9,7 @@
 #include "QuestManager.h"
 
 #include <game/server/core/entities/items/drop_quest_items.h>
+#include <game/server/core/entities/tools/arrow_navigator.h>
 #include <game/server/core/entities/tools/laser_orbite.h>
 
 #include "Entities/move_to.h"
@@ -81,6 +82,12 @@ bool CQuestStepBase::IsActiveStep() const
 // ################# PLAYER STEP STRUCTURE ######################
 CGS* CQuestStep::GS() const { return (CGS*)Instance::GameServerPlayer(m_ClientID); }
 CPlayer* CQuestStep::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
+
+CQuestStep::~CQuestStep()
+{
+	m_ClientQuitting = true;
+	UpdatePathNavigator();
+}
 
 void CQuestStep::Clear()
 {
@@ -270,18 +277,25 @@ void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 
 void CQuestStep::UpdatePathNavigator()
 {
-	// check default action
+	// skip if the bot is without action
+	if(!m_Bot.m_HasAction)
+		return;
+
 	CPlayer* pPlayer = GetPlayer();
-	if(m_StepComplete || m_ClientQuitting || !pPlayer || !pPlayer->GetCharacter() || !m_Bot.m_HasAction)
-		return;
+	const bool Exists = m_pEntNavigator && GS()->m_World.ExistEntity(m_pEntNavigator);
+	const bool DependLife = !m_StepComplete && !m_ClientQuitting && pPlayer && pPlayer->GetCharacter();
 
-	// check quest action
-	CPlayerQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Bot.m_StepPos)
-		return;
-
-	// navigator
-	pQuest->UpdateEntityQuestBotNavigator(m_Bot);
+	if(!DependLife && Exists)
+	{
+		dbg_msg("test", "delete navigator");
+		delete m_pEntNavigator;
+		m_pEntNavigator = nullptr;
+	}
+	else if(DependLife && !Exists)
+	{
+		dbg_msg("test", "create navigator");
+		m_pEntNavigator = new CEntityArrowNavigator(&GS()->m_World, m_ClientID, m_Bot.m_Position, m_Bot.m_WorldID);
+	}
 }
 
 void CQuestStep::UpdateTaskMoveTo()

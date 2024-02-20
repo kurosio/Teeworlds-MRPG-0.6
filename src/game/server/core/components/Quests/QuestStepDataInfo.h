@@ -30,10 +30,13 @@ private:
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
+class CEntityArrowNavigator;
 class CQuestStep : public CQuestStepBase
 {
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
+
+	CEntityArrowNavigator* m_pEntNavigator{};
 
 	struct MobProgressStatus
 	{
@@ -42,6 +45,8 @@ class CQuestStep : public CQuestStepBase
 	};
 
 public:
+	~CQuestStep();
+
 	std::unordered_map < int /*BotID*/, MobProgressStatus/*MobProgressStatus*/ > m_aMobProgress { };
 	std::deque < bool /* State */ > m_aMoveToProgress { };
 

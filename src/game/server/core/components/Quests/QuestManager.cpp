@@ -85,6 +85,8 @@ void CQuestManager::OnInitAccount(CPlayer* pPlayer)
 
 void CQuestManager::OnResetClient(int ClientID)
 {
+	for(auto& pQuest : CPlayerQuest::Data()[ClientID])
+		delete pQuest.second;
 	CPlayerQuest::Data().erase(ClientID);
 }
 

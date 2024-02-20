@@ -6,8 +6,6 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 
-#include "Entities/quest_bot_navigator.h"
-
 CGS* CPlayerQuest::GS() const { return (CGS*)Instance::GameServerPlayer(m_ClientID); }
 CPlayer* CPlayerQuest::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
 CQuestDescription* CPlayerQuest::Info() const { return CQuestDescription::Data()[m_ID]; }
@@ -19,9 +17,6 @@ CPlayerQuest::~CPlayerQuest()
 	for(auto& Step : m_vSteps)
 		Step.Clear();
 	m_vSteps.clear();
-
-	// Clear the m_vpEntityBotNavigator vector
-	m_vpEntityBotNavigator.clear();
 }
 
 bool CPlayerQuest::HasUnfinishedSteps() const
@@ -150,26 +145,6 @@ CQuestStep* CPlayerQuest::GetStepByMob(int MobID)
 {
 	auto iter = std::find_if(m_vSteps.begin(), m_vSteps.end(), [MobID](const CQuestStep& Step) { return Step.m_Bot.m_ID == MobID; });
 	return iter != m_vSteps.end() ? &(*iter) : nullptr;
-}
-
-CQuestBotNavigator* CPlayerQuest::UpdateEntityQuestBotNavigator(const QuestBotInfo& Bot)
-{
-	// erase the bot navigator if it does not exist
-	m_vpEntityBotNavigator.erase(std::remove_if(m_vpEntityBotNavigator.begin(), m_vpEntityBotNavigator.end(),
-		[pGS = GS()](CQuestBotNavigator* p) { return (p && p->IsMarkedForDestroy()) || !pGS->m_World.ExistEntity(p); }), m_vpEntityBotNavigator.end());
-
-	// find the bot navigator by the questbotid
-	const auto iter = std::find_if(m_vpEntityBotNavigator.begin(), m_vpEntityBotNavigator.end(),
-		[QuestBotID = Bot.m_ID](CQuestBotNavigator* p) { return p && p->m_QuestBotID == QuestBotID; });
-
-	// create a new bot navigator if it does not exist
-	CQuestBotNavigator* pBotNavigator = (iter != m_vpEntityBotNavigator.end()) ? *iter : nullptr;
-	if(!pBotNavigator)
-	{
-		pBotNavigator = new CQuestBotNavigator(&GS()->m_World, m_ClientID, Bot);
-		m_vpEntityBotNavigator.emplace_back(pBotNavigator);
-	}
-	return pBotNavigator;
 }
 
 /*

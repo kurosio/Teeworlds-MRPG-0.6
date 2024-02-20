@@ -5,13 +5,12 @@
 
 #include <game/server/entity.h>
 
-class CQuestBotNavigator : public CEntity
+class CEntityArrowNavigator : public CEntity
 {
 public:
-	int m_QuestBotID;
 	class CPlayer* m_pPlayer;
 
-	CQuestBotNavigator(CGameWorld* pGameWorld, int ClientID, const QuestBotInfo& Bot);
+	CEntityArrowNavigator(CGameWorld* pGameWorld, int ClientID, vec2 Position, int WorldID);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

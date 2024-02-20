@@ -30,7 +30,6 @@ class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, st
 	CPlayer* GetPlayer() const;
 
 	std::deque<CQuestStep> m_vSteps {};
-	std::deque < class CQuestBotNavigator* > m_vpEntityBotNavigator {};
 	int m_ClientID {};
 	QuestIdentifier m_ID {};
 	QuestState m_State {};
@@ -110,9 +109,6 @@ public:
 	 *
 	 */
 	CQuestStep* GetStepByMob(int MobID);
-
-	// steps path finder tools
-	CQuestBotNavigator* UpdateEntityQuestBotNavigator(const QuestBotInfo& Bot);
 
 	/*
 	 * Update the quest and all steps

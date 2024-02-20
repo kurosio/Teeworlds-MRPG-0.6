@@ -387,7 +387,11 @@ void CPlayerDialog::Next()
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 
 			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-			if(!pQuest->GetStepByMob(m_MobID)->IsComplete())
+			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
+			if(!pStep)
+				return;
+
+			if(!pStep->IsComplete())
 			{
 				GS()->Chat(ClientID, "The tasks haven't been completed yet!");
 				ShowCurrentDialog();
@@ -395,8 +399,6 @@ void CPlayerDialog::Next()
 			}
 
 			GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
-
-			// run event complete task
 			DialogEvents(DIALOGEVENTCUR::ON_COMPLETE_TASK);
 		}
 	}
