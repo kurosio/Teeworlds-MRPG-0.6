@@ -230,7 +230,7 @@ void QuestDatafile::Load()
 	int dequePos = 0;
 	for(auto& Step : JsonQuestData["steps"])
 	{
-		auto& WorkedNode = m_pQuest->m_vSteps[dequePos];
+		auto& WorkedNode = m_pQuest->m_vSteps[dequePos++];
 		WorkedNode.m_StepComplete = Step.value("state", false);
 		if(WorkedNode.m_StepComplete)
 			continue;
@@ -275,7 +275,6 @@ void QuestDatafile::Load()
 
 		// Set ClientQuitting value of the corresponding player step to false
 		WorkedNode.m_ClientQuitting = false;
-		dequePos++;
 	}
 
 	// Update the steps of the bot
