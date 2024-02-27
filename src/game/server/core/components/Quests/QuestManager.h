@@ -105,7 +105,7 @@ public:
 	CQuestsDailyBoard* GetDailyBoard(vec2 Pos) const;
 
 	void Update(CPlayer* pPlayer);
-	void AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);
+	void TryAcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);
 	void AcceptNextStoryQuestStep(CPlayer* pPlayer);
 	int GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const;
 	int GetCountComplectedQuests(int ClientID) const;

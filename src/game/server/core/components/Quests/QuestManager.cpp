@@ -553,7 +553,7 @@ void CQuestManager::Update(CPlayer* pPlayer)
 	}
 }
 
-void CQuestManager::AcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID)
+void CQuestManager::TryAcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID)
 {
 	// Check if the quest with CheckQuestID is a daily quest
 	CQuestDescription* pVerifyQuestInfo = GS()->GetQuestInfo(CheckQuestID);
@@ -606,7 +606,7 @@ void CQuestManager::AcceptNextStoryQuestStep(CPlayer* pPlayer)
 		if(IsAlreadyChecked == StoriesChecked.end())
 		{
 			StoriesChecked.emplace_front(pQuestInfo->GetStory());
-			AcceptNextStoryQuest(pPlayer, ID);
+			TryAcceptNextStoryQuest(pPlayer, ID);
 		}
 	}
 }

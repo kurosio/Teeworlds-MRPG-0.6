@@ -9,7 +9,7 @@ class DBSet
 	std::string m_Data {};
 
 	// Create an empty unordered_set variable called m_DataItems to store unique data items
-	ska::unordered_set<std::string> m_DataItems {};
+	ska::flat_hash_map<std::string, size_t> m_DataItems {};
 
 	// Initialize the function
 	void Init()
@@ -17,31 +17,34 @@ class DBSet
 		// Check if m_Data is not empty
 		if(!m_Data.empty())
 		{
-			// Set the delimiter as a comma
+			// Set the delimiter, starting and ending positions for finding the delimiter
 			const std::string delimiter = ",";
-
-			// Set the starting and ending positions for finding the delimiter
 			size_t start = 0;
-			size_t end = m_Data.find(delimiter);
-
+			int iteration = 0;
+			
 			// Reserve memory for m_DataItems to avoid unnecessary reallocations
 			m_DataItems.reserve(m_Data.length() / delimiter.length() + 1);
 
 			// Continue looping until all delimiters are found
-			while(end != std::string::npos)
+			while(start < m_Data.size())
 			{
+				// Find the next occurrence of the delimiter starting from the current start position
+				auto end = m_Data.find(delimiter, start);
+				if(end == std::string::npos)
+					end = m_Data.size();
+
 				// Add a new item to m_DataItems by copying the substring between the start and end positions
-				m_DataItems.emplace(m_Data.data() + start, end - start);
+				// and remove leading and trailing spaces from the substring
+				auto substring = m_Data.substr(start, end - start);
+				while(substring.find_first_of(' ') == 0)
+					substring.erase(0, 1);
+				while(substring.find_last_of(' ') == substring.size() - 1)
+					substring.erase(substring.size() - 1, 1);
+				m_DataItems[substring] = (size_t)1 << iteration++;
 
-				// Update the start position to be after the current delimiter
+				// Update the start position for the next iteration
 				start = end + delimiter.length();
-
-				// Find the next occurrence of the delimiter starting from the updated start position
-				end = m_Data.find(delimiter, start);
 			}
-
-			// Add the remaining substring as a new item to m_DataItems
-			m_DataItems.emplace(m_Data.data() + start);
 		}
 	}
 
@@ -73,6 +76,19 @@ public:
 		// Return the current object
 		return *this;
 	}
+	
+	// Operator bitwise AND overload for checking if a specific flag exists in the data items collection
+	bool operator&(const size_t& flag) const
+	{
+		return std::any_of(m_DataItems.begin(), m_DataItems.end(), [flag](const auto& item)
+		{
+			const auto& [key, value] = item;
+			return value & flag;
+		});
+	}
+
+	// Operator bitwise AND overload for checking if a specific set exists in the data items collection
+	bool operator&(const std::string& pSet) const { return hasSet(pSet); }
 
 	// Move assignment operator overload for assigning an rvalue std::string to a DBSet object
 	DBSet& operator=(std::string&& set)
@@ -94,7 +110,7 @@ public:
 	}
 
 	// Return a constant reference to the unordered_set<std::string> data member m_DataItems
-	const ska::unordered_set<std::string>& GetDataItems() const
+	const ska::flat_hash_map<std::string, size_t>& GetDataItems() const
 	{
 		return m_DataItems;
 	}

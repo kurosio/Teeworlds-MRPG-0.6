@@ -26,7 +26,7 @@ bool CPlayerQuest::HasUnfinishedSteps() const
 bool CPlayerQuest::Accept()
 {
 	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer || m_State != QuestState::NO_ACCEPT)
+	if(m_State != QuestState::NO_ACCEPT || !pPlayer)
 		return false;
 
 	// Initialize the quest
@@ -59,16 +59,18 @@ bool CPlayerQuest::Accept()
 
 void CPlayerQuest::Refuse()
 {
-	if(m_State != QuestState::ACCEPT || !GetPlayer())
+	CPlayer* pPlayer = GetPlayer();
+	if(m_State != QuestState::ACCEPT || !pPlayer)
 		return;
 
-	m_State = QuestState::NO_ACCEPT;
 	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Account()->GetID());
-	m_Datafile.Delete();
+	Reset();
 }
 
 void CPlayerQuest::Reset()
 {
+	m_Step = 0;
+	m_vSteps.clear();
 	m_State = QuestState::NO_ACCEPT;
 	m_Datafile.Delete();
 }
@@ -90,7 +92,7 @@ void CPlayerQuest::UpdateStepPosition()
 		return;
 	}
 
-	// Finish quest
+	// Finish quest because there are no next steps
 	m_State = QuestState::FINISHED;
 	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Account()->GetID());
 	m_Datafile.Delete();
@@ -102,16 +104,12 @@ void CPlayerQuest::UpdateStepPosition()
 	// Check if indicating a daily quest
 	if(Info()->IsDaily())
 	{
-		// Add the maximum number of Allied Seals that can be obtained from a daily quest to the player's item inventory
 		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestAlliedSealsReward);
-
-		// Send a chat message to all players informing that the player has completed a daily quest
 		GS()->Chat(-1, "{STR} completed daily quest \"{STR}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed daily quest ({STR})", Info()->GetName());
 	}
 	else
 	{
-		// Send a chat message to all players informing that the player has completed a regular quest
 		GS()->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
 
@@ -121,7 +119,7 @@ void CPlayerQuest::UpdateStepPosition()
 
 	// save player stats and accept next story quest
 	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-	GS()->Core()->QuestManager()->AcceptNextStoryQuest(pPlayer, m_ID);
+	GS()->Core()->QuestManager()->TryAcceptNextStoryQuest(pPlayer, m_ID);
 
 	// effect's
 	GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Complete");

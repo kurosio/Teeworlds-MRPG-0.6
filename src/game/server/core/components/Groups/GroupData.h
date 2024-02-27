@@ -28,7 +28,7 @@ public:
 		for(auto& p : SetAccountIDs.GetDataItems())
 		{
 			// Convert the data item to an integer
-			if(int UID = std::atoi(p.c_str()); UID > 0)
+			if(int UID = std::atoi(p.first.c_str()); UID > 0)
 			{
 				// If the integer is greater than 0, add it to the access user IDs set
 				m_vAccountIds.insert(UID);
