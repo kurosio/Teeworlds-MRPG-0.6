@@ -109,7 +109,7 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 
 		// tasks initilized
 		std::string TasksData = pRes->getString("TasksData").c_str();
-		QuestBot.InitTasks(TasksData);
+		QuestBot.InitTasksFromJSON(TasksData);
 
 		// dialog initilizer
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();

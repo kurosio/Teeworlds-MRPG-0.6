@@ -36,13 +36,13 @@ void CQuestStepBase::UpdateBot() const
 	const bool ActiveStepBot = IsActiveStep();
 	if(ActiveStepBot && BotClientID <= -1)
 	{
-		dbg_msg(QUEST_PREFIX_DEBUG, "The mob was not found, but the quest step remains active for players.");
+		dbg_msg(PRINT_QUEST_PREFIX, "The mob was not found, but the quest step remains active for players.");
 		pGS->CreateBot(TYPE_BOT_QUEST, m_Bot.m_BotID, m_Bot.m_ID);
 	}
 	// if the bot is not active for more than one player
 	if(!ActiveStepBot && BotClientID >= MAX_PLAYERS)
 	{
-		dbg_msg(QUEST_PREFIX_DEBUG, "The mob was found, but the quest step is not active for players.");
+		dbg_msg(PRINT_QUEST_PREFIX, "The mob was found, but the quest step is not active for players.");
 		delete pGS->m_apPlayers[BotClientID];
 		pGS->m_apPlayers[BotClientID] = nullptr;
 	}
@@ -159,7 +159,7 @@ bool CQuestStep::Finish()
 		if(!pPlayer->GetQuest(QuestID)->m_Datafile.Save())
 		{
 			GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
-			dbg_msg(QUEST_PREFIX_DEBUG, "After completing the quest step, I am unable to save the file.");
+			dbg_msg(PRINT_QUEST_PREFIX, "After completing the quest step, I am unable to save the file.");
 			m_StepComplete = false;
 		}
 
@@ -367,7 +367,7 @@ void CQuestStep::UpdateTaskMoveTo()
 							pRequired.m_Position
 						});
 
-					dbg_msg(QUEST_PREFIX_DEBUG, "Creating a quest mob");
+					dbg_msg(PRINT_QUEST_PREFIX, "Creating a quest mob");
 				}
 
 				pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[pPlayer->GetCID()] = true;

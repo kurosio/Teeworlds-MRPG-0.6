@@ -65,7 +65,7 @@ CEntityQuestAction::~CEntityQuestAction()
 			const int CID = m_pDefeatMobPlayer->GetCID();
 			delete GS()->m_apPlayers[CID];
 			GS()->m_apPlayers[CID] = nullptr;
-			dbg_msg(QUEST_PREFIX_DEBUG, "Delete questing mob");
+			dbg_msg(PRINT_QUEST_PREFIX, "Delete questing mob");
 		}
 	}
 

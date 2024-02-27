@@ -4,8 +4,6 @@
 
 #include <algorithm>
 
-std::string CQuestDescription::GetDataFilename(int AccountID) const { return "server_data/quest_tmp/" + std::to_string(m_ID) + "-" + std::to_string(AccountID) + ".json"; }
-
 int CQuestDescription::GetStoryQuestPosition() const
 {
 	// get position of quests storyline

@@ -44,7 +44,7 @@ void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, std::string& 
 /************************************************************************/
 /*  Global data quest bot                                               */
 /************************************************************************/
-void QuestBotInfo::InitTasks(const std::string& JsonData)
+void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 {
 	Tools::Json::parseFromString(JsonData, [&](const nlohmann::json& pJson)
 	{

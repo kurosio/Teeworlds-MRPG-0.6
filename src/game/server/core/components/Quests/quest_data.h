@@ -3,22 +3,10 @@
 #ifndef GAME_SERVER_COMPONENT_QUEST_DATA_H
 #define GAME_SERVER_COMPONENT_QUEST_DATA_H
 
-#define QUEST_PREFIX_DEBUG "quest_system"
+#define PRINT_QUEST_PREFIX "quest_system"
 
+#include "datafile_progress.h"
 #include "quest_desc_data.h"
-
-class CPlayerQuest;
-class QuestDatafile
-{
-	CPlayerQuest* m_pQuest{};
-
-public:
-	void Init(CPlayerQuest* pQuest) { m_pQuest = pQuest; }
-	void Create();
-	void Load();
-	bool Save();
-	void Delete();
-};
 
 class CGS;
 class CPlayer;
@@ -141,7 +129,6 @@ public:
 
 private:
 	void UpdateStepPosition();
-	std::string GetDataFilename() const;
 };
 
 

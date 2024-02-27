@@ -59,12 +59,6 @@ public:
 	QuestIdentifier GetID() const { return m_ID; }
 
 	/*
-	 * Get filename of the quest data
-	 *	 
-	 */
-	std::string GetDataFilename(int AccountID) const;
-
-	/*
 	 * Get name of the quest
 	 *	 
 	 */
