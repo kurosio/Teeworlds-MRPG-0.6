@@ -121,7 +121,7 @@ CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
 	auto it = m_Items.find(ID);
 	if(it == m_Items.end())
 	{
-		if(DataBotInfo::ms_aDataBot[m_BotID].m_EquippedModules & std::to_string(ID))
+		if(DataBotInfo::ms_aDataBot[m_BotID].m_EquippedModules.hasSet(std::to_string(ID)))
 			it = m_Items.emplace(ID, std::make_unique<CPlayerItem>(ID, m_ClientID, 1, 0, 100, 1)).first;
 		else
 			it = m_Items.emplace(ID, std::make_unique<CPlayerItem>(ID, m_ClientID, 0, 0, 0, 0)).first;

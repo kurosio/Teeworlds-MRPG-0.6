@@ -87,9 +87,6 @@ public:
 		});
 	}
 
-	// Operator bitwise AND overload for checking if a specific set exists in the data items collection
-	bool operator&(const std::string& pSet) const { return hasSet(pSet); }
-
 	// Move assignment operator overload for assigning an rvalue std::string to a DBSet object
 	DBSet& operator=(std::string&& set)
 	{
