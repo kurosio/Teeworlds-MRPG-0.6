@@ -64,6 +64,16 @@ public:
 		Init();
 	}
 
+	// Operator bitwise AND overload for checking if a specific flag exists in the data items collection
+	bool operator&(const size_t& flag) const
+	{
+		return std::any_of(m_DataItems.begin(), m_DataItems.end(), [flag](const auto& item)
+		{
+			const auto& [key, value] = item;
+			return flag & value;
+		});
+	}
+
 	// Assignment operator overload for assigning a std::string to a DBSet object
 	DBSet& operator=(const std::string& set)
 	{
@@ -75,16 +85,6 @@ public:
 
 		// Return the current object
 		return *this;
-	}
-	
-	// Operator bitwise AND overload for checking if a specific flag exists in the data items collection
-	bool operator&(const size_t& flag) const
-	{
-		return std::any_of(m_DataItems.begin(), m_DataItems.end(), [flag](const auto& item)
-		{
-			const auto& [key, value] = item;
-			return value & flag;
-		});
 	}
 
 	// Move assignment operator overload for assigning an rvalue std::string to a DBSet object

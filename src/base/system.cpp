@@ -2802,8 +2802,9 @@ void str_append_num(char* dst, const char* src, int dst_size, int num)
 	dst[dst_size - 1] = 0; /* assure null termination */
 }
 
-void str_replace(char* str, const char* from, const char* to)
+int str_replace(char* str, const char* from, const char* to)
 {
+	int result = 0;
 	int len = str_length(from);
 	char* found = strstr(str, from);
 	while(found)
@@ -2811,7 +2812,9 @@ void str_replace(char* str, const char* from, const char* to)
 		memmove(found + str_length(to), found + len, str_length(found + len) + 1);
 		memcpy(found, to, str_length(to));
 		found = strstr(found + str_length(to), from);
+		result = 1;
 	}
+	return result;
 }
 
 void str_utf8_truncate(char *dst, int dst_size, const char *src, int truncation_len)

@@ -25,10 +25,15 @@ enum
 	VWF_STYLE_STRICT      = 1 << 4, // example: ┌ │ └
 	VWF_STYLE_STRICT_BOLD = 1 << 5, // example: ┏ ┃ ┗
 
+	// custom numerals
+	VWF_NUMERAL_STYLE_ROMAN = 1 << 6,
+	VWF_NUMERAL_STYLE_BOLD  = 1 << 7,
+	VWF_NUMERAL_STYLE_CYRCLE  = 1 << 7,
+
 	// hidden
-	VWF_OPEN              = 1 << 6, // default open group
-	VWF_CLOSED            = 1 << 7, // default close group
-	VWF_UNIQUE            = 1 << 8, // default close group toggle unique groups 
+	VWF_OPEN              = 1 << 8, // default open group
+	VWF_CLOSED            = 1 << 9, // default close group
+	VWF_UNIQUE            = 1 << 10, // default close group toggle unique groups 
 	VWF_SEPARATE_OPEN     = VWF_OPEN | VWF_SEPARATE, // default open group with separate
 	VWF_SEPARATE_CLOSED   = VWF_CLOSED | VWF_SEPARATE, // default close group with separate
 	VWF_SEPARATE_UNIQUE   = VWF_UNIQUE | VWF_SEPARATE, // default close group with separate
@@ -62,6 +67,7 @@ class CVoteGroup
 	int m_Flags {};
 	int m_ClientID {};
 	int m_CurrentDepth {};
+	int m_CurrentNumeral {};
 
 	CVoteGroup(int ClientID, int Flags);
 

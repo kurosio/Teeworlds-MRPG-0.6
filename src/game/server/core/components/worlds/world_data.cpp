@@ -46,7 +46,7 @@ CWorldSwapData* CWorldData::GetSwapperByPos(vec2 Pos)
 
 CWorldData* CWorldData::GetRespawnWorld() const
 {
-	if(m_RespawnWorldID < 0 || m_RespawnWorldID >(int)Data().size())
+	if(m_RespawnWorldID < 0 || m_RespawnWorldID > (int)Data().size())
 		return nullptr;
 
 	return Data()[m_RespawnWorldID].get();

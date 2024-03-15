@@ -152,6 +152,14 @@ public:
 /************************************************************************/
 /*  Global data mob bot                                                 */
 /************************************************************************/
+enum MobBehaviorFlags
+{
+	MOBFLAG_BEHAVIOR_DEFAULT = 0,
+	MOBFLAG_BEHAVIOR_SLEEPY = 1 << 1,
+	MOBFLAG_BEHAVIOR_SLOWER = 1 << 2,
+	MOBFLAG_BEHAVIOR_NEUTRAL = 1 << 3,
+	MOBFLAG_BEHAVIOR_AGGRESSIVE = 1 << 4,
+};
 
 class CMobBuffDebuff
 {
@@ -182,8 +190,6 @@ public:
 class MobBotInfo
 {
 	friend class CBotManager;
-	char m_aBehavior[512] {};
-
 	std::deque < CMobBuffDebuff > m_Effects;
 
 public:
@@ -197,6 +203,7 @@ public:
 	int m_aDropItem[MAX_DROPPED_FROM_MOBS] {};
 	int m_aValueItem[MAX_DROPPED_FROM_MOBS] {};
 	float m_aRandomItem[MAX_DROPPED_FROM_MOBS] {};
+	DBSet m_BehaviorSets;
 	int m_BotID {};
 
 	const char* GetName() const
@@ -215,11 +222,6 @@ public:
 	}
 
 	void InitDebuffs(int Seconds, int Range, float Chance, std::string& buffSets);
-
-	bool IsIncludedBehavior(const char* pBehavior) const
-	{
-		return str_find(m_aBehavior, pBehavior) != nullptr;
-	}
 
 	static bool IsValid(int MobID)
 	{

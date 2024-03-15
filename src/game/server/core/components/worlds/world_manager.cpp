@@ -6,7 +6,7 @@
 
 void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 {
-	std::deque <CWorldSwapData> WorldSwappers;
+	std::deque<CWorldSwapData> vSwappers{};
 
 	/*
 	 *	load world swappers
@@ -33,7 +33,7 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 			Worlds = { pResSwap->getInt("WorldID"), pResSwap->getInt("TwoWorldID") };
 		}
 
-		WorldSwappers.emplace_back(std::move(Positions), std::move(Worlds));
+		vSwappers.emplace_back(std::move(Positions), std::move(Worlds));
 	}
 
 	/*
@@ -43,7 +43,7 @@ void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 	{
 		CWorldDetail* pDetail = Server()->GetWorldDetail(i);
 		dbg_assert(pDetail != nullptr, "detail data inside world initilized invalid");
-		CWorldData::CreateElement(i)->Init(pDetail->GetRespawnWorldID(), pDetail->GetJailWorldID(), pDetail->GetRequiredLevel(), std::move(WorldSwappers));
+		CWorldData::CreateElement(i)->Init(pDetail->GetRespawnWorldID(), pDetail->GetJailWorldID(), pDetail->GetRequiredLevel(), std::move(vSwappers));
 	}
 }
 
@@ -69,14 +69,16 @@ void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
 	}
 
 	// search path and got first and second path
-	std::vector NodeSteps = m_PathFinderBFS.findPath(GS()->GetWorldID(), WorldID);
-	if(NodeSteps.size() >= 2)
+	std::vector vNodeSteps = m_PathFinderBFS.findPath(GS()->GetWorldID(), WorldID);
+	if(vNodeSteps.size() >= 2)
 	{
-		const int NextRightWorldID = NodeSteps[1];
+		const int NextRightWorldID = vNodeSteps[1];
 		auto& rSwapers = CWorldData::Data()[CurrentWorldID]->GetSwappers();
 		const auto Iter = std::find_if(rSwapers.begin(), rSwapers.end(), [&](const CWorldSwapData& p) { return NextRightWorldID == p.GetSecondWorldID(); });
 		if(Iter != rSwapers.end())
+		{
 			*OutPos = (*Iter).GetFirstSwapPosition();
+		}
 
 		dbg_msg("cross-world pathfinder", "Found from %d to %d.", CurrentWorldID, NextRightWorldID);
 	}

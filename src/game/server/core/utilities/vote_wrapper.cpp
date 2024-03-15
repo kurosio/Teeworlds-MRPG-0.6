@@ -2,7 +2,8 @@
 
 #include <game/server/gamecontext.h>
 
-const char* VOTE_LINE_DEF = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
+const char* g_VoteLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
+constexpr int g_MaxNumericGroups = 10;
 
 namespace Border
 {
@@ -28,6 +29,7 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	m_TitleIsSet = false;
 	m_CurrentDepth = 0;
 	m_GroupSize = 0;
+	m_CurrentNumeral = 0;
 	m_HiddenID = (int)CVoteWrapper::Data()[ClientID].size();
 	m_pPlayer = m_pGS->GetPlayer(ClientID);
 	dbg_assert(m_pPlayer != nullptr, "player is null");
@@ -90,15 +92,43 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	if(!m_pPlayer || IsHidden())
 		return;
 
+	// Prepare
+	char aBufText[VOTE_DESC_LENGTH] {};
+	str_copy(aBufText, pText, sizeof(aBufText));
+
+	// Numerals
+	char aBufNumeral[64] {};
+	if(str_replace(aBufText, "<{NUMERAL}>", ""))
+	{
+		m_CurrentNumeral++;
+
+		if(m_Flags & VWF_NUMERAL_STYLE_ROMAN)
+		{
+			const char* pNumerals[g_MaxNumericGroups] = { "\0", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ" };
+			str_format(aBufNumeral, sizeof(aBufNumeral), "%s. ", pNumerals[clamp(m_CurrentNumeral, 1, 9)]);
+		}
+		else if(m_Flags & VWF_NUMERAL_STYLE_BOLD)
+		{
+			const char* pNumerals[g_MaxNumericGroups] = { "\0", "１", "２", "３", "４", "５", "６", "７", "８", "９" };
+			str_format(aBufNumeral, sizeof(aBufNumeral), "%s. ", pNumerals[clamp(m_CurrentNumeral, 1, 9)]);
+		}
+		else if(m_Flags & VWF_NUMERAL_STYLE_CYRCLE)
+		{
+			const char* pNumerals[g_MaxNumericGroups] = { "\0", "⓵", "⓶", "⓷", "⓸", "⓹", "⓺", "⓻", "⓼", "⓽" };
+			str_format(aBufNumeral, sizeof(aBufNumeral), "%s. ", pNumerals[clamp(m_CurrentNumeral, 1, 9)]);
+		}
+		else
+			str_format(aBufNumeral, sizeof(aBufNumeral), "%d. ", m_CurrentNumeral);
+	}
+
 	// Format the text using the player's language and additional arguments
 	va_list VarArgs;
 	va_start(VarArgs, pText);
 	dynamic_string Buffer;
-	Instance::Server()->Localization()->Format_VL(Buffer, m_pPlayer->GetLanguage(), pText, VarArgs);
+	Instance::Server()->Localization()->Format_VL(Buffer, m_pPlayer->GetLanguage(), aBufText, VarArgs);
 	va_end(VarArgs);
 
-	char aBufText[VOTE_DESC_LENGTH];
-	str_format(aBufText, sizeof(aBufText), "%s%s", str_comp(pCmd, "null") != 0 ? "\u257E " : "\0", Buffer.buffer());
+	str_format(aBufText, sizeof(aBufText), "%s%s%s", aBufNumeral, str_comp(pCmd, "null") != 0 ? "\u257E " : "\0", Buffer.buffer());
 	Buffer.clear();
 
 	// Check if the player's language is "ru" or "uk" and convert aBufText to Latin if true
@@ -127,7 +157,7 @@ void CVoteGroup::AddLineImpl()
 
 	// Create a new VoteOption with the values
 	CVoteOption Vote;
-	str_copy(Vote.m_aDescription, VOTE_LINE_DEF, sizeof(Vote.m_aDescription));
+	str_copy(Vote.m_aDescription, g_VoteLineDef, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "null", sizeof(Vote.m_aCommand));
 	Vote.m_Line = true;
 
@@ -291,7 +321,7 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 						Buffer.append(get(Border::Level, Flags));
 				}
 
-				if(str_comp(Option.m_aDescription, VOTE_LINE_DEF) != 0 && str_comp(Option.m_aCommand, "null") == 0)
+				if(str_comp(Option.m_aDescription, g_VoteLineDef) != 0 && str_comp(Option.m_aCommand, "null") == 0)
 					Buffer.append(" ");
 
 				// Save changes

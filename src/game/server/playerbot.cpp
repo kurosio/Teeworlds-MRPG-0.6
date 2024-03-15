@@ -154,28 +154,29 @@ bool CPlayerBot::IsActive() const
 
 void CPlayerBot::PrepareRespawnTick()
 {
-	// If the bot type is TYPE_BOT_MOB
 	if(m_BotType == TYPE_BOT_MOB)
 	{
-		// Set the respawn tick for the bot using the MobBotInfo's respawn tick value
+		m_DisabledBotDamage = false;
 		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * MobBotInfo::ms_aMobBot[m_MobID].m_RespawnTick;
 	}
-	// If the bot type is TYPE_BOT_NPC and the NPC bot's function is FUNCTION_NPC_GUARDIAN
+	else if(m_BotType == TYPE_BOT_QUEST_MOB)
+	{
+		m_DisabledBotDamage = false;
+		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
+	}
 	else if(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
 	{
-		// Set the respawn tick for the bot as the current server tick multiplied by 30
+		m_DisabledBotDamage = false;
 		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * 30;
 	}
-	// If the bot type is TYPE_BOT_QUEST, TYPE_BOT_NPC, or TYPE_BOT_EIDOLON
 	else if(m_BotType == TYPE_BOT_QUEST || m_BotType == TYPE_BOT_NPC || m_BotType == TYPE_BOT_EIDOLON)
 	{
-		// Set the respawn tick for the bot as the current server tick
+		m_DisabledBotDamage = true;
 		m_aPlayerTick[Respawn] = Server()->Tick();
 	}
-	// For any other bot type
 	else
 	{
-		// Set the respawn tick for the bot as the current server tick plus 3 server ticks
+		m_DisabledBotDamage = true;
 		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * 3;
 	}
 

@@ -51,7 +51,7 @@ private:
 	void EmotesAction(int EmotionStyle);
 	void SetAim(vec2 Dir);
 
-	bool SearchPlayersToTalk();
+	bool SearchPlayersForDialogue();
 	void HandleBot();
 	void EngineNPC();
 	void EngineMobs();
@@ -70,7 +70,7 @@ private:
 
 	// Bots functions
 	bool FunctionNurseNPC();
-	bool FunctionGuardian();
+	bool FunctionGuardianNPC();
 	bool BaseFunctionNPC();
 };
 

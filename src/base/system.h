@@ -1209,7 +1209,7 @@ void str_append_num(char* dst, const char* src, int dst_size, int num);
 /*
  * String replace
  */
-void str_replace(char* str, const char* from, const char* to);
+int str_replace(char* str, const char* from, const char* to);
 
 /**
  * Truncates a utf8 encoded string to a given length.

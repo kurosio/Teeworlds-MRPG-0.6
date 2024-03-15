@@ -180,7 +180,7 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_Level = pRes->getInt("Level");
 		MobBot.m_RespawnTick = pRes->getInt("Respawn");
 		MobBot.m_BotID = BotID;
-		str_copy(MobBot.m_aBehavior, pRes->getString("Behavior").c_str(), sizeof(MobBot.m_aBehavior));
+		MobBot.m_BehaviorSets = pRes->getString("Behavior").c_str();
 		std::string BuffDebuff = pRes->getString("Effect").c_str();
 		MobBot.InitDebuffs(4, 4, 3.0f, BuffDebuff);
 
@@ -241,7 +241,6 @@ bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 				VMob.Add("Level: {INT}", Mob.m_Level);
 				VMob.Add("Power: {INT}", Mob.m_Power);
 				VMob.Add("Boss: {STR}", Mob.m_Boss ? "Yes" : "No");
-				VMob.Add("Behavior: {STR}", Mob.m_aBehavior);
 				VMob.Add("Respawn: {INT} sec", Mob.m_RespawnTick);
 				VMob.EndDepthList();
 			}

@@ -1,12 +1,12 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <engine/shared/config.h>
 #include "warehouse_manager.h"
 
 #include <game/server/gamecontext.h>
-
 #include <game/server/core/components/Inventory/InventoryManager.h>
 
-#include "engine/shared/config.h"
+constexpr int g_UpdateTextLifeTime = SERVER_TICK_SPEED * 3;
 
 // Initialize the warehouse manager
 void CWarehouseManager::OnInit()
@@ -31,13 +31,14 @@ void CWarehouseManager::OnInit()
 // Warehouse manager tick
 void CWarehouseManager::OnTick()
 {
-	constexpr int LifeTime = SERVER_TICK_SPEED * 3; // 3 sec
-	if(Server()->Tick() % LifeTime == 0)
+	if(Server()->Tick() % g_UpdateTextLifeTime == 0)
 	{
 		for(const auto pWarehouse : CWarehouse::Data())
 		{
 			if(pWarehouse->IsHasFlag(WF_STORAGE))
-				pWarehouse->Storage().UpdateText(LifeTime);
+			{
+				pWarehouse->Storage().UpdateText(g_UpdateTextLifeTime);
+			}
 		}
 	}
 }
@@ -74,26 +75,20 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 
 	// show base shop functions
-	CVoteWrapper VShop(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Warehouse :: {STR}", pWarehouse->GetName());
-	VShop.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
-	VShop.AddLine();
-	VShop.AddItemValue(pWarehouse->GetCurrency()->GetID());
-	VShop.AddLine();
-	CVoteWrapper::AddEmptyline(ClientID);
-
+	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE | VWF_NUMERAL_STYLE_ROMAN, "Warehouse :: {STR}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
-		CVoteWrapper VStorage(ClientID, VWF_SEPARATE_CLOSED | VWF_STYLE_SIMPLE, "Warehouse storage");
-		VStorage.Add("Information:");
+		VStorage.Add("<{NUMERAL}> INFORMATION:");
 		{
 			VStorage.BeginDepthList();
-			VStorage.Add("You can load and unload products in stores");
+			VStorage.Add("You can repair broken items, and also");
+			VStorage.Add("load and unload products in stores.");
 			VStorage.Add("Maximum of {INT} products with you", g_Config.m_SvWarehouseProductsCanTake);
 			VStorage.Add("Loading rate 1 product - 1 gold");
 			VStorage.EndDepthList();
 		}
 		VStorage.AddLine();
-		VStorage.Add("Main:");
+		VStorage.Add("<{NUMERAL}> STORAGE:");
 		{
 			VStorage.BeginDepthList();
 			VStorage.Add("\u2727 Your: {VAL} | Storage: {VAL} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
@@ -104,8 +99,18 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 			VStorage.EndDepthList();
 		}
 		VStorage.AddLine();
-		CVoteWrapper::AddEmptyline(ClientID);
 	}
+	VStorage.AddLine();
+	VStorage.Add("<{NUMERAL}> FUNCTIONALITY:");
+	{
+		VStorage.BeginDepthList();
+		VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
+		VStorage.EndDepthList();
+	}
+	VStorage.AddLine();
+	VStorage.AddItemValue(pWarehouse->GetCurrency()->GetID());
+	VStorage.AddLine();
+	CVoteWrapper::AddEmptyline(ClientID);
 
 	/*
 	 * Show trading list
@@ -192,12 +197,12 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
 		int MaterialCost = pTrade->GetProductsCost();
-		VWant.Add("The item costs {VAL} products", MaterialCost);
-		VWant.Add("Storage has {VAL} products", pWarehouse->Storage().GetValue());
+		VWant.Add("Cost: {VAL} products", MaterialCost);
+		VWant.Add("Storage: {VAL} products", pWarehouse->Storage().GetValue());
 	}
 	VWant.AddLine();
 	{
-		VWant.Add("The item costs {VAL} {STR}", pTrade->GetPrice(), pWarehouse->GetCurrency()->GetName());
+		VWant.Add("Cost: {VAL} {STR}", pTrade->GetPrice(), pWarehouse->GetCurrency()->GetName());
 		VWant.Add("You has {VAL} {STR}", PlayerValue, pWarehouse->GetCurrency()->GetName());
 	}
 	VWant.AddLine();
@@ -220,9 +225,9 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 		Status = false;
 	}
 
-	VWant.AddIfOption(Status, "WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Yes");
-	VWant.AddMenu(MENU_WAREHOUSE, "Back");
+	VWant.AddIfOption(Status, "WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Buy");
 	VWant.AddLine();
+	VWant.AddMenu(MENU_WAREHOUSE, "Back");
 }
 
 // Warehouse manager handle menulist

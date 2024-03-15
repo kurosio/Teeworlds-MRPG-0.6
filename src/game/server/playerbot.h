@@ -16,6 +16,7 @@ class CPlayerBot : public CPlayer
 	int m_MobID;
 	int m_BotHealth;
 	int m_BotStartHealth;
+	bool m_DisabledBotDamage;
 	int m_DungeonAllowedSpawn;
 
 	struct CQuestBotMobInfo
@@ -80,6 +81,7 @@ public:
 
 	int m_EidolonItemID;
 	class CPlayer* GetEidolonOwner() const;
+	bool IsDisabledBotDamage() const { return m_DisabledBotDamage; }
 
 	class CPlayerItem* GetItem(ItemIdentifier ID) override;
 

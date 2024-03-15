@@ -59,7 +59,7 @@ void CCharacterBotAI::InitBot()
 			// Get a pointer to the MobBotInfo object for the given MobID
 			MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
 
-			// Check if the mob bot is a boss
+			// Check if the mob sbot is a boss
 			if(pMobBot->m_Boss)
 			{
 				AddMultipleOrbite(1, POWERUP_HEALTH, 0);
@@ -67,12 +67,10 @@ void CCharacterBotAI::InitBot()
 
 				// Check if the game state is not a dungeon
 				if(!GS()->IsWorldType(WorldType::Dungeon))
-				{
-					// Display a chat message in the world with the mob bot's name
 					GS()->ChatWorldID(pMobBot->m_WorldID, nullptr, "In your zone emerging {STR}!", pMobBot->GetName());
-				}
 			}
-		} break;
+		}
+		break;
 		//
 		// Case for bot type TYPE_BOT_QUEST
 		case TYPE_BOT_QUEST:
@@ -82,50 +80,37 @@ void CCharacterBotAI::InitBot()
 
 			// Check if the quest bot has an action and create a laser orbite
 			if(pQuestBot->m_HasAction)
-			{
 				GS()->CreateLaserOrbite(ClientID, 8, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 64.f, LASERTYPE_SHOTGUN);
-			}
-		} break;
+		}
+		break;
 		//
 		// Case for bot type TYPE_BOT_NPC
 		case TYPE_BOT_NPC:
 		{
 			// Get the function of the NPC bot
-			const int Function = NpcBotInfo::ms_aNpcBot[MobID].m_Function;
+			NpcBotInfo* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobID];
+			const int Function = pNpcBot->m_Function;
 
 			// Check the function of the NPC bot and perform the corresponding action
 			if(Function == FUNCTION_NPC_GIVE_QUEST)
-			{
 				AddMultipleOrbite(3, POWERUP_ARMOR, 0);
-			}
 			else if(Function == FUNCTION_NPC_NURSE)
-			{
-				// Create a new instance of CNurseHeart with the GameWorld and ClientID parameters
 				new CNurseHeart(GameWorld(), ClientID);
-			}
 			else if(Function == FUNCTION_NPC_GUARDIAN)
-			{
 				AddMultipleOrbite(2, POWERUP_NINJA, POWERUP_WEAPON);
-			}
-		} break;
+		}
+		break;
 		//
 		// Case for bot type TYPE_BOT_EIDOLON
 		case TYPE_BOT_EIDOLON:
 		{
-			// Set the m_Solo flag to true
 			m_Core.m_Solo = true;
 
-			// Get the CID of the owner of the bot
-			const int OwnerCID = m_pBotPlayer->GetEidolonOwner()->GetCID();
-
 			// Create a new CEidolon object with the specified parameters
+			const int OwnerCID = m_pBotPlayer->GetEidolonOwner()->GetCID();
 			new CEidolon(&GS()->m_World, m_Core.m_Pos, 0, ClientID, OwnerCID);
-		} break;
-		//
-		// Case for bot type TYPE_BOT_QUEST_MOB
-		{
-
-		} break;
+		}
+		break;
 		default: break;
 	}
 }
@@ -146,88 +131,66 @@ void CCharacterBotAI::GiveRandomEffects(int ClientID)
 bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
 	CPlayer* pFrom = GS()->GetPlayer(From, false, true);
-	if(!pFrom || !m_pBotPlayer->IsActive())
+	if(!pFrom || !m_pBotPlayer->IsActive() || m_pBotPlayer->IsDisabledBotDamage())
 		return false;
 
-	// allow damage for mob's
-	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB || m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB ||
-		(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN))
+	// Check for collision between the current character and another character
+	if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
+		return false;
+
+	// Function to handle character taking damage
+	CCharacter::TakeDamage(Force, Dmg, From, Weapon);
+
+	// Cast pFrom to CPlayerBot* and get the Eidolon Owner's CID
+	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
+		From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
+
+	// Check if the bot player is of type NPC and the player interacting with the bot is not a bot itself
+	if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && !pFrom->IsBot())
 	{
-		// Check for collision between the current character and another character
-		if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
-			return false;
-
-		// Function to handle character taking damage
-		CCharacter::TakeDamage(Force, Dmg, From, Weapon);
-
-		// Check if the type of pFrom is TYPE_BOT_EIDOLON
-		if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
-		{
-			// Cast pFrom to CPlayerBot* and get the Eidolon Owner's CID
-			From = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner()->GetCID();
-		}
-
-		// Check if the bot player is of type NPC and the player interacting with the bot is not a bot itself
-		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && !pFrom->IsBot())
-		{
-			SetEmote(EMOTE_ANGRY, 1, true);
-			pFrom->Account()->IncreaseRelations(1 + rand() % 8);
-		}
-
-		// Random create experience point's
-		if(rand() % 10 == 0)
-			GS()->CreateDropBonuses(m_Core.m_Pos, 1, 1, 1, Force);
-
-		// Check if the bot type of pFrom is TYPE_BOT_MOB and if the target of AI is empty
-		if(pFrom->GetBotType() == TYPE_BOT_MOB && AI()->GetTarget()->IsEmpty())
-		{
-			// Set the target of AI to the "From" bot with an aggression level of 200 units
-			AI()->GetTarget()->Set(From, 200);
-		}
-
-		// Check if the element "From" is already present in the vector m_aListDmgPlayers
-		if(m_aListDmgPlayers.find(From) == m_aListDmgPlayers.end())
-		{
-			// If the element is not present, append it to the end of the vector
-			m_aListDmgPlayers.insert(From);
-		}
-
-		// verify death
-		if(m_Health <= 0)
-		{
-			// Reward players with damage
-			// Check if the weapon is not self or world
-			if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
-			{
-				for(const auto& ClientID : m_aListDmgPlayers)
-				{
-					// Check if the player object exists and is in the same world as the bot player
-					CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
-					if(!pPlayer || !GS()->IsPlayerEqualWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
-						continue;
-
-					// Reward the player with damage applied
-					RewardPlayer(pPlayer, Force);
-				}
-			}
-
-			// Clear the list of damaged players
-			m_aListDmgPlayers.clear();
-
-			// Reset the target of the AI
-			AI()->GetTarget()->Reset();
-
-			// Die
-			Die(From, Weapon);
-
-			// Return false
-			return false;
-		}
-
-		return true;
+		SetEmote(EMOTE_ANGRY, 1, true);
+		pFrom->Account()->IncreaseRelations(1 + rand() % 8);
 	}
 
-	return false;
+	// Random create experience point's
+	if(rand() % 10 == 0)
+		GS()->CreateDropBonuses(m_Core.m_Pos, 1, 1, 1, Force);
+
+	// Check if the bot type of pFrom is TYPE_BOT_MOB and if the target of AI is empty
+	if(pFrom && m_pBotPlayer->GetBotType() != pFrom->GetBotType() && AI()->GetTarget()->IsEmpty())
+		AI()->GetTarget()->Set(From, 200);
+
+	// Check if the element "From" is already present in the vector m_aListDmgPlayers
+	if(m_aListDmgPlayers.find(From) == m_aListDmgPlayers.end())
+		m_aListDmgPlayers.insert(From);
+
+	// verify death
+	if(m_Health <= 0)
+	{
+		// Reward players with damage
+		// Check if the weapon is not self or world
+		if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
+		{
+			for(const auto& ClientID : m_aListDmgPlayers)
+			{
+				// Check if the player object exists and is in the same world as the bot player
+				CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
+				if(!pPlayer || !GS()->IsPlayerEqualWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
+					continue;
+
+				// Reward the player with damage applied
+				RewardPlayer(pPlayer, Force);
+			}
+		}
+
+		// Clear the list of damaged players
+		m_aListDmgPlayers.clear();
+		AI()->GetTarget()->Reset();
+		Die(From, Weapon);
+		return false;
+	}
+
+	return true;
 }
 
 void CCharacterBotAI::Die(int Killer, int Weapon)
@@ -551,8 +514,8 @@ void CCharacterBotAI::EngineNPC()
 	// check if the bot's function is set to NPC_GUARDIAN
 	if(NpcFunction == FUNCTION_NPC_GUARDIAN)
 	{
-		// call the FunctionGuardian to execute the corresponding actions
-		FunctionGuardian();
+		// call the FunctionGuardianNPC to execute the corresponding actions
+		FunctionGuardianNPC();
 		return;
 	}
 
@@ -599,7 +562,7 @@ void CCharacterBotAI::EngineQuestNPC()
 	EmotesAction(EMOTE_BLINK);
 
 	// functional
-	SearchPlayersToTalk();
+	SearchPlayersForDialogue();
 }
 
 void CCharacterBotAI::HandleTuning()
@@ -617,7 +580,8 @@ void CCharacterBotAI::HandleTuning()
 	{
 		// effect slower
 		const int MobID = m_pBotPlayer->GetBotMobID();
-		if(MobBotInfo::ms_aMobBot[MobID].IsIncludedBehavior("Slower"))
+		MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
+		if(pMobBot->m_BehaviorSets & MOBFLAG_BEHAVIOR_SLOWER)
 		{
 			pTuningParams->m_Gravity = 0.25f;
 			pTuningParams->m_GroundJumpImpulse = 8.0f;
@@ -650,7 +614,7 @@ void CCharacterBotAI::BehaviorTick()
 		MobBotInfo* pMobBot = &MobBotInfo::ms_aMobBot[MobID];
 
 		// sleepy behavior
-		if(AI()->GetTarget()->IsEmpty() && pMobBot->IsIncludedBehavior("Sleepy"))
+		if(AI()->GetTarget()->IsEmpty() && pMobBot->m_BehaviorSets & MOBFLAG_BEHAVIOR_SLEEPY)
 		{
 			if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 			{
@@ -670,11 +634,11 @@ void CCharacterBotAI::EngineMobs()
 	// reset input
 	ResetInput();
 
-	// search hardress player
-	CPlayer* pPlayer = SearchTankPlayer(1000.0f);
-	if(pPlayer && pPlayer->GetCharacter())
+	// Search target only if the bot is aggressive or has a target
+	CPlayer* pTarget = SearchTankPlayer(1000.0f);
+	if(pTarget && pTarget->GetCharacter())
 	{
-		m_pBotPlayer->m_TargetPos = pPlayer->GetCharacter()->GetPos();
+		m_pBotPlayer->m_TargetPos = pTarget->GetCharacter()->GetPos();
 		Fire();
 	}
 	else if(Server()->Tick() > m_pBotPlayer->m_LastPosTick)
@@ -1078,6 +1042,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 // finding a player among people who have the highest fury
 CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 {
+	// If is empty target, then search for the player
 	if(AI()->GetTarget()->IsEmpty() && (GS()->IsWorldType(WorldType::Dungeon) || rand() % 30 == 0))
 	{
 		CPlayer* pPlayer = SearchPlayer(Distance);
@@ -1090,15 +1055,18 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 	}
 
 	// strong warnings for reset target (position and world zone)
-	CPlayer* pPlayer = GS()->GetPlayer(AI()->GetTarget()->GetCID(), true, true);
-	if(!AI()->GetTarget()->IsEmpty() && (!pPlayer || (pPlayer && (distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(AI()->GetTarget()->GetCID())))))
-		AI()->GetTarget()->Reset();
-
-	// Check if the target player exists and if their character is damage disabled
 	CPlayer* pTarget = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
+	if(!AI()->GetTarget()->IsEmpty())
+	{
+		if(!pTarget || (pTarget && (distance(pTarget->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(AI()->GetTarget()->GetCID()))))
+			AI()->GetTarget()->Reset();
+	}
+
+	// Check if can't damage the target
+	pTarget = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
 	if(pTarget && pTarget->GetCharacter()->m_DamageDisabled)
 	{
-		// If the target is not lost, send a question emoticon
+		// If the target is not lost, send a question emoticon and set lost target
 		if(AI()->GetTarget()->GetType() != TARGET_TYPE::LOST)
 		{
 			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_QUESTION);
@@ -1109,11 +1077,11 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 	}
 
 	// non-hostile mobs
-	if(AI()->GetTarget()->IsEmpty() || !pPlayer)
+	if(AI()->GetTarget()->IsEmpty() || !pTarget)
 		return nullptr;
 
 	// throw off the lifetime of a target
-	AI()->GetTarget()->UpdateCollised(GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->GetPos(), m_Pos, nullptr, nullptr));
+	AI()->GetTarget()->UpdateCollised(GS()->Collision()->IntersectLineWithInvisible(pTarget->GetCharacter()->GetPos(), m_Pos, nullptr, nullptr));
 
 	// looking for a stronger
 	for(int i = 0; i < MAX_PLAYERS; i++)
@@ -1143,38 +1111,37 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
-		if(!FinderCollised && pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pPlayer->GetAttributeSize(AttributeIdentifier::HP))
+		if(!FinderCollised && pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pTarget->GetAttributeSize(AttributeIdentifier::HP))
 		{
 			AI()->GetTarget()->Set(i, 100);
-			pPlayer = pFinderHard;
+			pTarget = pFinderHard;
 		}
 	}
 
-	return pPlayer;
+	return pTarget;
 }
 
 // search mob
 CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 {
-	CPlayerBot* pBotPlayer = nullptr;
+	CPlayerBot* pTarget = nullptr;
 
 	// Looking for a stronger
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		// Check active player bot
-		CPlayerBot* pSearchBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
-		if(!pSearchBotPlayer || m_pBotPlayer->GetCID() == i || !pSearchBotPlayer->GetCharacter())
+		CPlayerBot* pSearchTarget = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		if(m_pBotPlayer->GetCID() == i || !pSearchTarget || !pSearchTarget->GetCharacter())
 			continue;
 
-		int SearchBotType = pSearchBotPlayer->GetBotType();
-		if(SearchBotType == TYPE_BOT_QUEST_MOB || SearchBotType == TYPE_BOT_MOB ||
-			(SearchBotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pSearchBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && m_pBotPlayer->GetBotType() != SearchBotType))
+		int SearchBotType = pSearchTarget->GetBotType();
+		if(!pSearchTarget->IsDisabledBotDamage() && m_pBotPlayer->GetBotType() != SearchBotType)
 		{
 			// Check if the bot player is an eidolon owner
 			if(m_pBotPlayer->GetEidolonOwner())
 			{
 				// Check if the bot player is of type "TYPE_BOT_QUEST_MOB" and if the quest bot mob is active for the client at index i
-				if(SearchBotType == TYPE_BOT_QUEST_MOB && !pSearchBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[m_pBotPlayer->GetEidolonOwner()->GetCID()])
+				if(SearchBotType == TYPE_BOT_QUEST_MOB && !pSearchTarget->GetQuestBotMobInfo().m_ActiveForClient[m_pBotPlayer->GetEidolonOwner()->GetCID()])
 					continue;
 
 				// Check if the search bot type is TYPE_BOT_NPC and the relationship with the eidolon owner is not deteriorated to the maximum level
@@ -1187,22 +1154,22 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 			}
 
 			// Check distance
-			if(distance(pSearchBotPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > Distance)
+			if(distance(pSearchTarget->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos) > Distance)
 				continue;
 
 			// Check walls and closed lines
-			if(GS()->Collision()->IntersectLineWithInvisible(pSearchBotPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
+			if(GS()->Collision()->IntersectLineWithInvisible(pSearchTarget->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
 				continue;
 
-			pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+			pTarget = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
 			break;
 		}
 	}
 
-	return pBotPlayer;
+	return pTarget;
 }
 
-bool CCharacterBotAI::SearchPlayersToTalk()
+bool CCharacterBotAI::SearchPlayersForDialogue()
 {
 	bool PlayerFinding = false;
 	for(int i = 0; i < MAX_PLAYERS; i++)
@@ -1241,18 +1208,10 @@ void CCharacterBotAI::EmotesAction(int EmotionStyle)
 	{
 		switch(EmotionStyle)
 		{
-			case EMOTE_BLINK:
-			SetEmote(EMOTE_BLINK, 1 + rand() % 2, true);
-			break;
-			case EMOTE_HAPPY:
-			SetEmote(EMOTE_HAPPY, 1 + rand() % 2, true);
-			break;
-			case EMOTE_ANGRY:
-			SetEmote(EMOTE_ANGRY, 1 + rand() % 2, true);
-			break;
-			case EMOTE_PAIN:
-			SetEmote(EMOTE_PAIN, 1 + rand() % 2, true);
-			break;
+			case EMOTE_BLINK: SetEmote(EMOTE_BLINK, 1 + rand() % 2, true); break;
+			case EMOTE_HAPPY: SetEmote(EMOTE_HAPPY, 1 + rand() % 2, true); break;
+			case EMOTE_ANGRY: SetEmote(EMOTE_ANGRY, 1 + rand() % 2, true); break;
+			case EMOTE_PAIN: SetEmote(EMOTE_PAIN, 1 + rand() % 2, true); break;
 			default: break;
 		}
 	}
@@ -1261,7 +1220,7 @@ void CCharacterBotAI::EmotesAction(int EmotionStyle)
 // - - - - - - - - - - - - - - - - - - - - - Npc functions
 bool CCharacterBotAI::BaseFunctionNPC()
 {
-	return SearchPlayersToTalk();
+	return SearchPlayersForDialogue();
 }
 
 bool CCharacterBotAI::FunctionNurseNPC()
@@ -1316,7 +1275,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 	return PlayerFinding;
 }
 
-bool CCharacterBotAI::FunctionGuardian()
+bool CCharacterBotAI::FunctionGuardianNPC()
 {
 	bool MobMove = true;
 
@@ -1325,8 +1284,6 @@ bool CCharacterBotAI::FunctionGuardian()
 
 	// Search for a tank player within a 1000 unit range
 	CPlayer* pPlayer = SearchTankPlayer(1000.0f);
-
-	// If a tank player is found and their revelation is less than 1000, or no player is found at all
 	if(!pPlayer || !pPlayer->GetCharacter())
 	{
 		// Search for a mob within a 600 unit range

@@ -7,7 +7,7 @@
 
 #include <game/server/core/components/Guilds/GuildData.h>
 
-CGS* CGuildHouseData::GS() const { return (CGS*)Instance::GameServerPlayer(m_WorldID); }
+CGS* CGuildHouseData::GS() const { return (CGS*)Instance::GameServer(m_WorldID); }
 
 CGuildHouseData::~CGuildHouseData()
 {
