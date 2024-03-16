@@ -26,14 +26,14 @@ enum
 	VWF_STYLE_STRICT_BOLD = 1 << 5, // example: ┏ ┃ ┗
 
 	// custom numerals
-	VWF_NUMERAL_STYLE_ROMAN = 1 << 6,
-	VWF_NUMERAL_STYLE_BOLD  = 1 << 7,
-	VWF_NUMERAL_STYLE_CYRCLE  = 1 << 7,
+	VWF_NUM_LIST_STYLE_ROMAN = 1 << 6,
+	VWF_NUM_LIST_STYLE_BOLD  = 1 << 7,
+	VWF_NUM_LIST_STYLE_CYRCLE  = 1 << 8,
 
 	// hidden
-	VWF_OPEN              = 1 << 8, // default open group
-	VWF_CLOSED            = 1 << 9, // default close group
-	VWF_UNIQUE            = 1 << 10, // default close group toggle unique groups 
+	VWF_OPEN              = 1 << 9, // default open group
+	VWF_CLOSED            = 1 << 10, // default close group
+	VWF_UNIQUE            = 1 << 11, // default close group toggle unique groups 
 	VWF_SEPARATE_OPEN     = VWF_OPEN | VWF_SEPARATE, // default open group with separate
 	VWF_SEPARATE_CLOSED   = VWF_CLOSED | VWF_SEPARATE, // default close group with separate
 	VWF_SEPARATE_UNIQUE   = VWF_UNIQUE | VWF_SEPARATE, // default close group with separate
@@ -78,6 +78,8 @@ class CVoteGroup
 	void SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...);
 	void AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...);
 	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
+
+	void Reformatting(char* pBuffer);
 
 	void AddLineImpl();
 	void AddEmptylineImpl();

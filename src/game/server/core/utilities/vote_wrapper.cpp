@@ -2,24 +2,46 @@
 
 #include <game/server/gamecontext.h>
 
-const char* g_VoteLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
-constexpr int g_MaxNumericGroups = 10;
+const char* g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
+static int gs_NumeralGroup[MAX_CLIENTS] = {};
+constexpr int g_NumeralNum = 10;
 
-namespace Border
+namespace Formatter
 {
-	enum BorderSymbol { Beggin, Middle, MiddleOption, Level, End, Num };
-	inline constexpr const char* g_pSimpleBorder[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
-	inline constexpr const char* g_pDoubleBorder[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
-	inline constexpr const char* g_pStrictBorder[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
-	inline constexpr const char* g_pStrictBoldBorder[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
-
-	static constexpr const char* get(BorderSymbol Border, int Flags)
+	// Numeral
+	namespace Numeral
 	{
-		if(Flags & VWF_STYLE_SIMPLE) { return g_pSimpleBorder[Border]; }
-		if(Flags & VWF_STYLE_DOUBLE) { return g_pDoubleBorder[Border]; }
-		if(Flags & VWF_STYLE_STRICT) { return g_pStrictBorder[Border]; }
-		if(Flags & VWF_STYLE_STRICT_BOLD) { return g_pStrictBoldBorder[Border]; }
-		return "";
+		inline constexpr const char* g_NumeralDefault[g_NumeralNum] = { "\0", "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
+		inline constexpr const char* g_NumeralRoman[g_NumeralNum] = { "\0", "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
+		inline constexpr const char* g_NumeralBold[g_NumeralNum] = { "\0", "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
+		inline constexpr const char* g_NumeralCyrcle[g_NumeralNum] = { "\0", "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
+
+		static constexpr const char* get(int Number, int Flags)
+		{
+			if(Flags & VWF_NUM_LIST_STYLE_ROMAN) { return g_NumeralRoman[clamp(Number, 1, 9)]; }
+			if(Flags & VWF_NUM_LIST_STYLE_BOLD) { return g_NumeralBold[clamp(Number, 1, 9)]; }
+			if(Flags & VWF_NUM_LIST_STYLE_CYRCLE) { return g_NumeralCyrcle[clamp(Number, 1, 9)]; }
+			return g_NumeralDefault[clamp(Number, 1, 9)];
+		}
+	}
+
+	// Border
+	namespace Border
+	{
+		enum BorderSymbol { Beggin, Middle, MiddleOption, Level, End, Num };
+		inline constexpr const char* g_pSimpleBorder[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
+		inline constexpr const char* g_pDoubleBorder[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
+		inline constexpr const char* g_pStrictBorder[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
+		inline constexpr const char* g_pStrictBoldBorder[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
+
+		static constexpr const char* get(BorderSymbol Border, int Flags)
+		{
+			if(Flags & VWF_STYLE_SIMPLE) { return g_pSimpleBorder[Border]; }
+			if(Flags & VWF_STYLE_DOUBLE) { return g_pDoubleBorder[Border]; }
+			if(Flags & VWF_STYLE_STRICT) { return g_pStrictBorder[Border]; }
+			if(Flags & VWF_STYLE_STRICT_BOLD) { return g_pStrictBoldBorder[Border]; }
+			return "";
+		}
 	}
 }
 
@@ -58,13 +80,17 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 		pCmd = "HIDDEN";
 	}
 
-	char aBufText[VOTE_DESC_LENGTH];
-	str_format(aBufText, sizeof(aBufText), "%s%s", pAppend, Buffer.buffer());
-	Buffer.clear();
+	// Reformatting
+	Reformatting(Buffer.buffer());
 
 	// Check if the player's language is "ru" or "uk" and convert aBufText to Latin if true
 	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
-		str_translation_cyrlic_to_latin(aBufText);
+		str_translation_cyrlic_to_latin(Buffer.buffer());
+
+	// End text format
+	char aBufText[VOTE_DESC_LENGTH];
+	str_format(aBufText, sizeof(aBufText), "%s%s", pAppend, Buffer.buffer());
+	Buffer.clear();
 
 	// Create a new VoteOption with the values from aBufText, pCmd, SettingsID1, and SettingsID2
 	CVoteOption Vote;
@@ -92,48 +118,24 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	if(!m_pPlayer || IsHidden())
 		return;
 
-	// Prepare
-	char aBufText[VOTE_DESC_LENGTH] {};
-	str_copy(aBufText, pText, sizeof(aBufText));
-
-	// Numerals
-	char aBufNumeral[64] {};
-	if(str_replace(aBufText, "<{NUMERAL}>", ""))
-	{
-		m_CurrentNumeral++;
-
-		if(m_Flags & VWF_NUMERAL_STYLE_ROMAN)
-		{
-			const char* pNumerals[g_MaxNumericGroups] = { "\0", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ" };
-			str_format(aBufNumeral, sizeof(aBufNumeral), "%s. ", pNumerals[clamp(m_CurrentNumeral, 1, 9)]);
-		}
-		else if(m_Flags & VWF_NUMERAL_STYLE_BOLD)
-		{
-			const char* pNumerals[g_MaxNumericGroups] = { "\0", "１", "２", "３", "４", "５", "６", "７", "８", "９" };
-			str_format(aBufNumeral, sizeof(aBufNumeral), "%s. ", pNumerals[clamp(m_CurrentNumeral, 1, 9)]);
-		}
-		else if(m_Flags & VWF_NUMERAL_STYLE_CYRCLE)
-		{
-			const char* pNumerals[g_MaxNumericGroups] = { "\0", "⓵", "⓶", "⓷", "⓸", "⓹", "⓺", "⓻", "⓼", "⓽" };
-			str_format(aBufNumeral, sizeof(aBufNumeral), "%s. ", pNumerals[clamp(m_CurrentNumeral, 1, 9)]);
-		}
-		else
-			str_format(aBufNumeral, sizeof(aBufNumeral), "%d. ", m_CurrentNumeral);
-	}
-
 	// Format the text using the player's language and additional arguments
 	va_list VarArgs;
 	va_start(VarArgs, pText);
 	dynamic_string Buffer;
-	Instance::Server()->Localization()->Format_VL(Buffer, m_pPlayer->GetLanguage(), aBufText, VarArgs);
+	Instance::Server()->Localization()->Format_VL(Buffer, m_pPlayer->GetLanguage(), pText, VarArgs);
 	va_end(VarArgs);
 
-	str_format(aBufText, sizeof(aBufText), "%s%s%s", aBufNumeral, str_comp(pCmd, "null") != 0 ? "\u257E " : "\0", Buffer.buffer());
-	Buffer.clear();
+	// Reformatting
+	Reformatting(Buffer.buffer());
 
-	// Check if the player's language is "ru" or "uk" and convert aBufText to Latin if true
+	// Reformat cyrlic to latin
 	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
-		str_translation_cyrlic_to_latin(aBufText);
+		str_translation_cyrlic_to_latin(Buffer.buffer());
+
+	// End text format
+	char aBufText[VOTE_DESC_LENGTH] {};
+	str_format(aBufText, sizeof(aBufText), "%s%s", str_comp(pCmd, "null") != 0 ? "\u257E " : "\0", Buffer.buffer());
+	Buffer.clear();
 
 	// Create a new VoteOption with the values from aBufText, pCmd, Settings1, and Settings2
 	CVoteOption Vote;
@@ -148,6 +150,17 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	m_vpVotelist.emplace_back(Vote);
 }
 
+void CVoteGroup::Reformatting(char* pBuffer)
+{
+	// Numeral list format
+	if(str_replace(pBuffer, "<$NUM_LIST>", Formatter::Numeral::get(m_CurrentNumeral + 1, m_Flags)))
+		m_CurrentNumeral++;
+
+	// Numeral group format (always by number)
+	if(str_replace(pBuffer, "<$NUM_GROUP>", Formatter::Numeral::get(gs_NumeralGroup[m_ClientID] + 1, VWF_NUM_LIST_STYLE_BOLD)))
+		gs_NumeralGroup[m_ClientID]++;
+}
+
 // This function is used to add a line
 void CVoteGroup::AddLineImpl()
 {
@@ -157,7 +170,7 @@ void CVoteGroup::AddLineImpl()
 
 	// Create a new VoteOption with the values
 	CVoteOption Vote;
-	str_copy(Vote.m_aDescription, g_VoteLineDef, sizeof(Vote.m_aDescription));
+	str_copy(Vote.m_aDescription, g_VoteStrLineDef, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "null", sizeof(Vote.m_aCommand));
 	Vote.m_Line = true;
 
@@ -305,23 +318,23 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 				// Append border to the vote option (can outside but)
 				dynamic_string Buffer;
 				if(&Option == pFront)
-					Buffer.append(get(Border::Beggin, Flags));
+					Buffer.append(get(Formatter::Border::Beggin, Flags));
 				else if(&Option == pBack)
-					Buffer.append(get(Border::End, Flags));
+					Buffer.append(get(Formatter::Border::End, Flags));
 				else if(str_comp(Option.m_aCommand, "null") == 0 && Option.m_Depth <= 0 && !Option.m_Line)
-					Buffer.append(get(Border::Middle, Flags));
+					Buffer.append(get(Formatter::Border::Middle, Flags));
 				else
-					Buffer.append(get(Border::MiddleOption, Flags));
+					Buffer.append(get(Formatter::Border::MiddleOption, Flags));
 
 				// Display the level of the vote option
 				// Dissable for line is a line as it is
 				if(!Option.m_Line && Option.m_Depth > 0)
 				{
 					for(int i = 0; i < Option.m_Depth; i++)
-						Buffer.append(get(Border::Level, Flags));
+						Buffer.append(get(Formatter::Border::Level, Flags));
 				}
 
-				if(str_comp(Option.m_aDescription, g_VoteLineDef) != 0 && str_comp(Option.m_aCommand, "null") == 0)
+				if(str_comp(Option.m_aDescription, g_VoteStrLineDef) != 0 && str_comp(Option.m_aCommand, "null") == 0)
 					Buffer.append(" ");
 
 				// Save changes
@@ -449,6 +462,7 @@ void CVotePlayerData::ClearVotes() const
 {
 	int ClientID = m_pPlayer->GetCID();
 	CVoteWrapper::Data()[ClientID].clear();
+	gs_NumeralGroup[ClientID] = 0;
 
 	// send vote options
 	CNetMsg_Sv_VoteClearOptions ClearMsg;

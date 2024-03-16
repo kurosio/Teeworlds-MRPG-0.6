@@ -75,10 +75,10 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 
 	// show base shop functions
-	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE | VWF_NUMERAL_STYLE_ROMAN, "Warehouse :: {STR}", pWarehouse->GetName());
+	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE | VWF_NUM_LIST_STYLE_ROMAN, "<$NUM_GROUP> Warehouse :: {STR}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
-		VStorage.Add("<{NUMERAL}> INFORMATION:");
+		VStorage.Add("<$NUM_LIST> INFORMATION:");
 		{
 			VStorage.BeginDepthList();
 			VStorage.Add("You can repair broken items, and also");
@@ -88,7 +88,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 			VStorage.EndDepthList();
 		}
 		VStorage.AddLine();
-		VStorage.Add("<{NUMERAL}> STORAGE:");
+		VStorage.Add("<$NUM_LIST> STORAGE:");
 		{
 			VStorage.BeginDepthList();
 			VStorage.Add("\u2727 Your: {VAL} | Storage: {VAL} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
@@ -101,7 +101,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 		VStorage.AddLine();
 	}
 	VStorage.AddLine();
-	VStorage.Add("<{NUMERAL}> FUNCTIONALITY:");
+	VStorage.Add("<$NUM_LIST> FUNCTIONALITY:");
 	{
 		VStorage.BeginDepthList();
 		VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
@@ -118,7 +118,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	CItemDescription* pCurrency = pWarehouse->GetCurrency();
 	if(pWarehouse->IsHasFlag(WF_BUY))
 	{
-		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to buy");
+		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "<$NUM_GROUP> \u2725 Choose the item you want to buy");
 		for(const auto& Trade : pWarehouse->GetTradingList())
 		{
 			const CItem* pItem = Trade.GetItem();
@@ -142,7 +142,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	 */
 	if(pWarehouse->IsHasFlag(WF_SELL))
 	{
-		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
+		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "<$NUM_GROUP> \u2725 Choose the item you want to sell");
 		for(const auto& Trade : pWarehouse->GetTradingList())
 		{
 			const CItem* pItem = Trade.GetItem();
