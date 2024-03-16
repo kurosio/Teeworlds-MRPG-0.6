@@ -14,21 +14,33 @@ typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallb
 
 enum
 {
+	// depth list
+	DEPTH_LVL0 = 0,
+	DEPTH_LVL1 = 1,
+	DEPTH_LVL2 = 2,
+	DEPTH_LVL3 = 3,
+	DEPTH_LVL4 = 4,
+	DEPTH_LVL5 = 5,
+	DEPTH_LIST_STYLE_ROMAN = 1 << 6,
+	DEPTH_LIST_STYLE_BOLD = 1 << 7,
+	DEPTH_LIST_STYLE_CYRCLE = 1 << 8,
+
+	// disabled
 	VWF_DISABLED          = 0, // regular title group
 
 	// settings
 	VWF_SEPARATE          = 1 << 1, // separates the end and the beginning of the new group by a line
+
+	// custom group numeral
+	VWF_NUMERAL_STYLE_ROMAN,
+	VWF_NUMERAL_STYLE_BOLD,
+	VWF_NUMERAL_STYLE_CYRCLE,
 
 	// styles
 	VWF_STYLE_SIMPLE      = 1 << 2, // example: ╭ │ ╰
 	VWF_STYLE_DOUBLE      = 1 << 3, // example: ╔ ═ ╚
 	VWF_STYLE_STRICT      = 1 << 4, // example: ┌ │ └
 	VWF_STYLE_STRICT_BOLD = 1 << 5, // example: ┏ ┃ ┗
-
-	// custom numerals
-	VWF_NUM_LIST_STYLE_ROMAN = 1 << 6,
-	VWF_NUM_LIST_STYLE_BOLD  = 1 << 7,
-	VWF_NUM_LIST_STYLE_CYRCLE  = 1 << 8,
 
 	// hidden
 	VWF_OPEN              = 1 << 9, // default open group
@@ -55,10 +67,15 @@ class CVoteGroup
 {
 	friend class CVoteWrapper;
 
+	struct NumeralDepth
+	{
+		int m_Value {};
+		int m_Style {};
+	};
+	NumeralDepth m_CustomNumeral {};
+	std::map<int, NumeralDepth> m_vDepthNumeral {};
 	std::deque<CVoteOption> m_vpVotelist {};
-	std::map<int, int> m_vDepthNumeral {};
 	int m_CurrentDepth {};
-	int m_Numeral {};
 
 	CGS* m_pGS {};
 	CPlayer* m_pPlayer {};
@@ -71,6 +88,8 @@ class CVoteGroup
 	int m_ClientID {};
 
 	CVoteGroup(int ClientID, int Flags);
+
+	void InitNumeralDepthStyles(std::initializer_list<std::pair<int, int>>&& vNumeralFlags);
 
 	bool IsEmpty() const { return m_GroupSize <= 0; }
 	bool IsTitleSet() const { return m_TitleIsSet; }
@@ -173,7 +192,12 @@ public:
 	/*
 	 * Group level
 	 */
-	CVoteWrapper& BeginDepthList(int NumeralFlag = -1) noexcept;
+	void InitNumeralDepthStyles(std::initializer_list<std::pair<int, int>> vNumeralFlags) const
+	{
+		dbg_assert(m_pGroup != nullptr, "For initilize depth, first needed initialize vote wrapper");
+		m_pGroup->InitNumeralDepthStyles(std::move(vNumeralFlags));
+	}
+	CVoteWrapper& BeginDepthList() noexcept;
 	CVoteWrapper& EndDepthList() noexcept {
 		m_pGroup->m_CurrentDepth--;
 		return *this;
