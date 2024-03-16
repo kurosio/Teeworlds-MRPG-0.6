@@ -193,7 +193,8 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
 			bool Has = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
-			VCraftElement.Add("* {STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
+			VCraftElement.Add("<$NUM_LIST>* {STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", 
+				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
 		VCraftElement.EndDepthList();
 	}

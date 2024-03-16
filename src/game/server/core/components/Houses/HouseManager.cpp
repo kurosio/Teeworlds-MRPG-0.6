@@ -192,7 +192,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		// show active access players to house
 		CHouseDoorsController* pHouseDoor = pHouse->GetDoorsController();
 		CVoteWrapper VAccess(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE);
-		VAccess.Add("Permits have been granted:");
+		VAccess.Add("<$NUM_LIST>Permits have been granted:");
 		{
 			VAccess.BeginDepthList();
 			VAccess.Add("You and your eidolon have full access");
@@ -203,7 +203,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 		// search result
 		CVoteWrapper VSearch(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Search result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
-		VSearch.Add("You can add {INT} player's:", pHouseDoor->GetAvailableAccessSlots());
+		VSearch.Add("<$NUM_LIST>You can add {INT} player's:", pHouseDoor->GetAvailableAccessSlots());
 		{
 			VSearch.BeginDepthList();
 			VSearch.Add("Use reason. The entered value can be a partial.");
@@ -211,7 +211,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			VSearch.EndDepthList();
 		}
 		VSearch.AddLine();
-		VSearch.Add("Search result: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		VSearch.Add("<$NUM_LIST>Search result: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
 		{
 			VSearch.BeginDepthList();
 			if(pPlayer->GetTempData().m_aPlayerSearchBuf[0] != '\0')

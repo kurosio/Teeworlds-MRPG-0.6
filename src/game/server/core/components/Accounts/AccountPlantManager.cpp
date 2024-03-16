@@ -84,24 +84,20 @@ bool CAccountPlantManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
 
 		const vec2 Pos = Plant.m_Position / 32.0f;
 		CVoteWrapper VPlant(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Plant {STR}", GS()->GetItemInfo(Plant.m_ItemID)->GetName());
+		VPlant.Add("<$NUM_LIST>Location:");
 		{
 			VPlant.BeginDepthList();
-			VPlant.Add("Location:");
-			{
-				VPlant.BeginDepthList();
-				VPlant.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-				VPlant.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
-				VPlant.EndDepthList();
-			}
-			VPlant.AddLine();
-			VPlant.Add("Description");
-			{
-				VPlant.BeginDepthList();
-				VPlant.Add("Level: {INT}", Plant.m_Level);
-				VPlant.Add("Health: {INT}P", Plant.m_StartHealth);
-				VPlant.Add("Distance of distribution: {INT}P", Plant.m_Distance);
-				VPlant.EndDepthList();
-			}
+			VPlant.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
+			VPlant.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
+			VPlant.EndDepthList();
+		}
+		VPlant.AddLine();
+		VPlant.Add("<$NUM_LIST>Description");
+		{
+			VPlant.BeginDepthList();
+			VPlant.Add("Level: {INT}", Plant.m_Level);
+			VPlant.Add("Health: {INT}P", Plant.m_StartHealth);
+			VPlant.Add("Distance of distribution: {INT}P", Plant.m_Distance);
 			VPlant.EndDepthList();
 		}
 		VPlant.AddLine();

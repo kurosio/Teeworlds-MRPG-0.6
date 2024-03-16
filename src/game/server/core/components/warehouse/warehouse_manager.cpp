@@ -76,10 +76,9 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 
 	// show base shop functions
 	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Warehouse :: {STR}", pWarehouse->GetName());
-	VStorage.InitNumeralDepthStyles({{ DEPTH_LVL1, DEPTH_LIST_STYLE_ROMAN }});
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
-		VStorage.Add("INFORMATION");
+		VStorage.Add("<$NUM_LIST>INFORMATION");
 		{
 			VStorage.BeginDepthList();
 			VStorage.Add("You can repair broken items, and also");
@@ -89,7 +88,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 			VStorage.EndDepthList();
 		}
 		VStorage.AddLine();
-		VStorage.Add("STORAGE");
+		VStorage.Add("<$NUM_LIST>STORAGE");
 		{
 			VStorage.BeginDepthList();
 			VStorage.Add("\u2727 Your: {VAL} | Storage: {VAL} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
@@ -102,14 +101,14 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 		VStorage.AddLine();
 	}
 	VStorage.AddLine();
-	VStorage.Add("FUNCTIONALITY");
+	VStorage.Add("<$NUM_LIST>FUNCTIONALITY");
 	{
 		VStorage.BeginDepthList();
 		VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
 		VStorage.EndDepthList();
 	}
 	VStorage.AddLine();
-	VStorage.Add("CURRENCY");
+	VStorage.Add("<$NUM_LIST>CURRENCY");
 	{
 		VStorage.BeginDepthList();
 		VStorage.AddItemValue(pWarehouse->GetCurrency()->GetID());

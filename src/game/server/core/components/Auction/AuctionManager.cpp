@@ -58,7 +58,7 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CVoteWrapper::AddEmptyline(ClientID);
 
 		CVoteWrapper VSlot(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {STR}", pAuctionItem->Info()->GetName());
-		VSlot.Add("Description:");
+		VSlot.Add("<$NUM_LIST>Description:");
 		{
 			VSlot.BeginDepthList();
 			VSlot.Add("Tax for creating a slot: {VAL}gold", pAuctionData->GetTaxPrice());
@@ -66,7 +66,7 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			VSlot.EndDepthList();
 		}
 		VSlot.AddLine();
-		VSlot.Add("Interaction:");
+		VSlot.Add("<$NUM_LIST>Interaction:");
 		{
 			VSlot.BeginDepthList();
 			VSlot.AddOption("AUCTION_COUNT", SlotItemID, "Select the number of items: {VAL}.", SlotValue);

@@ -67,6 +67,7 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() > 0)
 		{
+			CVoteWrapper::AddEmptyline(ClientID);
 			int SelectedType = clamp(pPlayer->m_VotesData.GetMenuTemporaryInteger(), (int)SKILL_TYPE_IMPROVEMENTS, (int)NUM_SKILL_TYPES - 1);
 			ShowSkillsByType(pPlayer, (SkillType)SelectedType);
 		}
@@ -97,14 +98,14 @@ void CSkillManager::ShowDetailSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	const bool IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
 
 	CVoteWrapper VSkill(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{STR} - {INT}SP {STR}", pInfo->GetName(), pInfo->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
-	VSkill.Add("Description:");
+	VSkill.Add("<$NUM_LIST>Description:");
 	{
 		VSkill.BeginDepthList();
 		VSkill.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
 		VSkill.EndDepthList();
 	}
 	VSkill.AddLine();
-	VSkill.Add("Main:");
+	VSkill.Add("<$NUM_LIST>Main:");
 	{
 		VSkill.BeginDepthList();
 		VSkill.Add("Level: {INT}/{INT}", pSkill->GetLevel(), pInfo->GetMaxLevel());
@@ -113,7 +114,7 @@ void CSkillManager::ShowDetailSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 		VSkill.EndDepthList();
 	}
 	VSkill.AddLine();
-	VSkill.AddIf(!IsPassive && IsLearned, "Usage:");
+	VSkill.AddIf(!IsPassive && IsLearned, "<$NUM_LIST>Usage:");
 	{
 		VSkill.BeginDepthList();
 		VSkill.AddIf(!IsPassive && IsLearned, "F1 Bind: (bind 'key' say \"/useskill {INT}\")", ID);

@@ -82,24 +82,20 @@ bool CAccountMinerManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
 
 		const vec2 Pos = Ore.m_Position / 32.0f;
 		CVoteWrapper VOres(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Ore {STR}", GS()->GetItemInfo(Ore.m_ItemID)->GetName());
+		VOres.Add("<$NUM_LIST>Location:");
 		{
 			VOres.BeginDepthList();
-			VOres.Add("Location:");
-			{
-				VOres.BeginDepthList();
-				VOres.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-				VOres.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
-				VOres.EndDepthList();
-			}
-			VOres.AddLine();
-			VOres.Add("Description");
-			{
-				VOres.BeginDepthList();
-				VOres.Add("Level: {INT}", Ore.m_Level);
-				VOres.Add("Health: {INT}P", Ore.m_StartHealth);
-				VOres.Add("Distance of distribution: {INT}P", Ore.m_Distance);
-				VOres.EndDepthList();
-			}
+			VOres.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
+			VOres.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
+			VOres.EndDepthList();
+		}
+		VOres.AddLine();
+		VOres.Add("<$NUM_LIST>Description");
+		{
+			VOres.BeginDepthList();
+			VOres.Add("Level: {INT}", Ore.m_Level);
+			VOres.Add("Health: {INT}P", Ore.m_StartHealth);
+			VOres.Add("Distance of distribution: {INT}P", Ore.m_Distance);
 			VOres.EndDepthList();
 		}
 		VOres.AddLine();

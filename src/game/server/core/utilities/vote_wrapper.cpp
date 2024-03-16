@@ -53,15 +53,12 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	m_GroupSize = 0;
 	m_HiddenID = (int)CVoteWrapper::Data()[ClientID].size();
 	m_pPlayer = m_pGS->GetPlayer(ClientID);
-
-	if(Flags & VWF_NUMERAL_STYLE_ROMAN)
-		m_CustomNumeral.m_Style = DEPTH_LIST_STYLE_ROMAN;
-	else if(Flags & VWF_NUMERAL_STYLE_BOLD)
-		m_CustomNumeral.m_Style = DEPTH_LIST_STYLE_BOLD;
-	else if(Flags & VWF_NUMERAL_STYLE_CYRCLE)
-		m_CustomNumeral.m_Style = DEPTH_LIST_STYLE_CYRCLE;
-
 	dbg_assert(m_pPlayer != nullptr, "player is null");
+
+	// init default styles
+	m_vDepthNumeral[DEPTH_LVL1].m_Style = DEPTH_LIST_STYLE_ROMAN;
+	m_vDepthNumeral[DEPTH_LVL2].m_Style = DEPTH_LIST_STYLE_BOLD;
+	m_vDepthNumeral[DEPTH_LVL3].m_Style = DEPTH_LIST_STYLE_BOLD;
 }
 
 void CVoteGroup::InitNumeralDepthStyles(std::initializer_list<std::pair<int, int>>&& vNumeralFlags)
@@ -166,11 +163,11 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 void CVoteGroup::Reformatting(char* pBuffer)
 {
 	// Numeral list format
-	if(str_replace(pBuffer, "<$NEXT_NUM_LIST>", Formatter::Numeral::get(m_CustomNumeral.m_Value + 1, m_CustomNumeral.m_Style)))
-		m_CustomNumeral.m_Value++;
+	if(str_replace(pBuffer, "<$NUM_LIST>", Formatter::Numeral::get(m_vDepthNumeral[m_CurrentDepth].m_Value + 1, m_vDepthNumeral[m_CurrentDepth].m_Style)))
+		m_vDepthNumeral[m_CurrentDepth].m_Value++;
 
 	// Numeral group format (always by number)
-	if(str_replace(pBuffer, "<$NEXT_NUM_GROUP>", Formatter::Numeral::get(gs_GroupsNumeral[m_ClientID] + 1, DEPTH_LIST_STYLE_BOLD)))
+	if(str_replace(pBuffer, "<$NUM_GROUP>", Formatter::Numeral::get(gs_GroupsNumeral[m_ClientID] + 1, DEPTH_LIST_STYLE_BOLD)))
 		gs_GroupsNumeral[m_ClientID]++;
 }
 
@@ -253,24 +250,6 @@ bool CVoteGroup::IsHidden() const
 
 	// Default it's openned
 	return false;
-}
-
-CVoteWrapper& CVoteWrapper::BeginDepthList() noexcept
-{
-	m_pGroup->m_CurrentDepth++;
-
-	int NumeralFlag = m_pGroup->m_vDepthNumeral[m_pGroup->m_CurrentDepth].m_Style;
-	if(!m_pGroup->m_vpVotelist.empty() && !m_pGroup->IsHidden() && NumeralFlag > 0)
-	{
-		m_pGroup->m_vDepthNumeral[m_pGroup->m_CurrentDepth].m_Value++;
-
-		char aDescUpdate[VOTE_DESC_LENGTH] {};
-		CVoteOption& BackVote = m_pGroup->m_vpVotelist.back();
-		str_format(aDescUpdate, sizeof(aDescUpdate), "%s%s", Formatter::Numeral::get(m_pGroup->m_vDepthNumeral[m_pGroup->m_CurrentDepth].m_Value, NumeralFlag), BackVote.m_aDescription);
-		str_copy(BackVote.m_aDescription, aDescUpdate, sizeof(BackVote.m_aDescription));
-	}
-
-	return *this;
 }
 
 // This function is responsible for rebuilding the votes for a specific client.

@@ -1330,21 +1330,25 @@ void CGuildManager::ShowFinder(int ClientID) const
 
 	// Show search option
 	CVoteWrapper VSearch(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2732 Guild finder");
-	VSearch.Add("Find guild by name:");
-	VSearch.BeginDepthList();
-	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Field: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
-	VSearch.EndDepthList();
+	VSearch.Add("<$NUM_LIST>Find guild by name:");
+	{
+		VSearch.BeginDepthList();
+		VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Field: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
+		VSearch.EndDepthList();
+	}
 	VSearch.AddLine();
 
 	// Iterate through all guilds
-	VSearch.Add("Guild list:");
-	VSearch.BeginDepthList();
-	for(auto& pGuild : CGuildData::Data())
+	VSearch.Add("<$NUM_LIST>Guild list:");
 	{
-		int OwnerUID = pGuild->GetLeaderUID();
-		VSearch.AddMenu(MENU_GUILD_FINDER_SELECTED, pGuild->GetID(), "{STR} (leader {STR})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
+		VSearch.BeginDepthList();
+		for(auto& pGuild : CGuildData::Data())
+		{
+			int OwnerUID = pGuild->GetLeaderUID();
+			VSearch.AddMenu(MENU_GUILD_FINDER_SELECTED, pGuild->GetID(), "{STR} (leader {STR})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
+		}
+		VSearch.EndDepthList();
 	}
-	VSearch.EndDepthList();
 	VSearch.AddLine();
 
 	// Add votes to the player's back page

@@ -15,12 +15,11 @@ typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallb
 enum
 {
 	// depth list
-	DEPTH_LVL0 = 0,
-	DEPTH_LVL1 = 1,
-	DEPTH_LVL2 = 2,
-	DEPTH_LVL3 = 3,
-	DEPTH_LVL4 = 4,
-	DEPTH_LVL5 = 5,
+	DEPTH_LVL1 = 0,
+	DEPTH_LVL2 = 1,
+	DEPTH_LVL3 = 2,
+	DEPTH_LVL4 = 3,
+	DEPTH_LVL5 = 4,
 	DEPTH_LIST_STYLE_ROMAN = 1 << 6,
 	DEPTH_LIST_STYLE_BOLD = 1 << 7,
 	DEPTH_LIST_STYLE_CYRCLE = 1 << 8,
@@ -30,11 +29,6 @@ enum
 
 	// settings
 	VWF_SEPARATE          = 1 << 1, // separates the end and the beginning of the new group by a line
-
-	// custom group numeral
-	VWF_NUMERAL_STYLE_ROMAN,
-	VWF_NUMERAL_STYLE_BOLD,
-	VWF_NUMERAL_STYLE_CYRCLE,
 
 	// styles
 	VWF_STYLE_SIMPLE      = 1 << 2, // example: ╭ │ ╰
@@ -72,7 +66,6 @@ class CVoteGroup
 		int m_Value {};
 		int m_Style {};
 	};
-	NumeralDepth m_CustomNumeral {};
 	std::map<int, NumeralDepth> m_vDepthNumeral {};
 	std::deque<CVoteOption> m_vpVotelist {};
 	int m_CurrentDepth {};
@@ -197,7 +190,10 @@ public:
 		dbg_assert(m_pGroup != nullptr, "For initilize depth, first needed initialize vote wrapper");
 		m_pGroup->InitNumeralDepthStyles(std::move(vNumeralFlags));
 	}
-	CVoteWrapper& BeginDepthList() noexcept;
+	CVoteWrapper& BeginDepthList() noexcept {
+		m_pGroup->m_CurrentDepth++;
+		return *this;
+	}
 	CVoteWrapper& EndDepthList() noexcept {
 		m_pGroup->m_CurrentDepth--;
 		return *this;

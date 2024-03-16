@@ -225,48 +225,44 @@ bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 
 		const vec2 Pos = Mob.m_Position / 32.0f;
 		CVoteWrapper VMob(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Mob {STR}", Mob.GetName());
+		VMob.Add("<$NUM_LIST>Location:");
 		{
 			VMob.BeginDepthList();
-			VMob.Add("Location:");
+			VMob.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
+			VMob.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
+			VMob.EndDepthList();
+		}
+		VMob.AddLine();
+		VMob.Add("<$NUM_LIST>Description:");
+		{
+			VMob.BeginDepthList();
+			VMob.Add("Level: {INT}", Mob.m_Level);
+			VMob.Add("Power: {INT}", Mob.m_Power);
+			VMob.Add("Boss: {STR}", Mob.m_Boss ? "Yes" : "No");
+			VMob.Add("Respawn: {INT} sec", Mob.m_RespawnTick);
+			VMob.EndDepthList();
+		}
+		VMob.AddLine();
+		VMob.Add("<$NUM_LIST>Dropped:");
+		{
+			VMob.BeginDepthList();
+			bool HasDropItem = false;
+			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 			{
-				VMob.BeginDepthList();
-				VMob.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-				VMob.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
-				VMob.EndDepthList();
-			}
-			VMob.AddLine();
-			VMob.Add("Description:");
-			{
-				VMob.BeginDepthList();
-				VMob.Add("Level: {INT}", Mob.m_Level);
-				VMob.Add("Power: {INT}", Mob.m_Power);
-				VMob.Add("Boss: {STR}", Mob.m_Boss ? "Yes" : "No");
-				VMob.Add("Respawn: {INT} sec", Mob.m_RespawnTick);
-				VMob.EndDepthList();
-			}
-			VMob.AddLine();
-			VMob.Add("Dropped:");
-			{
-				VMob.BeginDepthList();
-				bool HasDropItem = false;
-				for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
-				{
-					if(Mob.m_aDropItem[i] <= 0 || Mob.m_aValueItem[i] <= 0)
-						continue;
+				if(Mob.m_aDropItem[i] <= 0 || Mob.m_aValueItem[i] <= 0)
+					continue;
 
-					const float Chance = Mob.m_aRandomItem[i];
-					CItemDescription* pDropItemInfo = GS()->GetItemInfo(Mob.m_aDropItem[i]);
+				const float Chance = Mob.m_aRandomItem[i];
+				CItemDescription* pDropItemInfo = GS()->GetItemInfo(Mob.m_aDropItem[i]);
 
-					char aBuf[128];
-					str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", Mob.m_aValueItem[i], Chance, ExtraChance);
-					VMob.Add("{STR}{STR}", pDropItemInfo->GetName(), aBuf);
-					HasDropItem = true;
-				}
-				if(!HasDropItem)
-				{
-					VMob.Add("The mob has no items!");
-				}
-				VMob.EndDepthList();
+				char aBuf[128];
+				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", Mob.m_aValueItem[i], Chance, ExtraChance);
+				VMob.Add("{STR}{STR}", pDropItemInfo->GetName(), aBuf);
+				HasDropItem = true;
+			}
+			if(!HasDropItem)
+			{
+				VMob.Add("The mob has no items!");
 			}
 			VMob.EndDepthList();
 		}
