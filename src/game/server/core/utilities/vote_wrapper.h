@@ -56,6 +56,9 @@ class CVoteGroup
 	friend class CVoteWrapper;
 
 	std::deque<CVoteOption> m_vpVotelist {};
+	std::map<int, int> m_vDepthNumeral {};
+	int m_CurrentDepth {};
+	int m_Numeral {};
 
 	CGS* m_pGS {};
 	CPlayer* m_pPlayer {};
@@ -66,8 +69,6 @@ class CVoteGroup
 	int m_HiddenID {};
 	int m_Flags {};
 	int m_ClientID {};
-	int m_CurrentDepth {};
-	int m_CurrentNumeral {};
 
 	CVoteGroup(int ClientID, int Flags);
 
@@ -172,10 +173,7 @@ public:
 	/*
 	 * Group level
 	 */
-	CVoteWrapper& BeginDepthList() noexcept {
-		m_pGroup->m_CurrentDepth++;
-		return *this;
-	}
+	CVoteWrapper& BeginDepthList(int NumeralFlag = -1) noexcept;
 	CVoteWrapper& EndDepthList() noexcept {
 		m_pGroup->m_CurrentDepth--;
 		return *this;

@@ -3,7 +3,7 @@
 #include <game/server/gamecontext.h>
 
 const char* g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
-static int gs_NumeralGroup[MAX_CLIENTS] = {};
+static int gs_GroupsNumeral[MAX_CLIENTS] = {};
 constexpr int g_NumeralNum = 10;
 
 namespace Formatter
@@ -51,7 +51,7 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	m_TitleIsSet = false;
 	m_CurrentDepth = 0;
 	m_GroupSize = 0;
-	m_CurrentNumeral = 0;
+	m_Numeral = 0;
 	m_HiddenID = (int)CVoteWrapper::Data()[ClientID].size();
 	m_pPlayer = m_pGS->GetPlayer(ClientID);
 	dbg_assert(m_pPlayer != nullptr, "player is null");
@@ -153,12 +153,12 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 void CVoteGroup::Reformatting(char* pBuffer)
 {
 	// Numeral list format
-	if(str_replace(pBuffer, "<$NUM_LIST>", Formatter::Numeral::get(m_CurrentNumeral + 1, m_Flags)))
-		m_CurrentNumeral++;
+	if(str_replace(pBuffer, "<$NEXT_NUM_LIST>", Formatter::Numeral::get(m_Numeral + 1, m_Flags)))
+		m_Numeral++;
 
 	// Numeral group format (always by number)
-	if(str_replace(pBuffer, "<$NUM_GROUP>", Formatter::Numeral::get(gs_NumeralGroup[m_ClientID] + 1, VWF_NUM_LIST_STYLE_BOLD)))
-		gs_NumeralGroup[m_ClientID]++;
+	if(str_replace(pBuffer, "<$NEXT_NUM_GROUP>", Formatter::Numeral::get(gs_GroupsNumeral[m_ClientID] + 1, VWF_NUM_LIST_STYLE_BOLD)))
+		gs_GroupsNumeral[m_ClientID]++;
 }
 
 // This function is used to add a line
@@ -240,6 +240,23 @@ bool CVoteGroup::IsHidden() const
 
 	// Default it's openned
 	return false;
+}
+
+CVoteWrapper& CVoteWrapper::BeginDepthList(int NumeralFlag) noexcept
+{
+	m_pGroup->m_CurrentDepth++;
+
+	if(!m_pGroup->m_vpVotelist.empty() && !m_pGroup->IsHidden() && NumeralFlag != -1)
+	{
+		m_pGroup->m_vDepthNumeral[m_pGroup->m_CurrentDepth]++;
+
+		char aDescUpdate[VOTE_DESC_LENGTH] {};
+		CVoteOption& BackVote = m_pGroup->m_vpVotelist.back();
+		str_format(aDescUpdate, sizeof(aDescUpdate), "%s%s", Formatter::Numeral::get(m_pGroup->m_vDepthNumeral[m_pGroup->m_CurrentDepth], NumeralFlag), BackVote.m_aDescription);
+		str_copy(BackVote.m_aDescription, aDescUpdate, sizeof(BackVote.m_aDescription));
+	}
+
+	return *this;
 }
 
 // This function is responsible for rebuilding the votes for a specific client.
@@ -462,7 +479,7 @@ void CVotePlayerData::ClearVotes() const
 {
 	int ClientID = m_pPlayer->GetCID();
 	CVoteWrapper::Data()[ClientID].clear();
-	gs_NumeralGroup[ClientID] = 0;
+	gs_GroupsNumeral[ClientID] = 0;
 
 	// send vote options
 	CNetMsg_Sv_VoteClearOptions ClearMsg;

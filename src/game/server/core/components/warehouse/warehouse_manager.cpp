@@ -75,12 +75,12 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 
 	// show base shop functions
-	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE | VWF_NUM_LIST_STYLE_ROMAN, "<$NUM_GROUP> Warehouse :: {STR}", pWarehouse->GetName());
+	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Warehouse :: {STR}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
-		VStorage.Add("<$NUM_LIST> INFORMATION:");
+		VStorage.Add("INFORMATION");
 		{
-			VStorage.BeginDepthList();
+			VStorage.BeginDepthList(VWF_NUM_LIST_STYLE_ROMAN);
 			VStorage.Add("You can repair broken items, and also");
 			VStorage.Add("load and unload products in stores.");
 			VStorage.Add("Maximum of {INT} products with you", g_Config.m_SvWarehouseProductsCanTake);
@@ -88,9 +88,9 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 			VStorage.EndDepthList();
 		}
 		VStorage.AddLine();
-		VStorage.Add("<$NUM_LIST> STORAGE:");
+		VStorage.Add("STORAGE");
 		{
-			VStorage.BeginDepthList();
+			VStorage.BeginDepthList(VWF_NUM_LIST_STYLE_ROMAN);
 			VStorage.Add("\u2727 Your: {VAL} | Storage: {VAL} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
 			if(pWarehouse->IsHasFlag(WF_BUY))
 				VStorage.AddOption("WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
@@ -101,14 +101,19 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 		VStorage.AddLine();
 	}
 	VStorage.AddLine();
-	VStorage.Add("<$NUM_LIST> FUNCTIONALITY:");
+	VStorage.Add("FUNCTIONALITY");
 	{
-		VStorage.BeginDepthList();
+		VStorage.BeginDepthList(VWF_NUM_LIST_STYLE_ROMAN);
 		VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
 		VStorage.EndDepthList();
 	}
 	VStorage.AddLine();
-	VStorage.AddItemValue(pWarehouse->GetCurrency()->GetID());
+	VStorage.Add("CURRENCY");
+	{
+		VStorage.BeginDepthList(VWF_NUM_LIST_STYLE_ROMAN);
+		VStorage.AddItemValue(pWarehouse->GetCurrency()->GetID());
+		VStorage.EndDepthList();
+	}
 	VStorage.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
@@ -118,7 +123,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	CItemDescription* pCurrency = pWarehouse->GetCurrency();
 	if(pWarehouse->IsHasFlag(WF_BUY))
 	{
-		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "<$NUM_GROUP> \u2725 Choose the item you want to buy");
+		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to buy");
 		for(const auto& Trade : pWarehouse->GetTradingList())
 		{
 			const CItem* pItem = Trade.GetItem();
@@ -142,7 +147,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	 */
 	if(pWarehouse->IsHasFlag(WF_SELL))
 	{
-		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "<$NUM_GROUP> \u2725 Choose the item you want to sell");
+		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
 		for(const auto& Trade : pWarehouse->GetTradingList())
 		{
 			const CItem* pItem = Trade.GetItem();
