@@ -84,7 +84,7 @@ class CVoteGroup
 
 	CVoteGroup(int ClientID, int Flags);
 
-	void InitNumeralDepthStyles(std::initializer_list<std::pair<int, int>>&& vNumeralFlags);
+	void SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>>&& vNumeralFlags);
 
 	bool IsEmpty() const { return m_GroupSize <= 0; }
 	bool IsTitleSet() const { return m_TitleIsSet; }
@@ -190,7 +190,7 @@ public:
 	void InitNumeralDepthStyles(std::initializer_list<std::pair<int, int>> vNumeralFlags) const
 	{
 		dbg_assert(m_pGroup != nullptr, "For initilize depth, first needed initialize vote wrapper");
-		m_pGroup->InitNumeralDepthStyles(std::move(vNumeralFlags));
+		m_pGroup->SetNumeralDepthStyles(std::move(vNumeralFlags));
 	}
 	CVoteWrapper& MarkList() noexcept {
 		m_pGroup->m_NextMarkedListItem = true;

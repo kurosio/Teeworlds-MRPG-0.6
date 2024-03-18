@@ -1638,22 +1638,46 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	if(!pPlayer)
 		return;
 
-	CVoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN, "#### Hi, new adventurer! ####");
-	VWelcome.Add("This server is a mmo server. You'll have to finish");
-	VWelcome.Add("quests to continue the game. In these quests,");
-	VWelcome.Add("you'll have to get items to give to quest npcs.");
-	VWelcome.Add("To get a quest, you need to talk to NPCs.");
-	VWelcome.Add("You talk to them by hammering them.");
-	VWelcome.Add("You give these items by talking them again. ");
-	VWelcome.Add("Hearts and Shields around you show the position");
-	VWelcome.Add("quests' npcs. Hearts show Main quest, Shields show Others.");
-	VWelcome.Add("Don't ask other people to give you the items,");
-	VWelcome.Add("but you can ask for some help. Keep in mind that");
-	VWelcome.Add("it is hard for everyone too. You can see that your shield");
-	VWelcome.Add("(below your health bar) doesn't protect you,");
-	VWelcome.Add("it's because it's not shield, it's mana.");
-	VWelcome.Add("It is used for active skills, which you will need to buy");
-	VWelcome.Add("in the future. Active skills use mana, but they use %% of mana.");
+	CVoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, new adventurer!");
+	VWelcome.MarkList().Add("Information:");
+	{
+		VWelcome.BeginDepth();
+		VWelcome.MarkList().Add("This server is a mmo server. You'll have to finish");
+		{
+			VWelcome.BeginDepth();
+			VWelcome.Add("quests to continue the game. In these quests,");
+			VWelcome.Add("you'll have to get items to give to quest npcs.");
+			VWelcome.Add("To get a quest, you need to talk to NPCs.");
+			VWelcome.Add("You talk to them by hammering them.");
+			VWelcome.Add("You give these items by talking them again. ");
+			VWelcome.Add("Hearts and Shields around you show the position");
+			VWelcome.Add("quests' npcs. Hearts show Main quest, Shields show Others.");
+			VWelcome.EndDepth();
+		}
+		VWelcome.MarkList().Add("Don't ask other people to give you the items,");
+		{
+			VWelcome.BeginDepth();
+			VWelcome.Add("but you can ask for some help. Keep in mind that");
+			VWelcome.EndDepth();
+		}
+		VWelcome.MarkList().Add("You can see that your shield");
+		{
+			VWelcome.BeginDepth();
+			VWelcome.Add("(below your health bar) doesn't protect you,");
+			VWelcome.Add("it's because it's not shield, it's mana.");
+			VWelcome.Add("It is used for active skills, which you will need to buy");
+			VWelcome.Add("in the future. Active skills use mana, but they use %% of mana.");
+			VWelcome.EndDepth();
+		}
+		VWelcome.EndDepth();
+	}
+	VWelcome.AddLine();
+	VWelcome.MarkList().Add("Dev:");
+	{
+		VWelcome.BeginDepth();
+		VWelcome.Add("Test information");
+		VWelcome.EndDepth();
+	}
 }
 
 // strong update votes variability of the data

@@ -75,7 +75,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 
 	// show base shop functions
-	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Warehouse :: {STR}", pWarehouse->GetName());
+	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE|VWF_GROUP_NUMERAL, "Warehouse :: {STR}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
 		VStorage.MarkList().Add("INFORMATION");
@@ -92,10 +92,8 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 		{
 			VStorage.BeginDepth();
 			VStorage.Add("\u2727 Your: {VAL} | Storage: {VAL} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
-			if(pWarehouse->IsHasFlag(WF_BUY))
-				VStorage.AddOption("WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
-			else if(pWarehouse->IsHasFlag(WF_SELL))
-				VStorage.AddOption("WAREHOUSE_UNLOAD_PRODUCTS", pWarehouse->GetID(), "Unload products");
+			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_BUY), "WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
+			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_SELL), "WAREHOUSE_UNLOAD_PRODUCTS", pWarehouse->GetID(), "Unload products");
 			VStorage.EndDepth();
 		}
 		VStorage.AddLine();

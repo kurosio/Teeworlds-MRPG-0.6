@@ -2,47 +2,52 @@
 
 #include <game/server/gamecontext.h>
 
-const char* g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
-static int gs_GroupsNumeral[MAX_CLIENTS] = {};
-constexpr int g_NumeralNum = 10;
+// Formatter vote wrapper
 
 namespace Formatter
 {
-	// Numeral
-	namespace Numeral
-	{
-		inline constexpr const char* g_NumeralDefault[g_NumeralNum] = { "\0", "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
-		inline constexpr const char* g_NumeralRoman[g_NumeralNum] = { "\0", "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
-		inline constexpr const char* g_NumeralBold[g_NumeralNum] = { "\0", "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
-		inline constexpr const char* g_NumeralCyrcle[g_NumeralNum] = { "\0", "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
+	const char* g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
+	static int gs_GroupsNumeral[MAX_CLIENTS] = {};
+	constexpr int g_NumeralNum = 10;
 
+	// Numeral
+	class Numeral
+	{
+		inline static const char* g_pNDefault[g_NumeralNum] = { "\0", "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
+		inline static const char* g_pNRoman[g_NumeralNum] = { "\0", "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
+		inline static const char* g_pNBold[g_NumeralNum] = { "\0", "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
+		inline static const char* g_pNCyrcle[g_NumeralNum] = { "\0", "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
+
+	public:
 		static constexpr const char* get(int Number, int Style)
 		{
-			if(Style & DEPTH_LIST_STYLE_ROMAN) { return g_NumeralRoman[clamp(Number, 1, 9)]; }
-			if(Style & DEPTH_LIST_STYLE_BOLD) { return g_NumeralBold[clamp(Number, 1, 9)]; }
-			if(Style & DEPTH_LIST_STYLE_CYRCLE) { return g_NumeralCyrcle[clamp(Number, 1, 9)]; }
-			return g_NumeralDefault[clamp(Number, 1, 9)];
+			if(Style & DEPTH_LIST_STYLE_ROMAN) { return g_pNRoman[clamp(Number, 1, 9)]; }
+			if(Style & DEPTH_LIST_STYLE_BOLD) { return g_pNBold[clamp(Number, 1, 9)]; }
+			if(Style & DEPTH_LIST_STYLE_CYRCLE) { return g_pNCyrcle[clamp(Number, 1, 9)]; }
+			return g_pNDefault[clamp(Number, 1, 9)];
 		}
-	}
+	};
 
 	// Border
-	namespace Border
+	class Border
 	{
-		enum BorderSymbol { Beggin, Middle, MiddleOption, Level, End, Num };
-		inline constexpr const char* g_pSimpleBorder[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
-		inline constexpr const char* g_pDoubleBorder[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
-		inline constexpr const char* g_pStrictBorder[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
-		inline constexpr const char* g_pStrictBoldBorder[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
-
-		static constexpr const char* get(BorderSymbol Border, int Flags)
+	public:
+		enum Type { Beggin, Middle, MiddleOption, Level, End, Num };
+		static constexpr const char* get(Type Border, int Flags)
 		{
-			if(Flags & VWF_STYLE_SIMPLE) { return g_pSimpleBorder[Border]; }
-			if(Flags & VWF_STYLE_DOUBLE) { return g_pDoubleBorder[Border]; }
-			if(Flags & VWF_STYLE_STRICT) { return g_pStrictBorder[Border]; }
-			if(Flags & VWF_STYLE_STRICT_BOLD) { return g_pStrictBoldBorder[Border]; }
+			if(Flags & VWF_STYLE_SIMPLE) { return g_pBSimple[Border]; }
+			if(Flags & VWF_STYLE_DOUBLE) { return g_pBDouble[Border]; }
+			if(Flags & VWF_STYLE_STRICT) { return g_pBStrict[Border]; }
+			if(Flags & VWF_STYLE_STRICT_BOLD) { return g_pBStrictBold[Border]; }
 			return "";
 		}
-	}
+
+	private:
+		inline static const char* g_pBSimple[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
+		inline static const char* g_pBDouble[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
+		inline static const char* g_pBStrict[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
+		inline static const char* g_pBStrictBold[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
+	};
 }
 
 CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID)
@@ -55,13 +60,13 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	m_pPlayer = m_pGS->GetPlayer(ClientID);
 	dbg_assert(m_pPlayer != nullptr, "player is null");
 
-	// init numeral lists
+	// init default numeral lists
 	m_vDepthNumeral[DEPTH_LVL1].m_Style = DEPTH_LIST_STYLE_ROMAN;
 	m_vDepthNumeral[DEPTH_LVL2].m_Style = DEPTH_LIST_STYLE_BOLD;
 	m_vDepthNumeral[DEPTH_LVL3].m_Style = DEPTH_LIST_STYLE_BOLD;
 }
 
-void CVoteGroup::InitNumeralDepthStyles(std::initializer_list<std::pair<int, int>>&& vNumeralFlags)
+void CVoteGroup::SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>>&& vNumeralFlags)
 {
 	for(const auto& [Depth, Flag] : vNumeralFlags)
 		m_vDepthNumeral[Depth].m_Style = Flag;
@@ -170,8 +175,8 @@ void CVoteGroup::Reformatting(dynamic_string& Buffer)
 
 		if(m_Flags & VWF_GROUP_NUMERAL)
 		{
-			str_format(aTempBuf, sizeof(aTempBuf), "%s%s", Formatter::Numeral::get(gs_GroupsNumeral[m_ClientID] + 1, DEPTH_LIST_STYLE_BOLD), Buffer.buffer());
-			gs_GroupsNumeral[m_ClientID]++;
+			str_format(aTempBuf, sizeof(aTempBuf), "%s%s", Formatter::Numeral::get(Formatter::gs_GroupsNumeral[m_ClientID] + 1, DEPTH_LIST_STYLE_BOLD), Buffer.buffer());
+			Formatter::gs_GroupsNumeral[m_ClientID]++;
 			m_Flags &= ~VWF_GROUP_NUMERAL;
 		}
 		else
@@ -194,7 +199,7 @@ void CVoteGroup::AddLineImpl()
 
 	// Create a new VoteOption with the values
 	CVoteOption Vote;
-	str_copy(Vote.m_aDescription, g_VoteStrLineDef, sizeof(Vote.m_aDescription));
+	str_copy(Vote.m_aDescription, Formatter::g_VoteStrLineDef, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "null", sizeof(Vote.m_aCommand));
 	Vote.m_Line = true;
 
@@ -342,23 +347,23 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 				// Append border to the vote option (can outside but)
 				dynamic_string Buffer;
 				if(&Option == pFront)
-					Buffer.append(get(Formatter::Border::Beggin, Flags));
+					Buffer.append(Formatter::Border::get(Formatter::Border::Beggin, Flags));
 				else if(&Option == pBack)
-					Buffer.append(get(Formatter::Border::End, Flags));
+					Buffer.append(Formatter::Border::get(Formatter::Border::End, Flags));
 				else if(str_comp(Option.m_aCommand, "null") == 0 && Option.m_Depth <= 0 && !Option.m_Line)
-					Buffer.append(get(Formatter::Border::Middle, Flags));
+					Buffer.append(Formatter::Border::get(Formatter::Border::Middle, Flags));
 				else
-					Buffer.append(get(Formatter::Border::MiddleOption, Flags));
+					Buffer.append(Formatter::Border::get(Formatter::Border::MiddleOption, Flags));
 
 				// Display the level of the vote option
 				// Dissable for line is a line as it is
 				if(!Option.m_Line && Option.m_Depth > 0)
 				{
 					for(int i = 0; i < Option.m_Depth; i++)
-						Buffer.append(get(Formatter::Border::Level, Flags));
+						Buffer.append(Formatter::Border::get(Formatter::Border::Level, Flags));
 				}
 
-				if(str_comp(Option.m_aDescription, g_VoteStrLineDef) != 0 && str_comp(Option.m_aCommand, "null") == 0)
+				if(str_comp(Option.m_aDescription, Formatter::g_VoteStrLineDef) != 0 && str_comp(Option.m_aCommand, "null") == 0)
 					Buffer.append(" ");
 
 				// Save changes
@@ -486,7 +491,7 @@ void CVotePlayerData::ClearVotes() const
 {
 	int ClientID = m_pPlayer->GetCID();
 	CVoteWrapper::Data()[ClientID].clear();
-	gs_GroupsNumeral[ClientID] = 0;
+	Formatter::gs_GroupsNumeral[ClientID] = 0;
 
 	// send vote options
 	CNetMsg_Sv_VoteClearOptions ClearMsg;
