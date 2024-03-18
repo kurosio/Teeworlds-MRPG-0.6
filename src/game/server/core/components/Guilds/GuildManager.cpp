@@ -1330,24 +1330,24 @@ void CGuildManager::ShowFinder(int ClientID) const
 
 	// Show search option
 	CVoteWrapper VSearch(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2732 Guild finder");
-	VSearch.Add("<$NUM_LIST>Find guild by name:");
+	VSearch.MarkList().Add("Find guild by name:");
 	{
-		VSearch.BeginDepthList();
+		VSearch.BeginDepth();
 		VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Field: [{STR}]", pPlayer->GetTempData().m_aGuildSearchBuf);
-		VSearch.EndDepthList();
+		VSearch.EndDepth();
 	}
 	VSearch.AddLine();
 
 	// Iterate through all guilds
-	VSearch.Add("<$NUM_LIST>Guild list:");
+	VSearch.MarkList().Add("Guild list:");
 	{
-		VSearch.BeginDepthList();
+		VSearch.BeginDepth();
 		for(auto& pGuild : CGuildData::Data())
 		{
 			int OwnerUID = pGuild->GetLeaderUID();
 			VSearch.AddMenu(MENU_GUILD_FINDER_SELECTED, pGuild->GetID(), "{STR} (leader {STR})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
 		}
-		VSearch.EndDepthList();
+		VSearch.EndDepth();
 	}
 	VSearch.AddLine();
 

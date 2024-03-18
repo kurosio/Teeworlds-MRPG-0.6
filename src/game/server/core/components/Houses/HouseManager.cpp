@@ -192,28 +192,28 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		// show active access players to house
 		CHouseDoorsController* pHouseDoor = pHouse->GetDoorsController();
 		CVoteWrapper VAccess(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE);
-		VAccess.Add("<$NUM_LIST>Permits have been granted:");
+		VAccess.MarkList().Add("Permits have been granted:");
 		{
-			VAccess.BeginDepthList();
+			VAccess.BeginDepth();
 			VAccess.Add("You and your eidolon have full access");
 			for(auto& p : pHouseDoor->GetAccesses())
 				VAccess.AddOption("HOUSE_INVITED_LIST_REMOVE", p, "Remove access from {STR}", Server()->GetAccountNickname(p));
-			VAccess.EndDepthList();
+			VAccess.EndDepth();
 		}
 
 		// search result
 		CVoteWrapper VSearch(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Search result by [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
-		VSearch.Add("<$NUM_LIST>You can add {INT} player's:", pHouseDoor->GetAvailableAccessSlots());
+		VSearch.MarkList().Add("You can add {INT} player's:", pHouseDoor->GetAvailableAccessSlots());
 		{
-			VSearch.BeginDepthList();
+			VSearch.BeginDepth();
 			VSearch.Add("Use reason. The entered value can be a partial.");
 			VSearch.AddOption("HOUSE_INVITED_LIST_FIND", "Find player: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
-			VSearch.EndDepthList();
+			VSearch.EndDepth();
 		}
 		VSearch.AddLine();
-		VSearch.Add("<$NUM_LIST>Search result: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
+		VSearch.MarkList().Add("Search result: [{STR}]", pPlayer->GetTempData().m_aPlayerSearchBuf);
 		{
-			VSearch.BeginDepthList();
+			VSearch.BeginDepth();
 			if(pPlayer->GetTempData().m_aPlayerSearchBuf[0] != '\0')
 			{
 				bool Found = false;
@@ -235,7 +235,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			}
 			else
 				VSearch.Add("Set the reason for the search field");
-			VSearch.EndDepthList();
+			VSearch.EndDepth();
 		}
 
 		// back page

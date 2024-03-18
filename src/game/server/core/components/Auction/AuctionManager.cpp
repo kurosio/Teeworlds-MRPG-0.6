@@ -58,21 +58,21 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CVoteWrapper::AddEmptyline(ClientID);
 
 		CVoteWrapper VSlot(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {STR}", pAuctionItem->Info()->GetName());
-		VSlot.Add("<$NUM_LIST>Description:");
+		VSlot.MarkList().Add("Description:");
 		{
-			VSlot.BeginDepthList();
+			VSlot.BeginDepth();
 			VSlot.Add("Tax for creating a slot: {VAL}gold", pAuctionData->GetTaxPrice());
 			VSlot.AddIf(SlotEnchant > 0, "Warning selling enchanted: +{INT}", SlotEnchant);
-			VSlot.EndDepthList();
+			VSlot.EndDepth();
 		}
 		VSlot.AddLine();
-		VSlot.Add("<$NUM_LIST>Interaction:");
+		VSlot.MarkList().Add("Interaction:");
 		{
-			VSlot.BeginDepthList();
+			VSlot.BeginDepth();
 			VSlot.AddOption("AUCTION_COUNT", SlotItemID, "Select the number of items: {VAL}.", SlotValue);
 			VSlot.AddOption("AUCTION_PRICE", SlotItemID, "Set the price: {VAL}.", SlotPrice);
 			VSlot.AddOption("AUCTION_ACCEPT", SlotItemID, "Accept the offer.");
-			VSlot.EndDepthList();
+			VSlot.EndDepth();
 		}
 
 		CVoteWrapper::AddBackpage(ClientID);

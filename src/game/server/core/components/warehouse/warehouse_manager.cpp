@@ -78,41 +78,41 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	CVoteWrapper VStorage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Warehouse :: {STR}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
-		VStorage.Add("<$NUM_LIST>INFORMATION");
+		VStorage.MarkList().Add("INFORMATION");
 		{
-			VStorage.BeginDepthList();
+			VStorage.BeginDepth();
 			VStorage.Add("You can repair broken items, and also");
 			VStorage.Add("load and unload products in stores.");
 			VStorage.Add("Maximum of {INT} products with you", g_Config.m_SvWarehouseProductsCanTake);
 			VStorage.Add("Loading rate 1 product - 1 gold");
-			VStorage.EndDepthList();
+			VStorage.EndDepth();
 		}
 		VStorage.AddLine();
-		VStorage.Add("<$NUM_LIST>STORAGE");
+		VStorage.MarkList().Add("STORAGE");
 		{
-			VStorage.BeginDepthList();
+			VStorage.BeginDepth();
 			VStorage.Add("\u2727 Your: {VAL} | Storage: {VAL} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
 			if(pWarehouse->IsHasFlag(WF_BUY))
 				VStorage.AddOption("WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
 			else if(pWarehouse->IsHasFlag(WF_SELL))
 				VStorage.AddOption("WAREHOUSE_UNLOAD_PRODUCTS", pWarehouse->GetID(), "Unload products");
-			VStorage.EndDepthList();
+			VStorage.EndDepth();
 		}
 		VStorage.AddLine();
 	}
 	VStorage.AddLine();
-	VStorage.Add("<$NUM_LIST>FUNCTIONALITY");
+	VStorage.MarkList().Add("FUNCTIONALITY");
 	{
-		VStorage.BeginDepthList();
+		VStorage.BeginDepth();
 		VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
-		VStorage.EndDepthList();
+		VStorage.EndDepth();
 	}
 	VStorage.AddLine();
-	VStorage.Add("<$NUM_LIST>CURRENCY");
+	VStorage.MarkList().Add("CURRENCY");
 	{
-		VStorage.BeginDepthList();
+		VStorage.BeginDepth();
 		VStorage.AddItemValue(pWarehouse->GetCurrency()->GetID());
-		VStorage.EndDepthList();
+		VStorage.EndDepth();
 	}
 	VStorage.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);

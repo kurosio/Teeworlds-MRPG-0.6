@@ -55,7 +55,7 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	m_pPlayer = m_pGS->GetPlayer(ClientID);
 	dbg_assert(m_pPlayer != nullptr, "player is null");
 
-	// init default styles
+	// init numeral lists
 	m_vDepthNumeral[DEPTH_LVL1].m_Style = DEPTH_LIST_STYLE_ROMAN;
 	m_vDepthNumeral[DEPTH_LVL2].m_Style = DEPTH_LIST_STYLE_BOLD;
 	m_vDepthNumeral[DEPTH_LVL3].m_Style = DEPTH_LIST_STYLE_BOLD;
@@ -91,7 +91,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	}
 
 	// Reformatting
-	Reformatting(Buffer.buffer());
+	Reformatting(Buffer);
 
 	// Check if the player's language is "ru" or "uk" and convert aBufText to Latin if true
 	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
@@ -136,7 +136,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	va_end(VarArgs);
 
 	// Reformatting
-	Reformatting(Buffer.buffer());
+	Reformatting(Buffer);
 
 	// Reformat cyrlic to latin
 	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
@@ -160,15 +160,29 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	m_vpVotelist.emplace_back(Vote);
 }
 
-void CVoteGroup::Reformatting(char* pBuffer)
+void CVoteGroup::Reformatting(dynamic_string& Buffer)
 {
 	// Numeral list format
-	if(str_replace(pBuffer, "<$NUM_LIST>", Formatter::Numeral::get(m_vDepthNumeral[m_CurrentDepth].m_Value + 1, m_vDepthNumeral[m_CurrentDepth].m_Style)))
-		m_vDepthNumeral[m_CurrentDepth].m_Value++;
+	if(m_NextMarkedListItem || m_Flags & VWF_GROUP_NUMERAL)
+	{
+		char aTempBuf[VOTE_DESC_LENGTH]{};
+		NumeralDepth& Numeral = m_vDepthNumeral[m_CurrentDepth];
 
-	// Numeral group format (always by number)
-	if(str_replace(pBuffer, "<$NUM_GROUP>", Formatter::Numeral::get(gs_GroupsNumeral[m_ClientID] + 1, DEPTH_LIST_STYLE_BOLD)))
-		gs_GroupsNumeral[m_ClientID]++;
+		if(m_Flags & VWF_GROUP_NUMERAL)
+		{
+			str_format(aTempBuf, sizeof(aTempBuf), "%s%s", Formatter::Numeral::get(gs_GroupsNumeral[m_ClientID] + 1, DEPTH_LIST_STYLE_BOLD), Buffer.buffer());
+			gs_GroupsNumeral[m_ClientID]++;
+			m_Flags &= ~VWF_GROUP_NUMERAL;
+		}
+		else
+		{
+			str_format(aTempBuf, sizeof(aTempBuf), "%s%s", Formatter::Numeral::get(Numeral.m_Value + 1, Numeral.m_Style), Buffer.buffer());
+			Numeral.m_Value++;
+			m_NextMarkedListItem = false;
+		}
+
+		Buffer.copy(aTempBuf);
+	}
 }
 
 // This function is used to add a line
@@ -267,9 +281,9 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
 		CVoteWrapper VError(ClientID, VWF_STYLE_SIMPLE, "Error");
 		VError.Add("The voting list is empty")
-			.BeginDepthList()
+			.BeginDepth()
 				.Add("Probably a server error")
-			.EndDepthList()
+			.EndDepth()
 		.Add("Report the error code #{INT}x{INT}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
 		pVotesData->SetLastMenuID(MENU_MAIN);
 		CVoteWrapper::AddBackpage(ClientID);

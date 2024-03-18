@@ -98,28 +98,28 @@ void CSkillManager::ShowDetailSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	const bool IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
 
 	CVoteWrapper VSkill(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{STR} - {INT}SP {STR}", pInfo->GetName(), pInfo->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
-	VSkill.Add("<$NUM_LIST>Description:");
+	VSkill.MarkList().Add("Description:");
 	{
-		VSkill.BeginDepthList();
+		VSkill.BeginDepth();
 		VSkill.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
-		VSkill.EndDepthList();
+		VSkill.EndDepth();
 	}
 	VSkill.AddLine();
-	VSkill.Add("<$NUM_LIST>Main:");
+	VSkill.MarkList().Add("Main:");
 	{
-		VSkill.BeginDepthList();
+		VSkill.BeginDepth();
 		VSkill.Add("Level: {INT}/{INT}", pSkill->GetLevel(), pInfo->GetMaxLevel());
 		VSkill.Add("{INT} {STR} (each level +{INT})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
 		VSkill.AddIf(!IsPassive, "Mana required {INT}%", pInfo->GetPercentageCost());
-		VSkill.EndDepthList();
+		VSkill.EndDepth();
 	}
 	VSkill.AddLine();
-	VSkill.AddIf(!IsPassive && IsLearned, "<$NUM_LIST>Usage:");
+	VSkill.MarkList().AddIf(!IsPassive && IsLearned, "Usage:");
 	{
-		VSkill.BeginDepthList();
+		VSkill.BeginDepth();
 		VSkill.AddIf(!IsPassive && IsLearned, "F1 Bind: (bind 'key' say \"/useskill {INT}\")", ID);
 		VSkill.AddIf(!IsPassive && IsLearned, "Used on {STR}", pSkill->GetSelectedEmoticonName());
-		VSkill.EndDepthList();
+		VSkill.EndDepth();
 	}
 	VSkill.AddLine();
 	VSkill.AddIfOption(!IsMaximumLevel, "SKILL_LEARN", ID, "Learn");

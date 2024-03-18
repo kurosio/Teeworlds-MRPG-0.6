@@ -29,17 +29,18 @@ enum
 
 	// settings
 	VWF_SEPARATE          = 1 << 1, // separates the end and the beginning of the new group by a line
+	VWF_GROUP_NUMERAL     = 1 << 2, // numbers the title page
 
 	// styles
-	VWF_STYLE_SIMPLE      = 1 << 2, // example: ╭ │ ╰
-	VWF_STYLE_DOUBLE      = 1 << 3, // example: ╔ ═ ╚
-	VWF_STYLE_STRICT      = 1 << 4, // example: ┌ │ └
-	VWF_STYLE_STRICT_BOLD = 1 << 5, // example: ┏ ┃ ┗
+	VWF_STYLE_SIMPLE      = 1 << 3, // example: ╭ │ ╰
+	VWF_STYLE_DOUBLE      = 1 << 4, // example: ╔ ═ ╚
+	VWF_STYLE_STRICT      = 1 << 5, // example: ┌ │ └
+	VWF_STYLE_STRICT_BOLD = 1 << 6, // example: ┏ ┃ ┗
 
 	// hidden
-	VWF_OPEN              = 1 << 9, // default open group
-	VWF_CLOSED            = 1 << 10, // default close group
-	VWF_UNIQUE            = 1 << 11, // default close group toggle unique groups 
+	VWF_OPEN              = 1 << 7, // default open group
+	VWF_CLOSED            = 1 << 8, // default close group
+	VWF_UNIQUE            = 1 << 9, // default close group toggle unique groups 
 	VWF_SEPARATE_OPEN     = VWF_OPEN | VWF_SEPARATE, // default open group with separate
 	VWF_SEPARATE_CLOSED   = VWF_CLOSED | VWF_SEPARATE, // default close group with separate
 	VWF_SEPARATE_UNIQUE   = VWF_UNIQUE | VWF_SEPARATE, // default close group with separate
@@ -68,6 +69,7 @@ class CVoteGroup
 	};
 	std::map<int, NumeralDepth> m_vDepthNumeral {};
 	std::deque<CVoteOption> m_vpVotelist {};
+	bool m_NextMarkedListItem {};
 	int m_CurrentDepth {};
 
 	CGS* m_pGS {};
@@ -92,7 +94,7 @@ class CVoteGroup
 	void AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...);
 	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
 
-	void Reformatting(char* pBuffer);
+	void Reformatting(dynamic_string& Buffer);
 
 	void AddLineImpl();
 	void AddEmptylineImpl();
@@ -190,11 +192,15 @@ public:
 		dbg_assert(m_pGroup != nullptr, "For initilize depth, first needed initialize vote wrapper");
 		m_pGroup->InitNumeralDepthStyles(std::move(vNumeralFlags));
 	}
-	CVoteWrapper& BeginDepthList() noexcept {
+	CVoteWrapper& MarkList() noexcept {
+		m_pGroup->m_NextMarkedListItem = true;
+		return *this;
+	}
+	CVoteWrapper& BeginDepth() noexcept {
 		m_pGroup->m_CurrentDepth++;
 		return *this;
 	}
-	CVoteWrapper& EndDepthList() noexcept {
+	CVoteWrapper& EndDepth() noexcept {
 		m_pGroup->m_CurrentDepth--;
 		return *this;
 	}
@@ -202,16 +208,16 @@ public:
 	/*
 	 * Tools options group
 	 */
-	CVoteWrapper& AddIfLine(bool Checker) noexcept {
-		if(Checker)
+	CVoteWrapper& AddIfLine(bool Check) noexcept {
+		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddLineImpl();
 		return *this;
 	}
 	CVoteWrapper& AddLine(){
 		return AddIfLine(true);
 	}
-	CVoteWrapper& AddIfEmptyline(bool Checker) noexcept {
-		if(Checker)
+	CVoteWrapper& AddIfEmptyline(bool Check) noexcept {
+		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddEmptylineImpl();
 		return *this;
 	}
@@ -227,8 +233,8 @@ public:
 	 * Default group
 	 */
 	template<typename ... Args>
-	CVoteWrapper& AddIf(bool Checker, const char* pText, Args&& ... argsfmt) {
-		if(Checker)
+	CVoteWrapper& AddIf(bool Check, const char* pText, Args&& ... argsfmt) {
+		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddVoteImpl("null", NOPE, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
@@ -242,14 +248,14 @@ public:
 	 * Menu group
 	 */
 	template <typename ... Args>
-	CVoteWrapper& AddIfMenu(bool Checker, int MenuID, const char* pText, Args&& ... argsfmt) {
-		if(Checker)
+	CVoteWrapper& AddIfMenu(bool Check, int MenuID, const char* pText, Args&& ... argsfmt) {
+		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddVoteImpl("MENU", MenuID, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddIfMenu(bool Checker, int MenuID, int GroupInteractID, const char* pText, Args&& ... argsfmt) {
-		if(Checker)
+	CVoteWrapper& AddIfMenu(bool Check, int MenuID, int GroupInteractID, const char* pText, Args&& ... argsfmt) {
+		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddVoteImpl("MENU", MenuID, GroupInteractID, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
@@ -266,20 +272,20 @@ public:
 	 * Option group
 	 */
 	template <typename ... Args>
-	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, const char* pText, Args&& ... argsfmt) {
-		if(Checker)
+	CVoteWrapper& AddIfOption(bool Check, const char* pCmd, const char* pText, Args&& ... argsfmt) {
+		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddVoteImpl(pCmd, NOPE, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, int Settings1, const char* pText, Args&& ... argsfmt) {
-		if(Checker)
+	CVoteWrapper& AddIfOption(bool Check, const char* pCmd, int Settings1, const char* pText, Args&& ... argsfmt) {
+		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddVoteImpl(pCmd, Settings1, NOPE, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
 	template <typename ... Args>
-	CVoteWrapper& AddIfOption(bool Checker, const char* pCmd, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt) {
-		if(Checker)
+	CVoteWrapper& AddIfOption(bool Check, const char* pCmd, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt) {
+		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddVoteImpl(pCmd, Settings1, Settings2, pText, std::forward<Args>(argsfmt)...);
 		return *this;
 	}
@@ -321,6 +327,15 @@ public:
 	// Rebuild votes
 	static void RebuildVotes(int ClientID);
 	static CVoteOption* GetOptionVoteByAction(int ClientID, const char* pActionName);
+
+private:
+	template <typename ... Args>
+	bool CheckerAddVoteImpl(bool Checker) const
+	{
+		if(!Checker)
+			m_pGroup->m_NextMarkedListItem = false;
+		return Checker;
+	}
 };
 
 class CVotePlayerData

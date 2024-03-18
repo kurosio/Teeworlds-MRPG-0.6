@@ -472,9 +472,9 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 		const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
 		VWanted.Add("{STR} (Reward {VAL} gold)", Server()->ClientName(i), Reward);
 		{
-			VWanted.BeginDepthList();
+			VWanted.BeginDepth();
 			VWanted.Add("Last seen: {STR}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
-			VWanted.EndDepthList();
+			VWanted.EndDepth();
 		}
 	}
 }
@@ -513,11 +513,11 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 		CVoteWrapper VQuest(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "({STR}) {STR}", StateIndicator, QuestName);
 		VQuest.Add("Reward:");
 		{
-			VQuest.BeginDepthList();
+			VQuest.BeginDepth();
 			VQuest.Add("Gold: {VAL}", pDailyQuestInfo->GetRewardGold());
 			VQuest.Add("Exp: {VAL}", pDailyQuestInfo->GetRewardExp());
 			VQuest.Add("{STR}: {VAL}", GS()->GetItemInfo(itAlliedSeals)->GetName(), g_Config.m_SvDailyQuestAlliedSealsReward);
-			VQuest.EndDepthList();
+			VQuest.EndDepth();
 		}
 		VQuest.AddLine();
 		VQuest.AddOption("DAILY_QUEST_STATE", pDailyQuestInfo->GetID(), pBoard->GetID(), "{STR} quest", ActionName);

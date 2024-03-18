@@ -225,27 +225,27 @@ bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 
 		const vec2 Pos = Mob.m_Position / 32.0f;
 		CVoteWrapper VMob(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Mob {STR}", Mob.GetName());
-		VMob.Add("<$NUM_LIST>Location:");
+		VMob.MarkList().Add("Location:");
 		{
-			VMob.BeginDepthList();
+			VMob.BeginDepth();
 			VMob.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
 			VMob.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
-			VMob.EndDepthList();
+			VMob.EndDepth();
 		}
 		VMob.AddLine();
-		VMob.Add("<$NUM_LIST>Description:");
+		VMob.MarkList().Add("Description:");
 		{
-			VMob.BeginDepthList();
+			VMob.BeginDepth();
 			VMob.Add("Level: {INT}", Mob.m_Level);
 			VMob.Add("Power: {INT}", Mob.m_Power);
 			VMob.Add("Boss: {STR}", Mob.m_Boss ? "Yes" : "No");
 			VMob.Add("Respawn: {INT} sec", Mob.m_RespawnTick);
-			VMob.EndDepthList();
+			VMob.EndDepth();
 		}
 		VMob.AddLine();
-		VMob.Add("<$NUM_LIST>Dropped:");
+		VMob.MarkList().Add("Dropped:");
 		{
-			VMob.BeginDepthList();
+			VMob.BeginDepth();
 			bool HasDropItem = false;
 			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 			{
@@ -264,7 +264,7 @@ bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 			{
 				VMob.Add("The mob has no items!");
 			}
-			VMob.EndDepthList();
+			VMob.EndDepth();
 		}
 		VMob.AddLine();
 		Found = true;

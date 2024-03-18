@@ -158,7 +158,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 		int UnlockedPlayerZoneAethers = 0;
 		CVoteWrapper VAetherElem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{STR} : Aethernet", Server()->GetWorldName(WorldID));
 
-		VAetherElem.BeginDepthList();
+		VAetherElem.BeginDepth();
 		for(const auto& pAether : vAethers)
 		{
 			if(pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
@@ -168,7 +168,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 				UnlockedPlayerZoneAethers++;
 			}
 		}
-		VAetherElem.EndDepthList();
+		VAetherElem.EndDepth();
 
 		VAetherElem.Add("Unlocked {INT} of {INT} zone aethers.", UnlockedPlayerZoneAethers, vAethers.size());
 		CVoteWrapper::AddEmptyline(ClientID);

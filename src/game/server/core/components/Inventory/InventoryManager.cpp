@@ -312,7 +312,7 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 	CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Sale of items from the list is available!");
 	VItems.Add("Choose the item you want to sell");
 	{
-		VItems.BeginDepthList();
+		VItems.BeginDepth();
 		for(auto& [ID, Item] : CItemDescription::Data())
 		{
 			if(Item.GetFunctional() != Type)
@@ -321,7 +321,7 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 			int Price = maximum(1, Item.GetInitialPrice());
 			VItems.AddOption("SELL_ITEM", ID, Price, "[{VAL}] Sell {STR} ({VAL} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
 		}
-		VItems.EndDepthList();
+		VItems.EndDepth();
 	}
 	VItems.AddLine();
 }
@@ -386,7 +386,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	// not allowed drop equipped hammer
 	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
-		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{VAL}m)");
+		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{VAL}m)", pItem->GetDysenthis());
 		VItem.AddIfOption(pInfo->m_InitialPrice > 0, "AUCTION_CREATE", ItemID, "Sell at auction");
 		VItem.AddOption("IDROP", ItemID, "Drop");
 	}

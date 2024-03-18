@@ -28,9 +28,9 @@
 
 inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, CVoteWrapper* pWrapper)
 {
-	pWrapper->Add("<$NUM_LIST>Total statistics:");
+	pWrapper->MarkList().Add("Total statistics:");
 	{
-		pWrapper->BeginDepthList();
+		pWrapper->BeginDepth();
 		for(auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
 			if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
@@ -48,19 +48,19 @@ inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, CV
 				pWrapper->Add("{STR} - {INT}{STR}", pAttribute->GetName(), AttributeSize, aBuf);
 			}
 		}
-		pWrapper->EndDepthList();
+		pWrapper->EndDepth();
 	}
 	pWrapper->AddLine();
-	pWrapper->Add("<$NUM_LIST>Upgrading:");
+	pWrapper->MarkList().Add("Upgrading:");
 	{
-		pWrapper->BeginDepthList();
+		pWrapper->BeginDepth();
 		for(auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
 			if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
 				pWrapper->AddOption("UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), "{STR} - {INT} (cost {INT} point)",
 					pAttribute->GetName(), pPlayer->Account()->m_aStats[ID], pAttribute->GetUpgradePrice());
 		}
-		pWrapper->EndDepthList();
+		pWrapper->EndDepth();
 	}
 }
 
@@ -155,14 +155,14 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// statistics menu
 		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
 		const char* pStrLastLoginDate = pPlayer->Account()->GetLastLoginDate();
-		CVoteWrapper VMain(ClientID, VWF_SEPARATE_OPEN, "<$NUM_GROUP> Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pStrLastLoginDate);
+		CVoteWrapper VMain(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pStrLastLoginDate);
 		VMain.Add("Level {INT} : Exp {INT}/{INT}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
 		VMain.Add("Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VMain.Add("Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
 		VMain.AddLine();
 
 		// personal menu
-		CVoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN, "<$NUM_GROUP> \u262A PERSONAL");
+		CVoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "\u262A PERSONAL");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
@@ -178,7 +178,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.AddLine();
 
 		// info menu
-		CVoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN, "<$NUM_GROUP> \u262A INFORMATION");
+		CVoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "\u262A INFORMATION");
 		VInfo.AddMenu(MENU_GUIDE_GRINDING, "\u10D3 Wiki / Grinding Guide ");
 		VInfo.AddMenu(MENU_TOP_LIST, "\u21F0 Ranking guilds and players");
 		return true;

@@ -188,22 +188,22 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	CVoteWrapper VCraftElement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Craft: {STR}", pCraftItemInfo->GetName());
 	VCraftElement.Add("Required items:");
 	{
-		VCraftElement.BeginDepthList();
+		VCraftElement.BeginDepth();
 		for(auto& pRequiredItem : pCraft->GetRequiredItems())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
 			bool Has = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
-			VCraftElement.Add("<$NUM_LIST>* {STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", 
+			VCraftElement.MarkList().Add("* {STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", 
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
-		VCraftElement.EndDepthList();
+		VCraftElement.EndDepth();
 	}
 	VCraftElement.AddLine();
 	VCraftElement.AddItemValue(itGold);
 	{
-		VCraftElement.BeginDepthList();
+		VCraftElement.BeginDepth();
 		VCraftElement.AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({VAL} gold)", pCraft->GetPrice(pPlayer));
-		VCraftElement.EndDepthList();
+		VCraftElement.EndDepth();
 	}
 	VCraftElement.AddLine();
 
