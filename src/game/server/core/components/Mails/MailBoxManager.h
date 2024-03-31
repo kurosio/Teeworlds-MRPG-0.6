@@ -10,14 +10,14 @@ class CMailboxManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 
 public:
-	int GetMailLettersSize(int AccountID);
-	void GetInformationInbox(CPlayer *pPlayer);
+	int GetLettersCount(int AccountID);
+	void ShowMailboxMenu(CPlayer *pPlayer);
 	void SendInbox(const char* pFrom, int AccountID, const char* pName, const char* pDesc, int ItemID = -1, int Value = -1, int Enchant = -1);
 	bool SendInbox(const char* pFrom, const char* pNickname, const char* pName, const char* pDesc, int ItemID = -1, int Value = -1, int Enchant = -1);
 
 private:
-	void DeleteLetter(int MailLetterID);
-	void AcceptLetter(CPlayer* pPlayer, int MailLetterID);
+	void DeleteLetter(int LetterID);
+	void AcceptLetter(CPlayer* pPlayer, int LetterID);
 };
 
 #endif

@@ -179,7 +179,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	{
 		// Get the number of unread letters in the player's inbox
 		// Send a chat message to the player informing them about their unread letters
-		if(const int Letters = Core()->MailboxManager()->GetMailLettersSize(pPlayer->Account()->GetID()); Letters > 0)
+		if(const int Letters = Core()->MailboxManager()->GetLettersCount(pPlayer->Account()->GetID()); Letters > 0)
 			GS()->Chat(ClientID, "You have {INT} unread letters!", Letters);
 
 		// Update the player's votes and show the main menu
