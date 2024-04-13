@@ -98,7 +98,7 @@ void CWarehouse::InitProperties(const std::string& Properties)
 			m_Storage.m_TextPos = TextPos;
 		}
 
-		dbg_msg("warehouse", "'%s' has been initialized. (storage: '%s' type: '%s' size: '%llu')", 
+		dbg_msg("warehouse", "'%s' has been initialized. (storage: '%s' type: '%s' size: '%lu')", 
 			m_aName, IsHasFlag(WF_STORAGE) ? "Yes" : "No", IsHasFlag(WF_BUY) ? "Buy" : "Sell", m_vTradingList.size());
 		m_Properties = std::move(pJson);
 	});

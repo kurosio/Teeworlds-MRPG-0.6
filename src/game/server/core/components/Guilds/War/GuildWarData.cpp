@@ -61,7 +61,7 @@ void CGuildWarHandler::Tick()
 		return;
 	}
 
-	dbg_msg("test", "%llu - %llu", time(nullptr), m_TimeUntilEnd);
+	dbg_msg("test", "%ld - %ld", time(nullptr), m_TimeUntilEnd);
 
 }
 
