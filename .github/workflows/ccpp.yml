@@ -36,7 +36,7 @@ jobs:
 
     steps:
     - name: Checkout submodules
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         submodules: true
     - name: Prepare Linux
@@ -52,7 +52,7 @@ jobs:
         cd release
         ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=Release -Werror=dev -DDOWNLOAD_GTEST=ON -DDISCORD_SERVER_COMPILE=OFF -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=. ..
         ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target package_default
-        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target mmoteeworlds_srv
+        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target mmoteeworlds_srv --parallel $(nproc)
     - name: Package(Linux)
       if: contains(matrix.os, 'ubuntu')
       run: |
@@ -74,7 +74,7 @@ jobs:
         7z a ${{ matrix.package-full-file }} ${{ matrix.package-file }}
         mv ${{ matrix.package-full-file }} release/artifacts
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v2-preview
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.name }}
         path: release/artifacts/${{ matrix.package-full-file }}
