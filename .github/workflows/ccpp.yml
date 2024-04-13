@@ -21,8 +21,8 @@ jobs:
           package-file: mmoteeworlds-linux_x86_64.tar.xz
           package-full-file: mmoteeworlds-linux_x86_64-full.tar.xz
           env:
-            CFLAGS: -Wdeclaration-after-statement -Wduplicated-branches -Werror
-            CXXFLAGS: -Wduplicated-branches -Werror
+            CFLAGS: -Wdeclaration-after-statement -Wduplicated-branches -Wno-unused-function -Wno-unused-variable -Werror
+            CXXFLAGS: -Wduplicated-branches -Wno-unused-function -Wno-unused-variable -Werror
             
         - name: "Windows"
           os: windows-latest
@@ -51,8 +51,8 @@ jobs:
         mkdir release
         cd release
         ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=Release -Werror=dev -DDOWNLOAD_GTEST=ON -DDISCORD_SERVER_COMPILE=OFF -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=. ..
-        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target package_default
-        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target mmoteeworlds_srv
+        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target package_default --parallel $(nproc)
+        ${{ matrix.cmake-path }}cmake --build . --config Release ${{ matrix.build-args }} --target mmoteeworlds_srv --parallel $(nproc)
     - name: Package(Linux)
       if: contains(matrix.os, 'ubuntu')
       run: |

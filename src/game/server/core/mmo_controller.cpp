@@ -376,7 +376,11 @@ void CMmoController::HandleTimePeriod() const
 	// Declare variables to store timestamps for daily, weekly, and monthly data
 	time_t DailyStamp, WeekStamp, MonthStamp;
 	std::string Data = std::string((char*)RawData.data(), RawData.size());
+#ifdef WIN32 // time_t is llu on windows and ld on linux
 	std::sscanf(Data.c_str(), "%llu\n%llu\n%llu", &DailyStamp, &WeekStamp, &MonthStamp);
+#else
+	std::sscanf(Data.c_str(), "%ld\n%ld\n%ld", &DailyStamp, &WeekStamp, &MonthStamp);
+#endif
 
 	// Set a flag indicating whether time periods have been updated
 	std::vector<int> aPeriodsUpdated {};

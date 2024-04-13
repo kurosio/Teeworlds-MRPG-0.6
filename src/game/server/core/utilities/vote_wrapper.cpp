@@ -13,10 +13,10 @@ namespace Formatter
 	// Numeral
 	class Numeral
 	{
-		inline static const char* g_pNDefault[g_NumeralNum] = { "\0", "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
-		inline static const char* g_pNRoman[g_NumeralNum] = { "\0", "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
-		inline static const char* g_pNBold[g_NumeralNum] = { "\0", "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
-		inline static const char* g_pNCyrcle[g_NumeralNum] = { "\0", "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
+		inline static constexpr const char* g_pNDefault[g_NumeralNum] = { "\0", "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
+		inline static constexpr const char* g_pNRoman[g_NumeralNum] = { "\0", "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
+		inline static constexpr const char* g_pNBold[g_NumeralNum] = { "\0", "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
+		inline static constexpr const char* g_pNCyrcle[g_NumeralNum] = { "\0", "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
 
 	public:
 		static constexpr const char* get(int Number, int Style)
@@ -43,10 +43,10 @@ namespace Formatter
 		}
 
 	private:
-		inline static const char* g_pBSimple[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
-		inline static const char* g_pBDouble[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
-		inline static const char* g_pBStrict[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
-		inline static const char* g_pBStrictBold[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
+		inline static constexpr const char* g_pBSimple[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
+		inline static constexpr const char* g_pBDouble[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
+		inline static constexpr const char* g_pBStrict[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
+		inline static constexpr const char* g_pBStrictBold[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
 	};
 }
 
