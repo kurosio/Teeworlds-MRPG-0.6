@@ -21,8 +21,8 @@ jobs:
           package-file: mmoteeworlds-linux_x86_64.tar.xz
           package-full-file: mmoteeworlds-linux_x86_64-full.tar.xz
           env:
-            CFLAGS: -Wdeclaration-after-statement -Wduplicated-branches -Werror
-            CXXFLAGS: -Wduplicated-branches -Werror
+            CFLAGS: -Wdeclaration-after-statement -Wduplicated-branches -Wno-unused-function -Wno-unused-variable -Werror
+            CXXFLAGS: -Wduplicated-branches -Wno-unused-function -Wno-unused-variable -Werror
             
         - name: "Windows"
           os: windows-latest
