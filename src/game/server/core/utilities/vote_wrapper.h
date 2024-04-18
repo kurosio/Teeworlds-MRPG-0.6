@@ -187,7 +187,7 @@ public:
 	/*
 	 * Group level
 	 */
-	void InitNumeralDepthStyles(std::initializer_list<std::pair<int, int>> vNumeralFlags) const
+	void ReinitNumeralDepthStyles(std::initializer_list<std::pair<int, int>> vNumeralFlags) const
 	{
 		dbg_assert(m_pGroup != nullptr, "For initilize depth, first needed initialize vote wrapper");
 		m_pGroup->SetNumeralDepthStyles(std::move(vNumeralFlags));

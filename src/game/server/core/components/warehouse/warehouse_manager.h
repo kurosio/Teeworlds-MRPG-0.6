@@ -23,6 +23,7 @@ class CWarehouseManager : public MmoComponent
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
 	void ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehouse) const;
+	void ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemType Type) const;
 	bool BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID) const;
 	bool SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID, int Value) const;
 

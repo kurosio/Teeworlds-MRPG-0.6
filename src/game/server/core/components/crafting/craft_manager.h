@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_CRAFT_CORE_H
 #include <game/server/core/mmo_component.h>
 
-#include "CraftData.h"
+#include "craft_data.h"
 
 class CCraftManager : public MmoComponent
 {

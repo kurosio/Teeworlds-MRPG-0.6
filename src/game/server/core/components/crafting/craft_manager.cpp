@@ -1,6 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "CraftManager.h"
+#include "craft_manager.h"
 
 #include <game/server/gamecontext.h>
 #include <teeother/system/string.h>
@@ -119,6 +119,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 
 bool CCraftManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
+	// craft item function
 	if(PPSTR(CMD, "CRAFT") == 0)
 	{
 		CraftItem(pPlayer, GetCraftByID(VoteID));
@@ -132,9 +133,10 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
+	// craft list menu
 	if(Menulist == MENU_CRAFT_LIST)
 	{
-		// show craft list
+		// show information
 		CVoteWrapper VCraftInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
 		VCraftInfo.Add("If you will not have enough items for crafting");
 		VCraftInfo.Add("You will write those and the amount that is still required");
@@ -153,10 +155,12 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// craft selected item
 	if(Menulist == MENU_CRAFT_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_CRAFT_LIST);
 
+		// show craft by id
 		int CraftID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
 		ShowCraftItem(pPlayer, GetCraftByID(CraftID));
 		return true;
@@ -171,7 +175,8 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	if(!pCraft || pCraft->GetWorldID() != GS()->GetWorldID())
 		return;
 
-	CVoteWrapper VCraftItem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information about craft");
+	// detail information
+	CVoteWrapper VCraftItem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information");
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 	VCraftItem.Add("Crafting: {STR}x{VAL}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
 	VCraftItem.Add("{STR}", pCraftItemInfo->GetDescription());
@@ -185,27 +190,35 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// add craft reciepts
-	CVoteWrapper VCraftElement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Craft: {STR}", pCraftItemInfo->GetName());
-	VCraftElement.Add("Required items:");
+	CVoteWrapper VCraftRequired(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Required items", pCraftItemInfo->GetName());
 	{
-		VCraftElement.BeginDepth();
+		VCraftRequired.BeginDepth();
+
+		// required gold
+		int CraftPrice = pCraft->GetPrice(pPlayer);
+		if(CraftPrice > 0)
+		{
+			CPlayerItem* pGold = pPlayer->GetItem(itGold);
+			bool Has = pPlayer->GetItem(itGold)->GetValue() >= CraftPrice;
+			VCraftRequired.MarkList().Add("{STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", pGold->Info()->GetName(), CraftPrice, pGold->GetValue());
+		}
+
+		// requied items
 		for(auto& pRequiredItem : pCraft->GetRequiredItems())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
 			bool Has = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
-			VCraftElement.MarkList().Add("* {STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", 
+			VCraftRequired.MarkList().Add("{STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", 
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
-		VCraftElement.EndDepth();
+
+		VCraftRequired.EndDepth();
 	}
-	VCraftElement.AddLine();
-	VCraftElement.AddItemValue(itGold);
-	{
-		VCraftElement.BeginDepth();
-		VCraftElement.AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({VAL} gold)", pCraft->GetPrice(pPlayer));
-		VCraftElement.EndDepth();
-	}
-	VCraftElement.AddLine();
+	VCraftRequired.AddLine();
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	// add craft button
+	CVoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({VAL} gold)", pCraft->GetPrice(pPlayer));
 
 	// add backpage
 	CVoteWrapper::AddEmptyline(ClientID);
@@ -215,13 +228,22 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
-	if(std::all_of(CCraftItem::Data().begin(), CCraftItem::Data().end(), [Type](const CCraftItem* p){ return p->GetItem()->Info()->GetType() != Type; }))
+
+	// order only by type
+	if(std::all_of(CCraftItem::Data().begin(), CCraftItem::Data().end(), [Type](const CCraftItem* p)
+		{ return p->GetItem()->Info()->GetType() != Type; }))
 		return;
 
+	// add empty line
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	// craft tab list
 	CVoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, TypeName);
 	for(const auto& pCraft : CCraftItem::Data())
 	{
 		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
+
+		// check by type and world
 		if(pCraftItemInfo->GetType() != Type || pCraft->GetWorldID() != GS()->GetWorldID())
 			continue;
 
@@ -229,6 +251,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 		ItemIdentifier ItemID = pCraft->GetItem()->GetID();
 		const int Price = pCraft->GetPrice(pPlayer);
 
+		// set title name by enchant type (or stack item, or only once)
 		if(pCraftItemInfo->IsEnchantable())
 		{
 			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "{STR}{STR} - {VAL} gold", 
@@ -241,6 +264,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 		}
 	}
 
+	// add line
 	CVoteWrapper::AddLine(ClientID);
 }
 
