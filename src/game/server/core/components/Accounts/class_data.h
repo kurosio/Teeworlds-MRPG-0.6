@@ -14,7 +14,8 @@ public:
 
 	ClassGroup GetGroup() const { return m_Class; }
 	float GetExtraHP() const;
-	int GetExtraDMG() const;
+	float GetExtraDMG() const;
+	float GetExtraMP() const;
 };
 
 #endif

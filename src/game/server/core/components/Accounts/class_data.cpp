@@ -18,7 +18,18 @@ float CClassData::GetExtraHP() const
 	return 0.f;
 }
 
-int CClassData::GetExtraDMG() const
+float CClassData::GetExtraMP() const
+{
+	if(m_Class == ClassGroup::Tank)
+		return 0.f;
+	if(m_Class == ClassGroup::Healer)
+		return 30.f;
+	if(m_Class == ClassGroup::DPS)
+		return 10.f;
+	return 0;
+}
+
+float CClassData::GetExtraDMG() const
 {
 	if(m_Class == ClassGroup::Tank)
 		return 0.f;

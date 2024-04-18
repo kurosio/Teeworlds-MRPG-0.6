@@ -779,7 +779,8 @@ int CPlayer::GetStartHealth() const
 
 int CPlayer::GetStartMana() const
 {
-	return 10 + GetAttributeSize(AttributeIdentifier::MP);
+	const int DefaultMP = 10 + GetAttributeSize(AttributeIdentifier::MP);
+	return DefaultMP + translate_to_percent_rest(DefaultMP, Account()->GetClass().GetExtraMP());
 }
 
 int64_t CPlayer::GetAfkTime() const
