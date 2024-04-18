@@ -19,7 +19,7 @@ enum class DrawboardToolEvent : int
 	ON_END,
 };
 
-enum PlayerClass
+enum class PlayerClass : int
 {
 	None,
 	Tank,

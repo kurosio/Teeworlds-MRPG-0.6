@@ -45,6 +45,11 @@ public:
 	int GetID() const { return m_ID; } // Function to get the ID of an object
 
 	/*
+	 * Group functions: class system
+	 */
+	PlayerClass GetClass() const { return m_Class; }
+
+	/*
 	 * Group functions: house system
 	 */
 	void ReinitializeHouse(); // This function re-initializes the house object
