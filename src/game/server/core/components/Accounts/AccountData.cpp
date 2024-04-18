@@ -43,8 +43,8 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_Upgrade = pResult->getInt("Upgrade");
 	m_PrisonSeconds = pResult->getInt("PrisonSeconds");
 	m_DailyChairGolds = pResult->getInt("DailyChairGolds");
-	m_Class = (PlayerClass)pResult->getInt("Class");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
+	m_Class.Init((ClassGroup)pResult->getInt("Class"));
 
 	// time periods
 	{

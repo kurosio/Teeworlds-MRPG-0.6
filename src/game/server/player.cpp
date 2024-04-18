@@ -496,30 +496,17 @@ void CPlayer::RefreshClanString()
 	}
 
 	// class
-	const int AttributesByType[3] = { GetTypeAttributesSize(AttributeGroup::Tank),
-										GetTypeAttributesSize(AttributeGroup::Healer), GetTypeAttributesSize(AttributeGroup::Dps) };
-
-	int MaxAttributesPower = 0;
-	AttributeGroup Class = AttributeGroup::Tank;
-	for(int i = 0; i < 3; i++)
-	{
-		if(AttributesByType[i] > MaxAttributesPower)
-		{
-			MaxAttributesPower = AttributesByType[i];
-			Class = static_cast<AttributeGroup>(i);
-		}
-	}
-
 	const char* pClassName;
-	switch(Class)
+	switch(Account()->GetClass().GetGroup())
 	{
-		case AttributeGroup::Healer: pClassName = "_Healer_"; break;
-		case AttributeGroup::Dps: pClassName = "_DPS_"; break;
-		default: pClassName = "_Tank_"; break;
+		case ClassGroup::Healer: pClassName = "_Healer_"; break;
+		case ClassGroup::DPS: pClassName = "_DPS_"; break;
+		case ClassGroup::Tank: pClassName = "_Tank_"; break;
+		default: pClassName = "_Class_"; break;
 	}
 
 	char aBufClass[64];
-	str_format(aBufClass, sizeof(aBufClass), "%-*s | %dp", 10 - str_length(pClassName), pClassName, MaxAttributesPower);
+	str_format(aBufClass, sizeof(aBufClass), "%-*s", 10 - str_length(pClassName), pClassName);
 	Buffer.append(" | ");
 	Buffer.append(aBufClass);
 
@@ -786,7 +773,8 @@ int CPlayer::GetStartTeam() const
 
 int CPlayer::GetStartHealth() const
 {
-	return 10 + GetAttributeSize(AttributeIdentifier::HP);
+	const int DefaultHP = 10 + GetAttributeSize(AttributeIdentifier::HP);
+	return DefaultHP + translate_to_percent_rest(DefaultHP, Account()->GetClass().GetExtraHP());
 }
 
 int CPlayer::GetStartMana() const

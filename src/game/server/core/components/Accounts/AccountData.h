@@ -7,6 +7,7 @@
 
 #include <game/server/core/components/Auction/AuctionData.h>
 #include <game/server/core/tools/dbfield.h>
+#include "class_data.h"
 
 class CGS;
 class CPlayer;
@@ -31,7 +32,7 @@ class CAccountData
 	CHouseData* m_pHouseData{};
 	GroupData* m_pGroupData{};
 	CGuildData* m_pGuildData{};
-	PlayerClass m_Class {};
+	CClassData m_Class{};
 
 	CPlayer* m_pPlayer {};
 	CGS* GS() const;
@@ -47,7 +48,8 @@ public:
 	/*
 	 * Group functions: class system
 	 */
-	PlayerClass GetClass() const { return m_Class; }
+	CClassData& GetClass() { return m_Class; }
+
 
 	/*
 	 * Group functions: house system
