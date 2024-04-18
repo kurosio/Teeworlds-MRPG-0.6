@@ -19,6 +19,14 @@ enum class DrawboardToolEvent : int
 	ON_END,
 };
 
+enum PlayerClass
+{
+	None,
+	Tank,
+	DPS,
+	Healer
+};
+
 enum TIME_PERIOD
 {
 	DAILY_STAMP,
