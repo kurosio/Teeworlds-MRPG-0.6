@@ -12,7 +12,7 @@
 #include "components/Auction/AuctionManager.h"
 #include "components/aethernet/aethernet_manager.h"
 #include "components/Bots/BotManager.h"
-#include "components/Crafts/CraftManager.h"
+#include "components/crafting/craft_manager.h"
 #include "components/Dungeons/DungeonManager.h"
 #include "components/Eidolons/EidolonManager.h"
 #include "components/Groups/GroupManager.h"
