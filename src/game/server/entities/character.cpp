@@ -887,8 +887,11 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		if(pFrom->GetSkill(SkillBleedingBlow)->IsLearned())
 		{
 			int Chance = pFrom->GetSkill(SkillBleedingBlow)->GetBonus();
-			m_pPlayer->GiveEffect("Bleeding", 10, Chance);
-			m_BleedingByClientID = FromCID;
+			if(m_pPlayer->GiveEffect("Bleeding", 10, Chance))
+			{
+				GS()->CreateSound(pFrom->m_ViewPos, SOUND_NINJA_HIT);
+				m_BleedingByClientID = FromCID;
+			}
 		}
 
 		// vampirism replenish your health

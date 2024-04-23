@@ -65,7 +65,7 @@ public:
 	int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetAttributeSize(AttributeIdentifier ID) const override;
 
-	void GiveEffect(const char* Potion, int Sec, float Chance = 100.0f) override;
+	bool GiveEffect(const char* Potion, int Sec, float Chance = 100.0f) override;
 	bool IsActiveEffect(const char* Potion) const override;
 	void ClearEffects() override;
 

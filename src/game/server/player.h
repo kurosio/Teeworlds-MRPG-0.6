@@ -129,7 +129,7 @@ public:
 	float GetAttributePercent(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);
 
-	virtual void GiveEffect(const char* Potion, int Sec, float Chance = 100.0f);
+	virtual bool GiveEffect(const char* Potion, int Sec, float Chance = 100.0f);
 	virtual bool IsActiveEffect(const char* Potion) const;
 	virtual void ClearEffects();
 

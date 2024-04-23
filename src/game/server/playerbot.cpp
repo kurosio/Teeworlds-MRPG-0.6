@@ -260,14 +260,19 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID) const
 	return 10;
 }
 
-void CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
+bool CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
 {
 	if(!m_pCharacter || !m_pCharacter->IsAlive())
-		return;
+		return false;
 
 	const float RandomChance = random_float(100.0f);
 	if(RandomChance < Chance)
+	{
 		m_aEffects[Potion] = Sec;
+		return true;
+	}
+
+	return false;
 }
 
 bool CPlayerBot::IsActiveEffect(const char* Potion) const

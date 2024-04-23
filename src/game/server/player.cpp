@@ -723,7 +723,7 @@ bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int Maxi
 /* #########################################################################
 	FUNCTIONS PLAYER ACCOUNT
 ######################################################################### */
-void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
+bool CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 {
 	if(m_pCharacter && m_pCharacter->IsAlive())
 	{
@@ -732,8 +732,11 @@ void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 		{
 			GS()->Chat(m_ClientID, "You got the effect {STR} time {INT} seconds.", Potion, Sec);
 			CGS::ms_aEffects[m_ClientID][Potion] = Sec;
+			return true;
 		}
 	}
+
+	return false;
 }
 
 bool CPlayer::IsActiveEffect(const char* Potion) const
