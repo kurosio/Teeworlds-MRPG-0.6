@@ -1001,9 +1001,7 @@ void CPlayer::SetSnapHealthTick(int Sec)
 void CPlayer::ChangeWorld(int WorldID)
 {
 	// reset dungeon temp data
-	GetTempData().m_TempAlreadyVotedDungeon = false;
 	GetTempData().m_TempDungeonReady = false;
-	GetTempData().m_TempTankVotingDungeon = 0;
 	GetTempData().m_TempTimeDungeon = 0;
 
 	// change worlds

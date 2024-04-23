@@ -103,36 +103,6 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		return true;
 	}
 
-	// dungeon voting
-	else if(PPSTR(CMD, "DUNGEONVOTE") == 0)
-	{
-		CPlayer* pSearchPlayer = GS()->GetPlayer(VoteID, true);
-		if(!pSearchPlayer)
-		{
-			pPlayer->m_VotesData.UpdateCurrentVotes();
-			return true;
-		}
-
-		if(VoteID == ClientID)
-		{
-			GS()->Chat(ClientID, "You can't vote for yourself!");
-			pPlayer->m_VotesData.UpdateCurrentVotes();
-			return true;
-		}
-
-		if(pPlayer->GetTempData().m_TempAlreadyVotedDungeon)
-		{
-			GS()->Chat(ClientID, "You already voted!");
-			pPlayer->m_VotesData.UpdateCurrentVotes();
-			return true;
-		}
-
-		pPlayer->GetTempData().m_TempAlreadyVotedDungeon = true;
-		pSearchPlayer->GetTempData().m_TempTankVotingDungeon++;
-		GS()->ChatWorldID(pPlayer->GetPlayerWorldID(), "Dungeon:", "{STR} voted for {STR}.", Server()->ClientName(ClientID), Server()->ClientName(VoteID));
-		GS()->UpdateVotesIfForAll(pPlayer->m_VotesData.GetCurrentMenuID());
-		return true;
-	}
 	return false;
 }
 
@@ -212,17 +182,6 @@ void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 	const int ClientID = pPlayer->GetCID();
 	CGameControllerDungeon* pController = (CGameControllerDungeon*)GS()->m_pController;
 	int DungeonID = pController->GetDungeonID();
-	const int DungeonWorldID = CDungeonData::ms_aDungeon[DungeonID].m_WorldID;
-
-	CVoteWrapper VPlayers(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Voting for the choice of tank!");
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
-		if(!pSearchPlayer || pSearchPlayer->GetPlayerWorldID() != DungeonWorldID)
-			continue;
-
-		VPlayers.AddOption("DUNGEONVOTE", i, "Vote for {STR} (Votes: {INT})", Server()->ClientName(i), pSearchPlayer->GetTempData().m_TempTankVotingDungeon);
-	}
 
 	// exit from dungeon
 	CVoteWrapper::AddLine(ClientID);

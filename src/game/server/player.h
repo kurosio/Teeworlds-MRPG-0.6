@@ -66,6 +66,7 @@ protected:
 public:
 	CGS* GS() const { return m_pGS; }
 	CClassData* GetClass() { return &m_Class; }
+	const CClassData* GetClass() const { return &m_Class; }
 
 	vec2 m_ViewPos;
 	int m_PlayerFlags;

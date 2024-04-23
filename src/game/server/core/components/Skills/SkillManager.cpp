@@ -58,10 +58,11 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		CVoteWrapper::AddItemValue(ClientID, itSkillPoint);
 
 		// Skill types
+		const ClassGroup& Class = pPlayer->GetClass()->GetGroup();
 		CVoteWrapper VTypes(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_STRICT_BOLD, "Skill types");
-		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_TANK, pTypename[SKILL_TYPE_TANK]);
-		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_DPS, pTypename[SKILL_TYPE_DPS]);
-		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_HEALER, pTypename[SKILL_TYPE_HEALER]);
+		VTypes.AddIfMenu(Class == ClassGroup::Tank, MENU_SKILLS_LEARN_LIST, SKILL_TYPE_TANK, pTypename[SKILL_TYPE_TANK]);
+		VTypes.AddIfMenu(Class == ClassGroup::Dps, MENU_SKILLS_LEARN_LIST, SKILL_TYPE_DPS, pTypename[SKILL_TYPE_DPS]);
+		VTypes.AddIfMenu(Class == ClassGroup::Healer, MENU_SKILLS_LEARN_LIST, SKILL_TYPE_HEALER, pTypename[SKILL_TYPE_HEALER]);
 		VTypes.AddMenu(MENU_SKILLS_LEARN_LIST, SKILL_TYPE_IMPROVEMENTS, pTypename[SKILL_TYPE_IMPROVEMENTS]);
 		VTypes.AddLine();
 

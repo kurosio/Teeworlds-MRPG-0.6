@@ -158,8 +158,6 @@ struct CAccountTempData
 	// dungeon
 	int m_TempTimeDungeon;
 	bool m_TempDungeonReady;
-	int m_TempTankVotingDungeon;
-	bool m_TempAlreadyVotedDungeon;
 
 	void SetTeleportPosition(vec2 Position) { m_TempTeleportPos = Position; }
 	vec2 GetTeleportPosition() const { return m_TempTeleportPos; }

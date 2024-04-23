@@ -18,7 +18,6 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS) : IGameController
 	m_GameFlags = 0;
 	m_WorldID = GS()->GetWorldID();
 	m_ActivePlayers = 0;
-	m_TankClientID = -1;
 
 	// init dungeon zone
 	auto iter = std::find_if(CDungeonData::ms_aDungeon.begin(), CDungeonData::ms_aDungeon.end(), [&](const std::pair<int, CDungeonData>& pDungeon)
@@ -67,8 +66,6 @@ void CGameControllerDungeon::ChangeState(int State)
 		m_SafeTick = 0;
 
 		CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = 0;
-		m_TankClientID = -1;
-
 		SetMobsSpawn(false);
 		ResetDoorKeyState();
 	}
@@ -87,8 +84,6 @@ void CGameControllerDungeon::ChangeState(int State)
 	// used when changing state to start
 	else if(State == DUNGEON_STARTED)
 	{
-		SelectTankPlayer();
-
 		m_ActivePlayers = PlayersNum();
 		m_MaximumTick = Server()->TickSpeed() * 600;
 		m_SafeTick = Server()->TickSpeed() * 30;
@@ -310,7 +305,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 			const int ClientID = pChr->GetPlayer()->GetCID();
 
 			// update tanking client status
-			if(ClientID == m_TankClientID)
+			if(pChr->GetPlayer()->GetClass()->GetGroup() == ClassGroup::Tank)
 				pChr->GetPlayer()->m_MoodState = Mood::TANK;
 
 			// player died after the safety timer ended
@@ -419,57 +414,6 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 	}
 }
 
-void CGameControllerDungeon::SelectTankPlayer()
-{
-	int MaximalVotes = 0;
-	int MaximalHardness = 0;
-	bool ChosenByPlayers = false;
-
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		CPlayer* pPlayer = GS()->m_apPlayers[i];
-		if(!pPlayer || Server()->GetClientWorldID(i) != m_WorldID)
-			continue;
-
-		// random if the votes of several players are equal
-		if(MaximalVotes > 0 && pPlayer->GetTempData().m_TempTankVotingDungeon == MaximalVotes && rand() % 2 == 0)
-			m_TankClientID = i;
-
-		// the player is selected by votes
-		if(pPlayer->GetTempData().m_TempTankVotingDungeon > MaximalVotes)
-		{
-			ChosenByPlayers = true;
-
-			m_TankClientID = i;
-			MaximalVotes = pPlayer->GetTempData().m_TempTankVotingDungeon;
-		}
-
-		// selection by hardness statistics, if there are no votes
-		if(MaximalVotes <= 0 && pPlayer->GetTypeAttributesSize(AttributeGroup::Tank) > MaximalHardness)
-		{
-			m_TankClientID = i;
-			MaximalHardness = pPlayer->GetTypeAttributesSize(AttributeGroup::Tank);
-		}
-	}
-
-	// show information about class selection
-	CPlayer* pTankPlayer = GS()->GetPlayer(m_TankClientID, true);
-	if(pTankPlayer)
-	{
-		if(ChosenByPlayers)
-		{
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Tank is assigned to '{STR}' with {INT} votes!",
-				Server()->ClientName(m_TankClientID), pTankPlayer->GetTempData().m_TempTankVotingDungeon);
-		}
-		else
-		{
-			const int StrengthTank = pTankPlayer->GetTypeAttributesSize(AttributeGroup::Tank);
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Tank '{STR}' assigned with class strength {VAL}p!",
-				Server()->ClientName(m_TankClientID), StrengthTank);
-		}
-	}
-}
-
 // TODO: something to do with the balance
 int CGameControllerDungeon::GetSyncFactor() const
 {
@@ -497,7 +441,7 @@ int CGameControllerDungeon::GetSyncFactor() const
 	return (MaxFactor + MinFactor) / 2;
 }
 
-int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeIdentifier ID) const
+int CGameControllerDungeon::GetAttributeDungeonSync(const CPlayer* pPlayer, AttributeIdentifier ID) const
 {
 	float Percent = 0.0f;
 	const float ActiveAttribute = m_SyncDungeon / 2.0f;
@@ -511,7 +455,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeI
 		if(Type == AttributeGroup::Tank)
 			Percent = 50.0f;
 
-		// small dps boost
+		// very small dps boost
 		else if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
 			return 0;
 	}
@@ -524,7 +468,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeI
 		if(Type == AttributeGroup::Dps || Type == AttributeGroup::Hardtype)
 			Percent = 0.1f;
 
-		// small tank boost
+		// very small tank boost
 		else if(Type == AttributeGroup::Tank)
 			Percent = 5.f;
 	}
@@ -537,11 +481,11 @@ int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeI
 		if(Type == AttributeGroup::Healer)
 			Percent = minimum(25.0f + (m_ActivePlayers * 2.0f), 50.0f);
 
-		// medium tank boost
+		// small tank boost
 		else if(Type == AttributeGroup::Tank)
 			Percent = 10.f;
 
-		// small dps boost
+		// very small dps boost
 		else if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
 			return 0;
 	}
