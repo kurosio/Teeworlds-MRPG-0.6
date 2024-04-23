@@ -883,6 +883,14 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		const int EnchantBonus = translate_to_percent_rest(pFrom->GetAttributeSize(AttributeIdentifier::DMG), pFrom->GetClass()->GetExtraDMG());
 		Dmg += EnchantBonus;
 
+		// bleeding blow
+		if(pFrom->GetSkill(SkillBleedingBlow)->IsLearned())
+		{
+			int Chance = pFrom->GetSkill(SkillBleedingBlow)->GetBonus();
+			m_pPlayer->GiveEffect("Bleeding", 10, Chance);
+			m_BleedingByClientID = FromCID;
+		}
+
 		// vampirism replenish your health
 		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Vampirism) > random_float(100.0f))
 		{
@@ -1328,9 +1336,25 @@ void CCharacter::HandlePlayer()
 	if(!m_pPlayer->IsAuthed())
 		return;
 
-	// recovery mana
-	if(m_Mana < m_pPlayer->GetStartMana() && Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
-		IncreaseMana(m_pPlayer->GetStartMana() / 20);
+	if(Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
+	{
+		// recovery mana
+		if(m_Mana < m_pPlayer->GetStartMana())
+		{
+			IncreaseMana(m_pPlayer->GetStartMana() / 20);
+		}
+
+		// bleeding blow skill
+		if(m_pPlayer->IsActiveEffect("Bleeding"))
+		{
+			if(CPlayer* pPlayer = GS()->GetPlayer(m_BleedingByClientID, true))
+			{
+				int Damage = pPlayer->GetStartHealth() / 20;
+				TakeDamage(vec2(0, 0), Damage, m_BleedingByClientID, WEAPON_WORLD);
+				GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
+			}
+		}
+	}
 
 	// handle
 	HandleEvent();

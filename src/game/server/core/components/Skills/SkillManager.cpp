@@ -130,7 +130,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	const bool IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
 
 	// skill want learn information
-	CVoteWrapper VSkillWant(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want learn ({INT} of {INT} level)?", pSkill->GetLevel(), pInfo->GetMaxLevel());
+	CVoteWrapper VSkillWant(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want learn?");
 	VSkillWant.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
 	VSkillWant.AddIf(IsLearned, "{INT} {STR} (each level +{INT})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
 	VSkillWant.AddIf(!IsPassive, "Mana required {INT}%", pInfo->GetPercentageCost());
@@ -166,7 +166,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	else if(!MarkHas)
 		CVoteWrapper(ClientID).Add("- Not enough skill point's to learn");
 	else
-		CVoteWrapper(ClientID).AddOption("SKILL_LEARN", ID, "Learn");
+		CVoteWrapper(ClientID).AddOption("SKILL_LEARN", ID, "\u2726 Learn ({INT} of {INT} level)", pSkill->GetLevel(), pInfo->GetMaxLevel());
 
 	// add emptyline
 	CVoteWrapper::AddEmptyline(ClientID);
