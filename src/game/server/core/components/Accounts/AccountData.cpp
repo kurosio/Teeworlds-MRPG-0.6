@@ -44,7 +44,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_PrisonSeconds = pResult->getInt("PrisonSeconds");
 	m_DailyChairGolds = pResult->getInt("DailyChairGolds");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
-	pPlayer->GetClass()->Init((ClassGroup)pResult->getInt("Class"));
+	m_ClassGroup = (ClassGroup)pResult->getInt("Class");
 
 	// time periods
 	{
@@ -84,6 +84,10 @@ void CAccountData::UpdatePointer(CPlayer* pPlayer)
 
 	m_pPlayer = pPlayer;
 	m_ClientID = pPlayer->GetCID();
+
+	// update class data
+	m_pPlayer->GetClass()->Init(m_ClassGroup);
+	m_pPlayer->GetClass()->SetClassSkin(m_TeeInfos, m_pPlayer->GetItem(itCustomizer)->IsEquipped());
 }
 
 // This function initializes the house data for the account

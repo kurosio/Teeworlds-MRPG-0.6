@@ -31,6 +31,7 @@ class CAccountData
 	CHouseData* m_pHouseData{};
 	GroupData* m_pGroupData{};
 	CGuildData* m_pGuildData{};
+	ClassGroup m_ClassGroup {};
 
 	CPlayer* m_pPlayer {};
 	CGS* GS() const;

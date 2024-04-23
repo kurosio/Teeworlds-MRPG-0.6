@@ -1070,11 +1070,12 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
+			// allowed customize self skins
 			str_copy(pPlayer->GetTeeInfo().m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->GetTeeInfo().m_aSkinName));
 			pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
 			pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
-
+			pPlayer->GetClass()->SetClassSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
 			Server()->ExpireServerInfo();
 		}
 
@@ -1203,10 +1204,12 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				Server()->SetClientClan(ClientID, pMsg->m_pClan);
 				Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
-				str_copy(pPlayer->Account()->m_TeeInfos.m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->Account()->m_TeeInfos.m_aSkinName));
-				pPlayer->Account()->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
-				pPlayer->Account()->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
-				pPlayer->Account()->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+				// allowed customize self skins
+				str_copy(pPlayer->GetTeeInfo().m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->GetTeeInfo().m_aSkinName));
+				pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
+				pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
+				pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
+				pPlayer->GetClass()->SetClassSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
 			}
 
 			// send clear vote options

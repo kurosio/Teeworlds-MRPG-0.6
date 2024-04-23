@@ -398,6 +398,7 @@ enum
 	itEidolonPigQueen = 88,				// Eidolon
 	itAdventurersBadge = 92,			// The adventurer's badge
 	itTicketGuild = 95,					// Ticket for the creation of the guild
+	itCustomizer = 96,                  // Curomizer for personal skins
 
 	// decoration items
 	itPickupHealth = 10,					// Pickup heart

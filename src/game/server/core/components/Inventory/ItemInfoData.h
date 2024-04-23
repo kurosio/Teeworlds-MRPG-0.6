@@ -15,6 +15,13 @@ using ItemIdentifier = int;
 class CItemDescription : public MultiworldIdentifiableStaticData < std::map< int, CItemDescription > >
 {
 public:
+	enum
+	{
+		OnEventGot,
+		OnEventLost,
+		OnEventEquip,
+		OnEventUnequip,
+	};
 	using ContainerAttributes = std::deque< CAttribute >;
 
 private:
@@ -30,6 +37,7 @@ private:
 	ContainerAttributes m_aAttributes {};
 	std::string m_Data {};
 	CRandomBox m_RandomBox {};
+	std::string m_JsonEvent {};
 
 public:
 	CItemDescription() = default;
@@ -63,6 +71,7 @@ public:
 	ItemIdentifier GetID() const { return m_ID; }
 
 	// main functions
+	void RunEvent(CPlayer* pPlayer, int EventID) const;
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }

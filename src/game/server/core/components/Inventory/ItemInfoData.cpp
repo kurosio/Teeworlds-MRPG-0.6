@@ -60,6 +60,43 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 	return FinishedPrice;
 }
 
+void CItemDescription::RunEvent(CPlayer* pPlayer, int EventID) const
+{
+	Tools::Json::parseFromString(m_JsonEvent, [&pPlayer, EventID, this](nlohmann::json& pJson)
+	{
+		const char* pElem;
+		switch(EventID)
+		{
+			case OnEventGot: pElem = "on_got"; break;
+			case OnEventLost: pElem = "on_lost"; break;
+			case OnEventEquip: pElem = "on_equip"; break;
+			default: pElem = "on_unequip"; break;
+		}
+
+		CGS* pGS = pPlayer->GS();
+		const auto& pEventObjectJson = pJson[pElem];
+		const int ClientID = pPlayer->GetCID();
+
+		// messages array
+		if(pEventObjectJson.contains("messages"))
+		{
+			const auto& pChatArrayJson = pEventObjectJson["messages"];
+
+			std::string Text;
+			for(const auto& p : pChatArrayJson)
+			{
+				Text = p.value("text", "\0");
+
+				// broadcast type
+				if(p.contains("broadcast") && p.value("broadcast", false))
+					pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 300, Text.c_str());
+				else // chat type
+					pGS->Chat(ClientID, Text.c_str());
+			}
+		}
+	});
+}
+
 bool CItemDescription::IsEnchantable() const
 {
 	return !m_aAttributes.empty();

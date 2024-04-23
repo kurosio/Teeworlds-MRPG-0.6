@@ -91,6 +91,10 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	}
 	m_Value += Value;
 
+	// run event got
+	if(m_Value != Value)
+		Info()->RunEvent(GetPlayer(), CItemDescription::OnEventGot);
+
 	// check the empty slot if yes then put the item on
 	if((Info()->IsType(ItemType::TYPE_EQUIP) && GetPlayer()->GetEquippedItemID(Info()->GetFunctional()) <= 0) || Info()->IsType(ItemType::TYPE_MODULE))
 	{
@@ -130,6 +134,11 @@ bool CPlayerItem::Remove(int Value)
 		Equip(false);
 
 	m_Value -= Value;
+
+	// run event lost
+	if(m_Value <= 0)
+		Info()->RunEvent(GetPlayer(), CItemDescription::OnEventLost);
+
 	return Save();
 }
 
@@ -154,7 +163,9 @@ bool CPlayerItem::Equip(bool SaveItem)
 
 	if(GetPlayer()->GetCharacter())
 		GetPlayer()->GetCharacter()->UpdateEquipingStats(m_ID);
-
+	
+	// run event equip and unequip
+	Info()->RunEvent(GetPlayer(), m_Settings ? CItemDescription::OnEventEquip : CItemDescription::OnEventUnequip);
 	GS()->MarkUpdatedBroadcast(m_ClientID);
 	return SaveItem ? Save() : true;
 }

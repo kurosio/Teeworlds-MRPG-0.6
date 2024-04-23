@@ -8,7 +8,7 @@ class CClassData
 	ClassGroup m_Class {};
 
 public:
-	CClassData() {};
+	CClassData() {}
 
 	void Init(ClassGroup Class);
 
@@ -16,6 +16,8 @@ public:
 	float GetExtraHP() const;
 	float GetExtraDMG() const;
 	float GetExtraMP() const;
+
+	void SetClassSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const;
 };
 
 #endif
