@@ -61,7 +61,6 @@ protected:
 	bool m_Afk;
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
-	std::function<void()> m_PostVotes;
 	CClassData m_Class {};
 
 public:
@@ -71,7 +70,7 @@ public:
 	vec2 m_ViewPos;
 	int m_PlayerFlags;
 	int m_aPlayerTick[NUM_TICK];
-	char m_aClanString[128];
+	char m_aRotateClanBuffer[128];
 	Mood m_MoodState;
 	CCooldown m_Cooldown {};
 	CVotePlayerData m_VotesData;
@@ -226,7 +225,7 @@ private:
 	// Function: HandleVoteOptionals
 	// Description:
 	//    - Handles all the optional vote events
-	void HandleVoteOptionals();
+	void HandleVoteOptionals() const;
 };
 
 #endif

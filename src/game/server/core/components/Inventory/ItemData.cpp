@@ -88,12 +88,11 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	{
 		m_Enchant = StartEnchant;
 		m_Settings = StartSettings;
+
+		// run event got
+		Info()->RunEvent(GetPlayer(), CItemDescription::OnEventGot);
 	}
 	m_Value += Value;
-
-	// run event got
-	if(m_Value != Value)
-		Info()->RunEvent(GetPlayer(), CItemDescription::OnEventGot);
 
 	// check the empty slot if yes then put the item on
 	if((Info()->IsType(ItemType::TYPE_EQUIP) && GetPlayer()->GetEquippedItemID(Info()->GetFunctional()) <= 0) || Info()->IsType(ItemType::TYPE_MODULE))
@@ -119,7 +118,10 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		}
 	}
 	else
+	{
 		GS()->Chat(ClientID, "You obtain an {STR}x{VAL}({VAL}).", Info()->GetName(), Value, m_Value);
+	}
+
 	return Save();
 }
 
@@ -131,14 +133,14 @@ bool CPlayerItem::Remove(int Value)
 
 	// unequip if this is the last item
 	if(m_Value <= Value && IsEquipped())
+	{
 		Equip(false);
 
-	m_Value -= Value;
-
-	// run event lost
-	if(m_Value <= 0)
+		// run event lost
 		Info()->RunEvent(GetPlayer(), CItemDescription::OnEventLost);
+	}
 
+	m_Value -= Value;
 	return Save();
 }
 

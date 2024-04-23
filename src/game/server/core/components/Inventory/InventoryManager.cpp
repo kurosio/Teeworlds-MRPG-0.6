@@ -55,7 +55,7 @@ void CInventoryManager::OnInit()
 			}
 		}
 
-		CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, Data);
+		CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, std::move(Data));
 	}
 
 	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributs");

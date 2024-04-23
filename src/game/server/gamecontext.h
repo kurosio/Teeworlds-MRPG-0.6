@@ -20,8 +20,6 @@
 
 class CGS : public IGameServer
 {
-	using CVoteEventOptionalContainer = std::queue<CVoteEventOptional>;
-
 	/* #########################################################################
 		VAR AND OBJECT GAMECONTEX DATA
 	######################################################################### */
@@ -38,7 +36,7 @@ class CGS : public IGameServer
 	CTuningParams m_Tuning;
 
 	int m_WorldID;
-	inline static CVoteEventOptionalContainer m_Optionals[MAX_PLAYERS] {};
+	inline static std::queue<CVoteEventOptional> m_Optionals[MAX_PLAYERS] {};
 
 public:
 	IServer *Server() const { return m_pServer; }
@@ -62,7 +60,7 @@ public:
 	/* #########################################################################
 		SWAP GAMECONTEX DATA
 	######################################################################### */
-	CVoteEventOptionalContainer& GetVoteOptionalContainer(int ClientID)
+	std::queue<CVoteEventOptional>& GetVoteOptionalQueue(int ClientID)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_PLAYERS, "CVoteEventOptionalContainer out of bounds");
 		return m_Optionals[ClientID];

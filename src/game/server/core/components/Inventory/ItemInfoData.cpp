@@ -62,15 +62,15 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 
 void CItemDescription::RunEvent(CPlayer* pPlayer, int EventID) const
 {
-	Tools::Json::parseFromString(m_JsonEvent, [&pPlayer, EventID, this](nlohmann::json& pJson)
+	Tools::Json::parseFromString(m_Data, [&pPlayer, EventID, this](nlohmann::json& pJson)
 	{
 		const char* pElem;
 		switch(EventID)
 		{
-			case OnEventGot: pElem = "on_got"; break;
-			case OnEventLost: pElem = "on_lost"; break;
-			case OnEventEquip: pElem = "on_equip"; break;
-			default: pElem = "on_unequip"; break;
+			case OnEventGot: pElem = "on_event_got"; break;
+			case OnEventLost: pElem = "on_event_lost"; break;
+			case OnEventEquip: pElem = "on_event_equip"; break;
+			default: pElem = "on_event_unequip"; break;
 		}
 
 		CGS* pGS = pPlayer->GS();

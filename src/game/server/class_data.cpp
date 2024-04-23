@@ -31,7 +31,7 @@ float CClassData::GetExtraMP() const
 
 void CClassData::SetClassSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const
 {
-	if(Customizer)
+	if(HasCustomizer)
 		return;
 
 	if(m_Class == ClassGroup::Tank)

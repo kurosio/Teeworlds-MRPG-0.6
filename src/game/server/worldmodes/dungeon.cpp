@@ -497,37 +497,56 @@ int CGameControllerDungeon::GetSyncFactor() const
 	return (MaxFactor + MinFactor) / 2;
 }
 
-int CGameControllerDungeon::GetAttributeDungeonSync(const CPlayer* pPlayer, AttributeIdentifier ID) const
+int CGameControllerDungeon::GetAttributeDungeonSync(CPlayer* pPlayer, AttributeIdentifier ID) const
 {
 	float Percent = 0.0f;
+	const float ActiveAttribute = m_SyncDungeon / 2.0f;
 	const AttributeGroup Type = GS()->GetAttributeInfo(ID)->GetGroup();
 
 	// - - - - - - - - -- - - -
 	// balance tanks
-	if(pPlayer->m_MoodState == Mood::TANK)
+	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Tank)
 	{
-		const float ActiveAttribute = m_SyncDungeon / 2.0f;
+		// basic default tank upgrades
 		if(Type == AttributeGroup::Tank)
 			Percent = 50.0f;
 
-		// very low damage for tank
-		if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
+		// small dps boost
+		else if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
 			return 0;
-
-		const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
-		return maximum(AttributeSyncProcent, 1);
 	}
 
-	// - - - - - - - - -- - - -
-	// balance healer damage divides the average attribute into the number of players
-	const float ActiveAttribute = m_SyncDungeon / m_ActivePlayers;
-	if(Type == AttributeGroup::Healer)
-		Percent = minimum(25.0f + (m_ActivePlayers * 2.0f), 50.0f);
-	else if(Type == AttributeGroup::Tank)
-		Percent = 5.0f;
-	else if(Type == AttributeGroup::Hardtype || Type == AttributeGroup::Dps)
-		Percent = 0.1f;
+	// - - - - - - - - - - - - -
+	// balance dps
+	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Dps)
+	{
+		// basic default dps upgrades
+		if(Type == AttributeGroup::Dps || Type == AttributeGroup::Hardtype)
+			Percent = 0.1f;
 
+		// small tank boost
+		else if(Type == AttributeGroup::Tank)
+			Percent = 5.f;
+	}
+
+	// - - - - - - - - - - - - -
+	// balance healer
+	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Healer)
+	{
+		// basic default healer upgrades
+		if(Type == AttributeGroup::Healer)
+			Percent = minimum(25.0f + (m_ActivePlayers * 2.0f), 50.0f);
+
+		// medium tank boost
+		else if(Type == AttributeGroup::Tank)
+			Percent = 10.f;
+
+		// small dps boost
+		else if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
+			return 0;
+	}
+
+	// return final stat by percent rest
 	const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
 	return maximum(AttributeSyncProcent, 1);
 }

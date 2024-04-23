@@ -49,7 +49,7 @@ public:
 	void OnCharacterDeath(class CPlayer* pVictim, class CPlayer* pKiller, int Weapon) override;
 	bool OnCharacterSpawn(class CCharacter* pChr) override;
 	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override;
-	int GetAttributeDungeonSync(const CPlayer* pPlayer, AttributeIdentifier ID) const;
+	int GetAttributeDungeonSync(CPlayer* pPlayer, AttributeIdentifier ID) const;
 	int GetSyncFactor() const;
 	int GetDungeonID() const { return m_DungeonID; }
 

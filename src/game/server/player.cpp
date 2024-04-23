@@ -394,11 +394,11 @@ void CPlayer::Snap(int SnappingClient)
 	if(m_aPlayerTick[RefreshClanTitle] < Server()->Tick())
 	{
 		// Rotate the clan string by the length of the first character
-		int clanStringSize = str_utf8_fix_truncation(m_aClanString);
-		std::rotate(std::begin(m_aClanString), std::begin(m_aClanString) + str_utf8_forward(m_aClanString, 0), std::end(m_aClanString));
+		int clanStringSize = str_utf8_fix_truncation(m_aRotateClanBuffer);
+		std::rotate(std::begin(m_aRotateClanBuffer), std::begin(m_aRotateClanBuffer) + str_utf8_forward(m_aRotateClanBuffer, 0), std::end(m_aRotateClanBuffer));
 
 		// Set the next tick for refreshing the clan title
-		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aClanString[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 8));
+		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aRotateClanBuffer[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 8));
 
 		// If the clan string size is less than 10
 		if(clanStringSize < 10)
@@ -411,7 +411,7 @@ void CPlayer::Snap(int SnappingClient)
 	char aNameBuf[MAX_NAME_LENGTH];
 	GetFormatedName(aNameBuf, sizeof(aNameBuf));
 	StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
-	StrToInts(&pClientInfo->m_Clan0, 3, m_aClanString);
+	StrToInts(&pClientInfo->m_Clan0, 3, m_aRotateClanBuffer);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
 	pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
@@ -475,7 +475,7 @@ void CPlayer::RefreshClanString()
 {
 	if(!IsAuthed())
 	{
-		str_copy(m_aClanString, Server()->ClientClan(m_ClientID), sizeof(m_aClanString));
+		str_copy(m_aRotateClanBuffer, Server()->ClientClan(m_ClientID), sizeof(m_aRotateClanBuffer));
 		return;
 	}
 
@@ -511,7 +511,7 @@ void CPlayer::RefreshClanString()
 	Buffer.append(aBufClass);
 
 	// end format
-	str_format(m_aClanString, sizeof(m_aClanString), "%s", Buffer.buffer());
+	str_format(m_aRotateClanBuffer, sizeof(m_aRotateClanBuffer), "%s", Buffer.buffer());
 
 	Buffer.clear();
 }
@@ -823,9 +823,9 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 		return true;
 	}
 
-	if(!GS()->GetVoteOptionalContainer(m_ClientID).empty())
+	if(!GS()->GetVoteOptionalQueue(m_ClientID).empty())
 	{
-		CVoteEventOptional* pOptional = &GS()->GetVoteOptionalContainer(m_ClientID).front();
+		CVoteEventOptional* pOptional = &GS()->GetVoteOptionalQueue(m_ClientID).front();
 		RunEventOptional(Vote, pOptional);
 	}
 
@@ -1041,10 +1041,10 @@ CVoteEventOptional* CPlayer::CreateVoteOptional(int OptionID, int OptionID2, int
 	va_end(VarArgs);
 
 	// Add the vote event to the list of optionals
-	GS()->GetVoteOptionalContainer(m_ClientID).push(Optional);
+	GS()->GetVoteOptionalQueue(m_ClientID).push(Optional);
 
 	// Return a pointer to the newly created vote event
-	return &GS()->GetVoteOptionalContainer(m_ClientID).back();
+	return &GS()->GetVoteOptionalQueue(m_ClientID).back();
 }
 
 // This function is a member function of the CPlayer class.
@@ -1070,14 +1070,14 @@ void CPlayer::RunEventOptional(int Option, CVoteEventOptional* pOptional)
 }
 
 // Function to handle optional voting options for a player
-void CPlayer::HandleVoteOptionals()
+void CPlayer::HandleVoteOptionals() const
 {
 	// If the list of optionals is empty, return
-	if(GS()->GetVoteOptionalContainer(m_ClientID).empty())
+	if(GS()->GetVoteOptionalQueue(m_ClientID).empty())
 		return;
 
 	// Get a pointer to the first optional in the list
-	CVoteEventOptional* pOptional = &GS()->GetVoteOptionalContainer(m_ClientID).front();
+	CVoteEventOptional* pOptional = &GS()->GetVoteOptionalQueue(m_ClientID).front();
 
 	// If the optional is not already being processed
 	if(!pOptional->m_Working)
@@ -1104,6 +1104,6 @@ void CPlayer::HandleVoteOptionals()
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
 		// Remove the first optional from the list
-		GS()->GetVoteOptionalContainer(m_ClientID).pop();
+		GS()->GetVoteOptionalQueue(m_ClientID).pop();
 	}
 }

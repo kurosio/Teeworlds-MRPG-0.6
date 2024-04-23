@@ -37,15 +37,14 @@ private:
 	ContainerAttributes m_aAttributes {};
 	std::string m_Data {};
 	CRandomBox m_RandomBox {};
-	std::string m_JsonEvent {};
 
 public:
 	CItemDescription() = default;
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
-	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes, std::string Data)
+	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes, std::string&& Data)
 	{
-		m_Data = Data;
+		m_Data = std::move(Data);
 		Tools::Json::parseFromString(m_Data, [this](nlohmann::json& pJson)
 		{
 			// Parse random box
