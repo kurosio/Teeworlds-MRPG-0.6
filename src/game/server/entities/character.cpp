@@ -880,7 +880,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		else
 			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::HammerDMG);
 
-		const int EnchantBonus = pFrom->GetAttributeSize(AttributeIdentifier::DMG);
+		const int EnchantBonus = translate_to_percent_rest(pFrom->GetAttributeSize(AttributeIdentifier::DMG), pFrom->GetClass()->GetExtraDMG());
 		Dmg += EnchantBonus;
 
 		// vampirism replenish your health

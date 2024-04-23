@@ -497,10 +497,10 @@ void CPlayer::RefreshClanString()
 
 	// class
 	const char* pClassName;
-	switch(Account()->GetClass().GetGroup())
+	switch(m_Class.GetGroup())
 	{
 		case ClassGroup::Healer: pClassName = "_Healer_"; break;
-		case ClassGroup::DPS: pClassName = "_DPS_"; break;
+		case ClassGroup::Dps: pClassName = "_DPS_"; break;
 		case ClassGroup::Tank: pClassName = "_Tank_"; break;
 		default: pClassName = "_Class_"; break;
 	}
@@ -774,13 +774,13 @@ int CPlayer::GetStartTeam() const
 int CPlayer::GetStartHealth() const
 {
 	const int DefaultHP = 10 + GetAttributeSize(AttributeIdentifier::HP);
-	return DefaultHP + translate_to_percent_rest(DefaultHP, Account()->GetClass().GetExtraHP());
+	return DefaultHP + translate_to_percent_rest(DefaultHP, m_Class.GetExtraHP());
 }
 
 int CPlayer::GetStartMana() const
 {
 	const int DefaultMP = 10 + GetAttributeSize(AttributeIdentifier::MP);
-	return DefaultMP + translate_to_percent_rest(DefaultMP, Account()->GetClass().GetExtraMP());
+	return DefaultMP + translate_to_percent_rest(DefaultMP, m_Class.GetExtraMP());
 }
 
 int64_t CPlayer::GetAfkTime() const

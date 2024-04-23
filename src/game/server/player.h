@@ -10,6 +10,7 @@
 
 #include "entities/character.h"
 
+#include "class_data.h"
 #include "vote_event_optional.h"
 #include "core/utilities/cooldown.h"
 #include "core/utilities/vote_wrapper.h"
@@ -61,9 +62,12 @@ protected:
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
 	std::function<void()> m_PostVotes;
+	CClassData m_Class {};
 
 public:
 	CGS* GS() const { return m_pGS; }
+	CClassData* GetClass() { return &m_Class; }
+
 	vec2 m_ViewPos;
 	int m_PlayerFlags;
 	int m_aPlayerTick[NUM_TICK];

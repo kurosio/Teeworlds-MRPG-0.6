@@ -209,9 +209,9 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VUpgrPoint.AddLine();
 
 		// upgrade group's
-		const ClassGroup& Class = pPlayer->Account()->GetClass().GetGroup();
+		const ClassGroup& Class = pPlayer->GetClass()->GetGroup();
 		CVoteWrapper VUpgrGroupSelect(ClientID, VWF_SEPARATE_OPEN, "Select a type of upgrades");
-		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::DPS, MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
+		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Dps, MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
 		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Tank, MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
 		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Healer, MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
 		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Weapon, paGroupNames[(int)AttributeGroup::Weapon]);

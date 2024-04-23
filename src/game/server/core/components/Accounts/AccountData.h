@@ -7,7 +7,6 @@
 
 #include <game/server/core/components/Auction/AuctionData.h>
 #include <game/server/core/tools/dbfield.h>
-#include "class_data.h"
 
 class CGS;
 class CPlayer;
@@ -32,7 +31,6 @@ class CAccountData
 	CHouseData* m_pHouseData{};
 	GroupData* m_pGroupData{};
 	CGuildData* m_pGuildData{};
-	CClassData m_Class{};
 
 	CPlayer* m_pPlayer {};
 	CGS* GS() const;
@@ -44,12 +42,6 @@ public:
 	void Init(int ID, CPlayer* pPlayer, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult); // Function to initialize
 	void UpdatePointer(CPlayer* pPlayer);
 	int GetID() const { return m_ID; } // Function to get the ID of an object
-
-	/*
-	 * Group functions: class system
-	 */
-	CClassData& GetClass() { return m_Class; }
-
 
 	/*
 	 * Group functions: house system

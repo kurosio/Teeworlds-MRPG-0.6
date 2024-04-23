@@ -23,7 +23,7 @@ enum class ClassGroup : int
 {
 	None,
 	Tank,
-	DPS,
+	Dps,
 	Healer
 };
 
