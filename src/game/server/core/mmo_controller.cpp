@@ -163,12 +163,10 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		BigInt Money("310293012930129301");
 		Money += 100;
-		dbg_msg("test", "%s", Money.to_string().c_str());
+		dbg_msg("test", "%s", get_label<std::string>(Money.to_string()).c_str());
 
 		// personal menu
 		CVoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "\u262A PERSONAL");
-		VPersonal.Add("Def Money {LINT}", Money);
-		VPersonal.Add("Val Money {LVAL}", Money);
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);

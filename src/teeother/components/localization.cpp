@@ -259,12 +259,12 @@ void CLocalization::Format_V(dynamic_string& Buffer, const char* pLanguageCode, 
 				const int pVarArgValue = va_arg(VarArgsIter, int);
 				BufferIter = Buffer.append_at(BufferIter, get_commas<int>(pVarArgValue).c_str());
 			}
-			else if(str_comp_num("LINT", pText + ParamTypeStart, 4) == 0) // lint
+			else if(str_comp_num("BINT", pText + ParamTypeStart, 4) == 0) // big int
 			{
 				const BigInt biggerInt = va_arg(VarArgsIter, BigInt);
 				BufferIter = Buffer.append_at(BufferIter, biggerInt.to_string().c_str());
 			}
-			else if(str_comp_num("LVAL", pText + ParamTypeStart, 4) == 0) // lval
+			else if(str_comp_num("BVAL", pText + ParamTypeStart, 4) == 0) // big val
 			{
 				const BigInt biggerInt = va_arg(VarArgsIter, BigInt);
 				BufferIter = Buffer.append_at(BufferIter, get_commas<std::string>(biggerInt.to_string()).c_str());

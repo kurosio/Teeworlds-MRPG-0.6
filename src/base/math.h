@@ -202,6 +202,7 @@ template <typename T> // translate from the first to the second in percent e.g. 
 PercentArithmetic<T> translate_to_percent(T from, T value, float maximum_percent) { return (T)(((double)value / (double)from) * maximum_percent); }
 
 // translate to commas
+// example: 201010 - 201,010
 template<typename type, const char separator = ',', const unsigned num = 3>
 static std::string get_commas(type Number)
 {
@@ -219,6 +220,66 @@ static std::string get_commas(type Number)
 			NumberString.insert(it.base(), separator);
 		}
 	}
+
+	return NumberString;
+}
+
+// translate to label
+// example: 1021321 - 1,021 million
+template<typename type, const char separator = ','>
+static std::string get_label(type Number)
+{
+	std::string NumberString;
+	if constexpr(std::is_same_v<std::string, type>)
+		NumberString = Number;
+	else
+		NumberString = std::to_string(Number);
+
+	const char* pLabel[21] =
+	{
+		"k", // 1000
+		"million", // 1000000
+		"billion", // 1000000000
+		"trillion", // 1000000000000
+		"quadrillion",  // 1000000000000000
+		"quintillion",  // 1000000000000000000
+		"sextillion",  // 1000000000000000000000
+		"septillion",  // 1000000000000000000000000
+		"octillion",  // 1000000000000000000000000
+		"nonillion",  // 1000000000000000000000000000
+		"decillion",  // 1000000000000000000000000000000
+		"undecillion",  // 1000000000000000000000000000000000
+		"duodecillion",  // 1000000000000000000000000000000000000
+		"tredecillion",  // 1000000000000000000000000000000000000000
+		"quattuordecillion",  // 1000000000000000000000000000000000000000000
+		"quindecillion",  // 1000000000000000000000000000000000000000000000
+		"sexdecillion",  // 1000000000000000000000000000000000000000000000000
+		"septendecillion",  // 1000000000000000000000000000000000000000000000000000
+		"octodecillion",  // 1000000000000000000000000000000000000000000000000000000
+		"novemdecillion",  // 1000000000000000000000000000000000000000000000000000000000
+		"vigintillion"  // 1000000000000000000000000000000000000000000000000000000000
+	};
+
+	if(NumberString.length() > 3)
+	{
+		int Position = 0;
+		auto iter = NumberString.end();
+		for(auto it = NumberString.rbegin(); (3 + 1) <= std::distance(it, NumberString.rend());)
+		{
+			if(iter != NumberString.end())
+			{
+				NumberString.erase(iter, NumberString.end());
+			}
+
+			std::advance(it, 3);
+			iter = NumberString.insert(it.base(), separator);
+			Position++;
+		}
+
+		std::string strAppend(" " + std::string(pLabel[Position]));
+		NumberString.append(strAppend);
+	}
+
 
 	return NumberString;
 }
