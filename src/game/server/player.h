@@ -203,17 +203,6 @@ public:
 	/* ==========================================================
 	   VOTING OPTIONAL EVENT
 	========================================================== */
-	// Function: CreateVoteOptional
-	// Parameters:
-	//    - OptionID: an integer value representing the vote option
-	//    - OptionID2: an integer value representing the vote option
-	//    - Sec: an integer value representing the duration of the vote event
-	//    - pInformation: a pointer to a character array containing optional information for the vote
-	//    - ...: additional optional arguments for the information text format
-	// Return:
-	//    - a pointer to a CVoteEventOptional object representing the created vote event
-	CVoteEventOptional* CreateVoteOptional(int OptionID, int OptionID2, int Sec, const char* pInformation, ...);
-
 private:
 	// Function: RunEventOptional
 	// Parameters:

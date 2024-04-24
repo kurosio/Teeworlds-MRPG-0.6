@@ -155,17 +155,17 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// statistics menu
 		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
 		const char* pStrLastLoginDate = pPlayer->Account()->GetLastLoginDate();
-		CVoteWrapper VMain(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pStrLastLoginDate);
-		VMain.Add("Level {INT} : Exp {INT}/{INT}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
-		VMain.Add("Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
-		VMain.Add("Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
+		CVoteWrapper VMain(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, {} Last log in {}", GS()->Server()->ClientName(ClientID), pStrLastLoginDate);
+		VMain.Add("Level {} : Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
+		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
+		VMain.Add("Gold: {}", pPlayer->GetItem(itGold)->GetValue());
 		VMain.AddLine();
 
 		// personal menu
 		CVoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "\u262A PERSONAL");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
-		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
+		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({}p)", pPlayer->Account()->m_Upgrade);
 		VPersonal.AddMenu(MENU_EIDOLON_COLLECTION, "\u2727 Eidolon Collection");
 		VPersonal.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
 		VPersonal.AddMenu(MENU_GROUP, "\u2042 Group");

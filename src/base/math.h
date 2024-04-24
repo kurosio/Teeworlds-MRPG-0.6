@@ -237,7 +237,7 @@ static std::string get_label(type Number)
 
 	const char* pLabel[24] =
 	{
-		"k", // 1000
+		"--ignored--", // 1000
 		"million", // 1000000
 		"billion", // 1000000000
 		"trillion", // 1000000000000
@@ -265,7 +265,7 @@ static std::string get_label(type Number)
 
 	if(NumberString.length() > 3)
 	{
-		int Position = 0;
+		int Position = -1;
 		auto iter = NumberString.end();
 		for(auto it = NumberString.rbegin(); (3 + 1) <= std::distance(it, NumberString.rend());)
 		{
@@ -279,8 +279,8 @@ static std::string get_label(type Number)
 			Position++;
 		}
 
-		std::string strAppend(" " + std::string(pLabel[Position]));
-		NumberString.append(strAppend);
+		if(Position > 0 && Position < 24)
+			NumberString.append(std::string(pLabel[Position]));
 	}
 
 

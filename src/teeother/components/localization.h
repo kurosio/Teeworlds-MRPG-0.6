@@ -79,15 +79,96 @@ public:
 	virtual bool InitConfig(int argc, const char** argv);
 	virtual bool Init();
 
-	//localize
-	const char* Localize(const char* pLanguageCode, const char* pText);
+private:
+	template <typename T>
+	std::string ToString(const char* pLanguageCode, T Value)
+	{
+		if constexpr(std::is_arithmetic_v<T>)
+		{
+			return get_label<std::string>(std::to_string(Value));
+		}
+		else if constexpr(std::is_same_v<T, BigInt>)
+		{
+			return get_label<std::string>(std::to_string(Value));
+		}
+		else if constexpr(std::is_convertible_v<T, std::string>)
+		{
+			std::string str(Value);
+			std::string localizeFmt(Localize(pLanguageCode, str.c_str()));
+			return localizeFmt;
+		}
+		return "0";
+	}
 
-	//format
-	void Format_V(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, va_list VarArgs);
-	void Format(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, ...);
-	//localize, format
-	void Format_VL(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, va_list VarArgs);
-	void Format_L(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, ...);
+	std::string FormatImpl(const char*, const char* pText, std::deque<std::string>& vStrPack)
+	{
+		std::string Result{};
+		bool ArgStarted = false;
+		int TextLength = str_length(pText);
+
+		// found args
+		for(int i = 0; i <= TextLength; ++i)
+		{
+			bool IsLast = (i == TextLength);
+			char IterChar = pText[i];
+
+			// start arg iterate
+			if(IterChar == '{')
+			{
+				ArgStarted = true;
+				continue;
+			}
+
+			// found end arg iterate
+			if(IterChar == '}' && ArgStarted)
+			{
+				ArgStarted = false;
+				if(!vStrPack.empty())
+				{
+					Result += vStrPack.front();
+					vStrPack.pop_front();
+				}
+			}
+			// allowed use {} with comments
+			else if(!IsLast && !ArgStarted)
+			{
+				Result += IterChar;
+			}
+		}
+
+		// result string
+		return Result;
+	}
+
+	template<typename Arg, typename ... Args>
+	std::string FormatImpl(const char* pLanguageCode, const char* pText, std::deque<std::string>& vStrPack, Arg&& arg, Args&& ... argsfmt)
+	{
+		vStrPack.push_back(ToString(pLanguageCode, std::forward<Arg>(arg)));
+		return FormatImpl(pLanguageCode, pText, vStrPack, std::forward<Args>(argsfmt) ...);
+	}
+
+public:
+	std::string Format(const char* pLanguageCode, const char* pText)
+	{
+		return std::string(Localize(pLanguageCode, pText));
+	}
+
+	template<typename ... Args>
+	std::string Format(const char* pLanguageCode, const char* pText, Args&& ... argsfmt)
+	{
+		std::deque<std::string> vStrPack;
+		return FormatImpl(pLanguageCode, Localize(pLanguageCode, pText), vStrPack, std::forward<Args>(argsfmt) ...);
+	}
+
+	template<typename ... Args>
+	void Format(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, Args&& ... argsfmt)
+	{
+		std::string fmtStr = Format(pLanguageCode, pText, std::forward<Args>(argsfmt) ...);
+		Buffer.append(fmtStr.c_str());
+	}
+
+	// Localize
+	const char* Localize(const char* pLanguageCode, const char* pText);
 };
 
 #endif

@@ -66,6 +66,7 @@ public:
 	CGuildMemberData* GetGuildMemberData() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }
 	bool SameGuild(int ClientID) const;
+	bool SameGuild(int GuildID, int ClientID) const;
 
 	/*
 	 * Group function: getters / setters

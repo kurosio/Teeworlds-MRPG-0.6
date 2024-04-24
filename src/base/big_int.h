@@ -108,6 +108,8 @@ class BigInt {
         long to_long() const;
         long long to_long_long() const;
 
+        operator std::string() const { return to_string(); }
+
         // Random number generating functions:
         friend BigInt big_random(size_t);
 };

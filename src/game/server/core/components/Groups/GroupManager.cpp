@@ -231,7 +231,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			}
 
 			// Create vote optional
-			CVoteEventOptional* pOption = pInvitedPlayer->CreateVoteOptional(ClientID, GroupID, 15, Server()->Localize(ClientID, "Join to {STR} group?"), Server()->ClientName(ClientID));
+			auto pOption = CVoteEventOptional::Create(InvitedCID, ClientID, GroupID, 15, Server()->Localize(ClientID, "Join to {STR} group?"), Server()->ClientName(ClientID));
 			pOption->RegisterCallback(CallbackVoteOptionalGroupInvite);
 
 			// Send a chat message to the player inviting them to join the group

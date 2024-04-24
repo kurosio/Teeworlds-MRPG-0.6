@@ -73,18 +73,14 @@ void CVoteGroup::SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>
 }
 
 // Function to add a vote title implementation with variable arguments
-void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText, ...)
+void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText)
 {
 	// Check if the player is valid
 	if(!m_pPlayer)
 		return;
 
 	// Format the text using the player's language and additional arguments
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-	dynamic_string Buffer;
-	Instance::Server()->Localization()->Format_VL(Buffer, m_pPlayer->GetLanguage(), pText, VarArgs);
-	va_end(VarArgs);
+	dynamic_string Buffer(pText);
 
 	const char* pAppend = "\0";
 	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
@@ -127,20 +123,14 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 }
 
 // Function to add a vote implementation with variable arguments
-void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText, ...)
+void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText)
 {
 	// Check if the player is valid
 	if(!m_pPlayer || IsHidden())
 		return;
 
 	// Format the text using the player's language and additional arguments
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-	dynamic_string Buffer;
-	Instance::Server()->Localization()->Format_VL(Buffer, m_pPlayer->GetLanguage(), pText, VarArgs);
-	va_end(VarArgs);
-
-	// Reformatting
+	dynamic_string Buffer(pText);
 	Reformatting(Buffer);
 
 	// Reformat cyrlic to latin
@@ -249,7 +239,9 @@ void CVoteGroup::AddItemValueImpl(int ItemID)
 	if(!pPlayer || IsHidden())
 		return;
 
-	AddVoteImpl("null", NOPE, NOPE, "You have {VAL} {STR}", pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName());
+	const std::string endText = Instance::Server()->Localization()->Format(pPlayer->GetLanguage(), "You have {} {}", 
+		pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName());
+	AddVoteImpl("null", NOPE, NOPE, endText.c_str());
 }
 
 // Function for check hidden status

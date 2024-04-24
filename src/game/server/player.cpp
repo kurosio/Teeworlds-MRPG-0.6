@@ -826,9 +826,9 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 		return true;
 	}
 
-	if(!GS()->GetVoteOptionalQueue(m_ClientID).empty())
+	if(!CVoteEventOptional::Data()[m_ClientID].empty())
 	{
-		CVoteEventOptional* pOptional = &GS()->GetVoteOptionalQueue(m_ClientID).front();
+		CVoteEventOptional* pOptional = &CVoteEventOptional::Data()[m_ClientID].front();
 		RunEventOptional(Vote, pOptional);
 	}
 
@@ -1022,32 +1022,6 @@ CTeeInfo& CPlayer::GetTeeInfo() const
 	return Account()->m_TeeInfos;
 }
 
-// Function to create a vote event with optional parameters
-// Takes in a value, duration in seconds, information string, and variable arguments
-CVoteEventOptional* CPlayer::CreateVoteOptional(int OptionID, int OptionID2, int Sec, const char* pInformation, ...)
-{
-	// Create an instance of the CVoteEventOptional class
-	CVoteEventOptional Optional;
-	Optional.m_CloseTime = time_get() + time_freq() * Sec;
-	Optional.m_OptionID = OptionID;
-	Optional.m_OptionID2 = OptionID2;
-
-	// Format the information string using localization and variable arguments
-	va_list VarArgs;
-	va_start(VarArgs, pInformation);
-	dynamic_string Buffer;
-	Server()->Localization()->Format_VL(Buffer, GetLanguage(), pInformation, VarArgs);
-	Optional.m_Description = Buffer.buffer();
-	Buffer.clear();
-	va_end(VarArgs);
-
-	// Add the vote event to the list of optionals
-	GS()->GetVoteOptionalQueue(m_ClientID).push(Optional);
-
-	// Return a pointer to the newly created vote event
-	return &GS()->GetVoteOptionalQueue(m_ClientID).back();
-}
-
 // This function is a member function of the CPlayer class.
 // It is used to run an optional voting event for the player.
 void CPlayer::RunEventOptional(int Option, CVoteEventOptional* pOptional)
@@ -1074,11 +1048,11 @@ void CPlayer::RunEventOptional(int Option, CVoteEventOptional* pOptional)
 void CPlayer::HandleVoteOptionals() const
 {
 	// If the list of optionals is empty, return
-	if(GS()->GetVoteOptionalQueue(m_ClientID).empty())
+	if(CVoteEventOptional::Data()[m_ClientID].empty())
 		return;
 
 	// Get a pointer to the first optional in the list
-	CVoteEventOptional* pOptional = &GS()->GetVoteOptionalQueue(m_ClientID).front();
+	CVoteEventOptional* pOptional = &CVoteEventOptional::Data()[m_ClientID].front();
 
 	// If the optional is not already being processed
 	if(!pOptional->m_Working)
@@ -1105,6 +1079,6 @@ void CPlayer::HandleVoteOptionals() const
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
 		// Remove the first optional from the list
-		GS()->GetVoteOptionalQueue(m_ClientID).pop();
+		CVoteEventOptional::Data()[m_ClientID].pop();
 	}
 }
