@@ -62,7 +62,7 @@ void EventChecker(std::deque<TutorialBase*>& pItems, CPlayer* pPlayer, int Step,
 	}
 	else if(pGS->Server()->Tick() % (pGS->Server()->TickSpeed() * 1) == 0) // Check if it is time to display a tutorial message
 	{
-		pGS->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "- Tutorial {INT} of {INT}.\n\n{STR}", Step + 1, pItems.size(), pTutorial->GetText()); // Display the tutorial message
+		pGS->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "- Tutorial {} of {}.\n\n{}", Step + 1, pItems.size(), pTutorial->GetText()); // Display the tutorial message
 	}
 }
 

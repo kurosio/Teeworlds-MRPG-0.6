@@ -41,14 +41,14 @@ bool CPlayerQuest::Accept()
 	{
 		const int StoryQuestsNum = Info()->GetStoryQuestsNum();
 		const int QuestCurrentPos = Info()->GetStoryQuestPosition();
-		GS()->Chat(ClientID, "{STR} Quest {STR}({INT} of {INT}) accepted {STR}",
+		GS()->Chat(ClientID, "{} Quest {}({} of {}) accepted {}",
 			Tools::Aesthetic::B_PILLAR(3, false), Info()->GetStory(), QuestCurrentPos, StoryQuestsNum, Tools::Aesthetic::B_PILLAR(3, true));
-		GS()->Chat(ClientID, "Name: \"{STR}\"", Info()->GetName());
-		GS()->Chat(ClientID, "Reward: \"Gold {VAL}, Experience {INT}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
+		GS()->Chat(ClientID, "Name: \"{}\"", Info()->GetName());
+		GS()->Chat(ClientID, "Reward: \"Gold {c}, Experience {}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
 	}
 	else
 	{
-		GS()->Chat(ClientID, "Daily quest: '{STR}' accepted!", Info()->GetName());
+		GS()->Chat(ClientID, "Daily quest: '{}' accepted!", Info()->GetName());
 	}
 
 	// effect's
@@ -105,13 +105,13 @@ void CPlayerQuest::UpdateStepPosition()
 	if(Info()->IsDaily())
 	{
 		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestAlliedSealsReward);
-		GS()->Chat(-1, "{STR} completed daily quest \"{STR}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
-		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed daily quest ({STR})", Info()->GetName());
+		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed daily quest ({})", Info()->GetName());
 	}
 	else
 	{
-		GS()->Chat(-1, "{STR} completed the \"{STR} - {STR}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
-		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed ({STR} - {STR})", Info()->GetStory(), Info()->GetName());
+		GS()->Chat(-1, "{} completed the \"{} - {}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
+		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed ({} - {})", Info()->GetStory(), Info()->GetName());
 
 		// Notify the opened new zones and dungeons after completing the quest
 		GS()->Core()->DungeonManager()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);

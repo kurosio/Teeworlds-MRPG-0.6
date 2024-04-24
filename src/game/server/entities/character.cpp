@@ -260,7 +260,7 @@ void CCharacter::FireWeapon()
 					Hits = true;
 
 					const int BotID = pTarget->GetPlayer()->GetBotID();
-					GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {STR}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
+					GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 					break;
 				}
 
@@ -783,7 +783,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
 		{
 			GS()->CreateDropItem(m_Pos, Killer, { itGold, LossGold }, Force);
-			GS()->Chat(ClientID, "You lost {INT}%({VAL}) gold, killer {STR}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+			GS()->Chat(ClientID, "You lost {}%({c}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
 		}
 	}
 
@@ -806,12 +806,12 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				if(KillerIsPlayer)
 				{
 					pKiller->GetItem(itGold)->Add(Arrest);
-					GS()->Chat(-1, "{STR} killed {STR}, who was wanted. The reward is {VAL} gold!",
+					GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {c} gold!",
 						Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 				}
 
 				// Send a chat message to the client with their arrest information
-				GS()->Chat(ClientID, "Treasury confiscates {INT}%({VAL}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
+				GS()->Chat(ClientID, "Treasury confiscates {}%({c}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
 
 				// Imprison
 				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 100);
@@ -898,7 +898,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Vampirism) > random_float(100.0f))
 		{
 			const int Recovery = maximum(1, Dmg / 2);
-			GS()->Chat(FromCID, ":: Vampirism stolen: {INT}HP.", Recovery);
+			GS()->Chat(FromCID, ":: Vampirism stolen: {}HP.", Recovery);
 			pFrom->GetCharacter()->IncreaseHealth(Recovery);
 			GS()->SendEmoticon(FromCID, EMOTICON_DROP);
 		}

@@ -239,7 +239,7 @@ void CPlayer::HandleEffects()
 		pEffect->second--;
 		if(pEffect->second <= 0)
 		{
-			GS()->Chat(m_ClientID, "You lost the {STR} effect.", pEffect->first.c_str());
+			GS()->Chat(m_ClientID, "You lost the {} effect.", pEffect->first.c_str());
 			pEffect = CGS::ms_aEffects[m_ClientID].erase(pEffect);
 			continue;
 		}
@@ -350,7 +350,7 @@ void CPlayer::HandlePrison()
 		Account()->m_PrisonSeconds--;
 
 		// Broadcast a message to the player indicating the remaining prison seconds
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "You will regain your freedom in {INT} seconds as you are being released from prison.", Account()->m_PrisonSeconds);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "You will regain your freedom in {} seconds as you are being released from prison.", Account()->m_PrisonSeconds);
 
 		// check if the player is not currently in prison
 		if(!Account()->m_PrisonSeconds)
@@ -711,7 +711,7 @@ bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int Maxi
 
 	if(*Useless < UpgradeNeed)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_WARNING, 100, "Not upgrade points for +{INT}. Required {INT}.", Value, UpgradeNeed);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_WARNING, 100, "Not upgrade points for +{}. Required {}.", Value, UpgradeNeed);
 		return false;
 	}
 
@@ -730,7 +730,7 @@ bool CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 		const float RandomChance = random_float(100.0f);
 		if(RandomChance < Chance)
 		{
-			GS()->Chat(m_ClientID, "You got the effect {STR} time {INT} seconds.", Potion, Sec);
+			GS()->Chat(m_ClientID, "You got the effect {} time {} seconds.", Potion, Sec);
 			CGS::ms_aEffects[m_ClientID][Potion] = Sec;
 			return true;
 		}
@@ -852,7 +852,7 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 			if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
 			{
 				GetTempData().m_TempDungeonReady ^= true;
-				GS()->Chat(m_ClientID, "You changed the ready mode to \"{STR}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
+				GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
 			}
 			return true;
 		}

@@ -126,7 +126,7 @@ void CItemDescription::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int 
 		if(Att.HasValue())
 		{
 			const int BonusValue = GetInfoEnchantStats(Att.GetID(), Enchant);
-			pPlayer->GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{STR}+{VAL} ", Att.Info()->GetName(), BonusValue);
+			pPlayer->GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{}+{c} ", Att.Info()->GetName(), BonusValue);
 		}
 	}
 	str_copy(pBuffer, Buffer.buffer(), Size);

@@ -89,7 +89,7 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 			GS()->Core()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
 		}
 
-		GS()->Chat(-1, "{STR} joined to Dungeon {STR}!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[VoteID].m_aName);
+		GS()->Chat(-1, "{} joined to Dungeon {}!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[VoteID].m_aName);
 		GS()->Chat(ClientID, "You can vote for the choice of tank (Dungeon Tab)!");
 		pPlayer->ChangeWorld(CDungeonData::ms_aDungeon[VoteID].m_WorldID);
 		return true;
@@ -140,7 +140,7 @@ void CDungeonManager::InsertVotesDungeonTop(int DungeonID, CVoteWrapper* pWrappe
 
 		const int Minutes = BaseSeconds / 60;
 		const int Seconds = BaseSeconds - (BaseSeconds / 60 * 60);
-		pWrapper->Add("{INT}. {STR} | {INT}:{INT}min | {VAL}P", Rank, Server()->GetAccountNickname(UserID), Minutes, Seconds, BasePassageHelp);
+		pWrapper->Add("{}. {} | {}:{}min | {c}P", Rank, Server()->GetAccountNickname(UserID), Minutes, Seconds, BasePassageHelp);
 	}
 }
 
@@ -153,7 +153,7 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 		if(dungeon.second.m_IsStory != Story)
 			continue;
 
-		CVoteWrapper VDungeon(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "Lvl{INT} {STR} : Players {INT} : {STR} [{INT}%]",
+		CVoteWrapper VDungeon(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "Lvl{} {} : Players {} : {} [{}%]",
 			dungeon.second.m_Level, dungeon.second.m_aName, dungeon.second.m_Players, 
 			(dungeon.second.IsDungeonPlaying() ? "Active dungeon" : "Waiting players"), dungeon.second.m_Progress);
 
@@ -162,11 +162,11 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 		const int NeededQuestID = dungeon.second.m_RequiredQuestID;
 		if(NeededQuestID <= 0 || pPlayer->GetQuest(NeededQuestID)->IsCompleted())
 		{
-			VDungeon.AddOption("DUNGEONJOIN", dungeon.first, "Join dungeon {STR}", dungeon.second.m_aName);
+			VDungeon.AddOption("DUNGEONJOIN", dungeon.first, "Join dungeon {}", dungeon.second.m_aName);
 		}
 		else
 		{
-			VDungeon.Add("Need to complete quest {STR}", pPlayer->GetQuest(NeededQuestID)->Info()->GetName());
+			VDungeon.Add("Need to complete quest {}", pPlayer->GetQuest(NeededQuestID)->Info()->GetName());
 		}
 		Found = true;
 	}
@@ -185,7 +185,7 @@ void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 
 	// exit from dungeon
 	CVoteWrapper::AddLine(ClientID);
-	CVoteWrapper(ClientID).AddOption("DUNGEONEXIT", "Exit dungeon {STR} (warning)", CDungeonData::ms_aDungeon[DungeonID].m_aName);
+	CVoteWrapper(ClientID).AddOption("DUNGEONEXIT", "Exit dungeon {} (warning)", CDungeonData::ms_aDungeon[DungeonID].m_aName);
 }
 
 void CDungeonManager::NotifyUnlockedDungeonsByQuest(CPlayer* pPlayer, int QuestID) const
@@ -194,6 +194,6 @@ void CDungeonManager::NotifyUnlockedDungeonsByQuest(CPlayer* pPlayer, int QuestI
 	for(const auto& dungeon : CDungeonData::ms_aDungeon)
 	{
 		if(QuestID == dungeon.second.m_RequiredQuestID)
-			GS()->Chat(-1, "{STR} opened dungeon ({STR})!", Server()->ClientName(ClientID), dungeon.second.m_aName);
+			GS()->Chat(-1, "{} opened dungeon ({})!", Server()->ClientName(ClientID), dungeon.second.m_aName);
 	}
 }

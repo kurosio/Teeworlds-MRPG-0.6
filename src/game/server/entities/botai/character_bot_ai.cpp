@@ -67,7 +67,7 @@ void CCharacterBotAI::InitBot()
 
 				// Check if the game state is not a dungeon
 				if(!GS()->IsWorldType(WorldType::Dungeon))
-					GS()->ChatWorldID(pMobBot->m_WorldID, nullptr, "In your zone emerging {STR}!", pMobBot->GetName());
+					GS()->ChatWorldID(pMobBot->m_WorldID, nullptr, "In your zone emerging {}!", pMobBot->GetName());
 			}
 		}
 		break;
@@ -268,7 +268,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
 		pPlayerItem->Add(1);
-		GS()->Chat(ClientID, "Skill points increased. Now ({INT}SP)", pPlayerItem->GetValue());
+		GS()->Chat(ClientID, "Skill points increased. Now ({}SP)", pPlayerItem->GetValue());
 	}
 }
 
@@ -662,7 +662,7 @@ void CCharacterBotAI::EngineMobs()
 				const float Percent = translate_to_percent((float)StartHealth, (float)Health);
 
 				std::string ProgressBar = Tools::String::progressBar(100, (int)Percent, 10, "\u25B0", "\u25B1");
-				GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{STR} {STR}({INT}/{INT})",
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{} {}({}/{})",
 					DataBotInfo::ms_aDataBot[BotID].m_aNameBot, ProgressBar.c_str(), Health, StartHealth);
 			}
 		}

@@ -124,7 +124,7 @@ GUILD_RANK_RESULT CGuildRanksManager::Add(const std::string& Rank)
 	m_aRanks.emplace_back(new CGuildRankData(InitID, cstrRank.cstr(), RIGHTS_DEFAULT, m_pGuild));
 
 	// Send information to the game server and update the guild history
-	GS()->ChatGuild(GuildID, "New rank is created [{STR}]!", cstrRank.cstr());
+	GS()->ChatGuild(GuildID, "New rank is created [{}]!", cstrRank.cstr());
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "added rank '%s'", cstrRank.cstr());
 	return GUILD_RANK_RESULT::SUCCESSFUL;
 }
@@ -169,7 +169,7 @@ GUILD_RANK_RESULT CGuildRanksManager::Remove(const std::string& Rank)
 	m_aRanks.erase(Iter);
 
 	// Send information to the game server and update the guild history
-	GS()->ChatGuild(m_pGuild->GetID(), "Rank [{STR}] succesful delete", cstrRank.cstr());
+	GS()->ChatGuild(m_pGuild->GetID(), "Rank [{}] succesful delete", cstrRank.cstr());
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "removed rank '%s'", cstrRank.cstr());
 	return GUILD_RANK_RESULT::SUCCESSFUL;
 }

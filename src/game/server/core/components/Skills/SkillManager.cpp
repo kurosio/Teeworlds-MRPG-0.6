@@ -112,7 +112,7 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillTyp
 		if(Skill.m_Type == Type)
 		{
 			CSkill* pSkill = pPlayer->GetSkill(ID);
-			VSkills.AddMenu(MENU_SKILL_SELECTED, ID, "{STR} - {INT}SP {STR}", Skill.GetName(), Skill.GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
+			VSkills.AddMenu(MENU_SKILL_SELECTED, ID, "{} - {}SP {}", Skill.GetName(), Skill.GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
 		}
 	}
 
@@ -132,8 +132,8 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	// skill want learn information
 	CVoteWrapper VSkillWant(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want learn?");
 	VSkillWant.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
-	VSkillWant.AddIf(IsLearned, "{INT} {STR} (each level +{INT})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
-	VSkillWant.AddIf(!IsPassive, "Mana required {INT}%", pInfo->GetPercentageCost());
+	VSkillWant.AddIf(IsLearned, "{} {} (each level +{})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
+	VSkillWant.AddIf(!IsPassive, "Mana required {}%", pInfo->GetPercentageCost());
 	VSkillWant.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
@@ -146,7 +146,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	);
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
 	bool MarkHas = pPlayerItem->GetValue() >= pInfo->GetPriceSP();
-	VRequired.MarkList().Add("{STR} {STR}x{VAL} ({VAL})", MarkHas ? "\u2714" : "\u2718", pPlayerItem->Info()->GetName(), pInfo->GetPriceSP(), pPlayerItem->GetValue());
+	VRequired.MarkList().Add("{} {}x{c} ({c})", MarkHas ? "\u2714" : "\u2718", pPlayerItem->Info()->GetName(), pInfo->GetPriceSP(), pPlayerItem->GetValue());
 	VRequired.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
@@ -154,8 +154,8 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	if(!IsPassive && IsLearned)
 	{
 		CVoteWrapper VUsage(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Usage");
-		VUsage.Add("F1 Bind: (bind 'key' say \"/useskill {INT}\")", ID);
-		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICION", ID, "Used on {STR}", pSkill->GetSelectedEmoticonName());
+		VUsage.Add("F1 Bind: (bind 'key' say \"/useskill {}\")", ID);
+		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICION", ID, "Used on {}", pSkill->GetSelectedEmoticonName());
 		VUsage.AddLine();
 		CVoteWrapper::AddEmptyline(ClientID);
 	}
@@ -166,7 +166,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	else if(!MarkHas)
 		CVoteWrapper(ClientID).Add("- Not enough skill point's to learn");
 	else
-		CVoteWrapper(ClientID).AddOption("SKILL_LEARN", ID, "\u2726 Learn ({INT} of {INT} level)", pSkill->GetLevel(), pInfo->GetMaxLevel());
+		CVoteWrapper(ClientID).AddOption("SKILL_LEARN", ID, "\u2726 Learn ({} of {} level)", pSkill->GetLevel(), pInfo->GetMaxLevel());
 
 	// add emptyline
 	CVoteWrapper::AddEmptyline(ClientID);

@@ -66,7 +66,7 @@ bool CHouseData::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* p
 		{
 			if(pHouse->AddDecoration(pPoint))
 			{
-				pHouse->GS()->Chat(ClientID, "You have added {STR} to your house!", pPlayerItem->Info()->GetName());
+				pHouse->GS()->Chat(ClientID, "You have added {} to your house!", pPlayerItem->Info()->GetName());
 				return true;
 			}
 
@@ -77,7 +77,7 @@ bool CHouseData::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* p
 		{
 			if(pHouse->RemoveDecoration(pPoint))
 			{
-				pHouse->GS()->Chat(ClientID, "You have removed {STR} from your house!", pPlayerItem->Info()->GetName());
+				pHouse->GS()->Chat(ClientID, "You have removed {} from your house!", pPlayerItem->Info()->GetName());
 				return true;
 			}
 
@@ -150,8 +150,8 @@ void CHouseData::Buy(CPlayer* pPlayer)
 		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '%d', HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
 
 		// send information
-		GS()->Chat(-1, "{STR} becomes the owner of the house class {STR}", Server()->ClientName(ClientID), GetClassName());
-		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**{STR} becomes the owner of the house class {STR}**", Server()->ClientName(ClientID), GetClassName());
+		GS()->Chat(-1, "{} becomes the owner of the house class {}", Server()->ClientName(ClientID), GetClassName());
+		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**{} becomes the owner of the house class {}**", Server()->ClientName(ClientID), GetClassName());
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 	}
 }
@@ -186,8 +186,8 @@ void CHouseData::Sell()
 		GS()->Chat(pPlayer->GetCID(), "Your House is sold!");
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 	}
-	GS()->Chat(-1, "House: {INT} have been is released!", m_ID);
-	GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {INT}] have been sold!**", m_ID);
+	GS()->Chat(-1, "House: {} have been is released!", m_ID);
+	GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {}] have been sold!**", m_ID);
 }
 
 // This function sets the plant item ID for the house data

@@ -182,7 +182,7 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float
 	if(CritDamage)
 	{
 		if(CPlayer* pPlayer = GetPlayer(FromCID, true, true); pPlayer && pPlayer->GetItem(itShowCriticalDamage)->IsEquipped())
-			Chat(FromCID, ":: Crit damage: {INT}p.", Amount);
+			Chat(FromCID, ":: Crit damage: {}p.", Amount);
 	}
 }
 
@@ -750,7 +750,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			// If the first character is a pound sign, send a chat message to the world
 			else if(firstChar == '#')
 			{
-				ChatWorldID(pPlayer->GetPlayerWorldID(), "Nearby:", "'{STR}' performed an act '{STR}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
+				ChatWorldID(pPlayer->GetPlayerWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			}
 			// Otherwise, send a regular chat message
 			else
@@ -854,7 +854,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 					pPlayer->m_RequestChangeNickname = true;
 					Server()->SetClientNameChangeRequest(ClientID, pMsg->m_pName);
 					Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 300,
-						"Press F3 to confirm the nickname change to [{STR}]\n- After the change, you will only be able to log in with the new nickname", pMsg->m_pName);
+						"Press F3 to confirm the nickname change to [{}]\n- After the change, you will only be able to log in with the new nickname", pMsg->m_pName);
 				}
 			}
 			else
@@ -1044,7 +1044,7 @@ void CGS::OnClientEnter(int ClientID)
 	// another
 	if(!pPlayer->IsAuthed())
 	{
-		Chat(-1, "{STR} entered and joined the MRPG", Server()->ClientName(ClientID));
+		Chat(-1, "{} entered and joined the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
@@ -1072,7 +1072,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
 
-		Chat(-1, "{STR} has left the MRPG", Server()->ClientName(ClientID));
+		Chat(-1, "{} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
 		Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 	}
@@ -1647,7 +1647,7 @@ void CGS::SendDayInfo(int ClientID)
 
 	if(m_DayEnumType == NIGHT_TYPE)
 	{
-		Chat(ClientID, "Nighttime adventure has been boosted by {INT}%!", m_MultiplierExp);
+		Chat(ClientID, "Nighttime adventure has been boosted by {}%!", m_MultiplierExp);
 	}
 	else if(m_DayEnumType == MORNING_TYPE)
 	{

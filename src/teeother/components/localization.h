@@ -4,7 +4,7 @@
 #include <teeother/tl/hashtable.h>
 
 /*
- * TODO: Join plural rules example {RP:{INT}:{STR}} or {PR:{INT}:player} use rules from lang files
+ * TODO: Join plural rules example {RP:{}:{}} or {PR:{}:player} use rules from lang files
  */
 
 class CLocalization
@@ -84,13 +84,9 @@ private:
 	std::string ToString(const char* pLanguageCode, T Value)
 	{
 		if constexpr(std::is_arithmetic_v<T>)
-		{
-			return get_label<std::string>(std::to_string(Value));
-		}
+			return std::to_string(Value);
 		else if constexpr(std::is_same_v<T, BigInt>)
-		{
-			return get_label<std::string>(std::to_string(Value));
-		}
+			return Value.to_string();
 		else if constexpr(std::is_convertible_v<T, std::string>)
 		{
 			std::string str(Value);
@@ -102,9 +98,11 @@ private:
 
 	std::string FormatImpl(const char*, const char* pText, std::deque<std::string>& vStrPack)
 	{
+		enum { tdefault, tcomma, tlabel };
 		std::string Result{};
 		bool ArgStarted = false;
 		int TextLength = str_length(pText);
+		int Type = tdefault;
 
 		// found args
 		for(int i = 0; i <= TextLength; ++i)
@@ -119,18 +117,45 @@ private:
 				continue;
 			}
 
-			// found end arg iterate
-			if(IterChar == '}' && ArgStarted)
+			// arg started
+			if(ArgStarted)
 			{
-				ArgStarted = false;
-				if(!vStrPack.empty())
+				// comma
+				if(IterChar == 'c' || IterChar == 'C')
 				{
-					Result += vStrPack.front();
-					vStrPack.pop_front();
+					Type = tcomma;
+					continue;
+				}
+
+				// label
+				if(IterChar == 'l' || IterChar == 'L')
+				{
+					Type = tlabel;
+					continue;
+				}
+
+				// end argument
+				if(IterChar == '}')
+				{
+					ArgStarted = false;
+					if(!vStrPack.empty())
+					{
+						if(Type == tcomma)
+							Result += get_commas<std::string>(vStrPack.front());
+						else if(Type == tlabel)
+							Result += get_label<std::string>(vStrPack.front());
+						else
+							Result += vStrPack.front();
+
+						vStrPack.pop_front();
+					}
+				}
+				else if(Type != tdefault)
+				{
+					Type = tdefault;
 				}
 			}
-			// allowed use {} with comments
-			else if(!IsLast && !ArgStarted)
+			else if(!IsLast)
 			{
 				Result += IterChar;
 			}

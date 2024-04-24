@@ -102,20 +102,20 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		return;
 	}
 	const bool IsOwner = pGroup->GetLeaderUID() == pPlayer->Account()->GetID();
-	VGroup.AddIfOption(IsOwner, "GROUP_CHANGE_COLOR", "Change the colour: ({INT})", pGroup->GetTeamColor());
+	VGroup.AddIfOption(IsOwner, "GROUP_CHANGE_COLOR", "Change the colour: ({})", pGroup->GetTeamColor());
 	VGroup.AddIfOption(IsOwner, "GROUP_DISBAND", "Disband group");
 	VGroup.AddOption("GROUP_KICK", pPlayer->Account()->GetID(), "Leave the group");
 	VGroup.AddLine();
 
 	// Group membership list
-	CVoteWrapper(ClientID).Add("\u2735 Members {INT} of {INT}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
+	CVoteWrapper(ClientID).Add("\u2735 Members {} of {}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
 	for(auto& AID : pGroup->GetAccounts())
 	{
 		std::string PlayerName = Server()->GetAccountNickname(AID);
 		bool HasInteraction = IsOwner && AID != pPlayer->Account()->GetID();
-		CVoteWrapper VMember(ClientID, VWF_UNIQUE, "{STR}{STR}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
-		VMember.AddIfOption(HasInteraction, "GROUP_KICK", AID, "Kick {STR}", PlayerName.c_str());
-		VMember.AddIfOption(HasInteraction, "GROUP_CHANGE_OWNER", AID, "Transfer ownership {STR}", PlayerName.c_str());
+		CVoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
+		VMember.AddIfOption(HasInteraction, "GROUP_KICK", AID, "Kick {}", PlayerName.c_str());
+		VMember.AddIfOption(HasInteraction, "GROUP_CHANGE_OWNER", AID, "Transfer ownership {}", PlayerName.c_str());
 	}
 	CVoteWrapper::AddLine(ClientID);
 
@@ -125,7 +125,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	{
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
 		if(pSearchPlayer && !pSearchPlayer->Account()->GetGroup())
-			VGroupInvites.AddOption("GROUP_INVITE", i, "Invite {STR}", Server()->ClientName(i));
+			VGroupInvites.AddOption("GROUP_INVITE", i, "Invite {}", Server()->ClientName(i));
 	}
 
 	CVoteWrapper::AddBackpage(ClientID);
@@ -167,7 +167,7 @@ static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int OptionID, int 
 	{
 		// Send chat messages to the player and the invited player
 		pGS->Chat(ClientID, "You've accepted the invitation!");
-		pGS->Chat(InvitedCID, "{STR} accepted your invitation!", pGS->Server()->ClientName(ClientID));
+		pGS->Chat(InvitedCID, "{} accepted your invitation!", pGS->Server()->ClientName(ClientID));
 
 		// Add the player to the group
 		pGroup->Add(pPlayer->Account()->GetID());
@@ -176,7 +176,7 @@ static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int OptionID, int 
 	{
 		// Send chat messages to the player and the invited player
 		pGS->Chat(ClientID, "You declined the invitation!");
-		pGS->Chat(InvitedCID, "{STR} declined your invitation!", pGS->Server()->ClientName(ClientID));
+		pGS->Chat(InvitedCID, "{} declined your invitation!", pGS->Server()->ClientName(ClientID));
 	}
 }
 
@@ -231,14 +231,14 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			}
 
 			// Create vote optional
-			auto pOption = CVoteEventOptional::Create(InvitedCID, ClientID, GroupID, 15, Server()->Localize(ClientID, "Join to {STR} group?"), Server()->ClientName(ClientID));
+			auto pOption = CVoteEventOptional::Create(InvitedCID, ClientID, GroupID, 15, Server()->Localize(ClientID, "Join to {} group?"), Server()->ClientName(ClientID));
 			pOption->RegisterCallback(CallbackVoteOptionalGroupInvite);
 
 			// Send a chat message to the player inviting them to join the group
-			GS()->Chat(ClientID, "You've invited {STR} to join your group!", Server()->ClientName(InvitedCID));
+			GS()->Chat(ClientID, "You've invited {} to join your group!", Server()->ClientName(InvitedCID));
 
 			// Send chat messages to the player being invited informing them of the invitation and how to join the group
-			GS()->Chat(InvitedCID, "You have been invited by the {STR} to join the group.", Server()->ClientName(ClientID));
+			GS()->Chat(InvitedCID, "You have been invited by the {} to join the group.", Server()->ClientName(ClientID));
 		}
 		return true;
 	}

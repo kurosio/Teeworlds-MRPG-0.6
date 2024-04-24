@@ -75,14 +75,14 @@ bool CJobItems::Interaction(const char* pTool, AttributeIdentifier AttributeDmg,
 	// check equipped
 	if(EquipItem <= 0)
 	{
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need equip {STR}!", Server()->Localization()->Localize(pPlayer->GetLanguage(), pTool));
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need equip {}!", Server()->Localization()->Localize(pPlayer->GetLanguage(), pTool));
 		return false;
 	}
 
 	// check level
 	if(JobLevel < m_Level)
 	{
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Your level low. {STR} {INT} Level", pWorkedItem->Info()->GetName(), m_Level);
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Your level low. {} {} Level", pWorkedItem->Info()->GetName(), m_Level);
 		return false;
 	}
 
@@ -91,7 +91,7 @@ bool CJobItems::Interaction(const char* pTool, AttributeIdentifier AttributeDmg,
 	const int Durability = pPlayerItem->GetDurability();
 	if(Durability <= 0)
 	{
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need repair \"{STR}\"!", pPlayerItem->Info()->GetName());
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need repair \"{}\"!", pPlayerItem->Info()->GetName());
 		return false;
 	}
 
@@ -104,7 +104,7 @@ bool CJobItems::Interaction(const char* pTool, AttributeIdentifier AttributeDmg,
 	GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
 
 	// information
-	GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{STR} [{INT}/{INT}P] : {STR} ({INT}/100%)",
+	GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{} [{}/{}P] : {} ({}/100%)",
 		pWorkedItem->Info()->GetName(), (m_DamageDealt > m_Health ? m_Health : m_DamageDealt), m_Health, pPlayerItem->Info()->GetName(), Durability);
 
 	return m_DamageDealt >= m_Health;

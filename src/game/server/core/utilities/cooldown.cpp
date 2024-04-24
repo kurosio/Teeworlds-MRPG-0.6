@@ -97,7 +97,7 @@ void CCooldown::Handler()
 		std::string ProgressBar = Tools::String::progressBar(100, (int)Current, 10, "\u25B0", "\u25B1");
 
 		// Broadcast the time remaining and progress bar
-		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "{STR}\n< {STR} > {STR} - Action", m_Name.c_str(), aTimeformat, ProgressBar.c_str());
+		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "{}\n< {} > {} - Action", m_Name.c_str(), aTimeformat, ProgressBar.c_str());
 	}
 
 	// Decrease the timer

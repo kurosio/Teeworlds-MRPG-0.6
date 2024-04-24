@@ -272,7 +272,7 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 		return;
 
 	// If the player has no votes, give a chance to come back
-	// Code format: {INT}x{INT} (CurrentMenuID, LastMenuID)
+	// Code format: {}x{} (CurrentMenuID, LastMenuID)
 	if(m_pData[ClientID].empty())
 	{
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
@@ -281,7 +281,7 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 			.BeginDepth()
 				.Add("Probably a server error")
 			.EndDepth()
-		.Add("Report the error code #{INT}x{INT}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
+		.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
 		pVotesData->SetLastMenuID(MENU_MAIN);
 		CVoteWrapper::AddBackpage(ClientID);
 	}

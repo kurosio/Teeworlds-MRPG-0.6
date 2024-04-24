@@ -179,8 +179,8 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		// Add the vote information for the player's client
 		/*
 		pPlayer->GS()->AV(ClientID, "null");
-		pPlayer->GS()->AVL(ClientID, "null", "{STR} : Reward", pQuestInfo->GetName());
-		pPlayer->GS()->AVL(ClientID, "null", "Gold: {VAL} Exp: {INT}", pQuestInfo->GetRewardGold(), pQuestInfo->GetRewardExp());
+		pPlayer->GS()->AVL(ClientID, "null", "{} : Reward", pQuestInfo->GetName());
+		pPlayer->GS()->AVL(ClientID, "null", "Gold: {c} Exp: {}", pQuestInfo->GetRewardGold(), pQuestInfo->GetRewardExp());
 		*/
 
 		// Add the votes back page to the player's client
@@ -284,9 +284,9 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 	const int TotalIncomplectedQuests = TotalQuests - TotalComplectedQuests;
 
 	CVoteWrapper VInfo(ClientID, VWF_STYLE_STRICT, "Quests statistic");
-	VInfo.Add("Total quests: {INT}", TotalQuests);
-	VInfo.Add("Total complected quests: {INT}", TotalComplectedQuests);
-	VInfo.Add("Total incomplete quests: {INT}", TotalIncomplectedQuests);
+	VInfo.Add("Total quests: {}", TotalQuests);
+	VInfo.Add("Total complected quests: {}", TotalComplectedQuests);
+	VInfo.Add("Total incomplete quests: {}", TotalIncomplectedQuests);
 
 	// tabs with quests
 	ShowQuestsTabList(pPlayer, QuestState::ACCEPT);
@@ -299,7 +299,7 @@ void CQuestManager::ShowQuestsMainList(CPlayer* pPlayer)
 void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 {
 	const int ClientID = pPlayer->GetCID();
-	CVoteWrapper(ClientID).Add("{STR} quests", GetStateName(State));
+	CVoteWrapper(ClientID).Add("{} quests", GetStateName(State));
 
 	// check first quest story step
 	bool IsEmptyList = true;
@@ -353,7 +353,7 @@ void CQuestManager::ShowQuestID(CPlayer* pPlayer, int QuestID) const
 	// Display the quest information to the player using the AVD() function
 	const int QuestsSize = pQuestInfo->GetStoryQuestsNum();
 	const int QuestPosition = pQuestInfo->GetStoryQuestPosition();
-	CVoteWrapper(pPlayer->GetCID()).AddMenu(MENU_JOURNAL_QUEST_INFORMATION, QuestID, "{INT}/{INT} {STR}: {STR}",
+	CVoteWrapper(pPlayer->GetCID()).AddMenu(MENU_JOURNAL_QUEST_INFORMATION, QuestID, "{}/{} {}: {}",
 		QuestPosition, QuestsSize, pQuestInfo->GetStory(), pQuestInfo->GetName());
 }
 
@@ -374,7 +374,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		CQuestStep& rQuestStepDataInfo = pPlayerQuest->m_vSteps[pStepBot.first];
 		const char* pSymbol = (((pPlayerQuest->GetState() == QuestState::ACCEPT && rQuestStepDataInfo.m_StepComplete) || pPlayerQuest->GetState() == QuestState::FINISHED) ? "✔ " : "\0");
 
-		CVoteWrapper VStep(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{STR}Step {INT}. {STR} {STR}(x{INT} y{INT})", 
+		CVoteWrapper VStep(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{}Step {}. {} {}(x{} y{})", 
 			pSymbol, BotInfo.m_StepPos, BotInfo.GetName(), Server()->GetWorldName(BotInfo.m_WorldID), (int)Pos.x, (int)Pos.y);
 
 		// skipped non accepted task list
@@ -392,7 +392,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 			{
 				if(DataBotInfo::ms_aDataBot.find(p.m_BotID) != DataBotInfo::ms_aDataBot.end())
 				{
-					VStep.Add("- Defeat {STR} [{INT}/{INT}]", DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, rQuestStepDataInfo.m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
+					VStep.Add("- Defeat {} [{}/{}]", DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, rQuestStepDataInfo.m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
 					NoTasks = false;
 				}
 			}
@@ -406,7 +406,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 				CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequired.m_Item);
 				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, pRequired.m_Item.GetValue());
 
-				VStep.Add("- Item {STR} [{VAL}/{VAL}]", pPlayerItem->Info()->GetName(), ClapmItem, pRequired.m_Item.GetValue());
+				VStep.Add("- Item {} [{c}/{c}]", pPlayerItem->Info()->GetName(), ClapmItem, pRequired.m_Item.GetValue());
 				NoTasks = false;
 			}
 		}
@@ -416,7 +416,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		{
 			for(auto& pRewardItem : BotInfo.m_RewardItems)
 			{
-				VStep.Add("- Receive {STR}x{VAL}", pRewardItem.Info()->GetName(), pRewardItem.GetValue());
+				VStep.Add("- Receive {}x{c}", pRewardItem.Info()->GetName(), pRewardItem.GetValue());
 			}
 		}
 
@@ -470,10 +470,10 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 
 		CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
 		const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
-		VWanted.Add("{STR} (Reward {VAL} gold)", Server()->ClientName(i), Reward);
+		VWanted.Add("{} (Reward {c} gold)", Server()->ClientName(i), Reward);
 		{
 			VWanted.BeginDepth();
-			VWanted.Add("Last seen: {STR}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
+			VWanted.Add("Last seen: {}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
 			VWanted.EndDepth();
 		}
 	}
@@ -492,8 +492,8 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 	}
 
 	// Daily board information
-	CVoteWrapper VDailyBoard(ClientID, VWF_STYLE_STRICT_BOLD, "Daily board: {STR}", pBoard->GetName());
-	VDailyBoard.Add("Acceptable quests: ({INT} of {INT})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
+	CVoteWrapper VDailyBoard(ClientID, VWF_STYLE_STRICT_BOLD, "Daily board: {}", pBoard->GetName());
+	VDailyBoard.Add("Acceptable quests: ({} of {})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
 	VDailyBoard.AddItemValue(itAlliedSeals);
 	VDailyBoard.AddLine();
 
@@ -510,17 +510,17 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 		const char* QuestName = pDailyQuestInfo->GetName();
 
 		// Display the quest information to the player
-		CVoteWrapper VQuest(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "({STR}) {STR}", StateIndicator, QuestName);
+		CVoteWrapper VQuest(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "({}) {}", StateIndicator, QuestName);
 		VQuest.Add("Reward:");
 		{
 			VQuest.BeginDepth();
-			VQuest.Add("Gold: {VAL}", pDailyQuestInfo->GetRewardGold());
-			VQuest.Add("Exp: {VAL}", pDailyQuestInfo->GetRewardExp());
-			VQuest.Add("{STR}: {VAL}", GS()->GetItemInfo(itAlliedSeals)->GetName(), g_Config.m_SvDailyQuestAlliedSealsReward);
+			VQuest.Add("Gold: {c}", pDailyQuestInfo->GetRewardGold());
+			VQuest.Add("Exp: {c}", pDailyQuestInfo->GetRewardExp());
+			VQuest.Add("{}: {c}", GS()->GetItemInfo(itAlliedSeals)->GetName(), g_Config.m_SvDailyQuestAlliedSealsReward);
 			VQuest.EndDepth();
 		}
 		VQuest.AddLine();
-		VQuest.AddOption("DAILY_QUEST_STATE", pDailyQuestInfo->GetID(), pBoard->GetID(), "{STR} quest", ActionName);
+		VQuest.AddOption("DAILY_QUEST_STATE", pDailyQuestInfo->GetID(), pBoard->GetID(), "{} quest", ActionName);
 		VQuest.AddLine();
 	}
 

@@ -36,14 +36,14 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VInfo.AddLine();
 
 		std::pair EidolonSize = GetEidolonsSize(ClientID);
-		CVoteWrapper VEidolon(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "\u2727 My eidolons (own {INT} out of {INT}).", EidolonSize.first, EidolonSize.second);
+		CVoteWrapper VEidolon(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "\u2727 My eidolons (own {} out of {}).", EidolonSize.first, EidolonSize.second);
 
 		for(auto& pEidolon : CEidolonInfoData::Data())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolon.GetItemID());
 			const char* pCollectedInfo = (pPlayerItem->HasItem() ? "✔" : "\0");
 			const char* pUsedAtMoment = pPlayerItem->IsEquipped() ? Server()->Localization()->Localize(pPlayer->GetLanguage(), "[summoned by you]") : "\0";
-			VEidolon.AddMenu(MENU_EIDOLON_COLLECTION_SELECTED, pEidolon.GetItemID(), "{STR} {STR} {STR}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
+			VEidolon.AddMenu(MENU_EIDOLON_COLLECTION_SELECTED, pEidolon.GetItemID(), "{} {} {}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
 		}
 
 		CVoteWrapper::AddBackpage(ClientID);
@@ -61,7 +61,7 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
 			pPlayerItem->StrFormatAttributes(pPlayer, aAttributeBonus, sizeof(aAttributeBonus));
 
-			CVoteWrapper VDesc(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Descriptions of eidolon ({STR})", pEidolonInfo->GetDataBot()->m_aNameBot);
+			CVoteWrapper VDesc(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Descriptions of eidolon ({})", pEidolonInfo->GetDataBot()->m_aNameBot);
 			for(auto& Line : pEidolonInfo->GetLinesDescription())
 				VDesc.Add(Line.c_str());
 			VDesc.AddLine();
@@ -75,7 +75,7 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			if(pPlayerItem->HasItem())
 			{
 				const char* pStateSummon = Server()->Localization()->Localize(pPlayer->GetLanguage(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
-				CVoteWrapper(ClientID).AddOption("ISETTINGS", pEidolonInfo->GetItemID(), NOPE, "{STR} {STR}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
+				CVoteWrapper(ClientID).AddOption("ISETTINGS", pEidolonInfo->GetItemID(), NOPE, "{} {}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
 			}
 			else
 			{

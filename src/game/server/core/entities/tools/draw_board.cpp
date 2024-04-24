@@ -105,13 +105,13 @@ void CBrush::SendBroadcast() const
 	aBufSpaces[sizeof(aBufSpaces) - 1] = '\0';
 
 	const CItemDescription* pItem = GS()->GetItemInfo(*m_BrushItem);
-	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: {STR} | {STR}"
-		"\n{STR}"
+	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: {} | {}"
+		"\n{}"
 		"\n\n- \"Fire\" add item"
 		"\n- \"Hook\" erase item"
 		"\n- \"Menu\" end drawing"
 		"\n- \"Prev, Next\" - switch item"
-		"\n{STR}",
+		"\n{}",
 		pItem->GetName(), aBufAvailable, pItem->GetDescription(), aBufSpaces);
 }
 
@@ -271,7 +271,7 @@ bool CEntityDrawboard::Draw(CBrush* pBrush, EntityPoint* pPoint)
 		CPlayerItem* pPlayerItem = pBrush->m_pPlayer->GetItem(pPoint->m_ItemID);
 		if(!pPlayerItem->HasItem())
 		{
-			GS()->Chat(pBrush->m_pPlayer->GetCID(), "You don't have {STR}", pPlayerItem->Info()->GetName());
+			GS()->Chat(pBrush->m_pPlayer->GetCID(), "You don't have {}", pPlayerItem->Info()->GetName());
 			return false;
 		}
 

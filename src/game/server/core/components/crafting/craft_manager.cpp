@@ -75,12 +75,12 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 		if(pPlayer->GetItem(RequiredItem)->GetValue() < RequiredItem.GetValue())
 		{
 			const int ItemLeft = (RequiredItem.GetValue() - pPlayer->GetItem(RequiredItem)->GetValue());
-			GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{STR}x{VAL} ", RequiredItem.Info()->GetName(), ItemLeft);
+			GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{}x{c} ", RequiredItem.Info()->GetName(), ItemLeft);
 		}
 	}
 	if(Buffer.length() > 0)
 	{
-		GS()->Chat(ClientID, "Item left: {STR}", Buffer.buffer());
+		GS()->Chat(ClientID, "Item left: {}", Buffer.buffer());
 		Buffer.clear();
 		return;
 	}
@@ -94,7 +94,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 	if(pPlayer->GetItem(itTicketDiscountCraft)->IsEquipped())
 	{
 		pPlayer->GetItem(itTicketDiscountCraft)->Remove(1);
-		GS()->Chat(ClientID, "You used item {STR} and get discount 25%.", GS()->GetItemInfo(itTicketDiscountCraft)->GetName());
+		GS()->Chat(ClientID, "You used item {} and get discount 25%.", GS()->GetItemInfo(itTicketDiscountCraft)->GetName());
 	}
 
 	// action get and remove
@@ -107,11 +107,11 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 	pPlayerCraftItem->Add(CraftGetValue);
 	if(pPlayerCraftItem->Info()->IsEnchantable())
 	{
-		GS()->Chat(-1, "{STR} crafted [{STR}x{VAL}].", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), CraftGetValue);
+		GS()->Chat(-1, "{} crafted [{}x{c}].", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), CraftGetValue);
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You crafted [{STR}x{VAL}].", pPlayerCraftItem->Info()->GetName(), CraftGetValue);
+		GS()->Chat(ClientID, "You crafted [{}x{c}].", pPlayerCraftItem->Info()->GetName(), CraftGetValue);
 	}
 
 	pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -178,8 +178,8 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	// detail information
 	CVoteWrapper VCraftItem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information");
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
-	VCraftItem.Add("Crafting: {STR}x{VAL}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
-	VCraftItem.Add("{STR}", pCraftItemInfo->GetDescription());
+	VCraftItem.Add("Crafting: {}x{c}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
+	VCraftItem.Add("{}", pCraftItemInfo->GetDescription());
 	if(pCraftItemInfo->IsEnchantable())
 	{
 		char aAttributes[128];
@@ -200,7 +200,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		{
 			CPlayerItem* pGold = pPlayer->GetItem(itGold);
 			bool Has = pPlayer->GetItem(itGold)->GetValue() >= CraftPrice;
-			VCraftRequired.MarkList().Add("{STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", pGold->Info()->GetName(), CraftPrice, pGold->GetValue());
+			VCraftRequired.MarkList().Add("{} {}x{c} ({c})", Has ? "\u2714" : "\u2718", pGold->Info()->GetName(), CraftPrice, pGold->GetValue());
 		}
 
 		// requied items
@@ -208,7 +208,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
 			bool Has = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
-			VCraftRequired.MarkList().Add("{STR} {STR}x{VAL} ({VAL})", Has ? "\u2714" : "\u2718", 
+			VCraftRequired.MarkList().Add("{} {}x{c} ({c})", Has ? "\u2714" : "\u2718", 
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
 
@@ -218,7 +218,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// add craft button
-	CVoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({VAL} gold)", pCraft->GetPrice(pPlayer));
+	CVoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({c} gold)", pCraft->GetPrice(pPlayer));
 
 	// add backpage
 	CVoteWrapper::AddEmptyline(ClientID);
@@ -254,12 +254,12 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 		// set title name by enchant type (or stack item, or only once)
 		if(pCraftItemInfo->IsEnchantable())
 		{
-			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "{STR}{STR} - {VAL} gold", 
+			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "{}{} - {c} gold", 
 				(pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		}
 		else
 		{
-			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "[{VAL}]{STR}x{INT} - {VAL} gold",
+			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "[{c}]{}x{} - {c} gold",
 				pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}

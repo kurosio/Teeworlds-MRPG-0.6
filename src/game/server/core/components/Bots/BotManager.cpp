@@ -224,22 +224,22 @@ bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 			continue;
 
 		const vec2 Pos = Mob.m_Position / 32.0f;
-		CVoteWrapper VMob(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Mob {STR}", Mob.GetName());
+		CVoteWrapper VMob(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Mob {}", Mob.GetName());
 		VMob.MarkList().Add("Location:");
 		{
 			VMob.BeginDepth();
 			VMob.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-			VMob.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
+			VMob.Add("x{} y{}", (int)Pos.x, (int)Pos.y);
 			VMob.EndDepth();
 		}
 		VMob.AddLine();
 		VMob.MarkList().Add("Description:");
 		{
 			VMob.BeginDepth();
-			VMob.Add("Level: {INT}", Mob.m_Level);
-			VMob.Add("Power: {INT}", Mob.m_Power);
-			VMob.Add("Boss: {STR}", Mob.m_Boss ? "Yes" : "No");
-			VMob.Add("Respawn: {INT} sec", Mob.m_RespawnTick);
+			VMob.Add("Level: {}", Mob.m_Level);
+			VMob.Add("Power: {}", Mob.m_Power);
+			VMob.Add("Boss: {}", Mob.m_Boss ? "Yes" : "No");
+			VMob.Add("Respawn: {} sec", Mob.m_RespawnTick);
 			VMob.EndDepth();
 		}
 		VMob.AddLine();
@@ -257,7 +257,7 @@ bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 
 				char aBuf[128];
 				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", Mob.m_aValueItem[i], Chance, ExtraChance);
-				VMob.Add("{STR}{STR}", pDropItemInfo->GetName(), aBuf);
+				VMob.Add("{}{}", pDropItemInfo->GetName(), aBuf);
 				HasDropItem = true;
 			}
 			if(!HasDropItem)

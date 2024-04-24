@@ -102,7 +102,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 
 		char aAttributes[128];
 		Info()->StrFormatAttributes(GetPlayer(), aAttributes, sizeof(aAttributes), StartEnchant);
-		GS()->Chat(ClientID, "Auto equip {STR} - {STR}", Info()->GetName(), aAttributes);
+		GS()->Chat(ClientID, "Auto equip {} - {}", Info()->GetName(), aAttributes);
 	}
 
 	if(!Message || Info()->IsType(ItemType::TYPE_SETTINGS) || Info()->IsType(ItemType::TYPE_INVISIBLE))
@@ -110,16 +110,16 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 
 	if(Info()->IsType(ItemType::TYPE_EQUIP) || Info()->IsType(ItemType::TYPE_MODULE))
 	{
-		GS()->Chat(-1, "{STR} got of the {STR}.", GS()->Server()->ClientName(ClientID), Info()->GetName());
+		GS()->Chat(-1, "{} got of the {}.", GS()->Server()->ClientName(ClientID), Info()->GetName());
 		if(Info()->IsFunctional(EQUIP_EIDOLON))
 		{
 			std::pair EidolonSize = GS()->Core()->EidolonManager()->GetEidolonsSize(ClientID);
-			GS()->Chat(-1, "{STR} has a collection {INT} out of {INT} eidolons.", GS()->Server()->ClientName(ClientID), EidolonSize.first, EidolonSize.second);
+			GS()->Chat(-1, "{} has a collection {} out of {} eidolons.", GS()->Server()->ClientName(ClientID), EidolonSize.first, EidolonSize.second);
 		}
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You obtain an {STR}x{VAL}({VAL}).", Info()->GetName(), Value, m_Value);
+		GS()->Chat(ClientID, "You obtain an {}x{c}({c}).", Info()->GetName(), Value, m_Value);
 	}
 
 	return Save();
@@ -184,7 +184,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itPotionManaRegen && Remove(Value))
 	{
 		GetPlayer()->GiveEffect("RegenMana", 15);
-		GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
+		GS()->Chat(ClientID, "You used {}x{c}", Info()->GetName(), Value);
 		return true;
 	}
 	// ticket discount craft
@@ -197,7 +197,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "{} used {}x{c} and got {c} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->Account()->AddExperience(Getting);
 		return true;
 	}
@@ -205,7 +205,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itLittleBagGold && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{STR} used {STR}x{VAL} and got {VAL} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "{} used {}x{c} and got {c} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->Account()->AddGold(Getting);
 		return true;
 	}
@@ -226,7 +226,7 @@ bool CPlayerItem::Use(int Value)
 			}
 		}
 
-		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
+		GS()->Chat(-1, "{} used {} returned {} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
 		GetPlayer()->Account()->m_Upgrade += BackUpgrades;
 		GS()->Core()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
 		return true;
@@ -257,7 +257,7 @@ bool CPlayerItem::Use(int Value)
 			}
 		}
 
-		GS()->Chat(-1, "{STR} used {STR} returned {INT} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
+		GS()->Chat(-1, "{} used {} returned {} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
 		GetPlayer()->Account()->m_Upgrade += BackUpgrades;
 		GS()->Core()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
 		return true;
@@ -275,7 +275,7 @@ bool CPlayerItem::Use(int Value)
 			GetPlayer()->GiveEffect(pHeal->getEffect(), PotionTime);
 			GetPlayer()->m_aPlayerTick[PotionRecast] = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 
-			GS()->Chat(ClientID, "You used {STR}x{VAL}", Info()->GetName(), Value);
+			GS()->Chat(ClientID, "You used {}x{c}", Info()->GetName(), Value);
 			GS()->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 140.0f), vec2(), 70, pHeal->getEffect());
 		}
 		return true;

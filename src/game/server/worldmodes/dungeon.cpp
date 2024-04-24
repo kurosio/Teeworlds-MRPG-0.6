@@ -140,11 +140,11 @@ void CGameControllerDungeon::ChangeState(int State)
 		// dungeon finished information
 		char aTimeFormat[64];
 		str_format(aTimeFormat, sizeof(aTimeFormat), "Time: %d minute(s) %d second(s)", FinishTime / 60, FinishTime - (FinishTime / 60 * 60));
-		GS()->Chat(-1, "Group{STR}!", Buffer.buffer());
-		GS()->Chat(-1, "{STR} finished {STR}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
+		GS()->Chat(-1, "Group{}!", Buffer.buffer());
+		GS()->Chat(-1, "{} finished {}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
 
 		if(pBestPlayer)
-			GS()->Chat(-1, "Most Valuable '{STR}'. With help {VAL} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
+			GS()->Chat(-1, "Most Valuable '{}'. With help {c} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
@@ -199,7 +199,7 @@ void CGameControllerDungeon::StateTick()
 
 			// output before the start of the passage
 			const int Time = m_StartingTick / Server()->TickSpeed();
-			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon waiting {INT} sec!\nPlayer's are ready to start right now {INT} of {INT}!\nYou can change state with 'Vote yes'", Time, PlayersReadyState, Players);
+			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'", Time, PlayersReadyState, Players);
 
 			m_StartingTick--;
 			if(!m_StartingTick)
@@ -245,7 +245,7 @@ void CGameControllerDungeon::StateTick()
 		if(m_FinishedTick)
 		{
 			const int Time = m_FinishedTick / Server()->TickSpeed();
-			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon ended {INT} sec!", Time);
+			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon ended {} sec!", Time);
 
 			m_FinishedTick--;
 		}
@@ -290,7 +290,7 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 		{
 			const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
 			CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "The dungeon is completed on [{INT}%]", Progress);
+			GS()->ChatWorldID(m_WorldID, "Dungeon:", "The dungeon is completed on [{}%]", Progress);
 			UpdateDoorKeyState();
 		}
 	}
