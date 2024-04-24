@@ -883,7 +883,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		const int EnchantBonus = translate_to_percent_rest(pFrom->GetAttributeSize(AttributeIdentifier::DMG), pFrom->GetClass()->GetExtraDMG());
 		Dmg += EnchantBonus;
 
-		// bleeding blow
+		// bleeding blow skill
 		if(pFrom->GetSkill(SkillBleedingBlow)->IsLearned())
 		{
 			int Chance = pFrom->GetSkill(SkillBleedingBlow)->GetBonus();

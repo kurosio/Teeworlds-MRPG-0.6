@@ -30,7 +30,6 @@
 #include <cstdarg>
 
 #include "core/components/Eidolons/EidolonInfoData.h"
-#include "core/components/warehouse/warehouse_data.h"
 #include "core/components/worlds/world_data.h"
 #include "core/utilities/vote_wrapper.h"
 
