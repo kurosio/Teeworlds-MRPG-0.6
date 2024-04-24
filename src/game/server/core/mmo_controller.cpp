@@ -161,10 +161,6 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VMain.Add("Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
 		VMain.AddLine();
 
-		BigInt Money("310293012930129301");
-		Money += 100;
-		dbg_msg("test", "%s", get_label<std::string>(Money.to_string()).c_str());
-
 		// personal menu
 		CVoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "\u262A PERSONAL");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");

@@ -251,7 +251,7 @@ void CLocalization::Format_V(dynamic_string& Buffer, const char* pLanguageCode, 
 			{
 				char aBuf[128];
 				const int pVarArgValue = va_arg(VarArgsIter, int);
-				str_format(aBuf, sizeof(aBuf), "%d", pVarArgValue); // %ll
+				str_format(aBuf, sizeof(aBuf), "%d", pVarArgValue);
 				BufferIter = Buffer.append_at(BufferIter, aBuf);
 			}
 			else if(str_comp_num("VAL", pText + ParamTypeStart, 3) == 0) // value
@@ -259,15 +259,25 @@ void CLocalization::Format_V(dynamic_string& Buffer, const char* pLanguageCode, 
 				const int pVarArgValue = va_arg(VarArgsIter, int);
 				BufferIter = Buffer.append_at(BufferIter, get_commas<int>(pVarArgValue).c_str());
 			}
-			else if(str_comp_num("BINT", pText + ParamTypeStart, 4) == 0) // big int
+			else if(str_comp_num("LABEL_VAL", pText + ParamTypeStart, 4) == 0) // value
+			{
+				const int pVarArgValue = va_arg(VarArgsIter, int);
+				BufferIter = Buffer.append_at(BufferIter, get_label<int>(pVarArgValue).c_str());
+			}
+			else if(str_comp_num("BIG_INT", pText + ParamTypeStart, 4) == 0) // big int
 			{
 				const BigInt biggerInt = va_arg(VarArgsIter, BigInt);
 				BufferIter = Buffer.append_at(BufferIter, biggerInt.to_string().c_str());
 			}
-			else if(str_comp_num("BVAL", pText + ParamTypeStart, 4) == 0) // big val
+			else if(str_comp_num("BIG_VAL", pText + ParamTypeStart, 4) == 0) // big val
 			{
 				const BigInt biggerInt = va_arg(VarArgsIter, BigInt);
 				BufferIter = Buffer.append_at(BufferIter, get_commas<std::string>(biggerInt.to_string()).c_str());
+			}
+			else if(str_comp_num("LABEL_BIG_VAL", pText + ParamTypeStart, 5) == 0) // big val
+			{
+				const BigInt biggerInt = va_arg(VarArgsIter, BigInt);
+				BufferIter = Buffer.append_at(BufferIter, get_label<std::string>(biggerInt.to_string()).c_str());
 			}
 
 			//
