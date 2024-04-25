@@ -83,7 +83,9 @@ private:
 	template <typename T>
 	std::string ToString(const char* pLanguageCode, T Value)
 	{
-		if constexpr(std::is_arithmetic_v<T>)
+		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
+			return std::to_string(Value);
+		else if constexpr(std::is_arithmetic_v<T>)
 			return get_commas(std::to_string(Value));
 		else if constexpr(std::is_same_v<T, BigInt>)
 			return get_label(Value.to_string());
