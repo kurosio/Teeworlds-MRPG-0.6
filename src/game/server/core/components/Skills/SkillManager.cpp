@@ -146,7 +146,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	);
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
 	bool MarkHas = pPlayerItem->GetValue() >= pInfo->GetPriceSP();
-	VRequired.MarkList().Add("{} {}x{c} ({c})", MarkHas ? "\u2714" : "\u2718", pPlayerItem->Info()->GetName(), pInfo->GetPriceSP(), pPlayerItem->GetValue());
+	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pPlayerItem->Info()->GetName(), pInfo->GetPriceSP(), pPlayerItem->GetValue());
 	VRequired.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 

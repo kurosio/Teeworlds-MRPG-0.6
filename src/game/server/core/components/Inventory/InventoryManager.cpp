@@ -171,7 +171,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
 		pPlayerItem->Drop(Get);
 
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {}x{c}", pPlayerItem->Info()->GetName(), Get);
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {}x{}", pPlayerItem->Info()->GetName(), Get);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -200,7 +200,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		const int DesValue = pPlayerSelectedItem->GetDysenthis() * Get;
 		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
-			GS()->Chat(ClientID, "Disassemble {}x{c}.", pPlayerSelectedItem->Info()->GetName(), Get);
+			GS()->Chat(ClientID, "Disassemble {}x{}.", pPlayerSelectedItem->Info()->GetName(), Get);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
@@ -319,7 +319,7 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 				continue;
 
 			int Price = maximum(1, Item.GetInitialPrice());
-			VItems.AddOption("SELL_ITEM", ID, Price, "[{c}] Sell {} ({c} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
+			VItems.AddOption("SELL_ITEM", ID, Price, "[{}] Sell {} ({} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
 		}
 		VItems.EndDepth();
 	}
@@ -345,7 +345,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	}
 	else
 	{
-		VItem.SetTitle("{}{} x{c}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
+		VItem.SetTitle("{}{} x{}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
 	}
 	VItem.AddIf(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped(), "{}", pInfo->GetDescription());
 
@@ -380,13 +380,13 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	if(pInfo->IsEnchantable() && !pItem->IsEnchantMaxLevel())
 	{
 		const int Price = pItem->GetEnchantPrice();
-		VItem.AddOption("IENCHANT", ItemID, "Enchant ({c}m)", Price);
+		VItem.AddOption("IENCHANT", ItemID, "Enchant ({}m)", Price);
 	}
 
 	// not allowed drop equipped hammer
 	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
-		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{c}m)", pItem->GetDysenthis());
+		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{}m)", pItem->GetDysenthis());
 		VItem.AddIfOption(pInfo->m_InitialPrice > 0, "AUCTION_CREATE", ItemID, "Sell at auction");
 		VItem.AddOption("IDROP", ItemID, "Drop");
 	}

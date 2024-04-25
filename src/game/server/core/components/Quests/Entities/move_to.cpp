@@ -240,7 +240,7 @@ void CEntityQuestAction::HandleBroadcastInformation() const
 		const char* pLang = m_pPlayer->GetLanguage();
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pRequireItem.GetID());
 
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Required [{}x{c}({c})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
 		Buffer.append("\n");
 	}
 	if(pPickupItem.IsValid())
@@ -248,7 +248,7 @@ void CEntityQuestAction::HandleBroadcastInformation() const
 		const char* pLang = m_pPlayer->GetLanguage();
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pPickupItem.GetID());
 
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Pick up [{}x{c}({c})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
 		Buffer.append("\n");
 	}
 

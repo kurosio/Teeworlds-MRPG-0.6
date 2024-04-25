@@ -35,7 +35,7 @@ void CHouseBankData::Add(int Value)
 
 			// Send a chat message to the player indicating the amount of gold they have put in the safe
 			int ClientID = pPlayer->GetCID();
-			m_pGS->Chat(ClientID, "You put {c} gold in the safe, now {c}!", Value, m_Bank);
+			m_pGS->Chat(ClientID, "You put {} gold in the safe, now {}!", Value, m_Bank);
 		}
 	}
 }
@@ -75,7 +75,7 @@ void CHouseBankData::Take(int Value)
 			Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "HouseBank = '%d' WHERE ID = '%d'", m_Bank, HouseID);
 
 			// Send a message to the client with the updated information
-			m_pGS->Chat(ClientID, "You take {c} gold in the safe {c}!", Value, m_Bank);
+			m_pGS->Chat(ClientID, "You take {} gold in the safe {}!", Value, m_Bank);
 		}
 	}
 }

@@ -84,9 +84,9 @@ private:
 	std::string ToString(const char* pLanguageCode, T Value)
 	{
 		if constexpr(std::is_arithmetic_v<T>)
-			return std::to_string(Value);
+			return get_commas(std::to_string(Value));
 		else if constexpr(std::is_same_v<T, BigInt>)
-			return Value.to_string();
+			return get_label(Value.to_string());
 		else if constexpr(std::is_convertible_v<T, std::string>)
 		{
 			std::string str(Value);
@@ -98,11 +98,9 @@ private:
 
 	std::string FormatImpl(const char*, const char* pText, std::deque<std::string>& vStrPack)
 	{
-		enum { tdefault, tcomma, tlabel };
 		std::string Result{};
 		bool ArgStarted = false;
 		int TextLength = str_length(pText);
-		int Type = tdefault;
 
 		// found args
 		for(int i = 0; i <= TextLength; ++i)
@@ -120,42 +118,20 @@ private:
 			// arg started
 			if(ArgStarted)
 			{
-				// comma
-				if(IterChar == 'c' || IterChar == 'C')
-				{
-					Type = tcomma;
-					continue;
-				}
-
-				// label
-				if(IterChar == 'l' || IterChar == 'L')
-				{
-					Type = tlabel;
-					continue;
-				}
-
-				// end argument
 				if(IterChar == '}')
 				{
 					ArgStarted = false;
 					if(!vStrPack.empty())
 					{
-						if(Type == tcomma)
-							Result += get_commas<std::string>(vStrPack.front());
-						else if(Type == tlabel)
-							Result += get_label<std::string>(vStrPack.front());
-						else
-							Result += vStrPack.front();
-
+						Result += vStrPack.front();
 						vStrPack.pop_front();
 					}
 				}
-				else if(Type != tdefault)
-				{
-					Type = tdefault;
-				}
+				continue;
 			}
-			else if(!IsLast)
+
+			// add next char
+			if(!IsLast)
 			{
 				Result += IterChar;
 			}

@@ -77,7 +77,7 @@ void CMailboxManager::ShowMailboxMenu(CPlayer *pPlayer)
 		else if(AttachedItem.Info()->IsEnchantable())
 			VLetter.AddOption("MAIL", MailLetterID, "Receive {} {}", AttachedItem.Info()->GetName(), AttachedItem.Info()->StringEnchantLevel(Enchant).c_str());
 		else
-			VLetter.AddOption("MAIL", MailLetterID, "Receive {}x{c}", AttachedItem.Info()->GetName(), Value);
+			VLetter.AddOption("MAIL", MailLetterID, "Receive {}x{}", AttachedItem.Info()->GetName(), Value);
 
 		VLetter.AddOption("DELETE_MAIL", MailLetterID, "Delete");
 	}

@@ -783,7 +783,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
 		{
 			GS()->CreateDropItem(m_Pos, Killer, { itGold, LossGold }, Force);
-			GS()->Chat(ClientID, "You lost {}%({c}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+			GS()->Chat(ClientID, "You lost {}%({}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
 		}
 	}
 
@@ -806,12 +806,12 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				if(KillerIsPlayer)
 				{
 					pKiller->GetItem(itGold)->Add(Arrest);
-					GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {c} gold!",
+					GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {} gold!",
 						Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 				}
 
 				// Send a chat message to the client with their arrest information
-				GS()->Chat(ClientID, "Treasury confiscates {}%({c}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
+				GS()->Chat(ClientID, "Treasury confiscates {}%({}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
 
 				// Imprison
 				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 100);

@@ -180,7 +180,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		/*
 		pPlayer->GS()->AV(ClientID, "null");
 		pPlayer->GS()->AVL(ClientID, "null", "{} : Reward", pQuestInfo->GetName());
-		pPlayer->GS()->AVL(ClientID, "null", "Gold: {c} Exp: {}", pQuestInfo->GetRewardGold(), pQuestInfo->GetRewardExp());
+		pPlayer->GS()->AVL(ClientID, "null", "Gold: {} Exp: {}", pQuestInfo->GetRewardGold(), pQuestInfo->GetRewardExp());
 		*/
 
 		// Add the votes back page to the player's client
@@ -406,7 +406,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 				CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequired.m_Item);
 				int ClapmItem = clamp(pPlayerItem->GetValue(), 0, pRequired.m_Item.GetValue());
 
-				VStep.Add("- Item {} [{c}/{c}]", pPlayerItem->Info()->GetName(), ClapmItem, pRequired.m_Item.GetValue());
+				VStep.Add("- Item {} [{}/{}]", pPlayerItem->Info()->GetName(), ClapmItem, pRequired.m_Item.GetValue());
 				NoTasks = false;
 			}
 		}
@@ -416,7 +416,7 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 		{
 			for(auto& pRewardItem : BotInfo.m_RewardItems)
 			{
-				VStep.Add("- Receive {}x{c}", pRewardItem.Info()->GetName(), pRewardItem.GetValue());
+				VStep.Add("- Receive {}x{}", pRewardItem.Info()->GetName(), pRewardItem.GetValue());
 			}
 		}
 
@@ -470,7 +470,7 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 
 		CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
 		const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
-		VWanted.Add("{} (Reward {c} gold)", Server()->ClientName(i), Reward);
+		VWanted.Add("{} (Reward {} gold)", Server()->ClientName(i), Reward);
 		{
 			VWanted.BeginDepth();
 			VWanted.Add("Last seen: {}", Server()->GetWorldName(pPlayer->GetPlayerWorldID()));
@@ -514,9 +514,9 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 		VQuest.Add("Reward:");
 		{
 			VQuest.BeginDepth();
-			VQuest.Add("Gold: {c}", pDailyQuestInfo->GetRewardGold());
-			VQuest.Add("Exp: {c}", pDailyQuestInfo->GetRewardExp());
-			VQuest.Add("{}: {c}", GS()->GetItemInfo(itAlliedSeals)->GetName(), g_Config.m_SvDailyQuestAlliedSealsReward);
+			VQuest.Add("Gold: {}", pDailyQuestInfo->GetRewardGold());
+			VQuest.Add("Exp: {}", pDailyQuestInfo->GetRewardExp());
+			VQuest.Add("{}: {}", GS()->GetItemInfo(itAlliedSeals)->GetName(), g_Config.m_SvDailyQuestAlliedSealsReward);
 			VQuest.EndDepth();
 		}
 		VQuest.AddLine();

@@ -209,10 +209,12 @@ static std::string get_commas(type Number)
 	std::string NumberString;
 	if constexpr(std::is_same_v<std::string, type>)
 		NumberString = Number;
-	else	
+	else if constexpr(std::is_arithmetic_v<type>)
 		NumberString = std::to_string(Number);
+	else 
+		NumberString(Number);
 
-	if(NumberString.length() > num)
+	if(NumberString.length() > (num + 1))
 	{
 		for(auto it = NumberString.rbegin(); (num + 1) <= std::distance(it, NumberString.rend());)
 		{
@@ -224,16 +226,20 @@ static std::string get_commas(type Number)
 	return NumberString;
 }
 
+
 // translate to label
 // example: 1021321 - 1,021 million
 template<typename type, const char separator = ','>
 static std::string get_label(type Number)
 {
+	constexpr unsigned num = 3;
 	std::string NumberString;
 	if constexpr(std::is_same_v<std::string, type>)
 		NumberString = Number;
-	else
+	else if constexpr(std::is_arithmetic_v<type>)
 		NumberString = std::to_string(Number);
+	else
+		NumberString(Number);
 
 	const char* pLabel[24] =
 	{
@@ -263,18 +269,18 @@ static std::string get_label(type Number)
 		"trevigintillion"  // 1000000000000000000000000000000000000000000000000000000000000000000
 	};
 
-	if(NumberString.length() > 3)
+	if(NumberString.length() > (num + 1))
 	{
 		int Position = -1;
 		auto iter = NumberString.end();
-		for(auto it = NumberString.rbegin(); (3 + 1) <= std::distance(it, NumberString.rend());)
+		for(auto it = NumberString.rbegin(); (num + 1) <= std::distance(it, NumberString.rend());)
 		{
 			if(iter != NumberString.end())
 			{
 				NumberString.erase(iter, NumberString.end());
 			}
 
-			std::advance(it, 3);
+			std::advance(it, num);
 			iter = NumberString.insert(it.base(), separator);
 			Position++;
 		}
@@ -286,5 +292,15 @@ static std::string get_label(type Number)
 
 	return NumberString;
 }
+
+#ifndef FCOM
+// FCOM - format number / string (from 1321923 to 1,321,923)
+#define FCOM(value) get_commas(value).c_str()
+#endif
+
+#ifndef FLAB
+// FLAB - format number / string (from 1321923 to 1,321 million)
+#define FLAB(value) get_label(value).c_str()
+#endif
 
 #endif // BASE_MATH_H

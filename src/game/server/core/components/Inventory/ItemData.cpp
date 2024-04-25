@@ -119,7 +119,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You obtain an {}x{c}({c}).", Info()->GetName(), Value, m_Value);
+		GS()->Chat(ClientID, "You obtain an {}x{}({}).", Info()->GetName(), Value, m_Value);
 	}
 
 	return Save();
@@ -184,7 +184,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itPotionManaRegen && Remove(Value))
 	{
 		GetPlayer()->GiveEffect("RegenMana", 15);
-		GS()->Chat(ClientID, "You used {}x{c}", Info()->GetName(), Value);
+		GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
 		return true;
 	}
 	// ticket discount craft
@@ -197,7 +197,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{} used {}x{c} and got {c} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "{} used {}x{} and got {} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->Account()->AddExperience(Getting);
 		return true;
 	}
@@ -205,7 +205,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itLittleBagGold && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{} used {}x{c} and got {c} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "{} used {}x{} and got {} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		GetPlayer()->Account()->AddGold(Getting);
 		return true;
 	}
@@ -275,7 +275,7 @@ bool CPlayerItem::Use(int Value)
 			GetPlayer()->GiveEffect(pHeal->getEffect(), PotionTime);
 			GetPlayer()->m_aPlayerTick[PotionRecast] = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 
-			GS()->Chat(ClientID, "You used {}x{c}", Info()->GetName(), Value);
+			GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
 			GS()->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 140.0f), vec2(), 70, pHeal->getEffect());
 		}
 		return true;

@@ -191,7 +191,7 @@ void CQuestStep::PostFinish()
 
 			if(pRequired.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW)
 			{
-				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {}x{c} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
+				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {}x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 				continue;
 			}
 
@@ -206,7 +206,7 @@ void CQuestStep::PostFinish()
 
 			// remove item
 			pPlayerItem->Remove(pRequired.m_Item.GetValue());
-			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {}x{c} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
+			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {}x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 		}
 	}
 
@@ -495,7 +495,7 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show a" : "Require a";
 
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "{} {} {} ({c}/{c}).",
+			GS()->Server()->Localization()->Format(Buffer, pLang, "{} {} {} ({}/{}).",
 				pCompletePrefix, GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pRequied.m_Item.GetValue());
 		}
 	}

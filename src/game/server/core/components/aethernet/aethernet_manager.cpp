@@ -147,7 +147,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 
 	// Default aether menu
 	CVoteWrapper VAether(ClientID, VWF_STYLE_STRICT_BOLD, "Aethernet information");
-	VAether.Add("Total unlocked aethers: {c} of {c}.", pPlayer->Account()->GetAethers().size(), CAetherData::Data().size());
+	VAether.Add("Total unlocked aethers: {} of {}.", pPlayer->Account()->GetAethers().size(), CAetherData::Data().size());
 	VAether.AddItemValue(itGold);
 	VAether.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
@@ -164,7 +164,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 			if(pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
 			{
 				const int Fee = g_Config.m_SvAetherFee * (pAether->GetWorldID() + 1);
-				VAetherElem.AddOption("AETHER_TELEPORT", pAether->GetID(), Fee, "{} (Fee {c} gold's)", pAether->GetName(), Fee);
+				VAetherElem.AddOption("AETHER_TELEPORT", pAether->GetID(), Fee, "{} (Fee {} gold's)", pAether->GetName(), Fee);
 				UnlockedPlayerZoneAethers++;
 			}
 		}

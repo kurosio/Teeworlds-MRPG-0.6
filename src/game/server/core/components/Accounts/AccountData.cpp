@@ -333,7 +333,7 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID) const
 	if(pCurrencyItem->GetValue() < Price)
 	{
 		// Display a message to the player indicating that they don't have enough currency
-		GS()->Chat(m_ClientID, "Required {c}, but you only have {c} {}!", Price, pCurrencyItem->GetValue(), pCurrencyItem->Info()->GetName());
+		GS()->Chat(m_ClientID, "Required {}, but you only have {} {}!", Price, pCurrencyItem->GetValue(), pCurrencyItem->Info()->GetName());
 		return false;
 	}
 
@@ -395,6 +395,6 @@ void CAccountData::HandleChair()
 	std::string aExpBuf = "+" + std::to_string(ExpValue);
 	std::string aGoldBuf = (GoldValue > 0) ? "+" + std::to_string(GoldValue) : "limit";
 	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
-		"Gold {l} : {} (daily limit {c} of {c})\nExp {c}/{c} : {}\nThe limit and count is increased with special items!",
+		"Gold {} : {} (daily limit {} of {})\nExp {}/{} : {}\nThe limit and count is increased with special items!",
 		m_pPlayer->GetItem(itGold)->GetValue(), aGoldBuf.c_str(), GetCurrentDailyChairGolds(), GetLimitDailyChairGolds(), m_Exp, computeExperience(m_Level), aExpBuf.c_str());
 }

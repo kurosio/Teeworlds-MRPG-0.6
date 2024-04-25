@@ -83,7 +83,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	{
 		// storage functional
 		VStorage.AddLine();
-		VStorage.Add("\u2727 Your: {c} | Storage: {c} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
+		VStorage.Add("\u2727 Your: {} | Storage: {} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
 		{
 			VStorage.BeginDepth();
 			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_BUY), "WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
@@ -120,7 +120,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 			const CItem* pItem = Trade.GetItem();
 			const int Price = Trade.GetPrice();
 
-			VItems.AddOption("WAREHOUSE_SELL_ITEM", pWarehouse->GetID(), Trade.GetID(), "[{c}] Sell {} - {c} {} per unit",
+			VItems.AddOption("WAREHOUSE_SELL_ITEM", pWarehouse->GetID(), Trade.GetID(), "[{}] Sell {} - {} {} per unit",
 				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), Price, pCurrency->GetName());
 		}
 	}
@@ -163,12 +163,12 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 		if(pItem->Info()->IsEnchantable())
 		{
 			const bool HasItem = pPlayer->GetItem(*pItem)->HasItem();
-			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{}] {} {} - {c} {}", (HasItem ? "✔" : "×"),
+			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{}] {} {} - {} {}", (HasItem ? "✔" : "×"),
 				pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrency->GetName());
 		}
 		else
 		{
-			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{c}] {}x{c} - {c} {}",
+			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{}] {}x{} - {} {}",
 				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), pItem->GetValue(), Price, pCurrency->GetName());
 		}
 	}
@@ -202,7 +202,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	else
 	{
 		int Value = pPlayer->GetItem(pItem->GetID())->GetValue();
-		VItem.Add("{} (has {c})", pItem->Info()->GetName(), Value);
+		VItem.Add("{} (has {})", pItem->Info()->GetName(), Value);
 	}
 	VItem.Add(pItem->Info()->GetDescription());
 	if(pItem->Info()->HasAttributes())
@@ -226,12 +226,12 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 		int ProductCost = pTrade->GetProductsCost();
 		CItemDescription* pProductInfo = GS()->GetItemInfo(itProduct);
 		bool MarkHas = pWarehouse->Storage().GetValue() >= ProductCost;
-		VRequired.MarkList().Add("{} {}x{c} ({c})", MarkHas ? "\u2714" : "\u2718", pProductInfo->GetName(), ProductCost, pWarehouse->Storage().GetValue());
+		VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pProductInfo->GetName(), ProductCost, pWarehouse->Storage().GetValue());
 	}
 	CItemDescription* pCurrency = pWarehouse->GetCurrency();
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(pCurrency->GetID());
 	bool MarkHas = pPlayerItem->GetValue() >= pTrade->GetPrice();
-	VRequired.MarkList().Add("{} {}x{c} ({c})", MarkHas ? "\u2714" : "\u2718", pCurrency->GetName(), pTrade->GetPrice(), pPlayerItem->GetValue());
+	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pCurrency->GetName(), pTrade->GetPrice(), pPlayerItem->GetValue());
 	VRequired.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
@@ -343,7 +343,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		{
 			pWarehouse->Storage().Add(Value);
 			pPlayer->Account()->AddGold(Value);
-			GS()->Chat(ClientID, "You loaded {c} products. Got {c} gold.", Value, Value);
+			GS()->Chat(ClientID, "You loaded {} products. Got {} gold.", Value, Value);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
@@ -368,7 +368,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		CPlayerItem* pProducts = pPlayer->GetItem(itProduct);
 		if(pProducts->GetValue() >= g_Config.m_SvWarehouseProductsCanTake)
 		{
-			GS()->Chat(ClientID, "You can't take more than {c} products.", g_Config.m_SvWarehouseProductsCanTake);
+			GS()->Chat(ClientID, "You can't take more than {} products.", g_Config.m_SvWarehouseProductsCanTake);
 			return true;
 		}
 
@@ -377,7 +377,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		if(pWarehouse->Storage().Remove(Value))
 		{
 			pProducts->Add(Value);
-			GS()->Chat(ClientID, "You unloaded {c} products.", Value);
+			GS()->Chat(ClientID, "You unloaded {} products.", Value);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
@@ -410,7 +410,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeI
 		int MaterialCost = pTradeSlot->GetProductsCost();
 		if(pWarehouse->Storage().GetValue() < MaterialCost)
 		{
-			GS()->Chat(ClientID, "Not enought materials in storage! Required {c} materials.", MaterialCost);
+			GS()->Chat(ClientID, "Not enought materials in storage! Required {} materials.", MaterialCost);
 			return false;
 		}
 	}
@@ -424,7 +424,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeI
 
 		CItem* pItem = pTradeSlot->GetItem();
 		pPlayerItem->Add(pItem->GetValue(), 0, pItem->GetEnchant());
-		GS()->Chat(ClientID, "You exchanged {}x{c} for {}x{c}.",
+		GS()->Chat(ClientID, "You exchanged {}x{} for {}x{}.",
 			pWarehouse->GetCurrency()->GetName(), pTradeSlot->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
 		return true;
 	}
@@ -466,7 +466,7 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, Trade
 
 		// Add the total price to the player's
 		pPlayer->GetItem(pWarehouse->GetCurrency()->GetID())->Add(FinalPrice);
-		GS()->Chat(ClientID, "You sold {}x{c} for {c} {}.", pItem->Info()->GetName(), Value, FinalPrice, pWarehouse->GetCurrency()->GetName());
+		GS()->Chat(ClientID, "You sold {}x{} for {} {}.", pItem->Info()->GetName(), Value, FinalPrice, pWarehouse->GetCurrency()->GetName());
 		return true;
 	}
 

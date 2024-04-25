@@ -140,7 +140,7 @@ void CDungeonManager::InsertVotesDungeonTop(int DungeonID, CVoteWrapper* pWrappe
 
 		const int Minutes = BaseSeconds / 60;
 		const int Seconds = BaseSeconds - (BaseSeconds / 60 * 60);
-		pWrapper->Add("{}. {} | {}:{}min | {c}P", Rank, Server()->GetAccountNickname(UserID), Minutes, Seconds, BasePassageHelp);
+		pWrapper->Add("{}. {} | {}:{}min | {}P", Rank, Server()->GetAccountNickname(UserID), Minutes, Seconds, BasePassageHelp);
 	}
 }
 

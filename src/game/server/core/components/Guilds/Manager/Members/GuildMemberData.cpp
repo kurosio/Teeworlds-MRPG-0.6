@@ -86,7 +86,7 @@ bool CGuildMemberData::DepositInBank(int Golds)
 			// Send a chat message to the player indicating the successful deposit and the new bank value
 			const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 			m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' deposit '%d' in the guild safe.", pNickname, Golds);
-			GS()->ChatGuild(m_pGuild->GetID(), "'{}' deposit {c} gold in the safe, now {c}!", pNickname, Golds, m_pGuild->GetBank()->Get());
+			GS()->ChatGuild(m_pGuild->GetID(), "'{}' deposit {} gold in the safe, now {}!", pNickname, Golds, m_pGuild->GetBank()->Get());
 
 			// Save guild data
 			m_pGuild->GetMembers()->Save();
@@ -123,7 +123,7 @@ bool CGuildMemberData::WithdrawFromBank(int Golds)
 			// Send a chat message to the player indicating the successful withdrawal and the new bank value
 			const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 			m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' withdrawn '%d' from the guild safe.", pNickname, Golds);
-			GS()->ChatGuild(m_pGuild->GetID(), "'{}' withdrawn {c} gold from the safe, now {c}!", pNickname, Golds, m_pGuild->GetBank()->Get());
+			GS()->ChatGuild(m_pGuild->GetID(), "'{}' withdrawn {} gold from the safe, now {}!", pNickname, Golds, m_pGuild->GetBank()->Get());
 
 			// Save guild data
 			m_pGuild->GetMembers()->Save();

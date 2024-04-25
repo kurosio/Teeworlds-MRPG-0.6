@@ -95,7 +95,7 @@ void CDropItem::Tick()
 		}
 		else
 		{
-			GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{}x{c} {}",
+			GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{}x{} {}",
 				m_DropItem.Info()->GetName(), m_DropItem.GetValue(), pOwnerNick);
 		}
 	}

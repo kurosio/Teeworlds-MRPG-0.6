@@ -94,7 +94,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VInfo.AddLine();
 
 		// House deposit
-		CVoteWrapper VDeposit(ClientID, VWF_SEPARATE_OPEN, "\u2727 Your: {c} | Safe: {c} golds", pPlayer->GetItem(itGold)->GetValue(), pHouse->GetBank()->Get());
+		CVoteWrapper VDeposit(ClientID, VWF_SEPARATE_OPEN, "\u2727 Your: {} | Safe: {} golds", pPlayer->GetItem(itGold)->GetValue(), pHouse->GetBank()->Get());
 		VDeposit.AddOption("HOUSE_BANK_ADD", "Add. (Amount in a reason)");
 		VDeposit.AddOption("HOUSE_BANK_TAKE", "Take. (Amount in a reason)");
 		VDeposit.AddLine();
@@ -102,7 +102,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		// House doors
 		if(!pHouse->GetDoorsController()->GetDoors().empty())
 		{
-			CVoteWrapper VDoors(ClientID, VWF_SEPARATE_OPEN, "\u2743 House has {c} controlled door's", (int)pHouse->GetDoorsController()->GetDoors().size());
+			CVoteWrapper VDoors(ClientID, VWF_SEPARATE_OPEN, "\u2743 House has {} controlled door's", (int)pHouse->GetDoorsController()->GetDoors().size());
 			for(auto& [Number, DoorData] : pHouse->GetDoorsController()->GetDoors())
 			{
 				bool StateDoor = DoorData->IsClosed();
@@ -161,7 +161,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
 			if(pPlayerItem->HasItem())
-				VPlantItems.AddOption("HOUSE_PLANT_ZONE_TRY", ID, "Try plant {} (has {c})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+				VPlantItems.AddOption("HOUSE_PLANT_ZONE_TRY", ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 		}
 		if(VPlantItems.IsEmpty())
 			VPlantItems.Add("You have no plants for planting");
@@ -600,19 +600,19 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse)
 	const char* pStrHouseOwner = pHouse->HasOwner() ? Instance::Server()->GetAccountNickname(pHouse->GetAccountID()) : "No owner";
 
 	CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "House information");
-	VInfo.Add("You can buy this house for {c} gold.", pHouse->GetPrice());
+	VInfo.Add("You can buy this house for {} gold.", pHouse->GetPrice());
 	VInfo.AddLine();
 
 	// detail information
 	CVoteWrapper VDetail(ClientID, VWF_SEPARATE_OPEN, "Detail information about house.", ID, pHouse->GetClassName());
 	VDetail.Add("House owned by: {}", pStrHouseOwner);
-	VDetail.Add("House price: {c} gold", pHouse->GetPrice());
+	VDetail.Add("House price: {} gold", pHouse->GetPrice());
 	VDetail.Add("House class: {}", pHouse->GetClassName());
 	VDetail.AddLine();
 
-	CVoteWrapper VBuy(ClientID, VWF_SEPARATE_OPEN, "You have {c} golds.", pPlayer->GetItem(itGold)->GetValue());
+	CVoteWrapper VBuy(ClientID, VWF_SEPARATE_OPEN, "You have {} golds.", pPlayer->GetItem(itGold)->GetValue());
 	if(pHouse->GetAccountID() <= 0)
-		VBuy.AddOption("HOUSE_BUY", ID, "Buy this house. Price {c}gold", pHouse->GetPrice());
+		VBuy.AddOption("HOUSE_BUY", ID, "Buy this house. Price {}gold", pHouse->GetPrice());
 	else
 		VBuy.Add("This house has already been purchased!");
 	VBuy.AddLine();

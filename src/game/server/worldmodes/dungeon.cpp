@@ -144,7 +144,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		GS()->Chat(-1, "{} finished {}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
 
 		if(pBestPlayer)
-			GS()->Chat(-1, "Most Valuable '{}'. With help {c} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
+			GS()->Chat(-1, "Most Valuable '{}'. With help {} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -

@@ -921,7 +921,7 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 		const char* pNickname = Server()->GetAccountNickname(MemberUID);
 
 		// Print the member's rank, account nickname, and deposit
-		CVoteWrapper VMember(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{} {} Deposit: {c}", pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
+		CVoteWrapper VMember(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{} {} Deposit: {}", pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
 		const bool IsSelfSlot = pPlayer->Account()->GetID() == pMember->GetAccountID();
 
 		// Check if the player has leader rights
@@ -1104,14 +1104,14 @@ void CGuildManager::ShowMenu(int ClientID) const
 		// Rent information
 		char aBufTimeStamp[64];
 		CVoteWrapper VRent(ClientID);
-		VRent.Add("\u2679 House rent price per day: {c} golds", pGuild->GetHouse()->GetRentPrice());
+		VRent.Add("\u2679 House rent price per day: {} golds", pGuild->GetHouse()->GetRentPrice());
 		pGuild->GetHouse()->GetRentTimeStamp(aBufTimeStamp, sizeof(aBufTimeStamp));
 		VRent.Add("Approximate rental time: {}", aBufTimeStamp);
 		VRent.AddLine();
 	}
 
 	// Guild deposit
-	CVoteWrapper VDeposit(ClientID, VWF_SEPARATE_OPEN, "\u2727 Your: {c} | Bank: {c} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
+	CVoteWrapper VDeposit(ClientID, VWF_SEPARATE_OPEN, "\u2727 Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
 	VDeposit.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 	VDeposit.AddLine();
 
@@ -1139,7 +1139,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		// House doors
 		if(!pHouse->GetDoorManager()->GetContainer().empty())
 		{
-			CVoteWrapper VDoors(ClientID, VWF_SEPARATE_OPEN, "\u2743 House has {c} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
+			CVoteWrapper VDoors(ClientID, VWF_SEPARATE_OPEN, "\u2743 House has {} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
 			for(auto& [Number, DoorData] : pHouse->GetDoorManager()->GetContainer())
 			{
 				bool StateDoor = DoorData->IsClosed();
@@ -1151,7 +1151,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		// House plant zones
 		if(!pHouse->GetPlantzonesManager()->GetContainer().empty())
 		{
-			CVoteWrapper VPlantZones(ClientID, VWF_SEPARATE_OPEN, "\u2741 House has {c} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+			CVoteWrapper VPlantZones(ClientID, VWF_SEPARATE_OPEN, "\u2741 House has {} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
 			for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
 			{
 				VPlantZones.AddMenu(MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED, ID, "Plant zone {} / {}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
@@ -1176,7 +1176,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 
 		const auto* pUpgrade = pGuild->GetUpgrades(i);
 		int Price = pUpgrade->m_Value * (i == CGuildData::UPGRADE_AVAILABLE_SLOTS ? g_Config.m_SvPriceUpgradeGuildSlot : g_Config.m_SvPriceUpgradeGuildAnother);
-		VUpgrades.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {c}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
+		VUpgrades.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 	}
 
 	// Add backpage
@@ -1300,7 +1300,7 @@ void CGuildManager::ShowPlantZone(int ClientID, int PlantzoneID) const
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
 		if(pPlayerItem->HasItem())
-			VPlantItems.AddOption("GUILD_HOUSE_PLANT_ZONE_TRY", PlantzoneID, ID, "Try plant {} (has {c})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+			VPlantItems.AddOption("GUILD_HOUSE_PLANT_ZONE_TRY", PlantzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 	}
 	if(VPlantItems.IsEmpty())
 		VPlantItems.Add("You have no plants for planting");
@@ -1371,7 +1371,7 @@ void CGuildManager::ShowFinderDetailInformation(int ClientID, GuildIdentifier ID
 		VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 		VInfo.Add("Members: {} of {}", CurrentSlots.first, CurrentSlots.second);
 		VInfo.Add("Has house: {}", pGuild->HasHouse() ? "Yes" : "No");
-		VInfo.Add("Guild bank: {c} golds", pGuild->GetBank()->Get());
+		VInfo.Add("Guild bank: {} golds", pGuild->GetBank()->Get());
 		VInfo.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_JOIN_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
 		VInfo.AddLine();
 
@@ -1380,7 +1380,7 @@ void CGuildManager::ShowFinderDetailInformation(int ClientID, GuildIdentifier ID
 		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 		{
 			CGuildMemberData* pMember = pIterMember.second;
-			VMemberlist.Add("{} {} Deposit: {c}", pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
+			VMemberlist.Add("{} {} Deposit: {}", pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
 		}
 		VMemberlist.AddLine();
 	}
@@ -1411,10 +1411,10 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 	}
 
 	VHouse.Add("House owned by: {}", pHouse->GetOwnerName());
-	VHouse.Add("House price: {c} gold", pHouse->GetPrice());
-	VHouse.Add("House rent price per day: {c} gold", pHouse->GetRentPrice());
-	VHouse.Add("House has {c} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
-	VHouse.Add("House has {c} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
+	VHouse.Add("House price: {} gold", pHouse->GetPrice());
+	VHouse.Add("House rent price per day: {} gold", pHouse->GetRentPrice());
+	VHouse.Add("House has {} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+	VHouse.Add("House has {} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
 	CVoteWrapper::AddLine(ClientID);
 
 	// Check if house is not purchased
@@ -1429,9 +1429,9 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 
 		// Check if player has leader rights in the guild
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		CVoteWrapper VBuyHouse(ClientID, VWF_SEPARATE_OPEN, "Guild bank: {c} gold", pGuild->GetBank()->Get());
+		CVoteWrapper VBuyHouse(ClientID, VWF_SEPARATE_OPEN, "Guild bank: {} gold", pGuild->GetBank()->Get());
 		if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
-			VBuyHouse.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase this guild house! Cost: {c} golds", pHouse->GetPrice());
+			VBuyHouse.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase this guild house! Cost: {} golds", pHouse->GetPrice());
 		else
 			VBuyHouse.Add("You need to be the leader rights");
 	}

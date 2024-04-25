@@ -44,7 +44,7 @@ bool CPlayerQuest::Accept()
 		GS()->Chat(ClientID, "{} Quest {}({} of {}) accepted {}",
 			Tools::Aesthetic::B_PILLAR(3, false), Info()->GetStory(), QuestCurrentPos, StoryQuestsNum, Tools::Aesthetic::B_PILLAR(3, true));
 		GS()->Chat(ClientID, "Name: \"{}\"", Info()->GetName());
-		GS()->Chat(ClientID, "Reward: \"Gold {c}, Experience {}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
+		GS()->Chat(ClientID, "Reward: \"Gold {}, Experience {}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
 	}
 	else
 	{

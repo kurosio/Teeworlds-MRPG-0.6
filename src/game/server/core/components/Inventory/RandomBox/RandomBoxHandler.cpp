@@ -127,14 +127,14 @@ void CEntityRandomBoxRandomizer::Tick()
 				// Send a chat message
 				const char* pClientName = GS()->Server()->ClientName(m_pPlayer->GetCID());
 				GS()->Chat(-1, "---------------------------------");
-				GS()->Chat(-1, "{} uses '{}x{c}' and got:", pClientName, m_pPlayerUsesItem->Info()->GetName(), m_Used);
+				GS()->Chat(-1, "{} uses '{}x{}' and got:", pClientName, m_pPlayerUsesItem->Info()->GetName(), m_Used);
 
 				// Iterate through all the received items / information
 				for(auto& pItem : aReceivedItems)
 				{
 					CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pItem.RandomItem.m_ItemID);
 					GiveRandomItem(pItem.RandomItem);
-					GS()->Chat(-1, "* {}x{c} - ({})", pPlayerItem->Info()->GetName(), pItem.RandomItem.m_Value, pItem.Coincidences);
+					GS()->Chat(-1, "* {}x{} - ({})", pPlayerItem->Info()->GetName(), pItem.RandomItem.m_Value, pItem.Coincidences);
 				}
 				GS()->Chat(-1, "---------------------------------");
 			}

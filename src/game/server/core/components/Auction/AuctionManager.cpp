@@ -61,7 +61,7 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VSlot.MarkList().Add("Description:");
 		{
 			VSlot.BeginDepth();
-			VSlot.Add("Tax for creating a slot: {c}gold", pAuctionData->GetTaxPrice());
+			VSlot.Add("Tax for creating a slot: {}gold", pAuctionData->GetTaxPrice());
 			VSlot.AddIf(SlotEnchant > 0, "Warning selling enchanted: +{}", SlotEnchant);
 			VSlot.EndDepth();
 		}
@@ -69,8 +69,8 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VSlot.MarkList().Add("Interaction:");
 		{
 			VSlot.BeginDepth();
-			VSlot.AddOption("AUCTION_COUNT", SlotItemID, "Select the number of items: {c}.", SlotValue);
-			VSlot.AddOption("AUCTION_PRICE", SlotItemID, "Set the price: {c}.", SlotPrice);
+			VSlot.AddOption("AUCTION_COUNT", SlotItemID, "Select the number of items: {}.", SlotValue);
+			VSlot.AddOption("AUCTION_PRICE", SlotItemID, "Set the price: {}.", SlotPrice);
 			VSlot.AddOption("AUCTION_ACCEPT", SlotItemID, "Accept the offer.");
 			VSlot.EndDepth();
 		}
@@ -188,7 +188,7 @@ void CAuctionManager::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuction
 			pAuctionItem->GetID(), pAuctionData->GetPrice(), pAuctionItem->GetValue(), pPlayer->Account()->GetID(), pAuctionItem->GetEnchant());
 
 		const int AvailableSlot = (g_Config.m_SvMaxAuctionPlayerSlots - ValueSlot) - 1;
-		GS()->Chat(-1, "{} created a slot [{}x{c}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pAuctionItem->GetValue());
+		GS()->Chat(-1, "{} created a slot [{}x{}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pAuctionItem->GetValue());
 		GS()->Chat(ClientID, "Still available {} slots!", AvailableSlot);
 	}
 }
@@ -236,7 +236,7 @@ bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
 	Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
 
 	pPlayerItem->Add(Value, 0, Enchant);
-	GS()->Chat(ClientID, "You buy {}x{c}.", pPlayerItem->Info()->GetName(), Value);
+	GS()->Chat(ClientID, "You buy {}x{}.", pPlayerItem->Info()->GetName(), Value);
 	return true;
 }
 
@@ -263,7 +263,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 		CVoteWrapper VItem(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE);
 		if(pItemInfo->IsEnchantable())
 		{
-			VItem.SetTitle("{}{} {} - {c} gold",
+			VItem.SetTitle("{}{} {} - {} gold",
 				(pPlayer->GetItem(ItemID)->GetValue() > 0 ? "✔ " : "\0"), pItemInfo->GetName(), pItemInfo->StringEnchantLevel(Enchant).c_str(), Price);
 
 			char aAttributes[128];
@@ -272,11 +272,11 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 		}
 		else
 		{
-			VItem.SetTitle("{}x{c} ({c}) - {c} gold", pItemInfo->GetName(), ItemValue, pPlayer->GetItem(ItemID)->GetValue(), Price);
+			VItem.SetTitle("{}x{} ({}) - {} gold", pItemInfo->GetName(), ItemValue, pPlayer->GetItem(ItemID)->GetValue(), Price);
 		}
 
 		VItem.Add("Seller: {}", Server()->GetAccountNickname(UserID));
-		VItem.AddOption("AUCTION_BUY", ID, "Buy this item ({c} gold).", Price);
+		VItem.AddOption("AUCTION_BUY", ID, "Buy this item ({} gold).", Price);
 		Found = true;
 	}
 
