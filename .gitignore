@@ -16,7 +16,6 @@ __pycache__/
 scripts/work/
 /SDL.dll
 /freetype.dll
-/autoexec.cfg
 Info.plist
 
 !teeworlds.manifest
