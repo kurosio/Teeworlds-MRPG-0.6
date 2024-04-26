@@ -146,7 +146,10 @@ int main(int argc, const char** argv)
 
 	// register all console commands
 	pServer->RegisterCommands();
-	pConsole->ExecuteFile(AUTOEXEC_FILE);
+
+	if (!pConsole->ExecuteFile(AUTOEXEC_SERVER_FILE, -1, true)) {
+		pConsole->ExecuteFile(AUTOEXEC_FILE, -1, true);
+	}
 
 	if(!pServer->MultiWorlds()->LoadWorlds(pKernel, pStorage, pConsole))
 	{
