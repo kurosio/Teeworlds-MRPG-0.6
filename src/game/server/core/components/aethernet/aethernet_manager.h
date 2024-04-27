@@ -25,9 +25,16 @@ class CAethernetManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
+	// vote list's menus
 	void ShowMenu(CCharacter* pChar) const;
+
+	// unlock location by position
 	void UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const;
+
+	// get aether by id
 	CAetherData* GetAetherByID(int AetherID) const;
+
+	// get aether by position
 	CAetherData* GetAetherByPos(vec2 Pos) const;
 };
 

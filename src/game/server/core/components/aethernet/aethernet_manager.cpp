@@ -110,7 +110,6 @@ bool CAethernetManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 bool CAethernetManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
-	const int ClientID = pPlayer->GetCID();
 
 	// Check if the character enters the Aether teleport tile
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_AETHER_TELEPORT))
@@ -157,19 +156,19 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 	{
 		int UnlockedPlayerZoneAethers = 0;
 		CVoteWrapper VAetherElem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} : Aethernet", Server()->GetWorldName(WorldID));
-
-		VAetherElem.BeginDepth();
-		for(const auto& pAether : vAethers)
 		{
-			if(pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
+			VAetherElem.BeginDepth();
+			for(const auto& pAether : vAethers)
 			{
-				const int Fee = g_Config.m_SvAetherFee * (pAether->GetWorldID() + 1);
-				VAetherElem.AddOption("AETHER_TELEPORT", pAether->GetID(), Fee, "{} (Fee {} gold's)", pAether->GetName(), Fee);
-				UnlockedPlayerZoneAethers++;
+				if(pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
+				{
+					const int Fee = g_Config.m_SvAetherFee * (pAether->GetWorldID() + 1);
+					VAetherElem.AddOption("AETHER_TELEPORT", pAether->GetID(), Fee, "{} (Fee {} gold's)", pAether->GetName(), Fee);
+					UnlockedPlayerZoneAethers++;
+				}
 			}
+			VAetherElem.EndDepth();
 		}
-		VAetherElem.EndDepth();
-
 		VAetherElem.Add("Unlocked {} of {} zone aethers.", UnlockedPlayerZoneAethers, vAethers.size());
 		CVoteWrapper::AddEmptyline(ClientID);
 	}
@@ -194,17 +193,13 @@ void CAethernetManager::UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const
 CAetherData* CAethernetManager::GetAetherByID(int AetherID) const
 {
 	const auto& iter = std::find_if(CAetherData::Data().begin(), CAetherData::Data().end(), [AetherID](const CAetherData* pAether)
-	{
-		return pAether->GetID() == AetherID;
-	});
+	{ return pAether->GetID() == AetherID; });
 	return iter != CAetherData::Data().end() ? *iter : nullptr;
 }
 
 CAetherData* CAethernetManager::GetAetherByPos(vec2 Pos) const
 {
 	const auto& iter = std::find_if(CAetherData::Data().begin(), CAetherData::Data().end(), [Pos](const CAetherData* pAether)
-	{
-		return distance(pAether->GetPosition(), Pos) < 320.f;
-	});
+	{ return distance(pAether->GetPosition(), Pos) < 320.f; });
 	return iter != CAetherData::Data().end() ? *iter : nullptr;
 }
