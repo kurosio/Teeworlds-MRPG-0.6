@@ -25,7 +25,7 @@ bool CRandomBox::Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesIt
 	if(pPlayerUsesItem->Remove(UseValue))
 	{
 		// Send a chat message to the player confirming the usage of the items
-		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{STR}x{VAL}'.", pPlayerUsesItem->Info()->GetName(), UseValue);
+		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{}x{}'.", pPlayerUsesItem->Info()->GetName(), UseValue);
 
 		// Convert the duration from seconds to game ticks
 		Seconds *= pPlayer->GS()->Server()->TickSpeed();

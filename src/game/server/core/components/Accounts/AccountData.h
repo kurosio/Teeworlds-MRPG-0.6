@@ -31,6 +31,7 @@ class CAccountData
 	CHouseData* m_pHouseData{};
 	GroupData* m_pGroupData{};
 	CGuildData* m_pGuildData{};
+	ClassGroup m_ClassGroup {};
 
 	CPlayer* m_pPlayer {};
 	CGS* GS() const;
@@ -65,6 +66,7 @@ public:
 	CGuildMemberData* GetGuildMemberData() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }
 	bool SameGuild(int ClientID) const;
+	bool SameGuild(int GuildID, int ClientID) const;
 
 	/*
 	 * Group function: getters / setters
@@ -157,8 +159,6 @@ struct CAccountTempData
 	// dungeon
 	int m_TempTimeDungeon;
 	bool m_TempDungeonReady;
-	int m_TempTankVotingDungeon;
-	bool m_TempAlreadyVotedDungeon;
 
 	void SetTeleportPosition(vec2 Position) { m_TempTeleportPos = Position; }
 	vec2 GetTeleportPosition() const { return m_TempTeleportPos; }

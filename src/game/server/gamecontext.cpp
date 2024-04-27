@@ -30,7 +30,6 @@
 #include <cstdarg>
 
 #include "core/components/Eidolons/EidolonInfoData.h"
-#include "core/components/warehouse/warehouse_data.h"
 #include "core/components/worlds/world_data.h"
 #include "core/utilities/vote_wrapper.h"
 
@@ -183,7 +182,7 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float
 	if(CritDamage)
 	{
 		if(CPlayer* pPlayer = GetPlayer(FromCID, true, true); pPlayer && pPlayer->GetItem(itShowCriticalDamage)->IsEquipped())
-			Chat(FromCID, ":: Crit damage: {INT}p.", Amount);
+			Chat(FromCID, ":: Crit damage: {}p.", Amount);
 	}
 }
 
@@ -333,172 +332,6 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 	}
 }
 
-// send a formatted message
-void CGS::Chat(int ClientID, const char* pText, ...)
-{
-	const int Start = (ClientID < 0 ? 0 : ClientID);
-	const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
-
-	CNetMsg_Sv_Chat Msg;
-	Msg.m_Team = -1;
-	Msg.m_ClientID = -1;
-
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-
-	dynamic_string Buffer;
-	for(int i = Start; i < End; i++)
-	{
-		if(m_apPlayers[i])
-		{
-			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
-
-			Msg.m_pMessage = Buffer.buffer();
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
-			Buffer.clear();
-		}
-	}
-	va_end(VarArgs);
-}
-
-// send to an authorized player
-bool CGS::ChatAccount(int AccountID, const char* pText, ...)
-{
-	CPlayer* pPlayer = GetPlayerByUserID(AccountID);
-	if(!pPlayer)
-		return false;
-
-	CNetMsg_Sv_Chat Msg;
-	Msg.m_Team = -1;
-	Msg.m_ClientID = -1;
-
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-
-	dynamic_string Buffer;
-	Server()->Localization()->Format_VL(Buffer, pPlayer->GetLanguage(), pText, VarArgs);
-
-	Msg.m_pMessage = Buffer.buffer();
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, pPlayer->GetCID());
-	Buffer.clear();
-	va_end(VarArgs);
-	return true;
-}
-
-// Send a guild a message
-void CGS::ChatGuild(int GuildID, const char* pText, ...)
-{
-	if(GuildID <= 0)
-		return;
-
-	CNetMsg_Sv_Chat Msg;
-	Msg.m_Team = -1;
-	Msg.m_ClientID = -1;
-
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-
-	dynamic_string Buffer;
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->HasGuild() && pPlayer->Account()->GetGuild()->GetID() == GuildID)
-		{
-			Buffer.append("Guild | ");
-			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
-
-			Msg.m_pMessage = Buffer.buffer();
-
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
-			Buffer.clear();
-		}
-	}
-	va_end(VarArgs);
-}
-
-// Send a message in world
-void CGS::ChatWorldID(int WorldID, const char* Suffix, const char* pText, ...)
-{
-	CNetMsg_Sv_Chat Msg;
-	Msg.m_Team = -1;
-	Msg.m_ClientID = -1;
-
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-
-	dynamic_string Buffer;
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		CPlayer* pPlayer = GetPlayer(i, true);
-		if(!pPlayer || !IsPlayerEqualWorld(i, WorldID))
-			continue;
-
-		if(Suffix && Suffix[0] != '\0')
-		{
-			Buffer.append(Suffix);
-			Buffer.append(" ");
-		}
-		Server()->Localization()->Format_VL(Buffer, pPlayer->GetLanguage(), pText, VarArgs);
-
-		Msg.m_pMessage = Buffer.buffer();
-
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i, WorldID);
-		Buffer.clear();
-	}
-	va_end(VarArgs);
-}
-
-// Send discord message
-void CGS::ChatDiscord(int Color, const char* Title, const char* pText, ...)
-{
-#ifdef CONF_DISCORD
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-
-	dynamic_string Buffer;
-	Server()->Localization()->Format_VL(Buffer, "en", pText, VarArgs);
-	Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, Color, Title, Buffer.buffer());
-	Buffer.clear();
-
-	va_end(VarArgs);
-#endif
-}
-
-// Send a discord message to the channel
-void CGS::ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, ...)
-{
-#ifdef CONF_DISCORD
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-
-	dynamic_string Buffer;
-	Server()->Localization()->Format_VL(Buffer, "en", pText, VarArgs);
-	Server()->SendDiscordMessage(pChanel, Color, Title, Buffer.buffer());
-	Buffer.clear();
-
-	va_end(VarArgs);
-#endif
-}
-
-// Send Motd
-void CGS::Motd(int ClientID, const char* Text, ...)
-{
-	CPlayer* pPlayer = GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
-
-	va_list VarArgs;
-	va_start(VarArgs, Text);
-	dynamic_string Buffer;
-	Server()->Localization()->Format_VL(Buffer, pPlayer->GetLanguage(), Text, VarArgs);
-
-	CNetMsg_Sv_Motd Msg;
-	Msg.m_pMessage = Buffer.buffer();
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-
-	Buffer.clear();
-	va_end(VarArgs);
-}
-
 /* #########################################################################
 	BROADCAST FUNCTIONS
 ######################################################################### */
@@ -524,45 +357,6 @@ void CGS::AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priori
 		str_copy(m_aBroadcastStates[ClientID].m_NextMessage, pText, sizeof(m_aBroadcastStates[ClientID].m_NextMessage));
 		m_aBroadcastStates[ClientID].m_NextPriority = Priority;
 	}
-}
-
-// formatted broadcast
-void CGS::Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char* pText, ...)
-{
-	const int Start = (ClientID < 0 ? 0 : ClientID);
-	const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
-
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-	for(int i = Start; i < End; i++)
-	{
-		if(m_apPlayers[i])
-		{
-			dynamic_string Buffer;
-			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
-			AddBroadcast(i, Buffer.buffer(), Priority, LifeSpan);
-			Buffer.clear();
-		}
-	}
-	va_end(VarArgs);
-}
-
-// formatted world broadcast
-void CGS::BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan, const char* pText, ...)
-{
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		if(m_apPlayers[i] && IsPlayerEqualWorld(i, WorldID))
-		{
-			dynamic_string Buffer;
-			Server()->Localization()->Format_VL(Buffer, m_apPlayers[i]->GetLanguage(), pText, VarArgs);
-			AddBroadcast(i, Buffer.buffer(), Priority, LifeSpan);
-			Buffer.clear();
-		}
-	}
-	va_end(VarArgs);
 }
 
 // the tick of the broadcast and his life
@@ -956,7 +750,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			// If the first character is a pound sign, send a chat message to the world
 			else if(firstChar == '#')
 			{
-				ChatWorldID(pPlayer->GetPlayerWorldID(), "Nearby:", "'{STR}' performed an act '{STR}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
+				ChatWorldID(pPlayer->GetPlayerWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			}
 			// Otherwise, send a regular chat message
 			else
@@ -1060,7 +854,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 					pPlayer->m_RequestChangeNickname = true;
 					Server()->SetClientNameChangeRequest(ClientID, pMsg->m_pName);
 					Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 300,
-						"Press F3 to confirm the nickname change to [{STR}]\n- After the change, you will only be able to log in with the new nickname", pMsg->m_pName);
+						"Press F3 to confirm the nickname change to [{}]\n- After the change, you will only be able to log in with the new nickname", pMsg->m_pName);
 				}
 			}
 			else
@@ -1070,11 +864,12 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
+			// allowed customize self skins
 			str_copy(pPlayer->GetTeeInfo().m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->GetTeeInfo().m_aSkinName));
 			pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
 			pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
-
+			pPlayer->GetClass()->SetClassSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
 			Server()->ExpireServerInfo();
 		}
 
@@ -1203,10 +998,12 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				Server()->SetClientClan(ClientID, pMsg->m_pClan);
 				Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
-				str_copy(pPlayer->Account()->m_TeeInfos.m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->Account()->m_TeeInfos.m_aSkinName));
-				pPlayer->Account()->m_TeeInfos.m_UseCustomColor = pMsg->m_UseCustomColor;
-				pPlayer->Account()->m_TeeInfos.m_ColorBody = pMsg->m_ColorBody;
-				pPlayer->Account()->m_TeeInfos.m_ColorFeet = pMsg->m_ColorFeet;
+				// allowed customize self skins
+				str_copy(pPlayer->GetTeeInfo().m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->GetTeeInfo().m_aSkinName));
+				pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
+				pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
+				pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
+				pPlayer->GetClass()->SetClassSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
 			}
 
 			// send clear vote options
@@ -1247,7 +1044,7 @@ void CGS::OnClientEnter(int ClientID)
 	// another
 	if(!pPlayer->IsAuthed())
 	{
-		Chat(-1, "{STR} entered and joined the MRPG", Server()->ClientName(ClientID));
+		Chat(-1, "{} entered and joined the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
@@ -1275,7 +1072,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
 
-		Chat(-1, "{STR} has left the MRPG", Server()->ClientName(ClientID));
+		Chat(-1, "{} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
 		Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 	}
@@ -1850,7 +1647,7 @@ void CGS::SendDayInfo(int ClientID)
 
 	if(m_DayEnumType == NIGHT_TYPE)
 	{
-		Chat(ClientID, "Nighttime adventure has been boosted by {INT}%!", m_MultiplierExp);
+		Chat(ClientID, "Nighttime adventure has been boosted by {}%!", m_MultiplierExp);
 	}
 	else if(m_DayEnumType == MORNING_TYPE)
 	{

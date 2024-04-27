@@ -260,7 +260,7 @@ void CCharacter::FireWeapon()
 					Hits = true;
 
 					const int BotID = pTarget->GetPlayer()->GetBotID();
-					GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {STR}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
+					GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 					break;
 				}
 
@@ -783,7 +783,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
 		{
 			GS()->CreateDropItem(m_Pos, Killer, { itGold, LossGold }, Force);
-			GS()->Chat(ClientID, "You lost {INT}%({VAL}) gold, killer {STR}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+			GS()->Chat(ClientID, "You lost {}%({}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
 		}
 	}
 
@@ -806,12 +806,12 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				if(KillerIsPlayer)
 				{
 					pKiller->GetItem(itGold)->Add(Arrest);
-					GS()->Chat(-1, "{STR} killed {STR}, who was wanted. The reward is {VAL} gold!",
+					GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {} gold!",
 						Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 				}
 
 				// Send a chat message to the client with their arrest information
-				GS()->Chat(ClientID, "Treasury confiscates {INT}%({VAL}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
+				GS()->Chat(ClientID, "Treasury confiscates {}%({}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
 
 				// Imprison
 				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 100);
@@ -880,14 +880,25 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		else
 			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::HammerDMG);
 
-		const int EnchantBonus = pFrom->GetAttributeSize(AttributeIdentifier::DMG);
+		const int EnchantBonus = translate_to_percent_rest(pFrom->GetAttributeSize(AttributeIdentifier::DMG), pFrom->GetClass()->GetExtraDMG());
 		Dmg += EnchantBonus;
+
+		// bleeding blow skill
+		if(pFrom->GetSkill(SkillBleedingBlow)->IsLearned())
+		{
+			int Chance = pFrom->GetSkill(SkillBleedingBlow)->GetBonus();
+			if(m_pPlayer->GiveEffect("Bleeding", 10, Chance))
+			{
+				GS()->CreateSound(pFrom->m_ViewPos, SOUND_NINJA_HIT);
+				m_BleedingByClientID = FromCID;
+			}
+		}
 
 		// vampirism replenish your health
 		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Vampirism) > random_float(100.0f))
 		{
 			const int Recovery = maximum(1, Dmg / 2);
-			GS()->Chat(FromCID, ":: Vampirism stolen: {INT}HP.", Recovery);
+			GS()->Chat(FromCID, ":: Vampirism stolen: {}HP.", Recovery);
 			pFrom->GetCharacter()->IncreaseHealth(Recovery);
 			GS()->SendEmoticon(FromCID, EMOTICON_DROP);
 		}
@@ -1328,9 +1339,25 @@ void CCharacter::HandlePlayer()
 	if(!m_pPlayer->IsAuthed())
 		return;
 
-	// recovery mana
-	if(m_Mana < m_pPlayer->GetStartMana() && Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
-		IncreaseMana(m_pPlayer->GetStartMana() / 20);
+	if(Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
+	{
+		// recovery mana
+		if(m_Mana < m_pPlayer->GetStartMana())
+		{
+			IncreaseMana(m_pPlayer->GetStartMana() / 20);
+		}
+
+		// bleeding blow skill
+		if(m_pPlayer->IsActiveEffect("Bleeding"))
+		{
+			if(CPlayer* pPlayer = GS()->GetPlayer(m_BleedingByClientID, true))
+			{
+				int Damage = pPlayer->GetStartHealth() / 20;
+				TakeDamage(vec2(0, 0), Damage, m_BleedingByClientID, WEAPON_WORLD);
+				GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
+			}
+		}
+	}
 
 	// handle
 	HandleEvent();

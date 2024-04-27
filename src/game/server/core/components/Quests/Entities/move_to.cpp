@@ -117,7 +117,7 @@ void CEntityQuestAction::TryFinish()
 
 		// remove item
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
-		GS()->Chat(m_ClientID, "You've used on the point {STR}x{INT}", pPlayerItem->Info()->GetName(), RequiredValue);
+		GS()->Chat(m_ClientID, "You've used on the point {}x{}", pPlayerItem->Info()->GetName(), RequiredValue);
 	}
 
 	// pickup item
@@ -127,7 +127,7 @@ void CEntityQuestAction::TryFinish()
 		int PickupValue = TaskData.m_PickupItem.GetValue();
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
 
-		GS()->Chat(m_ClientID, "You've picked up {STR}x{INT}.", pPlayerItem->Info()->GetName(), PickupValue);
+		GS()->Chat(m_ClientID, "You've picked up {}x{}.", pPlayerItem->Info()->GetName(), PickupValue);
 		pPlayerItem->Add(PickupValue);
 	}
 
@@ -240,7 +240,7 @@ void CEntityQuestAction::HandleBroadcastInformation() const
 		const char* pLang = m_pPlayer->GetLanguage();
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pRequireItem.GetID());
 
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Required [{STR}x{VAL}({VAL})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
 		Buffer.append("\n");
 	}
 	if(pPickupItem.IsValid())
@@ -248,18 +248,18 @@ void CEntityQuestAction::HandleBroadcastInformation() const
 		const char* pLang = m_pPlayer->GetLanguage();
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pPickupItem.GetID());
 
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Pick up [{STR}x{VAL}({VAL})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
+		GS()->Server()->Localization()->Format(Buffer, pLang, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
 		Buffer.append("\n");
 	}
 
 	// select by type
 	if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Please click with hammer on the highlighted area to interact with it.\n{STR}", Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Please click with hammer on the highlighted area to interact with it.\n{}", Buffer.buffer());
 	}
 	else if(Type & QuestBotInfo::TaskAction::Types::PICKUP_ITEM || Type & QuestBotInfo::TaskAction::Types::REQUIRED_ITEM)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press hammer 'Fire', to interact.\n{STR}", Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press hammer 'Fire', to interact.\n{}", Buffer.buffer());
 	}
 }
 

@@ -63,7 +63,7 @@ void CGuildRankData::SetAccess(GuildRankAccess Access)
 	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Access = '%d' WHERE ID = '%d'", m_Access, m_ID);
 
 	// Send a chat message to the guild with the updated access level
-	GS()->ChatGuild(GuildID, "Rank '{STR}' new rights '{STR}'!", m_Rank.c_str(), GetAccessName());
+	GS()->ChatGuild(GuildID, "Rank '{}' new rights '{}'!", m_Rank.c_str(), GetAccessName());
 }
 
 // This function returns the name of the access level of the guild rank

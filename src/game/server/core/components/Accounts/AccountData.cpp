@@ -44,6 +44,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_PrisonSeconds = pResult->getInt("PrisonSeconds");
 	m_DailyChairGolds = pResult->getInt("DailyChairGolds");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
+	m_ClassGroup = (ClassGroup)pResult->getInt("Class");
 
 	// time periods
 	{
@@ -83,6 +84,10 @@ void CAccountData::UpdatePointer(CPlayer* pPlayer)
 
 	m_pPlayer = pPlayer;
 	m_ClientID = pPlayer->GetCID();
+
+	// update class data
+	m_pPlayer->GetClass()->Init(m_ClassGroup);
+	m_pPlayer->GetClass()->SetClassSkin(m_TeeInfos, m_pPlayer->GetItem(itCustomizer)->IsEquipped());
 }
 
 // This function initializes the house data for the account
@@ -160,6 +165,12 @@ bool CAccountData::SameGuild(int ClientID) const
     return pPlayer && pPlayer->Account()->GetGuild() && pPlayer->Account()->GetGuild()->GetID() == m_pGuildData->GetID();
 }
 
+bool CAccountData::SameGuild(int GuildID, int ClientID) const
+{
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	return pPlayer && pPlayer->Account()->GetGuild() && pPlayer->Account()->GetGuild()->GetID() == GuildID;
+}
+
 // This function returns the daily limit of gold that a player can obtain from chairs
 int CAccountData::GetLimitDailyChairGolds() const
 {
@@ -188,7 +199,7 @@ void CAccountData::IncreaseRelations(int Relevation)
 	m_Relations = minimum(m_Relations + Relevation, 100);
 
 	// Display a chat message to the player indicating the new relationship level.
-	GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {INT}%!", m_Relations);
+	GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {}%!", m_Relations);
 
 	// Check if the player's relations with other entities is greater than or equal to 100
 	if(m_Relations >= 100)
@@ -217,7 +228,7 @@ void CAccountData::Imprison(int Seconds)
 	{
 		// Set the prison seconds and send a chat message to all players indicating that the player has been imprisoned
 		m_PrisonSeconds = Seconds;
-		GS()->Chat(-1, "{STR}, has been imprisoned for {INT} seconds.", Instance::Server()->ClientName(m_pPlayer->GetCID()), Seconds);
+		GS()->Chat(-1, "{}, has been imprisoned for {} seconds.", Instance::Server()->ClientName(m_pPlayer->GetCID()), Seconds);
 		GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 	}
 }
@@ -233,7 +244,7 @@ void CAccountData::Unprison()
 		m_pPlayer->GetCharacter()->Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 
 	m_PrisonSeconds = -1;
-	GS()->Chat(-1, "{STR} were released from prison.", Instance::Server()->ClientName(m_pPlayer->GetCID()));
+	GS()->Chat(-1, "{} were released from prison.", Instance::Server()->ClientName(m_pPlayer->GetCID()));
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
@@ -265,7 +276,7 @@ void CAccountData::AddExperience(int Value)
 		}
 
 		// Display level up message
-		GS()->Chat(m_ClientID, "Congratulations. You attain level {INT}!", m_Level);
+		GS()->Chat(m_ClientID, "Congratulations. You attain level {}!", m_Level);
 
 		// Notify the player about unlocked
 		GS()->Core()->WorldManager()->NotifyUnlockedZonesByLeveling(m_pPlayer, m_ID);
@@ -322,7 +333,7 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID) const
 	if(pCurrencyItem->GetValue() < Price)
 	{
 		// Display a message to the player indicating that they don't have enough currency
-		GS()->Chat(m_ClientID, "Required {VAL}, but you only have {VAL} {STR}!", Price, pCurrencyItem->GetValue(), pCurrencyItem->Info()->GetName());
+		GS()->Chat(m_ClientID, "Required {}, but you only have {} {}!", Price, pCurrencyItem->GetValue(), pCurrencyItem->Info()->GetName());
 		return false;
 	}
 
@@ -384,6 +395,6 @@ void CAccountData::HandleChair()
 	std::string aExpBuf = "+" + std::to_string(ExpValue);
 	std::string aGoldBuf = (GoldValue > 0) ? "+" + std::to_string(GoldValue) : "limit";
 	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
-		"Gold {VAL} : {STR} (daily limit {VAL} of {VAL})\nExp {VAL}/{VAL} : {STR}\nThe limit and count is increased with special items!",
+		"Gold {} : {} (daily limit {} of {})\nExp {}/{} : {}\nThe limit and count is increased with special items!",
 		m_pPlayer->GetItem(itGold)->GetValue(), aGoldBuf.c_str(), GetCurrentDailyChairGolds(), GetLimitDailyChairGolds(), m_Exp, computeExperience(m_Level), aExpBuf.c_str());
 }

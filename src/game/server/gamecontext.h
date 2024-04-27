@@ -20,8 +20,6 @@
 
 class CGS : public IGameServer
 {
-	using CVoteEventOptionalContainer = std::queue<CVoteEventOptional>;
-
 	/* #########################################################################
 		VAR AND OBJECT GAMECONTEX DATA
 	######################################################################### */
@@ -36,9 +34,7 @@ class CGS : public IGameServer
 	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
-
 	int m_WorldID;
-	inline static CVoteEventOptionalContainer m_Optionals[MAX_PLAYERS] {};
 
 public:
 	IServer *Server() const { return m_pServer; }
@@ -62,11 +58,6 @@ public:
 	/* #########################################################################
 		SWAP GAMECONTEX DATA
 	######################################################################### */
-	CVoteEventOptionalContainer& GetVoteOptionalContainer(int ClientID)
-	{
-		dbg_assert(ClientID >= 0 && ClientID < MAX_PLAYERS, "CVoteEventOptionalContainer out of bounds");
-		return m_Optionals[ClientID];
-	}
 	static ska::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
 	// - - - - - - - - - - - -
 
@@ -103,13 +94,126 @@ private:
 	void UpdateDiscordStatus();
 
 public:
-	void Chat(int ClientID, const char* pText, ...) override;
-	bool ChatAccount(int AccountID, const char* pText, ...);
-	void ChatDiscord(int Color, const char *Title, const char* pText, ...);
-	void ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, ...);
-	void ChatGuild(int GuildID, const char* pText, ...);
-	void ChatWorldID(int WorldID, const char *Suffix, const char* pText, ...);
-	void Motd(int ClientID, const char* Text, ...);
+	/*
+	 * Message Chat (default)
+	 */
+	template< typename ... Ts> void Chat(int ClientID, const char* pText, Ts&&... args)
+	{
+		const int Start = (ClientID < 0 ? 0 : ClientID);
+		const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
+
+		CNetMsg_Sv_Chat Msg { -1, -1 };
+		for(int i = Start; i < End; i++)
+		{
+			if(m_apPlayers[i])
+			{
+				std::string endText = Server()->Localization()->Format(m_apPlayers[i]->GetLanguage(), pText, std::forward<Ts>(args) ...);
+				Msg.m_pMessage = endText.c_str();
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
+			}
+		}
+	}
+
+	/*
+	 * Message ChatAccount (by AccountID)
+	 */
+	template <typename ... Ts> bool ChatAccount(int AccountID, const char* pText, Ts&&... args)
+	{
+		CPlayer* pPlayer = GetPlayerByUserID(AccountID);
+		if(!pPlayer)
+			return false;
+
+		CNetMsg_Sv_Chat Msg { -1, -1 };
+		std::string endText = Server()->Localization()->Format(pPlayer->GetLanguage(), pText, std::forward<Ts>(args) ...);
+		Msg.m_pMessage = endText.c_str();
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, pPlayer->GetCID());
+		return true;
+	}
+
+	/*
+	 * Message ChatDiscord (default)
+	 */
+	template <typename ... Ts> void ChatDiscord(int Color, const char *Title, const char* pText, Ts&&... args)
+	{
+#ifdef CONF_DISCORD
+		std::string endText = Server()->Localization()->Format("en", pText, std::forward<Ts>(args) ...);
+		Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, Color, Title, endText.c_str());
+#endif
+	}
+
+	/*
+	 * Message ChatDiscordChannel (Channel)
+	 */
+	template <typename ... Ts> void ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, Ts&&... args)
+	{
+#ifdef CONF_DISCORD
+		std::string endText = Server()->Localization()->Format("en", pText, std::forward<Ts>(args) ...);
+		Server()->SendDiscordMessage(pChanel, Color, Title, endText.c_str());
+#endif
+	}
+
+	/*
+	 * Message Chat (by GuildID)
+	 */
+	template <typename ... Ts> void ChatGuild(int GuildID, const char* pText, Ts&&... args)
+	{
+		if(GuildID <= 0)
+			return;
+
+		dynamic_string Buffer {};
+		CNetMsg_Sv_Chat Msg {-1, -1};
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->SameGuild(GuildID, i))
+			{
+				Buffer.append("Guild | ");
+				Server()->Localization()->Format(Buffer, m_apPlayers[i]->GetLanguage(), pText, std::forward<Ts>(args) ...);
+				Msg.m_pMessage = Buffer.buffer();
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
+				Buffer.clear();
+			}
+		}
+	}
+
+	/*
+	 * Message Chat (by WorldID)
+	 */
+	template <typename ... Ts> void ChatWorldID(int WorldID, const char* Suffix, const char* pText, Ts&&... args)
+	{
+		dynamic_string Buffer;
+		CNetMsg_Sv_Chat Msg {-1, -1};
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			CPlayer* pPlayer = GetPlayer(i, true);
+			if(!pPlayer || !IsPlayerEqualWorld(i, WorldID))
+				continue;
+
+			if(Suffix && Suffix[0] != '\0')
+			{
+				Buffer.append(Suffix);
+				Buffer.append(" ");
+			}
+			Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), pText, std::forward<Ts>(args) ...);
+			Msg.m_pMessage = Buffer.buffer();
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i, WorldID);
+			Buffer.clear();
+		}
+	}
+
+	/*
+	 * Message Motd
+	 */
+	template <typename ... Ts> void Motd(int ClientID, const char* pText, Ts&&... args)
+	{
+		CPlayer* pPlayer = GetPlayer(ClientID, true);
+		if(pPlayer)
+		{
+			std::string endText = Server()->Localization()->Format(pPlayer->GetLanguage(), pText, std::forward<Ts>(args) ...);
+			CNetMsg_Sv_Motd Msg;
+			Msg.m_pMessage = endText.c_str();
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+		}
+	}
 
 	/* #########################################################################
 		BROADCAST FUNCTIONS
@@ -132,9 +236,38 @@ private:
 	CBroadcastState m_aBroadcastStates[MAX_PLAYERS];
 
 public:
+	/*
+	 * Message broadcast
+	 */
+	template <typename ... Args> void Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char *pText, Args&&... args)
+	{
+		const int Start = (ClientID < 0 ? 0 : ClientID);
+		const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
+
+		for(int i = Start; i < End; i++)
+		{
+			if(m_apPlayers[i])
+			{
+				std::string endText = Server()->Localization()->Format(m_apPlayers[i]->GetLanguage(), pText, std::forward<Args>(args) ...);
+				AddBroadcast(i, endText.c_str(), Priority, LifeSpan);
+			}
+		}
+	}
+
+	// Message Broadcast (by WorldID)
+	template <typename ... Args> void BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan, const char *pText, Args&&... args)
+	{
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			if(m_apPlayers[i] && IsPlayerEqualWorld(i, WorldID))
+			{
+				std::string endText = Server()->Localization()->Format(m_apPlayers[i]->GetLanguage(), pText, std::forward<Args>(args) ...);
+				AddBroadcast(i, endText.c_str(), Priority, LifeSpan);
+			}
+		}
+	}
+
 	void AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priority, int LifeSpan);
-	void Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char *pText, ...);
-	void BroadcastWorldID(int WorldID, BroadcastPriority Priority, int LifeSpan, const char *pText, ...);
 	void BroadcastTick(int ClientID);
 	void MarkUpdatedBroadcast(int ClientID);
 

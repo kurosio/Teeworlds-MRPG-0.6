@@ -3,6 +3,8 @@
 #include <game/server/gamecontext.h>
 #include <generated/protocol.h>
 
+#include <utility>
+
 void CCooldown::Start(int Time, std::string UniqueName, std::string Name, CCooldownCallback Callback)
 {
 	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS)
@@ -17,8 +19,8 @@ void CCooldown::Start(int Time, std::string UniqueName, std::string Name, CCoold
 		m_Callback = std::move(Callback);
 		m_IsCooldownActive = true;
 		m_Interrupted = false;
-		m_Action = UniqueName;
-		m_Name = Name;
+		m_Action = std::move(UniqueName);
+		m_Name = std::move(Name);
 
 		pGS->CreatePlayerSpawn(m_StartPos, CmaskOne(m_ClientID));
 		pPlayer->GetCharacter()->SetEmote(EMOTE_BLINK, m_Timer, true);
@@ -95,7 +97,7 @@ void CCooldown::Handler()
 		std::string ProgressBar = Tools::String::progressBar(100, (int)Current, 10, "\u25B0", "\u25B1");
 
 		// Broadcast the time remaining and progress bar
-		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "{STR}\n< {STR} > {STR} - Action", m_Name.c_str(), aTimeformat, ProgressBar.c_str());
+		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "{}\n< {} > {} - Action", m_Name.c_str(), aTimeformat, ProgressBar.c_str());
 	}
 
 	// Decrease the timer

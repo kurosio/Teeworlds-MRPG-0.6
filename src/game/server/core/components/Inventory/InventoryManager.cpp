@@ -55,7 +55,7 @@ void CInventoryManager::OnInit()
 			}
 		}
 
-		CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, Data);
+		CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, std::move(Data));
 	}
 
 	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributs");
@@ -106,12 +106,12 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VInventoryInfo.AddLine();
 
 		CVoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE_OPEN, "\u262A Inventory tabs");
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "\u270C Used ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_USED));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "\u2692 Craft ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_EQUIP, "\u26B0 Equipment ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_MODULE, "\u2693 Modules ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_MODULE));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_POTION, "\u26B1 Potion ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_POTION));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "\u26C3 Other ({INT})", GetCountItemsType(pPlayer, ItemType::TYPE_OTHER));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "\u270C Used ({})", GetCountItemsType(pPlayer, ItemType::TYPE_USED));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "\u2692 Craft ({})", GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_EQUIP, "\u26B0 Equipment ({})", GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_MODULE, "\u2693 Modules ({})", GetCountItemsType(pPlayer, ItemType::TYPE_MODULE));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_POTION, "\u26B1 Potion ({})", GetCountItemsType(pPlayer, ItemType::TYPE_POTION));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "\u26C3 Other ({})", GetCountItemsType(pPlayer, ItemType::TYPE_OTHER));
 		VInventoryTabs.AddLine();
 
 		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
@@ -137,13 +137,13 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			ItemIdentifier ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
 			if(ItemID <= 0 || !pPlayer->GetItem(ItemID)->IsEquipped())
 			{
-				VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{STR} not equipped", paTypeNames[i]);
+				VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} not equipped", paTypeNames[i]);
 				continue;
 			}
 
 			char aAttributes[128];
 			pPlayer->GetItem(ItemID)->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-			VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{STR} * {STR}", paTypeNames[i], aAttributes);
+			VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} * {}", paTypeNames[i], aAttributes);
 		}
 
 		// show and sort equipment
@@ -171,7 +171,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
 		pPlayerItem->Drop(Get);
 
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {STR}x{VAL}", pPlayerItem->Info()->GetName(), Get);
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {}x{}", pPlayerItem->Info()->GetName(), Get);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -200,7 +200,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		const int DesValue = pPlayerSelectedItem->GetDysenthis() * Get;
 		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
-			GS()->Chat(ClientID, "Disassemble {STR}x{VAL}.", pPlayerSelectedItem->Info()->GetName(), Get);
+			GS()->Chat(ClientID, "Disassemble {}x{}.", pPlayerSelectedItem->Info()->GetName(), Get);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
@@ -231,7 +231,7 @@ bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 
 		char aAttributes[128];
 		pPlayerItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-		GS()->Chat(-1, "{STR} enchant {STR} {STR} {STR}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str(), aAttributes);
+		GS()->Chat(-1, "{} enchant {} {} {}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str(), aAttributes);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -294,7 +294,7 @@ int CInventoryManager::GetUnfrozenItemValue(CPlayer* pPlayer, ItemIdentifier Ite
 	const int AvailableValue = Core()->QuestManager()->GetUnfrozenItemValue(pPlayer, ItemID);
 	if(AvailableValue <= 0 && pPlayer->GetItem(ItemID)->HasItem())
 	{
-		GS()->Chat(pPlayer->GetCID(), "'{STR}' frozen for some quest.", pPlayer->GetItem(ItemID)->Info()->GetName());
+		GS()->Chat(pPlayer->GetCID(), "'{}' frozen for some quest.", pPlayer->GetItem(ItemID)->Info()->GetName());
 		GS()->Chat(pPlayer->GetCID(), "In the 'Adventure Journal', you can see in which quest an item is used", pPlayer->GetItem(ItemID)->Info()->GetName());
 	}
 	return AvailableValue;
@@ -319,7 +319,7 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 				continue;
 
 			int Price = maximum(1, Item.GetInitialPrice());
-			VItems.AddOption("SELL_ITEM", ID, Price, "[{VAL}] Sell {STR} ({VAL} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
+			VItems.AddOption("SELL_ITEM", ID, Price, "[{}] Sell {} ({} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
 		}
 		VItems.EndDepth();
 	}
@@ -337,17 +337,17 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	// name description
 	if(pInfo->IsEnchantable())
 	{
-		VItem.SetTitle("{STR}{STR} {STR}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->StringEnchantLevel().c_str());
+		VItem.SetTitle("{}{} {}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->StringEnchantLevel().c_str());
 
 		char aAttributes[64];
 		pItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-		VItem.AddIf(aAttributes[0] != '\0', "{STR}", aAttributes);
+		VItem.AddIf(aAttributes[0] != '\0', "{}", aAttributes);
 	}
 	else
 	{
-		VItem.SetTitle("{STR}{STR} x{VAL}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
+		VItem.SetTitle("{}{} x{}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
 	}
-	VItem.AddIf(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped(), "{STR}", pInfo->GetDescription());
+	VItem.AddIf(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped(), "{}", pInfo->GetDescription());
 
 	// is used item
 	bool IsUsed = pInfo->m_Function == FUNCTION_ONE_USED || pInfo->m_Function == FUNCTION_USED;
@@ -359,7 +359,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 
 	// is potion
 	bool IsPotion = pInfo->m_Type == ItemType::TYPE_POTION;
-	VItem.AddIfOption(IsPotion, "ISETTINGS", ItemID, "Auto use - {STR}", (pItem->m_Settings ? "Enable" : "Disable"));
+	VItem.AddIfOption(IsPotion, "ISETTINGS", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
 
 	// is decoration
 	bool IsDeco = pInfo->m_Type == ItemType::TYPE_DECORATION;
@@ -380,13 +380,13 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	if(pInfo->IsEnchantable() && !pItem->IsEnchantMaxLevel())
 	{
 		const int Price = pItem->GetEnchantPrice();
-		VItem.AddOption("IENCHANT", ItemID, "Enchant ({VAL}m)", Price);
+		VItem.AddOption("IENCHANT", ItemID, "Enchant ({}m)", Price);
 	}
 
 	// not allowed drop equipped hammer
 	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
-		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{VAL}m)", pItem->GetDysenthis());
+		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{}m)", pItem->GetDysenthis());
 		VItem.AddIfOption(pInfo->m_InitialPrice > 0, "AUCTION_CREATE", ItemID, "Sell at auction");
 		VItem.AddOption("IDROP", ItemID, "Drop");
 	}

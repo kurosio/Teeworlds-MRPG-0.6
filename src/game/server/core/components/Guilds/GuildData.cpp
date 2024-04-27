@@ -38,7 +38,7 @@ bool CGuildData::Upgrade(int Type)
 
 		// Add and send a history entry for the upgrade
 		m_pLogger->Add(LOGFLAG_UPGRADES_CHANGES, "'%s' upgraded to %d level", pUpgradeData->getDescription(), pUpgradeData->m_Value);
-		GS()->ChatGuild(m_ID, "'{STR}' upgraded to {VAL} level", pUpgradeData->getDescription(), pUpgradeData->m_Value);
+		GS()->ChatGuild(m_ID, "'{}' upgraded to {} level", pUpgradeData->getDescription(), pUpgradeData->m_Value);
 		return true;
 	}
 
@@ -67,7 +67,7 @@ void CGuildData::AddExperience(int Experience)
 		ExperienceNeed = (int)computeExperience(m_Level);
 
 		// Add a history and send a chat message to the server indicating the guild's level up
-		GS()->Chat(-1, "Guild {STR} raised the level up to {INT}", GetName(), m_Level);
+		GS()->Chat(-1, "Guild {} raised the level up to {}", GetName(), m_Level);
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Guild raised level to '%d'.", m_Level);
 		UpdateTable = true;
 	}
@@ -102,7 +102,7 @@ GUILD_RESULT CGuildData::SetNewLeader(int AccountID)
 
 	// Add a new entry and send chat message to the guild history indicating the change of leader
 	m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "New guild leader '%s'", pNickNewLeader);
-	GS()->ChatGuild(m_ID, "New guild leader '{STR}'", pNickNewLeader);
+	GS()->ChatGuild(m_ID, "New guild leader '{}'", pNickNewLeader);
 
 	// Return a success code
 	return GUILD_RESULT::SUCCESSFUL;
@@ -167,7 +167,7 @@ bool CGuildData::SellHouse()
 
 		// Add a history entry and send a chat message for losing a guild house
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
-		GS()->ChatGuild(m_ID, "House sold, {VAL}gold returned to leader", ReturnedGold);
+		GS()->ChatGuild(m_ID, "House sold, {}gold returned to leader", ReturnedGold);
 
 		// Update the database to remove the guild ID from the guild house
 		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());

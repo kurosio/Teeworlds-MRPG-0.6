@@ -239,7 +239,7 @@ void CPlayer::HandleEffects()
 		pEffect->second--;
 		if(pEffect->second <= 0)
 		{
-			GS()->Chat(m_ClientID, "You lost the {STR} effect.", pEffect->first.c_str());
+			GS()->Chat(m_ClientID, "You lost the {} effect.", pEffect->first.c_str());
 			pEffect = CGS::ms_aEffects[m_ClientID].erase(pEffect);
 			continue;
 		}
@@ -350,7 +350,7 @@ void CPlayer::HandlePrison()
 		Account()->m_PrisonSeconds--;
 
 		// Broadcast a message to the player indicating the remaining prison seconds
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "You will regain your freedom in {INT} seconds as you are being released from prison.", Account()->m_PrisonSeconds);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "You will regain your freedom in {} seconds as you are being released from prison.", Account()->m_PrisonSeconds);
 
 		// check if the player is not currently in prison
 		if(!Account()->m_PrisonSeconds)
@@ -394,11 +394,11 @@ void CPlayer::Snap(int SnappingClient)
 	if(m_aPlayerTick[RefreshClanTitle] < Server()->Tick())
 	{
 		// Rotate the clan string by the length of the first character
-		int clanStringSize = str_utf8_fix_truncation(m_aClanString);
-		std::rotate(std::begin(m_aClanString), std::begin(m_aClanString) + str_utf8_forward(m_aClanString, 0), std::end(m_aClanString));
+		int clanStringSize = str_utf8_fix_truncation(m_aRotateClanBuffer);
+		std::rotate(std::begin(m_aRotateClanBuffer), std::begin(m_aRotateClanBuffer) + str_utf8_forward(m_aRotateClanBuffer, 0), std::end(m_aRotateClanBuffer));
 
 		// Set the next tick for refreshing the clan title
-		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aClanString[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 8));
+		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aRotateClanBuffer[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 8));
 
 		// If the clan string size is less than 10
 		if(clanStringSize < 10)
@@ -411,7 +411,7 @@ void CPlayer::Snap(int SnappingClient)
 	char aNameBuf[MAX_NAME_LENGTH];
 	GetFormatedName(aNameBuf, sizeof(aNameBuf));
 	StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
-	StrToInts(&pClientInfo->m_Clan0, 3, m_aClanString);
+	StrToInts(&pClientInfo->m_Clan0, 3, m_aRotateClanBuffer);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
 	StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
 	pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
@@ -475,7 +475,7 @@ void CPlayer::RefreshClanString()
 {
 	if(!IsAuthed())
 	{
-		str_copy(m_aClanString, Server()->ClientClan(m_ClientID), sizeof(m_aClanString));
+		str_copy(m_aRotateClanBuffer, Server()->ClientClan(m_ClientID), sizeof(m_aRotateClanBuffer));
 		return;
 	}
 
@@ -496,35 +496,22 @@ void CPlayer::RefreshClanString()
 	}
 
 	// class
-	const int AttributesByType[3] = { GetTypeAttributesSize(AttributeGroup::Tank),
-										GetTypeAttributesSize(AttributeGroup::Healer), GetTypeAttributesSize(AttributeGroup::Dps) };
-
-	int MaxAttributesPower = 0;
-	AttributeGroup Class = AttributeGroup::Tank;
-	for(int i = 0; i < 3; i++)
-	{
-		if(AttributesByType[i] > MaxAttributesPower)
-		{
-			MaxAttributesPower = AttributesByType[i];
-			Class = static_cast<AttributeGroup>(i);
-		}
-	}
-
 	const char* pClassName;
-	switch(Class)
+	switch(m_Class.GetGroup())
 	{
-		case AttributeGroup::Healer: pClassName = "_Healer_"; break;
-		case AttributeGroup::Dps: pClassName = "_DPS_"; break;
-		default: pClassName = "_Tank_"; break;
+		case ClassGroup::Healer: pClassName = "_Healer_"; break;
+		case ClassGroup::Dps: pClassName = "_DPS_"; break;
+		case ClassGroup::Tank: pClassName = "_Tank_"; break;
+		default: pClassName = "_Class_"; break;
 	}
 
 	char aBufClass[64];
-	str_format(aBufClass, sizeof(aBufClass), "%-*s | %dp", 10 - str_length(pClassName), pClassName, MaxAttributesPower);
+	str_format(aBufClass, sizeof(aBufClass), "%-*s", 10 - str_length(pClassName), pClassName);
 	Buffer.append(" | ");
 	Buffer.append(aBufClass);
 
 	// end format
-	str_format(m_aClanString, sizeof(m_aClanString), "%s", Buffer.buffer());
+	str_format(m_aRotateClanBuffer, sizeof(m_aRotateClanBuffer), "%s", Buffer.buffer());
 
 	Buffer.clear();
 }
@@ -724,7 +711,7 @@ bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int Maxi
 
 	if(*Useless < UpgradeNeed)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_WARNING, 100, "Not upgrade points for +{INT}. Required {INT}.", Value, UpgradeNeed);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_WARNING, 100, "Not upgrade points for +{}. Required {}.", Value, UpgradeNeed);
 		return false;
 	}
 
@@ -736,17 +723,20 @@ bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int Maxi
 /* #########################################################################
 	FUNCTIONS PLAYER ACCOUNT
 ######################################################################### */
-void CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
+bool CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
 {
 	if(m_pCharacter && m_pCharacter->IsAlive())
 	{
 		const float RandomChance = random_float(100.0f);
 		if(RandomChance < Chance)
 		{
-			GS()->Chat(m_ClientID, "You got the effect {STR} time {INT} seconds.", Potion, Sec);
+			GS()->Chat(m_ClientID, "You got the effect {} time {} seconds.", Potion, Sec);
 			CGS::ms_aEffects[m_ClientID][Potion] = Sec;
+			return true;
 		}
 	}
+
+	return false;
 }
 
 bool CPlayer::IsActiveEffect(const char* Potion) const
@@ -786,12 +776,14 @@ int CPlayer::GetStartTeam() const
 
 int CPlayer::GetStartHealth() const
 {
-	return 10 + GetAttributeSize(AttributeIdentifier::HP);
+	const int DefaultHP = 10 + GetAttributeSize(AttributeIdentifier::HP);
+	return DefaultHP + translate_to_percent_rest(DefaultHP, m_Class.GetExtraHP());
 }
 
 int CPlayer::GetStartMana() const
 {
-	return 10 + GetAttributeSize(AttributeIdentifier::MP);
+	const int DefaultMP = 10 + GetAttributeSize(AttributeIdentifier::MP);
+	return DefaultMP + translate_to_percent_rest(DefaultMP, m_Class.GetExtraMP());
 }
 
 int64_t CPlayer::GetAfkTime() const
@@ -834,9 +826,9 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 		return true;
 	}
 
-	if(!GS()->GetVoteOptionalContainer(m_ClientID).empty())
+	if(!CVoteEventOptional::Data()[m_ClientID].empty())
 	{
-		CVoteEventOptional* pOptional = &GS()->GetVoteOptionalContainer(m_ClientID).front();
+		CVoteEventOptional* pOptional = &CVoteEventOptional::Data()[m_ClientID].front();
 		RunEventOptional(Vote, pOptional);
 	}
 
@@ -860,7 +852,7 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 			if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
 			{
 				GetTempData().m_TempDungeonReady ^= true;
-				GS()->Chat(m_ClientID, "You changed the ready mode to \"{STR}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
+				GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
 			}
 			return true;
 		}
@@ -1012,9 +1004,7 @@ void CPlayer::SetSnapHealthTick(int Sec)
 void CPlayer::ChangeWorld(int WorldID)
 {
 	// reset dungeon temp data
-	GetTempData().m_TempAlreadyVotedDungeon = false;
 	GetTempData().m_TempDungeonReady = false;
-	GetTempData().m_TempTankVotingDungeon = 0;
 	GetTempData().m_TempTimeDungeon = 0;
 
 	// change worlds
@@ -1030,32 +1020,6 @@ int CPlayer::GetPlayerWorldID() const
 CTeeInfo& CPlayer::GetTeeInfo() const
 {
 	return Account()->m_TeeInfos;
-}
-
-// Function to create a vote event with optional parameters
-// Takes in a value, duration in seconds, information string, and variable arguments
-CVoteEventOptional* CPlayer::CreateVoteOptional(int OptionID, int OptionID2, int Sec, const char* pInformation, ...)
-{
-	// Create an instance of the CVoteEventOptional class
-	CVoteEventOptional Optional;
-	Optional.m_CloseTime = time_get() + time_freq() * Sec;
-	Optional.m_OptionID = OptionID;
-	Optional.m_OptionID2 = OptionID2;
-
-	// Format the information string using localization and variable arguments
-	va_list VarArgs;
-	va_start(VarArgs, pInformation);
-	dynamic_string Buffer;
-	Server()->Localization()->Format_VL(Buffer, GetLanguage(), pInformation, VarArgs);
-	Optional.m_Description = Buffer.buffer();
-	Buffer.clear();
-	va_end(VarArgs);
-
-	// Add the vote event to the list of optionals
-	GS()->GetVoteOptionalContainer(m_ClientID).push(Optional);
-
-	// Return a pointer to the newly created vote event
-	return &GS()->GetVoteOptionalContainer(m_ClientID).back();
 }
 
 // This function is a member function of the CPlayer class.
@@ -1081,14 +1045,14 @@ void CPlayer::RunEventOptional(int Option, CVoteEventOptional* pOptional)
 }
 
 // Function to handle optional voting options for a player
-void CPlayer::HandleVoteOptionals()
+void CPlayer::HandleVoteOptionals() const
 {
 	// If the list of optionals is empty, return
-	if(GS()->GetVoteOptionalContainer(m_ClientID).empty())
+	if(CVoteEventOptional::Data()[m_ClientID].empty())
 		return;
 
 	// Get a pointer to the first optional in the list
-	CVoteEventOptional* pOptional = &GS()->GetVoteOptionalContainer(m_ClientID).front();
+	CVoteEventOptional* pOptional = &CVoteEventOptional::Data()[m_ClientID].front();
 
 	// If the optional is not already being processed
 	if(!pOptional->m_Working)
@@ -1115,6 +1079,6 @@ void CPlayer::HandleVoteOptionals()
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
 		// Remove the first optional from the list
-		GS()->GetVoteOptionalContainer(m_ClientID).pop();
+		CVoteEventOptional::Data()[m_ClientID].pop();
 	}
 }

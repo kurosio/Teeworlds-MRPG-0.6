@@ -15,6 +15,13 @@ using ItemIdentifier = int;
 class CItemDescription : public MultiworldIdentifiableStaticData < std::map< int, CItemDescription > >
 {
 public:
+	enum
+	{
+		OnEventGot,
+		OnEventLost,
+		OnEventEquip,
+		OnEventUnequip,
+	};
 	using ContainerAttributes = std::deque< CAttribute >;
 
 private:
@@ -35,9 +42,9 @@ public:
 	CItemDescription() = default;
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
-	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes, std::string Data)
+	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes, std::string&& Data)
 	{
-		m_Data = Data;
+		m_Data = std::move(Data);
 		Tools::Json::parseFromString(m_Data, [this](nlohmann::json& pJson)
 		{
 			// Parse random box
@@ -63,6 +70,7 @@ public:
 	ItemIdentifier GetID() const { return m_ID; }
 
 	// main functions
+	void RunEvent(CPlayer* pPlayer, int EventID) const;
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }

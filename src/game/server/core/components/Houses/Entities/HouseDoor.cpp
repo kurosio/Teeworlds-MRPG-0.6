@@ -41,7 +41,7 @@ void CEntityHouseDoor::Tick()
 			}
 
 			// Broadcast a game information message to the player and hammer hit effect at the position of the door control
-			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
+			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{}'!", m_pDoorInfo->GetName());
 		}
 	}
 

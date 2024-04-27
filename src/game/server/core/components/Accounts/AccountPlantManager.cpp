@@ -69,7 +69,7 @@ int CAccountPlantManager::GetPlantHealth(vec2 Pos) const
 //	const int JobUpgrQuantity = pPlayer->AccountManager()->m_FarmingData(JOB_UPGR_QUANTITY, 0).m_Value;
 //	const int ExperienceNeed = computeExperience(JobLevel);
 //
-//	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Plants Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
+//	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Plants Point: {} :: Level: {} Exp: {}/{}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
 //}
 
 bool CAccountPlantManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
@@ -83,21 +83,21 @@ bool CAccountPlantManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
 			continue;
 
 		const vec2 Pos = Plant.m_Position / 32.0f;
-		CVoteWrapper VPlant(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Plant {STR}", GS()->GetItemInfo(Plant.m_ItemID)->GetName());
+		CVoteWrapper VPlant(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Plant {}", GS()->GetItemInfo(Plant.m_ItemID)->GetName());
 		VPlant.MarkList().Add("Location:");
 		{
 			VPlant.BeginDepth();
 			VPlant.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-			VPlant.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
+			VPlant.Add("x{} y{}", (int)Pos.x, (int)Pos.y);
 			VPlant.EndDepth();
 		}
 		VPlant.AddLine();
 		VPlant.MarkList().Add("Description");
 		{
 			VPlant.BeginDepth();
-			VPlant.Add("Level: {INT}", Plant.m_Level);
-			VPlant.Add("Health: {INT}P", Plant.m_StartHealth);
-			VPlant.Add("Distance of distribution: {INT}P", Plant.m_Distance);
+			VPlant.Add("Level: {}", Plant.m_Level);
+			VPlant.Add("Health: {}P", Plant.m_StartHealth);
+			VPlant.Add("Distance of distribution: {}P", Plant.m_Distance);
 			VPlant.EndDepth();
 		}
 		VPlant.AddLine();
@@ -128,7 +128,7 @@ void CAccountPlantManager::Work(CPlayer* pPlayer, int Level)
 		}
 
 		ExperienceNeed = computeExperience(pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value);
-		GS()->Chat(ClientID, "Plants Level UP. Now Level {INT}!", pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value);
+		GS()->Chat(ClientID, "Plants Level UP. Now Level {}!", pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value);
 	}
 
 	pPlayer->ProgressBar("Plants", pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value, pPlayer->Account()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value, ExperienceNeed, MultiplierExperience);

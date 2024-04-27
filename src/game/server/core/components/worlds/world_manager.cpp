@@ -91,7 +91,7 @@ void CWorldManager::NotifyUnlockedZonesByLeveling(CPlayer* pPlayer, int Level) c
 	{
 		if(pPlayer->Account()->GetLevel() == Level)
 		{
-			GS()->Chat(-1, "{STR} initiated area ({STR})!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
+			GS()->Chat(-1, "{} initiated area ({})!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
 		}
 	}
 }

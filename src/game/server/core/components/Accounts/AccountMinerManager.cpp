@@ -67,7 +67,7 @@ int CAccountMinerManager::GetOreHealth(vec2 Pos) const
 //	const int JobUpgrades = pPlayer->AccountManager()->m_MiningData(JOB_UPGRADES, 0).m_Value;
 //	const int ExperienceNeed = computeExperience(JobLevel);
 //
-//	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Miner Point: {INT} :: Level: {INT} Exp: {INT}/{INT}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
+//	GS()->AVM(ClientID, "null", NOPE, TAB_UPGR_JOB, "Miner Point: {} :: Level: {} Exp: {}/{}", JobUpgrades, JobLevel, JobExperience, ExperienceNeed);
 //}
 
 bool CAccountMinerManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
@@ -81,21 +81,21 @@ bool CAccountMinerManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
 			continue;
 
 		const vec2 Pos = Ore.m_Position / 32.0f;
-		CVoteWrapper VOres(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Ore {STR}", GS()->GetItemInfo(Ore.m_ItemID)->GetName());
+		CVoteWrapper VOres(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Ore {}", GS()->GetItemInfo(Ore.m_ItemID)->GetName());
 		VOres.MarkList().Add("Location:");
 		{
 			VOres.BeginDepth();
 			VOres.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-			VOres.Add("x{INT} y{INT}", (int)Pos.x, (int)Pos.y);
+			VOres.Add("x{} y{}", (int)Pos.x, (int)Pos.y);
 			VOres.EndDepth();
 		}
 		VOres.AddLine();
 		VOres.MarkList().Add("Description");
 		{
 			VOres.BeginDepth();
-			VOres.Add("Level: {INT}", Ore.m_Level);
-			VOres.Add("Health: {INT}P", Ore.m_StartHealth);
-			VOres.Add("Distance of distribution: {INT}P", Ore.m_Distance);
+			VOres.Add("Level: {}", Ore.m_Level);
+			VOres.Add("Health: {}P", Ore.m_StartHealth);
+			VOres.Add("Distance of distribution: {}P", Ore.m_Distance);
 			VOres.EndDepth();
 		}
 		VOres.AddLine();
@@ -127,7 +127,7 @@ void CAccountMinerManager::Work(CPlayer *pPlayer, int Level)
 
 		const int NewLevel = pPlayer->Account()->m_MiningData(JOB_LEVEL, 0).m_Value;
 		ExperienceNeed = computeExperience(NewLevel);
-		GS()->Chat(ClientID, "Miner Level UP. Now Level {INT}!", NewLevel);
+		GS()->Chat(ClientID, "Miner Level UP. Now Level {}!", NewLevel);
 	}
 
 	pPlayer->ProgressBar("Miner", pPlayer->Account()->m_MiningData(JOB_LEVEL, 0).m_Value, pPlayer->Account()->m_MiningData(JOB_EXPERIENCE, 0).m_Value, ExperienceNeed, MultiplierExperience);

@@ -44,12 +44,12 @@ void CEntityGuildDoor::Tick()
 				}
 
 				// Broadcast a game information message to the client
-				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{STR}'!", m_pDoorInfo->GetName());
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{}'!", m_pDoorInfo->GetName());
 			}
 			else
 			{
 				// Broadcast a game information message to the client
-				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "You do not have access to '{STR}' door!", m_pDoorInfo->GetName());
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "You do not have access to '{}' door!", m_pDoorInfo->GetName());
 			}
 		}
 

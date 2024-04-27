@@ -64,192 +64,6 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	return false;
 }
 
-void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehouse) const
-{
-	const int ClientID = pPlayer->GetCID();
-
-	// Check if the pWarehouse object is null
-	if(!pWarehouse)
-	{
-		CVoteWrapper(ClientID).Add("Warehouse don't work");
-		return;
-	}
-
-	CItemDescription* pCurrency = pWarehouse->GetCurrency();
-
-	// show base shop functions
-	CVoteWrapper VStorage(ClientID, VWF_STYLE_STRICT_BOLD, "Warehouse :: {STR}", pWarehouse->GetName());
-	if(pWarehouse->IsHasFlag(WF_STORAGE))
-	{
-		// storage functional
-		VStorage.AddLine();
-		VStorage.Add("\u2727 Your: {VAL} | Storage: {VAL} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
-		{
-			VStorage.BeginDepth();
-			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_BUY), "WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
-			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_SELL), "WAREHOUSE_UNLOAD_PRODUCTS", pWarehouse->GetID(), "Unload products");
-			VStorage.EndDepth();
-		}
-		VStorage.AddLine();
-	}
-
-	VStorage.AddItemValue(pCurrency->GetID());
-	VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
-	VStorage.AddLine();
-
-	/*
-	 * Show trading list
-	 */
-	ShowTradeList(pWarehouse, pPlayer, "Can be used's", ItemType::TYPE_USED);
-	ShowTradeList(pWarehouse, pPlayer, "Potion's", ItemType::TYPE_POTION);
-	ShowTradeList(pWarehouse, pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
-	ShowTradeList(pWarehouse, pPlayer, "Module's", ItemType::TYPE_MODULE);
-	ShowTradeList(pWarehouse, pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
-	ShowTradeList(pWarehouse, pPlayer, "Craft's", ItemType::TYPE_CRAFT);
-	ShowTradeList(pWarehouse, pPlayer, "Other's", ItemType::TYPE_OTHER);
-	ShowTradeList(pWarehouse, pPlayer, "Quest and all the rest's", ItemType::TYPE_INVISIBLE);
-
-	/*
-	 * Show selling list
-	 */
-	if(pWarehouse->IsHasFlag(WF_SELL))
-	{
-		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
-		for(const auto& Trade : pWarehouse->GetTradingList())
-		{
-			const CItem* pItem = Trade.GetItem();
-			const int Price = Trade.GetPrice();
-
-			VItems.AddOption("WAREHOUSE_SELL_ITEM", pWarehouse->GetID(), Trade.GetID(), "[{VAL}] Sell {STR} - {VAL} {STR} per unit",
-				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), Price, pCurrency->GetName());
-		}
-	}
-}
-
-void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemType Type) const
-{
-	const int ClientID = pPlayer->GetCID();
-
-	// Check if the pWarehouse object is null
-	if(!pWarehouse)
-	{
-		CVoteWrapper(ClientID).Add("Warehouse don't work");
-		return;
-	}
-
-	CItemDescription* pCurrency = pWarehouse->GetCurrency();
-
-	// order only by type
-	if(std::all_of(pWarehouse->GetTradingList().begin(), pWarehouse->GetTradingList().end(), [Type](const CTrade& p)
-	{ return p.GetItem()->Info()->GetType() != Type; }))
-		return;
-
-	// add empty line
-	CVoteWrapper::AddEmptyline(ClientID);
-
-	// show trading list
-	CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN, TypeName);
-	for(const auto& Trade : pWarehouse->GetTradingList())
-	{
-		const CItem* pItem = Trade.GetItem();
-		CItemDescription* pItemInfo = pItem->Info();
-		const int Price = Trade.GetPrice();
-
-		// check by type
-		if(pItemInfo->GetType() != Type)
-			continue;
-
-		// set title name by enchant type (or stack item, or only once)
-		if(pItem->Info()->IsEnchantable())
-		{
-			const bool HasItem = pPlayer->GetItem(*pItem)->HasItem();
-			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{STR}] {STR} {STR} - {VAL} {STR}", (HasItem ? "✔" : "×"),
-				pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrency->GetName());
-		}
-		else
-		{
-			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{VAL}] {STR}x{VAL} - {VAL} {STR}",
-				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), pItem->GetValue(), Price, pCurrency->GetName());
-		}
-	}
-
-	// add line
-	CVoteWrapper::AddLine(ClientID);
-}
-
-void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, const TradeIdentifier& TradeID) const
-{
-	int ClientID = pPlayer->GetCID();
-
-	// Check if the pWarehouse object is null
-	if(!pWarehouse || !pWarehouse->GetTrade(TradeID))
-	{
-		CVoteWrapper(ClientID).Add("Warehouse don't work");
-		return;
-	}
-
-	// Variables
-	CTrade* pTrade = pWarehouse->GetTrade(TradeID);
-	const CItem* pItem = pTrade->GetItem();
-	const bool HasItem = pPlayer->GetItem(pItem->GetID())->HasItem();
-
-	// Show item information
-	CVoteWrapper VItem(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
-	if(pItem->Info()->IsEnchantable())
-	{
-		VItem.Add("{STR} {STR}", (HasItem ? "✔" : "×"), pItem->Info()->GetName());
-	}
-	else
-	{
-		int Value = pPlayer->GetItem(pItem->GetID())->GetValue();
-		VItem.Add("{STR} (has {VAL})", pItem->Info()->GetName(), Value);
-	}
-	VItem.Add(pItem->Info()->GetDescription());
-	if(pItem->Info()->HasAttributes())
-	{
-		char aAttributes[128];
-		pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
-		VItem.Add("* {STR}", aAttributes);
-	}
-	VItem.AddLine();
-	CVoteWrapper::AddEmptyline(ClientID);
-
-	// show information about the cost of the item
-	CVoteWrapper VRequired(ClientID, VWF_OPEN|VWF_STYLE_STRICT, "Required");
-	VRequired.ReinitNumeralDepthStyles(
-		{
-			{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }
-		}
-	);
-	if(pWarehouse->IsHasFlag(WF_STORAGE))
-	{
-		int ProductCost = pTrade->GetProductsCost();
-		CItemDescription* pProductInfo = GS()->GetItemInfo(itProduct);
-		bool MarkHas = pWarehouse->Storage().GetValue() >= ProductCost;
-		VRequired.MarkList().Add("{STR} {STR}x{VAL} ({VAL})", MarkHas ? "\u2714" : "\u2718", pProductInfo->GetName(), ProductCost, pWarehouse->Storage().GetValue());
-	}
-	CItemDescription* pCurrency = pWarehouse->GetCurrency();
-	CPlayerItem* pPlayerItem = pPlayer->GetItem(pCurrency->GetID());
-	bool MarkHas = pPlayerItem->GetValue() >= pTrade->GetPrice();
-	VRequired.MarkList().Add("{STR} {STR}x{VAL} ({VAL})", MarkHas ? "\u2714" : "\u2718", pCurrency->GetName(), pTrade->GetPrice(), pPlayerItem->GetValue());
-	VRequired.AddLine();
-	CVoteWrapper::AddEmptyline(ClientID);
-
-	// show status and button buy
-	if(pItem->Info()->IsEnchantable() && HasItem)
-		CVoteWrapper(ClientID).Add("- You can't buy more than one item");
-	else if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
-		CVoteWrapper(ClientID).Add("- Not enough products to buy");
-	else if(pPlayer->GetItem(itGold)->GetValue() < pTrade->GetPrice())
-		CVoteWrapper(ClientID).Add("- Not enough gold to buy");
-	else
-		CVoteWrapper(ClientID).AddOption("WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Buy");
-
-	// add backpage
-	CVoteWrapper::AddEmptyline(ClientID);
-	CVoteWrapper::AddBackpage(ClientID);
-}
-
 // Warehouse manager handle menulist
 bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
@@ -257,6 +71,7 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 	if(Menulist == MENU_WAREHOUSE)
 	{
+		// show warehouse list by position
 		CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos);
 		ShowWarehouseList(pChr->GetPlayer(), pWarehouse);
 		return true;
@@ -266,12 +81,15 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_WAREHOUSE);
 
+		// try show trade item
 		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
 		{
 			CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos);
 			ShowTrade(pPlayer, pWarehouse, pPlayer->m_VotesData.GetMenuTemporaryInteger());
 		}
 
+		// add backpage
+		CVoteWrapper::AddBackpage(pPlayer->GetCID());
 		return true;
 	}
 
@@ -343,7 +161,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		{
 			pWarehouse->Storage().Add(Value);
 			pPlayer->Account()->AddGold(Value);
-			GS()->Chat(ClientID, "You loaded {VAL} products. Got {VAL} gold.", Value, Value);
+			GS()->Chat(ClientID, "You loaded {} products. Got {} gold.", Value, Value);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
@@ -368,7 +186,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		CPlayerItem* pProducts = pPlayer->GetItem(itProduct);
 		if(pProducts->GetValue() >= g_Config.m_SvWarehouseProductsCanTake)
 		{
-			GS()->Chat(ClientID, "You can't take more than {VAL} products.", g_Config.m_SvWarehouseProductsCanTake);
+			GS()->Chat(ClientID, "You can't take more than {} products.", g_Config.m_SvWarehouseProductsCanTake);
 			return true;
 		}
 
@@ -377,7 +195,7 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		if(pWarehouse->Storage().Remove(Value))
 		{
 			pProducts->Add(Value);
-			GS()->Chat(ClientID, "You unloaded {VAL} products.", Value);
+			GS()->Chat(ClientID, "You unloaded {} products.", Value);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
@@ -385,7 +203,186 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	return false;
 }
 
-// Buying an item from a warehouse
+void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehouse) const
+{
+	const int ClientID = pPlayer->GetCID();
+
+	// Check if the pWarehouse object is null
+	if(!pWarehouse)
+	{
+		CVoteWrapper(ClientID).Add("Warehouse don't work");
+		return;
+	}
+
+	CItemDescription* pCurrency = pWarehouse->GetCurrency();
+
+	// show base shop functions
+	CVoteWrapper VStorage(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Warehouse :: {}", pWarehouse->GetName());
+	if(pWarehouse->IsHasFlag(WF_STORAGE))
+	{
+		// storage functional
+		VStorage.AddLine();
+		VStorage.Add("\u2727 Your: {} | Storage: {} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
+		{
+			VStorage.BeginDepth();
+			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_BUY), "WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
+			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_SELL), "WAREHOUSE_UNLOAD_PRODUCTS", pWarehouse->GetID(), "Unload products");
+			VStorage.EndDepth();
+		}
+		VStorage.AddLine();
+	}
+	VStorage.AddItemValue(pCurrency->GetID());
+	VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
+
+	/*
+	 * Show trading list
+	 */
+	ShowTradeList(pWarehouse, pPlayer, "Can be used's", ItemType::TYPE_USED);
+	ShowTradeList(pWarehouse, pPlayer, "Potion's", ItemType::TYPE_POTION);
+	ShowTradeList(pWarehouse, pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
+	ShowTradeList(pWarehouse, pPlayer, "Module's", ItemType::TYPE_MODULE);
+	ShowTradeList(pWarehouse, pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
+	ShowTradeList(pWarehouse, pPlayer, "Craft's", ItemType::TYPE_CRAFT);
+	ShowTradeList(pWarehouse, pPlayer, "Other's", ItemType::TYPE_OTHER);
+	ShowTradeList(pWarehouse, pPlayer, "Quest and all the rest's", ItemType::TYPE_INVISIBLE);
+
+	/*
+	 * Show selling list
+	 */
+	if(pWarehouse->IsHasFlag(WF_SELL))
+	{
+		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
+		for(const auto& Trade : pWarehouse->GetTradingList())
+		{
+			const CItem* pItem = Trade.GetItem();
+			const int Price = Trade.GetPrice();
+
+			VItems.AddOption("WAREHOUSE_SELL_ITEM", pWarehouse->GetID(), Trade.GetID(), "[{}] Sell {} - {} {} per unit",
+				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), Price, pCurrency->GetName());
+		}
+	}
+}
+
+void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemType Type) const
+{
+	const int ClientID = pPlayer->GetCID();
+
+	// Check if the pWarehouse object is null
+	if(!pWarehouse)
+	{
+		CVoteWrapper(ClientID).Add("Warehouse don't work");
+		return;
+	}
+
+	// order only by type
+	if(std::all_of(pWarehouse->GetTradingList().begin(), pWarehouse->GetTradingList().end(), [Type](const CTrade& p)
+	{ return p.GetItem()->Info()->GetType() != Type; }))
+		return;
+
+	// add empty line
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	// show trading list
+	CItemDescription* pCurrency = pWarehouse->GetCurrency();
+	CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN, TypeName);
+	for(const auto& Trade : pWarehouse->GetTradingList())
+	{
+		const CItem* pItem = Trade.GetItem();
+		CItemDescription* pItemInfo = pItem->Info();
+		const int Price = Trade.GetPrice();
+
+		// check by type
+		if(pItemInfo->GetType() != Type)
+			continue;
+
+		// set title name by enchant type (or stack item, or only once)
+		if(pItem->Info()->IsEnchantable())
+		{
+			const bool HasItem = pPlayer->GetItem(*pItem)->HasItem();
+			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{}] {} {} - {} {}", (HasItem ? "✔" : "×"),
+				pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrency->GetName());
+		}
+		else
+		{
+			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{}] {}x{} - {} {}",
+				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), pItem->GetValue(), Price, pCurrency->GetName());
+		}
+	}
+
+	// add line
+	CVoteWrapper::AddLine(ClientID);
+}
+
+void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, const TradeIdentifier& TradeID) const
+{
+	int ClientID = pPlayer->GetCID();
+
+	// Check if the pWarehouse object is null
+	if(!pWarehouse || !pWarehouse->GetTrade(TradeID))
+	{
+		CVoteWrapper(ClientID).Add("Warehouse don't work");
+		return;
+	}
+
+	// Variables
+	CTrade* pTrade = pWarehouse->GetTrade(TradeID);
+	const CItem* pItem = pTrade->GetItem();
+	const bool HasItem = pPlayer->GetItem(pItem->GetID())->HasItem();
+
+	// Show item information
+	CVoteWrapper VItem(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
+	if(pItem->Info()->IsEnchantable())
+	{
+		VItem.Add("{} {}", (HasItem ? "✔" : "×"), pItem->Info()->GetName());
+	}
+	else
+	{
+		int Value = pPlayer->GetItem(pItem->GetID())->GetValue();
+		VItem.Add("{} (has {})", pItem->Info()->GetName(), Value);
+	}
+	VItem.Add(pItem->Info()->GetDescription());
+	if(pItem->Info()->HasAttributes())
+	{
+		char aAttributes[128];
+		pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
+		VItem.Add("* {}", aAttributes);
+	}
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	// show information about the cost of the item
+	CVoteWrapper VRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required");
+	VRequired.ReinitNumeralDepthStyles(
+		{
+			{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }
+		}
+	);
+	if(pWarehouse->IsHasFlag(WF_STORAGE))
+	{
+		int ProductCost = pTrade->GetProductsCost();
+		CItemDescription* pProductInfo = GS()->GetItemInfo(itProduct);
+		bool MarkHas = pWarehouse->Storage().GetValue() >= ProductCost;
+		VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pProductInfo->GetName(), ProductCost, pWarehouse->Storage().GetValue());
+	}
+	CItemDescription* pCurrency = pWarehouse->GetCurrency();
+	CPlayerItem* pPlayerItem = pPlayer->GetItem(pCurrency->GetID());
+	bool MarkHas = pPlayerItem->GetValue() >= pTrade->GetPrice();
+	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pCurrency->GetName(), pTrade->GetPrice(), pPlayerItem->GetValue());
+	CVoteWrapper::AddEmptyline(ClientID);
+
+	// show status and button buy
+	if(pItem->Info()->IsEnchantable() && HasItem)
+		CVoteWrapper(ClientID).Add("- You can't buy more than one item");
+	else if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
+		CVoteWrapper(ClientID).Add("- Not enough products to buy");
+	else if(pPlayer->GetItem(itGold)->GetValue() < pTrade->GetPrice())
+		CVoteWrapper(ClientID).Add("- Not enough gold to buy");
+	else
+		CVoteWrapper(ClientID).AddOption("WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Buy");
+
+	// add backpage
+	CVoteWrapper::AddEmptyline(ClientID);
+}
+
 bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID) const
 {
 	// Finding a warehouse by ID
@@ -410,7 +407,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeI
 		int MaterialCost = pTradeSlot->GetProductsCost();
 		if(pWarehouse->Storage().GetValue() < MaterialCost)
 		{
-			GS()->Chat(ClientID, "Not enought materials in storage! Required {VAL} materials.", MaterialCost);
+			GS()->Chat(ClientID, "Not enought materials in storage! Required {} materials.", MaterialCost);
 			return false;
 		}
 	}
@@ -424,7 +421,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeI
 
 		CItem* pItem = pTradeSlot->GetItem();
 		pPlayerItem->Add(pItem->GetValue(), 0, pItem->GetEnchant());
-		GS()->Chat(ClientID, "You exchanged {STR}x{VAL} for {STR}x{VAL}.",
+		GS()->Chat(ClientID, "You exchanged {}x{} for {}x{}.",
 			pWarehouse->GetCurrency()->GetName(), pTradeSlot->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
 		return true;
 	}
@@ -466,14 +463,13 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, Trade
 
 		// Add the total price to the player's
 		pPlayer->GetItem(pWarehouse->GetCurrency()->GetID())->Add(FinalPrice);
-		GS()->Chat(ClientID, "You sold {STR}x{VAL} for {VAL} {STR}.", pItem->Info()->GetName(), Value, FinalPrice, pWarehouse->GetCurrency()->GetName());
+		GS()->Chat(ClientID, "You sold {}x{} for {} {}.", pItem->Info()->GetName(), Value, FinalPrice, pWarehouse->GetCurrency()->GetName());
 		return true;
 	}
 
 	return false;
 }
 
-// Finding a warehouse by position
 CWarehouse* CWarehouseManager::GetWarehouse(vec2 Pos) const
 {
 	auto iter = std::find_if(CWarehouse::Data().begin(), CWarehouse::Data().end(), [Pos](const CWarehouse* pItem)
@@ -481,7 +477,6 @@ CWarehouse* CWarehouseManager::GetWarehouse(vec2 Pos) const
 	return iter != CWarehouse::Data().end() ? *iter : nullptr;
 }
 
-// Finding a warehouse by ID
 CWarehouse* CWarehouseManager::GetWarehouse(WarehouseIdentifier ID) const
 {
 	auto iter = std::find_if(CWarehouse::Data().begin(), CWarehouse::Data().end(), [ID](const CWarehouse* pItem){ return pItem->GetID() == ID; });

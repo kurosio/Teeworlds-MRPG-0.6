@@ -29,7 +29,7 @@ void CWorldData::Move(CPlayer* pPlayer)
 	CWorldData* pSecondWorldData = pGS->GetWorldData(pSwapper->GetSecondWorldID());
 	if(pSecondWorldData && pPlayer->Account()->GetLevel() < m_RequiredLevel)
 	{
-		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "You must be at least level {INT} to moved!", m_RequiredLevel);
+		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "You must be at least level {} to moved!", m_RequiredLevel);
 		return;
 	}
 

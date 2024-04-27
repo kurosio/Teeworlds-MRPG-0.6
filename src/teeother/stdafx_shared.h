@@ -18,6 +18,7 @@
 #include <queue>
 
 // custom something that is subject to less changes is introduced
+#include <base/big_int.h>
 #include <base/math.h>
 #include <base/vmath.h>
 #include <base/threadpool.h>

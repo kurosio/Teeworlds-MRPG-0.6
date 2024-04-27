@@ -18,7 +18,6 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS) : IGameController
 	m_GameFlags = 0;
 	m_WorldID = GS()->GetWorldID();
 	m_ActivePlayers = 0;
-	m_TankClientID = -1;
 
 	// init dungeon zone
 	auto iter = std::find_if(CDungeonData::ms_aDungeon.begin(), CDungeonData::ms_aDungeon.end(), [&](const std::pair<int, CDungeonData>& pDungeon)
@@ -67,8 +66,6 @@ void CGameControllerDungeon::ChangeState(int State)
 		m_SafeTick = 0;
 
 		CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = 0;
-		m_TankClientID = -1;
-
 		SetMobsSpawn(false);
 		ResetDoorKeyState();
 	}
@@ -87,8 +84,6 @@ void CGameControllerDungeon::ChangeState(int State)
 	// used when changing state to start
 	else if(State == DUNGEON_STARTED)
 	{
-		SelectTankPlayer();
-
 		m_ActivePlayers = PlayersNum();
 		m_MaximumTick = Server()->TickSpeed() * 600;
 		m_SafeTick = Server()->TickSpeed() * 30;
@@ -145,11 +140,11 @@ void CGameControllerDungeon::ChangeState(int State)
 		// dungeon finished information
 		char aTimeFormat[64];
 		str_format(aTimeFormat, sizeof(aTimeFormat), "Time: %d minute(s) %d second(s)", FinishTime / 60, FinishTime - (FinishTime / 60 * 60));
-		GS()->Chat(-1, "Group{STR}!", Buffer.buffer());
-		GS()->Chat(-1, "{STR} finished {STR}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
+		GS()->Chat(-1, "Group{}!", Buffer.buffer());
+		GS()->Chat(-1, "{} finished {}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
 
 		if(pBestPlayer)
-			GS()->Chat(-1, "Most Valuable '{STR}'. With help {VAL} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
+			GS()->Chat(-1, "Most Valuable '{}'. With help {} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
@@ -204,7 +199,7 @@ void CGameControllerDungeon::StateTick()
 
 			// output before the start of the passage
 			const int Time = m_StartingTick / Server()->TickSpeed();
-			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon waiting {INT} sec!\nPlayer's are ready to start right now {INT} of {INT}!\nYou can change state with 'Vote yes'", Time, PlayersReadyState, Players);
+			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'", Time, PlayersReadyState, Players);
 
 			m_StartingTick--;
 			if(!m_StartingTick)
@@ -250,7 +245,7 @@ void CGameControllerDungeon::StateTick()
 		if(m_FinishedTick)
 		{
 			const int Time = m_FinishedTick / Server()->TickSpeed();
-			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon ended {INT} sec!", Time);
+			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon ended {} sec!", Time);
 
 			m_FinishedTick--;
 		}
@@ -295,7 +290,7 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 		{
 			const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
 			CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "The dungeon is completed on [{INT}%]", Progress);
+			GS()->ChatWorldID(m_WorldID, "Dungeon:", "The dungeon is completed on [{}%]", Progress);
 			UpdateDoorKeyState();
 		}
 	}
@@ -310,7 +305,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 			const int ClientID = pChr->GetPlayer()->GetCID();
 
 			// update tanking client status
-			if(ClientID == m_TankClientID)
+			if(pChr->GetPlayer()->GetClass()->GetGroup() == ClassGroup::Tank)
 				pChr->GetPlayer()->m_MoodState = Mood::TANK;
 
 			// player died after the safety timer ended
@@ -419,57 +414,6 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 	}
 }
 
-void CGameControllerDungeon::SelectTankPlayer()
-{
-	int MaximalVotes = 0;
-	int MaximalHardness = 0;
-	bool ChosenByPlayers = false;
-
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		CPlayer* pPlayer = GS()->m_apPlayers[i];
-		if(!pPlayer || Server()->GetClientWorldID(i) != m_WorldID)
-			continue;
-
-		// random if the votes of several players are equal
-		if(MaximalVotes > 0 && pPlayer->GetTempData().m_TempTankVotingDungeon == MaximalVotes && rand() % 2 == 0)
-			m_TankClientID = i;
-
-		// the player is selected by votes
-		if(pPlayer->GetTempData().m_TempTankVotingDungeon > MaximalVotes)
-		{
-			ChosenByPlayers = true;
-
-			m_TankClientID = i;
-			MaximalVotes = pPlayer->GetTempData().m_TempTankVotingDungeon;
-		}
-
-		// selection by hardness statistics, if there are no votes
-		if(MaximalVotes <= 0 && pPlayer->GetTypeAttributesSize(AttributeGroup::Tank) > MaximalHardness)
-		{
-			m_TankClientID = i;
-			MaximalHardness = pPlayer->GetTypeAttributesSize(AttributeGroup::Tank);
-		}
-	}
-
-	// show information about class selection
-	CPlayer* pTankPlayer = GS()->GetPlayer(m_TankClientID, true);
-	if(pTankPlayer)
-	{
-		if(ChosenByPlayers)
-		{
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Tank is assigned to '{STR}' with {INT} votes!",
-				Server()->ClientName(m_TankClientID), pTankPlayer->GetTempData().m_TempTankVotingDungeon);
-		}
-		else
-		{
-			const int StrengthTank = pTankPlayer->GetTypeAttributesSize(AttributeGroup::Tank);
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Tank '{STR}' assigned with class strength {VAL}p!",
-				Server()->ClientName(m_TankClientID), StrengthTank);
-		}
-	}
-}
-
 // TODO: something to do with the balance
 int CGameControllerDungeon::GetSyncFactor() const
 {
@@ -500,34 +444,53 @@ int CGameControllerDungeon::GetSyncFactor() const
 int CGameControllerDungeon::GetAttributeDungeonSync(const CPlayer* pPlayer, AttributeIdentifier ID) const
 {
 	float Percent = 0.0f;
+	const float ActiveAttribute = m_SyncDungeon / 2.0f;
 	const AttributeGroup Type = GS()->GetAttributeInfo(ID)->GetGroup();
 
 	// - - - - - - - - -- - - -
 	// balance tanks
-	if(pPlayer->m_MoodState == Mood::TANK)
+	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Tank)
 	{
-		const float ActiveAttribute = m_SyncDungeon / 2.0f;
+		// basic default tank upgrades
 		if(Type == AttributeGroup::Tank)
 			Percent = 50.0f;
 
-		// very low damage for tank
-		if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
+		// very small dps boost
+		else if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
 			return 0;
-
-		const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
-		return maximum(AttributeSyncProcent, 1);
 	}
 
-	// - - - - - - - - -- - - -
-	// balance healer damage divides the average attribute into the number of players
-	const float ActiveAttribute = m_SyncDungeon / m_ActivePlayers;
-	if(Type == AttributeGroup::Healer)
-		Percent = minimum(25.0f + (m_ActivePlayers * 2.0f), 50.0f);
-	else if(Type == AttributeGroup::Tank)
-		Percent = 5.0f;
-	else if(Type == AttributeGroup::Hardtype || Type == AttributeGroup::Dps)
-		Percent = 0.1f;
+	// - - - - - - - - - - - - -
+	// balance dps
+	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Dps)
+	{
+		// basic default dps upgrades
+		if(Type == AttributeGroup::Dps || Type == AttributeGroup::Hardtype)
+			Percent = 0.1f;
 
+		// very small tank boost
+		else if(Type == AttributeGroup::Tank)
+			Percent = 5.f;
+	}
+
+	// - - - - - - - - - - - - -
+	// balance healer
+	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Healer)
+	{
+		// basic default healer upgrades
+		if(Type == AttributeGroup::Healer)
+			Percent = minimum(25.0f + (m_ActivePlayers * 2.0f), 50.0f);
+
+		// small tank boost
+		else if(Type == AttributeGroup::Tank)
+			Percent = 10.f;
+
+		// very small dps boost
+		else if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
+			return 0;
+	}
+
+	// return final stat by percent rest
 	const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
 	return maximum(AttributeSyncProcent, 1);
 }

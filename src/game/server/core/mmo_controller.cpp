@@ -45,7 +45,7 @@ inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, CV
 				{
 					str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
 				}
-				pWrapper->Add("{STR} - {INT}{STR}", pAttribute->GetName(), AttributeSize, aBuf);
+				pWrapper->Add("{} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
 			}
 		}
 		pWrapper->EndDepth();
@@ -57,7 +57,7 @@ inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, CV
 		for(auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
 			if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
-				pWrapper->AddOption("UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), "{STR} - {INT} (cost {INT} point)",
+				pWrapper->AddOption("UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), "{} - {} (cost {} point)",
 					pAttribute->GetName(), pPlayer->Account()->m_aStats[ID], pAttribute->GetUpgradePrice());
 		}
 		pWrapper->EndDepth();
@@ -155,17 +155,17 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// statistics menu
 		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
 		const char* pStrLastLoginDate = pPlayer->Account()->GetLastLoginDate();
-		CVoteWrapper VMain(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, {STR} Last log in {STR}", GS()->Server()->ClientName(ClientID), pStrLastLoginDate);
-		VMain.Add("Level {INT} : Exp {INT}/{INT}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
-		VMain.Add("Skill Point {INT}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
-		VMain.Add("Gold: {VAL}", pPlayer->GetItem(itGold)->GetValue());
+		CVoteWrapper VMain(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, {} Last log in {}", GS()->Server()->ClientName(ClientID), pStrLastLoginDate);
+		VMain.Add("Level {} : Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
+		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
+		VMain.Add("Gold: {}", pPlayer->GetItem(itGold)->GetValue());
 		VMain.AddLine();
 
 		// personal menu
 		CVoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "\u262A PERSONAL");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
-		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({INT}p)", pPlayer->Account()->m_Upgrade);
+		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({}p)", pPlayer->Account()->m_Upgrade);
 		VPersonal.AddMenu(MENU_EIDOLON_COLLECTION, "\u2727 Eidolon Collection");
 		VPersonal.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
 		VPersonal.AddMenu(MENU_GROUP, "\u2042 Group");
@@ -205,14 +205,15 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// upgrade point
 		CVoteWrapper VUpgrPoint(ClientID);
-		VUpgrPoint.Add("Upgrade Point's: {INT}P", pPlayer->Account()->m_Upgrade);
+		VUpgrPoint.Add("Upgrade Point's: {}P", pPlayer->Account()->m_Upgrade);
 		VUpgrPoint.AddLine();
 
 		// upgrade group's
+		const ClassGroup& Class = pPlayer->GetClass()->GetGroup();
 		CVoteWrapper VUpgrGroupSelect(ClientID, VWF_SEPARATE_OPEN, "Select a type of upgrades");
-		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
-		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
-		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
+		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Dps, MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
+		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Tank, MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
+		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Healer, MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
 		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Weapon, paGroupNames[(int)AttributeGroup::Weapon]);
 		VUpgrGroupSelect.AddLine();
 
@@ -222,7 +223,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetMenuTemporaryInteger(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
 			const char* pGroupName = paGroupNames[(int)Group];
 
-			CVoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "{STR} : Strength {VAL}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
+			CVoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "{} : Strength {}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
 			InsertUpgradesVotes(pPlayer, Group, &VUpgrGroup);
 			VUpgrGroup.AddLine();
 		}
@@ -237,22 +238,25 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VTopInfo(ClientID, VWF_SEPARATE_CLOSED, "Top List Information");
+		// information
+		CVoteWrapper VTopInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Top List Information");
 		VTopInfo.Add("You can view the top 10 players and guilds.");
-		VTopInfo.AddLine();
+		CVoteWrapper::AddEmptyline(ClientID);
 
-		CVoteWrapper VTopSelect(ClientID, VWF_SEPARATE_OPEN, "Select a type of ranking");
+		// select type list
+		CVoteWrapper VTopSelect(ClientID, VWF_OPEN, "Select a type of ranking");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::GUILDS_LEVELING, "Top 10 guilds leveling");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::GUILDS_WEALTHY, "Top 10 guilds wealthy");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::PLAYERS_LEVELING, "Top 10 players leveling");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::PLAYERS_WEALTHY, "Top 10 players wealthy");
-		VTopSelect.AddLine();
+		CVoteWrapper::AddEmptyline(ClientID);
 
-		CVoteWrapper VTopList(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD);
+		// show top list
+		CVoteWrapper VTopList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE);
 		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetMenuTemporaryInteger(); TemporaryInteger >= 0)
 			ShowTopList(ClientID, (ToplistType)TemporaryInteger, 10, &VTopList);
-		VTopList.AddLine();
 
+		// backpage
 		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -264,7 +268,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// discord information
 		CVoteWrapper VDiscordInfo(ClientID, VWF_STYLE_STRICT_BOLD);
-		VDiscordInfo.AddLine().Add("Discord: \"{STR}\"", g_Config.m_SvDiscordInviteLink).AddLine();
+		VDiscordInfo.AddLine().Add("Discord: \"{}\"", g_Config.m_SvDiscordInviteLink).AddLine();
 
 		// information
 		CVoteWrapper VGrindingInfo(ClientID, VWF_SEPARATE_CLOSED, "Grinding Information");
@@ -274,7 +278,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// show all world's
 		CVoteWrapper VGrindingSelect(ClientID, VWF_SEPARATE_OPEN, "Select a zone to view information");
 		for(int ID = MAIN_WORLD_ID; ID < GS()->Server()->GetWorldsSize(); ID++)
-			VGrindingSelect.AddMenu(MENU_GUIDE_GRINDING_SELECT, ID, "{STR}", GS()->Server()->GetWorldName(ID));
+			VGrindingSelect.AddMenu(MENU_GUIDE_GRINDING_SELECT, ID, "{}", GS()->Server()->GetWorldName(ID));
 
 		// add back page
 		CVoteWrapper::AddBackpage(ClientID);
@@ -290,21 +294,21 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// ores information detail
 		CVoteWrapper VOres(ClientID, VWF_STYLE_STRICT_BOLD);
-		VOres.AddLine().Add("Ores from ({STR})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		VOres.AddLine().Add("Ores from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
 		if(!AccountMinerManager()->InsertItemsDetailVotes(pPlayer, WorldID))
 			CVoteWrapper(ClientID).Add("No ores in this world");
 		CVoteWrapper::AddEmptyline(ClientID);
 
 		// plant information detail
 		CVoteWrapper VPlant(ClientID, VWF_STYLE_STRICT_BOLD);
-		VPlant.AddLine().Add("Plant from ({STR})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		VPlant.AddLine().Add("Plant from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
 		if(!AccountPlantManager()->InsertItemsDetailVotes(pPlayer, WorldID))
 			CVoteWrapper(ClientID).Add("No plants in this world");
 		CVoteWrapper::AddEmptyline(ClientID);
 
 		// mobs information detail
 		CVoteWrapper VMobs(ClientID, VWF_STYLE_STRICT_BOLD);
-		VMobs.AddLine().Add("Mob from ({STR})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		VMobs.AddLine().Add("Mob from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
 		if(!BotManager()->InsertItemsDetailVotes(pPlayer, WorldID))
 			CVoteWrapper(ClientID).Add("No mobs in this world");
 		CVoteWrapper::AddEmptyline(ClientID);
@@ -573,9 +577,9 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, CVote
 			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
 
 			if(pWrapper)
-				pWrapper->Add("{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
+				pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, NameGuild, Level, Experience);
 			else
-				GS()->Chat(ClientID, "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, NameGuild, Level, Experience);
+				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, NameGuild, Level, Experience);
 		}
 	}
 	else if(Type == ToplistType::GUILDS_WEALTHY)
@@ -592,9 +596,9 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, CVote
 			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
 
 			if(pWrapper)
-				pWrapper->Add("{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
+				pWrapper->Add("{}. {} :: Gold {}", Rank, NameGuild, Gold);
 			else
-				GS()->Chat(ClientID, "{INT}. {STR} :: Gold {VAL}", Rank, NameGuild, Gold);
+				GS()->Chat(ClientID, "{}. {} :: Gold {}", Rank, NameGuild, Gold);
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_LEVELING)
@@ -612,9 +616,9 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, CVote
 			str_copy(Nick, pRes->getString("Nick").c_str(), sizeof(Nick));
 
 			if(pWrapper)
-				pWrapper->Add("{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
+				pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, Nick, Level, Experience);
 			else
-				GS()->Chat(ClientID, "{INT}. {STR} :: Level {INT} : Exp {INT}", Rank, Nick, Level, Experience);
+				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, Nick, Level, Experience);
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_WEALTHY)
@@ -626,15 +630,15 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, CVote
 		while(pRes->next())
 		{
 			char Nick[64];
+			BigInt Gold = pRes->getInt("Value");
 			const int Rank = pRes->getRow();
-			const int Gold = pRes->getInt("Value");
 			const int UserID = pRes->getInt("UserID");
 			str_copy(Nick, Instance::Server()->GetAccountNickname(UserID), sizeof(Nick));
 
 			if(pWrapper)
-				pWrapper->Add("{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
+				pWrapper->Add("{}. {} :: Gold {}", Rank, Nick, Gold);
 			else
-				GS()->Chat(ClientID, "{INT}. {STR} :: Gold {VAL}", Rank, Nick, Gold);
+				GS()->Chat(ClientID, "{}. {} :: Gold {}", Rank, Nick, Gold);
 		}
 	}
 }
@@ -652,7 +656,7 @@ void CMmoController::AsyncClientEnterMsgInfo(const std::string ClientName, int C
 		if(!pRes->next())
 		{
 			pGS->Chat(ClientID, "You need to register using /register <login> <pass>!");
-			pGS->Chat(-1, "Apparently, we have a new player, {STR}!", PlayerName.c_str());
+			pGS->Chat(-1, "Apparently, we have a new player, {}!", PlayerName.c_str());
 			return;
 		}
 

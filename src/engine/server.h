@@ -288,8 +288,6 @@ public:
 	virtual bool IsClientPlayer(int ClientID) const = 0;
 	virtual bool PlayerExists(int ClientID) const = 0;
 
-	virtual void Chat(int ClientID, const char* pText, ...) = 0;
-
 	virtual const char *Version() const = 0;
 	virtual const char *NetVersion() const = 0;
 	virtual int GetRank(int AuthID) = 0;

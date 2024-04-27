@@ -69,15 +69,15 @@ void CMailboxManager::ShowMailboxMenu(CPlayer *pPlayer)
 
 		// add vote menu
 		CItem AttachedItem(ItemID, Value);
-		CVoteWrapper VLetter(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{INT}. {STR}", LetterPos, pRes->getString("Name").c_str());
+		CVoteWrapper VLetter(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{}. {}", LetterPos, pRes->getString("Name").c_str());
 		VLetter.Add(pDescription);
 
 		if(!AttachedItem.IsValid())
 			VLetter.AddOption("MAIL", MailLetterID, "Accept");
 		else if(AttachedItem.Info()->IsEnchantable())
-			VLetter.AddOption("MAIL", MailLetterID, "Receive {STR} {STR}", AttachedItem.Info()->GetName(), AttachedItem.Info()->StringEnchantLevel(Enchant).c_str());
+			VLetter.AddOption("MAIL", MailLetterID, "Receive {} {}", AttachedItem.Info()->GetName(), AttachedItem.Info()->StringEnchantLevel(Enchant).c_str());
 		else
-			VLetter.AddOption("MAIL", MailLetterID, "Receive {STR}x{VAL}", AttachedItem.Info()->GetName(), Value);
+			VLetter.AddOption("MAIL", MailLetterID, "Receive {}x{}", AttachedItem.Info()->GetName(), Value);
 
 		VLetter.AddOption("DELETE_MAIL", MailLetterID, "Delete");
 	}
@@ -97,7 +97,7 @@ void CMailboxManager::SendInbox(const char* pFrom, int AccountID, const char* pN
 	const CSqlString<64> cFrom = CSqlString<64>(pFrom);
 
 	// send information about new message
-	const bool LocalMsg = GS()->ChatAccount(AccountID, "[Mailbox] New letter ({STR})!", cName.cstr());
+	const bool LocalMsg = GS()->ChatAccount(AccountID, "[Mailbox] New letter ({})!", cName.cstr());
 	if(LocalMsg)
 	{
 		const int LetterCount = GetLettersCount(AccountID);
@@ -159,7 +159,7 @@ void CMailboxManager::AcceptLetter(CPlayer* pPlayer, int LetterID)
 		// recieve
 		const int Enchant = pRes->getInt("Enchant");
 		pItem->Add(Value, 0, Enchant);
-		GS()->Chat(pPlayer->GetCID(), "You received an attached item [{STR}].", GS()->GetItemInfo(ItemID)->GetName());
+		GS()->Chat(pPlayer->GetCID(), "You received an attached item [{}].", GS()->GetItemInfo(ItemID)->GetName());
 		DeleteLetter(LetterID);
 		return;
 	}

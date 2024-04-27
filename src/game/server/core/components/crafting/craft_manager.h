@@ -17,12 +17,17 @@ class CCraftManager : public MmoComponent
 	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
-	CCraftItem* GetCraftByID(CraftIdentifier ID) const;
 
+	// vote list's menus
+	void ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const;
+	void ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
+
+	// craft item
 	void CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
 
-	void ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
-	void ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const;
+	// get craft item by id
+	CCraftItem* GetCraftByID(CraftIdentifier ID) const;
+
 };
 
 #endif

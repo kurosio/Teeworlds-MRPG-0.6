@@ -201,7 +201,7 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 	}
 
 	// Guild command list
-	pGS->Chat(ClientID, "{STR} Guild system {STR}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
+	pGS->Chat(ClientID, "{} Guild system {}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
 	pGS->Chat(ClientID, "/guild create <name> - create a new guild");
 	pGS->Chat(ClientID, "/guild leave - leave the guild");
 
@@ -243,11 +243,11 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		// If the command element is "list", list all the doors in the house
 		if(pSubElem.compare(0, 4, "list") == 0)
 		{
-			pGS->Chat(ClientID, "{STR} Door list {STR}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
+			pGS->Chat(ClientID, "{} Door list {}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
 			for(const auto& [Number, Door] : pDoorController->GetDoors())
 			{
 				bool State = pDoorController->GetDoors()[Number]->IsClosed();
-				pGS->Chat(ClientID, "Number: {INT}. Name: {STR} ({STR})", 
+				pGS->Chat(ClientID, "Number: {}. Name: {} ({})", 
 					Number, Door->GetName(), State ? Instance::Server()->Localize(ClientID, "closed") : Instance::Server()->Localize(ClientID, "opened"));
 			}
 			return;
@@ -296,11 +296,11 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			pHouse->GetDoorsController()->Reverse(Number);
 			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			bool State = pDoorController->GetDoors()[Number]->IsClosed();
-			pGS->Chat(pPlayer->GetCID(), "Door {STR}(Number {INT}) was {STR}!", pDoorController->GetDoors()[Number]->GetName(), Number, State ? "closed" : "opened");
+			pGS->Chat(pPlayer->GetCID(), "Door {}(Number {}) was {}!", pDoorController->GetDoors()[Number]->GetName(), Number, State ? "closed" : "opened");
 			return;
 		}
 
-		pGS->Chat(ClientID, "{STR} Door controls {STR}", Tools::Aesthetic::B_PILLAR(6, false), Tools::Aesthetic::B_PILLAR(6, true));
+		pGS->Chat(ClientID, "{} Door controls {}", Tools::Aesthetic::B_PILLAR(6, false), Tools::Aesthetic::B_PILLAR(6, true));
 		pGS->Chat(ClientID, "/house doors list - list door's and ids");
 		pGS->Chat(ClientID, "/house doors open_all - open all door's");
 		pGS->Chat(ClientID, "/house doors close_all - close all door's");
@@ -309,7 +309,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		return;
 	}
 
-	pGS->Chat(ClientID, "{STR} House system {STR}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
+	pGS->Chat(ClientID, "{} House system {}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
 	pGS->Chat(ClientID, "/house doors - settings door's");
 	pGS->Chat(ClientID, "/house sell - sell the house to the state");
 }
@@ -325,7 +325,7 @@ void CCommandProcessor::ConChatPosition(IConsole::IResult* pResult, void* pUser)
 
 	const int PosX = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.x) / 32;
 	const int PosY = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.y) / 32;
-	pGS->Chat(ClientID, "[{STR}] Position X: {INT} Y: {INT}.", pGS->Server()->GetWorldName(pGS->GetWorldID()), PosX, PosY);
+	pGS->Chat(ClientID, "[{}] Position X: {} Y: {}.", pGS->Server()->GetWorldName(pGS->GetWorldID()), PosX, PosY);
 	dbg_msg("cmd_pos", "%0.f %0.f WorldID: %d", pPlayer->GetCharacter()->m_Core.m_Pos.x, pPlayer->GetCharacter()->m_Core.m_Pos.y, pGS->GetWorldID());
 }
 
@@ -407,19 +407,19 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		}
 
 		// Display the group list for the player
-		pGS->Chat(ClientID, "{STR} Group membership list {STR}", Tools::Aesthetic::B_PILLAR(5, false), Tools::Aesthetic::B_PILLAR(5, true));
+		pGS->Chat(ClientID, "{} Group membership list {}", Tools::Aesthetic::B_PILLAR(5, false), Tools::Aesthetic::B_PILLAR(5, true));
 		for(const auto& AID : pGroup->GetAccounts())
 		{
 			const char* Prefix = (pGroup->GetLeaderUID() == AID) ? "O: " : "\0";
 			const std::string Nickname = Instance::Server()->GetAccountNickname(AID);
-			pGS->Chat(ClientID, "{STR}{STR}", Prefix, Nickname.c_str());
+			pGS->Chat(ClientID, "{}{}", Prefix, Nickname.c_str());
 		}
 		return;
 	}
 
 	const char* Status = (pGroup ? pServer->Localize(ClientID, "in a group") : pServer->Localize(ClientID, "not in a group"));
-	pGS->Chat(ClientID, "{STR} Group system {STR}", Tools::Aesthetic::B_PILLAR(8, false), Tools::Aesthetic::B_PILLAR(8, true));
-	pGS->Chat(ClientID, "Current status: {STR}!", Status);
+	pGS->Chat(ClientID, "{} Group system {}", Tools::Aesthetic::B_PILLAR(8, false), Tools::Aesthetic::B_PILLAR(8, true));
+	pGS->Chat(ClientID, "Current status: {}!", Status);
 	pGS->Chat(ClientID, "/group create - create a new group");
 	pGS->Chat(ClientID, "/group list - group membership list");
 	pGS->Chat(ClientID, "/group leave - leave the group");
@@ -476,7 +476,7 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 
 	constexpr int MaxPage = 2;
 	const int Page = clamp(pResult->GetInteger(0), 1, MaxPage);
-	pGS->Chat(ClientID, "{STR} Command list [{INT} of {INT}] {STR}", Tools::Aesthetic::B_PILLAR(6, false), Page, MaxPage, Tools::Aesthetic::B_PILLAR(6, true));
+	pGS->Chat(ClientID, "{} Command list [{} of {}] {}", Tools::Aesthetic::B_PILLAR(6, false), Page, MaxPage, Tools::Aesthetic::B_PILLAR(6, true));
 	if(Page == 1)
 	{
 		pGS->Chat(ClientID, "/register <name> <pass> - new account.");
@@ -506,7 +506,7 @@ void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	// translate to russian
-	pGS->Chat(ClientID, "{STR} Server rules {STR}", Tools::Aesthetic::B_FLOWER(false), Tools::Aesthetic::B_FLOWER(true));
+	pGS->Chat(ClientID, "{} Server rules {}", Tools::Aesthetic::B_FLOWER(false), Tools::Aesthetic::B_FLOWER(true));
 	pGS->Chat(ClientID, "- Don't use racist words");
 	pGS->Chat(ClientID, "- Don't spam messages");
 	pGS->Chat(ClientID, "- Don't block other players");
@@ -529,7 +529,7 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 
 	if(pResult->NumArguments() != 1)
 	{
-		pGS->Chat(ClientID, "Use: /voucher <voucher>", pPlayer);
+		pGS->Chat(ClientID, "Use: /voucher <voucher>");
 		return;
 	}
 
@@ -588,12 +588,12 @@ void CCommandProcessor::ChatCmd(const char* pMessage, CPlayer* pPlayer)
 		{
 			char aArgsDesc[256];
 			GS()->Console()->ParseArgumentsDescription(pCommand->m_pParams, aArgsDesc, sizeof(aArgsDesc));
-			GS()->Chat(ClientID, "Use: /{STR} {STR}", pCommand->m_pName, aArgsDesc);
+			GS()->Chat(ClientID, "Use: /{} {}", pCommand->m_pName, aArgsDesc);
 		}
 		return;
 	}
 
-	GS()->Chat(ClientID, "Command {STR} not found!", pMessage);
+	GS()->Chat(ClientID, "Command {} not found!", pMessage);
 }
 
 // Function to add a new command to the command processor

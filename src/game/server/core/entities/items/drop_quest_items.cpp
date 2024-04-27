@@ -58,7 +58,7 @@ void CDropQuestItem::Tick()
 		if (pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 		{
 			pItem->Add(1);
-			GS()->Chat(m_ClientID, "You got {STR}.", pItem->Info()->GetName());
+			GS()->Chat(m_ClientID, "You got {}.", pItem->Info()->GetName());
 			GameWorld()->DestroyEntity(this);
 			return;
 		}

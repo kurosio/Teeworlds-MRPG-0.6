@@ -19,6 +19,14 @@ enum class DrawboardToolEvent : int
 	ON_END,
 };
 
+enum class ClassGroup : int
+{
+	None,
+	Tank,
+	Dps,
+	Healer
+};
+
 enum TIME_PERIOD
 {
 	DAILY_STAMP,
@@ -134,6 +142,7 @@ enum Skill
 	SkillAttackTeleport = 6, // ?knockout? teleport
 	SkillCureI = 7, // health recovery cure
 	SkillProvoke = 8, // provoke
+	SkillBleedingBlow = 9, // bleeding blow
 };
 
 // toplist types
@@ -244,7 +253,8 @@ enum MenuList
 	MENU_JOURNAL_QUEST_INFORMATION,
 
 	// Skills
-	MENU_SKILLS_LEARN_LIST,
+	MENU_SKILL_LIST,
+	MENU_SKILL_SELECTED,
 
 	// Quest menus
 	MENU_DAILY_BOARD,
@@ -390,6 +400,7 @@ enum
 	itEidolonPigQueen = 88,				// Eidolon
 	itAdventurersBadge = 92,			// The adventurer's badge
 	itTicketGuild = 95,					// Ticket for the creation of the guild
+	itCustomizer = 96,                  // Curomizer for personal skins
 
 	// decoration items
 	itPickupHealth = 10,					// Pickup heart

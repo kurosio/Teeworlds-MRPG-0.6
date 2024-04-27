@@ -191,7 +191,7 @@ void CQuestStep::PostFinish()
 
 			if(pRequired.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW)
 			{
-				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {STR}x{VAL} to the {STR}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
+				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {}x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 				continue;
 			}
 
@@ -206,7 +206,7 @@ void CQuestStep::PostFinish()
 
 			// remove item
 			pPlayerItem->Remove(pRequired.m_Item.GetValue());
-			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {STR}x{VAL} to the {STR}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
+			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {}x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 		}
 	}
 
@@ -263,7 +263,7 @@ void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 		if(m_aMobProgress[DefeatedBotID].m_Count >= DefeatCount)
 		{
 			m_aMobProgress[DefeatBotID].m_Complete = true;
-			GS()->Chat(pPlayer->GetCID(), "[Done] Defeat the {STR}'s for the {STR}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
+			GS()->Chat(pPlayer->GetCID(), "[Done] Defeat the {}'s for the {}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
 		}
 
 		pQuest->m_Datafile.Save();
@@ -478,7 +478,7 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count >= p.m_Value ? "\u2611" : "\u2610");
 
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "{STR} Defeat {STR} ({INT}/{INT})",
+			GS()->Server()->Localization()->Format(Buffer, pLang, "{} Defeat {} ({}/{})",
 				pCompletePrefix, DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
 		}
 	}
@@ -495,7 +495,7 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show a" : "Require a";
 
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "{STR} {STR} {STR} ({VAL}/{VAL}).",
+			GS()->Server()->Localization()->Format(Buffer, pLang, "{} {} {} ({}/{}).",
 				pCompletePrefix, GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pRequied.m_Item.GetValue());
 		}
 	}
@@ -537,12 +537,12 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 				const char* pCompletePrefix = (TaskCompleted >= TaskNum ? "\u2611" : "\u2610");
 				if(TaskNum == 1)
 				{
-					GS()->Server()->Localization()->Format(Buffer, pLang, "{INT}. {STR} {STR}.", Step, pCompletePrefix, Name.c_str());
+					GS()->Server()->Localization()->Format(Buffer, pLang, "{}. {} {}.", Step, pCompletePrefix, Name.c_str());
 					continue;
 				}
 
 				// Multi task
-				GS()->Server()->Localization()->Format(Buffer, pLang, "{INT}. {STR} {STR} ({INT}/{INT}).", Step, pCompletePrefix, Name.c_str(), TaskCompleted, TaskNum);
+				GS()->Server()->Localization()->Format(Buffer, pLang, "{}. {} {} ({}/{}).", Step, pCompletePrefix, Name.c_str(), TaskCompleted, TaskNum);
 			}
 		}
 	}
@@ -555,7 +555,7 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 		for(auto& p : m_Bot.m_RewardItems)
 		{
 			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "Obtain a {STR} ({INT}).", p.Info()->GetName(), p.GetValue());
+			GS()->Server()->Localization()->Format(Buffer, pLang, "Obtain a {} ({}).", p.Info()->GetName(), p.GetValue());
 		}
 	}
 

@@ -17,6 +17,7 @@ class CWorldManager : public MmoComponent
 		CWorldData::Data().clear();
 	}
 
+	// init world id
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 
 public:

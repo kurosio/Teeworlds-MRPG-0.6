@@ -52,7 +52,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	if(pRes->next())
 	{
 		GS()->Chat(ClientID, "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
-		GS()->Chat(ClientID, "Discord: \"{STR}\".", g_Config.m_SvDiscordInviteLink);
+		GS()->Chat(ClientID, "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
 		return AccountCodeResult::AOP_NICKNAME_ALREADY_EXIST; // Return nickname already exists error
 	}
 
@@ -80,7 +80,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	Server()->AddAccountNickname(InitID, cClearNick.cstr());
 	GS()->Chat(ClientID, "- Registration complete! Don't forget to save your data.");
 	GS()->Chat(ClientID, "# Your nickname is a unique identifier.");
-	GS()->Chat(ClientID, "# Log in: \"/login {STR} {STR}\"", cClearLogin.cstr(), cClearPass.cstr());
+	GS()->Chat(ClientID, "# Log in: \"/login {} {}\"", cClearLogin.cstr(), cClearPass.cstr());
 	return AccountCodeResult::AOP_REGISTER_OK; // Return registration success
 }
 
@@ -136,7 +136,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login,
 	if(pResBan->next())
 	{
 		// Send error message to the client with the ban information
-		GS()->Chat(ClientID, "You account was suspended until \"{STR}\" with the reason of \"{STR}\"", pResBan->getString("BannedUntil").c_str(), pResBan->getString("Reason").c_str());
+		GS()->Chat(ClientID, "You account was suspended until \"{}\" with the reason of \"{}\"", pResBan->getString("BannedUntil").c_str(), pResBan->getString("Reason").c_str());
 		return AccountCodeResult::AOP_ACCOUNT_BANNED; // Return account banned error
 	}
 
@@ -171,7 +171,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// Broadcast a message to the player with their current location
 	const int ClientID = pPlayer->GetCID();
-	GS()->Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 200, "You are currently positioned at {STR}({STR})!",
+	GS()->Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 200, "You are currently positioned at {}({})!",
 		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"));
 
 	// Check if it is not the first initialization
@@ -180,7 +180,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 		// Get the number of unread letters in the player's inbox
 		// Send a chat message to the player informing them about their unread letters
 		if(const int Letters = Core()->MailboxManager()->GetLettersCount(pPlayer->Account()->GetID()); Letters > 0)
-			GS()->Chat(ClientID, "You have {INT} unread letters!", Letters);
+			GS()->Chat(ClientID, "You have {} unread letters!", Letters);
 
 		// Update the player's votes and show the main menu
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
@@ -192,7 +192,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// Send information about log in
 	const int Rank = GetRank(pPlayer->Account()->GetID());
-	GS()->Chat(-1, "{STR} logged to account. Rank #{INT}", Server()->ClientName(ClientID), Rank);
+	GS()->Chat(-1, "{} logged to account. Rank #{}", Server()->ClientName(ClientID), Rank);
 #ifdef CONF_DISCORD
 	char aLoginBuf[64];
 	str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in AccountManager ID %d", Server()->ClientName(ClientID), pPlayer->AccountManager()->GetID());
@@ -305,7 +305,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
 			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
-				VMainSettings.AddOption("ISETTINGS", ItemID, "[{STR}] {STR}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
+				VMainSettings.AddOption("ISETTINGS", ItemID, "[{}] {}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
 		}
 		CVoteWrapper::AddLine(ClientID);
 
@@ -324,7 +324,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			else
 				str_copy(aAttributesInfo, pItemInfo->GetDescription(), sizeof(aAttributesInfo));
 
-			VModulesSettings.AddOption("ISETTINGS", pItemInfo->GetID(), "{STR}{STR} * {STR}", 
+			VModulesSettings.AddOption("ISETTINGS", pItemInfo->GetID(), "{}{} * {}", 
 				pPlayerItem->IsEquipped() ? "✔" : "\0", pItemInfo->GetName(), aAttributesInfo);
 		}
 		VModulesSettings.AddIf(VModulesSettings.IsEmpty(), "The list of equipment modules is empty.");
@@ -347,7 +347,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		// active language
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
 		CVoteWrapper VLanguage(ClientID, VWF_STYLE_STRICT_BOLD);
-		VLanguage.Add("Active language: [{STR}]", pPlayerLanguage);
+		VLanguage.Add("Active language: [{}]", pPlayerLanguage);
 		VLanguage.AddLine();
 
 		// languages
@@ -360,7 +360,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 			// Add language selection
 			const char* pLanguageName = Server()->Localization()->m_pLanguages[i]->GetName();
-			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{STR}\"", pLanguageName);
+			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{}\"", pLanguageName);
 		}
 
 		CVoteWrapper::AddBackpage(ClientID);
@@ -383,7 +383,7 @@ bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		Server()->SetClientLanguage(ClientID, pSelectedLanguage);
 
 		// Inform the client about the selected language
-		GS()->Chat(ClientID, "You have chosen a language \"{STR}\".", pSelectedLanguage);
+		GS()->Chat(ClientID, "You have chosen a language \"{}\".", pSelectedLanguage);
 
 		// Update the votes menu for the client
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_SETTINGS_LANGUAGE_SELECT);
@@ -456,7 +456,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 		nlohmann::json JsonData = nlohmann::json::parse(pResVoucher->getString("Data").c_str());
 
 		if(ValidUntil > 0 && ValidUntil < time(0))
-			GS()->Chat(ClientID, "The voucher code '{STR}' has expired.", pVoucher);
+			GS()->Chat(ClientID, "The voucher code '{}' has expired.", pVoucher);
 		else if(pResVoucher->getBoolean("used"))
 			GS()->Chat(ClientID, "This voucher has already been redeemed.");
 		else
@@ -487,13 +487,13 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 			GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 
 			Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Account()->GetID(), (int)time(0));
-			GS()->Chat(ClientID, "You have successfully redeemed the voucher '{STR}'.", pVoucher);
+			GS()->Chat(ClientID, "You have successfully redeemed the voucher '{}'.", pVoucher);
 		}
 
 		return;
 	}
 
-	GS()->Chat(ClientID, "The voucher code '{STR}' does not exist.", pVoucher);
+	GS()->Chat(ClientID, "The voucher code '{}' does not exist.", pVoucher);
 }
 
 // Function BanAccount

@@ -10,6 +10,7 @@
 
 #include "entities/character.h"
 
+#include "class_data.h"
 #include "vote_event_optional.h"
 #include "core/utilities/cooldown.h"
 #include "core/utilities/vote_wrapper.h"
@@ -60,14 +61,17 @@ protected:
 	bool m_Afk;
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
-	std::function<void()> m_PostVotes;
+	CClassData m_Class {};
 
 public:
 	CGS* GS() const { return m_pGS; }
+	CClassData* GetClass() { return &m_Class; }
+	const CClassData* GetClass() const { return &m_Class; }
+
 	vec2 m_ViewPos;
 	int m_PlayerFlags;
 	int m_aPlayerTick[NUM_TICK];
-	char m_aClanString[128];
+	char m_aRotateClanBuffer[128];
 	Mood m_MoodState;
 	CCooldown m_Cooldown {};
 	CVotePlayerData m_VotesData;
@@ -125,7 +129,7 @@ public:
 	float GetAttributePercent(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);
 
-	virtual void GiveEffect(const char* Potion, int Sec, float Chance = 100.0f);
+	virtual bool GiveEffect(const char* Potion, int Sec, float Chance = 100.0f);
 	virtual bool IsActiveEffect(const char* Potion) const;
 	virtual void ClearEffects();
 
@@ -199,17 +203,6 @@ public:
 	/* ==========================================================
 	   VOTING OPTIONAL EVENT
 	========================================================== */
-	// Function: CreateVoteOptional
-	// Parameters:
-	//    - OptionID: an integer value representing the vote option
-	//    - OptionID2: an integer value representing the vote option
-	//    - Sec: an integer value representing the duration of the vote event
-	//    - pInformation: a pointer to a character array containing optional information for the vote
-	//    - ...: additional optional arguments for the information text format
-	// Return:
-	//    - a pointer to a CVoteEventOptional object representing the created vote event
-	CVoteEventOptional* CreateVoteOptional(int OptionID, int OptionID2, int Sec, const char* pInformation, ...);
-
 private:
 	// Function: RunEventOptional
 	// Parameters:
@@ -222,7 +215,7 @@ private:
 	// Function: HandleVoteOptionals
 	// Description:
 	//    - Handles all the optional vote events
-	void HandleVoteOptionals();
+	void HandleVoteOptionals() const;
 };
 
 #endif

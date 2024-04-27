@@ -4,14 +4,16 @@
 
 #include "localization.h"
 
-CLocalization::CLanguage::CLanguage() : m_Loaded(false), m_Direction(CLocalization::DIRECTION_LTR)
+CLocalization::CLanguage::CLanguage()
+ : m_Loaded(false), m_Direction(CLocalization::DIRECTION_LTR)
 {
 	m_aName[0] = 0;
 	m_aFilename[0] = 0;
 	m_aParentFilename[0] = 0;
 }
 
-CLocalization::CLanguage::CLanguage(const char* pName, const char* pFilename, const char* pParentFilename) : m_Loaded(false), m_Direction(CLocalization::DIRECTION_LTR)
+CLocalization::CLanguage::CLanguage(const char* pName, const char* pFilename, const char* pParentFilename)
+ : m_Loaded(false), m_Direction(CLocalization::DIRECTION_LTR)
 {
 	str_copy(m_aName, pName, sizeof(m_aName));
 	str_copy(m_aFilename, pFilename, sizeof(m_aFilename));
@@ -30,7 +32,7 @@ CLocalization::CLanguage::~CLanguage()
 	}
 }
 
-bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorageEngine* pStorage)
+bool CLocalization::CLanguage::Load(IStorageEngine* pStorage)
 {
 	// read file data into buffer
 	char aBuf[256];
@@ -109,7 +111,7 @@ CLocalization::~CLocalization()
 
 bool CLocalization::InitConfig(int argc, const char** argv)
 {
-	m_Cfg_MainLanguage.copy("en");
+	m_CfgMainLanguage.copy("en");
 	return true;
 }
 
@@ -148,9 +150,9 @@ bool CLocalization::Init()
 			CLanguage*& pLanguage = m_pLanguages.increment();
 			pLanguage = new CLanguage((const char*)rStart[i]["name"], (const char*)rStart[i]["file"], (const char*)rStart[i]["parent"]);
 
-			if(m_Cfg_MainLanguage == pLanguage->GetFilename())
+			if(m_CfgMainLanguage == pLanguage->GetFilename())
 			{
-				pLanguage->Load(this, Storage());
+				pLanguage->Load(Storage());
 				m_pMainLanguage = pLanguage;
 			}
 		}
@@ -163,6 +165,7 @@ bool CLocalization::Init()
 
 const char* CLocalization::LocalizeWithDepth(const char* pLanguageCode, const char* pText, int Depth)
 {
+	// found language
 	CLanguage* pLanguage = m_pMainLanguage;
 	if(pLanguageCode)
 	{
@@ -176,139 +179,35 @@ const char* CLocalization::LocalizeWithDepth(const char* pLanguageCode, const ch
 		}
 	}
 
+	// if no language is found
 	if(!pLanguage)
+	{
 		return pText;
+	}
 
+	// load and initilize language if is not loaded
 	if(!pLanguage->IsLoaded())
-		pLanguage->Load(this, Storage());
+	{
+		pLanguage->Load(Storage());
+	}
 
-	const char* pResult = pLanguage->Localize(pText);
-	if(pResult)
+	// found result in hash map
+	if(const char* pResult = pLanguage->Localize(pText))
+	{
 		return pResult;
+	}
+
+	// localize with depth
 	if(pLanguage->GetParentFilename()[0] && Depth < 4)
+	{
 		return LocalizeWithDepth(pLanguage->GetParentFilename(), pText, Depth + 1);
+	}
+
+	// return default text
 	return pText;
 }
 
 const char* CLocalization::Localize(const char* pLanguageCode, const char* pText)
 {
 	return LocalizeWithDepth(pLanguageCode, pText, 0);
-}
-
-void CLocalization::Format_V(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, va_list VarArgs)
-{
-	CLanguage* pLanguage = m_pMainLanguage;
-	if(pLanguageCode)
-	{
-		for(int i = 0; i < m_pLanguages.size(); i++)
-		{
-			if(str_comp(m_pLanguages[i]->GetFilename(), pLanguageCode) != 0)
-				continue;
-
-			pLanguage = m_pLanguages[i];
-			break;
-		}
-	}
-
-	if(!pLanguage)
-	{
-		Buffer.append(pText);
-		return;
-	}
-
-	// start parameters of the end of the name and type string
-	const int BufferStart = Buffer.length();
-	int BufferIter = BufferStart;
-	int ParamTypeStart = -1;
-
-	// argument parsing
-	va_list VarArgsIter;
-	va_copy(VarArgsIter, VarArgs);
-
-	// character positions
-	int Iter = 0;
-	int Start = 0;
-
-	// parse text to search for positions
-	while(pText[Iter])
-	{
-		if(ParamTypeStart >= 0)
-		{
-			if(pText[Iter] != '}')
-			{
-				Iter = str_utf8_forward(pText, Iter);
-				continue;
-			}
-
-			// we get data from an argument parsing arguments
-			if(str_comp_num("STR", pText + ParamTypeStart, 3) == 0) // string
-			{
-				const char* pVarArgValue = va_arg(VarArgsIter, const char*);
-				const char* pTranslatedValue = pLanguage->Localize(pVarArgValue);
-				BufferIter = Buffer.append_at(BufferIter, (pTranslatedValue ? pTranslatedValue : pVarArgValue));
-			}
-			else if(str_comp_num("INT", pText + ParamTypeStart, 3) == 0) // intiger
-			{
-				char aBuf[128];
-				const int pVarArgValue = va_arg(VarArgsIter, int);
-				str_format(aBuf, sizeof(aBuf), "%d", pVarArgValue); // %ll
-				BufferIter = Buffer.append_at(BufferIter, aBuf);
-			}
-			else if(str_comp_num("VAL", pText + ParamTypeStart, 3) == 0) // value
-			{
-				const int pVarArgValue = va_arg(VarArgsIter, int);
-				BufferIter = Buffer.append_at(BufferIter, get_commas<int>(pVarArgValue).c_str());
-			}
-
-			//
-			Start = Iter + 1;
-			ParamTypeStart = -1;
-		}
-
-		// parameter parsing start
-		else
-		{
-			if(pText[Iter] == '{')
-			{
-				BufferIter = Buffer.append_at_num(BufferIter, pText + Start, Iter - Start);
-				Iter++;
-				ParamTypeStart = Iter;
-			}
-		}
-
-		Iter = str_utf8_forward(pText, Iter);
-	}
-
-	// close the argument macro
-	va_end(VarArgsIter);
-
-	if(Iter > 0 && ParamTypeStart == -1)
-		Buffer.append_at_num(BufferIter, pText + Start, Iter - Start);
-}
-
-void CLocalization::Format(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, ...)
-{
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-
-	Format_V(Buffer, pLanguageCode, pText, VarArgs);
-
-	va_end(VarArgs);
-}
-
-void CLocalization::Format_VL(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, va_list VarArgs)
-{
-	const char* pLocalText = Localize(pLanguageCode, pText);
-
-	Format_V(Buffer, pLanguageCode, pLocalText, VarArgs);
-}
-
-void CLocalization::Format_L(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, ...)
-{
-	va_list VarArgs;
-	va_start(VarArgs, pText);
-
-	Format_VL(Buffer, pLanguageCode, pText, VarArgs);
-
-	va_end(VarArgs);
 }

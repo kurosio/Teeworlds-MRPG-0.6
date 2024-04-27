@@ -20,6 +20,8 @@ class CCharacter : public CEntity
 	int m_LastWeapon;
 	int m_QueuedWeapon;
 
+	int m_BleedingByClientID;
+
 	// ninja
 	struct
 	{
