@@ -529,7 +529,7 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 
 	if(pResult->NumArguments() != 1)
 	{
-		pGS->Chat(ClientID, "Use: /voucher <voucher>", pPlayer);
+		pGS->Chat(ClientID, "Use: /voucher <voucher>");
 		return;
 	}
 

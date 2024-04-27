@@ -303,4 +303,8 @@ static std::string get_label(type Number)
 #define FLAB(value) get_label(value).c_str()
 #endif
 
+
+
+
+
 #endif // BASE_MATH_H

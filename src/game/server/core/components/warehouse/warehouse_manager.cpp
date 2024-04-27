@@ -64,6 +64,7 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 	return false;
 }
 
+/* show warehouse list*/
 void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehouse) const
 {
 	const int ClientID = pPlayer->GetCID();
@@ -137,8 +138,6 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 		return;
 	}
 
-	CItemDescription* pCurrency = pWarehouse->GetCurrency();
-
 	// order only by type
 	if(std::all_of(pWarehouse->GetTradingList().begin(), pWarehouse->GetTradingList().end(), [Type](const CTrade& p)
 	{ return p.GetItem()->Info()->GetType() != Type; }))
@@ -148,6 +147,7 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// show trading list
+	CItemDescription* pCurrency = pWarehouse->GetCurrency();
 	CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN, TypeName);
 	for(const auto& Trade : pWarehouse->GetTradingList())
 	{

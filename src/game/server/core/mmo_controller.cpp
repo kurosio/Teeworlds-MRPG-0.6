@@ -238,22 +238,25 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VTopInfo(ClientID, VWF_SEPARATE_CLOSED, "Top List Information");
+		// information
+		CVoteWrapper VTopInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Top List Information");
 		VTopInfo.Add("You can view the top 10 players and guilds.");
-		VTopInfo.AddLine();
+		CVoteWrapper::AddEmptyline(ClientID);
 
-		CVoteWrapper VTopSelect(ClientID, VWF_SEPARATE_OPEN, "Select a type of ranking");
+		// select type list
+		CVoteWrapper VTopSelect(ClientID, VWF_OPEN, "Select a type of ranking");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::GUILDS_LEVELING, "Top 10 guilds leveling");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::GUILDS_WEALTHY, "Top 10 guilds wealthy");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::PLAYERS_LEVELING, "Top 10 players leveling");
 		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::PLAYERS_WEALTHY, "Top 10 players wealthy");
-		VTopSelect.AddLine();
+		CVoteWrapper::AddEmptyline(ClientID);
 
-		CVoteWrapper VTopList(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD);
+		// show top list
+		CVoteWrapper VTopList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE);
 		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetMenuTemporaryInteger(); TemporaryInteger >= 0)
 			ShowTopList(ClientID, (ToplistType)TemporaryInteger, 10, &VTopList);
-		VTopList.AddLine();
 
+		// backpage
 		CVoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

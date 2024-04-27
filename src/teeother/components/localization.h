@@ -3,20 +3,21 @@
 
 #include <teeother/tl/hashtable.h>
 
-/*
- * TODO: Join plural rules example {RP:{}:{}} or {PR:{}:player} use rules from lang files
- */
-
 class CLocalization
 {
 	class IStorageEngine* m_pStorage;
-	IStorageEngine* Storage() { return m_pStorage; }
+	IStorageEngine* Storage() const { return m_pStorage; }
 
 public:
-
 	class CLanguage
 	{
 	protected:
+		char m_aName[64];
+		char m_aFilename[64];
+		char m_aParentFilename[64];
+		bool m_Loaded;
+		int m_Direction;
+
 		class CEntry
 		{
 		public:
@@ -34,12 +35,6 @@ public:
 			}
 		};
 
-		char m_aName[64];
-		char m_aFilename[64];
-		char m_aParentFilename[64];
-		bool m_Loaded;
-		int m_Direction;
-
 		hashtable< CEntry, 128 > m_Translations;
 
 	public:
@@ -51,7 +46,7 @@ public:
 		const char* GetFilename() const { return m_aFilename; }
 		const char* GetName() const { return m_aName; }
 		bool IsLoaded() const { return m_Loaded; }
-		bool Load(CLocalization* pLocalization, IStorageEngine* pStorage);
+		bool Load(IStorageEngine* pStorage);
 		const char* Localize(const char* pKey) const;
 	};
 
@@ -67,7 +62,7 @@ protected:
 
 public:
 	array<CLanguage*> m_pLanguages;
-	fixed_string128 m_Cfg_MainLanguage;
+	fixed_string128 m_CfgMainLanguage;
 
 protected:
 	const char* LocalizeWithDepth(const char* pLanguageCode, const char* pText, int Depth);
@@ -80,24 +75,36 @@ public:
 	virtual bool Init();
 
 private:
+	// reformat types to string
 	template <typename T>
 	std::string ToString(const char* pLanguageCode, T Value)
 	{
 		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
+		{
 			return std::to_string(Value);
+		}
 		else if constexpr(std::is_arithmetic_v<T>)
+		{
 			return get_commas(std::to_string(Value));
+		}
 		else if constexpr(std::is_same_v<T, BigInt>)
+		{
 			return get_label(Value.to_string());
+		}
 		else if constexpr(std::is_convertible_v<T, std::string>)
 		{
-			std::string str(Value);
-			std::string localizeFmt(Localize(pLanguageCode, str.c_str()));
+			std::string localizeFmt(Localize(pLanguageCode, std::string(Value).c_str()));
 			return localizeFmt;
 		}
-		return "0";
+		else
+		{
+			static_assert(false, "One of the passed arguments cannot be converted to a string");
+		}
+
+		return "error convertable";
 	}
 
+	// end unpacking args function
 	std::string FormatImpl(const char*, const char* pText, std::deque<std::string>& vStrPack)
 	{
 		std::string Result{};
@@ -143,6 +150,7 @@ private:
 		return Result;
 	}
 
+	// unpacking ellipsis args pack
 	template<typename Arg, typename ... Args>
 	std::string FormatImpl(const char* pLanguageCode, const char* pText, std::deque<std::string>& vStrPack, Arg&& arg, Args&& ... argsfmt)
 	{
@@ -151,11 +159,13 @@ private:
 	}
 
 public:
+	// format without args pack
 	std::string Format(const char* pLanguageCode, const char* pText)
 	{
 		return std::string(Localize(pLanguageCode, pText));
 	}
 
+	// format args pack
 	template<typename ... Args>
 	std::string Format(const char* pLanguageCode, const char* pText, Args&& ... argsfmt)
 	{
@@ -163,6 +173,7 @@ public:
 		return FormatImpl(pLanguageCode, Localize(pLanguageCode, pText), vStrPack, std::forward<Args>(argsfmt) ...);
 	}
 
+	// format with dynamic_string
 	template<typename ... Args>
 	void Format(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, Args&& ... argsfmt)
 	{

@@ -4,14 +4,16 @@
 
 #include "localization.h"
 
-CLocalization::CLanguage::CLanguage() : m_Loaded(false), m_Direction(CLocalization::DIRECTION_LTR)
+CLocalization::CLanguage::CLanguage()
+ : m_Loaded(false), m_Direction(CLocalization::DIRECTION_LTR)
 {
 	m_aName[0] = 0;
 	m_aFilename[0] = 0;
 	m_aParentFilename[0] = 0;
 }
 
-CLocalization::CLanguage::CLanguage(const char* pName, const char* pFilename, const char* pParentFilename) : m_Loaded(false), m_Direction(CLocalization::DIRECTION_LTR)
+CLocalization::CLanguage::CLanguage(const char* pName, const char* pFilename, const char* pParentFilename)
+ : m_Loaded(false), m_Direction(CLocalization::DIRECTION_LTR)
 {
 	str_copy(m_aName, pName, sizeof(m_aName));
 	str_copy(m_aFilename, pFilename, sizeof(m_aFilename));
@@ -30,7 +32,7 @@ CLocalization::CLanguage::~CLanguage()
 	}
 }
 
-bool CLocalization::CLanguage::Load(CLocalization* pLocalization, IStorageEngine* pStorage)
+bool CLocalization::CLanguage::Load(IStorageEngine* pStorage)
 {
 	// read file data into buffer
 	char aBuf[256];
@@ -109,7 +111,7 @@ CLocalization::~CLocalization()
 
 bool CLocalization::InitConfig(int argc, const char** argv)
 {
-	m_Cfg_MainLanguage.copy("en");
+	m_CfgMainLanguage.copy("en");
 	return true;
 }
 
@@ -148,9 +150,9 @@ bool CLocalization::Init()
 			CLanguage*& pLanguage = m_pLanguages.increment();
 			pLanguage = new CLanguage((const char*)rStart[i]["name"], (const char*)rStart[i]["file"], (const char*)rStart[i]["parent"]);
 
-			if(m_Cfg_MainLanguage == pLanguage->GetFilename())
+			if(m_CfgMainLanguage == pLanguage->GetFilename())
 			{
-				pLanguage->Load(this, Storage());
+				pLanguage->Load(Storage());
 				m_pMainLanguage = pLanguage;
 			}
 		}
@@ -163,6 +165,7 @@ bool CLocalization::Init()
 
 const char* CLocalization::LocalizeWithDepth(const char* pLanguageCode, const char* pText, int Depth)
 {
+	// found language
 	CLanguage* pLanguage = m_pMainLanguage;
 	if(pLanguageCode)
 	{
@@ -176,17 +179,31 @@ const char* CLocalization::LocalizeWithDepth(const char* pLanguageCode, const ch
 		}
 	}
 
+	// if no language is found
 	if(!pLanguage)
+	{
 		return pText;
+	}
 
+	// load and initilize language if is not loaded
 	if(!pLanguage->IsLoaded())
-		pLanguage->Load(this, Storage());
+	{
+		pLanguage->Load(Storage());
+	}
 
-	const char* pResult = pLanguage->Localize(pText);
-	if(pResult)
+	// found result in hash map
+	if(const char* pResult = pLanguage->Localize(pText))
+	{
 		return pResult;
+	}
+
+	// localize with depth
 	if(pLanguage->GetParentFilename()[0] && Depth < 4)
+	{
 		return LocalizeWithDepth(pLanguage->GetParentFilename(), pText, Depth + 1);
+	}
+
+	// return default text
 	return pText;
 }
 
