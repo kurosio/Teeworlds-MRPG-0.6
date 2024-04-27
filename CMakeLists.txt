@@ -438,9 +438,14 @@ list(APPEND TARGETS_DEP json md5 pugixml)
 # COPY DATA AND DLLS
 ########################################################################
 
-file(COPY maps DESTINATION .)
-file(COPY server_data DESTINATION .)
-file(COPY server_lang DESTINATION .)
+file(GLOB COPY_DATA_FILES
+  "maps"
+  "server_data"
+  "server_lang"
+  "*.cfg"
+)
+file(COPY ${COPY_DATA_FILES} DESTINATION .)
+
 #file(COPY data DESTINATION .)
 #set(COPY_FILES_CLIENT
 #  ${CURL_COPY_FILES}
