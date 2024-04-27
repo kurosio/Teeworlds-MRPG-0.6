@@ -16,6 +16,7 @@ void CCraftManager::OnInit()
 		int Price = pRes->getInt("Price");
 		int WorldID = pRes->getInt("WorldID");
 
+		// initialize required ingredients
 		CItemsContainer RequiredIngredients {};
 		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
 		Tools::Json::parseFromString(JsonRequiredData, [&](nlohmann::json& pJson)
@@ -23,17 +24,19 @@ void CCraftManager::OnInit()
 			RequiredIngredients = CItem::FromArrayJSON(pJson, "items");
 		});
 
+		// initialize new craft element
 		CraftIdentifier ID = pRes->getInt("ID");
 		CCraftItem::CreateElement(ID)->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
 	}
 
-	// sort by function
+	// sort craft item's by function
 	std::sort(CCraftItem::Data().begin(), CCraftItem::Data().end(), [](const CCraftItem* p1, const CCraftItem* p2)
 	{
 		return p1->GetItem()->Info()->GetFunctional() > p2->GetItem()->Info()->GetFunctional();
 	});
 
-	Core()->ShowLoadingProgress("Crafts", (int)CCraftItem::Data().size());
+	// show information about initilized craft item's
+	Core()->ShowLoadingProgress("Craft item's", (int)CCraftItem::Data().size());
 }
 
 bool CCraftManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
@@ -141,7 +144,6 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VCraftInfo.Add("If you will not have enough items for crafting");
 		VCraftInfo.Add("You will write those and the amount that is still required");
 		VCraftInfo.AddItemValue(itGold);
-		VCraftInfo.AddLine();
 
 		// show craft tabs
 		ShowCraftList(pPlayer, "Can be used's", ItemType::TYPE_USED);
@@ -186,11 +188,10 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		pCraftItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
 		VCraftItem.Add(aAttributes);
 	}
-	VCraftItem.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// add craft reciepts
-	CVoteWrapper VCraftRequired(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Required items", pCraftItemInfo->GetName());
+	CVoteWrapper VCraftRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required items", pCraftItemInfo->GetName());
 	{
 		VCraftRequired.BeginDepth();
 
@@ -211,10 +212,8 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 			VCraftRequired.MarkList().Add("{} {}x{} ({})", Has ? "\u2714" : "\u2718", 
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
-
 		VCraftRequired.EndDepth();
 	}
-	VCraftRequired.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// add craft button

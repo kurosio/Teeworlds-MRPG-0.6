@@ -10,10 +10,16 @@ int CCraftItem::GetPrice(CPlayer* pPlayer) const
 
 	if(pPlayer)
 	{
+		// discount by passive skill
 		Discount = translate_to_percent_rest(m_Price, pPlayer->GetSkill(SkillCraftDiscount)->GetLevel());
+
+		// discount by special item
 		if(pPlayer->GetItem(itTicketDiscountCraft)->IsEquipped())
+		{
 			Discount += translate_to_percent_rest(m_Price, 20);
+		}
 	}
 
+	// return end value
 	return maximum(m_Price - Discount, 0);
 }
