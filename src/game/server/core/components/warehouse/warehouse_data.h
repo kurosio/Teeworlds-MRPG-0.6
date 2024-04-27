@@ -35,10 +35,10 @@ class CTrade
 public:
 	CTrade(TradeIdentifier ID, CItem&& pItem, int Price) : m_ID(ID), m_Item(std::move(pItem)), m_Price(Price) {}
 
+	// default getters and setters
 	TradeIdentifier GetID() const { return m_ID; }
 	CItem* GetItem() { return &m_Item; }
 	const CItem* GetItem() const { return &m_Item; }
-
 	int GetPrice() const { return m_Price; }
 	int GetProductsCost() const
 	{
@@ -56,6 +56,7 @@ class CWarehouseStorage;
 using ContainerTradingList = std::deque<CTrade>;
 class CWarehouse : public MultiworldIdentifiableStaticData<std::deque<CWarehouse*>>
 {
+	// storage inner structure
 	class CStorage
 	{
 		friend class CWarehouse;
@@ -64,6 +65,7 @@ class CWarehouse : public MultiworldIdentifiableStaticData<std::deque<CWarehouse
 		CWarehouse* m_pWarehouse {};
 
 	public:
+		// remove storage value
 		bool Remove(int Value)
 		{
 			if(m_pWarehouse->IsHasFlag(WF_STORAGE) && m_Value >= Value)
@@ -75,6 +77,7 @@ class CWarehouse : public MultiworldIdentifiableStaticData<std::deque<CWarehouse
 			return false;
 		}
 
+		// add storage value
 		void Add(int Value)
 		{
 			if(m_pWarehouse->IsHasFlag(WF_STORAGE))
@@ -108,17 +111,18 @@ public:
 		return m_pData.emplace_back(pData);
 	}
 
+	// functions
 	void Init(const std::string& Name, const std::string& Properties, vec2 Pos, int Currency, int WorldID);
 	void InitProperties(const std::string& Properties);
 	void SaveProperties();
 
+	// getters and setters
 	WarehouseIdentifier GetID() const { return m_ID; }
 	bool IsHasFlag(int Flag) const { return m_Flags & Flag; }
 	const char* GetName() const { return m_aName; }
 	vec2 GetPos() const { return m_Pos; }
 	CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_Currency]; }
 	int GetWorldID() const { return m_WorldID; }
-
 	CStorage& Storage() { return m_Storage; }
 	CTrade* GetTrade(TradeIdentifier ID);
 	const ContainerTradingList& GetTradingList() const { return m_vTradingList; }

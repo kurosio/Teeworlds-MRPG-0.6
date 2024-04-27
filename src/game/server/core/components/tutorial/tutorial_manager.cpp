@@ -21,6 +21,7 @@ void CTutorialManager::OnInit()
 	Tools::Files::Result Result = Tools::Files::loadFile(FILE_NAME_INITILIZER, &RawData);
 	dbg_assert(Result != Tools::Files::Result::ERROR_FILE, "tutorial file not found (\"server_data/tutorial_data.json\")");
 
+	// parsing tutorial data from file
 	Tools::Json::parseFromString((char*)RawData.data(), [&](nlohmann::json& pJson)
 	{
 		for(auto& pStep : pJson)
@@ -41,6 +42,7 @@ void CTutorialManager::OnInit()
 				TutorialBase::Init(Type, pStep.value("info", "\0").c_str(), Tutorial);
 			}
 		}
+
 		dbg_msg("tutorial", "tutorial data loaded (size: '%lu')", TutorialBase::Data().size());
 	});
 }
@@ -50,7 +52,9 @@ template <typename CAST>
 void EventChecker(std::deque<TutorialBase*>& pItems, CPlayer* pPlayer, int Step, std::function<bool(CAST*)> Value)
 {
 	CGS* pGS = pPlayer->GS();
-	if(CAST* pTutorial = dynamic_cast<CAST*>(pItems[Step]); Value(pTutorial)) // Check if the current tutorial item is of type CAST and satisfies the specified condition
+
+	// Check if the current tutorial item is of type CAST and satisfies the specified condition
+	if(CAST* pTutorial = dynamic_cast<CAST*>(pItems[Step]); Value(pTutorial))
 	{
 		// Perform actions when the condition is true
 		pGS->CreateDeath(pPlayer->m_ViewPos, pPlayer->GetCID());
@@ -60,9 +64,11 @@ void EventChecker(std::deque<TutorialBase*>& pItems, CPlayer* pPlayer, int Step,
 		// Increment the tutorial step
 		pPlayer->m_TutorialStep++;
 	}
-	else if(pGS->Server()->Tick() % (pGS->Server()->TickSpeed() * 1) == 0) // Check if it is time to display a tutorial message
+	// Check if it is time to display a tutorial message
+	else if(pGS->Server()->Tick() % (pGS->Server()->TickSpeed() * 1) == 0)
 	{
-		pGS->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "- Tutorial {} of {}.\n\n{}", Step + 1, pItems.size(), pTutorial->GetText()); // Display the tutorial message
+		// Display the tutorial message
+		pGS->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "- Tutorial {} of {}.\n\n{}", Step + 1, pItems.size(), pTutorial->GetText());
 	}
 }
 

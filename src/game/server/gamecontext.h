@@ -97,7 +97,7 @@ public:
 	/*
 	 * Message Chat (default)
 	 */
-	template< typename ... Args> void Chat(int ClientID, const char* pText, Args&&... args)
+	template< typename ... Ts> void Chat(int ClientID, const char* pText, Ts&&... args)
 	{
 		const int Start = (ClientID < 0 ? 0 : ClientID);
 		const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
@@ -107,7 +107,7 @@ public:
 		{
 			if(m_apPlayers[i])
 			{
-				std::string endText = Server()->Localization()->Format(m_apPlayers[i]->GetLanguage(), pText, std::forward<Args>(args) ...);
+				std::string endText = Server()->Localization()->Format(m_apPlayers[i]->GetLanguage(), pText, std::forward<Ts>(args) ...);
 				Msg.m_pMessage = endText.c_str();
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
 			}
@@ -117,14 +117,14 @@ public:
 	/*
 	 * Message ChatAccount (by AccountID)
 	 */
-	template <typename ... Args> bool ChatAccount(int AccountID, const char* pText, Args&&... args)
+	template <typename ... Ts> bool ChatAccount(int AccountID, const char* pText, Ts&&... args)
 	{
 		CPlayer* pPlayer = GetPlayerByUserID(AccountID);
 		if(!pPlayer)
 			return false;
 
 		CNetMsg_Sv_Chat Msg { -1, -1 };
-		std::string endText = Server()->Localization()->Format(pPlayer->GetLanguage(), pText, std::forward<Args>(args) ...);
+		std::string endText = Server()->Localization()->Format(pPlayer->GetLanguage(), pText, std::forward<Ts>(args) ...);
 		Msg.m_pMessage = endText.c_str();
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, pPlayer->GetCID());
 		return true;
@@ -133,10 +133,10 @@ public:
 	/*
 	 * Message ChatDiscord (default)
 	 */
-	template <typename ... Args> void ChatDiscord(int Color, const char *Title, const char* pText, Args&&... args)
+	template <typename ... Ts> void ChatDiscord(int Color, const char *Title, const char* pText, Ts&&... args)
 	{
 #ifdef CONF_DISCORD
-		std::string endText = Server()->Localization()->Format("en", pText, std::forward<Args>(args) ...);
+		std::string endText = Server()->Localization()->Format("en", pText, std::forward<Ts>(args) ...);
 		Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, Color, Title, endText.c_str());
 #endif
 	}
@@ -144,10 +144,10 @@ public:
 	/*
 	 * Message ChatDiscordChannel (Channel)
 	 */
-	template <typename ... Args> void ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, Args&&... args)
+	template <typename ... Ts> void ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, Ts&&... args)
 	{
 #ifdef CONF_DISCORD
-		std::string endText = Server()->Localization()->Format("en", pText, std::forward<Args>(args) ...);
+		std::string endText = Server()->Localization()->Format("en", pText, std::forward<Ts>(args) ...);
 		Server()->SendDiscordMessage(pChanel, Color, Title, endText.c_str());
 #endif
 	}
@@ -155,7 +155,7 @@ public:
 	/*
 	 * Message Chat (by GuildID)
 	 */
-	template <typename ... Args> void ChatGuild(int GuildID, const char* pText, Args&&... args)
+	template <typename ... Ts> void ChatGuild(int GuildID, const char* pText, Ts&&... args)
 	{
 		if(GuildID <= 0)
 			return;
@@ -167,7 +167,7 @@ public:
 			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->SameGuild(GuildID, i))
 			{
 				Buffer.append("Guild | ");
-				Server()->Localization()->Format(Buffer, m_apPlayers[i]->GetLanguage(), pText, std::forward<Args>(args) ...);
+				Server()->Localization()->Format(Buffer, m_apPlayers[i]->GetLanguage(), pText, std::forward<Ts>(args) ...);
 				Msg.m_pMessage = Buffer.buffer();
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
 				Buffer.clear();
@@ -178,7 +178,7 @@ public:
 	/*
 	 * Message Chat (by WorldID)
 	 */
-	template <typename ... Args> void ChatWorldID(int WorldID, const char* Suffix, const char* pText, Args&&... args)
+	template <typename ... Ts> void ChatWorldID(int WorldID, const char* Suffix, const char* pText, Ts&&... args)
 	{
 		dynamic_string Buffer;
 		CNetMsg_Sv_Chat Msg {-1, -1};
@@ -193,7 +193,7 @@ public:
 				Buffer.append(Suffix);
 				Buffer.append(" ");
 			}
-			Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), pText, std::forward<Args>(args) ...);
+			Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), pText, std::forward<Ts>(args) ...);
 			Msg.m_pMessage = Buffer.buffer();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i, WorldID);
 			Buffer.clear();
@@ -203,12 +203,12 @@ public:
 	/*
 	 * Message Motd
 	 */
-	template <typename ... Args> void Motd(int ClientID, const char* pText, Args&&... args)
+	template <typename ... Ts> void Motd(int ClientID, const char* pText, Ts&&... args)
 	{
 		CPlayer* pPlayer = GetPlayer(ClientID, true);
 		if(pPlayer)
 		{
-			std::string endText = Server()->Localization()->Format(pPlayer->GetLanguage(), pText, std::forward<Args>(args) ...);
+			std::string endText = Server()->Localization()->Format(pPlayer->GetLanguage(), pText, std::forward<Ts>(args) ...);
 			CNetMsg_Sv_Motd Msg;
 			Msg.m_pMessage = endText.c_str();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);

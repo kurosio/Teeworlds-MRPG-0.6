@@ -105,7 +105,7 @@ private:
 	}
 
 	// end unpacking args function
-	std::string FormatImpl(const char*, const char* pText, std::deque<std::string>& vStrPack)
+	inline static std::string FormatImpl(const char*, const char* pText, std::deque<std::string>& vStrPack)
 	{
 		std::string Result{};
 		bool ArgStarted = false;
@@ -151,11 +151,11 @@ private:
 	}
 
 	// unpacking ellipsis args pack
-	template<typename Arg, typename ... Args>
-	std::string FormatImpl(const char* pLanguageCode, const char* pText, std::deque<std::string>& vStrPack, Arg&& arg, Args&& ... argsfmt)
+	template<typename T, typename ... Ts>
+	std::string FormatImpl(const char* pLanguageCode, const char* pText, std::deque<std::string>& vStrPack, T&& arg, Ts&& ... argsfmt)
 	{
-		vStrPack.push_back(ToString(pLanguageCode, std::forward<Arg>(arg)));
-		return FormatImpl(pLanguageCode, pText, vStrPack, std::forward<Args>(argsfmt) ...);
+		vStrPack.push_back(ToString(pLanguageCode, std::forward<T>(arg)));
+		return FormatImpl(pLanguageCode, pText, vStrPack, std::forward<Ts>(argsfmt) ...);
 	}
 
 public:
@@ -166,18 +166,18 @@ public:
 	}
 
 	// format args pack
-	template<typename ... Args>
-	std::string Format(const char* pLanguageCode, const char* pText, Args&& ... argsfmt)
+	template<typename ... Ts>
+	std::string Format(const char* pLanguageCode, const char* pText, Ts&& ... argsfmt)
 	{
 		std::deque<std::string> vStrPack;
-		return FormatImpl(pLanguageCode, Localize(pLanguageCode, pText), vStrPack, std::forward<Args>(argsfmt) ...);
+		return FormatImpl(pLanguageCode, Localize(pLanguageCode, pText), vStrPack, std::forward<Ts>(argsfmt) ...);
 	}
 
 	// format with dynamic_string
-	template<typename ... Args>
-	void Format(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, Args&& ... argsfmt)
+	template<typename ... Ts>
+	void Format(dynamic_string& Buffer, const char* pLanguageCode, const char* pText, Ts&& ... argsfmt)
 	{
-		std::string fmtStr = Format(pLanguageCode, pText, std::forward<Args>(argsfmt) ...);
+		std::string fmtStr = Format(pLanguageCode, pText, std::forward<Ts>(argsfmt) ...);
 		Buffer.append(fmtStr.c_str());
 	}
 
