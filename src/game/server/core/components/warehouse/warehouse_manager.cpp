@@ -217,7 +217,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	CItemDescription* pCurrency = pWarehouse->GetCurrency();
 
 	// show base shop functions
-	CVoteWrapper VStorage(ClientID, VWF_STYLE_STRICT_BOLD, "Warehouse :: {}", pWarehouse->GetName());
+	CVoteWrapper VStorage(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Warehouse :: {}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
 		// storage functional
@@ -231,10 +231,8 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 		}
 		VStorage.AddLine();
 	}
-
 	VStorage.AddItemValue(pCurrency->GetID());
 	VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
-	VStorage.AddLine();
 
 	/*
 	 * Show trading list
@@ -332,7 +330,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	const bool HasItem = pPlayer->GetItem(pItem->GetID())->HasItem();
 
 	// Show item information
-	CVoteWrapper VItem(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
+	CVoteWrapper VItem(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
 	if(pItem->Info()->IsEnchantable())
 	{
 		VItem.Add("{} {}", (HasItem ? "✔" : "×"), pItem->Info()->GetName());
@@ -349,11 +347,10 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 		pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
 		VItem.Add("* {}", aAttributes);
 	}
-	VItem.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// show information about the cost of the item
-	CVoteWrapper VRequired(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Required");
+	CVoteWrapper VRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required");
 	VRequired.ReinitNumeralDepthStyles(
 		{
 			{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }
@@ -370,7 +367,6 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(pCurrency->GetID());
 	bool MarkHas = pPlayerItem->GetValue() >= pTrade->GetPrice();
 	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pCurrency->GetName(), pTrade->GetPrice(), pPlayerItem->GetValue());
-	VRequired.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// show status and button buy

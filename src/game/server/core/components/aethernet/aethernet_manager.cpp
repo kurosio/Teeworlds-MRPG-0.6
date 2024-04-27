@@ -145,10 +145,9 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 	const int ClientID = pPlayer->GetCID();
 
 	// Default aether menu
-	CVoteWrapper VAether(ClientID, VWF_STYLE_STRICT_BOLD, "Aethernet information");
+	CVoteWrapper VAether(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Aethernet information");
 	VAether.Add("Total unlocked aethers: {} of {}.", pPlayer->Account()->GetAethers().size(), CAetherData::Data().size());
 	VAether.AddItemValue(itGold);
-	VAether.AddLine();
 	CVoteWrapper::AddEmptyline(ClientID);
 
 	// Add aether menu for each world
