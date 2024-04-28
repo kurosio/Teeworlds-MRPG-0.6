@@ -20,6 +20,11 @@ private:
 	int m_SkillBonus{};
 	vec2 m_Direction{};
 
+	bool m_SecondPart {};
+	int m_SecondPartTimeleft{};
+	int m_SecondPartCombo{};
+	std::vector<CPlayer*> m_vMovingMap{};
+
 public:
 	CPlayer* m_pPlayer{};
 };
