@@ -77,8 +77,8 @@ bool CSkill::Use()
 	// mana check
 	CCharacter* pChr = GetPlayer()->GetCharacter();
 	const int ManaCost = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost()));
-	//if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
-	//	return false;
+	if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
+		return false;
 
 	const vec2 PlayerPosition = pChr->GetPos();
 	const int ClientID = GetPlayer()->GetCID();
