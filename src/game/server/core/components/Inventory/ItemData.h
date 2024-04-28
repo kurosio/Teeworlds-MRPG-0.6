@@ -46,8 +46,8 @@ public:
 	// helper functions
 	[[nodiscard]] static CItem FromJSON(const nlohmann::json& json);
 	[[nodiscard]] static CItemsContainer FromArrayJSON(const nlohmann::json& json, const char* pField);
-	[[nodiscard]] static void ToJSON(CItem& Item, nlohmann::json& json);
-	[[nodiscard]] static void ToArrayJSON(CItemsContainer& vItems, nlohmann::json& json, const char* pField);
+	static void ToJSON(CItem& Item, nlohmann::json& json);
+	static void ToArrayJSON(CItemsContainer& vItems, nlohmann::json& json, const char* pField);
 };
 
 class CPlayerItem : public CItem, public MultiworldIdentifiableStaticData< std::map < int, std::map < int, CPlayerItem > > >
