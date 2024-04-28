@@ -52,9 +52,7 @@ bool CMailboxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 		// try show mail item
 		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
-		{
 			ShowMail(pPlayer->m_VotesData.GetMenuTemporaryInteger(), pPlayer);
-		}
 
 		// add backpage
 		VoteWrapper::AddBackpage(pPlayer->GetCID());
@@ -81,7 +79,6 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 		int m_ID {};
 		std::string m_Name {};
 		std::string m_Sender {};
-		bool m_HasAttachedItems {};
 	};
 	std::vector<BasicMailInfo> vUnreadMails {};
 	std::vector<BasicMailInfo> vReadedMails {};
@@ -91,14 +88,12 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 	while(pRes->next())
 	{
 		const bool Readed = pRes->getBoolean("Readed");
-		std::string AttachedItems = pRes->getString("AttachedItems").c_str();
 
 		// add new element
 		BasicMailInfo Mail;
 		Mail.m_ID = pRes->getInt("ID");
 		Mail.m_Name = pRes->getString("Name").c_str();
 		Mail.m_Sender = pRes->getString("Sender").c_str();
-		Mail.m_HasAttachedItems = !AttachedItems.empty();
 		if(Readed && vReadedMails.size() < MAILS_MAX_CAPACITY)
 			vReadedMails.push_back(Mail);
 		else if(vUnreadMails.size() < MAILS_MAX_CAPACITY)
@@ -113,15 +108,15 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// unreaded mails
-	VoteWrapper VUnreadList(ClientID, VWF_OPEN, "List of unread mails ({} of {})", (int)vUnreadMails.size(), (int)MAILS_MAX_CAPACITY);
+	VoteWrapper VUnreadList(ClientID, VWF_OPEN, "\u2709 List of unread mails ({} of {})", (int)vUnreadMails.size(), (int)MAILS_MAX_CAPACITY);
 	for(auto& p : vUnreadMails)
-		VUnreadList.AddMenu(MENU_MAILBOX_SELECTED, p.m_ID, "{}{} (UID:{})", p.m_Name, p.m_HasAttachedItems ? "(attachment)" : "\0", p.m_ID);
+		VUnreadList.AddMenu(MENU_MAILBOX_SELECTED, p.m_ID, "{} (UID:{})", p.m_Name,p.m_ID);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// readed mails
-	VoteWrapper VReadList(ClientID, VWF_OPEN, "List of read mails ({} of {})", (int)vReadedMails.size(), (int)MAILS_MAX_CAPACITY);
+	VoteWrapper VReadList(ClientID, VWF_OPEN, "\u2709 List of read mails ({} of {})", (int)vReadedMails.size(), (int)MAILS_MAX_CAPACITY);
 	for(auto& p : vReadedMails)
-		VReadList.AddMenu(MENU_MAILBOX_SELECTED, p.m_ID, "{}{} (UID:{})", p.m_Name, p.m_HasAttachedItems ? "(attachment)" : "\0", p.m_ID);
+		VReadList.AddMenu(MENU_MAILBOX_SELECTED, p.m_ID, "{} (UID:{})", p.m_Name, p.m_ID);
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
@@ -213,7 +208,7 @@ bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 	// send mail only with unaccable items
 	if(!vCannotAcceptableItems.empty())
 	{
-		MailWrapper Mail("System", pPlayer->Account()->GetID(), "Items cannot be accepted");
+		MailWrapper Mail("System", pPlayer->Account()->GetID(), "Cannot be accepted.");
 		Mail.AddDescLine("The reason you already have the item");
 		for(const auto& pItem : vCannotAcceptableItems)
 			Mail.AttachItem(pItem);

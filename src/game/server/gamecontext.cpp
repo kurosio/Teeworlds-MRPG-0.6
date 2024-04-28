@@ -1226,7 +1226,7 @@ void CGS::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 			return;
 		}
 
-		MailWrapper Mail("Console", pPlayer->Account()->GetID(), "The sender heavens");
+		MailWrapper Mail("Console", pPlayer->Account()->GetID(), "The sender heavens.");
 		Mail.AddDescLine("Sent from console");
 		Mail.AttachItem(CItem(ItemID, Value, Enchant));
 		Mail.Send();

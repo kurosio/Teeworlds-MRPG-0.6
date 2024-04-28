@@ -56,7 +56,7 @@ void CEntityRandomBoxRandomizer::Tick()
 			auto GiveRandomItem = [&](const CRandomItem& RandItem)
 			{
 				// Prepare mail
-				MailWrapper Mail("System", m_AccountID, "Random box");
+				MailWrapper Mail("System", m_AccountID, "Random box.");
 				Mail.AddDescLine("Item was not received by you personally.");
 
 				// Check if the item is enchantable

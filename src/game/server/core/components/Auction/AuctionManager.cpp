@@ -215,7 +215,7 @@ bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
 	if(UserID == pPlayer->Account()->GetID())
 	{
 		CItem AuctionItem(ItemID, Value, Enchant);
-		MailWrapper Mail("Auctionist", pPlayer->Account()->GetID(), "Auction Alert");
+		MailWrapper Mail("Auctionist", pPlayer->Account()->GetID(), "Auction alert.");
 		Mail.AddDescLine("You have bought a item, or canceled your slot");
 		Mail.AttachItem(AuctionItem);
 		Mail.Send();
@@ -237,7 +237,7 @@ bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
 		return false;
 
 	// information & exchange item
-	MailWrapper Mail("Auctionist", UserID, "Auction Sell");
+	MailWrapper Mail("Auctionist", UserID, "Gold for an item sold.");
 	Mail.AddDescLine("Your [Slot {}x{}] was sold!", pPlayerItem->Info()->GetName(), Value);
 	Mail.AttachItem(CItem(itGold, Price));
 	Mail.Send();

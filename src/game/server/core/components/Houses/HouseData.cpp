@@ -172,7 +172,7 @@ void CHouseData::Sell()
 	const int Price = m_Price + m_pBank->Get();
 
 	// Send mail
-	MailWrapper Mail("System", m_AccountID, "House is sold");
+	MailWrapper Mail("System", m_AccountID, "House is sold.");
 	Mail.AddDescLine("Your house is sold!");
 	Mail.AttachItem(CItem(itGold, Price));
 	Mail.Send();

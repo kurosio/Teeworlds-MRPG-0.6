@@ -227,7 +227,7 @@ void CQuestStep::PostFinish()
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRewardItem);
 			if(pPlayerItem->Info()->IsEnchantable() && pPlayerItem->GetValue() >= 1)
 			{
-				MailWrapper Mail("System", pPlayer->Account()->GetID(), "No place for item");
+				MailWrapper Mail("System", pPlayer->Account()->GetID(), "No place for item.");
 				Mail.AddDescLine("You already have this item.");
 				Mail.AddDescLine("We can't put it in inventory");
 				Mail.AttachItem(pRewardItem);

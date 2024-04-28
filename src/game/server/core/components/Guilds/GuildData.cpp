@@ -167,7 +167,7 @@ bool CGuildData::SellHouse()
 		const int ReturnedGold = m_pHouse->GetPrice();
 
 		// Send mail
-		MailWrapper Mail("System", m_LeaderUID, "Your guild house sold.");
+		MailWrapper Mail("System", m_LeaderUID, "Guild house is sold.");
 		Mail.AddDescLine("We returned some gold from your guild.");
 		Mail.AttachItem(CItem(itGold, ReturnedGold));
 		Mail.Send();
