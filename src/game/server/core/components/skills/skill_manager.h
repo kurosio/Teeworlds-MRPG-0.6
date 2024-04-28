@@ -20,7 +20,7 @@ class CSkillManager : public MmoComponent
 		// clear containers
 		CSkill::Data().clear();
 		CSkillDescription::Data().clear();
-	};
+	}
 
 	void OnInit() override;
 	void OnInitAccount(CPlayer* pPlayer) override;

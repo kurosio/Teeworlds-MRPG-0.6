@@ -1,18 +1,18 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "sleepy-gravity.h"
+#include "sleepy_gravity.h"
 
 #include <game/server/gamecontext.h>
 
 CSleepyGravity::CSleepyGravity(CGameWorld *pGameWorld, CPlayer* pPlayer, int SkillBonus, int PowerLevel, vec2 Pos)
 : CEntity(pGameWorld, CGameWorld::ENTYPE_SLEEPYGRAVITY, Pos)
 {
-	// transmitted arguments
 	m_pPlayer = pPlayer;
 	m_PowerLevel = PowerLevel;
 	m_Radius = minimum(200 + SkillBonus, 400);
 	m_LifeSpan = 10 * Server()->TickSpeed();
 	GameWorld()->InsertEntity(this);
+
 	for(int i = 0; i < NUM_IDS; i++)
 		m_IDs[i] = Server()->SnapNewID();
 }

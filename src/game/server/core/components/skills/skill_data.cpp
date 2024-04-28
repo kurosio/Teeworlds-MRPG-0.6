@@ -4,10 +4,10 @@
 
 #include <game/server/gamecontext.h>
 
-#include "Entities/HealthTurret/healer-health.h"
-#include "Entities/AttackTeleport/attack-teleport.h"
-#include "Entities/HealthTurret/hearth.h"
-#include "Entities/SleepyGravity/sleepy-gravity.h"
+#include "entities/health_turret/healer_health.h"
+#include "entities/attack_teleport/attack_teleport.h"
+#include "entities/health_turret/hearth.h"
+#include "entities/sleepy_gravity/sleepy_gravity.h"
 #include "game/server/entities/botai/character_bot_ai.h"
 
 const char* CSkillDescription::GetEmoticonName(int EmoticionID)
@@ -77,8 +77,8 @@ bool CSkill::Use()
 	// mana check
 	CCharacter* pChr = GetPlayer()->GetCharacter();
 	const int ManaCost = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost()));
-	if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
-		return false;
+	//if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
+	//	return false;
 
 	const vec2 PlayerPosition = pChr->GetPos();
 	const int ClientID = GetPlayer()->GetCID();
@@ -120,7 +120,7 @@ bool CSkill::Use()
 
 	if(m_ID == Skill::SkillAttackTeleport)
 	{
-		new CAttackTeleport(&GS()->m_World, PlayerPosition, pChr, GetBonus());
+		new CAttackTeleport(&GS()->m_World, PlayerPosition, GetPlayer(), GetBonus());
 		return true;
 	}
 
