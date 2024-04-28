@@ -1,8 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "SkillManager.h"
+#include "skill_manager.h"
 
 #include <game/server/gamecontext.h>
+#include "skill_data.h"
 
 void CSkillManager::OnInit()
 {
@@ -30,11 +31,12 @@ void CSkillManager::OnInitAccount(CPlayer *pPlayer)
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
+		SkillIdentifier ID = pRes->getInt("SkillID");
 		int Level = pRes->getInt("Level");
 		int SelectedEmoticion = pRes->getInt("UsedByEmoticon");
 
-		SkillIdentifier ID = pRes->getInt("SkillID");
-		CSkill(ID, ClientID).Init(Level, SelectedEmoticion);
+		// init by server
+		CSkill::CreateElement(ClientID, ID)->Init(Level, SelectedEmoticion);
 	}
 }
 
@@ -175,7 +177,6 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
-	const int ClientID = pPlayer->GetCID();
 
 	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_SKILL_ZONE))
 	{
@@ -192,14 +193,15 @@ bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
-	const int ClientID = pPlayer->GetCID();
-
 	// learn skill function
 	if (PPSTR(CMD, "SKILL_LEARN") == 0)
 	{
 		const int SkillID = VoteID;
 		if(pPlayer->GetSkill(SkillID)->Upgrade())
+		{
 			pPlayer->m_VotesData.UpdateCurrentVotes();
+		}
+
 		return true;
 	}
 
@@ -214,15 +216,15 @@ bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	return false;
 }
 
-void CSkillManager::ParseEmoticionSkill(CPlayer *pPlayer, int EmoticionID)
+void CSkillManager::UseSkillsByEmoticion(CPlayer *pPlayer, int EmoticionID)
 {
 	if(pPlayer && pPlayer->IsAuthed() && pPlayer->GetCharacter())
 	{
 		const int ClientID = pPlayer->GetCID();
-		for(auto& [ID, Skill] : CSkill::Data()[ClientID])
+		for(auto& p : CSkill::Data()[ClientID])
 		{
-			if (Skill.m_SelectedEmoticion == EmoticionID)
-				Skill.Use();
+			if(p->m_SelectedEmoticion == EmoticionID)
+				p->Use();
 		}
 	}
 }

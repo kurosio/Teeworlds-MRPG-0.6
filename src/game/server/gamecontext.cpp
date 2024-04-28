@@ -24,7 +24,7 @@
 #include "core/components/Bots/BotManager.h"
 #include "core/components/Guilds/GuildManager.h"
 #include "core/components/Quests/QuestManager.h"
-#include "core/components/Skills/SkillManager.h"
+#include "core/components/skills/skill_manager.h"
 
 #include <cstdarg>
 
@@ -887,7 +887,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			SendEmoticon(ClientID, pMsg->m_Emoticon);
 
 			// Parse any skills associated with the received emoticon for the player
-			Core()->SkillManager()->ParseEmoticionSkill(pPlayer, pMsg->m_Emoticon);
+			Core()->SkillManager()->UseSkillsByEmoticion(pPlayer, pMsg->m_Emoticon);
 		}
 
 		else if(MsgID == NETMSGTYPE_CL_KILL)

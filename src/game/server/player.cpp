@@ -15,7 +15,7 @@
 #include "core/components/Quests/QuestManager.h"
 
 #include "core/components/Inventory/ItemData.h"
-#include "core/components/Skills/SkillData.h"
+#include "core/components/skills/skill_data.h"
 #include "core/components/Groups/GroupData.h"
 #include "core/components/worlds/world_data.h"
 #include "core/entities/tools/draw_board.h"
@@ -898,13 +898,9 @@ CSkill* CPlayer::GetSkill(SkillIdentifier ID)
 {
 	dbg_assert(CSkillDescription::Data().find(ID) != CSkillDescription::Data().end(), "invalid referring to the CSkillData");
 
-	if(CSkill::Data()[m_ClientID].find(ID) == CSkill::Data()[m_ClientID].end())
-	{
-		CSkill(ID, m_ClientID).Init({}, {});
-		return &CSkill::Data()[m_ClientID][ID];
-	}
-
-	return &CSkill::Data()[m_ClientID][ID];
+	const auto& playerSkills = CSkill::Data()[m_ClientID];
+	auto iter = std::find_if(playerSkills.begin(), playerSkills.end(), [&ID](CSkill* pSkill){ return pSkill->GetID() == ID; });
+	return (iter == playerSkills.end() ? CSkill::CreateElement(m_ClientID, ID) : *iter);
 }
 
 CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const

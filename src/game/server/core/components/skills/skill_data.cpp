@@ -1,6 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "SkillData.h"
+#include "skill_data.h"
 
 #include <game/server/gamecontext.h>
 
@@ -10,9 +10,33 @@
 #include "Entities/SleepyGravity/sleepy-gravity.h"
 #include "game/server/entities/botai/character_bot_ai.h"
 
+const char* CSkillDescription::GetEmoticonName(int EmoticionID)
+{
+	switch(EmoticionID)
+	{
+		case EMOTICON_OOP: return "Emoticion Ooop";
+		case EMOTICON_EXCLAMATION: return "Emoticion Exclamation";
+		case EMOTICON_HEARTS: return "Emoticion Hearts";
+		case EMOTICON_DROP: return "Emoticion Drop";
+		case EMOTICON_DOTDOT: return "Emoticion ...";
+		case EMOTICON_MUSIC: return "Emoticion Music";
+		case EMOTICON_SORRY: return "Emoticion Sorry";
+		case EMOTICON_GHOST: return "Emoticion Ghost";
+		case EMOTICON_SUSHI: return "Emoticion Sushi";
+		case EMOTICON_SPLATTEE: return "Emoticion Splatee";
+		case EMOTICON_DEVILTEE: return "Emoticion Deviltee";
+		case EMOTICON_ZOMG: return "Emoticion Zomg";
+		case EMOTICON_ZZZ: return "Emoticion Zzz";
+		case EMOTICON_WTF: return "Emoticion Wtf";
+		case EMOTICON_EYES: return "Emoticion Eyes";
+		case EMOTICON_QUESTION: return "Emoticion Question";
+		default: return "Not selected";
+	}
+}
+
 CGS* CSkill::GS() const
 {
-	return (CGS*)Server()->GameServerPlayer(m_ClientID);
+	return (CGS*)Instance::Server()->GameServerPlayer(m_ClientID);
 }
 
 CPlayer* CSkill::GetPlayer() const
@@ -197,13 +221,23 @@ bool CSkill::Use()
 
 bool CSkill::Upgrade()
 {
-	if(!GetPlayer() || !GetPlayer()->IsAuthed() || m_Level >= Info()->GetMaxLevel())
+	// check player exists
+	if(!GetPlayer() || !GetPlayer()->IsAuthed())
 		return false;
 
+	// check for maximal leveling
+	const int ClientID = GetPlayer()->GetCID();
+	if(m_Level >= Info()->GetMaxLevel())
+	{
+		GS()->Chat(ClientID, "You've already reached the maximum level");
+		return false;
+	}
+
+	// try spend skill points
 	if(!GetPlayer()->Account()->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
 		return false;
 
-	const int ClientID = GetPlayer()->GetCID();
+	// update level
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Account()->GetID());
 	if(pRes->next())
 	{
