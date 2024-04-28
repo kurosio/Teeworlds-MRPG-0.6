@@ -16,6 +16,8 @@
 #define DC_DISCORD_INFO 431050
 #define DC_INVISIBLE_GRAY 3553599
 
+#define CLIENT_LANG(clientID) Instance::Server()->GetClientLanguage(clientID)
+
 // When recording a demo on the server, the ClientID -1 is used
 enum
 {

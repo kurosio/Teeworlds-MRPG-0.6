@@ -8,7 +8,7 @@
 
 #include <game/collision.h>
 
-#include <game/server/core/components/Skills/Entities/HealthTurret/hearth.h> // for nurse
+#include <game/server/core/components/skills/entities/health_turret/hearth.h> // for nurse
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/Quests/QuestManager.h>
 

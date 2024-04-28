@@ -4,15 +4,23 @@
 #define GAME_SERVER_COMPONENT_SKILL_CORE_H
 #include <game/server/core/mmo_component.h>
 
-#include "SkillData.h"
+#include "skill_data.h"
 
 class CSkillManager : public MmoComponent
 {
 	~CSkillManager() override
 	{
-		CSkillDescription::Data().clear();
+		// clear skill's
+		for(auto& p : CSkill::Data())
+		{
+			for(auto pData : p.second)
+				delete pData;
+		}
+
+		// clear containers
 		CSkill::Data().clear();
-	};
+		CSkillDescription::Data().clear();
+	}
 
 	void OnInit() override;
 	void OnInitAccount(CPlayer* pPlayer) override;
@@ -21,12 +29,13 @@ class CSkillManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
-public:
-	void ParseEmoticionSkill(CPlayer* pPlayer, int EmoticionID);
-
-private:
+	// vote list's menus
 	void ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillType Type) const;
 	void ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const;
+
+public:
+	// use skills by emoticion
+	void UseSkillsByEmoticion(CPlayer* pPlayer, int EmoticionID);
 };
 
 #endif

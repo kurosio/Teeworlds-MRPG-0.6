@@ -32,24 +32,24 @@ bool CDungeonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Dungeons Information");
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Dungeons Information");
 		VInfo.Add("In this section you can choose a dungeon");
 		VInfo.Add("View the fastest players on the passage");
 
-		CVoteWrapper::AddLine(ClientID);
-		CVoteWrapper(ClientID).Add("\u262C Story dungeon's");
+		VoteWrapper::AddLine(ClientID);
+		VoteWrapper(ClientID).Add("\u262C Story dungeon's");
 		if(!ShowDungeonsList(pPlayer, true))
-			CVoteWrapper(ClientID).Add("No dungeons available at the moment!");
+			VoteWrapper(ClientID).Add("No dungeons available at the moment!");
 
-		CVoteWrapper::AddLine(ClientID);
-		CVoteWrapper(ClientID).Add("\u274A Alternative story dungeon's");
+		VoteWrapper::AddLine(ClientID);
+		VoteWrapper(ClientID).Add("\u274A Alternative story dungeon's");
 		if(!ShowDungeonsList(pPlayer, false))
-			CVoteWrapper(ClientID).Add("No dungeons available at the moment!");
+			VoteWrapper(ClientID).Add("No dungeons available at the moment!");
 
-		CVoteWrapper::AddLine(ClientID);
+		VoteWrapper::AddLine(ClientID);
 		ShowInsideDungeonMenu(pPlayer);
 
-		CVoteWrapper::AddBackpage(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 	return false;
@@ -128,7 +128,7 @@ void CDungeonManager::SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayer
 	Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Seconds, PassageHelp) VALUES ('%d', '%d', '%d', '%f')", pPlayer->Account()->GetID(), DungeonID, Seconds, PassageHelp);
 }
 
-void CDungeonManager::InsertVotesDungeonTop(int DungeonID, CVoteWrapper* pWrapper) const
+void CDungeonManager::InsertVotesDungeonTop(int DungeonID, VoteWrapper* pWrapper) const
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '%d' ORDER BY Seconds ASC LIMIT 5", DungeonID);
 	while(pRes->next())
@@ -153,7 +153,7 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 		if(dungeon.second.m_IsStory != Story)
 			continue;
 
-		CVoteWrapper VDungeon(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "Lvl{} {} : Players {} : {} [{}%]",
+		VoteWrapper VDungeon(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "Lvl{} {} : Players {} : {} [{}%]",
 			dungeon.second.m_Level, dungeon.second.m_aName, dungeon.second.m_Players, 
 			(dungeon.second.IsDungeonPlaying() ? "Active dungeon" : "Waiting players"), dungeon.second.m_Progress);
 
@@ -184,8 +184,8 @@ void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 	int DungeonID = pController->GetDungeonID();
 
 	// exit from dungeon
-	CVoteWrapper::AddLine(ClientID);
-	CVoteWrapper(ClientID).AddOption("DUNGEONEXIT", "Exit dungeon {} (warning)", CDungeonData::ms_aDungeon[DungeonID].m_aName);
+	VoteWrapper::AddLine(ClientID);
+	VoteWrapper(ClientID).AddOption("DUNGEONEXIT", "Exit dungeon {} (warning)", CDungeonData::ms_aDungeon[DungeonID].m_aName);
 }
 
 void CDungeonManager::NotifyUnlockedDungeonsByQuest(CPlayer* pPlayer, int QuestID) const

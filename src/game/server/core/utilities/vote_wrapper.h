@@ -61,7 +61,7 @@ public:
 
 class CVoteGroup
 {
-	friend class CVoteWrapper;
+	friend class VoteWrapper;
 
 	struct NumeralDepth
 	{
@@ -87,6 +87,7 @@ class CVoteGroup
 
 	void SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>>&& vNumeralFlags);
 
+	int NextPos() const { return m_GroupSize + 1; }
 	bool IsEmpty() const { return m_GroupSize <= 0; }
 	bool IsTitleSet() const { return m_TitleIsSet; }
 	bool IsHidden() const;
@@ -104,8 +105,7 @@ class CVoteGroup
 
 };
 
-#define CLIENT_LANG(clientID) Instance::Server()->GetClientLanguage(clientID)
-class CVoteWrapper : public MultiworldIdentifiableStaticData<std::map<int, std::deque<CVoteGroup*>>>
+class VoteWrapper : public MultiworldIdentifiableStaticData<std::map<int, std::deque<CVoteGroup*>>>
 {
 	CVoteGroup* m_pGroup {};
 
@@ -113,14 +113,14 @@ public:
 	/* ====================================================
 	 *  Constructors (default)
 	 * ==================================================== */
-	CVoteWrapper(int ClientID)
+	VoteWrapper(int ClientID)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 		m_pGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		m_pData[ClientID].push_back(m_pGroup);
 	}
 	template <typename T = int>
-	CVoteWrapper(int ClientID, T Flags)
+	VoteWrapper(int ClientID, T Flags)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 		m_pGroup = new CVoteGroup(ClientID, Flags);
@@ -131,7 +131,7 @@ public:
 	 *  Constructors (title)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper(int ClientID, const char* pTitle, Args&& ... argsfmt)
+	VoteWrapper(int ClientID, const char* pTitle, Args&& ... argsfmt)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 
@@ -145,7 +145,7 @@ public:
 	 *  Constructors (title, flags)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper(int ClientID, int Flags, const char* pTitle, Args&& ... argsfmt)
+	VoteWrapper(int ClientID, int Flags, const char* pTitle, Args&& ... argsfmt)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 
@@ -159,7 +159,7 @@ public:
 	 *  SetTitle (title)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& SetTitle(const char* pTitle, Args&& ... argsfmt) noexcept
+	VoteWrapper& SetTitle(const char* pTitle, Args&& ... argsfmt) noexcept
 	{
 		const std::string endText = Instance::Server()->Localization()->Format(CLIENT_LANG(m_pGroup->m_ClientID), pTitle, std::forward<Args>(argsfmt) ...);
 		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, endText.c_str());
@@ -170,7 +170,7 @@ public:
 	 *  SetTitle (title, flags)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& SetTitle(int Flags, const char* pTitle, Args&& ... argsfmt) noexcept
+	VoteWrapper& SetTitle(int Flags, const char* pTitle, Args&& ... argsfmt) noexcept
 	{
 		const std::string endText = Instance::Server()->Localization()->Format(CLIENT_LANG(m_pGroup->m_ClientID), pTitle, std::forward<Args>(argsfmt) ...);
 		m_pGroup->m_Flags = Flags;
@@ -186,15 +186,15 @@ public:
 		dbg_assert(m_pGroup != nullptr, "For initilize depth, first needed initialize vote wrapper");
 		m_pGroup->SetNumeralDepthStyles(std::move(vNumeralFlags));
 	}
-	CVoteWrapper& MarkList() noexcept {
+	VoteWrapper& MarkList() noexcept {
 		m_pGroup->m_NextMarkedListItem = true;
 		return *this;
 	}
-	CVoteWrapper& BeginDepth() noexcept {
+	VoteWrapper& BeginDepth() noexcept {
 		m_pGroup->m_CurrentDepth++;
 		return *this;
 	}
-	CVoteWrapper& EndDepth() noexcept {
+	VoteWrapper& EndDepth() noexcept {
 		m_pGroup->m_CurrentDepth--;
 		return *this;
 	}
@@ -202,30 +202,31 @@ public:
 	/* ====================================================
 	 *  Tools
 	 * ==================================================== */
-	CVoteWrapper& AddIfLine(bool Check) noexcept
+	VoteWrapper& AddIfLine(bool Check) noexcept
 	{
 		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddLineImpl();
 		return *this;
 	}
-	CVoteWrapper& AddLine(){
+	VoteWrapper& AddLine(){
 		return AddIfLine(true);
 	}
-	CVoteWrapper& AddIfEmptyline(bool Check) noexcept
+	VoteWrapper& AddIfEmptyline(bool Check) noexcept
 	{
 		if(CheckerAddVoteImpl(Check))
 			m_pGroup->AddEmptylineImpl();
 		return *this;
 	}
-	CVoteWrapper& AddEmptyline(){
+	VoteWrapper& AddEmptyline(){
 		return AddIfEmptyline(true);
 	}
-	CVoteWrapper& AddItemValue(int ItemID) noexcept
+	VoteWrapper& AddItemValue(int ItemID) noexcept
 	{
 		m_pGroup->AddItemValueImpl(ItemID);
 		return *this;
 	}
 
+	bool NextPos() const { return m_pGroup->NextPos(); }
 	bool IsEmpty() const { return m_pGroup->IsEmpty(); }
 	bool IsTittleSet() const { return m_pGroup->IsTitleSet(); }
 
@@ -233,7 +234,7 @@ public:
 	 *  AddIf (text)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddIf(bool Check, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddIf(bool Check, const char* pText, Args&& ... argsfmt)
 	{
 		if(CheckerAddVoteImpl(Check))
 		{
@@ -247,7 +248,7 @@ public:
 	 *  Add (text)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& Add(const char* pText, Args&& ... argsfmt)
+	VoteWrapper& Add(const char* pText, Args&& ... argsfmt)
 	{
 		return AddIf(true, pText, std::forward<Args>(argsfmt) ...);
 	}
@@ -256,7 +257,7 @@ public:
 	 *  AddIfMenu (menuID)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddIfMenu(bool Check, int MenuID, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddIfMenu(bool Check, int MenuID, const char* pText, Args&& ... argsfmt)
 	{
 		if(CheckerAddVoteImpl(Check))
 		{
@@ -270,7 +271,7 @@ public:
 	 *  AddMenu (menuID)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddMenu(int MenuID, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddMenu(int MenuID, const char* pText, Args&& ... argsfmt)
 	{
 		return AddIfMenu(true, MenuID, pText, std::forward<Args>(argsfmt) ...);
 	}
@@ -279,7 +280,7 @@ public:
 	 *  AddIfMenu (menuID, groupInteractID)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddIfMenu(bool Check, int MenuID, int GroupInteractID, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddIfMenu(bool Check, int MenuID, int GroupInteractID, const char* pText, Args&& ... argsfmt)
 	{
 		if(CheckerAddVoteImpl(Check))
 		{
@@ -293,7 +294,7 @@ public:
 	 *  AddMenu (menuID, groupInteractID)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddMenu(int MenuID, int GroupInteractID, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddMenu(int MenuID, int GroupInteractID, const char* pText, Args&& ... argsfmt)
 	{
 		return AddIfMenu(true, MenuID, GroupInteractID, pText, std::forward<Args>(argsfmt) ...);
 	}
@@ -302,7 +303,7 @@ public:
 	 *  AddIfOption (Cmd)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddIfOption(bool Check, const char* pCmd, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddIfOption(bool Check, const char* pCmd, const char* pText, Args&& ... argsfmt)
 	{
 		if(CheckerAddVoteImpl(Check))
 		{
@@ -316,7 +317,7 @@ public:
 	 *  AddOption (Cmd)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddOption(const char* pCmd, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddOption(const char* pCmd, const char* pText, Args&& ... argsfmt)
 	{
 		return AddIfOption(true, pCmd, pText, std::forward<Args>(argsfmt) ...);
 	}
@@ -326,7 +327,7 @@ public:
 	 *  AddIfOption (Cmd, Setting1)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddIfOption(bool Check, const char* pCmd, int Settings1, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddIfOption(bool Check, const char* pCmd, int Settings1, const char* pText, Args&& ... argsfmt)
 	{
 		if(CheckerAddVoteImpl(Check))
 		{
@@ -340,7 +341,7 @@ public:
 	 *  AddOption (Cmd, Setting1)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddOption(const char* pCmd, int Settings1, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddOption(const char* pCmd, int Settings1, const char* pText, Args&& ... argsfmt)
 	{
 		return AddIfOption(true, pCmd, Settings1, pText, std::forward<Args>(argsfmt) ...);
 	}
@@ -349,7 +350,7 @@ public:
 	 *  AddIfOption (Cmd, Setting1, Setting2)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddIfOption(bool Check, const char* pCmd, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddIfOption(bool Check, const char* pCmd, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt)
 	{
 		if(CheckerAddVoteImpl(Check))
 		{
@@ -363,7 +364,7 @@ public:
 	 *  AddOption (Cmd, Setting1, Setting2)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddOption(const char* pCmd, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddOption(const char* pCmd, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt)
 	{
 		return AddIfOption(true, pCmd, Settings1, Settings2, pText, std::forward<Args>(argsfmt) ...);
 	}
@@ -372,7 +373,7 @@ public:
 	 *  AddOptionCallback (Callback)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, const char* pText, Args&& ... argsfmt)
 	{
 		const std::string endText = Instance::Server()->Localization()->Format(CLIENT_LANG(m_pGroup->m_ClientID), pText, std::forward<Args>(argsfmt) ...);
 		m_pGroup->AddVoteImpl("CALLBACK_IMPL", NOPE, NOPE, endText.c_str());
@@ -384,7 +385,7 @@ public:
 	 *  AddOptionCallback (Callback, Setting1)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Settings1, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Settings1, const char* pText, Args&& ... argsfmt)
 	{
 		const std::string endText = Instance::Server()->Localization()->Format(CLIENT_LANG(m_pGroup->m_ClientID), pText, std::forward<Args>(argsfmt) ...);
 		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Settings1, NOPE, endText.c_str());
@@ -396,7 +397,7 @@ public:
 	 *  AddOptionCallback (Callback, Setting1, Setting2)
 	 * ==================================================== */
 	template<typename ... Args>
-	CVoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt)
+	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Settings1, int Settings2, const char* pText, Args&& ... argsfmt)
 	{
 		const std::string endText = Instance::Server()->Localization()->Format(CLIENT_LANG(m_pGroup->m_ClientID), pText, std::forward<Args>(argsfmt) ...);
 		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Settings1, Settings2, endText.c_str());
@@ -448,7 +449,7 @@ private:
 class CVotePlayerData
 {
 	friend class CVoteGroup;
-	friend class CVoteWrapper;
+	friend class VoteWrapper;
 
 	struct VoteGroupHidden
 	{

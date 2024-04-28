@@ -5,6 +5,8 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
+#include <game/server/core/components/mails/mail_wrapper.h>
+
 CGS* CGuildData::GS() const { return (CGS*)Instance::GameServerPlayer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : MAIN_WORLD_ID); }
 
 CGuildData::~CGuildData()
@@ -163,7 +165,12 @@ bool CGuildData::SellHouse()
 	{
 		// Send an inbox message to the guild leader
 		const int ReturnedGold = m_pHouse->GetPrice();
-		GS()->SendInbox("System", m_LeaderUID, "Your guild house sold.", "We returned some gold from your guild.", itGold, ReturnedGold);
+
+		// Send mail
+		MailWrapper Mail("System", m_LeaderUID, "Guild house is sold.");
+		Mail.AddDescLine("We returned some gold from your guild.");
+		Mail.AttachItem(CItem(itGold, ReturnedGold));
+		Mail.Send();
 
 		// Add a history entry and send a chat message for losing a guild house
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));

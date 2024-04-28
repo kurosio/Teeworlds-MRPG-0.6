@@ -89,7 +89,7 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		}
 
 		// add backpage
-		CVoteWrapper::AddBackpage(pPlayer->GetCID());
+		VoteWrapper::AddBackpage(pPlayer->GetCID());
 		return true;
 	}
 
@@ -210,14 +210,14 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	// Check if the pWarehouse object is null
 	if(!pWarehouse)
 	{
-		CVoteWrapper(ClientID).Add("Warehouse don't work");
+		VoteWrapper(ClientID).Add("Warehouse don't work");
 		return;
 	}
 
 	CItemDescription* pCurrency = pWarehouse->GetCurrency();
 
 	// show base shop functions
-	CVoteWrapper VStorage(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Warehouse :: {}", pWarehouse->GetName());
+	VoteWrapper VStorage(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Warehouse :: {}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
 		// storage functional
@@ -251,7 +251,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	 */
 	if(pWarehouse->IsHasFlag(WF_SELL))
 	{
-		CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
+		VoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
 		for(const auto& Trade : pWarehouse->GetTradingList())
 		{
 			const CItem* pItem = Trade.GetItem();
@@ -270,7 +270,7 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 	// Check if the pWarehouse object is null
 	if(!pWarehouse)
 	{
-		CVoteWrapper(ClientID).Add("Warehouse don't work");
+		VoteWrapper(ClientID).Add("Warehouse don't work");
 		return;
 	}
 
@@ -280,11 +280,11 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 		return;
 
 	// add empty line
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// show trading list
 	CItemDescription* pCurrency = pWarehouse->GetCurrency();
-	CVoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN, TypeName);
+	VoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN, TypeName);
 	for(const auto& Trade : pWarehouse->GetTradingList())
 	{
 		const CItem* pItem = Trade.GetItem();
@@ -310,7 +310,7 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 	}
 
 	// add line
-	CVoteWrapper::AddLine(ClientID);
+	VoteWrapper::AddLine(ClientID);
 }
 
 void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, const TradeIdentifier& TradeID) const
@@ -320,7 +320,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	// Check if the pWarehouse object is null
 	if(!pWarehouse || !pWarehouse->GetTrade(TradeID))
 	{
-		CVoteWrapper(ClientID).Add("Warehouse don't work");
+		VoteWrapper(ClientID).Add("Warehouse don't work");
 		return;
 	}
 
@@ -330,7 +330,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	const bool HasItem = pPlayer->GetItem(pItem->GetID())->HasItem();
 
 	// Show item information
-	CVoteWrapper VItem(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
+	VoteWrapper VItem(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
 	if(pItem->Info()->IsEnchantable())
 	{
 		VItem.Add("{} {}", (HasItem ? "✔" : "×"), pItem->Info()->GetName());
@@ -347,10 +347,10 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 		pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
 		VItem.Add("* {}", aAttributes);
 	}
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// show information about the cost of the item
-	CVoteWrapper VRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required");
+	VoteWrapper VRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required");
 	VRequired.ReinitNumeralDepthStyles(
 		{
 			{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }
@@ -367,20 +367,20 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(pCurrency->GetID());
 	bool MarkHas = pPlayerItem->GetValue() >= pTrade->GetPrice();
 	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pCurrency->GetName(), pTrade->GetPrice(), pPlayerItem->GetValue());
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// show status and button buy
 	if(pItem->Info()->IsEnchantable() && HasItem)
-		CVoteWrapper(ClientID).Add("- You can't buy more than one item");
+		VoteWrapper(ClientID).Add("- You can't buy more than one item");
 	else if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
-		CVoteWrapper(ClientID).Add("- Not enough products to buy");
+		VoteWrapper(ClientID).Add("- Not enough products to buy");
 	else if(pPlayer->GetItem(itGold)->GetValue() < pTrade->GetPrice())
-		CVoteWrapper(ClientID).Add("- Not enough gold to buy");
+		VoteWrapper(ClientID).Add("- Not enough gold to buy");
 	else
-		CVoteWrapper(ClientID).AddOption("WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Buy");
+		VoteWrapper(ClientID).AddOption("WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Buy");
 
 	// add backpage
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 }
 
 bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID) const

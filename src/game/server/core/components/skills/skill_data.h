@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_SKILL_DATA_INFO_H
-#define GAME_SERVER_COMPONENT_SKILL_DATA_INFO_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_SKILLS_SKILL_DATA_H
+#define GAME_SERVER_CORE_COMPONENTS_SKILLS_SKILL_DATA_H
 
 enum SkillType
 {
@@ -11,28 +11,30 @@ enum SkillType
 	SKILL_TYPE_TANK,
 	NUM_SKILL_TYPES,
 };
-
 using SkillIdentifier = int;
 
+// skill description
 class CSkillDescription : public MultiworldIdentifiableStaticData< std::map < SkillIdentifier, CSkillDescription > >
 {
 	friend class CSkillManager;
 
-	SkillIdentifier m_ID{};
-	char m_aName[32]{};
-	char m_aDescription[64]{};
-	char m_aBoostName[64]{};
-	int m_BoostDefault{};
-	SkillType m_Type{};
-	int m_PercentageCost{};
-	int m_PriceSP{};
-	int m_MaxLevel{};
-	bool m_Passive{};
+	SkillIdentifier m_ID {};
+	char m_aName[32] {};
+	char m_aDescription[64] {};
+	char m_aBoostName[64] {};
+	int m_BoostDefault {};
+	SkillType m_Type {};
+	int m_PercentageCost {};
+	int m_PriceSP {};
+	int m_MaxLevel {};
+	bool m_Passive {};
 
 public:
+	// constructors
 	CSkillDescription() = default;
 	CSkillDescription(SkillIdentifier ID) : m_ID(ID) {}
 
+	// intialize skill description
 	void Init(const std::string& Name, const std::string& Description, const std::string& BonusName, int BonusDefault, SkillType Type, int PercentageCost, int PriceSP, int MaxLevel, bool Passive)
 	{
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
@@ -47,8 +49,8 @@ public:
 		CSkillDescription::m_pData[m_ID] = *this;
 	}
 
+	// getters and setters
 	SkillIdentifier GetID() const { return m_ID; }
-
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	const char* GetBoostName() const { return m_aBoostName; }
@@ -58,8 +60,56 @@ public:
 	int GetPriceSP() const { return m_PriceSP; }
 	int GetMaxLevel() const { return m_MaxLevel; }
 	bool IsPassive() const { return m_Passive; }
-
 	static const char* GetEmoticonName(int EmoticionID);
+};
+
+// skill data
+class CSkill : public MultiworldIdentifiableStaticData< std::map< int, std::deque < CSkill* > > >
+{
+	friend class CSkillManager;
+
+	class CGS* GS() const;
+	class CPlayer* GetPlayer() const;
+
+	SkillIdentifier m_ID{};
+	int m_ClientID{};
+	int m_Level{};
+	int m_SelectedEmoticion{};
+
+public:
+	// constructors
+	CSkill() = default;
+
+	// create a new instance of CSkill
+	static CSkill* CreateElement(int ClientID, const SkillIdentifier& ID) noexcept
+	{
+		auto pData = new CSkill;
+		pData->m_ID = ID;
+		pData->m_ClientID = ClientID;
+		return m_pData[ClientID].emplace_back(pData);
+	}
+
+	// initialize skill
+	void Init(int Level, int SelectedEmoticion)
+	{
+		m_Level = Level;
+		m_SelectedEmoticion = SelectedEmoticion;
+	}
+
+	// getters setters
+	void SetID(SkillIdentifier ID) { m_ID = ID; }
+	SkillIdentifier GetID() const { return m_ID; }
+	bool IsLearned() const { return m_Level > 0; }
+	int GetLevel() const { return m_Level; }
+	int GetBonus() const { return m_Level * Info()->GetBoostDefault(); }
+	const char* GetSelectedEmoticonName() const { return Info()->GetEmoticonName(m_SelectedEmoticion); }
+	std::string GetStringLevelStatus() const;
+	CSkillDescription* Info() const { return &CSkillDescription::Data()[m_ID]; }
+
+	// functions
+	void SelectNextControlEmote();
+	bool Upgrade();
+	bool Use();
 };
 
 #endif

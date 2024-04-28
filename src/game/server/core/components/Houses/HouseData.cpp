@@ -7,6 +7,8 @@
 #include <game/server/core/entities/items/jobitems.h>
 #include <game/server/core/entities/tools/draw_board.h>
 
+#include <game/server/core/components/mails/mail_wrapper.h>
+
 CGS* CHouseData::GS() const { return static_cast<CGS*>(Server()->GameServer(m_WorldID)); }
 CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerByUserID(m_AccountID); }
 
@@ -168,7 +170,12 @@ void CHouseData::Sell()
 
 	// Returned fully value gold
 	const int Price = m_Price + m_pBank->Get();
-	GS()->SendInbox("System", m_AccountID, "House is sold", "Your house is sold !", itGold, Price, 0);
+
+	// Send mail
+	MailWrapper Mail("System", m_AccountID, "House is sold.");
+	Mail.AddDescLine("Your house is sold!");
+	Mail.AttachItem(CItem(itGold, Price));
+	Mail.Send();
 
 	// Update the house data
 	m_pDoorsController->CloseAll();

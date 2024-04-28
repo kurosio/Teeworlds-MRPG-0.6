@@ -1,6 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "healer-health.h"
+#include "healer_health.h"
 
 #include "hearth.h"
 #include <game/server/gamecontext.h>
