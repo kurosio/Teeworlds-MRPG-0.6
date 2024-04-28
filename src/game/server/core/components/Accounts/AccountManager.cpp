@@ -6,7 +6,7 @@
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/components/Dungeons/DungeonManager.h>
-#include <game/server/core/components/Mails/MailBoxManager.h>
+#include <game/server/core/components/mails/mailbox_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
 
 #include <base/hash_ctxt.h>
@@ -179,7 +179,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	{
 		// Get the number of unread letters in the player's inbox
 		// Send a chat message to the player informing them about their unread letters
-		if(const int Letters = Core()->MailboxManager()->GetLettersCount(pPlayer->Account()->GetID()); Letters > 0)
+		if(const int Letters = Core()->MailboxManager()->GetMailCount(pPlayer->Account()->GetID()); Letters > 0)
 			GS()->Chat(ClientID, "You have {} unread letters!", Letters);
 
 		// Update the player's votes and show the main menu
@@ -294,23 +294,23 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// information
-		CVoteWrapper VSettingsInfo(ClientID, VWF_SEPARATE_CLOSED, "Settings Information");
+		VoteWrapper VSettingsInfo(ClientID, VWF_SEPARATE_CLOSED, "Settings Information");
 		VSettingsInfo.Add("Some of the settings become valid after death.");
 		VSettingsInfo.Add("Here you can change the settings of your account.");
-		CVoteWrapper::AddLine(ClientID);
+		VoteWrapper::AddLine(ClientID);
 
 		// game settings
-		CVoteWrapper VMainSettings(ClientID, VWF_SEPARATE_OPEN, "\u2699 Main settings");
+		VoteWrapper VMainSettings(ClientID, VWF_SEPARATE_OPEN, "\u2699 Main settings");
 		VMainSettings.AddMenu(MENU_SETTINGS_LANGUAGE_SELECT, "Settings language");
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
 			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
 				VMainSettings.AddOption("ISETTINGS", ItemID, "[{}] {}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
 		}
-		CVoteWrapper::AddLine(ClientID);
+		VoteWrapper::AddLine(ClientID);
 
 		// equipment modules
-		CVoteWrapper VModulesSettings(ClientID, VWF_SEPARATE_OPEN, "\u2694 Modules settings");
+		VoteWrapper VModulesSettings(ClientID, VWF_SEPARATE_OPEN, "\u2694 Modules settings");
 		for(auto& iter : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &iter.second;
@@ -329,7 +329,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		}
 		VModulesSettings.AddIf(VModulesSettings.IsEmpty(), "The list of equipment modules is empty.");
 
-		CVoteWrapper::AddBackpage(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -339,19 +339,19 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// language information
-		CVoteWrapper VLanguageInfo(ClientID, VWF_SEPARATE_CLOSED, "Languages Information");
+		VoteWrapper VLanguageInfo(ClientID, VWF_SEPARATE_CLOSED, "Languages Information");
 		VLanguageInfo.Add("Here you can choose the language.");
 		VLanguageInfo.Add("Note: translation is not complete.");
-		CVoteWrapper::AddLine(ClientID);
+		VoteWrapper::AddLine(ClientID);
 
 		// active language
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
-		CVoteWrapper VLanguage(ClientID, VWF_STYLE_STRICT_BOLD);
+		VoteWrapper VLanguage(ClientID, VWF_STYLE_STRICT_BOLD);
 		VLanguage.Add("Active language: [{}]", pPlayerLanguage);
 		VLanguage.AddLine();
 
 		// languages
-		CVoteWrapper VLanguages(ClientID, VWF_SEPARATE_OPEN, "Available languages");
+		VoteWrapper VLanguages(ClientID, VWF_SEPARATE_OPEN, "Available languages");
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{
 			// Do not show the language that is already selected by the player in the selection lists
@@ -363,7 +363,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{}\"", pLanguageName);
 		}
 
-		CVoteWrapper::AddBackpage(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 	return false;

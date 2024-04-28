@@ -83,7 +83,7 @@ bool CAccountPlantManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
 			continue;
 
 		const vec2 Pos = Plant.m_Position / 32.0f;
-		CVoteWrapper VPlant(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Plant {}", GS()->GetItemInfo(Plant.m_ItemID)->GetName());
+		VoteWrapper VPlant(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Plant {}", GS()->GetItemInfo(Plant.m_ItemID)->GetName());
 		VPlant.MarkList().Add("Location:");
 		{
 			VPlant.BeginDepth();

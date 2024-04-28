@@ -359,9 +359,6 @@ public:
 	void CreateDropItem(vec2 Pos, int ClientID, CItem DropItem, vec2 Force = vec2(0.0f, 0.0f));
 	void CreateRandomDropItem(vec2 Pos, int ClientID, float Chance, CItem DropItem, vec2 Force = vec2(0.0f, 0.0f));
 	bool TakeItemCharacter(int ClientID);
-	void SendInbox(const char* pFrom, CPlayer *pPlayer, const char* Name, const char* Desc, ItemIdentifier ItemID = -1, int Value = -1, int Enchant = -1);
-	void SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, ItemIdentifier ItemID = -1, int Value = -1, int Enchant = -1);
-
 	void CreateLaserOrbite(class CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1);
 	void CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1);
 	class CLaserOrbite* CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1);

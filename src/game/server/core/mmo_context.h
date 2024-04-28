@@ -216,10 +216,13 @@ enum MenuList
 	// Main menu
 	MENU_EQUIPMENT,
 	MENU_INVENTORY,
-	MENU_INBOX,
 	MENU_UPGRADES,
 	MENU_SETTINGS,
 	MENU_SETTINGS_LANGUAGE_SELECT,
+
+	// Mailbox
+	MENU_MAILBOX,
+	MENU_MAILBOX_SELECTED,
 
 	// Guild-related
 	MENU_GUILD,
@@ -353,7 +356,7 @@ enum
 	MAX_DECORATIONS_PER_HOUSE = 20,				// maximum decorations for houses
 	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
-	MAILLETTER_MAX_CAPACITY = 20,			// maximum number of emails what is displayed
+	MAILS_MAX_CAPACITY = 10,			// maximum number of emails what is displayed
 	MAX_ATTRIBUTES_FOR_ITEM = 2,			// maximum number of stats per item
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
 	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game. 

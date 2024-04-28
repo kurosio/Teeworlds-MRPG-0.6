@@ -8,6 +8,7 @@
 #include <game/server/core/components/Inventory/InventoryManager.h>
 #include "QuestManager.h"
 
+#include <game/server/core/components/mails/mail_wrapper.h>
 #include <game/server/core/entities/items/drop_quest_items.h>
 #include <game/server/core/entities/tools/arrow_navigator.h>
 #include <game/server/core/entities/tools/laser_orbite.h>
@@ -226,7 +227,11 @@ void CQuestStep::PostFinish()
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRewardItem);
 			if(pPlayerItem->Info()->IsEnchantable() && pPlayerItem->GetValue() >= 1)
 			{
-				GS()->SendInbox("System", pPlayer, "No place for item", "You already have this item, but we can't put it in inventory", pRewardItem.GetID(), 1);
+				MailWrapper Mail("System", pPlayer->Account()->GetID(), "No place for item");
+				Mail.AddDescLine("You already have this item.");
+				Mail.AddDescLine("We can't put it in inventory");
+				Mail.AttachItem(pRewardItem);
+				Mail.Send();
 				continue;
 			}
 

@@ -54,7 +54,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 
 CPlayer::~CPlayer()
 {
-	CVoteWrapper::Data()[m_ClientID].clear();
+	VoteWrapper::Data()[m_ClientID].clear();
 	delete m_pLastInput;
 	delete m_pCharacter;
 	m_pCharacter = nullptr;

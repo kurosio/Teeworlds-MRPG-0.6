@@ -56,7 +56,7 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	m_TitleIsSet = false;
 	m_CurrentDepth = 0;
 	m_GroupSize = 0;
-	m_HiddenID = (int)CVoteWrapper::Data()[ClientID].size();
+	m_HiddenID = (int)VoteWrapper::Data()[ClientID].size();
 	m_pPlayer = m_pGS->GetPlayer(ClientID);
 	dbg_assert(m_pPlayer != nullptr, "player is null");
 
@@ -264,7 +264,7 @@ bool CVoteGroup::IsHidden() const
 }
 
 // This function is responsible for rebuilding the votes for a specific client.
-void CVoteWrapper::RebuildVotes(int ClientID)
+void VoteWrapper::RebuildVotes(int ClientID)
 {
 	CGS* pGS = (CGS*)Instance::GameServerPlayer(ClientID);
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
@@ -276,14 +276,14 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 	if(m_pData[ClientID].empty())
 	{
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
-		CVoteWrapper VError(ClientID, VWF_STYLE_SIMPLE, "Error");
+		VoteWrapper VError(ClientID, VWF_STYLE_SIMPLE, "Error");
 		VError.Add("The voting list is empty")
 			.BeginDepth()
 				.Add("Probably a server error")
 			.EndDepth()
 		.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
 		pVotesData->SetLastMenuID(MENU_MAIN);
-		CVoteWrapper::AddBackpage(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
 	}
 
 	// Prepare group for hidden vote
@@ -373,10 +373,10 @@ void CVoteWrapper::RebuildVotes(int ClientID)
 }
 
 // This function returns the vote option for a specific action for a given client
-CVoteOption* CVoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActionName)
+CVoteOption* VoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActionName)
 {
 	// Get a reference to the data associated with the given ClientID
-	auto& vData = CVoteWrapper::Data()[ClientID];
+	auto& vData = VoteWrapper::Data()[ClientID];
 
 	// Find the vote option with the matching action name
 	for(auto& iterGroup : vData)
@@ -456,7 +456,7 @@ void CVotePlayerData::ApplyVoteUpdaterData()
 		ClearVotes();
 		int ClientID = m_pPlayer->GetCID();
 		m_pGS->Core()->OnPlayerHandleMainMenu(ClientID, m_CurrentMenuID);
-		CVoteWrapper::RebuildVotes(ClientID);
+		VoteWrapper::RebuildVotes(ClientID);
 		m_VoteUpdaterStatus.store(STATE_UPDATER::WAITING);
 	}
 }
@@ -482,7 +482,7 @@ void CVotePlayerData::UpdateVotesIf(int MenuID)
 void CVotePlayerData::ClearVotes() const
 {
 	int ClientID = m_pPlayer->GetCID();
-	CVoteWrapper::Data()[ClientID].clear();
+	VoteWrapper::Data()[ClientID].clear();
 	Formatter::gs_GroupsNumeral[ClientID] = 0;
 
 	// send vote options

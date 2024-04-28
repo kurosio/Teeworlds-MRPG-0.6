@@ -395,3 +395,38 @@ CItemsContainer CItem::FromArrayJSON(const nlohmann::json& json, const char* pFi
 
 	return Container;
 }
+
+void CItem::ToJSON(CItem& Item, nlohmann::json& json)
+{
+	try
+	{
+		json["id"] = Item.GetID();
+		json["value"] = Item.GetValue();
+		json["enchant"] = Item.GetEnchant();
+		json["durability"] = Item.GetDurability();
+	}
+	catch(nlohmann::json::exception& s)
+	{
+		dbg_msg("CItem(ToJSON)", "%s (json %s)", json.dump().c_str(), s.what());
+	}
+}
+
+void CItem::ToArrayJSON(CItemsContainer& vItems, nlohmann::json& json, const char* pField)
+{
+	try
+	{
+		for(auto& p : vItems)
+		{
+			nlohmann::json jsItem {};
+			jsItem["id"] = p.GetID();
+			jsItem["value"] = p.GetValue();
+			jsItem["enchant"] = p.GetEnchant();
+			jsItem["durability"] = p.GetDurability();
+			json[pField].push_back(jsItem);
+		}
+	}
+	catch (nlohmann::json::exception& s)
+	{
+		dbg_msg("CItem(ToArrayJson)", "(json %s)", s.what());
+	}
+}

@@ -51,7 +51,7 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		const int ClientID = pPlayer->GetCID();
 
 		// Information
-		CVoteWrapper VInfo(ClientID, VWF_STYLE_STRICT, "Skill master information");
+		VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT, "Skill master information");
 		VInfo.AddLine();
 		VInfo.Add("Here you can learn passive and active skills");
 		VInfo.Add("You can bind active skill any button using the console");
@@ -91,7 +91,7 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			ShowSkill(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
 
 		// Add backpage
-		CVoteWrapper::AddBackpage(pPlayer->GetCID());
+		VoteWrapper::AddBackpage(pPlayer->GetCID());
 		return true;
 	}
 
@@ -103,10 +103,10 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillTyp
 	const int ClientID = pPlayer->GetCID();
 
 	// add empty line
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// iterate skill's for list
-	CVoteWrapper VSkills(ClientID, VWF_SEPARATE_OPEN, pTitle);
+	VoteWrapper VSkills(ClientID, VWF_SEPARATE_OPEN, pTitle);
 	for(const auto& [ID, Skill] : CSkillDescription::Data())
 	{
 		if(Skill.m_Type == Type)
@@ -117,7 +117,7 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillTyp
 	}
 
 	// add line
-	CVoteWrapper::AddLine(ClientID);
+	VoteWrapper::AddLine(ClientID);
 }
 
 void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
@@ -130,15 +130,15 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	const bool IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
 
 	// skill want learn information
-	CVoteWrapper VSkillWant(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want learn?");
+	VoteWrapper VSkillWant(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want learn?");
 	VSkillWant.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
 	VSkillWant.AddIf(IsLearned, "{} {} (each level +{})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
 	VSkillWant.AddIf(!IsPassive, "Mana required {}%", pInfo->GetPercentageCost());
 	VSkillWant.AddLine();
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// required sp for learn
-	CVoteWrapper VRequired(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Required");
+	VoteWrapper VRequired(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Required");
 	VRequired.ReinitNumeralDepthStyles(
 		{
 			{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }
@@ -148,28 +148,28 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	bool MarkHas = pPlayerItem->GetValue() >= pInfo->GetPriceSP();
 	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pPlayerItem->Info()->GetName(), pInfo->GetPriceSP(), pPlayerItem->GetValue());
 	VRequired.AddLine();
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// settings and information about usage
 	if(!IsPassive && IsLearned)
 	{
-		CVoteWrapper VUsage(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Usage");
+		VoteWrapper VUsage(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Usage");
 		VUsage.Add("F1 Bind: (bind 'key' say \"/useskill {}\")", ID);
 		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICION", ID, "Used on {}", pSkill->GetSelectedEmoticonName());
 		VUsage.AddLine();
-		CVoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper::AddEmptyline(ClientID);
 	}
 
 	// show status and button buy
 	if(IsMaximumLevel)
-		CVoteWrapper(ClientID).Add("- Already been improved to maximum level");
+		VoteWrapper(ClientID).Add("- Already been improved to maximum level");
 	else if(!MarkHas)
-		CVoteWrapper(ClientID).Add("- Not enough skill point's to learn");
+		VoteWrapper(ClientID).Add("- Not enough skill point's to learn");
 	else
-		CVoteWrapper(ClientID).AddOption("SKILL_LEARN", ID, "\u2726 Learn ({} of {} level)", pSkill->GetLevel(), pInfo->GetMaxLevel());
+		VoteWrapper(ClientID).AddOption("SKILL_LEARN", ID, "\u2726 Learn ({} of {} level)", pSkill->GetLevel(), pInfo->GetMaxLevel());
 
 	// add emptyline
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 }
 
 bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)

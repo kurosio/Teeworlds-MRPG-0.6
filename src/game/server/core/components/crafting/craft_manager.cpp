@@ -140,7 +140,7 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_CRAFT_LIST)
 	{
 		// show information
-		CVoteWrapper VCraftInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
+		VoteWrapper VCraftInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
 		VCraftInfo.Add("If you will not have enough items for crafting");
 		VCraftInfo.Add("You will write those and the amount that is still required");
 		VCraftInfo.AddItemValue(itGold);
@@ -178,7 +178,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		return;
 
 	// detail information
-	CVoteWrapper VCraftItem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information");
+	VoteWrapper VCraftItem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information");
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 	VCraftItem.Add("Crafting: {}x{}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
 	VCraftItem.Add("{}", pCraftItemInfo->GetDescription());
@@ -188,10 +188,10 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		pCraftItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
 		VCraftItem.Add(aAttributes);
 	}
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// add craft reciepts
-	CVoteWrapper VCraftRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required items", pCraftItemInfo->GetName());
+	VoteWrapper VCraftRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required items", pCraftItemInfo->GetName());
 	{
 		VCraftRequired.BeginDepth();
 
@@ -214,14 +214,14 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		}
 		VCraftRequired.EndDepth();
 	}
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// add craft button
-	CVoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({} gold)", pCraft->GetPrice(pPlayer));
+	VoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({} gold)", pCraft->GetPrice(pPlayer));
 
 	// add backpage
-	CVoteWrapper::AddEmptyline(ClientID);
-	CVoteWrapper::AddBackpage(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddBackpage(ClientID);
 }
 
 void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
@@ -234,10 +234,10 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 		return;
 
 	// add empty line
-	CVoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// craft tab list
-	CVoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, TypeName);
+	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, TypeName);
 	for(const auto& pCraft : CCraftItem::Data())
 	{
 		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
@@ -264,7 +264,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 	}
 
 	// add line
-	CVoteWrapper::AddLine(ClientID);
+	VoteWrapper::AddLine(ClientID);
 }
 
 CCraftItem* CCraftManager::GetCraftByID(CraftIdentifier ID) const

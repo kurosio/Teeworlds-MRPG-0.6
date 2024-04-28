@@ -88,13 +88,13 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	int ClientID = pPlayer->GetCID();
 
 	// Group information
-	CVoteWrapper VGroupCmd(ClientID, VWF_SEPARATE_CLOSED, "Group commands");
+	VoteWrapper VGroupCmd(ClientID, VWF_SEPARATE_CLOSED, "Group commands");
 	VGroupCmd.Add("- /group Get all sub commands");
 	VGroupCmd.AddLine();
 
 	// Group management
 	GroupData* pGroup = pPlayer->Account()->GetGroup();
-	CVoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_STRICT_BOLD, "\u273D Group Management");
+	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_STRICT_BOLD, "\u273D Group Management");
 	if(!pGroup)
 	{
 		VGroup.AddOption("GROUP_CREATE", "Create a group");
@@ -108,19 +108,19 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	VGroup.AddLine();
 
 	// Group membership list
-	CVoteWrapper(ClientID).Add("\u2735 Members {} of {}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
+	VoteWrapper(ClientID).Add("\u2735 Members {} of {}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
 	for(auto& AID : pGroup->GetAccounts())
 	{
 		std::string PlayerName = Server()->GetAccountNickname(AID);
 		bool HasInteraction = IsOwner && AID != pPlayer->Account()->GetID();
-		CVoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
+		VoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
 		VMember.AddIfOption(HasInteraction, "GROUP_KICK", AID, "Kick {}", PlayerName.c_str());
 		VMember.AddIfOption(HasInteraction, "GROUP_CHANGE_OWNER", AID, "Transfer ownership {}", PlayerName.c_str());
 	}
-	CVoteWrapper::AddLine(ClientID);
+	VoteWrapper::AddLine(ClientID);
 
 	// Group player invites
-	CVoteWrapper VGroupInvites(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE_CLOSED, "\u2605 Players for invitation");
+	VoteWrapper VGroupInvites(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE_CLOSED, "\u2605 Players for invitation");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
@@ -128,7 +128,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 			VGroupInvites.AddOption("GROUP_INVITE", i, "Invite {}", Server()->ClientName(i));
 	}
 
-	CVoteWrapper::AddBackpage(ClientID);
+	VoteWrapper::AddBackpage(ClientID);
 }
 
 bool CGroupManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
@@ -140,7 +140,7 @@ bool CGroupManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		ShowGroupMenu(pPlayer);
-		CVoteWrapper::AddBackpage(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 

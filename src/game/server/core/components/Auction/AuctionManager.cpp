@@ -7,6 +7,8 @@
 
 #include <game/server/core/components/Inventory/InventoryManager.h>
 
+#include <game/server/core/components/mails/mail_wrapper.h>
+
 constexpr auto TW_AUCTION_TABLE = "tw_auction_items";
 
 void CAuctionManager::OnTick()
@@ -54,10 +56,10 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		const ItemIdentifier SlotItemID = pAuctionItem->GetID();
 		const int SlotPrice = pAuctionData->GetPrice();
 
-		CVoteWrapper(ClientID).Add("The reason for write the number for each row");
-		CVoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper(ClientID).Add("The reason for write the number for each row");
+		VoteWrapper::AddEmptyline(ClientID);
 
-		CVoteWrapper VSlot(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {}", pAuctionItem->Info()->GetName());
+		VoteWrapper VSlot(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {}", pAuctionItem->Info()->GetName());
 		VSlot.MarkList().Add("Description:");
 		{
 			VSlot.BeginDepth();
@@ -75,7 +77,7 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			VSlot.EndDepth();
 		}
 
-		CVoteWrapper::AddBackpage(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 	return false;
@@ -212,8 +214,13 @@ bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
 	// if it is a player slot then close the slot
 	if(UserID == pPlayer->Account()->GetID())
 	{
+		CItem AuctionItem(ItemID, Value, Enchant);
+		MailWrapper Mail("Auctionist", pPlayer->Account()->GetID(), "Auction Alert");
+		Mail.AddDescLine("You have bought a item, or canceled your slot");
+		Mail.AttachItem(AuctionItem);
+		Mail.Send();
+
 		GS()->Chat(ClientID, "You closed auction slot!");
-		GS()->SendInbox("Auctionist", pPlayer, "Auction Alert", "You have bought a item, or canceled your slot", ItemID, Value, Enchant);
 		Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
 		return true;
 	}
@@ -230,13 +237,15 @@ bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
 		return false;
 
 	// information & exchange item
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Your [Slot %sx%d] was sold!", pPlayerItem->Info()->GetName(), Value);
-	GS()->SendInbox("Auctionist", UserID, "Auction Sell", aBuf, itGold, Price, 0);
-	Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
+	MailWrapper Mail("Auctionist", UserID, "Auction Sell");
+	Mail.AddDescLine("Your [Slot {}x{}] was sold!", pPlayerItem->Info()->GetName(), Value);
+	Mail.AttachItem(CItem(itGold, Price));
+	Mail.Send();
 
+	// update
 	pPlayerItem->Add(Value, 0, Enchant);
 	GS()->Chat(ClientID, "You buy {}x{}.", pPlayerItem->Info()->GetName(), Value);
+	Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
 	return true;
 }
 
@@ -244,7 +253,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	CVoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Auction Information");
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Auction Information");
 	VInfo.Add("To create a slot, see inventory item interact.");
 	VInfo.AddLine();
 
@@ -260,7 +269,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 		const int UserID = pRes->getInt("UserID");
 		CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
 
-		CVoteWrapper VItem(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE);
+		VoteWrapper VItem(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE);
 		if(pItemInfo->IsEnchantable())
 		{
 			VItem.SetTitle("{}{} {} - {} gold",
@@ -282,6 +291,6 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 
 	if(!Found)
 	{
-		CVoteWrapper(ClientID).Add("Currently there are no products.");
+		VoteWrapper(ClientID).Add("Currently there are no products.");
 	}
 }

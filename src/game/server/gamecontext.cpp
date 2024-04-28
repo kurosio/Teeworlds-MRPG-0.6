@@ -22,7 +22,6 @@
 
 #include "core/components/Accounts/AccountManager.h"
 #include "core/components/Bots/BotManager.h"
-#include "core/components/Mails/MailBoxManager.h"
 #include "core/components/Guilds/GuildManager.h"
 #include "core/components/Quests/QuestManager.h"
 #include "core/components/Skills/SkillManager.h"
@@ -30,6 +29,7 @@
 #include <cstdarg>
 
 #include "core/components/Eidolons/EidolonInfoData.h"
+#include "core/components/mails/mail_wrapper.h"
 #include "core/components/worlds/world_data.h"
 #include "core/utilities/vote_wrapper.h"
 
@@ -778,7 +778,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				// If the player has an active post vote list, post it
 				pPlayer->m_VotesData.ApplyVoteUpdaterData();
 
-				if(CVoteOption* pActionVote = CVoteWrapper::GetOptionVoteByAction(ClientID, pMsg->m_pValue))
+				if(CVoteOption* pActionVote = VoteWrapper::GetOptionVoteByAction(ClientID, pMsg->m_pValue))
 				{
 					// Parsing the vote commands with the provided values
 					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
@@ -1169,7 +1169,7 @@ const char* CGS::NetVersion() const { return GAME_NETVERSION; }
 void CGS::ClearClientData(int ClientID)
 {
 	Core()->ResetClientData(ClientID);
-	CVoteWrapper::Data()[ClientID].clear();
+	VoteWrapper::Data()[ClientID].clear();
 	ms_aEffects[ClientID].clear();
 
 	// clear active snap bots for player
@@ -1212,7 +1212,7 @@ void CGS::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 	const ItemIdentifier ItemID = pResult->GetInteger(1);
 	const int Value = pResult->GetInteger(2);
 	const int Enchant = pResult->GetInteger(3);
-	const int Mail = pResult->GetInteger(4);
+	const int ByMailbox = pResult->GetInteger(4);
 
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
@@ -1220,12 +1220,16 @@ void CGS::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 	CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
 	if(pPlayer && CItemDescription::Data().find(ItemID) != CItemDescription::Data().end())
 	{
-		if(Mail == 0)
+		if(ByMailbox == 0)
 		{
 			pPlayer->GetItem(ItemID)->Add(Value, 0, Enchant);
 			return;
 		}
-		pSelf->SendInbox("Console", pPlayer, "The sender heavens", "Sent from console", ItemID, Value, Enchant);
+
+		MailWrapper Mail("Console", pPlayer->Account()->GetID(), "The sender heavens");
+		Mail.AddDescLine("Sent from console");
+		Mail.AttachItem(CItem(ItemID, Value, Enchant));
+		Mail.Send();
 	}
 }
 
@@ -1435,7 +1439,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	if(!pPlayer)
 		return;
 
-	CVoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, new adventurer!");
+	VoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, new adventurer!");
 	VWelcome.MarkList().Add("Information:");
 	{
 		VWelcome.BeginDepth();
@@ -1595,21 +1599,6 @@ bool CGS::TakeItemCharacter(int ClientID)
 		if(pDrop && pDrop->TakeItem(ClientID)) { return true; }
 	}
 	return false;
-}
-
-// send a message with or without the object using ClientID
-void CGS::SendInbox(const char* pFrom, CPlayer* pPlayer, const char* Name, const char* Desc, ItemIdentifier ItemID, int Value, int Enchant)
-{
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
-
-	SendInbox(pFrom, pPlayer->Account()->GetID(), Name, Desc, ItemID, Value, Enchant);
-}
-
-// send a message with or without the object using AccountID
-void CGS::SendInbox(const char* pFrom, int AccountID, const char* Name, const char* Desc, ItemIdentifier ItemID, int Value, int Enchant)
-{
-	Core()->MailboxManager()->SendInbox(pFrom, AccountID, Name, Desc, ItemID, Value, Enchant);
 }
 
 void CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)

@@ -5,6 +5,8 @@
 
 #include <game/server/gamecontext.h>
 
+#include "game/server/core/components/mails/mail_wrapper.h"
+
 CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, CPlayer* pPlayer, int PlayerAccountID, int LifeTime, const std::vector<CRandomItem>& List, CPlayerItem* pPlayerUsesItem, int UseValue)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_RANDOM_BOX, pPlayer->m_ViewPos)
 {
@@ -53,6 +55,10 @@ void CEntityRandomBoxRandomizer::Tick()
 			// function lambda for check allowed get or send it from inbox
 			auto GiveRandomItem = [&](const CRandomItem& RandItem)
 			{
+				// Prepare mail
+				MailWrapper Mail("System", m_AccountID, "Random box");
+				Mail.AddDescLine("Item was not received by you personally.");
+
 				// Check if the item is enchantable
 				if(GS()->GetItemInfo(RandItem.m_ItemID)->IsEnchantable())
 				{
@@ -63,7 +69,8 @@ void CEntityRandomBoxRandomizer::Tick()
 						if(!m_pPlayer || m_pPlayer->GetItem(RandItem.m_ItemID)->HasItem())
 						{
 							// Send a message to the player's inbox stating the item was not received personally
-							GS()->SendInbox("System", m_AccountID, "Random box", "Item was not received by you personally.", RandItem.m_ItemID, 1);
+							Mail.AttachItem(CItem(RandItem.m_ItemID, 1));
+							Mail.Send();
 							continue;
 						}
 
@@ -78,7 +85,8 @@ void CEntityRandomBoxRandomizer::Tick()
 					if(!m_pPlayer)
 					{
 						// Send a message to the player's inbox stating the item was not received personally
-						GS()->SendInbox("System", m_AccountID, "Random box", "Item was not received by you personally.", RandItem.m_ItemID, RandItem.m_Value);
+						Mail.AttachItem(CItem(RandItem.m_ItemID, RandItem.m_Value));
+						Mail.Send();
 						return;
 					}
 
