@@ -93,6 +93,7 @@ void CAttackTeleport::Tick()
 		{
 			// information about second part
 			GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, Server()->TickSpeed(), "Press fire for attacks by skill: {} attacks!", m_SecondPartCombo);
+			pOwnerChar->m_SafeAreaForTick = true;
 			m_SecondPartTimeleft--;
 
 			// is clicked fire
@@ -105,34 +106,55 @@ void CAttackTeleport::Tick()
 				// try get next player
 				while(!pNextPlayer && !pNextChar && !m_vMovingMap.empty())
 				{
-					pNextPlayer = m_vMovingMap.back();
-					if(pNextPlayer)
-						pNextChar = pNextPlayer->GetCharacter();
-					m_vMovingMap.pop_back();
+					auto randIt = m_vMovingMap.begin();
+					std::advance(randIt, rand() % m_vMovingMap.size());
+					pNextPlayer = (*randIt);
+
+					if(!pNextPlayer 
+						|| (pNextPlayer && GS()->Collision()->IntersectLineColFlag(m_pPlayer->m_ViewPos, pNextPlayer->m_ViewPos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE)))
+					{
+						m_vMovingMap.erase(randIt);
+						continue;
+					}
+
+					pNextChar = pNextPlayer->GetCharacter();
 				}
 
 				// if exists next character
 				if(pNextChar)
 				{
-					// take damage
+					// take damage and some buffs
 					vec2 SearchPos = pNextChar->GetPos();
 					vec2 Diff = SearchPos - m_Pos;
 					vec2 Force = normalize(Diff) * 16.0f;
 					pNextChar->TakeDamage(Force * 12.0f, MaximalDamageSize, ClientID, WEAPON_NINJA);
 					GS()->CreateExplosion(SearchPos, pOwnerChar->GetPlayer()->GetCID(), WEAPON_GRENADE, 0);
-					GS()->CreateSound(SearchPos, SOUND_NINJA_HIT);
+					pNextPlayer->GiveEffect("Stun", 1, 100);
 					pOwnerChar->ChangePosition(pNextChar->GetPos());
+
+					GS()->CreateSound(SearchPos, SOUND_NINJA_FIRE);
+					GS()->CreateSound(SearchPos, SOUND_NINJA_HIT);
 					m_Pos = m_PosTo = SearchPos;
 					m_SecondPartCombo++;
+
+					// add external explosion damage for other player's
+					for(const auto& pPlayer : m_vMovingMap)
+					{
+						if(pPlayer && pPlayer->GetCharacter())
+						{
+							GS()->CreateExplosion(pPlayer->m_ViewPos, pOwnerChar->GetPlayer()->GetCID(), WEAPON_GRENADE, 0);
+							GS()->CreateDeath(pPlayer->m_ViewPos, pPlayer->GetCID());
+						}
+					}
 				}
 			}
-		}
-		else
-		{
-			// destroy entity
-			GameWorld()->DestroyEntity(this);
+
+			// skip destroy block
 			return;
 		}
+
+		// destroy entity
+		GameWorld()->DestroyEntity(this);
 	}
 }
 
