@@ -147,7 +147,7 @@ void CPlayer::Tick()
 		TryRespawn();
 	}
 
-	// update dialog
+	// update events
 	m_Dialog.TickUpdate();
 	m_Cooldown.Handler();
 

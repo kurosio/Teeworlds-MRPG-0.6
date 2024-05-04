@@ -23,7 +23,6 @@ public:
 	void Initilize(int ClientID) { m_ClientID = ClientID; }
 	void Start(int Time, std::string Action, std::string Name, CCooldownCallback Callback);
 	void Reset();
-	bool IsCooldownActive(std::string Action) const { return Action == m_Action && m_IsCooldownActive; }
 	bool IsCooldownActive() const { return m_IsCooldownActive; }
 	void Handler();
 };
