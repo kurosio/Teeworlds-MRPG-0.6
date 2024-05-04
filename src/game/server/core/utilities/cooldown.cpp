@@ -5,9 +5,9 @@
 
 #include <utility>
 
-void CCooldown::Start(int Time, std::string UniqueName, std::string Name, CCooldownCallback Callback)
+void CCooldown::Start(int Time, std::string Name, CCooldownCallback Callback)
 {
-	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS)
+	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS || m_IsCooldownActive)
 		return;
 
 	CGS* pGS = (CGS*)(Instance::GameServerPlayer(m_ClientID));
@@ -19,7 +19,6 @@ void CCooldown::Start(int Time, std::string UniqueName, std::string Name, CCoold
 		m_Callback = std::move(Callback);
 		m_IsCooldownActive = true;
 		m_Interrupted = false;
-		m_Action = std::move(UniqueName);
 		m_Name = std::move(Name);
 
 		pGS->CreatePlayerSpawn(m_StartPos, CmaskOne(m_ClientID));
@@ -35,7 +34,6 @@ void CCooldown::Reset()
 	m_IsCooldownActive = false;
 	m_StartPos = {};
 	m_Interrupted = false;
-	m_Action = {};
 }
 
 void CCooldown::Handler()
