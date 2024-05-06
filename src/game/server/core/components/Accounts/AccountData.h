@@ -12,7 +12,7 @@ class CGS;
 class CPlayer;
 class CHouseData;
 class GroupData;
-class CGuildData;
+class CGuild;
 class CGuildMemberData;
 
 class CAccountData
@@ -30,7 +30,7 @@ class CAccountData
 	int m_Exp {};
 	CHouseData* m_pHouseData{};
 	GroupData* m_pGroupData{};
-	CGuildData* m_pGuildData{};
+	CGuild* m_pGuildData{};
 	ClassGroup m_ClassGroup {};
 
 	CPlayer* m_pPlayer {};
@@ -62,8 +62,8 @@ public:
 	 * Group functions: guild system
 	 */
 	void ReinitializeGuild(bool SetNull = false);
-	CGuildData* GetGuild() const { return m_pGuildData; }
-	CGuildData::CMember* GetGuildMember() const;
+	CGuild* GetGuild() const { return m_pGuildData; }
+	CGuild::CMember* GetGuildMember() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }
 	bool SameGuild(int ClientID) const;
 	bool SameGuild(int GuildID, int ClientID) const;

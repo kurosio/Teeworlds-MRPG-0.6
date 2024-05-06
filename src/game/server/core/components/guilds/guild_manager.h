@@ -10,18 +10,18 @@ class CGuildManager : public MmoComponent
 {
 	~CGuildManager() override
 	{
-		for(const auto pHouse : CGuildHouseData::Data())
+		for(const auto pHouse : CGuildHouse::Data())
 			delete pHouse;
-		for(const auto pGuild : CGuildData::Data())
+		for(const auto pGuild : CGuild::Data())
 			delete pGuild;
 		for(const auto pWar : CGuildWarHandler::Data())
 			delete pWar;
 
-		CGuildData::Data().clear();
-		CGuildHouseData::Data().clear();
+		CGuild::Data().clear();
+		CGuildHouse::Data().clear();
 		CGuildWarHandler::Data().clear();
-		CGuildData::Data().shrink_to_fit();
-		CGuildHouseData::Data().shrink_to_fit();
+		CGuild::Data().shrink_to_fit();
+		CGuildHouse::Data().shrink_to_fit();
 		CGuildWarHandler::Data().shrink_to_fit();
 	};
 
@@ -48,15 +48,15 @@ private:
 	void ShowMembershipList(int ClientID) const;
 	void ShowRequests(int ClientID) const;
 	void ShowPlantZone(int ClientID, int PlantzoneID) const;
-	void ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const;
+	void ShowBuyHouse(int ClientID, CGuildHouse* pHouse) const;
 	void ShowDeclareWar(int ClientID) const;
 
 public:
-	CGuildHouseData* GetGuildHouseByID(const GuildHouseIdentifier& ID) const;
-	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
-	CGuildData* GetGuildByID(GuildIdentifier ID) const;
-	CGuildData* GetGuildByName(const char* pGuildname) const;
-	CGuildHouseData::CPlantzone* GetGuildHousePlantzoneByPos(vec2 Pos) const;
+	CGuildHouse* GetGuildHouseByID(const GuildHouseIdentifier& ID) const;
+	CGuildHouse* GetGuildHouseByPos(vec2 Pos) const;
+	CGuild* GetGuildByID(GuildIdentifier ID) const;
+	CGuild* GetGuildByName(const char* pGuildname) const;
+	CGuildHouse::CPlantzone* GetGuildHousePlantzoneByPos(vec2 Pos) const;
 	bool IsAccountMemberGuild(int AccountID) const;
 
 };

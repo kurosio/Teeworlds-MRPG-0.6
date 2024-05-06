@@ -8,7 +8,7 @@
 #include "game/server/core/components/guilds/guild_data.h"
 #include "game/server/core/components/guilds/guild_house_data.h"
 
-CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouseData* pHouse, std::string&& Name, vec2 Pos)
+CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouse* pHouse, std::string&& Name, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_Name(std::move(Name)), m_pHouse(pHouse)
 {
 	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
@@ -26,7 +26,7 @@ void CEntityGuildDoor::Tick()
 		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
 		{
 			const int& ClientID = pChar->GetPlayer()->GetCID();
-			CGuildData* pCharGuild = pChar->GetPlayer()->Account()->GetGuild();
+			CGuild* pCharGuild = pChar->GetPlayer()->Account()->GetGuild();
 			if(pCharGuild && m_pHouse->GetGuild() && pCharGuild->GetID() == m_pHouse->GetGuild()->GetID() 
 				&& pChar->GetPlayer()->Account()->GetGuildMember()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
 			{
@@ -61,7 +61,7 @@ void CEntityGuildDoor::Tick()
 				if(Distance <= g_Config.m_SvDoorRadiusHit)
 				{
 					// Check if both the door's guild and pChar's guild exist and have the same ID
-					CGuildData* pCharGuild = pChar->GetPlayer()->Account()->GetGuild();
+					CGuild* pCharGuild = pChar->GetPlayer()->Account()->GetGuild();
 					if(pCharGuild && m_pHouse->GetGuild() && pCharGuild->GetID() == m_pHouse->GetGuild()->GetID())
 					{
 						continue;

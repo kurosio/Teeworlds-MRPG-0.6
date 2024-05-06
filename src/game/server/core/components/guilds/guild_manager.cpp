@@ -25,11 +25,11 @@ void CGuildManager::OnInit()
 		int Score = pRes->getInt("Score");
 		int64_t LogFlag = pRes->getInt64("LogFlag");
 
-		CGuildData::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
+		CGuild::CreateElement(ID)->Init(Name, std::move(MembersData), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
 	}
 
 	InitWars();
-	Core()->ShowLoadingProgress("Guilds", CGuildData::Data().size());
+	Core()->ShowLoadingProgress("Guilds", CGuild::Data().size());
 }
 
 void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
@@ -43,11 +43,11 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		std::string JsPlantzones = pRes->getString("Plantzones").c_str();
 		std::string JsPropersties = pRes->getString("Properties").c_str();
 
-		CGuildData* pGuild = GetGuildByID(GuildID);
-		CGuildHouseData::CreateElement(ID)->Init(pGuild, Price, GS()->GetWorldID(), std::move(JsPlantzones), std::move(JsPropersties));
+		CGuild* pGuild = GetGuildByID(GuildID);
+		CGuildHouse::CreateElement(ID)->Init(pGuild, Price, GS()->GetWorldID(), std::move(JsPlantzones), std::move(JsPropersties));
 	}
 
-	Core()->ShowLoadingProgress("Guild houses", CGuildHouseData::Data().size());
+	Core()->ShowLoadingProgress("Guild houses", CGuildHouse::Data().size());
 }
 
 void CGuildManager::OnTick()
@@ -64,7 +64,7 @@ void CGuildManager::OnTick()
 	int LifeTime = (Server()->TickSpeed() * 10);
 
 	// Get the house data
-	const auto& HouseData = CGuildHouseData::Data();
+	const auto& HouseData = CGuildHouse::Data();
 	for(const auto& p : HouseData)
 	{
 		// Update the text with the remaining lifetime
@@ -105,7 +105,7 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 			//if(HouseID <= 0 || GuildID <= 0)
 			//	return true;
 
-			//const int Exp = CGuildData::ms_aGuild[GuildID].m_UpgradesData(CGuildData::CHAIR_EXPERIENCE, 0).m_Value;
+			//const int Exp = CGuild::ms_aGuild[GuildID].m_UpgradesData(CGuild::CHAIR_EXPERIENCE, 0).m_Value;
 			//pPlayer->AccountManager()->AddExperience(Exp);
 		}
 		return true;
@@ -128,14 +128,14 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// Check if the guild has a house
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 		if(!pGuild->HasHouse())
 		{
 			GS()->Chat(ClientID, "Your guild does not have a house.");
 			return true;
 		}
 
-		CGuildHouseData* pHouse = pGuild->GetHouse();
+		CGuildHouse* pHouse = pGuild->GetHouse();
 		vec2 HousePosition = pHouse->GetPos();
 
 		// Check if the player is in a different world than pAether
@@ -162,8 +162,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		CGuildHouseData* pHouse = pPlayer->Account()->GetGuild()->GetHouse();
-
+		CGuildHouse* pHouse = pPlayer->Account()->GetGuild()->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "Your guild does not have a house.");
@@ -194,7 +193,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Get the member UID, guild data for the new leader
 		const int& MemberUID = VoteID;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 
 		// Set the new leader for the guild and get the result
 		GUILD_RESULT Result = pGuild->SetNewLeader(MemberUID);
@@ -225,7 +224,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		// Get the player's guild data, guild member data, member UID and rank ID from the vote ID
 		const int& MemberUID = VoteID;
 		const GuildRankIdentifier& RankID = VoteID2;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 		auto pInterMember = pGuild->GetMembers()->Get(MemberUID);
 
 		// Check if the member data is valid and set the rank for the member
@@ -458,7 +457,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Get the unique ID guild data of the player who sent the join request
 		const int& RequestFromUID = VoteID;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 
 		// Accept the join request and get the result
 		GUILD_RESULT Result = pGuild->GetMembers()->GetRequests()->Accept(RequestFromUID, pPlayer->Account()->GetGuildMember());
@@ -489,7 +488,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Get the request UID, player's guild data
 		const int& RequestFromUID = VoteID;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 
 		// Deny the request from the specified UID
 		pGuild->GetMembers()->GetRequests()->Deny(RequestFromUID, pPlayer->Account()->GetGuildMember());
@@ -528,7 +527,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		// Get the guild ID, guild data using the guild ID and account ID from the vote
 		const GuildIdentifier& ID = VoteID;
 		const int& AccountID = VoteID2;
-		CGuildData* pGuild = GetGuildByID(ID);
+		CGuild* pGuild = GetGuildByID(ID);
 		dbg_assert(pGuild != nullptr, "GUILD_REQUEST_TO_JOIN - guild data is empty");
 
 		// Send a request to join the guild and get the result
@@ -558,7 +557,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		const GuildHouseIdentifier& ID = VoteID;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 
 		GUILD_RESULT Result = pGuild->BuyHouse(ID);
 		if(Result == GUILD_RESULT::BUY_HOUSE_ALREADY_HAVE)
@@ -603,7 +602,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Get the guild ID, guild data using the guild ID and account ID from the vote
 		const GuildIdentifier& ID = VoteID;
-		CGuildData* pGuild = GetGuildByID(ID);
+		CGuild* pGuild = GetGuildByID(ID);
 		dbg_assert(pGuild != nullptr, "GUILD_DECLARE_WAR - guild data is empty");
 
 		if(pPlayer->Account()->GetGuild()->StartWar(pGuild))
@@ -631,8 +630,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		const int& Useds = maximum(1, Get);
 		const int& PlantzoneID = VoteID;
 		const ItemIdentifier& ItemID = VoteID2;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		CGuildHouseData* pHouse = pGuild->GetHouse();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
+		CGuildHouse* pHouse = pGuild->GetHouse();
 
 		// Check if the guild does not have a house
 		if(!pHouse)
@@ -700,8 +699,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check player house
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		CGuildHouseData* pHouse = pGuild->GetHouse();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
+		CGuildHouse* pHouse = pGuild->GetHouse();
 
 		if(!pHouse)
 		{
@@ -725,7 +724,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 		if(pGuild->SellHouse())
 		{
 			pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -742,7 +741,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 		if(!pGuild->Upgrade(VoteID))
 		{
 			GS()->Chat(ClientID, "Your guild does not have enough gold, or the maximum upgrade level has been reached.");
@@ -764,7 +763,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Set the log flag to the value of VoteID
 		const int& Logflag = VoteID;
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 
 		// Set the logger of the guild data to the log flag
 		pGuild->GetLogger()->SetActivityFlag(Logflag);
@@ -784,7 +783,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		CCharacter* pChr = pPlayer->GetCharacter();
-		CGuildHouseData* pHouse = GetGuildHouseByPos(pChr->m_Core.m_Pos);
+		CGuildHouse* pHouse = GetGuildHouseByPos(pChr->m_Core.m_Pos);
 		ShowBuyHouse(ClientID, pHouse);
 		return true;
 	}
@@ -858,7 +857,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 void CGuildManager::OnHandleTimePeriod(TIME_PERIOD Period)
 {
 	// Call the TimePeriodEvent function for each guild passing the Period parameter
-	for(auto& pGuild : CGuildData::Data())
+	for(auto& pGuild : CGuild::Data())
 		pGuild->TimePeriodEvent(Period);
 }
 
@@ -879,8 +878,8 @@ void CGuildManager::InitWars() const
 		const time_t TimeUntilEnd = pRes->getInt64("TimeUntilEnd");
 
 		// Get the pointer to the guild data
-		CGuildData* pGuild1 = GetGuildByID(GuildID1);
-		CGuildData* pGuild2 = GetGuildByID(GuildID2);
+		CGuild* pGuild1 = GetGuildByID(GuildID1);
+		CGuild* pGuild2 = GetGuildByID(GuildID2);
 		dbg_assert(pGuild1 != nullptr, "GUILD_WAR - guild data is empty");
 		dbg_assert(pGuild2 != nullptr, "GUILD_WAR - guild data is empty");
 
@@ -898,7 +897,7 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 		return;
 
 	// If the player is not in a guild
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuild* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
 	{
 		VoteWrapper::AddBackpage(ClientID);
@@ -994,7 +993,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	// initialize the guild
 	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":0}]})";
 
-	CGuildData* pGuild = CGuildData::CreateElement(InitID);
+	CGuild* pGuild = CGuild::CreateElement(InitID);
 	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, -1, nullptr);
 	pPlayer->Account()->ReinitializeGuild();
 
@@ -1008,12 +1007,12 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 void CGuildManager::Disband(GuildIdentifier ID) const
 {
 	// Find the guild with the given ID
-	auto pIterGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&ID](CGuildData* pGuild) { return pGuild->GetID() == ID; });
+	auto pIterGuild = std::find_if(CGuild::Data().begin(), CGuild::Data().end(), [&ID](CGuild* pGuild) { return pGuild->GetID() == ID; });
 	if(!(*pIterGuild))
 		return;
 
 	// Get a pointer to the guild
-	CGuildData* pGuild = (*pIterGuild);
+	CGuild* pGuild = (*pIterGuild);
 
 	// End guild wars for disbanded guild
 	if(pGuild->GetWar() && pGuild->GetWar()->GetHandler())
@@ -1045,10 +1044,10 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	Database->Execute<DB::REMOVE>(TW_GUILDS_TABLE, "WHERE ID = '%d'", pGuild->GetID());
 
 	// Delete the guild object and remove it from the guild data container
-	if(pIterGuild != CGuildData::Data().end())
+	if(pIterGuild != CGuild::Data().end())
 	{
 		delete (*pIterGuild);
-		CGuildData::Data().erase(pIterGuild);
+		CGuild::Data().erase(pIterGuild);
 		pGuild = nullptr;
 	}
 }
@@ -1062,7 +1061,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		return;
 
 	// If the player is not in a guild
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuild* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
 	{
 		VoteWrapper::AddBackpage(ClientID);
@@ -1072,7 +1071,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	bool HasHouse = pGuild->HasHouse();
 	int ExpNeed = computeExperience(pGuild->GetLevel());
 	const int MemberUsedSlots = pGuild->GetMembers()->GetContainer().size();
-	const int MemberMaxSlots = pGuild->GetUpgrades(CGuildData::UPGRADE_AVAILABLE_SLOTS)->m_Value;
+	const int MemberMaxSlots = pGuild->GetUpgrades(CGuild::UPGRADE_AVAILABLE_SLOTS)->m_Value;
 
 	// Guild information
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2747 Information about {}", pGuild->GetName());
@@ -1109,7 +1108,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	// Guild append house menu
 	if(HasHouse)
 	{
-		CGuildHouseData* pHouse = pGuild->GetHouse();
+		CGuildHouse* pHouse = pGuild->GetHouse();
 
 		// House management
 		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN, "\u2302 House Management");
@@ -1151,13 +1150,13 @@ void CGuildManager::ShowMenu(int ClientID) const
 
 	// Guild upgrades
 	VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN, "\u2730 Guild upgrades");
-	for(int i = CGuildData::UPGRADE_AVAILABLE_SLOTS; i < CGuildData::NUM_GUILD_UPGRADES; i++)
+	for(int i = CGuild::UPGRADE_AVAILABLE_SLOTS; i < CGuild::NUM_GUILD_UPGRADES; i++)
 	{
-		if(i == CGuildData::UPGRADE_CHAIR_EXPERIENCE && !HasHouse)
+		if(i == CGuild::UPGRADE_CHAIR_EXPERIENCE && !HasHouse)
 			continue;
 
 		const auto* pUpgrade = pGuild->GetUpgrades(i);
-		int Price = pUpgrade->m_Value * (i == CGuildData::UPGRADE_AVAILABLE_SLOTS ? g_Config.m_SvPriceUpgradeGuildSlot : g_Config.m_SvPriceUpgradeGuildAnother);
+		int Price = pUpgrade->m_Value * (i == CGuild::UPGRADE_AVAILABLE_SLOTS ? g_Config.m_SvPriceUpgradeGuildSlot : g_Config.m_SvPriceUpgradeGuildAnother);
 		VUpgrades.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 	}
 
@@ -1173,7 +1172,7 @@ void CGuildManager::ShowRanksSettings(int ClientID) const
 		return;
 
 	// If the player is not in a guild
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuild* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
 	{
 		VoteWrapper::AddBackpage(ClientID);
@@ -1218,7 +1217,7 @@ void CGuildManager::ShowRequests(int ClientID) const
 		return;
 
 	// If the player is not in a guild
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuild* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
 	{
 		VoteWrapper::AddBackpage(ClientID);
@@ -1254,7 +1253,7 @@ void CGuildManager::ShowPlantZone(int ClientID, int PlantzoneID) const
 		return;
 
 	// Check some guild data
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuild* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild || !pGuild->GetHouse() || !pGuild->GetHouse()->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID))
 	{
 		VoteWrapper::AddBackpage(ClientID);
@@ -1267,7 +1266,7 @@ void CGuildManager::ShowPlantZone(int ClientID, int PlantzoneID) const
 	VoteWrapper::AddLine(ClientID);
 
 	// settings
-	CGuildHouseData* pHouse = pGuild->GetHouse();
+	CGuildHouse* pHouse = pGuild->GetHouse();
 	auto pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
 	CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
 	VoteWrapper VPlantSettings(ClientID, VWF_STYLE_STRICT_BOLD);
@@ -1305,7 +1304,7 @@ void CGuildManager::ShowFinder(int ClientID) const
 	// Check if the player already has a guild
 	if(pPlayer->Account()->HasGuild())
 	{
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 		VoteWrapper(ClientID).Add("You already in guild '{}'!", pGuild->GetName());
 		VoteWrapper::AddLine(ClientID);
 	}
@@ -1324,7 +1323,7 @@ void CGuildManager::ShowFinder(int ClientID) const
 	VSearch.MarkList().Add("Guild list:");
 	{
 		VSearch.BeginDepth();
-		for(auto& pGuild : CGuildData::Data())
+		for(auto& pGuild : CGuild::Data())
 		{
 			int OwnerUID = pGuild->GetLeaderUID();
 			VSearch.AddMenu(MENU_GUILD_FINDER_SELECTED, pGuild->GetID(), "{} (leader {})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
@@ -1344,7 +1343,7 @@ void CGuildManager::ShowFinderDetailInformation(int ClientID, GuildIdentifier ID
 	if(!pPlayer)
 		return;
 
-	if(CGuildData* pGuild = GetGuildByID(ID))
+	if(CGuild* pGuild = GetGuildByID(ID))
 	{
 		// Detail information
 		auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
@@ -1371,7 +1370,7 @@ void CGuildManager::ShowFinderDetailInformation(int ClientID, GuildIdentifier ID
 	VoteWrapper::AddBackpage(ClientID);
 }
 
-void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
+void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouse* pHouse) const
 {
 	// If the player object does not exist, return from the function
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
@@ -1410,7 +1409,7 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 		}
 
 		// Check if player has leader rights in the guild
-		CGuildData* pGuild = pPlayer->Account()->GetGuild();
+		CGuild* pGuild = pPlayer->Account()->GetGuild();
 		VoteWrapper VBuyHouse(ClientID, VWF_SEPARATE_OPEN, "Guild bank: {} gold", pGuild->GetBank()->Get());
 		if(pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 			VBuyHouse.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase this guild house! Cost: {} golds", pHouse->GetPrice());
@@ -1427,7 +1426,7 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 		return;
 
 	// Check some guild data
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuild* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
 	{
 		VoteWrapper::AddBackpage(ClientID);
@@ -1443,7 +1442,7 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 	if(pGuild->GetWar())
 	{
 		CGuildWarData* pWar = pGuild->GetWar();
-		CGuildData* pTargetGuild = pWar->GetTargetGuild();
+		CGuild* pTargetGuild = pWar->GetTargetGuild();
 
 		char aBufTimeLeft[64];
 		pWar->GetHandler()->FormatTimeLeft(aBufTimeLeft, sizeof(aBufTimeLeft));
@@ -1459,7 +1458,7 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 		VWar.AddLine();
 
 		VoteWrapper VWarList(ClientID, "List of guilds to declare war");
-		for(auto& p : CGuildData::Data())
+		for(auto& p : CGuild::Data())
 		{
 			if(p->GetID() != pGuild->GetID())
 				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{} (online {} players)", p->GetName(), p->GetMembers()->GetOnlinePlayersCount());
@@ -1479,7 +1478,7 @@ void CGuildManager::ShowLogs(int ClientID) const
 		return;
 
 	// Check some guild data
-	CGuildData* pGuild = pPlayer->Account()->GetGuild();
+	CGuild* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
 	{
 		VoteWrapper::AddBackpage(ClientID);
@@ -1487,7 +1486,7 @@ void CGuildManager::ShowLogs(int ClientID) const
 	}
 
 	// Get the logger for the player's guild
-	CGuildData::CLogEntry* pLogger = pGuild->GetLogger();
+	CGuild::CLogEntry* pLogger = pGuild->GetLogger();
 
 	// Display guild activity log settings to the player
 	auto flagStatus = [&](int flag) { return pLogger->IsActivityFlagSet(flag) ? "[\u2714]" : "[\u2715]"; };
@@ -1506,7 +1505,7 @@ void CGuildManager::ShowLogs(int ClientID) const
 	// Logs
 	char aBuf[128];
 	VoteWrapper VLogs(ClientID, VWF_SEPARATE_CLOSED, "Logs");
-	const CGuildData::LogContainer& aLogs = pGuild->GetLogger()->GetContainer();
+	const CGuild::LogContainer& aLogs = pGuild->GetLogger()->GetContainer();
 	for(const auto& pLog : aLogs)
 	{
 		// Format the log entry and display it
@@ -1518,49 +1517,49 @@ void CGuildManager::ShowLogs(int ClientID) const
 	VoteWrapper::AddBackpage(ClientID);
 }
 
-CGuildHouseData* CGuildManager::GetGuildHouseByID(const GuildHouseIdentifier& ID) const
+CGuildHouse* CGuildManager::GetGuildHouseByID(const GuildHouseIdentifier& ID) const
 {
-	auto itHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&ID](const CGuildHouseData* p)
+	auto itHouse = std::find_if(CGuildHouse::Data().begin(), CGuildHouse::Data().end(), [&ID](const CGuildHouse* p)
 	{
 		return ID == p->GetID();
 	});
 
-	return itHouse != CGuildHouseData::Data().end() ? *itHouse : nullptr;
+	return itHouse != CGuildHouse::Data().end() ? *itHouse : nullptr;
 }
 
-CGuildHouseData* CGuildManager::GetGuildHouseByPos(vec2 Pos) const
+CGuildHouse* CGuildManager::GetGuildHouseByPos(vec2 Pos) const
 {
-	auto itHouse = std::find_if(CGuildHouseData::Data().begin(), CGuildHouseData::Data().end(), [&Pos, this](const CGuildHouseData* p)
+	auto itHouse = std::find_if(CGuildHouse::Data().begin(), CGuildHouse::Data().end(), [&Pos, this](const CGuildHouse* p)
 	{
 		return GS()->GetWorldID() == p->GetWorldID() && distance(Pos, p->GetPos()) < p->GetRadius();
 	});
 
-	return itHouse != CGuildHouseData::Data().end() ? *itHouse : nullptr;
+	return itHouse != CGuildHouse::Data().end() ? *itHouse : nullptr;
 }
 
-CGuildData* CGuildManager::GetGuildByID(GuildIdentifier ID) const
+CGuild* CGuildManager::GetGuildByID(GuildIdentifier ID) const
 {
-	auto itGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&ID](CGuildData* p)
+	auto itGuild = std::find_if(CGuild::Data().begin(), CGuild::Data().end(), [&ID](CGuild* p)
 	{
 		return p->GetID() == ID;
 	});
 
-	return itGuild != CGuildData::Data().end() ? (*itGuild) : nullptr;
+	return itGuild != CGuild::Data().end() ? (*itGuild) : nullptr;
 }
 
-CGuildData* CGuildManager::GetGuildByName(const char* pGuildname) const
+CGuild* CGuildManager::GetGuildByName(const char* pGuildname) const
 {
-	auto itGuild = std::find_if(CGuildData::Data().begin(), CGuildData::Data().end(), [&pGuildname](CGuildData* p)
+	auto itGuild = std::find_if(CGuild::Data().begin(), CGuild::Data().end(), [&pGuildname](CGuild* p)
 	{
 		return str_comp_nocase(p->GetName(), pGuildname) == 0;
 	});
 
-	return itGuild != CGuildData::Data().end() ? (*itGuild) : nullptr;
+	return itGuild != CGuild::Data().end() ? (*itGuild) : nullptr;
 }
 
-CGuildHouseData::CPlantzone* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos) const
+CGuildHouse::CPlantzone* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos) const
 {
-	for(auto& p : CGuildHouseData::Data())
+	for(auto& p : CGuildHouse::Data())
 	{
 		for(auto& Plantzone : p->GetPlantzonesManager()->GetContainer())
 		{
@@ -1574,5 +1573,5 @@ CGuildHouseData::CPlantzone* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos
 
 bool CGuildManager::IsAccountMemberGuild(int AccountID) const
 {
-	return CGuildData::IsAccountMemberGuild(AccountID);
+	return CGuild::IsAccountMemberGuild(AccountID);
 }

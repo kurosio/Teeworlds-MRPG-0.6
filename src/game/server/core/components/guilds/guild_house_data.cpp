@@ -10,16 +10,16 @@
 #include <game/server/core/components/guilds/entities/guild_door.h>
 #include <game/server/core/components/guilds/guild_data.h>
 
-CGS* CGuildHouseData::GS() const { return (CGS*)Instance::GameServer(m_WorldID); }
+CGS* CGuildHouse::GS() const { return (CGS*)Instance::GameServer(m_WorldID); }
 
-CGuildHouseData::~CGuildHouseData()
+CGuildHouse::~CGuildHouse()
 {
 	delete m_pPlantzones;
 	delete m_pDecorations;
 	delete m_pDoors;
 }
 
-void CGuildHouseData::InitProperties(std::string&& Plantzones, std::string&& Properties)
+void CGuildHouse::InitProperties(std::string&& Plantzones, std::string&& Properties)
 {
 	// Assert important values
 	dbg_assert(Properties.length() > 0, "The properties string is empty");
@@ -75,14 +75,14 @@ void CGuildHouseData::InitProperties(std::string&& Plantzones, std::string&& Pro
 	dbg_assert(m_pDoors != nullptr, "The house doors manager is null");
 }
 
-int CGuildHouseData::GetRentPrice() const
+int CGuildHouse::GetRentPrice() const
 {
 	int DoorCount = (int)GetDoorManager()->GetContainer().size();
 	int PlantzoneCount = (int)GetPlantzonesManager()->GetContainer().size();
 	return (int)m_Radius + (DoorCount * 200) + (PlantzoneCount * 500);
 }
 
-void CGuildHouseData::GetRentTimeStamp(char* aBuffer, size_t Size) const
+void CGuildHouse::GetRentTimeStamp(char* aBuffer, size_t Size) const
 {
 	if(IsPurchased())
 	{
@@ -98,14 +98,14 @@ void CGuildHouseData::GetRentTimeStamp(char* aBuffer, size_t Size) const
 	}
 }
 
-const char* CGuildHouseData::GetOwnerName() const
+const char* CGuildHouse::GetOwnerName() const
 {
 	if(!m_pGuild)
 		return "FREE GUILD HOUSE";
 	return m_pGuild->GetName();
 }
 
-void CGuildHouseData::TextUpdate(int LifeTime)
+void CGuildHouse::TextUpdate(int LifeTime)
 {
 	// Check if the last tick text update is greater than the current server tick
 	if(is_negative_vec(m_TextPosition) || m_LastTickTextUpdated > Server()->Tick())
@@ -124,7 +124,7 @@ void CGuildHouseData::TextUpdate(int LifeTime)
 	}
 }
 
-void CGuildHouseData::UpdateGuild(CGuildData* pGuild)
+void CGuildHouse::UpdateGuild(CGuild* pGuild)
 {
 	m_pGuild = pGuild;
 	if(m_pGuild)
@@ -136,7 +136,7 @@ void CGuildHouseData::UpdateGuild(CGuildData* pGuild)
 /* -------------------------------------
  * Plantzones impl
  * ------------------------------------- */
-void CGuildHouseData::CPlantzone::ChangeItem(int ItemID) const
+void CGuildHouse::CPlantzone::ChangeItem(int ItemID) const
 {
 	for(auto& pPlant : m_vPlants)
 	{
@@ -145,9 +145,9 @@ void CGuildHouseData::CPlantzone::ChangeItem(int ItemID) const
 	m_pManager->Save();
 }
 
-CGS* CGuildHouseData::CPlantzonesManager::GS() const { return m_pHouse->GS(); }
+CGS* CGuildHouse::CPlantzonesManager::GS() const { return m_pHouse->GS(); }
 
-CGuildHouseData::CPlantzonesManager::CPlantzonesManager(CGuildHouseData* pHouse, std::string&& JsPlantzones) : m_pHouse(pHouse)
+CGuildHouse::CPlantzonesManager::CPlantzonesManager(CGuildHouse* pHouse, std::string&& JsPlantzones) : m_pHouse(pHouse)
 {
 	// Parse the JSON string
 	Tools::Json::parseFromString(JsPlantzones, [this](nlohmann::json& pJson)
@@ -164,17 +164,17 @@ CGuildHouseData::CPlantzonesManager::CPlantzonesManager(CGuildHouseData* pHouse,
 }
 
 // Destructor for the CHouseDoorsController class
-CGuildHouseData::CPlantzonesManager::~CPlantzonesManager()
+CGuildHouse::CPlantzonesManager::~CPlantzonesManager()
 {
 	m_vPlantzones.clear();
 }
 
-void CGuildHouseData::CPlantzonesManager::AddPlantzone(CPlantzone&& Plantzone)
+void CGuildHouse::CPlantzonesManager::AddPlantzone(CPlantzone&& Plantzone)
 {
 	m_vPlantzones.emplace(m_vPlantzones.size() + 1, std::forward<CPlantzone>(Plantzone));
 }
 
-CGuildHouseData::CPlantzone* CGuildHouseData::CPlantzonesManager::GetPlantzoneByPos(vec2 Pos)
+CGuildHouse::CPlantzone* CGuildHouse::CPlantzonesManager::GetPlantzoneByPos(vec2 Pos)
 {
 	for(auto& p : m_vPlantzones)
 	{
@@ -185,13 +185,13 @@ CGuildHouseData::CPlantzone* CGuildHouseData::CPlantzonesManager::GetPlantzoneBy
 	return nullptr;
 }
 
-CGuildHouseData::CPlantzone* CGuildHouseData::CPlantzonesManager::GetPlantzoneByID(int ID)
+CGuildHouse::CPlantzone* CGuildHouse::CPlantzonesManager::GetPlantzoneByID(int ID)
 {
 	auto it = m_vPlantzones.find(ID);
 	return it != m_vPlantzones.end() ? &it->second : nullptr;
 }
 
-void CGuildHouseData::CPlantzonesManager::Save() const
+void CGuildHouse::CPlantzonesManager::Save() const
 {
 	// Create a JSON object to store plant zones data
 	nlohmann::json Plantzones;
@@ -213,19 +213,19 @@ void CGuildHouseData::CPlantzonesManager::Save() const
 /* -------------------------------------
  * Decorations impl
  * ------------------------------------- */
-CGS* CGuildHouseData::CDecorationManager::GS() const { return m_pHouse->GS(); }
+CGS* CGuildHouse::CDecorationManager::GS() const { return m_pHouse->GS(); }
 
-CGuildHouseData::CDecorationManager::CDecorationManager(CGuildHouseData* pHouse) : m_pHouse(pHouse)
+CGuildHouse::CDecorationManager::CDecorationManager(CGuildHouse* pHouse) : m_pHouse(pHouse)
 {
 	CDecorationManager::Init();
 }
 
-CGuildHouseData::CDecorationManager::~CDecorationManager()
+CGuildHouse::CDecorationManager::~CDecorationManager()
 {
 	delete m_pDrawBoard;
 }
 
-void CGuildHouseData::CDecorationManager::Init()
+void CGuildHouse::CDecorationManager::Init()
 {
 	// Create a new instance of CEntityDrawboard and pass the world and house position as parameters
 	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pHouse->GetPos(), m_pHouse->GetRadius());
@@ -244,21 +244,21 @@ void CGuildHouseData::CDecorationManager::Init()
 	}
 }
 
-bool CGuildHouseData::CDecorationManager::StartDrawing(CPlayer* pPlayer) const
+bool CGuildHouse::CDecorationManager::StartDrawing(CPlayer* pPlayer) const
 {
 	if(!pPlayer || !pPlayer->GetCharacter())
 		return false;
 	return m_pDrawBoard->StartDrawing(pPlayer);
 }
 
-bool CGuildHouseData::CDecorationManager::HasFreeSlots() const
+bool CGuildHouse::CDecorationManager::HasFreeSlots() const
 {
 	return m_pDrawBoard->GetEntityPoints().size() < (int)MAX_DECORATIONS_PER_HOUSE;
 }
 
-bool CGuildHouseData::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
+bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
 {
-	const auto pHouse = (CGuildHouseData*)pUser;
+	const auto pHouse = (CGuildHouse*)pUser;
 	if(!pPlayer || !pHouse)
 		return false;
 
@@ -305,7 +305,7 @@ bool CGuildHouseData::CDecorationManager::DrawboardToolEventCallback(DrawboardTo
 	return true;
 }
 
-bool CGuildHouseData::CDecorationManager::Add(const EntityPoint* pPoint) const
+bool CGuildHouse::CDecorationManager::Add(const EntityPoint* pPoint) const
 {
 	// Check if pPoint or pPoint->m_pEntity is null
 	if(!pPoint || !pPoint->m_pEntity)
@@ -322,7 +322,7 @@ bool CGuildHouseData::CDecorationManager::Add(const EntityPoint* pPoint) const
 	return true;
 }
 
-bool CGuildHouseData::CDecorationManager::Remove(const EntityPoint* pPoint) const
+bool CGuildHouse::CDecorationManager::Remove(const EntityPoint* pPoint) const
 {
 	// Check if pPoint is null or if pPoint's m_pEntity is null
 	if(!pPoint || !pPoint->m_pEntity)
@@ -340,10 +340,10 @@ bool CGuildHouseData::CDecorationManager::Remove(const EntityPoint* pPoint) cons
 /* -------------------------------------
  * Doors impl
  * ------------------------------------- */
-CGS* CGuildHouseData::CDoorManager::GS() const { return m_pHouse->GS(); }
+CGS* CGuildHouse::CDoorManager::GS() const { return m_pHouse->GS(); }
 
-CGuildHouseData::CDoorManager::CDoorManager(CGuildHouseData* pHouse) : m_pHouse(pHouse) {}
-CGuildHouseData::CDoorManager::~CDoorManager()
+CGuildHouse::CDoorManager::CDoorManager(CGuildHouse* pHouse) : m_pHouse(pHouse) {}
+CGuildHouse::CDoorManager::~CDoorManager()
 {
 	for(auto& p : m_apEntDoors)
 		delete p.second;
@@ -351,21 +351,21 @@ CGuildHouseData::CDoorManager::~CDoorManager()
 	m_apEntDoors.clear();
 }
 
-void CGuildHouseData::CDoorManager::Open(int Number)
+void CGuildHouse::CDoorManager::Open(int Number)
 {
 	// Open the door
 	if(m_apEntDoors.find(Number) != m_apEntDoors.end())
 		m_apEntDoors[Number]->Open();
 }
 
-void CGuildHouseData::CDoorManager::Close(int Number)
+void CGuildHouse::CDoorManager::Close(int Number)
 {
 	// Close the door
 	if(m_apEntDoors.find(Number) != m_apEntDoors.end())
 		m_apEntDoors[Number]->Close();
 }
 
-void CGuildHouseData::CDoorManager::Reverse(int Number)
+void CGuildHouse::CDoorManager::Reverse(int Number)
 {
 	// Check if the door exists in the map
 	if(m_apEntDoors.find(Number) == m_apEntDoors.end())
@@ -378,34 +378,34 @@ void CGuildHouseData::CDoorManager::Reverse(int Number)
 		Close(Number); // Close the door
 }
 
-void CGuildHouseData::CDoorManager::OpenAll()
+void CGuildHouse::CDoorManager::OpenAll()
 {
 	// Open the state of the door by its number in iterate
 	for(auto& p : m_apEntDoors)
 		Open(p.first);
 }
 
-void CGuildHouseData::CDoorManager::CloseAll()
+void CGuildHouse::CDoorManager::CloseAll()
 {
 	// Close the state of the door by its number in iterate
 	for(auto& p : m_apEntDoors)
 		Close(p.first);
 }
 
-void CGuildHouseData::CDoorManager::ReverseAll()
+void CGuildHouse::CDoorManager::ReverseAll()
 {
 	// Reverse the state of the door by its number in iterate
 	for(auto& p : m_apEntDoors)
 		Reverse(p.first);
 }
 
-void CGuildHouseData::CDoorManager::AddDoor(const char* pDoorname, vec2 Position)
+void CGuildHouse::CDoorManager::AddDoor(const char* pDoorname, vec2 Position)
 {
 	// Add the door to the m_apEntDoors map using the door name as the key
 	m_apEntDoors.emplace(m_apEntDoors.size() + 1, new CEntityGuildDoor(&GS()->m_World, m_pHouse, std::string(pDoorname), Position));
 }
 
-void CGuildHouseData::CDoorManager::RemoveDoor(const char* pDoorname, vec2 Position)
+void CGuildHouse::CDoorManager::RemoveDoor(const char* pDoorname, vec2 Position)
 {
 	auto iter = std::find_if(m_apEntDoors.begin(), m_apEntDoors.end(), [&](const std::pair<int, CEntityGuildDoor*>& p)
 	{

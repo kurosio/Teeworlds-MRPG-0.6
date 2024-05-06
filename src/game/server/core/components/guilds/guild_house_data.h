@@ -8,7 +8,7 @@
 
 class CGS;
 class CPlayer;
-class CGuildData;
+class CGuild;
 class CDrawingData;
 class CEntityHouseDecoration;
 class CEntityDrawboard;
@@ -17,7 +17,7 @@ class EntityPoint;
 class CJobItems;
 using GuildHouseIdentifier = int;
 
-class CGuildHouseData : public MultiworldIdentifiableStaticData< std::deque < CGuildHouseData* > >
+class CGuildHouse : public MultiworldIdentifiableStaticData< std::deque < CGuildHouse* > >
 {
 	friend class CGuildHouseDoorManager;
 	friend class CGuildHouseDecorationManager;
@@ -62,12 +62,12 @@ public:
 	{
 		friend class CPlantzone;
 		CGS* GS() const;
-		CGuildHouseData* m_pHouse {};
+		CGuildHouse* m_pHouse {};
 		std::unordered_map<int, CPlantzone> m_vPlantzones {};
 
 	public:
 		CPlantzonesManager() = delete;
-		CPlantzonesManager(CGuildHouseData* pHouse, std::string&& JsPlantzones);
+		CPlantzonesManager(CGuildHouse* pHouse, std::string&& JsPlantzones);
 		~CPlantzonesManager();
 
 		std::unordered_map<int, CPlantzone>& GetContainer() { return m_vPlantzones; }
@@ -89,11 +89,11 @@ public:
 	{
 		CGS* GS() const;
 		CEntityDrawboard* m_pDrawBoard {};
-		CGuildHouseData* m_pHouse {};
+		CGuildHouse* m_pHouse {};
 
 	public:
 		CDecorationManager() = delete;
-		CDecorationManager(CGuildHouseData* pHouse);
+		CDecorationManager(CGuildHouse* pHouse);
 		~CDecorationManager();
 
 		bool StartDrawing(CPlayer* pPlayer) const;
@@ -112,12 +112,12 @@ public:
 	class CDoorManager
 	{
 		CGS* GS() const;
-		CGuildHouseData* m_pHouse {};
+		CGuildHouse* m_pHouse {};
 		ska::unordered_map<int, CEntityGuildDoor*> m_apEntDoors {};
 
 	public:
 		CDoorManager() = delete;
-		CDoorManager(CGuildHouseData* pHouse);
+		CDoorManager(CGuildHouse* pHouse);
 		~CDoorManager();
 
 		ska::unordered_map<int, CEntityGuildDoor*>& GetContainer() { return m_apEntDoors; }
@@ -134,7 +134,7 @@ public:
 private:
 	CGS* GS() const;
 
-	CGuildData* m_pGuild {};
+	CGuild* m_pGuild {};
 	GuildHouseIdentifier m_ID{};
 	float m_Radius {};
 	vec2 m_Position{};
@@ -148,17 +148,17 @@ private:
 	CPlantzonesManager* m_pPlantzones {};
 
 public:
-	CGuildHouseData() = default;
-	~CGuildHouseData();
+	CGuildHouse() = default;
+	~CGuildHouse();
 
-	static CGuildHouseData* CreateElement(const GuildHouseIdentifier& ID)
+	static CGuildHouse* CreateElement(const GuildHouseIdentifier& ID)
 	{
-		auto pData = new CGuildHouseData;
+		auto pData = new CGuildHouse;
 		pData->m_ID = ID;
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuildData* pGuild, int Price, int WorldID, std::string&& JsPlantzones, std::string&& JsProperties)
+	void Init(CGuild* pGuild, int Price, int WorldID, std::string&& JsPlantzones, std::string&& JsProperties)
 	{
 		m_Price = Price;
 		m_WorldID = WorldID;
@@ -169,7 +169,7 @@ public:
 
 	void InitProperties(std::string&& Plantzones, std::string&& Properties);
 
-	CGuildData* GetGuild() const { return m_pGuild; }
+	CGuild* GetGuild() const { return m_pGuild; }
 	CDoorManager* GetDoorManager() const { return m_pDoors; }
 	CDecorationManager* GetDecorationManager() const { return m_pDecorations; }
 	CPlantzonesManager* GetPlantzonesManager() const { return m_pPlantzones; }
@@ -185,7 +185,7 @@ public:
 	const char* GetOwnerName() const;
 
 	void TextUpdate(int LifeTime);
-	void UpdateGuild(CGuildData* pGuild);
+	void UpdateGuild(CGuild* pGuild);
 };
 
 #endif

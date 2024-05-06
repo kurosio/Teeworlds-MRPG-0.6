@@ -4,7 +4,7 @@
 
 #include <game/server/core/components/guilds/guild_data.h>
 
-CGuildWarData::CGuildWarData(CGuildData* pGuild, CGuildData* pTargetGuild, int Score)
+CGuildWarData::CGuildWarData(CGuild* pGuild, CGuild* pTargetGuild, int Score)
 {
 	m_pGuild = pGuild;
 	m_pTargetGuild = pTargetGuild;

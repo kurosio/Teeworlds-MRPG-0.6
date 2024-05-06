@@ -5,7 +5,7 @@
 #include <game/server/entity.h>
 
 class CDoor;
-class CGuildHouseData;
+class CGuildHouse;
 
 class CEntityGuildDoor : public CEntity
 {
@@ -16,12 +16,12 @@ class CEntityGuildDoor : public CEntity
 	};
 
 	std::string m_Name {};
-	CGuildHouseData* m_pHouse {};
+	CGuildHouse* m_pHouse {};
 	int m_State {};
 	vec2 m_PosControll {};
 
 public:
-	CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouseData* pHouse, std::string&& Name, vec2 Pos);
+	CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouse* pHouse, std::string&& Name, vec2 Pos);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

@@ -6,23 +6,23 @@
 #define TW_GUILDS_WARS_TABLE "tw_guilds_wars"
 
 class CGS;
-class CGuildData;
+class CGuild;
 class CGuildWarHandler;
 
 class CGuildWarData
 {
 	friend class CGuildWarHandler;
 	CGuildWarHandler* m_pWarHandler {};
-	CGuildData* m_pGuild {};
-	CGuildData* m_pTargetGuild{};
+	CGuild* m_pGuild {};
+	CGuild* m_pTargetGuild{};
 	int m_Score {};
 
 public:
-	CGuildWarData(CGuildData* pGuild, CGuildData* pTargetGuild, int Score = 0);
+	CGuildWarData(CGuild* pGuild, CGuild* pTargetGuild, int Score = 0);
 
 	CGuildWarHandler* GetHandler() const { return m_pWarHandler; }
-	CGuildData* GetTargetGuild() const { return m_pTargetGuild; }
-	CGuildData* GetGuild() const { return m_pGuild; }
+	CGuild* GetTargetGuild() const { return m_pTargetGuild; }
+	CGuild* GetGuild() const { return m_pGuild; }
 	int GetScore() const { return m_Score; }
 	void AddScore(int Score);
 };

@@ -487,7 +487,7 @@ void CPlayer::RefreshClanString()
 	// guild
 	if(Account()->HasGuild())
 	{
-		CGuildData* pGuild = Account()->GetGuild();
+		CGuild* pGuild = Account()->GetGuild();
 
 		Buffer.append(" | ");
 		Buffer.append(pGuild->GetName());

@@ -1239,7 +1239,7 @@ void CGS::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 	const char* pGuildName = pResult->GetString(0);
-	CGuildData* pGuild = pSelf->Core()->GuildManager()->GetGuildByName(pGuildName);
+	CGuild* pGuild = pSelf->Core()->GuildManager()->GetGuildByName(pGuildName);
 
 	if(!pGuild)
 	{

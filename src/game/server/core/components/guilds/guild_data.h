@@ -62,10 +62,10 @@ enum GuildActivityLogFlags
 	| LOGFLAG_UPGRADES_CHANGES | LOGFLAG_RANKS_CHANGES | LOGFLAG_BANK_CHANGES | LOGFLAG_GUILD_MAIN_CHANGES,
 };
 
-class CGuildData : public MultiworldIdentifiableStaticData< std::deque < CGuildData* > >
+class CGuild : public MultiworldIdentifiableStaticData< std::deque < CGuild* > >
 {
 	friend class CGuildWarHandler;
-	friend class CGuildHouseData;
+	friend class CGuildHouse;
 
 public:
 	CGS* GS() const;
@@ -76,11 +76,11 @@ public:
 	class CBank
 	{
 		CGS* GS() const;
-		CGuildData* m_pGuild {};
+		CGuild* m_pGuild {};
 		int m_Bank {};
 
 	public:
-		CBank(int Bank, CGuildData* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
+		CBank(int Bank, CGuild* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
 
 		const int& Get() const { return m_Bank; }                                           // Get value inside bank
 		void Set(int Value);                                                                // Set value bank
@@ -99,13 +99,13 @@ public:
 	using LogContainer = std::deque<LogData>;
 	class CLogEntry
 	{
-		CGuildData* m_pGuild {};
+		CGuild* m_pGuild {};
 		int64_t m_Logflag {};
 		LogContainer m_aLogs {};
 
 	public:
 		CLogEntry() = delete;
-		CLogEntry(CGuildData* pGuild, int64_t Logflag);
+		CLogEntry(CGuild* pGuild, int64_t Logflag);
 
 		void SetActivityFlag(int64_t Flag);                                                 // Set activity flag
 		bool IsActivityFlagSet(int64_t Flag) const;                                         // Check activity flag
@@ -119,18 +119,17 @@ public:
 	/* -------------------------------------
 	 * Ranks impl
 	 * ------------------------------------- */
-	using GuildRankIdentifier = int;
 	class CRank
 	{
 		CGS* GS() const;
 		GuildRankIdentifier m_ID {};
 		std::string m_Rank {};
 		GuildRankAccess m_Access {};
-		CGuildData* m_pGuild {};
+		CGuild* m_pGuild {};
 
 	public:
 		CRank() = delete;
-		CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankAccess Access, CGuildData* pGuild);
+		CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankAccess Access, CGuild* pGuild);
 
 		GuildRankIdentifier GetID() const { return m_ID; }                                  // Get the unique identifier of the guild rank
 		const char* GetName() const { return m_Rank.c_str(); }                              // Get the name of the guild rank
@@ -147,11 +146,11 @@ public:
 		CGS* GS() const;
 		CRank* m_pDefaultRank {};
 		std::deque<class CRank*> m_aRanks {};
-		CGuildData* m_pGuild {};
+		CGuild* m_pGuild {};
 
 	public:
 		CRanksManager() = delete;
-		CRanksManager(CGuildData* pGuild, GuildRankIdentifier DefaultID);
+		CRanksManager(CGuild* pGuild, GuildRankIdentifier DefaultID);
 		~CRanksManager();
 		
 		std::deque<class CRank*>& GetContainer() { return m_aRanks; }                       // Function to get the container of guild ranks
@@ -174,18 +173,18 @@ public:
 	{
 		CGS* GS() const;
 
-		CGuildData* m_pGuild {};
+		CGuild* m_pGuild {};
 		CRank* m_pRank {};
 		int m_AccountID {};
-		int m_Deposit {};
+		BigInt m_Deposit {};
 
 	public:
-		CMember(CGuildData* pGuild, int AccountID, CRank* pRank, int Deposit = 0);
+		CMember(CGuild* pGuild, int AccountID, CRank* pRank, BigInt Deposit = 0);
 		~CMember();
 
 		int GetAccountID() const { return m_AccountID; }                                    // Get the account ID of the guild member
-		int GetDeposit() const { return m_Deposit; }                                        // Get the amount of gold deposited by the guild member
-		void SetDeposit(int Deposit) { m_Deposit = Deposit; }                               // Set the amount of gold deposited by the guild member
+		BigInt GetDeposit() const { return m_Deposit; }                                   // Get the amount of gold deposited by the guild member
+		void SetDeposit(BigInt Deposit) { m_Deposit = Deposit; }                            // Set the amount of gold deposited by the guild member
 		CRank* GetRank() const { return m_pRank; }                                          // Get the rank of the guild member
 		[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);                             // Set the rank of the guild member using the rank ID
 		[[nodiscard]] bool SetRank(CRank* pRank);                                           // Set the rank of the guild member using a rank object
@@ -198,12 +197,12 @@ public:
 	class CMembersManager
 	{
 		CGS* GS() const;
-		CGuildData* m_pGuild {};
+		CGuild* m_pGuild {};
 		CRequestsManager* m_pRequests {};
 		MembersContainer m_apMembers {};
 
 	public:
-		CMembersManager(CGuildData* pGuild, std::string&& MembersData);
+		CMembersManager(CGuild* pGuild, std::string&& MembersData);
 		~CMembersManager();
 		
 		CRequestsManager* GetRequests() const { return m_pRequests; }                        // Returns the pointer to the controller requests to join
@@ -239,12 +238,12 @@ public:
 	class CRequestsManager
 	{
 		CGS* GS() const;
-		CGuildData* m_pGuild {};
+		CGuild* m_pGuild {};
 		RequestsContainer m_aRequestsJoin {};
 
 	public:
 		CRequestsManager() = delete;
-		CRequestsManager(CGuildData* pGuild);
+		CRequestsManager(CGuild* pGuild);
 		~CRequestsManager();
 
 		const RequestsContainer& GetContainer() const { return m_aRequestsJoin; }            // Getter for the join requests container
@@ -272,10 +271,10 @@ private:
 
 	CBank* m_pBank {};
 	CLogEntry* m_pLogger {};
-	CGuildWarData* m_pWar {};
 	CRanksManager* m_pRanks {};
 	CMembersManager* m_pMembers {};
-	CGuildHouseData* m_pHouse {};
+	CGuildWarData* m_pWar {};
+	CGuildHouse* m_pHouse {};
 
 public:
 	enum
@@ -285,12 +284,12 @@ public:
 		NUM_GUILD_UPGRADES,
 	};
 
-	CGuildData() = default;
-	~CGuildData();
+	CGuild() = default;
+	~CGuild();
 
-	static CGuildData* CreateElement(const GuildIdentifier& ID)
+	static CGuild* CreateElement(const GuildIdentifier& ID)
 	{
-		auto pData = new CGuildData;
+		auto pData = new CGuild;
 		pData->m_ID = ID;
 		return m_pData.emplace_back(pData);
 	}
@@ -317,7 +316,7 @@ public:
 	CBank* GetBank() const { return m_pBank; }
 	CLogEntry* GetLogger() const { return m_pLogger; }
 	CRanksManager* GetRanks() const { return m_pRanks; }
-	CGuildHouseData* GetHouse() const { return m_pHouse; }
+	CGuildHouse* GetHouse() const { return m_pHouse; }
 	CMembersManager* GetMembers() const { return m_pMembers; }
 	DBField<int>* GetUpgrades(int Type) { return &m_UpgradesData(Type, 0); }
 	const char* GetName() const { return m_Name.c_str(); }
@@ -337,7 +336,7 @@ public:
 	void TimePeriodEvent(TIME_PERIOD Period);
 
 	// war
-	bool StartWar(CGuildData* pTargetGuild);
+	bool StartWar(CGuild* pTargetGuild);
 	CGuildWarData* GetWar() const { return m_pWar; };
 
 	// global functions
