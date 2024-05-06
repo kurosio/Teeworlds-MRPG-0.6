@@ -5,7 +5,7 @@
 #include <game/server/core/tools/dbfield.h>
 
 #include "guild_house_data.h"
-#include "War/GuildWarData.h"
+#include "guild_war_data.h"
 
 #define TW_GUILDS_TABLE "tw_guilds"
 #define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
