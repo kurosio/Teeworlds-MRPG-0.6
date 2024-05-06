@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GuildWarData.h"
 
-#include <game/server/core/components/Guilds/GuildData.h>
+#include <game/server/core/components/guilds/guild_data.h>
 
 CGuildWarData::CGuildWarData(CGuildData* pGuild, CGuildData* pTargetGuild, int Score)
 {

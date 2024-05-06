@@ -6,7 +6,7 @@
 #include "game/server/gamecontext.h"
 
 #include <game/server/core/components/Accounts/AccountManager.h>
-#include <game/server/core/components/Guilds/GuildManager.h>
+#include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/Houses/HouseManager.h>
 
 #include <game/server/core/components/Groups/GroupManager.h>
@@ -174,12 +174,12 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 		}
 
 		const int AccountID = pPlayer->Account()->GetID();
-		GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID);
-		if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
+		GUILD_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID);
+		if(Result == GUILD_RESULT::MEMBER_SUCCESSFUL)
 		{
 			pGS->Chat(ClientID, "You have left the guild!");
 		}
-		else if(Result == GUILD_MEMBER_RESULT::KICK_IS_OWNER)
+		else if(Result == GUILD_RESULT::MEMBER_KICK_IS_OWNER)
 		{
 			pGS->Chat(ClientID, "You cannot leave the guild because you are the owner.");
 		}

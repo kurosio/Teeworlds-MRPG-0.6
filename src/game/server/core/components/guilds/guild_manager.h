@@ -1,10 +1,10 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_GUILD_CORE_H
-#define GAME_SERVER_COMPONENT_GUILD_CORE_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_MANAGER_H
+#define GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_MANAGER_H
 #include <game/server/core/mmo_component.h>
 
-#include "GuildData.h"
+#include "guild_data.h"
 
 class CGuildManager : public MmoComponent
 {
@@ -56,7 +56,7 @@ public:
 	CGuildHouseData* GetGuildHouseByPos(vec2 Pos) const;
 	CGuildData* GetGuildByID(GuildIdentifier ID) const;
 	CGuildData* GetGuildByName(const char* pGuildname) const;
-	CGuildHousePlantzoneData* GetGuildHousePlantzoneByPos(vec2 Pos) const;
+	CGuildHouseData::CPlantzone* GetGuildHousePlantzoneByPos(vec2 Pos) const;
 	bool IsAccountMemberGuild(int AccountID) const;
 
 };

@@ -1,25 +1,21 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "GuildDoor.h"
+#include "guild_door.h"
 
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
-#include "game/server/core/components/Guilds/GuildData.h"
-#include "game/server/core/components/Guilds/Houses/GuildHouseData.h"
+#include "game/server/core/components/guilds/guild_data.h"
+#include "game/server/core/components/guilds/guild_house_data.h"
 
-CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, vec2 Pos, CGuildHouseDoor* pDoorInfo, CGuildHouseData* pHouse)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_pHouse(pHouse), m_pDoorInfo(pDoorInfo)
+CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouseData* pHouse, std::string&& Name, vec2 Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_Name(std::move(Name)), m_pHouse(pHouse)
 {
 	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
 	m_PosControll = Pos;
 	m_State = CLOSED;
 	GS()->CreateLaserOrbite(this, 4, EntLaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);
 	GameWorld()->InsertEntity(this);
-}
-
-CEntityGuildDoor::~CEntityGuildDoor()
-{
 }
 
 void CEntityGuildDoor::Tick()
@@ -32,7 +28,7 @@ void CEntityGuildDoor::Tick()
 			const int& ClientID = pChar->GetPlayer()->GetCID();
 			CGuildData* pCharGuild = pChar->GetPlayer()->Account()->GetGuild();
 			if(pCharGuild && m_pHouse->GetGuild() && pCharGuild->GetID() == m_pHouse->GetGuild()->GetID() 
-				&& pChar->GetPlayer()->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+				&& pChar->GetPlayer()->Account()->GetGuildMember()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
 			{
 				if(pChar->GetPlayer()->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 				{
@@ -44,12 +40,12 @@ void CEntityGuildDoor::Tick()
 				}
 
 				// Broadcast a game information message to the client
-				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{}'!", m_pDoorInfo->GetName());
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{}'!", m_Name);
 			}
 			else
 			{
 				// Broadcast a game information message to the client
-				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "You do not have access to '{}' door!", m_pDoorInfo->GetName());
+				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "You do not have access to '{}' door!", m_Name);
 			}
 		}
 

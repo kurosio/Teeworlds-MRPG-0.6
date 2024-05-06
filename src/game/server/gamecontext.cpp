@@ -22,7 +22,7 @@
 
 #include "core/components/Accounts/AccountManager.h"
 #include "core/components/Bots/BotManager.h"
-#include "core/components/Guilds/GuildManager.h"
+#include "core/components/guilds/guild_manager.h"
 #include "core/components/Quests/QuestManager.h"
 #include "core/components/skills/skill_manager.h"
 

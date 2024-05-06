@@ -5,7 +5,7 @@
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/components/Guilds/GuildManager.h>
+#include <game/server/core/components/guilds/guild_manager.h>
 
 void CAethernetManager::OnInit()
 {

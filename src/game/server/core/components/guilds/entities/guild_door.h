@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_GUILD_ENTITIES_DOOR_H
 #include <game/server/entity.h>
 
-class CGuildHouseDoor;
+class CDoor;
 class CGuildHouseData;
 
 class CEntityGuildDoor : public CEntity
@@ -15,14 +15,13 @@ class CEntityGuildDoor : public CEntity
 		OPENED
 	};
 
+	std::string m_Name {};
 	CGuildHouseData* m_pHouse {};
-	CGuildHouseDoor* m_pDoorInfo {};
 	int m_State {};
 	vec2 m_PosControll {};
 
 public:
-	CEntityGuildDoor(CGameWorld* pGameWorld, vec2 Pos, CGuildHouseDoor* pDoorInfo, CGuildHouseData* pHouse);
-	~CEntityGuildDoor() override;
+	CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouseData* pHouse, std::string&& Name, vec2 Pos);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
@@ -30,6 +29,7 @@ public:
 	void Open() { m_State = OPENED; }
 	void Close() { m_State = CLOSED; }
 	bool IsClosed() const { return m_State == CLOSED; }
+	std::string GetName() { return m_Name; }
 };
 
 

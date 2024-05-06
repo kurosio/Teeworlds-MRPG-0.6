@@ -16,7 +16,7 @@
 #include "components/Dungeons/DungeonManager.h"
 #include "components/Eidolons/EidolonManager.h"
 #include "components/Groups/GroupManager.h"
-#include "components/Guilds/GuildManager.h"
+#include "components/guilds/guild_manager.h"
 #include "components/Houses/HouseManager.h"
 #include "components/Inventory/InventoryManager.h"
 #include "components/mails/mailbox_manager.h"

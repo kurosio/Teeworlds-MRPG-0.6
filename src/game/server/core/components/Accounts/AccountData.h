@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 
 // TODO: fully rework structures
-
+#include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/Auction/AuctionData.h>
 #include <game/server/core/tools/dbfield.h>
 
@@ -63,7 +63,7 @@ public:
 	 */
 	void ReinitializeGuild(bool SetNull = false);
 	CGuildData* GetGuild() const { return m_pGuildData; }
-	CGuildMemberData* GetGuildMemberData() const;
+	CGuildData::CMember* GetGuildMember() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }
 	bool SameGuild(int ClientID) const;
 	bool SameGuild(int GuildID, int ClientID) const;

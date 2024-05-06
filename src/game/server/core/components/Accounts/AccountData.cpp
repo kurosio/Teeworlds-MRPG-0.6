@@ -8,7 +8,7 @@
 #include <game/server/core/components/Houses/HouseData.h>
 #include <game/server/core/components/Groups/GroupData.h>
 
-#include <game/server/core/components/Guilds/GuildManager.h>
+#include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/worlds/world_manager.h>
 
 std::map < int, CAccountData > CAccountData::ms_aData;
@@ -150,7 +150,7 @@ void CAccountData::ReinitializeGuild(bool SetNull)
 	m_pGuildData = nullptr;
 }
 
-CGuildMemberData* CAccountData::GetGuildMemberData() const
+CGuildData::CMember* CAccountData::GetGuildMember() const
 {
 	return m_pGuildData ? m_pGuildData->GetMembers()->Get(m_ID) : nullptr;
 }

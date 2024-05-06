@@ -11,7 +11,7 @@
 #include "core/components/Bots/BotManager.h"
 #include "core/components/Dungeons/DungeonData.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
-#include "core/components/Guilds/GuildManager.h"
+#include "core/components/guilds/guild_manager.h"
 #include "core/components/Quests/QuestManager.h"
 
 #include "core/components/Inventory/ItemData.h"
@@ -492,7 +492,7 @@ void CPlayer::RefreshClanString()
 		Buffer.append(" | ");
 		Buffer.append(pGuild->GetName());
 		Buffer.append(" : ");
-		Buffer.append(Account()->GetGuildMemberData()->GetRank()->GetName());
+		Buffer.append(Account()->GetGuildMember()->GetRank()->GetName());
 	}
 
 	// class

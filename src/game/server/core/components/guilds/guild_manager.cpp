@@ -1,10 +1,11 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "GuildManager.h"
+#include "guild_manager.h"
 
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
+#include "entities/guild_door.h"
 #include <game/server/core/components/Inventory/InventoryManager.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
@@ -155,7 +156,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_HOUSE_DECORATION") == 0)
 	{
 		// Check if the player has a guild or if they have the access rights to upgrade the house
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -184,7 +185,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_SET_NEW_LEADER") == 0)
 	{
 		// Check if the player has access to set a new guild leader
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			// Inform the player that they have no access or are not a member of the guild
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
@@ -215,7 +216,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_CHANGE_PLAYER_RANK") == 0)
 	{
 		// Check if the player has a guild or has leader rights
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -225,7 +226,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		const int& MemberUID = VoteID;
 		const GuildRankIdentifier& RankID = VoteID2;
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
-		CGuildMemberData* pInterMember = pGuild->GetMembers()->Get(MemberUID);
+		auto pInterMember = pGuild->GetMembers()->Get(MemberUID);
 
 		// Check if the member data is valid and set the rank for the member
 		if(!pInterMember || !pInterMember->SetRank(RankID))
@@ -242,7 +243,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_DISBAND") == 0)
 	{
 		// Check if the player has a guild or if they have the leader access rights
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -263,7 +264,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_KICK_PLAYER") == 0)
 	{
 		// Check if the player has access to kick members from the guild
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -277,16 +278,16 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// Attempt to kick the player from the guild
-		GUILD_MEMBER_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(VoteID);
-		if(Result == GUILD_MEMBER_RESULT::KICK_IS_OWNER)
+		GUILD_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(VoteID);
+		if(Result == GUILD_RESULT::MEMBER_KICK_IS_OWNER)
 		{
 			GS()->Chat(ClientID, "You can't kick a leader");
 		}
-		else if(Result == GUILD_MEMBER_RESULT::KICK_DOES_NOT_EXIST)
+		else if(Result == GUILD_RESULT::MEMBER_KICK_DOES_NOT_EXIST)
 		{
 			GS()->Chat(ClientID, "The player is no longer on the guild membership lists");
 		}
-		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
+		else if(Result == GUILD_RESULT::MEMBER_SUCCESSFUL)
 		{
 			GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP);
 		}
@@ -309,7 +310,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// Get the guild member data for the player
-		CGuildMemberData* pMember = pPlayer->Account()->GetGuildMemberData();
+		auto pMember = pPlayer->Account()->GetGuildMember();
 
 		// Deposit the specified amount in the guild bank
 		if(pMember->DepositInBank(Get))
@@ -339,28 +340,28 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_RANK_CREATE") == 0)
 	{
 		// Check if the player has a guild or has leader access
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
 		}
 
 		// Attempt to add the rank to the guild
-		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
-		if(Result == GUILD_RANK_RESULT::ADD_ALREADY_EXISTS)
+		GUILD_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
+		if(Result == GUILD_RESULT::RANK_ADD_ALREADY_EXISTS)
 		{
 			GS()->Chat(ClientID, "The rank name already exists");
 		}
-		else if(Result == GUILD_RANK_RESULT::ADD_LIMIT_HAS_REACHED)
+		else if(Result == GUILD_RESULT::RANK_ADD_LIMIT_HAS_REACHED)
 		{
 			GS()->Chat(ClientID, "Rank limit reached, {} out of {}", (int)MAX_GUILD_RANK_NUM, (int)MAX_GUILD_RANK_NUM);
 		}
-		else if(Result == GUILD_RANK_RESULT::WRONG_NUMBER_OF_CHAR_IN_NAME)
+		else if(Result == GUILD_RESULT::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME)
 		{
 			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
 			GS()->Chat(ClientID, "You may be using unauthorized characters in the name, like '");
 		}
-		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
+		else if(Result == GUILD_RESULT::RANK_SUCCESSFUL)
 		{
 			GS()->Chat(ClientID, "The rank '{}' has been successfully added!", pPlayer->GetTempData().m_aRankGuildBuf);
 			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
@@ -371,24 +372,24 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_RANK_RENAME") == 0)
 	{
 		// Check if the player has access to rename a guild rank
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
 		}
 
 		// Rename the guild rank and store the result
-		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(VoteID)->Rename(pPlayer->GetTempData().m_aRankGuildBuf);
-		if(Result == GUILD_RANK_RESULT::RENAME_ALREADY_NAME_EXISTS)
+		GUILD_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(VoteID)->Rename(pPlayer->GetTempData().m_aRankGuildBuf);
+		if(Result == GUILD_RESULT::RANK_RENAME_ALREADY_NAME_EXISTS)
 		{
 			GS()->Chat(ClientID, "The name is already in use by another rank");
 		}
-		else if(Result == GUILD_RANK_RESULT::WRONG_NUMBER_OF_CHAR_IN_NAME)
+		else if(Result == GUILD_RESULT::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME)
 		{
 			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
 			GS()->Chat(ClientID, "You may be using unauthorized characters in the name, like '");
 		}
-		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
+		else if(Result == GUILD_RESULT::RANK_SUCCESSFUL)
 		{
 			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
 		}
@@ -398,7 +399,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_RANK_REMOVE") == 0)
 	{
 		// Check if the player has access to remove a guild rank
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -406,19 +407,19 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Get the rank ID, rank data
 		const int& RankID = VoteID;
-		CGuildRankData* pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		auto pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
 
 		// Remove the rank from the guild
-		GUILD_RANK_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Remove(pRank->GetName());
-		if(Result == GUILD_RANK_RESULT::REMOVE_RANK_IS_DEFAULT)
+		GUILD_RESULT Result = pPlayer->Account()->GetGuild()->GetRanks()->Remove(pRank->GetName());
+		if(Result == GUILD_RESULT::RANK_REMOVE_IS_DEFAULT)
 		{
 			GS()->Chat(ClientID, "You can't remove default rank");
 		}
-		else if(Result == GUILD_RANK_RESULT::REMOVE_RANK_DOES_NOT_EXIST)
+		else if(Result == GUILD_RESULT::RANK_REMOVE_DOES_NOT_EXIST)
 		{
 			GS()->Chat(ClientID, "There is no such rank");
 		}
-		else if(Result == GUILD_RANK_RESULT::SUCCESSFUL)
+		else if(Result == GUILD_RESULT::RANK_SUCCESSFUL)
 		{
 			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
 		}
@@ -428,7 +429,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_RANK_ACCESS") == 0)
 	{
 		// Check if the player has a guild and if they have the leader access
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -436,7 +437,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Get the rank ID from the vote ID and guild rank data for the given rank ID
 		const int& RankID = VoteID;
-		CGuildRankData* pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		auto pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
 
 		// Change the access for the rank
 		pRank->ChangeAccess();
@@ -449,7 +450,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_REQUESTS_ACCEPT") == 0)
 	{
 		// Check if the player has access to invite or kick members from the guild
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_INVITE_KICK))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_INVITE_KICK))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -460,16 +461,16 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 
 		// Accept the join request and get the result
-		GUILD_MEMBER_RESULT Result = pGuild->GetMembers()->GetRequests()->Accept(RequestFromUID, pPlayer->Account()->GetGuildMemberData());
-		if(Result == GUILD_MEMBER_RESULT::JOIN_ALREADY_IN_GUILD)
+		GUILD_RESULT Result = pGuild->GetMembers()->GetRequests()->Accept(RequestFromUID, pPlayer->Account()->GetGuildMember());
+		if(Result == GUILD_RESULT::MEMBER_JOIN_ALREADY_IN_GUILD)
 		{
 			GS()->Chat(ClientID, "The player is already in a guild");
 		}
-		else if(Result == GUILD_MEMBER_RESULT::NO_AVAILABLE_SLOTS)
+		else if(Result == GUILD_RESULT::MEMBER_NO_AVAILABLE_SLOTS)
 		{
 			GS()->Chat(ClientID, "No guild slots available.");
 		}
-		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
+		else if(Result == GUILD_RESULT::MEMBER_SUCCESSFUL)
 		{
 			GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP);
 			GS()->UpdateVotesIfForAll(MENU_GUILD_INVITES);
@@ -480,7 +481,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_REQUESTS_DENY") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_INVITE_KICK))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_INVITE_KICK))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -491,7 +492,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 
 		// Deny the request from the specified UID
-		pGuild->GetMembers()->GetRequests()->Deny(RequestFromUID, pPlayer->Account()->GetGuildMemberData());
+		pGuild->GetMembers()->GetRequests()->Deny(RequestFromUID, pPlayer->Account()->GetGuildMember());
 		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP);
 		GS()->UpdateVotesIfForAll(MENU_GUILD_INVITES);
 		return true;
@@ -531,16 +532,16 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		dbg_assert(pGuild != nullptr, "GUILD_REQUEST_TO_JOIN - guild data is empty");
 
 		// Send a request to join the guild and get the result
-		GUILD_MEMBER_RESULT Result = pGuild->GetMembers()->GetRequests()->Request(AccountID);
-		if(Result == GUILD_MEMBER_RESULT::REQUEST_ALREADY_SEND)
+		GUILD_RESULT Result = pGuild->GetMembers()->GetRequests()->Request(AccountID);
+		if(Result == GUILD_RESULT::MEMBER_REQUEST_ALREADY_SEND)
 		{
 			GS()->Chat(ClientID, "You have already sent a request to this guild.");
 		}
-		else if(Result == GUILD_MEMBER_RESULT::NO_AVAILABLE_SLOTS)
+		else if(Result == GUILD_RESULT::MEMBER_NO_AVAILABLE_SLOTS)
 		{
 			GS()->Chat(ClientID, "No guild slots available.");
 		}
-		else if(Result == GUILD_MEMBER_RESULT::SUCCESSFUL)
+		else if(Result == GUILD_RESULT::MEMBER_SUCCESSFUL)
 		{
 			GS()->Chat(ClientID, "You sent a request to join the {} guild.", pGuild->GetName());
 		}
@@ -550,7 +551,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_HOUSE_BUY") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -588,7 +589,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_DECLARE_WAR") == 0)
 	{
 		// Check if the player has a guild or has the right to declare war
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -621,7 +622,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_HOUSE_PLANT_ZONE_TRY") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -641,7 +642,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// Check if pPlantzone is null or undefined
-		CGuildHousePlantzoneData* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
+		auto pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
 		if(!pPlantzone)
 		{
 			GS()->Chat(ClientID, "Plant zone not found.");
@@ -692,7 +693,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_HOUSE_DOOR") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -718,7 +719,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_HOUSE_SELL") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -735,7 +736,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_UPGRADE") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_UPGRADES_HOUSE))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -755,7 +756,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	if(PPSTR(CMD, "GUILD_LOGGER_SET") == 0)
 	{
 		// Check if the player has a guild or has the right to invite/kick members
-		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -914,10 +915,10 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 
 	// Membership list
 	VoteWrapper(ClientID).Add("\u2635 Membership list of {}", pGuild->GetName());
-	CGuildMemberData* pPlayerMember = pPlayer->Account()->GetGuildMemberData();
+	auto pPlayerMember = pPlayer->Account()->GetGuildMember();
 	for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 	{
-		CGuildMemberData* pMember = pIterMember.second;
+		auto pMember = pIterMember.second;
 		const int& MemberUID = pMember->GetAccountID();
 		const char* pNickname = Server()->GetAccountNickname(MemberUID);
 
@@ -952,31 +953,6 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 		// Check if there are no available actions for the member
 		VMember.AddIf(VMember.IsEmpty(), "No available actions on the player");
 	}
-	VoteWrapper::AddEmptyline(ClientID);
-	VoteWrapper::AddEmptyline(ClientID);
-
-	VoteWrapper TestWrap(ClientID, VWF_CLOSED | VWF_STYLE_STRICT_BOLD);
-	TestWrap.AddLine();
-	TestWrap.Add("Deposit gold to the guild bank");
-	TestWrap.AddLine();
-
-	VoteWrapper TestWrap2(ClientID, VWF_CLOSED | VWF_STYLE_STRICT_BOLD);
-	TestWrap2.AddLine();
-	TestWrap2.Add("Deposit gold to the guild bank");
-	TestWrap2.AddLine();
-
-	VoteWrapper::AddEmptyline(ClientID);
-	VoteWrapper::AddEmptyline(ClientID);
-
-	VoteWrapper TestWrap3(ClientID,  VWF_STYLE_STRICT_BOLD);
-	TestWrap3.AddLine();
-	TestWrap3.Add("Deposit gold to the guild bank");
-	TestWrap3.AddLine();
-
-	VoteWrapper TestWrap4(ClientID,  VWF_STYLE_STRICT_BOLD);
-	TestWrap4.AddLine();
-	TestWrap4.Add("Deposit gold to the guild bank");
-	TestWrap4.AddLine();
 
 	// Add the votes backpage for the player
 	VoteWrapper::AddBackpage(ClientID);
@@ -1250,7 +1226,7 @@ void CGuildManager::ShowRequests(int ClientID) const
 	}
 
 	// If there are requests in the container
-	const GuildRequestsContainer& aRequest = pGuild->GetMembers()->GetRequests()->GetContainer();
+	auto& aRequest = pGuild->GetMembers()->GetRequests()->GetContainer();
 	if(!aRequest.empty())
 	{
 		for(const auto& pRequest : aRequest)
@@ -1292,7 +1268,7 @@ void CGuildManager::ShowPlantZone(int ClientID, int PlantzoneID) const
 
 	// settings
 	CGuildHouseData* pHouse = pGuild->GetHouse();
-	CGuildHousePlantzoneData* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
+	auto pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
 	CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
 	VoteWrapper VPlantSettings(ClientID, VWF_STYLE_STRICT_BOLD);
 	VPlantSettings.Add("\u2741 Plant zone: {}", pPlantzone->GetName());
@@ -1385,7 +1361,7 @@ void CGuildManager::ShowFinderDetailInformation(int ClientID, GuildIdentifier ID
 		VoteWrapper VMemberlist(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2635 Membership list of {}", pGuild->GetName());
 		for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 		{
-			CGuildMemberData* pMember = pIterMember.second;
+			auto pMember = pIterMember.second;
 			VMemberlist.Add("{} {} Deposit: {}", pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
 		}
 		VMemberlist.AddLine();
@@ -1436,7 +1412,7 @@ void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouseData* pHouse) const
 		// Check if player has leader rights in the guild
 		CGuildData* pGuild = pPlayer->Account()->GetGuild();
 		VoteWrapper VBuyHouse(ClientID, VWF_SEPARATE_OPEN, "Guild bank: {} gold", pGuild->GetBank()->Get());
-		if(pPlayer->Account()->GetGuildMemberData()->CheckAccess(RIGHTS_LEADER))
+		if(pPlayer->Account()->GetGuildMember()->CheckAccess(RIGHTS_LEADER))
 			VBuyHouse.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase this guild house! Cost: {} golds", pHouse->GetPrice());
 		else
 			VBuyHouse.Add("You need to be the leader rights");
@@ -1511,7 +1487,7 @@ void CGuildManager::ShowLogs(int ClientID) const
 	}
 
 	// Get the logger for the player's guild
-	CGuildLoggerManager* pLogger = pGuild->GetLogger();
+	CGuildData::CLogEntry* pLogger = pGuild->GetLogger();
 
 	// Display guild activity log settings to the player
 	auto flagStatus = [&](int flag) { return pLogger->IsActivityFlagSet(flag) ? "[\u2714]" : "[\u2715]"; };
@@ -1530,7 +1506,7 @@ void CGuildManager::ShowLogs(int ClientID) const
 	// Logs
 	char aBuf[128];
 	VoteWrapper VLogs(ClientID, VWF_SEPARATE_CLOSED, "Logs");
-	const GuildLogContainer& aLogs = pGuild->GetLogger()->GetContainer();
+	const CGuildData::LogContainer& aLogs = pGuild->GetLogger()->GetContainer();
 	for(const auto& pLog : aLogs)
 	{
 		// Format the log entry and display it
@@ -1582,7 +1558,7 @@ CGuildData* CGuildManager::GetGuildByName(const char* pGuildname) const
 	return itGuild != CGuildData::Data().end() ? (*itGuild) : nullptr;
 }
 
-CGuildHousePlantzoneData* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos) const
+CGuildHouseData::CPlantzone* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos) const
 {
 	for(auto& p : CGuildHouseData::Data())
 	{
