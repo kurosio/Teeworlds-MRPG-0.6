@@ -5,6 +5,7 @@
 
 #define TW_GUILDS_HOUSES "tw_guilds_houses"
 #define TW_GUILD_HOUSES_DECORATION_TABLE "tw_guilds_decorations"
+static constexpr float s_GuildChancePlanting = 0.025f;
 
 class CGS;
 class CPlayer;

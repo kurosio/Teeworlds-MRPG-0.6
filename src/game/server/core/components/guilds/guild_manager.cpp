@@ -682,7 +682,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		{
 			// Check if the chance result is successful
 			bool Success = false;
-			Chance result(0.025f);
+			Chance result(s_GuildChancePlanting);
 			for(int i = 0; i < Useds && !Success; i++)
 			{
 				if(result())
@@ -1361,6 +1361,7 @@ void CGuildManager::ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const
 	// information
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 Plant {} zone", pPlantzone->GetName());
 	VInfo.Add("You can grow a plant on the property");
+	VInfo.Add("Chance: {}%", s_GuildChancePlanting);
 	VInfo.Add("Planted: {}", pItem->GetName());
 	VoteWrapper::AddEmptyline(ClientID);
 
