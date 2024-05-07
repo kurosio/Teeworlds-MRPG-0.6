@@ -319,23 +319,6 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		return true;
 	}
 
-	if(PPSTR(CMD, "GUILD_RANK_NAME_FIELD") == 0)
-	{
-		// Check if the input text is equal to "NULL"
-		if(PPSTR(GetText, "NULL") == 0)
-		{
-			GS()->Chat(ClientID, "Please use a different name.");
-			return true;
-		}
-
-		// Copy the input text to the player's temporary data buffer for guild rank
-		str_copy(pPlayer->GetTempData().m_aRankGuildBuf, GetText, sizeof(pPlayer->GetTempData().m_aRankGuildBuf));
-
-		// Update the votes for all players to refresh the guild rank menu
-		GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
-		return true;
-	}
-
 	if(PPSTR(CMD, "GUILD_RANK_CREATE") == 0)
 	{
 		// Check if the player has a guild or has leader access
@@ -345,16 +328,19 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
+		// Check if the input text is equal to "NULL"
+		if(PPSTR(GetText, "NULL") == 0)
+		{
+			GS()->Chat(ClientID, "Please use a different name.");
+			return true;
+		}
+
 		// Attempt to add the rank to the guild
-		GuildResult Result = pPlayer->Account()->GetGuild()->GetRanks()->Add(pPlayer->GetTempData().m_aRankGuildBuf);
+		GuildResult Result = pPlayer->Account()->GetGuild()->GetRanks()->Add(GetText);
 		if(Result == GuildResult::RANK_ADD_ALREADY_EXISTS)
-		{
 			GS()->Chat(ClientID, "The rank name already exists");
-		}
 		else if(Result == GuildResult::RANK_ADD_LIMIT_HAS_REACHED)
-		{
 			GS()->Chat(ClientID, "Rank limit reached, {} out of {}", (int)GUILD_RANKS_MAX_COUNT, (int)GUILD_RANKS_MAX_COUNT);
-		}
 		else if(Result == GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME)
 		{
 			GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16.");
@@ -362,8 +348,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GuildResult::RANK_SUCCESSFUL)
 		{
-			GS()->Chat(ClientID, "The rank '{}' has been successfully added!", pPlayer->GetTempData().m_aRankGuildBuf);
-			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
+			GS()->Chat(ClientID, "The rank '{}' has been successfully added!", GetText);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_LIST);
 		}
 		return true;
 	}
@@ -377,8 +363,25 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
+		// Check if the input text is equal to "NULL"
+		if(PPSTR(GetText, "NULL") == 0)
+		{
+			GS()->Chat(ClientID, "Please use a different name.");
+			return true;
+		}
+
+		// Get the rank data
+		const int& RankID = VoteID;
+		auto pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		if(!pRank)
+		{
+			GS()->Chat(ClientID, "Unforeseen error.");
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+			return true;
+		}
+
 		// Rename the guild rank and store the result
-		GuildResult Result = pPlayer->Account()->GetGuild()->GetRanks()->Get(VoteID)->Rename(pPlayer->GetTempData().m_aRankGuildBuf);
+		GuildResult Result = pRank->Rename(GetText);
 		if(Result == GuildResult::RANK_RENAME_ALREADY_NAME_EXISTS)
 		{
 			GS()->Chat(ClientID, "The name is already in use by another rank");
@@ -390,7 +393,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 		else if(Result == GuildResult::RANK_SUCCESSFUL)
 		{
-			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_EDIT);
 		}
 		return true;
 	}
@@ -407,25 +410,28 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		// Get the rank ID, rank data
 		const int& RankID = VoteID;
 		auto pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		if(!pRank)
+		{
+			GS()->Chat(ClientID, "Unforeseen error.");
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+			return true;
+		}
 
 		// Remove the rank from the guild
 		GuildResult Result = pPlayer->Account()->GetGuild()->GetRanks()->Remove(pRank->GetName());
 		if(Result == GuildResult::RANK_REMOVE_IS_DEFAULT)
-		{
 			GS()->Chat(ClientID, "You can't remove default rank");
-		}
 		else if(Result == GuildResult::RANK_REMOVE_DOES_NOT_EXIST)
-		{
 			GS()->Chat(ClientID, "There is no such rank");
-		}
 		else if(Result == GuildResult::RANK_SUCCESSFUL)
 		{
-			GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
+			pPlayer->m_VotesData.UpdateVotes(MENU_GUILD_RANK_LIST);
+			GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_EDIT);
 		}
 		return true;
 	}
-
-	if(PPSTR(CMD, "GUILD_RANK_ACCESS") == 0)
+	
+	if(PPSTR(CMD, "GUILD_RANK_SET_RIGHTS") == 0)
 	{
 		// Check if the player has a guild and if they have the leader access
 		if(!pPlayer->Account()->HasGuild() || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
@@ -436,13 +442,25 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// Get the rank ID from the vote ID and guild rank data for the given rank ID
 		const int& RankID = VoteID;
+		GuildRankRights Rights = static_cast<GuildRankRights>(VoteID2);
 		auto pRank = pPlayer->Account()->GetGuild()->GetRanks()->Get(RankID);
+		if(!pRank)
+		{
+			GS()->Chat(ClientID, "Unforeseen error.");
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+			return true;
+		}
 
-		// Change the access for the rank
-		pRank->ChangeAccess();
+		// Check for same of rights
+		if(pRank->GetRights() == Rights)
+		{
+			GS()->Chat(ClientID, "You already have current rights set.");
+			return true;
+		}
 
-		// Update the votes for all players in the guild rank menu
-		GS()->UpdateVotesIfForAll(MENU_GUILD_RANKS);
+		// Change the access for the rank and update votes
+		pRank->SetRights(Rights);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_EDIT);
 		return true;
 	}
 
@@ -683,7 +701,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 				pPlantzone->ChangeItem(ItemID);
 			}
 
-			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_PLANTZONE_SELECTED);
 		}
 
 		return true;
@@ -807,6 +825,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		ShowMenu(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -831,11 +850,19 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_RANKS)
+	if(Menulist == MENU_GUILD_RANK_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
-		ShowRanksSettings(ClientID);
+		ShowRanksList(pPlayer);
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
+	}
+
+	if(Menulist == MENU_GUILD_RANK_EDIT)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_RANK_LIST);
+		ShowRankEdit(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		VoteWrapper::AddBackpage(ClientID);
 	}
 
 	if(Menulist == MENU_GUILD_INVITES)
@@ -845,10 +872,27 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED)
+	if(Menulist == MENU_GUILD_HOUSE_DOOR_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
-		ShowPlantZone(ClientID, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		ShowDoorsControl(pPlayer);
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_GUILD_HOUSE_PLANTZONE_LIST)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
+		ShowPlantzonesControl(pPlayer);
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_GUILD_HOUSE_PLANTZONE_SELECTED)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_HOUSE_PLANTZONE_LIST);
+		ShowPlantzoneEdit(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -934,7 +978,7 @@ void CGuildManager::ShowMembershipList(int ClientID) const
 			{
 				if(pMember->GetRank()->GetID() != pRank->GetID())
 					VMember.AddOption("GUILD_CHANGE_PLAYER_RANK", MemberUID, pRank->GetID(), "Change rank to: {}",
-						pRank->GetName(), pRank->GetAccess() > GUILD_RANK_RIGHT_DEFAULT ? "*" : "");
+						pRank->GetName(), pRank->GetRights() > GUILD_RANK_RIGHT_DEFAULT ? "*" : "");
 			}
 
 			// Check if the member is not the player themselves
@@ -1053,7 +1097,6 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	}
 }
 
-
 void CGuildManager::ShowMenu(int ClientID) const
 {
 	// If the player object does not exist, return from the function
@@ -1062,12 +1105,9 @@ void CGuildManager::ShowMenu(int ClientID) const
 		return;
 
 	// If the player is not in a guild
-	CGuild* pGuild = pPlayer->Account()->GetGuild();
+	auto* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
-	{
-		VoteWrapper::AddBackpage(ClientID);
 		return;
-	}
 
 	bool HasHouse = pGuild->HasHouse();
 	int ExpNeed = computeExperience(pGuild->GetLevel());
@@ -1075,71 +1115,44 @@ void CGuildManager::ShowMenu(int ClientID) const
 	const int MemberMaxSlots = pGuild->GetUpgrades(GuildUpgrade::AVAILABLE_SLOTS)->m_Value;
 
 	// Guild information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2747 Information about {}", pGuild->GetName());
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2747 Information about {}", pGuild->GetName());
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Level: {} Experience: {}/{}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	VInfo.Add("Members: {} of {}", MemberUsedSlots, MemberMaxSlots);
-	VInfo.AddLine(ClientID);
 
 	if(HasHouse)
-	{
+	{	
 		// Rent information
 		char aBufTimeStamp[64];
-		VoteWrapper VRent(ClientID);
+		VoteWrapper VRent(ClientID, VWF_SEPARATE);
 		VRent.Add("\u2679 House rent price per day: {} golds", pGuild->GetHouse()->GetRentPrice());
 		pGuild->GetHouse()->GetRentTimeStamp(aBufTimeStamp, sizeof(aBufTimeStamp));
 		VRent.Add("Approximate rental time: {}", aBufTimeStamp);
-		VRent.AddLine();
 	}
 
 	// Guild deposit
-	VoteWrapper VDeposit(ClientID, VWF_SEPARATE_OPEN, "\u2727 Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
+	VoteWrapper VDeposit(ClientID, VWF_SEPARATE, "\u2727 Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
 	VDeposit.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
-	VDeposit.AddLine();
 
 	// Guild management
 	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN, "\u262B Guild Management");
 	VManagement.AddMenu(MENU_GUILD_MEMBERSHIP, "Membership list");
 	VManagement.AddMenu(MENU_GUILD_INVITES, "Requests membership");
 	VManagement.AddMenu(MENU_GUILD_LOGS, "Logs of activity");
-	VManagement.AddMenu(MENU_GUILD_RANKS, "Rank management");
+	VManagement.AddMenu(MENU_GUILD_RANK_LIST, "Rank management");
 	VManagement.AddMenu(MENU_GUILD_WARS, "Guild wars");
 	VManagement.AddLine();
 
 	// Guild append house menu
 	if(HasHouse)
 	{
-		CGuildHouse* pHouse = pGuild->GetHouse();
-
 		// House management
 		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN, "\u2302 House Management");
-		VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor");
+		VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor mode");
+		VHouse.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_LIST, "Plant zones");
+		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors control");
 		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
 		VHouse.AddOption("GUILD_HOUSE_SELL", "Sell the house");
-		VHouse.AddLine();
-
-		// House doors
-		if(!pHouse->GetDoorManager()->GetContainer().empty())
-		{
-			VoteWrapper VDoors(ClientID, VWF_SEPARATE_OPEN, "\u2743 House has {} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
-			for(auto& [Number, DoorData] : pHouse->GetDoorManager()->GetContainer())
-			{
-				bool StateDoor = DoorData->IsClosed();
-				VDoors.AddOption("GUILD_HOUSE_DOOR", Number, "Door {} {}", StateDoor ? "Open" : "Close", DoorData->GetName());
-			}
-			VDoors.AddLine();
-		}
-
-		// House plant zones
-		if(!pHouse->GetPlantzonesManager()->GetContainer().empty())
-		{
-			VoteWrapper VPlantZones(ClientID, VWF_SEPARATE_OPEN, "\u2741 House has {} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
-			for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
-			{
-				VPlantZones.AddMenu(MENU_GUILD_HOUSE_PLANT_ZONE_SELECTED, ID, "Plant zone {} / {}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
-			}
-			VPlantZones.AddLine();
-		}
 	}
 
 	// Guild disband
@@ -1167,54 +1180,69 @@ void CGuildManager::ShowMenu(int ClientID) const
 			VUpgrades.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 		}
 	}
-
-	// Add backpage
-	VoteWrapper::AddBackpage(ClientID);
 }
 
-void CGuildManager::ShowRanksSettings(int ClientID) const
+void CGuildManager::ShowRanksList(CPlayer* pPlayer) const
 {
-	// If the player object does not exist, return from the function
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
-
-	// If the player is not in a guild
-	CGuild* pGuild = pPlayer->Account()->GetGuild();
+	auto* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
-	{
-		VoteWrapper::AddBackpage(ClientID);
 		return;
-	}
 
-	// Guild rank information
-	VoteWrapper VRanks(ClientID, VWF_SEPARATE_CLOSED|VWF_STYLE_SIMPLE, "\u2324 Rank management (Information)");
-	VRanks.Add("Use reason how enter Value, Click fields!");
-	VRanks.Add("Example: Name rank: [], in reason name, and use this");
-	VRanks.Add("For leader access full, ignored ranks");
-	VRanks.Add("Maximal 5 ranks for one guild");
-	VoteWrapper::AddLine(ClientID);
+	int ClientID = pPlayer->GetCID();
+	int MaxRanksNum = (int)GUILD_RANKS_MAX_COUNT;
+	int CurrentRanksNum = pPlayer->Account()->GetGuild()->GetRanks()->GetContainer().size();
 
-	VoteWrapper VRankSettings(ClientID, VWF_SEPARATE_OPEN, "\u2743 Rank management (Settings)");
-	VRankSettings.AddOption("GUILD_RANK_NAME_FIELD", "Name rank: {}", pPlayer->GetTempData().m_aRankGuildBuf);
-	VRankSettings.AddOption("GUILD_RANK_CREATE", "Create new rank");
-	VoteWrapper::AddLine(ClientID);
+	// rank information
+	VoteWrapper VRanks(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "\u2324 Rank management (Information)");
+	VRanks.Add("Maximal {} ranks for one guild", MaxRanksNum);
+	VRanks.Add("Guild leader ignores rank rights");
+	VRanks.Add("Use the reason as a text field.");
+	VoteWrapper::AddEmptyline(ClientID);
 
-	// Guild rank list
+	// ranks list
+	VoteWrapper VList(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2743 Rank list ({} of {})", CurrentRanksNum, MaxRanksNum);
+	VList.ReinitNumeralDepthStyles({ {DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD} });
 	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
 	{
 		GuildRankIdentifier ID = pRank->GetID();
 		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank());
-		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetAccessName());
-
-		VoteWrapper VRank(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "\u2742 Rank [{}] {}", pRank->GetName(), StrAppendRankInfo.c_str());
-		VRank.AddOption("GUILD_RANK_RENAME", ID, "Rename to ({})", pPlayer->GetTempData().m_aRankGuildBuf);
-		VRank.AddIfOption(!IsDefaultRank, "GUILD_RANK_ACCESS", ID, "Change access", pRank->GetAccessName());
-		VRank.AddIfOption(!IsDefaultRank, "GUILD_RANK_REMOVE", ID, "Remove");
+		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetRightsName());
+		VList.MarkList().AddMenu(MENU_GUILD_RANK_EDIT, ID, "{} {}", pRank->GetName(), StrAppendRankInfo.c_str());
 	}
 
-	// Add the votes to the player's back page
-	VoteWrapper::AddBackpage(ClientID);
+	// new rank
+	VoteWrapper VNew(ClientID);
+	VNew.AddOption("GUILD_RANK_CREATE", "New rank (by reason field)");
+}
+
+void CGuildManager::ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID)
+{
+	auto* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+		return;
+
+	auto* pRank = pGuild->GetRanks()->Get(ID);
+	if(!pRank)
+		return;
+
+	// information
+	const int ClientID = pPlayer->GetCID();
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Change rights for '{}'", pRank->GetName());
+	VInfo.Add("Current rigths: {}", pRank->GetRightsName());
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// selector rights
+	VoteWrapper VSelector(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Select new rights:");
+	for(int i = GUILD_RANK_RIGHT_DEFAULT; i < GUILD_RIGHT_FULL; i++)
+	{
+		bool IsSet = (pRank->GetRights() == static_cast<GuildRankRights>(i));
+		VSelector.AddOption("GUILD_RANK_SET_RIGHTS", pRank->GetID(), i, "{} {}", (IsSet ? "✔" : "×"), pRank->GetRightsName((GuildRankRights)i));
+	}
+
+	// functions
+	VoteWrapper VFunction(ClientID);
+	VFunction.AddOption("GUILD_RANK_RENAME", pRank->GetID(), "Rename (by reason field)");
+	VFunction.AddOption("GUILD_RANK_REMOVE", pRank->GetID(), "Remove");
 }
 
 void CGuildManager::ShowRequests(int ClientID) const
@@ -1253,49 +1281,97 @@ void CGuildManager::ShowRequests(int ClientID) const
 	VoteWrapper::AddBackpage(ClientID);
 }
 
-void CGuildManager::ShowPlantZone(int ClientID, int PlantzoneID) const
+void CGuildManager::ShowDoorsControl(CPlayer* pPlayer) const
 {
-	// Check player
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer)
+	auto* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
 		return;
 
-	// Check some guild data
-	CGuild* pGuild = pPlayer->Account()->GetGuild();
-	if(!pGuild || !pGuild->GetHouse() || !pGuild->GetHouse()->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID))
-	{
-		VoteWrapper::AddBackpage(ClientID);
+	auto* pHouse = pGuild->GetHouse();
+	if(!pHouse)
 		return;
-	}
+
+	int ClientID = pPlayer->GetCID();
+	int DoorsNum = (int)pHouse->GetDoorManager()->GetContainer().size();
 
 	// information
-	VoteWrapper VPlantInfo(ClientID, VWF_SEPARATE_CLOSED, "\u2741 Plant zones information");
-	VPlantInfo.Add("You can plant some kind of plantation.");
-	VoteWrapper::AddLine(ClientID);
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "House doors information");
+	VInfo.Add("You can control your doors in the house");
+	VInfo.Add("Your home has: {} doors.", DoorsNum);
+	VoteWrapper::AddEmptyline(ClientID);
 
-	// settings
-	CGuildHouse* pHouse = pGuild->GetHouse();
-	auto pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
+	// doors control
+	VoteWrapper VDoors(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2743 Door's control");
+	for(auto& [Number, DoorData] : pHouse->GetDoorManager()->GetContainer())
+	{
+		bool StateDoor = DoorData->IsClosed();
+		VDoors.AddOption("GUILD_HOUSE_DOOR", Number, "{} {} door", StateDoor ? "Open" : "Close", DoorData->GetName());
+	}
+	VoteWrapper::AddEmptyline(ClientID);
+}
+
+void CGuildManager::ShowPlantzonesControl(CPlayer* pPlayer) const
+{
+	auto* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+		return;
+
+	auto* pHouse = pGuild->GetHouse();
+	if(!pHouse)
+		return;
+
+	int ClientID = pPlayer->GetCID();
+	int PlantzonesNum = (int)pHouse->GetPlantzonesManager()->GetContainer().size();
+
+	// information
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "Plant zones information");
+	VInfo.Add("You can control your plant zones in the house");
+	VInfo.Add("Your home has: {} plant zones.", PlantzonesNum);
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// plant zones control
+	VoteWrapper VPlantzones(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2743 Plant zone's control");
+	for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
+		VPlantzones.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_SELECTED, ID, "{} plant zone / {}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
+
+	VoteWrapper::AddEmptyline(ClientID);
+}
+
+void CGuildManager::ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const
+{
+	auto* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+		return;
+
+	auto* pHouse = pGuild->GetHouse();
+	if(!pHouse)
+		return;
+
+	auto* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
+	if(!pPlantzone)
+		return;
+
+	int ClientID = pPlayer->GetCID();
 	CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
-	VoteWrapper VPlantSettings(ClientID, VWF_STYLE_STRICT_BOLD);
-	VPlantSettings.Add("\u2741 Plant zone: {}", pPlantzone->GetName());
-	VPlantSettings.Add("Planted: {}", pItem->GetName());
-	VPlantSettings.AddLine();
 
-	// items
-	VoteWrapper VPlantItems(ClientID, VWF_SEPARATE_OPEN, "\u2741 Possible items for planting");
-	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ItemFunctional::FUNCTION_PLANT);
+	// information
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 {} plant zone", pPlantzone->GetName());
+	VInfo.Add("You can control your plant zones in the house");
+	VInfo.Add("Planted: {}", pItem->GetName());
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// items list availables can be planted
+	VoteWrapper VPlantItems(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
+	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(FUNCTION_PLANT);
 	for(auto& ID : vItems)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
 		if(pPlayerItem->HasItem())
+		{
 			VPlantItems.AddOption("GUILD_HOUSE_PLANT_ZONE_TRY", PlantzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+		}
 	}
-	if(VPlantItems.IsEmpty())
-		VPlantItems.Add("You have no plants for planting");
-
-	// Add the votes to the player's back page
-	VoteWrapper::AddBackpage(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 }
 
 void CGuildManager::ShowFinder(int ClientID) const

@@ -247,11 +247,9 @@ bool CGuild::IsAccountMemberGuild(int AccountID)
 	});
 }
 
-/*
- * -------------------------------------
+/* -------------------------------------
  * Bank impl
- * -------------------------------------
- */
+ * ------------------------------------- */
 CGS* CGuild::CBank::GS() const { return m_pGuild->GS(); }
 
 void CGuild::CBank::Set(int Value)
@@ -280,11 +278,9 @@ bool CGuild::CBank::Spend(int Value)
 }
 
 
-/*
- * -------------------------------------
+/* -------------------------------------
  * Logger impl
- * -------------------------------------
- */
+ * ------------------------------------- */
 CGuild::CLogEntry::CLogEntry(CGuild* pGuild, int64_t Logflag) : m_pGuild(pGuild)
 {
 	m_Logflag = Logflag < 0 ? (int64_t)LOGFLAG_GUILD_FULL : Logflag;
@@ -359,9 +355,9 @@ void CGuild::CLogEntry::InitLogs()
  * ------------------------------------- */
 CGS* CGuild::CRank::GS() const { return m_pGuild->GS(); }
 
-CGuild::CRank::CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankRights Access, CGuild* pGuild) : m_ID(RID), m_Rank(std::move(Rank))
+CGuild::CRank::CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankRights Rights, CGuild* pGuild) : m_ID(RID), m_Rank(std::move(Rank))
 {
-	m_Access = Access;
+	m_Rights = Rights;
 	m_pGuild = pGuild;
 }
 
@@ -392,34 +388,26 @@ GuildResult CGuild::CRank::Rename(std::string NewRank)
 	return GuildResult::RANK_SUCCESSFUL;
 }
 
-void CGuild::CRank::ChangeAccess()
-{
-	if(m_Access >= GUILD_RIGHT_FULL)
-		SetAccess(GUILD_RANK_RIGHT_DEFAULT);
-	else
-		SetAccess((GuildRankRights)(m_Access + 1));
-}
-
-void CGuild::CRank::SetAccess(GuildRankRights Access)
+void CGuild::CRank::SetRights(GuildRankRights Rights)
 {
 	// Set the access level, clamping it between GUILD_RANK_RIGHT_DEFAULT and GUILD_RIGHT_FULL
-	m_Access = (GuildRankRights)clamp((int)Access, (int)GUILD_RANK_RIGHT_DEFAULT, (int)GUILD_RIGHT_FULL);
+	m_Rights = (GuildRankRights)clamp((int)Rights, (int)GUILD_RANK_RIGHT_DEFAULT, (int)GUILD_RIGHT_FULL);
 
 	// Save the updated access level in the database
 	GuildIdentifier GuildID = m_pGuild->GetID();
-	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Access = '%d' WHERE ID = '%d'", m_Access, m_ID);
+	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Rights = '%d' WHERE ID = '%d'", m_Rights, m_ID);
 
 	// Send a chat message to the guild with the updated access level
-	GS()->ChatGuild(GuildID, "Rank '{}' new rights '{}'!", m_Rank.c_str(), GetAccessName());
+	GS()->ChatGuild(GuildID, "Rank '{}' new rights '{}'!", m_Rank.c_str(), GetRightsName());
 }
 
-const char* CGuild::CRank::GetAccessName() const
+const char* CGuild::CRank::GetRightsName(GuildRankRights Rights) const
 {
-	if(m_Access == GUILD_RANK_RIGHT_INVITE_KICK)
+	if(Rights == GUILD_RANK_RIGHT_INVITE_KICK)
 		return "Invite & kick";
-	if(m_Access == GUILD_RIGHT_UPGRADES_HOUSE)
+	if(Rights == GUILD_RIGHT_UPGRADES_HOUSE)
 		return "Upgrade & house door's";
-	if(m_Access == GUILD_RIGHT_FULL)
+	if(Rights == GUILD_RIGHT_FULL)
 		return "Full";
 	return "Default";
 }
@@ -456,7 +444,7 @@ void CGuild::CRanksManager::Init(GuildRankIdentifier DefaultID)
 		// Get the rank ID, name, and access level from the database query result
 		GuildRankIdentifier RID = pRes->getInt("ID");
 		std::string Rank = pRes->getString("Name").c_str();
-		GuildRankRights Access = (GuildRankRights)pRes->getInt("Access");
+		GuildRankRights Rights = (GuildRankRights)pRes->getInt("Rights");
 
 		// Create a new CRank object and add it to the ranks vector
 		if(DefaultID == RID)
@@ -465,7 +453,7 @@ void CGuild::CRanksManager::Init(GuildRankIdentifier DefaultID)
 		}
 		else
 		{
-			m_aRanks.emplace_back(new CRank(RID, std::forward<std::string>(Rank), Access, m_pGuild));
+			m_aRanks.emplace_back(new CRank(RID, std::forward<std::string>(Rank), Rights, m_pGuild));
 		}
 	}
 }
@@ -480,7 +468,7 @@ void CGuild::CRanksManager::UpdateDefaultRank()
 	if(!m_aRanks.empty())
 	{
 		m_pDefaultRank = m_aRanks.back();
-		m_pDefaultRank->SetAccess(GUILD_RANK_RIGHT_DEFAULT);
+		m_pDefaultRank->SetRights(GUILD_RANK_RIGHT_DEFAULT);
 	}
 	else
 	{
@@ -535,7 +523,7 @@ GuildResult CGuild::CRanksManager::Add(const std::string& Rank)
 
 	// Insert the new rank into the database
 	GuildIdentifier GuildID = m_pGuild->GetID();
-	Database->Execute<DB::INSERT>("tw_guilds_ranks", "(ID, Access, GuildID, Name) VALUES ('%d', '%d', '%d', '%s')", InitID, (int)GUILD_RANK_RIGHT_DEFAULT, GuildID, cstrRank.cstr());
+	Database->Execute<DB::INSERT>("tw_guilds_ranks", "(ID, Rights, GuildID, Name) VALUES ('%d', '%d', '%d', '%s')", InitID, (int)GUILD_RANK_RIGHT_DEFAULT, GuildID, cstrRank.cstr());
 	m_aRanks.emplace_back(new CRank(InitID, cstrRank.cstr(), GUILD_RANK_RIGHT_DEFAULT, m_pGuild));
 
 	// Send information to the game server and update the guild history
@@ -725,8 +713,8 @@ bool CGuild::CMember::WithdrawFromBank(int Golds)
 
 bool CGuild::CMember::CheckAccess(GuildRankRights RequiredAccess) const
 {
-	return (m_pGuild->GetLeaderUID() == m_AccountID || m_pRank->GetAccess() == RequiredAccess
-		|| (m_pRank->GetAccess() == GUILD_RIGHT_FULL && RequiredAccess != GUILD_RANK_RIGHT_LEADER));
+	return (m_pGuild->GetLeaderUID() == m_AccountID || m_pRank->GetRights() == RequiredAccess
+		|| (m_pRank->GetRights() == GUILD_RIGHT_FULL && RequiredAccess != GUILD_RANK_RIGHT_LEADER));
 }
 
 /* -------------------------------------

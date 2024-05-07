@@ -41,15 +41,18 @@ public:
 
 private:
 	void ShowMenu(int ClientID) const;
-	void ShowRanksSettings(int ClientID) const;
+	void ShowRanksList(CPlayer* pPlayer) const;
+	void ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID);
 	void ShowFinder(int ClientID) const;
 	void ShowFinderDetailInformation(int ClientID, GuildIdentifier ID) const;
 	void ShowLogs(int ClientID) const;
 	void ShowMembershipList(int ClientID) const;
 	void ShowRequests(int ClientID) const;
-	void ShowPlantZone(int ClientID, int PlantzoneID) const;
 	void ShowBuyHouse(int ClientID, CGuildHouse* pHouse) const;
 	void ShowDeclareWar(int ClientID) const;
+	void ShowDoorsControl(CPlayer* pPlayer) const;
+	void ShowPlantzonesControl(CPlayer* pPlayer) const;
+	void ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const;
 
 public:
 	CGuildHouse* GetGuildHouseByID(const GuildHouseIdentifier& ID) const;

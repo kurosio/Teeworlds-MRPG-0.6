@@ -157,20 +157,20 @@ public:
 		CGS* GS() const;
 		GuildRankIdentifier m_ID {};
 		std::string m_Rank {};
-		GuildRankRights m_Access {};
+		GuildRankRights m_Rights {};
 		CGuild* m_pGuild {};
 
 	public:
 		CRank() = delete;
-		CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankRights Access, CGuild* pGuild);
+		CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankRights Rights, CGuild* pGuild);
 
 		GuildRankIdentifier GetID() const { return m_ID; }                                  // Get the unique identifier of the guild rank
 		const char* GetName() const { return m_Rank.c_str(); }                              // Get the name of the guild rank
-		const char* GetAccessName() const;                                                  // Get the name of the access level of the guild rank
-		[[nodiscard]] GuildResult Rename(std::string NewRank);                             // Change the name of the guild rank
-		void ChangeAccess();                                                                // Change the access level of the guild rank
-		void SetAccess(GuildRankRights Access);                                             // Set the access level of the guild rank
-		const GuildRankRights& GetAccess() const { return m_Access; }                       // Get the rank access
+		const char* GetRightsName(GuildRankRights Right) const;                             // Get the name of the right level of the guild rank
+		const char* GetRightsName() const { return GetRightsName(m_Rights); }               // Get the name of the right level of the guild rank
+		[[nodiscard]] GuildResult Rename(std::string NewRank);                              // Change the name of the guild rank
+		void SetRights(GuildRankRights Rights);                                             // Set the access level of the guild rank
+		const GuildRankRights& GetRights() const { return m_Rights; }                       // Get the rank access
 	};
 
 	using RankContainer = std::deque<class CRank*>;
@@ -363,7 +363,7 @@ public:
 
 	// war
 	bool StartWar(CGuild* pTargetGuild);
-	CGuildWarData* GetWar() const { return m_pWar; };
+	CGuildWarData* GetWar() const { return m_pWar; }
 
 	// global functions
 	static bool IsAccountMemberGuild(int AccountID);
