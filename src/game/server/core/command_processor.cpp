@@ -174,12 +174,12 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 		}
 
 		const int AccountID = pPlayer->Account()->GetID();
-		GUILD_RESULT Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID);
-		if(Result == GUILD_RESULT::MEMBER_SUCCESSFUL)
+		GuildResult Result = pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID);
+		if(Result == GuildResult::MEMBER_SUCCESSFUL)
 		{
 			pGS->Chat(ClientID, "You have left the guild!");
 		}
-		else if(Result == GUILD_RESULT::MEMBER_KICK_IS_OWNER)
+		else if(Result == GuildResult::MEMBER_KICK_IS_OWNER)
 		{
 			pGS->Chat(ClientID, "You cannot leave the guild because you are the owner.");
 		}

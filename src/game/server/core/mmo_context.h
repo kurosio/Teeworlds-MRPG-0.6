@@ -361,13 +361,6 @@ enum
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
 	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game. 
 
-	// guild
-	MAX_GUILD_SLOTS = 20,					// maximum guild player's
-	MAX_GUILD_RANK_NUM = 5,					// maximum guild rank's
-	MAX_GUILD_LOGS_NUM = 50,				// maximum guild log's
-	DEFAULT_GUILD_AVAILABLE_SLOTS = 2,		// default available slots
-	DEFAULT_GUILD_CHAIR = 1,				// default chair boost
-
 	// settings items
 	itShowEquipmentDescription = 25,	// Description setting
 	itShowCriticalDamage = 34,			// Critical damage setting
@@ -457,17 +450,6 @@ private:
 	{
 		{ itTinyHealthPotion, "TinyHP", 7, 15 }
 	};
-};
-
-// Define an enum for the different levels of guild rank access
-enum GuildRankAccess
-{
-	RIGHTS_LEADER = -1,           // Highest level of access, reserved for guild leader
-	RIGHTS_DEFAULT = 0,           // Default level of access for new members
-	RIGHTS_INVITE_KICK,           // Access to invite and kick members
-	RIGHTS_UPGRADES_HOUSE,        // Access to upgrade guild house
-	RIGHTS_FULL,                  // Full access to all guild functions
-	RIGHTS_NUM,                   // Total number of access levels
 };
 
 // broadcast priority
