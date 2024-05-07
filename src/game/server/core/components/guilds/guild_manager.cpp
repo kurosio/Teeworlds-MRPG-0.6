@@ -1371,7 +1371,7 @@ void CGuildManager::ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const
 	for(auto& ID : vItems)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
-		if(pPlayerItem->HasItem())
+		if(pPlayerItem->HasItem() && ID != pPlantzone->GetItemID())
 		{
 			VPlantItems.AddOption("GUILD_HOUSE_PLANT_ZONE_TRY", PlantzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 		}
