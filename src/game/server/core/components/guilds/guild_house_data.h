@@ -53,7 +53,7 @@ public:
 		vec2 GetPos() const { return m_Pos; }
 		std::vector<CJobItems*>& GetContainer() { return m_vPlants; }
 
-		void ChangeItem(int ItemID) const;
+		void ChangeItem(int ItemID);
 		void Add(CJobItems* pItem) { m_vPlants.push_back(pItem); }
 		void Remove(CJobItems* pItem) { m_vPlants.erase(std::remove(m_vPlants.begin(), m_vPlants.end(), pItem), m_vPlants.end()); }
 	};

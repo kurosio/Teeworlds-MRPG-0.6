@@ -645,20 +645,24 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		const int& Useds = maximum(1, Get);
-		const int& PlantzoneID = VoteID;
-		const ItemIdentifier& ItemID = VoteID2;
-		CGuild* pGuild = pPlayer->Account()->GetGuild();
-		CGuildHouse* pHouse = pGuild->GetHouse();
+		// check guild valid
+		auto* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild)
+			return true;
 
-		// Check if the guild does not have a house
+		// check house valid
+		auto* pHouse = pGuild->GetHouse();
 		if(!pHouse)
 		{
 			GS()->Chat(ClientID, "Your guild does not have a house.");
 			return true;
 		}
 
-		// Check if pPlantzone is null or undefined
+		const int& Useds = maximum(1, Get);
+		const int& PlantzoneID = VoteID;
+		const ItemIdentifier& ItemID = VoteID2;
+
+		// check plantzone valid
 		auto pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
 		if(!pPlantzone)
 		{
@@ -666,14 +670,14 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
-		// Check if the ItemID of the plant matches the ItemID of the plant zone
+		// check is same plant item with current
 		if(ItemID == pPlantzone->GetItemID())
 		{
 			GS()->Chat(ClientID, "This plant is already planted.");
 			return true;
 		}
 
-		// Check if the player has enough currency to spend
+		// check spend currency (planting item)
 		if(pPlayer->Account()->SpendCurrency(Useds, ItemID))
 		{
 			// Check if the chance result is successful
@@ -1332,7 +1336,7 @@ void CGuildManager::ShowPlantzonesControl(CPlayer* pPlayer) const
 	// plant zones control
 	VoteWrapper VPlantzones(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2743 Plant zone's control");
 	for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
-		VPlantzones.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_SELECTED, ID, "{} plant zone / {}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
+		VPlantzones.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_SELECTED, ID, "Plant {} zone / {}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
 
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1355,8 +1359,8 @@ void CGuildManager::ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const
 	CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 {} plant zone", pPlantzone->GetName());
-	VInfo.Add("You can control your plant zones in the house");
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 Plant {} zone", pPlantzone->GetName());
+	VInfo.Add("You can grow a plant on the property");
 	VInfo.Add("Planted: {}", pItem->GetName());
 	VoteWrapper::AddEmptyline(ClientID);
 

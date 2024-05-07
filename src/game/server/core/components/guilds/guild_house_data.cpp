@@ -136,12 +136,13 @@ void CGuildHouse::UpdateGuild(CGuild* pGuild)
 /* -------------------------------------
  * Plantzones impl
  * ------------------------------------- */
-void CGuildHouse::CPlantzone::ChangeItem(int ItemID) const
+void CGuildHouse::CPlantzone::ChangeItem(int ItemID)
 {
 	for(auto& pPlant : m_vPlants)
 	{
 		pPlant->m_ItemID = ItemID;
 	}
+	m_ItemID = ItemID;
 	m_pManager->Save();
 }
 
