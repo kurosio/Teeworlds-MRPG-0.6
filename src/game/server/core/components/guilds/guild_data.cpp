@@ -73,7 +73,7 @@ void CGuild::AddExperience(int Experience)
 	}
 }
 
-GuildResult CGuild::SetNewLeader(int AccountID)
+GuildResult CGuild::SetLeader(int AccountID)
 {
 	// Check if the given AccountID is already the leader of the guild
 	if(AccountID == m_LeaderUID)
@@ -95,8 +95,6 @@ GuildResult CGuild::SetNewLeader(int AccountID)
 	const char* pNickNewLeader = Instance::Server()->GetAccountNickname(m_LeaderUID);
 	m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "New guild leader '%s'", pNickNewLeader);
 	GS()->ChatGuild(m_ID, "New guild leader '{}'", pNickNewLeader);
-
-	// Return a success code
 	return GuildResult::SUCCESSFUL;
 }
 
@@ -140,8 +138,6 @@ GuildResult CGuild::BuyHouse(int HouseID)
 		// Add a history entry and send a chat message for getting a guild house
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Your guild has purchased a house!");
 		GS()->ChatGuild(m_ID, "Your guild has purchased a house!");
-
-		// Return success code
 		return GuildResult::SUCCESSFUL; 
 	}
 
@@ -151,32 +147,28 @@ GuildResult CGuild::BuyHouse(int HouseID)
 bool CGuild::SellHouse()
 {
 	// Check if the guild house is not null
-	if(m_pHouse != nullptr)
-	{
-		// Send an inbox message to the guild leader
-		const int ReturnedGold = m_pHouse->GetPrice();
+	if(!m_pHouse)
+		return false;
 
-		// Send mail
-		MailWrapper Mail("System", m_LeaderUID, "Guild house is sold.");
-		Mail.AddDescLine("We returned some gold from your guild.");
-		Mail.AttachItem(CItem(itGold, ReturnedGold));
-		Mail.Send();
+	// Send mail
+	const int ReturnedGold = m_pHouse->GetPrice();
+	MailWrapper Mail("System", m_LeaderUID, "Guild house is sold.");
+	Mail.AddDescLine("We returned some gold from your guild.");
+	Mail.AttachItem(CItem(itGold, ReturnedGold));
+	Mail.Send();
 
-		// Add a history entry and send a chat message for losing a guild house
-		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
-		GS()->ChatGuild(m_ID, "House sold, {}gold returned to leader", ReturnedGold);
+	// Add a history entry and send a chat message for losing a guild house
+	m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Lost a house on '%s'.", Server()->GetWorldName(m_pHouse->GetWorldID()));
+	GS()->ChatGuild(m_ID, "House sold, {}gold returned to leader", ReturnedGold);
 
-		// Update the database to remove the guild ID from the guild house
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
+	// Update the database to remove the guild ID from the guild house
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
 
-		// Reset house pointers
-		m_pHouse->GetDoorManager()->CloseAll();
-		m_pHouse->UpdateGuild(nullptr);
-		m_pHouse = nullptr;
-		return true;
-	}
-
-	return false;
+	// Reset house pointers
+	m_pHouse->GetDoorManager()->CloseAll();
+	m_pHouse->UpdateGuild(nullptr);
+	m_pHouse = nullptr;
+	return true;
 }
 
 void CGuild::TimePeriodEvent(TIME_PERIOD Period)
@@ -228,13 +220,9 @@ int CGuild::GetUpgradePrice(GuildUpgrade Type)
 	int EndPrice = 0;
 
 	if(Type == GuildUpgrade::AVAILABLE_SLOTS)
-	{
 		EndPrice = m_UpgradesData((int)Type, 0).m_Value * g_Config.m_SvPriceUpgradeGuildSlot;
-	}
 	else if(Type == GuildUpgrade::HOUSE_CHAIR_EXPERIENCE)
-	{
 		EndPrice = m_UpgradesData((int)Type, 0).m_Value * g_Config.m_SvPriceUpgradeGuildAnother;
-	}
 
 	return EndPrice;
 }
@@ -251,7 +239,6 @@ bool CGuild::IsAccountMemberGuild(int AccountID)
  * Bank impl
  * ------------------------------------- */
 CGS* CGuild::CBank::GS() const { return m_pGuild->GS(); }
-
 void CGuild::CBank::Set(int Value)
 {
 	m_Bank = Value;
@@ -277,7 +264,6 @@ bool CGuild::CBank::Spend(int Value)
 	return false;
 }
 
-
 /* -------------------------------------
  * Logger impl
  * ------------------------------------- */
@@ -299,11 +285,7 @@ void CGuild::CLogEntry::SetActivityFlag(int64_t Flag)
 	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LogFlag = '%d' WHERE ID = '%d'", m_Logflag, m_pGuild->GetID());
 }
 
-bool CGuild::CLogEntry::IsActivityFlagSet(int64_t Flag) const
-{
-	// Return true if the log flag is less than or equal to 0, or if the given flag is set in the log flag, or if the guild full flag is set in the log flag
-	return (Flag & m_Logflag);
-}
+bool CGuild::CLogEntry::IsActivityFlagSet(int64_t Flag) const { return (Flag & m_Logflag); }
 
 void CGuild::CLogEntry::Add(int64_t LogFlag, const char* pBuffer, ...)
 {
@@ -322,9 +304,7 @@ void CGuild::CLogEntry::Add(int64_t LogFlag, const char* pBuffer, ...)
 
 		// If the number of logs exceeds the maximum limit, remove the oldest log
 		if(m_aLogs.size() >= GUILD_LOGS_MAX_COUNT)
-		{
 			m_aLogs.pop_front();
-		}
 
 		// Get the current timestamp and store it in aBufTimeStamp
 		char aBufTimeStamp[64];
@@ -354,7 +334,6 @@ void CGuild::CLogEntry::InitLogs()
  * Ranks impl
  * ------------------------------------- */
 CGS* CGuild::CRank::GS() const { return m_pGuild->GS(); }
-
 CGuild::CRank::CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankRights Rights, CGuild* pGuild) : m_ID(RID), m_Rank(std::move(Rank))
 {
 	m_Rights = Rights;
@@ -369,17 +348,12 @@ GuildResult CGuild::CRank::Rename(std::string NewRank)
 	// Check if the length of the string is less than 2 or greater than 16
 	const int LengthRank = str_length(cstrNewRank.cstr());
 	if(LengthRank < 2 || LengthRank > MAX_NAME_LENGTH)
-	{
-		// If the length is not within the valid range, return the result RANK_WRONG_NUMBER_OF_CHAR_IN_NAME
 		return GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME;
-	}
 
 	// Check if the new rank name is already used by another rank in the guild
 	if(std::count_if(m_pGuild->GetRanks()->GetContainer().begin(), m_pGuild->GetRanks()->GetContainer().end(),
 		[&cstrNewRank](const CRank* pRank) {return str_comp(pRank->m_Rank.c_str(), cstrNewRank.cstr()) == 0; }))
-	{
 		return GuildResult::RANK_RENAME_ALREADY_NAME_EXISTS;
-	}
 
 	// Update the name of the guild rank
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "renamed rank '%s' to '%s'", m_Rank.c_str(), cstrNewRank.cstr());
@@ -390,8 +364,8 @@ GuildResult CGuild::CRank::Rename(std::string NewRank)
 
 void CGuild::CRank::SetRights(GuildRankRights Rights)
 {
-	// Set the access level, clamping it between GUILD_RANK_RIGHT_DEFAULT and GUILD_RIGHT_FULL
-	m_Rights = (GuildRankRights)clamp((int)Rights, (int)GUILD_RANK_RIGHT_DEFAULT, (int)GUILD_RIGHT_FULL);
+	// Set the access level, clamping it between GUILD_RANK_RIGHT_DEFAULT and GUILD_RANK_RIGHT_FULL
+	m_Rights = (GuildRankRights)clamp((int)Rights, (int)GUILD_RANK_RIGHT_DEFAULT, (int)GUILD_RANK_RIGHT_FULL);
 
 	// Save the updated access level in the database
 	GuildIdentifier GuildID = m_pGuild->GetID();
@@ -405,9 +379,9 @@ const char* CGuild::CRank::GetRightsName(GuildRankRights Rights) const
 {
 	if(Rights == GUILD_RANK_RIGHT_INVITE_KICK)
 		return "Invite & kick";
-	if(Rights == GUILD_RIGHT_UPGRADES_HOUSE)
+	if(Rights == GUILD_RANK_RIGHT_UPGRADES_HOUSE)
 		return "Upgrade & house door's";
-	if(Rights == GUILD_RIGHT_FULL)
+	if(Rights == GUILD_RANK_RIGHT_FULL)
 		return "Full";
 	return "Default";
 }
@@ -416,7 +390,6 @@ const char* CGuild::CRank::GetRightsName(GuildRankRights Rights) const
  * Ranks manager impl
  * ------------------------------------- */
 CGS* CGuild::CRanksManager::GS() const { return m_pGuild->GS(); }
-
 CGuild::CRanksManager::CRanksManager(CGuild* pGuild, GuildRankIdentifier DefaultID)
 	: m_pGuild(pGuild)
 {
@@ -448,13 +421,9 @@ void CGuild::CRanksManager::Init(GuildRankIdentifier DefaultID)
 
 		// Create a new CRank object and add it to the ranks vector
 		if(DefaultID == RID)
-		{
 			m_pDefaultRank = m_aRanks.emplace_back(new CRank(RID, std::forward<std::string>(Rank), GUILD_RANK_RIGHT_DEFAULT, m_pGuild));
-		}
 		else
-		{
 			m_aRanks.emplace_back(new CRank(RID, std::forward<std::string>(Rank), Rights, m_pGuild));
-		}
 	}
 }
 
@@ -500,22 +469,15 @@ GuildResult CGuild::CRanksManager::Add(const std::string& Rank)
 	// Check if the length of the string is less than 2 or greater than 16
 	const int LengthRank = str_length(cstrRank.cstr());
 	if(LengthRank < 2 || LengthRank > MAX_NAME_LENGTH)
-	{
-		// If the length is not within the valid range, return the result RANK_WRONG_NUMBER_OF_CHAR_IN_NAME
 		return GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME;
-	}
 
 	// Check if the rank already exists
 	if(std::count_if(m_aRanks.begin(), m_aRanks.end(), [&cstrRank](const CRank* pRank) { return std::string(pRank->GetName()) == cstrRank.cstr(); }))
-	{
 		return GuildResult::RANK_ADD_ALREADY_EXISTS;
-	}
 
 	// Check if the rank count has reached the limit
 	if((int)m_aRanks.size() >= GUILD_RANKS_MAX_COUNT)
-	{
 		return GuildResult::RANK_ADD_LIMIT_HAS_REACHED;
-	}
 
 	// Get the ID for the new rank
 	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_guilds_ranks", "ORDER BY ID DESC LIMIT 1");
@@ -545,15 +507,11 @@ GuildResult CGuild::CRanksManager::Remove(const std::string& Rank)
 
 	// If the rank is the default rank, return
 	if(*Iter == m_pDefaultRank)
-	{
 		return GuildResult::RANK_REMOVE_IS_DEFAULT;
-	}
 
 	// If the rank does not exist, return
 	if(Iter == m_aRanks.end())
-	{
 		return GuildResult::RANK_REMOVE_DOES_NOT_EXIST;
-	}
 
 	// Set the default rank for all guild members who have the rank being removed
 	for(auto& pMember : m_pGuild->GetMembers()->GetContainer())
@@ -592,7 +550,6 @@ CGuild::CRank* CGuild::CRanksManager::Get(GuildRankIdentifier ID) const
  * Members impl
  * ------------------------------------- */
 CGS* CGuild::CMember::GS() const { return m_pGuild->GS(); }
-
 CGuild::CMember::CMember(CGuild* pGuild, int AccountID, CRank* pRank, BigInt Deposit) : m_pGuild(pGuild)
 {
 	m_AccountID = AccountID;
@@ -714,21 +671,20 @@ bool CGuild::CMember::WithdrawFromBank(int Golds)
 bool CGuild::CMember::CheckAccess(GuildRankRights RequiredAccess) const
 {
 	return (m_pGuild->GetLeaderUID() == m_AccountID || m_pRank->GetRights() == RequiredAccess
-		|| (m_pRank->GetRights() == GUILD_RIGHT_FULL && RequiredAccess != GUILD_RANK_RIGHT_LEADER));
+		|| (m_pRank->GetRights() == GUILD_RANK_RIGHT_FULL && RequiredAccess != GUILD_RANK_RIGHT_LEADER));
 }
 
 /* -------------------------------------
  * Members manager impl
  * ------------------------------------- */
 CGS* CGuild::CMembersManager::GS() const { return m_pGuild->GS(); }
-
-CGuild::CMembersManager::CMembersManager(CGuild* pGuild, std::string&& MembersData) : m_pGuild(pGuild)
+CGuild::CMembersManager::CMembersManager(CGuild* pGuild, std::string&& JsonMembers) : m_pGuild(pGuild)
 {
 	// Create a new instance of CRequestsManager with pGuild as the parameter
 	m_pRequests = new CRequestsManager(pGuild);
 
-	// Initialize CGuildMembersManager with MembersData using std::move to transfer ownership
-	CGuild::CMembersManager::Init(std::move(MembersData));
+	// Initialize CGuildMembersManager with JsonMembers using std::move to transfer ownership
+	CGuild::CMembersManager::Init(std::move(JsonMembers));
 }
 
 CGuild::CMembersManager::~CMembersManager()
@@ -748,24 +704,18 @@ GuildResult CGuild::CMembersManager::Join(int AccountID)
 {
 	// Check if the member is already in the guild
 	if(m_apMembers.find(AccountID) != m_apMembers.end() || CGuild::IsAccountMemberGuild(AccountID))
-	{
 		return GuildResult::MEMBER_JOIN_ALREADY_IN_GUILD;
-	}
 
 	// Check if there are free slots available in the guild
 	if(!HasFreeSlots())
-	{
 		return GuildResult::MEMBER_NO_AVAILABLE_SLOTS;
-	}
 
 	// Create a new guild member data and add it to the guild members map
 	m_apMembers[AccountID] = new CMember(m_pGuild, AccountID, m_pGuild->GetRanks()->GetDefaultRank());
 
 	// Reinitialize the guild for the player if they are online
 	if(CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID))
-	{
 		pPlayer->Account()->ReinitializeGuild();
-	}
 
 	// Add a join message to the guild history and send chat message
 	const char* pNickname = Instance::Server()->GetAccountNickname(AccountID);
@@ -781,9 +731,7 @@ GuildResult CGuild::CMembersManager::Kick(int AccountID)
 {
 	// Check if the player is the guild leader
 	if(m_pGuild->GetLeaderUID() == AccountID)
-	{
 		return GuildResult::MEMBER_KICK_IS_OWNER;
-	}
 
 	// Check if the player is a member of the guild
 	if(auto Iter = m_apMembers.find(AccountID); Iter != m_apMembers.end())
@@ -826,10 +774,7 @@ void CGuild::CMembersManager::ResetDeposits()
 {
 	// Iterate through each member in the member list
 	for(auto& [UID, pMember] : m_apMembers)
-	{
-		// Set the deposit amount for the member to 0
 		pMember->SetDeposit(0);
-	}
 
 	// Save the updated member list
 	Save();
@@ -841,20 +786,18 @@ int CGuild::CMembersManager::GetOnlinePlayersCount() const
 	for(auto& [UID, pMember] : m_apMembers)
 	{
 		if(GS()->GetPlayerByUserID(UID))
-		{
 			Count++;
-		}
 	}
 	return Count;
 }
 
-void CGuild::CMembersManager::Init(std::string&& MembersData)
+void CGuild::CMembersManager::Init(std::string&& JsonMembers)
 {
 	// Assert by empty
 	dbg_assert(m_apMembers.empty(), "");
 
 	// Parse the JSON string
-	Tools::Json::parseFromString(MembersData, [this](nlohmann::json& pJson)
+	Tools::Json::parseFromString(JsonMembers, [this](nlohmann::json& pJson)
 	{
 		for(auto& pMember : pJson["members"])
 		{
@@ -903,7 +846,6 @@ CGuild::CMember* CGuild::CMembersManager::Get(int AccountID)
  * Requests member manager impl
  * ------------------------------------- */
 CGS* CGuild::CRequestsManager::GS() const { return m_pGuild->GS(); }
-
 CGuild::CRequestsManager::CRequestsManager(CGuild* pGuild) : m_pGuild(pGuild)
 {
 	CRequestsManager::Init();
@@ -938,9 +880,7 @@ GuildResult CGuild::CRequestsManager::Request(int FromUID)
 
 	// Check if the guild's member list has free slots
 	if(!m_pGuild->GetMembers()->HasFreeSlots())
-	{
 		return GuildResult::MEMBER_NO_AVAILABLE_SLOTS;
-	}
 
 	// Add the invite to the guild's history and send a chat message
 	const char* pFromNickname = Instance::Server()->GetAccountNickname(FromUID);
@@ -965,9 +905,7 @@ GuildResult CGuild::CRequestsManager::Accept(int UserID, const CMember* pFromMem
 
 	// If the request is not found, return an undefined error
 	if(Iter == m_aRequestsJoin.end())
-	{
 		return GuildResult::MEMBER_UNDEFINED_ERROR;
-	}
 
 	// Remove the request from the database and delete it from memory
 	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d' AND UserID = '%d'", m_pGuild->GetID(), (*Iter)->GetFromUID());

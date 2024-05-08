@@ -11,21 +11,20 @@
 #include <game/server/core/components/guilds/guild_data.h>
 
 CGS* CGuildHouse::GS() const { return (CGS*)Instance::GameServer(m_WorldID); }
-
 CGuildHouse::~CGuildHouse()
 {
+	delete m_pDoors;
 	delete m_pPlantzones;
 	delete m_pDecorations;
-	delete m_pDoors;
 }
 
-void CGuildHouse::InitProperties(std::string&& Plantzones, std::string&& Properties)
+void CGuildHouse::InitProperties(std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties)
 {
 	// Assert important values
-	dbg_assert(Properties.length() > 0, "The properties string is empty");
+	dbg_assert(JsonProperties.length() > 0, "The properties string is empty");
 
 	// Parse the JSON string
-	Tools::Json::parseFromString(Properties, [this](nlohmann::json& pJson)
+	Tools::Json::parseFromString(JsonProperties, [this](nlohmann::json& pJson)
 	{
 		// Assert for important properties
 		dbg_assert(pJson.find("pos") != pJson.end(), "The importal properties value is empty");
@@ -35,10 +34,6 @@ void CGuildHouse::InitProperties(std::string&& Plantzones, std::string&& Propert
 		m_Position.y = (float)pHousePosData.value("y", 0);
 		m_Radius = (float)pHousePosData.value("radius", 300);
 
-		// Create a new instance of CDecorationManager and assign it to m_pDecorations
-		// The CDecorationManager will handle all the decorations for the guild house.
-		m_pDecorations = new CDecorationManager(this);
-
 		// Initialize text position
 		if(pJson.find("text_pos") != pJson.end())
 		{
@@ -46,28 +41,19 @@ void CGuildHouse::InitProperties(std::string&& Plantzones, std::string&& Propert
 			m_TextPosition.x = (float)pTextPosData.value("x", 0);
 			m_TextPosition.y = (float)pTextPosData.value("y", 0);
 		}
-
-		// Initialize doors
-		if(pJson.find("doors") != pJson.end())
-		{
-			// Create a new instance of CGuildHouseDoorManager and assign it to m_pDoors
-			// The CDecorationManager will handle all the doors for the guild house.
-			m_pDoors = new CDoorManager(this);
-
-			auto pDoorsData = pJson["doors"];
-			for(const auto& pDoor : pDoorsData)
-			{
-				// Check if the door name is not empty
-				std::string Doorname = pDoor.value("name", "");
-				vec2 Position = vec2(pDoor.value("x", 0), pDoor.value("y", 0));
-				m_pDoors->AddDoor(Doorname.c_str(), Position);
-			}
-		}
 	});
+
+	// Create a new instance of CDecorationManager and assign it to m_pDecorations
+	// The CDecorationManager will handle all the decorations for the guild house.
+	m_pDecorations = new CDecorationManager(this);
+
+	// Create a new instance of CGuildHouseDoorManager and assign it to m_pDoors
+	// The CDecorationManager will handle all the doors for the guild house.
+	m_pDoors = new CDoorManager(this, std::move(JsonDoors));
 
 	// Create a new instance of CPlantzonesManager and assign it to m_pPlantzones
 	// The CPlantzonesManager will handle all the plantzones for the guild house.
-	m_pPlantzones = new CPlantzonesManager(this, std::move(Plantzones));
+	m_pPlantzones = new CPlantzonesManager(this, std::move(JsonPlantzones));
 
 	// Asserts
 	dbg_assert(m_pPlantzones != nullptr, "The house plantzones manager is null");
@@ -147,11 +133,10 @@ void CGuildHouse::CPlantzone::ChangeItem(int ItemID)
 }
 
 CGS* CGuildHouse::CPlantzonesManager::GS() const { return m_pHouse->GS(); }
-
-CGuildHouse::CPlantzonesManager::CPlantzonesManager(CGuildHouse* pHouse, std::string&& JsPlantzones) : m_pHouse(pHouse)
+CGuildHouse::CPlantzonesManager::CPlantzonesManager(CGuildHouse* pHouse, std::string&& JsonPlantzones) : m_pHouse(pHouse)
 {
 	// Parse the JSON string
-	Tools::Json::parseFromString(JsPlantzones, [this](nlohmann::json& pJson)
+	Tools::Json::parseFromString(JsonPlantzones, [this](nlohmann::json& pJson)
 	{
 		for(const auto& pPlantzone : pJson)
 		{
@@ -188,7 +173,7 @@ CGuildHouse::CPlantzone* CGuildHouse::CPlantzonesManager::GetPlantzoneByPos(vec2
 
 CGuildHouse::CPlantzone* CGuildHouse::CPlantzonesManager::GetPlantzoneByID(int ID)
 {
-	auto it = m_vPlantzones.find(ID);
+	const auto it = m_vPlantzones.find(ID);
 	return it != m_vPlantzones.end() ? &it->second : nullptr;
 }
 
@@ -215,7 +200,6 @@ void CGuildHouse::CPlantzonesManager::Save() const
  * Decorations impl
  * ------------------------------------- */
 CGS* CGuildHouse::CDecorationManager::GS() const { return m_pHouse->GS(); }
-
 CGuildHouse::CDecorationManager::CDecorationManager(CGuildHouse* pHouse) : m_pHouse(pHouse)
 {
 	CDecorationManager::Init();
@@ -247,9 +231,7 @@ void CGuildHouse::CDecorationManager::Init()
 
 bool CGuildHouse::CDecorationManager::StartDrawing(CPlayer* pPlayer) const
 {
-	if(!pPlayer || !pPlayer->GetCharacter())
-		return false;
-	return m_pDrawBoard->StartDrawing(pPlayer);
+	return pPlayer && pPlayer->GetCharacter() && m_pDrawBoard->StartDrawing(pPlayer);
 }
 
 bool CGuildHouse::CDecorationManager::HasFreeSlots() const
@@ -337,13 +319,24 @@ bool CGuildHouse::CDecorationManager::Remove(const EntityPoint* pPoint) const
 	return true;
 }
 
-
 /* -------------------------------------
  * Doors impl
  * ------------------------------------- */
 CGS* CGuildHouse::CDoorManager::GS() const { return m_pHouse->GS(); }
+CGuildHouse::CDoorManager::CDoorManager(CGuildHouse* pHouse, std::string&& JsonDoors) : m_pHouse(pHouse)
+{
+	// Parse the JSON string
+	Tools::Json::parseFromString(JsonDoors, [this](nlohmann::json& pJson)
+	{
+		for(const auto& pDoor : pJson)
+		{
+			std::string Doorname = pDoor.value("name", "");
+			vec2 Position = vec2(pDoor.value("x", 0), pDoor.value("y", 0));
+			AddDoor(Doorname.c_str(), Position);
+		}
+	});
+}
 
-CGuildHouse::CDoorManager::CDoorManager(CGuildHouse* pHouse) : m_pHouse(pHouse) {}
 CGuildHouse::CDoorManager::~CDoorManager()
 {
 	for(auto& p : m_apEntDoors)

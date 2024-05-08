@@ -41,8 +41,10 @@ public:
 
 private:
 	void ShowMenu(int ClientID) const;
+	void ShowUpgrades(CPlayer* pPlayer) const;
+	void ShowDisband(CPlayer* pPlayer) const;
 	void ShowRanksList(CPlayer* pPlayer) const;
-	void ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID);
+	void ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID) const;
 	void ShowFinder(int ClientID) const;
 	void ShowFinderDetailInformation(int ClientID, GuildIdentifier ID) const;
 	void ShowLogs(int ClientID) const;

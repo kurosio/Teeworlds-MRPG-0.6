@@ -31,10 +31,13 @@ enum GuildMisc
 enum GuildRankRights
 {
 	GUILD_RANK_RIGHT_LEADER = -1,                   // Highest level of access, reserved for guild leader
+
+	GUILD_RANK_RIGHT_START = 0,                     // Start guild rights
 	GUILD_RANK_RIGHT_DEFAULT = 0,                   // Default level of access for new members
 	GUILD_RANK_RIGHT_INVITE_KICK,                   // Access to invite and kick members
-	GUILD_RIGHT_UPGRADES_HOUSE,                     // Access to upgrade guild house
-	GUILD_RIGHT_FULL,                               // Full access to all guild functions
+	GUILD_RANK_RIGHT_UPGRADES_HOUSE,                // Access to upgrade guild house
+	GUILD_RANK_RIGHT_FULL,                          // Full access to all guild functions
+	GUILD_RANK_RIGHT_END                            // End guild rights
 };
 
 // This enum class represents the possible results of guild operations
@@ -235,7 +238,7 @@ public:
 		MembersContainer m_apMembers {};
 
 	public:
-		CMembersManager(CGuild* pGuild, std::string&& MembersData);
+		CMembersManager(CGuild* pGuild, std::string&& JsonMembers);
 		~CMembersManager();
 		
 		CRequestsManager* GetRequests() const { return m_pRequests; }                        // Returns the pointer to the controller requests to join
@@ -250,7 +253,7 @@ public:
 		void Save() const;                                                                   // Save the guild members data
 
 	private:
-		void Init(std::string&& MembersData);                                                // Initialize the guild members controller
+		void Init(std::string&& JsonMembers);                                                // Initialize the guild members controller
 	};
 
 	/* -------------------------------------
@@ -320,7 +323,7 @@ public:
 		return m_pData.emplace_back(pData);
 	}
 
-	void Init(const std::string& Name, std::string&& MembersData, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank, int64_t Logflag, ResultPtr* pRes)
+	void Init(const std::string& Name, std::string&& JsonMembers, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank, int64_t Logflag, ResultPtr* pRes)
 	{
 		m_Name = Name;
 		m_LeaderUID = LeaderUID;
@@ -333,7 +336,7 @@ public:
 		m_pLogger = new CLogEntry(this, Logflag);
 		m_pBank = new CBank(Bank, this);
 		m_pRanks = new CRanksManager(this, DefaultRankID);
-		m_pMembers = new CMembersManager(this, std::move(MembersData));
+		m_pMembers = new CMembersManager(this, std::move(JsonMembers));
 		m_pRanks->UpdateDefaultRank();
 	}
 
@@ -356,7 +359,7 @@ public:
 	// functions
 	void AddExperience(int Experience);
 	[[nodiscard]] bool Upgrade(GuildUpgrade Type);
-	[[nodiscard]] GuildResult SetNewLeader(int AccountID);
+	[[nodiscard]] GuildResult SetLeader(int AccountID);
 	[[nodiscard]] GuildResult BuyHouse(int HouseID);
 	[[nodiscard]] bool SellHouse();
 	void TimePeriodEvent(TIME_PERIOD Period);

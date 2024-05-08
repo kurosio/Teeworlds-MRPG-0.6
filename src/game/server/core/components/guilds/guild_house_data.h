@@ -68,7 +68,7 @@ public:
 
 	public:
 		CPlantzonesManager() = delete;
-		CPlantzonesManager(CGuildHouse* pHouse, std::string&& JsPlantzones);
+		CPlantzonesManager(CGuildHouse* pHouse, std::string&& JsonPlantzones);
 		~CPlantzonesManager();
 
 		std::unordered_map<int, CPlantzone>& GetContainer() { return m_vPlantzones; }
@@ -118,7 +118,7 @@ public:
 
 	public:
 		CDoorManager() = delete;
-		CDoorManager(CGuildHouse* pHouse);
+		CDoorManager(CGuildHouse* pHouse, std::string&& JsonDoors);
 		~CDoorManager();
 
 		ska::unordered_map<int, CEntityGuildDoor*>& GetContainer() { return m_apEntDoors; }
@@ -159,16 +159,16 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuild* pGuild, int Price, int WorldID, std::string&& JsPlantzones, std::string&& JsProperties)
+	void Init(CGuild* pGuild, int Price, int WorldID, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties)
 	{
 		m_Price = Price;
 		m_WorldID = WorldID;
 
-		InitProperties(std::move(JsPlantzones), std::move(JsProperties));
+		InitProperties(std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonProperties));
 		UpdateGuild(pGuild);
 	}
 
-	void InitProperties(std::string&& Plantzones, std::string&& Properties);
+	void InitProperties(std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties);
 
 	CGuild* GetGuild() const { return m_pGuild; }
 	CDoorManager* GetDoorManager() const { return m_pDoors; }

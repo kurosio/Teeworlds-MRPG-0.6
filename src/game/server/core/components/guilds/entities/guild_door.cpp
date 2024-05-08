@@ -28,7 +28,7 @@ void CEntityGuildDoor::Tick()
 			const int& ClientID = pChar->GetPlayer()->GetCID();
 			CGuild* pCharGuild = pChar->GetPlayer()->Account()->GetGuild();
 			if(pCharGuild && m_pHouse->GetGuild() && pCharGuild->GetID() == m_pHouse->GetGuild()->GetID() 
-				&& pChar->GetPlayer()->Account()->GetGuildMember()->CheckAccess(GUILD_RIGHT_UPGRADES_HOUSE))
+				&& pChar->GetPlayer()->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
 			{
 				if(pChar->GetPlayer()->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
 				{
