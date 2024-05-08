@@ -6,7 +6,7 @@
 
 #include <game/server/core/components/Accounts/AccountMinerManager.h>
 #include <game/server/core/components/Accounts/AccountPlantManager.h>
-#include <game/server/core/components/Houses/HouseManager.h>
+#include <game/server/core/components/houses/house_manager.h>
 
 // 1 - miner / 2 - plant
 CJobItems::CJobItems(CGameWorld *pGameWorld, int ItemID, int Level, vec2 Pos, int Type, int Health, int HouseID)

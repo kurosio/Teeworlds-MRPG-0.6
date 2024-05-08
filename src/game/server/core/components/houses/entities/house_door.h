@@ -4,6 +4,8 @@
 #define GAME_SERVER_COMPONENT_HOUSE_ENTITIES_DOOR_H
 #include <game/server/entity.h>
 
+class CHouseData;
+
 class CEntityHouseDoor : public CEntity
 {
 	enum States
@@ -12,13 +14,13 @@ class CEntityHouseDoor : public CEntity
 		OPENED
 	};
 
-	class CHouseData* m_pHouse {};
-	class CHouseDoor* m_pDoorInfo {};
+	std::string m_Name {};
+	CHouseData* m_pHouse {};
 	int m_State {};
 	vec2 m_PosControll {};
 
 public:
-	CEntityHouseDoor(CGameWorld* pGameWorld, vec2 Pos, class CHouseDoor* pDoorInfo, class CHouseData* pHouse);
+	CEntityHouseDoor(CGameWorld* pGameWorld, CHouseData* pHouse, std::string&& Name, vec2 Pos);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
@@ -26,6 +28,7 @@ public:
 	void Open() { m_State = OPENED; }
 	void Close() { m_State = CLOSED; }
 	bool IsClosed() const { return m_State == CLOSED; }
+	std::string GetName() { return m_Name; }
 };
 
 #endif

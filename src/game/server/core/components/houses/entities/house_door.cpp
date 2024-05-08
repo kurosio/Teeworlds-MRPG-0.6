@@ -1,14 +1,14 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "HouseDoor.h"
+#include "house_door.h"
 
 #include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
-#include "game/server/core/components/Houses/HouseData.h"
+#include "game/server/core/components/houses/house_data.h"
 
-CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, vec2 Pos, CHouseDoor* pDoorInfo, CHouseData* pHouse)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_pHouse(pHouse), m_pDoorInfo(pDoorInfo)
+CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, CHouseData* pHouse, std::string&& Name, vec2 Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_Name(std::move(Name)), m_pHouse(pHouse)
 {
 	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
 	m_PosControll = Pos;
@@ -41,7 +41,7 @@ void CEntityHouseDoor::Tick()
 			}
 
 			// Broadcast a game information message to the player and hammer hit effect at the position of the door control
-			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{}'!", m_pDoorInfo->GetName());
+			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{}'!", m_Name);
 		}
 	}
 
@@ -63,14 +63,14 @@ void CEntityHouseDoor::Tick()
 				if(Distance <= g_Config.m_SvDoorRadiusHit)
 				{
 					// Skip characters who have access to the house door
-					if(m_pHouse->GetDoorsController()->HasAccess(pChar->GetPlayer()->Account()->GetID()))
+					if(m_pHouse->GetDoorManager()->HasAccess(pChar->GetPlayer()->Account()->GetID()))
 						continue;
 
 					// Skip eidolon when the owner has access
 					if(pChar->GetPlayer()->IsBot())
 					{
 						CPlayerBot* pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
-						if(pPlayerBot->GetEidolonOwner() && m_pHouse->GetDoorsController()->HasAccess(pPlayerBot->GetEidolonOwner()->Account()->GetID()))
+						if(pPlayerBot->GetEidolonOwner() && m_pHouse->GetDoorManager()->HasAccess(pPlayerBot->GetEidolonOwner()->Account()->GetID()))
 							continue;
 					}
 

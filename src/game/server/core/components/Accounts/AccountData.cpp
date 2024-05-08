@@ -5,7 +5,7 @@
 #include <engine/shared/config.h>
 
 #include <game/server/gamecontext.h>
-#include <game/server/core/components/Houses/HouseData.h>
+#include <game/server/core/components/houses/house_data.h>
 #include <game/server/core/components/Groups/GroupData.h>
 
 #include <game/server/core/components/guilds/guild_manager.h>

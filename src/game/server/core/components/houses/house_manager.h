@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_HOUSE_CORE_H
 #include <game/server/core/mmo_component.h>
 
-#include "HouseData.h"
+#include "house_data.h"
 
 class CEntityHouseDoor;
 class CEntityHouseDecoration;

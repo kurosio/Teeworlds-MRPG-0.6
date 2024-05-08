@@ -1,15 +1,16 @@
-﻿#include <engine/console.h>
-#include "command_processor.h"
+﻿#include "command_processor.h"
 
+#include <engine/console.h>
 #include <engine/server.h>
 #include <engine/shared/config.h>
-#include "game/server/gamecontext.h"
 
 #include <game/server/core/components/Accounts/AccountManager.h>
 #include <game/server/core/components/guilds/guild_manager.h>
-#include <game/server/core/components/Houses/HouseManager.h>
-
+#include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/Groups/GroupManager.h>
+
+#include "components/houses/entities/house_door.h"
+#include "game/server/gamecontext.h"
 
 void ConAddMultipleOrbite(IConsole::IResult* pResult, void* pUserData)
 {
@@ -238,15 +239,15 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 	const std::string pSubElem = pResult->GetString(1);
 	if(pElem.compare(0, 5, "doors") == 0)
 	{
-		CHouseDoorsController* pDoorController = pHouse->GetDoorsController();
+		auto* pDoorManager = pHouse->GetDoorManager();
 
 		// If the command element is "list", list all the doors in the house
 		if(pSubElem.compare(0, 4, "list") == 0)
 		{
 			pGS->Chat(ClientID, "{} Door list {}", Tools::Aesthetic::B_PILLAR(7, false), Tools::Aesthetic::B_PILLAR(7, true));
-			for(const auto& [Number, Door] : pDoorController->GetDoors())
+			for(const auto& [Number, Door] : pDoorManager->GetContainer())
 			{
-				bool State = pDoorController->GetDoors()[Number]->IsClosed();
+				bool State = pDoorManager->GetContainer()[Number]->IsClosed();
 				pGS->Chat(ClientID, "Number: {}. Name: {} ({})", 
 					Number, Door->GetName(), State ? Instance::Server()->Localize(ClientID, "closed") : Instance::Server()->Localize(ClientID, "opened"));
 			}
@@ -256,7 +257,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		// If the command element is "open_all", open all door's
 		if(pSubElem.compare(0, 8, "open_all") == 0)
 		{
-			pDoorController->OpenAll();
+			pDoorManager->OpenAll();
 			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were open!");
 			return;
@@ -265,7 +266,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		// If the command element is "close_all", close all door's
 		if(pSubElem.compare(0, 9, "close_all") == 0)
 		{
-			pDoorController->CloseAll();
+			pDoorManager->CloseAll();
 			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were closed!");
 			return;
@@ -274,7 +275,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		// If the command element is "reverse_all", reverse all door's
 		if(pSubElem.compare(0, 11, "reverse_all") == 0)
 		{
-			pDoorController->ReverseAll();
+			pDoorManager->ReverseAll();
 			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			pGS->Chat(pPlayer->GetCID(), "All the doors of the house were reversed!");
 			return;
@@ -287,16 +288,16 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		if(pSubElem.compare(0, 7, "reverse") == 0)
 		{
 			// Check if the door ID is valid
-			if(pHouse->GetDoorsController()->GetDoors().find(Number) == pHouse->GetDoorsController()->GetDoors().end())
+			if(pDoorManager->GetContainer().find(Number) == pDoorManager->GetContainer().end())
 			{
 				pGS->Chat(pPlayer->GetCID(), "Number is either not listed or such a door does not exist.");
 				return;
 			}
 
-			pHouse->GetDoorsController()->Reverse(Number);
+			pDoorManager->Reverse(Number);
 			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
-			bool State = pDoorController->GetDoors()[Number]->IsClosed();
-			pGS->Chat(pPlayer->GetCID(), "Door {}(Number {}) was {}!", pDoorController->GetDoors()[Number]->GetName(), Number, State ? "closed" : "opened");
+			bool State = pDoorManager->GetContainer()[Number]->IsClosed();
+			pGS->Chat(pPlayer->GetCID(), "Door {}(Number {}) was {}!", pDoorManager->GetContainer()[Number]->GetName(), Number, State ? "closed" : "opened");
 			return;
 		}
 

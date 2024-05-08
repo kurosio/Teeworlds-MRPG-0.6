@@ -1,10 +1,12 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "HouseManager.h"
+#include "house_manager.h"
 
-#include <game/server/gamecontext.h>
+#include "entities/house_door.h"
 
 #include <game/server/core/components/Inventory/InventoryManager.h>
+#include <game/server/gamecontext.h>
+
 
 void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 {
@@ -100,13 +102,13 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VDeposit.AddLine();
 
 		// House doors
-		if(!pHouse->GetDoorsController()->GetDoors().empty())
+		if(!pHouse->GetDoorManager()->GetContainer().empty())
 		{
-			VoteWrapper VDoors(ClientID, VWF_SEPARATE_OPEN, "\u2743 House has {} controlled door's", (int)pHouse->GetDoorsController()->GetDoors().size());
-			for(auto& [Number, DoorData] : pHouse->GetDoorsController()->GetDoors())
+			VoteWrapper VDoors(ClientID, VWF_SEPARATE_OPEN, "\u2743 House has {} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
+			for(auto& [Number, pEntDoor] : pHouse->GetDoorManager()->GetContainer())
 			{
-				bool StateDoor = DoorData->IsClosed();
-				VDoors.AddOption("HOUSE_DOOR", Number, "Door {} {}", StateDoor ? "Open" : "Close", DoorData->GetName());
+				bool StateDoor = pEntDoor->IsClosed();
+				VDoors.AddOption("HOUSE_DOOR", Number, "Door {} {}", StateDoor ? "Open" : "Close", pEntDoor->GetName());
 			}
 			VDoors.AddLine();
 		}
@@ -190,7 +192,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VInfo.AddLine();
 
 		// show active access players to house
-		CHouseDoorsController* pHouseDoor = pHouse->GetDoorsController();
+		auto* pHouseDoor = pHouse->GetDoorManager();
 		VoteWrapper VAccess(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE);
 		VAccess.MarkList().Add("Permits have been granted:");
 		{
@@ -456,7 +458,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 
 		// reverse door house
 		int UniqueDoorID = VoteID;
-		pHouse->GetDoorsController()->Reverse(UniqueDoorID);
+		pHouse->GetDoorManager()->Reverse(UniqueDoorID);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE);
 		return true;
 	}
@@ -571,7 +573,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		const int UserID = VoteID;
 		if(CHouseData* pHouse = pPlayer->Account()->GetHouse())
-			pHouse->GetDoorsController()->AddAccess(UserID);
+			pHouse->GetDoorManager()->AddAccess(UserID);
 
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_ACCESS_TO_DOOR);
 		return true;
@@ -581,7 +583,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	{
 		const int UserID = VoteID;
 		if(CHouseData* pHouse = pPlayer->Account()->GetHouse())
-			pHouse->GetDoorsController()->RemoveAccess(UserID);
+			pHouse->GetDoorManager()->RemoveAccess(UserID);
 
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_ACCESS_TO_DOOR);
 		return true;

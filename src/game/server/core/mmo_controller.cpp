@@ -17,7 +17,7 @@
 #include "components/Eidolons/EidolonManager.h"
 #include "components/Groups/GroupManager.h"
 #include "components/guilds/guild_manager.h"
-#include "components/Houses/HouseManager.h"
+#include "components/houses/house_manager.h"
 #include "components/Inventory/InventoryManager.h"
 #include "components/mails/mailbox_manager.h"
 #include "components/Quests/QuestManager.h"

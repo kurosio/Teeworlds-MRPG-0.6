@@ -8,7 +8,7 @@
 
 #include <game/server/core/components/Accounts/AccountMinerManager.h>
 #include <game/server/core/components/Accounts/AccountPlantManager.h>
-#include <game/server/core/components/Houses/HouseManager.h>
+#include <game/server/core/components/houses/house_manager.h>
 
 #include "game/server/core/components/guilds/guild_manager.h"
 #include "game/server/core/components/guilds/guild_house_data.h"
