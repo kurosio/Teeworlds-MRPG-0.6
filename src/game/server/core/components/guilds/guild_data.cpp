@@ -308,7 +308,7 @@ void CGuild::CLogEntry::Add(int64_t LogFlag, const char* pBuffer, ...)
 
 		// Get the current timestamp and store it in aBufTimeStamp
 		char aBufTimeStamp[64];
-		str_timestamp(aBufTimeStamp, sizeof(aBufTimeStamp));
+		str_timestamp_format(aBufTimeStamp, sizeof(aBufTimeStamp), FORMAT_WITHOUT_SEC_SPACE);
 
 		// Add the formatted string and timestamp to the logs list
 		const sqlstr::CSqlString<64> cBuf = sqlstr::CSqlString<64>(aBuf);

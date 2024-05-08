@@ -45,11 +45,12 @@ private:
 	void ShowDisband(CPlayer* pPlayer) const;
 	void ShowRanksList(CPlayer* pPlayer) const;
 	void ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID) const;
-	void ShowFinder(int ClientID) const;
-	void ShowFinderDetailInformation(int ClientID, GuildIdentifier ID) const;
-	void ShowLogs(int ClientID) const;
-	void ShowMembershipList(int ClientID) const;
-	void ShowRequests(int ClientID) const;
+	void ShowFinder(CPlayer* pPlayer) const;
+	void ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const;
+	void ShowLogs(CPlayer* pPlayer) const;
+	void ShowMembershipList(CPlayer* pPlayer) const;
+	void ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const;
+	void ShowRequests(CPlayer* pPlayer) const;
 	void ShowBuyHouse(int ClientID, CGuildHouse* pHouse) const;
 	void ShowDeclareWar(int ClientID) const;
 	void ShowDoorsControl(CPlayer* pPlayer) const;
