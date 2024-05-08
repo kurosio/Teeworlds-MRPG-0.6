@@ -726,10 +726,17 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			return true;
 		}
 
+		// prevent accidental pressing
+		if(Get != 3342)
+		{
+			GS()->Chat(ClientID, "Random Touch Security Code has not been entered correctly.");
+			return true;
+		}
+
 		// result
 		if(pGuild->SellHouse())
 		{
-			pPlayer->m_VotesData.UpdateCurrentVotes();
+			pPlayer->m_VotesData.UpdateVotes(MENU_GUILD);
 			GS()->UpdateVotesIfForAll(MENU_GUILD);
 		}
 	}
@@ -817,6 +824,14 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowDisband(pPlayer);
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_GUILD_HOUSE_SELL)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
+		ShowHouseSell(pPlayer);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -983,7 +998,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
 
 	// initialize the guild
-	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":0}]})";
+	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":"0"}]})";
 
 	CGuild* pGuild = CGuild::CreateElement(InitID);
 	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, -1, nullptr);
@@ -1069,11 +1084,6 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VInfo.Add("Bank: {} golds", pGuild->GetBank()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
-	// Guild deposit
-	VoteWrapper VDeposit(ClientID, VWF_SEPARATE, "\u2727 Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
-	VDeposit.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
-	VoteWrapper::AddEmptyline(ClientID);
-
 	// Guild management
 	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
 	VManagement.AddMenu(MENU_GUILD_UPGRADES, "Improvements & Upgrades");
@@ -1101,9 +1111,14 @@ void CGuildManager::ShowMenu(int ClientID) const
 		VHouse.AddMenu(MENU_GUILD_HOUSE_DOORS, "Doors control");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_LIST, "Plant zones");
 		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
-		VHouse.AddOption("GUILD_HOUSE_SELL", "Sell the house");
+		VHouse.AddMenu(MENU_GUILD_HOUSE_SELL, "Sell");
 		VoteWrapper::AddEmptyline(ClientID);
 	}
+
+	// Guild deposit
+	VoteWrapper VBank(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2727 Bank Management");
+	VBank.Add("Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
+	VBank.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 }
 
 void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
@@ -1158,6 +1173,27 @@ void CGuildManager::ShowDisband(CPlayer* pPlayer) const
 
 	// disband
 	VoteWrapper(ClientID).AddOption("GUILD_DISBAND", "Disband. (in reason send 55428)");
+	VoteWrapper::AddEmptyline(ClientID);
+}
+
+void CGuildManager::ShowHouseSell(CPlayer* pPlayer) const
+{
+	auto* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+		return;
+
+	auto* pHouse = pGuild->GetHouse();
+	if(!pHouse)
+		return;
+
+	// information
+	int ClientID = pPlayer->GetCID();
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Selling a house (Information)");
+	VInfo.Add("The gold will be returned to the leader.");
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// disband
+	VoteWrapper(ClientID).AddOption("GUILD_HOUSE_SELL", "Sell. (in reason send 3342)");
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
