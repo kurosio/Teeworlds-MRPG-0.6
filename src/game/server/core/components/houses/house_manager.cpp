@@ -20,16 +20,14 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 			int AccountID = pRes->getInt("UserID");
 			std::string ClassName = pRes->getString("Class").c_str();
 			int Price = pRes->getInt("Price");
-			int Bank = pRes->getInt("HouseBank");
-			vec2 Pos(pRes->getInt("PosX"), pRes->getInt("PosY"));
-			vec2 TextPos(pRes->getInt("TextX"), pRes->getInt("TextY"));
-			vec2 PlantPos(pRes->getInt("PlantX"), pRes->getInt("PlantY"));
-			int PlantItemID = pRes->getInt("PlantID");
+			int Bank = pRes->getInt("Bank");
 			int WorldID = pRes->getInt("WorldID");
-			std::string AccessData = pRes->getString("AccessData").c_str();
-			std::string JsonDoorData = pRes->getString("JsonDoorsData").c_str();
+			std::string AccessList = pRes->getString("AccessList").c_str();
+			std::string JsonDoors = pRes->getString("Doors").c_str();
+			std::string JsonPlantzones = pRes->getString("Plantzones").c_str();
+			std::string JsonProperties = pRes->getString("Properties").c_str();
 
-			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, Pos, TextPos, PlantPos, CItem(PlantItemID, 1), WorldID, std::move(AccessData), std::move(JsonDoorData));
+			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, WorldID, std::move(AccessList), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonProperties));
 		}
 
 		Core()->ShowLoadingProgress("Houses", CHouseData::Data().size());
@@ -281,7 +279,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			return true;
 		}
 
-		bool Result = pHouse->StartDrawing();
+		bool Result = pHouse->GetDecorationManager()->StartDrawing(pPlayer);
 		if(Result)
 		{
 			GS()->Chat(ClientID, "You can now draw decorations.");

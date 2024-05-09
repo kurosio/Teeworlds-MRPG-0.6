@@ -10,16 +10,74 @@
 
 class CGS;
 class CPlayer;
-class EntityPoint;
+class CJobItems;
+class CDrawingData;
 class CEntityDrawboard;
+class EntityPoint;
+class CEntityHouseDecoration;
 class CEntityHouseDoor;
 using HouseIdentifier = int;
-using HouseDecorationIdentifier = int;
 using HouseDataPtr = std::shared_ptr< class CHouseData >;
 
 class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDataPtr > >
 {
 public:
+	/* -------------------------------------
+ * Plantzones impl
+ * ------------------------------------- */
+	class CPlantzonesManager;
+	class CPlantzone
+	{
+		CPlantzonesManager* m_pManager {};
+		std::string m_Name {};
+		int m_ItemID {};
+		vec2 m_Pos {};
+		float m_Radius {};
+		std::vector<CJobItems*> m_vPlants {};
+
+	public:
+		CPlantzone() = delete;
+		CPlantzone(CPlantzonesManager* pManager, std::string&& Name, int ItemID, vec2 Pos, float Radius) : m_pManager(pManager)
+		{
+			m_Name = std::move(Name);
+			m_ItemID = ItemID;
+			m_Pos = Pos;
+			m_Radius = Radius;
+		}
+
+		const char* GetName() const { return m_Name.c_str(); }
+		float GetRadius() const { return m_Radius; }
+		int GetItemID() const { return m_ItemID; }
+		vec2 GetPos() const { return m_Pos; }
+		std::vector<CJobItems*>& GetContainer() { return m_vPlants; }
+
+		void ChangeItem(int ItemID);
+		void Add(CJobItems* pItem) { m_vPlants.push_back(pItem); }
+		void Remove(CJobItems* pItem) { m_vPlants.erase(std::remove(m_vPlants.begin(), m_vPlants.end(), pItem), m_vPlants.end()); }
+	};
+
+	class CPlantzonesManager
+	{
+		friend class CPlantzone;
+		CGS* GS() const;
+		CHouseData* m_pHouse {};
+		std::unordered_map<int, CPlantzone> m_vPlantzones {};
+
+	public:
+		CPlantzonesManager() = delete;
+		CPlantzonesManager(CHouseData* pHouse, std::string&& JsonPlantzones);
+		~CPlantzonesManager();
+
+		std::unordered_map<int, CPlantzone>& GetContainer() { return m_vPlantzones; }
+
+		void AddPlantzone(CPlantzone&& Plantzone);
+		CPlantzone* GetPlantzoneByPos(vec2 Pos);
+		CPlantzone* GetPlantzoneByID(int ID);
+
+	private:
+		void Save() const;
+	};
+
 	/* -------------------------------------
 	 * Bank impl
 	 * ------------------------------------- */
@@ -48,15 +106,15 @@ public:
 		CGS* GS() const;
 		CPlayer* GetPlayer() const;
 		CHouseData* m_pHouse {};
-		ska::unordered_map<int, CEntityHouseDoor*> m_apEntDoors {};
-		ska::unordered_set<int> m_AccessUserIDs {};
+		ska::unordered_map<int, CEntityHouseDoor*> m_vpEntDoors {};
+		ska::unordered_set<int> m_vAccessUserIDs {};
 
 	public:
 		CDoorManager(CHouseData* pHouse, std::string&& AccessData, std::string&& JsonDoors);
 		~CDoorManager();
 		
-		ska::unordered_set<int>& GetAccesses() { return m_AccessUserIDs; }               // Get the set of user IDs with access to the house
-		ska::unordered_map<int, CEntityHouseDoor*>& GetContainer() { return m_apEntDoors; }  // Get the map of door numbers to CHouseDoor objects
+		ska::unordered_set<int>& GetAccesses() { return m_vAccessUserIDs; }               // Get the set of user IDs with access to the house
+		ska::unordered_map<int, CEntityHouseDoor*>& GetContainer() { return m_vpEntDoors; }  // Get the map of door numbers to CHouseDoor objects
 		void AddAccess(int UserID);                                                      // Add access for a user
 		void RemoveAccess(int UserID);                                                   // Remove access for a user
 		bool HasAccess(int UserID);                                                      // Check if a user has access
@@ -74,18 +132,46 @@ public:
 		void SaveAccessList() const;                                                     // Save the access list to a file
 	};
 
-private:
-	HouseIdentifier m_ID {};
-	vec2 m_Pos {};
-	vec2 m_TextPos {};
-	vec2 m_PlantPos {};
+	/* -------------------------------------
+	 * Decoration impl
+	 * ------------------------------------- */
+	using DecorationIdentifier = int;
+	using DecorationsContainer = std::vector<CEntityHouseDecoration*>;
+	class CDecorationManager
+	{
+		CGS* GS() const;
+		CEntityDrawboard* m_pDrawBoard {};
+		CHouseData* m_pHouse {};
 
-	CEntityDrawboard* m_pDrawBoard {};
+	public:
+		CDecorationManager() = delete;
+		CDecorationManager(CHouseData* pHouse);
+		~CDecorationManager();
+
+		bool StartDrawing(CPlayer* pPlayer) const;
+		bool HasFreeSlots() const;
+
+	private:
+		void Init();
+		static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser);
+		bool Add(const EntityPoint* pPoint) const;
+		bool Remove(const EntityPoint* pPoint) const;
+	};
+
+private:
+	CPlantzonesManager* m_pPlantzonesManager{};
+	CDecorationManager* m_pDecorationManager{};
 	CDoorManager* m_pDoorManager {};
 	CBank* m_pBank {};
 	CItem m_PlantedItem {};
 
-	char m_aClassName[32] {};
+	HouseIdentifier m_ID {};
+	vec2 m_Position {};
+	vec2 m_TextPosition {};
+	vec2 m_PlantPos {};
+	float m_Radius {};
+
+	char m_aClass[32] {};
 	int m_AccountID {};
 	int m_WorldID {};
 	int m_Price {};
@@ -106,56 +192,38 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, std::string ClassName, int Price, int Bank, vec2 Pos, vec2 TextPos, vec2 PlantPos, CItem&& PlantedItem, int WorldID, std::string&& AccessSet, std::string&& JsonDoorData)
+	void Init(int AccountID, std::string Class, int Price, int Bank, int WorldID, std::string AccessDoorList, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties)
 	{
 		m_AccountID = AccountID;
-		str_copy(m_aClassName, ClassName.c_str(), sizeof(m_aClassName));
+		str_copy(m_aClass, Class.c_str(), sizeof(m_aClass));
 		m_Price = Price;
-		m_Pos = Pos;
-		m_TextPos = TextPos;
-		m_PlantPos = PlantPos;
 		m_WorldID = WorldID;
-		m_PlantedItem = std::move(PlantedItem);
-		
-		// initialize components
-		m_pDoorManager = new CDoorManager(this, std::move(AccessSet), std::move(JsonDoorData));
-		m_pBank = new CBank(this, Bank);
 
 		// init decoration
-		InitDecorations();
+		InitProperties(Bank, std::move(AccessDoorList), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonProperties));
 	}
+
+	CDoorManager* GetDoorManager() const { return m_pDoorManager; }
+	CBank* GetBank() const { return m_pBank; }
+	CDecorationManager* GetDecorationManager() const { return m_pDecorationManager; }
+	CPlantzonesManager* GetPlantzonesManager() const { return m_pPlantzonesManager; }
 
 	HouseIdentifier GetID() const { return m_ID; }
 	int GetAccountID() const { return m_AccountID; }
-	const char* GetClassName() const { return m_aClassName; }
-	const vec2& GetPos() const { return m_Pos; }
+	const char* GetClassName() const { return m_aClass; }
+	const vec2& GetPos() const { return m_Position; }
 	const vec2& GetPlantPos() const { return m_PlantPos; }
+	float GetRadius() const { return m_Radius; }
 	bool HasOwner() const { return m_AccountID > 0; }
 	int GetPrice() const { return m_Price; }
 	int GetWorldID() const { return m_WorldID; }
 	CItem* GetPlantedItem() { return &m_PlantedItem; }
-	CDoorManager* GetDoorManager() const { return m_pDoorManager; }
-	CBank* GetBank() const { return m_pBank; }
 
-	// A decoration functions
-	bool StartDrawing() const;
-	static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser);
-	bool AddDecoration(const EntityPoint* pPoint) const;
-	bool RemoveDecoration(const EntityPoint* pPoint) const;
-
-	// House functions
+	void InitProperties(int Bank, std::string&& AccessDoorList, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties);
 	void Buy(CPlayer* pPlayer);
 	void Sell();
-
-	// Planting functions
 	void SetPlantItemID(ItemIdentifier ItemID);
-
-	// Text update house
 	void TextUpdate(int LifeTime);
-
-private:
-	// Function to initialize decorations
-	void InitDecorations();
 };
 
 #endif

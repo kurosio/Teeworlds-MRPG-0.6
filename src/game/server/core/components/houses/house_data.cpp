@@ -14,108 +14,58 @@ CPlayer* CHouseData::GetPlayer() const { return GS()->GetPlayerByUserID(m_Accoun
 
 CHouseData::~CHouseData()
 {
-	// Remove the owner before destruct
-	CPlayer* pPlayer = GetPlayer();
-	if(pPlayer)
-	{
-		m_AccountID = -1;
-		pPlayer->Account()->ReinitializeHouse();
-	}
-
-	// Delete the CHouseData
-	delete m_pDrawBoard;
+	delete m_pPlantzonesManager;
+	delete m_pDecorationManager;
 	delete m_pDoorManager;
 	delete m_pBank;
 }
 
-void CHouseData::InitDecorations()
+void CHouseData::InitProperties(int Bank, std::string&& AccessDoorList, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties)
 {
-	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_Pos, 900.f);
-	m_pDrawBoard->RegisterEvent(&CHouseData::DrawboardToolEventCallback, this);
-	m_pDrawBoard->SetFlags(DRAWBOARDFLAG_PLAYER_ITEMS);
+	// Assert important values
+	dbg_assert(JsonProperties.length() > 0, "The properties string is empty");
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_DECORATION_TABLE, "WHERE WorldID = '%d' AND HouseID = '%d'", GS()->GetWorldID(), m_ID);
-	while(pRes->next())
+	// Parse the JSON string
+	Tools::Json::parseFromString(JsonProperties, [this](nlohmann::json& pJson)
 	{
-		int ItemID = pRes->getInt("ItemID");
-		vec2 Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		m_pDrawBoard->AddPoint(Pos, ItemID);
-	}
-}
+		// Assert for important properties
+		dbg_assert(pJson.find("pos") != pJson.end(), "The importal properties value is empty");
 
-bool CHouseData::StartDrawing() const
-{
-	CPlayer* pPlayer = GS()->GetPlayerByUserID(m_AccountID);
-	return pPlayer ? m_pDrawBoard->StartDrawing(pPlayer) : false;
-}
+		auto pHousePosData = pJson["pos"];
+		m_Position.x = (float)pHousePosData.value("x", 0);
+		m_Position.y = (float)pHousePosData.value("y", 0);
+		m_Radius = (float)pHousePosData.value("radius", 300);
 
-bool CHouseData::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
-{
-	const auto pHouse = (CHouseData*)pUser;
-	if(!pPlayer || !pHouse)
-		return false;
-
-	const int& ClientID = pPlayer->GetCID();
-
-	if(pPoint)
-	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
-		if(Event == DrawboardToolEvent::ON_POINT_ADD)
+		// Initialize text position
+		if(pJson.find("text_pos") != pJson.end())
 		{
-			if(pHouse->AddDecoration(pPoint))
-			{
-				pHouse->GS()->Chat(ClientID, "You have added {} to your house!", pPlayerItem->Info()->GetName());
-				return true;
-			}
-
-			return false;
+			auto pTextPosData = pJson["text_pos"];
+			m_TextPosition.x = (float)pTextPosData.value("x", 0);
+			m_TextPosition.y = (float)pTextPosData.value("y", 0);
 		}
+	});
 
-		if(Event == DrawboardToolEvent::ON_POINT_ERASE)
-		{
-			if(pHouse->RemoveDecoration(pPoint))
-			{
-				pHouse->GS()->Chat(ClientID, "You have removed {} from your house!", pPlayerItem->Info()->GetName());
-				return true;
-			}
+	// Create a new instance of CBank and assign it to m_pBank
+	// The CBank will handle bank house.
+	m_pBank = new CBank(this, Bank);
 
-			return false;
-		}
-	}
+	// Create a new instance of CDoorManager and assign it to m_pDoors
+	// The CDoorManager will handle all the doors for the house.
+	m_pDoorManager = new CDoorManager(this, std::move(AccessDoorList), std::move(JsonDoors));
 
-	if(Event == DrawboardToolEvent::ON_END)
-	{
-		pHouse->GS()->Chat(ClientID, "You have finished decorating your house!");
-		return true;
-	}
+	// Create a new instance of CDecorationManager and assign it to m_pDecorations
+	// The CDecorationManager will handle all the decorations for the house.
+	m_pDecorationManager = new CDecorationManager(this);
 
-	return true;
-}
+	// Create a new instance of CPlantzonesManager and assign it to m_pPlantzones
+	// The CPlantzonesManager will handle all the plantzones for the house.
+	m_pPlantzonesManager = new CPlantzonesManager(this, std::move(JsonPlantzones));
 
-bool CHouseData::AddDecoration(const EntityPoint* pPoint) const
-{
-	if(!pPoint || !pPoint->m_pEntity)
-		return false;
-
-	const CEntity* pEntity = pPoint->m_pEntity;
-	const ItemIdentifier& ItemID = pPoint->m_ItemID;
-	const vec2& EntityPos = pEntity->GetPos();
-
-	// Insert to last identifier and got it
-	Database->Execute<DB::INSERT>(TW_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d')",
-		ItemID, m_ID, round_to_int(EntityPos.x), round_to_int(EntityPos.y), GS()->GetWorldID());
-	return true;
-}
-
-bool CHouseData::RemoveDecoration(const EntityPoint* pPoint) const
-{
-	if(!pPoint || !pPoint->m_pEntity)
-		return false;
-
-	// Remove the decoration from the database
-	Database->Execute<DB::REMOVE>(TW_HOUSES_DECORATION_TABLE, "WHERE HouseID = '%d' AND ItemID = '%d' AND PosX = '%d' AND PosY = '%d'",
-		m_ID, pPoint->m_ItemID, round_to_int(pPoint->m_pEntity->GetPos().x), round_to_int(pPoint->m_pEntity->GetPos().y));
-	return true;
+	// Asserts
+	dbg_assert(m_pBank != nullptr, "The house bank is null");
+	dbg_assert(m_pPlantzonesManager != nullptr, "The house plantzones manager is null");
+	dbg_assert(m_pDecorationManager != nullptr, "The house decorations manager is null");
+	dbg_assert(m_pDoorManager != nullptr, "The house doors manager is null");
 }
 
 // This function represents the action of a player buying a house in the game.
@@ -154,7 +104,6 @@ void CHouseData::Buy(CPlayer* pPlayer)
 	}
 }
 
-// This function is used to sell the house data.
 void CHouseData::Sell()
 {
 	// Check if the house has an owner
@@ -236,7 +185,7 @@ void CHouseData::TextUpdate(int LifeTime)
 	}
 
 	// Create a text object with the given parameters
-	if(GS()->CreateText(nullptr, false, m_TextPos, {}, LifeTime - 5, Name.c_str()))
+	if(GS()->CreateText(nullptr, false, m_TextPosition, {}, LifeTime - 5, Name.c_str()))
 	{
 		// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object
 		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
@@ -310,9 +259,6 @@ CGS* CHouseData::CDoorManager::GS() const { return m_pHouse->GS(); }
 CPlayer* CHouseData::CDoorManager::GetPlayer() const { return m_pHouse->GetPlayer(); }
 CHouseData::CDoorManager::CDoorManager(CHouseData* pHouse, std::string&& AccessData, std::string&& JsonDoors) : m_pHouse(pHouse)
 {
-	// prepare
-	m_AccessUserIDs.reserve(MAX_HOUSE_DOOR_INVITED_PLAYERS);
-
 	// parse doors the JSON string
 	Tools::Json::parseFromString(JsonDoors, [this](nlohmann::json& pJson)
 	{
@@ -326,73 +272,74 @@ CHouseData::CDoorManager::CDoorManager(CHouseData* pHouse, std::string&& AccessD
 
 	// initialize access list
 	DBSet m_Set(AccessData);
+	m_vAccessUserIDs.reserve(MAX_HOUSE_DOOR_INVITED_PLAYERS);
 	for(auto& p : m_Set.GetDataItems())
 	{
 		if(int UID = std::atoi(p.first.c_str()); UID > 0)
-			m_AccessUserIDs.insert(UID);
+			m_vAccessUserIDs.insert(UID);
 	}
 }
 
 CHouseData::CDoorManager::~CDoorManager()
 {
-	for(auto& p : m_apEntDoors)
+	for(auto& p : m_vpEntDoors)
 		delete p.second;
-	m_apEntDoors.clear();
+	m_vpEntDoors.clear();
+	m_vAccessUserIDs.clear();
 }
 
 void CHouseData::CDoorManager::Open(int Number)
 {
-	if(m_apEntDoors.find(Number) != m_apEntDoors.end())
-		m_apEntDoors[Number]->Open();
+	if(m_vpEntDoors.find(Number) != m_vpEntDoors.end())
+		m_vpEntDoors[Number]->Open();
 }
 
 void CHouseData::CDoorManager::Close(int Number)
 {
-	if(m_apEntDoors.find(Number) != m_apEntDoors.end())
-		m_apEntDoors[Number]->Close();
+	if(m_vpEntDoors.find(Number) != m_vpEntDoors.end())
+		m_vpEntDoors[Number]->Close();
 }
 
 void CHouseData::CDoorManager::Reverse(int Number)
 {
-	if(m_apEntDoors.find(Number) == m_apEntDoors.end())
-		return;
-
-	// Check if the door is closed
-	if(m_apEntDoors[Number]->IsClosed())
-		Open(Number); // Open the door
-	else
-		Close(Number); // Close the door
+	if(m_vpEntDoors.find(Number) != m_vpEntDoors.end())
+	{
+		if(m_vpEntDoors[Number]->IsClosed())
+			Open(Number); // Open the door
+		else
+			Close(Number); // Close the door
+	}
 }
 
 void CHouseData::CDoorManager::OpenAll()
 {
-	for(auto& p : m_apEntDoors)
+	for(auto& p : m_vpEntDoors)
 		Open(p.first);
 }
 
 void CHouseData::CDoorManager::CloseAll()
 {
-	for(auto& p : m_apEntDoors)
+	for(auto& p : m_vpEntDoors)
 		Close(p.first);
 }
 
 void CHouseData::CDoorManager::ReverseAll()
 {
-	for(auto& p : m_apEntDoors)
+	for(auto& p : m_vpEntDoors)
 		Reverse(p.first);
 }
 
 void CHouseData::CDoorManager::AddAccess(int UserID)
 {
-	// Check if the size of the m_AccessUserIDs set is greater than or equal to the maximum number of invited players allowed
-	if(m_AccessUserIDs.size() >= MAX_HOUSE_DOOR_INVITED_PLAYERS)
+	// check if the size of the m_vAccessUserIDs set is greater than or equal to the maximum number of invited players allowed
+	if(m_vAccessUserIDs.size() >= MAX_HOUSE_DOOR_INVITED_PLAYERS)
 	{
 		GS()->ChatAccount(m_pHouse->GetAccountID(), "You have reached the limit of the allowed players!");
 		return;
 	}
 
 	// try add access to list
-	if(!m_AccessUserIDs.insert(UserID).second)
+	if(!m_vAccessUserIDs.insert(UserID).second)
 		return;
 
 	// update
@@ -402,25 +349,25 @@ void CHouseData::CDoorManager::AddAccess(int UserID)
 void CHouseData::CDoorManager::RemoveAccess(int UserID)
 {
 	// try remove access
-	if(m_AccessUserIDs.erase(UserID) > 0)
+	if(m_vAccessUserIDs.erase(UserID) > 0)
 		SaveAccessList();
 }
 
 bool CHouseData::CDoorManager::HasAccess(int UserID)
 {
-	return m_pHouse->GetAccountID() == UserID || m_AccessUserIDs.find(UserID) != m_AccessUserIDs.end();
+	return m_pHouse->GetAccountID() == UserID || m_vAccessUserIDs.find(UserID) != m_vAccessUserIDs.end();
 }
 
-int CHouseData::CDoorManager::GetAvailableAccessSlots() const { return (int)MAX_HOUSE_DOOR_INVITED_PLAYERS - (int)m_AccessUserIDs.size(); }
+int CHouseData::CDoorManager::GetAvailableAccessSlots() const { return (int)MAX_HOUSE_DOOR_INVITED_PLAYERS - (int)m_vAccessUserIDs.size(); }
 
 void CHouseData::CDoorManager::SaveAccessList() const
 {
 	// initialize variables
 	std::string AccessData;
-	AccessData.reserve(m_AccessUserIDs.size() * 8);
+	AccessData.reserve(m_vAccessUserIDs.size() * 8);
 
 	// parse access user ids to string
-	for(const auto& UID : m_AccessUserIDs)
+	for(const auto& UID : m_vAccessUserIDs)
 	{
 		AccessData += std::to_string(UID);
 		AccessData += ',';
@@ -436,20 +383,217 @@ void CHouseData::CDoorManager::SaveAccessList() const
 
 void CHouseData::CDoorManager::AddDoor(const char* pDoorname, vec2 Position)
 {
-	// Add the door to the m_apEntDoors map using the door name as the key
-	m_apEntDoors.emplace(m_apEntDoors.size() + 1, new CEntityHouseDoor(&GS()->m_World, m_pHouse, std::string(pDoorname), Position));
+	// Add the door to the m_vpEntDoors map using the door name as the key
+	m_vpEntDoors.emplace(m_vpEntDoors.size() + 1, new CEntityHouseDoor(&GS()->m_World, m_pHouse, std::string(pDoorname), Position));
 }
 
 void CHouseData::CDoorManager::RemoveDoor(const char* pDoorname, vec2 Position)
 {
-	auto iter = std::find_if(m_apEntDoors.begin(), m_apEntDoors.end(), [&](const std::pair<int, CEntityHouseDoor*>& p)
+	auto iter = std::find_if(m_vpEntDoors.begin(), m_vpEntDoors.end(), [&](const std::pair<int, CEntityHouseDoor*>& p)
 	{
 		return p.second->GetName() == pDoorname && p.second->GetPos() == Position;
 	});
 
-	if(iter != m_apEntDoors.end())
+	if(iter != m_vpEntDoors.end())
 	{
 		delete iter->second;
-		m_apEntDoors.erase(iter);
+		m_vpEntDoors.erase(iter);
 	}
+}
+
+/* -------------------------------------
+ * Decorations impl
+ * ------------------------------------- */
+CGS* CHouseData::CDecorationManager::GS() const { return m_pHouse->GS(); }
+CHouseData::CDecorationManager::CDecorationManager(CHouseData* pHouse) : m_pHouse(pHouse)
+{
+	CDecorationManager::Init();
+}
+
+CHouseData::CDecorationManager::~CDecorationManager()
+{
+	delete m_pDrawBoard;
+}
+
+void CHouseData::CDecorationManager::Init()
+{
+	// Create a new instance of CEntityDrawboard and pass the world and house position as parameters
+	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pHouse->GetPos(), m_pHouse->GetRadius());
+	m_pDrawBoard->RegisterEvent(&CDecorationManager::DrawboardToolEventCallback, m_pHouse);
+	m_pDrawBoard->SetFlags(DRAWBOARDFLAG_PLAYER_ITEMS);
+
+	// Load from database decorations
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_DECORATION_TABLE, "WHERE WorldID = '%d' AND HouseID = '%d'", GS()->GetWorldID(), m_pHouse->GetID());
+	while(pRes->next())
+	{
+		int ItemID = pRes->getInt("ItemID");
+		vec2 Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
+
+		// Add a point to the drawboard with the position and item ID
+		m_pDrawBoard->AddPoint(Pos, ItemID);
+	}
+}
+
+bool CHouseData::CDecorationManager::StartDrawing(CPlayer* pPlayer) const
+{
+	return pPlayer && pPlayer->GetCharacter() && m_pDrawBoard->StartDrawing(pPlayer);
+}
+
+bool CHouseData::CDecorationManager::HasFreeSlots() const
+{
+	return m_pDrawBoard->GetEntityPoints().size() < (int)MAX_DECORATIONS_PER_HOUSE;
+}
+
+bool CHouseData::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
+{
+	const auto pHouse = (CHouseData*)pUser;
+	if(!pPlayer || !pHouse)
+		return false;
+
+	const int& ClientID = pPlayer->GetCID();
+
+	if(pPoint)
+	{
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
+		if(Event == DrawboardToolEvent::ON_POINT_ADD)
+		{
+			if(!pHouse->GetDecorationManager()->HasFreeSlots())
+			{
+				pHouse->GS()->Chat(ClientID, "You have reached the maximum number of decorations for your house!");
+				return false;
+			}
+
+			if(pHouse->GetDecorationManager()->Add(pPoint))
+			{
+				pHouse->GS()->Chat(ClientID, "You have added {} to your house!", pPlayerItem->Info()->GetName());
+				return true;
+			}
+
+			return false;
+		}
+
+		if(Event == DrawboardToolEvent::ON_POINT_ERASE)
+		{
+			if(pHouse->GetDecorationManager()->Remove(pPoint))
+			{
+				pHouse->GS()->Chat(ClientID, "You have removed {} from your house!", pPlayerItem->Info()->GetName());
+				return true;
+			}
+
+			return false;
+		}
+	}
+
+	if(Event == DrawboardToolEvent::ON_END)
+	{
+		pHouse->GS()->Chat(ClientID, "You have finished decorating your house!");
+		return true;
+	}
+
+	return true;
+}
+
+bool CHouseData::CDecorationManager::Add(const EntityPoint* pPoint) const
+{
+	// Check if pPoint or pPoint->m_pEntity is null
+	if(!pPoint || !pPoint->m_pEntity)
+		return false;
+
+	// Get ItemID pEntity and EntityPos
+	const CEntity* pEntity = pPoint->m_pEntity;
+	const ItemIdentifier& ItemID = pPoint->m_ItemID;
+	const vec2& EntityPos = pEntity->GetPos();
+
+	// Execute a database insert query with the values
+	Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d')",
+		ItemID, m_pHouse->GetID(), round_to_int(EntityPos.x), round_to_int(EntityPos.y), GS()->GetWorldID());
+	return true;
+}
+
+bool CHouseData::CDecorationManager::Remove(const EntityPoint* pPoint) const
+{
+	if(!pPoint || !pPoint->m_pEntity)
+		return false;
+
+	// Remove the decoration from the database
+	Database->Execute<DB::REMOVE>(TW_HOUSES_DECORATION_TABLE, "WHERE HouseID = '%d' AND ItemID = '%d' AND PosX = '%d' AND PosY = '%d'",
+		m_pHouse->GetID(), pPoint->m_ItemID, round_to_int(pPoint->m_pEntity->GetPos().x), round_to_int(pPoint->m_pEntity->GetPos().y));
+	return true;
+}
+
+/* -------------------------------------
+ * Plantzones impl
+ * ------------------------------------- */
+void CHouseData::CPlantzone::ChangeItem(int ItemID)
+{
+	for(auto& pPlant : m_vPlants)
+	{
+		pPlant->m_ItemID = ItemID;
+	}
+	m_ItemID = ItemID;
+	m_pManager->Save();
+}
+
+CGS* CHouseData::CPlantzonesManager::GS() const { return m_pHouse->GS(); }
+CHouseData::CPlantzonesManager::CPlantzonesManager(CHouseData* pHouse, std::string&& JsonPlantzones) : m_pHouse(pHouse)
+{
+	// Parse the JSON string
+	Tools::Json::parseFromString(JsonPlantzones, [this](nlohmann::json& pJson)
+	{
+		for(const auto& pPlantzone : pJson)
+		{
+			std::string Plantname = pPlantzone.value("name", "");
+			vec2 Position = vec2(pPlantzone.value("x", 0), pPlantzone.value("y", 0));
+			int ItemID = pPlantzone.value("item_id", 0);
+			float Radius = pPlantzone.value("radius", 100);
+			AddPlantzone({ this, Plantname.c_str(), ItemID, Position, Radius });
+		}
+	});
+}
+
+// Destructor for the CHouseDoorsController class
+CHouseData::CPlantzonesManager::~CPlantzonesManager()
+{
+	m_vPlantzones.clear();
+}
+
+void CHouseData::CPlantzonesManager::AddPlantzone(CPlantzone&& Plantzone)
+{
+	m_vPlantzones.emplace(m_vPlantzones.size() + 1, std::forward<CPlantzone>(Plantzone));
+}
+
+CHouseData::CPlantzone* CHouseData::CPlantzonesManager::GetPlantzoneByPos(vec2 Pos)
+{
+	for(auto& p : m_vPlantzones)
+	{
+		if(distance(p.second.GetPos(), Pos) <= p.second.GetRadius())
+			return &p.second;
+	}
+
+	return nullptr;
+}
+
+CHouseData::CPlantzone* CHouseData::CPlantzonesManager::GetPlantzoneByID(int ID)
+{
+	const auto it = m_vPlantzones.find(ID);
+	return it != m_vPlantzones.end() ? &it->second : nullptr;
+}
+
+void CHouseData::CPlantzonesManager::Save() const
+{
+	// Create a JSON object to store plant zones data
+	nlohmann::json Plantzones;
+	for(auto& p : m_vPlantzones)
+	{
+		// Create a JSON object to store data for each plant zone
+		nlohmann::json plantzoneData;
+		plantzoneData["name"] = p.second.GetName();
+		plantzoneData["x"] = round_to_int(p.second.GetPos().x);
+		plantzoneData["y"] = round_to_int(p.second.GetPos().y);
+		plantzoneData["item_id"] = p.second.GetItemID();
+		plantzoneData["radius"] = round_to_int(p.second.GetRadius());
+		Plantzones.push_back(plantzoneData);
+	}
+
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Plantzones = '%s' WHERE ID = '%d'", Plantzones.dump().c_str(), m_pHouse->GetID());
 }
