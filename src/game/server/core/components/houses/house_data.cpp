@@ -341,7 +341,7 @@ void CHouseData::CDoorManager::SaveAccessList() const
 		AccessData.pop_back();
 
 	// update
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "AccessData = '%s' WHERE ID = '%d'", AccessData.c_str(), m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "AccessList = '%s' WHERE ID = '%d'", AccessData.c_str(), m_pHouse->GetID());
 }
 
 void CHouseData::CDoorManager::AddDoor(const char* pDoorname, vec2 Position)

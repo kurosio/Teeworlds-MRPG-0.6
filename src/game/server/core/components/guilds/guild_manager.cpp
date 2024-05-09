@@ -711,7 +711,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		// reverse door house
 		int UniqueDoorID = VoteID;
 		pHouse->GetDoorManager()->Reverse(UniqueDoorID);
-		GS()->UpdateVotesIfForAll(MENU_GUILD_HOUSE_DOORS);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_HOUSE_DOOR_LIST);
 		return true;
 	}
 
@@ -870,7 +870,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	}
 
 	// doors-related menus
-	if(Menulist == MENU_GUILD_HOUSE_DOORS)
+	if(Menulist == MENU_GUILD_HOUSE_DOOR_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowDoorsControl(pPlayer);
@@ -1108,7 +1108,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		pHouse->GetRentTimeStamp(aBufTimeStamp, sizeof(aBufTimeStamp));
 		VHouse.Add("Approximate rental time: {}", aBufTimeStamp);
 		VHouse.AddOption("GUILD_HOUSE_DECORATION_EDIT", "Decoration editor");
-		VHouse.AddMenu(MENU_GUILD_HOUSE_DOORS, "Doors control");
+		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors control");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_LIST, "Plant zones");
 		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_SELL, "Sell");

@@ -23,6 +23,11 @@ class CHouseManager : public MmoComponent
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
 	void ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse);
+	void ShowMenu(CPlayer* pPlayer) const;
+	void ShowSell(CPlayer* pPlayer);
+	void ShowDoorsController(CPlayer* pPlayer);
+	void ShowPlantzonesControl(CPlayer* pPlayer) const;
+	void ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const;
 
 public:
 	CHouseData* GetHouse(HouseIdentifier ID) const;
