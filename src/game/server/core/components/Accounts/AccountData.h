@@ -47,7 +47,7 @@ public:
 	/*
 	 * Group functions: house system
 	 */
-	void ReinitializeHouse(); // This function re-initializes the house object
+	void ReinitializeHouse(bool SetNull = false); // This function re-initializes the house object
 	CHouseData* GetHouse() const { return m_pHouseData; } // Get the house data for the current object
 	bool HasHouse() const { return m_pHouseData != nullptr; } // Check if the current object has house data
 

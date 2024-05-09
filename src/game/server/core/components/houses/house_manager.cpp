@@ -10,28 +10,25 @@
 
 void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 {
-	// load house
-	const auto InitHouses = Database->Prepare<DB::SELECT>("*", TW_HOUSES_TABLE, pWhereLocalWorld);
-	InitHouses->AtExecute([this](ResultPtr pRes)
+	// initialize houses
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_TABLE, pWhereLocalWorld);
+	while(pRes->next())
 	{
-		while(pRes->next())
-		{
-			HouseIdentifier ID = pRes->getInt("ID");
-			int AccountID = pRes->getInt("UserID");
-			std::string ClassName = pRes->getString("Class").c_str();
-			int Price = pRes->getInt("Price");
-			int Bank = pRes->getInt("Bank");
-			int WorldID = pRes->getInt("WorldID");
-			std::string AccessList = pRes->getString("AccessList").c_str();
-			std::string JsonDoors = pRes->getString("Doors").c_str();
-			std::string JsonPlantzones = pRes->getString("Plantzones").c_str();
-			std::string JsonProperties = pRes->getString("Properties").c_str();
+		HouseIdentifier ID = pRes->getInt("ID");
+		int AccountID = pRes->getInt("UserID");
+		std::string ClassName = pRes->getString("Class").c_str();
+		int Price = pRes->getInt("Price");
+		int Bank = pRes->getInt("Bank");
+		int WorldID = pRes->getInt("WorldID");
+		std::string AccessList = pRes->getString("AccessList").c_str();
+		std::string JsonDoors = pRes->getString("Doors").c_str();
+		std::string JsonPlantzones = pRes->getString("Plantzones").c_str();
+		std::string JsonProperties = pRes->getString("Properties").c_str();
 
-			CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, WorldID, std::move(AccessList), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonProperties));
-		}
+		CHouseData::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, WorldID, std::move(AccessList), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonProperties));
+	}
 
-		Core()->ShowLoadingProgress("Houses", CHouseData::Data().size());
-	});
+	Core()->ShowLoadingProgress("Houses", CHouseData::Data().size());
 }
 
 void CHouseManager::OnTick()
@@ -590,9 +587,6 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	return false;
 }
 
-/* #########################################################################
-	MENUS HOUSES
-######################################################################### */
 void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse)
 {
 	HouseIdentifier ID = pHouse->GetID();
@@ -618,32 +612,16 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse)
 	VBuy.AddLine();
 }
 
-CHouseData* CHouseManager::GetHouseByAccountID(int AccountID)
-{
-	CHouseData* pData = nullptr;
-
-	for(auto& pHouse : CHouseData::Data())
-	{
-		if(pHouse->GetAccountID() == AccountID)
-		{
-			pData = pHouse.get();
-			break;
-		}
-	}
-
-	return pData;
-}
-
-CHouseData* CHouseManager::GetHouse(HouseIdentifier ID)
+CHouseData* CHouseManager::GetHouse(HouseIdentifier ID) const
 {
 	auto pHouse = std::find_if(CHouseData::Data().begin(), CHouseData::Data().end(), [ID](auto& p) { return p->GetID() == ID; });
-	return pHouse != CHouseData::Data().end() ? (*pHouse).get() : nullptr;
+	return pHouse != CHouseData::Data().end() ? *pHouse : nullptr;
 }
 
-CHouseData* CHouseManager::GetHouseByPos(vec2 Pos)
+CHouseData* CHouseManager::GetHouseByPos(vec2 Pos) const
 {
 	auto pHouse = std::find_if(CHouseData::Data().begin(), CHouseData::Data().end(), [Pos](auto& p) { return distance(Pos, p->GetPos()) < 128.0f; });
-	return pHouse != CHouseData::Data().end() ? (*pHouse).get() : nullptr;
+	return pHouse != CHouseData::Data().end() ? *pHouse : nullptr;
 }
 
 CHouseData::CPlantzone* CHouseManager::GetHousePlantzoneByPos(vec2 Pos) const

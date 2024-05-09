@@ -17,10 +17,12 @@ class EntityPoint;
 class CEntityHouseDecoration;
 class CEntityHouseDoor;
 using HouseIdentifier = int;
-using HouseDataPtr = std::shared_ptr< class CHouseData >;
 
-class CHouseData : public MultiworldIdentifiableStaticData< std::deque < HouseDataPtr > >
+class CHouseData : public MultiworldIdentifiableStaticData< std::deque < CHouseData* > >
 {
+	CGS* GS() const;
+	CPlayer* GetPlayer() const;
+	
 public:
 	/* -------------------------------------
  * Plantzones impl
@@ -170,24 +172,20 @@ private:
 	vec2 m_TextPosition {};
 	vec2 m_PlantPos {};
 	float m_Radius {};
-
 	char m_aClass[32] {};
 	int m_AccountID {};
 	int m_WorldID {};
 	int m_Price {};
-
 	int m_LastTickTextUpdated{};
 
-	class CGS* GS() const;
-	class CPlayer* GetPlayer() const;
 
 public:
 	CHouseData() = default;
 	~CHouseData();
 
-	static HouseDataPtr CreateElement(HouseIdentifier ID)
+	static CHouseData* CreateElement(HouseIdentifier ID)
 	{
-		HouseDataPtr pData = std::make_shared<CHouseData>();
+		auto pData = new CHouseData();
 		pData->m_ID = ID;
 		return m_pData.emplace_back(std::move(pData));
 	}

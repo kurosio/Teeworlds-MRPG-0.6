@@ -35,9 +35,8 @@ class CHouseManager : public MmoComponent
 		GET CHECK HOUSES
 	######################################################################### */
 public:
-	static CHouseData* GetHouseByAccountID(int AccountID);
-	CHouseData* GetHouse(HouseIdentifier ID);
-	CHouseData* GetHouseByPos(vec2 Pos);
+	CHouseData* GetHouse(HouseIdentifier ID) const;
+	CHouseData* GetHouseByPos(vec2 Pos) const;
 	CHouseData::CPlantzone* GetHousePlantzoneByPos(vec2 Pos) const;
 };
 

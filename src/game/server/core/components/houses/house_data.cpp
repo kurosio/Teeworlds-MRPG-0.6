@@ -94,7 +94,7 @@ void CHouseData::Buy(CPlayer* pPlayer)
 		m_pDoorManager->CloseAll();
 		m_pBank->Reset();
 		pPlayer->Account()->ReinitializeHouse();
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '%d', HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '%d', Bank = '0', AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
 
 		// send information
 		GS()->Chat(-1, "{} becomes the owner of the house class {}", Server()->ClientName(ClientID), GetClassName());
@@ -113,26 +113,25 @@ void CHouseData::Sell()
 	CPlayer* pPlayer = GetPlayer();
 	const int ReturnValue = m_Price + m_pBank->Get();
 
-	// Send mail
+	// send mail
 	MailWrapper Mail("System", m_AccountID, "House is sold.");
 	Mail.AddDescLine("Your house is sold!");
 	Mail.AttachItem(CItem(itGold, ReturnValue));
 	Mail.Send();
 
 	// Update the house data
+	if(pPlayer)
+	{
+		pPlayer->Account()->ReinitializeHouse(true);
+		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
+	}
 	m_pDoorManager->CloseAll();
 	m_pBank->Reset();
 	m_AccountID = -1;
-	if(pPlayer)
-		pPlayer->Account()->ReinitializeHouse();
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_ID);
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0', AccessData = NULL WHERE ID = '%d'", m_ID);
 
-	// Send informations
-	if(pPlayer)
-	{
-		GS()->Chat(pPlayer->GetCID(), "Your House is sold!");
-		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
-	}
+	// send information
+	GS()->ChatAccount(m_AccountID, "Your House is sold!");
 	GS()->Chat(-1, "House: {} have been is released!", m_ID);
 	GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {}] have been sold!**", m_ID);
 }
@@ -166,7 +165,7 @@ void CHouseData::CBank::Add(int Value)
 		return;
 
 	// try get result by house id
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, HouseBank", TW_HOUSES_TABLE, "WHERE ID = '%d'", m_pHouse->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Bank", TW_HOUSES_TABLE, "WHERE ID = '%d'", m_pHouse->GetID());
 	if(!pRes->next())
 		return;
 
@@ -175,8 +174,8 @@ void CHouseData::CBank::Add(int Value)
 		return;
 
 	// update
-	m_Bank = pRes->getInt("HouseBank") + Value;
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "HouseBank = '%d' WHERE ID = '%d'", m_Bank, m_pHouse->GetID());
+	m_Bank = pRes->getInt("Bank") + Value;
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pHouse->GetID());
 
 	// send succesful message
 	GS()->Chat(pPlayer->GetCID(), "You put {} gold in the safe, now {}!", Value, m_Bank);
@@ -190,14 +189,14 @@ void CHouseData::CBank::Take(int Value)
 		return;
 
 	// try get result by house id
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, HouseBank", TW_HOUSES_TABLE, "WHERE ID = '%d'", m_pHouse->GetAccountID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Bank", TW_HOUSES_TABLE, "WHERE ID = '%d'", m_pHouse->GetAccountID());
 	if(!pRes->next())
 		return;
 
 	// initialize variables
 	int ClientID = pPlayer->GetCID();
 	int HouseID = pRes->getInt("ID");
-	int Bank = pRes->getInt("HouseBank");
+	int Bank = pRes->getInt("Bank");
 
 	// clamp value maximal
 	Value = minimum(Value, Bank);
@@ -206,7 +205,7 @@ void CHouseData::CBank::Take(int Value)
 		// update
 		m_Bank = Bank - Value;
 		pPlayer->Account()->AddGold(Value);
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "HouseBank = '%d' WHERE ID = '%d'", m_Bank, HouseID);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, HouseID);
 
 		// send succesful message
 		GS()->Chat(ClientID, "You take {} gold in the safe {}!", Value, m_Bank);
