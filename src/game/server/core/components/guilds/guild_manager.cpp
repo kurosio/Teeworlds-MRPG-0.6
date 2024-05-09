@@ -39,13 +39,14 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 	{
 		GuildHouseIdentifier ID = pRes->getInt("ID");
 		GuildIdentifier GuildID = pRes->getInt("GuildID");
-		int Price = pRes->getInt("Price");
+		int InitialFee = pRes->getInt("InitialFee");
+		int RentDays = pRes->getInt("RentDays");
 		std::string JsonDoors = pRes->getString("Doors").c_str();
 		std::string JsonPlantzones = pRes->getString("Plantzones").c_str();
 		std::string JsonPropersties = pRes->getString("Properties").c_str();
 
 		CGuild* pGuild = GetGuildByID(GuildID);
-		CGuildHouse::CreateElement(ID)->Init(pGuild, Price, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonPropersties));
+		CGuildHouse::CreateElement(ID)->Init(pGuild, RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonPropersties));
 	}
 
 	Core()->ShowLoadingProgress("Guild houses", CGuildHouse::Data().size());
@@ -319,6 +320,54 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		// deposit gold
 		if(pMember->DepositInBank(Get))
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD);
+		return true;
+	}
+
+	// extend rent
+	if(PPSTR(CMD, "GUILD_HOUSE_EXTEND_RENT") == 0)
+	{
+		// check guild valid and access rights
+		auto* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// check valid house
+		auto* pHouse = pGuild->GetHouse();
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "Your guild does not have a house.");
+			return true;
+		}
+
+		// check maximal rent days
+		if(pHouse->GetRentDays() >= GUILD_HOUSE_MAX_RENT_DAYS)
+		{
+			GS()->Chat(ClientID, "You can not extend the rent anymore then {} days.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
+			return true;
+		}
+
+		// check minimal
+		Get = clamp(Get, 0, GUILD_HOUSE_MAX_RENT_DAYS - pHouse->GetRentDays());
+		if(!Get)
+		{
+			GS()->Chat(ClientID, "Minimum is 1 day. Maximum total {} days.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
+			return true;
+		}
+
+		// extend
+		if(pHouse->ExtendDaysRent(Get))
+		{
+			GS()->ChatGuild(pGuild->GetID(), "Your house was extended by {} days.", Get);
+			pGuild->GetLogger()->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House extended by %d days.", Get);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+			return true;
+		}
+
+		// failed
+		GS()->Chat(ClientID, "Not enough gold.");
 		return true;
 	}
 
@@ -734,11 +783,9 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// result
-		if(pGuild->SellHouse())
-		{
-			pPlayer->m_VotesData.UpdateVotes(MENU_GUILD);
-			GS()->UpdateVotesIfForAll(MENU_GUILD);
-		}
+		pGuild->SellHouse();
+		pPlayer->m_VotesData.UpdateVotes(MENU_GUILD);
+		GS()->UpdateVotesIfForAll(MENU_GUILD);
 	}
 
 	// upgrade guild
@@ -839,10 +886,9 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_HOUSE_PURCHASE_INFO)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-
 		CCharacter* pChr = pPlayer->GetCharacter();
 		CGuildHouse* pHouse = GetHouseByPos(pChr->m_Core.m_Pos);
-		ShowBuyHouse(ClientID, pHouse);
+		ShowBuyHouse(pPlayer, pHouse);
 		return true;
 	}
 
@@ -1029,8 +1075,9 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	}
 
 	// If the guild has a house, sell it
-	if(pGuild->SellHouse())
+	if(pGuild->HasHouse())
 	{
+		pGuild->SellHouse();
 		GS()->Chat(-1, "The guild {} has lost house.", pGuild->GetName());
 	}
 
@@ -1086,6 +1133,9 @@ void CGuildManager::ShowMenu(int ClientID) const
 
 	// Guild management
 	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
+	VManagement.Add("Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
+	VManagement.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
+	VManagement.AddLine();
 	VManagement.AddMenu(MENU_GUILD_UPGRADES, "Improvements & Upgrades");
 	VManagement.AddMenu(MENU_GUILD_MEMBERSHIP_LIST, "Membership list");
 	VManagement.AddMenu(MENU_GUILD_INVITES, "Membership requests");
@@ -1093,32 +1143,23 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VManagement.AddMenu(MENU_GUILD_LOGS, "Logs of activity");
 	VManagement.AddMenu(MENU_GUILD_WARS, "Guild wars");
 	VManagement.AddMenu(MENU_GUILD_DISBAND, "Disband");
-	VoteWrapper::AddEmptyline(ClientID);
 
 	// Guild append house menu
 	if(HasHouse)
 	{
-		// initialize variables
-		char aBufTimeStamp[64]{};
-		auto* pHouse = pGuild->GetHouse();
-
 		// House management
-		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management");
-		VHouse.Add("Rent price per day: {} golds", pHouse->GetRentPrice());
-		pHouse->GetRentTimeStamp(aBufTimeStamp, sizeof(aBufTimeStamp));
-		VHouse.Add("Approximate rental time: {}", aBufTimeStamp);
+		auto* pHouse = pGuild->GetHouse();
+		VoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {} days)", pHouse->GetRentDays());
+		VHouse.Add("Bank: {} | Rent per day: {} golds", pGuild->GetBank()->Get(), pHouse->GetRentPrice());
+		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
+		VHouse.AddLine();
 		VHouse.AddOption("GUILD_HOUSE_DECORATION_EDIT", "Decoration editor");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors control");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_LIST, "Plant zones");
 		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_SELL, "Sell");
-		VoteWrapper::AddEmptyline(ClientID);
 	}
-
-	// Guild deposit
-	VoteWrapper VBank(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2727 Bank Management");
-	VBank.Add("Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
-	VBank.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 }
 
 void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
@@ -1527,51 +1568,39 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-void CGuildManager::ShowBuyHouse(int ClientID, CGuildHouse* pHouse) const
+void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
 {
-	// If the player object does not exist, return from the function
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer)
+	if(!pHouse || !pPlayer)
 		return;
 
-	// Show information about guild house
-	VoteWrapper VHouseInfo(ClientID, VWF_SEPARATE_CLOSED, "Information guild house");
-	VHouseInfo.Add("Buying a house you will need to constantly the Treasury");
-	VHouseInfo.Add("In the intervals of time will be paid house");
-	VoteWrapper::AddLine(ClientID);
+	// information
+	int ClientID = pPlayer->GetCID();
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT, "\u2324 Information about guild house");
+	VInfo.Add("Buying a house you will need to constantly the Treasury");
+	VInfo.Add("In the intervals of time will be paid house");
+	VInfo.Add("Owned by: {}", pHouse->GetOwnerName());
+	VInfo.Add("Plant zone's: {}", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+	VInfo.Add("Controlled door's: {}", (int)pHouse->GetDoorManager()->GetContainer().size());
+	VoteWrapper::AddEmptyline(ClientID);
 
-	// Check if house is available for sale
-	VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN, "House detail information");
-	if(!pHouse)
-	{
-		VHouse.Add("This house is not for sale yet");
-		return;
-	}
-
-	VHouse.Add("House owned by: {}", pHouse->GetOwnerName());
-	VHouse.Add("House price: {} gold", pHouse->GetPrice());
-	VHouse.Add("House rent price per day: {} gold", pHouse->GetRentPrice());
-	VHouse.Add("House has {} plant zone's", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
-	VHouse.Add("House has {} controlled door's", (int)pHouse->GetDoorManager()->GetContainer().size());
-	VoteWrapper::AddLine(ClientID);
-
-	// Check if house is not purchased
+	// top
 	if(!pHouse->IsPurchased())
 	{
-		// Check if the player does not have a guild
-		if(!pPlayer->Account()->HasGuild())
+		auto* pGuild = pPlayer->Account()->GetGuild();
+		VoteWrapper VTop(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Purchase of a house");
+		VTop.Add("Price rent per day: {} golds", pHouse->GetRentPrice());
+
+		// check rights
+		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
 		{
-			VoteWrapper(ClientID).Add("You need to be in a guild to buy a house");
+			VTop.Add("Initial fee: {} golds", pHouse->GetInitialFee());
+			VTop.Add("You don't have the right to buy a house");
 			return;
 		}
 
-		// Check if player has leader rights in the guild
-		CGuild* pGuild = pPlayer->Account()->GetGuild();
-		VoteWrapper VBuyHouse(ClientID, VWF_SEPARATE_OPEN, "Guild bank: {} gold", pGuild->GetBank()->Get());
-		if(pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
-			VBuyHouse.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase this guild house! Cost: {} golds", pHouse->GetPrice());
-		else
-			VBuyHouse.Add("You need to be the leader rights");
+		// show options
+		VTop.Add("Bank: {} golds | Initial fee: {}", pGuild->GetBank()->Get(), pHouse->GetInitialFee());
+		VTop.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase");
 	}
 }
 

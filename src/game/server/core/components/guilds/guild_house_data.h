@@ -20,6 +20,7 @@ using GuildHouseIdentifier = int;
 
 class CGuildHouse : public MultiworldIdentifiableStaticData< std::deque < CGuildHouse* > >
 {
+	friend class CGuild;
 	friend class CGuildHouseDoorManager;
 	friend class CGuildHouseDecorationManager;
 	friend class CPlantzonesManager;
@@ -140,8 +141,9 @@ private:
 	float m_Radius {};
 	vec2 m_Position{};
 	vec2 m_TextPosition{};
-	int m_Price {};
+	int m_InitialFee {};
 	int m_WorldID{};
+	int m_RentDays {};
 	int m_LastTickTextUpdated {};
 
 	CDoorManager* m_pDoors {};
@@ -159,9 +161,10 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuild* pGuild, int Price, int WorldID, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties)
+	void Init(CGuild* pGuild, int RentDays, int InitialFee, int WorldID, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties)
 	{
-		m_Price = Price;
+		m_InitialFee = InitialFee;
+		m_RentDays = RentDays;
 		m_WorldID = WorldID;
 
 		InitProperties(std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonProperties));
@@ -179,12 +182,14 @@ public:
 	vec2 GetPos() const { return m_Position; }
 	float GetRadius() const { return m_Radius; }
 	int GetWorldID() const { return m_WorldID; }
-	int GetPrice() const { return m_Price; }
+	int GetInitialFee() const { return m_InitialFee; }
 	int GetRentPrice() const;
-	void GetRentTimeStamp(char* aBuffer, size_t Size) const;
+	int GetRentDays() const { return m_RentDays; }
 	bool IsPurchased() const { return m_pGuild != nullptr; }
 	const char* GetOwnerName() const;
 
+	bool ExtendDaysRent(int Days);
+	bool ReduceRentDays();
 	void TextUpdate(int LifeTime);
 	void UpdateGuild(CGuild* pGuild);
 };

@@ -133,7 +133,8 @@ GuildResult CGuild::BuyHouse(int HouseID)
 		// Assign the house to the guild
 		m_pHouse = *IterHouse;
 		m_pHouse->UpdateGuild(this);
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = '%d' WHERE ID = '%d'", m_ID, HouseID);
+		m_pHouse->m_RentDays = GUILD_RENT_DAYS_DEFAULT;
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = '%d', RentDays = '%d' WHERE ID = '%d'", m_ID, m_pHouse->m_RentDays, HouseID);
 
 		// Add a history entry and send a chat message for getting a guild house
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Your guild has purchased a house!");
@@ -144,14 +145,14 @@ GuildResult CGuild::BuyHouse(int HouseID)
 	return GuildResult::BUY_HOUSE_ALREADY_PURCHASED;
 }
 
-bool CGuild::SellHouse()
+void CGuild::SellHouse()
 {
 	// Check if the guild house is not null
 	if(!m_pHouse)
-		return false;
+		return;
 
 	// Send mail
-	const int ReturnedGold = m_pHouse->GetPrice();
+	const int ReturnedGold = m_pHouse->GetInitialFee();
 	MailWrapper Mail("System", m_LeaderUID, "Guild house is sold.");
 	Mail.AddDescLine("We returned some gold from your guild.");
 	Mail.AttachItem(CItem(itGold, ReturnedGold));
@@ -168,37 +169,32 @@ bool CGuild::SellHouse()
 	m_pHouse->GetDoorManager()->CloseAll();
 	m_pHouse->UpdateGuild(nullptr);
 	m_pHouse = nullptr;
-	return true;
 }
 
 void CGuild::HandleTimePeriod(TIME_PERIOD Period)
 {
-	if(Period == DAILY_STAMP)
+	// rent paid
+	if(Period == DAILY_STAMP && HasHouse())
 	{
-		// Check if the guild has a house
-		if(m_pHouse != nullptr)
+		// can pay
+		if(m_pHouse->ReduceRentDays())
 		{
-			// Check if the guild has enough money to pay the rent
-			if(!m_pBank->Spend(m_pHouse->GetRentPrice()) && SellHouse())
-			{
-				// Send a chat message and log to the guild notifying them that their guild house rent has been paid
-				GS()->ChatGuild(m_ID, "Your guild house rent has expired, has been sold.");
-				m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has expired, has been sold.");
-				GS()->UpdateVotesIfForAll(MENU_GUILD);
-				return;
-			}
-
-			// Send a chat message and log to the guild notifying them that their guild house rent has been paid
 			GS()->ChatGuild(m_ID, "Your guild house rent has been paid.");
 			m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has been paid.");
+			return;
 		}
-	}
-	else if(Period == MONTH_STAMP)
-	{
-		// Reset the deposits of the guild members
-		m_pMembers->ResetDeposits();
 
-		// Send a chat message to the guild members
+		// can't pay, so sell the house
+		SellHouse();
+		GS()->ChatGuild(m_ID, "Your guild house rent has expired, has been sold.");
+		m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has expired, has been sold.");
+		GS()->UpdateVotesIfForAll(MENU_GUILD);
+	}
+
+	// reset members deposits
+	if(Period == MONTH_STAMP)
+	{
+		m_pMembers->ResetDeposits();
 		GS()->ChatGuild(m_ID, "Membership deposits have been reset.");
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Membership deposits have been reset.");
 	}

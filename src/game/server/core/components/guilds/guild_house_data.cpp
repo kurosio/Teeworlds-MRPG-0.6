@@ -68,27 +68,38 @@ int CGuildHouse::GetRentPrice() const
 	return (int)m_Radius + (DoorCount * 200) + (PlantzoneCount * 500);
 }
 
-void CGuildHouse::GetRentTimeStamp(char* aBuffer, size_t Size) const
-{
-	if(IsPurchased())
-	{
-		int Bank = m_pGuild->GetBank()->Get();
-		int Days = maximum(1, Bank) / GetRentPrice();
-		time_t currentTimestamp = time(nullptr);
-		tm desiredTime = *localtime(&currentTimestamp);
-		desiredTime.tm_hour = 23;
-		desiredTime.tm_min = 59;
-		desiredTime.tm_sec = 00;
-		time_t desiredTimestamp = mktime(&desiredTime) + (static_cast<long long>(Days) * 86400);
-		str_timestamp_ex(desiredTimestamp, aBuffer, Size, FORMAT_SPACE);
-	}
-}
-
 const char* CGuildHouse::GetOwnerName() const
 {
 	if(!m_pGuild)
 		return "FREE GUILD HOUSE";
 	return m_pGuild->GetName();
+}
+
+bool CGuildHouse::ExtendDaysRent(int Days)
+{
+	if(!m_pGuild || !m_pGuild->GetBank())
+		return false;
+
+	// try spend for rent days
+	if(m_pGuild->GetBank()->Spend(GetRentPrice() * Days))
+	{
+		m_RentDays += Days;
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '%d' WHERE ID = '%d'", m_RentDays, m_ID);
+		return true;
+	}
+
+	return false;
+}
+
+bool CGuildHouse::ReduceRentDays()
+{
+	if(!m_pGuild || !m_pGuild->GetBank() || m_RentDays <= 0)
+		return false;
+
+	// reduce rent days
+	m_RentDays -= 1;
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '%d' WHERE ID = '%d'", m_RentDays, m_ID);
+	return true;
 }
 
 void CGuildHouse::TextUpdate(int LifeTime)

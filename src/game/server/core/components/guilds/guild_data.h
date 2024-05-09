@@ -25,6 +25,8 @@ enum GuildMisc
 	GUILD_LOGS_MAX_COUNT = 50,				        // maximum guild log's
 	GUILD_NEW_UPGRADE_SLOTS = 2,		            // default available slots
 	GUILD_NEW_UPGRADE_CHAIR = 1,				    // default chair boost
+	GUILD_RENT_DAYS_DEFAULT = 3,                    // default guild rent days
+	GUILD_HOUSE_MAX_RENT_DAYS = 30,                 // default guild rent days
 };
 
 // Define an enum for the different levels of guild rank rights
@@ -361,7 +363,7 @@ public:
 	[[nodiscard]] bool Upgrade(GuildUpgrade Type);
 	[[nodiscard]] GuildResult SetLeader(int AccountID);
 	[[nodiscard]] GuildResult BuyHouse(int HouseID);
-	[[nodiscard]] bool SellHouse();
+	[[nodiscard]] void SellHouse();
 	void HandleTimePeriod(TIME_PERIOD Period);
 
 	// war

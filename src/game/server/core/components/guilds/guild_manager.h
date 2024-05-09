@@ -52,7 +52,7 @@ private:
 	void ShowMembershipList(CPlayer* pPlayer) const;
 	void ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const;
 	void ShowRequests(CPlayer* pPlayer) const;
-	void ShowBuyHouse(int ClientID, CGuildHouse* pHouse) const;
+	void ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const;
 	void ShowDeclareWar(int ClientID) const;
 	void ShowDoorsControl(CPlayer* pPlayer) const;
 	void ShowPlantzonesControl(CPlayer* pPlayer) const;
