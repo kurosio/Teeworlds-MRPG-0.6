@@ -222,7 +222,6 @@ public:
 	void InitProperties(int Bank, std::string&& AccessDoorList, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties);
 	void Buy(CPlayer* pPlayer);
 	void Sell();
-	void SetPlantItemID(ItemIdentifier ItemID);
 	void TextUpdate(int LifeTime);
 };
 

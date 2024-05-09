@@ -841,7 +841,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		CCharacter* pChr = pPlayer->GetCharacter();
-		CGuildHouse* pHouse = GetGuildHouseByPos(pChr->m_Core.m_Pos);
+		CGuildHouse* pHouse = GetHouseByPos(pChr->m_Core.m_Pos);
 		ShowBuyHouse(ClientID, pHouse);
 		return true;
 	}
@@ -1664,7 +1664,7 @@ void CGuildManager::ShowLogs(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-CGuildHouse* CGuildManager::GetGuildHouseByID(const GuildHouseIdentifier& ID) const
+CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
 {
 	auto itHouse = std::find_if(CGuildHouse::Data().begin(), CGuildHouse::Data().end(), [&ID](const CGuildHouse* p)
 	{
@@ -1674,7 +1674,7 @@ CGuildHouse* CGuildManager::GetGuildHouseByID(const GuildHouseIdentifier& ID) co
 	return itHouse != CGuildHouse::Data().end() ? *itHouse : nullptr;
 }
 
-CGuildHouse* CGuildManager::GetGuildHouseByPos(vec2 Pos) const
+CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
 {
 	auto itHouse = std::find_if(CGuildHouse::Data().begin(), CGuildHouse::Data().end(), [&Pos, this](const CGuildHouse* p)
 	{
@@ -1704,7 +1704,7 @@ CGuild* CGuildManager::GetGuildByName(const char* pGuildname) const
 	return itGuild != CGuild::Data().end() ? (*itGuild) : nullptr;
 }
 
-CGuildHouse::CPlantzone* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos) const
+CGuildHouse::CPlantzone* CGuildManager::GetHousePlantzoneByPos(vec2 Pos) const
 {
 	for(auto& p : CGuildHouse::Data())
 	{
@@ -1716,9 +1716,4 @@ CGuildHouse::CPlantzone* CGuildManager::GetGuildHousePlantzoneByPos(vec2 Pos) co
 	}
 
 	return nullptr;
-}
-
-bool CGuildManager::IsAccountMemberGuild(int AccountID) const
-{
-	return CGuild::IsAccountMemberGuild(AccountID);
 }

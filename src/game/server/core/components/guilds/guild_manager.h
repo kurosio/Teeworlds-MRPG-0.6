@@ -59,13 +59,11 @@ private:
 	void ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const;
 
 public:
-	CGuildHouse* GetGuildHouseByID(const GuildHouseIdentifier& ID) const;
-	CGuildHouse* GetGuildHouseByPos(vec2 Pos) const;
+	CGuildHouse* GetHouseByID(const GuildHouseIdentifier& ID) const;
+	CGuildHouse* GetHouseByPos(vec2 Pos) const;
 	CGuild* GetGuildByID(GuildIdentifier ID) const;
 	CGuild* GetGuildByName(const char* pGuildname) const;
-	CGuildHouse::CPlantzone* GetGuildHousePlantzoneByPos(vec2 Pos) const;
-	bool IsAccountMemberGuild(int AccountID) const;
-
+	CGuildHouse::CPlantzone* GetHousePlantzoneByPos(vec2 Pos) const;
 };
 
 #endif

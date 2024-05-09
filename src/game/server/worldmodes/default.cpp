@@ -54,11 +54,18 @@ bool CGameControllerDefault::OnEntity(int Index, vec2 Pos)
 			return true;
 		}
 
-		if(CGuildHouse::CPlantzone* pPlantzone = GS()->Core()->GuildManager()->GetGuildHousePlantzoneByPos(Pos))
+		if(CGuildHouse::CPlantzone* pPlantzone = GS()->Core()->GuildManager()->GetHousePlantzoneByPos(Pos))
 		{
 			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
 			return true;
 		}
+
+		if(CHouseData::CPlantzone* pPlantzone = GS()->Core()->HouseManager()->GetHousePlantzoneByPos(Pos))
+		{
+			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
+			return true;
+		}
+
 
 		return true;
 	}

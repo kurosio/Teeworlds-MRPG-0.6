@@ -93,21 +93,18 @@ const char* CGuildHouse::GetOwnerName() const
 
 void CGuildHouse::TextUpdate(int LifeTime)
 {
-	// Check if the last tick text update is greater than the current server tick
+	// check valid vector and now time
 	if(is_negative_vec(m_TextPosition) || m_LastTickTextUpdated > Server()->Tick())
 		return;
 
-	// Set the initial value of the variable "Name"
+	// initialize variable with name
 	std::string Name = "FREE GUILD HOUSE";
 	if(IsPurchased())
 		Name = m_pGuild->GetName();
 
-	// Create a text object with the given parameters
+	// try create new text object
 	if(GS()->CreateText(nullptr, false, m_TextPosition, {}, LifeTime - 5, Name.c_str()))
-	{
-		// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object
 		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
-	}
 }
 
 void CGuildHouse::UpdateGuild(CGuild* pGuild)

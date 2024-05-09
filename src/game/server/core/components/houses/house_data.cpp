@@ -68,26 +68,25 @@ void CHouseData::InitProperties(int Bank, std::string&& AccessDoorList, std::str
 	dbg_assert(m_pDoorManager != nullptr, "The house doors manager is null");
 }
 
-// This function represents the action of a player buying a house in the game.
 void CHouseData::Buy(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// Check if the player has a house
+	// check is player already have a house
 	if(pPlayer->Account()->HasHouse())
 	{
 		GS()->Chat(ClientID, "You already have a home.");
 		return;
 	}
 
-	// Check if the house has an owner
+	// check is house has owner
 	if(HasOwner())
 	{
 		GS()->Chat(ClientID, "House has already been purchased!");
 		return;
 	}
 
-	// buy house
+	// try spend currency
 	if(pPlayer->Account()->SpendCurrency(m_Price))
 	{
 		// update data
@@ -106,20 +105,18 @@ void CHouseData::Buy(CPlayer* pPlayer)
 
 void CHouseData::Sell()
 {
-	// Check if the house has an owner
+	// check is has owner
 	if(!HasOwner())
 		return;
 
-	// Get the pointer to the player object using the GetPlayer() function
+	// initialize variables
 	CPlayer* pPlayer = GetPlayer();
-
-	// Returned fully value gold
-	const int Price = m_Price + m_pBank->Get();
+	const int ReturnValue = m_Price + m_pBank->Get();
 
 	// Send mail
 	MailWrapper Mail("System", m_AccountID, "House is sold.");
 	Mail.AddDescLine("Your house is sold!");
-	Mail.AttachItem(CItem(itGold, Price));
+	Mail.AttachItem(CItem(itGold, ReturnValue));
 	Mail.Send();
 
 	// Update the house data
@@ -127,9 +124,7 @@ void CHouseData::Sell()
 	m_pBank->Reset();
 	m_AccountID = -1;
 	if(pPlayer)
-	{
 		pPlayer->Account()->ReinitializeHouse();
-	}
 	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, HouseBank = '0', AccessData = NULL WHERE ID = '%d'", m_ID);
 
 	// Send informations
@@ -142,54 +137,20 @@ void CHouseData::Sell()
 	GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {}] have been sold!**", m_ID);
 }
 
-// This function sets the plant item ID for the house data
-void CHouseData::SetPlantItemID(ItemIdentifier ItemID)
-{
-	// Check if the ItemID already is equal to the m_PlantItemID
-	if(ItemID == m_PlantedItem.GetID())
-		return;
-
-	// Check for update and set new plant itemid
-	bool Updated = false;
-	for(CJobItems* pPlant = (CJobItems*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_JOBITEMS); pPlant; pPlant = (CJobItems*)pPlant->TypeNext())
-	{
-		if(pPlant->m_HouseID == m_ID)
-		{
-			pPlant->m_ItemID = ItemID;
-			Updated = true;
-		}
-	}
-
-	// Save data
-	if(Updated)
-	{
-		m_PlantedItem.SetID(ItemID);
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "PlantID = '%d' WHERE ID = '%d'", ItemID, m_ID);
-	}
-}
-
 void CHouseData::TextUpdate(int LifeTime)
 {
-	// Check if the last tick text update is greater than the current server tick
-	if(m_LastTickTextUpdated > Server()->Tick())
+	// check valid vector and now time
+	if(is_negative_vec(m_TextPosition) || m_LastTickTextUpdated > Server()->Tick())
 		return;
 
-	// Set the initial value of the variable "Name" to "HOUSE"
-	std::string Name = "HOUSE";
-
-	// Check if the object has an owner
+	// initialize variable with name
+	std::string Name = "FREE HOUSE";
 	if(HasOwner())
-	{
-		// If it has an owner, update the value of "Name" to the player's name
 		Name = Server()->GetAccountNickname(m_AccountID);
-	}
 
-	// Create a text object with the given parameters
+	// try create new text object
 	if(GS()->CreateText(nullptr, false, m_TextPosition, {}, LifeTime - 5, Name.c_str()))
-	{
-		// Update the value of "m_LastTickTextUpdated" to the current server tick plus the lifetime of the text object
 		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
-	}
 }
 
 /* -------------------------------------
@@ -358,7 +319,10 @@ bool CHouseData::CDoorManager::HasAccess(int UserID)
 	return m_pHouse->GetAccountID() == UserID || m_vAccessUserIDs.find(UserID) != m_vAccessUserIDs.end();
 }
 
-int CHouseData::CDoorManager::GetAvailableAccessSlots() const { return (int)MAX_HOUSE_DOOR_INVITED_PLAYERS - (int)m_vAccessUserIDs.size(); }
+int CHouseData::CDoorManager::GetAvailableAccessSlots() const
+{
+	return (int)MAX_HOUSE_DOOR_INVITED_PLAYERS - (int)m_vAccessUserIDs.size();
+}
 
 void CHouseData::CDoorManager::SaveAccessList() const
 {

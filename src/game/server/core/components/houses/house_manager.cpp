@@ -337,7 +337,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			{
 				// Change the item in the plant zone to the planted item
 				GS()->Chat(ClientID, "You have successfully planted the plant.");
-				pHouse->SetPlantItemID(ItemID);
+				//pHouse->SetPlantItemID(ItemID);
 			}
 
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_PLANTS);
@@ -546,7 +546,7 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			}
 
 			GS()->Chat(-1, "Congratulations {}, planted at home {}!", Server()->ClientName(ClientID), GS()->GetItemInfo(TryItemID)->GetName());
-			pHouse->SetPlantItemID(TryItemID);
+			//pHouse->SetPlantItemID(TryItemID);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -646,8 +646,16 @@ CHouseData* CHouseManager::GetHouseByPos(vec2 Pos)
 	return pHouse != CHouseData::Data().end() ? (*pHouse).get() : nullptr;
 }
 
-CHouseData* CHouseManager::GetHouseByPlantPos(vec2 Pos)
+CHouseData::CPlantzone* CHouseManager::GetHousePlantzoneByPos(vec2 Pos) const
 {
-	auto pHouse = std::find_if(CHouseData::Data().begin(), CHouseData::Data().end(), [Pos](auto& p) { return distance(Pos, p->GetPlantPos()) < 300.0f; });
-	return pHouse != CHouseData::Data().end() ? (*pHouse).get() : nullptr;
+	for(auto& p : CHouseData::Data())
+	{
+		for(auto& Plantzone : p->GetPlantzonesManager()->GetContainer())
+		{
+			if(distance(Pos, Plantzone.second.GetPos()) < Plantzone.second.GetRadius())
+				return &Plantzone.second;
+		}
+	}
+
+	return nullptr;
 }

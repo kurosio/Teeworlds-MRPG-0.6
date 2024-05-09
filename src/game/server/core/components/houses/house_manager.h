@@ -38,7 +38,7 @@ public:
 	static CHouseData* GetHouseByAccountID(int AccountID);
 	CHouseData* GetHouse(HouseIdentifier ID);
 	CHouseData* GetHouseByPos(vec2 Pos);
-	CHouseData* GetHouseByPlantPos(vec2 Pos);
+	CHouseData::CPlantzone* GetHousePlantzoneByPos(vec2 Pos) const;
 };
 
 #endif
