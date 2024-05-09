@@ -171,7 +171,7 @@ bool CGuild::SellHouse()
 	return true;
 }
 
-void CGuild::TimePeriodEvent(TIME_PERIOD Period)
+void CGuild::HandleTimePeriod(TIME_PERIOD Period)
 {
 	if(Period == DAILY_STAMP)
 	{
@@ -247,21 +247,12 @@ void CGuild::CBank::Set(int Value)
 
 bool CGuild::CBank::Spend(int Value)
 {
-	// Retrieve the current bank value from the database
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Bank", TW_GUILDS_TABLE, "WHERE ID = '%d'", m_pGuild->GetID());
-	if(pRes->next())
-	{
-		int Bank = pRes->getInt("Bank");
-		if(Bank >= Value)
-		{
-			// Update the bank value and update the database
-			m_Bank = Bank - Value;
-			Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
-			return true;
-		}
-	}
+	if(m_Bank <= 0 || m_Bank < Value)
+		return false;
 
-	return false;
+	m_Bank -= Value;
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
+	return true;
 }
 
 /* -------------------------------------

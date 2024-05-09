@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_HOUSE_ENTITIES_DOOR_H
 #include <game/server/entity.h>
 
-class CHouseData;
+class CHouse;
 
 class CEntityHouseDoor : public CEntity
 {
@@ -15,12 +15,12 @@ class CEntityHouseDoor : public CEntity
 	};
 
 	std::string m_Name {};
-	CHouseData* m_pHouse {};
+	CHouse* m_pHouse {};
 	int m_State {};
 	vec2 m_PosControll {};
 
 public:
-	CEntityHouseDoor(CGameWorld* pGameWorld, CHouseData* pHouse, std::string&& Name, vec2 Pos);
+	CEntityHouseDoor(CGameWorld* pGameWorld, CHouse* pHouse, std::string&& Name, vec2 Pos);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

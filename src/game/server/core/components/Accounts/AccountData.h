@@ -10,7 +10,7 @@
 
 class CGS;
 class CPlayer;
-class CHouseData;
+class CHouse;
 class GroupData;
 class CGuild;
 class CGuildMemberData;
@@ -28,7 +28,7 @@ class CAccountData
 
 	int m_Level {};
 	int m_Exp {};
-	CHouseData* m_pHouseData{};
+	CHouse* m_pHouseData{};
 	GroupData* m_pGroupData{};
 	CGuild* m_pGuildData{};
 	ClassGroup m_ClassGroup {};
@@ -48,7 +48,7 @@ public:
 	 * Group functions: house system
 	 */
 	void ReinitializeHouse(bool SetNull = false); // This function re-initializes the house object
-	CHouseData* GetHouse() const { return m_pHouseData; } // Get the house data for the current object
+	CHouse* GetHouse() const { return m_pHouseData; } // Get the house data for the current object
 	bool HasHouse() const { return m_pHouseData != nullptr; } // Check if the current object has house data
 
 	/*

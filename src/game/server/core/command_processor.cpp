@@ -220,7 +220,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	// If the player does not own a house, send a chat message and return
-	CHouseData* pHouse = pPlayer->Account()->GetHouse();
+	CHouse* pHouse = pPlayer->Account()->GetHouse();
 	if(!pHouse)
 	{
 		pGS->Chat(pPlayer->GetCID(), "You don't own a house!");

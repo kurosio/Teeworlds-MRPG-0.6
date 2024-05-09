@@ -96,7 +96,7 @@ void CAccountData::ReinitializeHouse(bool SetNull)
 	if(!SetNull)
 	{
 		// Iterate through all the group data objects
-		for(auto pHouse : CHouseData::Data())
+		for(auto pHouse : CHouse::Data())
 		{
 			// Check if the account ID of the group data object matches the account ID of the current account
 			if(pHouse->GetAccountID() == m_ID)

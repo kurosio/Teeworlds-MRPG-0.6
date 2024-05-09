@@ -421,7 +421,8 @@ void CMmoController::HandleTimePeriod() const
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				component->OnHandleTimePeriod(TIME_PERIOD(periods));
+				TIME_PERIOD timePeriod = static_cast<TIME_PERIOD>(periods);
+				component->OnHandleTimePeriod(timePeriod);
 			}
 		}
 	}
@@ -777,7 +778,7 @@ void CMmoController::ConAsyncLinesForTranslate()
 			PushingDialogs(JsonData, pItem->GetName(), "stnm", pItem->GetID());
 		}
 
-		for(auto& pItem : CHouseData::Data())
+		for(auto& pItem : CHouse::Data())
 		{
 			PushingDialogs(JsonData, pItem->GetClassName(), "hmnm", pItem->GetID());
 		}

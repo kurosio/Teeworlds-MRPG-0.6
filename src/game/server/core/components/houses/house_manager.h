@@ -13,26 +13,27 @@ class CHouseManager : public MmoComponent
 {
 	~CHouseManager() override
 	{
-		CHouseData::Data().clear();
+		CHouse::Data().clear();
 	}
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 	void OnTick() override;
+	void OnHandleTimePeriod(TIME_PERIOD Period) override;
 	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
-	void ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse);
+	void ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse);
 	void ShowMenu(CPlayer* pPlayer) const;
-	void ShowSell(CPlayer* pPlayer);
-	void ShowDoorsController(CPlayer* pPlayer);
+	void ShowSell(CPlayer* pPlayer) const;
+	void ShowDoorsController(CPlayer* pPlayer) const;
 	void ShowPlantzonesControl(CPlayer* pPlayer) const;
 	void ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const;
 
 public:
-	CHouseData* GetHouse(HouseIdentifier ID) const;
-	CHouseData* GetHouseByPos(vec2 Pos) const;
-	CHouseData::CPlantzone* GetHousePlantzoneByPos(vec2 Pos) const;
+	CHouse* GetHouse(HouseIdentifier ID) const;
+	CHouse* GetHouseByPos(vec2 Pos) const;
+	CHouse::CPlantzone* GetHousePlantzoneByPos(vec2 Pos) const;
 };
 
 #endif

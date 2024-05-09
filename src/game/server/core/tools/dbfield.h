@@ -47,8 +47,6 @@ public:
 	const char* getDescription() const { return m_aDescription; }
 };
 
-template<class> inline constexpr bool always_false_v = false;
-
 class DBFieldContainer
 {
 	using FieldVariant = std::variant < DBField<int>, DBField<float>, DBField<double>, DBField<std::string> >;

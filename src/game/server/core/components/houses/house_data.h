@@ -18,7 +18,7 @@ class CEntityHouseDecoration;
 class CEntityHouseDoor;
 using HouseIdentifier = int;
 
-class CHouseData : public MultiworldIdentifiableStaticData< std::deque < CHouseData* > >
+class CHouse : public MultiworldIdentifiableStaticData< std::deque < CHouse* > >
 {
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
@@ -62,12 +62,12 @@ public:
 	{
 		friend class CPlantzone;
 		CGS* GS() const;
-		CHouseData* m_pHouse {};
+		CHouse* m_pHouse {};
 		std::unordered_map<int, CPlantzone> m_vPlantzones {};
 
 	public:
 		CPlantzonesManager() = delete;
-		CPlantzonesManager(CHouseData* pHouse, std::string&& JsonPlantzones);
+		CPlantzonesManager(CHouse* pHouse, std::string&& JsonPlantzones);
 		~CPlantzonesManager();
 
 		std::unordered_map<int, CPlantzone>& GetContainer() { return m_vPlantzones; }
@@ -87,15 +87,16 @@ public:
 	{
 		CGS* GS() const;
 		CPlayer* GetPlayer() const;
-		CHouseData* m_pHouse{};
+		CHouse* m_pHouse{};
 		int m_Bank {};
 
 	public:
-		CBank(CHouseData* pHouse, int Bank) : m_pHouse(pHouse), m_Bank(Bank) {}
+		CBank(CHouse* pHouse, int Bank) : m_pHouse(pHouse), m_Bank(Bank) {}
 
 		int Get() const { return m_Bank; }   // Returns the current bank value
 		void Add(int Value);                 // Adds the specified value to the bank
 		void Take(int Value);                // Takes the specified value from the bank
+		bool Spend(int Value);               // Spends the specified value from the bank
 		void Reset() { m_Bank = 0; }         // Resets the bank value to 0
 	};
 
@@ -104,15 +105,15 @@ public:
 	 * ------------------------------------- */
 	class CDoorManager
 	{
-		friend class CHouseData;
+		friend class CHouse;
 		CGS* GS() const;
 		CPlayer* GetPlayer() const;
-		CHouseData* m_pHouse {};
+		CHouse* m_pHouse {};
 		ska::unordered_map<int, CEntityHouseDoor*> m_vpEntDoors {};
 		ska::unordered_set<int> m_vAccessUserIDs {};
 
 	public:
-		CDoorManager(CHouseData* pHouse, std::string&& AccessData, std::string&& JsonDoors);
+		CDoorManager(CHouse* pHouse, std::string&& AccessData, std::string&& JsonDoors);
 		~CDoorManager();
 		
 		ska::unordered_set<int>& GetAccesses() { return m_vAccessUserIDs; }               // Get the set of user IDs with access to the house
@@ -143,11 +144,11 @@ public:
 	{
 		CGS* GS() const;
 		CEntityDrawboard* m_pDrawBoard {};
-		CHouseData* m_pHouse {};
+		CHouse* m_pHouse {};
 
 	public:
 		CDecorationManager() = delete;
-		CDecorationManager(CHouseData* pHouse);
+		CDecorationManager(CHouse* pHouse);
 		~CDecorationManager();
 
 		bool StartDrawing(CPlayer* pPlayer) const;
@@ -180,12 +181,12 @@ private:
 
 
 public:
-	CHouseData() = default;
-	~CHouseData();
+	CHouse() = default;
+	~CHouse();
 
-	static CHouseData* CreateElement(HouseIdentifier ID)
+	static CHouse* CreateElement(HouseIdentifier ID)
 	{
-		auto pData = new CHouseData();
+		auto pData = new CHouse();
 		pData->m_ID = ID;
 		return m_pData.emplace_back(std::move(pData));
 	}
@@ -216,11 +217,13 @@ public:
 	int GetPrice() const { return m_Price; }
 	int GetWorldID() const { return m_WorldID; }
 	CItem* GetPlantedItem() { return &m_PlantedItem; }
+	int GetRentPrice() const;
 
 	void InitProperties(int Bank, std::string&& AccessDoorList, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties);
 	void Buy(CPlayer* pPlayer);
 	void Sell();
 	void TextUpdate(int LifeTime);
+	void HandleTimePeriod(TIME_PERIOD Period);
 };
 
 #endif

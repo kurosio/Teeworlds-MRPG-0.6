@@ -931,9 +931,9 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 void CGuildManager::OnHandleTimePeriod(TIME_PERIOD Period)
 {
-	// Call the TimePeriodEvent function for each guild passing the Period parameter
+	// Call the HandleTimePeriod function for each guild passing the Period parameter
 	for(auto& pGuild : CGuild::Data())
-		pGuild->TimePeriodEvent(Period);
+		pGuild->HandleTimePeriod(Period);
 }
 
 void CGuildManager::InitWars() const

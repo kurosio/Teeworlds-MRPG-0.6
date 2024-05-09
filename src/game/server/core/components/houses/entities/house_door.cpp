@@ -7,7 +7,7 @@
 
 #include "game/server/core/components/houses/house_data.h"
 
-CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, CHouseData* pHouse, std::string&& Name, vec2 Pos)
+CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, CHouse* pHouse, std::string&& Name, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_Name(std::move(Name)), m_pHouse(pHouse)
 {
 	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
