@@ -14,11 +14,7 @@ class CHouseManager : public MmoComponent
 	~CHouseManager() override
 	{
 		CHouseData::Data().clear();
-	};
-
-	/* #########################################################################
-		VAR AND OBJECTS HOUSES
-	######################################################################### */
+	}
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 	void OnTick() override;
@@ -26,14 +22,8 @@ class CHouseManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
-	/* #########################################################################
-		MENUS HOUSES
-	######################################################################### */
 	void ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse);
 
-	/* #########################################################################
-		GET CHECK HOUSES
-	######################################################################### */
 public:
 	CHouseData* GetHouse(HouseIdentifier ID) const;
 	CHouseData* GetHouseByPos(vec2 Pos) const;

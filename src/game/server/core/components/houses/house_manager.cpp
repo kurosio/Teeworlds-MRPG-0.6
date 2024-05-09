@@ -240,12 +240,10 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// buy house menu
 	if(Menulist == MENU_HOUSE_BUY)
 	{
-		CCharacter* pChr = pPlayer->GetCharacter();
-		if(CHouseData* pHouse = GetHouseByPos(pChr->m_Core.m_Pos))
-			ShowBuyHouse(pPlayer, pHouse);
-
+		ShowBuyHouse(pPlayer, GetHouseByPos(pPlayer->GetCharacter()->m_Core.m_Pos));
 		return true;
 	}
 
@@ -589,27 +587,35 @@ bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 
 void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouseData* pHouse)
 {
+	// check valid player and house
+	if(!pHouse || !pPlayer)
+		return;
+
+	// initialize variables
 	HouseIdentifier ID = pHouse->GetID();
 	const int ClientID = pPlayer->GetCID();
-	const char* pStrHouseOwner = pHouse->HasOwner() ? Instance::Server()->GetAccountNickname(pHouse->GetAccountID()) : "No owner";
+	const char* pOwnerNickname = pHouse->HasOwner() ? Instance::Server()->GetAccountNickname(pHouse->GetAccountID()) : "No owner";
 
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "House information");
-	VInfo.Add("You can buy this house for {} gold.", pHouse->GetPrice());
-	VInfo.AddLine();
+	// information
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2732 House information");
+	VInfo.Add("Every player has the right to rent houses.", pHouse->GetPrice());
+	VInfo.Add("An admission price is required for rentals.", pHouse->GetPrice());
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// detail information
-	VoteWrapper VDetail(ClientID, VWF_SEPARATE_OPEN, "Detail information about house.", ID, pHouse->GetClassName());
-	VDetail.Add("House owned by: {}", pStrHouseOwner);
-	VDetail.Add("House price: {} gold", pHouse->GetPrice());
-	VDetail.Add("House class: {}", pHouse->GetClassName());
-	VDetail.AddLine();
+	VoteWrapper VDetail(ClientID, VWF_STYLE_SIMPLE, "Detail information about house.", ID, pHouse->GetClassName());
+	VDetail.Add("Admission price: {} gold", pHouse->GetPrice());
+	VDetail.Add("Owned by: {}", pOwnerNickname);
+	VDetail.Add("Class: {}", pHouse->GetClassName());
+	VoteWrapper::AddEmptyline(ClientID);
 
-	VoteWrapper VBuy(ClientID, VWF_SEPARATE_OPEN, "You have {} golds.", pPlayer->GetItem(itGold)->GetValue());
-	if(pHouse->GetAccountID() <= 0)
-		VBuy.AddOption("HOUSE_BUY", ID, "Buy this house. Price {}gold", pHouse->GetPrice());
+	// buy tab
+	VoteWrapper VBuy(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Buying a house", pPlayer->GetItem(itGold)->GetValue());
+	if(!pHouse->HasOwner())
+		VBuy.AddOption("HOUSE_BUY", "Buy for {} golds", pHouse->GetPrice());
 	else
 		VBuy.Add("This house has already been purchased!");
-	VBuy.AddLine();
+	VoteWrapper::AddEmptyline(ClientID);
 }
 
 CHouseData* CHouseManager::GetHouse(HouseIdentifier ID) const
