@@ -353,10 +353,6 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	bool IsUsed = pInfo->m_Function == FUNCTION_ONE_USED || pInfo->m_Function == FUNCTION_USED;
 	VItem.AddIfOption(IsUsed, "IUSE", ItemID, "Use");
 
-	// is planting item
-	bool IsPlantItem = pInfo->m_Function == FUNCTION_PLANT;
-	VItem.AddIfOption(IsPlantItem, "PLANTING_HOUSE_SET", ItemID, "To plant at home (0.06%)");
-
 	// is potion
 	bool IsPotion = pInfo->m_Type == ItemType::TYPE_POTION;
 	VItem.AddIfOption(IsPotion, "ISETTINGS", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));

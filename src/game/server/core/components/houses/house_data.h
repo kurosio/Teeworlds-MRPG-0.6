@@ -10,7 +10,7 @@
 
 class CGS;
 class CPlayer;
-class CJobItems;
+class CEntityHarvestingItem;
 class CDrawingData;
 class CEntityDrawboard;
 class EntityPoint;
@@ -25,21 +25,21 @@ class CHouse : public MultiworldIdentifiableStaticData< std::deque < CHouse* > >
 	
 public:
 	/* -------------------------------------
- * Plantzones impl
+ * Farmzones impl
  * ------------------------------------- */
-	class CPlantzonesManager;
-	class CPlantzone
+	class CFarmzonesManager;
+	class CFarmzone
 	{
-		CPlantzonesManager* m_pManager {};
+		CFarmzonesManager* m_pManager {};
 		std::string m_Name {};
 		int m_ItemID {};
 		vec2 m_Pos {};
 		float m_Radius {};
-		std::vector<CJobItems*> m_vPlants {};
+		std::vector<CEntityHarvestingItem*> m_vFarms {};
 
 	public:
-		CPlantzone() = delete;
-		CPlantzone(CPlantzonesManager* pManager, std::string&& Name, int ItemID, vec2 Pos, float Radius) : m_pManager(pManager)
+		CFarmzone() = delete;
+		CFarmzone(CFarmzonesManager* pManager, std::string&& Name, int ItemID, vec2 Pos, float Radius) : m_pManager(pManager)
 		{
 			m_Name = std::move(Name);
 			m_ItemID = ItemID;
@@ -51,30 +51,30 @@ public:
 		float GetRadius() const { return m_Radius; }
 		int GetItemID() const { return m_ItemID; }
 		vec2 GetPos() const { return m_Pos; }
-		std::vector<CJobItems*>& GetContainer() { return m_vPlants; }
+		std::vector<CEntityHarvestingItem*>& GetContainer() { return m_vFarms; }
 
 		void ChangeItem(int ItemID);
-		void Add(CJobItems* pItem) { m_vPlants.push_back(pItem); }
-		void Remove(CJobItems* pItem) { m_vPlants.erase(std::remove(m_vPlants.begin(), m_vPlants.end(), pItem), m_vPlants.end()); }
+		void Add(CEntityHarvestingItem* pItem) { m_vFarms.push_back(pItem); }
+		void Remove(CEntityHarvestingItem* pItem) { m_vFarms.erase(std::remove(m_vFarms.begin(), m_vFarms.end(), pItem), m_vFarms.end()); }
 	};
 
-	class CPlantzonesManager
+	class CFarmzonesManager
 	{
-		friend class CPlantzone;
+		friend class CFarmzone;
 		CGS* GS() const;
 		CHouse* m_pHouse {};
-		std::unordered_map<int, CPlantzone> m_vPlantzones {};
+		std::unordered_map<int, CFarmzone> m_vFarmzones {};
 
 	public:
-		CPlantzonesManager() = delete;
-		CPlantzonesManager(CHouse* pHouse, std::string&& JsonPlantzones);
-		~CPlantzonesManager();
+		CFarmzonesManager() = delete;
+		CFarmzonesManager(CHouse* pHouse, std::string&& JsonFarmzones);
+		~CFarmzonesManager();
 
-		std::unordered_map<int, CPlantzone>& GetContainer() { return m_vPlantzones; }
+		std::unordered_map<int, CFarmzone>& GetContainer() { return m_vFarmzones; }
 
-		void AddPlantzone(CPlantzone&& Plantzone);
-		CPlantzone* GetPlantzoneByPos(vec2 Pos);
-		CPlantzone* GetPlantzoneByID(int ID);
+		void AddFarmzone(CFarmzone&& Farmzone);
+		CFarmzone* GetFarmzoneByPos(vec2 Pos);
+		CFarmzone* GetFarmzoneByID(int ID);
 
 	private:
 		void Save() const;
@@ -162,16 +162,15 @@ public:
 	};
 
 private:
-	CPlantzonesManager* m_pPlantzonesManager{};
+	CFarmzonesManager* m_pFarmzonesManager{};
 	CDecorationManager* m_pDecorationManager{};
 	CDoorManager* m_pDoorManager {};
 	CBank* m_pBank {};
-	CItem m_PlantedItem {};
 
 	HouseIdentifier m_ID {};
 	vec2 m_Position {};
 	vec2 m_TextPosition {};
-	vec2 m_PlantPos {};
+	vec2 m_FarmPos {};
 	float m_Radius {};
 	char m_aClass[32] {};
 	int m_AccountID {};
@@ -191,7 +190,7 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, std::string Class, int Price, int Bank, int WorldID, std::string AccessDoorList, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties)
+	void Init(int AccountID, std::string Class, int Price, int Bank, int WorldID, std::string AccessDoorList, std::string&& JsonDoors, std::string&& JsonFarmzones, std::string&& JsonProperties)
 	{
 		m_AccountID = AccountID;
 		str_copy(m_aClass, Class.c_str(), sizeof(m_aClass));
@@ -199,27 +198,26 @@ public:
 		m_WorldID = WorldID;
 
 		// init decoration
-		InitProperties(Bank, std::move(AccessDoorList), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonProperties));
+		InitProperties(Bank, std::move(AccessDoorList), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonProperties));
 	}
 
 	CDoorManager* GetDoorManager() const { return m_pDoorManager; }
 	CBank* GetBank() const { return m_pBank; }
 	CDecorationManager* GetDecorationManager() const { return m_pDecorationManager; }
-	CPlantzonesManager* GetPlantzonesManager() const { return m_pPlantzonesManager; }
+	CFarmzonesManager* GetFarmzonesManager() const { return m_pFarmzonesManager; }
 
 	HouseIdentifier GetID() const { return m_ID; }
 	int GetAccountID() const { return m_AccountID; }
 	const char* GetClassName() const { return m_aClass; }
 	const vec2& GetPos() const { return m_Position; }
-	const vec2& GetPlantPos() const { return m_PlantPos; }
+	const vec2& GetFarmPos() const { return m_FarmPos; }
 	float GetRadius() const { return m_Radius; }
 	bool HasOwner() const { return m_AccountID > 0; }
 	int GetPrice() const { return m_Price; }
 	int GetWorldID() const { return m_WorldID; }
-	CItem* GetPlantedItem() { return &m_PlantedItem; }
 	int GetRentPrice() const;
 
-	void InitProperties(int Bank, std::string&& AccessDoorList, std::string&& JsonDoors, std::string&& JsonPlantzones, std::string&& JsonProperties);
+	void InitProperties(int Bank, std::string&& AccessDoorList, std::string&& JsonDoors, std::string&& JsonFarmzones, std::string&& JsonProperties);
 	void Buy(CPlayer* pPlayer);
 	void Sell();
 	void TextUpdate(int LifeTime);

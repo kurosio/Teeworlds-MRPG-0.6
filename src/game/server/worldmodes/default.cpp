@@ -3,11 +3,11 @@
 #include "default.h"
 
 #include <game/server/gamecontext.h>
-#include <game/server/core/entities/items/jobitems.h>
+#include <game/server/core/entities/items/harvesting_item.h>
 #include <game/server/core/entities/logic/logicwall.h>
 
-#include <game/server/core/components/Accounts/AccountMinerManager.h>
-#include <game/server/core/components/Accounts/AccountPlantManager.h>
+#include <game/server/core/components/Accounts/AccountMiningManager.h>
+#include <game/server/core/components/Accounts/AccountFarmingManager.h>
 #include <game/server/core/components/houses/house_manager.h>
 
 #include "game/server/core/components/guilds/guild_manager.h"
@@ -45,38 +45,39 @@ bool CGameControllerDefault::OnEntity(int Index, vec2 Pos)
 	if(IGameController::OnEntity(Index, Pos))
 		return true;
 
-	if(Index == ENTITY_PLANTS)
+	if(Index == ENTITY_FARMING)
 	{
-		const int ItemID = GS()->Core()->AccountPlantManager()->GetPlantItemID(Pos), Level = GS()->Core()->AccountPlantManager()->GetPlantLevel(Pos);
-		if(ItemID > 0)
+		// default farm positions
+		if(auto* pItemInfo = GS()->Core()->AccountFarmingManager()->GetFarmingItemInfoByPos(Pos))
 		{
-			new CJobItems(&GS()->m_World, ItemID, Level, Pos, CJobItems::JOB_ITEM_FARMING, 100);
+			new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), Pos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING);
 			return true;
 		}
 
-		if(CGuildHouse::CPlantzone* pPlantzone = GS()->Core()->GuildManager()->GetHousePlantzoneByPos(Pos))
+		// guild house farm positions
+		if(CGuildHouse::CFarmzone* pFarmzone = GS()->Core()->GuildManager()->GetHouseFarmzoneByPos(Pos))
 		{
-			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
+			pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), Pos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
 			return true;
 		}
 
-		if(CHouse::CPlantzone* pPlantzone = GS()->Core()->HouseManager()->GetHousePlantzoneByPos(Pos))
+		// house farm positions
+		if(CHouse::CFarmzone* pFarmzone = GS()->Core()->HouseManager()->GetHouseFarmzoneByPos(Pos))
 		{
-			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
+			pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), Pos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
 			return true;
 		}
-
 
 		return true;
 	}
 
-	if(Index == ENTITY_MINER)
+	if(Index == ENTITY_MINING)
 	{
-		const int ItemID = GS()->Core()->AccountMinerManager()->GetOreItemID(Pos), Level = GS()->Core()->AccountMinerManager()->GetOreLevel(Pos);
-		if(ItemID > 0)
+		// default ores positions
+		if(auto* pItemInfo = GS()->Core()->AccountMiningManager()->GetMiningItemInfoByPos(Pos))
 		{
-			const int Health = GS()->Core()->AccountMinerManager()->GetOreHealth(Pos);
-			new CJobItems(&GS()->m_World, ItemID, Level, Pos, CJobItems::JOB_ITEM_MINING, Health);
+			new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), Pos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_MINING);
+			return true;
 		}
 
 		return true;

@@ -27,13 +27,13 @@ class CHouseManager : public MmoComponent
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowSell(CPlayer* pPlayer) const;
 	void ShowDoorsController(CPlayer* pPlayer) const;
-	void ShowPlantzonesControl(CPlayer* pPlayer) const;
-	void ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const;
+	void ShowFarmzonesControl(CPlayer* pPlayer) const;
+	void ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const;
 
 public:
 	CHouse* GetHouse(HouseIdentifier ID) const;
 	CHouse* GetHouseByPos(vec2 Pos) const;
-	CHouse::CPlantzone* GetHousePlantzoneByPos(vec2 Pos) const;
+	CHouse::CFarmzone* GetHouseFarmzoneByPos(vec2 Pos) const;
 };
 
 #endif

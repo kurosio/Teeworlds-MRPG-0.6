@@ -37,8 +37,8 @@ class CMmoController
 	class CAccountManager* m_pAccountManager;
 	class CBotManager* m_pBotManager;
 	class CInventoryManager *m_pInventoryManager;
-	class CAccountMinerManager *m_pAccountMinerManager;
-	class CAccountPlantManager *m_pAccountPlantManager;
+	class CAccountMiningManager *m_pAccountMiningManager;
+	class CAccountFarmingManager *m_pAccountFarmingManager;
 	class CQuestManager *m_pQuestManager;
 	class CWarehouseManager *m_pWarehouseManager;
 	class CGuildManager* m_pGuildManager;
@@ -62,8 +62,8 @@ public:
 	CAccountManager* AccountManager() const { return m_pAccountManager; }
 	CBotManager* BotManager() const { return m_pBotManager; }
 	CInventoryManager* InventoryManager() const { return m_pInventoryManager; }
-	CAccountMinerManager* AccountMinerManager() const { return m_pAccountMinerManager; }
-	CAccountPlantManager* AccountPlantManager() const { return m_pAccountPlantManager; }
+	CAccountMiningManager* AccountMiningManager() const { return m_pAccountMiningManager; }
+	CAccountFarmingManager* AccountFarmingManager() const { return m_pAccountFarmingManager; }
 	CQuestManager* QuestManager() const { return m_pQuestManager; }
 	CWarehouseManager* WarehouseManager() const { return m_pWarehouseManager; }
 	CEidolonManager* EidolonManager() const { return m_pEidolonManager; }

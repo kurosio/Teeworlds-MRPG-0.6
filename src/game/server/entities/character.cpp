@@ -14,7 +14,7 @@
 #include <game/server/core/components/Quests/QuestManager.h>
 #include <game/server/core/components/worlds/world_data.h>
 
-#include <game/server/core/entities/items/jobitems.h>
+#include <game/server/core/entities/items/harvesting_item.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
@@ -1179,7 +1179,7 @@ bool CCharacter::InteractiveHammer(vec2 Direction, vec2 ProjStartPos)
 	if(GS()->TakeItemCharacter(m_pPlayer->GetCID()))
 		return true;
 
-	if(CJobItems* pJobItem = (CJobItems*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_JOBITEMS, nullptr))
+	if(CEntityHarvestingItem* pJobItem = (CEntityHarvestingItem*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_JOBITEMS, nullptr))
 	{
 		pJobItem->Work(m_pPlayer->GetCID());
 		m_ReloadTimer = Server()->TickSpeed() / 3;
