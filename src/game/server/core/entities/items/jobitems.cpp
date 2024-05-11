@@ -6,7 +6,7 @@
 
 #include <game/server/core/components/Accounts/AccountMinerManager.h>
 #include <game/server/core/components/Accounts/AccountPlantManager.h>
-#include <game/server/core/components/Houses/HouseManager.h>
+#include <game/server/core/components/houses/house_manager.h>
 
 // 1 - miner / 2 - plant
 CJobItems::CJobItems(CGameWorld *pGameWorld, int ItemID, int Level, vec2 Pos, int Type, int Health, int HouseID)
@@ -53,7 +53,7 @@ void CJobItems::Work(int ClientID)
 		return;
 
 	// not allowed un owner house job
-	CHouseData* pHouse = GS()->Core()->HouseManager()->GetHouse(m_HouseID);
+	CHouse* pHouse = GS()->Core()->HouseManager()->GetHouse(m_HouseID);
 	if(pHouse && !pHouse->HasOwner())
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "It is forbidden to pick plants without the owner!");

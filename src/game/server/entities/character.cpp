@@ -1252,6 +1252,20 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		TuningParams->m_HookLength = 0.0f;
 	}
 
+	if(m_pPlayer->IsActiveEffect("Stun"))
+	{
+		TuningParams->m_Gravity = 0.25f;
+		TuningParams->m_GroundFriction = 0.45f;
+		TuningParams->m_GroundControlSpeed = 30.0f / Server()->TickSpeed();
+		TuningParams->m_GroundControlAccel = 0.7f;
+		TuningParams->m_GroundJumpImpulse = 2.0f;
+		TuningParams->m_AirFriction = 0.4f;
+		TuningParams->m_AirControlSpeed = 30.0f / Server()->TickSpeed();
+		TuningParams->m_AirControlAccel = 0.7f;
+		TuningParams->m_AirJumpImpulse = 2.0f;
+		TuningParams->m_HookLength = 0.0f;
+	}
+
 	// poisons
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 	{

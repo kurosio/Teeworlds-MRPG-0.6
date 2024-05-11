@@ -5,9 +5,9 @@
 
 #include <utility>
 
-void CCooldown::Start(int Time, std::string UniqueName, std::string Name, CCooldownCallback Callback)
+void CCooldown::Start(int Time, std::string Name, CCooldownCallback Callback)
 {
-	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS)
+	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS || m_IsCooldownActive)
 		return;
 
 	CGS* pGS = (CGS*)(Instance::GameServerPlayer(m_ClientID));
@@ -19,7 +19,6 @@ void CCooldown::Start(int Time, std::string UniqueName, std::string Name, CCoold
 		m_Callback = std::move(Callback);
 		m_IsCooldownActive = true;
 		m_Interrupted = false;
-		m_Action = std::move(UniqueName);
 		m_Name = std::move(Name);
 
 		pGS->CreatePlayerSpawn(m_StartPos, CmaskOne(m_ClientID));
@@ -35,7 +34,6 @@ void CCooldown::Reset()
 	m_IsCooldownActive = false;
 	m_StartPos = {};
 	m_Interrupted = false;
-	m_Action = {};
 }
 
 void CCooldown::Handler()
@@ -59,10 +57,9 @@ void CCooldown::Handler()
 	if(!m_Timer)
 	{
 		m_IsCooldownActive = false;
-		m_Callback();
-		pPlayer->GetCharacter()->SetEmote(EMOTE_NORMAL, m_Timer, false);
 		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 50, "\0");
 		pGS->CreatePlayerSpawn(m_StartPos, CmaskOne(m_ClientID));
+		m_Callback();
 		return;
 	}
 
@@ -70,7 +67,6 @@ void CCooldown::Handler()
 	if(m_Interrupted)
 	{
 		m_IsCooldownActive = false;
-		pPlayer->GetCharacter()->SetEmote(EMOTE_NORMAL, m_Timer, false);
 		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 50, "< Interrupted >");
 		return;
 	}

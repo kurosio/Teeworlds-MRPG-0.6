@@ -8,7 +8,6 @@
 #include "game/server/core/components/Quests/QuestManager.h"
 
 constexpr unsigned int s_Particles = 4;
-constexpr auto COOLDOWN_ACTION_NAME = "CEntityQuestAction::TryFinish";
 
 CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, const QuestBotInfo::TaskAction& TaskMoveTo, int ClientID, int QuestID, bool* pComplete,
 		bool AutoCompletesQuestStep, CPlayerBot* pDefeatMobPlayer)
@@ -35,10 +34,6 @@ CEntityQuestAction::~CEntityQuestAction()
 	// Check if m_pPlayer and m_pPlayer's character exist
 	if(m_pPlayer)
 	{
-		// Reset countdown
-		if(m_pPlayer->m_Cooldown.IsCooldownActive(COOLDOWN_ACTION_NAME))
-			m_pPlayer->m_Cooldown.Reset();
-
 		// Update the steps of the quest for the player
 		if(m_pPlayer->GetCharacter())
 			GS()->Core()->QuestManager()->Update(m_pPlayer);
@@ -90,8 +85,7 @@ void CEntityQuestAction::Handler(const std::function<bool()>& pCallbackSuccesful
 	// Cooldown type
 	if(m_pTaskMoveTo->m_Cooldown > 0)
 	{
-		if(!m_pPlayer->m_Cooldown.IsCooldownActive(COOLDOWN_ACTION_NAME))
-			m_pPlayer->m_Cooldown.Start(m_pTaskMoveTo->m_Cooldown, COOLDOWN_ACTION_NAME, m_pTaskMoveTo->m_TaskName, std::bind(&CEntityQuestAction::TryFinish, this));
+		m_pPlayer->m_Cooldown.Start(m_pTaskMoveTo->m_Cooldown, m_pTaskMoveTo->m_TaskName, std::bind(&CEntityQuestAction::TryFinish, this));
 		return;
 	}
 

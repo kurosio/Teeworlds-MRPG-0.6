@@ -4,15 +4,15 @@
 #define GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 
 // TODO: fully rework structures
-
+#include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/Auction/AuctionData.h>
 #include <game/server/core/tools/dbfield.h>
 
 class CGS;
 class CPlayer;
-class CHouseData;
+class CHouse;
 class GroupData;
-class CGuildData;
+class CGuild;
 class CGuildMemberData;
 
 class CAccountData
@@ -28,9 +28,9 @@ class CAccountData
 
 	int m_Level {};
 	int m_Exp {};
-	CHouseData* m_pHouseData{};
+	CHouse* m_pHouseData{};
 	GroupData* m_pGroupData{};
-	CGuildData* m_pGuildData{};
+	CGuild* m_pGuildData{};
 	ClassGroup m_ClassGroup {};
 
 	CPlayer* m_pPlayer {};
@@ -47,8 +47,8 @@ public:
 	/*
 	 * Group functions: house system
 	 */
-	void ReinitializeHouse(); // This function re-initializes the house object
-	CHouseData* GetHouse() const { return m_pHouseData; } // Get the house data for the current object
+	void ReinitializeHouse(bool SetNull = false); // This function re-initializes the house object
+	CHouse* GetHouse() const { return m_pHouseData; } // Get the house data for the current object
 	bool HasHouse() const { return m_pHouseData != nullptr; } // Check if the current object has house data
 
 	/*
@@ -62,8 +62,8 @@ public:
 	 * Group functions: guild system
 	 */
 	void ReinitializeGuild(bool SetNull = false);
-	CGuildData* GetGuild() const { return m_pGuildData; }
-	CGuildMemberData* GetGuildMemberData() const;
+	CGuild* GetGuild() const { return m_pGuildData; }
+	CGuild::CMember* GetGuildMember() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }
 	bool SameGuild(int ClientID) const;
 	bool SameGuild(int GuildID, int ClientID) const;

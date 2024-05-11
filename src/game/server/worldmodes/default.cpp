@@ -8,10 +8,10 @@
 
 #include <game/server/core/components/Accounts/AccountMinerManager.h>
 #include <game/server/core/components/Accounts/AccountPlantManager.h>
-#include <game/server/core/components/Houses/HouseManager.h>
+#include <game/server/core/components/houses/house_manager.h>
 
-#include "game/server/core/components/Guilds/GuildManager.h"
-#include "game/server/core/components/Guilds/Houses/Manager/Plantings/GuildHousePlantzoneData.h"
+#include "game/server/core/components/guilds/guild_manager.h"
+#include "game/server/core/components/guilds/guild_house_data.h"
 
 CGameControllerDefault::CGameControllerDefault(class CGS *pGS)
 : IGameController(pGS)
@@ -54,11 +54,18 @@ bool CGameControllerDefault::OnEntity(int Index, vec2 Pos)
 			return true;
 		}
 
-		if(CGuildHousePlantzoneData* pPlantzone = GS()->Core()->GuildManager()->GetGuildHousePlantzoneByPos(Pos))
+		if(CGuildHouse::CPlantzone* pPlantzone = GS()->Core()->GuildManager()->GetHousePlantzoneByPos(Pos))
 		{
 			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
 			return true;
 		}
+
+		if(CHouse::CPlantzone* pPlantzone = GS()->Core()->HouseManager()->GetHousePlantzoneByPos(Pos))
+		{
+			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
+			return true;
+		}
+
 
 		return true;
 	}

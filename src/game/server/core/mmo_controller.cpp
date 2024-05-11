@@ -16,8 +16,8 @@
 #include "components/Dungeons/DungeonManager.h"
 #include "components/Eidolons/EidolonManager.h"
 #include "components/Groups/GroupManager.h"
-#include "components/Guilds/GuildManager.h"
-#include "components/Houses/HouseManager.h"
+#include "components/guilds/guild_manager.h"
+#include "components/houses/house_manager.h"
 #include "components/Inventory/InventoryManager.h"
 #include "components/mails/mailbox_manager.h"
 #include "components/Quests/QuestManager.h"
@@ -421,7 +421,8 @@ void CMmoController::HandleTimePeriod() const
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				component->OnHandleTimePeriod(TIME_PERIOD(periods));
+				TIME_PERIOD timePeriod = static_cast<TIME_PERIOD>(periods);
+				component->OnHandleTimePeriod(timePeriod);
 			}
 		}
 	}
@@ -553,10 +554,10 @@ void CMmoController::LoadLogicWorld() const
 	}
 }
 
-void CMmoController::ShowLoadingProgress(const char* pLoading, int Size) const
+void CMmoController::ShowLoadingProgress(const char* pLoading, size_t Size) const
 {
 	char aLoadingBuf[128];
-	str_format(aLoadingBuf, sizeof(aLoadingBuf), "[Loaded %d %s] :: WorldID %d.", Size, pLoading, GS()->GetWorldID());
+	str_format(aLoadingBuf, sizeof(aLoadingBuf), "[Loaded %d %s] :: WorldID %d.", (int)Size, pLoading, GS()->GetWorldID());
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "LOAD DB", aLoadingBuf);
 }
 
@@ -777,7 +778,7 @@ void CMmoController::ConAsyncLinesForTranslate()
 			PushingDialogs(JsonData, pItem->GetName(), "stnm", pItem->GetID());
 		}
 
-		for(auto& pItem : CHouseData::Data())
+		for(auto& pItem : CHouse::Data())
 		{
 			PushingDialogs(JsonData, pItem->GetClassName(), "hmnm", pItem->GetID());
 		}

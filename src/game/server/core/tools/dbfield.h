@@ -52,12 +52,21 @@ template<class> inline constexpr bool always_false_v = false;
 class DBFieldContainer
 {
 	using FieldVariant = std::variant < DBField<int>, DBField<float>, DBField<double>, DBField<std::string> >;
-
 	std::list < FieldVariant > m_VariantsData;
 
 public:
 	DBFieldContainer() = default;
 	DBFieldContainer(std::initializer_list<FieldVariant>&& pField) { m_VariantsData.insert(m_VariantsData.end(), pField.begin(), pField.end()); }
+
+	template <typename T>
+	bool valid(size_t UniqueID)
+	{
+		return std::any_of(m_VariantsData.begin(), m_VariantsData.end(), [UniqueID](auto& p)
+		{
+			try { return std::get<DBField<T>>(p).m_UniqueID == UniqueID; }
+			catch([[maybe_unused]] const std::bad_variant_access& ex) { return false; }
+		});
+	}
 
 	template < typename T >
 	DBField<T>& operator()(size_t UniqueID, [[maybe_unused]]T DefaultValue)

@@ -5,10 +5,10 @@
 #include <engine/shared/config.h>
 
 #include <game/server/gamecontext.h>
-#include <game/server/core/components/Houses/HouseData.h>
+#include <game/server/core/components/houses/house_data.h>
 #include <game/server/core/components/Groups/GroupData.h>
 
-#include <game/server/core/components/Guilds/GuildManager.h>
+#include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/worlds/world_manager.h>
 
 std::map < int, CAccountData > CAccountData::ms_aData;
@@ -91,21 +91,23 @@ void CAccountData::UpdatePointer(CPlayer* pPlayer)
 }
 
 // This function initializes the house data for the account
-void CAccountData::ReinitializeHouse()
+void CAccountData::ReinitializeHouse(bool SetNull)
 {
-	// Iterate through all the house data objects
-	for(const auto& p : CHouseData::Data())
+	if(!SetNull)
 	{
-		// Check if the account ID of the house data object matches the account ID of the current account
-		if(p->GetAccountID() == m_ID)
+		// Iterate through all the group data objects
+		for(auto pHouse : CHouse::Data())
 		{
-			// Set the house data pointer of the account to the current house data object
-			m_pHouseData = p.get();
-			return; // Exit the function
+			// Check if the account ID of the group data object matches the account ID of the current account
+			if(pHouse->GetAccountID() == m_ID)
+			{
+				m_pHouseData = pHouse;
+				return;
+			}
 		}
 	}
 
-	// If no matching house data object is found, set the house data pointer of the account to nullptr
+	// If no matching group data object is found, set the group data pointer of the account to nullptr
 	m_pHouseData = nullptr;
 }
 
@@ -134,7 +136,7 @@ void CAccountData::ReinitializeGuild(bool SetNull)
 	if(!SetNull)
 	{
 		// Iterate through all the group data objects
-		for(auto pGuild : CGuildData::Data())
+		for(auto pGuild : CGuild::Data())
 		{
 			// Check if the account ID of the group data object matches the account ID of the current account
 			auto& pMembers = pGuild->GetMembers()->GetContainer();
@@ -150,7 +152,7 @@ void CAccountData::ReinitializeGuild(bool SetNull)
 	m_pGuildData = nullptr;
 }
 
-CGuildMemberData* CAccountData::GetGuildMemberData() const
+CGuild::CMember* CAccountData::GetGuildMember() const
 {
 	return m_pGuildData ? m_pGuildData->GetMembers()->Get(m_ID) : nullptr;
 }

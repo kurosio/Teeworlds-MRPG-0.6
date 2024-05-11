@@ -5,7 +5,7 @@
 #include <engine/shared/datafile.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/components/Houses/HouseManager.h>
+#include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/Quests/QuestManager.h>
 
 template < typename T >

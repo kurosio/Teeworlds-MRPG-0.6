@@ -1783,7 +1783,9 @@ void str_timestamp_ex(time_t time, char *buffer, int buffer_size, const char *fo
 
 #define FORMAT_TIME "%H:%M:%S"
 #define FORMAT_SPACE "%Y-%m-%d %H:%M:%S"
+#define FORMAT_WITHOUT_SEC_SPACE "%Y-%m-%d %H:%M"
 #define FORMAT_NOSPACE "%Y-%m-%d_%H-%M-%S"
+#define FORMAT_WITHOUT_SEC_NOSPACE "%Y-%m-%d_%H:%M"
 
 enum
 {
