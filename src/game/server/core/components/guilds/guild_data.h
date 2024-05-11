@@ -121,7 +121,7 @@ public:
 		CBank(int Bank, CGuild* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
 
 		const int& Get() const { return m_Bank; }                                           // Get value inside bank
-		void Set(int Value);                                                                // Set value bank
+		void Add(int Value);                                                                // Add value to bank
 		[[nodiscard]] bool Spend(int Value);                                                // Spend from bank return boolean
 	};
 
@@ -220,6 +220,7 @@ public:
 		CMember(CGuild* pGuild, int AccountID, CRank* pRank, BigInt Deposit = 0);
 		~CMember();
 
+		bool IsOnline() const;
 		int GetAccountID() const { return m_AccountID; }                                    // Get the account ID of the guild member
 		BigInt GetDeposit() const { return m_Deposit; }                                   // Get the amount of gold deposited by the guild member
 		void SetDeposit(BigInt Deposit) { m_Deposit = Deposit; }                            // Set the amount of gold deposited by the guild member
@@ -251,7 +252,7 @@ public:
 		void ResetDeposits();                                                                // This function is used to reset all deposits to zero.
 		std::pair<int, int> GetCurrentSlots() const;                                         // This function returns the current number of slots being used and the total number of slots
 		bool HasFreeSlots() const;                                                           // This function checks if there are any free slots available
-		int GetOnlinePlayersCount() const;                                                   // This function is used to get online players.
+		int GetOnlineCount() const;                                                   // This function is used to get online players.
 		void Save() const;                                                                   // Save the guild members data
 
 	private:

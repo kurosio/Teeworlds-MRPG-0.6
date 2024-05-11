@@ -1554,7 +1554,6 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	VInfo.Add("Members: {} of {}", CurrentSlots.first, CurrentSlots.second);
 	VInfo.Add("Has house: {}", pGuild->HasHouse() ? "Yes" : "No");
 	VInfo.Add("Bank: {} golds", pGuild->GetBank()->Get());
-	VInfo.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_SEND_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Memberlist
@@ -1565,6 +1564,7 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 		VMemberlist.Add("{}. {} {} Deposit: {}", Position, pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
 		Position++;
 	}
+	VMemberlist.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_SEND_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
@@ -1647,7 +1647,7 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 		for(auto& p : CGuild::Data())
 		{
 			if(p->GetID() != pGuild->GetID())
-				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{} (online {} players)", p->GetName(), p->GetMembers()->GetOnlinePlayersCount());
+				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{} (online {} players)", p->GetName(), p->GetMembers()->GetOnlineCount());
 		}
 	}
 
