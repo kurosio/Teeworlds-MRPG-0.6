@@ -364,7 +364,7 @@ public:
 	[[nodiscard]] bool Upgrade(GuildUpgrade Type);
 	[[nodiscard]] GuildResult SetLeader(int AccountID);
 	[[nodiscard]] GuildResult BuyHouse(int HouseID);
-	[[nodiscard]] void SellHouse();
+	void SellHouse();
 	void HandleTimePeriod(TIME_PERIOD Period);
 
 	// war
