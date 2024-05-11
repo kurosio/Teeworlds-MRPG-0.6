@@ -17,8 +17,8 @@ class CItemDescription : public MultiworldIdentifiableStaticData < std::map< int
 public:
 	struct HarvestingData
 	{
-		int m_Level {};
-		int m_Health {};
+		int m_Level  {1};
+		int m_Health {100};
 	};
 
 	enum
