@@ -188,8 +188,8 @@ public:
 	bool IsPurchased() const { return m_pGuild != nullptr; }
 	const char* GetOwnerName() const;
 
-	bool ExtendDaysRent(int Days);
-	bool ReduceRentDays();
+	bool ExtendRentDays(int Days);
+	bool ReduceRentDays(int Days);
 	void TextUpdate(int LifeTime);
 	void UpdateGuild(CGuild* pGuild);
 };

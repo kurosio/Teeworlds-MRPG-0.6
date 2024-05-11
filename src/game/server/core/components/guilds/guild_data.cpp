@@ -162,7 +162,7 @@ void CGuild::HandleTimePeriod(TIME_PERIOD Period)
 	if(Period == DAILY_STAMP && HasHouse())
 	{
 		// can pay
-		if(m_pHouse->ReduceRentDays())
+		if(m_pHouse->ReduceRentDays(1))
 		{
 			GS()->ChatGuild(m_ID, "Your guild house rent has been paid.");
 			m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has been paid.");
@@ -622,13 +622,13 @@ bool CGuild::CMember::CheckAccess(GuildRankRights RequiredAccess) const
  * Members manager impl
  * ------------------------------------- */
 CGS* CGuild::CMembersManager::GS() const { return m_pGuild->GS(); }
-CGuild::CMembersManager::CMembersManager(CGuild* pGuild, std::string&& JsonMembers) : m_pGuild(pGuild)
+CGuild::CMembersManager::CMembersManager(CGuild* pGuild, const std::string& JsonMembers) : m_pGuild(pGuild)
 {
 	// Create a new instance of CRequestsManager with pGuild as the parameter
 	m_pRequests = new CRequestsManager(pGuild);
 
 	// Initialize CGuildMembersManager with JsonMembers using std::move to transfer ownership
-	CGuild::CMembersManager::Init(std::move(JsonMembers));
+	CGuild::CMembersManager::Init(JsonMembers);
 }
 
 CGuild::CMembersManager::~CMembersManager()
@@ -729,7 +729,7 @@ int CGuild::CMembersManager::GetOnlineCount() const
 	return (int)std::count_if(m_apMembers.begin(), m_apMembers.end(), [](const auto& pMember) { return pMember.second->IsOnline(); });
 }
 
-void CGuild::CMembersManager::Init(std::string&& JsonMembers)
+void CGuild::CMembersManager::Init(const std::string& JsonMembers)
 {
 	// Assert by empty
 	dbg_assert(m_apMembers.empty(), "");

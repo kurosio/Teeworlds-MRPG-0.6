@@ -75,8 +75,9 @@ const char* CGuildHouse::GetOwnerName() const
 	return m_pGuild->GetName();
 }
 
-bool CGuildHouse::ExtendDaysRent(int Days)
+bool CGuildHouse::ExtendRentDays(int Days)
 {
+	// check validity
 	if(!m_pGuild || !m_pGuild->GetBank())
 		return false;
 
@@ -91,13 +92,14 @@ bool CGuildHouse::ExtendDaysRent(int Days)
 	return false;
 }
 
-bool CGuildHouse::ReduceRentDays()
+bool CGuildHouse::ReduceRentDays(int Days)
 {
+	// check validity
 	if(!m_pGuild || !m_pGuild->GetBank() || m_RentDays <= 0)
 		return false;
 
 	// reduce rent days
-	m_RentDays -= 1;
+	m_RentDays -= clamp(Days, 1, m_RentDays);
 	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '%d' WHERE ID = '%d'", m_RentDays, m_ID);
 	return true;
 }
@@ -133,9 +135,7 @@ void CGuildHouse::UpdateGuild(CGuild* pGuild)
 void CGuildHouse::CPlantzone::ChangeItem(int ItemID)
 {
 	for(auto& pPlant : m_vPlants)
-	{
 		pPlant->m_ItemID = ItemID;
-	}
 	m_ItemID = ItemID;
 	m_pManager->Save();
 }
@@ -157,7 +157,6 @@ CGuildHouse::CPlantzonesManager::CPlantzonesManager(CGuildHouse* pHouse, std::st
 	});
 }
 
-// Destructor for the CHouseDoorsController class
 CGuildHouse::CPlantzonesManager::~CPlantzonesManager()
 {
 	m_vPlantzones.clear();
@@ -201,6 +200,7 @@ void CGuildHouse::CPlantzonesManager::Save() const
 		Plantzones.push_back(plantzoneData);
 	}
 
+	// update database
 	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Plantzones = '%s' WHERE ID = '%d'", Plantzones.dump().c_str(), m_pHouse->GetID());
 }
 
@@ -249,44 +249,50 @@ bool CGuildHouse::CDecorationManager::HasFreeSlots() const
 
 bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
 {
+	// check validity
 	const auto pHouse = (CGuildHouse*)pUser;
 	if(!pPlayer || !pHouse)
 		return false;
 
+	// initialize variables
 	const int& ClientID = pPlayer->GetCID();
 
-	if(pPoint)
+	// event point add
+	if(Event == DrawboardToolEvent::ON_POINT_ADD && pPoint)
 	{
+		// check if there are free slots
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
-		if(Event == DrawboardToolEvent::ON_POINT_ADD)
+		if(!pHouse->GetDecorationManager()->HasFreeSlots())
 		{
-			if(!pHouse->GetDecorationManager()->HasFreeSlots())
-			{
-				pHouse->GS()->Chat(ClientID, "You have reached the maximum number of decorations for your house!");
-				return false;
-			}
-
-			if(pHouse->GetDecorationManager()->Add(pPoint))
-			{
-				pHouse->GS()->Chat(ClientID, "You have added {} to your house!", pPlayerItem->Info()->GetName());
-				return true;
-			}
-
+			pHouse->GS()->Chat(ClientID, "You have reached the maximum number of decorations for your house!");
 			return false;
 		}
 
-		if(Event == DrawboardToolEvent::ON_POINT_ERASE)
+		// try to add the point
+		if(pHouse->GetDecorationManager()->Add(pPoint))
 		{
-			if(pHouse->GetDecorationManager()->Remove(pPoint))
-			{
-				pHouse->GS()->Chat(ClientID, "You have removed {} from your house!", pPlayerItem->Info()->GetName());
-				return true;
-			}
-
-			return false;
+			pHouse->GS()->Chat(ClientID, "You have added {} to your house!", pPlayerItem->Info()->GetName());
+			return true;
 		}
+
+		return false;
 	}
 
+	// event point erase
+	if(Event == DrawboardToolEvent::ON_POINT_ERASE && pPoint)
+	{
+		// try to remove the point
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
+		if(pHouse->GetDecorationManager()->Remove(pPoint))
+		{
+			pHouse->GS()->Chat(ClientID, "You have removed {} from your house!", pPlayerItem->Info()->GetName());
+			return true;
+		}
+
+		return false;
+	}
+
+	// event end
 	if(Event == DrawboardToolEvent::ON_END)
 	{
 		pHouse->GS()->Chat(ClientID, "You have finished decorating your house!");
@@ -298,16 +304,16 @@ bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEv
 
 bool CGuildHouse::CDecorationManager::Add(const EntityPoint* pPoint) const
 {
-	// Check if pPoint or pPoint->m_pEntity is null
+	// check validity of pPoint
 	if(!pPoint || !pPoint->m_pEntity)
 		return false;
 
-	// Get ItemID pEntity and EntityPos
+	// initialize variables
 	const CEntity* pEntity = pPoint->m_pEntity;
 	const ItemIdentifier& ItemID = pPoint->m_ItemID;
 	const vec2& EntityPos = pEntity->GetPos();
 
-	// Execute a database insert query with the values
+	// execute a database insert query
 	Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d')",
 		ItemID, m_pHouse->GetID(), round_to_int(EntityPos.x), round_to_int(EntityPos.y), GS()->GetWorldID());
 	return true;
@@ -315,13 +321,11 @@ bool CGuildHouse::CDecorationManager::Add(const EntityPoint* pPoint) const
 
 bool CGuildHouse::CDecorationManager::Remove(const EntityPoint* pPoint) const
 {
-	// Check if pPoint is null or if pPoint's m_pEntity is null
+	// check validity of pPoint
 	if(!pPoint || !pPoint->m_pEntity)
 		return false;
 
-	// Execute a remove query on the TW_GUILD_HOUSES_DECORATION_TABLE in the Database
-	// The query removes a row where HouseID, ItemID, PosX, and PosY match the given values
-	// The values are obtained from m_pHouse's ID, pPoint's m_ItemID, and rounded positions of pPoint's m_pEntity
+	// execute a database remove query
 	Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE HouseID = '%d' AND ItemID = '%d' AND PosX = '%d' AND PosY = '%d'",
 		m_pHouse->GetID(), pPoint->m_ItemID, round_to_int(pPoint->m_pEntity->GetPos().x), round_to_int(pPoint->m_pEntity->GetPos().y));
 	return true;
@@ -347,6 +351,7 @@ CGuildHouse::CDoorManager::CDoorManager(CGuildHouse* pHouse, std::string&& JsonD
 
 CGuildHouse::CDoorManager::~CDoorManager()
 {
+	// delete all doors
 	for(auto& p : m_apEntDoors)
 		delete p.second;
 
@@ -355,65 +360,64 @@ CGuildHouse::CDoorManager::~CDoorManager()
 
 void CGuildHouse::CDoorManager::Open(int Number)
 {
-	// Open the door
+	// open door by number
 	if(m_apEntDoors.find(Number) != m_apEntDoors.end())
 		m_apEntDoors[Number]->Open();
 }
 
 void CGuildHouse::CDoorManager::Close(int Number)
 {
-	// Close the door
+	// close door by number
 	if(m_apEntDoors.find(Number) != m_apEntDoors.end())
 		m_apEntDoors[Number]->Close();
 }
 
 void CGuildHouse::CDoorManager::Reverse(int Number)
 {
-	// Check if the door exists in the map
+	// check valid door by number
 	if(m_apEntDoors.find(Number) == m_apEntDoors.end())
 		return;
 
-	// Check if the door is closed
-	if(m_apEntDoors[Number]->IsClosed())
-		Open(Number); // Open the door
-	else
-		Close(Number); // Close the door
+	// implement reverse
+	return m_apEntDoors[Number]->IsClosed() ? Open(Number) : Close(Number);
 }
 
 void CGuildHouse::CDoorManager::OpenAll()
 {
-	// Open the state of the door by its number in iterate
+	// open the state for each door
 	for(auto& p : m_apEntDoors)
 		Open(p.first);
 }
 
 void CGuildHouse::CDoorManager::CloseAll()
 {
-	// Close the state of the door by its number in iterate
+	// close the state for each door
 	for(auto& p : m_apEntDoors)
 		Close(p.first);
 }
 
 void CGuildHouse::CDoorManager::ReverseAll()
 {
-	// Reverse the state of the door by its number in iterate
+	// reverse the state for each door
 	for(auto& p : m_apEntDoors)
 		Reverse(p.first);
 }
 
 void CGuildHouse::CDoorManager::AddDoor(const char* pDoorname, vec2 Position)
 {
-	// Add the door to the m_apEntDoors map using the door name as the key
+	// add door
 	m_apEntDoors.emplace(m_apEntDoors.size() + 1, new CEntityGuildDoor(&GS()->m_World, m_pHouse, std::string(pDoorname), Position));
 }
 
 void CGuildHouse::CDoorManager::RemoveDoor(const char* pDoorname, vec2 Position)
 {
+	// find the door in the m_apEntDoors
 	auto iter = std::find_if(m_apEntDoors.begin(), m_apEntDoors.end(), [&](const std::pair<int, CEntityGuildDoor*>& p)
 	{
 		return p.second->GetName() == pDoorname && p.second->GetPos() == Position;
 	});
 
+	// implement removal
 	if(iter != m_apEntDoors.end())
 	{
 		delete iter->second;

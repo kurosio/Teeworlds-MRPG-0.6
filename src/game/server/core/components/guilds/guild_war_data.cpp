@@ -52,7 +52,7 @@ void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& 
 	dbg_msg("test", "creating war handler");
 }
 
-void CGuildWarHandler::Tick()
+void CGuildWarHandler::Handle()
 {
 	// check end state
 	if(time(nullptr) >= m_TimeUntilEnd)

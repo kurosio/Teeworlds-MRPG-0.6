@@ -46,7 +46,7 @@ public:
 	void Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilEnd);
 	std::pair<CGuildWarData* , CGuildWarData*> GetWarData() const { return m_pWarData; }
 
-	void Tick();
+	void Handle();
 	void End();
 	void Save() const;
 };

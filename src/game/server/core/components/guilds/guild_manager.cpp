@@ -14,6 +14,7 @@ void CGuildManager::OnInit()
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE);
 	while(pRes->next())
 	{
+		// initialize variables
 		GuildIdentifier ID = pRes->getInt("ID");
 		std::string Name = pRes->getString("Name").c_str();
 		std::string JsonMembers = pRes->getString("Members").c_str();
@@ -25,6 +26,7 @@ void CGuildManager::OnInit()
 		int Score = pRes->getInt("Score");
 		int64_t LogFlag = pRes->getInt64("LogFlag");
 
+		// initialize guild
 		CGuild::CreateElement(ID)->Init(Name, std::move(JsonMembers), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
 	}
 
@@ -37,6 +39,7 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HOUSES, pWhereLocalWorld);
 	while(pRes->next())
 	{
+		// initialize variables
 		GuildHouseIdentifier ID = pRes->getInt("ID");
 		GuildIdentifier GuildID = pRes->getInt("GuildID");
 		int InitialFee = pRes->getInt("InitialFee");
@@ -45,6 +48,7 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		std::string JsonPlantzones = pRes->getString("Plantzones").c_str();
 		std::string JsonPropersties = pRes->getString("Properties").c_str();
 
+		// initialize guild houses
 		CGuild* pGuild = GetGuildByID(GuildID);
 		CGuildHouse::CreateElement(ID)->Init(pGuild, RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonPropersties));
 	}
@@ -54,23 +58,21 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 
 void CGuildManager::OnTick()
 {
-	// Check if the current world ID is not equal to the main world (once use House get instance object self world id) ID and current tick
-	if(GS()->GetWorldID() != MAIN_WORLD_ID || (Server()->Tick() % Server()->TickSpeed() != 0))
+	// check if we are in the main world
+	if(GS()->GetWorldID() != MAIN_WORLD_ID)
 		return;
 
-	// Loop through all guild war handlers in the CGuildWarHandler::Data() container
-	for(auto& pWarHandler : CGuildWarHandler::Data())
-		pWarHandler->Tick();
-
-	// Calculate the remaining lifetime of a text update
-	int LifeTime = (Server()->TickSpeed() * 10);
-
-	// Get the house data
-	const auto& HouseData = CGuildHouse::Data();
-	for(const auto& p : HouseData)
+	// handle one second
+	if(Server()->Tick() % Server()->TickSpeed() == 0)
 	{
-		// Update the text with the remaining lifetime
-		p->TextUpdate(LifeTime);
+		// update guild wars
+		for(auto& pWarHandler : CGuildWarHandler::Data())
+			pWarHandler->Handle();
+
+		// update guild houses text
+		int LifeTime = (Server()->TickSpeed() * 10);
+		for(const auto& p : CGuildHouse::Data())
+			p->TextUpdate(LifeTime);
 	}
 }
 
@@ -81,7 +83,7 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_HOUSE))
 	{
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_GUILD_HOUSE_PURCHASE_INFO);
+		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_GUILD_HOUSE_PURCHASE);
 		return true;
 	}
 	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_HOUSE))
@@ -358,7 +360,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// extend
-		if(pHouse->ExtendDaysRent(Get))
+		if(pHouse->ExtendRentDays(Get))
 		{
 			GS()->ChatGuild(pGuild->GetID(), "Your house was extended by {} days.", Get);
 			pGuild->GetLogger()->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House extended by %d days.", Get);
@@ -835,6 +837,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
+	// menu finder
 	if(Menulist == MENU_GUILD_FINDER)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
@@ -842,7 +845,6 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
-
 	if(Menulist == MENU_GUILD_FINDER_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_FINDER);
@@ -851,6 +853,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// menu guild
 	if(Menulist == MENU_GUILD)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
@@ -859,6 +862,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// menu guild upgrades
 	if(Menulist == MENU_GUILD_UPGRADES)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -866,7 +870,8 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
-	
+
+	// menu guild disband
 	if(Menulist == MENU_GUILD_DISBAND)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -875,6 +880,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// menu guild house sell
 	if(Menulist == MENU_GUILD_HOUSE_SELL)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -883,7 +889,8 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	if(Menulist == MENU_GUILD_HOUSE_PURCHASE_INFO)
+	// menu guild house purchase
+	if(Menulist == MENU_GUILD_HOUSE_PURCHASE)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		CCharacter* pChr = pPlayer->GetCharacter();
@@ -892,6 +899,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// menu guild logs
 	if(Menulist == MENU_GUILD_LOGS)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -900,6 +908,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// menu guild war
 	if(Menulist == MENU_GUILD_WARS)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -907,6 +916,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// menu guild invites
 	if(Menulist == MENU_GUILD_INVITES)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -915,7 +925,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// doors-related menus
+	// menu guild house door
 	if(Menulist == MENU_GUILD_HOUSE_DOOR_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -924,7 +934,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// membership-related menus
+	// menu guild membership
 	if(Menulist == MENU_GUILD_MEMBERSHIP_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -940,7 +950,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// rank-related menus
+	// menu guild ranks
 	if(Menulist == MENU_GUILD_RANK_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -956,7 +966,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// plantzones-related menus
+	// menu guild house plantzone
 	if(Menulist == MENU_GUILD_HOUSE_PLANTZONE_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
@@ -977,7 +987,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 void CGuildManager::OnHandleTimePeriod(TIME_PERIOD Period)
 {
-	// Call the HandleTimePeriod function for each guild passing the Period parameter
+	// handle time period for each guilds
 	for(auto& pGuild : CGuild::Data())
 		pGuild->HandleTimePeriod(Period);
 }
@@ -1012,10 +1022,11 @@ void CGuildManager::InitWars() const
 
 void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 {
+	// check validity
 	if(!pPlayer)
 		return;
 
-	// check whether we are already in the guild
+	// check if we already in guild
 	const int ClientID = pPlayer->GetCID();
 	if(pPlayer->Account()->HasGuild())
 	{
@@ -1023,7 +1034,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 		return;
 	}
 
-	// we check the availability of the guild's name
+	// check guild name
 	CSqlString<64> GuildName(pGuildName);
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", TW_GUILDS_TABLE, "WHERE Name = '%s'", GuildName.cstr());
 	if(pRes->next())
@@ -1032,78 +1043,63 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 		return;
 	}
 
-	// we check the ticket, we take it and create
-	if(!pPlayer->GetItem(itTicketGuild)->HasItem() || !pPlayer->GetItem(itTicketGuild)->Remove(1))
+	// check guild ticket
+	if(!pPlayer->Account()->SpendCurrency(1, itTicketGuild))
 	{
 		GS()->Chat(ClientID, "You need first buy guild ticket on shop!");
 		return;
 	}
 
-	// get ID for initialization
+	// get next guild ID
 	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_GUILDS_TABLE, "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
 
-	// initialize the guild
-	std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":"0"}]})";
-
+	// implement creation and add to table
 	CGuild* pGuild = CGuild::CreateElement(InitID);
-	pGuild->Init(GuildName.cstr(), std::forward<std::string>(MembersData), -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, -1, nullptr);
+	const std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":"0"}]})";
+	pGuild->Init(GuildName.cstr(), MembersData, -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, -1, nullptr);
 	pPlayer->Account()->ReinitializeGuild();
-
-	// we create a guild in the table
 	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('%d', '%s', '%d', '%s')",
 		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
-	GS()->Chat(-1, "New guilds [{}] have been created!", GuildName.cstr());
+	GS()->Chat(-1, "New guilds '{}' have been created!", GuildName.cstr());
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
 }
 
 void CGuildManager::Disband(GuildIdentifier ID) const
 {
-	// Find the guild with the given ID
-	auto pIterGuild = std::find_if(CGuild::Data().begin(), CGuild::Data().end(), [&ID](CGuild* pGuild) { return pGuild->GetID() == ID; });
-	if(!(*pIterGuild))
+	// check if guild exists
+	auto pGuild = GetGuildByID(ID);
+	if(!pGuild)
 		return;
-
-	// Get a pointer to the guild
-	CGuild* pGuild = (*pIterGuild);
 
 	// End guild wars for disbanded guild
 	if(pGuild->GetWar() && pGuild->GetWar()->GetHandler())
-	{
 		pGuild->GetWar()->GetHandler()->End();
 
-	}
-
-	// If the guild has a house, sell it
+	// if guild has house then sell it
 	if(pGuild->HasHouse())
 	{
 		pGuild->SellHouse();
 		GS()->Chat(-1, "The guild {} has lost house.", pGuild->GetName());
 	}
 
-	// Calculate the amount of gold to return to the guild leader
+	// send mail
 	const int ReturnsGold = maximum(1, pGuild->GetBank()->Get());
-
-	// Send mail
 	MailWrapper Mail("System", pGuild->GetLeaderUID(), "Your guild was disbanded.");
 	Mail.AddDescLine("We returned some gold from your guild.");
 	Mail.AttachItem(CItem(itGold, ReturnsGold));
 	Mail.Send();
 	GS()->Chat(-1, "The {} guild has been disbanded.", pGuild->GetName());
 
-	// Remove all guild-related entries from the database
+	// remove all related guild data
 	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
 	Database->Execute<DB::REMOVE>(TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
 	Database->Execute<DB::REMOVE>(TW_GUILDS_RANKS_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
 	Database->Execute<DB::REMOVE>(TW_GUILDS_TABLE, "WHERE ID = '%d'", pGuild->GetID());
 
-	// Delete the guild object and remove it from the guild data container
-	if(pIterGuild != CGuild::Data().end())
-	{
-		delete (*pIterGuild);
-		CGuild::Data().erase(pIterGuild);
-		pGuild = nullptr;
-	}
+	// erase guild from server
+	delete pGuild;
+	CGuild::Data().erase(std::find(CGuild::Data().begin(), CGuild::Data().end(), pGuild));
 }
 
 void CGuildManager::ShowMenu(int ClientID) const

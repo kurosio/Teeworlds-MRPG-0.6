@@ -241,22 +241,22 @@ public:
 		MembersContainer m_apMembers {};
 
 	public:
-		CMembersManager(CGuild* pGuild, std::string&& JsonMembers);
+		CMembersManager(CGuild* pGuild, const std::string& JsonMembers);
 		~CMembersManager();
 		
 		CRequestsManager* GetRequests() const { return m_pRequests; }                        // Returns the pointer to the controller requests to join
 		CMember* Get(int AccountID);                                                         // Get a guild member by account ID
 		MembersContainer& GetContainer() { return m_apMembers; }                             // Get the guild members container
-		[[nodiscard]] GuildResult Join(int AccountID);                                      // Join a guild by account ID
-		[[nodiscard]] GuildResult Kick(int AccountID);                                      // Kick a guild member by account ID
+		[[nodiscard]] GuildResult Join(int AccountID);                                       // Join a guild by account ID
+		[[nodiscard]] GuildResult Kick(int AccountID);                                       // Kick a guild member by account ID
 		void ResetDeposits();                                                                // This function is used to reset all deposits to zero.
 		std::pair<int, int> GetCurrentSlots() const;                                         // This function returns the current number of slots being used and the total number of slots
 		bool HasFreeSlots() const;                                                           // This function checks if there are any free slots available
-		int GetOnlineCount() const;                                                   // This function is used to get online players.
+		int GetOnlineCount() const;                                                          // This function is used to get online players.
 		void Save() const;                                                                   // Save the guild members data
 
 	private:
-		void Init(std::string&& JsonMembers);                                                // Initialize the guild members controller
+		void Init(const std::string& JsonMembers);                                           // Initialize the guild members controller
 	};
 
 	/* -------------------------------------
@@ -326,7 +326,7 @@ public:
 		return m_pData.emplace_back(pData);
 	}
 
-	void Init(const std::string& Name, std::string&& JsonMembers, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank, int64_t Logflag, ResultPtr* pRes)
+	void Init(const std::string& Name, const std::string& JsonMembers, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank, int64_t Logflag, ResultPtr* pRes)
 	{
 		m_Name = Name;
 		m_LeaderUID = LeaderUID;
@@ -339,7 +339,7 @@ public:
 		m_pLogger = new CLogEntry(this, Logflag);
 		m_pBank = new CBank(Bank, this);
 		m_pRanks = new CRanksManager(this, DefaultRankID);
-		m_pMembers = new CMembersManager(this, std::move(JsonMembers));
+		m_pMembers = new CMembersManager(this, JsonMembers);
 		m_pRanks->UpdateDefaultRank();
 	}
 
