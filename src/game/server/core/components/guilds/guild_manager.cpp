@@ -27,7 +27,7 @@ void CGuildManager::OnInit()
 		int64_t LogFlag = pRes->getInt64("LogFlag");
 
 		// initialize guild
-		CGuild::CreateElement(ID)->Init(Name, std::move(JsonMembers), DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
+		CGuild::CreateElement(ID)->Init(Name, JsonMembers, DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
 	}
 
 	InitWars();
@@ -79,7 +79,6 @@ void CGuildManager::OnTick()
 bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
-	const int ClientID = pPlayer->GetCID();
 
 	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_HOUSE))
 	{
@@ -1115,8 +1114,8 @@ void CGuildManager::ShowMenu(int ClientID) const
 		return;
 
 	bool HasHouse = pGuild->HasHouse();
-	int ExpNeed = computeExperience(pGuild->GetLevel());
-	const int MemberUsedSlots = pGuild->GetMembers()->GetContainer().size();
+	int ExpNeed = (int)computeExperience(pGuild->GetLevel());
+	const int MemberUsedSlots = (int)pGuild->GetMembers()->GetContainer().size();
 	const int MemberMaxSlots = pGuild->GetUpgrades(GuildUpgrade::AVAILABLE_SLOTS)->m_Value;
 
 	// Guild information
@@ -1242,7 +1241,6 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 
 	// initialize variables
 	int ClientID = pPlayer->GetCID();
-	auto pSelfMember = pPlayer->Account()->GetGuildMember();
 	auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
 
 	// information
@@ -1259,7 +1257,8 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 		auto pMember = pIterMember.second;
 		const int& UID = pMember->GetAccountID();
 		const char* pNickname = Server()->GetAccountNickname(UID);
-		VList.AddMenu(MENU_GUILD_MEMBERSHIP_SELECTED, UID, "{}. {} {} Deposit: {}", Position, pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
+		VList.AddMenu(MENU_GUILD_MEMBERSHIP_SELECTED, UID, "{}. {} {} Deposit: {}", 
+			Position, pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
 		Position++;
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1319,7 +1318,7 @@ void CGuildManager::ShowRanksList(CPlayer* pPlayer) const
 
 	int ClientID = pPlayer->GetCID();
 	int MaxRanksNum = (int)GUILD_RANKS_MAX_COUNT;
-	int CurrentRanksNum = pPlayer->Account()->GetGuild()->GetRanks()->GetContainer().size();
+	int CurrentRanksNum = (int)pPlayer->Account()->GetGuild()->GetRanks()->GetContainer().size();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "\u2324 Rank management (Information)");

@@ -554,10 +554,10 @@ void CMmoController::LoadLogicWorld() const
 	}
 }
 
-void CMmoController::ShowLoadingProgress(const char* pLoading, int Size) const
+void CMmoController::ShowLoadingProgress(const char* pLoading, size_t Size) const
 {
 	char aLoadingBuf[128];
-	str_format(aLoadingBuf, sizeof(aLoadingBuf), "[Loaded %d %s] :: WorldID %d.", Size, pLoading, GS()->GetWorldID());
+	str_format(aLoadingBuf, sizeof(aLoadingBuf), "[Loaded %d %s] :: WorldID %d.", (int)Size, pLoading, GS()->GetWorldID());
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "LOAD DB", aLoadingBuf);
 }
 
