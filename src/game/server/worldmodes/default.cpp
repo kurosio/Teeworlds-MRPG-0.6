@@ -83,7 +83,7 @@ bool CGameControllerDefault::OnEntity(int Index, vec2 Pos)
 		for(int i = 0; i < g_Config.m_SvAmountHarvestingOnTile; i++)
 		{
 			// calculate polar coordinates
-			const float calculate = iter + i * multiplier;
+			const float calculate = iter + (float)i * multiplier;
 			vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
 			if(GS()->Collision()->GetCollisionAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionAt(roundPos.x + (30.f + iter), Pos.y))
 				newPos = vec2(Pos.x, roundPos.y + calculate);
