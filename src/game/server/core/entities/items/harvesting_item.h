@@ -13,7 +13,7 @@ constexpr int PickupPhysSize = 14;
 class CEntityHarvestingItem : public CEntity
 {
 	int m_Damage;
-	int m_SpawnTick;
+	int m_SpawnTick{};
 	int m_Type;
 
 public:
@@ -34,12 +34,12 @@ public:
 	void Snap(int SnappingClient) override;
 
 	void SetSpawn(int Sec);
-	void Work(int ClientID);
+	void Process(int ClientID);
 	void SpawnPositions();
 
 private:
-	void FarmingWork(CPlayer* pPlayer, CPlayerItem& pWorkedItem);
-	void MiningWork(CPlayer* pPlayer, CPlayerItem& pWorkedItem);
+	void Farming(CPlayer* pPlayer, CPlayerItem& pWorkedItem);
+	void Mining(CPlayer* pPlayer, CPlayerItem& pWorkedItem);
 	bool Interaction(const char* pToolname, AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemFunctional EquipID, int SelfLevel);
 	int GetPickupType() const;
 	CItemDescription* GetItemInfo() const;

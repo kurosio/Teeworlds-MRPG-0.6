@@ -11,29 +11,45 @@
 CEntityHarvestingItem::CEntityHarvestingItem(CGameWorld *pGameWorld, int ItemID, vec2 Pos, int Type, int HouseID)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_JOBITEMS, Pos, PickupPhysSize), m_ItemID(ItemID)
 {
+	// initialize variables
 	m_Type = Type;
 	m_Damage = 0;
 	m_HouseID = HouseID;
 	SpawnPositions();
-
 	CEntityHarvestingItem::Reset();
+
+	// insert entity
 	GameWorld()->InsertEntity(this);
 }
 
 void CEntityHarvestingItem::SpawnPositions()
 {
-	vec2 SwapPos = vec2(m_Pos.x, m_Pos.y-20);
-	if (GS()->Collision()->GetCollisionAt(SwapPos.x, SwapPos.y) > 0)
-		m_Pos = SwapPos;
-	SwapPos = vec2(m_Pos.x, m_Pos.y+16);
-	if (GS()->Collision()->GetCollisionAt(SwapPos.x, SwapPos.y) > 0)
-		m_Pos = SwapPos;
-	SwapPos = vec2(m_Pos.x-18, m_Pos.y);
-	if (GS()->Collision()->GetCollisionAt(SwapPos.x, SwapPos.y) > 0)
-		m_Pos = SwapPos;
-	SwapPos = vec2(m_Pos.x+18, m_Pos.y);
-	if (GS()->Collision()->GetCollisionAt(SwapPos.x, SwapPos.y) > 0)
-		m_Pos = SwapPos;
+	// initialize variables
+	vec2 newPos {};
+	int minimalIterate = std::numeric_limits<int>::max();
+	vec2 Dir[4] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+	// find spawn position
+	for (const auto& vdir : Dir)
+	{
+		vec2 checkPos = m_Pos;
+		for(int s = 0; s < 32; s++)
+		{
+			if(s > minimalIterate)
+				break;
+
+			checkPos += vdir;
+			if(GS()->Collision()->CheckPoint(checkPos))
+			{
+				newPos = checkPos;
+				minimalIterate = s;
+				break;
+			}
+		}
+	}
+
+	// update position
+	m_Pos = newPos;
 }
 
 void CEntityHarvestingItem::SetSpawn(int Sec)
@@ -42,7 +58,7 @@ void CEntityHarvestingItem::SetSpawn(int Sec)
 	m_Damage = GetItemInfo()->GetHarvestingData().m_Health;
 }
 
-void CEntityHarvestingItem::Work(int ClientID)
+void CEntityHarvestingItem::Process(int ClientID)
 {
 	// check valid player
 	auto* pPlayer = GS()->GetPlayer(ClientID);
@@ -65,11 +81,11 @@ void CEntityHarvestingItem::Work(int ClientID)
 	auto* pPlayerItem = pPlayer->GetItem(GetItemInfo()->GetID());
 	if(m_Type == HARVESTINGITEM_TYPE_MINING)
 	{
-		MiningWork(pPlayer, *pPlayerItem);
+		Mining(pPlayer, *pPlayerItem);
 	}
 	else if(m_Type == HARVESTINGITEM_TYPE_FARMING)
 	{
-		FarmingWork(pPlayer, *pPlayerItem);
+		Farming(pPlayer, *pPlayerItem);
 	}
 }
 
@@ -121,17 +137,17 @@ bool CEntityHarvestingItem::Interaction(const char* pToolname, AttributeIdentifi
 	return m_Damage >= Health;
 }
 
-void CEntityHarvestingItem::MiningWork(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
+void CEntityHarvestingItem::Mining(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
 {
 	if(Interaction("Pickaxe", AttributeIdentifier::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, pPlayer->Account()->m_MiningData(JOB_LEVEL, 0).m_Value))
 	{
 		GS()->Core()->AccountMiningManager()->Process(pPlayer, GetItemInfo()->GetHarvestingData().m_Level);
-		pWorkedItem.Add(1+ rand()%2);
+		pWorkedItem.Add(1 + rand()%2);
 		SetSpawn(20);
 	}
 }
 
-void CEntityHarvestingItem::FarmingWork(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
+void CEntityHarvestingItem::Farming(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
 {
 	if(Interaction("Rake", AttributeIdentifier::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value))
 	{

@@ -1181,7 +1181,7 @@ bool CCharacter::InteractiveHammer(vec2 Direction, vec2 ProjStartPos)
 
 	if(CEntityHarvestingItem* pJobItem = (CEntityHarvestingItem*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_JOBITEMS, nullptr))
 	{
-		pJobItem->Work(m_pPlayer->GetCID());
+		pJobItem->Process(m_pPlayer->GetCID());
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 		return true;
 	}
