@@ -68,8 +68,6 @@ void CCollision::Init(class CLayers *pLayers)
 		case TILE_DAILY_BOARD:
 		case TILE_CRAFT_ZONE:
 		case TILE_AETHER_TELEPORT:
-		//case TILE_ORE_SELL:
-		//case TILE_PLANT_SELL:
 		case TILE_GUILD_CHAIR:
 		case TILE_CHAIR:
 		case TILE_WORLD_SWAP:

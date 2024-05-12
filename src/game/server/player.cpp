@@ -7,7 +7,7 @@
 #include "worldmodes/dungeon.h"
 
 #include "core/components/Accounts/AccountManager.h"
-#include "core/components/Accounts/AccountMinerManager.h"
+#include "core/components/Accounts/AccountMiningManager.h"
 #include "core/components/Bots/BotManager.h"
 #include "core/components/Dungeons/DungeonData.h"
 #include "core/components/Eidolons/EidolonInfoData.h"

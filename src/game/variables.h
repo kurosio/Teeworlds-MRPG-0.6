@@ -97,6 +97,7 @@ MACRO_CONFIG_INT(SvAetherFee, sv_aether_fee, 12, 0, 10000, CFGFLAG_SERVER, "Pric
 MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERVER, "Door radius hit.")
 MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50, 10, 100000, CFGFLAG_SERVER, "The size of the product is how much the player can wear.")
 MACRO_CONFIG_INT(SvDailyQuestAlliedSealsReward, sv_daily_quest_allied_seals_reward, 100, 5, 100000, CFGFLAG_SERVER, "Reward allied seals each daily quest.")
+MACRO_CONFIG_INT(SvAmountHarvestingOnTile, sv_amount_harvesting_on_tile, 2, 1, 4, CFGFLAG_SERVER, "Amount harvesting item on tile.")
 
 // auction
 MACRO_CONFIG_INT(SvMaxAuctionPlayerSlots, sv_max_auction_player_slots, 5, 1, 1000, CFGFLAG_SERVER, "Max player auction slots")
@@ -110,8 +111,8 @@ MACRO_CONFIG_INT(SvGuildWarDuration, sv_guild_war_duration, 30, 1, 240, CFGFLAG_
 
 // leveling
 MACRO_CONFIG_INT(SvKillmobsIncreaseLevel, sv_kill_mobs_increase_level, 500, 0, 1000, CFGFLAG_SERVER, "Kill mobs of own level to increase.")
-MACRO_CONFIG_INT(SvMiningIncreaseLevel, sv_mining_increase_level, 80, 0, 1000, CFGFLAG_SERVER, "Mining items own level to increase")
-MACRO_CONFIG_INT(SvPlantingIncreaseLevel, sv_planting_increase_level, 80, 0, 10000, CFGFLAG_SERVER, "Planting items own level to increase")
+MACRO_CONFIG_INT(SvMiningIncreaseLevel, sv_mining_increase_level, 80, 0, 100000, CFGFLAG_SERVER, "Mining items own level to increase")
+MACRO_CONFIG_INT(SvFarmingIncreaseLevel, sv_farming_increase_level, 80, 0, 100000, CFGFLAG_SERVER, "Farming items own level to increase")
 MACRO_CONFIG_INT(SvMultiplierExpRaidDungeon, sv_multiplier_exp_raid_dungeon, 150, 100, 1000, CFGFLAG_SERVER, "Dungeon experience multiplier")
 MACRO_CONFIG_INT(SvLossGoldAtDeath, sv_loss_gold_at_death, 5, 0, 100, CFGFLAG_SERVER, "Gold loss on death from a player in %")
 MACRO_CONFIG_INT(SvArrestGoldAtDeath, sv_arrest_gold_at_death, 30, 0, 100, CFGFLAG_SERVER, "Gold loss on death from the kill list")

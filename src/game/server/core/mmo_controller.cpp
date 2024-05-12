@@ -7,8 +7,8 @@
 #include <teeother/system/string.h>
 
 #include "components/Accounts/AccountManager.h"
-#include "components/Accounts/AccountMinerManager.h"
-#include "components/Accounts/AccountPlantManager.h"
+#include "components/Accounts/AccountMiningManager.h"
+#include "components/Accounts/AccountFarmingManager.h"
 #include "components/Auction/AuctionManager.h"
 #include "components/aethernet/aethernet_manager.h"
 #include "components/Bots/BotManager.h"
@@ -83,8 +83,8 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_System.add(m_pSkillManager = new CSkillManager);
 	m_System.add(m_pTutorialManager = new CTutorialManager);
 	m_System.add(m_pAccountManager = new CAccountManager);
-	m_System.add(m_pAccountMinerManager = new CAccountMinerManager);
-	m_System.add(m_pAccountPlantManager = new CAccountPlantManager);
+	m_System.add(m_pAccountMiningManager = new CAccountMiningManager);
+	m_System.add(m_pAccountFarmingManager = new CAccountFarmingManager);
 	m_System.add(m_pMailboxManager = new CMailboxManager);
 
 	for(auto& pComponent : m_System.m_vComponents)
@@ -272,7 +272,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// information
 		VoteWrapper VGrindingInfo(ClientID, VWF_SEPARATE_CLOSED, "Grinding Information");
-		VGrindingInfo.Add("You can look mobs, plants, and ores.");
+		VGrindingInfo.Add("You can look mob, farm, and mining point's.");
 		VGrindingInfo.AddLine();
 
 		// show all world's
@@ -293,24 +293,24 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		const int WorldID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
 
 		// ores information detail
-		VoteWrapper VOres(ClientID, VWF_STYLE_STRICT_BOLD);
-		VOres.AddLine().Add("Ores from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
-		if(!AccountMinerManager()->InsertItemsDetailVotes(pPlayer, WorldID))
-			VoteWrapper(ClientID).Add("No ores in this world");
+		VoteWrapper VMiningPoints(ClientID, VWF_STYLE_STRICT_BOLD);
+		VMiningPoints.AddLine().Add("Mining point's from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		if(!AccountMiningManager()->InsertItemsDetailVotes(pPlayer, WorldID))
+			VoteWrapper(ClientID).Add("No mining point's in this world");
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// plant information detail
-		VoteWrapper VPlant(ClientID, VWF_STYLE_STRICT_BOLD);
-		VPlant.AddLine().Add("Plant from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
-		if(!AccountPlantManager()->InsertItemsDetailVotes(pPlayer, WorldID))
-			VoteWrapper(ClientID).Add("No plants in this world");
+		// farm information detail
+		VoteWrapper VFarmingPoints(ClientID, VWF_STYLE_STRICT_BOLD);
+		VFarmingPoints.AddLine().Add("Farming point's from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		if(!AccountFarmingManager()->InsertItemsDetailVotes(pPlayer, WorldID))
+			VoteWrapper(ClientID).Add("No farm point's in this world");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// mobs information detail
-		VoteWrapper VMobs(ClientID, VWF_STYLE_STRICT_BOLD);
-		VMobs.AddLine().Add("Mob from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
+		VoteWrapper VMobsPoints(ClientID, VWF_STYLE_STRICT_BOLD);
+		VMobsPoints.AddLine().Add("Mob point's from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
 		if(!BotManager()->InsertItemsDetailVotes(pPlayer, WorldID))
-			VoteWrapper(ClientID).Add("No mobs in this world");
+			VoteWrapper(ClientID).Add("No mob point's in this world");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		VoteWrapper::AddBackpage(ClientID);
@@ -502,12 +502,12 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pAcc->m_Upgrade, Buffer.buffer(), pAcc->GetID());
 		Buffer.clear();
 	}
-	else if(Table == SAVE_PLANT_DATA)
+	else if(Table == SAVE_FARMING_DATA)
 	{
 		std::string Fields = pAcc->m_FarmingData.getUpdateField();
 		Database->Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pAcc->GetID());
 	}
-	else if(Table == SAVE_MINER_DATA)
+	else if(Table == SAVE_MINING_DATA)
 	{
 		std::string Fields = pAcc->m_MiningData.getUpdateField();
 		Database->Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pAcc->GetID());

@@ -45,12 +45,12 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		int InitialFee = pRes->getInt("InitialFee");
 		int RentDays = pRes->getInt("RentDays");
 		std::string JsonDoors = pRes->getString("Doors").c_str();
-		std::string JsonPlantzones = pRes->getString("Plantzones").c_str();
+		std::string JsonFarmzones = pRes->getString("Farmzones").c_str();
 		std::string JsonPropersties = pRes->getString("Properties").c_str();
 
 		// initialize guild houses
 		CGuild* pGuild = GetGuildByID(GuildID);
-		CGuildHouse::CreateElement(ID)->Init(pGuild, RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonPlantzones), std::move(JsonPropersties));
+		CGuildHouse::CreateElement(ID)->Init(pGuild, RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonPropersties));
 	}
 
 	Core()->ShowLoadingProgress("Guild houses", CGuildHouse::Data().size());
@@ -672,7 +672,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// try plant to house
-	if(PPSTR(CMD, "GUILD_HOUSE_PLANT_ZONE_TRY") == 0)
+	if(PPSTR(CMD, "GUILD_HOUSE_FARM_ZONE_TRY_PLANT") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -692,21 +692,21 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 
 		// initialize variables
 		const int& Useds = maximum(1, Get);
-		const int& PlantzoneID = VoteID;
+		const int& FarmzoneID = VoteID;
 		const ItemIdentifier& ItemID = VoteID2;
 
-		// check plantzone valid
-		auto pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
-		if(!pPlantzone)
+		// check farmzone valid
+		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
+		if(!pFarmzone)
 		{
-			GS()->Chat(ClientID, "Plant zone not found.");
+			GS()->Chat(ClientID, "Farm zone not found.");
 			return true;
 		}
 
 		// check is same plant item with current
-		if(ItemID == pPlantzone->GetItemID())
+		if(ItemID == pFarmzone->GetItemID())
 		{
-			GS()->Chat(ClientID, "This plant is already planted.");
+			GS()->Chat(ClientID, "This item has already been planted on this farm.");
 			return true;
 		}
 
@@ -725,15 +725,15 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 			// result
 			if(Success)
 			{
-				// Change the item in the plant zone to the planted item
-				GS()->Chat(ClientID, "You have successfully planted the plant.");
-				pPlantzone->ChangeItem(ItemID);
+				// update
+				GS()->Chat(ClientID, "You have successfully plant to farm zone.");
+				pFarmzone->ChangeItem(ItemID);
 			}
 			else
 			{
-				GS()->Chat(ClientID, "You failed to plant the plant.");
+				GS()->Chat(ClientID, "You failed plant to farm zone.");
 			}
-			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_PLANTZONE_SELECTED);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_FARMZONE_SELECTED);
 		}
 
 		return true;
@@ -965,18 +965,18 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// menu guild house plantzone
-	if(Menulist == MENU_GUILD_HOUSE_PLANTZONE_LIST)
+	// menu guild house farm zone
+	if(Menulist == MENU_GUILD_HOUSE_FARMZONE_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
-		ShowPlantzonesControl(pPlayer);
+		ShowFarmzonesControl(pPlayer);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
-	if(Menulist == MENU_GUILD_HOUSE_PLANTZONE_SELECTED)
+	if(Menulist == MENU_GUILD_HOUSE_FARMZONE_SELECTED)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_HOUSE_PLANTZONE_LIST);
-		ShowPlantzoneEdit(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_HOUSE_FARMZONE_LIST);
+		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -1150,8 +1150,8 @@ void CGuildManager::ShowMenu(int ClientID) const
 		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
 		VHouse.AddOption("GUILD_HOUSE_DECORATION_EDIT", "Decoration editor");
-		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors control");
-		VHouse.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_LIST, "Plant zones");
+		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors");
+		VHouse.AddMenu(MENU_GUILD_HOUSE_FARMZONE_LIST, "Farms");
 		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_SELL, "Sell");
 	}
@@ -1439,7 +1439,7 @@ void CGuildManager::ShowDoorsControl(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-void CGuildManager::ShowPlantzonesControl(CPlayer* pPlayer) const
+void CGuildManager::ShowFarmzonesControl(CPlayer* pPlayer) const
 {
 	auto* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
@@ -1450,23 +1450,23 @@ void CGuildManager::ShowPlantzonesControl(CPlayer* pPlayer) const
 		return;
 
 	int ClientID = pPlayer->GetCID();
-	int PlantzonesNum = (int)pHouse->GetPlantzonesManager()->GetContainer().size();
+	int FarmzonesNum = (int)pHouse->GetFarmzonesManager()->GetContainer().size();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Plant zones information");
-	VInfo.Add("You can control your plant zones in the house");
-	VInfo.Add("Your home has: {} plant zones.", PlantzonesNum);
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Farm zones information");
+	VInfo.Add("You can control your farm zones in the house");
+	VInfo.Add("Your home has: {} farm zones.", FarmzonesNum);
 	VoteWrapper::AddEmptyline(ClientID);
 
-	// plant zones control
-	VoteWrapper VPlantzones(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2743 Plant zone's control");
-	for(auto& [ID, Plantzone] : pHouse->GetPlantzonesManager()->GetContainer())
-		VPlantzones.AddMenu(MENU_GUILD_HOUSE_PLANTZONE_SELECTED, ID, "Plant {} zone / {}", Plantzone.GetName(), GS()->GetItemInfo(Plantzone.GetItemID())->GetName());
+	// farm zones control
+	VoteWrapper VFarmzones(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2743 Farm zone's control");
+	for(auto& [ID, Farmzone] : pHouse->GetFarmzonesManager()->GetContainer())
+		VFarmzones.AddMenu(MENU_GUILD_HOUSE_FARMZONE_SELECTED, ID, "Farm {} zone / {}", Farmzone.GetName(), GS()->GetItemInfo(Farmzone.GetItemID())->GetName());
 
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-void CGuildManager::ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const
+void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 {
 	auto* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
@@ -1476,29 +1476,29 @@ void CGuildManager::ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const
 	if(!pHouse)
 		return;
 
-	auto* pPlantzone = pHouse->GetPlantzonesManager()->GetPlantzoneByID(PlantzoneID);
-	if(!pPlantzone)
+	auto* pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
+	if(!pFarmzone)
 		return;
 
 	int ClientID = pPlayer->GetCID();
-	CItemDescription* pItem = GS()->GetItemInfo(pPlantzone->GetItemID());
+	CItemDescription* pItem = GS()->GetItemInfo(pFarmzone->GetItemID());
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 Plant {} zone", pPlantzone->GetName());
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
 	VInfo.Add("You can grow a plant on the property");
 	VInfo.Add("Chance: {}%", s_GuildChancePlanting);
 	VInfo.Add("Planted: {}", pItem->GetName());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// items list availables can be planted
-	VoteWrapper VPlantItems(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
-	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(FUNCTION_PLANT);
+	VoteWrapper VPossiblePlanting(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
+	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(FUNCTION_FARMING);
 	for(auto& ID : vItems)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
-		if(pPlayerItem->HasItem() && ID != pPlantzone->GetItemID())
+		if(pPlayerItem->HasItem() && ID != pFarmzone->GetItemID())
 		{
-			VPlantItems.AddOption("GUILD_HOUSE_PLANT_ZONE_TRY", PlantzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+			VPossiblePlanting.AddOption("GUILD_HOUSE_FARM_ZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 		}
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1574,7 +1574,7 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
 	VInfo.Add("Buying a house you will need to constantly the Treasury");
 	VInfo.Add("In the intervals of time will be paid house");
 	VInfo.Add("Owned by: {}", pHouse->GetOwnerName());
-	VInfo.Add("Plant zone's: {}", (int)pHouse->GetPlantzonesManager()->GetContainer().size());
+	VInfo.Add("Farm zone's: {}", (int)pHouse->GetFarmzonesManager()->GetContainer().size());
 	VInfo.Add("Controlled door's: {}", (int)pHouse->GetDoorManager()->GetContainer().size());
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -1728,14 +1728,14 @@ CGuild* CGuildManager::GetGuildByName(const char* pGuildname) const
 	return itGuild != CGuild::Data().end() ? (*itGuild) : nullptr;
 }
 
-CGuildHouse::CPlantzone* CGuildManager::GetHousePlantzoneByPos(vec2 Pos) const
+CGuildHouse::CFarmzone* CGuildManager::GetHouseFarmzoneByPos(vec2 Pos) const
 {
 	for(auto& p : CGuildHouse::Data())
 	{
-		for(auto& Plantzone : p->GetPlantzonesManager()->GetContainer())
+		for(auto& Farmzone : p->GetFarmzonesManager()->GetContainer())
 		{
-			if(distance(Pos, Plantzone.second.GetPos()) < Plantzone.second.GetRadius())
-				return &Plantzone.second;
+			if(distance(Pos, Farmzone.second.GetPos()) < Farmzone.second.GetRadius())
+				return &Farmzone.second;
 		}
 	}
 

@@ -55,15 +55,15 @@ private:
 	void ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const;
 	void ShowDeclareWar(int ClientID) const;
 	void ShowDoorsControl(CPlayer* pPlayer) const;
-	void ShowPlantzonesControl(CPlayer* pPlayer) const;
-	void ShowPlantzoneEdit(CPlayer* pPlayer, int PlantzoneID) const;
+	void ShowFarmzonesControl(CPlayer* pPlayer) const;
+	void ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const;
 
 public:
 	CGuildHouse* GetHouseByID(const GuildHouseIdentifier& ID) const;
 	CGuildHouse* GetHouseByPos(vec2 Pos) const;
 	CGuild* GetGuildByID(GuildIdentifier ID) const;
 	CGuild* GetGuildByName(const char* pGuildname) const;
-	CGuildHouse::CPlantzone* GetHousePlantzoneByPos(vec2 Pos) const;
+	CGuildHouse::CFarmzone* GetHouseFarmzoneByPos(vec2 Pos) const;
 };
 
 #endif

@@ -15,6 +15,12 @@ using ItemIdentifier = int;
 class CItemDescription : public MultiworldIdentifiableStaticData < std::map< int, CItemDescription > >
 {
 public:
+	struct HarvestingData
+	{
+		int m_Level  {1};
+		int m_Health {100};
+	};
+
 	enum
 	{
 		OnEventGot,
@@ -37,6 +43,7 @@ private:
 	ContainerAttributes m_aAttributes {};
 	std::string m_Data {};
 	CRandomBox m_RandomBox {};
+	HarvestingData m_Harvesting {};
 
 public:
 	CItemDescription() = default;
@@ -47,14 +54,15 @@ public:
 		m_Data = std::move(Data);
 		Tools::Json::parseFromString(m_Data, [this](nlohmann::json& pJson)
 		{
-			// Parse random box
-			if(pJson.find("random_box") != pJson.end())
-			{
-				for(auto& p : pJson["random_box"])
-				{
-					m_RandomBox.Add(p.value("item_id", -1), p.value("value", 1), p.value("chance", 100.0f));
-				}
-			}
+			// try initialize harversing
+			m_Harvesting = HarvestingData{
+				pJson.value("harvesting", nlohmann::json::object()).value("level", 1),
+				pJson.value("harvesting", nlohmann::json::object()).value("health", 100)
+			};
+
+			// try initialize random box
+			for(auto& p : pJson["random_box"])
+				m_RandomBox.Add(p.value("item_id", -1), p.value("value", 1), p.value("chance", 100.0f));
 		});
 
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
@@ -81,6 +89,7 @@ public:
 	bool IsType(ItemType Type) const { return m_Type == Type; }
 	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
+	HarvestingData& GetHarvestingData() { return m_Harvesting; }
 
 	bool IsEnchantable() const;
 	bool IsEnchantMaxLevel(int Enchant) const;

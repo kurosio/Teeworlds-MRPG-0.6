@@ -2,12 +2,13 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "default.h"
 
+#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
-#include <game/server/core/entities/items/jobitems.h>
+#include <game/server/core/entities/items/harvesting_item.h>
 #include <game/server/core/entities/logic/logicwall.h>
 
-#include <game/server/core/components/Accounts/AccountMinerManager.h>
-#include <game/server/core/components/Accounts/AccountPlantManager.h>
+#include <game/server/core/components/Accounts/AccountMiningManager.h>
+#include <game/server/core/components/Accounts/AccountFarmingManager.h>
 #include <game/server/core/components/houses/house_manager.h>
 
 #include "game/server/core/components/guilds/guild_manager.h"
@@ -45,40 +46,52 @@ bool CGameControllerDefault::OnEntity(int Index, vec2 Pos)
 	if(IGameController::OnEntity(Index, Pos))
 		return true;
 
-	if(Index == ENTITY_PLANTS)
+	// calculate polar coordinates
+	const vec2 roundPos = vec2((float)(round_to_int(Pos.x) / 32 * 32), (float)(round_to_int(Pos.y) / 32 * 32));
+	const float iter = 16.f / (float)g_Config.m_SvAmountHarvestingOnTile;
+	const float multiplier = iter * 2;
+
+	// entity farming point
+	if(Index == ENTITY_FARMING)
 	{
-		const int ItemID = GS()->Core()->AccountPlantManager()->GetPlantItemID(Pos), Level = GS()->Core()->AccountPlantManager()->GetPlantLevel(Pos);
-		if(ItemID > 0)
+		for(int i = 0; i < g_Config.m_SvAmountHarvestingOnTile; i++)
 		{
-			new CJobItems(&GS()->m_World, ItemID, Level, Pos, CJobItems::JOB_ITEM_FARMING, 100);
-			return true;
+			// calculate polar coordinates
+			const float calculate = iter + (float)i * multiplier;
+			vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
+			if(GS()->Collision()->GetCollisionAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionAt(roundPos.x + (30.f + iter), Pos.y))
+				newPos = vec2(Pos.x, roundPos.y + calculate);
+
+			// default farm positions
+			if(auto* pItemInfo = GS()->Core()->AccountFarmingManager()->GetFarmingItemInfoByPos(newPos))
+				new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING);
+
+			// guild house farm positions
+			if(CGuildHouse::CFarmzone* pFarmzone = GS()->Core()->GuildManager()->GetHouseFarmzoneByPos(newPos))
+				pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
+
+			// house farm positions
+			if(CHouse::CFarmzone* pFarmzone = GS()->Core()->HouseManager()->GetHouseFarmzoneByPos(newPos))
+				pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
 		}
-
-		if(CGuildHouse::CPlantzone* pPlantzone = GS()->Core()->GuildManager()->GetHousePlantzoneByPos(Pos))
-		{
-			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
-			return true;
-		}
-
-		if(CHouse::CPlantzone* pPlantzone = GS()->Core()->HouseManager()->GetHousePlantzoneByPos(Pos))
-		{
-			pPlantzone->Add(new CJobItems(&GS()->m_World, pPlantzone->GetItemID(), 1, Pos, CJobItems::JOB_ITEM_FARMING, 100));
-			return true;
-		}
-
-
 		return true;
 	}
 
-	if(Index == ENTITY_MINER)
+	// entity mining point
+	if(Index == ENTITY_MINING)
 	{
-		const int ItemID = GS()->Core()->AccountMinerManager()->GetOreItemID(Pos), Level = GS()->Core()->AccountMinerManager()->GetOreLevel(Pos);
-		if(ItemID > 0)
+		for(int i = 0; i < g_Config.m_SvAmountHarvestingOnTile; i++)
 		{
-			const int Health = GS()->Core()->AccountMinerManager()->GetOreHealth(Pos);
-			new CJobItems(&GS()->m_World, ItemID, Level, Pos, CJobItems::JOB_ITEM_MINING, Health);
-		}
+			// calculate polar coordinates
+			const float calculate = iter + (float)i * multiplier;
+			vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
+			if(GS()->Collision()->GetCollisionAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionAt(roundPos.x + (30.f + iter), Pos.y))
+				newPos = vec2(Pos.x, roundPos.y + calculate);
 
+			// default ores positions
+			if(auto* pItemInfo = GS()->Core()->AccountMiningManager()->GetMiningItemInfoByPos(newPos))
+				new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_MINING);
+		}
 		return true;
 	}
 
