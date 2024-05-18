@@ -69,6 +69,9 @@ public:
 		InitCriteriaJson(Data);
 	}
 	void InitCriteriaJson(const std::string& JsonData);
+
+	// check if the achievement is completed
+	bool CheckAchievement(int Type, int Value, int Value2);
 };
 
 // achievement data

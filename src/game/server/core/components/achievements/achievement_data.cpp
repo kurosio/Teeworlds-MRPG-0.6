@@ -4,6 +4,10 @@
 
 void CAchievementInfo::InitCriteriaJson(const std::string& JsonData)
 {
+    // check if the json data is empty
+    dbg_assert(JsonData.length() > 0, "empty json data");
+
+    // parse the json data
     Tools::Json::parseFromString(JsonData, [this](nlohmann::json& pJson)
     {
         for(auto& pAchievement : pJson)
@@ -51,4 +55,61 @@ void CAchievementInfo::InitCriteriaJson(const std::string& JsonData)
             }
         }
     });
+}
+
+bool CAchievementInfo::CheckAchievement(int Type, int Value, int Value2) const
+{
+    // check if the achievement type is the same as the current achievement type
+	if (Type == m_Type)
+	{
+		switch (m_Type)
+		{
+			case ACHIEVEMENT_TYPE_CRAFT_ITEM:
+			if (m_Data.m_CraftItem.m_ItemID == Value && m_Data.m_CraftItem.m_Value == Value2)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_DEFEAT_MOB:
+				if (m_Data.m_DefeatMob.m_ID == Value && m_Data.m_DefeatMob.m_Value == Value2)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_DEFEAT_PVE:
+				if (m_Data.m_DefeatPVE.m_Value == Value)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_DEFEAT_PVP:
+				if (m_Data.m_DefeatPVP.m_Value == Value)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_ENCHANT_ITEM:
+				if (m_Data.m_EnchantItem.m_ItemID == Value)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_EQUIPPED:
+				if (m_Data.m_Equipped.m_ItemID == Value)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_GET_ITEM:
+				if (m_Data.m_GetItem.m_ItemID == Value)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_USE_ITEM:
+				if (m_Data.m_UseItem.m_ItemID == Value)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_UNLOCK_WORLD:
+				if (m_Data.m_UnlockWorld.m_WorldID == Value)
+					return true;
+				break;
+			case ACHIEVEMENT_TYPE_LEVELING:
+				if (m_Data.m_Leveling.m_Value == Value)
+					return true;
+				break;
+			default:
+				dbg_assert(false, "unknown achievement type");
+				break;
+		}
+	}
+
+	// achievement is not completed
+    return false;
 }
