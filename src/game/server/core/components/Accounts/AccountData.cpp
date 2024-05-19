@@ -91,8 +91,7 @@ void CAccountData::InitAchievements(const std::string& Data)
 	int ClientID = m_pPlayer->GetCID();
 	Tools::Json::parseFromString(Data, [&ClientID, this](nlohmann::json& pJson)
 	{
-		m_AchivementsData = pJson;
-		for(auto& p : m_AchivementsData)
+		for(auto& p : pJson)
 		{
 			int AchievementID = p.value("aid", -1);
 			int Progress = p.value("progress", 0);
@@ -102,6 +101,7 @@ void CAccountData::InitAchievements(const std::string& Data)
 			if(pvAchievements.find(AchievementID) != pvAchievements.end())
 				pvAchievements[AchievementID]->Init(Progress, Completed);
 		}
+		m_AchivementsData = pJson;
 	});
 }
 

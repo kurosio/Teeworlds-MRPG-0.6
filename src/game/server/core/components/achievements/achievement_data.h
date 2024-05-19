@@ -4,7 +4,6 @@
 #define GAME_SERVER_CORE_COMPONENTS_ACHIEVEMENT_DATA_H
 
 #define TW_ACHIEVEMENTS "tw_achievements"
-#define TW_ACCOUNTS_ACHIEVEMENTS "tw_accounts_achievements"
 
 // forward declaration
 class CGS;
@@ -111,6 +110,5 @@ public:
 
 	bool UpdateProgress(int Misc, int Value, int ProgressType);
 };
-
 
 #endif

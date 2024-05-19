@@ -5,7 +5,6 @@
 #include <game/server/core/mmo_component.h>
 
 #include "achievement_data.h"
-#include "game/server/core/components/aethernet/aether_data.h"
 
 class CAchievementManager : public MmoComponent
 {
