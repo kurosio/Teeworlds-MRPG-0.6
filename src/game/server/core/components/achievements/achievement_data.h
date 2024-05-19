@@ -21,7 +21,7 @@ enum AchievementProgressType
 // achievement types
 enum AchievementType
 {
-	ACHIEVEMENT_DEFEAT_PVP = 0,
+	ACHIEVEMENT_DEFEAT_PVP = 1,
 	ACHIEVEMENT_DEFEAT_PVE,
 	ACHIEVEMENT_DEFEAT_MOB,
 	ACHIEVEMENT_DEATH,

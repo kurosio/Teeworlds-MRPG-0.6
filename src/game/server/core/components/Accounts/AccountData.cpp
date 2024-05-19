@@ -88,9 +88,20 @@ void CAccountData::InitAchievements(const std::string& Data)
 		CAchievement::CreateElement(pAchievement, m_pPlayer->GetCID());
 
 	// initialize achievements by player data
-	Tools::Json::parseFromString(Data, [this](nlohmann::json& pJson)
+	int ClientID = m_pPlayer->GetCID();
+	Tools::Json::parseFromString(Data, [&ClientID, this](nlohmann::json& pJson)
 	{
 		m_AchivementsData = pJson;
+		for(auto& p : m_AchivementsData)
+		{
+			int AchievementID = p.value("aid", -1);
+			int Progress = p.value("progress", 0);
+			bool Completed = p.value("completed", false);
+
+			auto& pvAchievements = CAchievement::Data()[ClientID];
+			if(pvAchievements.find(AchievementID) != pvAchievements.end())
+				pvAchievements[AchievementID]->Init(Progress, Completed);
+		}
 	});
 }
 

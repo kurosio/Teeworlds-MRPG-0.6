@@ -20,10 +20,10 @@ class CAchievementManager : public MmoComponent
 		CAchievement::Data().clear();
 
 		// free achievement information data
-		for(const auto& pAchievement : CAchievementInfo::Data())
-			delete pAchievement;
-		CAetherData::Data().clear();
-		CAetherData::Data().shrink_to_fit();
+		for(auto& p : CAchievementInfo::Data())
+			delete p;
+		CAchievementInfo::Data().clear();
+		CAchievementInfo::Data().shrink_to_fit();
 	};
 
 	void OnInit() override;
