@@ -4,6 +4,7 @@
 #define GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 
 // TODO: fully rework structures
+#include <game/server/core/components/achievements/achievement_data.h>
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/Auction/AuctionData.h>
 #include <game/server/core/tools/dbfield.h>
@@ -32,6 +33,7 @@ class CAccountData
 	GroupData* m_pGroupData{};
 	CGuild* m_pGuildData{};
 	ClassGroup m_ClassGroup {};
+	nlohmann::json m_AchivementsData { };
 
 	CPlayer* m_pPlayer {};
 	CGS* GS() const;
@@ -91,6 +93,11 @@ public:
 	void ResetDailyChairGolds(); // Reset daily getting chair golds
 	void ResetRelations(); // Reset relations
 	void HandleChair();
+
+	// Achievements
+	void InitAchievements(const std::string& Data);
+	void SetAchieventProgress(int AchievementID, int Progress, bool Completed);
+	nlohmann::json& GetAchievementsData() { return m_AchivementsData; }
 
 	// Aethers
 	bool IsUnlockedAether(int AetherID) const { return m_aAetherLocation.find(AetherID) != m_aAetherLocation.end(); }

@@ -102,3 +102,8 @@ void CGameControllerDefault::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 {
 	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 }
+
+void CGameControllerDefault::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
+{
+	IGameController::OnCharacterDamage(pFrom, pTo, Damage);
+}

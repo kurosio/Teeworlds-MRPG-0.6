@@ -6,7 +6,7 @@
 
 void CAchievementManager::OnInit()
 {
-	ResultPtr pResult = Database->Execute<DB::SELECT>(TW_ACHIEVEMENTS, "SELECT * FROM `tw_achievements`");
+	ResultPtr pResult = Database->Execute<DB::SELECT>("*", TW_ACHIEVEMENTS);
 	while(pResult->next())
 	{
 		// initialize variables
@@ -22,14 +22,47 @@ void CAchievementManager::OnInit()
 	}
 }
 
-void CAchievementManager::OnInitAccount(CPlayer* pPlayer)
+void CAchievementManager::OnResetClient(int ClientID)
 {
-
+	// free achievement data
+	for(auto& p : CAchievement::Data()[ClientID])
+		delete p.second;
+	CAchievement::Data()[ClientID].clear();
 }
 
 bool CAchievementManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	return false;
+}
+
+void CAchievementManager::UpdateAchievement(CPlayer* pPlayer, int Type, int Misc, int Value, int ProgressType) const
+{
+	// check valid player
+	if(!pPlayer || pPlayer->IsBot())
+		return;
+
+	// initialize variables
+    bool Updated = false;
+    auto& pAchievements = CAchievement::Data()[pPlayer->GetCID()];
+
+	// search for the achievement
+    for(auto& p : pAchievements)
+    {
+		// initialize variables
+        auto* pAchievement = p.second;
+        const auto achievementType = pAchievement->Info()->GetType();
+        const auto achievementMisc = pAchievement->Info()->GetMisc();
+
+        if(achievementType == Type && achievementMisc == Misc && !pAchievement->IsCompleted())
+        {
+            if(pAchievement->UpdateProgress(Misc, Value, ProgressType))
+                Updated = true;
+        }
+    }
+
+    // update the achievement progress in the database
+	if(Updated)
+		GS()->Core()->SaveAccount(pPlayer, SAVE_ACHIEVEMENTS);
 }
 
 bool CAchievementManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)

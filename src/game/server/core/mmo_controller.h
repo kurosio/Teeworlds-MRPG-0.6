@@ -34,6 +34,7 @@ class CMmoController
 	};
 	CStack m_System;
 
+	class CAchievementManager* m_pAchievementManager;
 	class CAccountManager* m_pAccountManager;
 	class CBotManager* m_pBotManager;
 	class CInventoryManager *m_pInventoryManager;
@@ -59,6 +60,7 @@ public:
 	CGS *m_pGameServer;
 	CGS *GS() const { return m_pGameServer; }
 
+	CAchievementManager* AchievementManager() const { return m_pAchievementManager; }
 	CAccountManager* AccountManager() const { return m_pAccountManager; }
 	CBotManager* BotManager() const { return m_pBotManager; }
 	CInventoryManager* InventoryManager() const { return m_pInventoryManager; }

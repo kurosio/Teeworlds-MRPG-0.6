@@ -6,19 +6,32 @@
 #define TW_ACHIEVEMENTS "tw_achievements"
 #define TW_ACCOUNTS_ACHIEVEMENTS "tw_accounts_achievements"
 
+// forward declaration
+class CGS;
+class CPlayer;
+class CAchievement;
+
+enum AchievementProgressType
+{
+	PROGRESS_ADD = 0,
+	PROGRESS_REMOVE,
+	PROGRESS_SET,
+};
+
 // achievement types
 enum AchievementType
 {
-	ACHIEVEMENT_TYPE_DEFEAT_PVP = 0,
-	ACHIEVEMENT_TYPE_DEFEAT_PVE,
-	ACHIEVEMENT_TYPE_DEFEAT_MOB,
-	ACHIEVEMENT_TYPE_EQUIPPED,
-	ACHIEVEMENT_TYPE_GET_ITEM,
-	ACHIEVEMENT_TYPE_USE_ITEM,
-	ACHIEVEMENT_TYPE_CRAFT_ITEM,
-	ACHIEVEMENT_TYPE_ENCHANT_ITEM,
-	ACHIEVEMENT_TYPE_UNLOCK_WORLD,
-	ACHIEVEMENT_TYPE_LEVELING,
+	ACHIEVEMENT_DEFEAT_PVP = 0,
+	ACHIEVEMENT_DEFEAT_PVE,
+	ACHIEVEMENT_DEFEAT_MOB,
+	ACHIEVEMENT_DEATH,
+	ACHIEVEMENT_TOTAL_DAMAGE,
+	ACHIEVEMENT_EQUIP,
+	ACHIEVEMENT_RECEIVE_ITEM,
+	ACHIEVEMENT_HAVE_ITEM,
+	ACHIEVEMENT_CRAFT_ITEM,
+	ACHIEVEMENT_UNLOCK_WORLD,
+	ACHIEVEMENT_LEVELING,
 };
 
 // achievement information data
@@ -28,21 +41,8 @@ class CAchievementInfo : public MultiworldIdentifiableStaticData< std::deque<CAc
 	int m_Type {};
 	std::string m_aName {};
 	std::string m_aDescription {};
-
-	// union for the achievement data
-	union AchievementDataUnion
-	{
-		struct { int m_Value; } m_DefeatPVP; // defeat player vs player
-		struct { int m_Value; } m_DefeatPVE; // defeat player vs environment
-		struct { int m_ID; int m_Value; } m_DefeatMob; // defeat mob
-		struct { int m_ItemID; } m_Equipped; // equip item
-		struct { int m_ItemID; int m_Value; } m_GetItem; // get item
-		struct { int m_ItemID; int m_Value; } m_UseItem; // use item
-		struct { int m_ItemID; int m_Value; } m_CraftItem; // craft item
-		struct { int m_ItemID; int m_Value; } m_EnchantItem; // enchant item
-		struct { int m_WorldID; } m_UnlockWorld; // unlock world
-		struct { int m_Value; } m_Leveling; // leveling
-	} m_Data{};
+	int m_Misc {NOPE};
+	int m_MiscRequired {};
 
 public:
 	explicit CAchievementInfo(int ID) : m_ID(ID) {}
@@ -55,6 +55,8 @@ public:
 	}
 
 	int GetID() const { return m_ID; }
+	int GetMisc() const { return m_Misc; }
+	int GetMiscRequired() const { return m_MiscRequired; }
 	const char* GetName() const { return m_aName.c_str(); }
 	const char* GetDescription() const { return m_aDescription.c_str(); }
 	int GetType() const { return m_Type; }
@@ -71,38 +73,43 @@ public:
 	void InitCriteriaJson(const std::string& JsonData);
 
 	// check if the achievement is completed
-	bool CheckAchievement(int Type, int Value, int Value2);
+	bool CheckAchievement(int Value, const CAchievement* pAchievement) const;
 };
 
 // achievement data
-class CAchievement : public MultiworldIdentifiableStaticData< std::deque<CAchievement*> >
+class CAchievement : public MultiworldIdentifiableStaticData< std::map< int, ska::unordered_map<int, CAchievement* > > >
 {
-	int m_ID {};
-	int m_AccountID {};
-	int m_Progress {};
+	friend class CAchievementInfo;
+	friend class CAchievementManager;
+
+	CGS* GS() const;
+	CPlayer* GetPlayer() const;
+
 	CAchievementInfo* m_pInfo {};
+	int m_ClientID {};
+	int m_Progress {};
+	bool m_Completed {};
 
 public:
-	explicit CAchievement(int ID) : m_ID(ID) {}
+	explicit CAchievement(CAchievementInfo* pInfo, int ClientID) : m_pInfo(pInfo), m_ClientID(ClientID) {}
 
-	static CAchievement* CreateElement(const int& ID)
+	static CAchievement* CreateElement(CAchievementInfo* pInfo, int ClientID)
 	{
-		auto pData = new CAchievement(ID);
-		pData->m_ID = ID;
-		return m_pData.emplace_back(pData);
+		const auto pData = new CAchievement(pInfo, ClientID);
+		return m_pData[ClientID][pInfo->GetID()] = pData;
 	}
 
 	// initalize the Aether data
-	void Init(const int& pAchievementID, const int& pAccountID, const int& pProgress)
+	void Init(int Progress, bool Completed)
 	{
-		const auto iter = std::find_if(CAchievementInfo::Data().begin(), CAchievementInfo::Data().end(), 
-			[pAchievementID](CAchievementInfo* p) { return p->GetID() == pAchievementID; });
-		dbg_assert(iter != CAchievementInfo::Data().end(), "achievement not found");
-		
-		m_pInfo = *iter;
-		m_AccountID = pAccountID;
-		m_Progress = pProgress;
+		m_Progress = Progress;
+		m_Completed = Completed;
 	}
+
+	CAchievementInfo* Info() const { return m_pInfo; }
+	bool IsCompleted() const { return m_Completed; }
+
+	bool UpdateProgress(int Misc, int Value, int ProgressType);
 };
 
 

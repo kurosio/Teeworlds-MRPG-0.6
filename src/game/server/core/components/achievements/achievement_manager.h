@@ -11,6 +11,15 @@ class CAchievementManager : public MmoComponent
 {
 	~CAchievementManager() override
 	{
+		// free achievement data
+		for(auto& p : CAchievement::Data())
+		{
+			for(auto& pAchievement : p.second)
+				delete pAchievement.second;
+		}
+		CAchievement::Data().clear();
+
+		// free achievement information data
 		for(const auto& pAchievement : CAchievementInfo::Data())
 			delete pAchievement;
 		CAetherData::Data().clear();
@@ -18,9 +27,12 @@ class CAchievementManager : public MmoComponent
 	};
 
 	void OnInit() override;
-	void OnInitAccount(CPlayer* pPlayer) override;
+	void OnResetClient(int ClientID) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+
+public:
+	void UpdateAchievement(CPlayer* pPlayer, int Type, int Misc, int Value, int AppendProgress) const;
 };
 
 #endif

@@ -70,10 +70,12 @@ bool CPlayerItem::SetValue(int Value)
 
 bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Message)
 {
-	if(Value < 1 || !GetPlayer() || !GetPlayer()->IsAuthed())
+	CPlayer* pPlayer = GetPlayer();
+	if(Value < 1 || !pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	const int ClientID = GetPlayer()->GetCID();
+	// check enchantable type
+	const int ClientID = pPlayer->GetCID();
 	if(Info()->IsEnchantable())
 	{
 		if(m_Value > 0)
@@ -90,18 +92,23 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		m_Settings = StartSettings;
 
 		// run event got
-		Info()->RunEvent(GetPlayer(), CItemDescription::OnEventGot);
+		Info()->RunEvent(pPlayer, CItemDescription::OnEventGot);
 	}
+
 	m_Value += Value;
 
+	// achievement for item
+	pPlayer->UpdateAchievement(ACHIEVEMENT_RECEIVE_ITEM, m_ID, Value, PROGRESS_ADD);
+	pPlayer->UpdateAchievement(ACHIEVEMENT_HAVE_ITEM, m_ID, m_Value, PROGRESS_SET);
+
 	// check the empty slot if yes then put the item on
-	if((Info()->IsType(ItemType::TYPE_EQUIP) && GetPlayer()->GetEquippedItemID(Info()->GetFunctional()) <= 0) || Info()->IsType(ItemType::TYPE_MODULE))
+	if((Info()->IsType(ItemType::TYPE_EQUIP) && pPlayer->GetEquippedItemID(Info()->GetFunctional()) <= 0) || Info()->IsType(ItemType::TYPE_MODULE))
 	{
 		if(!IsEquipped())
 			Equip(false);
 
 		char aAttributes[128];
-		Info()->StrFormatAttributes(GetPlayer(), aAttributes, sizeof(aAttributes), StartEnchant);
+		Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), StartEnchant);
 		GS()->Chat(ClientID, "Auto equip {} - {}", Info()->GetName(), aAttributes);
 	}
 
@@ -146,7 +153,8 @@ bool CPlayerItem::Remove(int Value)
 
 bool CPlayerItem::Equip(bool SaveItem)
 {
-	if(m_Value < 1 || !GetPlayer() || !GetPlayer()->IsAuthed())
+	CPlayer* pPlayer = GetPlayer();
+	if(m_Value < 1 || !pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	m_Settings ^= true;
@@ -154,20 +162,23 @@ bool CPlayerItem::Equip(bool SaveItem)
 	if(Info()->IsType(ItemType::TYPE_EQUIP))
 	{
 		const ItemFunctional EquipID = Info()->GetFunctional();
-		ItemIdentifier ItemID = GetPlayer()->GetEquippedItemID(EquipID, m_ID);
+		ItemIdentifier ItemID = pPlayer->GetEquippedItemID(EquipID, m_ID);
 		while(ItemID >= 1)
 		{
-			CPlayerItem* pPlayerItem = GetPlayer()->GetItem(ItemID);
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 			pPlayerItem->SetSettings(0);
-			ItemID = GetPlayer()->GetEquippedItemID(EquipID, m_ID);
+			ItemID = pPlayer->GetEquippedItemID(EquipID, m_ID);
 		}
 	}
 
-	if(GetPlayer()->GetCharacter())
-		GetPlayer()->GetCharacter()->UpdateEquipingStats(m_ID);
-	
+	if(pPlayer->GetCharacter())
+		pPlayer->GetCharacter()->UpdateEquipingStats(m_ID);
+
+	// achievement for item
+	pPlayer->UpdateAchievement(ACHIEVEMENT_EQUIP, m_ID, m_Settings, PROGRESS_SET);
+
 	// run event equip and unequip
-	Info()->RunEvent(GetPlayer(), m_Settings ? CItemDescription::OnEventEquip : CItemDescription::OnEventUnequip);
+	Info()->RunEvent(pPlayer, m_Settings ? CItemDescription::OnEventEquip : CItemDescription::OnEventUnequip);
 	GS()->MarkUpdatedBroadcast(m_ClientID);
 	return SaveItem ? Save() : true;
 }

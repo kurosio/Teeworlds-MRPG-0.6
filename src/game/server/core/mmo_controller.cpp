@@ -9,6 +9,7 @@
 #include "components/Accounts/AccountManager.h"
 #include "components/Accounts/AccountMiningManager.h"
 #include "components/Accounts/AccountFarmingManager.h"
+#include "components/achievements/achievement_manager.h"
 #include "components/Auction/AuctionManager.h"
 #include "components/aethernet/aethernet_manager.h"
 #include "components/Bots/BotManager.h"
@@ -67,6 +68,7 @@ inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, Vo
 CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
+	m_System.add(m_pAchievementManager = new CAchievementManager);
 	m_System.add(m_pQuestManager = new CQuestManager);
 	m_System.add(m_pBotManager = new CBotManager);
 	m_System.add(m_pInventoryManager = new CInventoryManager);
@@ -536,6 +538,10 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	else if(Table == SAVE_LANGUAGE)
 	{
 		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pAcc->GetID());
+	}
+	else if(Table == SAVE_ACHIEVEMENTS)
+	{
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '%s' WHERE ID = '%d'", pAcc->GetAchievementsData().dump().c_str(), pAcc->GetID());
 	}
 	else
 	{

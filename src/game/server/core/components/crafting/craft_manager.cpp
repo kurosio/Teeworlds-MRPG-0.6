@@ -106,6 +106,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 		pPlayer->GetItem(RequiredItem)->Remove(RequiredItem.GetValue());
 	}
 
+	// add craft item
 	const int CraftGetValue = pCraft->GetItem()->GetValue();
 	pPlayerCraftItem->Add(CraftGetValue);
 	if(pPlayerCraftItem->Info()->IsEnchantable())
@@ -117,6 +118,8 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 		GS()->Chat(ClientID, "You crafted [{}x{}].", pPlayerCraftItem->Info()->GetName(), CraftGetValue);
 	}
 
+	// achievement
+	pPlayer->UpdateAchievement(ACHIEVEMENT_CRAFT_ITEM, pCraft->GetID(), CraftGetValue, PROGRESS_ADD);
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 
