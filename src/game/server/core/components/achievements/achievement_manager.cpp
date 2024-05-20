@@ -25,7 +25,7 @@ void CAchievementManager::OnInit()
 
 	// sort achievements by name
 	std::sort(CAchievementInfo::Data().begin(), CAchievementInfo::Data().end(),
-        [](const CAchievementInfo* p1, const CAchievementInfo* p2) { return std::string_view(p1->GetName()) < std::string_view(p2->GetName()); });
+		[](const CAchievementInfo* p1, const CAchievementInfo* p2) { return std::string_view(p1->GetName()) < std::string_view(p2->GetName()); });
 }
 
 void CAchievementManager::OnResetClient(int ClientID)
@@ -67,33 +67,33 @@ bool CAchievementManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 
 void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 {
-    // check valid player
-    if (!pPlayer)
-        return;
+	// check valid player
+	if (!pPlayer)
+		return;
 
-    // initialize variables
-    int ClientID = pPlayer->GetCID();
+	// initialize variables
+	int ClientID = pPlayer->GetCID();
 
-    // information
-    VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
-    VInfo.Add("You can complete achievements and earn rewards.");
-    VoteWrapper::AddEmptyline(ClientID);
+	// information
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
+	VInfo.Add("You can complete achievements and earn rewards.");
+	VoteWrapper::AddEmptyline(ClientID);
 
-    // show group achievements
-    int Percentage = translate_to_percent(GetCount(), GetCompletedCount(ClientID));
-    VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2654 Achievements (completed {}%)", Percentage);
+	// show group achievements
+	int Percentage = translate_to_percent(GetCount(), GetCompletedCount(ClientID));
+	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2654 Achievements (completed {}%)", Percentage);
 
-    int CompletedGeneral = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_GENERAL);
-    int TotalGeneral = GetCountByGroup(ACHIEVEMENT_GROUP_GENERAL);
-    VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_GENERAL, "General ({} of {})", CompletedGeneral, TotalGeneral);
+	int CompletedGeneral = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_GENERAL);
+	int TotalGeneral = GetCountByGroup(ACHIEVEMENT_GROUP_GENERAL);
+	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_GENERAL, "General ({} of {})", CompletedGeneral, TotalGeneral);
 
-    int CompletedBattle = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_BATTLE);
-    int TotalBattle = GetCountByGroup(ACHIEVEMENT_GROUP_BATTLE);
-    VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_BATTLE, "Battle ({} of {})", CompletedBattle, TotalBattle);
+	int CompletedBattle = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_BATTLE);
+	int TotalBattle = GetCountByGroup(ACHIEVEMENT_GROUP_BATTLE);
+	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_BATTLE, "Battle ({} of {})", CompletedBattle, TotalBattle);
 
-    int CompletedItems = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_ITEMS);
-    int TotalItems = GetCountByGroup(ACHIEVEMENT_GROUP_ITEMS);
-    VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_ITEMS, "Items ({} of {})", CompletedItems, TotalItems);
+	int CompletedItems = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_ITEMS);
+	int TotalItems = GetCountByGroup(ACHIEVEMENT_GROUP_ITEMS);
+	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_ITEMS, "Items ({} of {})", CompletedItems, TotalItems);
 }
 
 void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
@@ -211,24 +211,24 @@ void CAchievementManager::UpdateAchievement(CPlayer* pPlayer, int Type, int Misc
 		return;
 
 	// initialize variables
-    bool Updated = false;
-    auto& pAchievements = CAchievement::Data()[pPlayer->GetCID()];
+	bool Updated = false;
+	auto& pAchievements = CAchievement::Data()[pPlayer->GetCID()];
 
 	// search for the achievement
-    for(auto& pAchievement : pAchievements)
-    {
+	for(auto& pAchievement : pAchievements)
+	{
 		// initialize variables
-        const auto achievementType = pAchievement->Info()->GetType();
-        const auto achievementMisc = pAchievement->Info()->GetMisc();
+		const auto achievementType = pAchievement->Info()->GetType();
+		const auto achievementMisc = pAchievement->Info()->GetMisc();
 
-        if(achievementType == Type && achievementMisc == Misc && !pAchievement->IsCompleted())
-        {
-            if(pAchievement->UpdateProgress(Misc, Value, ProgressType))
-                Updated = true;
-        }
-    }
+		if(achievementType == Type && achievementMisc == Misc && !pAchievement->IsCompleted())
+		{
+			if(pAchievement->UpdateProgress(Misc, Value, ProgressType))
+				Updated = true;
+		}
+	}
 
-    // update the achievement progress in the database
+	// update the achievement progress in the database
 	if(Updated)
 		GS()->Core()->SaveAccount(pPlayer, SAVE_ACHIEVEMENTS);
 }
