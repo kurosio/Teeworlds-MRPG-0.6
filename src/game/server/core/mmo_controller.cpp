@@ -174,6 +174,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.AddMenu(MENU_SETTINGS, "\u2699 Settings");
 		VPersonal.AddMenu(MENU_MAILBOX, "\u2709 Mailbox");
 		VPersonal.AddMenu(MENU_JOURNAL_MAIN, "\u270D Journal");
+		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		VPersonal.AddIfMenu(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
 		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		VPersonal.AddIfMenu(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");

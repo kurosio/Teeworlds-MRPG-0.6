@@ -14,7 +14,7 @@ class CAchievementManager : public MmoComponent
 		for(auto& p : CAchievement::Data())
 		{
 			for(auto& pAchievement : p.second)
-				delete pAchievement.second;
+				delete pAchievement;
 		}
 		CAchievement::Data().clear();
 
@@ -30,7 +30,14 @@ class CAchievementManager : public MmoComponent
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
+	void ShowMenu(CPlayer* pPlayer) const;
+	void ShowGroupMenu(CPlayer* pPlayer, int Group) const;
+
 public:
+	int GetCountByGroup(int Group) const;
+	int GetCompletedCountByGroup(int ClientID, int Group) const;
+	int GetCount() const;
+	int GetCompletedCount(int ClientID) const;
 	void UpdateAchievement(CPlayer* pPlayer, int Type, int Misc, int Value, int AppendProgress) const;
 };
 

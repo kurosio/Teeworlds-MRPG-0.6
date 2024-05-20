@@ -31,6 +31,14 @@ enum AchievementType
 	ACHIEVEMENT_CRAFT_ITEM,
 	ACHIEVEMENT_UNLOCK_WORLD,
 	ACHIEVEMENT_LEVELING,
+	NUM_ACHIEVEMENT_TYPES,
+};
+
+enum
+{
+	ACHIEVEMENT_GROUP_GENERAL = 0,
+	ACHIEVEMENT_GROUP_BATTLE,
+	ACHIEVEMENT_GROUP_ITEMS
 };
 
 // achievement information data
@@ -38,8 +46,10 @@ class CAchievementInfo : public MultiworldIdentifiableStaticData< std::deque<CAc
 {
 	int m_ID {};
 	int m_Type {};
+	int m_Group {};
 	std::string m_aName {};
 	std::string m_aDescription {};
+	nlohmann::json m_RewardData {};
 	int m_Misc {NOPE};
 	int m_MiscRequired {};
 
@@ -59,24 +69,27 @@ public:
 	const char* GetName() const { return m_aName.c_str(); }
 	const char* GetDescription() const { return m_aDescription.c_str(); }
 	int GetType() const { return m_Type; }
+	int GetGroup() const { return m_Group; }
+	nlohmann::json& GetRewardData() { return m_RewardData; }
+	bool RewardExists() const { return !m_RewardData.empty(); }
 
 	// initalize the Aether data
-	void Init(const std::string& pName, const std::string& pDescription, int Type, const std::string& Data)
+	void Init(const std::string& pName, const std::string& pDescription, int Type, const std::string& CriteriaData, const std::string& RewardData)
 	{
 		m_aName = pName;
 		m_aDescription = pDescription;
 		m_Type = Type;
 
-		InitCriteriaJson(Data);
+		InitData(CriteriaData, RewardData);
 	}
-	void InitCriteriaJson(const std::string& JsonData);
+	void InitData(const std::string& CriteriaData, const std::string& RewardData);
 
 	// check if the achievement is completed
 	bool CheckAchievement(int Value, const CAchievement* pAchievement) const;
 };
 
 // achievement data
-class CAchievement : public MultiworldIdentifiableStaticData< std::map< int, ska::unordered_map<int, CAchievement* > > >
+class CAchievement : public MultiworldIdentifiableStaticData< std::map< int, std::deque< CAchievement* > > >
 {
 	friend class CAchievementInfo;
 	friend class CAchievementManager;
@@ -87,6 +100,7 @@ class CAchievement : public MultiworldIdentifiableStaticData< std::map< int, ska
 	CAchievementInfo* m_pInfo {};
 	int m_ClientID {};
 	int m_Progress {};
+	bool m_NotifiedSoonComplete {};
 	bool m_Completed {};
 
 public:
@@ -95,7 +109,7 @@ public:
 	static CAchievement* CreateElement(CAchievementInfo* pInfo, int ClientID)
 	{
 		const auto pData = new CAchievement(pInfo, ClientID);
-		return m_pData[ClientID][pInfo->GetID()] = pData;
+		return m_pData[ClientID].emplace_back(pData);
 	}
 
 	// initalize the Aether data
@@ -107,6 +121,7 @@ public:
 
 	CAchievementInfo* Info() const { return m_pInfo; }
 	bool IsCompleted() const { return m_Completed; }
+	int GetProgress() const { return m_Progress; }
 
 	bool UpdateProgress(int Misc, int Value, int ProgressType);
 };

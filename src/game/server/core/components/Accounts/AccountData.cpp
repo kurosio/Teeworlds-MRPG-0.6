@@ -83,26 +83,29 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 
 void CAccountData::InitAchievements(const std::string& Data)
 {
-	// initialize base achievements
-	for(auto& pAchievement : CAchievementInfo::Data())
-		CAchievement::CreateElement(pAchievement, m_pPlayer->GetCID());
+	// initialize player base
+	std::map<int, CAchievement*> m_apReferenceMap {};
+	for(const auto& pAchievement : CAchievementInfo::Data())
+	{
+		const int AchievementID = pAchievement->GetID();
+		m_apReferenceMap[AchievementID] = CAchievement::CreateElement(pAchievement, m_pPlayer->GetCID());
+	}
 
-	// initialize achievements by player data
-	int ClientID = m_pPlayer->GetCID();
-	Tools::Json::parseFromString(Data, [&ClientID, this](nlohmann::json& pJson)
+	// initialize player achievements
+	Tools::Json::parseFromString(Data, [&m_apReferenceMap, this](nlohmann::json& pJson)
 	{
 		for(auto& p : pJson)
 		{
 			int AchievementID = p.value("aid", -1);
 			int Progress = p.value("progress", 0);
 			bool Completed = p.value("completed", false);
-
-			auto& pvAchievements = CAchievement::Data()[ClientID];
-			if(pvAchievements.find(AchievementID) != pvAchievements.end())
-				pvAchievements[AchievementID]->Init(Progress, Completed);
+			m_apReferenceMap[AchievementID]->Init(Progress, Completed);
 		}
-		m_AchivementsData = pJson;
+		m_AchivementsData = std::move(pJson);
 	});
+
+	// clear reference map
+	m_apReferenceMap.clear();
 }
 
 void CAccountData::UpdatePointer(CPlayer* pPlayer)

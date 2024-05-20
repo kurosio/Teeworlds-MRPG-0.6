@@ -25,6 +25,7 @@ class CCraftManager : public MmoComponent
 	// craft item
 	void CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
 
+public:
 	// get craft item by id
 	CCraftItem* GetCraftByID(CraftIdentifier ID) const;
 
