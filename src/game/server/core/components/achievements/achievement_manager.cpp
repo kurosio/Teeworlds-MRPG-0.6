@@ -109,13 +109,17 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 	if(!pPlayer)
 		return;
 
-	// information
+	// initialize variables
 	int ClientID = pPlayer->GetCID();
+	const char* pGroupName[] = { "General", "Battle", "Items" };
+
+	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
 	VInfo.Add("Select an achievement from the list to get conditions.");
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show all the achievements by group
+	VoteWrapper(ClientID).Add("\u2263 {} achievements", pGroupName[Group]);
 	auto& pAchievements = CAchievement::Data()[ClientID];
 	for(auto& pAchievement : pAchievements)
 	{
@@ -132,7 +136,7 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 
 		// show achievement
 		VoteWrapper VAchievement(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{} ({}ap) {}{}", (Completed ? "✔" : "×"),
-			pAchievement->Info()->GetAchievementPoint(), pAchievement->Info()->GetName(), (RewardExists ? " : Has reward" : "\0"));
+			pAchievement->Info()->GetAchievementPoint(), pAchievement->Info()->GetName(), (RewardExists ? " : Reward" : "\0"));
 		if(Type == ACHIEVEMENT_RECEIVE_ITEM)
 		{
 			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetMisc());

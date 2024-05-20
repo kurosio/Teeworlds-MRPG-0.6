@@ -99,7 +99,9 @@ void CAccountData::InitAchievements(const std::string& Data)
 			int AchievementID = p.value("aid", -1);
 			int Progress = p.value("progress", 0);
 			bool Completed = p.value("completed", false);
-			m_apReferenceMap[AchievementID]->Init(Progress, Completed);
+
+			if(m_apReferenceMap.find(AchievementID) != m_apReferenceMap.end())
+				m_apReferenceMap[AchievementID]->Init(Progress, Completed);
 		}
 		m_AchivementsData = std::move(pJson);
 	});
