@@ -17,10 +17,11 @@ void CAchievementManager::OnInit()
 		std::string Description = pResult->getString("Description").c_str();
 		std::string Criteria = pResult->getString("Criteria").c_str();
 		std::string Reward = pResult->getString("Reward").c_str();
+		int AchievementPoint = pResult->getInt("AchievementPoint");
 
 		// create element
 		auto* pAchievement = CAchievementInfo::CreateElement(ID);
-		pAchievement->Init(Name, Description, Type, Criteria, Reward);
+		pAchievement->Init(Name, Description, Type, Criteria, Reward, AchievementPoint);
 	}
 
 	// sort achievements by name
@@ -79,10 +80,17 @@ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 	VInfo.Add("You can complete achievements and earn rewards.");
 	VoteWrapper::AddEmptyline(ClientID);
 
-	// show group achievements
-	int Percentage = translate_to_percent(GetCount(), GetCompletedCount(ClientID));
-	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2654 Achievements (completed {}%)", Percentage);
+	// main
+	int TotalAchievements = GetCount();
+	int TotalCompleted = GetCompletedCount(ClientID);
+	int Percentage = translate_to_percent(TotalAchievements, TotalCompleted);
+	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT|VWF_SEPARATE, "\u2654 Main information");
+	VMain.Add("{} of {} completed (progress {}%)", TotalCompleted, TotalAchievements, Percentage);
+	VMain.Add("Achievement points: {}p", pPlayer->GetItem(itAchievementPoint)->GetValue());
+	VoteWrapper::AddEmptyline(ClientID);
 
+	// show group
+	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2059 Achievements groups");
 	int CompletedGeneral = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_GENERAL);
 	int TotalGeneral = GetCountByGroup(ACHIEVEMENT_GROUP_GENERAL);
 	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_GENERAL, "General ({} of {})", CompletedGeneral, TotalGeneral);
