@@ -109,14 +109,14 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 	if(!pPlayer)
 		return;
 
-	// initialize variables
+	// information
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VAchievement(ClientID, VWF_STYLE_SIMPLE);
-	VAchievement.AddLine();
-
-	auto& pAchievements = CAchievement::Data()[ClientID];
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
+	VInfo.Add("Select an achievement from the list to get conditions.");
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// show all the achievements by group
+	auto& pAchievements = CAchievement::Data()[ClientID];
 	for(auto& pAchievement : pAchievements)
 	{
 		// initialize variables
@@ -131,7 +131,7 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 			continue;
 
 		// show achievement
-		VAchievement.Add("{} ({}ap) {}{}", (Completed ? "✔" : "×"), 
+		VoteWrapper VAchievement(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{} ({}ap) {}{}", (Completed ? "✔" : "×"),
 			pAchievement->Info()->GetAchievementPoint(), pAchievement->Info()->GetName(), (RewardExists ? " : Has reward" : "\0"));
 		if(Type == ACHIEVEMENT_RECEIVE_ITEM)
 		{
@@ -184,7 +184,6 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 			if(CCraftItem* pItem = Core()->CraftManager()->GetCraftByID(pAchievement->Info()->GetMisc()))
 				VAchievement.Add("Craft {}/{} {}", Progress, Required, pItem->GetItem()->Info()->GetName());
 		}
-		VAchievement.AddLine();
 	}
 }
 
