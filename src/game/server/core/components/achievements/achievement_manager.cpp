@@ -14,14 +14,13 @@ void CAchievementManager::OnInit()
 		int ID = pResult->getInt("ID");
 		int Type = pResult->getInt("Type");
 		std::string Name = pResult->getString("Name").c_str();
-		std::string Description = pResult->getString("Description").c_str();
 		std::string Criteria = pResult->getString("Criteria").c_str();
 		std::string Reward = pResult->getString("Reward").c_str();
 		int AchievementPoint = pResult->getInt("AchievementPoint");
 
 		// create element
 		auto* pAchievement = CAchievementInfo::CreateElement(ID);
-		pAchievement->Init(Name, Description, Type, Criteria, Reward, AchievementPoint);
+		pAchievement->Init(Name, Type, Criteria, Reward, AchievementPoint);
 	}
 
 	// sort achievements by name
@@ -132,8 +131,8 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 			continue;
 
 		// show achievement
-		VAchievement.Add("{} {}{}", (Completed ? "✔" : "×"), pAchievement->Info()->GetName(), (RewardExists ? " : Has reward" : "\0"));
-		VAchievement.Add("{}", pAchievement->Info()->GetDescription());
+		VAchievement.Add("{} ({}ap) {}{}", (Completed ? "✔" : "×"), 
+			pAchievement->Info()->GetAchievementPoint(), pAchievement->Info()->GetName(), (RewardExists ? " : Has reward" : "\0"));
 		if(Type == ACHIEVEMENT_RECEIVE_ITEM)
 		{
 			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetMisc());

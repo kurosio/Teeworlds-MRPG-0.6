@@ -15,8 +15,8 @@ void CAchievementInfo::InitData(const std::string& CriteriaData, const std::stri
 	// parse the criteria data
 	Tools::Json::parseFromString(CriteriaData, [this](nlohmann::json& pJson)
 	{
-		m_Misc = pJson.value("value1", 0);
-		m_MiscRequired = pJson.value("value2", 0);
+		m_Misc = pJson.value("value1", NOPE);
+		m_MiscRequired = pJson.value("value2", NOPE);
 	});
 
 	// parse the reward data
