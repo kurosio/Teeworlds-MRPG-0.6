@@ -52,6 +52,7 @@ class CAchievementInfo : public MultiworldIdentifiableStaticData< std::deque<CAc
 	nlohmann::json m_RewardData {};
 	int m_Misc {NOPE};
 	int m_MiscRequired {};
+	int m_AchievementPoint {};
 
 public:
 	explicit CAchievementInfo(int ID) : m_ID(ID) {}
@@ -66,6 +67,7 @@ public:
 	int GetID() const { return m_ID; }
 	int GetMisc() const { return m_Misc; }
 	int GetMiscRequired() const { return m_MiscRequired; }
+	int GetAchievementPoint() const { return m_AchievementPoint; }
 	const char* GetName() const { return m_aName.c_str(); }
 	const char* GetDescription() const { return m_aDescription.c_str(); }
 	int GetType() const { return m_Type; }
@@ -74,11 +76,12 @@ public:
 	bool RewardExists() const { return !m_RewardData.empty(); }
 
 	// initalize the Aether data
-	void Init(const std::string& pName, const std::string& pDescription, int Type, const std::string& CriteriaData, const std::string& RewardData)
+	void Init(const std::string& pName, const std::string& pDescription, int Type, const std::string& CriteriaData, const std::string& RewardData, int AchievementPoint)
 	{
 		m_aName = pName;
 		m_aDescription = pDescription;
 		m_Type = Type;
+		m_AchievementPoint = AchievementPoint;
 
 		InitData(CriteriaData, RewardData);
 	}

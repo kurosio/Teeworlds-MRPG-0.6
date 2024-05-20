@@ -132,6 +132,14 @@ bool CAchievement::UpdateProgress(int Misc, int Value, int ProgressType)
 			}
 		}
 
+		// achievement point
+		if(m_pInfo->GetAchievementPoint() > 0)
+		{
+			auto* pPlayerItem = pPlayer->GetItem(itAchievementPoint);
+			pPlayerItem->Add(m_pInfo->GetAchievementPoint());
+			GS()->Chat(m_ClientID, "You received {}({}) achievement points!", m_pInfo->GetAchievementPoint(), pPlayerItem->GetValue());
+		}
+
 		// send msg
 		GS()->CreateHammerHit(pPlayer->m_ViewPos);
 		GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);

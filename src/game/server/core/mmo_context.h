@@ -333,11 +333,11 @@ enum
 	itMaterial = 7,						// Scraping material
 	itProduct = 8,						// Scraping material
 	itSkillPoint = 9,					// Skillpoint
+	itAchievementPoint = 10,			// Achievement point
 	itPotionManaRegen = 14,				// Mana regeneration potion
 	itTinyHealthPotion = 15,			// Tiny health potion
 	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
 	itLittleBagGold = 17,				// Gives 10-50 gold
-	itDamageEqualizer = 18,				// Module for dissable self dmg
 	itExplosiveGun = 19,				// Explosion for gun
 	itExplosiveShotgun = 20,			// Explosion for shotgun
 	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
@@ -357,6 +357,7 @@ enum
 	itAdventurersBadge = 92,			// The adventurer's badge
 	itTicketGuild = 95,					// Ticket for the creation of the guild
 	itCustomizer = 96,                  // Curomizer for personal skins
+	itDamageEqualizer = 97,				// Module for dissable self dmg
 
 	// decoration items
 	itPickupHealth = 10,					// Pickup heart
