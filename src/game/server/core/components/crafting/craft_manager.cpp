@@ -39,16 +39,16 @@ void CCraftManager::OnInit()
 	Core()->ShowLoadingProgress("Craft item's", (int)CCraftItem::Data().size());
 }
 
-bool CCraftManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CCraftManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_CRAFT_ZONE))
+	if (pChr->GetTiles()->IsEnter(TILE_CRAFT_ZONE))
 	{
 		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_CRAFT_LIST);
 		return true;
 	}
-	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_CRAFT_ZONE))
+	else if (pChr->GetTiles()->IsExit(TILE_CRAFT_ZONE))
 	{
 		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;

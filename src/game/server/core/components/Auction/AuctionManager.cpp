@@ -15,17 +15,17 @@ void CAuctionManager::OnTick()
 {
 }
 
-bool CAuctionManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CAuctionManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
-	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_AUCTION))
+	if (pChr->GetTiles()->IsEnter(TILE_AUCTION))
 	{
 		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AUCTION_LIST);
 		return true;
 	}
 
-	if (pChr->GetHelper()->TileExit(IndexCollision, TILE_AUCTION))
+	if (pChr->GetTiles()->IsExit(TILE_AUCTION))
 	{
 		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;

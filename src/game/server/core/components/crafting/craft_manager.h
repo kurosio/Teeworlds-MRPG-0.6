@@ -14,7 +14,7 @@ class CCraftManager : public MmoComponent
 	};
 
 	void OnInit() override;
-	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
+	bool OnHandleTile(CCharacter* pChr) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 

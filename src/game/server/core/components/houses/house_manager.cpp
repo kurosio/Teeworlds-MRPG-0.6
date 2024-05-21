@@ -55,17 +55,17 @@ void CHouseManager::OnHandleTimePeriod(TIME_PERIOD Period)
 		p->HandleTimePeriod(Period);
 }
 
-bool CHouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CHouseManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
 
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_PLAYER_HOUSE))
+	if(pChr->GetTiles()->IsEnter(TILE_PLAYER_HOUSE))
 	{
 		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_HOUSE_BUY);
 		return true;
 	}
-	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_PLAYER_HOUSE))
+	if(pChr->GetTiles()->IsExit(TILE_PLAYER_HOUSE))
 	{
 		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;

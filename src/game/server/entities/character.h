@@ -14,7 +14,7 @@ class CCharacter : public CEntity
 
 	// player controlling this character
 	class CPlayer *m_pPlayer;
-	TileHandle *m_pHelper;
+	CTileHandler *m_pTilesHandler;
 
 	int m_Event;
 	int m_LastWeapon;
@@ -77,7 +77,7 @@ protected:
 
 	void HandleWeapons();
 	void HandleNinja();
-	void HandleTilesets(int *pIndex = nullptr);
+	void HandleTilesets();
 	void HandleEvent();
 	void HandleIndependentTuning();
 
@@ -91,7 +91,7 @@ public:
 	~CCharacter() override;
 
 	CPlayer *GetPlayer() const { return m_pPlayer; }
-	TileHandle *GetHelper() const { return m_pHelper; }
+	CTileHandler *GetTiles() const { return m_pTilesHandler; }
 
 	void Tick() override;
 	void TickDeferred() override;

@@ -83,7 +83,7 @@ public:
 	// global systems
 	void OnTick();
 	bool OnMessage(int MsgID, void* pRawMsg, int ClientID);
-	bool OnPlayerHandleTile(CCharacter *pChr, int IndexCollision);
+	bool OnPlayerHandleTile(CCharacter *pChr);
 	bool OnPlayerHandleMainMenu(int ClientID, int Menulist);
 	void OnInitAccount(int ClientID);
 	bool OnParsingVoteCommands(CPlayer *pPlayer, const char *CMD, int VoteID, int VoteID2, int Get, const char *GetText);

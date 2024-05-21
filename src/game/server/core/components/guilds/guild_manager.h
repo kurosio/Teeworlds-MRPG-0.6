@@ -28,7 +28,7 @@ class CGuildManager : public MmoComponent
 	void OnInit() override;
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 	void OnTick() override;
-	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
+	bool OnHandleTile(CCharacter* pChr) override;
 	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
 	void OnHandleTimePeriod(TIME_PERIOD Period) override;

@@ -45,17 +45,17 @@ void CWarehouseManager::OnTick()
 }
 
 // Warehouse manager handle tile
-bool CWarehouseManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CWarehouseManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
 	// shop zone
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_SHOP_ZONE))
+	if(pChr->GetTiles()->IsEnter(TILE_SHOP_ZONE))
 	{
 		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_WAREHOUSE);
 		return true;
 	}
-	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_SHOP_ZONE))
+	else if(pChr->GetTiles()->IsExit(TILE_SHOP_ZONE))
 	{
 		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;

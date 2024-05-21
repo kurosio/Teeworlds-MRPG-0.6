@@ -332,14 +332,14 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	return false;
 }
 
-bool CMmoController::OnPlayerHandleTile(CCharacter* pChr, int IndexCollision)
+bool CMmoController::OnPlayerHandleTile(CCharacter* pChr)
 {
 	if(!pChr || !pChr->IsAlive())
 		return true;
 
 	for(auto& pComponent : m_System.m_vComponents)
 	{
-		if(pComponent->OnHandleTile(pChr, IndexCollision))
+		if(pComponent->OnHandleTile(pChr))
 			return true;
 	}
 	return false;

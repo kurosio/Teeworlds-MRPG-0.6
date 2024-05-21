@@ -23,7 +23,7 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 	: CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER, vec2(0, 0), ms_PhysSize)
 {
 	m_pMultipleOrbite = nullptr;
-	m_pHelper = new TileHandle();
+	m_pTilesHandler = new CTileHandler(pWorld->GS(), this);
 	m_DoorHit = false;
 	m_Health = 0;
 	m_TriggeredEvents = 0;
@@ -32,7 +32,7 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 CCharacter::~CCharacter()
 {
 	/* multiple orbite destroyed inside self */
-	delete m_pHelper;
+	delete m_pTilesHandler;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
 }
 
@@ -637,23 +637,18 @@ void CCharacter::Tick()
 		return;
 	}
 
-	// handle player
+	// handler's
 	HandlePlayer();
+	HandleTilesets();
+	HandleWeapons();
+	HandleTuning();
 
-	// handle tiles
-	// safe change world data from tick
-	int Index = TILE_AIR;
-	HandleTilesets(&Index);
-	if(GetHelper()->TileEnter(Index, TILE_WORLD_SWAP))
+	// to end the tick on the destroy caused by the change of worlds
+	if(GetTiles()->IsEnter(TILE_WORLD_SWAP))
 	{
 		GS()->GetWorldData()->Move(m_pPlayer);
 		return;
 	}
-	else if(GetHelper()->TileExit(Index, TILE_WORLD_SWAP)) { }
-
-	// handle
-	HandleWeapons();
-	HandleTuning();
 
 	// core
 	m_Core.m_Input = m_Input;
@@ -1103,45 +1098,34 @@ void CCharacter::PostSnap()
 	m_TriggeredEvents = 0;
 }
 
-void CCharacter::HandleTilesets(int* pIndex)
+void CCharacter::HandleTilesets()
 {
-	// get index tileset char pos component items
-	const int Tile = GS()->Collision()->GetParseTilesAt(m_Core.m_Pos.x, m_Core.m_Pos.y);
-	if(pIndex)
-	{
-		(*pIndex) = Tile;
-	}
+	// handle tilesets
+	m_pTilesHandler->Handler();
 
-	if(!m_pPlayer->IsBot() && GS()->Core()->OnPlayerHandleTile(this, Tile))
+	// check from components
+	if(!m_pPlayer->IsBot() && GS()->Core()->OnPlayerHandleTile(this))
 		return;
 
-	// next for all bots & players
-	for(int i = TILE_CLEAR_EVENTS; i <= TILE_EVENT_HEALTH; i++)
-	{
-		if(m_pHelper->TileEnter(Tile, i))
-			SetEvent(i);
-		else if(m_pHelper->TileExit(Tile, i)) { }
-	}
+	// initialize variables
+	int ClientID = m_pPlayer->GetCID();
 
 	// water effect enter exit
-	int ClientID = m_pPlayer->GetCID();
-	if(m_pHelper->TileEnter(Tile, TILE_WATER) || m_pHelper->TileExit(Tile, TILE_WATER))
-	{
+	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
 		GS()->CreateDeath(m_Core.m_Pos, ClientID);
-	}
 
 	// chairs
-	if(GetHelper()->TileEnter(Tile, TILE_CHAIR))
-	{
+	if(m_pTilesHandler->IsEnter(TILE_CHAIR) || m_pTilesHandler->IsExit(TILE_CHAIR))
 		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(ClientID));
-	}
-	else if(GetHelper()->TileExit(Tile, TILE_CHAIR))
-	{
-		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(ClientID));
-	}
-
-	if(GetHelper()->BoolIndex(TILE_CHAIR))
+	if(GetTiles()->IsActive(TILE_CHAIR))
 		m_pPlayer->Account()->HandleChair();
+
+	// tile events
+	for(int i = TILE_CLEAR_EVENTS; i <= TILE_EVENT_HEALTH; i++)
+	{
+		if(m_pTilesHandler->IsEnter(i))
+			SetEvent(i);
+	}
 }
 
 void CCharacter::HandleEvent()
@@ -1220,7 +1204,7 @@ void CCharacter::HandleIndependentTuning()
 	CTuningParams* pTuningParams = &m_pPlayer->m_NextTuningParams;
 
 	// water
-	if(m_pHelper->BoolIndex(TILE_WATER))
+	if(m_pTilesHandler->IsActive(TILE_WATER))
 	{
 		pTuningParams->m_Gravity = -0.05f;
 		pTuningParams->m_GroundFriction = 0.95f;

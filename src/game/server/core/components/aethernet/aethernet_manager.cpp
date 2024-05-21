@@ -107,19 +107,19 @@ bool CAethernetManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	return false;
 }
 
-bool CAethernetManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CAethernetManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
 	// Check if the character enters the Aether teleport tile
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_AETHER_TELEPORT))
+	if(pChr->GetTiles()->IsEnter(TILE_AETHER_TELEPORT))
 	{
 		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AETHERNET_LIST);
 		UnlockLocationByPos(pChr->GetPlayer(), pChr->m_Core.m_Pos);
 		return true;
 	}
 	// Check if the character exits the Aether teleport tile
-	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_AETHER_TELEPORT))
+	else if(pChr->GetTiles()->IsExit(TILE_AETHER_TELEPORT))
 	{
 		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;

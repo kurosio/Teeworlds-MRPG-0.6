@@ -76,30 +76,22 @@ void CGuildManager::OnTick()
 	}
 }
 
-bool CGuildManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CGuildManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_HOUSE))
+	if(pChr->GetTiles()->IsEnter(TILE_GUILD_HOUSE))
 	{
 		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_GUILD_HOUSE_PURCHASE);
 		return true;
 	}
-	if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_HOUSE))
+	if(pChr->GetTiles()->IsExit(TILE_GUILD_HOUSE))
 	{
 		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_GUILD_CHAIR))
-	{
-		return true;
-	}
-	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_GUILD_CHAIR))
-	{
-		return true;
-	}
-	if(pChr->GetHelper()->BoolIndex(TILE_GUILD_CHAIR))
+	if(pChr->GetTiles()->IsActive(TILE_GUILD_CHAIR))
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() * 5) == 0)
 		{

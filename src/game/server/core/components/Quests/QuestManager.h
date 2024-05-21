@@ -43,7 +43,7 @@ class CQuestManager : public MmoComponent
 	void OnResetClient(int ClientID) override;
 
 	// This function is called when a tile collision is handled by a character
-	bool OnHandleTile(CCharacter* pChr, int IndexCollision) override;
+	bool OnHandleTile(CCharacter* pChr) override;
 
 	// This function is called when a menu list is handled by a player
 	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;

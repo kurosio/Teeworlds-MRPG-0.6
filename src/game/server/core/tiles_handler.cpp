@@ -2,20 +2,42 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "tiles_handler.h"
 
-bool TileHandle::TileEnter(int IndexPlayer, int IndexNeed)
+#include <game/server/gamecontext.h>
+#include <game/server/entities/character.h>
+
+void CTileHandler::Handler()
 {
-	if(IndexPlayer == IndexNeed && !m_Collide[IndexNeed])
+	// initialize variables
+	const int Index = m_pGS->Collision()->GetParseTilesAt(m_pCharacter->m_Core.m_Pos.x, m_pCharacter->m_Core.m_Pos.y);
+
+	// check valid index
+	if(Index < 0 || Index >= MAX_TILES)
+		return;
+
+	// update to new index
+	if(m_Marked != Index)
 	{
-		m_Collide[IndexNeed] = true;
+		m_MarkEnter = Index;
+		m_MarkExit = m_Marked;
+		m_Marked = Index;
+	}
+}
+
+bool CTileHandler::IsEnter(int Index)
+{
+	if (Index == m_MarkEnter)
+	{
+		m_MarkEnter = TILE_AIR;
 		return true;
 	}
 	return false;
 }
-bool TileHandle::TileExit(int IndexPlayer, int IndexNeed)
+
+bool CTileHandler::IsExit(int Index)
 {
-	if(IndexPlayer != IndexNeed && m_Collide[IndexNeed])
+	if(Index == m_MarkExit)
 	{
-		m_Collide[IndexNeed] = false;
+		m_MarkExit = TILE_AIR;
 		return true;
 	}
 	return false;

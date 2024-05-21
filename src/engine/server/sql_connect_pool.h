@@ -105,6 +105,7 @@ private:
 		friend class CConectionPool;
 		std::string m_Query;
 		DB m_TypeQuery;
+
 	public:
 		const char* GetQueryString() const { return m_Query.c_str(); }
 	};
@@ -267,8 +268,6 @@ public:
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery);
-
-		// checking format query
 		return std::move(PrepareQuerySelect(T, pSelect, pTable, strQuery));
 	}
 
@@ -277,9 +276,6 @@ public:
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery);
-		dbg_msg("test", "%s", strQuery.c_str());
-
-		// checking format query
 		return PrepareQuerySelect(T, pSelect, pTable, strQuery)->Execute();
 	}
 
@@ -302,8 +298,6 @@ public:
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery);
-
-		// checking format query
 		return std::move(PrepareQueryCustom(T, strQuery));
 	}
 
@@ -312,8 +306,6 @@ public:
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery);
-
-		// checking format query
 		PrepareQueryCustom(T, strQuery)->Execute(Milliseconds);
 	}
 
@@ -341,8 +333,6 @@ public:
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery);
-
-		// checking format query
 		return std::move(PrepareQueryInsertUpdateDelete(T, pTable, strQuery));
 	}
 
@@ -351,8 +341,6 @@ public:
 	{
 		std::string strQuery;
 		FORMAT_STRING_ARGS(pBuffer, strQuery);
-
-		// checking format query
 		PrepareQueryInsertUpdateDelete(T, pTable, strQuery)->Execute(Milliseconds);
 	}
 };
