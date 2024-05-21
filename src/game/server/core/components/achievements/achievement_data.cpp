@@ -7,18 +7,8 @@
 
 #include "achievement_data.h"
 
-void CAchievementInfo::InitData(const std::string& CriteriaData, const std::string& RewardData)
+void CAchievementInfo::InitData(const std::string& RewardData)
 {
-	// check if criteria valid
-	dbg_assert(CriteriaData.length() > 0, "empty json data");
-
-	// parse the criteria data
-	Tools::Json::parseFromString(CriteriaData, [this](nlohmann::json& pJson)
-	{
-		m_Misc = pJson.value("value1", NOPE);
-		m_MiscRequired = pJson.value("value2", NOPE);
-	});
-
 	// parse the reward data
 	Tools::Json::parseFromString(RewardData, [this](nlohmann::json& pJson)
 	{
@@ -50,25 +40,27 @@ void CAchievementInfo::InitData(const std::string& CriteriaData, const std::stri
 
 bool CAchievementInfo::CheckAchievement(int Value, const CAchievement* pAchievement) const
 {
-	switch (m_Type)
+	if(m_Criteria == Value || m_Criteria <= 0)
 	{
-		case ACHIEVEMENT_EQUIP:
-		case ACHIEVEMENT_UNLOCK_WORLD:
-			return m_Misc == Value && pAchievement->m_Progress > 0;
-		case ACHIEVEMENT_CRAFT_ITEM:
-		case ACHIEVEMENT_DEFEAT_MOB:
-		case ACHIEVEMENT_RECEIVE_ITEM:
-		case ACHIEVEMENT_HAVE_ITEM:
-			return m_Misc == Value && pAchievement->m_Progress >= m_MiscRequired;
-		case ACHIEVEMENT_DEFEAT_PVE:
-		case ACHIEVEMENT_DEFEAT_PVP:
-		case ACHIEVEMENT_DEATH:
-		case ACHIEVEMENT_TOTAL_DAMAGE:
-		case ACHIEVEMENT_LEVELING:
-			return pAchievement->m_Progress >= m_MiscRequired;
-		default:
-			dbg_assert(false, "unknown achievement type");
+		switch(m_Type)
+		{
+			case ACHIEVEMENT_EQUIP:
+			case ACHIEVEMENT_UNLOCK_WORLD:
+				return pAchievement->m_Progress > 0;
+			case ACHIEVEMENT_CRAFT_ITEM:
+			case ACHIEVEMENT_DEFEAT_MOB:
+			case ACHIEVEMENT_RECEIVE_ITEM:
+			case ACHIEVEMENT_HAVE_ITEM:
+			case ACHIEVEMENT_DEFEAT_PVE:
+			case ACHIEVEMENT_DEFEAT_PVP:
+			case ACHIEVEMENT_DEATH:
+			case ACHIEVEMENT_TOTAL_DAMAGE:
+			case ACHIEVEMENT_LEVELING:
+				return pAchievement->m_Progress >= m_Required;
+			default:
+				 dbg_assert(false, "unknown achievement type");
 			break;
+		}
 	}
 
 	return false;
@@ -95,7 +87,7 @@ bool CAchievement::UpdateProgress(int Misc, int Value, int ProgressType)
 		m_Progress -= Value;
 	else if(ProgressType == PROGRESS_ADD)
 		m_Progress += Value;
-	m_Progress = clamp(m_Progress, 0, m_pInfo->GetMiscRequired());
+	m_Progress = clamp(m_Progress, 0, m_pInfo->GetRequired());
 
 	// check if the achievement is completed
 	if(m_pInfo->CheckAchievement(Misc, this))
@@ -147,7 +139,7 @@ bool CAchievement::UpdateProgress(int Misc, int Value, int ProgressType)
 	}
 	else
 	{
-		int Percent = translate_to_percent(m_pInfo->GetMiscRequired(), m_Progress);
+		int Percent = translate_to_percent(m_pInfo->GetRequired(), m_Progress);
 		if(Percent > 80 && !m_NotifiedSoonComplete)
 		{
 			m_NotifiedSoonComplete = true;

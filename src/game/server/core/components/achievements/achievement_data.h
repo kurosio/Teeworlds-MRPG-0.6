@@ -49,8 +49,8 @@ class CAchievementInfo : public MultiworldIdentifiableStaticData< std::deque<CAc
 	int m_Group {};
 	std::string m_aName {};
 	nlohmann::json m_RewardData {};
-	int m_Misc{};
-	int m_MiscRequired{};
+	int m_Criteria{};
+	int m_Required{};
 	int m_AchievementPoint {};
 
 public:
@@ -64,8 +64,8 @@ public:
 	}
 
 	int GetID() const { return m_ID; }
-	int GetMisc() const { return m_Misc; }
-	int GetMiscRequired() const { return m_MiscRequired; }
+	int GetCriteria() const { return m_Criteria; }
+	int GetRequired() const { return m_Required; }
 	int GetAchievementPoint() const { return m_AchievementPoint; }
 	const char* GetName() const { return m_aName.c_str(); }
 	int GetType() const { return m_Type; }
@@ -74,15 +74,17 @@ public:
 	bool RewardExists() const { return !m_RewardData.empty(); }
 
 	// initalize the Aether data
-	void Init(const std::string& pName, int Type, const std::string& CriteriaData, const std::string& RewardData, int AchievementPoint)
+	void Init(const std::string& pName, int Type, int Criteria, int Required, const std::string& RewardData, int AchievementPoint)
 	{
 		m_aName = pName;
 		m_Type = Type;
+		m_Criteria = Criteria;
+		m_Required = Required;
 		m_AchievementPoint = AchievementPoint;
 
-		InitData(CriteriaData, RewardData);
+		InitData(RewardData);
 	}
-	void InitData(const std::string& CriteriaData, const std::string& RewardData);
+	void InitData(const std::string& RewardData);
 
 	// check if the achievement is completed
 	bool CheckAchievement(int Value, const CAchievement* pAchievement) const;

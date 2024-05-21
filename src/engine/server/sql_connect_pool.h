@@ -33,16 +33,21 @@ enum class DB
 /*
  * defined
  */
-#define MAX_QUERY_LEN 2048
-#define FORMAT_STRING_ARGS(format, output, len) \
-{                                               \
-	va_list ap;                                 \
-	char buffer[len];                           \
-	va_start(ap, format);                       \
-	vsprintf(buffer, format, ap);               \
-	buffer[len - 1] = 0;						\
-	va_end(ap);                                 \
-	(output) = buffer;                          \
+#define FORMAT_STRING_ARGS(fmt, output) \
+{ \
+	va_list ap, ap2; \
+	va_start(ap, fmt); \
+	va_copy(ap2, ap); \
+	int size = std::vsnprintf(nullptr, 0, fmt, ap2); \
+	va_end(ap2); \
+	if (size > 0) \
+	{ \
+		std::string str(size, '\0'); \
+		std::vsnprintf(&str[0], size + 1, fmt, ap); \
+		output = std::move(str); \
+	} \
+	else { output = "\0"; } \
+	va_end(ap); \
 }
 #define Database CConectionPool::GetInstance()
 inline std::recursive_mutex g_SqlThreadRecursiveLock;
@@ -110,7 +115,7 @@ private:
 		CResultSelect& UpdateQuery(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
 		{
 			std::string strQuery;
-			FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+			FORMAT_STRING_ARGS(pBuffer, strQuery);
 			m_Query = std::string("SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + strQuery + ";");
 			return *this;
 		}
@@ -183,7 +188,7 @@ private:
 		CResultQuery& UpdateQuery(const char* pTable, const char* pBuffer, ...)
 		{
 			std::string strQuery;
-			FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+			FORMAT_STRING_ARGS(pBuffer, strQuery);
 
 			if (m_TypeQuery == DB::INSERT)
 				m_Query = std::string("INSERT INTO " + std::string(pTable) + " " + strQuery + ";");
@@ -238,7 +243,7 @@ private:
 		CResultQueryCustom& UpdateQuery(const char* pBuffer, ...)
 		{
 			std::string strQuery;
-			FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+			FORMAT_STRING_ARGS(pBuffer, strQuery);
 			m_Query = std::string(strQuery + ";");
 			return *this;
 		}
@@ -261,7 +266,7 @@ public:
 	static std::enable_if_t<T == DB::SELECT, std::unique_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
 	{
 		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+		FORMAT_STRING_ARGS(pBuffer, strQuery);
 
 		// checking format query
 		return std::move(PrepareQuerySelect(T, pSelect, pTable, strQuery));
@@ -271,7 +276,8 @@ public:
 	static std::enable_if_t<T == DB::SELECT, ResultPtr> Execute(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
 	{
 		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+		FORMAT_STRING_ARGS(pBuffer, strQuery);
+		dbg_msg("test", "%s", strQuery.c_str());
 
 		// checking format query
 		return PrepareQuerySelect(T, pSelect, pTable, strQuery)->Execute();
@@ -295,7 +301,7 @@ public:
 	static std::enable_if_t<T == DB::OTHER, std::unique_ptr<CResultQueryCustom>> Prepare(const char* pBuffer, ...)
 	{
 		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+		FORMAT_STRING_ARGS(pBuffer, strQuery);
 
 		// checking format query
 		return std::move(PrepareQueryCustom(T, strQuery));
@@ -305,7 +311,7 @@ public:
 	static std::enable_if_t<T == DB::OTHER, void> Execute(const char* pBuffer, ...)
 	{
 		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+		FORMAT_STRING_ARGS(pBuffer, strQuery);
 
 		// checking format query
 		PrepareQueryCustom(T, strQuery)->Execute(Milliseconds);
@@ -334,7 +340,7 @@ public:
 	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), std::unique_ptr<CResultQuery>> Prepare(const char* pTable, const char* pBuffer, ...)
 	{
 		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+		FORMAT_STRING_ARGS(pBuffer, strQuery);
 
 		// checking format query
 		return std::move(PrepareQueryInsertUpdateDelete(T, pTable, strQuery));
@@ -344,7 +350,7 @@ public:
 	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), void> Execute(const char* pTable, const char* pBuffer, ...)
 	{
 		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery, MAX_QUERY_LEN);
+		FORMAT_STRING_ARGS(pBuffer, strQuery);
 
 		// checking format query
 		PrepareQueryInsertUpdateDelete(T, pTable, strQuery)->Execute(Milliseconds);

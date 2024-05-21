@@ -13,14 +13,15 @@ void CAchievementManager::OnInit()
 		// initialize variables
 		int ID = pResult->getInt("ID");
 		int Type = pResult->getInt("Type");
+		int Criteria = pResult->getInt("Criteria");
+		int Required = pResult->getInt("Required");
 		std::string Name = pResult->getString("Name").c_str();
-		std::string Criteria = pResult->getString("Criteria").c_str();
 		std::string Reward = pResult->getString("Reward").c_str();
 		int AchievementPoint = pResult->getInt("AchievementPoint");
 
 		// create element
 		auto* pAchievement = CAchievementInfo::CreateElement(ID);
-		pAchievement->Init(Name, Type, Criteria, Reward, AchievementPoint);
+		pAchievement->Init(Name, Type, Criteria, Required, Reward, AchievementPoint);
 	}
 
 	// sort achievements by name
@@ -125,7 +126,7 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 	{
 		// initialize variables
 		int Progress = pAchievement->GetProgress();
-		int Required = pAchievement->Info()->GetMiscRequired();
+		int Required = pAchievement->Info()->GetRequired();
 		int Type = pAchievement->Info()->GetType();
 		bool Completed = pAchievement->IsCompleted();
 		bool RewardExists = pAchievement->Info()->RewardExists();
@@ -139,12 +140,12 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 			pAchievement->Info()->GetAchievementPoint(), pAchievement->Info()->GetName(), (RewardExists ? " : Reward" : "\0"));
 		if(Type == ACHIEVEMENT_RECEIVE_ITEM)
 		{
-			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetMisc());
+			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetCriteria());
 			VAchievement.Add("Receive {}/{} {}", Progress, Required, pItem->GetName());
 		}
 		else if(Type == ACHIEVEMENT_HAVE_ITEM)
 		{
-			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetMisc());
+			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetCriteria());
 			VAchievement.Add("Have {}/{} {}", Progress, Required, pItem->GetName());
 		}
 		else if(Type == ACHIEVEMENT_TOTAL_DAMAGE)
@@ -157,7 +158,7 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 		}
 		else if(Type == ACHIEVEMENT_DEFEAT_MOB)
 		{
-			int BotID = pAchievement->Info()->GetMisc();
+			int BotID = pAchievement->Info()->GetCriteria();
 			std::string BotName = DataBotInfo::ms_aDataBot[BotID].m_aNameBot;
 			VAchievement.Add("Defeat {}/{} {}", Progress, Required, BotName);
 		}
@@ -171,12 +172,12 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 		}
 		else if(Type == ACHIEVEMENT_EQUIP)
 		{
-			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetMisc());
+			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetCriteria());
 			VAchievement.Add("Equip {}", pItem->GetName());
 		}
 		else if(Type == ACHIEVEMENT_UNLOCK_WORLD)
 		{
-			int WorldID = pAchievement->Info()->GetMisc();
+			int WorldID = pAchievement->Info()->GetCriteria();
 			VAchievement.Add("Unlock {}", Progress, Required, Server()->GetWorldName(WorldID));
 		}
 		else if(Type == ACHIEVEMENT_LEVELING)
@@ -185,7 +186,7 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 		}
 		else if(Type == ACHIEVEMENT_CRAFT_ITEM)
 		{
-			if(CCraftItem* pItem = Core()->CraftManager()->GetCraftByID(pAchievement->Info()->GetMisc()))
+			if(CCraftItem* pItem = Core()->CraftManager()->GetCraftByID(pAchievement->Info()->GetCriteria()))
 				VAchievement.Add("Craft {}/{} {}", Progress, Required, pItem->GetItem()->Info()->GetName());
 		}
 	}
@@ -229,7 +230,7 @@ void CAchievementManager::UpdateAchievement(CPlayer* pPlayer, int Type, int Misc
 	{
 		// initialize variables
 		const auto achievementType = pAchievement->Info()->GetType();
-		const auto achievementMisc = pAchievement->Info()->GetMisc();
+		const auto achievementMisc = pAchievement->Info()->GetCriteria();
 
 		if(achievementType == Type && achievementMisc == Misc && !pAchievement->IsCompleted())
 		{
