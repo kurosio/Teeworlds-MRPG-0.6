@@ -80,11 +80,12 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 		return;
 
 	// Format the text using the player's language and additional arguments
+	auto pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
 	dynamic_string Buffer(pText);
 	std::string StrAppend {};
 
 	// check flag is tittle center
-	if(m_Flags & VWF_ALIGN_TITLE)
+	if(m_Flags & VWF_ALIGN_TITLE && ((pHidden && !pHidden->m_Value) || !pHidden))
 	{
 		// initialize variables
 		std::string StrSpace = " ";
@@ -112,8 +113,8 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	// check flag is tab type
 	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
 	{
-		const bool HiddenTab = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags)->m_Value;
-		StrAppend += HiddenTab ? "\u21BA" : "\u27A4";
+		pHidden = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags);
+		StrAppend += pHidden->m_Value ? "\u21BA" : "\u27A4";
 		SettingsID1 = m_HiddenID;
 		pCmd = "HIDDEN";
 	}
