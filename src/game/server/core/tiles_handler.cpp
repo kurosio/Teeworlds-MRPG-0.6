@@ -11,7 +11,7 @@ void CTileHandler::Handler()
 	const int Index = m_pGS->Collision()->GetParseTilesAt(m_pCharacter->m_Core.m_Pos.x, m_pCharacter->m_Core.m_Pos.y);
 
 	// check valid index
-	if(Index < 0 || Index >= MAX_TILES)
+	if(Index < TILE_AIR || Index >= MAX_TILES)
 		return;
 
 	// update to new index

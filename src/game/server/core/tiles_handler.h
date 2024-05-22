@@ -5,10 +5,10 @@
 
 #include <game/mapitems.h>
 
-#define _DEF_TILE_ENTER_ZONE_IMPL(player, menus) \
+#define DEF_TILE_ENTER_ZONE_IMPL(player, menus) \
 									GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You can see menu in the votes!"); \
 									player->m_VotesData.UpdateVotes(menus)
-#define _DEF_TILE_EXIT_ZONE_IMPL(player) \
+#define DEF_TILE_EXIT_ZONE_IMPL(player) \
 									GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You have left the active zone!"); \
 									player->m_VotesData.UpdateVotes(MENU_MAIN)
 

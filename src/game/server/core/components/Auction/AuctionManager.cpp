@@ -18,16 +18,15 @@ void CAuctionManager::OnTick()
 bool CAuctionManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
-	const int ClientID = pPlayer->GetCID();
 	if (pChr->GetTiles()->IsEnter(TILE_AUCTION))
 	{
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AUCTION_LIST);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AUCTION_LIST);
 		return true;
 	}
 
 	if (pChr->GetTiles()->IsExit(TILE_AUCTION))
 	{
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
@@ -59,7 +58,7 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VoteWrapper(ClientID).Add("The reason for write the number for each row");
 		VoteWrapper::AddEmptyline(ClientID);
 
-		VoteWrapper VSlot(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {}", pAuctionItem->Info()->GetName());
+		VoteWrapper VSlot(ClientID, VWF_LINE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {}", pAuctionItem->Info()->GetName());
 		VSlot.MarkList().Add("Description:");
 		{
 			VSlot.BeginDepth();
@@ -253,7 +252,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Auction Information");
+	VoteWrapper VInfo(ClientID, VWF_LINE_CLOSED, "Auction Information");
 	VInfo.Add("To create a slot, see inventory item interact.");
 	VInfo.AddLine();
 

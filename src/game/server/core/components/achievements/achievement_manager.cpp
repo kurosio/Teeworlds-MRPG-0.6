@@ -76,7 +76,7 @@ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 	int ClientID = pPlayer->GetCID();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 Achievements (Information)");
 	VInfo.Add("You can complete achievements and earn rewards.");
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -84,13 +84,13 @@ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 	int TotalAchievements = GetCount();
 	int TotalCompleted = GetCompletedCount(ClientID);
 	int Percentage = translate_to_percent(TotalAchievements, TotalCompleted);
-	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT|VWF_SEPARATE, "\u2654 Main information");
+	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT|VWF_LINE, "\u2654 Main information");
 	VMain.Add("{} of {} completed (progress {}%)", TotalCompleted, TotalAchievements, Percentage);
 	VMain.Add("Achievement points: {}p", pPlayer->GetItem(itAchievementPoint)->GetValue());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show group
-	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2059 Achievements groups");
+	VoteWrapper VGroup(ClientID, VWF_LINE_OPEN | VWF_STYLE_SIMPLE, "\u2059 Achievements groups");
 	int CompletedGeneral = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_GENERAL);
 	int TotalGeneral = GetCountByGroup(ACHIEVEMENT_GROUP_GENERAL);
 	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_GENERAL, "General ({} of {})", CompletedGeneral, TotalGeneral);
@@ -115,7 +115,7 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 	const char* pGroupName[] = { "General", "Battle", "Items" };
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE | VWF_ALIGN_TITLE, "\u2324 Achievements (Information)");
 	VInfo.Add("Select an achievement from the list to get conditions.");
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -136,7 +136,7 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 			continue;
 
 		// show achievement
-		VoteWrapper VAchievement(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{} ({}ap) {}{}", (Completed ? "✔" : "×"),
+		VoteWrapper VAchievement(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{} ({}AP) {}{}", (Completed ? "✔" : "×"),
 			pAchievement->Info()->GetAchievementPoint(), pAchievement->Info()->GetName(), (RewardExists ? " : Reward" : "\0"));
 		if(Type == ACHIEVEMENT_RECEIVE_ITEM)
 		{

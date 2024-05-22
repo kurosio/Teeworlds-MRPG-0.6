@@ -82,12 +82,12 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr)
 
 	if(pChr->GetTiles()->IsEnter(TILE_GUILD_HOUSE))
 	{
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_GUILD_HOUSE_PURCHASE);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_GUILD_HOUSE_PURCHASE);
 		return true;
 	}
 	if(pChr->GetTiles()->IsExit(TILE_GUILD_HOUSE))
 	{
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
@@ -1111,7 +1111,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	const int MemberMaxSlots = pGuild->GetUpgrades(GuildUpgrade::AVAILABLE_SLOTS)->m_Value;
 
 	// Guild information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2747 Information about {}", pGuild->GetName());
+	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE |VWF_LINE|VWF_STYLE_STRICT_BOLD, "\u2747 Information about {}", pGuild->GetName());
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Level: {} Experience: {}/{}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	VInfo.Add("Members: {} of {}", MemberUsedSlots, MemberMaxSlots);
@@ -1119,7 +1119,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Guild management
-	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
+	VoteWrapper VManagement(ClientID, VWF_ALIGN_TITLE |VWF_LINE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
 	VManagement.Add("Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
 	VManagement.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 	VManagement.AddLine();
@@ -1130,6 +1130,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VManagement.AddMenu(MENU_GUILD_LOGS, "Logs of activity");
 	VManagement.AddMenu(MENU_GUILD_WARS, "Guild wars");
 	VManagement.AddMenu(MENU_GUILD_DISBAND, "Disband");
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// Guild append house menu
 	if(HasHouse)
@@ -1137,7 +1138,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		// House management
 		auto* pHouse = pGuild->GetHouse();
 		VoteWrapper::AddEmptyline(ClientID);
-		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {} days)", pHouse->GetRentDays());
+		VoteWrapper VHouse(ClientID, VWF_LINE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {} days)", pHouse->GetRentDays());
 		VHouse.Add("Bank: {} | Rent per day: {} golds", pGuild->GetBank()->Get(), pHouse->GetRentPrice());
 		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
@@ -1157,7 +1158,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 
 	// information
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Guild upgrades (Information)");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 Guild upgrades (Information)");
 	VInfo.Add("All improvements are solely related to the guild itself.");
 	VInfo.Add("Bank: {}", pGuild->GetBank()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1194,7 +1195,7 @@ void CGuildManager::ShowDisband(CPlayer* pPlayer) const
 
 	// information
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Guild disbandment (Information)");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 Guild disbandment (Information)");
 	VInfo.Add("Gold spent on upgrades will not be refunded.");
 	VInfo.Add("The gold will be returned to the leader.");
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1216,7 +1217,7 @@ void CGuildManager::ShowHouseSell(CPlayer* pPlayer) const
 
 	// information
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Selling a house (Information)");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 Selling a house (Information)");
 	VInfo.Add("The gold will be returned to the leader.");
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -1236,7 +1237,7 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 	auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2324 Membership information", pGuild->GetName());
+	VoteWrapper VInfo(ClientID, VWF_LINE | VWF_STYLE_STRICT_BOLD, "\u2324 Membership information", pGuild->GetName());
 	VInfo.Add("Guild name: {}", pGuild->GetName());
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1274,7 +1275,7 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 
 	// information
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2324 Editing member {}", Server()->GetAccountNickname(pMember->GetAccountID()));
+	VoteWrapper VInfo(ClientID, VWF_LINE | VWF_STYLE_STRICT_BOLD, "\u2324 Editing member {}", Server()->GetAccountNickname(pMember->GetAccountID()));
 	VInfo.Add("Deposit: {}", pMember->GetDeposit());
 	VInfo.Add("Rank: {}", pMember->GetRank()->GetName());
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1313,7 +1314,7 @@ void CGuildManager::ShowRanksList(CPlayer* pPlayer) const
 	int CurrentRanksNum = (int)pPlayer->Account()->GetGuild()->GetRanks()->GetContainer().size();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "\u2324 Rank management (Information)");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_LINE, "\u2324 Rank management (Information)");
 	VInfo.Add("Maximal {} ranks for one guild", MaxRanksNum);
 	VInfo.Add("Guild leader ignores rank rights");
 	VInfo.Add("Use the reason as a text field.");
@@ -1349,7 +1350,7 @@ void CGuildManager::ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID) const
 
 	// information
 	const int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2324 Editing rank '{}'", pRank->GetName());
+	VoteWrapper VInfo(ClientID, VWF_LINE | VWF_STYLE_STRICT_BOLD, "\u2324 Editing rank '{}'", pRank->GetName());
 	VInfo.Add("Current rigths: {}", pRank->GetRightsName());
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -1377,7 +1378,7 @@ void CGuildManager::ShowRequests(CPlayer* pPlayer) const
 
 	// information
 	const int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Membership requests (Information)");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 Membership requests (Information)");
 	VInfo.Add("Players can send requests to join the guild");
 	VInfo.Add("Guild members with the necessary rights,");
 	VInfo.Add("can (accept and reject) invitations.");
@@ -1416,7 +1417,7 @@ void CGuildManager::ShowDoorsControl(CPlayer* pPlayer) const
 	int DoorsNum = (int)pHouse->GetDoorManager()->GetContainer().size();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 House doors information");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 House doors information");
 	VInfo.Add("You can control your doors in the house");
 	VInfo.Add("Your home has: {} doors.", DoorsNum);
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1445,7 +1446,7 @@ void CGuildManager::ShowFarmzonesControl(CPlayer* pPlayer) const
 	int FarmzonesNum = (int)pHouse->GetFarmzonesManager()->GetContainer().size();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Farm zones information");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 Farm zones information");
 	VInfo.Add("You can control your farm zones in the house");
 	VInfo.Add("Your home has: {} farm zones.", FarmzonesNum);
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1476,7 +1477,7 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	CItemDescription* pItem = GS()->GetItemInfo(pFarmzone->GetItemID());
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
+	VoteWrapper VInfo(ClientID, VWF_LINE|VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
 	VInfo.Add("You can grow a plant on the property");
 	VInfo.Add("Chance: {}%", s_GuildChancePlanting);
 	VInfo.Add("Planted: {}", pItem->GetName());
@@ -1500,7 +1501,7 @@ void CGuildManager::ShowFinder(CPlayer* pPlayer) const
 {
 	// information
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Guild finder information");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 Guild finder information");
 	VInfo.Add("You can find a guild by name or select from the list");
 	if(pPlayer->Account()->HasGuild())
 		VInfo.Add("You already in guild '{}'!", pPlayer->Account()->GetGuild()->GetName());
@@ -1536,7 +1537,7 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Information about {}", pGuild->GetName());
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_LINE, "\u2324 Information about {}", pGuild->GetName());
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Members: {} of {}", CurrentSlots.first, CurrentSlots.second);
 	VInfo.Add("Has house: {}", pGuild->HasHouse() ? "Yes" : "No");
@@ -1562,7 +1563,7 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
 
 	// information
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT, "\u2324 Information about guild house");
+	VoteWrapper VInfo(ClientID, VWF_LINE|VWF_STYLE_STRICT, "\u2324 Information about guild house");
 	VInfo.Add("Buying a house you will need to constantly the Treasury");
 	VInfo.Add("In the intervals of time will be paid house");
 	VInfo.Add("Owned by: {}", pHouse->GetOwnerName());
@@ -1574,7 +1575,7 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
 	if(!pHouse->IsPurchased())
 	{
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		VoteWrapper VTop(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Purchase of a house");
+		VoteWrapper VTop(ClientID, VWF_LINE_OPEN|VWF_STYLE_SIMPLE, "Purchase of a house");
 		VTop.Add("Price rent per day: {} golds", pHouse->GetRentPrice());
 
 		// check rights
@@ -1655,7 +1656,7 @@ void CGuildManager::ShowLogs(CPlayer* pPlayer) const
 	auto flagStatus = [&](int flag) { return pLogger->IsActivityFlagSet(flag) ? "[\u2714]" : "[\u2715]"; };
 
 	// logger settings
-	VoteWrapper VLogger(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Activity log settings");
+	VoteWrapper VLogger(ClientID, VWF_LINE_OPEN|VWF_STYLE_SIMPLE, "Activity log settings");
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_GUILD_FULL, "Full changes {}", flagStatus(LOGFLAG_GUILD_FULL));
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_GUILD_MAIN_CHANGES, "Main changes {}", flagStatus(LOGFLAG_GUILD_MAIN_CHANGES));
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_MEMBERS_CHANGES, "Members changes {}", flagStatus(LOGFLAG_MEMBERS_CHANGES));

@@ -75,6 +75,7 @@ public:
 	void FakeSnap() override;
 
 	bool IsActive() const override;
+	bool IsConversational() const;
 	void PrepareRespawnTick() override;
 
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }

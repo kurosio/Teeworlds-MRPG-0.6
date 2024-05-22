@@ -78,7 +78,7 @@ protected:
 	void HandleWeapons();
 	void HandleNinja();
 	void HandleTilesets();
-	void HandleEvent();
+	void HandleSpecialEvent();
 	void HandleIndependentTuning();
 
 	void SetSafe(int FlagsDisallow = CHARACTERFLAG_HAMMER_HIT_DISABLED | CHARACTERFLAG_COLLISION_DISABLED | CHARACTERFLAG_HOOK_HIT_DISABLED);
@@ -148,7 +148,7 @@ public:
 	int m_MoveRestrictions;
 
 private:
-	bool StartConversation(CPlayer* pTarget);
+	bool StartConversation(CPlayer* pTarget) const;
 	void HandleEventsDeath(int Killer, vec2 Force) const;
 };
 

@@ -26,25 +26,28 @@ enum
 	DEPTH_LIST_STYLE_CYRCLE = 1 << 8,
 
 	// disabled
-	VWF_DISABLED          = 0, // regular title group
+	VWF_DISABLED                   = 0, // regular title group
 
 	// settings
-	VWF_SEPARATE          = 1 << 1, // separates the end and the beginning of the new group by a line
-	VWF_GROUP_NUMERAL     = 1 << 2, // numbers the title page
+	VWF_LINE                       = 1 << 1, // ends the group with a line
+	VWF_GROUP_NUMERAL              = 1 << 3, // numbers the title page
+	VWF_ALIGN_TITLE                = 1 << 4, // example: ---  title  ---
 
 	// styles
-	VWF_STYLE_SIMPLE      = 1 << 3, // example: ╭ │ ╰
-	VWF_STYLE_DOUBLE      = 1 << 4, // example: ╔ ═ ╚
-	VWF_STYLE_STRICT      = 1 << 5, // example: ┌ │ └
-	VWF_STYLE_STRICT_BOLD = 1 << 6, // example: ┏ ┃ ┗
+	VWF_STYLE_SIMPLE               = 1 << 5, // example: ╭ │ ╰
+	VWF_STYLE_DOUBLE               = 1 << 6, // example: ╔ ═ ╚
+	VWF_STYLE_STRICT               = 1 << 7, // example: ┌ │ └
+	VWF_STYLE_STRICT_BOLD          = 1 << 8, // example: ┏ ┃ ┗
 
 	// hidden
-	VWF_OPEN              = 1 << 7, // default open group
-	VWF_CLOSED            = 1 << 8, // default close group
-	VWF_UNIQUE            = 1 << 9, // default close group toggle unique groups 
-	VWF_SEPARATE_OPEN     = VWF_OPEN | VWF_SEPARATE, // default open group with separate
-	VWF_SEPARATE_CLOSED   = VWF_CLOSED | VWF_SEPARATE, // default close group with separate
-	VWF_SEPARATE_UNIQUE   = VWF_UNIQUE | VWF_SEPARATE, // default close group with separate
+	VWF_OPEN                       = 1 << 9, // default open group
+	VWF_CLOSED                     = 1 << 10, // default close group
+	VWF_UNIQUE                     = 1 << 11, // default close group toggle unique groups
+
+	// defined
+	VWF_LINE_OPEN                  = VWF_OPEN | VWF_LINE, // default open group with line
+	VWF_LINE_CLOSED                = VWF_CLOSED | VWF_LINE, // default close group with line
+	VWF_LINE_UNIQUE                = VWF_UNIQUE | VWF_LINE, // default close group with line
 };
 
 class CVoteOption

@@ -114,14 +114,14 @@ bool CAethernetManager::OnHandleTile(CCharacter* pChr)
 	// Check if the character enters the Aether teleport tile
 	if(pChr->GetTiles()->IsEnter(TILE_AETHER_TELEPORT))
 	{
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AETHERNET_LIST);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AETHERNET_LIST);
 		UnlockLocationByPos(pChr->GetPlayer(), pChr->m_Core.m_Pos);
 		return true;
 	}
 	// Check if the character exits the Aether teleport tile
 	else if(pChr->GetTiles()->IsExit(TILE_AETHER_TELEPORT))
 	{
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
@@ -145,7 +145,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 	const int ClientID = pPlayer->GetCID();
 
 	// Default aether menu
-	VoteWrapper VAether(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Aethernet information");
+	VoteWrapper VAether(ClientID, VWF_LINE | VWF_STYLE_STRICT_BOLD, "Aethernet information");
 	VAether.Add("Total unlocked aethers: {} of {}.", pPlayer->Account()->GetAethers().size(), CAetherData::Data().size());
 	VAether.AddItemValue(itGold);
 	VoteWrapper::AddEmptyline(ClientID);
@@ -154,7 +154,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 	for(auto& [WorldID, vAethers] : s_vpAetherSortedList)
 	{
 		int UnlockedPlayerZoneAethers = 0;
-		VoteWrapper VAetherElem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} : Aethernet", Server()->GetWorldName(WorldID));
+		VoteWrapper VAetherElem(ClientID, VWF_LINE_OPEN | VWF_STYLE_SIMPLE, "{} : Aethernet", Server()->GetWorldName(WorldID));
 		{
 			VAetherElem.BeginDepth();
 			for(const auto& pAether : vAethers)

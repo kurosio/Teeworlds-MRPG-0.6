@@ -102,7 +102,7 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 
 	// information
 	const int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Information about mailbox");
+	VoteWrapper VInfo(ClientID, VWF_LINE | VWF_STYLE_STRICT_BOLD, "Information about mailbox");
 	VInfo.Add("You can interact with your mail");
 	VInfo.Add("Receive as well as delete mails");
 	VoteWrapper::AddEmptyline(ClientID);
@@ -150,7 +150,7 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 		}
 
 		// show mail information
-		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "{}", Name);
+		VoteWrapper VInfo(ClientID, VWF_LINE | VWF_STYLE_STRICT_BOLD, "{}", Name);
 		for(auto& pLine : vDescriptions)
 			VInfo.Add(pLine.c_str());
 		VInfo.Add("Sender: {}", Sender);
@@ -159,7 +159,7 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 		// show attached item's information
 		if(!vAttachedItems.empty())
 		{
-			VoteWrapper VAttached(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Attached items");
+			VoteWrapper VAttached(ClientID, VWF_LINE_OPEN | VWF_STYLE_STRICT, "Attached items");
 			VAttached.ReinitNumeralDepthStyles({ { DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD } });
 			for(auto& pItem : vAttachedItems)
 				VAttached.MarkList().Add("{}x{} ({})", pItem.Info()->GetName(), pItem.GetValue(), pPlayer->GetItem(pItem)->GetValue());

@@ -88,13 +88,13 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	int ClientID = pPlayer->GetCID();
 
 	// Group information
-	VoteWrapper VGroupCmd(ClientID, VWF_SEPARATE_CLOSED, "Group commands");
+	VoteWrapper VGroupCmd(ClientID, VWF_LINE_CLOSED, "Group commands");
 	VGroupCmd.Add("- /group Get all sub commands");
 	VGroupCmd.AddLine();
 
 	// Group management
 	GroupData* pGroup = pPlayer->Account()->GetGroup();
-	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_STRICT_BOLD, "\u273D Group Management");
+	VoteWrapper VGroup(ClientID, VWF_LINE_OPEN|VWF_STYLE_STRICT_BOLD, "\u273D Group Management");
 	if(!pGroup)
 	{
 		VGroup.AddOption("GROUP_CREATE", "Create a group");
@@ -120,7 +120,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	VoteWrapper::AddLine(ClientID);
 
 	// Group player invites
-	VoteWrapper VGroupInvites(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE_CLOSED, "\u2605 Players for invitation");
+	VoteWrapper VGroupInvites(ClientID, VWF_STYLE_SIMPLE|VWF_LINE_CLOSED, "\u2605 Players for invitation");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);

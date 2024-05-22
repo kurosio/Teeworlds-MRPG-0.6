@@ -152,6 +152,12 @@ bool CPlayerBot::IsActive() const
 	return GS()->m_World.IsBotActive(m_ClientID);
 }
 
+bool CPlayerBot::IsConversational() const
+{
+	return ((m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function != FUNCTION_NPC_GUARDIAN) || 
+		(m_BotType == TYPE_BOT_QUEST && QuestBotInfo::ms_aQuestBot[m_MobID].m_HasAction)) && IsActive();
+}
+
 void CPlayerBot::PrepareRespawnTick()
 {
 	if(m_BotType == TYPE_BOT_MOB)

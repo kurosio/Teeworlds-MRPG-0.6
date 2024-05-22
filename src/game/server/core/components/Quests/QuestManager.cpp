@@ -100,14 +100,14 @@ bool CQuestManager::OnHandleTile(CCharacter* pChr)
 	if(pChr->GetTiles()->IsEnter(TILE_DAILY_BOARD))
 	{
 		// Send message about entering the shop zone to the player
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_DAILY_BOARD);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_DAILY_BOARD);
 		return true;
 	}
 	// Check if the player exited the shop zone
 	else if(pChr->GetTiles()->IsExit(TILE_DAILY_BOARD))
 	{
 		// Send message about exiting the shop zone to the player
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 
@@ -461,7 +461,7 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 {
 	const int ClientID = pPlayer->GetCID();
 
-	VoteWrapper VWanted(ClientID, VWF_SEPARATE_CLOSED|VWF_STYLE_SIMPLE, "Wanted players list");
+	VoteWrapper VWanted(ClientID, VWF_LINE_CLOSED|VWF_STYLE_SIMPLE, "Wanted players list");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GS()->GetPlayer(i, true);

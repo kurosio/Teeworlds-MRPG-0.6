@@ -108,7 +108,7 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillTyp
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// iterate skill's for list
-	VoteWrapper VSkills(ClientID, VWF_SEPARATE_OPEN, pTitle);
+	VoteWrapper VSkills(ClientID, VWF_LINE_OPEN, pTitle);
 	for(const auto& [ID, Skill] : CSkillDescription::Data())
 	{
 		if(Skill.m_Type == Type)
@@ -180,12 +180,12 @@ bool CSkillManager::OnHandleTile(CCharacter* pChr)
 
 	if (pChr->GetTiles()->IsEnter(TILE_SKILL_ZONE))
 	{
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_SKILL_LIST);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_SKILL_LIST);
 		return true;
 	}
 	else if (pChr->GetTiles()->IsExit(TILE_SKILL_ZONE))
 	{
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 	return false;

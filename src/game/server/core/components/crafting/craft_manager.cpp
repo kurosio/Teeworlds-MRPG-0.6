@@ -45,12 +45,12 @@ bool CCraftManager::OnHandleTile(CCharacter* pChr)
 
 	if (pChr->GetTiles()->IsEnter(TILE_CRAFT_ZONE))
 	{
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_CRAFT_LIST);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_CRAFT_LIST);
 		return true;
 	}
 	else if (pChr->GetTiles()->IsExit(TILE_CRAFT_ZONE))
 	{
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 	return false;
@@ -143,7 +143,7 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_CRAFT_LIST)
 	{
 		// show information
-		VoteWrapper VCraftInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
+		VoteWrapper VCraftInfo(ClientID, VWF_LINE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
 		VCraftInfo.Add("If you will not have enough items for crafting");
 		VCraftInfo.Add("You will write those and the amount that is still required");
 		VCraftInfo.AddItemValue(itGold);
@@ -181,7 +181,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		return;
 
 	// detail information
-	VoteWrapper VCraftItem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information");
+	VoteWrapper VCraftItem(ClientID, VWF_LINE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information");
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 	VCraftItem.Add("Crafting: {}x{}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
 	VCraftItem.Add("{}", pCraftItemInfo->GetDescription());
@@ -194,7 +194,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// add craft reciepts
-	VoteWrapper VCraftRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required items", pCraftItemInfo->GetName());
+	VoteWrapper VCraftRequired(ClientID, VWF_LINE_OPEN | VWF_STYLE_STRICT, "Required items", pCraftItemInfo->GetName());
 	{
 		VCraftRequired.BeginDepth();
 
@@ -240,7 +240,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// craft tab list
-	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, TypeName);
+	VoteWrapper VCraftList(ClientID, VWF_LINE_OPEN, TypeName);
 	for(const auto& pCraft : CCraftItem::Data())
 	{
 		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();

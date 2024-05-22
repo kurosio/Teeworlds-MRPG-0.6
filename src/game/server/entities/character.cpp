@@ -31,7 +31,6 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 
 CCharacter::~CCharacter()
 {
-	/* multiple orbite destroyed inside self */
 	delete m_pTilesHandler;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
 }
@@ -65,7 +64,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_OldPos = Pos;
 	m_DamageDisabled = false;
 	m_Core.m_CollisionDisabled = false;
-	m_Event = TILE_CLEAR_EVENTS;
+	m_Event = TILE_CLEAR_SPECIAL_EVENTS;
 	m_Core.m_WorldID = m_pPlayer->GetPlayerWorldID();
 
 	if(!m_pPlayer->IsBot())
@@ -1121,16 +1120,16 @@ void CCharacter::HandleTilesets()
 		m_pPlayer->Account()->HandleChair();
 
 	// tile events
-	for(int i = TILE_CLEAR_EVENTS; i <= TILE_EVENT_HEALTH; i++)
+	for(int i = TILE_CLEAR_SPECIAL_EVENTS; i <= TILE_SPECIAL_EVENT_HEALTH; i++)
 	{
 		if(m_pTilesHandler->IsEnter(i))
 			SetEvent(i);
 	}
 }
 
-void CCharacter::HandleEvent()
+void CCharacter::HandleSpecialEvent()
 {
-	if(m_Event == TILE_EVENT_PARTY)
+	if(m_Event == TILE_SPECIAL_EVENT_PARTY)
 	{
 		SetEmote(EMOTE_HAPPY, 1, false);
 		if(rand() % 50 == 0)
@@ -1140,7 +1139,7 @@ void CCharacter::HandleEvent()
 		}
 	}
 
-	else if(m_Event == TILE_EVENT_LIKE)
+	else if(m_Event == TILE_SPECIAL_EVENT_LIKE)
 	{
 		SetEmote(EMOTE_HAPPY, 1, false);
 	}
@@ -1358,7 +1357,7 @@ void CCharacter::HandlePlayer()
 	}
 
 	// handle
-	HandleEvent();
+	HandleSpecialEvent();
 	HandleHookActions();
 }
 
@@ -1494,24 +1493,19 @@ void CCharacter::ResetDoorPos()
 		m_Core.m_Jumped = 1;
 }
 
-// talking system
-bool CCharacter::StartConversation(CPlayer* pTarget)
+bool CCharacter::StartConversation(CPlayer* pTarget) const
 {
-	if(!m_pPlayer || m_pPlayer->IsBot() || !pTarget->IsBot())
+	// check valid
+	if(m_pPlayer->IsBot() || !pTarget->IsBot())
 		return false;
 
-	// skip if not NPC, or it is not drawn
+	// check conversational
 	CPlayerBot* pTargetBot = static_cast<CPlayerBot*>(pTarget);
-	if(!pTargetBot
-		|| pTargetBot->GetBotType() == TYPE_BOT_MOB
-		|| pTargetBot->GetBotType() == TYPE_BOT_QUEST_MOB
-		|| pTargetBot->GetBotType() == TYPE_BOT_EIDOLON
-		|| (pTarget->GetBotType() == TYPE_BOT_QUEST && !QuestBotInfo::ms_aQuestBot[pTarget->GetBotMobID()].m_HasAction)
-		|| (pTarget->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pTarget->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN)
-		|| !pTargetBot->IsActive()
-		|| !pTargetBot->IsActiveForClient(m_pPlayer->GetCID()))
-		return false;
+	if(pTargetBot && pTargetBot->IsConversational() && pTargetBot->IsActiveForClient(m_pPlayer->GetCID()))
+	{
+		m_pPlayer->m_Dialog.Start(m_pPlayer, pTarget->GetCID());
+		return true;
+	}
 
-	m_pPlayer->m_Dialog.Start(m_pPlayer, pTarget->GetCID());
-	return true;
+	return false;
 }
