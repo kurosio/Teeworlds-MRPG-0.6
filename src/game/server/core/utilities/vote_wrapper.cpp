@@ -93,7 +93,8 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 		const int SpaceLength = (VOTE_VANILA_DESC_LENGTH - TextLength) / 2;
 
 		// pre spaces
-		StrAppend += "\u257E";
+		bool IsStyled = m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD);
+		StrAppend += IsStyled ? "\u2500" : "\u257E";
 		for(int Space = 0; Space < (SpaceLength / 4) - 2; Space++)
 			StrAppend += "\u2500";
 		StrAppend += "\u257C";
@@ -135,6 +136,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_SettingID = SettingsID1;
 	Vote.m_SettingID2 = SettingsID2;
+	Vote.m_IsTitle = true;
 
 	// Add title to front or update the title if it already exists
 	if(m_vpVotelist.empty() || !m_TitleIsSet)
@@ -392,7 +394,7 @@ void VoteWrapper::RebuildVotes(int ClientID)
 					}
 
 					// Add space between style and text
-					if(str_comp(Option.m_aCommand, "null") == 0)
+					if(!Option.m_IsTitle && str_comp(Option.m_aCommand, "null") == 0)
 						Buffer.append(" ");
 				}
 

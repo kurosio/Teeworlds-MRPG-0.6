@@ -59,6 +59,7 @@ public:
 	int m_SettingID { -1 };
 	int m_SettingID2 { -1 };
 	bool m_Line { false };
+	bool m_IsTitle { false };
 	VoteOptionCallback m_Callback {};
 };
 
