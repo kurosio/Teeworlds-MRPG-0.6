@@ -108,7 +108,7 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillTyp
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// iterate skill's for list
-	VoteWrapper VSkills(ClientID, VWF_LINE_OPEN, pTitle);
+	VoteWrapper VSkills(ClientID, VWF_SEPARATE_OPEN, pTitle);
 	for(const auto& [ID, Skill] : CSkillDescription::Data())
 	{
 		if(Skill.m_Type == Type)

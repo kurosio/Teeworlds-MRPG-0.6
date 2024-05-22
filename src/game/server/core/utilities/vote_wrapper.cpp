@@ -306,11 +306,13 @@ void VoteWrapper::RebuildVotes(int ClientID)
 	{
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
 		VoteWrapper VError(ClientID, VWF_STYLE_SIMPLE, "Error");
-		VError.Add("The voting list is empty")
-			.BeginDepth()
-				.Add("Probably a server error")
-			.EndDepth()
-		.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
+		VError.Add("The voting list is empty");
+		{
+			VError.BeginDepth();
+			VError.Add("Probably a server error");
+			VError.EndDepth();
+		}
+		VError.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
 		pVotesData->SetLastMenuID(MENU_MAIN);
 		VoteWrapper::AddBackpage(ClientID);
 	}
@@ -323,12 +325,15 @@ void VoteWrapper::RebuildVotes(int ClientID)
 
 		// if the group is an expandable list type, it is empty if there is no element in it
 		if(pGroup->m_TitleIsSet && pGroup->IsEmpty() && !pGroup->IsHidden())
-			pGroup->AddVoteImpl("null", NOPE, NOPE, "The list is empty");
+			pGroup->AddVoteImpl("null", NOPE, NOPE, "Is empty");
 
 		// check flag end with line
-		if(pGroup->m_Flags & VWF_LINE)
+		if(pGroup->m_Flags & VWF_SEPARATE)
 		{
-			if(pGroup->IsHidden())
+			auto niGroup = std::next(iterGroup);
+			bool nextNotEmptyline = niGroup != m_pData[ClientID].cend() && !(*niGroup)->m_vpVotelist.empty() && (*niGroup)->m_vpVotelist.back().m_aDescription[0] != '\0';
+
+			if(pGroup->IsHidden() && nextNotEmptyline)
 			{
 				auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 				pVoteGroup->AddLineImpl();
@@ -348,6 +353,7 @@ void VoteWrapper::RebuildVotes(int ClientID)
 				iterVote = pGroup->m_vpVotelist.erase(iterVote);
 				continue;
 			}
+
 			pLastVoteOption = &(*iterVote);
 			++iterVote;
 		}

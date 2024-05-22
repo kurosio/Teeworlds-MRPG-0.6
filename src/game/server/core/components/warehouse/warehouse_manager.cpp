@@ -217,7 +217,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	CItemDescription* pCurrency = pWarehouse->GetCurrency();
 
 	// show base shop functions
-	VoteWrapper VStorage(ClientID, VWF_LINE | VWF_STYLE_STRICT_BOLD, "Warehouse :: {}", pWarehouse->GetName());
+	VoteWrapper VStorage(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Warehouse :: {}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
 	{
 		// storage functional
@@ -251,7 +251,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	 */
 	if(pWarehouse->IsHasFlag(WF_SELL))
 	{
-		VoteWrapper VItems(ClientID, VWF_LINE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
+		VoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
 		for(const auto& Trade : pWarehouse->GetTradingList())
 		{
 			const CItem* pItem = Trade.GetItem();
@@ -284,7 +284,7 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 
 	// show trading list
 	CItemDescription* pCurrency = pWarehouse->GetCurrency();
-	VoteWrapper VItems(ClientID, VWF_LINE_OPEN, TypeName);
+	VoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN, TypeName);
 	for(const auto& Trade : pWarehouse->GetTradingList())
 	{
 		const CItem* pItem = Trade.GetItem();
@@ -330,7 +330,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	const bool HasItem = pPlayer->GetItem(pItem->GetID())->HasItem();
 
 	// Show item information
-	VoteWrapper VItem(ClientID, VWF_LINE|VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
+	VoteWrapper VItem(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
 	if(pItem->Info()->IsEnchantable())
 	{
 		VItem.Add("{} {}", (HasItem ? "✔" : "×"), pItem->Info()->GetName());
@@ -350,7 +350,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show information about the cost of the item
-	VoteWrapper VRequired(ClientID, VWF_LINE_OPEN | VWF_STYLE_STRICT, "Required");
+	VoteWrapper VRequired(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Required");
 	VRequired.ReinitNumeralDepthStyles(
 		{
 			{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }

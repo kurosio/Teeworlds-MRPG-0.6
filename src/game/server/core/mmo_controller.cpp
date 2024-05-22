@@ -157,14 +157,14 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// statistics menu
 		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
 		const char* pStrLastLoginDate = pPlayer->Account()->GetLastLoginDate();
-		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_LINE, "Account info");
+		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Account info");
 		VMain.Add("Last log in: {}", pStrLastLoginDate);
 		VMain.Add("Level {} : Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
 		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VMain.Add("Gold: {}", pPlayer->GetItem(itGold)->GetValue());
 
 		// personal menu
-		VoteWrapper VPersonal(ClientID, VWF_LINE_OPEN, "\u262A PERSONAL");
+		VoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN, "\u262A PERSONAL");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({}p)", pPlayer->Account()->m_Upgrade);
@@ -178,6 +178,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.AddIfMenu(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
 		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		VPersonal.AddIfMenu(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// info menu
 		VoteWrapper VInfo(ClientID, VWF_OPEN, "\u262A INFORMATION");
@@ -199,7 +200,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		};
 
 		// information
-		VoteWrapper VUpgrInfo(ClientID, VWF_LINE_CLOSED, "Upgrades Information");
+		VoteWrapper VUpgrInfo(ClientID, VWF_SEPARATE_CLOSED, "Upgrades Information");
 		VUpgrInfo.Add("You can upgrade your character's statistics.");
 		VUpgrInfo.Add("Each update costs differently point.");
 		VUpgrInfo.Add("You can get points by leveling up.");
@@ -212,7 +213,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// upgrade group's
 		const ClassGroup& Class = pPlayer->GetClass()->GetGroup();
-		VoteWrapper VUpgrGroupSelect(ClientID, VWF_LINE_OPEN, "Select a type of upgrades");
+		VoteWrapper VUpgrGroupSelect(ClientID, VWF_SEPARATE_OPEN, "Select a type of upgrades");
 		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Dps, MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
 		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Tank, MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
 		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Healer, MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
@@ -225,7 +226,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetMenuTemporaryInteger(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
 			const char* pGroupName = paGroupNames[(int)Group];
 
-			VoteWrapper VUpgrGroup(ClientID, VWF_LINE_OPEN | VWF_STYLE_STRICT_BOLD, "{} : Strength {}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
+			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "{} : Strength {}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
 			InsertUpgradesVotes(pPlayer, Group, &VUpgrGroup);
 			VUpgrGroup.AddLine();
 		}
@@ -241,7 +242,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// information
-		VoteWrapper VTopInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_LINE, "Top List Information");
+		VoteWrapper VTopInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Top List Information");
 		VTopInfo.Add("You can view the top 10 players and guilds.");
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -254,7 +255,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show top list
-		VoteWrapper VTopList(ClientID, VWF_STYLE_SIMPLE|VWF_LINE);
+		VoteWrapper VTopList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE);
 		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetMenuTemporaryInteger(); TemporaryInteger >= 0)
 			ShowTopList(ClientID, (ToplistType)TemporaryInteger, 10, &VTopList);
 
@@ -273,12 +274,12 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VDiscordInfo.AddLine().Add("Discord: \"{}\"", g_Config.m_SvDiscordInviteLink).AddLine();
 
 		// information
-		VoteWrapper VGrindingInfo(ClientID, VWF_LINE_CLOSED, "Grinding Information");
+		VoteWrapper VGrindingInfo(ClientID, VWF_SEPARATE_CLOSED, "Grinding Information");
 		VGrindingInfo.Add("You can look mob, farm, and mining point's.");
 		VGrindingInfo.AddLine();
 
 		// show all world's
-		VoteWrapper VGrindingSelect(ClientID, VWF_LINE_OPEN, "Select a zone to view information");
+		VoteWrapper VGrindingSelect(ClientID, VWF_SEPARATE_OPEN, "Select a zone to view information");
 		for(int ID = MAIN_WORLD_ID; ID < GS()->Server()->GetWorldsSize(); ID++)
 			VGrindingSelect.AddMenu(MENU_GUIDE_GRINDING_SELECT, ID, "{}", GS()->Server()->GetWorldName(ID));
 

@@ -32,7 +32,7 @@ bool CDungeonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		VoteWrapper VInfo(ClientID, VWF_LINE_CLOSED, "Dungeons Information");
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Dungeons Information");
 		VInfo.Add("In this section you can choose a dungeon");
 		VInfo.Add("View the fastest players on the passage");
 

@@ -29,7 +29,7 @@ enum
 	VWF_DISABLED                   = 0, // regular title group
 
 	// settings
-	VWF_LINE                       = 1 << 1, // ends the group with a line
+	VWF_SEPARATE                       = 1 << 1, // ends the group with a line
 	VWF_GROUP_NUMERAL              = 1 << 3, // numbers the title page
 	VWF_ALIGN_TITLE                = 1 << 4, // example: ---  title  ---
 
@@ -45,9 +45,9 @@ enum
 	VWF_UNIQUE                     = 1 << 11, // default close group toggle unique groups
 
 	// defined
-	VWF_LINE_OPEN                  = VWF_OPEN | VWF_LINE, // default open group with line
-	VWF_LINE_CLOSED                = VWF_CLOSED | VWF_LINE, // default close group with line
-	VWF_LINE_UNIQUE                = VWF_UNIQUE | VWF_LINE, // default close group with line
+	VWF_SEPARATE_OPEN                  = VWF_OPEN | VWF_SEPARATE, // default open group with line
+	VWF_SEPARATE_CLOSED                = VWF_CLOSED | VWF_SEPARATE, // default close group with line
+	VWF_SEPARATE_UNIQUE                = VWF_UNIQUE | VWF_SEPARATE, // default close group with line
 };
 
 class CVoteOption

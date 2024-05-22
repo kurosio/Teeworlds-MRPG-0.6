@@ -31,7 +31,7 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		VoteWrapper VInfo(ClientID, VWF_LINE_CLOSED, "Eidolon Collection Information");
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Eidolon Collection Information");
 		VInfo.Add("Here you can see your collection of eidolons.");
 		VInfo.AddLine();
 
@@ -61,14 +61,14 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
 			pPlayerItem->StrFormatAttributes(pPlayer, aAttributeBonus, sizeof(aAttributeBonus));
 
-			VoteWrapper VDesc(ClientID, VWF_LINE_OPEN | VWF_STYLE_SIMPLE, "Descriptions of eidolon ({})", pEidolonInfo->GetDataBot()->m_aNameBot);
+			VoteWrapper VDesc(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Descriptions of eidolon ({})", pEidolonInfo->GetDataBot()->m_aNameBot);
 			for(auto& Line : pEidolonInfo->GetLinesDescription())
 				VDesc.Add(Line.c_str());
 			VDesc.AddLine();
 			VDesc.Add(aAttributeBonus);
 			VDesc.AddLine();
 
-			VoteWrapper VEnchancement(ClientID, VWF_LINE_OPEN | VWF_STYLE_SIMPLE, "Unlocking Enhancements");
+			VoteWrapper VEnchancement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Unlocking Enhancements");
 			VEnchancement.Add("Available soon.");
 			VEnchancement.AddLine();
 

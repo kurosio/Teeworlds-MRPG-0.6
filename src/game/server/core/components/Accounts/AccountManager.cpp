@@ -294,13 +294,13 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// information
-		VoteWrapper VSettingsInfo(ClientID, VWF_LINE_CLOSED, "Settings Information");
+		VoteWrapper VSettingsInfo(ClientID, VWF_SEPARATE_CLOSED, "Settings Information");
 		VSettingsInfo.Add("Some of the settings become valid after death.");
 		VSettingsInfo.Add("Here you can change the settings of your account.");
 		VoteWrapper::AddLine(ClientID);
 
 		// game settings
-		VoteWrapper VMainSettings(ClientID, VWF_LINE_OPEN, "\u2699 Main settings");
+		VoteWrapper VMainSettings(ClientID, VWF_SEPARATE_OPEN, "\u2699 Main settings");
 		VMainSettings.AddMenu(MENU_SETTINGS_LANGUAGE_SELECT, "Settings language");
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
@@ -310,7 +310,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddLine(ClientID);
 
 		// equipment modules
-		VoteWrapper VModulesSettings(ClientID, VWF_LINE_OPEN, "\u2694 Modules settings");
+		VoteWrapper VModulesSettings(ClientID, VWF_SEPARATE_OPEN, "\u2694 Modules settings");
 		for(auto& iter : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &iter.second;
@@ -339,7 +339,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// language information
-		VoteWrapper VLanguageInfo(ClientID, VWF_LINE_CLOSED, "Languages Information");
+		VoteWrapper VLanguageInfo(ClientID, VWF_SEPARATE_CLOSED, "Languages Information");
 		VLanguageInfo.Add("Here you can choose the language.");
 		VLanguageInfo.Add("Note: translation is not complete.");
 		VoteWrapper::AddLine(ClientID);
@@ -351,7 +351,7 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VLanguage.AddLine();
 
 		// languages
-		VoteWrapper VLanguages(ClientID, VWF_LINE_OPEN, "Available languages");
+		VoteWrapper VLanguages(ClientID, VWF_SEPARATE_OPEN, "Available languages");
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{
 			// Do not show the language that is already selected by the player in the selection lists
