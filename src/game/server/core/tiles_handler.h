@@ -5,24 +5,36 @@
 
 #include <game/mapitems.h>
 
-#define _DEF_TILE_ENTER_ZONE_IMPL(player, menus) \
+#define DEF_TILE_ENTER_ZONE_IMPL(player, menus) \
 									GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You can see menu in the votes!"); \
 									player->m_VotesData.UpdateVotes(menus)
-#define _DEF_TILE_EXIT_ZONE_IMPL(player) \
+#define DEF_TILE_EXIT_ZONE_IMPL(player) \
 									GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You have left the active zone!"); \
 									player->m_VotesData.UpdateVotes(MENU_MAIN)
 
-class TileHandle
+// forward declaration
+class CGS;
+class CCharacter;
+
+// tile handler
+class CTileHandler
 {
-	bool m_Collide[MAX_TILES]{};
+	CGS* m_pGS {};
+	CCharacter* m_pCharacter{};
+	int m_Marked{};
+	int m_MarkEnter{};
+	int m_MarkExit{};
 
 public:
-	TileHandle() = default;
+	explicit CTileHandler(CGS* pGS, CCharacter* pCharacter) : m_pGS(pGS), m_pCharacter(pCharacter) {}
+
+
+	void Handler();
 
 	// tiles
-	bool TileEnter(int IndexPlayer, int IndexNeed);
-	bool TileExit(int IndexPlayer, int IndexNeed);
-	bool BoolIndex(int Index) const { return m_Collide[Index]; }
+	bool IsEnter(int Index);
+	bool IsExit(int Index);
+	bool IsActive(int Index) const { return m_Marked == Index; }
 };
 
 #endif

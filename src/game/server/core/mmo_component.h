@@ -28,7 +28,7 @@ private:
 	virtual void OnTick() {};
 	virtual void OnResetClient(int ClientID) {};
 	virtual bool OnMessage(int MsgID, void* pRawMsg, int ClientID) { return false; };
-	virtual bool OnHandleTile(class CCharacter* pChr, int IndexCollision) { return false; };
+	virtual bool OnHandleTile(class CCharacter* pChr) { return false; };
 	virtual bool OnHandleMenulist(class CPlayer* pPlayer, int Menulist) { return false; };
 	virtual bool OnHandleVoteCommands(class CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText) { return false; }
 	virtual void OnHandleTimePeriod(TIME_PERIOD Period) { return; }

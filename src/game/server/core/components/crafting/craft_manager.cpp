@@ -39,18 +39,18 @@ void CCraftManager::OnInit()
 	Core()->ShowLoadingProgress("Craft item's", (int)CCraftItem::Data().size());
 }
 
-bool CCraftManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CCraftManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_CRAFT_ZONE))
+	if (pChr->GetTiles()->IsEnter(TILE_CRAFT_ZONE))
 	{
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_CRAFT_LIST);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_CRAFT_LIST);
 		return true;
 	}
-	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_CRAFT_ZONE))
+	else if (pChr->GetTiles()->IsExit(TILE_CRAFT_ZONE))
 	{
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 	return false;
@@ -106,6 +106,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 		pPlayer->GetItem(RequiredItem)->Remove(RequiredItem.GetValue());
 	}
 
+	// add craft item
 	const int CraftGetValue = pCraft->GetItem()->GetValue();
 	pPlayerCraftItem->Add(CraftGetValue);
 	if(pPlayerCraftItem->Info()->IsEnchantable())
@@ -117,6 +118,8 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 		GS()->Chat(ClientID, "You crafted [{}x{}].", pPlayerCraftItem->Info()->GetName(), CraftGetValue);
 	}
 
+	// achievement
+	pPlayer->UpdateAchievement(ACHIEVEMENT_CRAFT_ITEM, pCraft->GetID(), CraftGetValue, PROGRESS_ADD);
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 

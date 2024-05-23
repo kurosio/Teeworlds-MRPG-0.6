@@ -500,7 +500,7 @@ void CCharacterBotAI::HandleBot()
 	}
 
 	// handle
-	HandleEvent();
+	HandleSpecialEvent();
 }
 
 // interactive of NPC

@@ -247,6 +247,10 @@ enum MenuList
 	MENU_GUILD_FINDER,
 	MENU_GUILD_FINDER_SELECTED,
 
+	// Achievements-related
+	MENU_ACHIEVEMENTS,
+	MENU_ACHIEVEMENTS_SELECTED,
+
 	// House-related
 	MENU_HOUSE,
 	MENU_HOUSE_SELL,
@@ -329,11 +333,11 @@ enum
 	itMaterial = 7,						// Scraping material
 	itProduct = 8,						// Scraping material
 	itSkillPoint = 9,					// Skillpoint
+	itAchievementPoint = 10,			// Achievement point
 	itPotionManaRegen = 14,				// Mana regeneration potion
 	itTinyHealthPotion = 15,			// Tiny health potion
 	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
 	itLittleBagGold = 17,				// Gives 10-50 gold
-	itDamageEqualizer = 18,				// Module for dissable self dmg
 	itExplosiveGun = 19,				// Explosion for gun
 	itExplosiveShotgun = 20,			// Explosion for shotgun
 	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
@@ -353,10 +357,11 @@ enum
 	itAdventurersBadge = 92,			// The adventurer's badge
 	itTicketGuild = 95,					// Ticket for the creation of the guild
 	itCustomizer = 96,                  // Curomizer for personal skins
+	itDamageEqualizer = 97,				// Module for dissable self dmg
 
 	// decoration items
-	itPickupHealth = 10,					// Pickup heart
-	itPickupArmor = 13,					// Pickup armor
+	itPickupHealth = 18,				// Pickup heart
+	itPickupMana = 13,					// Pickup mana
 	itPickupShotgun = 11,				// Pickup shotgun
 	itPickupGrenade = 12,				// Pickup grenade
 	itPickupLaser = 94,				    // Pickup laser
@@ -455,6 +460,7 @@ enum SaveType
 	SAVE_POSITION,			// Save Position Player
 	SAVE_LANGUAGE,			// Save Language Client
 	SAVE_TIME_PERIODS,		// Save Time Periods
+	SAVE_ACHIEVEMENTS,		// Save Achievements
 };
 
 // world day types

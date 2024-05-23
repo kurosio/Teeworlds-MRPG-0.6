@@ -90,24 +90,24 @@ void CQuestManager::OnResetClient(int ClientID)
 	CPlayerQuest::Data().erase(ClientID);
 }
 
-bool CQuestManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CQuestManager::OnHandleTile(CCharacter* pChr)
 {
 	// Get the player object client ID associated with the character object
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
 
 	// Check if the player entered the shop zone
-	if(pChr->GetHelper()->TileEnter(IndexCollision, TILE_DAILY_BOARD))
+	if(pChr->GetTiles()->IsEnter(TILE_DAILY_BOARD))
 	{
 		// Send message about entering the shop zone to the player
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_DAILY_BOARD);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_DAILY_BOARD);
 		return true;
 	}
 	// Check if the player exited the shop zone
-	else if(pChr->GetHelper()->TileExit(IndexCollision, TILE_DAILY_BOARD))
+	else if(pChr->GetTiles()->IsExit(TILE_DAILY_BOARD))
 	{
 		// Send message about exiting the shop zone to the player
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 

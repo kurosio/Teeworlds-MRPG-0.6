@@ -25,16 +25,30 @@ IGameController::IGameController(CGS* pGS)
 
 void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
 {
+	// achievement total damage
+	if(pFrom != pTo && !pFrom->IsBot())
+		pFrom->UpdateAchievement(ACHIEVEMENT_TOTAL_DAMAGE, NOPE, Damage, PROGRESS_ADD);
 }
 
 void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
-	if(pVictim->IsBot())
+	// achievement defeat mob & pve
+	if(pVictim->IsBot() && !pKiller->IsBot())
 	{
-		//CPlayerBot* pVictimBot = static_cast<CPlayerBot*>(pVictim);
-
+		pKiller->UpdateAchievement(ACHIEVEMENT_DEFEAT_MOB, pVictim->GetBotID(), 1, PROGRESS_ADD);
+		pKiller->UpdateAchievement(ACHIEVEMENT_DEFEAT_PVE, NOPE, 1, PROGRESS_ADD);
 	}
-	else
+
+	// achievement death
+	if(pVictim != pKiller && !pVictim->IsBot())
+		pVictim->UpdateAchievement(ACHIEVEMENT_DEATH, NOPE, 1, PROGRESS_ADD);
+
+	// achievement defeat pvp
+	if(pVictim != pKiller && !pVictim->IsBot() && !pKiller->IsBot())
+		pKiller->UpdateAchievement(ACHIEVEMENT_DEFEAT_PVP, NOPE, 1, PROGRESS_ADD);
+
+	// update last killed by weapon
+	if(!pVictim->IsBot())
 	{
 		pVictim->TryRemoveEidolon();
 		pVictim->GetTempData().m_LastKilledByWeapon = Weapon;

@@ -9,6 +9,7 @@
 #include "components/Accounts/AccountManager.h"
 #include "components/Accounts/AccountMiningManager.h"
 #include "components/Accounts/AccountFarmingManager.h"
+#include "components/achievements/achievement_manager.h"
 #include "components/Auction/AuctionManager.h"
 #include "components/aethernet/aethernet_manager.h"
 #include "components/Bots/BotManager.h"
@@ -67,6 +68,7 @@ inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, Vo
 CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
+	m_System.add(m_pAchievementManager = new CAchievementManager);
 	m_System.add(m_pQuestManager = new CQuestManager);
 	m_System.add(m_pBotManager = new CBotManager);
 	m_System.add(m_pInventoryManager = new CInventoryManager);
@@ -155,14 +157,14 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		// statistics menu
 		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
 		const char* pStrLastLoginDate = pPlayer->Account()->GetLastLoginDate();
-		VoteWrapper VMain(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, {} Last log in {}", GS()->Server()->ClientName(ClientID), pStrLastLoginDate);
+		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Account info");
+		VMain.Add("Last log in: {}", pStrLastLoginDate);
 		VMain.Add("Level {} : Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
 		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VMain.Add("Gold: {}", pPlayer->GetItem(itGold)->GetValue());
-		VMain.AddLine();
 
 		// personal menu
-		VoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "\u262A PERSONAL");
+		VoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN, "\u262A PERSONAL");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({}p)", pPlayer->Account()->m_Upgrade);
@@ -172,13 +174,13 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.AddMenu(MENU_SETTINGS, "\u2699 Settings");
 		VPersonal.AddMenu(MENU_MAILBOX, "\u2709 Mailbox");
 		VPersonal.AddMenu(MENU_JOURNAL_MAIN, "\u270D Journal");
+		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		VPersonal.AddIfMenu(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
 		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		VPersonal.AddIfMenu(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");
-		VPersonal.AddLine();
 
 		// info menu
-		VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "\u262A INFORMATION");
+		VoteWrapper VInfo(ClientID, VWF_OPEN, "\u262A INFORMATION");
 		VInfo.AddMenu(MENU_GUIDE_GRINDING, "\u10D3 Wiki / Grinding Guide ");
 		VInfo.AddMenu(MENU_TOP_LIST, "\u21F0 Ranking guilds and players");
 		return true;
@@ -329,14 +331,14 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	return false;
 }
 
-bool CMmoController::OnPlayerHandleTile(CCharacter* pChr, int IndexCollision)
+bool CMmoController::OnPlayerHandleTile(CCharacter* pChr)
 {
 	if(!pChr || !pChr->IsAlive())
 		return true;
 
 	for(auto& pComponent : m_System.m_vComponents)
 	{
-		if(pComponent->OnHandleTile(pChr, IndexCollision))
+		if(pComponent->OnHandleTile(pChr))
 			return true;
 	}
 	return false;
@@ -536,6 +538,10 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	else if(Table == SAVE_LANGUAGE)
 	{
 		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pAcc->GetID());
+	}
+	else if(Table == SAVE_ACHIEVEMENTS)
+	{
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '%s' WHERE ID = '%d'", pAcc->GetAchievementsData().dump().c_str(), pAcc->GetID());
 	}
 	else
 	{

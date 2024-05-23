@@ -174,18 +174,18 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-bool CSkillManager::OnHandleTile(CCharacter* pChr, int IndexCollision)
+bool CSkillManager::OnHandleTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	if (pChr->GetHelper()->TileEnter(IndexCollision, TILE_SKILL_ZONE))
+	if (pChr->GetTiles()->IsEnter(TILE_SKILL_ZONE))
 	{
-		_DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_SKILL_LIST);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_SKILL_LIST);
 		return true;
 	}
-	else if (pChr->GetHelper()->TileExit(IndexCollision, TILE_SKILL_ZONE))
+	else if (pChr->GetTiles()->IsExit(TILE_SKILL_ZONE))
 	{
-		_DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
+		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
 	return false;

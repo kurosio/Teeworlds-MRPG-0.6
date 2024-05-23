@@ -379,7 +379,7 @@ void CGuildHouse::CDoorManager::Reverse(int Number)
 		return;
 
 	// implement reverse
-	return m_apEntDoors[Number]->IsClosed() ? Open(Number) : Close(Number);
+	return m_apEntDoors[Number]->Reverse();
 }
 
 void CGuildHouse::CDoorManager::OpenAll()

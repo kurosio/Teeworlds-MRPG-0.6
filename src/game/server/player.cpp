@@ -8,6 +8,7 @@
 
 #include "core/components/Accounts/AccountManager.h"
 #include "core/components/Accounts/AccountMiningManager.h"
+#include "core/components/achievements/achievement_manager.h"
 #include "core/components/Bots/BotManager.h"
 #include "core/components/Dungeons/DungeonData.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
@@ -228,6 +229,10 @@ void CPlayer::TryRemoveEidolon()
 	m_EidolonCID = -1;
 }
 
+void CPlayer::UpdateAchievement(int Type, int Misc, int Value, int ProgressType)
+{
+	GS()->Core()->AchievementManager()->UpdateAchievement(this, Type, Misc, Value, ProgressType);
+}
 
 void CPlayer::HandleEffects()
 {

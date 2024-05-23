@@ -80,13 +80,41 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 		return;
 
 	// Format the text using the player's language and additional arguments
+	auto pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
 	dynamic_string Buffer(pText);
+	std::string StrAppend {};
 
-	const char* pAppend = "\0";
+	// check flag is tittle center
+	if(m_Flags & VWF_ALIGN_TITLE && ((pHidden && !pHidden->m_Value) || !pHidden))
+	{
+		// initialize variables
+		std::string StrSpace = " ";
+		std::string StrPost { StrSpace };
+		const int TextLength = str_length(Buffer.buffer());
+		const int SpaceLength = (VOTE_VANILA_DESC_LENGTH - TextLength) / 2;
+
+		// pre spaces
+		bool IsStyled = m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD);
+		StrAppend += IsStyled ? "\u2500" : "\u257E";
+		for(int Space = 0; Space < (SpaceLength / 4) - 2; Space++)
+			StrAppend += "\u2500";
+		StrAppend += "\u257C";
+
+		// post spaces
+		StrPost += "\u257E";
+		for(int Space = 0; Space < (SpaceLength / 4) - 2; Space++)
+			StrPost += "\u2500";
+		StrPost += "\u257C";
+
+		// append spaces
+		Buffer.append(StrPost.c_str());
+	}
+
+	// check flag is tab type
 	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
 	{
-		const bool HiddenTab = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags)->m_Value;
-		pAppend = HiddenTab ? "\u21BA " : "\u27A4 ";
+		pHidden = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags);
+		StrAppend += pHidden->m_Value ? "\u21BA" : "\u27A4";
 		SettingsID1 = m_HiddenID;
 		pCmd = "HIDDEN";
 	}
@@ -94,13 +122,13 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	// Reformatting
 	Reformatting(Buffer);
 
-	// Check if the player's language is "ru" or "uk" and convert aBufText to Latin if true
+	// optimize text for buffer size
 	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
 		str_translation_cyrlic_to_latin(Buffer.buffer());
 
-	// End text format
+	// end text format
 	char aBufText[VOTE_DESC_LENGTH];
-	str_format(aBufText, sizeof(aBufText), "%s%s", pAppend, Buffer.buffer());
+	str_format(aBufText, sizeof(aBufText), "%s %s", StrAppend.c_str(), Buffer.buffer());
 	Buffer.clear();
 
 	// Create a new VoteOption with the values from aBufText, pCmd, SettingsID1, and SettingsID2
@@ -109,6 +137,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_SettingID = SettingsID1;
 	Vote.m_SettingID2 = SettingsID2;
+	Vote.m_IsTitle = true;
 
 	// Add title to front or update the title if it already exists
 	if(m_vpVotelist.empty() || !m_TitleIsSet)
@@ -277,11 +306,13 @@ void VoteWrapper::RebuildVotes(int ClientID)
 	{
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
 		VoteWrapper VError(ClientID, VWF_STYLE_SIMPLE, "Error");
-		VError.Add("The voting list is empty")
-			.BeginDepth()
-				.Add("Probably a server error")
-			.EndDepth()
-		.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
+		VError.Add("The voting list is empty");
+		{
+			VError.BeginDepth();
+			VError.Add("Probably a server error");
+			VError.EndDepth();
+		}
+		VError.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
 		pVotesData->SetLastMenuID(MENU_MAIN);
 		VoteWrapper::AddBackpage(ClientID);
 	}
@@ -294,12 +325,15 @@ void VoteWrapper::RebuildVotes(int ClientID)
 
 		// if the group is an expandable list type, it is empty if there is no element in it
 		if(pGroup->m_TitleIsSet && pGroup->IsEmpty() && !pGroup->IsHidden())
-			pGroup->AddVoteImpl("null", NOPE, NOPE, "The list is empty");
+			pGroup->AddVoteImpl("null", NOPE, NOPE, "Is empty");
 
-		// Group separator with line
-		if(pGroup->m_Flags & VWF_SEPARATE && pGroup != m_pData[ClientID].back())
+		// check flag end with line
+		if(pGroup->m_Flags & VWF_SEPARATE)
 		{
-			if(pGroup->IsHidden())
+			auto niGroup = std::next(iterGroup);
+			bool nextNotEmptyline = niGroup != m_pData[ClientID].cend() && !(*niGroup)->m_vpVotelist.empty() && (*niGroup)->m_vpVotelist.back().m_aDescription[0] != '\0';
+
+			if(pGroup->IsHidden() && nextNotEmptyline)
 			{
 				auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 				pVoteGroup->AddLineImpl();
@@ -314,11 +348,12 @@ void VoteWrapper::RebuildVotes(int ClientID)
 		// There should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
 		for(auto iterVote = pGroup->m_vpVotelist.begin(); iterVote != pGroup->m_vpVotelist.end();)
 		{
-			if(pLastVoteOption && pLastVoteOption->m_Line && (*iterVote).m_Line)
+			if(pLastVoteOption && pLastVoteOption->m_Line && iterVote->m_Line)
 			{
 				iterVote = pGroup->m_vpVotelist.erase(iterVote);
 				continue;
 			}
+
 			pLastVoteOption = &(*iterVote);
 			++iterVote;
 		}
@@ -339,24 +374,36 @@ void VoteWrapper::RebuildVotes(int ClientID)
 				// Append border to the vote option (can outside but)
 				dynamic_string Buffer;
 				if(&Option == pFront)
-					Buffer.append(Formatter::Border::get(Formatter::Border::Beggin, Flags));
-				else if(&Option == pBack)
-					Buffer.append(Formatter::Border::get(Formatter::Border::End, Flags));
-				else if(str_comp(Option.m_aCommand, "null") == 0 && Option.m_Depth <= 0 && !Option.m_Line)
-					Buffer.append(Formatter::Border::get(Formatter::Border::Middle, Flags));
-				else
-					Buffer.append(Formatter::Border::get(Formatter::Border::MiddleOption, Flags));
-
-				// Display the level of the vote option
-				// Dissable for line is a line as it is
-				if(!Option.m_Line && Option.m_Depth > 0)
 				{
-					for(int i = 0; i < Option.m_Depth; i++)
-						Buffer.append(Formatter::Border::get(Formatter::Border::Level, Flags));
+					Buffer.append(Formatter::Border::get(Formatter::Border::Beggin, Flags));
+				}
+				else if(&Option == pBack)
+				{
+					Buffer.append(Formatter::Border::get(Formatter::Border::End, Flags));
+				}
+				else if(str_comp(Option.m_aCommand, "null") == 0 && Option.m_Depth <= 0 && !Option.m_Line)
+				{
+					Buffer.append(Formatter::Border::get(Formatter::Border::Middle, Flags));
+				}
+				else
+				{
+					Buffer.append(Formatter::Border::get(Formatter::Border::MiddleOption, Flags));
 				}
 
-				if(str_comp(Option.m_aDescription, Formatter::g_VoteStrLineDef) != 0 && str_comp(Option.m_aCommand, "null") == 0)
-					Buffer.append(" ");
+				if(!Option.m_Line)
+				{
+					// Display the level of the vote option
+					// Dissable for line is a line as it is
+					if(Option.m_Depth > 0)
+					{
+						for(int i = 0; i < Option.m_Depth; i++)
+							Buffer.append(Formatter::Border::get(Formatter::Border::Level, Flags));
+					}
+
+					// Add space between style and text
+					if(!Option.m_IsTitle && str_comp(Option.m_aCommand, "null") == 0)
+						Buffer.append(" ");
+				}
 
 				// Save changes
 				char aRebuildBuffer[VOTE_DESC_LENGTH];

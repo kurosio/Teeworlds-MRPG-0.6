@@ -14,7 +14,7 @@ class CCharacter : public CEntity
 
 	// player controlling this character
 	class CPlayer *m_pPlayer;
-	TileHandle *m_pHelper;
+	CTileHandler *m_pTilesHandler;
 
 	int m_Event;
 	int m_LastWeapon;
@@ -77,8 +77,8 @@ protected:
 
 	void HandleWeapons();
 	void HandleNinja();
-	void HandleTilesets(int *pIndex = nullptr);
-	void HandleEvent();
+	void HandleTilesets();
+	void HandleSpecialEvent();
 	void HandleIndependentTuning();
 
 	void SetSafe(int FlagsDisallow = CHARACTERFLAG_HAMMER_HIT_DISABLED | CHARACTERFLAG_COLLISION_DISABLED | CHARACTERFLAG_HOOK_HIT_DISABLED);
@@ -91,7 +91,7 @@ public:
 	~CCharacter() override;
 
 	CPlayer *GetPlayer() const { return m_pPlayer; }
-	TileHandle *GetHelper() const { return m_pHelper; }
+	CTileHandler *GetTiles() const { return m_pTilesHandler; }
 
 	void Tick() override;
 	void TickDeferred() override;
@@ -148,7 +148,7 @@ public:
 	int m_MoveRestrictions;
 
 private:
-	bool StartConversation(CPlayer* pTarget);
+	bool StartConversation(CPlayer* pTarget) const;
 	void HandleEventsDeath(int Killer, vec2 Force) const;
 };
 

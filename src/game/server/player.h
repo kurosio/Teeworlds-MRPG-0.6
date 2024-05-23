@@ -145,6 +145,7 @@ public:
 	class CPlayerBot* GetEidolon() const;
 	void TryCreateEidolon();
 	void TryRemoveEidolon();
+	void UpdateAchievement(int Type, int Misc, int Value, int ProgressType);
 
 private:
 	virtual void GetFormatedName(char* aBuffer, int BufferSize);
