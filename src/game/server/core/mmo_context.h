@@ -360,8 +360,8 @@ enum
 	itDamageEqualizer = 97,				// Module for dissable self dmg
 
 	// decoration items
-	itPickupHealth = 10,					// Pickup heart
-	itPickupArmor = 13,					// Pickup armor
+	itPickupHealth = 18,				// Pickup heart
+	itPickupMana = 13,					// Pickup mana
 	itPickupShotgun = 11,				// Pickup shotgun
 	itPickupGrenade = 12,				// Pickup grenade
 	itPickupLaser = 94,				    // Pickup laser

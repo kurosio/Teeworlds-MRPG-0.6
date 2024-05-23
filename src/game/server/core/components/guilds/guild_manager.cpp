@@ -1119,7 +1119,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Guild management
-	VoteWrapper VManagement(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
+	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
 	VManagement.Add("Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
 	VManagement.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 	VManagement.AddLine();
@@ -1138,7 +1138,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		// House management
 		auto* pHouse = pGuild->GetHouse();
 		VoteWrapper::AddEmptyline(ClientID);
-		VoteWrapper VHouse(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {} days)", pHouse->GetRentDays());
+		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {} days)", pHouse->GetRentDays());
 		VHouse.Add("Bank: {} | Rent per day: {} golds", pGuild->GetBank()->Get(), pHouse->GetRentPrice());
 		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
@@ -1164,7 +1164,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// guild-related upgrades
-	VoteWrapper VUpgr(ClientID, VWF_STYLE_SIMPLE, "\u2730 Guild-related upgrades");
+	VoteWrapper VUpgr(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2730 Guild-related upgrades");
 	for(int i = (int)GuildUpgrade::START_GUILD_UPGRADES; i < (int)GuildUpgrade::END_GUILD_UPGRADES; i++)
 	{
 		int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
@@ -1176,7 +1176,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	// house-related upgrades
 	if(pGuild->HasHouse())
 	{
-		VoteWrapper VUpgrHouse(ClientID, VWF_STYLE_SIMPLE, "\u2725 House-related upgrades");
+		VoteWrapper VUpgrHouse(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2725 House-related upgrades");
 		for(int i = (int)GuildUpgrade::START_GUILD_HOUSE_UPGRADES; i < (int)GuildUpgrade::END_GUILD_HOUSE_UPGRADES; i++)
 		{
 			int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
@@ -1271,15 +1271,12 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 	bool RightsInviteKick = pSelfMember->CheckAccess(GUILD_RANK_RIGHT_INVITE_KICK);
 	bool SelfSlot = (pMember->GetAccountID() == pSelfMember->GetAccountID());
 
-	// information
-	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2324 Editing member {}", Server()->GetAccountNickname(pMember->GetAccountID()));
-	VInfo.Add("Deposit: {}", pMember->GetDeposit());
-	VInfo.Add("Rank: {}", pMember->GetRank()->GetName());
-	VoteWrapper::AddEmptyline(ClientID);
-
 	// top-middle
-	VoteWrapper VTop(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "Management");
+	int ClientID = pPlayer->GetCID();
+	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE | VWF_SEPARATE | VWF_STYLE_SIMPLE, "Editing member '{}'", Server()->GetAccountNickname(pMember->GetAccountID()));
+	VTop.Add("Deposit: {}", pMember->GetDeposit());
+	VTop.Add("Rank: {}", pMember->GetRank()->GetName());
+	VTop.AddLine();
 	VTop.AddIfOption(RightsLeader && !SelfSlot, "GUILD_SET_LEADER", "Give Leader (in reason 134)");
 	VTop.AddIfOption(RightsInviteKick && !SelfSlot, "GUILD_KICK_MEMBER", AccountID, "Kick");
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1319,7 +1316,7 @@ void CGuildManager::ShowRanksList(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// top-middle
-	VoteWrapper VTop(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Management");
+	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "Management");
 	VTop.AddOption("GUILD_RANK_CREATE", "New rank (by reason field)");
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -1346,14 +1343,11 @@ void CGuildManager::ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID) const
 	if(!pRank)
 		return;
 
-	// information
-	const int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2324 Editing rank '{}'", pRank->GetName());
-	VInfo.Add("Current rigths: {}", pRank->GetRightsName());
-	VoteWrapper::AddEmptyline(ClientID);
-
 	// top-middle
-	VoteWrapper VTop(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Setting important", pRank->GetName());
+	const int ClientID = pPlayer->GetCID();
+	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "Editing rank '{}'", pRank->GetName());
+	VTop.Add("Rigths: {}", pRank->GetRightsName());
+	VTop.AddLine();
 	VTop.AddOption("GUILD_RANK_RENAME", pRank->GetID(), "Rename (by reason field)");
 	VTop.AddOption("GUILD_RANK_REMOVE", pRank->GetID(), "Remove");
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1652,7 +1646,7 @@ void CGuildManager::ShowLogs(CPlayer* pPlayer) const
 	auto flagStatus = [&](int flag) { return pLogger->IsActivityFlagSet(flag) ? "[\u2714]" : "[\u2715]"; };
 
 	// logger settings
-	VoteWrapper VLogger(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Activity log settings");
+	VoteWrapper VLogger(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "Activity log settings");
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_GUILD_FULL, "Full changes {}", flagStatus(LOGFLAG_GUILD_FULL));
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_GUILD_MAIN_CHANGES, "Main changes {}", flagStatus(LOGFLAG_GUILD_MAIN_CHANGES));
 	VLogger.AddOption("GUILD_LOGGER_SET", LOGFLAG_MEMBERS_CHANGES, "Members changes {}", flagStatus(LOGFLAG_MEMBERS_CHANGES));

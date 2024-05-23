@@ -15,7 +15,7 @@ CGS* CBrush::GS() const { return m_pBoard->GS(); }
 	switch(ItemID)
 	{
 		case itPickupHealth: return new CPickup(pWorld, POWERUP_HEALTH, 0, Pos);
-		case itPickupArmor: return new CPickup(pWorld, POWERUP_ARMOR, 0, Pos);
+		case itPickupMana: return new CPickup(pWorld, POWERUP_ARMOR, 0, Pos);
 		case itPickupShotgun: return new CPickup(pWorld, POWERUP_WEAPON, WEAPON_SHOTGUN, Pos);
 		case itPickupGrenade: return new CPickup(pWorld, POWERUP_WEAPON, WEAPON_GRENADE, Pos);
 		case itPickupLaser: return new CPickup(pWorld, POWERUP_WEAPON, WEAPON_LASER, Pos);

@@ -22,6 +22,7 @@ class CEntityGuildDoor : public CEntity
 
 public:
 	CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouse* pHouse, std::string&& Name, vec2 Pos);
+	void Reverse();
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
