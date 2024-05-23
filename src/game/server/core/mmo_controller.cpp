@@ -178,7 +178,6 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VPersonal.AddIfMenu(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
 		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		VPersonal.AddIfMenu(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");
-		VoteWrapper::AddEmptyline(ClientID);
 
 		// info menu
 		VoteWrapper VInfo(ClientID, VWF_OPEN, "\u262A INFORMATION");

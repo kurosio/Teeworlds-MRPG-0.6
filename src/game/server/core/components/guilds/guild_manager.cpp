@@ -1138,7 +1138,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		// House management
 		auto* pHouse = pGuild->GetHouse();
 		VoteWrapper::AddEmptyline(ClientID);
-		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {} days)", pHouse->GetRentDays());
+		VoteWrapper VHouse(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {} days)", pHouse->GetRentDays());
 		VHouse.Add("Bank: {} | Rent per day: {} golds", pGuild->GetBank()->Get(), pHouse->GetRentPrice());
 		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
@@ -1158,7 +1158,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 
 	// information
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Guild upgrades (Information)");
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "\u2324 Guild upgrades (Information)");
 	VInfo.Add("All improvements are solely related to the guild itself.");
 	VInfo.Add("Bank: {}", pGuild->GetBank()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1243,7 +1243,6 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// list
-	int Position = 1;
 	VoteWrapper VList(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "List of membership ({} of {})", CurrentSlots.first, CurrentSlots.second);
 	for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 	{
@@ -1251,8 +1250,7 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 		const int& UID = pMember->GetAccountID();
 		const char* pNickname = Server()->GetAccountNickname(UID);
 		VList.AddMenu(MENU_GUILD_MEMBERSHIP_SELECTED, UID, "{}. {} {} Deposit: {}", 
-			Position, pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
-		Position++;
+			VList.NextPos(), pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1532,7 +1530,6 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 		return;
 
 	// initialize variables
-	int Position = 1;
 	int ClientID = pPlayer->GetCID();
 	auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
 
@@ -1545,14 +1542,13 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Memberlist
-	VoteWrapper VMemberlist(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "List of membership");
+	VoteWrapper VList(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "List of membership");
 	for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 	{
 		auto pMember = pIterMember.second;
-		VMemberlist.Add("{}. {} {} Deposit: {}", Position, pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
-		Position++;
+		VList.Add("{}. {} {} Deposit: {}", VList.NextPos(), pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
 	}
-	VMemberlist.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_SEND_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
+	VList.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_SEND_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
 	VoteWrapper::AddEmptyline(ClientID);
 }
 

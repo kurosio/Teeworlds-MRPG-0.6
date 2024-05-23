@@ -230,7 +230,7 @@ public:
 		return *this;
 	}
 
-	bool NextPos() const { return m_pGroup->NextPos(); }
+	int NextPos() const { return m_pGroup->NextPos(); }
 	bool IsEmpty() const { return m_pGroup->IsEmpty(); }
 	bool IsTittleSet() const { return m_pGroup->IsTitleSet(); }
 
