@@ -24,7 +24,7 @@ void CDungeonManager::OnInit()
 	}
 }
 
-bool CDungeonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CDungeonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -55,28 +55,28 @@ bool CDungeonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
 	if(!pPlayer->GetCharacter() || !pPlayer->GetCharacter()->IsAlive())
 		return false;
 
-	if(PPSTR(CMD, "DUNGEONJOIN") == 0)
+	if(PPSTR(pCmd, "DUNGEONJOIN") == 0)
 	{
-		if(GS()->IsPlayerEqualWorld(ClientID, CDungeonData::ms_aDungeon[VoteID].m_WorldID))
+		if(GS()->IsPlayerEqualWorld(ClientID, CDungeonData::ms_aDungeon[Extra1].m_WorldID))
 		{
 			GS()->Chat(ClientID, "You are already in this dungeon!");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			return true;
 		}
-		if(CDungeonData::ms_aDungeon[VoteID].IsDungeonPlaying())
+		if(CDungeonData::ms_aDungeon[Extra1].IsDungeonPlaying())
 		{
 			GS()->Chat(ClientID, "At the moment players are passing this dungeon!");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			return true;
 		}
 
-		if(pPlayer->Account()->GetLevel() < CDungeonData::ms_aDungeon[VoteID].m_Level)
+		if(pPlayer->Account()->GetLevel() < CDungeonData::ms_aDungeon[Extra1].m_Level)
 		{
 			GS()->Chat(ClientID, "Your level is low to pass this dungeon!");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
@@ -89,14 +89,14 @@ bool CDungeonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 			GS()->Core()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
 		}
 
-		GS()->Chat(-1, "{} joined to Dungeon {}!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[VoteID].m_aName);
+		GS()->Chat(-1, "{} joined to Dungeon {}!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[Extra1].m_aName);
 		GS()->Chat(ClientID, "You can vote for the choice of tank (Dungeon Tab)!");
-		pPlayer->ChangeWorld(CDungeonData::ms_aDungeon[VoteID].m_WorldID);
+		pPlayer->ChangeWorld(CDungeonData::ms_aDungeon[Extra1].m_WorldID);
 		return true;
 	}
 
 	// dungeon exit
-	else if(PPSTR(CMD, "DUNGEONEXIT") == 0)
+	else if(PPSTR(pCmd, "DUNGEONEXIT") == 0)
 	{
 		const int LatestCorrectWorldID = Core()->AccountManager()->GetLastVisitedWorldID(pPlayer);
 		pPlayer->ChangeWorld(LatestCorrectWorldID);

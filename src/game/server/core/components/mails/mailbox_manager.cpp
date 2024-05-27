@@ -5,12 +5,12 @@
 #include <game/server/gamecontext.h>
 #include "mail_wrapper.h"
 
-bool CMailboxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText)
+bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason)
 {
 	// accept mail by id
-	if(PPSTR(CMD, "MAIL_ACCEPT") == 0)
+	if(PPSTR(pCmd, "MAIL_ACCEPT") == 0)
 	{
-		if(AcceptMail(pPlayer, VoteID))
+		if(AcceptMail(pPlayer, Extra1))
 			pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
 		else
 			GS()->Chat(pPlayer->GetCID(), "You can't accept the mail attached item's");
@@ -18,9 +18,9 @@ bool CMailboxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, in
 	}
 
 	// delete mail by id
-	if(PPSTR(CMD, "MAIL_DELETE") == 0)
+	if(PPSTR(pCmd, "MAIL_DELETE") == 0)
 	{
-		DeleteMail(VoteID);
+		DeleteMail(Extra1);
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
 		return true;
 	}
@@ -28,7 +28,7 @@ bool CMailboxManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, in
 	return false;
 }
 
-bool CMailboxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CMailboxManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -51,8 +51,8 @@ bool CMailboxManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAILBOX);
 
 		// try show mail item
-		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
-			ShowMail(pPlayer->m_VotesData.GetMenuTemporaryInteger(), pPlayer);
+		if(pPlayer->m_VotesData.GetGroupID() >= 0)
+			ShowMail(pPlayer->m_VotesData.GetGroupID(), pPlayer);
 
 		// add backpage
 		VoteWrapper::AddBackpage(pPlayer->GetCID());

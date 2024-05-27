@@ -274,9 +274,9 @@ public:
 	virtual void OnPostSnap() = 0;
 
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) = 0;
-	virtual void ClearClientData(int ClientID) = 0;
+	virtual void OnClearClientData(int ClientID) = 0;
 
-	virtual void PrepareClientChangeWorld(int ClientID) = 0;
+	virtual void OnClientPrepareChangeWorld(int ClientID) = 0;
 
 	virtual void OnClientConnected(int ClientID) = 0;
 	virtual void OnClientEnter(int ClientID) = 0;
@@ -292,7 +292,7 @@ public:
 
 	virtual const char *Version() const = 0;
 	virtual const char *NetVersion() const = 0;
-	virtual int GetRank(int AuthID) = 0;
+	virtual int GetRank(int AuthID) const = 0;
 
 	/**
 	 * Used to report custom player info to master servers.
@@ -300,7 +300,7 @@ public:
 	 * @param aBuf Should be the json key values to add, starting with a ',' beforehand, like: ',"skin": "default", "team": 1'
 	 * @param i The client id.
 	 */
-	virtual void OnUpdatePlayerServerInfo(nlohmann::json* pJson, int ClientID) = 0;
+	virtual void OnUpdateClientServerInfo(nlohmann::json* pJson, int ClientID) = 0;
 };
 
 namespace Instance

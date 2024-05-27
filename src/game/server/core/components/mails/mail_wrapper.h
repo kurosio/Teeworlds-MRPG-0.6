@@ -3,9 +3,8 @@
 #ifndef GAME_SERVER_CORE_COMPONENTS_MAIL_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_MAIL_DATA_H
 
-#include <engine/server.h>
-
 #include <game/server/core/components/Inventory/ItemData.h>
+#include <game/server/core/utilities/format.h>
 
 class MailWrapper
 {
@@ -17,21 +16,21 @@ class MailWrapper
 
 public:
 	template <typename ... Ts>
-	MailWrapper(const char* pFrom, int AccountID, const char* pTitle, Ts&&... args)
+	MailWrapper(const char* pFrom, int AccountID, const char* pTitle, const Ts&... args)
 	{
 		m_Sender = pFrom;
 		m_AccountID = AccountID;
-		m_Title = Instance::Server()->Localization()->Format("en", pTitle, std::forward<Ts>(args) ...);
+		m_Title = Tools::String::Format(pTitle, args...);
 	}
 
 	template <typename ... Ts>
-	MailWrapper& AddDescLine(const char* pDescline, Ts&&... args)
+	MailWrapper& AddDescLine(const char* pDescline, const Ts&... args)
 	{
-		m_vDescriptionLines.push_back(Instance::Server()->Localization()->Format("en", pDescline, std::forward<Ts>(args) ...));
+		m_vDescriptionLines.push_back(Tools::String::Format(pDescline, args...));
 		return *this;
 	}
 
-	MailWrapper& AttachItem(CItem Item)
+	MailWrapper& AttachItem(const CItem& Item)
 	{
 		m_vAttachedItems.push_back(Item);
 		return *this;

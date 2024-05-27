@@ -88,9 +88,9 @@ void CGameControllerDungeon::ChangeState(int State)
 		m_MaximumTick = Server()->TickSpeed() * 600;
 		m_SafeTick = Server()->TickSpeed() * 30;
 
-		GS()->ChatWorldID(m_WorldID, "Dungeon:", "The security timer is enabled for 30 seconds!");
-		GS()->ChatWorldID(m_WorldID, "Dungeon:", "You are given 10 minutes to complete of dungeon!");
-		GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon started!");
+		GS()->ChatWorld(m_WorldID, "Dungeon:", "The security timer is enabled for 30 seconds!");
+		GS()->ChatWorld(m_WorldID, "Dungeon:", "You are given 10 minutes to complete of dungeon!");
+		GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon started!");
 
 		SetMobsSpawn(true);
 		KillAllPlayers();
@@ -199,7 +199,7 @@ void CGameControllerDungeon::StateTick()
 
 			// output before the start of the passage
 			const int Time = m_StartingTick / Server()->TickSpeed();
-			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'", Time, PlayersReadyState, Players);
+			GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'", Time, PlayersReadyState, Players);
 
 			m_StartingTick--;
 			if(!m_StartingTick)
@@ -230,7 +230,7 @@ void CGameControllerDungeon::StateTick()
 		{
 			m_SafeTick--;
 			if(!m_SafeTick)
-				GS()->ChatWorldID(m_WorldID, "Dungeon:", "The security timer is over, be careful!");
+				GS()->ChatWorld(m_WorldID, "Dungeon:", "The security timer is over, be careful!");
 		}
 
 		// finish the dungeon when the dungeon is successfully completed
@@ -245,7 +245,7 @@ void CGameControllerDungeon::StateTick()
 		if(m_FinishedTick)
 		{
 			const int Time = m_FinishedTick / Server()->TickSpeed();
-			GS()->BroadcastWorldID(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon ended {} sec!", Time);
+			GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon ended {} sec!", Time);
 
 			m_FinishedTick--;
 		}
@@ -290,7 +290,7 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 		{
 			const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
 			CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "The dungeon is completed on [{}%]", Progress);
+			GS()->ChatWorld(m_WorldID, "Dungeon:", "The dungeon is completed on [{}%]", Progress);
 			UpdateDoorKeyState();
 		}
 	}
@@ -342,7 +342,7 @@ void CGameControllerDungeon::UpdateDoorKeyState()
 		pDoor; pDoor = (CLogicDungeonDoorKey*)pDoor->TypeNext())
 	{
 		if(pDoor->SyncStateChanges())
-			GS()->ChatWorldID(m_WorldID, "Dungeon:", "Door creaking.. Opened door somewhere!");
+			GS()->ChatWorld(m_WorldID, "Dungeon:", "Door creaking.. Opened door somewhere!");
 	}
 }
 

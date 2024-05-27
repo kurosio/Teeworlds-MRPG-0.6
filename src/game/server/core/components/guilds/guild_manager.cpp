@@ -76,7 +76,7 @@ void CGuildManager::OnTick()
 	}
 }
 
-bool CGuildManager::OnHandleTile(CCharacter* pChr)
+bool CGuildManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
@@ -109,12 +109,12 @@ bool CGuildManager::OnHandleTile(CCharacter* pChr)
 	return false;
 }
 
-bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText)
+bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
 
 	// teleport to house
-	if(PPSTR(CMD, "GUILD_HOUSE_SPAWN") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_SPAWN") == 0)
 	{
 		// check guild valid
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -148,7 +148,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// start house decoration edit
-	if(PPSTR(CMD, "GUILD_HOUSE_DECORATION_EDIT") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_DECORATION_EDIT") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -176,7 +176,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// set leader
-	if(PPSTR(CMD, "GUILD_SET_LEADER") == 0)
+	if(PPSTR(pCmd, "GUILD_SET_LEADER") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -187,7 +187,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// result
-		switch(pGuild->SetLeader(VoteID))
+		switch(pGuild->SetLeader(Extra1))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::SET_LEADER_NON_GUILD_PLAYER: GS()->Chat(ClientID, "The player is not a member of your guild"); break;
@@ -201,7 +201,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// change member rank
-	if(PPSTR(CMD, "GUILD_CHANGE_MEMBER_RANK") == 0)
+	if(PPSTR(pCmd, "GUILD_CHANGE_MEMBER_RANK") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -212,8 +212,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// initialize variables
-		const int& MemberUID = VoteID;
-		const GuildRankIdentifier& RankID = VoteID2;
+		const int& MemberUID = Extra1;
+		const GuildRankIdentifier& RankID = Extra2;
 		auto pMember = pGuild->GetMembers()->Get(MemberUID);
 
 		// check member valid and result from setrank
@@ -230,7 +230,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// disband
-	if(PPSTR(CMD, "GUILD_DISBAND") == 0)
+	if(PPSTR(pCmd, "GUILD_DISBAND") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -241,7 +241,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// prevent accidental pressing
-		if(Get != 55428)
+		if(ReasonNumber != 55428)
 		{
 			GS()->Chat(ClientID, "Random Touch Security Code has not been entered correctly.");
 			return true;
@@ -253,7 +253,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// kick member
-	if(PPSTR(CMD, "GUILD_KICK_MEMBER") == 0)
+	if(PPSTR(pCmd, "GUILD_KICK_MEMBER") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -264,14 +264,14 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check exclude oneself
-		if(pPlayer->Account()->GetID() == VoteID)
+		if(pPlayer->Account()->GetID() == Extra1)
 		{
 			GS()->Chat(ClientID, "You can't kick yourself");
 			return true;
 		}
 
 		// result
-		switch(pPlayer->Account()->GetGuild()->GetMembers()->Kick(VoteID))
+		switch(pPlayer->Account()->GetGuild()->GetMembers()->Kick(Extra1))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::MEMBER_KICK_IS_OWNER: GS()->Chat(ClientID, "You can't kick a leader"); break;
@@ -285,7 +285,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// deposit gold
-	if(PPSTR(CMD, "GUILD_DEPOSIT_GOLD") == 0)
+	if(PPSTR(pCmd, "GUILD_DEPOSIT_GOLD") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -296,7 +296,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// minimal 100
-		if(Get < 100)
+		if(ReasonNumber < 100)
 		{
 			GS()->Chat(ClientID, "Minimum is 100 gold.");
 			return true;
@@ -311,13 +311,13 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// deposit gold
-		if(pMember->DepositInBank(Get))
+		if(pMember->DepositInBank(ReasonNumber))
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD);
 		return true;
 	}
 
 	// extend rent
-	if(PPSTR(CMD, "GUILD_HOUSE_EXTEND_RENT") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_EXTEND_RENT") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -343,18 +343,18 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check minimal
-		Get = clamp(Get, 0, GUILD_HOUSE_MAX_RENT_DAYS - pHouse->GetRentDays());
-		if(!Get)
+		ReasonNumber = clamp(ReasonNumber, 0, GUILD_HOUSE_MAX_RENT_DAYS - pHouse->GetRentDays());
+		if(!ReasonNumber)
 		{
 			GS()->Chat(ClientID, "Minimum is 1 day. Maximum total {} days.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
 			return true;
 		}
 
 		// extend
-		if(pHouse->ExtendRentDays(Get))
+		if(pHouse->ExtendRentDays(ReasonNumber))
 		{
-			GS()->ChatGuild(pGuild->GetID(), "Your house was extended by {} days.", Get);
-			pGuild->GetLogger()->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House extended by %d days.", Get);
+			GS()->ChatGuild(pGuild->GetID(), "Your house was extended by {} days.", ReasonNumber);
+			pGuild->GetLogger()->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House extended by %d days.", ReasonNumber);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 			return true;
 		}
@@ -365,7 +365,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// create new rank
-	if(PPSTR(CMD, "GUILD_RANK_CREATE") == 0)
+	if(PPSTR(pCmd, "GUILD_RANK_CREATE") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -376,21 +376,21 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check valid text from reason
-		if(PPSTR(GetText, "NULL") == 0)
+		if(PPSTR(pReason, "NULL") == 0)
 		{
 			GS()->Chat(ClientID, "Please use a different name.");
 			return true;
 		}
 
 		// result
-		switch(pGuild->GetRanks()->Add(GetText))
+		switch(pGuild->GetRanks()->Add(pReason))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::RANK_ADD_ALREADY_EXISTS: GS()->Chat(ClientID, "The rank name already exists"); break;
 			case GuildResult::RANK_ADD_LIMIT_HAS_REACHED: GS()->Chat(ClientID, "Rank limit reached, {} out of {}", (int)GUILD_RANKS_MAX_COUNT, (int)GUILD_RANKS_MAX_COUNT); break;
 			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16."); break;
 			case GuildResult::RANK_SUCCESSFUL:
-				GS()->Chat(ClientID, "The rank '{}' has been successfully added!", GetText);
+				GS()->Chat(ClientID, "The rank '{}' has been successfully added!", pReason);
 				GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_LIST);
 			break;
 		}
@@ -398,7 +398,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// rename rank
-	if(PPSTR(CMD, "GUILD_RANK_RENAME") == 0)
+	if(PPSTR(pCmd, "GUILD_RANK_RENAME") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -409,14 +409,14 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check valid text from reason
-		if(PPSTR(GetText, "NULL") == 0)
+		if(PPSTR(pReason, "NULL") == 0)
 		{
 			GS()->Chat(ClientID, "Please use a different name.");
 			return true;
 		}
 
 		// check rank valid
-		auto pRank = pGuild->GetRanks()->Get(VoteID);
+		auto pRank = pGuild->GetRanks()->Get(Extra1);
 		if(!pRank)
 		{
 			GS()->Chat(ClientID, "Unforeseen error.");
@@ -425,7 +425,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// result
-		switch(pRank->Rename(GetText))
+		switch(pRank->Rename(pReason))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::RANK_RENAME_ALREADY_NAME_EXISTS: GS()->Chat(ClientID, "The name is already in use by another rank"); break;
@@ -436,7 +436,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// remove rank
-	if(PPSTR(CMD, "GUILD_RANK_REMOVE") == 0)
+	if(PPSTR(pCmd, "GUILD_RANK_REMOVE") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -447,7 +447,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check rank valid
-		auto pRank = pGuild->GetRanks()->Get(VoteID);
+		auto pRank = pGuild->GetRanks()->Get(Extra1);
 		if(!pRank)
 		{
 			GS()->Chat(ClientID, "Unforeseen error.");
@@ -470,7 +470,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// set rights for rank
-	if(PPSTR(CMD, "GUILD_RANK_SET_RIGHTS") == 0)
+	if(PPSTR(pCmd, "GUILD_RANK_SET_RIGHTS") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -481,7 +481,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check rank valid
-		auto pRank = pGuild->GetRanks()->Get(VoteID);
+		auto pRank = pGuild->GetRanks()->Get(Extra1);
 		if(!pRank)
 		{
 			GS()->Chat(ClientID, "Unforeseen error.");
@@ -490,7 +490,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check for same of rights
-		const auto Rights = static_cast<GuildRankRights>(VoteID2);
+		const auto Rights = static_cast<GuildRankRights>(Extra2);
 		if(pRank->GetRights() == Rights)
 		{
 			GS()->Chat(ClientID, "You already have current rights set.");
@@ -504,7 +504,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// request accept
-	if(PPSTR(CMD, "GUILD_REQUESTS_ACCEPT") == 0)
+	if(PPSTR(pCmd, "GUILD_REQUESTS_ACCEPT") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -515,7 +515,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// result
-		switch(pGuild->GetMembers()->GetRequests()->Accept(VoteID, pPlayer->Account()->GetGuildMember()))
+		switch(pGuild->GetMembers()->GetRequests()->Accept(Extra1, pPlayer->Account()->GetGuildMember()))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::MEMBER_JOIN_ALREADY_IN_GUILD: GS()->Chat(ClientID, "The player is already in a guild"); break;
@@ -529,7 +529,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// request deny
-	if(PPSTR(CMD, "GUILD_REQUESTS_DENY") == 0)
+	if(PPSTR(pCmd, "GUILD_REQUESTS_DENY") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -540,30 +540,30 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// deny the request
-		pGuild->GetMembers()->GetRequests()->Deny(VoteID, pPlayer->Account()->GetGuildMember());
+		pGuild->GetMembers()->GetRequests()->Deny(Extra1, pPlayer->Account()->GetGuildMember());
 		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
 		GS()->UpdateVotesIfForAll(MENU_GUILD_INVITES);
 		return true;
 	}
 
 	// field search guilds
-	if(PPSTR(CMD, "GUILD_FINDER_SEARCH_FIELD") == 0)
+	if(PPSTR(pCmd, "GUILD_FINDER_SEARCH_FIELD") == 0)
 	{
 		// check text valid
-		if(PPSTR(GetText, "NULL") == 0)
+		if(PPSTR(pReason, "NULL") == 0)
 		{
 			GS()->Chat(ClientID, "Please use a different name.");
 			return true;
 		}
 
 		// update search buffer and reset votes
-		str_copy(pPlayer->GetTempData().m_aGuildSearchBuf, GetText, sizeof(pPlayer->GetTempData().m_aGuildSearchBuf));
+		str_copy(pPlayer->GetTempData().m_aGuildSearchBuf, pReason, sizeof(pPlayer->GetTempData().m_aGuildSearchBuf));
 		pPlayer->m_VotesData.UpdateVotes(MENU_GUILD_FINDER);
 		return true;
 	}
 
 	// send request
-	if(PPSTR(CMD, "GUILD_SEND_REQUEST") == 0)
+	if(PPSTR(pCmd, "GUILD_SEND_REQUEST") == 0)
 	{
 		// check guild if have
 		if(pPlayer->Account()->HasGuild())
@@ -573,8 +573,8 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// initialize variables
-		const GuildIdentifier& ID = VoteID;
-		const int& AccountID = VoteID2;
+		const GuildIdentifier& ID = Extra1;
+		const int& AccountID = Extra2;
 
 		// check guild valid
 		auto* pGuild = GetGuildByID(ID);
@@ -597,7 +597,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// buy house
-	if(PPSTR(CMD, "GUILD_HOUSE_BUY") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_BUY") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -608,7 +608,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// result
-		switch(pGuild->BuyHouse(VoteID))
+		switch(pGuild->BuyHouse(Extra1))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::BUY_HOUSE_ALREADY_HAVE: GS()->Chat(ClientID, "Your guild already has a house."); break;
@@ -624,7 +624,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// declare guild war
-	if(PPSTR(CMD, "GUILD_DECLARE_WAR") == 0)
+	if(PPSTR(pCmd, "GUILD_DECLARE_WAR") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -635,14 +635,14 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// check if war and self it's same guild
-		if(pGuild->GetID() == VoteID)
+		if(pGuild->GetID() == Extra1)
 		{
 			GS()->Chat(ClientID, "You can't declare war on your own guild.");
 			return true;
 		}
 
 		// check war guild valid
-		CGuild* pWarGuild = GetGuildByID(VoteID);
+		CGuild* pWarGuild = GetGuildByID(Extra1);
 		if(!pWarGuild)
 		{
 			GS()->Chat(ClientID, "This guild cannot be declared war at this time.");
@@ -664,7 +664,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// try plant to house
-	if(PPSTR(CMD, "GUILD_HOUSE_FARM_ZONE_TRY_PLANT") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_FARM_ZONE_TRY_PLANT") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -683,9 +683,9 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// initialize variables
-		const int& Useds = maximum(1, Get);
-		const int& FarmzoneID = VoteID;
-		const ItemIdentifier& ItemID = VoteID2;
+		const int& Useds = maximum(1, ReasonNumber);
+		const int& FarmzoneID = Extra1;
+		const ItemIdentifier& ItemID = Extra2;
 
 		// check farmzone valid
 		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
@@ -732,7 +732,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// house door
-	if(PPSTR(CMD, "GUILD_HOUSE_DOOR") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_DOOR") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -751,14 +751,14 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// reverse door house
-		int UniqueDoorID = VoteID;
+		int UniqueDoorID = Extra1;
 		pHouse->GetDoorManager()->Reverse(UniqueDoorID);
 		GS()->UpdateVotesIfForAll(MENU_GUILD_HOUSE_DOOR_LIST);
 		return true;
 	}
 
 	// house sell
-	if(PPSTR(CMD, "GUILD_HOUSE_SELL") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_SELL") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -769,7 +769,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// prevent accidental pressing
-		if(Get != 3342)
+		if(ReasonNumber != 3342)
 		{
 			GS()->Chat(ClientID, "Random Touch Security Code has not been entered correctly.");
 			return true;
@@ -782,7 +782,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// upgrade guild
-	if(PPSTR(CMD, "GUILD_UPGRADE") == 0)
+	if(PPSTR(pCmd, "GUILD_UPGRADE") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -793,7 +793,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// result
-		GuildUpgrade UpgrID = static_cast<GuildUpgrade>(VoteID);
+		GuildUpgrade UpgrID = static_cast<GuildUpgrade>(Extra1);
 		if(!pGuild->Upgrade(UpgrID))
 		{
 			GS()->Chat(ClientID, "Your guild does not have enough gold, or the maximum upgrade level has been reached.");
@@ -805,7 +805,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	}
 
 	// logger set activity
-	if(PPSTR(CMD, "GUILD_LOGGER_SET") == 0)
+	if(PPSTR(pCmd, "GUILD_LOGGER_SET") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -816,7 +816,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 		}
 
 		// result
-		pGuild->GetLogger()->SetActivityFlag(VoteID);
+		pGuild->GetLogger()->SetActivityFlag(Extra1);
 		GS()->UpdateVotesIfForAll(MENU_GUILD_LOGS);
 		return true;
 	}
@@ -824,7 +824,7 @@ bool CGuildManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int 
 	return false;
 }
 
-bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CGuildManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -839,7 +839,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_FINDER_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_FINDER);
-		ShowFinderDetail(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		ShowFinderDetail(pPlayer, pPlayer->m_VotesData.GetGroupID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -936,7 +936,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_MEMBERSHIP_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_MEMBERSHIP_LIST);
-		ShowMembershipEdit(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		ShowMembershipEdit(pPlayer, pPlayer->m_VotesData.GetGroupID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -952,7 +952,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_RANK_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_RANK_LIST);
-		ShowRankEdit(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		ShowRankEdit(pPlayer, pPlayer->m_VotesData.GetGroupID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -968,7 +968,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_HOUSE_FARMZONE_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_HOUSE_FARMZONE_LIST);
-		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetGroupID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -976,7 +976,7 @@ bool CGuildManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-void CGuildManager::OnHandleTimePeriod(TIME_PERIOD Period)
+void CGuildManager::OnTimePeriod(TIME_PERIOD Period)
 {
 	// handle time period for each guilds
 	for(auto& pGuild : CGuild::Data())

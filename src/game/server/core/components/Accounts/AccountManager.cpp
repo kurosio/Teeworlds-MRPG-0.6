@@ -11,26 +11,17 @@
 
 #include <base/hash_ctxt.h>
 
-// This function returns the latest correct world ID from the player's history world list
-// The function takes a pointer to a CPlayer object as an argument
 int CAccountManager::GetLastVisitedWorldID(CPlayer* pPlayer) const
 {
-	// Find the first element in the range [pPlayer->Account()->m_aHistoryWorld.begin(), pPlayer->Account()->m_aHistoryWorld.end()]
-	// that satisfies the condition specified by the lambda function
 	const auto pWorldIterator = std::find_if(pPlayer->Account()->m_aHistoryWorld.begin(), pPlayer->Account()->m_aHistoryWorld.end(), [=](int WorldID)
 	{
-		// Return true if the world is not a dungeon world and the player's level is greater than or equal to the required level
 		if(GS()->GetWorldData(WorldID))
 		{
 			int RequiredLevel = GS()->GetWorldData(WorldID)->GetRequiredLevel();
-			return !Server()->IsWorldType(WorldID, WorldType::Dungeon) && pPlayer->Account()->GetLevel() >= RequiredLevel;
+			return Server()->IsWorldType(WorldID, WorldType::Default) && pPlayer->Account()->GetLevel() >= RequiredLevel;
 		}
-
-		// Return false if the world data for the given WorldID does not exist
 		return false;
 	});
-
-	// Return the world ID if a correct world ID is found, otherwise return the main world ID
 	return pWorldIterator != pPlayer->Account()->m_aHistoryWorld.end() ? *pWorldIterator : MAIN_WORLD_ID;
 }
 
@@ -84,74 +75,67 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	return AccountCodeResult::AOP_REGISTER_OK; // Return registration success
 }
 
-// Function to log in to an account
-AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* Login, const char* Password)
+AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin, const char* pPassword)
 {
-	// Get the player associated with the client ID
+	// check valid player
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, false);
-
-	// Check if the player exists
 	if(!pPlayer)
 	{
-		// If player does not exist, return unknown error
 		return AccountCodeResult::AOP_UNKNOWN;
 	}
 
-	// Check if the length of the login is less than 4 or greater than 12, or if the length of the password is less than 4 or greater than 12
-	const int LengthLogin = str_length(Login);
-	const int LengthPassword = str_length(Password);
+	// check valid login and password
+	const int LengthLogin = str_length(pLogin);
+	const int LengthPassword = str_length(pPassword);
 	if(LengthLogin < 4 || LengthLogin > 12 || LengthPassword < 4 || LengthPassword > 12)
 	{
-		// Send error message to the client
 		GS()->Chat(ClientID, "The username and password must each contain 4 - 12 characters.");
-		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS; // Return mismatch length symbols error
+		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS;
 	}
 
-	// Create a SQL strings
-	const auto sqlStrLogin = CSqlString<32>(Login);
-	const auto sqlStrPass = CSqlString<32>(Password);
+	// initialize sql string
+	const auto sqlStrLogin = CSqlString<32>(pLogin);
+	const auto sqlStrPass = CSqlString<32>(pPassword);
 	const auto sqlStrNick = CSqlString<32>(Server()->ClientName(ClientID));
 
-	// Check if the nickname exists in the database
+	// check if the account exists
 	ResultPtr pResAccount = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '%s'", sqlStrNick.cstr());
 	if(!pResAccount->next())
 	{
-		// Send error message to the client
 		GS()->Chat(ClientID, "Sorry, we couldn't locate your username in our system.");
-		return AccountCodeResult::AOP_NICKNAME_NOT_EXIST; // Return nickname not found error
+		return AccountCodeResult::AOP_NICKNAME_NOT_EXIST;
 	}
+	int AccountID = pResAccount->getInt("ID");
 
-	// Check if the wrong login or password error
-	int UserID = pResAccount->getInt("ID"); // Get the ID from the account result
-	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt", "tw_accounts", "WHERE Username = '%s' AND ID = '%d'", sqlStrLogin.cstr(), UserID);
+	// check is login and password correct
+	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt", "tw_accounts", "WHERE Username = '%s' AND ID = '%d'", sqlStrLogin.cstr(), AccountID);
 	if(!pResCheck->next() || str_comp(pResCheck->getString("Password").c_str(), HashPassword(sqlStrPass.cstr(), pResCheck->getString("PasswordSalt").c_str()).c_str()) != 0)
 	{
-		// Send error message to the client
 		GS()->Chat(ClientID, "Oops, that doesn't seem to be the right login or password");
-		return AccountCodeResult::AOP_LOGIN_WRONG; // Return wrong login or password error
+		return AccountCodeResult::AOP_LOGIN_WRONG;
 	}
 
-	// Check if the account is banned
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", UserID);
+	// check if the account is banned
+	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", AccountID);
 	if(pResBan->next())
 	{
-		// Send error message to the client with the ban information
-		GS()->Chat(ClientID, "You account was suspended until \"{}\" with the reason of \"{}\"", pResBan->getString("BannedUntil").c_str(), pResBan->getString("Reason").c_str());
-		return AccountCodeResult::AOP_ACCOUNT_BANNED; // Return account banned error
+		const char* pBannedUntil = pResBan->getString("BannedUntil").c_str();
+		const char* pReason = pResBan->getString("Reason").c_str();
+		GS()->Chat(ClientID, "You account was suspended until '{}' with the reason of '{}'.", pBannedUntil, pReason);
+		return AccountCodeResult::AOP_ACCOUNT_BANNED;
 	}
 
-	// Check if a player with the given UserID exists in the game state
-	if(GS()->GetPlayerByUserID(UserID) != nullptr)
+	// check is player ingame
+	if(GS()->GetPlayerByUserID(AccountID) != nullptr)
 	{
-		// Send error message to the client
 		GS()->Chat(ClientID, "The account is already in the game.");
-		return AccountCodeResult::AOP_ALREADY_IN_GAME; // Return already in game error
+		return AccountCodeResult::AOP_ALREADY_IN_GAME;
 	}
 
 	// Update player account information from the database
 	std::string Language = pResCheck->getString("Language").c_str();
 	std::string LoginDate = pResCheck->getString("LoginDate").c_str();
-	pPlayer->Account()->Init(UserID, pPlayer, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
+	pPlayer->Account()->Init(AccountID, pPlayer, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
 
 	// Send success messages to the client
 	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
@@ -188,7 +172,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	}
 
 	// If it is the first initialization, initialize the player's job account
-	Core()->OnInitAccount(ClientID);
+	Core()->OnPlayerLogin(pPlayer);
 
 	// Send information about log in
 	const int Rank = GetRank(pPlayer->Account()->GetID());
@@ -284,7 +268,13 @@ int CAccountManager::GetRank(int AccountID)
 	return -1;
 }
 
-bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+void CAccountManager::OnClientReset(int ClientID)
+{
+	CAccountTempData::ms_aPlayerTempData.erase(ClientID);
+	CAccountData::ms_aData.erase(ClientID);
+}
+
+bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -370,16 +360,16 @@ bool CAccountManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 }
 
 // Function to handle vote commands for an account
-bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
-	// Get the client ID of the player
+	// ReasonNumber the client ID of the player
 	const int ClientID = pPlayer->GetCID();
 
 	// Check if the command is "SELECTLANGUAGE"
-	if(PPSTR(CMD, "SELECT_LANGUAGE") == 0)
+	if(PPSTR(pCmd, "SELECT_LANGUAGE") == 0)
 	{
 		// Set the client's language to the selected language from the localization object
-		const char* pSelectedLanguage = Server()->Localization()->m_pLanguages[VoteID]->GetFilename();
+		const char* pSelectedLanguage = Server()->Localization()->m_pLanguages[Extra1]->GetFilename();
 		Server()->SetClientLanguage(ClientID, pSelectedLanguage);
 
 		// Inform the client about the selected language
@@ -393,9 +383,9 @@ bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 		return true;
 	}
 
-	if(PPSTR(CMD, "UPGRADE") == 0)
+	if(PPSTR(pCmd, "UPGRADE") == 0)
 	{
-		if(pPlayer->Upgrade(Get, &pPlayer->Account()->m_aStats[(AttributeIdentifier)VoteID], &pPlayer->Account()->m_Upgrade, VoteID2, 1000))
+		if(pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_aStats[(AttributeIdentifier)Extra1], &pPlayer->Account()->m_Upgrade, Extra2, 1000))
 		{
 			GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 			pPlayer->m_VotesData.UpdateVotes(MENU_UPGRADES);
@@ -406,13 +396,7 @@ bool CAccountManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, co
 	return false;
 }
 
-void CAccountManager::OnResetClient(int ClientID)
-{
-	CAccountTempData::ms_aPlayerTempData.erase(ClientID);
-	CAccountData::ms_aData.erase(ClientID);
-}
-
-void CAccountManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
+void CAccountManager::OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
 {
 	// Get the client ID of the player
 	int ClientID = pPlayer->GetCID();

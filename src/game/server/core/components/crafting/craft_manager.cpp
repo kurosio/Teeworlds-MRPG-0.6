@@ -39,7 +39,7 @@ void CCraftManager::OnInit()
 	Core()->ShowLoadingProgress("Craft item's", (int)CCraftItem::Data().size());
 }
 
-bool CCraftManager::OnHandleTile(CCharacter* pChr)
+bool CCraftManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
@@ -72,19 +72,18 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 	}
 
 	// first podding set what is available and required for removal
-	dynamic_string Buffer;
+	std::string strBuffer {};
 	for(auto& RequiredItem : pCraft->GetRequiredItems())
 	{
 		if(pPlayer->GetItem(RequiredItem)->GetValue() < RequiredItem.GetValue())
 		{
 			const int ItemLeft = (RequiredItem.GetValue() - pPlayer->GetItem(RequiredItem)->GetValue());
-			GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{}x{} ", RequiredItem.Info()->GetName(), ItemLeft);
+			strBuffer += Tools::String::FormatLocalize(ClientID, "{}x{} ", RequiredItem.Info()->GetName(), ItemLeft);
 		}
 	}
-	if(Buffer.length() > 0)
+	if(!strBuffer.empty())
 	{
-		GS()->Chat(ClientID, "Item left: {}", Buffer.buffer());
-		Buffer.clear();
+		GS()->Chat(ClientID, "Item left: {}", strBuffer.c_str());
 		return;
 	}
 
@@ -123,19 +122,19 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 
-bool CCraftManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	// craft item function
-	if(PPSTR(CMD, "CRAFT") == 0)
+	if(PPSTR(pCmd, "CRAFT") == 0)
 	{
-		CraftItem(pPlayer, GetCraftByID(VoteID));
+		CraftItem(pPlayer, GetCraftByID(Extra1));
 		return true;
 	}
 
 	return false;
 }
 
-bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CCraftManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -166,7 +165,7 @@ bool CCraftManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_CRAFT_LIST);
 
 		// show craft by id
-		int CraftID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
+		int CraftID = pPlayer->m_VotesData.GetGroupID();
 		ShowCraftItem(pPlayer, GetCraftByID(CraftID));
 		return true;
 	}

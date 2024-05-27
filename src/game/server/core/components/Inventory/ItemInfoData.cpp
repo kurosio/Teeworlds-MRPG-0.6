@@ -120,17 +120,16 @@ bool CItemDescription::HasAttributes() const { return !m_aAttributes.empty(); }
 
 void CItemDescription::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const
 {
-	dynamic_string Buffer;
+	std::string strAttrbutes{};
 	for (const auto& Att : m_aAttributes)
 	{
 		if(Att.HasValue())
 		{
 			const int BonusValue = GetInfoEnchantStats(Att.GetID(), Enchant);
-			pPlayer->GS()->Server()->Localization()->Format(Buffer, pPlayer->GetLanguage(), "{}+{} ", Att.Info()->GetName(), BonusValue);
+			strAttrbutes += Tools::String::FormatLocalize(pPlayer->GetCID(), "{}+{}", Att.Info()->GetName(), BonusValue);
 		}
 	}
-	str_copy(pBuffer, Buffer.buffer(), Size);
-	Buffer.clear();
+	str_copy(pBuffer, strAttrbutes.c_str(), Size);
 }
 
 std::string CItemDescription::StringEnchantLevel(int Enchant) const

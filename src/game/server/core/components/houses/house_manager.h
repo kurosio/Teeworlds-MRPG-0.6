@@ -18,10 +18,10 @@ class CHouseManager : public MmoComponent
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 	void OnTick() override;
-	void OnHandleTimePeriod(TIME_PERIOD Period) override;
-	bool OnHandleTile(CCharacter* pChr) override;
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
-	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+	void OnTimePeriod(TIME_PERIOD Period) override;
+	bool OnCharacterTile(CCharacter* pChr) override;
+	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
 
 	void ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse);
 	void ShowMenu(CPlayer* pPlayer) const;

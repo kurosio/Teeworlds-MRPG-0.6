@@ -16,10 +16,10 @@ class CInventoryManager : public MmoComponent
 	}
 
 	void OnInit() override;
-	void OnInitAccount(class CPlayer* pPlayer) override;
-	void OnResetClient(int ClientID) override;
-	bool OnHandleVoteCommands(class CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
-	bool OnHandleMenulist(class CPlayer* pPlayer, int Menulist) override;
+	void OnPlayerLogin(class CPlayer* pPlayer) override;
+	void OnClientReset(int ClientID) override;
+	bool OnPlayerVoteCommand(class CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+	bool OnPlayerMenulist(class CPlayer* pPlayer, int Menulist) override;
 
 public:
 	static std::vector<int> GetItemIDsCollection(ItemType Type);

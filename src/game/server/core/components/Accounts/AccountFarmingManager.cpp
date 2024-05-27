@@ -27,7 +27,7 @@ void CAccountFarmingManager::OnInitWorld(const char* pWhereLocalWorld)
 	}
 }
 
-void CAccountFarmingManager::OnInitAccount(CPlayer *pPlayer)
+void CAccountFarmingManager::OnPlayerLogin(CPlayer *pPlayer)
 {
 	// try load from database
 	auto& refFarmingDbField = pPlayer->Account()->m_FarmingData;
@@ -125,11 +125,11 @@ void CAccountFarmingManager::Procces(CPlayer* pPlayer, int Level) const
 	Core()->SaveAccount(pPlayer, SAVE_FARMING_DATA);
 }
 
-bool CAccountFarmingManager::OnHandleVoteCommands(CPlayer *pPlayer, const char *CMD, const int VoteID, const int VoteID2, int Get, const char *GetText)
+bool CAccountFarmingManager::OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char *pReason)
 {
-	if(PPSTR(CMD, "FARMING_UPGRADE") == 0)
+	if(PPSTR(pCmd, "FARMING_UPGRADE") == 0)
 	{
-		if(pPlayer->Upgrade(Get, &pPlayer->Account()->m_FarmingData(VoteID, 0).m_Value, &pPlayer->Account()->m_FarmingData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
+		if(pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_FarmingData(Extra1, 0).m_Value, &pPlayer->Account()->m_FarmingData(JOB_UPGRADES, 0).m_Value, Extra2, 3))
 		{
 			GS()->Core()->SaveAccount(pPlayer, SAVE_FARMING_DATA);
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_UPGRADES);

@@ -14,8 +14,8 @@ class CDungeonManager : public MmoComponent
 	};
 
 	void OnInit() override;
-	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
+	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
 
 public:
 	static bool IsDungeonWorld(int WorldID);

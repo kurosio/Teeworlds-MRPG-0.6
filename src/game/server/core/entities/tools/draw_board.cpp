@@ -89,22 +89,23 @@ bool CBrush::HandleInput()
 
 void CBrush::SendBroadcast() const
 {
-	char aBufAvailable[32];
+	// initialize variables
+	std::string strAvailable{};
+	std::string strSpaces(140, ' ');
+	CItemDescription* pItem = GS()->GetItemInfo(*m_BrushItem);
+
+	// check flags
 	if(m_pBoard->m_Flags & DRAWBOARDFLAG_PLAYER_ITEMS)
 	{
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(*m_BrushItem);
-		str_format(aBufAvailable, sizeof(aBufAvailable), "has %s", get_commas(pPlayerItem->GetValue()).c_str());
+		strAvailable = Tools::String::FormatLocalize(m_pPlayer->GetCID(), "has {}", pPlayerItem->GetValue());
 	}
 	else
 	{
-		str_format(aBufAvailable, sizeof(aBufAvailable), "%s", Server()->Localization()->Localize(m_pPlayer->GetLanguage(), "unlimited"));
+		strAvailable = Tools::String::FormatLocalize(m_pPlayer->GetCID(), "unlimited");
 	}
 
-	char aBufSpaces[140];
-	str_format(aBufSpaces, sizeof(aBufSpaces), "%-*s", (int)sizeof(aBufSpaces) - 1, " ");
-	aBufSpaces[sizeof(aBufSpaces) - 1] = '\0';
-
-	const CItemDescription* pItem = GS()->GetItemInfo(*m_BrushItem);
+	// send broadcast
 	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: {} | {}"
 		"\n{}"
 		"\n\n- \"Fire\" add item"
@@ -112,7 +113,7 @@ void CBrush::SendBroadcast() const
 		"\n- \"Menu\" end drawing"
 		"\n- \"Prev, Next\" - switch item"
 		"\n{}",
-		pItem->GetName(), aBufAvailable, pItem->GetDescription(), aBufSpaces);
+		pItem->GetName(), strAvailable.c_str(), pItem->GetDescription(), strSpaces.c_str());
 }
 
 bool CBrush::UpdatePosition()

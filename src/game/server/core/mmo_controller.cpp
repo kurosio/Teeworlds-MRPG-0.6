@@ -104,11 +104,6 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	}
 }
 
-CMmoController::~CMmoController()
-{
-	m_System.free();
-}
-
 void CMmoController::OnTick()
 {
 	for(auto& pComponent : m_System.m_vComponents)
@@ -119,13 +114,13 @@ void CMmoController::OnTick()
 		HandleTimePeriod();
 }
 
-bool CMmoController::OnMessage(int MsgID, void* pRawMsg, int ClientID)
+bool CMmoController::OnClientMessage(int MsgID, void* pRawMsg, int ClientID)
 {
 	if(GS()->Server()->ClientIngame(ClientID) && GS()->GetPlayer(ClientID))
 	{
 		for(auto& pComponent : m_System.m_vComponents)
 		{
-			if(pComponent->OnMessage(MsgID, pRawMsg, ClientID))
+			if(pComponent->OnClientMessage(MsgID, pRawMsg, ClientID))
 				return true;
 		}
 	}
@@ -133,21 +128,16 @@ bool CMmoController::OnMessage(int MsgID, void* pRawMsg, int ClientID)
 	return false;
 }
 
-void CMmoController::OnInitAccount(int ClientID)
+void CMmoController::OnPlayerLogin(CPlayer* pPlayer)
 {
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID);
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
-
 	for(auto& pComponent : m_System.m_vComponents)
-		pComponent->OnInitAccount(pPlayer);
+		pComponent->OnPlayerLogin(pPlayer);
 }
 
-bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
+bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID);
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return true;
+	// initialize variables
+	int ClientID = pPlayer->GetCID();
 
 	// main menu
 	if(Menulist == MENU_MAIN)
@@ -220,9 +210,9 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 		VUpgrGroupSelect.AddLine();
 
 		// Upgrades by group
-		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
+		if(pPlayer->m_VotesData.GetGroupID() >= 0)
 		{
-			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetMenuTemporaryInteger(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
+			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetGroupID(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
 			const char* pGroupName = paGroupNames[(int)Group];
 
 			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "{} : Strength {}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
@@ -255,7 +245,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 
 		// show top list
 		VoteWrapper VTopList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE);
-		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetMenuTemporaryInteger(); TemporaryInteger >= 0)
+		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetGroupID(); TemporaryInteger >= 0)
 			ShowTopList(ClientID, (ToplistType)TemporaryInteger, 10, &VTopList);
 
 		// backpage
@@ -292,7 +282,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUIDE_GRINDING);
 
-		const int WorldID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
+		const int WorldID = pPlayer->m_VotesData.GetGroupID();
 
 		// ores information detail
 		VoteWrapper VMiningPoints(ClientID, VWF_STYLE_STRICT_BOLD);
@@ -323,7 +313,7 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	// check append votes
 	for(auto& pComponent : m_System.m_vComponents)
 	{
-		if(pComponent->OnHandleMenulist(pPlayer, Menulist))
+		if(pComponent->OnPlayerMenulist(pPlayer, Menulist))
 			return true;
 	}
 	// ----------------------------------------
@@ -331,27 +321,27 @@ bool CMmoController::OnPlayerHandleMainMenu(int ClientID, int Menulist)
 	return false;
 }
 
-bool CMmoController::OnPlayerHandleTile(CCharacter* pChr)
+bool CMmoController::OnCharacterTile(CCharacter* pChr)
 {
 	if(!pChr || !pChr->IsAlive())
 		return true;
 
 	for(auto& pComponent : m_System.m_vComponents)
 	{
-		if(pComponent->OnHandleTile(pChr))
+		if(pComponent->OnCharacterTile(pChr))
 			return true;
 	}
 	return false;
 }
 
-bool CMmoController::OnParsingVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason)
 {
 	if(!pPlayer)
 		return true;
 
 	for(auto& pComponent : m_System.m_vComponents)
 	{
-		if(pComponent->OnHandleVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, GetText))
+		if(pComponent->OnPlayerVoteCommand(pPlayer, pCmd, ExtraValue1, ExtraValue2, ReasonNumber, pReason))
 			return true;
 	}
 	return false;
@@ -360,7 +350,7 @@ bool CMmoController::OnParsingVoteCommands(CPlayer* pPlayer, const char* CMD, co
 void CMmoController::ResetClientData(int ClientID)
 {
 	for(auto& pComponent : m_System.m_vComponents)
-		pComponent->OnResetClient(ClientID);
+		pComponent->OnClientReset(ClientID);
 }
 
 void CMmoController::HandleTimePeriod() const
@@ -424,7 +414,7 @@ void CMmoController::HandleTimePeriod() const
 			for(const auto& periods : aPeriodsUpdated)
 			{
 				TIME_PERIOD timePeriod = static_cast<TIME_PERIOD>(periods);
-				component->OnHandleTimePeriod(timePeriod);
+				component->OnTimePeriod(timePeriod);
 			}
 		}
 	}
@@ -470,7 +460,7 @@ void CMmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				component->OnPlayerHandleTimePeriod(pPlayer, static_cast<TIME_PERIOD>(periods));
+				component->OnPlayerTimePeriod(pPlayer, static_cast<TIME_PERIOD>(periods));
 			}
 		}
 	}

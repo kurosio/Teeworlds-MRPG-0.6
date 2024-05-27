@@ -53,22 +53,16 @@ void CConectionPool::DisconnectConnectionHeap()
 	g_atomic_lock.test_and_set(std::memory_order_acquire);
 	while(!m_ConnList.empty())
 	{
-		Connection* pConnection = m_ConnList.front();
-		m_ConnList.pop_front();
-
 		try
 		{
-			if(pConnection)
-			{
-				pConnection->close();
-			}
+			m_ConnList.front()->close();
+			m_ConnList.pop_front();
 		}
 		catch(SQLException& e)
 		{
 			dbg_msg("Sql Exception", "%s", e.what());
+			m_ConnList.pop_front();
 		}
-
-		delete pConnection;
 	}
 	g_atomic_lock.clear(std::memory_order_release);
 }

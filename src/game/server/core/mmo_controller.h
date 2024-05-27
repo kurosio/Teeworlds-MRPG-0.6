@@ -3,36 +3,12 @@
 #ifndef GAME_SERVER_CORE_MMO_CONTROLLER_H
 #define GAME_SERVER_CORE_MMO_CONTROLLER_H
 
-/*
-	At the end, distribute the components in CMmoController.cpp
-	And distribute where they are required
-	This will affect the size of the output file
-*/
 #include "mmo_component.h"
 
 class CMmoController
 {
-	class CStack
-	{
-	public:
-		void add(class MmoComponent *pComponent)
-		{
-			m_vComponents.push_back(pComponent);
-		}
-
-		void free()
-		{
-			for(auto* pComponent : m_vComponents)
-			{
-				delete pComponent;
-			}
-			m_vComponents.clear();
-			m_vComponents.shrink_to_fit();
-		}
-
-		std::vector< MmoComponent* > m_vComponents;
-	};
-	CStack m_System;
+	CGS* m_pGameServer;
+	MmoComponent::CStack m_System;
 
 	class CAchievementManager* m_pAchievementManager;
 	class CAccountManager* m_pAccountManager;
@@ -55,9 +31,7 @@ class CMmoController
 
 public:
 	explicit CMmoController(CGS *pGameServer);
-	~CMmoController();
 
-	CGS *m_pGameServer;
 	CGS *GS() const { return m_pGameServer; }
 
 	CAchievementManager* AchievementManager() const { return m_pAchievementManager; }
@@ -70,7 +44,6 @@ public:
 	CWarehouseManager* WarehouseManager() const { return m_pWarehouseManager; }
 	CEidolonManager* EidolonManager() const { return m_pEidolonManager; }
 	CTutorialManager* TutorialManager() const { return m_pTutorialManager; }
-
 	CCraftManager* CraftManager() const { return m_pCraftManager; }
 	CDungeonManager* DungeonManager() const { return m_pDungeonManager; }
 	CHouseManager* HouseManager() const { return m_pHouseManager; }
@@ -82,11 +55,11 @@ public:
 
 	// global systems
 	void OnTick();
-	bool OnMessage(int MsgID, void* pRawMsg, int ClientID);
-	bool OnPlayerHandleTile(CCharacter *pChr);
-	bool OnPlayerHandleMainMenu(int ClientID, int Menulist);
-	void OnInitAccount(int ClientID);
-	bool OnParsingVoteCommands(CPlayer *pPlayer, const char *CMD, int VoteID, int VoteID2, int Get, const char *GetText);
+	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID);
+	void OnPlayerLogin(CPlayer* pPlayer);
+	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist);
+	bool OnCharacterTile(CCharacter* pChr);
+	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason);
 	void ResetClientData(int ClientID);
 	void HandleTimePeriod() const;
 	void HandlePlayerTimePeriod(CPlayer* pPlayer);

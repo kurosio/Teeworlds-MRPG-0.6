@@ -10,9 +10,9 @@ class CAuctionManager : public MmoComponent
 	~CAuctionManager() override = default;
 
 	void OnTick() override;
-	bool OnHandleTile(CCharacter* pChr) override;
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
-	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+	bool OnCharacterTile(CCharacter* pChr) override;
+	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 	void CreateAuctionSlot(CPlayer *pPlayer, class CAuctionSlot* pAuctionData);
 

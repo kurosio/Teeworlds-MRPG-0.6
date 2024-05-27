@@ -8,12 +8,12 @@ using namespace sqlstr;
 
 #define TW_TABLE_EIDOLON_ENHANCEMENTS "tw_account_eidolon_enhancements"
 
-bool CEidolonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText)
+bool CEidolonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(PPSTR(CMD, "EIDOLON_SELECT") == 0)
+	if(PPSTR(pCmd, "EIDOLON_SELECT") == 0)
 	{
-		m_EidolonItemSelected[ClientID] = VoteID;
+		m_EidolonItemSelected[ClientID] = Extra1;
 
 		//pPlayer->m_TempMenuValue = MENU_EIDOLON_COLLECTION_SELECTED;
 		pPlayer->m_VotesData.UpdateVotes(MENU_EIDOLON_COLLECTION_SELECTED);
@@ -23,7 +23,7 @@ bool CEidolonManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, in
 	return false;
 }
 
-bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CEidolonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -54,7 +54,7 @@ bool CEidolonManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_EIDOLON_COLLECTION);
 
-		int EidolonID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
+		int EidolonID = pPlayer->m_VotesData.GetGroupID();
 		if(CEidolonInfoData* pEidolonInfo = GS()->GetEidolonByItemID(EidolonID))
 		{
 			char aAttributeBonus[128];

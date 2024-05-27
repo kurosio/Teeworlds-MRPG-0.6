@@ -27,7 +27,7 @@ void CGroupManager::OnInit()
 // This code is a method within a class called CGroupManager
 // The purpose of this method is to initialize the group data for a player's account
 // The method takes a pointer to a CPlayer object as a parameter
-void CGroupManager::OnInitAccount(CPlayer* pPlayer)
+void CGroupManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	// Call the ReinitializeGroup() method of the player's account object 
 	// to initialize the group data for the account
@@ -131,7 +131,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	VoteWrapper::AddBackpage(ClientID);
 }
 
-bool CGroupManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CGroupManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -180,12 +180,12 @@ static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int OptionID, int 
 	}
 }
 
-bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
 
 	// Check if the command is "GROUP_CREATE"
-	if(PPSTR(CMD, "GROUP_CREATE") == 0)
+	if(PPSTR(pCmd, "GROUP_CREATE") == 0)
 	{
 		// If the group creation is successful
 		if(CreateGroup(pPlayer))
@@ -196,9 +196,9 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		return true;
 	}
 
-	if(PPSTR(CMD, "GROUP_INVITE") == 0)
+	if(PPSTR(pCmd, "GROUP_INVITE") == 0)
 	{
-		const int InvitedCID = VoteID;
+		const int InvitedCID = Extra1;
 		GroupData* pGroup = pPlayer->Account()->GetGroup();
 		GroupIdentifier GroupID = pGroup->GetID();
 
@@ -231,7 +231,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			}
 
 			// Create vote optional
-			auto pOption = CVoteEventOptional::Create(InvitedCID, ClientID, GroupID, 15, Server()->Localize(ClientID, "Join to {} group?"), Server()->ClientName(ClientID));
+			auto pOption = CVoteOptional::Create(InvitedCID, ClientID, GroupID, 15, Server()->Localize(ClientID, "Join to {} group?"), Server()->ClientName(ClientID));
 			pOption->RegisterCallback(CallbackVoteOptionalGroupInvite);
 
 			// Send a chat message to the player inviting them to join the group
@@ -244,10 +244,10 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	}
 
 	// Check if the command is for changing the owner of a group
-	if(PPSTR(CMD, "GROUP_CHANGE_OWNER") == 0)
+	if(PPSTR(pCmd, "GROUP_CHANGE_OWNER") == 0)
 	{
-		// Set the AccountID to the value of VoteID
-		const int AccountID = VoteID;
+		// Set the AccountID to the value of Extra1
+		const int AccountID = Extra1;
 
 		// Get the group data of the player's account
 		GroupData* pGroup = pPlayer->Account()->GetGroup();
@@ -266,10 +266,10 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	}
 
 	// Check if the command is "GROUP_KICK"
-	if(PPSTR(CMD, "GROUP_KICK") == 0)
+	if(PPSTR(pCmd, "GROUP_KICK") == 0)
 	{
-		// Get the AccountID from VoteID
-		const int AccountID = VoteID;
+		// Get the AccountID from Extra1
+		const int AccountID = Extra1;
 
 		// Get the player's group
 		GroupData* pGroup = pPlayer->Account()->GetGroup();
@@ -286,9 +286,9 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	}
 
 	// Check if the command is "GROUP_CHANGE_COLOR"
-	if(PPSTR(CMD, "GROUP_CHANGE_COLOR") == 0)
+	if(PPSTR(pCmd, "GROUP_CHANGE_COLOR") == 0)
 	{
-		if(Get <= 1 || Get > 63)
+		if(ReasonNumber <= 1 || ReasonNumber > 63)
 		{
 			GS()->Chat(ClientID, "Please provide a numerical value within the range of 2 to 63 in your response.");
 			return true;
@@ -301,7 +301,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 		if(pGroup)
 		{
 			// Change the group's color
-			pGroup->ChangeColor(Get);
+			pGroup->ChangeColor(ReasonNumber);
 
 			// Update the votes for all players in the group menu
 			GS()->UpdateVotesIfForAll(MENU_GROUP);
@@ -311,7 +311,7 @@ bool CGroupManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	}
 
 	// Check if the command is "GROUP_DISBAND"
-	if(PPSTR(CMD, "GROUP_DISBAND") == 0)
+	if(PPSTR(pCmd, "GROUP_DISBAND") == 0)
 	{
 		// Get the group data of the player's account
 		GroupData* pGroup = pPlayer->Account()->GetGroup();

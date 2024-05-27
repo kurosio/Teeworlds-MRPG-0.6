@@ -11,9 +11,9 @@
 #include "entities/character.h"
 
 #include "class_data.h"
-#include "vote_event_optional.h"
 #include "core/utilities/cooldown.h"
 #include "core/utilities/vote_wrapper.h"
+#include "core/utilities/vote_optional.h"
 
 enum
 {
@@ -205,17 +205,6 @@ public:
 	   VOTING OPTIONAL EVENT
 	========================================================== */
 private:
-	// Function: RunEventOptional
-	// Parameters:
-	//    - Option: an integer value representing the selected option for the vote event
-	//    - pOptional: a pointer to a CVoteEventOptional object representing the vote event
-	// Description:
-	//    - Runs the selected optional vote event
-	void RunEventOptional(int Option, CVoteEventOptional* pOptional);
-
-	// Function: HandleVoteOptionals
-	// Description:
-	//    - Handles all the optional vote events
 	void HandleVoteOptionals() const;
 };
 

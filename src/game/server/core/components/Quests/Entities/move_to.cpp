@@ -228,32 +228,26 @@ void CEntityQuestAction::HandleBroadcastInformation() const
 		return;
 
 	// text information
-	dynamic_string Buffer;
+	std::string strBuffer{};
 	if(pRequireItem.IsValid())
 	{
-		const char* pLang = m_pPlayer->GetLanguage();
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pRequireItem.GetID());
-
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
-		Buffer.append("\n");
+		strBuffer += Tools::String::FormatLocalize(m_ClientID, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue()) + "\n";
 	}
 	if(pPickupItem.IsValid())
 	{
-		const char* pLang = m_pPlayer->GetLanguage();
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pPickupItem.GetID());
-
-		GS()->Server()->Localization()->Format(Buffer, pLang, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
-		Buffer.append("\n");
+		strBuffer += Tools::String::FormatLocalize(m_ClientID, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue()) + "\n";
 	}
 
 	// select by type
 	if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Please click with hammer on the highlighted area to interact with it.\n{}", Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Please click with hammer on the highlighted area to interact with it.\n{}", strBuffer.c_str());
 	}
 	else if(Type & QuestBotInfo::TaskAction::Types::PICKUP_ITEM || Type & QuestBotInfo::TaskAction::Types::REQUIRED_ITEM)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press hammer 'Fire', to interact.\n{}", Buffer.buffer());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press hammer 'Fire', to interact.\n{}", strBuffer.c_str());
 	}
 }
 

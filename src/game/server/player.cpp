@@ -20,6 +20,7 @@
 #include "core/components/Groups/GroupData.h"
 #include "core/components/worlds/world_data.h"
 #include "core/entities/tools/draw_board.h"
+#include "core/utilities/format.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -817,7 +818,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 
 	std::string ProgressBar = Tools::String::progressBar(100, LevelPercent, 10, ":", " ");
 	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%-150s",
-		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, get_commas<int>(Gold).c_str(), aRecastInfo, pAppendStr);
+		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, Tools::String::FormatDigit(Gold).c_str(), aRecastInfo, pAppendStr);
 }
 
 /* #########################################################################
@@ -831,10 +832,10 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 		return true;
 	}
 
-	if(!CVoteEventOptional::Data()[m_ClientID].empty())
+	if(!CVoteOptional::Data()[m_ClientID].empty())
 	{
-		CVoteEventOptional* pOptional = &CVoteEventOptional::Data()[m_ClientID].front();
-		RunEventOptional(Vote, pOptional);
+		CVoteOptional* pOptional = &CVoteOptional::Data()[m_ClientID].front();
+		pOptional->Run((bool)Vote);
 	}
 
 	// - - - - - F3- - - - - - -
@@ -1023,37 +1024,15 @@ CTeeInfo& CPlayer::GetTeeInfo() const
 	return Account()->m_TeeInfos;
 }
 
-// This function is a member function of the CPlayer class.
-// It is used to run an optional voting event for the player.
-void CPlayer::RunEventOptional(int Option, CVoteEventOptional* pOptional)
-{
-	// Check if pOptional pointer exists and its callback function returns true
-	if(pOptional && pOptional->Run(this, Option <= 0 ? false : true))
-	{
-		// Create a new network message to update the vote status
-		CNetMsg_Sv_VoteStatus Msg;
-		Msg.m_Total = 1;
-		Msg.m_Yes = (Option >= 1 ? 1 : 0);
-		Msg.m_No = (Option <= 0 ? 1 : 0);
-		Msg.m_Pass = 0;
-
-		// Send the network message to the client with the MSGFLAG_VITAL flag
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
-
-		// Set the close time of pOptional to half a second from the current time
-		pOptional->m_CloseTime = time_get() + (time_freq() / 2);
-	}
-}
-
 // Function to handle optional voting options for a player
 void CPlayer::HandleVoteOptionals() const
 {
 	// If the list of optionals is empty, return
-	if(CVoteEventOptional::Data()[m_ClientID].empty())
+	if(CVoteOptional::Data()[m_ClientID].empty())
 		return;
 
 	// Get a pointer to the first optional in the list
-	CVoteEventOptional* pOptional = &CVoteEventOptional::Data()[m_ClientID].front();
+	CVoteOptional* pOptional = &CVoteOptional::Data()[m_ClientID].front();
 
 	// If the optional is not already being processed
 	if(!pOptional->m_Working)
@@ -1080,6 +1059,6 @@ void CPlayer::HandleVoteOptionals() const
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
 		// Remove the first optional from the list
-		CVoteEventOptional::Data()[m_ClientID].pop();
+		CVoteOptional::Data()[m_ClientID].pop();
 	}
 }

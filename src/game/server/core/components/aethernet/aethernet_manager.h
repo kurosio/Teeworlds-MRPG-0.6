@@ -20,10 +20,10 @@ class CAethernetManager : public MmoComponent
 	};
 
 	void OnInit() override;
-	void OnInitAccount(CPlayer* pPlayer) override;
-	bool OnHandleTile(CCharacter* pChr) override;
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
-	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+	void OnPlayerLogin(CPlayer* pPlayer) override;
+	bool OnCharacterTile(CCharacter* pChr) override;
+	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 	// vote list's menus
 	void ShowMenu(CCharacter* pChar) const;

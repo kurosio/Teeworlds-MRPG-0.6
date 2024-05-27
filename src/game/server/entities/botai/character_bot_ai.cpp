@@ -67,7 +67,7 @@ void CCharacterBotAI::InitBot()
 
 				// Check if the game state is not a dungeon
 				if(!GS()->IsWorldType(WorldType::Dungeon))
-					GS()->ChatWorldID(pMobBot->m_WorldID, nullptr, "In your zone emerging {}!", pMobBot->GetName());
+					GS()->ChatWorld(pMobBot->m_WorldID, nullptr, "In your zone emerging {}!", pMobBot->GetName());
 			}
 		}
 		break;

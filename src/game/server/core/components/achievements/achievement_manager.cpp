@@ -29,7 +29,7 @@ void CAchievementManager::OnInit()
 		[](const CAchievementInfo* p1, const CAchievementInfo* p2) { return std::string_view(p1->GetName()) < std::string_view(p2->GetName()); });
 }
 
-void CAchievementManager::OnResetClient(int ClientID)
+void CAchievementManager::OnClientReset(int ClientID)
 {
 	// free achievement data
 	for(auto& p : CAchievement::Data()[ClientID])
@@ -37,12 +37,12 @@ void CAchievementManager::OnResetClient(int ClientID)
 	CAchievement::Data()[ClientID].clear();
 }
 
-bool CAchievementManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CAchievementManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	return false;
 }
 
-bool CAchievementManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CAchievementManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	int ClientID = pPlayer->GetCID();
 
@@ -59,7 +59,7 @@ bool CAchievementManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_ACHIEVEMENTS_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_ACHIEVEMENTS);
-		ShowGroupMenu(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		ShowGroupMenu(pPlayer, pPlayer->m_VotesData.GetGroupID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

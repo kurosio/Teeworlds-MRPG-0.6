@@ -361,10 +361,10 @@ void CServer::ChangeWorld(int ClientID, int NewWorldID)
 		return;
 
 	m_aClients[ClientID].m_OldWorldID = m_aClients[ClientID].m_WorldID;
-	GameServer(m_aClients[ClientID].m_OldWorldID)->PrepareClientChangeWorld(ClientID);
+	GameServer(m_aClients[ClientID].m_OldWorldID)->OnClientPrepareChangeWorld(ClientID);
 
 	m_aClients[ClientID].m_WorldID = NewWorldID;
-	GameServer(m_aClients[ClientID].m_WorldID)->PrepareClientChangeWorld(ClientID);
+	GameServer(m_aClients[ClientID].m_WorldID)->OnClientPrepareChangeWorld(ClientID);
 
 	int* pIdMap = GetIdMap(ClientID);
 	memset(pIdMap, -1, sizeof(int) * VANILLA_MAX_CLIENTS);
@@ -890,7 +890,7 @@ int CServer::NewClientNoAuthCallback(int ClientID, void* pUser)
 {
 	CServer* pThis = (CServer*)pUser;
 
-	pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
+	pThis->GameServer(MAIN_WORLD_ID)->OnClearClientData(ClientID);
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
 	pThis->m_aClients[ClientID].m_aClan[0] = 0;
@@ -916,7 +916,7 @@ int CServer::NewClientCallback(int ClientID, void* pUser)
 	memset(pIdMap, -1, sizeof(int) * VANILLA_MAX_CLIENTS);
 	pIdMap[0] = ClientID;
 
-	pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
+	pThis->GameServer(MAIN_WORLD_ID)->OnClearClientData(ClientID);
 	str_copy(pThis->m_aClients[ClientID].m_aLanguage, "en", sizeof(pThis->m_aClients[ClientID].m_aLanguage));
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_AUTH;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
@@ -963,7 +963,7 @@ int CServer::DelClientCallback(int ClientID, const char* pReason, void* pUser)
 			pGameServer->OnClientDrop(ClientID, pReason);
 		}
 
-		pThis->GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
+		pThis->GameServer(MAIN_WORLD_ID)->OnClearClientData(ClientID);
 		pThis->ExpireServerInfo();
 	}
 
@@ -1205,7 +1205,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 
 				m_aClients[ClientID].m_Version = Unpacker.GetInt();
 				m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
-				GameServer(MAIN_WORLD_ID)->ClearClientData(ClientID);
+				GameServer(MAIN_WORLD_ID)->OnClearClientData(ClientID);
 				SendCapabilities(ClientID);
 				SendMap(ClientID);
 			}
@@ -1250,7 +1250,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 					for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 					{
 						IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->GameServer();
-						pGameServer->PrepareClientChangeWorld(ClientID);
+						pGameServer->OnClientPrepareChangeWorld(ClientID);
 					}
 					GameServer(WorldID)->OnClientConnected(ClientID);
 				}
@@ -1796,7 +1796,7 @@ void CServer::UpdateRegisterServerInfo()
 			JsPlayerInfo["country"] = m_aClients[i].m_Country;
 			JsPlayerInfo["score"] = m_aClients[i].m_Score;
 			JsPlayerInfo["is_player"] = GameServer()->IsClientPlayer(i);
-			GameServer()->OnUpdatePlayerServerInfo(&JsPlayerInfo, i);
+			GameServer()->OnUpdateClientServerInfo(&JsPlayerInfo, i);
 
 			JsServerInfo["clients"].push_back(JsPlayerInfo);
 		}
@@ -2238,7 +2238,13 @@ int CServer::Run(ILogger* pLogger)
 		}
 	}
 
-	// disconnect all clients on shutdown
+	// shutdown
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
+			Kick(i, "Server shutdown");
+	}
+
 	m_Econ.Shutdown();
 	m_NetServer.Close();
 	m_pRegister->OnShutdown();

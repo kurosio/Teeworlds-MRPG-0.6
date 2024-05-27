@@ -15,7 +15,7 @@ void CAuctionManager::OnTick()
 {
 }
 
-bool CAuctionManager::OnHandleTile(CCharacter* pChr)
+bool CAuctionManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	if (pChr->GetTiles()->IsEnter(TILE_AUCTION))
@@ -33,7 +33,7 @@ bool CAuctionManager::OnHandleTile(CCharacter* pChr)
 	return false;
 }
 
-bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CAuctionManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -82,65 +82,65 @@ bool CAuctionManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CAuctionManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	if(PPSTR(CMD, "AUCTION_BUY") == 0)
+	if(PPSTR(pCmd, "AUCTION_BUY") == 0)
 	{
-		if(BuyItem(pPlayer, VoteID))
+		if(BuyItem(pPlayer, Extra1))
 			pPlayer->m_VotesData.UpdateVotes(MenuList::MENU_MAIN);
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTION_COUNT") == 0)
+	if(PPSTR(pCmd, "AUCTION_COUNT") == 0)
 	{
 		// if there are fewer items installed, we set the number of items.
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
-		if(Get > pPlayerItem->GetValue())
-			Get = pPlayerItem->GetValue();
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(Extra1);
+		if(ReasonNumber > pPlayerItem->GetValue())
+			ReasonNumber = pPlayerItem->GetValue();
 
 		// if it is possible to number
 		if(pPlayerItem->Info()->IsEnchantable())
-			Get = 1;
+			ReasonNumber = 1;
 
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
-		const int MinimalPrice = (Get * pPlayerItem->Info()->GetInitialPrice());
+		const int MinimalPrice = (ReasonNumber * pPlayerItem->Info()->GetInitialPrice());
 		if(pAuctionData->GetPrice() < MinimalPrice)
 			pAuctionData->SetPrice(MinimalPrice);
 
-		pAuctionData->GetItem()->SetValue(Get);
+		pAuctionData->GetItem()->SetValue(ReasonNumber);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTION_PRICE") == 0)
+	if(PPSTR(pCmd, "AUCTION_PRICE") == 0)
 	{
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
 		const int MinimalPrice = (pAuctionData->GetItem()->GetValue() * pAuctionData->GetItem()->Info()->GetInitialPrice());
-		if(Get < MinimalPrice)
-			Get = MinimalPrice;
+		if(ReasonNumber < MinimalPrice)
+			ReasonNumber = MinimalPrice;
 
-		pAuctionData->SetPrice(Get);
+		pAuctionData->SetPrice(ReasonNumber);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTION_CREATE") == 0)
+	if(PPSTR(pCmd, "AUCTION_CREATE") == 0)
 	{
-		int AvailableValue = Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, VoteID);
+		int AvailableValue = Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, Extra1);
 		if(AvailableValue <= 0)
 			return true;
 		
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
-		pAuctionData->SetItem({ VoteID, 0, pPlayer->GetItem(VoteID)->GetEnchant(), 0, 0});
+		pAuctionData->SetItem({ Extra1, 0, pPlayer->GetItem(Extra1)->GetEnchant(), 0, 0});
 		pPlayer->m_VotesData.UpdateVotes(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 
-	if(PPSTR(CMD, "AUCTION_ACCEPT") == 0)
+	if(PPSTR(pCmd, "AUCTION_ACCEPT") == 0)
 	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(Extra1);
 		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
 		if(pPlayerItem->GetValue() >= pAuctionData->GetItem()->GetValue() && pAuctionData->GetPrice() >= 10)
 		{

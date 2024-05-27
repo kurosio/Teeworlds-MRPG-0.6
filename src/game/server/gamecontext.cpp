@@ -26,8 +26,6 @@
 #include "core/components/Quests/QuestManager.h"
 #include "core/components/skills/skill_manager.h"
 
-#include <cstdarg>
-
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/mails/mail_wrapper.h"
 #include "core/components/worlds/world_data.h"
@@ -284,6 +282,15 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 	}
 }
 
+void CGS::SendChatTarget(int ClientID, const char* pText) const
+{
+	CNetMsg_Sv_Chat Msg;
+	Msg.m_Team = 0;
+	Msg.m_pMessage = pText;
+	Msg.m_ClientID = -1;
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+}
+
 /* #########################################################################
 	CHAT FUNCTIONS
 ######################################################################### */
@@ -461,10 +468,10 @@ void CGS::SendWeaponPickup(int ClientID, int Weapon)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
-void CGS::SendMotd(int ClientID)
+void CGS::SendMotd(int ClientID, const char* pText)
 {
 	CNetMsg_Sv_Motd Msg;
-	Msg.m_pMessage = g_Config.m_SvMotd;
+	Msg.m_pMessage = pText;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
@@ -656,17 +663,17 @@ void CGS::OnTickGlobal()
 		switch(RandomType)
 		{
 			case ToplistType::GUILDS_LEVELING:
-			StrTypeName = "---- [Top 5 guilds by leveling] ----";
-			break;
+				StrTypeName = "---- [Top 5 guilds by leveling] ----";
+				break;
 			case ToplistType::GUILDS_WEALTHY:
-			StrTypeName = "---- [Top 5 guilds by gold] ----";
-			break;
+				StrTypeName = "---- [Top 5 guilds by gold] ----";
+				break;
 			case ToplistType::PLAYERS_LEVELING:
-			StrTypeName = "---- [Top 5 players by leveling] ----";
-			break;
+				StrTypeName = "---- [Top 5 players by leveling] ----";
+				break;
 			default:
-			StrTypeName = "---- [Top 5 players by gold] ----";
-			break;
+				StrTypeName = "---- [Top 5 players by gold] ----";
+				break;
 		}
 
 		// display the top message in the chat
@@ -750,7 +757,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			// If the first character is a pound sign, send a chat message to the world
 			else if(firstChar == '#')
 			{
-				ChatWorldID(pPlayer->GetPlayerWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
+				ChatWorld(pPlayer->GetPlayerWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			}
 			// Otherwise, send a regular chat message
 			else
@@ -764,28 +771,32 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{
-			// Check if the player has recently voted
-			if(pPlayer->m_aPlayerTick[LastVoteTry] > Server()->Tick())
+			// check last vote
+			if(pPlayer->m_aPlayerTick[LastVote] > Server()->Tick())
 				return;
 
-			// Set a cooldown for voting
-			pPlayer->m_aPlayerTick[LastVoteTry] = Server()->Tick() + (Server()->TickSpeed() / 2);
-
-			// Checking if the vote type is "option"
+			// initialize variables
 			CNetMsg_Cl_CallVote* pMsg = (CNetMsg_Cl_CallVote*)pRawMsg;
+			pPlayer->m_aPlayerTick[LastVote] = Server()->Tick() + (Server()->TickSpeed() / 2);
+
+			// check if the player is not authenticated
 			if(str_comp_nocase(pMsg->m_pType, "option") == 0)
 			{
-				// If the player has an active post vote list, post it
+				// post player votes
 				pPlayer->m_VotesData.ApplyVoteUpdaterData();
 
+				// use vote by command with the provided values
 				if(CVoteOption* pActionVote = VoteWrapper::GetOptionVoteByAction(ClientID, pMsg->m_pValue))
 				{
-					// Parsing the vote commands with the provided values
-					const int InteractiveValue = string_to_number(pMsg->m_pReason, 1, 10000000);
+					const int ReasonNumber = clamp(str_toint(pMsg->m_pReason), 1, 100000);
 					if(pActionVote->m_Callback.m_Impl)
-						pActionVote->m_Callback.m_Impl(pPlayer, InteractiveValue, pMsg->m_pReason, pActionVote->m_Callback.m_pData);
+					{
+						pActionVote->m_Callback.m_Impl(pPlayer, ReasonNumber, pMsg->m_pReason, pActionVote->m_Callback.m_pData);
+					}
 					else
-						ParsingVoteCommands(ClientID, pActionVote->m_aCommand, pActionVote->m_SettingID, pActionVote->m_SettingID2, InteractiveValue, pMsg->m_pReason);
+					{
+						OnClientVoteCommand(ClientID, pActionVote->m_aCommand, pActionVote->m_Extra1, pActionVote->m_Extra2, ReasonNumber, pMsg->m_pReason);
+					}
 				}
 			}
 		}
@@ -960,7 +971,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			Server()->SendPackMsg(&GoodCheck, MSGFLAG_VITAL | MSGFLAG_FLUSH | MSGFLAG_NORECORD, ClientID);
 		}
 		/*else
-			Core()->OnMessage(MsgID, pRawMsg, ClientID);*/
+			Core()->OnClientMessage(MsgID, pRawMsg, ClientID);*/
 	}
 	else
 	{
@@ -1029,7 +1040,7 @@ void CGS::OnClientConnected(int ClientID)
 		m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
 	}
 
-	SendMotd(ClientID);
+	SendMotd(ClientID, g_Config.m_SvMotd);
 	m_aBroadcastStates[ClientID] = {};
 }
 
@@ -1097,13 +1108,13 @@ void CGS::OnClientPredictedInput(int ClientID, void* pInput)
 	m_apPlayers[ClientID]->OnPredictedInput((CNetObj_PlayerInput*)pInput);
 }
 
-void CGS::OnUpdatePlayerServerInfo(nlohmann::json* pJson, int ClientID)
+void CGS::OnUpdateClientServerInfo(nlohmann::json* pJson, int ClientID)
 {
 	CPlayer* pPlayer = GetPlayer(ClientID);
 	if(!pPlayer)
 		return;
 
-	CTeeInfo& TeeInfo = m_apPlayers[ClientID]->GetTeeInfo();
+	CTeeInfo& TeeInfo = pPlayer->GetTeeInfo();
 	(*pJson)["skin"]["name"] = TeeInfo.m_aSkinName;
 	if(TeeInfo.m_UseCustomColor)
 	{
@@ -1111,11 +1122,11 @@ void CGS::OnUpdatePlayerServerInfo(nlohmann::json* pJson, int ClientID)
 		(*pJson)["skin"]["color_feet"] = TeeInfo.m_ColorFeet;
 	}
 	(*pJson)["afk"] = false;
-	(*pJson)["team"] = m_apPlayers[ClientID]->GetTeam();
+	(*pJson)["team"] = pPlayer->GetTeam();
 }
 
 // change the world
-void CGS::PrepareClientChangeWorld(int ClientID)
+void CGS::OnClientPrepareChangeWorld(int ClientID)
 {
 	if(m_apPlayers[ClientID])
 	{
@@ -1125,6 +1136,11 @@ void CGS::PrepareClientChangeWorld(int ClientID)
 	}
 	const int AllocMemoryCell = ClientID + m_WorldID * MAX_CLIENTS;
 	m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
+}
+
+int CGS::GetRank(int AccountID) const
+{
+	return Core()->AccountManager()->GetRank(AccountID);
 }
 
 bool CGS::IsClientReady(int ClientID) const
@@ -1166,7 +1182,7 @@ const char* CGS::Version() const { return GAME_VERSION; }
 const char* CGS::NetVersion() const { return GAME_NETVERSION; }
 
 // clearing all data at the exit of the client necessarily call once enough
-void CGS::ClearClientData(int ClientID)
+void CGS::OnClearClientData(int ClientID)
 {
 	Core()->ResetClientData(ClientID);
 	VoteWrapper::Data()[ClientID].clear();
@@ -1175,11 +1191,6 @@ void CGS::ClearClientData(int ClientID)
 	// clear active snap bots for player
 	for(auto& pActiveSnap : DataBotInfo::ms_aDataBot)
 		pActiveSnap.second.m_aVisibleActive[ClientID] = false;
-}
-
-int CGS::GetRank(int AccountID)
-{
-	return Core()->AccountManager()->GetRank(AccountID);
 }
 
 /* #########################################################################
@@ -1416,7 +1427,7 @@ void CGS::ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* pUserData,
 	if(pResult->NumArguments())
 	{
 		CGS* pSelf = (CGS*)pUserData;
-		pSelf->SendMotd(-1);
+		pSelf->SendMotd(-1, g_Config.m_SvMotd);
 	}
 }
 
@@ -1439,7 +1450,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	if(!pPlayer)
 		return;
 
-	VoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN|VWF_GROUP_NUMERAL, "Hi, new adventurer!");
+	VoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN | VWF_GROUP_NUMERAL, "Hi, new adventurer!");
 	VWelcome.MarkList().Add("Information:");
 	{
 		VWelcome.BeginDepth();
@@ -1492,7 +1503,7 @@ void CGS::UpdateVotesIfForAll(int MenuList)
 }
 
 // vote parsing of all functions of action methods
-bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* Text)
+bool CGS::OnClientVoteCommand(int ClientID, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	CPlayer* pPlayer = GetPlayer(ClientID, false, true);
 	if(!pPlayer)
@@ -1501,17 +1512,18 @@ bool CGS::ParsingVoteCommands(int ClientID, const char* CMD, const int VoteID, c
 		return true;
 	}
 
-	if(PPSTR(CMD, "null") == 0)
+	if(PPSTR(pCmd, "null") == 0)
 		return true;
 
 	CreatePlayerSound(ClientID, SOUND_BODY_LAND);
 
-	if(pPlayer->m_VotesData.ParsingDefaultSystemCommands(CMD, VoteID, VoteID2, Get, Text))
+	// parsing default vote commands
+	if(pPlayer->m_VotesData.DefaultVoteCommands(pCmd, Extra1, Extra2, ReasonNumber, pReason))
 		return true;
-	
+
 	// parsing everything else
-	const CSqlString<64> FormatText = sqlstr::CSqlString<64>(Text);
-	return Core()->OnParsingVoteCommands(pPlayer, CMD, VoteID, VoteID2, Get, FormatText.cstr());
+	const auto csqlReason = sqlstr::CSqlString<64>(pReason);
+	return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extra1, Extra2, ReasonNumber, csqlReason.cstr());
 }
 
 /* #########################################################################

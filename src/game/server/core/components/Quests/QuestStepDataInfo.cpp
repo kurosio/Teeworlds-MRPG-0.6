@@ -470,20 +470,17 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	if(!pPlayer)
 		return;
 
-	dynamic_string Buffer("");
+	std::string strBuffer {};
 	const char* pLang = pPlayer->GetLanguage();
 
 	// show required bots
 	if(!m_Bot.m_vRequiredDefeat.empty())
 	{
-		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Slay enemies:"));
+		strBuffer += "\n\n" + Tools::String::FormatLocalize(m_ClientID, "- \u270E Slay enemies:");
 		for(auto& p : m_Bot.m_vRequiredDefeat)
 		{
 			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count >= p.m_Value ? "\u2611" : "\u2610");
-
-			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "{} Defeat {} ({}/{})",
+			strBuffer += "\n" + Tools::String::FormatLocalize(m_ClientID, "{} Defeat {} ({}/{})",
 				pCompletePrefix, DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
 		}
 	}
@@ -491,25 +488,21 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	// show required items
 	if(!m_Bot.m_vRequiredItems.empty())
 	{
-		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Retrieve an item's:"));
+		strBuffer += "\n\n" + Tools::String::FormatLocalize(m_ClientID, "- \u270E Retrieve an item's:");
 		for(auto& pRequied : m_Bot.m_vRequiredItems)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequied.m_Item);
 			const char* pCompletePrefix = (pPlayerItem->GetValue() >= pRequied.m_Item.GetValue() ? "\u2611" : "\u2610");
 			const char* pInteractiveType = pRequied.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW ? "Show a" : "Require a";
-
-			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "{} {} {} ({}/{}).",
-				pCompletePrefix, GS()->Server()->Localization()->Localize(pLang, pInteractiveType), pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pRequied.m_Item.GetValue());
+			strBuffer += "\n" + Tools::String::FormatLocalize(m_ClientID, "{} {} {} ({}/{}).",
+				pCompletePrefix, pInteractiveType, pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pRequied.m_Item.GetValue());
 		}
 	}
 
 	// show move to
 	if(!m_Bot.m_vRequiredMoveAction.empty())
 	{
-		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Trigger some action's:"));
+		strBuffer += "\n\n" + Tools::String::FormatLocalize(m_ClientID, "- \u270E Trigger some action's:");
 
 		// Create an unordered map called m_Order with key type int and value type unordered_map<string, pair<int, int>> for special order task's
 		std::map<int /* step */, ska::unordered_map<std::string /* task name */, std::pair<int /* complected */, int /* count */>>> m_Order;
@@ -534,7 +527,7 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 			for(auto& [Name, StepCount] : TaskMap)
 			{
 				// Append a newline character to Buffer
-				Buffer.append_at(Buffer.length(), "\n");
+				strBuffer += "\n";
 
 				// Check for one task
 				const int& TaskNum = StepCount.second;
@@ -542,12 +535,12 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 				const char* pCompletePrefix = (TaskCompleted >= TaskNum ? "\u2611" : "\u2610");
 				if(TaskNum == 1)
 				{
-					GS()->Server()->Localization()->Format(Buffer, pLang, "{}. {} {}.", Step, pCompletePrefix, Name.c_str());
+					strBuffer += Tools::String::FormatLocalize(m_ClientID, "{}. {} {}.", Step, pCompletePrefix, Name.c_str());
 					continue;
 				}
 
 				// Multi task
-				GS()->Server()->Localization()->Format(Buffer, pLang, "{}. {} {} ({}/{}).", Step, pCompletePrefix, Name.c_str(), TaskCompleted, TaskNum);
+				strBuffer += Tools::String::FormatLocalize(m_ClientID, "{}. {} {} ({}/{}).", Step, pCompletePrefix, Name.c_str(), TaskCompleted, TaskNum);
 			}
 		}
 	}
@@ -555,18 +548,13 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	// show reward items
 	if(!m_Bot.m_RewardItems.empty())
 	{
-		Buffer.append_at(Buffer.length(), "\n\n");
-		Buffer.append_at(Buffer.length(), GS()->Server()->Localization()->Localize(pLang, "- \u270E Reward for completing a task:"));
+		strBuffer += "\n\n" + Tools::String::FormatLocalize(m_ClientID, "- \u270E Reward for completing a task:");
 		for(auto& p : m_Bot.m_RewardItems)
-		{
-			Buffer.append_at(Buffer.length(), "\n");
-			GS()->Server()->Localization()->Format(Buffer, pLang, "Obtain a {} ({}).", p.Info()->GetName(), p.GetValue());
-		}
+			strBuffer += "\n" + Tools::String::FormatLocalize(m_ClientID, "Obtain a {} ({}).", p.Info()->GetName(), p.GetValue());
 	}
 
 	// Copy the contents of the buffer `Buffer` into the character array `aBufQuestTask`,
-	str_copy(aBufQuestTask, Buffer.buffer(), Size);
-	Buffer.clear();
+	str_copy(aBufQuestTask, strBuffer.c_str(), Size);
 }
 
 int CQuestStep::GetMoveToNum() const

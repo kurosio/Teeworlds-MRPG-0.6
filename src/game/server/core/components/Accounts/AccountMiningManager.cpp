@@ -25,7 +25,7 @@ void CAccountMiningManager::OnInitWorld(const char* pWhereLocalWorld)
 	}
 }
 
-void CAccountMiningManager::OnInitAccount(CPlayer* pPlayer)
+void CAccountMiningManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	// try load from database
 	auto& refMiningDbField = pPlayer->Account()->m_MiningData;
@@ -126,12 +126,12 @@ void CAccountMiningManager::Process(CPlayer *pPlayer, int Level) const
 }
 
 
-bool CAccountMiningManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CAccountMiningManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
-	if (PPSTR(CMD, "MINING_UPGRADE") == 0)
+	if (PPSTR(pCmd, "MINING_UPGRADE") == 0)
 	{
-		if (pPlayer->Upgrade(Get, &pPlayer->Account()->m_MiningData(VoteID, 0).m_Value, &pPlayer->Account()->m_MiningData(JOB_UPGRADES, 0).m_Value, VoteID2, 3))
+		if (pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_MiningData(Extra1, 0).m_Value, &pPlayer->Account()->m_MiningData(JOB_UPGRADES, 0).m_Value, Extra2, 3))
 		{
 			GS()->Core()->SaveAccount(pPlayer, SAVE_MINING_DATA);
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_UPGRADES);

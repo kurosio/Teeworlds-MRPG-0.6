@@ -65,7 +65,7 @@ void CQuestManager::OnInit()
 }
 
 // This method is called when a player's account is initialized.
-void CQuestManager::OnInitAccount(CPlayer* pPlayer)
+void CQuestManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	// Get the client ID of the player
 	const int ClientID = pPlayer->GetCID();
@@ -83,14 +83,14 @@ void CQuestManager::OnInitAccount(CPlayer* pPlayer)
 	}
 }
 
-void CQuestManager::OnResetClient(int ClientID)
+void CQuestManager::OnClientReset(int ClientID)
 {
 	for(auto& pQuest : CPlayerQuest::Data()[ClientID])
 		delete pQuest.second;
 	CPlayerQuest::Data().erase(ClientID);
 }
 
-bool CQuestManager::OnHandleTile(CCharacter* pChr)
+bool CQuestManager::OnCharacterTile(CCharacter* pChr)
 {
 	// Get the player object client ID associated with the character object
 	CPlayer* pPlayer = pChr->GetPlayer();
@@ -114,7 +114,7 @@ bool CQuestManager::OnHandleTile(CCharacter* pChr)
 	return false;
 }
 
-bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CQuestManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	// Retrieve the character object client ID associated with the player
 	CCharacter* pChr = pPlayer->GetCharacter();
@@ -170,7 +170,7 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_JOURNAL_MAIN);
 
 		// Get the quest information for the specified QuestID
-		const int QuestID = pPlayer->m_VotesData.GetMenuTemporaryInteger();
+		const int QuestID = pPlayer->m_VotesData.GetGroupID();
 		CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 
 		// Show the active NPC for the quest to the player
@@ -193,13 +193,13 @@ bool CQuestManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CQuestManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(PPSTR(CMD, "DAILY_QUEST_STATE") == 0)
+	if(PPSTR(pCmd, "DAILY_QUEST_STATE") == 0)
 	{
-		// Get the daily quest board for VoteID2
-		CQuestsDailyBoard* pBoard = GS()->GetQuestDailyBoard(VoteID2);
+		// ReasonNumber the daily quest board for Extra2
+		CQuestsDailyBoard* pBoard = GS()->GetQuestDailyBoard(Extra2);
 
 		// If the daily quest board is not found, return true
 		if(!pBoard)
@@ -213,8 +213,8 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 			return true;
 		}
 
-		// If there is no quest associated with the VoteID or the quest is already completed, return true
-		CPlayerQuest* pQuest = pPlayer->GetQuest(VoteID);
+		// If there is no quest associated with the Extra1 or the quest is already completed, return true
+		CPlayerQuest* pQuest = pPlayer->GetQuest(Extra1);
 		if(!pQuest || pQuest->IsCompleted())
 			return true;
 
@@ -233,7 +233,7 @@ bool CQuestManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 }
 
 // This function is called when a player's time period changes in the quest manager
-void CQuestManager::OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
+void CQuestManager::OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
 {
 	// Get the client ID of the player
 	int ClientID = pPlayer->GetCID();

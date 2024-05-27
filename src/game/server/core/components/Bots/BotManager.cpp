@@ -82,7 +82,7 @@ void CBotManager::OnInitWorld(const char* pWhereLocalWorld)
 	InitMobsBots(pWhereLocalWorld);
 }
 
-bool CBotManager::OnMessage(int MsgID, void* pRawMsg, int ClientID)
+bool CBotManager::OnClientMessage(int MsgID, void* pRawMsg, int ClientID)
 {
 	return false;
 }

@@ -49,13 +49,13 @@ void CHouseManager::OnTick()
 	}
 }
 
-void CHouseManager::OnHandleTimePeriod(TIME_PERIOD Period)
+void CHouseManager::OnTimePeriod(TIME_PERIOD Period)
 {
 	for(auto& p : CHouse::Data())
 		p->HandleTimePeriod(Period);
 }
 
-bool CHouseManager::OnHandleTile(CCharacter* pChr)
+bool CHouseManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	const int ClientID = pPlayer->GetCID();
@@ -74,7 +74,7 @@ bool CHouseManager::OnHandleTile(CCharacter* pChr)
 	return false;
 }
 
-bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CHouseManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -125,7 +125,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_HOUSE_FARMZONE_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_HOUSE_FARMZONE_LIST);
-		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetGroupID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -133,7 +133,7 @@ bool CHouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CHouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
 

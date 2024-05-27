@@ -63,9 +63,9 @@ bool CMultiWorlds::Init(CWorld* pNewWorld, IKernel* pKernel)
 	else // register
 	{
 		pNewWorld->m_pMapDetail->m_pMap = CreateEngineMap();
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pMapDetail->m_pMap, true, pNewWorld->m_WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pMapDetail->m_pMap, false, pNewWorld->m_WorldID);
 		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld->m_pMapDetail->m_pMap), false, pNewWorld->m_WorldID);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pGameServer, true, pNewWorld->m_WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pGameServer, false, pNewWorld->m_WorldID);
 	}
 
 	m_WasInitilized++;
@@ -75,7 +75,7 @@ bool CMultiWorlds::Init(CWorld* pNewWorld, IKernel* pKernel)
 bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConsole* pConsole)
 {
 	// clear old worlds
-	Clear(false);
+	 Clear(false);
 
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_worlds");
  	while(pRes->next())

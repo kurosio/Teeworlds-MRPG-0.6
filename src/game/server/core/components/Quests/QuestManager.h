@@ -37,22 +37,22 @@ class CQuestManager : public MmoComponent
 	void OnInit() override;
 
 	// This function is called when the player's account is initialized
-	void OnInitAccount(CPlayer* pPlayer) override;
+	void OnPlayerLogin(CPlayer* pPlayer) override;
 
 	// This function is called when the client is reset
-	void OnResetClient(int ClientID) override;
+	void OnClientReset(int ClientID) override;
 
 	// This function is called when a tile collision is handled by a character
-	bool OnHandleTile(CCharacter* pChr) override;
+	bool OnCharacterTile(CCharacter* pChr) override;
 
 	// This function is called when a menu list is handled by a player
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
+	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
 
 	// This function is called when a vote command is handled by a player
-	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 	// This function is called when a time period is handled by a player
-	void OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period) override;
+	void OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period) override;
 
 public:
 	// Check if a given QuestID is valid for a given ClientID

@@ -43,7 +43,7 @@ void CAethernetManager::OnInit()
 	}
 }
 
-void CAethernetManager::OnInitAccount(CPlayer* pPlayer)
+void CAethernetManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	// Initialize the player's aether data
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_ACCOUNTS_AETHERS, "WHERE UserID = '%d'", pPlayer->Account()->GetID());
@@ -54,15 +54,15 @@ void CAethernetManager::OnInitAccount(CPlayer* pPlayer)
 	}
 }
 
-bool CAethernetManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
 
 	// Check if the player is trying to teleport to an aether
-	if(PPSTR(CMD, "AETHER_TELEPORT") == 0)
+	if(PPSTR(pCmd, "AETHER_TELEPORT") == 0)
 	{
-		// Assign the given VoteID to AetherID and AetherData object
-		AetherIdentifier AetherID = VoteID;
+		// Assign the given Extra1 to AetherID and AetherData object
+		AetherIdentifier AetherID = Extra1;
 		CAetherData* pAether = GetAetherByID(AetherID);
 
 		// Check if the AetherData object does not exist
@@ -80,7 +80,7 @@ bool CAethernetManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 		}
 
 		// Check if the player has enough currency to spend
-		const int& Fee = VoteID2;
+		const int& Fee = Extra2;
 		if(Fee <= 0 || pPlayer->Account()->SpendCurrency(Fee))
 		{
 			// Check if the player is in a different world than the Aether
@@ -107,7 +107,7 @@ bool CAethernetManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	return false;
 }
 
-bool CAethernetManager::OnHandleTile(CCharacter* pChr)
+bool CAethernetManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
@@ -128,7 +128,7 @@ bool CAethernetManager::OnHandleTile(CCharacter* pChr)
 	return false;
 }
 
-bool CAethernetManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CAethernetManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	if(Menulist == MENU_AETHERNET_LIST)
 	{

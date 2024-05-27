@@ -122,7 +122,7 @@ enum TickState
 	LastChangeInfo,
 	LastChangeTeam,
 	LastChat,
-	LastVoteTry,
+	LastVote,
 	LastDialog,
 	LastRandomBox,
 	PotionRecast,

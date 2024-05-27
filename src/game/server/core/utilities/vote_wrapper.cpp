@@ -66,14 +66,14 @@ CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(Cli
 	m_vDepthNumeral[DEPTH_LVL3].m_Style = DEPTH_LIST_STYLE_BOLD;
 }
 
-void CVoteGroup::SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>>&& vNumeralFlags)
+void CVoteGroup::SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>> vNumeralFlags)
 {
 	for(const auto& [Depth, Flag] : vNumeralFlags)
 		m_vDepthNumeral[Depth].m_Style = Flag;
 }
 
 // Function to add a vote title implementation with variable arguments
-void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int SettingsID2, const char* pText)
+void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, const char* pText)
 {
 	// Check if the player is valid
 	if(!m_pPlayer)
@@ -115,7 +115,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	{
 		pHidden = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags);
 		StrAppend += pHidden->m_Value ? "\u21BA" : "\u27A4";
-		SettingsID1 = m_HiddenID;
+		Extra1 = m_HiddenID;
 		pCmd = "HIDDEN";
 	}
 
@@ -131,12 +131,12 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 	str_format(aBufText, sizeof(aBufText), "%s %s", StrAppend.c_str(), Buffer.buffer());
 	Buffer.clear();
 
-	// Create a new VoteOption with the values from aBufText, pCmd, SettingsID1, and SettingsID2
+	// Create a new VoteOption with the values from aBufText, pCmd, Extra1, and Extra2
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, aBufText, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
-	Vote.m_SettingID = SettingsID1;
-	Vote.m_SettingID2 = SettingsID2;
+	Vote.m_Extra1 = Extra1;
+	Vote.m_Extra2 = Extra2;
 	Vote.m_IsTitle = true;
 
 	// Add title to front or update the title if it already exists
@@ -152,7 +152,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int SettingsID1, int Setting
 }
 
 // Function to add a vote implementation with variable arguments
-void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, const char* pText)
+void CVoteGroup::AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const char* pText)
 {
 	// Check if the player is valid
 	if(!m_pPlayer || IsHidden())
@@ -171,12 +171,12 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Settings1, int Settings2, con
 	str_format(aBufText, sizeof(aBufText), "%s%s", str_comp(pCmd, "null") != 0 ? "\u257E " : "\0", Buffer.buffer());
 	Buffer.clear();
 
-	// Create a new VoteOption with the values from aBufText, pCmd, Settings1, and Settings2
+	// Create a new VoteOption with the values from aBufText, pCmd, Extra1, and Extra2
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, aBufText, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
-	Vote.m_SettingID = Settings1;
-	Vote.m_SettingID2 = Settings2;
+	Vote.m_Extra1 = Extra1;
+	Vote.m_Extra2 = Extra2;
 	Vote.m_Depth = m_CurrentDepth;
 
 	// Add the VoteOption to the player's votes
@@ -268,9 +268,8 @@ void CVoteGroup::AddItemValueImpl(int ItemID)
 	if(!pPlayer || IsHidden())
 		return;
 
-	const std::string endText = Instance::Server()->Localization()->Format(pPlayer->GetLanguage(), "You have {} {}", 
-		pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName());
-	AddVoteImpl("null", NOPE, NOPE, endText.c_str());
+	std::string LocalizeStr = Tools::String::FormatLocalize(m_ClientID, "You have {} {}", pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName()).c_str();
+	AddVoteImpl("null", NOPE, NOPE, LocalizeStr.c_str());
 }
 
 // Function for check hidden status
@@ -491,7 +490,6 @@ void CVotePlayerData::ThreadVoteUpdater(CVotePlayerData* pData)
 	if(!pData || !pData->m_pPlayer)
 		return;
 
-	// TODO: Same prepared vote thread update
 	pData->m_VoteUpdaterStatus.store(STATE_UPDATER::DONE);
 }
 
@@ -501,9 +499,8 @@ void CVotePlayerData::ApplyVoteUpdaterData()
 	if(m_VoteUpdaterStatus == STATE_UPDATER::DONE)
 	{
 		ClearVotes();
-		int ClientID = m_pPlayer->GetCID();
-		m_pGS->Core()->OnPlayerHandleMainMenu(ClientID, m_CurrentMenuID);
-		VoteWrapper::RebuildVotes(ClientID);
+		m_pGS->Core()->OnPlayerMenulist(m_pPlayer, m_CurrentMenuID);
+		VoteWrapper::RebuildVotes(m_pPlayer->GetCID());
 		m_VoteUpdaterStatus.store(STATE_UPDATER::WAITING);
 	}
 }
@@ -538,22 +535,22 @@ void CVotePlayerData::ClearVotes() const
 }
 
 // Function to parse default system commands
-bool CVotePlayerData::ParsingDefaultSystemCommands(const char* CMD, const int VoteID, const int VoteID2, int Get, const char* Text)
+bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, const int Extra2, int, const char*)
 {
 	// Check if the command is "MENU"
-	if(PPSTR(CMD, "MENU") == 0)
+	if(PPSTR(pCmd, "MENU") == 0)
 	{
 		// Set the temporary menu integer to the specified value
-		m_TempMenuInteger = VoteID2;
+		m_GroupID = Extra2;
 
 		// Update the votes for the player
-		ResetHidden(VoteID);
-		UpdateVotes(VoteID);
+		ResetHidden(Extra1);
+		UpdateVotes(Extra1);
 		return true;
 	}
 
 	// Check if the command is "BACK"
-	if(PPSTR(CMD, "BACK") == 0)
+	if(PPSTR(pCmd, "BACK") == 0)
 	{
 		// Update the votes for the player
 		UpdateVotes(m_LastMenuID);
@@ -561,17 +558,17 @@ bool CVotePlayerData::ParsingDefaultSystemCommands(const char* CMD, const int Vo
 	}
 
 	// Check if the command is "HIDDEN"
-	if(PPSTR(CMD, "HIDDEN") == 0)
+	if(PPSTR(pCmd, "HIDDEN") == 0)
 	{
 		// If the hidden vote group does not exist, return true
-		if(VoteGroupHidden* pHidden = GetHidden(VoteID))
+		if(VoteGroupHidden* pHidden = GetHidden(Extra1))
 		{
 			// If the hidden vote group has the VWF_UNIQUE flag and its ID is not the specified ID, set its value to true
 			if(pHidden->m_Flag & VWF_UNIQUE)
 			{
 				for(auto& [ID, Hide] : m_aHiddenGroup[m_CurrentMenuID])
 				{
-					if(Hide.m_Flag & VWF_UNIQUE && ID != VoteID)
+					if(Hide.m_Flag & VWF_UNIQUE && ID != Extra1)
 						Hide.m_Value = true;
 				}
 			}

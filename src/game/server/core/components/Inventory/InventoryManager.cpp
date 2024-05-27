@@ -71,7 +71,7 @@ void CInventoryManager::OnInit()
 	}
 }
 
-void CInventoryManager::OnInitAccount(CPlayer* pPlayer)
+void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
@@ -87,12 +87,12 @@ void CInventoryManager::OnInitAccount(CPlayer* pPlayer)
 	}
 }
 
-void CInventoryManager::OnResetClient(int ClientID)
+void CInventoryManager::OnClientReset(int ClientID)
 {
 	CPlayerItem::Data().erase(ClientID);
 }
 
-bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -114,8 +114,8 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "\u26C3 Other ({})", GetCountItemsType(pPlayer, ItemType::TYPE_OTHER));
 		VInventoryTabs.AddLine();
 
-		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
-			ListInventory(ClientID, (ItemType)pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		if(pPlayer->m_VotesData.GetGroupID() >= 0)
+			ListInventory(ClientID, (ItemType)pPlayer->m_VotesData.GetGroupID());
 
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -147,8 +147,8 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		}
 
 		// show and sort equipment
-		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() > 0)
-			ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		if(pPlayer->m_VotesData.GetGroupID() > 0)
+			ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetGroupID());
 
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -157,7 +157,7 @@ bool CInventoryManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CInventoryManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
 

@@ -45,7 +45,7 @@ void CWarehouseManager::OnTick()
 }
 
 // Warehouse manager handle tile
-bool CWarehouseManager::OnHandleTile(CCharacter* pChr)
+bool CWarehouseManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
@@ -65,7 +65,7 @@ bool CWarehouseManager::OnHandleTile(CCharacter* pChr)
 }
 
 // Warehouse manager handle menulist
-bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CWarehouseManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	CCharacter* pChr = pPlayer->GetCharacter();
 
@@ -82,10 +82,10 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_WAREHOUSE);
 
 		// try show trade item
-		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
+		if(pPlayer->m_VotesData.GetGroupID() >= 0)
 		{
 			CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos);
-			ShowTrade(pPlayer, pWarehouse, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+			ShowTrade(pPlayer, pWarehouse, pPlayer->m_VotesData.GetGroupID());
 		}
 
 		// add backpage
@@ -97,12 +97,12 @@ bool CWarehouseManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 }
 
 // Warehouse manager handle vote commands
-bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
 
 	// Repair all items
-	if(PPSTR(CMD, "REPAIR_ITEMS") == 0)
+	if(PPSTR(pCmd, "REPAIR_ITEMS") == 0)
 	{
 		Core()->InventoryManager()->RepairDurabilityItems(pPlayer);
 		GS()->Chat(ClientID, "All items have been repaired.");
@@ -110,10 +110,10 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	}
 
 	// Buying an item from a warehouse
-	if(PPSTR(CMD, "WAREHOUSE_BUY_ITEM") == 0)
+	if(PPSTR(pCmd, "WAREHOUSE_BUY_ITEM") == 0)
 	{
-		const WarehouseIdentifier& WarehouseID = VoteID;
-		const TradeIdentifier& TradeID = VoteID2;
+		const WarehouseIdentifier& WarehouseID = Extra1;
+		const TradeIdentifier& TradeID = Extra2;
 
 		CWarehouse* pWarehouse = GetWarehouse(WarehouseID);
 		if(BuyItem(pPlayer, pWarehouse, TradeID))
@@ -125,13 +125,13 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	}
 
 	// Selling items for the warehouse
-	if(PPSTR(CMD, "WAREHOUSE_SELL_ITEM") == 0)
+	if(PPSTR(pCmd, "WAREHOUSE_SELL_ITEM") == 0)
 	{
-		const WarehouseIdentifier& WarehouseID = VoteID;
-		const TradeIdentifier& TradeID = VoteID2;
+		const WarehouseIdentifier& WarehouseID = Extra1;
+		const TradeIdentifier& TradeID = Extra2;
 
 		CWarehouse* pWarehouse = GetWarehouse(WarehouseID);
-		if(SellItem(pPlayer, pWarehouse, TradeID, Get))
+		if(SellItem(pPlayer, pWarehouse, TradeID, ReasonNumber))
 		{
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
@@ -140,9 +140,9 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	}
 
 	// Load products into the warehouse
-	if(PPSTR(CMD, "WAREHOUSE_LOAD_PRODUCTS") == 0)
+	if(PPSTR(pCmd, "WAREHOUSE_LOAD_PRODUCTS") == 0)
 	{
-		WarehouseIdentifier WarehouseID = VoteID;
+		WarehouseIdentifier WarehouseID = Extra1;
 		CWarehouse* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse || !pWarehouse->IsHasFlag(WF_STORAGE))
 			return true;
@@ -168,9 +168,9 @@ bool CWarehouseManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, 
 	}
 
 	// Unloading products from the warehouse
-	if(PPSTR(CMD, "WAREHOUSE_UNLOAD_PRODUCTS") == 0)
+	if(PPSTR(pCmd, "WAREHOUSE_UNLOAD_PRODUCTS") == 0)
 	{
-		WarehouseIdentifier WarehouseID = VoteID;
+		WarehouseIdentifier WarehouseID = Extra1;
 		CWarehouse* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse || !pWarehouse->IsHasFlag(WF_STORAGE))
 			return true;

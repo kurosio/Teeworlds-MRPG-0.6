@@ -13,12 +13,12 @@ class CAccountManager : public MmoComponent
 	{
 		CAccountData::ms_aData.clear();
 		CAccountTempData::ms_aPlayerTempData.clear();
-	};
+	}
 
-	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
-	void OnResetClient(int ClientID) override;
-	void OnPlayerHandleTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period) override;
+	void OnClientReset(int ClientID) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
+	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
+	void OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period) override;
 
     struct AccBan
     {
@@ -30,7 +30,7 @@ class CAccountManager : public MmoComponent
 
 public:
 	AccountCodeResult RegisterAccount(int ClientID, const char *Login, const char *Password);
-	AccountCodeResult LoginAccount(int ClientID, const char *Login, const char *Password);
+	AccountCodeResult LoginAccount(int ClientID, const char *pLogin, const char *pPassword);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
 	void DiscordConnect(int ClientID, const char *pDID) const;
 	bool ChangeNickname(int ClientID);

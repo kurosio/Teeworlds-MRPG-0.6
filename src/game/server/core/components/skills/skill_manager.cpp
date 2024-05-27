@@ -25,7 +25,7 @@ void CSkillManager::OnInit()
 	}
 }
 
-void CSkillManager::OnInitAccount(CPlayer *pPlayer)
+void CSkillManager::OnPlayerLogin(CPlayer *pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
@@ -40,12 +40,12 @@ void CSkillManager::OnInitAccount(CPlayer *pPlayer)
 	}
 }
 
-void CSkillManager::OnResetClient(int ClientID)
+void CSkillManager::OnClientReset(int ClientID)
 {
 	CSkill::Data().erase(ClientID);
 }
 
-bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
+bool CSkillManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	// Main menu skill list
 	if(Menulist == MENU_SKILL_LIST)
@@ -89,8 +89,8 @@ bool CSkillManager::OnHandleMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SKILL_LIST);
 
 		// Show selected skill
-		if(pPlayer->m_VotesData.GetMenuTemporaryInteger() >= 0)
-			ShowSkill(pPlayer, pPlayer->m_VotesData.GetMenuTemporaryInteger());
+		if(pPlayer->m_VotesData.GetGroupID() >= 0)
+			ShowSkill(pPlayer, pPlayer->m_VotesData.GetGroupID());
 
 		// Add backpage
 		VoteWrapper::AddBackpage(pPlayer->GetCID());
@@ -174,7 +174,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-bool CSkillManager::OnHandleTile(CCharacter* pChr)
+bool CSkillManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
@@ -191,12 +191,12 @@ bool CSkillManager::OnHandleTile(CCharacter* pChr)
 	return false;
 }
 
-bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CSkillManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	// learn skill function
-	if (PPSTR(CMD, "SKILL_LEARN") == 0)
+	if (PPSTR(pCmd, "SKILL_LEARN") == 0)
 	{
-		const int SkillID = VoteID;
+		const int SkillID = Extra1;
 		if(pPlayer->GetSkill(SkillID)->Upgrade())
 		{
 			pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -206,9 +206,9 @@ bool CSkillManager::OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, cons
 	}
 
 	// change emoticion function
-	if (PPSTR(CMD, "SKILL_CHANGE_USAGE_EMOTICION") == 0)
+	if (PPSTR(pCmd, "SKILL_CHANGE_USAGE_EMOTICION") == 0)
 	{
-		const int SkillID = VoteID;
+		const int SkillID = Extra1;
 		pPlayer->GetSkill(SkillID)->SelectNextControlEmote();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;

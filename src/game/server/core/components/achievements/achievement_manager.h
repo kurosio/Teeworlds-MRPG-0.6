@@ -26,9 +26,9 @@ class CAchievementManager : public MmoComponent
 	};
 
 	void OnInit() override;
-	void OnResetClient(int ClientID) override;
-	bool OnHandleMenulist(CPlayer* pPlayer, int Menulist) override;
-	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+	void OnClientReset(int ClientID) override;
+	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowGroupMenu(CPlayer* pPlayer, int Group) const;

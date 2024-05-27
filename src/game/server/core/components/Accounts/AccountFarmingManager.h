@@ -23,8 +23,8 @@ class CAccountFarmingManager : public MmoComponent
 	static std::map < int, FarmingPoint > ms_vmFarmingPoints;
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
-	void OnInitAccount(CPlayer* pPlayer) override;
-	bool OnHandleVoteCommands(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+	void OnPlayerLogin(CPlayer* pPlayer) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 public:
 	CItemDescription* GetFarmingItemInfoByPos(vec2 Pos) const;
