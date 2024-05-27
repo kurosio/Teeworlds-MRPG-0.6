@@ -63,7 +63,10 @@ bool CAuctionManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		{
 			VSlot.BeginDepth();
 			VSlot.Add("Tax for creating a slot: {}gold", pAuctionData->GetTaxPrice());
-			VSlot.AddIf(SlotEnchant > 0, "Warning selling enchanted: +{}", SlotEnchant);
+			if(SlotEnchant > 0)
+			{
+				VSlot.Add("Warning selling enchanted: +{}", SlotEnchant);
+			}
 			VSlot.EndDepth();
 		}
 		VSlot.AddLine();

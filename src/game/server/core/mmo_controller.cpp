@@ -165,9 +165,11 @@ bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		VPersonal.AddMenu(MENU_MAILBOX, "\u2709 Mailbox");
 		VPersonal.AddMenu(MENU_JOURNAL_MAIN, "\u270D Journal");
 		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
-		VPersonal.AddIfMenu(pPlayer->Account()->HasHouse(), MENU_HOUSE, "\u2302 House");
+		if(pPlayer->Account()->HasHouse())
+			VPersonal.AddMenu(MENU_HOUSE, "\u2302 House");
 		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
-		VPersonal.AddIfMenu(pPlayer->Account()->HasGuild(), MENU_GUILD, "\u32E1 Guild");
+		if(pPlayer->Account()->HasGuild())
+			VPersonal.AddMenu(MENU_GUILD, "\u32E1 Guild");
 
 		// info menu
 		VoteWrapper VInfo(ClientID, VWF_OPEN, "\u262A INFORMATION");
@@ -203,9 +205,12 @@ bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		// upgrade group's
 		const ClassGroup& Class = pPlayer->GetClass()->GetGroup();
 		VoteWrapper VUpgrGroupSelect(ClientID, VWF_SEPARATE_OPEN, "Select a type of upgrades");
-		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Dps, MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
-		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Tank, MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
-		VUpgrGroupSelect.AddIfMenu(Class == ClassGroup::Healer, MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
+		if(Class == ClassGroup::Dps)
+			VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
+		else if(Class == ClassGroup::Tank)
+			VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
+		else if(Class == ClassGroup::Healer)
+			VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
 		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Weapon, paGroupNames[(int)AttributeGroup::Weapon]);
 		VUpgrGroupSelect.AddLine();
 

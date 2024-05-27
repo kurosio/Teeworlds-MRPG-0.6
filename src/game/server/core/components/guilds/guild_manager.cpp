@@ -1277,8 +1277,13 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 	VTop.Add("Deposit: {}", pMember->GetDeposit());
 	VTop.Add("Rank: {}", pMember->GetRank()->GetName());
 	VTop.AddLine();
-	VTop.AddIfOption(RightsLeader && !SelfSlot, "GUILD_SET_LEADER", "Give Leader (in reason 134)");
-	VTop.AddIfOption(RightsInviteKick && !SelfSlot, "GUILD_KICK_MEMBER", AccountID, "Kick");
+	if(!SelfSlot)
+	{
+		if(RightsLeader)
+			VTop.AddOption("GUILD_SET_LEADER", "Give Leader (in reason 134)");
+		if(RightsInviteKick)
+			VTop.AddOption("GUILD_KICK_MEMBER", AccountID, "Kick");
+	}
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// selector rights
@@ -1542,7 +1547,10 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 		auto pMember = pIterMember.second;
 		VList.Add("{}. {} {} Deposit: {}", VList.NextPos(), pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
 	}
-	VList.AddIfOption(!pPlayer->Account()->HasGuild(), "GUILD_SEND_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
+
+	// buttom send
+	if(!pPlayer->Account()->HasGuild())
+		VList.AddOption("GUILD_SEND_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
 	VoteWrapper::AddEmptyline(ClientID);
 }
 

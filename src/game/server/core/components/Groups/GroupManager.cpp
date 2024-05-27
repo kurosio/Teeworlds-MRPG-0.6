@@ -102,8 +102,11 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		return;
 	}
 	const bool IsOwner = pGroup->GetLeaderUID() == pPlayer->Account()->GetID();
-	VGroup.AddIfOption(IsOwner, "GROUP_CHANGE_COLOR", "Change the colour: ({})", pGroup->GetTeamColor());
-	VGroup.AddIfOption(IsOwner, "GROUP_DISBAND", "Disband group");
+	if(IsOwner)
+	{
+		VGroup.AddOption("GROUP_CHANGE_COLOR", "Change the colour: ({})", pGroup->GetTeamColor());
+		VGroup.AddOption("GROUP_DISBAND", "Disband group");
+	}
 	VGroup.AddOption("GROUP_KICK", pPlayer->Account()->GetID(), "Leave the group");
 	VGroup.AddLine();
 
@@ -114,8 +117,11 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		std::string PlayerName = Server()->GetAccountNickname(AID);
 		bool HasInteraction = IsOwner && AID != pPlayer->Account()->GetID();
 		VoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
-		VMember.AddIfOption(HasInteraction, "GROUP_KICK", AID, "Kick {}", PlayerName.c_str());
-		VMember.AddIfOption(HasInteraction, "GROUP_CHANGE_OWNER", AID, "Transfer ownership {}", PlayerName.c_str());
+		if(HasInteraction)
+		{
+			VMember.AddOption("GROUP_KICK", AID, "Kick {}", PlayerName.c_str());
+			VMember.AddOption("GROUP_CHANGE_OWNER", AID, "Transfer ownership {}", PlayerName.c_str());
+		}
 	}
 	VoteWrapper::AddLine(ClientID);
 

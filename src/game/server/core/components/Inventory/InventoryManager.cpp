@@ -341,30 +341,37 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 
 		char aAttributes[64];
 		pItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-		VItem.AddIf(aAttributes[0] != '\0', "{}", aAttributes);
+		if(aAttributes[0] != '\0')
+		{
+			VItem.Add("{}", aAttributes);
+		}
 	}
 	else
 	{
 		VItem.SetTitle("{}{} x{}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
 	}
-	VItem.AddIf(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped(), "{}", pInfo->GetDescription());
+
+	// show description
+	if(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped())
+		VItem.Add("{}", pInfo->GetDescription());
 
 	// is used item
-	bool IsUsed = pInfo->m_Function == FUNCTION_ONE_USED || pInfo->m_Function == FUNCTION_USED;
-	VItem.AddIfOption(IsUsed, "IUSE", ItemID, "Use");
+	if(pInfo->m_Function == FUNCTION_ONE_USED || pInfo->m_Function == FUNCTION_USED)
+		VItem.AddOption("IUSE", ItemID, "Use");
 
 	// is potion
-	bool IsPotion = pInfo->m_Type == ItemType::TYPE_POTION;
-	VItem.AddIfOption(IsPotion, "ISETTINGS", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
+	if(pInfo->m_Type == ItemType::TYPE_POTION)
+		VItem.AddOption("ISETTINGS", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
 
 	// is decoration
-	bool IsDeco = pInfo->m_Type == ItemType::TYPE_DECORATION;
-	VItem.AddIfOption(IsDeco, "DECORATION_HOUSE_ADD", ItemID, "Start drawing near house");
-	VItem.AddIfOption(IsDeco, "GUILD_HOUSE_DECORATION", ItemID, "Start drawing near guild house");
+	if(pInfo->m_Type == ItemType::TYPE_DECORATION)
+	{
+		VItem.AddOption("DECORATION_HOUSE_ADD", ItemID, "Start drawing near house");
+		VItem.AddOption("GUILD_HOUSE_DECORATION", ItemID, "Start drawing near guild house");
+	}
 
 	// is equipped
-	bool IsEquipped = pInfo->m_Type == ItemType::TYPE_EQUIP || pInfo->m_Function == FUNCTION_SETTINGS;
-	if(IsEquipped)
+	if(pInfo->m_Type == ItemType::TYPE_EQUIP || pInfo->m_Function == FUNCTION_SETTINGS)
 	{
 		if(pInfo->m_Function == EQUIP_HAMMER && pItem->IsEquipped())
 			VItem.Add("You can not undress equipping hammer");
@@ -382,8 +389,15 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	// not allowed drop equipped hammer
 	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
 	{
-		VItem.AddIfOption(pItem->GetDysenthis() > 0, "IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{}m)", pItem->GetDysenthis());
-		VItem.AddIfOption(pInfo->m_InitialPrice > 0, "AUCTION_CREATE", ItemID, "Sell at auction");
+		// can dysenthis
+		if(pItem->GetDysenthis() > 0)
+			VItem.AddOption("IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{}m)", pItem->GetDysenthis());
+
+		// can trade
+		if(pInfo->m_InitialPrice > 0)
+			VItem.AddOption("AUCTION_CREATE", ItemID, "Sell at auction");
+
+		// drop
 		VItem.AddOption("IDROP", ItemID, "Drop");
 	}
 }

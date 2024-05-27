@@ -317,7 +317,6 @@ bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 			VModulesSettings.AddOption("ISETTINGS", pItemInfo->GetID(), "{}{} * {}", 
 				pPlayerItem->IsEquipped() ? "✔" : "\0", pItemInfo->GetName(), aAttributesInfo);
 		}
-		VModulesSettings.AddIf(VModulesSettings.IsEmpty(), "The list of equipment modules is empty.");
 
 		VoteWrapper::AddBackpage(ClientID);
 		return true;

@@ -134,8 +134,10 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	// skill want learn information
 	VoteWrapper VSkillWant(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want learn?");
 	VSkillWant.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
-	VSkillWant.AddIf(IsLearned, "{} {} (each level +{})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
-	VSkillWant.AddIf(!IsPassive, "Mana required {}%", pInfo->GetPercentageCost());
+	if(IsLearned)
+		VSkillWant.Add("{} {} (each level +{})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
+	if(!IsPassive)
+		VSkillWant.Add("Mana required {}%", pInfo->GetPercentageCost());
 	VSkillWant.AddLine();
 	VoteWrapper::AddEmptyline(ClientID);
 

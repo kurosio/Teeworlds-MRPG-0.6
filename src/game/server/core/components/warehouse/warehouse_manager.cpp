@@ -225,8 +225,10 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 		VStorage.Add("\u2727 Your: {} | Storage: {} products", pPlayer->GetItem(itProduct)->GetValue(), pWarehouse->Storage().GetValue());
 		{
 			VStorage.BeginDepth();
-			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_BUY), "WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
-			VStorage.AddIfOption(pWarehouse->IsHasFlag(WF_SELL), "WAREHOUSE_UNLOAD_PRODUCTS", pWarehouse->GetID(), "Unload products");
+			if(pWarehouse->IsHasFlag(WF_BUY))
+				VStorage.AddOption("WAREHOUSE_LOAD_PRODUCTS", pWarehouse->GetID(), "Load products");
+			if(pWarehouse->IsHasFlag(WF_SELL))
+				VStorage.AddOption("WAREHOUSE_UNLOAD_PRODUCTS", pWarehouse->GetID(), "Unload products");
 			VStorage.EndDepth();
 		}
 		VStorage.AddLine();
