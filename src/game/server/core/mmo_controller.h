@@ -65,7 +65,7 @@ public:
 	void HandlePlayerTimePeriod(CPlayer* pPlayer);
 
 	static void AsyncClientEnterMsgInfo(std::string ClientName, int ClientID);
-	void ConAsyncLinesForTranslate();
+	void SyncLocalizations() const;
 	//
 	void LoadLogicWorld() const;
 	void SaveAccount(CPlayer *pPlayer, int Table) const;

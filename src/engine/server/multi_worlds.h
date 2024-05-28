@@ -5,6 +5,7 @@
 
 class IKernel;
 class IEngineMap;
+class IStorageEngine;
 class CWorld;
 
 class CMapDetail

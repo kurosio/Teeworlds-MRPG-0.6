@@ -5,19 +5,9 @@
 
 class CLocalization
 {
-	class IStorageEngine* m_pStorage;
-	IStorageEngine* Storage() const { return m_pStorage; }
-
 public:
 	class CLanguage
 	{
-	protected:
-		char m_aName[64];
-		char m_aFilename[64];
-		char m_aParentFilename[64];
-		bool m_Loaded;
-		int m_Direction;
-
 		class CEntry
 		{
 		public:
@@ -27,7 +17,7 @@ public:
 
 			void Free()
 			{
-				if (m_apVersions)
+				if(m_apVersions)
 				{
 					delete[] m_apVersions;
 					m_apVersions = nullptr;
@@ -35,45 +25,55 @@ public:
 			}
 		};
 
+		class CUpdater
+		{
+			friend class CLanguage;
+			struct Element
+			{
+				std::string m_Hash {};
+				std::string m_Text {};
+				std::string m_End {};
+			};
+			CLanguage* m_pLanguage {};
+			std::vector<Element> m_vElements {};
+			bool m_Prepared {};
+
+		public:
+			bool LoadDefault(std::vector<Element>& vElements);
+			bool Prepare();
+			void Push(const char* pTextKey, const char* pUnique, int ID);
+			void Finish();
+		};
+
+		std::string m_Name;
+		std::string m_Filename;
+		std::string m_ParentFilename;
+		bool m_Loaded;
 		hashtable< CEntry, 128 > m_Translations;
+		CUpdater m_Updater;
 
 	public:
-		CLanguage();
-		CLanguage(const char* pName, const char* pFilename, const char* pParentFilename);
+		CLanguage(const std::string& Name, const std::string& Filename, const std::string& ParentFilename);
 		~CLanguage();
 
-		const char* GetParentFilename() const { return m_aParentFilename; }
-		const char* GetFilename() const { return m_aFilename; }
-		const char* GetName() const { return m_aName; }
+		const char* GetParentFilename() const { return m_ParentFilename.c_str(); }
+		const char* GetFilename() const { return m_Filename.c_str(); }
+		const char* GetName() const { return m_Name.c_str(); }
 		bool IsLoaded() const { return m_Loaded; }
-		bool Load(IStorageEngine* pStorage);
+		void Load();
 		const char* Localize(const char* pKey) const;
+		CUpdater& Updater() { return m_Updater; }
 	};
 
-	enum
-	{
-		DIRECTION_LTR=0,
-		DIRECTION_RTL,
-		NUM_DIRECTIONS,
-	};
+	~CLocalization();
 
-protected:
-	CLanguage* m_pMainLanguage;
-
-public:
-	array<CLanguage*> m_pLanguages;
-	fixed_string128 m_CfgMainLanguage;
-
-protected:
-	const char* LocalizeWithDepth(const char* pLanguageCode, const char* pText, int Depth);
-
-public:
-	CLocalization(IStorageEngine* pStorage);
-	virtual ~CLocalization();
-
-	virtual bool InitConfig(int argc, const char** argv);
-	virtual bool Init();
+	bool Init();
 	const char* Localize(const char* pLanguageCode, const char* pText);
+	array<CLanguage*> m_pLanguages{};
+
+private:
+	CLanguage* m_pMainLanguage{};
+	const char* LocalizeWithDepth(const char* pLanguageFile, const char* pText, int Depth);
 };
 
 #endif

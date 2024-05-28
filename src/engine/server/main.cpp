@@ -134,12 +134,6 @@ int main(int argc, const char** argv)
 		}
 	}
 
-	pServer->m_pLocalization = new CLocalization(pStorage);
-	if(!pServer->m_pLocalization->Init())
-	{
-		dbg_msg("localization", "could not initialize localization");
-		return -1;
-	}
 	pEngine->Init();
 	pConfigManager->Init();
 	pConsole->Init();
@@ -149,6 +143,13 @@ int main(int argc, const char** argv)
 
 	if (!pConsole->ExecuteFile(AUTOEXEC_SERVER_FILE, -1, true)) {
 		pConsole->ExecuteFile(AUTOEXEC_FILE, -1, true);
+	}
+
+	pServer->m_pLocalization = new CLocalization();
+	if(!pServer->m_pLocalization->Init())
+	{
+		dbg_msg("localization", "could not initialize localization");
+		return -1;
 	}
 
 	if(!pServer->MultiWorlds()->LoadWorlds(pKernel, pStorage, pConsole))

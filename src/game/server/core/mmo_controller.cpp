@@ -89,6 +89,7 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_System.add(m_pAccountFarmingManager = new CAccountFarmingManager);
 	m_System.add(m_pMailboxManager = new CMailboxManager);
 
+	// initialize components
 	for(auto& pComponent : m_System.m_vComponents)
 	{
 		pComponent->m_Core = this;
@@ -102,6 +103,9 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 		str_format(aLocalSelect, sizeof(aLocalSelect), "WHERE WorldID = '%d'", m_pGameServer->GetWorldID());
 		pComponent->OnInitWorld(aLocalSelect);
 	}
+
+	// update language data
+	SyncLocalizations();
 }
 
 void CMmoController::OnTick()
@@ -667,133 +671,83 @@ void CMmoController::AsyncClientEnterMsgInfo(const std::string ClientName, int C
 }
 
 // dump dialogs for translate
-void CMmoController::ConAsyncLinesForTranslate()
+void CMmoController::SyncLocalizations() const
 {
+	// check action state
 	static std::mutex ms_mtxDump;
-
-	// check thread last action
-	if(!ms_mtxDump.try_lock())
+	if (!ms_mtxDump.try_lock())
 	{
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Wait the last operation is in progress..");
 		return;
 	}
 
-	// start new action
-	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Start of thread data collection for translation!");
-
-	// lambda function for easy parse and hashing
-	auto PushingDialogs = [](nlohmann::json& pJson, const char* pTextKey, const char* UniqueStart, int UniqueID)
+	// update language data
+	for (int i = 0; i < GS()->Server()->Localization()->m_pLanguages.size(); i++)
 	{
-		if(pTextKey[0] == '\0')
-			return;
+		// prepare
+		auto* pLanguage = GS()->Server()->Localization()->m_pLanguages[i];
 
-		const std::hash<std::string> StrHash;
-		const std::string HashingStr(UniqueStart + std::to_string(UniqueID));
-		try
+		pLanguage->Updater().Prepare();
+		for (const auto& [ID, p] : QuestBotInfo::ms_aQuestBot)
 		{
-			for(auto& pKeys : pJson["translation"])
+			int DialogNum = 0;
+			for (const auto& pDialog : p.m_aDialogs)
 			{
-				if(!pKeys["key"].is_string() || !pKeys["value"].is_string())
-					continue;
-
-				if((pKeys.find("hash") != pKeys.end() && !pKeys["hash"].is_null()) && pKeys.value<size_t>("hash", 0) == StrHash(HashingStr))
-				{
-					if(StrHash(pKeys.value("key", "0")) != StrHash(pTextKey))
-						pKeys["key"] = pKeys["value"] = pTextKey;
-					return;
-				}
-				if(StrHash(pKeys.value("key", "0")) == StrHash(pTextKey))
-				{
-					pKeys["hash"] = StrHash(HashingStr);
-					return;
-				}
+				pLanguage->Updater().Push(pDialog.GetText(), std::string("dialog_quest" + std::to_string(ID)).c_str(), DialogNum++);
 			}
-			pJson["translation"].push_back({ { "key", pTextKey }, { "value", pTextKey }, { "hash", StrHash(HashingStr) } });
 		}
-		catch(nlohmann::json::exception& e)
-		{
-			dbg_msg("sync_lines", "%s", e.what());
-		}
-	};
 
-	// update and sorted by translate
-	char aDirLanguageFile[256];
-	for(int i = 0; i < GS()->Server()->Localization()->m_pLanguages.size(); i++)
-	{
-		str_format(aDirLanguageFile, sizeof(aDirLanguageFile), "server_lang/%s.json", GS()->Server()->Localization()->m_pLanguages[i]->GetFilename());
-
-		// Check if a file is successfully loaded using the specified directory and store its content in the RawData variable
-		ByteArray RawData;
-		if(!Tools::Files::loadFile(aDirLanguageFile, &RawData))
-			continue;
-
-		// insert database lines
-		nlohmann::json JsonData = nlohmann::json::parse((char*)RawData.data());
-		for(auto& pItem : QuestBotInfo::ms_aQuestBot)
+		for (const auto& [ID, p] : NpcBotInfo::ms_aNpcBot)
 		{
 			int DialogNum = 0;
-			std::string UniqueID("diaqu" + std::to_string(pItem.first));
-			for(auto& pDialog : pItem.second.m_aDialogs)
-				PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
+			for (const auto& pDialog : p.m_aDialogs)
+			{
+				pLanguage->Updater().Push(pDialog.GetText(), std::string("dialog_npc" + std::to_string(ID)).c_str(), DialogNum++);
+			}
 		}
 
-		for(auto& pItem : NpcBotInfo::ms_aNpcBot)
+		for (const auto& p : CAetherData::Data())
 		{
-			int DialogNum = 0;
-			std::string UniqueID("dianp" + std::to_string(pItem.first));
-			for(auto& pDialog : pItem.second.m_aDialogs)
-				PushingDialogs(JsonData, pDialog.GetText(), UniqueID.c_str(), DialogNum++);
+			pLanguage->Updater().Push(p->GetName(), "aether", p->GetID());
 		}
 
-		for(auto& pAether : CAetherData::Data())
+		for (const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			PushingDialogs(JsonData, pAether->GetName(), "aeth", pAether->GetID());
+			pLanguage->Updater().Push(pAttribute->GetName(), "attribute", (int)ID);
 		}
 
-		for(auto& [ID, pAttribute] : CAttributeDescription::Data())
+		for (const auto& [ID, p] : CItemDescription::Data())
 		{
-			PushingDialogs(JsonData, pAttribute->GetName(), "attb", (int)ID);
+			pLanguage->Updater().Push(p.GetName(), "item_name", ID);
+			pLanguage->Updater().Push(p.GetDescription(), "item_description", ID);
 		}
 
-		for(auto& pItem : CItemDescription::Data())
+		for (const auto& [ID, p] : CSkillDescription::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.GetName(), "ittm", pItem.first);
-			PushingDialogs(JsonData, pItem.second.GetDescription(), "itdc", pItem.first);
+			pLanguage->Updater().Push(p.GetName(), "skill_name", ID);
+			pLanguage->Updater().Push(p.GetDescription(), "skill_description", ID);
+			pLanguage->Updater().Push(p.GetBoostName(), "skill_boost", ID);
 		}
 
-		for(auto& pItem : CSkillDescription::Data())
+		for (const auto& [ID, p] : CQuestDescription::Data())
 		{
-			PushingDialogs(JsonData, pItem.second.GetName(), "sknm", pItem.first);
-			PushingDialogs(JsonData, pItem.second.GetDescription(), "skds", pItem.first);
-			PushingDialogs(JsonData, pItem.second.GetBoostName(), "skbn", pItem.first);
+			pLanguage->Updater().Push(p->GetName(), "quest_name", ID);
+			pLanguage->Updater().Push(p->GetStory(), "quest_story", ID);
 		}
 
-		for(auto& pItem : CQuestDescription::Data())
+		for (const auto& p : CWarehouse::Data())
 		{
-			PushingDialogs(JsonData, pItem.second->GetName(), "qudn", pItem.first);
-			PushingDialogs(JsonData, pItem.second->GetStory(), "qusn", pItem.first);
+			pLanguage->Updater().Push(p->GetName(), "warehouse_name", p->GetID());
 		}
 
-		for(auto& pItem : CWarehouse::Data())
+		for (const auto& p : CHouse::Data())
 		{
-			PushingDialogs(JsonData, pItem->GetName(), "stnm", pItem->GetID());
+			pLanguage->Updater().Push(p->GetClassName(), "house_class_name", p->GetID());
 		}
 
-		for(auto& pItem : CHouse::Data())
-		{
-			PushingDialogs(JsonData, pItem->GetClassName(), "hmnm", pItem->GetID());
-		}
-
-		// order non updated translated to up
-		std::sort(JsonData["translation"].begin(), JsonData["translation"].end(), [](nlohmann::json& pA, nlohmann::json& pB)
-		{ return pA["key"] == pA["value"] && pB["key"] != pB["value"]; });
-
-		// save file
-		std::string Data = JsonData.dump(4);
-		Tools::Files::saveFile(aDirLanguageFile, (void*)Data.data(), Data.size());
+		// finish
+		pLanguage->Updater().Finish();
 	}
 
-	// end transaction
-	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Completed successfully!");
 	ms_mtxDump.unlock();
 }

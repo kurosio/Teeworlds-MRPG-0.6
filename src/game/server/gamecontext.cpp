@@ -1309,7 +1309,7 @@ void CGS::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData)
 	CGS* pSelf = (CGS*)pServer->GameServer();
 
 	// dump
-	std::thread(&CMmoController::ConAsyncLinesForTranslate, pSelf->m_pMmoController).detach();
+	std::thread(&CMmoController::SyncLocalizations, pSelf->m_pMmoController).detach();
 }
 
 void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)

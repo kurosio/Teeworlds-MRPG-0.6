@@ -8,3 +8,5 @@ These files will be updated (to complete the translation, you need to transfer t
 Also added Rcon command to generate or update via hashing key strings for translation
 'sync_lines_for_translate' 
 - It works in a thread / sorts so that everything that is not translated is on top. In order not to waste time searching
+
+### From 29/05/2024 automatic synchronization with data from the database
