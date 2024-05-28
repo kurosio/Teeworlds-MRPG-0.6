@@ -17,13 +17,15 @@ enum
 {
 	// depth list
 	DEPTH_LVL1 = 0,
-	DEPTH_LVL2 = 1,
-	DEPTH_LVL3 = 2,
-	DEPTH_LVL4 = 3,
-	DEPTH_LVL5 = 4,
-	DEPTH_LIST_STYLE_ROMAN = 1 << 6,
-	DEPTH_LIST_STYLE_BOLD = 1 << 7,
-	DEPTH_LIST_STYLE_CYRCLE = 1 << 8,
+	DEPTH_LVL2,
+	DEPTH_LVL3,
+	DEPTH_LVL4,
+	DEPTH_LVL5,
+	DEPTH_LIST_STYLE_DEFAULT = 0,
+	DEPTH_LIST_STYLE_ROMAN,
+	DEPTH_LIST_STYLE_BOLD,
+	DEPTH_LIST_STYLE_CYRCLE,
+	NUM_DEPTH_LIST_STYLES,
 
 	// disabled
 	VWF_DISABLED                       = 0, // regular title group
@@ -671,7 +673,7 @@ class CVotePlayerData
 
 	struct VoteGroupHidden
 	{
-		bool m_Value {};
+		bool m_State {};
 		int m_Flag {};
 	};
 

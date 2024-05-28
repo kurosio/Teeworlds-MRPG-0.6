@@ -2,51 +2,63 @@
 
 #include <game/server/gamecontext.h>
 
-// Formatter vote wrapper
-namespace Formatter
+namespace
 {
-	const char* g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
-	constexpr int g_NumeralNum = 10;
-
-	class Numeral
+	constexpr auto g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
+	const char* GetNumeralStyle(int Number, int Style) noexcept
 	{
-	public:
-		static constexpr const char* get(int Number, int Style)
-		{
-			if(Style & DEPTH_LIST_STYLE_ROMAN) { return g_pNRoman[clamp(Number, 1, 9)]; }
-			if(Style & DEPTH_LIST_STYLE_BOLD) { return g_pNBold[clamp(Number, 1, 9)]; }
-			if(Style & DEPTH_LIST_STYLE_CYRCLE) { return g_pNCyrcle[clamp(Number, 1, 9)]; }
-			return g_pNDefault[clamp(Number, 1, 9)];
-		}
-	private:
-		static constexpr const char* g_pNDefault[g_NumeralNum] = 
-			{ "\0", "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
-		static constexpr const char* g_pNRoman[g_NumeralNum] = 
-			{ "\0", "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
-		static constexpr const char* g_pNBold[g_NumeralNum] = 
-			{ "\0", "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
-		static constexpr const char* g_pNCyrcle[g_NumeralNum] = 
-			{ "\0", "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
-	};
+		constexpr int MaxNumber = 9;
 
-	class Border
-	{
-	public:
-		enum Type { Beggin, Middle, MiddleOption, Level, End, Num };
-		static constexpr const char* get(Type Border, int Flags)
+		if(Style == DEPTH_LIST_STYLE_DEFAULT)
 		{
-			if(Flags & VWF_STYLE_SIMPLE) { return g_pBSimple[Border]; }
-			if(Flags & VWF_STYLE_DOUBLE) { return g_pBDouble[Border]; }
-			if(Flags & VWF_STYLE_STRICT) { return g_pBStrict[Border]; }
-			if(Flags & VWF_STYLE_STRICT_BOLD) { return g_pBStrictBold[Border]; }
-			return "";
+			static const char* pList[MaxNumber] = { "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
+			return pList[std::clamp(Number, 0, MaxNumber - 1)];
 		}
-	private:
-		static constexpr const char* g_pBSimple[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
-		static constexpr const char* g_pBDouble[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
-		static constexpr const char* g_pBStrict[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
-		static constexpr const char* g_pBStrictBold[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
-	};
+		if(Style == DEPTH_LIST_STYLE_ROMAN)
+		{
+			static const char* pList[MaxNumber] = { "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
+			return pList[std::clamp(Number, 0, MaxNumber - 1)];
+		}
+		if(Style == DEPTH_LIST_STYLE_BOLD)
+		{
+			static const char* pList[MaxNumber] = { "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
+			return pList[std::clamp(Number, 0, MaxNumber - 1)];
+		}
+		if(Style == DEPTH_LIST_STYLE_CYRCLE)
+		{
+			static const char* pList[MaxNumber] = { "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
+			return pList[std::clamp(Number, 0, MaxNumber - 1)];
+		}
+
+		return "";
+	}
+
+    enum class BorderType : int { Beggin, Middle, MiddleOption, Level, End };
+    const char* GetBorderStyle(BorderType Border, int Flags) noexcept
+    {
+        if (Flags & VWF_STYLE_SIMPLE)
+        {
+			static const char* pBorder[] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
+            return pBorder[static_cast<int>(Border)];
+        }
+        if (Flags & VWF_STYLE_DOUBLE)
+        {
+			static const char* pBorder[] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
+            return pBorder[static_cast<int>(Border)];
+        }
+        if (Flags & VWF_STYLE_STRICT)
+        {
+			static const char* pBorder[] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
+            return pBorder[static_cast<int>(Border)];
+        }
+        if (Flags & VWF_STYLE_STRICT_BOLD)
+        {
+			static const char* pBorder[] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
+            return pBorder[static_cast<int>(Border)];
+        }
+
+        return "";
+    }
 }
 
 CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID)
@@ -83,7 +95,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	auto pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
 
 	// check flag align title
-	if(m_Flags & VWF_ALIGN_TITLE && ((pHidden && !pHidden->m_Value) || !pHidden))
+	if(m_Flags & VWF_ALIGN_TITLE && ((pHidden && !pHidden->m_State) || !pHidden))
 	{
 		// initialize variables
 		std::string StrSpace = " ";
@@ -109,7 +121,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
 	{
 		pHidden = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags);
-		Prefix += pHidden->m_Value ? "\u21BA" : "\u27A4";
+		Prefix += pHidden->m_State ? "\u21BA" : "\u27A4";
 		Extra1 = m_HiddenID;
 		pCmd = "HIDDEN";
 	}
@@ -162,8 +174,8 @@ void CVoteGroup::Reformatting(std::string& Buffer)
 	// numeral list format
 	if(m_NextMarkedListItem)
 	{
-		NumeralDepth& Numeral = m_vDepthNumeral[m_CurrentDepth];
-		Buffer.insert(0, Formatter::Numeral::get(Numeral.m_Value + 1, Numeral.m_Style));
+		auto& Numeral = m_vDepthNumeral[m_CurrentDepth];
+		Buffer.insert(0, GetNumeralStyle(Numeral.m_Value, Numeral.m_Style));
 		Numeral.m_Value++;
 		m_NextMarkedListItem = false;
 	}
@@ -181,7 +193,7 @@ void CVoteGroup::AddLineImpl()
 
 	// new option
 	CVoteOption Vote;
-	str_copy(Vote.m_aDescription, Formatter::g_VoteStrLineDef, sizeof(Vote.m_aDescription));
+	str_copy(Vote.m_aDescription, g_VoteStrLineDef, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "null", sizeof(Vote.m_aCommand));
 	Vote.m_Line = true;
 	m_vpVotelist.emplace_back(Vote);
@@ -235,8 +247,8 @@ bool CVoteGroup::IsHidden() const
 	// check flag hidden
 	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
 	{
-		CVotePlayerData::VoteGroupHidden* pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
-		return pHidden && pHidden->m_Value;
+		const auto* pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
+		return pHidden && pHidden->m_State;
 	}
 
 	return false;
@@ -322,26 +334,26 @@ void VoteWrapper::RebuildVotes(int ClientID)
 				std::string Buffer{};
 				if(&Option == pFront)
 				{
-					Buffer += Formatter::Border::get(Formatter::Border::Beggin, Flags);
+					Buffer += GetBorderStyle(BorderType::Beggin, Flags);
 				}
 				else if(&Option == pBack)
 				{
-					Buffer += Formatter::Border::get(Formatter::Border::End, Flags);
+					Buffer += GetBorderStyle(BorderType::End, Flags);
 				}
 				else if(str_comp(Option.m_aCommand, "null") == 0 && Option.m_Depth <= 0 && !Option.m_Line)
 				{
-					Buffer += Formatter::Border::get(Formatter::Border::Middle, Flags);
+					Buffer += GetBorderStyle(BorderType::Middle, Flags);
 				}
 				else
 				{
-					Buffer += Formatter::Border::get(Formatter::Border::MiddleOption, Flags);
+					Buffer += GetBorderStyle(BorderType::MiddleOption, Flags);
 				}
 
 				// level of the vote option
 				if(!Option.m_Line && Option.m_Depth > 0)
 				{
 					for(int i = 0; i < Option.m_Depth; i++)
-						Buffer += Formatter::Border::get(Formatter::Border::Level, Flags);
+						Buffer += GetBorderStyle(BorderType::Level, Flags);
 				}
 
 				// space between style and text
@@ -411,7 +423,7 @@ void CVotePlayerData::ResetHidden(int MenuID)
 	for(auto& [ID, Hide] : vmHiddens)
 	{
 		if(Hide.m_Flag & VWF_UNIQUE)
-			Hide.m_Value = true;
+			Hide.m_State = true;
 	}
 }
 
@@ -491,14 +503,14 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, co
 	{
 		if(VoteGroupHidden* pHidden = GetHidden(Extra1))
 		{
-			const bool Value = pHidden->m_Value;
+			const bool Value = pHidden->m_State;
 
 			// check if the hidden vote group is unique
 			if(pHidden->m_Flag & VWF_UNIQUE)
 				ResetHidden(m_CurrentMenuID);
 
 			// toggle the hidden
-			pHidden->m_Value = !Value;
+			pHidden->m_State = !Value;
 			UpdateCurrentVotes();
 		}
 		return true;
