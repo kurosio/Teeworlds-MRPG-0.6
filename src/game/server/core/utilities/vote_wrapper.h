@@ -80,7 +80,7 @@ class CVoteGroup
 	CPlayer* m_pPlayer {};
 	CGS* GS() const { return m_pGS; }
 
-	bool m_TitleIsSet {};
+	bool m_HasTitle {};
 	int m_GroupSize {};
 	int m_HiddenID {};
 	int m_Flags {};
@@ -92,7 +92,7 @@ class CVoteGroup
 
 	int NextPos() const { return m_GroupSize + 1; }
 	bool IsEmpty() const { return m_GroupSize <= 0; }
-	bool IsTitleSet() const { return m_TitleIsSet; }
+	bool HasTitle() const { return m_HasTitle; }
 	bool IsHidden() const;
 
 	void SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, const char* pText);
@@ -233,7 +233,7 @@ public:
 	 *
 	 * @return True if the voting menu title is set, false otherwise.
 	 */
-	bool IsTittleSet() const { return m_pGroup->IsTitleSet(); }
+	bool IsTittleSet() const { return m_pGroup->HasTitle(); }
 
 	/**
 	 * @brief Sets the title of the voting menu.

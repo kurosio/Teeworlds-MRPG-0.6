@@ -52,7 +52,7 @@ namespace Formatter
 CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID)
 {
 	m_pGS = (CGS*)Instance::GameServerPlayer(ClientID);
-	m_TitleIsSet = false;
+	m_HasTitle = false;
 	m_CurrentDepth = 0;
 	m_GroupSize = 0;
 	m_HiddenID = (int)VoteWrapper::Data()[ClientID].size();
@@ -71,10 +71,9 @@ void CVoteGroup::SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>
 		m_vDepthNumeral[Depth].m_Style = Flag;
 }
 
-// Function to add a vote title implementation with variable arguments
 void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, const char* pText)
 {
-	// Check if the player is valid
+	// check player valid
 	if(!m_pPlayer)
 		return;
 
@@ -126,9 +125,9 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	Vote.m_Extra1 = Extra1;
 	Vote.m_Extra2 = Extra2;
 	Vote.m_Title = true;
-	if(m_vpVotelist.empty() || !m_TitleIsSet)
+	if(m_vpVotelist.empty() || !m_HasTitle)
 	{
-		m_TitleIsSet = true;
+		m_HasTitle = true;
 		m_vpVotelist.push_front(Vote);
 	}
 	else
@@ -137,10 +136,9 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	}
 }
 
-// Function to add a vote implementation with variable arguments
 void CVoteGroup::AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const char* pText)
 {
-	// Check if the player is valid
+	// check player valid and hidden status
 	if(!m_pPlayer || IsHidden())
 		return;
 
@@ -161,7 +159,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const cha
 
 void CVoteGroup::Reformatting(std::string& Buffer)
 {
-	// Numeral list format
+	// numeral list format
 	if(m_NextMarkedListItem)
 	{
 		NumeralDepth& Numeral = m_vDepthNumeral[m_CurrentDepth];
@@ -175,121 +173,105 @@ void CVoteGroup::Reformatting(std::string& Buffer)
 		str_translation_cyrlic_to_latin(Buffer.data());
 }
 
-// This function is used to add a line
 void CVoteGroup::AddLineImpl()
 {
-	// Check player and hidden status
+	// check player valid and hidden status
 	if(!m_pPlayer || IsHidden())
 		return;
 
-	// Create a new VoteOption with the values
+	// new option
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, Formatter::g_VoteStrLineDef, sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "null", sizeof(Vote.m_aCommand));
 	Vote.m_Line = true;
-
-	// Add the VoteOption to the player's votes
-	m_GroupSize++;
 	m_vpVotelist.emplace_back(Vote);
+	m_GroupSize++;
 }
 
-// This function adds the implementation for the AddBackpage method in the CVoteGroup class.
 void CVoteGroup::AddBackpageImpl()
 {
-	// Check player and hidden status
+	// check player valid and hidden status
 	if(!m_pPlayer || IsHidden())
 		return;
 
-	// Create a new VoteOption with the values
+	// new option
+	AddLineImpl();
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, "\u21A9 Backpage", sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "BACK", sizeof(Vote.m_aCommand));
-
-	// Add the VoteOption to the player's votes
-	AddLineImpl();
 	m_vpVotelist.emplace_back(Vote);
 }
 
-// This function adds an empty line
 void CVoteGroup::AddEmptylineImpl()
 {
-	// Check player and hidden status
-	if(!GS()->GetPlayer(m_ClientID) || IsHidden())
+	// check player valid and hidden status
+	if(!m_pPlayer || IsHidden())
 		return;
 
-	// Create a new VoteOption with the values
+	// new option
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, "\0", sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "null", sizeof(Vote.m_aCommand));
-
-	// Add the VoteOption to the player's votes
 	m_vpVotelist.emplace_back(Vote);
 }
 
-// Function to add an item value information to the CVoteGroup
 void CVoteGroup::AddItemValueImpl(int ItemID)
 {
-	// Check player and hidden status
-	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
-	if(!pPlayer || IsHidden())
+	// check player valid and hidden status
+	if(!m_pPlayer || IsHidden())
 		return;
 
+	// add item value
 	AddVoteImpl("null", NOPE, NOPE, Tools::String::FormatLocalize(m_ClientID, "You have {} {}", 
-			pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName()).c_str());
+		m_pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName()).c_str());
 }
 
-// Function for check hidden status
 bool CVoteGroup::IsHidden() const
 {
-	// For special flags hidden does not used
+	// check player valid
+	if(!m_pPlayer)
+		return false;
+
+	// check flag hidden
 	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
 	{
-		// Check if the player is valid
-		if(m_pPlayer)
-		{
-			// Check if the hidden vote object exists and if its value is true
-			CVotePlayerData::VoteGroupHidden* pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
-			return pHidden && pHidden->m_Value;
-		}
+		CVotePlayerData::VoteGroupHidden* pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
+		return pHidden && pHidden->m_Value;
 	}
 
-	// Default it's openned
 	return false;
 }
 
-// This function is responsible for rebuilding the votes for a specific client.
 void VoteWrapper::RebuildVotes(int ClientID)
 {
+	// check player valid
 	CGS* pGS = (CGS*)Instance::GameServerPlayer(ClientID);
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer)
 		return;
 
-	// If the player has no votes, give a chance to come back
-	// Code format: {}x{} (CurrentMenuID, LastMenuID)
+	// check is empty option's
 	if(m_pData[ClientID].empty())
 	{
 		CVotePlayerData* pVotesData = &pPlayer->m_VotesData;
-		VoteWrapper VError(ClientID, VWF_STYLE_SIMPLE, "Error");
-		VError.Add("The voting list is empty");
-		{
-			VError.BeginDepth();
-			VError.Add("Probably a server error");
-			VError.EndDepth();
-		}
-		VError.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID());
 		pVotesData->SetLastMenuID(MENU_MAIN);
-		VoteWrapper::AddBackpage(ClientID);
+		VoteWrapper VError(ClientID, VWF_STYLE_SIMPLE, "Error");
+		VError.Add("The voting list is empty")
+		.BeginDepth()
+			.Add("Probably a server error")
+		.EndDepth()
+		.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID())
+		.AddBackpage(ClientID);
 	}
 
-	// Prepare group for hidden vote
+	// rebuild groups
 	CVoteOption* pLastVoteOption = nullptr;
 	for(auto iterGroup = m_pData[ClientID].cbegin(); iterGroup != m_pData[ClientID].cend(); ++iterGroup)
 	{
 		CVoteGroup* pGroup = *iterGroup;
 
 		// if the group is an expandable list type, it is empty if there is no element in it
-		if(pGroup->m_TitleIsSet && pGroup->IsEmpty() && !pGroup->IsHidden())
+		if(pGroup->m_HasTitle && pGroup->IsEmpty() && !pGroup->IsHidden())
 			pGroup->AddVoteImpl("null", NOPE, NOPE, "Is empty");
 
 		// check flag end with line
@@ -310,7 +292,7 @@ void VoteWrapper::RebuildVotes(int ClientID)
 			}
 		}
 
-		// There should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
+		// there should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
 		for(auto iterVote = pGroup->m_vpVotelist.begin(); iterVote != pGroup->m_vpVotelist.end();)
 		{
 			if(pLastVoteOption && pLastVoteOption->m_Line && iterVote->m_Line)
@@ -324,59 +306,54 @@ void VoteWrapper::RebuildVotes(int ClientID)
 		}
 	}
 
-	// Rebuild the votes from group
+	// rebuild group votes
 	for(const auto pGroup : m_pData[ClientID])
 	{
 		for(auto& Option : pGroup->m_vpVotelist)
 		{
-			// Rebuild the vote options to aesthetic style
+			// style and border
 			if(pGroup->m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD) && !pGroup->IsHidden())
 			{
 				const int& Flags = pGroup->m_Flags;
 				auto pBack = &pGroup->m_vpVotelist.back();
 				auto pFront = &pGroup->m_vpVotelist.front();
 
-				// Append border to the vote option (can outside but)
-				dynamic_string Buffer;
+				// append border to the vote option (can outside but)
+				std::string Buffer{};
 				if(&Option == pFront)
 				{
-					Buffer.append(Formatter::Border::get(Formatter::Border::Beggin, Flags));
+					Buffer += Formatter::Border::get(Formatter::Border::Beggin, Flags);
 				}
 				else if(&Option == pBack)
 				{
-					Buffer.append(Formatter::Border::get(Formatter::Border::End, Flags));
+					Buffer += Formatter::Border::get(Formatter::Border::End, Flags);
 				}
 				else if(str_comp(Option.m_aCommand, "null") == 0 && Option.m_Depth <= 0 && !Option.m_Line)
 				{
-					Buffer.append(Formatter::Border::get(Formatter::Border::Middle, Flags));
+					Buffer += Formatter::Border::get(Formatter::Border::Middle, Flags);
 				}
 				else
 				{
-					Buffer.append(Formatter::Border::get(Formatter::Border::MiddleOption, Flags));
+					Buffer += Formatter::Border::get(Formatter::Border::MiddleOption, Flags);
 				}
 
-				if(!Option.m_Line)
+				// level of the vote option
+				if(!Option.m_Line && Option.m_Depth > 0)
 				{
-					// Display the level of the vote option
-					// Dissable for line is a line as it is
-					if(Option.m_Depth > 0)
-					{
-						for(int i = 0; i < Option.m_Depth; i++)
-							Buffer.append(Formatter::Border::get(Formatter::Border::Level, Flags));
-					}
-
-					// Add space between style and text
-					if(!Option.m_Title && str_comp(Option.m_aCommand, "null") == 0)
-						Buffer.append(" ");
+					for(int i = 0; i < Option.m_Depth; i++)
+						Buffer += Formatter::Border::get(Formatter::Border::Level, Flags);
 				}
+
+				// space between style and text
+				if(!Option.m_Line && !Option.m_Title && str_comp(Option.m_aCommand, "null") == 0)
+					Buffer += " ";
 
 				// Save changes
-				char aRebuildBuffer[VOTE_DESC_LENGTH];
-				str_copy(aRebuildBuffer, Option.m_aDescription, sizeof(aRebuildBuffer));
-				str_format(Option.m_aDescription, sizeof(Option.m_aDescription), "%s%s", Buffer.buffer(), aRebuildBuffer);
+				Buffer += Option.m_aDescription;
+				str_copy(Option.m_aDescription, Buffer.c_str(), sizeof(Option.m_aDescription));
 			}
 
-			// Send the vote option to the client
+			// send the vote option to the client
 			CNetMsg_Sv_VoteOptionAdd OptionMsg;
 			OptionMsg.m_pDescription = Option.m_aDescription;
 			pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
@@ -384,13 +361,10 @@ void VoteWrapper::RebuildVotes(int ClientID)
 	}
 }
 
-// This function returns the vote option for a specific action for a given client
 CVoteOption* VoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActionName)
 {
-	// Get a reference to the data associated with the given ClientID
+	// find the vote option with the matching action name
 	auto& vData = VoteWrapper::Data()[ClientID];
-
-	// Find the vote option with the matching action name
 	for(auto& iterGroup : vData)
 	{
 		auto iter = std::find_if(iterGroup->m_vpVotelist.begin(), iterGroup->m_vpVotelist.end(), [pActionName](const CVoteOption& vote)
@@ -404,64 +378,57 @@ CVoteOption* VoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActio
 		}
 	}
 
-	// If no matching vote option is found, return nullptr
 	return nullptr;
 }
 
-// Function to create or update a hidden vote group
 CVotePlayerData::VoteGroupHidden* CVotePlayerData::EmplaceHidden(int ID, int Type)
 {
-	// Check if the vote group already exists and has the same type
-	auto& CurrentHidden = m_aHiddenGroup[m_CurrentMenuID];
-	if(CurrentHidden.find(ID) != CurrentHidden.end() && CurrentHidden[ID].m_Flag == Type)
-		return &CurrentHidden[ID];
+	auto& vmHiddens = m_aHiddenGroup[m_CurrentMenuID];
+	if(vmHiddens.find(ID) != vmHiddens.end() && vmHiddens[ID].m_Flag == Type)
+		return &vmHiddens[ID];
 
 	bool Value = (Type & VWF_CLOSED) || (Type & VWF_UNIQUE);
-	CurrentHidden[ID] = { Value, Type };
-	return &CurrentHidden[ID];
+	vmHiddens[ID] = { Value, Type };
+	return &vmHiddens[ID];
 }
 
-// Function to get a hidden vote group
 CVotePlayerData::VoteGroupHidden* CVotePlayerData::GetHidden(int ID)
 {
-	auto& CurrentHidden = m_aHiddenGroup[m_CurrentMenuID];
-	auto it = CurrentHidden.find(ID);
-	if(it != CurrentHidden.end())
+	auto& vmHiddens = m_aHiddenGroup[m_CurrentMenuID];
+	auto it = vmHiddens.find(ID);
+	if(it != vmHiddens.end())
 		return &it->second;
 
 	return nullptr;
 }
 
-// Function to reset the hidden vote groups for a menu
 void CVotePlayerData::ResetHidden(int MenuID)
 {
-	// If the hidden group is empty, return
-	auto& HiddenGroup = m_aHiddenGroup[MenuID];
-	if(HiddenGroup.empty())
+	auto& vmHiddens = m_aHiddenGroup[MenuID];
+	if(vmHiddens.empty())
 		return;
 
-	// Iterate over each hidden vote group
-	for(auto& [ID, Hide] : HiddenGroup)
+	for(auto& [ID, Hide] : vmHiddens)
 	{
 		if(Hide.m_Flag & VWF_UNIQUE)
 			Hide.m_Value = true;
 	}
 }
 
-// This function is responsible for updating the vote data for a player in a separate thread.
 void CVotePlayerData::ThreadVoteUpdater(CVotePlayerData* pData)
 {
-	// Required sleep for to work properly and correct output of texts and data
+	// sleep updater for getting some data
 	std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	if(!pData || !pData->m_pPlayer)
 		return;
 
+	// apply the vote updater data
 	pData->m_VoteUpdaterStatus.store(STATE_UPDATER::DONE);
 }
 
-// This function applies the vote updater data to the player's vote data
 void CVotePlayerData::ApplyVoteUpdaterData()
 {
+	// check if the vote updater is done
 	if(m_VoteUpdaterStatus == STATE_UPDATER::DONE)
 	{
 		ClearVotes();
@@ -475,6 +442,7 @@ void CVotePlayerData::UpdateVotes(int MenuID)
 {
 	m_CurrentMenuID = MenuID;
 
+	// check if the vote updater is waiting
 	if(m_VoteUpdaterStatus == STATE_UPDATER::WAITING)
 	{
 		m_VoteUpdaterStatus.store(STATE_UPDATER::RUNNING);
@@ -499,47 +467,38 @@ void CVotePlayerData::ClearVotes() const
 	Instance::Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
 }
 
-// Function to parse default system commands
 bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, const int Extra2, int, const char*)
 {
-	// Check if the command is "MENU"
+	// command menu
 	if(PPSTR(pCmd, "MENU") == 0)
 	{
-		// Set the temporary menu integer to the specified value
 		m_GroupID = Extra2;
 
-		// Update the votes for the player
 		ResetHidden(Extra1);
 		UpdateVotes(Extra1);
 		return true;
 	}
 
-	// Check if the command is "BACK"
+	// command back
 	if(PPSTR(pCmd, "BACK") == 0)
 	{
-		// Update the votes for the player
 		UpdateVotes(m_LastMenuID);
 		return true;
 	}
 
-	// Check if the command is "HIDDEN"
+	// command hidden
 	if(PPSTR(pCmd, "HIDDEN") == 0)
 	{
-		// If the hidden vote group does not exist, return true
 		if(VoteGroupHidden* pHidden = GetHidden(Extra1))
 		{
-			// If the hidden vote group has the VWF_UNIQUE flag and its ID is not the specified ID, set its value to true
-			if(pHidden->m_Flag & VWF_UNIQUE)
-			{
-				for(auto& [ID, Hide] : m_aHiddenGroup[m_CurrentMenuID])
-				{
-					if(Hide.m_Flag & VWF_UNIQUE && ID != Extra1)
-						Hide.m_Value = true;
-				}
-			}
+			const bool Value = pHidden->m_Value;
 
-			// Toggle the value of the hidden vote group
-			pHidden->m_Value = !pHidden->m_Value;
+			// check if the hidden vote group is unique
+			if(pHidden->m_Flag & VWF_UNIQUE)
+				ResetHidden(m_CurrentMenuID);
+
+			// toggle the hidden
+			pHidden->m_Value = !Value;
 			UpdateCurrentVotes();
 		}
 		return true;
