@@ -3,21 +3,13 @@
 #include <game/server/gamecontext.h>
 
 // Formatter vote wrapper
-
 namespace Formatter
 {
 	const char* g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
-	static int gs_GroupsNumeral[MAX_CLIENTS] = {};
 	constexpr int g_NumeralNum = 10;
 
-	// Numeral
 	class Numeral
 	{
-		inline static constexpr const char* g_pNDefault[g_NumeralNum] = { "\0", "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
-		inline static constexpr const char* g_pNRoman[g_NumeralNum] = { "\0", "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
-		inline static constexpr const char* g_pNBold[g_NumeralNum] = { "\0", "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
-		inline static constexpr const char* g_pNCyrcle[g_NumeralNum] = { "\0", "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
-
 	public:
 		static constexpr const char* get(int Number, int Style)
 		{
@@ -26,9 +18,17 @@ namespace Formatter
 			if(Style & DEPTH_LIST_STYLE_CYRCLE) { return g_pNCyrcle[clamp(Number, 1, 9)]; }
 			return g_pNDefault[clamp(Number, 1, 9)];
 		}
+	private:
+		static constexpr const char* g_pNDefault[g_NumeralNum] = 
+			{ "\0", "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
+		static constexpr const char* g_pNRoman[g_NumeralNum] = 
+			{ "\0", "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
+		static constexpr const char* g_pNBold[g_NumeralNum] = 
+			{ "\0", "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
+		static constexpr const char* g_pNCyrcle[g_NumeralNum] = 
+			{ "\0", "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
 	};
 
-	// Border
 	class Border
 	{
 	public:
@@ -41,12 +41,11 @@ namespace Formatter
 			if(Flags & VWF_STYLE_STRICT_BOLD) { return g_pBStrictBold[Border]; }
 			return "";
 		}
-
 	private:
-		inline static constexpr const char* g_pBSimple[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
-		inline static constexpr const char* g_pBDouble[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
-		inline static constexpr const char* g_pBStrict[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
-		inline static constexpr const char* g_pBStrictBold[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
+		static constexpr const char* g_pBSimple[Num] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
+		static constexpr const char* g_pBDouble[Num] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
+		static constexpr const char* g_pBStrict[Num] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
+		static constexpr const char* g_pBStrictBold[Num] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
 	};
 }
 
@@ -79,67 +78,54 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	if(!m_pPlayer)
 		return;
 
-	// Format the text using the player's language and additional arguments
+	// initialize variables
+	std::string Prefix {};
+	std::string Suffix {};
 	auto pHidden = m_pPlayer->m_VotesData.GetHidden(m_HiddenID);
-	dynamic_string Buffer(pText);
-	std::string StrAppend {};
 
-	// check flag is tittle center
+	// check flag align title
 	if(m_Flags & VWF_ALIGN_TITLE && ((pHidden && !pHidden->m_Value) || !pHidden))
 	{
 		// initialize variables
 		std::string StrSpace = " ";
-		std::string StrPost { StrSpace };
-		const int TextLength = str_length(Buffer.buffer());
+		const int TextLength = str_length(pText);
 		const int SpaceLength = (VOTE_VANILA_DESC_LENGTH - TextLength) / 2;
+		const bool Styled = m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD);
 
-		// pre spaces
-		bool IsStyled = m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD);
-		StrAppend += IsStyled ? "\u2500" : "\u257E";
+		// prefix
+		if(!Styled)
+			Prefix += "\u257E";
 		for(int Space = 0; Space < (SpaceLength / 4) - 2; Space++)
-			StrAppend += "\u2500";
-		StrAppend += "\u257C";
+			Prefix += "\u2500";
+		Prefix += "\u257C";
 
-		// post spaces
-		StrPost += "\u257E";
+		// suffix
+		Suffix += "\u257E";
 		for(int Space = 0; Space < (SpaceLength / 4) - 2; Space++)
-			StrPost += "\u2500";
-		StrPost += "\u257C";
-
-		// append spaces
-		Buffer.append(StrPost.c_str());
+			Suffix += "\u2500";
+		Suffix += "\u257C";
 	}
 
 	// check flag is tab type
 	if(m_Flags & (VWF_CLOSED | VWF_OPEN | VWF_UNIQUE))
 	{
 		pHidden = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags);
-		StrAppend += pHidden->m_Value ? "\u21BA" : "\u27A4";
+		Prefix += pHidden->m_Value ? "\u21BA" : "\u27A4";
 		Extra1 = m_HiddenID;
 		pCmd = "HIDDEN";
 	}
 
-	// Reformatting
+	// reformating
+	std::string Buffer(Prefix + " " + std::string(pText) + " " + Suffix);
 	Reformatting(Buffer);
 
-	// optimize text for buffer size
-	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
-		str_translation_cyrlic_to_latin(Buffer.buffer());
-
-	// end text format
-	char aBufText[VOTE_DESC_LENGTH];
-	str_format(aBufText, sizeof(aBufText), "%s %s", StrAppend.c_str(), Buffer.buffer());
-	Buffer.clear();
-
-	// Create a new VoteOption with the values from aBufText, pCmd, Extra1, and Extra2
+	// new option
 	CVoteOption Vote;
-	str_copy(Vote.m_aDescription, aBufText, sizeof(Vote.m_aDescription));
+	str_copy(Vote.m_aDescription, Buffer.c_str(), sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_Extra1 = Extra1;
 	Vote.m_Extra2 = Extra2;
-	Vote.m_IsTitle = true;
-
-	// Add title to front or update the title if it already exists
+	Vote.m_Title = true;
 	if(m_vpVotelist.empty() || !m_TitleIsSet)
 	{
 		m_TitleIsSet = true;
@@ -158,55 +144,35 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const cha
 	if(!m_pPlayer || IsHidden())
 		return;
 
-	// Format the text using the player's language and additional arguments
-	dynamic_string Buffer(pText);
+	// reformating
+	std::string Buffer((str_comp(pCmd, "null") != 0 ? "\u257E " : "") + std::string(pText));
 	Reformatting(Buffer);
 
-	// Reformat cyrlic to latin
-	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
-		str_translation_cyrlic_to_latin(Buffer.buffer());
-
-	// End text format
-	char aBufText[VOTE_DESC_LENGTH] {};
-	str_format(aBufText, sizeof(aBufText), "%s%s", str_comp(pCmd, "null") != 0 ? "\u257E " : "\0", Buffer.buffer());
-	Buffer.clear();
-
-	// Create a new VoteOption with the values from aBufText, pCmd, Extra1, and Extra2
+	// new option
 	CVoteOption Vote;
-	str_copy(Vote.m_aDescription, aBufText, sizeof(Vote.m_aDescription));
+	str_copy(Vote.m_aDescription, Buffer.c_str(), sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
 	Vote.m_Extra1 = Extra1;
 	Vote.m_Extra2 = Extra2;
 	Vote.m_Depth = m_CurrentDepth;
-
-	// Add the VoteOption to the player's votes
-	m_GroupSize++;
 	m_vpVotelist.emplace_back(Vote);
+	m_GroupSize++;
 }
 
-void CVoteGroup::Reformatting(dynamic_string& Buffer)
+void CVoteGroup::Reformatting(std::string& Buffer)
 {
 	// Numeral list format
-	if(m_NextMarkedListItem || m_Flags & VWF_GROUP_NUMERAL)
+	if(m_NextMarkedListItem)
 	{
-		char aTempBuf[VOTE_DESC_LENGTH]{};
 		NumeralDepth& Numeral = m_vDepthNumeral[m_CurrentDepth];
-
-		if(m_Flags & VWF_GROUP_NUMERAL)
-		{
-			str_format(aTempBuf, sizeof(aTempBuf), "%s%s", Formatter::Numeral::get(Formatter::gs_GroupsNumeral[m_ClientID] + 1, DEPTH_LIST_STYLE_BOLD), Buffer.buffer());
-			Formatter::gs_GroupsNumeral[m_ClientID]++;
-			m_Flags &= ~VWF_GROUP_NUMERAL;
-		}
-		else
-		{
-			str_format(aTempBuf, sizeof(aTempBuf), "%s%s", Formatter::Numeral::get(Numeral.m_Value + 1, Numeral.m_Style), Buffer.buffer());
-			Numeral.m_Value++;
-			m_NextMarkedListItem = false;
-		}
-
-		Buffer.copy(aTempBuf);
+		Buffer.insert(0, Formatter::Numeral::get(Numeral.m_Value + 1, Numeral.m_Style));
+		Numeral.m_Value++;
+		m_NextMarkedListItem = false;
 	}
+
+	// optimize text for buffer size
+	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
+		str_translation_cyrlic_to_latin(Buffer.data());
 }
 
 // This function is used to add a line
@@ -268,8 +234,8 @@ void CVoteGroup::AddItemValueImpl(int ItemID)
 	if(!pPlayer || IsHidden())
 		return;
 
-	std::string LocalizeStr = Tools::String::FormatLocalize(m_ClientID, "You have {} {}", pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName()).c_str();
-	AddVoteImpl("null", NOPE, NOPE, LocalizeStr.c_str());
+	AddVoteImpl("null", NOPE, NOPE, Tools::String::FormatLocalize(m_ClientID, "You have {} {}", 
+			pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName()).c_str());
 }
 
 // Function for check hidden status
@@ -400,7 +366,7 @@ void VoteWrapper::RebuildVotes(int ClientID)
 					}
 
 					// Add space between style and text
-					if(!Option.m_IsTitle && str_comp(Option.m_aCommand, "null") == 0)
+					if(!Option.m_Title && str_comp(Option.m_aCommand, "null") == 0)
 						Buffer.append(" ");
 				}
 
@@ -527,7 +493,6 @@ void CVotePlayerData::ClearVotes() const
 {
 	int ClientID = m_pPlayer->GetCID();
 	VoteWrapper::Data()[ClientID].clear();
-	Formatter::gs_GroupsNumeral[ClientID] = 0;
 
 	// send vote options
 	CNetMsg_Sv_VoteClearOptions ClearMsg;

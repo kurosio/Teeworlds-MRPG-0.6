@@ -6,10 +6,10 @@
 #include <game/voting.h>
 #include "format.h"
 
+// forward declarations
 class CGS;
 class CPlayer;
 class CVoteGroupHidden;
-
 typedef void (*VoteOptionCallbackImpl)(CPlayer*, int, std::string, void*);
 typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallback;
 
@@ -30,19 +30,18 @@ enum
 
 	// settings
 	VWF_SEPARATE                       = 1 << 1, // ends the group with a line
-	VWF_GROUP_NUMERAL                  = 1 << 3, // numbers the title page
-	VWF_ALIGN_TITLE                    = 1 << 4, // example: ---  title  ---
+	VWF_ALIGN_TITLE                    = 1 << 2, // example: ---  title  ---
 
 	// styles
-	VWF_STYLE_SIMPLE                   = 1 << 5, // example: ╭ │ ╰
-	VWF_STYLE_DOUBLE                   = 1 << 6, // example: ╔ ═ ╚
-	VWF_STYLE_STRICT                   = 1 << 7, // example: ┌ │ └
-	VWF_STYLE_STRICT_BOLD              = 1 << 8, // example: ┏ ┃ ┗
+	VWF_STYLE_SIMPLE                   = 1 << 3, // example: ╭ │ ╰
+	VWF_STYLE_DOUBLE                   = 1 << 4, // example: ╔ ═ ╚
+	VWF_STYLE_STRICT                   = 1 << 5, // example: ┌ │ └
+	VWF_STYLE_STRICT_BOLD              = 1 << 6, // example: ┏ ┃ ┗
 
 	// hidden
-	VWF_OPEN                           = 1 << 9, // default open group
-	VWF_CLOSED                         = 1 << 10, // default close group
-	VWF_UNIQUE                         = 1 << 11, // default close group toggle unique groups
+	VWF_OPEN                           = 1 << 7, // default open group
+	VWF_CLOSED                         = 1 << 8, // default close group
+	VWF_UNIQUE                         = 1 << 9, // default close group toggle unique groups
 
 	// defined
 	VWF_SEPARATE_OPEN                  = VWF_OPEN | VWF_SEPARATE, // default open group with line
@@ -59,7 +58,7 @@ public:
 	int m_Extra1 { -1 };
 	int m_Extra2 { -1 };
 	bool m_Line { false };
-	bool m_IsTitle { false };
+	bool m_Title { false };
 	VoteOptionCallback m_Callback {};
 };
 
@@ -100,7 +99,7 @@ class CVoteGroup
 	void AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const char* pText);
 	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
 
-	void Reformatting(dynamic_string& Buffer);
+	void Reformatting(std::string& Buffer);
 
 	void AddLineImpl();
 	void AddEmptylineImpl();
@@ -125,7 +124,9 @@ class CVoteGroup
 	 *     .AddOption("ban", "Ban a player") // Add a voting option to ban a player
 	 *     .AddLine() // Add a line separator
 	 *     .AddOption("nextmap", "Change the map") // Add a voting option to change the map
-	 *     .AddOption("restart", "Restart the game"); // Add a voting option to restart the game
+	 *     .AddOption("restart", "Restart the game") // Add a voting option to restart the game
+	 *     .Add("Nickname: {}", Server()->ClientName(0)) // Add a voting message uses format
+	 *     .AddMenu(MENU_INFO, "Info"); // Add menu list
 	 * @endcode
 */
 class VoteWrapper : public MultiworldIdentifiableStaticData<std::map<int, std::deque<CVoteGroup*>>>
@@ -661,7 +662,6 @@ public:
 	static void RebuildVotes(int ClientID);
 	static CVoteOption* GetOptionVoteByAction(int ClientID, const char* pActionName);
 };
-
 #undef FMT_LOCALIZE_STR
 
 class CVotePlayerData
@@ -678,7 +678,7 @@ class CVotePlayerData
 	CGS* m_pGS {};
 	CPlayer* m_pPlayer {};
 	int m_LastMenuID{};
-	int m_CurrentMenuID { };
+	int m_CurrentMenuID{};
 	int m_GroupID {};
 	std::thread m_VoteUpdater {};
 	enum class STATE_UPDATER { WAITING, RUNNING, DONE };
@@ -695,6 +695,7 @@ public:
 	CVotePlayerData()
 	{
 		m_CurrentMenuID = MENU_MAIN;
+		m_LastMenuID = MENU_MAIN;
 	}
 
 	~CVotePlayerData()

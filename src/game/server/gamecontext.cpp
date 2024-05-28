@@ -1450,7 +1450,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	if(!pPlayer)
 		return;
 
-	VoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN | VWF_GROUP_NUMERAL, "Hi, new adventurer!");
+	VoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN, "Hi, new adventurer!");
 	VWelcome.MarkList().Add("Information:");
 	{
 		VWelcome.BeginDepth();
