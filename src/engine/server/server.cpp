@@ -1989,9 +1989,7 @@ int CServer::Run(ILogger* pLogger)
 
 	// initilize game server
 	for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
-	{
 		MultiWorlds()->GetWorld(i)->GameServer()->OnInit(i);
-	}
 
 	// initilize nicknames
 	InitAccountNicknames();
@@ -2112,10 +2110,16 @@ int CServer::Run(ILogger* pLogger)
 					m_ServerInfoFirstRequest = 0;
 					SetOffsetWorldTime(0);
 
+					// Reset localization
+					if(!m_pLocalization->Reload())
+					{
+						log_error("server", "localization for heavy reload could not be updated.");
+						return -1;
+					}
+
 					// Check if the worlds were loaded successfully
 					if(!MultiWorlds()->LoadWorlds(Kernel(), Storage(), Console()))
 					{
-						// If not, log an error message
 						log_error("server", "interfaces for heavy reload could not be updated.");
 						return -1;
 					}
@@ -2126,9 +2130,7 @@ int CServer::Run(ILogger* pLogger)
 						// load map data for the current world
 						if(!LoadMap(i))
 						{
-							// if the map fails to load, print an error message and return -1
-							str_format(aBuf, sizeof(aBuf), "%s the map is not loaded.", MultiWorlds()->GetWorld(i)->GetPath());
-							Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+							log_error("server", "%s the map is not loaded.", MultiWorlds()->GetWorld(i)->GetPath());
 							return -1;
 						}
 					}

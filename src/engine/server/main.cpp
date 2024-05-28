@@ -189,8 +189,8 @@ int main(int argc, const char** argv)
 	dbg_msg("server", "starting...");
 	int Ret = pServer->Run(pServerLogger.get());
 
-	pServerLogger->OnServerDeletion();
 	// free
+	pServerLogger->OnServerDeletion();
 	delete pServer->m_pLocalization;
 	delete pKernel;
 

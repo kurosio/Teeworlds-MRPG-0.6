@@ -11,15 +11,12 @@ public:
 		class CEntry
 		{
 		public:
-			char* m_apVersions;
-
-			CEntry() : m_apVersions(nullptr) {}
-
+			char* m_apVersions{};
 			void Free()
 			{
 				if(m_apVersions)
 				{
-					delete[] m_apVersions;
+					free(m_apVersions);
 					m_apVersions = nullptr;
 				}
 			}
@@ -68,6 +65,7 @@ public:
 	~CLocalization();
 
 	bool Init();
+	bool Reload();
 	const char* Localize(const char* pLanguageCode, const char* pText);
 	array<CLanguage*> m_pLanguages{};
 

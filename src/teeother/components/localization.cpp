@@ -39,6 +39,15 @@ bool CLocalization::Init()
 	return true;
 }
 
+bool CLocalization::Reload()
+{
+	for(int i = 0; i < m_pLanguages.size(); i++)
+		delete m_pLanguages[i];
+	m_pLanguages.clear();
+	m_pMainLanguage = nullptr;
+	return Init();
+}
+
 const char* CLocalization::LocalizeWithDepth(const char* pLanguageFile, const char* pText, int Depth)
 {
 	// found language
