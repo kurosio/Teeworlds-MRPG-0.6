@@ -3,7 +3,6 @@
 #include "GroupData.h"
 
 #include "game/server/gamecontext.h"
-#include "game/server/core/tools/dbset.h"
 
 // Function to add AccountID
 bool GroupData::Add(int AccountID)

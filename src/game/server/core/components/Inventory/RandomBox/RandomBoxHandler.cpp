@@ -3,6 +3,7 @@
 #include "RandomBoxData.h"
 #include "RandomBoxHandler.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 #include "game/server/core/components/mails/mail_wrapper.h"
@@ -47,7 +48,7 @@ void CEntityRandomBoxRandomizer::Tick()
 		if(m_pPlayer && m_pPlayer->GetCharacter())
 		{
 			const vec2 PlayerPos = m_pPlayer->GetCharacter()->m_Core.m_Pos;
-			GS()->CreateText(nullptr, false, vec2(PlayerPos.x, PlayerPos.y - 80), vec2(0, -0.3f), 15, GS()->GetItemInfo(IterRandomElement->m_ItemID)->GetName());
+			GS()->EntityManager()->Text(PlayerPos + vec2(0, -80), 50, GS()->GetItemInfo(IterRandomElement->m_ItemID)->GetName());
 		}
 
 		if(!m_LifeTime)

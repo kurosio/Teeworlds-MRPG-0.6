@@ -4,16 +4,17 @@
 #define GAME_SERVER_ENTITIES_DROPINGBONUSES_H
 #include <game/server/entity.h>
 
-class CDropBonuses : public CEntity
+class CEntityDropBonuses : public CEntity
 {
 	vec2 m_Vel;
 	int m_Type;
+	int m_Subtype;
 	int m_Value;
 	int m_LifeSpan;
 	CFlashingTick m_Flash;
 
 public:
-	CDropBonuses(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, int Type, int Value);
+	CEntityDropBonuses::CEntityDropBonuses(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, int Type, int Subtype, int Value);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

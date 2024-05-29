@@ -3,8 +3,6 @@
 #ifndef ENGINE_SERVER_H
 #define ENGINE_SERVER_H
 
-#include "kernel.h"
-#include "message.h"
 #include <engine/shared/world_detail.h>
 
 #define DC_SERVER_INFO 13872503
@@ -35,9 +33,7 @@ public:
 	// static std::mutex m_aMutexPlayerDataSafe[MAX_CLIENTS];
 	virtual class IGameServer* GameServer(int WorldID = 0) const = 0;
 	virtual class IGameServer* GameServerPlayer(int ClientID) const = 0;
-
-	class CLocalization* m_pLocalization;
-	inline class CLocalization* Localization() const { return m_pLocalization; }
+	virtual class CLocalization* Localization() const = 0;
 
 	struct CClientInfo
 	{

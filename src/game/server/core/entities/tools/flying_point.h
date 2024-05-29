@@ -5,9 +5,9 @@
 
 #include <game/server/entity.h>
 
-class CFlyingPoint : public CEntity
+class CEntityFlyingPoint : public CEntity
 {
-	typedef std::function<void(CFlyingPoint*, class CPlayer*, class CPlayer*)> FlyingPointCallback;
+	typedef std::function<void(class CPlayer*, class CPlayer*)> FlyingPointCallback;
 
 	vec2 m_InitialVel{};
 	float m_InitialAmount{};
@@ -17,9 +17,9 @@ class CFlyingPoint : public CEntity
 	FlyingPointCallback m_pFunctionCollised{};
 
 public:
-	CFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID);
+	CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID);
 	void Register(FlyingPointCallback pFunc) { m_pFunctionCollised = std::move(pFunc); };
-	void SetType(int Type) { m_Type = Type; };
+	void SetType(int Type) { m_Type = Type; }
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

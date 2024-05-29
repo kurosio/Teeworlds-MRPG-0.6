@@ -1,7 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "playerbot.h"
-
 #include "gamecontext.h"
 
 #include "entities/botai/character_bot_ai.h"
@@ -20,6 +19,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
 	m_Items.reserve(CItemDescription::Data().size());
+	m_pPathFinderData = new CPathFinderPrepare;
 	PrepareRespawnTick();
 }
 
@@ -28,9 +28,9 @@ CPlayerBot::~CPlayerBot()
 	// Set all elements in the m_aVisibleActive array of the DataBotInfo object at index m_BotID to 0
 	std::memset(DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive, 0, MAX_PLAYERS * sizeof(bool));
 
-	// Delete the m_pCharacter object and set it to nullptr
+	// free memory
 	delete m_pCharacter;
-	m_pCharacter = nullptr;
+	delete m_pPathFinderData;
 }
 
 // This method is used to initialize the quest bot mob info for the player bot
@@ -592,7 +592,7 @@ void CPlayerBot::HandlePathFinder()
 		if(m_TargetPos != vec2(0, 0))
 		{
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 		// If the target position is (0, 0) or the distance between the view position and the target position is less than 128.0f
 		else if(m_TargetPos == vec2(0, 0) || distance(m_pCharacter->m_Core.m_Pos, m_TargetPos) < 128.0f)
@@ -600,7 +600,7 @@ void CPlayerBot::HandlePathFinder()
 			// Set the last position tick to the current server tick plus a random time interval
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + rand() % 4);
 			// Prepare the path finder data for random path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::RANDOM>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::RANDOM>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 
@@ -613,7 +613,7 @@ void CPlayerBot::HandlePathFinder()
 		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0))
 		{
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 
@@ -623,10 +623,10 @@ void CPlayerBot::HandlePathFinder()
 		// Check if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
 		if(m_TargetPos != vec2(0, 0))
 		{
-			m_PathFinderData.Get().Clear();
+			m_pPathFinderData->Get().Clear();
 
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 
@@ -636,10 +636,10 @@ void CPlayerBot::HandlePathFinder()
 		// Check if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
 		if(m_TargetPos != vec2(0, 0))
 		{
-			m_PathFinderData.Get().Clear();
+			m_pPathFinderData->Get().Clear();
 
 			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepared::DEFAULT>(&m_PathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 }

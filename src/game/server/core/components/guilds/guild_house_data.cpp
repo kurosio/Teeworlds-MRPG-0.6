@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_house_data.h"
 
-#include <engine/server.h>
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/entities/items/harvesting_item.h>
@@ -104,20 +104,15 @@ bool CGuildHouse::ReduceRentDays(int Days)
 	return true;
 }
 
-void CGuildHouse::TextUpdate(int LifeTime)
+void CGuildHouse::UpdateText(int Lifetime) const
 {
 	// check valid vector and now time
-	if(is_negative_vec(m_TextPosition) || m_LastTickTextUpdated > Server()->Tick())
+	if(!is_negative_vec(m_TextPosition))
 		return;
 
-	// initialize variable with name
-	std::string Name = "FREE GUILD HOUSE";
-	if(IsPurchased())
-		Name = m_pGuild->GetName();
-
-	// try create new text object
-	if(GS()->CreateText(nullptr, false, m_TextPosition, {}, LifeTime - 5, Name.c_str()))
-		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
+	// update text
+	const char* pName = IsPurchased() ? m_pGuild->GetName() : "FREE GUILD HOUSE";
+	GS()->EntityManager()->Text(m_TextPosition, Lifetime - 5, pName);
 }
 
 void CGuildHouse::UpdateGuild(CGuild* pGuild)

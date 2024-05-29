@@ -812,7 +812,7 @@ if(SERVER_COMPILE)
   # Sources
   file(GLOB_RECURSE ENGINE_SERVER "src/engine/server/*.cpp" "src/engine/server/*.h")
   file(GLOB_RECURSE GAME_SERVER "src/game/server/*.cpp" "src/game/server/*.h")
-  file(GLOB LOCALIZED_SERVER "src/teeother/components/*.cpp" "src/teeother/components/*.h" "src/teeother/flat_hash_map/*.h" "src/teeother/system/*.h" "src/teeother/tl/*.h")
+  file(GLOB LOCALIZED_SERVER "src/teeother/components/*.cpp" "src/teeother/components/*.h" "src/teeother/tools/*.cpp" "src/teeother/tools/*.h" "src/teeother/tools/flat_hash_map/*.h")
   set(GAME_GENERATED_SERVER src/generated/server_data.cpp src/generated/server_data.h)
   set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER} ${LOCALIZED_SERVER})
   

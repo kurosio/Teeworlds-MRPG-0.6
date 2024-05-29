@@ -2,8 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "AuctionData.h"
 
-#include <engine/shared/config.h>
-
 int CAuctionSlot::GetTaxPrice() const
 {
 	return maximum(1, translate_to_percent_rest(m_Price, g_Config.m_SvAuctionSlotTaxPrice));

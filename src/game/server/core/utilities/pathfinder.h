@@ -3,7 +3,6 @@
 #include "pathfinder_data.h"
 
 #include <game/layers.h>
-#include <game/server/core/tools/binaryheap.h>
 
 #define MAX_WAY_CALC 50000
 
@@ -37,18 +36,18 @@ class CPathFinder
 			}
 		};
 
-		static CPathFinderPrepared::CData CallbackFindPath(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
-		static CPathFinderPrepared::CData CallbackRandomRadiusWaypoint(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
+		static CPathFinderPrepare::CData CallbackFindPath(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
+		static CPathFinderPrepare::CData CallbackRandomRadiusWaypoint(const ::std::shared_ptr<HandleArgsPack>& pHandleData);
 
 	public:
 		explicit CHandler(CPathFinder* pPathFinder) : m_pPathFinder(pPathFinder) {}
 
-		// This function prepares the path finder for a search by creating a future task and storing it in the provided CPathFinderPrepared object.
+		// This function prepares the path finder for a search by creating a future task and storing it in the provided CPathFinderPrepare object.
 		// The type template parameter determines the type of search to be performed.
 		// The function returns true if the preparation is starting, meaning that a new future task is created.
 		// Otherwise, it returns false, indicating that the preparation is already in progress.
-		template<CPathFinderPrepared::Type type>
-		bool Prepare(CPathFinderPrepared* pPrepare, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
+		template<CPathFinderPrepare::Type type>
+		bool Prepare(CPathFinderPrepare* pPrepare, vec2 StartPos, vec2 SearchPos, float Radius = 800.0f) const
 		{
 			bool StartingPrepare = !pPrepare->m_FutureData.valid();
 
@@ -59,7 +58,7 @@ class CPathFinder
 				auto Handle = std::make_shared<HandleArgsPack>(HandleArgsPack({ m_pPathFinder, StartPos, SearchPos, Radius }));
 
 				// Enqueue a future task based on the type of search
-				if constexpr(type == CPathFinderPrepared::Type::RANDOM)
+				if constexpr(type == CPathFinderPrepare::Type::RANDOM)
 				{
 					pPrepare->m_FutureData = m_Pool.enqueue(&CallbackRandomRadiusWaypoint, Handle);
 				}
@@ -75,7 +74,7 @@ class CPathFinder
 		// Function: TryGetPreparedData
 		// Returns: bool
 		// Parameters:
-		// - pPrepare: A pointer to a CPathFinderPrepared object that will be populated with prepared data if available.
+		// - pPrepare: A pointer to a CPathFinderPrepare object that will be populated with prepared data if available.
 		// - pTarget (optional): A pointer to a vec2 object that will be populated with the target position if available.
 		// - pOldTarget (optional): A pointer to a vec2 object that will be populated with the old target position if available.
 		// 
@@ -83,7 +82,7 @@ class CPathFinder
 		// If pTarget is provided, it also populates the pTarget object with the target position and returns true.
 		// If pOldTarget is provided, it also populates the pOldTarget object with the old target position and returns true.
 		// If prepared data is not available, it returns false.
-		bool TryGetPreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
+		bool TryGetPreparedData(CPathFinderPrepare* pPrepare, vec2* pTarget = nullptr, vec2* pOldTarget = nullptr);
 	};
 
 	friend class CHandler;

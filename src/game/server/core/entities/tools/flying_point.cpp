@@ -4,8 +4,8 @@
 
 #include <game/server/gamecontext.h>
 
-CFlyingPoint::CFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, Pos)
+CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos)
 {
 	m_Pos = Pos;
 	m_InitialVel = InitialVel;
@@ -16,7 +16,7 @@ CFlyingPoint::CFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, in
 	GameWorld()->InsertEntity(this);
 }
 
-void CFlyingPoint::Tick()
+void CEntityFlyingPoint::Tick()
 {
 	CPlayer *pPlayer = GS()->m_apPlayers[m_ClientID];
 	if(!pPlayer || !pPlayer->GetCharacter() || (m_FromID != -1 && (!GS()->m_apPlayers[m_FromID] || !GS()->m_apPlayers[m_FromID]->GetCharacter())))
@@ -31,7 +31,7 @@ void CFlyingPoint::Tick()
 		if(m_pFunctionCollised)
 		{
 			CPlayer* pFrom = GS()->GetPlayer(m_FromID);
-			m_pFunctionCollised(this, pFrom ? pFrom : pPlayer, pPlayer);
+			m_pFunctionCollised(pFrom ? pFrom : pPlayer, pPlayer);
 		}
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -42,7 +42,7 @@ void CFlyingPoint::Tick()
 	m_InitialAmount *= 0.98f;
 }
 
-void CFlyingPoint::Snap(int SnappingClient)
+void CEntityFlyingPoint::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient))
 		return;

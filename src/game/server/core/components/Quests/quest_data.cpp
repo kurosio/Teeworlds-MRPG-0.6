@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "QuestManager.h"
 
-#include <engine/shared/config.h>
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 
@@ -123,7 +123,7 @@ void CPlayerQuest::UpdateStepPosition()
 
 	// effect's
 	GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Complete");
-	GS()->CreateText(nullptr, false, vec2(pPlayer->m_ViewPos.x, pPlayer->m_ViewPos.y - 70), vec2(0, -0.5), 30, "QUEST COMPLETE");
+	GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
 	GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
 }
 

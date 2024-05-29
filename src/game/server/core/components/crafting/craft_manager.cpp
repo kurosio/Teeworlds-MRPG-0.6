@@ -3,7 +3,6 @@
 #include "craft_manager.h"
 
 #include <game/server/gamecontext.h>
-#include <teeother/system/string.h>
 
 void CCraftManager::OnInit()
 {
@@ -78,7 +77,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 		if(pPlayer->GetItem(RequiredItem)->GetValue() < RequiredItem.GetValue())
 		{
 			const int ItemLeft = (RequiredItem.GetValue() - pPlayer->GetItem(RequiredItem)->GetValue());
-			strBuffer += Tools::String::FormatLocalize(ClientID, "{}x{} ", RequiredItem.Info()->GetName(), ItemLeft);
+			strBuffer += fmt_handle(ClientID, "{}x{} ", RequiredItem.Info()->GetName(), ItemLeft);
 		}
 	}
 	if(!strBuffer.empty())

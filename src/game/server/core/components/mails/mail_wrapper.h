@@ -4,7 +4,6 @@
 #define GAME_SERVER_CORE_COMPONENTS_MAIL_DATA_H
 
 #include <game/server/core/components/Inventory/ItemData.h>
-#include <game/server/core/utilities/format.h>
 
 class MailWrapper
 {
@@ -20,13 +19,13 @@ public:
 	{
 		m_Sender = pFrom;
 		m_AccountID = AccountID;
-		m_Title = Tools::String::Format(pTitle, args...);
+		m_Title = fmt(pTitle, args...);
 	}
 
 	template <typename ... Ts>
 	MailWrapper& AddDescLine(const char* pDescline, const Ts&... args)
 	{
-		m_vDescriptionLines.push_back(Tools::String::Format(pDescline, args...));
+		m_vDescriptionLines.push_back(fmt(pDescline, args...));
 		return *this;
 	}
 

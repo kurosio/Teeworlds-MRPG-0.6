@@ -1,11 +1,7 @@
 #ifndef SHARED_TL_HASHTABLE_H
 #define SHARED_TL_HASHTABLE_H
 
-/* BEGIN EDIT *********************************************************/
 #include <base/tl/array.h>
-#include <teeother/system/string.h>
-#include <teeother/tl/allocator.h>
-/* END EDIT ***********************************************************/
 
 template <typename T, int TABLESIZE, typename ALLOCATOR = tu_allocator_default<T> >
 class hashtable : private ALLOCATOR

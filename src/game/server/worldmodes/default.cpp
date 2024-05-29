@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "default.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/entities/items/harvesting_item.h>
 #include <game/server/core/entities/logic/logicwall.h>

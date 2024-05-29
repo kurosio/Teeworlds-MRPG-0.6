@@ -2,11 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "botwall.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 CBotWall::CBotWall(CGameWorld* pGameWorld, vec2 Pos, vec2 Direction, int Flag)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_NPC_DOOR, Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_NPC_BLOCKER, Pos)
 {
 	GS()->Collision()->Wallline(32, Direction, &m_Pos, &m_PosTo);
 	m_Active = false;

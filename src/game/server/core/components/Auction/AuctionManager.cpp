@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "AuctionManager.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/components/Inventory/InventoryManager.h>

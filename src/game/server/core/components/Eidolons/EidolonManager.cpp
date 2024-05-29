@@ -42,7 +42,7 @@ bool CEidolonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolon.GetItemID());
 			const char* pCollectedInfo = (pPlayerItem->HasItem() ? "✔" : "\0");
-			const char* pUsedAtMoment = pPlayerItem->IsEquipped() ? Server()->Localization()->Localize(pPlayer->GetLanguage(), "[summoned by you]") : "\0";
+			const char* pUsedAtMoment = pPlayerItem->IsEquipped() ? Instance::Localize(pPlayer->GetCID(), "[summoned by you]") : "\0";
 			VEidolon.AddMenu(MENU_EIDOLON_COLLECTION_SELECTED, pEidolon.GetItemID(), "{} {} {}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
 		}
 
@@ -74,7 +74,7 @@ bool CEidolonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 
 			if(pPlayerItem->HasItem())
 			{
-				const char* pStateSummon = Server()->Localization()->Localize(pPlayer->GetLanguage(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
+				const char* pStateSummon = Instance::Localize(pPlayer->GetCID(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
 				VoteWrapper(ClientID).AddOption("ISETTINGS", pEidolonInfo->GetItemID(), NOPE, "{} {}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
 			}
 			else

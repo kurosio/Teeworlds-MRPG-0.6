@@ -212,7 +212,7 @@ vec2 CPathFinder::GetRandomWaypointRadius(vec2 Pos, float Radius)
  * - Synchronized path search in a separate thread pool
  */
 
-CPathFinderPrepared::CData CPathFinder::CHandler::CallbackFindPath(const std::shared_ptr<HandleArgsPack>& pHandleData)
+CPathFinderPrepare::CData CPathFinder::CHandler::CallbackFindPath(const std::shared_ptr<HandleArgsPack>& pHandleData)
 {
 	HandleArgsPack* pHandle = pHandleData.get();
 
@@ -232,8 +232,8 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackFindPath(const std::sh
 		pPathFinder->FindPath();
 
 		// initilize for future data
-		CPathFinderPrepared::CData Data;
-		Data.m_Type = CPathFinderPrepared::DEFAULT;
+		CPathFinderPrepare::CData Data;
+		Data.m_Type = CPathFinderPrepare::DEFAULT;
 		Data.m_Points.reserve(pPathFinder->m_FinalSize);
 		for(int i = pPathFinder->m_FinalSize - 1, j = 0; i >= 0; i--, j++)
 		{
@@ -246,7 +246,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackFindPath(const std::sh
 	return {};
 }
 
-CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(const std::shared_ptr<HandleArgsPack>& pHandleData)
+CPathFinderPrepare::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(const std::shared_ptr<HandleArgsPack>& pHandleData)
 {
 	HandleArgsPack* pHandle = pHandleData.get();
 
@@ -261,8 +261,8 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(c
 		const vec2 TargetPos = pHandle->m_PathFinder->GetRandomWaypointRadius(StartPos, pHandle->m_Radius);
 
 		// initilize for future data
-		CPathFinderPrepared::CData Data;
-		Data.m_Type = CPathFinderPrepared::RANDOM;
+		CPathFinderPrepare::CData Data;
+		Data.m_Type = CPathFinderPrepare::RANDOM;
 		Data.m_Points[0] = vec2(TargetPos.x * 32, TargetPos.y * 32);
 		return Data;
 	}
@@ -270,7 +270,7 @@ CPathFinderPrepared::CData CPathFinder::CHandler::CallbackRandomRadiusWaypoint(c
 	return{};
 }
 
-bool CPathFinder::CHandler::TryGetPreparedData(CPathFinderPrepared* pPrepare, vec2* pTarget, vec2* pOldTarget)
+bool CPathFinder::CHandler::TryGetPreparedData(CPathFinderPrepare* pPrepare, vec2* pTarget, vec2* pOldTarget)
 {
 	// check future status
 	if(pPrepare && pPrepare->m_FutureData.valid() && pPrepare->m_FutureData.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)

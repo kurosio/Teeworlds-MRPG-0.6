@@ -2,20 +2,15 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_GAMECONTEXT_H
 #define GAME_SERVER_GAMECONTEXT_H
-
-#include <engine/console.h>
 #include <engine/server.h>
 #include <game/collision.h>
 
 #include "eventhandler.h"
 #include "gamecontroller.h"
 #include "gameworld.h"
-#include "player.h"
 #include "playerbot.h"
 
-#include "core/entities/tools/flying_point.h"
 #include "core/mmo_controller.h"
-#include "core/utilities/format.h"
 
 class CGS : public IGameServer
 {
@@ -29,6 +24,7 @@ class CGS : public IGameServer
 	class CCommandProcessor* m_pCommandProcessor;
 	class CMmoController* m_pMmoController;
 	class CLayers* m_pLayers;
+	class CEntityManager* m_pEntityManager;
 
 	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
@@ -41,6 +37,7 @@ public:
 	CMmoController* Core() const { return m_pMmoController; }
 	IStorageEngine* Storage() const { return m_pStorage; }
 	CCommandProcessor* CommandProcessor() const { return m_pCommandProcessor; }
+	CEntityManager* EntityManager() const { return m_pEntityManager; }
 
 	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }
@@ -72,7 +69,6 @@ public:
 	class CQuestsDailyBoard* GetQuestDailyBoard(int ID) const;
 	class CWorldData* GetWorldData(int ID = -1) const;
 	class CEidolonInfoData* GetEidolonByItemID(ItemIdentifier ItemID) const;
-	/* [[nodiscard]] */class CFlyingPoint* CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, int FromID = -1);
 	void UpdateDiscordStatus();
 
 	/* #########################################################################
@@ -127,7 +123,7 @@ public:
 		for(int i = Start; i < End; i++)
 		{
 			if(m_apPlayers[i])
-				SendChatTarget(i, Tools::String::FormatLocalize(i, pText, args...).c_str());
+				SendChatTarget(i, fmt_handle(i, pText, args...).c_str());
 		}
 	}
 
@@ -136,7 +132,7 @@ public:
 	{
 		CPlayer* pPlayer = GetPlayerByUserID(AccountID);
 		if(pPlayer)
-			SendChatTarget(pPlayer->GetCID(), Tools::String::FormatLocalize(pPlayer->GetCID(), pText, args...).c_str());
+			SendChatTarget(pPlayer->GetCID(), fmt_handle(pPlayer->GetCID(), pText, args...).c_str());
 		return pPlayer != nullptr;
 	}
 
@@ -148,7 +144,7 @@ public:
 			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->SameGuild(GuildID, i))
 			{
 				std::string Result = "Guild | ";
-				Result += Tools::String::FormatLocalize(i, pText, args...);
+				Result += fmt_handle(i, pText, args...);
 				SendChatTarget(i, Result.c_str());
 			}
 		}
@@ -162,7 +158,7 @@ public:
 			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && IsPlayerEqualWorld(i, WorldID))
 			{
 				std::string Result = pSuffix[0] != '\0' ? std::string(pSuffix) + " " : "";
-				Result += Tools::String::FormatLocalize(i, pText, args...);
+				Result += fmt_handle(i, pText, args...);
 				SendChatTarget(i, Result.c_str());
 			}
 		}
@@ -172,7 +168,7 @@ public:
 	void ChatDiscord(int Color, const char *Title, const char* pText, const Ts&... args)
 	{
 #ifdef CONF_DISCORD
-		Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, Color, Title, Tools::String::Format(pText, args...).c_str());
+		Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, Color, Title, fmt(pText, args...).c_str());
 #endif
 	}
 
@@ -180,7 +176,7 @@ public:
 	void ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, const Ts&... args)
 	{
 #ifdef CONF_DISCORD
-		Server()->SendDiscordMessage(pChanel, Color, Title, Tools::String::Format(pText, args...).c_str());
+		Server()->SendDiscordMessage(pChanel, Color, Title, fmt(pText, args...).c_str());
 #endif
 	}
 
@@ -193,7 +189,7 @@ public:
 		for(int i = Start; i < End; i++)
 		{
 			if(m_apPlayers[i])
-				SendMotd(i, Tools::String::FormatLocalize(i, pText, args...).c_str());
+				SendMotd(i, fmt_handle(i, pText, args...).c_str());
 		}
 	}
 
@@ -206,7 +202,7 @@ public:
 		for(int i = Start; i < End; i++)
 		{
 			if(m_apPlayers[i])
-				AddBroadcast(i, Tools::String::FormatLocalize(i, pText, args...).c_str(), Priority, LifeSpan);
+				AddBroadcast(i, fmt_handle(i, pText, args...).c_str(), Priority, LifeSpan);
 		}
 	}
 
@@ -216,7 +212,7 @@ public:
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			if(m_apPlayers[i] && IsPlayerEqualWorld(i, WorldID))
-				AddBroadcast(i, Tools::String::FormatLocalize(i, pText, args...).c_str(), Priority, LifeSpan);
+				AddBroadcast(i, fmt_handle(i, pText, args...).c_str(), Priority, LifeSpan);
 		}
 	}
 
@@ -288,11 +284,6 @@ public:
 		MMO GAMECONTEXT
 	######################################################################### */
 	int CreateBot(short BotType, int BotID, int SubID);
-	bool CreateText(CEntity* pParent, bool Follow, vec2 Pos, vec2 Vel, int Lifespan, const char* pText);
-	void CreateParticleExperience(vec2 Pos, int ClientID, int Experience, vec2 Force = vec2(0.0f, 0.0f));
-	void CreateDropBonuses(vec2 Pos, int Type, int Value, int NumDrop = 1, vec2 Force = vec2(0.0f, 0.0f));
-	void CreateDropItem(vec2 Pos, int ClientID, CItem DropItem, vec2 Force = vec2(0.0f, 0.0f));
-	void CreateRandomDropItem(vec2 Pos, int ClientID, float Chance, CItem DropItem, vec2 Force = vec2(0.0f, 0.0f));
 	bool TakeItemCharacter(int ClientID);
 	void CreateLaserOrbite(class CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1);
 	void CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1);

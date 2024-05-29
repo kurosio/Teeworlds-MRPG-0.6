@@ -7,7 +7,6 @@
 #include <game/server/core/components/achievements/achievement_data.h>
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/Auction/AuctionData.h>
-#include <game/server/core/tools/dbfield.h>
 
 class CGS;
 class CPlayer;

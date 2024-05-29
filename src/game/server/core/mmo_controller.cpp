@@ -2,9 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "mmo_controller.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
-#include <teeother/system/string.h>
 
 #include "components/Accounts/AccountManager.h"
 #include "components/Accounts/AccountMiningManager.h"
@@ -26,6 +24,7 @@
 #include "components/tutorial/tutorial_manager.h"
 #include "components/warehouse/warehouse_manager.h"
 #include "components/worlds/world_manager.h"
+#include <teeother/components/localization.h>
 
 inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, VoteWrapper* pWrapper)
 {
@@ -681,7 +680,7 @@ void CMmoController::SyncLocalizations() const
 		return;
 	}
 
-	// update language data
+	// update language data TODO FIX
 	for (int i = 0; i < GS()->Server()->Localization()->m_pLanguages.size(); i++)
 	{
 		// prepare

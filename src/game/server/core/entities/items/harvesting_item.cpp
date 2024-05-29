@@ -9,7 +9,7 @@
 #include <game/server/core/components/houses/house_manager.h>
 
 CEntityHarvestingItem::CEntityHarvestingItem(CGameWorld *pGameWorld, int ItemID, vec2 Pos, int Type, int HouseID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_JOBITEMS, Pos, PickupPhysSize), m_ItemID(ItemID)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_HERVESTING_ITEM, Pos, PickupPhysSize), m_ItemID(ItemID)
 {
 	// initialize variables
 	m_Type = Type;
@@ -101,7 +101,7 @@ bool CEntityHarvestingItem::Interaction(const char* pToolname, AttributeIdentifi
 	if(EquipItem <= 0)
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need equip {}!", 
-			Server()->Localization()->Localize(pPlayer->GetLanguage(), pToolname));
+			Instance::Localize(pPlayer->GetCID(), pToolname));
 		return false;
 	}
 

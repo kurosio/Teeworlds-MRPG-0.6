@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "skill_data.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 #include "entities/health_turret/healer_health.h"
@@ -85,7 +86,7 @@ bool CSkill::Use()
 	if(m_ID == Skill::SkillHeartTurret)
 	{
 		// check and reset
-		for(CHealthHealer* pHh = (CHealthHealer*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_SKILLTURRETHEART); pHh; pHh = (CHealthHealer*)pHh->TypeNext())
+		for(CHealthHealer* pHh = (CHealthHealer*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_HEALTH_TURRET); pHh; pHh = (CHealthHealer*)pHh->TypeNext())
 		{
 			if(pHh->m_pPlayer->GetCID() != ClientID)
 				continue;
@@ -103,7 +104,7 @@ bool CSkill::Use()
 	if(m_ID == Skill::SkillSleepyGravity)
 	{
 		// check and reset
-		for(CSleepyGravity* pHh = (CSleepyGravity*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_SLEEPYGRAVITY); pHh; pHh = (CSleepyGravity*)pHh->TypeNext())
+		for(CSleepyGravity* pHh = (CSleepyGravity*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_SLEEPY_GRAVITY); pHh; pHh = (CSleepyGravity*)pHh->TypeNext())
 		{
 			if(pHh->m_pPlayer->GetCID() != ClientID)
 				continue;
@@ -169,7 +170,7 @@ bool CSkill::Use()
 			GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
 		}
 
-		GS()->CreateText(NULL, false, vec2(PlayerPosition.x, PlayerPosition.y - 96.0f), vec2(0, 0), 40, "RECOVERY AMMO");
+		GS()->EntityManager()->Text(PlayerPosition + vec2(0, -96), 40, "RECOVERY AMMO");
 		return true;
 	}
 
@@ -206,14 +207,16 @@ bool CSkill::Use()
 			pCharacterBotAI->AI()->GetTarget()->Set(ClientID, GetBonus());
 			GS()->CreatePlayerSpawn(pPlayer->GetCharacter()->GetPos());
 			pPlayer->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
-			GS()->CreateFlyingPoint(PlayerPosition, pPlayer->GetCharacter()->m_Core.m_Vel, i);
+			GS()->EntityManager()->FlyingPoint(PlayerPosition, i, pPlayer->GetCharacter()->m_Core.m_Vel);
 		}
 
 		// some effects
 		GS()->CreateSound(PlayerPosition, SOUND_NINJA_FIRE);
-		GS()->CreateText(NULL, false, vec2(PlayerPosition.x, PlayerPosition.y - 96.0f), vec2(0, 0), 40, "PROVOKE");
+		GS()->EntityManager()->Text(PlayerPosition + vec2(0, -96), 40, "PROVOKE");
 		if(MissedProvoked)
+		{
 			GS()->Chat(ClientID, "Some were not provoked due to a stronger provocation.");
+		}
 	}
 
 	return false;

@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "logicwall.h"
 
-#include <engine/shared/config.h>
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 CLogicWall::CLogicWall(CGameWorld *pGameWorld, vec2 Pos)
@@ -88,7 +88,7 @@ void CLogicWallFire::Tick()
 		return;
 	}
 
-	for(CLogicWallWall *p = (CLogicWallWall*) GameWorld()->FindFirst(CGameWorld::ENTTYPE_EYESWALL); p; p = (CLogicWallWall *)p->TypeNext())
+	for(CLogicWallWall *p = (CLogicWallWall*) GameWorld()->FindFirst(CGameWorld::ENTTYPE_EYES_WALL); p; p = (CLogicWallWall *)p->TypeNext())
 	{
 		vec2 IntersectPos;
 		if(closest_point_on_line(p->GetPos(), p->GetTo(), m_Pos, IntersectPos))
@@ -96,13 +96,13 @@ void CLogicWallFire::Tick()
 			if(distance(m_Pos, IntersectPos) < 15)
 			{
 				p->TakeDamage();
-				GS()->CreateText(NULL, false, m_Pos, vec2(0, 0), 100, std::to_string(p->GetHealth()).c_str());
 				if(p->GetHealth() <= 0)
 				{
 					pLogicWall->SetDestroy(120);
 					p->SetDestroy(120);
 				}
 
+				GS()->EntityManager()->Text(m_Pos, 100, std::to_string(p->GetHealth()).c_str());
 				GameWorld()->DestroyEntity(this);
 				return;
 			}
@@ -127,7 +127,7 @@ void CLogicWallFire::Snap(int SnappingClient)
 
 /////////////////////////////////////////
 CLogicWallWall::CLogicWallWall(CGameWorld *pGameWorld, vec2 Pos, int Mode, int Health)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_EYESWALL, Pos, 14)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_EYES_WALL, Pos, 14)
 {
 	vec2 Direction = Mode == 0 ? vec2(0, -1) : vec2(1, 0);
 	GS()->Collision()->Wallline(32, Direction, &m_Pos, &m_PosTo);

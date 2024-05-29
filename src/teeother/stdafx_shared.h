@@ -1,9 +1,6 @@
-#ifndef SHARED_STDAFX_H
-#define SHARED_STDAFX_H
+#ifndef GAME_TEEOTHER_STDAFX_SHARED_H
+#define GAME_TEEOTHER_STDAFX_SHARED_H
 
-//TODO: add precompiled headers
-
-// core
 #include <atomic>
 #include <vector>
 #include <list>
@@ -16,15 +13,17 @@
 #include <memory>
 #include <future>
 #include <queue>
+#include <teeother/tools/nlohmann_json.h>
 
-// custom something that is subject to less changes is introduced
+#include <base/system.h>
 #include <base/big_int.h>
+#include <base/format.h>
+#include <base/hash.h>
 #include <base/math.h>
 #include <base/vmath.h>
 #include <base/threadpool.h>
 #include <base/tl/array.h>
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
-#include <teeother/tl/nlohmann_json.h>
 
-#endif //SERVER_STDAFX_H
+#endif //GAME_TEEOTHER_STDAFX_SHARED_H

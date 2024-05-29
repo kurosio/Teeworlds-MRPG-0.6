@@ -3,6 +3,7 @@
 #include "tutorial_manager.h"
 #include "tutorial_data.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 constexpr auto FILE_NAME_INITILIZER = "server_data/tutorial_data.json";
@@ -59,7 +60,7 @@ void EventChecker(std::deque<TutorialBase*>& pItems, CPlayer* pPlayer, int Step,
 		// Perform actions when the condition is true
 		pGS->CreateDeath(pPlayer->m_ViewPos, pPlayer->GetCID());
 		pGS->CreatePlayerSound(pPlayer->GetCID(), SOUND_NINJA_HIT);
-		pGS->CreateText(nullptr, false, vec2(pPlayer->m_ViewPos.x, pPlayer->m_ViewPos.y - 50.0f), vec2(0, 0), 100, "Good");
+		pGS->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -50), 100, "Good");
 
 		// Increment the tutorial step
 		pPlayer->m_TutorialStep++;

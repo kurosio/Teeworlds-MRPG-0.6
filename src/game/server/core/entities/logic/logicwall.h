@@ -39,8 +39,8 @@ class CLogicWallFire : public CEntity
 
 public:
 	CLogicWallFire(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, CLogicWall *Eyes);
-	virtual void Snap(int SnappingClient);
-	virtual void Tick();
+	void Snap(int SnappingClient) override;
+	void Tick() override;
 };
 
 class CLogicWallWall : public CEntity

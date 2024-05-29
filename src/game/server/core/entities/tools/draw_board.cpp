@@ -1,6 +1,5 @@
 #include "draw_board.h"
 
-#include <engine/server.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Inventory/InventoryManager.h>
 
@@ -98,11 +97,11 @@ void CBrush::SendBroadcast() const
 	if(m_pBoard->m_Flags & DRAWBOARDFLAG_PLAYER_ITEMS)
 	{
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(*m_BrushItem);
-		strAvailable = Tools::String::FormatLocalize(m_pPlayer->GetCID(), "has {}", pPlayerItem->GetValue());
+		strAvailable = fmt_handle(m_pPlayer->GetCID(), "has {}", pPlayerItem->GetValue());
 	}
 	else
 	{
-		strAvailable = Tools::String::FormatLocalize(m_pPlayer->GetCID(), "unlimited");
+		strAvailable = fmt_handle(m_pPlayer->GetCID(), "unlimited");
 	}
 
 	// send broadcast

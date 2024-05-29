@@ -2,10 +2,11 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "base.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 CEidolon::CEidolon(CGameWorld *pGameWorld, vec2 Pos, int Type, int EidolonCID, int OwnerCID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPBONUS, Pos)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_EIDOLON_ITEM, Pos)
 {
 	m_Pos = Pos;
 	m_Type = Type;
@@ -69,8 +70,8 @@ void CEidolon::Tick()
 	if(pOwner && pOwner->GetHealth() < pOwner->GetStartHealth() / 3)
 	{
 		int RestoreHealth = pOwner->GetStartHealth() / 2;
-		GS()->CreateText(nullptr, false, m_Pos, vec2(0, 0), 50, "Eidolon");
 		pOwner->GetCharacter()->IncreaseHealth(RestoreHealth);
+		GS()->EntityManager()->Text(m_Pos, 50, "Eidolon");
 		GS()->CreateSound(m_Pos, SOUND_CTF_CAPTURE);
 		GS()->CreateDeath(m_Pos, m_EidolonCID);
 		GS()->CreateDeath(m_Pos, m_OwnerCID);

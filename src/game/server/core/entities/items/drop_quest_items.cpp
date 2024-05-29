@@ -6,7 +6,7 @@
 #include <game/server/gamecontext.h>
 
 CDropQuestItem::CDropQuestItem(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, int ItemID, int Needed, int QuestID, int Step, int ClientID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPQUEST, Pos, 24.0f)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_QUEST_DROP, Pos, 24.0f)
 {
 	m_Pos = Pos;
 	m_Vel = Vel;

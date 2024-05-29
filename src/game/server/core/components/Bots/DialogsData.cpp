@@ -295,7 +295,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	 */
 	char aBufText[1024] {};
 	{
-		str_copy(aBufText, GS()->Server()->Localization()->Localize(m_pPlayer->GetLanguage(), pDialog->GetText()), sizeof(aBufText));
+		str_copy(aBufText, Instance::Localize(m_pPlayer->GetCID(), pDialog->GetText()), sizeof(aBufText));
 
 		// arrays replacing dialogs
 		char aBufSearch[16];

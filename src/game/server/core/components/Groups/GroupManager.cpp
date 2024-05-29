@@ -1,9 +1,9 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "GroupManager.h"
-
 #include "GroupData.h"
 
+#include <game/server/core/utilities/vote_optional.h>
 #include <game/server/gamecontext.h>
 
 // Initialization function for CGroupManager class
@@ -237,7 +237,8 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			}
 
 			// Create vote optional
-			auto pOption = CVoteOptional::Create(InvitedCID, ClientID, GroupID, 15, Server()->Localize(ClientID, "Join to {} group?"), Server()->ClientName(ClientID));
+			auto pOption = CVoteOptional::Create(InvitedCID, ClientID, GroupID, 15, 
+				Server()->Localize(ClientID, "Join to {} group?"), Server()->ClientName(ClientID));
 			pOption->RegisterCallback(CallbackVoteOptionalGroupInvite);
 
 			// Send a chat message to the player inviting them to join the group

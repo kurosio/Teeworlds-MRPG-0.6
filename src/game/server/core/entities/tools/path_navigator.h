@@ -5,14 +5,14 @@
 
 #include <game/server/entity.h>
 
-#include "game/server/core/utilities/pathfinder_data.h"
+class CPathFinderPrepare;
 
 class CEntityPathNavigator : public CEntity
 {
+	CPathFinderPrepare* m_pPathPrepare {};
 	bool m_StartByCreating{};
 	int m_StepPos {};
 	CEntity* m_pParent {};
-	CPathFinderPrepared m_Data {};
 	vec2 m_LastPos {};
 	int64_t m_Mask {};
 	int m_TickLastIdle {};
@@ -21,6 +21,8 @@ class CEntityPathNavigator : public CEntity
 
 public:
 	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask = -1);
+	~CEntityPathNavigator();
+
 	bool PreparedPathData();
 
 	ska::unordered_map<int, vec2> getFinishedContainer(ska::unordered_map<int, vec2>& pathContainer);

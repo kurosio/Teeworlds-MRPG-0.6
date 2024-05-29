@@ -29,11 +29,12 @@ class CServer : public IServer
 	class CMultiWorlds* m_pMultiWorlds;
 	class CServerBan* m_pServerBan;
 	class DiscordJob* m_pDiscord {};
-	class IRegister* m_pRegister;
+	class IRegister* m_pRegister{};
 
 public:
 	class IGameServer* GameServer(int WorldID = 0) const override;
 	class IGameServer* GameServerPlayer(int ClientID) const override;
+	class CLocalization* Localization() const override { return m_pLocalization; };
 	class IConsole* Console() const { return m_pConsole; }
 	class IStorageEngine* Storage() const { return m_pStorage; }
 	class CMultiWorlds* MultiWorlds() const { return m_pMultiWorlds; }
@@ -120,6 +121,7 @@ public:
 	CClient m_aClients[MAX_CLIENTS];
 	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS] {};
 
+	CLocalization* m_pLocalization;
 	CSnapshotDelta m_SnapshotDelta;
 	CSnapshotBuilder m_SnapshotBuilder;
 	CSnapIDPool m_IDPool;
@@ -279,6 +281,8 @@ public:
 	static void ConchainRconPasswordSet(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 	static void ConchainLoglevel(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 	static void ConchainStdoutOutputLevel(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
+
+	static std::string CallbackLocalize(int ClientID, const char* pText, void* pUser);
 
 	void RegisterCommands();
 

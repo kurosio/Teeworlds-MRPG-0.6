@@ -1,6 +1,5 @@
 #ifndef ENGINE_SERVER_WORLD_DETAIL_H
 #define ENGINE_SERVER_WORLD_DETAIL_H
-#include <base/hash.h>
 
 class IKernel;
 class IEngineMap;

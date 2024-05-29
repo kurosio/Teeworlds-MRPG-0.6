@@ -144,7 +144,6 @@ private:
 	int m_InitialFee {};
 	int m_WorldID{};
 	int m_RentDays {};
-	int m_LastTickTextUpdated {};
 
 	CDoorManager* m_pDoors {};
 	CDecorationManager* m_pDecorationManager {};
@@ -190,7 +189,7 @@ public:
 
 	bool ExtendRentDays(int Days);
 	bool ReduceRentDays(int Days);
-	void TextUpdate(int LifeTime);
+	void UpdateText(int Lifetime) const;
 	void UpdateGuild(CGuild* pGuild);
 };
 

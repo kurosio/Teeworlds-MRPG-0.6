@@ -2,10 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "house_door.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
-
-#include "game/server/core/components/houses/house_data.h"
+#include <game/server/core/components/houses/house_data.h>
 
 CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, CHouse* pHouse, std::string&& Name, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_Name(std::move(Name)), m_pHouse(pHouse)

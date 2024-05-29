@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 
 CSleepyGravity::CSleepyGravity(CGameWorld *pGameWorld, CPlayer* pPlayer, int SkillBonus, int PowerLevel, vec2 Pos)
-: CEntity(pGameWorld, CGameWorld::ENTYPE_SLEEPYGRAVITY, Pos)
+: CEntity(pGameWorld, CGameWorld::ENTYPE_SLEEPY_GRAVITY, Pos)
 {
 	m_pPlayer = pPlayer;
 	m_PowerLevel = PowerLevel;

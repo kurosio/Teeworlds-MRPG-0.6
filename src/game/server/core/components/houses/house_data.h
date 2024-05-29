@@ -176,8 +176,6 @@ private:
 	int m_AccountID {};
 	int m_WorldID {};
 	int m_Price {};
-	int m_LastTickTextUpdated{};
-
 
 public:
 	CHouse() = default;
@@ -220,7 +218,7 @@ public:
 	void InitProperties(int Bank, std::string&& AccessDoorList, std::string&& JsonDoors, std::string&& JsonFarmzones, std::string&& JsonProperties);
 	void Buy(CPlayer* pPlayer);
 	void Sell();
-	void TextUpdate(int LifeTime);
+	void UpdateText(int Lifetime) const;
 	void HandleTimePeriod(TIME_PERIOD Period);
 };
 

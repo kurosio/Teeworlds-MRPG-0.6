@@ -2,13 +2,11 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "dungeon.h"
 
-#include <engine/shared/config.h>
 #include <game/server/entity.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/entities/logic/botwall.h>
 #include <game/server/core/entities/logic/logicwall.h>
-#include <teeother/system/string.h>
 
 #include <game/server/core/components/Accounts/AccountManager.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>

@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "AccountFarmingManager.h"
 
-#include <engine/shared/config.h>
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/components/Inventory/InventoryManager.h>
@@ -115,7 +115,7 @@ void CAccountFarmingManager::Procces(CPlayer* pPlayer, int Level) const
 		{
 			GS()->CreateSound(pPlayer->GetCharacter()->m_Core.m_Pos, 4);
 			GS()->CreateDeath(pPlayer->GetCharacter()->m_Core.m_Pos, ClientID);
-			GS()->CreateText(pPlayer->GetCharacter(), false, vec2(0, -40), vec2(0, -1), 40, "farming up");
+			GS()->EntityManager()->Text(pPlayer->GetCharacter()->m_Core.m_Pos + vec2(0, -40), 40, "farming up");
 		}
 		GS()->Chat(ClientID, "Farming Level UP. Now Level {}!", refLevel);
 	}

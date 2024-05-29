@@ -1,8 +1,17 @@
 ﻿#include "format.h"
-
 #include <base/system.h>
 
-std::string Tools::String::FormatImpl::Impl(int, const char* pText, std::list<std::string>& vStrPack)
+void fmt_init_handler_func(HandlerFmtCallbackFunc* pCallback, void* pData)
+{
+	struct_handler_fmt::init(pCallback, pData);
+}
+
+void fmt_use_flags(int flags)
+{
+	struct_handler_fmt::use_flags(flags);
+}
+
+std::string struct_format_implement::impl(int, const std::string& Text, std::list<std::string>& vStrPack)
 {
 	// initialize variables
 	enum
@@ -13,8 +22,7 @@ std::string Tools::String::FormatImpl::Impl(int, const char* pText, std::list<st
 	};
 	std::string Result {};
 	bool argumentProcessing = false;
-	const int length = str_length(pText);
-
+	const int length = (int)Text.length();
 	int truncationValue {};
 	int truncationType {};
 	char truncationAfterChar { '\0' };
@@ -22,7 +30,7 @@ std::string Tools::String::FormatImpl::Impl(int, const char* pText, std::list<st
 	// use instead const char* std::string
 	for(int i = 0; i < length; ++i)
 	{
-		char iterChar = pText[i];
+		const char iterChar = Text[i];
 
 		// start argument
 		if(iterChar == '{')
@@ -42,10 +50,10 @@ std::string Tools::String::FormatImpl::Impl(int, const char* pText, std::list<st
 		if(iterChar == '~')
 		{
 			std::string truncationString;
-			for(int j = i + 1; pText[j] != '}' && j != length; ++j)
+			for(int j = i + 1; Text[j] != '}' && j != length; ++j)
 			{
 				// align custom value from fmt
-				if(pText[j] == '%' && !vStrPack.empty())
+				if(Text[j] == '%' && !vStrPack.empty())
 				{
 					truncationString = vStrPack.front();
 					vStrPack.pop_front();
@@ -53,13 +61,13 @@ std::string Tools::String::FormatImpl::Impl(int, const char* pText, std::list<st
 				}
 
 				// align custom value from text
-				if(pText[j] >= '0' && pText[j] <= '9')
+				if(Text[j] >= '0' && Text[j] <= '9')
 				{
-					truncationString += pText[j];
+					truncationString += Text[j];
 					continue;
 				}
 
-				truncationAfterChar = pText[j];
+				truncationAfterChar = Text[j];
 			}
 
 			truncationValue = truncationString.empty() ? 0 : str_toint(truncationString.c_str());

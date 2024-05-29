@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "warehouse_data.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Inventory/InventoryManager.h>
 
@@ -152,5 +153,5 @@ void CWarehouse::CStorage::UpdateText(int LifeTime) const
 {
 	// update storage text
 	CGS* pGS = (CGS*)Instance::GameServer(m_pWarehouse->m_WorldID);
-	pGS->CreateText(nullptr, false, m_TextPos, {}, LifeTime, std::to_string(m_Value).c_str());
+	pGS->EntityManager()->Text(m_TextPos, LifeTime, std::to_string(m_Value).c_str());
 }

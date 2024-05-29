@@ -1,7 +1,7 @@
 #ifndef GAME_SERVER_CORE_UTILITIES_PATHFINDER_DATA_H
 #define GAME_SERVER_CORE_UTILITIES_PATHFINDER_DATA_H
 
-class CPathFinderPrepared
+class CPathFinderPrepare
 {
 	friend class CPathFinder;
 

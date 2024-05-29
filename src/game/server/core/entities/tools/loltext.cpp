@@ -1,17 +1,13 @@
 #include "loltext.h"
 
 #include <engine/server.h>
-#include <engine/shared/config.h>
 
-CLolPlasma::CLolPlasma(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, vec2 Vel, int Lifespan)
+CLolPlasma::CLolPlasma(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, int Lifespan)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_WORLD_TEXT, Pos)
 {
-	m_LocalPos = vec2(0.0f, 0.0f);
 	m_StartOff = Pos;
 	m_Pos = (pParent ? pParent->GetPos() : vec2(0.0f, 0.0f)) + m_StartOff;
-	m_Vel = Vel;
 	m_Life = Lifespan;
-	m_StartTick = Server()->Tick();
 	m_pParent = pParent;
 	GameWorld()->InsertEntity(this);
 }
@@ -25,10 +21,8 @@ void CLolPlasma::Tick()
 		return;
 	}
 
-	if(GameWorld()->ExistEntity(m_pParent))
-		m_Pos = m_pParent->GetPos();
-	else
-		m_Pos = vec2(0.0f, 0.0f) + m_StartOff + (m_LocalPos += m_Vel);
+	m_Pos = GameWorld()->ExistEntity(m_pParent) ? m_pParent->GetPos() : vec2(0.0f, 0.0f);
+	m_Pos += m_StartOff;
 }
 
 void CLolPlasma::Snap(int SnappingClient)
@@ -331,17 +325,9 @@ inline static vec2 TextSize(const char* pText)
 	return vec2(Count * g_Config.m_SvLoltextHspace * 4.0f, g_Config.m_SvLoltextVspace);
 }
 
-void CLoltext::Create(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, vec2 Vel, int Lifespan, const char* pText, bool Center, bool Follow)
+void CLoltext::Create(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, int Lifespan, const char* pText)
 {
-	vec2 CurPos = Pos;
-	if(Center)
-		CurPos -= TextSize(pText) * 0.5f;
-
-	if(pParent && !Follow)
-	{
-		CurPos += pParent->GetPos();
-		pParent = nullptr;
-	}
+	vec2 CurPos = Pos - TextSize(pText) * 0.5f;
 
 	char c;
 	while((c = *pText++))
@@ -354,7 +340,7 @@ void CLoltext::Create(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, vec2 V
 		for(int y = 0; y < 5/*XXX*/; ++y)
 			for(int x = 0; x < 3/*XXX*/; ++x)
 				if(s_aaaChars[(unsigned)c][y][x])
-					new CLolPlasma(pGameWorld, pParent, CurPos + vec2(x * g_Config.m_SvLoltextHspace, y * g_Config.m_SvLoltextVspace), Vel, Lifespan);
+					new CLolPlasma(pGameWorld, pParent, CurPos + vec2(x * g_Config.m_SvLoltextHspace, y * g_Config.m_SvLoltextVspace), Lifespan);
 		CurPos.x += 4 * g_Config.m_SvLoltextHspace;
 	}
 }

@@ -2,8 +2,6 @@
 
 #include "sql_connect_pool.h"
 
-#include <engine/shared/config.h>
-
 /*
 	I don't see the point in using SELECT operations in the thread,
 	since this will lead to unnecessary code, which may cause confusion,

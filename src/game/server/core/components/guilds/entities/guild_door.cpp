@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_door.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 #include "game/server/core/components/guilds/guild_data.h"

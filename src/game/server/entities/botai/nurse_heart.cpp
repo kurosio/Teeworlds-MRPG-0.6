@@ -7,7 +7,7 @@
 // Constructor for CNurseHeart class
 // Takes a pointer to a CGameWorld object and a ClientID as parameters
 CNurseHeart::CNurseHeart(CGameWorld* pGameWorld, int ClientID)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_EVENTS, {}, 0.0f) // Call CEntity constructor with appropriate parameters
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_OTHER, {}, 0.0f) // Call CEntity constructor with appropriate parameters
 {
 	// Check if ClientID is valid for CNurseHeart class
 	dbg_assert(ClientID >= MAX_PLAYERS, "CNurseHeart only for bot's");

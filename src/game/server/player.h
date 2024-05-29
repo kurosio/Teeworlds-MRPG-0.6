@@ -10,10 +10,9 @@
 
 #include "entities/character.h"
 
-#include "class_data.h"
 #include "core/utilities/cooldown.h"
 #include "core/utilities/vote_wrapper.h"
-#include "core/utilities/vote_optional.h"
+#include "class_data.h"
 
 enum
 {
@@ -125,6 +124,7 @@ public:
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
 	virtual StateSnapping IsActiveForClient(int ClientID) const { return STATE_SNAPPING_FULL; }
 	virtual int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
+	virtual bool IsEquipped(ItemFunctional EquipID) const;
 	virtual int GetAttributeSize(AttributeIdentifier ID) const;
 	float GetAttributePercent(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);

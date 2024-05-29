@@ -12,7 +12,6 @@
 #include <engine/storage.h>
 
 #include <engine/shared/compression.h>
-#include <engine/shared/config.h>
 #include <engine/shared/econ.h>
 #include <engine/shared/json.h>
 #include <engine/shared/http.h>
@@ -22,6 +21,7 @@
 #include <engine/shared/protocol_ex.h>
 #include <engine/shared/snapshot.h>
 #include <mastersrv/mastersrv.h>
+#include <teeother/components/localization.h>
 #include "snapshot_ids_pool.h"
 #include "register.h"
 #include "server.h"
@@ -1926,8 +1926,20 @@ int CServer::Run(ILogger* pLogger)
 	if(m_RunServer == UNINITIALIZED)
 		m_RunServer = RUNNING;
 
-	// initilize
+	// initilize instance data
 	Instance::Data::g_pServer = static_cast<IServer*>(this);
+
+	// initialize fmt localize function
+	fmt_use_flags(FMTFLAG_DIGIT_COMMAS | FMTFLAG_HANDLE_ARGS);
+	fmt_init_handler_func(&CServer::CallbackLocalize, this);
+
+	// initilize localization
+	m_pLocalization = new CLocalization();
+	if(!m_pLocalization->Init())
+	{
+		dbg_msg("localization", "could not initialize localization");
+		return -1;
+	}
 
 	// loading maps to memory
 	char aBuf[256];
@@ -2469,6 +2481,12 @@ void CServer::ConchainStdoutOutputLevel(IConsole::IResult* pResult, void* pUserD
 		// Set the log filter of the stdout logger using the output level from the configuration
 		pSelf->m_pStdoutLogger->SetFilter(CLogFilter { IConsole::ToLogLevelFilter(g_Config.m_StdoutOutputLevel) });
 	}
+}
+
+std::string CServer::CallbackLocalize(int ClientID, const char* pText, void* pUser)
+{
+	IServer* pServer = static_cast<IServer*>(pUser);
+	return pServer->Localize(ClientID, pText);
 }
 
 // This function is used to register commands for the server

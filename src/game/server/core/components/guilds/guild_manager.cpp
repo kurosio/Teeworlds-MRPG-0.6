@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_manager.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 #include "entities/guild_door.h"
@@ -62,17 +61,18 @@ void CGuildManager::OnTick()
 	if(GS()->GetWorldID() != MAIN_WORLD_ID)
 		return;
 
-	// handle one second
+	// update guild wars
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 	{
-		// update guild wars
 		for(auto& pWarHandler : CGuildWarHandler::Data())
 			pWarHandler->Handle();
+	}
 
-		// update guild houses text
-		int LifeTime = (Server()->TickSpeed() * 10);
+	// update guild houses text
+	if(Server()->Tick() % g_Config.m_SvUpdateEntityTextNames == 0)
+	{
 		for(const auto& p : CGuildHouse::Data())
-			p->TextUpdate(LifeTime);
+			p->UpdateText(g_Config.m_SvUpdateEntityTextNames);
 	}
 }
 

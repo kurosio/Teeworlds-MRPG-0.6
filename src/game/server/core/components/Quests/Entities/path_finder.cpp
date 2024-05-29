@@ -8,7 +8,7 @@
 #include <game/server/core/entities/tools/path_navigator.h>
 
 CEntityPathArrow::CEntityPathArrow(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_FINDQUEST, SearchPos, 0, ClientID)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_FINDER, SearchPos, 0, ClientID)
 {
 	vec2 GetterPos{0,0};
 	GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos, &GetterPos);

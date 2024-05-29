@@ -54,13 +54,13 @@ public:
 		m_Data = std::move(Data);
 		Tools::Json::parseFromString(m_Data, [this](nlohmann::json& pJson)
 		{
-			// try initialize harversing
+			// try to initialize harversing
 			m_Harvesting = HarvestingData{
 				pJson.value("harvesting", nlohmann::json::object()).value("level", 1),
 				pJson.value("harvesting", nlohmann::json::object()).value("health", 100)
 			};
 
-			// try initialize random box
+			// try to initialize random box
 			for(auto& p : pJson["random_box"])
 				m_RandomBox.Add(p.value("item_id", -1), p.value("value", 1), p.value("chance", 100.0f));
 		});

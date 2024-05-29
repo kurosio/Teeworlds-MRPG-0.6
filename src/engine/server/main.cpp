@@ -11,9 +11,7 @@
 
 #include <engine/server/server.h>
 #include <engine/server/server_logger.h>
-
 #include <engine/shared/assertion_logger.h>
-#include <engine/shared/config.h>
 
 #include "multi_worlds.h"
 
@@ -145,13 +143,6 @@ int main(int argc, const char** argv)
 		pConsole->ExecuteFile(AUTOEXEC_FILE, -1, true);
 	}
 
-	pServer->m_pLocalization = new CLocalization();
-	if(!pServer->m_pLocalization->Init())
-	{
-		dbg_msg("localization", "could not initialize localization");
-		return -1;
-	}
-
 	if(!pServer->MultiWorlds()->LoadWorlds(pKernel, pStorage, pConsole))
 	{
 		dbg_msg("server", "failed to load worlds");
@@ -191,7 +182,6 @@ int main(int argc, const char** argv)
 
 	// free
 	pServerLogger->OnServerDeletion();
-	delete pServer->m_pLocalization;
 	delete pKernel;
 
 	secure_random_uninit();

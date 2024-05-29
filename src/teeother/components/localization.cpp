@@ -1,7 +1,6 @@
 #include "localization.h"
 
 #include <engine/storage.h>
-#include <engine/shared/config.h>
 #include <engine/shared/linereader.h>
 
 constexpr auto g_pMotherLanguageFile = "en";

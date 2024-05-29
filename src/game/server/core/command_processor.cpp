@@ -1,9 +1,6 @@
 ﻿#include "command_processor.h"
 
-#include <engine/console.h>
 #include <engine/server.h>
-#include <engine/shared/config.h>
-
 #include <game/server/core/components/Accounts/AccountManager.h>
 #include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/houses/house_manager.h>
@@ -249,7 +246,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			{
 				bool State = pDoorManager->GetContainer()[Number]->IsClosed();
 				pGS->Chat(ClientID, "Number: {}. Name: {} ({})", 
-					Number, Door->GetName(), State ? Instance::Server()->Localize(ClientID, "closed") : Instance::Server()->Localize(ClientID, "opened"));
+					Number, Door->GetName(), State ? Instance::Localize(ClientID, "closed") : Instance::Localize(ClientID, "opened"));
 			}
 			return;
 		}
@@ -418,7 +415,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		return;
 	}
 
-	const char* Status = (pGroup ? pServer->Localize(ClientID, "in a group") : pServer->Localize(ClientID, "not in a group"));
+	const char* Status = (pGroup ? Instance::Localize(ClientID, "in a group") : Instance::Localize(ClientID, "not in a group"));
 	pGS->Chat(ClientID, "{} Group system {}", Tools::Aesthetic::B_PILLAR(8, false), Tools::Aesthetic::B_PILLAR(8, true));
 	pGS->Chat(ClientID, "Current status: {}!", Status);
 	pGS->Chat(ClientID, "/group create - create a new group");

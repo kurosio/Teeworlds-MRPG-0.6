@@ -3,9 +3,6 @@
 #ifndef GAME_SERVER_CORE_UTILITIES_VOTE_WRAPPER_H
 #define GAME_SERVER_CORE_UTILITIES_VOTE_WRAPPER_H
 
-#include <game/voting.h>
-#include "format.h"
-
 // forward declarations
 class CGS;
 class CPlayer;
@@ -110,7 +107,7 @@ class CVoteGroup
 
 };
 
-#define FMT_LOCALIZE_STR(clientid, text, args) Tools::String::FormatLocalize(clientid, text, args).c_str()
+#define FMT_LOCALIZE_STR(clientid, text, args) fmt_handle(clientid, text, args).c_str()
 
 /**
 	 * @brief The VoteWrapper class provides a convenient way to create and manage voting options and groups.

@@ -1,12 +1,13 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "healer_health.h"
-
 #include "hearth.h"
+
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 CHealthHealer::CHealthHealer(CGameWorld *pGameWorld, CPlayer* pPlayer, int SkillBonus, int PowerLevel, vec2 Pos)
-: CEntity(pGameWorld, CGameWorld::ENTYPE_SKILLTURRETHEART, Pos)
+: CEntity(pGameWorld, CGameWorld::ENTYPE_HEALTH_TURRET, Pos)
 {
 	m_Pos = Pos;
 	m_pPlayer = pPlayer;
@@ -63,7 +64,7 @@ void CHealthHealer::Tick()
 	{
 		char aBuf[16];
 		str_format(aBuf, sizeof(aBuf), "%dHP", HealthRestore);
-		GS()->CreateText(NULL, false, vec2(m_Pos.x, m_Pos.y - 96.0f), vec2(0, 0), 40, aBuf);
+		GS()->EntityManager()->Text(m_Pos + vec2(0, -96), 40, aBuf);
 	}
 }
 

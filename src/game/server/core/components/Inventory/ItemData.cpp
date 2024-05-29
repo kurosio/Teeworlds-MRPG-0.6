@@ -3,7 +3,7 @@
 #include "ItemData.h"
 
 #include <game/server/gamecontext.h>
-
+#include <game/server/entity_manager.h>
 #include "game/server/core/components/Eidolons/EidolonManager.h"
 
 CGS* CPlayerItem::GS() const
@@ -287,7 +287,7 @@ bool CPlayerItem::Use(int Value)
 			GetPlayer()->m_aPlayerTick[PotionRecast] = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 
 			GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
-			GS()->CreateText(nullptr, false, vec2(GetPlayer()->m_ViewPos.x, GetPlayer()->m_ViewPos.y - 140.0f), vec2(), 70, pHeal->getEffect());
+			GS()->EntityManager()->Text(GetPlayer()->m_ViewPos + vec2(0, -140.0f), 70, pHeal->getEffect());
 		}
 		return true;
 	}
@@ -317,7 +317,7 @@ bool CPlayerItem::Drop(int Value)
 	if(Remove(Value))
 	{
 		DropItem.m_Value = Value;
-		GS()->CreateDropItem(m_pCharacter->m_Core.m_Pos, -1, static_cast<CItem>(DropItem), Force);
+		GS()->EntityManager()->DropItem(m_pCharacter->m_Core.m_Pos, -1, static_cast<CItem>(DropItem), Force);
 		return true;
 	}
 	return false;

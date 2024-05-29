@@ -7,7 +7,7 @@
 #include <base/tl/base.h>
 
 CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItem DropItem, int OwnerID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_DROPITEM, Pos, 28.0f)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_ITEM_DROP, Pos, 28.0f)
 {
 	m_Pos = Pos;
 	m_Vel = Vel;

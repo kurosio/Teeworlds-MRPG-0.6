@@ -11,7 +11,7 @@ constexpr unsigned int s_Particles = 4;
 
 CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, const QuestBotInfo::TaskAction& TaskMoveTo, int ClientID, int QuestID, bool* pComplete,
 		bool AutoCompletesQuestStep, CPlayerBot* pDefeatMobPlayer)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO, TaskMoveTo.m_Position, 32.f, ClientID), m_QuestID(QuestID), m_pTaskMoveTo(&TaskMoveTo)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, TaskMoveTo.m_Position, 32.f, ClientID), m_QuestID(QuestID), m_pTaskMoveTo(&TaskMoveTo)
 {
 	// Initialize base
 	m_Radius = GetProximityRadius();
@@ -232,12 +232,12 @@ void CEntityQuestAction::HandleBroadcastInformation() const
 	if(pRequireItem.IsValid())
 	{
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pRequireItem.GetID());
-		strBuffer += Tools::String::FormatLocalize(m_ClientID, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue()) + "\n";
+		strBuffer += fmt_handle(m_ClientID, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue()) + "\n";
 	}
 	if(pPickupItem.IsValid())
 	{
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pPickupItem.GetID());
-		strBuffer += Tools::String::FormatLocalize(m_ClientID, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue()) + "\n";
+		strBuffer += fmt_handle(m_ClientID, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue()) + "\n";
 	}
 
 	// select by type

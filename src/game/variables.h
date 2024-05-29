@@ -98,6 +98,7 @@ MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERV
 MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50, 10, 100000, CFGFLAG_SERVER, "The size of the product is how much the player can wear.")
 MACRO_CONFIG_INT(SvDailyQuestAlliedSealsReward, sv_daily_quest_allied_seals_reward, 100, 5, 100000, CFGFLAG_SERVER, "Reward allied seals each daily quest.")
 MACRO_CONFIG_INT(SvAmountHarvestingOnTile, sv_amount_harvesting_on_tile, 2, 1, 4, CFGFLAG_SERVER, "Amount harvesting item on tile.")
+MACRO_CONFIG_INT(SvUpdateEntityTextNames, sv_update_ent_text_names, 50, 25, 1000, CFGFLAG_SERVER, "Update entities text names.")
 
 // auction
 MACRO_CONFIG_INT(SvMaxAuctionPlayerSlots, sv_max_auction_player_slots, 5, 1, 1000, CFGFLAG_SERVER, "Max player auction slots")
@@ -117,7 +118,6 @@ MACRO_CONFIG_INT(SvMultiplierExpRaidDungeon, sv_multiplier_exp_raid_dungeon, 150
 MACRO_CONFIG_INT(SvLossGoldAtDeath, sv_loss_gold_at_death, 5, 0, 100, CFGFLAG_SERVER, "Gold loss on death from a player in %")
 MACRO_CONFIG_INT(SvArrestGoldAtDeath, sv_arrest_gold_at_death, 30, 0, 100, CFGFLAG_SERVER, "Gold loss on death from the kill list")
 MACRO_CONFIG_INT(SvMaxIncreasedChairGolds, sv_max_increased_chair_golds, 10000, 1000, 10000000, CFGFLAG_SERVER, "Max can increased chair golds by multiplier")
-
 MACRO_CONFIG_INT(SvStrongGold, sv_strong_gold, 2, 0, 5, CFGFLAG_SERVER, "Level mobs / strong gold")
 MACRO_CONFIG_INT(SvStrongAntiPVP, sv_strong_anti_pvp, 50, 0, 10000, CFGFLAG_SERVER, "Anti-PVP Difference classing leveling for denied.")
 

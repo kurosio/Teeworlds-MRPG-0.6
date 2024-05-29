@@ -1,8 +1,6 @@
 #ifndef TEEOTHER_COMPONENTS_LOCALIZATION_H
 #define TEEOTHER_COMPONENTS_LOCALIZATION_H
 
-#include <teeother/tl/hashtable.h>
-
 class CLocalization
 {
 public:

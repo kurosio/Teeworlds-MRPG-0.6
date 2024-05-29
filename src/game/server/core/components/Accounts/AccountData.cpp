@@ -2,8 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "AccountData.h"
 
-#include <engine/shared/config.h>
-
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/houses/house_data.h>
 #include <game/server/core/components/Groups/GroupData.h>
@@ -306,7 +305,7 @@ void CAccountData::AddExperience(int Value)
 			// Create death effect, sound, and level up text
 			GS()->CreateDeath(pChar->m_Core.m_Pos, m_ClientID);
 			GS()->CreateSound(pChar->m_Core.m_Pos, 4);
-			GS()->CreateText(pChar, false, vec2(0, -40), vec2(0, -1), 30, "level up");
+			GS()->EntityManager()->Text(pChar->GetPos() + vec2(0, -40), 30, "level up");
 		}
 
 		// Display level up message

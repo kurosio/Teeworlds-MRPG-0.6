@@ -2,14 +2,14 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "AccountManager.h"
 
-#include <engine/shared/config.h>
+#include <base/hash_ctxt.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 #include <game/server/core/components/mails/mailbox_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
 
-#include <base/hash_ctxt.h>
+#include <teeother/components/localization.h>
 
 int CAccountManager::GetLastVisitedWorldID(CPlayer* pPlayer) const
 {
@@ -339,7 +339,7 @@ bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		VLanguage.Add("Active language: [{}]", pPlayerLanguage);
 		VLanguage.AddLine();
 
-		// languages
+		// languages TODO fix language selection
 		VoteWrapper VLanguages(ClientID, VWF_SEPARATE_OPEN, "Available languages");
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{

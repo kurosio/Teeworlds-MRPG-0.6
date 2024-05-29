@@ -2,8 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
-#include <game/server/core/tools/dbfield.h>
-
 #include "guild_house_data.h"
 #include "guild_war_data.h"
 

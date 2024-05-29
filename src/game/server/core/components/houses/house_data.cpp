@@ -4,6 +4,7 @@
 
 #include "entities/house_door.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/entities/items/harvesting_item.h>
 #include <game/server/core/entities/tools/draw_board.h>
@@ -133,20 +134,15 @@ void CHouse::Sell()
 	GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {}] have been sold!**", m_ID);
 }
 
-void CHouse::TextUpdate(int LifeTime)
+void CHouse::UpdateText(int Lifetime) const
 {
 	// check valid vector and now time
-	if(is_negative_vec(m_TextPosition) || m_LastTickTextUpdated > Server()->Tick())
+	if(is_negative_vec(m_TextPosition))
 		return;
 
 	// initialize variable with name
-	std::string Name = "FREE HOUSE";
-	if(HasOwner())
-		Name = Server()->GetAccountNickname(m_AccountID);
-
-	// try create new text object
-	if(GS()->CreateText(nullptr, false, m_TextPosition, {}, LifeTime - 5, Name.c_str()))
-		m_LastTickTextUpdated = Server()->Tick() + LifeTime;
+	const char* pName = HasOwner() ? Server()->GetAccountNickname(m_AccountID) : "FREE HOUSE";
+	GS()->EntityManager()->Text(m_TextPosition, Lifetime - 5, pName);
 }
 
 void CHouse::HandleTimePeriod(TIME_PERIOD Period)

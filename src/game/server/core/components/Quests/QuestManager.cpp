@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "QuestManager.h"
 
-#include <engine/shared/config.h>
 #include <game/server/gamecontext.h>
 
 constexpr auto TW_QUESTS_DAILY_BOARD = "tw_quests_daily_boards";

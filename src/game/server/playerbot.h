@@ -2,15 +2,16 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_PLAYER_BOT_H
 #define GAME_SERVER_PLAYER_BOT_H
-
 #include "player.h"
 
-#include "core/utilities/pathfinder_data.h"
+// forward declarations
+class CPathFinderPrepare;
 
 class CPlayerBot : public CPlayer
 {
 	MACRO_ALLOC_POOL_ID()
 
+	CPathFinderPrepare* m_pPathFinderData;
 	int m_BotType;
 	int m_BotID;
 	int m_MobID;
@@ -37,10 +38,11 @@ public:
 	int m_LastPosTick;
 	vec2 m_TargetPos;
 	vec2 m_OldTargetPos;
-	CPathFinderPrepared m_PathFinderData;
 
 	CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPoint);
 	~CPlayerBot() override;
+
+	CPathFinderPrepare* PathFinderPrepared() const { return m_pPathFinderData; }
 
 	void InitQuestBotMobInfo(CQuestBotMobInfo elem);
 	CQuestBotMobInfo& GetQuestBotMobInfo() { return m_QuestMobInfo; }

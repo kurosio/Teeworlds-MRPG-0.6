@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_COMPONENT_GROUP_DATA_H
 #define GAME_SERVER_COMPONENT_GROUP_DATA_H
-#include <game/server/core/tools/dbset.h>
 
 #define TW_GROUPS_TABLE "tw_groups"
 

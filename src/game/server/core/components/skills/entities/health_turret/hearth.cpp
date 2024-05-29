@@ -2,10 +2,11 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "hearth.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 CHearth::CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel, bool ShowInformation)
-: CEntity(pGameWorld, CGameWorld::ENTYPE_HEARTLIFE, Pos)
+: CEntity(pGameWorld, CGameWorld::ENTYPE_HEALTH, Pos)
 {
 	// set the values by arguments
 	m_Pos = Pos;
@@ -46,7 +47,7 @@ void CHearth::Tick()
 	{
 		char aBuf[64];
 		str_format(aBuf, sizeof(aBuf), "%dHP", m_Health);
-		GS()->CreateText(NULL, false, vec2(m_Pos.x, m_Pos.y - 96.0f), vec2(0, 0), 20, aBuf);
+		GS()->EntityManager()->Text(m_Pos + vec2(0, -96), 20, aBuf);
 	}
 
 	GameWorld()->DestroyEntity(this);

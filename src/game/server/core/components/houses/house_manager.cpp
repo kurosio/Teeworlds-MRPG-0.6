@@ -2,11 +2,12 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "house_manager.h"
 
-#include "entities/house_door.h"
-
 #include <game/server/core/components/Inventory/InventoryManager.h>
 #include <game/server/gamecontext.h>
 
+#include "entities/house_door.h"
+
+constexpr int g_UpdateTextLifeTime = SERVER_TICK_SPEED * 2;
 
 void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 {
@@ -33,19 +34,15 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 
 void CHouseManager::OnTick()
 {
-	// Check if the current world ID is not equal to the main world (once use House get instance object self world id) ID and current tick
-	if(GS()->GetWorldID() != MAIN_WORLD_ID || (Server()->Tick() % Server()->TickSpeed() != 0))
+	// check if we are in the main world
+	if(GS()->GetWorldID() != MAIN_WORLD_ID)
 		return;
 
-	// Calculate the remaining lifetime of a text update
-	int LifeTime = (Server()->TickSpeed() * 10);
-
-	// Get the house data
-	const auto& HouseData = CHouse::Data();
-	for(const auto& p : HouseData)
+	// update houses text
+	if(Server()->Tick() % g_Config.m_SvUpdateEntityTextNames == 0)
 	{
-		// Update the text with the remaining lifetime
-		p->TextUpdate(LifeTime);
+		for(const auto& p : CHouse::Data())
+			p->UpdateText(g_Config.m_SvUpdateEntityTextNames);
 	}
 }
 

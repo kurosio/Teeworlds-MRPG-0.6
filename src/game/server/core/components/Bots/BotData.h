@@ -6,8 +6,6 @@
 #include <game/server/core/components/Inventory/ItemData.h>
 #include "DialogsData.h"
 
-#include <game/server/core/tools/dbset.h>
-
 /************************************************************************/
 /*  Global data information bot                                         */
 /************************************************************************/

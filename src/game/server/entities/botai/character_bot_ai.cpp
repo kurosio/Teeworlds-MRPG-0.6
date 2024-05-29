@@ -1,7 +1,6 @@
 /* (c) Alexandre Díaz. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-
-#include <engine/shared/config.h>
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 #include <game/server/playerbot.h>
 #include "character_bot_ai.h"
@@ -154,7 +153,9 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 	// Random create experience point's
 	if(rand() % 10 == 0)
-		GS()->CreateDropBonuses(m_Core.m_Pos, 1, 1, 1, Force);
+	{
+		GS()->EntityManager()->DropBonus(m_Core.m_Pos, POWERUP_ARMOR, 0, 1, 1, Force);
+	}
 
 	// Check if the bot type of pFrom is TYPE_BOT_MOB and if the target of AI is empty
 	if(pFrom && m_pBotPlayer->GetBotType() != pFrom->GetBotType() && AI()->GetTarget()->IsEmpty())
@@ -228,8 +229,8 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	if(pPlayer->IsAfk())
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "You get reduced rewards, due to farming mobs afk.");
+		GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, 1, Force);
 		pPlayer->Account()->AddGold(1);
-		GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, 1, Force);
 		return;
 	}
 
@@ -240,11 +241,11 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	// grinding experience
 	const int ExperienceMob = maximum(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
 	const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
-	GS()->CreateParticleExperience(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
+	GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
 
 	// drop experience
 	const int ExperienceDrop = maximum(ExperienceWithMultiplier / 2, 1);
-	GS()->CreateDropBonuses(m_Core.m_Pos, 1, ExperienceDrop, (1 + rand() % 2), Force);
+	GS()->EntityManager()->DropBonus(m_Core.m_Pos, POWERUP_ARMOR, 0, ExperienceDrop, (1 + rand() % 2), Force);
 
 	// drop item's
 	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
@@ -258,7 +259,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 		const float RandomDrop = clamp(MobBotInfo::ms_aMobBot[SubID].m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
 		const vec2 ForceRandom(centrelized_frandom(Force.x, Force.x / 4.0f), centrelized_frandom(Force.y, Force.y / 8.0f));
-		GS()->CreateRandomDropItem(m_Core.m_Pos, ClientID, RandomDrop, DropItem, ForceRandom);
+		GS()->EntityManager()->RandomDropItem(m_Core.m_Pos, ClientID, RandomDrop, DropItem, ForceRandom);
 	}
 
 	// skill point
@@ -806,8 +807,8 @@ void CCharacterBotAI::EngineQuestMob()
 void CCharacterBotAI::Move()
 {
 	// Try to get the prepared data for the path finder
-	if(GS()->PathFinder()->Handle()->TryGetPreparedData(&m_pBotPlayer->m_PathFinderData, &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos))
-		m_aPath = m_pBotPlayer->m_PathFinderData.Get().m_Points;
+	if(GS()->PathFinder()->Handle()->TryGetPreparedData(m_pBotPlayer->PathFinderPrepared(), &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos))
+		m_aPath = m_pBotPlayer->PathFinderPrepared()->Get().m_Points;
 
 	// Update the aim of the bot player by calculating the direction vector from the current position to the target position
 	SetAim(m_pBotPlayer->m_TargetPos - m_Pos);
@@ -1269,7 +1270,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 			// information
 			vec2 DrawPosition = vec2(pPlayer->GetCharacter()->m_Core.m_Pos.x, pPlayer->GetCharacter()->m_Core.m_Pos.y - 90.0f);
 			str_format(aBuf, sizeof(aBuf), "%dHP", Health);
-			GS()->CreateText(nullptr, false, DrawPosition, vec2(0, 0), 40, aBuf);
+			GS()->EntityManager()->Text(DrawPosition, 40, aBuf);
 		}
 	}
 	return PlayerFinding;

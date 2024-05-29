@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_CORE_MMO_CONTEXT_H
 #define GAME_SERVER_CORE_MMO_CONTEXT_H
-#include "teeother/flat_hash_map/flat_hash_map.h"
 
 enum class WorldType : int
 {

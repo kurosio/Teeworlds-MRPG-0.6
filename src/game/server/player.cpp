@@ -3,7 +3,6 @@
 #include "player.h"
 
 #include "gamecontext.h"
-#include "engine/shared/config.h"
 #include "worldmodes/dungeon.h"
 
 #include "core/components/Accounts/AccountManager.h"
@@ -20,7 +19,8 @@
 #include "core/components/Groups/GroupData.h"
 #include "core/components/worlds/world_data.h"
 #include "core/entities/tools/draw_board.h"
-#include "core/utilities/format.h"
+
+#include "core/utilities/vote_optional.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -818,7 +818,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 
 	std::string ProgressBar = Tools::String::progressBar(100, LevelPercent, 10, ":", " ");
 	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%-150s",
-		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, Tools::String::FormatDigit(Gold).c_str(), aRecastInfo, pAppendStr);
+		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, fmt_digit(Gold).c_str(), aRecastInfo, pAppendStr);
 }
 
 /* #########################################################################
@@ -934,6 +934,11 @@ int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 
 	// Return -1 if no equipped item with the specified functionality was found
 	return -1;
+}
+
+bool CPlayer::IsEquipped(ItemFunctional EquipID) const
+{
+	return GetEquippedItemID(EquipID, -1) != -1;
 }
 
 int CPlayer::GetAttributeSize(AttributeIdentifier ID) const

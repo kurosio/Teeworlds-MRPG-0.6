@@ -4,7 +4,6 @@
 
 #include <engine/storage.h>
 #include <engine/map.h>
-#include <engine/shared/config.h>
 
 #include <game/gamecore.h>
 #include <game/layers.h>
@@ -13,11 +12,10 @@
 #include "worldmodes/default.h"
 #include "worldmodes/tutorial.h"
 
+#include "entity_manager.h"
 #include "core/command_processor.h"
 #include "core/utilities/pathfinder.h"
-#include "core/entities/items/drop_bonuses.h"
 #include "core/entities/items/drop_items.h"
-#include "core/entities/tools/loltext.h"
 #include "core/entities/tools/laser_orbite.h"
 
 #include "core/components/Accounts/AccountManager.h"
@@ -56,6 +54,7 @@ CGS::CGS()
 	m_pCommandProcessor = nullptr;
 	m_pPathFinder = nullptr;
 	m_pLayers = nullptr;
+	m_pEntityManager = nullptr;
 }
 
 CGS::~CGS()
@@ -74,6 +73,7 @@ CGS::~CGS()
 	delete m_pCommandProcessor;
 	delete m_pPathFinder;
 	delete m_pLayers;
+	delete m_pEntityManager;
 }
 
 class CCharacter* CGS::GetPlayerChar(int ClientID) const
@@ -149,12 +149,6 @@ CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
 	const auto& p = std::find_if(CEidolonInfoData::Data().begin(), CEidolonInfoData::Data().end(), [ItemID](CEidolonInfoData& p){ return p.GetItemID() == ItemID; });
 	return p != CEidolonInfoData::Data().end() ? &(*p) : nullptr;
 }
-
-CFlyingPoint* CGS::CreateFlyingPoint(vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
-{
-	return new CFlyingPoint(&m_World, Pos, InitialVel, ClientID, FromID);
-}
-
 
 /* #########################################################################
 	EVENTS
@@ -527,6 +521,7 @@ void CGS::OnInit(int WorldID)
 	m_pLayers = new CLayers();
 	m_pLayers->Init(Kernel(), WorldID);
 	m_Collision.Init(m_pLayers);
+	m_pEntityManager = new CEntityManager(this);
 	m_pMmoController = new CMmoController(this);
 	m_pMmoController->LoadLogicWorld();
 
@@ -1545,57 +1540,6 @@ int CGS::CreateBot(short BotType, int BotID, int SubID)
 	return BotClientID;
 }
 
-// create lol text in the world
-bool CGS::CreateText(CEntity* pParent, bool Follow, vec2 Pos, vec2 Vel, int Lifespan, const char* pText)
-{
-	if(!IsPlayersNearby(Pos, 800))
-		return false;
-
-	CLoltext Text;
-	Text.Create(&m_World, pParent, Pos, Vel, Lifespan, pText, true, Follow);
-	return true;
-}
-
-// creates a particle of experience that follows the player
-void CGS::CreateParticleExperience(vec2 Pos, int ClientID, int Experience, vec2 Force)
-{
-	CFlyingPoint* pPoint = CreateFlyingPoint(Pos, Force, ClientID);
-	pPoint->Register([Experience](CFlyingPoint*, CPlayer*, CPlayer* pPlayer)
-	{
-		pPlayer->Account()->AddExperience(Experience);
-	});
-}
-
-// gives a bonus in the position type and quantity and the number of them.
-void CGS::CreateDropBonuses(vec2 Pos, int Type, int Value, int NumDrop, vec2 Force)
-{
-	for(int i = 0; i < NumDrop; i++)
-	{
-		vec2 Vel = Force;
-		Vel.x += random_float(15.0f);
-		Vel.y += random_float(15.0f);
-		new CDropBonuses(&m_World, Pos, Vel, Type, Value);
-	}
-}
-
-// lands items in the position type and quantity and their number themselves
-void CGS::CreateDropItem(vec2 Pos, int ClientID, CItem DropItem, vec2 Force)
-{
-	if(DropItem.GetID() <= 0 || DropItem.GetValue() <= 0)
-		return;
-
-	const float Angle = angle(normalize(Force));
-	new CDropItem(&m_World, Pos, Force, Angle, DropItem, ClientID);
-}
-
-// random drop of the item with percentage
-void CGS::CreateRandomDropItem(vec2 Pos, int ClientID, float Chance, CItem DropItem, vec2 Force)
-{
-	const float RandomDrop = random_float(100.0f);
-	if(RandomDrop < Chance)
-		CreateDropItem(Pos, ClientID, DropItem, Force);
-}
-
 bool CGS::TakeItemCharacter(int ClientID)
 {
 	CPlayer* pPlayer = GetPlayer(ClientID, true, true);
@@ -1603,7 +1547,7 @@ bool CGS::TakeItemCharacter(int ClientID)
 		return false;
 
 	std::vector<CDropItem*> vDrops;
-	for(CEntity* item : m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 64, 64, CGameWorld::ENTTYPE_DROPITEM))
+	for(CEntity* item : m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 64, 64, CGameWorld::ENTTYPE_ITEM_DROP))
 		vDrops.push_back((CDropItem*)item);
 
 	for(const auto& pDrop : vDrops)

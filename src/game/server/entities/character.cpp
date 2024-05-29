@@ -1,9 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "character.h"
-#include <engine/shared/config.h>
 #include <generated/server_data.h>
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 #include "laser.h"
@@ -776,7 +776,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		// Swap loss gold near Killer and Player
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
 		{
-			GS()->CreateDropItem(m_Pos, Killer, { itGold, LossGold }, Force);
+			GS()->EntityManager()->DropItem(m_Pos, Killer, { itGold, LossGold }, Force);
 			GS()->Chat(ClientID, "You lost {}%({}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
 		}
 	}
@@ -1162,7 +1162,7 @@ bool CCharacter::InteractiveHammer(vec2 Direction, vec2 ProjStartPos)
 	if(GS()->TakeItemCharacter(m_pPlayer->GetCID()))
 		return true;
 
-	if(CEntityHarvestingItem* pJobItem = (CEntityHarvestingItem*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_JOBITEMS, nullptr))
+	if(CEntityHarvestingItem* pJobItem = (CEntityHarvestingItem*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_HERVESTING_ITEM, nullptr))
 	{
 		pJobItem->Process(m_pPlayer->GetCID());
 		m_ReloadTimer = Server()->TickSpeed() / 3;
