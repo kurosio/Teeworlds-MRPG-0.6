@@ -14,7 +14,7 @@ class CEntityDropBonuses : public CEntity
 	CFlashingTick m_Flash;
 
 public:
-	CEntityDropBonuses::CEntityDropBonuses(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, int Type, int Subtype, int Value);
+	CEntityDropBonuses(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, int Type, int Subtype, int Value);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
