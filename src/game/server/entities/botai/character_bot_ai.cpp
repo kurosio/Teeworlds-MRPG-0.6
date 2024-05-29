@@ -242,7 +242,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// grinding experience
 	const int ExperienceMob = maximum(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
-	const int ExperienceWithMultiplier = GS()->GetExperienceMultiplier(ExperienceMob);
+	const int ExperienceWithMultiplier = GS()->GetExpMultiplier(ExperienceMob);
 	GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
 
 	// drop experience

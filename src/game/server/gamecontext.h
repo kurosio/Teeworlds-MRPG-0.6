@@ -23,7 +23,7 @@ class CGS : public IGameServer
 	class CLayers* m_pLayers;
 	class CEntityManager* m_pEntityManager;
 
-	static int m_MultiplierExp;
+	int m_MultiplierExp;
 	CBroadcastState m_aBroadcastStates[MAX_PLAYERS];
 	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
@@ -214,7 +214,7 @@ public:
 
 	int GetWorldID() const { return m_WorldID; }
 	bool IsWorldType(WorldType Type) const;
-	int GetExperienceMultiplier(int Experience) const;
+	int GetExpMultiplier(int Experience) const;
 	bool IsPlayerEqualWorld(int ClientID, int WorldID = -1) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 	vec2 GetJailPosition() const { return m_JailPosition; }
@@ -229,6 +229,7 @@ private:
 	void InitZones();
 	void SendDayInfo(int ClientID);
 	void ShowVotesNewbieInformation(int ClientID);
+	void UpdateExpMultiplier();
 
 	static void ConSetWorldTime(IConsole::IResult *pResult, void *pUserData);
 	static void ConItemList(IConsole::IResult *pResult, void *pUserData);

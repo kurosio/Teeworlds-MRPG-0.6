@@ -28,8 +28,6 @@
 #include "core/components/worlds/world_data.h"
 #include "core/utilities/vote_wrapper.h"
 
-int CGS::m_MultiplierExp = 100;
-
 CGS::CGS()
 {
 	for(auto& pBroadcastState : m_aBroadcastStates)
@@ -599,29 +597,21 @@ void CGS::OnTickGlobal()
 	// Check if the day enum type has changed
 	if(m_DayEnumType != Server()->GetEnumTypeDay())
 	{
-		// Update the day enum type
 		m_DayEnumType = Server()->GetEnumTypeDay();
 
-		// Check if the day enum type is NIGHT_TYPE
+		// is nighttype
 		if(m_DayEnumType == NIGHT_TYPE)
 		{
-			// Go through each player and handle their time period
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
 				if(CPlayer* pPlayer = GetPlayer(i, true))
 					Core()->HandlePlayerTimePeriod(pPlayer);
+				SendDayInfo(i);
 			}
-
-			// Set the experience multiplier to a random value within the range [100, 300)
-			m_MultiplierExp = 100 + maximum(20, rand() % 200);
-		}
-		else
-		{
-			// Set the experience multiplier to 100
-			m_MultiplierExp = 100;
 		}
 
-		// Send the updated day information to all players
+		// update multiplier info
+		UpdateExpMultiplier();
 		SendDayInfo(-1);
 	}
 
@@ -1118,7 +1108,6 @@ void CGS::OnUpdateClientServerInfo(nlohmann::json* pJson, int ClientID)
 	(*pJson)["team"] = pPlayer->GetTeam();
 }
 
-// change the world
 void CGS::OnClientPrepareChangeWorld(int ClientID)
 {
 	if(m_apPlayers[ClientID])
@@ -1127,6 +1116,7 @@ void CGS::OnClientPrepareChangeWorld(int ClientID)
 		delete m_apPlayers[ClientID];
 		m_apPlayers[ClientID] = nullptr;
 	}
+
 	const int AllocMemoryCell = ClientID + m_WorldID * MAX_CLIENTS;
 	m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
 }
@@ -1145,7 +1135,7 @@ bool CGS::IsClientReady(int ClientID) const
 bool CGS::IsClientPlayer(int ClientID) const
 {
 	CPlayer* pPlayer = GetPlayer(ClientID);
-	return pPlayer && pPlayer->GetTeam() == TEAM_SPECTATORS ? false : true;
+	return !pPlayer || pPlayer->GetTeam() != TEAM_SPECTATORS;
 }
 
 bool CGS::IsClientCharacterExist(int ClientID) const
@@ -1174,7 +1164,6 @@ int CGS::GetClientVersion(int ClientID) const
 const char* CGS::Version() const { return GAME_VERSION; }
 const char* CGS::NetVersion() const { return GAME_NETVERSION; }
 
-// clearing all data at the exit of the client necessarily call once enough
 void CGS::OnClearClientData(int ClientID)
 {
 	Core()->ResetClientData(ClientID);
@@ -1433,10 +1422,6 @@ void CGS::ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IC
 	}
 }
 
-/* #########################################################################
-	VOTING MMO GAMECONTEXT
-######################################################################### */
-// information for unauthorized players
 void CGS::ShowVotesNewbieInformation(int ClientID)
 {
 	CPlayer* pPlayer = GetPlayer(ClientID);
@@ -1485,6 +1470,22 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 	}
 }
 
+void CGS::UpdateExpMultiplier()
+{
+	// is dungeon
+	if(Server()->GetWorldDetail(m_WorldID)->GetType() == WorldType::Dungeon)
+	{
+		m_MultiplierExp = g_Config.m_SvMultiplierExpRaidDungeon;
+		return;
+	}
+
+	// is nighttype
+	if(m_DayEnumType == NIGHT_TYPE)
+		m_MultiplierExp = (100 + maximum(20, rand() % 200));
+	else
+		m_MultiplierExp = 100;
+}
+
 // strong update votes variability of the data
 void CGS::UpdateVotesIfForAll(int MenuList)
 {
@@ -1519,9 +1520,6 @@ bool CGS::OnClientVoteCommand(int ClientID, const char* pCmd, const int Extra1, 
 	return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extra1, Extra2, ReasonNumber, csqlReason.cstr());
 }
 
-/* #########################################################################
-	MMO GAMECONTEXT
-######################################################################### */
 int CGS::CreateBot(short BotType, int BotID, int SubID)
 {
 	int BotClientID = MAX_PLAYERS;
@@ -1555,38 +1553,41 @@ bool CGS::TakeItemCharacter(int ClientID)
 	return false;
 }
 
-// send day information
 void CGS::SendDayInfo(int ClientID)
 {
 	if(ClientID == -1)
 	{
 		switch(m_DayEnumType)
 		{
-			case MORNING_TYPE: Chat(-1, "Rise and shine! The sun has made its triumphant return, banishing the darkness of night. It's time to face the challenges of a brand new day."); break;
-			case EVENING_TYPE: Chat(-1, "The sun has set, and the night sky has taken over."); break;
-			case NIGHT_TYPE: Chat(-1, "Night has fallen!"); break;
-			default:break;
+			case MORNING_TYPE:
+				Chat(-1, "Rise and shine! The sun has made its triumphant return, banishing the darkness of night. It's time to face the challenges of a brand new day.");
+				break;
+			case EVENING_TYPE:
+				Chat(-1, "The sun has set, and the night sky has taken over.");
+				break;
+			case NIGHT_TYPE:
+				Chat(-1, "Night has fallen!");
+				break;
+			default:
+				break;
 		}
+		return;
 	}
 
 	if(m_DayEnumType == NIGHT_TYPE)
-	{
 		Chat(ClientID, "Nighttime adventure has been boosted by {}%!", m_MultiplierExp);
-	}
 	else if(m_DayEnumType == MORNING_TYPE)
-	{
 		Chat(ClientID, "Experience is now at 100%.");
-	}
+}
+
+int CGS::GetExpMultiplier(int Experience) const
+{
+	return translate_to_percent_rest(Experience, (float)m_MultiplierExp);
 }
 
 bool CGS::IsWorldType(WorldType Type) const
 {
 	return Server()->IsWorldType(m_WorldID, Type);
-}
-
-int CGS::GetExperienceMultiplier(int Experience) const
-{
-	return IsWorldType(WorldType::Dungeon) ? translate_to_percent_rest(Experience, g_Config.m_SvMultiplierExpRaidDungeon) : translate_to_percent_rest(Experience, m_MultiplierExp);
 }
 
 void CGS::InitZones()
@@ -1613,6 +1614,8 @@ void CGS::InitZones()
 		m_pController = new CGameControllerDefault(this);
 		pWorldType = "Default";
 	}
+
+	UpdateExpMultiplier();
 
 	const char* pStatePVP = m_AllowedPVP ? "yes" : "no";
 	dbg_msg("world init", "%s(ID: %d) | %s | PvP: %s", Server()->GetWorldName(m_WorldID), m_WorldID, pWorldType, pStatePVP);
