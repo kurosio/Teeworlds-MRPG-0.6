@@ -28,8 +28,6 @@
 #include "core/components/worlds/world_data.h"
 #include "core/utilities/vote_wrapper.h"
 
-// static data that have the same value in different objects
-ska::unordered_map < std::string, int > CGS::ms_aEffects[MAX_PLAYERS];
 int CGS::m_MultiplierExp = 100;
 
 CGS::CGS()

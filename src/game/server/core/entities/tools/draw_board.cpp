@@ -240,7 +240,7 @@ bool CEntityDrawboard::StartDrawing(CPlayer* pPlayer)
 	}
 
 	if(!m_pOrbite)
-		m_pOrbite = new CEntityLaserOrbite(GameWorld(), m_Pos, 15, LaserOrbiteType::INSIDE_ORBITE, 0.f, m_Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
+		m_pOrbite = new CEntityLaserOrbite(GameWorld(), -1, nullptr, 15, LaserOrbiteType::INSIDE_ORBITE, 0.f, m_Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
 	else
 		m_pOrbite->AddClientMask(pPlayer->GetCID());
 

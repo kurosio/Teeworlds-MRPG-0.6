@@ -7,7 +7,6 @@
 class CEntityLaserOrbite : public CEntity
 {
 public:
-	CEntityLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask);
 	CEntityLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask);
 	~CEntityLaserOrbite() override;
 

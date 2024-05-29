@@ -14,9 +14,6 @@
 
 class CGS : public IGameServer
 {
-	/* #########################################################################
-		VAR AND OBJECT GAMECONTEX DATA
-	######################################################################### */
 	class IServer* m_pServer;
 	class IConsole* m_pConsole;
 	class CPathFinder* m_pPathFinder;
@@ -26,9 +23,14 @@ class CGS : public IGameServer
 	class CLayers* m_pLayers;
 	class CEntityManager* m_pEntityManager;
 
+	static int m_MultiplierExp;
+	CBroadcastState m_aBroadcastStates[MAX_PLAYERS];
 	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
+	bool m_AllowedPVP;
+	int m_DayEnumType;
+	vec2 m_JailPosition;
 	int m_WorldID;
 
 public:
@@ -38,28 +40,19 @@ public:
 	IStorageEngine* Storage() const { return m_pStorage; }
 	CCommandProcessor* CommandProcessor() const { return m_pCommandProcessor; }
 	CEntityManager* EntityManager() const { return m_pEntityManager; }
-
+	CPathFinder* PathFinder() const { return m_pPathFinder; }
 	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }
+
+	CEventHandler m_Events;
+	CPlayer* m_apPlayers[MAX_CLIENTS];
+	IGameController* m_pController;
+	CGameWorld m_World;
+	inline static ska::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
 
 	CGS();
 	~CGS() override;
 
-	CEventHandler m_Events;
-	CPlayer *m_apPlayers[MAX_CLIENTS];
-	IGameController *m_pController;
-	CGameWorld m_World;
-	CPathFinder* PathFinder() const { return m_pPathFinder; }
-
-	/* #########################################################################
-		SWAP GAMECONTEX DATA
-	######################################################################### */
-	static ska::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
-	// - - - - - - - - - - - -
-
-	/* #########################################################################
-		HELPER PLAYER FUNCTION
-	######################################################################### */
 	class CCharacter *GetPlayerChar(int ClientID) const;
 	CPlayer *GetPlayer(int ClientID, bool CheckAuthed = false, bool CheckCharacter = false) const;
 	CPlayer *GetPlayerByUserID(int AccountID) const;
@@ -71,9 +64,6 @@ public:
 	class CEidolonInfoData* GetEidolonByItemID(ItemIdentifier ItemID) const;
 	void UpdateDiscordStatus();
 
-	/* #########################################################################
-		EVENTS
-	######################################################################### */
 	void CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float Angle = 0.f, int64_t Mask = -1);
 	void CreateHammerHit(vec2 Pos, int64_t Mask = -1);
 	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage);
@@ -82,27 +72,6 @@ public:
 	void CreateSound(vec2 Pos, int Sound, int64_t Mask = -1);
 	void CreatePlayerSound(int ClientID, int Sound);
 
-	/* #########################################################################
-		MESSAGES
-	######################################################################### */
-private:
-	struct CBroadcastState
-	{
-		int m_NoChangeTick;
-		char m_PrevMessage[1024];
-
-		BroadcastPriority m_NextPriority;
-		char m_NextMessage[1024];
-		char m_aCompleteMsg[1024];
-		bool m_Updated;
-
-		int m_LifeSpanTick;
-		BroadcastPriority m_TimedPriority;
-		char m_TimedMessage[1024];
-	};
-	CBroadcastState m_aBroadcastStates[MAX_PLAYERS];
-
-public:
 	void AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priority, int LifeSpan);
 	void BroadcastTick(int ClientID);
 	void MarkUpdatedBroadcast(int ClientID);
@@ -113,7 +82,6 @@ public:
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendTuningParams(int ClientID);
 
-public:
 	template< typename ... Ts>
 	void Chat(int ClientID, const char* pText, const Ts&... args)
 	{
@@ -216,23 +184,17 @@ public:
 		}
 	}
 
-	/* #########################################################################
-		ENGINE GAMECONTEXT
-	######################################################################### */
 	void OnInit(int WorldID) override;
 	void OnConsoleInit() override;
 	void OnShutdown() override { delete this; }
-
 	void OnTick() override;
 	void OnTickGlobal() override;
 	void OnPreSnap() override;
 	void OnSnap(int ClientID) override;
 	void OnPostSnap() override;
-
 	void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) override;
 	void OnClientConnected(int ClientID) override;
 	void OnClientPrepareChangeWorld(int ClientID) override;
-
 	void OnClientEnter(int ClientID) override;
 	void OnClientDrop(int ClientID, const char *pReason) override;
 	void OnClientDirectInput(int ClientID, void *pInput) override;
@@ -243,7 +205,6 @@ public:
 	bool IsClientCharacterExist(int ClientID) const override;
 	bool IsClientMRPG(int ClientID) const;
 	bool PlayerExists(int ClientID) const override { return m_apPlayers[ClientID]; }
-
 	int GetRank(int AccountID) const override;
 	void* GetLastInput(int ClientID) const override;
 	int GetClientVersion(int ClientID) const;
@@ -251,10 +212,24 @@ public:
 	const char *NetVersion() const override;
 	void OnClearClientData(int ClientID) override;
 
-	/* #########################################################################
-		CONSOLE GAMECONTEXT
-	######################################################################### */
+	int GetWorldID() const { return m_WorldID; }
+	bool IsWorldType(WorldType Type) const;
+	int GetExperienceMultiplier(int Experience) const;
+	bool IsPlayerEqualWorld(int ClientID, int WorldID = -1) const;
+	bool IsAllowedPVP() const { return m_AllowedPVP; }
+	vec2 GetJailPosition() const { return m_JailPosition; }
+	bool IsPlayersNearby(vec2 Pos, float Distance) const;
+
+	int CreateBot(short BotType, int BotID, int SubID);
+	bool TakeItemCharacter(int ClientID);
+	void UpdateVotesIfForAll(int MenuList);
+	bool OnClientVoteCommand(int ClientID, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason);
+
 private:
+	void InitZones();
+	void SendDayInfo(int ClientID);
+	void ShowVotesNewbieInformation(int ClientID);
+
 	static void ConSetWorldTime(IConsole::IResult *pResult, void *pUserData);
 	static void ConItemList(IConsole::IResult *pResult, void *pUserData);
 	static void ConGiveItem(IConsole::IResult *pResult, void *pUserData);
@@ -270,41 +245,6 @@ private:
 	static void ConBansAcc(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-
-	/* #########################################################################
-		VOTING MMO GAMECONTEXT
-	######################################################################### */
-	void ShowVotesNewbieInformation(int ClientID);
-
-public:
-	void UpdateVotesIfForAll(int MenuList);
-	bool OnClientVoteCommand(int ClientID, const char *pCmd, int Extra1, int Extra2, int ReasonNumber, const char *pReason);
-
-	/* #########################################################################
-		MMO GAMECONTEXT
-	######################################################################### */
-	int CreateBot(short BotType, int BotID, int SubID);
-	bool TakeItemCharacter(int ClientID);
-
-private:
-	void SendDayInfo(int ClientID);
-
-public:
-	int GetWorldID() const { return m_WorldID; }
-	bool IsWorldType(WorldType Type) const;
-	int GetExperienceMultiplier(int Experience) const;
-	bool IsPlayerEqualWorld(int ClientID, int WorldID = -1) const;
-	bool IsAllowedPVP() const { return m_AllowedPVP; }
-	vec2 GetJailPosition() const { return m_JailPosition; }
-
-	bool IsPlayersNearby(vec2 Pos, float Distance) const;
-private:
-	void InitZones();
-
-	bool m_AllowedPVP;
-	int m_DayEnumType;
-	vec2 m_JailPosition;
-	static int m_MultiplierExp;
 };
 
 inline int64_t CmaskAll() { return -1; }

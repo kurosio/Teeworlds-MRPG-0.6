@@ -4,22 +4,6 @@
 
 #include <game/server/gamecontext.h>
 
-CEntityLaserOrbite::CEntityLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
-	: CEntity(pGameWorld, CGameWorld::ENTYPE_LASER_ORBITE, Position, Radius)
-{
-	m_Type = Type;
-	m_ClientID = -1;
-	m_pEntParent = nullptr;
-	m_MoveSpeed = Speed;
-	m_Mask = Mask;
-	m_LaserType = LaserType;
-	GameWorld()->InsertEntity(this);
-
-	m_IDs.set_size(Amount);
-	for(int i = 0; i < m_IDs.size(); i++)
-		m_IDs[i] = Server()->SnapNewID();
-}
-
 CEntityLaserOrbite::CEntityLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTYPE_LASER_ORBITE, vec2(0.f, 0.f), (int)Radius)
 {

@@ -412,7 +412,7 @@ private:
 	};
 };
 
-// broadcast priority
+// broadcast
 enum class BroadcastPriority
 {
 	LOWER,
@@ -423,6 +423,21 @@ enum class BroadcastPriority
 	MAIN_INFORMATION,
 	TITLE_INFORMATION,
 	VERY_IMPORTANT,
+};
+
+struct CBroadcastState
+{
+	int m_NoChangeTick;
+	char m_PrevMessage[1024];
+
+	BroadcastPriority m_NextPriority;
+	char m_NextMessage[1024];
+	char m_aCompleteMsg[1024];
+	bool m_Updated;
+
+	int m_LifeSpanTick;
+	BroadcastPriority m_TimedPriority;
+	char m_TimedMessage[1024];
 };
 
 // spawn types
