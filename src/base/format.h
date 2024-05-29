@@ -162,6 +162,9 @@ struct struct_format_implement
 	template<typename... Ts>
 	static std::string impl_fmt(const description& desc, const char* ptext, const Ts &...args)
 	{
+		if(!ptext)
+			return "";
+
 		std::list<std::string> vStringPack {};
 		auto text = desc.m_handlefmt ? struct_handler_fmt::handle(desc.m_definer, ptext) : ptext;
 		return struct_format_implement::impl(desc, text, vStringPack, args...);
@@ -169,6 +172,9 @@ struct struct_format_implement
 
 	static std::string impl_fmt(const description& desc, const char* ptext)
 	{
+		if(!ptext)
+			return "";
+
 		return desc.m_handlefmt ? struct_handler_fmt::handle(desc.m_definer, ptext) : ptext;
 	}
 };
@@ -205,7 +211,7 @@ template <typename... Ts>
 inline std::string fmt(const char* ptext, const Ts &...args)
 {
 	struct_format_implement::description desc { 0, false };
-	return struct_format_implement::impl_fmt({}, ptext, args...);
+	return struct_format_implement::impl_fmt(desc, ptext, args...);
 }
 
 /**
@@ -239,4 +245,4 @@ inline std::string fmt_handle_def(int definer, const char* ptext, const Ts &...a
 	return struct_format_implement::impl_fmt(desc, ptext, args...);
 }
 
-#endif // _GAME_SERVER_TOOLS_FORMAT_H
+#endif // BASE_FORMAT_H
