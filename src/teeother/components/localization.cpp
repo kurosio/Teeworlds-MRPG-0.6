@@ -203,7 +203,7 @@ bool CLocalization::CLanguage::CUpdater::Prepare()
 		// check valid line
 		if(!pLine)
 		{
-			dbg_msg("localization", "localization", "unexpected end of file");
+			dbg_msg("localization", "unexpected end of file");
 			break;
 		}
 
