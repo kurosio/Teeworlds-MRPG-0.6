@@ -16,7 +16,6 @@
 #include "core/command_processor.h"
 #include "core/utilities/pathfinder.h"
 #include "core/entities/items/drop_items.h"
-#include "core/entities/tools/laser_orbite.h"
 
 #include "core/components/Accounts/AccountManager.h"
 #include "core/components/Bots/BotManager.h"
@@ -107,6 +106,7 @@ CPlayer* CGS::GetPlayerByUserID(int AccountID) const
 			return pGS->GetPlayer(i, true);
 		}
 	}
+
 	return nullptr;
 }
 
@@ -1555,25 +1555,6 @@ bool CGS::TakeItemCharacter(int ClientID)
 		if(pDrop && pDrop->TakeItem(ClientID)) { return true; }
 	}
 	return false;
-}
-
-void CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
-{
-	if(pEntParent)
-		new CLaserOrbite(&m_World, -1, pEntParent, Amount, Type, Speed, Radius, LaserType, Mask);
-}
-
-void CGS::CreateLaserOrbite(int ClientID, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
-{
-	if(const CPlayer* pPlayer = GetPlayer(ClientID, false, true); pPlayer)
-		new CLaserOrbite(&m_World, ClientID, nullptr, Amount, Type, Speed, Radius, LaserType, Mask);
-}
-
-CLaserOrbite* CGS::CreateLaserOrbite(CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Radius, int LaserType, int64_t Mask)
-{
-	if(pEntParent)
-		return new CLaserOrbite(&m_World, -1, pEntParent, Amount, Type, 0.f, Radius, LaserType, Mask);
-	return nullptr;
 }
 
 // send day information

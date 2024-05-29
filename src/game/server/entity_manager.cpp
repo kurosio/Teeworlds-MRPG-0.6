@@ -6,6 +6,7 @@
 #include "core/entities/items/drop_bonuses.h"
 #include "core/entities/items/drop_items.h"
 #include "core/entities/tools/flying_point.h"
+#include "core/entities/tools/laser_orbite.h"
 #include "core/entities/tools/loltext.h"
 
 CEntityManager::CEntityManager(CGS* pGS)
@@ -78,4 +79,28 @@ void CEntityManager::Text(CEntity* pParent, int Lifespan, const char* pText, boo
 	if(pResult)
 		*pResult = true;
 	CLoltext::Create(&GS()->m_World, pParent, {}, Lifespan, pText);
+}
+
+void CEntityManager::LaserOrbite(int ClientID, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask) const
+{
+	if(GS()->GetPlayer(ClientID, false, true))
+		new CEntityLaserOrbite(&GS()->m_World, ClientID, nullptr, Amount, Type, Speed, Radius, LaserType, Mask);
+}
+
+void CEntityManager::LaserOrbite(CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask) const
+{
+	if(pParent)
+		new CEntityLaserOrbite(&GS()->m_World, -1, pParent, Amount, Type, Speed, Radius, LaserType, Mask);
+}
+
+void CEntityManager::LaserOrbite(CEntityLaserOrbite*& pOut, int ClientID, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask) const
+{
+	if(GS()->GetPlayer(ClientID, false, true))
+		pOut = new CEntityLaserOrbite(&GS()->m_World, ClientID, nullptr, Amount, Type, Speed, Radius, LaserType, Mask);
+}
+
+void CEntityManager::LaserOrbite(CEntityLaserOrbite*& pOut, CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask) const
+{
+	if(pParent)
+		pOut = new CEntityLaserOrbite(&GS()->m_World, -1, pParent, Amount, Type, Speed, Radius, LaserType, Mask);
 }

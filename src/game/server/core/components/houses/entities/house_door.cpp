@@ -2,7 +2,9 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "house_door.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
+
 #include <game/server/core/components/houses/house_data.h>
 
 CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, CHouse* pHouse, std::string&& Name, vec2 Pos)
@@ -11,7 +13,7 @@ CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, CHouse* pHouse, std::
 	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
 	m_PosControll = Pos;
 	m_State = CLOSED;
-	GS()->CreateLaserOrbite(this, 4, EntLaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);
+	GS()->EntityManager()->LaserOrbite(this, 4, LaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);
 	GameWorld()->InsertEntity(this);
 }
 

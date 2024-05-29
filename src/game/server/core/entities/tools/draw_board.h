@@ -25,7 +25,7 @@ public:
 // Forward declaration and alias
 class CPlayer;
 class CEntityDrawboard;
-class CLaserOrbite;
+class CEntityLaserOrbite;
 typedef bool (*DrawboardToolCallback)(DrawboardToolEvent, CPlayer*, const EntityPoint*, void*);
 typedef struct { DrawboardToolCallback m_Callback; void* m_pData; } DrawboardEvent;
 
@@ -74,7 +74,7 @@ class CEntityDrawboard : public CEntity
 	DrawboardEvent m_ToolEvent {};
 	std::vector<EntityPoint*> m_vEntities {};
 	ska::unordered_set<CBrush*> m_vBrushes {};
-	CLaserOrbite* m_pOrbite {};
+	CEntityLaserOrbite* m_pOrbite {};
 	float m_Radius {};
 	int64_t m_Flags {};
 

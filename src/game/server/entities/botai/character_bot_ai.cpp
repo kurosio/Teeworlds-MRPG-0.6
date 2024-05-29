@@ -79,7 +79,9 @@ void CCharacterBotAI::InitBot()
 
 			// Check if the quest bot has an action and create a laser orbite
 			if(pQuestBot->m_HasAction)
-				GS()->CreateLaserOrbite(ClientID, 8, EntLaserOrbiteType::MOVE_RIGHT, 0.15f, 64.f, LASERTYPE_SHOTGUN);
+			{
+				GS()->EntityManager()->LaserOrbite(ClientID, 8, LaserOrbiteType::MOVE_RIGHT, 0.15f, 64.f, LASERTYPE_SHOTGUN);
+			}
 		}
 		break;
 		//

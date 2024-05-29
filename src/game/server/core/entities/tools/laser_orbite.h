@@ -4,12 +4,12 @@
 #define GAME_SERVER_ENTITIES_LASER_ORBITE_H
 #include <game/server/entity.h>
 
-class CLaserOrbite : public CEntity
+class CEntityLaserOrbite : public CEntity
 {
 public:
-	CLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask);
-	CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask);
-	~CLaserOrbite() override;
+	CEntityLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask);
+	CEntityLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask);
+	~CEntityLaserOrbite() override;
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
@@ -17,12 +17,12 @@ public:
 	void AddClientMask(int ClientID);
 	void RemoveClientMask(int ClientID);
 
-	EntLaserOrbiteType GetType() const { return m_Type; }
+	LaserOrbiteType GetType() const { return m_Type; }
 	CEntity* GetEntityParent() const { return m_pEntParent; }
 
 private:
 	array<int> m_IDs;
-	EntLaserOrbiteType m_Type {};
+	LaserOrbiteType m_Type {};
 	int m_ClientID {};
 	int m_LaserType {};
 	float m_MoveSpeed{};

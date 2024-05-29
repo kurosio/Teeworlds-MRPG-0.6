@@ -13,6 +13,7 @@
 
 #include "Entities/move_to.h"
 #include "Entities/path_finder.h"
+#include "game/server/entity_manager.h"
 
 // ##############################################################
 // ################# GLOBAL STEP STRUCTURE ######################
@@ -387,20 +388,20 @@ void CQuestStep::UpdateTaskMoveTo()
 				{
 					// Create orbital path and navigator for it
 					float Radius;
-					CLaserOrbite* pEntOrbite;
+					CEntityLaserOrbite* pEntOrbite;
 
 					// If the required task is to defeat a mob, set a smaller radius for the orbit
 					if(pRequired.m_Type == QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
 					{
 						Radius = 400.f;
-						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), 
-							EntLaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
+						GS()->EntityManager()->LaserOrbite(pEntOrbite, pEntMoveTo, (int)(Radius / 50.f),
+							LaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
 					}
 					else
 					{
 						Radius = 400.f + random_float(2000.f);
-						pEntOrbite = GS()->CreateLaserOrbite(pEntMoveTo, (int)(Radius / 50.f), 
-							EntLaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
+						GS()->EntityManager()->LaserOrbite(pEntOrbite, (int)(Radius / 50.f),
+							LaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
 					}
 
 					// Add navigator to the orbital path

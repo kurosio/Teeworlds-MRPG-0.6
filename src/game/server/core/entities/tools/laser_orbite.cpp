@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
+CEntityLaserOrbite::CEntityLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTYPE_LASER_ORBITE, Position, Radius)
 {
 	m_Type = Type;
@@ -20,7 +20,7 @@ CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, vec2 Position, int Amount, En
 		m_IDs[i] = Server()->SnapNewID();
 }
 
-CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, EntLaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
+CEntityLaserOrbite::CEntityLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTYPE_LASER_ORBITE, vec2(0.f, 0.f), (int)Radius)
 {
 	m_Type = Type;
@@ -33,7 +33,7 @@ CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntPa
 	if(m_pEntParent)
 	{
 		m_AppendPos = vec2(centrelized_frandom(0.f, GetProximityRadius() / 1.5f), centrelized_frandom(0.f, GetProximityRadius() / 1.5f));
-		m_Pos = pEntParent->GetPos() + (Type == EntLaserOrbiteType::INSIDE_ORBITE_RANDOM ? m_AppendPos : vec2(0.f, 0.f));
+		m_Pos = pEntParent->GetPos() + (Type == LaserOrbiteType::INSIDE_ORBITE_RANDOM ? m_AppendPos : vec2(0.f, 0.f));
 	}
 	GameWorld()->InsertEntity(this);
 
@@ -42,17 +42,17 @@ CLaserOrbite::CLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEntity* pEntPa
 		m_IDs[i] = Server()->SnapNewID();
 }
 
-CLaserOrbite::~CLaserOrbite()
+CEntityLaserOrbite::~CEntityLaserOrbite()
 {
 	for(int i = 0; i < m_IDs.size(); i++)
 		Server()->SnapFreeID(m_IDs[i]);
 	m_IDs.clear();
 }
 
-void CLaserOrbite::Tick()
+void CEntityLaserOrbite::Tick()
 {
 	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID, false, true);
-	if((m_ClientID >= 0 && !pPlayer) || (m_pEntParent && m_pEntParent->IsMarkedForDestroy()))
+	if((m_ClientID >= 0 && !pPlayer) || (m_pEntParent && !GameWorld()->ExistEntity(m_pEntParent)))
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -60,7 +60,7 @@ void CLaserOrbite::Tick()
 
 	if(m_pEntParent)
 	{
-		if(m_Type == EntLaserOrbiteType::INSIDE_ORBITE_RANDOM)
+		if(m_Type == LaserOrbiteType::INSIDE_ORBITE_RANDOM)
 			m_Pos = m_pEntParent->GetPos() + m_AppendPos;
 		else
 			m_Pos = m_pEntParent->GetPos();
@@ -71,13 +71,13 @@ void CLaserOrbite::Tick()
 	}
 }
 
-vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const
+vec2 CEntityLaserOrbite::UtilityOrbitePos(int PosID) const
 {
 	float AngleStart = 2.0f * pi;
 	float AngleStep = 2.0f * pi / (float)m_IDs.size();
-	if(m_Type == EntLaserOrbiteType::MOVE_LEFT)
+	if(m_Type == LaserOrbiteType::MOVE_LEFT)
 		AngleStart = -(AngleStart * (float)Server()->Tick() / (float)Server()->TickSpeed()) * m_MoveSpeed;
-	else if(m_Type == EntLaserOrbiteType::MOVE_RIGHT)
+	else if(m_Type == LaserOrbiteType::MOVE_RIGHT)
 		AngleStart = (AngleStart * (float)Server()->Tick() / (float)Server()->TickSpeed()) * m_MoveSpeed;
 
 	float X = GetProximityRadius() * cos(AngleStart + AngleStep * (float)PosID);
@@ -85,7 +85,7 @@ vec2 CLaserOrbite::UtilityOrbitePos(int PosID) const
 	return { X, Y };
 }
 
-void CLaserOrbite::Snap(int SnappingClient)
+void CEntityLaserOrbite::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient, m_Pos, GetProximityRadius()) || !CmaskIsSet(m_Mask, SnappingClient))
 		return;
@@ -126,12 +126,12 @@ void CLaserOrbite::Snap(int SnappingClient)
 	}
 }
 
-void CLaserOrbite::AddClientMask(int ClientID)
+void CEntityLaserOrbite::AddClientMask(int ClientID)
 {
 		m_Mask |= CmaskOne(ClientID);
 }
 
-void CLaserOrbite::RemoveClientMask(int ClientID)
+void CEntityLaserOrbite::RemoveClientMask(int ClientID)
 {
 		m_Mask &= ~CmaskOne(ClientID);
 }

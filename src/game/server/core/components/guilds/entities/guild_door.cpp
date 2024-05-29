@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_door.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 #include "game/server/core/components/guilds/guild_data.h"
@@ -17,7 +18,7 @@ CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouse* pHouse, 
 	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
 	m_PosControll = Pos;
 	m_State = CLOSED;
-	GS()->CreateLaserOrbite(this, 4, EntLaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);
+	GS()->EntityManager()->LaserOrbite(this, 4, LaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);
 
 	// insert the entity into the game world
 	GameWorld()->InsertEntity(this);

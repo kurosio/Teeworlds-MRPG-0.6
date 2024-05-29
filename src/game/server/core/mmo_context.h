@@ -82,7 +82,7 @@ enum InputEvents
 }; 
 
 // laser orbite
-enum class EntLaserOrbiteType : unsigned char
+enum class LaserOrbiteType : unsigned char
 {
 	DEFAULT, // Default value
 	MOVE_LEFT, // Move left value
