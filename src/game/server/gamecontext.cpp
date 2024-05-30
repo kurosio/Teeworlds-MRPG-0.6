@@ -5,9 +5,6 @@
 #include <engine/storage.h>
 #include <engine/map.h>
 
-#include <game/gamecore.h>
-#include <game/layers.h>
-
 #include "worldmodes/dungeon.h"
 #include "worldmodes/default.h"
 #include "worldmodes/tutorial.h"
@@ -521,7 +518,7 @@ void CGS::OnInit(int WorldID)
 	m_pMmoController = new CMmoController(this);
 	m_pMmoController->LoadLogicWorld();
 
-	InitZones();
+	InitWorldzone();
 
 	// command processor
 	m_pCommandProcessor = new CCommandProcessor(this);
@@ -569,6 +566,31 @@ void CGS::OnConsoleInit()
 	Console()->Register("bans_acc", "", CFGFLAG_SERVER, ConBansAcc, m_pServer, "Accounts bans");
 }
 
+void CGS::OnDaytypeChange(int NewDaytype)
+{
+	// update multiplier
+	UpdateExpMultiplier();
+
+	// send day info
+	const char* pWorldname = Server()->GetWorldName(m_WorldID);
+	switch(NewDaytype)
+	{
+		case MORNING_TYPE:
+			ChatWorld(m_WorldID, "", "Rise and shine! The sun has made its triumphant return, banishing the darkness of night. It's time to face the challenges of a brand new day.");
+			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
+			break;
+		case EVENING_TYPE:
+			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
+		break;
+		case NIGHT_TYPE:
+			ChatWorld(m_WorldID, "", "Nighttime adventure in the '{}' zone has been boosted by {}%!", pWorldname, m_MultiplierExp);
+			break;
+		default:
+			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
+		break;
+	}
+}
+
 void CGS::OnTick()
 {
 	m_World.m_Core.m_Tuning = m_Tuning;
@@ -591,33 +613,19 @@ void CGS::OnTick()
 	Core()->OnTick();
 }
 
-// Here we use functions that can have static data or functions that don't need to be called in all worlds
 void CGS::OnTickGlobal()
 {
-	// Check if the day enum type has changed
-	if(m_DayEnumType != Server()->GetEnumTypeDay())
+	// check if it's time to check the player's time period based on the configured interval
+	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvCheckPlayerTimePeriod) == 0)
 	{
-		m_DayEnumType = Server()->GetEnumTypeDay();
-
-		// is nighttype
-		if(m_DayEnumType == NIGHT_TYPE)
+		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			for(int i = 0; i < MAX_PLAYERS; i++)
-			{
-				if(CPlayer* pPlayer = GetPlayer(i, true))
-					Core()->HandlePlayerTimePeriod(pPlayer);
-				SendDayInfo(i);
-			}
+			if(CPlayer* pPlayer = GetPlayer(i, true))
+				Core()->HandlePlayerTimePeriod(pPlayer);
 		}
-
-		// update multiplier info
-		UpdateExpMultiplier();
-		SendDayInfo(-1);
 	}
 
-	// This code sends periodic chat messages in the game server. The messages are displayed to all players. 
-	// The code executes every tick, which is determined by the server's tick speed and the specified chat message time interval.
-	// Check if the current tick is a multiple of the specified chat message time interval
+	// check if the current tick is a multiple of the specified chat message time interval
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatMessageTime) == 0)
 	{
 		// Create a deque (double-ended queue) to hold the chat messages
@@ -669,20 +677,20 @@ void CGS::OnTickGlobal()
 	UpdateDiscordStatus();
 }
 
-// output of all objects
 void CGS::OnSnap(int ClientID)
 {
+	// check valid player
 	CPlayer* pPlayer = m_apPlayers[ClientID];
 	if(!pPlayer || pPlayer->GetPlayerWorldID() != GetWorldID())
 		return;
 
+	// snap all objects
 	m_pController->Snap();
-	for(auto& arpPlayer : m_apPlayers)
+	for(const auto& pIterPlayer : m_apPlayers)
 	{
-		if(arpPlayer)
-			arpPlayer->Snap(ClientID);
+		if(pIterPlayer)
+			pIterPlayer->Snap(ClientID);
 	}
-
 	m_World.Snap(ClientID);
 	m_Events.Snap(ClientID);
 }
@@ -719,50 +727,43 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 	{
 		if(MsgID == NETMSGTYPE_CL_SAY)
 		{
-			// Check if the player has already sent a chat message during this server tick
+			// check last chat tick
 			if(pPlayer->m_aPlayerTick[LastChat] > Server()->Tick())
 				return;
 
-			// Set the tick value for when the player can send another chat message
+			// initialize variables
+			const auto pMsg = (CNetMsg_Cl_Say*)pRawMsg;
 			pPlayer->m_aPlayerTick[LastChat] = Server()->Tick() + Server()->TickSpeed();
 
-			// Check if the message contains valid UTF-8 characters
-			CNetMsg_Cl_Say* pMsg = (CNetMsg_Cl_Say*)pRawMsg;
+			// check msg contains valid UTF-8 characters
 			if(!str_utf8_check(pMsg->m_pMessage))
 				return;
 
-			// If the first character is a forward slash, treat the message as a command
+			// check message
 			char firstChar = pMsg->m_pMessage[0];
 			if(firstChar == '/')
-			{
 				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
-			}
-			// If the first character is a pound sign, send a chat message to the world
 			else if(firstChar == '#')
-			{
 				ChatWorld(pPlayer->GetPlayerWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
-			}
-			// Otherwise, send a regular chat message
 			else
-			{
 				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
-			}
 
-			// Copy the contents of pMsg->m_pMessage to pPlayer->m_aLastMsg
+			// set last message
 			str_copy(pPlayer->m_aLastMsg, pMsg->m_pMessage, sizeof(pPlayer->m_aLastMsg));
+			return;
 		}
 
-		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
+		if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{
-			// check last vote
+			// check last vote tick
 			if(pPlayer->m_aPlayerTick[LastVote] > Server()->Tick())
 				return;
 
 			// initialize variables
-			CNetMsg_Cl_CallVote* pMsg = (CNetMsg_Cl_CallVote*)pRawMsg;
+			const auto pMsg = (CNetMsg_Cl_CallVote*)pRawMsg;
 			pPlayer->m_aPlayerTick[LastVote] = Server()->Tick() + (Server()->TickSpeed() / 2);
 
-			// check if the player is not authenticated
+			// check is option type
 			if(str_comp_nocase(pMsg->m_pType, "option") == 0)
 			{
 				// post player votes
@@ -773,76 +774,68 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				{
 					const int ReasonNumber = clamp(str_toint(pMsg->m_pReason), 1, 100000);
 					if(pActionVote->m_Callback.m_Impl)
-					{
 						pActionVote->m_Callback.m_Impl(pPlayer, ReasonNumber, pMsg->m_pReason, pActionVote->m_Callback.m_pData);
-					}
 					else
-					{
 						OnClientVoteCommand(ClientID, pActionVote->m_aCommand, pActionVote->m_Extra1, pActionVote->m_Extra2, ReasonNumber, pMsg->m_pReason);
-					}
 				}
 			}
+			return;
 		}
 
-		else if(MsgID == NETMSGTYPE_CL_VOTE)
+		if(MsgID == NETMSGTYPE_CL_VOTE)
 		{
-			// Parse the vote items from the message using the ParseVoteOptionResult function
+			// update event key
 			const auto pMsg = (CNetMsg_Cl_Vote*)pRawMsg;
 			if(pMsg->m_Vote == 1)
-			{
 				Server()->AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_YES);
-			}
 			else if(pMsg->m_Vote == 0)
-			{
 				Server()->AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_NO);
-			}
 
+			// parse vote option result
 			pPlayer->ParseVoteOptionResult(pMsg->m_Vote);
+			return;
 		}
 
-		else if(MsgID == NETMSGTYPE_CL_SETTEAM)
+		if(MsgID == NETMSGTYPE_CL_SETTEAM)
 		{
-			// Check if the player has recently voted to change teams
+			// check change team last tick
 			if(pPlayer->m_aPlayerTick[LastChangeTeam] > Server()->Tick())
 				return;
 
-			// Set a cooldown for change teams
+			// initialize variables
 			pPlayer->m_aPlayerTick[LastChangeTeam] = Server()->Tick() + Server()->TickSpeed();
 
-			// Check if the player is not authenticated
+			// send broadcast message
 			if(!pPlayer->IsAuthed())
-			{
-				// Display a broadcast message to the player informing them to register or login
 				Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "Use /register <name> <pass>\nOr /login <name> <pass>.");
-				return;
-			}
-
-			// Inform the player that team change is not allowed
-			Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Team change is not allowed.");
+			else
+				Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Team change is not allowed.");
+			return;
 		}
 
-		else if(MsgID == NETMSGTYPE_CL_SETSPECTATORMODE)
+		if(MsgID == NETMSGTYPE_CL_SETSPECTATORMODE)
 		{
 			return;
 		}
 
-		else if(MsgID == NETMSGTYPE_CL_CHANGEINFO)
+		if(MsgID == NETMSGTYPE_CL_CHANGEINFO)
 		{
-			// Check if the last info change for the player has not expired yet
+			// check last change info tick
 			if(pPlayer->m_aPlayerTick[LastChangeInfo] > Server()->Tick())
 				return;
 
-			// Set the tick at which the next info change can occur for the player
+			// initialize variables
+			auto pMsg = (CNetMsg_Cl_ChangeInfo*)pRawMsg;
 			pPlayer->m_aPlayerTick[LastChangeInfo] = Server()->Tick() + (Server()->TickSpeed() * g_Config.m_SvInfoChangeDelay);
 
-			// Check if the clan name and skin name passed in the message are valid UTF-8 strings
-			CNetMsg_Cl_ChangeInfo* pMsg = (CNetMsg_Cl_ChangeInfo*)pRawMsg;
+			// check valid utf-8 characters
 			if(!str_utf8_check(pMsg->m_pClan) || !str_utf8_check(pMsg->m_pSkin))
 				return;
 
-			// Set tee info
+			// set client info
 			if(pPlayer->IsAuthed())
 			{
+				// check if the player has an account and the nickname is different
 				if(str_comp(Server()->ClientName(ClientID), pMsg->m_pName) != 0)
 				{
 					pPlayer->m_RequestChangeNickname = true;
@@ -858,47 +851,47 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
-			// allowed customize self skins
+			// set player info
 			str_copy(pPlayer->GetTeeInfo().m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->GetTeeInfo().m_aSkinName));
 			pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
 			pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
 			pPlayer->GetClass()->SetClassSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
+
+			// expire server info
 			Server()->ExpireServerInfo();
+			return;
 		}
 
-		else if(MsgID == NETMSGTYPE_CL_EMOTICON)
+		if(MsgID == NETMSGTYPE_CL_EMOTICON)
 		{
-			// Check if the player has already used an emoticon in the current tick
+			// check last emote tick
 			if(pPlayer->m_aPlayerTick[LastEmote] > Server()->Tick())
 				return;
 
-			// Set the player's last emoticon tick to the current tick plus half of the tick speed
+			// initialize variables
+			const auto pMsg = (CNetMsg_Cl_Emoticon*)pRawMsg;
 			pPlayer->m_aPlayerTick[LastEmote] = Server()->Tick() + (Server()->TickSpeed() / 2);
 
-			// Send the received emoticon to the client with the given ClientID
-			CNetMsg_Cl_Emoticon* pMsg = (CNetMsg_Cl_Emoticon*)pRawMsg;
+			// send emoticon and use skills by emoticon
 			SendEmoticon(ClientID, pMsg->m_Emoticon);
-
-			// Parse any skills associated with the received emoticon for the player
 			Core()->SkillManager()->UseSkillsByEmoticion(pPlayer, pMsg->m_Emoticon);
+			return;
 		}
 
-		else if(MsgID == NETMSGTYPE_CL_KILL)
+		if(MsgID == NETMSGTYPE_CL_KILL)
 		{
-			// Check if the last self-kill for the player occurred within the last half second
+			// check last self kill tick
 			if(pPlayer->m_aPlayerTick[LastSelfKill] > Server()->Tick())
 				return;
 
-			// Set the tick for the last self-kill to the current tick plus half a second
+			// send broadcast message
 			pPlayer->m_aPlayerTick[LastSelfKill] = Server()->Tick() + (Server()->TickSpeed() / 2);
-
-			// Broadcast a message to the client indicating that self-kill is not allowed
 			Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Self kill is not allowed.");
-			// pPlayer->KillCharacter(WEAPON_SELF);
+			return;
 		}
 
-		else if(MsgID == NETMSGTYPE_CL_ISDDNETLEGACY)
+		if(MsgID == NETMSGTYPE_CL_ISDDNETLEGACY)
 		{
 			// Get client information from the server
 			IServer::CClientInfo Info;
@@ -917,100 +910,98 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 			// Set the DDNet version for the client on the server side
 			Server()->SetClientDDNetVersion(ClientID, DDNetVersion);
-		}
-		else if(MsgID == NETMSGTYPE_CL_SHOWOTHERSLEGACY)
-		{
-			// empty
-		}
-		else if(MsgID == NETMSGTYPE_CL_SHOWOTHERS)
-		{
-			// empty
-		}
-		else if(MsgID == NETMSGTYPE_CL_SHOWDISTANCE)
-		{
-			// empty
+			return;
 		}
 
-		//////////////////////////////////////////////////////////////////////////////////
-		///////////// If the client has passed the test, the alternative is to use the client
-		else if(MsgID == NETMSGTYPE_CL_ISMRPGSERVER)
+		if(MsgID == NETMSGTYPE_CL_SHOWOTHERSLEGACY)
 		{
-			// Cast the received raw message into a CNetMsg_Cl_IsMRPGServer object
-			CNetMsg_Cl_IsMRPGServer* pMsg = (CNetMsg_Cl_IsMRPGServer*)pRawMsg;
+			dbg_msg("msg", "msg show others legacy cid '%d'", ClientID);
+			return;
+		}
 
-			// Check if the version of the message matches the protocol version defined as CURRENT_PROTOCOL_VERSION_MRPG
-			if(pMsg->m_Version != CURRENT_PROTOCOL_VERSION_MRPG)
+		if(MsgID == NETMSGTYPE_CL_SHOWOTHERS)
+		{
+			dbg_msg("msg", "msg show others cid '%d'", ClientID);
+			return;
+		}
+
+		if(MsgID == NETMSGTYPE_CL_SHOWDISTANCE)
+		{
+			dbg_msg("msg", "msg show distance cid '%d'", ClientID);
+			return;
+		}
+
+		// custom
+		if(MsgID == NETMSGTYPE_CL_ISMRPGSERVER)
+		{
+			// check protocol version
+			if(const auto pMsg = (CNetMsg_Cl_IsMRPGServer*)pRawMsg; pMsg->m_Version != CURRENT_PROTOCOL_VERSION_MRPG)
 			{
-				// If the versions don't match, kick the client with a message to update their client
 				Server()->Kick(ClientID, "Update client use updater or download in discord.");
 				return;
 			}
 
-			// Set the client's state as an MRPG server
-			Server()->SetStateClientMRPG(ClientID, true);
-
-			// Send a check success message to the client
+			// update protocol version and send good check
 			CNetMsg_Sv_AfterIsMRPGServer GoodCheck;
+			Server()->SetStateClientMRPG(ClientID, true);
 			Server()->SendPackMsg(&GoodCheck, MSGFLAG_VITAL | MSGFLAG_FLUSH | MSGFLAG_NORECORD, ClientID);
 		}
-		/*else
-			Core()->OnClientMessage(MsgID, pRawMsg, ClientID);*/
 	}
 	else
 	{
 		if(MsgID == NETMSGTYPE_CL_STARTINFO)
 		{
-			// This gives a initialize single used start info
-			// Check if the player's last change info tick is not zero
+			// check last change info tick (once use)
 			if(pPlayer->m_aPlayerTick[LastChangeInfo] != 0)
 				return;
 
-			// Set the player's last change info tick to the current server tick
+			// initialize variables
 			pPlayer->m_aPlayerTick[LastChangeInfo] = Server()->Tick();
 
-			// set start infos
-			if(!pPlayer->IsAuthed())
+			// is authed
+			if(pPlayer->IsAuthed())
 			{
-				CNetMsg_Cl_StartInfo* pMsg = (CNetMsg_Cl_StartInfo*)pRawMsg;
-				if(!str_utf8_check(pMsg->m_pName))
-				{
-					Server()->Kick(ClientID, "name is not valid utf8");
-					return;
-				}
-				if(!str_utf8_check(pMsg->m_pClan))
-				{
-					Server()->Kick(ClientID, "clan is not valid utf8");
-					return;
-				}
-				if(!str_utf8_check(pMsg->m_pSkin))
-				{
-					Server()->Kick(ClientID, "skin is not valid utf8");
-					return;
-				}
-
-				Server()->SetClientName(ClientID, pMsg->m_pName);
-				Server()->SetClientClan(ClientID, pMsg->m_pClan);
-				Server()->SetClientCountry(ClientID, pMsg->m_Country);
-
-				// allowed customize self skins
-				str_copy(pPlayer->GetTeeInfo().m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->GetTeeInfo().m_aSkinName));
-				pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
-				pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
-				pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
-				pPlayer->GetClass()->SetClassSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
+				CNetMsg_Sv_ReadyToEnter m;
+				Server()->SendPackMsg(&m, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
+				pPlayer->m_VotesData.ClearVotes();
+				return;
 			}
 
-			// send clear vote options
-			pPlayer->m_VotesData.ClearVotes();
+			// set client info
+			const auto pMsg = (CNetMsg_Cl_StartInfo*)pRawMsg;
+			if(!str_utf8_check(pMsg->m_pName))
+			{
+				Server()->Kick(ClientID, "name is not valid utf8");
+				return;
+			}
+			if(!str_utf8_check(pMsg->m_pClan))
+			{
+				Server()->Kick(ClientID, "clan is not valid utf8");
+				return;
+			}
+			if(!str_utf8_check(pMsg->m_pSkin))
+			{
+				Server()->Kick(ClientID, "skin is not valid utf8");
+				return;
+			}
+			Server()->SetClientName(ClientID, pMsg->m_pName);
+			Server()->SetClientClan(ClientID, pMsg->m_pClan);
+			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
-			// client is ready to enter
+			// set player info
+			str_copy(pPlayer->GetTeeInfo().m_aSkinName, pMsg->m_pSkin, sizeof(pPlayer->GetTeeInfo().m_aSkinName));
+			pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
+			pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
+			pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
+			pPlayer->GetClass()->SetClassSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
+
+			// send ready to enter
 			CNetMsg_Sv_ReadyToEnter m;
 			Server()->SendPackMsg(&m, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientID);
+			pPlayer->m_VotesData.ClearVotes();
 
-			if(!pPlayer->IsAuthed())
-			{
-				Server()->ExpireServerInfo();
-			}
+			// expire server info
+			Server()->ExpireServerInfo();
 		}
 	}
 }
@@ -1042,12 +1033,11 @@ void CGS::OnClientEnter(int ClientID)
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
-
-		SendDayInfo(ClientID);
 		ShowVotesNewbieInformation(ClientID);
 		return;
 	}
 
+	Chat(ClientID, "Welcome to {}! Zone multiplier exp is at {}%.", Server()->GetWorldName(m_WorldID), m_MultiplierExp);
 	Core()->AccountManager()->LoadAccount(pPlayer, false);
 	Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 }
@@ -1182,7 +1172,7 @@ void CGS::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 {
 	const int Hour = pResult->GetInteger(0);
 	IServer* pServer = (IServer*)pUserData;
-	pServer->SetOffsetWorldTime(Hour);
+	pServer->SetOffsetGameTime(Hour);
 }
 
 void CGS::ConItemList(IConsole::IResult* pResult, void* pUserData)
@@ -1480,7 +1470,7 @@ void CGS::UpdateExpMultiplier()
 	}
 
 	// is nighttype
-	if(m_DayEnumType == NIGHT_TYPE)
+	if(Server()->GetCurrentTypeday() == NIGHT_TYPE)
 		m_MultiplierExp = (100 + maximum(20, rand() % 200));
 	else
 		m_MultiplierExp = 100;
@@ -1505,11 +1495,6 @@ bool CGS::OnClientVoteCommand(int ClientID, const char* pCmd, const int Extra1, 
 		Chat(ClientID, "Deploy it while still alive!");
 		return true;
 	}
-
-	if(PPSTR(pCmd, "null") == 0)
-		return true;
-
-	CreatePlayerSound(ClientID, SOUND_BODY_LAND);
 
 	// parsing default vote commands
 	if(pPlayer->m_VotesData.DefaultVoteCommands(pCmd, Extra1, Extra2, ReasonNumber, pReason))
@@ -1553,33 +1538,6 @@ bool CGS::TakeItemCharacter(int ClientID)
 	return false;
 }
 
-void CGS::SendDayInfo(int ClientID)
-{
-	if(ClientID == -1)
-	{
-		switch(m_DayEnumType)
-		{
-			case MORNING_TYPE:
-				Chat(-1, "Rise and shine! The sun has made its triumphant return, banishing the darkness of night. It's time to face the challenges of a brand new day.");
-				break;
-			case EVENING_TYPE:
-				Chat(-1, "The sun has set, and the night sky has taken over.");
-				break;
-			case NIGHT_TYPE:
-				Chat(-1, "Night has fallen!");
-				break;
-			default:
-				break;
-		}
-		return;
-	}
-
-	if(m_DayEnumType == NIGHT_TYPE)
-		Chat(ClientID, "Nighttime adventure has been boosted by {}%!", m_MultiplierExp);
-	else if(m_DayEnumType == MORNING_TYPE)
-		Chat(ClientID, "Experience is now at 100%.");
-}
-
 int CGS::GetExpMultiplier(int Experience) const
 {
 	return translate_to_percent_rest(Experience, (float)m_MultiplierExp);
@@ -1590,10 +1548,8 @@ bool CGS::IsWorldType(WorldType Type) const
 	return Server()->IsWorldType(m_WorldID, Type);
 }
 
-void CGS::InitZones()
+void CGS::InitWorldzone()
 {
-	m_DayEnumType = Server()->GetEnumTypeDay();
-
 	// initilize world type
 	const char* pWorldType;
 	CWorldDetail* pWorldDetail = Server()->GetWorldDetail(m_WorldID);

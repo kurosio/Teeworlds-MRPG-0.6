@@ -337,7 +337,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 
 		// based replacing dialogs
 		str_replace(aBufText, "<player>", GS()->Server()->ClientName(ClientID));
-		str_replace(aBufText, "<time>", GS()->Server()->GetStringTypeDay());
+		str_replace(aBufText, "<time>", GS()->Server()->GetStringTypeday());
 		str_replace(aBufText, "<here>", GS()->Server()->GetWorldName(GS()->GetWorldID()));
 		str_replace(aBufText, "<eidolon>", m_pPlayer->GetEidolon() ? DataBotInfo::ms_aDataBot[m_pPlayer->GetEidolon()->GetBotID()].m_aNameBot : "Eidolon");
 	}

@@ -153,17 +153,16 @@ public:
 	// world time
 	int m_ShiftTime;
 	int m_LastShiftTick;
-	int m_WorldMinute {};
-	int m_WorldHour {};
-	bool m_IsNewMinute {};
+	int m_GameMinuteTime {};
+	int m_GameHourTime {};
+	int m_GameTypeday {};
 
-	int GetMinuteWorldTime() const override;
-	int GetHourWorldTime() const override;
-	int GetOffsetWorldTime() const override;
-	void SetOffsetWorldTime(int Hour) override;
-	bool CheckWorldTime(int Hour, int Minute) override;
-	const char* GetStringTypeDay() const override;
-	int GetEnumTypeDay() const override;
+	int GetMinuteGameTime() const override;
+	int GetHourGameTime() const override;
+	int GetOffsetGameTime() const override;
+	void SetOffsetGameTime(int Hour) override;
+	const char* GetStringTypeday() const override;
+	int GetCurrentTypeday() const override;
 
 	// input
 	void ParseInputClickedKeys(int ClientID, void* pInputData);

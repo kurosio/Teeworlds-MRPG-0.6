@@ -481,6 +481,13 @@ void CVotePlayerData::ClearVotes() const
 
 bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, const int Extra2, int, const char*)
 {
+	// is empty
+	if(PPSTR(pCmd, "null") == 0)
+		return true;
+
+	// sound effect
+	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_BODY_LAND);
+
 	// command menu
 	if(PPSTR(pCmd, "MENU") == 0)
 	{

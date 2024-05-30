@@ -185,13 +185,12 @@ public:
 	}
 
 	// World Time
-	virtual int GetMinuteWorldTime() const = 0;
-	virtual int GetHourWorldTime() const = 0;
-	virtual int GetOffsetWorldTime() const = 0;
-	virtual void SetOffsetWorldTime(int Hour) = 0;
-	virtual bool CheckWorldTime(int Hour, int Minute) = 0;
-	virtual const char* GetStringTypeDay() const = 0;
-	virtual int GetEnumTypeDay() const = 0;
+	virtual int GetMinuteGameTime() const = 0;
+	virtual int GetHourGameTime() const = 0;
+	virtual int GetOffsetGameTime() const = 0;
+	virtual void SetOffsetGameTime(int Hour) = 0;
+	virtual const char* GetStringTypeday() const = 0;
+	virtual int GetCurrentTypeday() const = 0;
 
 	// input
 	virtual void AppendEventKeyClick(int ClientID, int KeyID) = 0;
@@ -269,6 +268,7 @@ public:
 	virtual void OnSnap(int ClientID) = 0;
 	virtual void OnPostSnap() = 0;
 
+	virtual void OnDaytypeChange(int NewDaytype) = 0;
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) = 0;
 	virtual void OnClearClientData(int ClientID) = 0;
 

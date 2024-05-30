@@ -125,6 +125,7 @@ MACRO_CONFIG_INT(SvStrongAntiPVP, sv_strong_anti_pvp, 50, 0, 10000, CFGFLAG_SERV
 MACRO_CONFIG_INT(SvTimeWaitingsDungeon, sv_waiting_dungeon_time, 180, 0, 1020, CFGFLAG_SERVER, "Watining time dungeon on secound")
 MACRO_CONFIG_INT(SvInfoChatMessageTime, sv_chat_message_time, 600, 0, 14400, CFGFLAG_SERVER, "Time chat message time in seconds")
 MACRO_CONFIG_INT(SvInfoChatTopMessageTime, sv_chat_message_time, 900, 0, 14400, CFGFLAG_SERVER, "Time chat toplist message time in seconds")
+MACRO_CONFIG_INT(SvCheckPlayerTimePeriod, sv_check_player_timeperiod, 1440, 0, 14400, CFGFLAG_SERVER, "Check player changes on time period")
 
 // house
 MACRO_CONFIG_INT(SvLimitDecoration, sv_limit_decorations, 10, 5, 20, CFGFLAG_SERVER, "Limit objects for decoration")

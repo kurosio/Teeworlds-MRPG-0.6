@@ -111,51 +111,40 @@ IGameServer* CServer::GameServerPlayer(int ClientID) const
 
 
 // get the world minute
-int CServer::GetMinuteWorldTime() const
+int CServer::GetMinuteGameTime() const
 {
-	return m_WorldMinute;
+	return m_GameMinuteTime;
 }
 
 // get the world hour
-int CServer::GetHourWorldTime() const
+int CServer::GetHourGameTime() const
 {
-	return m_WorldHour;
+	return m_GameHourTime;
 }
 
 // get the time offset at the beginning of the timer
-int CServer::GetOffsetWorldTime() const
+int CServer::GetOffsetGameTime() const
 {
 	return m_ShiftTime;
 }
 
 // set the time offset at the beginning of the timer
-void CServer::SetOffsetWorldTime(int Hour)
+void CServer::SetOffsetGameTime(int Hour)
 {
 	m_LastShiftTick = Tick();
-	m_WorldHour = clamp(Hour, 0, 23);
-	m_WorldMinute = 0;
+	m_GameHourTime = clamp(Hour, 0, 23);
+	m_GameMinuteTime = 0;
 
 	if(Hour <= 0)
 		m_ShiftTime = m_LastShiftTick;
 	else
-		m_ShiftTime = m_LastShiftTick - ((m_WorldHour * 60) * TickSpeed());
-}
-
-// skipping in two places so that time does not run out.
-bool CServer::CheckWorldTime(int Hour, int Minute)
-{
-	if(m_WorldHour == Hour && m_WorldMinute == Minute && m_IsNewMinute)
-	{
-		m_WorldMinute++;
-		return true;
-	}
-	return false;
+		m_ShiftTime = m_LastShiftTick - ((m_GameHourTime * 60) * TickSpeed());
 }
 
 // format Day
-const char* CServer::GetStringTypeDay() const
+const char* CServer::GetStringTypeday() const
 {
-	switch(GetEnumTypeDay())
+	switch(GetCurrentTypeday())
 	{
 		case MORNING_TYPE: return "Morning";
 		case DAY_TYPE: return "Day";
@@ -165,11 +154,11 @@ const char* CServer::GetStringTypeDay() const
 }
 
 // format Day to Int
-int CServer::GetEnumTypeDay() const
+int CServer::GetCurrentTypeday() const
 {
-	if(m_WorldHour >= 0 && m_WorldHour < 6) return NIGHT_TYPE;
-	if(m_WorldHour >= 6 && m_WorldHour < 13) return MORNING_TYPE;
-	if(m_WorldHour >= 13 && m_WorldHour < 19) return DAY_TYPE;
+	if(m_GameHourTime >= 0 && m_GameHourTime < 6) return NIGHT_TYPE;
+	if(m_GameHourTime >= 6 && m_GameHourTime < 13) return MORNING_TYPE;
+	if(m_GameHourTime >= 13 && m_GameHourTime < 19) return DAY_TYPE;
 	return EVENING_TYPE;
 }
 
@@ -466,10 +455,11 @@ int64_t CServer::TickStartTime(int Tick) const
 
 int CServer::Init()
 {
-	m_WorldMinute = 0;
-	m_WorldHour = 0;
-	m_IsNewMinute = false;
+	m_GameTypeday = -1;
+	m_GameMinuteTime = 0;
+	m_GameHourTime = 0;
 	m_CurrentGameTick = 0;
+
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		str_copy(m_aClients[i].m_aLanguage, "en", sizeof(m_aClients[i].m_aLanguage));
@@ -2085,22 +2075,34 @@ int CServer::Run(ILogger* pLogger)
 					}
 				}
 
-				// world time
-				m_IsNewMinute = false;
+				// update game time
 				if(Tick() % TickSpeed() == 0)
 				{
-					m_WorldMinute++;
-					m_IsNewMinute = true;
-
-					if(m_WorldMinute >= 60)
+					// update game typeday
+					if(m_GameTypeday != GetCurrentTypeday())
 					{
-						m_WorldHour++;
-						if(m_WorldHour >= 24)
+						m_GameTypeday = GetCurrentTypeday();
+						for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 						{
-							m_WorldHour = 0;
-							SetOffsetWorldTime(0);
+							IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->GameServer();
+							pGameServer->OnDaytypeChange(m_GameTypeday);
 						}
-						m_WorldMinute = 0;
+					}
+
+					// update game minute
+					m_GameMinuteTime++;
+					if(m_GameMinuteTime >= 60)
+					{
+						// update game hour
+						m_GameHourTime++;
+						if(m_GameHourTime >= 24)
+						{
+							m_GameHourTime = 0;
+							SetOffsetGameTime(0);
+						}
+
+						// reset game minute
+						m_GameMinuteTime = 0;
 					}
 				}
 
@@ -2120,7 +2122,7 @@ int CServer::Run(ILogger* pLogger)
 					m_CurrentGameTick = 0;
 					m_GameStartTime = time_get();
 					m_ServerInfoFirstRequest = 0;
-					SetOffsetWorldTime(0);
+					SetOffsetGameTime(0);
 
 					// Reset localization
 					if(!m_pLocalization->Reload())

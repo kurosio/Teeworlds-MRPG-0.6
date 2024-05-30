@@ -29,7 +29,6 @@ class CGS : public IGameServer
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
 	bool m_AllowedPVP;
-	int m_DayEnumType;
 	vec2 m_JailPosition;
 	int m_WorldID;
 
@@ -187,6 +186,7 @@ public:
 	void OnInit(int WorldID) override;
 	void OnConsoleInit() override;
 	void OnShutdown() override { delete this; }
+	void OnDaytypeChange(int NewDaytype) override;
 	void OnTick() override;
 	void OnTickGlobal() override;
 	void OnPreSnap() override;
@@ -226,8 +226,7 @@ public:
 	bool OnClientVoteCommand(int ClientID, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason);
 
 private:
-	void InitZones();
-	void SendDayInfo(int ClientID);
+	void InitWorldzone();
 	void ShowVotesNewbieInformation(int ClientID);
 	void UpdateExpMultiplier();
 
