@@ -125,7 +125,6 @@ CWorldData* CGS::GetWorldData(int ID) const
 {
 	int WorldID = ID == -1 ? GetWorldID() : ID;
 	const auto& p = std::find_if(CWorldData::Data().begin(), CWorldData::Data().end(), [WorldID](const WorldDataPtr& p){return WorldID == p->GetID(); });
-
 	return p != CWorldData::Data().end() ? (*p).get() : nullptr;
 }
 
@@ -135,9 +134,6 @@ CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
 	return p != CEidolonInfoData::Data().end() ? &(*p) : nullptr;
 }
 
-/* #########################################################################
-	EVENTS
-######################################################################### */
 void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float Angle, int64_t Mask)
 {
 	float a = 3 * pi / 2 + Angle;
@@ -1157,43 +1153,51 @@ void CGS::OnClearClientData(int ClientID)
 		pActiveSnap.second.m_aVisibleActive[ClientID] = false;
 }
 
-/* #########################################################################
-	CONSOLE GAMECONTEXT
-######################################################################### */
 void CGS::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 {
+	// initialize variables
 	const int Hour = pResult->GetInteger(0);
-	IServer* pServer = (IServer*)pUserData;
+	const auto pServer = (IServer*)pUserData;
+
+	// set offset game time
 	pServer->SetOffsetGameTime(Hour);
 }
 
 void CGS::ConItemList(IConsole::IResult* pResult, void* pUserData)
 {
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	// initialize variables
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer();
 
-	char aBuf[256];
+	// show list of items
 	for(auto& p : CItemDescription::Data())
 	{
-		str_format(aBuf, sizeof(aBuf), "ID: %d | Name: %s | %s", p.first, p.second.GetName(), p.second.IsEnchantable() ? "Enchantable" : "Default stack");
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "item_list", aBuf);
+		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "item_list", 
+			"ID: %d | Name: %s | %s", p.first, p.second.GetName(), p.second.IsEnchantable() ? "Enchantable" : "Default stack");
 	}
 }
 
 // give the item to the player
 void CGS::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 {
+	// initialize variables
 	const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS - 1);
 	const ItemIdentifier ItemID = pResult->GetInteger(1);
 	const int Value = pResult->GetInteger(2);
 	const int Enchant = pResult->GetInteger(3);
 	const int ByMailbox = pResult->GetInteger(4);
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+	// check valid item
+	if(CItemDescription::Data().find(ItemID) == CItemDescription::Data().end())
+	{
+		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "give_item", "Item with ID %d not found. Use command for list \"itemlist\".", ItemID);
+		return;
+	}
 
-	CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
-	if(pPlayer && CItemDescription::Data().find(ItemID) != CItemDescription::Data().end())
+	// check valid player
+	if(CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true))
 	{
 		if(ByMailbox == 0)
 		{
@@ -1210,79 +1214,93 @@ void CGS::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 
 void CGS::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 {
-	char aBuf[256];
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	// initialize variables
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 	const char* pGuildName = pResult->GetString(0);
-	CGuild* pGuild = pSelf->Core()->GuildManager()->GetGuildByName(pGuildName);
+	const CGuild* pGuild = pSelf->Core()->GuildManager()->GetGuildByName(pGuildName);
 
+	// check valid guild
 	if(!pGuild)
 	{
-		str_format(aBuf, sizeof(aBuf), "\"%s\", no such guild has been found.", pGuildName);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "disbandguild", aBuf);
+		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "guild_disband", "%s, no such guild has been found.", pGuildName);
 		return;
 	}
 
-	str_format(aBuf, sizeof(aBuf), "Guild with identifier %d and by the name of %s has been disbanded.", pGuild->GetID(), pGuildName);
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "disbandguild", aBuf);
+	// disband
+	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "guild_disband", "Guild with identifier %d and by the name of %s has been disbanded.", pGuild->GetID(), pGuildName);
 	pSelf->Core()->GuildManager()->Disband(pGuild->GetID());
 }
 
 void CGS::ConRemItem(IConsole::IResult* pResult, void* pUserData)
 {
+	// initialize variables
 	const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS - 1);
 	const ItemIdentifier ItemID = pResult->GetInteger(1);
 	const int Value = pResult->GetInteger(2);
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
-
-	CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true);
-	if(pPlayer)
+	// check valid player
+	if(CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true))
 	{
-		pPlayer->GetItem(ItemID)->Remove(Value);
+		// success remove item
+		if(pPlayer->GetItem(ItemID)->Remove(Value))
+		{
+			pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "rem_item", "Item with ID %d(%d) has been removed from the player.", ItemID, Value);
+			return;
+		}
+
+		// item not found
+		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "rem_item", "Item with ID %d not found in the player's inventory.", ItemID);
 	}
 }
 
 void CGS::ConSay(IConsole::IResult* pResult, void* pUserData)
 {
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	// initialize variables
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer();
+
+	// send chat
 	pSelf->SendChat(-1, CHAT_ALL, pResult->GetString(0));
 }
 
-// add a new bot player to the database
 void CGS::ConAddCharacter(IConsole::IResult* pResult, void* pUserData)
 {
-	const int ClientID = clamp(pResult->GetInteger(0), 0, MAX_PLAYERS - 1);
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+	// initialize variables
+	const int ClientID = pResult->GetInteger(0);
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
 	// we check if there is a player
-	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSelf->m_apPlayers[ClientID])
+	if(const CPlayer* pPlayer = pSelf->GetPlayer(ClientID); !pPlayer)
+	{
+		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "add_character", "Player not found or isn't logged in");
 		return;
+	}
 
 	// add a new kind of bot
 	pSelf->Core()->BotManager()->ConAddCharacterBot(ClientID, pResult->GetString(1));
 }
 
-// dump dialogs for translate
 void CGS::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData)
 {
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer();
+	// initialize variables
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer();
 
-	// dump
+	// start thread for sync lines
 	std::thread(&CMmoController::SyncLocalizations, pSelf->m_pMmoController).detach();
 }
 
 void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 {
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
-
-	char aBuf[1024];
+	// initialize variables
 	int Counter = 0;
+	const auto pServer = (IServer*)pUserData;
+	auto pSelf = (CGS*)pServer->GameServer();
+
 	for(int i = 0; i < MAX_PLAYERS; ++i)
 	{
 		// check client in-game
@@ -1290,38 +1308,35 @@ void CGS::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 		{
 			// check afk state
 			pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(i));
-			if(CPlayer* pPlayer = pSelf->GetPlayer(i); pPlayer && pPlayer->IsAfk())
+			if(const CPlayer* pPlayer = pSelf->GetPlayer(i); pPlayer && pPlayer->IsAfk())
 			{
 				// write information about afk
-				str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time='%ld's", i, pServer->ClientName(i), pPlayer->GetAfkTime());
-				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
+				pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "id=%d name='%s' afk_time='%ld's", i, pServer->ClientName(i), pPlayer->GetAfkTime());
 				Counter++;
 			}
 		}
 	}
 
 	// total afk players
-	str_format(aBuf, sizeof(aBuf), "%d afk players in total", Counter);
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
+	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "%d afk players in total", Counter);
 }
 
 void CGS::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
 {
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	// initialize variables
+	int ClientID = pResult->GetInteger(0);
+	const auto pServer = (IServer*)pUserData;
+	auto pSelf = (CGS*)pServer->GameServer();
 
 	// check client in-game
-	int ClientID = pResult->GetInteger(0);
 	if(pServer->ClientIngame(ClientID))
 	{
 		// check afk state
 		pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
-		if(CPlayer* pPlayer = pSelf->GetPlayer(ClientID); pPlayer && pPlayer->IsAfk())
+		if(const CPlayer* pPlayer = pSelf->GetPlayer(ClientID); pPlayer && pPlayer->IsAfk())
 		{
 			// write information about afk
-			char aBuf[1024];
-			str_format(aBuf, sizeof(aBuf), "id=%d name='%s' afk_time='%ld's", ClientID, pServer->ClientName(ClientID), pPlayer->GetAfkTime());
-			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", aBuf);
+			pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "id=%d name='%s' afk_time='%ld's", ClientID, pServer->ClientName(ClientID), pPlayer->GetAfkTime());
 			return;
 		}
 	}
@@ -1332,9 +1347,10 @@ void CGS::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
 
 void CGS::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 {
+	// initialize variables
 	const int ClientID = pResult->GetInteger(0);
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServerPlayer(ClientID);
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer();
 
 	// check valid timeperiod
 	TimePeriodData time(pResult->GetString(1));
@@ -1358,8 +1374,8 @@ void CGS::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 
 void CGS::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 {
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer();
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer();
 
 	// unban account by banid
 	pSelf->Core()->AccountManager()->UnBanAccount(pResult->GetInteger(0));
@@ -1367,8 +1383,8 @@ void CGS::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 
 void CGS::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 {
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 
 	char aBuf[1024];
 	int Counter = 0;
@@ -1390,7 +1406,7 @@ void CGS::ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* pUserData,
 	pfnCallback(pResult, pCallbackUserData);
 	if(pResult->NumArguments())
 	{
-		CGS* pSelf = (CGS*)pUserData;
+		const auto pSelf = (CGS*)pUserData;
 		pSelf->SendMotd(-1, g_Config.m_SvMotd);
 	}
 }
@@ -1404,7 +1420,7 @@ void CGS::ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IC
 	}
 }
 
-void CGS::ShowVotesNewbieInformation(int ClientID)
+void CGS::ShowVotesNewbieInformation(int ClientID) const
 {
 	CPlayer* pPlayer = GetPlayer(ClientID);
 	if(!pPlayer)
@@ -1455,7 +1471,7 @@ void CGS::ShowVotesNewbieInformation(int ClientID)
 void CGS::UpdateExpMultiplier()
 {
 	// is dungeon
-	if(Server()->GetWorldDetail(m_WorldID)->GetType() == WorldType::Dungeon)
+	if(IsWorldType(WorldType::Dungeon))
 	{
 		m_MultiplierExp = g_Config.m_SvMultiplierExpRaidDungeon;
 		return;
@@ -1468,8 +1484,7 @@ void CGS::UpdateExpMultiplier()
 		m_MultiplierExp = 100;
 }
 
-// strong update votes variability of the data
-void CGS::UpdateVotesIfForAll(int MenuList)
+void CGS::UpdateVotesIfForAll(int MenuList) const
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
@@ -1478,7 +1493,6 @@ void CGS::UpdateVotesIfForAll(int MenuList)
 	}
 }
 
-// vote parsing of all functions of action methods
 bool CGS::OnClientVoteCommand(int ClientID, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	CPlayer* pPlayer = GetPlayer(ClientID, false, true);
@@ -1537,7 +1551,8 @@ bool CGS::TakeItemCharacter(int ClientID)
 
 	for(const auto& pDrop : vDrops)
 	{
-		if(pDrop && pDrop->TakeItem(ClientID)) { return true; }
+		if(pDrop && pDrop->TakeItem(ClientID))
+			return true;
 	}
 	return false;
 }
