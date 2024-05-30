@@ -14,7 +14,7 @@ void ConAddMultipleOrbite(IConsole::IResult* pResult, void* pUserData)
 	IServer* pServer = (IServer*)pUserData;
 	CGS* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(pResult->GetClientID()));
 
-	CPlayer* pPlayer = pGS->m_apPlayers[pResult->GetClientID()];
+	CPlayer* pPlayer = pGS->GetPlayer(pResult->GetClientID());
 	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->GetCharacter())
 		return;
 
@@ -83,7 +83,7 @@ void CCommandProcessor::ConChatLogin(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(pPlayer)
 	{
 		if(pPlayer->IsAuthed())
@@ -106,7 +106,7 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer)
 		return;
 
@@ -157,7 +157,7 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
@@ -212,7 +212,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
 	// If the player is not authenticated, return
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
@@ -317,7 +317,7 @@ void CCommandProcessor::ConChatPosition(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
 		return;
 
@@ -332,7 +332,7 @@ void CCommandProcessor::ConChatSound(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
 		return;
 
@@ -346,7 +346,7 @@ void CCommandProcessor::ConChatGiveEffect(IConsole::IResult* pResult, void* pUse
 	IServer* pServer = (IServer*)pUser;
 	CGS* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(pPlayer && pPlayer->IsAuthed() && pGS->Server()->IsAuthed(ClientID))
 		pPlayer->GiveEffect(pResult->GetString(0), pResult->GetInteger(1));
 }
@@ -428,7 +428,7 @@ void CCommandProcessor::ConChatUseItem(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
@@ -448,7 +448,7 @@ void CCommandProcessor::ConChatUseSkill(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
@@ -468,7 +468,7 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer)
 		return;
 
@@ -499,7 +499,7 @@ void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer)
 		return;
 
@@ -521,7 +521,7 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
@@ -541,7 +541,7 @@ void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
 	const int ClientID = pResult->GetClientID();
 	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
 
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 

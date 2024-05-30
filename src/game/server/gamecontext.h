@@ -24,6 +24,7 @@ class CGS : public IGameServer
 	class CEntityManager* m_pEntityManager;
 
 	int m_MultiplierExp;
+	CPlayer* m_apPlayers[MAX_CLIENTS];
 	CBroadcastState m_aBroadcastStates[MAX_PLAYERS];
 	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
@@ -44,7 +45,6 @@ public:
 	CTuningParams *Tuning() { return &m_Tuning; }
 
 	CEventHandler m_Events;
-	CPlayer* m_apPlayers[MAX_CLIENTS];
 	IGameController* m_pController;
 	CGameWorld m_World;
 	inline static ska::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
@@ -53,7 +53,7 @@ public:
 	~CGS() override;
 
 	class CCharacter *GetPlayerChar(int ClientID) const;
-	CPlayer *GetPlayer(int ClientID, bool CheckAuthed = false, bool CheckCharacter = false) const;
+	CPlayer *GetPlayer(int ClientID, bool CheckAuth = false, bool CheckCharacter = false) const;
 	CPlayer *GetPlayerByUserID(int AccountID) const;
 	class CItemDescription* GetItemInfo(ItemIdentifier ItemID) const;
 	CQuestDescription* GetQuestInfo(QuestIdentifier QuestID) const;
@@ -224,6 +224,7 @@ public:
 	bool TakeItemCharacter(int ClientID);
 	void UpdateVotesIfForAll(int MenuList);
 	bool OnClientVoteCommand(int ClientID, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason);
+	bool DestroyPlayer(int ClientID);
 
 private:
 	void InitWorldzone();

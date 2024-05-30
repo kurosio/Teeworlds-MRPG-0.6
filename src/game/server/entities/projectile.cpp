@@ -57,12 +57,15 @@ return CalcPos(m_Pos, m_Direction, Curvature, Speed, Time);
 
 void CProjectile::Tick()
 {
+	// initialize variables
+	CPlayer* pOwner = GS()->GetPlayer(m_Owner);
 	const float Pt = (Server()->Tick() - m_StartTick - 1) / (float)Server()->TickSpeed();
 	const float Ct = (Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed();
 	const vec2 PrevPos = GetPos(Pt);
 	vec2 CurPos = GetPos(Ct);
 
-	if (!GS()->m_apPlayers[m_Owner] || !GS()->m_apPlayers[m_Owner]->GetCharacter())
+	// check owner exists
+	if (!pOwner || !pOwner->GetCharacter())
 	{
 		if (m_Explosive)
 			GS()->CreateExplosion(CurPos, -1, m_Weapon, m_Damage);
@@ -71,12 +74,13 @@ void CProjectile::Tick()
 		return;
 	}
 
+	// initialize variables
 	bool Collide = GS()->Collision()->IntersectLineWithInvisible(PrevPos, CurPos, &CurPos, 0);
 	CCharacter* OwnerChar = GS()->GetPlayerChar(m_Owner);
 	CCharacter* TargetChr = GS()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
-
 	m_LifeSpan--;
 
+	// check collide span and target
 	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && !TargetChr->m_Core.m_CollisionDisabled && TargetChr->IsAllowedPVP(OwnerChar->GetPlayer()->GetCID())))
 	{
 		if (m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)

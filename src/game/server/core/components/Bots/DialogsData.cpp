@@ -79,44 +79,15 @@ void CDialogElem::Init(int BotID, std::string Text, bool Action)
 	m_Request = Action;
 }
 
-// TODO: Replace not optimized for search
-int CDialogElem::GetClientIDByBotID(CGS* pGS, int CheckVisibleForCID, int BotID) const
-{
-	int CurrentPosCID = -1;
-	float LastDistance = 1e10f;
-	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
-	{
-		if(!pGS->m_apPlayers[i] || !pGS->m_apPlayers[i]->GetCharacter())
-			continue;
-
-		if(const CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(pGS->m_apPlayers[i]);
-			pPlayerBot->GetBotID() == BotID && pPlayerBot->IsActiveForClient(CheckVisibleForCID))
-		{
-			const CPlayer* pPlayer = pGS->m_apPlayers[CheckVisibleForCID];
-			const float Distance = distance(pPlayerBot->GetCharacter()->GetPos(), pPlayer->m_ViewPos);
-			if(Distance < LastDistance)
-			{
-				LastDistance = Distance;
-				CurrentPosCID = pPlayerBot->GetCID();
-			}
-		}
-	}
-
-	return CurrentPosCID;
-}
-
-void CDialogElem::Show(CGS* pGS, int ClientID)
+void CDialogElem::Show(CGS* pGS, int ClientID) const
 {
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
 	if(!pPlayer)
 		return;
 
-	int LeftSideClientID = -1;
-	int RightSideClientID = -1;
+	// checking flags
 	const char* pLeftNickname = nullptr;
 	const char* pRightNickname = nullptr;
-
-	// checking flags
 	if(m_Flags & DIALOGFLAG_SPEAK_AUTHOR)
 	{
 		pLeftNickname = "...";
@@ -125,56 +96,18 @@ void CDialogElem::Show(CGS* pGS, int ClientID)
 	{
 		// left sides flags
 		if(m_Flags & DIALOGFLAG_LEFT_PLAYER)
-		{
-			LeftSideClientID = ClientID;
-			pLeftNickname = pGS->Server()->ClientName(LeftSideClientID);
-
-		}
+			pLeftNickname = pGS->Server()->ClientName(ClientID);
 		else if(m_Flags & DIALOGFLAG_LEFT_BOT)
-		{
-			// search clientid by bot id or dissable flag what left side it's bot
-			if(LeftSideClientID = GetClientIDByBotID(pGS, ClientID, m_LeftSide); LeftSideClientID == -1)
-			{
-				m_Flags ^= DIALOGFLAG_LEFT_BOT;
-				m_Flags |= DIALOGFLAG_LEFT_EMPTY;
-			}
-			else
-			{
-				pLeftNickname = DataBotInfo::ms_aDataBot[m_LeftSide].m_aNameBot;
-			}
-		}
+			pLeftNickname = DataBotInfo::ms_aDataBot[m_LeftSide].m_aNameBot;
 
 		// right sides flags
 		if(m_Flags & DIALOGFLAG_RIGHT_BOT)
-		{
-			// search clientid by bot id or dissable flag what right side it's bot
-			if(RightSideClientID = GetClientIDByBotID(pGS, ClientID, m_RightSide); RightSideClientID == -1)
-			{
-				m_Flags ^= DIALOGFLAG_RIGHT_BOT;
-				m_Flags |= DIALOGFLAG_RIGHT_EMPTY;
-			}
-			else
-			{
-				pRightNickname = DataBotInfo::ms_aDataBot[m_RightSide].m_aNameBot;
-			}
-		}
+			pRightNickname = DataBotInfo::ms_aDataBot[m_RightSide].m_aNameBot;
 	}
 
 	// show dialog
 	pPlayer->m_Dialog.FormatText(this, pLeftNickname, pRightNickname);
-	if(pGS->IsClientMRPG(ClientID))
-	{
-		CNetMsg_Sv_Dialog Msg;
-		Msg.m_LeftClientID = LeftSideClientID;
-		Msg.m_RightClientID = RightSideClientID;
-		Msg.m_pText = pPlayer->m_Dialog.GetCurrentText();
-		Msg.m_Flag = m_Flags;
-		pGS->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-	}
-	else
-	{
-		pGS->Motd(ClientID, pPlayer->m_Dialog.GetCurrentText());
-	}
+	pGS->Motd(ClientID, pPlayer->m_Dialog.GetCurrentText());
 }
 
 CDialogElem* CPlayerDialog::GetCurrent() const
@@ -195,12 +128,11 @@ CGS* CPlayerDialog::GS() const { return m_pPlayer->GS(); }
 void CPlayerDialog::Start(CPlayer* pPlayer, int BotCID)
 {
 	m_pPlayer = pPlayer;
-	if(!pPlayer || !GS()->GetPlayer(BotCID))
+	CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(BotCID));
+	if(!pPlayer || !pPlayerBot)
 		return;
 
 	Clear();
-
-	const CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[BotCID]);
 
 	m_Step = 0;
 	m_BotType = pPlayerBot->GetBotType();
@@ -229,8 +161,9 @@ void CPlayerDialog::Start(CPlayer* pPlayer, int BotCID)
 
 void CPlayerDialog::TickUpdate()
 {
-	if(!m_pPlayer || !m_pPlayer->GetCharacter() || m_BotCID < MAX_PLAYERS || !GS()->m_apPlayers[m_BotCID] || !GS()->m_apPlayers[m_BotCID]->GetCharacter()
-		|| distance(m_pPlayer->m_ViewPos, GS()->m_apPlayers[m_BotCID]->GetCharacter()->GetPos()) > 180.0f)
+	CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_BotCID));
+	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !pPlayerBot || !pPlayerBot->GetCharacter()
+		|| distance(m_pPlayer->m_ViewPos, pPlayerBot->GetCharacter()->GetPos()) > 180.0f)
 	{
 		Clear();
 	}

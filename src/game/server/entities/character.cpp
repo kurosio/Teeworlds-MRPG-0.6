@@ -124,8 +124,8 @@ bool CCharacter::IsCollisionFlag(int Flag) const
 
 CPlayer* CCharacter::GetHookedPlayer() const
 {
-	if(m_Core.m_HookedPlayer > 0 && m_Core.m_HookedPlayer < MAX_CLIENTS && m_Core.m_HookState == HOOK_GRABBED)
-		return GS()->m_apPlayers[m_Core.m_HookedPlayer];
+	if(m_Core.m_HookState == HOOK_GRABBED)
+		return GS()->GetPlayer(m_Core.m_HookedPlayer);
 	return nullptr;
 }
 
@@ -751,13 +751,11 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 {
 	// Get the client ID of the player
 	const int ClientID = m_pPlayer->GetCID();
+	CPlayer* pKiller = GS()->GetPlayer(Killer);
 
 	// Check if the killer player exists
-	if(!GS()->m_apPlayers[Killer] || (Killer == ClientID))
+	if(!pKiller || (Killer == ClientID))
 		return;
-
-	// Get the pointer to the killer player object from the game state
-	CPlayer* pKiller = GS()->m_apPlayers[Killer];
 
 	// Check if the killer is a guardian bot
 	bool KillerIsGuardian = (pKiller->IsBot() && dynamic_cast<CPlayerBot*>(pKiller)->GetBotType() == TYPE_BOT_NPC &&
@@ -826,7 +824,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	const int ClientID = m_pPlayer->GetCID();
 
 	// a nice sound
-	GS()->m_pController->OnCharacterDeath(m_pPlayer, GS()->m_apPlayers[Killer], Weapon);
+	GS()->m_pController->OnCharacterDeath(m_pPlayer, GS()->GetPlayer(Killer), Weapon);
 	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 
 	// send the kill message

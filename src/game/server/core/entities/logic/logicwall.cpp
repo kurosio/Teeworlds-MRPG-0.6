@@ -195,18 +195,19 @@ void CLogicWallLine::Respawn(bool Spawn) { m_Spawned = Spawn; }
 
 void CLogicWallLine::Tick()
 {
-	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS || !GS()->m_apPlayers[m_ClientID] || !GS()->m_apPlayers[m_ClientID]->GetCharacter())
+	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
+	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS || !pPlayer || !pPlayer->GetCharacter())
 	{
 		m_PosTo = m_Pos;
 		return;
 	}
 
-	vec2 PositionPlayer = GS()->m_apPlayers[m_ClientID]->GetCharacter()->m_Core.m_Pos;
+	vec2 PositionPlayer = pPlayer->GetCharacter()->m_Core.m_Pos;
 	if(m_Spawned && distance(m_Pos, PositionPlayer) < 300)
 	{
 		m_PosTo = PositionPlayer;
 		if(Server()->Tick() % Server()->TickSpeed() == 0)
-			GS()->m_apPlayers[m_ClientID]->GetCharacter()->TakeDamage(vec2(0,0), 1, -1, WEAPON_WORLD);
+			pPlayer->GetCharacter()->TakeDamage(vec2(0,0), 1, -1, WEAPON_WORLD);
 		return;
 	}
 	m_PosTo = m_Pos;
@@ -318,7 +319,7 @@ bool CLogicDungeonDoorKey::SyncStateChanges()
 	// sync with bots
 	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if (BotPlayer && BotPlayer->GetCharacter() && BotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB
 			&& BotPlayer->GetBotID() == m_BotID && GS()->GetWorldID() == BotPlayer->GetPlayerWorldID())
 		{

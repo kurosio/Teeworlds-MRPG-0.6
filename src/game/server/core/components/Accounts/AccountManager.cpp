@@ -423,7 +423,7 @@ std::string CAccountManager::HashPassword(const std::string& Password, const std
 
 void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 {
-	CPlayer* pPlayer = GS()->m_apPlayers[ClientID];
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 

@@ -25,7 +25,8 @@ void CQuestStepBase::UpdateBot() const
 	int BotClientID = -1;
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		if(!pGS->m_apPlayers[i] || pGS->m_apPlayers[i]->GetBotType() != TYPE_BOT_QUEST || pGS->m_apPlayers[i]->GetBotMobID() != m_Bot.m_ID)
+		CPlayer* pPlayer = pGS->GetPlayer(i);
+		if(!pPlayer || pPlayer->GetBotType() != TYPE_BOT_QUEST || pPlayer->GetBotMobID() != m_Bot.m_ID)
 			continue;
 
 		BotClientID = i;
@@ -43,8 +44,7 @@ void CQuestStepBase::UpdateBot() const
 	if(!ActiveStepBot && BotClientID >= MAX_PLAYERS)
 	{
 		dbg_msg(PRINT_QUEST_PREFIX, "The mob was found, but the quest step is not active for players.");
-		delete pGS->m_apPlayers[BotClientID];
-		pGS->m_apPlayers[BotClientID] = nullptr;
+		pGS->DestroyPlayer(BotClientID);
 	}
 }
 
@@ -56,7 +56,7 @@ bool CQuestStepBase::IsActiveStep() const
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		CPlayer* pPlayer = pGS->m_apPlayers[i];
+		CPlayer* pPlayer = pGS->GetPlayer(i);
 		if(!pPlayer || !pPlayer->IsAuthed())
 			continue;
 
@@ -346,7 +346,7 @@ void CQuestStep::UpdateTaskMoveTo()
 			{
 				for(int c = MAX_PLAYERS; c < MAX_CLIENTS; c++)
 				{
-					CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[c]);
+					CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(c));
 					if(pPlBotSearch && pPlBotSearch->GetQuestBotMobInfo().m_QuestID == pQuest->GetID() &&
 						pPlBotSearch->GetQuestBotMobInfo().m_QuestStep == m_Bot.m_StepPos &&
 						pPlBotSearch->GetQuestBotMobInfo().m_MoveToStep == i)
@@ -359,7 +359,7 @@ void CQuestStep::UpdateTaskMoveTo()
 				if(!pPlayerBot)
 				{
 					int MobClientID = GS()->CreateBot(TYPE_BOT_QUEST_MOB, pRequired.m_DefeatMobInfo.m_BotID, -1);
-					pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[MobClientID]);
+					pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(MobClientID));
 					pPlayerBot->InitQuestBotMobInfo(
 						{
 							m_Bot.m_QuestID,

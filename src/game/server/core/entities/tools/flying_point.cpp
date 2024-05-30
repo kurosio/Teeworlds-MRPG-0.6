@@ -18,8 +18,17 @@ CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 In
 
 void CEntityFlyingPoint::Tick()
 {
-	CPlayer *pPlayer = GS()->m_apPlayers[m_ClientID];
-	if(!pPlayer || !pPlayer->GetCharacter() || (m_FromID != -1 && (!GS()->m_apPlayers[m_FromID] || !GS()->m_apPlayers[m_FromID]->GetCharacter())))
+	// check valid player
+	CPlayer *pPlayer = GS()->GetPlayer(m_ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter())
+	{
+		GameWorld()->DestroyEntity(this);
+		return;
+	}
+
+	// check valid from player if exist
+	CPlayer* pFromPlayer = GS()->GetPlayer(m_FromID);
+	if(m_FromID != -1 && (!pFromPlayer || !pFromPlayer->GetCharacter()))
 	{
 		GameWorld()->DestroyEntity(this);
 		return;

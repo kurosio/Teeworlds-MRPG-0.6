@@ -37,7 +37,7 @@ CDropQuestItem::~CDropQuestItem()
 
 void CDropQuestItem::Tick()
 {
-	CPlayer* pPlayer = GS()->m_apPlayers[m_ClientID];
+	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
 	if (m_LifeSpan < 0 || !pPlayer)
 	{
 		GameWorld()->DestroyEntity(this);

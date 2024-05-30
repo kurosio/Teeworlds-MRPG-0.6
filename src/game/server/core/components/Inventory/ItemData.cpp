@@ -13,11 +13,7 @@ CGS* CPlayerItem::GS() const
 
 CPlayer* CPlayerItem::GetPlayer() const
 {
-	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
-	{
-		return GS()->m_apPlayers[m_ClientID];
-	}
-	return nullptr;
+	return GS()->GetPlayer(m_ClientID);
 }
 
 inline int randomRangecount(int startrandom, int endrandom, int count)

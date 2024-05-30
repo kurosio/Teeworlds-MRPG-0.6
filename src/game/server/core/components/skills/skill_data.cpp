@@ -44,7 +44,7 @@ CPlayer* CSkill::GetPlayer() const
 {
 	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
 	{
-		return GS()->m_apPlayers[m_ClientID];
+		return GS()->GetPlayer(m_ClientID);
 	}
 	return nullptr;
 }

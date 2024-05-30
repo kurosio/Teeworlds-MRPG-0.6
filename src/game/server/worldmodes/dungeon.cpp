@@ -110,12 +110,12 @@ void CGameControllerDungeon::ChangeState(int State)
 
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			CPlayer* pPlayer = GS()->m_apPlayers[i];
+			CPlayer* pPlayer = GS()->GetPlayer(i);
 			if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 				continue;
 
 			// update finish time int sec
-			m_Records[i].m_Time = GS()->m_apPlayers[i]->GetTempData().m_TempTimeDungeon / Server()->TickSpeed();
+			m_Records[i].m_Time = pPlayer->GetTempData().m_TempTimeDungeon / Server()->TickSpeed();
 			FinishTime = m_Records[i].m_Time;
 
 			// search best passage help
@@ -131,7 +131,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 			// save record and reset time for client
 			GS()->Core()->DungeonManager()->SaveDungeonRecord(pPlayer, m_DungeonID, &m_Records[i]);
-			GS()->m_apPlayers[i]->GetTempData().m_TempTimeDungeon = 0;
+			pPlayer->GetTempData().m_TempTimeDungeon = 0;
 			m_Records[i].Reset();
 		}
 
@@ -216,7 +216,7 @@ void CGameControllerDungeon::StateTick()
 		// update players time
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			CPlayer* pPlayer = GS()->m_apPlayers[i];
+			CPlayer* pPlayer = GS()->GetPlayer(i);
 			if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 				continue;
 
@@ -321,7 +321,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 			// update vote menu for player
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
-				CPlayer* pPlayer = GS()->m_apPlayers[i];
+				CPlayer* pPlayer = GS()->GetPlayer(i);
 				if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
 					continue;
 
@@ -356,7 +356,7 @@ int CGameControllerDungeon::CountMobs() const
 	int CountMobs = 0;
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if(BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
 			CountMobs++;
 	}
@@ -365,14 +365,16 @@ int CGameControllerDungeon::CountMobs() const
 
 int CGameControllerDungeon::PlayersReady() const
 {
-	int ReadyPlayers = 0;
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		if(!GS()->m_apPlayers[i] || !GS()->IsPlayerEqualWorld(i, m_WorldID) || !GS()->m_apPlayers[i]->GetTempData().m_TempDungeonReady)
-			continue;
-		ReadyPlayers++;
-	}
-	return ReadyPlayers;
+    int ReadyPlayers = 0;
+    for(int i = 0; i < MAX_PLAYERS; i++)
+    {
+        CPlayer* pPlayer = GS()->GetPlayer(i);
+        if(pPlayer && GS()->IsPlayerEqualWorld(i, m_WorldID) && pPlayer->GetTempData().m_TempDungeonReady)
+        {
+            ReadyPlayers++;
+        }
+    }
+    return ReadyPlayers;
 }
 
 int CGameControllerDungeon::PlayersNum() const
@@ -391,7 +393,7 @@ int CGameControllerDungeon::LeftMobsToWin() const
 	int LeftMobs = 0;
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		CPlayerBot* BotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if(BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && BotPlayer->GetCharacter() && m_WorldID == BotPlayer->GetPlayerWorldID())
 			LeftMobs++;
 	}
@@ -402,7 +404,7 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 {
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		CPlayerBot* BotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if(BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetPlayerWorldID())
 		{
 			BotPlayer->SetDungeonAllowedSpawn(AllowedSpawn);
@@ -421,7 +423,7 @@ int CGameControllerDungeon::GetSyncFactor() const
 
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		CPlayerBot* pBotPlayer = static_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if(pBotPlayer && pBotPlayer->GetBotType() == TYPE_BOT_MOB && pBotPlayer->GetPlayerWorldID() == m_WorldID)
 		{
 			const int LevelDisciple = pBotPlayer->GetAttributesSize();

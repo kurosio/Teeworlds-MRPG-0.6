@@ -19,7 +19,7 @@ CNurseHeart::CNurseHeart(CGameWorld* pGameWorld, int ClientID)
 void CNurseHeart::Tick()
 {
 	// Get the player bot object
-	CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[m_ClientID]);
+	CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_ClientID));
 
 	// Check if the player or their character is null
 	if(!pPlayerBot || !pPlayerBot->GetCharacter())

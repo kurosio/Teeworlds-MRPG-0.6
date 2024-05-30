@@ -53,8 +53,7 @@ class CDialogElem
 	int GetLeftSide() const { return m_LeftSide; }
 	int GetRightSide() const { return m_RightSide; }
 
-	int GetClientIDByBotID(class CGS* pGS, int CheckVisibleForCID, int BotID) const;
-	void Show(class CGS* pGS, int ClientID);
+	void Show(class CGS* pGS, int ClientID) const;
 
 public:
 	void Init(int BotID, std::string Text, bool Action);

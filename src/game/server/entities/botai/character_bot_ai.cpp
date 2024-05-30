@@ -1001,7 +1001,8 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		// Skip the iteration if the player or their character is not available
-		if(!GS()->m_apPlayers[i] || !GS()->m_apPlayers[i]->GetCharacter())
+		CPlayer* pCandidatePlayer = GS()->GetPlayer(i);
+		if(!pCandidatePlayer || !pCandidatePlayer->GetCharacter())
 			continue;
 
 		// Skip the iteration if the bot is a quest mob type and the player is not active for the bot
@@ -1012,22 +1013,22 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
 			// Check if the bot is a guardian NPC and the player is not active for the bot
-			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !GS()->m_apPlayers[i]->Account()->IsRelationshipsDeterioratedToMax())
+			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !pCandidatePlayer->Account()->IsRelationshipsDeterioratedToMax())
 			{
 				continue;
 			}
 		}
 
 		// Check if the player's character has damage disabled
-		if(GS()->m_apPlayers[i]->GetCharacter()->m_DamageDisabled)
+		if(pCandidatePlayer->GetCharacter()->m_DamageDisabled)
 			continue;
 
 		// Skip the iteration if the distance between the bot and the player's character is greater than the specified distance
-		if(distance(m_Core.m_Pos, GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos) > Distance)
+		if(distance(m_Core.m_Pos, pCandidatePlayer->GetCharacter()->m_Core.m_Pos) > Distance)
 			continue;
 
 		// Skip the iteration if there is a collision between the bot and the player's character
-		if(GS()->Collision()->IntersectLineWithInvisible(GS()->m_apPlayers[i]->GetCharacter()->m_Core.m_Pos, m_Pos, nullptr, nullptr))
+		if(GS()->Collision()->IntersectLineWithInvisible(pCandidatePlayer->GetCharacter()->m_Core.m_Pos, m_Pos, nullptr, nullptr))
 			continue;
 
 		// Skip the iteration if the player is not in the same world as the bot
@@ -1035,7 +1036,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 			continue;
 
 		// Return the player if all conditions are met
-		return GS()->m_apPlayers[i];
+		return pCandidatePlayer;
 	}
 
 	// Return null if no player is found that meets all the conditions
@@ -1133,7 +1134,7 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
 		// Check active player bot
-		CPlayerBot* pSearchTarget = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+		CPlayerBot* pSearchTarget = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if(m_pBotPlayer->GetCID() == i || !pSearchTarget || !pSearchTarget->GetCharacter())
 			continue;
 
@@ -1164,7 +1165,7 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 			if(GS()->Collision()->IntersectLineWithInvisible(pSearchTarget->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
 				continue;
 
-			pTarget = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[i]);
+			pTarget = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
 			break;
 		}
 	}

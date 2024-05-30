@@ -48,7 +48,7 @@ int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius, boo
 	if(SnappingClient == -1)
 		return NetworkClippedResultImpl<0>(FreezeUnsnapped);
 
-	const CPlayer* pPlayer = GS()->m_apPlayers[SnappingClient];
+	const CPlayer* pPlayer = GS()->GetPlayer(SnappingClient);
 	const float dx = pPlayer->m_ViewPos.x - CheckPos.x;
 	const float dy = pPlayer->m_ViewPos.y - CheckPos.y;
 	const float radiusOffset = Radius / 2.f;
@@ -68,7 +68,7 @@ bool CEntity::IsClientEntityFullSnapping(int SnappingClient) const
 	if(m_ClientID >= 0 && m_ClientID < MAX_CLIENTS)
 	{
 		// Get the player object corresponding to the client ID
-		CPlayer* pPlayer = GS()->m_apPlayers[m_ClientID];
+		CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
 		if(pPlayer->IsActiveForClient(SnappingClient) != STATE_SNAPPING_FULL)
 			return false;
 	}

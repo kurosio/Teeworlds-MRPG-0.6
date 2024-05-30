@@ -27,19 +27,8 @@
 
 CGS::CGS()
 {
-	for(auto& pBroadcastState : m_aBroadcastStates)
-	{
-		pBroadcastState.m_NoChangeTick = 0;
-		pBroadcastState.m_LifeSpanTick = 0;
-		pBroadcastState.m_NextMessage[0] = 0;
-		pBroadcastState.m_TimedMessage[0] = 0;
-		pBroadcastState.m_PrevMessage[0] = 0;
-		pBroadcastState.m_NextPriority = BroadcastPriority::LOWER;
-	}
-
-	for(auto& apPlayer : m_apPlayers)
-		apPlayer = nullptr;
-
+	m_MultiplierExp = 0;
+	m_pStorage = nullptr;
 	m_pServer = nullptr;
 	m_pController = nullptr;
 	m_pMmoController = nullptr;
@@ -47,17 +36,19 @@ CGS::CGS()
 	m_pPathFinder = nullptr;
 	m_pLayers = nullptr;
 	m_pEntityManager = nullptr;
+	mem_zero(m_apPlayers, sizeof(m_apPlayers));
+	mem_zero(m_aBroadcastStates, sizeof(m_aBroadcastStates));
 }
 
 CGS::~CGS()
 {
+	for(auto& vClientEffects : ms_aEffects)
+		vClientEffects.clear();
 	m_Events.Clear();
-	for(auto& pEffects : ms_aEffects)
-		pEffects.clear();
-	for(auto& apPlayer : m_apPlayers)
+	for(auto& pPlayer : m_apPlayers)
 	{
-		delete apPlayer;
-		apPlayer = nullptr;
+		delete pPlayer;
+		pPlayer = nullptr;
 	}
 
 	delete m_pController;
@@ -68,23 +59,25 @@ CGS::~CGS()
 	delete m_pEntityManager;
 }
 
-class CCharacter* CGS::GetPlayerChar(int ClientID) const
+CCharacter* CGS::GetPlayerChar(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return nullptr;
 	return m_apPlayers[ClientID]->GetCharacter();
 }
-CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuthed, bool CheckCharacter) const
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
-		return nullptr;
 
-	CPlayer* pPlayer = m_apPlayers[ClientID];
-	if(CheckAuthed && !pPlayer->IsAuthed())
-		return nullptr;
-	if(CheckCharacter && !pPlayer->GetCharacter())
-		return nullptr;
-	return pPlayer;
+CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuth, bool CheckCharacter) const
+{
+    if (ClientID < 0 || ClientID >= MAX_CLIENTS)
+        return nullptr;
+    CPlayer* pPlayer = m_apPlayers[ClientID];
+    if (!pPlayer)
+        return nullptr;
+    if (CheckAuth && !pPlayer->IsAuthed())
+        return nullptr;
+    if (CheckCharacter && !pPlayer->GetCharacter())
+        return nullptr;
+    return pPlayer;
 }
 
 CPlayer* CGS::GetPlayerByUserID(int AccountID) const
@@ -94,12 +87,11 @@ CPlayer* CGS::GetPlayerByUserID(int AccountID) const
 		CPlayer* pPlayer = GetPlayer(i, true);
 		if(pPlayer && pPlayer->Account()->GetID() == AccountID)
 		{
-			int WorldID = pPlayer->GetPlayerWorldID();
-			CGS* pGS = (CGS*)Instance::GameServer(WorldID);
+			const int WorldID = pPlayer->GetPlayerWorldID();
+			const auto pGS = (CGS*)Instance::GameServer(WorldID);
 			return pGS->GetPlayer(i, true);
 		}
 	}
-
 	return nullptr;
 }
 
@@ -1503,6 +1495,18 @@ bool CGS::OnClientVoteCommand(int ClientID, const char* pCmd, const int Extra1, 
 	// parsing everything else
 	const auto csqlReason = sqlstr::CSqlString<64>(pReason);
 	return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extra1, Extra2, ReasonNumber, csqlReason.cstr());
+}
+
+bool CGS::DestroyPlayer(int ClientID)
+{
+	if(ClientID < 0 || ClientID > MAX_CLIENTS || !m_apPlayers[ClientID])
+		return false;
+
+	if(m_apPlayers[ClientID]->GetCharacter())
+		m_apPlayers[ClientID]->KillCharacter(WEAPON_WORLD);
+	delete m_apPlayers[ClientID];
+	m_apPlayers[ClientID] = nullptr;
+	return true;
 }
 
 int CGS::CreateBot(short BotType, int BotID, int SubID)

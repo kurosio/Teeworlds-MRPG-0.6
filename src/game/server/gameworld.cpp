@@ -297,7 +297,7 @@ void CGameWorld::UpdatePlayerMaps()
 	std::pair<float, int> Dist[MAX_CLIENTS];
 	for(int ClientID = 0; ClientID < MAX_PLAYERS; ClientID++)
 	{
-		CPlayer* pPlayer = GS()->m_apPlayers[ClientID];
+		CPlayer* pPlayer = GS()->GetPlayer(ClientID);
 		int ClientWorldID = Server()->GetClientWorldID(ClientID);
 		if(!Server()->ClientIngame(ClientID) || ClientWorldID != GS()->GetWorldID() || !pPlayer)
 			continue;
@@ -310,7 +310,7 @@ void CGameWorld::UpdatePlayerMaps()
 			Dist[j].second = j;
 
 			// Check if the player is a bot and is currently in game
-			CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[j]);
+			CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(j));
 			if(!Server()->ClientIngame(j) || !pBotPlayer || !pBotPlayer->GetCharacter())
 			{
 				// If not, set the distance to a very large value and skip to the next player

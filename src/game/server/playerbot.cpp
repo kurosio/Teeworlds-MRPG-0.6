@@ -111,7 +111,7 @@ CPlayer* CPlayerBot::GetEidolonOwner() const
 {
 	if(m_BotType != TYPE_BOT_EIDOLON || m_MobID < 0 || m_MobID >= MAX_PLAYERS)
 		return nullptr;
-	return GS()->m_apPlayers[m_MobID];
+	return GS()->GetPlayer(m_MobID);
 }
 
 CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
@@ -360,7 +360,7 @@ int64_t CPlayerBot::GetMaskVisibleForClients() const
 StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 {
 	// Get the snapping player
-	CPlayer* pSnappingPlayer = GS()->m_apPlayers[ClientID];
+	CPlayer* pSnappingPlayer = GS()->GetPlayer(ClientID);
 
 	// Check if the client ID is valid and if the snapping player exists
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer)

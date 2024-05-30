@@ -277,7 +277,7 @@ void CInventoryManager::ListInventory(int ClientID, ItemType Type)
 {
 	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
 	{
-		ItemSelected(GS()->m_apPlayers[ClientID], &pItem);
+		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
 	});
 }
 
@@ -285,7 +285,7 @@ void CInventoryManager::ListInventory(int ClientID, ItemFunctional Type)
 {
 	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
 	{
-		ItemSelected(GS()->m_apPlayers[ClientID], &pItem);
+		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
 	});
 }
 

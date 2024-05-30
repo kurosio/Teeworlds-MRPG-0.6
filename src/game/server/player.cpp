@@ -194,7 +194,7 @@ CPlayerBot* CPlayer::GetEidolon() const
 {
 	if(m_EidolonCID < MAX_PLAYERS || m_EidolonCID >= MAX_CLIENTS)
 		return nullptr;
-	return dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[m_EidolonCID]);
+	return dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_EidolonCID));
 }
 
 void CPlayer::TryCreateEidolon()
@@ -207,7 +207,7 @@ void CPlayer::TryCreateEidolon()
 	{
 		if(const int EidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, pEidolonData->GetDataBotID(), m_ClientID); EidolonCID != -1)
 		{
-			dynamic_cast<CPlayerBot*>(GS()->m_apPlayers[EidolonCID])->m_EidolonItemID = EidolonItemID;
+			dynamic_cast<CPlayerBot*>(GS()->GetPlayer(EidolonCID))->m_EidolonItemID = EidolonItemID;
 			m_EidolonCID = EidolonCID;
 		}
 	}
@@ -218,15 +218,7 @@ void CPlayer::TryRemoveEidolon()
 	if(IsBot())
 		return;
 
-	if(m_EidolonCID >= MAX_PLAYERS && m_EidolonCID < MAX_CLIENTS && GS()->m_apPlayers[m_EidolonCID])
-	{
-		if(GS()->m_apPlayers[m_EidolonCID]->GetCharacter())
-			GS()->m_apPlayers[m_EidolonCID]->KillCharacter(WEAPON_WORLD);
-
-		delete GS()->m_apPlayers[m_EidolonCID];
-		GS()->m_apPlayers[m_EidolonCID] = nullptr;
-	}
-
+	GS()->DestroyPlayer(m_EidolonCID);
 	m_EidolonCID = -1;
 }
 
