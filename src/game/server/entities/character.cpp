@@ -1501,7 +1501,7 @@ bool CCharacter::StartConversation(CPlayer* pTarget) const
 	CPlayerBot* pTargetBot = static_cast<CPlayerBot*>(pTarget);
 	if(pTargetBot && pTargetBot->IsConversational() && pTargetBot->IsActiveForClient(m_pPlayer->GetCID()))
 	{
-		m_pPlayer->m_Dialog.Start(m_pPlayer, pTarget->GetCID());
+		m_pPlayer->m_Dialog.Start(pTarget->GetCID());
 		return true;
 	}
 

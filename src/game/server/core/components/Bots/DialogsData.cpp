@@ -125,18 +125,21 @@ CDialogElem* CPlayerDialog::GetCurrent() const
 }
 
 CGS* CPlayerDialog::GS() const { return m_pPlayer->GS(); }
-void CPlayerDialog::Start(CPlayer* pPlayer, int BotCID)
+void CPlayerDialog::Start(int BotCID)
 {
-	m_pPlayer = pPlayer;
-	CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(BotCID));
-	if(!pPlayer || !pPlayerBot)
+	// assert player
+	dbg_assert(m_pPlayer != nullptr, "Player is not initialized on player dialog");
+
+	// check valid bot
+	const auto pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(BotCID));
+	if(!pPlayerBot)
 		return;
 
+	// initialize variables
 	Clear();
-
 	m_Step = 0;
-	m_BotType = pPlayerBot->GetBotType();
 	m_BotCID = BotCID;
+	m_BotType = pPlayerBot->GetBotType();
 	m_MobID = pPlayerBot->GetBotMobID();
 
 	// show step dialog or meaningless
@@ -151,21 +154,40 @@ void CPlayerDialog::Start(CPlayer* pPlayer, int BotCID)
 			"<player> are you interested something? I'm sorry, don't want to talk right now."
 		};
 		MeaninglessDialog.Init(pPlayerBot->GetBotID(), pTalking[rand() % 3], false);
-		MeaninglessDialog.Show(GS(), pPlayer->GetCID());
+		MeaninglessDialog.Show(GS(), m_pPlayer->GetCID());
+		return;
 	}
-	else
-	{
-		ShowCurrentDialog();
-	}
+
+	// default dialogue
+	ShowCurrentDialog();
 }
 
 void CPlayerDialog::TickUpdate()
 {
-	CPlayerBot* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_BotCID));
-	if(!m_pPlayer || !m_pPlayer->GetCharacter() || !pPlayerBot || !pPlayerBot->GetCharacter()
-		|| distance(m_pPlayer->m_ViewPos, pPlayerBot->GetCharacter()->GetPos()) > 180.0f)
+	// is non-active
+	if(!IsActive())
+		return;
+
+	// check player valid
+	if(!m_pPlayer || !m_pPlayer->GetCharacter())
 	{
 		Clear();
+		return;
+	}
+
+	// check bot valid
+	const auto pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_BotCID));
+	if(!pPlayerBot || !pPlayerBot->GetCharacter())
+	{
+		Clear();
+		return;
+	}
+
+	// check distance between player and bot
+	if(distance(m_pPlayer->m_ViewPos, pPlayerBot->GetCharacter()->GetPos()) > 180.0f)
+	{
+		Clear();
+		return;
 	}
 }
 
@@ -294,6 +316,11 @@ void CPlayerDialog::ClearText()
 	mem_zero(m_aFormatedText, sizeof(m_aFormatedText));
 }
 
+void CPlayerDialog::Init(CPlayer* pPlayer)
+{
+	m_pPlayer = pPlayer;
+}
+
 void CPlayerDialog::Next()
 {
 	CDialogElem* pDialog = GetCurrent();
@@ -395,19 +422,12 @@ void CPlayerDialog::PostNext()
 
 void CPlayerDialog::Clear()
 {
-	// send information packet about clear
-	if(m_pPlayer && m_BotCID != -1)
-	{
-		int ClientID = m_pPlayer->GetCID();
-		if(GS()->IsClientMRPG(ClientID))
-		{
-			CNetMsg_Sv_ClearDialog Msg;
-			GS()->Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	dbg_assert(m_pPlayer != nullptr, "Player is not initialized on player dialog");
 
-			GS()->Motd(ClientID, "\0");
-		}
-		else
-			GS()->Motd(ClientID, "\0");
+	// send empty motd for clear it's
+	if(IsActive())
+	{
+		GS()->Motd(m_pPlayer->GetCID(), "\0");
 	}
 
 	// clear var

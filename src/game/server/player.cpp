@@ -35,8 +35,9 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
-	m_Cooldown.Initilize(ClientID);
-	m_VotesData.Initilize(m_pGS, this);
+	m_Cooldown.Init(ClientID);
+	m_VotesData.Init(m_pGS, this);
+	m_Dialog.Init(this);
 
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)

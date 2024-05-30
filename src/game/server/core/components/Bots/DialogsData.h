@@ -19,9 +19,15 @@ class CPlayerDialog
 	char m_aFormatedText[1024] {};
 
 public:
-	CPlayerDialog() { Clear(); }
-	bool IsActive() const { return m_BotCID > 0; }
-	void Start(class CPlayer* pPlayer, int BotCID);
+	CPlayerDialog()
+	{
+		Clear();
+	}
+
+	bool IsActive() const { return m_BotCID >= MAX_PLAYERS && m_BotCID < MAX_CLIENTS; }
+
+	void Init(CPlayer* pPlayer);
+	void Start(int BotCID);
 	void Next();
 	void TickUpdate();
 

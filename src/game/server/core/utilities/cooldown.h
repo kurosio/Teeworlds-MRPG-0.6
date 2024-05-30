@@ -19,7 +19,7 @@ class CCooldown
 public:
 	CCooldown() = default;
 
-	void Initilize(int ClientID) { m_ClientID = ClientID; }
+	void Init(int ClientID) { m_ClientID = ClientID; }
 	void Start(int Time, std::string Name, CCooldownCallback Callback);
 	void Reset();
 	bool IsCooldownActive() const { return m_IsCooldownActive; }

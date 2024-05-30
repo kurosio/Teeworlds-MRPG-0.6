@@ -708,7 +708,7 @@ public:
 		m_aHiddenGroup.clear();
 	}
 
-	void Initilize(CGS* pGS, CPlayer* pPlayer)
+	void Init(CGS* pGS, CPlayer* pPlayer)
 	{
 		m_pGS = pGS;
 		m_pPlayer = pPlayer;
