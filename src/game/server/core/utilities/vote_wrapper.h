@@ -107,7 +107,7 @@ class CVoteGroup
 
 };
 
-#define FMT_LOCALIZE_STR(clientid, text, args) fmt_handle(clientid, text, args).c_str()
+#define FMT_LOCALIZE_STR(clientid, text, args) fmt_handle_def(clientid, text, args).c_str()
 
 /**
 	 * @brief The VoteWrapper class provides a convenient way to create and manage voting options and groups.

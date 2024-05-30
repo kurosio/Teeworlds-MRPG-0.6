@@ -234,7 +234,7 @@ void CVoteGroup::AddItemValueImpl(int ItemID)
 		return;
 
 	// add item value
-	AddVoteImpl("null", NOPE, NOPE, fmt_handle(m_ClientID, "You have {} {}", 
+	AddVoteImpl("null", NOPE, NOPE, fmt_handle_def(m_ClientID, "You have {} {}",
 		m_pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName()).c_str());
 }
 

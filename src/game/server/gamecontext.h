@@ -90,7 +90,7 @@ public:
 		for(int i = Start; i < End; i++)
 		{
 			if(m_apPlayers[i])
-				SendChatTarget(i, fmt_handle(i, pText, args...).c_str());
+				SendChatTarget(i, fmt_handle_def(i, pText, args...).c_str());
 		}
 	}
 
@@ -99,7 +99,7 @@ public:
 	{
 		CPlayer* pPlayer = GetPlayerByUserID(AccountID);
 		if(pPlayer)
-			SendChatTarget(pPlayer->GetCID(), fmt_handle(pPlayer->GetCID(), pText, args...).c_str());
+			SendChatTarget(pPlayer->GetCID(), fmt_handle_def(pPlayer->GetCID(), pText, args...).c_str());
 		return pPlayer != nullptr;
 	}
 
@@ -111,7 +111,7 @@ public:
 			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->SameGuild(GuildID, i))
 			{
 				std::string Result = "Guild | ";
-				Result += fmt_handle(i, pText, args...);
+				Result += fmt_handle_def(i, pText, args...);
 				SendChatTarget(i, Result.c_str());
 			}
 		}
@@ -125,7 +125,7 @@ public:
 			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && IsPlayerEqualWorld(i, WorldID))
 			{
 				std::string Result = pSuffix[0] != '\0' ? std::string(pSuffix) + " " : "";
-				Result += fmt_handle(i, pText, args...);
+				Result += fmt_handle_def(i, pText, args...);
 				SendChatTarget(i, Result.c_str());
 			}
 		}
@@ -156,7 +156,7 @@ public:
 		for(int i = Start; i < End; i++)
 		{
 			if(m_apPlayers[i])
-				SendMotd(i, fmt_handle(i, pText, args...).c_str());
+				SendMotd(i, fmt_handle_def(i, pText, args...).c_str());
 		}
 	}
 
@@ -169,7 +169,7 @@ public:
 		for(int i = Start; i < End; i++)
 		{
 			if(m_apPlayers[i])
-				AddBroadcast(i, fmt_handle(i, pText, args...).c_str(), Priority, LifeSpan);
+				AddBroadcast(i, fmt_handle_def(i, pText, args...).c_str(), Priority, LifeSpan);
 		}
 	}
 
@@ -179,7 +179,7 @@ public:
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			if(m_apPlayers[i] && IsPlayerEqualWorld(i, WorldID))
-				AddBroadcast(i, fmt_handle(i, pText, args...).c_str(), Priority, LifeSpan);
+				AddBroadcast(i, fmt_handle_def(i, pText, args...).c_str(), Priority, LifeSpan);
 		}
 	}
 

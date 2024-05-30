@@ -33,7 +33,7 @@ public:
 		Optional.m_MiscValue1 = MiscValue1;
 		Optional.m_MiscValue2 = MiscValue2;
 		Optional.m_ClientID = ClientID;
-		Optional.m_Description = fmt_handle(ClientID, pInformation).c_str();
+		Optional.m_Description = fmt_handle_def(ClientID, pInformation).c_str();
 		m_pData[ClientID].push(Optional);
 		return &m_pData[ClientID].back();
 	}

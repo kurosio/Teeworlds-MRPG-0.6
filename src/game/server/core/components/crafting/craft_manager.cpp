@@ -77,7 +77,7 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 		if(pPlayer->GetItem(RequiredItem)->GetValue() < RequiredItem.GetValue())
 		{
 			const int ItemLeft = (RequiredItem.GetValue() - pPlayer->GetItem(RequiredItem)->GetValue());
-			strBuffer += fmt_handle(ClientID, "{}x{} ", RequiredItem.Info()->GetName(), ItemLeft);
+			strBuffer += fmt_handle_def(ClientID, "{}x{} ", RequiredItem.Info()->GetName(), ItemLeft);
 		}
 	}
 	if(!strBuffer.empty())

@@ -126,7 +126,7 @@ void CItemDescription::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int 
 		if(Att.HasValue())
 		{
 			const int BonusValue = GetInfoEnchantStats(Att.GetID(), Enchant);
-			strAttrbutes += fmt_handle(pPlayer->GetCID(), "{}+{}", Att.Info()->GetName(), BonusValue);
+			strAttrbutes += fmt_handle_def(pPlayer->GetCID(), "{}+{}", Att.Info()->GetName(), BonusValue);
 		}
 	}
 	str_copy(pBuffer, strAttrbutes.c_str(), Size);

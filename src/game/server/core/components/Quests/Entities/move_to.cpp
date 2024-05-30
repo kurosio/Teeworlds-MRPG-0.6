@@ -231,12 +231,12 @@ void CEntityQuestAction::HandleBroadcastInformation() const
 	if(pRequireItem.IsValid())
 	{
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pRequireItem.GetID());
-		strBuffer += fmt_handle(m_ClientID, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue()) + "\n";
+		strBuffer += fmt_handle_def(m_ClientID, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue()) + "\n";
 	}
 	if(pPickupItem.IsValid())
 	{
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pPickupItem.GetID());
-		strBuffer += fmt_handle(m_ClientID, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue()) + "\n";
+		strBuffer += fmt_handle_def(m_ClientID, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue()) + "\n";
 	}
 
 	// select by type

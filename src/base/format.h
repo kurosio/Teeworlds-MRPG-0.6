@@ -93,8 +93,7 @@ enum
 	FMTFLAG_DIGIT_COMMAS = 1 << 1,
 };
 
-
-typedef std::string (HandlerFmtCallbackFunc)(int, const char*, void*);
+typedef std::string(HandlerFmtCallbackFunc)(int, const char*, void*);
 typedef struct { HandlerFmtCallbackFunc* m_pCallback; void* m_pData; } HandlerFmtCallback;
 struct struct_handler_fmt
 {
@@ -114,6 +113,67 @@ private:
 	inline static int ms_Flags {};
 };
 
+// implement format
+struct struct_format_implement
+{
+	struct description
+	{
+		int m_definer;
+		bool m_handlefmt;
+	};
+
+	// argument conversion
+	template<typename T>
+	static std::string to_string(const description& desc, const T& value)
+	{
+		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
+		{
+			return std::to_string(value);
+		}
+		else if constexpr(std::is_arithmetic_v<T>)
+		{
+			bool digitCommas = struct_handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS;
+			return digitCommas ? fmt_digit<std::string>(std::to_string(value)) : std::to_string(value);
+		}
+		else if constexpr(std::is_convertible_v<T, std::string>)
+		{
+			bool handleArgs = desc.m_handlefmt && struct_handler_fmt::get_flags() & FMTFLAG_HANDLE_ARGS;
+			return handleArgs ? struct_handler_fmt::handle(desc.m_definer, std::string(value)) : std::string(value);
+		}
+		else
+		{
+			static_assert(!std::is_same_v<T, T>, "One of the passed arguments cannot be converted to a string");
+			return "error convertible";
+		}
+	}
+
+	// implementation for the last argument
+	static std::string impl(const description& desc, const std::string& text, std::list<std::string>& vStrPack);
+
+	// implementation for recursive arguments
+	template<typename T, typename... Ts>
+	static std::string impl(const description& desc, const std::string& text, std::list<std::string>& vStrPack, const T& arg, const Ts &...args)
+	{
+		vStrPack.emplace_back(to_string(desc, arg));
+		return impl(desc, text, vStrPack, args...);
+	}
+
+	// implementation for default format
+	template<typename... Ts>
+	static std::string impl_fmt(const description& desc, const char* ptext, const Ts &...args)
+	{
+		std::list<std::string> vStringPack {};
+		auto text = desc.m_handlefmt ? struct_handler_fmt::handle(desc.m_definer, ptext) : ptext;
+		return struct_format_implement::impl(desc, text, vStringPack, args...);
+	}
+
+	static std::string impl_fmt(const description& desc, const char* ptext)
+	{
+		return desc.m_handlefmt ? struct_handler_fmt::handle(desc.m_definer, ptext) : ptext;
+	}
+};
+
+
 /**
  * Initializes the handler function callback.
  *
@@ -130,104 +190,53 @@ void fmt_init_handler_func(HandlerFmtCallbackFunc* pCallback, void* pData);
  *
  * @param flags The flags to be used.
  */
-void fmt_use_flags(int flags);
+void fmt_set_flags(int flags);
 
-struct struct_format_implement
-{
-	// argument conversion
-	template<typename T>
-	static std::string to_string(int Definerlang, const T& Value)
-	{
-		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
-		{
-			return std::to_string(Value);
-		}
-		else if constexpr(std::is_arithmetic_v<T>)
-		{
-			bool digitCommas = struct_handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS;
-			return digitCommas ? fmt_digit<std::string>(std::to_string(Value)) : std::to_string(Value);
-		}
-		else if constexpr(std::is_same_v<T, BigInt>)
-		{
-			bool digitCommas = struct_handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS;
-			return digitCommas ? fmt_big_digit(Value.to_string()) : Value.to_string();
-		}
-		else if constexpr(std::is_convertible_v<T, std::string>)
-		{
-			bool handleArgs = struct_handler_fmt::get_flags() & FMTFLAG_HANDLE_ARGS;
-			return handleArgs ? struct_handler_fmt::handle(Definerlang, std::string(Value)) : std::string(Value);
-		}
-		else
-		{
-			static_assert(!std::is_same_v<T, T>, "One of the passed arguments cannot be converted to a string");
-			return "error convertible";
-		}
-	}
-
-	// implementation for the last argument
-	static std::string impl(int Definer, const std::string& Text, std::list<std::string>& vStrPack);
-
-	// implementation for recursive arguments
-	template<typename T, typename... Ts>
-	static std::string impl(int Definer, const std::string& Text, std::list<std::string>& vStrPack, const T& Arg, const Ts &...Argpack)
-	{
-		vStrPack.emplace_back(to_string(Definer, Arg));
-		return impl(Definer, Text, vStrPack, Argpack...);
-	}
-};
 
 /**
-* Formats a string with the specified arguments.
-*
-* @tparam Ts The types of the arguments.
-* @param pText The format string.
-* @param ArgPack The arguments to format.
-* @return The formatted string.
-*/
+ * Formats a string with the specified arguments.
+ *
+ * @tparam Ts The types of the arguments.
+ * @param ptext The format string.
+ * @param args The arguments to be formatted.
+ * @return The formatted string.
+ */
+template <typename... Ts>
+inline std::string fmt(const char* ptext, const Ts &...args)
+{
+	struct_format_implement::description desc { 0, false };
+	return struct_format_implement::impl_fmt({}, ptext, args...);
+}
+
+/**
+ * Formats a string with the specified arguments using a handler function.
+ *
+ * @tparam Ts The types of the arguments.
+ * @param ptext The format string.
+ * @param args The arguments to be formatted.
+ * @return The formatted string.
+ */
+template <typename... Ts>
+inline std::string fmt_handle(const char* ptext, const Ts &...args)
+{
+	struct_format_implement::description desc { 0, true };
+	return struct_format_implement::impl_fmt(desc, ptext, args...);
+}
+
+/**
+ * Formats a string with the specified arguments using a handler function.
+ *
+ * @tparam Ts The types of the arguments.
+ * @param definer The definer value.
+ * @param ptext The format string.
+ * @param args The arguments to be formatted.
+ * @return The formatted string.
+ */
 template<typename... Ts>
-inline std::string fmt(const char* pText, const Ts &...ArgPack)
+inline std::string fmt_handle_def(int definer, const char* ptext, const Ts &...args)
 {
-	std::list<std::string> vStringPack {};
-	return struct_format_implement::impl(-1, pText, vStringPack, ArgPack...);
-}
-
-/**
-* Formats a string without any arguments.
-*
-* @param pText The format string.
-* @return The formatted string.
-*/
-inline std::string fmt(const char* pText)
-{
-	return pText;
-}
-
-/**
-* Formats a localized string with the specified arguments.
-*
-* @tparam Ts The types of the arguments.
-* @param Definer The value, flag or hash.
-* @param pText The format string.
-* @param Argpack The arguments to format.
-* @return The formatted localized string.
-*/
-template<typename... Ts>
-inline std::string fmt_handle(int Definer, const char* pText, const Ts &...Argpack)
-{
-	std::list<std::string> vStringPack {};
-	return struct_format_implement::impl(Definer, struct_handler_fmt::handle(Definer, pText), vStringPack, Argpack...);
-}
-
-/**
-* Formats a by handle callback string without any arguments.
-*
-* @param Definer The value, flag or hash.
-* @param pText The format string.
-* @return The formatted localized string.
-*/
-inline std::string fmt_handle(int Definer, const char* pText)
-{
-	return struct_handler_fmt::handle(Definer, pText);
+	struct_format_implement::description desc { definer, true };
+	return struct_format_implement::impl_fmt(desc, ptext, args...);
 }
 
 #endif // _GAME_SERVER_TOOLS_FORMAT_H

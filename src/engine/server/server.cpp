@@ -1920,7 +1920,7 @@ int CServer::Run(ILogger* pLogger)
 	Instance::Data::g_pServer = static_cast<IServer*>(this);
 
 	// initialize fmt localize function
-	fmt_use_flags(FMTFLAG_DIGIT_COMMAS | FMTFLAG_HANDLE_ARGS);
+	fmt_set_flags(FMTFLAG_DIGIT_COMMAS | FMTFLAG_HANDLE_ARGS);
 	fmt_init_handler_func(&CServer::CallbackLocalize, this);
 
 	// initilize localization

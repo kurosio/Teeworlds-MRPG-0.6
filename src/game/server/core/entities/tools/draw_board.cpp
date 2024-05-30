@@ -97,11 +97,11 @@ void CBrush::SendBroadcast() const
 	if(m_pBoard->m_Flags & DRAWBOARDFLAG_PLAYER_ITEMS)
 	{
 		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(*m_BrushItem);
-		strAvailable = fmt_handle(m_pPlayer->GetCID(), "has {}", pPlayerItem->GetValue());
+		strAvailable = fmt_handle_def(m_pPlayer->GetCID(), "has {}", pPlayerItem->GetValue());
 	}
 	else
 	{
-		strAvailable = fmt_handle(m_pPlayer->GetCID(), "unlimited");
+		strAvailable = fmt_handle_def(m_pPlayer->GetCID(), "unlimited");
 	}
 
 	// send broadcast
