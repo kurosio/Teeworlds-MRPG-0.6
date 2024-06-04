@@ -2488,7 +2488,8 @@ void CServer::ConchainStdoutOutputLevel(IConsole::IResult* pResult, void* pUserD
 std::string CServer::CallbackLocalize(int ClientID, const char* pText, void* pUser)
 {
 	IServer* pServer = static_cast<IServer*>(pUser);
-	return pServer->Localize(ClientID, pText);
+	const char* pResult = pServer->Localize(ClientID, pText);
+	return pResult ? pResult : pText;
 }
 
 // This function is used to register commands for the server

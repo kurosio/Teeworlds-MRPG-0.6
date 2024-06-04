@@ -422,11 +422,10 @@ void CPlayerDialog::PostNext()
 
 void CPlayerDialog::Clear()
 {
-	dbg_assert(m_pPlayer != nullptr, "Player is not initialized on player dialog");
-
 	// send empty motd for clear it's
 	if(IsActive())
 	{
+		dbg_assert(m_pPlayer != nullptr, "Player is not initialized on player dialog");
 		GS()->Motd(m_pPlayer->GetCID(), "\0");
 	}
 
