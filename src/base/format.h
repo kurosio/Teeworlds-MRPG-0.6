@@ -148,21 +148,26 @@ struct struct_format_implement
 	}
 
 	// implementation for the last argument
-	static std::string impl_end_result(const description& Desc, const std::string& Text, std::deque<std::string>& vPack);
+	static void prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::string>&& vPack);
 
 	// implementation for default format
 	template<typename... Ts>
-	static std::string impl_fmt(const description& Desc, const char* pText, const Ts &...Args)
+	static std::string impl_format(const description& Desc, const char* pText, const Ts &...Args)
 	{
-		if(!pText)
-			return "";
-
-		std::deque<std::string> vPack { to_string(Desc, Args)... };
+		size_t argsSize = sizeof...(Args);
+		std::string Result;
 		std::string Text = Desc.m_handlefmt ? struct_handler_fmt::handle(Desc.m_definer, pText) : pText;
-		return impl_end_result(Desc, Text, vPack);
+		Result.reserve(Text.size() + argsSize * 10);
+
+		// Reserve space for all the argument strings
+		std::vector<std::string> vPack;
+		vPack.reserve(argsSize);
+		((vPack.emplace_back(to_string(Desc, Args))), ...);
+		prepare_result(Desc, Text, &Result, std::move(vPack));
+		return Result;
 	}
 
-	static std::string impl_fmt(const description& desc, const char* ptext)
+	static std::string impl_format(const description& desc, const char* ptext)
 	{
 		if(!ptext)
 			return "";
@@ -203,7 +208,7 @@ template <typename... Ts>
 inline std::string fmt(const char* ptext, const Ts &...args)
 {
 	struct_format_implement::description desc { 0, false };
-	return struct_format_implement::impl_fmt(desc, ptext, args...);
+	return struct_format_implement::impl_format(desc, ptext, args...);
 }
 
 /**
@@ -218,7 +223,7 @@ template <typename... Ts>
 inline std::string fmt_handle(const char* ptext, const Ts &...args)
 {
 	struct_format_implement::description desc { 0, true };
-	return struct_format_implement::impl_fmt(desc, ptext, args...);
+	return struct_format_implement::impl_format(desc, ptext, args...);
 }
 
 /**
@@ -234,7 +239,7 @@ template<typename... Ts>
 inline std::string fmt_handle_def(int definer, const char* ptext, const Ts &...args)
 {
 	struct_format_implement::description desc { definer, true };
-	return struct_format_implement::impl_fmt(desc, ptext, args...);
+	return struct_format_implement::impl_format(desc, ptext, args...);
 }
 
 #endif // BASE_FORMAT_H

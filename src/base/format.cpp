@@ -11,7 +11,7 @@ void fmt_set_flags(int flags)
 	struct_handler_fmt::use_flags(flags);
 }
 
-std::string struct_format_implement::impl_end_result(const description&, const std::string& Text, std::deque<std::string>& vPack)
+void struct_format_implement::prepare_result(const description&, const std::string& Text, std::string* pResult, std::vector<std::string>&& vPack)
 {
 	// initialize variables
 	enum
@@ -20,7 +20,6 @@ std::string struct_format_implement::impl_end_result(const description&, const s
 		truncation_full,
 		truncation_custom
 	};
-	std::string Result {};
 	size_t argumentPosition = 0;
 	bool argumentProcessing = false;
 	const int length = (int)Text.length();
@@ -28,7 +27,7 @@ std::string struct_format_implement::impl_end_result(const description&, const s
 	int truncationType {};
 	char truncationAfterChar { '\0' };
 
-	// use instead const char* std::string
+	// use instead const char* std::string and optimize this
 	for(int i = 0; i < length; ++i)
 	{
 		const char iterChar = Text[i];
@@ -43,7 +42,7 @@ std::string struct_format_implement::impl_end_result(const description&, const s
 		// argument started
 		if(!argumentProcessing)
 		{
-			Result += iterChar;
+			(*pResult) += iterChar;
 			continue;
 		}
 
@@ -61,7 +60,7 @@ std::string struct_format_implement::impl_end_result(const description&, const s
 				}
 
 				// align custom value from text
-				if(Text[j] >= '0' && Text[j] <= '9')
+				if(isdigit(Text[j]))
 				{
 					truncationString += Text[j];
 					continue;
@@ -103,10 +102,7 @@ std::string struct_format_implement::impl_end_result(const description&, const s
 				truncationType = truncation_nope;
 			}
 
-			Result += arg;
+			(*pResult) += arg;
 		}
 	}
-
-	// result string
-	return Result;
 }
