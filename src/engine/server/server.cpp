@@ -290,7 +290,7 @@ const char* CServer::GetClientNameChangeRequest(int ClientID)
 const char* CServer::Localize(int ClientID, const char* pText)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
-		return nullptr;
+		return pText;
 
 	return m_pLocalization->Localize(m_aClients[ClientID].m_aLanguage, pText);
 }
@@ -2487,9 +2487,8 @@ void CServer::ConchainStdoutOutputLevel(IConsole::IResult* pResult, void* pUserD
 
 std::string CServer::CallbackLocalize(int ClientID, const char* pText, void* pUser)
 {
-	IServer* pServer = static_cast<IServer*>(pUser);
-	const char* pResult = pServer->Localize(ClientID, pText);
-	return pResult ? pResult : pText;
+	auto pServer = static_cast<IServer*>(pUser);
+	return pServer->Localize(ClientID, pText);
 }
 
 // This function is used to register commands for the server

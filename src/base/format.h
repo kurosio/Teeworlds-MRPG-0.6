@@ -148,26 +148,18 @@ struct struct_format_implement
 	}
 
 	// implementation for the last argument
-	static std::string impl(const description& desc, const std::string& text, std::list<std::string>& vStrPack);
-
-	// implementation for recursive arguments
-	template<typename T, typename... Ts>
-	static std::string impl(const description& desc, const std::string& text, std::list<std::string>& vStrPack, const T& arg, const Ts &...args)
-	{
-		vStrPack.emplace_back(to_string(desc, arg));
-		return impl(desc, text, vStrPack, args...);
-	}
+	static std::string impl_end_result(const description& Desc, const std::string& Text, std::deque<std::string>& vPack);
 
 	// implementation for default format
 	template<typename... Ts>
-	static std::string impl_fmt(const description& desc, const char* ptext, const Ts &...args)
+	static std::string impl_fmt(const description& Desc, const char* pText, const Ts &...Args)
 	{
-		if(!ptext)
+		if(!pText)
 			return "";
 
-		std::list<std::string> vStringPack {};
-		auto text = desc.m_handlefmt ? struct_handler_fmt::handle(desc.m_definer, ptext) : ptext;
-		return struct_format_implement::impl(desc, text, vStringPack, args...);
+		std::deque<std::string> vPack { to_string(Desc, Args)... };
+		std::string Text = Desc.m_handlefmt ? struct_handler_fmt::handle(Desc.m_definer, pText) : pText;
+		return impl_end_result(Desc, Text, vPack);
 	}
 
 	static std::string impl_fmt(const description& desc, const char* ptext)

@@ -11,7 +11,7 @@ void fmt_set_flags(int flags)
 	struct_handler_fmt::use_flags(flags);
 }
 
-std::string struct_format_implement::impl(const description&, const std::string& text, std::list<std::string>& vStrPack)
+std::string struct_format_implement::impl_end_result(const description&, const std::string& Text, std::deque<std::string>& vPack)
 {
 	// initialize variables
 	enum
@@ -21,8 +21,9 @@ std::string struct_format_implement::impl(const description&, const std::string&
 		truncation_custom
 	};
 	std::string Result {};
+	size_t argumentPosition = 0;
 	bool argumentProcessing = false;
-	const int length = (int)text.length();
+	const int length = (int)Text.length();
 	int truncationValue {};
 	int truncationType {};
 	char truncationAfterChar { '\0' };
@@ -30,7 +31,7 @@ std::string struct_format_implement::impl(const description&, const std::string&
 	// use instead const char* std::string
 	for(int i = 0; i < length; ++i)
 	{
-		const char iterChar = text[i];
+		const char iterChar = Text[i];
 
 		// start argument
 		if(iterChar == '{')
@@ -50,24 +51,23 @@ std::string struct_format_implement::impl(const description&, const std::string&
 		if(iterChar == '~')
 		{
 			std::string truncationString;
-			for(int j = i + 1; text[j] != '}' && j != length; ++j)
+			for(int j = i + 1; Text[j] != '}' && j != length; ++j)
 			{
 				// align custom value from fmt
-				if(text[j] == '%' && !vStrPack.empty())
+				if(Text[j] == '%' && argumentPosition < vPack.size())
 				{
-					truncationString = vStrPack.front();
-					vStrPack.pop_front();
+					truncationString = vPack[argumentPosition++];
 					continue;
 				}
 
 				// align custom value from text
-				if(text[j] >= '0' && text[j] <= '9')
+				if(Text[j] >= '0' && Text[j] <= '9')
 				{
-					truncationString += text[j];
+					truncationString += Text[j];
 					continue;
 				}
 
-				truncationAfterChar = text[j];
+				truncationAfterChar = Text[j];
 			}
 
 			truncationValue = truncationString.empty() ? 0 : str_toint(truncationString.c_str());
@@ -79,14 +79,11 @@ std::string struct_format_implement::impl(const description&, const std::string&
 		if(iterChar == '}')
 		{
 			argumentProcessing = false;
-			if(vStrPack.empty())
-			{
+			if(argumentPosition >= vPack.size())
 				continue;
-			}
 
 			// initialize variables
-			std::string arg = vStrPack.front();
-			vStrPack.pop_front();
+			std::string arg = vPack[argumentPosition++];
 
 			// truncation prepare value
 			if(truncationType != truncation_nope)
