@@ -82,25 +82,29 @@ GroupData* CGroupManager::GetGroupByID(GroupIdentifier ID) const
 }
 
 // Function to display the group menu for a player
-void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
+void CGroupManager::ShowGroupMenu(CPlayer* pPlayer) const
 {
-	// Get the client ID of the player
+	// initialize variables
 	int ClientID = pPlayer->GetCID();
 
-	// Group information
-	VoteWrapper VGroupCmd(ClientID, VWF_SEPARATE_CLOSED, "Group commands");
+	// information
+	VoteWrapper VGroupCmd(ClientID,VWF_STYLE_STRICT_BOLD|VWF_SEPARATE|VWF_ALIGN_TITLE, "Group commands");
 	VGroupCmd.Add("- /group Get all sub commands");
-	VGroupCmd.AddLine();
+	VoteWrapper::AddEmptyline(ClientID);
 
-	// Group management
+	// group management
 	GroupData* pGroup = pPlayer->Account()->GetGroup();
-	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_STRICT_BOLD, "\u273D Group Management");
+	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u273D Group Management");
+
+	// check group valid
 	if(!pGroup)
 	{
 		VGroup.AddOption("GROUP_CREATE", "Create a group");
-		VGroup.AddLine();
+		VoteWrapper::AddEmptyline(ClientID);
 		return;
 	}
+
+	// group functions
 	const bool IsOwner = pGroup->GetOwnerUID() == pPlayer->Account()->GetID();
 	if(IsOwner)
 	{
@@ -108,9 +112,19 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		VGroup.AddOption("GROUP_DISBAND", "Disband group");
 	}
 	VGroup.AddOption("GROUP_KICK", pPlayer->Account()->GetID(), "Leave the group");
-	VGroup.AddLine();
+	VoteWrapper::AddEmptyline(ClientID);
 
-	// Group membership list
+	// group invites list
+	VoteWrapper VGroupInvites(ClientID, VWF_STYLE_SIMPLE | VWF_SEPARATE_OPEN, "Players for invitation");
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
+		if(pSearchPlayer && !pSearchPlayer->Account()->GetGroup())
+			VGroupInvites.AddOption("GROUP_INVITE", i, "Invite {}", Server()->ClientName(i));
+	}
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// group member list
 	VoteWrapper(ClientID).Add("\u2735 Members {} of {}", (int)pGroup->GetAccounts().size(), (int)MAX_GROUP_MEMBERS);
 	for(auto& AID : pGroup->GetAccounts())
 	{
@@ -123,18 +137,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 			VMember.AddOption("GROUP_CHANGE_OWNER", AID, "Transfer ownership {}", PlayerName.c_str());
 		}
 	}
-	VoteWrapper::AddLine(ClientID);
-
-	// Group player invites
-	VoteWrapper VGroupInvites(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE_CLOSED, "\u2605 Players for invitation");
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
-		if(pSearchPlayer && !pSearchPlayer->Account()->GetGroup())
-			VGroupInvites.AddOption("GROUP_INVITE", i, "Invite {}", Server()->ClientName(i));
-	}
-
-	VoteWrapper::AddBackpage(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 }
 
 bool CGroupManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
@@ -153,7 +156,7 @@ bool CGroupManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int Extra1, int Extra2, bool Option)
+static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int Extra1, int Extra2, bool Accepted)
 {
 	// initialize variables
 	CGS* pGS = pPlayer->GS();
@@ -167,7 +170,7 @@ static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int Extra1, int Ex
 		return;
 
 	// check selected option
-	if(Option)
+	if(Accepted)
 	{
 		pGroup->Add(pPlayer->Account()->GetID());
 		pGS->Chat(ClientID, "You've accepted the invitation!");
@@ -187,7 +190,7 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	// create new group
 	if(PPSTR(pCmd, "GROUP_CREATE") == 0)
 	{
-		// try create group
+		// try to create group
 		if(CreateGroup(pPlayer))
 			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		return true;
@@ -309,6 +312,7 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			// update random color
 			pGroup->UpdateRandomColor();
 			GS()->UpdateVotesIfForAll(MENU_GROUP);
+			GS()->Chat(ClientID, "The group color has been updated!");
 		}
 
 		return true;

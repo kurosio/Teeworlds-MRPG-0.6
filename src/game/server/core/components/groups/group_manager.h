@@ -15,7 +15,7 @@ class CGroupManager : public MmoComponent
 
 	void OnInit() override;
 	void OnPlayerLogin(CPlayer* pPlayer) override;
-	void ShowGroupMenu(CPlayer* pPlayer);
+	void ShowGroupMenu(CPlayer* pPlayer) const;
 	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
