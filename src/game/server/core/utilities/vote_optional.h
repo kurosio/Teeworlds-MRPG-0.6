@@ -11,7 +11,7 @@ class CVoteOptional : public MultiworldIdentifiableStaticData< std::map<int, std
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
-	typedef void (*OptionEventCallback)(class CPlayer*, int, int, int);
+	typedef void (*OptionEventCallback)(class CPlayer*, int, int, bool);
 	OptionEventCallback m_Callback {}; // The callback function for the event
 
 public:
@@ -33,7 +33,7 @@ public:
 		Optional.m_MiscValue1 = MiscValue1;
 		Optional.m_MiscValue2 = MiscValue2;
 		Optional.m_ClientID = ForCID;
-		Optional.m_Description = fmt_handle_def(ForCID, pInformation).c_str();
+		Optional.m_Description = fmt_handle_def(ForCID, pInformation, args...);
 		m_pData[ForCID].push(Optional);
 		return &m_pData[ForCID].back();
 	}

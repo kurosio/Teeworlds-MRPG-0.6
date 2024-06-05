@@ -153,7 +153,7 @@ bool CGroupManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int Extra1, int Extra2, int Option)
+static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int Extra1, int Extra2, bool Option)
 {
 	// initialize variables
 	CGS* pGS = pPlayer->GS();
@@ -167,7 +167,7 @@ static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int Extra1, int Ex
 		return;
 
 	// check selected option
-	if(Option == 1)
+	if(Option)
 	{
 		pGroup->Add(pPlayer->Account()->GetID());
 		pGS->Chat(ClientID, "You've accepted the invitation!");

@@ -828,7 +828,7 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 	if(!CVoteOptional::Data()[m_ClientID].empty())
 	{
 		CVoteOptional* pOptional = &CVoteOptional::Data()[m_ClientID].front();
-		pOptional->Run((bool)Vote);
+		pOptional->Run(Vote == 1);
 	}
 
 	// - - - - - F3- - - - - - -
