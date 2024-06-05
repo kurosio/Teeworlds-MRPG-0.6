@@ -89,8 +89,8 @@ bool CSkillManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SKILL_LIST);
 
 		// Show selected skill
-		if(pPlayer->m_VotesData.GetGroupID() >= 0)
-			ShowSkill(pPlayer, pPlayer->m_VotesData.GetGroupID());
+		if(pPlayer->m_VotesData.GetExtraID() >= 0)
+			ShowSkill(pPlayer, pPlayer->m_VotesData.GetExtraID());
 
 		// Add backpage
 		VoteWrapper::AddBackpage(pPlayer->GetCID());

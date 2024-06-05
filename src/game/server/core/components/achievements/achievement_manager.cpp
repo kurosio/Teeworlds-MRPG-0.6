@@ -59,7 +59,7 @@ bool CAchievementManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_ACHIEVEMENTS_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_ACHIEVEMENTS);
-		ShowGroupMenu(pPlayer, pPlayer->m_VotesData.GetGroupID());
+		ShowGroupMenu(pPlayer, pPlayer->m_VotesData.GetExtraID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

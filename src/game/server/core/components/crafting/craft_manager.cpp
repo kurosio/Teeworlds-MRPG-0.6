@@ -164,7 +164,7 @@ bool CCraftManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_CRAFT_LIST);
 
 		// show craft by id
-		int CraftID = pPlayer->m_VotesData.GetGroupID();
+		int CraftID = pPlayer->m_VotesData.GetExtraID();
 		ShowCraftItem(pPlayer, GetCraftByID(CraftID));
 		return true;
 	}

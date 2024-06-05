@@ -8,10 +8,22 @@
 
 #include <game/server/core/components/mails/mail_wrapper.h>
 
-constexpr auto TW_AUCTION_TABLE = "tw_auction_items";
-
-void CAuctionManager::OnTick()
+void CAuctionManager::OnInit()
 {
+	// init auction slots
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_SLOTS_TABLE);
+	while(pRes->next())
+	{
+		int ID = pRes->getInt("ID");
+		int ItemID = pRes->getInt("ItemID");
+		int Value = pRes->getInt("Value");
+		int Enchant = pRes->getInt("Enchant");
+		int Price = pRes->getInt("Price");
+		int OwnerID = pRes->getInt("OwnerID");
+
+		// init by server
+		CAuctionSlot::CreateElement(ID)->Init({ItemID, Value, Enchant}, Price, OwnerID);
+	}
 }
 
 bool CAuctionManager::OnCharacterTile(CCharacter* pChr)
@@ -42,46 +54,117 @@ bool CAuctionManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	if(Menulist == MENU_AUCTION_CREATE_SLOT)
+	if(Menulist == MENU_AUCTION_SLOT_SELECTED)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_INVENTORY);
-
-		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
-		CItem* pAuctionItem = pAuctionData->GetItem();
-
-		const int SlotValue = pAuctionItem->GetValue();
-		const int SlotEnchant = pAuctionItem->GetEnchant();
-		const ItemIdentifier SlotItemID = pAuctionItem->GetID();
-		const int SlotPrice = pAuctionData->GetPrice();
-
-		VoteWrapper(ClientID).Add("The reason for write the number for each row");
-		VoteWrapper::AddEmptyline(ClientID);
-
-		VoteWrapper VSlot(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {}", pAuctionItem->Info()->GetName());
-		VSlot.MarkList().Add("Description:");
-		{
-			VSlot.BeginDepth();
-			VSlot.Add("Tax for creating a slot: {}gold", pAuctionData->GetTaxPrice());
-			if(SlotEnchant > 0)
-			{
-				VSlot.Add("Warning selling enchanted: +{}", SlotEnchant);
-			}
-			VSlot.EndDepth();
-		}
-		VSlot.AddLine();
-		VSlot.MarkList().Add("Interaction:");
-		{
-			VSlot.BeginDepth();
-			VSlot.AddOption("AUCTION_COUNT", SlotItemID, "Select the number of items: {}.", SlotValue);
-			VSlot.AddOption("AUCTION_PRICE", SlotItemID, "Set the price: {}.", SlotPrice);
-			VSlot.AddOption("AUCTION_ACCEPT", SlotItemID, "Accept the offer.");
-			VSlot.EndDepth();
-		}
-
+		pPlayer->m_VotesData.SetLastMenuID(MENU_AUCTION_LIST);
+		ShowAuctionSlot(pPlayer, pPlayer->m_VotesData.GetExtraID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
+
+	if(Menulist == MENU_AUCTION_CREATE_SLOT)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_INVENTORY);
+		ShowCreateSlot(pPlayer);
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
 	return false;
+}
+
+void CAuctionManager::ShowAuction(CPlayer* pPlayer) const
+{
+	// initialize variables
+	const int ClientID = pPlayer->GetCID();
+	const int UsedsSlots = GetSlotsCountByAccountID(pPlayer->Account()->GetID());
+
+	// information
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD | VWF_ALIGN_TITLE, "Auction Information");
+	VInfo.Add("To create a slot, see inventory item interact.");
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// show your auction list
+	VoteWrapper VSelf(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Your auction slots {} of {}", UsedsSlots, g_Config.m_SvMaxAuctionPlayerSlots);
+	for(auto& pSlot : CAuctionSlot::Data())
+	{
+		// self slots
+		if(pSlot->GetOwnerID() == pPlayer->Account()->GetID())
+		{
+			const CItem* pItem = pSlot->GetItem();
+			VSelf.AddOption("AUCTION_BUY", pSlot->GetID(), "{}. Cancel slot ({}x{})", VSelf.NextPos(), pItem->Info()->GetName(), pItem->GetValue());
+		}
+	}
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// show other auction list
+	VoteWrapper VList(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Other slots");
+	for(auto& pSlot : CAuctionSlot::Data())
+	{
+		// show other slots
+		if(pSlot->GetOwnerID() != pPlayer->Account()->GetID())
+		{
+			const CItem* pItem = pSlot->GetItem();
+			VList.AddMenu(MENU_AUCTION_SLOT_SELECTED, pSlot->GetID(), "{}. {}x{} Seller: {}",
+				VList.NextPos(), pItem->Info()->GetName(), pItem->GetValue(), Server()->GetAccountNickname(pSlot->GetOwnerID()));
+		}
+	}
+}
+
+void CAuctionManager::ShowCreateSlot(CPlayer* pPlayer) const
+{
+	// initialize variables
+	const int ClientID = pPlayer->GetCID();
+	CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_TempAuctionSlot;
+	const CItem* pItem = pAuctionData->GetItem();
+	const int Value = pItem->GetValue();
+	const int Enchant = pItem->GetEnchant();
+	const ItemIdentifier ItemID = pItem->GetID();
+	const int SlotPrice = pAuctionData->GetPrice();
+
+	// information
+	VoteWrapper(ClientID).Add("The reason for write the number for each row");
+	VoteWrapper::AddEmptyline(ClientID);
+
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Auction slot for {}", pItem->Info()->GetName());
+	VInfo.MarkList().Add("Description:");
+	{
+		VInfo.BeginDepth();
+		VInfo.Add("Tax for creating a slot: {}gold", pAuctionData->GetTaxPrice());
+		if(Enchant > 0)
+		{
+			VInfo.Add("Warning selling enchanted: +{}", Enchant);
+		}
+		VInfo.EndDepth();
+	}
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// interaction
+	VoteWrapper VInteract(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Interaction:");
+	VInteract.AddOption("AUCTION_NUMBER", ItemID, "Select the number of items: {}.", Value);
+	VInteract.AddOption("AUCTION_PRICE", ItemID, "Set the price: {}.", SlotPrice);
+	VInteract.AddOption("AUCTION_ACCEPT", ItemID, "Accept the offer.");
+	VoteWrapper::AddEmptyline(ClientID);
+}
+
+void CAuctionManager::ShowAuctionSlot(CPlayer* pPlayer, int ID) const
+{
+	// initialize variables
+	const int ClientID = pPlayer->GetCID();
+	const CAuctionSlot* pSlot = GetSlot(ID);
+	if(!pSlot)
+		return;
+
+	// show slot information
+	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Auction slot");
+	VInfo.Add("Item: {}x{}", pSlot->GetItem()->Info()->GetName(), pSlot->GetItem()->GetValue());
+	VInfo.Add("Price: {}gold", pSlot->GetPrice());
+	VInfo.Add("Seller: {}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// interaction
+	VoteWrapper VInteract(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Interaction");
+	VInteract.AddOption("AUCTION_BUY", ID, "Buy this slot.");
 }
 
 bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
@@ -90,27 +173,24 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 
 	if(PPSTR(pCmd, "AUCTION_BUY") == 0)
 	{
-		if(BuyItem(pPlayer, Extra1))
-			pPlayer->m_VotesData.UpdateVotes(MenuList::MENU_MAIN);
+		// try to buy slot
+		const int SlotID = Extra1;
+		if(BuySlot(pPlayer, SlotID))
+			pPlayer->m_VotesData.UpdateVotes(MENU_AUCTION_LIST);
 		return true;
 	}
 
-	if(PPSTR(pCmd, "AUCTION_COUNT") == 0)
+	if(PPSTR(pCmd, "AUCTION_NUMBER") == 0)
 	{
-		// if there are fewer items installed, we set the number of items.
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(Extra1);
-		if(ReasonNumber > pPlayerItem->GetValue())
-			ReasonNumber = pPlayerItem->GetValue();
-
-		// if it is possible to number
-		if(pPlayerItem->Info()->IsEnchantable())
-			ReasonNumber = 1;
-
-		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
+		// initialize variables
+		const int ItemID = Extra1;
+		const CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
+		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_TempAuctionSlot;
+		ReasonNumber = minimum(ReasonNumber, pPlayerItem->GetValue());
 		const int MinimalPrice = (ReasonNumber * pPlayerItem->Info()->GetInitialPrice());
-		if(pAuctionData->GetPrice() < MinimalPrice)
-			pAuctionData->SetPrice(MinimalPrice);
 
+		// update value
+		pAuctionData->SetPrice(maximum(MinimalPrice, pAuctionData->GetPrice()));
 		pAuctionData->GetItem()->SetValue(ReasonNumber);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
@@ -118,11 +198,12 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 
 	if(PPSTR(pCmd, "AUCTION_PRICE") == 0)
 	{
-		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
+		// initialize variables
+		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_TempAuctionSlot;
 		const int MinimalPrice = (pAuctionData->GetItem()->GetValue() * pAuctionData->GetItem()->Info()->GetInitialPrice());
-		if(ReasonNumber < MinimalPrice)
-			ReasonNumber = MinimalPrice;
 
+		// update slot price
+		ReasonNumber = maximum(ReasonNumber, MinimalPrice);
 		pAuctionData->SetPrice(ReasonNumber);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
@@ -130,26 +211,40 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 
 	if(PPSTR(pCmd, "AUCTION_CREATE") == 0)
 	{
+		// initialize variables
+		int ItemID = Extra1;
 		int AvailableValue = Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, Extra1);
+
+		// check available value
 		if(AvailableValue <= 0)
+		{
+			GS()->Chat(ClientID, "This item is frozen!");
 			return true;
-		
-		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
-		pAuctionData->SetItem({ Extra1, 0, pPlayer->GetItem(Extra1)->GetEnchant(), 0, 0});
+		}
+
+		// start creating new slot
+		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_TempAuctionSlot;
+		pAuctionData->SetItem({ ItemID, 1, pPlayer->GetItem(ItemID)->GetEnchant(), 0, 0});
+		pAuctionData->SetPrice(maximum(1, pAuctionData->GetItem()->Info()->GetInitialPrice()));
 		pPlayer->m_VotesData.UpdateVotes(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
 
 	if(PPSTR(pCmd, "AUCTION_ACCEPT") == 0)
 	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(Extra1);
-		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_AuctionData;
-		if(pPlayerItem->GetValue() >= pAuctionData->GetItem()->GetValue() && pAuctionData->GetPrice() >= 10)
+		// initialize variables
+		const int ItemID = Extra1;
+		const CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
+		CAuctionSlot* pTempSlot = &pPlayer->GetTempData().m_TempAuctionSlot;
+
+		// try to create new slot
+		if(pPlayerItem->GetValue() >= pTempSlot->GetItem()->GetValue())
 		{
-			CreateAuctionSlot(pPlayer, pAuctionData);
-			pPlayer->m_VotesData.UpdateVotes(MenuList::MENU_INVENTORY);
+			CreateSlot(pPlayer, pTempSlot);
+			pPlayer->m_VotesData.UpdateVotes(MENU_INVENTORY);
 			return true;
 		}
+
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_AUCTION_CREATE_SLOT);
 		return true;
 	}
@@ -157,141 +252,145 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	return false;
 }
 
-void CAuctionManager::CreateAuctionSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData)
+void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) const
 {
+	// check valid player
+	if(!pPlayer)
+		return;
+
+	// initialize variables
 	const int ClientID = pPlayer->GetCID();
+	int AccountID = pPlayer->Account()->GetID();
 
-	// check the number of slots whether everything is occupied or not
-	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID > '0' LIMIT %d", g_Config.m_SvMaxAuctionSlots);
-	if((int)pResCheck->rowsCount() >= g_Config.m_SvMaxAuctionSlots)
+	// check player slots
+	if(GetSlotsCountByAccountID(AccountID) >= g_Config.m_SvMaxAuctionPlayerSlots)
 	{
-		GS()->Chat(ClientID, "Auction has run out of slots, wait for the release of slots!");
+		GS()->Chat(ClientID, "You have reached the maximum number of slots in the auction!");
 		return;
 	}
 
-	// check your slots
-	ResultPtr pResCheck2 = Database->Execute<DB::SELECT>("ID", "tw_auction_items", "WHERE UserID = '%d' LIMIT %d", pPlayer->Account()->GetID(), g_Config.m_SvMaxAuctionPlayerSlots);
-	const int ValueSlot = (int)pResCheck2->rowsCount();
-	if(ValueSlot >= g_Config.m_SvMaxAuctionPlayerSlots)
+	// check total slots
+	if(GetTotalSlotsCount() > g_Config.m_SvMaxAuctionSlots)
 	{
-		GS()->Chat(ClientID, "You use all open the slots in your auction!");
+		GS()->Chat(ClientID, "The auction has reached the maximum number of slots!");
 		return;
 	}
 
-	// take a tax from the player for the slot
-	if(!pPlayer->Account()->SpendCurrency(pAuctionData->GetTaxPrice()))
-		return;
-
-	// pick up the item and add a slot
-	CItem* pAuctionItem = pAuctionData->GetItem();
-	CPlayerItem* pPlayerItem = pPlayer->GetItem(pAuctionItem->GetID());
-	if(pPlayerItem->GetValue() >= pAuctionItem->GetValue() && pPlayerItem->Remove(pAuctionItem->GetValue()))
+	// check tax price
+	if(pPlayer->GetItem(itGold)->GetValue() < pAuctionData->GetTaxPrice())
 	{
-		Database->Execute<DB::INSERT>(TW_AUCTION_TABLE, "(ItemID, Price, ItemValue, UserID, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')",
-			pAuctionItem->GetID(), pAuctionData->GetPrice(), pAuctionItem->GetValue(), pPlayer->Account()->GetID(), pAuctionItem->GetEnchant());
+		GS()->Chat(ClientID, "You do not have enough gold to create a slot!");
+		return;
+	}
 
-		const int AvailableSlot = (g_Config.m_SvMaxAuctionPlayerSlots - ValueSlot) - 1;
-		GS()->Chat(-1, "{} created a slot [{}x{}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pAuctionItem->GetValue());
-		GS()->Chat(ClientID, "Still available {} slots!", AvailableSlot);
+	// spend tax price
+	if(pPlayer->Account()->SpendCurrency(pAuctionData->GetTaxPrice()))
+	{
+		// initialize variables
+		const CItem* pItem = pAuctionData->GetItem();
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pItem->GetID());
+
+		// try to spend selling auction item
+		if(pPlayer->Account()->SpendCurrency(pItem->GetValue(), pItem->GetID()))
+		{
+			// get the highest group ID from the database
+			ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_AUCTION_SLOTS_TABLE, "ORDER BY ID DESC LIMIT 1");
+			const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
+
+			// insert new slot
+			Database->Execute<DB::INSERT>(TW_AUCTION_SLOTS_TABLE, "(ID, ItemID, Value, Price, Enchant, OwnerID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
+				InitID, pItem->GetID(), pItem->GetValue(), pAuctionData->GetPrice(), pItem->GetEnchant(), pPlayer->Account()->GetID());
+			CAuctionSlot::CreateElement(InitID)->Init(*pItem, pAuctionData->GetPrice(), AccountID);
+
+			// send messages
+			const int AvailableSlots = g_Config.m_SvMaxAuctionPlayerSlots - GetSlotsCountByAccountID(AccountID);
+			GS()->Chat(-1, "{} created a slot [{}x{}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
+			GS()->Chat(ClientID, "Still available {} slots!", AvailableSlots);
+		}
 	}
 }
 
-bool CAuctionManager::BuyItem(CPlayer* pPlayer, int ID)
+bool CAuctionManager::BuySlot(CPlayer* pPlayer, int ID) const
 {
-	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE ID = '%d'", ID);
-	if(!pRes->next())
+	// check valid slot
+	auto pSlot = GetSlot(ID);
+	if(!pSlot)
 		return false;
 
-	// checking for enchanted items
-	const ItemIdentifier ItemID = pRes->getInt("ItemID");
-	CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
+	// initialize variables
+	const int ClientID = pPlayer->GetCID();
+	const int AccountID = pPlayer->Account()->GetID();
+	const CItem* pItem = pSlot->GetItem();
 
-	const int UserID = pRes->getInt("UserID");
-	const int Price = pRes->getInt("Price");
-	const int Value = pRes->getInt("ItemValue");
-	const int Enchant = pRes->getInt("Enchant");
-
-	// if it is a player slot then close the slot
-	if(UserID == pPlayer->Account()->GetID())
+	// check for self slot
+	if(pSlot->GetOwnerID() == AccountID)
 	{
-		CItem AuctionItem(ItemID, Value, Enchant);
-		MailWrapper Mail("Auctionist", pPlayer->Account()->GetID(), "Auction alert.");
-		Mail.AddDescLine("You have bought a item, or canceled your slot");
-		Mail.AttachItem(AuctionItem);
+		// send mail for owner
+		MailWrapper Mail("Auctionist", AccountID, "Auction alert.");
+		Mail.AddDescLine("You canceled your slot");
+		Mail.AttachItem(*pItem);
 		Mail.Send();
 
-		GS()->Chat(ClientID, "You closed auction slot!");
-		Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
+		// update and messages
+		GS()->Chat(ClientID, "You canceled your slot!");
+		RemoveSlotByID(ID);
 		return true;
 	}
 
-	// checking for enchanted items
-	if(pPlayerItem->HasItem() && pPlayerItem->Info()->IsEnchantable())
+	// player purchasing
+	if(pPlayer->Account()->SpendCurrency(pSlot->GetPrice()))
 	{
-		GS()->Chat(ClientID, "Enchant item maximal count x1 in a backpack!");
-		return false;
+		// send mail for seller
+		MailWrapper MailSeller("Auctionist", pSlot->GetOwnerID(), "Auction alert.");
+		MailSeller.AddDescLine("Buyer: {}", Server()->ClientName(ClientID));
+		MailSeller.AddDescLine("Item: {}x{}", pItem->Info()->GetName(), pItem->GetValue());
+		MailSeller.AttachItem({ itGold, pSlot->GetPrice() });
+		MailSeller.Send();
+
+		// send mail for buyer
+		MailWrapper MailBuyer("Auctionist", AccountID, "Auction alert.");
+		MailBuyer.AddDescLine("Seller: {}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
+		MailBuyer.AddDescLine("Item: {}x{}", pItem->Info()->GetName(), pItem->GetValue());
+		MailBuyer.AttachItem(*pItem);
+		MailBuyer.Send();
+
+		// update and messages
+		GS()->ChatAccount(AccountID, "You bought {}x{}.", pItem->Info()->GetName(), pItem->GetValue());
+		GS()->ChatAccount(pSlot->GetOwnerID(), "Your slot was sold!");
+		RemoveSlotByID(ID);
+		return true;
 	}
 
-	// player purchasing
-	if(!pPlayer->Account()->SpendCurrency(Price))
-		return false;
-
-	// information & exchange item
-	MailWrapper Mail("Auctionist", UserID, "Gold for an item sold.");
-	Mail.AddDescLine("Your [Slot {}x{}] was sold!", pPlayerItem->Info()->GetName(), Value);
-	Mail.AttachItem(CItem(itGold, Price));
-	Mail.Send();
-
-	// update
-	pPlayerItem->Add(Value, 0, Enchant);
-	GS()->Chat(ClientID, "You buy {}x{}.", pPlayerItem->Info()->GetName(), Value);
-	Database->Execute<DB::REMOVE>(TW_AUCTION_TABLE, "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, UserID);
-	return true;
+	return false;
 }
 
-void CAuctionManager::ShowAuction(CPlayer* pPlayer)
+int CAuctionManager::GetSlotsCountByAccountID(int AccountID) const
 {
-	const int ClientID = pPlayer->GetCID();
-
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Auction Information");
-	VInfo.Add("To create a slot, see inventory item interact.");
-	VInfo.AddLine();
-
-	bool Found = false;
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_TABLE, "WHERE UserID > 0 ORDER BY Price");
-	while(pRes->next())
+	return (int)std::count_if(CAuctionSlot::Data().begin(), CAuctionSlot::Data().end(), [AccountID](const CAuctionSlot* pSlot)
 	{
-		const int ID = pRes->getInt("ID");
-		const ItemIdentifier ItemID = pRes->getInt("ItemID");
-		const int Price = pRes->getInt("Price");
-		const int Enchant = pRes->getInt("Enchant");
-		const int ItemValue = pRes->getInt("ItemValue");
-		const int UserID = pRes->getInt("UserID");
-		CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
+		return pSlot->GetOwnerID() == AccountID;
+	});
+}
 
-		VoteWrapper VItem(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE);
-		if(pItemInfo->IsEnchantable())
-		{
-			VItem.SetTitle("{}{} {} - {} gold",
-				(pPlayer->GetItem(ItemID)->GetValue() > 0 ? "✔ " : "\0"), pItemInfo->GetName(), pItemInfo->StringEnchantLevel(Enchant).c_str(), Price);
+int CAuctionManager::GetTotalSlotsCount() const
+{
+	return static_cast<int>(CAuctionSlot::Data().size());
+}
 
-			char aAttributes[128];
-			pItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), Enchant);
-			VItem.Add(aAttributes);
-		}
-		else
-		{
-			VItem.SetTitle("{}x{} ({}) - {} gold", pItemInfo->GetName(), ItemValue, pPlayer->GetItem(ItemID)->GetValue(), Price);
-		}
-
-		VItem.Add("Seller: {}", Server()->GetAccountNickname(UserID));
-		VItem.AddOption("AUCTION_BUY", ID, "Buy this item ({} gold).", Price);
-		Found = true;
-	}
-
-	if(!Found)
+CAuctionSlot* CAuctionManager::GetSlot(int ID) const
+{
+	auto it = std::find_if(CAuctionSlot::Data().begin(), CAuctionSlot::Data().end(), [ID](const CAuctionSlot* pSlot)
 	{
-		VoteWrapper(ClientID).Add("Currently there are no products.");
+		return pSlot->GetID() == ID;
+	});
+	return it != CAuctionSlot::Data().end() ? *it : nullptr;
+}
+
+void CAuctionManager::RemoveSlotByID(int ID) const
+{
+	if(const auto pSlot = GetSlot(ID))
+	{
+		Database->Execute<DB::REMOVE>(TW_AUCTION_SLOTS_TABLE, "WHERE ID = '%d'", ID);
+		CAuctionSlot::Data().erase(std::remove(CAuctionSlot::Data().begin(), CAuctionSlot::Data().end(), pSlot), CAuctionSlot::Data().end());
 	}
 }

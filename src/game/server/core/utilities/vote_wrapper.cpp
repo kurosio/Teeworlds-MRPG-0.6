@@ -491,7 +491,7 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, co
 	// command menu
 	if(PPSTR(pCmd, "MENU") == 0)
 	{
-		m_GroupID = Extra2;
+		m_ExtraID = Extra2;
 
 		ResetHidden(Extra1);
 		UpdateVotes(Extra1);

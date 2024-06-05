@@ -5,17 +5,34 @@
 
 #include <game/server/core/components/Inventory/ItemData.h>
 
-class CAuctionSlot
+constexpr auto TW_AUCTION_SLOTS_TABLE = "tw_auction_slots";
+class CAuctionSlot : public MultiworldIdentifiableStaticData<std::deque<CAuctionSlot*>>
 {
+	int m_ID {};
 	CItem m_Item {};
 	int m_Price {};
+	int m_OwnerID {};
 
 public:
-	// Default constructor
 	CAuctionSlot() = default;
 
-	// Parameterized constructor
-	CAuctionSlot(CItem Item, int Price) : m_Item(std::move(Item)), m_Price(Price) {}
+	// create new element
+	static CAuctionSlot* CreateElement(int ID)
+	{
+		auto* pAuctionSlot = new CAuctionSlot;
+		pAuctionSlot->m_ID = ID;
+		return m_pData.emplace_back(pAuctionSlot);
+	}
+
+	// functions
+	void Init(const CItem& Item, int Price, int OwnerID)
+	{
+		m_Item = Item;
+		m_Price = Price;
+		m_OwnerID = OwnerID;
+	}
+
+	int GetID() const { return m_ID; }
 
 	// Setter methods for item and price
 	void SetItem(CItem Item) { m_Item = std::move(Item); }
@@ -26,6 +43,7 @@ public:
 	const CItem* GetItem() const { return &m_Item; }               // Return a const pointer to the item (for const objects)
 	int GetPrice() const { return m_Price; }                       // Return the price
 	int GetTaxPrice() const;                                       // Declaration for a function to calculate the tax price
+	int GetOwnerID() const { return m_OwnerID; }
 };
 #endif
 

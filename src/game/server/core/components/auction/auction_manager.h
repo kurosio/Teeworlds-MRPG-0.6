@@ -9,15 +9,24 @@ class CAuctionManager : public MmoComponent
 {
 	~CAuctionManager() override = default;
 
-	void OnTick() override;
+	void OnInit() override;
+
 	bool OnCharacterTile(CCharacter* pChr) override;
 	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
-	void CreateAuctionSlot(CPlayer *pPlayer, class CAuctionSlot* pAuctionData);
+	void CreateSlot(CPlayer *pPlayer, class CAuctionSlot* pAuctionData) const;
 
-	bool BuyItem(CPlayer* pPlayer, int ID);
-	void ShowAuction(CPlayer* pPlayer);
+	bool BuySlot(CPlayer* pPlayer, int ID) const;
+
+	void ShowAuction(CPlayer* pPlayer) const;
+	void ShowCreateSlot(CPlayer* pPlayer) const;
+	void ShowAuctionSlot(CPlayer* pPlayer, int ID) const;
+
+	int GetSlotsCountByAccountID(int AccountID) const;
+	int GetTotalSlotsCount() const;
+	CAuctionSlot* GetSlot(int ID) const;
+	void RemoveSlotByID(int ID) const;
 };
 
 #endif

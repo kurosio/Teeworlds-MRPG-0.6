@@ -218,9 +218,9 @@ bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		VUpgrGroupSelect.AddLine();
 
 		// Upgrades by group
-		if(pPlayer->m_VotesData.GetGroupID() >= 0)
+		if(pPlayer->m_VotesData.GetExtraID() >= 0)
 		{
-			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetGroupID(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
+			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetExtraID(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
 			const char* pGroupName = paGroupNames[(int)Group];
 
 			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "{} : Strength {}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
@@ -253,7 +253,7 @@ bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 
 		// show top list
 		VoteWrapper VTopList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE);
-		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetGroupID(); TemporaryInteger >= 0)
+		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetExtraID(); TemporaryInteger >= 0)
 			ShowTopList(ClientID, (ToplistType)TemporaryInteger, 10, &VTopList);
 
 		// backpage
@@ -290,7 +290,7 @@ bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUIDE_GRINDING);
 
-		const int WorldID = pPlayer->m_VotesData.GetGroupID();
+		const int WorldID = pPlayer->m_VotesData.GetExtraID();
 
 		// ores information detail
 		VoteWrapper VMiningPoints(ClientID, VWF_STYLE_STRICT_BOLD);

@@ -839,7 +839,7 @@ bool CGuildManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_FINDER_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_FINDER);
-		ShowFinderDetail(pPlayer, pPlayer->m_VotesData.GetGroupID());
+		ShowFinderDetail(pPlayer, pPlayer->m_VotesData.GetExtraID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -936,7 +936,7 @@ bool CGuildManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_MEMBERSHIP_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_MEMBERSHIP_LIST);
-		ShowMembershipEdit(pPlayer, pPlayer->m_VotesData.GetGroupID());
+		ShowMembershipEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -952,7 +952,7 @@ bool CGuildManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_RANK_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_RANK_LIST);
-		ShowRankEdit(pPlayer, pPlayer->m_VotesData.GetGroupID());
+		ShowRankEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -968,7 +968,7 @@ bool CGuildManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_HOUSE_FARMZONE_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_HOUSE_FARMZONE_LIST);
-		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetGroupID());
+		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

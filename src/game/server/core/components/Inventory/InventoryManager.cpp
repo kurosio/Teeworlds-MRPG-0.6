@@ -114,8 +114,8 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "\u26C3 Other ({})", GetCountItemsType(pPlayer, ItemType::TYPE_OTHER));
 		VInventoryTabs.AddLine();
 
-		if(pPlayer->m_VotesData.GetGroupID() >= 0)
-			ListInventory(ClientID, (ItemType)pPlayer->m_VotesData.GetGroupID());
+		if(pPlayer->m_VotesData.GetExtraID() >= 0)
+			ListInventory(ClientID, (ItemType)pPlayer->m_VotesData.GetExtraID());
 
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -147,8 +147,8 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		}
 
 		// show and sort equipment
-		if(pPlayer->m_VotesData.GetGroupID() > 0)
-			ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetGroupID());
+		if(pPlayer->m_VotesData.GetExtraID() > 0)
+			ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetExtraID());
 
 		VoteWrapper::AddBackpage(ClientID);
 		return true;

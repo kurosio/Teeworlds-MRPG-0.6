@@ -285,6 +285,7 @@ enum MenuList
 
 	// Auction
 	MENU_AUCTION_LIST,
+	MENU_AUCTION_SLOT_SELECTED,
 	MENU_AUCTION_CREATE_SLOT,
 
 	// Group menus

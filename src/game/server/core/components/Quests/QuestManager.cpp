@@ -169,7 +169,7 @@ bool CQuestManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_JOURNAL_MAIN);
 
 		// Get the quest information for the specified QuestID
-		const int QuestID = pPlayer->m_VotesData.GetGroupID();
+		const int QuestID = pPlayer->m_VotesData.GetExtraID();
 		CQuestDescription* pQuestInfo = pPlayer->GetQuest(QuestID)->Info();
 
 		// Show the active NPC for the quest to the player

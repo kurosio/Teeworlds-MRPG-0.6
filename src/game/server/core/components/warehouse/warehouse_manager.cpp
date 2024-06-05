@@ -81,10 +81,10 @@ bool CWarehouseManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_WAREHOUSE);
 
 		// try show trade item
-		if(pPlayer->m_VotesData.GetGroupID() >= 0)
+		if(pPlayer->m_VotesData.GetExtraID() >= 0)
 		{
 			CWarehouse* pWarehouse = GetWarehouse(pChr->m_Core.m_Pos);
-			ShowTrade(pPlayer, pWarehouse, pPlayer->m_VotesData.GetGroupID());
+			ShowTrade(pPlayer, pWarehouse, pPlayer->m_VotesData.GetExtraID());
 		}
 
 		// add backpage

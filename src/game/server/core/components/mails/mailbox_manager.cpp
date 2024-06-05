@@ -51,8 +51,8 @@ bool CMailboxManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAILBOX);
 
 		// try show mail item
-		if(pPlayer->m_VotesData.GetGroupID() >= 0)
-			ShowMail(pPlayer->m_VotesData.GetGroupID(), pPlayer);
+		if(pPlayer->m_VotesData.GetExtraID() >= 0)
+			ShowMail(pPlayer->m_VotesData.GetExtraID(), pPlayer);
 
 		// add backpage
 		VoteWrapper::AddBackpage(pPlayer->GetCID());

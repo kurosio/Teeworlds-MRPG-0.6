@@ -54,7 +54,7 @@ bool CEidolonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_EIDOLON_COLLECTION);
 
-		int EidolonID = pPlayer->m_VotesData.GetGroupID();
+		int EidolonID = pPlayer->m_VotesData.GetExtraID();
 		if(CEidolonInfoData* pEidolonInfo = GS()->GetEidolonByItemID(EidolonID))
 		{
 			char aAttributeBonus[128];

@@ -122,7 +122,7 @@ bool CHouseManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_HOUSE_FARMZONE_SELECTED)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_HOUSE_FARMZONE_LIST);
-		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetGroupID());
+		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
