@@ -8,7 +8,7 @@
 #include "components/Accounts/AccountMiningManager.h"
 #include "components/Accounts/AccountFarmingManager.h"
 #include "components/achievements/achievement_manager.h"
-#include "components/Auction/AuctionManager.h"
+#include "components/auction/auction_manager.h"
 #include "components/aethernet/aethernet_manager.h"
 #include "components/Bots/BotManager.h"
 #include "components/crafting/craft_manager.h"

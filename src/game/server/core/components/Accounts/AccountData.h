@@ -6,7 +6,7 @@
 // TODO: fully rework structures
 #include <game/server/core/components/achievements/achievement_data.h>
 #include <game/server/core/components/guilds/guild_data.h>
-#include <game/server/core/components/Auction/AuctionData.h>
+#include <game/server/core/components/auction/auction_data.h>
 
 class CGS;
 class CPlayer;
