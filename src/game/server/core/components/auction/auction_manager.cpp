@@ -144,7 +144,6 @@ void CAuctionManager::ShowCreateSlot(CPlayer* pPlayer) const
 	VInteract.AddOption("AUCTION_NUMBER", ItemID, "Select the number of items: {}.", Value);
 	VInteract.AddOption("AUCTION_PRICE", ItemID, "Set the price: {}.", SlotPrice);
 	VInteract.AddOption("AUCTION_ACCEPT", ItemID, "Accept the offer.");
-	VoteWrapper::AddEmptyline(ClientID);
 }
 
 void CAuctionManager::ShowAuctionSlot(CPlayer* pPlayer, int ID) const
@@ -158,7 +157,7 @@ void CAuctionManager::ShowAuctionSlot(CPlayer* pPlayer, int ID) const
 	// show slot information
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Auction slot");
 	VInfo.Add("Item: {}x{}", pSlot->GetItem()->Info()->GetName(), pSlot->GetItem()->GetValue());
-	VInfo.Add("Price: {}gold", pSlot->GetPrice());
+	VInfo.Add("Price: {} gold", pSlot->GetPrice());
 	VInfo.Add("Seller: {}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
 	VoteWrapper::AddEmptyline(ClientID);
 
