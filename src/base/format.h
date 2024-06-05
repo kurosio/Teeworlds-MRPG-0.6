@@ -38,18 +38,14 @@ inline std::string fmt_big_digit(T Value)
 		for(auto it = conversionString.rbegin(); (num + 1) <= std::distance(it, conversionString.rend());)
 		{
 			if(iter != conversionString.end())
-			{
 				conversionString.erase(iter, conversionString.end());
-			}
 			std::advance(it, num);
 			iter = conversionString.insert(it.base(), separator);
 			Position++;
 		}
 
 		if(Position > 0 && Position < 24)
-		{
 			conversionString.append(pLabel[Position]);
-		}
 	}
 
 	return conversionString;
@@ -93,27 +89,9 @@ enum
 	FMTFLAG_DIGIT_COMMAS = 1 << 1,
 };
 
+// implement format
 typedef std::string(HandlerFmtCallbackFunc)(int, const char*, void*);
 typedef struct { HandlerFmtCallbackFunc* m_pCallback; void* m_pData; } HandlerFmtCallback;
-struct struct_handler_fmt
-{
-	static void init(HandlerFmtCallbackFunc* pCallback, void* pData)
-	{
-		ms_pCallback.m_pCallback = pCallback;
-		ms_pCallback.m_pData = pData;
-	}
-	static std::string handle(const int Definerlang, const std::string& Text)
-	{
-		return ms_pCallback.m_pCallback ? ms_pCallback.m_pCallback(Definerlang, Text.c_str(), ms_pCallback.m_pData) : Text;
-	}
-	static void use_flags(int flags) { ms_Flags = flags; }
-	static int get_flags() { return ms_Flags; }
-private:
-	inline static HandlerFmtCallback ms_pCallback {};
-	inline static int ms_Flags {};
-};
-
-// implement format
 struct struct_format_implement
 {
 	struct description
@@ -122,23 +100,52 @@ struct struct_format_implement
 		bool m_handlefmt;
 	};
 
+	/**
+	 * Handles the formatting of a string using a callback function.
+	 */
+	struct handler_fmt
+	{
+		static void init(HandlerFmtCallbackFunc* pCallback, void* pData)
+		{
+			ms_pCallback.m_pCallback = pCallback;
+			ms_pCallback.m_pData = pData;
+		}
+		static std::string handle(const description& Desc, const std::string& Text)
+		{
+			if(Desc.m_handlefmt && ms_pCallback.m_pCallback)
+				return ms_pCallback.m_pCallback(Desc.m_definer, Text.c_str(), ms_pCallback.m_pData);
+			return Text;
+		}
+		static void use_flags(int flags)
+		{
+			ms_Flags = flags;
+		}
+		static int get_flags()
+		{
+			return ms_Flags;
+		}
+	private:
+		inline static HandlerFmtCallback ms_pCallback {};
+		inline static int ms_Flags {};
+	};
+
 	// argument conversion
 	template<typename T>
-	static std::string to_string(const description& desc, const T& value)
+	static std::string to_string(const description& Desc, const T& Value)
 	{
 		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
 		{
-			return std::to_string(value);
+			return std::to_string(Value);
 		}
 		else if constexpr(std::is_arithmetic_v<T>)
 		{
-			bool digitCommas = struct_handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS;
-			return digitCommas ? fmt_digit<std::string>(std::to_string(value)) : std::to_string(value);
+			bool digitCommas = handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS;
+			return digitCommas ? fmt_digit<std::string>(std::to_string(Value)) : std::to_string(Value);
 		}
 		else if constexpr(std::is_convertible_v<T, std::string>)
 		{
-			bool handleArgs = desc.m_handlefmt && struct_handler_fmt::get_flags() & FMTFLAG_HANDLE_ARGS;
-			return handleArgs ? struct_handler_fmt::handle(desc.m_definer, std::string(value)) : std::string(value);
+			bool handleArgs = handler_fmt::get_flags() & FMTFLAG_HANDLE_ARGS;
+			return handleArgs ? handler_fmt::handle(Desc, std::string(Value)) : std::string(Value);
 		}
 		else
 		{
@@ -154,12 +161,17 @@ struct struct_format_implement
 	template<typename... Ts>
 	static std::string impl_format(const description& Desc, const char* pText, const Ts &...Args)
 	{
+		// check text pointer valid
+		if(!pText)
+			return "";
+
+		// initialize variables
 		size_t argsSize = sizeof...(Args);
 		std::string Result;
-		std::string Text = Desc.m_handlefmt ? struct_handler_fmt::handle(Desc.m_definer, pText) : pText;
+		std::string Text = handler_fmt::handle(Desc, pText);
 		Result.reserve(Text.size() + argsSize * 10);
 
-		// Reserve space for all the argument strings
+		// reserve space for all the argument strings
 		std::vector<std::string> vPack;
 		vPack.reserve(argsSize);
 		((vPack.emplace_back(to_string(Desc, Args))), ...);
@@ -167,15 +179,14 @@ struct struct_format_implement
 		return Result;
 	}
 
-	static std::string impl_format(const description& desc, const char* ptext)
+	static std::string impl_format(const description& Desc, const char* pText)
 	{
-		if(!ptext)
+		// check text pointer valid
+		if(!pText)
 			return "";
-
-		return desc.m_handlefmt ? struct_handler_fmt::handle(desc.m_definer, ptext) : ptext;
+		return handler_fmt::handle(Desc, pText);
 	}
 };
-
 
 /**
  * Initializes the handler function callback.

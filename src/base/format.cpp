@@ -3,12 +3,12 @@
 
 void fmt_init_handler_func(HandlerFmtCallbackFunc* pCallback, void* pData)
 {
-	struct_handler_fmt::init(pCallback, pData);
+	struct_format_implement::handler_fmt::init(pCallback, pData);
 }
 
 void fmt_set_flags(int flags)
 {
-	struct_handler_fmt::use_flags(flags);
+	struct_format_implement::handler_fmt::use_flags(flags);
 }
 
 void struct_format_implement::prepare_result(const description&, const std::string& Text, std::string* pResult, std::vector<std::string>&& vPack)
