@@ -11,7 +11,7 @@ void fmt_set_flags(int flags)
 	struct_format_implement::handler_fmt::use_flags(flags);
 }
 
-void struct_format_implement::prepare_result(const description&, const std::string& Text, std::string* pResult, std::vector<std::string>&& vPack)
+void struct_format_implement::prepare_result(const description&, const std::string& Text, std::string* pResult, const std::vector<std::string>& vPack)
 {
 	// initialize variables
 	enum

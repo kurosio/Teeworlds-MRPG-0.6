@@ -155,7 +155,7 @@ struct struct_format_implement
 	}
 
 	// implementation for the last argument
-	static void prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::string>&& vPack);
+	static void prepare_result(const description& Desc, const std::string& Text, std::string* pResult, const std::vector<std::string>& vPack);
 
 	// implementation for default format
 	template<typename... Ts>
@@ -175,7 +175,7 @@ struct struct_format_implement
 		std::vector<std::string> vPack;
 		vPack.reserve(argsSize);
 		((vPack.emplace_back(to_string(Desc, Args))), ...);
-		prepare_result(Desc, Text, &Result, std::move(vPack));
+		prepare_result(Desc, Text, &Result, vPack);
 		return Result;
 	}
 
