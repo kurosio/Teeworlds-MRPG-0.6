@@ -10,7 +10,7 @@
 #include "projectile.h"
 
 #include <game/server/core/components/Bots/BotData.h>
-#include <game/server/core/components/Groups/GroupData.h>
+#include <game/server/core/components/groups/group_data.h>
 #include <game/server/core/components/Quests/QuestManager.h>
 #include <game/server/core/components/worlds/world_data.h>
 

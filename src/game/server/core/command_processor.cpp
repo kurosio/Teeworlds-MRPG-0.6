@@ -408,7 +408,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		pGS->Chat(ClientID, "{} Group membership list {}", Tools::Aesthetic::B_PILLAR(5, false), Tools::Aesthetic::B_PILLAR(5, true));
 		for(const auto& AID : pGroup->GetAccounts())
 		{
-			const char* Prefix = (pGroup->GetLeaderUID() == AID) ? "O: " : "\0";
+			const char* Prefix = (pGroup->GetOwnerUID() == AID) ? "O: " : "\0";
 			const std::string Nickname = Instance::Server()->GetAccountNickname(AID);
 			pGS->Chat(ClientID, "{}{}", Prefix, Nickname.c_str());
 		}

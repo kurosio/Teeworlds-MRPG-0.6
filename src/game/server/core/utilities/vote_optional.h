@@ -25,17 +25,17 @@ public:
 	// Return:
 	//    - a pointer to a CVoteOptional object representing the created vote event
 	template< typename ... Ts>
-	static CVoteOptional* Create(int ClientID, int MiscValue1, int MiscValue2, int Secound, const char* pInformation, const Ts&... args)
+	static CVoteOptional* Create(int ForCID, int MiscValue1, int MiscValue2, int Secound, const char* pInformation, const Ts&... args)
 	{
 		// Create an instance and push it
 		CVoteOptional Optional;
 		Optional.m_CloseTime = time_get() + time_freq() * Secound;
 		Optional.m_MiscValue1 = MiscValue1;
 		Optional.m_MiscValue2 = MiscValue2;
-		Optional.m_ClientID = ClientID;
-		Optional.m_Description = fmt_handle_def(ClientID, pInformation).c_str();
-		m_pData[ClientID].push(Optional);
-		return &m_pData[ClientID].back();
+		Optional.m_ClientID = ForCID;
+		Optional.m_Description = fmt_handle_def(ForCID, pInformation).c_str();
+		m_pData[ForCID].push(Optional);
+		return &m_pData[ForCID].back();
 	}
 
 	int m_ClientID {}; // The client ID of the player who created the vote

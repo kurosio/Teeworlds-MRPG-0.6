@@ -15,56 +15,45 @@ class GroupData : public MultiworldIdentifiableStaticData< std::map< int, GroupD
 
 public:
 	GroupData() = default;
-	GroupData(GroupIdentifier ID) : m_ID(ID)
+
+	static GroupData& CreateElement(GroupIdentifier ID) noexcept
 	{
-		m_vAccountIds.reserve(MAX_GROUP_MEMBERS);
+		m_pData[ID] = GroupData();
+		m_pData[ID].m_ID = ID;
+		return m_pData[ID];
 	}
 
-	// Initialize the group with the owner's UID, color, and a set of account IDs
-	void Init(int LeaderUID, int Color, class DBSet&& SetAccountIDs)
+	// functions
+	void Init(int LeaderUID, DBSet&& SetAccountIDs)
 	{
-		// init access list
+		// initialize group list
+		m_vAccountIds.reserve(MAX_GROUP_MEMBERS);
 		for(auto& p : SetAccountIDs.GetDataItems())
 		{
-			// Convert the data item to an integer
-			if(int UID = std::atoi(p.first.c_str()); UID > 0)
-			{
-				// If the integer is greater than 0, add it to the access user IDs set
+			if(int UID = str_toint(p.first.c_str()); UID > 0)
 				m_vAccountIds.insert(UID);
-			}
 		}
 
-		m_TeamColor = Color;
+		// initialize variables
 		m_LeaderUID = LeaderUID;
 		m_pData[m_ID] = *this;
 	}
 
-	// Add an account to the group
-	// Returns true if the account was successfully added, false otherwise
 	bool Add(int AccountID);
-
-	// Remove an account from the group
-	// Returns true if the account was successfully removed, false otherwise
 	bool Remove(int AccountID);
-
-	// Disband the group, removing all accounts and resetting the owner and color
 	void Disband();
+	void ChangeOwner(int AccountID);
+	void UpdateRandomColor();
 
-	// Check if the group has a specific account ID
+	// getters
+	int GetOnlineCount() const;
 	bool HasAccountID(int AccountID) const { return m_vAccountIds.find(AccountID) != m_vAccountIds.end(); }
-
-	// Change the owner of the group to a different account
-	void ChangeLeader(int AccountID);
-
-	// Change the color of the group
-	void ChangeColor(int NewColor);
-	
-	bool IsFull() const { return (int)m_vAccountIds.size() >= (int)MAX_GROUP_MEMBERS; } // This function checks if the group is full or not
-	int GetTeamColor() const { return m_TeamColor; } // Get the color of the group
-	GroupIdentifier GetID() const { return m_ID; } // Get the ID of the group
-	int GetLeaderUID() const { return m_LeaderUID; } // Get the owner's UID
-	int IsLeader(int AccountID) const { return m_LeaderUID == AccountID; } // Check leader state
-	const ska::unordered_set<int>& GetAccounts() const { return m_vAccountIds; } // Get a reference to the map of account IDs in the group
+	bool IsFull() const { return (int)m_vAccountIds.size() >= (int)MAX_GROUP_MEMBERS; }
+	int GetTeamColor() const { return m_TeamColor; }
+	GroupIdentifier GetID() const { return m_ID; }
+	int GetOwnerUID() const { return m_LeaderUID; }
+	int IsLeader(int AccountID) const { return m_LeaderUID == AccountID; }
+	const ska::unordered_set<int>& GetAccounts() const { return m_vAccountIds; }
 
 private:
 	void Save() const;

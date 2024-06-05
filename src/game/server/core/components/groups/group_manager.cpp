@@ -6,7 +6,6 @@
 #include <game/server/core/utilities/vote_optional.h>
 #include <game/server/gamecontext.h>
 
-// Initialization function for CGroupManager class
 void CGroupManager::OnInit()
 {
 	// Create a pointer to store the result of the database query
@@ -15,60 +14,61 @@ void CGroupManager::OnInit()
 	{
 		// Get the values of the columns for the current row
 		GroupIdentifier ID = pRes->getInt("ID");
-		int LeaderUID = pRes->getInt("LeaderUID");
-		int TeamColor = pRes->getInt("Color");
+		int OwnerUID = pRes->getInt("OwnerUID");
 		std::string StrAccountIDs = pRes->getString("AccountIDs").c_str();
 
 		// Initialize a GroupData object with the retrieved values
-		GroupData(ID).Init(LeaderUID, TeamColor, StrAccountIDs);
+		GroupData::CreateElement(ID).Init(OwnerUID, std::move(StrAccountIDs));
 	}
 }
 
-// This code is a method within a class called CGroupManager
-// The purpose of this method is to initialize the group data for a player's account
-// The method takes a pointer to a CPlayer object as a parameter
 void CGroupManager::OnPlayerLogin(CPlayer* pPlayer)
 {
-	// Call the ReinitializeGroup() method of the player's account object 
-	// to initialize the group data for the account
+	// reinitialize group
 	pPlayer->Account()->ReinitializeGroup();
+
+	// check is first online player and set random free color
+	if(pPlayer->Account()->HasGroup())
+	{
+		const auto pGroup = pPlayer->Account()->GetGroup();
+		if(pGroup->GetOnlineCount() == 1)
+			pGroup->UpdateRandomColor();
+	}
 }
 
-// Function to create a group for a player
-// Input: Pointer to the player to create a group for
-// Output: Pointer to GroupData representing the created group
 GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 {
-	// Check if the player is authenticated
+	// check valid player
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return nullptr;
 
-	// Check if the player is already in a group
+	// check if the player is already in a group
 	if(pPlayer->Account()->GetGroup())
 	{
 		GS()->Chat(pPlayer->GetCID(), "You're already in a group!");
 		return nullptr;
 	}
 
-	// Get the highest group ID from the database
+	// get the highest group ID from the database
 	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_GROUPS_TABLE, "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
 
-	// Create a string with the player's account ID
-	int Color = 1 + rand() % 63;
-	int LeaderUID = pPlayer->Account()->GetID();
-	std::string StrAccountIDs = std::to_string(LeaderUID);
+	// initialize variables
+	int OwnerUID = pPlayer->Account()->GetID();
+	std::string StrAccountIDs = std::to_string(OwnerUID);
 
-	// Insert the new group into the database
-	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, LeaderUID, Color, AccountIDs) VALUES ('%d', '%d', '%d', '%s')", InitID, LeaderUID, Color, StrAccountIDs.c_str());
+	// insert to database
+	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('%d', '%d', '%d', '%s')", InitID, OwnerUID, StrAccountIDs.c_str());
 
-	// Initialize the group data
-	GroupData(InitID).Init(LeaderUID, Color, StrAccountIDs);
+	// initialize the group
+	auto& newGroup = GroupData::CreateElement(InitID);
+	newGroup.Init(OwnerUID, StrAccountIDs);
+	newGroup.UpdateRandomColor();
 	pPlayer->Account()->ReinitializeGroup();
 
-	// Inform the player that the group was created
+	// send message
 	GS()->Chat(pPlayer->GetCID(), "The formation of the group took place!");
-	return &GroupData::Data()[InitID];
+	return &newGroup;
 }
 
 GroupData* CGroupManager::GetGroupByID(GroupIdentifier ID) const
@@ -101,10 +101,10 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 		VGroup.AddLine();
 		return;
 	}
-	const bool IsOwner = pGroup->GetLeaderUID() == pPlayer->Account()->GetID();
+	const bool IsOwner = pGroup->GetOwnerUID() == pPlayer->Account()->GetID();
 	if(IsOwner)
 	{
-		VGroup.AddOption("GROUP_CHANGE_COLOR", "Change the colour: ({})", pGroup->GetTeamColor());
+		VGroup.AddOption("GROUP_RANDOM_COLOR", "Random new group color");
 		VGroup.AddOption("GROUP_DISBAND", "Disband group");
 	}
 	VGroup.AddOption("GROUP_KICK", pPlayer->Account()->GetID(), "Leave the group");
@@ -116,7 +116,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer)
 	{
 		std::string PlayerName = Server()->GetAccountNickname(AID);
 		bool HasInteraction = IsOwner && AID != pPlayer->Account()->GetID();
-		VoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{}", (AID == pGroup->GetLeaderUID() ? "*" : "\0"), PlayerName.c_str());
+		VoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{}", (AID == pGroup->GetOwnerUID() ? "*" : "\0"), PlayerName.c_str());
 		if(HasInteraction)
 		{
 			VMember.AddOption("GROUP_KICK", AID, "Kick {}", PlayerName.c_str());
@@ -153,34 +153,28 @@ bool CGroupManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int OptionID, int OptionID2, int Option)
+static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int Extra1, int Extra2, int Option)
 {
-	// Get variables
+	// initialize variables
 	CGS* pGS = pPlayer->GS();
 	int ClientID = pPlayer->GetCID();
+	int& InvitedCID = Extra1;
+	int& GroupID = Extra2;
 
-	// Get references to the option IDs
-	int& InvitedCID = OptionID;
-	int& GroupID = OptionID2;
-
-	// Check if the group ID exists in the group data
+	// check valid group
 	GroupData* pGroup = pGS->Core()->GroupManager()->GetGroupByID(GroupID);
 	if(!pGroup)
 		return;
 
-	// Check the selected option
+	// check selected option
 	if(Option == 1)
 	{
-		// Send chat messages to the player and the invited player
+		pGroup->Add(pPlayer->Account()->GetID());
 		pGS->Chat(ClientID, "You've accepted the invitation!");
 		pGS->Chat(InvitedCID, "{} accepted your invitation!", pGS->Server()->ClientName(ClientID));
-
-		// Add the player to the group
-		pGroup->Add(pPlayer->Account()->GetID());
 	}
 	else
 	{
-		// Send chat messages to the player and the invited player
 		pGS->Chat(ClientID, "You declined the invitation!");
 		pGS->Chat(InvitedCID, "{} declined your invitation!", pGS->Server()->ClientName(ClientID));
 	}
@@ -190,146 +184,151 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// Check if the command is "GROUP_CREATE"
+	// create new group
 	if(PPSTR(pCmd, "GROUP_CREATE") == 0)
 	{
-		// If the group creation is successful
+		// try create group
 		if(CreateGroup(pPlayer))
-		{
-			// Update votes for all players with the GROUP menu
 			GS()->UpdateVotesIfForAll(MENU_GROUP);
-		}
 		return true;
 	}
 
+	// invite to enter group
 	if(PPSTR(pCmd, "GROUP_INVITE") == 0)
 	{
+		// initialize variables
 		const int InvitedCID = Extra1;
-		GroupData* pGroup = pPlayer->Account()->GetGroup();
-		GroupIdentifier GroupID = pGroup->GetID();
+		const auto pGroup = pPlayer->Account()->GetGroup();
 
+		// check valid group
 		if(!pGroup)
 		{
 			GS()->Chat(ClientID, "You're not in a group!");
 			return true;
 		}
 
-		if(pGroup->GetLeaderUID() != pPlayer->Account()->GetID())
+		// check is owner
+		if(pGroup->GetOwnerUID() != pPlayer->Account()->GetID())
 		{
 			GS()->Chat(ClientID, "You're not the owner of the group!");
 			return true;
 		}
 
+		// check is full
 		if(pGroup->IsFull())
 		{
 			GS()->Chat(ClientID, "The group is full!");
 			return true;
 		}
 
-		// Check if the player being invited exists
+		// try invite player
+		const GroupIdentifier GroupID = pGroup->GetID();
 		if(CPlayer* pInvitedPlayer = GS()->GetPlayer(InvitedCID, true))
 		{
-			// Check if the player being invited already belongs to another group
+			// is invited player has group
 			if(pInvitedPlayer->Account()->HasGroup())
 			{
 				GS()->Chat(ClientID, "This player is already in another group.");
 				return true;
 			}
 
-			// Create vote optional
-			auto pOption = CVoteOptional::Create(InvitedCID, ClientID, GroupID, 15, 
-				Server()->Localize(ClientID, "Join to {} group?"), Server()->ClientName(ClientID));
+			// create invite vote optional
+			const auto pOption = CVoteOptional::Create(InvitedCID, ClientID, GroupID, 15,
+			                                           "Join to {} group?", Server()->ClientName(ClientID));
 			pOption->RegisterCallback(CallbackVoteOptionalGroupInvite);
 
-			// Send a chat message to the player inviting them to join the group
+			// send messages
 			GS()->Chat(ClientID, "You've invited {} to join your group!", Server()->ClientName(InvitedCID));
-
-			// Send chat messages to the player being invited informing them of the invitation and how to join the group
 			GS()->Chat(InvitedCID, "You have been invited by the {} to join the group.", Server()->ClientName(ClientID));
 		}
+
 		return true;
 	}
 
-	// Check if the command is for changing the owner of a group
+	// change group owner
 	if(PPSTR(pCmd, "GROUP_CHANGE_OWNER") == 0)
 	{
-		// Set the AccountID to the value of Extra1
+		// initialize variables
 		const int AccountID = Extra1;
 
-		// Get the group data of the player's account
-		GroupData* pGroup = pPlayer->Account()->GetGroup();
-
-		// If the player is in a group
-		if(pGroup)
+		// check player group valid
+		if(const auto pGroup = pPlayer->Account()->GetGroup())
 		{
-			// Change the owner of the group to the specified AccountID
-			pGroup->ChangeLeader(AccountID);
+			// check is owner player
+			if(pGroup->GetOwnerUID() != pPlayer->Account()->GetID())
+			{
+				GS()->Chat(ClientID, "You're not the owner of the group!");
+				return true;
+			}
 
-			// Update the votes for all players
+			// change owner
+			pGroup->ChangeOwner(AccountID);
 			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 
 		return true;
 	}
 
-	// Check if the command is "GROUP_KICK"
+	// kick from group
 	if(PPSTR(pCmd, "GROUP_KICK") == 0)
 	{
-		// Get the AccountID from Extra1
+		// initialize variables
 		const int AccountID = Extra1;
 
-		// Get the player's group
-		GroupData* pGroup = pPlayer->Account()->GetGroup();
-		if(pGroup) // If the player has a group
+		// check player group valid
+		if(const auto pGroup = pPlayer->Account()->GetGroup())
 		{
-			// Remove the account from the group
+			// check is owner player
+			if(pGroup->GetOwnerUID() != pPlayer->Account()->GetID())
+			{
+				GS()->Chat(ClientID, "You're not the owner of the group!");
+				return true;
+			}
+
+			// remove
 			pGroup->Remove(AccountID);
-
-			// Update votes for all players in the menu GROUP
-			GS()->UpdateVotesIfForAll(MENU_GROUP);
-		}
-
-		return true; // Return true to indicate success
-	}
-
-	// Check if the command is "GROUP_CHANGE_COLOR"
-	if(PPSTR(pCmd, "GROUP_CHANGE_COLOR") == 0)
-	{
-		if(ReasonNumber <= 1 || ReasonNumber > 63)
-		{
-			GS()->Chat(ClientID, "Please provide a numerical value within the range of 2 to 63 in your response.");
-			return true;
-		}
-
-		// Get the player's group data
-		GroupData* pGroup = pPlayer->Account()->GetGroup();
-
-		// If the player is in a group
-		if(pGroup)
-		{
-			// Change the group's color
-			pGroup->ChangeColor(ReasonNumber);
-
-			// Update the votes for all players in the group menu
 			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 
 		return true;
 	}
 
-	// Check if the command is "GROUP_DISBAND"
+	// get random free color
+	if(PPSTR(pCmd, "GROUP_RANDOM_COLOR") == 0)
+	{
+		// check player group valid
+		if(const auto pGroup = pPlayer->Account()->GetGroup())
+		{
+			// check is owner player
+			if(pGroup->GetOwnerUID() != pPlayer->Account()->GetID())
+			{
+				GS()->Chat(ClientID, "You're not the owner of the group!");
+				return true;
+			}
+
+			// update random color
+			pGroup->UpdateRandomColor();
+			GS()->UpdateVotesIfForAll(MENU_GROUP);
+		}
+
+		return true;
+	}
+
+	// disband group
 	if(PPSTR(pCmd, "GROUP_DISBAND") == 0)
 	{
-		// Get the group data of the player's account
-		GroupData* pGroup = pPlayer->Account()->GetGroup();
-
-		// Check if the player has a group and if they are the owner of the group
-		if(pGroup && pGroup->GetLeaderUID() == pPlayer->Account()->GetID())
+		// check player group valid
+		if(const auto pGroup = pPlayer->Account()->GetGroup())
 		{
-			// Disband the group
-			pGroup->Disband();
+			// check is owner player
+			if(pGroup->GetOwnerUID() != pPlayer->Account()->GetID())
+			{
+				GS()->Chat(ClientID, "You're not the owner of the group!");
+				return true;
+			}
 
-			// Update votes for all players for the group menu
+			// disband group
+			pGroup->Disband();
 			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 
