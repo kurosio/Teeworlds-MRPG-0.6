@@ -1130,7 +1130,6 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VManagement.AddMenu(MENU_GUILD_LOGS, "Logs of activity");
 	VManagement.AddMenu(MENU_GUILD_WARS, "Guild wars");
 	VManagement.AddMenu(MENU_GUILD_DISBAND, "Disband");
-	VoteWrapper::AddEmptyline(ClientID);
 
 	// Guild append house menu
 	if(HasHouse)

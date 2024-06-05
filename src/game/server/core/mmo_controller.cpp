@@ -14,7 +14,7 @@
 #include "components/crafting/craft_manager.h"
 #include "components/Dungeons/DungeonManager.h"
 #include "components/Eidolons/EidolonManager.h"
-#include "components/Groups/GroupManager.h"
+#include "components/groups/group_manager.h"
 #include "components/guilds/guild_manager.h"
 #include "components/houses/house_manager.h"
 #include "components/Inventory/InventoryManager.h"

@@ -5,7 +5,7 @@
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/houses/house_data.h>
-#include <game/server/core/components/Groups/GroupData.h>
+#include <game/server/core/components/groups/group_data.h>
 
 #include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/worlds/world_manager.h>

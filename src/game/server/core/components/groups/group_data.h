@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_GROUP_DATA_H
-#define GAME_SERVER_COMPONENT_GROUP_DATA_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_GROUPS_GROUP_DATA
+#define GAME_SERVER_CORE_COMPONENTS_GROUPS_GROUP_DATA
 
 #define TW_GROUPS_TABLE "tw_groups"
 

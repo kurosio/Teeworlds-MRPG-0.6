@@ -4,7 +4,7 @@
 #include <game/server/core/components/Accounts/AccountManager.h>
 #include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/houses/house_manager.h>
-#include <game/server/core/components/Groups/GroupManager.h>
+#include <game/server/core/components/groups/group_manager.h>
 
 #include "components/houses/entities/house_door.h"
 #include "game/server/gamecontext.h"

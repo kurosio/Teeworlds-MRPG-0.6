@@ -1,7 +1,7 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "GroupManager.h"
-#include "GroupData.h"
+#include "group_manager.h"
+#include "group_data.h"
 
 #include <game/server/core/utilities/vote_optional.h>
 #include <game/server/gamecontext.h>

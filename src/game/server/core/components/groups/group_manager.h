@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_GROUP_CORE_H
 #include <game/server/core/mmo_component.h>
 
-#include "GroupData.h"
+#include "group_data.h"
 
 class CGroupManager : public MmoComponent
 {

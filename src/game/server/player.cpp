@@ -16,7 +16,7 @@
 
 #include "core/components/Inventory/ItemData.h"
 #include "core/components/skills/skill_data.h"
-#include "core/components/Groups/GroupData.h"
+#include "core/components/groups/group_data.h"
 #include "core/components/worlds/world_data.h"
 #include "core/entities/tools/draw_board.h"
 
