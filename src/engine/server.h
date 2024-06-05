@@ -264,7 +264,6 @@ public:
 
 	virtual void OnTick() = 0;
 	virtual void OnTickGlobal() = 0;
-	virtual void OnPreSnap() = 0;
 	virtual void OnSnap(int ClientID) = 0;
 	virtual void OnPostSnap() = 0;
 
@@ -290,12 +289,6 @@ public:
 	virtual const char *NetVersion() const = 0;
 	virtual int GetRank(int AuthID) const = 0;
 
-	/**
-	 * Used to report custom player info to master servers.
-	 *
-	 * @param aBuf Should be the json key values to add, starting with a ',' beforehand, like: ',"skin": "default", "team": 1'
-	 * @param i The client id.
-	 */
 	virtual void OnUpdateClientServerInfo(nlohmann::json* pJson, int ClientID) = 0;
 };
 

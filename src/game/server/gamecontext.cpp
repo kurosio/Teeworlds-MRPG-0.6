@@ -270,12 +270,12 @@ void CGS::SendChatTarget(int ClientID, const char* pText) const
 ######################################################################### */
 void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 {
-	char aBuf[256];
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
+		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat", 
+			"%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
 	else
-		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
-	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat", aBuf);
+		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat", 
+			"*** %s", pText);
 
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Team = 0;
@@ -299,9 +299,6 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 			return;
 		}
 
-		// pack one for the recording only
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NOSEND, -1);
-
 		// send chat to guild team
 		Msg.m_Team = 1;
 		for(int i = 0; i < MAX_PLAYERS; i++)
@@ -310,6 +307,9 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 			if(pSearchPlayer && pChatterPlayer->Account()->SameGuild(i))
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
 		}
+
+		// pack one for the recording only
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NOSEND, -1);
 	}
 }
 
@@ -599,7 +599,7 @@ void CGS::OnTickGlobal()
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatMessageTime) == 0)
 	{
 		// Create a deque (double-ended queue) to hold the chat messages
-		std::deque<std::string> ChatMsg
+		std::deque<std::string> vMsg
 		{
 			"[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 1\", this will allow the voting menu not to close after clicking to vote.",
 			"[INFO] If you can't see the dialogs with NPCs, check in F1 console \"cl_motd_time\" so that the value is set.",
@@ -609,14 +609,12 @@ void CGS::OnTickGlobal()
 		};
 
 		// Select a random chat message from the deque and send it as a chat message to all players (-1)
-		Chat(-1, ChatMsg[rand() % ChatMsg.size()].c_str());
+		Chat(-1, vMsg[rand() % vMsg.size()].c_str());
 	}
 
 	// check if it's time to display the top message based on the configured interval
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatTopMessageTime) == 0)
 	{
-		// declare a variable to store the type of top list
-		const char* StrTypeName;
 		// generate a random top list type
 		ToplistType RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
 
@@ -624,21 +622,19 @@ void CGS::OnTickGlobal()
 		switch(RandomType)
 		{
 			case ToplistType::GUILDS_LEVELING:
-				StrTypeName = "---- [Top 5 guilds by leveling] ----";
+				Chat(-1, "---- [Top 5 guilds by leveling] ----");
 				break;
 			case ToplistType::GUILDS_WEALTHY:
-				StrTypeName = "---- [Top 5 guilds by gold] ----";
+				Chat(-1, "---- [Top 5 guilds by gold] ----");
 				break;
 			case ToplistType::PLAYERS_LEVELING:
-				StrTypeName = "---- [Top 5 players by leveling] ----";
+				Chat(-1, "---- [Top 5 players by leveling] ----");
 				break;
 			default:
-				StrTypeName = "---- [Top 5 players by gold] ----";
+				Chat(-1, "---- [Top 5 players by gold] ----");
 				break;
 		}
 
-		// display the top message in the chat
-		Chat(-1, StrTypeName);
 		// show the top list to all players
 		Core()->ShowTopList(-1, RandomType, 5);
 	}
@@ -665,7 +661,6 @@ void CGS::OnSnap(int ClientID)
 	m_Events.Snap(ClientID);
 }
 
-void CGS::OnPreSnap() {}
 void CGS::OnPostSnap()
 {
 	m_World.PostSnap();
@@ -680,9 +675,8 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 	{
 		if(g_Config.m_Debug)
 		{
-			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), "dropped weird message '%s' (%d), failed on '%s'", m_NetObjHandler.GetMsgName(MsgID), MsgID, m_NetObjHandler.FailedMsgOn());
-			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
+			Console()->PrintF(IConsole::OUTPUT_LEVEL_DEBUG, "server",
+				"dropped weird message '%s' (%d), failed on '%s'", m_NetObjHandler.GetMsgName(MsgID), MsgID, m_NetObjHandler.FailedMsgOn());
 		}
 
 		return;
@@ -1020,14 +1014,11 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
 
-	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
+	if(Server()->ClientIngame(ClientID) || (Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
 	{
-		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
-
 		Chat(-1, "{} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
+		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 	}
 

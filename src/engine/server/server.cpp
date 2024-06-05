@@ -760,7 +760,6 @@ int CServer::SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64_t Mask, in
 
 void CServer::DoSnapshot(int WorldID)
 {
-	GameServer(WorldID)->OnPreSnap();
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		// client must be ingame to recive snapshots

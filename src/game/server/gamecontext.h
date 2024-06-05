@@ -189,7 +189,6 @@ public:
 	void OnDaytypeChange(int NewDaytype) override;
 	void OnTick() override;
 	void OnTickGlobal() override;
-	void OnPreSnap() override;
 	void OnSnap(int ClientID) override;
 	void OnPostSnap() override;
 	void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) override;
