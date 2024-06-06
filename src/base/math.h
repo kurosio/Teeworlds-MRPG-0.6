@@ -138,20 +138,20 @@ constexpr inline T minimum(T a, T b)
 {
 	return std::min(a, b);
 }
-template<typename T>
-constexpr inline T minimum(T a, T b, T c)
+template<typename T, typename ... Ts>
+constexpr inline T minimum(T a, Ts ... args)
 {
-	return std::min(std::min(a, b), c);
+	return minimum(a, minimum((args)...));
 }
 template<typename T>
 constexpr inline T maximum(T a, T b)
 {
 	return std::max(a, b);
 }
-template<typename T>
-constexpr inline T maximum(T a, T b, T c)
+template<typename T, typename ... Ts>
+constexpr inline T maximum(T a, Ts ... args)
 {
-	return std::max(std::max(a, b), c);
+	return maximum(a, maximum((args)...));
 }
 template<typename T>
 constexpr inline T absolute(T a)
