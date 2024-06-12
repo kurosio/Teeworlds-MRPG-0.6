@@ -13,7 +13,7 @@
 
 int CAccountManager::GetLastVisitedWorldID(CPlayer* pPlayer) const
 {
-	const auto pWorldIterator = std::find_if(pPlayer->Account()->m_aHistoryWorld.begin(), pPlayer->Account()->m_aHistoryWorld.end(), [=](int WorldID)
+	const auto pWorldIterator = std::find_if(pPlayer->Account()->m_aHistoryWorld.begin(), pPlayer->Account()->m_aHistoryWorld.end(), [&](int WorldID)
 	{
 		if(GS()->GetWorldData(WorldID))
 		{

@@ -129,7 +129,7 @@ if(NOT MSVC)
 
   # broken somehow and throws this error on linux
   if (NOT TARGET_OS STREQUAL "linux")
-    add_c_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-implicit-function-declaration)
+    add_cxx_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-implicit-function-declaration)
   endif()
 
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wduplicated-cond)
