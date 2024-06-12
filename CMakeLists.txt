@@ -31,8 +31,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 include(CheckSymbolExists)
-#include(CheckCXXCompilerFlag) #unused
 
 check_symbol_exists(__i386 "" TARGET_ARCH_X86_i386)
 if(TARGET_ARCH_X86_i386)
