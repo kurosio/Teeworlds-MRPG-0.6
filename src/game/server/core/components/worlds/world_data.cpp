@@ -39,7 +39,7 @@ void CWorldData::Move(CPlayer* pPlayer)
 
 CWorldSwapData* CWorldData::GetSwapperByPos(vec2 Pos)
 {
-	auto pWorld = std::find_if(m_Swappers.begin(), m_Swappers.end(), [=](const CWorldSwapData& pItem)
+	auto pWorld = std::find_if(m_Swappers.begin(), m_Swappers.end(), [&](const CWorldSwapData& pItem)
 	{ return pItem.GetFirstWorldID() == m_ID && distance(pItem.GetFirstSwapPosition(), Pos) < 400; });
 	return (pWorld != m_Swappers.end()) ? &(*pWorld) : nullptr;
 }
