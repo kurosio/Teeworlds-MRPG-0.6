@@ -118,6 +118,7 @@ if(NOT MSVC)
   add_c_compiler_flag_if_supported(OUR_FLAGS_OWN -Wextra)
   add_c_compiler_flag_if_supported(OUR_FLAGS_OWN -Wno-unused-parameter)
   add_c_compiler_flag_if_supported(OUR_FLAGS_OWN -Wno-missing-field-initializers)
+  add_c_compiler_flag_if_supported(OUR_FLAGS_OWN -Wno-deprecated-enum-enum-conversion)
   add_c_compiler_flag_if_supported(OUR_FLAGS_OWN -Wformat=2) # Warn about format strings.
 
   # sry, discord sdk is broken somehow and throws this error on linux

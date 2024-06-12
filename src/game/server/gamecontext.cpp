@@ -1014,7 +1014,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
 
-	if(Server()->ClientIngame(ClientID) || (Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
+	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
 	{
 		Chat(-1, "{} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
