@@ -162,19 +162,20 @@ struct struct_format_implement
 	static std::string impl_format(const description& Desc, const char* pText, const Ts &...Args)
 	{
 		// check text pointer valid
-		if(!pText)
+		if(!pText) 
 			return "";
 
 		// initialize variables
+		std::string Text = handler_fmt::handle(Desc, pText);
 		size_t argsSize = sizeof...(Args);
 		std::string Result;
-		std::string Text = handler_fmt::handle(Desc, pText);
 		Result.reserve(Text.size() + argsSize * 10);
 
 		// reserve space for all the argument strings
 		std::vector<std::string> vPack;
 		vPack.reserve(argsSize);
 		((vPack.emplace_back(to_string(Desc, Args))), ...);
+
 		prepare_result(Desc, Text, &Result, vPack);
 		return Result;
 	}
@@ -184,6 +185,7 @@ struct struct_format_implement
 		// check text pointer valid
 		if(!pText)
 			return "";
+
 		return handler_fmt::handle(Desc, pText);
 	}
 };
