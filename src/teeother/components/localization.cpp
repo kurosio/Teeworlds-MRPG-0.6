@@ -22,17 +22,25 @@ bool CLocalization::Init()
 		return false;
 	}
 
-	nlohmann::json Json = nlohmann::json::parse((char*)RawData.data());
-	for(auto& JsonLang : Json["language indices"])
+	try
 	{
-		std::string Name = JsonLang.value("name", "\0");
-		std::string File = JsonLang.value("file", "\0");
-		std::string Parent = JsonLang.value("parent", "\0");
+		nlohmann::json json = nlohmann::json::parse((char*)RawData.data());
+		for(const auto& jsonLang : json["language indices"])
+		{
+			std::string Name = jsonLang.value("name", "");
+			std::string File = jsonLang.value("file", "");
+			std::string Parent = jsonLang.value("parent", "");
 
-		CLanguage*& pLanguage = m_pLanguages.increment();
-		pLanguage = new CLanguage(Name, File, Parent);
-		if(str_comp(g_Config.m_SvDefaultLanguage, pLanguage->GetFilename()) == 0)
-			m_pMainLanguage = pLanguage;
+			CLanguage*& pLanguage = m_pLanguages.increment();
+			pLanguage = new CLanguage(Name, File, Parent);
+			if(str_comp(g_Config.m_SvDefaultLanguage, pLanguage->GetFilename()) == 0)
+				m_pMainLanguage = pLanguage;
+		}
+	}
+	catch(const std::exception& e)
+	{
+		dbg_msg("Localization", "JSON parse error: %s", e.what());
+		return false;
 	}
 
 	return true;
@@ -112,11 +120,12 @@ CLocalization::CLanguage::~CLanguage()
 void CLocalization::CLanguage::Load()
 {
 	// untranslate does not load
-	if(m_Filename == "en")
-	{
-		m_Loaded = true;
-		return;
-	}
+    if (m_Filename == "en")
+    {
+        m_Loaded = true;
+        dbg_msg("localization", "language '%s' does not require loading", m_Filename.c_str());
+        return;
+    }
 
 	// load language file
 	std::vector<CUpdater::Element> vElements;

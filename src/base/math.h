@@ -181,25 +181,39 @@ public:
 	bool operator()() const { return m_State; }
 };
 
-// percents
-template < typename T> // char is arithmetic type we must exclude it 'a' / 'd' etc
-using PercentArithmetic = typename std::enable_if < std::is_arithmetic  < T >::value && !std::is_same < T, char >::value, T >::type;
+// Concept arithmetic type
+template <typename T>
+concept PercentArithmetic = std::is_arithmetic_v<T> && !std::is_same_v<T, char>;
 
-template <typename T> // derive from the number of percent e.g. ((100, 10%) = 10)
-PercentArithmetic<T> translate_to_percent_rest(T value, float percent) { return (T)(((double)value / 100.0f) * (T)percent); }
-
-template <typename T> // add to the number a percentage e.g. ((100, 10%) = 110)
-PercentArithmetic<T> add_percent_to_source(T* pvalue, float percent)
+// derive from the number of percent e.g. ((100, 10%) = 10)
+template <PercentArithmetic T>
+T translate_to_percent_rest(T value, float percent)
 {
-	*pvalue = ((T)((double)*pvalue) * (1.0f + ((T)percent / 100.0f)));
-	return (T)(*pvalue);
+	return static_cast<T>((static_cast<double>(value) * percent) / 100.0);
 }
 
-template <typename T> // translate from the first to the second in percent e.g. ((10, 5) = 50%)
-PercentArithmetic<T> translate_to_percent(T from, T value) { return (T)(((double)value / (double)from) * 100.0f); }
+// add to the number a percentage e.g. ((100, 10%) = 110)
+template <PercentArithmetic T>
+T add_percent_to_source(T* pvalue, float percent)
+{
+	if(pvalue)
+		*pvalue = static_cast<T>(static_cast<double>(*pvalue) * (1.0 + (percent / 100.0)));
+	return *pvalue;
+}
 
-template <typename T> // translate from the first to the second in percent e.g. ((10, 5, 50) = 25%)
-PercentArithmetic<T> translate_to_percent(T from, T value, float maximum_percent) { return (T)(((double)value / (double)from) * maximum_percent); }
+// translate from the first to the second in percent e.g. ((10, 5) = 50%)
+template <PercentArithmetic T>
+T translate_to_percent(T from, T value)
+{
+	return static_cast<T>((static_cast<double>(value) * 100.0) / static_cast<double>(from));
+}
+
+// translate from the first to the second in percent e.g. ((10, 5, 50) = 25%)
+template <PercentArithmetic T>
+T translate_to_percent(T from, T value, float maximum_percent)
+{
+	return static_cast<T>((static_cast<double>(value) * maximum_percent) / static_cast<double>(from));
+}
 
 
 #endif // BASE_MATH_H

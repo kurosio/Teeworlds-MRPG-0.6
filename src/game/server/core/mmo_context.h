@@ -678,7 +678,7 @@ namespace Tools
 
 	namespace String
 	{
-		inline std::string progressBar(int max_value, int current_value, int step, std::string UTF_fill_symbol, std::string UTF_empty_symbol)
+		inline std::string progressBar(int max_value, int current_value, int step, const std::string& UTF_fill_symbol, const std::string& UTF_empty_symbol)
 		{
 			std::string ProgressBar;
 			int numFilled = current_value / step;
@@ -771,7 +771,7 @@ namespace Tools
 class _StoreMultiworldIdentifiableStaticData
 {
 	// This pointer stores the instance of the server class.
-	// It is declared as inline static to allow for its initialization outside of the class.
+	// It is declared as inline static to allow for its initialization outside the class.
 	inline static class IServer* m_pServer {};
 
 public:
@@ -787,7 +787,7 @@ class MultiworldIdentifiableStaticData : public _StoreMultiworldIdentifiableStat
 {
 protected:
 	// This static pointer stores the shared static data.
-	// It is declared as inline static to allow for its initialization outside of the class.
+	// It is declared as inline static to allow for its initialization outside the class.
 	static inline T m_pData {};
 
 public:

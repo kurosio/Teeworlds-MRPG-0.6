@@ -67,16 +67,16 @@ CCharacter* CGS::GetPlayerChar(int ClientID) const
 
 CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuth, bool CheckCharacter) const
 {
-    if (ClientID < 0 || ClientID >= MAX_CLIENTS)
-        return nullptr;
-    CPlayer* pPlayer = m_apPlayers[ClientID];
-    if (!pPlayer)
-        return nullptr;
-    if (CheckAuth && !pPlayer->IsAuthed())
-        return nullptr;
-    if (CheckCharacter && !pPlayer->GetCharacter())
-        return nullptr;
-    return pPlayer;
+	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
+		return nullptr;
+	CPlayer* pPlayer = m_apPlayers[ClientID];
+	if (!pPlayer)
+		return nullptr;
+	if (CheckAuth && !pPlayer->IsAuthed())
+		return nullptr;
+	if (CheckCharacter && !pPlayer->GetCharacter())
+		return nullptr;
+	return pPlayer;
 }
 
 CPlayer* CGS::GetPlayerByUserID(int AccountID) const

@@ -5,60 +5,38 @@
 namespace
 {
 	constexpr auto g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
+
+	constexpr int MaxNumber = 9;
+	constexpr std::array<std::array<const char*, MaxNumber>, NUM_DEPTH_LIST_STYLES> NumeralStyles = {{
+		{ "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " },
+		{ "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " },
+		{ "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " },
+		{ "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " }
+	}};
+
 	const char* GetNumeralStyle(int Number, int Style) noexcept
 	{
-		constexpr int MaxNumber = 9;
-
-		if(Style == DEPTH_LIST_STYLE_DEFAULT)
+		if(Style >= 0 && Style < NUM_DEPTH_LIST_STYLES)
 		{
-			static const char* pList[MaxNumber] = { "1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. " };
-			return pList[std::clamp(Number, 0, MaxNumber - 1)];
+			return NumeralStyles[Style][std::clamp(Number, 0, MaxNumber - 1)];
 		}
-		if(Style == DEPTH_LIST_STYLE_ROMAN)
-		{
-			static const char* pList[MaxNumber] = { "\u2160. ", "\u2161. ", "\u2162. ", "\u2163. ", "\u2164. ", "\u2165. ", "\u2166. ", "\u2167. ", "\u2168. " };
-			return pList[std::clamp(Number, 0, MaxNumber - 1)];
-		}
-		if(Style == DEPTH_LIST_STYLE_BOLD)
-		{
-			static const char* pList[MaxNumber] = { "\uFF11. ", "\uFF12. ", "\uFF13. ", "\uFF14. ", "\uFF15. ", "\uFF16. ", "\uFF17. ", "\uFF18. ", "\uFF19. " };
-			return pList[std::clamp(Number, 0, MaxNumber - 1)];
-		}
-		if(Style == DEPTH_LIST_STYLE_CYRCLE)
-		{
-			static const char* pList[MaxNumber] = { "\u24F5. ", "\u24F6. ", "\u24F7. ", "\u24F8. ", "\u24F9. ", "\u24FA. ", "\u24FB. ", "\u24FC. ", "\u24FD. " };
-			return pList[std::clamp(Number, 0, MaxNumber - 1)];
-		}
-
 		return "";
 	}
 
-    enum class BorderType : int { Beggin, Middle, MiddleOption, Level, End };
-    const char* GetBorderStyle(BorderType Border, int Flags) noexcept
-    {
-        if (Flags & VWF_STYLE_SIMPLE)
-        {
-			static const char* pBorder[] = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
-            return pBorder[static_cast<int>(Border)];
-        }
-        if (Flags & VWF_STYLE_DOUBLE)
-        {
-			static const char* pBorder[] = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
-            return pBorder[static_cast<int>(Border)];
-        }
-        if (Flags & VWF_STYLE_STRICT)
-        {
-			static const char* pBorder[] = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
-            return pBorder[static_cast<int>(Border)];
-        }
-        if (Flags & VWF_STYLE_STRICT_BOLD)
-        {
-			static const char* pBorder[] = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
-            return pBorder[static_cast<int>(Border)];
-        }
+	enum class BorderType : int { Beggin, Middle, MiddleOption, Level, End };
+	constexpr std::array SimpleBorders = { "\u256D", "\u2502", "\u251C", "\u2508", "\u2570" };
+	constexpr std::array DoubleBorders = { "\u2554", "\u2551", "\u2560", "\u2550", "\u255A" };
+	constexpr std::array StrictBorders = { "\u250C", "\u2502", "\u251C", "\u2508", "\u2514" };
+	constexpr std::array StrictBoldBorders = { "\u250F", "\u2503", "\u2523", "\u2509", "\u2517" };
 
-        return "";
-    }
+	const char* GetBorderStyle(BorderType Border, int Flags) noexcept
+	{
+		if(Flags & VWF_STYLE_SIMPLE) return SimpleBorders[static_cast<int>(Border)];
+		if(Flags & VWF_STYLE_DOUBLE) return DoubleBorders[static_cast<int>(Border)];
+		if(Flags & VWF_STYLE_STRICT) return StrictBorders[static_cast<int>(Border)];
+		if(Flags & VWF_STYLE_STRICT_BOLD) return StrictBoldBorders[static_cast<int>(Border)];
+		return "";
+	}
 }
 
 CVoteGroup::CVoteGroup(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID)

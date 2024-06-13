@@ -165,17 +165,16 @@ struct struct_format_implement
 		if(!pText) 
 			return "";
 
-		// initialize variables
+		// prepare text
 		std::string Text = handler_fmt::handle(Desc, pText);
-		size_t argsSize = sizeof...(Args);
-		std::string Result;
-		Result.reserve(Text.size() + argsSize * 10);
 
-		// reserve space for all the argument strings
+		// collect arguments converted to string
 		std::vector<std::string> vPack;
-		vPack.reserve(argsSize);
-		((vPack.emplace_back(to_string(Desc, Args))), ...);
+		(vPack.emplace_back(to_string(Desc, Args)), ...);
 
+		// prepare result
+		std::string Result;
+		Result.reserve(Text.size() + std::accumulate(vPack.begin(), vPack.end(), std::size_t { 0 }, [](std::size_t acc, const std::string& s) { return acc + s.size(); }));
 		prepare_result(Desc, Text, &Result, vPack);
 		return Result;
 	}
