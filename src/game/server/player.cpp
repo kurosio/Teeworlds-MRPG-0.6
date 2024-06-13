@@ -694,7 +694,7 @@ void CPlayer::ProgressBar(const char* Name, int MyLevel, int MyExp, int ExpNeed,
 	const float GetLevelProgress = translate_to_percent((float)ExpNeed, (float)MyExp);
 	const float GetExpProgress = translate_to_percent((float)ExpNeed, (float)GivedExp);
 
-	std::string ProgressBar = Tools::String::progressBar(100, (int)GetLevelProgress, 10, ":", " ");
+	std::string ProgressBar = Utils::String::progressBar(100, (int)GetLevelProgress, 10, ":", " ");
 	str_format(aBufBroadcast, sizeof(aBufBroadcast), "Lv%d %s[%s] %0.2f%%+%0.3f%%(%d)XP", MyLevel, Name, ProgressBar.c_str(), GetLevelProgress, GetExpProgress, GivedExp);
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, aBufBroadcast);
 }
@@ -809,7 +809,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
 	}
 
-	std::string ProgressBar = Tools::String::progressBar(100, LevelPercent, 10, ":", " ");
+	std::string ProgressBar = Utils::String::progressBar(100, LevelPercent, 10, ":", " ");
 	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%-150s",
 		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, fmt_digit(Gold).c_str(), aRecastInfo, pAppendStr);
 }

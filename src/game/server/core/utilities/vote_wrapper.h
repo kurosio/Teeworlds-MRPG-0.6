@@ -10,42 +10,39 @@ class CVoteGroupHidden;
 typedef void (*VoteOptionCallbackImpl)(CPlayer*, int, std::string, void*);
 typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallback;
 
-enum
+enum VoteDepthListStyles
 {
-	// depth list
-	DEPTH_LVL1 = 0,
-	DEPTH_LVL2,
-	DEPTH_LVL3,
-	DEPTH_LVL4,
-	DEPTH_LVL5,
 	DEPTH_LIST_STYLE_DEFAULT = 0,
 	DEPTH_LIST_STYLE_ROMAN,
 	DEPTH_LIST_STYLE_BOLD,
 	DEPTH_LIST_STYLE_CYRCLE,
 	NUM_DEPTH_LIST_STYLES,
+};
 
-	// disabled
-	VWF_DISABLED                       = 0, // regular title group
+enum VoteDepthListStylesLevels
+{
+	DEPTH_LVL1 = 0,
+	DEPTH_LVL2,
+	DEPTH_LVL3,
+	DEPTH_LVL4,
+	DEPTH_LVL5,
+};
 
-	// settings
-	VWF_SEPARATE                       = 1 << 1, // ends the group with a line
-	VWF_ALIGN_TITLE                    = 1 << 2, // example: ---  title  ---
-
-	// styles
-	VWF_STYLE_SIMPLE                   = 1 << 3, // example: ╭ │ ╰
-	VWF_STYLE_DOUBLE                   = 1 << 4, // example: ╔ ═ ╚
-	VWF_STYLE_STRICT                   = 1 << 5, // example: ┌ │ └
-	VWF_STYLE_STRICT_BOLD              = 1 << 6, // example: ┏ ┃ ┗
-
-	// hidden
-	VWF_OPEN                           = 1 << 7, // default open group
-	VWF_CLOSED                         = 1 << 8, // default close group
-	VWF_UNIQUE                         = 1 << 9, // default close group toggle unique groups
-
-	// defined
-	VWF_SEPARATE_OPEN                  = VWF_OPEN | VWF_SEPARATE, // default open group with line
-	VWF_SEPARATE_CLOSED                = VWF_CLOSED | VWF_SEPARATE, // default close group with line
-	VWF_SEPARATE_UNIQUE                = VWF_UNIQUE | VWF_SEPARATE, // default close group with line
+enum VoteWrapperFlags
+{
+	VWF_DISABLED = 0, // regular title group
+	VWF_SEPARATE = 1 << 1, // ends the group with a line
+	VWF_ALIGN_TITLE = 1 << 2, // example: ---  title  ---
+	VWF_STYLE_SIMPLE = 1 << 3, // example: ╭ │ ╰
+	VWF_STYLE_DOUBLE = 1 << 4, // example: ╔ ═ ╚
+	VWF_STYLE_STRICT = 1 << 5, // example: ┌ │ └
+	VWF_STYLE_STRICT_BOLD = 1 << 6, // example: ┏ ┃ ┗
+	VWF_OPEN = 1 << 7, // default open group
+	VWF_CLOSED = 1 << 8, // default close group
+	VWF_UNIQUE = 1 << 9, // default close group toggle unique groups
+	VWF_SEPARATE_OPEN = VWF_OPEN | VWF_SEPARATE, // default open group with end line
+	VWF_SEPARATE_CLOSED = VWF_CLOSED | VWF_SEPARATE, // default close group with end line
+	VWF_SEPARATE_UNIQUE = VWF_UNIQUE | VWF_SEPARATE, // default close group with end line
 };
 
 class CVoteOption
@@ -348,7 +345,7 @@ public:
 	 *
 	 * @return A reference to the VoteWrapper instance.
 	 */
-	VoteWrapper& AddLine()
+	VoteWrapper& AddLine() noexcept
 	{
 		m_pGroup->AddLineImpl();
 		return *this;
@@ -362,7 +359,7 @@ public:
 	 *
 	 * @return A reference to the VoteWrapper instance.
 	 */
-	VoteWrapper& AddEmptyline()
+	VoteWrapper& AddEmptyline() noexcept
 	{
 		m_pGroup->AddEmptylineImpl();
 		return *this;

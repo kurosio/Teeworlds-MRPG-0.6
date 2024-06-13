@@ -62,7 +62,7 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 
 void CItemDescription::RunEvent(CPlayer* pPlayer, int EventID) const
 {
-	Tools::Json::parseFromString(m_Data, [&pPlayer, EventID, this](nlohmann::json& pJson)
+	Utils::Json::parseFromString(m_Data, [&pPlayer, EventID, this](nlohmann::json& pJson)
 	{
 		const char* pElem;
 		switch(EventID)

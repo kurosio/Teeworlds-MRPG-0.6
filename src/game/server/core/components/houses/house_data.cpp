@@ -27,7 +27,7 @@ void CHouse::InitProperties(int Bank, std::string&& AccessDoorList, std::string&
 	dbg_assert(JsonProperties.length() > 0, "The properties string is empty");
 
 	// Parse the JSON string
-	Tools::Json::parseFromString(JsonProperties, [this](nlohmann::json& pJson)
+	Utils::Json::parseFromString(JsonProperties, [this](nlohmann::json& pJson)
 	{
 		// Assert for important properties
 		dbg_assert(pJson.find("pos") != pJson.end(), "The importal properties value is empty");
@@ -230,7 +230,7 @@ CPlayer* CHouse::CDoorManager::GetPlayer() const { return m_pHouse->GetPlayer();
 CHouse::CDoorManager::CDoorManager(CHouse* pHouse, std::string&& AccessData, std::string&& JsonDoors) : m_pHouse(pHouse)
 {
 	// parse doors the JSON string
-	Tools::Json::parseFromString(JsonDoors, [this](nlohmann::json& pJson)
+	Utils::Json::parseFromString(JsonDoors, [this](nlohmann::json& pJson)
 	{
 		for(const auto& pDoor : pJson)
 		{
@@ -511,7 +511,7 @@ CGS* CHouse::CFarmzonesManager::GS() const { return m_pHouse->GS(); }
 CHouse::CFarmzonesManager::CFarmzonesManager(CHouse* pHouse, std::string&& JsonFarmzones) : m_pHouse(pHouse)
 {
 	// Parse the JSON string
-	Tools::Json::parseFromString(JsonFarmzones, [this](nlohmann::json& pJson)
+	Utils::Json::parseFromString(JsonFarmzones, [this](nlohmann::json& pJson)
 	{
 		for(const auto& pFarmzone : pJson)
 		{

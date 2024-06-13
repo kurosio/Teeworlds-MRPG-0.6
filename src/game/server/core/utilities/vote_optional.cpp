@@ -10,10 +10,8 @@ bool CVoteOptional::Run(bool VoteState)
 	// Check if the callback function is valid
 	if(m_Callback)
 	{
-		CPlayer* pPlayer = GetPlayer();
-
 		// Call the callback function with the given parameters
-		m_Callback(pPlayer, m_MiscValue1, m_MiscValue2, VoteState);
+		m_Callback(GetPlayer(), m_MiscValue1, m_MiscValue2, VoteState);
 
 		// Create a new network message to update the vote status
 		CNetMsg_Sv_VoteStatus Msg;
@@ -28,7 +26,6 @@ bool CVoteOptional::Run(bool VoteState)
 		return true;
 	}
 
-	// Return false to indicate that the callback function was not called
 	return false;
 }
 

@@ -52,7 +52,7 @@ public:
 	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes, std::string&& Data)
 	{
 		m_Data = std::move(Data);
-		Tools::Json::parseFromString(m_Data, [this](nlohmann::json& pJson)
+		Utils::Json::parseFromString(m_Data, [this](nlohmann::json& pJson)
 		{
 			// try to initialize harversing
 			m_Harvesting = HarvestingData{

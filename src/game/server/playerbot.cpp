@@ -440,7 +440,7 @@ void CPlayerBot::Snap(int SnappingClient)
 	{
 		const float Progress = translate_to_percent((float)GetStartHealth(), (float)GetHealth());
 
-		std::string ProgressBar = Tools::String::progressBar(100, (int)Progress, 33, "\u25B0", "\u25B1");
+		std::string ProgressBar = Utils::String::progressBar(100, (int)Progress, 33, "\u25B0", "\u25B1");
 		StrToInts(&pClientInfo->m_Clan0, 3, ProgressBar.c_str());
 	}
 	else

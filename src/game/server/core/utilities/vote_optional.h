@@ -11,8 +11,7 @@ class CVoteOptional : public MultiworldIdentifiableStaticData< std::map<int, std
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
-	typedef void (*OptionEventCallback)(class CPlayer*, int, int, bool);
-	OptionEventCallback m_Callback {}; // The callback function for the event
+	using OptionEventCallback = std::function<void(CPlayer*, int, int, bool)>;
 
 public:
 	// Function: CreateVoteOptional
@@ -38,19 +37,22 @@ public:
 		return &m_pData[ForCID].back();
 	}
 
-	int m_ClientID {}; // The client ID of the player who created the vote
-	int m_MiscValue1 {}; // The reserve misc value of the vote
-	int m_MiscValue2 {}; // The reserve misc value of the vote
-	bool m_Working {}; // Indicates if the voting event is currently active
-	std::string m_Description {}; // The description of the voting event
-	time_t m_CloseTime {}; // The time when the voting event will close
+	int m_ClientID {};
+	int m_MiscValue1 {};
+	int m_MiscValue2 {};
+	bool m_Working {};
+	std::string m_Description {};
+	time_t m_CloseTime {};
 
 	// This function registers a callback function for the voting event
-	void RegisterCallback(OptionEventCallback Callback) { m_Callback = Callback; }
+	void RegisterCallback(OptionEventCallback Callback) { m_Callback = std::move(Callback); }
 
 	// This function is used to run a callback function with the given parameters.
 	// It takes a pointer to a CPlayer object, a boolean state, and returns a boolean value.
 	bool Run(bool VoteState);
+
+private:
+	OptionEventCallback m_Callback; // Callback function for the voting event
 };
 
 #endif

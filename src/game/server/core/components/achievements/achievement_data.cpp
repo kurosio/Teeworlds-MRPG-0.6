@@ -8,7 +8,7 @@
 void CAchievementInfo::InitData(const std::string& RewardData)
 {
 	// parse the reward data
-	Tools::Json::parseFromString(RewardData, [this](nlohmann::json& pJson)
+	Utils::Json::parseFromString(RewardData, [this](nlohmann::json& pJson)
 	{
 		m_RewardData = std::move(pJson);
 	});

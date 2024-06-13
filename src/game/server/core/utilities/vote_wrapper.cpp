@@ -115,6 +115,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	Vote.m_Extra1 = Extra1;
 	Vote.m_Extra2 = Extra2;
 	Vote.m_Title = true;
+
 	if(m_vpVotelist.empty() || !m_HasTitle)
 	{
 		m_HasTitle = true;
@@ -354,10 +355,9 @@ void VoteWrapper::RebuildVotes(int ClientID)
 CVoteOption* VoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActionName)
 {
 	// find the vote option with the matching action name
-	auto& vData = VoteWrapper::Data()[ClientID];
-	for(auto& iterGroup : vData)
+	for(const auto& iterGroup : Data()[ClientID])
 	{
-		auto iter = std::find_if(iterGroup->m_vpVotelist.begin(), iterGroup->m_vpVotelist.end(), [pActionName](const CVoteOption& vote)
+		auto iter = std::ranges::find_if(iterGroup->m_vpVotelist, [pActionName](const CVoteOption& vote)
 		{
 			return str_comp(pActionName, vote.m_aDescription) == 0;
 		});
@@ -464,7 +464,7 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, co
 		return true;
 
 	// sound effect
-	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_BODY_LAND);
+	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_PICKUP_ARMOR);
 
 	// command menu
 	if(PPSTR(pCmd, "MENU") == 0)

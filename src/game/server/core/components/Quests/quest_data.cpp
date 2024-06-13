@@ -42,7 +42,7 @@ bool CPlayerQuest::Accept()
 		const int StoryQuestsNum = Info()->GetStoryQuestsNum();
 		const int QuestCurrentPos = Info()->GetStoryQuestPosition();
 		GS()->Chat(ClientID, "{} Quest {}({} of {}) accepted {}",
-			Tools::Aesthetic::B_PILLAR(3, false), Info()->GetStory(), QuestCurrentPos, StoryQuestsNum, Tools::Aesthetic::B_PILLAR(3, true));
+			Utils::Aesthetic::B_PILLAR(3, false), Info()->GetStory(), QuestCurrentPos, StoryQuestsNum, Utils::Aesthetic::B_PILLAR(3, true));
 		GS()->Chat(ClientID, "Name: \"{}\"", Info()->GetName());
 		GS()->Chat(ClientID, "Reward: \"Gold {}, Experience {}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
 	}

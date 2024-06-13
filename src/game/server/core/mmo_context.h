@@ -3,6 +3,16 @@
 #ifndef GAME_SERVER_CORE_MMO_CONTEXT_H
 #define GAME_SERVER_CORE_MMO_CONTEXT_H
 
+namespace Concepts
+{
+	template <typename Container>
+	concept EmplaceBackContainer = requires(Container container, std::string str)
+	{
+		{ container.clear() } -> std::same_as<void>;
+		{ container.emplace_back(str) } -> std::same_as<void>;
+	};
+}
+
 enum class WorldType : int
 {
 	Default,
@@ -210,9 +220,8 @@ enum FunctionsNPC
 // menu list
 enum MenuList
 {
-	MENU_MAIN = 1,
-
 	// Main menu
+	MENU_MAIN = 1,
 	MENU_EQUIPMENT,
 	MENU_INVENTORY,
 	MENU_UPGRADES,
@@ -229,16 +238,12 @@ enum MenuList
 	MENU_GUILD_HOUSE_SELL,
 	MENU_GUILD_UPGRADES,
 	MENU_GUILD_HOUSE_DOOR_LIST,
-
 	MENU_GUILD_MEMBERSHIP_LIST,
 	MENU_GUILD_MEMBERSHIP_SELECTED,
-
 	MENU_GUILD_RANK_LIST,
 	MENU_GUILD_RANK_SELECTED,
-
 	MENU_GUILD_HOUSE_FARMZONE_LIST,
 	MENU_GUILD_HOUSE_FARMZONE_SELECTED,
-
 	MENU_GUILD_INVITES,
 	MENU_GUILD_LOGS,
 	MENU_GUILD_WARS,
@@ -256,7 +261,6 @@ enum MenuList
 	MENU_HOUSE_DOOR_LIST,
 	MENU_HOUSE_ACCESS_TO_DOOR,
 	MENU_HOUSE_BUY,
-
 	MENU_HOUSE_FARMZONE_LIST,
 	MENU_HOUSE_FARMZONE_SELECTED,
 
@@ -395,7 +399,7 @@ public:
 
 		static const Heal* getHealInfo(int ItemID)
 		{
-			auto p = std::find_if(m_PotionHealthInfo.begin(), m_PotionHealthInfo.end(), [ItemID](const Heal& p){ return p.m_ItemID == ItemID; });
+			auto p = std::ranges::find_if(m_PotionHealthInfo, [ItemID](const Heal& p){ return p.m_ItemID == ItemID; });
 			return p != m_PotionHealthInfo.end() ? p : nullptr;
 		}
 		static std::initializer_list<Heal>& getList() { return m_PotionHealthInfo; }
@@ -551,7 +555,7 @@ enum class AttributeIdentifier : int
 };
 
 using ByteArray = std::basic_string<std::byte>;
-namespace Tools
+namespace Utils
 {
 	namespace Aesthetic
 	{
@@ -693,31 +697,42 @@ namespace Tools
 
 			return ProgressBar;
 		}
+
+		template <Concepts::EmplaceBackContainer Container>
+		void splitString(const std::string& str, const std::string& delimiter, Container& container)
+		{
+			container.clear();
+			if(delimiter.empty())
+			{
+				container.emplace_back(str);
+				return;
+			}
+
+			std::string::size_type start = 0;
+			std::string::size_type end = 0;
+			while((end = str.find(delimiter, start)) != std::string::npos)
+			{
+				container.emplace_back(str.substr(start, end - start));
+				start = end + delimiter.length();
+			}
+			container.emplace_back(str.substr(start));
+		}
 	}
 
 	namespace Json
 	{
-		// Define a static function called parseFromString that takes in a string Data and a callback function pFuncCallback as parameters
 		inline void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
 		{
-			// Check data empty
 			if(!Data.empty())
 			{
 				try
 				{
-					// Parse the input string into a nlohmann::json object called JsonData
 					nlohmann::json JsonData = nlohmann::json::parse(Data);
-
-					// Call the callback function with JsonData as the parameter
 					pFuncCallback(JsonData);
 				}
-				// Catch any exceptions thrown during the parsing process and handle them
 				catch(nlohmann::json::exception& s)
 				{
-					// Output the error message to the debug log
-					char aBufError[2048];
-					str_format(aBufError, sizeof(aBufError), "[json parse] Invalid json: %s", s.what());
-					dbg_assert(false, aBufError);
+					dbg_assert(false, fmt("[json parse] Invalid json: {}", s.what()).c_str());
 				}
 			}
 		}
@@ -762,7 +777,6 @@ namespace Tools
 			io_close(File);
 			return SUCCESSFUL;
 		}
-
 	}
 }
 
