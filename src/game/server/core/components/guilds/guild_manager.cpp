@@ -338,7 +338,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		// check maximal rent days
 		if(pHouse->GetRentDays() >= GUILD_HOUSE_MAX_RENT_DAYS)
 		{
-			GS()->Chat(ClientID, "You can not extend the rent anymore then {} days.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
+			GS()->Chat(ClientID, "You can not extend the rent anymore then {#day|days}.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
 			return true;
 		}
 
@@ -346,14 +346,14 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		ReasonNumber = clamp(ReasonNumber, 0, GUILD_HOUSE_MAX_RENT_DAYS - pHouse->GetRentDays());
 		if(!ReasonNumber)
 		{
-			GS()->Chat(ClientID, "Minimum is 1 day. Maximum total {} days.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
+			GS()->Chat(ClientID, "Minimum is 1 day. Maximum total {#day|days}.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
 			return true;
 		}
 
 		// extend
 		if(pHouse->ExtendRentDays(ReasonNumber))
 		{
-			GS()->ChatGuild(pGuild->GetID(), "Your house was extended by {} days.", ReasonNumber);
+			GS()->ChatGuild(pGuild->GetID(), "Your house was extended by {#day|days}.", ReasonNumber);
 			pGuild->GetLogger()->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House extended by %d days.", ReasonNumber);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 			return true;

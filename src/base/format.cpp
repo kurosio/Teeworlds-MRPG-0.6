@@ -19,9 +19,9 @@ std::string pluralize(int count, const std::vector<std::string>& forms)
 
 	if(numForms == 3)
 	{
-		if(forms.size() == 1 || count % 10 == 1 && count % 100 != 11)
+		if(forms.size() == 1 || (count % 10 == 1 && count % 100 != 11))
 			return forms[0];
-		if(forms.size() == 2 || count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20))
+		if(forms.size() == 2 || (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)))
 			return forms[1];
 		return forms[2];
 	}
@@ -52,7 +52,7 @@ std::vector<std::string> collect_argument_variants(size_t startPos, const std::s
 
 void struct_format_implement::prepare_result(const description&, const std::string& Text, std::string* pResult, std::vector<std::string>& vPack)
 {
-    enum { arg_default, arg_plural, arg_reverse, arg_repeat, arg_uppercase, arg_lowercase, arg_truncate, arg_truncate_full, arg_truncate_custom };
+    enum { arg_default, arg_plural, arg_truncate, arg_truncate_full, arg_truncate_custom };
     std::string argument;
     size_t argumentPosition = 0;
     bool argumentProcessing = false;
@@ -67,46 +67,21 @@ void struct_format_implement::prepare_result(const description&, const std::stri
             continue;
         }
 
-        // truncate type
-    	if(iterChar == '~')
+        // get argument type
+        if(argumentType == arg_default)
         {
-            argumentType = arg_truncate;
-            continue;
-        }
+            // truncate type
+            if(iterChar == '~')
+            {
+                argumentType = arg_truncate;
+                continue;
+            }
 
-        // plural type
-    	if(iterChar == '#')
-        {
-            argumentType = arg_plural;
-            continue;
-        }
-
-        // reverse type
-        if(iterChar == 'R')
-        {
-	        argumentType = arg_reverse;
-			continue;
-        }
-
-        // repeat type
-        if(iterChar == '*')
-        {
-            argumentType = arg_repeat;
-            continue;
-        }
-
-        // lower case
-        if(iterChar == 'L')
-        {
-            argumentType = arg_lowercase;
-            continue;
-        }
-
-        // upper case
-        if(iterChar == 'U')
-        {
-            argumentType = arg_uppercase;
-            continue;
+            // plural type
+            if(iterChar == '#')
+            {
+                argumentType = arg_plural;
+            }
         }
 
         // end argument processing
@@ -154,31 +129,36 @@ void struct_format_implement::prepare_result(const description&, const std::stri
                 // plural type
                 else if(argumentType == arg_plural)
                 {
-                    std::string& collectFrom = argument.empty() && argumentPosition < vPack.size() ? vPack[argumentPosition++] : argument;
-                    argumentResult += " " + pluralize(str_toint(argumentResult.c_str()), collect_argument_variants(0, collectFrom));
-                }
-                // reverse type
-                else if(argumentType == arg_reverse)
-                {
-                    std::ranges::reverse(argumentResult);
-                }
-                // repeat type
-                else if(argumentType == arg_repeat)
-                {
-                    int count = maximum(1, str_toint(argument.c_str()));
-                    std::string original = argumentResult;
-                    for(int i = 1; i < count; ++i)
-                        argumentResult += original;
-                }
-                // upper case
-                else if(argumentType == arg_uppercase)
-                {
-                    std::ranges::transform(argumentResult, argumentResult.begin(), ::toupper);
-                }
-                // lower case
-                if(argumentType == arg_lowercase)
-                {
-                    std::ranges::transform(argumentResult, argumentResult.begin(), ::tolower);
+                    bool parsePlural = false;
+                    std::string resultPlural {};
+                    std::string variantPlural {};
+
+                    for(auto& c : argument)
+                    {
+                        if(c == '#')
+                        {
+                            resultPlural += argumentResult;
+                        }
+                        else if(c == '(')
+                        {
+                            parsePlural = true;
+                        }
+                        else if(c == ')')
+                        {
+                            resultPlural += pluralize(str_toint(argumentResult.c_str()), collect_argument_variants(0, variantPlural));
+                            parsePlural = false;
+                        }
+                        else if(!parsePlural)
+                        {
+                            resultPlural += c;
+                        }
+                        else
+                        {
+                            variantPlural += c;
+                        }
+                    }
+
+                    argumentResult = resultPlural;
                 }
 
                 // reset and add result
