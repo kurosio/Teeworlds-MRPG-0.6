@@ -338,7 +338,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		// check maximal rent days
 		if(pHouse->GetRentDays() >= GUILD_HOUSE_MAX_RENT_DAYS)
 		{
-			GS()->Chat(ClientID, "You can not extend the rent anymore then {#day|days}.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
+			GS()->Chat(ClientID, "You can not extend the rent anymore then {# (day|days)}.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
 			return true;
 		}
 
@@ -346,14 +346,14 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		ReasonNumber = clamp(ReasonNumber, 0, GUILD_HOUSE_MAX_RENT_DAYS - pHouse->GetRentDays());
 		if(!ReasonNumber)
 		{
-			GS()->Chat(ClientID, "Minimum is 1 day. Maximum total {#day|days}.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
+			GS()->Chat(ClientID, "Minimum is 1 day. Maximum {# total (day|days)}.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
 			return true;
 		}
 
 		// extend
 		if(pHouse->ExtendRentDays(ReasonNumber))
 		{
-			GS()->ChatGuild(pGuild->GetID(), "Your house was extended by {#day|days}.", ReasonNumber);
+			GS()->ChatGuild(pGuild->GetID(), "Your house was extended by {# total (day|days)}.", ReasonNumber);
 			pGuild->GetLogger()->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House extended by %d days.", ReasonNumber);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 			return true;
@@ -1137,7 +1137,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		// House management
 		auto* pHouse = pGuild->GetHouse();
 		VoteWrapper::AddEmptyline(ClientID);
-		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {} days)", pHouse->GetRentDays());
+		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {# (day|days)})", pHouse->GetRentDays());
 		VHouse.Add("Bank: {} | Rent per day: {} golds", pGuild->GetBank()->Get(), pHouse->GetRentPrice());
 		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
@@ -1564,8 +1564,8 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
 	VInfo.Add("Buying a house you will need to constantly the Treasury");
 	VInfo.Add("In the intervals of time will be paid house");
 	VInfo.Add("Owned by: {}", pHouse->GetOwnerName());
-	VInfo.Add("Farm zone's: {}", (int)pHouse->GetFarmzonesManager()->GetContainer().size());
-	VInfo.Add("Controlled door's: {}", (int)pHouse->GetDoorManager()->GetContainer().size());
+	VInfo.Add("Farm {(zone|zones): #}", (int)pHouse->GetFarmzonesManager()->GetContainer().size());
+	VInfo.Add("Controlled {(door|doors): #}", (int)pHouse->GetDoorManager()->GetContainer().size());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// top
@@ -1578,13 +1578,13 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
 		// check rights
 		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
 		{
-			VTop.Add("Initial fee: {} golds", pHouse->GetInitialFee());
+			VTop.Add("Initial fee: {# (gold|golds)}", pHouse->GetInitialFee());
 			VTop.Add("You don't have the right to buy a house");
 			return;
 		}
 
 		// show options
-		VTop.Add("Bank: {} golds | Initial fee: {}", pGuild->GetBank()->Get(), pHouse->GetInitialFee());
+		VTop.Add("Bank: {# (gold|golds)} | Initial fee: {}", pGuild->GetBank()->Get(), pHouse->GetInitialFee());
 		VTop.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase");
 	}
 }
@@ -1607,7 +1607,7 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 	// TODO
 	VoteWrapper VWar(ClientID);
 	VWar.Add("\u2646 Declare war on another guild");
-	VWar.Add("Cooldown: {} minutes", 10);
+	VWar.Add("Cooldown: {# (minute|minutes)}", 10);
 	VWar.AddLine();
 
 	if(pGuild->GetWar())
@@ -1632,7 +1632,7 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 		for(auto& p : CGuild::Data())
 		{
 			if(p->GetID() != pGuild->GetID())
-				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{} (online {} players)", p->GetName(), p->GetMembers()->GetOnlineCount());
+				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{} (online {# (player|players)})", p->GetName(), p->GetMembers()->GetOnlineCount());
 		}
 	}
 

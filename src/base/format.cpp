@@ -126,7 +126,7 @@ void struct_format_implement::prepare_result(const description&, const std::stri
                         argumentResult = argumentResult.substr(0, dotPos + truncateNum);
                     }
                 }
-                // plural type
+                // plural type TODO: skip result
                 else if(argumentType == arg_plural)
                 {
                     bool parsePlural = false;

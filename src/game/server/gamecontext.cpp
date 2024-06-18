@@ -580,12 +580,6 @@ void CGS::OnTick()
 		}
 	}
 
-	dbg_msg("test", fmt_handle("Maximum {# total (day|days)}.", 1).c_str());
-	dbg_msg("test", fmt_handle("Maximum {total # (day|days)}.", 3).c_str());
-	dbg_msg("test", fmt_handle("Maximum {total (day|days) #}.", 10).c_str());
-	dbg_msg("test", fmt_handle("y menya {L}", "Hello world!").c_str());
-	dbg_msg("test", fmt_handle("y menya {*}", "Hello world!").c_str());
-	dbg_msg("test", fmt_handle("y menya {*3}", "Hello world!").c_str());
 	Core()->OnTick();
 }
 
