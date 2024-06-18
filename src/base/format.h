@@ -155,7 +155,7 @@ struct struct_format_implement
 	}
 
 	// implementation for the last argument
-	static void prepare_result(const description& Desc, const std::string& Text, std::string* pResult, const std::vector<std::string>& vPack);
+	static void prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::string>& vPack);
 
 	// implementation for default format
 	template<typename... Ts>
