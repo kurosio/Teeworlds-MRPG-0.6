@@ -2,53 +2,46 @@
 #define BASE_FORMAT_H
 
 /**
- * Formats a big digit value into a string with a specified separator.
+ * Formats a big digit value into a string with a specified separator and number of digits.
  *
- * @tparam T The type of the value to format.
- * @param Value The value to format.
+ * @param numberStr The string value to format.
  * @return The formatted string.
  */
-template<typename T, const char separator = '.'>
-inline std::string fmt_big_digit(T Value)
+template <char separator = '.'>
+std::string fmt_big_digit( std::string numberStr)
 {
-	constexpr unsigned num = 3;
-
-	// coverting the value to string
-	std::string conversionString;
-	if constexpr(std::is_same_v<std::string, T>)
-		conversionString = Value;
-	else if constexpr(std::is_arithmetic_v<T>)
-		conversionString = std::to_string(Value);
-	else
-		conversionString(Value);
-
-	const char* pLabel[24] = { "", "million", "billion", "trillion", "quadrillion", "quintillion", "sextillion",
-		"septillion", "octillion", "nonillion", "decillion", "undecillion",
-		"duodecillion", "tredecillion", "quattuordecillion", "quindecillion",
-		"sexdecillion", "septendecillion", "octodecillion", "novemdecillion",
-		"vigintillion", "unvigintillion", "duovigintillion", "trevigintillion"
+	// intiailize variables
+	double number = strtod(numberStr.c_str(), nullptr);
+	const std::vector<std::string> vSuffixes =
+	{
+		"", "k", "mil", "bil", "tri", "quad", "quint", "sext", "sept", "oct",
+		"non", "dec", "undec", "duodec", "tredec", "quattuordec", "quindec",
+		"sexdec", "septendec", "octodec", "novemdec", "vigint", "unvigint", "duovigint", "trevigint"
 	};
 
-	// prepare big digit
-	if(conversionString.length() > (num + 1))
+	// check is less default number
+	if(floor(number) == number && number < 1000)
+		return std::to_string(static_cast<int>(number));
+
+	// get suffix index
+	size_t index = 0;
+	while(number >= 1000 && index < vSuffixes.size() - 1)
 	{
-		int Position = -1;
-		auto iter = conversionString.end();
-
-		for(auto it = conversionString.rbegin(); (num + 1) <= std::distance(it, conversionString.rend());)
-		{
-			if(iter != conversionString.end())
-				conversionString.erase(iter, conversionString.end());
-			std::advance(it, num);
-			iter = conversionString.insert(it.base(), separator);
-			Position++;
-		}
-
-		if(Position > 0 && Position < 24)
-			conversionString.append(pLabel[Position]);
+		number /= 1000;
+		index++;
 	}
 
-	return conversionString;
+	// format the number with two decimal places
+	std::string numberResult = std::to_string(round(number * 100) / 100);
+	if(auto pos = numberResult.find(separator); pos != std::string::npos)
+	{
+		numberResult.erase(numberResult.find_last_not_of('0') + 1, std::string::npos);
+		if(numberResult.back() == separator)
+			numberResult.pop_back();
+	}
+
+	// result
+	return numberResult + vSuffixes[index];
 }
 
 /**
@@ -99,7 +92,7 @@ struct struct_format_implement
 		int m_definer;
 		bool m_handlefmt;
 	};
-	enum { type_unknown, type_string, type_integers, type_floating };
+	enum { type_unknown, type_string, type_integers, type_big_integers, type_floating };
 
 	/**
 	 * Handles the formatting of a string using a callback function.
@@ -136,6 +129,8 @@ struct struct_format_implement
 	{
 		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
 			return { type_floating, std::to_string(Value) };
+		else if constexpr(std::is_same_v<T, BigInt>)
+			return { type_big_integers, Value.to_string() };
 		else if constexpr(std::is_arithmetic_v<T>)
 			return { type_integers, std::to_string(Value) };
 		else if constexpr(std::is_convertible_v<T, std::string>)
@@ -155,7 +150,7 @@ struct struct_format_implement
 	static std::string impl_format(const description& Desc, const char* pText, const Ts &...Args)
 	{
 		// check text pointer valid
-		if(!pText) 
+		if(!pText)
 			return "";
 
 		// prepare text

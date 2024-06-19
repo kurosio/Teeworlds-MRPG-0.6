@@ -67,14 +67,14 @@ CCharacter* CGS::GetPlayerChar(int ClientID) const
 
 CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuth, bool CheckCharacter) const
 {
-	if (ClientID < 0 || ClientID >= MAX_CLIENTS)
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return nullptr;
 	CPlayer* pPlayer = m_apPlayers[ClientID];
-	if (!pPlayer)
+	if(!pPlayer)
 		return nullptr;
-	if (CheckAuth && !pPlayer->IsAuthed())
+	if(CheckAuth && !pPlayer->IsAuthed())
 		return nullptr;
-	if (CheckCharacter && !pPlayer->GetCharacter())
+	if(CheckCharacter && !pPlayer->GetCharacter())
 		return nullptr;
 	return pPlayer;
 }
@@ -271,10 +271,10 @@ void CGS::SendChatTarget(int ClientID, const char* pText) const
 void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 {
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat", 
+		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat",
 			"%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
 	else
-		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat", 
+		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat",
 			"*** %s", pText);
 
 	CNetMsg_Sv_Chat Msg;
@@ -551,13 +551,13 @@ void CGS::OnDaytypeChange(int NewDaytype)
 			break;
 		case EVENING_TYPE:
 			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
-		break;
+			break;
 		case NIGHT_TYPE:
 			ChatWorld(m_WorldID, "", "Nighttime adventure in the '{}' zone has been boosted by {}%!", pWorldname, m_MultiplierExp);
 			break;
 		default:
 			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
-		break;
+			break;
 	}
 }
 

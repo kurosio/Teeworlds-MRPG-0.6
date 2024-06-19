@@ -54,7 +54,6 @@ std::vector<std::string> collect_argument_variants(size_t startPos, const std::s
 	return values;
 }
 
-
 void struct_format_implement::prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::pair<int, std::string>>& vPack)
 {
 	enum { arg_default, arg_plural, arg_skip_handle, arg_truncate, arg_truncate_full, arg_truncate_custom };
@@ -91,9 +90,6 @@ void struct_format_implement::prepare_result(const description& Desc, const std:
 		// end argument processing
 		if(iterChar == '}')
 		{
-			dbg_msg("test", "argument: %s", argument.c_str());
-
-
 			argumentProcessing = false;
 			if(argumentPosition < vPack.size())
 			{
@@ -174,9 +170,11 @@ void struct_format_implement::prepare_result(const description& Desc, const std:
 				if(argumentType != arg_skip_handle)
 				{
 					if(argumentTypename == type_integers && handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS)
-						argumentResult = fmt_digit<std::string>(argumentResult);
+						argumentResult = fmt_digit(std::move(argumentResult));
 					else if(argumentTypename == type_string && handler_fmt::get_flags() & FMTFLAG_HANDLE_ARGS)
 						argumentResult = handler_fmt::handle(Desc, argumentResult);
+					else if(argumentTypename == type_big_integers)
+						argumentResult = fmt_big_digit(std::move(argumentResult));
 				}
 
 				// reset and append result
