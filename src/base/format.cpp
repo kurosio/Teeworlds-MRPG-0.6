@@ -77,16 +77,11 @@ void struct_format_implement::prepare_result(const description&, const std::stri
 		{
 			// truncate type
 			if(iterChar == '~')
-			{
 				argumentType = arg_truncate;
-				continue;
-			}
 
 			// plural type
 			if(iterChar == '#')
-			{
 				argumentType = arg_plural;
-			}
 		}
 
 		// end argument processing
