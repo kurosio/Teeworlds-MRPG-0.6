@@ -55,9 +55,9 @@ std::vector<std::string> collect_argument_variants(size_t startPos, const std::s
 }
 
 
-void struct_format_implement::prepare_result(const description&, const std::string& Text, std::string* pResult, std::vector<std::string>& vPack)
+void struct_format_implement::prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::pair<int, std::string>>& vPack)
 {
-	enum { arg_default, arg_plural, arg_truncate, arg_truncate_full, arg_truncate_custom };
+	enum { arg_default, arg_plural, arg_skip_handle, arg_truncate, arg_truncate_full, arg_truncate_custom };
 	std::string argument;
 	size_t argumentPosition = 0;
 	bool argumentProcessing = false;
@@ -82,38 +82,52 @@ void struct_format_implement::prepare_result(const description&, const std::stri
 			// plural type
 			if(iterChar == '#')
 				argumentType = arg_plural;
+
+			// skip handle type
+			if(iterChar == '-')
+				argumentType = arg_skip_handle;
 		}
 
 		// end argument processing
 		if(iterChar == '}')
 		{
+			dbg_msg("test", "argument: %s", argument.c_str());
+
+
 			argumentProcessing = false;
 			if(argumentPosition < vPack.size())
 			{
-				std::string argumentResult = vPack[argumentPosition++];
+				// initialize variables
+				auto& [argumentTypename, argumentResult] = vPack[argumentPosition++];
 
 				// truncate type
 				if(argumentType == arg_truncate)
 				{
+					// initialize variables
 					std::string truncationString;
 					char truncationAfterChar = '\0';
 
-					for(char j : argument)
+					// skip first '~' if present
+					if(!argument.empty() && argument[0] == '~')
+						argument = argument.substr(1);
+
+					// parse truncate description
+					for(char c : argument)
 					{
-						if(j == '%' && argumentPosition < vPack.size())
+						if(c == '%' && argumentTypename == type_integers && argumentPosition < vPack.size())
 						{
+							auto& [newTypename, newResult] = vPack[argumentPosition++];
 							truncationString = argumentResult;
-							argumentResult = vPack[argumentPosition++];
-							continue;
+							argumentTypename = newTypename;
+							argumentResult = newResult;
 						}
-						if(isdigit(j))
-						{
-							truncationString += j;
-							continue;
-						}
-						truncationAfterChar = j;
+						else if(isdigit(c))
+							truncationString += c;
+						else
+							truncationAfterChar = c;
 					}
 
+					// truncate
 					const int truncateNum = truncationString.empty() ? 0 : str_toint(truncationString.c_str());
 					argumentType = (truncationAfterChar == '\0') ? arg_truncate_full : arg_truncate_custom;
 					if(argumentType == arg_truncate_full && argumentResult.size() > static_cast<size_t>(truncateNum))
@@ -126,46 +140,51 @@ void struct_format_implement::prepare_result(const description&, const std::stri
 						argumentResult = argumentResult.substr(0, dotPos + truncateNum);
 					}
 				}
-				// plural type TODO: skip result
+				// plural type
 				else if(argumentType == arg_plural)
 				{
+					// initialize variables
 					bool parsePlural = false;
 					std::string resultPlural {};
 					std::string variantPlural {};
 
+					// parse plural description 
 					for(auto& c : argument)
 					{
+						// plural argument position
 						if(c == '#')
-						{
 							resultPlural += argumentResult;
-						}
 						else if(c == '(')
-						{
 							parsePlural = true;
-						}
 						else if(c == ')')
 						{
 							resultPlural += pluralize(str_toint(argumentResult.c_str()), collect_argument_variants(0, variantPlural));
 							parsePlural = false;
 						}
 						else if(!parsePlural)
-						{
 							resultPlural += c;
-						}
 						else
-						{
 							variantPlural += c;
-						}
 					}
 
 					argumentResult = resultPlural;
 				}
 
-				// reset and add result
+				// skip handle type
+				if(argumentType != arg_skip_handle)
+				{
+					if(argumentTypename == type_integers && handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS)
+						argumentResult = fmt_digit<std::string>(argumentResult);
+					else if(argumentTypename == type_string && handler_fmt::get_flags() & FMTFLAG_HANDLE_ARGS)
+						argumentResult = handler_fmt::handle(Desc, argumentResult);
+				}
+
+				// reset and append result
 				argumentType = arg_default;
 				(*pResult) += argumentResult;
 			}
 
+			// clear argument
 			argument.clear();
 			continue;
 		}

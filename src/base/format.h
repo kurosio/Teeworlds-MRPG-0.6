@@ -99,6 +99,7 @@ struct struct_format_implement
 		int m_definer;
 		bool m_handlefmt;
 	};
+	enum { type_unknown, type_string, type_integers, type_floating };
 
 	/**
 	 * Handles the formatting of a string using a callback function.
@@ -131,31 +132,23 @@ struct struct_format_implement
 
 	// argument conversion
 	template<typename T>
-	static std::string to_string(const description& Desc, const T& Value)
+	static std::pair<int, std::string> to_string(const description& Desc, const T& Value)
 	{
 		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
-		{
-			return std::to_string(Value);
-		}
+			return { type_floating, std::to_string(Value) };
 		else if constexpr(std::is_arithmetic_v<T>)
-		{
-			bool digitCommas = handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS;
-			return digitCommas ? fmt_digit<std::string>(std::to_string(Value)) : std::to_string(Value);
-		}
+			return { type_integers, std::to_string(Value) };
 		else if constexpr(std::is_convertible_v<T, std::string>)
-		{
-			bool handleArgs = handler_fmt::get_flags() & FMTFLAG_HANDLE_ARGS;
-			return handleArgs ? handler_fmt::handle(Desc, std::string(Value)) : std::string(Value);
-		}
+			return { type_string, std::string(Value) };
 		else
 		{
 			static_assert(!std::is_same_v<T, T>, "One of the passed arguments cannot be converted to a string");
-			return "error convertible";
+			return { type_unknown, "error convertible" };
 		}
 	}
 
 	// implementation for the last argument
-	static void prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::string>& vPack);
+	static void prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::pair<int, std::string>>& vPack);
 
 	// implementation for default format
 	template<typename... Ts>
@@ -169,12 +162,12 @@ struct struct_format_implement
 		std::string Text = handler_fmt::handle(Desc, pText);
 
 		// collect arguments converted to string
-		std::vector<std::string> vPack;
+		std::vector<std::pair<int, std::string>> vPack;
 		(vPack.emplace_back(to_string(Desc, Args)), ...);
 
 		// prepare result
 		std::string Result;
-		Result.reserve(Text.size() + std::accumulate(vPack.begin(), vPack.end(), std::size_t { 0 }, [](std::size_t acc, const std::string& s) { return acc + s.size(); }));
+		Result.reserve(Text.size() + std::accumulate(vPack.begin(), vPack.end(), std::size_t { 0 }, [](std::size_t acc, const auto& s) { return acc + s.second.size(); }));
 		prepare_result(Desc, Text, &Result, vPack);
 		return Result;
 	}
