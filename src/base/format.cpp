@@ -1,17 +1,7 @@
 ﻿#include "format.h"
 #include <base/system.h>
 
-void fmt_init_handler_func(HandlerFmtCallbackFunc* pCallback, void* pData)
-{
-	struct_format_implement::handler_fmt::init(pCallback, pData);
-}
-
-void fmt_set_flags(int flags)
-{
-	struct_format_implement::handler_fmt::use_flags(flags);
-}
-
-std::string pluralize(int count, const std::vector<std::string>& forms)
+std::string pluralize(const BigInt& count, const std::vector<std::string>& forms)
 {
 	// initialize variables
 	const size_t numForms = forms.size();
@@ -33,7 +23,7 @@ std::string pluralize(int count, const std::vector<std::string>& forms)
 	return "";
 }
 
-std::vector<std::string> collect_argument_variants(size_t startPos, const std::string& Argument)
+std::vector<std::string> collect_argument_plural(size_t startPos, const std::string& Argument)
 {
 	// initialize variables
 	std::vector<std::string> values;
@@ -42,7 +32,7 @@ std::vector<std::string> collect_argument_variants(size_t startPos, const std::s
 	// collect data
 	while(pipePos != std::string::npos)
 	{
-		values.emplace_back(Argument.substr(startPos, pipePos - startPos));
+		values.emplace_back(Argument, startPos, pipePos - startPos);
 		startPos = pipePos + 1;
 		pipePos = Argument.find('|', startPos);
 	}
@@ -54,14 +44,30 @@ std::vector<std::string> collect_argument_variants(size_t startPos, const std::s
 	return values;
 }
 
-void struct_format_implement::prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::pair<int, std::string>>& vPack)
+void CFormatter::prepare_result(const std::string& Text, std::string* pResult, std::vector<std::pair<int, std::string>>& vPack) const
 {
+	// initialize variables
 	enum { arg_default, arg_plural, arg_skip_handle, arg_truncate, arg_truncate_full, arg_truncate_custom };
 	std::string argument;
 	size_t argumentPosition = 0;
 	bool argumentProcessing = false;
+	bool argumentHandled = false;
 	int argumentType = arg_default;
+	auto handleArguments = [this, &argumentType, &argumentHandled](int argumentTypename, std::string& argumentResult, std::string argumentFrom)
+	{
+		if(argumentType != arg_skip_handle && get_flags() & FMTFLAG_HANDLE_ARGS && !argumentHandled)
+		{
+			argumentHandled = true;
+			if(argumentTypename == type_integers)
+				argumentResult = fmt_digit(std::move(argumentFrom));
+			else if(argumentTypename == type_big_integers)
+				argumentResult = fmt_big_digit(std::move(argumentFrom));
+			else if(argumentTypename == type_string)
+				argumentResult = handle(argumentFrom);
+		}
+	};
 
+	// arguments parsing
 	for(char iterChar : Text)
 	{
 		// start argument processing
@@ -139,47 +145,53 @@ void struct_format_implement::prepare_result(const description& Desc, const std:
 				// plural type
 				else if(argumentType == arg_plural)
 				{
-					// initialize variables
-					bool parsePlural = false;
-					std::string resultPlural {};
-					std::string variantPlural {};
-
-					// parse plural description 
-					for(auto& c : argument)
+					if(argumentTypename == type_integers || argumentTypename == type_big_integers)
 					{
-						// plural argument position
-						if(c == '#')
-							resultPlural += argumentResult;
-						else if(c == '(')
-							parsePlural = true;
-						else if(c == ')')
+						// initialize variables
+						bool parsePlural = false;
+						std::string resultPlural {};
+						std::string variantPlural {};
+						BigInt numberPlural(argumentResult);
+
+						// parse plural description 
+						for(auto& c : argument)
 						{
-							resultPlural += pluralize(str_toint(argumentResult.c_str()), collect_argument_variants(0, variantPlural));
-							parsePlural = false;
+							// plural argument position
+							if(c == '#')
+							{
+								handleArguments(argumentTypename, argumentResult, argumentResult);
+								resultPlural += argumentResult;
+							}
+							else if(c == '(')
+							{
+								parsePlural = true;
+							}
+							else if(c == ')')
+							{
+								resultPlural += pluralize(numberPlural, collect_argument_plural(0, variantPlural));
+								parsePlural = false;
+								variantPlural.clear();
+							}
+							else if(!parsePlural)
+							{
+								resultPlural += c;
+							}
+							else
+							{
+								variantPlural += c;
+							}
 						}
-						else if(!parsePlural)
-							resultPlural += c;
-						else
-							variantPlural += c;
+
+						// update argument result by plural result
+						argumentResult = resultPlural;
 					}
-
-					argumentResult = resultPlural;
 				}
 
-				// skip handle type
-				if(argumentType != arg_skip_handle)
-				{
-					if(argumentTypename == type_integers && handler_fmt::get_flags() & FMTFLAG_DIGIT_COMMAS)
-						argumentResult = fmt_digit(std::move(argumentResult));
-					else if(argumentTypename == type_string && handler_fmt::get_flags() & FMTFLAG_HANDLE_ARGS)
-						argumentResult = handler_fmt::handle(Desc, argumentResult);
-					else if(argumentTypename == type_big_integers)
-						argumentResult = fmt_big_digit(std::move(argumentResult));
-				}
-
-				// reset and append result
-				argumentType = arg_default;
+				// reset and append handled result
+				handleArguments(argumentTypename, argumentResult, argumentResult);
 				(*pResult) += argumentResult;
+				argumentType = arg_default;
+				argumentHandled = false;
 			}
 
 			// clear argument

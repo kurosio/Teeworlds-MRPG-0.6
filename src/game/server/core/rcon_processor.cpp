@@ -46,10 +46,10 @@ void RconProcessor::ConItemList(IConsole::IResult* pResult, void* pUserData)
 	const auto pSelf = (CGS*)pServer->GameServer();
 
 	// show list of items
-	for(auto& p : CItemDescription::Data())
+	for(auto& [ID, Item] : CItemDescription::Data())
 	{
 		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "item_list",
-			"ID: %d | Name: %s | %s", p.first, p.second.GetName(), p.second.IsEnchantable() ? "Enchantable" : "Default stack");
+			"ID: %d | Name: %s | %s", ID, Item.GetName(), Item.IsEnchantable() ? "Enchantable" : "Default stack");
 	}
 }
 
@@ -66,7 +66,7 @@ void RconProcessor::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 	const auto pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
 	// check valid item
-	if(CItemDescription::Data().find(ItemID) == CItemDescription::Data().end())
+	if(!CItemDescription::Data().contains(ItemID))
 	{
 		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "give_item", "Item with ID %d not found. Use command for list \"item_list\".", ItemID);
 		return;
@@ -150,7 +150,7 @@ void RconProcessor::ConAddCharacter(IConsole::IResult* pResult, void* pUserData)
 	const auto pSelf = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 
 	// we check if there is a player
-	if(const CPlayer* pPlayer = pSelf->GetPlayer(ClientID); !pPlayer)
+	if(const CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true); !pPlayer)
 	{
 		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "add_character", "Player not found or isn't logged in");
 		return;
@@ -259,22 +259,21 @@ void RconProcessor::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 
 void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 {
+	// initialize variables
+	int Counter = 0;
 	const auto pServer = (IServer*)pUserData;
 	const auto pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
 
-	char aBuf[1024];
-	int Counter = 0;
+	// collects banned accounts
 	for(const auto& p : pSelf->Core()->AccountManager()->BansAccount())
 	{
 		// write information about afk
-		str_format(aBuf, sizeof(aBuf), "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
+		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
 		Counter++;
 	}
 
 	// total bans
-	str_format(aBuf, sizeof(aBuf), "%d bans in total", Counter);
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", aBuf);
+	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "%d bans in total", Counter);
 }
 
 void RconProcessor::ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)

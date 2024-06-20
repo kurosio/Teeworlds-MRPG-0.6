@@ -1,12 +1,6 @@
 ﻿#ifndef BASE_FORMAT_H
 #define BASE_FORMAT_H
 
-/**
- * Formats a big digit value into a string with a specified separator and number of digits.
- *
- * @param numberStr The string value to format.
- * @return The formatted string.
- */
 template <char separator = '.'>
 std::string fmt_big_digit( std::string numberStr)
 {
@@ -44,13 +38,6 @@ std::string fmt_big_digit( std::string numberStr)
 	return numberResult + vSuffixes[index];
 }
 
-/**
- * Formats a digit value into a string with a specified separator and number of digits.
- *
- * @tparam T The type of the value to format.
- * @param Value The value to format.
- * @return The formatted string.
- */
 template<typename T, const char separator = '.', const unsigned num = 3>
 inline std::string fmt_digit(T Value)
 {
@@ -79,53 +66,28 @@ inline std::string fmt_digit(T Value)
 enum
 {
 	FMTFLAG_HANDLE_ARGS = 1 << 0,
-	FMTFLAG_DIGIT_COMMAS = 1 << 1,
 };
 
 // implement format
 typedef std::string(HandlerFmtCallbackFunc)(int, const char*, void*);
 typedef struct { HandlerFmtCallbackFunc* m_pCallback; void* m_pData; } HandlerFmtCallback;
-struct struct_format_implement
+class CFormatter
 {
-	struct description
-	{
-		int m_definer;
-		bool m_handlefmt;
-	};
 	enum { type_unknown, type_string, type_integers, type_big_integers, type_floating };
+	struct Config { int m_Definer; };
+	HandlerFmtCallback m_pCallback {};
+	Config m_Config {};
+	int m_Flags {};
 
-	/**
-	 * Handles the formatting of a string using a callback function.
-	 */
-	struct handler_fmt
+	std::string handle(const std::string& Text) const
 	{
-		static void init(HandlerFmtCallbackFunc* pCallback, void* pData)
-		{
-			ms_pCallback.m_pCallback = pCallback;
-			ms_pCallback.m_pData = pData;
-		}
-		static std::string handle(const description& Desc, const std::string& Text)
-		{
-			if(Desc.m_handlefmt && ms_pCallback.m_pCallback)
-				return ms_pCallback.m_pCallback(Desc.m_definer, Text.c_str(), ms_pCallback.m_pData);
-			return Text;
-		}
-		static void use_flags(int flags)
-		{
-			ms_Flags = flags;
-		}
-		static int get_flags()
-		{
-			return ms_Flags;
-		}
-	private:
-		inline static HandlerFmtCallback ms_pCallback {};
-		inline static int ms_Flags {};
-	};
+		if(m_pCallback.m_pCallback)
+			return m_pCallback.m_pCallback(m_Config.m_Definer, Text.c_str(), m_pCallback.m_pData);
+		return Text;
+	}
 
-	// argument conversion
 	template<typename T>
-	static std::pair<int, std::string> to_string(const description& Desc, const T& Value)
+	std::pair<int, std::string> to_string(const T& Value)
 	{
 		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
 			return { type_floating, std::to_string(Value) };
@@ -141,105 +103,76 @@ struct struct_format_implement
 			return { type_unknown, "error convertible" };
 		}
 	}
+	void prepare_result(const std::string& Text, std::string* pResult, std::vector<std::pair<int, std::string>>& vPack) const;
 
-	// implementation for the last argument
-	static void prepare_result(const description& Desc, const std::string& Text, std::string* pResult, std::vector<std::pair<int, std::string>>& vPack);
+public:
+	void init(HandlerFmtCallbackFunc* pCallback, void* pData)
+	{
+		m_pCallback.m_pCallback = pCallback;
+		m_pCallback.m_pData = pData;
+	}
+
+	void set_definer(int definer) { m_Config.m_Definer = definer; }
+	void use_flags(int flags) { m_Flags = flags; }
+	int get_flags() const { return m_Flags; }
 
 	// implementation for default format
 	template<typename... Ts>
-	static std::string impl_format(const description& Desc, const char* pText, const Ts &...Args)
+	std::string operator()(const char* pText, const Ts &...Args)
 	{
 		// check text pointer valid
 		if(!pText)
 			return "";
 
 		// prepare text
-		std::string Text = handler_fmt::handle(Desc, pText);
+		std::string Text = handle(pText);
 
 		// collect arguments converted to string
 		std::vector<std::pair<int, std::string>> vPack;
-		(vPack.emplace_back(to_string(Desc, Args)), ...);
+		(vPack.emplace_back(to_string(Args)), ...);
 
 		// prepare result
 		std::string Result;
 		Result.reserve(Text.size() + std::accumulate(vPack.begin(), vPack.end(), std::size_t { 0 }, [](std::size_t acc, const auto& s) { return acc + s.second.size(); }));
-		prepare_result(Desc, Text, &Result, vPack);
+		prepare_result(Text, &Result, vPack);
+		m_Config.m_Definer = {};
 		return Result;
 	}
 
-	static std::string impl_format(const description& Desc, const char* pText)
+	std::string operator()(const char* pText)
 	{
 		// check text pointer valid
 		if(!pText)
 			return "";
 
-		return handler_fmt::handle(Desc, pText);
+		std::string Result = std::move(handle(pText));
+		m_Config.m_Definer = {};
+		return std::move(Result);
 	}
 };
 
-/**
- * Initializes the handler function callback.
- *
- * @param pCallback A pointer to the handler callback function.
- * @param pData A pointer to the data associated with the handler callback function.
- *
- * Usage example:
- * Callback function
- */
-void fmt_init_handler_func(HandlerFmtCallbackFunc* pCallback, void* pData);
+inline CFormatter g_fmt_default {};
+inline CFormatter g_fmt_localize {};
 
-/**
- * Sets the flags to be used in the formatting process.
- *
- * @param flags The flags to be used.
- */
-void fmt_set_flags(int flags);
-
-
-/**
- * Formats a string with the specified arguments.
- *
- * @tparam Ts The types of the arguments.
- * @param ptext The format string.
- * @param args The arguments to be formatted.
- * @return The formatted string.
- */
-template <typename... Ts>
-inline std::string fmt(const char* ptext, const Ts &...args)
+template <typename ... Ts>
+std::string fmt(const char* pText, const Ts& ... args)
 {
-	struct_format_implement::description desc { 0, false };
-	return struct_format_implement::impl_format(desc, ptext, args...);
+	return g_fmt_default(pText, args...);
 }
 
-/**
- * Formats a string with the specified arguments using a handler function.
- *
- * @tparam Ts The types of the arguments.
- * @param ptext The format string.
- * @param args The arguments to be formatted.
- * @return The formatted string.
- */
-template <typename... Ts>
-inline std::string fmt_handle(const char* ptext, const Ts &...args)
+template <typename ... Ts>
+std::string fmt_self(int flags, const char* pText, const Ts& ... args)
 {
-	struct_format_implement::description desc { 0, true };
-	return struct_format_implement::impl_format(desc, ptext, args...);
+	CFormatter fmt;
+	fmt.use_flags(flags);
+	return fmt(pText, args...);
 }
 
-/**
- * Formats a string with the specified arguments using a handler function.
- *
- * @tparam Ts The types of the arguments.
- * @param definer The definer value.
- * @param ptext The format string.
- * @param args The arguments to be formatted.
- * @return The formatted string.
- */
-template<typename... Ts>
-inline std::string fmt_handle_def(int definer, const char* ptext, const Ts &...args)
+template <typename ... Ts>
+std::string fmt_localize(int ClientID, const char* pText, const Ts& ... args)
 {
-	struct_format_implement::description desc { definer, true };
-	return struct_format_implement::impl_format(desc, ptext, args...);
+	g_fmt_localize.set_definer(ClientID);
+	return g_fmt_localize(pText, args...);
 }
 
 #endif // BASE_FORMAT_H
