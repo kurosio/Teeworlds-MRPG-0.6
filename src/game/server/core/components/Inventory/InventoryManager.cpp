@@ -134,15 +134,15 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor", "Eidolon" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
-			ItemIdentifier ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
-			if(ItemID <= 0 || !pPlayer->GetItem(ItemID)->IsEquipped())
+			const auto ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
+			if(!ItemID.has_value() || !pPlayer->GetItem(ItemID.value())->IsEquipped())
 			{
 				VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} not equipped", paTypeNames[i]);
 				continue;
 			}
 
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
-			std::string strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayer->GetItem(ItemID)->GetStringAttributesInfo(pPlayer) : "unattributed";
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID.value());
+			std::string strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayer->GetItem(ItemID.value())->GetStringAttributesInfo(pPlayer) : "unattributed";
 			VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} * {}", paTypeNames[i], strAttributes.c_str());
 		}
 
