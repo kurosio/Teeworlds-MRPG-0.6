@@ -206,7 +206,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 		return true;
 	}
 
-	if(PPSTR(CMD, "ISETTINGS") == 0)
+	if(PPSTR(CMD, "EQUIP_ITEM") == 0)
 	{
 		pPlayer->GetItem(VoteID)->Equip();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -361,7 +361,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 
 	// is potion
 	if(pInfo->m_Type == ItemType::TYPE_POTION)
-		VItem.AddOption("ISETTINGS", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
+		VItem.AddOption("EQUIP_ITEM", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
 
 	// is decoration
 	if(pInfo->m_Type == ItemType::TYPE_DECORATION)
@@ -376,7 +376,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 		if(pInfo->m_Function == EQUIP_HAMMER && pItem->IsEquipped())
 			VItem.Add("You can not undress equipping hammer");
 		else
-			VItem.AddOption("ISETTINGS", ItemID, (pItem->m_Settings ? "Undress" : "Equip"));
+			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->m_Settings ? "Undress" : "Equip"));
 	}
 
 	// is enchantable

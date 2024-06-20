@@ -47,7 +47,7 @@ std::vector<std::string> collect_argument_plural(size_t startPos, const std::str
 void CFormatter::prepare_result(const std::string& Text, std::string* pResult, std::vector<std::pair<int, std::string>>& vPack) const
 {
 	// initialize variables
-	enum { arg_default, arg_plural, arg_skip_handle, arg_truncate, arg_truncate_full, arg_truncate_custom };
+	enum { arg_default, arg_plural, arg_big_digit, arg_skip_handle, arg_truncate, arg_truncate_full, arg_truncate_custom };
 	std::string argument;
 	size_t argumentPosition = 0;
 	bool argumentProcessing = false;
@@ -61,7 +61,7 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 			if(argumentTypename == type_integers)
 				argumentResult = fmt_digit(std::move(argumentFrom));
 			else if(argumentTypename == type_big_integers)
-				argumentResult = fmt_big_digit(std::move(argumentFrom));
+				argumentResult = argumentType == arg_big_digit ? fmt_big_digit(std::move(argumentFrom)) : fmt_digit(std::move(argumentFrom));
 			else if(argumentTypename == type_string)
 				argumentResult = handle(argumentFrom);
 		}
@@ -91,6 +91,10 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 			// skip handle type
 			if(iterChar == '-')
 				argumentType = arg_skip_handle;
+
+			// big digit
+			if(iterChar == '$')
+				argumentType = arg_big_digit;
 		}
 
 		// end argument processing

@@ -394,7 +394,7 @@ void CPlayer::Snap(int SnappingClient)
 	{
 		// Rotate the clan string by the length of the first character
 		int clanStringSize = str_utf8_fix_truncation(m_aRotateClanBuffer);
-		std::rotate(std::begin(m_aRotateClanBuffer), std::begin(m_aRotateClanBuffer) + str_utf8_forward(m_aRotateClanBuffer, 0), std::end(m_aRotateClanBuffer));
+		std::ranges::rotate(m_aRotateClanBuffer, std::begin(m_aRotateClanBuffer) + str_utf8_forward(m_aRotateClanBuffer, 0));
 
 		// Set the next tick for refreshing the clan title
 		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aRotateClanBuffer[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 8));
@@ -478,20 +478,23 @@ void CPlayer::RefreshClanString()
 		return;
 	}
 
-	dynamic_string Buffer {};
-
 	// location
-	Buffer.append(Server()->GetWorldName(GetPlayerWorldID()));
+	std::string Prepared(Server()->GetWorldName(GetPlayerWorldID()));
+
+	// title
+	if(const int TitleID = GetEquippedItemID(EQUIP_HIDEN_TITLE); TitleID > 0)
+	{
+		Prepared += " | ";
+		Prepared += GetItem(TitleID)->Info()->GetName();
+	}
 
 	// guild
-	if(Account()->HasGuild())
+	if(const CGuild* pGuild = Account()->GetGuild())
 	{
-		CGuild* pGuild = Account()->GetGuild();
-
-		Buffer.append(" | ");
-		Buffer.append(pGuild->GetName());
-		Buffer.append(" : ");
-		Buffer.append(Account()->GetGuildMember()->GetRank()->GetName());
+		Prepared += " | ";
+		Prepared += pGuild->GetName();
+		Prepared += " : ";
+		Prepared += Account()->GetGuildMember()->GetRank()->GetName();
 	}
 
 	// class
@@ -503,16 +506,13 @@ void CPlayer::RefreshClanString()
 		case ClassGroup::Tank: pClassName = "_Tank_"; break;
 		default: pClassName = "_Class_"; break;
 	}
-
 	char aBufClass[64];
 	str_format(aBufClass, sizeof(aBufClass), "%-*s", 10 - str_length(pClassName), pClassName);
-	Buffer.append(" | ");
-	Buffer.append(aBufClass);
+	Prepared += " | ";
+	Prepared += aBufClass;
 
 	// end format
-	str_format(m_aRotateClanBuffer, sizeof(m_aRotateClanBuffer), "%s", Buffer.buffer());
-
-	Buffer.clear();
+	str_format(m_aRotateClanBuffer, sizeof(m_aRotateClanBuffer), "%s", Prepared.c_str());
 }
 
 CCharacter* CPlayer::GetCharacter() const
@@ -910,22 +910,14 @@ CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 	return CPlayerQuest::Data()[m_ClientID][ID];
 }
 
-// This function returns the ID of the equipped item with the specified functionality, excluding the specified item ID.
 int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
-	// Iterate through each item
 	const auto& playerItems = CPlayerItem::Data()[m_ClientID];
 	for(const auto& [itemID, item] : playerItems)
 	{
-		// Check if the item has an item and is equipped and has the specified functionality and is not the excluded item
 		if(item.HasItem() && item.IsEquipped() && item.Info()->IsFunctional(EquipID) && itemID != SkipItemID)
-		{
-			// Return the item ID
 			return itemID;
-		}
 	}
-
-	// Return -1 if no equipped item with the specified functionality was found
 	return -1;
 }
 

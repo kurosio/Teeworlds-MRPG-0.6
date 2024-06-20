@@ -75,7 +75,7 @@ bool CEidolonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 			if(pPlayerItem->HasItem())
 			{
 				const char* pStateSummon = Instance::Localize(pPlayer->GetCID(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
-				VoteWrapper(ClientID).AddOption("ISETTINGS", pEidolonInfo->GetItemID(), NOPE, "{} {}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
+				VoteWrapper(ClientID).AddOption("EQUIP_ITEM", pEidolonInfo->GetItemID(), NOPE, "{} {}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
 			}
 			else
 			{

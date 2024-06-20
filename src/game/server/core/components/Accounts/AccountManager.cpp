@@ -284,23 +284,24 @@ bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// information
-		VoteWrapper VSettingsInfo(ClientID, VWF_SEPARATE_CLOSED, "Settings Information");
-		VSettingsInfo.Add("Some of the settings become valid after death.");
-		VSettingsInfo.Add("Here you can change the settings of your account.");
-		VoteWrapper::AddLine(ClientID);
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Settings Information");
+		VInfo.Add("Some of the settings become valid after death.");
+		VInfo.Add("Here you can change the settings of your account.");
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// game settings
-		VoteWrapper VMainSettings(ClientID, VWF_SEPARATE_OPEN, "\u2699 Main settings");
-		VMainSettings.AddMenu(MENU_SETTINGS_LANGUAGE_SELECT, "Settings language");
+		VoteWrapper VMain(ClientID, VWF_OPEN, "\u2699 Main settings");
+		VMain.AddMenu(MENU_SETTINGS_TITLE_SELECT, "Select personal title");
+		VMain.AddMenu(MENU_SETTINGS_LANGUAGE_SELECT, "Settings language");
 		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
 		{
 			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
-				VMainSettings.AddOption("ISETTINGS", ItemID, "[{}] {}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
+				VMain.AddOption("EQUIP_ITEM", ItemID, "[{}] {}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
 		}
-		VoteWrapper::AddLine(ClientID);
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// equipment modules
-		VoteWrapper VModulesSettings(ClientID, VWF_SEPARATE_OPEN, "\u2694 Modules settings");
+		VoteWrapper VModules(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Modules settings");
 		for(auto& iter : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &iter.second;
@@ -314,7 +315,7 @@ bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 			else
 				str_copy(aAttributesInfo, pItemInfo->GetDescription(), sizeof(aAttributesInfo));
 
-			VModulesSettings.AddOption("ISETTINGS", pItemInfo->GetID(), "{}{} * {}", 
+			VModules.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", 
 				pPlayerItem->IsEquipped() ? "✔" : "\0", pItemInfo->GetName(), aAttributesInfo);
 		}
 
@@ -355,6 +356,52 @@ bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
+
+	// Title selection
+	if(Menulist == MENU_SETTINGS_TITLE_SELECT)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
+
+		// initialize variables
+		const int EquippedTitleItemID = pPlayer->GetEquippedItemID(EQUIP_HIDEN_TITLE);
+		const char* pCurrentTitle = EquippedTitleItemID > 0 ? pPlayer->GetItem(EquippedTitleItemID)->Info()->GetName() : "title is not used";
+
+		// title information
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_SIMPLE, "Title Information");
+		VInfo.Add("Here you can set the title.");
+		VInfo.Add("Current title: {}", pCurrentTitle);
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// title list
+		bool IsEmpty = true;
+		for(auto& pairItem : CPlayerItem::Data()[ClientID])
+		{
+			CPlayerItem* pPlayerItem = &pairItem.second;
+			if(pPlayerItem->Info()->IsFunctional(EQUIP_HIDEN_TITLE) && pPlayerItem->HasItem())
+			{
+				// initialize variables
+				bool IsEquipped = pPlayerItem->IsEquipped();
+				char aBuffer[VOTE_VANILA_DESC_LENGTH];
+				pPlayerItem->StrFormatAttributes(pPlayer, aBuffer, sizeof(aBuffer));
+
+				// add to list
+				VoteWrapper VList(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE,"Title: {}", pPlayerItem->Info()->GetName());
+				VList.Add("{}", pPlayerItem->Info()->GetDescription());
+				VList.Add("{}", aBuffer);
+				VList.AddOption("EQUIP_ITEM", pPlayerItem->GetID(), "{} {}", IsEquipped ? "Unset" : "Set", pPlayerItem->Info()->GetName());
+				IsEmpty = false;
+			}
+		}
+		if(IsEmpty)
+		{
+			VoteWrapper(ClientID).Add("Is empty list");
+		}
+
+		// add backpage
+		VoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
+	}
+
 	return false;
 }
 
