@@ -31,7 +31,7 @@ CEidolon::~CEidolon()
 void CEidolon::Tick()
 {
 	CPlayer* pEidolon = GS()->GetPlayer(m_EidolonCID, false, true);
-	if(!pEidolon || !pEidolon->GetEquippedItemID(ItemFunctional::EQUIP_EIDOLON))
+	if(!pEidolon || !pEidolon->GetEquippedItemID(ItemFunctional::EQUIP_EIDOLON).has_value())
 	{
 		GameWorld()->DestroyEntity(this);
 		return;

@@ -480,7 +480,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
 	const int WeaponID = clamp(Weapon, (int)WEAPON_HAMMER, (int)WEAPON_NINJA);
 	const bool IsHammer = WeaponID == WEAPON_HAMMER;
-	if(m_pPlayer->GetEquippedItemID((ItemFunctional)WeaponID) <= 0 && !IsHammer)
+	if(!m_pPlayer->IsEquipped((ItemFunctional)WeaponID) && !IsHammer)
 	{
 		if(RemoveWeapon(WeaponID) && WeaponID == m_Core.m_ActiveWeapon)
 			SetWeapon(m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER);

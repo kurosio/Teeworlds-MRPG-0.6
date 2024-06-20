@@ -14,7 +14,6 @@ MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENT
 CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPoint)
 	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(MobID), m_BotHealth(0), m_LastPosTick(0)
 {
-	m_EidolonCID = -1;
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
@@ -201,9 +200,8 @@ int CPlayerBot::GetAttributeSize(AttributeIdentifier ID) const
 			int Size = Power;
 			for(unsigned i = 0; i < NUM_EQUIPPED; i++)
 			{
-				const int ItemID = GetEquippedItemID((ItemFunctional)i);
-				if(ItemID > 0)
-					Size += GS()->GetItemInfo(ItemID)->GetInfoEnchantStats(ID);
+				if(const auto ItemID = GetEquippedItemID((ItemFunctional)i); ItemID.has_value())
+					Size += GS()->GetItemInfo(ItemID.value())->GetInfoEnchantStats(ID);
 			}
 
 			// sync power mobs
@@ -521,7 +519,7 @@ void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 	}
 }
 
-int CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
+std::optional<int> CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
 	if((EquipID >= EQUIP_HAMMER && EquipID <= EQUIP_LASER) || EquipID == EQUIP_ARMOR)
 		return DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];

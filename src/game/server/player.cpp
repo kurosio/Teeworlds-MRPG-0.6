@@ -193,34 +193,44 @@ void CPlayer::PrepareRespawnTick()
 
 CPlayerBot* CPlayer::GetEidolon() const
 {
-	if(m_EidolonCID < MAX_PLAYERS || m_EidolonCID >= MAX_CLIENTS)
+	if(!m_EidolonCID)
 		return nullptr;
-	return dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_EidolonCID));
+
+	return dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_EidolonCID.value()));
 }
 
 void CPlayer::TryCreateEidolon()
 {
-	if(IsBot() || !IsAuthed() || !GetCharacter())
+	if(IsBot() || !IsAuthed() || !GetCharacter() || m_EidolonCID.has_value())
 		return;
 
-	int EidolonItemID = GetEquippedItemID(EQUIP_EIDOLON);
-	if(CEidolonInfoData* pEidolonData = GS()->GetEidolonByItemID(EidolonItemID))
+	// check valid equppied item id
+	const auto eidolonItemID = GetEquippedItemID(EQUIP_EIDOLON);
+	if(!eidolonItemID.has_value())
+		return;
+
+	// try to create eidolon
+	if(const auto* pEidolonData = GS()->GetEidolonByItemID(eidolonItemID.value()))
 	{
-		if(const int EidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, pEidolonData->GetDataBotID(), m_ClientID); EidolonCID != -1)
+		if(int eidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, pEidolonData->GetDataBotID(), m_ClientID); eidolonCID != -1)
 		{
-			dynamic_cast<CPlayerBot*>(GS()->GetPlayer(EidolonCID))->m_EidolonItemID = EidolonItemID;
-			m_EidolonCID = EidolonCID;
+			if(auto* pEidolonPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(eidolonCID)))
+			{
+				pEidolonPlayer->m_EidolonItemID = eidolonItemID.value();
+				m_EidolonCID = eidolonCID;
+			}
 		}
 	}
 }
 
 void CPlayer::TryRemoveEidolon()
 {
-	if(IsBot())
-		return;
-
-	GS()->DestroyPlayer(m_EidolonCID);
-	m_EidolonCID = -1;
+	// try to remove eidolon
+	if(m_EidolonCID)
+	{
+		GS()->DestroyPlayer(m_EidolonCID.value());
+		m_EidolonCID.reset();
+	}
 }
 
 void CPlayer::UpdateAchievement(int Type, int Misc, int Value, int ProgressType)
@@ -482,10 +492,10 @@ void CPlayer::RefreshClanString()
 	std::string Prepared(Server()->GetWorldName(GetPlayerWorldID()));
 
 	// title
-	if(const int TitleID = GetEquippedItemID(EQUIP_HIDEN_TITLE); TitleID > 0)
+	if(const auto TitleItemID = GetEquippedItemID(EQUIP_HIDEN_TITLE); TitleItemID.has_value())
 	{
 		Prepared += " | ";
-		Prepared += GetItem(TitleID)->Info()->GetName();
+		Prepared += GetItem(TitleItemID.value())->Info()->GetName();
 	}
 
 	// guild
@@ -910,7 +920,7 @@ CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 	return CPlayerQuest::Data()[m_ClientID][ID];
 }
 
-int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
+std::optional<int> CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
 	const auto& playerItems = CPlayerItem::Data()[m_ClientID];
 	for(const auto& [itemID, item] : playerItems)
@@ -918,12 +928,12 @@ int CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 		if(item.HasItem() && item.IsEquipped() && item.Info()->IsFunctional(EquipID) && itemID != SkipItemID)
 			return itemID;
 	}
-	return -1;
+	return std::nullopt;
 }
 
 bool CPlayer::IsEquipped(ItemFunctional EquipID) const
 {
-	return GetEquippedItemID(EquipID, -1) != -1;
+	return GetEquippedItemID(EquipID, -1) != std::nullopt;
 }
 
 int CPlayer::GetAttributeSize(AttributeIdentifier ID) const

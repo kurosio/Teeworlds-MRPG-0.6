@@ -93,12 +93,12 @@ bool CEntityHarvestingItem::Interaction(const char* pToolname, AttributeIdentifi
 {
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
-	const int EquipItem = pPlayer->GetEquippedItemID(EquipID);
+	const auto EquipItemID = pPlayer->GetEquippedItemID(EquipID);
 	const int& Level = GetItemInfo()->GetHarvestingData().m_Level;
 	const int& Health = GetItemInfo()->GetHarvestingData().m_Health;
 
 	// check equipped
-	if(EquipItem <= 0)
+	if(!EquipItemID.has_value())
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need equip {}!", 
 			Instance::Localize(pPlayer->GetCID(), pToolname));
@@ -113,7 +113,7 @@ bool CEntityHarvestingItem::Interaction(const char* pToolname, AttributeIdentifi
 	}
 
 	// check durability
-	auto* pEquippedItem = pPlayer->GetItem(EquipItem);
+	auto* pEquippedItem = pPlayer->GetItem(EquipItemID.value());
 	const int Durability = pEquippedItem->GetDurability();
 	if(Durability <= 0)
 	{

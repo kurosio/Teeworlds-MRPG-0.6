@@ -357,8 +357,8 @@ bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// initialize variables
-		const int EquippedTitleItemID = pPlayer->GetEquippedItemID(EQUIP_HIDEN_TITLE);
-		const char* pCurrentTitle = EquippedTitleItemID > 0 ? pPlayer->GetItem(EquippedTitleItemID)->Info()->GetName() : "title is not used";
+		const auto EquippedTitleItemID = pPlayer->GetEquippedItemID(EQUIP_HIDEN_TITLE);
+		const char* pCurrentTitle = EquippedTitleItemID.has_value() ? pPlayer->GetItem(EquippedTitleItemID.value())->Info()->GetName() : "title is not used";
 
 		// title information
 		VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_SIMPLE, "Title Information");

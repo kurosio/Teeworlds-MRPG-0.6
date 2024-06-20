@@ -49,13 +49,11 @@ class CPlayer
 	int m_SnapHealthNicknameTick;
 
 protected:
-	CCharacter* m_pCharacter;
-	CGS* m_pGS;
-
 	IServer* Server() const;
-	int m_ClientID;
 
-	// lastest afk state
+	CGS* m_pGS;
+	int m_ClientID;
+	CCharacter* m_pCharacter;
 	bool m_Afk;
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
@@ -89,9 +87,9 @@ public:
 
 	bool m_WantSpawn;
 	bool m_RequestChangeNickname;
-	int m_EidolonCID;
 	bool m_ActivedGroupColors;
 	int m_TickActivedGroupColors;
+	std::optional<int> m_EidolonCID;
 
 	/* ==========================================================
 		FUNCTIONS PLAYER ENGINE
@@ -122,7 +120,7 @@ public:
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
 	virtual StateSnapping IsActiveForClient(int ClientID) const { return STATE_SNAPPING_FULL; }
-	virtual int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
+	virtual std::optional<int> GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
 	virtual bool IsEquipped(ItemFunctional EquipID) const;
 	virtual int GetAttributeSize(AttributeIdentifier ID) const;
 	float GetAttributePercent(AttributeIdentifier ID) const;
@@ -136,12 +134,12 @@ public:
 	virtual void PostTick();
 	virtual void Snap(int SnappingClient);
 	virtual void FakeSnap();
+	virtual bool IsActive() const { return true; }
+	virtual void PrepareRespawnTick();
 
 	void RefreshClanString();
 
-	virtual bool IsActive() const { return true; }
-	virtual void PrepareRespawnTick();
-	class CPlayerBot* GetEidolon() const;
+	CPlayerBot* GetEidolon() const;
 	void TryCreateEidolon();
 	void TryRemoveEidolon();
 	void UpdateAchievement(int Type, int Misc, int Value, int ProgressType);
@@ -154,41 +152,25 @@ private:
 	void HandlePrison();
 
 public:
+	int GetCID() const { return m_ClientID; }
 	CCharacter* GetCharacter() const;
-
 	void KillCharacter(int Weapon = WEAPON_WORLD);
 	void OnDisconnect();
 	void OnDirectInput(CNetObj_PlayerInput* pNewInput);
 	void OnPredictedInput(CNetObj_PlayerInput* pNewInput) const;
 
-	int GetCID() const { return m_ClientID; }
-	/* ==========================================================
-		FUNCTIONS PLAYER HELPER
-	========================================================== */
 	void ProgressBar(const char* Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const;
 	bool Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const;
-
-	/* ==========================================================
-		FUNCTIONS PLAYER ACCOUNT
-	========================================================== */
 	const char* GetLanguage() const;
-
 	bool IsAuthed() const;
 	int GetStartTeam() const;
-
-	/* ==========================================================
-		FUNCTIONS PLAYER PARSING
-	========================================================== */
 	bool ParseVoteOptionResult(int Vote);
 	bool IsClickedKey(int KeyID) const;
 
-	/* ==========================================================
-		FUNCTIONS PLAYER ITEMS
-	========================================================== */
-	class CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }
-	virtual class CPlayerItem* GetItem(ItemIdentifier ID);
-	class CSkill* GetSkill(SkillIdentifier ID);
-	class CPlayerQuest* GetQuest(QuestIdentifier ID) const;
+	CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }
+	virtual CPlayerItem* GetItem(ItemIdentifier ID);
+	CSkill* GetSkill(SkillIdentifier ID);
+	CPlayerQuest* GetQuest(QuestIdentifier ID) const;
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
 	CAccountData* Account() const { return &CAccountData::ms_aData[m_ClientID]; }
 

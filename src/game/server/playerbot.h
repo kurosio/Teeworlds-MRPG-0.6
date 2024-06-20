@@ -64,7 +64,7 @@ public:
 
 	int64_t GetMaskVisibleForClients() const override;
 	StateSnapping IsActiveForClient(int ClientID) const override;
-	int GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
+	std::optional<int> GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetAttributeSize(AttributeIdentifier ID) const override;
 
 	bool GiveEffect(const char* Potion, int Sec, float Chance = 100.0f) override;

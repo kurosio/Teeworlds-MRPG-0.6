@@ -98,7 +98,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	pPlayer->UpdateAchievement(ACHIEVEMENT_HAVE_ITEM, m_ID, m_Value, PROGRESS_SET);
 
 	// check the empty slot if yes then put the item on
-	if((Info()->IsType(ItemType::TYPE_EQUIP) && pPlayer->GetEquippedItemID(Info()->GetFunctional()) <= 0) || Info()->IsType(ItemType::TYPE_MODULE))
+	if((Info()->IsType(ItemType::TYPE_EQUIP) && !pPlayer->GetEquippedItemID(Info()->GetFunctional()).has_value()) || Info()->IsType(ItemType::TYPE_MODULE))
 	{
 		if(!IsEquipped())
 			Equip(false);
@@ -156,10 +156,10 @@ bool CPlayerItem::Equip(bool SaveItem)
 	if(Info()->IsType(ItemType::TYPE_EQUIP))
 	{
 		const ItemFunctional EquipID = Info()->GetFunctional();
-		ItemIdentifier ItemID = pPlayer->GetEquippedItemID(EquipID, m_ID);
-		while(ItemID >= 1)
+		auto ItemID = pPlayer->GetEquippedItemID(EquipID, m_ID);
+		while(ItemID.has_value())
 		{
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID.value());
 			pPlayerItem->SetSettings(0);
 			ItemID = pPlayer->GetEquippedItemID(EquipID, m_ID);
 		}

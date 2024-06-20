@@ -280,7 +280,7 @@ void CCharacterBotAI::ChangeWeapons()
 	if(Server()->Tick() % (Server()->TickSpeed() * (1 + rand() % 3)) == 0)
 	{
 		int RandomWeapon = clamp(rand() % 4, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
-		if(RandomWeapon == WEAPON_HAMMER || m_pBotPlayer->GetEquippedItemID((ItemFunctional)RandomWeapon))
+		if(RandomWeapon == WEAPON_HAMMER || m_pBotPlayer->GetEquippedItemID((ItemFunctional)RandomWeapon).has_value())
 			m_Core.m_ActiveWeapon = RandomWeapon;
 	}
 }
