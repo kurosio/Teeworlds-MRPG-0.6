@@ -57,15 +57,17 @@ bool CEidolonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		int EidolonID = pPlayer->m_VotesData.GetExtraID();
 		if(CEidolonInfoData* pEidolonInfo = GS()->GetEidolonByItemID(EidolonID))
 		{
-			char aAttributeBonus[128];
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
-			pPlayerItem->StrFormatAttributes(pPlayer, aAttributeBonus, sizeof(aAttributeBonus));
-
 			VoteWrapper VDesc(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Descriptions of eidolon ({})", pEidolonInfo->GetDataBot()->m_aNameBot);
 			for(auto& Line : pEidolonInfo->GetLinesDescription())
+			{
 				VDesc.Add(Line.c_str());
+			}
 			VDesc.AddLine();
-			VDesc.Add(aAttributeBonus);
+			if(pPlayerItem->Info()->HasAttributes())
+			{
+				VDesc.Add(pPlayerItem->GetStringAttributesInfo(pPlayer).c_str());
+			}
 			VDesc.AddLine();
 
 			VoteWrapper VEnchancement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Unlocking Enhancements");

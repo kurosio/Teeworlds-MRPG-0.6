@@ -309,14 +309,8 @@ bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 			if(!pItemInfo->IsType(ItemType::TYPE_MODULE) || !pPlayerItem->HasItem())
 				continue;
 
-			char aAttributesInfo[128];
-			if(pItemInfo->HasAttributes())
-				pPlayerItem->StrFormatAttributes(pPlayer, aAttributesInfo, sizeof(aAttributesInfo));
-			else
-				str_copy(aAttributesInfo, pItemInfo->GetDescription(), sizeof(aAttributesInfo));
-
-			VModules.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", 
-				pPlayerItem->IsEquipped() ? "✔" : "\0", pItemInfo->GetName(), aAttributesInfo);
+			std::string StrAttributeInfo = pItemInfo->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : pItemInfo->GetDescription();
+			VModules.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", pPlayerItem->IsEquipped() ? "✔" : "\0", pItemInfo->GetName(), StrAttributeInfo);
 		}
 
 		VoteWrapper::AddBackpage(ClientID);
@@ -381,13 +375,14 @@ bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 			{
 				// initialize variables
 				bool IsEquipped = pPlayerItem->IsEquipped();
-				char aBuffer[VOTE_VANILA_DESC_LENGTH];
-				pPlayerItem->StrFormatAttributes(pPlayer, aBuffer, sizeof(aBuffer));
 
 				// add to list
 				VoteWrapper VList(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE,"Title: {}", pPlayerItem->Info()->GetName());
 				VList.Add("{}", pPlayerItem->Info()->GetDescription());
-				VList.Add("{}", aBuffer);
+				if(pPlayerItem->Info()->HasAttributes())
+				{
+					VList.Add("{}", pPlayerItem->GetStringAttributesInfo(pPlayer));
+				}
 				VList.AddOption("EQUIP_ITEM", pPlayerItem->GetID(), "{} {}", IsEquipped ? "Unset" : "Set", pPlayerItem->Info()->GetName());
 				IsEmpty = false;
 			}

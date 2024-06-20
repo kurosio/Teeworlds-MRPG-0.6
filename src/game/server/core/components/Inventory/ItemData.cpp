@@ -103,9 +103,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		if(!IsEquipped())
 			Equip(false);
 
-		char aAttributes[128];
-		Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), StartEnchant);
-		GS()->Chat(ClientID, "Auto equip {} - {}", Info()->GetName(), aAttributes);
+		GS()->Chat(ClientID, "Auto equip {} - {}", Info()->GetName(), GetStringAttributesInfo(pPlayer));
 	}
 
 	if(!Message || Info()->IsType(ItemType::TYPE_SETTINGS) || Info()->IsType(ItemType::TYPE_INVISIBLE))

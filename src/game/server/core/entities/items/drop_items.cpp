@@ -35,7 +35,7 @@ bool CDropItem::TakeItem(int ClientID)
 		if(!pPlayerItem->IsEquipped() && LastEquipped)
 			pPlayerItem->Equip(false);
 
-		GS()->Chat(ClientID, "You now own {}{}", pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str());
+		GS()->Chat(ClientID, "You now own {}{}", pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel().c_str());
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
 		pPlayerItem->Save();
@@ -85,7 +85,7 @@ void CDropItem::Tick()
 			if(pPlayerItem->GetValue() > 0)
 			{
 				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You have: {}{}\nReplace with: {}{} {}",
-					pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str(), m_DropItem.Info()->GetName(), m_DropItem.StringEnchantLevel().c_str(), pOwnerNick);
+					pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel().c_str(), m_DropItem.Info()->GetName(), m_DropItem.GetStringEnchantLevel().c_str(), pOwnerNick);
 			}
 			else
 			{

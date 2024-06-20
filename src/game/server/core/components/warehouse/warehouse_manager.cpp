@@ -301,7 +301,7 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 		{
 			const bool HasItem = pPlayer->GetItem(*pItem)->HasItem();
 			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{}] {} {} - {} {}", (HasItem ? "✔" : "×"),
-				pItem->Info()->GetName(), pItem->StringEnchantLevel().c_str(), Price, pCurrency->GetName());
+				pItem->Info()->GetName(), pItem->GetStringEnchantLevel().c_str(), Price, pCurrency->GetName());
 		}
 		else
 		{
@@ -343,11 +343,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 	}
 	VItem.Add(pItem->Info()->GetDescription());
 	if(pItem->Info()->HasAttributes())
-	{
-		char aAttributes[128];
-		pItem->Info()->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), pItem->GetEnchant());
-		VItem.Add("* {}", aAttributes);
-	}
+		VItem.Add("* {}", pItem->Info()->GetStringAttributesInfo(pPlayer, pItem->GetEnchant()));
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show information about the cost of the item

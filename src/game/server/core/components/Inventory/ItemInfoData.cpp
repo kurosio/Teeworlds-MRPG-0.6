@@ -118,21 +118,21 @@ bool CItemDescription::IsEnchantMaxLevel(int Enchant) const
 
 bool CItemDescription::HasAttributes() const { return !m_aAttributes.empty(); }
 
-void CItemDescription::StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const
+std::string CItemDescription::GetStringAttributesInfo(CPlayer* pPlayer, int Enchant) const
 {
-	std::string strAttrbutes{};
-	for (const auto& Att : m_aAttributes)
+	std::string strAttributes {};
+	for(const auto& Att : m_aAttributes)
 	{
 		if(Att.HasValue())
 		{
 			const int BonusValue = GetInfoEnchantStats(Att.GetID(), Enchant);
-			strAttrbutes += fmt_localize(pPlayer->GetCID(), "{}+{}", Att.Info()->GetName(), BonusValue);
+			strAttributes += fmt_localize(pPlayer->GetCID(), "{}+{}", Att.Info()->GetName(), BonusValue);
 		}
 	}
-	str_copy(pBuffer, strAttrbutes.c_str(), Size);
+	return strAttributes.empty() ? "unattributed" : strAttributes;
 }
 
-std::string CItemDescription::StringEnchantLevel(int Enchant) const
+std::string CItemDescription::GetStringEnchantLevel(int Enchant) const
 {
 	if(Enchant > 0)
 		return "[" + (IsEnchantMaxLevel(Enchant) ? "Max" : std::string("+" + std::to_string(Enchant))) + "]";

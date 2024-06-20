@@ -183,12 +183,8 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 	VCraftItem.Add("Crafting: {}x{}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
 	VCraftItem.Add("{}", pCraftItemInfo->GetDescription());
-	if(pCraftItemInfo->IsEnchantable())
-	{
-		char aAttributes[128];
-		pCraftItemInfo->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes), 0);
-		VCraftItem.Add(aAttributes);
-	}
+	if(pCraftItemInfo->HasAttributes())
+		VCraftItem.Add(pCraftItemInfo->GetStringAttributesInfo(pPlayer, 0).c_str());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// add craft reciepts

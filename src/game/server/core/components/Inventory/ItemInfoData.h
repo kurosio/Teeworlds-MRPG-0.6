@@ -99,8 +99,8 @@ public:
 	int GetInfoEnchantStats(AttributeIdentifier ID) const;
 	int GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const;
 	int GetEnchantPrice(int EnchantLevel) const;
-	void StrFormatAttributes(class CPlayer* pPlayer, char* pBuffer, int Size, int Enchant) const;
-	std::string StringEnchantLevel(int Enchant) const;
+	std::string GetStringAttributesInfo(CPlayer* pPlayer, int Enchant) const;
+	std::string GetStringEnchantLevel(int Enchant) const;
 };
 
 #endif

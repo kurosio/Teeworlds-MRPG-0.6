@@ -141,9 +141,9 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 				continue;
 			}
 
-			char aAttributes[128];
-			pPlayer->GetItem(ItemID)->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-			VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} * {}", paTypeNames[i], aAttributes);
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
+			std::string strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayer->GetItem(ItemID)->GetStringAttributesInfo(pPlayer) : "unattributed";
+			VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} * {}", paTypeNames[i], strAttributes.c_str());
 		}
 
 		// show and sort equipment
@@ -213,8 +213,9 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 		return true;
 	}
 
-	if(PPSTR(CMD, "IENCHANT") == 0)
+	if(PPSTR(CMD, "ENCHANT_ITEM") == 0)
 	{
+		// check enchant max level
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
 		if(pPlayerItem->IsEnchantMaxLevel())
 		{
@@ -222,16 +223,18 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 			return true;
 		}
 
+		// try to spend material
 		const int Price = pPlayerItem->GetEnchantPrice();
 		if(!pPlayer->Account()->SpendCurrency(Price, itMaterial))
 			return true;
 
+		// enchant new level
 		const int EnchantLevel = pPlayerItem->GetEnchant() + 1;
 		pPlayerItem->SetEnchant(EnchantLevel);
 
-		char aAttributes[128];
-		pPlayerItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-		GS()->Chat(-1, "{} enchant {} {} {}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pPlayerItem->StringEnchantLevel().c_str(), aAttributes);
+		// information
+		std::string strNewAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
+		GS()->Chat(-1, "{} enchant {} {} {}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel(), strNewAttributes);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -337,14 +340,9 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	// name description
 	if(pInfo->IsEnchantable())
 	{
-		VItem.SetTitle("{}{} {}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->StringEnchantLevel().c_str());
-
-		char aAttributes[64];
-		pItem->StrFormatAttributes(pPlayer, aAttributes, sizeof(aAttributes));
-		if(aAttributes[0] != '\0')
-		{
-			VItem.Add("{}", aAttributes);
-		}
+		VItem.SetTitle("{}{} {}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->GetStringEnchantLevel().c_str());
+		if(pInfo->HasAttributes())
+			VItem.Add("{}", pItem->GetStringAttributesInfo(pPlayer));
 	}
 	else
 	{
@@ -383,7 +381,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	if(pInfo->IsEnchantable() && !pItem->IsEnchantMaxLevel())
 	{
 		const int Price = pItem->GetEnchantPrice();
-		VItem.AddOption("IENCHANT", ItemID, "Enchant ({}m)", Price);
+		VItem.AddOption("ENCHANT_ITEM", ItemID, "Enchant ({}m)", Price);
 	}
 
 	// not allowed drop equipped hammer

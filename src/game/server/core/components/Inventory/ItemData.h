@@ -40,8 +40,7 @@ public:
 	bool IsValid() const { return CItemDescription::Data().find(m_ID) != CItemDescription::Data().end() && m_Value > 0; }
 
 	CItemDescription* Info() const { return &CItemDescription::Data()[m_ID]; }
-
-	std::string StringEnchantLevel() const { return Info()->StringEnchantLevel(m_Enchant); }
+	std::string GetStringEnchantLevel() const { return Info()->GetStringEnchantLevel(m_Enchant); }
 
 	// helper functions
 	[[nodiscard]] static CItem FromJSON(const nlohmann::json& json);
@@ -83,6 +82,7 @@ public:
 	}
 	bool IsEnchantMaxLevel() const { return Info()->IsEnchantMaxLevel(m_Enchant); }
 	bool HasItem() const { return m_Value > 0; }
+	std::string GetStringAttributesInfo(CPlayer* pPlayer) const { return Info()->GetStringAttributesInfo(pPlayer, m_Enchant); }
 
 	// main functions
 	bool Add(int Value, int StartSettings = 0, int StartEnchant = 0, bool Message = true);
@@ -90,7 +90,6 @@ public:
 	bool Equip(bool SaveItem = true);
 	bool Use(int Value);
 	bool Drop(int Value);
-	void StrFormatAttributes(CPlayer* pPlayer, char* pBuffer, int Size) const { Info()->StrFormatAttributes(pPlayer, pBuffer, Size, m_Enchant); }
 	bool Save();
 
 	// override functions
