@@ -9,8 +9,8 @@
 #include "core/components/skills/skill_data.h"
 
 #include "entities/character.h"
-#include "core/utilities/cooldown.h"
-#include "core/utilities/vote_wrapper.h"
+#include "core/tools/cooldown.h"
+#include "core/tools/vote_wrapper.h"
 #include "class_data.h"
 
 enum

@@ -6,7 +6,7 @@
 #include <game/server/core/components/Inventory/ItemData.h>
 
 constexpr auto TW_AUCTION_SLOTS_TABLE = "tw_auction_slots";
-class CAuctionSlot : public MultiworldIdentifiableStaticData<std::deque<CAuctionSlot*>>
+class CAuctionSlot : public MultiworldIdentifiableData<std::deque<CAuctionSlot*>>
 {
 	int m_ID {};
 	CItem m_Item {};

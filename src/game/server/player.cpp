@@ -20,7 +20,7 @@
 #include "core/components/worlds/world_data.h"
 #include "core/entities/tools/draw_board.h"
 
-#include "core/utilities/vote_optional.h"
+#include "core/tools/vote_optional.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 

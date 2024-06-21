@@ -33,7 +33,7 @@ public:
 /*
  * World Data
  */
-class CWorldData : public MultiworldIdentifiableStaticData< std::deque< WorldDataPtr > >
+class CWorldData : public MultiworldIdentifiableData< std::deque< WorldDataPtr > >
 {
 	WorldIdentifier m_ID {};
 	char m_aName[64] {};

@@ -14,7 +14,7 @@ enum SkillType
 using SkillIdentifier = int;
 
 // skill description
-class CSkillDescription : public MultiworldIdentifiableStaticData< std::map < SkillIdentifier, CSkillDescription > >
+class CSkillDescription : public MultiworldIdentifiableData< std::map < SkillIdentifier, CSkillDescription > >
 {
 	friend class CSkillManager;
 
@@ -64,7 +64,7 @@ public:
 };
 
 // skill data
-class CSkill : public MultiworldIdentifiableStaticData< std::map< int, std::deque < CSkill* > > >
+class CSkill : public MultiworldIdentifiableData< std::map< int, std::deque < CSkill* > > >
 {
 	friend class CSkillManager;
 

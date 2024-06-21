@@ -24,7 +24,7 @@ enum class TutorialType : int
 	TUTORIAL_STRING_ONE = 1 << TUTORIAL_CHAT_MSG,
 };
 
-class TutorialBase : public MultiworldIdentifiableStaticData< std::deque< TutorialBase* > >
+class TutorialBase : public MultiworldIdentifiableData< std::deque< TutorialBase* > >
 {
 	TutorialType m_TutorialType {};
 	char m_aTextBuf[1024] {};

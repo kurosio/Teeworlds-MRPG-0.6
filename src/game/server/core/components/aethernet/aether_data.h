@@ -8,7 +8,7 @@
 
 using AetherIdentifier = int;
 
-class CAetherData : public MultiworldIdentifiableStaticData< std::deque<CAetherData*> >
+class CAetherData : public MultiworldIdentifiableData< std::deque<CAetherData*> >
 {
 	AetherIdentifier m_ID {};
 	char m_aName[64] {};

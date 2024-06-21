@@ -13,7 +13,7 @@ enum
 	QF_DAILY = 1 << 0,
 };
 
-class CQuestDescription : public MultiworldIdentifiableStaticData < std::map< int, CQuestDescription* > >
+class CQuestDescription : public MultiworldIdentifiableData < std::map< int, CQuestDescription* > >
 {
 	QuestIdentifier m_ID{};
 	char m_aName[24]{};

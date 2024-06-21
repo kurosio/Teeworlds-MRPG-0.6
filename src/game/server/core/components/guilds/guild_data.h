@@ -98,7 +98,7 @@ enum GuildActivityLogFlags
 	| LOGFLAG_UPGRADES_CHANGES | LOGFLAG_RANKS_CHANGES | LOGFLAG_BANK_CHANGES | LOGFLAG_GUILD_MAIN_CHANGES,
 };
 
-class CGuild : public MultiworldIdentifiableStaticData< std::deque < CGuild* > >
+class CGuild : public MultiworldIdentifiableData< std::deque < CGuild* > >
 {
 	friend class CGuildWarHandler;
 	friend class CGuildHouse;

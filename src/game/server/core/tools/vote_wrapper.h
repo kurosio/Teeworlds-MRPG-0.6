@@ -125,7 +125,7 @@ class CVoteGroup
 	 *     .AddMenu(MENU_INFO, "Info"); // Add menu list
 	 * @endcode
 */
-class VoteWrapper : public MultiworldIdentifiableStaticData<std::map<int, std::deque<CVoteGroup*>>>
+class VoteWrapper : public MultiworldIdentifiableData<std::map<int, std::deque<CVoteGroup*>>>
 {
 	CVoteGroup* m_pGroup {};
 

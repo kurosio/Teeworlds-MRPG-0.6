@@ -12,7 +12,7 @@
 #include "entity_manager.h"
 #include "core/command_processor.h"
 #include "core/rcon_processor.h"
-#include "core/utilities/pathfinder.h"
+#include "core/tools/pathfinder.h"
 #include "core/entities/items/drop_items.h"
 
 #include "core/components/Accounts/AccountManager.h"
@@ -22,7 +22,7 @@
 
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/worlds/world_data.h"
-#include "core/utilities/vote_wrapper.h"
+#include "core/tools/vote_wrapper.h"
 
 CGS::CGS()
 {

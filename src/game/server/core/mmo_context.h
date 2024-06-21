@@ -3,16 +3,16 @@
 #ifndef GAME_SERVER_CORE_MMO_CONTEXT_H
 #define GAME_SERVER_CORE_MMO_CONTEXT_H
 
-namespace Concepts
+// skin data
+struct CTeeInfo
 {
-	template <typename Container>
-	concept EmplaceBackContainer = requires(Container container, std::string str)
-	{
-		{ container.clear() } -> std::same_as<void>;
-		{ container.emplace_back(str) } -> std::same_as<void>;
-	};
-}
+	char m_aSkinName[64]; // name of the skin
+	int m_UseCustomColor; // flag indicating whether custom colors are used
+	int m_ColorBody; // color value for the body part
+	int m_ColorFeet; // color value for the feet part
+};
 
+// world types
 enum class WorldType : int
 {
 	Default,
@@ -20,6 +20,7 @@ enum class WorldType : int
 	Tutorial,
 };
 
+// drawboard events
 enum class DrawboardToolEvent : int
 {
 	ON_START,
@@ -28,6 +29,7 @@ enum class DrawboardToolEvent : int
 	ON_END,
 };
 
+// class groups
 enum class ClassGroup : int
 {
 	None,
@@ -36,6 +38,7 @@ enum class ClassGroup : int
 	Healer
 };
 
+// time period
 enum TIME_PERIOD
 {
 	DAILY_STAMP,
@@ -44,7 +47,7 @@ enum TIME_PERIOD
 	NUM_STAMPS
 };
 
-// Enum for input events related to key presses
+// input events
 enum InputEvents
 {
 	// Key events for firing different weapons
@@ -91,14 +94,14 @@ enum InputEvents
 	BLOCK_INPUT_FULL_WEAPON = BLOCK_INPUT_FREEZE_WEAPON | BLOCK_INPUT_FIRE,
 }; 
 
-// laser orbite
+// laser orbite types
 enum class LaserOrbiteType : unsigned char
 {
-	DEFAULT, // Default value
-	MOVE_LEFT, // Move left value
-	MOVE_RIGHT, // Move right value
-	INSIDE_ORBITE, // Inside orbite
-	INSIDE_ORBITE_RANDOM, // Inside orbite
+	DEFAULT,
+	MOVE_LEFT,
+	MOVE_RIGHT,
+	INSIDE_ORBITE,
+	INSIDE_ORBITE_RANDOM,
 };
 
 // mood type
@@ -112,8 +115,8 @@ enum class Mood : short
 	TANK,
 };
 
-// jobs
-enum JobAccountStats
+// account harvesting stats
+enum AccountHarvestingStats
 {
 	JOB_LEVEL = 0,
 	JOB_EXPERIENCE = 1,
@@ -387,41 +390,6 @@ enum
 	DECORATIONS_GUILD_HOUSE,
 };
 
-// todo use template class 
-class PotionTools
-{
-public:
-	class Heal
-	{
-		int m_ItemID {};
-		std::string m_Effect {};
-		int m_Recovery {};
-		int m_Time {};
-
-	public:
-		Heal() = delete;
-		Heal(int ItemID, std::string Effect, int Recovery, int Time) : m_ItemID(ItemID), m_Effect(Effect), m_Recovery(Recovery), m_Time(Time) {}
-
-		static const Heal* getHealInfo(int ItemID)
-		{
-			auto p = std::ranges::find_if(m_PotionHealthInfo, [ItemID](const Heal& p){ return p.m_ItemID == ItemID; });
-			return p != m_PotionHealthInfo.end() ? p : nullptr;
-		}
-		static std::initializer_list<Heal>& getList() { return m_PotionHealthInfo; }
-
-		int getItemID() const { return m_ItemID; }
-		const char* getEffect() const { return m_Effect.c_str(); }
-		int getRecovery() const { return m_Recovery; }
-		int getTime() const { return m_Time; }
-	};
-
-private:
-	inline static std::initializer_list<Heal> m_PotionHealthInfo
-	{
-		{ itTinyHealthPotion, "TinyHP", 7, 15 }
-	};
-};
-
 // broadcast
 enum class BroadcastPriority
 {
@@ -433,21 +401,6 @@ enum class BroadcastPriority
 	MAIN_INFORMATION,
 	TITLE_INFORMATION,
 	VERY_IMPORTANT,
-};
-
-struct CBroadcastState
-{
-	int m_NoChangeTick;
-	char m_PrevMessage[1024];
-
-	BroadcastPriority m_NextPriority;
-	char m_NextMessage[1024];
-	char m_aCompleteMsg[1024];
-	bool m_Updated;
-
-	int m_LifeSpanTick;
-	BroadcastPriority m_TimedPriority;
-	char m_TimedMessage[1024];
 };
 
 // spawn types
@@ -510,15 +463,6 @@ enum CDataList
 	MMO_DATA_INVENTORY_INFORMATION = 0,
 };
 
-// skin data
-struct CTeeInfo
-{
-	char m_aSkinName[64]; // name of the skin
-	int m_UseCustomColor; // flag indicating whether custom colors are used
-	int m_ColorBody; // color value for the body part
-	int m_ColorFeet; // color value for the feet part
-};
-
 // Enum class declaration for different attribute types
 enum class AttributeGroup : int
 {
@@ -559,259 +503,39 @@ enum class AttributeIdentifier : int
 	ATTRIBUTES_NUM,              // The number of total attributes
 };
 
-using ByteArray = std::basic_string<std::byte>;
-namespace Utils
+// todo use template class 
+class PotionTools
 {
-	namespace Aesthetic
-	{
-		namespace Impl
-		{
-			struct AestheticImpl
-			{
-				AestheticImpl() = default;
-				AestheticImpl(const char* pUnique, const char* pRUnique, const char* pSnake, int SnakesIter, bool Post)
-				{
-					if(pSnake != nullptr)
-					{
-						m_Detail.m_Post = Post;
-						m_Detail.m_SnakesIter = SnakesIter;
-						str_copy(m_Detail.aBufSnakeIter, pSnake, sizeof(m_Detail.aBufSnakeIter));
-						for(int i = 0; i < SnakesIter; i++) { str_append(m_Detail.aBufSnake, pSnake, sizeof(m_Detail.aBufSnake)); }
-						if(Post && m_Detail.aBufSnake[0] != '\0') { str_utf8_reverse(m_Detail.aBufSnake); }
-					}
-					if(pUnique != nullptr) { str_append(m_Detail.aBufUnique, pUnique, sizeof(m_Detail.aBufUnique)); }
-					if(pRUnique != nullptr) { str_append(m_Detail.aBufRUnique, pRUnique, sizeof(m_Detail.aBufRUnique)); }
-					if(Post) { str_format(m_aData, sizeof(m_aData), "%s%s%s", m_Detail.aBufRUnique, m_Detail.aBufSnake, m_Detail.aBufUnique); }
-					else { str_format(m_aData, sizeof(m_aData), "%s%s%s", m_Detail.aBufUnique, m_Detail.aBufSnake, m_Detail.aBufRUnique); }
-				}
-				struct Detail
-				{
-					char aBufUnique[64] {};
-					char aBufSnake[128] {};
-					char aBufRUnique[64] {};
-					char aBufSnakeIter[64] {};
-					int m_SnakesIter {};
-					bool m_Post {};
-				};
-				Detail m_Detail {};
-				char m_aData[256] {};
-			};
-
-			struct CompareAestheticDetail
-			{
-				bool operator()(const AestheticImpl::Detail& D1, const char* pUnique, const char* pRUnique, const char* pSnake, int SnakesIter, bool Post) const
-				{
-					bool cUnique = !pUnique || std::string(D1.aBufUnique) == pUnique;
-					bool cRUnique = !pRUnique || std::string(D1.aBufRUnique) == pRUnique;
-					bool cSnake = !pSnake || std::string(D1.aBufSnakeIter) == pSnake;
-					return cUnique && cRUnique && cSnake && D1.m_SnakesIter == SnakesIter && D1.m_Post == Post;
-				}
-			};
-			inline ska::flat_hash_set<AestheticImpl*> m_aResultCollection {};
-
-			inline AestheticImpl* AestheticText(const char* pUnique, const char* pRUnique, const char* pSnake, int SnakesIter, bool Post)
-			{
-				const auto iter = std::find_if(m_aResultCollection.begin(), m_aResultCollection.end(),
-					[&](const AestheticImpl* pAest)
-				{
-					return CompareAestheticDetail {}(pAest->m_Detail, pUnique, pRUnique, pSnake, SnakesIter, Post);
-				});
-				if(iter == m_aResultCollection.end())
-				{
-					auto* pData = new AestheticImpl(pUnique ? pUnique : "\0", pRUnique ? pRUnique : "\0", pSnake ? pSnake : "\0", SnakesIter, Post);
-					m_aResultCollection.emplace(pData);
-					return pData;
-				}
-				return *iter;
-			}
-		};
-
-		/* BORDURES */
-		// Example: ┏━━━━━ ━━━━━┓
-		inline const char* B_DEFAULT_TOP(int iter, bool post) {
-			return Impl::AestheticText(post ? "\u2513" : "\u250F", nullptr, "\u2501", iter, post)->m_aData;
-		}
-		// Example: ───※ ·· ※───
-		inline const char* B_PILLAR(int iter, bool post) {
-			return Impl::AestheticText(nullptr, post ? "\u00B7 \u203B" : "\u203B \u00B7", "\u2500", iter, post)->m_aData;
-		}
-		// Example: ✯¸.•*•✿✿•*•.¸✯
-		inline const char* B_FLOWER(bool post) {
-			return Impl::AestheticText(post ? "\u273F\u2022*\u2022.\u00B8\u272F" : "\u272F\u00B8.\u2022*\u2022\u273F", nullptr, nullptr, 0, false)->m_aData;
-		}
-		// Example: ──⇌ • • ⇋──
-		inline const char* B_CONFIDENT(int iter, bool post) {
-			return Impl::AestheticText(nullptr, post ? "\u2022 \u21CB" : "\u21CC \u2022", "\u2500", iter, post)->m_aData;
-		}
-		// Example: •·.·''·.·•Text•·.·''·.·
-		inline const char* B_IRIDESCENT(int iter, bool post) {
-			return Impl::AestheticText(post ? "''\u00B7.\u00B7" : "\u2022\u00B7.\u00B7''", "\u2022", "'\u00B7.\u00B7'", iter, post)->m_aData;
-		}
-
-		/* LINES */
-		// Example: ━━━━━━
-		inline const char* L_DEFAULT(int iter) {
-			return Impl::AestheticText(nullptr, nullptr, "\u2501", iter, false)->m_aData;
-		}
-		// Example: ︵‿︵‿
-		inline const char* L_WAVES(int iter, bool post) {
-			return Impl::AestheticText(nullptr, nullptr, "\uFE35\u203F", iter, post)->m_aData;
-		}
-
-		/* WRAP LINES */
-		// Example:  ────⇌ • • ⇋────
-		inline std::string SWL_CONFIDENT(int iter) {
-			return std::string(B_CONFIDENT(iter, false)) + std::string(B_CONFIDENT(iter, true));
-		}
-		// Example: ───※ ·· ※───
-		inline std::string SWL_PILAR(int iter) {
-			return std::string(B_PILLAR(iter, false)) + std::string(B_PILLAR(iter, true));
-		}
-
-		/* QUOTES */
-		// Example: -ˏˋ Text here ˊˎ
-		inline const char* Q_DEFAULT(bool post) {
-			return Impl::AestheticText(post ? "\u02CA\u02CE" : "-\u02CF\u02CB", nullptr, nullptr, 0, post)->m_aData;
-		}
-
-		/* SYMBOL SMILIES */
-		// Example: 『•✎•』
-		inline const char* S_EDIT(const char* pBody) {
-			return Impl::AestheticText(std::string("\u300E " + std::string(pBody) + " \u300F").c_str(), nullptr, nullptr, 0, false)->m_aData;
-		}
-		// Example: ᴄᴏᴍᴘʟᴇᴛᴇ!
-		inline const char* S_COMPLETE() {
-			return Impl::AestheticText("\u1D04\u1D0F\u1D0D\u1D18\u029F\u1D07\u1D1B\u1D07!", nullptr, nullptr, 0, false)->m_aData;
-		}
-	}
-
-	namespace String
-	{
-		inline std::string progressBar(int max_value, int current_value, int step, const std::string& UTF_fill_symbol, const std::string& UTF_empty_symbol)
-		{
-			std::string ProgressBar;
-			int numFilled = current_value / step;
-			int numEmpty = max_value / step - numFilled;
-			ProgressBar.reserve(numFilled + numEmpty);
-
-			for(int i = 0; i < numFilled; i++)
-				ProgressBar += UTF_fill_symbol;
-
-			for(int i = 0; i < numEmpty; i++)
-				ProgressBar += UTF_empty_symbol;
-
-			return ProgressBar;
-		}
-
-		template <Concepts::EmplaceBackContainer Container>
-		void splitString(const std::string& str, const std::string& delimiter, Container& container)
-		{
-			container.clear();
-			if(delimiter.empty())
-			{
-				container.emplace_back(str);
-				return;
-			}
-
-			std::string::size_type start = 0;
-			std::string::size_type end = 0;
-			while((end = str.find(delimiter, start)) != std::string::npos)
-			{
-				container.emplace_back(str.substr(start, end - start));
-				start = end + delimiter.length();
-			}
-			container.emplace_back(str.substr(start));
-		}
-	}
-
-	namespace Json
-	{
-		inline void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
-		{
-			if(!Data.empty())
-			{
-				try
-				{
-					nlohmann::json JsonData = nlohmann::json::parse(Data);
-					pFuncCallback(JsonData);
-				}
-				catch(nlohmann::json::exception& s)
-				{
-					dbg_assert(false, fmt("[json parse] Invalid json: {}", s.what()).c_str());
-				}
-			}
-		}
-	}
-
-	namespace Files
-	{
-		enum Result : int
-		{
-			ERROR_FILE,
-			SUCCESSFUL,
-		};
-
-		inline Result loadFile(const char* pFile, ByteArray* pData)
-		{
-			IOHANDLE File = io_open(pFile, IOFLAG_READ);
-			if(!File)
-				return ERROR_FILE;
-
-			pData->resize((unsigned)io_length(File));
-			io_read(File, pData->data(), (unsigned)pData->size());
-			io_close(File);
-			return SUCCESSFUL;
-		}
-
-		inline Result deleteFile(const char* pFile)
-		{
-			int Result = fs_remove(pFile);
-			return Result == 0 ? SUCCESSFUL : ERROR_FILE;
-		}
-
-		inline Result saveFile(const char* pFile, const void* pData, unsigned size)
-		{
-			// delete old file
-			deleteFile(pFile);
-
-			IOHANDLE File = io_open(pFile, IOFLAG_WRITE);
-			if(!File)
-				return ERROR_FILE;
-
-			io_write(File, pData, size);
-			io_close(File);
-			return SUCCESSFUL;
-		}
-	}
-}
-
-// This class is a template class that stores static data shared across multiple worlds.
-// It is intended to be inherited by other classes.
-class _StoreMultiworldIdentifiableStaticData
-{
-	// This pointer stores the instance of the server class.
-	// It is declared as inline static to allow for its initialization outside the class.
-	inline static class IServer* m_pServer {};
-
 public:
-	// This method returns the instance of the server class.
-	class IServer* Server() const { return m_pServer; }
+	class Heal
+	{
+		int m_ItemID {};
+		std::string m_Effect {};
+		int m_Recovery {};
+		int m_Time {};
 
-	// This method initializes the instance of the server class.
-	static void Init(IServer* pServer) { m_pServer = pServer; }
-};
+	public:
+		Heal() = delete;
+		Heal(int ItemID, std::string Effect, int Recovery, int Time) : m_ItemID(ItemID), m_Effect(Effect), m_Recovery(Recovery), m_Time(Time) {}
 
-template < typename T >
-class MultiworldIdentifiableStaticData : public _StoreMultiworldIdentifiableStaticData
-{
-protected:
-	// This static pointer stores the shared static data.
-	// It is declared as inline static to allow for its initialization outside the class.
-	static inline T m_pData {};
+		static const Heal* getHealInfo(int ItemID)
+		{
+			auto p = std::ranges::find_if(m_PotionHealthInfo, [ItemID](const Heal& p){ return p.m_ItemID == ItemID; });
+			return p != m_PotionHealthInfo.end() ? p : nullptr;
+		}
+		static std::initializer_list<Heal>& getList() { return m_PotionHealthInfo; }
 
-public:
-	// This method returns the shared static data.
-	static T& Data() { return m_pData; }
+		int getItemID() const { return m_ItemID; }
+		const char* getEffect() const { return m_Effect.c_str(); }
+		int getRecovery() const { return m_Recovery; }
+		int getTime() const { return m_Time; }
+	};
+
+private:
+	inline static std::initializer_list<Heal> m_PotionHealthInfo
+	{
+		{ itTinyHealthPotion, "TinyHP", 7, 15 }
+	};
 };
 
 #endif

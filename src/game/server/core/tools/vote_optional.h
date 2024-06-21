@@ -6,7 +6,7 @@
 class CGS;
 class CPlayer;
 
-class CVoteOptional : public MultiworldIdentifiableStaticData< std::map<int, std::queue<CVoteOptional>>>
+class CVoteOptional : public MultiworldIdentifiableData< std::map<int, std::queue<CVoteOptional>>>
 {
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;

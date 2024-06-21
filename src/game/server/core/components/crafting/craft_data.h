@@ -7,7 +7,7 @@
 
 using CraftIdentifier = int;
 
-class CCraftItem : public MultiworldIdentifiableStaticData< std::deque<CCraftItem*> >
+class CCraftItem : public MultiworldIdentifiableData< std::deque<CCraftItem*> >
 {
 	CraftIdentifier m_ID {};
 	CItem m_Item {};

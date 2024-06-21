@@ -13,7 +13,7 @@
 
 #include <game/server/core/entities/eidolons/base.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>
-#include <game/server/core/utilities/pathfinder.h>
+#include <game/server/core/tools/pathfinder.h>
 
 #include "nurse_heart.h"
 

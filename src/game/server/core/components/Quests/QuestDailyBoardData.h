@@ -8,7 +8,7 @@
 using QuestDailyBoardIdentifier = int;
 
 // This class represents the daily board for quests in a game.
-class CQuestsDailyBoard : public MultiworldIdentifiableStaticData< std::map< int, CQuestsDailyBoard > >
+class CQuestsDailyBoard : public MultiworldIdentifiableData< std::map< int, CQuestsDailyBoard > >
 {
 public:
 	using ContainerDailyQuests = std::deque<CQuestDescription*>;

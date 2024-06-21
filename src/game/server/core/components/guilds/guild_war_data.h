@@ -27,7 +27,7 @@ public:
 	void AddScore(int Score);
 };
 
-class CGuildWarHandler : public MultiworldIdentifiableStaticData<std::deque <CGuildWarHandler*>>
+class CGuildWarHandler : public MultiworldIdentifiableData<std::deque <CGuildWarHandler*>>
 {
 	friend class CGuildWarData;
 	time_t m_TimeUntilEnd {};

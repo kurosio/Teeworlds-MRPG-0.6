@@ -18,7 +18,7 @@ class EntityPoint;
 class CEntityHarvestingItem;
 using GuildHouseIdentifier = int;
 
-class CGuildHouse : public MultiworldIdentifiableStaticData< std::deque < CGuildHouse* > >
+class CGuildHouse : public MultiworldIdentifiableData< std::deque < CGuildHouse* > >
 {
 	friend class CGuild;
 	friend class CGuildHouseDoorManager;

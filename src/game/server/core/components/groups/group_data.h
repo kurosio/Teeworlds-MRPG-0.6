@@ -6,7 +6,7 @@
 #define TW_GROUPS_TABLE "tw_groups"
 
 using GroupIdentifier = int;
-class GroupData : public MultiworldIdentifiableStaticData< std::map< int, GroupData > >
+class GroupData : public MultiworldIdentifiableData< std::map< int, GroupData > >
 {
 	GroupIdentifier m_ID {};
 	int m_LeaderUID {};

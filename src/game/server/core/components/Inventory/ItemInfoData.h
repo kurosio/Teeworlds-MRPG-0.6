@@ -12,7 +12,7 @@
 
 using ItemIdentifier = int;
 
-class CItemDescription : public MultiworldIdentifiableStaticData < std::map< int, CItemDescription > >
+class CItemDescription : public MultiworldIdentifiableData < std::map< int, CItemDescription > >
 {
 public:
 	struct HarvestingData

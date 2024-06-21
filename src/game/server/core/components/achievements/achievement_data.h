@@ -42,7 +42,7 @@ enum
 };
 
 // achievement information data
-class CAchievementInfo : public MultiworldIdentifiableStaticData< std::deque<CAchievementInfo*> >
+class CAchievementInfo : public MultiworldIdentifiableData< std::deque<CAchievementInfo*> >
 {
 	int m_ID {};
 	int m_Type {};
@@ -91,7 +91,7 @@ public:
 };
 
 // achievement data
-class CAchievement : public MultiworldIdentifiableStaticData< std::map< int, std::deque< CAchievement* > > >
+class CAchievement : public MultiworldIdentifiableData< std::map< int, std::deque< CAchievement* > > >
 {
 	friend class CAchievementInfo;
 	friend class CAchievementManager;

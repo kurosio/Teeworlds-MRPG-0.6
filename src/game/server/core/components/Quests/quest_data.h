@@ -10,7 +10,7 @@
 
 class CGS;
 class CPlayer;
-class CPlayerQuest : public MultiworldIdentifiableStaticData< std::map < int, std::map <int, CPlayerQuest* > > >
+class CPlayerQuest : public MultiworldIdentifiableData< std::map < int, std::map <int, CPlayerQuest* > > >
 {
 	friend class QuestDatafile;
 	friend class CQuestManager;

@@ -5,7 +5,7 @@
 
 using AttributeDescriptionPtr = std::shared_ptr< class CAttributeDescription >;
 
-class CAttributeDescription : public MultiworldIdentifiableStaticData< std::map < AttributeIdentifier, AttributeDescriptionPtr > >
+class CAttributeDescription : public MultiworldIdentifiableData< std::map < AttributeIdentifier, AttributeDescriptionPtr > >
 {
 	char m_aName[32]{};
 	char m_aFieldName[32]{};

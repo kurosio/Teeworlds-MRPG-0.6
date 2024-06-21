@@ -49,7 +49,7 @@ public:
 	static void ToArrayJSON(CItemsContainer& vItems, nlohmann::json& json, const char* pField);
 };
 
-class CPlayerItem : public CItem, public MultiworldIdentifiableStaticData< std::map < int, std::map < int, CPlayerItem > > >
+class CPlayerItem : public CItem, public MultiworldIdentifiableData< std::map < int, std::map < int, CPlayerItem > > >
 {
 	friend class CInventoryManager;
 	int m_ClientID {};

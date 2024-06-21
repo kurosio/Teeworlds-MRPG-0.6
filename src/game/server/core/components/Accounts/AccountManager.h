@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
 #define GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
 #include <game/server/core/mmo_component.h>
-#include <game/server/core/utilities/timeperiod_data.h>
+#include <game/server/core/tools/timeperiod_data.h>
 
 #include "AccountData.h"
 

@@ -54,7 +54,7 @@ public:
  */
 class CWarehouseStorage;
 using ContainerTradingList = std::deque<CTrade>;
-class CWarehouse : public MultiworldIdentifiableStaticData<std::deque<CWarehouse*>>
+class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 {
 	// storage inner structure
 	class CStorage

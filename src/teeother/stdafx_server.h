@@ -23,6 +23,8 @@
 #include <game/mapitems.h>
 #include <game/version.h>
 #include <game/voting.h>
+#include <game/server/core/utilites.h>
 #include <game/server/core/mmo_context.h>
+
 
 #endif //GAME_TEEOTHER_STDAFX_SHARED_H

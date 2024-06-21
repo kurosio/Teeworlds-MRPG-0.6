@@ -3,7 +3,7 @@
 #include "group_manager.h"
 #include "group_data.h"
 
-#include <game/server/core/utilities/vote_optional.h>
+#include <game/server/core/tools/vote_optional.h>
 #include <game/server/gamecontext.h>
 
 void CGroupManager::OnInit()

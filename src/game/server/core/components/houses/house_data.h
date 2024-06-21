@@ -18,7 +18,7 @@ class CEntityHouseDecoration;
 class CEntityHouseDoor;
 using HouseIdentifier = int;
 
-class CHouse : public MultiworldIdentifiableStaticData< std::deque < CHouse* > >
+class CHouse : public MultiworldIdentifiableData< std::deque < CHouse* > >
 {
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;

@@ -4,7 +4,7 @@
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/components/worlds/world_manager.h>
-#include <game/server/core/utilities/pathfinder.h>
+#include <game/server/core/tools/pathfinder.h>
 
 CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_NAVIGATOR, FromPos)
