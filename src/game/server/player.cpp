@@ -28,7 +28,6 @@ IServer* CPlayer::Server() const { return m_pGS->Server(); };
 
 CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 {
-	m_EidolonCID = -1;
 	m_WantSpawn = true;
 	m_SnapHealthNicknameTick = 0;
 	m_aPlayerTick[Die] = Server()->Tick();
