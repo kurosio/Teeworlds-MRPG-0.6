@@ -13,44 +13,51 @@ namespace mrpgstd
 		{ c.clear() } -> std::same_as<void>;
 	};
 
-	// сoncept to check if a type is a container
-	template <typename T>
-	concept is_container = requires(T a) {
-		typename T::value_type;
-		typename T::iterator;
-		{ a.begin() } -> std::convertible_to<typename T::iterator>;
-		{ a.end() } -> std::convertible_to<typename T::iterator>;
+	// concept to check if a type is a smart pointer functions
+	template<typename T>
+	concept is_smart_pointer = requires(T & c) {
+		{ c.get() } -> std::convertible_to<typename T::element_type*>;
+		{ c.reset() } noexcept -> std::same_as<void>;
 	};
 
-	// сoncept to check if a container holds pointer elements
-	template<typename is_container>
-	concept is_container_pointers_element = std::is_pointer_v<typename is_container::value_type>;
+	// сoncept to check if a type is a container
+	template <typename T>
+	concept is_container = requires(T & c) {
+		typename T::value_type;
+		typename T::iterator;
+		{ c.begin() } -> std::convertible_to<typename T::iterator>;
+		{ c.end() } -> std::convertible_to<typename T::iterator>;
+	};
 
 	// сoncept to check if a type is a map container
 	template<typename T>
-	concept is_map_container = requires(T a) {
+	concept is_map_container = requires(T & c) {
 		typename T::key_type;
 		typename T::mapped_type;
+			requires is_container<T>;
 			requires std::same_as<typename T::value_type, std::pair<const typename T::key_type, typename T::mapped_type>>;
 	};
-
-	// сoncept to check if a map container holds pointer values
-	template<typename is_map_container>
-	concept is_map_container_pointers_element = std::is_pointer_v<typename is_map_container::mapped_type>;
 
 	// function to clear a container
 	template<typename T>
 	void cleaning_free_container_data(T& container)
 	{
 		static_assert(is_has_clear_function<T>, "One or more types do not have clear() function");
-		if constexpr(is_container_pointers_element<T>)
-			std::ranges::for_each(container, [](auto& element) { delete element; });
-		else if constexpr(is_container<T> && (is_container<typename T::value_type> || is_map_container<typename T::value_type>))
-			std::ranges::for_each(container, [](auto& element) { cleaning_free_container_data(element); });
-		else if constexpr(is_map_container_pointers_element<T>)
-			std::ranges::for_each(container, [](auto& element) { delete element.second; });
-		else if constexpr(is_map_container<T> && (is_container<typename T::mapped_type> || is_map_container<typename T::mapped_type>))
-			std::ranges::for_each(container, [](auto& element) { cleaning_free_container_data(element.second); });
+
+		if constexpr(is_map_container<T>)
+		{
+			if constexpr(is_container<typename T::mapped_type>)
+				std::ranges::for_each(container, [](auto& element) { cleaning_free_container_data(element.second); });
+			else if constexpr(std::is_pointer_v<typename T::mapped_type> && !is_smart_pointer<typename T::mapped_type>)
+				std::ranges::for_each(container, [](auto& element) { delete element.second; });
+		}
+		else if constexpr(is_container<T>)
+		{
+			if constexpr(is_container<typename T::value_type>)
+				std::ranges::for_each(container, [](auto& element) { cleaning_free_container_data(element); });
+			else if constexpr(std::is_pointer_v<typename T::value_type> && !is_smart_pointer<typename T::value_type>)
+				std::ranges::for_each(container, [](auto& element) { delete element; });
+		}
 		container.clear();
 	}
 
