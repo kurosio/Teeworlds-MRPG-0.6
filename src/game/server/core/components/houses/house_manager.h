@@ -13,7 +13,8 @@ class CHouseManager : public MmoComponent
 {
 	~CHouseManager() override
 	{
-		CHouse::Data().clear();
+		// free data
+		mrpgstd::cleaning_free_container_data(CHouse::Data());
 	}
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;

@@ -17,20 +17,12 @@ class CQuestManager : public MmoComponent
 	// Destructor which overrides the base class destructor
 	~CQuestManager() override
 	{
-		// Clear the quest description data
-		for(auto& pItem : CQuestDescription::Data())
+		// free data
+		std::ranges::for_each(CPlayerQuest::Data(), [](auto& pair)
 		{
-			delete pItem.second;
-		}
-		CQuestDescription::Data().clear();
-
-		// Clear the player quest data
-		for(auto& pContainer : CPlayerQuest::Data())
-		{
-			for(auto& pQuest : pContainer.second)
-				delete pQuest.second;
-		}
-		CPlayerQuest::Data().clear();
+			mrpgstd::cleaning_free_container_data(pair.second);
+		});
+		mrpgstd::cleaning_free_container_data(CQuestDescription::Data(), CPlayerQuest::Data());
 	}
 
 	// This function is called when the module is initialized

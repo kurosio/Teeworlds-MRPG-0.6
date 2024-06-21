@@ -35,6 +35,22 @@ namespace mrpgstd
 	// сoncept to check if a map container holds pointer values
 	template<typename is_map_container>
 	concept is_map_container_pointers_element = std::is_pointer_v<typename is_map_container::mapped_type>;
+
+	// function to clear a container
+	template<typename T>
+	void cleaning_free_container_data(T& container)
+	{
+		static_assert(is_has_clear_function<T>, "One or more types do not have clear() function");
+		if constexpr(is_container_pointers_element<T>)
+			std::ranges::for_each(container, [](auto& element) { delete element; });
+		else if constexpr(is_map_container_pointers_element<T>)
+			std::ranges::for_each(container, [](auto& element) { delete element.second; });
+		container.clear();
+	}
+
+	// clear multiple containers uses fold expression
+	template<typename... Containers>
+	void cleaning_free_container_data(Containers&... args) { (cleaning_free_container_data(args), ...); }
 }
 
 // aesthetic utils (TODO: remove)

@@ -10,16 +10,12 @@ class CSkillManager : public MmoComponent
 {
 	~CSkillManager() override
 	{
-		// clear skill's
-		for(auto& p : CSkill::Data())
+		// free data
+		std::ranges::for_each(CSkill::Data(), [](auto& pair) 
 		{
-			for(auto pData : p.second)
-				delete pData;
-		}
-
-		// clear containers
-		CSkill::Data().clear();
-		CSkillDescription::Data().clear();
+			mrpgstd::cleaning_free_container_data(pair.second);
+		});
+		mrpgstd::cleaning_free_container_data(CSkill::Data(), CSkillDescription::Data());
 	}
 
 	void OnInit() override;

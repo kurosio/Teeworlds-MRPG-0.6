@@ -12,11 +12,8 @@ class CAethernetManager : public MmoComponent
 
 	~CAethernetManager() override
 	{
-		for(const auto& pAether : CAetherData::Data())
-			delete pAether;
-		CAetherData::Data().clear();
-		CAetherData::Data().shrink_to_fit();
-		s_vpAetherSortedList.clear();
+		// free data
+		mrpgstd::cleaning_free_container_data(CAetherData::Data(), s_vpAetherSortedList);
 	};
 
 	void OnInit() override;

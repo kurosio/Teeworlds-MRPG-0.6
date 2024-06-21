@@ -10,19 +10,8 @@ class CGuildManager : public MmoComponent
 {
 	~CGuildManager() override
 	{
-		for(const auto pHouse : CGuildHouse::Data())
-			delete pHouse;
-		for(const auto pGuild : CGuild::Data())
-			delete pGuild;
-		for(const auto pWar : CGuildWarHandler::Data())
-			delete pWar;
-
-		CGuild::Data().clear();
-		CGuildHouse::Data().clear();
-		CGuildWarHandler::Data().clear();
-		CGuild::Data().shrink_to_fit();
-		CGuildHouse::Data().shrink_to_fit();
-		CGuildWarHandler::Data().shrink_to_fit();
+		// free data
+		mrpgstd::cleaning_free_container_data(CGuildHouse::Data(), CGuild::Data(), CGuildWarHandler::Data());
 	};
 
 	void OnInit() override;

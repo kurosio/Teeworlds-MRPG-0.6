@@ -10,10 +10,8 @@ class CBotManager : public MmoComponent
 {
 	~CBotManager() override
 	{
-		DataBotInfo::ms_aDataBot.clear();
-		QuestBotInfo::ms_aQuestBot.clear();
-		NpcBotInfo::ms_aNpcBot.clear();
-		MobBotInfo::ms_aMobBot.clear();
+		// free data
+		mrpgstd::cleaning_free_container_data(DataBotInfo::ms_aDataBot, QuestBotInfo::ms_aQuestBot, NpcBotInfo::ms_aNpcBot, MobBotInfo::ms_aMobBot);
 	};
 
 	void OnInit() override;

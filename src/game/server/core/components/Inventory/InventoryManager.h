@@ -10,9 +10,8 @@ class CInventoryManager : public MmoComponent
 {
 	~CInventoryManager() override
 	{
-		CAttributeDescription::Data().clear();
-		CItemDescription::Data().clear();
-		CPlayerItem::Data().clear();
+		// free data
+		mrpgstd::cleaning_free_container_data(CAttributeDescription::Data(), CItemDescription::Data(), CPlayerItem::Data());
 	}
 
 	void OnInit() override;

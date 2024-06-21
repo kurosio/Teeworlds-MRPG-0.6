@@ -10,10 +10,8 @@ class CTutorialManager : public MmoComponent
 {
 	~CTutorialManager() override
 	{
-		for(auto pItem : TutorialBase::Data())
-			delete pItem;
-
-		TutorialBase::Data().clear();
+		// free data
+		mrpgstd::cleaning_free_container_data(TutorialBase::Data());
 	}
 
 	void OnInit() override;

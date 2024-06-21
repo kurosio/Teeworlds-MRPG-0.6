@@ -10,9 +10,8 @@ class CWarehouseManager : public MmoComponent
 {
 	~CWarehouseManager() override
 	{
-		for(auto pData : CWarehouse::Data())
-			delete pData;
-		CWarehouse::Data().clear();
+		// free data
+		mrpgstd::cleaning_free_container_data(CWarehouse::Data());
 	}
 
 	void OnInit() override;
