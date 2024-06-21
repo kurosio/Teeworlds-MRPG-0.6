@@ -5,6 +5,38 @@
 
 using ByteArray = std::basic_string<std::byte>;
 
+namespace mrpgstd
+{
+	// сoncept to check if a type has a clear() function
+	template<typename T>
+	concept is_has_clear_function = requires(T & c) {
+		{ c.clear() } -> std::same_as<void>;
+	};
+
+	// сoncept to check if a type is a container
+	template<typename T>
+	concept is_container = requires(T a) {
+		{ a.begin() } -> std::convertible_to<typename T::iterator>;
+		{ a.end() } -> std::convertible_to<typename T::iterator>;
+	};
+
+	// сoncept to check if a container holds pointer elements
+	template<typename is_container>
+	concept is_container_pointers_element = std::is_pointer_v<typename is_container::value_type>;
+
+	// сoncept to check if a type is a map container
+	template<typename T>
+	concept is_map_container = requires(T a) {
+		typename T::key_type;
+		typename T::mapped_type;
+			requires std::same_as<typename T::value_type, std::pair<const typename T::key_type, typename T::mapped_type>>;
+	};
+
+	// сoncept to check if a map container holds pointer values
+	template<typename is_map_container>
+	concept is_map_container_pointers_element = std::is_pointer_v<typename is_map_container::mapped_type>;
+}
+
 // aesthetic utils (TODO: remove)
 namespace Utils::Aesthetic
 {
