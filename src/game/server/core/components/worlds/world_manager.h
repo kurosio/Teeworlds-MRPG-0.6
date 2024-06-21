@@ -14,7 +14,8 @@ class CWorldManager : public MmoComponent
 
 	~CWorldManager() override
 	{
-		CWorldData::Data().clear();
+		// free data
+		mrpgstd::cleaning_free_container_data(CWorldData::Data());
 	}
 
 	// init world id

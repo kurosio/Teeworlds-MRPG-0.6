@@ -14,8 +14,10 @@ namespace mrpgstd
 	};
 
 	// сoncept to check if a type is a container
-	template<typename T>
+	template <typename T>
 	concept is_container = requires(T a) {
+		typename T::value_type;
+		typename T::iterator;
 		{ a.begin() } -> std::convertible_to<typename T::iterator>;
 		{ a.end() } -> std::convertible_to<typename T::iterator>;
 	};
@@ -43,8 +45,13 @@ namespace mrpgstd
 		static_assert(is_has_clear_function<T>, "One or more types do not have clear() function");
 		if constexpr(is_container_pointers_element<T>)
 			std::ranges::for_each(container, [](auto& element) { delete element; });
+		else if constexpr(is_container<T> && (is_container<typename T::value_type> || is_map_container<typename T::value_type>))
+			std::ranges::for_each(container, [](auto& element) { cleaning_free_container_data(element); });
 		else if constexpr(is_map_container_pointers_element<T>)
 			std::ranges::for_each(container, [](auto& element) { delete element.second; });
+		else if constexpr(is_map_container<T> && (is_container<typename T::mapped_type> || is_map_container<typename T::mapped_type>))
+			std::ranges::for_each(container, [](auto& element) { cleaning_free_container_data(element.second); });
+		std::cout << typeid(T).name();
 		container.clear();
 	}
 

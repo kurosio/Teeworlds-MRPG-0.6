@@ -11,10 +11,6 @@ class CAchievementManager : public MmoComponent
 	~CAchievementManager() override
 	{
 		// free data
-		std::ranges::for_each(CAchievement::Data(), [](auto& pair)
-		{
-			mrpgstd::cleaning_free_container_data(pair.second);
-		});
 		mrpgstd::cleaning_free_container_data(CAchievement::Data(), CAchievementInfo::Data());
 	};
 

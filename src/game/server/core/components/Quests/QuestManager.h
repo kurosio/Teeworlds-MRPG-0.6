@@ -18,10 +18,6 @@ class CQuestManager : public MmoComponent
 	~CQuestManager() override
 	{
 		// free data
-		std::ranges::for_each(CPlayerQuest::Data(), [](auto& pair)
-		{
-			mrpgstd::cleaning_free_container_data(pair.second);
-		});
 		mrpgstd::cleaning_free_container_data(CQuestDescription::Data(), CPlayerQuest::Data());
 	}
 

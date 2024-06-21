@@ -11,10 +11,6 @@ class CSkillManager : public MmoComponent
 	~CSkillManager() override
 	{
 		// free data
-		std::ranges::for_each(CSkill::Data(), [](auto& pair) 
-		{
-			mrpgstd::cleaning_free_container_data(pair.second);
-		});
 		mrpgstd::cleaning_free_container_data(CSkill::Data(), CSkillDescription::Data());
 	}
 
