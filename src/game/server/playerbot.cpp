@@ -522,7 +522,10 @@ void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 std::optional<int> CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
 	if((EquipID >= EQUIP_HAMMER && EquipID <= EQUIP_LASER) || EquipID == EQUIP_ARMOR)
-		return DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];
+	{
+		int itemID = DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];
+		return (itemID > 0) ? std::make_optional(itemID) : std::nullopt;
+	}
 	return std::nullopt;
 }
 
