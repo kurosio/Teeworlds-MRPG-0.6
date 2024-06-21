@@ -11,7 +11,7 @@ class CSkillManager : public MmoComponent
 	~CSkillManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(CSkill::Data(), CSkillDescription::Data());
+		mrpgstd::free_container(CSkill::Data(), CSkillDescription::Data());
 	}
 
 	void OnInit() override;

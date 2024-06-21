@@ -94,7 +94,6 @@ class CVoteGroup
 	void SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, const char* pText);
 	void AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const char* pText);
 	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
-
 	void Reformatting(std::string& Buffer);
 
 	void AddLineImpl();
@@ -106,25 +105,6 @@ class CVoteGroup
 
 #define FMT_LOCALIZE_STR(clientid, text, args) fmt_localize(clientid, text, args).c_str()
 
-/**
-	 * @brief The VoteWrapper class provides a convenient way to create and manage voting options and groups.
-	 *
-	 * The VoteWrapper class allows you to easily create and manage voting options and groups in your game server.
-	 * It provides a fluent interface for adding and configuring voting options, setting titles, and controlling the structure of the voting menu.
-	 *
-	 * Usage example:
-	 * @code{.cpp}
-	 * VoteWrapper vote(0); // Create a VoteWrapper instance for client ID 0
-	 * vote.SetTitle("Main Menu") // Set the title of the voting menu
-	 *     .AddOption("kick", "Kick a player") // Add a voting option to kick a player
-	 *     .AddOption("ban", "Ban a player") // Add a voting option to ban a player
-	 *     .AddLine() // Add a line separator
-	 *     .AddOption("nextmap", "Change the map") // Add a voting option to change the map
-	 *     .AddOption("restart", "Restart the game") // Add a voting option to restart the game
-	 *     .Add("Nickname: {}", Server()->ClientName(0)) // Add a voting message uses format
-	 *     .AddMenu(MENU_INFO, "Info"); // Add menu list
-	 * @endcode
-*/
 class VoteWrapper : public MultiworldIdentifiableData<std::map<int, std::deque<CVoteGroup*>>>
 {
 	CVoteGroup* m_pGroup {};

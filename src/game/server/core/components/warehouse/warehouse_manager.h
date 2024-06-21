@@ -11,7 +11,7 @@ class CWarehouseManager : public MmoComponent
 	~CWarehouseManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(CWarehouse::Data());
+		mrpgstd::free_container(CWarehouse::Data());
 	}
 
 	void OnInit() override;

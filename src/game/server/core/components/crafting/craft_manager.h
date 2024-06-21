@@ -11,7 +11,7 @@ class CCraftManager : public MmoComponent
 	~CCraftManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(CCraftItem::Data());
+		mrpgstd::free_container(CCraftItem::Data());
 	};
 
 	void OnInit() override;

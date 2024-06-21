@@ -11,7 +11,7 @@ class CTutorialManager : public MmoComponent
 	~CTutorialManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(TutorialBase::Data());
+		mrpgstd::free_container(TutorialBase::Data());
 	}
 
 	void OnInit() override;

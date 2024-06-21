@@ -11,7 +11,7 @@ class CInventoryManager : public MmoComponent
 	~CInventoryManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(CAttributeDescription::Data(), CItemDescription::Data(), CPlayerItem::Data());
+		mrpgstd::free_container(CAttributeDescription::Data(), CItemDescription::Data(), CPlayerItem::Data());
 	}
 
 	void OnInit() override;

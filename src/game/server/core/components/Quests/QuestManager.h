@@ -18,7 +18,7 @@ class CQuestManager : public MmoComponent
 	~CQuestManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(CQuestDescription::Data(), CPlayerQuest::Data());
+		mrpgstd::free_container(CQuestDescription::Data(), CPlayerQuest::Data());
 	}
 
 	// This function is called when the module is initialized

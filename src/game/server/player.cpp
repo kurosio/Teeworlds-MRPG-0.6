@@ -56,10 +56,13 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 
 CPlayer::~CPlayer()
 {
-	VoteWrapper::Data()[m_ClientID].clear();
+	// free data
+	if(m_pCharacter)
+	{
+		delete m_pCharacter;
+		m_pCharacter = nullptr;
+	}
 	delete m_pLastInput;
-	delete m_pCharacter;
-	m_pCharacter = nullptr;
 }
 
 void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)

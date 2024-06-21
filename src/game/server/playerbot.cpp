@@ -24,11 +24,8 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 
 CPlayerBot::~CPlayerBot()
 {
-	// Set all elements in the m_aVisibleActive array of the DataBotInfo object at index m_BotID to 0
+	// free data
 	std::memset(DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive, 0, MAX_PLAYERS * sizeof(bool));
-
-	// free memory
-	delete m_pCharacter;
 	delete m_pPathFinderData;
 }
 

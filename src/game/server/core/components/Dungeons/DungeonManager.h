@@ -11,7 +11,7 @@ class CDungeonManager : public MmoComponent
 	~CDungeonManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(CDungeonData::ms_aDungeon);
+		mrpgstd::free_container(CDungeonData::ms_aDungeon);
 	};
 
 	void OnInit() override;

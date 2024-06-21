@@ -11,7 +11,7 @@ class CAchievementManager : public MmoComponent
 	~CAchievementManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(CAchievement::Data(), CAchievementInfo::Data());
+		mrpgstd::free_container(CAchievement::Data(), CAchievementInfo::Data());
 	};
 
 	void OnInit() override;

@@ -13,7 +13,7 @@ class CAethernetManager : public MmoComponent
 	~CAethernetManager() override
 	{
 		// free data
-		mrpgstd::cleaning_free_container_data(CAetherData::Data(), s_vpAetherSortedList);
+		mrpgstd::free_container(CAetherData::Data(), s_vpAetherSortedList);
 	};
 
 	void OnInit() override;
