@@ -2,13 +2,12 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "tiles_handler.h"
 
-#include <game/server/gamecontext.h>
-#include <game/server/entities/character.h>
+#include <game/collision.h>
 
-void CTileHandler::Handler()
+void CTileHandler::Handle(const vec2& Position)
 {
 	// initialize variables
-	const int Index = m_pGS->Collision()->GetParseTilesAt(m_pCharacter->m_Core.m_Pos.x, m_pCharacter->m_Core.m_Pos.y);
+	const int Index = m_pCollision->GetParseTilesAt(Position.x, Position.y);
 
 	// check valid index
 	if(Index < TILE_AIR || Index >= MAX_TILES)

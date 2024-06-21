@@ -3,8 +3,6 @@
 #ifndef GAME_SERVER_CORE_TILES_HANDLER_H
 #define GAME_SERVER_CORE_TILES_HANDLER_H
 
-#include <game/mapitems.h>
-
 #define DEF_TILE_ENTER_ZONE_IMPL(player, menus) \
 									GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You can see menu in the votes!"); \
 									player->m_VotesData.UpdateVotes(menus)
@@ -13,28 +11,33 @@
 									player->m_VotesData.UpdateVotes(MENU_MAIN)
 
 // forward declaration
-class CGS;
+class CCollision;
 class CCharacter;
 
 // tile handler
 class CTileHandler
 {
-	CGS* m_pGS {};
+	CCollision* m_pCollision {};
 	CCharacter* m_pCharacter{};
 	int m_Marked{};
 	int m_MarkEnter{};
 	int m_MarkExit{};
 
 public:
-	explicit CTileHandler(CGS* pGS, CCharacter* pCharacter) : m_pGS(pGS), m_pCharacter(pCharacter) {}
+	explicit CTileHandler(CCollision* pCollision) : m_pCollision(pCollision) {}
 
-
-	void Handler();
+	void Handle(const vec2& Position);
 
 	// tiles
 	bool IsEnter(int Index);
 	bool IsExit(int Index);
 	bool IsActive(int Index) const { return m_Marked == Index; }
+	int GetActive() const { return m_Marked; }
+
+	// fold expression helpers
+	template <typename ... Ts> bool AreAnyEnter(const Ts... args) { return ((IsEnter(args)) || ...); }
+	template <typename ... Ts> bool AreAnyExit(const Ts... args) { return ((IsEnter(args)) || ...); }
+	template <typename ... Ts> bool AreAnyActive(const Ts... args) const { return ((m_Marked == args) || ...); }
 };
 
 #endif

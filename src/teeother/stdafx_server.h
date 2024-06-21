@@ -20,6 +20,7 @@
 #include <engine/shared/config.h>
 #include <game/gamecore.h>
 #include <game/layers.h>
+#include <game/mapitems.h>
 #include <game/version.h>
 #include <game/voting.h>
 #include <game/server/core/mmo_context.h>

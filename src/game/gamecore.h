@@ -6,9 +6,6 @@
 #include <base/system.h>
 #include <base/vmath.h>
 
-#include <map>
-#include <vector>
-
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
 

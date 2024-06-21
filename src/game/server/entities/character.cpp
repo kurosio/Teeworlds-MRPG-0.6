@@ -3,6 +3,7 @@
 #include "character.h"
 #include <generated/server_data.h>
 
+#include <game/mapitems.h>
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
@@ -23,7 +24,7 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 	: CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER, vec2(0, 0), ms_PhysSize)
 {
 	m_pMultipleOrbite = nullptr;
-	m_pTilesHandler = new CTileHandler(pWorld->GS(), this);
+	m_pTilesHandler = new CTileHandler(pWorld->GS()->Collision());
 	m_DoorHit = false;
 	m_Health = 0;
 	m_TriggeredEvents = 0;
@@ -1098,7 +1099,7 @@ void CCharacter::PostSnap()
 void CCharacter::HandleTilesets()
 {
 	// handle tilesets
-	m_pTilesHandler->Handler();
+	m_pTilesHandler->Handle(m_Core.m_Pos);
 
 	// check from components
 	if(!m_pPlayer->IsBot() && GS()->Core()->OnCharacterTile(this))
@@ -1118,11 +1119,8 @@ void CCharacter::HandleTilesets()
 		m_pPlayer->Account()->HandleChair();
 
 	// tile events
-	for(int i = TILE_CLEAR_SPECIAL_EVENTS; i <= TILE_SPECIAL_EVENT_HEALTH; i++)
-	{
-		if(m_pTilesHandler->IsEnter(i))
-			SetEvent(i);
-	}
+	if(m_pTilesHandler->AreAnyEnter(TILE_SPECIAL_EVENT_PARTY, TILE_SPECIAL_EVENT_LIKE, TILE_SPECIAL_EVENT_HEALTH, TILE_CLEAR_SPECIAL_EVENTS))
+		SetEvent(m_pTilesHandler->GetActive());
 }
 
 void CCharacter::HandleSpecialEvent()

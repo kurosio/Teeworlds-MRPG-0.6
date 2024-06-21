@@ -96,7 +96,7 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	if(Menulist == MenuList::MENU_INVENTORY)
+	if(Menulist == MENU_INVENTORY)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
@@ -121,7 +121,7 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	if(Menulist == MenuList::MENU_EQUIPMENT)
+	if(Menulist == MENU_EQUIPMENT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 

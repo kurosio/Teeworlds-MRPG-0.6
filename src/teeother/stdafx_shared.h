@@ -13,6 +13,7 @@
 #include <memory>
 #include <future>
 #include <queue>
+#include <set>
 #include <teeother/tools/nlohmann_json.h>
 
 #include <base/system.h>
