@@ -51,7 +51,6 @@ namespace mrpgstd
 			std::ranges::for_each(container, [](auto& element) { delete element.second; });
 		else if constexpr(is_map_container<T> && (is_container<typename T::mapped_type> || is_map_container<typename T::mapped_type>))
 			std::ranges::for_each(container, [](auto& element) { cleaning_free_container_data(element.second); });
-		std::cout << typeid(T).name();
 		container.clear();
 	}
 
