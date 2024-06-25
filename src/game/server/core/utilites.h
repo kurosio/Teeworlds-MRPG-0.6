@@ -39,7 +39,7 @@ namespace mrpgstd
 	};
 
 	// function to clear a container
-	template<typename T>
+	template<is_container T>
 	void free_container(T& container)
 	{
 		static_assert(is_has_clear_function<T>, "One or more types do not have clear() function");
@@ -51,7 +51,7 @@ namespace mrpgstd
 			else if constexpr(std::is_pointer_v<typename T::mapped_type> && !is_smart_pointer<typename T::mapped_type>)
 				std::ranges::for_each(container, [](auto& element) { delete element.second; });
 		}
-		else if constexpr(is_container<T>)
+		else
 		{
 			if constexpr(is_container<typename T::value_type>)
 				std::ranges::for_each(container, [](auto& element) { free_container(element); });
@@ -62,7 +62,7 @@ namespace mrpgstd
 	}
 
 	// clear multiple containers uses fold expression
-	template<typename... Containers>
+	template<is_container... Containers>
 	void free_container(Containers&... args) { (free_container(args), ...); }
 }
 
