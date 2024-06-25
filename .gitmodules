@@ -1,12 +1,3 @@
-[submodule "discord_deps/websocketpp"]
-	path = discord_deps/websocketpp
-	url = https://github.com/zaphoyd/websocketpp.git
-[submodule "discord_deps/cpr-external"]
-	path = discord_deps/cpr-external
-	url = https://github.com/libcpr/cpr.git
-[submodule "discord_deps/asio"]
-	path = discord_deps/asio
-	url = https://github.com/chriskohlhoff/asio.git
 [submodule "libraries"]
 	path = libraries
 	url = https://github.com/MrCosmo666/MmoTee-Libs.git

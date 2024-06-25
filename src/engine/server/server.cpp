@@ -87,8 +87,8 @@ CServer::CServer()
 CServer::~CServer()
 {
 #ifdef CONF_DISCORD
-	m_pDiscord->quit();
-	delete m_pDiscord;
+	//m_pDiscord->quit();
+	//delete m_pDiscord;
 #endif
 	delete m_pRegister;
 	delete m_pMultiWorlds;
@@ -376,21 +376,21 @@ int CServer::GetClientWorldID(int ClientID) const
 void CServer::SendDiscordGenerateMessage(const char* pTitle, int AccountID, int Color)
 {
 #ifdef CONF_DISCORD
-	DiscordTask Task(std::bind(&DiscordJob::SendGenerateMessageAccountID, m_pDiscord, SleepyDiscord::User(), std::string(g_Config.m_SvDiscordServerChatChannel), std::string(pTitle), AccountID, Color));
-	m_pDiscord->AddThreadTask(Task);
+	//DiscordTask Task(std::bind(&DiscordJob::SendGenerateMessageAccountID, m_pDiscord, SleepyDiscord::User(), std::string(g_Config.m_SvDiscordServerChatChannel), std::string(pTitle), AccountID, Color));
+	//m_pDiscord->AddThreadTask(Task);
 #endif
 }
 
 void CServer::SendDiscordMessage(const char* pChannel, int Color, const char* pTitle, const char* pText)
 {
 #ifdef CONF_DISCORD
-	SleepyDiscord::Embed embed;
-	embed.title = std::string(EscapeDiscordMarkdown(pTitle));
-	embed.description = std::string(EscapeDiscordMarkdown(pText));
-	embed.color = Color;
+	//SleepyDiscord::Embed embed;
+	//embed.title = std::string(EscapeDiscordMarkdown(pTitle));
+	//embed.description = std::string(EscapeDiscordMarkdown(pText));
+	//embed.color = Color;
 
-	DiscordTask Task(std::bind(&DiscordJob::sendMessageWithoutResponse, m_pDiscord, std::string(pChannel), std::string("\0"), embed));
-	m_pDiscord->AddThreadTask(Task);
+	//DiscordTask Task(std::bind(&DiscordJob::sendMessageWithoutResponse, m_pDiscord, std::string(pChannel), std::string("\0"), embed));
+	//m_pDiscord->AddThreadTask(Task);
 #endif
 }
 
@@ -398,8 +398,8 @@ void CServer::UpdateDiscordStatus(const char* pStatus)
 {
 #ifdef CONF_DISCORD
 #undef max
-	DiscordTask ThreadTask(std::bind(&DiscordJob::updateStatus, m_pDiscord, std::string(pStatus), std::numeric_limits<uint64_t>::max(), SleepyDiscord::online, false));
-	m_pDiscord->AddThreadTask(ThreadTask);
+	//DiscordTask ThreadTask(std::bind(&DiscordJob::updateStatus, m_pDiscord, std::string(pStatus), std::numeric_limits<uint64_t>::max(), SleepyDiscord::online, false));
+	//m_pDiscord->AddThreadTask(ThreadTask);
 #endif
 }
 
@@ -2025,7 +2025,7 @@ int CServer::Run(ILogger* pLogger)
 
 	// intilized discord bot
 #ifdef CONF_DISCORD
-	m_pDiscord = new DiscordJob(this);
+	//m_pDiscord = new DiscordJob(this);
 #endif
 
 	// start game

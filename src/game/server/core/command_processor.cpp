@@ -63,7 +63,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 
 	// discord command
 #ifdef CONF_DISCORD
-	AddCommand("discord_connect", "s[DID]", ConChatDiscordConnect, pServer, "");
+	//AddCommand("discord_connect", "s[DID]", ConChatDiscordConnect, pServer, "");
 #endif
 }
 
@@ -125,31 +125,31 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 }
 
 #ifdef CONF_DISCORD
-void CCommandProcessor::ConChatDiscordConnect(IConsole::IResult* pResult, void* pUser)
-{
-	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
-
-	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
-
-	char aDiscordDID[32];
-	str_copy(aDiscordDID, pResult->GetString(0), sizeof(aDiscordDID));
-	if(str_length(aDiscordDID) > 30 || str_length(aDiscordDID) < 10)
-	{
-		pGS->Chat(ClientID, "Discord ID must contain 10-30 characters.");
-		return;
-	}
-
-	if(!string_to_number(aDiscordDID, 0, std::numeric_limits<int>::max()))
-	{
-		pGS->Chat(ClientID, "Discord ID can only contain numbers.");
-		return;
-	}
-
-	pGS->Core()->AccountManager()->DiscordConnect(ClientID, aDiscordDID);
-}
+//void CCommandProcessor::ConChatDiscordConnect(IConsole::IResult* pResult, void* pUser)
+//{
+//	const int ClientID = pResult->GetClientID();
+//	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+//
+//	CPlayer* pPlayer = pGS->m_apPlayers[ClientID];
+//	if(!pPlayer || !pPlayer->IsAuthed())
+//		return;
+//
+//	char aDiscordDID[32];
+//	str_copy(aDiscordDID, pResult->GetString(0), sizeof(aDiscordDID));
+//	if(str_length(aDiscordDID) > 30 || str_length(aDiscordDID) < 10)
+//	{
+//		pGS->Chat(ClientID, "Discord ID must contain 10-30 characters.");
+//		return;
+//	}
+//
+//	if(!string_to_number(aDiscordDID, 0, std::numeric_limits<int>::max()))
+//	{
+//		pGS->Chat(ClientID, "Discord ID can only contain numbers.");
+//		return;
+//	}
+//
+//	pGS->Core()->AccountManager()->DiscordConnect(ClientID, aDiscordDID);
+//}
 #endif
 
 void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)

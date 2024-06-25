@@ -178,9 +178,9 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	const int Rank = GetRank(pPlayer->Account()->GetID());
 	GS()->Chat(-1, "{} logged to account. Rank #{}", Server()->ClientName(ClientID), Rank);
 #ifdef CONF_DISCORD
-	char aLoginBuf[64];
-	str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in AccountManager ID %d", Server()->ClientName(ClientID), pPlayer->AccountManager()->GetID());
-	Server()->SendDiscordGenerateMessage(aLoginBuf, pPlayer->AccountManager()->GetID());
+	//char aLoginBuf[64];
+	//str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in AccountManager ID %d", Server()->ClientName(ClientID), pPlayer->AccountManager()->GetID());
+	//Server()->SendDiscordGenerateMessage(aLoginBuf, pPlayer->AccountManager()->GetID());
 #endif
 
 	/* Initialize static settings items' data */
@@ -220,20 +220,20 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 void CAccountManager::DiscordConnect(int ClientID, const char* pDID) const
 {
 #ifdef CONF_DISCORD
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
+	//CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	//if(!pPlayer)
+	//	return;
 
-	const CSqlString<64> cDiscordID = CSqlString<64>(pDID);
+	//const CSqlString<64> cDiscordID = CSqlString<64>(pDID);
 
-	// disable another account if it is connected to this discord
-	Database->Execute<DB::UPDATE>("tw_accounts_data", "DiscordID = 'null' WHERE DiscordID = '%s'", cDiscordID.cstr());
+	//// disable another account if it is connected to this discord
+	//Database->Execute<DB::UPDATE>("tw_accounts_data", "DiscordID = 'null' WHERE DiscordID = '%s'", cDiscordID.cstr());
 
-	// connect the player discord id
-	Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "DiscordID = '%s' WHERE ID = '%d'", cDiscordID.cstr(), pPlayer->AccountManager()->GetID());
+	//// connect the player discord id
+	//Database->Execute<DB::UPDATE, 1000>("tw_accounts_data", "DiscordID = '%s' WHERE ID = '%d'", cDiscordID.cstr(), pPlayer->AccountManager()->GetID());
 
-	GS()->Chat(ClientID, "Your Discord ID has been updated.");
-	GS()->Chat(ClientID, "Check the connection status in discord \"/connect\".");
+	//GS()->Chat(ClientID, "Your Discord ID has been updated.");
+	//GS()->Chat(ClientID, "Check the connection status in discord \"/connect\".");
 #endif
 }
 
