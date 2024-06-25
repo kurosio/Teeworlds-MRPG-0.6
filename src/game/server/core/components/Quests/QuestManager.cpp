@@ -536,8 +536,8 @@ void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) cons
 	// reset daily quests
 	for(auto& [QuestID, pQuest] : CPlayerQuest::Data()[clientID])
 	{
-		if((Period == WEEK_STAMP && pQuest->Info()->IsHasFlag(QUEST_FLAG_WEEKLY)) ||
-			(Period == DAILY_STAMP && pQuest->Info()->IsHasFlag(QUEST_FLAG_DAILY)))
+		if((Period == WEEK_STAMP && pQuest->Info()->IsHasFlag(QUEST_FLAG_TYPE_WEEKLY)) ||
+			(Period == DAILY_STAMP && pQuest->Info()->IsHasFlag(QUEST_FLAG_TYPE_DAILY)))
 		{
 			if(pQuest->IsAccepted() || pQuest->IsCompleted())
 			{
