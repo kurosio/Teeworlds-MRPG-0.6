@@ -363,7 +363,7 @@ public:
 	[[nodiscard]] GuildResult SetLeader(int AccountID);
 	[[nodiscard]] GuildResult BuyHouse(int HouseID);
 	void SellHouse();
-	void HandleTimePeriod(TIME_PERIOD Period);
+	void HandleTimePeriod(ETimePeriod Period);
 
 	// war
 	bool StartWar(CGuild* pTargetGuild);

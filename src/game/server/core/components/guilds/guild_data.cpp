@@ -155,7 +155,7 @@ void CGuild::SellHouse()
 	m_pHouse = nullptr;
 }
 
-void CGuild::HandleTimePeriod(TIME_PERIOD Period)
+void CGuild::HandleTimePeriod(ETimePeriod Period)
 {
 	// rent paid
 	if(Period == DAILY_STAMP && HasHouse())

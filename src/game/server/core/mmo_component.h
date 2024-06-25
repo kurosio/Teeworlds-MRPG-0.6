@@ -66,7 +66,7 @@ private:
      * 
      * @param Period The time period that occurred.
      */
-    virtual void OnTimePeriod(TIME_PERIOD Period) { return; }
+    virtual void OnTimePeriod(ETimePeriod Period) { return; }
 
     /**
      * @brief Called on each tick of the game.
@@ -128,7 +128,7 @@ private:
      * @param pPlayer A pointer to the player object.
      * @param Period The time period that occurred.
      */
-    virtual void OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period) { return; }
+    virtual void OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period) { return; }
 
     /**
      * @brief Called when a character tile is encountered.

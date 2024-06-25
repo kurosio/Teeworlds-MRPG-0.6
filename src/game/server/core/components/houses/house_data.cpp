@@ -145,7 +145,7 @@ void CHouse::UpdateText(int Lifetime) const
 	GS()->EntityManager()->Text(m_TextPosition, Lifetime - 5, pName);
 }
 
-void CHouse::HandleTimePeriod(TIME_PERIOD Period)
+void CHouse::HandleTimePeriod(ETimePeriod Period)
 {
 	// day event rent paid
 	if(Period == DAILY_STAMP && HasOwner())

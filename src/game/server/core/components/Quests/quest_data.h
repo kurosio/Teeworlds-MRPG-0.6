@@ -14,8 +14,9 @@ using QuestIdentifier = int;
 
 enum
 {
-	QFLAG_NONE = 0,
-	QFLAG_DAILY = 1 << 0,
+	QUEST_FLAG_NONE = 0,
+	QUEST_FLAG_DAILY = 1 << 0,
+	QUEST_FLAG_WEEKLY = 1 << 1,
 };
 
 // quest reward class
@@ -44,6 +45,7 @@ class CQuestDescription : public MultiworldIdentifiableData < std::map< int, CQu
 	std::string m_Story {};
 	CQuestReward m_Reward {};
 	int m_Flags {};
+	std::optional<int> m_NextQuestID {};
 
 public:
 	CQuestDescription() = default;
@@ -55,23 +57,27 @@ public:
 		return m_pData[ID] = pData;
 	}
 
-	void Init(const std::string& Name, const std::string& Story, int Gold, int Exp, const DBSet& flagSet)
+	void Init(const std::string& Name, const std::string& Story, int Gold, int Exp, std::optional<int> NextQuestID, const DBSet& FlagSet)
 	{
 		m_Name = Name;
 		m_Story = Story;
+		m_NextQuestID = NextQuestID;
 		m_Reward.Init(Exp, Gold);
-		InitFlags(flagSet);
+		InitFlags(FlagSet);
 	}
 
-	void InitFlags(const DBSet& flagSet)
+	void InitFlags(const DBSet& FlagSet)
 	{
-		if(flagSet.hasSet("Daily"))
-			m_Flags |= QFLAG_DAILY;
+		if(FlagSet.hasSet("Daily"))
+			m_Flags |= QUEST_FLAG_DAILY;
+		if(FlagSet.hasSet("Weekly"))
+			m_Flags |= QUEST_FLAG_WEEKLY;
 	}
 
 	QuestIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_Name.c_str(); }
 	const char* GetStory() const { return m_Story.c_str(); }
+	std::optional<int> GetNextQuestID() const { return m_NextQuestID; }
 	int GetStoryCurrentPos() const;
 	int GetStoryQuestsNum() const;
 
@@ -79,7 +85,6 @@ public:
 
 	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem);
 	bool IsHasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
-	bool IsDaily() const { return IsHasFlag(QFLAG_DAILY); }
 
 	// steps with array bot data on active step
 	std::map < int, std::deque<CQuestStepBase> > m_vSteps;

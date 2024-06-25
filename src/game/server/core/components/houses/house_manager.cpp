@@ -46,7 +46,7 @@ void CHouseManager::OnTick()
 	}
 }
 
-void CHouseManager::OnTimePeriod(TIME_PERIOD Period)
+void CHouseManager::OnTimePeriod(ETimePeriod Period)
 {
 	for(auto& p : CHouse::Data())
 		p->HandleTimePeriod(Period);

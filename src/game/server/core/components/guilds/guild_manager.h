@@ -20,7 +20,7 @@ class CGuildManager : public MmoComponent
 	bool OnCharacterTile(CCharacter* pChr) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
-	void OnTimePeriod(TIME_PERIOD Period) override;
+	void OnTimePeriod(ETimePeriod Period) override;
 
 	void InitWars() const;
 

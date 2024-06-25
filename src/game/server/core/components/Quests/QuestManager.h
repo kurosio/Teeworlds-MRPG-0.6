@@ -40,7 +40,7 @@ class CQuestManager : public MmoComponent
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 	// This function is called when a time period is handled by a player
-	void OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period) override;
+	void OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period) override;
 
 public:
 	// Check if a given QuestID is valid for a given ClientID
@@ -91,12 +91,12 @@ public:
 	// Input: Pos - a 2D vector representing the position
 	// Return: a pointer to a CQuestsBoard object
 	CQuestsBoard* GetBoardByPos(vec2 Pos) const;
-	void ResetDailyQuests(CPlayer* pPlayer) const;
+	void ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) const;
 
 
 	void Update(CPlayer* pPlayer);
-	void TryAcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);
-	void AcceptNextStoryQuestStep(CPlayer* pPlayer);
+	void TryAcceptNextQuestChain(CPlayer* pPlayer, int BaseQuestID) const;
+	void TryAcceptNextQuestAll(CPlayer* pPlayer) const;
 	int GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const;
 	int GetCountComplectedQuests(int ClientID) const;
 };

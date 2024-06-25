@@ -421,7 +421,7 @@ void CMmoController::HandleTimePeriod() const
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				TIME_PERIOD timePeriod = static_cast<TIME_PERIOD>(periods);
+				ETimePeriod timePeriod = static_cast<ETimePeriod>(periods);
 				component->OnTimePeriod(timePeriod);
 			}
 		}
@@ -468,7 +468,7 @@ void CMmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				component->OnPlayerTimePeriod(pPlayer, static_cast<TIME_PERIOD>(periods));
+				component->OnPlayerTimePeriod(pPlayer, static_cast<ETimePeriod>(periods));
 			}
 		}
 	}

@@ -39,7 +39,7 @@ enum class ClassGroup : int
 };
 
 // time period
-enum TIME_PERIOD
+enum ETimePeriod
 {
 	DAILY_STAMP,
 	WEEK_STAMP,

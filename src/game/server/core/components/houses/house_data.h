@@ -219,7 +219,7 @@ public:
 	void Buy(CPlayer* pPlayer);
 	void Sell();
 	void UpdateText(int Lifetime) const;
-	void HandleTimePeriod(TIME_PERIOD Period);
+	void HandleTimePeriod(ETimePeriod Period);
 };
 
 #endif

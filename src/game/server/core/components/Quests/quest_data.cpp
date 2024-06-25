@@ -66,33 +66,37 @@ bool CPlayerQuest::HasUnfinishedSteps() const
 
 bool CPlayerQuest::Accept()
 {
+	// check valid player and quest state
 	CPlayer* pPlayer = GetPlayer();
 	if(m_State != QuestState::NO_ACCEPT || !pPlayer)
 		return false;
 
-	// Initialize the quest
+	// initialize
 	m_State = QuestState::ACCEPT;
 	m_Step = 1;
 	m_Datafile.Create();
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Account()->GetID(), m_State);
 
-	// Send quest information to the player
+	// send information
 	int ClientID = GetPlayer()->GetCID();
-	if(!Info()->IsDaily())
+	if(Info()->IsHasFlag(QUEST_FLAG_DAILY))
+	{
+		GS()->Chat(ClientID, "Daily quest: '{}' accepted!", Info()->GetName());
+	}
+	else if(Info()->IsHasFlag(QUEST_FLAG_WEEKLY))
+	{
+		GS()->Chat(ClientID, "Weekly quest: '{}' accepted!", Info()->GetName());
+	}
+	else
 	{
 		const int StoryQuestsNum = Info()->GetStoryQuestsNum();
 		const int QuestCurrentPos = Info()->GetStoryCurrentPos();
-		GS()->Chat(ClientID, "{} Quest {}({} of {}) accepted {}",
+		GS()->Chat(ClientID, "{} Quest {} accepted {}",
 			Utils::Aesthetic::B_PILLAR(3, false), Info()->GetStory(), QuestCurrentPos, StoryQuestsNum, Utils::Aesthetic::B_PILLAR(3, true));
 		GS()->Chat(ClientID, "Name: \"{}\"", Info()->GetName());
 		GS()->Chat(ClientID, "Reward: \"Gold {}, Experience {}\".", Info()->Reward().GetGold(), Info()->Reward().GetExperience());
 	}
-	else
-	{
-		GS()->Chat(ClientID, "Daily quest: '{}' accepted!", Info()->GetName());
-	}
 
-	// effect's
 	GS()->Broadcast(ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Accepted");
 	GS()->CreatePlayerSound(ClientID, SOUND_CTF_GRAB_EN);
 	return true;
@@ -100,10 +104,12 @@ bool CPlayerQuest::Accept()
 
 void CPlayerQuest::Refuse()
 {
+	// check valid player and quest state
 	CPlayer* pPlayer = GetPlayer();
 	if(m_State != QuestState::ACCEPT || !pPlayer)
 		return;
 
+	// refuse quest
 	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Account()->GetID());
 	Reset();
 }
@@ -118,12 +124,12 @@ void CPlayerQuest::Reset()
 
 void CPlayerQuest::UpdateStepPosition()
 {
-	// check whether the active steps is complete
+	// check player valid and unfinished steps
 	CPlayer* pPlayer = GetPlayer();
 	if(!pPlayer || HasUnfinishedSteps())
 		return;
 
-	// Update step
+	// update
 	m_Step++;
 	Info()->PreparePlayerSteps(m_Step, m_ClientID, &m_vSteps);
 	if(!m_vSteps.empty())
@@ -133,38 +139,40 @@ void CPlayerQuest::UpdateStepPosition()
 		return;
 	}
 
-	// Finish quest because there are no next steps
+	// finish quest
 	m_State = QuestState::FINISHED;
 	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Account()->GetID());
 	m_Datafile.Delete();
 
-	// Add the reward gold to the player's money and experience
+	// apply reward for player
 	Info()->Reward().ApplyReward(pPlayer);
 
-	// Check if indicating a daily quest
-	if(Info()->IsDaily())
+	// send information
+	if(Info()->IsHasFlag(QUEST_FLAG_DAILY))
 	{
 		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestAlliedSealsReward);
 		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed daily quest ({})", Info()->GetName());
 	}
+	else if(Info()->IsHasFlag(QUEST_FLAG_WEEKLY))
+	{
+		GS()->Chat(-1, "{} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed weekly quest ({})", Info()->GetName());
+	}
 	else
 	{
 		GS()->Chat(-1, "{} completed the \"{} - {}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed ({} - {})", Info()->GetStory(), Info()->GetName());
-
-		// Notify the opened new zones and dungeons after completing the quest
 		GS()->Core()->DungeonManager()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
 	}
 
-	// save player stats and accept next story quest
-	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-	GS()->Core()->QuestManager()->TryAcceptNextStoryQuest(pPlayer, m_ID);
-
-	// effect's
 	GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Complete");
 	GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
 	GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
+
+	// save player stats and accept next story quest
+	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
+	GS()->Core()->QuestManager()->TryAcceptNextQuestChain(pPlayer, m_ID);
 }
 
 void CPlayerQuest::Update()

@@ -18,7 +18,7 @@ class CAccountManager : public MmoComponent
 	void OnClientReset(int ClientID) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
-	void OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period) override;
+	void OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period) override;
 
     struct AccBan
     {

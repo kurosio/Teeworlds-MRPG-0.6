@@ -976,7 +976,7 @@ bool CGuildManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-void CGuildManager::OnTimePeriod(TIME_PERIOD Period)
+void CGuildManager::OnTimePeriod(ETimePeriod Period)
 {
 	// handle time period for each guilds
 	for(auto& pGuild : CGuild::Data())

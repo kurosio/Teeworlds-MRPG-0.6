@@ -437,13 +437,13 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	return false;
 }
 
-void CAccountManager::OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
+void CAccountManager::OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period)
 {
 	// Get the client ID of the player
 	int ClientID = pPlayer->GetCID();
 
 	// If the time period is set to DAILY_STAMP
-	if(Period == TIME_PERIOD::DAILY_STAMP)
+	if(Period == ETimePeriod::DAILY_STAMP)
 	{
 		pPlayer->Account()->ResetDailyChairGolds();
 		GS()->Chat(ClientID, "The gold limit in the chair has been updated.");
