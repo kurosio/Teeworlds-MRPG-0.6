@@ -6,6 +6,47 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 
+void CQuestReward::ApplyReward(CPlayer* pPlayer) const
+{
+	pPlayer->Account()->AddExperience(m_Experience);
+	pPlayer->Account()->AddGold(m_Gold);
+}
+
+int CQuestDescription::GetStoryCurrentPos() const
+{
+	return (int)std::ranges::count_if(Data(), [this](std::pair< const int, CQuestDescription*>& pItem)
+	{
+		return pItem.second->m_Story == m_Story && m_ID >= pItem.first;
+	});
+}
+
+int CQuestDescription::GetStoryQuestsNum() const
+{
+	return (int)std::ranges::count_if(Data(), [this](std::pair< const int, CQuestDescription*>& pItem)
+	{
+		return pItem.second->m_Story == m_Story;
+	});
+}
+
+void CQuestDescription::PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem)
+{
+	// clear old steps
+	if(!(*pElem).empty())
+		(*pElem).clear();
+
+	// prepare new steps
+	for(const auto& Step : m_vSteps[StepPos])
+	{
+		CQuestStep Base;
+		Base.m_ClientID = ClientID;
+		Base.m_Bot = Step.m_Bot;
+		Base.m_StepComplete = false;
+		Base.m_ClientQuitting = false;
+		Base.m_aMobProgress.clear();
+		(*pElem).push_back(std::move(Base));
+	}
+}
+
 CGS* CPlayerQuest::GS() const { return dynamic_cast<CGS*>(Instance::GameServerPlayer(m_ClientID)); }
 CPlayer* CPlayerQuest::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
 CQuestDescription* CPlayerQuest::Info() const { return CQuestDescription::Data()[m_ID]; }
@@ -40,11 +81,11 @@ bool CPlayerQuest::Accept()
 	if(!Info()->IsDaily())
 	{
 		const int StoryQuestsNum = Info()->GetStoryQuestsNum();
-		const int QuestCurrentPos = Info()->GetStoryQuestPosition();
+		const int QuestCurrentPos = Info()->GetStoryCurrentPos();
 		GS()->Chat(ClientID, "{} Quest {}({} of {}) accepted {}",
 			Utils::Aesthetic::B_PILLAR(3, false), Info()->GetStory(), QuestCurrentPos, StoryQuestsNum, Utils::Aesthetic::B_PILLAR(3, true));
 		GS()->Chat(ClientID, "Name: \"{}\"", Info()->GetName());
-		GS()->Chat(ClientID, "Reward: \"Gold {}, Experience {}\".", Info()->GetRewardGold(), Info()->GetRewardExp());
+		GS()->Chat(ClientID, "Reward: \"Gold {}, Experience {}\".", Info()->Reward().GetGold(), Info()->Reward().GetExperience());
 	}
 	else
 	{
@@ -98,8 +139,7 @@ void CPlayerQuest::UpdateStepPosition()
 	m_Datafile.Delete();
 
 	// Add the reward gold to the player's money and experience
-	pPlayer->Account()->AddGold(Info()->GetRewardGold());
-	pPlayer->Account()->AddExperience(Info()->GetRewardExp());
+	Info()->Reward().ApplyReward(pPlayer);
 
 	// Check if indicating a daily quest
 	if(Info()->IsDaily())

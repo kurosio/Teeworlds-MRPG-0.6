@@ -4,7 +4,7 @@
 #define GAME_SERVER_COMPONENT_QUEST_CORE_H
 #include <game/server/core/mmo_component.h>
 
-#include "QuestDailyBoardData.h"
+#include "quest_board_data.h"
 #include "quest_data.h"
 
 /*
@@ -85,12 +85,14 @@ public:
 
 	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
 	void ShowWantedPlayersBoard(CPlayer* pPlayer) const;
-	void ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pBoard) const;
+	void ShowQuestsBoard(CPlayer* pPlayer, CQuestsBoard* pBoard) const;
 
-	// Function: GetDailyBoard
+	// Function: GetBoardByPos
 	// Input: Pos - a 2D vector representing the position
-	// Return: a pointer to a CQuestsDailyBoard object
-	CQuestsDailyBoard* GetDailyBoard(vec2 Pos) const;
+	// Return: a pointer to a CQuestsBoard object
+	CQuestsBoard* GetBoardByPos(vec2 Pos) const;
+	void ResetDailyQuests(CPlayer* pPlayer) const;
+
 
 	void Update(CPlayer* pPlayer);
 	void TryAcceptNextStoryQuest(CPlayer* pPlayer, int CheckQuestID);

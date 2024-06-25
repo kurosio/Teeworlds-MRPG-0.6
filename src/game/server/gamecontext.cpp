@@ -97,7 +97,6 @@ CPlayer* CGS::GetPlayerByUserID(int AccountID) const
 CItemDescription* CGS::GetItemInfo(ItemIdentifier ItemID) const
 {
 	dbg_assert(CItemDescription::Data().find(ItemID) != CItemDescription::Data().end(), "invalid referring to the CItemDescription");
-
 	return &CItemDescription::Data()[ItemID];
 }
 
@@ -109,15 +108,13 @@ CQuestDescription* CGS::GetQuestInfo(QuestIdentifier QuestID) const
 CAttributeDescription* CGS::GetAttributeInfo(AttributeIdentifier ID) const
 {
 	dbg_assert(CAttributeDescription::Data().find(ID) != CAttributeDescription::Data().end(), "invalid referring to the CAttributeDescription");
-
 	return CAttributeDescription::Data()[ID].get();
 }
 
-CQuestsDailyBoard* CGS::GetQuestDailyBoard(int ID) const
+CQuestsBoard* CGS::GetQuestBoard(int ID) const
 {
-	dbg_assert(CQuestsDailyBoard::Data().find(ID) != CQuestsDailyBoard::Data().end(), "invalid referring to the CQuestsDailyBoard");
-
-	return &CQuestsDailyBoard::Data()[ID];
+	dbg_assert(CQuestsBoard::Data().find(ID) != CQuestsBoard::Data().end(), "invalid referring to the CQuestsBoard");
+	return CQuestsBoard::Data()[ID];
 }
 
 CWorldData* CGS::GetWorldData(int ID) const

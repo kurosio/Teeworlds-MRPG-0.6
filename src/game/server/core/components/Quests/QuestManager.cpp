@@ -4,63 +4,51 @@
 
 #include <game/server/gamecontext.h>
 
-constexpr auto TW_QUESTS_DAILY_BOARD = "tw_quests_daily_boards";
-constexpr auto TW_QUESTS_DAILY_BOARDS_LIST = "tw_quests_daily_board_list";
-
-// This function is called during the initialization of the Quest Manager object.
 void CQuestManager::OnInit()
 {
-	// Execute a SELECT query to retrieve all columns from the "tw_quests_list" table
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_quests_list");
 	while(pRes->next())
 	{
-		// Retrieve the values for each column from the current row of the result set
+		// initialize variables
 		QuestIdentifier ID = pRes->getInt("ID");
 		std::string Name = pRes->getString("Name").c_str();
 		std::string Story = pRes->getString("StoryLine").c_str();
+		DBSet FlagSet = std::string(pRes->getString("Flags").c_str());
 		int Gold = pRes->getInt("Money");
 		int Exp = pRes->getInt("Exp");
 
-		// Initialize a CQuestDescription object with the retrieved values
-		CQuestDescription::CreateElement(ID)->Init(Name, Story, Gold, Exp);
+		// create new element
+		CQuestDescription::CreateElement(ID)->Init(Name, Story, Gold, Exp, FlagSet);
 	}
 
-	// Create a container to store the daily quest data
-	std::unordered_map< int, CQuestsDailyBoard::ContainerDailyQuests > DailyQuests;
-
-	// Execute a SELECT query on the database and store the result pointer in pResBoard
-	ResultPtr pResBoard = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARD);
+	// initialize boards
+	ResultPtr pResBoard = Database->Execute<DB::SELECT>("*", TW_QUEST_BOARDS_TABLE);
 	while(pResBoard->next())
 	{
-		// Retrieve the values for each column from the current row of the result set
-		QuestDailyBoardIdentifier ID = pResBoard->getInt("ID");
+		// initialize variables
+		int ID = pResBoard->getInt("ID");
 		std::string Name = pResBoard->getString("Name").c_str();
 		vec2 Pos = vec2((float)pResBoard->getInt("PosX"), (float)pResBoard->getInt("PosY"));
 		int WorldID = pResBoard->getInt("WorldID");
 
-		// Initialize the daily quest with the server parameters
-		CQuestsDailyBoard(ID).Init(Name, Pos, WorldID);
+		// create new element
+		CQuestsBoard::CreateElement(ID)->Init(Name, Pos, WorldID);
 	}
 
-	// Execute a SELECT query on the database and store the result pointer in pResDailyQuest
-	ResultPtr pResDailyQuest = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARDS_LIST);
+	// initialize board quests
+	std::unordered_map< int, std::deque<CQuestDescription*> > vDailyInitializeList;
+	ResultPtr pResDailyQuest = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARD_LIST);
 	while(pResDailyQuest->next())
 	{
-		// Retrieve the values for each column from the current row of the result set
+		// initialize variables
 		QuestIdentifier QuestID = pResDailyQuest->getInt("QuestID");
-		QuestDailyBoardIdentifier BoardID = pResDailyQuest->getInt("DailyBoardID");
+		int BoardID = pResDailyQuest->getInt("DailyBoardID");
 
-		// Push the quest information into the corresponding daily quest container
-		CQuestDescription* pQuestInfo = GS()->GetQuestInfo(QuestID);
-		pQuestInfo->MarkDaily();
-		DailyQuests[BoardID].push_back(pQuestInfo);
+		// add quest to board
+		vDailyInitializeList[BoardID].push_back(GS()->GetQuestInfo(QuestID));
 	}
-
-	// Update the daily quest information for each daily quest board
-	for(auto& [BoardID, DataContainer] : DailyQuests)
-	{
-		CQuestsDailyBoard::Data()[BoardID].m_vpDailyQuests = DataContainer;
-	}
+	for(auto& [BoardID, DataContainer] : vDailyInitializeList)
+		CQuestsBoard::Data()[BoardID]->m_vpDailyQuests = DataContainer;
 }
 
 // This method is called when a player's account is initialized.
@@ -122,8 +110,8 @@ bool CQuestManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_DAILY_BOARD)
 	{
 		// Get the daily board for the player character's position
-		CQuestsDailyBoard* pDailyBoard = GetDailyBoard(pChr->m_Core.m_Pos);
-		ShowDailyQuestsBoard(pChr->GetPlayer(), pDailyBoard);
+		CQuestsBoard* pDailyBoard = GetBoardByPos(pChr->m_Core.m_Pos);
+		ShowQuestsBoard(pChr->GetPlayer(), pDailyBoard);
 
 		// Show wanted players board
 		ShowWantedPlayersBoard(pChr->GetPlayer());
@@ -198,7 +186,7 @@ bool CQuestManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	if(PPSTR(pCmd, "DAILY_QUEST_STATE") == 0)
 	{
 		// ReasonNumber the daily quest board for Extra2
-		CQuestsDailyBoard* pBoard = GS()->GetQuestDailyBoard(Extra2);
+		CQuestsBoard* pBoard = GS()->GetQuestBoard(Extra2);
 
 		// If the daily quest board is not found, return true
 		if(!pBoard)
@@ -237,18 +225,10 @@ void CQuestManager::OnPlayerTimePeriod(CPlayer* pPlayer, TIME_PERIOD Period)
 	// Get the client ID of the player
 	int ClientID = pPlayer->GetCID();
 
-	// If the time period is set to DAILY_STAMP
-	if(Period == TIME_PERIOD::DAILY_STAMP)
+	// daily reset daily quests
+	if(Period == DAILY_STAMP)
 	{
-		// Reset the daily quests for the specified player
-		for(auto& p : CQuestsDailyBoard::Data())
-		{
-			p.second.ClearDailyQuests(pPlayer);
-		}
-
-		// Call the UpdateVotes function to update the player's voting menu and send chat message
-		GS()->Chat(ClientID, "The daily quests have been updated.");
-		GS()->Chat(ClientID, "Visit the quest board for new quests!");
+		ResetDailyQuests(pPlayer);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 	}
 }
@@ -351,7 +331,7 @@ void CQuestManager::ShowQuestID(CPlayer* pPlayer, int QuestID) const
 	// Get the size of the quest's story and the current position in the story
 	// Display the quest information to the player using the AVD() function
 	const int QuestsSize = pQuestInfo->GetStoryQuestsNum();
-	const int QuestPosition = pQuestInfo->GetStoryQuestPosition();
+	const int QuestPosition = pQuestInfo->GetStoryCurrentPos();
 	VoteWrapper(pPlayer->GetCID()).AddMenu(MENU_JOURNAL_QUEST_INFORMATION, QuestID, "{}/{} {}: {}",
 		QuestPosition, QuestsSize, pQuestInfo->GetStory(), pQuestInfo->GetName());
 }
@@ -478,7 +458,7 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 	}
 }
 
-void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pBoard) const
+void CQuestManager::ShowQuestsBoard(CPlayer* pPlayer, CQuestsBoard* pBoard) const
 {
 	// Get the client's ID
 	const int ClientID = pPlayer->GetCID();
@@ -513,8 +493,8 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 		VQuest.Add("Reward:");
 		{
 			VQuest.BeginDepth();
-			VQuest.Add("Gold: {}", pDailyQuestInfo->GetRewardGold());
-			VQuest.Add("Exp: {}", pDailyQuestInfo->GetRewardExp());
+			VQuest.Add("Gold: {}", pDailyQuestInfo->Reward().GetGold());
+			VQuest.Add("Exp: {}", pDailyQuestInfo->Reward().GetExperience());
 			VQuest.Add("{}: {}", GS()->GetItemInfo(itAlliedSeals)->GetName(), g_Config.m_SvDailyQuestAlliedSealsReward);
 			VQuest.EndDepth();
 		}
@@ -526,18 +506,41 @@ void CQuestManager::ShowDailyQuestsBoard(CPlayer* pPlayer, CQuestsDailyBoard* pB
 	VoteWrapper::AddLine(ClientID);
 }
 
-// The function takes a parameter "Pos" of type "vec2" and returns a pointer to "CQuestsDailyBoard" object
-CQuestsDailyBoard* CQuestManager::GetDailyBoard(vec2 Pos) const
+CQuestsBoard* CQuestManager::GetBoardByPos(vec2 Pos) const
 {
-	// Iterate through the map "CQuestsDailyBoard::Data()"
-	for(auto it = CQuestsDailyBoard::Data().begin(); it != CQuestsDailyBoard::Data().end(); ++it)
+	for(auto& [key, board] : CQuestsBoard::Data())
 	{
-		// Check if the distance between the position of the current "CQuestsDailyBoard" object and the given "Pos" is less than 200
-		if(distance(it->second.GetPos(), Pos) < 200)
-			return &(it->second);
+		if(distance(board->GetPos(), Pos) < 200)
+			return board;
 	}
 
 	return nullptr;
+}
+
+void CQuestManager::ResetDailyQuests(CPlayer* pPlayer) const
+{
+	// initialize variables
+	int clientID = pPlayer->GetCID();
+	int accountID = pPlayer->Account()->GetID();
+	std::string questDailyCollection {};
+
+	// reset daily quests
+	for(auto& [ID, pQuest] : CPlayerQuest::Data()[clientID])
+	{
+		if(pQuest->Info()->IsHasFlag(QFLAG_DAILY) && (pQuest->IsAccepted() || pQuest->IsCompleted()))
+		{
+			questDailyCollection += std::to_string(ID) + ",";
+			pQuest->Reset();
+		}
+	}
+
+	// is not empty try remove from database
+	if(!questDailyCollection.empty())
+	{
+		questDailyCollection.pop_back();
+		Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID IN (%s) AND UserID = '%d'", questDailyCollection.c_str(), accountID);
+		GS()->Chat(clientID, "The daily quests have been updated.");
+	}
 }
 
 void CQuestManager::Update(CPlayer* pPlayer)

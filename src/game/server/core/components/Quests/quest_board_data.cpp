@@ -1,11 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "QuestDailyBoardData.h"
+#include "quest_board_data.h"
 
 #include <game/server/player.h>
 
 // This function calculates the number of available daily quests for a player
-int CQuestsDailyBoard::QuestsAvailables(CPlayer* pPlayer)
+int CQuestsBoard::QuestsAvailables(CPlayer* pPlayer)
 {
 	// Initialize a count variable
 	int Count = std::count_if(m_vpDailyQuests.begin(), m_vpDailyQuests.end(), [pPlayer](const auto& p)
@@ -21,7 +21,7 @@ int CQuestsDailyBoard::QuestsAvailables(CPlayer* pPlayer)
 }
 
 // ClearDailyQuests function is a member function of the CQuestsDailyBoard class
-void CQuestsDailyBoard::ClearDailyQuests(CPlayer* pPlayer) const
+void CQuestsBoard::ClearDailyQuests(CPlayer* pPlayer) const
 {
 	// Iterate through each item in the m_vpDailyQuests
 	for(auto& p : m_vpDailyQuests)

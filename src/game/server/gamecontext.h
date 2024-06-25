@@ -73,7 +73,7 @@ public:
 	class CItemDescription* GetItemInfo(ItemIdentifier ItemID) const;
 	CQuestDescription* GetQuestInfo(QuestIdentifier QuestID) const;
 	class CAttributeDescription* GetAttributeInfo(AttributeIdentifier ID) const;
-	class CQuestsDailyBoard* GetQuestDailyBoard(int ID) const;
+	class CQuestsBoard* GetQuestBoard(int ID) const;
 	class CWorldData* GetWorldData(int ID = -1) const;
 	class CEidolonInfoData* GetEidolonByItemID(ItemIdentifier ItemID) const;
 	void UpdateDiscordStatus();

@@ -69,124 +69,88 @@ namespace mrpgstd
 // aesthetic utils (TODO: remove)
 namespace Utils::Aesthetic
 {
-	namespace Impl
-	{
-		struct AestheticImpl
-		{
-			AestheticImpl() = default;
-			AestheticImpl(const char* pUnique, const char* pRUnique, const char* pSnake, int SnakesIter, bool Post)
-			{
-				if(pSnake != nullptr)
-				{
-					m_Detail.m_Post = Post;
-					m_Detail.m_SnakesIter = SnakesIter;
-					str_copy(m_Detail.aBufSnakeIter, pSnake, sizeof(m_Detail.aBufSnakeIter));
-					for(int i = 0; i < SnakesIter; i++) { str_append(m_Detail.aBufSnake, pSnake, sizeof(m_Detail.aBufSnake)); }
-					if(Post && m_Detail.aBufSnake[0] != '\0') { str_utf8_reverse(m_Detail.aBufSnake); }
-				}
-				if(pUnique != nullptr) { str_append(m_Detail.aBufUnique, pUnique, sizeof(m_Detail.aBufUnique)); }
-				if(pRUnique != nullptr) { str_append(m_Detail.aBufRUnique, pRUnique, sizeof(m_Detail.aBufRUnique)); }
-				if(Post) { str_format(m_aData, sizeof(m_aData), "%s%s%s", m_Detail.aBufRUnique, m_Detail.aBufSnake, m_Detail.aBufUnique); }
-				else { str_format(m_aData, sizeof(m_aData), "%s%s%s", m_Detail.aBufUnique, m_Detail.aBufSnake, m_Detail.aBufRUnique); }
-			}
-			struct Detail
-			{
-				char aBufUnique[64] {};
-				char aBufSnake[128] {};
-				char aBufRUnique[64] {};
-				char aBufSnakeIter[64] {};
-				int m_SnakesIter {};
-				bool m_Post {};
-			};
-			Detail m_Detail {};
-			char m_aData[256] {};
-		};
-
-		struct CompareAestheticDetail
-		{
-			bool operator()(const AestheticImpl::Detail& D1, const char* pUnique, const char* pRUnique, const char* pSnake, int SnakesIter, bool Post) const
-			{
-				bool cUnique = !pUnique || std::string(D1.aBufUnique) == pUnique;
-				bool cRUnique = !pRUnique || std::string(D1.aBufRUnique) == pRUnique;
-				bool cSnake = !pSnake || std::string(D1.aBufSnakeIter) == pSnake;
-				return cUnique && cRUnique && cSnake && D1.m_SnakesIter == SnakesIter && D1.m_Post == Post;
-			}
-		};
-		inline ska::flat_hash_set<AestheticImpl*> m_aResultCollection {};
-
-		inline AestheticImpl* AestheticText(const char* pUnique, const char* pRUnique, const char* pSnake, int SnakesIter, bool Post)
-		{
-			const auto iter = std::find_if(m_aResultCollection.begin(), m_aResultCollection.end(),
-				[&](const AestheticImpl* pAest)
-			{
-				return CompareAestheticDetail {}(pAest->m_Detail, pUnique, pRUnique, pSnake, SnakesIter, Post);
-			});
-			if(iter == m_aResultCollection.end())
-			{
-				auto* pData = new AestheticImpl(pUnique ? pUnique : "\0", pRUnique ? pRUnique : "\0", pSnake ? pSnake : "\0", SnakesIter, Post);
-				m_aResultCollection.emplace(pData);
-				return pData;
-			}
-			return *iter;
-		}
-	};
-
 	/* BORDURES */
-	// Example: ┏━━━━━ ━━━━━┓
-	inline const char* B_DEFAULT_TOP(int iter, bool post) {
-		return Impl::AestheticText(post ? "\u2513" : "\u250F", nullptr, "\u2501", iter, post)->m_aData;
-	}
 	// Example: ───※ ·· ※───
-	inline const char* B_PILLAR(int iter, bool post) {
-		return Impl::AestheticText(nullptr, post ? "\u00B7 \u203B" : "\u203B \u00B7", "\u2500", iter, post)->m_aData;
+	inline std::string B_PILLAR(int iter, bool right)
+	{
+		std::string result {};
+		if(right) { result += "\u203B \u00B7"; }
+		for(int i = 0; i < iter; i++) { result += "\u2500"; }
+		if(!right) { result += "\u00B7 \u203B"; }
+		return std::move(result);
 	}
+
+	// Example: ┏━━━━━ ━━━━━┓
+	inline std::string B_DEFAULT_TOP(int iter, bool right)
+	{
+		std::string result;
+		if(!right) { result += "\u250F"; }
+		for(int i = 0; i < iter; i++) { result += "\u2501"; }
+		if(right) { result += "\u2513"; }
+		return std::move(result);
+	}
+
 	// Example: ✯¸.•*•✿✿•*•.¸✯
-	inline const char* B_FLOWER(bool post) {
-		return Impl::AestheticText(post ? "\u273F\u2022*\u2022.\u00B8\u272F" : "\u272F\u00B8.\u2022*\u2022\u273F", nullptr, nullptr, 0, false)->m_aData;
+	inline std::string B_FLOWER(bool right)
+	{
+		return right ? "\u273F\u2022*\u2022.\u00B8\u272F" : "\u272F\u00B8.\u2022*\u2022\u273F";
 	}
+
 	// Example: ──⇌ • • ⇋──
-	inline const char* B_CONFIDENT(int iter, bool post) {
-		return Impl::AestheticText(nullptr, post ? "\u2022 \u21CB" : "\u21CC \u2022", "\u2500", iter, post)->m_aData;
-	}
-	// Example: •·.·''·.·•Text•·.·''·.·
-	inline const char* B_IRIDESCENT(int iter, bool post) {
-		return Impl::AestheticText(post ? "''\u00B7.\u00B7" : "\u2022\u00B7.\u00B7''", "\u2022", "'\u00B7.\u00B7'", iter, post)->m_aData;
+	inline std::string B_CONFIDENT(int iter, bool right)
+	{
+		std::string result;
+		if(right) { result += " \u21CC \u2022"; }
+		for(int i = 0; i < iter; i++) { result += "\u2500"; }
+		if(!right) { result += "\u2022 \u21CB"; }
+		return std::move(result);
 	}
 
 	/* LINES */
 	// Example: ━━━━━━
-	inline const char* L_DEFAULT(int iter) {
-		return Impl::AestheticText(nullptr, nullptr, "\u2501", iter, false)->m_aData;
+	inline std::string L_DEFAULT(int iter)
+	{
+		std::string result;
+		for(int i = 0; i < iter; i++) { result += "\u2501"; }
+		return std::move(result);
 	}
 	// Example: ︵‿︵‿
-	inline const char* L_WAVES(int iter, bool post) {
-		return Impl::AestheticText(nullptr, nullptr, "\uFE35\u203F", iter, post)->m_aData;
+	inline std::string L_WAVES(int iter, bool post)
+	{
+		std::string result;
+		for(int i = 0; i < iter; i++) { result += "\uFE35\u203F"; }
+		return std::move(result);
 	}
 
 	/* WRAP LINES */
 	// Example:  ────⇌ • • ⇋────
-	inline std::string SWL_CONFIDENT(int iter) {
-		return std::string(B_CONFIDENT(iter, false)) + std::string(B_CONFIDENT(iter, true));
+	inline std::string SWL_CONFIDENT(int iter)
+	{
+		return B_CONFIDENT(iter, false) + B_CONFIDENT(iter, true);
 	}
 	// Example: ───※ ·· ※───
-	inline std::string SWL_PILAR(int iter) {
-		return std::string(B_PILLAR(iter, false)) + std::string(B_PILLAR(iter, true));
+	inline std::string SWL_PILAR(int iter)
+	{
+		return B_PILLAR(iter, false) + B_PILLAR(iter, true);
 	}
 
 	/* QUOTES */
 	// Example: -ˏˋ Text here ˊˎ
-	inline const char* Q_DEFAULT(bool post) {
-		return Impl::AestheticText(post ? "\u02CA\u02CE" : "-\u02CF\u02CB", nullptr, nullptr, 0, post)->m_aData;
+	inline std::string Q_DEFAULT(bool right)
+	{
+		return right ? "\u02CA\u02CE" : "-\u02CF\u02CB";
 	}
 
 	/* SYMBOL SMILIES */
 	// Example: 『•✎•』
-	inline const char* S_EDIT(const char* pBody) {
-		return Impl::AestheticText(std::string("\u300E " + std::string(pBody) + " \u300F").c_str(), nullptr, nullptr, 0, false)->m_aData;
+	inline std::string S_EDIT(const char* pBody)
+	{
+		return std::string("\u300E " + std::string(pBody) + " \u300F");
 	}
 	// Example: ᴄᴏᴍᴘʟᴇᴛᴇ!
-	inline const char* S_COMPLETE() {
-		return Impl::AestheticText("\u1D04\u1D0F\u1D0D\u1D18\u029F\u1D07\u1D1B\u1D07!", nullptr, nullptr, 0, false)->m_aData;
+	inline std::string S_COMPLETE()
+	{
+		return "\u1D04\u1D0F\u1D0D\u1D18\u029F\u1D07\u1D1B\u1D07!";
 	}
 }
 
