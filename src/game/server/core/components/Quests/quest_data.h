@@ -14,9 +14,10 @@ using QuestIdentifier = int;
 
 enum
 {
-	QUEST_FLAG_NONE = 0,
-	QUEST_FLAG_DAILY = 1 << 0,
-	QUEST_FLAG_WEEKLY = 1 << 1,
+	QUEST_FLAG_TYPE_MAIN = 1 << 0,
+	QUEST_FLAG_TYPE_DAILY = 1 << 1,
+	QUEST_FLAG_TYPE_WEEKLY = 1 << 2,
+	QUEST_FLAG_TYPE_REPEATABLE = 1 << 3,
 };
 
 // quest reward class
@@ -68,10 +69,15 @@ public:
 
 	void InitFlags(const DBSet& FlagSet)
 	{
-		if(FlagSet.hasSet("Daily"))
-			m_Flags |= QUEST_FLAG_DAILY;
-		if(FlagSet.hasSet("Weekly"))
-			m_Flags |= QUEST_FLAG_WEEKLY;
+		// initialize type quest
+		if(FlagSet.hasSet("Type daily"))
+			m_Flags |= QUEST_FLAG_TYPE_DAILY;
+		else if(FlagSet.hasSet("Type weekly"))
+			m_Flags |= QUEST_FLAG_TYPE_WEEKLY;
+		else if(FlagSet.hasSet("Type repeatable"))
+			m_Flags |= QUEST_FLAG_TYPE_REPEATABLE;
+		else
+			m_Flags |= QUEST_FLAG_TYPE_MAIN;
 	}
 
 	QuestIdentifier GetID() const { return m_ID; }

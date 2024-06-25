@@ -77,16 +77,23 @@ bool CPlayerQuest::Accept()
 	m_Datafile.Create();
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Account()->GetID(), m_State);
 
-	// send information
+	// handle repeatable quest
 	int ClientID = GetPlayer()->GetCID();
-	if(Info()->IsHasFlag(QUEST_FLAG_DAILY))
+	if(Info()->IsHasFlag(QUEST_FLAG_TYPE_REPEATABLE))
+	{
+		GS()->Chat(ClientID, "Repeatable quest: '{}' accepted!", Info()->GetName());
+	}
+	// handle daily quest
+	else if(Info()->IsHasFlag(QUEST_FLAG_TYPE_DAILY))
 	{
 		GS()->Chat(ClientID, "Daily quest: '{}' accepted!", Info()->GetName());
 	}
-	else if(Info()->IsHasFlag(QUEST_FLAG_WEEKLY))
+	// handle weekly quest
+	else if(Info()->IsHasFlag(QUEST_FLAG_TYPE_WEEKLY))
 	{
 		GS()->Chat(ClientID, "Weekly quest: '{}' accepted!", Info()->GetName());
 	}
+	// handle other quest
 	else
 	{
 		const int StoryQuestsNum = Info()->GetStoryQuestsNum();
@@ -97,6 +104,7 @@ bool CPlayerQuest::Accept()
 		GS()->Chat(ClientID, "Reward: \"Gold {}, Experience {}\".", Info()->Reward().GetGold(), Info()->Reward().GetExperience());
 	}
 
+	// accepted effects
 	GS()->Broadcast(ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Accepted");
 	GS()->CreatePlayerSound(ClientID, SOUND_CTF_GRAB_EN);
 	return true;
@@ -139,36 +147,49 @@ void CPlayerQuest::UpdateStepPosition()
 		return;
 	}
 
-	// finish quest
-	m_State = QuestState::FINISHED;
-	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Account()->GetID());
-	m_Datafile.Delete();
-
 	// apply reward for player
 	Info()->Reward().ApplyReward(pPlayer);
 
-	// send information
-	if(Info()->IsHasFlag(QUEST_FLAG_DAILY))
+	// completion effects
+	GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Complete");
+	GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
+	GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
+
+	// finish quest
+	m_State = QuestState::FINISHED;
+
+	// handle repeatable type quest
+	if(Info()->IsHasFlag(QUEST_FLAG_TYPE_REPEATABLE))
+	{
+		GS()->Chat(-1, "{} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		Refuse();
+		return;
+	}
+
+	// handle type daily quest
+	if(Info()->IsHasFlag(QUEST_FLAG_TYPE_DAILY))
 	{
 		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestAlliedSealsReward);
 		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed daily quest ({})", Info()->GetName());
 	}
-	else if(Info()->IsHasFlag(QUEST_FLAG_WEEKLY))
+	// handle type weekly quest
+	else if(Info()->IsHasFlag(QUEST_FLAG_TYPE_WEEKLY))
 	{
 		GS()->Chat(-1, "{} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed weekly quest ({})", Info()->GetName());
 	}
-	else
+	// handle type main quest
+	else if(Info()->IsHasFlag(QUEST_FLAG_TYPE_MAIN))
 	{
 		GS()->Chat(-1, "{} completed the \"{} - {}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
 		GS()->ChatDiscord(DC_SERVER_INFO, GS()->Server()->ClientName(m_ClientID), "Completed ({} - {})", Info()->GetStory(), Info()->GetName());
 		GS()->Core()->DungeonManager()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
 	}
 
-	GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Complete");
-	GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
-	GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
+	// update quest state in database
+	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Account()->GetID());
+	m_Datafile.Delete();
 
 	// save player stats and accept next story quest
 	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
