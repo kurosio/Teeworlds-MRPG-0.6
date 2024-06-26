@@ -17,7 +17,7 @@
 
 #include "core/components/Accounts/AccountManager.h"
 #include "core/components/Bots/BotManager.h"
-#include "core/components/Quests/QuestManager.h"
+#include "core/components/quests/quest_manager.h"
 #include "core/components/skills/skill_manager.h"
 
 #include "core/components/Eidolons/EidolonInfoData.h"

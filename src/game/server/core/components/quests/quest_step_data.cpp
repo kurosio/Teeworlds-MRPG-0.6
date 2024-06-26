@@ -1,10 +1,10 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "QuestStepDataInfo.h"
+#include "quest_step_data.h"
 
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Inventory/InventoryManager.h>
-#include "QuestManager.h"
+#include "quest_manager.h"
 
 #include <game/server/core/components/mails/mail_wrapper.h>
 #include <game/server/core/entities/items/drop_quest_items.h>
@@ -15,13 +15,11 @@
 #include "Entities/path_finder.h"
 #include "game/server/entity_manager.h"
 
-// ##############################################################
-// ################# GLOBAL STEP STRUCTURE ######################
 void CQuestStepBase::UpdateBot() const
 {
 	CGS* pGS = (CGS*)Instance::GameServer(m_Bot.m_WorldID);
 
-	// check it's if there's a active bot
+	// check it's if there's an active bot
 	int BotClientID = -1;
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
@@ -56,15 +54,16 @@ bool CQuestStepBase::IsActiveStep() const
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
+		// check valid player
 		CPlayer* pPlayer = pGS->GetPlayer(i);
 		if(!pPlayer || !pPlayer->IsAuthed())
 			continue;
 
-		// invalid data
-		if(CQuestDescription::Data().find(QuestID) == CQuestDescription::Data().end())
+		// invalid quest data
+		if(!CQuestDescription::Data().contains(QuestID))
 			continue;
 
-		// skip some quest actions
+		// skip is not accepted quest or not same quest step
 		CPlayerQuest* pQuest = pPlayer->GetQuest(QuestID);
 		if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Bot.m_StepPos)
 			continue;
@@ -86,22 +85,26 @@ CPlayer* CQuestStep::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
 CQuestStep::~CQuestStep()
 {
 	m_ClientQuitting = true;
-	
+
+	// update bot and path navigator
 	CQuestStepBase::UpdateBot();
 	UpdatePathNavigator();
 
 	// clear the move actions
-	m_vpEntitiesAction.erase(std::remove_if(m_vpEntitiesAction.begin(), m_vpEntitiesAction.end(),
-		[pGS = GS()](CEntityQuestAction* p) { return (p && p->IsMarkedForDestroy()) || !pGS->m_World.ExistEntity(p); }), m_vpEntitiesAction.end());
+	auto pGS = GS();
 	for(auto& pEnt : m_vpEntitiesAction)
-		pEnt->MarkForDestroy();
+	{
+		if(pEnt && (pEnt->IsMarkedForDestroy() || !pGS->m_World.ExistEntity(pEnt)))
+			pEnt->MarkForDestroy();
+	}
 	m_vpEntitiesAction.clear();
 
 	// clear the navigators
-	m_apEntitiesNavigator.erase(std::remove_if(m_apEntitiesNavigator.begin(), m_apEntitiesNavigator.end(),
-		[pGS = GS()](CEntityPathArrow* p) { return (p && p->IsMarkedForDestroy()) || !pGS->m_World.ExistEntity(p); }), m_apEntitiesNavigator.end());
 	for(auto& pEnt : m_apEntitiesNavigator)
-		pEnt->MarkForDestroy();
+	{
+		if(pEnt && (pEnt->IsMarkedForDestroy() || !pGS->m_World.ExistEntity(pEnt)))
+			pEnt->MarkForDestroy();
+	}
 	m_apEntitiesNavigator.clear();
 
 	m_aMobProgress.clear();
@@ -121,6 +124,7 @@ int CQuestStep::GetNumberBlockedItem(int ItemID) const
 
 bool CQuestStep::IsComplete()
 {
+	// check if all required items are gathered
 	if(!m_Bot.m_vRequiredItems.empty())
 	{
 		for(auto& p : m_Bot.m_vRequiredItems)
@@ -130,16 +134,18 @@ bool CQuestStep::IsComplete()
 		}
 	}
 
-	if(!m_Bot.m_vRequiredDefeat.empty())
+	// check if all required defeats are met
+	if(!m_Bot.m_vRequiredDefeats.empty())
 	{
-		for(auto& [m_BotID, m_Count] : m_Bot.m_vRequiredDefeat)
+		for(auto& [botID, requiredCount] : m_Bot.m_vRequiredDefeats)
 		{
-			if(m_aMobProgress[m_BotID].m_Count < m_Count)
+			if(m_aMobProgress[botID].m_Count < requiredCount)
 				return false;
 		}
 	}
 
-	if(GetCountMoveToComplected() < (int)m_aMoveToProgress.size())
+	// check if all move-to actions are completed
+	if(GetCompletedMoveToCount() < (int)m_aMoveToProgress.size())
 		return false;
 
 	return true;
@@ -147,32 +153,29 @@ bool CQuestStep::IsComplete()
 
 bool CQuestStep::Finish()
 {
+	// initialize variables
 	CPlayer* pPlayer = GetPlayer();
+	const int QuestID = m_Bot.m_QuestID;
 
-	// quest completion
-	if(IsComplete())
+	// check is competed quest
+	if(!IsComplete())
+		return false;
+
+	// set flag to complete
+	m_StepComplete = true;
+
+	// save quest progress
+	if(!pPlayer->GetQuest(QuestID)->m_Datafile.Save())
 	{
-		// save file or dissable post finish
-		m_StepComplete = true;
-
-		const int QuestID = m_Bot.m_QuestID;
-		if(!pPlayer->GetQuest(QuestID)->m_Datafile.Save())
-		{
-			GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
-			dbg_msg(PRINT_QUEST_PREFIX, "After completing the quest step, I am unable to save the file.");
-			m_StepComplete = false;
-		}
-
-		if(m_StepComplete)
-		{
-			PostFinish();
-		}
-
-		return m_StepComplete;
+		GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
+		dbg_msg(PRINT_QUEST_PREFIX, "After completing the quest step, unable to save the file.");
+		m_StepComplete = false;
+		return false;
 	}
 
-	// quest not yet completed
-	return false;
+	// apply post finish
+	PostFinish();
+	return true;
 }
 
 void CQuestStep::PostFinish()
@@ -180,6 +183,7 @@ void CQuestStep::PostFinish()
 	bool AntiDatabaseStress = false;
 	CPlayer* pPlayer = GetPlayer();
 	int ClientID = pPlayer->GetCID();
+	ska::unordered_set<int> vInteractItemIds {};
 
 	// required item's
 	if(!m_Bot.m_vRequiredItems.empty())
@@ -195,16 +199,8 @@ void CQuestStep::PostFinish()
 				continue;
 			}
 
-			// check for stress database
-			if(!m_Bot.m_RewardItems.empty())
-			{
-				for(auto& pRewardItem : m_Bot.m_RewardItems)
-				{
-					AntiDatabaseStress = (pRequired.m_Item.GetID() == pRewardItem.GetID());
-				}
-			}
-
 			// remove item
+			vInteractItemIds.emplace(pPlayerItem->GetID());
 			pPlayerItem->Remove(pRequired.m_Item.GetValue());
 			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {}x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 		}
@@ -216,7 +212,7 @@ void CQuestStep::PostFinish()
 		for(auto& pRewardItem : m_Bot.m_RewardItems)
 		{
 			// under stress, add a delay
-			if(AntiDatabaseStress)
+			if(vInteractItemIds.find(pRewardItem.GetID()) != vInteractItemIds.end())
 			{
 				GS()->Core()->InventoryManager()->AddItemSleep(pPlayer->Account()->GetID(), pRewardItem.GetID(), pRewardItem.GetValue(), 300);
 				continue;
@@ -249,7 +245,7 @@ void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 {
 	// check default action
 	CPlayer* pPlayer = GetPlayer();
-	if(m_StepComplete || m_ClientQuitting || m_Bot.m_vRequiredDefeat.empty() || !pPlayer || !DataBotInfo::IsDataBotValid(DefeatedBotID))
+	if(m_StepComplete || m_ClientQuitting || m_Bot.m_vRequiredDefeats.empty() || !pPlayer || !DataBotInfo::IsDataBotValid(DefeatedBotID))
 		return;
 
 	// check quest action
@@ -258,7 +254,7 @@ void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 		return;
 
 	// check complecte mob
-	for(auto& [DefeatBotID, DefeatCount] : m_Bot.m_vRequiredDefeat)
+	for(auto& [DefeatBotID, DefeatCount] : m_Bot.m_vRequiredDefeats)
 	{
 		if(DefeatedBotID != DefeatBotID || m_aMobProgress[DefeatedBotID].m_Count >= DefeatCount)
 			continue;
@@ -311,7 +307,7 @@ void CQuestStep::UpdateTaskMoveTo()
 		return;
 
 	// check and mark required mob's
-	for(auto& [DefeatBotID, DefeatCount] : m_Bot.m_vRequiredDefeat)
+	for(auto& [DefeatBotID, DefeatCount] : m_Bot.m_vRequiredDefeats)
 	{
 		if(m_aMobProgress[DefeatBotID].m_Count >= DefeatCount)
 			continue;
@@ -473,14 +469,14 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	const char* pLang = pPlayer->GetLanguage();
 
 	// show required bots
-	if(!m_Bot.m_vRequiredDefeat.empty())
+	if(!m_Bot.m_vRequiredDefeats.empty())
 	{
 		strBuffer += "\n\n" + fmt_localize(m_ClientID, "- \u270E Slay enemies:");
-		for(auto& p : m_Bot.m_vRequiredDefeat)
+		for(auto& p : m_Bot.m_vRequiredDefeats)
 		{
-			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count >= p.m_Value ? "\u2611" : "\u2610");
+			const char* pCompletePrefix = (m_aMobProgress[p.m_BotID].m_Count >= p.m_RequiredCount ? "\u2611" : "\u2610");
 			strBuffer += "\n" + fmt_localize(m_ClientID, "{} Defeat {} ({}/{})",
-				pCompletePrefix, DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID].m_Count, p.m_Value);
+				pCompletePrefix, DataBotInfo::ms_aDataBot[p.m_BotID].m_aNameBot, m_aMobProgress[p.m_BotID].m_Count, p.m_RequiredCount);
 		}
 	}
 
@@ -575,7 +571,7 @@ int CQuestStep::GetMoveToCurrentStepPos() const
 }
 
 // This function returns the count of completed move steps in a player quest
-int CQuestStep::GetCountMoveToComplected()
+int CQuestStep::GetCompletedMoveToCount()
 {
 	// Using std::count_if to count the number of elements in m_aMoveToProgress that satisfy the condition
 	// The condition is a lambda function that checks if the element is true

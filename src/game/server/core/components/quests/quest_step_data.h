@@ -70,7 +70,7 @@ public:
 
 	int GetMoveToNum() const;
 	int GetMoveToCurrentStepPos() const;
-	int GetCountMoveToComplected();
+	int GetCompletedMoveToCount();
 
 	// steps path finder tools
 	std::deque < class CEntityQuestAction* > m_vpEntitiesAction {};

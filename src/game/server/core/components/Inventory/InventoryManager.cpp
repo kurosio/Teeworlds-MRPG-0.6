@@ -6,7 +6,7 @@
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/components/houses/house_manager.h>
-#include <game/server/core/components/Quests/QuestManager.h>
+#include <game/server/core/components/quests/quest_manager.h>
 
 template < typename T >
 void ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, const std::function<void(const CPlayerItem&)> pFunc)

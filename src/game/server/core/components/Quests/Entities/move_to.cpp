@@ -5,7 +5,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include "game/server/core/components/Quests/QuestManager.h"
+#include "game/server/core/components/quests/quest_manager.h"
 
 constexpr unsigned int s_Particles = 4;
 
@@ -140,7 +140,7 @@ void CEntityQuestAction::TryFinish()
 	// Finish the quest step if AutoCompleteQuestStep is true
 	if(m_AutoCompletesQuestStep)
 	{
-		const bool IsLastElement = (pQuestStep->GetCountMoveToComplected() == pQuestStep->GetMoveToNum());
+		const bool IsLastElement = (pQuestStep->GetCompletedMoveToCount() == pQuestStep->GetMoveToNum());
 		if(IsLastElement && pQuestStep->IsComplete())
 			pQuestStep->Finish();
 	}

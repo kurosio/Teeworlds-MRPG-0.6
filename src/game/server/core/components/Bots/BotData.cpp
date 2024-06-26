@@ -83,7 +83,7 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 				const int Value = p.value("value", -1);
 				if(BotID > 0 && Value > 0)
 				{
-					m_vRequiredDefeat.push_back({ BotID, Value });
+					m_vRequiredDefeats.push_back({ BotID, Value });
 				}
 			}
 		}

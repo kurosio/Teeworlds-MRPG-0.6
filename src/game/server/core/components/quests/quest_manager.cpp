@@ -1,6 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "QuestManager.h"
+#include "quest_manager.h"
 
 #include <game/server/gamecontext.h>
 
@@ -374,9 +374,9 @@ void CQuestManager::ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const
 
 		// show required defeat
 		bool NoTasks = true;
-		if(!BotInfo.m_vRequiredDefeat.empty())
+		if(!BotInfo.m_vRequiredDefeats.empty())
 		{
-			for(auto& p : BotInfo.m_vRequiredDefeat)
+			for(auto& p : BotInfo.m_vRequiredDefeats)
 			{
 				if(DataBotInfo::ms_aDataBot.find(p.m_BotID) != DataBotInfo::ms_aDataBot.end())
 				{
@@ -536,8 +536,8 @@ void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) cons
 	// reset daily quests
 	for(auto& [QuestID, pQuest] : CPlayerQuest::Data()[clientID])
 	{
-		if((Period == WEEK_STAMP && pQuest->Info()->IsHasFlag(QUEST_FLAG_TYPE_WEEKLY)) ||
-			(Period == DAILY_STAMP && pQuest->Info()->IsHasFlag(QUEST_FLAG_TYPE_DAILY)))
+		if((Period == WEEK_STAMP && pQuest->Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY)) ||
+			(Period == DAILY_STAMP && pQuest->Info()->HasFlag(QUEST_FLAG_TYPE_DAILY)))
 		{
 			if(pQuest->IsAccepted() || pQuest->IsCompleted())
 			{

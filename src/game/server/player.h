@@ -5,7 +5,7 @@
 
 #include "core/components/Accounts/AccountData.h"
 #include "core/components/Inventory/ItemData.h"
-#include "core/components/Quests/quest_data.h"
+#include "core/components/quests/quest_data.h"
 #include "core/components/skills/skill_data.h"
 
 #include "entities/character.h"

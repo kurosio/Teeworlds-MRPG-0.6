@@ -12,7 +12,7 @@
 
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/groups/group_data.h>
-#include <game/server/core/components/Quests/QuestManager.h>
+#include <game/server/core/components/quests/quest_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
 
 #include <game/server/core/entities/items/harvesting_item.h>

@@ -6,7 +6,7 @@
 #define PRINT_QUEST_PREFIX "quest_system"
 
 #include "datafile_progress.h"
-#include "QuestStepDataInfo.h"
+#include "quest_step_data.h"
 
 class CGS;
 class CPlayer;
@@ -15,9 +15,10 @@ using QuestIdentifier = int;
 enum
 {
 	QUEST_FLAG_TYPE_MAIN = 1 << 0,
-	QUEST_FLAG_TYPE_DAILY = 1 << 1,
-	QUEST_FLAG_TYPE_WEEKLY = 1 << 2,
-	QUEST_FLAG_TYPE_REPEATABLE = 1 << 3,
+	QUEST_FLAG_TYPE_SIDE = 1 << 1,
+	QUEST_FLAG_TYPE_DAILY = 1 << 2,
+	QUEST_FLAG_TYPE_WEEKLY = 1 << 3,
+	QUEST_FLAG_TYPE_REPEATABLE = 1 << 4,
 };
 
 // quest reward class
@@ -90,7 +91,7 @@ public:
 	CQuestReward& Reward() { return m_Reward; }
 
 	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem);
-	bool IsHasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
+	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
 
 	// steps with array bot data on active step
 	std::map < int, std::deque<CQuestStepBase> > m_vSteps;

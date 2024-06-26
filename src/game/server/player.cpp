@@ -12,7 +12,7 @@
 #include "core/components/Dungeons/DungeonData.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/guilds/guild_manager.h"
-#include "core/components/Quests/QuestManager.h"
+#include "core/components/quests/quest_manager.h"
 
 #include "core/components/Inventory/ItemData.h"
 #include "core/components/skills/skill_data.h"

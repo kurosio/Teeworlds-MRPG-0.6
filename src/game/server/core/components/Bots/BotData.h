@@ -83,9 +83,9 @@ public:
 	struct TaskRequiredDefeat
 	{
 		int m_BotID {};
-		int m_Value {};
+		int m_RequiredCount {};
 	};
-	std::deque < TaskRequiredDefeat > m_vRequiredDefeat;
+	std::deque < TaskRequiredDefeat > m_vRequiredDefeats;
 
 	struct TaskAction
 	{

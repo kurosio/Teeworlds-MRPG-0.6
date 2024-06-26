@@ -19,7 +19,7 @@
 #include "components/houses/house_manager.h"
 #include "components/Inventory/InventoryManager.h"
 #include "components/mails/mailbox_manager.h"
-#include "components/Quests/QuestManager.h"
+#include "components/quests/quest_manager.h"
 #include "components/skills/skill_manager.h"
 #include "components/tutorial/tutorial_manager.h"
 #include "components/warehouse/warehouse_manager.h"

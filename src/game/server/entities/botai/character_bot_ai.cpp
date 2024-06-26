@@ -9,7 +9,7 @@
 
 #include <game/server/core/components/skills/entities/health_turret/hearth.h> // for nurse
 #include <game/server/core/components/Bots/BotData.h>
-#include <game/server/core/components/Quests/QuestManager.h>
+#include <game/server/core/components/quests/quest_manager.h>
 
 #include <game/server/core/entities/eidolons/base.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>

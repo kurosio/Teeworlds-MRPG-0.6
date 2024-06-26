@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/components/Quests/QuestManager.h>
+#include <game/server/core/components/quests/quest_manager.h>
 
 // dialogue initilizer
 typedef std::pair < bool, std::vector<CDialogElem> > DialogsInitilizerType;

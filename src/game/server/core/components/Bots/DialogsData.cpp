@@ -3,7 +3,7 @@
 #include "DialogsData.h"
 
 #include <game/server/gamecontext.h>
-#include <game/server/core/components/Quests/QuestManager.h>
+#include <game/server/core/components/quests/quest_manager.h>
 
 // TODO: add SPEAK side / add support client 
 

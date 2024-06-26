@@ -31,7 +31,7 @@ void QuestDatafile::Create() const
 		Append["quest_bot_id"] = Step.m_Bot.m_ID;
 		Append["state"] = false;
 
-		for(auto& p : Step.m_Bot.m_vRequiredDefeat)
+		for(auto& p : Step.m_Bot.m_vRequiredDefeats)
 		{
 			Step.m_aMobProgress[p.m_BotID].m_Count = 0;
 			Append["defeat"].push_back({ { "id", p.m_BotID }, { "count", 0 }, { "complete", false } });
@@ -97,7 +97,7 @@ void QuestDatafile::Load() const
 		if(Step.contains("defeat"))
 		{
 			// If the size of the "defeat" array in pStep is not equal to the size of the m_aMobProgress map of the corresponding player step
-			if(Step["defeat"].size() != WorkedNode.m_Bot.m_vRequiredDefeat.size())
+			if(Step["defeat"].size() != WorkedNode.m_Bot.m_vRequiredDefeats.size())
 			{
 				dbg_msg(PRINT_QUEST_PREFIX, "Reinitialization... Player save file has a defeat value, but it is not present in the data!");
 				Create();
