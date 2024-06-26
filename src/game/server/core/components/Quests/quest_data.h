@@ -44,7 +44,6 @@ class CQuestDescription : public MultiworldIdentifiableData < std::map< int, CQu
 {
 	QuestIdentifier m_ID {};
 	std::string m_Name {};
-	std::string m_Story {};
 	CQuestReward m_Reward {};
 	int m_Flags {};
 	std::optional<int> m_NextQuestID {};
@@ -59,10 +58,9 @@ public:
 		return m_pData[ID] = pData;
 	}
 
-	void Init(const std::string& Name, const std::string& Story, int Gold, int Exp, std::optional<int> NextQuestID, const DBSet& FlagSet)
+	void Init(const std::string& Name, int Gold, int Exp, std::optional<int> NextQuestID, const DBSet& FlagSet)
 	{
 		m_Name = Name;
-		m_Story = Story;
 		m_NextQuestID = NextQuestID;
 		m_Reward.Init(Exp, Gold);
 		InitFlags(FlagSet);
@@ -83,11 +81,7 @@ public:
 
 	QuestIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_Name.c_str(); }
-	const char* GetStory() const { return m_Story.c_str(); }
 	std::optional<int> GetNextQuestID() const { return m_NextQuestID; }
-	int GetStoryCurrentPos() const;
-	int GetStoryQuestsNum() const;
-
 	CQuestReward& Reward() { return m_Reward; }
 
 	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem);

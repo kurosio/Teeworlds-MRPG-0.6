@@ -12,22 +12,6 @@ void CQuestReward::ApplyReward(CPlayer* pPlayer) const
 	pPlayer->Account()->AddGold(m_Gold);
 }
 
-int CQuestDescription::GetStoryCurrentPos() const
-{
-	return (int)std::ranges::count_if(Data(), [this](std::pair< const int, CQuestDescription*>& pItem)
-	{
-		return pItem.second->m_Story == m_Story && m_ID >= pItem.first;
-	});
-}
-
-int CQuestDescription::GetStoryQuestsNum() const
-{
-	return (int)std::ranges::count_if(Data(), [this](std::pair< const int, CQuestDescription*>& pItem)
-	{
-		return pItem.second->m_Story == m_Story;
-	});
-}
-
 void CQuestDescription::PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem)
 {
 	// clear old steps
@@ -174,12 +158,12 @@ void CPlayerQuest::UpdateStepPosition()
 	// handle type main quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
 	{
-		GS()->Chat(-1, "{} completed main quest \"{} - {}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
+		GS()->Chat(-1, "{} completed main quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// handle other type quest
 	else
 	{
-		GS()->Chat(-1, "{} completed side quest \"{} - {}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetStory(), Info()->GetName());
+		GS()->Chat(-1, "{} completed side quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 
 	// update quest state in database

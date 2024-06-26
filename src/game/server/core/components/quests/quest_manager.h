@@ -21,25 +21,12 @@ class CQuestManager : public MmoComponent
 		mrpgstd::free_container(CQuestDescription::Data(), CPlayerQuest::Data());
 	}
 
-	// This function is called when the module is initialized
 	void OnInit() override;
-
-	// This function is called when the player's account is initialized
 	void OnPlayerLogin(CPlayer* pPlayer) override;
-
-	// This function is called when the client is reset
 	void OnClientReset(int ClientID) override;
-
-	// This function is called when a tile collision is handled by a character
 	bool OnCharacterTile(CCharacter* pChr) override;
-
-	// This function is called when a menu list is handled by a player
 	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
-
-	// This function is called when a vote command is handled by a player
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
-
-	// This function is called when a time period is handled by a player
 	void OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period) override;
 
 public:
@@ -84,8 +71,10 @@ public:
 	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size);
 
 	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
-	void ShowWantedPlayersBoard(CPlayer* pPlayer) const;
-	void ShowQuestsBoard(CPlayer* pPlayer, CQuestsBoard* pBoard) const;
+
+	void AppendQuestBoardGroup(CPlayer* pPlayer, CQuestsBoard* pBoard, class VoteWrapper* pWrapper, int QuestFlag) const;
+	void ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) const;
+	void ShowQuestsBoardQuest(CPlayer* pPlayer, CQuestsBoard* pBoard, int QuestID) const;
 
 	// Function: GetBoardByPos
 	// Input: Pos - a 2D vector representing the position

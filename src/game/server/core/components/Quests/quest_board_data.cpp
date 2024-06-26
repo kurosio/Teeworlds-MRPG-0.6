@@ -4,34 +4,55 @@
 
 #include <game/server/player.h>
 
-// This function calculates the number of available daily quests for a player
-int CQuestsBoard::QuestsAvailables(CPlayer* pPlayer)
+int CQuestsBoard::CountAvailableDailyQuests(CPlayer* pPlayer)
 {
-	// Initialize a count variable
-	int Count = std::count_if(m_vpDailyQuests.begin(), m_vpDailyQuests.end(), [pPlayer](const auto& p)
+	return (int)std::ranges::count_if(m_vpQuests, [&pPlayer](const auto& p)
 	{
-		// Get the quest with the given ID from the player's quest list
-		CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-		// Check if the quest's state is greater than or equal to ACCEPT
-		return pQuest->GetState() >= QuestState::ACCEPT;
+		if(p->HasFlag(QUEST_FLAG_TYPE_DAILY))
+		{
+			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
+			return pQuest->GetState() != QuestState::FINISHED;
+		}
+		return false;
 	});
-
-	// Return the remaining number of daily quests the player can accept
-	return MAX_DAILY_QUESTS_BY_BOARD - Count;
 }
 
-// ClearDailyQuests function is a member function of the CQuestsDailyBoard class
-void CQuestsBoard::ClearDailyQuests(CPlayer* pPlayer) const
+int CQuestsBoard::CountAvailableWeeklyQuests(CPlayer* pPlayer)
 {
-	// Iterate through each item in the m_vpDailyQuests
-	for(auto& p : m_vpDailyQuests)
+	return (int)std::ranges::count_if(m_vpQuests, [&pPlayer](const auto& p)
 	{
-		// Get the quest with the corresponding ID from the player's quest list and reset player quest
-		CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-		pQuest->Reset();
-	}
+		if(p->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
+		{
+			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
+			return pQuest->GetState() != QuestState::FINISHED;
+		}
+		return false;
+	});
+}
 
-	// Delete entries from the tw_accounts_quests table where UserID matches pPlayer's ID,
-	// and QuestID matches the QuestID in tw_quests_daily_board_list table.
-	Database->Execute<DB::OTHER>("DELETE tw_accounts_quests.* FROM tw_accounts_quests JOIN tw_quests_daily_board_list ON tw_quests_daily_board_list.QuestID = tw_accounts_quests.QuestID WHERE tw_accounts_quests.UserID = '%d';", pPlayer->Account()->GetID());
+
+int CQuestsBoard::CountAvailableRepeatableQuests(CPlayer* pPlayer)
+{
+	return (int)std::ranges::count_if(m_vpQuests, [&pPlayer](const auto& p)
+	{
+		if(p->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
+		{
+			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
+			return pQuest->GetState() != QuestState::FINISHED;
+		}
+		return false;
+	});
+}
+
+int CQuestsBoard::CountAvailableSideQuests(CPlayer* pPlayer)
+{
+	return (int)std::ranges::count_if(m_vpQuests, [&pPlayer](const auto& p)
+	{
+		if(p->HasFlag(QUEST_FLAG_TYPE_SIDE))
+		{
+			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
+			return pQuest->GetState() != QuestState::FINISHED;
+		}
+		return false;
+	});
 }

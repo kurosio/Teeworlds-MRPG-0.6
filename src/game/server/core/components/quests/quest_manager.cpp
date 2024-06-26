@@ -14,13 +14,12 @@ void CQuestManager::OnInit()
 		int nextQuestID = pRes->getInt("NextQuestID");
 		DBSet flagSet = std::string(pRes->getString("Flags").c_str());
 		std::string Name = pRes->getString("Name").c_str();
-		std::string Story = pRes->getString("StoryLine").c_str();
 		int Gold = pRes->getInt("Money");
 		int Exp = pRes->getInt("Exp");
 
 		// create new element
 		auto optionalNextQuestID = nextQuestID > 0 ? std::optional(nextQuestID) : std::nullopt;
-		CQuestDescription::CreateElement(ID)->Init(Name, Story, Gold, Exp, optionalNextQuestID, flagSet);
+		CQuestDescription::CreateElement(ID)->Init(Name, Gold, Exp, optionalNextQuestID, flagSet);
 	}
 
 	// initialize boards
@@ -50,52 +49,42 @@ void CQuestManager::OnInit()
 		vInitializeList[BoardID].push_back(GS()->GetQuestInfo(QuestID));
 	}
 	for(auto& [BoardID, DataContainer] : vInitializeList)
-		CQuestsBoard::Data()[BoardID]->m_vpDailyQuests = DataContainer;
+		CQuestsBoard::Data()[BoardID]->m_vpQuests = DataContainer;
 }
 
-// This method is called when a player's account is initialized.
 void CQuestManager::OnPlayerLogin(CPlayer* pPlayer)
 {
-	// Get the client ID of the player
-	const int ClientID = pPlayer->GetCID();
-
-	// Execute a select query to fetch all rows from the "tw_accounts_quests" table where UserID is equal to the ID of the player's account
+	// initialize player quests
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
-		// Get the QuestID and Type values from the current row
+		// initialize variables
 		QuestIdentifier ID = pRes->getInt("QuestID");
 		QuestState State = (QuestState)pRes->getInt("Type");
 
-		// Initialize a new instance of CPlayerQuest with the QuestID and ClientID, and set its state to the retrieved Type value
-		CPlayerQuest::CreateElement(ID, ClientID)->Init(State);
+		// create new element
+		CPlayerQuest::CreateElement(ID, pPlayer->GetCID())->Init(State);
 	}
 }
 
 void CQuestManager::OnClientReset(int ClientID)
 {
-	for(auto& pQuest : CPlayerQuest::Data()[ClientID])
-		delete pQuest.second;
-	CPlayerQuest::Data().erase(ClientID);
+	mrpgstd::free_container(CPlayerQuest::Data()[ClientID]);
 }
 
 bool CQuestManager::OnCharacterTile(CCharacter* pChr)
 {
-	// Get the player object client ID associated with the character object
+	// initialize variables
 	CPlayer* pPlayer = pChr->GetPlayer();
-	const int ClientID = pPlayer->GetCID();
 
-	// Check if the player entered the shop zone
-	if(pChr->GetTiles()->IsEnter(TILE_DAILY_BOARD))
+	// quest board
+	if(pChr->GetTiles()->IsEnter(TILE_QUEST_BOARD))
 	{
-		// Send message about entering the shop zone to the player
-		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_DAILY_BOARD);
+		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_QUEST_BOARD);
 		return true;
 	}
-	// Check if the player exited the shop zone
-	else if(pChr->GetTiles()->IsExit(TILE_DAILY_BOARD))
+	else if(pChr->GetTiles()->IsExit(TILE_QUEST_BOARD))
 	{
-		// Send message about exiting the shop zone to the player
 		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
 		return true;
 	}
@@ -105,18 +94,24 @@ bool CQuestManager::OnCharacterTile(CCharacter* pChr)
 
 bool CQuestManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 {
-	// Retrieve the character object client ID associated with the player
+	// initialize variables
 	CCharacter* pChr = pPlayer->GetCharacter();
 	const int ClientID = pPlayer->GetCID();
 
-	if(Menulist == MENU_DAILY_BOARD)
+	// quest board
+	if(Menulist == MENU_QUEST_BOARD)
 	{
-		// Get the daily board for the player character's position
-		CQuestsBoard* pDailyBoard = GetBoardByPos(pChr->m_Core.m_Pos);
-		ShowQuestsBoard(pChr->GetPlayer(), pDailyBoard);
+		CQuestsBoard* pBoard = GetBoardByPos(pChr->m_Core.m_Pos);
+		ShowQuestsBoardList(pChr->GetPlayer(), pBoard);
+		return true;
+	}
 
-		// Show wanted players board
-		ShowWantedPlayersBoard(pChr->GetPlayer());
+	// quest board selected
+	if(Menulist == MENU_QUEST_BOARD_SELECTED)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_QUEST_BOARD);
+		CQuestsBoard* pBoard = GetBoardByPos(pChr->m_Core.m_Pos);
+		ShowQuestsBoardQuest(pPlayer, pBoard, pPlayer->m_VotesData.GetExtraID());
 		return true;
 	}
 
@@ -185,35 +180,25 @@ bool CQuestManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 bool CQuestManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(PPSTR(pCmd, "DAILY_QUEST_STATE") == 0)
+	if(PPSTR(pCmd, "QUEST_STATE") == 0)
 	{
-		// ReasonNumber the daily quest board for Extra2
+		// check valid board
 		CQuestsBoard* pBoard = GS()->GetQuestBoard(Extra2);
-
-		// If the daily quest board is not found, return true
 		if(!pBoard)
 			return true;
 
-		// Check if there are quests available for the player on the board
-		if(!pBoard->QuestsAvailables(pPlayer))
-		{
-			// If there are more than 3 assignments per day that can be accepted, send a chat message to the client with the error message
-			GS()->Chat(ClientID, "More than 3 assignments per day cannot be accepted/finished.");
-			return true;
-		}
-
-		// If there is no quest associated with the Extra1 or the quest is already completed, return true
+		// check valid quest
 		CPlayerQuest* pQuest = pPlayer->GetQuest(Extra1);
 		if(!pQuest || pQuest->IsCompleted())
 			return true;
 
-		// If the quest is active, refuse it. Otherwise, accept it.
+		// toggle quest state
 		if(pQuest->IsAccepted())
 			pQuest->Refuse();
 		else
 			pQuest->Accept();
 
-		// Return true to indicate the action was successful and update votes
+		// update current votes
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -304,18 +289,6 @@ void CQuestManager::ShowQuestsTabList(CPlayer* pPlayer, QuestState State)
 			continue;
 		}
 
-		const auto& IsAlreadyChecked = std::find_if(StoriesChecked.begin(), StoriesChecked.end(), 
-			[pStory = pQuestInfo->GetStory()](const std::string& stories)
-		{
-			return (str_comp_nocase(pStory, stories.c_str()) == 0);
-		});
-
-		if(IsAlreadyChecked == StoriesChecked.end())
-		{
-			StoriesChecked.emplace_back(pQuestInfo->GetStory());
-			ShowQuestID(pPlayer, ID);
-			IsEmptyList = false;
-		}
 	}
 
 	// if the quest list is empty
@@ -338,11 +311,7 @@ void CQuestManager::ShowQuestID(CPlayer* pPlayer, int QuestID) const
 	//	return;
 
 	// Get the size of the quest's story and the current position in the story
-	// Display the quest information to the player using the AVD() function
-	const int QuestsSize = pQuestInfo->GetStoryQuestsNum();
-	const int QuestPosition = pQuestInfo->GetStoryCurrentPos();
-	VoteWrapper(pPlayer->GetCID()).AddMenu(MENU_JOURNAL_QUEST_INFORMATION, QuestID, "{}/{} {}: {}",
-		QuestPosition, QuestsSize, pQuestInfo->GetStory(), pQuestInfo->GetName());
+	VoteWrapper(pPlayer->GetCID()).AddMenu(MENU_JOURNAL_QUEST_INFORMATION, QuestID, "{}", pQuestInfo->GetName());
 }
 
 // active npc information display
@@ -445,11 +414,64 @@ void CQuestManager::AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 	}
 }
 
-void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
+void CQuestManager::AppendQuestBoardGroup(CPlayer* pPlayer, CQuestsBoard* pBoard, class VoteWrapper* pWrapper, int QuestFlag) const
 {
+	// daily quests
+	for(const auto& pQuestInfo : pBoard->m_vpQuests)
+	{
+		// check daily flag
+		if(!pQuestInfo->HasFlag(QuestFlag))
+			continue;
+
+		// check is completed quest
+		const auto* pQuest = pPlayer->GetQuest(pQuestInfo->GetID());
+		if(pQuest->IsCompleted())
+			continue;
+
+		// initialize variables
+		const char* StateIndicator = (pQuest->IsAccepted() ? "✔" : "×");
+		//const char* ActionName = (pQuest->IsAccepted() ? "Refuse" : "Accept");
+		const char* QuestName = pQuestInfo->GetName();
+
+		// ...
+		pWrapper->AddMenu(MENU_QUEST_BOARD_SELECTED, pQuestInfo->GetID(), "({}) {}", StateIndicator, QuestName);
+	}
+}
+
+void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) const
+{
+	// initialize variables
 	const int ClientID = pPlayer->GetCID();
 
-	VoteWrapper VWanted(ClientID, VWF_SEPARATE_CLOSED|VWF_STYLE_SIMPLE, "Wanted players list");
+	// check board valid
+	if(!pBoard)
+	{
+		VoteWrapper(ClientID).Add("Quest board don't work");
+		return;
+	}
+
+	// information
+	VoteWrapper VBoard(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE|VWF_ALIGN_TITLE, "Board: {}", pBoard->GetName());
+	VBoard.AddItemValue(itAlliedSeals);
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// add groups
+	auto appendQuestGroup = [&](const char* pTitle, int Count, int Flag)
+	{
+		if(Count > 0)
+		{
+			VoteWrapper VGroup(ClientID, VWF_STYLE_SIMPLE, pTitle, Count);
+			AppendQuestBoardGroup(pPlayer, pBoard, &VGroup, Flag);
+			VoteWrapper::AddEmptyline(ClientID);
+		}
+	};
+	appendQuestGroup("\u2696 Available daily {}", pBoard->CountAvailableDailyQuests(pPlayer), QUEST_FLAG_TYPE_DAILY);
+	appendQuestGroup("\u2696 Available weekly {}", pBoard->CountAvailableWeeklyQuests(pPlayer), QUEST_FLAG_TYPE_WEEKLY);
+	appendQuestGroup("\u2696 Available repeatable {}", pBoard->CountAvailableRepeatableQuests(pPlayer), QUEST_FLAG_TYPE_REPEATABLE);
+	appendQuestGroup("\u2696 Available side {}", pBoard->CountAvailableSideQuests(pPlayer), QUEST_FLAG_TYPE_SIDE);
+
+	// wanted players
+	VoteWrapper VWanted(ClientID, VWF_SEPARATE | VWF_STYLE_SIMPLE, "Wanted players list");
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GS()->GetPlayer(i, true);
@@ -467,52 +489,30 @@ void CQuestManager::ShowWantedPlayersBoard(CPlayer* pPlayer) const
 	}
 }
 
-void CQuestManager::ShowQuestsBoard(CPlayer* pPlayer, CQuestsBoard* pBoard) const
+void CQuestManager::ShowQuestsBoardQuest(CPlayer* pPlayer, CQuestsBoard* pBoard, int QuestID) const
 {
-	// Get the client's ID
-	const int ClientID = pPlayer->GetCID();
-
-	// Check if the pBoard variable is null
+	// check valid board
 	if(!pBoard)
-	{
-		VoteWrapper(ClientID).Add("Daily board don't work");
 		return;
-	}
 
-	// Daily board information
-	VoteWrapper VDailyBoard(ClientID, VWF_STYLE_STRICT_BOLD, "Daily board: {}", pBoard->GetName());
-	VDailyBoard.Add("Acceptable quests: ({} of {})", pBoard->QuestsAvailables(pPlayer), (int)MAX_DAILY_QUESTS_BY_BOARD);
-	VDailyBoard.AddItemValue(itAlliedSeals);
-	VDailyBoard.AddLine();
+	// initialize variables
+	const int ClientID = pPlayer->GetCID();
+	CQuestDescription* pQuest = GS()->GetQuestInfo(QuestID);
 
-	for(const auto& pDailyQuestInfo : pBoard->m_vpDailyQuests)
-	{
-		// If the quest is completed, skip to the next iteration
-		const auto* pQuest = pPlayer->GetQuest(pDailyQuestInfo->GetID());
-		if(pQuest->IsCompleted())
-			continue;
+	// detail information
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2690 Detail information");
+	VInfo.Add("Name: {}", pQuest->GetName());
+	VInfo.Add("Exp: {}, Gold: {}", pQuest->Reward().GetExperience(), pQuest->Reward().GetGold());
+	VoteWrapper::AddEmptyline(ClientID);
 
-		// Determine the state indicator and action name based on whether the quest is active or not
-		const char* StateIndicator = (pQuest->IsAccepted() ? "✔" : "×");
-		const char* ActionName = (pQuest->IsAccepted() ? "Refuse" : "Accept");
-		const char* QuestName = pDailyQuestInfo->GetName();
+	// add button
+	CPlayerQuest* pPlayerQuest = pPlayer->GetQuest(QuestID);
+	const char* ActionName = (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept");
+	VoteWrapper(ClientID).AddOption("QUEST_STATE", pPlayerQuest->GetID(), pBoard->GetID(), ActionName);
 
-		// Display the quest information to the player
-		VoteWrapper VQuest(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "({}) {}", StateIndicator, QuestName);
-		VQuest.Add("Reward:");
-		{
-			VQuest.BeginDepth();
-			VQuest.Add("Gold: {}", pDailyQuestInfo->Reward().GetGold());
-			VQuest.Add("Exp: {}", pDailyQuestInfo->Reward().GetExperience());
-			VQuest.Add("{}: {}", GS()->GetItemInfo(itAlliedSeals)->GetName(), g_Config.m_SvDailyQuestAlliedSealsReward);
-			VQuest.EndDepth();
-		}
-		VQuest.AddLine();
-		VQuest.AddOption("DAILY_QUEST_STATE", pDailyQuestInfo->GetID(), pBoard->GetID(), "{} quest", ActionName);
-		VQuest.AddLine();
-	}
-
-	VoteWrapper::AddLine(ClientID);
+	// add backpage
+	VoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper::AddBackpage(ClientID);
 }
 
 CQuestsBoard* CQuestManager::GetBoardByPos(vec2 Pos) const

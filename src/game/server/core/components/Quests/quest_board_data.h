@@ -33,11 +33,13 @@ public:
 		m_WorldID = WorldID;
 	}
 
-	std::deque<CQuestDescription*> m_vpDailyQuests {};
+	std::deque<CQuestDescription*> m_vpQuests {};
 
 	// functions
-	int QuestsAvailables(class CPlayer* pPlayer);
-	void ClearDailyQuests(class CPlayer* pPlayer) const;
+	int CountAvailableDailyQuests(CPlayer* pPlayer);
+	int CountAvailableWeeklyQuests(CPlayer* pPlayer);
+	int CountAvailableRepeatableQuests(CPlayer* pPlayer);
+	int CountAvailableSideQuests(CPlayer* pPlayer);
 
 	// getters
 	int GetID() const { return m_ID; }

@@ -731,7 +731,6 @@ void CMmoController::SyncLocalizations() const
 		for (const auto& [ID, p] : CQuestDescription::Data())
 		{
 			pLanguage->Updater().Push(p->GetName(), "quest_name", ID);
-			pLanguage->Updater().Push(p->GetStory(), "quest_story", ID);
 		}
 
 		for (const auto& p : CWarehouse::Data())
