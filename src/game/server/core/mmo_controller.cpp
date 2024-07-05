@@ -155,27 +155,29 @@ bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 		VMain.Add("Level {} : Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
 		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VMain.Add("Gold: {}", pPlayer->GetItem(itGold)->GetValue());
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// personal menu
-		VoteWrapper VPersonal(ClientID, VWF_SEPARATE_OPEN, "\u262A PERSONAL");
+		VoteWrapper VPersonal(ClientID, VWF_ALIGN_TITLE, "\u262A PERSONAL");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({}p)", pPlayer->Account()->m_Upgrade);
+		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		VPersonal.AddMenu(MENU_EIDOLON_COLLECTION, "\u2727 Eidolon Collection");
 		VPersonal.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
 		VPersonal.AddMenu(MENU_GROUP, "\u2042 Group");
 		VPersonal.AddMenu(MENU_SETTINGS, "\u2699 Settings");
 		VPersonal.AddMenu(MENU_MAILBOX, "\u2709 Mailbox");
 		VPersonal.AddMenu(MENU_JOURNAL_MAIN, "\u270D Journal");
-		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		if(pPlayer->Account()->HasHouse())
 			VPersonal.AddMenu(MENU_HOUSE, "\u2302 House");
 		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		if(pPlayer->Account()->HasGuild())
 			VPersonal.AddMenu(MENU_GUILD, "\u32E1 Guild");
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// info menu
-		VoteWrapper VInfo(ClientID, VWF_OPEN, "\u262A INFORMATION");
+		VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE, "\u262A INFORMATION");
 		VInfo.AddMenu(MENU_GUIDE_GRINDING, "\u10D3 Wiki / Grinding Guide ");
 		VInfo.AddMenu(MENU_TOP_LIST, "\u21F0 Ranking guilds and players");
 		return true;

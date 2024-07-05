@@ -25,8 +25,8 @@ public:
 	static std::vector<int> GetItemIDsCollectionByFunction(ItemFunctional Type);
 
 	// primary
-	void ListInventory(int ClientID, ItemType Type);
-	void ListInventory(int ClientID, ItemFunctional Type);
+	bool ListInventory(int ClientID, ItemType Type);
+	bool ListInventory(int ClientID, ItemFunctional Type);
 	void ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem);
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, ItemIdentifier ItemID) const;
 

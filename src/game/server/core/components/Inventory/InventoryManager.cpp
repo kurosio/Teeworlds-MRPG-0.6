@@ -100,23 +100,28 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		VoteWrapper VInventoryInfo(ClientID, VWF_SEPARATE_OPEN, "Inventory Information");
+		VoteWrapper VInventoryInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Inventory Information");
 		VInventoryInfo.Add("Choose the type of items you want to show");
 		VInventoryInfo.Add("After, need select item to interact");
-		VInventoryInfo.AddLine();
+		VoteWrapper::AddEmptyline(ClientID);
 
-		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE_OPEN, "\u262A Inventory tabs");
+		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "\u270C Used ({})", GetCountItemsType(pPlayer, ItemType::TYPE_USED));
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "\u2692 Craft ({})", GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT));
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_EQUIP, "\u26B0 Equipment ({})", GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP));
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_MODULE, "\u2693 Modules ({})", GetCountItemsType(pPlayer, ItemType::TYPE_MODULE));
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_POTION, "\u26B1 Potion ({})", GetCountItemsType(pPlayer, ItemType::TYPE_POTION));
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "\u26C3 Other ({})", GetCountItemsType(pPlayer, ItemType::TYPE_OTHER));
-		VInventoryTabs.AddLine();
+		VoteWrapper::AddEmptyline(ClientID);
 
-		if(pPlayer->m_VotesData.GetExtraID() >= 0)
-			ListInventory(ClientID, (ItemType)pPlayer->m_VotesData.GetExtraID());
+		// show and sort inventory
+		VoteWrapper VInfo(ClientID);
+		if(pPlayer->m_VotesData.GetExtraID() < 0)
+			VInfo.Add("Select the required tab");
+		else if(!ListInventory(ClientID, (ItemType)pPlayer->m_VotesData.GetExtraID()))
+			VInfo.Add("The selected list is empty");
 
+		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -125,12 +130,12 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		VoteWrapper VEquipInfo(ClientID, VWF_SEPARATE_OPEN, "\u2604 Equipment Information");
+		VoteWrapper VEquipInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2604 Equipment Information");
 		VEquipInfo.Add("Select the type of equipment you want to show");
 		VEquipInfo.Add("After, need select item to interact");
-		VEquipInfo.AddLine();
+		VoteWrapper::AddEmptyline(ClientID);
 
-		VoteWrapper VEquipTabs(ClientID, VWF_SEPARATE_OPEN, "\u2604 Equipment tabs");
+		VoteWrapper VEquipTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2604 Equipment tabs");
 		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor", "Eidolon" };
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
@@ -145,11 +150,16 @@ bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 			std::string strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayer->GetItem(ItemID.value())->GetStringAttributesInfo(pPlayer) : "unattributed";
 			VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} * {}", paTypeNames[i], strAttributes.c_str());
 		}
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort equipment
-		if(pPlayer->m_VotesData.GetExtraID() > 0)
-			ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetExtraID());
+		VoteWrapper VInfo(ClientID);
+		if(pPlayer->m_VotesData.GetExtraID() < 0)
+			VInfo.Add("Select the required tab"); 
+		else if(!ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetExtraID()))
+			VInfo.Add("The selected list is empty");
 
+		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -276,20 +286,26 @@ std::vector<int> CInventoryManager::GetItemIDsCollectionByFunction(ItemFunctiona
 	return ItemIDs;
 }
 
-void CInventoryManager::ListInventory(int ClientID, ItemType Type)
+bool CInventoryManager::ListInventory(int ClientID, ItemType Type)
 {
+	bool hasItems = false;
 	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
 	{
 		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
+		hasItems = true;
 	});
+	return hasItems;
 }
 
-void CInventoryManager::ListInventory(int ClientID, ItemFunctional Type)
+bool CInventoryManager::ListInventory(int ClientID, ItemFunctional Type)
 {
+	bool hasItems = false;
 	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
 	{
 		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
+		hasItems = true;
 	});
+	return hasItems;
 }
 
 int CInventoryManager::GetUnfrozenItemValue(CPlayer* pPlayer, ItemIdentifier ItemID) const
