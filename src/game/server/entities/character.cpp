@@ -73,7 +73,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 		m_pPlayer->m_MoodState = m_pPlayer->GetMoodState();
 
 		GS()->Core()->QuestManager()->Update(m_pPlayer);
-		GS()->Core()->QuestManager()->TryAcceptNextQuestAll(m_pPlayer);
+		GS()->Core()->QuestManager()->TryAcceptNextQuestChainAll(m_pPlayer);
 
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
 		m_pPlayer->m_VotesData.UpdateCurrentVotes();

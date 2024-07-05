@@ -19,6 +19,10 @@ enum
 	QUEST_FLAG_TYPE_DAILY = 1 << 2,
 	QUEST_FLAG_TYPE_WEEKLY = 1 << 3,
 	QUEST_FLAG_TYPE_REPEATABLE = 1 << 4,
+
+	QUEST_FLAG_GRANTED_FROM_NPC = 1 << 10,
+	QUEST_FLAG_GRANTED_FROM_BOARD = 1 << 11,
+	QUEST_FLAG_GRANTED_FROM_AUTO = 1 << 12,
 };
 
 // quest reward class
@@ -47,6 +51,7 @@ class CQuestDescription : public MultiworldIdentifiableData < std::map< int, CQu
 	CQuestReward m_Reward {};
 	int m_Flags {};
 	std::optional<int> m_NextQuestID {};
+	std::optional<int> m_PreviousQuestID {};
 
 public:
 	CQuestDescription() = default;
@@ -66,9 +71,14 @@ public:
 		InitFlags(FlagSet);
 	}
 
+	void InitPrevousQuestID(int QuestID)
+	{
+		m_PreviousQuestID = QuestID;
+	}
+
 	void InitFlags(const DBSet& FlagSet)
 	{
-		// initialize type quest
+		// initialize type flags
 		if(FlagSet.hasSet("Type daily"))
 			m_Flags |= QUEST_FLAG_TYPE_DAILY;
 		else if(FlagSet.hasSet("Type weekly"))
@@ -77,15 +87,26 @@ public:
 			m_Flags |= QUEST_FLAG_TYPE_REPEATABLE;
 		else
 			m_Flags |= QUEST_FLAG_TYPE_MAIN;
+
+		// initialize other flags
+		if(m_NextQuestID.has_value())
+			m_Flags |= QUEST_FLAG_GRANTED_FROM_AUTO;
+	}
+
+	void AddFlag(int Flag)
+	{
+		m_Flags |= Flag;
 	}
 
 	QuestIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_Name.c_str(); }
 	std::optional<int> GetNextQuestID() const { return m_NextQuestID; }
+	std::optional<int> GetPreviousQuestID() const { return m_PreviousQuestID; }
 	CQuestReward& Reward() { return m_Reward; }
 
 	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem);
 	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
+	bool IsGranted() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_AUTO) || HasFlag(QUEST_FLAG_GRANTED_FROM_NPC) || HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD); }
 
 	// steps with array bot data on active step
 	std::map < int, std::deque<CQuestStepBase> > m_vSteps;

@@ -30,64 +30,22 @@ class CQuestManager : public MmoComponent
 	void OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period) override;
 
 public:
-	// Check if a given QuestID is valid for a given ClientID
-	bool IsValidQuest(int QuestID, int ClientID = -1) const
-	{
-		// Check if the QuestID exists in the list of available quests
-		if(CQuestDescription::Data().find(QuestID) != CQuestDescription::Data().end())
-		{
-			// Check if the ClientID is within the valid range
-			if(ClientID < 0 || ClientID >= MAX_PLAYERS)
-				return true;
+	void ShowQuestList(CPlayer* pPlayer) const;
+	void ShowQuestsTabList(const char* pTabname, CPlayer* pPlayer, QuestState State) const;
 
-			// Check if the ClientID has the given QuestID
-			if(CPlayerQuest::Data()[ClientID].find(QuestID) != CPlayerQuest::Data()[ClientID].end())
-				return true;
-		}
-
-		return false;
-	}
-
-	// Function to display the main list of quests for a player
-	void ShowQuestsMainList(CPlayer* pPlayer);
-
-	// Function to show active quests npc for a player with a specific quest ID
-	void ShowQuestActivesNPC(CPlayer* pPlayer, int QuestID) const;
-
-private:
-	// Function to show a list of quests for a player, filtered by their state.
-	// Parameters:
-	// - pPlayer: pointer to the player for whom to display the quests
-	// - State: the state of the quests to display (e.g. active, completed, etc.)
-	void ShowQuestsTabList(CPlayer* pPlayer, QuestState State);
-
-	// Function to show the details of a specific quest for a player.
-	// Parameters:
-	// - pPlayer: pointer to the player for whom to display the quest details
-	// - QuestID: the ID of the quest to display
-	void ShowQuestID(CPlayer* pPlayer, int QuestID) const;
-
-public:
-	void QuestShowRequired(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size);
-
-	void AppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
-
-	void AppendQuestBoardGroup(CPlayer* pPlayer, CQuestsBoard* pBoard, class VoteWrapper* pWrapper, int QuestFlag) const;
-	void ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) const;
-	void ShowQuestsBoardQuest(CPlayer* pPlayer, CQuestsBoard* pBoard, int QuestID) const;
-
-	// Function: GetBoardByPos
-	// Input: Pos - a 2D vector representing the position
-	// Return: a pointer to a CQuestsBoard object
 	CQuestsBoard* GetBoardByPos(vec2 Pos) const;
+	void ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) const;
+	void ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) const;
+
+	void PrepareRequiredBuffer(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size);
+	void TryAppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);
+
 	void ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) const;
-
-
 	void Update(CPlayer* pPlayer);
 	void TryAcceptNextQuestChain(CPlayer* pPlayer, int BaseQuestID) const;
-	void TryAcceptNextQuestAll(CPlayer* pPlayer) const;
+	void TryAcceptNextQuestChainAll(CPlayer* pPlayer) const;
 	int GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const;
-	int GetCountComplectedQuests(int ClientID) const;
+	int GetCountCompletedQuests(int ClientID) const;
 };
 
 #endif

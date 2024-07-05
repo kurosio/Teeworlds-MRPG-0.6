@@ -304,7 +304,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	if(m_BotType == TYPE_BOT_QUEST && pDialog->IsRequestAction())
 	{
 		// check for client and send quest tables
-		GS()->Core()->QuestManager()->QuestShowRequired(m_pPlayer, QuestBotInfo::ms_aQuestBot[m_MobID], aBufQuestTask, sizeof(aBufQuestTask));
+		GS()->Core()->QuestManager()->PrepareRequiredBuffer(m_pPlayer, QuestBotInfo::ms_aQuestBot[m_MobID], aBufQuestTask, sizeof(aBufQuestTask));
 	}
 
 	// copy all formated data

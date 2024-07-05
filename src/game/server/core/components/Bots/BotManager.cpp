@@ -117,14 +117,15 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_HasAction = lAction;
 		QuestBot.m_aDialogs = aDialogs;
 
-		// initilize quest steps
+		// initialize quest steps
 		CQuestStepBase Base;
 		Base.m_Bot = QuestBot;
-		GS()->GetQuestInfo(QuestID)->m_vSteps[QuestBot.m_StepPos].push_back(Base);
+		dbg_assert(GS()->GetQuestInfo(QuestID) != nullptr, "QuestID is not valid");
+		auto* pQuestInfo = GS()->GetQuestInfo(QuestID);
+		pQuestInfo->m_vSteps[QuestBot.m_StepPos].push_back(Base);
 
 		// initilize
 		QuestBotInfo::ms_aQuestBot[MobID] = std::move(QuestBot);
-		dbg_assert(GS()->GetQuestInfo(QuestID) != nullptr, "QuestID is not valid");
 	}
 }
 
@@ -147,6 +148,9 @@ void CBotManager::InitNPCBots(const char* pWhereLocalWorld)
 		NpcBot.m_GiveQuestID = pRes->getInt("GiveQuestID");
 		if(NpcBot.m_GiveQuestID > 0)
 		{
+			dbg_assert(GS()->GetQuestInfo(NpcBot.m_GiveQuestID) != nullptr, "QuestID is not valid");
+			auto* pQuestInfo = GS()->GetQuestInfo(NpcBot.m_GiveQuestID);
+			pQuestInfo->AddFlag(QUEST_FLAG_GRANTED_FROM_NPC);
 			NpcBot.m_Function = FUNCTION_NPC_GIVE_QUEST;
 		}
 
