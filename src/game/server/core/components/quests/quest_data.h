@@ -105,8 +105,8 @@ public:
 
 	QuestIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_Name.c_str(); }
-	std::optional<int> GetNextQuestID() const { return m_NextQuestID; }
-	std::optional<int> GetPreviousQuestID() const { return m_PreviousQuestID; }
+	CQuestDescription* GetNextQuest() const;
+	CQuestDescription* GetPreviousQuest() const;
 	CReward& Reward() { return m_Reward; }
 
 	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem);

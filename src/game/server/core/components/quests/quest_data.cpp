@@ -12,6 +12,26 @@ void CQuestDescription::CReward::ApplyReward(CPlayer* pPlayer) const
 	pPlayer->Account()->AddGold(m_Gold);
 }
 
+CQuestDescription* CQuestDescription::GetNextQuest() const
+{
+	if(m_NextQuestID.has_value())
+	{
+		if(const auto it = m_pData.find(m_NextQuestID.value()); it != m_pData.end())
+			return it->second;
+	}
+	return nullptr;
+}
+
+CQuestDescription* CQuestDescription::GetPreviousQuest() const
+{
+	if(m_PreviousQuestID.has_value())
+	{
+		if(const auto it = m_pData.find(m_PreviousQuestID.value()); it != m_pData.end())
+			return it->second;
+	}
+	return nullptr;
+}
+
 void CQuestDescription::PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem)
 {
 	// clear old steps

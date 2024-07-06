@@ -61,15 +61,10 @@ void CQuestManager::OnInit()
 	}
 
 	// Initialize previous quests ids for chain by nextQuestID
-	for(const auto& [id, quest] : CQuestDescription::Data())
+	for(const auto& [id, pQuest] : CQuestDescription::Data())
 	{
-		if(auto nextQuestID = quest->GetNextQuestID())
-		{
-			int nextID = nextQuestID.value();
-			auto nextQuest = CQuestDescription::Data().find(nextID);
-			if(nextQuest != CQuestDescription::Data().end())
-				nextQuest->second->InitPrevousQuestID(id);
-		}
+		if(auto* pNextQuest = pQuest->GetNextQuest())
+			pNextQuest->InitPrevousQuestID(id);
 	}
 }
 
@@ -457,15 +452,17 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 
 	// add buttons
 	VoteWrapper VButtons(ClientID);
-	const auto nextQuestID = pQuest->GetNextQuestID();
-	const auto previousQuestID = pQuest->GetPreviousQuestID();
+	const auto* pNextQuest = pQuest->GetNextQuest();
+	const auto* pPreviousQuest = pQuest->GetPreviousQuest();
 
-	if(nextQuestID.has_value())
-		VButtons.AddMenu(MENU_BOARD_QUEST_SELECTED, nextQuestID.value(), "Next: \u27A1 {}", GS()->GetQuestInfo(nextQuestID.value())->GetName());
-
-	if(previousQuestID.has_value())
+	if(pNextQuest)
 	{
-		auto* playerPreviousQuest = pPlayer->GetQuest(previousQuestID.value());
+		VButtons.AddMenu(MENU_BOARD_QUEST_SELECTED, pNextQuest->GetID(), "Next: \u27A1 {}", pNextQuest->GetName());
+	}
+
+	if(pPreviousQuest)
+	{
+		auto* playerPreviousQuest = pPlayer->GetQuest(pPreviousQuest->GetID());
 		if(playerPreviousQuest->IsCompleted())
 		{
 			if(pQuest->CanBeAcceptedOrRefused())
@@ -476,7 +473,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 		else
 			VButtons.Add("\u26A0 Need to complete {}.", playerPreviousQuest->Info()->GetName());
 
-		VButtons.AddMenu(MENU_BOARD_QUEST_SELECTED, previousQuestID.value(), "Previous: \u2B05 {}", playerPreviousQuest->Info()->GetName());
+		VButtons.AddMenu(MENU_BOARD_QUEST_SELECTED, pPreviousQuest->GetID(), "Previous: \u2B05 {}", playerPreviousQuest->Info()->GetName());
 	}
 	else
 	{
@@ -549,11 +546,11 @@ void CQuestManager::TryAcceptNextQuestChain(CPlayer* pPlayer, int BaseQuestID) c
 		return;
 
 	// try to accept next quest
-	if(auto nextQuestID = pVerifyQuestInfo->GetNextQuestID())
+	if(const auto* pNextQuest = pVerifyQuestInfo->GetNextQuest())
 	{
-		CPlayerQuest* pNextQuest = pPlayer->GetQuest(nextQuestID.value());
-		if(pNextQuest && pNextQuest->GetState() == QuestState::NO_ACCEPT)
-			pNextQuest->Accept();
+		auto* pPlayerNextQuest = pPlayer->GetQuest(pNextQuest->GetID());
+		if(pPlayerNextQuest && pPlayerNextQuest->GetState() == QuestState::NO_ACCEPT)
+			pPlayerNextQuest->Accept();
 	}
 }
 
