@@ -82,7 +82,7 @@ enum
 	SERVERINFO_LEVEL_MIN = 0,
 	SERVERINFO_LEVEL_MAX = 2,
 
-	MAX_CLIENTS = 128, // TODO: add support vanilla
+	MAX_CLIENTS = 512, // TODO: add support vanilla
 	MAX_PLAYERS = 24,
 	VANILLA_MAX_CLIENTS = 64,
 

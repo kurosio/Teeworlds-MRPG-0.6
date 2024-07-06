@@ -58,7 +58,7 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 	std::string StrAccountIDs = std::to_string(OwnerUID);
 
 	// insert to database
-	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('%d', '%d', '%d', '%s')", InitID, OwnerUID, StrAccountIDs.c_str());
+	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('%d', '%d', '%s')", InitID, OwnerUID, StrAccountIDs.c_str());
 
 	// initialize the group
 	auto& newGroup = GroupData::CreateElement(InitID);

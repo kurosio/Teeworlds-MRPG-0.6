@@ -135,7 +135,7 @@ void CEntityQuestAction::TryFinish()
 	// Create a death entity at the current position and destroy this entity
 	GS()->CreateDeath(m_Pos, m_ClientID);
 	GameWorld()->DestroyEntity(this);
-	pQuestStep->m_vpEntitiesAction.erase(std::remove(pQuestStep->m_vpEntitiesAction.begin(), pQuestStep->m_vpEntitiesAction.end(), this), pQuestStep->m_vpEntitiesAction.end());
+	std::erase(pQuestStep->m_vpEntitiesAction, this);
 
 	// Finish the quest step if AutoCompleteQuestStep is true
 	if(m_AutoCompletesQuestStep)

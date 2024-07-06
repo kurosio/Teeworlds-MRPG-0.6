@@ -76,10 +76,10 @@ bool CPlayerQuest::Accept()
 	m_State = QuestState::ACCEPT;
 	m_Step = 1;
 	m_Datafile.Create();
-	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, GetPlayer()->Account()->GetID(), m_State);
+	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, pPlayer->Account()->GetID(), m_State);
 
 	// handle repeatable quest
-	int ClientID = GetPlayer()->GetCID();
+	int ClientID = pPlayer->GetCID();
 	if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
 	{
 		GS()->Chat(ClientID, "Repeatable quest: '{}' accepted!", Info()->GetName());
