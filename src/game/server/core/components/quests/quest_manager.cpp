@@ -391,7 +391,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 			VStep.MarkList().Add("\u2659 From {}:", questBotInfo.GetName());
 			VStep.BeginDepth();
 
-			// Required defeats
+			// required defeats
 			for(const auto& requiredDefeat : questBotInfo.m_vRequiredDefeats)
 			{
 				const auto& botInfo = DataBotInfo::ms_aDataBot[requiredDefeat.m_BotID];
@@ -410,7 +410,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 				hasTask = true;
 			}
 
-			// Required items
+			// required items
 			for(const auto& requiredItem : questBotInfo.m_vRequiredItems)
 			{
 				if(!pPlayerQuest->IsAccepted())
@@ -426,7 +426,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 				hasTask = true;
 			}
 
-			// Required actions
+			// required actions
 			for(size_t i = 0; i < questBotInfo.m_vRequiredMoveAction.size(); ++i)
 			{
 				const auto& requiredAction = questBotInfo.m_vRequiredMoveAction[i];
@@ -455,7 +455,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 		VoteWrapper::AddEmptyline(ClientID);
 	}
 
-	// Add buttons
+	// add buttons
 	VoteWrapper VButtons(ClientID);
 	const auto nextQuestID = pQuest->GetNextQuestID();
 	const auto previousQuestID = pQuest->GetPreviousQuestID();
@@ -466,37 +466,24 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 	if(previousQuestID.has_value())
 	{
 		auto* playerPreviousQuest = pPlayer->GetQuest(previousQuestID.value());
-
 		if(playerPreviousQuest->IsCompleted())
 		{
-			if(!pQuest->IsGranted() || pQuest->HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD))
+			if(pQuest->CanBeAcceptedOrRefused())
 				VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
 			else
-			{
-				if(pQuest->HasFlag(QUEST_FLAG_GRANTED_FROM_AUTO))
-					VButtons.Add("\u26A0 Automatically granted");
-				else if(pQuest->HasFlag(QUEST_FLAG_GRANTED_FROM_NPC))
-					VButtons.Add("\u26A0 Granted by NPC");
-			}
+				VButtons.Add("\u26A0 Quest is auto-activated or by NPC");
 		}
 		else
-		{
 			VButtons.Add("\u26A0 Need to complete {}.", playerPreviousQuest->Info()->GetName());
-		}
 
 		VButtons.AddMenu(MENU_BOARD_QUEST_SELECTED, previousQuestID.value(), "Previous: \u2B05 {}", playerPreviousQuest->Info()->GetName());
 	}
 	else
 	{
-		if(!pQuest->IsGranted() || pQuest->HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD))
+		if(pQuest->CanBeAcceptedOrRefused())
 			VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
 		else
-		{
-			if(pQuest->HasFlag(QUEST_FLAG_GRANTED_FROM_AUTO))
-				VButtons.Add("\u26A0 Automatically granted");
-			else if(pQuest->HasFlag(QUEST_FLAG_GRANTED_FROM_NPC))
-				VButtons.Add("\u26A0 Granted by NPC");
-		}
+			VButtons.Add("\u26A0 Quest is auto-activated or by NPC");
 	}
 }
 

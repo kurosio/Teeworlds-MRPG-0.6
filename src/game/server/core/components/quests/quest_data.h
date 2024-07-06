@@ -25,30 +25,35 @@ enum
 	QUEST_FLAG_GRANTED_FROM_AUTO = 1 << 12,
 };
 
-// quest reward class
-class CQuestReward
-{
-	int m_Experience{};
-	int m_Gold{};
-
-public:
-	CQuestReward() = default;
-	void Init(int Experience, int Gold)
-	{
-		m_Experience = Experience;
-		m_Gold = Gold;
-	}
-	int GetExperience() const { return m_Experience; }
-	int GetGold() const { return m_Gold; }
-	void ApplyReward(CPlayer* pPlayer) const;
-};
-
 // quest description
 class CQuestDescription : public MultiworldIdentifiableData < std::map< int, CQuestDescription* > >
 {
+public:
+	/* -------------------------------------
+	 * Quest reward impl
+	 * ------------------------------------- */
+	class CReward
+	{
+		int m_Experience {};
+		int m_Gold {};
+
+	public:
+		CReward() = default;
+		void Init(int Experience, int Gold)
+		{
+			m_Experience = Experience;
+			m_Gold = Gold;
+		}
+		int GetExperience() const { return m_Experience; }
+		int GetGold() const { return m_Gold; }
+		void ApplyReward(CPlayer* pPlayer) const;
+	};
+
+private:
+	// variables
 	QuestIdentifier m_ID {};
 	std::string m_Name {};
-	CQuestReward m_Reward {};
+	CReward m_Reward {};
 	int m_Flags {};
 	std::optional<int> m_NextQuestID {};
 	std::optional<int> m_PreviousQuestID {};
@@ -102,11 +107,12 @@ public:
 	const char* GetName() const { return m_Name.c_str(); }
 	std::optional<int> GetNextQuestID() const { return m_NextQuestID; }
 	std::optional<int> GetPreviousQuestID() const { return m_PreviousQuestID; }
-	CQuestReward& Reward() { return m_Reward; }
+	CReward& Reward() { return m_Reward; }
 
 	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem);
 	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
-	bool IsGranted() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_AUTO) || HasFlag(QUEST_FLAG_GRANTED_FROM_NPC) || HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD); }
+	bool CanBeGranted() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_AUTO) || HasFlag(QUEST_FLAG_GRANTED_FROM_NPC) || HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD); }
+	bool CanBeAcceptedOrRefused() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD) || !CanBeGranted(); }
 
 	// steps with array bot data on active step
 	std::map < int, std::deque<CQuestStepBase> > m_vSteps;
@@ -127,18 +133,11 @@ class CPlayerQuest : public MultiworldIdentifiableData< std::map < int, std::map
 	int m_Step {};
 
 public:
+	QuestDatafile m_Datafile {};
+
 	CPlayerQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID), m_Step(1) { m_ID = ID; }
 	~CPlayerQuest();
 
-	/*
-	 * Datafile for the quest
-	 */
-	QuestDatafile m_Datafile {};
-
-	/*
-	 * Create a new instance of the quest
-	 *
-	 */
 	static CPlayerQuest* CreateElement(QuestIdentifier ID, int ClientID)
 	{
 		dbg_assert(CQuestDescription::Data().find(ID) != CQuestDescription::Data().end(), "Quest ID not found");
@@ -147,86 +146,24 @@ public:
 		return m_pData[ClientID][ID] = pData;
 	}
 
-	/*
-	 * Initialize the quest
-	 *
-	 */
 	void Init(QuestState State)
 	{
 		m_State = State;
 		m_Datafile.Load();
 	}
 
-	/*
-	 * Get the quest description
-	 *
-	 */
 	CQuestDescription* Info() const;
-
-	/*
-	 * Get the quest identifier
-	 *
-	 */
 	QuestIdentifier GetID() const { return m_ID; }
-
-	/*
-	 * Get the quest state
-	 *
-	 */
 	QuestState GetState() const { return m_State; }
-
-	/*
-	 * Check if the quest is completed
-	 *
-	 */
 	bool IsCompleted() const { return m_State == QuestState::FINISHED; }
-
-	/*
-	 * Check if the quest is accepted
-	 *
-	 */
 	bool IsAccepted() const { return m_State == QuestState::ACCEPT; }
-
-	/*
-	 * Check the quest has unfinished steps on the current position
-	 *
-	 */
 	bool HasUnfinishedSteps() const;
-
-	/*
-	 * Get the current step position
-	 *
-	 */
 	int GetStepPos() const { return m_Step; }
-
-	/*
-	 * Get the step by quest mob id
-	 *
-	 */
 	CQuestStep* GetStepByMob(int MobID);
 
-	/*
-	 * Update the quest and all steps
-	 *
-	 */
 	void Update();
-
-	/*
-	 * Accept the quest and set the state to 'Accepted'
-	 *
-	 */
 	bool Accept();
-
-	/*
-	 * Reset all datas of the quest and refuse it to state 'No accepted'
-	 *
-	 */
 	void Refuse();
-
-	/*
-	 * Reset all datas of the quest save state
-	 *	 
-	 */
 	void Reset();
 
 private:

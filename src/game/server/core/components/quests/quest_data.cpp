@@ -6,7 +6,7 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 
-void CQuestReward::ApplyReward(CPlayer* pPlayer) const
+void CQuestDescription::CReward::ApplyReward(CPlayer* pPlayer) const
 {
 	pPlayer->Account()->AddExperience(m_Experience);
 	pPlayer->Account()->AddGold(m_Gold);
@@ -187,6 +187,6 @@ void CPlayerQuest::Update()
 
 CQuestStep* CPlayerQuest::GetStepByMob(int MobID)
 {
-	auto iter = std::find_if(m_vSteps.begin(), m_vSteps.end(), [MobID](const CQuestStep& Step) { return Step.m_Bot.m_ID == MobID; });
+	auto iter = std::ranges::find_if(m_vSteps, [MobID](const CQuestStep& Step) { return Step.m_Bot.m_ID == MobID; });
 	return iter != m_vSteps.end() ? &(*iter) : nullptr;
 }
