@@ -94,8 +94,10 @@ void CPathFinder::FindPath()
 		return;
 
 	std::map<int, CNode> lNodes;
+	lNodes[m_StartIndex] = m_lMap[m_StartIndex];
 	lNodes[m_StartIndex].m_Parent = START;
 	lNodes[m_StartIndex].m_IsClosed = true;
+	lNodes[m_EndIndex] = m_lMap[m_EndIndex];
 	lNodes[m_EndIndex].m_Parent = END;
 
 	int CurrentIndex = m_StartIndex;
@@ -107,11 +109,12 @@ void CPathFinder::FindPath()
 			int WorkingIndex = CurrentIndex + neighborOffset;
 			if(WorkingIndex >= 0 && WorkingIndex < (int)m_lMap.size())
 			{
-				if(!m_lMap[WorkingIndex].m_IsClosed)
-				{
-					CNode& WorkingNode = lNodes[WorkingIndex];
-					WorkingNode = m_lMap[WorkingIndex];
+				if(!lNodes.contains(WorkingIndex))
+					lNodes[WorkingIndex] = m_lMap[WorkingIndex];
 
+				CNode& WorkingNode = lNodes[WorkingIndex];
+				if(!WorkingNode.m_IsClosed)
+				{
 					int tentativeG = lNodes[CurrentIndex].m_G + 1;
 					if(!WorkingNode.m_IsOpen || tentativeG < WorkingNode.m_G)
 					{
@@ -119,6 +122,7 @@ void CPathFinder::FindPath()
 						WorkingNode.m_G = tentativeG;
 						WorkingNode.m_H = std::abs(WorkingNode.m_Pos.x - lNodes[m_EndIndex].m_Pos.x) + std::abs(WorkingNode.m_Pos.y - lNodes[m_EndIndex].m_Pos.y);
 						WorkingNode.m_F = WorkingNode.m_G + WorkingNode.m_H;
+
 						if(!WorkingNode.m_IsOpen)
 						{
 							WorkingNode.m_IsOpen = true;
@@ -139,7 +143,6 @@ void CPathFinder::FindPath()
 		CurrentIndex = m_Open.GetMin()->m_ID;
 		m_Open.RemoveMin();
 
-		lNodes[CurrentIndex] = m_lMap[CurrentIndex];
 		lNodes[CurrentIndex].m_IsClosed = true;
 		m_ClosedNodes++;
 	}
@@ -149,9 +152,8 @@ void CPathFinder::FindPath()
 		m_lFinalPath[m_FinalSize] = lNodes[CurrentIndex];
 		m_FinalSize++;
 		CurrentIndex = lNodes[CurrentIndex].m_Parent;
-		if(CurrentIndex < 0)
-			break;
 	}
+	dbg_msg("test", "end");
 }
 
 vec2 CPathFinder::GetRandomWaypoint()
