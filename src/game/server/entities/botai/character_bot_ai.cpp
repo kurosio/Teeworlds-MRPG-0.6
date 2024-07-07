@@ -918,9 +918,6 @@ void CCharacterBotAI::Move()
 				vec2 dir = direction(a);
 				vec2 Pos = GetPos() + dir * GS()->Tuning()->m_HookLength;
 
-				if(GameWorld()->FirstIntersectCharacter(GetPos(), Pos, 16.0f, IntersectPos, (CCharacter*)this))
-					continue;
-
 				if((GS()->Collision()->IntersectLine(GetPos(), Pos, &Pos, nullptr) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
 				{
 					vec2 HookVel = dir * GS()->Tuning()->m_HookDragAccel;
@@ -931,6 +928,9 @@ void CCharacterBotAI::Move()
 					float ps = dot(WayDir, HookVel);
 					if(ps > MaxForce)
 					{
+						if(GameWorld()->IntersectCharacter(GetPos(), Pos, 16.0f, IntersectPos, this))
+							continue;
+
 						MaxForce = ps;
 						HookDir = Pos - GetPos();
 					}
