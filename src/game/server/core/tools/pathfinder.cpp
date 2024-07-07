@@ -153,7 +153,6 @@ void CPathFinder::FindPath()
 		m_FinalSize++;
 		CurrentIndex = lNodes[CurrentIndex].m_Parent;
 	}
-	dbg_msg("test", "end");
 }
 
 vec2 CPathFinder::GetRandomWaypoint()
