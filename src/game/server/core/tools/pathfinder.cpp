@@ -105,7 +105,7 @@ void CPathFinder::FindPath()
 		for(const int neighborOffset : neighborOffsets)
 		{
 			int WorkingIndex = CurrentIndex + neighborOffset;
-			if(WorkingIndex >= 0 && WorkingIndex < m_lMap.size())
+			if(WorkingIndex >= 0 && WorkingIndex < (int)m_lMap.size())
 			{
 				if(!m_lMap[WorkingIndex].m_IsClosed)
 				{
