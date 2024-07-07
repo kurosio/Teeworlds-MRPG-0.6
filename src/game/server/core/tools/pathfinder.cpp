@@ -16,9 +16,8 @@ CPathFinder::CPathFinder(CLayers* Layers, CCollision* Collision) : m_pLayers(Lay
 	m_LayerHeight = m_pLayers->GameLayer()->m_Height;
 
 	// set size for array
-	m_lMap.set_size(m_LayerWidth * m_LayerHeight);
-	m_lNodes.set_size(m_LayerWidth * m_LayerHeight);
-	m_lFinalPath.set_size(MAX_WAY_CALC);
+	m_lMap.resize(m_LayerWidth * m_LayerHeight);
+	m_lFinalPath.resize(MAX_WAY_CALC);
 
 	// init size for heap
 	m_Open.SetSize(4 * MAX_WAY_CALC);
@@ -55,7 +54,6 @@ CPathFinder::~CPathFinder()
 {
 	m_lMap.clear();
 	m_lFinalPath.clear();
-	m_lNodes.clear();
 
 	// delete handler
 	delete m_pHandler;
@@ -67,14 +65,11 @@ void CPathFinder::Init()
 	m_ClosedNodes = 0;
 	m_FinalSize = 0;
 	m_Open.MakeEmpty();
-	m_lNodes = m_lMap;
 }
 
 void CPathFinder::SetStart(vec2 Pos)
 {
 	int Index = GetIndex(Pos.x, Pos.y);
-	m_lNodes[Index].m_Parent = START;
-	m_lNodes[Index].m_IsClosed = true;
 	m_ClosedNodes++;
 	m_StartIndex = Index;
 }
@@ -82,7 +77,6 @@ void CPathFinder::SetStart(vec2 Pos)
 void CPathFinder::SetEnd(vec2 Pos)
 {
 	int Index = GetIndex(Pos.x, Pos.y);
-	m_lNodes[Index].m_Parent = END;
 	m_EndIndex = Index;
 }
 
@@ -96,64 +90,67 @@ int CPathFinder::GetIndex(int x, int y) const
 
 void CPathFinder::FindPath()
 {
+	if(m_StartIndex == -1 || m_EndIndex == -1)
+		return;
+
+	std::map<int, CNode> lNodes;
+	lNodes[m_StartIndex].m_Parent = START;
+	lNodes[m_StartIndex].m_IsClosed = true;
+	lNodes[m_EndIndex].m_Parent = END;
+
 	int CurrentIndex = m_StartIndex;
-	if(m_StartIndex > -1 && m_EndIndex > -1)
+	int neighborOffsets[] = { 1, -1, m_LayerWidth, -m_LayerWidth };
+	while(m_ClosedNodes < MAX_WAY_CALC && m_lMap[CurrentIndex].m_ID != m_EndIndex)
 	{
-		while(m_ClosedNodes < MAX_WAY_CALC && m_lNodes[CurrentIndex].m_ID != m_EndIndex)
+		for(const int neighborOffset : neighborOffsets)
 		{
-			// TODO ADD: offset by dist for corrects working with direction
-
-			const int neighborOffsets[/*8*/4] = { 1, -1, m_LayerWidth, -m_LayerWidth/*, m_LayerWidth + 1, -m_LayerWidth + 1, m_LayerWidth - 1, -m_LayerWidth - 1*/ };
-			for (const int neighborOffset : neighborOffsets)
+			int WorkingIndex = CurrentIndex + neighborOffset;
+			if(WorkingIndex >= 0 && WorkingIndex < m_lMap.size())
 			{
-				int WorkingIndex = CurrentIndex + neighborOffset;
-				if(WorkingIndex >= 0 && WorkingIndex < m_lNodes.size() && !m_lNodes[WorkingIndex].m_IsClosed)
+				if(!m_lMap[WorkingIndex].m_IsClosed)
 				{
-					CNode& WorkingNode = m_lNodes[WorkingIndex];
-					if(!WorkingNode.m_IsOpen)
+					CNode& WorkingNode = lNodes[WorkingIndex];
+					WorkingNode = m_lMap[WorkingIndex];
+
+					int tentativeG = lNodes[CurrentIndex].m_G + 1;
+					if(!WorkingNode.m_IsOpen || tentativeG < WorkingNode.m_G)
 					{
 						WorkingNode.m_Parent = CurrentIndex;
-						WorkingNode.m_G = m_lNodes[CurrentIndex].m_G + 1;
-						WorkingNode.m_H = std::abs(WorkingNode.m_Pos.x - m_lNodes[m_EndIndex].m_Pos.x) + std::abs(WorkingNode.m_Pos.y - m_lNodes[m_EndIndex].m_Pos.y);
+						WorkingNode.m_G = tentativeG;
+						WorkingNode.m_H = std::abs(WorkingNode.m_Pos.x - lNodes[m_EndIndex].m_Pos.x) + std::abs(WorkingNode.m_Pos.y - lNodes[m_EndIndex].m_Pos.y);
 						WorkingNode.m_F = WorkingNode.m_G + WorkingNode.m_H;
-						WorkingNode.m_IsOpen = true;
-
-						m_Open.Insert(WorkingNode);
-					}
-					else if(WorkingNode.m_G > m_lNodes[CurrentIndex].m_G + 1)
-					{
-						WorkingNode.m_Parent = CurrentIndex;
-						WorkingNode.m_G = m_lNodes[CurrentIndex].m_G + 1;
-						WorkingNode.m_F = WorkingNode.m_G + WorkingNode.m_H;
-
-						m_Open.Replace(WorkingNode);
+						if(!WorkingNode.m_IsOpen)
+						{
+							WorkingNode.m_IsOpen = true;
+							m_Open.Insert(WorkingNode);
+						}
+						else
+						{
+							m_Open.Replace(WorkingNode);
+						}
 					}
 				}
 			}
-
-			if(m_Open.GetSize() < 1)
-				break;
-
-			// get Lowest F from heap and set new CurrentIndex
-			CurrentIndex = m_Open.GetMin()->m_ID;
-
-			// delete it \o/
-			m_Open.RemoveMin();
-
-			// set the one with lowest score to closed list and begin new from there
-			m_lNodes[CurrentIndex].m_IsClosed = true;
-			m_ClosedNodes++;
 		}
 
-		// go backwards and return final path :-O
-		while(m_lNodes[CurrentIndex].m_ID != m_StartIndex)
-		{
-			m_lFinalPath[m_FinalSize] = m_lNodes[CurrentIndex];
-			m_FinalSize++;
+		if(m_Open.GetSize() < 1)
+			break;
 
-			// get next node
-			CurrentIndex = m_lNodes[CurrentIndex].m_Parent;
-		}
+		CurrentIndex = m_Open.GetMin()->m_ID;
+		m_Open.RemoveMin();
+
+		lNodes[CurrentIndex] = m_lMap[CurrentIndex];
+		lNodes[CurrentIndex].m_IsClosed = true;
+		m_ClosedNodes++;
+	}
+
+	while(lNodes[CurrentIndex].m_ID != m_StartIndex)
+	{
+		m_lFinalPath[m_FinalSize] = lNodes[CurrentIndex];
+		m_FinalSize++;
+		CurrentIndex = lNodes[CurrentIndex].m_Parent;
+		if(CurrentIndex < 0)
+			break;
 	}
 }
 

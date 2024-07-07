@@ -127,8 +127,8 @@ public:
 
 	void FindPath();
 
-	array<CNode> m_lMap;
-	array<CNode> m_lFinalPath;
+	std::vector<CNode> m_lMap;
+	std::vector<CNode> m_lFinalPath;
 
 	int m_FinalSize;
 private:
@@ -140,8 +140,6 @@ private:
 
 	CLayers* m_pLayers;
 	CCollision* m_pCollision;
-
-	array<CNode> m_lNodes;
 
 	// binary heap for open nodes
 	CBinaryHeap<CNode> m_Open;

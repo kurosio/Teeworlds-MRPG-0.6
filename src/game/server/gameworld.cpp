@@ -232,6 +232,32 @@ CCharacter* CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 	return pClosest;
 }
 
+CCharacter* CGameWorld::FirstIntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, CEntity* pNotThis)
+{
+	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+	CCharacter* pClosest = nullptr;
+
+	for(CCharacter* p = (CCharacter*)FindFirst(ENTTYPE_CHARACTER); p; p = (CCharacter*)p->TypeNext())
+	{
+		if(p == pNotThis)
+			continue;
+
+		vec2 IntersectPos;
+		if(closest_point_on_line(Pos0, Pos1, p->m_Pos, IntersectPos))
+		{
+			float LenToIntersect = distance(Pos0, IntersectPos);
+			if(LenToIntersect < ClosestLen && LenToIntersect < p->m_ProximityRadius + Radius)
+			{
+				NewPos = IntersectPos;
+				pClosest = p;
+				break;
+			}
+		}
+	}
+
+	return pClosest;
+}
+
 bool CGameWorld::IntersectClosestEntity(vec2 Pos, float Radius, int EnttypeID)
 {
 	for(CEntity* pDoor = FindFirst(EnttypeID); pDoor; pDoor = pDoor->TypeNext())
@@ -338,9 +364,6 @@ void CGameWorld::UpdatePlayerMaps()
 				// Set the distance to 0 and add the actual distance
 				Dist[j].first = 0;
 				Dist[j].first += Distance;
-
-				// marked active bots
-				m_aMarkedBotsActive.insert(j);
 			}
 		}
 
@@ -388,6 +411,9 @@ void CGameWorld::UpdatePlayerMaps()
 			if(aReverseMap[k] != -1 && Demand-- > 0)
 				pMap[aReverseMap[k]] = -1;
 		}
+
+		for(int j = MAX_PLAYERS; j < VANILLA_MAX_CLIENTS - 1; j++)
+			m_aMarkedBotsActive.insert(pMap[j]);
 
 		pMap[VANILLA_MAX_CLIENTS - 1] = -1; // player with empty name to say chat msgs
 	}
