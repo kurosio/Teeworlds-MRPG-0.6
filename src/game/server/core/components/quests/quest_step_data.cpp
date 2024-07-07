@@ -11,8 +11,8 @@
 #include <game/server/core/entities/tools/arrow_navigator.h>
 #include <game/server/core/entities/tools/laser_orbite.h>
 
-#include "Entities/move_to.h"
-#include "Entities/path_finder.h"
+#include "entities/move_to.h"
+#include "entities/path_finder.h"
 #include "game/server/entity_manager.h"
 
 void CQuestStepBase::UpdateBot() const
