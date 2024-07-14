@@ -180,10 +180,8 @@ void CPlayer::PostTick()
 		HandlePrison();
 	}
 
-	// Call the function HandleVoteOptionals() to handle any optional vote features.
-	HandleVoteOptionals();
-
-	// Handle scoreboard colors
+	// handlers
+	CVoteOptional::HandleVoteOptionals(m_ClientID);
 	HandleScoreboardColors();
 }
 
@@ -840,7 +838,7 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 	if(!CVoteOptional::Data()[m_ClientID].empty())
 	{
 		CVoteOptional* pOptional = &CVoteOptional::Data()[m_ClientID].front();
-		pOptional->Run(Vote == 1);
+		pOptional->ExecuteVote(Vote == 1);
 	}
 
 	// - - - - - F3- - - - - - -
@@ -1024,43 +1022,4 @@ int CPlayer::GetPlayerWorldID() const
 CTeeInfo& CPlayer::GetTeeInfo() const
 {
 	return Account()->m_TeeInfos;
-}
-
-// Function to handle optional voting options for a player
-void CPlayer::HandleVoteOptionals() const
-{
-	// If the list of optionals is empty, return
-	if(CVoteOptional::Data()[m_ClientID].empty())
-		return;
-
-	// Get a pointer to the first optional in the list
-	CVoteOptional* pOptional = &CVoteOptional::Data()[m_ClientID].front();
-
-	// If the optional is not already being processed
-	if(!pOptional->m_Working)
-	{
-		// Create a vote set message and send the message to the client
-		CNetMsg_Sv_VoteSet Msg;
-		Msg.m_Timeout = (pOptional->m_CloseTime - time_get()) / time_freq();
-		Msg.m_pDescription = pOptional->m_Description.c_str();
-		Msg.m_pReason = "\0";
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
-
-		// Mark the optional as being processed
-		pOptional->m_Working = true;
-	}
-
-	// If the closing time of the optional has not passed yet
-	if(pOptional->m_CloseTime < time_get())
-	{
-		// Create a vote set message with timeout 0 and send the message to the client
-		CNetMsg_Sv_VoteSet Msg;
-		Msg.m_Timeout = 0;
-		Msg.m_pDescription = "";
-		Msg.m_pReason = "";
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
-
-		// Remove the first optional from the list
-		CVoteOptional::Data()[m_ClientID].pop();
-	}
 }

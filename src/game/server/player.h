@@ -181,12 +181,6 @@ public:
 
 	virtual Mood GetMoodState() const { return Mood::NORMAL; }
 	void ChangeWorld(int WorldID);
-
-	/* ==========================================================
-	   VOTING OPTIONAL EVENT
-	========================================================== */
-private:
-	void HandleVoteOptionals() const;
 };
 
 #endif

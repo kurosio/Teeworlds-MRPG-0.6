@@ -18,19 +18,39 @@
 
 void CDialogElem::Init(int BotID, std::string Text, bool Action)
 {
-	// left side
-	const char* pBot = str_find_nocase(Text.c_str(), "[ls_");
-	if(int LeftDataBotID = 0; pBot != nullptr && sscanf(pBot, "[ls_%d]", &LeftDataBotID) && DataBotInfo::IsDataBotValid(LeftDataBotID))
+	// lambda for find and erase
+	auto FindAndErase = [&](const std::string& token) -> bool
 	{
-		char aBufSearch[16];
-		str_format(aBufSearch, sizeof(aBufSearch), "[ls_%d]", LeftDataBotID);
-		Text.erase(Text.find(aBufSearch), str_length(aBufSearch));
-		m_LeftSide = LeftDataBotID;
+		size_t pos = Text.find(token);
+		if(pos != std::string::npos)
+		{
+			Text.erase(pos, token.length());
+			return true;
+		}
+		return false;
+	};
+
+	// lambda for parse
+	auto ParseBotID = [&](const std::string& prefix) -> std::optional<int>
+	{
+		const char* pBot = str_find_nocase(Text.c_str(), prefix.c_str());
+		int parsedBotID;
+		if(pBot != nullptr && sscanf(pBot, (prefix + "%d]").c_str(), &parsedBotID) && DataBotInfo::IsDataBotValid(BotID))
+		{
+			FindAndErase(prefix + std::to_string(parsedBotID) + "]");
+			return parsedBotID;
+		}
+		return std::nullopt;
+	};
+
+	// left side
+	if(auto LeftDataBotID = ParseBotID("[ls_"))
+	{
+		m_LeftSide = *LeftDataBotID;
 		m_Flags |= DIALOGFLAG_LEFT_BOT;
 	}
-	else if(str_find_nocase(Text.c_str(), "[le]") != nullptr)
+	else if(FindAndErase("[le]"))
 	{
-		Text.erase(Text.find("[le]"), 4);
 		m_Flags |= DIALOGFLAG_LEFT_EMPTY;
 	}
 	else
@@ -39,18 +59,13 @@ void CDialogElem::Init(int BotID, std::string Text, bool Action)
 	}
 
 	// right side
-	pBot = str_find_nocase(Text.c_str(), "[rs_");
-	if(int RightDataBotID = 0; pBot != nullptr && sscanf(pBot, "[rs_%d]", &RightDataBotID) && DataBotInfo::IsDataBotValid(RightDataBotID))
+	if(auto RightDataBotID = ParseBotID("[rs_"))
 	{
-		char aBufSearch[16];
-		str_format(aBufSearch, sizeof(aBufSearch), "[rs_%d]", RightDataBotID);
-		Text.erase(Text.find(aBufSearch), str_length(aBufSearch));
-		m_RightSide = RightDataBotID;
+		m_RightSide = *RightDataBotID;
 		m_Flags |= DIALOGFLAG_RIGHT_BOT;
 	}
-	else if(str_find_nocase(Text.c_str(), "[re]") != nullptr)
+	else if(FindAndErase("[re]"))
 	{
-		Text.erase(Text.find("[re]"), 4);
 		m_Flags |= DIALOGFLAG_RIGHT_EMPTY;
 	}
 	else
@@ -60,21 +75,14 @@ void CDialogElem::Init(int BotID, std::string Text, bool Action)
 	}
 
 	// speak left or right or author
-	if(m_Flags & DIALOGFLAG_LEFT_EMPTY && m_Flags & DIALOGFLAG_RIGHT_EMPTY)
-	{
+	if((m_Flags & DIALOGFLAG_LEFT_EMPTY) && (m_Flags & DIALOGFLAG_RIGHT_EMPTY))
 		m_Flags |= DIALOGFLAG_SPEAK_AUTHOR;
-	}
-	else if(str_find_nocase(Text.c_str(), "[l]") != nullptr)
-	{
-		Text.erase(Text.find("[l]"), 3);
+	else if(FindAndErase("[l]"))
 		m_Flags |= DIALOGFLAG_SPEAK_LEFT;
-	}
 	else
-	{
 		m_Flags |= DIALOGFLAG_SPEAK_RIGHT;
-	}
 
-	// initilize var
+	// initialize vars
 	m_Text = Text;
 	m_Request = Action;
 }
@@ -82,37 +90,35 @@ void CDialogElem::Init(int BotID, std::string Text, bool Action)
 void CDialogElem::Show(CGS* pGS, int ClientID) const
 {
 	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
+	if(!pPlayer) return;
 
-	// checking flags
+	// Determine nicknames based on flags
 	const char* pLeftNickname = nullptr;
 	const char* pRightNickname = nullptr;
+
 	if(m_Flags & DIALOGFLAG_SPEAK_AUTHOR)
 	{
 		pLeftNickname = "...";
 	}
 	else
 	{
-		// left sides flags
 		if(m_Flags & DIALOGFLAG_LEFT_PLAYER)
 			pLeftNickname = pGS->Server()->ClientName(ClientID);
 		else if(m_Flags & DIALOGFLAG_LEFT_BOT)
 			pLeftNickname = DataBotInfo::ms_aDataBot[m_LeftSide].m_aNameBot;
 
-		// right sides flags
 		if(m_Flags & DIALOGFLAG_RIGHT_BOT)
 			pRightNickname = DataBotInfo::ms_aDataBot[m_RightSide].m_aNameBot;
 	}
 
-	// show dialog
+	// Show dialog
 	pPlayer->m_Dialog.FormatText(this, pLeftNickname, pRightNickname);
 	pGS->Motd(ClientID, pPlayer->m_Dialog.GetCurrentText());
 }
 
 CDialogElem* CPlayerDialog::GetCurrent() const
 {
-	std::vector <CDialogElem>* pDialogsVector;
+	std::vector<CDialogElem>* pDialogsVector;
 	if(m_BotType == TYPE_BOT_QUEST)
 		pDialogsVector = &QuestBotInfo::ms_aQuestBot[m_MobID].m_aDialogs;
 	else
@@ -127,28 +133,26 @@ CDialogElem* CPlayerDialog::GetCurrent() const
 CGS* CPlayerDialog::GS() const { return m_pPlayer->GS(); }
 void CPlayerDialog::Start(int BotCID)
 {
-	// assert player
+	// Assert player
 	dbg_assert(m_pPlayer != nullptr, "Player is not initialized on player dialog");
 
-	// check valid bot
+	// Check if bot is valid
 	const auto pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(BotCID));
-	if(!pPlayerBot)
-		return;
+	if(!pPlayerBot) return;
 
-	// initialize variables
+	// Initialize variables
 	Clear();
 	m_Step = 0;
 	m_BotCID = BotCID;
 	m_BotType = pPlayerBot->GetBotType();
 	m_MobID = pPlayerBot->GetBotMobID();
 
-	// show step dialog or meaningless
+	// Show current dialog or meaningless dialog
 	CDialogElem* pDialog = GetCurrent();
 	if(!pDialog)
 	{
 		CDialogElem MeaninglessDialog;
-		const char* pTalking[3] =
-		{
+		const char* pTalking[] = {
 			"<player>, do you have any questions? I'm sorry, can't help you.",
 			"What a beautiful <time>. I don't have anything for you <player>.",
 			"<player> are you interested something? I'm sorry, don't want to talk right now."
@@ -158,24 +162,22 @@ void CPlayerDialog::Start(int BotCID)
 		return;
 	}
 
-	// default dialogue
 	ShowCurrentDialog();
 }
 
 void CPlayerDialog::TickUpdate()
 {
-	// is non-active
-	if(!IsActive())
-		return;
+	// Check if dialog is active
+	if(!IsActive()) return;
 
-	// check player valid
+	// Validate player
 	if(!m_pPlayer || !m_pPlayer->GetCharacter())
 	{
 		Clear();
 		return;
 	}
 
-	// check bot valid
+	// Validate bot
 	const auto pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_BotCID));
 	if(!pPlayerBot || !pPlayerBot->GetCharacter())
 	{
@@ -183,7 +185,7 @@ void CPlayerDialog::TickUpdate()
 		return;
 	}
 
-	// check distance between player and bot
+	// Check distance between player and bot
 	if(distance(m_pPlayer->m_ViewPos, pPlayerBot->GetCharacter()->GetPos()) > 180.0f)
 	{
 		Clear();
@@ -252,45 +254,28 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	{
 		str_copy(aBufText, Instance::Localize(m_pPlayer->GetCID(), pDialog->GetText()), sizeof(aBufText));
 
-		// arrays replacing dialogs
-		char aBufSearch[16];
-		const char* pSearch = str_find(aBufText, "<bot_");
-		while(pSearch != nullptr)
+		// Arrays replacing dialogs
+		auto replace_placeholders = [&](const char* prefix, auto get_replacement)
 		{
-			int SearchBotID = 0;
-			if(sscanf(pSearch, "<bot_%d>", &SearchBotID) && DataBotInfo::IsDataBotValid(SearchBotID))
+			const char* pSearch = str_find(aBufText, prefix);
+			while(pSearch != nullptr)
 			{
-				str_format(aBufSearch, sizeof(aBufSearch), "<bot_%d>", SearchBotID);
-				str_replace(aBufText, aBufSearch, DataBotInfo::ms_aDataBot[SearchBotID].m_aNameBot);
+				int id = 0;
+				if(sscanf(pSearch, (std::string(prefix) + "%d>").c_str(), &id))
+				{
+					char aBufSearch[16];
+					str_format(aBufSearch, sizeof(aBufSearch), (std::string(prefix) + "%d>").c_str(), id);
+					str_replace(aBufText, aBufSearch, get_replacement(id));
+				}
+				pSearch = str_find(aBufText, prefix);
 			}
-			pSearch = str_find(aBufText, "<bot_");
-		}
+		};
 
-		pSearch = str_find(aBufText, "<world_");
-		while(pSearch != nullptr)
-		{
-			int WorldID = 0;
-			if(sscanf(pSearch, "<world_%d>", &WorldID))
-			{
-				str_format(aBufSearch, sizeof(aBufSearch), "<world_%d>", WorldID);
-				str_replace(aBufText, aBufSearch, GS()->Server()->GetWorldName(WorldID));
-			}
-			pSearch = str_find(aBufText, "<world_");
-		}
+		replace_placeholders("<bot_", [](int id) { return DataBotInfo::ms_aDataBot[id].m_aNameBot; });
+		replace_placeholders("<world_", [&](int id) { return GS()->Server()->GetWorldName(id); });
+		replace_placeholders("<item_", [&](int id) { return GS()->GetItemInfo(id)->GetName(); });
 
-		pSearch = str_find(aBufText, "<item_");
-		while(pSearch != nullptr)
-		{
-			int ItemID = 0;
-			if(sscanf(pSearch, "<item_%d>", &ItemID) && (CItemDescription::Data().find(ItemID) != CItemDescription::Data().end()))
-			{
-				str_format(aBufSearch, sizeof(aBufSearch), "<item_%d>", ItemID);
-				str_replace(aBufText, aBufSearch, GS()->GetItemInfo(ItemID)->GetName());
-			}
-			pSearch = str_find(aBufText, "<item_");
-		}
-
-		// based replacing dialogs
+		// Based replacing dialogs
 		str_replace(aBufText, "<player>", GS()->Server()->ClientName(ClientID));
 		str_replace(aBufText, "<time>", GS()->Server()->GetStringTypeday());
 		str_replace(aBufText, "<here>", GS()->Server()->GetWorldName(GS()->GetWorldID()));
@@ -330,17 +315,16 @@ void CPlayerDialog::Next()
 		return;
 	}
 
-	// request action
+	// Request action handling
 	if(pDialog->IsRequestAction())
 	{
-		// bot type NPC (who giving Quests)
+		// Handle NPC bot type
 		if(m_BotType == TYPE_BOT_NPC)
 		{
 			int QuestID = NpcBotInfo::ms_aNpcBot[m_MobID].m_GiveQuestID;
 			m_pPlayer->GetQuest(QuestID)->Accept();
 		}
-
-		// bot type Quest (who requred tasks)
+		// Handle Quest bot type
 		else if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int ClientID = m_pPlayer->GetCID();
@@ -348,8 +332,7 @@ void CPlayerDialog::Next()
 
 			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
-			if(!pStep)
-				return;
+			if(!pStep) return;
 
 			if(!pStep->IsComplete())
 			{
@@ -363,13 +346,9 @@ void CPlayerDialog::Next()
 		}
 	}
 
-	// next step
+	// Move to next step
 	m_Step++;
-
-	// clear text buffer and allow update
 	ClearText();
-
-	// post next
 	PostNext();
 }
 
@@ -377,16 +356,15 @@ void CPlayerDialog::PostNext()
 {
 	CDialogElem* pCurrent = GetCurrent();
 
-	// is last dialog
+	// Check if last dialog
 	if(!pCurrent)
 	{
-		// finish quest on last dialogue
+		// Handle end of quest
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 			bool RunEndDialogEvent = m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish();
 
-			// clear and run end event
 			if(RunEndDialogEvent)
 			{
 				DialogEvents(DIALOGEVENTCUR::ON_END);
@@ -397,7 +375,7 @@ void CPlayerDialog::PostNext()
 		return;
 	}
 
-	// post dialog action
+	// Handle dialog actions
 	if(pCurrent->IsRequestAction())
 	{
 		if(m_BotType == TYPE_BOT_QUEST)
@@ -406,7 +384,6 @@ void CPlayerDialog::PostNext()
 			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 			pQuest->GetStepByMob(m_MobID)->CreateVarietyTypesRequiredItems();
 
-			// tasks receive
 			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
 			if(!pStep->m_TaskListReceived)
 			{
@@ -416,20 +393,18 @@ void CPlayerDialog::PostNext()
 		}
 	}
 
-	// show next dialog
+	// Show next dialog
 	ShowCurrentDialog();
 }
 
 void CPlayerDialog::Clear()
 {
-	// send empty motd for clear it's
 	if(IsActive())
 	{
 		dbg_assert(m_pPlayer != nullptr, "Player is not initialized on player dialog");
 		GS()->Motd(m_pPlayer->GetCID(), "\0");
 	}
 
-	// clear var
 	m_Step = 0;
 	m_BotCID = -1;
 	m_BotType = -1;
@@ -439,13 +414,13 @@ void CPlayerDialog::Clear()
 
 void CPlayerDialog::DialogEvents(DIALOGEVENTCUR Pos) const
 {
-	std::string EventData {};
+	std::string EventData;
 	if(m_BotType == TYPE_BOT_QUEST)
 	{
 		EventData = QuestBotInfo::ms_aQuestBot[m_MobID].m_EventJsonData;
 	}
 
-	Utils::Json::parseFromString(EventData, [Pos, this](nlohmann::json& pJson)
+	Utils::Json::parseFromString(EventData, [Pos, this](nlohmann::json& pJson) 
 	{
 		const char* pElem = nullptr;
 		switch(Pos)
@@ -458,33 +433,30 @@ void CPlayerDialog::DialogEvents(DIALOGEVENTCUR Pos) const
 		const auto& pEventObjectJson = pJson[pElem];
 		const int ClientID = m_pPlayer->GetCID();
 
-		// messages array
+		// Handle messages
 		if(pEventObjectJson.contains("messages"))
 		{
 			const auto& pChatArrayJson = pEventObjectJson["messages"];
 
-			std::string Text;
 			for(const auto& p : pChatArrayJson)
 			{
-				Text = p.value("text", "\0");
+				std::string Text = p.value("text", "\0");
 
-				// broadcast type
 				if(p.contains("broadcast") && p.value("broadcast", false))
 				{
 					GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 300, Text.c_str());
 				}
-				else // chat type
+				else
 				{
 					GS()->Chat(ClientID, Text.c_str());
 				}
 			}
 		}
 
-		// effect object
+		// Handle effects
 		if(pEventObjectJson.contains("effect"))
 		{
 			const auto& pEffectObjectJson = pEventObjectJson["effect"];
-
 			std::string Effect = pEffectObjectJson.value("name", "\0");
 			int Seconds = pEffectObjectJson.value("seconds", 0);
 			if(!Effect.empty())
@@ -493,26 +465,20 @@ void CPlayerDialog::DialogEvents(DIALOGEVENTCUR Pos) const
 			}
 		}
 
-		// only by end
-		if(Pos == DIALOGEVENTCUR::ON_END)
+		// Handle teleport
+		if(Pos == DIALOGEVENTCUR::ON_END && pEventObjectJson.contains("teleport"))
 		{
-			// teleport object
-			if(pEventObjectJson.contains("teleport"))
+			const auto& pTeleport = pEventObjectJson["teleport"];
+			vec2 Position(pTeleport.value("x", -1.0f), pTeleport.value("y", -1.0f));
+
+			if(pTeleport.find("world_id") != pTeleport.end() && m_pPlayer->GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
 			{
-				const auto& pTeleport = pEventObjectJson["teleport"];
-				vec2 Position(pTeleport.value("x", -1.0f), pTeleport.value("y", -1.0f));
-
-				// change world
-				if(pTeleport.find("world_id") != pTeleport.end() && m_pPlayer->GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
-				{
-					m_pPlayer->GetTempData().SetTeleportPosition(Position);
-					m_pPlayer->ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID));
-					return;
-				}
-
-				// or change position only
-				m_pPlayer->GetCharacter()->ChangePosition(Position);
+				m_pPlayer->GetTempData().SetTeleportPosition(Position);
+				m_pPlayer->ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID));
+				return;
 			}
+
+			m_pPlayer->GetCharacter()->ChangePosition(Position);
 		}
 	});
 }
@@ -521,26 +487,20 @@ void CPlayerDialog::ShowCurrentDialog() const
 {
 	CDialogElem* pCurrent = GetCurrent();
 
-	// tasks receive
-	if(m_BotType == TYPE_BOT_QUEST)
+	if(m_BotType == TYPE_BOT_QUEST && pCurrent->IsRequestAction())
 	{
-		if(pCurrent->IsRequestAction())
+		int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+		CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+		CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
+
+		if(!pStep->m_TaskListReceived)
 		{
-			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
+			pStep->m_TaskListReceived = true;
+			pStep->UpdateTaskMoveTo();
 
-			if(!pStep->m_TaskListReceived)
-			{
-				pStep->m_TaskListReceived = true;
-				pStep->UpdateTaskMoveTo();
-
-				// run event recieve task
-				DialogEvents(DIALOGEVENTCUR::ON_RECIEVE_TASK);
-			}
+			DialogEvents(DIALOGEVENTCUR::ON_RECIEVE_TASK);
 		}
 	}
 
-	// show dialog
 	pCurrent->Show(GS(), m_pPlayer->GetCID());
 }
