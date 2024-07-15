@@ -1,10 +1,11 @@
 #include "draw_board.h"
 
+#include <game/server/event_key_manager.h>
 #include <game/server/gamecontext.h>
-#include <game/server/core/components/Inventory/InventoryManager.h>
-
 #include "laser_orbite.h"
 #include <game/server/entities/pickup.h>
+
+#include <game/server/core/components/Inventory/InventoryManager.h>
 
 IServer* CBrush::Server() const { return m_pBoard->Server(); }
 CGS* CBrush::GS() const { return m_pBoard->GS(); }
@@ -69,19 +70,19 @@ bool CBrush::OnUpdate()
 bool CBrush::HandleInput()
 {
 	const int& ClientID = m_pPlayer->GetCID();
-	Server()->BlockInputGroup(ClientID, BLOCK_INPUT_FREEZE_GUN | BLOCK_INPUT_FIRE | BLOCK_INPUT_HOOK);
+	CEventKeyManager::BlockInputGroup(ClientID, BLOCK_INPUT_FREEZE_HAMMER | BLOCK_INPUT_FIRE | BLOCK_INPUT_HOOK);
 
-	if(Server()->IsKeyClicked(ClientID, KEY_EVENT_FIRE))
+	if(CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_FIRE))
 		Draw();
-	else if(Server()->IsKeyClicked(ClientID, KEY_EVENT_HOOK))
+	else if(CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_HOOK))
 		Erase();
-	else if(Server()->IsKeyClicked(ClientID, KEY_EVENT_NEXT_WEAPON))
+	else if(CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_NEXT_WEAPON))
 		NextItem();
-	else if(Server()->IsKeyClicked(ClientID, KEY_EVENT_PREV_WEAPON))
+	else if(CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_PREV_WEAPON))
 		PrevItem();
-	else if(Server()->IsKeyClicked(ClientID, KEY_EVENT_SCOREBOARD))
+	else if(CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_SCOREBOARD))
 		SwitchMode();
-	else if(Server()->IsKeyClicked(ClientID, KEY_EVENT_MENU))
+	else if(CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_MENU))
 		return false;
 	return true;
 }

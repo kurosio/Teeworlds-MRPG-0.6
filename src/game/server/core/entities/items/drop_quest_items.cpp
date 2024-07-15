@@ -3,6 +3,7 @@
 #include <game/server/core/components/Bots/BotData.h>
 #include "drop_quest_items.h"
 
+#include <game/server/event_key_manager.h>
 #include <game/server/gamecontext.h>
 
 CDropQuestItem::CDropQuestItem(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, int ItemID, int Needed, int QuestID, int Step, int ClientID)
@@ -55,7 +56,7 @@ void CDropQuestItem::Tick()
 	// pickup
 	if (pPlayer->GetCharacter() && distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos) < 32.0f)
 	{
-		if (pPlayer->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
+		if(CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_FIRE_HAMMER))
 		{
 			pItem->Add(1);
 			GS()->Chat(m_ClientID, "You got {}.", pItem->Info()->GetName());

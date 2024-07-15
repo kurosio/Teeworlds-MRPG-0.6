@@ -1,25 +1,23 @@
 ﻿#include "cooldown.h"
-
 #include <game/server/gamecontext.h>
 #include <generated/protocol.h>
 
-#include <utility>
-
-void CCooldown::Start(int Time, std::string Name, CCooldownCallback Callback)
+void CCooldown::Start(int time, std::string name, CCooldownCallback callback)
 {
 	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS || m_IsCooldownActive)
 		return;
 
-	CGS* pGS = (CGS*)(Instance::GameServerPlayer(m_ClientID));
+	CGS* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
 	if(CPlayer* pPlayer = pGS->GetPlayer(m_ClientID, true, true))
 	{
 		m_StartPos = pPlayer->m_ViewPos;
-		m_StartTimer = Time;
-		m_Timer = Time;
-		m_Callback = std::move(Callback);
+		m_StartMousePos = pPlayer->GetCharacter()->GetMousePos();
+		m_StartTimer = time;
+		m_Timer = time;
+		m_Callback = std::move(callback);
 		m_IsCooldownActive = true;
 		m_Interrupted = false;
-		m_Name = std::move(Name);
+		m_Name = std::move(name);
 
 		pGS->CreatePlayerSpawn(m_StartPos, CmaskOne(m_ClientID));
 		pPlayer->GetCharacter()->SetEmote(EMOTE_BLINK, m_Timer, true);
@@ -38,14 +36,10 @@ void CCooldown::Reset()
 
 void CCooldown::Handler()
 {
-	// Check if the cooldown is active
 	if(!m_IsCooldownActive)
-	{
 		return;
-	}
 
-	// Get server instance and player data
-	CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+	CGS* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
 	CPlayer* pPlayer = pGS->GetPlayer(m_ClientID, true, true);
 	if(!pPlayer)
 	{
@@ -53,49 +47,63 @@ void CCooldown::Handler()
 		return;
 	}
 
-	// If timer is not set, end the cooldown and execute the callback function
 	if(!m_Timer)
 	{
-		m_IsCooldownActive = false;
-		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 50, "\0");
-		pGS->CreatePlayerSpawn(m_StartPos, CmaskOne(m_ClientID));
+		EndCooldown();
 		m_Callback();
 		return;
 	}
 
-	// If interrupted, end the cooldown and broadcast interruption message
 	if(m_Interrupted)
 	{
-		m_IsCooldownActive = false;
-		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 50, "< Interrupted >");
+		EndCooldown("< Interrupted >");
 		return;
 	}
 
-	// Check if a certain amount of ticks has passed
 	IServer* pServer = Instance::Server();
 	if(pServer->Tick() % (pServer->TickSpeed() / 25) == 0)
 	{
-		// Check if player has moved too far from the starting position
-		if(distance(m_StartPos, pPlayer->m_ViewPos) > 48.f)
+		if(HasPlayerMoved(pPlayer) || HasMouseMoved(pPlayer))
 		{
 			m_Interrupted = true;
 			return;
 		}
 
-		// Format the time remaining in SS:MSMS format
-		char aTimeformat[32];
-		int Seconds = m_Timer / pServer->TickSpeed();
-		int Microseconds = (m_Timer - Seconds * pServer->TickSpeed());
-		str_format(aTimeformat, sizeof(aTimeformat), "%d.%.2ds", Seconds, Microseconds);
-
-		// Format a progress bar to show the remaining time as a percentage
-		float Current = translate_to_percent(m_StartTimer, m_Timer);
-		std::string ProgressBar = Utils::String::progressBar(100, (int)Current, 10, "\u25B0", "\u25B1");
-
-		// Broadcast the time remaining and progress bar
-		pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "{}\n< {} > {} - Action", m_Name.c_str(), aTimeformat, ProgressBar.c_str());
+		BroadcastCooldown(pServer);
 	}
 
-	// Decrease the timer
 	m_Timer--;
+}
+
+void CCooldown::EndCooldown(const char* message)
+{
+	CGS* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+
+	m_IsCooldownActive = false;
+	pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 50, message);
+	pGS->CreatePlayerSpawn(m_StartPos, CmaskOne(m_ClientID));
+}
+
+bool CCooldown::HasPlayerMoved(CPlayer* pPlayer) const
+{
+	return distance(m_StartPos, pPlayer->m_ViewPos) > 48.f;
+}
+
+bool CCooldown::HasMouseMoved(CPlayer* pPlayer) const
+{
+	return pPlayer->GetCharacter() ? distance(m_StartMousePos, pPlayer->GetCharacter()->GetMousePos()) > 48.f : true;
+}
+
+void CCooldown::BroadcastCooldown(IServer* pServer) const
+{
+	char timeFormat[32];
+	int seconds = m_Timer / pServer->TickSpeed();
+	int microseconds = (m_Timer - seconds * pServer->TickSpeed());
+	str_format(timeFormat, sizeof(timeFormat), "%d.%.2ds", seconds, microseconds);
+
+	float currentProgress = translate_to_percent(m_StartTimer, m_Timer);
+	std::string progressBar = Utils::String::progressBar(100, static_cast<int>(currentProgress), 10, "\u25B0", "\u25B1");
+
+	CGS* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "{}\n< {} > {} - Action", m_Name.c_str(), timeFormat, progressBar.c_str());
 }

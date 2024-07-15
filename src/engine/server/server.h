@@ -164,18 +164,14 @@ public:
 	const char* GetStringTypeday() const override;
 	int GetCurrentTypeday() const override;
 
-	// input
-	void ParseInputClickedKeys(int ClientID, void* pInputData);
-	void AppendEventKeyClick(int ClientID, int KeyID) override;
-	bool IsKeyClicked(int ClientID, int KeyID) override;
-	void BlockInputGroup(int ClientID, int64_t FlagBlockedGroup) override;
-	bool IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup) override;
-
 	// basic
 	void SetClientName(int ClientID, const char* pName) override;
 	void SetClientClan(int ClientID, char const* pClan) override;
 	void SetClientCountry(int ClientID, int Country) override;
 	void SetClientScore(int ClientID, int Score) override;
+
+	int64_t& GetClientInputFlags(int ClientID) override;
+	int64_t& GetClientInputBlockedFlags(int ClientID) override;
 
 	void SetClientNameChangeRequest(int ClientID, const char* pName) override;
 	const char* GetClientNameChangeRequest(int ClientID) override;

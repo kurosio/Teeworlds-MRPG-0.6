@@ -184,6 +184,10 @@ public:
 		return SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
 	}
 
+	// input
+	virtual int64_t& GetClientInputFlags(int ClientID) = 0;
+	virtual int64_t& GetClientInputBlockedFlags(int ClientID) = 0;
+
 	// World Time
 	virtual int GetMinuteGameTime() const = 0;
 	virtual int GetHourGameTime() const = 0;
@@ -191,12 +195,6 @@ public:
 	virtual void SetOffsetGameTime(int Hour) = 0;
 	virtual const char* GetStringTypeday() const = 0;
 	virtual int GetCurrentTypeday() const = 0;
-
-	// input
-	virtual void AppendEventKeyClick(int ClientID, int KeyID) = 0;
-	virtual bool IsKeyClicked(int ClientID, int KeyID) = 0;
-	virtual void BlockInputGroup(int ClientID, int64_t FlagBlockedGroup) = 0;
-	virtual bool IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup) = 0;
 
 	// main client functions
 	virtual void SetClientName(int ClientID, char const *pName) = 0;
@@ -270,7 +268,6 @@ public:
 	virtual void OnDaytypeChange(int NewDaytype) = 0;
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) = 0;
 	virtual void OnClearClientData(int ClientID) = 0;
-
 	virtual void OnClientPrepareChangeWorld(int ClientID) = 0;
 
 	virtual void OnClientConnected(int ClientID) = 0;

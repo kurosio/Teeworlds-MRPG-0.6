@@ -106,7 +106,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 
 	// reformating
 	std::string Buffer(Prefix + " " + std::string(pText) + " " + Suffix);
-	Reformatting(Buffer);
+	Reformat(Buffer);
 
 	// new option
 	CVoteOption Vote;
@@ -135,7 +135,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const cha
 
 	// reformating
 	std::string Buffer((str_comp(pCmd, "null") != 0 ? "\u257E " : "") + std::string(pText));
-	Reformatting(Buffer);
+	Reformat(Buffer);
 
 	// new option
 	CVoteOption Vote;
@@ -148,7 +148,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const cha
 	m_GroupSize++;
 }
 
-void CVoteGroup::Reformatting(std::string& Buffer)
+void CVoteGroup::Reformat(std::string& Buffer)
 {
 	// numeral list format
 	if(m_NextMarkedListItem)

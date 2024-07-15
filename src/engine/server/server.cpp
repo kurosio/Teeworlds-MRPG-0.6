@@ -162,77 +162,6 @@ int CServer::GetCurrentTypeday() const
 	return EVENING_TYPE;
 }
 
-void CServer::ParseInputClickedKeys(int ClientID, void* pInputData)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
-		return;
-
-	const int& WorldID = m_aClients[ClientID].m_WorldID;
-	const CNetObj_PlayerInput* pNewInput = (CNetObj_PlayerInput*)pInputData;
-	const CNetObj_PlayerInput* pLastInput = (CNetObj_PlayerInput*)GameServer(WorldID)->GetLastInput(ClientID);
-	if(pNewInput && pLastInput && GameServer(WorldID)->IsClientCharacterExist(ClientID))
-	{
-		if(pNewInput->m_PlayerFlags & PLAYERFLAG_IN_MENU && !(pLastInput->m_PlayerFlags & PLAYERFLAG_IN_MENU))
-		{
-			AppendEventKeyClick(ClientID, KEY_EVENT_MENU);
-		}
-
-		if(pNewInput->m_PlayerFlags & PLAYERFLAG_SCOREBOARD && !(pLastInput->m_PlayerFlags & PLAYERFLAG_SCOREBOARD))
-		{
-			AppendEventKeyClick(ClientID, KEY_EVENT_SCOREBOARD);
-		}
-
-		if(pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING && !(pLastInput->m_PlayerFlags & PLAYERFLAG_CHATTING))
-		{
-			AppendEventKeyClick(ClientID, KEY_EVENT_CHAT);
-		}
-
-		if(!pLastInput->m_Jump && pNewInput->m_Jump)
-		{
-			AppendEventKeyClick(ClientID, KEY_EVENT_JUMP);
-		}
-
-		if(!pLastInput->m_Hook && pNewInput->m_Hook)
-		{
-			AppendEventKeyClick(ClientID, KEY_EVENT_HOOK);
-		}
-	}
-}
-
-void CServer::AppendEventKeyClick(int ClientID, int KeyID)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
-		return;
-
-	if((m_aClients[ClientID].m_aActionEventKeys & KeyID) == 0)
-		m_aClients[ClientID].m_aActionEventKeys |= KeyID;
-}
-
-bool CServer::IsKeyClicked(int ClientID, int KeyID)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
-		return false;
-
-	return m_aClients[ClientID].m_aActionEventKeys & KeyID;
-}
-
-void CServer::BlockInputGroup(int ClientID, int64_t FlagBlockedGroup)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
-		return;
-
-	if((m_aClients[ClientID].m_aBlockedInputKeys & FlagBlockedGroup) == 0)
-		m_aClients[ClientID].m_aBlockedInputKeys |= FlagBlockedGroup;
-}
-
-bool CServer::IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup)
-{
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_INGAME)
-		return false;
-
-	return m_aClients[ClientID].m_aBlockedInputKeys & FlagBlockedGroup;
-}
-
 void CServer::SetClientName(int ClientID, const char* pName)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY || !pName)
@@ -520,6 +449,16 @@ bool CServer::IsBanned(int ClientID)
 bool CServer::IsEmpty(int ClientID) const
 {
 	return m_aClients[ClientID].m_State == CClient::STATE_EMPTY;
+}
+
+int64_t& CServer::GetClientInputFlags(int ClientID)
+{
+	return m_aClients[ClientID].m_aActionEventKeys;
+}
+
+int64_t& CServer::GetClientInputBlockedFlags(int ClientID)
+{
+	return m_aClients[ClientID].m_aBlockedInputKeys;
 }
 
 int CServer::GetClientInfo(int ClientID, CClientInfo* pInfo) const
@@ -1328,7 +1267,6 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 			if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
 			{
 				const int WorldID = m_aClients[ClientID].m_WorldID;
-				ParseInputClickedKeys(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
 				GameServer(WorldID)->OnClientDirectInput(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
 				m_aClients[ClientID].m_aBlockedInputKeys = 0;
 			}

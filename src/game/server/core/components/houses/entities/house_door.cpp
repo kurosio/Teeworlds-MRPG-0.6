@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "house_door.h"
 
+#include <game/server/event_key_manager.h>
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
@@ -31,7 +32,7 @@ void CEntityHouseDoor::Tick()
 		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
 		{
 			// Check if the character's reload timer is active
-			if(pChar->GetPlayer()->IsClickedKey(KEY_EVENT_FIRE_HAMMER))
+			if(CEventKeyManager::IsKeyClicked(pPlayer->GetCID(), KEY_EVENT_FIRE_HAMMER))
 			{
 				// Check the state of the door and perform the corresponding action
 				if(m_State == OPENED)

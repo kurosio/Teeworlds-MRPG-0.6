@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "player.h"
 
+#include "event_key_manager.h"
 #include "gamecontext.h"
 #include "worldmodes/dungeon.h"
 
@@ -67,44 +68,42 @@ CPlayer::~CPlayer()
 
 void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 {
-	// Check if the player is not currently chatting and the server tick is less than the snapshot health tick
-	if(!(m_PlayerFlags & PLAYERFLAG_CHATTING) && Server()->Tick() < m_SnapHealthNicknameTick)
-	{
-		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
-		char aHealthProgressBuf[6];
-		char aNicknameBuf[MAX_NAME_LENGTH];
-		char aEndNicknameBuf[MAX_NAME_LENGTH];
+	bool isChatting = m_PlayerFlags & PLAYERFLAG_CHATTING;
+	bool isAuthed = IsAuthed();
+	int currentTick = Server()->Tick();
+	int tickSpeed = Server()->TickSpeed();
 
+	// Player is not chatting and health nickname tick is valid
+	if(!isChatting && currentTick < m_SnapHealthNicknameTick)
+	{
+		int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
+		char aHealthProgressBuf[6];
 		str_format(aHealthProgressBuf, sizeof(aHealthProgressBuf), ":%d%%", clamp(PercentHP, 1, 100));
-		str_utf8_truncate(aNicknameBuf, sizeof(aNicknameBuf), Server()->ClientName(m_ClientID), (int)((MAX_NAME_LENGTH - 1) - str_length(aHealthProgressBuf)));
-		str_format(aEndNicknameBuf, sizeof(aEndNicknameBuf), "%s%s", aNicknameBuf, aHealthProgressBuf);
-		str_copy(aBuffer, aEndNicknameBuf, BufferSize);
+
+		char aNicknameBuf[MAX_NAME_LENGTH];
+		str_utf8_truncate(aNicknameBuf, sizeof(aNicknameBuf), Server()->ClientName(m_ClientID),
+			(int)((MAX_NAME_LENGTH - 1) - str_length(aHealthProgressBuf)));
+
+		str_format(aBuffer, BufferSize, "%s%s", aNicknameBuf, aHealthProgressBuf);
 		return;
 	}
 
-	// Check if the player is authenticated and if the tick is a multiple of 10 seconds
-	if(IsAuthed() && Server()->Tick() % (Server()->TickSpeed() * 10) == 0)
+	// Update nickname leveling tick if player is authenticated and the tick is a multiple of 10 seconds
+	if(isAuthed && currentTick % (tickSpeed * 10) == 0)
 	{
-		// Set the refresh tick for nickname leveling to be 1 second in the future
-		m_aPlayerTick[RefreshNickLeveling] = Server()->Tick() + Server()->TickSpeed();
+		m_aPlayerTick[RefreshNickLeveling] = currentTick + tickSpeed;
 	}
 
-	// Check if the player is authenticated and if the refresh tick for nickname leveling is in the future
-	if(IsAuthed() && m_aPlayerTick[RefreshNickLeveling] > Server()->Tick() && !(m_PlayerFlags & PLAYERFLAG_CHATTING))
+	// Player is authenticated, nickname leveling tick is valid, and not chatting
+	if(isAuthed && m_aPlayerTick[RefreshNickLeveling] > currentTick && !isChatting)
 	{
-		char aBufNicknameLeveling[MAX_NAME_LENGTH];
-		str_format(aBufNicknameLeveling, sizeof(aBufNicknameLeveling), "Lv%d %.4s...", Account()->GetLevel(), Server()->ClientName(m_ClientID));
-		str_copy(aBuffer, aBufNicknameLeveling, BufferSize);
+		str_format(aBuffer, BufferSize, "Lv%d %.4s...", Account()->GetLevel(), Server()->ClientName(m_ClientID));
 	}
 	else
 	{
 		str_copy(aBuffer, Server()->ClientName(m_ClientID), BufferSize);
 	}
 }
-
-/* #########################################################################
-	FUNCTIONS PLAYER ENGINE
-######################################################################### */
 
 void CPlayer::Tick()
 {
@@ -139,7 +138,6 @@ void CPlayer::Tick()
 		if(m_pCharacter->IsAlive())
 		{
 			m_ViewPos = m_pCharacter->GetPos();
-
 		}
 		else
 		{
@@ -170,18 +168,14 @@ void CPlayer::PostTick()
 		if(Server()->ClientIngame(m_ClientID))
 			GetTempData().m_TempPing = m_Latency.m_Min;
 
-		// Execute the effects tick function
+		// handlers
 		HandleEffects();
-
-		// Handle tuning parameters
 		HandleTuningParams();
-
-		// Handle prison
 		HandlePrison();
+		CVoteOptional::HandleVoteOptionals(m_ClientID);
 	}
 
 	// handlers
-	CVoteOptional::HandleVoteOptionals(m_ClientID);
 	HandleScoreboardColors();
 }
 
@@ -262,117 +256,67 @@ void CPlayer::HandleScoreboardColors()
 	if(m_TickActivedGroupColors > Server()->Tick())
 		return;
 
-	// If the player's flags include the PLAYERFLAG_SCOREBOARD flag
-	if(m_PlayerFlags & PLAYERFLAG_SCOREBOARD)
+	bool ScoreboardActive = m_PlayerFlags & PLAYERFLAG_SCOREBOARD;
+	if(ScoreboardActive != m_ActivedGroupColors)
 	{
-		// If the active group colors have not been set yet
-		if(!m_ActivedGroupColors)
+		CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
+		CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
+
+		for(int i = 0; i < VANILLA_MAX_CLIENTS; ++i)
 		{
-			// Create two message packers: Msg and MsgLegacy
-			CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
-			CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
-			for(int i = 0; i < VANILLA_MAX_CLIENTS; i++)
-			{
-				CPlayer* pPlayer = GS()->GetPlayer(i, true);
+			CPlayer* pPlayer = GS()->GetPlayer(i, true);
+			int TeamColor = (ScoreboardActive && pPlayer && pPlayer->Account()->GetGroup()) ?
+				pPlayer->Account()->GetGroup()->GetTeamColor() : 0;
 
-				// Add the team color of the group to both message packers
-				if(pPlayer && pPlayer->Account()->GetGroup())
-				{
-					Msg.AddInt(pPlayer->Account()->GetGroup()->GetTeamColor());
-					MsgLegacy.AddInt(pPlayer->Account()->GetGroup()->GetTeamColor());
-				}
-				else
-				{
-					Msg.AddInt(0);
-					MsgLegacy.AddInt(0);
-				}
-			}
-			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
-
-			// Get the client version of the player the client version is between VERSION_DDRACE and VERSION_DDNET_MSG_LEGACY
-			int ClientVersion = Server()->GetClientVersion(m_ClientID);
-			if(VERSION_DDRACE < ClientVersion && ClientVersion < VERSION_DDNET_MSG_LEGACY)
-				Server()->SendMsg(&MsgLegacy, MSGFLAG_VITAL, m_ClientID);
-
-			// Set the active group colors to true
-			m_ActivedGroupColors = true;
-			m_TickActivedGroupColors = Server()->Tick() + (Server()->TickSpeed() / 4);
+			Msg.AddInt(TeamColor);
+			MsgLegacy.AddInt(TeamColor);
 		}
-	}
-	// If the player flags do not have the PLAYERFLAG_SCOREBOARD flag
-	else
-	{
-		// If group colors are active
-		if(m_ActivedGroupColors)
-		{
-			// Create two message packers: Msg and MsgLegacy
-			CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
-			CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
-			for(int i = 0; i < VANILLA_MAX_CLIENTS; i++)
-			{
-				// Add the team color of the group to both message packers
-				Msg.AddInt(0);
-				MsgLegacy.AddInt(0);
-			}
-			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
-			// Get the client version of the player client version is between VERSION_DDRACE and VERSION_DDNET_MSG_LEGACY
-			int ClientVersion = Server()->GetClientVersion(m_ClientID);
-			if(VERSION_DDRACE < ClientVersion && ClientVersion < VERSION_DDNET_MSG_LEGACY)
-				Server()->SendMsg(&MsgLegacy, MSGFLAG_VITAL, m_ClientID);
+		Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_ClientID);
 
-			// Set the active group colors to false
-			m_ActivedGroupColors = false;
-			m_TickActivedGroupColors = Server()->Tick() + (Server()->TickSpeed() / 4);
-		}
+		int ClientVersion = Server()->GetClientVersion(m_ClientID);
+		if(VERSION_DDRACE < ClientVersion && ClientVersion < VERSION_DDNET_MSG_LEGACY)
+			Server()->SendMsg(&MsgLegacy, MSGFLAG_VITAL, m_ClientID);
+
+		m_ActivedGroupColors = ScoreboardActive;
+		m_TickActivedGroupColors = Server()->Tick() + (Server()->TickSpeed() / 4);
 	}
 }
 
-// This function is responsible for handling the prison state of a character.
 void CPlayer::HandlePrison()
 {
-	// Check if the account is not prisoned or if the character is not available
+	// Check is account is prisoned and character valid
 	if(!Account()->IsPrisoned() || !GetCharacter())
 		return;
 
-	// Check if the player is not already in the jail world
 	int JailWorldID = GS()->GetWorldData()->GetJailWorld()->GetID();
+
+	// Change world to jail
 	if(GetPlayerWorldID() != JailWorldID)
 	{
-		// Change the player's world to the jail world
 		ChangeWorld(JailWorldID);
 		return;
 	}
 
-	// Check if the distance between the player's view position and the jail position is greater than 1000 units
+	// Check distance
 	if(distance(m_pCharacter->m_Core.m_Pos, GS()->GetJailPosition()) > 1000.f)
 	{
-		// Move the player to the jail position
 		GetCharacter()->ChangePosition(GS()->GetJailPosition());
 		GS()->Chat(m_ClientID, "You are not allowed to leave the prison!");
 	}
 
-	// Check if the server tick is a multiple of the tick speed
+	// Handle every tick
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 	{
-		// Decrease the prison seconds for the player's account
 		Account()->m_PrisonSeconds--;
 
-		// Broadcast a message to the player indicating the remaining prison seconds
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "You will regain your freedom in {} seconds as you are being released from prison.", Account()->m_PrisonSeconds);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50,
+			"You will regain your freedom in {} seconds as you are being released from prison.", Account()->m_PrisonSeconds);
 
-		// check if the player is not currently in prison
-		if(!Account()->m_PrisonSeconds)
-		{
-			// if not in prison, unprison the player
+		if(Account()->m_PrisonSeconds <= 0)
 			Account()->Unprison();
-		}
-		// if player is in prison, check if it's time to save their account's social status
 		else if(Server()->Tick() % (Server()->TickSpeed() * 10) == 0)
-		{
-			// if it's time to save, call the SaveAccount function with the SAVE_SOCIAL_STATUS flag
 			GS()->Core()->SaveAccount(this, SAVE_SOCIAL_STATUS);
-		}
 	}
 }
 
@@ -534,48 +478,35 @@ CCharacter* CPlayer::GetCharacter() const
 
 void CPlayer::TryRespawn()
 {
-	// Declare a variable to store the spawn position
 	vec2 SpawnPos;
-	int SpawnType = SPAWN_HUMAN; // Default base spawn
+	int SpawnType = Account()->IsPrisoned() ? SPAWN_HUMAN_PRISON : SPAWN_HUMAN; // Default to prison if account is in prison
 
-	// Check if the player's account is in prison
-	if(Account()->IsPrisoned())
-	{
-		// Set the spawn type to human prison
-		SpawnType = SPAWN_HUMAN_PRISON;
-	}
 	// Check if the last killed by weapon is not WEAPON_WORLD
-	else if(GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
+	if(!Account()->IsPrisoned() && GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
 	{
-		// Check if the respawn world ID is valid and the player is not already in the respawn world
-		const int RespawnWorldID = GS()->GetWorldData()->GetRespawnWorld()->GetID();
+		int RespawnWorldID = GS()->GetWorldData()->GetRespawnWorld()->GetID();
 		if(RespawnWorldID >= 0 && !GS()->IsPlayerEqualWorld(m_ClientID, RespawnWorldID))
 		{
-			// Change the player's world to the respawn world
 			ChangeWorld(RespawnWorldID);
 			return;
 		}
-
-		// Set the spawn type to human treatment
 		SpawnType = SPAWN_HUMAN_TREATMENT;
 	}
 
 	// Check if the controller allows spawning of the given spawn type at the specified position
 	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
 	{
-		// Check if self-coordinated spawning is possible
 		vec2 TeleportPosition = GetTempData().GetTeleportPosition();
-		bool TrySelfCordSpawn = !is_negative_vec(TeleportPosition) && !GS()->Collision()->CheckPoint(TeleportPosition);
+		bool CanSelfCordSpawn = !is_negative_vec(TeleportPosition) && !GS()->Collision()->CheckPoint(TeleportPosition);
 
-		// If the game state is not a dungeon and the TrySelfCordSpawn is true
-		if(!GS()->IsWorldType(WorldType::Dungeon) && TrySelfCordSpawn)
+		// Use self-coordinated spawning if possible
+		if(!GS()->IsWorldType(WorldType::Dungeon) && CanSelfCordSpawn)
 		{
-			// Set the spawn position to the teleport position
 			SpawnPos = TeleportPosition;
 		}
 
-		// Create a new character object at the allocated memory cell
-		const int AllocMemoryCell = MAX_CLIENTS * GS()->GetWorldID() + m_ClientID;
+		// Create and spawn a new character
+		int AllocMemoryCell = MAX_CLIENTS * GS()->GetWorldID() + m_ClientID;
 		m_pCharacter = new(AllocMemoryCell) CCharacter(&GS()->m_World);
 		m_pCharacter->Spawn(this, SpawnPos);
 		GS()->CreatePlayerSpawn(SpawnPos);
@@ -601,53 +532,22 @@ void CPlayer::OnDisconnect()
 
 void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
-	// update view pos
+	// Update view position for spectators
 	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
-		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
-
-	if(m_pCharacter && m_pCharacter->IsAlive())
 	{
-		// Check if the "Fire" button has been pressed
-		if(CountInput(m_pLastInput->m_Fire, pNewInput->m_Fire).m_Presses)
-		{
-			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_FIRE);
-
-			// Set the corresponding key as clicked based on the active weapon
-			const int& ActiveWeapon = m_pCharacter->m_Core.m_ActiveWeapon;
-			Server()->AppendEventKeyClick(m_ClientID, 1 << (KEY_EVENT_FIRE + ActiveWeapon));
-		}
-
-		// Check if the next weapon button was pressed
-		if(CountInput(m_pLastInput->m_NextWeapon, pNewInput->m_NextWeapon).m_Presses)
-		{
-			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_NEXT_WEAPON);
-		}
-
-		// Check if the previous weapon button was pressed
-		if(CountInput(m_pLastInput->m_PrevWeapon, pNewInput->m_PrevWeapon).m_Presses)
-		{
-			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_PREV_WEAPON);
-		}
-
-		// Check if the wanted weapon button was pressed
-		if(m_pLastInput->m_WantedWeapon != pNewInput->m_WantedWeapon)
-		{
-			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_WANTED_WEAPON);
-
-			// Set the corresponding key as clicked based on the wanted weapon
-			const int Weapon = pNewInput->m_WantedWeapon - 1;
-			Server()->AppendEventKeyClick(m_ClientID, KEY_EVENT_WANTED_WEAPON << (Weapon + 1));
-		}
+		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
 	}
 
-	// reset input with chating
+	// parse event keys
+	CEventKeyManager::ParseInputClickedKeys(this, pNewInput, m_pLastInput);
+	CEventKeyManager::ProcessCharacterInput(this, pNewInput, m_pLastInput);
+
+	// Reset input when chatting
 	if(pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING)
 	{
-		// skip the input if chat is active
 		if(m_PlayerFlags & PLAYERFLAG_CHATTING)
 			return;
 
-		// reset input
 		if(m_pCharacter)
 			m_pCharacter->ResetInput();
 
@@ -659,18 +559,17 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 
 	if(m_pCharacter)
 	{
-		// update afk time
+		// Update AFK status
 		if(g_Config.m_SvMaxAfkTime != 0)
-			m_Afk = (bool)(m_LastPlaytime < time_get() - time_freq() * g_Config.m_SvMaxAfkTime);
+			m_Afk = m_LastPlaytime < time_get() - time_freq() * g_Config.m_SvMaxAfkTime;
 
 		m_pCharacter->OnDirectInput(pNewInput);
 	}
 
-	// check for activity
+	// Check for activity
 	if(mem_comp(pNewInput, m_pLastInput, sizeof(CNetObj_PlayerInput)))
 	{
 		mem_copy(m_pLastInput, pNewInput, sizeof(CNetObj_PlayerInput));
-		// Ignore the first direct input and keep the player afk as it is sent automatically
 		if(m_LastInputInit)
 			m_LastPlaytime = time_get();
 
@@ -883,11 +782,6 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 		}
 	}
 	return false;
-}
-
-bool CPlayer::IsClickedKey(int KeyID) const
-{
-	return Server()->IsKeyClicked(m_ClientID, KeyID);
 }
 
 CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)

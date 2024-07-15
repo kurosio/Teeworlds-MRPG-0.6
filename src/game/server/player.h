@@ -165,7 +165,6 @@ public:
 	bool IsAuthed() const;
 	int GetStartTeam() const;
 	bool ParseVoteOptionResult(int Vote);
-	bool IsClickedKey(int KeyID) const;
 
 	CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }
 	virtual CPlayerItem* GetItem(ItemIdentifier ID);

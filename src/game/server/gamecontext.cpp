@@ -10,6 +10,7 @@
 #include "worldmodes/tutorial.h"
 
 #include "entity_manager.h"
+#include "event_key_manager.h"
 #include "core/command_processor.h"
 #include "core/rcon_processor.h"
 #include "core/tools/pathfinder.h"
@@ -748,9 +749,13 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			// update event key
 			const auto pMsg = (CNetMsg_Cl_Vote*)pRawMsg;
 			if(pMsg->m_Vote == 1)
-				Server()->AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_YES);
+			{
+				CEventKeyManager::AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_YES);
+			}
 			else if(pMsg->m_Vote == 0)
-				Server()->AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_NO);
+			{
+				CEventKeyManager::AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_NO);
+			}
 
 			// parse vote option result
 			pPlayer->ParseVoteOptionResult(pMsg->m_Vote);

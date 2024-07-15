@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "attack_teleport.h"
 
+#include <game/server/event_key_manager.h>
 #include <game/server/gamecontext.h>
 
 CAttackTeleport::CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CPlayer* pPlayer, int SkillBonus)
@@ -97,7 +98,7 @@ void CAttackTeleport::Tick()
 			m_SecondPartTimeleft--;
 
 			// is clicked fire
-			if(m_pPlayer->IsClickedKey(KEY_EVENT_FIRE))
+			if(CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_FIRE))
 			{
 				CPlayer* pNextPlayer = nullptr;
 				CCharacter* pNextChar = nullptr;
