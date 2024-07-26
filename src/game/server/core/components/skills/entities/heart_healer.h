@@ -6,7 +6,7 @@
 
 class CPlayer;
 
-class CHearth : public CEntity
+class CHeartHealer : public CEntity
 {
 	CPlayer *m_pPlayer;
 	vec2 m_InitialVel;
@@ -15,7 +15,7 @@ class CHearth : public CEntity
 	bool m_ShowInformation;
 
 public:
-	CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel, bool ShowInformation = false);
+	CHeartHealer(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel, bool ShowInformation = false);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

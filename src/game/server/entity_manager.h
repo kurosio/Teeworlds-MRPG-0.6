@@ -9,12 +9,14 @@
 class CGS;
 class CEntity;
 class CPlayer;
+class CEntityGroup;
 class CEntityLaserOrbite;
 
 class CEntityManager
 {
 	CGS* m_pGS {};
 	CGS* GS() const { return m_pGS; }
+	IServer* Server() const;
 
 public:
 	CEntityManager(CGS* pGS);
@@ -33,6 +35,20 @@ public:
 	void LaserOrbite(CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
 	void LaserOrbite(CEntityLaserOrbite*& pOut, int ClientID, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
 	void LaserOrbite(CEntityLaserOrbite*& pOut, CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
+
+	std::shared_ptr<CEntityGroup> GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage) const;
+	std::shared_ptr<CEntityGroup> GravityDisruption(vec2 Position, float Radius, int Lifetime, int Damage) const
+	{
+		return GravityDisruption(-1, Position, Radius, Lifetime, Damage);
+	}
+	
+	std::shared_ptr<CEntityGroup> HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick) const;
+	std::shared_ptr<CEntityGroup> HealthTurret(vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick) const
+	{
+		return HealthTurret(-1, Position, RestoreHealth, Lifetime, InitialReloadtick);
+	}
+		
+	std::shared_ptr<CEntityGroup> EnergyShield(int ClientID, vec2 Position, int Health) const;
 };
 
 #endif

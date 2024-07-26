@@ -1,11 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "hearth.h"
+#include "heart_healer.h"
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
-CHearth::CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel, bool ShowInformation)
+CHeartHealer::CHeartHealer(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel, bool ShowInformation)
 : CEntity(pGameWorld, CGameWorld::ENTYPE_HEALTH, Pos)
 {
 	// set the values by arguments
@@ -19,7 +19,7 @@ CHearth::CHearth(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health,
 	GameWorld()->InsertEntity(this);
 }
 
-void CHearth::Tick()
+void CHeartHealer::Tick()
 {
 	// check if there is a player or not to use his functions
 	if(!m_pPlayer || !m_pPlayer->GetCharacter())
@@ -54,7 +54,7 @@ void CHearth::Tick()
 	return;
 }
 
-void CHearth::Snap(int SnappingClient)
+void CHeartHealer::Snap(int SnappingClient)
 {
 	if (NetworkClipped(SnappingClient))
 		return;

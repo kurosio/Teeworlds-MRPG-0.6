@@ -15,7 +15,7 @@ CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEner
 	m_Bounces = 0;
 	m_EvalTick = 0;
 	GameWorld()->InsertEntity(this);
-	DoBounce();
+	CLaser::DoBounce();
 }
 
 bool CLaser::HitCharacter(vec2 From, vec2 To)
@@ -26,7 +26,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	if(!pHit || pHit->m_Core.m_CollisionDisabled)
 		return false;
 
-	m_From = From;
+	m_PosTo = From;
 	m_Pos = At;
 	m_Energy = -1;
 	pHit->TakeDamage(vec2(0.f, 0.f), g_pData->m_Weapons.m_aId[WEAPON_LASER].m_Damage, m_Owner, WEAPON_LASER);
@@ -50,7 +50,7 @@ void CLaser::DoBounce()
 		if(!HitCharacter(m_Pos, To))
 		{
 			// intersected
-			m_From = m_Pos;
+			m_PosTo = m_Pos;
 			m_Pos = To;
 
 			vec2 TempPos = m_Pos;
@@ -60,7 +60,7 @@ void CLaser::DoBounce()
 			m_Pos = TempPos;
 			m_Dir = normalize(TempDir);
 
-			m_Energy -= distance(m_From, m_Pos) + GS()->Tuning()->m_LaserBounceCost;
+			m_Energy -= distance(m_PosTo, m_Pos) + GS()->Tuning()->m_LaserBounceCost;
 			m_Bounces++;
 
 			if(m_Bounces > GS()->Tuning()->m_LaserBounceNum)
@@ -73,7 +73,7 @@ void CLaser::DoBounce()
 	{
 		if(!HitCharacter(m_Pos, To))
 		{
-			m_From = m_Pos;
+			m_PosTo = m_Pos;
 			m_Pos = To;
 			m_Energy = -1;
 		}
@@ -99,7 +99,7 @@ void CLaser::TickPaused()
 
 void CLaser::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, m_From))
+	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, m_PosTo))
 		return;
 
 	CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
@@ -108,7 +108,7 @@ void CLaser::Snap(int SnappingClient)
 
 	pObj->m_X = (int)m_Pos.x;
 	pObj->m_Y = (int)m_Pos.y;
-	pObj->m_FromX = (int)m_From.x;
-	pObj->m_FromY = (int)m_From.y;
+	pObj->m_FromX = (int)m_PosTo.x;
+	pObj->m_FromY = (int)m_PosTo.y;
 	pObj->m_StartTick = m_EvalTick;
 }

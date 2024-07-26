@@ -5,11 +5,11 @@
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
-#include "entities/health_turret/healer_health.h"
+#include <game/server/entities/botai/character_bot_ai.h>
+#include <game/server/core/entities/event/entitiy_group.h>
+
 #include "entities/attack_teleport/attack_teleport.h"
-#include "entities/health_turret/hearth.h"
-#include "entities/sleepy_gravity/sleepy_gravity.h"
-#include "game/server/entities/botai/character_bot_ai.h"
+#include "entities/heart_healer.h"
 
 const char* CSkillDescription::GetEmoticonName(int EmoticionID)
 {
@@ -75,58 +75,30 @@ bool CSkill::Use()
 	if(!GetPlayer() || !GetPlayer()->IsAuthed() || !GetPlayer()->GetCharacter() || m_Level <= 0)
 		return false;
 
-	// mana check
-	CCharacter* pChr = GetPlayer()->GetCharacter();
-	const int ManaCost = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost()));
-	if(ManaCost > 0 && pChr->CheckFailMana(ManaCost))
-		return false;
-
-	const vec2 PlayerPosition = pChr->GetPos();
+	// initialize variables
 	const int ClientID = GetPlayer()->GetCID();
-	if(m_ID == Skill::SkillHeartTurret)
+	const int ManaCost = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost()));
+	CCharacter* pChr = GetPlayer()->GetCharacter();
+	const vec2 PlayerPosition = pChr->GetPos();
+
+	if(m_ID == SkillAttackTeleport)
 	{
-		// check and reset
-		for(CHealthHealer* pHh = (CHealthHealer*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_HEALTH_TURRET); pHh; pHh = (CHealthHealer*)pHh->TypeNext())
-		{
-			if(pHh->m_pPlayer->GetCID() != ClientID)
-				continue;
+		// check mana
+		if(pChr->CheckFailMana(ManaCost))
+			return false;
 
-			pHh->Destroy();
-			break;
-		}
-
-		// create healt turret
-		const int PowerLevel = ManaCost;
-		new CHealthHealer(&GS()->m_World, GetPlayer(), GetBonus(), PowerLevel, PlayerPosition);
-		return true;
-	}
-
-	if(m_ID == Skill::SkillSleepyGravity)
-	{
-		// check and reset
-		for(CSleepyGravity* pHh = (CSleepyGravity*)GS()->m_World.FindFirst(CGameWorld::ENTYPE_SLEEPY_GRAVITY); pHh; pHh = (CSleepyGravity*)pHh->TypeNext())
-		{
-			if(pHh->m_pPlayer->GetCID() != ClientID)
-				continue;
-
-			pHh->Destroy();
-			break;
-		}
-
-		// create sleepy
-		const int PowerLevel = ManaCost;
-		new CSleepyGravity(&GS()->m_World, GetPlayer(), GetBonus(), PowerLevel, PlayerPosition);
-		return true;
-	}
-
-	if(m_ID == Skill::SkillAttackTeleport)
-	{
+		// create attack teleport
 		new CAttackTeleport(&GS()->m_World, PlayerPosition, GetPlayer(), GetBonus());
 		return true;
 	}
 
-	if(m_ID == Skill::SkillCureI)
+	if(m_ID == SkillCureI)
 	{
+		// check mana
+		if(pChr->CheckFailMana(ManaCost))
+			return false;
+
+		// cure near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			// check player
@@ -144,15 +116,21 @@ bool CSkill::Use()
 
 			// create healt
 			const int PowerLevel = maximum(ManaCost + translate_to_percent_rest(ManaCost, minimum(GetBonus(), 100)), 1);
-			new CHearth(&GS()->m_World, PlayerPosition, pPlayer, PowerLevel, pPlayer->GetCharacter()->m_Core.m_Vel, true);
+			new CHeartHealer(&GS()->m_World, PlayerPosition, pPlayer, PowerLevel, pPlayer->GetCharacter()->m_Core.m_Vel, true);
 			GS()->CreateDeath(pPlayer->GetCharacter()->GetPos(), i);
 		}
 
 		GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
+		return true;
 	}
 
-	if(m_ID == Skill::SkillBlessingGodWar)
+	if(m_ID == SkillBlessingGodWar)
 	{
+		// check mana
+		if(pChr->CheckFailMana(ManaCost))
+			return false;
+
+		// blessing near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
@@ -174,8 +152,13 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == Skill::SkillProvoke)
+	if(m_ID == SkillProvoke)
 	{
+		// check mana
+		if(pChr->CheckFailMana(ManaCost))
+			return false;
+
+		// provoke mobs
 		bool MissedProvoked = false;
 		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 		{
@@ -217,6 +200,50 @@ bool CSkill::Use()
 		{
 			GS()->Chat(ClientID, "Some were not provoked due to a stronger provocation.");
 		}
+
+		return true;
+	}
+
+	if(m_ID == SkillSleepyGravity)
+	{
+		// check mana
+		if(pChr->CheckFailMana(ManaCost))
+			return false;
+
+		m_pGravityDisruption = GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, minimum(200.f + GetBonus(), 400.f), 10 * Server()->TickSpeed(), ManaCost);
+		return true;
+	}
+
+	// Skill heart turret
+	if(m_ID == SkillHeartTurret)
+	{
+		// check mana
+		if(pChr->CheckFailMana(ManaCost))
+			return false;
+
+		m_pHealthTurret = GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, (10 + GetBonus()) * Server()->TickSpeed(), 2 * Server()->TickSpeed());
+		return true;
+	}
+
+	if(m_ID == SkillEnergyShield)
+	{
+		// disable energy shield
+		if(m_pEnergyShield && m_pEnergyShield->IsActive())
+		{
+			GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been disabled!");
+			m_pEnergyShield.reset();
+			return true;
+		}
+
+		// check mana
+		if(pChr->CheckFailMana(ManaCost))
+			return false;
+
+		// enable shield
+		const int StartHealth = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartHealth(), GetBonus()));
+		m_pEnergyShield = GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth);
+		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been enabled! Health: {}!", StartHealth);
+		return true;
 	}
 
 	return false;

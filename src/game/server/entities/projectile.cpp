@@ -63,6 +63,7 @@ void CProjectile::Tick()
 	const float Ct = (Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed();
 	const vec2 PrevPos = GetPos(Pt);
 	vec2 CurPos = GetPos(Ct);
+	m_CurrentPos = CurPos;
 
 	// check owner exists
 	if (!pOwner || !pOwner->GetCharacter())

@@ -108,6 +108,7 @@ enum Skill
 	SkillCureI = 7, // health recovery cure
 	SkillProvoke = 8, // provoke
 	SkillBleedingBlow = 9, // bleeding blow
+	SkillEnergyShield = 10, // energy shield
 };
 
 // toplist types

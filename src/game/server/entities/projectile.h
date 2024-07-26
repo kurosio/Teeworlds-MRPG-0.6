@@ -6,6 +6,7 @@
 
 class CProjectile : public CEntity
 {
+	vec2 m_CurrentPos;
 	vec2 m_Direction;
 	int m_LifeSpan;
 	int m_Owner;
@@ -22,6 +23,9 @@ public:
 		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon);
 
 	vec2 GetPos(float Time);
+	vec2 GetCurrentPos() const { return m_CurrentPos; }
+	int GetOwner() const { return m_Owner; }
+	int GetDamage() const { return m_Damage; }
 
 	void Reset() override;
 	void Tick() override;

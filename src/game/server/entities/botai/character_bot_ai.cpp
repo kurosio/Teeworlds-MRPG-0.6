@@ -7,7 +7,7 @@
 
 #include <game/collision.h>
 
-#include <game/server/core/components/skills/entities/health_turret/hearth.h> // for nurse
+#include <game/server/core/components/skills/entities/heart_healer.h> // for nurse
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/quests/quest_manager.h>
 
@@ -1267,7 +1267,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 		{
 			// increase health for player
 			int Health = maximum(pPlayer->GetStartHealth() / 20, 1);
-			new CHearth(&GS()->m_World, m_Pos, pPlayer, Health, pPlayer->GetCharacter()->m_Core.m_Vel);
+			new CHeartHealer(&GS()->m_World, m_Pos, pPlayer, Health, pPlayer->GetCharacter()->m_Core.m_Vel);
 			m_Input.m_Direction = 0;
 
 			// information

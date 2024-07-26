@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_CORE_COMPONENTS_SKILLS_SKILL_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_SKILLS_SKILL_DATA_H
 
+class CEntityGroup;
+
 enum SkillType
 {
 	SKILL_TYPE_IMPROVEMENTS,
@@ -105,6 +107,10 @@ public:
 	const char* GetSelectedEmoticonName() const { return Info()->GetEmoticonName(m_SelectedEmoticion); }
 	std::string GetStringLevelStatus() const;
 	CSkillDescription* Info() const { return &CSkillDescription::Data()[m_ID]; }
+
+	std::shared_ptr<CEntityGroup> m_pGravityDisruption {};
+	std::shared_ptr<CEntityGroup> m_pEnergyShield {};
+	std::shared_ptr<CEntityGroup> m_pHealthTurret {};
 
 	// functions
 	void SelectNextControlEmote();

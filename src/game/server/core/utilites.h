@@ -64,6 +64,60 @@ namespace mrpgstd
 	// clear multiple containers uses fold expression
 	template<is_container... Containers>
 	void free_container(Containers&... args) { (free_container(args), ...); }
+
+	// configurable class
+	class CConfigurable
+	{
+		using ConfigVariant = std::variant<int, float, vec2, std::string>;
+		ska::flat_hash_map<std::string, ConfigVariant> m_umConfig;
+
+	public:
+		void SetConfig(const std::string& key, const ConfigVariant& value) { m_umConfig[key] = value; }
+		bool HasConfig(const std::string& key) const { return m_umConfig.find(key) != m_umConfig.end(); }
+
+		template<typename T>
+		T GetConfig(const std::string& key, const T& defaultValue) const
+		{
+			if(const auto it = m_umConfig.find(key); it != m_umConfig.end())
+			{
+				if(std::holds_alternative<T>(it->second))
+					return std::get<T>(it->second);
+
+				dbg_assert(false, fmt("Type mismatch for key: {}", key).c_str());
+			}
+			return defaultValue;
+		}
+
+		template<typename T>
+		T& GetRefConfig(const std::string& key, const T& defaultValue)
+		{
+			if(auto it = m_umConfig.find(key); it != m_umConfig.end())
+			{
+				if(!std::holds_alternative<T>(it->second))
+					dbg_assert(false, fmt("Type mismatch for key: {}\n", key).c_str());
+
+				return std::get<T>(it->second);
+			}
+
+			dbg_assert(false, fmt("Key not found: {}\n", key).c_str());
+			m_umConfig[key] = defaultValue;
+			return std::get<T>(m_umConfig[key]);
+		}
+
+		template<typename T>
+		bool TryGetConfig(const std::string& key, T& outValue) const
+		{
+			if(const auto it = m_umConfig.find(key); it != m_umConfig.end())
+			{
+				if(std::holds_alternative<T>(it->second))
+				{
+					outValue = std::get<T>(it->second);
+					return true;
+				}
+			}
+			return false;
+		}
+	};
 }
 
 // aesthetic utils (TODO: remove)

@@ -1,0 +1,42 @@
+#ifndef GAME_SERVER_ENTITIES_EVENT_ENTITY_GROUP_H
+#define GAME_SERVER_ENTITIES_EVENT_ENTITY_GROUP_H
+
+#include "laser_entity.h"
+#include "pickup_entity.h"
+
+class CPlayer;
+class CLaserEntity;
+class CGameWorld;
+
+class CEntityGroup : public std::enable_shared_from_this<CEntityGroup>, public mrpgstd::CConfigurable
+{
+	CGameWorld* m_pWorld{};
+	int m_ClientID{};
+
+public:
+	static std::shared_ptr<CEntityGroup> NewGroup(CGameWorld* pWorld, int ClientID = -1)
+	{
+		std::shared_ptr<CEntityGroup> groupPtr(new CEntityGroup(pWorld, ClientID));
+		return groupPtr;
+	}
+	~CEntityGroup();
+
+private:
+	CEntityGroup(CGameWorld* pWorld, int ClientID = -1);
+
+public:
+	void AddEntity(CBaseEntity* pEnt);
+	void ForEachEntity(const std::function<void(CBaseEntity*)>& func) const;
+	void RemoveEntity(CBaseEntity* pEnt);
+	void Clear();
+
+	CLaserEntity* CreateLaser(vec2 Pos, vec2 PosTo, int LaserType = LASERTYPE_RIFLE);
+	CPickupEntity* CreatePickup(vec2 Pos, int Type = POWERUP_HEALTH, int Subtype = 0);
+
+	bool IsActive() const { return m_vEntities.size() > 0; }
+
+private:
+	std::vector<CBaseEntity*> m_vEntities;
+};
+
+#endif

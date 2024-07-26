@@ -81,12 +81,11 @@ public:
 };
 
 template<typename T>
-constexpr inline vector2_base<T> rotate(const vector2_base<T>& a, float angle)
+constexpr inline vector2_base<T> rotate(const vector2_base<T>& pos, vector2_base<T> curPos, float angle)
 {
-	angle = angle * pi / 180.0f;
-	float s = std::sin(angle);
-	float c = std::cos(angle);
-	return vector2_base<T>((T)(c * a.x - s * a.y), (T)(s * a.x + c * a.y));
+	const float s = sin(33.f + angle);
+	const float c = cos(33.f + angle);
+	return vector2_base<T>((T)(curPos.x + pos.x * c - pos.y * s), (T)(curPos.y + pos.x * s + pos.y * c));
 }
 
 template<typename T>
@@ -189,6 +188,15 @@ constexpr inline bool closest_point_on_line(vector2_base<T> line_pointA, vector2
 	}
 	else
 		return false;
+}
+
+template<typename T>
+constexpr inline bool is_within_distance_on_line(float dist, vector2_base<T> line_pointA, vector2_base<T> line_pointB, vector2_base<T> target_point)
+{
+	vector2_base<T> IntersectPos;
+	if(closest_point_on_line(line_pointA, line_pointB, target_point, IntersectPos))
+		return distance(IntersectPos, target_point) < dist;
+	return false;
 }
 
 // ------------------------------------
