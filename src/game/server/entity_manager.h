@@ -36,19 +36,19 @@ public:
 	void LaserOrbite(CEntityLaserOrbite*& pOut, int ClientID, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
 	void LaserOrbite(CEntityLaserOrbite*& pOut, CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
 
-	std::shared_ptr<CEntityGroup> GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage) const;
-	std::shared_ptr<CEntityGroup> GravityDisruption(vec2 Position, float Radius, int Lifetime, int Damage) const
+	void GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
+	void GravityDisruption(vec2 Position, float Radius, int Lifetime, int Damage, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const
 	{
-		return GravityDisruption(-1, Position, Radius, Lifetime, Damage);
+		GravityDisruption(-1, Position, Radius, Lifetime, Damage);
 	}
 	
-	std::shared_ptr<CEntityGroup> HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick) const;
-	std::shared_ptr<CEntityGroup> HealthTurret(vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick) const
+	void HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
+	void HealthTurret(vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const
 	{
-		return HealthTurret(-1, Position, RestoreHealth, Lifetime, InitialReloadtick);
+		HealthTurret(-1, Position, RestoreHealth, Lifetime, InitialReloadtick, pPtr);
 	}
 		
-	std::shared_ptr<CEntityGroup> EnergyShield(int ClientID, vec2 Position, int Health) const;
+	void EnergyShield(int ClientID, vec2 Position, int Health, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
 };
 
 #endif

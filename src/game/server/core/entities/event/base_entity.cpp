@@ -95,6 +95,5 @@ void CBaseEntity::TickDeferred()
 
 void CBaseEntity::Snap(int SnappingClient)
 {
-	if(IsEnabledEvent(EventSnap) && m_SnapCallback)
-		m_SnapCallback(this, SnappingClient, m_vIDs);
+	TriggerEvent(EventSnap, SnappingClient, m_vIDs);
 }

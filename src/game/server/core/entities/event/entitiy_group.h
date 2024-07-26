@@ -29,6 +29,7 @@ public:
 	void AddEntity(CBaseEntity* pEnt);
 	void ForEachEntity(const std::function<void(CBaseEntity*)>& func) const;
 	void RemoveEntity(CBaseEntity* pEnt);
+	void Clear();
 
 	CLaserEntity* CreateLaser(vec2 Pos, vec2 PosTo, int LaserType = LASERTYPE_RIFLE);
 	CPickupEntity* CreatePickup(vec2 Pos, int Type = POWERUP_HEALTH, int Subtype = 0);

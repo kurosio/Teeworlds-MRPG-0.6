@@ -12,7 +12,7 @@ CEntityGroup::~CEntityGroup()
 	{
 		m_pWorld->m_EntityGroups.erase(sharedPtr);
 	}
-	mrpgstd::free_container(m_vEntities);
+	m_vEntities.clear();
 }
 
 void CEntityGroup::AddEntity(CBaseEntity* pEnt)
@@ -27,6 +27,12 @@ void CEntityGroup::RemoveEntity(CBaseEntity* pEnt)
 	{
 		m_pWorld->m_EntityGroups.erase(shared_from_this());
 	}
+}
+
+void CEntityGroup::Clear()
+{
+	m_pWorld->m_EntityGroups.erase(shared_from_this());
+	m_vEntities.clear();
 }
 
 void CEntityGroup::ForEachEntity(const std::function<void(CBaseEntity*)>& func) const

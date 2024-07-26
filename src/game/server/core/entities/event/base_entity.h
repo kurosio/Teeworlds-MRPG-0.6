@@ -33,24 +33,16 @@ public:
 	void RegisterEvent(EventType Type, int NumIDs, const std::function<void(CBaseEntity*, int, std::vector<int>)>& Callback);
 	std::shared_ptr<CEntityGroup> GetGroup() const { return m_GroupPtr.lock(); }
 
-	bool IsEnabledEvent(EventType Type) const { return !m_vDisabledEvents.contains(Type); }
-	void DisableEvent(EventType Type)
-	{
-		if(IsEnabledEvent(Type))
-			m_vDisabledEvents.emplace(Type);
-	}
-	void EnableEvent(EventType Type)
-	{
-		if(!IsEnabledEvent(Type))
-			m_vDisabledEvents.erase(Type);
-	}
 	std::vector<int>& GetIDs() { return m_vIDs; }
 
 protected:
 	void TriggerEvent(EventType Type)
 	{
-		if(!IsEnabledEvent(Type))
+		if(!m_GroupPtr.lock())
+		{
+			MarkForDestroy();
 			return;
+		}
 
 		if(Type == EventCreate)
 		{
@@ -76,18 +68,20 @@ protected:
 				m_DestroyCallback(this);
 		}
 	}
-
-	struct HitCharactersEventCallback
+	void TriggerEvent(EventType Type, int SnappingClient, const std::vector<int>& vIds)
 	{
-		std::function<void(CBaseEntity*, std::vector<CCharacter*>)> Callback;
-		float HitRadius;
-	};
+		if(!m_GroupPtr.lock())
+		{
+			MarkForDestroy();
+			return;
+		}
 
-	struct HitEntitiesEventCallback
-	{
-		std::function<void(CBaseEntity*, std::vector<CEntity*>)> Callback;
-		float HitRadius;
-	};
+		if(Type == EventSnap)
+		{
+			if(m_SnapCallback)
+				m_SnapCallback(this, SnappingClient, vIds);
+		}
+	}
 
 	std::function<void(CBaseEntity*)> m_CreateCallback;
 	std::function<void(CBaseEntity*)> m_TickCallback;
@@ -95,7 +89,6 @@ protected:
 	std::function<void(CBaseEntity*)> m_DestroyCallback;
 	std::function<void(CBaseEntity*, int, const std::vector<int>&)> m_SnapCallback;
 
-	std::set<int> m_vDisabledEvents;
 	std::weak_ptr<CEntityGroup> m_GroupPtr;
 	std::vector<int> m_vIDs;
 };

@@ -115,7 +115,7 @@ void CEntityManager::LaserOrbite(CEntityLaserOrbite*& pOut, CEntity* pParent, in
 		pOut = new CEntityLaserOrbite(&GS()->m_World, -1, pParent, Amount, Type, Speed, Radius, LaserType, Mask);
 }
 
-std::shared_ptr<CEntityGroup> CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage) const
+void CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage, std::weak_ptr<CEntityGroup>* pPtr) const
 {
 	// initialize group & config
 	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
@@ -206,10 +206,11 @@ std::shared_ptr<CEntityGroup> CEntityManager::GravityDisruption(int ClientID, ve
 		}
 	});
 
-	return groupPtr;
+	if(pPtr)
+		*pPtr = groupPtr;
 }
 
-std::shared_ptr<CEntityGroup> CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadTick) const
+void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadTick, std::weak_ptr<CEntityGroup>* pPtr) const
 {
 	// initialize group & config
 	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
@@ -286,10 +287,11 @@ std::shared_ptr<CEntityGroup> CEntityManager::HealthTurret(int ClientID, vec2 Po
 		}
 	});
 
-	return groupPtr;
+	if(pPtr)
+		*pPtr = groupPtr;
 }
 
-std::shared_ptr<CEntityGroup> CEntityManager::EnergyShield(int ClientID, vec2 Position, int Health) const
+void CEntityManager::EnergyShield(int ClientID, vec2 Position, int Health, std::weak_ptr<CEntityGroup>* pPtr) const
 {
 	std::vector<vec2> vShieldEdges = {
 		{-144.0f, 0.0f}, {-96.0f, -48.0f}, {-48.0f, -96.0f},
@@ -372,5 +374,6 @@ std::shared_ptr<CEntityGroup> CEntityManager::EnergyShield(int ClientID, vec2 Po
 		});
 	}
 
-	return groupPtr;
+	if(pPtr)
+		*pPtr = groupPtr;
 }

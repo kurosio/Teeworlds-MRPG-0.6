@@ -210,7 +210,10 @@ bool CSkill::Use()
 		if(pChr->CheckFailMana(ManaCost))
 			return false;
 
-		m_pGravityDisruption = GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, minimum(200.f + GetBonus(), 400.f), 10 * Server()->TickSpeed(), ManaCost);
+		if(auto groupPtr = m_pEntitySkill.lock())
+			groupPtr->Clear();
+
+		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, minimum(200.f + GetBonus(), 400.f), 10 * Server()->TickSpeed(), ManaCost, &m_pEntitySkill);
 		return true;
 	}
 
@@ -221,17 +224,20 @@ bool CSkill::Use()
 		if(pChr->CheckFailMana(ManaCost))
 			return false;
 
-		m_pHealthTurret = GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, (10 + GetBonus()) * Server()->TickSpeed(), 2 * Server()->TickSpeed());
+		if(auto groupPtr = m_pEntitySkill.lock())
+			groupPtr->Clear();
+
+		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, (10 + GetBonus()) * Server()->TickSpeed(), 2 * Server()->TickSpeed(), &m_pEntitySkill);
 		return true;
 	}
 
 	if(m_ID == SkillEnergyShield)
 	{
 		// disable energy shield
-		if(m_pEnergyShield && m_pEnergyShield->IsActive())
+		if(auto groupPtr = m_pEntitySkill.lock())
 		{
 			GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been disabled!");
-			m_pEnergyShield.reset();
+			groupPtr->Clear();
 			return true;
 		}
 
@@ -241,7 +247,7 @@ bool CSkill::Use()
 
 		// enable shield
 		const int StartHealth = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartHealth(), GetBonus()));
-		m_pEnergyShield = GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth);
+		GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth, &m_pEntitySkill);
 		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been enabled! Health: {}!", StartHealth);
 		return true;
 	}

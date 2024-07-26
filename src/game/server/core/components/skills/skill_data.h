@@ -108,9 +108,7 @@ public:
 	std::string GetStringLevelStatus() const;
 	CSkillDescription* Info() const { return &CSkillDescription::Data()[m_ID]; }
 
-	std::shared_ptr<CEntityGroup> m_pGravityDisruption {};
-	std::shared_ptr<CEntityGroup> m_pEnergyShield {};
-	std::shared_ptr<CEntityGroup> m_pHealthTurret {};
+	std::weak_ptr<CEntityGroup> m_pEntitySkill{};
 
 	// functions
 	void SelectNextControlEmote();
