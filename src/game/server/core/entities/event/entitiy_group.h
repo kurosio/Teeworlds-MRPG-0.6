@@ -16,7 +16,8 @@ class CEntityGroup : public std::enable_shared_from_this<CEntityGroup>, public m
 public:
 	static std::shared_ptr<CEntityGroup> NewGroup(CGameWorld* pWorld, int ClientID = -1)
 	{
-		std::shared_ptr<CEntityGroup> groupPtr(new CEntityGroup(pWorld, ClientID));
+		auto groupPtr = std::shared_ptr<CEntityGroup>(new CEntityGroup(pWorld, ClientID));
+		pWorld->m_EntityGroups.insert(groupPtr);
 		return groupPtr;
 	}
 	~CEntityGroup();
@@ -28,12 +29,11 @@ public:
 	void AddEntity(CBaseEntity* pEnt);
 	void ForEachEntity(const std::function<void(CBaseEntity*)>& func) const;
 	void RemoveEntity(CBaseEntity* pEnt);
-	void Clear();
 
 	CLaserEntity* CreateLaser(vec2 Pos, vec2 PosTo, int LaserType = LASERTYPE_RIFLE);
 	CPickupEntity* CreatePickup(vec2 Pos, int Type = POWERUP_HEALTH, int Subtype = 0);
 
-	bool IsActive() const { return m_vEntities.size() > 0; }
+	bool IsActive() const { return (int)m_vEntities.size() > 0; }
 
 private:
 	std::vector<CBaseEntity*> m_vEntities;

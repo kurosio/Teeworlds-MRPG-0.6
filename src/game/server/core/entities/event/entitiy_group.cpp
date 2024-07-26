@@ -7,6 +7,11 @@ CEntityGroup::CEntityGroup(CGameWorld* pWorld, int ClientID)
 
 CEntityGroup::~CEntityGroup()
 {
+	const auto weakPtr = weak_from_this();
+	if(const auto sharedPtr = weakPtr.lock())
+	{
+		m_pWorld->m_EntityGroups.erase(sharedPtr);
+	}
 	mrpgstd::free_container(m_vEntities);
 }
 
@@ -18,11 +23,10 @@ void CEntityGroup::AddEntity(CBaseEntity* pEnt)
 void CEntityGroup::RemoveEntity(CBaseEntity* pEnt)
 {
 	m_vEntities.erase(std::ranges::remove(m_vEntities, pEnt).begin(), m_vEntities.end());
-}
-
-void CEntityGroup::Clear()
-{
-	m_vEntities.clear();
+	if(m_vEntities.empty())
+	{
+		m_pWorld->m_EntityGroups.erase(shared_from_this());
+	}
 }
 
 void CEntityGroup::ForEachEntity(const std::function<void(CBaseEntity*)>& func) const

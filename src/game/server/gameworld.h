@@ -73,6 +73,7 @@ public:
 	CGS *GS() const { return m_pGS; }
 	IServer *Server() const { return m_pServer; }
 
+	ska::unordered_set<std::shared_ptr<CEntityGroup>> m_EntityGroups;
 	bool m_ResetRequested;
 	bool m_Paused;
 	CWorldCore m_Core;
