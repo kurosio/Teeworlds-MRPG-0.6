@@ -117,7 +117,94 @@ namespace mrpgstd
 			}
 			return false;
 		}
+
+		void RemoveConfig(const std::string& key)
+		{
+			m_umConfig.erase(key);
+		}
 	};
+}
+
+// string utils
+namespace Utils::String
+{
+	inline std::string progressBar(int max_value, int current_value, int step, const std::string& UTF_fill_symbol, const std::string& UTF_empty_symbol)
+	{
+		std::string ProgressBar;
+		int numFilled = current_value / step;
+		int numEmpty = max_value / step - numFilled;
+		ProgressBar.reserve(numFilled + numEmpty);
+
+		for(int i = 0; i < numFilled; i++)
+			ProgressBar += UTF_fill_symbol;
+
+		for(int i = 0; i < numEmpty; i++)
+			ProgressBar += UTF_empty_symbol;
+
+		return ProgressBar;
+	}
+}
+
+// json utils
+namespace Utils::Json
+{
+	inline void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
+	{
+		if(!Data.empty())
+		{
+			try
+			{
+				nlohmann::json JsonData = nlohmann::json::parse(Data);
+				pFuncCallback(JsonData);
+			}
+			catch(nlohmann::json::exception& s)
+			{
+				dbg_assert(false, fmt("[json parse] Invalid json: {}", s.what()).c_str());
+			}
+		}
+	}
+}
+
+// files utils
+namespace Utils::Files
+{
+	enum Result : int
+	{
+		ERROR_FILE,
+		SUCCESSFUL,
+	};
+
+	inline Result loadFile(const char* pFile, ByteArray* pData)
+	{
+		IOHANDLE File = io_open(pFile, IOFLAG_READ);
+		if(!File)
+			return ERROR_FILE;
+
+		pData->resize((unsigned)io_length(File));
+		io_read(File, pData->data(), (unsigned)pData->size());
+		io_close(File);
+		return SUCCESSFUL;
+	}
+
+	inline Result deleteFile(const char* pFile)
+	{
+		int Result = fs_remove(pFile);
+		return Result == 0 ? SUCCESSFUL : ERROR_FILE;
+	}
+
+	inline Result saveFile(const char* pFile, const void* pData, unsigned size)
+	{
+		// delete old file
+		deleteFile(pFile);
+
+		IOHANDLE File = io_open(pFile, IOFLAG_WRITE);
+		if(!File)
+			return ERROR_FILE;
+
+		io_write(File, pData, size);
+		io_close(File);
+		return SUCCESSFUL;
+	}
 }
 
 // aesthetic utils (TODO: remove)
@@ -205,88 +292,6 @@ namespace Utils::Aesthetic
 	inline std::string S_COMPLETE()
 	{
 		return "\u1D04\u1D0F\u1D0D\u1D18\u029F\u1D07\u1D1B\u1D07!";
-	}
-}
-
-// string utils
-namespace Utils::String
-{
-	inline std::string progressBar(int max_value, int current_value, int step, const std::string& UTF_fill_symbol, const std::string& UTF_empty_symbol)
-	{
-		std::string ProgressBar;
-		int numFilled = current_value / step;
-		int numEmpty = max_value / step - numFilled;
-		ProgressBar.reserve(numFilled + numEmpty);
-
-		for(int i = 0; i < numFilled; i++)
-			ProgressBar += UTF_fill_symbol;
-
-		for(int i = 0; i < numEmpty; i++)
-			ProgressBar += UTF_empty_symbol;
-
-		return ProgressBar;
-	}
-}
-
-// json utils
-namespace Utils::Json
-{
-	inline void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
-	{
-		if(!Data.empty())
-		{
-			try
-			{
-				nlohmann::json JsonData = nlohmann::json::parse(Data);
-				pFuncCallback(JsonData);
-			}
-			catch(nlohmann::json::exception& s)
-			{
-				dbg_assert(false, fmt("[json parse] Invalid json: {}", s.what()).c_str());
-			}
-		}
-	}
-}
-
-// files utils
-namespace Utils::Files
-{
-	enum Result : int
-	{
-		ERROR_FILE,
-		SUCCESSFUL,
-	};
-
-	inline Result loadFile(const char* pFile, ByteArray* pData)
-	{
-		IOHANDLE File = io_open(pFile, IOFLAG_READ);
-		if(!File)
-			return ERROR_FILE;
-
-		pData->resize((unsigned)io_length(File));
-		io_read(File, pData->data(), (unsigned)pData->size());
-		io_close(File);
-		return SUCCESSFUL;
-	}
-
-	inline Result deleteFile(const char* pFile)
-	{
-		int Result = fs_remove(pFile);
-		return Result == 0 ? SUCCESSFUL : ERROR_FILE;
-	}
-
-	inline Result saveFile(const char* pFile, const void* pData, unsigned size)
-	{
-		// delete old file
-		deleteFile(pFile);
-
-		IOHANDLE File = io_open(pFile, IOFLAG_WRITE);
-		if(!File)
-			return ERROR_FILE;
-
-		io_write(File, pData, size);
-		io_close(File);
-		return SUCCESSFUL;
 	}
 }
 

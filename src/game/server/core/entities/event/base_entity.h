@@ -6,7 +6,6 @@
 
 class CPlayer;
 class CEntityGroup;
-using ConfigVariant = std::variant<int, float, vec2, std::string>;
 
 class CBaseEntity : public CEntity, public mrpgstd::CConfigurable
 {

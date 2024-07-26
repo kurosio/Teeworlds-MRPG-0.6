@@ -138,7 +138,7 @@ std::shared_ptr<CEntityGroup> CEntityManager::GravityDisruption(int ClientID, ve
 		}
 		LifeTime--;
 
-		// test
+		// new damage
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
 		const int TimeLeft = LifeTime / pBase->Server()->TickSpeed();
 		if(TimeLeft < 3)

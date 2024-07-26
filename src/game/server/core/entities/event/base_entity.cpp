@@ -74,7 +74,7 @@ CPlayer* CBaseEntity::GetPlayer() const
 
 CCharacter* CBaseEntity::GetCharacter() const
 {
-	return GetPlayer()->GetCharacter();
+	return GetPlayer() ? GetPlayer()->GetCharacter() : nullptr;
 }
 
 void CBaseEntity::Tick()
