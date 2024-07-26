@@ -5,13 +5,16 @@
 CEntityGroup::CEntityGroup(CGameWorld* pWorld, int ClientID)
 	: m_pWorld(pWorld), m_ClientID(ClientID) {}
 
-CEntityGroup::~CEntityGroup()
+void CEntityGroup::RemoveFromWorld()
 {
 	const auto weakPtr = weak_from_this();
 	if(const auto sharedPtr = weakPtr.lock())
-	{
 		m_pWorld->m_EntityGroups.erase(sharedPtr);
-	}
+}
+
+CEntityGroup::~CEntityGroup()
+{
+	RemoveFromWorld();
 	m_vEntities.clear();
 }
 
@@ -23,15 +26,16 @@ void CEntityGroup::AddEntity(CBaseEntity* pEnt)
 void CEntityGroup::RemoveEntity(CBaseEntity* pEnt)
 {
 	m_vEntities.erase(std::ranges::remove(m_vEntities, pEnt).begin(), m_vEntities.end());
+
 	if(m_vEntities.empty())
 	{
-		m_pWorld->m_EntityGroups.erase(shared_from_this());
+		RemoveFromWorld();
 	}
 }
 
 void CEntityGroup::Clear()
 {
-	m_pWorld->m_EntityGroups.erase(shared_from_this());
+	RemoveFromWorld();
 	m_vEntities.clear();
 }
 

@@ -18,12 +18,14 @@ public:
 	{
 		auto groupPtr = std::shared_ptr<CEntityGroup>(new CEntityGroup(pWorld, ClientID));
 		pWorld->m_EntityGroups.insert(groupPtr);
+		dbg_msg("test", "%d", pWorld->m_EntityGroups.size());
 		return groupPtr;
 	}
 	~CEntityGroup();
 
 private:
 	CEntityGroup(CGameWorld* pWorld, int ClientID = -1);
+	void RemoveFromWorld();
 
 public:
 	void AddEntity(CBaseEntity* pEnt);
