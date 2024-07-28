@@ -89,6 +89,14 @@ constexpr inline vector2_base<T> rotate(const vector2_base<T>& pos, vector2_base
 }
 
 template<typename T>
+constexpr inline vector2_base<T> random_range_pos(vector2_base<T> curPos, float radius)
+{
+	float angle = random_float(0.0f, 2.0f * pi);
+	float distance = sqrt(random_float()) * radius;
+	return vector2_base<T>((T)curPos.x + distance * cos(angle), (T)curPos.y + distance * sin(angle));
+}
+
+template<typename T>
 constexpr inline T distance(const vector2_base<T> a, const vector2_base<T>& b)
 {
 	return length(a - b);

@@ -18,7 +18,6 @@ public:
 	{
 		auto groupPtr = std::shared_ptr<CEntityGroup>(new CEntityGroup(pWorld, ClientID));
 		pWorld->m_EntityGroups.insert(groupPtr);
-		dbg_msg("test", "%d", pWorld->m_EntityGroups.size());
 		return groupPtr;
 	}
 	~CEntityGroup();
@@ -33,6 +32,7 @@ public:
 	void RemoveEntity(CBaseEntity* pEnt);
 	void Clear();
 
+	CBaseEntity* CreateBase(vec2 Pos);
 	CLaserEntity* CreateLaser(vec2 Pos, vec2 PosTo, int LaserType = LASERTYPE_RIFLE);
 	CPickupEntity* CreatePickup(vec2 Pos, int Type = POWERUP_HEALTH, int Subtype = 0);
 

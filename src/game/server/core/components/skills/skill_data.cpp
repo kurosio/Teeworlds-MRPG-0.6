@@ -207,13 +207,22 @@ bool CSkill::Use()
 	if(m_ID == SkillSleepyGravity)
 	{
 		// check mana
-		if(pChr->CheckFailMana(ManaCost))
-			return false;
+		//if(pChr->CheckFailMana(ManaCost))
+		//	return false;
 
 		if(auto groupPtr = m_pEntitySkill.lock())
 			groupPtr->Clear();
 
-		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, minimum(200.f + GetBonus(), 400.f), 10 * Server()->TickSpeed(), ManaCost, &m_pEntitySkill);
+		int Damage = 15;
+		int Lifetime = 1000;
+		float Speed = 2.0f;
+		float Radius = 300.0f;
+		//GS()->EntityManager()->Tornado(ClientID, PlayerPosition, Damage, Lifetime, Speed, Radius);
+
+
+		//GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, 320.f, 1000, 10);
+
+		//GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, minimum(200.f + GetBonus(), 400.f), 10 * Server()->TickSpeed(), ManaCost, &m_pEntitySkill);
 		return true;
 	}
 
@@ -221,11 +230,16 @@ bool CSkill::Use()
 	if(m_ID == SkillHeartTurret)
 	{
 		// check mana
-		if(pChr->CheckFailMana(ManaCost))
-			return false;
+		//if(pChr->CheckFailMana(ManaCost))
+		//	return false;
 
 		if(auto groupPtr = m_pEntitySkill.lock())
 			groupPtr->Clear();
+
+		//GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
+		//GS()->EntityManager()->FrostNova(ClientID, PlayerPosition, 120.f, 12, 5);
+		GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, 320.f, 1000, 10);
+		//GS()->EntityManager()->Bow(ClientID, 5, 5, 160.f, 16);
 
 		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, (10 + GetBonus()) * Server()->TickSpeed(), 2 * Server()->TickSpeed(), &m_pEntitySkill);
 		return true;
@@ -234,7 +248,7 @@ bool CSkill::Use()
 	if(m_ID == SkillEnergyShield)
 	{
 		// disable energy shield
-		if(auto groupPtr = m_pEntitySkill.lock())
+		if(const auto groupPtr = m_pEntitySkill.lock())
 		{
 			GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been disabled!");
 			groupPtr->Clear();
@@ -242,8 +256,10 @@ bool CSkill::Use()
 		}
 
 		// check mana
-		if(pChr->CheckFailMana(ManaCost))
-			return false;
+		//if(pChr->CheckFailMana(ManaCost))
+		//	return false;
+
+		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
 
 		// enable shield
 		const int StartHealth = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartHealth(), GetBonus()));

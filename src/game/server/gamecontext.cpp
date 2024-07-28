@@ -166,39 +166,73 @@ void CGS::CreateHammerHit(vec2 Pos, int64_t Mask)
 	}
 }
 
+void CGS::CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage)
+{
+	for(int i = 0; i < ExplosionCount; ++i)
+	{
+		const float theta = random_float(0.0f, 2.0f * pi);
+		const float Distance = sqrt(random_float()) * Radius;
+		const vec2 ExplosionPos = Pos + vec2(Distance * cos(theta), Distance * sin(theta));
+		CreateExplosion(ExplosionPos, Owner, Weapon, MaxDamage);
+	}
+}
+
+void CGS::CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage)
+{
+	const float AngleStep = 2.0f * pi / ExplosionCount;
+
+	for(int i = 0; i < ExplosionCount; ++i)
+	{
+		const float Angle = i * AngleStep;
+		const vec2 ExplosionPos = Pos + vec2(Radius * cos(Angle), Radius * sin(Angle));
+		CreateExplosion(ExplosionPos, Owner, Weapon, MaxDamage);
+	}
+}
+
 void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 {
-	// create the event
-	CNetEvent_Explosion* pEvent = (CNetEvent_Explosion*)m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion));
+	// create the explosion event
+	CNetEvent_Explosion* pEvent = static_cast<CNetEvent_Explosion*>(m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion)));
 	if(pEvent)
 	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
+		pEvent->m_X = static_cast<int>(Pos.x);
+		pEvent->m_Y = static_cast<int>(Pos.y);
 	}
 
-	// deal damage
-	CCharacter* apEnts[MAX_CLIENTS];
+	// define constants
 	constexpr float Radius = 135.0f;
 	constexpr float InnerRadius = 48.0f;
-	const int Num = m_World.FindEntities(Pos, Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-	for(int i = 0; i < Num; i++)
+
+	// find entities within explosion radius
+	CCharacter* apEnts[MAX_CLIENTS];
+	const int Num = m_World.FindEntities(Pos, Radius, reinterpret_cast<CEntity**>(apEnts), MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+
+	for(int i = 0; i < Num; ++i)
 	{
-		vec2 Diff = apEnts[i]->GetPos() - Pos;
-		vec2 ForceDir(0, 1);
+		CCharacter* pChar = apEnts[i];
+		vec2 Diff = pChar->GetPos() - Pos;
 		const float Length = length(Diff);
-		if(Length)
-			ForceDir = normalize(Diff) * 1.0f;
 
-		const float Factor = 1 - clamp((Length - InnerRadius) / (Radius - InnerRadius), 0.0f, 1.0f);
-		if(const int Damage = (int)(Factor * MaxDamage))
+		if(Length == 0)
+			continue;
+
+		vec2 ForceDir = normalize(Diff);
+
+		// calculate damage factor
+		const float Factor = 1.0f - clamp((Length - InnerRadius) / (Radius - InnerRadius), 0.0f, 1.0f);
+		const int Damage = static_cast<int>(Factor * MaxDamage);
+
+		if(Damage > 0)
 		{
-			float Strength;
-			if(Owner == -1 || !m_apPlayers[Owner])
-				Strength = 0.5f;
-			else
+			// calculate explosion strength
+			float Strength = 0.5f;
+			if(Owner != -1 && m_apPlayers[Owner])
+			{
 				Strength = m_apPlayers[Owner]->m_NextTuningParams.m_ExplosionStrength;
+			}
 
-			apEnts[i]->TakeDamage(ForceDir * (Strength * Length), Damage, Owner, Weapon);
+			// Apply damage and force
+			pChar->TakeDamage(ForceDir * (Strength * Length), Damage, Owner, Weapon);
 		}
 	}
 }

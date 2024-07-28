@@ -582,8 +582,10 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 			HandleWeaponSwitch();
 
 		// Check if the input group for firing weapon is not blocked for the player
-		if(!CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FIRE))
-			FireWeapon();
+		if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FIRE))
+			m_ReloadTimer = 10;
+
+		FireWeapon();
 	}
 
 	if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_HOOK))

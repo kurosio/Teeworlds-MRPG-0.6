@@ -68,7 +68,7 @@ namespace mrpgstd
 	// configurable class
 	class CConfigurable
 	{
-		using ConfigVariant = std::variant<int, float, vec2, std::string>;
+		using ConfigVariant = std::variant<int, float, vec2, std::string, std::vector<vec2>>;
 		ska::flat_hash_map<std::string, ConfigVariant> m_umConfig;
 
 	public:

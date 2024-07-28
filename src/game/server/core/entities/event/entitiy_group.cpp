@@ -39,6 +39,12 @@ void CEntityGroup::Clear()
 	m_vEntities.clear();
 }
 
+CBaseEntity* CEntityGroup::CreateBase(vec2 Pos)
+{
+	const auto pBase = new CBaseEntity(m_pWorld, shared_from_this(), CGameWorld::ENTTYPE_OTHER, Pos, m_ClientID);
+	return pBase;
+}
+
 void CEntityGroup::ForEachEntity(const std::function<void(CBaseEntity*)>& func) const
 {
 	for(auto& entity : m_vEntities)
