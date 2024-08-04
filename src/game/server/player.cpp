@@ -53,6 +53,15 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 		m_LastInputInit = false;
 		m_LastPlaytime = 0;
 	}
+
+	//
+	m_Menu.Init(m_ClientID);
+	m_Menu.AddPoint("HELP", "Help", [](int){});
+	m_Menu.AddPoint("Suka", "Suka!", [pGS = m_pGS](int ClientID)
+	{
+		pGS->Chat(ClientID, "Help informatiopN!");
+	});
+	m_Menu.AddDescription("Some saokdoas dkoask doakso dkaso dkoas kdosao");
 }
 
 CPlayer::~CPlayer()
@@ -153,6 +162,7 @@ void CPlayer::Tick()
 	// update events
 	m_Dialog.TickUpdate();
 	m_Cooldown.Handler();
+	m_Menu.Handle();
 
 	// post updated votes if player open menu
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU)

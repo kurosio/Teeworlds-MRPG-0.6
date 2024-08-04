@@ -10,6 +10,7 @@
 
 #include "entities/character.h"
 #include "core/tools/cooldown.h"
+#include "core/tools/motd_menu.h"
 #include "core/tools/vote_wrapper.h"
 #include "class_data.h"
 
@@ -71,6 +72,7 @@ public:
 	Mood m_MoodState;
 	CCooldown m_Cooldown {};
 	CVotePlayerData m_VotesData;
+	MotdMenu m_Menu;
 
 	char m_aLastMsg[256];
 	int m_TutorialStep;
