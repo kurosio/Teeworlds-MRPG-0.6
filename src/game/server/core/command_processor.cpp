@@ -365,6 +365,25 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 	if(!pPlayer)
 		return;
 
+	MotdMenu MMenu(ClientID, MTFLAG_CLOSE_LAST_MENU_ON_SELECT, "Hm you pidor?");
+	MMenu.Add("ASS", 1, "Extra 1");
+	MMenu.Add("TEST228", 2, "Extra 2");
+	MMenu.Add("TEST228", 3, "Shlus asdasd aa");
+	MMenu.Add("TEST228", 4, "Argumsns");
+	MMenu.Add("TEST228", 5, "Pistol 112");
+	MMenu.Add("TEST228", 6, "Gun 338");
+	MMenu.Add("TEST228", 7, "Extra 7");
+	MMenu.Add("TEST228", 8, "322 A");
+	MMenu.Add("TEST228", 9, "Inform");
+	MMenu.Add("TEST228", 10, "Extra 10");
+	MMenu.Add("TEST228", 11, "O4kos");
+	MMenu.Add("TEST228", 7, "arara");
+	MMenu.Add("TEST228", 8, "Extra 8");
+	MMenu.Add("TEST228", 9, "Arasss");
+	MMenu.Add("TEST228", 10, "Extra 10");
+	MMenu.Add("TEST228", 11, "3398 KS");
+	MMenu.Send();
+
 	// Get the requested element from the result
 	const std::string pElem = pResult->GetString(0);
 

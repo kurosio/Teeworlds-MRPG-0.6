@@ -357,6 +357,19 @@ bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 	return false;
 }
 
+bool CMmoController::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, int ExtraValue)
+{
+	if(!pPlayer)
+		return true;
+
+	for(auto& pComponent : m_System.m_vComponents)
+	{
+		if(pComponent->OnPlayerMotdCommand(pPlayer, pCmd, ExtraValue))
+			return true;
+	}
+	return false;
+}
+
 void CMmoController::ResetClientData(int ClientID)
 {
 	for(auto& pComponent : m_System.m_vComponents)

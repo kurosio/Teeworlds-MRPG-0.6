@@ -240,6 +240,7 @@ public:
 	bool TakeItemCharacter(int ClientID);
 	void UpdateVotesIfForAll(int MenuList) const;
 	bool OnClientVoteCommand(int ClientID, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason);
+	bool OnClientMotdCommand(int ClientID, const char* pCmd, int Extra);
 	bool DestroyPlayer(int ClientID);
 
 private:

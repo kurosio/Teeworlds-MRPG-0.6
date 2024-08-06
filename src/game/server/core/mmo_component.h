@@ -123,6 +123,17 @@ private:
     virtual bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason) { return false; }
 
     /**
+     * @brief Called when a player issues a motd command.
+     *
+     * @param pPlayer A pointer to the player object.
+     * @param pCmd The vote command.
+     * @param ExtraValue The ID of the vote.
+     *
+     * @return True if the motd command was handled, false otherwise.
+     */
+    virtual bool OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue) { return false; }
+
+    /**
      * @brief Called when a player experiences a time period.
      * 
      * @param pPlayer A pointer to the player object.

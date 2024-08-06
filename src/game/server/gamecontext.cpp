@@ -1253,6 +1253,39 @@ bool CGS::OnClientVoteCommand(int ClientID, const char* pCmd, const int Extra1, 
 	return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extra1, Extra2, ReasonNumber, csqlReason.cstr());
 }
 
+bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd, int Extra)
+{
+	CPlayer* pPlayer = GetPlayer(ClientID, false, true);
+	if(!pPlayer)
+	{
+		Chat(ClientID, "Deploy it while still alive!");
+		return true;
+	}
+
+	if(PPSTR(pCmd, "BACKPAGE") == 0)
+	{
+		if(pPlayer->m_vpInstanceMotdMenu.size() > 1)
+			pPlayer->m_vpInstanceMotdMenu.pop_back();
+		return true;
+	}
+
+	if(PPSTR(pCmd, "TEST228") == 0)
+	{
+		MotdMenu MHm(ClientID, "Hm are you about (Extra {})", Extra);
+		MHm.Add("BACKPAGE", "<<< Backpage");
+		MHm.Send();
+		return true;
+	}
+
+	const bool Result = Core()->OnPlayerMotdCommand(pPlayer, pCmd, Extra);
+	if(Result)
+	{
+		CreatePlayerSound(ClientID, SOUND_PICKUP_ARMOR);
+	}
+
+	return Result;
+}
+
 bool CGS::DestroyPlayer(int ClientID)
 {
 	if(ClientID < 0 || ClientID > MAX_CLIENTS || !m_apPlayers[ClientID])

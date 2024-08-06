@@ -60,6 +60,7 @@ public:
 	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist);
 	bool OnCharacterTile(CCharacter* pChr);
 	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason);
+	bool OnPlayerMotdCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue);
 	void ResetClientData(int ClientID);
 	void HandleTimePeriod() const;
 	void HandlePlayerTimePeriod(CPlayer* pPlayer);
