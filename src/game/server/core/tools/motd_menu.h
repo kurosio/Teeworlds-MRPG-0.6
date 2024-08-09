@@ -19,6 +19,9 @@ class MotdMenu
 		char m_aDesc[32];
 	};
 
+	int m_MenuExtra {NOPE};
+	int m_LastMenulist{NOPE};
+	int m_Menulist {NOPE};
 	int m_Flags {};
 	int m_ClientID {};
 	int m_ResendMotdTick {};
@@ -30,29 +33,47 @@ class MotdMenu
 public:
 	MotdMenu(int ClientID) : m_ClientID(ClientID) {}
 	MotdMenu(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID) {}
-	template <typename ... Ts> MotdMenu(int ClientID, const char* pDesc, const Ts&... args)
-		: m_ClientID(ClientID) {
-		m_Description = fmt(pDesc, args...);
-	}
-	template <typename ... Ts> MotdMenu(int ClientID, int Flags, const char* pDesc, const Ts&... args)
-		: m_Flags(Flags), m_ClientID(ClientID) {
-		m_Description = fmt(pDesc, args...);
-	}
-	template <typename ... Ts>
-	void Add(const std::string& command, const std::string& description, const Ts&... args)
+
+	template <typename... Ts>
+	MotdMenu(int ClientID, const char* pDesc, const Ts&... args)
+		: m_ClientID(ClientID), m_Description(fmt(pDesc, args...)) {}
+
+	template <typename... Ts>
+	MotdMenu(int ClientID, int Flags, const char* pDesc, const Ts&... args)
+		: m_Flags(Flags), m_ClientID(ClientID), m_Description(fmt(pDesc, args...)) {}
+
+	template <typename... Ts>
+	void Add(std::string_view command, std::string_view description, const Ts&... args)
 	{
-		AddImpl(NOPE, command, fmt(description.c_str(), args...));
+		AddImpl(NOPE, command, fmt(description.data(), args...));
 	}
-	template <typename ... Ts>
-	void Add(const std::string& command, int extra, const std::string& description, const Ts&... args)
+
+	template <typename... Ts>
+	void Add(std::string_view command, int extra, std::string_view description, const Ts&... args)
 	{
-		AddImpl(extra, command, fmt(description.c_str(), args...));
+		AddImpl(extra, command, fmt(description.data(), args...));
 	}
+
+	template <typename... Ts>
+	void AddMenu(int MenuID, int Extra, std::string_view description, const Ts&... args)
+	{
+		m_MenuExtra = Extra;
+		AddImpl(MenuID, "MENU", fmt(description.data(), args...));
+	}
+
+	void AddBackpage()
+	{
+		AddImpl(NOPE, "BACKPAGE", "<<< Backpage");
+	}
+
 	void Handle();
-	void Send();
+	void Send(int Menulist);
+	int GetLastMenulist() const { return m_LastMenulist; }
+	int GetMenulist() const { return m_Menulist; }
+	void SetLastMenulist(int Menulist) { m_LastMenulist = Menulist; }
 
 private:
-	void AddImpl(int extra, const std::string& command, const std::string& description);
+	void AddImpl(int extra, std::string_view command, const std::string& description);
 	void ClearMotd(CGS* pGS, CPlayer* pPlayer);
 };
 

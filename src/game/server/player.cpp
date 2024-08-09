@@ -153,8 +153,10 @@ void CPlayer::Tick()
 	// update events
 	m_Dialog.TickUpdate();
 	m_Cooldown.Handler();
-	if(!m_vpInstanceMotdMenu.empty())
-		m_vpInstanceMotdMenu.back()->Handle();
+	if(m_pMotdMenu)
+	{
+		m_pMotdMenu->Handle();
+	}
 
 	// post updated votes if player open menu
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU)

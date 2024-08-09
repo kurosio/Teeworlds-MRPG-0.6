@@ -228,6 +228,8 @@ public:
 	const char *NetVersion() const override;
 	void OnClearClientData(int ClientID) override;
 
+	void SendMotdMenu(CPlayer* pPlayer, int Menulist);
+
 	int GetWorldID() const { return m_WorldID; }
 	bool IsWorldType(WorldType Type) const;
 	int GetExpMultiplier(int Experience) const;

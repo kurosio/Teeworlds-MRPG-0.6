@@ -268,6 +268,10 @@ enum MenuList
 	// Other menus
 	MENU_TOP_LIST,
 	MENU_DUNGEONS,
+
+	//
+	MOTD_MENU_TEST,
+	MOTD_MENU_SUBTEST,
 };
 
 // primary

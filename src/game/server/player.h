@@ -72,7 +72,7 @@ public:
 	Mood m_MoodState;
 	CCooldown m_Cooldown {};
 	CVotePlayerData m_VotesData;
-	std::vector<std::unique_ptr<MotdMenu>> m_vpInstanceMotdMenu{};
+	std::unique_ptr<MotdMenu> m_pMotdMenu{};
 
 	char m_aLastMsg[256];
 	int m_TutorialStep;
