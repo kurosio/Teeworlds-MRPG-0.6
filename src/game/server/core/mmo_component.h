@@ -106,7 +106,17 @@ private:
      * 
      * @return True if the menu item was handled, false otherwise.
      */
-    virtual bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) { return false; }
+    virtual bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) { return false; }
+
+    /**
+     * @brief Called when a send to player motd menu.
+     *
+     * @param pPlayer A pointer to the player object.
+     * @param Menulist The selected menu item.
+     *
+     * @return True if the menu item was handled, false otherwise.
+     */
+    virtual bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) { return false; }
 
     /**
      * @brief Called when a player issues a vote command.

@@ -79,14 +79,14 @@ void MotdMenu::Handle()
 				if(m_Flags & MTFLAG_CLOSE_LAST_MENU_ON_SELECT)
 				{
 					if(m_LastMenulist != NOPE)
-						pGS->SendMotdMenu(pChar->GetPlayer(), m_LastMenulist);
+						pGS->SendMenuMotd(pChar->GetPlayer(), m_LastMenulist);
 					else
 						ClearMotd(pGS, pChar->GetPlayer());
 				}
 				else if(m_Flags & MTFLAG_CLOSE_ON_SELECT)
 					ClearMotd(pGS, pChar->GetPlayer());
 				else
-					pGS->SendMotdMenu(pChar->GetPlayer(), m_Menulist);
+					pGS->SendMenuMotd(pChar->GetPlayer(), m_Menulist);
 				return;
 			}
 		}
@@ -128,7 +128,7 @@ void MotdMenu::Handle()
 	else if(pServer->Tick() >= m_ResendMotdTick)
 	{
 		m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
-		pGS->SendMotdMenu(pChar->GetPlayer(), m_Menulist);
+		pGS->SendMenuMotd(pChar->GetPlayer(), m_Menulist);
 	}
 }
 

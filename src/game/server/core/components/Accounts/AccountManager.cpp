@@ -274,7 +274,7 @@ void CAccountManager::OnClientReset(int ClientID)
 	CAccountData::ms_aData.erase(ClientID);
 }
 
-bool CAccountManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

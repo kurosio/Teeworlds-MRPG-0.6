@@ -133,7 +133,7 @@ bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	return false;
 }
 
-bool CCraftManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

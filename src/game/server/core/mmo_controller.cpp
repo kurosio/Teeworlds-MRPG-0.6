@@ -137,7 +137,17 @@ void CMmoController::OnPlayerLogin(CPlayer* pPlayer)
 		pComponent->OnPlayerLogin(pPlayer);
 }
 
-bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CMmoController::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
+{
+	for(auto& pComponent : m_System.m_vComponents)
+	{
+		if(pComponent->OnSendMenuMotd(pPlayer, Menulist))
+			return true;
+	}
+	return false;
+}
+
+bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	// initialize variables
 	int ClientID = pPlayer->GetCID();
@@ -323,7 +333,7 @@ bool CMmoController::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
 	// check append votes
 	for(auto& pComponent : m_System.m_vComponents)
 	{
-		if(pComponent->OnPlayerMenulist(pPlayer, Menulist))
+		if(pComponent->OnSendMenuVotes(pPlayer, Menulist))
 			return true;
 	}
 	// ----------------------------------------

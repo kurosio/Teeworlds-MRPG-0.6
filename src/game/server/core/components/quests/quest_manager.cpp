@@ -108,7 +108,7 @@ bool CQuestManager::OnCharacterTile(CCharacter* pChr)
 	return false;
 }
 
-bool CQuestManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	// initialize variables
 	CCharacter* pChr = pPlayer->GetCharacter();

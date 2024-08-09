@@ -28,7 +28,7 @@ bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, in
 	return false;
 }
 
-bool CMailboxManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CMailboxManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

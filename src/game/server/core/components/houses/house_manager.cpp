@@ -71,7 +71,7 @@ bool CHouseManager::OnCharacterTile(CCharacter* pChr)
 	return false;
 }
 
-bool CHouseManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CHouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

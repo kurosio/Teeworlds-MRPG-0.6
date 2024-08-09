@@ -92,7 +92,7 @@ void CInventoryManager::OnClientReset(int ClientID)
 	CPlayerItem::Data().erase(ClientID);
 }
 
-bool CInventoryManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

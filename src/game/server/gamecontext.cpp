@@ -1162,10 +1162,10 @@ void CGS::OnClearClientData(int ClientID)
 		pActiveSnap.second.m_aVisibleActive[ClientID] = false;
 }
 
-void CGS::SendMotdMenu(CPlayer* pPlayer, int Menulist)
+bool CGS::SendMenuMotd(CPlayer* pPlayer, int Menulist) const
 {
 	if(!pPlayer)
-		return;
+		return false;
 
 	if(Menulist == MOTD_MENU_TEST)
 	{
@@ -1173,7 +1173,7 @@ void CGS::SendMotdMenu(CPlayer* pPlayer, int Menulist)
 		Mtest.Add("Suka", "Hello {}", pPlayer->IsActiveEffect("Test") ? "[+]" : "[-]");
 		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
 		Mtest.Send(MOTD_MENU_TEST);
-		return;
+		return true;
 	}
 
 	if(Menulist == MOTD_MENU_SUBTEST)
@@ -1181,8 +1181,10 @@ void CGS::SendMotdMenu(CPlayer* pPlayer, int Menulist)
 		MotdMenu Mtest(pPlayer->GetCID(), "Hello pidor?");
 		Mtest.AddBackpage();
 		Mtest.Send(MOTD_MENU_SUBTEST);
-		return;
+		return true;
 	}
+
+	return Core()->OnSendMenuMotd(pPlayer, Menulist);
 }
 
 void CGS::ShowVotesNewbieInformation(int ClientID) const
@@ -1288,13 +1290,13 @@ bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd, int Extra)
 	if(PPSTR(pCmd, "BACKPAGE") == 0)
 	{
 		if(pPlayer->m_pMotdMenu && pPlayer->m_pMotdMenu->GetLastMenulist() != NOPE)
-			SendMotdMenu(pPlayer, pPlayer->m_pMotdMenu->GetLastMenulist());
+			SendMenuMotd(pPlayer, pPlayer->m_pMotdMenu->GetLastMenulist());
 		return true;
 	}
 
 	if(PPSTR(pCmd, "MENU") == 0)
 	{
-		SendMotdMenu(pPlayer, Extra);
+		SendMenuMotd(pPlayer, Extra);
 		return true;
 	}
 

@@ -17,7 +17,7 @@ class CCraftManager : public MmoComponent
 	void OnInit() override;
 	bool OnCharacterTile(CCharacter* pChr) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
-	bool OnPlayerMenulist(CPlayer* pPlayer, int Menulist) override;
+	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
 	// vote list's menus
 	void ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const;

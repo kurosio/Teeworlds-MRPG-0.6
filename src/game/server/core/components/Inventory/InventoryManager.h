@@ -18,7 +18,7 @@ class CInventoryManager : public MmoComponent
 	void OnPlayerLogin(class CPlayer* pPlayer) override;
 	void OnClientReset(int ClientID) override;
 	bool OnPlayerVoteCommand(class CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
-	bool OnPlayerMenulist(class CPlayer* pPlayer, int Menulist) override;
+	bool OnSendMenuVotes(class CPlayer* pPlayer, int Menulist) override;
 
 public:
 	static std::vector<int> GetItemIDsCollection(ItemType Type);

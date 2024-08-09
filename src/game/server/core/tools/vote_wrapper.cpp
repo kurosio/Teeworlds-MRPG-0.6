@@ -422,7 +422,7 @@ void CVotePlayerData::ApplyVoteUpdaterData()
 	if(m_VoteUpdaterStatus == STATE_UPDATER::DONE)
 	{
 		ClearVotes();
-		m_pGS->Core()->OnPlayerMenulist(m_pPlayer, m_CurrentMenuID);
+		m_pGS->Core()->OnSendMenuVotes(m_pPlayer, m_CurrentMenuID);
 		VoteWrapper::RebuildVotes(m_pPlayer->GetCID());
 		m_VoteUpdaterStatus.store(STATE_UPDATER::WAITING);
 	}

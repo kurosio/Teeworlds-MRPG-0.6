@@ -23,7 +23,7 @@ bool CEidolonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, in
 	return false;
 }
 
-bool CEidolonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CEidolonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

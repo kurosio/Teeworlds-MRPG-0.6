@@ -24,7 +24,7 @@ void CDungeonManager::OnInit()
 	}
 }
 
-bool CDungeonManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

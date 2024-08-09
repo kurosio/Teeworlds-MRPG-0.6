@@ -824,7 +824,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 	return false;
 }
 
-bool CGuildManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

@@ -64,7 +64,7 @@ bool CWarehouseManager::OnCharacterTile(CCharacter* pChr)
 }
 
 // Warehouse manager handle menulist
-bool CWarehouseManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CWarehouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	CCharacter* pChr = pPlayer->GetCharacter();
 

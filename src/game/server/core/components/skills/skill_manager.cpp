@@ -45,7 +45,7 @@ void CSkillManager::OnClientReset(int ClientID)
 	CSkill::Data().erase(ClientID);
 }
 
-bool CSkillManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	// Main menu skill list
 	if(Menulist == MENU_SKILL_LIST)

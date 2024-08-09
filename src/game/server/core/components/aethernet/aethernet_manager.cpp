@@ -127,7 +127,7 @@ bool CAethernetManager::OnCharacterTile(CCharacter* pChr)
 	return false;
 }
 
-bool CAethernetManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CAethernetManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	if(Menulist == MENU_AETHERNET_LIST)
 	{

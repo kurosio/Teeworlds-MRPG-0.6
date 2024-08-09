@@ -44,7 +44,7 @@ bool CAuctionManager::OnCharacterTile(CCharacter* pChr)
 	return false;
 }
 
-bool CAuctionManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CAuctionManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 

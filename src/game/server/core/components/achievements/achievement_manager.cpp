@@ -42,7 +42,7 @@ bool CAchievementManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd
 	return false;
 }
 
-bool CAchievementManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	int ClientID = pPlayer->GetCID();
 

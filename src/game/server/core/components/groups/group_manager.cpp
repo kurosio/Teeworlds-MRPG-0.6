@@ -140,7 +140,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-bool CGroupManager::OnPlayerMenulist(CPlayer* pPlayer, int Menulist)
+bool CGroupManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
