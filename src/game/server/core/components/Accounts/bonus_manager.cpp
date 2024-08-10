@@ -37,6 +37,11 @@ void CBonusManager::AddBonus(const TemporaryBonus& bonus)
 {
 	m_vTemporaryBonuses.push_back(bonus);
 	SaveBonuses();
+
+	CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+	const char* bonusType = GetStringBonusType(bonus.Type);
+	pGS->Chat(m_ClientID, "You have received: {} +{~.2}%", bonusType, bonus.Amount);
+
 }
 
 void CBonusManager::LoadBonuses()
