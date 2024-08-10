@@ -78,6 +78,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	ReinitializeHouse();
 	ReinitializeGroup();
 	ReinitializeGuild();
+	m_BonusManager.Init(m_ClientID, m_pPlayer);
 }
 
 void CAccountData::InitAchievements(const std::string& Data)
@@ -191,11 +192,11 @@ CGuild::CMember* CAccountData::GetGuildMember() const
 // Check if the account is in the same guild as the specified client ID
 bool CAccountData::SameGuild(int ClientID) const
 {
-    if(!m_pGuildData)
-        return false;
+	if(!m_pGuildData)
+		return false;
 
-    CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-    return pPlayer && pPlayer->Account()->GetGuild() && pPlayer->Account()->GetGuild()->GetID() == m_pGuildData->GetID();
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	return pPlayer && pPlayer->Account()->GetGuild() && pPlayer->Account()->GetGuild()->GetID() == m_pGuildData->GetID();
 }
 
 bool CAccountData::SameGuild(int GuildID, int ClientID) const
@@ -281,14 +282,13 @@ void CAccountData::Unprison()
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
-// Add experience to the account
 void CAccountData::AddExperience(int Value)
 {
-	// Check if the player is valid
 	if(!m_pPlayer)
 		return;
 
 	// Increase the experience value
+	m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
 	m_Exp += Value;
 
 	// Check if the experience is enough to level up
@@ -299,22 +299,26 @@ void CAccountData::AddExperience(int Value)
 		m_Level++;
 		m_Upgrade += 1;
 
-		// Check if the player has a character
+		// increase skill points
+		if(g_Config.m_SvSPEachLevel > 0)
+		{
+			auto pPlayerItemSP = m_pPlayer->GetItem(itSkillPoint);
+			pPlayerItemSP->Add(g_Config.m_SvSPEachLevel);
+			GS()->Chat(m_ClientID, "You have earned {} Skill Points! You now have {} SP!", g_Config.m_SvSPEachLevel, pPlayerItemSP->GetValue());
+		}
+
+		// effects
 		if(CCharacter* pChar = m_pPlayer->GetCharacter())
 		{
-			// Create death effect, sound, and level up text
 			GS()->CreateDeath(pChar->m_Core.m_Pos, m_ClientID);
 			GS()->CreateSound(pChar->m_Core.m_Pos, 4);
 			GS()->EntityManager()->Text(pChar->GetPos() + vec2(0, -40), 30, "level up");
 		}
 
-		// Display level up message
 		GS()->Chat(m_ClientID, "Congratulations. You attain level {}!", m_Level);
-
-		// Notify the player about unlocked
 		GS()->Core()->WorldManager()->NotifyUnlockedZonesByLeveling(m_pPlayer, m_ID);
 
-		// Check if the experience is not enough for the next level
+		// post leveling
 		if(m_Exp < (int)computeExperience(m_Level))
 		{
 			// Update votes, save stats, and save upgrades
@@ -325,28 +329,29 @@ void CAccountData::AddExperience(int Value)
 		}
 	}
 
-	// Update the progress bar
+	// update the progress bar
 	m_pPlayer->ProgressBar("Account", m_Level, m_Exp, (int)computeExperience(m_Level), Value);
 
-	// Randomly save the account stats
+	// randomly save the account stats
 	if(rand() % 5 == 0)
 	{
 		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
 	}
 
-	// Add experience to the guild member
+	// add experience to the guild member
 	if(HasGuild())
 	{
 		m_pGuildData->AddExperience(1);
 	}
 }
 
-// Add gold to the account
 void CAccountData::AddGold(int Value) const
 {
-	// Check if the player is valid
 	if(m_pPlayer)
+	{
+		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &Value);
 		m_pPlayer->GetItem(itGold)->Add(Value);
+	}
 }
 
 // This function checks if the player has enough currency to spend and deducts the price from their currency item

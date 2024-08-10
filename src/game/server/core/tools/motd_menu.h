@@ -32,9 +32,9 @@ class MotdMenu
 
 	struct Point
 	{
-		int m_Extra;
-		std::string m_Command;
-		char m_aDesc[32];
+		int m_Extra{};
+		std::string m_Command{"NULL"};
+		char m_aDesc[32]{};
 	};
 
 	int m_MenuExtra {NOPE};
@@ -100,10 +100,10 @@ public:
 	int GetLastMenulist() const { return m_LastMenulist; }
 	int GetMenulist() const { return m_Menulist; }
 	void SetLastMenulist(int Menulist) { m_LastMenulist = Menulist; }
+	void ClearMotd(CGS* pGS, CPlayer* pPlayer);
 
 private:
 	void AddImpl(int extra, std::string_view command, const std::string& description);
-	void ClearMotd(CGS* pGS, CPlayer* pPlayer);
 };
 
 #endif

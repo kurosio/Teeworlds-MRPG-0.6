@@ -157,6 +157,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	const int ClientID = pPlayer->GetCID();
 	GS()->Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 200, "You are currently positioned at {}({})!",
 		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"));
+	pPlayer->Account()->GetBonusManager().SendInfoAboutActiveBonuses();
 
 	// Check if it is not the first initialization
 	if(!FirstInitilize)
@@ -448,6 +449,46 @@ void CAccountManager::OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period)
 		pPlayer->Account()->ResetDailyChairGolds();
 		GS()->Chat(ClientID, "The gold limit in the chair has been updated.");
 	}
+}
+
+bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
+{
+	int ClientID = pPlayer->GetCID();
+
+	// motd menu about bonuses
+	if(Menulist == MOTD_MENU_ABOUT_BONUSES)
+	{
+		const char* pSeparateLine = "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+							  "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500";
+		const int sizeTemporaryBonuses = (int)pPlayer->Account()->GetBonusManager().GetTemporaryBonuses().size();
+		MotdMenu MBonuses(ClientID, MTFLAG_CLOSE_BUTTON, "All bonuses overlap, the minimum increase cannot be lower than 1 point.\n\nUse /bonuses again or press Close to exit.");
+		MBonuses.AddText("Active bonuses ♕");
+		MBonuses.AddText(pSeparateLine);
+		for(int i = 0; i < 8; i++)
+		{
+			const auto* pBonus = sizeTemporaryBonuses > i ? &pPlayer->Account()->GetBonusManager().GetTemporaryBonuses()[i] : nullptr;
+			if(!pBonus)
+			{
+				MBonuses.AddText("{}. No active bonus", (i+1));
+				MBonuses.AddLine();
+				MBonuses.AddText(pSeparateLine);
+				continue;
+			}
+
+			const char* pBonusType = pPlayer->Account()->GetBonusManager().GetStringBonusType(pBonus->Type);
+			int remainingTime = pBonus->RemainingTime();
+			int minutes = remainingTime / 60;
+			int seconds = remainingTime % 60;
+			MBonuses.AddText("{}. {} - {~.2}%", (i+1), pBonusType, pBonus->Amount);
+			MBonuses.AddText("Time left: {} min {} sec.", minutes, seconds);
+			MBonuses.AddText(pSeparateLine);
+		}
+
+		MBonuses.Send(MOTD_MENU_ABOUT_BONUSES);
+		return true;
+	}
+
+	return false;
 }
 
 std::string CAccountManager::HashPassword(const std::string& Password, const std::string& Salt)

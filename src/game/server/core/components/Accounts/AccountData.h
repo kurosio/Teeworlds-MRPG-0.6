@@ -4,6 +4,7 @@
 #define GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 
 // TODO: fully rework structures
+#include "bonus_manager.h"
 #include <game/server/core/components/achievements/achievement_data.h>
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
@@ -33,11 +34,16 @@ class CAccountData
 	CGuild* m_pGuildData{};
 	ClassGroup m_ClassGroup {};
 	nlohmann::json m_AchivementsData { };
+	CBonusManager m_BonusManager;
 
 	CPlayer* m_pPlayer {};
 	CGS* GS() const;
-	CPlayer* GetPlayer() const { return m_pPlayer; };
+	CPlayer* GetPlayer() const { return m_pPlayer; }
+
 public:
+	CBonusManager& GetBonusManager() { return m_BonusManager; }
+	const CBonusManager& GetBonusManager() const { return m_BonusManager; }
+
 	/*
 	 * Group functions: initialize or uniques from function
 	 */

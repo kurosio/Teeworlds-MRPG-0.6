@@ -41,6 +41,7 @@ private:
 	bool GiveWeapon(int Weapon, int GiveAmmo) override;
 
 	void RewardPlayer(CPlayer *pPlayer, vec2 ForceDies) const;
+	void HandleMobSkillPointDrop(CPlayer* pPlayer) const;
 
 	/*
 	 * Changing weapons randomly, only for those that have in equipment

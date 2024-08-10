@@ -98,6 +98,12 @@ void MotdMenu::Handle()
 		{
 			const auto& extra = m_Points[i].m_Extra;
 
+			if(command == "CLOSE")
+			{
+				ClearMotd(pGS, pChar->GetPlayer());
+				return;
+			}
+
 			if(pGS->OnClientMotdCommand(m_ClientID, command.c_str(), extra))
 			{
 				if(m_Flags & MTFLAG_CLOSE_LAST_MENU_ON_SELECT)
@@ -128,23 +134,6 @@ void MotdMenu::Handle()
 
 		addLineToBuffer(m_Points[i].m_aDesc, isSelected);
 	}
-
-	// add close button if necessary
-	if(m_Flags & MTFLAG_CLOSE_BUTTON)
-	{
-		const int closeIndex = static_cast<int>(m_Points.size());
-		const int checkYStart = startLineY + closeIndex * lineSizeY;
-		const int checkYEnd = startLineY + (closeIndex + 1) * lineSizeY;
-		const bool isCloseSelected = (targetX > -196 && targetX < 196 && targetY >= checkYStart && targetY < checkYEnd);
-
-		if(isCloseSelected && CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
-		{
-			ClearMotd(pGS, pChar->GetPlayer());
-			return;
-		}
-
-		addLineToBuffer("Close", isCloseSelected);
-	}
 	buffer += "\n" + m_Description;
 
 	// update buffer if it has changed
@@ -166,6 +155,13 @@ void MotdMenu::Handle()
 
 void MotdMenu::Send(int Menulist)
 {
+	// add close button if necessary
+	if(m_Flags & MTFLAG_CLOSE_BUTTON)
+	{
+		AddImpl(NOPE, "CLOSE", "Close");
+	}
+
+	// reinitialize player motd menu
 	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 	if(auto* pPlayer = pGS->GetPlayer(m_ClientID))
 	{

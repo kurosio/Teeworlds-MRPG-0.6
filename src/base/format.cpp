@@ -73,6 +73,7 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 		// start argument processing
 		if(iterChar == '{')
 		{
+			argumentType = arg_default;
 			argumentProcessing = true;
 			continue;
 		}

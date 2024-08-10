@@ -92,6 +92,11 @@ MACRO_CONFIG_INT(SvInfoChangeDelay, sv_info_change_delay, 5, 0, 9999, CFGFLAG_SE
 MACRO_CONFIG_INT(SvInactiveKickTime, sv_inactivekick_time, 3, 0, 1000, CFGFLAG_SERVER, "How many minutes to wait before taking care of inactive clients")
 MACRO_CONFIG_INT(SvInactiveKick, sv_inactivekick, 2, 0, 3, CFGFLAG_SERVER, "How to deal with inactive clients (0=move player to spectator, 1=move player to spectator and kick spectator, 2=move to free spectator slot/kick, 3=kick)")
 
+// balance
+MACRO_CONFIG_INT(SvSPEachLevel, sv_sp_each_level, 10, 0, 100, CFGFLAG_SERVER, "Gives a set number of Skill Points for each level up")
+MACRO_CONFIG_INT(SvSPChanceDropMob, sv_sp_chance_drop_mob, 5, 0, 100, CFGFLAG_SERVER, "Chance (in percent) to drop Skill Points when killing a regular mob")
+MACRO_CONFIG_INT(SvSPChanceDropRareMob, sv_sp_chance_drop_rare_mob, 10, 0, 100, CFGFLAG_SERVER, "Chance (in percent) to drop Skill Points when killing a rare mob")
+
 // another config
 MACRO_CONFIG_INT(SvAetherFee, sv_aether_fee, 12, 0, 10000, CFGFLAG_SERVER, "Price for teleport * world distance")
 MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERVER, "Door radius hit.")

@@ -139,6 +139,14 @@ public:
 			CreateFolder("editor", TYPE_SAVE);
 			CreateFolder("ghosts", TYPE_SAVE);
 			CreateFolder("teehistorian", TYPE_SAVE);
+
+			// check server if the "directories" does not exist
+			if(!fs_is_dir("server_data"))
+				fs_makedir("server_data");
+			if(!fs_is_dir("server_data/account_bonuses"))
+				fs_makedir("server_data/account_bonuses");
+			if(!fs_is_dir("server_data/account_quests"))
+				fs_makedir("server_data/account_quests");
 		}
 
 		return m_NumPaths ? 0 : 1;

@@ -14,13 +14,6 @@ void QuestDatafile::Create() const
 	if(!m_pQuest || m_pQuest->m_State != QuestState::ACCEPT || !m_pQuest->GetPlayer())
 		return;
 
-	// check if the "directories" does not exist
-	if(!fs_is_dir("server_data/quest_tmp"))
-	{
-		fs_makedir("server_data");
-		fs_makedir("server_data/quest_tmp");
-	}
-
 	// json structuring
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_pQuest->m_Step;
@@ -192,5 +185,5 @@ std::string QuestDatafile::GetFilename() const
 {
 	const int QuestID = m_pQuest->GetID();
 	const int AccountID = m_pQuest->GetPlayer()->Account()->GetID();
-	return "server_data/quest_tmp/" + std::to_string(QuestID) + "-" + std::to_string(AccountID) + ".json";
+	return "server_data/account_quests/" + std::to_string(QuestID) + "-" + std::to_string(AccountID) + ".json";
 }

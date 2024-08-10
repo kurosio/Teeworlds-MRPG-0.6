@@ -58,6 +58,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("cmdlist", "?i[page]", ConChatCmdList, pServer, "");
 	AddCommand("help", "?i[page]", ConChatCmdList, pServer, "");
 	AddCommand("rules", "", ConChatRules, pServer, "");
+	AddCommand("bonuses", "", ConChatBonuses, pServer, "");
 
 	AddCommand("add_multiple_orbite", "i[orbite] i[type] i[subtype]", ConAddMultipleOrbite, pServer, "");
 
@@ -490,6 +491,7 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 		pGS->Chat(ClientID, "/group - group system.");
 		pGS->Chat(ClientID, "/guild - guild system.");
 		pGS->Chat(ClientID, "/house - house system.");
+		pGS->Chat(ClientID, "/bonuses - information about bonuses.");
 		pGS->Chat(ClientID, "#<text> - perform an action.");
 	}
 }
@@ -553,6 +555,21 @@ void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
 
 	pGS->Chat(ClientID, "You have begun the training challenge!");
 	pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
+}
+
+void CCommandProcessor::ConChatBonuses(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return;
+
+	if(pPlayer->IsSameMotdMenu(MOTD_MENU_ABOUT_BONUSES))
+		pPlayer->m_pMotdMenu->ClearMotd(pGS, pPlayer);
+	else
+		pGS->SendMenuMotd(pPlayer, MOTD_MENU_ABOUT_BONUSES);
 }
 
 

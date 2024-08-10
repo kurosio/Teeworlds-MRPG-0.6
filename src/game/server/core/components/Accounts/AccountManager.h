@@ -20,6 +20,8 @@ class CAccountManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	void OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period) override;
 
+	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
+
     struct AccBan
     {
         int id;

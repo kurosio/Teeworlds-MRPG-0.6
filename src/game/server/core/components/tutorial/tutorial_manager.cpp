@@ -10,13 +10,6 @@ constexpr auto FILE_NAME_INITILIZER = "server_data/tutorial_data.json";
 
 void CTutorialManager::OnInit()
 {
-	// checking dir
-	if(!fs_is_dir("server_data/tutorial_tmp"))
-	{
-		fs_makedir("server_data");
-		fs_makedir("server_data/tutorial_tmp");
-	}
-
 	// load file
 	ByteArray RawData;
 	Utils::Files::Result Result = Utils::Files::loadFile(FILE_NAME_INITILIZER, &RawData);

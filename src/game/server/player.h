@@ -179,6 +179,7 @@ public:
 	int GetAttributesSize();
 
 	void SetSnapHealthTick(int Sec);
+	bool IsSameMotdMenu(int Menulist) const { return m_pMotdMenu && m_pMotdMenu->GetMenulist() == Menulist; }
 
 	virtual Mood GetMoodState() const { return Mood::NORMAL; }
 	void ChangeWorld(int WorldID);

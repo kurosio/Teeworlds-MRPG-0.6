@@ -265,13 +265,33 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	}
 
 	// skill point
-	// TODO: balance depending on the difficulty, not just the level
-	const int CalculateSP = (pPlayer->Account()->GetLevel() > MobBotInfo::ms_aMobBot[SubID].m_Level ? 40 + minimum(40, (pPlayer->Account()->GetLevel() - MobBotInfo::ms_aMobBot[SubID].m_Level) * 2) : 40);
-	if(rand() % CalculateSP == 0)
+	HandleMobSkillPointDrop(pPlayer);
+}
+
+void CCharacterBotAI::HandleMobSkillPointDrop(CPlayer* pPlayer) const
+{
+	// initialize variables
+	const int SubID = m_pBotPlayer->GetBotMobID();
+	const int PlayerLevel = pPlayer->Account()->GetLevel();
+	const int MobLevel = MobBotInfo::ms_aMobBot[SubID].m_Level;
+	const bool isRareMob = MobBotInfo::ms_aMobBot[SubID].m_Boss;
+	float BaseChance = isRareMob ? g_Config.m_SvSPChanceDropRareMob : g_Config.m_SvSPChanceDropMob;
+	const int LevelDifference = PlayerLevel - MobLevel;
+
+	// check leveling difference
+	if(LevelDifference > 0)
+	{
+		const int AdjustmentSteps = LevelDifference / 5;
+		BaseChance -= BaseChance * (0.10f * AdjustmentSteps);
+	}
+	BaseChance = maximum(1.0f, BaseChance);
+
+	// try generate chance
+	if(random_float(100.f) <= BaseChance)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
 		pPlayerItem->Add(1);
-		GS()->Chat(ClientID, "Skill points increased. Now ({}SP)", pPlayerItem->GetValue());
+		GS()->Chat(pPlayer->GetCID(), "Skill points increased. Now you have {} SP!", pPlayerItem->GetValue());
 	}
 }
 

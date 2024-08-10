@@ -177,6 +177,7 @@ void CPlayer::PostTick()
 		HandleTuningParams();
 		HandlePrison();
 		CVoteOptional::HandleVoteOptionals(m_ClientID);
+		Account()->GetBonusManager().UpdateBonuses();
 	}
 
 	// handlers
@@ -516,8 +517,6 @@ void CPlayer::TryRespawn()
 		GS()->CreatePlayerSpawn(SpawnPos);
 		GetTempData().ClearTeleportPosition();
 		m_WantSpawn = false;
-
-		GS()->SendMenuMotd(this, MOTD_MENU_TEST);
 	}
 }
 
@@ -690,14 +689,18 @@ int CPlayer::GetStartTeam() const
 
 int CPlayer::GetStartHealth() const
 {
-	const int DefaultHP = 10 + GetAttributeSize(AttributeIdentifier::HP);
-	return DefaultHP + translate_to_percent_rest(DefaultHP, m_Class.GetExtraHP());
+	int DefaultHP = 10 + GetAttributeSize(AttributeIdentifier::HP);
+	DefaultHP += translate_to_percent_rest(DefaultHP, m_Class.GetExtraHP());
+	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_HP, &DefaultHP);
+	return DefaultHP;
 }
 
 int CPlayer::GetStartMana() const
 {
-	const int DefaultMP = 10 + GetAttributeSize(AttributeIdentifier::MP);
-	return DefaultMP + translate_to_percent_rest(DefaultMP, m_Class.GetExtraMP());
+	int DefaultMP = 10 + GetAttributeSize(AttributeIdentifier::MP);
+	DefaultMP += translate_to_percent_rest(DefaultMP, m_Class.GetExtraMP());
+	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_MP, &DefaultMP);
+	return DefaultMP;
 }
 
 int64_t CPlayer::GetAfkTime() const
@@ -724,9 +727,14 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
 	}
 
+	constexpr int targetNewlineCount = 8;
+	auto bonusActivites = Account()->GetBonusManager().GetBonusActivitiesString();
+	int additionalNewlines = targetNewlineCount - bonusActivites.first;
+	std::string additionNewline(additionalNewlines, '\n');
 	std::string ProgressBar = Utils::String::progressBar(100, LevelPercent, 10, ":", " ");
-	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n\n\n\n\n\n\n\n\n\n\n%-150s",
-		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, fmt_digit(Gold).c_str(), aRecastInfo, pAppendStr);
+	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n%s\n%s\n%-150s",
+		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, fmt_digit(Gold).c_str(), 
+		bonusActivites.second.c_str(), aRecastInfo, additionNewline.c_str(), pAppendStr);
 }
 
 /* #########################################################################
