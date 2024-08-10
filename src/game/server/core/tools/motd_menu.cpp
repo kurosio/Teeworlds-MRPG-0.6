@@ -48,29 +48,54 @@ void MotdMenu::Handle()
 
 	// prepare the buffer for the MOTD
 	std::string buffer;
-	int linePos = 0;
-
-	if(m_ScrollManager.CanScrollUp())
+	auto addScrollBar = [&](int index)
 	{
-		buffer += "△ Scroll up △\n";
-		linePos++;
-	}
+		// initialize variables
+		int totalItems = (int)m_Points.size();
+		int currentScrollPos = m_ScrollManager.GetScrollPos();
+		int visibleItems = m_ScrollManager.GetMaxVisibleItems();
 
-	auto addLineToBuffer = [&](int index, const std::string& line, bool isSelected)
+		float visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
+		int scrollBarHeight = static_cast<int>(visibleProportion * visibleItems);
+		if(scrollBarHeight < 1) 
+			scrollBarHeight = 1;
+
+		// calculate position
+		float progress = static_cast<float>(currentScrollPos) / static_cast<float>(totalItems - visibleItems);
+		int scrollBarPosition = static_cast<int>(progress * (visibleItems - scrollBarHeight));
+
+		// get current index
+		int currentBar = index - currentScrollPos;
+		const char* pSymbol = currentBar >= scrollBarPosition && currentBar < scrollBarPosition + scrollBarHeight ? "\u258D" : "\u258F";
+		buffer.append(pSymbol);
+	};
+
+	auto addLineToBuffer = [&](const std::string& line, bool isSelected)
 	{
-		buffer += (isSelected ? "✘ " : "➜ ") + std::to_string(index + 1) + ". " + line + "\n";
+		buffer.append(isSelected ? "\u279C " : "\u257E ");
+		buffer.append(line);
+		buffer.append("\n");
 	};
 
 	// add menu items to buffer
-	for(int i = m_ScrollManager.GetScrollPos(); i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
+	for(int i = m_ScrollManager.GetScrollPos(); i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i)
 	{
-		const int checkYStart = startLineY + linePos * lineSizeY;
-		const int checkYEnd = startLineY + (linePos + 1) * lineSizeY;
+		if((int)m_Points.size() > m_ScrollManager.GetMaxVisibleItems())
+			addScrollBar(i);
+
+		const auto& command = m_Points[i].m_Command;
+		if(command == "NULL")
+		{
+			buffer.append(m_Points[i].m_aDesc).append("\n");
+			continue;
+		}
+
+		const int checkYStart = startLineY + i * lineSizeY;
+		const int checkYEnd = startLineY + (i + 1) * lineSizeY;
 		const bool isSelected = (targetX > -196 && targetX < 196 && targetY >= checkYStart && targetY < checkYEnd);
 
 		if(isSelected && CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
 		{
-			const auto& command = m_Points[i].m_Command;
 			const auto& extra = m_Points[i].m_Extra;
 
 			if(pGS->OnClientMotdCommand(m_ClientID, command.c_str(), extra))
@@ -101,7 +126,7 @@ void MotdMenu::Handle()
 			}
 		}
 
-		addLineToBuffer(i, m_Points[i].m_aDesc, isSelected);
+		addLineToBuffer(m_Points[i].m_aDesc, isSelected);
 	}
 
 	// add close button if necessary
@@ -118,14 +143,8 @@ void MotdMenu::Handle()
 			return;
 		}
 
-		addLineToBuffer(closeIndex, "Close", isCloseSelected);
+		addLineToBuffer("Close", isCloseSelected);
 	}
-
-	if(m_ScrollManager.CanScrollDown())
-	{
-		buffer += "▽ Scroll down ▽\n";
-	}
-
 	buffer += "\n" + m_Description;
 
 	// update buffer if it has changed
@@ -168,4 +187,3 @@ void MotdMenu::ClearMotd(CGS* pGS, CPlayer* pPlayer)
 		pPlayer->m_pMotdMenu.reset();
 	}
 }
-

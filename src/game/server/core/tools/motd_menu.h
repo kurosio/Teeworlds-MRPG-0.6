@@ -23,6 +23,7 @@ class MotdMenu
 		void SetMaxScrollPos(int itemCount) { m_MaxScrollPos = maximum(0, itemCount - m_MaxItemsVisible); }
 		int GetScrollPos() const { return m_ScrollPos; }
 		int GetEndScrollPos() const { return minimum(m_ScrollPos + m_MaxItemsVisible, m_MaxScrollPos + m_MaxItemsVisible); }
+		int GetMaxVisibleItems() const { return m_MaxItemsVisible; }
 		void ScrollUp() { m_ScrollPos = minimum(m_ScrollPos + 1, m_MaxScrollPos); }
 		void ScrollDown() { m_ScrollPos = maximum(m_ScrollPos - 1, 0); }
 		bool CanScrollUp() const { return m_ScrollPos > 0; }
@@ -45,7 +46,7 @@ class MotdMenu
 	std::string m_LastBuffer{};
 	std::string m_Description{};
 	std::vector<Point> m_Points{};
-	ScrollManager m_ScrollManager{10};
+	ScrollManager m_ScrollManager{13};
 
 public:
 	MotdMenu(int ClientID) : m_ClientID(ClientID) {}
@@ -58,6 +59,12 @@ public:
 	template <typename... Ts>
 	MotdMenu(int ClientID, int Flags, const char* pDesc, const Ts&... args)
 		: m_Flags(Flags), m_ClientID(ClientID), m_Description(fmt(pDesc, args...)) {}
+
+	template <typename... Ts>
+	void AddText(std::string_view description, const Ts&... args)
+	{
+		AddImpl(NOPE, "NULL", fmt(description.data(), args...));
+	}
 
 	template <typename... Ts>
 	void Add(std::string_view command, std::string_view description, const Ts&... args)
@@ -76,6 +83,11 @@ public:
 	{
 		m_MenuExtra = Extra;
 		AddImpl(MenuID, "MENU", fmt(description.data(), args...));
+	}
+
+	void AddLine()
+	{
+		AddImpl(NOPE, "NULL", "");
 	}
 
 	void AddBackpage()

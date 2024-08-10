@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "gamecontext.h"
 
@@ -1169,28 +1169,32 @@ bool CGS::SendMenuMotd(CPlayer* pPlayer, int Menulist) const
 
 	if(Menulist == MOTD_MENU_TEST)
 	{
-		MotdMenu Mtest(pPlayer->GetCID(), "Hello pidor?");
-		Mtest.Add("Suka", "Hello {}", pPlayer->IsActiveEffect("Test") ? "[+]" : "[-]");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.Add("Suka", "Hello {}", pPlayer->IsActiveEffect("Test") ? "[+]" : "[-]");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		MotdMenu Mtest(pPlayer->GetCID(), "ADVENTURER'S GUIDE");
+
+		Mtest.Add("WELCOME, HERO", "Greetings, {} {}", Server()->ClientName(pPlayer->GetCID()));
+		Mtest.AddText("XP: {} | Gold: {}", pPlayer->Account()->GetExperience(), pPlayer->GetItem(itGold)->GetValue());
+		Mtest.AddText("");
+
+		Mtest.AddText("MAIN QUESTS");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Start a New Adventure");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Continue Journey");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Visit the Kingdom");
+		Mtest.AddLine();
+
+		Mtest.AddText("INVENTORY");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Manage Equipment");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Inventory");
+		Mtest.AddLine();
+
+		Mtest.AddText("CHARACTER");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "View Stats");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Skills & Abilities");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Learn New Skills");
+		Mtest.AddLine();
+
+		Mtest.AddText("EXIT");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Return to Main Menu");
+
 		Mtest.Send(MOTD_MENU_TEST);
 		return true;
 	}
