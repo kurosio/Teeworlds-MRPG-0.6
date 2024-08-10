@@ -20,7 +20,7 @@ const char* CBonusManager::GetStringBonusType(int bonusType) const
 
 void CBonusManager::SendInfoAboutActiveBonuses() const
 {
-	CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 
 	if(const int activeBonusesCount = static_cast<int>(m_vTemporaryBonuses.size()); activeBonusesCount == 0)
 	{
@@ -35,13 +35,38 @@ void CBonusManager::SendInfoAboutActiveBonuses() const
 
 void CBonusManager::AddBonus(const TemporaryBonus& bonus)
 {
-	m_vTemporaryBonuses.push_back(bonus);
+	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+
+	// check bonus
+	bool bonusStacked = false;
+	for(auto& existingBonus : m_vTemporaryBonuses)
+	{
+		if(existingBonus.Type == bonus.Type && existingBonus.Amount == bonus.Amount)
+		{
+			existingBonus.Duration += bonus.Duration;
+			bonusStacked = true;
+
+			// information
+			const char* bonusType = GetStringBonusType(bonus.Type);
+			const int addedDurationMinutes = bonus.Duration / 60;
+			const int newTotalDurationMinutes = existingBonus.Duration / 60;
+			pGS->Chat(m_ClientID, "{} +{~.2}% has been extended by {} minutes.", bonusType, bonus.Amount, addedDurationMinutes);
+			pGS->Chat(m_ClientID, "New total duration: {} minutes.", newTotalDurationMinutes);
+			break;
+		}
+	}
+
+	// new bonus
+	if(!bonusStacked)
+	{
+		m_vTemporaryBonuses.push_back(bonus);
+
+		// information
+		const char* bonusType = GetStringBonusType(bonus.Type);
+		pGS->Chat(m_ClientID, "You have received: {} +{~.2}%", bonusType, bonus.Amount);
+	}
+
 	SaveBonuses();
-
-	CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	const char* bonusType = GetStringBonusType(bonus.Type);
-	pGS->Chat(m_ClientID, "You have received: {} +{~.2}%", bonusType, bonus.Amount);
-
 }
 
 void CBonusManager::LoadBonuses()
@@ -96,7 +121,7 @@ void CBonusManager::UpdateBonuses()
 		if(!it->IsActive())
 		{
 			CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-			pGS->Chat(m_ClientID, "Your {} of {:.2f}% has expired.", GetStringBonusType(it->Type), it->Amount);
+			pGS->Chat(m_ClientID, "Your {} of {~.2f}% has expired.", GetStringBonusType(it->Type), it->Amount);
 			it = m_vTemporaryBonuses.erase(it);
 			hasChanges = true;
 		}
