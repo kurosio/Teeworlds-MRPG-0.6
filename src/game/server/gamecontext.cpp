@@ -1172,6 +1172,25 @@ bool CGS::SendMenuMotd(CPlayer* pPlayer, int Menulist) const
 		MotdMenu Mtest(pPlayer->GetCID(), "Hello pidor?");
 		Mtest.Add("Suka", "Hello {}", pPlayer->IsActiveEffect("Test") ? "[+]" : "[-]");
 		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.Add("Suka", "Hello {}", pPlayer->IsActiveEffect("Test") ? "[+]" : "[-]");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
+		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Test tab");
 		Mtest.Send(MOTD_MENU_TEST);
 		return true;
 	}

@@ -12,6 +12,23 @@ enum MotdMenuFlags
 
 class MotdMenu
 {
+	class ScrollManager
+	{
+		int m_ScrollPos {};
+		int m_MaxScrollPos {};
+		int m_MaxItemsVisible {};
+
+	public:
+		explicit ScrollManager(int visibleLines) : m_MaxItemsVisible(visibleLines) {}
+		void SetMaxScrollPos(int itemCount) { m_MaxScrollPos = maximum(0, itemCount - m_MaxItemsVisible); }
+		int GetScrollPos() const { return m_ScrollPos; }
+		int GetEndScrollPos() const { return minimum(m_ScrollPos + m_MaxItemsVisible, m_MaxScrollPos + m_MaxItemsVisible); }
+		void ScrollUp() { m_ScrollPos = minimum(m_ScrollPos + 1, m_MaxScrollPos); }
+		void ScrollDown() { m_ScrollPos = maximum(m_ScrollPos - 1, 0); }
+		bool CanScrollUp() const { return m_ScrollPos > 0; }
+		bool CanScrollDown() const { return m_ScrollPos < m_MaxScrollPos; }
+	};
+
 	struct Point
 	{
 		int m_Extra;
@@ -25,10 +42,10 @@ class MotdMenu
 	int m_Flags {};
 	int m_ClientID {};
 	int m_ResendMotdTick {};
-	int m_ScrollPos {};
-	std::string m_LastBuffer;
-	std::string m_Description;
-	std::vector<Point> m_Points;
+	std::string m_LastBuffer{};
+	std::string m_Description{};
+	std::vector<Point> m_Points{};
+	ScrollManager m_ScrollManager{10};
 
 public:
 	MotdMenu(int ClientID) : m_ClientID(ClientID) {}
