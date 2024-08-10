@@ -78,7 +78,7 @@ void MotdMenu::Handle()
 	};
 
 	// add menu items to buffer
-	for(int i = m_ScrollManager.GetScrollPos(); i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i)
+	for(int i = m_ScrollManager.GetScrollPos(), linePos = 0; i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
 	{
 		if((int)m_Points.size() > m_ScrollManager.GetMaxVisibleItems())
 			addScrollBar(i);
@@ -90,8 +90,8 @@ void MotdMenu::Handle()
 			continue;
 		}
 
-		const int checkYStart = startLineY + i * lineSizeY;
-		const int checkYEnd = startLineY + (i + 1) * lineSizeY;
+		const int checkYStart = startLineY + linePos * lineSizeY;
+		const int checkYEnd = startLineY + (linePos + 1) * lineSizeY;
 		const bool isSelected = (targetX > -196 && targetX < 196 && targetY >= checkYStart && targetY < checkYEnd);
 
 		if(isSelected && CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
