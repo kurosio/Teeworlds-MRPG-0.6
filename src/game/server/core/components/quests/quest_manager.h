@@ -35,7 +35,7 @@ public:
 
 	CQuestsBoard* GetBoardByPos(vec2 Pos) const;
 	void ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) const;
-	void ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) const;
+	void ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, bool fromBoard) const;
 
 	void PrepareRequiredBuffer(CPlayer* pPlayer, QuestBotInfo& pBot, char* aBufQuestTask, int Size);
 	void TryAppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID);

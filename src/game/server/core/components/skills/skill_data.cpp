@@ -239,7 +239,7 @@ bool CSkill::Use()
 		//GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
 		//GS()->EntityManager()->FrostNova(ClientID, PlayerPosition, 120.f, 12, 5);
 		GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, 320.f, 1000, 10);
-		//GS()->EntityManager()->Bow(ClientID, 5, 5, 160.f, 16);
+		GS()->EntityManager()->Bow(ClientID, 5, 25, 160.f, 16);
 
 		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, (10 + GetBonus()) * Server()->TickSpeed(), 2 * Server()->TickSpeed(), &m_pEntitySkill);
 		return true;

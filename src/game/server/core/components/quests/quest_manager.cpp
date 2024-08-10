@@ -129,7 +129,7 @@ bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_BOARD);
 
 		// show quest board element
-		ShowQuestInfo(pPlayer, GS()->GetQuestInfo(pPlayer->m_VotesData.GetExtraID()));
+		ShowQuestInfo(pPlayer, GS()->GetQuestInfo(pPlayer->m_VotesData.GetExtraID()), true);
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -153,7 +153,7 @@ bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_JOURNAL_MAIN);
 
 		// show quest element
-		ShowQuestInfo(pPlayer, GS()->GetQuestInfo(pPlayer->m_VotesData.GetExtraID()));
+		ShowQuestInfo(pPlayer, GS()->GetQuestInfo(pPlayer->m_VotesData.GetExtraID()), false);
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -347,7 +347,7 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 	}
 }
 
-void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) const
+void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, bool fromBoard) const
 {
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
@@ -454,10 +454,11 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 	VoteWrapper VButtons(ClientID);
 	const auto* pNextQuest = pQuest->GetNextQuest();
 	const auto* pPreviousQuest = pQuest->GetPreviousQuest();
+	const int Menulist = fromBoard ? MENU_BOARD_QUEST_SELECTED : MENU_JOURNAL_QUEST_SELECTED;
 
 	if(pNextQuest)
 	{
-		VButtons.AddMenu(MENU_BOARD_QUEST_SELECTED, pNextQuest->GetID(), "Next: \u27A1 {}", pNextQuest->GetName());
+		VButtons.AddMenu(Menulist, pNextQuest->GetID(), "Next: \u27A1 {}", pNextQuest->GetName());
 	}
 
 	if(pPreviousQuest)
@@ -473,7 +474,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest) c
 		else
 			VButtons.Add("\u26A0 Need to complete {}.", playerPreviousQuest->Info()->GetName());
 
-		VButtons.AddMenu(MENU_BOARD_QUEST_SELECTED, pPreviousQuest->GetID(), "Previous: \u2B05 {}", playerPreviousQuest->Info()->GetName());
+		VButtons.AddMenu(Menulist, pPreviousQuest->GetID(), "Previous: \u2B05 {}", playerPreviousQuest->Info()->GetName());
 	}
 	else
 	{

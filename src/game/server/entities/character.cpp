@@ -298,10 +298,10 @@ void CCharacter::FireWeapon()
 		case WEAPON_SHOTGUN:
 		{
 			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
-			const int ShotSpread = minimum(2 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadShotgun), 36);
+			const int ShotSpread = 5 + minimum(m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadShotgun), 36);
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread);
-			for(int i = 1; i <= ShotSpread; ++i)
+			for(int i = 0; i <= ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
 				const float a = angle(Direction) + Spreading;
@@ -317,10 +317,10 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_GRENADE:
 		{
-			const int ShotSpread = minimum(1 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadGrenade), 21);
+			const int ShotSpread = 1 + minimum(m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadGrenade), 21);
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread);
-			for(int i = 1; i < ShotSpread; ++i)
+			for(int i = 0; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
 				const float a = angle(Direction) + Spreading;
@@ -335,8 +335,8 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_LASER:
 		{
-			const int ShotSpread = minimum(1 + m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadRifle), 36);
-			for(int i = 1; i < ShotSpread; ++i)
+			const int ShotSpread = 1 + minimum(m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadRifle), 36);
+			for(int i = 0; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
 				const float a = angle(Direction) + Spreading;
