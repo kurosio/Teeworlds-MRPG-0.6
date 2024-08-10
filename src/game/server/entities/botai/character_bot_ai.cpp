@@ -501,9 +501,6 @@ void CCharacterBotAI::HandleBot()
 		// unknown bot
 		default: break;
 	}
-
-	// handle
-	HandleSpecialEvent();
 }
 
 // interactive of NPC

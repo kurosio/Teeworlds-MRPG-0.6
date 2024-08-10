@@ -57,7 +57,6 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 
 	m_ReckoningTick = 0;
 	m_SendCore = {};
-	m_ReckoningTick = {};
 	GS()->m_World.InsertEntity(this);
 	m_Alive = true;
 	m_NumInputs = 0;
@@ -66,7 +65,6 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_OldPos = Pos;
 	m_DamageDisabled = false;
 	m_Core.m_CollisionDisabled = false;
-	m_Event = TILE_CLEAR_SPECIAL_EVENTS;
 	m_Core.m_WorldID = m_pPlayer->GetPlayerWorldID();
 
 	if(!m_pPlayer->IsBot())
@@ -825,8 +823,6 @@ void CCharacter::Die(int Killer, int Weapon)
 {
 	m_Alive = false;
 
-	const int ClientID = m_pPlayer->GetCID();
-
 	// a nice sound
 	GS()->m_pController->OnCharacterDeath(m_pPlayer, GS()->GetPlayer(Killer), Weapon);
 	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
@@ -840,11 +836,33 @@ void CCharacter::Die(int Killer, int Weapon)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, m_pPlayer->GetPlayerWorldID());
 
 	// respawn
+	const int ClientID = m_pPlayer->GetCID();
 	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
 	m_pPlayer->PrepareRespawnTick();
 	GS()->m_World.RemoveEntity(this);
 	GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
 	GS()->CreateDeath(m_Pos, ClientID);
+}
+
+void CCharacter::AutoUseHealingPotionIfNeeded() const
+{
+	// automatically use equipped heal potion if conditions are met
+	if(m_pPlayer->m_aPlayerTick[PotionRecast] >= Server()->Tick() || m_Health > m_pPlayer->GetStartHealth() / 3)
+		return;
+
+	const auto equippedHeal = m_pPlayer->GetEquippedItemID(EQUIP_POTION_HEAL);
+	if(!equippedHeal)
+		return;
+
+	const auto potion = PotionTools::Heal::getHealInfo(equippedHeal.value());
+	if(!potion)
+		return;
+
+	const auto pPlayerItem = m_pPlayer->GetItem(potion->getItemID());
+	if(m_pPlayer->IsActiveEffect(potion->getEffect()) || !pPlayerItem->IsEquipped())
+		return;
+
+	pPlayerItem->Use(1);
 }
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
@@ -859,8 +877,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	if(!IsAllowedPVP(FromCID))
 		return false;
 
-	Dmg = (FromCID == m_pPlayer->GetCID() ? maximum(1, Dmg / 2) : maximum(1, Dmg));
-
+	// calculate damage
 	int CritDamage = 0;
 	CPlayer* pFrom = GS()->GetPlayer(FromCID);
 	if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
@@ -925,7 +942,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		// give effects from player or bot to who got damage
 		pFrom->GetCharacter()->GiveRandomEffects(m_pPlayer->GetCID());
 	}
+	Dmg = (FromCID == m_pPlayer->GetCID() ? maximum(1, Dmg / 2) : maximum(1, Dmg));
 
+	// update health
 	const int OldHealth = m_Health;
 	if(Dmg)
 	{
@@ -941,10 +960,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	GS()->CreateSound(m_Pos, IsCriticalDamage ? (int)SOUND_PLAYER_PAIN_LONG : (int)SOUND_PLAYER_PAIN_SHORT);
 	m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
-
 	if(FromCID != m_pPlayer->GetCID())
 		GS()->CreatePlayerSound(FromCID, SOUND_HIT);
-
 
 	// verify death
 	if(m_Health <= 0)
@@ -962,17 +979,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		return false;
 	}
 
-	// health recovery potion worker health potions
-	if(m_pPlayer->m_aPlayerTick[PotionRecast] < Server()->Tick() && !m_pPlayer->IsBot() && m_Health <= m_pPlayer->GetStartHealth() / 3)
-	{
-		std::for_each(PotionTools::Heal::getList().begin(), PotionTools::Heal::getList().end(), [this](const PotionTools::Heal& p)
-		{
-			CPlayerItem* pPlayerItem = m_pPlayer->GetItem(p.getItemID());
-			if(!m_pPlayer->IsActiveEffect(p.getEffect()) && pPlayerItem->IsEquipped())
-				pPlayerItem->Use(1);
-		});
-	}
-
+	AutoUseHealingPotionIfNeeded();
 	return true;
 }
 
@@ -1120,28 +1127,6 @@ void CCharacter::HandleTilesets()
 		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(ClientID));
 	if(GetTiles()->IsActive(TILE_CHAIR))
 		m_pPlayer->Account()->HandleChair();
-
-	// tile events
-	if(m_pTilesHandler->AreAnyEnter(TILE_SPECIAL_EVENT_PARTY, TILE_SPECIAL_EVENT_LIKE, TILE_SPECIAL_EVENT_HEALTH, TILE_CLEAR_SPECIAL_EVENTS))
-		SetEvent(m_pTilesHandler->GetActive());
-}
-
-void CCharacter::HandleSpecialEvent()
-{
-	if(m_Event == TILE_SPECIAL_EVENT_PARTY)
-	{
-		SetEmote(EMOTE_HAPPY, 1, false);
-		if(rand() % 50 == 0)
-		{
-			GS()->SendEmoticon(m_pPlayer->GetCID(), 1 + rand() % 2);
-			GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
-		}
-	}
-
-	else if(m_Event == TILE_SPECIAL_EVENT_LIKE)
-	{
-		SetEmote(EMOTE_HAPPY, 1, false);
-	}
 }
 
 void CCharacter::GiveRandomEffects(int To)
@@ -1169,31 +1154,9 @@ bool CCharacter::InteractiveHammer(vec2 Direction, vec2 ProjStartPos)
 	}
 	return false;
 }
-/*
-void CCharacter::InteractiveGun(vec2 Direction, vec2 ProjStartPos)
-{
-	return;
-}
 
-void CCharacter::InteractiveShotgun(vec2 Direction, vec2 ProjStartPos)
-{
-	return;
-}
-
-void CCharacter::InteractiveGrenade(vec2 Direction, vec2 ProjStartPos)
-{
-	return;
-}
-
-void CCharacter::InteractiveRifle(vec2 Direction, vec2 ProjStartPos)
-{
-	return;
-}
-*/
 void CCharacter::HandleTuning()
 {
-	//CTuningParams* pTuningParams = &m_pPlayer->m_NextTuningParams;
-
 	HandleIndependentTuning();
 }
 
@@ -1269,7 +1232,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		}
 
 		// worker health potions
-		std::for_each(PotionTools::Heal::getList().begin(), PotionTools::Heal::getList().end(), [this](const PotionTools::Heal& p)
+		std::ranges::for_each(PotionTools::Heal::getList(), [this](const PotionTools::Heal& p)
 		{
 			if(m_pPlayer->IsActiveEffect(p.getEffect()))
 				IncreaseHealth(p.getRecovery());
@@ -1356,7 +1319,6 @@ void CCharacter::HandlePlayer()
 	}
 
 	// handle
-	HandleSpecialEvent();
 	HandleHookActions();
 }
 
@@ -1494,12 +1456,11 @@ void CCharacter::ResetDoorPos()
 
 bool CCharacter::StartConversation(CPlayer* pTarget) const
 {
-	// check valid
 	if(m_pPlayer->IsBot() || !pTarget->IsBot())
 		return false;
 
 	// check conversational
-	CPlayerBot* pTargetBot = static_cast<CPlayerBot*>(pTarget);
+	const auto pTargetBot = static_cast<CPlayerBot*>(pTarget);
 	if(pTargetBot && pTargetBot->IsConversational() && pTargetBot->IsActiveForClient(m_pPlayer->GetCID()))
 	{
 		m_pPlayer->m_Dialog.Start(pTarget->GetCID());

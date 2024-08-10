@@ -12,14 +12,11 @@ class CCharacter : public CEntity
 {
 	MACRO_ALLOC_POOL_ID()
 
-	// player controlling this character
 	class CPlayer *m_pPlayer;
 	CTileHandler *m_pTilesHandler;
 
-	int m_Event;
 	int m_LastWeapon;
 	int m_QueuedWeapon;
-
 	int m_BleedingByClientID;
 
 	// ninja
@@ -40,11 +37,6 @@ class CCharacter : public CEntity
 	void DoWeaponSwitch();
 	void HandleHookActions();
 	bool InteractiveHammer(vec2 Direction, vec2 ProjStartPos);
-	//void InteractiveGun(vec2 Direction, vec2 ProjStartPos);
-	//void InteractiveShotgun(vec2 Direction, vec2 ProjStartPos);
-	//void InteractiveGrenade(vec2 Direction, vec2 ProjStartPos);
-	//void InteractiveRifle(vec2 Direction, vec2 ProjStartPos);
-	virtual void HandleTuning();
 	void HandleBuff(CTuningParams* TuningParams);
 	void HandlePlayer();
 
@@ -53,9 +45,10 @@ class CCharacter : public CEntity
 
 protected:
 	bool m_Alive;
+	int m_Health;
+	int m_Mana;
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 
-	// last tick that the player took any action ie some input
 	int m_LastNoAmmoSound;
 	int m_NumInputs;
 	int m_TriggeredEvents;
@@ -65,8 +58,6 @@ protected:
 	int m_AttackTick;
 	int m_EmoteType;
 	int m_EmoteStop;
-	int m_Health;
-	int m_Mana;
 	vec2 m_SpawnPoint;
 	CMultipleOrbite* m_pMultipleOrbite;
 
@@ -78,15 +69,30 @@ protected:
 	void HandleWeapons();
 	void HandleNinja();
 	void HandleTilesets();
-	void HandleSpecialEvent();
 	void HandleIndependentTuning();
 
 	void SetSafe(int FlagsDisallow = CHARACTERFLAG_HAMMER_HIT_DISABLED | CHARACTERFLAG_COLLISION_DISABLED | CHARACTERFLAG_HOOK_HIT_DISABLED);
 	void ResetSafe();
 
+	bool StartConversation(CPlayer* pTarget) const;
+	void HandleEventsDeath(int Killer, vec2 Force) const;
+
+	void AutoUseHealingPotionIfNeeded() const;
+
 public:
+	// the player core for the physics
+	CCharacterCore m_Core;
+
+	// allow perm
+	bool m_DamageDisabled;
+	int m_AmmoRegen;
+	bool m_SafeAreaForTick;
+	vec2 m_OldPos;
+	vec2 m_OlderPos;
+	bool m_DoorHit;
+
 	//character's size
-	static const int ms_PhysSize = 28;
+	static constexpr int ms_PhysSize = 28;
 	CCharacter(CGameWorld *pWorld);
 	~CCharacter() override;
 
@@ -102,6 +108,7 @@ public:
 	virtual void GiveRandomEffects(int To);
 	virtual bool TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon);
 	virtual void Die(int Killer, int Weapon);
+	virtual void HandleTuning();
 
 	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);
 	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
@@ -113,7 +120,6 @@ public:
 
 	bool IsAllowedPVP(int FromID) const;
 	bool IsAlive() const { return m_Alive; }
-	void SetEvent(int EventID) { m_Event = EventID; }
 	void SetEmote(int Emote, int Sec, bool StartEmoticion);
 	void SetWeapon(int Weapon);
 	bool IncreaseHealth(int Amount);
@@ -123,33 +129,14 @@ public:
 	int Health() const { return m_Health; }
 
 	void AddMultipleOrbite(int Amount, int Type, int Subtype);
-
 	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
 
 	void ChangePosition(vec2 NewPos);
-	void ResetDoorPos();
 	void UpdateEquipingStats(int ItemID);
+	void ResetDoorPos();
 
-	// input
 	vec2 GetMousePos() const { return m_Core.m_Pos + vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY); }
-
-	// the player core for the physics
-	CCharacterCore m_Core;
-
-	// allow perm
-	bool m_DamageDisabled;
-	int m_AmmoRegen;
-	bool m_SafeAreaForTick;
-	vec2 m_OldPos;
-	vec2 m_OlderPos;
-	bool m_DoorHit;
-	
-	int m_MoveRestrictions;
-
-private:
-	bool StartConversation(CPlayer* pTarget) const;
-	void HandleEventsDeath(int Killer, vec2 Force) const;
 };
 
 #endif

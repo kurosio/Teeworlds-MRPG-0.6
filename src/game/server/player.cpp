@@ -440,7 +440,7 @@ void CPlayer::RefreshClanString()
 	std::string Prepared(Server()->GetWorldName(GetPlayerWorldID()));
 
 	// title
-	if(const auto TitleItemID = GetEquippedItemID(EQUIP_HIDEN_TITLE); TitleItemID.has_value())
+	if(const auto TitleItemID = GetEquippedItemID(EQUIP_TITLE); TitleItemID.has_value())
 	{
 		Prepared += " | ";
 		Prepared += GetItem(TitleItemID.value())->Info()->GetName();

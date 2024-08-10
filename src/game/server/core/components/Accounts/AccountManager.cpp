@@ -357,7 +357,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// initialize variables
-		const auto EquippedTitleItemID = pPlayer->GetEquippedItemID(EQUIP_HIDEN_TITLE);
+		const auto EquippedTitleItemID = pPlayer->GetEquippedItemID(EQUIP_TITLE);
 		const char* pCurrentTitle = EquippedTitleItemID.has_value() ? pPlayer->GetItem(EquippedTitleItemID.value())->Info()->GetName() : "title is not used";
 
 		// title information
@@ -371,7 +371,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		for(auto& pairItem : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &pairItem.second;
-			if(pPlayerItem->Info()->IsFunctional(EQUIP_HIDEN_TITLE) && pPlayerItem->HasItem())
+			if(pPlayerItem->Info()->IsFunctional(EQUIP_TITLE) && pPlayerItem->HasItem())
 			{
 				// initialize variables
 				bool IsEquipped = pPlayerItem->IsEquipped();

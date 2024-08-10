@@ -136,9 +136,28 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		VoteWrapper VEquipTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2604 Equipment tabs");
-		const char* paTypeNames[NUM_EQUIPPED] = { "Hammer", "Gun", "Shotgun", "Grenade", "Rifle", "Pickaxe", "Rake", "Armor", "Eidolon" };
+		const char* paTypeNames[NUM_EQUIPPED] = {
+			"Hammer",
+			"Gun",
+			"Shotgun",
+			"Grenade",
+			"Rifle",
+			"Pickaxe",
+			"Rake",
+			"Armor",
+			"Eidolon",
+			"Potion healing",
+			"Potion mana",
+			"Potion special",
+			"Title"
+		};
 		for(int i = 0; i < NUM_EQUIPPED; i++)
 		{
+			// append another menu
+			if(i == EQUIP_TITLE)
+				continue;
+
+			// check is equipped
 			const auto ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
 			if(!ItemID.has_value() || !pPlayer->GetItem(ItemID.value())->IsEquipped())
 			{
@@ -146,9 +165,22 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 				continue;
 			}
 
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID.value());
-			std::string strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayer->GetItem(ItemID.value())->GetStringAttributesInfo(pPlayer) : "unattributed";
-			VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} * {}", paTypeNames[i], strAttributes.c_str());
+			// add information
+			const auto pPlayerItem = pPlayer->GetItem(ItemID.value());
+			if(i == EQUIP_POTION_HEAL || i == EQUIP_POTION_MANA || i == EQUIP_POTION_SPECIAL)
+			{
+				if(const auto pHealInfo = PotionTools::Heal::getHealInfo(ItemID.value()))
+					VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} (recast {} hp {}) x{}", 
+						pPlayerItem->Info()->GetName(), pHealInfo->getTime(), pHealInfo->getRecovery(), pPlayerItem->GetValue());
+				else
+					VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} x{}", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+
+			}
+			else
+			{
+				std::string strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayer->GetItem(ItemID.value())->GetStringAttributesInfo(pPlayer) : "unattributed";
+				VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} * {}", pPlayerItem->Info()->GetName(), strAttributes.c_str());
+			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
