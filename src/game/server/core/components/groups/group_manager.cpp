@@ -156,33 +156,6 @@ bool CGroupManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-static void CallbackVoteOptionalGroupInvite(CPlayer* pPlayer, int Extra1, int Extra2, bool Accepted)
-{
-	// initialize variables
-	CGS* pGS = pPlayer->GS();
-	int ClientID = pPlayer->GetCID();
-	int& InvitedCID = Extra1;
-	int& GroupID = Extra2;
-
-	// check valid group
-	GroupData* pGroup = pGS->Core()->GroupManager()->GetGroupByID(GroupID);
-	if(!pGroup)
-		return;
-
-	// check selected option
-	if(Accepted)
-	{
-		pGroup->Add(pPlayer->Account()->GetID());
-		pGS->Chat(ClientID, "You've accepted the invitation!");
-		pGS->Chat(InvitedCID, "{} accepted your invitation!", pGS->Server()->ClientName(ClientID));
-	}
-	else
-	{
-		pGS->Chat(ClientID, "You declined the invitation!");
-		pGS->Chat(InvitedCID, "{} declined your invitation!", pGS->Server()->ClientName(ClientID));
-	}
-}
-
 bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -236,9 +209,29 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			}
 
 			// create invite vote optional
-			const auto pOption = CVoteOptional::Create(InvitedCID, ClientID, GroupID, 15,
-			                                           "Join to {} group?", Server()->ClientName(ClientID));
-			pOption->RegisterCallback(CallbackVoteOptionalGroupInvite);
+			auto fncallbackJoindGuild = [InvitedCID, GroupID](CPlayer* pPlayer, bool Accepted)
+			{
+				CGS* pGS = pPlayer->GS();
+				const int ClientID = pPlayer->GetCID();
+
+				if(const auto pGroup = pGS->Core()->GroupManager()->GetGroupByID(GroupID))
+				{
+					// check selected option
+					if(Accepted)
+					{
+						pGroup->Add(pPlayer->Account()->GetID());
+						pGS->Chat(ClientID, "You've accepted the invitation!");
+						pGS->Chat(InvitedCID, "{} accepted your invitation!", pGS->Server()->ClientName(ClientID));
+					}
+					else
+					{
+						pGS->Chat(ClientID, "You declined the invitation!");
+						pGS->Chat(InvitedCID, "{} declined your invitation!", pGS->Server()->ClientName(ClientID));
+					}
+				}
+			};
+			const auto pOption = CVoteOptional::Create(InvitedCID, 15, "Join to {} group?", Server()->ClientName(ClientID));
+			pOption->RegisterCallback(fncallbackJoindGuild);
 
 			// send messages
 			GS()->Chat(ClientID, "You've invited {} to join your group!", Server()->ClientName(InvitedCID));

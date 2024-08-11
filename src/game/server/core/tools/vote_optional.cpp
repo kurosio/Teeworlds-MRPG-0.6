@@ -15,7 +15,7 @@ bool CVoteOptional::ExecuteVote(bool voteState)
 {
     if(m_Callback)
     {
-        m_Callback(GetPlayer(), m_MiscValue1, m_MiscValue2, voteState);
+        m_Callback(GetPlayer(), voteState);
 
         CNetMsg_Sv_VoteStatus voteStatusMsg;
         voteStatusMsg.m_Total = 1;

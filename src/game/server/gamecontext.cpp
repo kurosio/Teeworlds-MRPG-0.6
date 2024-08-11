@@ -891,12 +891,12 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			// close motd menu by vote optional
 			if(pPlayer->m_pMotdMenu)
 			{
-				auto fnCallback = [](CPlayer* pPlayer, int, int, bool Accepted)
+				auto fnCallback = [](CPlayer* pPlayer, bool Accepted)
 				{
 					if(Accepted)
 						pPlayer->m_pMotdMenu->ClearMotd(pPlayer->GS(), pPlayer);
 				};
-				const auto pOption = CVoteOptional::Create(ClientID, -1, -1, 10, "Close motd menu?");
+				const auto pOption = CVoteOptional::Create(ClientID, 10, "Close motd menu?");
 				pOption->RegisterCallback(fnCallback);
 				return;
 			}

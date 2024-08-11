@@ -9,17 +9,15 @@ class CVoteOptional : public MultiworldIdentifiableData<std::map<int, std::queue
     CGS* GS() const;
     CPlayer* GetPlayer() const;
 
-    using OptionEventCallback = std::function<void(CPlayer*, int, int, bool)>;
+    using OptionEventCallback = std::function<void(CPlayer*, bool)>;
 
 public:
     // Factory method to create a new vote event
     template<typename ... Args>
-    static CVoteOptional* Create(int clientID, int miscValue1, int miscValue2, int durationSeconds, const char* descriptionFormat, const Args& ... args)
+    static CVoteOptional* Create(int clientID, int durationSeconds, const char* descriptionFormat, const Args& ... args)
 	{
         CVoteOptional voteEvent;
         voteEvent.m_CloseTime = time_get() + time_freq() * durationSeconds;
-        voteEvent.m_MiscValue1 = miscValue1;
-        voteEvent.m_MiscValue2 = miscValue2;
         voteEvent.m_ClientID = clientID;
         voteEvent.m_Description = fmt_localize(clientID, descriptionFormat, args...);
         m_pData[clientID].push(voteEvent);
@@ -40,8 +38,6 @@ public:
 
 private:
     int m_ClientID {};
-    int m_MiscValue1 {};
-    int m_MiscValue2 {};
     bool m_Active { false };
     std::string m_Description {};
     time_t m_CloseTime {};
