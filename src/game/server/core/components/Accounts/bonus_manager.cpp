@@ -89,7 +89,7 @@ void CBonusManager::LoadBonuses()
 				if(elapsedTime < bonus.Duration)
 				{
 					bonus.StartTime = currentTime - elapsedTime;
-					AddBonus(bonus);
+					m_vTemporaryBonuses.push_back(bonus);
 				}
 			}
 		}
