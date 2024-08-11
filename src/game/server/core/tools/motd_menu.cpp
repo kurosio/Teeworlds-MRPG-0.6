@@ -35,7 +35,8 @@ void MotdMenu::Handle()
 	const int targetY = pChar->m_Core.m_Input.m_TargetY;
 
 	// prepare the buffer for the MOTD
-	std::string buffer;
+	int linePos = 2;
+	std::string buffer = Instance::Localize(m_ClientID, "* Use 'Self kill' to close the motd!\n\n");
 	auto addScrollBar = [&](int index)
 	{
 		// initialize variables
@@ -66,8 +67,8 @@ void MotdMenu::Handle()
 	};
 
 	// key events and freeze input is hovered worked area
-	constexpr int startWorkedAreaY = startLineY + 0 * lineSizeY;
-	const int endWorkedAreaY = startLineY + m_ScrollManager.GetMaxVisibleItems() * lineSizeY;
+	const int startWorkedAreaY = startLineY + linePos * lineSizeY;
+	const int endWorkedAreaY = startLineY + (linePos + m_ScrollManager.GetMaxVisibleItems()) * lineSizeY;
 	if((targetX > -196 && targetX < 196 && targetY >= startWorkedAreaY && targetY < endWorkedAreaY))
 	{
 		// handle scrolling with key events
@@ -85,7 +86,7 @@ void MotdMenu::Handle()
 	}
 
 	// add menu items to buffer
-	for(int i = m_ScrollManager.GetScrollPos(), linePos = 0; i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
+	for(int i = m_ScrollManager.GetScrollPos(); i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
 	{
 		// add scrollbar symbol
 		if((int)m_Points.size() > m_ScrollManager.GetMaxVisibleItems())

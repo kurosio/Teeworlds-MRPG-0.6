@@ -461,7 +461,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		const char* pSeparateLine = "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
 							  "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500";
 		const int sizeTemporaryBonuses = (int)pPlayer->Account()->GetBonusManager().GetTemporaryBonuses().size();
-		MotdMenu MBonuses(ClientID, MTFLAG_CLOSE_BUTTON, "All bonuses overlap, the minimum increase cannot be lower than 1 point.\n\nUse /bonuses again or press Close to exit.");
+		MotdMenu MBonuses(ClientID, MTFLAG_CLOSE_BUTTON, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
 		MBonuses.AddText("Active bonuses ♕");
 		MBonuses.AddText(pSeparateLine);
 		for(int i = 0; i < 8; i++)

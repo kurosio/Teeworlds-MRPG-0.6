@@ -23,6 +23,7 @@
 
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/worlds/world_data.h"
+#include "core/tools/vote_optional.h"
 #include "core/tools/vote_wrapper.h"
 
 CGS::CGS()
@@ -885,8 +886,22 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(pPlayer->m_aPlayerTick[LastSelfKill] > Server()->Tick())
 				return;
 
-			// send broadcast message
 			pPlayer->m_aPlayerTick[LastSelfKill] = Server()->Tick() + (Server()->TickSpeed() / 2);
+
+			// close motd menu by vote optional
+			if(pPlayer->m_pMotdMenu)
+			{
+				auto fnCallback = [](CPlayer* pPlayer, int, int, bool Accepted)
+				{
+					if(Accepted)
+						pPlayer->m_pMotdMenu->ClearMotd(pPlayer->GS(), pPlayer);
+				};
+				const auto pOption = CVoteOptional::Create(ClientID, -1, -1, 10, "Close motd menu?");
+				pOption->RegisterCallback(fnCallback);
+				return;
+			}
+
+			// send broadcast message
 			Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Self kill is not allowed.");
 			return;
 		}
