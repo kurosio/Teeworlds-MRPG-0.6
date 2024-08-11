@@ -34,18 +34,6 @@ void MotdMenu::Handle()
 	const int targetX = pChar->m_Core.m_Input.m_TargetX;
 	const int targetY = pChar->m_Core.m_Input.m_TargetY;
 
-	// handle scrolling with key events
-	if(CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_NEXT_WEAPON))
-	{
-		m_ScrollManager.ScrollUp();
-		m_ResendMotdTick = pServer->Tick() + 5;
-	}
-	else if(CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_PREV_WEAPON))
-	{
-		m_ScrollManager.ScrollDown();
-		m_ResendMotdTick = pServer->Tick() + 5;
-	}
-
 	// prepare the buffer for the MOTD
 	std::string buffer;
 	auto addScrollBar = [&](int index)
@@ -77,12 +65,33 @@ void MotdMenu::Handle()
 		buffer.append("\n");
 	};
 
+	// key events and freeze input is hovered worked area
+	constexpr int startWorkedAreaY = startLineY + 0 * lineSizeY;
+	const int endWorkedAreaY = startLineY + m_ScrollManager.GetMaxVisibleItems() * lineSizeY;
+	if((targetX > -196 && targetX < 196 && targetY >= startWorkedAreaY && targetY < endWorkedAreaY))
+	{
+		// handle scrolling with key events
+		if(CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_NEXT_WEAPON))
+		{
+			m_ScrollManager.ScrollUp();
+			m_ResendMotdTick = pServer->Tick() + 5;
+		}
+		else if(CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_PREV_WEAPON))
+		{
+			m_ScrollManager.ScrollDown();
+			m_ResendMotdTick = pServer->Tick() + 5;
+		}
+		CEventKeyManager::BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE | BLOCK_INPUT_FREEZE_HAMMER);
+	}
+
 	// add menu items to buffer
 	for(int i = m_ScrollManager.GetScrollPos(), linePos = 0; i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
 	{
+		// add scrollbar symbol
 		if((int)m_Points.size() > m_ScrollManager.GetMaxVisibleItems())
 			addScrollBar(i);
 
+		// empty command only text
 		const auto& command = m_Points[i].m_Command;
 		if(command == "NULL")
 		{
@@ -90,10 +99,12 @@ void MotdMenu::Handle()
 			continue;
 		}
 
+		// initialize variables
 		const int checkYStart = startLineY + linePos * lineSizeY;
 		const int checkYEnd = startLineY + (linePos + 1) * lineSizeY;
 		const bool isSelected = (targetX > -196 && targetX < 196 && targetY >= checkYStart && targetY < checkYEnd);
 
+		// is hovered and clicked
 		if(isSelected && CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
 		{
 			const auto& extra = m_Points[i].m_Extra;
