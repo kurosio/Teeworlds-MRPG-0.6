@@ -38,6 +38,7 @@
 #include "multi_worlds.h"
 #include "server_ban.h"
 #include "server_logger.h"
+#include "geo_ip.h"
 
 void CServer::CClient::Reset()
 {
@@ -300,6 +301,22 @@ int CServer::GetClientWorldID(int ClientID) const
 		return MAIN_WORLD_ID;
 
 	return m_aClients[ClientID].m_WorldID;
+}
+
+const char* CServer::GetClientContinent(int ClientID) const
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY || m_aClients[ClientID].m_aContinent[0] == '\0')
+		return "Unknown";
+
+	return m_aClients[ClientID].m_aContinent;
+}
+
+const char* CServer::GetClientCountryIsoCode(int ClientID) const
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY || m_aClients[ClientID].m_aCountryIsoCode[0] == '\0')
+		return "UN";
+
+	return m_aClients[ClientID].m_aCountryIsoCode;
 }
 
 void CServer::SendDiscordGenerateMessage(const char* pTitle, int AccountID, int Color)
@@ -1168,10 +1185,15 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 				if(!m_aClients[ClientID].m_ChangeWorld)
 				{
 					char aAddrStr[NETADDR_MAXSTRSIZE];
+					char aAddrStrWithoutPort[NETADDR_MAXSTRSIZE];
 					net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
+					net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStrWithoutPort, sizeof(aAddrStrWithoutPort), false);
+					str_copy(m_aClients[ClientID].m_aContinent, CGeoIP::getData("continent", aAddrStrWithoutPort).c_str(), sizeof(m_aClients[ClientID].m_aContinent));
+					str_copy(m_aClients[ClientID].m_aCountryIsoCode, CGeoIP::getData("country_iso_code", aAddrStrWithoutPort).c_str(), sizeof(m_aClients[ClientID].m_aCountryIsoCode));
 
 					char aBuf[256];
-					str_format(aBuf, sizeof(aBuf), "player is ready. ClientID=%d addr=%s", ClientID, aAddrStr);
+					str_format(aBuf, sizeof(aBuf), "player is ready. ClientID=%d addr=%s continent=%s country_iso_code=%s", 
+						ClientID, aAddrStr, m_aClients[ClientID].m_aContinent, m_aClients[ClientID].m_aCountryIsoCode);
 					Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 
 					const int WorldID = m_aClients[ClientID].m_WorldID;
@@ -1915,6 +1937,9 @@ int CServer::Run(ILogger* pLogger)
 	m_NetServer.SetCallbacks(NewClientCallback, NewClientNoAuthCallback, ClientRejoinCallback, DelClientCallback, this);
 	m_Econ.Init(&g_Config, Console(), m_pServerBan);
 
+	// initialize geolite2pp
+	CGeoIP::init("server_data/Country.mmdb");
+
 	// server name
 	str_format(aBuf, sizeof(aBuf), "server name is '%s'", g_Config.m_SvName);
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
@@ -2201,6 +2226,7 @@ int CServer::Run(ILogger* pLogger)
 	m_Econ.Shutdown();
 	m_NetServer.Close();
 	m_pRegister->OnShutdown();
+	CGeoIP::free();
 	return 0;
 }
 

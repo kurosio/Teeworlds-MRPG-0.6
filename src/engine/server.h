@@ -57,6 +57,9 @@ public:
 	virtual void SetClientDDNetVersion(int ClientID, int DDNetVersion) = 0;
 	virtual void GetClientAddr(int ClientID, char* pAddrStr, int Size) const = 0;
 
+	virtual const char* GetClientContinent(int ClientID) const = 0;
+	virtual const char* GetClientCountryIsoCode(int ClientID) const = 0;
+
 	virtual void SetStateClientMRPG(int ClientID, bool State) = 0;
 	virtual bool GetStateClientMRPG(int ClientID) const = 0;
 

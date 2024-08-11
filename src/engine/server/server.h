@@ -97,6 +97,9 @@ public:
 		int m_Authed;
 		int m_AuthTries;
 
+		char m_aContinent[32];
+		char m_aCountryIsoCode[8];
+
 		int m_WorldID;
 		int m_OldWorldID;
 		bool m_ChangeWorld;
@@ -179,6 +182,9 @@ public:
 	bool IsClientChangesWorld(int ClientID) override;
 	void ChangeWorld(int ClientID, int NewWorldID) override;
 	int GetClientWorldID(int ClientID) const override;
+
+	const char* GetClientContinent(int ClientID) const override;
+	const char* GetClientCountryIsoCode(int ClientID) const override;
 
 	const char* Localize(int ClientID, const char* pText) override;
 	void SetClientLanguage(int ClientID, const char* pLanguage) override;

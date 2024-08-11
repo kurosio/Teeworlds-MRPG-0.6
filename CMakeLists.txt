@@ -305,7 +305,6 @@ endif()
 
 if(SERVER_COMPILE)
   show_dependency_status("MySQL" MYSQL TRUE)
-  #show_dependency_status("ICU" ICU TRUE)
   show_dependency_status("OpenSSL" OPENSSL FALSE)
 endif()
 #if(CLIENT_COMPILE)
@@ -365,6 +364,12 @@ if(TARGET_OS STREQUAL "windows")
 #    set(PLATFORM_LIBS)
 #  endif()
 endif()
+
+########################################################################
+# EXTERNAL
+########################################################################
+
+include(${CMAKE_SOURCE_DIR}/cmake/ExternalMaxMindDB.cmake)
 
 ########################################################################
 # DOWNLOAD GTEST
@@ -534,7 +539,6 @@ generate_source("src/generated/protocol.h" "network_header")
 generate_source("src/generated/server_data.cpp" "server_content_source")
 generate_source("src/generated/server_data.h" "server_content_header")
 
-
 ########################################################################
 # SHARED
 ########################################################################
@@ -653,7 +657,7 @@ set(DEPS ${DEP_JSON} ${DEP_MD5} ${ZLIB_DEP} ${DEP_PUGIXML})
 set(LIBS ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARY} ${PLATFORM_LIBS})
 
 # Targets
-add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_SHARED} ${ENGINE_GENERATED_SHARED} ${BASE} )
+add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_SHARED} ${ENGINE_GENERATED_SHARED} ${BASE})
 add_library(game-shared EXCLUDE_FROM_ALL OBJECT ${GAME_SHARED} ${GAME_GENERATED_SHARED})
 
 target_precompile_headers(engine-shared PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/teeother/stdafx_shared.h>")
@@ -816,7 +820,9 @@ if(SERVER_COMPILE)
   # Sources
   file(GLOB_RECURSE ENGINE_SERVER "src/engine/server/*.cpp" "src/engine/server/*.h")
   file(GLOB_RECURSE GAME_SERVER "src/game/server/*.cpp" "src/game/server/*.h")
-  file(GLOB LOCALIZED_SERVER "src/teeother/components/*.cpp" "src/teeother/components/*.h" "src/teeother/tools/*.cpp" "src/teeother/tools/*.h" "src/teeother/tools/flat_hash_map/*.h")
+  file(GLOB LOCALIZED_SERVER "src/teeother/components/*.cpp" "src/teeother/components/*.h" "src/teeother/tools/*.cpp" 
+     "src/teeother/tools/geolite2pp/*.cpp" "src/teeother/tools/geolite2pp/*.hpp"  
+     "src/teeother/tools/*.h" "src/teeother/tools/flat_hash_map/*.h")
   set(GAME_GENERATED_SERVER src/generated/server_data.cpp src/generated/server_data.h)
   set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER} ${LOCALIZED_SERVER})
   
@@ -829,6 +835,7 @@ if(SERVER_COMPILE)
   set(SERVER_INCLUDES_DIRS
     ${Boost_INCLUDE_DIRS}
     ${MYSQL_INCLUDE_DIRS}
+    ${LIBMAXMINDDB_INCLUDE_DIR}
   )
   set(SERVER_LIBRARIES
     ${MYSQL_LIBRARIES}
@@ -850,6 +857,7 @@ if(SERVER_COMPILE)
     ${DEPS_SERVER}
     $<TARGET_OBJECTS:engine-shared>
     $<TARGET_OBJECTS:game-shared>
+    $<TARGET_OBJECTS:libmaxminddb>
   )
   target_precompile_headers(${TARGET_SERVER} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/teeother/stdafx_shared.h>" "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/teeother/stdafx_server.h>")
   target_include_directories(${TARGET_SERVER} PRIVATE ${SERVER_INCLUDES_DIRS})
