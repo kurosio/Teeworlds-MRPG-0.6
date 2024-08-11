@@ -333,7 +333,7 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPl = GS()->GetPlayer(i, true);
-		if(!pPl || !pPl->Account()->IsRelationshipsDeterioratedToMax())
+		if(!pPl || !pPl->Account()->IsCrimeScoreMaxedOut())
 			continue;
 
 		CPlayerItem* pItemGold = pPl->GetItem(itGold);

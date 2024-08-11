@@ -25,7 +25,7 @@ class CAccountData
 	char m_aLogin[64] {};
 	char m_aLastLogin[64] {};
 	int m_DailyChairGolds {};
-	int m_Relations {};
+	int m_CrimeScore {};
 
 	int m_Level {};
 	int m_Exp {};
@@ -72,8 +72,8 @@ public:
 	CGuild* GetGuild() const { return m_pGuildData; }
 	CGuild::CMember* GetGuildMember() const;
 	bool HasGuild() const { return m_pGuildData != nullptr; }
-	bool SameGuild(int ClientID) const;
-	bool SameGuild(int GuildID, int ClientID) const;
+	bool IsClientSameGuild(int ClientID) const;
+	bool IsSameGuild(int GuildID) const;
 
 	/*
 	 * Group function: getters / setters
@@ -84,19 +84,20 @@ public:
 	const char* GetLastLoginDate() const { return m_aLastLogin; } // Returns the last login date of the player as a const char pointer
 	int GetCurrentDailyChairGolds() const { return m_DailyChairGolds; } // Returns current daily chair golds
 	int GetLimitDailyChairGolds() const; // Returns the daily limit of gold that a player can obtain from chairs
-	int GetRelations() const { return m_Relations; } // Returns the relations
 
-	bool IsPrisoned() const { return m_PrisonSeconds > 0; } // Checks if the player is currently in prison
-	bool IsRelationshipsDeterioratedToMax() const { return m_Relations >= 100; } // Checks if the player's relationships have deteriorated to the maximum level
+	void IncreaseCrimeScore(int Score);
+	bool IsCrimeScoreMaxedOut() const { return m_CrimeScore >= 100; }
+	int GetCrimeScore() const { return m_CrimeScore; }
+	void ResetCrimeScore();
 
-	void IncreaseRelations(int Relations); // This function increases the relations of an account by a given value
-	void Imprison(int Seconds); // Puts the player in prison for the specified number of seconds
-	void Unprison(); // Release the player from prison
+	bool IsInPrison() const { return m_PrisonSeconds > 0; }
+	void Imprison(int Seconds);
+	void FreeFromPrison();
+
 	void AddExperience(int Value); // Adds the specified value to the player's experience points
 	void AddGold(int Value) const; // Adds the specified value to the player's gold (currency)
 	bool SpendCurrency(int Price, int CurrencyItemID = 1) const; // Returns a boolean value indicating whether the currency was successfully spent or not.
 	void ResetDailyChairGolds(); // Reset daily getting chair golds
-	void ResetRelations(); // Reset relations
 	void HandleChair();
 
 	// Achievements

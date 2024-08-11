@@ -42,6 +42,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_Upgrade = pResult->getInt("Upgrade");
 	m_PrisonSeconds = pResult->getInt("PrisonSeconds");
 	m_DailyChairGolds = pResult->getInt("DailyChairGolds");
+	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 	m_ClassGroup = (ClassGroup)pResult->getInt("Class");
 
@@ -100,7 +101,7 @@ void CAccountData::InitAchievements(const std::string& Data)
 			int Progress = p.value("progress", 0);
 			bool Completed = p.value("completed", false);
 
-			if(m_apReferenceMap.find(AchievementID) != m_apReferenceMap.end())
+			if(m_apReferenceMap.contains(AchievementID))
 				m_apReferenceMap[AchievementID]->Init(Progress, Completed);
 		}
 		m_AchivementsData = std::move(pJson);
@@ -189,8 +190,7 @@ CGuild::CMember* CAccountData::GetGuildMember() const
 	return m_pGuildData ? m_pGuildData->GetMembers()->Get(m_ID) : nullptr;
 }
 
-// Check if the account is in the same guild as the specified client ID
-bool CAccountData::SameGuild(int ClientID) const
+bool CAccountData::IsClientSameGuild(int ClientID) const
 {
 	if(!m_pGuildData)
 		return false;
@@ -199,10 +199,9 @@ bool CAccountData::SameGuild(int ClientID) const
 	return pPlayer && pPlayer->Account()->GetGuild() && pPlayer->Account()->GetGuild()->GetID() == m_pGuildData->GetID();
 }
 
-bool CAccountData::SameGuild(int GuildID, int ClientID) const
+bool CAccountData::IsSameGuild(int GuildID) const
 {
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	return pPlayer && pPlayer->Account()->GetGuild() && pPlayer->Account()->GetGuild()->GetID() == GuildID;
+	return m_pGuildData && m_pGuildData->GetID() == GuildID;
 }
 
 // This function returns the daily limit of gold that a player can obtain from chairs
@@ -222,38 +221,26 @@ int CAccountData::GetLimitDailyChairGolds() const
 	}
 }
 
-// This function increases the relations of an account by a given value
-void CAccountData::IncreaseRelations(int Relevation)
+void CAccountData::IncreaseCrimeScore(int Score)
 {
-	// Check if the player is valid and if their relationship level is not already at the maximum.
-	if(!m_pPlayer || IsRelationshipsDeterioratedToMax())
+	if(!m_pPlayer || IsCrimeScoreMaxedOut())
 		return;
 
-	// Increase the player's relationship level by the value of Relevation, up to a maximum of 100.
-	m_Relations = minimum(m_Relations + Relevation, 100);
+	m_CrimeScore = minimum(m_CrimeScore + Score, 100);
+	GS()->Chat(m_ClientID, "Your Crime Score has increased to {}%!", m_CrimeScore);
 
-	// Display a chat message to the player indicating the new relationship level.
-	GS()->Chat(m_ClientID, "Harmony between characters has plummeted to {}%!", m_Relations);
+	if(m_CrimeScore >= 100)
+		GS()->Chat(m_ClientID, "You have reached the maximum Crime Score and are now a wanted criminal! Be cautious, as law enforcers are actively searching for you.");
 
-	// Check if the player's relations with other entities is greater than or equal to 100
-	if(m_Relations >= 100)
-	{
-		// Display a chat message to the player warning them that they are wanted as a felon
-		GS()->Chat(m_ClientID, "An esteemed criminal like yourself has become the target of an intense manhunt. Be on high alert, for the watchful gaze of vigilant guards is upon you!");
-	}
-
-	// Save the player's account data, specifically the relationship level.
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
-// This function is used to imprison a player for a certain number of seconds
 void CAccountData::Imprison(int Seconds)
 {
-	// Check if the player is valid
 	if(!m_pPlayer)
 		return;
 
-	// Check if the player has a character and kill the player's character
+	// kill character
 	if(m_pPlayer->GetCharacter())
 		m_pPlayer->GetCharacter()->Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 
@@ -267,18 +254,17 @@ void CAccountData::Imprison(int Seconds)
 	}
 }
 
-void CAccountData::Unprison()
+void CAccountData::FreeFromPrison()
 {
-	// Check if the player is valid
 	if(!m_pPlayer)
 		return;
 
-	// Check if the player has a character and kill the player's character
+	// kill character
 	if(m_pPlayer->GetCharacter())
 		m_pPlayer->GetCharacter()->Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 
 	m_PrisonSeconds = -1;
-	GS()->Chat(-1, "{} were released from prison.", Instance::Server()->ClientName(m_pPlayer->GetCID()));
+	GS()->Chat(-1, "{} has been released from prison.", Instance::Server()->ClientName(m_pPlayer->GetCID()));
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
@@ -392,14 +378,12 @@ void CAccountData::ResetDailyChairGolds()
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
-void CAccountData::ResetRelations()
+void CAccountData::ResetCrimeScore()
 {
-	// Check if the player is valid
 	if(!m_pPlayer)
 		return;
 
-	// Reset player's relations and save relations
-	m_Relations = 0;
+	m_CrimeScore = 0;
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 

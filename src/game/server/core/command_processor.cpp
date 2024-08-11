@@ -59,6 +59,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("help", "?i[page]", ConChatCmdList, pServer, "");
 	AddCommand("rules", "", ConChatRules, pServer, "");
 	AddCommand("bonuses", "", ConChatBonuses, pServer, "");
+	AddCommand("wanted", "", ConChatWanted, pServer, "");
 
 	AddCommand("add_multiple_orbite", "i[orbite] i[type] i[subtype]", ConAddMultipleOrbite, pServer, "");
 
@@ -480,18 +481,20 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 	{
 		pGS->Chat(ClientID, "/register <name> <pass> - new account.");
 		pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
-		pGS->Chat(ClientID, "/rules - server rules.");
-		pGS->Chat(ClientID, "/tutorial - training challenge.");
+		pGS->Chat(ClientID, "/bonuses - information about bonuses.");
+		pGS->Chat(ClientID, "/wanted - information about wanted players.");
 		pGS->Chat(ClientID, "/voucher <voucher> - get voucher special items.");
 		pGS->Chat(ClientID, "/useskill <uid> - use skill by uid.");
 		pGS->Chat(ClientID, "/useitem <uid> - use item by uid.");
+
 	}
 	else if(Page == 2)
 	{
+		pGS->Chat(ClientID, "/rules - server rules.");
 		pGS->Chat(ClientID, "/group - group system.");
 		pGS->Chat(ClientID, "/guild - guild system.");
 		pGS->Chat(ClientID, "/house - house system.");
-		pGS->Chat(ClientID, "/bonuses - information about bonuses.");
+		pGS->Chat(ClientID, "/tutorial - training challenge.");
 		pGS->Chat(ClientID, "#<text> - perform an action.");
 	}
 }
@@ -570,6 +573,21 @@ void CCommandProcessor::ConChatBonuses(IConsole::IResult* pResult, void* pUser)
 		pPlayer->m_pMotdMenu->ClearMotd(pGS, pPlayer);
 	else
 		pGS->SendMenuMotd(pPlayer, MOTD_MENU_ABOUT_BONUSES);
+}
+
+void CCommandProcessor::ConChatWanted(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return;
+
+	if(pPlayer->IsSameMotdMenu(MOTD_MENU_ABOUT_WANTED))
+		pPlayer->m_pMotdMenu->ClearMotd(pGS, pPlayer);
+	else
+		pGS->SendMenuMotd(pPlayer, MOTD_MENU_ABOUT_WANTED);
 }
 
 

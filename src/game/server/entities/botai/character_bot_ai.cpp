@@ -150,7 +150,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC && !pFrom->IsBot())
 	{
 		SetEmote(EMOTE_ANGRY, 1, true);
-		pFrom->Account()->IncreaseRelations(1 + rand() % 8);
+		pFrom->Account()->IncreaseCrimeScore(1 + rand() % 8);
 	}
 
 	// Random create experience point's
@@ -1030,10 +1030,8 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
 			// Check if the bot is a guardian NPC and the player is not active for the bot
-			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !pCandidatePlayer->Account()->IsRelationshipsDeterioratedToMax())
-			{
+			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !pCandidatePlayer->Account()->IsCrimeScoreMaxedOut())
 				continue;
-			}
 		}
 
 		// Check if the player's character has damage disabled
@@ -1124,7 +1122,7 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 		if(m_pBotPlayer->GetBotType() == TYPE_BOT_NPC)
 		{
 			// Check if the bot is a guardian NPC and the player is not active for the bot
-			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !pFinderHard->Account()->IsRelationshipsDeterioratedToMax())
+			if(NpcBotInfo::ms_aNpcBot[m_pBotPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN && !pFinderHard->Account()->IsCrimeScoreMaxedOut())
 			{
 				continue;
 			}
@@ -1166,7 +1164,7 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 					continue;
 
 				// Check if the search bot type is TYPE_BOT_NPC and the relationship with the eidolon owner is not deteriorated to the maximum level
-				if(SearchBotType == TYPE_BOT_NPC && !m_pBotPlayer->GetEidolonOwner()->Account()->IsRelationshipsDeterioratedToMax())
+				if(SearchBotType == TYPE_BOT_NPC && !m_pBotPlayer->GetEidolonOwner()->Account()->IsCrimeScoreMaxedOut())
 					continue;
 
 				// Check if the eidolon owner has a character and if the character is damage disabled

@@ -27,6 +27,7 @@ class CCommandProcessor
 	static void ConChatVoucher(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatTutorial(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatBonuses(IConsole::IResult* pResult, void* pUserData);
+	static void ConChatWanted(IConsole::IResult* pResult, void* pUserData);
 #ifdef CONF_DISCORD
 	static void ConChatDiscordConnect(IConsole::IResult* pResult, void* pUserData);
 #endif

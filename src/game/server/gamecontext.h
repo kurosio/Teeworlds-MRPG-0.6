@@ -125,7 +125,7 @@ public:
 	{
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->SameGuild(GuildID, i))
+			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->IsSameGuild(GuildID))
 			{
 				std::string Result = "Guild | ";
 				Result += fmt_localize(i, pText, args...);

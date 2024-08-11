@@ -539,8 +539,8 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_SOCIAL_STATUS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Relations = '%d', PrisonSeconds = '%d', DailyChairGolds = '%d' WHERE ID = '%d'",
-			pAcc->GetRelations(), pAcc->m_PrisonSeconds, pAcc->GetCurrentDailyChairGolds(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '%d', PrisonSeconds = '%d', DailyChairGolds = '%d' WHERE ID = '%d'",
+			pAcc->GetCrimeScore(), pAcc->m_PrisonSeconds, pAcc->GetCurrentDailyChairGolds(), pAcc->GetID());
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{

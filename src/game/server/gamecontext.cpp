@@ -337,7 +337,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pSearchPlayer = GetPlayer(i, true);
-			if(pSearchPlayer && pChatterPlayer->Account()->SameGuild(i))
+			if(pSearchPlayer && pChatterPlayer->Account()->IsClientSameGuild(i))
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
 		}
 

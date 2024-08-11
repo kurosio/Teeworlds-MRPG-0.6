@@ -89,8 +89,7 @@ void MotdMenu::Handle()
 	for(int i = m_ScrollManager.GetScrollPos(); i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
 	{
 		// add scrollbar symbol
-		if((int)m_Points.size() > m_ScrollManager.GetMaxVisibleItems())
-			addScrollBar(i);
+		addScrollBar(i);
 
 		// empty command only text
 		const auto& command = m_Points[i].m_Command;

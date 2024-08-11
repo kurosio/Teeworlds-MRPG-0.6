@@ -781,22 +781,19 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		}
 	}
 
-	// Relationship system
+	// Crime score system
 	{
-		if(m_pPlayer->Account()->IsRelationshipsDeterioratedToMax() && (KillerIsGuardian || KillerIsPlayer))
+		if(m_pPlayer->Account()->IsCrimeScoreMaxedOut() && (KillerIsGuardian || KillerIsPlayer))
 		{
 			// Get the Gold item from the player
 			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+			m_pPlayer->Account()->ResetCrimeScore();
 
-			// Reset player's relations and save relations
-			m_pPlayer->Account()->ResetRelations();
-
-			// Translate the value of the Gold item to a percentage for arrest and remove arrest
+			// translate the value of the Gold item to a percentage for arrest and remove arrest
 			const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
 			if(Arrest > 0 && pItemGold->Remove(Arrest))
 			{
 				// Check if the killer is not a bot
-				// And add the Arrest amount to the killer's gold item
 				if(KillerIsPlayer)
 				{
 					pKiller->GetItem(itGold)->Add(Arrest);
@@ -806,15 +803,13 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 
 				// Send a chat message to the client with their arrest information
 				GS()->Chat(ClientID, "Treasury confiscates {}%({}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
-
-				// Imprison
-				m_pPlayer->Account()->Imprison(/*TODO CHANGE*/ 100);
+				m_pPlayer->Account()->Imprison(100);
 			}
 		}
 		else if(KillerIsPlayer)
 		{
 			// Increase the relations of the player identified by the "Killer" index by 25
-			pKiller->Account()->IncreaseRelations(25);
+			pKiller->Account()->IncreaseCrimeScore(25);
 		}
 	}
 }
@@ -1337,7 +1332,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	// Check if the player or the sender is a NPC bot of type "Guardian"
 	if((m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN) ||
 		(pFrom->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pFrom->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN &&
-			(m_pPlayer->IsBot() || m_pPlayer->Account()->IsRelationshipsDeterioratedToMax())))
+			(m_pPlayer->IsBot() || m_pPlayer->Account()->IsCrimeScoreMaxedOut())))
 	{
 		return true;
 	}
@@ -1389,7 +1384,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		if(FromID != m_pPlayer->GetCID())
 		{
 			// anti pvp for guild players
-			if(m_pPlayer->Account()->SameGuild(FromID))
+			if(m_pPlayer->Account()->IsClientSameGuild(FromID))
 				return false;
 
 			// anti pvp for group players

@@ -458,33 +458,65 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	// motd menu about bonuses
 	if(Menulist == MOTD_MENU_ABOUT_BONUSES)
 	{
+		int position = 1;
 		const char* pSeparateLine = "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
 							  "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500";
-		const int sizeTemporaryBonuses = (int)pPlayer->Account()->GetBonusManager().GetTemporaryBonuses().size();
 		MotdMenu MBonuses(ClientID, MTFLAG_CLOSE_BUTTON, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
-		MBonuses.AddText("Active bonuses ♕");
+		MBonuses.AddText("Active bonuses \u2696");
 		MBonuses.AddText(pSeparateLine);
-		for(int i = 0; i < 8; i++)
+		for(auto& bonus : pPlayer->Account()->GetBonusManager().GetTemporaryBonuses())
 		{
-			const auto* pBonus = sizeTemporaryBonuses > i ? &pPlayer->Account()->GetBonusManager().GetTemporaryBonuses()[i] : nullptr;
-			if(!pBonus)
-			{
-				MBonuses.AddText("{}. No active bonus", (i+1));
-				MBonuses.AddLine();
-				MBonuses.AddText(pSeparateLine);
-				continue;
-			}
-
-			const char* pBonusType = pPlayer->Account()->GetBonusManager().GetStringBonusType(pBonus->Type);
-			int remainingTime = pBonus->RemainingTime();
+			const char* pBonusType = pPlayer->Account()->GetBonusManager().GetStringBonusType(bonus.Type);
+			int remainingTime = bonus.RemainingTime();
 			int minutes = remainingTime / 60;
 			int seconds = remainingTime % 60;
-			MBonuses.AddText("{}. {} - {~.2}%", (i+1), pBonusType, pBonus->Amount);
+			MBonuses.AddText("{}. {} - {~.2}%", position, pBonusType, bonus.Amount);
 			MBonuses.AddText("Time left: {} min {} sec.", minutes, seconds);
+			MBonuses.AddText(pSeparateLine);
+			position++;
+		}
+
+		if(position == 1)
+		{
+			MBonuses.AddText("No active bonuses!");
 			MBonuses.AddText(pSeparateLine);
 		}
 
 		MBonuses.Send(MOTD_MENU_ABOUT_BONUSES);
+		return true;
+	}
+
+	// motd menu about wanted
+	if(Menulist == MOTD_MENU_ABOUT_WANTED)
+	{
+		bool hasWanted = false;
+		const char* pSeparateLine = "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+			"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500";
+		MotdMenu MWanted(ClientID, MTFLAG_CLOSE_BUTTON, "A list of wanted players for whom bounties have been assigned. To get the bounty you need to kill a player from the list.");
+		MWanted.AddText("Wanted players \u2694");
+		MWanted.AddText(pSeparateLine);
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			CPlayer* pPl = GS()->GetPlayer(i, true);
+			if(!pPl || !pPl->Account()->IsCrimeScoreMaxedOut())
+				continue;
+
+			CPlayerItem* pItemGold = pPl->GetItem(itGold);
+			const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+			MWanted.AddText(Server()->ClientName(i));
+			MWanted.AddText("Reward: {} gold", Reward);
+			MWanted.AddText("Last seen in : {}", Server()->GetWorldName(pPl->GetPlayerWorldID()));
+			MWanted.AddText(pSeparateLine);
+			hasWanted = true;
+		}
+
+		if(!hasWanted)
+		{
+			MWanted.AddText("No wanted players!");
+			MWanted.AddText(pSeparateLine);
+		}
+
+		MWanted.Send(MOTD_MENU_ABOUT_WANTED);
 		return true;
 	}
 
