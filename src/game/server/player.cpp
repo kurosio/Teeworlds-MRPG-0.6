@@ -757,17 +757,6 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 	// - - - - - F3- - - - - - -
 	if(Vote == 1)
 	{
-		if(m_RequestChangeNickname)
-		{
-			if(GS()->Core()->AccountManager()->ChangeNickname(m_ClientID))
-				GS()->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 300, "Your nickname has been successfully updated");
-			else
-				GS()->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 300, "This nickname is already in use");
-
-			m_RequestChangeNickname = false;
-			return true;
-		}
-
 		if(GS()->IsWorldType(WorldType::Dungeon))
 		{
 			const int DungeonID = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetDungeonID();

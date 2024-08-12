@@ -63,9 +63,6 @@ public:
 	virtual void SetStateClientMRPG(int ClientID, bool State) = 0;
 	virtual bool GetStateClientMRPG(int ClientID) const = 0;
 
-	virtual void SetClientNameChangeRequest(int ClientID, const char* pName) = 0;
-	virtual const char* GetClientNameChangeRequest(int ClientID) = 0;
-
 	virtual int GetClientVersion(int ClientID) const = 0;
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1) = 0;
 

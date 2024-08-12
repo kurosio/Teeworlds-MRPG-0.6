@@ -36,7 +36,7 @@ public:
 	AccountCodeResult LoginAccount(int ClientID, const char *pLogin, const char *pPassword);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
 	void DiscordConnect(int ClientID, const char *pDID) const;
-	bool ChangeNickname(int ClientID);
+	bool ChangeNickname(const std::string& newNickname, int ClientID) const;
     bool BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason);
     bool UnBanAccount(int BanId) const;
     std::vector<AccBan> BansAccount() const;

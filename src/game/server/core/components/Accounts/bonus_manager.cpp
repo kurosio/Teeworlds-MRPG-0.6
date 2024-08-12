@@ -29,7 +29,6 @@ void CBonusManager::SendInfoAboutActiveBonuses() const
 	else
 	{
 		pGS->Chat(m_ClientID, "You have {} active bonus{}.", activeBonusesCount, activeBonusesCount > 1 ? "es" : "");
-		pGS->Chat(m_ClientID, "Type /bonuses for more information.");
 	}
 }
 

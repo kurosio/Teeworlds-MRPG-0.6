@@ -821,28 +821,43 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		if(MsgID == NETMSGTYPE_CL_CHANGEINFO)
 		{
-			// check last change info tick
 			if(pPlayer->m_aPlayerTick[LastChangeInfo] > Server()->Tick())
 				return;
 
-			// initialize variables
 			auto pMsg = (CNetMsg_Cl_ChangeInfo*)pRawMsg;
 			pPlayer->m_aPlayerTick[LastChangeInfo] = Server()->Tick() + (Server()->TickSpeed() * g_Config.m_SvInfoChangeDelay);
-
-			// check valid utf-8 characters
 			if(!str_utf8_check(pMsg->m_pClan) || !str_utf8_check(pMsg->m_pSkin))
 				return;
 
-			// set client info
 			if(pPlayer->IsAuthed())
 			{
-				// check if the player has an account and the nickname is different
-				if(str_comp(Server()->ClientName(ClientID), pMsg->m_pName) != 0)
+				if(str_comp(Server()->ClientName(ClientID), pMsg->m_pName) != 0 && !(pPlayer->m_PlayerFlags & PLAYERFLAG_IN_MENU))
 				{
-					pPlayer->m_RequestChangeNickname = true;
-					Server()->SetClientNameChangeRequest(ClientID, pMsg->m_pName);
-					Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 300,
-						"Press F3 to confirm the nickname change to [{}]\n- After the change, you will only be able to log in with the new nickname", pMsg->m_pName);
+					std::string NewName = pMsg->m_pName;
+					auto fnCallback = [NewName](CPlayer* pPlayer, bool Accepted)
+					{
+						CGS* pGS = pPlayer->GS();
+						const int ClientID = pPlayer->GetCID();
+						if(Accepted)
+						{
+							if(pGS->Core()->AccountManager()->ChangeNickname(NewName, ClientID))
+								pGS->Chat(ClientID, "Your nickname has been successfully updated");
+							else
+								pGS->Chat(ClientID, "This nickname is already in use");
+						}
+						else
+						{
+							pGS->Chat(ClientID, "You need to set a valid nickname. This window will keep appearing until you confirm the nickname change.");
+						}
+					};
+					auto closeCondition = [NewName](CPlayer* pPlayer)
+					{
+						return str_comp(NewName.c_str(), Instance::Server()->ClientName(pPlayer->GetCID())) == 0;
+					};
+
+					const auto pOption = CVoteOptional::Create(ClientID, 10, "Nick {}?", pMsg->m_pName);
+					pOption->RegisterCallback(fnCallback);
+					pOption->RegisterCloseCondition(closeCondition);
 				}
 			}
 			else

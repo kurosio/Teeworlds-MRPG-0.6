@@ -147,7 +147,6 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 
 void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 {
-	// Check if pPlayer exists and is authenticated, and if the player is in the same world as the game server
 	if(!pPlayer || !pPlayer->IsAuthed() || !GS()->IsPlayerEqualWorld(pPlayer->GetCID()))
 		return;
 
@@ -158,36 +157,27 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	const int ClientID = pPlayer->GetCID();
 	GS()->Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 200, "You are currently positioned at {}({})!",
 		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"));
-	pPlayer->Account()->GetBonusManager().SendInfoAboutActiveBonuses();
 
 	// Check if it is not the first initialization
 	if(!FirstInitilize)
 	{
-		// Get the number of unread letters in the player's inbox
-		// Send a chat message to the player informing them about their unread letters
 		if(const int Letters = Core()->MailboxManager()->GetMailCount(pPlayer->Account()->GetID()); Letters > 0)
-			GS()->Chat(ClientID, "You have {} unread letters!", Letters);
-
-		// Update the player's votes and show the main menu
+			GS()->Chat(ClientID, "You have {} unread letters.", Letters);
+		pPlayer->Account()->GetBonusManager().SendInfoAboutActiveBonuses();
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return;
 	}
 
-	// If it is the first initialization, initialize the player's job account
 	Core()->OnPlayerLogin(pPlayer);
-
-	// Send information about log in
 	const int Rank = GetRank(pPlayer->Account()->GetID());
-	GS()->Chat(-1, "{} logged to account. Rank #{}", Server()->ClientName(ClientID), Rank);
+	GS()->Chat(-1, "{} logged to account. Rank #{}[{}]", Server()->ClientName(ClientID), Rank, Server()->GetClientCountryIsoCode(ClientID));
 #ifdef CONF_DISCORD
 	char aLoginBuf[64];
 	str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in AccountManager ID %d", Server()->ClientName(ClientID), pPlayer->AccountManager()->GetID());
 	Server()->SendDiscordGenerateMessage(aLoginBuf, pPlayer->AccountManager()->GetID());
 #endif
 
-	/* Initialize static settings items' data */
 	{
-		// Define a lambda function InitSettingsItem that takes in a player and a map of item IDs and default values
 		auto InitSettingsItem = [pPlayer](const std::unordered_map<int, int>& pItems)
 		{
 			for(auto& [id, defaultValue] : pItems)
@@ -197,7 +187,6 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 			}
 		};
 
-		// Call the InitSettingsItem function with a map of item IDs and default values
 		InitSettingsItem(
 			{
 				{ itHammer, 1 },
@@ -206,8 +195,6 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 				{ itShowQuestNavigator, 1 }
 			});
 	}
-
-	// Hanlde time period
 	Core()->HandlePlayerTimePeriod(pPlayer);
 
 	// Change player's world ID to the latest correct world ID
@@ -239,20 +226,20 @@ void CAccountManager::DiscordConnect(int ClientID, const char* pDID) const
 #endif
 }
 
-bool CAccountManager::ChangeNickname(int ClientID)
+bool CAccountManager::ChangeNickname(const std::string& newNickname, int ClientID) const
 {
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer || !pPlayer->m_RequestChangeNickname)
+	if(!pPlayer)
 		return false;
 
 	// check newnickname
-	const CSqlString<32> cClearNick = CSqlString<32>(Server()->GetClientNameChangeRequest(ClientID));
+	const CSqlString<32> cClearNick = CSqlString<32>(newNickname.c_str());
 	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
 	if(pRes->next())
 		return false;
 
 	Database->Execute<DB::UPDATE>("tw_accounts_data", "Nick = '%s' WHERE ID = '%d'", cClearNick.cstr(), pPlayer->Account()->GetID());
-	Server()->SetClientName(ClientID, Server()->GetClientNameChangeRequest(ClientID));
+	Server()->SetClientName(ClientID, newNickname.c_str());
 	return true;
 }
 

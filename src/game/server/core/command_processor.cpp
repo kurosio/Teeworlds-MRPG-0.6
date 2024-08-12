@@ -58,8 +58,6 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("cmdlist", "?i[page]", ConChatCmdList, pServer, "");
 	AddCommand("help", "?i[page]", ConChatCmdList, pServer, "");
 	AddCommand("rules", "", ConChatRules, pServer, "");
-	AddCommand("bonuses", "", ConChatBonuses, pServer, "");
-	AddCommand("wanted", "", ConChatWanted, pServer, "");
 
 	AddCommand("add_multiple_orbite", "i[orbite] i[type] i[subtype]", ConAddMultipleOrbite, pServer, "");
 
@@ -481,8 +479,6 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 	{
 		pGS->Chat(ClientID, "/register <name> <pass> - new account.");
 		pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
-		pGS->Chat(ClientID, "/bonuses - information about bonuses.");
-		pGS->Chat(ClientID, "/wanted - information about wanted players.");
 		pGS->Chat(ClientID, "/voucher <voucher> - get voucher special items.");
 		pGS->Chat(ClientID, "/useskill <uid> - use skill by uid.");
 		pGS->Chat(ClientID, "/useitem <uid> - use item by uid.");
@@ -559,37 +555,6 @@ void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, "You have begun the training challenge!");
 	pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
 }
-
-void CCommandProcessor::ConChatBonuses(IConsole::IResult* pResult, void* pUser)
-{
-	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
-
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
-
-	if(pPlayer->IsSameMotdMenu(MOTD_MENU_ABOUT_BONUSES))
-		pPlayer->CloseMotdMenu();
-	else
-		pGS->SendMenuMotd(pPlayer, MOTD_MENU_ABOUT_BONUSES);
-}
-
-void CCommandProcessor::ConChatWanted(IConsole::IResult* pResult, void* pUser)
-{
-	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
-
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
-
-	if(pPlayer->IsSameMotdMenu(MOTD_MENU_ABOUT_WANTED))
-		pPlayer->CloseMotdMenu();
-	else
-		pGS->SendMenuMotd(pPlayer, MOTD_MENU_ABOUT_WANTED);
-}
-
 
 /************************************************************************/
 /*  Command system                                                      */

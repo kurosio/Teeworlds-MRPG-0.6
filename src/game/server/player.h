@@ -88,7 +88,6 @@ public:
 	CPlayerDialog m_Dialog;
 
 	bool m_WantSpawn;
-	bool m_RequestChangeNickname;
 	bool m_ActivedGroupColors;
 	int m_TickActivedGroupColors;
 	std::optional<int> m_EidolonCID;

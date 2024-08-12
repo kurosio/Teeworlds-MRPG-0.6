@@ -83,7 +83,6 @@ public:
 		int m_CurrentInput;
 
 		char m_aName[MAX_NAME_LENGTH];
-		char m_aNameChangeRequest[MAX_NAME_LENGTH];
 		char m_aNameTransfersPrefix[MAX_NAME_LENGTH];
 
 		char m_aClan[MAX_CLAN_LENGTH];
@@ -175,9 +174,6 @@ public:
 
 	int64_t& GetClientInputFlags(int ClientID) override;
 	int64_t& GetClientInputBlockedFlags(int ClientID) override;
-
-	void SetClientNameChangeRequest(int ClientID, const char* pName) override;
-	const char* GetClientNameChangeRequest(int ClientID) override;
 
 	bool IsClientChangesWorld(int ClientID) override;
 	void ChangeWorld(int ClientID, int NewWorldID) override;
