@@ -122,7 +122,6 @@ if(NOT MSVC)
     add_cxx_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-implicit-function-declaration)
   endif()
   
-  add_c_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-declaration-after-statement)
   check_c_compiler_flag("-O2;-Wp,-Werror;-D_FORTIFY_SOURCE=2" DEFINE_FORTIFY_SOURCE) # Some distributions define _FORTIFY_SOURCE by themselves.
 endif()
 
@@ -1302,5 +1301,8 @@ foreach(target ${TARGETS_DEP})
   endif()
   if(OUR_FLAGS_DEP)
     target_compile_options(${target} PRIVATE ${OUR_FLAGS_DEP})
+  endif()
+  if(NOT MSVC)
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-declaration-after-statement>)
   endif()
 endforeach()
