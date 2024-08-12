@@ -35,10 +35,16 @@ void CDialogElem::Init(int BotID, std::string Text, bool Action)
 	{
 		const char* pBot = str_find_nocase(Text.c_str(), prefix.c_str());
 		int parsedBotID;
-		if(pBot != nullptr && sscanf(pBot, (prefix + "%d]").c_str(), &parsedBotID) && DataBotInfo::IsDataBotValid(BotID))
+
+		if(pBot != nullptr)
 		{
-			FindAndErase(prefix + std::to_string(parsedBotID) + "]");
-			return parsedBotID;
+			char formatBuffer[64];
+			str_format(formatBuffer, sizeof(formatBuffer), "%s%%d]", prefix.c_str());
+			if(sscanf(pBot, formatBuffer, &parsedBotID) == 1 && DataBotInfo::IsDataBotValid(parsedBotID))
+			{
+				FindAndErase(prefix + std::to_string(parsedBotID) + "]");
+				return parsedBotID;
+			}
 		}
 		return std::nullopt;
 	};
@@ -261,10 +267,13 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 			while(pSearch != nullptr)
 			{
 				int id = 0;
-				if(sscanf(pSearch, (std::string(prefix) + "%d>").c_str(), &id))
+
+				char formatBuffer[64];
+				str_format(formatBuffer, sizeof(formatBuffer), "%s%%d>", prefix);
+				if(sscanf(pSearch, formatBuffer, &id) == 1)
 				{
 					char aBufSearch[16];
-					str_format(aBufSearch, sizeof(aBufSearch), (std::string(prefix) + "%d>").c_str(), id);
+					str_format(aBufSearch, sizeof(aBufSearch), "%s%d>", prefix, id);
 					str_replace(aBufText, aBufSearch, get_replacement(id));
 				}
 				pSearch = str_find(aBufText, prefix);
