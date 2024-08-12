@@ -46,4 +46,4 @@ if(WIN32)
 endif()
 
 # add library to targets
-list(APPEND TARGETS_OWN libmaxminddb)
+list(APPEND TARGETS_DEP libmaxminddb)
