@@ -69,35 +69,27 @@ set(SERVER_EXECUTABLE mmoteeworlds_srv CACHE STRING "Name of the built server ex
 ########################################################################
 
 function(add_c_compiler_flag_if_supported VARIABLE FLAG)
-  if(ARGC GREATER 2)
-    set(CHECKED_FLAG "${ARGV2}")
-  else()
-    set(CHECKED_FLAG "${FLAG}")
-  endif()
-  string(REGEX REPLACE "[^A-Za-z0-9]" "_" CONFIG_VARIABLE "FLAG_SUPPORTED${CHECKED_FLAG}")
+  set(CHECKED_FLAG "${FLAG}")
+  string(REGEX REPLACE "[^A-Za-z0-9]" "_" CONFIG_VARIABLE "FLAG_SUPPORTED_${CHECKED_FLAG}")
   check_c_compiler_flag("${CHECKED_FLAG}" ${CONFIG_VARIABLE})
   if(${CONFIG_VARIABLE})
-    if(${VARIABLE})
-      set("${VARIABLE}" "${${VARIABLE}};${FLAG}" PARENT_SCOPE)
+    if(DEFINED ${VARIABLE})
+      set(${VARIABLE} "${${VARIABLE}};${FLAG}" PARENT_SCOPE)
     else()
-      set("${VARIABLE}" "${FLAG}" PARENT_SCOPE)
+      set(${VARIABLE} "${FLAG}" PARENT_SCOPE)
     endif()
   endif()
 endfunction()
 
 function(add_cxx_compiler_flag_if_supported VARIABLE FLAG)
-  if(ARGC GREATER 2)
-    set(CHECKED_FLAG "${ARGV2}")
-  else()
-    set(CHECKED_FLAG "${FLAG}")
-  endif()
-  string(REGEX REPLACE "[^A-Za-z0-9]" "_" CONFIG_VARIABLE "FLAG_SUPPORTED${CHECKED_FLAG}")
+  set(CHECKED_FLAG "${FLAG}")
+  string(REGEX REPLACE "[^A-Za-z0-9]" "_" CONFIG_VARIABLE "FLAG_SUPPORTED_${CHECKED_FLAG}")
   check_cxx_compiler_flag("${CHECKED_FLAG}" ${CONFIG_VARIABLE})
   if(${CONFIG_VARIABLE})
-    if(${VARIABLE})
-      set("${VARIABLE}" "${${VARIABLE}};${FLAG}" PARENT_SCOPE)
+    if(DEFINED ${VARIABLE})
+      set(${VARIABLE} "${${VARIABLE}};${FLAG}" PARENT_SCOPE)
     else()
-      set("${VARIABLE}" "${FLAG}" PARENT_SCOPE)
+      set(${VARIABLE} "${FLAG}" PARENT_SCOPE)
     endif()
   endif()
 endfunction()
@@ -105,7 +97,7 @@ endfunction()
 if(NOT MSVC)
   # Protect the stack pointer.
   # -fstack-protector-all doesn't work on MinGW.
-  add_cxx_compiler_flag_if_supported(OUR_FLAGS -fstack-protector-all)
+  add_c_compiler_flag_if_supported(OUR_FLAGS -fstack-protector-all)
 
   # Inaccurate floating point numbers cause problems on mingw-w64-gcc when
   # compiling for x86, might cause problems elsewhere. So don't store floats
@@ -113,31 +105,23 @@ if(NOT MSVC)
   if(TARGET_ARCH STREQUAL "x86")
     add_c_compiler_flag_if_supported(OUR_FLAGS -ffloat-store)
   endif()
-
-  #if(TARGET_OS STREQUAL "mac")
-  #  add_c_compiler_flag_if_supported(OUR_FLAGS -stdlib=libc++)
-  #  add_c_compiler_flag_if_supported(OUR_FLAGS -mmacosx-version-min=10.7)
-  #endif()
   
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wall)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wextra)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wno-unused-parameter)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wno-missing-field-initializers)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wno-deprecated-enum-enum-conversion)
-  add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wformat=2) # Warn about format strings.
-
-  # broken somehow and throws this error on linux
-  if (NOT TARGET_OS STREQUAL "linux")
-    add_cxx_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-implicit-function-declaration)
-  endif()
-
+  add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wformat=2)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wduplicated-cond)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wduplicated-branches)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wlogical-op)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wrestrict)
-endif()
 
-if(NOT MSVC)
+  # broken somehow and throws this error on linux
+  if(NOT TARGET_OS STREQUAL "linux")
+    add_cxx_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-implicit-function-declaration)
+  endif()
+  
   check_c_compiler_flag("-O2;-Wp,-Werror;-D_FORTIFY_SOURCE=2" DEFINE_FORTIFY_SOURCE) # Some distributions define _FORTIFY_SOURCE by themselves.
 endif()
 
