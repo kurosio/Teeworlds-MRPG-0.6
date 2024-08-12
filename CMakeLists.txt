@@ -63,7 +63,6 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS src/game/version.
 
 set(SERVER_EXECUTABLE mmoteeworlds_srv CACHE STRING "Name of the built server executable")
 #set(CLIENT_EXECUTABLE mmoteeworlds CACHE STRING "Name of the build client executable")
-#set(CLIENT_COMPILE ON)
 
 ########################################################################
 # Compiler flags

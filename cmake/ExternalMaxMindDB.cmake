@@ -31,12 +31,16 @@ file(GLOB LIBMAXMINDDB_SRC_FILES
     "${LIBMAXMINDDB_DIR}/src/*.h"
 )
 add_library(libmaxminddb EXCLUDE_FROM_ALL OBJECT ${LIBMAXMINDDB_SRC_FILES})
+set_target_properties(libmaxminddb PROPERTIES
+    C_STANDARD 99
+    C_STANDARD_REQUIRED ON
+    C_EXTENSIONS OFF
+)
 target_include_directories(libmaxminddb PRIVATE ${LIBMAXMINDDB_INCLUDE_DIR})
 target_compile_definitions(libmaxminddb PRIVATE PACKAGE_VERSION="1.10.0")
 if(NOT IS_BIG_ENDIAN)
   target_compile_definitions(libmaxminddb PRIVATE MMDB_LITTLE_ENDIAN=1)
 endif()
-
 if(WIN32)
   target_link_libraries(libmaxminddb ws2_32)
 endif()
