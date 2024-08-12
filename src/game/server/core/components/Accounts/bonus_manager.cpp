@@ -83,7 +83,11 @@ void CBonusManager::LoadBonuses()
 		while((pLine = Reader.Get()))
 		{
 			TemporaryBonus bonus;
+#if defined(__GNUC__) && __WORDSIZE == 64
+			if(sscanf(pLine, "%d %f %ld %d", &bonus.Type, &bonus.Amount, &bonus.StartTime, &bonus.Duration) == 4)
+#else
 			if(sscanf(pLine, "%d %f %lld %d", &bonus.Type, &bonus.Amount, &bonus.StartTime, &bonus.Duration) == 4)
+#endif
 			{
 				int elapsedTime = static_cast<int>(difftime(currentTime, bonus.StartTime));
 				if(elapsedTime < bonus.Duration)
@@ -106,7 +110,11 @@ void CBonusManager::SaveBonuses() const
 		for(const auto& bonus : m_vTemporaryBonuses)
 		{
 			char buffer[128];
+#if defined(__GNUC__) && __WORDSIZE == 64
+			str_format(buffer, sizeof(buffer), "%d %.2f %ld %d\n", bonus.Type, bonus.Amount, bonus.StartTime, bonus.Duration);
+#else
 			str_format(buffer, sizeof(buffer), "%d %.2f %lld %d\n", bonus.Type, bonus.Amount, bonus.StartTime, bonus.Duration);
+#endif
 			io_write(File, buffer, str_length(buffer));
 		}
 		io_close(File);
