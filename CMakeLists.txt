@@ -122,6 +122,7 @@ if(NOT MSVC)
     add_cxx_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-implicit-function-declaration)
   endif()
   
+  add_c_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-declaration-after-statement)
   check_c_compiler_flag("-O2;-Wp,-Werror;-D_FORTIFY_SOURCE=2" DEFINE_FORTIFY_SOURCE) # Some distributions define _FORTIFY_SOURCE by themselves.
 endif()
 
