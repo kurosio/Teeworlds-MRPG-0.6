@@ -36,11 +36,14 @@ set_target_properties(libmaxminddb PROPERTIES
     C_STANDARD_REQUIRED ON
     C_EXTENSIONS OFF
 )
-target_include_directories(libmaxminddb PRIVATE ${LIBMAXMINDDB_INCLUDE_DIR})
+if(NOT MSVC)
+  target_compile_options(libmaxminddb PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-declaration-after-statement>)
+endif()
 target_compile_definitions(libmaxminddb PRIVATE PACKAGE_VERSION="1.10.0")
 if(NOT IS_BIG_ENDIAN)
   target_compile_definitions(libmaxminddb PRIVATE MMDB_LITTLE_ENDIAN=1)
 endif()
+target_include_directories(libmaxminddb PRIVATE ${LIBMAXMINDDB_INCLUDE_DIR})
 if(WIN32)
   target_link_libraries(libmaxminddb ws2_32)
 endif()
