@@ -223,7 +223,6 @@ if(NOT CMAKE_CROSSCOMPILING)
 endif()
 
 ## own packages
-set(Boost_INCLUDES_DIRS)
 find_package(Python3)
 find_package(Threads)
 find_package(ZLIB)
@@ -239,17 +238,8 @@ find_package(MySQL)
 #find_package(GLEW)
 
 # TODO: change
-if(TARGET_OS AND TARGET_OS STREQUAL "linux")
-  find_package(Boost 1.36.0)
-  if(NOT(Boost_FOUND))
-    message(FATAL_ERROR, "Required install Boost.")
-  endif()
-#elseif(TARGET_OS AND TARGET_OS STREQUAL "mac")
-#  set(SERVER_COMPILE OFF)
-endif()
-
-if(NOT(Boost_INCLUDES_DIRS))
-  set(Boost_INCLUDE_DIRS "libraries/boost/include")
+if(NOT Boost_INCLUDE_DIRS)
+  set(Boost_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libraries/boost/include")
 endif()
 
 # another packages
