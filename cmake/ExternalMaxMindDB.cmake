@@ -20,8 +20,8 @@ include (TestBigEndian)
 TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
 
 # Generate and prepare include dir
-file(COPY ${LIBMAXMINDDB_DIR}/include/maxminddb.h DESTINATION ${CMAKE_BINARY_DIR}/libmaxminddb/include)
-configure_file(${LIBMAXMINDDB_DIR}/include/maxminddb_config.h.cmake.in
+file(COPY ${LIBMAXMINDDB_DIR}/geninc/maxminddb.h DESTINATION ${CMAKE_BINARY_DIR}/libmaxminddb/include)
+configure_file(${LIBMAXMINDDB_DIR}/geninc/maxminddb_config.h.cmake.in
           ${CMAKE_BINARY_DIR}/libmaxminddb/include/maxminddb_config.h)
 set(LIBMAXMINDDB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/libmaxminddb/include)
 
