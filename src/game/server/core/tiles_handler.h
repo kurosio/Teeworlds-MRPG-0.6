@@ -3,12 +3,46 @@
 #ifndef GAME_SERVER_CORE_TILES_HANDLER_H
 #define GAME_SERVER_CORE_TILES_HANDLER_H
 
-#define DEF_TILE_ENTER_ZONE_IMPL(player, menus) \
-									GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You can see menu in the votes!"); \
-									player->m_VotesData.UpdateVotes(menus)
-#define DEF_TILE_EXIT_ZONE_IMPL(player) \
-									GS()->Broadcast(player->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You have left the active zone!"); \
-									player->m_VotesData.UpdateVotes(MENU_MAIN)
+#define HANDLE_TILE_MOTD_MENU(pPlayer, pChr, tile, motdMenu) \
+    if(pChr->GetTiles()->IsEnter(tile)) \
+	{ \
+        GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 50, "Welcome! Press the 'self kill' key to open the menu."); \
+		return true; \
+    } \
+	if(pChr->GetTiles()->IsExit(tile) && pPlayer->IsSameMotdMenu(motdMenu)) \
+	{ \
+	    GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 50, "Goodbye!"); \
+	    pPlayer->CloseMotdMenu(); \
+	    return true; \
+	} \
+    if(pChr->GetTiles()->IsActive(tile)) \
+    { \
+        if (Server()->Tick() % Server()->TickSpeed() == 0) \
+            GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 50, "Welcome! Press the 'self kill' key to open the menu."); \
+        \
+        if (CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_SELF_KILL)) \
+        { \
+            GS()->SendMenuMotd(pPlayer, motdMenu); \
+        } \
+        return true; \
+    } \
+
+
+#define HANDLE_TILE_VOTE_MENU(pPlayer, pChr, tile, voteMenu, enterActions, exitActions) \
+    if (pChr->GetTiles()->IsEnter(tile)) \
+    { \
+		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You can see menu in the votes!"); \
+		pPlayer->m_VotesData.UpdateVotes(voteMenu); \
+        enterActions \
+        return true; \
+    } \
+    else if (pChr->GetTiles()->IsExit(tile)) \
+    { \
+		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You have left the active zone!"); \
+        pPlayer->m_VotesData.UpdateVotes(MENU_MAIN); \
+        exitActions \
+        return true; \
+    }
 
 // forward declaration
 class CCollision;

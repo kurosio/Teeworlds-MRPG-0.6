@@ -894,15 +894,21 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				auto fnCallback = [](CPlayer* pPlayer, bool Accepted)
 				{
 					if(Accepted)
-						pPlayer->m_pMotdMenu->ClearMotd(pPlayer->GS(), pPlayer);
+						pPlayer->CloseMotdMenu();
 				};
+				auto closeCondition = [](CPlayer* pPlayer)
+				{
+					return !pPlayer->m_pMotdMenu;
+				};
+
 				const auto pOption = CVoteOptional::Create(ClientID, 10, "Close motd menu?");
 				pOption->RegisterCallback(fnCallback);
+				pOption->RegisterCloseCondition(closeCondition);
 				return;
 			}
 
-			// send broadcast message
-			Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Self kill is not allowed.");
+			// event key self kill
+			CEventKeyManager::AppendEventKeyClick(ClientID, KEY_EVENT_SELF_KILL);
 			return;
 		}
 

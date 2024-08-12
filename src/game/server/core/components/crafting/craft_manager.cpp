@@ -42,16 +42,8 @@ bool CCraftManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	if (pChr->GetTiles()->IsEnter(TILE_CRAFT_ZONE))
-	{
-		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_CRAFT_LIST);
-		return true;
-	}
-	else if (pChr->GetTiles()->IsExit(TILE_CRAFT_ZONE))
-	{
-		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
-		return true;
-	}
+	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_CRAFT_ZONE, MENU_CRAFT_LIST, {}, {});
+
 	return false;
 }
 

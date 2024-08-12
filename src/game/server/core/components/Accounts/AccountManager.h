@@ -19,6 +19,7 @@ class CAccountManager : public MmoComponent
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	void OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period) override;
+	bool OnCharacterTile(CCharacter* pChr) override;
 
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 
@@ -37,15 +38,15 @@ public:
 	void DiscordConnect(int ClientID, const char *pDID) const;
 	bool ChangeNickname(int ClientID);
     bool BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason);
-    bool UnBanAccount(int BanId);
-    std::vector<AccBan> BansAccount();
+    bool UnBanAccount(int BanId) const;
+    std::vector<AccBan> BansAccount() const;
 
 	int GetLastVisitedWorldID(CPlayer* pPlayer) const;
 	
 	static int GetRank(int AccountID);
 	static bool IsActive(int ClientID)
 	{
-		return CAccountData::ms_aData.find(ClientID) != CAccountData::ms_aData.end();
+		return CAccountData::ms_aData.contains(ClientID);
 	}
 
 	static std::string HashPassword(const std::string& Password, const std::string& Salt);

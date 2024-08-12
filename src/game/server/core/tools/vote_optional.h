@@ -10,6 +10,7 @@ class CVoteOptional : public MultiworldIdentifiableData<std::map<int, std::queue
     CPlayer* GetPlayer() const;
 
     using OptionEventCallback = std::function<void(CPlayer*, bool)>;
+    using CloseConditionCallback = std::function<bool(CPlayer*)>;
 
 public:
     // Factory method to create a new vote event
@@ -30,6 +31,12 @@ public:
         m_Callback = std::move(callback);
     }
 
+    // Register a condition to automatically close the vote
+    void RegisterCloseCondition(CloseConditionCallback closeCondition)
+    {
+        m_CloseCondition = std::move(closeCondition);
+    }
+
     // Execute the vote and return whether the callback was called
     bool ExecuteVote(bool voteState);
 
@@ -42,6 +49,7 @@ private:
     std::string m_Description {};
     time_t m_CloseTime {};
     OptionEventCallback m_Callback;
+    CloseConditionCallback m_CloseCondition;
 };
 
 #endif // GAME_SERVER_VOTE_OPTIONAL_H

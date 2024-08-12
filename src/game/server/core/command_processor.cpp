@@ -570,7 +570,7 @@ void CCommandProcessor::ConChatBonuses(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	if(pPlayer->IsSameMotdMenu(MOTD_MENU_ABOUT_BONUSES))
-		pPlayer->m_pMotdMenu->ClearMotd(pGS, pPlayer);
+		pPlayer->CloseMotdMenu();
 	else
 		pGS->SendMenuMotd(pPlayer, MOTD_MENU_ABOUT_BONUSES);
 }
@@ -585,7 +585,7 @@ void CCommandProcessor::ConChatWanted(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	if(pPlayer->IsSameMotdMenu(MOTD_MENU_ABOUT_WANTED))
-		pPlayer->m_pMotdMenu->ClearMotd(pGS, pPlayer);
+		pPlayer->CloseMotdMenu();
 	else
 		pGS->SendMenuMotd(pPlayer, MOTD_MENU_ABOUT_WANTED);
 }

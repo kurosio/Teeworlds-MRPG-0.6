@@ -93,17 +93,7 @@ bool CQuestManager::OnCharacterTile(CCharacter* pChr)
 	// initialize variables
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	// quest board
-	if(pChr->GetTiles()->IsEnter(TILE_QUEST_BOARD))
-	{
-		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_BOARD);
-		return true;
-	}
-	else if(pChr->GetTiles()->IsExit(TILE_QUEST_BOARD))
-	{
-		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
-		return true;
-	}
+	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_QUEST_BOARD, MENU_BOARD, {}, {});
 
 	return false;
 }

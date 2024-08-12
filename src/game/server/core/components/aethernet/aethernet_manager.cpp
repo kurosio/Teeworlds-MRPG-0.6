@@ -110,19 +110,10 @@ bool CAethernetManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	// Check if the character enters the Aether teleport tile
-	if(pChr->GetTiles()->IsEnter(TILE_AETHER_TELEPORT))
-	{
-		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_AETHERNET_LIST);
-		UnlockLocationByPos(pChr->GetPlayer(), pChr->m_Core.m_Pos);
-		return true;
-	}
-	// Check if the character exits the Aether teleport tile
-	else if(pChr->GetTiles()->IsExit(TILE_AETHER_TELEPORT))
-	{
-		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
-		return true;
-	}
+	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_AETHER_TELEPORT, MENU_AETHERNET_LIST,
+		{ UnlockLocationByPos(pChr->GetPlayer(), pChr->m_Core.m_Pos); },
+		{}
+	);
 
 	return false;
 }

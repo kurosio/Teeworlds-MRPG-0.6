@@ -5,6 +5,7 @@
 #include <base/hash_ctxt.h>
 #include <game/server/gamecontext.h>
 
+#include <game/server/event_key_manager.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 #include <game/server/core/components/mails/mailbox_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
@@ -13,7 +14,7 @@
 
 int CAccountManager::GetLastVisitedWorldID(CPlayer* pPlayer) const
 {
-	const auto pWorldIterator = std::find_if(pPlayer->Account()->m_aHistoryWorld.begin(), pPlayer->Account()->m_aHistoryWorld.end(), [&](int WorldID)
+	const auto pWorldIterator = std::ranges::find_if(pPlayer->Account()->m_aHistoryWorld, [&](int WorldID)
 	{
 		if(GS()->GetWorldData(WorldID))
 		{
@@ -257,16 +258,8 @@ bool CAccountManager::ChangeNickname(int ClientID)
 
 int CAccountManager::GetRank(int AccountID)
 {
-	int Rank = 0;
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC");
-	while(pRes->next())
-	{
-		Rank++;
-		const int ID = pRes->getInt("ID");
-		if(AccountID == ID)
-			return Rank;
-	}
-	return -1;
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Rank FROM (SELECT ID, RANK() OVER (ORDER BY Level DESC, Exp DESC) AS Rank", "tw_accounts_data", ") AS RankedData WHERE ID = %d", AccountID);
+	return pRes->next() ? pRes->getInt("Rank") : -1;
 }
 
 void CAccountManager::OnClientReset(int ClientID)
@@ -318,7 +311,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// Language selection
+	// language selection
 	if(Menulist == MENU_SETTINGS_LANGUAGE_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
@@ -352,7 +345,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// Title selection
+	// title selection
 	if(Menulist == MENU_SETTINGS_TITLE_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
@@ -401,30 +394,22 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-// Function to handle vote commands for an account
 bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
-	// ReasonNumber the client ID of the player
 	const int ClientID = pPlayer->GetCID();
 
-	// Check if the command is "SELECTLANGUAGE"
+	// select language command
 	if(PPSTR(pCmd, "SELECT_LANGUAGE") == 0)
 	{
-		// Set the client's language to the selected language from the localization object
 		const char* pSelectedLanguage = Server()->Localization()->m_pLanguages[Extra1]->GetFilename();
 		Server()->SetClientLanguage(ClientID, pSelectedLanguage);
-
-		// Inform the client about the selected language
 		GS()->Chat(ClientID, "You have chosen a language \"{}\".", pSelectedLanguage);
-
-		// Update the votes menu for the client
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_SETTINGS_LANGUAGE_SELECT);
-
-		// Save the account's language
 		Core()->SaveAccount(pPlayer, SAVE_LANGUAGE);
 		return true;
 	}
 
+	// upgrade command
 	if(PPSTR(pCmd, "UPGRADE") == 0)
 	{
 		if(pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_aStats[(AttributeIdentifier)Extra1], &pPlayer->Account()->m_Upgrade, Extra2, 1000))
@@ -440,15 +425,25 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 
 void CAccountManager::OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period)
 {
-	// Get the client ID of the player
-	int ClientID = pPlayer->GetCID();
+	const int ClientID = pPlayer->GetCID();
 
-	// If the time period is set to DAILY_STAMP
-	if(Period == ETimePeriod::DAILY_STAMP)
+	// time period on daily stamp
+	if(Period == DAILY_STAMP)
 	{
 		pPlayer->Account()->ResetDailyChairGolds();
 		GS()->Chat(ClientID, "The gold limit in the chair has been updated.");
 	}
+}
+
+bool CAccountManager::OnCharacterTile(CCharacter* pChr)
+{
+	CPlayer* pPlayer = pChr->GetPlayer();
+	int ClientID = pPlayer->GetCID();
+	
+	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_ABOUT_BONUSES)
+	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_ABOUT_WANTED)
+
+	return false;
 }
 
 bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
@@ -459,11 +454,9 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MOTD_MENU_ABOUT_BONUSES)
 	{
 		int position = 1;
-		const char* pSeparateLine = "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
-							  "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500";
 		MotdMenu MBonuses(ClientID, MTFLAG_CLOSE_BUTTON, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
 		MBonuses.AddText("Active bonuses \u2696");
-		MBonuses.AddText(pSeparateLine);
+		MBonuses.AddSeparateLine();
 		for(auto& bonus : pPlayer->Account()->GetBonusManager().GetTemporaryBonuses())
 		{
 			const char* pBonusType = pPlayer->Account()->GetBonusManager().GetStringBonusType(bonus.Type);
@@ -472,14 +465,14 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			int seconds = remainingTime % 60;
 			MBonuses.AddText("{}. {} - {~.2}%", position, pBonusType, bonus.Amount);
 			MBonuses.AddText("Time left: {} min {} sec.", minutes, seconds);
-			MBonuses.AddText(pSeparateLine);
+			MBonuses.AddSeparateLine();
 			position++;
 		}
 
 		if(position == 1)
 		{
 			MBonuses.AddText("No active bonuses!");
-			MBonuses.AddText(pSeparateLine);
+			MBonuses.AddSeparateLine();
 		}
 
 		MBonuses.Send(MOTD_MENU_ABOUT_BONUSES);
@@ -490,11 +483,9 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MOTD_MENU_ABOUT_WANTED)
 	{
 		bool hasWanted = false;
-		const char* pSeparateLine = "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
-			"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500";
 		MotdMenu MWanted(ClientID, MTFLAG_CLOSE_BUTTON, "A list of wanted players for whom bounties have been assigned. To get the bounty you need to kill a player from the list.");
 		MWanted.AddText("Wanted players \u2694");
-		MWanted.AddText(pSeparateLine);
+		MWanted.AddSeparateLine();
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPl = GS()->GetPlayer(i, true);
@@ -506,14 +497,14 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			MWanted.AddText(Server()->ClientName(i));
 			MWanted.AddText("Reward: {} gold", Reward);
 			MWanted.AddText("Last seen in : {}", Server()->GetWorldName(pPl->GetPlayerWorldID()));
-			MWanted.AddText(pSeparateLine);
+			MWanted.AddSeparateLine();
 			hasWanted = true;
 		}
 
 		if(!hasWanted)
 		{
 			MWanted.AddText("No wanted players!");
-			MWanted.AddText(pSeparateLine);
+			MWanted.AddSeparateLine();
 		}
 
 		MWanted.Send(MOTD_MENU_ABOUT_WANTED);
@@ -554,47 +545,50 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 		nlohmann::json JsonData = nlohmann::json::parse(pResVoucher->getString("Data").c_str());
 
 		if(ValidUntil > 0 && ValidUntil < time(0))
-			GS()->Chat(ClientID, "The voucher code '{}' has expired.", pVoucher);
-		else if(pResVoucher->getBoolean("used"))
-			GS()->Chat(ClientID, "This voucher has already been redeemed.");
-		else
 		{
-			const int Exp = JsonData.value("exp", 0);
-			const int Money = JsonData.value("money", 0);
-			const int Upgrade = JsonData.value("upgrade", 0);
-
-			if(Exp > 0)
-				pPlayer->Account()->AddExperience(Exp);
-			if(Money > 0)
-				pPlayer->Account()->AddGold(Money);
-			if(Upgrade > 0)
-				pPlayer->Account()->m_Upgrade += Upgrade;
-
-			if(JsonData.find("items") != JsonData.end() && JsonData["items"].is_array())
-			{
-				for(const nlohmann::json& Item : JsonData["items"])
-				{
-					const int ItemID = Item.value("id", -1);
-					const int Value = Item.value("value", 0);
-					if(Value > 0 && CItemDescription::Data().find(ItemID) != CItemDescription::Data().end())
-						pPlayer->GetItem(ItemID)->Add(Value);
-				}
-			}
-
-			GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-			GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
-
-			Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Account()->GetID(), (int)time(0));
-			GS()->Chat(ClientID, "You have successfully redeemed the voucher '{}'.", pVoucher);
+			GS()->Chat(ClientID, "The voucher code '{}' has expired.", pVoucher);
+			return;
 		}
 
+		if(pResVoucher->getBoolean("used"))
+		{
+			GS()->Chat(ClientID, "This voucher has already been redeemed.");
+			return;
+		}
+
+		const int Exp = JsonData.value("exp", 0);
+		const int Money = JsonData.value("money", 0);
+		const int Upgrade = JsonData.value("upgrade", 0);
+
+		if(Exp > 0)
+			pPlayer->Account()->AddExperience(Exp);
+		if(Money > 0)
+			pPlayer->Account()->AddGold(Money);
+		if(Upgrade > 0)
+			pPlayer->Account()->m_Upgrade += Upgrade;
+
+		if(JsonData.find("items") != JsonData.end() && JsonData["items"].is_array())
+		{
+			for(const nlohmann::json& Item : JsonData["items"])
+			{
+				const int ItemID = Item.value("id", -1);
+				const int Value = Item.value("value", 0);
+				if(Value > 0 && CItemDescription::Data().contains(ItemID))
+					pPlayer->GetItem(ItemID)->Add(Value);
+			}
+		}
+
+		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
+		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
+
+		Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Account()->GetID(), (int)time(0));
+		GS()->Chat(ClientID, "You have successfully redeemed the voucher '{}'.", pVoucher);
 		return;
 	}
 
 	GS()->Chat(ClientID, "The voucher code '{}' does not exist.", pVoucher);
 }
 
-// Function BanAccount
 bool CAccountManager::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason)
 {
 	// Check if the account is already banned
@@ -610,14 +604,11 @@ bool CAccountManager::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const st
 	Database->Execute<DB::INSERT>("tw_accounts_bans", "(AccountId, BannedUntil, Reason) VALUES (%d, %s, '%s')",
 		pPlayer->Account()->GetID(), std::string("current_timestamp + " + Time.asSqlInterval()).c_str(), Reason.c_str());
 	GS()->Server()->Kick(pPlayer->GetCID(), "Your account was banned");
-
-	// Print success message and return true
 	m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully banned!");
 	return true;
 }
 
-// Function: UnBanAccount by specified BanId
-bool CAccountManager::UnBanAccount(int BanId)
+bool CAccountManager::UnBanAccount(int BanId) const
 {
 	// Search for ban using the specified BanId
 	ResultPtr pResBan = Database->Execute<DB::SELECT>("AccountId", "tw_accounts_bans", "WHERE Id = '%d' AND current_timestamp() < `BannedUntil`", BanId);
@@ -635,11 +626,11 @@ bool CAccountManager::UnBanAccount(int BanId)
 }
 
 // Function: BansAccount
-std::vector<CAccountManager::AccBan> CAccountManager::BansAccount()
+std::vector<CAccountManager::AccBan> CAccountManager::BansAccount() const
 {
-	std::vector<AccBan> out; // Create a vector called "out" to store instances of the AccBan struct
-	std::size_t capacity = 100; // Set the initial capacity of the vector to 100
-	out.reserve(capacity); // Reserve memory for the vector based on the capacity
+	constexpr std::size_t capacity = 100;
+	std::vector<AccBan> out;
+	out.reserve(capacity);
 
 	/*
 		Execute a SELECT query on the "tw_accounts_bans" table in the database,
@@ -649,15 +640,13 @@ std::vector<CAccountManager::AccBan> CAccountManager::BansAccount()
 	ResultPtr pResBan = Database->Execute<DB::SELECT>("Id, BannedUntil, Reason, AccountId", "tw_accounts_bans", "WHERE current_timestamp() < `BannedUntil`");
 	while(pResBan->next())
 	{
-		int ID = pResBan->getInt("Id"); // Get the value of the "Id" column from the current row
-		int AccountID = pResBan->getInt("AccountId"); // Get the value of the "AccountId" column from the current row
-		std::string BannedUntil = pResBan->getString("BannedUntil").c_str(); // Get the value of the "BannedUntil" column from the current row
-		std::string PlayerNickname = Server()->GetAccountNickname(AccountID); // Get the player nickname using the AccountID
-		std::string Reason = pResBan->getString("Reason").c_str(); // Get the value of the "Reason" column from the current row
-
-		// Create an instance of the AccBan struct with the retrieved values and add it to the vector "out"
+		int ID = pResBan->getInt("Id");
+		int AccountID = pResBan->getInt("AccountId");
+		std::string BannedUntil = pResBan->getString("BannedUntil").c_str();
+		std::string PlayerNickname = Server()->GetAccountNickname(AccountID);
+		std::string Reason = pResBan->getString("Reason").c_str();
 		out.push_back({ ID, BannedUntil, std::move(PlayerNickname), std::move(Reason) });
 	}
 
-	return out; // Return the vector "out" containing the AccBan structs
+	return out;
 }

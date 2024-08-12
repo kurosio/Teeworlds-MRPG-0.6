@@ -80,16 +80,7 @@ bool CGuildManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	if(pChr->GetTiles()->IsEnter(TILE_GUILD_HOUSE))
-	{
-		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_GUILD_HOUSE_PURCHASE);
-		return true;
-	}
-	if(pChr->GetTiles()->IsExit(TILE_GUILD_HOUSE))
-	{
-		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
-		return true;
-	}
+	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_GUILD_HOUSE, MENU_GUILD_HOUSE_PURCHASE, {}, {});
 
 	if(pChr->GetTiles()->IsActive(TILE_GUILD_CHAIR))
 	{

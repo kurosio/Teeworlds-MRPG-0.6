@@ -90,6 +90,13 @@ public:
 		AddImpl(NOPE, "NULL", "");
 	}
 
+	void AddSeparateLine()
+	{
+		AddImpl(NOPE, "NULL", "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+			"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+			"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500");
+	}
+
 	void AddBackpage()
 	{
 		AddImpl(NOPE, "BACKPAGE", "<<< Backpage");

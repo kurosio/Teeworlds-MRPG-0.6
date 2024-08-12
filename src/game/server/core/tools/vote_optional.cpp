@@ -49,7 +49,7 @@ void CVoteOptional::HandleVoteOptionals(int clientID)
         pOptional->m_Active = true;
     }
 
-    if(pOptional->m_CloseTime < time_get())
+    if((pOptional->m_CloseCondition && pOptional->m_CloseCondition(pOptional->GetPlayer())) || pOptional->m_CloseTime < time_get())
     {
         CNetMsg_Sv_VoteSet msg;
         msg.m_Timeout = 0;

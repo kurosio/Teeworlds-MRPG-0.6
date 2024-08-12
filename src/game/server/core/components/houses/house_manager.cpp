@@ -55,18 +55,8 @@ void CHouseManager::OnTimePeriod(ETimePeriod Period)
 bool CHouseManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
-	const int ClientID = pPlayer->GetCID();
 
-	if(pChr->GetTiles()->IsEnter(TILE_PLAYER_HOUSE))
-	{
-		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_HOUSE_BUY);
-		return true;
-	}
-	if(pChr->GetTiles()->IsExit(TILE_PLAYER_HOUSE))
-	{
-		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
-		return true;
-	}
+	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_PLAYER_HOUSE, MENU_HOUSE_BUY, {}, {});
 
 	return false;
 }

@@ -48,17 +48,7 @@ bool CWarehouseManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	// shop zone
-	if(pChr->GetTiles()->IsEnter(TILE_SHOP_ZONE))
-	{
-		DEF_TILE_ENTER_ZONE_IMPL(pPlayer, MENU_WAREHOUSE);
-		return true;
-	}
-	else if(pChr->GetTiles()->IsExit(TILE_SHOP_ZONE))
-	{
-		DEF_TILE_EXIT_ZONE_IMPL(pPlayer);
-		return true;
-	}
+	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_SHOP_ZONE, MENU_WAREHOUSE, {}, {});
 
 	return false;
 }
