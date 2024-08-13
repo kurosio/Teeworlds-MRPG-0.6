@@ -76,6 +76,7 @@ public:
 	class CQuestsBoard* GetQuestBoard(int ID) const;
 	class CWorldData* GetWorldData(int ID = -1) const;
 	class CEidolonInfoData* GetEidolonByItemID(ItemIdentifier ItemID) const;
+
 	void UpdateDiscordStatus();
 
 	void CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float Angle = 0.f, int64_t Mask = -1);
@@ -249,6 +250,7 @@ private:
 	void InitWorldzone();
 	void ShowVotesNewbieInformation(int ClientID) const;
 	void UpdateExpMultiplier();
+	void HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const;
 };
 
 inline int64_t CmaskAll() { return -1; }

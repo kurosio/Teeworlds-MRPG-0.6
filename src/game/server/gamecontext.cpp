@@ -518,6 +518,45 @@ void CGS::UpdateDiscordStatus()
 #endif
 }
 
+void CGS::HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const
+{
+	if(!pPlayer)
+		return;
+
+	const int ClientID = pPlayer->GetCID();
+	if(!pPlayer->IsAuthed())
+	{
+		Server()->SetClientName(ClientID, pNewNickname);
+		return;
+	}
+
+	if(str_comp(Server()->ClientName(ClientID), pNewNickname) != 0 && !(pPlayer->m_PlayerFlags & PLAYERFLAG_IN_MENU))
+	{
+		std::string NewName = pNewNickname;
+		auto fnCallback = [NewName](CPlayer* pPlayer, bool Accepted)
+		{
+			CGS* pGS = pPlayer->GS();
+			const int ClientID = pPlayer->GetCID();
+			if(Accepted)
+			{
+				if(pGS->Core()->AccountManager()->ChangeNickname(NewName, ClientID))
+					pGS->Chat(ClientID, "Your nickname has been successfully updated.");
+				else
+					pGS->Chat(ClientID, "This nickname is already in use.");
+			}
+			else
+				pGS->Chat(ClientID, "You need to set a '{}' nickname. This window will keep appearing until you confirm the nickname change.", Instance::Server()->ClientName(ClientID));
+		};
+		auto closeCondition = [NewName](CPlayer* pPlayer)
+		{
+			return str_comp(NewName.c_str(), pPlayer->GS()->Server()->ClientName(pPlayer->GetCID())) == 0;
+		};
+		const auto pOption = CVoteOptional::Create(ClientID, 10, "Nick {}?", NewName.c_str());
+		pOption->RegisterCallback(fnCallback);
+		pOption->RegisterCloseCondition(closeCondition);
+	}
+}
+
 void CGS::OnInit(int WorldID)
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -829,41 +868,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(!str_utf8_check(pMsg->m_pClan) || !str_utf8_check(pMsg->m_pSkin))
 				return;
 
-			if(pPlayer->IsAuthed())
-			{
-				if(str_comp(Server()->ClientName(ClientID), pMsg->m_pName) != 0 && !(pPlayer->m_PlayerFlags & PLAYERFLAG_IN_MENU))
-				{
-					std::string NewName = pMsg->m_pName;
-					auto fnCallback = [NewName](CPlayer* pPlayer, bool Accepted)
-					{
-						CGS* pGS = pPlayer->GS();
-						const int ClientID = pPlayer->GetCID();
-						if(Accepted)
-						{
-							if(pGS->Core()->AccountManager()->ChangeNickname(NewName, ClientID))
-								pGS->Chat(ClientID, "Your nickname has been successfully updated");
-							else
-								pGS->Chat(ClientID, "This nickname is already in use");
-						}
-						else
-						{
-							pGS->Chat(ClientID, "You need to set a valid nickname. This window will keep appearing until you confirm the nickname change.");
-						}
-					};
-					auto closeCondition = [NewName](CPlayer* pPlayer)
-					{
-						return str_comp(NewName.c_str(), Instance::Server()->ClientName(pPlayer->GetCID())) == 0;
-					};
-
-					const auto pOption = CVoteOptional::Create(ClientID, 10, "Nick {}?", pMsg->m_pName);
-					pOption->RegisterCallback(fnCallback);
-					pOption->RegisterCloseCondition(closeCondition);
-				}
-			}
-			else
-			{
-				Server()->SetClientName(ClientID, pMsg->m_pName);
-			}
+			HandleNicknameChange(pPlayer, pMsg->m_pName);
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
