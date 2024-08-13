@@ -577,7 +577,7 @@ void CGS::OnInit(int WorldID)
 	m_pMmoController = new CMmoController(this);
 	m_pMmoController->LoadLogicWorld();
 
-	InitWorldzone();
+	InitWorld();
 
 	// initialize cores
 	CMapItemLayerTilemap* pTileMap = m_pLayers->GameLayer();
@@ -763,20 +763,17 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 	{
 		if(MsgID == NETMSGTYPE_CL_SAY)
 		{
-			// check last chat tick
 			if(pPlayer->m_aPlayerTick[LastChat] > Server()->Tick())
 				return;
 
 			// initialize variables
 			const auto pMsg = (CNetMsg_Cl_Say*)pRawMsg;
 			pPlayer->m_aPlayerTick[LastChat] = Server()->Tick() + Server()->TickSpeed();
-
-			// check msg contains valid UTF-8 characters
 			if(!str_utf8_check(pMsg->m_pMessage))
 				return;
 
 			// check message
-			char firstChar = pMsg->m_pMessage[0];
+			const auto firstChar = pMsg->m_pMessage[0];
 			if(firstChar == '/')
 				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
 			else if(firstChar == '#')
@@ -791,7 +788,6 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{
-			// check last vote tick
 			if(pPlayer->m_aPlayerTick[LastVote] > Server()->Tick())
 				return;
 
@@ -802,10 +798,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			// check is option type
 			if(str_comp_nocase(pMsg->m_pType, "option") == 0)
 			{
-				// post player votes
 				pPlayer->m_VotesData.ApplyVoteUpdaterData();
-
-				// use vote by command with the provided values
 				if(CVoteOption* pActionVote = VoteWrapper::GetOptionVoteByAction(ClientID, pMsg->m_pValue))
 				{
 					const int ReasonNumber = clamp(str_toint(pMsg->m_pReason), 1, 100000);
@@ -823,13 +816,9 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			// update event key
 			const auto pMsg = (CNetMsg_Cl_Vote*)pRawMsg;
 			if(pMsg->m_Vote == 1)
-			{
 				CEventKeyManager::AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_YES);
-			}
 			else if(pMsg->m_Vote == 0)
-			{
 				CEventKeyManager::AppendEventKeyClick(ClientID, KEY_EVENT_VOTE_NO);
-			}
 
 			// parse vote option result
 			pPlayer->ParseVoteOptionResult(pMsg->m_Vote);
@@ -838,18 +827,12 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		if(MsgID == NETMSGTYPE_CL_SETTEAM)
 		{
-			// check change team last tick
 			if(pPlayer->m_aPlayerTick[LastChangeTeam] > Server()->Tick())
 				return;
 
-			// initialize variables
 			pPlayer->m_aPlayerTick[LastChangeTeam] = Server()->Tick() + Server()->TickSpeed();
-
-			// send broadcast message
-			if(!pPlayer->IsAuthed())
-				Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "Use /register <name> <pass>\nOr /login <name> <pass>.");
-			else
-				Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "Team change is not allowed.");
+			const char* pMsgText = !pPlayer->IsAuthed() ? "Use /register <name> <pass>\nOr /login <name> <pass>." : "Team change is not allowed.";
+			Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, pMsgText);
 			return;
 		}
 
@@ -886,7 +869,6 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		if(MsgID == NETMSGTYPE_CL_EMOTICON)
 		{
-			// check last emote tick
 			if(pPlayer->m_aPlayerTick[LastEmote] > Server()->Tick())
 				return;
 
@@ -902,7 +884,6 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		if(MsgID == NETMSGTYPE_CL_KILL)
 		{
-			// check last self kill tick
 			if(pPlayer->m_aPlayerTick[LastSelfKill] > Server()->Tick())
 				return;
 
@@ -944,8 +925,6 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 			// Get DDNet version from the unpacker
 			int DDNetVersion = pUnpacker->GetInt();
-
-			// Check for errors or negative DDNet version to default if there were errors or negative version
 			if(pUnpacker->Error() || DDNetVersion < 0)
 				DDNetVersion = VERSION_DDRACE;
 
@@ -992,11 +971,9 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 	{
 		if(MsgID == NETMSGTYPE_CL_STARTINFO)
 		{
-			// check last change info tick (once use)
 			if(pPlayer->m_aPlayerTick[LastChangeInfo] != 0)
 				return;
 
-			// initialize variables
 			pPlayer->m_aPlayerTick[LastChangeInfo] = Server()->Tick();
 
 			// is authed
@@ -1067,14 +1044,11 @@ void CGS::OnClientEnter(int ClientID)
 
 	m_pController->OnPlayerConnect(pPlayer);
 
-	// another
 	if(!pPlayer->IsAuthed())
 	{
 		Chat(-1, "{} entered and joined the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
-
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
-		ShowVotesNewbieInformation(ClientID);
 		return;
 	}
 
@@ -1205,98 +1179,7 @@ void CGS::OnClearClientData(int ClientID)
 
 bool CGS::SendMenuMotd(CPlayer* pPlayer, int Menulist) const
 {
-	if(!pPlayer)
-		return false;
-
-	if(Menulist == MOTD_MENU_TEST)
-	{
-		MotdMenu Mtest(pPlayer->GetCID(), "ADVENTURER'S GUIDE");
-
-		Mtest.Add("WELCOME, HERO", "Greetings, {} {}", Server()->ClientName(pPlayer->GetCID()));
-		Mtest.AddText("XP: {} | Gold: {}", pPlayer->Account()->GetExperience(), pPlayer->GetItem(itGold)->GetValue());
-		Mtest.AddText("");
-
-		Mtest.AddText("MAIN QUESTS");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Start a New Adventure");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Continue Journey");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Visit the Kingdom");
-		Mtest.AddLine();
-
-		Mtest.AddText("INVENTORY");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Manage Equipment");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Inventory");
-		Mtest.AddLine();
-
-		Mtest.AddText("CHARACTER");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "View Stats");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Skills & Abilities");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Learn New Skills");
-		Mtest.AddLine();
-
-		Mtest.AddText("EXIT");
-		Mtest.AddMenu(MOTD_MENU_SUBTEST, NOPE, "Return to Main Menu");
-
-		Mtest.Send(MOTD_MENU_TEST);
-		return true;
-	}
-
-	if(Menulist == MOTD_MENU_SUBTEST)
-	{
-		MotdMenu Mtest(pPlayer->GetCID(), "Hello pidor?");
-		Mtest.AddBackpage();
-		Mtest.Send(MOTD_MENU_SUBTEST);
-		return true;
-	}
-
-	return Core()->OnSendMenuMotd(pPlayer, Menulist);
-}
-
-void CGS::ShowVotesNewbieInformation(int ClientID) const
-{
-	CPlayer* pPlayer = GetPlayer(ClientID);
-	if(!pPlayer)
-		return;
-
-	VoteWrapper VWelcome(ClientID, VWF_SEPARATE_OPEN, "Hi, new adventurer!");
-	VWelcome.MarkList().Add("Information:");
-	{
-		VWelcome.BeginDepth();
-		VWelcome.MarkList().Add("This server is a mmo server. You'll have to finish");
-		{
-			VWelcome.BeginDepth();
-			VWelcome.Add("quests to continue the game. In these quests,");
-			VWelcome.Add("you'll have to get items to give to quest npcs.");
-			VWelcome.Add("To get a quest, you need to talk to NPCs.");
-			VWelcome.Add("You talk to them by hammering them.");
-			VWelcome.Add("You give these items by talking them again. ");
-			VWelcome.Add("Hearts and Shields around you show the position");
-			VWelcome.Add("quests' npcs. Hearts show Main quest, Shields show Others.");
-			VWelcome.EndDepth();
-		}
-		VWelcome.MarkList().Add("Don't ask other people to give you the items,");
-		{
-			VWelcome.BeginDepth();
-			VWelcome.Add("but you can ask for some help. Keep in mind that");
-			VWelcome.EndDepth();
-		}
-		VWelcome.MarkList().Add("You can see that your shield");
-		{
-			VWelcome.BeginDepth();
-			VWelcome.Add("(below your health bar) doesn't protect you,");
-			VWelcome.Add("it's because it's not shield, it's mana.");
-			VWelcome.Add("It is used for active skills, which you will need to buy");
-			VWelcome.Add("in the future. Active skills use mana, but they use %% of mana.");
-			VWelcome.EndDepth();
-		}
-		VWelcome.EndDepth();
-	}
-	VWelcome.AddLine();
-	VWelcome.MarkList().Add("Dev:");
-	{
-		VWelcome.BeginDepth();
-		VWelcome.Add("Test information");
-		VWelcome.EndDepth();
-	}
+	return pPlayer ? Core()->OnSendMenuMotd(pPlayer, Menulist) : false;
 }
 
 void CGS::UpdateExpMultiplier()
@@ -1361,12 +1244,6 @@ bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd, int Extra)
 	if(PPSTR(pCmd, "MENU") == 0)
 	{
 		SendMenuMotd(pPlayer, Extra);
-		return true;
-	}
-
-	if(PPSTR(pCmd, "Suka") == 0)
-	{
-		pPlayer->GiveEffect("Test", 5);
 		return true;
 	}
 
@@ -1435,7 +1312,7 @@ bool CGS::IsWorldType(WorldType Type) const
 	return Server()->IsWorldType(m_WorldID, Type);
 }
 
-void CGS::InitWorldzone()
+void CGS::InitWorld()
 {
 	// initilize world type
 	const char* pWorldType;

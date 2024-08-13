@@ -13,7 +13,6 @@ class CVoteOptional : public MultiworldIdentifiableData<std::map<int, std::queue
     using CloseConditionCallback = std::function<bool(CPlayer*)>;
 
 public:
-    // Factory method to create a new vote event
     template<typename ... Args>
     static CVoteOptional* Create(int clientID, int durationSeconds, const char* descriptionFormat, const Args& ... args)
 	{
@@ -25,19 +24,15 @@ public:
         return &m_pData[clientID].back();
     }
 
-    // Register a callback to be triggered when the vote executes
     void RegisterCallback(OptionEventCallback callback)
 	{
         m_Callback = std::move(callback);
     }
 
-    // Register a condition to automatically close the vote
     void RegisterCloseCondition(CloseConditionCallback closeCondition)
     {
         m_CloseCondition = std::move(closeCondition);
     }
-
-    // Execute the vote and return whether the callback was called
     bool ExecuteVote(bool voteState);
 
     // Handle optional voting options for a player

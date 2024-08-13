@@ -3,7 +3,7 @@
 
 CGS* CVoteOptional::GS() const
 {
-    return static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+    return (CGS*)Instance::GameServerPlayer(m_ClientID);
 }
 
 CPlayer* CVoteOptional::GetPlayer() const
@@ -15,7 +15,8 @@ bool CVoteOptional::ExecuteVote(bool voteState)
 {
     if(m_Callback)
     {
-        m_Callback(GetPlayer(), voteState);
+        if(CPlayer* pPlayer = GetPlayer())
+            m_Callback(pPlayer, voteState);
 
         CNetMsg_Sv_VoteStatus voteStatusMsg;
         voteStatusMsg.m_Total = 1;

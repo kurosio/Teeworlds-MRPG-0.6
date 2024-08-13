@@ -247,10 +247,9 @@ public:
 	bool DestroyPlayer(int ClientID);
 
 private:
-	void InitWorldzone();
-	void ShowVotesNewbieInformation(int ClientID) const;
-	void UpdateExpMultiplier();
+	void InitWorld();
 	void HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const;
+	void UpdateExpMultiplier();
 };
 
 inline int64_t CmaskAll() { return -1; }
