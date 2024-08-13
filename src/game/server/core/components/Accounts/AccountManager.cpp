@@ -5,7 +5,6 @@
 #include <base/hash_ctxt.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/event_key_manager.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 #include <game/server/core/components/mails/mailbox_manager.h>
 #include <game/server/core/components/worlds/world_data.h>

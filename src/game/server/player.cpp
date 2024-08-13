@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "player.h"
 
-#include "event_key_manager.h"
 #include "gamecontext.h"
 #include "worldmodes/dungeon.h"
 
@@ -544,8 +543,12 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 	}
 
 	// parse event keys
-	CEventKeyManager::ParseInputClickedKeys(this, pNewInput, m_pLastInput);
-	CEventKeyManager::ProcessCharacterInput(this, pNewInput, m_pLastInput);
+	Server()->Input()->ParseInputClickedKeys(m_ClientID , pNewInput, m_pLastInput);
+	if(m_pCharacter)
+	{
+		const int ActiveWeapon = m_pCharacter->m_Core.m_ActiveWeapon;
+		Server()->Input()->ProcessCharacterInput(m_ClientID, ActiveWeapon, pNewInput, m_pLastInput);
+	}
 
 	// Reset input when chatting
 	if(pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING)

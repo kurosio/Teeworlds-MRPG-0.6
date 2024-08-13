@@ -20,7 +20,7 @@
         if (Server()->Tick() % Server()->TickSpeed() == 0) \
             GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 50, "Welcome! Press the 'self kill' key to open the menu."); \
         \
-        if (CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_SELF_KILL)) \
+        if (Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_SELF_KILL)) \
         { \
             GS()->SendMenuMotd(pPlayer, motdMenu); \
         } \

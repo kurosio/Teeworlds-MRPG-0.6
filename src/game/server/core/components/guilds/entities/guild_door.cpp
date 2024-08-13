@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_door.h"
 
-#include <game/server/event_key_manager.h>
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
@@ -56,7 +55,7 @@ void CEntityGuildDoor::Tick()
                 pChar->GetPlayer()->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
             {
                 // is clicked key
-                if(CEventKeyManager::IsKeyClicked(ClientID, KEY_EVENT_FIRE_HAMMER))
+                if(Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE_HAMMER))
                     Reverse();
 
                 // send information

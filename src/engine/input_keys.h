@@ -1,11 +1,10 @@
-#ifndef GAME_SERVER_EVENT_KEY_MANAGER_H
-#define GAME_SERVER_EVENT_KEY_MANAGER_H
+#ifndef ENGINE_INPUT_KEYS_H
+#define ENGINE_INPUT_KEYS_H
 
-class IServer;
-class CPlayer;
+#include <cstdint>
+
 struct CNetObj_PlayerInput;
 
-// input events
 enum InputEvents
 {
 	// Key events for firing different weapons
@@ -53,17 +52,19 @@ enum InputEvents
 	BLOCK_INPUT_FULL_WEAPON = BLOCK_INPUT_FREEZE_WEAPON | BLOCK_INPUT_FIRE,
 };
 
-class CEventKeyManager
+class IInputKeys
 {
 public:
-    static void ParseInputClickedKeys(CPlayer* pPlayer, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput);
-    static void ProcessKeyPress(int ClientID, int LastInput, int NewInput, int EventKey, int ActiveWeaponKey = -1);
-    static void ProcessCharacterInput(CPlayer* pPlayer, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput);
+    virtual ~IInputKeys() = default;
 
-    static void AppendEventKeyClick(int ClientID, int KeyID);
-    static bool IsKeyClicked(int ClientID, int KeyID);
-    static void BlockInputGroup(int ClientID, int64_t FlagBlockedGroup);
-    static bool IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup);
+	virtual void ParseInputClickedKeys(int ClientID, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput) = 0;
+    virtual void ProcessKeyPress(int ClientID, int LastInput, int NewInput, int EventKey, int ActiveWeaponKey = -1) = 0;
+    virtual void ProcessCharacterInput(int ClientID, int ActiveWeapon, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput) = 0;
+
+    virtual void AppendEventKeyClick(int ClientID, int KeyID) = 0;
+    virtual bool IsKeyClicked(int ClientID, int KeyID) = 0;
+    virtual void BlockInputGroup(int ClientID, int64_t FlagBlockedGroup) = 0;
+    virtual bool IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup) = 0;
 };
 
-#endif // GAME_SERVER_EVENT_KEY_MANAGER_H
+#endif // ENGINE_INPUT_KEYS_H

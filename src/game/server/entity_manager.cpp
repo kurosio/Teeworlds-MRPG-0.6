@@ -1,7 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "entity_manager.h"
-#include "event_key_manager.h"
 #include "gamecontext.h"
 
 #include "entities/projectile.h"
@@ -708,11 +707,11 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 	{
 		// freeze input for bow
 		int& FireCount = pBase->GetGroup()->GetRefConfig("fireCount", 0);
-		CEventKeyManager::BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FIRE);
-		CEventKeyManager::BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FREEZE_GUN);
+		pBase->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FIRE);
+		pBase->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FREEZE_GUN);
 
 		// check is key clicked
-		if(CEventKeyManager::IsKeyClicked(pBase->GetClientID(), KEY_EVENT_FIRE))
+		if(pBase->Server()->Input()->IsKeyClicked(pBase->GetClientID(), KEY_EVENT_FIRE))
 		{
 			// initialize variables
 			vec2 Direction = normalize(vec2(pBase->GetCharacter()->m_Core.m_Input.m_TargetX, pBase->GetCharacter()->m_Core.m_Input.m_TargetY));

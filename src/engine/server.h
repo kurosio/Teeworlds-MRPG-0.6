@@ -3,6 +3,7 @@
 #ifndef ENGINE_SERVER_H
 #define ENGINE_SERVER_H
 
+#include <engine/input_keys.h>
 #include <engine/shared/world_detail.h>
 
 #define DC_SERVER_INFO 13872503
@@ -34,6 +35,7 @@ public:
 	virtual class IGameServer* GameServer(int WorldID = 0) const = 0;
 	virtual class IGameServer* GameServerPlayer(int ClientID) const = 0;
 	virtual class CLocalization* Localization() const = 0;
+	virtual class IInputKeys* Input() const = 0;
 
 	struct CClientInfo
 	{
@@ -183,10 +185,6 @@ public:
 
 		return SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
 	}
-
-	// input
-	virtual int64_t& GetClientInputFlags(int ClientID) = 0;
-	virtual int64_t& GetClientInputBlockedFlags(int ClientID) = 0;
 
 	// World Time
 	virtual int GetMinuteGameTime() const = 0;

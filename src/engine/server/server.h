@@ -34,10 +34,11 @@ class CServer : public IServer
 public:
 	class IGameServer* GameServer(int WorldID = 0) const override;
 	class IGameServer* GameServerPlayer(int ClientID) const override;
-	class CLocalization* Localization() const override { return m_pLocalization; };
 	class IConsole* Console() const { return m_pConsole; }
 	class IStorageEngine* Storage() const { return m_pStorage; }
 	class CMultiWorlds* MultiWorlds() const { return m_pMultiWorlds; }
+	class CLocalization* Localization() const override { return m_pLocalization; }
+	class IInputKeys* Input() const override;
 
 	enum
 	{
@@ -87,8 +88,6 @@ public:
 
 		char m_aClan[MAX_CLAN_LENGTH];
 		char m_aLanguage[MAX_LANGUAGE_LENGTH];
-		int64_t m_aActionEventKeys;
-		int64_t m_aBlockedInputKeys;
 
 		int m_Version;
 		int m_Country;
@@ -123,6 +122,7 @@ public:
 	CClient m_aClients[MAX_CLIENTS];
 	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS] {};
 
+	class CInputKeys* m_pInputKeys;
 	CLocalization* m_pLocalization;
 	CSnapshotDelta m_SnapshotDelta;
 	CSnapshotBuilder m_SnapshotBuilder;
@@ -171,9 +171,6 @@ public:
 	void SetClientClan(int ClientID, char const* pClan) override;
 	void SetClientCountry(int ClientID, int Country) override;
 	void SetClientScore(int ClientID, int Score) override;
-
-	int64_t& GetClientInputFlags(int ClientID) override;
-	int64_t& GetClientInputBlockedFlags(int ClientID) override;
 
 	bool IsClientChangesWorld(int ClientID) override;
 	void ChangeWorld(int ClientID, int NewWorldID) override;

@@ -1,6 +1,5 @@
 ﻿#include "motd_menu.h"
 
-#include <game/server/event_key_manager.h>
 #include <game/server/gamecontext.h>
 
 void MotdMenu::AddImpl(int extra, std::string_view command, const std::string& description)
@@ -72,17 +71,17 @@ void MotdMenu::Handle()
 	if((targetX > -196 && targetX < 196 && targetY >= startWorkedAreaY && targetY < endWorkedAreaY))
 	{
 		// handle scrolling with key events
-		if(CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_NEXT_WEAPON))
+		if(pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_NEXT_WEAPON))
 		{
 			m_ScrollManager.ScrollUp();
 			m_ResendMotdTick = pServer->Tick() + 5;
 		}
-		else if(CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_PREV_WEAPON))
+		else if(pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_PREV_WEAPON))
 		{
 			m_ScrollManager.ScrollDown();
 			m_ResendMotdTick = pServer->Tick() + 5;
 		}
-		CEventKeyManager::BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE | BLOCK_INPUT_FREEZE_HAMMER);
+		pServer->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE | BLOCK_INPUT_FREEZE_HAMMER);
 	}
 
 	// add menu items to buffer
@@ -105,7 +104,7 @@ void MotdMenu::Handle()
 		const bool isSelected = (targetX > -196 && targetX < 196 && targetY >= checkYStart && targetY < checkYEnd);
 
 		// is hovered and clicked
-		if(isSelected && CEventKeyManager::IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
+		if(isSelected && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
 		{
 			const auto& extra = m_Points[i].m_Extra;
 

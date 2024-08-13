@@ -35,6 +35,7 @@
 #include "discord/discord_main.h"
 #endif
 
+#include "input_keys.h"
 #include "multi_worlds.h"
 #include "server_ban.h"
 #include "server_logger.h"
@@ -54,8 +55,6 @@ void CServer::CClient::Reset()
 	m_SnapRate = SNAPRATE_INIT;
 	m_Score = -1;
 	m_NextMapChunk = 0;
-	m_aBlockedInputKeys = 0;
-	m_aActionEventKeys = 0;
 }
 
 CServer::CServer()
@@ -110,6 +109,10 @@ IGameServer* CServer::GameServerPlayer(int ClientID) const
 	return GameServer(GetClientWorldID(ClientID));
 }
 
+IInputKeys* CServer::Input() const
+{
+	return m_pInputKeys;
+}
 
 // get the world minute
 int CServer::GetMinuteGameTime() const
@@ -450,16 +453,6 @@ bool CServer::IsBanned(int ClientID)
 bool CServer::IsEmpty(int ClientID) const
 {
 	return m_aClients[ClientID].m_State == CClient::STATE_EMPTY;
-}
-
-int64_t& CServer::GetClientInputFlags(int ClientID)
-{
-	return m_aClients[ClientID].m_aActionEventKeys;
-}
-
-int64_t& CServer::GetClientInputBlockedFlags(int ClientID)
-{
-	return m_aClients[ClientID].m_aBlockedInputKeys;
 }
 
 int CServer::GetClientInfo(int ClientID, CClientInfo* pInfo) const
@@ -1274,7 +1267,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 			{
 				const int WorldID = m_aClients[ClientID].m_WorldID;
 				GameServer(WorldID)->OnClientDirectInput(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
-				m_aClients[ClientID].m_aBlockedInputKeys = 0;
+				m_pInputKeys->ResetClientBlockKeys(ClientID);
 			}
 		}
 		else if(MsgID == NETMSG_RCON_CMD)
@@ -1920,6 +1913,7 @@ int CServer::Run(ILogger* pLogger)
 	m_pRegister = CreateRegister(&g_Config, m_pConsole, pEngine, this->m_NetServer.Address().port, m_NetServer.GetGlobalToken());
 	m_NetServer.SetCallbacks(NewClientCallback, NewClientNoAuthCallback, ClientRejoinCallback, DelClientCallback, this);
 	m_Econ.Init(&g_Config, Console(), m_pServerBan);
+	m_pInputKeys = CreateInputKeys();
 
 	// initialize geolite2pp
 	CGeoIP::init("server_data/Country.mmdb");
@@ -2146,16 +2140,8 @@ int CServer::Run(ILogger* pLogger)
 							DoSnapshot(i);
 					}
 
-					// Loop through all players
-					for(int c = 0; c < MAX_PLAYERS; c++)
-					{
-						// Check if the player is in the game and has any action keys
-						if(m_aClients[c].m_State == CClient::STATE_INGAME)
-						{
-							// Clear the action keys for the player
-							m_aClients[c].m_aActionEventKeys = 0;
-						}
-					}
+					// reset all input client keys
+					m_pInputKeys->ResetInputKeys();
 
 					// update client RCON commands
 					UpdateClientRconCommands();
@@ -2207,6 +2193,7 @@ int CServer::Run(ILogger* pLogger)
 			Kick(i, "Server shutdown");
 	}
 
+	delete m_pInputKeys;
 	m_Econ.Shutdown();
 	m_NetServer.Close();
 	m_pRegister->OnShutdown();

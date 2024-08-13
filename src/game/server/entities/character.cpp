@@ -4,7 +4,6 @@
 #include <generated/server_data.h>
 
 #include <game/mapitems.h>
-#include <game/server/event_key_manager.h>
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
@@ -566,27 +565,27 @@ void CCharacter::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 
 	if(m_NumInputs > 1 && m_pPlayer->GetTeam() != TEAM_SPECTATORS)
 	{
-		if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_HAMMER))
+		if(Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_HAMMER))
 			m_Core.m_ActiveWeapon = WEAPON_HAMMER;
-		else if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_GUN))
+		else if(Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_GUN))
 			m_Core.m_ActiveWeapon = WEAPON_GUN;
-		else if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_SHOTGUN))
+		else if(Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_SHOTGUN))
 			m_Core.m_ActiveWeapon = WEAPON_SHOTGUN;
-		else if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_GRENADE))
+		else if(Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_GRENADE))
 			m_Core.m_ActiveWeapon = WEAPON_GRENADE;
-		else if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_LASER))
+		else if(Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_LASER))
 			m_Core.m_ActiveWeapon = WEAPON_LASER;
-		else if(!CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_WEAPON))
+		else if(!Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_WEAPON))
 			HandleWeaponSwitch();
 
 		// Check if the input group for firing weapon is not blocked for the player
-		if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FIRE))
+		if(Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FIRE))
 			m_ReloadTimer = 10;
 
 		FireWeapon();
 	}
 
-	if(CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_HOOK))
+	if(Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_HOOK))
 	{
 		CTuningParams* pTuningParams = &m_pPlayer->m_NextTuningParams;
 		pTuningParams->m_HookLength = 0.0f;
@@ -988,8 +987,8 @@ void CCharacter::Snap(int SnappingClient)
 		return;
 
 	// Check if the default input is blocked for the player
-	const bool BlockingInputChangeWeapon = CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_WEAPON);
-	const bool BlockingInputFireWeapon = CEventKeyManager::IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FIRE);
+	const bool BlockingInputChangeWeapon = Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FREEZE_WEAPON);
+	const bool BlockingInputFireWeapon = Server()->Input()->IsBlockedInputGroup(m_pPlayer->GetCID(), BLOCK_INPUT_FIRE);
 
 	// write down the m_Core
 	if(!m_ReckoningTick || GS()->m_World.m_Paused)

@@ -3,7 +3,6 @@
 #include "game/server/core/components/Bots/BotData.h"
 #include "move_to.h"
 
-#include <game/server/event_key_manager.h>
 #include <game/server/gamecontext.h>
 
 #include "game/server/core/components/quests/quest_manager.h"
@@ -74,7 +73,7 @@ bool CEntityQuestAction::PressedFire() const
 	if(!m_pPlayer || !m_pPlayer->GetCharacter())
 		return false;
 
-	return CEventKeyManager::IsKeyClicked(m_pPlayer->GetCID(), KEY_EVENT_FIRE_HAMMER);
+	return Server()->Input()->IsKeyClicked(m_pPlayer->GetCID(), KEY_EVENT_FIRE_HAMMER);
 }
 
 void CEntityQuestAction::Handler(const std::function<bool()>& pCallbackSuccesful)
