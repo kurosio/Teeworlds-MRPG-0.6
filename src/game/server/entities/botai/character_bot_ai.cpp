@@ -332,7 +332,7 @@ void CCharacterBotAI::Tick()
 	ResetSafe();
 
 	// Check if the player's current position is within a safe area or if the player is of type EIDOLON
-	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA) || m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
+	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE) || m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
 	{
 		// Set the safe state of the player
 		SetSafe();

@@ -633,7 +633,7 @@ void CCharacter::Tick()
 
 	// check safe area
 	ResetSafe();
-	if(m_SafeAreaForTick || GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE_AREA))
+	if(m_SafeAreaForTick || GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE))
 		SetSafe();
 
 	// check allowed world for player
@@ -1384,7 +1384,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		return false;
 
 	// disable damage on safe area
-	if(GS()->Collision()->GetTile(GetPos()) & CCollision::COLFLAG_SAFE_AREA || GS()->Collision()->GetTile(pFrom->GetCharacter()->GetPos()) & CCollision::COLFLAG_SAFE_AREA)
+	if(GS()->Collision()->GetTile(GetPos()) & CCollision::COLFLAG_SAFE || GS()->Collision()->GetTile(pFrom->GetCharacter()->GetPos()) & CCollision::COLFLAG_SAFE)
 		return false;
 
 	// players anti pvp

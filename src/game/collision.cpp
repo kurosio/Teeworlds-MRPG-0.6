@@ -84,18 +84,18 @@ void CCollision::InitTiles(CTile* pTiles) const
 			case TILE_CRAFT_ZONE:
 			case TILE_AETHER_TELEPORT:
 			case TILE_GUILD_CHAIR:
-			case TILE_CHAIR:
 			case TILE_INFO_BONUSES:
 			case TILE_INFO_WANTED:
 			case TILE_ANTI_PVP:
 			case TILE_WORLD_SWAP:
-				pTiles[i].m_Index = COLFLAG_SAFE_AREA;
+				pTiles[i].m_Index = COLFLAG_SAFE;
 				pTiles[i].m_Reserved = static_cast<char>(Index);
 				break;
 			case TILE_INVISIBLE_WALL:
 				pTiles[i].m_Index = COLFLAG_DISALLOW_MOVE;
 				pTiles[i].m_Reserved = static_cast<char>(Index);
 				break;
+			case TILE_CHAIR:
 			default:
 				pTiles[i].m_Index = 0;
 				pTiles[i].m_Reserved = static_cast<char>(Index);
