@@ -57,14 +57,14 @@ public:
 	void OnTick();
 	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID);
 	void OnPlayerLogin(CPlayer* pPlayer);
+	bool OnCharacterTile(CCharacter* pChr);
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist);
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist);
-	bool OnCharacterTile(CCharacter* pChr);
 	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason);
 	bool OnPlayerMotdCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue);
-	void ResetClientData(int ClientID);
-	void HandleTimePeriod() const;
-	void HandlePlayerTimePeriod(CPlayer* pPlayer);
+	void OnResetClientData(int ClientID);
+	void OnHandleTimePeriod() const;
+	void OnHandlePlayerTimePeriod(CPlayer* pPlayer);
 
 	static void AsyncClientEnterMsgInfo(std::string ClientName, int ClientID);
 	void SyncLocalizations() const;

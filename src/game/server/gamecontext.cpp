@@ -12,7 +12,7 @@
 #include "entity_manager.h"
 #include "core/command_processor.h"
 #include "core/rcon_processor.h"
-#include "core/tools/pathfinder.h"
+#include "core/tools/path_finder.h"
 #include "core/entities/items/drop_items.h"
 
 #include "core/components/Accounts/AccountManager.h"
@@ -556,6 +556,8 @@ void CGS::HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const
 	}
 }
 
+std::future<PathResult> futureResult;
+
 void CGS::OnInit(int WorldID)
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -632,6 +634,8 @@ void CGS::OnDaytypeChange(int NewDaytype)
 	}
 }
 
+
+std::future<PathResult> futureTest;
 void CGS::OnTick()
 {
 	m_World.m_Core.m_Tuning = m_Tuning;
@@ -662,7 +666,7 @@ void CGS::OnTickGlobal()
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			if(CPlayer* pPlayer = GetPlayer(i, true))
-				Core()->HandlePlayerTimePeriod(pPlayer);
+				Core()->OnHandlePlayerTimePeriod(pPlayer);
 		}
 	}
 
@@ -1064,7 +1068,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
 
-	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangesWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
+	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
 	{
 		Chat(-1, "{} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
@@ -1167,7 +1171,7 @@ const char* CGS::NetVersion() const { return GAME_NETVERSION; }
 
 void CGS::OnClearClientData(int ClientID)
 {
-	Core()->ResetClientData(ClientID);
+	Core()->OnResetClientData(ClientID);
 	VoteWrapper::Data()[ClientID].clear();
 	ms_aEffects[ClientID].clear();
 

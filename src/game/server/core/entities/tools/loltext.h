@@ -1,5 +1,6 @@
 #ifndef GAME_SERVER_ENTITIES_LOLTEXT_H
 #define GAME_SERVER_ENTITIES_LOLTEXT_H
+
 #include <game/server/entity.h>
 
 class CLolPlasma : public CEntity

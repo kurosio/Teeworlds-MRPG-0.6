@@ -12,8 +12,7 @@
 #include <game/server/core/components/quests/quest_manager.h>
 
 #include <game/server/core/entities/eidolons/base.h>
-#include <game/server/core/entities/tools/multiple_orbite.h>
-#include <game/server/core/tools/pathfinder.h>
+#include <game/server/core/tools/path_finder.h>
 
 #include "nurse_heart.h"
 
@@ -825,28 +824,26 @@ void CCharacterBotAI::EngineQuestMob()
 
 void CCharacterBotAI::Move()
 {
-	// Try to get the prepared data for the path finder
-	if(GS()->PathFinder()->Handle()->TryGetPreparedData(m_pBotPlayer->PathFinderPrepared(), &m_pBotPlayer->m_TargetPos, &m_pBotPlayer->m_OldTargetPos))
-		m_aPath = m_pBotPlayer->PathFinderPrepared()->Get().m_Points;
+	m_pBotPlayer->m_PathHandle.TryGetPath();
+	if(m_pBotPlayer->m_PathHandle.vPath.empty())
+		return;
 
 	// Update the aim of the bot player by calculating the direction vector from the current position to the target position
 	SetAim(m_pBotPlayer->m_TargetPos - m_Pos);
 
 	// Initialize variables
-	int Index = -1; // Index of the last valid waypoint
-	int ActiveWayPoints = 4; // Number of active waypoints
-	vec2 WayDir = m_pBotPlayer->m_TargetPos; // Set WayDir to the target position of the bot player
-	for(int i = 0; i < (int)m_aPath.size() && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_aPath[i], m_Pos, nullptr, nullptr); i++)
+	int Index = -1;
+	int ActiveWayPoints = 4;
+	vec2 WayDir = m_pBotPlayer->m_TargetPos;
+	for(int i = 0; i < (int)m_pBotPlayer->m_PathHandle.vPath.size() && i < 30 && !GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->m_PathHandle.vPath[i], m_Pos, nullptr, nullptr); i++)
 	{
-		Index = i; // Update the Index variable with the current i value
-		ActiveWayPoints = i; // Update the ActiveWayPoints variable with the current i value
+		Index = i;
+		ActiveWayPoints = i;
 	}
 
 	// If the given index is valid
 	if(Index > -1)
-	{
-		WayDir = m_aPath[Index];
-	}
+		WayDir = m_pBotPlayer->m_PathHandle.vPath[Index];
 
 	// Accuracy
 	WayDir = normalize(WayDir - m_Core.m_Pos);
@@ -974,6 +971,7 @@ void CCharacterBotAI::Move()
 		m_MoveTick = Server()->Tick();
 	}
 }
+
 
 
 void CCharacterBotAI::Fire()

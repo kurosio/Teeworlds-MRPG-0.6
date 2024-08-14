@@ -9,9 +9,6 @@ class CCommandProcessor
 	class CGS* GS() const { return m_pGS; }
 	CCommandManager m_CommandManager;
 
-	/************************************************************************/
-	/*  Commands                                                            */
-	/************************************************************************/
 	static void ConChatLogin(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatRegister(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatGuild(IConsole::IResult* pResult, void* pUserData);
@@ -30,9 +27,6 @@ class CCommandProcessor
 	static void ConChatDiscordConnect(IConsole::IResult* pResult, void* pUserData);
 #endif
 
-	/************************************************************************/
-	/*  Command system                                                      */
-	/************************************************************************/
 public:
 	CCommandProcessor(CGS* pGS);
 	~CCommandProcessor();

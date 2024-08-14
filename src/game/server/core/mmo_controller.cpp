@@ -114,7 +114,7 @@ void CMmoController::OnTick()
 
 	// Check if the current tick is a multiple of the time period check time
 	if(GS()->Server()->Tick() % ((GS()->Server()->TickSpeed() * 60) * g_Config.m_SvTimePeriodCheckTime) == 0)
-		HandleTimePeriod();
+		OnHandleTimePeriod();
 }
 
 bool CMmoController::OnClientMessage(int MsgID, void* pRawMsg, int ClientID)
@@ -380,13 +380,13 @@ bool CMmoController::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, int
 	return false;
 }
 
-void CMmoController::ResetClientData(int ClientID)
+void CMmoController::OnResetClientData(int ClientID)
 {
 	for(auto& pComponent : m_System.m_vComponents)
 		pComponent->OnClientReset(ClientID);
 }
 
-void CMmoController::HandleTimePeriod() const
+void CMmoController::OnHandleTimePeriod() const
 {
 	// Declare a current timestamp, byte array to store raw data
 	ByteArray RawData {};
@@ -453,7 +453,7 @@ void CMmoController::HandleTimePeriod() const
 	}
 }
 
-void CMmoController::HandlePlayerTimePeriod(CPlayer* pPlayer)
+void CMmoController::OnHandlePlayerTimePeriod(CPlayer* pPlayer)
 {
 	// Set a flag indicating whether time periods have been updated
 	std::vector<int> aPeriodsUpdated {};

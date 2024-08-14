@@ -15,8 +15,6 @@
 #define DC_DISCORD_INFO 431050
 #define DC_INVISIBLE_GRAY 3553599
 
-#define CLIENT_LANG(clientID) Instance::Server()->GetClientLanguage(clientID)
-
 // When recording a demo on the server, the ClientID -1 is used
 enum
 {
@@ -31,7 +29,6 @@ protected:
 	int m_TickSpeed;
 
 public:
-	// static std::mutex m_aMutexPlayerDataSafe[MAX_CLIENTS];
 	virtual class IGameServer* GameServer(int WorldID = 0) const = 0;
 	virtual class IGameServer* GameServerPlayer(int ClientID) const = 0;
 	virtual class CLocalization* Localization() const = 0;
@@ -52,19 +49,16 @@ public:
 
 	virtual const char *ClientName(int ClientID) const = 0;
 	virtual const char *ClientClan(int ClientID) const = 0;
+	virtual const char* ClientContinent(int ClientID) const = 0;
+	virtual const char* ClientCountryIsoCode(int ClientID) const = 0;
 	virtual int ClientCountry(int ClientID) const = 0;
 	virtual bool ClientIngame(int ClientID) const = 0;
 	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) const = 0;
 	virtual int GetClientLatency(int ClientID) const = 0;
 	virtual void SetClientDDNetVersion(int ClientID, int DDNetVersion) = 0;
 	virtual void GetClientAddr(int ClientID, char* pAddrStr, int Size) const = 0;
-
-	virtual const char* GetClientContinent(int ClientID) const = 0;
-	virtual const char* GetClientCountryIsoCode(int ClientID) const = 0;
-
 	virtual void SetStateClientMRPG(int ClientID, bool State) = 0;
 	virtual bool GetStateClientMRPG(int ClientID) const = 0;
-
 	virtual int GetClientVersion(int ClientID) const = 0;
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1) = 0;
 
@@ -200,7 +194,7 @@ public:
 	virtual void SetClientCountry(int ClientID, int Country) = 0;
 	virtual void SetClientScore(int ClientID, int Score) = 0;
 
-	virtual bool IsClientChangesWorld(int ClientID) = 0;
+	virtual bool IsClientChangingWorld(int ClientID) = 0;
 	virtual void ChangeWorld(int ClientID, int NewWorldID) = 0;
 	virtual int GetClientWorldID(int ClientID) const = 0;
 	virtual const char* GetWorldName(int WorldID) = 0;
@@ -289,19 +283,10 @@ public:
 
 namespace Instance
 {
-	// Declare a static member variable m_pServer as  pointer to IServer class
 	struct Data { inline static class IServer* g_pServer; };
-
-	// Define a static member function Server that returns a pointer to IServer object
 	static IServer* Server() { return Data::g_pServer; }
-
-	// Define a static member function GameServerPlayer that returns a pointer to IGameServer object
 	static IGameServer* GameServerPlayer(int ClientID = -1) { return Data::g_pServer->GameServerPlayer(ClientID); }
-
-	// Define a static member function GameServerPlayer that returns a pointer to IGameServer object
 	static IGameServer* GameServer(int WorldID = MAIN_WORLD_ID) { return Data::g_pServer->GameServer(WorldID); }
-
-	// Define a static member function Localization that returns a pointer to Localize text
 	static const char* Localize(int ClientID, const char* pText) { return Data::g_pServer->Localize(ClientID, pText); }
 };
 

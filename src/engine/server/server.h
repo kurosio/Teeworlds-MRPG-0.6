@@ -172,12 +172,12 @@ public:
 	void SetClientCountry(int ClientID, int Country) override;
 	void SetClientScore(int ClientID, int Score) override;
 
-	bool IsClientChangesWorld(int ClientID) override;
+	bool IsClientChangingWorld(int ClientID) override;
 	void ChangeWorld(int ClientID, int NewWorldID) override;
 	int GetClientWorldID(int ClientID) const override;
 
-	const char* GetClientContinent(int ClientID) const override;
-	const char* GetClientCountryIsoCode(int ClientID) const override;
+	const char* ClientContinent(int ClientID) const override;
+	const char* ClientCountryIsoCode(int ClientID) const override;
 
 	const char* Localize(int ClientID, const char* pText) override;
 	void SetClientLanguage(int ClientID, const char* pLanguage) override;

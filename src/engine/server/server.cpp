@@ -220,7 +220,7 @@ void CServer::SetClientLanguage(int ClientID, const char* pLanguage)
 	str_copy(m_aClients[ClientID].m_aLanguage, pLanguage, sizeof(m_aClients[ClientID].m_aLanguage));
 }
 
-bool CServer::IsClientChangesWorld(int ClientID)
+bool CServer::IsClientChangingWorld(int ClientID)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return false;
@@ -290,7 +290,7 @@ int CServer::GetClientWorldID(int ClientID) const
 	return m_aClients[ClientID].m_WorldID;
 }
 
-const char* CServer::GetClientContinent(int ClientID) const
+const char* CServer::ClientContinent(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY || m_aClients[ClientID].m_aContinent[0] == '\0')
 		return "Unknown";
@@ -298,7 +298,7 @@ const char* CServer::GetClientContinent(int ClientID) const
 	return m_aClients[ClientID].m_aContinent;
 }
 
-const char* CServer::GetClientCountryIsoCode(int ClientID) const
+const char* CServer::ClientCountryIsoCode(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY || m_aClients[ClientID].m_aCountryIsoCode[0] == '\0')
 		return "UN";
@@ -875,7 +875,7 @@ int CServer::DelClientCallback(int ClientID, const char* pReason, void* pUser)
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
 	// notify the mod about the drop
-	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY || pThis->IsClientChangesWorld(ClientID))
+	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY || pThis->IsClientChangingWorld(ClientID))
 	{
 		pThis->m_aClients[ClientID].m_Quitting = true;
 

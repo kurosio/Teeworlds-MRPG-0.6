@@ -4,7 +4,7 @@
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/components/worlds/world_manager.h>
-#include <game/server/core/tools/pathfinder.h>
+#include <game/server/core/tools/path_finder.h>
 
 CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_NAVIGATOR, FromPos)
@@ -16,47 +16,33 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pPar
 	m_pParent = pParent;
 	m_Projectile = Projectile;
 	m_StartByCreating = StartByCreating;
-	m_pPathPrepare = new CPathFinderPrepare;
 	GameWorld()->InsertEntity(this);
-}
-
-CEntityPathNavigator::~CEntityPathNavigator()
-{
-	delete m_pPathPrepare;
-}
-
-bool CEntityPathNavigator::PreparedPathData()
-{
-	// Check if enough time has passed since the last idle tick and if the distance between the parent's position and the target position is greater than 240 units
-	if(m_pPathPrepare->IsRequiredPrepare() && m_TickLastIdle < Server()->Tick() && distance(m_pParent->GetPos(), m_PosTo) > 240.f)
-	{
-		// Prepare the data for path finding using the default method in the path finder handle
-		GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathPrepare, m_pParent->GetPos(), m_PosTo);
-		m_StepPos = 0;
-	}
-
-	// Check if the path finder has prepared data available
-	if(!GS()->PathFinder()->Handle()->TryGetPreparedData(m_pPathPrepare))
-		return false;
-
-	return true;
 }
 
 void CEntityPathNavigator::Tick()
 {
-	// Check if the entity's parent is exist
+	// destroy the entity if its parent no longer exists
 	if(!GameWorld()->ExistEntity(m_pParent))
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
-	// Check if the countdown has reached its limit and if the path data is prepared
-	if(m_TickCountDown < Server()->Tick() && PreparedPathData())
+	// if no path is available, request a new path
+	if(m_PathHandle.vPath.empty())
 	{
-		// Move the object
-		Move();
+		if(m_TickLastIdle < Server()->Tick() && distance(m_pParent->GetPos(), m_PosTo) > 240.f)
+		{
+			GS()->PathFinder()->RequestPath(m_PathHandle, m_pParent->GetPos(), m_PosTo);
+			m_StepPos = 0;
+		}
+		m_PathHandle.TryGetPath();
+		return;
 	}
+
+	// perform movement if the countdown has expired
+	if(m_TickCountDown < Server()->Tick())
+		Move();
 }
 
 void CEntityPathNavigator::TickDeferred()
@@ -77,17 +63,17 @@ void CEntityPathNavigator::Move()
 	{
 		if(is_negative_vec(m_Pos))
 		{
-			m_Pos = m_pPathPrepare->Get().m_Points[m_StepPos];
+			m_Pos = m_PathHandle.vPath[m_StepPos];
 			m_StepPos++;
 		}
 
 		// smooth movement
-		m_Pos += normalize(m_pPathPrepare->Get().m_Points[m_StepPos] - m_Pos) * 4.f;
+		m_Pos += normalize(m_PathHandle.vPath[m_StepPos] - m_Pos) * 4.f;
 
 		// update timer by steps
 		if(Server()->Tick() % (Server()->TickSpeed() / 8) == 0)
 		{
-			m_Pos = m_pPathPrepare->Get().m_Points[m_StepPos];
+			m_Pos = m_PathHandle.vPath[m_StepPos];
 			m_StepPos++;
 		}
 
@@ -97,27 +83,26 @@ void CEntityPathNavigator::Move()
 	// update timer by steps
 	if(Server()->Tick() % (Server()->TickSpeed() / 10) == 0)
 	{
-		m_Pos = m_pPathPrepare->Get().m_Points[m_StepPos];
+		m_Pos = m_PathHandle.vPath[m_StepPos];
 
-		vec2 Corrector(32.f, 64.f);
+		// create damage effect
+		constexpr vec2 Corrector(32.f, 64.f);
 		GS()->CreateDamage(m_Pos - Corrector, -1, 1, false, 0.f, m_Mask);
 		m_StepPos++;
 
-		// Check if the distance between the parent's position and the object's position is greater than 800.0f
-		// or if the step position is greater than or equal to the number of points in the path data
-		if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= (int)m_pPathPrepare->Get().m_Points.size())
+		// check if the entity should stop moving
+		if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= (int)m_PathHandle.vPath.size())
 		{
-			// Set the countdown to the current tick plus 2 seconds
 			m_TickCountDown = Server()->Tick() + (Server()->TickSpeed() * 2);
-			m_pPathPrepare->Get().Clear();
 			m_StartByCreating = false;
+			m_PathHandle.vPath.clear();
 		}
 	}
 }
 
 void CEntityPathNavigator::Snap(int SnappingClient)
 {
-	if(!m_Projectile || m_pPathPrepare->Get().Empty() || !CmaskIsSet(m_Mask, SnappingClient) || NetworkClipped(SnappingClient))
+	if(!m_Projectile || m_PathHandle.vPath.empty() || !CmaskIsSet(m_Mask, SnappingClient) || NetworkClipped(SnappingClient))
 		return;
 
 	CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));

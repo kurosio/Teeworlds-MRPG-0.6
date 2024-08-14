@@ -7,7 +7,7 @@
 #include "worldmodes/dungeon.h"
 
 #include "core/components/Bots/BotManager.h"
-#include "core/tools/pathfinder.h"
+#include "core/tools/path_finder.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -18,7 +18,6 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 	m_DungeonAllowedSpawn = false;
 	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
 	m_Items.reserve(CItemDescription::Data().size());
-	m_pPathFinderData = new CPathFinderPrepare;
 	PrepareRespawnTick();
 }
 
@@ -26,7 +25,6 @@ CPlayerBot::~CPlayerBot()
 {
 	// free data
 	std::memset(DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive, 0, MAX_PLAYERS * sizeof(bool));
-	delete m_pPathFinderData;
 }
 
 // This method is used to initialize the quest bot mob info for the player bot
@@ -583,61 +581,45 @@ void CPlayerBot::HandlePathFinder()
 	if(!IsActive() || !m_pCharacter || !m_pCharacter->IsAlive())
 		return;
 
-	// Check if the bot type is TYPE_BOT_MOB
 	if(GetBotType() == TYPE_BOT_MOB)
 	{
-		// Check if the target position is not (0, 0) and if the current server tick modulo (3 * m_ClientID) is 0
 		if(m_TargetPos != vec2(0, 0))
 		{
-			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
-		// If the target position is (0, 0) or the distance between the view position and the target position is less than 128.0f
 		else if(m_TargetPos == vec2(0, 0) || distance(m_pCharacter->m_Core.m_Pos, m_TargetPos) < 128.0f)
 		{
-			// Set the last position tick to the current server tick plus a random time interval
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + rand() % 4);
-			// Prepare the path finder data for random path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::RANDOM>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestRandomPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, 800.f);
+			m_TargetPos = vec2(0, 0);
 		}
 	}
 
 	// Check if the bot type is TYPE_BOT_EIDOLON
 	else if(GetBotType() == TYPE_BOT_EIDOLON)
 	{
-		// Get the owner ID of the bot
 		int OwnerID = m_MobID;
-		// Check if the owner player exists and if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
 		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0))
 		{
-			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 
 	// Check if the bot type is TYPE_BOT_QUEST_MOB
 	else if(GetBotType() == TYPE_BOT_QUEST_MOB)
 	{
-		// Check if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
 		if(m_TargetPos != vec2(0, 0))
 		{
-			m_pPathFinderData->Get().Clear();
-
-			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 
 	// Check if the bot type is TYPE_BOT_NPC and the function is FUNCTION_NPC_GUARDIAN
 	else if(GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
 	{
-		// Check if the target position is not (0, 0) and if the current server tick modulo (Server()->TickSpeed() / 3) is 0
 		if(m_TargetPos != vec2(0, 0))
 		{
-			m_pPathFinderData->Get().Clear();
-
-			// Prepare the path finder data for default path finding
-			GS()->PathFinder()->Handle()->Prepare<CPathFinderPrepare::DEFAULT>(m_pPathFinderData, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, m_TargetPos);
 		}
 	}
 }

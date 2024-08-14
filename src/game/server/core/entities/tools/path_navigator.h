@@ -5,11 +5,9 @@
 
 #include <game/server/entity.h>
 
-class CPathFinderPrepare;
-
 class CEntityPathNavigator : public CEntity
 {
-	CPathFinderPrepare* m_pPathPrepare {};
+	PathRequestHandle m_PathHandle{};
 	bool m_StartByCreating{};
 	int m_StepPos {};
 	CEntity* m_pParent {};
@@ -21,9 +19,6 @@ class CEntityPathNavigator : public CEntity
 
 public:
 	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask = -1);
-	~CEntityPathNavigator();
-
-	bool PreparedPathData();
 
 	ska::unordered_map<int, vec2> getFinishedContainer(ska::unordered_map<int, vec2>& pathContainer);
 

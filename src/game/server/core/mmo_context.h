@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_CORE_MMO_CONTEXT_H
 #define GAME_SERVER_CORE_MMO_CONTEXT_H
 
+#include "tools/path_finder_result.h"
+
 // skin data
 struct CTeeInfo
 {

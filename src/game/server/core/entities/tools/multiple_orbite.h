@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_ENTITIES_SNAP_FULL_H
 #define GAME_SERVER_ENTITIES_SNAP_FULL_H
+
 #include <game/server/entity.h>
 
 class CMultipleOrbite : public CEntity

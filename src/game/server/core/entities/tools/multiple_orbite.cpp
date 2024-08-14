@@ -61,7 +61,6 @@ void CMultipleOrbite::Tick()
 	m_Pos = m_pParent->GetPos();
 }
 
-// optimize it
 vec2 CMultipleOrbite::UtilityOrbitePos(int PosID) const
 {
 	float AngleStep = 2.0f * pi / (float)m_Items.size();

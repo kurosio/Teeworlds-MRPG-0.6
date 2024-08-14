@@ -169,7 +169,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	Core()->OnPlayerLogin(pPlayer);
 	const int Rank = GetRank(pPlayer->Account()->GetID());
-	GS()->Chat(-1, "{} logged to account. Rank #{}[{}]", Server()->ClientName(ClientID), Rank, Server()->GetClientCountryIsoCode(ClientID));
+	GS()->Chat(-1, "{} logged to account. Rank #{}[{}]", Server()->ClientName(ClientID), Rank, Server()->ClientCountryIsoCode(ClientID));
 #ifdef CONF_DISCORD
 	char aLoginBuf[64];
 	str_format(aLoginBuf, sizeof(aLoginBuf), "%s logged in AccountManager ID %d", Server()->ClientName(ClientID), pPlayer->AccountManager()->GetID());
@@ -194,7 +194,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 				{ itShowQuestNavigator, 1 }
 			});
 	}
-	Core()->HandlePlayerTimePeriod(pPlayer);
+	Core()->OnHandlePlayerTimePeriod(pPlayer);
 
 	// Change player's world ID to the latest correct world ID
 	const int LatestCorrectWorldID = GetLastVisitedWorldID(pPlayer);

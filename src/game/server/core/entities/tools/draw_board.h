@@ -1,5 +1,6 @@
 #ifndef GAME_SERVER_ENTITIES_DRAW_BOARD_H
 #define GAME_SERVER_ENTITIES_DRAW_BOARD_H
+
 #include <game/server/entity.h>
 
 enum CBrushFlags

@@ -32,6 +32,8 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 
 CCharacter::~CCharacter()
 {
+	if(m_pMultipleOrbite)
+		delete m_pMultipleOrbite;
 	delete m_pTilesHandler;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
 }

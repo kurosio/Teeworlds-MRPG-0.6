@@ -31,12 +31,13 @@ class CGS : public IGameServer
 
 	class IServer* m_pServer;
 	class IConsole* m_pConsole;
-	class CPathFinder* m_pPathFinder;
 	class IStorageEngine* m_pStorage;
 	class CCommandProcessor* m_pCommandProcessor;
 	class CMmoController* m_pMmoController;
 	class CLayers* m_pLayers;
 	class CEntityManager* m_pEntityManager;
+	class CPathFinder* m_pPathFinder;
+
 
 	int m_MultiplierExp;
 	CPlayer* m_apPlayers[MAX_CLIENTS];
