@@ -7,6 +7,7 @@
 #include <engine/server.h>
 
 #include <engine/shared/econ.h>
+#include <engine/shared/http.h>
 #include <engine/shared/network.h>
 #include <engine/shared/protocol.h>
 #include <engine/shared/snapshot.h>
@@ -129,6 +130,7 @@ public:
 	CSnapIDPool m_IDPool;
 	CNetServer m_NetServer;
 	CEcon m_Econ;
+	CHttp m_Http;
 
 	int64_t m_GameStartTime {};
 	int m_RunServer;

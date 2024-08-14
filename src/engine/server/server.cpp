@@ -1419,7 +1419,7 @@ void CServer::PumpNetwork(bool PacketWaiting)
 
 	if(PacketWaiting)
 	{
-		// process packets
+		ResponseToken = NET_SECURITY_TOKEN_UNKNOWN;
 		while(m_NetServer.Recv(&Packet, &ResponseToken))
 		{
 			if(Packet.m_ClientID == -1)
@@ -1910,7 +1910,9 @@ int CServer::Run(ILogger* pLogger)
 
 	// initilize components
 	IEngine* pEngine = Kernel()->RequestInterface<IEngine>();
-	m_pRegister = CreateRegister(&g_Config, m_pConsole, pEngine, this->m_NetServer.Address().port, m_NetServer.GetGlobalToken());
+	IHttp* pHttp = Kernel()->RequestInterface<IHttp>();
+
+	m_pRegister = CreateRegister(&g_Config, m_pConsole, pEngine, pHttp, m_NetServer.Address().port, m_NetServer.GetGlobalToken());
 	m_NetServer.SetCallbacks(NewClientCallback, NewClientNoAuthCallback, ClientRejoinCallback, DelClientCallback, this);
 	m_Econ.Init(&g_Config, Console(), m_pServerBan);
 	m_pInputKeys = CreateInputKeys();
@@ -2164,7 +2166,7 @@ int CServer::Run(ILogger* pLogger)
 			}
 
 			// Check if the server is in a non-active state
-			NonActive = std::none_of(std::begin(m_aClients), std::end(m_aClients), [](const auto& client) { return client.m_State != CClient::STATE_EMPTY; });
+			NonActive = std::ranges::none_of(m_aClients, [](const auto& client) { return client.m_State != CClient::STATE_EMPTY; });
 
 			// Wait for incoming data if the server is in a non-active state
 			if(NonActive)
@@ -2432,8 +2434,8 @@ void CServer::RegisterCommands()
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pStorage = Kernel()->RequestInterface<IStorageEngine>();
 
-	// Initialize HTTP
-	HttpInit(m_pStorage);
+	m_Http.Init(std::chrono::seconds { 2 });
+	Kernel()->RegisterInterface(static_cast<IHttp*>(&m_Http), false);
 
 	// Register console commands
 	Console()->Register("kick", "i[id] ?r[reason]", CFGFLAG_SERVER, ConKick, this, "Kick player with specified id for any reason");

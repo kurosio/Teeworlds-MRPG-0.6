@@ -8,6 +8,16 @@
 
 const unsigned char SECURITY_TOKEN_MAGIC[4] = {'T', 'K', 'E', 'N'};
 
+SECURITY_TOKEN ToSecurityToken(const unsigned char* pData)
+{
+	return bytes_be_to_uint(pData);
+}
+
+void WriteSecurityToken(unsigned char* pData, SECURITY_TOKEN Token)
+{
+	uint_to_bytes_be(pData, Token);
+}
+
 void CNetRecvUnpacker::Clear()
 {
 	m_Valid = false;
@@ -22,15 +32,14 @@ void CNetRecvUnpacker::Start(const NETADDR *pAddr, CNetConnection *pConnection, 
 	m_Valid = true;
 }
 
-// TODO: rename this function
-int CNetRecvUnpacker::FetchChunk(CNetChunk *pChunk)
+int CNetRecvUnpacker::FetchChunk(CNetChunk* pChunk)
 {
 	CNetChunkHeader Header;
-	unsigned char *pEnd = m_Data.m_aChunkData + m_Data.m_DataSize;
+	unsigned char* pEnd = m_Data.m_aChunkData + m_Data.m_DataSize;
 
 	while(true)
 	{
-		unsigned char *pData = m_Data.m_aChunkData;
+		unsigned char* pData = m_Data.m_aChunkData;
 
 		// check for old data to unpack
 		if(!m_Valid || m_CurrentChunk >= m_Data.m_NumChunks)
@@ -93,7 +102,7 @@ int CNetRecvUnpacker::FetchChunk(CNetChunk *pChunk)
 
 static const unsigned char NET_HEADER_EXTENDED[] = {'x', 'e'};
 // packs the data tight and sends it
-void CNetBase::SendPacketConnless(NETSOCKET Socket, NETADDR *pAddr, const void *pData, int DataSize, bool Extended, unsigned char aExtra[4])
+void CNetBase::SendPacketConnless(NETSOCKET Socket, NETADDR* pAddr, const void* pData, int DataSize, bool Extended, unsigned char aExtra[4])
 {
 	unsigned char aBuffer[NET_MAX_PACKETSIZE];
 	const int DATA_OFFSET = 6;
@@ -111,7 +120,7 @@ void CNetBase::SendPacketConnless(NETSOCKET Socket, NETADDR *pAddr, const void *
 	net_udp_send(Socket, pAddr, aBuffer, DataSize + DATA_OFFSET);
 }
 
-void CNetBase::SendPacket(NETSOCKET Socket, NETADDR *pAddr, CNetPacketConstruct *pPacket, SECURITY_TOKEN SecurityToken, bool NoCompress)
+void CNetBase::SendPacket(NETSOCKET Socket, NETADDR* pAddr, CNetPacketConstruct* pPacket, SECURITY_TOKEN SecurityToken, bool NoCompress)
 {
 	unsigned char aBuffer[NET_MAX_PACKETSIZE];
 	int CompressedSize = -1;
@@ -132,7 +141,7 @@ void CNetBase::SendPacket(NETSOCKET Socket, NETADDR *pAddr, CNetPacketConstruct 
 	{
 		// append security token
 		// if SecurityToken is NET_SECURITY_TOKEN_UNKNOWN we will still append it hoping to negotiate it
-		mem_copy(&pPacket->m_aChunkData[pPacket->m_DataSize], &SecurityToken, sizeof(SecurityToken));
+		WriteSecurityToken(pPacket->m_aChunkData + pPacket->m_DataSize, SecurityToken);
 		pPacket->m_DataSize += sizeof(SecurityToken);
 	}
 
@@ -175,8 +184,7 @@ void CNetBase::SendPacket(NETSOCKET Socket, NETADDR *pAddr, CNetPacketConstruct 
 	}
 }
 
-// TODO: rename this function
-int CNetBase::UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct *pPacket, SECURITY_TOKEN *pSecurityToken, SECURITY_TOKEN *pResponseToken)
+int CNetBase::UnpackPacket(unsigned char* pBuffer, int Size, CNetPacketConstruct* pPacket, SECURITY_TOKEN* pSecurityToken, SECURITY_TOKEN* pResponseToken)
 {
 	// check the size
 	if(Size < NET_PACKETHEADERSIZE || Size > NET_MAX_PACKETSIZE)
@@ -258,7 +266,7 @@ int CNetBase::UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct
 	return 0;
 }
 
-void CNetBase::SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, int ControlMsg, const void *pExtra, int ExtraSize, SECURITY_TOKEN SecurityToken)
+void CNetBase::SendControlMsg(NETSOCKET Socket, NETADDR* pAddr, int Ack, int ControlMsg, const void* pExtra, int ExtraSize, SECURITY_TOKEN SecurityToken)
 {
 	CNetPacketConstruct Construct;
 	Construct.m_Flags = NET_PACKETFLAG_CONTROL;
@@ -273,7 +281,7 @@ void CNetBase::SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, int Con
 	CNetBase::SendPacket(Socket, pAddr, &Construct, SecurityToken, true);
 }
 
-unsigned char *CNetChunkHeader::Pack(unsigned char *pData, int Split)
+unsigned char* CNetChunkHeader::Pack(unsigned char* pData, int Split)
 {
 	pData[0] = ((m_Flags & 3) << 6) | ((m_Size >> Split) & 0x3f);
 	pData[1] = (m_Size & ((1 << Split) - 1));
@@ -286,7 +294,7 @@ unsigned char *CNetChunkHeader::Pack(unsigned char *pData, int Split)
 	return pData + 2;
 }
 
-unsigned char *CNetChunkHeader::Unpack(unsigned char *pData, int Split)
+unsigned char* CNetChunkHeader::Unpack(unsigned char* pData, int Split)
 {
 	m_Flags = (pData[0] >> 6) & 3;
 	m_Size = ((pData[0] & 0x3f) << Split) | (pData[1] & ((1 << Split) - 1));
@@ -358,12 +366,12 @@ void CNetBase::CloseLog()
 	}
 }
 
-int CNetBase::Compress(const void *pData, int DataSize, void *pOutput, int OutputSize)
+int CNetBase::Compress(const void* pData, int DataSize, void* pOutput, int OutputSize)
 {
 	return ms_Huffman.Compress(pData, DataSize, pOutput, OutputSize);
 }
 
-int CNetBase::Decompress(const void *pData, int DataSize, void *pOutput, int OutputSize)
+int CNetBase::Decompress(const void* pData, int DataSize, void* pOutput, int OutputSize)
 {
 	return ms_Huffman.Decompress(pData, DataSize, pOutput, OutputSize);
 }
