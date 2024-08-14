@@ -32,9 +32,8 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 
 CCharacter::~CCharacter()
 {
-	if(m_pMultipleOrbite)
-		delete m_pMultipleOrbite;
 	delete m_pTilesHandler;
+	m_pMultipleOrbite = nullptr;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
 }
 
@@ -475,6 +474,14 @@ void CCharacter::AddMultipleOrbite(int Amount, int Type, int Subtype)
 	}
 
 	m_pMultipleOrbite->Add(Amount, Type, Subtype);
+}
+
+void CCharacter::RemoveMultipleOrbite(int Amount, int Type, int Subtype) const
+{
+	if(!m_pMultipleOrbite)
+		return;
+
+	m_pMultipleOrbite->Remove(Amount, Type, Subtype);
 }
 
 bool CCharacter::GiveWeapon(int Weapon, int Ammo)
@@ -1087,7 +1094,7 @@ void CCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_FreezeEnd = 0;
 	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
 	pDDNetCharacter->m_TeleCheckpoint = 0;
-	pDDNetCharacter->m_StrongWeakID = 0; // ???
+	pDDNetCharacter->m_StrongWeakID = 0;
 
 	// Display Informations
 	pDDNetCharacter->m_JumpedTotal = m_Core.m_JumpedTotal;
@@ -1123,6 +1130,12 @@ void CCharacter::HandleTilesets()
 		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(ClientID));
 	if(GetTiles()->IsActive(TILE_CHAIR))
 		m_pPlayer->Account()->HandleChair();
+
+	// anti-pvp
+	if(m_pTilesHandler->IsEnter(TILE_ANTI_PVP))
+		GS()->Chat(ClientID, "You have entered the safe zone!");
+	else if(m_pTilesHandler->IsExit(TILE_ANTI_PVP))
+		GS()->Chat(ClientID, "You've left the safe zone!");
 }
 
 void CCharacter::GiveRandomEffects(int To)

@@ -31,6 +31,7 @@ class CCollision
 	class CLayers *m_pLayers;
 	bool IsTile(int x, int y, int Flag=COLFLAG_SOLID) const;
 	int GetTile(int x, int y) const;
+	int GetFrontTile(int x, int y) const;
 
 public:
 	enum

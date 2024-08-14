@@ -31,6 +31,7 @@ vec2 ClampVel(int MoveRestriction, vec2 Vel)
 CCollision::CCollision()
 {
 	m_pTiles = nullptr;
+	m_pFront = nullptr;
 	m_pLayers = nullptr;
 	m_Width = 0;
 	m_Height = 0;
@@ -86,6 +87,7 @@ void CCollision::InitTiles(CTile* pTiles) const
 			case TILE_CHAIR:
 			case TILE_INFO_BONUSES:
 			case TILE_INFO_WANTED:
+			case TILE_ANTI_PVP:
 			case TILE_WORLD_SWAP:
 				pTiles[i].m_Index = COLFLAG_SAFE_AREA;
 				pTiles[i].m_Reserved = static_cast<char>(Index);
@@ -105,15 +107,16 @@ unsigned short CCollision::GetParseTile(int x, int y) const
 {
 	int Nx = clamp(x / 32, 0, m_Width - 1);
 	int Ny = clamp(y / 32, 0, m_Height - 1);
-
 	return static_cast<int>(m_pTiles[Ny * m_Width + Nx].m_Reserved);
 }
 
 unsigned short CCollision::GetParseFrontTile(int x, int y) const
 {
+	if(!m_pFront)
+		return TILE_AIR;
+
 	int Nx = clamp(x / 32, 0, m_Width - 1);
 	int Ny = clamp(y / 32, 0, m_Height - 1);
-
 	return static_cast<int>(m_pFront[Ny * m_Width + Nx].m_Reserved);
 }
 
@@ -121,8 +124,17 @@ int CCollision::GetTile(int x, int y) const
 {
 	int Nx = clamp(x/32, 0, m_Width-1);
 	int Ny = clamp(y/32, 0, m_Height-1);
-
 	return m_pTiles[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pTiles[Ny*m_Width+Nx].m_Index;
+}
+
+int CCollision::GetFrontTile(int x, int y) const
+{
+	if(!m_pFront)
+		return 0;
+
+	int Nx = clamp(x/32, 0, m_Width-1);
+	int Ny = clamp(y/32, 0, m_Height-1);
+	return m_pFront[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pFront[Ny*m_Width+Nx].m_Index;
 }
 
 int CCollision::GetTileIndex(int Index) const
@@ -327,7 +339,7 @@ void CCollision::Wallline(int DepthTiles, vec2 Direction, vec2* pPos, vec2* pPos
 
 bool CCollision::IsTile(int x, int y, int Flag) const
 {
-	return GetTile(x, y)&Flag;
+	return (GetTile(x, y) & Flag) != 0 || (GetFrontTile(x, y) & Flag) != 0;
 }
 
 // TODO: OPT: rewrite this smarter!

@@ -129,6 +129,7 @@ public:
 	int Health() const { return m_Health; }
 
 	void AddMultipleOrbite(int Amount, int Type, int Subtype);
+	void RemoveMultipleOrbite(int Amount, int Type, int Subtype) const;
 	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
 
