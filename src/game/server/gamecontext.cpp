@@ -556,8 +556,6 @@ void CGS::HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const
 	}
 }
 
-std::future<PathResult> futureResult;
-
 void CGS::OnInit(int WorldID)
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -634,8 +632,6 @@ void CGS::OnDaytypeChange(int NewDaytype)
 	}
 }
 
-
-std::future<PathResult> futureTest;
 void CGS::OnTick()
 {
 	m_World.m_Core.m_Tuning = m_Tuning;
