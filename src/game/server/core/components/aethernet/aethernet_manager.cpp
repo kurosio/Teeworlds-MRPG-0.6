@@ -106,7 +106,7 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	return false;
 }
 
-bool CAethernetManager::OnCharacterTile(CCharacter* pChr)
+void CAethernetManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
@@ -114,8 +114,6 @@ bool CAethernetManager::OnCharacterTile(CCharacter* pChr)
 		{ UnlockLocationByPos(pChr->GetPlayer(), pChr->m_Core.m_Pos); },
 		{}
 	);
-
-	return false;
 }
 
 bool CAethernetManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)

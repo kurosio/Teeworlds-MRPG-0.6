@@ -1108,8 +1108,8 @@ void CCharacter::HandleTilesets()
 	m_pTilesHandler->Handle(m_Core.m_Pos);
 
 	// check from components
-	if(!m_pPlayer->IsBot() && GS()->Core()->OnCharacterTile(this))
-		return;
+	if(!m_pPlayer->IsBot())
+		GS()->Core()->OnCharacterTile(this);
 
 	// initialize variables
 	int ClientID = m_pPlayer->GetCID();

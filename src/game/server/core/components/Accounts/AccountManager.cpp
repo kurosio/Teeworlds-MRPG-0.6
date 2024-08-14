@@ -421,15 +421,13 @@ void CAccountManager::OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period)
 	}
 }
 
-bool CAccountManager::OnCharacterTile(CCharacter* pChr)
+void CAccountManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	int ClientID = pPlayer->GetCID();
 	
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_ABOUT_BONUSES)
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_ABOUT_WANTED)
-
-	return false;
 }
 
 bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)

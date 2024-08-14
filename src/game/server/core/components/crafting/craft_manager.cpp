@@ -38,13 +38,11 @@ void CCraftManager::OnInit()
 	Core()->ShowLoadingProgress("Craft item's", (int)CCraftItem::Data().size());
 }
 
-bool CCraftManager::OnCharacterTile(CCharacter* pChr)
+void CCraftManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_CRAFT_ZONE, MENU_CRAFT_LIST, {}, {});
-
-	return false;
 }
 
 void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const

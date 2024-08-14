@@ -13,9 +13,10 @@ CLayers::CLayers()
 	m_GroupsStart = 0;
 	m_LayersNum = 0;
 	m_LayersStart = 0;
-	m_pGameGroup = 0;
-	m_pGameLayer = 0;
-	m_pMap = 0;
+	m_pGameGroup = nullptr;
+	m_pGameLayer = nullptr;
+	m_pFrontLayer = nullptr;
+	m_pMap = nullptr;
 }
 
 void CLayers::Init(class IKernel* pKernel, int ID)
@@ -30,6 +31,7 @@ void CLayers::Init(class IKernel* pKernel, int ID)
 		for (int l = 0; l < pGroup->m_NumLayers; l++)
 		{
 			CMapItemLayer* pLayer = GetLayer(pGroup->m_StartLayer + l);
+			bool IsEntities = false;
 
 			if (pLayer->m_Type == LAYERTYPE_TILES)
 			{
@@ -54,8 +56,24 @@ void CLayers::Init(class IKernel* pKernel, int ID)
 						m_pGameGroup->m_ClipW = 0;
 						m_pGameGroup->m_ClipH = 0;
 					}
+					IsEntities = true;
 
 					//break;
+				}
+
+				if(pTilemap->m_Flags & TILESLAYERFLAG_FRONT)
+				{
+					if(pTilemap->m_Version <= 2)
+					{
+						pTilemap->m_Front = *((int*)(pTilemap)+17);
+					}
+					m_pFrontLayer = pTilemap;
+					IsEntities = true;
+				}
+
+				if(IsEntities)
+				{
+					pTilemap->m_Color = CColor(255, 255, 255, 255);
 				}
 			}
 		}

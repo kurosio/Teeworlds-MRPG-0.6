@@ -88,14 +88,11 @@ void CQuestManager::OnClientReset(int ClientID)
 	mrpgstd::free_container(CPlayerQuest::Data()[ClientID]);
 }
 
-bool CQuestManager::OnCharacterTile(CCharacter* pChr)
+void CQuestManager::OnCharacterTile(CCharacter* pChr)
 {
-	// initialize variables
 	CPlayer* pPlayer = pChr->GetPlayer();
 
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_QUEST_BOARD, MENU_BOARD, {}, {});
-
-	return false;
 }
 
 bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)

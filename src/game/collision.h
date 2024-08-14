@@ -18,11 +18,15 @@ vec2 ClampVel(int MoveRestriction, vec2 Vel);
 class CCollision
 {
 	class CTile *m_pTiles;
+	class CTile *m_pFront;
 	unsigned short GetParseTile(int x, int y) const;
+	unsigned short GetParseFrontTile(int x, int y) const;
 	/*end another*/
 
 	int m_Width;
 	int m_Height;
+
+	void InitTiles(CTile* pTiles) const;
 
 	class CLayers *m_pLayers;
 	bool IsTile(int x, int y, int Flag=COLFLAG_SOLID) const;
@@ -54,6 +58,7 @@ public:
 		return GetMoveRestrictions(nullptr, Pos, Distance);
 	}
 
+	int GetParseFrontTilesAt(float x, float y) const { return GetParseFrontTile(round_to_int(x), round_to_int(y)); }
 	int GetParseTilesAt(float x, float y) const { return GetParseTile(round_to_int(x), round_to_int(y)); }
 	void Wallline(int DepthTiles, vec2 Direction, vec2* pPos, vec2* pPosTo, bool OffsetStartlineOneTile = true) const;
 

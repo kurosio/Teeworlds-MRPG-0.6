@@ -7,37 +7,51 @@
 void CTileHandler::Handle(const vec2& Position)
 {
 	// initialize variables
-	const int Index = m_pCollision->GetParseTilesAt(Position.x, Position.y);
+	const int Indices[2] = {
+		m_pCollision->GetParseTilesAt(Position.x, Position.y),
+		m_pCollision->GetParseFrontTilesAt(Position.x, Position.y)
+	};
 
-	// check valid index
-	if(Index < TILE_AIR || Index >= MAX_TILES)
-		return;
-
-	// update to new index
-	if(m_Marked != Index)
+	// handle tiles layers
+	for(int i = 0; i < 2; ++i)
 	{
-		m_MarkEnter = Index;
-		m_MarkExit = m_Marked;
-		m_Marked = Index;
+		const int Index = Indices[i];
+		if(Index >= TILE_AIR && Index < MAX_TILES)
+		{
+			if(m_MarkedTiles[i] != Index)
+			{
+				m_MarkEnter[i] = Index;
+				m_MarkExit[i] = m_MarkedTiles[i];
+				m_MarkedTiles[i] = Index;
+			}
+		}
 	}
 }
 
 bool CTileHandler::IsEnter(int Index)
 {
-	if (Index == m_MarkEnter)
+	bool Entered = false;
+	for(int i = 0; i < 2; ++i)
 	{
-		m_MarkEnter = TILE_AIR;
-		return true;
+		if(Index == m_MarkEnter[i])
+		{
+			m_MarkEnter[i] = TILE_AIR;
+			Entered = true;
+		}
 	}
-	return false;
+	return Entered;
 }
 
 bool CTileHandler::IsExit(int Index)
 {
-	if(Index == m_MarkExit)
+	bool Exited = false;
+	for(int i = 0; i < 2; ++i)
 	{
-		m_MarkExit = TILE_AIR;
-		return true;
+		if(Index == m_MarkExit[i])
+		{
+			m_MarkExit[i] = TILE_AIR;
+			Exited = true;
+		}
 	}
-	return false;
+	return Exited;
 }

@@ -341,17 +341,13 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CMmoController::OnCharacterTile(CCharacter* pChr)
+void CMmoController::OnCharacterTile(CCharacter* pChr) const
 {
 	if(!pChr || !pChr->IsAlive())
-		return true;
+		return;
 
 	for(auto& pComponent : m_System.m_vComponents)
-	{
-		if(pComponent->OnCharacterTile(pChr))
-			return true;
-	}
-	return false;
+		pComponent->OnCharacterTile(pChr);
 }
 
 bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason)

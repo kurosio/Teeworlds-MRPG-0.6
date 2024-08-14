@@ -76,7 +76,7 @@ void CGuildManager::OnTick()
 	}
 }
 
-bool CGuildManager::OnCharacterTile(CCharacter* pChr)
+void CGuildManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
@@ -94,10 +94,7 @@ bool CGuildManager::OnCharacterTile(CCharacter* pChr)
 			//const int Exp = CGuild::ms_aGuild[GuildID].m_UpgradesData(CGuild::CHAIR_EXPERIENCE, 0).m_Value;
 			//pPlayer->AccountManager()->AddExperience(Exp);
 		}
-		return true;
 	}
-
-	return false;
 }
 
 bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason)

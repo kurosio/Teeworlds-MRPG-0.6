@@ -176,13 +176,11 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-bool CSkillManager::OnCharacterTile(CCharacter* pChr)
+void CSkillManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_SKILL_ZONE, MENU_SKILL_LIST, {}, {});
-
-	return false;
 }
 
 bool CSkillManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)

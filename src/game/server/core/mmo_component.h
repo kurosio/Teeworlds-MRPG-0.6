@@ -155,10 +155,8 @@ private:
      * @brief Called when a character tile is encountered.
      * 
      * @param pChr A pointer to the character object.
-     * 
-     * @return True if the character tile was handled, false otherwise.
      */
-    virtual bool OnCharacterTile(CCharacter* pChr) { return false; }
+    virtual void OnCharacterTile(CCharacter* pChr) {}
 };
 
 #endif

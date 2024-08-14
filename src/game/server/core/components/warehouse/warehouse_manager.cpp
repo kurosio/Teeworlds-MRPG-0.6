@@ -43,14 +43,11 @@ void CWarehouseManager::OnTick()
 	}
 }
 
-// Warehouse manager handle tile
-bool CWarehouseManager::OnCharacterTile(CCharacter* pChr)
+void CWarehouseManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_SHOP_ZONE, MENU_WAREHOUSE, {}, {});
-
-	return false;
 }
 
 // Warehouse manager handle menulist

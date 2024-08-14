@@ -17,7 +17,10 @@ class CLayers
 	int m_LayersNum;
 	int m_LayersStart;
 	CMapItemGroup* m_pGameGroup;
+
 	CMapItemLayerTilemap* m_pGameLayer;
+	CMapItemLayerTilemap* m_pFrontLayer;
+
 	IMap* m_pMap;
 
 	void InitTilemapSkip();
@@ -33,6 +36,8 @@ public:
 	CMapItemLayerTilemap* GameLayer() const { return m_pGameLayer; }
 	CMapItemGroup* GetGroup(int Index) const;
 	CMapItemLayer* GetLayer(int Index) const;
+
+	CMapItemLayerTilemap* FrontLayer() const { return m_pFrontLayer; }
 };
 
 #endif

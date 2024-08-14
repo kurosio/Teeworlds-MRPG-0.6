@@ -52,13 +52,11 @@ void CHouseManager::OnTimePeriod(ETimePeriod Period)
 		p->HandleTimePeriod(Period);
 }
 
-bool CHouseManager::OnCharacterTile(CCharacter* pChr)
+void CHouseManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_PLAYER_HOUSE, MENU_HOUSE_BUY, {}, {});
-
-	return false;
 }
 
 bool CHouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)

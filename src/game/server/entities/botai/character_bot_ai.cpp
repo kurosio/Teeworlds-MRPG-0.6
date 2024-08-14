@@ -1059,7 +1059,6 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 // finding a player among people who have the highest fury
 CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 {
-	// If is empty target, then search for the player
 	if(AI()->GetTarget()->IsEmpty() && (GS()->IsWorldType(WorldType::Dungeon) || rand() % 30 == 0))
 	{
 		CPlayer* pPlayer = SearchPlayer(Distance);

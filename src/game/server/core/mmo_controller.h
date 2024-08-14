@@ -57,7 +57,7 @@ public:
 	void OnTick();
 	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID);
 	void OnPlayerLogin(CPlayer* pPlayer);
-	bool OnCharacterTile(CCharacter* pChr);
+	void OnCharacterTile(CCharacter* pChr) const;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist);
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist);
 	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason);

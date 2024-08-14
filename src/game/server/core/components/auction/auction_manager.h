@@ -11,7 +11,7 @@ class CAuctionManager : public MmoComponent
 
 	void OnInit() override;
 
-	bool OnCharacterTile(CCharacter* pChr) override;
+	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 

@@ -42,47 +42,79 @@ void CCollision::Init(class CLayers *pLayers)
 	m_Width = m_pLayers->GameLayer()->m_Width;
 	m_Height = m_pLayers->GameLayer()->m_Height;
 	m_pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
+	InitTiles(m_pTiles);
 
-	for(int i = 0; i < m_Width*m_Height; i++)
+	if(m_pLayers->FrontLayer())
 	{
-		int Index = m_pTiles[i].m_Index;
+		unsigned int Size = m_pLayers->Map()->GetDataSize(m_pLayers->FrontLayer()->m_Front);
+		if(Size >= (size_t)m_Width * m_Height * sizeof(CTile))
+		{
+			m_pFront = static_cast<CTile*>(m_pLayers->Map()->GetData(m_pLayers->FrontLayer()->m_Front));
+			InitTiles(m_pFront);
+		}
+	}
+}
+
+void CCollision::InitTiles(CTile* pTiles) const
+{
+	for(int i = 0; i < m_Width * m_Height; i++)
+	{
+		int Index = pTiles[i].m_Index;
 		if(Index > 128)
 			continue;
 
 		switch(Index)
 		{
-		case TILE_DEATH:
-			m_pTiles[i].m_Index = COLFLAG_DEATH;
-			break;
-		case TILE_SOLID:
-			m_pTiles[i].m_Index = COLFLAG_SOLID;
-			break;
-		case TILE_NOHOOK:
-			m_pTiles[i].m_Index = COLFLAG_SOLID|COLFLAG_NOHOOK;
-			break;
-		case TILE_GUILD_HOUSE:
-		case TILE_AUCTION:
-		case TILE_PLAYER_HOUSE:
-		case TILE_SKILL_ZONE:
-		case TILE_SHOP_ZONE:
-		case TILE_QUEST_BOARD:
-		case TILE_CRAFT_ZONE:
-		case TILE_AETHER_TELEPORT:
-		case TILE_GUILD_CHAIR:
-		case TILE_CHAIR:
-		case TILE_WORLD_SWAP:
-			m_pTiles[i].m_Index = COLFLAG_SAFE_AREA;
-			m_pTiles[i].m_Reserved = static_cast<char>(Index);
-			break;
-		case TILE_INVISIBLE_WALL:
-			m_pTiles[i].m_Index = COLFLAG_DISALLOW_MOVE;
-			m_pTiles[i].m_Reserved = static_cast<char>(Index);
-			break;
-		default:
-			m_pTiles[i].m_Index = 0;
-			m_pTiles[i].m_Reserved = static_cast< char >(Index);
+			case TILE_DEATH:
+				pTiles[i].m_Index = COLFLAG_DEATH;
+				break;
+			case TILE_SOLID:
+				pTiles[i].m_Index = COLFLAG_SOLID;
+				break;
+			case TILE_NOHOOK:
+				pTiles[i].m_Index = COLFLAG_SOLID | COLFLAG_NOHOOK;
+				break;
+			case TILE_GUILD_HOUSE:
+			case TILE_AUCTION:
+			case TILE_PLAYER_HOUSE:
+			case TILE_SKILL_ZONE:
+			case TILE_SHOP_ZONE:
+			case TILE_QUEST_BOARD:
+			case TILE_CRAFT_ZONE:
+			case TILE_AETHER_TELEPORT:
+			case TILE_GUILD_CHAIR:
+			case TILE_CHAIR:
+			case TILE_INFO_BONUSES:
+			case TILE_INFO_WANTED:
+			case TILE_WORLD_SWAP:
+				pTiles[i].m_Index = COLFLAG_SAFE_AREA;
+				pTiles[i].m_Reserved = static_cast<char>(Index);
+				break;
+			case TILE_INVISIBLE_WALL:
+				pTiles[i].m_Index = COLFLAG_DISALLOW_MOVE;
+				pTiles[i].m_Reserved = static_cast<char>(Index);
+				break;
+			default:
+				pTiles[i].m_Index = 0;
+				pTiles[i].m_Reserved = static_cast<char>(Index);
 		}
 	}
+}
+
+unsigned short CCollision::GetParseTile(int x, int y) const
+{
+	int Nx = clamp(x / 32, 0, m_Width - 1);
+	int Ny = clamp(y / 32, 0, m_Height - 1);
+
+	return static_cast<int>(m_pTiles[Ny * m_Width + Nx].m_Reserved);
+}
+
+unsigned short CCollision::GetParseFrontTile(int x, int y) const
+{
+	int Nx = clamp(x / 32, 0, m_Width - 1);
+	int Ny = clamp(y / 32, 0, m_Height - 1);
+
+	return static_cast<int>(m_pFront[Ny * m_Width + Nx].m_Reserved);
 }
 
 int CCollision::GetTile(int x, int y) const
@@ -93,7 +125,6 @@ int CCollision::GetTile(int x, int y) const
 	return m_pTiles[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pTiles[Ny*m_Width+Nx].m_Index;
 }
 
-/* another */
 int CCollision::GetTileIndex(int Index) const
 {
 	if (Index < 0)
@@ -106,14 +137,6 @@ int CCollision::GetTileFlags(int Index) const
 	if (Index < 0)
 		return 0;
 	return m_pTiles[Index].m_Flags;
-}
-
-unsigned short CCollision::GetParseTile(int x, int y) const
-{
-	int Nx = clamp(x/32, 0, m_Width-1);
-	int Ny = clamp(y/32, 0, m_Height-1);
-
-	return static_cast<int>(m_pTiles[Ny * m_Width + Nx].m_Reserved);
 }
 
 int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision) const

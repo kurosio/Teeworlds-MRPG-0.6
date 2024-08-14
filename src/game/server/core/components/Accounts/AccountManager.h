@@ -19,7 +19,7 @@ class CAccountManager : public MmoComponent
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	void OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period) override;
-	bool OnCharacterTile(CCharacter* pChr) override;
+	void OnCharacterTile(CCharacter* pChr) override;
 
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 

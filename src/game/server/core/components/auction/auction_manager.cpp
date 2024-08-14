@@ -26,13 +26,11 @@ void CAuctionManager::OnInit()
 	}
 }
 
-bool CAuctionManager::OnCharacterTile(CCharacter* pChr)
+void CAuctionManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_AUCTION, MENU_AUCTION_LIST, {}, {});
-
-	return false;
 }
 
 bool CAuctionManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
