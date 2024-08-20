@@ -5,7 +5,6 @@
 
 // TODO: fully rework structures
 #include "bonus_manager.h"
-#include <game/server/core/components/achievements/achievement_data.h>
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
 

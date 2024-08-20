@@ -3,7 +3,7 @@
 #ifndef ENGINE_SERVER_H
 #define ENGINE_SERVER_H
 
-#include <engine/input_keys.h>
+#include <engine/input_events.h>
 #include <engine/shared/world_detail.h>
 
 #define DC_SERVER_INFO 13872503
@@ -32,7 +32,7 @@ public:
 	virtual class IGameServer* GameServer(int WorldID = 0) const = 0;
 	virtual class IGameServer* GameServerPlayer(int ClientID) const = 0;
 	virtual class CLocalization* Localization() const = 0;
-	virtual class IInputKeys* Input() const = 0;
+	virtual class IInputEvents* Input() const = 0;
 
 	struct CClientInfo
 	{

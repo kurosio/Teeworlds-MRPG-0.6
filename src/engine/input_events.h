@@ -1,5 +1,5 @@
-#ifndef ENGINE_INPUT_KEYS_H
-#define ENGINE_INPUT_KEYS_H
+#ifndef ENGINE_INPUT_EVENTS_H
+#define ENGINE_INPUT_EVENTS_H
 
 #include <cstdint>
 
@@ -52,10 +52,10 @@ enum InputEvents
 	BLOCK_INPUT_FULL_WEAPON = BLOCK_INPUT_FREEZE_WEAPON | BLOCK_INPUT_FIRE,
 };
 
-class IInputKeys
+class IInputEvents
 {
 public:
-    virtual ~IInputKeys() = default;
+    virtual ~IInputEvents() = default;
 
 	virtual void ParseInputClickedKeys(int ClientID, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput) = 0;
     virtual void ProcessKeyPress(int ClientID, int LastInput, int NewInput, int EventKey, int ActiveWeaponKey = -1) = 0;
@@ -67,4 +67,4 @@ public:
     virtual bool IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup) = 0;
 };
 
-#endif // ENGINE_INPUT_KEYS_H
+#endif // ENGINE_INPUT_EVENTS_H

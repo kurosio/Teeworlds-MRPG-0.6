@@ -1,9 +1,9 @@
-#ifndef ENGINE_SERVER_INPUT_KEYS_H
-#define ENGINE_SERVER_INPUT_KEYS_H
+#ifndef ENGINE_SERVER_INPUT_EVENTS_H
+#define ENGINE_SERVER_INPUT_EVENTS_H
 
-#include <engine/input_keys.h>
+#include <engine/input_events.h>
 
-class CInputKeys : public IInputKeys
+class CInputEvents : public IInputEvents
 {
     int64_t m_aActionEventKeys[MAX_CLIENTS]{};
     int64_t m_aBlockedInputKeys[MAX_CLIENTS]{};
@@ -29,6 +29,6 @@ public:
     }
 };
 
-extern CInputKeys* CreateInputKeys();
+extern CInputEvents* CreateInputKeys();
 
-#endif // ENGINE_SERVER_EVENT_INPUT_KEYS_H
+#endif // ENGINE_SERVER_INPUT_EVENTS_H

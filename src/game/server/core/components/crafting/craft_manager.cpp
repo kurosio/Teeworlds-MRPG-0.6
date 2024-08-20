@@ -4,6 +4,8 @@
 
 #include <game/server/gamecontext.h>
 
+#include "../achievements/achievement_data.h"
+
 void CCraftManager::OnInit()
 {
 	// load crafts

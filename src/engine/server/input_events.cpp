@@ -1,7 +1,7 @@
 #include <engine/server.h>
-#include "input_keys.h"
+#include "input_events.h"
 
-void CInputKeys::ParseInputClickedKeys(int ClientID, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput)
+void CInputEvents::ParseInputClickedKeys(int ClientID, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput)
 {
     auto AppendIfFlagChanged = [&](int flag, int event)
     {
@@ -26,7 +26,7 @@ void CInputKeys::ParseInputClickedKeys(int ClientID, const CNetObj_PlayerInput* 
     }
 }
 
-void CInputKeys::ProcessKeyPress(int ClientID, int LastInput, int NewInput, int EventKey, int ActiveWeaponKey)
+void CInputEvents::ProcessKeyPress(int ClientID, int LastInput, int NewInput, int EventKey, int ActiveWeaponKey)
 {
     if(CountInput(LastInput, NewInput).m_Presses)
     {
@@ -38,7 +38,7 @@ void CInputKeys::ProcessKeyPress(int ClientID, int LastInput, int NewInput, int 
     }
 }
 
-void CInputKeys::ProcessCharacterInput(int ClientID, int ActiveWeapon, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput)
+void CInputEvents::ProcessCharacterInput(int ClientID, int ActiveWeapon, const CNetObj_PlayerInput* pNewInput, const CNetObj_PlayerInput* pLastInput)
 {
     ProcessKeyPress(ClientID, pLastInput->m_Fire, pNewInput->m_Fire, KEY_EVENT_FIRE, 1 << (KEY_EVENT_FIRE + ActiveWeapon));
     ProcessKeyPress(ClientID, pLastInput->m_NextWeapon, pNewInput->m_NextWeapon, KEY_EVENT_NEXT_WEAPON);
@@ -51,7 +51,7 @@ void CInputKeys::ProcessCharacterInput(int ClientID, int ActiveWeapon, const CNe
     }
 }
 
-void CInputKeys::AppendEventKeyClick(int ClientID, int KeyID)
+void CInputEvents::AppendEventKeyClick(int ClientID, int KeyID)
 {
     if(ClientID >= 0 && ClientID < MAX_CLIENTS)
     {
@@ -59,12 +59,12 @@ void CInputKeys::AppendEventKeyClick(int ClientID, int KeyID)
     }
 }
 
-bool CInputKeys::IsKeyClicked(int ClientID, int KeyID)
+bool CInputEvents::IsKeyClicked(int ClientID, int KeyID)
 {
     return (ClientID >= 0 && ClientID < MAX_CLIENTS) ? (m_aActionEventKeys[ClientID] & KeyID) != 0 : false;
 }
 
-void CInputKeys::BlockInputGroup(int ClientID, int64_t FlagBlockedGroup)
+void CInputEvents::BlockInputGroup(int ClientID, int64_t FlagBlockedGroup)
 {
     if(ClientID >= 0 && ClientID < MAX_CLIENTS)
     {
@@ -72,9 +72,9 @@ void CInputKeys::BlockInputGroup(int ClientID, int64_t FlagBlockedGroup)
     }
 }
 
-bool CInputKeys::IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup)
+bool CInputEvents::IsBlockedInputGroup(int ClientID, int64_t FlagBlockedGroup)
 {
     return (ClientID >= 0 && ClientID < MAX_CLIENTS) ? (m_aBlockedInputKeys[ClientID] & FlagBlockedGroup) != 0 : false;
 }
 
-CInputKeys* CreateInputKeys() { return new CInputKeys; }
+CInputEvents* CreateInputKeys() { return new CInputEvents; }

@@ -35,7 +35,7 @@
 #include "discord/discord_main.h"
 #endif
 
-#include "input_keys.h"
+#include "input_events.h"
 #include "multi_worlds.h"
 #include "server_ban.h"
 #include "server_logger.h"
@@ -109,7 +109,7 @@ IGameServer* CServer::GameServerPlayer(int ClientID) const
 	return GameServer(GetClientWorldID(ClientID));
 }
 
-IInputKeys* CServer::Input() const
+IInputEvents* CServer::Input() const
 {
 	return m_pInputKeys;
 }

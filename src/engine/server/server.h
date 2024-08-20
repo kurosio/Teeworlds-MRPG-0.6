@@ -39,7 +39,7 @@ public:
 	class IStorageEngine* Storage() const { return m_pStorage; }
 	class CMultiWorlds* MultiWorlds() const { return m_pMultiWorlds; }
 	class CLocalization* Localization() const override { return m_pLocalization; }
-	class IInputKeys* Input() const override;
+	class IInputEvents* Input() const override;
 
 	enum
 	{
@@ -123,7 +123,7 @@ public:
 	CClient m_aClients[MAX_CLIENTS];
 	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS] {};
 
-	class CInputKeys* m_pInputKeys;
+	class CInputEvents* m_pInputKeys;
 	CLocalization* m_pLocalization;
 	CSnapshotDelta m_SnapshotDelta;
 	CSnapshotBuilder m_SnapshotBuilder;
