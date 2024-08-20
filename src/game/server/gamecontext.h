@@ -150,7 +150,7 @@ private:
 	void UpdateExpMultiplier();
 
 public:
-	#include "messages_impl.h"
+	#include "gamecontext_msg_impl.h"
 };
 
 inline int64_t CmaskAll() { return -1; }
