@@ -546,7 +546,7 @@ void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	if(pGS->IsPlayerEqualWorld(ClientID, TUTORIAL_WORLD_ID))
+	if(pGS->IsPlayerInWorld(ClientID, TUTORIAL_WORLD_ID))
 	{
 		pGS->Chat(ClientID, "You're already taking a training challenge!");
 		return;

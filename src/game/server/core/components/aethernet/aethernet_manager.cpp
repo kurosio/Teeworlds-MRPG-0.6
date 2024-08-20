@@ -84,7 +84,7 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		{
 			// Check if the player is in a different world than the Aether
 			vec2 Position = pAether->GetPosition();
-			if(!GS()->IsPlayerEqualWorld(ClientID, pAether->GetWorldID()))
+			if(!GS()->IsPlayerInWorld(ClientID, pAether->GetWorldID()))
 			{
 				// Set the teleport position in the player's temporary data
 				pPlayer->GetTempData().SetTeleportPosition(Position);

@@ -222,7 +222,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// change world in case the house is in another world
-		if(!GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
+		if(!GS()->IsPlayerInWorld(ClientID, pHouse->GetWorldID()))
 		{
 			pPlayer->GetTempData().SetTeleportPosition(pHouse->GetPos());
 			pPlayer->ChangeWorld(pHouse->GetWorldID());

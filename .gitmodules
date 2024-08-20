@@ -7,6 +7,3 @@
 [submodule "discord_deps/asio"]
 	path = discord_deps/asio
 	url = https://github.com/chriskohlhoff/asio.git
-[submodule "libraries"]
-	path = libraries
-	url = https://github.com/MrCosmo666/MmoTee-Libs.git

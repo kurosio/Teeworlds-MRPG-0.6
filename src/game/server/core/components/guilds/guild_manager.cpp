@@ -121,7 +121,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		}
 
 		// Check if the player is in a different world than pAether
-		if(!GS()->IsPlayerEqualWorld(ClientID, pHouse->GetWorldID()))
+		if(!GS()->IsPlayerInWorld(ClientID, pHouse->GetWorldID()))
 		{
 			// Change the player's world to pAether's world
 			pPlayer->GetTempData().SetTeleportPosition(pHouse->GetPos());

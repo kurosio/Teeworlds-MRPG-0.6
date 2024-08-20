@@ -146,7 +146,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 
 void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 {
-	if(!pPlayer || !pPlayer->IsAuthed() || !GS()->IsPlayerEqualWorld(pPlayer->GetCID()))
+	if(!pPlayer || !pPlayer->IsAuthed() || !GS()->IsPlayerInWorld(pPlayer->GetCID()))
 		return;
 
 	// Update account context pointer

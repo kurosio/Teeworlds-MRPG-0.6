@@ -18,7 +18,7 @@ void CGameControllerTutorial::Tick()
 	// handle tutorial world
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(GS()->IsPlayerEqualWorld(i))
+		if(GS()->IsPlayerInWorld(i))
 		{
 			if(CPlayer* pPlayer = GS()->GetPlayer(i, true, true); pPlayer)
 			{

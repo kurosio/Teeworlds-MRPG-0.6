@@ -38,7 +38,6 @@ class CGS : public IGameServer
 	class CEntityManager* m_pEntityManager;
 	class CPathFinder* m_pPathFinder;
 
-
 	int m_MultiplierExp;
 	CPlayer* m_apPlayers[MAX_CLIENTS];
 	CBroadcastState m_aBroadcastStates[MAX_PLAYERS];
@@ -100,108 +99,6 @@ public:
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendTuningParams(int ClientID);
 
-	template< typename ... Ts>
-	void Chat(int ClientID, const char* pText, const Ts&... args)
-	{
-		const int Start = (ClientID < 0 ? 0 : ClientID);
-		const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
-
-		for(int i = Start; i < End; i++)
-		{
-			if(m_apPlayers[i])
-				SendChatTarget(i, fmt_localize(i, pText, args...).c_str());
-		}
-	}
-
-	template <typename ... Ts>
-	bool ChatAccount(int AccountID, const char* pText, const Ts&... args)
-	{
-		CPlayer* pPlayer = GetPlayerByUserID(AccountID);
-		if(pPlayer)
-			SendChatTarget(pPlayer->GetCID(), fmt_localize(pPlayer->GetCID(), pText, args...).c_str());
-		return pPlayer != nullptr;
-	}
-
-	template <typename ... Ts>
-	void ChatGuild(int GuildID, const char* pText, const Ts&... args)
-	{
-		for(int i = 0; i < MAX_PLAYERS; i++)
-		{
-			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && pPlayer->Account()->IsSameGuild(GuildID))
-			{
-				std::string Result = "Guild | ";
-				Result += fmt_localize(i, pText, args...);
-				SendChatTarget(i, Result.c_str());
-			}
-		}
-	}
-
-	template <typename ... Ts>
-	void ChatWorld(int WorldID, const char* pSuffix, const char* pText, const Ts&... args)
-	{
-		for(int i = 0; i < MAX_PLAYERS; i++)
-		{
-			if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && IsPlayerEqualWorld(i, WorldID))
-			{
-				std::string Result = pSuffix[0] != '\0' ? std::string(pSuffix) + " " : "";
-				Result += fmt_localize(i, pText, args...);
-				SendChatTarget(i, Result.c_str());
-			}
-		}
-	}
-
-	template <typename ... Ts>
-	void ChatDiscord(int Color, const char *Title, const char* pText, const Ts&... args)
-	{
-#ifdef CONF_DISCORD
-		Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, Color, Title, fmt(pText, args...).c_str());
-#endif
-	}
-
-	template <typename ... Ts>
-	void ChatDiscordChannel(const char* pChanel, int Color, const char* Title, const char* pText, const Ts&... args)
-	{
-#ifdef CONF_DISCORD
-		Server()->SendDiscordMessage(pChanel, Color, Title, fmt(pText, args...).c_str());
-#endif
-	}
-
-	template <typename ... Ts>
-	void Motd(int ClientID, const char* pText, const Ts&... args)
-	{
-		const int Start = (ClientID < 0 ? 0 : ClientID);
-		const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
-
-		for(int i = Start; i < End; i++)
-		{
-			if(m_apPlayers[i])
-				SendMotd(i, fmt_localize(i, pText, args...).c_str());
-		}
-	}
-
-	template <typename ... Ts>
-	void Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char* pText, const Ts&... args)
-	{
-		const int Start = (ClientID < 0 ? 0 : ClientID);
-		const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
-
-		for(int i = Start; i < End; i++)
-		{
-			if(m_apPlayers[i])
-				AddBroadcast(i, fmt_localize(i, pText, args...).c_str(), Priority, LifeSpan);
-		}
-	}
-
-	template <typename ... Ts>
-	void BroadcastWorld(int WorldID, BroadcastPriority Priority, int LifeSpan, const char* pText, const Ts&... args)
-	{
-		for(int i = 0; i < MAX_PLAYERS; i++)
-		{
-			if(m_apPlayers[i] && IsPlayerEqualWorld(i, WorldID))
-				AddBroadcast(i, fmt_localize(i, pText, args...).c_str(), Priority, LifeSpan);
-		}
-	}
-
 	void OnInit(int WorldID) override;
 	void OnConsoleInit() override;
 	void OnShutdown() override { delete this; }
@@ -235,10 +132,10 @@ public:
 	int GetWorldID() const { return m_WorldID; }
 	bool IsWorldType(WorldType Type) const;
 	int GetExpMultiplier(int Experience) const;
-	bool IsPlayerEqualWorld(int ClientID, int WorldID = -1) const;
+	bool IsPlayerInWorld(int ClientID, int WorldID = -1) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 	vec2 GetJailPosition() const { return m_JailPosition; }
-	bool IsPlayersNearby(vec2 Pos, float Distance) const;
+	bool ArePlayersNearby(vec2 Pos, float Distance) const;
 
 	int CreateBot(short BotType, int BotID, int SubID);
 	bool TakeItemCharacter(int ClientID);
@@ -251,6 +148,9 @@ private:
 	void InitWorld();
 	void HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const;
 	void UpdateExpMultiplier();
+
+public:
+	#include "messages_impl.h"
 };
 
 inline int64_t CmaskAll() { return -1; }

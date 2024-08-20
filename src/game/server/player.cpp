@@ -489,7 +489,7 @@ void CPlayer::TryRespawn()
 	if(!Account()->IsInPrison() && GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
 	{
 		int RespawnWorldID = GS()->GetWorldData()->GetRespawnWorld()->GetID();
-		if(RespawnWorldID >= 0 && !GS()->IsPlayerEqualWorld(m_ClientID, RespawnWorldID))
+		if(RespawnWorldID >= 0 && !GS()->IsPlayerInWorld(m_ClientID, RespawnWorldID))
 		{
 			ChangeWorld(RespawnWorldID);
 			return;

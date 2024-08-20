@@ -43,7 +43,7 @@ void CGameControllerDungeon::KillAllPlayers() const
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CCharacter* pCharacter = GS()->GetPlayerChar(i);
-		if(pCharacter && GS()->IsPlayerEqualWorld(i, m_WorldID))
+		if(pCharacter && GS()->IsPlayerInWorld(i, m_WorldID))
 			pCharacter->Die(i, WEAPON_WORLD);
 	}
 }
@@ -111,7 +111,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->GetPlayer(i);
-			if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
+			if(!pPlayer || !GS()->IsPlayerInWorld(i, m_WorldID))
 				continue;
 
 			// update finish time int sec
@@ -217,7 +217,7 @@ void CGameControllerDungeon::StateTick()
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->GetPlayer(i);
-			if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
+			if(!pPlayer || !GS()->IsPlayerInWorld(i, m_WorldID))
 				continue;
 
 			pPlayer->GetTempData().m_TempTimeDungeon++;
@@ -322,7 +322,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 			for(int i = 0; i < MAX_PLAYERS; i++)
 			{
 				CPlayer* pPlayer = GS()->GetPlayer(i);
-				if(!pPlayer || !GS()->IsPlayerEqualWorld(i, m_WorldID))
+				if(!pPlayer || !GS()->IsPlayerInWorld(i, m_WorldID))
 					continue;
 
 				pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
@@ -369,7 +369,7 @@ int CGameControllerDungeon::PlayersReady() const
     for(int i = 0; i < MAX_PLAYERS; i++)
     {
         CPlayer* pPlayer = GS()->GetPlayer(i);
-        if(pPlayer && GS()->IsPlayerEqualWorld(i, m_WorldID) && pPlayer->GetTempData().m_TempDungeonReady)
+        if(pPlayer && GS()->IsPlayerInWorld(i, m_WorldID) && pPlayer->GetTempData().m_TempDungeonReady)
         {
             ReadyPlayers++;
         }

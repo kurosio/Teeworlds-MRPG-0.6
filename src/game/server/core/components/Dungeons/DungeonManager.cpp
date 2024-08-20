@@ -63,7 +63,7 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 
 	if(PPSTR(pCmd, "DUNGEONJOIN") == 0)
 	{
-		if(GS()->IsPlayerEqualWorld(ClientID, CDungeonData::ms_aDungeon[Extra1].m_WorldID))
+		if(GS()->IsPlayerInWorld(ClientID, CDungeonData::ms_aDungeon[Extra1].m_WorldID))
 		{
 			GS()->Chat(ClientID, "You are already in this dungeon!");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);

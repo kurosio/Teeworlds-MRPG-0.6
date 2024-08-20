@@ -67,7 +67,7 @@ void CEntityManager::ExpFlyingPoint(vec2 Pos, int ClientID, int Exp, vec2 Force)
 
 void CEntityManager::Text(vec2 Pos, int Lifespan, const char* pText, bool* pResult) const
 {
-	if(!GS()->IsPlayersNearby(Pos, 800))
+	if(!GS()->ArePlayersNearby(Pos, 800))
 	{
 		if(pResult)
 			*pResult = false;
@@ -80,7 +80,7 @@ void CEntityManager::Text(vec2 Pos, int Lifespan, const char* pText, bool* pResu
 
 void CEntityManager::Text(CEntity* pParent, int Lifespan, const char* pText, bool* pResult) const
 {
-	if(!pParent || !GS()->IsPlayersNearby(pParent->GetPos(), 800))
+	if(!pParent || !GS()->ArePlayersNearby(pParent->GetPos(), 800))
 	{
 		if(pResult)
 			*pResult = false;

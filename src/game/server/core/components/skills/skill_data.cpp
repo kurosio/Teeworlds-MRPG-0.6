@@ -103,7 +103,7 @@ bool CSkill::Use()
 		{
 			// check player
 			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
-			if(!pPlayer || !GS()->IsPlayerEqualWorld(i))
+			if(!pPlayer || !GS()->IsPlayerInWorld(i))
 				continue;
 
 			// check distance
@@ -134,7 +134,7 @@ bool CSkill::Use()
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
-			if(!pPlayer || !GS()->IsPlayerEqualWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
+			if(!pPlayer || !GS()->IsPlayerInWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
 				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
 				continue;
 
@@ -164,7 +164,7 @@ bool CSkill::Use()
 		{
 			// check player
 			CPlayerBot* pPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i, false, true));
-			if(!pPlayer || !GS()->IsPlayerEqualWorld(i))
+			if(!pPlayer || !GS()->IsPlayerInWorld(i))
 				continue;
 
 			// check distance

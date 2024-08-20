@@ -63,6 +63,7 @@ CCharacter* CGS::GetPlayerChar(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return nullptr;
+
 	return m_apPlayers[ClientID]->GetCharacter();
 }
 
@@ -70,13 +71,11 @@ CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuth, bool CheckCharacter) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS)
 		return nullptr;
+
 	CPlayer* pPlayer = m_apPlayers[ClientID];
-	if(!pPlayer)
+	if(!pPlayer || (CheckAuth && !pPlayer->IsAuthed()) || (CheckCharacter && !pPlayer->GetCharacter()))
 		return nullptr;
-	if(CheckAuth && !pPlayer->IsAuthed())
-		return nullptr;
-	if(CheckCharacter && !pPlayer->GetCharacter())
-		return nullptr;
+
 	return pPlayer;
 }
 
@@ -84,13 +83,14 @@ CPlayer* CGS::GetPlayerByUserID(int AccountID) const
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		CPlayer* pPlayer = GetPlayer(i, true);
+		int WorldID = Server()->GetClientWorldID(i);
+		CGS* pGS = (CGS*)Instance::GameServer(WorldID);
+		if(!pGS)
+			continue;
+
+		CPlayer* pPlayer = pGS->GetPlayer(i, true);
 		if(pPlayer && pPlayer->Account()->GetID() == AccountID)
-		{
-			const int WorldID = pPlayer->GetPlayerWorldID();
-			const auto pGS = (CGS*)Instance::GameServer(WorldID);
-			return pGS->GetPlayer(i, true);
-		}
+			return pPlayer;
 	}
 	return nullptr;
 }
@@ -380,7 +380,7 @@ void CGS::BroadcastTick(int ClientID)
 		return;
 
 	// Check if the player exists and is in the same world
-	if(m_apPlayers[ClientID] && IsPlayerEqualWorld(ClientID))
+	if(m_apPlayers[ClientID] && IsPlayerInWorld(ClientID))
 	{
 		// Get the broadcast state for the given client ID
 		CBroadcastState& Broadcast = m_aBroadcastStates[ClientID];
@@ -1064,7 +1064,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 	// update clients on drop
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
 
-	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerEqualWorld(ClientID))
+	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerInWorld(ClientID))
 	{
 		Chat(-1, "{} has left the MRPG", Server()->ClientName(ClientID));
 		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
@@ -1340,20 +1340,21 @@ void CGS::InitWorld()
 	dbg_msg("world init", "%s(ID: %d) | %s | PvP: %s", Server()->GetWorldName(m_WorldID), m_WorldID, pWorldType, pStatePVP);
 }
 
-bool CGS::IsPlayerEqualWorld(int ClientID, int WorldID) const
+bool CGS::IsPlayerInWorld(int ClientID, int WorldID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return false;
 
 	int PlayerWorldID = m_apPlayers[ClientID]->GetPlayerWorldID();
-	return PlayerWorldID == (WorldID <= -1 ? m_WorldID : WorldID);
+	return PlayerWorldID == (WorldID == -1 ? m_WorldID : WorldID);
 }
 
-bool CGS::IsPlayersNearby(vec2 Pos, float Distance) const
+bool CGS::ArePlayersNearby(vec2 Pos, float Distance) const
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(m_apPlayers[i] && IsPlayerEqualWorld(i) && distance(Pos, m_apPlayers[i]->m_ViewPos) <= Distance)
+		CPlayer* pPlayer = m_apPlayers[i];
+		if(pPlayer && IsPlayerInWorld(i) && distance(Pos, pPlayer->m_ViewPos) <= Distance)
 			return true;
 	}
 

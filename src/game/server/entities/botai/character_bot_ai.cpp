@@ -177,7 +177,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			{
 				// Check if the player object exists and is in the same world as the bot player
 				CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
-				if(!pPlayer || !GS()->IsPlayerEqualWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
+				if(!pPlayer || !GS()->IsPlayerInWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()) || distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
 					continue;
 
 				// Reward the player with damage applied
@@ -1045,7 +1045,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 			continue;
 
 		// Skip the iteration if the player is not in the same world as the bot
-		if(!GS()->IsPlayerEqualWorld(i))
+		if(!GS()->IsPlayerInWorld(i))
 			continue;
 
 		// Return the player if all conditions are met
@@ -1074,7 +1074,7 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 	CPlayer* pTarget = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
 	if(!AI()->GetTarget()->IsEmpty())
 	{
-		if(!pTarget || (pTarget && (distance(pTarget->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerEqualWorld(AI()->GetTarget()->GetCID()))))
+		if(!pTarget || (pTarget && (distance(pTarget->GetCharacter()->GetPos(), m_Pos) > 800.0f || !GS()->IsPlayerInWorld(AI()->GetTarget()->GetCID()))))
 			AI()->GetTarget()->Reset();
 	}
 
