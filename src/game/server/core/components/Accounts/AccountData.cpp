@@ -6,7 +6,6 @@
 #include <game/server/gamecontext.h>
 
 #include "../houses/house_data.h"
-#include "../groups/group_data.h"
 #include "../achievements/achievement_data.h"
 #include "../guilds/guild_manager.h"
 #include "../worlds/world_manager.h"
@@ -28,7 +27,6 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	// Get the server instance
 	int ClientID = pPlayer->GetCID();
 	IServer* pServer = Instance::Server();
-
 	/*
 		Initialize object
 	*/
@@ -79,7 +77,6 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 		Initialize sub account data.
 	*/
 	ReinitializeHouse();
-	ReinitializeGroup();
 	ReinitializeGuild();
 	m_BonusManager.Init(m_ClientID, m_pPlayer);
 }
@@ -144,26 +141,6 @@ void CAccountData::ReinitializeHouse(bool SetNull)
 
 	// If no matching group data object is found, set the group data pointer of the account to nullptr
 	m_pHouseData = nullptr;
-}
-
-// 
-void CAccountData::ReinitializeGroup()
-{
-	// Iterate through all the group data objects
-	for(auto& p : GroupData::Data())
-	{
-		// Check if the account ID of the group data object matches the account ID of the current account
-		auto& Accounts = p.second.GetAccounts();
-		if(Accounts.find(m_ID) != Accounts.end())
-		{
-			// Set the group data pointer of the account to the current group data object
-			m_pGroupData = &p.second;
-			return; // Exit the function
-		}
-	}
-
-	// If no matching group data object is found, set the group data pointer of the account to nullptr
-	m_pGroupData = nullptr;
 }
 
 void CAccountData::ReinitializeGuild(bool SetNull)

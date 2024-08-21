@@ -27,9 +27,9 @@ bool GroupData::Add(int AccountID)
 	// try insert account id
 	if(m_vAccountIds.insert(AccountID).second)
 	{
-		// reinitilize player
+		// set player group
 		if(pPlayer)
-			pPlayer->Account()->ReinitializeGroup();
+			pPlayer->Account()->SetGroup(Data()[m_ID]);
 
 		// send message and save
 		Save();
@@ -56,9 +56,9 @@ bool GroupData::Remove(int AccountID)
 	// try erase account id
 	if(m_vAccountIds.erase(AccountID) > 0)
 	{
-		// reinitilize player
+		// set player group
 		if(pPlayer)
-			pPlayer->Account()->ReinitializeGroup();
+			pPlayer->Account()->SetGroup(nullptr);
 
 		// if is empty disband group
 		if(m_vAccountIds.empty())
@@ -70,7 +70,9 @@ bool GroupData::Remove(int AccountID)
 
 		// set new begin leader
 		if(AccountID == m_LeaderUID)
+		{
 			ChangeOwner(*m_vAccountIds.begin());
+		}
 
 		// send message and save
 		Save();
@@ -81,22 +83,8 @@ bool GroupData::Remove(int AccountID)
 	return false;
 }
 
-void GroupData::Disband()
+void GroupData::Disband() const
 {
-	// copy accounts for reinitilize data
-	const ska::unordered_set<int> ReinitilizedAccounts = m_vAccountIds;
-	m_vAccountIds.clear();
-
-	// reinitilize data
-	for(auto& AID : ReinitilizedAccounts)
-	{
-		// try reinitilize data
-		const auto pGS = (CGS*)Instance::Server()->GameServer();
-		if(const CPlayer* pPlayer = pGS->GetPlayerByUserID(AID))
-			pPlayer->Account()->ReinitializeGroup();
-	}
-
-	// erase group by id
 	m_pData.erase(m_ID);
 	Database->Execute<DB::REMOVE>(TW_GROUPS_TABLE, "WHERE ID = '%d'", m_ID);
 }
@@ -126,9 +114,9 @@ void GroupData::UpdateRandomColor()
 		bool IsFree = true;
 
 		// check is color free
-		for(const auto& [ID, Group] : m_pData)
+		for(const auto& [ID, pGroup] : m_pData)
 		{
-			if(Group.GetTeamColor() == Color)
+			if(pGroup->GetTeamColor() == Color)
 			{
 				IsFree = false;
 				break;

@@ -6,7 +6,7 @@
 #define TW_GROUPS_TABLE "tw_groups"
 
 using GroupIdentifier = int;
-class GroupData : public MultiworldIdentifiableData< std::map< int, GroupData > >
+class GroupData : public MultiworldIdentifiableData< std::map< int, std::shared_ptr<GroupData> > >
 {
 	GroupIdentifier m_ID {};
 	int m_LeaderUID {};
@@ -16,11 +16,12 @@ class GroupData : public MultiworldIdentifiableData< std::map< int, GroupData > 
 public:
 	GroupData() = default;
 
-	static GroupData& CreateElement(GroupIdentifier ID) noexcept
+	static std::shared_ptr<GroupData> CreateElement(GroupIdentifier ID) noexcept
 	{
-		m_pData[ID] = GroupData();
-		m_pData[ID].m_ID = ID;
-		return m_pData[ID];
+		auto groupData = std::make_shared<GroupData>();
+		groupData->m_ID = ID;
+		m_pData[ID] = groupData;
+		return groupData;
 	}
 
 	// functions
@@ -36,12 +37,11 @@ public:
 
 		// initialize variables
 		m_LeaderUID = LeaderUID;
-		m_pData[m_ID] = *this;
 	}
 
 	bool Add(int AccountID);
 	bool Remove(int AccountID);
-	void Disband();
+	void Disband() const;
 	void ChangeOwner(int AccountID);
 	void UpdateRandomColor();
 

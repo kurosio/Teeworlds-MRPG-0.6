@@ -29,7 +29,7 @@ class CAccountData
 	int m_Level {};
 	int m_Exp {};
 	CHouse* m_pHouseData{};
-	GroupData* m_pGroupData{};
+	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
 	ClassGroup m_ClassGroup {};
 	nlohmann::json m_AchivementsData { };
@@ -60,9 +60,9 @@ public:
 	/*
 	 * Group functions: group system
 	 */
-	void ReinitializeGroup(); // This function re-initializes the group object
-	GroupData* GetGroup() const { return m_pGroupData; } // Get the group data for the current object
-	bool HasGroup() const { return m_pGroupData != nullptr; } // Check if the current object has group data
+	void SetGroup(const std::shared_ptr<GroupData>& pGroupPtr) { m_pGroupData = pGroupPtr; }
+	GroupData* GetGroup() const { return m_pGroupData.lock().get(); }
+	bool HasGroup() const { return !m_pGroupData.expired(); }
 
 	/*
 	 * Group functions: guild system

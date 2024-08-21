@@ -18,67 +18,71 @@ void CGroupManager::OnInit()
 		std::string StrAccountIDs = pRes->getString("AccountIDs").c_str();
 
 		// Initialize a GroupData object with the retrieved values
-		GroupData::CreateElement(ID).Init(OwnerUID, std::move(StrAccountIDs));
+		auto groupData = GroupData::CreateElement(ID);
+		groupData->Init(OwnerUID, std::move(StrAccountIDs));
 	}
 }
 
 void CGroupManager::OnPlayerLogin(CPlayer* pPlayer)
 {
-	// reinitialize group
-	pPlayer->Account()->ReinitializeGroup();
+	// initialize group
+	for(auto& pGroup : GroupData::Data())
+	{
+		if(pGroup.second->HasAccountID(pPlayer->Account()->GetID()))
+			pPlayer->Account()->SetGroup(pGroup.second);
+	}
 
-	// check is first online player and set random free color
+	// check if the player is the first online player and set random free color
 	if(pPlayer->Account()->HasGroup())
 	{
-		const auto pGroup = pPlayer->Account()->GetGroup();
-		if(pGroup->GetOnlineCount() == 1)
+		auto pGroup = pPlayer->Account()->GetGroup();
+		if(pGroup && pGroup->GetOnlineCount() == 1)
 			pGroup->UpdateRandomColor();
 	}
 }
 
 GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 {
-	// check valid player
+	// Check valid player
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return nullptr;
 
-	// check if the player is already in a group
+	// Check if the player is already in a group
 	if(pPlayer->Account()->GetGroup())
 	{
 		GS()->Chat(pPlayer->GetCID(), "You're already in a group!");
 		return nullptr;
 	}
 
-	// get the highest group ID from the database
+	// Get the highest group ID from the database
 	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_GROUPS_TABLE, "ORDER BY ID DESC LIMIT 1");
 	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
 
-	// initialize variables
+	// Initialize variables
 	int OwnerUID = pPlayer->Account()->GetID();
 	std::string StrAccountIDs = std::to_string(OwnerUID);
 
-	// insert to database
+	// Insert to database
 	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('%d', '%d', '%s')", InitID, OwnerUID, StrAccountIDs.c_str());
 
-	// initialize the group
-	auto& newGroup = GroupData::CreateElement(InitID);
-	newGroup.Init(OwnerUID, StrAccountIDs);
-	newGroup.UpdateRandomColor();
-	pPlayer->Account()->ReinitializeGroup();
+	// Initialize the group
+	auto groupData = GroupData::CreateElement(InitID);
+	groupData->Init(OwnerUID, StrAccountIDs);
+	groupData->UpdateRandomColor();
+	pPlayer->Account()->SetGroup(groupData);
 
-	// send message
+	// Send message
 	GS()->Chat(pPlayer->GetCID(), "The formation of the group took place!");
-	return &newGroup;
+	return groupData.get();
 }
 
 GroupData* CGroupManager::GetGroupByID(GroupIdentifier ID) const
 {
-	// Check if the group ID exists in the group data
-	if(GroupData::Data().find(ID) == GroupData::Data().end())
+	auto it = GroupData::Data().find(ID);
+	if(it == GroupData::Data().end())
 		return nullptr;
 
-	// Return a pointer to the group data
-	return &GroupData::Data()[ID];
+	return it->second.get();
 }
 
 // Function to display the group menu for a player
@@ -111,7 +115,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer) const
 		VGroup.AddOption("GROUP_RANDOM_COLOR", "Random new group color");
 		VGroup.AddOption("GROUP_DISBAND", "Disband group");
 	}
-	VGroup.AddOption("GROUP_KICK", pPlayer->Account()->GetID(), "Leave the group");
+	VGroup.AddOption("GROUP_LEAVE", pPlayer->Account()->GetID(), "Leave the group");
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// group invites list
@@ -283,6 +287,19 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 
 			// remove
 			pGroup->Remove(AccountID);
+			GS()->UpdateVotesIfForAll(MENU_GROUP);
+		}
+
+		return true;
+	}
+
+	// leave from group
+	if(PPSTR(pCmd, "GROUP_LEAVE") == 0)
+	{
+		// check player group valid
+		if(const auto pGroup = pPlayer->Account()->GetGroup())
+		{
+			pGroup->Remove(pPlayer->Account()->GetID());
 			GS()->UpdateVotesIfForAll(MENU_GROUP);
 		}
 
