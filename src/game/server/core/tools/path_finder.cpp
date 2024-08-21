@@ -15,9 +15,10 @@ CPathFinder::CPathFinder(CLayers* Layers, CCollision* Collision)
 {
 	m_Height = m_pLayers->GameLayer()->m_Height;
 	m_Width = m_pLayers->GameLayer()->m_Width;
-	m_vMap.resize(m_Height, std::vector(m_Width, true));
-	m_vHeuristicMap.resize(m_Height, std::vector<int>(m_Width, 0));
 
+	m_vMap = BitCollideMap(m_Width, m_Height);
+	m_vCostSoFar.resize(m_Width * m_Height, std::numeric_limits<int>::max());
+	m_vCameFrom.resize(m_Width * m_Height, ivec2 { -1, -1 });
 	Initialize();
 }
 
@@ -39,10 +40,7 @@ void CPathFinder::Initialize()
 	for(int y = 0; y < m_Height; y++)
 	{
 		for(int x = 0; x < m_Width; x++)
-		{
-			m_vMap[y][x] = !m_pCollision->CheckPoint(static_cast<float>(x) * 32.f + 16.f, static_cast<float>(y) * 32.f + 16.f);
-			m_vHeuristicMap[y][x] = std::abs(x - m_Width / 2) + std::abs(y - m_Height / 2);
-		}
+			m_vMap.Set(x, y, m_pCollision->CheckPoint(static_cast<float>(x) * 32.f + 16.f, static_cast<float>(y) * 32.f + 16.f));
 	}
 
 	m_Running = true;
@@ -62,7 +60,7 @@ void CPathFinder::RequestPath(PathRequestHandle& Handle, const vec2& Start, cons
 	request.Start = istart;
 	request.End = iend;
 
-	std::future<PathResult> temp_future = request.Promise.get_future();
+	std::future<PathResult*> temp_future = request.Promise.get_future();
 	m_vRequestQueue.push(std::move(request));
 	m_Condition.notify_one();
 
@@ -78,7 +76,8 @@ void CPathFinder::PathfindingThread()
 {
 	while(m_Running)
 	{
-		PathRequest request;
+		std::vector<PathRequest> requests;
+
 		{
 			std::unique_lock lock(m_QueueMutex);
 			m_Condition.wait(lock, [this] { return !m_vRequestQueue.empty() || !m_Running; });
@@ -87,42 +86,53 @@ void CPathFinder::PathfindingThread()
 				return;
 
 			// get the next request from the queue
-			request = std::move(m_vRequestQueue.front());
-			m_vRequestQueue.pop();
+			while(!m_vRequestQueue.empty())
+			{
+				requests.push_back(std::move(m_vRequestQueue.front()));
+				m_vRequestQueue.pop();
+			}
 		}
 
-		std::vector<vec2> vPath = FindPath(request.Start, request.End);
-		const bool Success = !vPath.empty();
-		request.Promise.set_value({ vPath, Success });
+		for(auto& request : requests)
+		{
+			std::vector<vec2> vPath = FindPath(request.Start, request.End);
+			const bool Success = !vPath.empty();
+
+			auto result = new PathResult({ vPath, Success });
+			request.Promise.set_value(result);
+		}
 	}
 }
 
-bool CPathFinder::IsWalkable(const ivec2& Pos) const
+int ManhattanDistance(const ivec2& a, const ivec2& b)
 {
-	if(Pos.x < 0 || Pos.x >= m_Width || Pos.y < 0 || Pos.y >= m_Height)
-		return false;
-
-	return m_vMap[Pos.y][Pos.x];
+	return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
 
-std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End) const
+std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 {
 	std::vector<vec2> vPath;
-	if(!IsWalkable(Start) || !IsWalkable(End))
+	if(m_vMap.IsCollide(Start.x, Start.y) || m_vMap.IsCollide(End.x, End.y))
 		return vPath;
 
 	// initialize variables
+	std::ranges::fill(m_vCostSoFar, std::numeric_limits<int>::max());
+	auto ToIndex = [this](const ivec2& pos)
+	{
+		return pos.y * m_Width + pos.x;
+	};
+
 	using Node = std::pair<int, ivec2>;
 	auto NodeComparator = [](const Node& a, const Node& b) { return a.first > b.first; };
 	std::priority_queue<Node, std::vector<Node>, decltype(NodeComparator)> vFrontier(NodeComparator);
-	std::unordered_map<ivec2, ivec2> vCameFrom;
-	std::unordered_map<ivec2, int> vCostSoFar;
 
 	vFrontier.emplace(0, Start);
-	vCameFrom[Start] = Start;
-	vCostSoFar[Start] = 0;
+	m_vCostSoFar[ToIndex(Start)] = 0;
+	m_vCameFrom[ToIndex(Start)] = Start;
+	m_vCameFrom[ToIndex(End)] = { -1, -1 };
 
 	// search path
+	constexpr std::array<ivec2, 4> directions = { {{-1, 0}, {1, 0}, {0, -1}, {0, 1}} };
 	while(!vFrontier.empty())
 	{
 		ivec2 current = vFrontier.top().second;
@@ -131,28 +141,32 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End) co
 		if(current == End)
 			break;
 
-		ivec2 neighbors[4] = { {current.x - 1, current.y}, {current.x + 1, current.y}, {current.x, current.y - 1}, {current.x, current.y + 1} };
-		for(const auto& next : neighbors)
+		const int currentIndex = ToIndex(current);
+		for(const auto& dir : directions)
 		{
-			if(!IsWalkable(next))
+			ivec2 next = { current.x + dir.x, current.y + dir.y };
+			if(next.x < 0 || next.x >= m_Width || next.y < 0 || next.y >= m_Height || m_vMap.IsCollide(next.x, next.y))
 				continue;
 
-			const int newCost = vCostSoFar[current] + 1;
-			if(!vCostSoFar.contains(next) || newCost < vCostSoFar[next])
+			const int nextIndex = ToIndex(next);
+			const int newCost = m_vCostSoFar[currentIndex] + 1;
+			if(newCost < m_vCostSoFar[nextIndex])
 			{
-				vCostSoFar[next] = newCost;
-				int priority = newCost + m_vHeuristicMap[next.y][next.x];
+				m_vCostSoFar[nextIndex] = newCost;
+				int priority = newCost + ManhattanDistance(next, End);
 				vFrontier.emplace(priority, next);
-				vCameFrom[next] = current;
+				m_vCameFrom[nextIndex] = current;
 			}
 		}
 	}
 
-	// construct path
-	if(vCameFrom.contains(End))
+	if(m_vCameFrom[ToIndex(End)] != ivec2 { -1, -1 })
 	{
-		for(ivec2 current = End; current != Start; current = vCameFrom[current])
+		vPath.reserve(ManhattanDistance(Start, End));
+		for(ivec2 current = End; current != Start; current = m_vCameFrom[ToIndex(current)])
+		{
 			vPath.emplace_back(static_cast<float>(current.x) * 32.f + 16.f, static_cast<float>(current.y) * 32.f + 16.f);
+		}
 
 		vPath.emplace_back(static_cast<float>(Start.x) * 32.f + 16.f, static_cast<float>(Start.y) * 32.f + 16.f);
 		std::ranges::reverse(vPath);
@@ -163,26 +177,38 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End) co
 
 vec2 CPathFinder::GetRandomWaypointRadius(const vec2& Pos, float Radius) const
 {
-	std::vector<vec2> vPossibleWaypoints;
-	const float Range = Radius / 2.0f;
-	const int StartX = clamp(static_cast<int>((Pos.x - Range) / 32.0f), 0, m_Width - 1);
-	const int StartY = clamp(static_cast<int>((Pos.y - Range) / 32.0f), 0, m_Height - 1);
-	const int EndX = clamp(static_cast<int>((Pos.x + Range) / 32.0f), 0, m_Width - 1);
-	const int EndY = clamp(static_cast<int>((Pos.y + Range) / 32.0f), 0, m_Height - 1);
+	const float RadiusSquared = Radius * Radius;
+	const int StartX = clamp(static_cast<int>((Pos.x - Radius) / 32.0f), 0, m_Width - 1);
+	const int StartY = clamp(static_cast<int>((Pos.y - Radius) / 32.0f), 0, m_Height - 1);
+	const int EndX = clamp(static_cast<int>((Pos.x + Radius) / 32.0f), 0, m_Width - 1);
+	const int EndY = clamp(static_cast<int>((Pos.y + Radius) / 32.0f), 0, m_Height - 1);
 
-	for(int y = StartY; y <= EndY; y++)
+	vec2 selectedPoint = { -1.0f, -1.0f };
+	int count = 0;
+
+	for(int y = StartY; y <= EndY; ++y)
 	{
-		for(int x = StartX; x <= EndX; x++)
+		const float yCenter = y * 32.0f + 16.0f;
+		const float deltaY = Pos.y - yCenter;
+		const float deltaYSquared = deltaY * deltaY;
+
+		for(int x = StartX; x <= EndX; ++x)
 		{
-			if(IsWalkable({ x, y }))
-				vPossibleWaypoints.emplace_back(static_cast<float>(x) * 32.0f + 16.0f, static_cast<float>(y) * 32.0f + 16.0f);
+			if(!m_vMap.IsCollide(x, y))
+			{
+				const float xCenter = x * 32.0f + 16.0f;
+				const float deltaX = Pos.x - xCenter;
+				if(deltaX * deltaX + deltaYSquared <= RadiusSquared)
+				{
+					++count;
+					if(secure_rand() % count == 0)
+					{
+						selectedPoint = vec2(xCenter, yCenter);
+					}
+				}
+			}
 		}
 	}
 
-	if(!vPossibleWaypoints.empty())
-	{
-		const int Rand = secure_rand() % vPossibleWaypoints.size();
-		return vPossibleWaypoints[Rand];
-	}
-	return {0.0f, 0.0f};
+	return selectedPoint;
 }

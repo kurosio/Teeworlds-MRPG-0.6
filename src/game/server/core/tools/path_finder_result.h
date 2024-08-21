@@ -3,58 +3,61 @@
 
 struct PathResult
 {
-    std::vector<vec2> Path;
-    bool Success;
+	std::vector<vec2> Path;
+	bool Success;
 };
 
 struct PathRequest
 {
-    ivec2 Start;
-    ivec2 End;
-    std::promise<PathResult> Promise;
+	ivec2 Start;
+	ivec2 End;
+	std::promise<PathResult*> Promise;
 };
 
 struct PathRequestHandle
 {
-    std::future<PathResult> Future;
-    std::vector<vec2> vPath;
+	std::future<PathResult*> Future;
+	std::vector<vec2> vPath;
 
-    bool IsReady() const
-    {
-        if(Future.valid() && Future.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
-            return true;
-        return false;
-    }
+	bool IsReady() const
+	{
+		if(Future.valid() && Future.wait_for(std::chrono::microseconds(0)) == std::future_status::ready)
+			return true;
+		return false;
+	}
 
-    bool TryGetPath()
-    {
-        if(IsReady())
-        {
-            bool Success = false;
-            try
-            {
-                const auto& pathResult = Future.get();
-                if(pathResult.Success)
-                {
-                    vPath = pathResult.Path;
-                    Future = std::future<PathResult>();
-                    Success = true;
-                }
-            }
-            catch(const std::future_error& e)
-            {
-                dbg_msg("PathFinder", "future error: %s", e.what());
-            }
-            return Success;
-        }
-        return false;
-    }
+	bool TryGetPath()
+	{
+		if(IsReady())
+		{
+			bool Success = false;
+			try
+			{
+				if(const PathResult* pathResult = Future.get())
+				{
+					if(pathResult->Success)
+					{
+						vPath = pathResult->Path;
+						Future = std::future<PathResult*>();
+						Success = true;
+					}
+					delete pathResult;
+				}
+			}
+			catch(const std::future_error& e)
+			{
+				dbg_msg("PathFinder", "future error: %s", e.what());
+			}
+			return Success;
+		}
+		return false;
+	}
 
-    void Reset()
-    {
-        Future = std::future<PathResult>();
-        vPath.clear();
-    }
+	void Reset()
+	{
+		Future = std::future<PathResult*>();
+		vPath.clear();
+	}
 };
 
 #endif
