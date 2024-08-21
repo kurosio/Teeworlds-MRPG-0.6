@@ -62,7 +62,7 @@ void CPathFinder::RequestPath(PathRequestHandle& Handle, const vec2& Start, cons
 	request.Start = istart;
 	request.End = iend;
 
-	std::future<PathResult*> temp_future = request.Promise.get_future();
+	std::future<PathResult> temp_future = request.Promise.get_future();
 	m_vRequestQueue.push(std::move(request));
 	m_Condition.notify_one();
 
@@ -93,9 +93,7 @@ void CPathFinder::PathfindingThread()
 
 		std::vector<vec2> vPath = FindPath(request.Start, request.End);
 		const bool Success = !vPath.empty();
-
-		auto result = new PathResult({ vPath, Success });
-		request.Promise.set_value(result);
+		request.Promise.set_value({ vPath, Success });
 	}
 }
 

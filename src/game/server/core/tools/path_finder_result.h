@@ -11,12 +11,12 @@ struct PathRequest
 {
     ivec2 Start;
     ivec2 End;
-    std::promise<PathResult*> Promise;
+    std::promise<PathResult> Promise;
 };
 
 struct PathRequestHandle
 {
-    std::future<PathResult*> Future;
+    std::future<PathResult> Future;
     std::vector<vec2> vPath;
 
     bool IsReady() const
@@ -33,16 +33,13 @@ struct PathRequestHandle
             bool Success = false;
             try
             {
-	            if(const PathResult* pathResult = Future.get())
-	            {
-	                if(pathResult->Success)
-	                {
-	                    vPath = pathResult->Path;
-	                    Future = std::future<PathResult*>();
-                        Success = true;
-	                }
-	                delete pathResult;
-	            }
+                const auto& pathResult = Future.get();
+                if(pathResult.Success)
+                {
+                    vPath = pathResult.Path;
+                    Future = std::future<PathResult>();
+                    Success = true;
+                }
             }
             catch(const std::future_error& e)
             {
@@ -55,7 +52,7 @@ struct PathRequestHandle
 
     void Reset()
     {
-        Future = std::future<PathResult*>();
+        Future = std::future<PathResult>();
         vPath.clear();
     }
 };
