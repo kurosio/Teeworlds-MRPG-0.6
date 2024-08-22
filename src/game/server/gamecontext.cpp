@@ -134,13 +134,12 @@ CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
 void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float Angle, int64_t Mask)
 {
 	float a = 3 * pi / 2 + Angle;
-	//float a = get_angle(dir);
 	float s = a - pi / 3;
 	float e = a + pi / 3;
 	for(int i = 0; i < Amount; i++)
 	{
-		float f = mix(s, e, float(i + 1) / float(Amount + 2));
-		CNetEvent_DamageInd* pEvent = (CNetEvent_DamageInd*)m_Events.Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd), Mask);
+		float f = mix(s, e, (i + 1) / (float)(Amount + 2));
+		CNetEvent_DamageInd* pEvent = static_cast<CNetEvent_DamageInd*>(m_Events.Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd), Mask));
 		if(pEvent)
 		{
 			pEvent->m_X = (int)Pos.x;
@@ -179,7 +178,7 @@ void CGS::CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos
 
 void CGS::CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage)
 {
-	const float AngleStep = 2.0f * pi / ExplosionCount;
+	const float AngleStep = 2.0f * pi / (float)ExplosionCount;
 
 	for(int i = 0; i < ExplosionCount; ++i)
 	{
@@ -260,8 +259,7 @@ void CGS::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 
 void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
-	// fix for vanilla unterstand SoundID
-	if(Sound < 0 || Sound > 40)
+	if(Sound < 0 || Sound > SOUND_MENU)
 		return;
 
 	CNetEvent_SoundWorld* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask);
@@ -275,8 +273,7 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 
 void CGS::CreatePlayerSound(int ClientID, int Sound)
 {
-	// fix for vanilla unterstand SoundID
-	if(!m_apPlayers[ClientID] || Sound < 0 || Sound > 40)
+	if(!m_apPlayers[ClientID] || Sound < 0 || Sound > SOUND_MENU)
 		return;
 
 	CNetEvent_SoundWorld* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), CmaskOne(ClientID));
@@ -1099,13 +1096,24 @@ void CGS::OnUpdateClientServerInfo(nlohmann::json* pJson, int ClientID)
 		return;
 
 	CTeeInfo& TeeInfo = pPlayer->GetTeeInfo();
-	(*pJson)["skin"]["name"] = TeeInfo.m_aSkinName;
+	nlohmann::json JsSkin;
+
 	if(TeeInfo.m_UseCustomColor)
 	{
-		(*pJson)["skin"]["color_body"] = TeeInfo.m_ColorBody;
-		(*pJson)["skin"]["color_feet"] = TeeInfo.m_ColorFeet;
+		JsSkin =
+		{
+			{"name", TeeInfo.m_aSkinName},
+			{"color_body", TeeInfo.m_ColorBody},
+			{"color_feet", TeeInfo.m_ColorFeet}
+		};
 	}
-	(*pJson)["afk"] = false;
+	else
+	{
+		JsSkin = { {"name", TeeInfo.m_aSkinName} };
+	}
+
+	(*pJson)["skin"] = std::move(JsSkin);
+	(*pJson)["afk"] = pPlayer->IsAfk();
 	(*pJson)["team"] = pPlayer->GetTeam();
 }
 

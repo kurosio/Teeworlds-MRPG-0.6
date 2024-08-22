@@ -848,3 +848,64 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 	if(pPtr)
 		*pPtr = groupPtr;
 }
+
+void CEntityManager::EffectCircleDamage(int ClientID, int DelayImpulse, int DelayBetweenImpulses, int Repeat) const
+{
+	CPlayer* pPlayer = GS()->GetPlayer(ClientID, false, true);
+	if(!pPlayer)
+		return;
+
+	// initialize group
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	groupPtr->SetConfig("delayImpulse", DelayImpulse);
+	groupPtr->SetConfig("delayBetweenImpulses", DelayBetweenImpulses);
+
+	// initialize effect
+	auto pEffect = groupPtr->CreateBase(pPlayer->GetCharacter()->GetPos());
+	pEffect->SetConfig("currentImpulseTick", DelayImpulse);
+	pEffect->SetConfig("currentAngle", 0.f);
+	pEffect->SetConfig("remainingRepeats", Repeat);
+	pEffect->SetConfig("currentDelayTick", 0);
+
+	// register tick event
+	pEffect->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+	{
+		auto& delayTick = pBase->GetRefConfig("currentDelayTick", 0);
+
+		// delay tick
+		if(delayTick > 0)
+		{
+			--delayTick;
+			return;
+		}
+
+		auto& currentImpulseTick = pBase->GetRefConfig("currentImpulseTick", 0);
+		auto& currentAngle = pBase->GetRefConfig("currentAngle", 0.f);
+
+		// effect
+		if(currentImpulseTick > 0)
+		{
+			constexpr float angleIncrement = 1.f;
+			constexpr float maxAngle = 256.f;
+
+			currentAngle = fmod(currentAngle + angleIncrement, maxAngle);
+			currentImpulseTick--;
+
+			pBase->GS()->CreateDamage(pBase->GetCharacter()->GetPos(), pBase->GetClientID(), 1, false, currentAngle);
+			return;
+		}
+
+		// repeats
+		auto& remainingRepeats = pBase->GetRefConfig("remainingRepeats", 0);
+		if(remainingRepeats > 0 || remainingRepeats == -1)
+		{
+			remainingRepeats = maximum(remainingRepeats - 1, -1);
+			currentImpulseTick = pBase->GetGroup()->GetConfig("delayImpulse", 0);
+			delayTick = pBase->GetGroup()->GetConfig("delayBetweenImpulses", 0);
+			return;
+		}
+		
+		// destroy
+		pBase->MarkForDestroy();
+	});
+}

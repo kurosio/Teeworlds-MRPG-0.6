@@ -969,7 +969,6 @@ void CServer::SendMap(int ClientID)
 	}
 
 	{
-
 		CMsgPacker Msg(NETMSG_MAP_CHANGE, true);
 		Msg.AddString(pWorldName, 0);
 		Msg.AddInt(pMapDetail->GetCrc());
@@ -1216,57 +1215,61 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 		}
 		else if(MsgID == NETMSG_INPUT)
 		{
-			CClient::CInput* pInput;
 			int64_t TagTime;
 
-			m_aClients[ClientID].m_LastAckedSnapshot = Unpacker.GetInt();
+			auto& client = m_aClients[ClientID];
+			client.m_LastAckedSnapshot = Unpacker.GetInt();
 			int IntendedTick = Unpacker.GetInt();
 			int Size = Unpacker.GetInt();
 
-			// check for errors
+			// check to error
 			if(Unpacker.Error() || Size / 4 > MAX_INPUT_SIZE)
 				return;
 
-			if(m_aClients[ClientID].m_LastAckedSnapshot > 0)
-				m_aClients[ClientID].m_SnapRate = CClient::SNAPRATE_FULL;
+			// update snapshot rate
+			if(client.m_LastAckedSnapshot > 0)
+				client.m_SnapRate = CClient::SNAPRATE_FULL;
 
-			if(m_aClients[ClientID].m_Snapshots.Get(m_aClients[ClientID].m_LastAckedSnapshot, &TagTime, 0, 0) >= 0)
-				m_aClients[ClientID].m_Latency = (int)(((time_get() - TagTime) * 1000) / time_freq());
-
-			// add message to report the input timing
-			// skip packets that are old
-			if(IntendedTick > m_aClients[ClientID].m_LastInputTick)
+			// update client latency
+			if(client.m_Snapshots.Get(client.m_LastAckedSnapshot, &TagTime, nullptr, nullptr) >= 0)
 			{
-				int TimeLeft = ((TickStartTime(IntendedTick) - time_get()) * 1000) / time_freq();
+				int64_t timeNow = time_get();
+				client.m_Latency = static_cast<int>(((timeNow - TagTime) * 1000) / time_freq());
+			}
+
+			// skip old packets and add new
+			if(IntendedTick > client.m_LastInputTick)
+			{
+				int TimeLeft = static_cast<int>(((TickStartTime(IntendedTick) - time_get()) * 1000) / time_freq());
 
 				CMsgPacker Msgp(NETMSG_INPUTTIMING, true);
 				Msgp.AddInt(IntendedTick);
 				Msgp.AddInt(TimeLeft);
-				SendMsg(&Msgp, 0, ClientID, -1, m_aClients[ClientID].m_WorldID);
+				SendMsg(&Msgp, 0, ClientID, -1, client.m_WorldID);
 			}
 
-			m_aClients[ClientID].m_LastInputTick = IntendedTick;
+			client.m_LastInputTick = IntendedTick;
 
-			pInput = &m_aClients[ClientID].m_aInputs[m_aClients[ClientID].m_CurrentInput];
-
+			// input
+			auto& currentInput = client.m_aInputs[client.m_CurrentInput];
 			if(IntendedTick <= Tick())
 				IntendedTick = Tick() + 1;
 
-			pInput->m_GameTick = IntendedTick;
+			currentInput.m_GameTick = IntendedTick;
 
-			for(int i = 0; i < Size / 4; i++)
-				pInput->m_aData[i] = Unpacker.GetInt();
+			int InputSize = Size / 4;
+			for(int i = 0; i < InputSize; i++)
+				currentInput.m_aData[i] = Unpacker.GetInt();
 
-			mem_copy(m_aClients[ClientID].m_LatestInput.m_aData, pInput->m_aData, MAX_INPUT_SIZE * sizeof(int));
+			mem_copy(client.m_LatestInput.m_aData, currentInput.m_aData, InputSize * sizeof(int));
 
-			m_aClients[ClientID].m_CurrentInput++;
-			m_aClients[ClientID].m_CurrentInput %= 200;
+			client.m_CurrentInput = (client.m_CurrentInput + 1) % 200;
 
-			// call the mod with the fresh input data
-			if(m_aClients[ClientID].m_State == CClient::STATE_INGAME)
+			// update new input codes
+			if(client.m_State == CClient::STATE_INGAME)
 			{
-				const int WorldID = m_aClients[ClientID].m_WorldID;
-				GameServer(WorldID)->OnClientDirectInput(ClientID, m_aClients[ClientID].m_LatestInput.m_aData);
+				const int WorldID = client.m_WorldID;
+				GameServer(WorldID)->OnClientDirectInput(ClientID, client.m_LatestInput.m_aData);
 				m_pInputKeys->ResetClientBlockKeys(ClientID);
 			}
 		}
@@ -1691,44 +1694,51 @@ void CServer::UpdateRegisterServerInfo()
 		}
 	}
 
-	int MaxPlayers = maximum((int)MAX_PLAYERS, PlayerCount);
-	int MaxClients = maximum((int)MAX_PLAYERS, ClientCount);
-	char aMapSha256[SHA256_MAXSTRSIZE];
+	auto* pMainWorld = MultiWorlds()->GetWorld(MAIN_WORLD_ID);
+	auto* pMapDetail = pMainWorld->MapDetail();
 
+	char aMapSha256[SHA256_MAXSTRSIZE];
 	sha256_str(MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetSha256(), aMapSha256, sizeof(aMapSha256));
 
-	nlohmann::json JsServerInfo;
-	JsServerInfo["max_clients"] = MaxClients;
-	JsServerInfo["max_players"] = MaxPlayers;
-	JsServerInfo["passworded"] = g_Config.m_Password[0] != '\0';
-	JsServerInfo["game_type"] = "MRPG";
-	JsServerInfo["name"] = g_Config.m_SvName;
-
-	JsServerInfo["map"]["name"] = "Multiworld";
-	JsServerInfo["map"]["sha256"] = aMapSha256;
-	JsServerInfo["map"]["size"] = MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetSize();
-
-	JsServerInfo["version"] = GameServer()->Version();
-	JsServerInfo["game_type"] = "MRPG";
-	JsServerInfo["client_score_kind"] = "points";
+	nlohmann::json JsServerInfo =
+	{
+		{"max_clients", (int)MAX_CLIENTS},
+		{"max_players", (int)MAX_PLAYERS},
+		{"passworded", g_Config.m_Password[0] != '\0' ? true : false},
+		{"game_type", "MRPG"},
+		{"name", g_Config.m_SvName},
+		{"map",
+			{
+				{"name", "Multiworld"},
+				{"sha256", aMapSha256},
+				{"size", pMapDetail->GetSize()}
+			}
+		},
+		{"version", GameServer()->Version()},
+		{"client_score_kind", "points"},
+		{"requires_login", false},
+		{"clients", nlohmann::json::array()}
+	};
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
 		{
-			nlohmann::json JsPlayerInfo;
-			JsPlayerInfo["name"] = ClientName(i);
-			JsPlayerInfo["clan"] = ClientClan(i);
-			JsPlayerInfo["country"] = m_aClients[i].m_Country;
-			JsPlayerInfo["score"] = m_aClients[i].m_Score;
-			JsPlayerInfo["is_player"] = GameServer()->IsClientPlayer(i);
+			nlohmann::json JsPlayerInfo =
+			{
+				{"name", ClientName(i)},
+				{"clan", ClientClan(i)},
+				{"country", m_aClients[i].m_Country},
+				{"score", m_aClients[i].m_Score},
+				{"is_player", GameServer()->IsClientPlayer(i)}
+			};
 			GameServer()->OnUpdateClientServerInfo(&JsPlayerInfo, i);
 
 			JsServerInfo["clients"].push_back(JsPlayerInfo);
 		}
 	}
 
-	m_pRegister->OnNewInfo(JsServerInfo.dump(-1).c_str());
+	m_pRegister->OnNewInfo(JsServerInfo.dump().c_str());
 }
 
 void CServer::UpdateServerInfo(bool Resend)
