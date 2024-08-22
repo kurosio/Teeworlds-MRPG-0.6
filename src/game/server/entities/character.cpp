@@ -1114,9 +1114,19 @@ void CCharacter::HandleTilesets()
 	// handle tilesets
 	m_pTilesHandler->Handle(m_Core.m_Pos);
 
-	// check from components
 	if(!m_pPlayer->IsBot())
+	{
+		// teleport
+		vec2 TeleOut;
+		if(m_pTilesHandler->IsEnter(TILE_TELE_IN) && GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut))
+		{
+			ChangePosition(TeleOut);
+			return;
+		}
+
+		// check from components
 		GS()->Core()->OnCharacterTile(this);
+	}
 
 	// initialize variables
 	int ClientID = m_pPlayer->GetCID();

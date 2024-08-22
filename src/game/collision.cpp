@@ -45,6 +45,16 @@ void CCollision::Init(class CLayers *pLayers)
 	m_pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
 	InitTiles(m_pTiles);
 
+	if(m_pLayers->TeleLayer())
+	{
+		unsigned int Size = m_pLayers->Map()->GetDataSize(m_pLayers->TeleLayer()->m_Tele);
+		if(Size >= (size_t)m_Width * m_Height * sizeof(CTeleTile))
+		{
+			m_pTele = static_cast<CTeleTile*>(m_pLayers->Map()->GetData(m_pLayers->TeleLayer()->m_Tele));
+			InitTeleports(m_pTele);
+		}
+	}
+
 	if(m_pLayers->FrontLayer())
 	{
 		unsigned int Size = m_pLayers->Map()->GetDataSize(m_pLayers->FrontLayer()->m_Front);
@@ -103,6 +113,29 @@ void CCollision::InitTiles(CTile* pTiles) const
 	}
 }
 
+void CCollision::InitTeleports(CTeleTile* pTiles)
+{
+	for(int i = 0; i < m_Width * m_Height; i++)
+	{
+		const int Number = pTiles[i].m_Number;
+		const int Type = pTiles[i].m_Type;
+
+		if(Number < 0)
+			continue;
+
+		if(Type == TILE_TELE_IN)
+		{
+			m_pTiles[i].m_Reserved = static_cast<char>(Type);
+			m_vTeleIns[Number].emplace_back(i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f);
+		}
+		else if(Type == TILE_TELE_OUT)
+		{
+			m_pTiles[i].m_Reserved = static_cast<char>(Type);
+			m_vTeleOuts[Number].emplace_back(i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f);
+		}
+	}
+}
+
 unsigned short CCollision::GetParseTile(int x, int y) const
 {
 	int Nx = clamp(x / 32, 0, m_Width - 1);
@@ -135,6 +168,25 @@ int CCollision::GetFrontTile(int x, int y) const
 	int Nx = clamp(x/32, 0, m_Width-1);
 	int Ny = clamp(y/32, 0, m_Height-1);
 	return m_pFront[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pFront[Ny*m_Width+Nx].m_Index;
+}
+
+bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out)
+{
+	if(!m_pTele)
+		return false;
+
+	const int Nx = clamp(round_to_int(Ins.x) / 32, 0, m_Width - 1);
+	const int Ny = clamp(round_to_int(Ins.y) / 32, 0, m_Height - 1);
+	const auto& Number = m_pTele[Ny * m_Width + Nx].m_Number;
+
+	if(Number > 0 && !m_vTeleOuts[Number].empty())
+	{
+		const int TeleOut = rand() % m_vTeleOuts[Number].size();
+		Out = m_vTeleOuts[Number][TeleOut];
+		return true;
+	}
+
+	return false;
 }
 
 int CCollision::GetTileIndex(int Index) const

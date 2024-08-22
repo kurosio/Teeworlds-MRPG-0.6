@@ -16,6 +16,7 @@ CLayers::CLayers()
 	m_pGameGroup = nullptr;
 	m_pGameLayer = nullptr;
 	m_pFrontLayer = nullptr;
+	m_pTeleLayer = nullptr;
 	m_pMap = nullptr;
 }
 
@@ -68,6 +69,16 @@ void CLayers::Init(class IKernel* pKernel, int ID)
 						pTilemap->m_Front = *((int*)(pTilemap)+17);
 					}
 					m_pFrontLayer = pTilemap;
+					IsEntities = true;
+				}
+
+				if(pTilemap->m_Flags & TILESLAYERFLAG_TELE)
+				{
+					if(pTilemap->m_Version <= 2)
+					{
+						pTilemap->m_Tele = *((int*)(pTilemap)+15);
+					}
+					m_pTeleLayer = pTilemap;
 					IsEntities = true;
 				}
 

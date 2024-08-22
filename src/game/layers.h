@@ -20,6 +20,7 @@ class CLayers
 
 	CMapItemLayerTilemap* m_pGameLayer;
 	CMapItemLayerTilemap* m_pFrontLayer;
+	CMapItemLayerTilemap* m_pTeleLayer;
 
 	IMap* m_pMap;
 
@@ -32,12 +33,13 @@ public:
 	int NumGroups() const { return m_GroupsNum; }
 	int NumLayers() const { return m_LayersNum; }
 	IMap* Map() const { return m_pMap; }
-	CMapItemGroup* GameGroup() const { return m_pGameGroup; }
 	CMapItemLayerTilemap* GameLayer() const { return m_pGameLayer; }
 	CMapItemGroup* GetGroup(int Index) const;
 	CMapItemLayer* GetLayer(int Index) const;
 
+	CMapItemGroup* GameGroup() const { return m_pGameGroup; }
 	CMapItemLayerTilemap* FrontLayer() const { return m_pFrontLayer; }
+	CMapItemLayerTilemap* TeleLayer() const { return m_pTeleLayer; }
 };
 
 #endif

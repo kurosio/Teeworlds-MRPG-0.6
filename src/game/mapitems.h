@@ -60,6 +60,8 @@ enum
 	TILE_AETHER_TELEPORT,
 	TILE_WORLD_SWAP,
 	TILE_SHOP_ZONE,
+	TILE_TELE_IN = 26,
+	TILE_TELE_OUT,
 	TILE_WATER = 30,
 	TILE_INVISIBLE_WALL,
 	TILE_GUILD_CHAIR = 32,
@@ -80,6 +82,7 @@ enum
 
 	LAYERFLAG_DETAIL=1,
 	TILESLAYERFLAG_GAME=1,
+	TILESLAYERFLAG_TELE = 2,
 	TILESLAYERFLAG_FRONT = 8,
 
 	ENTITY_OFFSET=255-16*4,
@@ -115,6 +118,13 @@ public:
 	unsigned char m_Flags;
 	unsigned char m_Skip;
 	unsigned char m_Reserved;
+};
+
+class CTeleTile
+{
+public:
+	unsigned char m_Number;
+	unsigned char m_Type;
 };
 
 struct CMapItemInfo

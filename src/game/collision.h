@@ -15,10 +15,15 @@ enum
 
 vec2 ClampVel(int MoveRestriction, vec2 Vel);
 
+class CTile;
+class CTeleTile;
+class CLayers;
+
 class CCollision
 {
-	class CTile *m_pTiles;
-	class CTile *m_pFront;
+	CTile *m_pTiles;
+	CTile *m_pFront;
+	CTeleTile* m_pTele;
 	unsigned short GetParseTile(int x, int y) const;
 	unsigned short GetParseFrontTile(int x, int y) const;
 	/*end another*/
@@ -27,11 +32,15 @@ class CCollision
 	int m_Height;
 
 	void InitTiles(CTile* pTiles) const;
+	void InitTeleports(CTeleTile* pTiles);
 
-	class CLayers *m_pLayers;
+	CLayers *m_pLayers;
 	bool IsTile(int x, int y, int Flag=COLFLAG_SOLID) const;
 	int GetTile(int x, int y) const;
 	int GetFrontTile(int x, int y) const;
+
+	std::map<int, std::vector<vec2>> m_vTeleIns;
+	std::map<int, std::vector<vec2>> m_vTeleOuts;
 
 public:
 	enum
@@ -44,7 +53,7 @@ public:
 	};
 
 	CCollision();
-	void Init(class CLayers *pLayers);
+	void Init(CLayers *pLayers);
 	bool CheckPoint(float x, float y, int Flag=COLFLAG_SOLID) const { return IsTile(round_to_int(x), round_to_int(y), Flag); }
 	bool CheckPoint(vec2 Pos, int Flag=COLFLAG_SOLID) const { return CheckPoint(Pos.x, Pos.y, Flag); }
 	int GetCollisionAt(float x, float y) const { return GetTile(round_to_int(x), round_to_int(y)); }
@@ -52,6 +61,7 @@ public:
 	int GetTileIndex(int Index) const;
 	int GetTileFlags(int Index) const;
 	int GetTile(vec2 Pos) const { return GetTile(round_to_int(Pos.x), round_to_int(Pos.y)); }
+	bool TryGetTeleportOut(vec2 Ins, vec2& Out);
 
 	int GetMoveRestrictions(void* pUser, vec2 Pos, float Distance = 18.0f, int OverrideCenterTileIndex = -1);
 	int GetMoveRestrictions(vec2 Pos, float Distance = 18.0f)
