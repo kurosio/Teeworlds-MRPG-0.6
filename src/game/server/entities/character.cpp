@@ -1116,12 +1116,26 @@ void CCharacter::HandleTilesets()
 
 	if(!m_pPlayer->IsBot())
 	{
-		// teleport
 		vec2 TeleOut;
-		if(m_pTilesHandler->IsEnter(TILE_TELE_IN) && GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut))
+		if(m_pTilesHandler->IsActive(TILE_TELE_IN))
 		{
-			ChangePosition(TeleOut);
-			return;
+			// teleport
+			if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut, TILE_TELE_OUT))
+			{
+				ChangePosition(TeleOut);
+				return;
+			}
+
+			// confirm teleport
+			if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut, TILE_TELE_CONFIRM_OUT))
+			{
+				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, Server()->TickSpeed(), "Use the hammer to enter");
+				if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_ReloadTimer)
+				{
+					ChangePosition(TeleOut);
+					return;
+				}
+			}
 		}
 
 		// check from components

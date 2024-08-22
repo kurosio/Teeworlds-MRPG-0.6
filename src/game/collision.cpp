@@ -133,6 +133,11 @@ void CCollision::InitTeleports(CTeleTile* pTiles)
 			m_pTiles[i].m_Reserved = static_cast<char>(Type);
 			m_vTeleOuts[Number].emplace_back(i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f);
 		}
+		else if(Type == TILE_TELE_CONFIRM_OUT)
+		{
+			m_pTiles[i].m_Reserved = static_cast<char>(Type);
+			m_vConfirmTeleOuts[Number].emplace_back(i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f);
+		}
 	}
 }
 
@@ -170,7 +175,7 @@ int CCollision::GetFrontTile(int x, int y) const
 	return m_pFront[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pFront[Ny*m_Width+Nx].m_Index;
 }
 
-bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out)
+bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out, int ToIndex)
 {
 	if(!m_pTele)
 		return false;
@@ -179,14 +184,15 @@ bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out)
 	const int Ny = clamp(round_to_int(Ins.y) / 32, 0, m_Height - 1);
 	const auto& Number = m_pTele[Ny * m_Width + Nx].m_Number;
 
-	if(Number > 0 && !m_vTeleOuts[Number].empty())
-	{
-		const int TeleOut = rand() % m_vTeleOuts[Number].size();
-		Out = m_vTeleOuts[Number][TeleOut];
-		return true;
-	}
+	if(Number <= 0)
+		return false;
 
-	return false;
+	const auto& TeleOuts = (ToIndex == TILE_TELE_OUT) ? m_vTeleOuts[Number] : m_vConfirmTeleOuts[Number];
+	if(TeleOuts.empty())
+		return false;
+
+	Out = TeleOuts[rand() % TeleOuts.size()];
+	return true;
 }
 
 int CCollision::GetTileIndex(int Index) const

@@ -41,6 +41,7 @@ class CCollision
 
 	std::map<int, std::vector<vec2>> m_vTeleIns;
 	std::map<int, std::vector<vec2>> m_vTeleOuts;
+	std::map<int, std::vector<vec2>> m_vConfirmTeleOuts;
 
 public:
 	enum
@@ -61,7 +62,7 @@ public:
 	int GetTileIndex(int Index) const;
 	int GetTileFlags(int Index) const;
 	int GetTile(vec2 Pos) const { return GetTile(round_to_int(Pos.x), round_to_int(Pos.y)); }
-	bool TryGetTeleportOut(vec2 Ins, vec2& Out);
+	bool TryGetTeleportOut(vec2 Ins, vec2& Out, int ToIndex);
 
 	int GetMoveRestrictions(void* pUser, vec2 Pos, float Distance = 18.0f, int OverrideCenterTileIndex = -1);
 	int GetMoveRestrictions(vec2 Pos, float Distance = 18.0f)
