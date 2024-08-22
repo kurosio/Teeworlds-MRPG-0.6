@@ -25,8 +25,11 @@ void CAchievementManager::OnInit()
 	}
 
 	// sort achievements by name
-	std::sort(CAchievementInfo::Data().begin(), CAchievementInfo::Data().end(),
-		[](const CAchievementInfo* p1, const CAchievementInfo* p2) { return std::string_view(p1->GetName()) < std::string_view(p2->GetName()); });
+	std::ranges::sort(CAchievementInfo::Data(),
+      [](const CAchievementInfo* p1, const CAchievementInfo* p2)
+      {
+          return std::string_view(p1->GetName()) < std::string_view(p2->GetName());
+      });
 }
 
 void CAchievementManager::OnClientReset(int ClientID)
@@ -194,15 +197,15 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
 
 int CAchievementManager::GetCountByGroup(int Group) const
 {
-	return (int)std::count_if(CAchievementInfo::Data().begin(), CAchievementInfo::Data().end(), [Group](const CAchievementInfo* pAchievement)
-	{ return pAchievement->GetGroup() == Group; });
+	return (int)std::ranges::count_if(CAchievementInfo::Data(), [Group](const CAchievementInfo* pAchievement)
+	                                  { return pAchievement->GetGroup() == Group; });
 }
 
 int CAchievementManager::GetCompletedCountByGroup(int ClientID, int Group) const
 {
 	auto& pAchievements = CAchievement::Data()[ClientID];
-	return (int)std::count_if(pAchievements.begin(), pAchievements.end(), [Group](const CAchievement* p)
-	{ return p->Info()->GetGroup() == Group && p->IsCompleted(); });
+	return (int)std::ranges::count_if(pAchievements, [Group](const CAchievement* p)
+	                                  { return p->Info()->GetGroup() == Group && p->IsCompleted(); });
 }
 
 int CAchievementManager::GetCount() const { return (int)CAchievementInfo::Data().size(); }
@@ -210,8 +213,8 @@ int CAchievementManager::GetCount() const { return (int)CAchievementInfo::Data()
 int CAchievementManager::GetCompletedCount(int ClientID) const
 {
 	auto& pAchievements = CAchievement::Data()[ClientID];
-	return (int)std::count_if(pAchievements.begin(), pAchievements.end(), [](const CAchievement* p)
-	{ return p->IsCompleted(); });
+	return (int)std::ranges::count_if(pAchievements, [](const CAchievement* p)
+	                                  { return p->IsCompleted(); });
 }
 
 

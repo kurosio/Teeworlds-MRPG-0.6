@@ -87,7 +87,7 @@ public:
 	void InitData(const std::string& RewardData);
 
 	// check if the achievement is completed
-	bool CheckAchievement(int Value, const CAchievement* pAchievement) const;
+	bool CheckAchievement(int Misc, const CAchievement* pAchievement) const;
 };
 
 // achievement data
@@ -124,8 +124,11 @@ public:
 	CAchievementInfo* Info() const { return m_pInfo; }
 	bool IsCompleted() const { return m_Completed; }
 	int GetProgress() const { return m_Progress; }
-
 	bool UpdateProgress(int Misc, int Value, int ProgressType);
+
+private:
+	void NotifyPlayerProgress(CPlayer* pPlayer);
+	void RewardPlayer(CPlayer* pPlayer) const;
 };
 
 #endif

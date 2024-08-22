@@ -10,14 +10,14 @@ public:
 	using CCooldownCallback = std::function<void()>;
 
 	CCooldown() = default;
-	void Init(int clientID) { m_ClientID = clientID; }
-	void Start(int time, std::string name, CCooldownCallback callback);
+	void Init(int ClientID) { m_ClientID = ClientID; }
+	void Start(int Time, std::string Name, CCooldownCallback fnCallback);
 	void Reset();
 	bool IsCooldownActive() const { return m_IsCooldownActive; }
 	void Handler();
 
 private:
-	void EndCooldown(const char* message = "\0");
+	void EndCooldown(const char* pMessage = "\0");
 	bool HasPlayerMoved(CPlayer* pPlayer) const;
 	bool HasMouseMoved(CPlayer* pPlayer) const;
 	void BroadcastCooldown(IServer* pServer) const;
