@@ -352,8 +352,8 @@ void CCharacterBotAI::Tick()
 	if(GameLayerClipped(m_Pos))
 		Die(m_pBotPlayer->GetCID(), WEAPON_SELF);
 
-	// update door state
-	if(!m_DoorHit)
+	// door
+	if(length(m_NormalDoorHit) < 0.1f)
 	{
 		m_OlderPos = m_OldPos;
 		m_OldPos = m_Core.m_Pos;
@@ -366,11 +366,11 @@ void CCharacterBotAI::TickDeferred()
 	if(!m_pBotPlayer->IsActive() || !IsAlive())
 		return;
 
-	// reset door
-	if(m_DoorHit)
+	// door reset
+	if(length(m_NormalDoorHit) >= 0.1f)
 	{
-		ResetDoorPos();
-		m_DoorHit = false;
+		HandleDoorHit();
+		m_NormalDoorHit = vec2(0, 0);
 	}
 
 	CCharacterCore::CParams PlayerTune(&m_pBotPlayer->m_NextTuningParams);
@@ -875,7 +875,7 @@ void CCharacterBotAI::Move()
 		{
 			AI()->GetTarget()->SetType(TARGET_TYPE::LOST);
 			m_Input.m_Direction = -m_Input.m_Direction;
-			m_DoorHit = true;
+			m_NormalDoorHit = vec2(1.f, 1.f);
 		}
 	}
 

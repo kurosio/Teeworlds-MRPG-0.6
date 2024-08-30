@@ -62,7 +62,7 @@ void CPlayerBot::Tick()
 				{
 					// Teleport the bot to the owner's position
 					vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
-					m_pCharacter->m_DoorHit = false;
+					m_pCharacter->ResetDoorHit();
 					m_pCharacter->ChangePosition(OwnerPos);
 
 					// Copy the owner's velocity, direction, and input to the bot

@@ -574,7 +574,7 @@ void DungeonDoor::Tick()
 			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
 			if(Distance <= (float)g_Config.m_SvDoorRadiusHit)
 			{
-				pChar->m_DoorHit = true;
+				pChar->SetDoorHit(m_Pos, m_PosTo);
 				pChar->Die(pChar->GetPlayer()->GetCID(), WEAPON_WORLD);
 			}
 		}

@@ -12,12 +12,12 @@ class CCharacter : public CEntity
 {
 	MACRO_ALLOC_POOL_ID()
 
-	class CPlayer *m_pPlayer;
-	CTileHandler *m_pTilesHandler;
+	class CPlayer* m_pPlayer {};
+	CTileHandler* m_pTilesHandler {};
 
-	int m_LastWeapon;
-	int m_QueuedWeapon;
-	int m_BleedingByClientID;
+	int m_LastWeapon {};
+	int m_QueuedWeapon {};
+	int m_BleedingByClientID {};
 
 	// ninja
 	struct
@@ -25,11 +25,11 @@ class CCharacter : public CEntity
 		vec2 m_ActivationDir;
 		int m_CurrentMoveTime;
 		int m_OldVelAmount;
-	} m_Ninja;
+	} m_Ninja {};
 
 	// info for dead reckoning
-	CCharacterCore m_SendCore; // core that we should send
-	CCharacterCore m_ReckoningCore; // the dead reckoning core
+	CCharacterCore m_SendCore {}; // core that we should send
+	CCharacterCore m_ReckoningCore {}; // the dead reckoning core
 
 	void HandleReload();
 	void FireWeapon();
@@ -44,27 +44,26 @@ class CCharacter : public CEntity
 	bool CheckAllowedWorld() const;
 
 protected:
-	bool m_Alive;
-	int m_Health;
-	int m_Mana;
-	int m_ReckoningTick; // tick that we are performing dead reckoning From
-
-	int m_LastNoAmmoSound;
-	int m_NumInputs;
-	int m_TriggeredEvents;
-	int m_LastAction;
-	int m_ReloadTimer;
-
-	int m_AttackTick;
-	int m_EmoteType;
-	int m_EmoteStop;
-	vec2 m_SpawnPoint;
-	CMultipleOrbite* m_pMultipleOrbite;
+	bool m_Alive {};
+	int m_Health {};
+	int m_Mana {};
+	int m_ReckoningTick {};
+	int m_LastNoAmmoSound {};
+	int m_NumInputs {};
+	int m_TriggeredEvents {};
+	int m_LastAction {};
+	int m_ReloadTimer {};
+	int m_AttackTick {};
+	int m_EmoteType {};
+	int m_EmoteStop {};
+	vec2 m_SpawnPoint {};
+	vec2 m_NormalDoorHit {};
+	CMultipleOrbite* m_pMultipleOrbite {};
 
 	// these are non-heldback inputs
-	CNetObj_PlayerInput m_Input;
-	CNetObj_PlayerInput m_LatestPrevInput;
-	CNetObj_PlayerInput m_LatestInput;
+	CNetObj_PlayerInput m_Input {};
+	CNetObj_PlayerInput m_LatestPrevInput {};
+	CNetObj_PlayerInput m_LatestInput {};
 
 	void HandleWeapons();
 	void HandleNinja();
@@ -73,26 +72,21 @@ protected:
 
 	void SetSafe(int FlagsDisallow = CHARACTERFLAG_HAMMER_HIT_DISABLED | CHARACTERFLAG_COLLISION_DISABLED | CHARACTERFLAG_HOOK_HIT_DISABLED);
 	void ResetSafe();
-
 	bool StartConversation(CPlayer* pTarget) const;
 	void HandleEventsDeath(int Killer, vec2 Force) const;
-
 	void AutoUseHealingPotionIfNeeded() const;
 
 public:
-	// the player core for the physics
-	CCharacterCore m_Core;
-
-	// allow perm
-	bool m_DamageDisabled;
-	int m_AmmoRegen;
-	bool m_SafeAreaForTick;
-	vec2 m_OldPos;
-	vec2 m_OlderPos;
-	bool m_DoorHit;
-
-	//character's size
 	static constexpr int ms_PhysSize = 28;
+	CCharacterCore m_Core {};
+
+	bool m_DamageDisabled {};
+	int m_AmmoRegen {};
+	bool m_SafeAreaForTick {};
+	vec2 m_OldPos {};
+	vec2 m_OlderPos {};
+
+	// constructors
 	CCharacter(CGameWorld *pWorld);
 	~CCharacter() override;
 
@@ -127,16 +121,15 @@ public:
 	bool CheckFailMana(int Mana);
 	int Mana() const { return m_Mana; }
 	int Health() const { return m_Health; }
-
 	void AddMultipleOrbite(int Amount, int Type, int Subtype);
 	void RemoveMultipleOrbite(int Amount, int Type, int Subtype) const;
 	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
-
 	void ChangePosition(vec2 NewPos);
 	void UpdateEquipingStats(int ItemID);
-	void ResetDoorPos();
-
+	void SetDoorHit(vec2 Start, vec2 End);
+	void HandleDoorHit();
+	void ResetDoorHit() { m_NormalDoorHit = vec2(0, 0); }
 	vec2 GetMousePos() const { return m_Core.m_Pos + vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY); }
 };
 

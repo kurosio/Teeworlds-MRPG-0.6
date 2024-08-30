@@ -453,6 +453,13 @@ bool CCollision::TestBox(vec2 Pos, vec2 Size, int Flag) const
 	return false;
 }
 
+vec2 CCollision::GetDoorNormal(vec2 doorStart, vec2 doorEnd)
+{
+	const vec2 doorVector = doorEnd - doorStart;
+	const vec2 normalizedDoorVector = normalize(doorVector);
+	return vec2(-normalizedDoorVector.y, normalizedDoorVector.x);
+}
+
 void CCollision::MoveBox(vec2 *pInoutPos, vec2 *pInoutVel, vec2 Size, float Elasticity, bool *pDeath) const
 {
 	// do the move

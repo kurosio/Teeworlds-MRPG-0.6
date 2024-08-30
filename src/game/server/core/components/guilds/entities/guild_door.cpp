@@ -82,8 +82,7 @@ void CEntityGuildDoor::Tick()
                     if(pCharGuild && m_pHouse->IsPurchased() && pCharGuild->GetID() == m_pHouse->GetGuild()->GetID())
                         continue;
 
-                    // Set pChar's DoorHit flag to true
-                    pChar->m_DoorHit = true;
+                    pChar->SetDoorHit(m_Pos, m_PosTo);
                 }
             }
         }

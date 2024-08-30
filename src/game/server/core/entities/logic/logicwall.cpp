@@ -157,7 +157,9 @@ void CLogicWallWall::Tick()
 			{
 				float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
 				if(Distance <= g_Config.m_SvDoorRadiusHit)
-					pChar->m_DoorHit = true;
+				{
+					pChar->SetDoorHit(m_Pos, m_PosTo);
+				}
 			}
 		}
 	}
@@ -259,7 +261,7 @@ void CLogicDoorKey::Tick()
 			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
 			if(Distance <= g_Config.m_SvDoorRadiusHit)
 			{
-				pChar->m_DoorHit = true;
+				pChar->SetDoorHit(m_Pos, m_PosTo);
 				GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GAME_WARNING, 100, "You need {}", GS()->GetItemInfo(m_ItemID)->GetName());
 			}
 		}
@@ -308,8 +310,8 @@ void CLogicDungeonDoorKey::Tick()
 		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 		{
 			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-			if(Distance <= 64.0f)
-				pChar->m_DoorHit = true;
+			if(Distance <= g_Config.m_SvDoorRadiusHit)
+				pChar->SetDoorHit(m_Pos, m_PosTo);
 		}
 	}
 }

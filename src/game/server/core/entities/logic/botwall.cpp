@@ -23,7 +23,9 @@ void CBotWall::HitCharacter(CCharacter* pChar)
 		if(Distance <= g_Config.m_SvDoorRadiusHit * 3)
 		{
 			if(Distance <= g_Config.m_SvDoorRadiusHit)
-				pChar->m_DoorHit = true;
+			{
+				pChar->SetDoorHit(m_Pos, m_PosTo);
+			}
 			m_Active = true;
 		}
 	}

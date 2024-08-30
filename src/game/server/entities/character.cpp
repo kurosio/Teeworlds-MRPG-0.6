@@ -23,11 +23,7 @@ MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENT
 CCharacter::CCharacter(CGameWorld* pWorld)
 	: CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER, vec2(0, 0), ms_PhysSize)
 {
-	m_pMultipleOrbite = nullptr;
 	m_pTilesHandler = new CTileHandler(pWorld->GS()->Collision());
-	m_DoorHit = false;
-	m_Health = 0;
-	m_TriggeredEvents = 0;
 }
 
 CCharacter::~CCharacter()
@@ -40,6 +36,7 @@ CCharacter::~CCharacter()
 bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 {
 	m_pPlayer = pPlayer;
+	m_ClientID = pPlayer->GetCID();
 
 	m_EmoteStop = -1;
 	m_LastAction = -1;
@@ -414,13 +411,12 @@ void CCharacter::HandleNinja()
 		// reset velocity so the client doesn't predict stuff
 		m_Core.m_Vel = vec2(0.f, 0.f);
 
-		int ClientID = m_pPlayer->GetCID();
 		const float Radius = GetProximityRadius() * 2.0f;
 		for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
 			if(distance(pChar->m_Core.m_Pos, m_Core.m_Pos) < Radius)
 			{
-				if(pChar->GetPlayer()->GetCID() != ClientID && pChar->IsAllowedPVP(ClientID))
+				if(pChar->GetPlayer()->GetCID() != m_ClientID && pChar->IsAllowedPVP(m_ClientID))
 					pChar->TakeDamage(vec2(0, -10.0f), 1, m_pPlayer->GetCID(), WEAPON_NINJA);
 			}
 		}
@@ -432,7 +428,6 @@ void CCharacter::HandleHookActions()
 	if(!m_Alive)
 		return;
 
-	int ClientID = m_pPlayer->GetCID();
 	CPlayer* pHookedPlayer = GetHookedPlayer();
 	if(pHookedPlayer && pHookedPlayer->GetCharacter())
 	{
@@ -440,7 +435,7 @@ void CCharacter::HandleHookActions()
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
 			if(m_pPlayer->GetItem(itPoisonHook)->IsEquipped())
-				pHookedPlayer->GetCharacter()->TakeDamage({}, 1, ClientID, WEAPON_HAMMER);
+				pHookedPlayer->GetCharacter()->TakeDamage({}, 1, m_ClientID, WEAPON_HAMMER);
 		}
 	}
 	else
@@ -461,7 +456,7 @@ void CCharacter::HandleHookActions()
 	if((m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_GROUND && distance(m_Core.m_HookPos, m_Core.m_Pos) > 48.0f) || m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_PLAYER)
 	{
 		if(m_pPlayer->GetItem(itExplodeHook)->IsEquipped())
-			GS()->CreateExplosion(m_Core.m_HookPos, ClientID, WEAPON_GRENADE, 1);
+			GS()->CreateExplosion(m_Core.m_HookPos, m_ClientID, WEAPON_GRENADE, 1);
 	}
 }
 
@@ -669,7 +664,7 @@ void CCharacter::Tick()
 		Die(m_pPlayer->GetCID(), WEAPON_SELF);
 
 	// door
-	if(!m_DoorHit)
+	if(length(m_NormalDoorHit) < 0.1f)
 	{
 		m_OlderPos = m_OldPos;
 		m_OldPos = m_Core.m_Pos;
@@ -682,10 +677,10 @@ void CCharacter::TickDeferred()
 		return;
 
 	// door reset
-	if(m_DoorHit)
+	if(length(m_NormalDoorHit) >= 0.1f)
 	{
-		ResetDoorPos();
-		m_DoorHit = false;
+		HandleDoorHit();
+		ResetDoorHit();
 	}
 
 	// advance the dummy
@@ -760,11 +755,10 @@ bool CCharacter::IncreaseMana(int Amount)
 void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 {
 	// Get the client ID of the player
-	const int ClientID = m_pPlayer->GetCID();
 	CPlayer* pKiller = GS()->GetPlayer(Killer);
 
 	// Check if the killer player exists
-	if(!pKiller || (Killer == ClientID))
+	if(!pKiller || (Killer == m_ClientID))
 		return;
 
 	// Check if the killer is a guardian bot
@@ -785,7 +779,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
 		{
 			GS()->EntityManager()->DropItem(m_Pos, Killer, { itGold, LossGold }, Force);
-			GS()->Chat(ClientID, "You lost {}%({}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+			GS()->Chat(m_ClientID, "You lost {}%({}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
 		}
 	}
 
@@ -810,7 +804,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				}
 
 				// Send a chat message to the client with their arrest information
-				GS()->Chat(ClientID, "Treasury confiscates {}%({}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
+				GS()->Chat(m_ClientID, "Treasury confiscates {}%({}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
 				m_pPlayer->Account()->Imprison(100);
 			}
 		}
@@ -839,12 +833,11 @@ void CCharacter::Die(int Killer, int Weapon)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, m_pPlayer->GetPlayerWorldID());
 
 	// respawn
-	const int ClientID = m_pPlayer->GetCID();
 	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;
 	m_pPlayer->PrepareRespawnTick();
 	GS()->m_World.RemoveEntity(this);
-	GS()->m_World.m_Core.m_apCharacters[ClientID] = nullptr;
-	GS()->CreateDeath(m_Pos, ClientID);
+	GS()->m_World.m_Core.m_apCharacters[m_ClientID] = nullptr;
+	GS()->CreateDeath(m_Pos, m_ClientID);
 }
 
 void CCharacter::AutoUseHealingPotionIfNeeded() const
@@ -1114,52 +1107,49 @@ void CCharacter::HandleTilesets()
 	// handle tilesets
 	m_pTilesHandler->Handle(m_Core.m_Pos);
 
-	if(!m_pPlayer->IsBot())
+	// teleport
+	if(m_pTilesHandler->IsActive(TILE_TELE_IN))
 	{
 		vec2 TeleOut;
-		if(m_pTilesHandler->IsActive(TILE_TELE_IN))
+
+		// base teleport
+		if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut, TILE_TELE_OUT))
 		{
-			// teleport
-			if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut, TILE_TELE_OUT))
+			ChangePosition(TeleOut);
+			return;
+		}
+
+		// confirm teleport
+		if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut, TILE_TELE_CONFIRM_OUT))
+		{
+			GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, Server()->TickSpeed(), "Use the hammer to enter");
+			if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_ReloadTimer)
 			{
 				ChangePosition(TeleOut);
 				return;
 			}
-
-			// confirm teleport
-			if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut, TILE_TELE_CONFIRM_OUT))
-			{
-				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, Server()->TickSpeed(), "Use the hammer to enter");
-				if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_ReloadTimer)
-				{
-					ChangePosition(TeleOut);
-					return;
-				}
-			}
 		}
-
-		// check from components
-		GS()->Core()->OnCharacterTile(this);
 	}
 
-	// initialize variables
-	int ClientID = m_pPlayer->GetCID();
+	// check from components
+	if(!m_pPlayer->IsBot())
+		GS()->Core()->OnCharacterTile(this);
 
 	// water effect enter exit
 	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
-		GS()->CreateDeath(m_Core.m_Pos, ClientID);
+		GS()->CreateDeath(m_Core.m_Pos, m_ClientID);
 
 	// chairs
 	if(m_pTilesHandler->IsEnter(TILE_CHAIR) || m_pTilesHandler->IsExit(TILE_CHAIR))
-		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(ClientID));
+		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(m_ClientID));
 	if(GetTiles()->IsActive(TILE_CHAIR))
 		m_pPlayer->Account()->HandleChair();
 
 	// anti-pvp
 	if(m_pTilesHandler->IsEnter(TILE_ANTI_PVP))
-		GS()->Chat(ClientID, "You have entered the safe zone!");
+		GS()->Chat(m_ClientID, "You have entered the safe zone!");
 	else if(m_pTilesHandler->IsExit(TILE_ANTI_PVP))
-		GS()->Chat(ClientID, "You've left the safe zone!");
+		GS()->Chat(m_ClientID, "You've left the safe zone!");
 }
 
 void CCharacter::GiveRandomEffects(int To)
@@ -1326,6 +1316,11 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
 }
 
+void CCharacter::SetDoorHit(vec2 Start, vec2 End)
+{
+	m_NormalDoorHit = GS()->Collision()->GetDoorNormal(Start, End);
+}
+
 void CCharacter::HandlePlayer()
 {
 	if(!m_pPlayer->IsAuthed())
@@ -1479,10 +1474,18 @@ void CCharacter::ChangePosition(vec2 NewPos)
 	ResetHook();
 }
 
-void CCharacter::ResetDoorPos()
+void CCharacter::HandleDoorHit()
 {
-	m_Core.m_Pos = m_OlderPos;
-	m_Core.m_Vel = vec2(0, 0);
+	vec2 doorNormal = vec2(1.0f, 0.0f);
+	float dotProduct = dot(m_Core.m_Vel, doorNormal);
+
+	m_Core.m_Vel -= doorNormal * dotProduct;
+
+	if(dot(m_Core.m_Pos - m_OlderPos, doorNormal) > 0)
+	{
+		m_Core.m_Pos -= doorNormal * dot(m_Core.m_Pos - m_OlderPos, doorNormal);
+	}
+
 	if(m_Core.m_Jumped >= 2)
 		m_Core.m_Jumped = 1;
 }
@@ -1492,7 +1495,6 @@ bool CCharacter::StartConversation(CPlayer* pTarget) const
 	if(m_pPlayer->IsBot() || !pTarget->IsBot())
 		return false;
 
-	// check conversational
 	const auto pTargetBot = static_cast<CPlayerBot*>(pTarget);
 	if(pTargetBot && pTargetBot->IsConversational() && pTargetBot->IsActiveForClient(m_pPlayer->GetCID()))
 	{

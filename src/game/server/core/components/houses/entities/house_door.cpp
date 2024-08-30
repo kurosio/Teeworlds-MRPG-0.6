@@ -74,8 +74,7 @@ void CEntityHouseDoor::Tick()
 							continue;
 					}
 
-					// Set the character's door hit flag to true
-					pChar->m_DoorHit = true;
+					pChar->SetDoorHit(m_Pos, m_PosTo);
 				}
 			}
 		}
