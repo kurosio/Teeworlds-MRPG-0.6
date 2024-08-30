@@ -1476,15 +1476,11 @@ void CCharacter::ChangePosition(vec2 NewPos)
 
 void CCharacter::HandleDoorHit()
 {
-	vec2 doorNormal = vec2(1.0f, 0.0f);
-	float dotProduct = dot(m_Core.m_Vel, doorNormal);
+	float dotProduct = dot(m_Core.m_Vel, m_NormalDoorHit);
+	m_Core.m_Vel -= m_NormalDoorHit * dotProduct;
 
-	m_Core.m_Vel -= doorNormal * dotProduct;
-
-	if(dot(m_Core.m_Pos - m_OlderPos, doorNormal) > 0)
-	{
-		m_Core.m_Pos -= doorNormal * dot(m_Core.m_Pos - m_OlderPos, doorNormal);
-	}
+	if(dot(m_Core.m_Pos - m_OlderPos, m_NormalDoorHit) > 0)
+		m_Core.m_Pos -= m_NormalDoorHit * dot(m_Core.m_Pos - m_OlderPos, m_NormalDoorHit);
 
 	if(m_Core.m_Jumped >= 2)
 		m_Core.m_Jumped = 1;
