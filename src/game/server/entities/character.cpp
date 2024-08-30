@@ -1318,7 +1318,7 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 
 void CCharacter::SetDoorHit(vec2 Start, vec2 End)
 {
-	m_NormalDoorHit = GS()->Collision()->GetDoorNormal(Start, End);
+	m_NormalDoorHit = GS()->Collision()->GetDoorNormal(Start, End, m_Core.m_Pos);
 }
 
 void CCharacter::HandlePlayer()
