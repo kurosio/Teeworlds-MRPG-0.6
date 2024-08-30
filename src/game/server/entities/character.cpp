@@ -61,7 +61,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 
 	m_Mana = 0;
 	m_OldPos = Pos;
-	m_DamageDisabled = false;
+	m_Core.m_DamageDisabled = false;
 	m_Core.m_CollisionDisabled = false;
 	m_Core.m_WorldID = m_pPlayer->GetPlayerWorldID();
 
@@ -627,10 +627,8 @@ void CCharacter::Tick()
 	if(!m_Alive)
 		return;
 
-	// check safe area
-	ResetSafe();
-	if(m_SafeAreaForTick || GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE))
-		SetSafe();
+	// handle safe flags
+	HandleSafeFlags();
 
 	// check access to world for player
 	if(!IsWorldAccessible())
@@ -1253,24 +1251,31 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 	}
 }
 
-void CCharacter::SetSafe(int FlagsDisallow)
+void CCharacter::HandleSafeFlags()
 {
-	if(FlagsDisallow & CHARACTERFLAG_HAMMER_HIT_DISABLED)
-		m_Core.m_HammerHitDisabled = true;
-	if(FlagsDisallow & CHARACTERFLAG_COLLISION_DISABLED)
-		m_Core.m_CollisionDisabled = true;
-	if(FlagsDisallow & CHARACTERFLAG_HOOK_HIT_DISABLED)
-		m_Core.m_HookHitDisabled = true;
-	m_DamageDisabled = true;
-	m_SafeAreaForTick = false;
-}
-
-void CCharacter::ResetSafe()
-{
+	// reset 
 	m_Core.m_HammerHitDisabled = false;
 	m_Core.m_CollisionDisabled = false;
 	m_Core.m_HookHitDisabled = false;
-	m_DamageDisabled = false;
+	m_Core.m_DamageDisabled = false;
+
+	// set full safe for collision flag safe
+	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE))
+		SetSafeFlags();
+
+	// update by safe tick
+	if(m_SafeTickFlags)
+	{
+		if(m_SafeTickFlags & SAFEFLAG_HAMMER_HIT_DISABLED)
+			m_Core.m_HammerHitDisabled = true;
+		if(m_SafeTickFlags & SAFEFLAG_COLLISION_DISABLED)
+			m_Core.m_CollisionDisabled = true;
+		if(m_SafeTickFlags & SAFEFLAG_HOOK_HIT_DISABLED)
+			m_Core.m_HookHitDisabled = true;
+		if(m_SafeTickFlags & SAFEFLAG_DAMAGE_DISABLED)
+			m_Core.m_DamageDisabled = true;
+		m_SafeTickFlags = 0;
+	}
 }
 
 void CCharacter::UpdateEquipingStats(int ItemID)
@@ -1336,7 +1341,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		return false;
 
 	// Check if damage is disabled for the current object or the object it is interacting with
-	if(m_DamageDisabled || pFrom->GetCharacter()->m_DamageDisabled)
+	if(m_Core.m_DamageDisabled || pFrom->GetCharacter()->m_Core.m_DamageDisabled)
 		return false;
 
 	// Check if the player or the sender is a NPC bot of type "Guardian"

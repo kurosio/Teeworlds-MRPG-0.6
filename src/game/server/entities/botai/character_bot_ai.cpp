@@ -324,19 +324,12 @@ void CCharacterBotAI::Tick()
 		// Disable collision, hook hit, and damage
 		m_Core.m_CollisionDisabled = true;
 		m_Core.m_HookHitDisabled = true;
-		m_DamageDisabled = true;
+		m_Core.m_DamageDisabled = true;
 		return;
 	}
 
-	// Reset the safe state of the player
-	ResetSafe();
-
-	// Check if the player's current position is within a safe area or if the player is of type EIDOLON
-	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE) || m_pBotPlayer->GetBotType() == TYPE_BOT_EIDOLON)
-	{
-		// Set the safe state of the player
-		SetSafe();
-	}
+	// handle safe flags
+	HandleSafeFlags();
 
 	// engine bots
 	HandleBot();
@@ -476,13 +469,14 @@ void CCharacterBotAI::HandleBot()
 		// player eidolon
 		case TYPE_BOT_EIDOLON:
 		{
+			SetSafeFlags(SAFEFLAG_COLLISION_DISABLED);
 			AI()->GetTarget()->Tick();
 			EngineEidolons();
 		} break;
 		// quest bot
 		case TYPE_BOT_QUEST:
 		{
-			SetSafe();
+			SetSafeFlags();
 			EngineQuestNPC();
 		} break;
 		// npc bot
@@ -513,7 +507,7 @@ void CCharacterBotAI::HandleBot()
 				m_LatestPrevInput = m_LatestInput;
 				m_LatestInput = m_Input;
 
-				SetSafe();
+				SetSafeFlags();
 				EngineNPC();
 			}
 		} break;
@@ -1033,7 +1027,7 @@ CPlayer* CCharacterBotAI::SearchPlayer(float Distance) const
 		}
 
 		// Check if the player's character has damage disabled
-		if(pCandidatePlayer->GetCharacter()->m_DamageDisabled)
+		if(pCandidatePlayer->GetCharacter()->m_Core.m_DamageDisabled)
 			continue;
 
 		// Skip the iteration if the distance between the bot and the player's character is greater than the specified distance
@@ -1080,7 +1074,7 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 
 	// Check if can't damage the target
 	pTarget = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
-	if(pTarget && pTarget->GetCharacter()->m_DamageDisabled)
+	if(pTarget && pTarget->GetCharacter()->m_Core.m_DamageDisabled)
 	{
 		// If the target is not lost, send a question emoticon and set lost target
 		if(AI()->GetTarget()->GetType() != TARGET_TYPE::LOST)
@@ -1112,7 +1106,7 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 			continue;
 
 		// Check if the player's character has damage disabled
-		if(pFinderHard->GetCharacter()->m_DamageDisabled)
+		if(pFinderHard->GetCharacter()->m_Core.m_DamageDisabled)
 			continue;
 
 		// Check if the bot is a npc type
@@ -1165,7 +1159,7 @@ CPlayerBot* CCharacterBotAI::SearchMob(float Distance) const
 					continue;
 
 				// Check if the eidolon owner has a character and if the character is damage disabled
-				if(m_pBotPlayer->GetEidolonOwner()->GetCharacter() && m_pBotPlayer->GetEidolonOwner()->GetCharacter()->m_DamageDisabled)
+				if(m_pBotPlayer->GetEidolonOwner()->GetCharacter() && m_pBotPlayer->GetEidolonOwner()->GetCharacter()->m_Core.m_DamageDisabled)
 					continue;
 			}
 
@@ -1203,7 +1197,7 @@ bool CCharacterBotAI::SearchPlayersForDialogue()
 		if(GS()->Collision()->IntersectLineWithInvisible(pPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr))
 			continue;
 
-		pPlayer->GetCharacter()->m_SafeAreaForTick = true;
+		pPlayer->GetCharacter()->SetSafeFlags();
 		m_Input.m_TargetX = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.x - m_Pos.x);
 		m_Input.m_TargetY = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.y - m_Pos.y);
 		m_Input.m_Direction = 0;
@@ -1258,7 +1252,7 @@ bool CCharacterBotAI::FunctionNurseNPC()
 		float Distance = distance(pPlayer->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos);
 		if(Distance < 128.0f)
 		{
-			pPlayer->GetCharacter()->m_SafeAreaForTick = true;
+			pPlayer->GetCharacter()->SetSafeFlags();
 			if(Distance < 64.0f)
 				m_Input.m_Direction = 0;
 		}

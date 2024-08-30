@@ -93,7 +93,7 @@ void CAttackTeleport::Tick()
 		{
 			// information about second part
 			GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, Server()->TickSpeed(), "Press fire for attacks by skill: {} attacks!", m_SecondPartCombo);
-			pOwnerChar->m_SafeAreaForTick = true;
+			pOwnerChar->SetSafeFlags();
 			m_SecondPartTimeleft--;
 
 			// is clicked fire

@@ -6,6 +6,14 @@
 
 #include "../core/tiles_handler.h"
 
+enum
+{
+	SAFEFLAG_HAMMER_HIT_DISABLED = 1 << 0,
+	SAFEFLAG_COLLISION_DISABLED = 1 << 1,
+	SAFEFLAG_HOOK_HIT_DISABLED = 1 << 2,
+	SAFEFLAG_DAMAGE_DISABLED = 1 << 3
+};
+
 class CMultipleOrbite;
 
 class CCharacter : public CEntity
@@ -38,8 +46,6 @@ class CCharacter : public CEntity
 	bool InteractiveHammer(vec2 Direction, vec2 ProjStartPos);
 	void HandleBuff(CTuningParams* TuningParams);
 	void HandlePlayer();
-
-	// return true if the world is closed
 	bool IsWorldAccessible() const;
 
 protected:
@@ -55,6 +61,7 @@ protected:
 	int m_AttackTick {};
 	int m_EmoteType {};
 	int m_EmoteStop {};
+	int m_SafeTickFlags {};
 	vec2 m_SpawnPoint {};
 	vec2 m_NormalDoorHit {};
 	CMultipleOrbite* m_pMultipleOrbite {};
@@ -69,8 +76,7 @@ protected:
 	void HandleTilesets();
 	void HandleIndependentTuning();
 
-	void SetSafe(int FlagsDisallow = CHARACTERFLAG_HAMMER_HIT_DISABLED | CHARACTERFLAG_COLLISION_DISABLED | CHARACTERFLAG_HOOK_HIT_DISABLED);
-	void ResetSafe();
+	void HandleSafeFlags();
 	bool StartConversation(CPlayer* pTarget) const;
 	void HandleEventsDeath(int Killer, vec2 Force) const;
 	void AutoUseHealingPotionIfNeeded() const;
@@ -79,9 +85,7 @@ public:
 	static constexpr int ms_PhysSize = 28;
 	CCharacterCore m_Core {};
 
-	bool m_DamageDisabled {};
 	int m_AmmoRegen {};
-	bool m_SafeAreaForTick {};
 	vec2 m_OldPos {};
 	vec2 m_OlderPos {};
 
@@ -111,6 +115,7 @@ public:
 	bool IsCollisionFlag(int Flag) const;
 	CPlayer* GetHookedPlayer() const;
 
+	void SetSafeFlags(int Flags = SAFEFLAG_DAMAGE_DISABLED | SAFEFLAG_HAMMER_HIT_DISABLED | SAFEFLAG_COLLISION_DISABLED | SAFEFLAG_HOOK_HIT_DISABLED) { m_SafeTickFlags = Flags; }
 	bool IsAllowedPVP(int FromID) const;
 	bool IsAlive() const { return m_Alive; }
 	void SetEmote(int Emote, int Sec, bool StartEmoticion);

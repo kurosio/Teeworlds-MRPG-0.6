@@ -324,6 +324,7 @@ public:
 	bool m_DeepFrozen;
 	bool m_LiveFrozen;
 
+	bool m_DamageDisabled;
 	int m_WorldID;
 
 private:
