@@ -505,7 +505,8 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 
 	if(Table == SAVE_STATS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d' WHERE ID = '%d'", pAcc->GetLevel(), pAcc->GetExperience(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d', Pouch = '%s' WHERE ID = '%d'", 
+			pAcc->GetLevel(), pAcc->GetExperience(), pAcc->GetPouch().to_string().c_str(), pAcc->GetID());
 	}
 	else if(Table == SAVE_UPGRADES)
 	{

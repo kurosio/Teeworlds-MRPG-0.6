@@ -231,13 +231,13 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "You get reduced rewards, due to farming mobs afk.");
 		GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, 1, Force);
-		pPlayer->Account()->AddGold(1);
+		pPlayer->Account()->AddGold(1, true);
 		return;
 	}
 
 	// grinding gold
 	const int Gold = maximum(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
-	pPlayer->Account()->AddGold(Gold);
+	pPlayer->Account()->AddGold(Gold, true);
 
 	// grinding experience
 	const int ExperienceMob = maximum(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);

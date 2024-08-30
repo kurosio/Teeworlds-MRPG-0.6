@@ -730,13 +730,14 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
 	}
 
-	constexpr int targetNewlineCount = 8;
+	constexpr int targetNewlineCount = 7;
 	auto bonusActivites = Account()->GetBonusManager().GetBonusActivitiesString();
 	int additionalNewlines = targetNewlineCount - bonusActivites.first;
 	std::string additionNewline(additionalNewlines, '\n');
 	std::string ProgressBar = Utils::String::progressBar(100, LevelPercent, 10, ":", " ");
-	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\n%s\n%s\n%s\n%-150s",
-		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, fmt_digit(Gold).c_str(), 
+	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\nPouch %s\n%s\n%s\n%s\n%-150s",
+		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, 
+		fmt_digit(Gold).c_str(), fmt_big_digit(Account()->GetPouch().to_string().c_str()).c_str(),
 		bonusActivites.second.c_str(), aRecastInfo, additionNewline.c_str(), pAppendStr);
 }
 

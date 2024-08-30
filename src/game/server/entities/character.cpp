@@ -760,58 +760,53 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	if(!pKiller || (Killer == m_ClientID))
 		return;
 
-	// Check if the killer is a guardian bot
+	// initialize variables
 	bool KillerIsGuardian = (pKiller->IsBot() && dynamic_cast<CPlayerBot*>(pKiller)->GetBotType() == TYPE_BOT_NPC &&
 		NpcBotInfo::ms_aNpcBot[dynamic_cast<CPlayerBot*>(pKiller)->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN);
-
-	// Check if the killer is a player
 	bool KillerIsPlayer = !pKiller->IsBot();
+	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
 
-	// Loss gold at death
-	if(g_Config.m_SvLossGoldAtDeath && KillerIsPlayer)
+	// loss gold at death
+	if(g_Config.m_SvLossGoldAtDeath)
 	{
-		// Get the Gold item from the player
-		CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
 		const int LossGold = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvLossGoldAtDeath), pItemGold->GetValue());
-
-		// Swap loss gold near Killer and Player
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
 		{
-			GS()->EntityManager()->DropItem(m_Pos, Killer, { itGold, LossGold }, Force);
-			GS()->Chat(m_ClientID, "You lost {}%({}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+			GS()->EntityManager()->DropItem(m_Pos, Killer >= MAX_PLAYERS ? -1 : Killer, { itGold, LossGold }, Force);
+			if(KillerIsPlayer)
+			{
+				GS()->Chat(m_ClientID, "You lost {}% ({}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+			}
+			else
+			{
+				GS()->Chat(m_ClientID, "You lost {}% ({}) gold due to death!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+			}
 		}
 	}
 
 	// Crime score system
+	if(m_pPlayer->Account()->IsCrimeScoreMaxedOut() && (KillerIsGuardian || KillerIsPlayer))
 	{
-		if(m_pPlayer->Account()->IsCrimeScoreMaxedOut() && (KillerIsGuardian || KillerIsPlayer))
+		const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+		if(Arrest > 0 && pItemGold->Remove(Arrest))
 		{
-			// Get the Gold item from the player
-			CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
-			m_pPlayer->Account()->ResetCrimeScore();
-
-			// translate the value of the Gold item to a percentage for arrest and remove arrest
-			const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
-			if(Arrest > 0 && pItemGold->Remove(Arrest))
+			if(KillerIsPlayer)
 			{
-				// Check if the killer is not a bot
-				if(KillerIsPlayer)
-				{
-					pKiller->GetItem(itGold)->Add(Arrest);
-					GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {} gold!",
-						Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
-				}
-
-				// Send a chat message to the client with their arrest information
-				GS()->Chat(m_ClientID, "Treasury confiscates {}%({}) of gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
-				m_pPlayer->Account()->Imprison(100);
+				pKiller->Account()->AddGold(Arrest);
+				GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {} gold!",
+					Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 			}
+
+			GS()->Chat(m_ClientID, "Treasury confiscates {}% ({}) of your gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
+			m_pPlayer->Account()->Imprison(100);
 		}
-		else if(KillerIsPlayer)
-		{
-			// Increase the relations of the player identified by the "Killer" index by 25
-			pKiller->Account()->IncreaseCrimeScore(25);
-		}
+
+		m_pPlayer->Account()->ResetCrimeScore();
+	}
+	else if(KillerIsPlayer)
+	{
+		// Increase the relations of the player identified by the "Killer" index by 25
+		pKiller->Account()->IncreaseCrimeScore(25);
 	}
 }
 

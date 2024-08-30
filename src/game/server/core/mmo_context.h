@@ -295,7 +295,8 @@ enum
 	MAILS_MAX_CAPACITY = 10,			// maximum number of emails what is displayed
 	MAX_ATTRIBUTES_FOR_ITEM = 2,			// maximum number of stats per item
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
-	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game. 
+	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game.
+	PLAYER_GOLD_LIMIT = 1'000'000'000,		// player gold limit
 
 	// settings items
 	itShowEquipmentDescription = 25,	// Description setting

@@ -44,6 +44,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 	m_ClassGroup = (ClassGroup)pResult->getInt("Class");
+	m_Pouch = pResult->getString("Pouch").c_str();
 
 	// achievements data
 	InitAchievements(pResult->getString("Achievements").c_str());
@@ -310,39 +311,136 @@ void CAccountData::AddExperience(int Value)
 	}
 }
 
-void CAccountData::AddGold(int Value) const
+bool CAccountData::DepositGoldToPouch(int Amount)
 {
-	if(m_pPlayer)
-	{
-		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &Value);
-		m_pPlayer->GetItem(itGold)->Add(Value);
-	}
-}
-
-// This function checks if the player has enough currency to spend and deducts the price from their currency item
-bool CAccountData::SpendCurrency(int Price, int CurrencyItemID) const
-{
-	// Check if the player is valid
 	if(!m_pPlayer)
 		return false;
 
-	// Check if the price is zero or negative, in which case the player can spend it for free
-	if(Price <= 0)
-		return true;
+	// initialize variables
+	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+	int CurrentGold = pItemGold->GetValue();
 
-	// Get the currency item from the player's inventory
-	CPlayerItem* pCurrencyItem = m_pPlayer->GetItem(CurrencyItemID);
-
-	// Check if the player has enough currency to spend
-	if(pCurrencyItem->GetValue() < Price)
+	// check enough gold in inventory
+	if(CurrentGold < Amount)
 	{
-		// Display a message to the player indicating that they don't have enough currency
-		GS()->Chat(m_ClientID, "Required {}, but you only have {} {}!", Price, pCurrencyItem->GetValue(), pCurrencyItem->Info()->GetName());
+		GS()->Chat(m_ClientID, "You don't have enough gold in your inventory. You only have {} gold.", CurrentGold);
 		return false;
 	}
 
-	// Deduct the price from the player's currency item
-	return pCurrencyItem->Remove(Price);
+	// remove gold and add to pouch
+	if(pItemGold->Remove(Amount))
+	{
+		m_Pouch += Amount;
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+		GS()->Chat(m_ClientID, "You have deposited {} gold into your pouch.", Amount);
+		return true;
+	}
+
+	GS()->Chat(m_ClientID, "An error occurred while trying to deposit gold into your pouch.");
+	return false;
+}
+
+bool CAccountData::WithdrawGoldFromPouch(int Amount)
+{
+	if(!m_pPlayer)
+		return false;
+
+	// initialize variables
+	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+	int CurrentGold = pItemGold->GetValue();
+	int AvailableSpace = PLAYER_GOLD_LIMIT - CurrentGold;
+
+	// check pouch amount
+	if(m_Pouch < Amount)
+	{
+		GS()->Chat(m_ClientID, "You only have {} gold in your pouch, but you tried to withdraw {}!", m_Pouch, Amount);
+		return false;
+	}
+
+	// calculate gold for withdraw
+	int GoldToWithdraw = minimum(Amount, AvailableSpace);
+
+	if(GoldToWithdraw > 0)
+	{
+		pItemGold->Add(GoldToWithdraw);
+		m_Pouch -= GoldToWithdraw;
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+		GS()->Chat(m_ClientID, "You have withdrawn {} gold from your pouch to your inventory.", GoldToWithdraw);
+	}
+
+	if(GoldToWithdraw < Amount)
+	{
+		GS()->Chat(m_ClientID, "Your inventory is full. You could only withdraw {} gold.", GoldToWithdraw);
+	}
+
+	return true;
+}
+
+void CAccountData::AddGold(int Value, bool ApplyBonuses)
+{
+	if(!m_pPlayer)
+		return;
+
+	// apply bonuses
+	if(ApplyBonuses)
+		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &Value);
+
+	// initialize variables
+	CPlayerItem* pGoldItem = m_pPlayer->GetItem(itGold);
+	const int CurrentGold = pGoldItem->GetValue();
+	const int FreeSpace = PLAYER_GOLD_LIMIT - CurrentGold;
+
+	// add golds
+	if(Value > FreeSpace)
+	{
+		pGoldItem->Add(FreeSpace);
+		m_Pouch += (Value - FreeSpace);
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+	}
+	else
+	{
+		pGoldItem->Add(Value);
+	}
+}
+
+bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
+{
+	if(!m_pPlayer)
+		return false;
+
+	// check is free
+	if(Price <= 0)
+		return true;
+
+	// initialize variables
+	CPlayerItem* pCurrencyItem = m_pPlayer->GetItem(CurrencyItemID);
+	const int PlayerCurrency = pCurrencyItem->GetValue();
+	const BigInt TotalCurrency = static_cast<BigInt>(PlayerCurrency) + m_Pouch;
+
+	// check total currency
+	if(TotalCurrency < Price)
+	{
+		GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including pouch)!", Price, TotalCurrency, pCurrencyItem->Info()->GetName());
+		return false;
+	}
+
+	// first, spend currency from player's hand
+	int RemainingPrice = Price;
+	if(PlayerCurrency > 0)
+	{
+		int ToSpendFromHands = minimum(PlayerCurrency, RemainingPrice);
+		pCurrencyItem->Remove(ToSpendFromHands);
+		RemainingPrice -= ToSpendFromHands;
+	}
+
+	// second, spend the remaining currency from the pouch
+	if(RemainingPrice > 0)
+	{
+		m_Pouch -= RemainingPrice;
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+	}
+
+	return true;
 }
 
 // Reset daily chair golds
@@ -388,7 +486,7 @@ void CAccountData::HandleChair()
 	// If gold was gained
 	if(GoldValue > 0)
 	{
-		AddGold(GoldValue); // Add the gold value to the player's gold
+		AddGold(GoldValue, true); // Add the gold value to the player's gold
 		m_DailyChairGolds += GoldValue; // Increase the daily gold count
 		GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS); // Save the player's account
 	}
