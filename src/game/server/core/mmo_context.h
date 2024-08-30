@@ -109,8 +109,7 @@ enum Skill
 	SkillAttackTeleport = 6, // ?knockout? teleport
 	SkillCureI = 7, // health recovery cure
 	SkillProvoke = 8, // provoke
-	SkillBleedingBlow = 9, // bleeding blow
-	SkillEnergyShield = 10, // energy shield
+	SkillEnergyShield = 9, // energy shield
 };
 
 // toplist types

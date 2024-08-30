@@ -12,6 +12,7 @@
 
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/groups/group_data.h>
+#include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/quests/quest_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
 
@@ -631,8 +632,8 @@ void CCharacter::Tick()
 	if(m_SafeAreaForTick || GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE))
 		SetSafe();
 
-	// check allowed world for player
-	if(CheckAllowedWorld())
+	// check access to world for player
+	if(!IsWorldAccessible())
 	{
 		m_pPlayer->GetTempData().ClearTeleportPosition();
 		GS()->Chat(m_pPlayer->GetCID(), "This chapter is still closed.");
@@ -648,7 +649,7 @@ void CCharacter::Tick()
 	HandleTuning();
 
 	// to end the tick on the destroy caused by the change of worlds
-	if(GetTiles()->IsEnter(TILE_WORLD_SWAP))
+	if(m_pTilesHandler->IsEnter(TILE_WORLD_SWAP))
 	{
 		GS()->GetWorldData()->Move(m_pPlayer);
 		return;
@@ -891,17 +892,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 
 		const int EnchantBonus = translate_to_percent_rest(pFrom->GetAttributeSize(AttributeIdentifier::DMG), pFrom->GetClass()->GetExtraDMG());
 		Dmg += EnchantBonus;
-
-		// bleeding blow skill
-		if(pFrom->GetSkill(SkillBleedingBlow)->IsLearned())
-		{
-			int Chance = pFrom->GetSkill(SkillBleedingBlow)->GetBonus();
-			if(m_pPlayer->GiveEffect("Bleeding", 10, Chance))
-			{
-				GS()->CreateSound(pFrom->m_ViewPos, SOUND_NINJA_HIT);
-				m_BleedingByClientID = FromCID;
-			}
-		}
 
 		// vampirism replenish your health
 		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Vampirism) > random_float(100.0f))
@@ -1326,24 +1316,11 @@ void CCharacter::HandlePlayer()
 	if(!m_pPlayer->IsAuthed())
 		return;
 
+	// recovery mana
 	if(Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
 	{
-		// recovery mana
 		if(m_Mana < m_pPlayer->GetStartMana())
-		{
 			IncreaseMana(m_pPlayer->GetStartMana() / 20);
-		}
-
-		// bleeding blow skill
-		if(m_pPlayer->IsActiveEffect("Bleeding"))
-		{
-			if(CPlayer* pPlayer = GS()->GetPlayer(m_BleedingByClientID, true))
-			{
-				int Damage = pPlayer->GetStartHealth() / 20;
-				TakeDamage(vec2(0, 0), Damage, m_BleedingByClientID, WEAPON_WORLD);
-				GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
-			}
-		}
 	}
 
 	// handle
@@ -1432,18 +1409,18 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	return true;
 }
 
-bool CCharacter::CheckAllowedWorld() const
+bool CCharacter::IsWorldAccessible() const
 {
 	if(Server()->Tick() % Server()->TickSpeed() * 3 == 0 && m_pPlayer->IsAuthed())
 	{
+		// check accessible to world by level
 		if(m_pPlayer->Account()->GetLevel() < GS()->GetWorldData()->GetRequiredLevel())
 		{
-			//const int CheckHouseID = GS()->Core()->Member()->GetPosHouseID(m_Core.m_Pos);
-			//if(CheckHouseID <= 0)
-			//	return true;
+			if(!GS()->Core()->GuildManager()->GetHouseByPos(m_Core.m_Pos))
+				return false;
 		}
 	}
-	return false;
+	return true;
 }
 
 bool CCharacter::CheckFailMana(int Mana)
@@ -1455,6 +1432,8 @@ bool CCharacter::CheckFailMana(int Mana)
 	}
 
 	m_Mana -= Mana;
+
+	// try auto use regen mana
 	if(m_Mana <= m_pPlayer->GetStartMana() / 5 && !m_pPlayer->IsActiveEffect("RegenMana") && m_pPlayer->GetItem(itPotionManaRegen)->IsEquipped())
 		m_pPlayer->GetItem(itPotionManaRegen)->Use(1);
 
@@ -1471,12 +1450,13 @@ void CCharacter::ChangePosition(vec2 NewPos)
 	GS()->CreatePlayerSpawn(NewPos);
 	m_Core.m_Pos = NewPos;
 	m_Pos = NewPos;
+	ResetDoorHit();
 	ResetHook();
 }
 
 void CCharacter::HandleDoorHit()
 {
-	float dotProduct = dot(m_Core.m_Vel, m_NormalDoorHit);
+	const float dotProduct = dot(m_Core.m_Vel, m_NormalDoorHit);
 	m_Core.m_Vel -= m_NormalDoorHit * dotProduct;
 
 	if(dot(m_Core.m_Pos - m_OlderPos, m_NormalDoorHit) > 0)

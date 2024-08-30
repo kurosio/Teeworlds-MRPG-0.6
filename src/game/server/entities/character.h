@@ -17,7 +17,6 @@ class CCharacter : public CEntity
 
 	int m_LastWeapon {};
 	int m_QueuedWeapon {};
-	int m_BleedingByClientID {};
 
 	// ninja
 	struct
@@ -41,7 +40,7 @@ class CCharacter : public CEntity
 	void HandlePlayer();
 
 	// return true if the world is closed
-	bool CheckAllowedWorld() const;
+	bool IsWorldAccessible() const;
 
 protected:
 	bool m_Alive {};
