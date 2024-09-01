@@ -87,7 +87,7 @@ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 	int TotalAchievements = GetCount();
 	int TotalCompleted = GetCompletedCount(ClientID);
 	int Percentage = translate_to_percent(TotalAchievements, TotalCompleted);
-	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT|VWF_SEPARATE, "\u2654 Main information");
+	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT | VWF_ALIGN_TITLE | VWF_SEPARATE, "\u2654 Main information");
 	VMain.Add("{} of {} completed (progress {}%)", TotalCompleted, TotalAchievements, Percentage);
 	VMain.Add("Achievement points: {}p", pPlayer->GetItem(itAchievementPoint)->GetValue());
 	VoteWrapper::AddEmptyline(ClientID);

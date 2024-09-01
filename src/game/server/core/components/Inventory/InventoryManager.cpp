@@ -399,15 +399,21 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 
 	// show description
 	if(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped())
+	{
 		VItem.Add("{}", pInfo->GetDescription());
+	}
 
 	// is used item
 	if(pInfo->m_Function == FUNCTION_ONE_USED || pInfo->m_Function == FUNCTION_USED)
+	{
 		VItem.AddOption("IUSE", ItemID, "Use");
+	}
 
 	// is potion
 	if(pInfo->m_Type == ItemType::TYPE_POTION)
+	{
 		VItem.AddOption("EQUIP_ITEM", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
+	}
 
 	// is decoration
 	if(pInfo->m_Type == ItemType::TYPE_DECORATION)

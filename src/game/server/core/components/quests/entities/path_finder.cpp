@@ -21,8 +21,10 @@ CEntityPathArrow::CEntityPathArrow(CGameWorld* pGameWorld, vec2 SearchPos, int W
 	GameWorld()->InsertEntity(this);
 
 	// quest navigator finder
-	if(m_pPlayer && m_pPlayer->GetItem(itShowQuestNavigator)->IsEquipped())
+	if(m_pPlayer && m_pPlayer->GetItem(itShowQuestStarNavigator)->IsEquipped())
+	{
 		new CEntityPathNavigator(&GS()->m_World, this, true, m_pPlayer->m_ViewPos, SearchPos, WorldID, true, CmaskOne(ClientID));
+	}
 }
 
 void CEntityPathArrow::Tick()

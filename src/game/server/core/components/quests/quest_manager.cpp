@@ -129,7 +129,6 @@ bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// show quest journal
 		ShowQuestList(pPlayer);
-		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -215,10 +214,10 @@ void CQuestManager::ShowQuestList(CPlayer* pPlayer) const
 	const float CompletionPercentage = translate_to_percent(TotalQuests, TotalCompletedQuests);
 
 	// Information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_SIMPLE | VWF_SEPARATE, "Quest Statistics");
-	VInfo.Add("Total Quests: {}", TotalQuests);
-	VInfo.Add("Completed Quests: {} ({~.2}%)", TotalCompletedQuests, CompletionPercentage);
-	VInfo.Add("Incomplete Quests: {} ({~.2}%)", TotalIncompleteQuests, 100 - CompletionPercentage);
+	VoteWrapper VInfo(ClientID, VWF_STYLE_SIMPLE | VWF_ALIGN_TITLE | VWF_SEPARATE, "Quest Statistics");
+	VInfo.Add("Total quests: {}", TotalQuests);
+	VInfo.Add("Completed quests: {} ({~.2}%)", TotalCompletedQuests, CompletionPercentage);
+	VInfo.Add("Incomplete quests: {} ({~.2}%)", TotalIncompleteQuests, 100 - CompletionPercentage);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Tabs with quests

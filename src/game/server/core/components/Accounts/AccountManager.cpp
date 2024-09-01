@@ -181,8 +181,11 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 		{
 			for(auto& [id, defaultValue] : pItems)
 			{
-				if(auto pItem = pPlayer->GetItem(id); !pItem->GetValue())
-					pItem->Add(1, defaultValue);
+				if(auto pItem = pPlayer->GetItem(id))
+				{
+					if(!pItem->HasItem())
+						pItem->Add(1, defaultValue);
+				}
 			}
 		};
 
@@ -191,7 +194,8 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 				{ itHammer, 1 },
 				{ itShowEquipmentDescription, 0 },
 				{ itShowCriticalDamage, 1 },
-				{ itShowQuestNavigator, 1 }
+				{ itShowQuestStarNavigator, 1 },
+				{ itShowDetailGainMessages, 1},
 			});
 	}
 	Core()->OnHandlePlayerTimePeriod(pPlayer);
@@ -265,7 +269,6 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// information
 		VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Settings Information");
-		VInfo.Add("Some of the settings become valid after death.");
 		VInfo.Add("Here you can change the settings of your account.");
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -273,15 +276,11 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VMain(ClientID, VWF_OPEN, "\u2699 Main settings");
 		VMain.AddMenu(MENU_SETTINGS_TITLE_SELECT, "Select personal title");
 		VMain.AddMenu(MENU_SETTINGS_LANGUAGE_SELECT, "Settings language");
-		for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
-		{
-			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
-				VMain.AddOption("EQUIP_ITEM", ItemID, "[{}] {}", (ItemData.GetSettings() ? "Enabled" : "Disabled"), ItemData.Info()->GetName());
-		}
+		VMain.AddMenu(MENU_SETTINGS_ACCOUNT, "Settings account");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// equipment modules
-		VoteWrapper VModules(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Modules settings");
+		VoteWrapper VModules(ClientID, VWF_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Modules settings");
 		for(auto& iter : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &iter.second;
@@ -293,6 +292,34 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			VModules.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", pPlayerItem->IsEquipped() ? "✔" : "\0", pItemInfo->GetName(), StrAttributeInfo);
 		}
 
+		VoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	// settings account
+	if(Menulist == MENU_SETTINGS_ACCOUNT)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
+
+		// information
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Account settings Information");
+		VInfo.Add("Some of the settings become valid after death or reconnect.");
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// account settings
+		VoteWrapper VAccount(ClientID, VWF_OPEN, "\u2699 Main settings");
+		const auto& PlayerItems = CPlayerItem::Data()[ClientID];
+		for(const auto& [ItemID, ItemData] : PlayerItems)
+		{
+			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
+			{
+				const char* Status = ItemData.GetSettings() ? "Enabled" : "Disabled";
+				VAccount.AddOption("EQUIP_ITEM", ItemID, "[{}] {}", Status, ItemData.Info()->GetName());
+			}
+		}
+
+		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -303,19 +330,15 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// language information
-		VoteWrapper VLanguageInfo(ClientID, VWF_SEPARATE_CLOSED, "Languages Information");
+		const char* pPlayerLanguage = pPlayer->GetLanguage();
+		VoteWrapper VLanguageInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Languages Information");
 		VLanguageInfo.Add("Here you can choose the language.");
 		VLanguageInfo.Add("Note: translation is not complete.");
-		VoteWrapper::AddLine(ClientID);
-
-		// active language
-		const char* pPlayerLanguage = pPlayer->GetLanguage();
-		VoteWrapper VLanguage(ClientID, VWF_STYLE_STRICT_BOLD);
-		VLanguage.Add("Active language: [{}]", pPlayerLanguage);
-		VLanguage.AddLine();
+		VLanguageInfo.Add("Active language: [{}]", pPlayerLanguage);
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// languages TODO fix language selection
-		VoteWrapper VLanguages(ClientID, VWF_SEPARATE_OPEN, "Available languages");
+		VoteWrapper VLanguages(ClientID, VWF_OPEN, "Available languages");
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{
 			// Do not show the language that is already selected by the player in the selection lists
@@ -327,6 +350,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{}\"", pLanguageName);
 		}
 
+		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -341,7 +365,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		const char* pCurrentTitle = EquippedTitleItemID.has_value() ? pPlayer->GetItem(EquippedTitleItemID.value())->Info()->GetName() : "title is not used";
 
 		// title information
-		VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_SIMPLE, "Title Information");
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Title Information");
 		VInfo.Add("Here you can set the title.");
 		VInfo.Add("Current title: {}", pCurrentTitle);
 		VoteWrapper::AddEmptyline(ClientID);

@@ -191,6 +191,7 @@ enum MenuList
 
 	// Settings
 	MENU_SETTINGS,
+	MENU_SETTINGS_ACCOUNT,
 	MENU_SETTINGS_LANGUAGE_SELECT,
 	MENU_SETTINGS_TITLE_SELECT,
 
@@ -302,7 +303,8 @@ enum
 	// settings items
 	itShowEquipmentDescription = 25,	// Description setting
 	itShowCriticalDamage = 34,			// Critical damage setting
-	itShowQuestNavigator = 93,			// Show quest path when idle
+	itShowQuestStarNavigator = 93,		// Show quest path when idle
+	itShowDetailGainMessages = 98,      // Show detail gain messages
 
 	// items
 	NOPE = -1,

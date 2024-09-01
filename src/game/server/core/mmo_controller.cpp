@@ -202,24 +202,20 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			Instance::Localize(ClientID, "\u2699 Disciple of Tank"),
 			Instance::Localize(ClientID, "\u2696 Disciple of Healer"),
 			Instance::Localize(ClientID, "\u2694 Disciple of War"),
-			Instance::Localize(ClientID, " \u2690 Weapons / Ammo")
+			Instance::Localize(ClientID, "\u2690 Weapons / Ammo")
 		};
 
 		// information
-		VoteWrapper VUpgrInfo(ClientID, VWF_SEPARATE_CLOSED, "Upgrades Information");
+		VoteWrapper VUpgrInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Upgrades Information");
 		VUpgrInfo.Add("You can upgrade your character's statistics.");
 		VUpgrInfo.Add("Each update costs differently point.");
 		VUpgrInfo.Add("You can get points by leveling up.");
-		VUpgrInfo.AddLine();
-
-		// upgrade point
-		VoteWrapper VUpgrPoint(ClientID);
-		VUpgrPoint.Add("Upgrade Point's: {}P", pPlayer->Account()->m_Upgrade);
-		VUpgrPoint.AddLine();
+		VUpgrInfo.Add("Upgrade Point's: {}P", pPlayer->Account()->m_Upgrade);
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// upgrade group's
 		const ClassGroup& Class = pPlayer->GetClass()->GetGroup();
-		VoteWrapper VUpgrGroupSelect(ClientID, VWF_SEPARATE_OPEN, "Select a type of upgrades");
+		VoteWrapper VUpgrGroupSelect(ClientID, VWF_OPEN, "Select a type of upgrades");
 		if(Class == ClassGroup::Dps)
 			VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
 		else if(Class == ClassGroup::Tank)
@@ -227,7 +223,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		else if(Class == ClassGroup::Healer)
 			VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
 		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Weapon, paGroupNames[(int)AttributeGroup::Weapon]);
-		VUpgrGroupSelect.AddLine();
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// Upgrades by group
 		if(pPlayer->m_VotesData.GetExtraID() >= 0)

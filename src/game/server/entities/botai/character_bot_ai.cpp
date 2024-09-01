@@ -235,7 +235,10 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	{
 		const int goldGain = calculate_gold_gain(g_Config.m_SvKillmobsGoldFactor, PlayerLevel, MobLevel, true);
 		pPlayer->Account()->AddGold(goldGain, false, true);
-		GS()->Chat(pPlayer->GetCID(), "You gained {} gold.", goldGain);
+		if(pPlayer->GetItem(itShowDetailGainMessages)->IsEquipped())
+		{
+			GS()->Chat(pPlayer->GetCID(), "You gained {} gold.", goldGain);
+		}
 	}
 	else
 	{
@@ -245,7 +248,10 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	// grinding experience
 	const int expGain = calculate_exp_gain(g_Config.m_SvKillmobsExpFactor, PlayerLevel, MobLevel);
 	GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, expGain, Force);
-	GS()->Chat(pPlayer->GetCID(), "You gained {} exp.", expGain);
+	if(pPlayer->GetItem(itShowDetailGainMessages)->IsEquipped())
+	{
+		GS()->Chat(pPlayer->GetCID(), "You gained {} exp.", expGain);
+	}
 
 	// drop experience
 	const int expBonusDrop = maximum(expGain / 2, 1);
