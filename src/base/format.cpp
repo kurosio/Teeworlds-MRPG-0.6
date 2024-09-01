@@ -58,9 +58,7 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 		if(argumentType != arg_skip_handle && get_flags() & FMTFLAG_HANDLE_ARGS && !argumentHandled)
 		{
 			argumentHandled = true;
-			if(argumentTypename == type_integers)
-				argumentResult = fmt_digit(std::move(argumentFrom));
-			else if(argumentTypename == type_big_integers)
+			if(argumentTypename == type_integers || argumentTypename == type_big_integers)
 				argumentResult = argumentType == arg_big_digit ? fmt_big_digit(std::move(argumentFrom)) : fmt_digit(std::move(argumentFrom));
 			else if(argumentTypename == type_string)
 				argumentResult = handle(argumentFrom);

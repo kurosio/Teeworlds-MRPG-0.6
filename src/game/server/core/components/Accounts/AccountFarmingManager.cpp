@@ -48,7 +48,7 @@ void CAccountFarmingManager::OnPlayerLogin(CPlayer *pPlayer)
 CItemDescription* CAccountFarmingManager::GetFarmingItemInfoByPos(vec2 Pos) const
 {
 	// search farming item by position
-	auto Iter = std::find_if(ms_vmFarmingPoints.begin(), ms_vmFarmingPoints.end(), [Pos](auto& p)
+	auto Iter = std::ranges::find_if(ms_vmFarmingPoints, [Pos](auto& p)
 	{
 		return distance(p.second.m_Position, Pos) < p.second.m_Distance;
 	});

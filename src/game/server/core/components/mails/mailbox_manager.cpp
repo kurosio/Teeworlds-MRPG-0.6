@@ -162,7 +162,7 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 			VoteWrapper VAttached(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Attached items");
 			VAttached.ReinitNumeralDepthStyles({ { DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD } });
 			for(auto& pItem : vAttachedItems)
-				VAttached.MarkList().Add("{}x{} ({})", pItem.Info()->GetName(), pItem.GetValue(), pPlayer->GetItem(pItem)->GetValue());
+				VAttached.MarkList().Add("{}x{$} ({$})", pItem.Info()->GetName(), pItem.GetValue(), pPlayer->GetItem(pItem)->GetValue());
 			VoteWrapper::AddEmptyline(ClientID);
 		}
 

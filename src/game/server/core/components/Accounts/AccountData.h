@@ -34,7 +34,7 @@ class CAccountData
 	ClassGroup m_ClassGroup {};
 	nlohmann::json m_AchivementsData { };
 	CBonusManager m_BonusManager;
-	BigInt m_Pouch {};
+	BigInt m_Bank {};
 
 	CPlayer* m_pPlayer {};
 	CGS* GS() const;
@@ -94,12 +94,12 @@ public:
 	void Imprison(int Seconds);
 	void FreeFromPrison();
 
-	BigInt GetPouch() const { return m_Pouch; }
+	BigInt GetBank() const { return m_Bank; }
 
 	void AddExperience(int Value); // Adds the specified value to the player's experience points
 	void AddGold(int Value, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
-	bool DepositGoldToPouch(int Amount);
-	bool WithdrawGoldFromPouch(int Amount);
+	bool DepositGoldToBank(int Amount);
+	bool WithdrawGoldFromBank(int Amount);
 	bool SpendCurrency(int Price, int CurrencyItemID = 1); // Returns a boolean value indicating whether the currency was successfully spent or not.
 	void ResetDailyChairGolds(); // Reset daily getting chair golds
 	void HandleChair();

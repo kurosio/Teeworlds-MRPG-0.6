@@ -150,7 +150,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 				if(pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
 				{
 					const int Fee = g_Config.m_SvAetherFee * (pAether->GetWorldID() + 1);
-					VAetherElem.AddOption("AETHER_TELEPORT", pAether->GetID(), Fee, "{} (Fee {} gold's)", pAether->GetName(), Fee);
+					VAetherElem.AddOption("AETHER_TELEPORT", pAether->GetID(), Fee, "{} (Fee {$} gold)", pAether->GetName(), Fee);
 					UnlockedPlayerZoneAethers++;
 				}
 			}
@@ -179,14 +179,14 @@ void CAethernetManager::UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const
 
 CAetherData* CAethernetManager::GetAetherByID(int AetherID) const
 {
-	const auto& iter = std::find_if(CAetherData::Data().begin(), CAetherData::Data().end(), [AetherID](const CAetherData* pAether)
-	{ return pAether->GetID() == AetherID; });
+	const auto& iter = std::ranges::find_if(CAetherData::Data(), [AetherID](const CAetherData* pAether)
+	                                        { return pAether->GetID() == AetherID; });
 	return iter != CAetherData::Data().end() ? *iter : nullptr;
 }
 
 CAetherData* CAethernetManager::GetAetherByPos(vec2 Pos) const
 {
-	const auto& iter = std::find_if(CAetherData::Data().begin(), CAetherData::Data().end(), [Pos](const CAetherData* pAether)
-	{ return distance(pAether->GetPosition(), Pos) < 320.f; });
+	const auto& iter = std::ranges::find_if(CAetherData::Data(), [Pos](const CAetherData* pAether)
+	                                        { return distance(pAether->GetPosition(), Pos) < 320.f; });
 	return iter != CAetherData::Data().end() ? *iter : nullptr;
 }

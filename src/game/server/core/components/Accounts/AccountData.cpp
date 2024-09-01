@@ -44,7 +44,7 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 	m_ClassGroup = (ClassGroup)pResult->getInt("Class");
-	m_Pouch = pResult->getString("Pouch").c_str();
+	m_Bank = pResult->getString("Bank").c_str();
 
 	// achievements data
 	InitAchievements(pResult->getString("Achievements").c_str());
@@ -311,71 +311,6 @@ void CAccountData::AddExperience(int Value)
 	}
 }
 
-bool CAccountData::DepositGoldToPouch(int Amount)
-{
-	if(!m_pPlayer)
-		return false;
-
-	// initialize variables
-	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
-	int CurrentGold = pItemGold->GetValue();
-
-	// check enough gold in inventory
-	if(CurrentGold < Amount)
-	{
-		GS()->Chat(m_ClientID, "You don't have enough gold in your inventory. You only have {} gold.", CurrentGold);
-		return false;
-	}
-
-	// remove gold and add to pouch
-	if(pItemGold->Remove(Amount))
-	{
-		m_Pouch += Amount;
-		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
-		GS()->Chat(m_ClientID, "You have deposited {} gold into your pouch.", Amount);
-		return true;
-	}
-
-	GS()->Chat(m_ClientID, "An error occurred while trying to deposit gold into your pouch.");
-	return false;
-}
-
-bool CAccountData::WithdrawGoldFromPouch(int Amount)
-{
-	if(!m_pPlayer)
-		return false;
-
-	// initialize variables
-	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
-	int CurrentGold = pItemGold->GetValue();
-	int AvailableSpace = PLAYER_GOLD_LIMIT - CurrentGold;
-
-	// check pouch amount
-	if(m_Pouch < Amount)
-	{
-		GS()->Chat(m_ClientID, "You only have {} gold in your pouch, but you tried to withdraw {}!", m_Pouch, Amount);
-		return false;
-	}
-
-	// calculate gold for withdraw
-	int GoldToWithdraw = minimum(Amount, AvailableSpace);
-
-	if(GoldToWithdraw > 0)
-	{
-		pItemGold->Add(GoldToWithdraw);
-		m_Pouch -= GoldToWithdraw;
-		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
-		GS()->Chat(m_ClientID, "You have withdrawn {} gold from your pouch to your inventory.", GoldToWithdraw);
-	}
-
-	if(GoldToWithdraw < Amount)
-	{
-		GS()->Chat(m_ClientID, "Your inventory is full. You could only withdraw {} gold.", GoldToWithdraw);
-	}
-
-	return true;
-}
-
 void CAccountData::AddGold(int Value, bool ApplyBonuses)
 {
 	if(!m_pPlayer)
@@ -394,7 +329,7 @@ void CAccountData::AddGold(int Value, bool ApplyBonuses)
 	if(Value > FreeSpace)
 	{
 		pGoldItem->Add(FreeSpace);
-		m_Pouch += (Value - FreeSpace);
+		m_Bank += (Value - FreeSpace);
 		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
 	}
 	else
@@ -415,12 +350,12 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 	// initialize variables
 	CPlayerItem* pCurrencyItem = m_pPlayer->GetItem(CurrencyItemID);
 	const int PlayerCurrency = pCurrencyItem->GetValue();
-	const BigInt TotalCurrency = static_cast<BigInt>(PlayerCurrency) + m_Pouch;
+	const BigInt TotalCurrency = static_cast<BigInt>(PlayerCurrency) + m_Bank;
 
 	// check total currency
 	if(TotalCurrency < Price)
 	{
-		GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including pouch)!", Price, TotalCurrency, pCurrencyItem->Info()->GetName());
+		GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, TotalCurrency, pCurrencyItem->Info()->GetName());
 		return false;
 	}
 
@@ -433,11 +368,75 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 		RemainingPrice -= ToSpendFromHands;
 	}
 
-	// second, spend the remaining currency from the pouch
+	// second, spend the remaining currency from the bank
 	if(RemainingPrice > 0)
 	{
-		m_Pouch -= RemainingPrice;
+		m_Bank -= RemainingPrice;
 		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+	}
+
+	return true;
+}
+
+bool CAccountData::DepositGoldToBank(int Amount)
+{
+	if(!m_pPlayer)
+		return false;
+
+	// initialize variables
+	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+	int CurrentGold = pItemGold->GetValue();
+
+	// check enough gold in inventory
+	if(CurrentGold < Amount)
+	{
+		GS()->Chat(m_ClientID, "You don't have enough gold in your inventory. You only have {} gold.", CurrentGold);
+		return false;
+	}
+
+	// remove gold and add to bank
+	if(pItemGold->Remove(Amount))
+	{
+		m_Bank += Amount;
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+		GS()->Chat(m_ClientID, "You have deposited {} gold into your bank.", Amount);
+		return true;
+	}
+
+	return false;
+}
+
+bool CAccountData::WithdrawGoldFromBank(int Amount)
+{
+	if(!m_pPlayer)
+		return false;
+
+	// initialize variables
+	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+	int CurrentGold = pItemGold->GetValue();
+	int AvailableSpace = PLAYER_GOLD_LIMIT - CurrentGold;
+
+	// check bank amount
+	if(m_Bank < Amount)
+	{
+		GS()->Chat(m_ClientID, "You only have {} gold in your bank, but you tried to withdraw {}!", m_Bank, Amount);
+		return false;
+	}
+
+	// calculate gold for withdraw
+	int GoldToWithdraw = minimum(Amount, AvailableSpace);
+
+	if(GoldToWithdraw > 0)
+	{
+		pItemGold->Add(GoldToWithdraw);
+		m_Bank -= GoldToWithdraw;
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+		GS()->Chat(m_ClientID, "You have withdrawn {} gold from your bank to your inventory.", GoldToWithdraw);
+	}
+
+	if(GoldToWithdraw < Amount)
+	{
+		GS()->Chat(m_ClientID, "Your inventory is full. You could only withdraw {} gold.", GoldToWithdraw);
 	}
 
 	return true;

@@ -1103,12 +1103,12 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Level: {} Experience: {}/{}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	VInfo.Add("Members: {} of {}", MemberUsedSlots, MemberMaxSlots);
-	VInfo.Add("Bank: {} golds", pGuild->GetBank()->Get());
+	VInfo.Add("Bank: {$} gold", pGuild->GetBank()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Guild management
 	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
-	VManagement.Add("Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
+	VManagement.Add("Your: {$} | Bank: {$} gold", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
 	VManagement.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 	VManagement.AddLine();
 	VManagement.AddMenu(MENU_GUILD_UPGRADES, "Improvements & Upgrades");
@@ -1126,7 +1126,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		auto* pHouse = pGuild->GetHouse();
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {# (day|days)})", pHouse->GetRentDays());
-		VHouse.Add("Bank: {} | Rent per day: {} golds", pGuild->GetBank()->Get(), pHouse->GetRentPrice());
+		VHouse.Add("Bank: {$} | Rent per day: {$} gold", pGuild->GetBank()->Get(), pHouse->GetRentPrice());
 		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
 		VHouse.AddOption("GUILD_HOUSE_DECORATION_EDIT", "Decoration editor");
@@ -1156,7 +1156,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	{
 		int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
 		const auto* pUpgrade = pGuild->GetUpgrades(static_cast<GuildUpgrade>(i));
-		VUpgr.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
+		VUpgr.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -1168,7 +1168,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 		{
 			int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
 			const auto* pUpgrade = pGuild->GetUpgrades(static_cast<GuildUpgrade>(i));
-			VUpgrHouse.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {}gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
+			VUpgrHouse.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 	}
@@ -1524,7 +1524,7 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Members: {} of {}", CurrentSlots.first, CurrentSlots.second);
 	VInfo.Add("Has house: {}", pGuild->HasHouse() ? "Yes" : "No");
-	VInfo.Add("Bank: {} golds", pGuild->GetBank()->Get());
+	VInfo.Add("Bank: {$} gold", pGuild->GetBank()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Memberlist
@@ -1561,18 +1561,18 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
 	{
 		auto* pGuild = pPlayer->Account()->GetGuild();
 		VoteWrapper VTop(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Purchase of a house");
-		VTop.Add("Price rent per day: {} golds", pHouse->GetRentPrice());
+		VTop.Add("Price rent per day: {$} golds", pHouse->GetRentPrice());
 
 		// check rights
 		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
 		{
-			VTop.Add("Initial fee: {# (gold|golds)}", pHouse->GetInitialFee());
+			VTop.Add("Initial fee: {$} gold", pHouse->GetInitialFee());
 			VTop.Add("You don't have the right to buy a house");
 			return;
 		}
 
 		// show options
-		VTop.Add("Bank: {# (gold|golds)} | Initial fee: {}", pGuild->GetBank()->Get(), pHouse->GetInitialFee());
+		VTop.Add("Bank: {$} gold | Initial fee: {$}", pGuild->GetBank()->Get(), pHouse->GetInitialFee());
 		VTop.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase");
 	}
 }
@@ -1668,7 +1668,7 @@ void CGuildManager::ShowLogs(CPlayer* pPlayer) const
 
 CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
 {
-	auto itHouse = std::find_if(CGuildHouse::Data().begin(), CGuildHouse::Data().end(), [&ID](const CGuildHouse* p)
+	auto itHouse = std::ranges::find_if(CGuildHouse::Data(), [&ID](const CGuildHouse* p)
 	{
 		return ID == p->GetID();
 	});
@@ -1678,7 +1678,7 @@ CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
 
 CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
 {
-	auto itHouse = std::find_if(CGuildHouse::Data().begin(), CGuildHouse::Data().end(), [&Pos, this](const CGuildHouse* p)
+	auto itHouse = std::ranges::find_if(CGuildHouse::Data(), [&Pos, this](const CGuildHouse* p)
 	{
 		return GS()->GetWorldID() == p->GetWorldID() && distance(Pos, p->GetPos()) < p->GetRadius();
 	});
@@ -1688,7 +1688,7 @@ CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
 
 CGuild* CGuildManager::GetGuildByID(GuildIdentifier ID) const
 {
-	auto itGuild = std::find_if(CGuild::Data().begin(), CGuild::Data().end(), [&ID](CGuild* p)
+	auto itGuild = std::ranges::find_if(CGuild::Data(), [&ID](CGuild* p)
 	{
 		return p->GetID() == ID;
 	});
@@ -1698,7 +1698,7 @@ CGuild* CGuildManager::GetGuildByID(GuildIdentifier ID) const
 
 CGuild* CGuildManager::GetGuildByName(const char* pGuildname) const
 {
-	auto itGuild = std::find_if(CGuild::Data().begin(), CGuild::Data().end(), [&pGuildname](CGuild* p)
+	auto itGuild = std::ranges::find_if(CGuild::Data(), [&pGuildname](CGuild* p)
 	{
 		return str_comp_nocase(p->GetName(), pGuildname) == 0;
 	});

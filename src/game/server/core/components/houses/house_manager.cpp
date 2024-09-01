@@ -539,7 +539,7 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse)
 	// buy tab
 	VoteWrapper VBuy(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Buying a house", pPlayer->GetItem(itGold)->GetValue());
 	if(!pHouse->HasOwner())
-		VBuy.AddOption("HOUSE_BUY", "Buy for {} golds", pHouse->GetPrice());
+		VBuy.AddOption("HOUSE_BUY", "Buy for {$} golds", pHouse->GetPrice());
 	else
 		VBuy.Add("This house has already been purchased!");
 	VoteWrapper::AddEmptyline(ClientID);
@@ -567,7 +567,7 @@ void CHouseManager::ShowMenu(CPlayer* pPlayer) const
 
 	// house bank
 	VoteWrapper VBank(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2727 Bank Management");
-	VBank.Add("Your: {} | Bank: {} golds", pPlayer->GetItem(itGold)->GetValue(), pHouse->GetBank()->Get());
+	VBank.Add("Your: {$} | Bank: {$} golds", pPlayer->GetItem(itGold)->GetValue(), pHouse->GetBank()->Get());
 	VBank.AddOption("HOUSE_BANK_ADD", "Add. (Amount in a reason)");
 	VBank.AddOption("HOUSE_BANK_TAKE", "Take. (Amount in a reason)");
 	VoteWrapper::AddEmptyline(ClientID);
@@ -583,13 +583,13 @@ void CHouseManager::ShowMenu(CPlayer* pPlayer) const
 
 CHouse* CHouseManager::GetHouse(HouseIdentifier ID) const
 {
-	auto pHouse = std::find_if(CHouse::Data().begin(), CHouse::Data().end(), [ID](auto& p) { return p->GetID() == ID; });
+	auto pHouse = std::ranges::find_if(CHouse::Data(), [ID](auto& p) { return p->GetID() == ID; });
 	return pHouse != CHouse::Data().end() ? *pHouse : nullptr;
 }
 
 CHouse* CHouseManager::GetHouseByPos(vec2 Pos) const
 {
-	auto pHouse = std::find_if(CHouse::Data().begin(), CHouse::Data().end(), [Pos](auto& p) { return distance(Pos, p->GetPos()) < 128.0f; });
+	auto pHouse = std::ranges::find_if(CHouse::Data(), [Pos](auto& p) { return distance(Pos, p->GetPos()) < 128.0f; });
 	return pHouse != CHouse::Data().end() ? *pHouse : nullptr;
 }
 

@@ -370,7 +370,7 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 				continue;
 
 			int Price = maximum(1, Item.GetInitialPrice());
-			VItems.AddOption("SELL_ITEM", ID, Price, "[{}] Sell {} ({} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
+			VItems.AddOption("SELL_ITEM", ID, Price, "[{}] Sell {} ({$} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
 		}
 		VItems.EndDepth();
 	}

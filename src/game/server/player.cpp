@@ -716,29 +716,32 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	if(!IsAuthed() || !m_pCharacter)
 		return;
 
-	const int LevelPercent = translate_to_percent((int)computeExperience(Account()->GetLevel()), Account()->GetExperience());
+	const int LevelPercent = translate_to_percent(static_cast<int>(computeExperience(Account()->GetLevel())), Account()->GetExperience());
 	const int MaximumHealth = GetStartHealth();
 	const int MaximumMana = GetStartMana();
 	const int Health = m_pCharacter->Health();
 	const int Mana = m_pCharacter->Mana();
-	const int Gold = GetItem(itGold)->GetValue();
+	const auto BankGoldStr = fmt_big_digit(Account()->GetBank().to_string());
+	const auto GoldStr = fmt_big_digit(std::to_string(GetItem(itGold)->GetValue()));
 
-	char aRecastInfo[32] {};
-	if(m_aPlayerTick[PotionRecast] > Server()->Tick())
+	char aRecastInfo[32] = { '\0' };
+	const int PotionRecastTime = m_aPlayerTick[PotionRecast] - Server()->Tick();
+	if(PotionRecastTime > 0)
 	{
-		int Seconds = maximum(0, (m_aPlayerTick[PotionRecast] - Server()->Tick()) / Server()->TickSpeed());
+		const int Seconds = maximum(0, PotionRecastTime / Server()->TickSpeed());
 		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
 	}
 
-	constexpr int targetNewlineCount = 7;
-	auto bonusActivites = Account()->GetBonusManager().GetBonusActivitiesString();
-	int additionalNewlines = targetNewlineCount - bonusActivites.first;
-	std::string additionNewline(additionalNewlines, '\n');
-	std::string ProgressBar = Utils::String::progressBar(100, LevelPercent, 10, ":", " ");
-	str_format(pBuffer, Size, "\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\nPouch %s\n%s\n%s\n%s\n%-150s",
-		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana, 
-		fmt_digit(Gold).c_str(), fmt_big_digit(Account()->GetPouch().to_string().c_str()).c_str(),
-		bonusActivites.second.c_str(), aRecastInfo, additionNewline.c_str(), pAppendStr);
+	const auto BonusActivities = Account()->GetBonusManager().GetBonusActivitiesString();
+	const int NewlinesNeeded = 7 - BonusActivities.first;
+	std::string AdditionNewlines(NewlinesNeeded > 0 ? NewlinesNeeded : 0, '\n');
+	const std::string ProgressBar = Utils::String::progressBar(100, LevelPercent, 10, ":", " ");
+
+	str_format(pBuffer, Size,
+		"\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\nBank %s\n%s\n%s\n%s\n%-150s",
+		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana,
+		GoldStr.c_str(), BankGoldStr.c_str(),
+		BonusActivities.second.c_str(), aRecastInfo, AdditionNewlines.c_str(), pAppendStr);
 }
 
 /* #########################################################################

@@ -8,9 +8,9 @@ std::string fmt_big_digit( std::string numberStr)
 	double number = strtod(numberStr.c_str(), nullptr);
 	const std::vector<std::string> vSuffixes =
 	{
-		"", "k", "mil", "bil", "tri", "quad", "quint", "sext", "sept", "oct",
-		"non", "dec", "undec", "duodec", "tredec", "quattuordec", "quindec",
-		"sexdec", "septendec", "octodec", "novemdec", "vigint", "unvigint", "duovigint", "trevigint"
+		"", "k", "m", "b", "t", "qa", "qi", "sx", "sp", "oc",
+		"no", "dc", "ud", "dd", "td", "qad", "qid",
+		"sxd", "spd", "ocd", "nod", "vg", "uvg", "dvg", "tvg"
 	};
 
 	// check is less default number

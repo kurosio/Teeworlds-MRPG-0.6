@@ -428,11 +428,47 @@ void CAccountManager::OnCharacterTile(CCharacter* pChr)
 	
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_ABOUT_BONUSES)
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_ABOUT_WANTED)
+	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_BANK_MANAGER, MOTD_MENU_BANK_MANAGER)
 }
 
 bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 {
 	int ClientID = pPlayer->GetCID();
+
+	// motd menu bank
+	if(Menulist == MOTD_MENU_BANK_MANAGER)
+	{
+		// initialize variables
+		const int CurrentGold = pPlayer->GetItem(itGold)->GetValue();
+		const BigInt CurrentBankGold = pPlayer->Account()->GetBank();
+
+		MotdMenu MBonuses(ClientID,  "Here you can securely store or retrieve your gold. Remember, gold in the Bank is protected and will never be lost, even in death.");
+		MBonuses.AddText("Bank Management \u2697");
+		MBonuses.AddSeparateLine();
+		MBonuses.AddText("Gold: {$}", CurrentGold);
+		MBonuses.AddText("Bank: {$}", CurrentBankGold);
+		MBonuses.AddSeparateLine();
+
+		// depoosit
+		MBonuses.AddText("Gold to Bank");
+		MBonuses.Add("BANK_DEPOSIT", CurrentGold, "Deposit All");
+		if(CurrentGold >= 1000)
+			MBonuses.Add("BANK_DEPOSIT", 1000, "Deposit 1k Gold");
+		if(CurrentGold >= 5000)
+			MBonuses.Add("BANK_DEPOSIT", 5000, "Deposit 5k Gold");
+		MBonuses.AddLine();
+
+		// withdraw
+		MBonuses.AddText("Gold from Bank");
+		int WithdrawAll = CurrentBankGold.to_int();
+		MBonuses.Add("BANK_WITHDRAW", WithdrawAll, "Withdraw All");
+		if(WithdrawAll >= 1000)
+			MBonuses.Add("BANK_WITHDRAW", 1000, "Withdraw 1k Gold");
+		if(WithdrawAll >= 5000)
+			MBonuses.Add("BANK_WITHDRAW", 5000, "Withdraw 5k Gold");
+		MBonuses.Send(MOTD_MENU_BANK_MANAGER);
+		return true;
+	}
 
 	// motd menu about bonuses
 	if(Menulist == MOTD_MENU_ABOUT_BONUSES)
@@ -479,7 +515,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			CPlayerItem* pItemGold = pPl->GetItem(itGold);
 			const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
 			MWanted.AddText(Server()->ClientName(i));
-			MWanted.AddText("Reward: {} gold", Reward);
+			MWanted.AddText("Reward: {$} gold", Reward);
 			MWanted.AddText("Last seen in : {}", Server()->GetWorldName(pPl->GetPlayerWorldID()));
 			MWanted.AddSeparateLine();
 			hasWanted = true;
@@ -492,6 +528,27 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		}
 
 		MWanted.Send(MOTD_MENU_ABOUT_WANTED);
+		return true;
+	}
+
+	return false;
+}
+
+bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue)
+{
+	// deposit bank gold
+	if(strcmp(pCmd, "BANK_DEPOSIT") == 0)
+	{
+		if(pPlayer->Account()->DepositGoldToBank(ExtraValue))
+			GS()->SendMenuMotd(pPlayer, MOTD_MENU_BANK_MANAGER);
+		return true;
+	}
+
+	// withdraw bank gold
+	if(strcmp(pCmd, "BANK_WITHDRAW") == 0)
+	{
+		if(pPlayer->Account()->WithdrawGoldFromBank(ExtraValue))
+			GS()->SendMenuMotd(pPlayer, MOTD_MENU_BANK_MANAGER);
 		return true;
 	}
 

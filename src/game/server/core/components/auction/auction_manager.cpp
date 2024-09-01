@@ -119,7 +119,7 @@ void CAuctionManager::ShowCreateSlot(CPlayer* pPlayer) const
 	VInfo.MarkList().Add("Description:");
 	{
 		VInfo.BeginDepth();
-		VInfo.Add("Tax for creating a slot: {}gold", pAuctionData->GetTaxPrice());
+		VInfo.Add("Tax for creating a slot: {$}gold", pAuctionData->GetTaxPrice());
 		if(Enchant > 0)
 		{
 			VInfo.Add("Warning selling enchanted: +{}", Enchant);
@@ -131,7 +131,7 @@ void CAuctionManager::ShowCreateSlot(CPlayer* pPlayer) const
 	// interaction
 	VoteWrapper VInteract(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Interaction:");
 	VInteract.AddOption("AUCTION_NUMBER", ItemID, "Select the number of items: {}.", Value);
-	VInteract.AddOption("AUCTION_PRICE", ItemID, "Set the price: {}.", SlotPrice);
+	VInteract.AddOption("AUCTION_PRICE", ItemID, "Set the price: {$}.", SlotPrice);
 	VInteract.AddOption("AUCTION_ACCEPT", ItemID, "Accept the offer.");
 }
 
@@ -146,7 +146,7 @@ void CAuctionManager::ShowAuctionSlot(CPlayer* pPlayer, int ID) const
 	// show slot information
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Auction slot");
 	VInfo.Add("Item: {}x{}", pSlot->GetItem()->Info()->GetName(), pSlot->GetItem()->GetValue());
-	VInfo.Add("Price: {} gold", pSlot->GetPrice());
+	VInfo.Add("Price: {$} gold", pSlot->GetPrice());
 	VInfo.Add("Seller: {}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -354,7 +354,7 @@ bool CAuctionManager::BuySlot(CPlayer* pPlayer, int ID) const
 
 int CAuctionManager::GetSlotsCountByAccountID(int AccountID) const
 {
-	return (int)std::count_if(CAuctionSlot::Data().begin(), CAuctionSlot::Data().end(), [AccountID](const CAuctionSlot* pSlot)
+	return (int)std::ranges::count_if(CAuctionSlot::Data(), [AccountID](const CAuctionSlot* pSlot)
 	{
 		return pSlot->GetOwnerID() == AccountID;
 	});
@@ -367,7 +367,7 @@ int CAuctionManager::GetTotalSlotsCount() const
 
 CAuctionSlot* CAuctionManager::GetSlot(int ID) const
 {
-	auto it = std::find_if(CAuctionSlot::Data().begin(), CAuctionSlot::Data().end(), [ID](const CAuctionSlot* pSlot)
+	auto it = std::ranges::find_if(CAuctionSlot::Data(), [ID](const CAuctionSlot* pSlot)
 	{
 		return pSlot->GetID() == ID;
 	});
@@ -379,6 +379,6 @@ void CAuctionManager::RemoveSlotByID(int ID) const
 	if(const auto pSlot = GetSlot(ID))
 	{
 		Database->Execute<DB::REMOVE>(TW_AUCTION_SLOTS_TABLE, "WHERE ID = '%d'", ID);
-		CAuctionSlot::Data().erase(std::remove(CAuctionSlot::Data().begin(), CAuctionSlot::Data().end(), pSlot), CAuctionSlot::Data().end());
+		std::erase(CAuctionSlot::Data(), pSlot);
 	}
 }

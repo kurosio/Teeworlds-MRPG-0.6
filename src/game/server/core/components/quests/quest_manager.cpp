@@ -344,7 +344,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2690 Quest Details");
 	VInfo.Add("Name: {}", pQuest->GetName());
 	VInfo.Add("Experience: {}", pQuest->Reward().GetExperience());
-	VInfo.Add("Gold: {}", pQuest->Reward().GetGold());
+	VInfo.Add("Gold: {$}", pQuest->Reward().GetGold());
 	VInfo.Add("Total Steps: {}", pQuest->m_vSteps.size());
 	VInfo.Add("Status: {}", (pPlayerQuest->IsAccepted() ? "Accepted" : "Not Accepted"));
 	VoteWrapper::AddEmptyline(ClientID);

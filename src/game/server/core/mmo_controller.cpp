@@ -162,9 +162,9 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		const char* pStrLastLoginDate = pPlayer->Account()->GetLastLoginDate();
 		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Account info");
 		VMain.Add("Last log in: {}", pStrLastLoginDate);
-		VMain.Add("Level {} : Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
+		VMain.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
+		VMain.Add("Gold: {$}, Bank: {$}", pPlayer->GetItem(itGold)->GetValue(), pPlayer->Account()->GetBank());
 		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
-		VMain.Add("Gold: {}", pPlayer->GetItem(itGold)->GetValue());
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// personal menu
@@ -505,8 +505,8 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 
 	if(Table == SAVE_STATS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d', Pouch = '%s' WHERE ID = '%d'", 
-			pAcc->GetLevel(), pAcc->GetExperience(), pAcc->GetPouch().to_string().c_str(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d', Bank = '%s' WHERE ID = '%d'", 
+			pAcc->GetLevel(), pAcc->GetExperience(), pAcc->GetBank().to_string().c_str(), pAcc->GetID());
 	}
 	else if(Table == SAVE_UPGRADES)
 	{
@@ -623,9 +623,9 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
 
 			if(pWrapper)
-				pWrapper->Add("{}. {} :: Gold {}", Rank, NameGuild, Gold);
+				pWrapper->Add("{}. {} :: Gold {$}", Rank, NameGuild, Gold);
 			else
-				GS()->Chat(ClientID, "{}. {} :: Gold {}", Rank, NameGuild, Gold);
+				GS()->Chat(ClientID, "{}. {} :: Gold {$}", Rank, NameGuild, Gold);
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_LEVELING)
@@ -663,9 +663,9 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 			str_copy(Nick, Instance::Server()->GetAccountNickname(UserID), sizeof(Nick));
 
 			if(pWrapper)
-				pWrapper->Add("{}. {} :: Gold {}", Rank, Nick, Gold);
+				pWrapper->Add("{}. {} :: Gold {$}", Rank, Nick, Gold);
 			else
-				GS()->Chat(ClientID, "{}. {} :: Gold {}", Rank, Nick, Gold);
+				GS()->Chat(ClientID, "{}. {} :: Gold {$}", Rank, Nick, Gold);
 		}
 	}
 }
