@@ -36,11 +36,11 @@ inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, Vo
 			if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
 			{
 				// if upgrades are cheap, they have a division of statistics
-				const int AttributeSize = pPlayer->GetAttributeSize(ID);
+				const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
 
 				// percent data TODO: extract percent attributes
 				char aBuf[64] {};
-				float Percent = pPlayer->GetAttributePercent(ID);
+				float Percent = pPlayer->GetAttributeChance(ID);
 				if(Percent)
 				{
 					str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
@@ -235,7 +235,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetExtraID(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
 			const char* pGroupName = paGroupNames[(int)Group];
 
-			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "{} : Strength {}", pGroupName, pPlayer->GetTypeAttributesSize(Group));
+			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "{} : Strength {}", pGroupName, pPlayer->GetTotalAttributesInGroup(Group));
 			InsertUpgradesVotes(pPlayer, Group, &VUpgrGroup);
 			VUpgrGroup.AddLine();
 		}
@@ -536,8 +536,8 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_SOCIAL_STATUS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '%d', PrisonSeconds = '%d', DailyChairGolds = '%d' WHERE ID = '%d'",
-			pAcc->GetCrimeScore(), pAcc->m_PrisonSeconds, pAcc->GetCurrentDailyChairGolds(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '%d', PrisonSeconds = '%d' WHERE ID = '%d'",
+			pAcc->GetCrimeScore(), pAcc->m_PrisonSeconds, pAcc->GetID());
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{

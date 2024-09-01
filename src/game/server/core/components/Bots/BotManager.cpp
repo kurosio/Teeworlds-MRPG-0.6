@@ -220,7 +220,7 @@ bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
 {
 	bool Found = false;
 	const int ClientID = pPlayer->GetCID();
-	const float ExtraChance = clamp(static_cast<float>(pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem)) / 100.0f, 0.01f, 10.0f);
+	const float ExtraChance = clamp(static_cast<float>(pPlayer->GetTotalAttributeValue(AttributeIdentifier::LuckyDropItem)) / 100.0f, 0.01f, 10.0f);
 
 	for(const auto& [ID, Mob] : MobBotInfo::ms_aMobBot)
 	{

@@ -426,7 +426,7 @@ int CGameControllerDungeon::GetSyncFactor() const
 		CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if(pBotPlayer && pBotPlayer->GetBotType() == TYPE_BOT_MOB && pBotPlayer->GetPlayerWorldID() == m_WorldID)
 		{
-			const int LevelDisciple = pBotPlayer->GetAttributesSize();
+			const int LevelDisciple = pBotPlayer->GetTotalAttributes();
 			MinFactor = minimum(MinFactor, LevelDisciple);
 			MaxFactor = maximum(MaxFactor, LevelDisciple);
 			BotCount++;

@@ -18,6 +18,11 @@ CGS* CAccountData::GS() const
 	return m_pPlayer ? m_pPlayer->GS() : nullptr;
 }
 
+int CAccountData::GetGoldCapacity() const
+{
+	return DEFAULT_MAX_PLAYER_BAG_GOLD + m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);
+}
+
 // Set the ID of the account
 void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
 {
@@ -40,7 +45,6 @@ void CAccountData::Init(int ID, CPlayer* pPlayer, const char* pLogin, std::strin
 	m_Exp = pResult->getInt("Exp");
 	m_Upgrade = pResult->getInt("Upgrade");
 	m_PrisonSeconds = pResult->getInt("PrisonSeconds");
-	m_DailyChairGolds = pResult->getInt("DailyChairGolds");
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 	m_ClassGroup = (ClassGroup)pResult->getInt("Class");
@@ -184,23 +188,6 @@ bool CAccountData::IsSameGuild(int GuildID) const
 	return m_pGuildData && m_pGuildData->GetID() == GuildID;
 }
 
-// This function returns the daily limit of gold that a player can obtain from chairs
-int CAccountData::GetLimitDailyChairGolds() const
-{
-	// Check if the player exists
-	if(m_pPlayer)
-	{
-		// Calculate the daily limit based on the player's item value
-		// The limit is 300 gold plus either 50 times the value of the player's AlliedSeals item or by config, whichever is higher
-		return 300 + minimum(m_pPlayer->GetItem(itPermissionExceedLimits)->GetValue(), g_Config.m_SvMaxIncreasedChairGolds);
-	}
-	else
-	{
-		// If the player does not exist, return 0 as the daily limit
-		return 0;
-	}
-}
-
 void CAccountData::IncreaseCrimeScore(int Score)
 {
 	if(!m_pPlayer || IsCrimeScoreMaxedOut())
@@ -333,7 +320,7 @@ void CAccountData::AddGold(int Value, bool ApplyBonuses)
 	// initialize variables
 	CPlayerItem* pGoldItem = m_pPlayer->GetItem(itGold);
 	const int CurrentGold = pGoldItem->GetValue();
-	const int FreeSpace = PLAYER_GOLD_LIMIT - CurrentGold;
+	const int FreeSpace = GetGoldCapacity() - CurrentGold;
 
 	// add golds
 	if(Value > FreeSpace)
@@ -424,7 +411,7 @@ bool CAccountData::WithdrawGoldFromBank(int Amount)
 	// initialize variables
 	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
 	int CurrentGold = pItemGold->GetValue();
-	int AvailableSpace = PLAYER_GOLD_LIMIT - CurrentGold;
+	int AvailableSpace = GetGoldCapacity() - CurrentGold;
 
 	// check bank amount
 	if(m_Bank < Amount)
@@ -452,18 +439,6 @@ bool CAccountData::WithdrawGoldFromBank(int Amount)
 	return true;
 }
 
-// Reset daily chair golds
-void CAccountData::ResetDailyChairGolds()
-{
-	// Check if the player is valid
-	if(!m_pPlayer)
-		return;
-
-	// Reset the daily chair golds to 0
-	m_DailyChairGolds = 0;
-	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
-}
-
 void CAccountData::ResetCrimeScore()
 {
 	if(!m_pPlayer)
@@ -473,39 +448,51 @@ void CAccountData::ResetCrimeScore()
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
-void CAccountData::HandleChair()
+void CAccountData::HandleChair(int Exp, int Gold)
 {
-	// Check if the player is valid
 	if(!m_pPlayer)
 		return;
 
-	// Check if the current tick is not a multiple of the tick speed multiplied by 5
 	IServer* pServer = Instance::Server();
-	if(pServer->Tick() % (pServer->TickSpeed() * 5) != 0)
+	if(pServer->Tick() % pServer->TickSpeed() != 0)
 		return;
 
-	int ExpValue = 1;
-	int GoldValue = clamp(1, 0, GetLimitDailyChairGolds() - GetCurrentDailyChairGolds());
+	// initialize variables
+	const int maxGoldCapacity = GetGoldCapacity();
+	const bool isGoldBagFull = (GetGold() >= maxGoldCapacity);
 
-	// TODO: Add special upgrades item's
+	int expGain = maximum(Exp, (int)calculate_exp_gain(g_Config.m_SvChairExpFactor, m_Level, m_Level + Exp));
+	int goldGain = isGoldBagFull ? 0 : maximum(Gold, (int)calculate_gold_gain(g_Config.m_SvChairGoldFactor, m_Level, m_Level + Gold));
 
-	// Add the experience value to the player's experience
-	AddExperience(ExpValue);
+	// total percent bonuses
+	int totalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD));
+	int totalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_EXPERIENCE));
 
-	// If gold was gained
-	if(GoldValue > 0)
+	// add exp & gold
+	AddExperience(expGain);
+	if(!isGoldBagFull)
 	{
-		AddGold(GoldValue, true); // Add the gold value to the player's gold
-		m_DailyChairGolds += GoldValue; // Increase the daily gold count
-		GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS); // Save the player's account
+		AddGold(goldGain, true);
 	}
 
-	// Broadcast the information about the gold and experience gained, as well as the current limits and counts
-	std::string aExpBuf = "+" + std::to_string(ExpValue);
-	std::string aGoldBuf = (GoldValue > 0) ? "+" + std::to_string(GoldValue) : "limit";
-	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
-		"Gold {$} : {} (daily limit {$} of {$})\nExp {}/{} : {}\nThe limit and count is increased with special items!",
-		GetTotalGold(), aGoldBuf.c_str(), GetCurrentDailyChairGolds(), GetLimitDailyChairGolds(), m_Exp, computeExperience(m_Level), aExpBuf.c_str());
+	// format
+	std::string expStr = "+" + std::to_string(expGain);
+	std::string goldStr = goldGain > 0 ? "+" + std::to_string(goldGain) : "Bag Full";
+
+	// add bonus information
+	if(totalPercentBonusExp > 0)
+	{
+		expStr += " (+" + std::to_string(totalPercentBonusExp) + "% bonus)";
+	}
+	if(totalPercentBonusGold > 0 && goldGain > 0)
+	{
+		goldStr += " (+" + std::to_string(totalPercentBonusGold) + "% bonus)";
+	}
+
+	// send broadcast
+    GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
+        "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
+		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), m_Exp, computeExperience(m_Level), expStr.c_str());
 }
 
 void CAccountData::SetAchieventProgress(int AchievementID, int Progress, bool Completed)

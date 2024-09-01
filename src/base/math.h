@@ -93,13 +93,6 @@ constexpr inline int fx2i(int v)
 	return v / fxpscale;
 }
 
-inline unsigned long long computeExperience(unsigned Level)
-{
-	if(Level == 1)
-		return 18;
-	return Level * (static_cast<unsigned long long>(Level) - 1) * 24;
-}
-
 class fxp
 {
 	int value;
@@ -215,5 +208,43 @@ T translate_to_percent(T from, T value, float maximum_percent)
 	return static_cast<T>((static_cast<double>(value) * maximum_percent) / static_cast<double>(from));
 }
 
+constexpr inline unsigned long long computeExperience(unsigned Level)
+{
+	if(Level == 1)
+		return 18;
+	return Level * (static_cast<unsigned long long>(Level) - 1) * 24;
+}
+
+constexpr inline unsigned long long calculate_exp_gain(int factorCount, int baseLevel, int factorLevel)
+{
+	int levelDifference = baseLevel - factorLevel;
+	double multiplier = (levelDifference >= 0)
+		? 1.0 + (levelDifference * 0.05)
+		: 1.0 / (1.0 + (std::abs(levelDifference) * 0.1));
+	unsigned long long baseExp = computeExperience(factorLevel) / factorCount;
+	unsigned long long experience = baseExp / multiplier;
+	unsigned long long minimumExperience = baseExp * 0.05;
+	return maximum((unsigned long long)1, experience, minimumExperience);
+}
+
+
+constexpr inline unsigned long long calculate_gold_gain(int factorCount, int baseLevel, int factorLevel, bool randomBonus = false)
+{
+	int levelDifference = baseLevel - factorLevel;
+	double multiplier = (levelDifference >= 0)
+		? 1.0 + (levelDifference * 0.05)
+		: 1.0 / (1.0 + (std::abs(levelDifference) * 0.1));
+	unsigned long long baseGold = computeExperience(factorLevel) / factorCount;
+	unsigned long long gold = baseGold / multiplier;
+	unsigned long long minimumGold = baseGold * 0.05;
+
+	if(randomBonus)
+	{
+		gold += rand() % (gold / 5 + 1);
+		minimumGold += rand() % (minimumGold / 5 + 1);
+	}
+
+	return maximum((unsigned long long)1, gold, minimumGold);
+}
 
 #endif // BASE_MATH_H

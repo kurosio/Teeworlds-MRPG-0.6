@@ -23,7 +23,6 @@ class CAccountData
 	int m_ClientID {};
 	char m_aLogin[64] {};
 	char m_aLastLogin[64] {};
-	int m_DailyChairGolds {};
 	int m_CrimeScore {};
 
 	int m_Level {};
@@ -82,8 +81,6 @@ public:
 	int GetExperience() const { return m_Exp; } // Returns the experience points of the player
 	const char* GetLogin() const { return m_aLogin; } // Returns the login name of the player as a const char pointer
 	const char* GetLastLoginDate() const { return m_aLastLogin; } // Returns the last login date of the player as a const char pointer
-	int GetCurrentDailyChairGolds() const { return m_DailyChairGolds; } // Returns current daily chair golds
-	int GetLimitDailyChairGolds() const; // Returns the daily limit of gold that a player can obtain from chairs
 
 	void IncreaseCrimeScore(int Score);
 	bool IsCrimeScoreMaxedOut() const { return m_CrimeScore >= 100; }
@@ -97,14 +94,14 @@ public:
 	BigInt GetBank() const { return m_Bank; }
 	int GetGold() const;
 	BigInt GetTotalGold() const;
+	int GetGoldCapacity() const;
 
 	void AddExperience(int Value); // Adds the specified value to the player's experience points
 	void AddGold(int Value, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
 	bool DepositGoldToBank(int Amount);
 	bool WithdrawGoldFromBank(int Amount);
 	bool SpendCurrency(int Price, int CurrencyItemID = 1); // Returns a boolean value indicating whether the currency was successfully spent or not.
-	void ResetDailyChairGolds(); // Reset daily getting chair golds
-	void HandleChair();
+	void HandleChair(int Exp, int Gold);
 
 	// Achievements
 	void InitAchievements(const std::string& Data);

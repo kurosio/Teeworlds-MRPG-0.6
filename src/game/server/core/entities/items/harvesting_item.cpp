@@ -126,7 +126,7 @@ bool CEntityHarvestingItem::Interaction(const char* pToolname, AttributeIdentifi
 		pEquippedItem->SetDurability(Durability - 1);
 
 	// damage
-	m_Damage += 3 + pPlayer->GetAttributeSize(Attribute);
+	m_Damage += 3 + pPlayer->GetTotalAttributeValue(Attribute);
 	GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
 
 	// send message

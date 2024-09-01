@@ -52,7 +52,7 @@ void CAttackTeleport::Tick()
 			GS()->CreateSound(pOwnerChar->GetPos(), SOUND_NINJA_FIRE);
 
 			// damage for players
-			const int MaximalDamageSize = translate_to_percent_rest(pOwnerChar->GetPlayer()->GetAttributeSize(AttributeIdentifier::DMG), clamp(m_SkillBonus, 5, 50));
+			const int MaximalDamageSize = translate_to_percent_rest(pOwnerChar->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::DMG), clamp(m_SkillBonus, 5, 50));
 			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
 				CPlayer* pSearchPlayer = GS()->GetPlayer(i, false, true);
@@ -101,7 +101,7 @@ void CAttackTeleport::Tick()
 			{
 				CPlayer* pNextPlayer = nullptr;
 				CCharacter* pNextChar = nullptr;
-				const int MaximalDamageSize = translate_to_percent_rest(pOwnerChar->GetPlayer()->GetAttributeSize(AttributeIdentifier::DMG), clamp(m_SkillBonus, 5, 50));
+				const int MaximalDamageSize = translate_to_percent_rest(pOwnerChar->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::DMG), clamp(m_SkillBonus, 5, 50));
 
 				// try get next player
 				while(!pNextPlayer && !pNextChar && !m_vMovingMap.empty())

@@ -72,7 +72,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 		GS()->Core()->QuestManager()->Update(m_pPlayer);
 		GS()->Core()->QuestManager()->TryAcceptNextQuestChainAll(m_pPlayer);
 
-		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
+		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 		m_pPlayer->m_VotesData.UpdateCurrentVotes();
 		GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	}
@@ -296,7 +296,7 @@ void CCharacter::FireWeapon()
 		case WEAPON_SHOTGUN:
 		{
 			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
-			const int ShotSpread = 5 + minimum(m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadShotgun), 36);
+			const int ShotSpread = 5 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadShotgun), 36);
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread);
 			for(int i = 0; i <= ShotSpread; ++i)
@@ -315,7 +315,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_GRENADE:
 		{
-			const int ShotSpread = 1 + minimum(m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadGrenade), 21);
+			const int ShotSpread = 1 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadGrenade), 21);
 			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
 			Msg.AddInt(ShotSpread);
 			for(int i = 0; i < ShotSpread; ++i)
@@ -333,7 +333,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_LASER:
 		{
-			const int ShotSpread = 1 + minimum(m_pPlayer->GetAttributeSize(AttributeIdentifier::SpreadRifle), 36);
+			const int ShotSpread = 1 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadRifle), 36);
 			for(int i = 0; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
@@ -360,7 +360,7 @@ void CCharacter::FireWeapon()
 
 	if(!m_ReloadTimer)
 	{
-		const int ReloadArt = m_pPlayer->GetAttributeSize(AttributeIdentifier::AttackSPD);
+		const int ReloadArt = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AttackSPD);
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 + ReloadArt);
 	}
 }
@@ -385,7 +385,7 @@ void CCharacter::HandleWeapons()
 
 		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart <= Server()->Tick())
 		{
-			const int RealAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
+			const int RealAmmo = 10 + m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo = minimum(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo + 1, RealAmmo);
 			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = -1;
 		}
@@ -491,7 +491,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 		return false;
 	}
 
-	const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
+	const int MaximumAmmo = 10 + m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
 	if(m_Core.m_aWeapons[WeaponID].m_Ammo >= MaximumAmmo)
 		return false;
 
@@ -873,21 +873,21 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
 		if(Weapon == WEAPON_GUN)
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::GunDMG);
+			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::GunDMG);
 		else if(Weapon == WEAPON_SHOTGUN)
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::ShotgunDMG);
+			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::ShotgunDMG);
 		else if(Weapon == WEAPON_GRENADE)
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::GrenadeDMG);
+			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::GrenadeDMG);
 		else if(Weapon == WEAPON_LASER)
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::RifleDMG);
+			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::RifleDMG);
 		else
-			Dmg = pFrom->GetAttributeSize(AttributeIdentifier::HammerDMG);
+			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::HammerDMG);
 
-		const int EnchantBonus = translate_to_percent_rest(pFrom->GetAttributeSize(AttributeIdentifier::DMG), pFrom->GetClass()->GetExtraDMG());
+		const int EnchantBonus = translate_to_percent_rest(pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG), pFrom->GetClass()->GetExtraDMG());
 		Dmg += EnchantBonus;
 
 		// vampirism replenish your health
-		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Vampirism) > random_float(100.0f))
+		if(m_pPlayer->GetAttributeChance(AttributeIdentifier::Vampirism) > random_float(100.0f))
 		{
 			const int Recovery = maximum(1, Dmg / 2);
 			GS()->Chat(FromCID, ":: Vampirism stolen: {}HP.", Recovery);
@@ -896,16 +896,16 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		}
 
 		// miss out on damage
-		if(m_pPlayer->GetAttributePercent(AttributeIdentifier::Lucky) > random_float(100.0f))
+		if(m_pPlayer->GetAttributeChance(AttributeIdentifier::Lucky) > random_float(100.0f))
 		{
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_HEARTS);
 			return false;
 		}
 
 		// critical damage
-		if(Dmg && !pFrom->IsBot() && m_pPlayer->GetAttributePercent(AttributeIdentifier::Crit) > random_float(100.0f))
+		if(Dmg && !pFrom->IsBot() && m_pPlayer->GetAttributeChance(AttributeIdentifier::Crit) > random_float(100.0f))
 		{
-			CritDamage = 100 + maximum(pFrom->GetAttributeSize(AttributeIdentifier::CritDMG), 1);
+			CritDamage = 100 + maximum(pFrom->GetTotalAttributeValue(AttributeIdentifier::CritDMG), 1);
 			const float CritDamageFormula = (float)Dmg + ((float)CritDamage * ((float)Dmg / 100.0f));
 			const float CritRange = (CritDamageFormula + (CritDamageFormula / 2.0f) / 2.0f);
 			Dmg = (int)CritDamageFormula + rand() % (int)CritRange;
@@ -1017,7 +1017,7 @@ void CCharacter::Snap(int SnappingClient)
 	{
 		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo > 0)
 		{
-			const int MaximumAmmo = 10 + m_pPlayer->GetAttributeSize(AttributeIdentifier::Ammo);
+			const int MaximumAmmo = 10 + m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
 			const int AmmoPercent = translate_to_percent(MaximumAmmo, m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo, 10.0f);
 			pCharacter->m_AmmoCount = clamp(AmmoPercent, 1, 10);
 		}
@@ -1122,17 +1122,19 @@ void CCharacter::HandleTilesets()
 	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
 		GS()->CreateDeath(m_Core.m_Pos, m_ClientID);
 
-	// chairs
-	if(m_pTilesHandler->IsEnter(TILE_CHAIR) || m_pTilesHandler->IsExit(TILE_CHAIR))
-		GS()->CreatePlayerSpawn(m_Core.m_Pos, CmaskOne(m_ClientID));
-	if(GetTiles()->IsActive(TILE_CHAIR))
-		m_pPlayer->Account()->HandleChair();
-
 	// anti-pvp
 	if(m_pTilesHandler->IsEnter(TILE_ANTI_PVP))
 		GS()->Chat(m_ClientID, "You have entered the safe zone!");
 	else if(m_pTilesHandler->IsExit(TILE_ANTI_PVP))
 		GS()->Chat(m_ClientID, "You've left the safe zone!");
+
+	// chairs
+	if(GetTiles()->IsActive(TILE_CHAIR_LV1))
+		m_pPlayer->Account()->HandleChair(1, 1);
+	if(GetTiles()->IsActive(TILE_CHAIR_LV2))
+		m_pPlayer->Account()->HandleChair(3, 3);
+	if(GetTiles()->IsActive(TILE_CHAIR_LV3))
+		m_pPlayer->Account()->HandleChair(5, 5);
 }
 
 void CCharacter::GiveRandomEffects(int To)
@@ -1278,6 +1280,7 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 	if(!m_Alive || !m_pPlayer->IsAuthed())
 		return;
 
+	// health check
 	if(m_Health > m_pPlayer->GetStartHealth())
 	{
 		GS()->Chat(m_pPlayer->GetCID(), "Your health has been reduced.");
@@ -1285,6 +1288,7 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 		m_Health = m_pPlayer->GetStartHealth();
 	}
 
+	// mana check
 	if(m_Mana > m_pPlayer->GetStartMana())
 	{
 		GS()->Chat(m_pPlayer->GetCID(), "Your mana has been reduced.");
@@ -1292,18 +1296,33 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 		m_Mana = m_pPlayer->GetStartMana();
 	}
 
-	CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
-	if((pItemInfo->GetFunctional() >= EQUIP_HAMMER && pItemInfo->GetFunctional() <= EQUIP_LASER))
-		m_pPlayer->GetCharacter()->GiveWeapon(pItemInfo->GetFunctional(), 3);
+	// checking and limiting the gold capacity
+	int currentGold = m_pPlayer->Account()->GetGold();
+	int maxGoldCapacity = m_pPlayer->Account()->GetGoldCapacity();
+	if(currentGold > maxGoldCapacity)
+	{
+		const int excessGold = currentGold - maxGoldCapacity;
+		m_pPlayer->Account()->DepositGoldToBank(excessGold);
+		GS()->Chat(m_pPlayer->GetCID(), "Your gold has been reduced to the maximum capacity.");
+	}
 
+	// weapon update if the item is functional as a weapon
+	CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
+	if(pItemInfo->GetFunctional() >= EQUIP_HAMMER && pItemInfo->GetFunctional() <= EQUIP_LASER)
+	{
+		m_pPlayer->GetCharacter()->GiveWeapon(pItemInfo->GetFunctional(), 3);
+	}
+
+	// eidolon functional processing
 	if(pItemInfo->GetFunctional() == EQUIP_EIDOLON)
 	{
 		m_pPlayer->TryRemoveEidolon();
 		m_pPlayer->TryCreateEidolon();
 	}
 
+	// update ammo regeneration
 	if(pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen) > 0)
-		m_AmmoRegen = m_pPlayer->GetAttributeSize(AttributeIdentifier::AmmoRegen);
+		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 }
 
 void CCharacter::SetDoorHit(vec2 Start, vec2 End)

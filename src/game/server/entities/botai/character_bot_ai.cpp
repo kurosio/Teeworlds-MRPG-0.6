@@ -203,53 +203,56 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 		CCharacter::Die(Killer, Weapon);
 }
 
+struct ExperienceData
+{
+	int requiredKills;  // Количество необходимых убийств
+	double experiencePerKill;  // Опыт за одного моба
+};
+
+
 void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 {
+	// initialize variables
 	const int ClientID = pPlayer->GetCID();
 	const int BotID = m_pBotPlayer->GetBotID();
 	const int SubID = m_pBotPlayer->GetBotMobID();
+	const int MobLevel = MobBotInfo::ms_aMobBot[SubID].m_Level;
+	const int PlayerLevel = pPlayer->Account()->GetLevel();
 
-	// Check if the bot type is TYPE_BOT_QUEST_MOB and the killer is active for the client
+	// is quest mob type
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB)
 	{
 		if(m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[ClientID])
-		{
-			// Set the completion status for the killer to true
 			m_pBotPlayer->GetQuestBotMobInfo().m_CompleteClient[ClientID] = true;
-		}
 	}
 
-	// Check if the bot is a mob type
+	// is default mob type
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
-	{
-		// Append defeat progress for the quest mob
 		GS()->Core()->QuestManager()->TryAppendDefeatProgress(pPlayer, BotID);
-	}
-
-	// reduce afk farming
-	if(pPlayer->IsAfk())
-	{
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "You get reduced rewards, due to farming mobs afk.");
-		GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, 1, Force);
-		pPlayer->Account()->AddGold(1, true);
-		return;
-	}
 
 	// grinding gold
-	const int Gold = maximum(MobBotInfo::ms_aMobBot[SubID].m_Level / g_Config.m_SvStrongGold, 1);
-	pPlayer->Account()->AddGold(Gold, true);
+	if(pPlayer->Account()->GetGold() < pPlayer->Account()->GetGoldCapacity())
+	{
+		const int goldGain = calculate_gold_gain(g_Config.m_SvKillmobsGoldFactor, PlayerLevel, MobLevel, true);
+		pPlayer->Account()->AddGold(goldGain, true);
+		GS()->Chat(pPlayer->GetCID(), "You gained {} gold.", goldGain);
+	}
+	else
+	{
+		GS()->Chat(pPlayer->GetCID(), "You have reached the maximum gold capacity and cannot collect more gold.");
+	}
 
 	// grinding experience
-	const int ExperienceMob = maximum(1, (int)computeExperience(MobBotInfo::ms_aMobBot[SubID].m_Level) / g_Config.m_SvKillmobsIncreaseLevel);
-	const int ExperienceWithMultiplier = GS()->GetExpMultiplier(ExperienceMob);
-	GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, ExperienceWithMultiplier, Force);
+	const int expGain = calculate_exp_gain(g_Config.m_SvKillmobsExpFactor, PlayerLevel, MobLevel);
+	GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, expGain, Force);
+	GS()->Chat(pPlayer->GetCID(), "You gained {} exp.", expGain);
 
 	// drop experience
-	const int ExperienceDrop = maximum(ExperienceWithMultiplier / 2, 1);
-	GS()->EntityManager()->DropBonus(m_Core.m_Pos, POWERUP_ARMOR, 0, ExperienceDrop, (1 + rand() % 2), Force);
+	const int expBonusDrop = maximum(expGain / 2, 1);
+	GS()->EntityManager()->DropBonus(m_Core.m_Pos, POWERUP_ARMOR, 0, expBonusDrop, (1 + rand() % 2), Force);
 
 	// drop item's
-	const float ActiveLuckyDrop = clamp((float)pPlayer->GetAttributeSize(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
+	const float ActiveLuckyDrop = clamp((float)pPlayer->GetTotalAttributeValue(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
 	for(int i = 0; i < 5; i++)
 	{
 		CItem DropItem;
@@ -1121,7 +1124,7 @@ CPlayer* CCharacterBotAI::SearchTankPlayer(float Distance)
 
 		// check if the player is tastier for the bot
 		const bool FinderCollised = GS()->Collision()->IntersectLineWithInvisible(pFinderHard->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos, nullptr, nullptr);
-		if(!FinderCollised && pFinderHard->GetAttributeSize(AttributeIdentifier::HP) > pTarget->GetAttributeSize(AttributeIdentifier::HP))
+		if(!FinderCollised && pFinderHard->GetTotalAttributeValue(AttributeIdentifier::HP) > pTarget->GetTotalAttributeValue(AttributeIdentifier::HP))
 		{
 			AI()->GetTarget()->Set(i, 100);
 			pTarget = pFinderHard;

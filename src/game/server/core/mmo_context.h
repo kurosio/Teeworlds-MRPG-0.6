@@ -297,7 +297,7 @@ enum
 	MAX_ATTRIBUTES_FOR_ITEM = 2,			// maximum number of stats per item
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
 	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game.
-	PLAYER_GOLD_LIMIT = 1'000'000'000,		// player gold limit
+	DEFAULT_MAX_PLAYER_BAG_GOLD = 5000,		// player gold limit
 
 	// settings items
 	itShowEquipmentDescription = 25,	// Description setting
@@ -466,6 +466,7 @@ enum class AttributeIdentifier : int
 	RifleDMG = 20,               // Attribute identifier for rifle damage
 	LuckyDropItem = 21,          // Attribute identifier for lucky drop item
 	EidolonPWR = 22,             // Attribute identifier for eidolon power
+	GoldCapacity = 22,           // Attribute identifier for gold capacity
 	ATTRIBUTES_NUM,              // The number of total attributes
 };
 

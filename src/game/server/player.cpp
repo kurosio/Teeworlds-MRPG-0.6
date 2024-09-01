@@ -692,7 +692,7 @@ int CPlayer::GetStartTeam() const
 
 int CPlayer::GetStartHealth() const
 {
-	int DefaultHP = 10 + GetAttributeSize(AttributeIdentifier::HP);
+	int DefaultHP = 10 + GetTotalAttributeValue(AttributeIdentifier::HP);
 	DefaultHP += translate_to_percent_rest(DefaultHP, m_Class.GetExtraHP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_HP, &DefaultHP);
 	return DefaultHP;
@@ -700,7 +700,7 @@ int CPlayer::GetStartHealth() const
 
 int CPlayer::GetStartMana() const
 {
-	int DefaultMP = 10 + GetAttributeSize(AttributeIdentifier::MP);
+	int DefaultMP = 10 + GetTotalAttributeValue(AttributeIdentifier::MP);
 	DefaultMP += translate_to_percent_rest(DefaultMP, m_Class.GetExtraMP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_MP, &DefaultMP);
 	return DefaultMP;
@@ -723,6 +723,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const int Mana = m_pCharacter->Mana();
 	const auto BankGoldStr = fmt_big_digit(Account()->GetBank().to_string());
 	const auto GoldStr = fmt_big_digit(std::to_string(Account()->GetGold()));
+	const auto GoldCapacityStr = fmt_big_digit(std::to_string(Account()->GetGoldCapacity()));
 
 	char aRecastInfo[32] = { '\0' };
 	const int PotionRecastTime = m_aPlayerTick[PotionRecast] - Server()->Tick();
@@ -738,9 +739,9 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const std::string ProgressBar = Utils::String::progressBar(100, LevelPercent, 10, ":", " ");
 
 	str_format(pBuffer, Size,
-		"\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s\nBank %s\n%s\n%s\n%s\n%-150s",
+		"\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s of %s\nBank %s\n%s\n%s\n%s\n%-150s",
 		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana,
-		GoldStr.c_str(), BankGoldStr.c_str(),
+		GoldStr.c_str(), GoldCapacityStr.c_str(), BankGoldStr.c_str(),
 		BonusActivities.second.c_str(), aRecastInfo, AdditionNewlines.c_str(), pAppendStr);
 }
 
@@ -840,10 +841,12 @@ bool CPlayer::IsEquipped(ItemFunctional EquipID) const
 	return GetEquippedItemID(EquipID, -1) != std::nullopt;
 }
 
-int CPlayer::GetAttributeSize(AttributeIdentifier ID) const
+int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
-	// if the best tank class is selected among the players we return the sync dungeon stats
+	// initialize variables
 	const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID);
+
+	// check if the player is in a dungeon and the attribute has a low improvement cost
 	if(GS()->IsWorldType(WorldType::Dungeon))
 	{
 		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
@@ -851,55 +854,71 @@ int CPlayer::GetAttributeSize(AttributeIdentifier ID) const
 			return pDungeon->GetAttributeDungeonSync(this, ID);
 	}
 
-	// get all attributes from items
-	int Size = 0;
+	// counting attributes from equipped items
+	int totalValue = 0;
 	for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[m_ClientID])
 	{
 		if(ItemData.IsEquipped() && ItemData.Info()->IsEnchantable() && ItemData.Info()->GetInfoEnchantStats(ID))
 		{
-			Size += ItemData.GetEnchantStats(ID);
+			totalValue += ItemData.GetEnchantStats(ID);
 		}
 	}
 
-	// if the attribute has the value of player upgrades we sum up
+	// add attribute value from player's improvements
 	if(pAtt->HasDatabaseField())
-		Size += Account()->m_aStats[ID];
+	{
+		totalValue += Account()->m_aStats[ID];
+	}
 
-	return Size;
+	return totalValue;
 }
 
-float CPlayer::GetAttributePercent(AttributeIdentifier ID) const
+float CPlayer::GetAttributeChance(AttributeIdentifier ID) const
 {
-	float Percent = 0.0f;
-	int Size = GetAttributeSize(ID);
+	// initialize variables
+	int attributeValue = GetTotalAttributeValue(ID);
+	float chance = 0.0f;
 
-	if(ID == AttributeIdentifier::Vampirism)
-		Percent = minimum(8.0f + (float)Size * 0.0015f, 30.0f);
-	if(ID == AttributeIdentifier::Crit)
-		Percent = minimum(8.0f + (float)Size * 0.0015f, 30.0f);
-	if(ID == AttributeIdentifier::Lucky)
-		Percent = minimum(5.0f + (float)Size * 0.0015f, 20.0f);
-	return Percent;
+	// chance
+	switch(ID)
+	{
+		case AttributeIdentifier::Vampirism:
+		case AttributeIdentifier::Crit:
+			chance = std::min(8.0f + static_cast<float>(attributeValue) * 0.0015f, 30.0f);
+			break;
+
+		case AttributeIdentifier::Lucky:
+			chance = std::min(5.0f + static_cast<float>(attributeValue) * 0.0015f, 20.0f);
+			break;
+
+		default:
+			break;
+	}
+
+	return chance;
 }
 
-int CPlayer::GetTypeAttributesSize(AttributeGroup Type)
+int CPlayer::GetTotalAttributesInGroup(AttributeGroup Type)
 {
-	int Size = 0;
+	int totalSize = 0;
 	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
 		if(pAttribute->IsGroup(Type))
-			Size += GetAttributeSize(ID);
+		{
+			totalSize += GetTotalAttributeValue(ID);
+		}
 	}
-	return Size;
+	return totalSize;
 }
 
-int CPlayer::GetAttributesSize()
+int CPlayer::GetTotalAttributes()
 {
-	int Size = 0;
+	int totalSize = 0;
 	for(const auto& [ID, Attribute] : CAttributeDescription::Data())
-		Size += GetAttributeSize(ID);
-
-	return Size;
+	{
+		totalSize += GetTotalAttributeValue(ID);
+	}
+	return totalSize;
 }
 
 void CPlayer::SetSnapHealthTick(int Sec)

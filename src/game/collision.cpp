@@ -105,7 +105,9 @@ void CCollision::InitTiles(CTile* pTiles) const
 				pTiles[i].m_Index = COLFLAG_DISALLOW_MOVE;
 				pTiles[i].m_Reserved = static_cast<char>(Index);
 				break;
-			case TILE_CHAIR:
+			case TILE_CHAIR_LV1:
+			case TILE_CHAIR_LV2:
+			case TILE_CHAIR_LV3:
 			default:
 				pTiles[i].m_Index = 0;
 				pTiles[i].m_Reserved = static_cast<char>(Index);

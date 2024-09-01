@@ -126,7 +126,7 @@ std::string CItemDescription::GetStringAttributesInfo(CPlayer* pPlayer, int Ench
 		if(Att.HasValue())
 		{
 			const int BonusValue = GetInfoEnchantStats(Att.GetID(), Enchant);
-			strAttributes += fmt_localize(pPlayer->GetCID(), "{}+{$}", Att.Info()->GetName(), BonusValue);
+			strAttributes += fmt_localize(pPlayer->GetCID(), "{}+{$} ", Att.Info()->GetName(), BonusValue);
 		}
 	}
 	return strAttributes.empty() ? "unattributed" : strAttributes;

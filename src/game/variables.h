@@ -116,14 +116,18 @@ MACRO_CONFIG_INT(SvPriceUpgradeGuildAnother, sv_price_member_another, 16800, 100
 MACRO_CONFIG_INT(SvGuildWarDuration, sv_guild_war_duration, 30, 1, 240, CFGFLAG_SERVER, "Guild war duration in minutes")
 
 // leveling
-MACRO_CONFIG_INT(SvKillmobsIncreaseLevel, sv_kill_mobs_increase_level, 500, 0, 1000, CFGFLAG_SERVER, "Kill mobs of own level to increase.")
+MACRO_CONFIG_INT(SvKillmobsExpFactor, sv_killmobs_exp_factor, 1000, 100, 5000, CFGFLAG_SERVER, "Kill mobs factor experience.")
+MACRO_CONFIG_INT(SvChairExpFactor, sv_chair_exp_factor, 10000, 1000, 50000, CFGFLAG_SERVER, "Chair factor experience.")
+
+MACRO_CONFIG_INT(SvKillmobsGoldFactor, sv_killmobs_gold_factor, 1200, 100, 5000, CFGFLAG_SERVER, "Kill mobs factor gold.")
+MACRO_CONFIG_INT(SvChairGoldFactor, sv_chair_gold_factor, 12000, 1, 50000, CFGFLAG_SERVER, "Chair factor gold.")
+
 MACRO_CONFIG_INT(SvMiningIncreaseLevel, sv_mining_increase_level, 80, 0, 100000, CFGFLAG_SERVER, "Mining items own level to increase")
 MACRO_CONFIG_INT(SvFarmingIncreaseLevel, sv_farming_increase_level, 80, 0, 100000, CFGFLAG_SERVER, "Farming items own level to increase")
 MACRO_CONFIG_INT(SvMultiplierExpRaidDungeon, sv_multiplier_exp_raid_dungeon, 150, 100, 1000, CFGFLAG_SERVER, "Dungeon experience multiplier")
 MACRO_CONFIG_INT(SvLossGoldAtDeath, sv_loss_gold_at_death, 5, 0, 100, CFGFLAG_SERVER, "Gold loss on death from a player in %")
 MACRO_CONFIG_INT(SvArrestGoldAtDeath, sv_arrest_gold_at_death, 30, 0, 100, CFGFLAG_SERVER, "Gold loss on death from the kill list")
 MACRO_CONFIG_INT(SvMaxIncreasedChairGolds, sv_max_increased_chair_golds, 10000, 1000, 10000000, CFGFLAG_SERVER, "Max can increased chair golds by multiplier")
-MACRO_CONFIG_INT(SvStrongGold, sv_strong_gold, 2, 0, 5, CFGFLAG_SERVER, "Level mobs / strong gold")
 MACRO_CONFIG_INT(SvStrongAntiPVP, sv_strong_anti_pvp, 50, 0, 10000, CFGFLAG_SERVER, "Anti-PVP Difference classing leveling for denied.")
 
 // world time

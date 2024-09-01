@@ -409,18 +409,6 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	return false;
 }
 
-void CAccountManager::OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period)
-{
-	const int ClientID = pPlayer->GetCID();
-
-	// time period on daily stamp
-	if(Period == DAILY_STAMP)
-	{
-		pPlayer->Account()->ResetDailyChairGolds();
-		GS()->Chat(ClientID, "The gold limit in the chair has been updated.");
-	}
-}
-
 void CAccountManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
@@ -476,7 +464,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MOTD_MENU_ABOUT_BONUSES)
 	{
 		int position = 1;
-		MotdMenu MBonuses(ClientID, MTFLAG_CLOSE_BUTTON, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
+		MotdMenu MBonuses(ClientID, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
 		MBonuses.AddText("Active bonuses \u2696");
 		MBonuses.AddSeparateLine();
 		for(auto& bonus : pPlayer->Account()->GetBonusManager().GetTemporaryBonuses())
@@ -505,7 +493,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MOTD_MENU_ABOUT_WANTED)
 	{
 		bool hasWanted = false;
-		MotdMenu MWanted(ClientID, MTFLAG_CLOSE_BUTTON, "A list of wanted players for whom bounties have been assigned. To get the bounty you need to kill a player from the list.");
+		MotdMenu MWanted(ClientID, "A list of wanted players for whom bounties have been assigned. To get the bounty you need to kill a player from the list.");
 		MWanted.AddText("Wanted players \u2694");
 		MWanted.AddSeparateLine();
 		for(int i = 0; i < MAX_PLAYERS; i++)

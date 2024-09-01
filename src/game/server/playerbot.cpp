@@ -16,7 +16,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 {
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
-	m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
+	m_BotStartHealth = CPlayerBot::GetTotalAttributeValue(AttributeIdentifier::HP);
 	m_Items.reserve(CItemDescription::Data().size());
 	CPlayerBot::PrepareRespawnTick();
 }
@@ -42,7 +42,7 @@ void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 		std::memset(m_QuestMobInfo.m_CompleteClient, 0, MAX_PLAYERS * sizeof(bool));
 
 		// Update the attribute size of the player bot for the attribute identifier HP
-		m_BotStartHealth = CPlayerBot::GetAttributeSize(AttributeIdentifier::HP);
+		m_BotStartHealth = CPlayerBot::GetTotalAttributeValue(AttributeIdentifier::HP);
 	}
 }
 
@@ -184,7 +184,7 @@ void CPlayerBot::PrepareRespawnTick()
 	m_WantSpawn = true;
 }
 
-int CPlayerBot::GetAttributeSize(AttributeIdentifier ID) const
+int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
 	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_EIDOLON || m_BotType == TYPE_BOT_QUEST_MOB ||
 		(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))

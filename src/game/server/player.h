@@ -123,8 +123,8 @@ public:
 	virtual StateSnapping IsActiveForClient(int ClientID) const { return STATE_SNAPPING_FULL; }
 	virtual std::optional<int> GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
 	virtual bool IsEquipped(ItemFunctional EquipID) const;
-	virtual int GetAttributeSize(AttributeIdentifier ID) const;
-	float GetAttributePercent(AttributeIdentifier ID) const;
+	virtual int GetTotalAttributeValue(AttributeIdentifier ID) const;
+	float GetAttributeChance(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);
 
 	virtual bool GiveEffect(const char* Potion, int Sec, float Chance = 100.0f);
@@ -174,8 +174,8 @@ public:
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
 	CAccountData* Account() const { return &CAccountData::ms_aData[m_ClientID]; }
 
-	int GetTypeAttributesSize(AttributeGroup Type);
-	int GetAttributesSize();
+	int GetTotalAttributesInGroup(AttributeGroup Type);
+	int GetTotalAttributes();
 
 	void SetSnapHealthTick(int Sec);
 	bool IsSameMotdMenu(int Menulist) const { return m_pMotdMenu && m_pMotdMenu->GetMenulist() == Menulist; }
