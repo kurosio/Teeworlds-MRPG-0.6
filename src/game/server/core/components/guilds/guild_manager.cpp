@@ -1108,7 +1108,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 
 	// Guild management
 	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
-	VManagement.Add("Your: {$} | Bank: {$} gold", pPlayer->GetItem(itGold)->GetValue(), pGuild->GetBank()->Get());
+	VManagement.Add("Your: {$} | Bank: {$} gold", pPlayer->Account()->GetTotalGold(), pGuild->GetBank()->Get());
 	VManagement.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 	VManagement.AddLine();
 	VManagement.AddMenu(MENU_GUILD_UPGRADES, "Improvements & Upgrades");

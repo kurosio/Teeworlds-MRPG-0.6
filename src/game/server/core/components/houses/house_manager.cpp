@@ -537,7 +537,7 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse)
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// buy tab
-	VoteWrapper VBuy(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Buying a house", pPlayer->GetItem(itGold)->GetValue());
+	VoteWrapper VBuy(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Buying a house");
 	if(!pHouse->HasOwner())
 		VBuy.AddOption("HOUSE_BUY", "Buy for {$} golds", pHouse->GetPrice());
 	else
@@ -567,7 +567,7 @@ void CHouseManager::ShowMenu(CPlayer* pPlayer) const
 
 	// house bank
 	VoteWrapper VBank(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2727 Bank Management");
-	VBank.Add("Your: {$} | Bank: {$} golds", pPlayer->GetItem(itGold)->GetValue(), pHouse->GetBank()->Get());
+	VBank.Add("Your: {$} | Bank: {$} golds", pPlayer->Account()->GetTotalGold(), pHouse->GetBank()->Get());
 	VBank.AddOption("HOUSE_BANK_ADD", "Add. (Amount in a reason)");
 	VBank.AddOption("HOUSE_BANK_TAKE", "Take. (Amount in a reason)");
 	VoteWrapper::AddEmptyline(ClientID);

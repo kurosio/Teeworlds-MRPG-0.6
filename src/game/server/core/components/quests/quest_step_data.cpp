@@ -211,24 +211,11 @@ void CQuestStep::PostFinish()
 	{
 		for(auto& pRewardItem : m_Bot.m_RewardItems)
 		{
-			// under stress, add a delay
-			if(vInteractItemIds.find(pRewardItem.GetID()) != vInteractItemIds.end())
-			{
-				GS()->Core()->InventoryManager()->AddItemSleep(pPlayer->Account()->GetID(), pRewardItem.GetID(), pRewardItem.GetValue(), 300);
-				continue;
-			}
+			// no use same giving and receiving for it can use "show"
+			dbg_assert(vInteractItemIds.find(pRewardItem.GetID()) != vInteractItemIds.end(), "the quest has (the same item of giving and receiving)");
 
 			// check for enchant item
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRewardItem);
-			if(pPlayerItem->Info()->IsEnchantable() && pPlayerItem->GetValue() >= 1)
-			{
-				MailWrapper Mail("System", pPlayer->Account()->GetID(), "No place for item.");
-				Mail.AddDescLine("You already have this item.");
-				Mail.AddDescLine("We can't put it in inventory");
-				Mail.AttachItem(pRewardItem);
-				Mail.Send();
-				continue;
-			}
 
 			// give item
 			pPlayerItem->Add(pRewardItem.GetValue());

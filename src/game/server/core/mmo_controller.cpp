@@ -163,7 +163,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Account info");
 		VMain.Add("Last log in: {}", pStrLastLoginDate);
 		VMain.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
-		VMain.Add("Gold: {$}, Bank: {$}", pPlayer->GetItem(itGold)->GetValue(), pPlayer->Account()->GetBank());
+		VMain.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
 		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VoteWrapper::AddEmptyline(ClientID);
 

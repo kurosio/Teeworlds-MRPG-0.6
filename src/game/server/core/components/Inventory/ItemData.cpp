@@ -7,6 +7,7 @@
 
 #include "../Eidolons/EidolonManager.h"
 #include "../achievements/achievement_data.h"
+#include "../mails/mail_wrapper.h"
 
 CGS* CPlayerItem::GS() const
 {
@@ -78,9 +79,14 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	{
 		if(m_Value > 0)
 		{
-			GS()->Chat(ClientID, "This item cannot have more than 1 item");
+			MailWrapper Mail("System", pPlayer->Account()->GetID(), "No place for item.");
+			Mail.AddDescLine("You already have this item.");
+			Mail.AddDescLine("We can't put it in inventory");
+			Mail.AttachItem({m_ID, 1, StartEnchant, 100});
+			Mail.Send();
 			return false;
 		}
+
 		Value = 1;
 	}
 

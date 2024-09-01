@@ -248,6 +248,16 @@ void CAccountData::FreeFromPrison()
 	GS()->Core()->SaveAccount(m_pPlayer, SAVE_SOCIAL_STATUS);
 }
 
+int CAccountData::GetGold() const
+{
+	return m_pPlayer ? m_pPlayer->GetItem(itGold)->GetValue() : 0;
+}
+
+BigInt CAccountData::GetTotalGold() const
+{
+	return m_pPlayer ? m_Bank + m_pPlayer->GetItem(itGold)->GetValue() : 0;
+}
+
 void CAccountData::AddExperience(int Value)
 {
 	if(!m_pPlayer)
@@ -494,8 +504,8 @@ void CAccountData::HandleChair()
 	std::string aExpBuf = "+" + std::to_string(ExpValue);
 	std::string aGoldBuf = (GoldValue > 0) ? "+" + std::to_string(GoldValue) : "limit";
 	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
-		"Gold {} : {} (daily limit {} of {})\nExp {}/{} : {}\nThe limit and count is increased with special items!",
-		m_pPlayer->GetItem(itGold)->GetValue(), aGoldBuf.c_str(), GetCurrentDailyChairGolds(), GetLimitDailyChairGolds(), m_Exp, computeExperience(m_Level), aExpBuf.c_str());
+		"Gold {$} : {} (daily limit {$} of {$})\nExp {}/{} : {}\nThe limit and count is increased with special items!",
+		GetTotalGold(), aGoldBuf.c_str(), GetCurrentDailyChairGolds(), GetLimitDailyChairGolds(), m_Exp, computeExperience(m_Level), aExpBuf.c_str());
 }
 
 void CAccountData::SetAchieventProgress(int AchievementID, int Progress, bool Completed)

@@ -51,7 +51,7 @@ void CInventoryManager::OnInit()
 			int AttributeValue = pRes->getInt(aAttributeValue);
 			if(AttributeID >= AttributeIdentifier::SpreadShotgun && AttributeValue > 0)
 			{
-				aContainerAttributes.push_back({ AttributeID, AttributeValue });
+				aContainerAttributes.emplace_back(AttributeID, AttributeValue);
 			}
 		}
 

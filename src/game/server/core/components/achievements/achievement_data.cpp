@@ -111,22 +111,8 @@ void CAchievement::RewardPlayer(CPlayer* pPlayer) const
 		GS()->Chat(m_ClientID, "You received {} exp!", Exp);
 	}
 
-	CItemsContainer Items = CItem::FromArrayJSON(JsonData, "items");
-	for(auto& Item : Items)
-	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(Item);
-		if(Item.Info()->IsEnchantable() && pPlayerItem->HasItem())
-		{
-			MailWrapper Mail("System", pPlayer->Account()->GetID(), "Achievement");
-			Mail.AddDescLine("Some awards cannot be earned.");
-			Mail.AttachItem(Item);
-			Mail.Send();
-		}
-		else
-		{
-			pPlayer->GetItem(Item)->Add(Item.GetValue());
-		}
-	}
+	for(const CItemsContainer Items = CItem::FromArrayJSON(JsonData, "items"); auto& Item : Items)
+		pPlayer->GetItem(Item)->Add(Item.GetValue());
 
 	if(int AchievementPoints = m_pInfo->GetAchievementPoint(); AchievementPoints > 0)
 	{

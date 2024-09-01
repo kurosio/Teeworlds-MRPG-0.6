@@ -358,7 +358,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, cons
 		VoteWrapper(ClientID).Add("- You can't buy more than one item");
 	else if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
 		VoteWrapper(ClientID).Add("- Not enough products to buy");
-	else if(pPlayer->GetItem(itGold)->GetValue() < pTrade->GetPrice())
+	else if(pPlayer->Account()->GetTotalGold() < pTrade->GetPrice())
 		VoteWrapper(ClientID).Add("- Not enough gold to buy");
 	else
 		VoteWrapper(ClientID).AddOption("WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Buy");

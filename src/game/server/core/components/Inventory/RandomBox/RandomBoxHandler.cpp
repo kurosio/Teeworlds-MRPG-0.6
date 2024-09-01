@@ -56,45 +56,24 @@ void CEntityRandomBoxRandomizer::Tick()
 			// function lambda for check allowed get or send it from inbox
 			auto GiveRandomItem = [&](const CRandomItem& RandItem)
 			{
+				bool IsEnchantable = GS()->GetItemInfo(RandItem.m_ItemID)->IsEnchantable();
+
 				// Prepare mail
 				MailWrapper Mail("System", m_AccountID, "Random box.");
 				Mail.AddDescLine("Item was not received by you personally.");
 
-				// Check if the item is enchantable
-				if(GS()->GetItemInfo(RandItem.m_ItemID)->IsEnchantable())
+				// Check if the player doesn't exist
+				if(!m_pPlayer || (IsEnchantable && m_pPlayer->GetItem(RandItem.m_ItemID)->HasItem()))
 				{
-					// Loop through the value of the random item
-					for(int i = 0; i < RandItem.m_Value; i++)
-					{
-						// Check if the player doesn't exist or already has the item
-						if(!m_pPlayer || m_pPlayer->GetItem(RandItem.m_ItemID)->HasItem())
-						{
-							// Send a message to the player's inbox stating the item was not received personally
-							Mail.AttachItem(CItem(RandItem.m_ItemID, 1));
-							Mail.Send();
-							continue;
-						}
-
-						// Add the item to the player
-						m_pPlayer->GetItem(RandItem.m_ItemID)->Add(1, 0, 0, false);
-						GS()->CreateDeath(m_pPlayer->m_ViewPos, m_pPlayer->GetCID());
-					}
+					// Send a message to the player's inbox stating the item was not received personally
+					Mail.AttachItem(CItem(RandItem.m_ItemID, RandItem.m_Value));
+					Mail.Send();
+					return;
 				}
-				else // if the item is not enchantable
-				{
-					// Check if the player doesn't exist
-					if(!m_pPlayer)
-					{
-						// Send a message to the player's inbox stating the item was not received personally
-						Mail.AttachItem(CItem(RandItem.m_ItemID, RandItem.m_Value));
-						Mail.Send();
-						return;
-					}
 
-					// Add the item to the player
-					m_pPlayer->GetItem(RandItem.m_ItemID)->Add(RandItem.m_Value, 0, 0, false);
-					GS()->CreateDeath(m_pPlayer->m_ViewPos, m_pPlayer->GetCID());
-				}
+				// Add the item to the player
+				m_pPlayer->GetItem(RandItem.m_ItemID)->Add(RandItem.m_Value, 0, 0, false);
+				GS()->CreateDeath(m_pPlayer->m_ViewPos, m_pPlayer->GetCID());
 			};
 
 			// get list received items

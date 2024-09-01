@@ -95,6 +95,8 @@ public:
 	void FreeFromPrison();
 
 	BigInt GetBank() const { return m_Bank; }
+	int GetGold() const;
+	BigInt GetTotalGold() const;
 
 	void AddExperience(int Value); // Adds the specified value to the player's experience points
 	void AddGold(int Value, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)

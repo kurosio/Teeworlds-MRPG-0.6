@@ -215,9 +215,8 @@ void CVoteGroup::AddItemValueImpl(int ItemID)
 	// show gold include bank
 	if(ItemID == itGold)
 	{
-		const BigInt totalValue = (BigInt)m_pPlayer->GetItem(ItemID)->GetValue() + m_pPlayer->Account()->GetBank();
 		AddVoteImpl("null", NOPE, NOPE, fmt_localize(m_ClientID, "You have {$} {}(including bank)",
-			totalValue, GS()->GetItemInfo(ItemID)->GetName()).c_str());
+			m_pPlayer->Account()->GetTotalGold(), GS()->GetItemInfo(ItemID)->GetName()).c_str());
 		return;
 	}
 

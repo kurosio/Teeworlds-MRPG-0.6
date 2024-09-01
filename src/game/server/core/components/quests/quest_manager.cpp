@@ -323,8 +323,7 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 		if(!pPl || !pPl->Account()->IsCrimeScoreMaxedOut())
 			continue;
 
-		CPlayerItem* pItemGold = pPl->GetItem(itGold);
-		const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+		const int Reward = minimum(translate_to_percent_rest(pPlayer->Account()->GetGold(), (float)g_Config.m_SvArrestGoldAtDeath), pPlayer->Account()->GetGold());
 		VWanted.Add("{} (Reward: {} gold)", Server()->ClientName(i), Reward);
 		{
 			VWanted.BeginDepth();

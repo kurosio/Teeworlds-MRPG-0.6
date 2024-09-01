@@ -439,14 +439,16 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MOTD_MENU_BANK_MANAGER)
 	{
 		// initialize variables
-		const int CurrentGold = pPlayer->GetItem(itGold)->GetValue();
+		const int CurrentGold = pPlayer->Account()->GetGold();
 		const BigInt CurrentBankGold = pPlayer->Account()->GetBank();
+		const BigInt TotalGold = pPlayer->Account()->GetTotalGold();
 
 		MotdMenu MBonuses(ClientID,  "Here you can securely store or retrieve your gold. Remember, gold in the Bank is protected and will never be lost, even in death.");
 		MBonuses.AddText("Bank Management \u2697");
 		MBonuses.AddSeparateLine();
 		MBonuses.AddText("Gold: {$}", CurrentGold);
 		MBonuses.AddText("Bank: {$}", CurrentBankGold);
+		MBonuses.AddText("Total: {$}", TotalGold);
 		MBonuses.AddSeparateLine();
 
 		// depoosit

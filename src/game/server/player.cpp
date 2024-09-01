@@ -722,7 +722,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const int Health = m_pCharacter->Health();
 	const int Mana = m_pCharacter->Mana();
 	const auto BankGoldStr = fmt_big_digit(Account()->GetBank().to_string());
-	const auto GoldStr = fmt_big_digit(std::to_string(GetItem(itGold)->GetValue()));
+	const auto GoldStr = fmt_big_digit(std::to_string(Account()->GetGold()));
 
 	char aRecastInfo[32] = { '\0' };
 	const int PotionRecastTime = m_aPlayerTick[PotionRecast] - Server()->Tick();

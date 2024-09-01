@@ -265,7 +265,7 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 	}
 
 	// check tax price
-	if(pPlayer->GetItem(itGold)->GetValue() < pAuctionData->GetTaxPrice())
+	if(pPlayer->Account()->GetTotalGold() < pAuctionData->GetTaxPrice())
 	{
 		GS()->Chat(ClientID, "You do not have enough gold to create a slot!");
 		return;

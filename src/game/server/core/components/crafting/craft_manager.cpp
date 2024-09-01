@@ -27,17 +27,18 @@ void CCraftManager::OnInit()
 
 		// initialize new craft element
 		CraftIdentifier ID = pRes->getInt("ID");
-		CCraftItem::CreateElement(ID)->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+		auto* pCraftItem = CCraftItem::CreateElement(ID);
+		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
 	}
 
 	// sort craft item's by function
-	std::sort(CCraftItem::Data().begin(), CCraftItem::Data().end(), [](const CCraftItem* p1, const CCraftItem* p2)
+	std::ranges::sort(CCraftItem::Data(), [](const CCraftItem* p1, const CCraftItem* p2)
 	{
 		return p1->GetItem()->Info()->GetFunctional() > p2->GetItem()->Info()->GetFunctional();
 	});
 
 	// show information about initilized craft item's
-	Core()->ShowLoadingProgress("Craft item's", (int)CCraftItem::Data().size());
+	Core()->ShowLoadingProgress("Craft items", (int)CCraftItem::Data().size());
 }
 
 void CCraftManager::OnCharacterTile(CCharacter* pChr)
@@ -47,7 +48,7 @@ void CCraftManager::OnCharacterTile(CCharacter* pChr)
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_CRAFT_ZONE, MENU_CRAFT_LIST, {}, {});
 }
 
-void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
+void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 {
 	if(!pPlayer || !pCraft)
 		return;
@@ -55,61 +56,61 @@ void CCraftManager::CraftItem(CPlayer *pPlayer, CCraftItem* pCraft) const
 	const int ClientID = pPlayer->GetCID();
 	CPlayerItem* pPlayerCraftItem = pPlayer->GetItem(*pCraft->GetItem());
 
-	// check enchant
-	if (pPlayerCraftItem->Info()->IsEnchantable() && pPlayerCraftItem->GetValue() > 0)
+	// check if we have all the necessary items
+	std::string missingItems;
+	for(const auto& RequiredItem : pCraft->GetRequiredItems())
 	{
-		GS()->Chat(ClientID, "Enchant item maximal count x1 in a backpack!");
-		return;
-	}
+		const int playerItemCount = pPlayer->GetItem(RequiredItem)->GetValue();
+		const int requiredItemCount = RequiredItem.GetValue();
 
-	// first podding set what is available and required for removal
-	std::string strBuffer {};
-	for(auto& RequiredItem : pCraft->GetRequiredItems())
-	{
-		if(pPlayer->GetItem(RequiredItem)->GetValue() < RequiredItem.GetValue())
+		if(playerItemCount < requiredItemCount)
 		{
-			const int ItemLeft = (RequiredItem.GetValue() - pPlayer->GetItem(RequiredItem)->GetValue());
-			strBuffer += fmt_localize(ClientID, "{}x{} ", RequiredItem.Info()->GetName(), ItemLeft);
+			int itemShortage = requiredItemCount - playerItemCount;
+			missingItems += fmt_localize(ClientID, "{}x{} ", RequiredItem.Info()->GetName(), itemShortage);
 		}
 	}
-	if(!strBuffer.empty())
+
+	if(!missingItems.empty())
 	{
-		GS()->Chat(ClientID, "Item left: {}", strBuffer.c_str());
+		GS()->Chat(ClientID, "Item(s) left to gather: {}", missingItems.c_str());
 		return;
 	}
 
-	// we are already organizing the crafting
-	const int Price = pCraft->GetPrice(pPlayer);
-	if(!pPlayer->Account()->SpendCurrency(Price))
+	// checking to see if there are enough funds for crafting
+	const int craftPrice = pCraft->GetPrice(pPlayer);
+	if(!pPlayer->Account()->SpendCurrency(craftPrice))
 		return;
 
-	// delete ticket if equipped
-	if(pPlayer->GetItem(itTicketDiscountCraft)->IsEquipped())
+	// if a discount ticket is used, delete it and apply the discount
+	auto* pDiscountTicket = pPlayer->GetItem(itTicketDiscountCraft);
+	if(pDiscountTicket->IsEquipped())
 	{
-		pPlayer->GetItem(itTicketDiscountCraft)->Remove(1);
-		GS()->Chat(ClientID, "You used item {} and get discount 25%.", GS()->GetItemInfo(itTicketDiscountCraft)->GetName());
+		pDiscountTicket->Remove(1);
+		GS()->Chat(ClientID, "You used the {} for a 25% discount.", GS()->GetItemInfo(itTicketDiscountCraft)->GetName());
 	}
 
-	// action get and remove
-	for(auto& RequiredItem : pCraft->GetRequiredItems())
+	// remove necessary items from the player's inventory
+	for(const auto& RequiredItem : pCraft->GetRequiredItems())
 	{
 		pPlayer->GetItem(RequiredItem)->Remove(RequiredItem.GetValue());
 	}
 
-	// add craft item
-	const int CraftGetValue = pCraft->GetItem()->GetValue();
-	pPlayerCraftItem->Add(CraftGetValue);
+	// add the crafted item to the player's inventory
+	const int craftedItemCount = pCraft->GetItem()->GetValue();
+	pPlayerCraftItem->Add(craftedItemCount);
+
+	// report a crafted item, either to everyone or only to a player, depending on its characteristics
 	if(pPlayerCraftItem->Info()->IsEnchantable())
 	{
-		GS()->Chat(-1, "{} crafted [{}x{}].", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), CraftGetValue);
+		GS()->Chat(-1, "{} crafted [{}x{}].", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), craftedItemCount);
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You crafted [{}x{}].", pPlayerCraftItem->Info()->GetName(), CraftGetValue);
+		GS()->Chat(ClientID, "You crafted [{}x{}].", pPlayerCraftItem->Info()->GetName(), craftedItemCount);
 	}
 
-	// achievement
-	pPlayer->UpdateAchievement(ACHIEVEMENT_CRAFT_ITEM, pCraft->GetID(), CraftGetValue, PROGRESS_ADD);
+	// update achievement and votes
+	pPlayer->UpdateAchievement(ACHIEVEMENT_CRAFT_ITEM, pCraft->GetID(), craftedItemCount, PROGRESS_ADD);
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 
@@ -176,7 +177,9 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	VCraftItem.Add("Crafting: {}x{}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
 	VCraftItem.Add("{}", pCraftItemInfo->GetDescription());
 	if(pCraftItemInfo->HasAttributes())
+	{
 		VCraftItem.Add(pCraftItemInfo->GetStringAttributesInfo(pPlayer, 0).c_str());
+	}
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// add craft reciepts
@@ -188,17 +191,17 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		int CraftPrice = pCraft->GetPrice(pPlayer);
 		if(CraftPrice > 0)
 		{
-			CPlayerItem* pGold = pPlayer->GetItem(itGold);
-			bool Has = pPlayer->GetItem(itGold)->GetValue() >= CraftPrice;
-			VCraftRequired.MarkList().Add("{} {}x{} ({})", Has ? "\u2714" : "\u2718", pGold->Info()->GetName(), CraftPrice, pGold->GetValue());
+			auto playerGold = pPlayer->Account()->GetTotalGold();
+			bool hasEnoughGold = pPlayer->Account()->GetTotalGold() >= CraftPrice;
+			VCraftRequired.MarkList().Add("{} Goldx{$} ({$})", hasEnoughGold ? "\u2714" : "\u2718", CraftPrice, playerGold);
 		}
 
 		// requied items
-		for(auto& pRequiredItem : pCraft->GetRequiredItems())
+		for(const auto& pRequiredItem : pCraft->GetRequiredItems())
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
-			bool Has = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
-			VCraftRequired.MarkList().Add("{} {}x{} ({})", Has ? "\u2714" : "\u2718", 
+			bool hasEnoughItems = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
+			VCraftRequired.MarkList().Add("{} {}x{} ({})", hasEnoughItems ? "\u2714" : "\u2718",
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
 		VCraftRequired.EndDepth();
@@ -206,7 +209,15 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// add craft button
-	VoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({} gold)", pCraft->GetPrice(pPlayer));
+	bool hasCraftItem = pPlayer->GetItem(pCraft->GetItem()->GetID())->HasItem();
+	if(pCraftItemInfo->IsEnchantable() && hasCraftItem)
+	{
+		VoteWrapper(ClientID).Add("- You already have the item", pCraft->GetPrice(pPlayer));
+	}
+	else
+	{
+		VoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({} gold)", pCraft->GetPrice(pPlayer));
+	}
 
 	// add backpage
 	VoteWrapper::AddEmptyline(ClientID);
@@ -218,9 +229,11 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 	const int ClientID = pPlayer->GetCID();
 
 	// order only by type
-	if(std::all_of(CCraftItem::Data().begin(), CCraftItem::Data().end(), [Type](const CCraftItem* p)
-		{ return p->GetItem()->Info()->GetType() != Type; }))
+	if(std::ranges::none_of(CCraftItem::Data(), [Type](const CCraftItem* p)
+	{ return p->GetItem()->Info()->GetType() == Type; }))
+	{
 		return;
+	}
 
 	// add empty line
 	VoteWrapper::AddEmptyline(ClientID);
@@ -258,6 +271,6 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 
 CCraftItem* CCraftManager::GetCraftByID(CraftIdentifier ID) const
 {
-	auto iter = std::find_if(CCraftItem::Data().begin(), CCraftItem::Data().end(), [ID](const CCraftItem* p){ return p->GetID() == ID; });
+	auto iter = std::ranges::find_if(CCraftItem::Data(), [ID](const CCraftItem* p){ return p->GetID() == ID; });
 	return iter != CCraftItem::Data().end() ? *iter : nullptr;
 }

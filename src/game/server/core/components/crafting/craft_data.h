@@ -1,5 +1,3 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_COMPONENT_CRAFT_DATA_H
 #define GAME_SERVER_COMPONENT_CRAFT_DATA_H
 
@@ -16,17 +14,17 @@ class CCraftItem : public MultiworldIdentifiableData< std::deque<CCraftItem*> >
 	int m_WorldID {};
 
 public:
-	// Constructor with AetherIdentifier parameter
+	// constructor
 	explicit CCraftItem(CraftIdentifier ID) : m_ID(ID) {}
 
-	// Create a static function called CreateElement which creates a new CCraftItem object and adds it to the data container
+	// create new element to container
 	static CCraftItem* CreateElement(CraftIdentifier ID)
 	{
 		auto pData = new CCraftItem(ID);
 		return m_pData.emplace_back(pData);
 	}
 
-	// Initialize the CCraftItem object with the required container for required items, crafted item, price, and world ID where can craft item
+	// initialize
 	void Init(CItemsContainer RequiredContainer, CItem Item, int Price, int WorldID)
 	{
 		m_RequiredItem = std::move(RequiredContainer);
