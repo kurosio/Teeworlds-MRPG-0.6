@@ -234,7 +234,7 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	if(pPlayer->Account()->GetGold() < pPlayer->Account()->GetGoldCapacity())
 	{
 		const int goldGain = calculate_gold_gain(g_Config.m_SvKillmobsGoldFactor, PlayerLevel, MobLevel, true);
-		pPlayer->Account()->AddGold(goldGain, true);
+		pPlayer->Account()->AddGold(goldGain, false, true);
 		GS()->Chat(pPlayer->GetCID(), "You gained {} gold.", goldGain);
 	}
 	else

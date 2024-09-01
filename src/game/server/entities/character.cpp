@@ -792,7 +792,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		{
 			if(KillerIsPlayer)
 			{
-				pKiller->Account()->AddGold(Arrest);
+				pKiller->Account()->AddGold(Arrest, false);
 				GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {$} gold!",
 					Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 			}

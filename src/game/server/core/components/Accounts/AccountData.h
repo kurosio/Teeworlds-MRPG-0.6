@@ -97,7 +97,7 @@ public:
 	int GetGoldCapacity() const;
 
 	void AddExperience(int Value); // Adds the specified value to the player's experience points
-	void AddGold(int Value, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
+	void AddGold(int Value, bool ToBank = true, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
 	bool DepositGoldToBank(int Amount);
 	bool WithdrawGoldFromBank(int Amount);
 	bool SpendCurrency(int Price, int CurrencyItemID = 1); // Returns a boolean value indicating whether the currency was successfully spent or not.

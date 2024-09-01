@@ -308,7 +308,7 @@ void CAccountData::AddExperience(int Value)
 	}
 }
 
-void CAccountData::AddGold(int Value, bool ApplyBonuses)
+void CAccountData::AddGold(int Value, bool ToBank, bool ApplyBonuses)
 {
 	if(!m_pPlayer)
 		return;
@@ -316,6 +316,14 @@ void CAccountData::AddGold(int Value, bool ApplyBonuses)
 	// apply bonuses
 	if(ApplyBonuses)
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &Value);
+
+	// to bank
+	if(ToBank)
+	{
+		m_Bank += Value;
+		GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
+		return;
+	}
 
 	// initialize variables
 	CPlayerItem* pGoldItem = m_pPlayer->GetItem(itGold);
@@ -472,7 +480,7 @@ void CAccountData::HandleChair(int Exp, int Gold)
 	AddExperience(expGain);
 	if(!isGoldBagFull)
 	{
-		AddGold(goldGain, true);
+		AddGold(goldGain, false, true);
 	}
 
 	// format
