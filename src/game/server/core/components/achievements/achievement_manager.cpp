@@ -63,6 +63,7 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_ACHIEVEMENTS);
 		ShowGroupMenu(pPlayer, pPlayer->m_VotesData.GetExtraID());
+		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

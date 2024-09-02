@@ -308,7 +308,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// account settings
-		VoteWrapper VAccount(ClientID, VWF_OPEN, "\u2699 Main settings");
+		VoteWrapper VAccount(ClientID, VWF_OPEN, "\u2699 Account settings");
 		const auto& PlayerItems = CPlayerItem::Data()[ClientID];
 		for(const auto& [ItemID, ItemData] : PlayerItems)
 		{
@@ -466,20 +466,12 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		// depoosit
 		MBonuses.AddText("Gold to Bank");
 		MBonuses.Add("BANK_DEPOSIT", CurrentGold, "Deposit All");
-		if(CurrentGold >= 1000)
-			MBonuses.Add("BANK_DEPOSIT", 1000, "Deposit 1k Gold");
-		if(CurrentGold >= 5000)
-			MBonuses.Add("BANK_DEPOSIT", 5000, "Deposit 5k Gold");
 		MBonuses.AddLine();
 
 		// withdraw
 		MBonuses.AddText("Gold from Bank");
 		int WithdrawAll = CurrentBankGold.to_int();
 		MBonuses.Add("BANK_WITHDRAW", WithdrawAll, "Withdraw All");
-		if(WithdrawAll >= 1000)
-			MBonuses.Add("BANK_WITHDRAW", 1000, "Withdraw 1k Gold");
-		if(WithdrawAll >= 5000)
-			MBonuses.Add("BANK_WITHDRAW", 5000, "Withdraw 5k Gold");
 		MBonuses.Send(MOTD_MENU_BANK_MANAGER);
 		return true;
 	}

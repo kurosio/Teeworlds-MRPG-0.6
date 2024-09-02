@@ -131,7 +131,7 @@ public:
 
 	int GetWorldID() const { return m_WorldID; }
 	bool IsWorldType(WorldType Type) const;
-	int GetExpMultiplier(int Experience) const;
+	void ApplyExperienceMultiplier(int* pExperience) const;
 	bool IsPlayerInWorld(int ClientID, int WorldID = -1) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 	vec2 GetJailPosition() const { return m_JailPosition; }

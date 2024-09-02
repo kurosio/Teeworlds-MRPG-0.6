@@ -228,7 +228,9 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// is default mob type
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_MOB)
+	{
 		GS()->Core()->QuestManager()->TryAppendDefeatProgress(pPlayer, BotID);
+	}
 
 	// grinding gold
 	if(pPlayer->Account()->GetGold() < pPlayer->Account()->GetGoldCapacity())
@@ -246,15 +248,16 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	}
 
 	// grinding experience
-	const int expGain = calculate_exp_gain(g_Config.m_SvKillmobsExpFactor, PlayerLevel, MobLevel);
-	GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, expGain, Force);
+	int expGain = calculate_exp_gain(g_Config.m_SvKillmobsExpFactor, PlayerLevel, MobLevel);
+	GS()->ApplyExperienceMultiplier(&expGain);
 	if(pPlayer->GetItem(itShowDetailGainMessages)->IsEquipped())
 	{
 		GS()->Chat(pPlayer->GetCID(), "You gained {} exp.", expGain);
 	}
+	GS()->EntityManager()->ExpFlyingPoint(m_Core.m_Pos, ClientID, expGain, Force);
 
 	// drop experience
-	const int expBonusDrop = maximum(expGain / 2, 1);
+	const int expBonusDrop = maximum(expGain / 3, 1);
 	GS()->EntityManager()->DropBonus(m_Core.m_Pos, POWERUP_ARMOR, 0, expBonusDrop, (1 + rand() % 2), Force);
 
 	// drop item's

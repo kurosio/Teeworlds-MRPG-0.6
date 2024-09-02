@@ -1309,9 +1309,10 @@ bool CGS::TakeItemCharacter(int ClientID)
 	return false;
 }
 
-int CGS::GetExpMultiplier(int Experience) const
+void CGS::ApplyExperienceMultiplier(int* pExperience) const
 {
-	return translate_to_percent_rest(Experience, (float)m_MultiplierExp);
+	if(pExperience)
+		*pExperience = translate_to_percent_rest(*pExperience, (float)m_MultiplierExp);
 }
 
 bool CGS::IsWorldType(WorldType Type) const
