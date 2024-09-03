@@ -6,6 +6,13 @@
 
 #include <game/server/core/components/quests/quest_manager.h>
 
+// structure
+/* "side": (author, left, right)
+ * "text": (some text)
+ * "action": (true, false)
+ * "left_speaker_id: (13 - bot id, player, empty)
+ * "right_speaker_id: (14 - bot id, player, empty)
+ */
 // dialogue initilizer
 typedef std::pair < bool, std::vector<CDialogElem> > DialogsInitilizerType;
 static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string& JsonDialogData)
@@ -15,24 +22,30 @@ static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string&
 	{
 		for(auto& pItem : pJson)
 		{
-			bool Action = pItem.value("action_step", 0);
-			if(!Value.first && Action)
-				Value.first = true;
-
 			CDialogElem Dialogue;
-			Dialogue.Init(DataBotID, pItem.value("text", ""), Action);
+			Dialogue.Init(DataBotID, pItem);
+			if(Dialogue.IsRequestAction())
+				Value.first = true;
 			Value.second.push_back(Dialogue);
 		}
 	});
-
 	// useless dialogue
 	if(Value.second.empty())
 	{
 		CDialogElem Dialogue;
-		Dialogue.Init(DataBotID, "<player>, do you have any questions? I'm sorry, can't help you.", false);
+
+		// json sturcture
+		nlohmann::json JsonDialog;
+		JsonDialog["text"] = "<player>, do you have any questions? I'm sorry, can't help you.";
+		JsonDialog["action"] = false;
+		JsonDialog["side"] = "right";
+		JsonDialog["left_speaker_id"] = DataBotID;
+		JsonDialog["right_speaker_id"] = 0;
+
+		// initialize dialog
+		Dialogue.Init(DataBotID, JsonDialog);
 		Value.second.push_back(Dialogue);
 	}
-
 	return Value;
 }
 
@@ -113,9 +126,9 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 
 		// dialog initilizer
 		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
-		auto [lAction, aDialogs] = DialogsInitilizer(QuestBot.m_BotID, DialogJsonStr);
-		QuestBot.m_HasAction = lAction;
-		QuestBot.m_aDialogs = aDialogs;
+		auto [hasAction, vDialogs] = DialogsInitilizer(QuestBot.m_BotID, DialogJsonStr);
+		QuestBot.m_HasAction = hasAction;
+		QuestBot.m_aDialogs = vDialogs;
 
 		// initialize quest steps
 		CQuestStepBase Base;

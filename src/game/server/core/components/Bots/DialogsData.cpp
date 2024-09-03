@@ -5,91 +5,64 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/quests/quest_manager.h>
 
-// TODO: add SPEAK side / add support client 
-
-/*
- * Information about formatting:
- * [l] - speak left side / not set right side if all sets to empty world side
- * [ls_ID] - left side bot speak with ID if not set speak Player
- * [le] - left side is empty
- * [rs_ID] - right side bot speak with ID if not set speak Bot from dialog
- * [re] - right side empty
- */
-
-void CDialogElem::Init(int BotID, std::string Text, bool Action)
+void CDialogElem::Init(int BotID, const nlohmann::json& JsonDialog)
 {
-	// lambda for find and erase
-	auto FindAndErase = [&](const std::string& token) -> bool
-	{
-		size_t pos = Text.find(token);
-		if(pos != std::string::npos)
-		{
-			Text.erase(pos, token.length());
-			return true;
-		}
-		return false;
-	};
+	// initialize variables
+	const std::string Side = JsonDialog.value("side", "left");
+	const int LeftSpeakerID = JsonDialog.value("left_speaker_id", 0);
+	const int RightSpeakerID = JsonDialog.value("right_speaker_id", 0);
+	m_Text = JsonDialog.value("text", "");
+	m_Request = JsonDialog.value("action", false);
 
-	// lambda for parse
-	auto ParseBotID = [&](const std::string& prefix) -> std::optional<int>
+	// initialize author
+	if(Side == "author")
 	{
-		const char* pBot = str_find_nocase(Text.c_str(), prefix.c_str());
-		int parsedBotID;
-		if(pBot != nullptr)
-		{
-			pBot += prefix.length();
-
-			if(sscanf(pBot, "%d]", &parsedBotID) == 1)
-			{
-				FindAndErase(prefix + std::to_string(parsedBotID) + "]");
-				return parsedBotID;
-			}
-		}
-		return std::nullopt;
-	};
-
-	// left side
-	if(auto LeftDataBotID = ParseBotID("[ls_"))
-	{
-		m_LeftSide = *LeftDataBotID;
-		m_Flags |= DIALOGFLAG_LEFT_BOT;
-	}
-	else if(FindAndErase("[le]"))
-	{
+		m_Flags |= DIALOGFLAG_SPEAK_AUTHOR;
 		m_Flags |= DIALOGFLAG_LEFT_EMPTY;
+		m_Flags |= DIALOGFLAG_RIGHT_EMPTY;
+		return;
+	}
+
+	// initialize side
+	if(Side == "left")
+	{
+		m_Flags |= DIALOGFLAG_SPEAK_LEFT;
+	}
+	else if(Side == "only_left")
+	{
+		m_Flags |= DIALOGFLAG_SPEAK_LEFT | DIALOGFLAG_RIGHT_EMPTY;
+	}
+	else if(Side == "only_right")
+	{
+		m_Flags |= DIALOGFLAG_SPEAK_RIGHT | DIALOGFLAG_LEFT_EMPTY;
+	}
+	else
+	{
+		m_Flags |= DIALOGFLAG_SPEAK_RIGHT;
+	}
+
+	// initialize left-side
+	if(LeftSpeakerID != 0)
+	{
+		m_LeftSide = LeftSpeakerID;
+		m_Flags |= DIALOGFLAG_LEFT_BOT;
 	}
 	else
 	{
 		m_Flags |= DIALOGFLAG_LEFT_PLAYER;
 	}
 
-	// right side
-	if(auto RightDataBotID = ParseBotID("[rs_"))
+	// initialize right-side
+	if(RightSpeakerID != 0)
 	{
-		m_RightSide = *RightDataBotID;
+		m_RightSide = RightSpeakerID;
 		m_Flags |= DIALOGFLAG_RIGHT_BOT;
-	}
-	else if(FindAndErase("[re]"))
-	{
-		m_Flags |= DIALOGFLAG_RIGHT_EMPTY;
 	}
 	else
 	{
 		m_RightSide = BotID;
 		m_Flags |= DIALOGFLAG_RIGHT_BOT;
 	}
-
-	// speak left or right or author
-	if((m_Flags & DIALOGFLAG_LEFT_EMPTY) && (m_Flags & DIALOGFLAG_RIGHT_EMPTY))
-		m_Flags |= DIALOGFLAG_SPEAK_AUTHOR;
-	else if(FindAndErase("[l]"))
-		m_Flags |= DIALOGFLAG_SPEAK_LEFT;
-	else
-		m_Flags |= DIALOGFLAG_SPEAK_RIGHT;
-
-	// initialize vars
-	m_Text = Text;
-	m_Request = Action;
 }
 
 void CDialogElem::Show(CGS* pGS, int ClientID) const
@@ -160,9 +133,19 @@ void CPlayerDialog::Start(int BotCID)
 		const char* pTalking[] = {
 			"<player>, do you have any questions? I'm sorry, can't help you.",
 			"What a beautiful <time>. I don't have anything for you <player>.",
-			"<player> are you interested something? I'm sorry, don't want to talk right now."
+			"<player>, are you interested in something? I'm sorry, don't want to talk right now."
 		};
-		MeaninglessDialog.Init(pPlayerBot->GetBotID(), pTalking[rand() % 3], false);
+
+		// create structure
+		nlohmann::json JsonDialog;
+		JsonDialog["text"] = pTalking[rand() % 3];
+		JsonDialog["action"] = false;
+		JsonDialog["side"] = "right";
+		JsonDialog["left_speaker_id"] = 0;
+		JsonDialog["right_speaker_id"] = pPlayerBot->GetBotID();
+
+		// initialize and show dialogue
+		MeaninglessDialog.Init(pPlayerBot->GetBotID(), JsonDialog);
 		MeaninglessDialog.Show(GS(), m_pPlayer->GetCID());
 		return;
 	}

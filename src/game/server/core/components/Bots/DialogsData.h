@@ -50,9 +50,7 @@ class CDialogElem
 
 	int m_LeftSide{};
 	int m_RightSide{};
-
 	std::string m_Text {};
-
 	bool m_Request{};
 	int64_t m_Flags{};
 
@@ -62,7 +60,7 @@ class CDialogElem
 	void Show(class CGS* pGS, int ClientID) const;
 
 public:
-	void Init(int BotID, std::string Text, bool Action);
+	void Init(int BotID, const nlohmann::json& JsonDialog);
 
 	const char* GetText() const { return m_Text.c_str(); }
 	bool IsEmptyDialog() const { return m_Text.empty(); }
