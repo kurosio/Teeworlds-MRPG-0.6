@@ -18,50 +18,61 @@ void CDialogElem::Init(int BotID, const nlohmann::json& JsonDialog)
 	if(Side == "author")
 	{
 		m_Flags |= DIALOGFLAG_SPEAK_AUTHOR;
-		m_Flags |= DIALOGFLAG_LEFT_EMPTY;
-		m_Flags |= DIALOGFLAG_RIGHT_EMPTY;
 		return;
 	}
 
-	// initialize side
-	if(Side == "left")
+	// initialize thoughts
+	if(Side == "thoughts")
 	{
-		m_Flags |= DIALOGFLAG_SPEAK_LEFT;
-	}
-	else if(Side == "only_left")
-	{
-		m_Flags |= DIALOGFLAG_SPEAK_LEFT | DIALOGFLAG_RIGHT_EMPTY;
-	}
-	else if(Side == "only_right")
-	{
-		m_Flags |= DIALOGFLAG_SPEAK_RIGHT | DIALOGFLAG_LEFT_EMPTY;
-	}
-	else
-	{
-		m_Flags |= DIALOGFLAG_SPEAK_RIGHT;
+		if(LeftSpeakerID == -1)
+		{
+			m_Flags |= DIALOGFLAG_LEFT_PLAYER;
+		}
+		else if(LeftSpeakerID == 0)
+		{
+			m_Flags |= DIALOGFLAG_LEFT_BOT;
+			m_LeftSide = BotID;
+		}
+		else
+		{
+			m_LeftSide = LeftSpeakerID;
+			m_Flags |= DIALOGFLAG_LEFT_BOT;
+		}
+
+		m_Flags |= DIALOGFLAG_SPEAK_THOUGHTS;
+		return;
 	}
 
 	// initialize left-side
-	if(LeftSpeakerID != 0)
+	if(LeftSpeakerID == -1)
+	{
+		m_Flags |= DIALOGFLAG_LEFT_PLAYER;
+	}
+	else if(LeftSpeakerID == 0)
+	{
+		m_Flags |= DIALOGFLAG_LEFT_BOT;
+		m_LeftSide = BotID;
+	}
+	else
 	{
 		m_LeftSide = LeftSpeakerID;
 		m_Flags |= DIALOGFLAG_LEFT_BOT;
 	}
-	else
-	{
-		m_Flags |= DIALOGFLAG_LEFT_PLAYER;
-	}
 
 	// initialize right-side
-	if(RightSpeakerID != 0)
+	if(RightSpeakerID == -1)
 	{
-		m_RightSide = RightSpeakerID;
+		m_Flags |= DIALOGFLAG_RIGHT_PLAYER;
+	}
+	else if(RightSpeakerID == 0)
+	{
 		m_Flags |= DIALOGFLAG_RIGHT_BOT;
+		m_RightSide = BotID;
 	}
 	else
 	{
-		m_RightSide = BotID;
 		m_Flags |= DIALOGFLAG_RIGHT_BOT;
+		m_RightSide = RightSpeakerID;
 	}
 }
 
@@ -85,7 +96,9 @@ void CDialogElem::Show(CGS* pGS, int ClientID) const
 		else if(m_Flags & DIALOGFLAG_LEFT_BOT)
 			pLeftNickname = DataBotInfo::ms_aDataBot[m_LeftSide].m_aNameBot;
 
-		if(m_Flags & DIALOGFLAG_RIGHT_BOT)
+		if(m_Flags & DIALOGFLAG_RIGHT_PLAYER)
+			pRightNickname = pGS->Server()->ClientName(ClientID);
+		else if(m_Flags & DIALOGFLAG_RIGHT_BOT)
 			pRightNickname = DataBotInfo::ms_aDataBot[m_RightSide].m_aNameBot;
 	}
 
@@ -216,7 +229,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	if(IsVanillaClient && !IsSpeakAuthor)
 	{
 		if(pLeftNickname && pRightNickname)
-			str_format(aBufNickname, sizeof(aBufNickname), "* %s and %s:\n", pLeftNickname, pRightNickname);
+			str_format(aBufNickname, sizeof(aBufNickname), "* %s says to %s:\n", pLeftNickname, pRightNickname);
 		else if(pRightNickname)
 			str_format(aBufNickname, sizeof(aBufNickname), "* %s:\n", pRightNickname);
 		else if(pLeftNickname)
@@ -231,7 +244,7 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 		else if(m_BotType == TYPE_BOT_NPC)
 			PageNum = static_cast<int>(NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs.size());
 
-		const char* pNicknameTalked = IsSpeakAuthor ? "..." : (pDialog->GetFlag() & DIALOGFLAG_SPEAK_LEFT ? pLeftNickname : pRightNickname);
+		const char* pNicknameTalked = IsSpeakAuthor ? "..." : pLeftNickname;
 		str_format(aBufPosition, sizeof(aBufPosition), "\u2500\u2500\u2500\u2500 | %d of %d | %s.\n", (m_Step + 1), maximum(1, PageNum), pNicknameTalked);
 	}
 
