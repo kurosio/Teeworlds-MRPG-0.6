@@ -80,6 +80,7 @@ void CCollision::InitTiles(CTile* pTiles)
 		switch(Index)
 		{
 			case TILE_FIXED_CAM:
+			{
 				vec2 camPos = { i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f };
 				vec4 camRect = { camPos.x - CAM_RADIUS_W, camPos.y - CAM_RADIUS_H, camPos.x + CAM_RADIUS_W, camPos.y + CAM_RADIUS_H };
 				m_vFixedCamZones.emplace_back(camPos, camRect);
@@ -87,6 +88,7 @@ void CCollision::InitTiles(CTile* pTiles)
 				pTiles[i].m_Index = 0;
 				pTiles[i].m_Reserved = static_cast<char>(Index);
 				break;
+			}
 			case TILE_DEATH:
 				pTiles[i].m_Index = COLFLAG_DEATH;
 				break;
