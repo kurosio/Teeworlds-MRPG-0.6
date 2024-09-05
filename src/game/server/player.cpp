@@ -380,7 +380,7 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	const bool localClient = m_ClientID == SnappingClient;
-	pPlayerInfo->m_Local = localClient;
+	pPlayerInfo->m_Local = m_FixedView.IsLocked() ? false : localClient;
 	pPlayerInfo->m_ClientID = m_ClientID;
 	pPlayerInfo->m_Team = GetTeam();
 	pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);

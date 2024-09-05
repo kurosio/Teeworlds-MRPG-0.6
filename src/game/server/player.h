@@ -59,11 +59,13 @@ protected:
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
 	CClassData m_Class {};
+	FixedViewCam m_FixedView {};
 
 public:
 	CGS* GS() const { return m_pGS; }
 	CClassData* GetClass() { return &m_Class; }
 	const CClassData* GetClass() const { return &m_Class; }
+	FixedViewCam& LockedView() { return m_FixedView; }
 
 	vec2 m_ViewPos;
 	int m_PlayerFlags;

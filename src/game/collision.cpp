@@ -7,6 +7,9 @@
 #include <game/layers.h>
 #include <game/collision.h>
 
+constexpr float CAM_RADIUS_H = 380.f;
+constexpr float CAM_RADIUS_W = 480.f;
+
 vec2 ClampVel(int MoveRestriction, vec2 Vel)
 {
 	if(Vel.x > 0 && (MoveRestriction & CANTMOVE_RIGHT))
@@ -66,7 +69,7 @@ void CCollision::Init(class CLayers *pLayers)
 	}
 }
 
-void CCollision::InitTiles(CTile* pTiles) const
+void CCollision::InitTiles(CTile* pTiles)
 {
 	for(int i = 0; i < m_Width * m_Height; i++)
 	{
@@ -76,6 +79,14 @@ void CCollision::InitTiles(CTile* pTiles) const
 
 		switch(Index)
 		{
+			case TILE_FIXED_CAM:
+				vec2 camPos = { i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f };
+				vec4 camRect = { camPos.x - CAM_RADIUS_W, camPos.y - CAM_RADIUS_H, camPos.x + CAM_RADIUS_W, camPos.y + CAM_RADIUS_H };
+				m_vFixedCamZones.emplace_back(camPos, camRect);
+
+				pTiles[i].m_Index = 0;
+				pTiles[i].m_Reserved = static_cast<char>(Index);
+				break;
 			case TILE_DEATH:
 				pTiles[i].m_Index = COLFLAG_DEATH;
 				break;
@@ -113,6 +124,17 @@ void CCollision::InitTiles(CTile* pTiles) const
 				pTiles[i].m_Reserved = static_cast<char>(Index);
 		}
 	}
+}
+
+std::optional<vec2> CCollision::TryGetFixedCamPos(vec2 currentPos) const
+{
+	for(const auto& [camPos, zoneRect] : m_vFixedCamZones)
+	{
+		if(currentPos.x > zoneRect.x && currentPos.x < zoneRect.z &&
+			currentPos.y > zoneRect.y && currentPos.y < zoneRect.w)
+			return camPos;
+	}
+	return std::nullopt;
 }
 
 void CCollision::InitTeleports(CTeleTile* pTiles)

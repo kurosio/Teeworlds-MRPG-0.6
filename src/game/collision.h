@@ -31,7 +31,7 @@ class CCollision
 	int m_Width;
 	int m_Height;
 
-	void InitTiles(CTile* pTiles) const;
+	void InitTiles(CTile* pTiles);
 	void InitTeleports(CTeleTile* pTiles);
 
 	CLayers *m_pLayers;
@@ -42,6 +42,7 @@ class CCollision
 	std::map<int, std::vector<vec2>> m_vTeleIns;
 	std::map<int, std::vector<vec2>> m_vTeleOuts;
 	std::map<int, std::vector<vec2>> m_vConfirmTeleOuts;
+	std::vector<std::pair<vec2, vec4>> m_vFixedCamZones;
 
 public:
 	enum
@@ -63,6 +64,7 @@ public:
 	int GetTileFlags(int Index) const;
 	int GetTile(vec2 Pos) const { return GetTile(round_to_int(Pos.x), round_to_int(Pos.y)); }
 	bool TryGetTeleportOut(vec2 Ins, vec2& Out, int ToIndex);
+	std::optional<vec2> TryGetFixedCamPos(vec2 currentPos) const;
 
 	int GetMoveRestrictions(void* pUser, vec2 Pos, float Distance = 18.0f, int OverrideCenterTileIndex = -1);
 	int GetMoveRestrictions(vec2 Pos, float Distance = 18.0f)
