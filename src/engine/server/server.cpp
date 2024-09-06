@@ -31,10 +31,6 @@
 #include <Windows.h>
 #endif
 
-#ifdef CONF_DISCORD
-#include "discord/discord_main.h"
-#endif
-
 #include "input_events.h"
 #include "multi_worlds.h"
 #include "server_ban.h"
@@ -86,10 +82,6 @@ CServer::CServer()
 
 CServer::~CServer()
 {
-#ifdef CONF_DISCORD
-	m_pDiscord->quit();
-	delete m_pDiscord;
-#endif
 	delete m_pRegister;
 	delete m_pMultiWorlds;
 	m_aAccountsNicknames.clear();
@@ -304,50 +296,6 @@ const char* CServer::ClientCountryIsoCode(int ClientID) const
 		return "UN";
 
 	return m_aClients[ClientID].m_aCountryIsoCode;
-}
-
-void CServer::SendDiscordGenerateMessage(const char* pTitle, int AccountID, int Color)
-{
-#ifdef CONF_DISCORD
-	DiscordTask Task(std::bind(&DiscordJob::SendGenerateMessageAccountID, m_pDiscord, SleepyDiscord::User(), std::string(g_Config.m_SvDiscordServerChatChannel), std::string(pTitle), AccountID, Color));
-	m_pDiscord->AddThreadTask(Task);
-#endif
-}
-
-void CServer::SendDiscordMessage(const char* pChannel, int Color, const char* pTitle, const char* pText)
-{
-#ifdef CONF_DISCORD
-	SleepyDiscord::Embed embed;
-	embed.title = std::string(EscapeDiscordMarkdown(pTitle));
-	embed.description = std::string(EscapeDiscordMarkdown(pText));
-	embed.color = Color;
-
-	DiscordTask Task(std::bind(&DiscordJob::sendMessageWithoutResponse, m_pDiscord, std::string(pChannel), std::string("\0"), embed));
-	m_pDiscord->AddThreadTask(Task);
-#endif
-}
-
-void CServer::UpdateDiscordStatus(const char* pStatus)
-{
-#ifdef CONF_DISCORD
-#undef max
-	DiscordTask ThreadTask(std::bind(&DiscordJob::updateStatus, m_pDiscord, std::string(pStatus), std::numeric_limits<uint64_t>::max(), SleepyDiscord::online, false));
-	m_pDiscord->AddThreadTask(ThreadTask);
-#endif
-}
-
-std::string CServer::EscapeDiscordMarkdown(const std::string& input)
-{
-	std::string out(input);
-	for(size_t i = 0; i < out.size(); ++i)
-	{
-		if(out.at(i) == '*' || out.at(i) == '\\' || out.at(i) == '>' || out.at(i) == '_' || out.at(i) == '`')
-		{
-			out.insert(i, "\\");
-			i++;
-		}
-	}
-	return out;
 }
 
 void CServer::Kick(int ClientID, const char* pReason)
@@ -1975,11 +1923,6 @@ int CServer::Run(ILogger* pLogger)
 
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "----------------------------------------------------");
 	}
-
-	// intilized discord bot
-#ifdef CONF_DISCORD
-	m_pDiscord = new DiscordJob(this);
-#endif
 
 	// start game
 	{

@@ -1,0 +1,7 @@
+#ifndef GAME_PROJECT_H
+#define GAME_PROJECT_H
+
+constexpr const char* GAMEMODE_NAME = "@PROJECT_GAMEMODE_NAME@"
+constexpr const char* GAMEMODE_VERSION = "@PROJECT_VERSION@"
+
+#endif // GAME_PROJECT_H

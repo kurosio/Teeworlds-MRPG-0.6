@@ -29,7 +29,6 @@ class CServer : public IServer
 	class IStorageEngine* m_pStorage {};
 	class CMultiWorlds* m_pMultiWorlds;
 	class CServerBan* m_pServerBan;
-	class DiscordJob* m_pDiscord {};
 	class IRegister* m_pRegister{};
 
 public:
@@ -188,12 +187,6 @@ public:
 	CWorldDetail* GetWorldDetail(int WorldID) override;
 	bool IsWorldType(int WorldID, WorldType Type) const override;
 	int GetWorldsSize() const override;
-
-	void SendDiscordMessage(const char* pChannel, int Color, const char* pTitle, const char* pText) override;
-	void SendDiscordGenerateMessage(const char* pTitle, int AccountID, int Color = 0) override;
-	void UpdateDiscordStatus(const char* pStatus) override;
-	std::string EscapeDiscordMarkdown(const std::string& input) override;
-
 	void Kick(int ClientID, const char* pReason) override;
 
 	int64_t TickStartTime(int Tick) const;

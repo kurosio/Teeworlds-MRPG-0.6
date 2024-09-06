@@ -313,10 +313,6 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 
 	if(Mode == CHAT_ALL)
 	{
-		// send discord chat only from players
-		if(ChatterClientID < MAX_PLAYERS)
-			Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, DC_SERVER_CHAT, Server()->ClientName(ChatterClientID), pText);
-
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
 	}
 	else if(Mode == CHAT_TEAM)
@@ -490,30 +486,6 @@ void CGS::SendTuningParams(int ClientID)
 /* #########################################################################
 	ENGINE GAMECONTEXT
 ######################################################################### */
-void CGS::UpdateDiscordStatus()
-{
-#ifdef CONF_DISCORD
-	if(Server()->Tick() % (Server()->TickSpeed() * 10) != 0 || m_WorldID != MAIN_WORLD_ID)
-		return;
-
-	int Players = 0;
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		if(Server()->ClientIngame(i))
-			Players++;
-	}
-
-	if(Players > 0)
-	{
-		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), "%d player's play MRPG!", Players);
-		Server()->UpdateDiscordStatus(aBuf);
-		return;
-	}
-	Server()->UpdateDiscordStatus("and expects players.");
-#endif
-}
-
 void CGS::HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const
 {
 	if(!pPlayer)
@@ -706,9 +678,6 @@ void CGS::OnTickGlobal()
 		// show the top list to all players
 		Core()->ShowTopList(-1, RandomType, 5);
 	}
-
-	// discord status
-	UpdateDiscordStatus();
 }
 
 void CGS::OnSnap(int ClientID)
@@ -1043,7 +1012,6 @@ void CGS::OnClientEnter(int ClientID)
 	if(!pPlayer->IsAuthed())
 	{
 		Chat(-1, "{} entered and joined the MRPG", Server()->ClientName(ClientID));
-		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "connected and enter in MRPG");
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 		return;
 	}
@@ -1064,7 +1032,6 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerInWorld(ClientID))
 	{
 		Chat(-1, "{} has left the MRPG", Server()->ClientName(ClientID));
-		ChatDiscord(DC_JOIN_LEAVE, Server()->ClientName(ClientID), "leave game MRPG");
 		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 	}

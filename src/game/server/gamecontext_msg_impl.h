@@ -54,22 +54,6 @@ inline void ChatWorld(int WorldID, const char* pSuffix, const char* pText, const
 }
 
 template<typename... Ts>
-inline void ChatDiscord(int Color, const char* Title, const char* pText, const Ts&... args)
-{
-#ifdef CONF_DISCORD
-    Server()->SendDiscordMessage(g_Config.m_SvDiscordServerChatChannel, Color, Title, fmt(pText, args...).c_str());
-#endif
-}
-
-template<typename... Ts>
-inline void ChatDiscordChannel(const char* pChannel, int Color, const char* Title, const char* pText, const Ts&... args)
-{
-#ifdef CONF_DISCORD
-    Server()->SendDiscordMessage(pChannel, Color, Title, fmt(pText, args...).c_str());
-#endif
-}
-
-template<typename... Ts>
 inline void Motd(int ClientID, const char* pText, const Ts&... args)
 {
     const int Start = std::max(ClientID, 0);

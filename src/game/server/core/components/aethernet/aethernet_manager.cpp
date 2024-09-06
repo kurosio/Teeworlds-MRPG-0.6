@@ -173,7 +173,6 @@ void CAethernetManager::UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const
 
 		pPlayer->Account()->AddAether(pAether->GetID());
 		GS()->Chat(ClientID, "You now have Aethernet access to the {}.", pAether->GetName());
-		GS()->ChatDiscord(DC_SERVER_INFO, Server()->ClientName(ClientID), "Now have Aethernet access to the {}.", pAether->GetName());
 	}
 }
 

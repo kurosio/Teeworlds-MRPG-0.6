@@ -43,7 +43,6 @@ endif()
 
 set(AUTO_DEPENDENCIES_DEFAULT ON)
 option(SERVER_COMPILE "Build the server together with the client" ON)
-option(DISCORD_SERVER_COMPILE "Compile Sleepy-Discord in conjunction with the server" ON)
 option(DOWNLOAD_GTEST "Download and compile GTest if not found" ${AUTO_DEPENDENCIES_DEFAULT})
 option(PREFER_BUNDLED_LIBS "Prefer bundled libraries over system libraries" ${AUTO_DEPENDENCIES_DEFAULT})
 option(DEV "Don't generate stuff necessary for packaging" OFF)
@@ -290,11 +289,6 @@ endif()
 #  show_dependency_status("Glew" GLEW TRUE)
 #endif()
 show_dependency_status("Curl" CURL TRUE)
-
-if(NOT OPENSSL_FOUND)
-  message(WARNING "Server discord support is disabled, as well as some crypto functions in favor of md5")
-  set(DISCORD_SERVER_COMPILE OFF)
-endif()
 
 if(NOT GTEST_FOUND)
   if(DOWNLOAD_GTEST)
@@ -717,74 +711,6 @@ list(APPEND TARGETS_OWN engine-shared game-shared)
 #  list(APPEND TARGETS_LINK ${TARGET_CLIENT})
 #endif()
 
-
-########################################################################
-# SLEEPY-DISCORD
-########################################################################
-
-if(SERVER_COMPILE AND DISCORD_SERVER_COMPILE)
-  # Include Cpr
-  set(CPR_LIBRARIES cpr CACHE INTERNAL "")
-  install(DIRECTORY ${PROJECT_SOURCE_DIR}/discord_deps/cpr-external/include/cpr DESTINATION ${PROJECT_SOURCE_DIR}/discord_deps/cpr-external/include)
-  set(CPR_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/discord_deps/cpr-external/include")
-  file(GLOB CPR_LIBRARIES_SRC "${PROJECT_SOURCE_DIR}/discord_deps/cpr-external/cpr/*.cpp" "${CPR_INCLUDE_DIRS}/*.h")
-  add_library(${CPR_LIBRARIES} EXCLUDE_FROM_ALL OBJECT ${CPR_LIBRARIES_SRC})
-  if((MINGW OR TARGET_OS STREQUAL "linux") AND PREFER_BUNDLED_LIBS)
-    target_link_libraries(${CPR_LIBRARIES} -lcurl) # wtf
-  endif()
-  target_link_libraries(${CPR_LIBRARIES} ${CURL_LIBRARIES})
-  target_include_directories(${CPR_LIBRARIES} PUBLIC ${CPR_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIRS})
-  list(APPEND TARGETS_DEP ${CPR_LIBRARIES})
-
-  # Include Sleepy-Discord
-  file(GLOB SLEEPY_DISCORD_LIBRARIES_SRC "${PROJECT_SOURCE_DIR}/discord_deps/sleepy-discord/sleepy_discord/*.cpp")
-  add_library(sleepy-discord EXCLUDE_FROM_ALL OBJECT ${SLEEPY_DISCORD_LIBRARIES_SRC})
-  target_include_directories(sleepy-discord
-    PUBLIC ${PROJECT_SOURCE_DIR}/discord_deps/sleepy-discord/include
-	PRIVATE ${PROJECT_SOURCE_DIR}/discord_deps/sleepy-discord/include/sleepy_discord)
-
-  # Including Cpr to Sleepy-Discord
-  set(SLEEPY_DISCORD_LIBRARIES)
-  target_include_directories(sleepy-discord PUBLIC ${CPR_INCLUDE_DIRS})
-  list(APPEND SLEEPY_DISCORD_LIBRARIES ${CPR_LIBRARIES})
-  target_compile_definitions(sleepy-discord PUBLIC EXISTENT_CPR)
-
-  # Including Asio to Sleepy-Discord
-  target_include_directories(sleepy-discord PUBLIC "${PROJECT_SOURCE_DIR}/discord_deps/asio/asio/include")
-  target_compile_definitions(sleepy-discord PUBLIC EXISTENT_ASIO)
-
-  # Including Websocketpp to Sleepy-Discord
-  target_include_directories(sleepy-discord PUBLIC "${PROJECT_SOURCE_DIR}/discord_deps/websocketpp")
-  target_compile_definitions(sleepy-discord PUBLIC EXISTENT_WEBSOCKETPP)
-
-  # Including OpenSSL to Sleepy-Discord
-  if (WIN32)
-	list(APPEND SLEEPY_DISCORD_LIBRARIES ${OPENSSL_LIBRARY})
-  elseif (UNIX)
-	list(APPEND SLEEPY_DISCORD_LIBRARIES ${OPENSSL_LIBRARY} "Threads::Threads")
-  endif()
-
-  #Todo add support for it
-  target_compile_definitions(sleepy-discord PUBLIC NONEEXISTENT_ZLIB_NG)
-  target_compile_definitions(sleepy-discord PUBLIC NONEXISTENT_UWEBSOCKETS)
-  target_compile_definitions(sleepy-discord PUBLIC NONEXISTENT_OPUS)
-  target_compile_definitions(sleepy-discord PUBLIC NONEXISTENT_SODIUM)
-  target_link_libraries(sleepy-discord ${SLEEPY_DISCORD_LIBRARIES})
-  list(APPEND TARGETS_DEP sleepy-discord)
-
-  # Disable warning sleepy-discord
-  if(MINGW OR TARGET_OS STREQUAL "linux")
-    target_compile_options(sleepy-discord PUBLIC -Wno-duplicated-branches -Wno-deprecated-copy)
-  endif()
-
-  #The codebase is c++11 but both clang and visual c++ have issues with c++11
-  #These issues are fixed by using preprocessor defines to replace code that
-  #cause issues with c++14 and upper    
-  set_target_properties(sleepy-discord PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-  target_compile_features(sleepy-discord PUBLIC cxx_return_type_deduction)
-endif()
-
-
 ########################################################################
 # SERVER
 ########################################################################
@@ -799,12 +725,6 @@ if(SERVER_COMPILE)
   set(GAME_GENERATED_SERVER src/generated/server_data.cpp src/generated/server_data.h)
   set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER} ${LOCALIZED_SERVER})
   
-  # Deps
-  set(DISCORD_SERVER_LIBS)
-  if(DISCORD_SERVER_COMPILE)
-    set(DISCORD_SERVER_LIBS sleepy-discord ${CPR_LIBRARIES})
-  endif()
-
   set(SERVER_INCLUDES_DIRS
     ${Boost_INCLUDE_DIRS}
     ${MYSQL_INCLUDE_DIRS}
@@ -812,7 +732,6 @@ if(SERVER_COMPILE)
   )
   set(SERVER_LIBRARIES
     ${MYSQL_LIBRARIES}
-    ${DISCORD_SERVER_LIBS}
   )
   set(DEPS_SERVER ${DEPS})
 
@@ -1284,10 +1203,6 @@ foreach(target ${TARGETS_OWN})
   if(OPENSSL_FOUND)
 	target_compile_definitions(${target} PRIVATE CONF_OPENSSL)
 	target_include_directories(${target} PRIVATE ${OPENSSL_INCLUDE_DIRS})
-  endif()
-
-  if(DISCORD_SERVER_COMPILE)
-    target_compile_definitions(${target} PRIVATE CONF_DISCORD)
   endif()
 
   if(MYSQL_FOUND)

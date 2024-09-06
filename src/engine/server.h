@@ -6,15 +6,6 @@
 #include <engine/input_events.h>
 #include <engine/shared/world_detail.h>
 
-#define DC_SERVER_INFO 13872503
-#define DC_PLAYER_INFO 1346299
-#define DC_JOIN_LEAVE 14494801
-#define DC_SERVER_CHAT 7899095
-#define DC_DISCORD_WARNING 13183530
-#define DC_DISCORD_SUCCESS 1346299
-#define DC_DISCORD_INFO 431050
-#define DC_INVISIBLE_GRAY 3553599
-
 // When recording a demo on the server, the ClientID -1 is used
 enum
 {
@@ -205,12 +196,6 @@ public:
 	virtual const char* Localize(int ClientID, const char* pText) = 0;
 	virtual void SetClientLanguage(int ClientID, const char* pLanguage) = 0;
 	virtual const char* GetClientLanguage(int ClientID) const = 0;
-
-	// discord
-	virtual void SendDiscordMessage(const char *pChannel, int Color, const char* pTitle, const char* pText) = 0;
-	virtual void SendDiscordGenerateMessage(const char* pTitle, int AccountID, int Color = 0) = 0;
-	virtual void UpdateDiscordStatus(const char *pStatus) = 0;
-    virtual std::string EscapeDiscordMarkdown(const std::string &input) = 0;
 
 	// Bots
 	virtual void InitClientBot(int ClientID) = 0;

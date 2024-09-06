@@ -106,14 +106,7 @@ void CServerBan::ConBanExt(IConsole::IResult* pResult, void* pUser)
 		if(pThis->Server()->IsEmpty(ClientID))
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "net_ban", "ban error (invalid client id)");
 		else
-		{
-			char aBuf[128];
-			char aAddrStr[NETADDR_MAXSTRSIZE];
-			net_addr_str(pThis->m_pNetServer->ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
-			str_format(aBuf, sizeof(aBuf), "Player %s IP(%s). Banned for %d minutes!", pThis->Server()->ClientName(ClientID), aAddrStr, Minutes);
-			pThis->Server()->SendDiscordMessage(g_Config.m_SvDiscordAdminChannel, DC_DISCORD_WARNING, "Bans information!", aBuf);
 			pThis->BanAddr(pThis->m_pNetServer->ClientAddr(ClientID), Minutes * 60, pReason);
-		}
 	}
 	else
 		ConBan(pResult, pUser);

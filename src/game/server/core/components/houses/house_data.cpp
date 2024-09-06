@@ -99,7 +99,6 @@ void CHouse::Buy(CPlayer* pPlayer)
 
 		// send information
 		GS()->Chat(-1, "{} becomes the owner of the house class {}", Server()->ClientName(ClientID), GetClassName());
-		GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**{} becomes the owner of the house class {}**", Server()->ClientName(ClientID), GetClassName());
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 	}
 }
@@ -131,7 +130,6 @@ void CHouse::Sell()
 	// send information
 	GS()->ChatAccount(m_AccountID, "Your House is sold!");
 	GS()->Chat(-1, "House: {} have been is released!", m_ID);
-	GS()->ChatDiscord(DC_SERVER_INFO, "Server information", "**[House: {}] have been sold!**", m_ID);
 }
 
 void CHouse::UpdateText(int Lifetime) const
