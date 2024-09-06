@@ -9,17 +9,25 @@ class PlayerScenario;
 using ScenarioAction = std::function<void(const PlayerScenario*)>;
 using ScenarioCondition = std::function<bool(const PlayerScenario*)>;
 
+enum class ConditionPriority
+{
+	CONDITION_AND_TIMER,
+	CONDITION_OR_TIMER,
+};
+
 // scenario
 class PlayerScenario : public MultiworldIdentifiableData<std::map<int, std::vector<PlayerScenario>>>
 {
 	struct Step
 	{
-		ScenarioAction FuncAction {};
-		ScenarioCondition FuncCondition {};
+		ScenarioAction FuncActive {};
+		ScenarioAction FuncOnStart {};
+		ScenarioAction FuncOnEnd {};
+		ScenarioCondition FuncCheckCondition {};
+		ConditionPriority Priority {ConditionPriority::CONDITION_AND_TIMER };
 		int DelayMs {};
 
-		Step(ScenarioAction pfnAction, int delayMs, ScenarioCondition pfnCondition)
-			: FuncAction(std::move(pfnAction)), FuncCondition(std::move(pfnCondition)), DelayMs(delayMs) {}
+		explicit Step(int delayMs) : DelayMs(delayMs) {}
 	};
 
 	int m_ClientID{};
@@ -32,7 +40,7 @@ class PlayerScenario : public MultiworldIdentifiableData<std::map<int, std::vect
 	void ExecuteCurrentStep();
 
 public:
-	explicit PlayerScenario(int clientID) : m_ClientID(clientID) {}
+	PlayerScenario() = default;
 
 	CGS* GS() const;
 	int GetClientID() const { return m_ClientID; }
@@ -40,17 +48,44 @@ public:
 	CCharacter* GetCharacter() const { return GetPlayer()->GetCharacter(); }
 	bool IsFinished() const { return m_CurrentStepIndex >= m_vSteps.size(); }
 
-	void AddStep(const ScenarioAction& pfnAction, int delayMs)
+	PlayerScenario& Add(int delayMs = -1)
 	{
-		m_vSteps.emplace_back(pfnAction, delayMs, nullptr);
+		m_vSteps.emplace_back(delayMs);
+		return *this;
 	}
 
-	void AddStep(const ScenarioAction& pfnAction, const ScenarioCondition& pfnCondition)
+	PlayerScenario& WhenStarted(const ScenarioAction& pfnOnStart)
 	{
-		m_vSteps.emplace_back(pfnAction, -1, pfnCondition);
+		if(!m_vSteps.empty())
+			m_vSteps.back().FuncOnStart = pfnOnStart;
+		return *this;
 	}
 
-	void Start();
+	PlayerScenario& WhenActive(const ScenarioAction& pfnActive)
+	{
+		if(!m_vSteps.empty())
+			m_vSteps.back().FuncActive = pfnActive;
+		return *this;
+	}
+
+	PlayerScenario& WhenEnded(const ScenarioAction& pfnOnEnd)
+	{
+		if(!m_vSteps.empty())
+			m_vSteps.back().FuncOnEnd = pfnOnEnd;
+		return *this;
+	}
+
+	PlayerScenario& CheckCondition(ConditionPriority priority, const ScenarioCondition& pfnCheckCondition)
+	{
+		if(!m_vSteps.empty())
+		{
+			m_vSteps.back().Priority = priority;
+			m_vSteps.back().FuncCheckCondition = pfnCheckCondition;
+		}
+		return *this;
+	}
+
+	void Start(int ClientID);
 	void Stop();
 	void Tick();
 

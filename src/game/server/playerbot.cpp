@@ -58,7 +58,7 @@ void CPlayerBot::Tick()
 			if(m_BotType == TYPE_BOT_EIDOLON)
 			{
 				// Get the eidolon owner
-				if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && distance(pOwner->m_ViewPos, m_ViewPos) > 1000.f)
+				if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && distance(pOwner->GetCharacter()->GetPos(), m_ViewPos) > 1000.f)
 				{
 					// Teleport the bot to the owner's position
 					vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
