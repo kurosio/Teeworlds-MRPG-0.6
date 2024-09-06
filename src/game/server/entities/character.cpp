@@ -1114,9 +1114,17 @@ void CCharacter::HandleTilesets()
 		}
 	}
 
-	// check from components
 	if(!m_pPlayer->IsBot())
+	{
+		// locked view cam
+		if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Core.m_Pos))
+			m_pPlayer->LockedView().ViewLock(result.value());
+		else
+			m_pPlayer->LockedView().ViewUnlock();
+
+		// check from components
 		GS()->Core()->OnCharacterTile(this);
+	}
 
 	// water effect enter exit
 	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
@@ -1135,12 +1143,6 @@ void CCharacter::HandleTilesets()
 		m_pPlayer->Account()->HandleChair(3, 3);
 	if(GetTiles()->IsActive(TILE_CHAIR_LV3))
 		m_pPlayer->Account()->HandleChair(5, 5);
-
-	// locked view cam
-	if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Core.m_Pos))
-		m_pPlayer->LockedView().ViewLock(result.value());
-	else
-		m_pPlayer->LockedView().ViewUnlock();
 }
 
 void CCharacter::GiveRandomEffects(int To)

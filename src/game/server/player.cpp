@@ -399,8 +399,8 @@ void CPlayer::Snap(int SnappingClient)
 			return;
 
 		const bool isFixedViewLocked = m_FixedView.IsLocked();
-		pSpectatorInfo->m_X = isFixedViewLocked ? m_FixedView.LockedAt.x : m_ViewPos.x;
-		pSpectatorInfo->m_Y = isFixedViewLocked ? m_FixedView.LockedAt.y : m_ViewPos.y;
+		pSpectatorInfo->m_X = m_ViewPos.x = (isFixedViewLocked ? m_FixedView.LockedAt.x : m_ViewPos.x);
+		pSpectatorInfo->m_Y = m_ViewPos.y = (isFixedViewLocked ? m_FixedView.LockedAt.y : m_ViewPos.y);
 		pSpectatorInfo->m_SpectatorID = m_ClientID;
 	}
 }
