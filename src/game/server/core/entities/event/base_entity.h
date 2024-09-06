@@ -31,9 +31,10 @@ public:
 
 	void RegisterEvent(EventType Type, const std::function<void(CBaseEntity*)>& Callback);
 	void RegisterEvent(EventType Type, int NumIDs, const std::function<void(CBaseEntity*, int, std::vector<int>)>& Callback);
-	std::shared_ptr<CEntityGroup> GetGroup() const { return m_GroupPtr.lock(); }
 
+	std::shared_ptr<CEntityGroup> GetGroup() const { return m_GroupPtr.lock(); }
 	std::vector<int>& GetIDs() { return m_vIDs; }
+	int GetSnapID() const { return GetID(); }
 
 protected:
 	void TriggerEvent(EventType Type)

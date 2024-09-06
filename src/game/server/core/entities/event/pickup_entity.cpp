@@ -8,17 +8,6 @@ CPickupEntity::CPickupEntity(CGameWorld* pGameWorld, const std::shared_ptr<CEnti
 	m_Options.Subtype = Subtype;
 }
 
-void CPickupEntity::Tick()
-{
-	if(m_ClientID != -1 && !GetPlayer())
-	{
-		MarkForDestroy();
-		return;
-	}
-
-	CBaseEntity::Tick();
-}
-
 void CPickupEntity::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient))

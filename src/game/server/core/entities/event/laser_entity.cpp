@@ -8,17 +8,6 @@ CLaserEntity::CLaserEntity(CGameWorld* pGameWorld, const std::shared_ptr<CEntity
 	m_Options.LaserType = LaserType;
 }
 
-void CLaserEntity::Tick()
-{
-	if(m_ClientID != -1 && !GetPlayer())
-	{
-		MarkForDestroy();
-		return;
-	}
-
-	CBaseEntity::Tick();
-}
-
 void CLaserEntity::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, m_PosTo))

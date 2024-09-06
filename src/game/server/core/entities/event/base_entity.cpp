@@ -26,7 +26,7 @@ CBaseEntity::~CBaseEntity()
 
 	TriggerEvent(EventDestroy);
 
-	if(auto group = GetGroup())
+	if(const auto group = GetGroup())
 	{
 		group->RemoveEntity(this);
 	}
