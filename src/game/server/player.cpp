@@ -380,21 +380,28 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	const bool localClient = m_ClientID == SnappingClient;
-	pPlayerInfo->m_Local = m_FixedView.IsLocked() ? false : localClient;
+	pPlayerInfo->m_Local = localClient;
 	pPlayerInfo->m_ClientID = m_ClientID;
 	pPlayerInfo->m_Team = GetTeam();
 	pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
 	pPlayerInfo->m_Score = Account()->GetLevel();
 
-	if(m_ClientID == SnappingClient && (GetTeam() == TEAM_SPECTATORS))
+	if(auto pDDNetPlayer = static_cast<CNetObj_DDNetPlayer*>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, m_ClientID, sizeof(CNetObj_DDNetPlayer))))
+	{
+		pDDNetPlayer->m_AuthLevel = Server()->GetAuthedState(m_ClientID);
+		pDDNetPlayer->m_Flags = m_FixedView.IsLocked() ? EXPLAYERFLAG_SPEC : 0;
+	}
+
+	if(localClient && (GetTeam() == TEAM_SPECTATORS || m_FixedView.IsLocked()))
 	{
 		CNetObj_SpectatorInfo* pSpectatorInfo = static_cast<CNetObj_SpectatorInfo*>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, m_ClientID, sizeof(CNetObj_SpectatorInfo)));
 		if(!pSpectatorInfo)
 			return;
 
-		pSpectatorInfo->m_SpectatorID = -1;
-		pSpectatorInfo->m_X = m_ViewPos.x;
-		pSpectatorInfo->m_Y = m_ViewPos.y;
+		const bool isFixedViewLocked = m_FixedView.IsLocked();
+		pSpectatorInfo->m_X = isFixedViewLocked ? m_FixedView.LockedAt.x : m_ViewPos.x;
+		pSpectatorInfo->m_Y = isFixedViewLocked ? m_FixedView.LockedAt.y : m_ViewPos.y;
+		pSpectatorInfo->m_SpectatorID = m_ClientID;
 	}
 }
 

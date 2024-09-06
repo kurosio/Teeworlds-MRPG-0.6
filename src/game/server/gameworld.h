@@ -11,22 +11,12 @@ class CCharacter;
 struct FixedViewCam
 {
 	vec2 LockedAt {};
-	bool Locked {};
-
-	bool IsLocked() const { return m_LockedInitilized && Locked; }
-	void ViewLock(const vec2& position) { if(Locked) return; Locked = true; LockedAt = position; m_LockedInitilized = false; }
-	void ViewUnlock() { if(!Locked) return; Locked = false; m_LockedInitilized = false; }
-	void UpdateLockedAt(CCharacterCore& SendCore, CCharacterCore& Core)
-	{
-		if(Locked && !m_LockedInitilized)
-		{
-			SendCore.m_Pos = LockedAt;
-			m_LockedInitilized = true;
-		}
-	}
+	void ViewLock(const vec2& position) { if(_Locked) return; _Locked = true; LockedAt = position; }
+	void ViewUnlock() { if(!_Locked) return; _Locked = false; }
+	bool IsLocked() const { return _Locked; }
 
 private:
-	bool m_LockedInitilized {};
+	bool _Locked {};
 };
 
 /*

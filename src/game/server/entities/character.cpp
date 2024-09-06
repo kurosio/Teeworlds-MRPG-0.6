@@ -985,7 +985,6 @@ void CCharacter::Snap(int SnappingClient)
 	}
 	else
 	{
-		m_pPlayer->LockedView().UpdateLockedAt(m_SendCore, m_Core);
 		pCharacter->m_Tick = m_ReckoningTick;
 		m_SendCore.Write(pCharacter);
 	}
