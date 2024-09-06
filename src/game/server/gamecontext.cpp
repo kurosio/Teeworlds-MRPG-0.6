@@ -22,6 +22,7 @@
 
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/worlds/world_data.h"
+#include "core/tools/player_scenario.h"
 #include "core/tools/vote_optional.h"
 #include "core/tools/vote_wrapper.h"
 
@@ -614,6 +615,7 @@ void CGS::OnTick()
 
 		m_apPlayers[i]->Tick();
 		m_apPlayers[i]->PostTick();
+		PlayerScenario::Tick(i);
 		if(i < MAX_PLAYERS)
 		{
 			BroadcastTick(i);
