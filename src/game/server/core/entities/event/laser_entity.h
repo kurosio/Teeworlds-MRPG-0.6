@@ -6,6 +6,8 @@
 struct LaserOptions
 {
 	int LaserType = LASERTYPE_RIFLE;
+	int LaserSubtype = 0;
+	int LaserFlags = 0;
 	int StartTickShift = 3;
 };
 
