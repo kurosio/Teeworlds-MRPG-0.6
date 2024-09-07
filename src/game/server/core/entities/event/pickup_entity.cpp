@@ -13,14 +13,8 @@ void CPickupEntity::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Pickup* pObj = static_cast<CNetObj_Pickup*>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
-	if(!pObj)
+	if(!GS()->SnapPickup(SnappingClient, GetID(), m_Pos, m_Options.Type, m_Options.Subtype))
 		return;
-
-	pObj->m_X = (int)m_Pos.x;
-	pObj->m_Y = (int)m_Pos.y;
-	pObj->m_Type = m_Options.Type;
-	pObj->m_Subtype = m_Options.Subtype;
 
 	CBaseEntity::Snap(SnappingClient);
 }

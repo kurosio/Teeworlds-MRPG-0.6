@@ -110,7 +110,7 @@ public:
 	int SendPackMsgOne(const T* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
 	{
 		dbg_assert(ClientID != -1, "SendPackMsgOne called with -1");
-		CMsgPacker Packer(pMsg->ms_MsgID, false);
+		CMsgPacker Packer(pMsg->ms_MsgId, false);
 		if(pMsg->Pack(&Packer))
 			return -1;
 
@@ -139,7 +139,7 @@ public:
 		CNetMsg_Sv_Emoticon MsgCopy;
 		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
 
-		return Translate(MsgCopy.m_ClientID, ClientID) && SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
+		return Translate(MsgCopy.m_ClientId, ClientID) && SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
 	}
 
 	int SendPackMsgTranslate(const CNetMsg_Sv_Chat* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
@@ -148,11 +148,11 @@ public:
 		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
 
 		char aBuf[1000];
-		if(MsgCopy.m_ClientID >= 0 && !Translate(MsgCopy.m_ClientID, ClientID))
+		if(MsgCopy.m_ClientId >= 0 && !Translate(MsgCopy.m_ClientId, ClientID))
 		{
-			str_format(aBuf, sizeof(aBuf), "%s: %s", ClientName(MsgCopy.m_ClientID), MsgCopy.m_pMessage);
+			str_format(aBuf, sizeof(aBuf), "%s: %s", ClientName(MsgCopy.m_ClientId), MsgCopy.m_pMessage);
 			MsgCopy.m_pMessage = aBuf;
-			MsgCopy.m_ClientID = VANILLA_MAX_CLIENTS - 1;
+			MsgCopy.m_ClientId = VANILLA_MAX_CLIENTS - 1;
 		}
 
 		return SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
@@ -205,6 +205,9 @@ public:
 	virtual void SnapFreeID(int ID) = 0;
 	virtual void *SnapNewItem(int Type, int ID, int Size) = 0;
 	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
+
+	template<typename T>
+	T* SnapNewItem(int Id) { return static_cast<T*>(SnapNewItem(T::ms_MsgId, Id, sizeof(T))); }
 
 	enum
 	{

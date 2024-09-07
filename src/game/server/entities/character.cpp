@@ -225,7 +225,8 @@ void CCharacter::FireWeapon()
 		}
 	}
 
-	const vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
+	const vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
+	const vec2 Direction = normalize(MouseTarget);
 	const vec2 ProjStartPos = m_Pos + Direction * GetProximityRadius() * 0.75f;
 	switch(m_Core.m_ActiveWeapon)
 	{
@@ -287,8 +288,19 @@ void CCharacter::FireWeapon()
 		case WEAPON_GUN:
 		{
 			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveGun)->IsEquipped();
-			new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos, Direction, (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime),
-				g_pData->m_Weapons.m_Gun.m_pBase->m_Damage, IsExplosive, 0, -1, WEAPON_GUN);
+			new CProjectile(
+				GameWorld(), 
+				WEAPON_GUN, 
+				m_pPlayer->GetCID(), 
+				ProjStartPos, 
+				Direction, 
+				(int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime),
+				g_pData->m_Weapons.m_Gun.m_pBase->m_Damage, 
+				IsExplosive, 
+				0, 
+				-1,
+				MouseTarget,
+				WEAPON_GUN);
 
 			GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 		} break;
@@ -297,37 +309,49 @@ void CCharacter::FireWeapon()
 		{
 			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
 			const int ShotSpread = 5 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadShotgun), 36);
-			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-			Msg.AddInt(ShotSpread);
 			for(int i = 0; i <= ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
 				const float a = angle(Direction) + Spreading;
 				const float Speed = (float)GS()->Tuning()->m_ShotgunSpeeddiff + random_float(0.2f);
-				new CProjectile(GameWorld(), WEAPON_SHOTGUN, m_pPlayer->GetCID(), ProjStartPos,
+				new CProjectile(
+					GameWorld(), 
+					WEAPON_SHOTGUN, 
+					m_pPlayer->GetCID(), 
+					ProjStartPos,
 					vec2(cosf(a), sinf(a)) * Speed,
 					(int)(Server()->TickSpeed() * GS()->Tuning()->m_ShotgunLifetime),
-					g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage, IsExplosive, 0, 15, WEAPON_SHOTGUN);
+					g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage, 
+					IsExplosive, 
+					0, 
+					15,
+					MouseTarget,
+					WEAPON_SHOTGUN);
 			}
-			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
 			GS()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
 		} break;
 
 		case WEAPON_GRENADE:
 		{
 			const int ShotSpread = 1 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadGrenade), 21);
-			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-			Msg.AddInt(ShotSpread);
 			for(int i = 0; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
 				const float a = angle(Direction) + Spreading;
-				new CProjectile(GameWorld(), WEAPON_GRENADE, m_pPlayer->GetCID(), ProjStartPos,
+				new CProjectile(
+					GameWorld(), 
+					WEAPON_GRENADE, 
+					m_pPlayer->GetCID(), 
+					ProjStartPos,
 					vec2(cosf(a), sinf(a)),
 					(int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime),
-					g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GRENADE);
+					g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage, 
+					true, 
+					0, 
+					SOUND_GRENADE_EXPLODE,
+					MouseTarget,
+					WEAPON_GRENADE);
 			}
-			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
 			GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
 		} break;
 
@@ -1070,7 +1094,7 @@ void CCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_FreezeEnd = 0;
 	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
 	pDDNetCharacter->m_TeleCheckpoint = 0;
-	pDDNetCharacter->m_StrongWeakID = 0;
+	pDDNetCharacter->m_StrongWeakId = 0;
 
 	// Display Informations
 	pDDNetCharacter->m_JumpedTotal = m_Core.m_JumpedTotal;

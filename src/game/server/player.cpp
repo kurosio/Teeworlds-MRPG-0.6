@@ -18,7 +18,6 @@
 #include "core/components/skills/skill_data.h"
 #include "core/components/groups/group_data.h"
 #include "core/components/worlds/world_data.h"
-#include "core/entities/tools/draw_board.h"
 
 #include "core/tools/vote_optional.h"
 
@@ -28,10 +27,11 @@ IServer* CPlayer::Server() const { return m_pGS->Server(); };
 
 CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 {
-	m_WantSpawn = true;
-	m_SnapHealthNicknameTick = 0;
 	m_aPlayerTick[Die] = Server()->Tick();
 	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
+	m_SnapHealthNicknameTick = 0;
+
+	m_WantSpawn = true;
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 	m_Cooldown.Init(ClientID);
@@ -47,7 +47,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 		GS()->SendTuningParams(ClientID);
 
 		m_Afk = false;
-		delete m_pLastInput;
 		m_pLastInput = new CNetObj_PlayerInput({ 0 });
 		m_LastInputInit = false;
 		m_LastPlaytime = 0;
@@ -343,7 +342,7 @@ void CPlayer::HandleTuningParams()
 
 void CPlayer::Snap(int SnappingClient)
 {
-	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, m_ClientID, sizeof(CNetObj_ClientInfo)));
+	CNetObj_ClientInfo* pClientInfo = Server()->SnapNewItem<CNetObj_ClientInfo>(m_ClientID);
 	if(!pClientInfo)
 		return;
 
@@ -375,13 +374,13 @@ void CPlayer::Snap(int SnappingClient)
 	pClientInfo->m_ColorBody = GetTeeInfo().m_ColorBody;
 	pClientInfo->m_ColorFeet = GetTeeInfo().m_ColorFeet;
 
-	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, m_ClientID, sizeof(CNetObj_PlayerInfo)));
+	CNetObj_PlayerInfo* pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(m_ClientID);
 	if(!pPlayerInfo)
 		return;
 
 	const bool localClient = m_ClientID == SnappingClient;
 	pPlayerInfo->m_Local = localClient;
-	pPlayerInfo->m_ClientID = m_ClientID;
+	pPlayerInfo->m_ClientId = m_ClientID;
 	pPlayerInfo->m_Team = GetTeam();
 	pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
 	pPlayerInfo->m_Score = Account()->GetLevel();
@@ -401,7 +400,7 @@ void CPlayer::Snap(int SnappingClient)
 		const bool isFixedViewLocked = m_FixedView.IsLocked();
 		pSpectatorInfo->m_X = m_ViewPos.x = (isFixedViewLocked ? m_FixedView.LockedAt.x : m_ViewPos.x);
 		pSpectatorInfo->m_Y = m_ViewPos.y = (isFixedViewLocked ? m_FixedView.LockedAt.y : m_ViewPos.y);
-		pSpectatorInfo->m_SpectatorID = m_ClientID;
+		pSpectatorInfo->m_SpectatorId = m_ClientID;
 	}
 }
 
@@ -422,7 +421,7 @@ void CPlayer::FakeSnap()
 
 	pPlayerInfo->m_Latency = m_Latency.m_Min;
 	pPlayerInfo->m_Local = 1;
-	pPlayerInfo->m_ClientID = FakeID;
+	pPlayerInfo->m_ClientId = FakeID;
 	pPlayerInfo->m_Score = -9999;
 	pPlayerInfo->m_Team = TEAM_SPECTATORS;
 
@@ -430,7 +429,7 @@ void CPlayer::FakeSnap()
 	if(!pSpectatorInfo)
 		return;
 
-	pSpectatorInfo->m_SpectatorID = -1;
+	pSpectatorInfo->m_SpectatorId = -1;
 	pSpectatorInfo->m_X = m_ViewPos.x;
 	pSpectatorInfo->m_Y = m_ViewPos.y;
 }

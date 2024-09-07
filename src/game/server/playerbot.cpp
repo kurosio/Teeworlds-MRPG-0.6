@@ -457,7 +457,7 @@ void CPlayerBot::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = 0;
 	pPlayerInfo->m_Score = 0;
 	pPlayerInfo->m_Local = LocalClient;
-	pPlayerInfo->m_ClientID = ID;
+	pPlayerInfo->m_ClientId = ID;
 	pPlayerInfo->m_Team = TEAM_BLUE;
 }
 

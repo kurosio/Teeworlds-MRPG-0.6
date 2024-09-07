@@ -10,7 +10,6 @@ class CTutorialManager : public MmoComponent
 {
 	~CTutorialManager() override
 	{
-		// free data
 		mrpgstd::free_container(TutorialBase::Data());
 	}
 
@@ -19,8 +18,8 @@ class CTutorialManager : public MmoComponent
 	TutorialBase* GetTutorial(int ID) const { return TutorialBase::Data()[ID]; }
 
 public:
-	int GetSize() const { return (int)TutorialBase::Data().size(); }
-	void HandleTutorial(CPlayer* pPlayer) const;
+	int GetTutorialCount() const { return (int)TutorialBase::Data().size(); }
+	void ProcessTutorialStep(CPlayer* pPlayer) const;
 };
 
 #endif

@@ -6,7 +6,7 @@
 #include "character.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon)
+		int Damage, bool Explosive, float Force, int SoundImpact, vec2 InitDir, int Weapon)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE, Pos)
 {
 	m_Type = Type;
@@ -19,6 +19,7 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_Weapon = Weapon;
 	m_StartTick = Server()->Tick();
 	m_Explosive = Explosive;
+	m_InitDir = InitDir;
 
 	GameWorld()->InsertEntity(this);
 }
@@ -102,6 +103,47 @@ void CProjectile::TickPaused()
 	++m_StartTick;
 }
 
+void CProjectile::Snap(int SnappingClient)
+{
+	const float Ct = (Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed();
+	if (NetworkClipped(SnappingClient, GetPos(Ct)))
+		return;
+
+	CNetObj_DDRaceProjectile DDRaceProjectile;
+	int SnappingClientVersion = GS()->GetClientVersion(SnappingClient);\
+
+	if(SnappingClientVersion >= VERSION_DDNET_ENTITY_NETOBJS)
+	{
+		CNetObj_DDNetProjectile* pDDNetProjectile = static_cast<CNetObj_DDNetProjectile*>(Server()->SnapNewItem(NETOBJTYPE_DDNETPROJECTILE, GetID(), sizeof(CNetObj_DDNetProjectile)));
+		if(!pDDNetProjectile)
+		{
+			return;
+		}
+		FillExtraInfo(pDDNetProjectile);
+	}
+	else if(SnappingClientVersion >= VERSION_DDNET_ANTIPING_PROJECTILE && FillExtraInfoLegacy(&DDRaceProjectile))
+	{
+		int Type = SnappingClientVersion < VERSION_DDNET_MSG_LEGACY ? (int)NETOBJTYPE_PROJECTILE : NETOBJTYPE_DDRACEPROJECTILE;
+		void* pProj = Server()->SnapNewItem(Type, GetID(), sizeof(DDRaceProjectile));
+		if(!pProj)
+		{
+			return;
+		}
+		mem_copy(pProj, &DDRaceProjectile, sizeof(DDRaceProjectile));
+	}
+	else
+	{
+		CNetObj_Projectile* pProj = Server()->SnapNewItem<CNetObj_Projectile>(GetID());
+		if(!pProj)
+		{
+			return;
+		}
+		FillInfo(pProj);
+	}
+}
+
+
+
 void CProjectile::FillInfo(CNetObj_Projectile* pProj)
 {
 	pProj->m_X = (int)m_Pos.x;
@@ -112,58 +154,71 @@ void CProjectile::FillInfo(CNetObj_Projectile* pProj)
 	pProj->m_Type = m_Type;
 }
 
-void CProjectile::Snap(int SnappingClient)
+void CProjectile::FillExtraInfo(CNetObj_DDNetProjectile* pProj)
 {
-	const float Ct = (Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed();
-	if (NetworkClipped(SnappingClient, GetPos(Ct)))
-		return;
-
-	int SnappingClientVersion = GS()->GetClientVersion(SnappingClient);
-	CNetObj_DDNetProjectile DDNetProjectile;
-	if(SnappingClientVersion >= VERSION_DDNET_ANTIPING_PROJECTILE && FillExtraInfo(&DDNetProjectile))
+	int Flags = 0;
+	/*if(m_Bouncing & 1)
 	{
-		int Type = SnappingClientVersion < VERSION_DDNET_MSG_LEGACY ? (int)NETOBJTYPE_PROJECTILE : NETOBJTYPE_DDNETPROJECTILE;
-		void* pProj = Server()->SnapNewItem(Type, GetID(), sizeof(DDNetProjectile));
-		if(!pProj)
-		{
-			return;
-		}
-		mem_copy(pProj, &DDNetProjectile, sizeof(DDNetProjectile));
+		Flags |= PROJECTILEFLAG_BOUNCE_HORIZONTAL;
+	}
+	if(m_Bouncing & 2)
+	{
+		Flags |= PROJECTILEFLAG_BOUNCE_VERTICAL;
+	}*/
+	if(m_Explosive)
+	{
+		Flags |= PROJECTILEFLAG_EXPLOSIVE;
+	}
+	/*if(m_Freeze)
+	{
+		Flags |= PROJECTILEFLAG_FREEZE;
+	}*/
+
+	if(m_Owner < 0)
+	{
+		pProj->m_VelX = round_to_int(m_Direction.x * 1e6f);
+		pProj->m_VelY = round_to_int(m_Direction.y * 1e6f);
 	}
 	else
 	{
-		CNetObj_Projectile* pProj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
-		if(!pProj)
-		{
-			return;
-		}
-		FillInfo(pProj);
+		pProj->m_VelX = round_to_int(m_InitDir.x);
+		pProj->m_VelY = round_to_int(m_InitDir.y);
+		Flags |= PROJECTILEFLAG_NORMALIZE_VEL;
 	}
+
+	pProj->m_X = round_to_int(m_Pos.x * 100.0f);
+	pProj->m_Y = round_to_int(m_Pos.y * 100.0f);
+	pProj->m_Type = m_Type;
+	pProj->m_StartTick = m_StartTick;
+	pProj->m_Owner = m_Owner;
+	pProj->m_Flags = Flags;
+	pProj->m_SwitchNumber = 0;
+	pProj->m_TuneZone = 0;
 }
 
-bool CProjectile::FillExtraInfo(CNetObj_DDNetProjectile* pProj)
+bool CProjectile::FillExtraInfoLegacy(CNetObj_DDRaceProjectile* pProj)
 {
 	const int MaxPos = 0x7fffffff / 100;
-	if(abs((int)m_Pos.y) + 1 >= MaxPos || abs((int)m_Pos.x) + 1 >= MaxPos)
+	if(absolute((int)m_Pos.y) + 1 >= MaxPos || absolute((int)m_Pos.x) + 1 >= MaxPos)
 	{
 		//If the modified data would be too large to fit in an integer, send normal data instead
 		return false;
 	}
 	//Send additional/modified info, by modifying the fields of the netobj
-	float Angle = -atan2f(m_Direction.x, m_Direction.y);
+	float Angle = -std::atan2(m_Direction.x, m_Direction.y);
 
 	int Data = 0;
-	Data |= (abs(m_Owner) & 255) << 0;
+	Data |= (absolute(m_Owner) & 255) << 0;
 	if(m_Owner < 0)
-		Data |= PROJECTILEFLAG_NO_OWNER;
+		Data |= LEGACYPROJECTILEFLAG_NO_OWNER;
 	//This bit tells the client to use the extra info
-	Data |= PROJECTILEFLAG_IS_DDNET;
-	// PROJECTILEFLAG_BOUNCE_HORIZONTAL, PROJECTILEFLAG_BOUNCE_VERTICAL
-	//Data |= (0 & 3) << 10;
+	Data |= LEGACYPROJECTILEFLAG_IS_DDNET;
+	// LEGACYPROJECTILEFLAG_BOUNCE_HORIZONTAL, LEGACYPROJECTILEFLAG_BOUNCE_VERTICAL
+	Data |= (0 & 3) << 10;
 	if(m_Explosive)
-		Data |= PROJECTILEFLAG_EXPLOSIVE;
+		Data |= LEGACYPROJECTILEFLAG_EXPLOSIVE;
 	//if(m_Freeze)
-	//	Data |= PROJECTILEFLAG_FREEZE;
+	//	Data |= LEGACYPROJECTILEFLAG_FREEZE;
 
 	pProj->m_X = (int)(m_Pos.x * 100.0f);
 	pProj->m_Y = (int)(m_Pos.y * 100.0f);

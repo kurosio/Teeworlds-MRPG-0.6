@@ -254,7 +254,7 @@ void CGS::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 	{
 		pEvent->m_X = (int)Pos.x;
 		pEvent->m_Y = (int)Pos.y;
-		pEvent->m_ClientID = ClientID;
+		pEvent->m_ClientId = ClientID;
 	}
 }
 
@@ -268,7 +268,7 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 	{
 		pEvent->m_X = (int)Pos.x;
 		pEvent->m_Y = (int)Pos.y;
-		pEvent->m_SoundID = Sound;
+		pEvent->m_SoundId = Sound;
 	}
 }
 
@@ -282,8 +282,129 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 	{
 		pEvent->m_X = (int)m_apPlayers[ClientID]->m_ViewPos.x;
 		pEvent->m_Y = (int)m_apPlayers[ClientID]->m_ViewPos.y;
-		pEvent->m_SoundID = Sound;
+		pEvent->m_SoundId = Sound;
 	}
+}
+
+bool CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick, int LaserType, int Subtype, int Owner, int Flags) const
+{
+	if(GetClientVersion(SnappingClient) >= VERSION_DDNET_MULTI_LASER)
+	{
+		CNetObj_DDNetLaser* pObj = Server()->SnapNewItem<CNetObj_DDNetLaser>(ID);
+		if(!pObj)
+			return false;
+
+		pObj->m_ToX = (int)To.x;
+		pObj->m_ToY = (int)To.y;
+		pObj->m_FromX = (int)From.x;
+		pObj->m_FromY = (int)From.y;
+		pObj->m_StartTick = StartTick;
+		pObj->m_Owner = Owner;
+		pObj->m_Type = LaserType;
+		pObj->m_Subtype = Subtype;
+		pObj->m_SwitchNumber = 0;
+		pObj->m_Flags = Flags;
+	}
+	else
+	{
+		CNetObj_Laser* pObj = Server()->SnapNewItem<CNetObj_Laser>(ID);
+		if(!pObj)
+			return false;
+
+		pObj->m_X = (int)To.x;
+		pObj->m_Y = (int)To.y;
+		pObj->m_FromX = (int)From.x;
+		pObj->m_FromY = (int)From.y;
+		pObj->m_StartTick = StartTick;
+	}
+
+	return true;
+}
+
+bool CGS::SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type, int SubType) const
+{
+	if(GetClientVersion(SnappingClient) >= VERSION_DDNET_ENTITY_NETOBJS)
+	{
+		CNetObj_DDNetPickup* pPickup = Server()->SnapNewItem<CNetObj_DDNetPickup>(ID);
+		if(!pPickup)
+			return false;
+
+		pPickup->m_X = (int)Pos.x;
+		pPickup->m_Y = (int)Pos.y;
+		pPickup->m_Type = Type;
+		pPickup->m_Subtype = SubType;
+		pPickup->m_SwitchNumber = 0;
+	}
+	else
+	{
+		CNetObj_Pickup* pPickup = Server()->SnapNewItem<CNetObj_Pickup>(ID);
+		if(!pPickup)
+			return false;
+
+		pPickup->m_X = (int)Pos.x;
+		pPickup->m_Y = (int)Pos.y;
+		pPickup->m_Type = Type;
+		if(GetClientVersion(SnappingClient) < VERSION_DDNET_WEAPON_SHIELDS)
+		{
+			if(Type >= POWERUP_ARMOR_SHOTGUN && Type <= POWERUP_ARMOR_LASER)
+				pPickup->m_Type = POWERUP_ARMOR;
+		}
+		pPickup->m_Subtype = SubType;
+	}
+
+	return true;
+}
+
+bool CGS::SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2& Vel, int StartTick, int Type, int Owner, int Flags) const
+{
+	const int SnappingClientVersion = GetClientVersion(SnappingClient);
+
+	if(SnappingClientVersion >= VERSION_DDNET_ENTITY_NETOBJS)
+	{
+		CNetObj_DDNetProjectile* pProj = Server()->SnapNewItem<CNetObj_DDNetProjectile>(ID);
+		if(!pProj)
+			return false;
+
+		pProj->m_X = round_to_int(Pos.x * 100.0f);
+		pProj->m_Y = round_to_int(Pos.y * 100.0f);
+		pProj->m_VelX = round_to_int(Vel.x);
+		pProj->m_VelY = round_to_int(Vel.y);
+		pProj->m_Type = Type;
+		pProj->m_StartTick = StartTick;
+		pProj->m_Owner = Owner;
+		pProj->m_Flags = Flags;
+		pProj->m_SwitchNumber = 0;
+		pProj->m_TuneZone = 0;
+	}
+	else if(SnappingClientVersion >= VERSION_DDNET_MSG_LEGACY)
+	{
+		CNetObj_DDRaceProjectile* pProj = Server()->SnapNewItem<CNetObj_DDRaceProjectile>(ID);
+		if(!pProj)
+			return false;
+
+		float Angle = -std::atan2(Vel.x, Vel.y);
+		pProj->m_X = (int)(Pos.x * 100.0f);
+		pProj->m_Y = (int)(Pos.y * 100.0f);
+		pProj->m_Angle = (int)(Angle * 1000000.0f);
+		pProj->m_Data = Flags;
+		pProj->m_StartTick = StartTick;
+		pProj->m_Type = Type;
+	}
+	else
+	{
+		CNetObj_Projectile* pProj = Server()->SnapNewItem<CNetObj_Projectile>(ID);
+		if(!pProj)
+			return false;
+
+		pProj->m_X = (int)Pos.x;
+		pProj->m_Y = (int)Pos.y;
+		pProj->m_VelX = (int)(Vel.x * 100.0f);
+		pProj->m_VelY = (int)(Vel.y * 100.0f);
+		pProj->m_StartTick = StartTick;
+		pProj->m_Type = Type;
+	}
+
+	return true;
 }
 
 void CGS::SendChatTarget(int ClientID, const char* pText) const
@@ -291,7 +412,7 @@ void CGS::SendChatTarget(int ClientID, const char* pText) const
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Team = 0;
 	Msg.m_pMessage = pText;
-	Msg.m_ClientID = -1;
+	Msg.m_ClientId = -1;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
@@ -309,7 +430,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Team = 0;
-	Msg.m_ClientID = ChatterClientID;
+	Msg.m_ClientId = ChatterClientID;
 	Msg.m_pMessage = pText;
 
 	if(Mode == CHAT_ALL)
@@ -456,7 +577,7 @@ void CGS::MarkUpdatedBroadcast(int ClientID)
 void CGS::SendEmoticon(int ClientID, int Emoticon)
 {
 	CNetMsg_Sv_Emoticon Msg;
-	Msg.m_ClientID = ClientID;
+	Msg.m_ClientId = ClientID;
 	Msg.m_Emoticon = Emoticon;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, m_WorldID);
 }

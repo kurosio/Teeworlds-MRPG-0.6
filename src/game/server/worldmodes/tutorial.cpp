@@ -23,9 +23,9 @@ void CGameControllerTutorial::Tick()
 			if(CPlayer* pPlayer = GS()->GetPlayer(i, true, true); pPlayer)
 			{
 				CTutorialManager* pTutorialManager = GS()->Core()->TutorialManager();
-				pTutorialManager->HandleTutorial(pPlayer);
+				pTutorialManager->ProcessTutorialStep(pPlayer);
 
-				if(pPlayer->m_TutorialStep >= pTutorialManager->GetSize() && !pPlayer->GetItem(itAdventurersBadge)->HasItem())
+				if(pPlayer->m_TutorialStep >= pTutorialManager->GetTutorialCount() && !pPlayer->GetItem(itAdventurersBadge)->HasItem())
 					pPlayer->GetItem(itAdventurersBadge)->Add(1);
 			}
 		}

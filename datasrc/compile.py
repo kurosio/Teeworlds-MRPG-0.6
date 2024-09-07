@@ -4,9 +4,12 @@ import network
 
 from datatypes import EmitDefinition, EmitTypeDeclaration
 
-def create_enum_table(names, num):
+def create_enum_table(names, num, start = 0):
 	lines = []
 	lines += ["enum", "{"]
+	if len(names) > 0 and start != 0:
+		lines += [f"\t{names[0]} = {start},"]
+		names = names[1:]
 	for name in names:
 		lines += [f"\t{name},"]
 	lines += [f"\t{num}", "};"]
@@ -48,7 +51,7 @@ def gen_network_header():
 	print(network.RawHeader)
 
 	for e in network.Enums:
-		for line in create_enum_table([f"{e.name}_{v}" for v in e.values], f'NUM_{e.name}S'): # pylint: disable=no-member
+		for line in create_enum_table([f"{e.name}_{v}" for v in e.values], f'NUM_{e.name}S', e.start): # pylint: disable=no-member
 			print(line)
 		print("")
 
@@ -262,10 +265,7 @@ void *CNetObjHandler::SecureUnpackObj(int Type, CUnpacker *pUnpacker)
 	"""]
 
 	for item in network.Objects:
-		base_item = None
-		if item.base:
-			base_item = next(i for i in network.Objects if i.name == item.base)
-		for line in item.emit_uncompressed_unpack_and_validate(base_item):
+		for line in item.emit_uncompressed_unpack_and_validate(network.Objects):
 			lines += ["\t" + line]
 		lines += ['\t']
 
