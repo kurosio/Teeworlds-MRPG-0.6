@@ -303,7 +303,7 @@ void CCommandProcessor::ConChatSound(IConsole::IResult* pResult, void* pUser)
 	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
 		return;
 
-	const int SoundID = clamp(pResult->GetInteger(0), 0, 40);
+	const int SoundID = maximum(0, pResult->GetInteger(0));
 	pGS->CreateSound(pPlayer->GetCharacter()->m_Core.m_Pos, SoundID);
 }
 

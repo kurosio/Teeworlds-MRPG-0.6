@@ -309,11 +309,13 @@ void CCharacter::FireWeapon()
 		{
 			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
 			const int ShotSpread = 5 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadShotgun), 36);
-			for(int i = 0; i <= ShotSpread; ++i)
+			for(int i = 0; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
 				const float a = angle(Direction) + Spreading;
 				const float Speed = (float)GS()->Tuning()->m_ShotgunSpeeddiff + random_float(0.2f);
+				vec2 TargetPos = MouseTarget + vec2(cosf(a), sinf(a)) * (Speed * 500.0f);
+
 				new CProjectile(
 					GameWorld(), 
 					WEAPON_SHOTGUN, 
@@ -325,7 +327,7 @@ void CCharacter::FireWeapon()
 					IsExplosive, 
 					0, 
 					15,
-					MouseTarget,
+					TargetPos,
 					WEAPON_SHOTGUN);
 			}
 			GS()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
@@ -338,6 +340,9 @@ void CCharacter::FireWeapon()
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
 				const float a = angle(Direction) + Spreading;
+				const float Speed = (float)GS()->Tuning()->m_GrenadeSpeed + random_float(0.2f);
+				vec2 TargetPos = MouseTarget + vec2(cosf(a), sinf(a)) * (Speed * 500.0f);
+
 				new CProjectile(
 					GameWorld(), 
 					WEAPON_GRENADE, 
@@ -349,7 +354,7 @@ void CCharacter::FireWeapon()
 					true, 
 					0, 
 					SOUND_GRENADE_EXPLODE,
-					MouseTarget,
+					TargetPos,
 					WEAPON_GRENADE);
 			}
 			GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);

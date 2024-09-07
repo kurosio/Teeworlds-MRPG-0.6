@@ -260,29 +260,37 @@ void CGS::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 
 void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
-	if(Sound < 0 || Sound > SOUND_MENU)
-		return;
-
-	CNetEvent_SoundWorld* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask);
-	if(pEvent)
+	if(Sound > SOUND_MENU)
+	{
+		if(auto* pEvent = (CNetEvent_MapSoundWorld*)m_Events.Create(NETEVENTTYPE_MAPSOUNDWORLD, sizeof(CNetEvent_MapSoundWorld), Mask))
+		{
+			pEvent->m_X = round_to_int(Pos.x);
+			pEvent->m_Y = round_to_int(Pos.y);
+			pEvent->m_SoundId = (Sound - SOUND_MENU) - 1;
+		}
+	}
+	else if(auto* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask))
 	{
 		pEvent->m_X = (int)Pos.x;
 		pEvent->m_Y = (int)Pos.y;
-		pEvent->m_SoundId = Sound;
+		pEvent->m_SoundId = maximum(0, Sound);
 	}
 }
 
 void CGS::CreatePlayerSound(int ClientID, int Sound)
 {
-	if(!m_apPlayers[ClientID] || Sound < 0 || Sound > SOUND_MENU)
-		return;
-
-	CNetEvent_SoundWorld* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), CmaskOne(ClientID));
-	if(pEvent)
+	if(Sound > SOUND_MENU)
+	{
+		CNetMsg_Sv_MapSoundGlobal Msg;
+		Msg.m_SoundId = (Sound - SOUND_MENU) - 1;
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+	}
+	else if(auto* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), CmaskOne(ClientID)); 
+		pEvent && GetPlayer(ClientID))
 	{
 		pEvent->m_X = (int)m_apPlayers[ClientID]->m_ViewPos.x;
 		pEvent->m_Y = (int)m_apPlayers[ClientID]->m_ViewPos.y;
-		pEvent->m_SoundId = Sound;
+		pEvent->m_SoundId = maximum(0, Sound);
 	}
 }
 
