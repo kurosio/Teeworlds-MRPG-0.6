@@ -6,7 +6,7 @@
 class CEventHandler
 {
 	static const int MAX_EVENTS = 128;
-	static const int MAX_DATASIZE = 128*64;
+	static const int MAX_DATASIZE = 128 * 64;
 
 	int m_aTypes[MAX_EVENTS]; // TODO: remove some of these arrays
 	int m_aOffsets[MAX_EVENTS];
@@ -17,12 +17,16 @@ class CEventHandler
 	class CGS* m_pGameServer;
 	int m_CurrentOffset;
 	int m_NumEvents;
+
 public:
-	CGS *GS() const { return m_pGameServer; }
-	void SetGameServer(CGS *pGameServer);
+	CGS* GS() const { return m_pGameServer; }
+	void SetGameServer(CGS* pGameServer);
 
 	CEventHandler();
-	void *Create(int Type, int Size, int64_t Mask = -1);
+
+	template<typename T>
+	T* Create(int64_t Mask = -1) { return static_cast<T*>(Create(T::ms_MsgId, sizeof(T), Mask)); }
+	void* Create(int Type, int Size, int64_t Mask = -1);
 	void Clear();
 	void Snap(int SnappingClient);
 };

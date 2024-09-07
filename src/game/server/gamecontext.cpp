@@ -140,8 +140,7 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float
 	for(int i = 0; i < Amount; i++)
 	{
 		float f = mix(s, e, (i + 1) / (float)(Amount + 2));
-		CNetEvent_DamageInd* pEvent = static_cast<CNetEvent_DamageInd*>(m_Events.Create(NETEVENTTYPE_DAMAGEIND, sizeof(CNetEvent_DamageInd), Mask));
-		if(pEvent)
+		if(auto* pEvent = m_Events.Create<CNetEvent_DamageInd>(Mask))
 		{
 			pEvent->m_X = (int)Pos.x;
 			pEvent->m_Y = (int)Pos.y;
@@ -158,8 +157,7 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float
 
 void CGS::CreateHammerHit(vec2 Pos, int64_t Mask)
 {
-	CNetEvent_HammerHit* pEvent = (CNetEvent_HammerHit*)m_Events.Create(NETEVENTTYPE_HAMMERHIT, sizeof(CNetEvent_HammerHit), Mask);
-	if(pEvent)
+	if(auto* pEvent = m_Events.Create<CNetEvent_HammerHit>(Mask))
 	{
 		pEvent->m_X = (int)Pos.x;
 		pEvent->m_Y = (int)Pos.y;
@@ -192,11 +190,10 @@ void CGS::CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int 
 void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 {
 	// create the explosion event
-	CNetEvent_Explosion* pEvent = static_cast<CNetEvent_Explosion*>(m_Events.Create(NETEVENTTYPE_EXPLOSION, sizeof(CNetEvent_Explosion)));
-	if(pEvent)
+	if(auto* pEvent = m_Events.Create<CNetEvent_Explosion>())
 	{
-		pEvent->m_X = static_cast<int>(Pos.x);
-		pEvent->m_Y = static_cast<int>(Pos.y);
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
 	}
 
 	// define constants
@@ -239,18 +236,16 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 
 void CGS::CreatePlayerSpawn(vec2 Pos, int64_t Mask)
 {
-	CNetEvent_Spawn* ev = (CNetEvent_Spawn*)m_Events.Create(NETEVENTTYPE_SPAWN, sizeof(CNetEvent_Spawn), Mask);
-	if(ev)
+	if(auto* pEvent = m_Events.Create<CNetEvent_Spawn>(Mask))
 	{
-		ev->m_X = (int)Pos.x;
-		ev->m_Y = (int)Pos.y;
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
 	}
 }
 
 void CGS::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 {
-	CNetEvent_Death* pEvent = (CNetEvent_Death*)m_Events.Create(NETEVENTTYPE_DEATH, sizeof(CNetEvent_Death), Mask);
-	if(pEvent)
+	if(auto* pEvent = m_Events.Create<CNetEvent_Death>(Mask))
 	{
 		pEvent->m_X = (int)Pos.x;
 		pEvent->m_Y = (int)Pos.y;
@@ -262,14 +257,14 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
 	if(Sound >= NUM_SOUNDS)
 	{
-		if(auto* pEvent = (CNetEvent_MapSoundWorld*)m_Events.Create(NETEVENTTYPE_MAPSOUNDWORLD, sizeof(CNetEvent_MapSoundWorld), Mask))
+		if(auto* pEvent = m_Events.Create<CNetEvent_MapSoundWorld>(Mask))
 		{
-			pEvent->m_X = round_to_int(Pos.x);
-			pEvent->m_Y = round_to_int(Pos.y);
+			pEvent->m_X = (int)Pos.x;
+			pEvent->m_Y = (int)Pos.y;
 			pEvent->m_SoundId = Sound - NUM_SOUNDS;
 		}
 	}
-	else if(auto* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask))
+	else if(auto* pEvent = m_Events.Create<CNetEvent_SoundWorld>(Mask))
 	{
 		pEvent->m_X = (int)Pos.x;
 		pEvent->m_Y = (int)Pos.y;
@@ -285,8 +280,7 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 		Msg.m_SoundId = Sound - NUM_SOUNDS;
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 	}
-	else if(auto* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), CmaskOne(ClientID)); 
-		pEvent && GetPlayer(ClientID))
+	else if(auto* pEvent = m_Events.Create<CNetEvent_SoundWorld>(CmaskOne(ClientID)); pEvent && GetPlayer(ClientID))
 	{
 		pEvent->m_X = (int)m_apPlayers[ClientID]->m_ViewPos.x;
 		pEvent->m_Y = (int)m_apPlayers[ClientID]->m_ViewPos.y;
