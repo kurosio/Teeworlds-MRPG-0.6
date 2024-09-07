@@ -260,13 +260,13 @@ void CGS::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 
 void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
-	if(Sound > SOUND_MENU)
+	if(Sound >= NUM_SOUNDS)
 	{
 		if(auto* pEvent = (CNetEvent_MapSoundWorld*)m_Events.Create(NETEVENTTYPE_MAPSOUNDWORLD, sizeof(CNetEvent_MapSoundWorld), Mask))
 		{
 			pEvent->m_X = round_to_int(Pos.x);
 			pEvent->m_Y = round_to_int(Pos.y);
-			pEvent->m_SoundId = (Sound - SOUND_MENU) - 1;
+			pEvent->m_SoundId = Sound - NUM_SOUNDS;
 		}
 	}
 	else if(auto* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), Mask))
@@ -279,10 +279,10 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 
 void CGS::CreatePlayerSound(int ClientID, int Sound)
 {
-	if(Sound > SOUND_MENU)
+	if(Sound >= NUM_SOUNDS)
 	{
 		CNetMsg_Sv_MapSoundGlobal Msg;
-		Msg.m_SoundId = (Sound - SOUND_MENU) - 1;
+		Msg.m_SoundId = Sound - NUM_SOUNDS;
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 	}
 	else if(auto* pEvent = (CNetEvent_SoundWorld*)m_Events.Create(NETEVENTTYPE_SOUNDWORLD, sizeof(CNetEvent_SoundWorld), CmaskOne(ClientID)); 
