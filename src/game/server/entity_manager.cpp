@@ -121,22 +121,22 @@ void CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius
 	groupPtr->SetConfig("radius", Radius);
 
 	// initialize element & config
-	auto pCore = groupPtr->CreatePickup(Position, POWERUP_ARMOR);
-	pCore->SetConfig("lifetimeTick", Lifetime);
-	pCore->SetConfig("damage", Damage);
+	auto pPickup = groupPtr->CreatePickup(Position, POWERUP_ARMOR);
+	pPickup->SetConfig("lifetimeTick", Lifetime);
+	pPickup->SetConfig("damage", Damage);
 
 	// register event tick
-	pCore->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+	pPickup->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
-		// get configurations
 		int& LifeTime = pBase->GetRefConfig("lifetimeTick", 0);
 		const int Damage = pBase->GetConfig("damage", 0);
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
+		const vec2 BasePos = pBase->GetPos();
 
-		// lifetime
+		// life time
 		if(LifeTime <= 0)
 		{
-			pBase->GS()->CreateCyrcleExplosion(12, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_GRENADE, Damage);
+			pBase->GS()->CreateCyrcleExplosion(12, Radius, BasePos, pBase->GetClientID(), WEAPON_GRENADE, Damage);
 			pBase->MarkForDestroy();
 			return;
 		}
@@ -145,24 +145,30 @@ void CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius
 		// magnetism
 		for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
-			const float Dist = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
-			if(!pChar || Dist > Radius || Dist < 24.0f)
+			const float Dist = distance(BasePos, pChar->m_Core.m_Pos);
+			if(Dist > Radius || Dist < 24.0f)
 				continue;
 
 			if(!pBase->GetPlayer() || (pBase->GetClientID() != pChar->GetPlayer()->GetCID() && pChar->IsAllowedPVP(pBase->GetClientID())))
-				pChar->m_Core.m_Vel -= normalize(pChar->m_Core.m_Pos - pBase->GetPos()) * 1.50f;
+			{
+				vec2 Dir = normalize(pChar->m_Core.m_Pos - BasePos);
+				pChar->m_Core.m_Vel -= Dir * 1.50f;
+			}
 		}
 	});
 
 	// register event snap
-	pCore->RegisterEvent(CBaseEntity::EventSnap, 12, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
+	pPickup->RegisterEvent(CBaseEntity::EventSnap, 12, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
-		const float AngleStep = 2.0f * pi / (float)vIds.size();
+		const float AngleStep = 2.0f * pi / static_cast<float>(vIds.size());
+		const vec2 BasePos = pBase->GetPos();
 
-		for(int i = 0; i < (int)vIds.size(); i++)
+		for(size_t i = 0; i < vIds.size(); ++i)
 		{
-			vec2 VertexPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
+			float Angle = AngleStep * static_cast<float>(i);
+			vec2 VertexPos = BasePos + vec2(Radius * cos(Angle), Radius * sin(Angle));
+
 			if(!pBase->GS()->SnapProjectile(SnappingClient, vIds[i], VertexPos, {}, pBase->Server()->Tick() - 1, WEAPON_HAMMER))
 				return;
 		}
@@ -187,20 +193,17 @@ void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth
 	// register event tick
 	pPickup->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
-		// get configurations
-		int& Lifetime = pBase->GetRefConfig("lifetimeTick", 0);
-		int& ReloadTick = pBase->GetRefConfig("currentReloadTick", 0);
-		const int HealthRestored = pBase->GetGroup()->GetConfig("healthRestored", 0);
-
 		// lifetime
-		if(!Lifetime)
+		int& Lifetime = pBase->GetRefConfig("lifetimeTick", 0);
+		if(Lifetime <= 0)
 		{
 			pBase->MarkForDestroy();
 			return;
 		}
 		Lifetime--;
 
-		// reload time
+		// reload
+		int& ReloadTick = pBase->GetRefConfig("currentReloadTick", 0);
 		if(ReloadTick > 0)
 		{
 			ReloadTick--;
@@ -208,11 +211,15 @@ void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth
 		}
 		ReloadTick = pBase->GetConfig("initialReloadTick", 2 * pBase->Server()->TickSpeed());
 
-		// health
+		// variables
 		bool ShowRestoreHealth = false;
-		for(auto pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+		const int HealthRestored = pBase->GetGroup()->GetConfig("healthRestored", 0);
+
+		// restore health
+		for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
-			if(distance(pBase->GetPos(), pChar->m_Core.m_Pos) < 620.f && 
+			const float Distance = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
+			if(Distance < 620.f &&
 				(!pBase->GetPlayer() || (pBase->GetClientID() == pChar->GetPlayer()->GetCID() || !pChar->IsAllowedPVP(pBase->GetClientID()))))
 			{
 				ShowRestoreHealth = true;
@@ -222,9 +229,7 @@ void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth
 
 		if(ShowRestoreHealth)
 		{
-			char aBuf[16];
-			str_format(aBuf, sizeof(aBuf), "%dHP", HealthRestored);
-			pBase->GS()->EntityManager()->Text(pBase->GetPos() + vec2(0, -96), 40, aBuf);
+			pBase->GS()->EntityManager()->Text(pBase->GetPos() + vec2(0, -96), 40, fmt("{}HP", HealthRestored).c_str());
 		}
 	});
 
@@ -232,12 +237,12 @@ void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth
 	pPickup->RegisterEvent(CBaseEntity::EventSnap, 4, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
 		const int ReloadTick = pBase->GetConfig("currentReloadTick", 0);
-		const float AngleStep = 2.0f * pi / (float)vIds.size();
-		const float Radius = clamp(0.0f + (float)ReloadTick, 0.0f, 32.0f);
+		const float Radius = clamp(static_cast<float>(ReloadTick), 0.0f, 32.0f);
+		const float AngleStep = 2.0f * pi / static_cast<float>(vIds.size());
 
-		for(int i = 0; i < (int)vIds.size(); i++)
+		for(size_t i = 0; i < vIds.size(); ++i)
 		{
-			const vec2 VertexPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * (float)i), Radius * sin(AngleStep * (float)i));
+			const vec2 VertexPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * static_cast<float>(i)), Radius * sin(AngleStep * static_cast<float>(i)));
 			if(!pBase->GS()->SnapPickup(SnappingClient, vIds[i], VertexPos, POWERUP_HEALTH))
 				return;
 		}
@@ -261,15 +266,19 @@ void CEntityManager::EnergyShield(int ClientID, vec2 Position, int Health, std::
 	// initialize elements
 	for(int i = 0; i < (int)vShieldEdges.size(); i++)
 	{
-		vec2 firstPos = vShieldEdges[i];
-		vec2 endPos = vShieldEdges[minimum(i + 1, (int)vShieldEdges.size() - 2)];
-		const auto pLaser = groupPtr->CreateLaser(Position + firstPos, Position + endPos, LASERTYPE_SHOTGUN);
+		vec2 startPos = vShieldEdges[i];
+		vec2 endPos = vShieldEdges[(i + 1) % vShieldEdges.size()];
+
+		const auto pLaser = groupPtr->CreateLaser(Position + startPos, Position + endPos, LASERTYPE_SHOTGUN);
+		pLaser->GetOptions().LaserSubtype = LASERDRAGGERTYPE_NORMAL;
+		pLaser->GetOptions().StartTickShift = 3;
 
 		// register event tick
-		pLaser->RegisterEvent(CBaseEntity::EventTick, [firstPos, endPos](CBaseEntity* pBase)
+		pLaser->RegisterEvent(CBaseEntity::EventTick, [startPos, endPos](CBaseEntity* pBase)
 		{
-			// check health
 			int& Health = pBase->GetGroup()->GetRefConfig("health", 0);
+
+			// health
 			if(Health <= 0)
 			{
 				pBase->GS()->CreateExplosion(pBase->GetPos(), pBase->GetClientID(), WEAPON_WORLD, 3);
@@ -278,38 +287,33 @@ void CEntityManager::EnergyShield(int ClientID, vec2 Position, int Health, std::
 				return;
 			}
 
-			// knock back
-			for(auto* p = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); p; p = (CCharacter*)p->TypeNext())
+			// knock back characters
+			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 			{
-				if(p->GetPlayer()->GetCID() != pBase->GetClientID() && p->IsAllowedPVP(pBase->GetClientID()))
+				if(pChar->GetPlayer()->GetCID() != pBase->GetClientID() && pChar->IsAllowedPVP(pBase->GetClientID()) &&
+					is_within_distance_on_line(48.0f, pBase->GetPos(), pBase->GetPosTo(), pChar->GetPos()))
 				{
-					if(is_within_distance_on_line(48.f, pBase->GetPos(), pBase->GetPosTo(), p->GetPos()))
-					{
-						vec2 knockBackDir = normalize(p->GetPos() - pBase->GetCharacter()->GetPos());
-						p->m_Core.m_Vel += knockBackDir * 12.f;
-						pBase->GetCharacter()->TakeDamage(knockBackDir, 100, pBase->GetPlayer()->GetCID(), WEAPON_SELF);
-					}
+					vec2 knockBackDir = normalize(pChar->GetPos() - pBase->GetPos());
+					pChar->m_Core.m_Vel += knockBackDir * 12.0f;
 				}
 			}
 
-			// destroy projectile
-			for(auto* p = (CProjectile*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_PROJECTILE); p; p = (CProjectile*)p->TypeNext())
+			// destroy projectiles
+			for(auto* pProj = (CProjectile*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_PROJECTILE); pProj; pProj = (CProjectile*)pProj->TypeNext())
 			{
-				if(p->GetOwner() != pBase->GetPlayer()->GetCID())
+				if(pProj->GetOwner() != pBase->GetPlayer()->GetCID() &&
+					is_within_distance_on_line(48.0f, pBase->GetPos(), pBase->GetPosTo(), pProj->GetCurrentPos()))
 				{
-					if(is_within_distance_on_line(48.f, pBase->GetPos(), pBase->GetPosTo(), p->GetCurrentPos()))
-					{
-						Health -= p->GetDamage();
-						pBase->GS()->CreateHammerHit(p->GetCurrentPos());
-						p->MarkForDestroy();
-					}
+					Health -= pProj->GetDamage();
+					pBase->GS()->CreateHammerHit(pProj->GetCurrentPos());
+					pProj->MarkForDestroy();
 				}
 			}
 
-			// new position
+			// update position
 			const auto* pChar = pBase->GetCharacter();
 			const float angle = std::atan2(pChar->m_Core.m_Input.m_TargetY, pChar->m_Core.m_Input.m_TargetX);
-			pBase->SetPos(rotate(firstPos, pChar->GetPos(), angle));
+			pBase->SetPos(rotate(startPos, pChar->GetPos(), angle));
 			pBase->SetPosTo(rotate(endPos, pChar->GetPos(), angle));
 		});
 
@@ -319,7 +323,6 @@ void CEntityManager::EnergyShield(int ClientID, vec2 Position, int Health, std::
 			const auto* pChar = pBase->GetCharacter();
 			const float angle = std::atan2(pChar->m_Core.m_Input.m_TargetY, pChar->m_Core.m_Input.m_TargetX);
 			const vec2 curPos = rotate(edgePos, pChar->GetPos(), angle);
-
 			if(!pBase->GS()->SnapPickup(SnappingClient, vIDs[0], curPos, POWERUP_ARMOR))
 				return;
 		});
@@ -336,13 +339,13 @@ void CEntityManager::FlameWall(int ClientID, vec2 Position, float Radius, int Li
 	groupPtr->SetConfig("radius", Radius);
 
 	// initialize element & config
-	auto pWall = groupPtr->CreatePickup(Position, POWERUP_ARMOR);
-	pWall->SetConfig("lifetimeTick", Lifetime);
-	pWall->SetConfig("damagePerTick", DamagePerTick);
-	pWall->SetConfig("slowDownFactor", SlowDownFactor);
+	auto pPickup = groupPtr->CreatePickup(Position, POWERUP_ARMOR);
+	pPickup->SetConfig("lifetimeTick", Lifetime);
+	pPickup->SetConfig("damagePerTick", DamagePerTick);
+	pPickup->SetConfig("slowDownFactor", SlowDownFactor);
 
 	// register event tick
-	pWall->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+	pPickup->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
 		// lifetime
 		int& Lifetime = pBase->GetRefConfig("lifetimeTick", 0);
@@ -353,33 +356,34 @@ void CEntityManager::FlameWall(int ClientID, vec2 Position, float Radius, int Li
 		}
 		Lifetime--;
 
-		// damage and slow down
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
 		const int DamagePerTick = pBase->GetConfig("damagePerTick", 0);
 		const float SlowDownFactor = pBase->GetConfig("slowDownFactor", 0.f);
+		const int TickSpeed = pBase->Server()->TickSpeed();
 
-		// random explosion on position
-		if(pBase->Server()->Tick() % pBase->Server()->TickSpeed() / 2 == 0)
+		// random explosion on radius
+		if(pBase->Server()->Tick() % (TickSpeed / 2) == 0)
 			pBase->GS()->CreateRandomRadiusExplosion(2, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_NINJA, DamagePerTick);
 
-		// find the closest enemies
-		for(auto* p = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); p; p = (CCharacter*)p->TypeNext())
+		// damage and slowdown enemies
+		for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
-			if(!p || distance(pBase->GetPos(), p->m_Core.m_Pos) > Radius)
+			if(distance(pBase->GetPos(), pChar->m_Core.m_Pos) > Radius)
 				continue;
 
-			if(!pBase->GetPlayer() || (pBase->GetClientID() != p->GetPlayer()->GetCID() && p->IsAllowedPVP(pBase->GetClientID())))
+			if(!pBase->GetPlayer() || (pBase->GetClientID() != pChar->GetPlayer()->GetCID() && pChar->IsAllowedPVP(pBase->GetClientID())))
 			{
-				if(pBase->Server()->Tick() % pBase->Server()->TickSpeed() == 0)
-					p->TakeDamage(vec2(0, 0), DamagePerTick, pBase->GetClientID(), WEAPON_WORLD);
-				p->m_Core.m_Vel *= SlowDownFactor;
+				if(pBase->Server()->Tick() % TickSpeed == 0)
+					pChar->TakeDamage(vec2(0, 0), DamagePerTick, pBase->GetClientID(), WEAPON_WORLD);
+
+				pChar->m_Core.m_Vel *= SlowDownFactor;
 			}
 		}
 	});
 
 	// register event snap
 	enum { NUM_CIRCLE = 10, NUM_PROJ_INSIDE = 2, NUM_IDS = NUM_CIRCLE + NUM_PROJ_INSIDE};
-	pWall->RegisterEvent(CBaseEntity::EventSnap, NUM_IDS, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
+	pPickup->RegisterEvent(CBaseEntity::EventSnap, NUM_IDS, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
 		constexpr float AngleStep = 2.0f * pi / static_cast<float>(NUM_CIRCLE);
@@ -419,21 +423,20 @@ void CEntityManager::FrostNova(int ClientID, vec2 Position, float Radius, int Da
 	// register event tick
 	pNova->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
-		// trigger nova
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
 		const int Damage = pBase->GetConfig("damage", 0);
-		const int FreezeTime = pBase->GetConfig("freezeTime", 0);
+		//const int FreezeTime = pBase->GetConfig("freezeTime", 0);
 
-		for(auto* p = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); p; p = (CCharacter*)p->TypeNext())
+		// damage and freeze enimies
+		for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
-			if(!p || distance(pBase->GetPos(), p->m_Core.m_Pos) > Radius)
+			if(distance(pBase->GetPos(), pChar->m_Core.m_Pos) > Radius)
 				continue;
 
-			if(pBase->GetClientID() != p->GetPlayer()->GetCID() && p->IsAllowedPVP(pBase->GetClientID()))
+			if(pBase->GetClientID() != pChar->GetPlayer()->GetCID() && pChar->IsAllowedPVP(pBase->GetClientID()))
 			{
-				p->TakeDamage(vec2(0, 0), Damage, pBase->GetClientID(), WEAPON_WORLD);
-				//p->Freeze(FreezeTime);
-
+				pChar->TakeDamage(vec2(0, 0), Damage, pBase->GetClientID(), WEAPON_WORLD);
+				//pChar->Freeze(FreezeTime);
 				pBase->MarkForDestroy();
 			}
 		}
@@ -443,9 +446,9 @@ void CEntityManager::FrostNova(int ClientID, vec2 Position, float Radius, int Da
 	pNova->RegisterEvent(CBaseEntity::EventSnap, 4, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
-		const float AngleStep = 2.0f * pi / (float)vIds.size();
+		const float AngleStep = 2.0f * pi / static_cast<float>(vIds.size());
 
-		for(int i = 0; i < (int)vIds.size(); i++)
+		for(size_t i = 0; i < vIds.size(); ++i)
 		{
 			vec2 VertexPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
 			if(!pBase->GS()->SnapPickup(SnappingClient, vIds[i], VertexPos, POWERUP_ARMOR))
@@ -471,33 +474,26 @@ void CEntityManager::HealingAura(int ClientID, vec2 Position, float Radius, int 
 	groupPtr->SetConfig("radius", Radius);
 
 	// initialize element & config
-	auto pAura = groupPtr->CreatePickup(Position, POWERUP_ARMOR);
-	pAura->SetConfig("lifetimeTick", Lifetime);
-	pAura->SetConfig("healPerTick", HealPerTick);
+	auto pPickup = groupPtr->CreatePickup(Position, POWERUP_ARMOR);
+	pPickup->SetConfig("lifetimeTick", Lifetime);
+	pPickup->SetConfig("healPerTick", HealPerTick);
 
 	// generate random positions for hearts inside the radius
-	std::vector<vec2> heartPositions;
+	std::vector<vec2> heartPositions(NUM_HEART);
+	std::vector<vec2> heartVelocities(NUM_HEART);
 	for(int i = 0; i < NUM_HEART; ++i)
 	{
-		vec2 HeartPos = random_range_pos(Position, Radius);
-		HeartPos.y += Radius; // Start below the circle
-		heartPositions.push_back(HeartPos);
+		heartPositions[i] = random_range_pos(Position, Radius);
+		heartPositions[i].y += Radius;
+		heartVelocities[i] = vec2(random_float(-1.0f, 1.0f), random_float(-2.0f, -1.0f));
 	}
-	pAura->SetConfig("heartPositions", heartPositions);
-
-	// generate random initial velocities for hearts
-	std::vector<vec2> heartVelocities;
-	for(int i = 0; i < NUM_HEART; ++i)
-	{
-		vec2 HeartVelocity = vec2(random_float(-1.0f, 1.0f), random_float(-2.0f, -1.0f));
-		heartVelocities.push_back(HeartVelocity);
-	}
-	pAura->SetConfig("heartVelocities", heartVelocities);
+	pPickup->SetConfig("heartPositions", heartPositions);
+	pPickup->SetConfig("heartVelocities", heartVelocities);
 
 	// register event tick
-	pAura->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+	pPickup->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
-		// lifetime
+		// life time
 		int& Lifetime = pBase->GetRefConfig("lifetimeTick", 0);
 		if(Lifetime <= 0)
 		{
@@ -506,21 +502,22 @@ void CEntityManager::HealingAura(int ClientID, vec2 Position, float Radius, int 
 		}
 		Lifetime--;
 
-		// initialize variables
+		// variables
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
 		const int HealPerTick = pBase->GetConfig("healPerTick", 0);
+		const int TickSpeed = pBase->Server()->TickSpeed();
 
-		// find the closest enemies
-		if(pBase->Server()->Tick() % pBase->Server()->TickSpeed() == 0)
+		// healing players
+		if(pBase->Server()->Tick() % TickSpeed == 0)
 		{
-			for(auto* p = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); p; p = (CCharacter*)p->TypeNext())
+			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 			{
-				if(!p || distance(pBase->GetPos(), p->m_Core.m_Pos) > Radius)
+				if(distance(pBase->GetPos(), pChar->m_Core.m_Pos) > Radius)
 					continue;
 
-				if(!pBase->GetPlayer() || pBase->GetClientID() == p->GetPlayer()->GetCID() || !p->IsAllowedPVP(pBase->GetClientID()))
+				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID() || pChar->IsAllowedPVP(pBase->GetClientID()))
 				{
-					p->IncreaseHealth(HealPerTick);
+					pChar->IncreaseHealth(HealPerTick);
 				}
 			}
 		}
@@ -528,53 +525,43 @@ void CEntityManager::HealingAura(int ClientID, vec2 Position, float Radius, int 
 		// update heart positions and velocities
 		std::vector<vec2>& heartPositions = pBase->GetRefConfig("heartPositions", std::vector<vec2>{});
 		std::vector<vec2>& heartVelocities = pBase->GetRefConfig("heartVelocities", std::vector<vec2>{});
-		for(size_t i = 0; i < NUM_HEART; ++i)
+
+		for(int i = 0; i < NUM_HEART; ++i)
 		{
-			// initialize variables
 			vec2& pos = heartPositions[i];
 			vec2& vel = heartVelocities[i];
 
-			// update position with current velocity
 			pos += vel;
+			vel.x = clamp(vel.x + random_float(-0.1f, 0.1f), -1.0f, 1.0f);
+			vel.y = clamp(vel.y + random_float(-0.1f, 0.1f), -2.0f, -1.0f);
 
-			// apply some randomness to the velocity for chaotic movement
-			vel.x += random_float(-0.1f, 0.1f);
-			vel.y += random_float(-0.1f, 0.1f);
-
-			// limit the velocities to avoid too fast movements
-			vel.x = clamp(vel.x, -1.0f, 1.0f);
-			vel.y = clamp(vel.y, -2.0f, -1.0f);
-
-			// reset position if it goes out of bounds
 			if(pos.y < pBase->GetPos().y - Radius)
 			{
 				pos = random_range_pos(pBase->GetPos(), Radius);
 				pos.y = pBase->GetPos().y + Radius;
-				vel = vec2(random_float(-1.0f, 1.0f), random_float(-2.0f, -1.0f)); // Reset to initial random velocity
+				vel = vec2(random_float(-1.0f, 1.0f), random_float(-2.0f, -1.0f));
 			}
 		}
-
 	});
 
 	// register event snap
-	pAura->RegisterEvent(CBaseEntity::EventSnap, NUM_IDS, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
+	pPickup->RegisterEvent(CBaseEntity::EventSnap, NUM_IDS, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
-		// initialize variables
 		const float Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
-		constexpr float AngleStep = 2.0f * pi / (float)NUM_CIRCLES;
+		constexpr float AngleStep = 2.0f * pi / static_cast<float>(NUM_CIRCLES);
 
-		// create pickups in a circle
-		for(int i = 0; i < NUM_CIRCLES; i++)
+		// snap cyrcle
+		for(int i = 0; i < NUM_CIRCLES; ++i)
 		{
 			vec2 VertexPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
 			if(!pBase->GS()->SnapPickup(SnappingClient, vIds[i], VertexPos, POWERUP_HEALTH))
 				return;
 		}
 
-		// create lasers connecting each pickup to form a circle
-		for(int i = 0; i < NUM_CIRCLES; i++)
+		// snap cyrcle connect
+		for(int i = 0; i < NUM_CIRCLES; ++i)
 		{
-			int nextIndex = (i + 1) % (int)NUM_CIRCLES;
+			int nextIndex = (i + 1) % NUM_CIRCLES;
 			vec2 CurrentPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
 			vec2 NextPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * nextIndex), Radius * sin(AngleStep * nextIndex));
 
@@ -582,12 +569,12 @@ void CEntityManager::HealingAura(int ClientID, vec2 Position, float Radius, int 
 				return;
 		}
 
-		// create hearts inside the circle moving upwards
+		// snap hearts inside cyrcle
 		const std::vector<vec2>& heartPositions = pBase->GetConfig("heartPositions", std::vector<vec2>{});
-		for(int i = 0; i < NUM_HEART; i++)
+		for(int i = 0; i < NUM_HEART; ++i)
 		{
 			vec2 InnerPos = heartPositions[i];
-			if(!pBase->GS()->SnapPickup(SnappingClient, vIds[(NUM_IDS - NUM_HEART) + i], InnerPos, POWERUP_HEALTH))
+			if(!pBase->GS()->SnapPickup(SnappingClient, vIds[NUM_CIRCLES * 2 + i], InnerPos, POWERUP_HEALTH))
 				return;
 		}
 	});
@@ -615,18 +602,17 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 	// register event tick
 	pBow->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
-		// freeze input for bow
 		int& FireCount = pBase->GetGroup()->GetRefConfig("fireCount", 0);
+
+		// freeze input for bow
 		pBase->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FIRE);
 		pBase->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FREEZE_GUN);
 
 		// check is key clicked
 		if(pBase->Server()->Input()->IsKeyClicked(pBase->GetClientID(), KEY_EVENT_FIRE))
 		{
-			// initialize variables
-			vec2 Direction = normalize(vec2(pBase->GetCharacter()->m_Core.m_Input.m_TargetX, pBase->GetCharacter()->m_Core.m_Input.m_TargetY));
-
 			// create fire
+			vec2 Direction = normalize(vec2(pBase->GetCharacter()->m_Core.m_Input.m_TargetX, pBase->GetCharacter()->m_Core.m_Input.m_TargetY));
 			const auto pArrow = pBase->GetGroup()->CreatePickup(pBase->GetCharacter()->GetPos());
 			pArrow->SetConfig("direction", Direction);
 			FireCount--;
@@ -634,38 +620,34 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 			// register event tick
 			pArrow->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 			{
-				// initialize variables
 				const float ExplosionRadius = pBase->GetGroup()->GetConfig("explosionRadius", 0.f);
 				const int ExplosionCount = pBase->GetGroup()->GetConfig("explosionCount", 0);
 				const int Damage = pBase->GetGroup()->GetConfig("damage", 0);
 				vec2 Direction = pBase->GetConfig("direction", vec2());
 
-				// find the closest enemy & hit enemies
-				for(auto* p = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); p; p = (CCharacter*)p->TypeNext())
+				for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 				{
-					if(!p || pBase->GetClientID() == p->GetPlayer()->GetCID() || !p->IsAllowedPVP(pBase->GetClientID()))
+					if(pBase->GetClientID() == pChar->GetPlayer()->GetCID() || !pChar->IsAllowedPVP(pBase->GetClientID()))
 						continue;
 
-					// explose
-					const float Distance = distance(pBase->GetPos(), p->m_Core.m_Pos);
+					float Distance = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
 					if(Distance < 64.f)
 					{
-						p->TakeDamage(Direction, Damage, pBase->GetClientID(), WEAPON_GRENADE);
+						pChar->TakeDamage(Direction, Damage, pBase->GetClientID(), WEAPON_GRENADE);
 						pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_NINJA, Damage);
 						pBase->MarkForDestroy();
 						return;
 					}
 
-					// adjust direction slightly towards the closest enemy
 					if(Distance < 300.0f)
 					{
-						vec2 ToEnemy = normalize(p->m_Core.m_Pos - pBase->GetPos());
+						vec2 ToEnemy = normalize(pChar->m_Core.m_Pos - pBase->GetPos());
 						Direction = normalize(Direction + ToEnemy * 0.05f);
 						pBase->SetConfig("direction", Direction);
 					}
 				}
 
-				// check solid
+				// check collide
 				if(pBase->GS()->Collision()->CheckPoint(pBase->GetPos()))
 				{
 					pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_NINJA, Damage);
@@ -673,14 +655,14 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 					return;
 				}
 
-				// Update position
+				// update position
 				pBase->SetPos(pBase->GetPos() + Direction * 18.0f);
 			});
 
 			// Register event snap for the fire projectile (drawing the arrow)
 			pArrow->RegisterEvent(CBaseEntity::EventSnap, 3, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 			{
-				const vec2 Direction = pBase->GetConfig("direction", vec2());
+				vec2 Direction = pBase->GetConfig("direction", vec2());
 				vec2 Pos = pBase->GetPos();
 
 				for(int i = 0; i < (int)vIds.size(); ++i)
@@ -688,7 +670,6 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 					vec2 SegmentPos = Pos - Direction * 24.f * i;
 					if(!pBase->GS()->SnapLaser(SnappingClient, vIds[i], SegmentPos, Pos, pBase->Server()->Tick() - 4))
 						return;
-
 					Pos = SegmentPos;
 				}
 			});
@@ -702,7 +683,7 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 		}
 
 		// update position
-		const float angle = std::atan2(pBase->GetCharacter()->m_Core.m_Input.m_TargetY, pBase->GetCharacter()->m_Core.m_Input.m_TargetX);
+		float angle = std::atan2(pBase->GetCharacter()->m_Core.m_Input.m_TargetY, pBase->GetCharacter()->m_Core.m_Input.m_TargetX);
 		pBase->SetPos(rotate(vec2(0.f, -56.f), pBase->GetCharacter()->GetPos(), angle));
 	});
 
@@ -712,39 +693,25 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 	};
 
 	// Register event snap
-	pBow->RegisterEvent(CBaseEntity::EventSnap, (int)vArrowEdges.size() + 1, [vEdges = vArrowEdges](CBaseEntity* pBase, int, const std::vector<int>& vIds)
+	pBow->RegisterEvent(CBaseEntity::EventSnap, (int)vArrowEdges.size() + 1, [vEdges = vArrowEdges](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
 		const auto* pChar = pBase->GetCharacter();
-		const float angle = std::atan2(pChar->m_Core.m_Input.m_TargetY, pChar->m_Core.m_Input.m_TargetX);
+		float angle = std::atan2(pChar->m_Core.m_Input.m_TargetY, pChar->m_Core.m_Input.m_TargetX);
 
-		vec2 firstPos = vEdges[vEdges.size() - 1];
-		vec2 endPos = vEdges[0];
+		vec2 firstPos = vEdges.back();
+		vec2 endPos = vEdges.front();
 		vec2 Pos = rotate(firstPos, pChar->GetPos(), angle);
 		vec2 PosTo = rotate(endPos, pChar->GetPos(), angle);
 
-		CNetObj_Laser* pLaser = static_cast<CNetObj_Laser*>(pBase->Server()->SnapNewItem(NETOBJTYPE_LASER, vIds[0], sizeof(CNetObj_Laser)));
-		if(pLaser)
-		{
-			pLaser->m_X = (int)Pos.x;
-			pLaser->m_Y = (int)Pos.y;
-			pLaser->m_FromX = (int)PosTo.x;
-			pLaser->m_FromY = (int)PosTo.y;
-			pLaser->m_StartTick = pBase->Server()->Tick() - 3;
-		}
+		if(!pBase->GS()->SnapLaser(SnappingClient, vIds[0], Pos, PosTo, pBase->Server()->Tick() - 3, LASERTYPE_SHOTGUN, 0, pBase->GetClientID()))
+			return;
 
-		for(int i = 0; i < (int)vEdges.size(); i++)
+		for(size_t i = 0; i < vEdges.size(); ++i)
 		{
-			vec2 pos = vEdges[i];
-			vec2 curPos = rotate(pos, pChar->GetPos(), angle);
+			vec2 curPos = rotate(vEdges[i], pChar->GetPos(), angle);
 
-			CNetObj_Pickup* pPickup = static_cast<CNetObj_Pickup*>(pBase->Server()->SnapNewItem(NETOBJTYPE_PICKUP, vIds[1 + i], sizeof(CNetObj_Pickup)));
-			if(pPickup)
-			{
-				pPickup->m_X = (int)curPos.x;
-				pPickup->m_Y = (int)curPos.y;
-				pPickup->m_Type = POWERUP_ARMOR;
-				pPickup->m_Subtype = 0;
-			}
+			if(!pBase->GS()->SnapPickup(SnappingClient, vIds[1 + i], curPos, POWERUP_ARMOR))
+				return;
 		}
 	});
 
@@ -773,26 +740,26 @@ void CEntityManager::EffectCircleDamage(int ClientID, int DelayImpulse, int Dela
 	// register tick event
 	pEffect->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
-		auto& delayTick = pBase->GetRefConfig("currentDelayTick", 0);
+		constexpr float angleIncrement = 1.f;
+		constexpr float maxAngle = 256.f;
 
 		// delay tick
+		auto& delayTick = pBase->GetRefConfig("currentDelayTick", 0);
 		if(delayTick > 0)
 		{
 			--delayTick;
 			return;
 		}
 
+		// variables
 		auto& currentImpulseTick = pBase->GetRefConfig("currentImpulseTick", 0);
 		auto& currentAngle = pBase->GetRefConfig("currentAngle", 0.f);
 
-		// effect
+		// is impulse active
 		if(currentImpulseTick > 0)
 		{
-			constexpr float angleIncrement = 1.f;
-			constexpr float maxAngle = 256.f;
-
 			currentAngle = fmod(currentAngle + angleIncrement, maxAngle);
-			currentImpulseTick--;
+			--currentImpulseTick;
 
 			pBase->GS()->CreateDamage(pBase->GetCharacter()->GetPos(), pBase->GetClientID(), 1, false, currentAngle);
 			return;
@@ -807,8 +774,7 @@ void CEntityManager::EffectCircleDamage(int ClientID, int DelayImpulse, int Dela
 			delayTick = pBase->GetGroup()->GetConfig("delayBetweenImpulses", 0);
 			return;
 		}
-		
-		// destroy
+
 		pBase->MarkForDestroy();
 	});
 }
