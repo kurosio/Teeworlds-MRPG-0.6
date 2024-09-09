@@ -1164,12 +1164,6 @@ void CCharacter::HandleTiles()
 	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
 		GS()->CreateDeath(m_Core.m_Pos, m_ClientID);
 
-	// anti-pvp
-	if(m_pTilesHandler->IsEnter(TILE_ANTI_PVP))
-		GS()->Chat(m_ClientID, "You have entered the safe zone!");
-	else if(m_pTilesHandler->IsExit(TILE_ANTI_PVP))
-		GS()->Chat(m_ClientID, "You have entered the pvp zone!");
-
 	// chairs
 	if(m_pTilesHandler->IsActive(TILE_CHAIR_LV1))
 		m_pPlayer->Account()->HandleChair(1, 1);
