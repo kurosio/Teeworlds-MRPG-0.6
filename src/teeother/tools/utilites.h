@@ -127,20 +127,18 @@ namespace mrpgstd
 		}
 	};
 
-	// function for loading numeral configurations
+	// function for loading numeral configurations // TODO:ignore severity
 	template<typename T1, typename T2 = int>
 	inline std::optional<T1> LoadSetting(const std::string& prefix, const std::vector<std::string>& settings, std::optional<T2> UniquePrefix = std::nullopt)
 	{
-		std::string fullPrefix = prefix;
+		std::string fullPrefix = prefix + " ";
 		if(UniquePrefix.has_value())
 		{
 			if constexpr(std::is_same_v<T2, std::string>)
-				fullPrefix += " " + UniquePrefix.value() + " ";
+				fullPrefix += UniquePrefix.value() + " ";
 			else
-				fullPrefix += " " + std::to_string(UniquePrefix.value()) + " ";
+				fullPrefix += std::to_string(UniquePrefix.value()) + " ";
 		}
-		else
-			fullPrefix += " ";
 
 		auto it = std::ranges::find_if(settings, [&fullPrefix](const std::string& s)
 		{
@@ -149,8 +147,9 @@ namespace mrpgstd
 
 		if(it != settings.end())
 		{
-			const std::string valueStr = it->substr(fullPrefix.size());
-			return detail::ParseValue<T1>(valueStr);
+			std::string valueStr = it->substr(fullPrefix.size());
+			if(!valueStr.empty())
+				return detail::ParseValue<T1>(valueStr);
 		}
 
 		return std::nullopt;

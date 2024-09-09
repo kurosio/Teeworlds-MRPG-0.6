@@ -1145,7 +1145,7 @@ void CCharacter::HandleTiles()
 			m_pPlayer->LockedView().ViewUnlock();
 
 		// zone information
-		if(m_pTilesHandler->IsActive(TILE_ZONE_NAME))
+		if(m_pTilesHandler->IsActive(TILE_ZONE))
 		{
 			if(const char* pName = GS()->Collision()->GetZonename(m_Core.m_Pos); pName && m_Zonename != pName)
 			{
@@ -1153,7 +1153,7 @@ void CCharacter::HandleTiles()
 				m_Zonename = pName;
 			}
 		}
-		else if(m_pTilesHandler->IsExit(TILE_ZONE_NAME))
+		else if(m_pTilesHandler->IsExit(TILE_ZONE))
 			m_Zonename = "unknown";
 
 		// check from components
