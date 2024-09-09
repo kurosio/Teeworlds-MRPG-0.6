@@ -1,16 +1,36 @@
 ﻿#include <game/server/gamecontext.h>
 #include "player_scenario.h"
 
-bool PlayerScenario::CanExecuteStep(const Step& step, long elapsedMs) const
+CGS* PlayerScenario::GS() const
+{
+	return (CGS*)Instance::GameServerPlayer(m_ClientID);
+}
+
+IServer* PlayerScenario::Server() const
+{
+	return Instance::Server();
+}
+
+CPlayer* PlayerScenario::GetPlayer() const
+{
+	return GS()->GetPlayer(m_ClientID);
+}
+
+CCharacter* PlayerScenario::GetCharacter() const
+{
+	return GetPlayer()->GetCharacter();
+}
+
+bool PlayerScenario::CanExecuteStep(const Step& step, long elapsedTick) const
 {
 	switch(step.Priority)
 	{
 		case ConditionPriority::CONDITION_AND_TIMER:
-			return (step.DelayMs <= 0 || (elapsedMs >= step.DelayMs)) &&
+			return (step.DelayTick <= 0 || (elapsedTick >= step.DelayTick)) &&
 				(!step.FuncCheckCondition || step.FuncCheckCondition(this));
 
 		case ConditionPriority::CONDITION_OR_TIMER:
-			return (step.DelayMs >= 0 && elapsedMs >= step.DelayMs) ||
+			return (step.DelayTick >= 0 && elapsedTick >= step.DelayTick) ||
 				(step.FuncCheckCondition && step.FuncCheckCondition(this));
 	}
 
@@ -25,28 +45,21 @@ void PlayerScenario::ExecuteCurrentStep()
 		step.FuncOnEnd = nullptr;
 	}
 
-	m_LastStepTime = std::chrono::steady_clock::now();
+	m_LastStepTimeTick = Server()->Tick();
 	m_CurrentStepIndex++;
 
 	if(IsFinished())
 		Stop();
 }
 
-CGS* PlayerScenario::GS() const
-{
-	return (CGS*)Instance::GameServerPlayer(m_ClientID);
-}
-
-void PlayerScenario::Start(int ClientID)
+void PlayerScenario::Start()
 {
 	if(m_vSteps.empty())
 		return;
 
-	m_ClientID = ClientID;
 	m_Running = true;
 	m_CurrentStepIndex = 0;
-	m_LastStepTime = std::chrono::steady_clock::now();
-	m_pData[m_ClientID].push_back(*this);
+	m_LastStepTimeTick = Server()->Tick();
 }
 
 void PlayerScenario::Stop()
@@ -59,14 +72,13 @@ void PlayerScenario::Tick()
 	if(!m_Running || IsFinished())
 		return;
 
-	if(!GetPlayer() || !GetCharacter())
+	if(!GetPlayer())
 	{
 		Stop();
 		return;
 	}
 
-	const auto now = std::chrono::steady_clock::now();
-	const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_LastStepTime).count();
+	const auto elapsedTick = Server()->Tick() - m_LastStepTimeTick;
 	auto& step = m_vSteps[m_CurrentStepIndex];
 
 	if(step.FuncOnStart)
@@ -80,7 +92,7 @@ void PlayerScenario::Tick()
 		step.FuncActive(this);
 	}
 
-	if(CanExecuteStep(step, elapsedMs))
+	if(CanExecuteStep(step, elapsedTick))
 	{
 		ExecuteCurrentStep();
 	}

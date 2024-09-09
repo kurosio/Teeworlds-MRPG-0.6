@@ -48,31 +48,24 @@ void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 
 void CPlayerBot::Tick()
 {
-	// Check if the character is valid
 	if(m_pCharacter)
 	{
-		// Check if the character is alive
 		if(m_pCharacter->IsAlive())
 		{
-			// Check if the bot type is TYPE_BOT_EIDOLON
 			if(m_BotType == TYPE_BOT_EIDOLON)
 			{
-				// Get the eidolon owner
 				if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && distance(pOwner->GetCharacter()->GetPos(), m_ViewPos) > 1000.f)
 				{
-					// Teleport the bot to the owner's position
 					vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
 					m_pCharacter->ResetDoorHit();
 					m_pCharacter->ChangePosition(OwnerPos);
 
-					// Copy the owner's velocity, direction, and input to the bot
 					m_pCharacter->m_Core.m_Vel = pOwner->GetCharacter()->m_Core.m_Vel;
 					m_pCharacter->m_Core.m_Direction = pOwner->GetCharacter()->m_Core.m_Direction;
 					m_pCharacter->m_Core.m_Input = pOwner->GetCharacter()->m_Core.m_Input;
 				}
 			}
 
-			// Check if the bot is active
 			if(IsActive())
 			{
 				m_ViewPos = m_pCharacter->GetPos();
@@ -81,17 +74,17 @@ void CPlayerBot::Tick()
 		}
 		else
 		{
-			// Delete the character and set it to nullptr
 			delete m_pCharacter;
 			m_pCharacter = nullptr;
 		}
 	}
-	// If the bot is spawned and the respawn tick has passed
 	else if(m_WantSpawn && m_aPlayerTick[Respawn] <= Server()->Tick())
 	{
-		// Try to respawn the bot
 		TryRespawn();
 	}
+
+	// update events
+	m_Scenarios.Tick();
 }
 
 void CPlayerBot::PostTick()

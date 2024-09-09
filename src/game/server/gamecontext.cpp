@@ -22,7 +22,6 @@
 
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/worlds/world_data.h"
-#include "core/tools/player_scenario.h"
 #include "core/tools/vote_optional.h"
 #include "core/tools/vote_wrapper.h"
 
@@ -35,7 +34,6 @@ CGS::CGS()
 	m_pMmoController = nullptr;
 	m_pCommandProcessor = nullptr;
 	m_pPathFinder = nullptr;
-	m_pLayers = nullptr;
 	m_pEntityManager = nullptr;
 	mem_zero(m_apPlayers, sizeof(m_apPlayers));
 	mem_zero(m_aBroadcastStates, sizeof(m_aBroadcastStates));
@@ -56,7 +54,6 @@ CGS::~CGS()
 	delete m_pMmoController;
 	delete m_pCommandProcessor;
 	delete m_pPathFinder;
-	delete m_pLayers;
 	delete m_pEntityManager;
 }
 
@@ -662,35 +659,19 @@ void CGS::OnInit(int WorldID)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
 
 	// create controller
-	m_pLayers = new CLayers();
-	m_pLayers->Init(Kernel(), WorldID);
-	m_Collision.Init(m_pLayers);
+	m_Collision.Init(Kernel(), WorldID);
 	m_pEntityManager = new CEntityManager(this);
 	m_pMmoController = new CMmoController(this);
 	m_pMmoController->LoadLogicWorld();
-
 	InitWorld();
 
 	// initialize cores
-	CMapItemLayerTilemap* pTileMap = m_pLayers->GameLayer();
-	CTile* pTiles = (CTile*)Kernel()->RequestInterface<IMap>(WorldID)->GetData(pTileMap->m_Data);
-	for(int y = 0; y < pTileMap->m_Height; y++)
-	{
-		for(int x = 0; x < pTileMap->m_Width; x++)
-		{
-			const int Index = pTiles[y * pTileMap->m_Width + x].m_Index;
-			if(Index >= ENTITY_OFFSET)
-			{
-				const vec2 Pos(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
-				m_pController->OnEntity(Index - ENTITY_OFFSET, Pos);
-			}
-		}
-	}
+	m_Collision.InitEntities(std::bind(&IGameController::OnEntity, m_pController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	m_pController->CanSpawn(SPAWN_HUMAN_PRISON, &m_JailPosition);
 
 	// initialize
 	m_pCommandProcessor = new CCommandProcessor(this);
-	m_pPathFinder = new CPathFinder(m_pLayers, &m_Collision);
+	m_pPathFinder = new CPathFinder(&m_Collision);
 }
 
 void CGS::OnConsoleInit()
@@ -738,7 +719,6 @@ void CGS::OnTick()
 
 		m_apPlayers[i]->Tick();
 		m_apPlayers[i]->PostTick();
-		PlayerScenario::Tick(i);
 		if(i < MAX_PLAYERS)
 		{
 			BroadcastTick(i);

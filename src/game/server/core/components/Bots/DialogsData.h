@@ -29,7 +29,7 @@ public:
 	void Init(CPlayer* pPlayer);
 	void Start(int BotCID);
 	void Next();
-	void TickUpdate();
+	void Tick();
 
 private:
 	void FormatText(const class CDialogElem* pDialog, const char* pLeftNickname, const char* pRightNickname);

@@ -34,6 +34,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_WantSpawn = true;
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
+	m_Scenarios.Init(ClientID);
 	m_Cooldown.Init(ClientID);
 	m_VotesData.Init(m_pGS, this);
 	m_Dialog.Init(this);
@@ -149,13 +150,17 @@ void CPlayer::Tick()
 	}
 
 	// update events
-	m_Cooldown.Handler();
+	m_Scenarios.Tick();
+	m_Cooldown.Tick();
 	if(m_pMotdMenu)
-		m_pMotdMenu->Handle();
+	{
+		m_pMotdMenu->Tick();
+	}
 	else
-		m_Dialog.TickUpdate();
+	{
+		m_Dialog.Tick();
+	}
 
-	// post updated votes if player open menu
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU)
 		m_VotesData.ApplyVoteUpdaterData();
 }

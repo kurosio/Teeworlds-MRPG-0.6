@@ -110,8 +110,6 @@ void CCharacterCore::Reset()
 void CCharacterCore::Tick(bool UseInput, CTuningParams* pTuningParams)
 {
 	const CTuningParams* pTuning = pTuningParams ? pTuningParams : &m_pWorld->m_Tuning;
-
-	m_MoveRestrictions = m_pCollision->GetMoveRestrictions(this, m_Pos);
 	m_TriggeredEvents = 0;
 
 	// get ground state
@@ -412,11 +410,11 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTuningParams)
 						// add force to the hooked player
 						Temp.x = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore->m_Vel.x, HookAccel * Dir.x * 1.5f);
 						Temp.y = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore->m_Vel.y, HookAccel * Dir.y * 1.5f);
-						pCharCore->m_Vel = ClampVel(pCharCore->m_MoveRestrictions, Temp);
+						pCharCore->m_Vel = Temp;
 						// add a little bit force to the guy who has the grip
 						Temp.x = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.x, -HookAccel * Dir.x * 0.25f);
 						Temp.y = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.y, -HookAccel * Dir.y * 0.25f);
-						m_Vel = ClampVel(m_MoveRestrictions, Temp);
+						m_Vel = Temp;
 					}
 				}
 			}

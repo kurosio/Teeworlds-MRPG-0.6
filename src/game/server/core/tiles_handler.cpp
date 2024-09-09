@@ -7,13 +7,15 @@
 void CTileHandler::Handle(const vec2& Position)
 {
 	// initialize variables
-	const int Indices[2] = {
-		m_pCollision->GetParseTilesAt(Position.x, Position.y),
-		m_pCollision->GetParseFrontTilesAt(Position.x, Position.y)
+	const int Indices[TILES_LAYER_NUM] = 
+	{
+		m_pCollision->GetMainTileIndex(Position.x, Position.y),
+		m_pCollision->GetFrontTileIndex(Position.x, Position.y),
+		m_pCollision->GetExtraTileIndex(Position.x, Position.y)
 	};
 
 	// handle tiles layers
-	for(int i = 0; i < 2; ++i)
+	for(int i = 0; i < TILES_LAYER_NUM; ++i)
 	{
 		const int Index = Indices[i];
 		if(Index >= TILE_AIR && Index < MAX_TILES)
@@ -31,7 +33,7 @@ void CTileHandler::Handle(const vec2& Position)
 bool CTileHandler::IsEnter(int Index)
 {
 	bool Entered = false;
-	for(int i = 0; i < 2; ++i)
+	for(int i = 0; i < TILES_LAYER_NUM; ++i)
 	{
 		if(Index == m_MarkEnter[i])
 		{
@@ -45,7 +47,7 @@ bool CTileHandler::IsEnter(int Index)
 bool CTileHandler::IsExit(int Index)
 {
 	bool Exited = false;
-	for(int i = 0; i < 2; ++i)
+	for(int i = 0; i < TILES_LAYER_NUM; ++i)
 	{
 		if(Index == m_MarkExit[i])
 		{

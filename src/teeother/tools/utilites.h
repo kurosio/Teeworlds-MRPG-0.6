@@ -7,62 +7,68 @@ using ByteArray = std::basic_string<std::byte>;
 
 namespace mrpgstd
 {
-	// сoncept to check if a type has a clear() function
-	template<typename T>
-	concept is_has_clear_function = requires(T & c) {
-		{ c.clear() } -> std::same_as<void>;
-	};
+	namespace detail
+	{
+		// specialization pasrsing value
+		template<typename T>
+		inline std::optional<T> ParseValue(const std::string& str) { return std::nullopt; };
 
-	// concept to check if a type is a smart pointer functions
-	template<typename T>
-	concept is_smart_pointer = requires(T & c) {
-		{ c.get() } -> std::convertible_to<typename T::element_type*>;
-		{ c.reset() } noexcept -> std::same_as<void>;
-	};
+		template<>
+		inline std::optional<int> ParseValue<int>(const std::string& str) { return str_toint(str.c_str()); }
 
-	// сoncept to check if a type is a container
-	template <typename T>
-	concept is_container = requires(T & c) {
-		typename T::value_type;
-		typename T::iterator;
-		{ c.begin() } -> std::convertible_to<typename T::iterator>;
-		{ c.end() } -> std::convertible_to<typename T::iterator>;
-	};
+		template<>
+		inline std::optional<std::string> ParseValue<std::string>(const std::string& str) { return str; }
 
-	// сoncept to check if a type is a map container
-	template<typename T>
-	concept is_map_container = requires(T & c) {
-		typename T::key_type;
-		typename T::mapped_type;
-			requires is_container<T>;
-			requires std::same_as<typename T::value_type, std::pair<const typename T::key_type, typename T::mapped_type>>;
-	};
+		// сconcepts
+		template<typename T>
+		concept is_has_clear_function = requires(T & c) { { c.clear() } -> std::same_as<void>; };
+
+		template<typename T>
+		concept is_smart_pointer = requires(T & c) {
+			{ c.get() } -> std::convertible_to<typename T::element_type*>;
+			{ c.reset() } noexcept -> std::same_as<void>;
+		};
+
+		template <typename T>
+		concept is_container = requires(T & c) {
+			typename T::value_type;
+			typename T::iterator;
+			{ c.begin() } -> std::convertible_to<typename T::iterator>;
+			{ c.end() } -> std::convertible_to<typename T::iterator>;
+		};
+
+		template<typename T>
+		concept is_map_container = requires(T & c) {
+			typename T::key_type;
+			typename T::mapped_type;
+				requires is_container<T>;
+				requires std::same_as<typename T::value_type, std::pair<const typename T::key_type, typename T::mapped_type>>;
+		};
+	}
 
 	// function to clear a container
-	template<is_container T>
+	template<detail::is_container T>
 	void free_container(T& container)
 	{
-		static_assert(is_has_clear_function<T>, "One or more types do not have clear() function");
+		static_assert(detail::is_has_clear_function<T>, "One or more types do not have clear() function");
 
-		if constexpr(is_map_container<T>)
+		if constexpr(detail::is_map_container<T>)
 		{
-			if constexpr(is_container<typename T::mapped_type>)
+			if constexpr(detail::is_container<typename T::mapped_type>)
 				std::ranges::for_each(container, [](auto& element) { free_container(element.second); });
-			else if constexpr(std::is_pointer_v<typename T::mapped_type> && !is_smart_pointer<typename T::mapped_type>)
+			else if constexpr(std::is_pointer_v<typename T::mapped_type> && !detail::is_smart_pointer<typename T::mapped_type>)
 				std::ranges::for_each(container, [](auto& element) { delete element.second; });
 		}
 		else
 		{
-			if constexpr(is_container<typename T::value_type>)
+			if constexpr(detail::is_container<typename T::value_type>)
 				std::ranges::for_each(container, [](auto& element) { free_container(element); });
-			else if constexpr(std::is_pointer_v<typename T::value_type> && !is_smart_pointer<typename T::value_type>)
+			else if constexpr(std::is_pointer_v<typename T::value_type> && !detail::is_smart_pointer<typename T::value_type>)
 				std::ranges::for_each(container, [](auto& element) { delete element; });
 		}
 		container.clear();
 	}
-
-	// clear multiple containers uses fold expression
-	template<is_container... Containers>
+	template<detail::is_container... Containers>
 	void free_container(Containers&... args) { (free_container(args), ...); }
 
 	// configurable class
@@ -91,17 +97,14 @@ namespace mrpgstd
 		template<typename T>
 		T& GetRefConfig(const std::string& key, const T& defaultValue)
 		{
-			if(auto it = m_umConfig.find(key); it != m_umConfig.end())
+			auto& variant = m_umConfig[key];
+			if(!std::holds_alternative<T>(variant))
 			{
-				if(!std::holds_alternative<T>(it->second))
-					dbg_assert(false, fmt("Type mismatch for key: {}\n", key).c_str());
-
-				return std::get<T>(it->second);
+				dbg_assert(false, fmt("Type mismatch for key: {}\n", key).c_str());
+				variant = defaultValue;
 			}
 
-			dbg_assert(false, fmt("Key not found: {}\n", key).c_str());
-			m_umConfig[key] = defaultValue;
-			return std::get<T>(m_umConfig[key]);
+			return std::get<T>(variant);
 		}
 
 		template<typename T>
@@ -123,6 +126,35 @@ namespace mrpgstd
 			m_umConfig.erase(key);
 		}
 	};
+
+	// function for loading numeral configurations
+	template<typename T1, typename T2 = int>
+	inline std::optional<T1> LoadSetting(const std::string& prefix, const std::vector<std::string>& settings, std::optional<T2> UniquePrefix = std::nullopt)
+	{
+		std::string fullPrefix = prefix;
+		if(UniquePrefix.has_value())
+		{
+			if constexpr(std::is_same_v<T2, std::string>)
+				fullPrefix += " " + UniquePrefix.value() + " ";
+			else
+				fullPrefix += " " + std::to_string(UniquePrefix.value()) + " ";
+		}
+		else
+			fullPrefix += " ";
+
+		auto it = std::ranges::find_if(settings, [&fullPrefix](const std::string& s)
+		{
+			return s.starts_with(fullPrefix);
+		});
+
+		if(it != settings.end())
+		{
+			const std::string valueStr = it->substr(fullPrefix.size());
+			return detail::ParseValue<T1>(valueStr);
+		}
+
+		return std::nullopt;
+	}
 }
 
 // string utils

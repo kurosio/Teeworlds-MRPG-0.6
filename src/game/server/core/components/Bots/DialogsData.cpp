@@ -166,7 +166,7 @@ void CPlayerDialog::Start(int BotCID)
 	ShowCurrentDialog();
 }
 
-void CPlayerDialog::TickUpdate()
+void CPlayerDialog::Tick()
 {
 	// Check if dialog is active
 	if(!IsActive()) return;

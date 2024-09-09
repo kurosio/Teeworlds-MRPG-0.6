@@ -10,8 +10,8 @@ struct std::hash<ivec2>
 	std::size_t operator()(const ivec2& v) const noexcept { return std::hash<int>()(v.x) ^ (std::hash<int>()(v.y) << 1); }
 };
 
-CPathFinder::CPathFinder(CLayers* Layers, CCollision* Collision)
-	: m_pLayers(Layers), m_pCollision(Collision)
+CPathFinder::CPathFinder(CCollision* pCollision)
+	: m_pLayers(pCollision->GetLayers()), m_pCollision(pCollision)
 {
 	m_Height = m_pLayers->GameLayer()->m_Height;
 	m_Width = m_pLayers->GameLayer()->m_Width;

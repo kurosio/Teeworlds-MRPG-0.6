@@ -38,7 +38,7 @@ private:
 class CPathFinder
 {
 public:
-	CPathFinder(CLayers* Layers, class CCollision* Collision);
+	CPathFinder(class CCollision* pCollision);
 	~CPathFinder();
 
 	void Initialize();

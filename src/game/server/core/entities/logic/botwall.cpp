@@ -5,9 +5,9 @@
 #include <game/server/gamecontext.h>
 
 CBotWall::CBotWall(CGameWorld* pGameWorld, vec2 Pos, vec2 Direction, int Flag)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_NPC_BLOCKER, Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BOT_WALL, Pos)
 {
-	GS()->Collision()->Wallline(32, Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->FillLengthWall(32, Direction, &m_Pos, &m_PosTo);
 	m_Active = false;
 	m_Flag = Flag;
 
@@ -41,20 +41,20 @@ void CBotWall::Tick()
 			continue;
 
 		int BotType = pChar->GetPlayer()->GetBotType();
-		if((m_Flag & Flags::WALLLINEFLAG_MOB_BOT) && (BotType == BotsTypes::TYPE_BOT_MOB))
+		if((m_Flag & WALLLINEFLAG_MOB_BOT) && (BotType == TYPE_BOT_MOB))
 		{
 			HitCharacter(pChar);
 			continue;
 		}
 
 		int MobID = pChar->GetPlayer()->GetBotMobID();
-		if((m_Flag & Flags::WALLLINEFLAG_NPC_BOT) && (BotType == BotsTypes::TYPE_BOT_NPC) && (NpcBotInfo::ms_aNpcBot[MobID].m_Function != FUNCTION_NPC_GUARDIAN))
+		if((m_Flag & WALLLINEFLAG_NPC_BOT) && (BotType == TYPE_BOT_NPC) && (NpcBotInfo::ms_aNpcBot[MobID].m_Function != FUNCTION_NPC_GUARDIAN))
 		{
 			HitCharacter(pChar);
 			continue;
 		}
 
-		if((m_Flag & Flags::WALLLINEFLAG_QUEST_BOT) && (BotType == BotsTypes::TYPE_BOT_QUEST))
+		if((m_Flag & WALLLINEFLAG_QUEST_BOT) && (BotType == TYPE_BOT_QUEST))
 		{
 			HitCharacter(pChar);
 			continue;
@@ -67,30 +67,6 @@ void CBotWall::Snap(int SnappingClient)
 	if(!m_Active || NetworkClipped(SnappingClient))
 		return;
 
-	if(GS()->GetClientVersion(SnappingClient) >= VERSION_DDNET_MULTI_LASER)
-	{
-		CNetObj_DDNetLaser* pObj = static_cast<CNetObj_DDNetLaser*>(Server()->SnapNewItem(NETOBJTYPE_DDNETLASER, GetID(), sizeof(CNetObj_DDNetLaser)));
-		if(!pObj)
-			return;
-
-		pObj->m_ToX = int(m_Pos.x);
-		pObj->m_ToY = int(m_Pos.y);
-		pObj->m_FromX = int(m_PosTo.x);
-		pObj->m_FromY = int(m_PosTo.y);
-		pObj->m_StartTick = Server()->Tick() - 4;
-		pObj->m_Owner = -1;
-		pObj->m_Type = LASERTYPE_FREEZE;
-	}
-	else
-	{
-		CNetObj_Laser* pObj = static_cast<CNetObj_Laser*>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
-		if(!pObj)
-			return;
-
-		pObj->m_X = int(m_Pos.x);
-		pObj->m_Y = int(m_Pos.y);
-		pObj->m_FromX = int(m_PosTo.x);
-		pObj->m_FromY = int(m_PosTo.y);
-		pObj->m_StartTick = Server()->Tick() - 4;
-	}
+	if(!GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 4, LASERTYPE_FREEZE, LASERTYPE_DOOR))
+		return;
 }

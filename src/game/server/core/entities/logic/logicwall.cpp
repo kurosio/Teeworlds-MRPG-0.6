@@ -130,7 +130,7 @@ CLogicWallWall::CLogicWallWall(CGameWorld *pGameWorld, vec2 Pos, int Mode, int H
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_EYES_WALL, Pos, 14)
 {
 	vec2 Direction = Mode == 0 ? vec2(0, -1) : vec2(1, 0);
-	GS()->Collision()->Wallline(32, Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->FillLengthWall(32, Direction, &m_Pos, &m_PosTo);
 	m_RespawnTick = Server()->TickSpeed()*10;
 
 	GameWorld()->InsertEntity(this);
@@ -241,7 +241,7 @@ CLogicDoorKey::CLogicDoorKey(CGameWorld *pGameWorld, vec2 Pos, int ItemID, int M
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 14)
 {
 	vec2 Direction = Mode == 0 ? vec2(0, -1) : vec2(1, 0);
-	GS()->Collision()->Wallline(32, Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->FillLengthWall(32, Direction, &m_Pos, &m_PosTo);
 	m_ItemID = ItemID;
 
 	GameWorld()->InsertEntity(this);
@@ -292,7 +292,7 @@ void CLogicDoorKey::Snap(int SnappingClient)
 CLogicDungeonDoorKey::CLogicDungeonDoorKey(CGameWorld *pGameWorld, vec2 Pos, int BotID)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR, Pos, 14)
 {
-	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo);
+	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo);
 	m_OpenedDoor = false;
 	m_BotID = BotID;
 

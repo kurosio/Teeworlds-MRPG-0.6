@@ -326,9 +326,6 @@ public:
 
 	bool m_DamageDisabled;
 	int m_WorldID;
-
-private:
-	int m_MoveRestrictions;
 };
 
 //input count

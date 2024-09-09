@@ -180,6 +180,12 @@ enum FunctionsNPC
 	FUNCTION_NPC_GUARDIAN,
 };
 
+// player scenarios
+enum
+{
+	
+};
+
 // menu list
 enum MenuList
 {

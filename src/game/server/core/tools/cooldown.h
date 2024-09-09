@@ -14,7 +14,7 @@ public:
 	void Start(int Time, std::string Name, CCooldownCallback fnCallback);
 	void Reset();
 	bool IsCooldownActive() const { return m_IsCooldownActive; }
-	void Handler();
+	void Tick();
 
 private:
 	void EndCooldown(const char* pMessage = "\0");

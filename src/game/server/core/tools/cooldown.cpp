@@ -34,7 +34,7 @@ void CCooldown::Reset()
 	m_Interrupted = false;
 }
 
-void CCooldown::Handler()
+void CCooldown::Tick()
 {
 	if(!m_IsCooldownActive)
 		return;

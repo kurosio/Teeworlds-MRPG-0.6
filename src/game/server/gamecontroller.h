@@ -52,7 +52,7 @@ public:
 	virtual void OnCharacterDamage(class CPlayer* pFrom, class CPlayer* pTo, int Damage);
 	virtual void OnCharacterDeath(class CPlayer* pVictim, class CPlayer *pKiller, int Weapon);
 	virtual bool OnCharacterSpawn(class CCharacter *pChr);
-	virtual bool OnEntity(int Index, vec2 Pos);
+	virtual void OnEntity(int Index, vec2 Pos, int Flags);
 
 	void OnPlayerConnect(class CPlayer *pPlayer);
 	void OnPlayerDisconnect(class CPlayer *pPlayer);

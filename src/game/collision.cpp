@@ -9,123 +9,232 @@
 
 constexpr float CAM_RADIUS_H = 380.f;
 constexpr float CAM_RADIUS_W = 480.f;
-
-vec2 ClampVel(int MoveRestriction, vec2 Vel)
-{
-	if(Vel.x > 0 && (MoveRestriction & CANTMOVE_RIGHT))
-	{
-		Vel.x = 0;
-	}
-	if(Vel.x < 0 && (MoveRestriction & CANTMOVE_LEFT))
-	{
-		Vel.x = 0;
-	}
-	if(Vel.y > 0 && (MoveRestriction & CANTMOVE_DOWN))
-	{
-		Vel.y = 0;
-	}
-	if(Vel.y < 0 && (MoveRestriction & CANTMOVE_UP))
-	{
-		Vel.y = 0;
-	}
-	return Vel;
-}
+constexpr float TILE_SIZE = 32.0f;
 
 CCollision::CCollision()
 {
-	m_pTiles = nullptr;
-	m_pFront = nullptr;
-	m_pLayers = nullptr;
-	m_Width = 0;
-	m_Height = 0;
+	m_pLayers = new CLayers();
 }
 
-void CCollision::Init(class CLayers *pLayers)
+CCollision::~CCollision()
 {
-	m_pLayers = pLayers;
-	m_Width = m_pLayers->GameLayer()->m_Width;
-	m_Height = m_pLayers->GameLayer()->m_Height;
-	m_pTiles = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->GameLayer()->m_Data));
+	delete m_pLayers;
+}
+
+void CCollision::Init(IKernel* pKernel, int WorldID)
+{
+	m_pLayers->Init(pKernel, WorldID);
+
+	const CMapItemLayerTilemap* pGameLayer = m_pLayers->GameLayer();
+	m_Width = pGameLayer->m_Width;
+	m_Height = pGameLayer->m_Height;
+
+	// initailize base game tiles
+	IMap* pMap = m_pLayers->Map();
+	m_pTiles = static_cast<CTile*>(pMap->GetData(pGameLayer->m_Data));
 	InitTiles(m_pTiles);
 
-	if(m_pLayers->TeleLayer())
+	// initialize front tiles
+	if(const CMapItemLayerTilemap* pFrontLayer = m_pLayers->FrontLayer())
 	{
-		unsigned int Size = m_pLayers->Map()->GetDataSize(m_pLayers->TeleLayer()->m_Tele);
-		if(Size >= (size_t)m_Width * m_Height * sizeof(CTeleTile))
+		unsigned int FrontLayerSize = pMap->GetDataSize(pFrontLayer->m_Front);
+		if(FrontLayerSize >= (m_Width * m_Height * sizeof(CTile)))
 		{
-			m_pTele = static_cast<CTeleTile*>(m_pLayers->Map()->GetData(m_pLayers->TeleLayer()->m_Tele));
-			InitTeleports(m_pTele);
+			m_pFront = static_cast<CTile*>(pMap->GetData(pFrontLayer->m_Front));
+			InitTiles(m_pFront);
 		}
 	}
 
-	if(m_pLayers->FrontLayer())
+	// initialize teleports
+	if(const CMapItemLayerTilemap* pTeleLayer = m_pLayers->TeleLayer())
 	{
-		unsigned int Size = m_pLayers->Map()->GetDataSize(m_pLayers->FrontLayer()->m_Front);
-		if(Size >= (size_t)m_Width * m_Height * sizeof(CTile))
+		unsigned int TeleLayerSize = pMap->GetDataSize(pTeleLayer->m_Tele);
+		if(TeleLayerSize >= (m_Width * m_Height * sizeof(CTeleTile)))
 		{
-			m_pFront = static_cast<CTile*>(m_pLayers->Map()->GetData(m_pLayers->FrontLayer()->m_Front));
-			InitTiles(m_pFront);
+			m_pTele = static_cast<CTeleTile*>(pMap->GetData(pTeleLayer->m_Tele));
+			InitTeleports();
+		}
+	}
+
+	// initialize switch tiles
+	if(const CMapItemLayerTilemap* pSwitchLayer = m_pLayers->SwitchLayer())
+	{
+		unsigned int SwitchLayerSize = pMap->GetDataSize(pSwitchLayer->m_Switch);
+		if(SwitchLayerSize >= (m_Width * m_Height * sizeof(CSwitchTileExtra)))
+		{
+			m_pExtra = static_cast<CSwitchTileExtra*>(pMap->GetData(pSwitchLayer->m_Switch));
+			InitExtra();
 		}
 	}
 }
 
 void CCollision::InitTiles(CTile* pTiles)
 {
+	// initialze variables
+	static std::unordered_map<int, int> TileFlags = 
+	{
+		{ TILE_DEATH, COLFLAG_DEATH },
+		{ TILE_SOLID, COLFLAG_SOLID },
+		{ TILE_NOHOOK, COLFLAG_SOLID | COLFLAG_NOHOOK },
+		{ TILE_GUILD_HOUSE, COLFLAG_SAFE },
+		{ TILE_AUCTION, COLFLAG_SAFE },
+		{ TILE_PLAYER_HOUSE, COLFLAG_SAFE },
+		{ TILE_SKILL_ZONE, COLFLAG_SAFE },
+		{ TILE_SHOP_ZONE, COLFLAG_SAFE },
+		{ TILE_QUEST_BOARD, COLFLAG_SAFE },
+		{ TILE_CRAFT_ZONE, COLFLAG_SAFE },
+		{ TILE_AETHER_TELEPORT, COLFLAG_SAFE },
+		{ TILE_GUILD_CHAIR, COLFLAG_SAFE },
+		{ TILE_INFO_BONUSES, COLFLAG_SAFE },
+		{ TILE_INFO_WANTED, COLFLAG_SAFE },
+		{ TILE_ANTI_PVP, COLFLAG_SAFE },
+		{ TILE_WORLD_SWAP, COLFLAG_SAFE },
+		{ TILE_INVISIBLE_WALL, COLFLAG_DISALLOW_MOVE }
+	};
+
 	for(int i = 0; i < m_Width * m_Height; i++)
 	{
-		int Index = pTiles[i].m_Index;
+		const int Index = pTiles[i].m_Index;
 		if(Index > 128)
 			continue;
 
-		switch(Index)
+		if(Index == TILE_FIXED_CAM)
 		{
-			case TILE_FIXED_CAM:
-			{
-				vec2 camPos = { i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f };
-				vec4 camRect = { camPos.x - CAM_RADIUS_W, camPos.y - CAM_RADIUS_H, camPos.x + CAM_RADIUS_W, camPos.y + CAM_RADIUS_H };
-				m_vFixedCamZones.emplace_back(camPos, camRect);
+			vec2 camPos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
+			vec4 camRect = { camPos.x - CAM_RADIUS_W, camPos.y - CAM_RADIUS_H, camPos.x + CAM_RADIUS_W, camPos.y + CAM_RADIUS_H };
+			m_vFixedCamZones.emplace_back(camPos, camRect);
+			pTiles[i].m_ColFlags = 0;
+			continue;
+		}
 
-				pTiles[i].m_Index = 0;
-				pTiles[i].m_Reserved = static_cast<char>(Index);
-				break;
-			}
-			case TILE_DEATH:
-				pTiles[i].m_Index = COLFLAG_DEATH;
-				break;
-			case TILE_SOLID:
-				pTiles[i].m_Index = COLFLAG_SOLID;
-				break;
-			case TILE_NOHOOK:
-				pTiles[i].m_Index = COLFLAG_SOLID | COLFLAG_NOHOOK;
-				break;
-			case TILE_GUILD_HOUSE:
-			case TILE_AUCTION:
-			case TILE_PLAYER_HOUSE:
-			case TILE_SKILL_ZONE:
-			case TILE_SHOP_ZONE:
-			case TILE_QUEST_BOARD:
-			case TILE_CRAFT_ZONE:
-			case TILE_AETHER_TELEPORT:
-			case TILE_GUILD_CHAIR:
-			case TILE_INFO_BONUSES:
-			case TILE_INFO_WANTED:
-			case TILE_ANTI_PVP:
-			case TILE_WORLD_SWAP:
-				pTiles[i].m_Index = COLFLAG_SAFE;
-				pTiles[i].m_Reserved = static_cast<char>(Index);
-				break;
-			case TILE_INVISIBLE_WALL:
-				pTiles[i].m_Index = COLFLAG_DISALLOW_MOVE;
-				pTiles[i].m_Reserved = static_cast<char>(Index);
-				break;
-			case TILE_CHAIR_LV1:
-			case TILE_CHAIR_LV2:
-			case TILE_CHAIR_LV3:
-			default:
-				pTiles[i].m_Index = 0;
-				pTiles[i].m_Reserved = static_cast<char>(Index);
+		auto it = TileFlags.find(Index);
+		pTiles[i].m_ColFlags = it != TileFlags.end() ? static_cast<char>(it->second) : 0;
+	}
+}
+
+void CCollision::InitTeleports()
+{
+	// initialize tiles
+	for(int i = 0; i < m_Width * m_Height; i++)
+	{
+		const int Number = m_pTele[i].m_Number;
+		const int Type = m_pTele[i].m_Type;
+
+		if(Number < 0)
+			continue;
+
+		// initialize teleports
+		vec2 tilePos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
+		if(Type == TILE_TELE_IN)
+		{
+			m_pTiles[i].m_Index = static_cast<char>(Type);
+			m_vTeleIns[Number].push_back(tilePos);
+		}
+		else if(Type == TILE_TELE_OUT)
+		{
+			m_pTiles[i].m_Index = static_cast<char>(Type);
+			m_vTeleOuts[Number].push_back(tilePos);
+		}
+		else if(Type == TILE_TELE_CONFIRM_OUT)
+		{
+			m_pTiles[i].m_Index = static_cast<char>(Type);
+			m_vConfirmTeleOuts[Number].push_back(tilePos);
 		}
 	}
+}
+
+void CCollision::InitExtra()
+{
+	const std::vector<std::string>& settings = m_pLayers->GetSettings();
+
+	for(int i = 0; i < m_Width * m_Height; i++)
+	{
+		const int Number = m_pExtra[i].m_Number;
+		const int Type = m_pExtra[i].m_Type;
+
+		if(Type == TILE_ZONE_NAME)
+		{
+			if(auto name = mrpgstd::LoadSetting<std::string>("#zone_name", settings, { Number }))
+				m_vZoneNames[Number] = name.value();
+			if(auto pvp = mrpgstd::LoadSetting<int>("#zone_pvp", settings, { Number }); !pvp.has_value() || pvp <= 0)
+				m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
+		}
+		else if(Type == TILE_INTERACT_OBJECT)
+		{
+			if(auto result = mrpgstd::LoadSetting<std::string>("#switch", settings, { Number }))
+			{
+				const vec2 tilePos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
+				m_vInteractObjects[result.value()] = tilePos;
+			}
+		}
+	}
+}
+
+void CCollision::InitEntities(const std::function<void(int, vec2, int)>& funcInit) const
+{
+	for(int y = 0; y < m_Height; ++y)
+	{
+		for(int x = 0; x < m_Width; ++x)
+		{
+			const int TileIndex = y * m_Width + x;
+			const int Index = m_pTiles[TileIndex].m_Index;
+			if(Index >= ENTITY_OFFSET)
+			{
+				const vec2 Pos(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+				const int Flags = m_pTiles[TileIndex].m_Flags;
+				funcInit(Index - ENTITY_OFFSET, Pos, Flags);
+			}
+		}
+	}
+}
+
+vec2 CCollision::GetRotateDirByFlags(int Flags)
+{
+	if(Flags == ROTATION_90)
+		return {1, 0};
+	if(Flags == ROTATION_180)
+		return {0, 1};
+	if(Flags == ROTATION_270)
+		return {-1, 0};
+	return {0, -1};
+}
+
+int CCollision::GetMainTileIndex(float x, float y) const
+{
+	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
+	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
+	return m_pTiles[Ny * m_Width + Nx].m_Index;
+}
+
+int CCollision::GetFrontTileIndex(float x, float y) const
+{
+	if(!m_pFront)
+		return TILE_AIR;
+
+	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
+	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
+	return m_pFront[Ny * m_Width + Nx].m_Index;
+}
+
+int CCollision::GetExtraTileIndex(float x, float y) const
+{
+	if(!m_pExtra)
+		return TILE_AIR;
+
+	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
+	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
+	return m_pExtra[Ny * m_Width + Nx].m_Type;
+}
+
+const char* CCollision::GetZonename(vec2 Pos) const
+{
+	if(!m_pExtra)
+		return nullptr;
+
+	int Nx = clamp(round_to_int(Pos.x) / 32, 0, m_Width - 1);
+	int Ny = clamp(round_to_int(Pos.y) / 32, 0, m_Height - 1);
+	int Number = m_pExtra[Ny * m_Width + Nx].m_Number;
+	return m_vZoneNames.contains(Number) ? m_vZoneNames.at(Number).c_str() : nullptr;
 }
 
 std::optional<vec2> CCollision::TryGetFixedCamPos(vec2 currentPos) const
@@ -137,68 +246,6 @@ std::optional<vec2> CCollision::TryGetFixedCamPos(vec2 currentPos) const
 			return camPos;
 	}
 	return std::nullopt;
-}
-
-void CCollision::InitTeleports(CTeleTile* pTiles)
-{
-	for(int i = 0; i < m_Width * m_Height; i++)
-	{
-		const int Number = pTiles[i].m_Number;
-		const int Type = pTiles[i].m_Type;
-
-		if(Number < 0)
-			continue;
-
-		if(Type == TILE_TELE_IN)
-		{
-			m_pTiles[i].m_Reserved = static_cast<char>(Type);
-			m_vTeleIns[Number].emplace_back(i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f);
-		}
-		else if(Type == TILE_TELE_OUT)
-		{
-			m_pTiles[i].m_Reserved = static_cast<char>(Type);
-			m_vTeleOuts[Number].emplace_back(i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f);
-		}
-		else if(Type == TILE_TELE_CONFIRM_OUT)
-		{
-			m_pTiles[i].m_Reserved = static_cast<char>(Type);
-			m_vConfirmTeleOuts[Number].emplace_back(i % m_Width * 32.0f + 16.0f, i / m_Width * 32.0f + 16.0f);
-		}
-	}
-}
-
-unsigned short CCollision::GetParseTile(int x, int y) const
-{
-	int Nx = clamp(x / 32, 0, m_Width - 1);
-	int Ny = clamp(y / 32, 0, m_Height - 1);
-	return static_cast<int>(m_pTiles[Ny * m_Width + Nx].m_Reserved);
-}
-
-unsigned short CCollision::GetParseFrontTile(int x, int y) const
-{
-	if(!m_pFront)
-		return TILE_AIR;
-
-	int Nx = clamp(x / 32, 0, m_Width - 1);
-	int Ny = clamp(y / 32, 0, m_Height - 1);
-	return static_cast<int>(m_pFront[Ny * m_Width + Nx].m_Reserved);
-}
-
-int CCollision::GetTile(int x, int y) const
-{
-	int Nx = clamp(x/32, 0, m_Width-1);
-	int Ny = clamp(y/32, 0, m_Height-1);
-	return m_pTiles[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pTiles[Ny*m_Width+Nx].m_Index;
-}
-
-int CCollision::GetFrontTile(int x, int y) const
-{
-	if(!m_pFront)
-		return 0;
-
-	int Nx = clamp(x/32, 0, m_Width-1);
-	int Ny = clamp(y/32, 0, m_Height-1);
-	return m_pFront[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pFront[Ny*m_Width+Nx].m_Index;
 }
 
 bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out, int ToIndex)
@@ -221,21 +268,24 @@ bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out, int ToIndex)
 	return true;
 }
 
-int CCollision::GetTileIndex(int Index) const
+int CCollision::GetMainTileCollisionFlags(int x, int y) const
 {
-	if (Index < 0)
-		return 0;
-	return m_pTiles[Index].m_Index;
+	int Nx = clamp(x/32, 0, m_Width-1);
+	int Ny = clamp(y/32, 0, m_Height-1);
+	return m_pTiles[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pTiles[Ny*m_Width+Nx].m_ColFlags;
 }
 
-int CCollision::GetTileFlags(int Index) const
+int CCollision::GetFrontTileCollisionFlags(int x, int y) const
 {
-	if (Index < 0)
+	if(!m_pFront)
 		return 0;
-	return m_pTiles[Index].m_Flags;
+
+	int Nx = clamp(x/32, 0, m_Width-1);
+	int Ny = clamp(y/32, 0, m_Height-1);
+	return m_pFront[Ny*m_Width+Nx].m_Index > 128 ? 0 : m_pFront[Ny*m_Width+Nx].m_ColFlags;
 }
 
-int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision) const
+int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *pOutBeforeCollision, int ColFlag) const
 {
 	const int Tile0X = round_to_int(Pos0.x)/32;
 	const int Tile0Y = round_to_int(Pos0.y)/32;
@@ -243,104 +293,18 @@ int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *p
 	const int Tile1Y = round_to_int(Pos1.y)/32;
 
 	const float Ratio = (Tile0X == Tile1X) ? 1.f : (Pos1.y - Pos0.y) / (Pos1.x-Pos0.x);
-
 	const float DetPos = Pos0.x * Pos1.y - Pos0.y * Pos1.x;
-
 	const int DeltaTileX = (Tile0X <= Tile1X) ? 1 : -1;
 	const int DeltaTileY = (Tile0Y <= Tile1Y) ? 1 : -1;
-
 	const float DeltaError = DeltaTileY * DeltaTileX * Ratio;
-
+	
 	int CurTileX = Tile0X;
 	int CurTileY = Tile0Y;
 	vec2 Pos = Pos0;
 
 	bool Vertical = false;
-
 	float Error = 0;
-	if(Tile0Y != Tile1Y && Tile0X != Tile1X)
-	{
-		Error = (CurTileX * Ratio - CurTileY - DetPos / (32*(Pos1.x-Pos0.x))) * DeltaTileY;
-		if(Tile0X < Tile1X)
-			Error += Ratio * DeltaTileY;
-		if(Tile0Y < Tile1Y)
-			Error -= DeltaTileY;
-	}
 
-	while(CurTileX != Tile1X || CurTileY != Tile1Y)
-	{
-		if(IsTile(CurTileX*32,CurTileY*32, COLFLAG_SOLID))
-			break;
-		if(CurTileY != Tile1Y && (CurTileX == Tile1X || Error > 0))
-		{
-			CurTileY += DeltaTileY;
-			Error -= 1;
-			Vertical = false;
-		}
-		else
-		{
-			CurTileX += DeltaTileX;
-			Error += DeltaError;
-			Vertical = true;
-		}
-	}
-	if(IsTile(CurTileX*32,CurTileY*32, COLFLAG_SOLID))
-	{
-		if(CurTileX != Tile0X || CurTileY != Tile0Y)
-		{
-			if(Vertical)
-			{
-				Pos.x = 32 * (CurTileX + ((Tile0X < Tile1X) ? 0 : 1));
-				Pos.y = (Pos.x * (Pos1.y - Pos0.y) - DetPos) / (Pos1.x - Pos0.x);
-			}
-			else
-			{
-				Pos.y = 32 * (CurTileY + ((Tile0Y < Tile1Y) ? 0 : 1));
-				Pos.x = (Pos.y * (Pos1.x - Pos0.x) + DetPos) / (Pos1.y - Pos0.y);
-			}
-		}
-		if(pOutCollision)
-			*pOutCollision = Pos;
-		if(pOutBeforeCollision)
-		{
-			vec2 Dir = normalize(Pos1-Pos0);
-			if(Vertical)
-				Dir *= 0.5f / absolute(Dir.x) + 1.f;
-			else
-				Dir *= 0.5f / absolute(Dir.y) + 1.f;
-			*pOutBeforeCollision = Pos - Dir;
-		}
-		return  GetTile(CurTileX*32,CurTileY*32);
-	}
-	if(pOutCollision)
-		*pOutCollision = Pos1;
-	if(pOutBeforeCollision)
-		*pOutBeforeCollision = Pos1;
-	return 0;
-}
-
-bool CCollision::IntersectLineColFlag(vec2 Pos0, vec2 Pos1, vec2* pOutCollision, vec2* pOutBeforeCollision, int ColFlag) const
-{
-	const int Tile0X = round_to_int(Pos0.x) / 32;
-	const int Tile0Y = round_to_int(Pos0.y) / 32;
-	const int Tile1X = round_to_int(Pos1.x) / 32;
-	const int Tile1Y = round_to_int(Pos1.y) / 32;
-
-	const float Ratio = (Tile0X == Tile1X) ? 1.f : (Pos1.y - Pos0.y) / (Pos1.x - Pos0.x);
-	const float DetPos = Pos0.x * Pos1.y - Pos0.y * Pos1.x;
-
-	const int DeltaTileX = (Tile0X <= Tile1X) ? 1 : -1;
-	const int DeltaTileY = (Tile0Y <= Tile1Y) ? 1 : -1;
-
-	const float DeltaError = DeltaTileY * DeltaTileX * Ratio;
-
-	int CurTileX = Tile0X;
-	int CurTileY = Tile0Y;
-	vec2 Pos = Pos0;
-
-	bool Vertical = false;
-
-	float Error = 0;
 	if(Tile0Y != Tile1Y && Tile0X != Tile1X)
 	{
 		Error = (CurTileX * Ratio - CurTileY - DetPos / (32 * (Pos1.x - Pos0.x))) * DeltaTileY;
@@ -350,11 +314,12 @@ bool CCollision::IntersectLineColFlag(vec2 Pos0, vec2 Pos1, vec2* pOutCollision,
 			Error -= DeltaTileY;
 	}
 
-	while(CurTileX != Tile1X || CurTileY != Tile1Y)
+	while (CurTileX != Tile1X || CurTileY != Tile1Y)
 	{
-		if(IsTile(CurTileX * 32, CurTileY * 32, ColFlag))
+		if (CheckPoint(CurTileX * 32, CurTileY * 32, ColFlag))
 			break;
-		if(CurTileY != Tile1Y && (CurTileX == Tile1X || Error > 0))
+
+		if (CurTileY != Tile1Y && (CurTileX == Tile1X || Error > 0))
 		{
 			CurTileY += DeltaTileY;
 			Error -= 1;
@@ -367,7 +332,8 @@ bool CCollision::IntersectLineColFlag(vec2 Pos0, vec2 Pos1, vec2* pOutCollision,
 			Vertical = true;
 		}
 	}
-	if(IsTile(CurTileX * 32, CurTileY * 32, ColFlag))
+
+	if(CheckPoint(CurTileX * 32, CurTileY * 32, ColFlag))
 	{
 		if(CurTileX != Tile0X || CurTileY != Tile0Y)
 		{
@@ -393,17 +359,23 @@ bool CCollision::IntersectLineColFlag(vec2 Pos0, vec2 Pos1, vec2* pOutCollision,
 				Dir *= 0.5f / absolute(Dir.y) + 1.f;
 			*pOutBeforeCollision = Pos - Dir;
 		}
-		return true;
+		return GetCollisionFlagsAt(CurTileX * 32, CurTileY * 32);
 	}
+
 	if(pOutCollision)
 		*pOutCollision = Pos1;
 	if(pOutBeforeCollision)
 		*pOutBeforeCollision = Pos1;
-	return false;
+
+	return 0;
 }
 
-/* another */
-void CCollision::Wallline(int DepthTiles, vec2 Direction, vec2* pPos, vec2* pPosTo, bool OffsetStartlineOneTile) const
+bool CCollision::IntersectLineColFlag(vec2 Pos0, vec2 Pos1, vec2* pOutCollision, vec2* pOutBeforeCollision, int ColFlag) const
+{
+	return IntersectLine(Pos0, Pos1, pOutCollision, pOutBeforeCollision) & ColFlag;
+}
+
+void CCollision::FillLengthWall(int DepthTiles, vec2 Direction, vec2* pPos, vec2* pPosTo, bool OffsetStartlineOneTile) const
 {
 	if(pPos && pPosTo)
 	{
@@ -418,12 +390,6 @@ void CCollision::Wallline(int DepthTiles, vec2 Direction, vec2* pPos, vec2* pPos
 			*pPos -= Direction * 30;
 		}
 	}
-}
-/* end another */
-
-bool CCollision::IsTile(int x, int y, int Flag) const
-{
-	return (GetTile(x, y) & Flag) != 0 || (GetFrontTile(x, y) & Flag) != 0;
 }
 
 // TODO: OPT: rewrite this smarter!
@@ -564,8 +530,7 @@ void CCollision::MovePhysicalAngleBox(vec2* pPos, vec2* pVel, vec2 Size, float* 
 	Vel.y += Gravity;
 	const float CheckSizeX = (Size.x / 2.0f);
 	const float CheckSizeY = (Size.y / 2.0f);
-	const bool IsCollide = (bool)CheckPoint(Pos.x - CheckSizeX, Pos.y + CheckSizeY + 5) || CheckPoint(Pos.x + CheckSizeX, Pos.y + CheckSizeY + 5);
-	if(IsCollide)
+	if(CheckPoint(Pos.x - CheckSizeX, Pos.y + CheckSizeY + 5) || CheckPoint(Pos.x + CheckSizeX, Pos.y + CheckSizeY + 5))
 	{
 		AngleForce += (Vel.x - 0.74f * 6.0f - AngleForce) / 2.0f;
 		Vel.x *= 0.8f;
@@ -595,8 +560,7 @@ void CCollision::MovePhysicalBox(vec2* pPos, vec2* pVel, vec2 Size, float Elasti
 	Vel.y += Gravity;
 	const float CheckSizeX = (Size.x / 2.0f);
 	const float CheckSizeY = (Size.y / 2.0f);
-	const bool IsCollide = (bool)CheckPoint(Pos.x - CheckSizeX, Pos.y + CheckSizeY + 5) || CheckPoint(Pos.x + CheckSizeX, Pos.y + CheckSizeY + 5);
-	if(IsCollide)
+	if(CheckPoint(Pos.x - CheckSizeX, Pos.y + CheckSizeY + 5) || CheckPoint(Pos.x + CheckSizeX, Pos.y + CheckSizeY + 5))
 	{
 		Vel.x *= 0.8f;
 	}
@@ -613,109 +577,29 @@ void CCollision::MovePhysicalBox(vec2* pPos, vec2* pVel, vec2 Size, float Elasti
 	*pVel = Vel;
 }
 
-enum
+int CCollision::GetMainTileFlags(float x, float y) const
 {
-	MR_DIR_HERE = 0,
-	MR_DIR_RIGHT,
-	MR_DIR_DOWN,
-	MR_DIR_LEFT,
-	MR_DIR_UP,
-	NUM_MR_DIRS
-};
-
-static int GetMoveRestrictionsRaw(int Direction, int Tile, int Flags)
-{
-	Flags = Flags & (TILEFLAG_VFLIP | TILEFLAG_HFLIP | TILEFLAG_ROTATE);
-	/*switch (Tile)
-	{
-	case TILE_STOP:
-		switch (Flags)
-		{
-		case ROTATION_0: return CANTMOVE_DOWN;
-		case ROTATION_90: return CANTMOVE_LEFT;
-		case ROTATION_180: return CANTMOVE_UP;
-		case ROTATION_270: return CANTMOVE_RIGHT;
-
-		case TILEFLAG_HFLIP^ ROTATION_0: return CANTMOVE_UP;
-		case TILEFLAG_HFLIP^ ROTATION_90: return CANTMOVE_RIGHT;
-		case TILEFLAG_HFLIP^ ROTATION_180: return CANTMOVE_DOWN;
-		case TILEFLAG_HFLIP^ ROTATION_270: return CANTMOVE_LEFT;
-		}
-		break;
-	case TILE_STOPS:
-		switch (Flags)
-		{
-		case ROTATION_0:
-		case ROTATION_180:
-		case TILEFLAG_HFLIP^ ROTATION_0:
-		case TILEFLAG_HFLIP^ ROTATION_180:
-			return CANTMOVE_DOWN | CANTMOVE_UP;
-		case ROTATION_90:
-		case ROTATION_270:
-		case TILEFLAG_HFLIP^ ROTATION_90:
-		case TILEFLAG_HFLIP^ ROTATION_270:
-			return CANTMOVE_LEFT | CANTMOVE_RIGHT;
-		}
-		break;
-	case TILE_STOPA:
-		return CANTMOVE_LEFT | CANTMOVE_RIGHT | CANTMOVE_UP | CANTMOVE_DOWN;
-	}*/
-	return 0;
+	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
+	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
+	return m_pTiles[Ny * m_Width + Nx].m_Index > 128 ? 0 : m_pTiles[Ny * m_Width + Nx].m_Flags;
 }
 
-static int GetMoveRestrictionsMask(int Direction)
+int CCollision::GetFrontTileFlags(float x, float y) const
 {
-	switch (Direction)
-	{
-	case MR_DIR_HERE: return 0;
-	case MR_DIR_RIGHT: return CANTMOVE_RIGHT;
-	case MR_DIR_DOWN: return CANTMOVE_DOWN;
-	case MR_DIR_LEFT: return CANTMOVE_LEFT;
-	case MR_DIR_UP: return CANTMOVE_UP;
-	default: dbg_assert(false, "invalid dir");
-	}
-	return 0;
+	if(!m_pFront)
+		return 0;
+
+	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
+	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
+	return m_pFront[Ny * m_Width + Nx].m_Index > 128 ? 0 : m_pFront[Ny * m_Width + Nx].m_Flags;
 }
 
-static int GetMoveRestrictions(int Direction, int Tile, int Flags)
+int CCollision::GetExtraTileFlags(float x, float y) const
 {
-	int Result = GetMoveRestrictionsRaw(Direction, Tile, Flags);
-	// Generally, stoppers only have an effect if they block us from moving
-	// *onto* them. The one exception is one-way blockers, they can also
-	// block us from moving if we're on top of them.
-	/*if (Direction == MR_DIR_HERE && Tile == TILE_STOP)
-	{
-		return Result;
-	}*/
-	return Result & GetMoveRestrictionsMask(Direction);
-}
+	if(!m_pExtra)
+		return 0;
 
-int CCollision::GetMoveRestrictions(void* pUser, vec2 Pos, float Distance, int OverrideCenterTileIndex)
-{
-	static const vec2 DIRECTIONS[NUM_MR_DIRS] =
-	{
-		vec2(0, 0),
-		vec2(1, 0),
-		vec2(0, 1),
-		vec2(-1, 0),
-		vec2(0, -1) };
-	dbg_assert(0.0f <= Distance && Distance <= 32.0f, "invalid distance");
-
-	int Restrictions = 0;
-	for (int d = 0; d < NUM_MR_DIRS; d++)
-	{
-		vec2 ModPos = Pos + DIRECTIONS[d] * Distance;
-		int ModMapIndex = GetTile(ModPos);
-		if (d == MR_DIR_HERE && OverrideCenterTileIndex >= 0)
-		{
-			ModMapIndex = OverrideCenterTileIndex;
-		}
-		for (int Front = 0; Front < 2; Front++)
-		{
-			int Tile = GetTileIndex(ModMapIndex);
-			int Flags = GetTileFlags(ModMapIndex);
-			Restrictions |= ::GetMoveRestrictions(d, Tile, Flags);
-		}
-	}
-	return Restrictions;
+	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
+	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
+	return m_pExtra[Ny * m_Width + Nx].m_Type > 128 ? 0 : m_pExtra[Ny * m_Width + Nx].m_Flags;
 }

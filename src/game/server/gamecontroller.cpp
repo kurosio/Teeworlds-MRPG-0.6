@@ -102,7 +102,7 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	return true;
 }
 
-bool IGameController::OnEntity(int Index, vec2 Pos)
+void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 {
 	int Type = -1;
 	int SubType = 0;
@@ -144,38 +144,19 @@ bool IGameController::OnEntity(int Index, vec2 Pos)
 	if(Type != -1)
 	{
 		new CPickup(&GS()->m_World, Type, SubType, Pos);
-		return true;
 	}
 
-	// BOT'S WALLS
-	if(Index == ENTITY_NPC_WALL_UP)
+	if(Index == ENTITY_NPC_WALL)
 	{
-		vec2 Direction = vec2(0, -1);
+		vec2 Direction = GS()->Collision()->GetRotateDirByFlags(Flags);
 		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_FRIENDLY_BOT);
-		return true;
 	}
 
-	if(Index == ENTITY_NPC_WALL_LEFT)
+	if(Index == ENTITY_MOB_WALL)
 	{
-		vec2 Direction = vec2(1, 0);
-		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_FRIENDLY_BOT);
-		return true;
-	}
-	if(Index == ENTITY_MOB_WALL_UP)
-	{
-		vec2 Direction = vec2(0, -1);
+		vec2 Direction = GS()->Collision()->GetRotateDirByFlags(Flags);
 		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGRESSED_BOT);
-		return true;
 	}
-	if(Index == ENTITY_MOB_WALL_LEFT)
-	{
-		vec2 Direction = vec2(1, 0);
-		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGRESSED_BOT);
-		return true;
-	}
-
-
-	return false;
 }
 
 void IGameController::OnPlayerConnect(CPlayer* pPlayer)

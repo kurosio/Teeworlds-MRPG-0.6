@@ -3,6 +3,7 @@
 
 // forward
 class CGS;
+class IServer;
 class CPlayer;
 class CCharacter;
 class PlayerScenario;
@@ -16,8 +17,10 @@ enum class ConditionPriority
 };
 
 // scenario
-class PlayerScenario : public MultiworldIdentifiableData<std::map<int, std::vector<PlayerScenario>>>
+class PlayerScenario
 {
+	friend class PlayerScenarioManager;
+
 	struct Step
 	{
 		ScenarioAction FuncActive {};
@@ -25,32 +28,32 @@ class PlayerScenario : public MultiworldIdentifiableData<std::map<int, std::vect
 		ScenarioAction FuncOnEnd {};
 		ScenarioCondition FuncCheckCondition {};
 		ConditionPriority Priority {ConditionPriority::CONDITION_AND_TIMER };
-		int DelayMs {};
+		int DelayTick {};
 
-		explicit Step(int delayMs) : DelayMs(delayMs) {}
+		explicit Step(int delayTick) : DelayTick(delayTick) {}
 	};
 
-	int m_ClientID{};
-	std::vector<Step> m_vSteps{};
+	int m_ClientID {};
+	std::vector<Step> m_vSteps {};
 	size_t m_CurrentStepIndex {};
-	std::chrono::steady_clock::time_point m_LastStepTime{};
+	int m_LastStepTimeTick{};
 	bool m_Running{};
 
-	bool CanExecuteStep(const Step& step, long elapsedMs) const;
+	bool CanExecuteStep(const Step& step, long elapsedTick) const;
 	void ExecuteCurrentStep();
 
 public:
 	PlayerScenario() = default;
 
 	CGS* GS() const;
+	IServer* Server() const;
 	int GetClientID() const { return m_ClientID; }
-	CPlayer* GetPlayer() const { return GS()->GetPlayer(m_ClientID, true); }
-	CCharacter* GetCharacter() const { return GetPlayer()->GetCharacter(); }
-	bool IsFinished() const { return m_CurrentStepIndex >= m_vSteps.size(); }
+	CPlayer* GetPlayer() const;
+	CCharacter* GetCharacter() const;
 
-	PlayerScenario& Add(int delayMs = -1)
+	PlayerScenario& Add(int delayTick = -1)
 	{
-		m_vSteps.emplace_back(delayMs);
+		m_vSteps.emplace_back(delayTick);
 		return *this;
 	}
 
@@ -85,22 +88,68 @@ public:
 		return *this;
 	}
 
-	void Start(int ClientID);
+private:
+	void Start();
 	void Stop();
 	void Tick();
 
-	static void Tick(int ClientID)
-	{
-		if(const auto it = m_pData.find(ClientID); it != m_pData.end())
-		{
-			std::erase_if(it->second, [](PlayerScenario& scenario)
-			{
-				scenario.Tick();
-				return scenario.IsFinished();
-			});
+	bool IsFinished() const { return m_CurrentStepIndex >= m_vSteps.size(); }
+};
 
-			if(it->second.empty())
-				m_pData.erase(it);
+// scenario manager
+class PlayerScenarioManager
+{
+	int m_ClientID {};
+	std::map<int, PlayerScenario> m_Scenarios {};
+
+public:
+	PlayerScenarioManager() = default;
+
+	void Init(int ClientID)
+	{
+		m_ClientID = ClientID;
+	}
+
+	void Start(int ScenarioID)
+	{
+		if(const auto it = m_Scenarios.find(ScenarioID); it != m_Scenarios.end())
+			it->second.Start();
+	}
+
+	void Add(int ScenarioID, PlayerScenario Scenario)
+	{
+		dbg_assert(ScenarioID >= 0, "attempting to start a scenario without an indexer");
+		Scenario.m_ClientID = m_ClientID;
+		m_Scenarios[ScenarioID] = std::move(Scenario);
+	}
+
+	bool IsRunning(int ScenarioID) const
+	{
+		const auto it = m_Scenarios.find(ScenarioID);
+		return it != m_Scenarios.end() && it->second.m_Running;
+	}
+
+	void Tick()
+	{
+		for(auto& [id, scenario] : m_Scenarios)
+		{
+			scenario.Tick();
+		}
+	}
+
+	void StopAll()
+	{
+		for(auto& [id, scenario] : m_Scenarios)
+		{
+			scenario.Stop();
+		}
+	}
+
+	void Stop(int index)
+	{
+		if(const auto it = m_Scenarios.find(index); it != m_Scenarios.end())
+		{
+			it->second.Stop();
 		}
 	}
 };

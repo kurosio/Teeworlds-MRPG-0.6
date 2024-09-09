@@ -15,7 +15,7 @@ CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouse* pHouse, 
 	dbg_assert(m_pHouse != nullptr, "guild house is null for the door");
 
 	// initialize the door
-	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
+	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
 	m_PosControll = Pos;
 	m_State = CLOSED;
 	GS()->EntityManager()->LaserOrbite(this, 4, LaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);

@@ -345,7 +345,7 @@ void CCharacterBotAI::Tick()
 
 	// engine bots
 	HandleBot();
-	HandleTilesets();
+	HandleTiles();
 	HandleTuning();
 
 	// core

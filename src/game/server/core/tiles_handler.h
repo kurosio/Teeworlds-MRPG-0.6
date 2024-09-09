@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_CORE_TILES_HANDLER_H
 #define GAME_SERVER_CORE_TILES_HANDLER_H
 
+constexpr int TILES_LAYER_NUM = 3;
+
 #define HANDLE_TILE_MOTD_MENU(pPlayer, pChr, tile, motdMenu) \
 	if(pChr->GetTiles()->IsEnter(tile)) \
 	{ \
@@ -47,20 +49,21 @@ class CCharacter;
 class CTileHandler
 {
 	CCollision* m_pCollision {};
-	CCharacter* m_pCharacter{};
-	int m_MarkedTiles[2] {};
-	int m_MarkEnter[2] {};
-	int m_MarkExit[2] {};
+	CCharacter* m_pCharacter {};
+	int m_MarkedTiles[TILES_LAYER_NUM] {};
+	int m_MarkEnter[TILES_LAYER_NUM] {};
+	int m_MarkExit[TILES_LAYER_NUM] {};
+	int m_MoveRestrictions {};
 
 public:
-	explicit CTileHandler(CCollision* pCollision) : m_pCollision(pCollision) {}
+	explicit CTileHandler(CCollision* pCollision, CCharacter* pCharacter) : m_pCollision(pCollision), m_pCharacter(pCharacter) {}
 
 	void Handle(const vec2& Position);
 
 	// tiles
 	bool IsEnter(int Index);
 	bool IsExit(int Index);
-	bool IsActive(int Index) const { return m_MarkedTiles[0] == Index || m_MarkedTiles[1] == Index; }
+	bool IsActive(int Index) const { return m_MarkedTiles[0] == Index || m_MarkedTiles[1] == Index || m_MarkedTiles[2] == Index; }
 
 	// fold expression helpers
 	template <typename ... Ts> bool AreAnyEnter(const Ts... args) { return ((IsEnter(args)) || ...); }

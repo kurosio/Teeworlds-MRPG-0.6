@@ -34,7 +34,6 @@ class CGS : public IGameServer
 	class IStorageEngine* m_pStorage;
 	class CCommandProcessor* m_pCommandProcessor;
 	class CMmoController* m_pMmoController;
-	class CLayers* m_pLayers;
 	class CEntityManager* m_pEntityManager;
 	class CPathFinder* m_pPathFinder;
 

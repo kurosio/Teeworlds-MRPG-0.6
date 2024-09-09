@@ -15,6 +15,11 @@
 #include <queue>
 #include <set>
 #include <optional>
+#include <variant>
+
+#include <teeother/tools/flat_hash_map/bytell_hash_map.h>
+#include <teeother/tools/flat_hash_map/flat_hash_map.h>
+#include <teeother/tools/flat_hash_map/unordered_map.h>
 #include <teeother/tools/nlohmann_json.h>
 
 #include <base/system.h>
@@ -27,5 +32,6 @@
 #include <base/tl/array.h>
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
+#include <teeother/tools/utilites.h>
 
 #endif //GAME_TEEOTHER_STDAFX_SHARED_H

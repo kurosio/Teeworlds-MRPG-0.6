@@ -10,7 +10,7 @@
 CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, CHouse* pHouse, std::string&& Name, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_Name(std::move(Name)), m_pHouse(pHouse)
 {
-	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
+	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
 	m_PosControll = Pos;
 	m_State = CLOSED;
 	GS()->EntityManager()->LaserOrbite(this, 4, LaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);

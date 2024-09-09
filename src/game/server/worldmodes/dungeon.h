@@ -44,7 +44,6 @@ public:
 	void Tick() override;
 	void Snap() override;
 
-	bool OnEntity(int Index, vec2 Pos) override;
 	void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) override;
 	void OnCharacterDeath(class CPlayer* pVictim, class CPlayer* pKiller, int Weapon) override;
 	bool OnCharacterSpawn(class CCharacter* pChr) override;

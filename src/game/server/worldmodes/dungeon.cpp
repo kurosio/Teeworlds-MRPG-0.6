@@ -544,18 +544,10 @@ void CGameControllerDungeon::CreateLogic(int Type, int Mode, vec2 Pos, int Parse
 		new CLogicDoorKey(&GS()->m_World, Pos, ParseInt, Mode);
 }
 
-bool CGameControllerDungeon::OnEntity(int Index, vec2 Pos)
-{
-	if(IGameController::OnEntity(Index, Pos))
-		return true;
-
-	return false;
-}
-
 DungeonDoor::DungeonDoor(CGameWorld* pGameWorld, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_DOOR, Pos)
 {
-	GS()->Collision()->Wallline(32, vec2(0, -1), &m_Pos, &m_PosTo);
+	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo);
 	m_State = DUNGEON_WAITING;
 
 	GameWorld()->InsertEntity(this);

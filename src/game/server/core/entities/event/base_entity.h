@@ -1,7 +1,6 @@
 #ifndef GAME_SERVER_ENTITIES_BASE_ENTITY_H
 #define GAME_SERVER_ENTITIES_BASE_ENTITY_H
 
-#include <game/server/core/utilites.h>
 #include <game/server/entity.h>
 
 class CPlayer;

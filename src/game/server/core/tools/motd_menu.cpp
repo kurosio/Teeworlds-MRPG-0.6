@@ -13,7 +13,7 @@ void MotdMenu::AddImpl(int extra, std::string_view command, const std::string& d
 	m_ScrollManager.SetMaxScrollPos(static_cast<int>(m_Points.size()));
 }
 
-void MotdMenu::Handle()
+void MotdMenu::Tick()
 {
 	// check is has points
 	if(m_Points.empty())

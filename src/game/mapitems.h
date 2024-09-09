@@ -6,11 +6,12 @@
 // layer types
 enum
 {
-	LAYERTYPE_INVALID=0,
-	LAYERTYPE_GAME,
+	// layers
+	LAYERTYPE_INVALID = 0,
+	LAYERTYPE_GAME, // unused
 	LAYERTYPE_TILES,
-	LAYERTYPE_QUADS,
 
+	// mapitem types
 	MAPITEMTYPE_VERSION=0,
 	MAPITEMTYPE_INFO,
 	MAPITEMTYPE_IMAGE,
@@ -34,10 +35,8 @@ enum
 	ENTITY_PICKUP_SHOTGUN,
 	ENTITY_PICKUP_GRENADE,
 	ENTITY_PICKUP_LASER,
-	ENTITY_NPC_WALL_UP,
-	ENTITY_NPC_WALL_LEFT,
-	ENTITY_MOB_WALL_UP,
-	ENTITY_MOB_WALL_LEFT,
+	ENTITY_NPC_WALL,
+	ENTITY_MOB_WALL,
 	ENTITY_FARMING,
 	ENTITY_MINING,
 	ENTITY_SPAWN = 17,
@@ -78,19 +77,33 @@ enum
 	TILE_SPECIAL_EVENT_PARTY,
 	TILE_SPECIAL_EVENT_LIKE,
 	TILE_SPECIAL_EVENT_HEALTH,
+
+	// extra
+	TILE_ZONE_NAME = 144,
+	TILE_INTERACT_OBJECT,
 	MAX_TILES,
 
-	TILEFLAG_VFLIP=1,
-	TILEFLAG_HFLIP=2,
-	TILEFLAG_OPAQUE=4,
-	TILEFLAG_ROTATE=8,
+	//Flags
+	TILEFLAG_XFLIP = 1,
+	TILEFLAG_YFLIP = 2,
+	TILEFLAG_OPAQUE = 4,
+	TILEFLAG_ROTATE = 8,
 
-	LAYERFLAG_DETAIL=1,
-	TILESLAYERFLAG_GAME=1,
+	//Rotation
+	ROTATION_0 = 0,
+	ROTATION_90 = TILEFLAG_ROTATE,
+	ROTATION_180 = (TILEFLAG_XFLIP | TILEFLAG_YFLIP),
+	ROTATION_270 = (TILEFLAG_XFLIP | TILEFLAG_YFLIP | TILEFLAG_ROTATE),
+
+	// layerflags
+	LAYERFLAG_DETAIL = 1,
+	TILESLAYERFLAG_GAME = 1,
 	TILESLAYERFLAG_TELE = 2,
 	TILESLAYERFLAG_FRONT = 8,
+	TILESLAYERFLAG_SWITCH = 16,
 
-	ENTITY_OFFSET=255-16*4,
+	// entity offset
+	ENTITY_OFFSET = 255 - 16 * 4,
 };
 
 struct CPoint
@@ -122,7 +135,7 @@ public:
 	unsigned char m_Index;
 	unsigned char m_Flags;
 	unsigned char m_Skip;
-	unsigned char m_Reserved;
+	unsigned char m_ColFlags;
 };
 
 class CTeleTile
@@ -130,6 +143,15 @@ class CTeleTile
 public:
 	unsigned char m_Number;
 	unsigned char m_Type;
+};
+
+class CSwitchTileExtra
+{
+public:
+	unsigned char m_Number;
+	unsigned char m_Type;
+	unsigned char m_Flags;
+	unsigned char m_Delay;
 };
 
 struct CMapItemInfo

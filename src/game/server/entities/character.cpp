@@ -24,7 +24,7 @@ MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENT
 CCharacter::CCharacter(CGameWorld* pWorld)
 	: CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER, vec2(0, 0), ms_PhysSize)
 {
-	m_pTilesHandler = new CTileHandler(pWorld->GS()->Collision());
+	m_pTilesHandler = new CTileHandler(pWorld->GS()->Collision(), this);
 }
 
 CCharacter::~CCharacter()
@@ -102,9 +102,7 @@ bool CCharacter::IsGrounded() const
 		return true;
 	if(GS()->Collision()->CheckPoint(m_Pos.x - GetProximityRadius() / 2, m_Pos.y + GetProximityRadius() / 2 + 5))
 		return true;
-
-	int MoveRestrictionsBelow = GS()->Collision()->GetMoveRestrictions(m_Pos + vec2(0, GetProximityRadius() / 2 + 4), 0.0f);
-	return (MoveRestrictionsBelow & CANTMOVE_DOWN) != 0;
+	return false;
 }
 
 bool CCharacter::IsCollisionFlag(int Flag) const
@@ -671,7 +669,7 @@ void CCharacter::Tick()
 
 	// handler's
 	HandlePlayer();
-	HandleTilesets();
+	HandleTiles();
 	HandleWeapons();
 	HandleTuning();
 
@@ -1114,7 +1112,7 @@ void CCharacter::PostSnap()
 	m_TriggeredEvents = 0;
 }
 
-void CCharacter::HandleTilesets()
+void CCharacter::HandleTiles()
 {
 	// handle tilesets
 	m_pTilesHandler->Handle(m_Core.m_Pos);
@@ -1146,6 +1144,18 @@ void CCharacter::HandleTilesets()
 		else
 			m_pPlayer->LockedView().ViewUnlock();
 
+		// zone information
+		if(m_pTilesHandler->IsActive(TILE_ZONE_NAME))
+		{
+			if(const char* pName = GS()->Collision()->GetZonename(m_Core.m_Pos); pName && m_Zonename != pName)
+			{
+				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 50, "You're in {}!", pName);
+				m_Zonename = pName;
+			}
+		}
+		else if(m_pTilesHandler->IsExit(TILE_ZONE_NAME))
+			m_Zonename = "unknown";
+
 		// check from components
 		GS()->Core()->OnCharacterTile(this);
 	}
@@ -1158,14 +1168,14 @@ void CCharacter::HandleTilesets()
 	if(m_pTilesHandler->IsEnter(TILE_ANTI_PVP))
 		GS()->Chat(m_ClientID, "You have entered the safe zone!");
 	else if(m_pTilesHandler->IsExit(TILE_ANTI_PVP))
-		GS()->Chat(m_ClientID, "You've left the safe zone!");
+		GS()->Chat(m_ClientID, "You have entered the pvp zone!");
 
 	// chairs
-	if(GetTiles()->IsActive(TILE_CHAIR_LV1))
+	if(m_pTilesHandler->IsActive(TILE_CHAIR_LV1))
 		m_pPlayer->Account()->HandleChair(1, 1);
-	if(GetTiles()->IsActive(TILE_CHAIR_LV2))
+	if(m_pTilesHandler->IsActive(TILE_CHAIR_LV2))
 		m_pPlayer->Account()->HandleChair(3, 3);
-	if(GetTiles()->IsActive(TILE_CHAIR_LV3))
+	if(m_pTilesHandler->IsActive(TILE_CHAIR_LV3))
 		m_pPlayer->Account()->HandleChair(5, 5);
 }
 
@@ -1431,7 +1441,8 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		return false;
 
 	// disable damage on safe area
-	if(GS()->Collision()->GetTile(GetPos()) & CCollision::COLFLAG_SAFE || GS()->Collision()->GetTile(pFrom->GetCharacter()->GetPos()) & CCollision::COLFLAG_SAFE)
+	if(GS()->Collision()->GetCollisionFlagsAt(GetPos()) & CCollision::COLFLAG_SAFE 
+		|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->GetPos()) & CCollision::COLFLAG_SAFE)
 		return false;
 
 	// players anti pvp

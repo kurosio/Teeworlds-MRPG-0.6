@@ -102,7 +102,7 @@ public:
 		AddImpl(NOPE, "BACKPAGE", "<<< Backpage");
 	}
 
-	void Handle();
+	void Tick();
 	void Send(int Menulist);
 	int GetLastMenulist() const { return m_LastMenulist; }
 	int GetMenulist() const { return m_Menulist; }
