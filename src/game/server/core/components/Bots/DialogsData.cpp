@@ -423,7 +423,7 @@ void CPlayerDialog::DialogEvents(DIALOGEVENTCUR Pos) const
 		EventData = QuestBotInfo::ms_aQuestBot[m_MobID].m_EventJsonData;
 	}
 
-	Utils::Json::parseFromString(EventData, [Pos, this](nlohmann::json& pJson) 
+	mystd::json::parse(EventData, [Pos, this](nlohmann::json& pJson) 
 	{
 		const char* pElem = nullptr;
 		switch(Pos)

@@ -12,11 +12,11 @@ void CTutorialManager::OnInit()
 {
 	// load file
 	ByteArray RawData;
-	Utils::Files::Result Result = Utils::Files::loadFile(TUTORIAL_FILE_PATH, &RawData);
-	dbg_assert(Result != Utils::Files::Result::ERROR_FILE, "Tutorial file not found (\"server_data/tutorial_data.json\")");
+	mystd::file::result Result = mystd::file::load(TUTORIAL_FILE_PATH, &RawData);
+	dbg_assert(Result != mystd::file::result::ERROR_FILE, "Tutorial file not found (\"server_data/tutorial_data.json\")");
 
 	// parsing tutorial data from file
-	Utils::Json::parseFromString((char*)RawData.data(), [&](nlohmann::json& pJson)
+	mystd::json::parse((char*)RawData.data(), [&](nlohmann::json& pJson)
 	{
 		for(auto& pStep : pJson)
 		{

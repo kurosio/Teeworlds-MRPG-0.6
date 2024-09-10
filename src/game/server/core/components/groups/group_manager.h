@@ -11,7 +11,7 @@ class CGroupManager : public MmoComponent
 	~CGroupManager() override
 	{
 		// free data
-		mrpgstd::free_container(GroupData::Data());
+		mystd::freeContainer(GroupData::Data());
 	}
 
 	void OnInit() override;

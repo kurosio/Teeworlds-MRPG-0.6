@@ -6,7 +6,7 @@
 class CPlayer;
 class CEntityGroup;
 
-class CBaseEntity : public CEntity, public mrpgstd::CConfigurable
+class CBaseEntity : public CEntity, public mystd::CConfigurable
 {
 public:
 	enum EventType

@@ -5,11 +5,18 @@
 
 using ByteArray = std::basic_string<std::byte>;
 
-namespace mrpgstd
+/**
+ * @namespace mystd
+ * @brief A set of utilities for advanced work with containers, concepts and configuration.
+ *
+ * The `mystd` namespace contains functions and classes for working with containers,
+ * smart pointers and configurations, as well as utilities for parsing strings and freeing resources.
+ */
+namespace mystd
 {
 	namespace detail
 	{
-		// specialization pasrsing value
+		// specialization parsing value
 		template<typename T>
 		inline std::optional<T> ParseValue(const std::string& str) { return std::nullopt; };
 
@@ -19,7 +26,7 @@ namespace mrpgstd
 		template<>
 		inline std::optional<std::string> ParseValue<std::string>(const std::string& str) { return str; }
 
-		// сconcepts
+		// сoncepts
 		template<typename T>
 		concept is_has_clear_function = requires(T & c) { { c.clear() } -> std::same_as<void>; };
 
@@ -48,30 +55,272 @@ namespace mrpgstd
 
 	// function to clear a container
 	template<detail::is_container T>
-	void free_container(T& container)
+	void freeContainer(T& container)
 	{
 		static_assert(detail::is_has_clear_function<T>, "One or more types do not have clear() function");
 
 		if constexpr(detail::is_map_container<T>)
 		{
 			if constexpr(detail::is_container<typename T::mapped_type>)
-				std::ranges::for_each(container, [](auto& element) { free_container(element.second); });
+				std::ranges::for_each(container, [](auto& element) { freeContainer(element.second); });
 			else if constexpr(std::is_pointer_v<typename T::mapped_type> && !detail::is_smart_pointer<typename T::mapped_type>)
 				std::ranges::for_each(container, [](auto& element) { delete element.second; });
 		}
 		else
 		{
 			if constexpr(detail::is_container<typename T::value_type>)
-				std::ranges::for_each(container, [](auto& element) { free_container(element); });
+				std::ranges::for_each(container, [](auto& element) { freeContainer(element); });
 			else if constexpr(std::is_pointer_v<typename T::value_type> && !detail::is_smart_pointer<typename T::value_type>)
 				std::ranges::for_each(container, [](auto& element) { delete element; });
 		}
 		container.clear();
 	}
 	template<detail::is_container... Containers>
-	void free_container(Containers&... args) { (free_container(args), ...); }
+	void freeContainer(Containers&... args) { (freeContainer(args), ...); }
 
-	// configurable class
+	// function for loading numeral configurations // TODO:ignore severity
+	template<typename T1, typename T2 = int>
+	inline std::optional<T1> loadSetting(const std::string& prefix, const std::vector<std::string>& settings, std::optional<T2> UniquePrefix = std::nullopt)
+	{
+		std::string fullPrefix = prefix + " ";
+		if(UniquePrefix.has_value())
+		{
+			if constexpr(std::is_same_v<T2, std::string>)
+				fullPrefix += UniquePrefix.value() + " ";
+			else
+				fullPrefix += std::to_string(UniquePrefix.value()) + " ";
+		}
+
+		auto it = std::ranges::find_if(settings, [&fullPrefix](const std::string& s)
+		{
+			return s.starts_with(fullPrefix);
+		});
+
+		if(it != settings.end())
+		{
+			std::string valueStr = it->substr(fullPrefix.size());
+			if(!valueStr.empty())
+				return detail::ParseValue<T1>(valueStr);
+		}
+
+		return std::nullopt;
+	}
+
+
+	/**
+	 * @namespace string
+	 * @brief Utilities for working with text strings.
+	 *
+	 * The `string` namespace contains functions for working with strings, which can be used
+	 * for various purposes of formatting, displaying, or manipulating text.
+	 */
+	namespace string
+	{
+		inline std::string progressBar(int max_value, int current_value, int step, const std::string& UTF_fill_symbol, const std::string& UTF_empty_symbol)
+		{
+			std::string ProgressBar;
+			int numFilled = current_value / step;
+			int numEmpty = max_value / step - numFilled;
+			ProgressBar.reserve(numFilled + numEmpty);
+
+			for(int i = 0; i < numFilled; i++)
+				ProgressBar += UTF_fill_symbol;
+
+			for(int i = 0; i < numEmpty; i++)
+				ProgressBar += UTF_empty_symbol;
+
+			return ProgressBar;
+		}
+	}
+
+
+	/**
+	 * @namespace json
+	 * @brief Utilities for working with JSON data using the nlohmann::json library.
+	 *
+	 * The `json` namespace provides functions to parse strings in JSON format
+	 * and perform actions on the resulting data via callback functions.
+	 */
+	namespace json
+	{
+		inline void parse(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
+		{
+			if(!Data.empty())
+			{
+				try
+				{
+					nlohmann::json JsonData = nlohmann::json::parse(Data);
+					pFuncCallback(JsonData);
+				}
+				catch(nlohmann::json::exception& s)
+				{
+					dbg_assert(false, fmt("[json parse] Invalid json: {}", s.what()).c_str());
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * @namespace file
+	 * @brief Utilities for working with the file system: reading, writing and deleting files.
+	 *
+	 * The `file` namespace contains functions for performing file operations,
+	 * such as load, save, and delete. These functions return the result of the operation
+	 * as a `Result` enumeration.
+	 */
+	namespace file
+	{
+		enum result : int
+		{
+			ERROR_FILE,
+			SUCCESSFUL,
+		};
+
+		inline result load(const char* pFile, ByteArray* pData)
+		{
+			IOHANDLE File = io_open(pFile, IOFLAG_READ);
+			if(!File)
+				return ERROR_FILE;
+
+			pData->resize((unsigned)io_length(File));
+			io_read(File, pData->data(), (unsigned)pData->size());
+			io_close(File);
+			return SUCCESSFUL;
+		}
+
+		inline result remove(const char* pFile)
+		{
+			int Result = fs_remove(pFile);
+			return Result == 0 ? SUCCESSFUL : ERROR_FILE;
+		}
+
+		inline result save(const char* pFile, const void* pData, unsigned size)
+		{
+			// delete old file
+			remove(pFile);
+
+			IOHANDLE File = io_open(pFile, IOFLAG_WRITE);
+			if(!File)
+				return ERROR_FILE;
+
+			io_write(File, pData, size);
+			io_close(File);
+			return SUCCESSFUL;
+		}
+	}
+
+
+	/**
+	 * @namespace aesthetic
+	 * @brief A set of utilities for creating aesthetically pleasing text strings with decorative borders and symbols.
+	 *
+	 * The `aesthetic` namespace provides functions for creating text elements,
+	 * such as borders, symbols, lines, and quotes, which can be used for
+	 * output design in applications.
+	 */
+	namespace aesthetic
+	{
+		// Example: ───※ ·· ※───
+		template<int iter = 5>
+		inline std::string boardPillar(const std::string_view& text)
+		{
+			std::string result;
+			result.reserve(iter * 2 + text.size() + 10);
+
+			for(int i = 0; i < iter; ++i)
+				result += "\u2500";
+			result += "\u203B \u00B7 ";
+			result += text;
+			result += " \u00B7 \u203B";
+			for(int i = 0; i < iter; ++i)
+				result += "\u2500";
+
+			return std::move(result);
+		}
+
+		// Example: ✯¸.•*•✿✿•*•.¸✯
+		inline std::string boardFlower(const std::string_view& text)
+		{
+			std::string result;
+			result.reserve(text.size() + 10);
+
+			result += "\u272F\u00B8.\u2022*\u2022\u273F";
+			result += text;
+			result += "\u273F\u2022*\u2022.\u00B8\u272F";
+
+			return std::move(result);
+		}
+
+		// Example: ──⇌ • • ⇋──
+		template<int iter = 5>
+		inline std::string boardConfident(const std::string_view& text)
+		{
+			std::string result;
+			result.reserve(iter * 2 + text.size() + 10);
+
+			for(int i = 0; i < iter; ++i)
+				result += "\u2500";
+			result += " \u21CC \u2022 ";
+			result += text;
+			result += " \u2022 \u21CB ";
+			for(int i = 0; i < iter; ++i)
+				result += "\u2500";
+
+			return std::move(result);
+		}
+
+		/* LINES */
+		// Example: ︵‿︵‿
+		template <int iter>
+		inline std::string lineWaves()
+		{
+			std::string result;
+			result.reserve(iter * 2);
+
+			for(int i = 0; i < iter; ++i)
+				result += "\uFE35\u203F";
+
+			return result;
+		}
+
+		/* WRAP LINES */
+		// Example:  ────⇌ • • ⇋────
+		template <int iter>
+		inline std::string wrapLineConfident()
+		{
+			return boardConfident<iter>("");
+		}
+
+		// Example: ───※ ·· ※───
+		template <int iter>
+		inline std::string wrapLinePillar()
+		{
+			return boardPillar<iter>("");
+		}
+
+		/* QUOTES */
+		// Example: -ˏˋ Text here ˊˎ
+		inline std::string quoteDefault(const std::string_view& text)
+		{
+			std::string result;
+			result.reserve(text.size() + 10);
+
+			result += "-\u02CF\u02CB";
+			result += text;
+			result += "\u02CA\u02CE";
+
+			return result;
+		}
+
+		/* SYMBOL SMILIES */
+		// Example: ᴄᴏᴍᴘʟᴇᴛᴇ!
+		inline std::string symbolsComplete()
+		{
+			return "\u1D04\u1D0F\u1D0D\u1D18\u029F\u1D07\u1D1B\u1D07!";
+		}
+	}
+
 	class CConfigurable
 	{
 		using ConfigVariant = std::variant<int, float, vec2, std::string, std::vector<vec2>>;
@@ -126,225 +375,6 @@ namespace mrpgstd
 			m_umConfig.erase(key);
 		}
 	};
-
-	// function for loading numeral configurations // TODO:ignore severity
-	template<typename T1, typename T2 = int>
-	inline std::optional<T1> LoadSetting(const std::string& prefix, const std::vector<std::string>& settings, std::optional<T2> UniquePrefix = std::nullopt)
-	{
-		std::string fullPrefix = prefix + " ";
-		if(UniquePrefix.has_value())
-		{
-			if constexpr(std::is_same_v<T2, std::string>)
-				fullPrefix += UniquePrefix.value() + " ";
-			else
-				fullPrefix += std::to_string(UniquePrefix.value()) + " ";
-		}
-
-		auto it = std::ranges::find_if(settings, [&fullPrefix](const std::string& s)
-		{
-			return s.starts_with(fullPrefix);
-		});
-
-		if(it != settings.end())
-		{
-			std::string valueStr = it->substr(fullPrefix.size());
-			if(!valueStr.empty())
-				return detail::ParseValue<T1>(valueStr);
-		}
-
-		return std::nullopt;
-	}
 }
-
-// string utils
-namespace Utils::String
-{
-	inline std::string progressBar(int max_value, int current_value, int step, const std::string& UTF_fill_symbol, const std::string& UTF_empty_symbol)
-	{
-		std::string ProgressBar;
-		int numFilled = current_value / step;
-		int numEmpty = max_value / step - numFilled;
-		ProgressBar.reserve(numFilled + numEmpty);
-
-		for(int i = 0; i < numFilled; i++)
-			ProgressBar += UTF_fill_symbol;
-
-		for(int i = 0; i < numEmpty; i++)
-			ProgressBar += UTF_empty_symbol;
-
-		return ProgressBar;
-	}
-}
-
-// json utils
-namespace Utils::Json
-{
-	inline void parseFromString(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
-	{
-		if(!Data.empty())
-		{
-			try
-			{
-				nlohmann::json JsonData = nlohmann::json::parse(Data);
-				pFuncCallback(JsonData);
-			}
-			catch(nlohmann::json::exception& s)
-			{
-				dbg_assert(false, fmt("[json parse] Invalid json: {}", s.what()).c_str());
-			}
-		}
-	}
-}
-
-// files utils
-namespace Utils::Files
-{
-	enum Result : int
-	{
-		ERROR_FILE,
-		SUCCESSFUL,
-	};
-
-	inline Result loadFile(const char* pFile, ByteArray* pData)
-	{
-		IOHANDLE File = io_open(pFile, IOFLAG_READ);
-		if(!File)
-			return ERROR_FILE;
-
-		pData->resize((unsigned)io_length(File));
-		io_read(File, pData->data(), (unsigned)pData->size());
-		io_close(File);
-		return SUCCESSFUL;
-	}
-
-	inline Result deleteFile(const char* pFile)
-	{
-		int Result = fs_remove(pFile);
-		return Result == 0 ? SUCCESSFUL : ERROR_FILE;
-	}
-
-	inline Result saveFile(const char* pFile, const void* pData, unsigned size)
-	{
-		// delete old file
-		deleteFile(pFile);
-
-		IOHANDLE File = io_open(pFile, IOFLAG_WRITE);
-		if(!File)
-			return ERROR_FILE;
-
-		io_write(File, pData, size);
-		io_close(File);
-		return SUCCESSFUL;
-	}
-}
-
-// aesthetic utils (TODO: remove)
-namespace Utils::Aesthetic
-{
-	/* BORDURES */
-	// Example: ───※ ·· ※───
-	inline std::string B_PILLAR(int iter, bool right)
-	{
-		std::string result {};
-		if(right) { result += "\u203B \u00B7"; }
-		for(int i = 0; i < iter; i++) { result += "\u2500"; }
-		if(!right) { result += "\u00B7 \u203B"; }
-		return std::move(result);
-	}
-
-	// Example: ┏━━━━━ ━━━━━┓
-	inline std::string B_DEFAULT_TOP(int iter, bool right)
-	{
-		std::string result;
-		if(!right) { result += "\u250F"; }
-		for(int i = 0; i < iter; i++) { result += "\u2501"; }
-		if(right) { result += "\u2513"; }
-		return std::move(result);
-	}
-
-	// Example: ✯¸.•*•✿✿•*•.¸✯
-	inline std::string B_FLOWER(bool right)
-	{
-		return right ? "\u273F\u2022*\u2022.\u00B8\u272F" : "\u272F\u00B8.\u2022*\u2022\u273F";
-	}
-
-	// Example: ──⇌ • • ⇋──
-	inline std::string B_CONFIDENT(int iter, bool right)
-	{
-		std::string result;
-		if(right) { result += " \u21CC \u2022"; }
-		for(int i = 0; i < iter; i++) { result += "\u2500"; }
-		if(!right) { result += "\u2022 \u21CB"; }
-		return std::move(result);
-	}
-
-	/* LINES */
-	// Example: ━━━━━━
-	inline std::string L_DEFAULT(int iter)
-	{
-		std::string result;
-		for(int i = 0; i < iter; i++) { result += "\u2501"; }
-		return std::move(result);
-	}
-	// Example: ︵‿︵‿
-	inline std::string L_WAVES(int iter, bool post)
-	{
-		std::string result;
-		for(int i = 0; i < iter; i++) { result += "\uFE35\u203F"; }
-		return std::move(result);
-	}
-
-	/* WRAP LINES */
-	// Example:  ────⇌ • • ⇋────
-	inline std::string SWL_CONFIDENT(int iter)
-	{
-		return B_CONFIDENT(iter, false) + B_CONFIDENT(iter, true);
-	}
-	// Example: ───※ ·· ※───
-	inline std::string SWL_PILAR(int iter)
-	{
-		return B_PILLAR(iter, false) + B_PILLAR(iter, true);
-	}
-
-	/* QUOTES */
-	// Example: -ˏˋ Text here ˊˎ
-	inline std::string Q_DEFAULT(bool right)
-	{
-		return right ? "\u02CA\u02CE" : "-\u02CF\u02CB";
-	}
-
-	/* SYMBOL SMILIES */
-	// Example: 『•✎•』
-	inline std::string S_EDIT(const char* pBody)
-	{
-		return std::string("\u300E " + std::string(pBody) + " \u300F");
-	}
-	// Example: ᴄᴏᴍᴘʟᴇᴛᴇ!
-	inline std::string S_COMPLETE()
-	{
-		return "\u1D04\u1D0F\u1D0D\u1D18\u029F\u1D07\u1D1B\u1D07!";
-	}
-}
-
-// base class multiworld identifiable data
-class _BaseMultiworldIdentifiableData
-{
-	inline static class IServer* m_pServer {};
-
-public:
-	IServer* Server() const { return m_pServer; }
-	static void Init(IServer* pServer) { m_pServer = pServer; }
-};
-
-// class multiworld identifiable data
-template < typename T >
-class MultiworldIdentifiableData : public _BaseMultiworldIdentifiableData
-{
-protected:
-	static inline T m_pData {};
-
-public:
-	static T& Data() { return m_pData; }
-};
 
 #endif

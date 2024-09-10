@@ -97,7 +97,7 @@ void CAccountData::InitAchievements(const std::string& Data)
 	}
 
 	// initialize player achievements
-	Utils::Json::parseFromString(Data, [&m_apReferenceMap, this](nlohmann::json& pJson)
+	mystd::json::parse(Data, [&m_apReferenceMap, this](nlohmann::json& pJson)
 	{
 		for(auto& p : pJson)
 		{

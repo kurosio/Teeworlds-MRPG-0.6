@@ -11,7 +11,7 @@ CPlayer* CAchievement::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
 void CAchievementInfo::InitData(const std::string& RewardData)
 {
 	// parse the reward data
-	Utils::Json::parseFromString(RewardData, [this](nlohmann::json& pJson)
+	mystd::json::parse(RewardData, [this](nlohmann::json& pJson)
 	{
 		m_RewardData = std::move(pJson);
 	});

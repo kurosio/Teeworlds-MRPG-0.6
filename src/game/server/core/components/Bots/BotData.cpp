@@ -46,7 +46,7 @@ void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, std::string& 
 /************************************************************************/
 void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 {
-	Utils::Json::parseFromString(JsonData, [&](const nlohmann::json& pJson)
+	mystd::json::parse(JsonData, [&](const nlohmann::json& pJson)
 	{
 		// initilize required items
 		if(pJson.contains("required_items"))

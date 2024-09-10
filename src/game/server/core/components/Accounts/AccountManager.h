@@ -12,7 +12,7 @@ class CAccountManager : public MmoComponent
 	~CAccountManager() override
 	{
 		// free data
-		mrpgstd::free_container(CAccountData::ms_aData, CAccountTempData::ms_aPlayerTempData);
+		mystd::freeContainer(CAccountData::ms_aData, CAccountTempData::ms_aPlayerTempData);
 	}
 
 	void OnClientReset(int ClientID) override;

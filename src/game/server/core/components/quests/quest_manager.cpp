@@ -85,7 +85,7 @@ void CQuestManager::OnPlayerLogin(CPlayer* pPlayer)
 
 void CQuestManager::OnClientReset(int ClientID)
 {
-	mrpgstd::free_container(CPlayerQuest::Data()[ClientID]);
+	mystd::freeContainer(CPlayerQuest::Data()[ClientID]);
 }
 
 void CQuestManager::OnCharacterTile(CCharacter* pChr)

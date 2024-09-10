@@ -18,7 +18,7 @@ class CQuestManager : public MmoComponent
 	~CQuestManager() override
 	{
 		// free data
-		mrpgstd::free_container(CQuestDescription::Data(), CPlayerQuest::Data());
+		mystd::freeContainer(CQuestDescription::Data(), CPlayerQuest::Data());
 	}
 
 	void OnInit() override;

@@ -29,7 +29,7 @@ void CWarehouse::InitProperties(const std::string& Properties)
 	dbg_assert(Properties.length() > 0, "The properties string is empty");
 
 	// parse properties
-	Utils::Json::parseFromString(Properties, [this](nlohmann::json& pJson)
+	mystd::json::parse(Properties, [this](nlohmann::json& pJson)
 	{
 		// check importal properties values
 		dbg_assert(pJson.find("type") != pJson.end(), "The importal properties value is empty");

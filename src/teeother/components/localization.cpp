@@ -16,7 +16,7 @@ bool CLocalization::Init()
 	// loading file is not open pereinitilized steps
 	ByteArray RawData;
 	const char* pFilename = "./server_lang/index.json";
-	if(!Utils::Files::loadFile(pFilename, &RawData))
+	if(!mystd::file::load(pFilename, &RawData))
 	{
 		dbg_msg("Localization", "can't open ./server_lang/index.json");
 		return false;
@@ -247,8 +247,8 @@ void CLocalization::CLanguage::CUpdater::Push(const char* pTextKey, const char* 
 
 	// update localize element
 	std::string Hash(pUnique + std::to_string(ID));
-	auto iter = std::find_if(m_vElements.begin(), m_vElements.end(), [&Hash](const Element& pItem)
-	{ return pItem.m_Hash == Hash; });
+	auto iter = std::ranges::find_if(m_vElements, [&Hash](const Element& pItem)
+	                                 { return pItem.m_Hash == Hash; });
 	if (iter != m_vElements.end())
 	{
 		if(auto& pLocalize = *iter; pLocalize.m_Text != pTextKey)
@@ -288,6 +288,6 @@ void CLocalization::CLanguage::CUpdater::Finish()
 
 	// save
 	std::string aDirLanguageFile = std::string("./server_lang/") + m_pLanguage->GetFilename() + ".txt";
-	Utils::Files::saveFile(aDirLanguageFile.c_str(), (void*)Data.data(), (unsigned)Data.size());
+	mystd::file::save(aDirLanguageFile.c_str(), (void*)Data.data(), (unsigned)Data.size());
 	dbg_msg("localization", "language file %s has been updated!", m_pLanguage->GetFilename());
 }

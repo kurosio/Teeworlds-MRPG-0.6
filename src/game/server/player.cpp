@@ -622,7 +622,7 @@ void CPlayer::ProgressBar(const char* Name, int MyLevel, int MyExp, int ExpNeed,
 	const float GetLevelProgress = translate_to_percent((float)ExpNeed, (float)MyExp);
 	const float GetExpProgress = translate_to_percent((float)ExpNeed, (float)GivedExp);
 
-	std::string ProgressBar = Utils::String::progressBar(100, (int)GetLevelProgress, 10, ":", " ");
+	std::string ProgressBar = mystd::string::progressBar(100, (int)GetLevelProgress, 10, ":", " ");
 	str_format(aBufBroadcast, sizeof(aBufBroadcast), "Lv%d %s[%s] %0.2f%%+%0.3f%%(%d)XP", MyLevel, Name, ProgressBar.c_str(), GetLevelProgress, GetExpProgress, GivedExp);
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, aBufBroadcast);
 }
@@ -747,7 +747,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const auto BonusActivities = Account()->GetBonusManager().GetBonusActivitiesString();
 	const int NewlinesNeeded = 7 - BonusActivities.first;
 	std::string AdditionNewlines(NewlinesNeeded > 0 ? NewlinesNeeded : 0, '\n');
-	const std::string ProgressBar = Utils::String::progressBar(100, LevelPercent, 10, ":", " ");
+	const std::string ProgressBar = mystd::string::progressBar(100, LevelPercent, 10, ":", " ");
 
 	str_format(pBuffer, Size,
 		"\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s of %s\nBank %s\n%s\n%s\n%s\n%-150s",

@@ -385,12 +385,12 @@ void CMmoController::OnHandleTimePeriod() const
 	time_t CurrentTimeStamp = time(nullptr);
 
 	// Load the file "time_periods.cfg" and store the result in a variable
-	Utils::Files::Result Result = Utils::Files::loadFile("time_periods.cfg", &RawData);
-	if(Result == Utils::Files::Result::ERROR_FILE)
+	mystd::file::result Result = mystd::file::load("time_periods.cfg", &RawData);
+	if(Result == mystd::file::result::ERROR_FILE)
 	{
 		// Save the data to the file "time_periods.cfg"
 		std::string Data = std::to_string(CurrentTimeStamp) + "\n" + std::to_string(CurrentTimeStamp) + "\n" + std::to_string(CurrentTimeStamp);
-		Utils::Files::saveFile("time_periods.cfg", Data.data(), (unsigned)Data.size());
+		mystd::file::save("time_periods.cfg", Data.data(), (unsigned)Data.size());
 		return;
 	}
 
@@ -431,7 +431,7 @@ void CMmoController::OnHandleTimePeriod() const
 	if(!aPeriodsUpdated.empty())
 	{
 		std::string Data = std::to_string(DailyStamp) + "\n" + std::to_string(WeekStamp) + "\n" + std::to_string(MonthStamp);
-		Utils::Files::saveFile("time_periods.cfg", Data.data(), (unsigned)Data.size());
+		mystd::file::save("time_periods.cfg", Data.data(), (unsigned)Data.size());
 
 		// Check time periods for all components
 		for(const auto& component : m_System.m_vComponents)

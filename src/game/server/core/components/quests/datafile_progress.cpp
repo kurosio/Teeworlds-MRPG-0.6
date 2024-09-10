@@ -47,7 +47,7 @@ void QuestDatafile::Create() const
 
 	// save file
 	std::string Data = JsonQuestData.dump();
-	Utils::Files::saveFile(GetFilename().c_str(), Data.data(), (unsigned)Data.size());
+	mystd::file::save(GetFilename().c_str(), Data.data(), (unsigned)Data.size());
 }
 
 void QuestDatafile::Load() const
@@ -58,7 +58,7 @@ void QuestDatafile::Load() const
 
 	// loading file is not open pereinitilized steps
 	ByteArray RawData;
-	if(!Utils::Files::loadFile(GetFilename().c_str(), &RawData))
+	if(!mystd::file::load(GetFilename().c_str(), &RawData))
 	{
 		Create();
 		return;
@@ -138,7 +138,7 @@ void QuestDatafile::Load() const
 
 	// save file
 	std::string Data = JsonQuestData.dump();
-	Utils::Files::saveFile(GetFilename().c_str(), Data.data(), (unsigned)Data.size());
+	mystd::file::save(GetFilename().c_str(), Data.data(), (unsigned)Data.size());
 }
 
 bool QuestDatafile::Save() const
@@ -165,8 +165,8 @@ bool QuestDatafile::Save() const
 
 	// replace file
 	std::string Data = JsonQuestData.dump();
-	const auto Result = Utils::Files::saveFile(GetFilename().c_str(), Data.data(), (unsigned)Data.size());
-	return (Result == Utils::Files::Result::SUCCESSFUL);
+	const auto Result = mystd::file::save(GetFilename().c_str(), Data.data(), (unsigned)Data.size());
+	return (Result == mystd::file::result::SUCCESSFUL);
 }
 
 void QuestDatafile::Delete() const
@@ -177,7 +177,7 @@ void QuestDatafile::Delete() const
 	m_pQuest->m_vSteps.clear();
 
 	// Remove the temporary user quest data file
-	Utils::Files::deleteFile(GetFilename().c_str());
+	mystd::file::remove(GetFilename().c_str());
 	fs_remove(GetFilename().c_str());
 }
 

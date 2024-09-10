@@ -459,7 +459,7 @@ void CVotePlayerData::ClearVotes() const
 {
 	// free container data
 	int ClientID = m_pPlayer->GetCID();
-	mrpgstd::free_container(VoteWrapper::Data()[ClientID]);
+	mystd::freeContainer(VoteWrapper::Data()[ClientID]);
 
 	// send vote options
 	CNetMsg_Sv_VoteClearOptions ClearMsg;

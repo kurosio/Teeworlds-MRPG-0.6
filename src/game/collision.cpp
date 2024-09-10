@@ -153,14 +153,14 @@ void CCollision::InitExtra()
 
 		if(Type == TILE_ZONE)
 		{
-			if(auto name = mrpgstd::LoadSetting<std::string>("#zone_name", settings, { Number }))
+			if(auto name = mystd::loadSetting<std::string>("#zone_name", settings, { Number }))
 				m_vZoneNames[Number] = name.value();
-			if(auto pvp = mrpgstd::LoadSetting<int>("#zone_pvp", settings, { Number }); (!pvp.has_value() || pvp <= 0))
+			if(auto pvp = mystd::loadSetting<int>("#zone_pvp", settings, { Number }); (!pvp.has_value() || pvp <= 0))
 				m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
 		}
 		else if(Type == TILE_INTERACT_OBJECT)
 		{
-			if(auto result = mrpgstd::LoadSetting<std::string>("#switch", settings, { Number }))
+			if(auto result = mystd::loadSetting<std::string>("#switch", settings, { Number }))
 			{
 				const vec2 tilePos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
 				m_vInteractObjects[result.value()] = tilePos;

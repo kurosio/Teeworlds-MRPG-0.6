@@ -352,7 +352,7 @@ int CServer::Init()
 	}
 
 	// Initialize the static data for multiworld identification in the store
-	_BaseMultiworldIdentifiableData::Init((IServer*)this);
+	detail::_MultiworldIdentifiableData::Init(this);
 	return 0;
 }
 

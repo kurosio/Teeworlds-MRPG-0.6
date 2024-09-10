@@ -8,7 +8,7 @@ class CPlayer;
 class CLaserEntity;
 class CGameWorld;
 
-class CEntityGroup : public std::enable_shared_from_this<CEntityGroup>, public mrpgstd::CConfigurable
+class CEntityGroup : public std::enable_shared_from_this<CEntityGroup>, public mystd::CConfigurable
 {
 	CGameWorld* m_pWorld{};
 	int m_ClientID{};

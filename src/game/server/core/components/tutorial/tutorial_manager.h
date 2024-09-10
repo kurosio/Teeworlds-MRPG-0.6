@@ -10,7 +10,7 @@ class CTutorialManager : public MmoComponent
 {
 	~CTutorialManager() override
 	{
-		mrpgstd::free_container(TutorialBase::Data());
+		mystd::freeContainer(TutorialBase::Data());
 	}
 
 	void OnInit() override;

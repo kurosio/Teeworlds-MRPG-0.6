@@ -20,7 +20,7 @@ void CCraftManager::OnInit()
 		// initialize required ingredients
 		CItemsContainer RequiredIngredients {};
 		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
-		Utils::Json::parseFromString(JsonRequiredData, [&](nlohmann::json& pJson)
+		mystd::json::parse(JsonRequiredData, [&](nlohmann::json& pJson)
 		{
 			RequiredIngredients = CItem::FromArrayJSON(pJson, "items");
 		});

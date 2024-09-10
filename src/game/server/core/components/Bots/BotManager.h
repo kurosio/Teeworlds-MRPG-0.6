@@ -11,7 +11,7 @@ class CBotManager : public MmoComponent
 	~CBotManager() override
 	{
 		// free data
-		mrpgstd::free_container(DataBotInfo::ms_aDataBot, QuestBotInfo::ms_aQuestBot, NpcBotInfo::ms_aNpcBot, MobBotInfo::ms_aMobBot);
+		mystd::freeContainer(DataBotInfo::ms_aDataBot, QuestBotInfo::ms_aQuestBot, NpcBotInfo::ms_aNpcBot, MobBotInfo::ms_aMobBot);
 	};
 
 	void OnInit() override;

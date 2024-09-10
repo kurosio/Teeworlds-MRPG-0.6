@@ -734,7 +734,7 @@ void CGuild::CMembersManager::Init(const std::string& JsonMembers)
 	dbg_assert(m_apMembers.empty(), "");
 
 	// Parse the JSON string
-	Utils::Json::parseFromString(JsonMembers, [this](nlohmann::json& pJson)
+	mystd::json::parse(JsonMembers, [this](nlohmann::json& pJson)
 	{
 		for(auto& pMember : pJson["members"])
 		{

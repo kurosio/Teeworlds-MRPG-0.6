@@ -18,7 +18,7 @@ typedef std::pair < bool, std::vector<CDialogElem> > DialogsInitilizerType;
 static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string& JsonDialogData)
 {
 	DialogsInitilizerType Value{false, {}};
-	Utils::Json::parseFromString(JsonDialogData, [&](nlohmann::json& pJson)
+	mystd::json::parse(JsonDialogData, [&](nlohmann::json& pJson)
 	{
 		for(auto& pItem : pJson)
 		{
@@ -75,7 +75,7 @@ void CBotManager::OnInit()
 
 		// load teeinfo
 		std::string JsonString = pRes->getString("JsonTeeInfo").c_str();
-		Utils::Json::parseFromString(JsonString, [&](nlohmann::json& pJson)
+		mystd::json::parse(JsonString, [&](nlohmann::json& pJson)
 		{
 			str_copy(BotInfo.m_TeeInfos.m_aSkinName, pJson.value("skin", "default").c_str(), sizeof(BotInfo.m_TeeInfos.m_aSkinName));
 			BotInfo.m_TeeInfos.m_UseCustomColor = pJson.value("custom_color", 0);

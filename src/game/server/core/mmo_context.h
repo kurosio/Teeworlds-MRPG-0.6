@@ -513,4 +513,27 @@ private:
 	};
 };
 
+class IServer;
+namespace detail
+{
+	class _MultiworldIdentifiableData
+	{
+		inline static IServer* m_pServer {};
+
+	public:
+		IServer* Server() const { return m_pServer; }
+		static void Init(IServer* pServer) { m_pServer = pServer; }
+	};
+}
+
+template < typename T >
+class MultiworldIdentifiableData : public detail::_MultiworldIdentifiableData
+{
+protected:
+	static inline T m_pData {};
+
+public:
+	static T& Data() { return m_pData; }
+};
+
 #endif
