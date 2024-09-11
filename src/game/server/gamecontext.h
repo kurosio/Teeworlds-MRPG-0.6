@@ -10,6 +10,7 @@
 #include "gameworld.h"
 #include "playerbot.h"
 
+#include "core/tools/event_listener.h"
 #include "core/mmo_controller.h"
 
 class CGS : public IGameServer
@@ -43,6 +44,7 @@ class CGS : public IGameServer
 	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
+	CEventListenerManager m_EventListener;
 	bool m_AllowedPVP;
 	vec2 m_JailPosition;
 	int m_WorldID;
@@ -57,6 +59,7 @@ public:
 	CPathFinder* PathFinder() const { return m_pPathFinder; }
 	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }
+	CEventListenerManager* EventListener() { return &m_EventListener; }
 
 	CEventHandler m_Events;
 	IGameController* m_pController;
