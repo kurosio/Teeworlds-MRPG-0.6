@@ -6,9 +6,9 @@ class CGS;
 class IServer;
 class CPlayer;
 class CCharacter;
-class PlayerScenario;
-using ScenarioAction = std::function<void(const PlayerScenario*)>;
-using ScenarioCondition = std::function<bool(const PlayerScenario*)>;
+class ScenarioBase;
+using ScenarioAction = std::function<void(const ScenarioBase*)>;
+using ScenarioCondition = std::function<bool(const ScenarioBase*)>;
 
 enum class ConditionPriority
 {
@@ -17,7 +17,7 @@ enum class ConditionPriority
 };
 
 // scenario
-class PlayerScenario
+class ScenarioBase
 {
 	friend class PlayerScenarioManager;
 
@@ -27,7 +27,7 @@ class PlayerScenario
 		ScenarioAction FuncOnStart {};
 		ScenarioAction FuncOnEnd {};
 		ScenarioCondition FuncCheckCondition {};
-		ConditionPriority Priority {ConditionPriority::CONDITION_AND_TIMER };
+		ConditionPriority Priority { ConditionPriority::CONDITION_AND_TIMER };
 		int DelayTick {};
 
 		explicit Step(int delayTick) : DelayTick(delayTick) {}
@@ -36,14 +36,18 @@ class PlayerScenario
 	int m_ClientID {};
 	std::vector<Step> m_vSteps {};
 	size_t m_CurrentStepIndex {};
-	int m_LastStepTimeTick{};
-	bool m_Running{};
+	int m_LastStepTimeTick {};
+	bool m_Running {};
 
-	bool CanExecuteStep(const Step& step, long elapsedTick) const;
-	void ExecuteCurrentStep();
+protected:
+	virtual void SetupScenario() {}
 
 public:
-	PlayerScenario() = default;
+	ScenarioBase() = default;
+	virtual ~ScenarioBase();
+
+	virtual void OnRegisterEventListener() {}
+	virtual void OnUnregisterEventListener() {}
 
 	CGS* GS() const;
 	IServer* Server() const;
@@ -51,39 +55,46 @@ public:
 	CPlayer* GetPlayer() const;
 	CCharacter* GetCharacter() const;
 
-	PlayerScenario& Add(int delayTick = -1)
+	ScenarioBase& AddStep(int delayTick = -1)
 	{
 		m_vSteps.emplace_back(delayTick);
 		return *this;
 	}
 
-	PlayerScenario& WhenStarted(const ScenarioAction& pfnOnStart)
-	{
-		if(!m_vSteps.empty())
-			m_vSteps.back().FuncOnStart = pfnOnStart;
-		return *this;
-	}
-
-	PlayerScenario& WhenActive(const ScenarioAction& pfnActive)
-	{
-		if(!m_vSteps.empty())
-			m_vSteps.back().FuncActive = pfnActive;
-		return *this;
-	}
-
-	PlayerScenario& WhenEnded(const ScenarioAction& pfnOnEnd)
-	{
-		if(!m_vSteps.empty())
-			m_vSteps.back().FuncOnEnd = pfnOnEnd;
-		return *this;
-	}
-
-	PlayerScenario& CheckCondition(ConditionPriority priority, const ScenarioCondition& pfnCheckCondition)
+	ScenarioBase& WhenStarted(const ScenarioAction& pfnOnStart)
 	{
 		if(!m_vSteps.empty())
 		{
-			m_vSteps.back().Priority = priority;
-			m_vSteps.back().FuncCheckCondition = pfnCheckCondition;
+			m_vSteps.back().FuncOnStart = pfnOnStart;
+		}
+		return *this;
+	}
+
+	ScenarioBase& WhenActive(const ScenarioAction& pfnActive)
+	{
+		if(!m_vSteps.empty())
+		{
+			m_vSteps.back().FuncActive = pfnActive;
+		}
+		return *this;
+	}
+
+	ScenarioBase& WhenFinished(const ScenarioAction& pfnOnEnd)
+	{
+		if(!m_vSteps.empty())
+		{
+			m_vSteps.back().FuncOnEnd = pfnOnEnd;
+		}
+		return *this;
+	}
+
+	ScenarioBase& CheckCondition(ConditionPriority priority, const ScenarioCondition& pfnCheckCondition)
+	{
+		if(!m_vSteps.empty())
+		{
+			auto& step = m_vSteps.back();
+			step.Priority = priority;
+			step.FuncCheckCondition = pfnCheckCondition;
 		}
 		return *this;
 	}
@@ -92,18 +103,23 @@ private:
 	void Start();
 	void Stop();
 	void Tick();
-
 	bool IsFinished() const { return m_CurrentStepIndex >= m_vSteps.size(); }
+	bool CanExecuteStep(const Step& step, long elapsedTick) const;
+	void ExecuteCurrentStep();
 };
 
 // scenario manager
 class PlayerScenarioManager
 {
 	int m_ClientID {};
-	std::map<int, PlayerScenario> m_Scenarios {};
+	std::map<int, ScenarioBase*> m_Scenarios {};
 
 public:
 	PlayerScenarioManager() = default;
+	~PlayerScenarioManager()
+	{
+		StopAll();
+	}
 
 	void Init(int ClientID)
 	{
@@ -113,43 +129,47 @@ public:
 	void Start(int ScenarioID)
 	{
 		if(const auto it = m_Scenarios.find(ScenarioID); it != m_Scenarios.end())
-			it->second.Start();
+			it->second->Start();
 	}
 
-	void Add(int ScenarioID, PlayerScenario Scenario)
+	void Add(int ScenarioID, ScenarioBase* pScenario)
 	{
 		dbg_assert(ScenarioID >= 0, "attempting to start a scenario without an indexer");
-		Scenario.m_ClientID = m_ClientID;
-		m_Scenarios[ScenarioID] = std::move(Scenario);
+		pScenario->m_ClientID = m_ClientID;
+		m_Scenarios[ScenarioID] = pScenario;
 	}
 
 	bool IsRunning(int ScenarioID) const
 	{
 		const auto it = m_Scenarios.find(ScenarioID);
-		return it != m_Scenarios.end() && it->second.m_Running;
+		return it != m_Scenarios.end() && it->second->m_Running;
 	}
 
 	void Tick()
 	{
-		for(auto& [id, scenario] : m_Scenarios)
+		for(auto& [id, pScenario] : m_Scenarios)
 		{
-			scenario.Tick();
+			pScenario->Tick();
 		}
 	}
 
 	void StopAll()
 	{
-		for(auto& [id, scenario] : m_Scenarios)
+		for(auto& [id, pScenario] : m_Scenarios)
 		{
-			scenario.Stop();
+			pScenario->Stop();
+			delete pScenario;
 		}
+		m_Scenarios.clear();
 	}
 
 	void Stop(int index)
 	{
 		if(const auto it = m_Scenarios.find(index); it != m_Scenarios.end())
 		{
-			it->second.Stop();
+			it->second->Stop();
+			delete it->second;
+			m_Scenarios.erase(it);
 		}
 	}
 };

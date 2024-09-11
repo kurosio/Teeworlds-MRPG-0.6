@@ -15,6 +15,12 @@ public:
 	virtual ~IEventListener() = default;
 };
 
+class EventCharacterDieListener : public IEventListener
+{
+public:
+	virtual void HandleEvent(CPlayer* pKiller, CPlayer* pVictim) = 0;
+};
+
 class CEventListenerManager
 {
 	std::unordered_map<std::type_index, std::vector<IEventListener*>> m_vListeners;

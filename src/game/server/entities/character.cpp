@@ -654,20 +654,17 @@ void CCharacter::Tick()
 	if(!m_Alive)
 		return;
 
-	// handle safe flags
-	HandleSafeFlags();
-
-	// check access to world for player
+	// check world access
 	if(!IsWorldAccessible())
 	{
 		m_pPlayer->GetTempData().ClearTeleportPosition();
-		GS()->Chat(m_pPlayer->GetCID(), "This chapter is still closed.");
-		GS()->Chat(m_pPlayer->GetCID(), "You were magically transported to the first zone!");
+		GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
 		m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
 		return;
 	}
 
 	// handler's
+	HandleSafeFlags();
 	HandlePlayer();
 	HandleTiles();
 	HandleWeapons();
@@ -687,9 +684,11 @@ void CCharacter::Tick()
 
 	// game clipped
 	if(GameLayerClipped(m_Pos))
+	{
 		Die(m_pPlayer->GetCID(), WEAPON_SELF);
+	}
 
-	// door
+	// freeze position by old core and current core
 	if(length(m_NormalDoorHit) < 0.1f)
 	{
 		m_OlderPos = m_OldPos;
@@ -780,10 +779,7 @@ bool CCharacter::IncreaseMana(int Amount)
 
 void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 {
-	// Get the client ID of the player
 	CPlayer* pKiller = GS()->GetPlayer(Killer);
-
-	// Check if the killer player exists
 	if(!pKiller || (Killer == m_ClientID))
 		return;
 
@@ -859,6 +855,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	GS()->m_World.RemoveEntity(this);
 	GS()->m_World.m_Core.m_apCharacters[m_ClientID] = nullptr;
 	GS()->CreateDeath(m_Pos, m_ClientID);
+	GS()->EventListener()->Notify<EventCharacterDieListener>(GS()->GetPlayer(Killer), m_pPlayer);
 }
 
 void CCharacter::AutoUseHealingPotionIfNeeded() const

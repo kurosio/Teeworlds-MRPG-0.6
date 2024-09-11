@@ -1,46 +1,52 @@
 ﻿#include <game/server/gamecontext.h>
 #include "player_scenario.h"
 
-CGS* PlayerScenario::GS() const
+ScenarioBase::~ScenarioBase()
 {
-	return (CGS*)Instance::GameServerPlayer(m_ClientID);
+	ScenarioBase::OnUnregisterEventListener();
 }
 
-IServer* PlayerScenario::Server() const
+CGS* ScenarioBase::GS() const
+{
+	return static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+}
+
+IServer* ScenarioBase::Server() const
 {
 	return Instance::Server();
 }
 
-CPlayer* PlayerScenario::GetPlayer() const
+CPlayer* ScenarioBase::GetPlayer() const
 {
 	return GS()->GetPlayer(m_ClientID);
 }
 
-CCharacter* PlayerScenario::GetCharacter() const
+CCharacter* ScenarioBase::GetCharacter() const
 {
 	return GetPlayer()->GetCharacter();
 }
 
-bool PlayerScenario::CanExecuteStep(const Step& step, long elapsedTick) const
+bool ScenarioBase::CanExecuteStep(const Step& step, long elapsedTick) const
 {
 	switch(step.Priority)
 	{
 		case ConditionPriority::CONDITION_AND_TIMER:
-			return (step.DelayTick <= 0 || (elapsedTick >= step.DelayTick)) &&
+			return (step.DelayTick <= 0 || elapsedTick >= step.DelayTick) &&
 				(!step.FuncCheckCondition || step.FuncCheckCondition(this));
 
 		case ConditionPriority::CONDITION_OR_TIMER:
 			return (step.DelayTick >= 0 && elapsedTick >= step.DelayTick) ||
 				(step.FuncCheckCondition && step.FuncCheckCondition(this));
 	}
-
 	return false;
 }
 
-void PlayerScenario::ExecuteCurrentStep()
+void ScenarioBase::ExecuteCurrentStep()
 {
-	if(auto& step = m_vSteps[m_CurrentStepIndex]; step.FuncOnEnd)
+	auto& step = m_vSteps[m_CurrentStepIndex];
+	if(step.FuncOnEnd)
 	{
+		OnUnregisterEventListener();
 		step.FuncOnEnd(this);
 		step.FuncOnEnd = nullptr;
 	}
@@ -49,11 +55,15 @@ void PlayerScenario::ExecuteCurrentStep()
 	m_CurrentStepIndex++;
 
 	if(IsFinished())
+	{
 		Stop();
+	}
 }
 
-void PlayerScenario::Start()
+void ScenarioBase::Start()
 {
+	SetupScenario();
+
 	if(m_vSteps.empty())
 		return;
 
@@ -62,12 +72,13 @@ void PlayerScenario::Start()
 	m_LastStepTimeTick = Server()->Tick();
 }
 
-void PlayerScenario::Stop()
+void ScenarioBase::Stop()
 {
 	m_Running = false;
+	OnUnregisterEventListener();
 }
 
-void PlayerScenario::Tick()
+void ScenarioBase::Tick()
 {
 	if(!m_Running || IsFinished())
 		return;
@@ -83,6 +94,7 @@ void PlayerScenario::Tick()
 
 	if(step.FuncOnStart)
 	{
+		OnRegisterEventListener();
 		step.FuncOnStart(this);
 		step.FuncOnStart = nullptr;
 	}
