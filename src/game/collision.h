@@ -99,7 +99,7 @@ public:
 
 	// self
 	const char* GetZonename(vec2 Pos) const;
-	bool TryGetTeleportOut(vec2 Ins, vec2& Out);
+	std::optional<vec2> TryGetTeleportOut(vec2 currentPos);
 	std::optional<vec2> TryGetFixedCamPos(vec2 currentPos) const;
 
 	// other

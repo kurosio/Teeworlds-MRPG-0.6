@@ -1120,20 +1120,18 @@ void CCharacter::HandleTiles()
 	// teleport
 	if(m_pTilesHandler->IsActive(TILE_TELE_FROM))
 	{
-		vec2 TeleOut;
-		if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut))
-			ChangePosition(TeleOut);
+		if(const auto outsPos = GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos))
+			ChangePosition(outsPos.value());
 	}
 
 	// confirm teleport
 	if(m_pTilesHandler->IsActive(TILE_TELE_FROM_CONFIRM))
 	{
-		vec2 TeleOut;
-		if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut))
+		if(const auto outsPos = GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos))
 		{
 			GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, Server()->TickSpeed(), "Use the hammer to enter");
 			if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_ReloadTimer)
-				ChangePosition(TeleOut);
+				ChangePosition(outsPos.value());
 		}
 	}
 

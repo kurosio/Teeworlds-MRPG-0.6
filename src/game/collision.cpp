@@ -245,24 +245,23 @@ std::optional<vec2> CCollision::TryGetFixedCamPos(vec2 currentPos) const
 	return std::nullopt;
 }
 
-bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out)
+std::optional<vec2> CCollision::TryGetTeleportOut(vec2 currentPos)
 {
 	if(!m_pTele)
-		return false;
+		return std::nullopt;
 
-	const int Nx = clamp(round_to_int(Ins.x) / 32, 0, m_Width - 1);
-	const int Ny = clamp(round_to_int(Ins.y) / 32, 0, m_Height - 1);
+	const int Nx = clamp(round_to_int(currentPos.x) / 32, 0, m_Width - 1);
+	const int Ny = clamp(round_to_int(currentPos.y) / 32, 0, m_Height - 1);
 	const auto& Number = m_pTele[Ny * m_Width + Nx].m_Number;
 
 	if(Number <= 0)
-		return false;
+		return std::nullopt;
 
 	const auto& TeleOuts = m_vTeleOuts[Number];
 	if(TeleOuts.empty())
-		return false;
+		return std::nullopt;
 
-	Out = TeleOuts[rand() % TeleOuts.size()];
-	return true;
+	return TeleOuts[rand() % TeleOuts.size()];
 }
 
 int CCollision::GetMainTileCollisionFlags(int x, int y) const
