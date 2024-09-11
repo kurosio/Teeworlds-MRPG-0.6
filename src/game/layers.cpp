@@ -79,6 +79,16 @@ void CLayers::Init(class IKernel* pKernel, int ID)
 					IsEntities = true;
 				}
 
+				if(pTilemap->m_Flags & TILESLAYERFLAG_SPEEDUP)
+				{
+					if(pTilemap->m_Version <= 2)
+					{
+						pTilemap->m_Speedup = *((int*)(pTilemap)+16);
+					}
+					m_pSpeedupLayer = pTilemap;
+					IsEntities = true;
+				}
+
 				if(IsEntities)
 				{
 					pTilemap->m_Color = CColor(255, 255, 255, 255);

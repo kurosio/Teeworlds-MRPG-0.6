@@ -87,8 +87,8 @@ void CCollision::InitTiles(CTile* pTiles)
 		{ TILE_GUILD_CHAIR, COLFLAG_SAFE },
 		{ TILE_INFO_BONUSES, COLFLAG_SAFE },
 		{ TILE_INFO_WANTED, COLFLAG_SAFE },
-		{ TILE_WORLD_SWAP, COLFLAG_SAFE },
-		{ TILE_INVISIBLE_WALL, COLFLAG_DISALLOW_MOVE }
+		{ TILE_WORLD_SWAPPER, COLFLAG_SAFE },
+		{ TILE_DESTROYER_PROJECTILE, COLFLAG_DISALLOW_MOVE }
 	};
 
 	for(int i = 0; i < m_Width * m_Height; i++)
@@ -124,21 +124,19 @@ void CCollision::InitTeleports()
 
 		// initialize teleports
 		vec2 tilePos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
-		if(Type == TILE_TELE_IN)
+		if(Type == TILE_TELE_FROM)
 		{
 			m_pTiles[i].m_Index = static_cast<char>(Type);
-			m_vTeleIns[Number].push_back(tilePos);
+		}
+		else if(Type == TILE_TELE_FROM_CONFIRM)
+		{
+			m_pTiles[i].m_Index = static_cast<char>(Type);
 		}
 		else if(Type == TILE_TELE_OUT)
 		{
 			m_pTiles[i].m_Index = static_cast<char>(Type);
 			m_vTeleOuts[Number].push_back(tilePos);
-		}
-		else if(Type == TILE_TELE_CONFIRM_OUT)
-		{
-			m_pTiles[i].m_Index = static_cast<char>(Type);
-			m_vConfirmTeleOuts[Number].push_back(tilePos);
-		}
+		} 
 	}
 }
 
@@ -247,7 +245,7 @@ std::optional<vec2> CCollision::TryGetFixedCamPos(vec2 currentPos) const
 	return std::nullopt;
 }
 
-bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out, int ToIndex)
+bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out)
 {
 	if(!m_pTele)
 		return false;
@@ -259,7 +257,7 @@ bool CCollision::TryGetTeleportOut(vec2 Ins, vec2& Out, int ToIndex)
 	if(Number <= 0)
 		return false;
 
-	const auto& TeleOuts = (ToIndex == TILE_TELE_OUT) ? m_vTeleOuts[Number] : m_vConfirmTeleOuts[Number];
+	const auto& TeleOuts = m_vTeleOuts[Number];
 	if(TeleOuts.empty())
 		return false;
 

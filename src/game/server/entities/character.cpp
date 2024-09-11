@@ -674,7 +674,7 @@ void CCharacter::Tick()
 	HandleTuning();
 
 	// to end the tick on the destroy caused by the change of worlds
-	if(m_pTilesHandler->IsEnter(TILE_WORLD_SWAP))
+	if(m_pTilesHandler->IsEnter(TILE_WORLD_SWAPPER))
 	{
 		GS()->GetWorldData()->Move(m_pPlayer);
 		return;
@@ -1118,16 +1118,18 @@ void CCharacter::HandleTiles()
 	m_pTilesHandler->Handle(m_Core.m_Pos);
 
 	// teleport
-	if(m_pTilesHandler->IsActive(TILE_TELE_IN))
+	if(m_pTilesHandler->IsActive(TILE_TELE_FROM))
 	{
 		vec2 TeleOut;
-
-		// base teleport
-		if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut, TILE_TELE_OUT))
+		if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut))
 			ChangePosition(TeleOut);
+	}
 
-		// confirm teleport
-		if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut, TILE_TELE_CONFIRM_OUT))
+	// confirm teleport
+	if(m_pTilesHandler->IsActive(TILE_TELE_FROM_CONFIRM))
+	{
+		vec2 TeleOut;
+		if(GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos, TeleOut))
 		{
 			GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, Server()->TickSpeed(), "Use the hammer to enter");
 			if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_ReloadTimer)

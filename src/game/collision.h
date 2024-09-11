@@ -40,9 +40,7 @@ private:
 	CLayers* m_pLayers {};
 
 	// elements
-	std::map<int, std::vector<vec2>> m_vTeleIns {};
 	std::map<int, std::vector<vec2>> m_vTeleOuts {};
-	std::map<int, std::vector<vec2>> m_vConfirmTeleOuts {};
 	std::vector<std::pair<vec2, vec4>> m_vFixedCamZones {};
 	std::map<std::string, vec2> m_vInteractObjects {};
 	std::map<int, std::string> m_vZoneNames {};
@@ -101,7 +99,7 @@ public:
 
 	// self
 	const char* GetZonename(vec2 Pos) const;
-	bool TryGetTeleportOut(vec2 Ins, vec2& Out, int ToIndex);
+	bool TryGetTeleportOut(vec2 Ins, vec2& Out);
 	std::optional<vec2> TryGetFixedCamPos(vec2 currentPos) const;
 
 	// other

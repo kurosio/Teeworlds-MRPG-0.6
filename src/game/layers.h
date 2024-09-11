@@ -24,6 +24,7 @@ class CLayers
 	CMapItemLayerTilemap* m_pFrontLayer{};
 	CMapItemLayerTilemap* m_pTeleLayer{};
 	CMapItemLayerTilemap* m_pSwitchLayer{};
+	CMapItemLayerTilemap* m_pSpeedupLayer{};
 
 	void InitTilemapSkip();
 	void InitSettings();
@@ -43,6 +44,7 @@ public:
 	CMapItemLayerTilemap* FrontLayer() const { return m_pFrontLayer; }
 	CMapItemLayerTilemap* TeleLayer() const { return m_pTeleLayer; }
 	CMapItemLayerTilemap* SwitchLayer() const { return m_pSwitchLayer; }
+	CMapItemLayerTilemap* SpeedupLayer() const { return m_pSpeedupLayer; }
 };
 
 #endif
