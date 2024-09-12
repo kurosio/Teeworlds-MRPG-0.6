@@ -33,7 +33,7 @@ void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage
 
 void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
-	GS()->EventListener()->Notify(IEventListener::Type::PlayerDeath, pVictim, pKiller, Weapon);
+	GS()->EventListener()->Notify<IEventListener::Type::PlayerDeath>( pVictim, pKiller, Weapon);
 
 	// achievement defeat mob & pve
 	if(pVictim->IsBot() && !pKiller->IsBot())
@@ -67,7 +67,7 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 
 bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 {
-	GS()->EventListener()->Notify(IEventListener::Type::PlayerSpawn, pChr->GetPlayer());
+	GS()->EventListener()->Notify<IEventListener::Type::PlayerSpawn>(pChr->GetPlayer());
 
 	// if we spawn the bot
 	if(pChr->GetPlayer()->IsBot())

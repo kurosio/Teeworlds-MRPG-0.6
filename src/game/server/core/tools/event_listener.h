@@ -51,24 +51,21 @@ public:
 			m_vListeners.erase(event);
 		}
 	}
-	template <typename... Ts>
-	void Notify(IEventListener::Type event, Ts&&... args)
+	template <IEventListener::Type event, typename... Ts>
+	void Notify(Ts&&... args)
 	{
 		std::lock_guard lock(m_Mutex);
 		if(const auto it = m_vListeners.find(event); it != m_vListeners.end())
 		{
 			for(auto* listener : it->second)
 			{
-				switch(event)
+				if constexpr(event == IEventListener::Type::PlayerDeath)
 				{
-					case IEventListener::Type::PlayerDeath:
-						listener->OnPlayerDeath(std::forward<Ts>(args)...);
-						break;
-					case IEventListener::Type::PlayerSpawn:
-						listener->OnPlayerSpawn(std::forward<Ts>(args)...);
-						break;
-					default:
-						break;
+					listener->OnPlayerDeath(std::forward<Ts>(args)...);
+				}
+				else if constexpr(event == IEventListener::Type::PlayerSpawn)
+				{
+					listener->OnPlayerSpawn(std::forward<Ts>(args)...);
 				}
 			}
 		}
