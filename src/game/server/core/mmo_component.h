@@ -4,6 +4,7 @@
 #define GAME_SERVER_CORE_MMO_COMPONENT_H
 
 #include <engine/server/sql_string_helpers.h>
+#include "tools/event_listener.h"
 
 // forward declarations
 class CGS;

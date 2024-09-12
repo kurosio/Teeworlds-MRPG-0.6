@@ -10,7 +10,6 @@
 #include "gameworld.h"
 #include "playerbot.h"
 
-#include "core/tools/event_listener.h"
 #include "core/mmo_controller.h"
 
 class CGS : public IGameServer

@@ -1,6 +1,5 @@
 ﻿#ifndef GAME_SERVER_CORE_TOOLS_EVENT_LISTENER_H
 #define GAME_SERVER_CORE_TOOLS_EVENT_LISTENER_H
-#include <typeindex>
 
 // forward
 class CGS;
@@ -13,44 +12,65 @@ class IEventListener
 {
 public:
 	virtual ~IEventListener() = default;
-};
 
-class EventCharacterDieListener : public IEventListener
-{
-public:
-	virtual void HandleEvent(CPlayer* pKiller, CPlayer* pVictim) = 0;
+	enum class Type
+	{
+		PlayerDeath,
+		PlayerSpawn,
+	};
+
+	virtual void OnPlayerDeath(CPlayer* pPlayer, CPlayer* pKiller, int Weapon) {}
+	virtual void OnPlayerSpawn(CPlayer* pPlayer) {}
 };
 
 class CEventListenerManager
 {
 	std::mutex m_Mutex;
-	std::unordered_map<std::type_index, std::vector<IEventListener*>> m_vListeners;
+	std::unordered_map<IEventListener::Type, std::vector<IEventListener*>> m_vListeners;
 
 public:
-	template <typename EventListenerType>
-	void RegisterListener(IEventListener* listener)
+	void RegisterListener(IEventListener::Type event, IEventListener* listener)
 	{
-		std::lock_guard lock(m_Mutex);
-		m_vListeners[typeid(EventListenerType)].push_back(listener);
-	}
+		std::unique_lock lock(m_Mutex);
+		auto& listeners = m_vListeners[event];
 
-	template <typename EventListenerType>
-	void UnregisterListener(IEventListener* listener)
-	{
-		std::lock_guard lock(m_Mutex);
-		auto& listeners = m_vListeners[typeid(EventListenerType)];
-		std::erase(listeners, listener);
-	}
-
-	template <typename EventListenerType, typename... Ts>
-	void Notify(Ts&&... args)
-	{
-		std::lock_guard lock(m_Mutex);
-		if(const auto it = m_vListeners.find(typeid(EventListenerType)); it != m_vListeners.end())
+		if(std::ranges::find(listeners, listener) == listeners.end())
 		{
-			const auto listeners = it->second;
-			for(auto* listener : listeners)
-				static_cast<EventListenerType*>(listener)->HandleEvent(std::forward<Ts>(args)...);
+			listeners.push_back(listener);
+		}
+	}
+
+	void UnregisterListener(IEventListener::Type event, IEventListener* listener)
+	{
+		std::unique_lock lock(m_Mutex);
+		auto& listeners = m_vListeners[event];
+
+		listeners.erase(std::ranges::remove(listeners, listener).begin(), listeners.end());
+		if(listeners.empty())
+		{
+			m_vListeners.erase(event);
+		}
+	}
+	template <typename... Ts>
+	void Notify(IEventListener::Type event, Ts&&... args)
+	{
+		std::lock_guard lock(m_Mutex);
+		if(const auto it = m_vListeners.find(event); it != m_vListeners.end())
+		{
+			for(auto* listener : it->second)
+			{
+				switch(event)
+				{
+					case IEventListener::Type::PlayerDeath:
+						listener->OnPlayerDeath(std::forward<Ts>(args)...);
+						break;
+					case IEventListener::Type::PlayerSpawn:
+						listener->OnPlayerSpawn(std::forward<Ts>(args)...);
+						break;
+					default:
+						break;
+				}
+			}
 		}
 	}
 };

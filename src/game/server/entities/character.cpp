@@ -855,7 +855,6 @@ void CCharacter::Die(int Killer, int Weapon)
 	GS()->m_World.RemoveEntity(this);
 	GS()->m_World.m_Core.m_apCharacters[m_ClientID] = nullptr;
 	GS()->CreateDeath(m_Pos, m_ClientID);
-	GS()->EventListener()->Notify<EventCharacterDieListener>(GS()->GetPlayer(Killer), m_pPlayer);
 }
 
 void CCharacter::AutoUseHealingPotionIfNeeded() const
