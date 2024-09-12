@@ -11,7 +11,7 @@
 #include "entities/character.h"
 #include "core/tools/cooldown.h"
 #include "core/tools/motd_menu.h"
-#include "core/tools/player_scenario.h"
+#include "core/tools/scenario_manager.h"
 #include "core/tools/vote_wrapper.h"
 #include "class_data.h"
 
@@ -61,14 +61,14 @@ protected:
 	int64_t m_LastPlaytime;
 	CClassData m_Class {};
 	FixedViewCam m_FixedView {};
-	PlayerScenarioManager m_Scenarios {};
+	ScenarioManager m_Scenarios {};
 
 public:
 	CGS* GS() const { return m_pGS; }
 	CClassData* GetClass() { return &m_Class; }
 	const CClassData* GetClass() const { return &m_Class; }
 	FixedViewCam& LockedView() { return m_FixedView; }
-	PlayerScenarioManager& Scenarios() { return m_Scenarios; }
+	ScenarioManager& Scenarios() { return m_Scenarios; }
 
 	vec2 m_ViewPos{};
 	int m_SpecChar{-1};

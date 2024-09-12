@@ -89,9 +89,9 @@ void CPlayerBot::Tick()
 
 void CPlayerBot::PostTick()
 {
-	// update playerbot tick
 	HandleTuningParams();
 	HandleEffects();
+	m_Scenarios.PostTick();
 }
 
 CPlayer* CPlayerBot::GetEidolonOwner() const

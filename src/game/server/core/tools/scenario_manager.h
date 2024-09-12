@@ -19,7 +19,7 @@ enum class ConditionPriority
 // scenario
 class ScenarioBase
 {
-	friend class PlayerScenarioManager;
+	friend class ScenarioManager;
 
 	struct Step
 	{
@@ -109,14 +109,14 @@ private:
 };
 
 // scenario manager
-class PlayerScenarioManager
+class ScenarioManager
 {
 	int m_ClientID {};
-	std::map<int, ScenarioBase*> m_Scenarios {};
+	std::vector<std::unique_ptr<ScenarioBase>> m_Scenarios {};
 
 public:
-	PlayerScenarioManager() = default;
-	~PlayerScenarioManager()
+	ScenarioManager() = default;
+	~ScenarioManager()
 	{
 		StopAll();
 	}
@@ -126,51 +126,43 @@ public:
 		m_ClientID = ClientID;
 	}
 
-	void Start(int ScenarioID)
+	void Start(std::unique_ptr<ScenarioBase> pScenario)
 	{
-		if(const auto it = m_Scenarios.find(ScenarioID); it != m_Scenarios.end())
-			it->second->Start();
-	}
-
-	void Add(int ScenarioID, ScenarioBase* pScenario)
-	{
-		dbg_assert(ScenarioID >= 0, "attempting to start a scenario without an indexer");
 		pScenario->m_ClientID = m_ClientID;
-		m_Scenarios[ScenarioID] = pScenario;
-	}
-
-	bool IsRunning(int ScenarioID) const
-	{
-		const auto it = m_Scenarios.find(ScenarioID);
-		return it != m_Scenarios.end() && it->second->m_Running;
-	}
-
-	void Tick()
-	{
-		for(auto& [id, pScenario] : m_Scenarios)
-		{
-			pScenario->Tick();
-		}
+		pScenario->Start();
+		m_Scenarios.push_back(std::move(pScenario));
 	}
 
 	void StopAll()
 	{
-		for(auto& [id, pScenario] : m_Scenarios)
+		for(auto& pScenario : m_Scenarios)
 		{
-			pScenario->Stop();
-			delete pScenario;
+			if(pScenario)
+				pScenario->Stop();
 		}
 		m_Scenarios.clear();
 	}
 
-	void Stop(int index)
+	void Tick() const
 	{
-		if(const auto it = m_Scenarios.find(index); it != m_Scenarios.end())
+		for(auto& pScenario : m_Scenarios)
 		{
-			it->second->Stop();
-			delete it->second;
-			m_Scenarios.erase(it);
+			if(pScenario)
+				pScenario->Tick();
 		}
+	}
+
+	void PostTick()
+	{
+		std::erase_if(m_Scenarios, [](const std::unique_ptr<ScenarioBase>& pScenario)
+		{
+			if(pScenario->IsFinished())
+			{
+				pScenario->Stop();
+				return true;
+			}
+			return false;
+		});
 	}
 };
 

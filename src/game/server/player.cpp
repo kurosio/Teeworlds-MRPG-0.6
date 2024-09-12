@@ -180,6 +180,7 @@ void CPlayer::PostTick()
 		HandlePrison();
 		CVoteOptional::HandleVoteOptionals(m_ClientID);
 		Account()->GetBonusManager().UpdateBonuses();
+		m_Scenarios.PostTick();
 	}
 
 	// handlers

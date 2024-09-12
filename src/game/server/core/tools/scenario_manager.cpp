@@ -1,5 +1,5 @@
 ﻿#include <game/server/gamecontext.h>
-#include "player_scenario.h"
+#include "scenario_manager.h"
 
 ScenarioBase::~ScenarioBase()
 {
@@ -8,7 +8,7 @@ ScenarioBase::~ScenarioBase()
 
 CGS* ScenarioBase::GS() const
 {
-	return static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	return dynamic_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
 }
 
 IServer* ScenarioBase::Server() const
