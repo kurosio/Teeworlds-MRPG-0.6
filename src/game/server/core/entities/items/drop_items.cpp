@@ -11,7 +11,6 @@ CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForc
 {
 	m_Pos = Pos;
 	m_Vel = Vel;
-	m_Flash.InitFlashing(&m_LifeSpan);
 	m_LifeSpan = Server()->TickSpeed() * 20;
 
 	m_OwnerID = OwnerID;
@@ -62,15 +61,12 @@ void CDropItem::Tick()
 		return;
 	}
 
-	// flashing
-	m_Flash.OnTick();
+	m_Flash.Tick(m_LifeSpan);
+	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), 0.5f);
 
 	// set without owner if there is no player owner
 	if(m_OwnerID != -1 && !GS()->GetPlayer(m_OwnerID, true, true))
 		m_OwnerID = -1;
-
-	// physic
-	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), 0.5f);
 
 	// information
 	CCharacter *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 64.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);

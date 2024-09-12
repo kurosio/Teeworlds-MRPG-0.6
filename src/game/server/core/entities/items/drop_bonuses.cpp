@@ -9,7 +9,6 @@ CEntityDropBonuses::CEntityDropBonuses(CGameWorld *pGameWorld, vec2 Pos, vec2 Ve
 {
 	m_Value = Value;
 	m_LifeSpan = Server()->TickSpeed() * 15;
-	m_Flash.InitFlashing(&m_LifeSpan);
 	GameWorld()->InsertEntity(this);
 }
 
@@ -23,10 +22,7 @@ void CEntityDropBonuses::Tick()
 		return;
 	}
 
-	// flashing
-	m_Flash.OnTick();
-
-	// physic
+	m_Flash.Tick(m_LifeSpan);
 	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), 0.5f);
 
 	// interactive

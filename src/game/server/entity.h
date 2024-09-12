@@ -168,29 +168,34 @@ public:
 */
 class CFlashingTick
 {
-	int *m_LifeSpan;
-	int m_Timer;
-	bool m_Flashing;
+	int m_Timer{ TIMER_RESET };
+	bool m_Flashing{};
+
+	constexpr static int FLASH_THRESHOLD = 150;
+	constexpr static int TIMER_RESET = 5;
 
 public:
 	CFlashingTick() = default;
 
-	void InitFlashing(int* EntityLifeSpan) { m_LifeSpan = EntityLifeSpan; }
-	bool IsFlashing() const { return m_Flashing; }
-
-	void OnTick()
+	bool IsFlashing() const
 	{
-		if((*m_LifeSpan) < 150)
+		return m_Flashing;
+	}
+
+	void Tick(const int& lifeSpan)
+	{
+		if(lifeSpan < FLASH_THRESHOLD)
 		{
-			m_Timer--;
-			if(m_Timer > 5)
-				m_Flashing = true;
-			else
+			if(--m_Timer <= 0)
 			{
-				m_Flashing = false;
-				if(m_Timer <= 0)
-					m_Timer = 0;
+				m_Flashing = !m_Flashing;
+				m_Timer = TIMER_RESET;
 			}
+		}
+		else if(m_Flashing || m_Timer != TIMER_RESET)
+		{
+			m_Flashing = false;
+			m_Timer = TIMER_RESET;
 		}
 	}
 };

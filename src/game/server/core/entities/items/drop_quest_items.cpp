@@ -16,7 +16,6 @@ CDropQuestItem::CDropQuestItem(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, float
 	m_Needed = Needed;
 	m_QuestID = QuestID;
 	m_Step = Step;
-	m_Flash.InitFlashing(&m_LifeSpan);
 	m_LifeSpan = Server()->TickSpeed() * 60;
 
 	GameWorld()->InsertEntity(this);
@@ -37,11 +36,16 @@ CDropQuestItem::~CDropQuestItem()
 void CDropQuestItem::Tick()
 {
 	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
+
+	m_LifeSpan--;
 	if (m_LifeSpan < 0 || !pPlayer)
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
+
+	m_Flash.Tick(m_LifeSpan);
+	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), &m_Angle, &m_AngleForce, 0.5f);
 
 	CPlayerItem* pItem = pPlayer->GetItem(m_ItemID);
 	const CPlayerQuest* pQuest = pPlayer->GetQuest(m_QuestID);
@@ -64,10 +68,6 @@ void CDropQuestItem::Tick()
 
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press hammer 'Fire', to pick up an item");
 	}
-
-	m_LifeSpan--;
-	m_Flash.OnTick();
-	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), &m_Angle, &m_AngleForce, 0.5f);
 }
 
 
