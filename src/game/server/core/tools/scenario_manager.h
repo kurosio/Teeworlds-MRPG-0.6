@@ -7,6 +7,7 @@ class IServer;
 class CPlayer;
 class CCharacter;
 class ScenarioBase;
+class CEventListenerManager;
 using ScenarioAction = std::function<void(const ScenarioBase*)>;
 using ScenarioCondition = std::function<bool(const ScenarioBase*)>;
 
@@ -46,8 +47,8 @@ public:
 	ScenarioBase() = default;
 	virtual ~ScenarioBase();
 
-	virtual void OnRegisterEventListener() {}
-	virtual void OnUnregisterEventListener() {}
+	virtual void OnRegisterEventListener(CEventListenerManager* pListener) {}
+	virtual void OnUnregisterEventListener(CEventListenerManager* pListener) {}
 
 	CGS* GS() const;
 	IServer* Server() const;

@@ -3,7 +3,7 @@
 
 ScenarioBase::~ScenarioBase()
 {
-	ScenarioBase::OnUnregisterEventListener();
+	ScenarioBase::OnUnregisterEventListener(GS()->EventListener());
 }
 
 CGS* ScenarioBase::GS() const
@@ -46,7 +46,7 @@ void ScenarioBase::ExecuteCurrentStep()
 	auto& step = m_vSteps[m_CurrentStepIndex];
 	if(step.FuncOnEnd)
 	{
-		OnUnregisterEventListener();
+		OnUnregisterEventListener(GS()->EventListener());
 		step.FuncOnEnd(this);
 		step.FuncOnEnd = nullptr;
 	}
@@ -75,7 +75,8 @@ void ScenarioBase::Start()
 void ScenarioBase::Stop()
 {
 	m_Running = false;
-	OnUnregisterEventListener();
+	m_vSteps.clear();
+	OnUnregisterEventListener(GS()->EventListener());
 }
 
 void ScenarioBase::Tick()
@@ -94,7 +95,7 @@ void ScenarioBase::Tick()
 
 	if(step.FuncOnStart)
 	{
-		OnRegisterEventListener();
+		OnRegisterEventListener(GS()->EventListener());
 		step.FuncOnStart(this);
 		step.FuncOnStart = nullptr;
 	}
