@@ -23,18 +23,21 @@ public:
 
 class CEventListenerManager
 {
+	std::mutex m_Mutex;
 	std::unordered_map<std::type_index, std::vector<IEventListener*>> m_vListeners;
 
 public:
 	template <typename EventListenerType>
 	void RegisterListener(IEventListener* listener)
 	{
+		std::lock_guard lock(m_Mutex);
 		m_vListeners[typeid(EventListenerType)].push_back(listener);
 	}
 
 	template <typename EventListenerType>
 	void UnregisterListener(IEventListener* listener)
 	{
+		std::lock_guard lock(m_Mutex);
 		auto& listeners = m_vListeners[typeid(EventListenerType)];
 		std::erase(listeners, listener);
 	}
@@ -42,6 +45,7 @@ public:
 	template <typename EventListenerType, typename... Ts>
 	void Notify(Ts&&... args)
 	{
+		std::lock_guard lock(m_Mutex);
 		if(const auto it = m_vListeners.find(typeid(EventListenerType)); it != m_vListeners.end())
 		{
 			const auto listeners = it->second;
