@@ -938,13 +938,20 @@ void CPlayer::SetSnapHealthTick(int Sec)
 	m_SnapHealthNicknameTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
 }
 
-void CPlayer::ChangeWorld(int WorldID)
+void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition) const
 {
-	// reset dungeon temp data
-	GetTempData().m_TempDungeonReady = false;
-	GetTempData().m_TempTimeDungeon = 0;
+	// reset dungeon temporary data
+	auto& tempData = GetTempData();
+	tempData.m_TempDungeonReady = false;
+	tempData.m_TempTimeDungeon = 0;
 
-	// change worlds
+	// if new position is provided, set the teleport position
+	if(newWorldPosition.has_value())
+	{
+		tempData.SetTeleportPosition(newWorldPosition.value());
+	}
+
+	// change the player's world
 	Account()->m_aHistoryWorld.push_front(WorldID);
 	Server()->ChangeWorld(m_ClientID, WorldID);
 }

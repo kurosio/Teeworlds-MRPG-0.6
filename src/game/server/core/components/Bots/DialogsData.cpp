@@ -476,8 +476,7 @@ void CPlayerDialog::DialogEvents(DIALOGEVENTCUR Pos) const
 
 			if(pTeleport.find("world_id") != pTeleport.end() && m_pPlayer->GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
 			{
-				m_pPlayer->GetTempData().SetTeleportPosition(Position);
-				m_pPlayer->ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID));
+				m_pPlayer->ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID), Position);
 				return;
 			}
 

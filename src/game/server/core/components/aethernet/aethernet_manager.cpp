@@ -87,8 +87,7 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			if(!GS()->IsPlayerInWorld(ClientID, pAether->GetWorldID()))
 			{
 				// Set the teleport position in the player's temporary data
-				pPlayer->GetTempData().SetTeleportPosition(Position);
-				pPlayer->ChangeWorld(pAether->GetWorldID());
+				pPlayer->ChangeWorld(pAether->GetWorldID(), Position);
 			}
 			else
 			{

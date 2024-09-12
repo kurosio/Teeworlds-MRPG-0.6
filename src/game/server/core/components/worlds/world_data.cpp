@@ -33,8 +33,7 @@ void CWorldData::Move(CPlayer* pPlayer)
 		return;
 	}
 
-	pPlayer->GetTempData().SetTeleportPosition(pSwapper->GetSecondSwapPosition());
-	pPlayer->ChangeWorld(pSwapper->GetSecondWorldID());
+	pPlayer->ChangeWorld(pSwapper->GetSecondWorldID(), pSwapper->GetSecondSwapPosition());
 }
 
 CWorldSwapData* CWorldData::GetSwapperByPos(vec2 Pos)

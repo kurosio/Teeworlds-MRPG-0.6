@@ -124,8 +124,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		if(!GS()->IsPlayerInWorld(ClientID, pHouse->GetWorldID()))
 		{
 			// Change the player's world to pAether's world
-			pPlayer->GetTempData().SetTeleportPosition(pHouse->GetPos());
-			pPlayer->ChangeWorld(pHouse->GetWorldID());
+			pPlayer->ChangeWorld(pHouse->GetWorldID(), pHouse->GetPos());
 			return true;
 		}
 

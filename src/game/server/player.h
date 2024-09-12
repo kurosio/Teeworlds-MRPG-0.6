@@ -188,7 +188,7 @@ public:
 	void CloseMotdMenu() { m_pMotdMenu->ClearMotd(m_pGS, this); }
 
 	virtual Mood GetMoodState() const { return Mood::NORMAL; }
-	void ChangeWorld(int WorldID);
+	void ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition = std::nullopt) const;
 };
 
 #endif
