@@ -108,7 +108,7 @@ void CAccountData::InitAchievements(const std::string& Data)
 			if(m_apReferenceMap.contains(AchievementID))
 				m_apReferenceMap[AchievementID]->Init(Progress, Completed);
 		}
-		m_AchivementsData = std::move(pJson);
+		m_AchievementsData = std::move(pJson);
 	});
 
 	// clear reference map
@@ -288,7 +288,7 @@ void CAccountData::AddExperience(int Value)
 			m_pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
 			GS()->Core()->SaveAccount(m_pPlayer, SAVE_STATS);
 			GS()->Core()->SaveAccount(m_pPlayer, SAVE_UPGRADES);
-			m_pPlayer->UpdateAchievement(ACHIEVEMENT_LEVELING, NOPE, m_Level, PROGRESS_SET);
+			m_pPlayer->UpdateAchievement(AchievementType::Leveling, NOPE, m_Level, PROGRESS_ABSOLUTE);
 		}
 	}
 
@@ -510,28 +510,30 @@ void CAccountData::HandleChair(int Exp, int Gold)
 	}
 
 	// send broadcast
-    GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
-        "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
+	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 250,
+		"Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
 		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), m_Exp, computeExperience(m_Level), expStr.c_str());
 }
 
-void CAccountData::SetAchieventProgress(int AchievementID, int Progress, bool Completed)
+void CAccountData::UpdateAchievementProgress(int AchievementID, int Progress, bool Completed)
 {
-	// find achievement data by ID
-	for(auto& pObj : m_AchivementsData)
+	const auto it = std::ranges::find_if(m_AchievementsData, [AchievementID](const nlohmann::json& obj)
 	{
-		if(pObj.value("aid", -1) == AchievementID)
-		{
-			pObj["progress"] = Progress;
-			pObj["completed"] = Completed;
-			return;
-		}
-	}
+		return obj.value("aid", -1) == AchievementID;
+	});
 
-	// append new achievement data
-	nlohmann::json Obj;
-	Obj["aid"] = AchievementID;
-	Obj["progress"] = Progress;
-	Obj["completed"] = Completed;
-	m_AchivementsData.push_back(Obj);
+	// update
+	if(it != m_AchievementsData.end())
+	{
+		(*it)["progress"] = Progress;
+		(*it)["completed"] = Completed;
+	}
+	else
+	{
+		nlohmann::json newAchievement;
+		newAchievement["aid"] = AchievementID;
+		newAchievement["progress"] = Progress;
+		newAchievement["completed"] = Completed;
+		m_AchievementsData.push_back(newAchievement);
+	}
 }

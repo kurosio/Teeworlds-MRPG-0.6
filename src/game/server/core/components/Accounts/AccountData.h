@@ -31,7 +31,7 @@ class CAccountData
 	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
 	ClassGroup m_ClassGroup {};
-	nlohmann::json m_AchivementsData { };
+	nlohmann::json m_AchievementsData { };
 	CBonusManager m_BonusManager;
 	BigInt m_Bank {};
 
@@ -105,8 +105,8 @@ public:
 
 	// Achievements
 	void InitAchievements(const std::string& Data);
-	void SetAchieventProgress(int AchievementID, int Progress, bool Completed);
-	nlohmann::json& GetAchievementsData() { return m_AchivementsData; }
+	void UpdateAchievementProgress(int AchievementID, int Progress, bool Completed);
+	nlohmann::json& GetAchievementsData() { return m_AchievementsData; }
 
 	// Aethers
 	bool IsUnlockedAether(int AetherID) const { return m_aAetherLocation.find(AetherID) != m_aAetherLocation.end(); }

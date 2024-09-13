@@ -235,9 +235,9 @@ void CPlayer::TryRemoveEidolon()
 	}
 }
 
-void CPlayer::UpdateAchievement(int Type, int Misc, int Value, int ProgressType)
+void CPlayer::UpdateAchievement(AchievementType Type, int Criteria, int Progress, int ProgressType)
 {
-	GS()->Core()->AchievementManager()->UpdateAchievement(this, Type, Misc, Value, ProgressType);
+	GS()->Core()->AchievementManager()->UpdateAchievement(this, Type, Criteria, Progress, ProgressType);
 }
 
 void CPlayer::HandleEffects()

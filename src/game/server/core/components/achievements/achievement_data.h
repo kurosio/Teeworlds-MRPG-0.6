@@ -12,26 +12,24 @@ class CAchievement;
 
 enum AchievementProgressType
 {
-	PROGRESS_ADD = 0,
-	PROGRESS_REMOVE,
-	PROGRESS_SET,
+	PROGRESS_ACCUMULATE = 0,
+	PROGRESS_ABSOLUTE,
 };
 
 // achievement types
-enum AchievementType
+enum class AchievementType : int
 {
-	ACHIEVEMENT_DEFEAT_PVP = 1,
-	ACHIEVEMENT_DEFEAT_PVE,
-	ACHIEVEMENT_DEFEAT_MOB,
-	ACHIEVEMENT_DEATH,
-	ACHIEVEMENT_TOTAL_DAMAGE,
-	ACHIEVEMENT_EQUIP,
-	ACHIEVEMENT_RECEIVE_ITEM,
-	ACHIEVEMENT_HAVE_ITEM,
-	ACHIEVEMENT_CRAFT_ITEM,
-	ACHIEVEMENT_UNLOCK_WORLD,
-	ACHIEVEMENT_LEVELING,
-	NUM_ACHIEVEMENT_TYPES,
+	DefeatPVP = 1,
+	DefeatPVE,
+	DefeatMob,
+	Death,
+	TotalDamage,
+	Equip,
+	ReceiveItem,
+	HaveItem,
+	CraftItem,
+	UnlockWorld,
+	Leveling,
 };
 
 enum
@@ -45,17 +43,16 @@ enum
 class CAchievementInfo : public MultiworldIdentifiableData< std::deque<CAchievementInfo*> >
 {
 	int m_ID {};
-	int m_Type {};
+	AchievementType m_Type {};
 	int m_Group {};
 	std::string m_aName {};
-	nlohmann::json m_RewardData {};
 	int m_Criteria{};
 	int m_Required{};
-	int m_AchievementPoint {};
+	int m_Point {};
+	nlohmann::json m_RewardData {};
 
 public:
 	explicit CAchievementInfo(int ID) : m_ID(ID) {}
-
 	static CAchievementInfo* CreateElement(const int& ID)
 	{
 		auto pData = new CAchievementInfo(ID);
@@ -66,28 +63,28 @@ public:
 	int GetID() const { return m_ID; }
 	int GetCriteria() const { return m_Criteria; }
 	int GetRequired() const { return m_Required; }
-	int GetAchievementPoint() const { return m_AchievementPoint; }
+	int GetPoint() const { return m_Point; }
 	const char* GetName() const { return m_aName.c_str(); }
-	int GetType() const { return m_Type; }
+	AchievementType GetType() const { return m_Type; }
 	int GetGroup() const { return m_Group; }
 	nlohmann::json& GetRewardData() { return m_RewardData; }
 	bool RewardExists() const { return !m_RewardData.empty(); }
 
 	// initalize the Aether data
-	void Init(const std::string& pName, int Type, int Criteria, int Required, const std::string& RewardData, int AchievementPoint)
+	void Init(const std::string& pName, AchievementType Type, int Criteria, int Required, const std::string& RewardData, int Point)
 	{
 		m_aName = pName;
 		m_Type = Type;
 		m_Criteria = Criteria;
 		m_Required = Required;
-		m_AchievementPoint = AchievementPoint;
+		m_Point = Point;
 
 		InitData(RewardData);
 	}
 	void InitData(const std::string& RewardData);
 
 	// check if the achievement is completed
-	bool CheckAchievement(int Misc, const CAchievement* pAchievement) const;
+	bool IsCompleted(int Criteria, const CAchievement* pAchievement) const;
 };
 
 // achievement data
@@ -102,12 +99,11 @@ class CAchievement : public MultiworldIdentifiableData< std::map< int, std::dequ
 	CAchievementInfo* m_pInfo {};
 	int m_ClientID {};
 	int m_Progress {};
-	bool m_NotifiedSoonComplete {};
 	bool m_Completed {};
+	bool m_NotifiedSoonComplete {};
 
 public:
 	explicit CAchievement(CAchievementInfo* pInfo, int ClientID) : m_pInfo(pInfo), m_ClientID(ClientID) {}
-
 	static CAchievement* CreateElement(CAchievementInfo* pInfo, int ClientID)
 	{
 		const auto pData = new CAchievement(pInfo, ClientID);
@@ -124,11 +120,11 @@ public:
 	CAchievementInfo* Info() const { return m_pInfo; }
 	bool IsCompleted() const { return m_Completed; }
 	int GetProgress() const { return m_Progress; }
-	bool UpdateProgress(int Misc, int Value, int ProgressType);
+	bool UpdateProgress(int Criteria, int Progress, int ProgressType);
 
 private:
-	void NotifyPlayerProgress(CPlayer* pPlayer);
-	void RewardPlayer(CPlayer* pPlayer) const;
+	void NotifyPlayerProgress();
+	void RewardPlayer() const;
 };
 
 #endif

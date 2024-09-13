@@ -94,7 +94,7 @@ void CWorldManager::NotifyUnlockedZonesByLeveling(CPlayer* pPlayer, int Level) c
 		if(pPlayer->Account()->GetLevel() == Level)
 		{
 			GS()->Chat(-1, "{} initiated area ({})!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
-			pPlayer->UpdateAchievement(ACHIEVEMENT_UNLOCK_WORLD, GS()->GetWorldID(), 1, PROGRESS_SET);
+			pPlayer->UpdateAchievement(AchievementType::UnlockWorld, GS()->GetWorldID(), 1, PROGRESS_ABSOLUTE);
 		}
 	}
 }

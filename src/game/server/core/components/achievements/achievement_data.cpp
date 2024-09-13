@@ -1,6 +1,5 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <game/server/core/components/mails/mail_wrapper.h>
 #include <game/server/gamecontext.h>
 
 #include "achievement_data.h"
@@ -20,17 +19,17 @@ void CAchievementInfo::InitData(const std::string& RewardData)
 	m_Group = ACHIEVEMENT_GROUP_GENERAL;
 	switch(m_Type)
 	{
-		case ACHIEVEMENT_DEFEAT_PVP:
-		case ACHIEVEMENT_DEFEAT_PVE:
-		case ACHIEVEMENT_DEFEAT_MOB:
-		case ACHIEVEMENT_DEATH:
-		case ACHIEVEMENT_TOTAL_DAMAGE:
+		case AchievementType::DefeatPVP:
+		case AchievementType::DefeatPVE:
+		case AchievementType::DefeatMob:
+		case AchievementType::Death:
+		case AchievementType::TotalDamage:
 			m_Group = ACHIEVEMENT_GROUP_BATTLE;
 			break;
-		case ACHIEVEMENT_EQUIP:
-		case ACHIEVEMENT_RECEIVE_ITEM:
-		case ACHIEVEMENT_HAVE_ITEM:
-		case ACHIEVEMENT_CRAFT_ITEM:
+		case AchievementType::Equip:
+		case AchievementType::ReceiveItem:
+		case AchievementType::HaveItem:
+		case AchievementType::CraftItem:
 			m_Group = ACHIEVEMENT_GROUP_ITEMS;
 			break;
 		default: 
@@ -39,82 +38,102 @@ void CAchievementInfo::InitData(const std::string& RewardData)
 	}
 }
 
-bool CAchievementInfo::CheckAchievement(int Misc, const CAchievement* pAchievement) const
+bool CAchievementInfo::IsCompleted(int Criteria, const CAchievement* pAchievement) const
 {
-	if(m_Criteria != Misc && m_Criteria > 0)
+	// check if the criteria are met
+	if(m_Criteria > 0 && m_Criteria != Criteria)
 		return false;
 
+	// logic for checking progress by achievement type
 	switch(m_Type)
 	{
-		case ACHIEVEMENT_EQUIP:
-		case ACHIEVEMENT_UNLOCK_WORLD:
+		// achievements that require minimal progress (just having progress)
+		case AchievementType::Equip:
+		case AchievementType::UnlockWorld:
 			return pAchievement->m_Progress > 0;
-		case ACHIEVEMENT_CRAFT_ITEM:
-		case ACHIEVEMENT_DEFEAT_MOB:
-		case ACHIEVEMENT_RECEIVE_ITEM:
-		case ACHIEVEMENT_HAVE_ITEM:
-		case ACHIEVEMENT_DEFEAT_PVE:
-		case ACHIEVEMENT_DEFEAT_PVP:
-		case ACHIEVEMENT_DEATH:
-		case ACHIEVEMENT_TOTAL_DAMAGE:
-		case ACHIEVEMENT_LEVELING:
+
+		// achievements that require a specific number of actions or conditions to be met
+		case AchievementType::CraftItem:
+		case AchievementType::DefeatMob:
+		case AchievementType::ReceiveItem:
+		case AchievementType::HaveItem:
+		case AchievementType::DefeatPVE:
+		case AchievementType::DefeatPVP:
+		case AchievementType::Death:
+		case AchievementType::TotalDamage:
+		case AchievementType::Leveling:
 			return pAchievement->m_Progress >= m_Required;
+
+		// if the type is unknown, print an error and return false
 		default:
-			 dbg_assert(false, "unknown achievement type");
-			 return false;
+			dbg_assert(false, "Unknown achievement type");
+			return false;
 	}
 }
 
-bool CAchievement::UpdateProgress(int Misc, int Value, int ProgressType)
+bool CAchievement::UpdateProgress(int Criteria, int Progress, int ProgressType)
 {
-	if(m_Completed || !GetPlayer())
+	CPlayer* pPlayer = GetPlayer();
+	if(m_Completed || !pPlayer)
 		return false;
 
 	// update the achievement progress
-	CPlayer* pPlayer = GetPlayer();
 	switch(ProgressType)
 	{
-		case PROGRESS_SET:    m_Progress = Value; break;
-		case PROGRESS_REMOVE: m_Progress -= Value; break;
-		case PROGRESS_ADD:    m_Progress += Value; break;
-		default:              return false;
+		case PROGRESS_ABSOLUTE:
+		{
+			m_Progress = Progress;
+			break;
+		}
+		case PROGRESS_ACCUMULATE:
+		{
+			m_Progress += Progress;
+			break;
+		}
+		default:
+			return false;
 	}
 	m_Progress = clamp(m_Progress, 0, m_pInfo->GetRequired());
 
 	// check if the achievement is completed
-	if(m_pInfo->CheckAchievement(Misc, this))
+	if(m_pInfo->IsCompleted(Criteria, this))
 	{
-		m_Completed = true;
-		RewardPlayer(pPlayer);
 		GS()->CreateHammerHit(pPlayer->m_ViewPos);
 		GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
 		GS()->Chat(m_ClientID, "'{}' has completed the achievement '{}'!", Server()->ClientName(m_ClientID), m_pInfo->GetName());
+
+		m_Completed = true;
+		RewardPlayer();
 	}
 	else
 	{
-		NotifyPlayerProgress(pPlayer);
+		NotifyPlayerProgress();
 	}
 
-	pPlayer->Account()->SetAchieventProgress(m_pInfo->GetID(), m_Progress, m_Completed);
+	// save
+	pPlayer->Account()->UpdateAchievementProgress(m_pInfo->GetID(), m_Progress, m_Completed);
 	return true;
 }
 
-void CAchievement::RewardPlayer(CPlayer* pPlayer) const
+void CAchievement::RewardPlayer() const
 {
 	const auto& JsonData = m_pInfo->GetRewardData();
-	if(JsonData.empty()) return;
+	if(JsonData.empty()) 
+		return;
 
-	int Exp = JsonData.value("exp", 0);
-	if(Exp > 0)
+	CPlayer* pPlayer = GetPlayer();
+	if(const int Experience = JsonData.value("exp", 0); Experience > 0)
 	{
-		pPlayer->Account()->AddExperience(Exp);
-		GS()->Chat(m_ClientID, "You received {} exp!", Exp);
+		pPlayer->Account()->AddExperience(Experience);
+		GS()->Chat(m_ClientID, "You received {} exp!", Experience);
 	}
 
-	for(const CItemsContainer Items = CItem::FromArrayJSON(JsonData, "items"); auto& Item : Items)
+	for(const CItemsContainer Items = CItem::FromArrayJSON(JsonData, "items"); auto & Item : Items)
+	{
 		pPlayer->GetItem(Item)->Add(Item.GetValue());
+	}
 
-	if(int AchievementPoints = m_pInfo->GetAchievementPoint(); AchievementPoints > 0)
+	if(const int AchievementPoints = m_pInfo->GetPoint(); AchievementPoints > 0)
 	{
 		auto* pPlayerItem = pPlayer->GetItem(itAchievementPoint);
 		pPlayerItem->Add(AchievementPoints);
@@ -122,9 +141,9 @@ void CAchievement::RewardPlayer(CPlayer* pPlayer) const
 	}
 }
 
-void CAchievement::NotifyPlayerProgress(CPlayer* pPlayer)
+void CAchievement::NotifyPlayerProgress()
 {
-	int Percent = translate_to_percent(m_pInfo->GetRequired(), m_Progress);
+	const int Percent = translate_to_percent(m_pInfo->GetRequired(), m_Progress);
 	if(Percent > 80 && !m_NotifiedSoonComplete)
 	{
 		m_NotifiedSoonComplete = true;

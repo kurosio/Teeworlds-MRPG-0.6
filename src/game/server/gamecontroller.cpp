@@ -28,27 +28,36 @@ void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage
 {
 	// achievement total damage
 	if(pFrom != pTo && !pFrom->IsBot())
-		pFrom->UpdateAchievement(ACHIEVEMENT_TOTAL_DAMAGE, NOPE, Damage, PROGRESS_ADD);
+	{
+		pFrom->UpdateAchievement(AchievementType::TotalDamage, NOPE, Damage, PROGRESS_ACCUMULATE);
+	}
 }
 
 void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
 	GS()->EventListener()->Notify<IEventListener::Type::PlayerDeath>( pVictim, pKiller, Weapon);
 
-	// achievement defeat mob & pve
-	if(pVictim->IsBot() && !pKiller->IsBot())
+	// achievement death
+	if(!pVictim->IsBot())
 	{
-		pKiller->UpdateAchievement(ACHIEVEMENT_DEFEAT_MOB, pVictim->GetBotID(), 1, PROGRESS_ADD);
-		pKiller->UpdateAchievement(ACHIEVEMENT_DEFEAT_PVE, NOPE, 1, PROGRESS_ADD);
+		pVictim->UpdateAchievement(AchievementType::Death, NOPE, 1, PROGRESS_ACCUMULATE);
 	}
 
-	// achievement death
-	if(pVictim != pKiller && !pVictim->IsBot())
-		pVictim->UpdateAchievement(ACHIEVEMENT_DEATH, NOPE, 1, PROGRESS_ADD);
+	if(pVictim != pKiller)
+	{
+		// achievement defeat mob & pve
+		if(pVictim->IsBot() && !pKiller->IsBot())
+		{
+			pKiller->UpdateAchievement(AchievementType::DefeatMob, pVictim->GetBotID(), 1, PROGRESS_ACCUMULATE);
+			pKiller->UpdateAchievement(AchievementType::DefeatPVE, NOPE, 1, PROGRESS_ACCUMULATE);
+		}
 
-	// achievement defeat pvp
-	if(pVictim != pKiller && !pVictim->IsBot() && !pKiller->IsBot())
-		pKiller->UpdateAchievement(ACHIEVEMENT_DEFEAT_PVP, NOPE, 1, PROGRESS_ADD);
+		// achievement defeat pvp
+		if(!pVictim->IsBot() && !pKiller->IsBot())
+		{
+			pKiller->UpdateAchievement(AchievementType::DefeatPVP, NOPE, 1, PROGRESS_ACCUMULATE);
+		}
+	}
 
 	// update last killed by weapon
 	if(!pVictim->IsBot())

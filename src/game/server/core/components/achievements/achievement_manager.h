@@ -5,29 +5,29 @@
 #include <game/server/core/mmo_component.h>
 
 #include "achievement_data.h"
+#include "game/server/core/tools/vote_wrapper.h"
 
 class CAchievementManager : public MmoComponent
 {
 	~CAchievementManager() override
 	{
-		// free data
 		mystd::freeContainer(CAchievement::Data(), CAchievementInfo::Data());
 	};
 
 	void OnInit() override;
 	void OnClientReset(int ClientID) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
-	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowGroupMenu(CPlayer* pPlayer, int Group) const;
+	void AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required) const;
 
 public:
+	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int AppendProgress) const;
 	int GetCountByGroup(int Group) const;
 	int GetCompletedCountByGroup(int ClientID, int Group) const;
 	int GetCount() const;
 	int GetCompletedCount(int ClientID) const;
-	void UpdateAchievement(CPlayer* pPlayer, int Type, int Misc, int Value, int AppendProgress) const;
 };
 
 #endif

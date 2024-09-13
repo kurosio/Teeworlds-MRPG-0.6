@@ -102,8 +102,8 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	m_Value += Value;
 
 	// achievement for item
-	pPlayer->UpdateAchievement(ACHIEVEMENT_RECEIVE_ITEM, m_ID, Value, PROGRESS_ADD);
-	pPlayer->UpdateAchievement(ACHIEVEMENT_HAVE_ITEM, m_ID, m_Value, PROGRESS_SET);
+	pPlayer->UpdateAchievement(AchievementType::ReceiveItem, m_ID, Value, PROGRESS_ACCUMULATE);
+	pPlayer->UpdateAchievement(AchievementType::HaveItem, m_ID, m_Value, PROGRESS_ABSOLUTE);
 
 	// check the empty slot if yes then put the item on
 	if((Info()->IsType(ItemType::TYPE_EQUIP) && !pPlayer->GetEquippedItemID(Info()->GetFunctional()).has_value()) || Info()->IsType(ItemType::TYPE_MODULE))
@@ -177,7 +177,7 @@ bool CPlayerItem::Equip(bool SaveItem)
 		pPlayer->GetCharacter()->UpdateEquipingStats(m_ID);
 
 	// achievement for item
-	pPlayer->UpdateAchievement(ACHIEVEMENT_EQUIP, m_ID, m_Settings, PROGRESS_SET);
+	pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
 
 	// run event equip and unequip
 	Info()->RunEvent(pPlayer, m_Settings ? CItemDescription::OnEventEquip : CItemDescription::OnEventUnequip);

@@ -15,6 +15,8 @@
 #include "core/tools/vote_wrapper.h"
 #include "class_data.h"
 
+enum class AchievementType;
+
 enum
 {
 	WEAPON_SELF = -2, // self die
@@ -149,7 +151,7 @@ public:
 	CPlayerBot* GetEidolon() const;
 	void TryCreateEidolon();
 	void TryRemoveEidolon();
-	void UpdateAchievement(int Type, int Misc, int Value, int ProgressType);
+	void UpdateAchievement(AchievementType Type, int Criteria, int Progress, int ProgressType);
 
 private:
 	virtual void GetFormatedName(char* aBuffer, int BufferSize);

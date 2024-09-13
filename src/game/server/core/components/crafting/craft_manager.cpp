@@ -110,7 +110,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	}
 
 	// update achievement and votes
-	pPlayer->UpdateAchievement(ACHIEVEMENT_CRAFT_ITEM, pCraft->GetID(), craftedItemCount, PROGRESS_ADD);
+	pPlayer->UpdateAchievement(AchievementType::CraftItem, pCraft->GetID(), craftedItemCount, PROGRESS_ACCUMULATE);
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 

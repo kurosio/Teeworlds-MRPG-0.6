@@ -21,33 +21,27 @@ void CAchievementManager::OnInit()
 
 		// create element
 		auto* pAchievement = CAchievementInfo::CreateElement(ID);
-		pAchievement->Init(Name, Type, Criteria, Required, Reward, AchievementPoint);
+		pAchievement->Init(Name, (AchievementType)Type, Criteria, Required, Reward, AchievementPoint);
 	}
 
 	// sort achievements by name
-	std::ranges::sort(CAchievementInfo::Data(),
-      [](const CAchievementInfo* p1, const CAchievementInfo* p2)
-      {
-          return std::string_view(p1->GetName()) < std::string_view(p2->GetName());
-      });
+	std::ranges::sort(CAchievementInfo::Data(), [](const CAchievementInfo* p1, const CAchievementInfo* p2)
+	{
+		return std::string_view(p1->GetName()) < std::string_view(p2->GetName());
+	});
 }
 
 void CAchievementManager::OnClientReset(int ClientID)
 {
-	// free achievement data
 	for(auto& p : CAchievement::Data()[ClientID])
 		delete p;
-	CAchievement::Data()[ClientID].clear();
-}
 
-bool CAchievementManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
-{
-	return false;
+	CAchievement::Data()[ClientID].clear();
 }
 
 bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
-	int ClientID = pPlayer->GetCID();
+	const int ClientID = pPlayer->GetCID();
 
 	// menu achievements
 	if(Menulist == MENU_ACHIEVEMENTS)
@@ -72,12 +66,7 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 {
-	// check valid player
-	if (!pPlayer)
-		return;
-
-	// initialize variables
-	int ClientID = pPlayer->GetCID();
+	const int ClientID = pPlayer->GetCID();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
@@ -108,120 +97,106 @@ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_ITEMS, "Items ({} of {})", CompletedItems, TotalItems);
 }
 
-void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int Group) const
+void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int groupID) const
 {
-	// check valid player
-	if(!pPlayer)
-		return;
-
-	// initialize variables
-	int ClientID = pPlayer->GetCID();
-	const char* pGroupName[] = { "General", "Battle", "Items" };
+	const int ClientID = pPlayer->GetCID();
+	const char* apGroupName[] = { "General", "Battle", "Items" };
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2324 Achievements (Information)");
 	VInfo.Add("Select an achievement from the list to get conditions.");
 	VoteWrapper::AddEmptyline(ClientID);
 
-	// show all the achievements by group
-	VoteWrapper(ClientID).Add("\u2263 {} achievements", pGroupName[Group]);
-	auto& pAchievements = CAchievement::Data()[ClientID];
-	for(auto& pAchievement : pAchievements)
+	// achievements list
+	const auto& achievements = CAchievement::Data()[ClientID];
+	VoteWrapper(ClientID).Add("\u2263 {} achievements", apGroupName[groupID]);
+	for(auto& pAchievement : achievements)
 	{
-		// initialize variables
-		int Progress = pAchievement->GetProgress();
-		int Required = pAchievement->Info()->GetRequired();
-		int Type = pAchievement->Info()->GetType();
-		bool Completed = pAchievement->IsCompleted();
-		bool RewardExists = pAchievement->Info()->RewardExists();
-
-		// check group
-		if(pAchievement->Info()->GetGroup() != Group)
+		const auto* pInfo = pAchievement->Info();
+		if(pInfo->GetGroup() != groupID)
 			continue;
 
-		// show achievement
-		VoteWrapper VAchievement(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "{} ({}AP) {}{}", (Completed ? "✔" : "×"),
-			pAchievement->Info()->GetAchievementPoint(), pAchievement->Info()->GetName(), (RewardExists ? " : Reward" : "\0"));
-		if(Type == ACHIEVEMENT_RECEIVE_ITEM)
+		int progress = pAchievement->GetProgress();
+		int required = pInfo->GetRequired();
+		bool completed = pAchievement->IsCompleted();
+		bool rewardExists = pInfo->RewardExists();
+
+		VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} ({}AP) {}{}",
+			completed ? "✔" : "×",
+			pInfo->GetPoint(),
+			pInfo->GetName(),
+			rewardExists ? " : Reward" : "");
+
+		AddAchievementDetails(VAchievement, pInfo, progress, required);
+	}
+}
+
+void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required) const
+{
+	switch(const auto Type = pInfo->GetType())
+	{
+		case AchievementType::ReceiveItem:
+		case AchievementType::HaveItem:
 		{
-			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetCriteria());
-			VAchievement.Add("Receive {}/{} {}", Progress, Required, pItem->GetName());
+			CItemDescription* pItem = GS()->GetItemInfo(pInfo->GetCriteria());
+			VAchievement.Add("{} {}/{} {}", Type == AchievementType::ReceiveItem ? "Receive" : "Have", Progress, Required, pItem->GetName());
+			break;
 		}
-		else if(Type == ACHIEVEMENT_HAVE_ITEM)
-		{
-			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetCriteria());
-			VAchievement.Add("Have {}/{} {}", Progress, Required, pItem->GetName());
-		}
-		else if(Type == ACHIEVEMENT_TOTAL_DAMAGE)
+		case AchievementType::TotalDamage:
 		{
 			VAchievement.Add("Total damage {}/{}", Progress, Required);
+			break;
 		}
-		else if(Type == ACHIEVEMENT_DEATH)
+		case AchievementType::Death:
 		{
 			VAchievement.Add("Deaths {}/{}", Progress, Required);
+			break;
 		}
-		else if(Type == ACHIEVEMENT_DEFEAT_MOB)
+		case AchievementType::DefeatMob:
 		{
-			int BotID = pAchievement->Info()->GetCriteria();
-			std::string BotName = DataBotInfo::ms_aDataBot[BotID].m_aNameBot;
-			VAchievement.Add("Defeat {}/{} {}", Progress, Required, BotName);
+			int botID = pInfo->GetCriteria();
+			std::string botName = DataBotInfo::ms_aDataBot[botID].m_aNameBot;
+			VAchievement.Add("Defeat {}/{} {}", Progress, Required, botName);
+			break;
 		}
-		else if(Type == ACHIEVEMENT_DEFEAT_PVE)
+		case AchievementType::DefeatPVE:
 		{
 			VAchievement.Add("Defeat {}/{} enemies", Progress, Required);
+			break;
 		}
-		else if(Type == ACHIEVEMENT_DEFEAT_PVP)
+		case AchievementType::DefeatPVP:
 		{
 			VAchievement.Add("Defeat {}/{} players", Progress, Required);
+			break;
 		}
-		else if(Type == ACHIEVEMENT_EQUIP)
+		case AchievementType::Equip:
 		{
-			CItemDescription* pItem = GS()->GetItemInfo(pAchievement->Info()->GetCriteria());
+			CItemDescription* pItem = GS()->GetItemInfo(pInfo->GetCriteria());
 			VAchievement.Add("Equip {}", pItem->GetName());
+			break;
 		}
-		else if(Type == ACHIEVEMENT_UNLOCK_WORLD)
+		case AchievementType::UnlockWorld:
 		{
-			int WorldID = pAchievement->Info()->GetCriteria();
-			VAchievement.Add("Unlock {}", Progress, Required, Server()->GetWorldName(WorldID));
+			int worldID = pInfo->GetCriteria();
+			VAchievement.Add("Unlock {}", Server()->GetWorldName(worldID));
+			break;
 		}
-		else if(Type == ACHIEVEMENT_LEVELING)
+		case AchievementType::Leveling:
 		{
 			VAchievement.Add("Reach {}/{} levels", Progress, Required);
+			break;
 		}
-		else if(Type == ACHIEVEMENT_CRAFT_ITEM)
+		case AchievementType::CraftItem:
 		{
-			if(CCraftItem* pItem = Core()->CraftManager()->GetCraftByID(pAchievement->Info()->GetCriteria()))
+			if(CCraftItem* pItem = Core()->CraftManager()->GetCraftByID(pInfo->GetCriteria()))
 				VAchievement.Add("Craft {}/{} {}", Progress, Required, pItem->GetItem()->Info()->GetName());
+			break;
 		}
 	}
 }
 
-int CAchievementManager::GetCountByGroup(int Group) const
+void CAchievementManager::UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int ProgressType) const
 {
-	return (int)std::ranges::count_if(CAchievementInfo::Data(), [Group](const CAchievementInfo* pAchievement)
-	                                  { return pAchievement->GetGroup() == Group; });
-}
-
-int CAchievementManager::GetCompletedCountByGroup(int ClientID, int Group) const
-{
-	auto& pAchievements = CAchievement::Data()[ClientID];
-	return (int)std::ranges::count_if(pAchievements, [Group](const CAchievement* p)
-	                                  { return p->Info()->GetGroup() == Group && p->IsCompleted(); });
-}
-
-int CAchievementManager::GetCount() const { return (int)CAchievementInfo::Data().size(); }
-
-int CAchievementManager::GetCompletedCount(int ClientID) const
-{
-	auto& pAchievements = CAchievement::Data()[ClientID];
-	return (int)std::ranges::count_if(pAchievements, [](const CAchievement* p)
-	                                  { return p->IsCompleted(); });
-}
-
-
-void CAchievementManager::UpdateAchievement(CPlayer* pPlayer, int Type, int Misc, int Value, int ProgressType) const
-{
-	// check valid player
 	if(!pPlayer || pPlayer->IsBot())
 		return;
 
@@ -230,20 +205,55 @@ void CAchievementManager::UpdateAchievement(CPlayer* pPlayer, int Type, int Misc
 	auto& pAchievements = CAchievement::Data()[pPlayer->GetCID()];
 
 	// search for the achievement
-	for(auto& pAchievement : pAchievements)
+	for(const auto& pAchievement : pAchievements)
 	{
-		// initialize variables
 		const auto achievementType = pAchievement->Info()->GetType();
-		const auto achievementMisc = pAchievement->Info()->GetCriteria();
+		const auto achievementCriteria = pAchievement->Info()->GetCriteria();
 
-		if(achievementType == Type && achievementMisc == Misc && !pAchievement->IsCompleted())
+		if(achievementType != Type || pAchievement->IsCompleted())
+			continue;
+
+		if(achievementCriteria <= 0 || achievementCriteria == Criteria)
 		{
-			if(pAchievement->UpdateProgress(Misc, Value, ProgressType))
+			if(pAchievement->UpdateProgress(Criteria, Progress, ProgressType))
 				Updated = true;
 		}
 	}
 
 	// update the achievement progress in the database
 	if(Updated)
+	{
 		GS()->Core()->SaveAccount(pPlayer, SAVE_ACHIEVEMENTS);
+	}
+}
+
+int CAchievementManager::GetCount() const
+{
+	return (int)CAchievementInfo::Data().size();
+}
+
+int CAchievementManager::GetCountByGroup(int Group) const
+{
+	return (int)std::ranges::count_if(CAchievementInfo::Data(), [Group](const CAchievementInfo* pAchievement)
+	{
+		return pAchievement->GetGroup() == Group;
+	});
+}
+
+int CAchievementManager::GetCompletedCountByGroup(int ClientID, int Group) const
+{
+	auto& pAchievements = CAchievement::Data()[ClientID];
+	return (int)std::ranges::count_if(pAchievements, [Group](const CAchievement* p)
+	{
+		return p->Info()->GetGroup() == Group && p->IsCompleted();
+	});
+}
+
+int CAchievementManager::GetCompletedCount(int ClientID) const
+{
+	auto& pAchievements = CAchievement::Data()[ClientID];
+	return (int)std::ranges::count_if(pAchievements, [](const CAchievement* p)
+	{
+		return p->IsCompleted();
+	});
 }
