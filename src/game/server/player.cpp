@@ -409,7 +409,7 @@ void CPlayer::Snap(int SnappingClient)
 		const bool isFixedViewLocked = optViewLockAt.has_value();
 		pSpectatorInfo->m_X = m_ViewPos.x = (isFixedViewLocked ? optViewLockAt->x : m_ViewPos.x);
 		pSpectatorInfo->m_Y = m_ViewPos.y = (isFixedViewLocked ? optViewLockAt->y : m_ViewPos.y);
-		pSpectatorInfo->m_SpectatorId = m_ClientID;
+		pSpectatorInfo->m_SpectatorId = (isFixedViewLocked ? m_ClientID : -1);
 	}
 }
 
