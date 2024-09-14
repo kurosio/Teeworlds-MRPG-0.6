@@ -23,42 +23,45 @@ struct FixedViewCam
 		m_Moving = true;
 	}
 
-	void Tick(const vec2& playerView)
+	void Tick(vec2& playerView)
 	{
-		if(!m_Moving)
-			return;
-
-		// prepare current view
-		const vec2 target = m_Locked ? m_LockedAt : playerView;
-		if(!m_Smooth)
-			m_CurrentView = target;
-		else if(!m_CurrentView.has_value())
-			m_CurrentView = playerView;
-
-		// check distance
-		const float distanceToTarget = distance(*m_CurrentView, target);
-		if(distanceToTarget < 5.f)
+		if(m_Moving)
 		{
-			if(m_Locked)
+			// prepare current view
+			const vec2 target = m_Locked ? m_LockedAt : playerView;
+			if(!m_Smooth)
 				m_CurrentView = target;
-			else
-				m_CurrentView.reset();
-			m_Moving = false;
-			return;
+			else if(!m_CurrentView.has_value())
+				m_CurrentView = playerView;
+
+			// check distance
+			if(const float distanceToTarget = distance(*m_CurrentView, target); distanceToTarget < 5.f)
+			{
+				if(m_Locked)
+					m_CurrentView = target;
+				else
+					m_CurrentView.reset();
+				m_Moving = false;
+			}
+			else // moving
+			{
+				float dynamicLerpSpeed = 0.05f + distanceToTarget * 0.001f;
+				if(!m_Locked)
+					dynamicLerpSpeed = std::max(dynamicLerpSpeed * 2.f, 2.f);
+				else
+					dynamicLerpSpeed = std::max(dynamicLerpSpeed, 0.5f);
+
+				m_CurrentView = lerp(*m_CurrentView, target, dynamicLerpSpeed * 0.16f);
+			}
 		}
 
-		// moving
-		float dynamicLerpSpeed = 0.05f + distanceToTarget * 0.001f;
-		if(!m_Locked)
-			dynamicLerpSpeed = std::max(dynamicLerpSpeed * 2.f, 2.f);
-		else
-			dynamicLerpSpeed = std::max(dynamicLerpSpeed, 0.5f);
-		m_CurrentView = lerp(*m_CurrentView, target, dynamicLerpSpeed * 0.16f);
+		if(m_CurrentView.has_value())
+			playerView = *m_CurrentView;
 	}
 
-	void PostTick()
+	void Reset()
 	{
-		if(!m_Locked)
+		if(!m_Locked || m_Moving)
 			return;
 
 		m_Locked = false;

@@ -182,7 +182,6 @@ void CPlayer::PostTick()
 		CVoteOptional::HandleVoteOptionals(m_ClientID);
 		Account()->GetBonusManager().UpdateBonuses();
 		m_Scenarios.PostTick();
-		m_FixedView.PostTick();
 	}
 
 	// handlers
@@ -393,30 +392,30 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
 	pPlayerInfo->m_Score = Account()->GetLevel();
 
-	const auto& optViewLockAt = m_FixedView.GetCurrentView();
-	if(auto pDDNetPlayer = static_cast<CNetObj_DDNetPlayer*>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, m_ClientID, sizeof(CNetObj_DDNetPlayer))))
+	const bool isViewLocked = m_FixedView.GetCurrentView().has_value();
+	if(auto pDDNetPlayer = Server()->SnapNewItem<CNetObj_DDNetPlayer>(m_ClientID))
 	{
 		pDDNetPlayer->m_AuthLevel = Server()->GetAuthedState(m_ClientID);
-		pDDNetPlayer->m_Flags = optViewLockAt.has_value() ? EXPLAYERFLAG_SPEC : 0;
+		pDDNetPlayer->m_Flags = isViewLocked ? EXPLAYERFLAG_SPEC : 0;
 	}
 
-	if(localClient && (GetTeam() == TEAM_SPECTATORS || optViewLockAt.has_value()))
+	if(localClient && (GetTeam() == TEAM_SPECTATORS || isViewLocked))
 	{
-		CNetObj_SpectatorInfo* pSpectatorInfo = static_cast<CNetObj_SpectatorInfo*>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, m_ClientID, sizeof(CNetObj_SpectatorInfo)));
+		CNetObj_SpectatorInfo* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(m_ClientID);
 		if(!pSpectatorInfo)
 			return;
 
-		const bool isFixedViewLocked = optViewLockAt.has_value();
-		pSpectatorInfo->m_X = m_ViewPos.x = (isFixedViewLocked ? optViewLockAt->x : m_ViewPos.x);
-		pSpectatorInfo->m_Y = m_ViewPos.y = (isFixedViewLocked ? optViewLockAt->y : m_ViewPos.y);
-		pSpectatorInfo->m_SpectatorId = (isFixedViewLocked ? m_ClientID : -1);
+		pSpectatorInfo->m_X = m_ViewPos.x;
+		pSpectatorInfo->m_Y = m_ViewPos.y;
+		pSpectatorInfo->m_SpectatorId = (isViewLocked ? m_ClientID : -1);
+		m_FixedView.Reset();
 	}
 }
 
 void CPlayer::FakeSnap()
 {
 	int FakeID = VANILLA_MAX_CLIENTS - 1;
-	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, FakeID, sizeof(CNetObj_ClientInfo)));
+	CNetObj_ClientInfo* pClientInfo = Server()->SnapNewItem<CNetObj_ClientInfo>(FakeID);
 	if(!pClientInfo)
 		return;
 
@@ -424,7 +423,7 @@ void CPlayer::FakeSnap()
 	StrToInts(&pClientInfo->m_Clan0, 3, "");
 	StrToInts(&pClientInfo->m_Skin0, 6, "default");
 
-	CNetObj_PlayerInfo* pPlayerInfo = static_cast<CNetObj_PlayerInfo*>(Server()->SnapNewItem(NETOBJTYPE_PLAYERINFO, FakeID, sizeof(CNetObj_PlayerInfo)));
+	CNetObj_PlayerInfo* pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(FakeID);
 	if(!pPlayerInfo)
 		return;
 
@@ -434,7 +433,7 @@ void CPlayer::FakeSnap()
 	pPlayerInfo->m_Score = -9999;
 	pPlayerInfo->m_Team = TEAM_SPECTATORS;
 
-	CNetObj_SpectatorInfo* pSpectatorInfo = static_cast<CNetObj_SpectatorInfo*>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, FakeID, sizeof(CNetObj_SpectatorInfo)));
+	CNetObj_SpectatorInfo* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(FakeID);
 	if(!pSpectatorInfo)
 		return;
 
