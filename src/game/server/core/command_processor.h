@@ -22,7 +22,6 @@ class CCommandProcessor
 	static void ConChatCmdList(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatRules(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatVoucher(IConsole::IResult* pResult, void* pUserData);
-	static void ConChatTutorial(IConsole::IResult* pResult, void* pUserData);
 
 public:
 	CCommandProcessor(CGS* pGS);

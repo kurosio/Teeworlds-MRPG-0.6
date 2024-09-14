@@ -97,11 +97,13 @@ void CCollision::InitTiles(CTile* pTiles)
 		if(Index > 128)
 			continue;
 
-		if(Index == TILE_FIXED_CAM)
+		if(Index == TILE_FIXED_CAM || Index == TILE_SMOOTH_FIXED_CAM)
 		{
-			vec2 camPos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
-			vec4 camRect = { camPos.x - CAM_RADIUS_W, camPos.y - CAM_RADIUS_H, camPos.x + CAM_RADIUS_W, camPos.y + CAM_RADIUS_H };
-			m_vFixedCamZones.emplace_back(camPos, camRect);
+			FixedCamZoneData data;
+			data.Pos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
+			data.Rect = { data.Pos.x - CAM_RADIUS_W, data.Pos.y - CAM_RADIUS_H, data.Pos.x + CAM_RADIUS_W, data.Pos.y + CAM_RADIUS_H };
+			data.Smooth = (Index == TILE_SMOOTH_FIXED_CAM);
+			m_vFixedCamZones.emplace_back(data);
 			pTiles[i].m_ColFlags = 0;
 			continue;
 		}
@@ -234,13 +236,13 @@ const char* CCollision::GetZonename(vec2 Pos) const
 	return m_vZoneNames.contains(Number) ? m_vZoneNames.at(Number).c_str() : nullptr;
 }
 
-std::optional<vec2> CCollision::TryGetFixedCamPos(vec2 currentPos) const
+std::optional<std::pair<vec2, bool>> CCollision::TryGetFixedCamPos(vec2 currentPos) const
 {
-	for(const auto& [camPos, zoneRect] : m_vFixedCamZones)
+	for(const auto& [Pos, Rect, Smooth] : m_vFixedCamZones)
 	{
-		if(currentPos.x > zoneRect.x && currentPos.x < zoneRect.z &&
-			currentPos.y > zoneRect.y && currentPos.y < zoneRect.w)
-			return camPos;
+		if(currentPos.x > Rect.x && currentPos.x < Rect.z &&
+			currentPos.y > Rect.y && currentPos.y < Rect.w)
+			return std::make_pair(Pos, Smooth);
 	}
 	return std::nullopt;
 }

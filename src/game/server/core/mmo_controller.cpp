@@ -69,8 +69,8 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	// order
 	m_System.add(m_pAchievementManager = new CAchievementManager);
 	m_System.add(m_pQuestManager = new CQuestManager);
-	m_System.add(m_pBotManager = new CBotManager);
 	m_System.add(m_pInventoryManager = new CInventoryManager);
+	m_System.add(m_pBotManager = new CBotManager);
 	m_System.add(m_pCraftManager = new CCraftManager);
 	m_System.add(m_pWarehouseManager = new CWarehouseManager);
 	m_System.add(new CAuctionManager);

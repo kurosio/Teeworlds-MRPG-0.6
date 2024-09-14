@@ -150,7 +150,8 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 		return;
 
 	// Update account context pointer
-	pPlayer->Account()->UpdatePointer(pPlayer);
+	auto* pAccount = pPlayer->Account();
+	pAccount->UpdatePointer(pPlayer);
 
 	// Broadcast a message to the player with their current location
 	const int ClientID = pPlayer->GetCID();
@@ -160,15 +161,15 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	// Check if it is not the first initialization
 	if(!FirstInitilize)
 	{
-		if(const int Letters = Core()->MailboxManager()->GetMailCount(pPlayer->Account()->GetID()); Letters > 0)
+		if(const int Letters = Core()->MailboxManager()->GetMailCount(pAccount->GetID()); Letters > 0)
 			GS()->Chat(ClientID, "You have {} unread letters.", Letters);
-		pPlayer->Account()->GetBonusManager().SendInfoAboutActiveBonuses();
+		pAccount->GetBonusManager().SendInfoAboutActiveBonuses();
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return;
 	}
 
 	Core()->OnPlayerLogin(pPlayer);
-	const int Rank = GetRank(pPlayer->Account()->GetID());
+	const int Rank = GetRank(pAccount->GetID());
 	GS()->Chat(-1, "{} logged to account. Rank #{}[{}]", Server()->ClientName(ClientID), Rank, Server()->ClientCountryIsoCode(ClientID));
 	{
 		auto InitSettingsItem = [pPlayer](const std::unordered_map<int, int>& pItems)

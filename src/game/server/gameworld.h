@@ -10,13 +10,67 @@ class CCharacter;
 
 struct FixedViewCam
 {
-	vec2 LockedAt {};
-	void ViewLock(const vec2& position) { _Locked = true; LockedAt = position; }
-	void ViewUnlock() { if(!_Locked) return; _Locked = false; }
-	bool IsLocked() const { return _Locked; }
+	std::optional<vec2> GetCurrentView() const
+	{
+		return m_CurrentView;
+	}
+
+	void ViewLock(const vec2& Position, bool Smooth = false)
+	{
+		m_LockedAt = Position;
+		m_Smooth = Smooth;
+		m_Locked = true;
+		m_Moving = true;
+	}
+
+	void Tick(const vec2& playerView)
+	{
+		if(!m_Moving)
+			return;
+
+		// prepare current view
+		const vec2 target = m_Locked ? m_LockedAt : playerView;
+		if(!m_Smooth)
+			m_CurrentView = target;
+		else if(!m_CurrentView.has_value())
+			m_CurrentView = playerView;
+
+		// check distance
+		const float distanceToTarget = distance(*m_CurrentView, target);
+		if(distanceToTarget < 5.f)
+		{
+			if(m_Locked)
+				m_CurrentView = target;
+			else
+				m_CurrentView.reset();
+			m_Moving = false;
+			return;
+		}
+
+		// moving
+		float dynamicLerpSpeed = 0.05f + distanceToTarget * 0.001f;
+		if(!m_Locked)
+			dynamicLerpSpeed = std::max(dynamicLerpSpeed * 2.f, 2.f);
+		else
+			dynamicLerpSpeed = std::max(dynamicLerpSpeed, 0.5f);
+		m_CurrentView = lerp(*m_CurrentView, target, dynamicLerpSpeed * 0.16f);
+	}
+
+	void PostTick()
+	{
+		if(!m_Locked)
+			return;
+
+		m_Locked = false;
+		m_Moving = true;
+	}
 
 private:
-	bool _Locked {};
+	std::optional<vec2> m_CurrentView {};
+	vec2 m_LockedAt {};
+	bool m_Locked {};
+	bool m_Moving {};
+	bool m_Smooth {};
 };
 
 /*

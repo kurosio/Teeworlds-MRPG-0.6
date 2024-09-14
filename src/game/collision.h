@@ -40,8 +40,14 @@ private:
 	CLayers* m_pLayers {};
 
 	// elements
+	struct FixedCamZoneData
+	{
+		vec2 Pos;
+		vec4 Rect;
+		bool Smooth;
+	};
 	std::map<int, std::vector<vec2>> m_vTeleOuts {};
-	std::vector<std::pair<vec2, vec4>> m_vFixedCamZones {};
+	std::vector<FixedCamZoneData> m_vFixedCamZones {};
 	std::map<std::string, vec2> m_vInteractObjects {};
 	std::map<int, std::string> m_vZoneNames {};
 
@@ -100,7 +106,7 @@ public:
 	// self
 	const char* GetZonename(vec2 Pos) const;
 	std::optional<vec2> TryGetTeleportOut(vec2 currentPos);
-	std::optional<vec2> TryGetFixedCamPos(vec2 currentPos) const;
+	std::optional<std::pair<vec2, bool>> TryGetFixedCamPos(vec2 currentPos) const;
 
 	// other
 	int IntersectLine(vec2 Pos0, vec2 Pos1, vec2* pOutCollision, vec2* pOutBeforeCollision, int ColFlag = COLFLAG_SOLID) const;

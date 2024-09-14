@@ -656,12 +656,7 @@ void CCharacter::Tick()
 
 	// check world access
 	if(!IsWorldAccessible())
-	{
-		m_pPlayer->GetTempData().ClearTeleportPosition();
-		GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
-		m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
 		return;
-	}
 
 	// handler's
 	HandleSafeFlags();
@@ -1136,9 +1131,7 @@ void CCharacter::HandleTiles()
 	{
 		// locked view cam
 		if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Core.m_Pos))
-			m_pPlayer->LockedView().ViewLock(result.value());
-		else
-			m_pPlayer->LockedView().ViewUnlock();
+			m_pPlayer->LockedView().ViewLock(result->first, result->second);
 
 		// zone information
 		if(m_pTilesHandler->IsActive(TILE_ZONE))
@@ -1466,10 +1459,25 @@ bool CCharacter::IsWorldAccessible() const
 	if(Server()->Tick() % Server()->TickSpeed() * 3 == 0 && m_pPlayer->IsAuthed())
 	{
 		// check accessible to world by level
-		if(m_pPlayer->Account()->GetLevel() < GS()->GetWorldData()->GetRequiredLevel())
+		const auto* pAccount = m_pPlayer->Account();
+		if(pAccount->GetLevel() < GS()->GetWorldData()->GetRequiredLevel())
 		{
 			if(!GS()->Core()->GuildManager()->GetHouseByPos(m_Core.m_Pos))
+			{
+				m_pPlayer->GetTempData().ClearTeleportPosition();
+				GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
+				m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
 				return false;
+			}
+		}
+
+		// check finished tutorial
+		if(!pAccount->IsClassSelected())
+		{
+			m_pPlayer->GetTempData().ClearTeleportPosition();
+			GS()->Chat(m_pPlayer->GetCID(), "You will need to take the training and select a class!");
+			m_pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
+			return false;
 		}
 	}
 	return true;

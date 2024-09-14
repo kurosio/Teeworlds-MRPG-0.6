@@ -114,6 +114,8 @@ public:
 	void RemoveAether(int AetherID) { m_aAetherLocation.erase(AetherID); }
 	ska::unordered_set< int >& GetAethers() { return m_aAetherLocation; }
 
+	bool IsClassSelected() const { return m_ClassGroup != ClassGroup::None; }
+
 	struct TimePeriods
 	{
 		time_t m_DailyStamp { };

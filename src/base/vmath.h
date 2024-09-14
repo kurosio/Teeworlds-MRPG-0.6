@@ -177,6 +177,11 @@ inline vector2_base<float> random_direction()
 	return direction(random_angle());
 }
 
+inline vector2_base<float> lerp(const vector2_base<float>& start, const vector2_base<float>& end, float t)
+{
+	return start + (end - start) * t;
+}
+
 typedef vector2_base<float> vec2;
 typedef vector2_base<bool> bvec2;
 typedef vector2_base<int> ivec2;

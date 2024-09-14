@@ -52,7 +52,6 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("useskill", "i[skill]", ConChatUseSkill, pServer, "");
 	AddCommand("voucher", "r[voucher]", ConChatVoucher, pServer, "");
 	AddCommand("coupon", "r[coupon]", ConChatVoucher, pServer, "");
-	AddCommand("tutorial", "", ConChatTutorial, pServer, "");
 
 	// information command
 	AddCommand("cmdlist", "?i[page]", ConChatCmdList, pServer, "");
@@ -502,25 +501,6 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 	char aVoucher[32];
 	str_copy(aVoucher, pResult->GetString(0), sizeof(aVoucher));
 	pGS->Core()->AccountManager()->UseVoucher(ClientID, aVoucher);
-}
-
-void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
-{
-	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
-
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
-
-	if(pGS->IsPlayerInWorld(ClientID, TUTORIAL_WORLD_ID))
-	{
-		pGS->Chat(ClientID, "You're already taking a training challenge!");
-		return;
-	}
-
-	pGS->Chat(ClientID, "You have begun the training challenge!");
-	pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
 }
 
 /************************************************************************/

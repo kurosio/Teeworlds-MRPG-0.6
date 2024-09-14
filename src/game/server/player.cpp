@@ -150,6 +150,7 @@ void CPlayer::Tick()
 	}
 
 	// update events
+	m_FixedView.Tick(m_ViewPos);
 	m_Scenarios.Tick();
 	m_Cooldown.Tick();
 	if(m_pMotdMenu)
@@ -181,6 +182,7 @@ void CPlayer::PostTick()
 		CVoteOptional::HandleVoteOptionals(m_ClientID);
 		Account()->GetBonusManager().UpdateBonuses();
 		m_Scenarios.PostTick();
+		m_FixedView.PostTick();
 	}
 
 	// handlers
@@ -391,21 +393,22 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
 	pPlayerInfo->m_Score = Account()->GetLevel();
 
+	const auto& optViewLockAt = m_FixedView.GetCurrentView();
 	if(auto pDDNetPlayer = static_cast<CNetObj_DDNetPlayer*>(Server()->SnapNewItem(NETOBJTYPE_DDNETPLAYER, m_ClientID, sizeof(CNetObj_DDNetPlayer))))
 	{
 		pDDNetPlayer->m_AuthLevel = Server()->GetAuthedState(m_ClientID);
-		pDDNetPlayer->m_Flags = m_FixedView.IsLocked() ? EXPLAYERFLAG_SPEC : 0;
+		pDDNetPlayer->m_Flags = optViewLockAt.has_value() ? EXPLAYERFLAG_SPEC : 0;
 	}
 
-	if(localClient && (GetTeam() == TEAM_SPECTATORS || m_FixedView.IsLocked()))
+	if(localClient && (GetTeam() == TEAM_SPECTATORS || optViewLockAt.has_value()))
 	{
 		CNetObj_SpectatorInfo* pSpectatorInfo = static_cast<CNetObj_SpectatorInfo*>(Server()->SnapNewItem(NETOBJTYPE_SPECTATORINFO, m_ClientID, sizeof(CNetObj_SpectatorInfo)));
 		if(!pSpectatorInfo)
 			return;
 
-		const bool isFixedViewLocked = m_FixedView.IsLocked();
-		pSpectatorInfo->m_X = m_ViewPos.x = (isFixedViewLocked ? m_FixedView.LockedAt.x : m_ViewPos.x);
-		pSpectatorInfo->m_Y = m_ViewPos.y = (isFixedViewLocked ? m_FixedView.LockedAt.y : m_ViewPos.y);
+		const bool isFixedViewLocked = optViewLockAt.has_value();
+		pSpectatorInfo->m_X = m_ViewPos.x = (isFixedViewLocked ? optViewLockAt->x : m_ViewPos.x);
+		pSpectatorInfo->m_Y = m_ViewPos.y = (isFixedViewLocked ? optViewLockAt->y : m_ViewPos.y);
 		pSpectatorInfo->m_SpectatorId = m_ClientID;
 	}
 }
