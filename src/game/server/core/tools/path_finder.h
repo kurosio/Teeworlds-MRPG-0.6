@@ -7,7 +7,11 @@ class BitCollideMap
 {
 public:
 	BitCollideMap() = default;
-	BitCollideMap(int width, int height) : m_Width(width), m_Height(height), m_Bits((width* height + 7) / 8, 0) {}
+	BitCollideMap(int width, int height)
+		: m_Width(width), m_Height(height),
+		m_Bits((width * height + 7) / 8, 0),
+		m_Teleports((width * height), ivec2 { -1, -1 }) {}
+
 	bool IsCollide(int x, int y) const
 	{
 		if(x < 0 || x >= m_Width || y < 0 || y >= m_Height)
@@ -16,7 +20,7 @@ public:
 		const size_t index = y * m_Width + x;
 		return m_Bits[index / 8] & (1 << (index % 8));
 	}
-	void Set(int x, int y, bool value)
+	void SetCollide(int x, int y, bool value)
 	{
 		if(x < 0 || x >= m_Width || y < 0 || y >= m_Height)
 			return;
@@ -27,12 +31,36 @@ public:
 		else
 			m_Bits[index / 8] &= ~(1 << (index % 8));
 	}
+
+	void SetTeleport(int x1, int y1, int x2, int y2)
+	{
+		if(x1 < 0 || x1 >= m_Width || y1 < 0 || y1 >= m_Height ||
+			x2 < 0 || x2 >= m_Width || y2 < 0 || y2 >= m_Height)
+			return;
+
+		const size_t index = y1 * m_Width + x1;
+		m_Teleports[index] = ivec2 { x2, y2 };
+	}
+
+	bool IsTeleport(int x, int y) const
+	{
+		const size_t index = y * m_Width + x;
+		return m_Teleports[index].x != -1 && m_Teleports[index].y != -1;
+	}
+
+	ivec2 GetTeleportDestination(int x, int y) const
+	{
+		const size_t index = y * m_Width + x;
+		return m_Teleports[index];
+	}
+
 	const uint8_t* Data() const { return m_Bits.data(); }
 
 private:
 	int m_Width {};
 	int m_Height {};
 	std::vector<uint8_t> m_Bits {};
+	std::vector<ivec2> m_Teleports{};
 };
 
 class CPathFinder

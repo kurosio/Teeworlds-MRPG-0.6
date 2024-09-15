@@ -40,7 +40,18 @@ void CPathFinder::Initialize()
 	for(int y = 0; y < m_Height; y++)
 	{
 		for(int x = 0; x < m_Width; x++)
-			m_vMap.Set(x, y, m_pCollision->CheckPoint(static_cast<float>(x) * 32.f + 16.f, static_cast<float>(y) * 32.f + 16.f));
+		{
+			// initialize collides
+			const vec2 Position(static_cast<float>(x) * 32.f + 16.f, static_cast<float>(y) * 32.f + 16.f);
+			m_vMap.SetCollide(x, y, m_pCollision->CheckPoint(Position));
+
+			// initialize teleports
+			if(const auto& optTeleValue = m_pCollision->TryGetTeleportOut(Position))
+			{
+				const auto TeleDest = ivec2(round_to_int(optTeleValue->x / 32.f), round_to_int(optTeleValue->y / 32.f));
+				m_vMap.SetTeleport(x, y, TeleDest.x, TeleDest.y);
+			}
+		}
 	}
 
 	m_Running = true;
@@ -142,6 +153,25 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 			break;
 
 		const int currentIndex = ToIndex(current);
+
+		// check if the current tile is a teleport
+		if(m_vMap.IsTeleport(current.x, current.y))
+		{
+			// get the destination of the teleport
+			ivec2 teleportDest = m_vMap.GetTeleportDestination(current.x, current.y);
+			const int teleportIndex = ToIndex(teleportDest);
+
+			// add teleport destination to the frontier if it's more optimal
+			if(m_vCostSoFar[currentIndex] < m_vCostSoFar[teleportIndex])
+			{
+				m_vCostSoFar[teleportIndex] = m_vCostSoFar[currentIndex];
+				int priority = m_vCostSoFar[teleportIndex] + ManhattanDistance(teleportDest, End);
+				vFrontier.emplace(priority, teleportDest);
+				m_vCameFrom[teleportIndex] = current;
+			}
+		}
+
+		// check neighboring tiles
 		for(const auto& dir : directions)
 		{
 			ivec2 next = { current.x + dir.x, current.y + dir.y };
