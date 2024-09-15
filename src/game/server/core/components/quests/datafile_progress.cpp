@@ -30,7 +30,7 @@ void QuestDatafile::Create() const
 			Append["defeat"].push_back({ { "id", p.m_BotID }, { "count", 0 }, { "complete", false } });
 		}
 
-		pStep->m_aMoveToProgress.resize(pStep->m_Bot.m_vRequiredMoveAction.size(), false);
+		pStep->m_aMoveActionProgress.resize(pStep->m_Bot.m_vRequiredMoveAction.size(), false);
 		for(auto& p : pStep->m_Bot.m_vRequiredMoveAction)
 			Append["move_to"].push_back({ { "complete", false } });
 
@@ -41,7 +41,7 @@ void QuestDatafile::Create() const
 	for(auto& pStep : m_pQuest->m_vSteps)
 	{
 		int MoveToElementsSize = pStep->m_Bot.m_vRequiredMoveAction.size();
-		pStep->m_aMoveToProgress.resize(MoveToElementsSize, false);
+		pStep->m_aMoveActionProgress.resize(MoveToElementsSize, false);
 		pStep->Update();
 	}
 
@@ -119,9 +119,9 @@ void QuestDatafile::Load() const
 			}
 
 			// Initialize the size of the MoveToProgress array based on the number of required move-to elements
-			WorkedNode->m_aMoveToProgress.resize(TotalAction, false);
+			WorkedNode->m_aMoveActionProgress.resize(TotalAction, false);
 			for(int p = 0; p < (int)Step["move_to"].size(); p++)
-				WorkedNode->m_aMoveToProgress[p] = Step["move_to"][p].value("complete", false);
+				WorkedNode->m_aMoveActionProgress[p] = Step["move_to"][p].value("complete", false);
 		}
 
 		// Set ClientQuitting value of the corresponding player step to false
@@ -157,7 +157,7 @@ bool QuestDatafile::Save() const
 		Append["state"] = pStep->m_StepComplete;
 		for(auto& p : pStep->m_aMobProgress)
 			Append["defeat"].push_back({ { "id", p.first }, { "count", p.second.m_Count }, { "complete", p.second.m_Complete } });
-		for(auto& p : pStep->m_aMoveToProgress)
+		for(auto& p : pStep->m_aMoveActionProgress)
 			Append["move_to"].push_back({ { "complete", p } });
 
 		JsonQuestData["steps"].push_back(Append);

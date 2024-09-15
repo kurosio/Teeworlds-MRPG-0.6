@@ -62,7 +62,7 @@ void CEntityPathArrow::Tick()
 		return;
 	}
 
-	if(m_ConditionType == CONDITION_MOVE_TO && pStep->m_aMoveToProgress[m_ConditionIndex])
+	if(m_ConditionType == CONDITION_MOVE_TO && pStep->m_aMoveActionProgress[m_ConditionIndex])
 	{
 		GameWorld()->DestroyEntity(this);
 		return;

@@ -43,12 +43,12 @@ public:
 	{
 		m_Bot = Bot;
 		m_aMobProgress.clear();
-		m_aMoveToProgress.clear();
+		m_aMoveActionProgress.clear();
 	}
 	~CQuestStep();
 
 	std::unordered_map < int /*BotID*/, MobProgressStatus/*MobProgressStatus*/ > m_aMobProgress { };
-	std::deque < bool /* State */ > m_aMoveToProgress { };
+	std::deque < bool /* State */ > m_aMoveActionProgress { };
 
 	int m_ClientID {};
 	bool m_StepComplete{};
@@ -68,9 +68,9 @@ public:
 	void UpdateTaskMoveTo();
 	void Update();
 
-	int GetMoveToNum() const;
-	int GetMoveToCurrentStepPos() const;
-	int GetCompletedMoveToCount();
+	int GetMoveActionNum() const;
+	int GetMoveActionCurrentStepPos() const;
+	int GetCompletedMoveActionCount();
 
 	// steps path finder tools
 	std::deque < std::shared_ptr<class CEntityQuestAction> > m_vpEntitiesAction {};

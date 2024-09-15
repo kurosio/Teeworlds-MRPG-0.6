@@ -97,7 +97,7 @@ void CEntityQuestAction::Tick()
 		return;
 	}
 
-	const bool IsComplected = GetQuestStep()->m_aMoveToProgress[m_MoveToIndex];
+	const bool IsComplected = GetQuestStep()->m_aMoveActionProgress[m_MoveToIndex];
 	if(IsComplected)
 	{
 		GameWorld()->DestroyEntity(this);
@@ -174,7 +174,7 @@ void CEntityQuestAction::TryFinish()
 	}
 
 	// Set the complete flag to true
-	GetQuestStep()->m_aMoveToProgress[m_MoveToIndex] = true;
+	GetQuestStep()->m_aMoveActionProgress[m_MoveToIndex] = true;
 	pQuest->Datafile().Save();
 
 	// Create a death entity at the current position and destroy this entity
@@ -184,7 +184,7 @@ void CEntityQuestAction::TryFinish()
 	// Finish the quest step if AutoCompleteQuestStep is true
 	if(m_AutoCompletesQuestStep)
 	{
-		const bool IsLastElement = (pQuestStep->GetCompletedMoveToCount() == pQuestStep->GetMoveToNum());
+		const bool IsLastElement = (pQuestStep->GetCompletedMoveActionCount() == pQuestStep->GetMoveActionNum());
 		if(IsLastElement && pQuestStep->IsComplete())
 			pQuestStep->Finish();
 	}

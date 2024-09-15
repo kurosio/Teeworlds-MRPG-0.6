@@ -90,7 +90,7 @@ CQuestStep::~CQuestStep()
 {
 	m_ClientQuitting = true;
 	m_aMobProgress.clear();
-	m_aMoveToProgress.clear();
+	m_aMoveActionProgress.clear();
 	CQuestStepBase::UpdateBot();
 	m_vpEntitiesAction.clear();
 	m_vpEntitiesNavigator.clear();
@@ -130,7 +130,7 @@ bool CQuestStep::IsComplete()
 	}
 
 	// check if all move-to actions are completed
-	if(GetCompletedMoveToCount() < (int)m_aMoveToProgress.size())
+	if(GetCompletedMoveActionCount() < (int)m_aMoveActionProgress.size())
 		return false;
 
 	return true;
@@ -165,7 +165,6 @@ bool CQuestStep::Finish()
 
 void CQuestStep::PostFinish()
 {
-	bool AntiDatabaseStress = false;
 	CPlayer* pPlayer = GetPlayer();
 	int ClientID = pPlayer->GetCID();
 	ska::unordered_set<int> vInteractItemIds {};
@@ -291,14 +290,14 @@ void CQuestStep::UpdateTaskMoveTo()
 	}
 
 	// check and add entities
-	if(!m_aMoveToProgress.empty())
+	if(!m_aMoveActionProgress.empty())
 	{
-		const int CurrentStep = GetMoveToCurrentStepPos();
+		const int CurrentStep = GetMoveActionCurrentStepPos();
 		for(int i = 0; i < (int)m_Bot.m_vRequiredMoveAction.size(); i++)
 		{
 			// skip completed and not current step's
 			auto* pTaskData = &m_Bot.m_vRequiredMoveAction[i];
-			if(CurrentStep != pTaskData->m_Step || m_aMoveToProgress[i])
+			if(CurrentStep != pTaskData->m_Step || m_aMoveActionProgress[i])
 				continue;
 
 			// Always creating navigator in other worlds 
@@ -449,9 +448,9 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 			// If TaskMapID is empty, assign it the value "Demands a bit of action"
 			std::string TaskMapID = m_Bot.m_vRequiredMoveAction[i].m_TaskName;
 
-			// If m_aMoveToProgress[i] is true, increment the first value of the pair in m_Order[Step][TaskMapID]
+			// If m_aMoveActionProgress[i] is true, increment the first value of the pair in m_Order[Step][TaskMapID]
 			int Step = m_Bot.m_vRequiredMoveAction[i].m_Step;
-			if(m_aMoveToProgress[i])
+			if(m_aMoveActionProgress[i])
 				m_Order[Step][TaskMapID].first++;
 
 			// Increment the second value of the pair in m_Order[Step][TaskMapID]
@@ -495,16 +494,16 @@ void CQuestStep::FormatStringTasks(char* aBufQuestTask, int Size)
 	str_copy(aBufQuestTask, strBuffer.c_str(), Size);
 }
 
-int CQuestStep::GetMoveToNum() const
+int CQuestStep::GetMoveActionNum() const
 {
-	return (int)m_aMoveToProgress.size();
+	return (int)m_aMoveActionProgress.size();
 }
 
-int CQuestStep::GetMoveToCurrentStepPos() const
+int CQuestStep::GetMoveActionCurrentStepPos() const
 {
 	for(int i = 0; i < (int)m_Bot.m_vRequiredMoveAction.size(); i++)
 	{
-		if(m_aMoveToProgress[i])
+		if(m_aMoveActionProgress[i])
 			continue;
 
 		return m_Bot.m_vRequiredMoveAction[i].m_Step;
@@ -513,12 +512,9 @@ int CQuestStep::GetMoveToCurrentStepPos() const
 	return 1;
 }
 
-// This function returns the count of completed move steps in a player quest
-int CQuestStep::GetCompletedMoveToCount()
+int CQuestStep::GetCompletedMoveActionCount()
 {
-	// Using std::count_if to count the number of elements in m_aMoveToProgress that satisfy the condition
-	// The condition is a lambda function that checks if the element is true
-	return (int)std::ranges::count_if(m_aMoveToProgress, [](const bool State){return State == true; });
+	return (int)std::ranges::count_if(m_aMoveActionProgress, [](const bool State){return State == true; });
 }
 
 void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID)

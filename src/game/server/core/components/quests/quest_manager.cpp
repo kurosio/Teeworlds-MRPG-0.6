@@ -418,7 +418,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 				}
 				else
 				{
-					bool isCompleted = pPlayerStep->m_aMoveToProgress[i];
+					bool isCompleted = pPlayerStep->m_aMoveActionProgress[i];
 					VStep.MarkList().Add("{} [{}]", requiredAction.m_TaskName, isCompleted ? "\u2714" : "\u2718");
 				}
 				hasTask = true;

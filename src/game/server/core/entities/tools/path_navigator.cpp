@@ -74,7 +74,7 @@ void CEntityPathNavigator::Move()
 		}
 
 		// update timer by steps
-		if(Server()->Tick() % (Server()->TickSpeed() / 8) == 0 && m_StepPos < m_PathHandle.vPath.size())
+		if(Server()->Tick() % (Server()->TickSpeed() / 8) == 0 && m_StepPos < (int)m_PathHandle.vPath.size())
 		{
 			m_Pos = m_PathHandle.vPath[m_StepPos];
 			m_StepPos++;
