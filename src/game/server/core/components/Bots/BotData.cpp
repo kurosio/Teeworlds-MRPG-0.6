@@ -217,7 +217,7 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 					Move.m_Position = Position;
 					Move.m_CompletionText = CompletionText;
 					Move.m_TaskName = TaskName;
-					Move.m_Type = maximum(Type, (unsigned int)TaskAction::Types::MOVE_ONLY);
+					Move.m_TypeFlags = maximum(Type, (unsigned int)TaskAction::Types::MOVE_ONLY);
 					Move.m_QuestBotID = m_ID;
 					Move.m_Interaction = Interactive;
 					Move.m_DefeatMobInfo = DefeatDescription;

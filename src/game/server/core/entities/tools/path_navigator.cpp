@@ -68,10 +68,13 @@ void CEntityPathNavigator::Move()
 		}
 
 		// smooth movement
-		m_Pos += normalize(m_PathHandle.vPath[m_StepPos] - m_Pos) * 4.f;
+		if(m_StepPos < m_PathHandle.vPath.size())
+		{
+			m_Pos += normalize(m_PathHandle.vPath[m_StepPos] - m_Pos) * 4.f;
+		}
 
 		// update timer by steps
-		if(Server()->Tick() % (Server()->TickSpeed() / 8) == 0)
+		if(Server()->Tick() % (Server()->TickSpeed() / 8) == 0 && m_StepPos < m_PathHandle.vPath.size())
 		{
 			m_Pos = m_PathHandle.vPath[m_StepPos];
 			m_StepPos++;

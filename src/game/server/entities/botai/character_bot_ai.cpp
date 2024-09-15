@@ -222,8 +222,9 @@ void CCharacterBotAI::RewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	// is quest mob type
 	if(m_pBotPlayer->GetBotType() == TYPE_BOT_QUEST_MOB)
 	{
-		if(m_pBotPlayer->GetQuestBotMobInfo().m_ActiveForClient[ClientID])
-			m_pBotPlayer->GetQuestBotMobInfo().m_CompleteClient[ClientID] = true;
+		auto& questBotMobData = m_pBotPlayer->GetQuestBotMobInfo();
+		if(questBotMobData.m_ActiveForClient[ClientID])
+			questBotMobData.m_CompleteClient[ClientID] = true;
 	}
 
 	// is default mob type

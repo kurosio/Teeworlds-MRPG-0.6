@@ -122,7 +122,7 @@ public:
 		int m_WorldID {};
 		int m_Step {};
 		bool m_Navigator {};
-		unsigned int m_Type {};
+		unsigned int m_TypeFlags {};
 		CItem m_PickupItem {};
 		CItem m_RequiredItem {};
 		std::string m_CompletionText {};

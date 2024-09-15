@@ -261,7 +261,7 @@ void CQuestManager::TryAppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 
 		// check current steps and append
 		for(auto& pStepBot : pQuest->m_vSteps)
-			pStepBot.AppendDefeatProgress(DefeatedBotID);
+			pStepBot->AppendDefeatProgress(DefeatedBotID);
 	}
 }
 

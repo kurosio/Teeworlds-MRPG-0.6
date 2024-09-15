@@ -109,7 +109,7 @@ public:
 	CQuestDescription* GetPreviousQuest() const;
 	CReward& Reward() { return m_Reward; }
 
-	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem);
+	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem);
 	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
 	bool CanBeGranted() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_AUTO) || HasFlag(QUEST_FLAG_GRANTED_FROM_NPC) || HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD); }
 	bool CanBeAcceptedOrRefused() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD) || !CanBeGranted(); }
@@ -126,14 +126,14 @@ class CPlayerQuest : public MultiworldIdentifiableData< std::map < int, std::map
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
-	std::deque<CQuestStep> m_vSteps {};
 	int m_ClientID {};
 	QuestIdentifier m_ID {};
 	QuestState m_State {};
 	int m_Step {};
+	std::deque<std::shared_ptr<CQuestStep>> m_vSteps {};
+	QuestDatafile m_Datafile {};
 
 public:
-	QuestDatafile m_Datafile {};
 
 	CPlayerQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID), m_Step(1) { m_ID = ID; }
 	~CPlayerQuest();
@@ -152,6 +152,7 @@ public:
 		m_Datafile.Load();
 	}
 
+	QuestDatafile& Datafile() { return m_Datafile; }
 	CQuestDescription* Info() const;
 	QuestIdentifier GetID() const { return m_ID; }
 	QuestState GetState() const { return m_State; }

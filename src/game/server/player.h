@@ -15,6 +15,7 @@
 #include "core/tools/vote_wrapper.h"
 #include "class_data.h"
 
+class CPlayerBot;
 enum class AchievementType;
 
 enum

@@ -9,71 +9,115 @@
 
 constexpr unsigned int s_Particles = 4;
 
-CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, const QuestBotInfo::TaskAction& TaskMoveTo, int ClientID, int QuestID, bool* pComplete,
-		bool AutoCompletesQuestStep, CPlayerBot* pDefeatMobPlayer)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, TaskMoveTo.m_Position, 32.f, ClientID), m_QuestID(QuestID), m_pTaskMoveTo(&TaskMoveTo)
+CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex, 
+	const std::weak_ptr<CQuestStep>& pStep, bool AutoCompletesQuestStep, std::optional<int> optDefeatBotCID)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, {}, 32.f, ClientID), m_MoveToIndex(MoveToIndex)
 {
 	// Initialize base
-	m_Radius = GetProximityRadius();
-	m_pComplete = pComplete;
+	m_pStep = pStep;
+	m_optDefeatBotCID = optDefeatBotCID;
 	m_AutoCompletesQuestStep = AutoCompletesQuestStep;
-	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
-	m_pDefeatMobPlayer = pDefeatMobPlayer;
+	if(const auto* pTaskData = GetTaskMoveTo())
+	{
+		m_Pos = pTaskData->m_Position;
+		m_Radius = GetProximityRadius();
+	}
 	GameWorld()->InsertEntity(this);
 
-	// Set the size of the container m_IDs to hold s_Particles number of elements
+	// initialize snap ids
 	m_IDs.set_size(s_Particles);
-
-	// Iterate over each element in m_IDs container
 	for(int i = 0; i < m_IDs.size(); i++)
 		m_IDs[i] = Server()->SnapNewID();
 }
 
 CEntityQuestAction::~CEntityQuestAction()
 {
-	// Check if m_pPlayer and m_pPlayer's character exist
-	if(m_pPlayer)
+	// update player progress
+	if(CPlayer* pPlayer = GetPlayer())
 	{
-		// Update the steps of the quest for the player
-		if(m_pPlayer->GetCharacter())
-			GS()->Core()->QuestManager()->Update(m_pPlayer);
+		GS()->Core()->QuestManager()->Update(pPlayer);
 	}
 
-	// Check if m_pDefeatMobPlayer exists
-	if(m_pDefeatMobPlayer)
+	// update defeat bot
+	if(CPlayerBot* pDefeatBotPlayer = GetDefeatPlayerBot())
 	{
-		// Disable the quest progress for the current client
-		m_pDefeatMobPlayer->GetQuestBotMobInfo().m_ActiveForClient[m_ClientID] = false;
-		m_pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID] = false;
+		auto& QuestBotInfo = pDefeatBotPlayer->GetQuestBotMobInfo();
+		QuestBotInfo.m_ActiveForClient[m_ClientID] = false;
+		QuestBotInfo.m_CompleteClient[m_ClientID] = false;
 
-		// Flag to check if m_pDefeatMobPlayer should be cleared
 		bool ClearDefeatMobPlayer = true;
-		for(int i = 0; i < MAX_PLAYERS; i++)
+		for(int i = 0; i < MAX_PLAYERS; ++i)
 		{
-			if(m_pDefeatMobPlayer->GetQuestBotMobInfo().m_ActiveForClient[i] && !m_pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID])
+			if(QuestBotInfo.m_ActiveForClient[i])
+			{
 				ClearDefeatMobPlayer = false;
+				break;
+			}
 		}
 
-		// Clear m_pDefeatMobPlayer if ClearDefeatMobPlayer is true
 		if(ClearDefeatMobPlayer)
 		{
-			const int CID = m_pDefeatMobPlayer->GetCID();
-			GS()->DestroyPlayer(CID);
-			dbg_msg(PRINT_QUEST_PREFIX, "Delete questing mob");
+			GS()->DestroyPlayer(pDefeatBotPlayer->GetCID());
+			dbg_msg(PRINT_QUEST_PREFIX, "Deleted questing mob");
 		}
 	}
 
-	// Iterate through each element in the m_IDs
+	// free ids
 	for(int i = 0; i < m_IDs.size(); i++)
 		Server()->SnapFreeID(m_IDs[i]);
 }
 
+void CEntityQuestAction::Destroy()
+{
+	if(auto* pStep = GetQuestStep())
+	{
+		std::erase(pStep->m_vpEntitiesAction, shared_from_this());
+	}
+}
+
+void CEntityQuestAction::Tick()
+{
+	CPlayer* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->GetCharacter())
+	{
+		GameWorld()->DestroyEntity(this);
+		return;
+	}
+
+	if(!GetPlayerQuest() || !GetQuestStep())
+	{
+		GameWorld()->DestroyEntity(this);
+		return;
+	}
+
+	const auto* pTaskData = GetTaskMoveTo();
+	if(!pTaskData)
+	{
+		GameWorld()->DestroyEntity(this);
+		return;
+	}
+
+	const bool IsComplected = GetQuestStep()->m_aMoveToProgress[m_MoveToIndex];
+	if(IsComplected)
+	{
+		GameWorld()->DestroyEntity(this);
+		return;
+	}
+
+	// check distance
+	const unsigned TypeFlags = pTaskData->m_TypeFlags;
+	const float Radius = (TypeFlags & QuestBotInfo::TaskAction::Types::DEFEAT_MOB) ? 600.f : m_Radius;
+	if(distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > Radius)
+		return;
+
+	// handlers
+	HandleTaskType(pTaskData);
+	HandleBroadcastInformation(pTaskData);
+}
+
 bool CEntityQuestAction::PressedFire() const
 {
-	if(!m_pPlayer || !m_pPlayer->GetCharacter())
-		return false;
-
-	return Server()->Input()->IsKeyClicked(m_pPlayer->GetCID(), KEY_EVENT_FIRE_HAMMER);
+	return Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE_HAMMER);
 }
 
 void CEntityQuestAction::Handler(const std::function<bool()>& pCallbackSuccesful)
@@ -81,61 +125,61 @@ void CEntityQuestAction::Handler(const std::function<bool()>& pCallbackSuccesful
 	if(!pCallbackSuccesful())
 		return;
 
-	// Cooldown type
-	if(m_pTaskMoveTo->m_Cooldown > 0)
+	CPlayer* pPlayer = GetPlayer();
+	const auto* pTaskData = GetTaskMoveTo();
+	if(pTaskData->m_Cooldown > 0)
 	{
-		m_pPlayer->m_Cooldown.Start(m_pTaskMoveTo->m_Cooldown, m_pTaskMoveTo->m_TaskName, std::bind(&CEntityQuestAction::TryFinish, this));
-		return;
+		pPlayer->m_Cooldown.Start(pTaskData->m_Cooldown, pTaskData->m_TaskName, std::bind(&CEntityQuestAction::TryFinish, this));
 	}
-
-	// Default try finish
-	TryFinish();
+	else
+	{
+		TryFinish();
+	}
 }
 
 void CEntityQuestAction::TryFinish()
 {
-	const QuestBotInfo::TaskAction& TaskData = *m_pTaskMoveTo;
-	CPlayerQuest* pQuest = m_pPlayer->GetQuest(m_QuestID);
-	CQuestStep* pQuestStep = pQuest->GetStepByMob(TaskData.m_QuestBotID);
+	CPlayer* pPlayer = GetPlayer();
+	CPlayerQuest* pQuest = GetPlayerQuest();
+	CQuestStep* pQuestStep = GetQuestStep();
+	const auto* pTaskData = GetTaskMoveTo();
 
 	// required item
-	if(TaskData.m_Type & QuestBotInfo::TaskAction::Types::REQUIRED_ITEM && TaskData.m_RequiredItem.IsValid())
+	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::REQUIRED_ITEM && pTaskData->m_RequiredItem.IsValid())
 	{
-		ItemIdentifier ItemID = TaskData.m_RequiredItem.GetID();
-		int RequiredValue = TaskData.m_RequiredItem.GetValue();
-
-		// check required value
-		if(!m_pPlayer->Account()->SpendCurrency(RequiredValue, ItemID))
+		ItemIdentifier ItemID = pTaskData->m_RequiredItem.GetID();
+		int RequiredValue = pTaskData->m_RequiredItem.GetValue();
+		if(!pPlayer->Account()->SpendCurrency(RequiredValue, ItemID))
 			return;
 
-		// remove item
-		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 		GS()->Chat(m_ClientID, "You've used on the point {}x{}", pPlayerItem->Info()->GetName(), RequiredValue);
 	}
 
 	// pickup item
-	if(TaskData.m_Type & QuestBotInfo::TaskAction::Types::PICKUP_ITEM && TaskData.m_PickupItem.IsValid())
+	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::PICKUP_ITEM && pTaskData->m_PickupItem.IsValid())
 	{
-		ItemIdentifier ItemID = TaskData.m_PickupItem.GetID();
-		int PickupValue = TaskData.m_PickupItem.GetValue();
-		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(ItemID);
+		ItemIdentifier ItemID = pTaskData->m_PickupItem.GetID();
+		int PickupValue = pTaskData->m_PickupItem.GetValue();
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 
-		GS()->Chat(m_ClientID, "You've picked up {}x{}.", pPlayerItem->Info()->GetName(), PickupValue);
 		pPlayerItem->Add(PickupValue);
+		GS()->Chat(m_ClientID, "You've picked up {}x{}.", pPlayerItem->Info()->GetName(), PickupValue);
 	}
 
 	// Completion text
-	if(!m_pTaskMoveTo->m_CompletionText.empty())
-		GS()->Chat(m_ClientID, m_pTaskMoveTo->m_CompletionText.c_str());
+	if(!pTaskData->m_CompletionText.empty())
+	{
+		GS()->Chat(m_ClientID, pTaskData->m_CompletionText.c_str());
+	}
 
 	// Set the complete flag to true
-	*m_pComplete = true;
-	pQuest->m_Datafile.Save();
+	GetQuestStep()->m_aMoveToProgress[m_MoveToIndex] = true;
+	pQuest->Datafile().Save();
 
 	// Create a death entity at the current position and destroy this entity
 	GS()->CreateDeath(m_Pos, m_ClientID);
 	GameWorld()->DestroyEntity(this);
-	std::erase(pQuestStep->m_vpEntitiesAction, this);
 
 	// Finish the quest step if AutoCompleteQuestStep is true
 	if(m_AutoCompletesQuestStep)
@@ -146,108 +190,47 @@ void CEntityQuestAction::TryFinish()
 	}
 }
 
-void CEntityQuestAction::Tick()
+CPlayer* CEntityQuestAction::GetPlayer() const
 {
-	// Check if any of the required variables are null or if the completion flag is true
-	if(!m_pTaskMoveTo || !m_pPlayer || !m_pPlayer->GetCharacter() || !m_pComplete || (*m_pComplete == true))
-	{
-		// Destroy the entity and exit the function
-		GameWorld()->DestroyEntity(this);
-		return;
-	}
-
-	// Check the type of the required move task
-	const unsigned Type = m_pTaskMoveTo->m_Type;
-
-	// distance for defeat mob larger
-	if(Type & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
-		m_Radius = 600.f;
-
-	// check distance to check complete
-	if(distance(m_pPlayer->m_ViewPos, m_Pos) > m_Radius)
-		return;
-
-	// Check if the Type includes the DEFEAT_MOB flag
-	if(Type & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
-	{
-		Handler([this]
-		{
-			// Complete the task by defeating a mob
-			return m_pDefeatMobPlayer && m_pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID];
-		});
-	}
-	// Check if the Type includes the MOVE_ONLY flag
-	else if(Type & QuestBotInfo::TaskAction::Types::MOVE_ONLY)
-	{
-		Handler([this]
-		{
-			// Complete the task by only moving
-			return true;
-		});
-	}
-	// Check if the Type includes the INTERACTIVE flag
-	else if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
-	{
-		if(Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
-			GS()->CreateHammerHit(m_pTaskMoveTo->m_Interaction.m_Position, CmaskOne(m_ClientID));
-
-		Handler([this]
-		{
-			// Complete the task by interacting
-			return PressedFire() && distance(m_pPlayer->GetCharacter()->GetMousePos(), m_pTaskMoveTo->m_Interaction.m_Position) < 48.f;
-		});
-	}
-	// Check if the Type includes the PICKUP_ITEM or REQUIRED_ITEM flags
-	else if(Type & (QuestBotInfo::TaskAction::PICKUP_ITEM | QuestBotInfo::TaskAction::REQUIRED_ITEM))
-	{
-		Handler([this]
-		{
-			// Complete the task by pressing "fire" button
-			return PressedFire();
-		});
-	}
-
-	// handle broadcast
-	HandleBroadcastInformation();
+	return GS()->GetPlayer(m_ClientID);
 }
 
-void CEntityQuestAction::HandleBroadcastInformation() const
+CPlayerBot* CEntityQuestAction::GetDefeatPlayerBot() const
 {
-	// in case the quest ended in Handler
-	if(!m_pTaskMoveTo)
-		return;
+	if(m_optDefeatBotCID.has_value())
+		return dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_optDefeatBotCID.value()));
+	return nullptr;
+}
 
-	// var
-	auto& pPickupItem = m_pTaskMoveTo->m_PickupItem;
-	auto& pRequireItem = m_pTaskMoveTo->m_RequiredItem;
-	const auto Type = m_pTaskMoveTo->m_Type;
+CPlayerQuest* CEntityQuestAction::GetPlayerQuest() const
+{
+	CPlayer* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return nullptr;
 
-	// defeat mob skip
-	if(Type & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
-		return;
+	if(const auto pStep = m_pStep.lock())
+	{
+		return pPlayer->GetQuest(pStep->m_Bot.m_QuestID);
+	}
+	return nullptr;
+}
 
-	// text information
-	std::string strBuffer{};
-	if(pRequireItem.IsValid())
+CQuestStep* CEntityQuestAction::GetQuestStep() const
+{
+	if(const auto pStep = m_pStep.lock())
 	{
-		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pRequireItem.GetID());
-		strBuffer += fmt_localize(m_ClientID, "- Required [{}x{}({})]", pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue()) + "\n";
+		return pStep.get();
 	}
-	if(pPickupItem.IsValid())
-	{
-		CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pPickupItem.GetID());
-		strBuffer += fmt_localize(m_ClientID, "- Pick up [{}x{}({})]", pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue()) + "\n";
-	}
+	return nullptr;
+}
 
-	// select by type
-	if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
+QuestBotInfo::TaskAction* CEntityQuestAction::GetTaskMoveTo() const
+{
+	if(const auto pStep = m_pStep.lock())
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Please click with hammer on the highlighted area to interact with it.\n{}", strBuffer.c_str());
+		return &pStep->m_Bot.m_vRequiredMoveAction[m_MoveToIndex];
 	}
-	else if(Type & QuestBotInfo::TaskAction::Types::PICKUP_ITEM || Type & QuestBotInfo::TaskAction::Types::REQUIRED_ITEM)
-	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press hammer 'Fire', to interact.\n{}", strBuffer.c_str());
-	}
+	return nullptr;
 }
 
 void CEntityQuestAction::Snap(int SnappingClient)
@@ -257,13 +240,86 @@ void CEntityQuestAction::Snap(int SnappingClient)
 
 	for(int i = 0; i < m_IDs.size(); i++)
 	{
-		CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, m_IDs[i], sizeof(CNetObj_Projectile)));
-		if(!pObj)
-			return;
-
-		pObj->m_Type = WEAPON_HAMMER;
-		pObj->m_X = m_Pos.x + random_float(-m_Radius / 1.5f, m_Radius / 1.5f);
-		pObj->m_Y = m_Pos.y + random_float(-m_Radius / 1.5f, m_Radius / 1.5f);
-		pObj->m_StartTick = Server()->Tick() - 3;
+		vec2 randomRangePos = random_range_pos(m_Pos, m_Radius);
+		if(!GS()->SnapProjectile(SnappingClient, m_IDs[i], randomRangePos, { }, Server()->Tick() - 3, WEAPON_HAMMER, m_ClientID))
+			break;
 	}
+}
+
+void CEntityQuestAction::HandleTaskType(const QuestBotInfo::TaskAction* pTaskData)
+{
+	const unsigned TypeFlags = pTaskData->m_TypeFlags;
+
+	// defeat type flag
+	if(TypeFlags & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
+	{
+		Handler([this]
+		{
+			CPlayerBot* pDefeatMobPlayer = GetDefeatPlayerBot();
+			if(!pDefeatMobPlayer)
+				return true;
+			return pDefeatMobPlayer && pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID];
+		});
+	}
+	// move only type flag
+	else if(TypeFlags & QuestBotInfo::TaskAction::Types::MOVE_ONLY)
+	{
+		Handler([this] { return true; });
+	}
+	// interactive flag
+	else if(TypeFlags & QuestBotInfo::TaskAction::Types::INTERACTIVE)
+	{
+		if(Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
+		{
+			GS()->CreateHammerHit(pTaskData->m_Interaction.m_Position, CmaskOne(m_ClientID));
+		}
+		Handler([this, pTaskData]
+		{
+			return PressedFire() && distance(GetPlayer()->GetCharacter()->GetMousePos(), pTaskData->m_Interaction.m_Position) < 48.f;
+		});
+	}
+	// pickup or required item
+	else if(TypeFlags & (QuestBotInfo::TaskAction::PICKUP_ITEM | QuestBotInfo::TaskAction::REQUIRED_ITEM))
+	{
+		Handler([this] { return PressedFire(); });
+	}
+}
+
+void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskAction* pTaskData) const
+{
+	CPlayer* pPlayer = GetPlayer();
+	const auto& pPickupItem = pTaskData->m_PickupItem;
+	const auto& pRequireItem = pTaskData->m_RequiredItem;
+	const auto Type = pTaskData->m_TypeFlags;
+
+	// skip defeat mob
+	if(Type & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
+		return;
+
+	// formating
+	std::string strBuffer;
+	if(pRequireItem.IsValid())
+	{
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequireItem.GetID());
+		strBuffer += fmt_localize(m_ClientID, "- Required [{}x{}({})]\n",
+			pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
+	}
+
+	if(pPickupItem.IsValid())
+	{
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPickupItem.GetID());
+		strBuffer += fmt_localize(m_ClientID, "- Pick up [{}x{}({})]\n",
+			pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
+	}
+
+	// by type flag
+	const char* broadcastMessage = nullptr;
+	if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
+		broadcastMessage = "Please click with hammer on the highlighted area to interact with it.\n{}";
+	else if(Type & (QuestBotInfo::TaskAction::Types::PICKUP_ITEM | QuestBotInfo::TaskAction::Types::REQUIRED_ITEM))
+		broadcastMessage = "Press hammer 'Fire', to interact.\n{}";
+
+	// send broadcast
+	if(broadcastMessage)
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, broadcastMessage, strBuffer.c_str());
 }

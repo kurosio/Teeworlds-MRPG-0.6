@@ -8,12 +8,6 @@
 class CGS;
 class CPlayer;
 
-/*
- * Structure:
- * - array steps (1..10)
- *		- array mobs (by ids)
- * - current position
- */	
 
 /*
  * Quest step
@@ -31,7 +25,7 @@ private:
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
 class CEntityArrowNavigator;
-class CQuestStep : public CQuestStepBase
+class CQuestStep : public CQuestStepBase, public std::enable_shared_from_this<CQuestStep>
 {
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
@@ -45,6 +39,12 @@ class CQuestStep : public CQuestStepBase
 	};
 
 public:
+	CQuestStep(int ClientID, const QuestBotInfo& Bot) : m_ClientID(ClientID)
+	{
+		m_Bot = Bot;
+		m_aMobProgress.clear();
+		m_aMoveToProgress.clear();
+	}
 	~CQuestStep();
 
 	std::unordered_map < int /*BotID*/, MobProgressStatus/*MobProgressStatus*/ > m_aMobProgress { };
@@ -73,10 +73,10 @@ public:
 	int GetCompletedMoveToCount();
 
 	// steps path finder tools
-	std::deque < class CEntityQuestAction* > m_vpEntitiesAction {};
+	std::deque < std::shared_ptr<class CEntityQuestAction> > m_vpEntitiesAction {};
 	std::deque < class CEntityPathArrow* > m_apEntitiesNavigator {};
 
-	CEntityQuestAction* UpdateEntityQuestAction(bool* pMarkIsNewItem, const QuestBotInfo::TaskAction& TaskMoveTo, bool* pComplete, class CPlayerBot* pDefeatMobPlayer = nullptr);
+	void UpdateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID = std::nullopt);
 	CEntityPathArrow* UpdateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete);
 };
 

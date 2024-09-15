@@ -6,7 +6,6 @@
 #include <game/server/core/components/Inventory/InventoryManager.h>
 #include "quest_manager.h"
 
-#include <game/server/core/components/mails/mail_wrapper.h>
 #include <game/server/core/entities/items/drop_quest_items.h>
 #include <game/server/core/entities/tools/arrow_navigator.h>
 #include <game/server/core/entities/tools/laser_orbite.h>
@@ -17,29 +16,28 @@
 
 void CQuestStepBase::UpdateBot() const
 {
-	CGS* pGS = (CGS*)Instance::GameServer(m_Bot.m_WorldID);
+	auto* pGS = dynamic_cast<CGS*>(Instance::GameServer(m_Bot.m_WorldID));
 
-	// check it's if there's an active bot
+	// search active bot
 	int BotClientID = -1;
-	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; ++i)
 	{
 		CPlayer* pPlayer = pGS->GetPlayer(i);
-		if(!pPlayer || pPlayer->GetBotType() != TYPE_BOT_QUEST || pPlayer->GetBotMobID() != m_Bot.m_ID)
-			continue;
-
-		BotClientID = i;
-		break;
+		if(pPlayer && pPlayer->GetBotType() == TYPE_BOT_QUEST && pPlayer->GetBotMobID() == m_Bot.m_ID)
+		{
+			BotClientID = i;
+			break;
+		}
 	}
 
-	// seek if all players have an active bot
+	// update bot state
 	const bool ActiveStepBot = IsActiveStep();
-	if(ActiveStepBot && BotClientID <= -1)
+	if(ActiveStepBot && BotClientID == -1)
 	{
 		dbg_msg(PRINT_QUEST_PREFIX, "The mob was not found, but the quest step remains active for players.");
 		pGS->CreateBot(TYPE_BOT_QUEST, m_Bot.m_BotID, m_Bot.m_ID);
 	}
-	// if the bot is not active for more than one player
-	if(!ActiveStepBot && BotClientID >= MAX_PLAYERS)
+	else if(!ActiveStepBot && BotClientID != -1)
 	{
 		dbg_msg(PRINT_QUEST_PREFIX, "The mob was found, but the quest step is not active for players.");
 		pGS->DestroyPlayer(BotClientID);
@@ -48,58 +46,59 @@ void CQuestStepBase::UpdateBot() const
 
 bool CQuestStepBase::IsActiveStep() const
 {
-	CGS* pGS = (CGS*)Instance::GameServer(m_Bot.m_WorldID);
+	const auto* pGS = dynamic_cast<CGS*>(Instance::GameServer(m_Bot.m_WorldID));
 	const int QuestID = m_Bot.m_QuestID;
 	const int QuestBotID = m_Bot.m_ID;
 
-	for(int i = 0; i < MAX_PLAYERS; i++)
+	// check valid quest
+	if(!CQuestDescription::Data().contains(QuestID))
+		return false;
+
+	for(int i = 0; i < MAX_PLAYERS; ++i)
 	{
-		// check valid player
 		CPlayer* pPlayer = pGS->GetPlayer(i);
 		if(!pPlayer || !pPlayer->IsAuthed())
 			continue;
 
-		// invalid quest data
-		if(!CQuestDescription::Data().contains(QuestID))
-			continue;
-
-		// skip is not accepted quest or not same quest step
 		CPlayerQuest* pQuest = pPlayer->GetQuest(QuestID);
-		if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Bot.m_StepPos)
+		if(!pQuest || pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Bot.m_StepPos)
 			continue;
 
-		// skip some step actions
 		CQuestStep* pStep = pQuest->GetStepByMob(QuestBotID);
-		if(pStep->m_StepComplete || pStep->m_ClientQuitting)
+		if(!pStep || pStep->m_StepComplete || pStep->m_ClientQuitting)
 			continue;
 
 		return true;
 	}
+
 	return false;
 }
+
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
-CGS* CQuestStep::GS() const { return (CGS*)Instance::GameServerPlayer(m_ClientID); }
-CPlayer* CQuestStep::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
+CGS* CQuestStep::GS() const
+{
+	return (CGS*)Instance::GameServerPlayer(m_ClientID);
+}
+
+CPlayer* CQuestStep::GetPlayer() const
+{
+	return GS()->GetPlayer(m_ClientID);
+}
 
 CQuestStep::~CQuestStep()
 {
 	m_ClientQuitting = true;
+	m_aMobProgress.clear();
+	m_aMoveToProgress.clear();
+	CQuestStepBase::UpdateBot();
+	m_vpEntitiesAction.clear();
 
 	// update bot and path navigator
-	CQuestStepBase::UpdateBot();
 	UpdatePathNavigator();
 
 	// clear the move actions
 	auto pGS = GS();
-	for(auto& pEnt : m_vpEntitiesAction)
-	{
-		if(pEnt && (pEnt->IsMarkedForDestroy() || !pGS->m_World.ExistEntity(pEnt)))
-			pEnt->MarkForDestroy();
-	}
-	m_vpEntitiesAction.clear();
-
-	// clear the navigators
 	for(auto& pEnt : m_apEntitiesNavigator)
 	{
 		if(pEnt && (pEnt->IsMarkedForDestroy() || !pGS->m_World.ExistEntity(pEnt)))
@@ -107,19 +106,14 @@ CQuestStep::~CQuestStep()
 	}
 	m_apEntitiesNavigator.clear();
 
-	m_aMobProgress.clear();
-	m_aMoveToProgress.clear();
 }
 
 int CQuestStep::GetNumberBlockedItem(int ItemID) const
 {
-	int Amount = 0;
-	for(auto& p : m_Bot.m_vRequiredItems)
+	return std::accumulate(m_Bot.m_vRequiredItems.begin(), m_Bot.m_vRequiredItems.end(), 0, [ItemID](int Amount, const auto& p) 
 	{
-		if(p.m_Item.GetID() == ItemID)
-			Amount += p.m_Item.GetValue();
-	}
-	return Amount;
+		return Amount + (p.m_Item.GetID() == ItemID ? p.m_Item.GetValue() : 0);
+	});
 }
 
 bool CQuestStep::IsComplete()
@@ -165,7 +159,7 @@ bool CQuestStep::Finish()
 	m_StepComplete = true;
 
 	// save quest progress
-	if(!pPlayer->GetQuest(QuestID)->m_Datafile.Save())
+	if(!pPlayer->GetQuest(QuestID)->Datafile().Save())
 	{
 		GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
 		dbg_msg(PRINT_QUEST_PREFIX, "After completing the quest step, unable to save the file.");
@@ -253,7 +247,7 @@ void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 			GS()->Chat(pPlayer->GetCID(), "[Done] Defeat the {}'s for the {}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
 		}
 
-		pQuest->m_Datafile.Save();
+		pQuest->Datafile().Save();
 		break;
 	}
 }
@@ -312,21 +306,22 @@ void CQuestStep::UpdateTaskMoveTo()
 		for(int i = 0; i < (int)m_Bot.m_vRequiredMoveAction.size(); i++)
 		{
 			// skip completed and not current step's
-			QuestBotInfo::TaskAction& pRequired = m_Bot.m_vRequiredMoveAction[i];
-			if(CurrentStep != pRequired.m_Step || m_aMoveToProgress[i])
+			auto* pTaskData = &m_Bot.m_vRequiredMoveAction[i];
+			if(CurrentStep != pTaskData->m_Step || m_aMoveToProgress[i])
 				continue;
 
 			// Always creating navigator in other worlds 
-			if(pRequired.m_WorldID != pPlayer->GetPlayerWorldID())
+			if(pTaskData->m_WorldID != pPlayer->GetPlayerWorldID())
 			{
-				UpdateEntityArrowNavigator(pRequired.m_Position, pRequired.m_WorldID, 0.f, &m_aMoveToProgress[i]);
+				UpdateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, 0.f, &m_aMoveToProgress[i]);
 				continue;
 			}
 
 			// Add move to point questing mob
-			CPlayerBot* pPlayerBot = nullptr;
-			if(pRequired.IsHasDefeatMob())
+			std::optional <int> OptDefeatBotCID = std::nullopt;
+			if(pTaskData->IsHasDefeatMob())
 			{
+				CPlayerBot* pPlayerBot = nullptr;
 				for(int c = MAX_PLAYERS; c < MAX_CLIENTS; c++)
 				{
 					CPlayerBot* pPlBotSearch = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(c));
@@ -341,17 +336,18 @@ void CQuestStep::UpdateTaskMoveTo()
 
 				if(!pPlayerBot)
 				{
-					int MobClientID = GS()->CreateBot(TYPE_BOT_QUEST_MOB, pRequired.m_DefeatMobInfo.m_BotID, -1);
+					const auto& defeatMobInfo = pTaskData->m_DefeatMobInfo;
+					const int MobClientID = GS()->CreateBot(TYPE_BOT_QUEST_MOB, defeatMobInfo.m_BotID, -1);
 					pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(MobClientID));
 					pPlayerBot->InitQuestBotMobInfo(
 						{
 							m_Bot.m_QuestID,
 							m_Bot.m_StepPos,
 							i,
-							pRequired.m_DefeatMobInfo.m_AttributePower,
-							pRequired.m_DefeatMobInfo.m_AttributeSpread,
-							pRequired.m_DefeatMobInfo.m_WorldID,
-							pRequired.m_Position
+							defeatMobInfo.m_AttributePower,
+							defeatMobInfo.m_AttributeSpread,
+							defeatMobInfo.m_WorldID,
+							pTaskData->m_Position
 						});
 
 					dbg_msg(PRINT_QUEST_PREFIX, "Creating a quest mob");
@@ -359,42 +355,11 @@ void CQuestStep::UpdateTaskMoveTo()
 
 				pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[pPlayer->GetCID()] = true;
 				pPlayerBot->GetQuestBotMobInfo().m_CompleteClient[pPlayer->GetCID()] = false;
+				OptDefeatBotCID = pPlayerBot->GetCID();
 			}
 
-			// Check if there is a move-to entity at the required position
-			bool MarkNewItem;
-			CEntityQuestAction* pEntMoveTo = UpdateEntityQuestAction(&MarkNewItem, pRequired, &m_aMoveToProgress[i], pPlayerBot);
-			if(MarkNewItem)
-			{
-				// Check if the required task is navigation or defeating a mob
-				if(!pRequired.m_Navigator || pRequired.m_Type == QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
-				{
-					// Create orbital path and navigator for it
-					float Radius;
-					CEntityLaserOrbite* pEntOrbite;
-
-					// If the required task is to defeat a mob, set a smaller radius for the orbit
-					if(pRequired.m_Type == QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
-					{
-						Radius = 400.f;
-						GS()->EntityManager()->LaserOrbite(pEntOrbite, pEntMoveTo, (int)(Radius / 50.f),
-							LaserOrbiteType::INSIDE_ORBITE, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
-					}
-					else
-					{
-						Radius = 400.f + random_float(2000.f);
-						GS()->EntityManager()->LaserOrbite(pEntOrbite, (int)(Radius / 50.f),
-							LaserOrbiteType::INSIDE_ORBITE_RANDOM, Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
-					}
-
-					// Add navigator to the orbital path
-					UpdateEntityArrowNavigator(pEntOrbite->GetPos(), pRequired.m_WorldID, Radius, &m_aMoveToProgress[i]);
-					continue;
-				}
-
-				// Add navigator to the orbital path
-				UpdateEntityArrowNavigator(pRequired.m_Position, pRequired.m_WorldID, 0.f, &m_aMoveToProgress[i]);
-			}
+			// update entity quest action
+			UpdateEntityQuestAction(i, OptDefeatBotCID);
 		}
 	}
 }
@@ -562,30 +527,52 @@ int CQuestStep::GetCompletedMoveToCount()
 {
 	// Using std::count_if to count the number of elements in m_aMoveToProgress that satisfy the condition
 	// The condition is a lambda function that checks if the element is true
-	return (int)std::count_if(m_aMoveToProgress.begin(), m_aMoveToProgress.end(), [](const bool State){return State == true; });
+	return (int)std::ranges::count_if(m_aMoveToProgress, [](const bool State){return State == true; });
 }
 
-CEntityQuestAction* CQuestStep::UpdateEntityQuestAction(bool* pMarkIsNewItem, const QuestBotInfo::TaskAction& TaskMoveTo, bool* pComplete, CPlayerBot* pDefeatMobPlayer)
+void CQuestStep::UpdateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID)
 {
-	// erase the move to if it does not exist
-	m_vpEntitiesAction.erase(std::remove_if(m_vpEntitiesAction.begin(), m_vpEntitiesAction.end(),
-		[pGS = GS()](CEntityQuestAction* p) { return (p && p->IsMarkedForDestroy()) || !pGS->m_World.ExistEntity(p); }), m_vpEntitiesAction.end());
+	if(MoveToIndex < 0 || MoveToIndex >= (int)m_Bot.m_vRequiredMoveAction.size())
+		return;
 
-	// find the bot navigator by the position
-	const auto iter = std::find_if(m_vpEntitiesAction.begin(), m_vpEntitiesAction.end(),
-		[Position = TaskMoveTo.m_Position](CEntityQuestAction* p) { return p && p->GetPos() == Position; });
+	// find the action by move to index
+	const auto iter = std::ranges::find_if(m_vpEntitiesAction, [MoveToIndex](const std::shared_ptr<CEntityQuestAction>& pPtr)
+	{
+		return MoveToIndex == pPtr->GetMoveToIndex();
+	});
 
 	// create a new move to item if it does not exist
-	*pMarkIsNewItem = false;
-	CEntityQuestAction* pEntQuestAction = (iter != m_vpEntitiesAction.end()) ? *iter : nullptr;
-	if(pComplete && !(*pComplete) && !pEntQuestAction)
+	if(iter == m_vpEntitiesAction.end())
 	{
-		*pMarkIsNewItem = true;
-		pEntQuestAction = new CEntityQuestAction(&GS()->m_World, TaskMoveTo, GetPlayer()->GetCID(), m_Bot.m_QuestID, pComplete, m_Bot.IsAutoCompletesQuestStep(), pDefeatMobPlayer);
-		m_vpEntitiesAction.emplace_back(pEntQuestAction);
-	}
+		auto pSharedAction = std::make_shared<CEntityQuestAction>(&GS()->m_World, m_ClientID, MoveToIndex, weak_from_this(), m_Bot.IsAutoCompletesQuestStep(), OptDefeatBotCID);
+		m_vpEntitiesAction.emplace_back(pSharedAction);
 
-	return pEntQuestAction;
+		// create navigations
+		auto* pTaskData = &m_Bot.m_vRequiredMoveAction[MoveToIndex];
+		if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
+		{
+			CEntityLaserOrbite* pEntOrbite;
+			constexpr float Radius = 400.f;
+			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
+				LaserOrbiteType::INSIDE_ORBITE, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+
+			UpdateEntityArrowNavigator(pEntOrbite->GetPos(), pTaskData->m_WorldID, Radius, &m_aMoveToProgress[MoveToIndex]);
+		}
+		else if(!pTaskData->m_Navigator)
+		{
+			CEntityLaserOrbite* pEntOrbite;
+			const float Radius = 400.f + random_float(2000.f);
+			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
+				LaserOrbiteType::INSIDE_ORBITE_RANDOM, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+
+			UpdateEntityArrowNavigator(pEntOrbite->GetPos(), pTaskData->m_WorldID, Radius, &m_aMoveToProgress[MoveToIndex]);
+		}
+		else
+		{
+			UpdateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, 0.f, &m_aMoveToProgress[MoveToIndex]);
+		}
+
+	}
 }
 
 CEntityPathArrow* CQuestStep::UpdateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete)

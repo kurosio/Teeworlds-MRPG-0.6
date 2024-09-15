@@ -32,28 +32,29 @@ CQuestDescription* CQuestDescription::GetPreviousQuest() const
 	return nullptr;
 }
 
-void CQuestDescription::PreparePlayerSteps(int StepPos, int ClientID, std::deque<CQuestStep>* pElem)
+void CQuestDescription::PreparePlayerSteps(int StepPos, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem)
 {
-	// clear old steps
-	if(!(*pElem).empty())
-		(*pElem).clear();
-
-	// prepare new steps
+	pElem.clear();
 	for(const auto& Step : m_vSteps[StepPos])
 	{
-		CQuestStep Base;
-		Base.m_ClientID = ClientID;
-		Base.m_Bot = Step.m_Bot;
-		Base.m_StepComplete = false;
-		Base.m_ClientQuitting = false;
-		Base.m_aMobProgress.clear();
-		(*pElem).push_back(std::move(Base));
+		pElem.emplace_back(std::make_shared<CQuestStep>(ClientID, Step.m_Bot));
 	}
 }
 
-CGS* CPlayerQuest::GS() const { return dynamic_cast<CGS*>(Instance::GameServerPlayer(m_ClientID)); }
-CPlayer* CPlayerQuest::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
-CQuestDescription* CPlayerQuest::Info() const { return CQuestDescription::Data()[m_ID]; }
+CGS* CPlayerQuest::GS() const
+{
+	return dynamic_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+}
+
+CPlayer* CPlayerQuest::GetPlayer() const
+{
+	return GS()->GetPlayer(m_ClientID);
+}
+
+CQuestDescription* CPlayerQuest::Info() const
+{
+	return CQuestDescription::Data()[m_ID];
+}
 
 CPlayerQuest::~CPlayerQuest()
 {
@@ -62,7 +63,10 @@ CPlayerQuest::~CPlayerQuest()
 
 bool CPlayerQuest::HasUnfinishedSteps() const
 {
-	return std::ranges::any_of(m_vSteps, [](const CQuestStep& p) { return !p.m_StepComplete && p.m_Bot.m_HasAction; });
+	return std::ranges::any_of(m_vSteps, [](const std::shared_ptr<CQuestStep>& pPtr) 
+	{
+		return !pPtr->m_StepComplete && pPtr->m_Bot.m_HasAction;
+	});
 }
 
 bool CPlayerQuest::Accept()
@@ -73,8 +77,8 @@ bool CPlayerQuest::Accept()
 		return false;
 
 	// initialize
-	m_State = QuestState::ACCEPT;
 	m_Step = 1;
+	m_State = QuestState::ACCEPT;
 	m_Datafile.Create();
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, pPlayer->Account()->GetID(), m_State);
 
@@ -113,21 +117,24 @@ bool CPlayerQuest::Accept()
 
 void CPlayerQuest::Refuse()
 {
-	// check valid player and quest state
 	CPlayer* pPlayer = GetPlayer();
 	if(m_State != QuestState::ACCEPT || !pPlayer)
 		return;
 
 	// refuse quest
-	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Account()->GetID());
+	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, pPlayer->Account()->GetID());
 	Reset();
 }
 
 void CPlayerQuest::Reset()
 {
 	m_Step = 0;
-	m_vSteps.clear();
 	m_State = QuestState::NO_ACCEPT;
+	for(const auto& pStep : m_vSteps)
+	{
+		pStep->Update();
+	}
+	m_vSteps.clear();
 	m_Datafile.Delete();
 }
 
@@ -140,7 +147,7 @@ void CPlayerQuest::UpdateStepPosition()
 
 	// update
 	m_Step++;
-	Info()->PreparePlayerSteps(m_Step, m_ClientID, &m_vSteps);
+	Info()->PreparePlayerSteps(m_Step, m_ClientID, m_vSteps);
 	if(!m_vSteps.empty())
 	{
 		m_Datafile.Create();
@@ -199,14 +206,18 @@ void CPlayerQuest::UpdateStepPosition()
 
 void CPlayerQuest::Update()
 {
-	for(auto& pStep : m_vSteps)
-		pStep.Update();
-
+	for(const auto& pStep : m_vSteps)
+	{
+		pStep->Update();
+	}
 	UpdateStepPosition();
 }
 
 CQuestStep* CPlayerQuest::GetStepByMob(int MobID)
 {
-	auto iter = std::ranges::find_if(m_vSteps, [MobID](const CQuestStep& Step) { return Step.m_Bot.m_ID == MobID; });
-	return iter != m_vSteps.end() ? &(*iter) : nullptr;
+	const auto iter = std::ranges::find_if(m_vSteps, [MobID](const std::shared_ptr<CQuestStep>& Step) 
+	{
+		return Step->m_Bot.m_ID == MobID;
+	});
+    return iter != m_vSteps.end() ? iter->get() : nullptr;
 }
