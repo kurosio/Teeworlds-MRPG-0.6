@@ -10,7 +10,7 @@
 #include <game/server/core/entities/tools/arrow_navigator.h>
 #include <game/server/core/entities/tools/laser_orbite.h>
 
-#include "entities/move_to.h"
+#include "entities/move_action.h"
 #include "entities/path_finder.h"
 #include "game/server/entity_manager.h"
 
@@ -541,7 +541,7 @@ void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 			CEntityLaserOrbite* pEntOrbite;
 			constexpr float Radius = 400.f;
 			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
-				LaserOrbiteType::INSIDE_ORBITE, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+				LaserOrbiteType::INSIDE_ORBITE, 0.f, pSharedAction->GetRadius(), LASERTYPE_FREEZE, CmaskOne(m_ClientID));
 
 			CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, Radius, CEntityPathArrow::CONDITION_MOVE_TO, MoveToIndex);
 		}

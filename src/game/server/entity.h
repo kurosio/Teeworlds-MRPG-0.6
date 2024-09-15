@@ -29,11 +29,6 @@ private:
 	int m_TickFreeze;
 	bool m_TickFreezeCheckStarted;
 
-	/*
-		Variable: m_ProximityRadius
-			Contains the physical size of the entity.
-	*/
-	float m_ProximityRadius;
 
 	/* State */
 	bool m_MarkedForDestroy;
@@ -49,12 +44,18 @@ protected:
 	vec2 m_PosTo;
 	int m_ClientID;
 
+	/*
+		Variable: m_Radius
+			Contains the physical size of the entity.
+	*/
+	float m_Radius;
+
 	/* Getters */
 	int GetID() const					{ return m_ID; }
 
 public:
 	/* Constructor */
-	CEntity(CGameWorld *pGameWorld, int Objtype, vec2 Pos, int ProximityRadius=0, int ClientID = -1);
+	CEntity(CGameWorld *pGameWorld, int Objtype, vec2 Pos, int Radius=0, int ClientID = -1);
 
 	/* Destructor */
 	virtual ~CEntity();
@@ -69,7 +70,7 @@ public:
 	CEntity *TypePrev() const			{ return m_pPrevTypeEntity; }
 	const vec2 &GetPos() const			{ return m_Pos; }
 	const vec2 &GetPosTo() const		{ return m_PosTo; }
-	float GetProximityRadius() const	{ return m_ProximityRadius; }
+	float GetRadius() const				{ return m_Radius; }
 	bool IsMarkedForDestroy() const		{ return m_MarkedForDestroy; }
 
 	/* Setters */

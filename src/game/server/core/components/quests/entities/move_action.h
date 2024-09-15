@@ -1,7 +1,5 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_MMOCORE_COMPONENTS_QUESTS_ENTITIES_MOVE_TO_H
-#define GAME_SERVER_MMOCORE_COMPONENTS_QUESTS_ENTITIES_MOVE_TO_H
+﻿#ifndef GAME_SERVER_CORE_COMPONENTS_QUESTS_ENTITIES_MOVE_ACTION_H
+#define GAME_SERVER_CORE_COMPONENTS_QUESTS_ENTITIES_MOVE_ACTION_H
 
 #include <game/server/entity.h>
 
@@ -13,7 +11,6 @@ class CQuestStep;
 class CEntityQuestAction : public CEntity, public std::enable_shared_from_this<CEntityQuestAction>
 {
 	bool m_AutoCompletesQuestStep;
-	float m_Radius;
 	int m_MoveToIndex;
 	std::optional<int> m_optDefeatBotCID {};
 	std::weak_ptr<CQuestStep> m_pStep;

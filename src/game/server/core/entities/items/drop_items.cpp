@@ -62,7 +62,7 @@ void CDropItem::Tick()
 	}
 
 	m_Flash.Tick(m_LifeSpan);
-	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), 0.5f);
+	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), 0.5f);
 
 	// set without owner if there is no player owner
 	if(m_OwnerID != -1 && !GS()->GetPlayer(m_OwnerID, true, true))

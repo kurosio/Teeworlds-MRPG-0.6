@@ -53,7 +53,7 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity** ppEnts, int Max, 
 	int Num = 0;
 	for(CEntity* pEnt = m_apFirstEntityTypes[Type]; pEnt; pEnt = pEnt->m_pNextTypeEntity)
 	{
-		if(distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_ProximityRadius)
+		if(distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_Radius)
 		{
 			if(ppEnts)
 				ppEnts[Num] = pEnt;
@@ -73,7 +73,7 @@ std::vector<CEntity*> CGameWorld::FindEntities(vec2 Pos, float Radius, int Max, 
 	std::vector<CEntity*> vEnts(Max);
 	for(CEntity* pEnt = m_apFirstEntityTypes[Type]; pEnt; pEnt = pEnt->m_pNextTypeEntity)
 	{
-		if(distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_ProximityRadius)
+		if(distance(pEnt->m_Pos, Pos) < Radius + pEnt->m_Radius)
 		{
 			vEnts.push_back(pEnt);
 			if(vEnts.size() == std::size_t(Max))
@@ -216,7 +216,7 @@ CCharacter* CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 		if(closest_point_on_line(Pos0, Pos1, p->m_Pos, IntersectPos))
 		{
 			float Len = distance(p->m_Pos, IntersectPos);
-			if(Len < p->m_ProximityRadius + Radius)
+			if(Len < p->m_Radius + Radius)
 			{
 				Len = distance(Pos0, IntersectPos);
 				if(Len < ClosestLen)
@@ -271,7 +271,7 @@ CEntity* CGameWorld::ClosestEntity(vec2 Pos, float Radius, int Type, CEntity* pN
 			continue;
 
 		const float Len = distance(Pos, p->m_Pos);
-		if(Len < p->m_ProximityRadius + Radius)
+		if(Len < p->m_Radius + Radius)
 		{
 			if(Len < ClosestRange)
 			{

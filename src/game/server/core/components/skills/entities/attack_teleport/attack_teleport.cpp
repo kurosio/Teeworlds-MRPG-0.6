@@ -34,13 +34,13 @@ void CAttackTeleport::Tick()
 	// variables
 	const int ClientID = m_pPlayer->GetCID();
 	vec2 To = m_Pos + normalize(m_Direction) * 20.0f;
-	vec2 Size = vec2(GetProximityRadius(), GetProximityRadius());
+	vec2 Size = vec2(m_Radius, m_Radius);
 	CCharacter* pOwnerChar = m_pPlayer->GetCharacter();
-	CCharacter *pSearchChar = (CCharacter*)GS()->m_World.ClosestEntity(To, GetProximityRadius(), CGameWorld::ENTTYPE_CHARACTER, nullptr);
+	CCharacter *pSearchChar = (CCharacter*)GS()->m_World.ClosestEntity(To, m_Radius, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 
 	// check collide
 	const bool IsCollide = (GS()->Collision()->TestBox(m_Pos, Size) || GS()->Collision()->TestBox(To, Size)
-		|| GS()->m_World.IntersectClosestDoorEntity(m_Pos, GetProximityRadius()) || GS()->m_World.IntersectClosestDoorEntity(To, GetProximityRadius()));
+		|| GS()->m_World.IntersectClosestDoorEntity(m_Pos, m_Radius) || GS()->m_World.IntersectClosestDoorEntity(To, m_Radius));
 	const bool IsAllowedPVP = (pSearchChar && pSearchChar->IsAlive() && pSearchChar != pOwnerChar && pSearchChar->IsAllowedPVP(pOwnerChar->GetPlayer()->GetCID()));
 
 	// first part

@@ -16,7 +16,7 @@ CEntityLaserOrbite::CEntityLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEn
 
 	if(m_pEntParent)
 	{
-		m_AppendPos = vec2(centrelized_frandom(0.f, GetProximityRadius() / 1.5f), centrelized_frandom(0.f, GetProximityRadius() / 1.5f));
+		m_AppendPos = vec2(centrelized_frandom(0.f, m_Radius / 1.5f), centrelized_frandom(0.f, m_Radius / 1.5f));
 		m_Pos = pEntParent->GetPos() + (Type == LaserOrbiteType::INSIDE_ORBITE_RANDOM ? m_AppendPos : vec2(0.f, 0.f));
 	}
 	GameWorld()->InsertEntity(this);
@@ -64,14 +64,15 @@ vec2 CEntityLaserOrbite::UtilityOrbitePos(int PosID) const
 	else if(m_Type == LaserOrbiteType::MOVE_RIGHT)
 		AngleStart = (AngleStart * (float)Server()->Tick() / (float)Server()->TickSpeed()) * m_MoveSpeed;
 
-	float X = GetProximityRadius() * cos(AngleStart + AngleStep * (float)PosID);
-	float Y = GetProximityRadius() * sin(AngleStart + AngleStep * (float)PosID);
+	float DynamicRadius = m_Radius * (1.0f + 0.05f * sin((float)Server()->Tick() / (float)Server()->TickSpeed()));
+	float X = DynamicRadius * cos(AngleStart + AngleStep * (float)PosID);
+	float Y = DynamicRadius * sin(AngleStart + AngleStep * (float)PosID);
 	return { X, Y };
 }
 
 void CEntityLaserOrbite::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient, m_Pos, GetProximityRadius()) || !CmaskIsSet(m_Mask, SnappingClient))
+	if(NetworkClipped(SnappingClient, m_Pos, m_Radius) || !CmaskIsSet(m_Mask, SnappingClient))
 		return;
 
 	vec2 LastPosition = m_Pos + UtilityOrbitePos(m_IDs.size() - 1);

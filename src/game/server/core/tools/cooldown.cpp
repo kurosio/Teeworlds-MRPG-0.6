@@ -107,5 +107,5 @@ void CCooldown::BroadcastCooldown(IServer* pServer) const
 	std::string progressBar = mystd::string::progressBar(100, static_cast<int>(currentProgress), 10, "\u25B0", "\u25B1");
 
 	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "%s\n< %s > %s - Action", m_Name.c_str(), timeFormat, progressBar.c_str());
+	pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "{}\n< {} > {} - Action", m_Name, timeFormat, progressBar);
 }

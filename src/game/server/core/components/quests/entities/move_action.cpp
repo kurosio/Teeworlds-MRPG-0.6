@@ -1,10 +1,7 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "game/server/core/components/Bots/BotData.h"
-#include "move_to.h"
+#include "move_action.h"
 
 #include <game/server/gamecontext.h>
-
 #include "game/server/core/components/quests/quest_manager.h"
 
 constexpr unsigned int s_Particles = 4;
@@ -20,7 +17,7 @@ CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int
 	if(const auto* pTaskData = GetTaskMoveTo())
 	{
 		m_Pos = pTaskData->m_Position;
-		m_Radius = GetProximityRadius();
+		m_Radius = (pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::DEFEAT_MOB) ? 400.f : 32.f;
 	}
 	GameWorld()->InsertEntity(this);
 
@@ -105,9 +102,7 @@ void CEntityQuestAction::Tick()
 	}
 
 	// check distance
-	const unsigned TypeFlags = pTaskData->m_TypeFlags;
-	const float Radius = (TypeFlags & QuestBotInfo::TaskAction::Types::DEFEAT_MOB) ? 600.f : m_Radius;
-	if(distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > Radius)
+	if(distance(pPlayer->GetCharacter()->GetPos(), m_Pos) > m_Radius)
 		return;
 
 	// handlers
@@ -301,25 +296,25 @@ void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskActi
 	if(pRequireItem.IsValid())
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequireItem.GetID());
-		strBuffer += fmt_localize(m_ClientID, "- Required [{}x{}({})]\n",
+		strBuffer += fmt_localize(m_ClientID, "- Required: {} ({} | {})\n",
 			pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
 	}
 
 	if(pPickupItem.IsValid())
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPickupItem.GetID());
-		strBuffer += fmt_localize(m_ClientID, "- Pick up [{}x{}({})]\n",
+		strBuffer += fmt_localize(m_ClientID, "- Pick up: {} ({} | {})\n",
 			pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
 	}
 
-	// by type flag
-	const char* broadcastMessage = nullptr;
-	if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
-		broadcastMessage = "Please click with hammer on the highlighted area to interact with it.\n{}";
-	else if(Type & (QuestBotInfo::TaskAction::Types::PICKUP_ITEM | QuestBotInfo::TaskAction::Types::REQUIRED_ITEM))
-		broadcastMessage = "Press hammer 'Fire', to interact.\n{}";
-
 	// send broadcast
-	if(broadcastMessage)
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, broadcastMessage, strBuffer.c_str());
+	if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
+	{
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Click the highlighted area with the hammer to interact.\n{}", strBuffer.c_str());
+	}
+	else if(Type & (QuestBotInfo::TaskAction::Types::PICKUP_ITEM | QuestBotInfo::TaskAction::Types::REQUIRED_ITEM))
+	{
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press 'Fire' with the hammer to interact.\n{}", strBuffer.c_str());
+	}
+
 }

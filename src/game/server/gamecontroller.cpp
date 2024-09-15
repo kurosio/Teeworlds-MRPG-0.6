@@ -317,7 +317,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval* pEval, int SpawnType, std::p
 			{
 				if(
 					GS()->Collision()->CheckPoint(m_aaSpawnPoints[SpawnType][i] + Positions[Index]) ||
-					distance(aEnts[c]->GetPos(), m_aaSpawnPoints[SpawnType][i] + Positions[Index]) <= aEnts[c]->GetProximityRadius())
+					distance(aEnts[c]->GetPos(), m_aaSpawnPoints[SpawnType][i] + Positions[Index]) <= aEnts[c]->GetRadius())
 				{
 					Result = -1;
 					break;

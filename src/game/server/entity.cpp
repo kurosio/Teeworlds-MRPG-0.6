@@ -3,7 +3,7 @@
 #include "entity.h"
 #include "gamecontext.h"
 
-CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int ProximityRadius, int ClientID)
+CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int Radius, int ClientID)
 {
 	m_pGameWorld = pGameWorld;
 
@@ -14,7 +14,7 @@ CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int ProximityRad
 	m_ObjType = ObjType;
 
 	m_ClientID = ClientID;
-	m_ProximityRadius = ProximityRadius;
+	m_Radius = Radius;
 	m_MarkedForDestroy = false;
 
 	m_Pos = Pos;

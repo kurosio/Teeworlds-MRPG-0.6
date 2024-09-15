@@ -65,8 +65,8 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int PosID) const
 {
 	float AngleStep = 2.0f * pi / (float)m_Items.size();
 	float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-	float X = GetProximityRadius() * cos(AngleStart + AngleStep * (float)PosID);
-	float Y = GetProximityRadius() * sin(AngleStart + AngleStep * (float)PosID);
+	float X = GetRadius() * cos(AngleStart + AngleStep * (float)PosID);
+	float Y = GetRadius() * sin(AngleStart + AngleStep * (float)PosID);
 	return { X, Y };
 }
 

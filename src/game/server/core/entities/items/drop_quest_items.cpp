@@ -45,7 +45,7 @@ void CDropQuestItem::Tick()
 	}
 
 	m_Flash.Tick(m_LifeSpan);
-	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), &m_Angle, &m_AngleForce, 0.5f);
+	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), &m_Angle, &m_AngleForce, 0.5f);
 
 	CPlayerItem* pItem = pPlayer->GetItem(m_ItemID);
 	const CPlayerQuest* pQuest = pPlayer->GetQuest(m_QuestID);
