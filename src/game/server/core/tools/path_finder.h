@@ -32,6 +32,12 @@ public:
 			m_Bits[index / 8] &= ~(1 << (index % 8));
 	}
 
+	bool IsTeleport(int x, int y) const
+	{
+		const size_t index = y * m_Width + x;
+		return m_Teleports[index].x != -1 && m_Teleports[index].y != -1;
+	}
+
 	void SetTeleport(int x1, int y1, int x2, int y2)
 	{
 		if(x1 < 0 || x1 >= m_Width || y1 < 0 || y1 >= m_Height ||
@@ -40,12 +46,6 @@ public:
 
 		const size_t index = y1 * m_Width + x1;
 		m_Teleports[index] = ivec2 { x2, y2 };
-	}
-
-	bool IsTeleport(int x, int y) const
-	{
-		const size_t index = y * m_Width + x;
-		return m_Teleports[index].x != -1 && m_Teleports[index].y != -1;
 	}
 
 	ivec2 GetTeleportDestination(int x, int y) const

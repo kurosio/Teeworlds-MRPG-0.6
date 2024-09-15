@@ -48,8 +48,9 @@ void CPathFinder::Initialize()
 			// initialize teleports
 			if(const auto& optTeleValue = m_pCollision->TryGetTeleportOut(Position))
 			{
-				const auto TeleDest = ivec2(round_to_int(optTeleValue->x / 32.f), round_to_int(optTeleValue->y / 32.f));
-				m_vMap.SetTeleport(x, y, TeleDest.x, TeleDest.y);
+				const int Nx = clamp(round_to_int(optTeleValue->x) / 32, 0, m_Width - 1);
+				const int Ny = clamp(round_to_int(optTeleValue->y) / 32, 0, m_Height - 1);
+				m_vMap.SetTeleport(x, y, Nx, Ny);
 			}
 		}
 	}
@@ -160,12 +161,13 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 			// get the destination of the teleport
 			ivec2 teleportDest = m_vMap.GetTeleportDestination(current.x, current.y);
 			const int teleportIndex = ToIndex(teleportDest);
+			const int teleportCost = m_vCostSoFar[currentIndex] + 1;
 
 			// add teleport destination to the frontier if it's more optimal
-			if(m_vCostSoFar[currentIndex] < m_vCostSoFar[teleportIndex])
+			if(teleportCost < m_vCostSoFar[teleportIndex])
 			{
-				m_vCostSoFar[teleportIndex] = m_vCostSoFar[currentIndex];
-				int priority = m_vCostSoFar[teleportIndex] + ManhattanDistance(teleportDest, End);
+				m_vCostSoFar[teleportIndex] = teleportCost;
+				int priority = teleportCost + ManhattanDistance(teleportDest, End);
 				vFrontier.emplace(priority, teleportDest);
 				m_vCameFrom[teleportIndex] = current;
 			}
@@ -175,7 +177,10 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 		for(const auto& dir : directions)
 		{
 			ivec2 next = { current.x + dir.x, current.y + dir.y };
-			if(next.x < 0 || next.x >= m_Width || next.y < 0 || next.y >= m_Height || m_vMap.IsCollide(next.x, next.y))
+			if(next.x < 0 || next.x >= m_Width || next.y < 0 || next.y >= m_Height)
+				continue;
+
+			if(m_vMap.IsCollide(next.x, next.y))
 				continue;
 
 			const int nextIndex = ToIndex(next);
