@@ -68,7 +68,7 @@ void CEntityPathNavigator::Move()
 		}
 
 		// smooth movement
-		if(m_StepPos < m_PathHandle.vPath.size())
+		if(m_StepPos < (int)m_PathHandle.vPath.size())
 		{
 			m_Pos += normalize(m_PathHandle.vPath[m_StepPos] - m_Pos) * 4.f;
 		}
