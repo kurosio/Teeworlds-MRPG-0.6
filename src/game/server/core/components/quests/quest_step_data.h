@@ -74,10 +74,10 @@ public:
 
 	// steps path finder tools
 	std::deque < std::shared_ptr<class CEntityQuestAction> > m_vpEntitiesAction {};
-	std::deque < class CEntityPathArrow* > m_apEntitiesNavigator {};
+	std::deque < std::shared_ptr<class CEntityPathArrow> > m_vpEntitiesNavigator {};
 
-	void UpdateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID = std::nullopt);
-	CEntityPathArrow* UpdateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete);
+	void CreateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID = std::nullopt);
+	void CreateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, int ConditionType, int ConditionIndex);
 };
 
 #endif

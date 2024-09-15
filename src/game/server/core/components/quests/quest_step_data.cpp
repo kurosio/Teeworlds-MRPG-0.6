@@ -93,19 +93,10 @@ CQuestStep::~CQuestStep()
 	m_aMoveToProgress.clear();
 	CQuestStepBase::UpdateBot();
 	m_vpEntitiesAction.clear();
+	m_vpEntitiesNavigator.clear();
 
 	// update bot and path navigator
 	UpdatePathNavigator();
-
-	// clear the move actions
-	auto pGS = GS();
-	for(auto& pEnt : m_apEntitiesNavigator)
-	{
-		if(pEnt && (pEnt->IsMarkedForDestroy() || !pGS->m_World.ExistEntity(pEnt)))
-			pEnt->MarkForDestroy();
-	}
-	m_apEntitiesNavigator.clear();
-
 }
 
 int CQuestStep::GetNumberBlockedItem(int ItemID) const
@@ -295,7 +286,7 @@ void CQuestStep::UpdateTaskMoveTo()
 
 		if(const MobBotInfo* pMob = DataBotInfo::FindMobByBot(DefeatBotID))
 		{
-			UpdateEntityArrowNavigator(pMob->m_Position, pMob->m_WorldID, 400.f, &m_aMobProgress[DefeatBotID].m_Complete);
+			CreateEntityArrowNavigator(pMob->m_Position, pMob->m_WorldID, 400.f, CEntityPathArrow::CONDITION_DEFEAT_BOT, DefeatBotID);
 		}
 	}
 
@@ -313,7 +304,7 @@ void CQuestStep::UpdateTaskMoveTo()
 			// Always creating navigator in other worlds 
 			if(pTaskData->m_WorldID != pPlayer->GetPlayerWorldID())
 			{
-				UpdateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, 0.f, &m_aMoveToProgress[i]);
+				CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, 0.f, CEntityPathArrow::CONDITION_MOVE_TO, i);
 				continue;
 			}
 
@@ -359,7 +350,7 @@ void CQuestStep::UpdateTaskMoveTo()
 			}
 
 			// update entity quest action
-			UpdateEntityQuestAction(i, OptDefeatBotCID);
+			CreateEntityQuestAction(i, OptDefeatBotCID);
 		}
 	}
 }
@@ -530,7 +521,7 @@ int CQuestStep::GetCompletedMoveToCount()
 	return (int)std::ranges::count_if(m_aMoveToProgress, [](const bool State){return State == true; });
 }
 
-void CQuestStep::UpdateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID)
+void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID)
 {
 	if(MoveToIndex < 0 || MoveToIndex >= (int)m_Bot.m_vRequiredMoveAction.size())
 		return;
@@ -556,7 +547,7 @@ void CQuestStep::UpdateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
 				LaserOrbiteType::INSIDE_ORBITE, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
 
-			UpdateEntityArrowNavigator(pEntOrbite->GetPos(), pTaskData->m_WorldID, Radius, &m_aMoveToProgress[MoveToIndex]);
+			CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, Radius, CEntityPathArrow::CONDITION_MOVE_TO, MoveToIndex);
 		}
 		else if(!pTaskData->m_Navigator)
 		{
@@ -565,32 +556,28 @@ void CQuestStep::UpdateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
 				LaserOrbiteType::INSIDE_ORBITE_RANDOM, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
 
-			UpdateEntityArrowNavigator(pEntOrbite->GetPos(), pTaskData->m_WorldID, Radius, &m_aMoveToProgress[MoveToIndex]);
+			CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, Radius, CEntityPathArrow::CONDITION_MOVE_TO, MoveToIndex);
 		}
 		else
 		{
-			UpdateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, 0.f, &m_aMoveToProgress[MoveToIndex]);
+			CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, 0.f, CEntityPathArrow::CONDITION_MOVE_TO, MoveToIndex);
 		}
 
 	}
 }
 
-CEntityPathArrow* CQuestStep::UpdateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, bool* pComplete)
+void CQuestStep::CreateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, int ConditionType, int ConditionIndex)
 {
-	// erase the bot navigator if it does not exist
-	m_apEntitiesNavigator.erase(std::remove_if(m_apEntitiesNavigator.begin(), m_apEntitiesNavigator.end(),
-		[pGS = GS()](CEntityPathArrow* p) { return (p && p->IsMarkedForDestroy())|| !pGS->m_World.ExistEntity(p); }), m_apEntitiesNavigator.end());
-
 	// find the bot navigator by the position
-	const auto iter = std::find_if(m_apEntitiesNavigator.begin(), m_apEntitiesNavigator.end(),
-		[&Position](CEntityPathArrow* p) { return p && p->GetPosTo() == Position; });
+	const auto iter = std::ranges::find_if(m_vpEntitiesNavigator, [Position](const std::shared_ptr<CEntityPathArrow>& pPtr)
+	{
+		return pPtr->GetPosTo() == Position;
+	});
 
 	// create a new arrow navigator if it does not exist
-	CEntityPathArrow* pEntArrow = (iter != m_apEntitiesNavigator.end()) ? *iter : nullptr;
-	if(pComplete && !(*pComplete) && !pEntArrow)
+	if(iter == m_vpEntitiesNavigator.end())
 	{
-		pEntArrow = new CEntityPathArrow(&GS()->m_World, Position, WorldID, GetPlayer()->GetCID(), AreaClipped, pComplete);
-		m_apEntitiesNavigator.emplace_back(pEntArrow);
+		auto pSharedArrow = std::make_shared<CEntityPathArrow>(&GS()->m_World, m_ClientID, AreaClipped, Position, WorldID, weak_from_this(), ConditionType, ConditionIndex);
+		m_vpEntitiesNavigator.emplace_back(pSharedArrow);
 	}
-	return pEntArrow;
 }

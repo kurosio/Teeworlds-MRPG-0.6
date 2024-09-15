@@ -5,18 +5,33 @@
 
 #include <game/server/entity.h>
 
-class CEntityPathArrow : public CEntity
+class CPlayer;
+class CQuestStep;
+
+class CEntityPathArrow : public CEntity, public std::enable_shared_from_this<CEntityPathArrow>
 {
-	int m_WorldID;
-	float m_AreaClipped;
-	bool* m_pComplete;
-	class CPlayer* m_pPlayer;
+	float m_AreaClipped{};
+	int m_ConditionType{};
+	int m_ConditionIndex{};
+	std::weak_ptr<CQuestStep> m_pStep{};
 
 public:
-	CEntityPathArrow(CGameWorld* pGameWorld, vec2 SearchPos, int WorldID, int ClientID, float AreaClipped, bool* pComplete);
+	enum
+	{
+		CONDITION_MOVE_TO = 1,
+		CONDITION_DEFEAT_BOT,
+	};
+
+	CEntityPathArrow(CGameWorld* pGameWorld, int ClientID, float AreaClipped, vec2 SearchPos, int WorldID,
+		const std::weak_ptr<CQuestStep>& pStep, int ConditionType, int ConditionIndex);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
+	void Destroy() override;
+
+private:
+	CPlayer* GetPlayer() const;
+	CQuestStep* GetQuestStep() const;
 };
 
 #endif
