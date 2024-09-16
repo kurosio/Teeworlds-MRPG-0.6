@@ -84,6 +84,7 @@ void CCharacterCore::Reset()
 	// DDNet Character
 	m_Solo = false;
 	m_Jetpack = false;
+	m_MovingDisabled = false;
 	m_CollisionDisabled = false;
 	m_HookHitDisabled = false;
 	m_EndlessHook = false;

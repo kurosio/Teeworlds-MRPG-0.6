@@ -108,6 +108,8 @@ public:
 	virtual void Die(int Killer, int Weapon);
 	virtual void HandleTuning();
 
+	void MovingDisable(bool State);
+
 	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);
 	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
 	void ResetHook();

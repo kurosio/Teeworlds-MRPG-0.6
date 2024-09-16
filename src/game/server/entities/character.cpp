@@ -98,22 +98,22 @@ void CCharacter::SetWeapon(int Weapon)
 
 bool CCharacter::IsGrounded() const
 {
-	if(GS()->Collision()->CheckPoint(m_Pos.x + GetProximityRadius() / 2, m_Pos.y + GetProximityRadius() / 2 + 5))
+	if(GS()->Collision()->CheckPoint(m_Pos.x + GetRadius() / 2, m_Pos.y + GetRadius() / 2 + 5))
 		return true;
-	if(GS()->Collision()->CheckPoint(m_Pos.x - GetProximityRadius() / 2, m_Pos.y + GetProximityRadius() / 2 + 5))
+	if(GS()->Collision()->CheckPoint(m_Pos.x - GetRadius() / 2, m_Pos.y + GetRadius() / 2 + 5))
 		return true;
 	return false;
 }
 
 bool CCharacter::IsCollisionFlag(int Flag) const
 {
-	if(GS()->Collision()->CheckPoint(m_Pos.x + GetProximityRadius() / 2, m_Pos.y + GetProximityRadius() / 2 + 10, Flag))
+	if(GS()->Collision()->CheckPoint(m_Pos.x + GetRadius() / 2, m_Pos.y + GetRadius() / 2 + 10, Flag))
 		return true;
-	if(GS()->Collision()->CheckPoint(m_Pos.x - GetProximityRadius() / 2, m_Pos.y + GetProximityRadius() / 2 + 10, Flag))
+	if(GS()->Collision()->CheckPoint(m_Pos.x - GetRadius() / 2, m_Pos.y + GetRadius() / 2 + 10, Flag))
 		return true;
-	if(GS()->Collision()->CheckPoint(m_Pos.x + GetProximityRadius() / 2, m_Pos.y - GetProximityRadius() / 2 + 10, Flag))
+	if(GS()->Collision()->CheckPoint(m_Pos.x + GetRadius() / 2, m_Pos.y - GetRadius() / 2 + 10, Flag))
 		return true;
-	if(GS()->Collision()->CheckPoint(m_Pos.x - GetProximityRadius() / 2, m_Pos.y - GetProximityRadius() / 2 + 10, Flag))
+	if(GS()->Collision()->CheckPoint(m_Pos.x - GetRadius() / 2, m_Pos.y - GetRadius() / 2 + 10, Flag))
 		return true;
 	return false;
 }
@@ -225,7 +225,7 @@ void CCharacter::FireWeapon()
 
 	const vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
 	const vec2 Direction = normalize(MouseTarget);
-	const vec2 ProjStartPos = m_Pos + Direction * GetProximityRadius() * 0.75f;
+	const vec2 ProjStartPos = m_Pos + Direction * GetRadius() * 0.75f;
 	switch(m_Core.m_ActiveWeapon)
 	{
 		case WEAPON_HAMMER:
@@ -241,7 +241,7 @@ void CCharacter::FireWeapon()
 			GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
 
 			CCharacter* apEnts[MAX_CLIENTS];
-			const int Num = GS()->m_World.FindEntities(ProjStartPos, GetProximityRadius() * Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+			const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 			for(int i = 0; i < Num; ++i)
 			{
 				CCharacter* pTarget = apEnts[i];
@@ -268,7 +268,7 @@ void CCharacter::FireWeapon()
 					continue;
 
 				if(length(pTarget->m_Pos - ProjStartPos) > 0.0f)
-					GS()->CreateHammerHit(pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * GetProximityRadius() * Radius);
+					GS()->CreateHammerHit(pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * GetRadius() * Radius);
 				else
 					GS()->CreateHammerHit(ProjStartPos);
 
@@ -434,12 +434,12 @@ void CCharacter::HandleNinja()
 	{
 		// Set velocity
 		m_Core.m_Vel = m_Ninja.m_ActivationDir * g_pData->m_Weapons.m_Ninja.m_Velocity;
-		GS()->Collision()->MoveBox(&m_Core.m_Pos, &m_Core.m_Vel, vec2(GetProximityRadius(), GetProximityRadius()), 0.f);
+		GS()->Collision()->MoveBox(&m_Core.m_Pos, &m_Core.m_Vel, vec2(GetRadius(), GetRadius()), 0.f);
 
 		// reset velocity so the client doesn't predict stuff
 		m_Core.m_Vel = vec2(0.f, 0.f);
 
-		const float Radius = GetProximityRadius() * 2.0f;
+		const float Radius = GetRadius() * 2.0f;
 		for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
 			if(distance(pChar->m_Core.m_Pos, m_Core.m_Pos) < Radius)
@@ -1081,7 +1081,7 @@ void CCharacter::Snap(int SnappingClient)
 	DDNetFlag(CHARACTERFLAG_GRENADE_HIT_DISABLED, BlockingInputFireWeapon ? true : m_Core.m_GrenadeHitDisabled);
 	DDNetFlag(CHARACTERFLAG_LASER_HIT_DISABLED, BlockingInputFireWeapon ? true : m_Core.m_LaserHitDisabled);
 	DDNetFlag(CHARACTERFLAG_SOLO, m_Core.m_Solo);
-	DDNetFlag(CHARACTERFLAG_MOVEMENTS_DISABLED, m_Core.m_LiveFrozen);
+	DDNetFlag(CHARACTERFLAG_MOVEMENTS_DISABLED, m_Core.m_MovingDisabled);
 	DDNetFlag(CHARACTERFLAG_IN_FREEZE, m_Core.m_IsInFreeze);
 	DDNetFlag(CHARACTERFLAG_PRACTICE_MODE, BlockingInputFireWeapon);
 
@@ -1193,9 +1193,34 @@ void CCharacter::HandleTuning()
 	HandleIndependentTuning();
 }
 
+void CCharacter::MovingDisable(bool State)
+{
+	if(State)
+	{
+		m_Core.m_Vel = {};
+		ResetHook();
+	}
+	m_Core.m_MovingDisabled = State;
+};
+
 void CCharacter::HandleIndependentTuning()
 {
 	CTuningParams* pTuningParams = &m_pPlayer->m_NextTuningParams;
+
+	// freeze moving
+	if(m_Core.m_MovingDisabled)
+	{
+		pTuningParams->m_GroundFriction = 1.0f;
+		pTuningParams->m_GroundControlSpeed = 0.0f;
+		pTuningParams->m_GroundControlAccel = 0.0f;
+		pTuningParams->m_GroundJumpImpulse = 0.0f;
+		pTuningParams->m_AirFriction = 1.0f;
+		pTuningParams->m_AirControlSpeed = 0.0f;
+		pTuningParams->m_AirControlAccel = 0.0f;
+		pTuningParams->m_AirJumpImpulse = 0.0f;
+		pTuningParams->m_HookLength = 0.0f;
+		pTuningParams->m_HookDragAccel = 0.f;
+	}
 
 	// water
 	if(m_pTilesHandler->IsActive(TILE_WATER))
@@ -1472,7 +1497,7 @@ bool CCharacter::IsWorldAccessible() const
 		}
 
 		// check finished tutorial
-		if(!pAccount->IsClassSelected())
+		if(!pAccount->IsClassSelected() && !GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID))
 		{
 			m_pPlayer->GetTempData().ClearTeleportPosition();
 			GS()->Chat(m_pPlayer->GetCID(), "You will need to take the training and select a class!");
