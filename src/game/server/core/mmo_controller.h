@@ -25,7 +25,6 @@ class CMmoController
 	class CHouseManager* m_pHouseManager;
 	class CMailboxManager* m_pMailboxManager;
 	class CSkillManager* m_pSkillManager;
-	class CTutorialManager* m_pTutorialManager;
 	class CWorldManager* m_pWorldManager;
 	class CEidolonManager* m_pEidolonManager;
 
@@ -43,7 +42,6 @@ public:
 	CQuestManager* QuestManager() const { return m_pQuestManager; }
 	CWarehouseManager* WarehouseManager() const { return m_pWarehouseManager; }
 	CEidolonManager* EidolonManager() const { return m_pEidolonManager; }
-	CTutorialManager* TutorialManager() const { return m_pTutorialManager; }
 	CCraftManager* CraftManager() const { return m_pCraftManager; }
 	CDungeonManager* DungeonManager() const { return m_pDungeonManager; }
 	CHouseManager* HouseManager() const { return m_pHouseManager; }

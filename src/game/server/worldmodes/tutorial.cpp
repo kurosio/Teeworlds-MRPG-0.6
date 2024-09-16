@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "tutorial.h"
 
-#include <game/server/core/components/tutorial/tutorial_manager.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/entities/event/entitiy_group.h>
@@ -244,22 +243,6 @@ CGameControllerTutorial::CGameControllerTutorial(class CGS* pGS)
 void CGameControllerTutorial::Tick()
 {
 	IGameController::Tick();
-
-	// handle tutorial world
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		if(GS()->IsPlayerInWorld(i))
-		{
-			if(CPlayer* pPlayer = GS()->GetPlayer(i, true, true); pPlayer)
-			{
-				CTutorialManager* pTutorialManager = GS()->Core()->TutorialManager();
-				pTutorialManager->ProcessTutorialStep(pPlayer);
-
-				if(pPlayer->m_TutorialStep >= pTutorialManager->GetTutorialCount() && !pPlayer->GetItem(itAdventurersBadge)->HasItem())
-					pPlayer->GetItem(itAdventurersBadge)->Add(1);
-			}
-		}
-	}
 }
 
 bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)

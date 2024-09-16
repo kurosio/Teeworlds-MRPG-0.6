@@ -42,7 +42,7 @@ void CSkillManager::OnPlayerLogin(CPlayer *pPlayer)
 
 void CSkillManager::OnClientReset(int ClientID)
 {
-	CSkill::Data().erase(ClientID);
+	mystd::freeContainer(CSkill::Data()[ClientID]);
 }
 
 bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)

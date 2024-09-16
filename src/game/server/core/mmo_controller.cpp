@@ -21,7 +21,6 @@
 #include "components/mails/mailbox_manager.h"
 #include "components/quests/quest_manager.h"
 #include "components/skills/skill_manager.h"
-#include "components/tutorial/tutorial_manager.h"
 #include "components/warehouse/warehouse_manager.h"
 #include "components/worlds/world_manager.h"
 #include <teeother/components/localization.h>
@@ -82,7 +81,6 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_System.add(m_pGuildManager = new CGuildManager);
 	m_System.add(m_pGroupManager = new CGroupManager);
 	m_System.add(m_pSkillManager = new CSkillManager);
-	m_System.add(m_pTutorialManager = new CTutorialManager);
 	m_System.add(m_pAccountManager = new CAccountManager);
 	m_System.add(m_pAccountMiningManager = new CAccountMiningManager);
 	m_System.add(m_pAccountFarmingManager = new CAccountFarmingManager);

@@ -33,10 +33,7 @@ void CAchievementManager::OnInit()
 
 void CAchievementManager::OnClientReset(int ClientID)
 {
-	for(auto& p : CAchievement::Data()[ClientID])
-		delete p;
-
-	CAchievement::Data()[ClientID].clear();
+	mystd::freeContainer(CAchievement::Data()[ClientID]);
 }
 
 bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
