@@ -180,12 +180,6 @@ enum FunctionsNPC
 	FUNCTION_NPC_GUARDIAN,
 };
 
-// player scenarios
-enum
-{
-	
-};
-
 // menu list
 enum MenuList
 {
@@ -288,6 +282,12 @@ enum MenuList
 	MOTD_MENU_SUBTEST,
 };
 
+// player scenarios
+enum
+{
+	SCENARIO_TUTORIAL = 1,
+};
+
 // primary
 enum
 {
@@ -297,14 +297,13 @@ enum
 	*/
 	MAX_GROUP_MEMBERS = 4,					// maximum number of players in a group
 	MAX_HOUSE_DOOR_INVITED_PLAYERS = 3,		// maximum player what can have access for house door
-	MAX_DECORATIONS_PER_HOUSE = 20,				// maximum decorations for houses
-	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
-	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
-	MAILS_MAX_CAPACITY = 10,			// maximum number of emails what is displayed
+	MAX_DECORATIONS_PER_HOUSE = 20,			// maximum decorations for houses
+	MAIL_MAX_CAPACITY = 10,					// maximum number of emails what is displayed
 	MAX_ATTRIBUTES_FOR_ITEM = 2,			// maximum number of stats per item
 	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
-	MAX_DAILY_QUESTS_BY_BOARD = 3,			// maximum number of daily quests that can be assigned to a specific board in a game.
 	DEFAULT_MAX_PLAYER_BAG_GOLD = 5000,		// player gold limit
+	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
+	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
 
 	// settings items
 	itShowEquipmentDescription = 25,	// Description setting
@@ -351,17 +350,6 @@ enum
 	itPickupShotgun = 11,				// Pickup shotgun
 	itPickupGrenade = 12,				// Pickup grenade
 	itPickupLaser = 94,				    // Pickup laser
-
-	// all sorting sheets that exist on the server
-	SORT_INVENTORY = 0,
-	SORT_EQUIPING,
-	SORT_GUIDE_WORLD,
-	SORT_TOP,
-	NUM_SORT_TAB,
-
-	// type of decorations
-	DECORATIONS_HOUSE = 0,
-	DECORATIONS_GUILD_HOUSE,
 };
 
 // broadcast

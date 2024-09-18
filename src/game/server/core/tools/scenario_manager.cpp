@@ -62,7 +62,7 @@ void ScenarioBase::ExecuteCurrentStep()
 
 void ScenarioBase::Start()
 {
-	SetupScenario();
+	OnSetupScenario();
 
 	if(m_vSteps.empty())
 		return;
@@ -84,7 +84,7 @@ void ScenarioBase::Tick()
 	if(!m_Running || IsFinished())
 		return;
 
-	if(!GetPlayer())
+	if(!GetPlayer() || OnStopConditions())
 	{
 		Stop();
 		return;

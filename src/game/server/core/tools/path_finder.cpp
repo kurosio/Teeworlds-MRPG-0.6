@@ -16,7 +16,7 @@ CPathFinder::CPathFinder(CCollision* pCollision)
 	m_Height = m_pLayers->GameLayer()->m_Height;
 	m_Width = m_pLayers->GameLayer()->m_Width;
 
-	m_vMap = BitCollideMap(m_Width, m_Height);
+	m_MapData = MapData(m_Width, m_Height);
 	m_vCostSoFar.resize(m_Width * m_Height, std::numeric_limits<int>::max());
 	m_vCameFrom.resize(m_Width * m_Height, ivec2 { -1, -1 });
 	Initialize();
@@ -43,14 +43,14 @@ void CPathFinder::Initialize()
 		{
 			// initialize collides
 			const vec2 Position(static_cast<float>(x) * 32.f + 16.f, static_cast<float>(y) * 32.f + 16.f);
-			m_vMap.SetCollide(x, y, m_pCollision->CheckPoint(Position));
+			m_MapData.SetCollide(x, y, m_pCollision->CheckPoint(Position));
 
 			// initialize teleports
 			if(const auto& optTeleValue = m_pCollision->TryGetTeleportOut(Position))
 			{
 				const int Nx = clamp(round_to_int(optTeleValue->x) / 32, 0, m_Width - 1);
 				const int Ny = clamp(round_to_int(optTeleValue->y) / 32, 0, m_Height - 1);
-				m_vMap.SetTeleport(x, y, Nx, Ny);
+				m_MapData.SetTeleport(x, y, Nx, Ny);
 			}
 		}
 	}
@@ -124,7 +124,7 @@ int ManhattanDistance(const ivec2& a, const ivec2& b)
 std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 {
 	std::vector<vec2> vPath;
-	if(m_vMap.IsCollide(Start.x, Start.y) || m_vMap.IsCollide(End.x, End.y))
+	if(m_MapData.IsCollide(Start.x, Start.y) || m_MapData.IsCollide(End.x, End.y))
 		return vPath;
 
 	// initialize variables
@@ -156,10 +156,10 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 		const int currentIndex = ToIndex(current);
 
 		// check if the current tile is a teleport
-		if(m_vMap.IsTeleport(current.x, current.y))
+		if(m_MapData.IsTeleport(current.x, current.y))
 		{
 			// get the destination of the teleport
-			ivec2 teleportDest = m_vMap.GetTeleportDestination(current.x, current.y);
+			ivec2 teleportDest = m_MapData.GetTeleportDestination(current.x, current.y);
 			const int teleportIndex = ToIndex(teleportDest);
 			const int teleportCost = m_vCostSoFar[currentIndex] + 1;
 
@@ -180,7 +180,7 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 			if(next.x < 0 || next.x >= m_Width || next.y < 0 || next.y >= m_Height)
 				continue;
 
-			if(m_vMap.IsCollide(next.x, next.y))
+			if(m_MapData.IsCollide(next.x, next.y))
 				continue;
 
 			const int nextIndex = ToIndex(next);
@@ -229,7 +229,7 @@ vec2 CPathFinder::GetRandomWaypointRadius(const vec2& Pos, float Radius) const
 
 		for(int x = StartX; x <= EndX; ++x)
 		{
-			if(!m_vMap.IsCollide(x, y))
+			if(!m_MapData.IsCollide(x, y))
 			{
 				const float xCenter = x * 32.0f + 16.0f;
 				const float deltaX = Pos.x - xCenter;

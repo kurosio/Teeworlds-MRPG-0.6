@@ -47,8 +47,9 @@ protected:
 
 public:
 	IGameController(class CGS *pGS);
-	virtual ~IGameController() {};
+	virtual ~IGameController() {}
 
+	virtual void OnInit() {};
 	virtual void OnCharacterDamage(class CPlayer* pFrom, class CPlayer* pTo, int Damage);
 	virtual void OnCharacterDeath(class CPlayer* pVictim, class CPlayer *pKiller, int Weapon);
 	virtual bool OnCharacterSpawn(class CCharacter *pChr);

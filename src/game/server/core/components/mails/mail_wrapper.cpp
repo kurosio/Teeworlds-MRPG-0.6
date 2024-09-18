@@ -14,7 +14,7 @@ void MailWrapper::Send()
 	if(LocalMsg)
 	{
 		const int LetterCount = pGS->Core()->MailboxManager()->GetMailCount(m_AccountID);
-		if(LetterCount >= (int)MAILS_MAX_CAPACITY)
+		if(LetterCount >= (int)MAIL_MAX_CAPACITY)
 		{
 			pGS->ChatAccount(m_AccountID, "[Mailbox] Your mailbox is full you can't get.");
 			pGS->ChatAccount(m_AccountID, "[Mailbox] It will come after you clear your mailbox.");

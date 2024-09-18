@@ -7,9 +7,12 @@
 
 class CGameControllerTutorial : public IGameController
 {
+	nlohmann::json m_JsonTutorialData{};
+
 public:
 	CGameControllerTutorial(class CGS* pGameServer);
 
+	void OnInit() override;
 	void Tick() override;
 	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override {}
 

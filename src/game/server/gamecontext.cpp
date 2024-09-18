@@ -1416,6 +1416,7 @@ void CGS::InitWorld()
 	}
 
 	UpdateExpMultiplier();
+	m_pController->OnInit();
 
 	const char* pStatePVP = m_AllowedPVP ? "yes" : "no";
 	dbg_msg("world init", "%s(ID: %d) | %s | PvP: %s", Server()->GetWorldName(m_WorldID), m_WorldID, pWorldType, pStatePVP);

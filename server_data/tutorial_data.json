@@ -1,17 +1,158 @@
-[
-	{"type": 10, "info": "Talk to your instructor, and accept your first quest.\n\nUse 'Hammer Fire' - to start a dialog.\nUse 'F4 (Vote NO)' - to communicate during a dialog.", "integer": 1 },
-	{"type": 6, "info": "Use the arrows on your keyboard to go down.", "posX": 679, "posY": 2577 },	
-	{"type": 6, "info": "Use the jump to get past the obstacles.", "posX": 5558, "posY": 1452 },
-	{"type": 6, "info": "Keep moving forward, you're doing well!", "posX": 8260, "posY": 1169 },
-	{"type": 6, "info": "Now combine movement and the use of jumps.", "posX": 12279, "posY": 1777 },
-	{"type": 6, "info": "Now let's try use the hook.", "posX": 17100, "posY": 2069 },
-	{"type": 6, "info": "Now let's complicate things a bit with the hook.", "posX": 18884, "posY": 1037 },
-	{"type": 6, "info": "Move to the right side.", "posX": 21911, "posY": 2692 },
-	{"type": 6, "info": "And now all together!", "posX": 25617, "posY": 2180 },
-	{"type": 6, "info": "Move to the right side.", "posX": 28420, "posY": 2017 },
-	{"type": 8, "info": "Press TAB. Look at the list of players.", "integer": 8 },
-	{"type": 8, "info": "Using ESC. Open the menu.", "integer": 2 },
-	{"type": 9, "info": "Select the 'Call vote' tab.\nAfter select tab 'Settings' from the menu.\n\nThere you can find the basic settings of the player.\nAnd also the setting of modules on the character", "integer": 6 },
-	{"type": 9, "info": "Press 'Backpage'. To go back to the menu selection.", "integer": 1 },
-	{"type": 11, "info": "Talk to an NPC. And complete your first quest!\n\nUse 'Hammer Fire' - to start a dialog.\nUse 'F4 (Vote NO)' - to communicate during a dialog.", "integer": 1 }
-] 
+{
+  "steps": [
+    {
+      "action": "reset_quest",
+      "quest_id": 1
+    },
+    {
+      "action": "freeze_movements",
+      "state": true
+    },
+    {
+      "action": "message",
+      "delay": 100,
+      "text": "Welcome to the tutorial!"
+    },
+    {
+      "action": "emote_message",
+      "delay": 150,
+      "emote_type": 3,
+      "emoticon_type": 15,
+      "text": "You're wondering what this is and what I'm doing here?"
+    },
+    {
+      "action": "message",
+      "delay": 100,
+      "text": "I'm here to help you learn the basics of the game."
+    },
+    {
+      "action": "freeze_movements",
+      "state": false
+    },
+    {
+      "action": "movement_task",
+      "delay": 150,
+      "position": { "x": 1749, "y": 849 },
+      "lock_text": "Can you see the dot?",
+      "text": "Move to the dot!"
+    },
+    {
+      "action": "freeze_movements",
+      "state": true
+    },
+    {
+      "action": "message",
+      "delay": 100,
+      "text": "Great job!"
+    },
+    {
+      "action": "teleport",
+      "delay": 100,
+      "position": { "x": 640, "y": 2752 },
+      "text": "Let's test your hook skills!"
+    },
+    {
+      "action": "freeze_movements",
+      "state": false
+    },
+    {
+      "action": "movement_task",
+      "delay": 150,
+      "position": { "x": 5580, "y": 2800 },
+      "lock_text": "Try to get to the courts",
+      "text": "Move to the dot!"
+    },
+    {
+      "action": "freeze_movements",
+      "state": true
+    },
+    {
+      "action": "message",
+      "delay": 100,
+      "text": "Great job!"
+    },
+    {
+      "action": "teleport",
+      "delay": 100,
+      "position": { "x": 3072, "y": 1408 },
+      "text": "Now let's get to the basics of the gamemode!"
+    },
+    {
+      "action": "fixed_cam",
+      "delay": 150,
+      "position": { "x": 3964, "y": 1455 },
+      "start_text": "These are NPCs that you can usually interact with.\nBut there are also some that will only share information.",
+      "end_message": "Try talking to him!"
+    },
+    {
+      "action": "freeze_movements",
+      "state": false
+    },
+    {
+      "action": "check_quest_accepted",
+      "quest_id": 1
+    },
+    {
+      "action": "freeze_movements",
+      "state": true
+    },
+    {
+      "action": "message",
+      "delay": 50,
+      "text": "You accept your first quest pretty well!"
+    },    
+	{
+      "action": "message",
+      "delay": 50,
+      "text": "There is a movement indicator for the NPC next to you!"
+    },
+    {
+      "action": "fixed_cam",
+      "delay": 100,
+      "position": { "x": 3242, "y": 1457 },
+      "start_text": "As you can see it points in the direction of the NPC.",
+      "end_text": "Go up to him and talk to him!"
+    },
+    {
+      "action": "freeze_movements",
+      "state": false
+    },
+    {
+      "action": "check_quest_completed",
+      "quest_id": 1
+    },
+    {
+      "action": "freeze_movements",
+      "state": true
+    },
+    {
+      "action": "message",
+      "delay": 100,
+      "text": "You already know how to do the quests."
+    },
+    {
+      "action": "teleport",
+      "delay": 50,
+      "position": { "x": 5280, "y": 900 },
+      "text": "Let's test your shooting skills."
+    },
+    {
+      "action": "shootmarkers",
+      "markers": [
+        { "position": { "x": 5480, "y": 800 }, "health": 5 },
+        { "position": { "x": 5580, "y": 750 }, "health": 5 },
+        { "position": { "x": 5380, "y": 680 }, "health": 5 }
+      ],
+      "text": "Shoot the markers!"
+    },
+    {
+      "action": "message",
+      "delay": 100,
+      "text": "You're doing pretty good!"
+    },
+    {
+      "action": "freeze_movements",
+      "state": false
+    }
+  ]
+}

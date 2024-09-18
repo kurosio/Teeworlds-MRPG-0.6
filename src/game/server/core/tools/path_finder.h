@@ -3,11 +3,11 @@
 
 #include "path_finder_result.h"
 
-class BitCollideMap
+class MapData
 {
 public:
-	BitCollideMap() = default;
-	BitCollideMap(int width, int height)
+	MapData() = default;
+	MapData(int width, int height)
 		: m_Width(width), m_Height(height),
 		m_Bits((width * height + 7) / 8, 0),
 		m_Teleports((width * height), ivec2 { -1, -1 }) {}
@@ -80,7 +80,7 @@ private:
 
 	int m_Width{};
 	int m_Height{};
-	BitCollideMap m_vMap{};
+	MapData m_MapData{};
 	std::vector<int> m_vCostSoFar{};
 	std::vector<ivec2> m_vCameFrom{};
 

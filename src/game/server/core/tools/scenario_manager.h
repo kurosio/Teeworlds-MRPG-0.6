@@ -35,20 +35,22 @@ class ScenarioBase
 	};
 
 	int m_ClientID {};
+	int m_ScenarioID {};
 	std::vector<Step> m_vSteps {};
 	size_t m_CurrentStepIndex {};
 	int m_LastStepTimeTick {};
 	bool m_Running {};
 
 protected:
-	virtual void SetupScenario() {}
-
-public:
-	ScenarioBase() = default;
-	virtual ~ScenarioBase();
-
 	virtual void OnRegisterEventListener(CEventListenerManager* pListener) {}
 	virtual void OnUnregisterEventListener(CEventListenerManager* pListener) {}
+	virtual void OnSetupScenario() {}
+	virtual bool OnStopConditions() { return true; }
+
+public:
+	ScenarioBase(int ScenarioID) : m_ScenarioID(ScenarioID) {}
+	virtual ~ScenarioBase();
+
 
 	CGS* GS() const;
 	IServer* Server() const;
@@ -100,9 +102,12 @@ public:
 		return *this;
 	}
 
+protected:
+	int GetNumSteps() const { return (int)m_vSteps.size(); }
+	void Stop();
+
 private:
 	void Start();
-	void Stop();
 	void Tick();
 	bool IsFinished() const { return m_CurrentStepIndex >= m_vSteps.size(); }
 	bool CanExecuteStep(const Step& step, long elapsedTick) const;
@@ -129,9 +134,11 @@ public:
 
 	void Start(std::unique_ptr<ScenarioBase> pScenario)
 	{
+		Stop(pScenario->m_ScenarioID);
+
 		pScenario->m_ClientID = m_ClientID;
 		pScenario->Start();
-		m_Scenarios.push_back(std::move(pScenario));
+		m_Scenarios.emplace_back(std::move(pScenario));
 	}
 
 	void StopAll()
@@ -139,17 +146,31 @@ public:
 		for(auto& pScenario : m_Scenarios)
 		{
 			if(pScenario)
+			{
 				pScenario->Stop();
+			}
 		}
 		m_Scenarios.clear();
+	}
+
+	void Stop(int ScenarioID)
+	{
+		const auto it = std::ranges::find_if(m_Scenarios, [ScenarioID](const auto& pScenario) { return pScenario->m_ScenarioID == ScenarioID; });
+		if(it != m_Scenarios.end())
+		{
+			(*it)->Stop();
+			m_Scenarios.erase(it);
+		}
 	}
 
 	void Tick() const
 	{
 		for(auto& pScenario : m_Scenarios)
 		{
-			if(pScenario)
+			if(pScenario && pScenario->m_Running)
+			{
 				pScenario->Tick();
+			}
 		}
 	}
 
@@ -164,6 +185,12 @@ public:
 			}
 			return false;
 		});
+	}
+
+	bool IsActive(int ScenarioID)
+	{
+		const auto it = std::ranges::find_if(m_Scenarios, [ScenarioID](const auto& pScenario) { return pScenario->m_ScenarioID == ScenarioID; });
+		return it != m_Scenarios.end();
 	}
 };
 

@@ -94,9 +94,9 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 		Mail.m_ID = pRes->getInt("ID");
 		Mail.m_Name = pRes->getString("Name").c_str();
 		Mail.m_Sender = pRes->getString("Sender").c_str();
-		if(Readed && vReadedMails.size() < MAILS_MAX_CAPACITY)
+		if(Readed && vReadedMails.size() < MAIL_MAX_CAPACITY)
 			vReadedMails.push_back(Mail);
-		else if(vUnreadMails.size() < MAILS_MAX_CAPACITY)
+		else if(vUnreadMails.size() < MAIL_MAX_CAPACITY)
 			vUnreadMails.push_back(Mail);
 	}
 
@@ -108,13 +108,13 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// unreaded mails
-	VoteWrapper VUnreadList(ClientID, VWF_OPEN, "\u2709 List of unread mails ({} of {})", (int)vUnreadMails.size(), (int)MAILS_MAX_CAPACITY);
+	VoteWrapper VUnreadList(ClientID, VWF_OPEN, "\u2709 List of unread mails ({} of {})", (int)vUnreadMails.size(), (int)MAIL_MAX_CAPACITY);
 	for(auto& p : vUnreadMails)
 		VUnreadList.AddMenu(MENU_MAILBOX_SELECTED, p.m_ID, "{} (UID:{})", p.m_Name,p.m_ID);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// readed mails
-	VoteWrapper VReadList(ClientID, VWF_OPEN, "\u2709 List of read mails ({} of {})", (int)vReadedMails.size(), (int)MAILS_MAX_CAPACITY);
+	VoteWrapper VReadList(ClientID, VWF_OPEN, "\u2709 List of read mails ({} of {})", (int)vReadedMails.size(), (int)MAIL_MAX_CAPACITY);
 	for(auto& p : vReadedMails)
 		VReadList.AddMenu(MENU_MAILBOX_SELECTED, p.m_ID, "{} (UID:{})", p.m_Name, p.m_ID);
 	VoteWrapper::AddEmptyline(ClientID);
