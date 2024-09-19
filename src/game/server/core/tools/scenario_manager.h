@@ -40,6 +40,7 @@ class ScenarioBase
 	size_t m_CurrentStepIndex {};
 	int m_LastStepTimeTick {};
 	bool m_Running {};
+	int m_Flags {};
 
 protected:
 	virtual void OnRegisterEventListener(CEventListenerManager* pListener) {}
@@ -48,9 +49,16 @@ protected:
 	virtual bool OnStopConditions() { return true; }
 
 public:
-	ScenarioBase(int ScenarioID) : m_ScenarioID(ScenarioID) {}
+	enum
+	{
+		FLAG_NONE = 0,
+		FLAG_REPEATABLE = 1 << 0,
+	};
+
+	ScenarioBase(int ScenarioID, int Flags = 0) : m_ScenarioID(ScenarioID), m_Flags(Flags) {}
 	virtual ~ScenarioBase();
 
+	bool IsRepeatable() const { return m_Flags & FLAG_REPEATABLE; }
 
 	CGS* GS() const;
 	IServer* Server() const;

@@ -286,6 +286,7 @@ enum MenuList
 enum
 {
 	SCENARIO_TUTORIAL = 1,
+	SCENARIO_EIDOLON,
 };
 
 // primary

@@ -56,7 +56,17 @@ void ScenarioBase::ExecuteCurrentStep()
 
 	if(IsFinished())
 	{
-		Stop();
+		if(IsRepeatable())
+		{
+			m_CurrentStepIndex = 0;
+			m_LastStepTimeTick = 0;
+			m_vSteps.clear();
+			Start();
+		}
+		else
+		{
+			Stop();
+		}
 	}
 }
 

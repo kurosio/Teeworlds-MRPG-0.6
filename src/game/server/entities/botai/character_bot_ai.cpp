@@ -14,6 +14,8 @@
 #include <game/server/core/entities/eidolons/base.h>
 #include <game/server/core/tools/path_finder.h>
 
+#include <game/server/core/scenarios/scenario_eidolon.h>
+
 #include "nurse_heart.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
@@ -104,6 +106,7 @@ void CCharacterBotAI::InitBot()
 		// Case for bot type TYPE_BOT_EIDOLON
 		case TYPE_BOT_EIDOLON:
 		{
+			m_pBotPlayer->Scenarios().Start(std::make_unique<CEidolonScenario>());
 			m_Core.m_Solo = true;
 
 			// Create a new CEidolon object with the specified parameters
