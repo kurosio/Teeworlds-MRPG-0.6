@@ -1,6 +1,6 @@
 #include "eidolon_ai.h"
 
-#include <game/server/entities/botai/character_bot_ai.h>
+#include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/scenarios/scenario_eidolon.h>

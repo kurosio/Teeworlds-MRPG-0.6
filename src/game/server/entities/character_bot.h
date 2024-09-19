@@ -1,12 +1,11 @@
 /* (c) Alexandre Díaz. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_BOTAI_HELPER_H
-#define GAME_SERVER_BOTAI_HELPER_H
+#ifndef GAME_SERVER_ENTITIES_CHARACTER_BOT_H
+#define GAME_SERVER_ENTITIES_CHARACTER_BOT_H
 
-#include "../character.h"
+#include "character.h"
 #include "ai/base_ai.h"
 
-class CEntityFunctionNurse;
 class CCharacterBotAI : public CCharacter
 {
 	MACRO_ALLOC_POOL_ID()

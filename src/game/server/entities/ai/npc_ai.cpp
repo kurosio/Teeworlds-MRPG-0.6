@@ -1,9 +1,9 @@
 #include "npc_ai.h"
 
-#include <game/server/entities/botai/character_bot_ai.h>
+#include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/entities/botai/nurse_heart.h>
+//#include <game/server/entities/botai/nurse_heart.h>
 
 CNpcAI::CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo) {}
@@ -18,7 +18,7 @@ void CNpcAI::OnSpawn()
 	}
 	else if(Function == FUNCTION_NPC_NURSE)
 	{
-		new CNurseHeart(&GS()->m_World, m_ClientID);
+		//new CNurseHeart(&GS()->m_World, m_ClientID);
 	}
 	else if(Function == FUNCTION_NPC_GUARDIAN)
 	{

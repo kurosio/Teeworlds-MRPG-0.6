@@ -1,7 +1,6 @@
-#include "quest_mob.h"
+#include "quest_mob_ai.h"
 
-#include <game/server/entities/botai/character_bot_ai.h>
-#include <game/server/entity_manager.h>
+#include <game/server/entities/character_bot.h>
 #include <game/server/core/components/quests/quest_manager.h>
 #include <game/server/gamecontext.h>
 

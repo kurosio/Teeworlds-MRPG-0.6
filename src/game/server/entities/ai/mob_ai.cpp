@@ -1,7 +1,7 @@
 #include "mob_ai.h"
 
-#include <game/server/entities/botai/character_bot_ai.h>
 #include <game/server/entity_manager.h>
+#include <game/server/entities/character_bot.h>
 #include <game/server/core/components/quests/quest_manager.h>
 #include <game/server/gamecontext.h>
 
@@ -29,10 +29,6 @@ void CMobAI::OnGiveRandomEffect(int ClientID)
 	{
 		pPlayer->GiveEffect(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
 	}
-}
-
-void CMobAI::OnTakeDamage(int Dmg, int From, int Weapon)
-{
 }
 
 void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
@@ -119,10 +115,6 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// append defeat mob progress
 	GS()->Core()->QuestManager()->TryAppendDefeatProgress(pPlayer, m_pMobInfo->m_BotID);
-}
-
-void CMobAI::OnHandleTunning(CTuningParams* pTuning)
-{
 }
 
 void CMobAI::OnTargetRules(float Radius)

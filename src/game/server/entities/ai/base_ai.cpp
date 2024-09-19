@@ -1,10 +1,9 @@
 #include "base_ai.h"
 
 #include <engine/server.h>
+#include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
 #include <game/server/playerbot.h>
-
-#include "game/server/entities/botai/character_bot_ai.h"
 
 CBaseAI::CBaseAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: m_pPlayer(pPlayer), m_pCharacter(pCharacter)

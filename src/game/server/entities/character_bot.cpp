@@ -1,21 +1,18 @@
 /* (c) Alexandre Díaz. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <game/server/gamecontext.h>
-#include <game/server/playerbot.h>
-#include "character_bot_ai.h"
-
 #include <game/collision.h>
-
-#include <game/server/core/components/skills/entities/heart_healer.h> // for nurse
-#include <game/server/core/components/Bots/BotData.h>
-
 #include <game/server/core/tools/path_finder.h>
+#include "character_bot.h"
 
 #include "ai/npc_ai.h"
 #include "ai/eidolon_ai.h"
 #include "ai/mob_ai.h"
-#include "ai/quest_mob.h"
-#include "ai/quest_npc.h"
+#include "ai/quest_mob_ai.h"
+#include "ai/quest_npc_ai.h"
+
+#include <game/server/core/components/Bots/BotData.h>
+#include <game/server/gamecontext.h>
+#include <game/server/playerbot.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 

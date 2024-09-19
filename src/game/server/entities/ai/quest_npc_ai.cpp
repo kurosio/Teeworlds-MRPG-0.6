@@ -1,6 +1,6 @@
-#include "quest_npc.h"
+#include "quest_npc_ai.h"
 
-#include <game/server/entities/botai/character_bot_ai.h>
+#include <game/server/entities/character_bot.h>
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
