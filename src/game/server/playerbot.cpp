@@ -3,7 +3,7 @@
 #include "playerbot.h"
 #include "gamecontext.h"
 
-#include "entities/botai/character_bot_ai.h"
+#include "entities/character_bot.h"
 #include "worldmodes/dungeon.h"
 
 #include "core/components/Bots/BotManager.h"
@@ -162,7 +162,12 @@ void CPlayerBot::PrepareRespawnTick()
 		m_DisabledBotDamage = false;
 		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * 30;
 	}
-	else if(m_BotType == TYPE_BOT_QUEST || m_BotType == TYPE_BOT_NPC || m_BotType == TYPE_BOT_EIDOLON)
+	else if(m_BotType == TYPE_BOT_EIDOLON)
+	{
+		m_DisabledBotDamage = false;
+		m_aPlayerTick[Respawn] = Server()->Tick();
+	}
+	else if(m_BotType == TYPE_BOT_QUEST || m_BotType == TYPE_BOT_NPC)
 	{
 		m_DisabledBotDamage = true;
 		m_aPlayerTick[Respawn] = Server()->Tick();

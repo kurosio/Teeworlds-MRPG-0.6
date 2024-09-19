@@ -324,8 +324,12 @@ void CPlayerDialog::Next()
 		// Handle NPC bot type
 		if(m_BotType == TYPE_BOT_NPC)
 		{
-			int QuestID = NpcBotInfo::ms_aNpcBot[m_MobID].m_GiveQuestID;
-			m_pPlayer->GetQuest(QuestID)->Accept();
+			const auto* pNpcInfo = &NpcBotInfo::ms_aNpcBot[m_MobID];
+			if(pNpcInfo->m_Function == FUNCTION_NPC_GIVE_QUEST)
+			{
+				int QuestID = pNpcInfo->m_GiveQuestID;
+				m_pPlayer->GetQuest(QuestID)->Accept();
+			}
 		}
 		// Handle Quest bot type
 		else if(m_BotType == TYPE_BOT_QUEST)

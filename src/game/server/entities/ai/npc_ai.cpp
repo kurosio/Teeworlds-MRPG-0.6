@@ -61,21 +61,22 @@ void CNpcAI::OnTargetRules(float Radius)
 
 	if(Function == FUNCTION_NPC_GUARDIAN)
 	{
-		const auto* pTarget = GS()->GetPlayer(m_Target.GetCID(), false, true);
-		const auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
+		auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
 		{
+			const bool IsCrimaScoreMax = pCandidate->Account()->IsCrimeScoreMaxedOut();
 			const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
 
-			if(pTarget)
-			{
-				const int CurrentTotalAttHP = pTarget->GetTotalAttributeValue(AttributeIdentifier::HP);
-				const int CandidateTotalAttHP = pCandidate->GetTotalAttributeValue(AttributeIdentifier::HP);
-				return !DamageDisabled && (CurrentTotalAttHP < CandidateTotalAttHP);
-			}
-
-			const bool AgressionFactor = GS()->IsWorldType(WorldType::Dungeon) || rand() % 30 == 0;
-			return !DamageDisabled && AgressionFactor;
+			return !DamageDisabled && IsCrimaScoreMax;
 		});
+
+		if(!pPlayer)
+		{
+			pPlayer = SearchPlayerBotCondition(Radius, [&](const CPlayerBot* pCandidate)
+			{
+				const bool DamageDisabled = pCandidate->IsDisabledBotDamage();
+				return !DamageDisabled;
+			});
+		}
 
 		if(pPlayer)
 		{

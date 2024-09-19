@@ -10,7 +10,7 @@ class CCharacterBotAI : public CCharacter
 {
 	MACRO_ALLOC_POOL_ID()
 
-	CBaseAI* m_pAI{};
+	std::unique_ptr<CBaseAI> m_pAI{};
 	CPlayerBot* m_pBotPlayer{};
 
 	int m_MoveTick{};
@@ -23,9 +23,8 @@ class CCharacterBotAI : public CCharacter
 
 public:
 	CCharacterBotAI(CGameWorld* pWorld);
-	~CCharacterBotAI() override;
 
-	CBaseAI* AI() const { return m_pAI; }
+	CBaseAI* AI() const { return m_pAI.get(); }
 	void SetForcedWeapon(int WeaponID);
 	void ClearForcedWeapon();
 

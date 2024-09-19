@@ -11,7 +11,7 @@ CBaseAI::CBaseAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	m_ClientID = pPlayer->GetCID();
 	m_Target.Reset();
 	m_Target.Init(m_pCharacter);
-	m_SpawnPoint = m_pCharacter->GetPos();
+	m_SpawnPoint = m_pCharacter->m_Core.m_Pos;
 }
 
 IServer* CBaseAI::Server() const

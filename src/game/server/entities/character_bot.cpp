@@ -20,43 +20,38 @@ CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld)
 {
 	m_aListDmgPlayers.reserve(MAX_CLIENTS);
 }
-CCharacterBotAI::~CCharacterBotAI()
-{
-	delete m_pAI;
-	m_pAI = nullptr;
-}
 
 bool CCharacterBotAI::Spawn(CPlayer* pPlayer, vec2 Pos)
 {
 	m_pBotPlayer = static_cast<CPlayerBot*>(pPlayer);
 
-	const int Bottype = m_pBotPlayer->GetBotType();
-	if(Bottype == TYPE_BOT_NPC)
-	{
-		const int MobID = m_pBotPlayer->GetBotMobID();
-		m_pAI = new CNpcAI(&NpcBotInfo::ms_aNpcBot[MobID], m_pBotPlayer, this);
-	}
-	else if(Bottype == TYPE_BOT_QUEST)
-	{
-		const int MobID = m_pBotPlayer->GetBotMobID();
-		m_pAI = new CQuestNpcAI(&QuestBotInfo::ms_aQuestBot[MobID], m_pBotPlayer, this);
-	}
-	else if(Bottype == TYPE_BOT_QUEST_MOB)
-	{
-		m_pAI = new CQuestMobAI(&m_pBotPlayer->GetQuestBotMobInfo(), m_pBotPlayer, this);
-	}
-	else if(Bottype == TYPE_BOT_MOB)
-	{
-		const int MobID = m_pBotPlayer->GetBotMobID();
-		m_pAI = new CMobAI(&MobBotInfo::ms_aMobBot[MobID], m_pBotPlayer, this);
-	}
-	else if(Bottype == TYPE_BOT_EIDOLON)
-	{
-		m_pAI = new CEidolonAI(m_pBotPlayer, this);
-	}
-
 	if(CCharacter::Spawn(m_pBotPlayer, Pos))
 	{
+		const int Bottype = m_pBotPlayer->GetBotType();
+		if(Bottype == TYPE_BOT_NPC)
+		{
+			const int MobID = m_pBotPlayer->GetBotMobID();
+			m_pAI = std::make_unique<CNpcAI>(&NpcBotInfo::ms_aNpcBot[MobID], m_pBotPlayer, this);
+		}
+		else if(Bottype == TYPE_BOT_QUEST)
+		{
+			const int MobID = m_pBotPlayer->GetBotMobID();
+			m_pAI = std::make_unique<CQuestNpcAI>(&QuestBotInfo::ms_aQuestBot[MobID], m_pBotPlayer, this);
+		}
+		else if(Bottype == TYPE_BOT_QUEST_MOB)
+		{
+			m_pAI = std::make_unique<CQuestMobAI>(&m_pBotPlayer->GetQuestBotMobInfo(), m_pBotPlayer, this);
+		}
+		else if(Bottype == TYPE_BOT_MOB)
+		{
+			const int MobID = m_pBotPlayer->GetBotMobID();
+			m_pAI = std::make_unique<CMobAI>(&MobBotInfo::ms_aMobBot[MobID], m_pBotPlayer, this);
+		}
+		else if(Bottype == TYPE_BOT_EIDOLON)
+		{
+			m_pAI = std::make_unique<CEidolonAI>(m_pBotPlayer, this);
+		}
+
 		m_pAI->OnSpawn();
 		return true;
 	}

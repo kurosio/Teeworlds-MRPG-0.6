@@ -120,7 +120,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 void CMobAI::OnTargetRules(float Radius)
 {
 	const auto* pTarget = GS()->GetPlayer(m_Target.GetCID(), false, true);
-	const auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
+	auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
 	{
 		const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
 
@@ -134,6 +134,28 @@ void CMobAI::OnTargetRules(float Radius)
 		const bool AgressionFactor = GS()->IsWorldType(WorldType::Dungeon) || rand() % 30 == 0;
 		return !DamageDisabled && AgressionFactor;
 	});
+
+	if(!pPlayer)
+	{
+		pPlayer = SearchPlayerBotCondition(Radius, [&](const CPlayerBot* pCandidate)
+		{
+			const bool DamageDisabled = pCandidate->IsDisabledBotDamage();
+			const int MobIDCandidate = pCandidate->GetBotMobID();
+			const int BottypeCandidate = pCandidate->GetBotType();
+
+			if(BottypeCandidate == TYPE_BOT_EIDOLON)
+				return !DamageDisabled;
+
+			if(BottypeCandidate == TYPE_BOT_NPC)
+			{
+				const auto* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobIDCandidate];
+
+				if(pNpcBot->m_Function == FUNCTION_NPC_GUARDIAN)
+					return !DamageDisabled;
+			}
+			return false;
+		});
+	}
 
 	if(pPlayer)
 	{
