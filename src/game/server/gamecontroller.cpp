@@ -83,8 +83,11 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	{
 		pChr->IncreaseHealth(pChr->GetPlayer()->GetStartHealth());
 		pChr->GiveWeapon(WEAPON_HAMMER, -1);
+
 		for(int i = WEAPON_GUN; i < NUM_WEAPONS - 1; i++)
+		{
 			pChr->GiveWeapon(i, 10);
+		}
 		return true;
 	}
 

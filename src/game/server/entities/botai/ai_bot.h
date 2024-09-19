@@ -65,12 +65,15 @@ class CAIController
 			}
 		}
 
-		void SetType(TARGET_TYPE TargetType)
+		bool SetType(TARGET_TYPE TargetType)
 		{
-			if(m_pCharacter)
+			if(m_pCharacter && m_Type != TargetType)
 			{
 				m_Type = TargetType;
+				return true;
 			}
+
+			return false;
 		}
 
 		bool IsEmpty() const { return m_TargetID <= -1; }

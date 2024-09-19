@@ -2,19 +2,36 @@
 
 #include <game/server/gamecontext.h>
 
+CPlayer* CEidolonScenario::GetOwner() const
+{
+	const auto* pBot = dynamic_cast<CPlayerBot*>(GetPlayer());
+	return pBot ? pBot->GetEidolonOwner() : nullptr;
+}
+
 bool CEidolonScenario::OnStopConditions()
 {
 	const auto* pBot = dynamic_cast<CPlayerBot*>(GetPlayer());
-	return !pBot || !pBot->GetCharacter() || pBot->GetBotType() != TYPE_BOT_EIDOLON;
+	return !pBot || !pBot->GetCharacter() || !pBot->GetEidolonOwner() || !pBot->GetEidolonOwner()->GetCharacter();
 }
 
 void CEidolonScenario::OnSetupScenario()
 {
-	auto& step = AddStep(100);
-	step.WhenFinished([this](auto*)
-	{
-		//GS()->SendChat(GetClientID(), CHAT_ALL, "Hmmm...");
-	});
+	const auto* pBot = dynamic_cast<CPlayerBot*>(GetPlayer());
+	const auto* pOwner = GetOwner();
+	CCharacter* pBotChar = pBot->GetCharacter();
+	CCharacter* pOwnerChar = pOwner->GetCharacter();
 
-	// Setup the scenario
+	if(pOwner->GetHealth() < pOwner->GetStartHealth() * 0.1)
+	{
+
+	}
+}
+
+void CEidolonScenario::SendRandomChatMessage(const std::vector<const char*>& messages) const
+{
+	if(messages.empty())
+		return;
+
+	const int randIndex = rand() % messages.size();
+	GS()->SendChat(GetClientID(), CHAT_ALL, messages[randIndex]);
 }

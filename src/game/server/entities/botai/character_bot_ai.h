@@ -20,6 +20,10 @@ class CCharacterBotAI : public CCharacter
 	vec2 m_PrevPos;
 	vec2 m_WallPos;
 	int m_EmotionsStyle;
+
+	vec2 m_DieForce {};
+	std::optional<int> m_ForcedActiveWeapon {};
+
 	ska::unordered_set< int > m_aListDmgPlayers;
 
 public:
@@ -27,6 +31,8 @@ public:
 	~CCharacterBotAI() override;
 
 	CAIController* AI() const { return m_pAI; }
+	void SetForcedWeapon(int WeaponID);
+	void ClearForcedWeapon();
 
 private:
 	void InitBot();
@@ -39,38 +45,41 @@ private:
 	void Die(int Killer, int Weapon) override;
 	bool GiveWeapon(int Weapon, int GiveAmmo) override;
 
-	void RewardPlayer(CPlayer *pPlayer, vec2 ForceDies) const;
-	void HandleMobSkillPointDrop(CPlayer* pPlayer) const;
+	void RewardPlayer(CPlayer *pPlayer) const;
+	void HandleQuestMobReward(CPlayer* pPlayer) const;
+	void HandleMobReward(CPlayer* pPlayer) const;
 
 	/*
 	 * Changing weapons randomly, only for those that have in equipment
 	 */
-	void ChangeWeapons();
+	void SelectWeaponAtRandomInterval();
+	void SelectEmoteAtRandomInterval(int EmotionStyle);
 
-
-	void EmotesAction(int EmotionStyle);
 	void SetAim(vec2 Dir);
 
 	bool SearchPlayersForDialogue();
-	void HandleBot();
-	void EngineNPC();
-	void EngineMobs();
-	void EngineEidolons();
-	void EngineQuestMob();
-	void EngineQuestNPC();
+	void ProcessBotBehavior();
+
+	void ProcessNPC();
+	void ProcessGuardianNPC();
+	void ProcessMobs();
+	void ProcessEidolons();
+	void ProcessQuestMob();
+	void ProcessQuestNPC();
+
 	void HandleTuning() override;
 	void BehaviorTick();
 
-	CPlayer *SearchPlayer(float Distance) const;
-    CPlayer *SearchTankPlayer(float Distance);
-	CPlayerBot* SearchMob(float Distance) const;
+	void UpdateTarget(float Radius);
+
+	CPlayer* SearchPlayerCondition(float Distance, const std::function<bool(CPlayer*)>& Condition) const;
+	CPlayerBot* SearchPlayerBotCondition(float Distance, const std::function<bool(CPlayerBot*)>& Condition) const;
 
 	void Move();
 	void Fire();
 
 	// Bots functions
 	bool FunctionNurseNPC();
-	bool FunctionGuardianNPC();
 	bool BaseFunctionNPC();
 };
 

@@ -418,7 +418,7 @@ void CGS::SendChatTarget(int ClientID, const char* pText) const
 /* #########################################################################
 	CHAT FUNCTIONS
 ######################################################################### */
-void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
+void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mask)
 {
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
 		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat",
@@ -434,7 +434,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 
 	if(Mode == CHAT_ALL)
 	{
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1, Mask);
 	}
 	else if(Mode == CHAT_TEAM)
 	{
@@ -451,12 +451,32 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText)
 		{
 			CPlayer* pSearchPlayer = GetPlayer(i, true);
 			if(pSearchPlayer && pChatterPlayer->Account()->IsClientSameGuild(i))
-				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, i);
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, i, Mask);
 		}
 
 		// pack one for the recording only
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NOSEND, -1);
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NOSEND, -1, Mask);
 	}
+}
+
+void CGS::SendChatRadius(int ChatterClientID, float Radius, const char* pText)
+{
+	int64_t MaskRadius = 0;
+	CNetMsg_Sv_Chat Msg;
+	Msg.m_Team = 0;
+	Msg.m_ClientId = ChatterClientID;
+	Msg.m_pMessage = pText;
+
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		CPlayer* pPlayer = GetPlayer(i);
+		if(!pPlayer)
+			continue;
+
+		if(distance(pPlayer->m_ViewPos, m_apPlayers[ChatterClientID]->m_ViewPos) < Radius)
+			MaskRadius |= CmaskOne(i);
+	}
+	SendChat(ChatterClientID, CHAT_ALL, pText, MaskRadius);
 }
 
 /* #########################################################################

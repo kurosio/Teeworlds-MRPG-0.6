@@ -98,7 +98,8 @@ public:
 	void BroadcastTick(int ClientID);
 	void MarkUpdatedBroadcast(int ClientID);
 	void SendChatTarget(int ClientID, const char *pText) const;
-	void SendChat(int ChatterClientID, int Mode, const char *pText);
+	void SendChat(int ChatterClientID, int Mode, const char *pText, int64_t Mask = -1);
+	void SendChatRadius(int ChatterClientID, float Radius, const char *pText);
 	void SendMotd(int ClientID, const char* pText);
 	void SendEmoticon(int ClientID, int Emoticon);
 	void SendWeaponPickup(int ClientID, int Weapon);

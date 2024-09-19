@@ -72,6 +72,9 @@ void ScenarioBase::ExecuteCurrentStep()
 
 void ScenarioBase::Start()
 {
+	if(!GetPlayer() || OnStopConditions())
+		return;
+
 	OnSetupScenario();
 
 	if(m_vSteps.empty())
