@@ -879,7 +879,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	m_Core.m_Vel += Force;
 	const float MaximumVel = GS()->IsWorldType(WorldType::Dungeon) ? 16.0f : 24.0f;
 	if(length(m_Core.m_Vel) > MaximumVel)
+	{
 		m_Core.m_Vel = normalize(m_Core.m_Vel) * MaximumVel;
+	}
 
 	// check disallow damage
 	if(!IsAllowedPVP(FromCID))
@@ -938,6 +940,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 
 		// give effects from player or bot to who got damage
 		pFrom->GetCharacter()->GiveRandomEffects(m_pPlayer->GetCID());
+		m_LastDamageTakenTick[FromCID] = Server()->Tick();
 	}
 	Dmg = (FromCID == m_pPlayer->GetCID() ? maximum(1, Dmg / 2) : maximum(1, Dmg));
 

@@ -5,7 +5,7 @@
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/entities/botai/character_bot_ai.h>
+#include <game/server/entities/character_bot.h>
 #include <game/server/core/entities/group/entitiy_group.h>
 
 #include "entities/attack_teleport/attack_teleport.h"

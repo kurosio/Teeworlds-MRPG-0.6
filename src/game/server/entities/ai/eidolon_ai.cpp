@@ -25,7 +25,7 @@ void CEidolonAI::OnTargetRules(float Radius)
 	const auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
 	{
 		const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
-		const bool AllowedPVP = pOwner->GetCharacter()->IsAllowedPVP(pCandidate->GetCID());
+		const bool AllowedPVP = pOwner->GetCID() != pCandidate->GetCID() && pOwner->GetCharacter()->IsAllowedPVP(pCandidate->GetCID());
 
 		if(pTarget)
 		{
@@ -47,7 +47,11 @@ void CEidolonAI::OnTargetRules(float Radius)
 			const int BottypeCandidate = pCandidatePlayer->GetBotType();
 
 			if(BottypeCandidate == TYPE_BOT_MOB)
+				return !DamageDisabled;
+
+			if(BottypeCandidate == TYPE_BOT_EIDOLON)
 			{
+				// TODO
 				return !DamageDisabled;
 			}
 
@@ -57,12 +61,6 @@ void CEidolonAI::OnTargetRules(float Radius)
 				const bool IsActiveForClient = questBotMobInfo.m_ActiveForClient[pOwner->GetCID()];
 
 				return !DamageDisabled && IsActiveForClient;
-			}
-
-			if(BottypeCandidate == TYPE_BOT_EIDOLON)
-			{
-				// TODO
-				return !DamageDisabled;
 			}
 
 			if(BottypeCandidate == TYPE_BOT_NPC)

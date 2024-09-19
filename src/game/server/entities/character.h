@@ -22,6 +22,7 @@ class CCharacter : public CEntity
 
 	class CPlayer* m_pPlayer {};
 	CTileHandler* m_pTilesHandler {};
+	int m_LastDamageTakenTick[MAX_CLIENTS];
 
 	int m_LastWeapon {};
 	int m_QueuedWeapon {};
