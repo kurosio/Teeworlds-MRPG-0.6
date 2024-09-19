@@ -141,8 +141,8 @@ bool CPlayerBot::IsActive() const
 
 bool CPlayerBot::IsConversational() const
 {
-	return ((m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function != FUNCTION_NPC_GUARDIAN) || 
-		(m_BotType == TYPE_BOT_QUEST && QuestBotInfo::ms_aQuestBot[m_MobID].m_HasAction)) && IsActive();
+	const auto* pChar = dynamic_cast<CCharacterBotAI*>(m_pCharacter);
+	return IsActive() && pChar && pChar->AI()->IsConversational();
 }
 
 void CPlayerBot::PrepareRespawnTick()

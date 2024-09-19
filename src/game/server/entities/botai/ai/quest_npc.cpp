@@ -1,0 +1,56 @@
+#include "quest_npc.h"
+
+#include <game/server/entities/botai/character_bot_ai.h>
+#include <game/server/entity_manager.h>
+#include <game/server/gamecontext.h>
+
+CQuestNpcAI::CQuestNpcAI(QuestBotInfo* pQuestNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
+	: CBaseAI(pPlayer, pCharacter), m_pQuestNpcInfo(pQuestNpcInfo) {}
+
+void CQuestNpcAI::OnSpawn()
+{
+	if(m_pQuestNpcInfo->m_HasAction)
+	{
+		GS()->EntityManager()->EffectCircleDamage(m_ClientID, Server()->TickSpeed() / 2, Server()->TickSpeed());
+	}
+}
+
+void CQuestNpcAI::Process()
+{
+	m_pCharacter->SetSafeFlags();
+
+	// random direction target
+	if(Server()->Tick() % Server()->TickSpeed() == 0)
+	{
+		m_pCharacter->m_Input.m_TargetY = (rand() % 9) - 4;
+	}
+	m_pCharacter->m_Input.m_TargetX = m_pCharacter->m_Input.m_Direction * 10 + 1;
+
+	// behavior
+	SearchPlayerCondition(128.f, [&](CPlayer* pCandidate)
+	{
+		const int CandidateCID = pCandidate->GetCID();
+
+		if(m_pPlayer->IsActive() && m_pPlayer->IsActiveForClient(CandidateCID))
+		{
+			const vec2& CandidatePos = pCandidate->GetCharacter()->m_Core.m_Pos;
+			const vec2& SelfPos = m_pCharacter->m_Core.m_Pos;
+
+			pCandidate->GetCharacter()->SetSafeFlags();
+			m_pCharacter->m_Input.m_TargetX = static_cast<int>(CandidatePos.x - SelfPos.x);
+			m_pCharacter->m_Input.m_TargetY = static_cast<int>(CandidatePos.y - SelfPos.y);
+			m_pCharacter->m_Input.m_Direction = 0;
+
+			GS()->Broadcast(CandidateCID, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialogue: \"hammer hit\"");
+		}
+		return false;
+	});
+
+	// random interval emote
+	SelectEmoteAtRandomInterval(0);
+}
+
+bool CQuestNpcAI::IsConversational()
+{
+	return m_pQuestNpcInfo->m_HasAction;
+}

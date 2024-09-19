@@ -67,11 +67,6 @@ protected:
 	std::string m_Zonename {};
 	CMultipleOrbite* m_pMultipleOrbite {};
 
-	// these are non-heldback inputs
-	CNetObj_PlayerInput m_Input {};
-	CNetObj_PlayerInput m_LatestPrevInput {};
-	CNetObj_PlayerInput m_LatestInput {};
-
 	void HandleWeapons();
 	void HandleNinja();
 	void HandleTiles();
@@ -83,6 +78,11 @@ protected:
 	void AutoUseHealingPotionIfNeeded() const;
 
 public:
+	// these are non-heldback inputs
+	CNetObj_PlayerInput m_Input {};
+	CNetObj_PlayerInput m_LatestPrevInput {};
+	CNetObj_PlayerInput m_LatestInput {};
+
 	static constexpr int ms_PhysSize = 28;
 	CCharacterCore m_Core {};
 

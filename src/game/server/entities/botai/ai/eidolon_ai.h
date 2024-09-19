@@ -1,0 +1,19 @@
+#ifndef GAME_SERVER_ENTITIES_AI_EIDOLON_DEFAULT_AI_H
+#define GAME_SERVER_ENTITIES_AI_EIDOLON_DEFAULT_AI_H
+
+#include "base_ai.h"
+
+class CEidolonAI final : public CBaseAI
+{
+public:
+	CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter);
+
+	void OnSpawn() override;
+
+	void OnTargetRules(float Radius) override;
+	void Process() override;
+
+	void OnSnapDDNetCharacter(int SnappingClient, CNetObj_DDNetCharacter* pDDNetCharacter) override;
+};
+
+#endif

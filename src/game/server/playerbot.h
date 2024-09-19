@@ -8,6 +8,21 @@
 // forward declarations
 struct PathResult;
 
+class CQuestBotMobInfo
+{
+public:
+	int m_QuestID;
+	int m_QuestStep;
+	int m_MoveToStep;
+	int m_AttributePower;
+	int m_AttributeSpread;
+	int m_WorldID;
+	vec2 m_Position;
+
+	bool m_ActiveForClient[MAX_PLAYERS] {};
+	bool m_CompleteClient[MAX_PLAYERS] {};
+};
+
 class CPlayerBot : public CPlayer
 {
 	MACRO_ALLOC_POOL_ID()
@@ -19,20 +34,7 @@ class CPlayerBot : public CPlayer
 	int m_BotStartHealth;
 	bool m_DisabledBotDamage;
 	int m_DungeonAllowedSpawn;
-
-	struct CQuestBotMobInfo
-	{
-		int m_QuestID;
-		int m_QuestStep;
-		int m_MoveToStep;
-		int m_AttributePower;
-		int m_AttributeSpread;
-		int m_WorldID;
-		vec2 m_Position;
-
-		bool m_ActiveForClient[MAX_PLAYERS]{};
-		bool m_CompleteClient[MAX_PLAYERS]{};
-	} m_QuestMobInfo;
+	CQuestBotMobInfo m_QuestMobInfo;
 
 public:
 	int m_LastPosTick;
