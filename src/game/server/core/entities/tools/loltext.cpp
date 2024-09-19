@@ -3,7 +3,7 @@
 #include <engine/server.h>
 
 CLolPlasma::CLolPlasma(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, int Lifespan)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_WORLD_TEXT, Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_VISUAL, Pos)
 {
 	m_StartOff = Pos;
 	m_Pos = (pParent ? pParent->GetPos() : vec2(0.0f, 0.0f)) + m_StartOff;

@@ -36,6 +36,7 @@ void CGameControllerTutorial::Tick()
 
 bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 {
+	// start tutorial scenario
 	pChr->GetPlayer()->Scenarios().Start(std::make_unique<CTutorialScenario>(m_JsonTutorialData));
 
 	return IGameController::OnCharacterSpawn(pChr);

@@ -4,7 +4,7 @@
 #include "gamecontext.h"
 
 #include "entities/projectile.h"
-#include "core/entities/event/entitiy_group.h"
+#include "core/entities/group/entitiy_group.h"
 #include "core/entities/items/drop_bonuses.h"
 #include "core/entities/items/drop_items.h"
 #include "core/entities/tools/flying_point.h"
@@ -12,7 +12,6 @@
 #include "core/entities/tools/loltext.h"
 
 #include "core/components/skills/entities/heart_healer.h"
-#include "core/entities/event/laser_entity.h"
 
 IServer* CEntityManager::Server() const
 {
@@ -117,7 +116,7 @@ void CEntityManager::LaserOrbite(CEntityLaserOrbite*& pOut, CEntity* pParent, in
 void CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage, std::weak_ptr<CEntityGroup>* pPtr) const
 {
 	// initialize group & config
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	groupPtr->SetConfig("radius", Radius);
 
 	// initialize element & config
@@ -181,7 +180,7 @@ void CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius
 void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadTick, std::weak_ptr<CEntityGroup>* pPtr) const
 {
 	// initialize group & config
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	groupPtr->SetConfig("healthRestored", RestoreHealth);
 
 	// initialize element & config
@@ -260,7 +259,7 @@ void CEntityManager::EnergyShield(int ClientID, vec2 Position, int Health, std::
 	};
 
 	// initialize group & config
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	groupPtr->SetConfig("health", Health);
 
 	// initialize elements
@@ -335,7 +334,7 @@ void CEntityManager::EnergyShield(int ClientID, vec2 Position, int Health, std::
 void CEntityManager::FlameWall(int ClientID, vec2 Position, float Radius, int Lifetime, int DamagePerTick, float SlowDownFactor, std::weak_ptr<CEntityGroup>* pPtr) const
 {
 	// initialize group & config
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	groupPtr->SetConfig("radius", Radius);
 
 	// initialize element & config
@@ -412,7 +411,7 @@ void CEntityManager::FlameWall(int ClientID, vec2 Position, float Radius, int Li
 void CEntityManager::FrostNova(int ClientID, vec2 Position, float Radius, int Damage, int FreezeTime, std::weak_ptr<CEntityGroup>* pPtr) const
 {
 	// initialize group & config
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	groupPtr->SetConfig("radius", Radius);
 
 	// initialize element & config
@@ -470,7 +469,7 @@ void CEntityManager::HealingAura(int ClientID, vec2 Position, float Radius, int 
 	};
 
 	// initialize group & config
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	groupPtr->SetConfig("radius", Radius);
 
 	// initialize element & config
@@ -590,7 +589,7 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 		return;
 
 	// initialize group & config
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	groupPtr->SetConfig("damage", Damage);
 	groupPtr->SetConfig("fireCount", FireCount);
 	groupPtr->SetConfig("explosionRadius", ExplosionRadius);
@@ -726,7 +725,7 @@ void CEntityManager::EffectCircleDamage(int ClientID, int DelayImpulse, int Dela
 		return;
 
 	// initialize group
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, ClientID);
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_VISUAL, ClientID);
 	groupPtr->SetConfig("delayImpulse", DelayImpulse);
 	groupPtr->SetConfig("delayBetweenImpulses", DelayBetweenImpulses);
 

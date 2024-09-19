@@ -2,7 +2,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/entities/event/entitiy_group.h>
+#include <game/server/core/entities/group/entitiy_group.h>
 #include <game/server/entities/projectile.h>
 
 CTutorialScenario::CTutorialScenario(const nlohmann::json& jsonData)
@@ -280,7 +280,7 @@ bool CTutorialScenario::IsShootingComplete() const
 void CTutorialScenario::CreateEntityShootmarkersTask(const vec2& pos, int health)
 {
 	// initialize group
-	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, GetClientID());
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_ACTION, GetClientID());
 	groupPtr->SetConfig("health", health);
 
 	// initialize effect

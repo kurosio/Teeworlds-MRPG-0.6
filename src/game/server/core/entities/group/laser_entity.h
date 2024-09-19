@@ -16,7 +16,7 @@ class CLaserEntity final : public CBaseEntity
 	LaserOptions m_Options;
 
 public:
-	CLaserEntity(CGameWorld* pGameWorld, const std::shared_ptr<CEntityGroup>& group, vec2 Pos, vec2 PosTo, int Owner, int LaserType = LASERTYPE_RIFLE);
+	CLaserEntity(CGameWorld* pGameWorld, const std::shared_ptr<CEntityGroup>& group, int EnttypeID, vec2 Pos, vec2 PosTo, int Owner, int LaserType = LASERTYPE_RIFLE);
 
 	void Snap(int SnappingClient) override;
 

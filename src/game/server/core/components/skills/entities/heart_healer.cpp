@@ -6,7 +6,7 @@
 #include <game/server/gamecontext.h>
 
 CHeartHealer::CHeartHealer(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, int Health, vec2 InitialVel, bool ShowInformation)
-: CEntity(pGameWorld, CGameWorld::ENTYPE_HEALTH, Pos)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos)
 {
 	// set the values by arguments
 	m_Pos = Pos;

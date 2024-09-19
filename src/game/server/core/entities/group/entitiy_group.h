@@ -10,20 +10,21 @@ class CGameWorld;
 
 class CEntityGroup : public std::enable_shared_from_this<CEntityGroup>, public mystd::CConfigurable
 {
+	int m_DefaultEnttypeID {};
 	CGameWorld* m_pWorld{};
 	int m_ClientID{};
 
 public:
-	static std::shared_ptr<CEntityGroup> NewGroup(CGameWorld* pWorld, int ClientID = -1)
+	static std::shared_ptr<CEntityGroup> NewGroup(CGameWorld* pWorld, int DefaultEnttypeID, int ClientID = -1)
 	{
-		auto groupPtr = std::shared_ptr<CEntityGroup>(new CEntityGroup(pWorld, ClientID));
+		auto groupPtr = std::shared_ptr<CEntityGroup>(new CEntityGroup(pWorld, DefaultEnttypeID, ClientID));
 		pWorld->m_EntityGroups.insert(groupPtr);
 		return groupPtr;
 	}
 	~CEntityGroup();
 
 private:
-	CEntityGroup(CGameWorld* pWorld, int ClientID = -1);
+	CEntityGroup(CGameWorld* pWorld, int DefaultEnttypeID, int ClientID);
 	void RemoveFromWorld();
 
 public:
@@ -32,9 +33,9 @@ public:
 	void RemoveEntity(CBaseEntity* pEnt);
 	void Clear();
 
-	CBaseEntity* CreateBase(vec2 Pos);
-	CLaserEntity* CreateLaser(vec2 Pos, vec2 PosTo, int LaserType = LASERTYPE_RIFLE);
-	CPickupEntity* CreatePickup(vec2 Pos, int Type = POWERUP_HEALTH, int Subtype = 0);
+	CBaseEntity* CreateBase(vec2 Pos, std::optional<int> EnttypeID = std::nullopt);
+	CLaserEntity* CreateLaser(vec2 Pos, vec2 PosTo, int LaserType = LASERTYPE_RIFLE, std::optional<int> EnttypeID = std::nullopt);
+	CPickupEntity* CreatePickup(vec2 Pos, int Type = POWERUP_HEALTH, int Subtype = 0, std::optional<int> EnttypeID = std::nullopt);
 
 	bool IsActive() const { return (int)m_vEntities.size() > 0; }
 

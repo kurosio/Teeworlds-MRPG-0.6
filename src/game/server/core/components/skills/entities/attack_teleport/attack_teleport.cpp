@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 
 CAttackTeleport::CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CPlayer* pPlayer, int SkillBonus)
-: CEntity(pGameWorld, CGameWorld::ENTYPE_ATTACK_TELEPORT, Pos, 28.0f)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_SKILL, Pos, 28.0f)
 {
 	m_pPlayer = pPlayer;
 	m_Direction = (m_pPlayer ? vec2(m_pPlayer->m_pLastInput->m_TargetX, m_pPlayer->m_pLastInput->m_TargetY) : vec2(0, 0));

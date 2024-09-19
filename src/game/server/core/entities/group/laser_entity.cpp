@@ -1,8 +1,8 @@
 ﻿#include "laser_entity.h"
 #include <game/server/gamecontext.h>
 
-CLaserEntity::CLaserEntity(CGameWorld* pGameWorld, const std::shared_ptr<CEntityGroup>& group, vec2 Pos, vec2 PosTo, int Owner, int LaserType)
-	: CBaseEntity(pGameWorld, group, CGameWorld::ENTTYPE_LASER, Pos, Owner)
+CLaserEntity::CLaserEntity(CGameWorld* pGameWorld, const std::shared_ptr<CEntityGroup>& group, int EnttypeID, vec2 Pos, vec2 PosTo, int Owner, int LaserType)
+	: CBaseEntity(pGameWorld, group, EnttypeID, Pos, Owner)
 {
 	m_PosTo = PosTo;
 	m_Options.LaserType = LaserType;
