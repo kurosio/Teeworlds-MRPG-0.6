@@ -19,6 +19,8 @@
 #include <game/server/core/entities/items/harvesting_item.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>
 
+#include "character_bot.h"
+
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 CCharacter::CCharacter(CGameWorld* pWorld)
@@ -1411,72 +1413,26 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 	if(m_Core.m_DamageDisabled || pFrom->GetCharacter()->m_Core.m_DamageDisabled)
 		return false;
 
-	// Check if the player or the sender is a NPC bot of type "Guardian"
-	if((m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN) ||
-		(pFrom->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[pFrom->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN &&
-			(m_pPlayer->IsBot() || m_pPlayer->Account()->IsCrimeScoreMaxedOut())))
-	{
-		return true;
-	}
-
-	// Allow damage if the player is a bot and is a quest mob, and the quest mob is active for the client, and the damage is coming from another player who is not a bot
-	// OR if the damage is coming from another bot who is a quest mob, and the quest mob is active for the player, and the player is not a bot
-	if((m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID] && !pFrom->IsBot()) ||
-		(pFrom->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(pFrom)->GetQuestBotMobInfo().m_ActiveForClient[m_pPlayer->GetCID()] && !m_pPlayer->IsBot()))
-	{
-		return true;
-	}
-
-	// Check if the sender is a bot and the bot type is TYPE_BOT_EIDOLON
-	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
-	{
-		// Check if the player is a bot and if the bot type is either TYPE_BOT_MOB or TYPE_BOT_QUEST_MOB and is active for the specific client with ID FromID
-		// Also, check if the bot type is TYPE_BOT_NPC and the function of the NPC bot is FUNCTION_NPC_GUARDIAN
-		// If any of these conditions are true, return true, otherwise return false.
-		if(m_pPlayer->GetBotType() == TYPE_BOT_MOB ||
-			(m_pPlayer->GetBotType() == TYPE_BOT_QUEST_MOB && dynamic_cast<CPlayerBot*>(m_pPlayer)->GetQuestBotMobInfo().m_ActiveForClient[FromID]) ||
-			(m_pPlayer->GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_pPlayer->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN))
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	// Dissable damage for From bot and current bot
-	if(m_pPlayer->IsBot() && pFrom->IsBot())
-		return false;
-
-	// pvp only for mobs
-	if((m_pPlayer->IsBot() && m_pPlayer->GetBotType() != TYPE_BOT_MOB) || (pFrom->IsBot() && pFrom->GetBotType() != TYPE_BOT_MOB))
-		return false;
-
 	// disable damage on safe area
-	if(GS()->Collision()->GetCollisionFlagsAt(GetPos()) & CCollision::COLFLAG_SAFE 
-		|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->GetPos()) & CCollision::COLFLAG_SAFE)
+	if(GS()->Collision()->GetCollisionFlagsAt(m_Core.m_Pos) & CCollision::COLFLAG_SAFE 
+		|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->m_Core.m_Pos) & CCollision::COLFLAG_SAFE)
 		return false;
 
-	// players anti pvp
-	if(!m_pPlayer->IsBot() && !pFrom->IsBot())
+	// anti pvp on safe world or dungeon
+	if(!pFrom->IsBot() && (!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon)))
+		return false;
+
+	// only for unself player
+	if(FromID != m_pPlayer->GetCID())
 	{
-		// anti pvp on safe world or dungeon
-		if(!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon))
+		// anti pvp for guild players
+		if(m_pPlayer->Account()->IsClientSameGuild(FromID))
 			return false;
 
-		// only for unself player
-		if(FromID != m_pPlayer->GetCID())
-		{
-			// anti pvp for guild players
-			if(m_pPlayer->Account()->IsClientSameGuild(FromID))
-				return false;
-
-			// anti pvp for group players
-			{
-				GroupData* pGroup = m_pPlayer->Account()->GetGroup();
-				if(pGroup && pGroup->HasAccountID(pFrom->Account()->GetID()))
-					return false;
-			}
-		}
+		// anti pvp for group players
+		GroupData* pGroup = m_pPlayer->Account()->GetGroup();
+		if(pGroup && pGroup->HasAccountID(pFrom->Account()->GetID()))
+			return false;
 	}
 
 	return true;

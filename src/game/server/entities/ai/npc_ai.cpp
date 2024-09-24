@@ -8,6 +8,11 @@
 CNpcAI::CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo) {}
 
+bool CNpcAI::CanDamage(CPlayer* pFrom)
+{
+	return m_pNpcInfo->m_Function == FUNCTION_NPC_GUARDIAN;
+}
+
 void CNpcAI::OnSpawn()
 {
 	const int Function = m_pNpcInfo->m_Function;
@@ -71,10 +76,12 @@ void CNpcAI::OnTargetRules(float Radius)
 
 		if(!pPlayer)
 		{
-			pPlayer = SearchPlayerBotCondition(Radius, [&](const CPlayerBot* pCandidate)
+			pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
 			{
 				const bool DamageDisabled = pCandidate->IsDisabledBotDamage();
-				return !DamageDisabled;
+				const auto* pCandidateChar = dynamic_cast<CCharacterBotAI*>(pCandidate->GetCharacter());
+
+				return !DamageDisabled && CanDamage(pCandidate) && pCandidateChar->AI()->CanDamage(m_pPlayer);
 			});
 		}
 
@@ -98,37 +105,29 @@ void CNpcAI::ProcessGuardianNPC() const
 	}
 	m_pCharacter->ResetInput();
 
-	bool MobMove = true;
 	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
 	{
 		m_pPlayer->m_TargetPos = pTargetChar->GetPos();
 		m_pCharacter->Fire();
+		m_pCharacter->Move();
+		return;
+	}
+
+	if(DistanceBetweenSpawnpoint < 256.0f)
+	{
+		if(Server()->Tick() % Server()->TickSpeed() == 0)
+		{
+			m_pCharacter->m_Input.m_TargetY = rand() % 4 - rand() % 8;
+		}
+
+		m_pCharacter->m_Input.m_TargetX = (m_pCharacter->m_Input.m_Direction * 10 + 1);
+		m_pCharacter->m_Input.m_Direction = 0;
 	}
 	else
 	{
-		if(DistanceBetweenSpawnpoint < 256.0f)
-		{
-			if(Server()->Tick() % Server()->TickSpeed() == 0)
-			{
-				m_pCharacter->m_Input.m_TargetY = rand() % 4 - rand() % 8;
-			}
-
-			m_pCharacter->m_Input.m_TargetX = (m_pCharacter->m_Input.m_Direction * 10 + 1);
-			m_pCharacter->m_Input.m_Direction = 0;
-			MobMove = false;
-		}
-		else
-		{
-			m_pPlayer->m_TargetPos = m_SpawnPoint;
-		}
-	}
-
-	if(MobMove)
-	{
+		m_pPlayer->m_TargetPos = m_SpawnPoint;
 		m_pCharacter->Move();
 	}
-
-	SelectEmoteAtRandomInterval(0); // TODO
 }
 
 void CNpcAI::ProcessDefaultNPC()
@@ -174,9 +173,6 @@ void CNpcAI::ProcessDefaultNPC()
 	{
 		m_pCharacter->m_Input.m_Direction = -1 + rand() % 3;
 	}
-
-	// emote actions
-	SelectEmoteAtRandomInterval(0); // TODO
 }
 
 void CNpcAI::Process()

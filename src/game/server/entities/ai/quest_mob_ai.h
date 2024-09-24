@@ -12,6 +12,9 @@ class CQuestMobAI final : public CBaseAI
 public:
 	CQuestMobAI(CQuestBotMobInfo* pQuestMobInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter);
 
+	bool CanDamage(CPlayer* pFrom) override;
+
+	void OnSpawn() override;
 	void OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const override;
 	void OnTargetRules(float Radius) override;
 	void Process() override;

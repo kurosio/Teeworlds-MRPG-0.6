@@ -8,8 +8,16 @@
 CMobAI::CMobAI(MobBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter), m_pMobInfo(pNpcInfo) {}
 
+bool CMobAI::CanDamage(CPlayer* pFrom)
+{
+	return !pFrom->IsBot() || pFrom->GetBotType() == TYPE_BOT_EIDOLON ||
+		pFrom->GetBotType() == TYPE_BOT_NPC;
+}
+
 void CMobAI::OnSpawn()
 {
+	m_EmotionStyle = EMOTE_ANGRY;
+
 	if(m_pMobInfo->m_Boss)
 	{
 		m_pCharacter->AddMultipleOrbite(1, POWERUP_HEALTH, 0);
@@ -137,23 +145,12 @@ void CMobAI::OnTargetRules(float Radius)
 
 	if(!pPlayer)
 	{
-		pPlayer = SearchPlayerBotCondition(Radius, [&](const CPlayerBot* pCandidate)
+		pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
 		{
 			const bool DamageDisabled = pCandidate->IsDisabledBotDamage();
-			const int MobIDCandidate = pCandidate->GetBotMobID();
-			const int BottypeCandidate = pCandidate->GetBotType();
+			const auto* pCandidateChar = dynamic_cast<CCharacterBotAI*>(pCandidate->GetCharacter());
 
-			if(BottypeCandidate == TYPE_BOT_EIDOLON)
-				return !DamageDisabled;
-
-			if(BottypeCandidate == TYPE_BOT_NPC)
-			{
-				const auto* pNpcBot = &NpcBotInfo::ms_aNpcBot[MobIDCandidate];
-
-				if(pNpcBot->m_Function == FUNCTION_NPC_GUARDIAN)
-					return !DamageDisabled;
-			}
-			return false;
+			return !DamageDisabled && CanDamage(pCandidate) && pCandidateChar->AI()->CanDamage(m_pPlayer);
 		});
 	}
 
@@ -173,9 +170,9 @@ void CMobAI::Process()
 		m_pPlayer->m_TargetPos = pTargetChar->GetPos();
 		m_pCharacter->Fire();
 	}
-	else if(Server()->Tick() > m_pPlayer->m_LastPosTick)
+	else
 	{
-		m_pPlayer->m_TargetPos = {};
+		m_pPlayer->m_TargetPos.reset();
 	}
 
 	if(m_pMobInfo->m_Spread >= 1)
@@ -184,7 +181,6 @@ void CMobAI::Process()
 	}
 
 	m_pCharacter->Move();
-	SelectEmoteAtRandomInterval(0); // TODO
 
 	if(m_pMobInfo->m_Boss)
 	{

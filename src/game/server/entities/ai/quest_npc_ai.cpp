@@ -7,8 +7,15 @@
 CQuestNpcAI::CQuestNpcAI(QuestBotInfo* pQuestNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter), m_pQuestNpcInfo(pQuestNpcInfo) {}
 
+bool CQuestNpcAI::CanDamage(CPlayer* pFrom)
+{
+	return false;
+}
+
 void CQuestNpcAI::OnSpawn()
 {
+	m_EmotionStyle = EMOTE_BLINK;
+
 	if(m_pQuestNpcInfo->m_HasAction)
 	{
 		GS()->EntityManager()->EffectCircleDamage(m_ClientID, Server()->TickSpeed() / 2, Server()->TickSpeed());
@@ -45,9 +52,6 @@ void CQuestNpcAI::Process()
 		}
 		return false;
 	});
-
-	// random interval emote
-	SelectEmoteAtRandomInterval(0);
 }
 
 bool CQuestNpcAI::IsConversational()

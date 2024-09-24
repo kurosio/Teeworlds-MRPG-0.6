@@ -38,7 +38,7 @@ class CPlayerBot : public CPlayer
 
 public:
 	int m_LastPosTick;
-	vec2 m_TargetPos;
+	std::optional<vec2> m_TargetPos;
 	vec2 m_OldTargetPos;
 
 	PathRequestHandle m_PathHandle;

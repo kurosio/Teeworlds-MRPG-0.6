@@ -8,6 +8,8 @@ class CEidolonAI final : public CBaseAI
 public:
 	CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter);
 
+	bool CanDamage(CPlayer* pFrom) override;
+
 	void OnSpawn() override;
 
 	void OnTargetRules(float Radius) override;

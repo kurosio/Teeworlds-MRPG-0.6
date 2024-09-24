@@ -12,6 +12,8 @@ class CMobAI final : public CBaseAI
 public:
 	CMobAI(MobBotInfo* pMobInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter);
 
+	bool CanDamage(CPlayer* pFrom) override;
+
 	void OnSpawn() override;
 	void OnGiveRandomEffect(int ClientID) override;
 	void OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const override;

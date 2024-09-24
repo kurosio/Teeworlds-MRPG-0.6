@@ -576,20 +576,20 @@ CTeeInfo& CPlayerBot::GetTeeInfo() const
 
 void CPlayerBot::HandlePathFinder()
 {
-	if(!IsActive() || !m_pCharacter || !m_pCharacter->IsAlive())
+	const auto* pChar = dynamic_cast<CCharacterBotAI*>(m_pCharacter);
+	if(!IsActive() || !pChar || !pChar->IsAlive())
 		return;
 
 	if(GetBotType() == TYPE_BOT_MOB)
 	{
-		if(m_TargetPos != vec2(0, 0))
+		if(m_TargetPos.has_value())
 		{
-			GS()->PathFinder()->RequestPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestPath(m_PathHandle, pChar->m_Core.m_Pos, m_TargetPos.value());
 		}
-		else if(m_TargetPos == vec2(0, 0) || distance(m_pCharacter->m_Core.m_Pos, m_TargetPos) < 128.0f)
+		else if(m_LastPosTick < Server()->Tick())
 		{
 			m_LastPosTick = Server()->Tick() + (Server()->TickSpeed() * 2 + rand() % 4);
-			GS()->PathFinder()->RequestRandomPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, 800.f);
-			m_TargetPos = vec2(0, 0);
+			GS()->PathFinder()->RequestRandomPath(m_PathHandle, pChar->m_Core.m_Pos, 800.f);
 		}
 	}
 
@@ -597,27 +597,29 @@ void CPlayerBot::HandlePathFinder()
 	else if(GetBotType() == TYPE_BOT_EIDOLON)
 	{
 		int OwnerID = m_MobID;
-		if(const CPlayer* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true); pPlayerOwner && m_TargetPos != vec2(0, 0))
+		const auto* pPlayerOwner = GS()->GetPlayer(OwnerID, true, true);
+
+		if(pPlayerOwner && m_TargetPos.has_value())
 		{
-			GS()->PathFinder()->RequestPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestPath(m_PathHandle, pChar->m_Core.m_Pos, m_TargetPos.value());
 		}
 	}
 
 	// Check if the bot type is TYPE_BOT_QUEST_MOB
 	else if(GetBotType() == TYPE_BOT_QUEST_MOB)
 	{
-		if(m_TargetPos != vec2(0, 0))
+		if(m_TargetPos.has_value())
 		{
-			GS()->PathFinder()->RequestPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestPath(m_PathHandle, pChar->m_Core.m_Pos, m_TargetPos.value());
 		}
 	}
 
 	// Check if the bot type is TYPE_BOT_NPC and the function is FUNCTION_NPC_GUARDIAN
 	else if(GetBotType() == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
 	{
-		if(m_TargetPos != vec2(0, 0))
+		if(m_TargetPos.has_value())
 		{
-			GS()->PathFinder()->RequestPath(m_PathHandle, m_pCharacter->m_Core.m_Pos, m_TargetPos);
+			GS()->PathFinder()->RequestPath(m_PathHandle, pChar->m_Core.m_Pos, m_TargetPos.value());
 		}
 	}
 }

@@ -12,6 +12,8 @@ class CNpcAI final : public CBaseAI
 public:
 	CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter);
 
+	bool CanDamage(CPlayer* pFrom) override;
+
 	void OnSpawn() override;
 	void OnTakeDamage(int Dmg, int From, int Weapon) override;
 	void OnHandleTunning(CTuningParams* pTuning) override;

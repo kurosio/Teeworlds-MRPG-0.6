@@ -7,6 +7,25 @@
 CQuestMobAI::CQuestMobAI(CQuestBotMobInfo* pQuestMobInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter), m_pQuestMobInfo(pQuestMobInfo) {}
 
+bool CQuestMobAI::CanDamage(CPlayer* pFrom)
+{
+	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
+	{
+		if(const auto* pOwner = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner())
+			return m_pQuestMobInfo->m_ActiveForClient[pOwner->GetCID()];
+	}
+
+	if(!pFrom->IsBot() && m_pQuestMobInfo->m_ActiveForClient[pFrom->GetCID()])
+		return true;
+
+	return false;
+}
+
+void CQuestMobAI::OnSpawn()
+{
+	m_EmotionStyle = EMOTE_ANGRY;
+}
+
 void CQuestMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 {
 	const int ClientID = pPlayer->GetCID();
@@ -62,33 +81,25 @@ void CQuestMobAI::Process()
 	m_pCharacter->ResetInput();
 
 
-	bool MobMove = true;
 	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
 	{
 		m_pPlayer->m_TargetPos = pTargetChar->GetPos();
+		m_pCharacter->SelectWeaponAtRandomInterval();
 		m_pCharacter->Fire();
+		m_pCharacter->Move();
+		return;
+	}
+
+	if(DistanceBetweenSpawnpoint < 128.0f)
+	{
+		m_pPlayer->m_TargetPos = {};
+		m_pCharacter->m_Input.m_Direction = 0;
 	}
 	else
 	{
-		if(DistanceBetweenSpawnpoint < 128.0f)
-		{
-			m_pPlayer->m_TargetPos = {};
-			m_pCharacter->m_Input.m_Direction = 0;
-			MobMove = false;
-		}
-		else
-		{
-			m_pPlayer->m_TargetPos = m_SpawnPoint;
-		}
-	}
-
-	if(MobMove)
-	{
-		m_pCharacter->SelectWeaponAtRandomInterval();
+		m_pPlayer->m_TargetPos = m_SpawnPoint;
 		m_pCharacter->Move();
 	}
-
-	SelectEmoteAtRandomInterval(0); // TODO
 }
 
 void CQuestMobAI::OnSnapDDNetCharacter(int SnappingClient, CNetObj_DDNetCharacter* pDDNetCharacter)

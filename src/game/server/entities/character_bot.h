@@ -16,7 +16,6 @@ class CCharacterBotAI : public CCharacter
 	int m_MoveTick{};
 	int m_PrevDirection{};
 	vec2 m_PrevPos{};
-	vec2 m_WallPos{};
 	vec2 m_DieForce {};
 	std::optional<int> m_ForcedActiveWeapon {};
 	ska::unordered_set< int > m_aListDmgPlayers{};
@@ -38,15 +37,17 @@ private:
 	void Die(int Killer, int Weapon) override;
 	void HandleTuning() override;
 
-	void SetAim(vec2 Dir);
 	bool GiveWeapon(int Weapon, int GiveAmmo) override;
-	void RewardPlayer(CPlayer *pPlayer) const;
 
 	void ProcessBot();
 
 public:
 	void SelectWeaponAtRandomInterval();
+	void SelectEmoteAtRandomInterval();
+
+	bool IsAllowedPVP(int FromID) const override;
 	void UpdateTarget(float Radius) const;
+	void SetAim(vec2 Dir);
 
 	ska::unordered_set<int>& GetListDmgPlayers() { return m_aListDmgPlayers; }
 

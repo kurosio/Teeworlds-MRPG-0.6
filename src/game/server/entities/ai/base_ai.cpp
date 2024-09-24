@@ -12,6 +12,7 @@ CBaseAI::CBaseAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	m_Target.Reset();
 	m_Target.Init(m_pCharacter);
 	m_SpawnPoint = m_pCharacter->m_Core.m_Pos;
+	m_EmotionStyle = EMOTE_NORMAL;
 }
 
 IServer* CBaseAI::Server() const
@@ -22,19 +23,6 @@ IServer* CBaseAI::Server() const
 CGS* CBaseAI::GS() const
 {
 	return m_pPlayer->GS();
-}
-
-void CBaseAI::SelectEmoteAtRandomInterval(int EmotionStyle) const
-{
-	if(EmotionStyle < EMOTE_PAIN || EmotionStyle > EMOTE_BLINK)
-		return;
-
-	const int emoteInterval = Server()->TickSpeed() * 3 + rand() % 10;
-	if(Server()->Tick() % emoteInterval == 0)
-	{
-		const int duration = 1 + rand() % 2;
-		m_pCharacter->SetEmote(EMOTE_BLINK, duration, true);
-	}
 }
 
 CPlayer* CBaseAI::SearchPlayerCondition(float Distance, const std::function<bool(CPlayer*)>& Condition)

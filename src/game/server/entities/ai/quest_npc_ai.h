@@ -12,6 +12,8 @@ class CQuestNpcAI final : public CBaseAI
 public:
 	CQuestNpcAI(QuestBotInfo* pQuestNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter);
 
+	bool CanDamage(CPlayer* pFrom) override;
+
 	void OnSpawn() override;
 	void Process() override;
 
