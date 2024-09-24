@@ -162,7 +162,6 @@ void CGameWorld::RemoveEntities()
 			{
 				RemoveEntity(pEnt);
 				pEnt->Destroy();
-				pEnt = nullptr;
 			}
 			pEnt = m_pNextTraverseEntity;
 		}

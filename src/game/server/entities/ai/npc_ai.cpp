@@ -10,6 +10,9 @@ CNpcAI::CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pChar
 
 bool CNpcAI::CanDamage(CPlayer* pFrom)
 {
+	if(pFrom->GetBotType() == TYPE_BOT_NPC)
+		return false;
+
 	return m_pNpcInfo->m_Function == FUNCTION_NPC_GUARDIAN;
 }
 

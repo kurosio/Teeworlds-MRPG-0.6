@@ -25,10 +25,10 @@ CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld)
 
 bool CCharacterBotAI::Spawn(CPlayer* pPlayer, vec2 Pos)
 {
-	m_pBotPlayer = static_cast<CPlayerBot*>(pPlayer);
-
-	if(CCharacter::Spawn(m_pBotPlayer, Pos))
+	if(CCharacter::Spawn(pPlayer, Pos))
 	{
+		m_pBotPlayer = static_cast<CPlayerBot*>(pPlayer);
+
 		const int Bottype = m_pBotPlayer->GetBotType();
 		if(Bottype == TYPE_BOT_NPC)
 		{

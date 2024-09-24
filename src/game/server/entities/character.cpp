@@ -1418,9 +1418,19 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->m_Core.m_Pos) & CCollision::COLFLAG_SAFE)
 		return false;
 
-	// anti pvp on safe world or dungeon
-	if(!pFrom->IsBot() && (!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon)))
-		return false;
+	if(pFrom->IsBot())
+	{
+		// can damage bot
+		const auto* pBotChar = dynamic_cast<CCharacterBotAI*>(pFrom->GetCharacter());
+		if(!pBotChar->AI()->CanDamage(m_pPlayer))
+			return false;
+	}
+	else
+	{
+		// anti pvp on safe world or dungeon
+		if(!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon))
+			return false;
+	}
 
 	// only for unself player
 	if(FromID != m_pPlayer->GetCID())
