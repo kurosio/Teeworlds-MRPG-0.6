@@ -25,17 +25,13 @@ void CPrisonManager::Imprison(int Seconds)
     if(GS()->m_pController->CanSpawn(SPAWN_HUMAN_PRISON, &PrisonPos))
     {
         GS()->Chat(-1, "{}, has been imprisoned for {} seconds.", GS()->Server()->ClientName(m_ClientID), Seconds);
-    }
-    else
-    {
-        GS()->Chat(-1, "{}, has been imprisoned for {} seconds, but cannot find prison spawn position.", GS()->Server()->ClientName(m_ClientID), Seconds);
-    }
 
-    const auto* pPlayer = GetPlayer();
-    if(pPlayer && pPlayer->GetCharacter())
-	{
-		pPlayer->GetCharacter()->ChangePosition(PrisonPos);
-	}
+        const auto* pPlayer = GetPlayer();
+        if(pPlayer && pPlayer->GetCharacter())
+        {
+            pPlayer->GetCharacter()->ChangePosition(PrisonPos);
+        }
+    }
 
     SavePrisonData();
 }
