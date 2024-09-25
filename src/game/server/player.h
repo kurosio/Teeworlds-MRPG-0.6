@@ -159,7 +159,6 @@ private:
 	virtual void HandleEffects();
 	virtual void TryRespawn();
 	void HandleScoreboardColors();
-	void HandlePrison();
 
 public:
 	int GetCID() const { return m_ClientID; }

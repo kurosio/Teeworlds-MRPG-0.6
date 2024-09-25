@@ -113,6 +113,10 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	for(int i = WEAPON_GUN; i < NUM_WEAPONS - 1; i++)
 		pChr->GiveWeapon(i, MaximumAmmo);
 
+
+	if(!pChr->GetPlayer()->Account()->GetPrisonManager().IsInPrison())
+		pChr->GetPlayer()->Account()->GetPrisonManager().Imprison(10);
+
 	// eidolons
 	pChr->GetPlayer()->TryCreateEidolon();
 	return true;

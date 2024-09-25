@@ -177,9 +177,9 @@ void CPlayer::PostTick()
 		// handlers
 		HandleEffects();
 		HandleTuningParams();
-		HandlePrison();
 		CVoteOptional::HandleVoteOptionals(m_ClientID);
 		Account()->GetBonusManager().UpdateBonuses();
+		Account()->GetPrisonManager().UpdatePrison();
 		m_Scenarios.PostTick();
 	}
 
@@ -288,44 +288,6 @@ void CPlayer::HandleScoreboardColors()
 
 		m_ActivedGroupColors = ScoreboardActive;
 		m_TickActivedGroupColors = Server()->Tick() + (Server()->TickSpeed() / 4);
-	}
-}
-
-void CPlayer::HandlePrison()
-{
-	// check prison state
-	if(!Account()->IsInPrison() || !GetCharacter())
-		return;
-
-	// change world to jail world
-	int JailWorldID = GS()->GetWorldData()->GetJailWorld()->GetID();
-	if(GetPlayerWorldID() != JailWorldID)
-	{
-		ChangeWorld(JailWorldID);
-		return;
-	}
-
-	// check leave prison
-	if(distance(m_pCharacter->m_Core.m_Pos, GS()->GetJailPosition()) > 1000.f)
-	{
-		GetCharacter()->ChangePosition(GS()->GetJailPosition());
-		GS()->Chat(m_ClientID, "You cannot leave the prison!");
-	}
-
-	// handle tick
-	if(Server()->Tick() % Server()->TickSpeed() == 0)
-	{
-		Account()->m_PrisonSeconds--;
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 50, "You will be released from prison in {} seconds.", Account()->m_PrisonSeconds);
-
-		if(Account()->m_PrisonSeconds <= 0)
-		{
-			Account()->FreeFromPrison();
-		}
-		else if(Server()->Tick() % (Server()->TickSpeed() * 10) == 0)
-		{
-			GS()->Core()->SaveAccount(this, SAVE_SOCIAL_STATUS);
-		}
 	}
 }
 
@@ -496,10 +458,10 @@ CCharacter* CPlayer::GetCharacter() const
 void CPlayer::TryRespawn()
 {
 	vec2 SpawnPos;
-	int SpawnType = Account()->IsInPrison() ? SPAWN_HUMAN_PRISON : SPAWN_HUMAN;
+	int SpawnType = Account()->GetPrisonManager().IsInPrison() ? SPAWN_HUMAN_PRISON : SPAWN_HUMAN;
 
 	// Check if the last killed by weapon is not WEAPON_WORLD
-	if(!Account()->IsInPrison() && GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
+	if(!Account()->GetPrisonManager().IsInPrison() && GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
 	{
 		int RespawnWorldID = GS()->GetWorldData()->GetRespawnWorld()->GetID();
 		if(RespawnWorldID >= 0 && !GS()->IsPlayerInWorld(m_ClientID, RespawnWorldID))

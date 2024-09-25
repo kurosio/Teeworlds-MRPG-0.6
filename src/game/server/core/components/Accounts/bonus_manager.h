@@ -27,14 +27,12 @@ struct TemporaryBonus
 class CBonusManager
 {
 	int m_ClientID{};
-	CPlayer* m_pPlayer{};
 	std::vector<TemporaryBonus> m_vTemporaryBonuses{};
 
 public:
-	void Init(int ClientID, CPlayer* pPlayer)
+	void Init(int ClientID)
 	{
 		m_ClientID = ClientID;
-		m_pPlayer = pPlayer;
 		LoadBonuses();
 	}
 

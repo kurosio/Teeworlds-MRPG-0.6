@@ -135,7 +135,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	// Update player account information from the database
 	std::string Language = pResCheck->getString("Language").c_str();
 	std::string LoginDate = pResCheck->getString("LoginDate").c_str();
-	pPlayer->Account()->Init(AccountID, pPlayer, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
+	pPlayer->Account()->Init(AccountID, ClientID, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
 
 	// Send success messages to the client
 	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
@@ -151,7 +151,6 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// Update account context pointer
 	auto* pAccount = pPlayer->Account();
-	pAccount->UpdatePointer(pPlayer);
 
 	// Broadcast a message to the player with their current location
 	const int ClientID = pPlayer->GetCID();

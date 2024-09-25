@@ -5,6 +5,7 @@
 
 // TODO: fully rework structures
 #include "bonus_manager.h"
+#include "prison_manager.h"
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
 
@@ -32,23 +33,24 @@ class CAccountData
 	CGuild* m_pGuildData{};
 	ClassGroup m_ClassGroup {};
 	nlohmann::json m_AchievementsData { };
-	CBonusManager m_BonusManager;
+	CBonusManager m_BonusManager{};
+	CPrisonManager m_PrisonManager{};
 	BigInt m_Bank {};
 
-	CPlayer* m_pPlayer {};
 	CGS* GS() const;
-	CPlayer* GetPlayer() const { return m_pPlayer; }
+	CPlayer* GetPlayer() const;
 
 public:
+	CPrisonManager& GetPrisonManager() { return m_PrisonManager; }
+	const CPrisonManager& GetPrisonManager() const { return m_PrisonManager; }
 	CBonusManager& GetBonusManager() { return m_BonusManager; }
 	const CBonusManager& GetBonusManager() const { return m_BonusManager; }
 
 	/*
 	 * Group functions: initialize or uniques from function
 	 */
-	void Init(int ID, CPlayer* pPlayer, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult); // Function to initialize
-	void UpdatePointer(CPlayer* pPlayer);
-	int GetID() const { return m_ID; } // Function to get the ID of an object
+	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult);
+	int GetID() const { return m_ID; }
 
 	/*
 	 * Group functions: house system
@@ -87,10 +89,6 @@ public:
 	int GetCrimeScore() const { return m_CrimeScore; }
 	void ResetCrimeScore();
 
-	bool IsInPrison() const { return m_PrisonSeconds > 0; }
-	void Imprison(int Seconds);
-	void FreeFromPrison();
-
 	BigInt GetBank() const { return m_Bank; }
 	int GetGold() const;
 	BigInt GetTotalGold() const;
@@ -124,7 +122,6 @@ public:
 	};
 
 	// main
-	int m_PrisonSeconds {};
 	TimePeriods m_Periods {};
 	std::list< int > m_aHistoryWorld {};
 

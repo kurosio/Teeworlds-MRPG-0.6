@@ -70,10 +70,15 @@ void CBonusManager::AddBonus(const TemporaryBonus& bonus)
 
 void CBonusManager::LoadBonuses()
 {
-	const time_t currentTime = time(nullptr);
-	IStorageEngine* pStorage = m_pPlayer->GS()->Storage();
+	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+	IStorageEngine* pStorage = pGS->Storage();
+	const auto* pPlayer = pGS->GetPlayer(m_ClientID);
 
-	if(const auto File = pStorage->OpenFile(fmt("server_data/account_bonuses/{}.txt", m_pPlayer->Account()->GetID()).c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
+	if(!pPlayer)
+		return;
+
+	const time_t currentTime = time(nullptr);
+	if(const auto File = pStorage->OpenFile(fmt("server_data/account_bonuses/{}.txt", pPlayer->Account()->GetID()).c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
 	{
 		CLineReader Reader;
 		Reader.Init(File);
@@ -102,9 +107,14 @@ void CBonusManager::LoadBonuses()
 
 void CBonusManager::SaveBonuses() const
 {
-	IStorageEngine* pStorage = m_pPlayer->GS()->Storage();
+	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+	IStorageEngine* pStorage = pGS->Storage();
+	const auto* pPlayer = pGS->GetPlayer(m_ClientID);
 
-	if(const auto File = pStorage->OpenFile(fmt("server_data/account_bonuses/{}.txt", m_pPlayer->Account()->GetID()).c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
+	if(!pPlayer)
+		return;
+
+	if(const auto File = pStorage->OpenFile(fmt("server_data/account_bonuses/{}.txt", pPlayer->Account()->GetID()).c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
 	{
 		for(const auto& bonus : m_vTemporaryBonuses)
 		{

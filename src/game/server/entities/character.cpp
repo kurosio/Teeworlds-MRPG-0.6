@@ -818,7 +818,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 			}
 
 			GS()->Chat(m_ClientID, "Treasury confiscates {}% ({$}) of your gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
-			m_pPlayer->Account()->Imprison(100);
+			m_pPlayer->Account()->GetPrisonManager().Imprison(360);
 		}
 
 		m_pPlayer->Account()->ResetCrimeScore();

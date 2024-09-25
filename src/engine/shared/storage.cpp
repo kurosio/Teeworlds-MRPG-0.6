@@ -145,6 +145,8 @@ public:
 				fs_makedir("server_data");
 			if(!fs_is_dir("server_data/account_bonuses"))
 				fs_makedir("server_data/account_bonuses");
+			if(!fs_is_dir("server_data/account_prison"))
+				fs_makedir("server_data/account_prison");
 			if(!fs_is_dir("server_data/account_quests"))
 				fs_makedir("server_data/account_quests");
 		}

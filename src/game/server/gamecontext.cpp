@@ -462,15 +462,11 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mas
 void CGS::SendChatRadius(int ChatterClientID, float Radius, const char* pText)
 {
 	int64_t MaskRadius = 0;
-	CNetMsg_Sv_Chat Msg;
-	Msg.m_Team = 0;
-	Msg.m_ClientId = ChatterClientID;
-	Msg.m_pMessage = pText;
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPlayer = GetPlayer(i);
-		if(!pPlayer)
+		if(!m_apPlayers[i])
 			continue;
 
 		if(distance(pPlayer->m_ViewPos, m_apPlayers[ChatterClientID]->m_ViewPos) < Radius)
