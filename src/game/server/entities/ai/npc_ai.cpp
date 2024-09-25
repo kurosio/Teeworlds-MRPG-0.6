@@ -13,7 +13,15 @@ bool CNpcAI::CanDamage(CPlayer* pFrom)
 	if(pFrom->GetBotType() == TYPE_BOT_NPC)
 		return false;
 
-	return m_pNpcInfo->m_Function == FUNCTION_NPC_GUARDIAN;
+	if(m_pNpcInfo->m_Function == FUNCTION_NPC_GUARDIAN)
+	{
+		if(!pFrom->IsBot() && !pFrom->Account()->IsCrimeScoreMaxedOut())
+			return false;
+
+		return true;
+	}
+
+	return false;
 }
 
 void CNpcAI::OnSpawn()
