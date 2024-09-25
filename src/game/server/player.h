@@ -118,8 +118,8 @@ public:
 	virtual	int GetPlayerWorldID() const;
 	virtual CTeeInfo& GetTeeInfo() const;
 
-	virtual int GetStartHealth() const;
-	int GetStartMana() const;
+	virtual int GetMaxHealth() const;
+	int GetMaxMana() const;
 	virtual	int GetHealth() const { return GetTempData().m_TempHealth; }
 	virtual	int GetMana() const { return GetTempData().m_TempMana; }
 	bool IsAfk() const { return m_Afk; }
@@ -173,7 +173,6 @@ public:
 	bool Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const;
 	const char* GetLanguage() const;
 	bool IsAuthed() const;
-	int GetStartTeam() const;
 	bool ParseVoteOptionResult(int Vote);
 
 	CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }

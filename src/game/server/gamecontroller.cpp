@@ -81,7 +81,7 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	// if we spawn the bot
 	if(pChr->GetPlayer()->IsBot())
 	{
-		pChr->IncreaseHealth(pChr->GetPlayer()->GetStartHealth());
+		pChr->IncreaseHealth(pChr->GetPlayer()->GetMaxHealth());
 		pChr->GiveWeapon(WEAPON_HAMMER, -1);
 
 		for(int i = WEAPON_GUN; i < NUM_WEAPONS - 1; i++)
@@ -92,7 +92,7 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	}
 
 	// Health
-	int StartHealth = pChr->GetPlayer()->GetStartHealth();
+	int StartHealth = pChr->GetPlayer()->GetMaxHealth();
 	if(!GS()->IsWorldType(WorldType::Dungeon))
 	{
 		// If the player's health is greater than 0, set StartHealth to the player's health otherwise, set StartHealth to half of its current value
@@ -341,20 +341,16 @@ void IGameController::EvaluateSpawnType(CSpawnEval* pEval, int SpawnType, std::p
 	}
 }
 
-void IGameController::DoTeamChange(CPlayer* pPlayer, bool DoChatMsg)
+void IGameController::DoTeamChange(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	const int Team = pPlayer->GetStartTeam();
-	if(Team == pPlayer->GetTeam())
-		return;
+	const int Team = pPlayer->GetTeam();
 
-	pPlayer->Account()->m_Team = Team;
 	pPlayer->GetTempData().m_LastKilledByWeapon = WEAPON_WORLD;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", ClientID, Server()->ClientName(ClientID), Team);
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 	OnPlayerInfoChange(pPlayer, GS()->GetWorldID());
-
 	Server()->ExpireServerInfo();
 }

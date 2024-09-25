@@ -77,7 +77,7 @@ bool CSkill::Use()
 
 	// initialize variables
 	const int ClientID = GetPlayer()->GetCID();
-	const int ManaCost = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartMana(), Info()->GetPercentageCost()));
+	const int ManaCost = maximum(1, translate_to_percent_rest(GetPlayer()->GetMaxMana(), Info()->GetPercentageCost()));
 	CCharacter* pChr = GetPlayer()->GetCharacter();
 	const vec2 PlayerPosition = pChr->GetPos();
 
@@ -179,7 +179,7 @@ bool CSkill::Use()
 			CCharacterBotAI* pCharacterBotAI = dynamic_cast<CCharacterBotAI*>(pPlayer->GetCharacter());
 			if(CPlayer* pPlayerAgr = GS()->GetPlayer(pCharacterBotAI->AI()->GetTarget()->GetCID(), false, true))
 			{
-				if(pPlayerAgr->GetStartHealth() > GetPlayer()->GetStartHealth())
+				if(pPlayerAgr->GetMaxHealth() > GetPlayer()->GetMaxHealth())
 				{
 					MissedProvoked = true;
 					continue;
@@ -262,7 +262,7 @@ bool CSkill::Use()
 		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
 
 		// enable shield
-		const int StartHealth = maximum(1, translate_to_percent_rest(GetPlayer()->GetStartHealth(), GetBonus()));
+		const int StartHealth = maximum(1, translate_to_percent_rest(GetPlayer()->GetMaxHealth(), GetBonus()));
 		GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth, &m_pEntitySkill);
 		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been enabled! Health: {}!", StartHealth);
 		return true;

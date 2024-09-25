@@ -67,7 +67,7 @@ public:
 	virtual void Tick();
 
 	bool CanSpawn(int SpawnType, vec2 *pPos, std::pair<vec2, float> LimiterSpread = std::make_pair(vec2(), -1.f)) const;
-	void DoTeamChange(class CPlayer *pPlayer, bool DoChatMsg=true);
+	void DoTeamChange(class CPlayer *pPlayer);
 
 };
 

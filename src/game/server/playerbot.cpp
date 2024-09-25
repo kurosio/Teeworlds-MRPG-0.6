@@ -429,7 +429,7 @@ void CPlayerBot::Snap(int SnappingClient)
 	StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
 	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB || (m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
-		const float Progress = translate_to_percent((float)GetStartHealth(), (float)GetHealth());
+		const float Progress = translate_to_percent((float)GetMaxHealth(), (float)GetHealth());
 
 		std::string ProgressBar = mystd::string::progressBar(100, (int)Progress, 33, "\u25B0", "\u25B1");
 		StrToInts(&pClientInfo->m_Clan0, 3, ProgressBar.c_str());
@@ -503,7 +503,7 @@ void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 {
 	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB || (m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
 	{
-		const int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
+		const int PercentHP = translate_to_percent(GetMaxHealth(), GetHealth());
 		str_format(aBuffer, BufferSize, "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, clamp(PercentHP, 1, 100));
 	}
 	else

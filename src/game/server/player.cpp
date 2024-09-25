@@ -44,7 +44,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	{
 		m_TutorialStep = 1;
 		m_MoodState = Mood::NORMAL;
-		Account()->m_Team = GetStartTeam();
 		GS()->SendTuningParams(ClientID);
 
 		m_Afk = false;
@@ -75,7 +74,7 @@ void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 	// Player is not chatting and health nickname tick is valid
 	if(!isChatting && currentTick < m_SnapHealthNicknameTick)
 	{
-		int PercentHP = translate_to_percent(GetStartHealth(), GetHealth());
+		int PercentHP = translate_to_percent(GetMaxHealth(), GetHealth());
 		char aHealthProgressBuf[6];
 		str_format(aHealthProgressBuf, sizeof(aHealthProgressBuf), ":%d%%", clamp(PercentHP, 1, 100));
 
@@ -611,9 +610,7 @@ void CPlayer::OnPredictedInput(CNetObj_PlayerInput* pNewInput) const
 
 int CPlayer::GetTeam()
 {
-	if(GS()->Core()->AccountManager()->IsActive(m_ClientID))
-		return Account()->m_Team;
-	return TEAM_SPECTATORS;
+	return IsAuthed() ? TEAM_RED : TEAM_SPECTATORS;
 }
 
 /* #########################################################################
@@ -697,14 +694,7 @@ bool CPlayer::IsAuthed() const
 	return false;
 }
 
-int CPlayer::GetStartTeam() const
-{
-	if(IsAuthed())
-		return TEAM_RED;
-	return TEAM_SPECTATORS;
-}
-
-int CPlayer::GetStartHealth() const
+int CPlayer::GetMaxHealth() const
 {
 	int DefaultHP = 10 + GetTotalAttributeValue(AttributeIdentifier::HP);
 	DefaultHP += translate_to_percent_rest(DefaultHP, m_Class.GetExtraHP());
@@ -712,7 +702,7 @@ int CPlayer::GetStartHealth() const
 	return DefaultHP;
 }
 
-int CPlayer::GetStartMana() const
+int CPlayer::GetMaxMana() const
 {
 	int DefaultMP = 10 + GetTotalAttributeValue(AttributeIdentifier::MP);
 	DefaultMP += translate_to_percent_rest(DefaultMP, m_Class.GetExtraMP());
@@ -731,8 +721,8 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		return;
 
 	const int LevelPercent = translate_to_percent(static_cast<int>(computeExperience(Account()->GetLevel())), Account()->GetExperience());
-	const int MaximumHealth = GetStartHealth();
-	const int MaximumMana = GetStartMana();
+	const int MaximumHealth = GetMaxHealth();
+	const int MaximumMana = GetMaxMana();
 	const int Health = m_pCharacter->Health();
 	const int Mana = m_pCharacter->Mana();
 	const auto BankGoldStr = fmt_big_digit(Account()->GetBank().to_string());

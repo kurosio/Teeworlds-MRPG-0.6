@@ -57,7 +57,7 @@ public:
 	int GetPlayerWorldID() const override;
 	CTeeInfo& GetTeeInfo() const override;
 
-	int GetStartHealth() const override { return m_BotStartHealth; };
+	int GetMaxHealth() const override { return m_BotStartHealth; };
 	int GetHealth() const override { return m_BotHealth; }
 	int GetMana() const override { return 999; }
 

@@ -67,9 +67,9 @@ void CEidolon::Tick()
 
 	// interaction
 	CPlayer* pOwner = GS()->GetPlayer(m_OwnerCID, false, true);
-	if(pOwner && pOwner->GetHealth() < pOwner->GetStartHealth() / 3)
+	if(pOwner && pOwner->GetHealth() < pOwner->GetMaxHealth() / 3)
 	{
-		int RestoreHealth = pOwner->GetStartHealth() / 2;
+		int RestoreHealth = pOwner->GetMaxHealth() / 2;
 		pOwner->GetCharacter()->IncreaseHealth(RestoreHealth);
 		GS()->EntityManager()->Text(m_Pos, 50, "Eidolon");
 		GS()->CreateSound(m_Pos, SOUND_CTF_CAPTURE);

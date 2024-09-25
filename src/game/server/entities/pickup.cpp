@@ -46,7 +46,7 @@ void CPickup::Tick()
 	bool Picked = false;
 	if(m_Type == POWERUP_HEALTH)
 	{
-		const int RestoreHealth = translate_to_percent_rest(pChr->GetPlayer()->GetStartHealth(), 1);
+		const int RestoreHealth = translate_to_percent_rest(pChr->GetPlayer()->GetMaxHealth(), 1);
 		if(pChr->IncreaseHealth(RestoreHealth))
 		{
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);
@@ -55,7 +55,7 @@ void CPickup::Tick()
 	}
 	else if(m_Type == POWERUP_ARMOR)
 	{
-		const int RestoreMana = translate_to_percent_rest(pChr->GetPlayer()->GetStartMana(), 1);
+		const int RestoreMana = translate_to_percent_rest(pChr->GetPlayer()->GetMaxMana(), 1);
 		if(pChr->IncreaseMana(RestoreMana))
 		{
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);

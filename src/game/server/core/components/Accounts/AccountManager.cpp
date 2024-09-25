@@ -139,7 +139,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 
 	// Send success messages to the client
 	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
-	GS()->m_pController->DoTeamChange(pPlayer, false);
+	GS()->m_pController->DoTeamChange(pPlayer);
 	LoadAccount(pPlayer, true);
 	return AccountCodeResult::AOP_LOGIN_OK;
 }

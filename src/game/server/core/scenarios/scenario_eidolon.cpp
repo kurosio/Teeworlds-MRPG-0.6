@@ -21,7 +21,7 @@ void CEidolonScenario::OnSetupScenario()
 	CCharacter* pBotChar = pBot->GetCharacter();
 	CCharacter* pOwnerChar = pOwner->GetCharacter();
 
-	if(pOwner->GetHealth() < pOwner->GetStartHealth() * 0.1)
+	if(pOwner->GetHealth() < pOwner->GetMaxHealth() * 0.1)
 	{
 
 	}

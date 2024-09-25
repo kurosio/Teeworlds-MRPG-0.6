@@ -192,7 +192,7 @@ void CMobAI::ShowHealth() const
 {
 	const int BotID = m_pPlayer->GetBotID();
 	const int Health = m_pPlayer->GetHealth();
-	const int StartHealth = m_pPlayer->GetStartHealth();
+	const int StartHealth = m_pPlayer->GetMaxHealth();
 	const float Percent = translate_to_percent((float)StartHealth, (float)Health);
 	std::string ProgressBar = mystd::string::progressBar(100, (int)Percent, 10, "\u25B0", "\u25B1");
 

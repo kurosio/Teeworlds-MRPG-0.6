@@ -124,7 +124,6 @@ public:
 	};
 
 	// main
-	int m_GuildRank {};
 	int m_PrisonSeconds {};
 	TimePeriods m_Periods {};
 	std::list< int > m_aHistoryWorld {};
@@ -134,7 +133,6 @@ public:
 	std::map< AttributeIdentifier, int > m_aStats {};
 
 	CTeeInfo m_TeeInfos {};
-	int m_Team {};
 
 	DBFieldContainer m_MiningData
 	{
@@ -156,14 +154,7 @@ public:
 struct CAccountTempData
 {
 	int m_LastKilledByWeapon;
-	int m_TempDecoractionID;
-	int m_TempDecorationType;
-	int m_TempID3;
-
 	CAuctionSlot m_TempAuctionSlot;
-
-	// temp rankname for guild rank settings
-	char m_aRankGuildBuf[32];
 
 	// temp for searching
 	char m_aGuildSearchBuf[32];

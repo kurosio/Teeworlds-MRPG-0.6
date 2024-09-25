@@ -753,11 +753,11 @@ void CCharacter::TickDeferred()
 
 bool CCharacter::IncreaseHealth(int Amount)
 {
-	if(m_Health >= m_pPlayer->GetStartHealth())
+	if(m_Health >= m_pPlayer->GetMaxHealth())
 		return false;
 
 	Amount = maximum(Amount, 1);
-	m_Health = clamp(m_Health + Amount, 0, m_pPlayer->GetStartHealth());
+	m_Health = clamp(m_Health + Amount, 0, m_pPlayer->GetMaxHealth());
 	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	m_pPlayer->SetSnapHealthTick(2);
 	return true;
@@ -765,11 +765,11 @@ bool CCharacter::IncreaseHealth(int Amount)
 
 bool CCharacter::IncreaseMana(int Amount)
 {
-	if(m_Mana >= m_pPlayer->GetStartMana())
+	if(m_Mana >= m_pPlayer->GetMaxMana())
 		return false;
 
 	Amount = maximum(Amount, 1);
-	m_Mana = clamp(m_Mana + Amount, 0, m_pPlayer->GetStartMana());
+	m_Mana = clamp(m_Mana + Amount, 0, m_pPlayer->GetMaxMana());
 	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	return true;
 }
@@ -857,7 +857,7 @@ void CCharacter::Die(int Killer, int Weapon)
 void CCharacter::AutoUseHealingPotionIfNeeded() const
 {
 	// automatically use equipped heal potion if conditions are met
-	if(m_pPlayer->m_aPlayerTick[PotionRecast] >= Server()->Tick() || m_Health > m_pPlayer->GetStartHealth() / 3)
+	if(m_pPlayer->m_aPlayerTick[PotionRecast] >= Server()->Tick() || m_Health > m_pPlayer->GetMaxHealth() / 3)
 		return;
 
 	const auto equippedHeal = m_pPlayer->GetEquippedItemID(EQUIP_POTION_HEAL);
@@ -1047,13 +1047,13 @@ void CCharacter::Snap(int SnappingClient)
 
 		if(m_Health > 0)
 		{
-			const int HealthPercent = translate_to_percent(m_pPlayer->GetStartHealth(), m_Health, 10.0f);
+			const int HealthPercent = translate_to_percent(m_pPlayer->GetMaxHealth(), m_Health, 10.0f);
 			pCharacter->m_Health = clamp(HealthPercent, 1, 10);
 		}
 
 		if(m_Mana > 0)
 		{
-			const int ManaPercent = translate_to_percent(m_pPlayer->GetStartMana(), m_Mana, 10.0f);
+			const int ManaPercent = translate_to_percent(m_pPlayer->GetMaxMana(), m_Mana, 10.0f);
 			pCharacter->m_Armor = clamp(ManaPercent, 1, 10);
 		}
 	}
@@ -1279,18 +1279,18 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 	{
 		if(m_pPlayer->IsActiveEffect("Fire"))
 		{
-			const int ExplodeDamageSize = translate_to_percent_rest(m_pPlayer->GetStartHealth(), 3);
+			const int ExplodeDamageSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
 			GS()->CreateExplosion(m_Core.m_Pos, m_pPlayer->GetCID(), WEAPON_GRENADE, 0);
 			TakeDamage(vec2(0, 0), ExplodeDamageSize, m_pPlayer->GetCID(), WEAPON_SELF);
 		}
 		if(m_pPlayer->IsActiveEffect("Poison"))
 		{
-			const int PoisonSize = translate_to_percent_rest(m_pPlayer->GetStartHealth(), 3);
+			const int PoisonSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
 			TakeDamage(vec2(0, 0), PoisonSize, m_pPlayer->GetCID(), WEAPON_SELF);
 		}
 		if(m_pPlayer->IsActiveEffect("RegenMana"))
 		{
-			const int RestoreMana = translate_to_percent_rest(m_pPlayer->GetStartMana(), 5);
+			const int RestoreMana = translate_to_percent_rest(m_pPlayer->GetMaxMana(), 5);
 			IncreaseMana(RestoreMana);
 		}
 
@@ -1336,19 +1336,19 @@ void CCharacter::UpdateEquipingStats(int ItemID)
 		return;
 
 	// health check
-	if(m_Health > m_pPlayer->GetStartHealth())
+	if(m_Health > m_pPlayer->GetMaxHealth())
 	{
 		GS()->Chat(m_pPlayer->GetCID(), "Your health has been reduced.");
 		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that gave it away.");
-		m_Health = m_pPlayer->GetStartHealth();
+		m_Health = m_pPlayer->GetMaxHealth();
 	}
 
 	// mana check
-	if(m_Mana > m_pPlayer->GetStartMana())
+	if(m_Mana > m_pPlayer->GetMaxMana())
 	{
 		GS()->Chat(m_pPlayer->GetCID(), "Your mana has been reduced.");
 		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that gave it away.");
-		m_Mana = m_pPlayer->GetStartMana();
+		m_Mana = m_pPlayer->GetMaxMana();
 	}
 
 	// checking and limiting the gold capacity
@@ -1393,8 +1393,8 @@ void CCharacter::HandlePlayer()
 	// recovery mana
 	if(Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
 	{
-		if(m_Mana < m_pPlayer->GetStartMana())
-			IncreaseMana(m_pPlayer->GetStartMana() / 20);
+		if(m_Mana < m_pPlayer->GetMaxMana())
+			IncreaseMana(m_pPlayer->GetMaxMana() / 20);
 	}
 
 	// handle
@@ -1488,7 +1488,7 @@ bool CCharacter::CheckFailMana(int Mana)
 	m_Mana -= Mana;
 
 	// try auto use regen mana
-	if(m_Mana <= m_pPlayer->GetStartMana() / 5 && !m_pPlayer->IsActiveEffect("RegenMana") && m_pPlayer->GetItem(itPotionManaRegen)->IsEquipped())
+	if(m_Mana <= m_pPlayer->GetMaxMana() / 5 && !m_pPlayer->IsActiveEffect("RegenMana") && m_pPlayer->GetItem(itPotionManaRegen)->IsEquipped())
 		m_pPlayer->GetItem(itPotionManaRegen)->Use(1);
 
 	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
