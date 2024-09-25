@@ -113,7 +113,7 @@ void CWarehouse::InitProperties(const std::string& Properties)
 
 			// initialize storage
 			auto JsonStorage = pJson["storage"];
-			int Value = JsonStorage.value("value", 0);
+			BigInt Value = JsonStorage.value("value", BigInt(0));
 			vec2 TextPos = vec2(JsonStorage.value("x", 0), JsonStorage.value("y", 0));
 			m_Storage.m_pWarehouse = this;
 			m_Storage.m_Value = Value;
@@ -153,5 +153,5 @@ void CWarehouse::CStorage::UpdateText(int LifeTime) const
 {
 	// update storage text
 	CGS* pGS = (CGS*)Instance::GameServer(m_pWarehouse->m_WorldID);
-	pGS->EntityManager()->Text(m_TextPos, LifeTime, std::to_string(m_Value).c_str());
+	pGS->EntityManager()->Text(m_TextPos, LifeTime, m_Value.to_string().c_str());
 }

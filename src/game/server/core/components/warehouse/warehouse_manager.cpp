@@ -177,7 +177,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		}
 
 		// Unloading products from the warehouse
-		int Value = minimum(pWarehouse->Storage().GetValue(), g_Config.m_SvWarehouseProductsCanTake - pProducts->GetValue());
+		int Value = minimum(pWarehouse->Storage().GetValue().to_int(), g_Config.m_SvWarehouseProductsCanTake - pProducts->GetValue());
 		if(pWarehouse->Storage().Remove(Value))
 		{
 			pProducts->Add(Value);
