@@ -47,7 +47,7 @@ void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& 
 	m_pWarData.second->m_pGuild->m_pWar = m_pWarData.second;
 	m_TimeUntilEnd = TimeUntilEnd;
 
-	Database->Execute<DB::INSERT>(TW_GUILDS_WARS_TABLE, "(TimeUntilEnd, GuildID1, GuildID2) VALUES ('%llu', '%d', '%d')", 
+	Database->Execute<DB::INSERT>(TW_GUILDS_WARS_TABLE, "(TimeUntilEnd, GuildID1, GuildID2) VALUES ('{}', '{}', '{}')", 
 		m_TimeUntilEnd, m_pWarData.first->m_pGuild->GetID(), m_pWarData.second->m_pGuild->GetID());
 	dbg_msg("test", "creating war handler");
 }
@@ -71,7 +71,7 @@ void CGuildWarHandler::End()
 	if(iter != m_pData.end())
 	{
 		m_pData.erase(iter);
-		Database->Execute<DB::REMOVE>(TW_GUILDS_WARS_TABLE, "WHERE GuildID1 = '%d' AND GuildID2 = '%d'", m_pWarData.first->GetGuild()->GetID(), m_pWarData.second->GetGuild()->GetID());
+		Database->Execute<DB::REMOVE>(TW_GUILDS_WARS_TABLE, "WHERE GuildID1 = '{}' AND GuildID2 = '{}'", m_pWarData.first->GetGuild()->GetID(), m_pWarData.second->GetGuild()->GetID());
 	}
 
 	// here reward count
@@ -82,6 +82,6 @@ void CGuildWarHandler::End()
 
 void CGuildWarHandler::Save() const
 {
-	Database->Execute<DB::UPDATE>(TW_GUILDS_WARS_TABLE, "TimeUntilEnd = '%llu', Score1 = '%d', Score2 = '%d' WHERE GuildID1 = '%d' AND GuildID2 = '%d'", 
+	Database->Execute<DB::UPDATE>(TW_GUILDS_WARS_TABLE, "TimeUntilEnd = '{}', Score1 = '{}', Score2 = '{}' WHERE GuildID1 = '{}' AND GuildID2 = '{}'", 
 		m_TimeUntilEnd, m_pWarData.first->GetScore(), m_pWarData.second->GetScore(), m_pWarData.first->GetGuild()->GetID(), m_pWarData.second->GetGuild()->GetID());
 }

@@ -71,7 +71,7 @@ void CQuestManager::OnInit()
 void CQuestManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	// initialize player quests
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
 		// initialize variables
@@ -505,7 +505,7 @@ void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) cons
 	if(!questIDsToReset.empty())
 	{
 		questIDsToReset.pop_back();
-		Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID IN (%s) AND UserID = '%d'", questIDsToReset.c_str(), AccountID);
+		Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID IN ({}) AND UserID = '{}'", questIDsToReset.c_str(), AccountID);
 		GS()->Chat(ClientID, "The daily quests have been updated.");
 	}
 }

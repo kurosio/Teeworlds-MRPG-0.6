@@ -29,7 +29,7 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS) : IGameController
 	ChangeState(DUNGEON_WAITING);
 
 	// key door construction
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_door", "WHERE DungeonID = '%d'", m_DungeonID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_door", "WHERE DungeonID = '{}'", m_DungeonID);
 	while(pRes->next())
 	{
 		const int DungeonBotID = pRes->getInt("BotID");

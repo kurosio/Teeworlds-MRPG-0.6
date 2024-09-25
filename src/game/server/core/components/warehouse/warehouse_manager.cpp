@@ -16,8 +16,8 @@ void CWarehouseManager::OnInit()
 	while(pRes->next())
 	{
 		WarehouseIdentifier ID = pRes->getInt("ID");
-		std::string Name = pRes->getString("Name").c_str();
-		std::string Properties = pRes->getString("Properties").c_str();
+		std::string Name = pRes->getString("Name");
+		std::string Properties = pRes->getString("Properties");
 		vec2 Pos = vec2((float)pRes->getInt("PosX"), (float)pRes->getInt("PosY"));
 		int Currency = pRes->getInt("Currency");
 		int WorldID = pRes->getInt("WorldID");

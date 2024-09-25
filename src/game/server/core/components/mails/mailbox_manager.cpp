@@ -65,7 +65,7 @@ bool CMailboxManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 // check whether messages are available
 int CMailboxManager::GetMailCount(int AccountID)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_mailbox", "WHERE UserID = '%d'", AccountID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_mailbox", "WHERE UserID = '{}'", AccountID);
 	const int MailValue = (int)pRes->rowsCount();
 	return MailValue;
 }
@@ -84,7 +84,7 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 	std::vector<BasicMailInfo> vReadedMails {};
 
 	// collect by found from database
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
 		const bool Readed = pRes->getBoolean("Readed");
@@ -126,7 +126,7 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 	MarkReadedMail(MailID);
 
 	// found from database by mail id
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE ID = '%d'", MailID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE ID = '{}'", MailID);
 	if(pRes->next())
 	{
 		// get the information to create an object
@@ -175,7 +175,7 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 
 bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("AttachedItems", "tw_accounts_mailbox", "WHERE ID = '%d'", MailID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("AttachedItems", "tw_accounts_mailbox", "WHERE ID = '{}'", MailID);
 	if(!pRes->next())
 		return false;
 
@@ -223,11 +223,11 @@ bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 void CMailboxManager::MarkReadedMail(int MailID) const
 {
 	// mark readed mail
-	Database->Execute<DB::UPDATE>("tw_accounts_mailbox", "Readed = '1' WHERE ID = '%d'", MailID);
+	Database->Execute<DB::UPDATE>("tw_accounts_mailbox", "Readed = '1' WHERE ID = '{}'", MailID);
 }
 
 void CMailboxManager::DeleteMail(int MailID) const
 {
 	// remove from database
-	Database->Execute<DB::REMOVE>("tw_accounts_mailbox", "WHERE ID = '%d'", MailID);
+	Database->Execute<DB::REMOVE>("tw_accounts_mailbox", "WHERE ID = '{}'", MailID);
 }

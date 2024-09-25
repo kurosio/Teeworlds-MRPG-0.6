@@ -117,20 +117,20 @@ void CDungeonManager::SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayer
 	const int Seconds = pPlayerDungeonRecord->m_Time;
 	const float PassageHelp = pPlayerDungeonRecord->m_PassageHelp;
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE UserID = '%d' AND DungeonID = '%d'", pPlayer->Account()->GetID(), DungeonID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE UserID = '{}' AND DungeonID = '{}'", pPlayer->Account()->GetID(), DungeonID);
 	if(pRes->next())
 	{
 		if(pRes->getInt("Seconds") > Seconds && pRes->getInt("PassageHelp") < PassageHelp)
-			Database->Execute<DB::UPDATE>("tw_dungeons_records", "Seconds = '%d', PassageHelp = '%f' WHERE UserID = '%d' AND DungeonID = '%d'",
+			Database->Execute<DB::UPDATE>("tw_dungeons_records", "Seconds = '{}', PassageHelp = '{}' WHERE UserID = '{}' AND DungeonID = '{}'",
 				Seconds, PassageHelp, pPlayer->Account()->GetID(), DungeonID);
 		return;
 	}
-	Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Seconds, PassageHelp) VALUES ('%d', '%d', '%d', '%f')", pPlayer->Account()->GetID(), DungeonID, Seconds, PassageHelp);
+	Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Seconds, PassageHelp) VALUES ('{}', '{}', '{}', '{}')", pPlayer->Account()->GetID(), DungeonID, Seconds, PassageHelp);
 }
 
 void CDungeonManager::InsertVotesDungeonTop(int DungeonID, VoteWrapper* pWrapper) const
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '%d' ORDER BY Seconds ASC LIMIT 5", DungeonID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '{}' ORDER BY Seconds ASC LIMIT 5", DungeonID);
 	while(pRes->next())
 	{
 		const int Rank = pRes->getRow();

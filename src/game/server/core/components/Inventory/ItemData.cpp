@@ -330,7 +330,7 @@ bool CPlayerItem::Save()
 	if(GetPlayer() && GetPlayer()->IsAuthed())
 	{
 		int UserID = GetPlayer()->Account()->GetID();
-		const auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", m_ID, UserID);
+		const auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", m_ID, UserID);
 		pResCheck->AtExecute([this, UserID](ResultPtr pRes)
 		{
 			// check database value
@@ -339,12 +339,12 @@ bool CPlayerItem::Save()
 				// remove item
 				if(!m_Value)
 				{
-					Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", m_ID, UserID);
+					Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", m_ID, UserID);
 					return;
 				}
 
 				// update an item
-				Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d', Settings = '%d', Enchant = '%d', Durability = '%d' WHERE UserID = '%d' AND ItemID = '%d'",
+				Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
 					m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Account()->GetID(), m_ID);
 				return;
 			}
@@ -353,7 +353,7 @@ bool CPlayerItem::Save()
 			if(m_Value)
 			{
 				m_Durability = 100;
-				Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '%d', '%d')", m_ID, UserID, m_Value, m_Settings, m_Enchant);
+				Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')", m_ID, UserID, m_Value, m_Settings, m_Enchant);
 			}
 		});
 		return true;

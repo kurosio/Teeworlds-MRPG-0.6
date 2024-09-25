@@ -80,7 +80,7 @@ bool CPlayerQuest::Accept()
 	m_Step = 1;
 	m_State = QuestState::ACCEPT;
 	m_Datafile.Create();
-	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('%d', '%d', '%d')", m_ID, pPlayer->Account()->GetID(), m_State);
+	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
 	// handle repeatable quest
 	int ClientID = pPlayer->GetCID();
@@ -122,7 +122,7 @@ void CPlayerQuest::Refuse()
 		return;
 
 	// refuse quest
-	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '%d' AND UserID = '%d'", m_ID, pPlayer->Account()->GetID());
+	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '{}' AND UserID = '{}'", m_ID, pPlayer->Account()->GetID());
 	Reset();
 }
 
@@ -195,7 +195,7 @@ void CPlayerQuest::UpdateStepPosition()
 
 	// update quest state in database
 	m_State = QuestState::FINISHED;
-	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '%d' WHERE QuestID = '%d' AND UserID = '%d'", m_State, m_ID, pPlayer->Account()->GetID());
+	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '{}' WHERE QuestID = '{}' AND UserID = '{}'", (int)m_State, m_ID, pPlayer->Account()->GetID());
 	m_Datafile.Delete();
 
 	// save player stats and accept next story quest

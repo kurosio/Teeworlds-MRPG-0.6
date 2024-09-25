@@ -429,7 +429,7 @@ void CHouseManager::ShowDoorsController(CPlayer* pPlayer) const
 		{
 			bool Found = false;
 			CSqlString<64> cPlayerName = CSqlString<64>(pPlayer->GetTempData().m_aPlayerSearchBuf);
-			ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick LIKE '%%%s%%' LIMIT 5", cPlayerName.cstr());
+			ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick LIKE '%{}%' LIMIT 5", cPlayerName.cstr());
 			while(pRes->next())
 			{
 				const int UserID = pRes->getInt("ID");

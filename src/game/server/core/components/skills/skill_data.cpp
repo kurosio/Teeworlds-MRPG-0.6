@@ -67,7 +67,7 @@ void CSkill::SelectNextControlEmote()
 	if(m_SelectedEmoticion >= NUM_EMOTICONS)
 		m_SelectedEmoticion = -1;
 
-	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_SelectedEmoticion, m_ID, GetPlayer()->Account()->GetID());
+	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '{}' WHERE SkillID = '{}' AND UserID = '{}'", m_SelectedEmoticion, m_ID, GetPlayer()->Account()->GetID());
 }
 
 bool CSkill::Use()
@@ -290,18 +290,18 @@ bool CSkill::Upgrade()
 		return false;
 
 	// update level
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '%d' AND UserID = '%d'", m_ID, GetPlayer()->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '{}' AND UserID = '{}'", m_ID, GetPlayer()->Account()->GetID());
 	if(pRes->next())
 	{
 		m_Level++;
-		Database->Execute<DB::UPDATE>("tw_accounts_skills", "Level = '%d' WHERE SkillID = '%d' AND UserID = '%d'", m_Level, m_ID, GetPlayer()->Account()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_skills", "Level = '{}' WHERE SkillID = '{}' AND UserID = '{}'", m_Level, m_ID, GetPlayer()->Account()->GetID());
 		GS()->Chat(ClientID, "Increased the skill [{} level to {}]", Info()->GetName(), m_Level);
 	}
 	else
 	{
 		m_Level = 1;
 		m_SelectedEmoticion = -1;
-		Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('%d', '%d', '1');", m_ID, GetPlayer()->Account()->GetID());
+		Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('{}', '{}', '1');", m_ID, GetPlayer()->Account()->GetID());
 		GS()->Chat(ClientID, "Learned a new skill [{}]", Info()->GetName());
 	}
 

@@ -95,7 +95,7 @@ void CHouse::Buy(CPlayer* pPlayer)
 		m_pDoorManager->CloseAll();
 		m_pBank->Reset();
 		pPlayer->Account()->ReinitializeHouse();
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '%d', Bank = '0', AccessData = NULL WHERE ID = '%d'", m_AccountID, m_ID);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', AccessData = NULL WHERE ID = '{}'", m_AccountID, m_ID);
 
 		// send information
 		GS()->Chat(-1, "{} becomes the owner of the house class {}", Server()->ClientName(ClientID), GetClassName());
@@ -125,7 +125,7 @@ void CHouse::Sell()
 	m_pDoorManager->CloseAll();
 	m_pBank->Reset();
 	m_AccountID = -1;
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0', AccessData = NULL WHERE ID = '%d'", m_ID);
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0', AccessData = NULL WHERE ID = '{}'", m_ID);
 
 	// send information
 	GS()->ChatAccount(m_AccountID, "Your House is sold!");
@@ -185,7 +185,7 @@ void CHouse::CBank::Add(int Value)
 
 	// update
 	m_Bank += Value;
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pHouse->GetID());
 	GS()->Chat(pPlayer->GetCID(), "You put {} gold in the safe, now {}!", Value, m_Bank);
 }
 
@@ -205,7 +205,7 @@ void CHouse::CBank::Take(int Value)
 		// update
 		m_Bank -= Value;
 		pPlayer->Account()->AddGold(Value);
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pHouse->GetID());
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pHouse->GetID());
 		GS()->Chat(ClientID, "You take {} gold in the safe {}!", Value, m_Bank);
 	}
 }
@@ -216,7 +216,7 @@ bool CHouse::CBank::Spend(int Value)
 		return false;
 
 	m_Bank -= Value;
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pHouse->GetID());
 	return true;
 }
 
@@ -349,7 +349,7 @@ void CHouse::CDoorManager::SaveAccessList() const
 		AccessData.pop_back();
 
 	// update
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "AccessList = '%s' WHERE ID = '%d'", AccessData.c_str(), m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "AccessList = '{}' WHERE ID = '{}'", AccessData.c_str(), m_pHouse->GetID());
 }
 
 void CHouse::CDoorManager::AddDoor(const char* pDoorname, vec2 Position)
@@ -394,7 +394,7 @@ void CHouse::CDecorationManager::Init()
 	m_pDrawBoard->SetFlags(DRAWBOARDFLAG_PLAYER_ITEMS);
 
 	// Load from database decorations
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_DECORATION_TABLE, "WHERE WorldID = '%d' AND HouseID = '%d'", GS()->GetWorldID(), m_pHouse->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_DECORATION_TABLE, "WHERE WorldID = '{}' AND HouseID = '{}'", GS()->GetWorldID(), m_pHouse->GetID());
 	while(pRes->next())
 	{
 		int ItemID = pRes->getInt("ItemID");
@@ -476,7 +476,7 @@ bool CHouse::CDecorationManager::Add(const EntityPoint* pPoint) const
 	const vec2& EntityPos = pEntity->GetPos();
 
 	// Execute a database insert query with the values
-	Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d')",
+	Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('{}', '{}', '{}', '{}', '{}')",
 		ItemID, m_pHouse->GetID(), round_to_int(EntityPos.x), round_to_int(EntityPos.y), GS()->GetWorldID());
 	return true;
 }
@@ -487,7 +487,7 @@ bool CHouse::CDecorationManager::Remove(const EntityPoint* pPoint) const
 		return false;
 
 	// Remove the decoration from the database
-	Database->Execute<DB::REMOVE>(TW_HOUSES_DECORATION_TABLE, "WHERE HouseID = '%d' AND ItemID = '%d' AND PosX = '%d' AND PosY = '%d'",
+	Database->Execute<DB::REMOVE>(TW_HOUSES_DECORATION_TABLE, "WHERE HouseID = '{}' AND ItemID = '{}' AND PosX = '{}' AND PosY = '{}'",
 		m_pHouse->GetID(), pPoint->m_ItemID, round_to_int(pPoint->m_pEntity->GetPos().x), round_to_int(pPoint->m_pEntity->GetPos().y));
 	return true;
 }
@@ -566,5 +566,5 @@ void CHouse::CFarmzonesManager::Save() const
 		Farmzones.push_back(farmzoneData);
 	}
 
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '%s' WHERE ID = '%d'", Farmzones.dump().c_str(), m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '{}' WHERE ID = '{}'", Farmzones.dump().c_str(), m_pHouse->GetID());
 }

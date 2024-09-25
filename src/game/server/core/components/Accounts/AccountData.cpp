@@ -73,7 +73,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	// The update query is executed on the row with the ID equal to the given UserID
 	char aAddrStr[64];
 	pServer->GetClientAddr(m_ClientID, aAddrStr, sizeof(aAddrStr));
-	Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '%s', CountryISO = '%s' WHERE ID = '%d'", 
+	Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '{}', CountryISO = '{}' WHERE ID = '{}'", 
 		aAddrStr, Instance::Server()->ClientCountryIsoCode(m_ClientID), ID);
 
 	/*

@@ -36,6 +36,6 @@ void MailWrapper::Send()
 	CItem::ToArrayJSON(m_vAttachedItems, preparedJsItems, "items");
 
 	// send to database
-	Database->Execute<DB::INSERT>("tw_accounts_mailbox", "(Name, Description, AttachedItems, UserID, Sender) VALUES ('%s', '%s', '%s', '%d', '%s');",
+	Database->Execute<DB::INSERT>("tw_accounts_mailbox", "(Name, Description, AttachedItems, UserID, Sender) VALUES ('{}', '{}', '{}', '{}', '{}');",
 		cTitle.cstr(), cDesc.cstr(), preparedJsItems.dump().c_str(), m_AccountID, cSender.cstr());
 }

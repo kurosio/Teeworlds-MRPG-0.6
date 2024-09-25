@@ -1014,7 +1014,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 
 	// check guild name
 	CSqlString<64> GuildName(pGuildName);
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", TW_GUILDS_TABLE, "WHERE Name = '%s'", GuildName.cstr());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", TW_GUILDS_TABLE, "WHERE Name = '{}'", GuildName.cstr());
 	if(pRes->next())
 	{
 		GS()->Chat(ClientID, "This guild name already useds!");
@@ -1037,7 +1037,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	const std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":"0"}]})";
 	pGuild->Init(GuildName.cstr(), MembersData, -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, -1, nullptr);
 	pPlayer->Account()->ReinitializeGuild();
-	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('%d', '%s', '%d', '%s')",
+	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('{}', '{}', '{}', '{}')",
 		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
 	GS()->Chat(-1, "New guilds '{}' have been created!", GuildName.cstr());
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
@@ -1070,10 +1070,10 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	GS()->Chat(-1, "The {} guild has been disbanded.", pGuild->GetName());
 
 	// remove all related guild data
-	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
-	Database->Execute<DB::REMOVE>(TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
-	Database->Execute<DB::REMOVE>(TW_GUILDS_RANKS_TABLE, "WHERE GuildID = '%d'", pGuild->GetID());
-	Database->Execute<DB::REMOVE>(TW_GUILDS_TABLE, "WHERE ID = '%d'", pGuild->GetID());
+	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
+	Database->Execute<DB::REMOVE>(TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
+	Database->Execute<DB::REMOVE>(TW_GUILDS_RANKS_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
+	Database->Execute<DB::REMOVE>(TW_GUILDS_TABLE, "WHERE ID = '{}'", pGuild->GetID());
 
 	// erase guild from server
 	delete pGuild;

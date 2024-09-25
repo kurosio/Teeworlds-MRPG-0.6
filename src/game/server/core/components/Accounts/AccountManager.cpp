@@ -39,7 +39,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	const CSqlString<32> cClearNick = CSqlString<32>(Server()->ClientName(ClientID));
 
 	// Check if the client's nickname is already registered
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", cClearNick.cstr());
 	if(pRes->next())
 	{
 		GS()->Chat(ClientID, "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
@@ -64,9 +64,9 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	secure_random_password(aSalt, sizeof(aSalt), 24);
 
 	// Insert the account into the tw_accounts table with the values
-	Database->Execute<DB::INSERT>("tw_accounts", "(ID, Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('%d', '%s', '%s', '%s', UTC_TIMESTAMP(), '%s')", InitID, cClearLogin.cstr(), HashPassword(cClearPass.cstr(), aSalt).c_str(), aSalt, aAddrStr);
+	Database->Execute<DB::INSERT>("tw_accounts", "(ID, Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('{}', '{}', '{}', '{}', UTC_TIMESTAMP(), '{}')", InitID, cClearLogin.cstr(), HashPassword(cClearPass.cstr(), aSalt).c_str(), aSalt, aAddrStr);
 	// Insert the account into the tw_accounts_data table with the ID and nickname values
-	Database->Execute<DB::INSERT, 100>("tw_accounts_data", "(ID, Nick) VALUES ('%d', '%s')", InitID, cClearNick.cstr());
+	Database->Execute<DB::INSERT, 100>("tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", InitID, cClearNick.cstr());
 
 	Server()->AddAccountNickname(InitID, cClearNick.cstr());
 	GS()->Chat(ClientID, "- Registration complete! Don't forget to save your data.");
@@ -99,7 +99,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	const auto sqlStrNick = CSqlString<32>(Server()->ClientName(ClientID));
 
 	// check if the account exists
-	ResultPtr pResAccount = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '%s'", sqlStrNick.cstr());
+	ResultPtr pResAccount = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '{}'", sqlStrNick.cstr());
 	if(!pResAccount->next())
 	{
 		GS()->Chat(ClientID, "Sorry, we couldn't locate your username in our system.");
@@ -108,7 +108,8 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	int AccountID = pResAccount->getInt("ID");
 
 	// check is login and password correct
-	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt", "tw_accounts", "WHERE Username = '%s' AND ID = '%d'", sqlStrLogin.cstr(), AccountID);
+	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt", 
+		"tw_accounts", "WHERE Username = '{}' AND ID = '{}'", sqlStrLogin.cstr(), AccountID);
 	if(!pResCheck->next() || str_comp(pResCheck->getString("Password").c_str(), HashPassword(sqlStrPass.cstr(), pResCheck->getString("PasswordSalt").c_str()).c_str()) != 0)
 	{
 		GS()->Chat(ClientID, "Oops, that doesn't seem to be the right login or password");
@@ -116,7 +117,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	}
 
 	// check if the account is banned
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", AccountID);
+	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '{}' AND current_timestamp() < `BannedUntil`", AccountID);
 	if(pResBan->next())
 	{
 		const char* pBannedUntil = pResBan->getString("BannedUntil").c_str();
@@ -211,18 +212,18 @@ bool CAccountManager::ChangeNickname(const std::string& newNickname, int ClientI
 
 	// check newnickname
 	const CSqlString<32> cClearNick = CSqlString<32>(newNickname.c_str());
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '%s'", cClearNick.cstr());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", cClearNick.cstr());
 	if(pRes->next())
 		return false;
 
-	Database->Execute<DB::UPDATE>("tw_accounts_data", "Nick = '%s' WHERE ID = '%d'", cClearNick.cstr(), pPlayer->Account()->GetID());
+	Database->Execute<DB::UPDATE>("tw_accounts_data", "Nick = '{}' WHERE ID = '{}'", cClearNick.cstr(), pPlayer->Account()->GetID());
 	Server()->SetClientName(ClientID, newNickname.c_str());
 	return true;
 }
 
 int CAccountManager::GetRank(int AccountID)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Rank FROM (SELECT ID, RANK() OVER (ORDER BY Level DESC, Exp DESC) AS Rank", "tw_accounts_data", ") AS RankedData WHERE ID = %d", AccountID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Rank FROM (SELECT ID, RANK() OVER (ORDER BY Level DESC, Exp DESC) AS Rank", "tw_accounts_data", ") AS RankedData WHERE ID = {}", AccountID);
 	return pRes->next() ? pRes->getInt("Rank") : -1;
 }
 
@@ -558,7 +559,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 	const CSqlString<32> cVoucherCode = CSqlString<32>(pVoucher);
 	str_format(aSelect, sizeof(aSelect), "v.*, IF((SELECT r.ID FROM tw_voucher_redeemed r WHERE CASE v.Multiple WHEN 1 THEN r.VoucherID = v.ID AND r.UserID = %d ELSE r.VoucherID = v.ID END) IS NULL, FALSE, TRUE) AS used", pPlayer->Account()->GetID());
 
-	ResultPtr pResVoucher = Database->Execute<DB::SELECT>(aSelect, "tw_voucher v", "WHERE v.Code = '%s'", cVoucherCode.cstr());
+	ResultPtr pResVoucher = Database->Execute<DB::SELECT>(aSelect, "tw_voucher v", "WHERE v.Code = '{}'", cVoucherCode.cstr());
 	if(pResVoucher->next())
 	{
 		const int VoucherID = pResVoucher->getInt("ID");
@@ -602,7 +603,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
 		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 
-		Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES (%d, %d, %d)", VoucherID, pPlayer->Account()->GetID(), (int)time(0));
+		Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES ({}, {}, {})", VoucherID, pPlayer->Account()->GetID(), (int)time(0));
 		GS()->Chat(ClientID, "You have successfully redeemed the voucher '{}'.", pVoucher);
 		return;
 	}
@@ -613,7 +614,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 bool CAccountManager::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason)
 {
 	// Check if the account is already banned
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil", "tw_accounts_bans", "WHERE AccountId = '%d' AND current_timestamp() < `BannedUntil`", pPlayer->Account()->GetID());
+	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil", "tw_accounts_bans", "WHERE AccountId = '{}' AND current_timestamp() < `BannedUntil`", pPlayer->Account()->GetID());
 	if(pResBan->next())
 	{
 		// Print message and return false if the account is already banned
@@ -622,7 +623,7 @@ bool CAccountManager::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const st
 	}
 
 	// Ban the account
-	Database->Execute<DB::INSERT>("tw_accounts_bans", "(AccountId, BannedUntil, Reason) VALUES (%d, %s, '%s')",
+	Database->Execute<DB::INSERT>("tw_accounts_bans", "(AccountId, BannedUntil, Reason) VALUES ('{}', '{}', '{}')",
 		pPlayer->Account()->GetID(), std::string("current_timestamp + " + Time.asSqlInterval()).c_str(), Reason.c_str());
 	GS()->Server()->Kick(pPlayer->GetCID(), "Your account was banned");
 	m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully banned!");
@@ -632,11 +633,11 @@ bool CAccountManager::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const st
 bool CAccountManager::UnBanAccount(int BanId) const
 {
 	// Search for ban using the specified BanId
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("AccountId", "tw_accounts_bans", "WHERE Id = '%d' AND current_timestamp() < `BannedUntil`", BanId);
+	ResultPtr pResBan = Database->Execute<DB::SELECT>("AccountId", "tw_accounts_bans", "WHERE Id = '{}' AND current_timestamp() < `BannedUntil`", BanId);
 	if(pResBan->next())
 	{
 		// If the ban exists and the current timestamp is still less than the BannedUntil timestamp, unban the account
-		Database->Execute<DB::UPDATE>("tw_accounts_bans", "BannedUntil = current_timestamp WHERE Id = '%d'", BanId);
+		Database->Execute<DB::UPDATE>("tw_accounts_bans", "BannedUntil = current_timestamp WHERE Id = '{}'", BanId);
 		m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully unbanned!");
 		return true;
 	}

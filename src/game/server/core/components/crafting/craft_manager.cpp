@@ -14,7 +14,7 @@ void CCraftManager::OnInit()
 	{
 		int ItemID = pRes->getInt("ItemID");
 		int ItemValue = pRes->getInt("ItemValue");
-		int Price = pRes->getInt("Price");
+		BigInt Price = pRes->getBigInt("Price");
 		int WorldID = pRes->getInt("WorldID");
 
 		// initialize required ingredients
@@ -28,7 +28,7 @@ void CCraftManager::OnInit()
 		// initialize new craft element
 		CraftIdentifier ID = pRes->getInt("ID");
 		auto* pCraftItem = CCraftItem::CreateElement(ID);
-		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), 100, WorldID);
 	}
 
 	// sort craft item's by function

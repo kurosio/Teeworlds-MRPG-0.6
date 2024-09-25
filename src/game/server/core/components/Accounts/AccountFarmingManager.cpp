@@ -31,7 +31,7 @@ void CAccountFarmingManager::OnPlayerLogin(CPlayer *pPlayer)
 {
 	// try load from database
 	auto& refFarmingDbField = pPlayer->Account()->m_FarmingData;
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	if(pRes->next())
 	{
 		refFarmingDbField.initFields(&pRes);
@@ -42,7 +42,7 @@ void CAccountFarmingManager::OnPlayerLogin(CPlayer *pPlayer)
 	refFarmingDbField(JOB_LEVEL, 1).m_Value = 1;
 	refFarmingDbField(JOB_EXPERIENCE, 0).m_Value = 0;
 	refFarmingDbField(JOB_UPGRADES, 0).m_Value = 0;
-	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('%d')", pPlayer->Account()->GetID());
+	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('{}')", pPlayer->Account()->GetID());
 }
 
 CItemDescription* CAccountFarmingManager::GetFarmingItemInfoByPos(vec2 Pos) const

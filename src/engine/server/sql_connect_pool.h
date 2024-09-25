@@ -33,29 +33,49 @@ enum class DB
 /*
  * defined
  */
-#define FORMAT_STRING_ARGS(fmt, output) \
-{ \
-	va_list ap, ap2; \
-	va_start(ap, fmt); \
-	va_copy(ap2, ap); \
-	int size = std::vsnprintf(nullptr, 0, fmt, ap2); \
-	va_end(ap2); \
-	if (size > 0) \
-	{ \
-		std::string str(size, '\0'); \
-		std::vsnprintf(&str[0], size + 1, fmt, ap); \
-		output = std::move(str); \
-	} \
-	else { output = "\0"; } \
-	va_end(ap); \
-}
 #define Database CConectionPool::GetInstance()
 inline std::recursive_mutex g_SqlThreadRecursiveLock;
+
+class WrapperResultSet
+{
+public:
+	explicit WrapperResultSet(ResultSet* pResult) : m_pResult(pResult) {}
+	~WrapperResultSet() { delete m_pResult; }
+
+	WrapperResultSet(const WrapperResultSet&) = delete;
+	WrapperResultSet& operator=(const WrapperResultSet&) = delete;
+
+	bool getBoolean(const SQLString& column) const { return m_pResult->getBoolean(column); }
+	int getInt(const SQLString& column) const { return m_pResult->getInt(column); }
+	int64_t getInt64(const SQLString& column) const { return m_pResult->getInt64(column); }
+	double getDouble(const SQLString& column) const { return m_pResult->getDouble(column); }
+	std::string getString(const SQLString& column) const { return std::string(m_pResult->getString(column).c_str()); }
+	std::string getDateTime(const SQLString& column) const { return std::string(m_pResult->getString(column).c_str()); }
+	bool next() const { return m_pResult->next(); }
+	size_t rowsCount() const { return m_pResult->rowsCount(); }
+	size_t getRow() const { return m_pResult->getRow(); }
+
+	BigInt getBigInt(const SQLString& column) const
+	{
+		try
+		{
+			const std::string stringValue = m_pResult->getString(column).c_str();
+			return BigInt(stringValue);
+		}
+		catch(const SQLException& e)
+		{
+			throw std::runtime_error("Failed to convert column '" + std::string(column.c_str()) + "' to BigInt: " + e.what());
+		}
+	}
+
+private:
+	ResultSet* m_pResult;
+};
 
 /*
  * using typename
  */
-using ResultPtr = std::unique_ptr<ResultSet>;
+using ResultPtr = std::unique_ptr<WrapperResultSet>;
 using CallbackResultPtr = std::function<void(ResultPtr)>;
 using CallbackUpdatePtr = std::function<void()>;
 
@@ -113,11 +133,11 @@ private:
 	class CResultSelect : public CResultBase
 	{
 	public:
-		CResultSelect& UpdateQuery(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
+		template<typename... Ts>
+		CResultSelect& UpdateQuery(const char* pSelect, const char* pTable, const char* pBuffer, Ts&&... args)
 		{
-			std::string strQuery;
-			FORMAT_STRING_ARGS(pBuffer, strQuery);
-			m_Query = std::string("SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + strQuery + ";");
+			std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
+			m_Query = fmt("SELECT {} FROM {} {};", pSelect, pTable, strQuery);
 			return *this;
 		}
 
@@ -132,7 +152,7 @@ private:
 			try
 			{
 				const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-				pResult.reset(pStmt->executeQuery(m_Query.c_str()));
+				pResult = std::make_unique<WrapperResultSet>(pStmt->executeQuery(m_Query.c_str()));
 				pStmt->close();
 			}
 			catch (SQLException& e)
@@ -161,7 +181,7 @@ private:
 				try
 				{
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-					ResultPtr pResult(pStmt->executeQuery(Query.c_str()));
+					auto pResult = std::make_unique<WrapperResultSet>(pStmt->executeQuery(Query.c_str()));
 					if(pCallbackResult)
 					{
 						pCallbackResult(std::move(pResult));
@@ -186,17 +206,18 @@ private:
 	class CResultQuery : public CResultBase
 	{
 	public:
-		CResultQuery& UpdateQuery(const char* pTable, const char* pBuffer, ...)
+		template <typename ... Ts>
+		CResultQuery& UpdateQuery(const char* pTable, const char* pBuffer, Ts&&... args)
 		{
-			std::string strQuery;
-			FORMAT_STRING_ARGS(pBuffer, strQuery);
+			std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
 
-			if (m_TypeQuery == DB::INSERT)
-				m_Query = std::string("INSERT INTO " + std::string(pTable) + " " + strQuery + ";");
-			else if (m_TypeQuery == DB::UPDATE)
-				m_Query = std::string("UPDATE " + std::string(pTable) + " SET " + strQuery + ";");
-			else if (m_TypeQuery == DB::REMOVE)
-				m_Query = std::string("DELETE FROM " + std::string(pTable) + " " + strQuery + ";");
+			if(m_TypeQuery == DB::INSERT)
+				m_Query = fmt("INSERT INTO {} {};", pTable, strQuery);
+			else if(m_TypeQuery == DB::UPDATE)
+				m_Query = fmt("UPDATE {} SET {};", pTable, strQuery);
+			else if(m_TypeQuery == DB::REMOVE)
+				m_Query = fmt("DELETE FROM {} {};", pTable, strQuery);
+
 			return *this;
 		}
 
@@ -241,11 +262,11 @@ private:
 	class CResultQueryCustom : public CResultQuery
 	{
 	public:
-		CResultQueryCustom& UpdateQuery(const char* pBuffer, ...)
+		template <typename... Ts>
+		CResultQueryCustom& UpdateQuery(const char* pBuffer, Ts&&... args)
 		{
-			std::string strQuery;
-			FORMAT_STRING_ARGS(pBuffer, strQuery);
-			m_Query = std::string(strQuery + ";");
+			std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
+			m_Query = strQuery + ";";
 			return *this;
 		}
 	};
@@ -264,18 +285,26 @@ private:
 
 public:
 	template<DB T>
-	static std::enable_if_t<T == DB::SELECT, std::unique_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
+	static std::enable_if_t<T == DB::SELECT, std::unique_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable)
 	{
-		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery);
+		return std::move(PrepareQuerySelect(T, pSelect, pTable, ""));
+	}
+	template<DB T, typename... Ts>
+	static std::enable_if_t<T == DB::SELECT, std::unique_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable, const char* pBuffer, Ts&&... args)
+	{
+		std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
 		return std::move(PrepareQuerySelect(T, pSelect, pTable, strQuery));
 	}
 
-	template<DB T>
-	static std::enable_if_t<T == DB::SELECT, ResultPtr> Execute(const char* pSelect, const char* pTable, const char* pBuffer = "\0", ...)
+	template<DB T, typename... Ts>
+	static std::enable_if_t<T == DB::SELECT, ResultPtr> Execute(const char* pSelect, const char* pTable)
 	{
-		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery);
+		return PrepareQuerySelect(T, pSelect, pTable, "")->Execute();
+	}
+	template<DB T, typename... Ts>
+	static std::enable_if_t<T == DB::SELECT, ResultPtr> Execute(const char* pSelect, const char* pTable, const char* pBuffer, Ts&&... args)
+	{
+		std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
 		return PrepareQuerySelect(T, pSelect, pTable, strQuery)->Execute();
 	}
 
@@ -293,19 +322,10 @@ private:
 	}
 
 public:
-	template<DB T>
-	static std::enable_if_t<T == DB::OTHER, std::unique_ptr<CResultQueryCustom>> Prepare(const char* pBuffer, ...)
+	template<DB T, int Milliseconds = 0, typename... Ts>
+	static std::enable_if_t<T == DB::OTHER, void> Execute(const char* pBuffer, Ts&&... args)
 	{
-		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery);
-		return std::move(PrepareQueryCustom(T, strQuery));
-	}
-
-	template<DB T, int Milliseconds = 0>
-	static std::enable_if_t<T == DB::OTHER, void> Execute(const char* pBuffer, ...)
-	{
-		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery);
+		std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
 		PrepareQueryCustom(T, strQuery)->Execute(Milliseconds);
 	}
 
@@ -328,19 +348,10 @@ private:
 	}
 
 public:
-	template<DB T>
-	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), std::unique_ptr<CResultQuery>> Prepare(const char* pTable, const char* pBuffer, ...)
+	template<DB T, int Milliseconds = 0, typename... Ts>
+	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), void> Execute(const char* pTable, const char* pBuffer, Ts&&... args)
 	{
-		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery);
-		return std::move(PrepareQueryInsertUpdateDelete(T, pTable, strQuery));
-	}
-
-	template<DB T, int Milliseconds = 0>
-	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), void> Execute(const char* pTable, const char* pBuffer, ...)
-	{
-		std::string strQuery;
-		FORMAT_STRING_ARGS(pBuffer, strQuery);
+		std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
 		PrepareQueryInsertUpdateDelete(T, pTable, strQuery)->Execute(Milliseconds);
 	}
 };

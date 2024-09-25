@@ -286,7 +286,7 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 			const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
 
 			// insert new slot
-			Database->Execute<DB::INSERT>(TW_AUCTION_SLOTS_TABLE, "(ID, ItemID, Value, Price, Enchant, OwnerID) VALUES ('%d', '%d', '%d', '%d', '%d', '%d')",
+			Database->Execute<DB::INSERT>(TW_AUCTION_SLOTS_TABLE, "(ID, ItemID, Value, Price, Enchant, OwnerID) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
 				InitID, pItem->GetID(), pItem->GetValue(), pAuctionData->GetPrice(), pItem->GetEnchant(), pPlayer->Account()->GetID());
 			CAuctionSlot::CreateElement(InitID)->Init(*pItem, pAuctionData->GetPrice(), AccountID);
 
@@ -378,7 +378,7 @@ void CAuctionManager::RemoveSlotByID(int ID) const
 {
 	if(const auto pSlot = GetSlot(ID))
 	{
-		Database->Execute<DB::REMOVE>(TW_AUCTION_SLOTS_TABLE, "WHERE ID = '%d'", ID);
+		Database->Execute<DB::REMOVE>(TW_AUCTION_SLOTS_TABLE, "WHERE ID = '{}'", ID);
 		std::erase(CAuctionSlot::Data(), pSlot);
 	}
 }

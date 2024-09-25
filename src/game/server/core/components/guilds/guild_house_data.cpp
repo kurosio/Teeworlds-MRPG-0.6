@@ -85,7 +85,7 @@ bool CGuildHouse::ExtendRentDays(int Days)
 	if(m_pGuild->GetBank()->Spend(GetRentPrice() * Days))
 	{
 		m_RentDays += Days;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '%d' WHERE ID = '%d'", m_RentDays, m_ID);
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
 		return true;
 	}
 
@@ -100,7 +100,7 @@ bool CGuildHouse::ReduceRentDays(int Days)
 
 	// reduce rent days
 	m_RentDays -= clamp(Days, 1, m_RentDays);
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '%d' WHERE ID = '%d'", m_RentDays, m_ID);
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
 	return true;
 }
 
@@ -196,7 +196,7 @@ void CGuildHouse::CFarmzonesManager::Save() const
 	}
 
 	// update database
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '%s' WHERE ID = '%d'", Farmzones.dump().c_str(), m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '{}' WHERE ID = '{}'", Farmzones.dump().c_str(), m_pHouse->GetID());
 }
 
 /* -------------------------------------
@@ -221,7 +221,7 @@ void CGuildHouse::CDecorationManager::Init()
 	m_pDrawBoard->SetFlags(DRAWBOARDFLAG_PLAYER_ITEMS);
 
 	// Load from database decorations
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE WorldID = '%d' AND HouseID = '%d'", GS()->GetWorldID(), m_pHouse->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE WorldID = '{}' AND HouseID = '{}'", GS()->GetWorldID(), m_pHouse->GetID());
 	while(pRes->next())
 	{
 		int ItemID = pRes->getInt("ItemID");
@@ -309,7 +309,7 @@ bool CGuildHouse::CDecorationManager::Add(const EntityPoint* pPoint) const
 	const vec2& EntityPos = pEntity->GetPos();
 
 	// execute a database insert query
-	Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('%d', '%d', '%d', '%d', '%d')",
+	Database->Execute<DB::INSERT>(TW_GUILD_HOUSES_DECORATION_TABLE, "(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('{}', '{}', '{}', '{}', '{}')",
 		ItemID, m_pHouse->GetID(), round_to_int(EntityPos.x), round_to_int(EntityPos.y), GS()->GetWorldID());
 	return true;
 }
@@ -321,7 +321,7 @@ bool CGuildHouse::CDecorationManager::Remove(const EntityPoint* pPoint) const
 		return false;
 
 	// execute a database remove query
-	Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE HouseID = '%d' AND ItemID = '%d' AND PosX = '%d' AND PosY = '%d'",
+	Database->Execute<DB::REMOVE>(TW_GUILD_HOUSES_DECORATION_TABLE, "WHERE HouseID = '{}' AND ItemID = '{}' AND PosX = '{}' AND PosY = '{}'",
 		m_pHouse->GetID(), pPoint->m_ItemID, round_to_int(pPoint->m_pEntity->GetPos().x), round_to_int(pPoint->m_pEntity->GetPos().y));
 	return true;
 }

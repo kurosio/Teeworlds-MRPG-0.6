@@ -29,7 +29,7 @@ bool CGuild::Upgrade(GuildUpgrade Type)
 	{
 		// Increase the value of the upgrade by 1
 		pUpgradeData->m_Value += 1;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "%s = '%d' WHERE ID = '%d'", pUpgradeData->getFieldName(), pUpgradeData->m_Value, m_ID);
+		Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "{} = '{}' WHERE ID = '{}'", pUpgradeData->getFieldName(), pUpgradeData->m_Value, m_ID);
 
 		// Add and send a history entry for the upgrade
 		m_pLogger->Add(LOGFLAG_UPGRADES_CHANGES, "'%s' upgraded to %d level", pUpgradeData->getDescription(), pUpgradeData->m_Value);
@@ -68,7 +68,7 @@ void CGuild::AddExperience(int Experience)
 	// update table
 	if(rand() % 10 == 2 || UpdateTable)
 	{
-		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '%d', Experience = '%d' WHERE ID = '%d'", m_Level, m_Experience, m_ID);
+		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '{}', Experience = '{}' WHERE ID = '{}'", m_Level, m_Experience, m_ID);
 	}
 }
 
@@ -84,7 +84,7 @@ GuildResult CGuild::SetLeader(int AccountID)
 
 	// implement the leader change
 	m_LeaderUID = AccountID;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LeaderUID = '%d' WHERE ID = '%d'", m_LeaderUID, m_ID);
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LeaderUID = '{}' WHERE ID = '{}'", m_LeaderUID, m_ID);
 
 	// send messages
 	const char* pNickNewLeader = Instance::Server()->GetAccountNickname(m_LeaderUID);
@@ -118,7 +118,7 @@ GuildResult CGuild::BuyHouse(int HouseID)
 		m_pHouse = *IterHouse;
 		m_pHouse->UpdateGuild(this);
 		m_pHouse->m_RentDays = GUILD_RENT_DAYS_DEFAULT;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = '%d', RentDays = '%d' WHERE ID = '%d'", m_ID, m_pHouse->m_RentDays, HouseID);
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = '{}', RentDays = '{}' WHERE ID = '{}'", m_ID, m_pHouse->m_RentDays, HouseID);
 
 		// send messages
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Your guild has purchased a house!");
@@ -149,7 +149,7 @@ void CGuild::SellHouse()
 	GS()->ChatGuild(m_ID, "House sold, {}gold returned to leader", ReturnedGold);
 
 	// implement the sell of the house
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '%d'", m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '{}'", m_pHouse->GetID());
 	m_pHouse->GetDoorManager()->CloseAll();
 	m_pHouse->UpdateGuild(nullptr);
 	m_pHouse = nullptr;
@@ -223,7 +223,7 @@ CGS* CGuild::CBank::GS() const { return m_pGuild->GS(); }
 void CGuild::CBank::Add(int Value)
 {
 	m_Bank += Value;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pGuild->GetID());
 }
 
 bool CGuild::CBank::Spend(int Value)
@@ -232,7 +232,7 @@ bool CGuild::CBank::Spend(int Value)
 		return false;
 
 	m_Bank -= Value;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '%d' WHERE ID = '%d'", m_Bank, m_pGuild->GetID());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pGuild->GetID());
 	return true;
 }
 
@@ -254,7 +254,7 @@ void CGuild::CLogEntry::SetActivityFlag(int64_t Flag)
 		m_Logflag |= Flag;
 
 	// update the database
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LogFlag = '%d' WHERE ID = '%d'", m_Logflag, m_pGuild->GetID());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LogFlag = '{}' WHERE ID = '{}'", m_Logflag, m_pGuild->GetID());
 }
 
 bool CGuild::CLogEntry::IsActivityFlagSet(int64_t Flag) const { return (Flag & m_Logflag); }
@@ -285,14 +285,14 @@ void CGuild::CLogEntry::Add(int64_t LogFlag, const char* pBuffer, ...)
 		// add the formatted string and timestamp to the logs list
 		const auto cBuf = CSqlString<64>(aBuf);
 		m_aLogs.push_back({ cBuf.cstr(), aBufTimeStamp });
-		Database->Execute<DB::INSERT>(TW_GUILDS_HISTORY_TABLE, "(GuildID, Text, Time) VALUES ('%d', '%s', '%s')", m_pGuild->GetID(), cBuf.cstr(), aBufTimeStamp);
+		Database->Execute<DB::INSERT>(TW_GUILDS_HISTORY_TABLE, "(GuildID, Text, Time) VALUES ('{}', '{}', '{}')", m_pGuild->GetID(), cBuf.cstr(), aBufTimeStamp);
 	}
 }
 
 void CGuild::CLogEntry::InitLogs()
 {
 	// initialize the logs list
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '%d' ORDER BY ID DESC LIMIT %d", m_pGuild->GetID(), (int)GUILD_LOGS_MAX_COUNT);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '{}' ORDER BY ID DESC LIMIT {}", m_pGuild->GetID(), (int)GUILD_LOGS_MAX_COUNT);
 	while(pRes->next())
 		m_aLogs.push_back({ pRes->getString("Text").c_str(), pRes->getString("Time").c_str() });
 }
@@ -323,7 +323,7 @@ GuildResult CGuild::CRank::Rename(std::string NewRank)
 
 	// implement renaming
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "renamed rank '%s' to '%s'", m_Rank.c_str(), cstrNewRank.cstr());
-	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Name = '%s' WHERE ID = '%d'", cstrNewRank.cstr(), m_ID);
+	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Name = '{}' WHERE ID = '{}'", cstrNewRank.cstr(), m_ID);
 	m_Rank = cstrNewRank.cstr();
 	return GuildResult::RANK_SUCCESSFUL;
 }
@@ -332,7 +332,7 @@ void CGuild::CRank::SetRights(GuildRankRights Rights)
 {
 	// implement setting new rights
 	m_Rights = (GuildRankRights)clamp((int)Rights, (int)GUILD_RANK_RIGHT_DEFAULT, (int)GUILD_RANK_RIGHT_FULL);
-	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Rights = '%d' WHERE ID = '%d'", m_Rights, m_ID);
+	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Rights = '{}' WHERE ID = '{}'", (int)m_Rights, m_ID);
 
 	// send messages
 	GS()->ChatGuild(m_pGuild->GetID(), "Rank '{}' new rights '{}'!", m_Rank.c_str(), GetRightsName());
@@ -374,7 +374,7 @@ CGuild::CRanksManager::~CRanksManager()
 void CGuild::CRanksManager::Init(GuildRankIdentifier DefaultID)
 {
 	// execute a database query to get the rank data for the guild
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_ranks", "WHERE GuildID = '%d'", m_pGuild->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds_ranks", "WHERE GuildID = '{}'", m_pGuild->GetID());
 	while(pRes->next())
 	{
 		// initialize variables
@@ -448,7 +448,7 @@ GuildResult CGuild::CRanksManager::Add(const std::string& Rank)
 
 	// implement the new rank
 	GuildIdentifier GuildID = m_pGuild->GetID();
-	Database->Execute<DB::INSERT>("tw_guilds_ranks", "(ID, Rights, GuildID, Name) VALUES ('%d', '%d', '%d', '%s')", InitID, (int)GUILD_RANK_RIGHT_DEFAULT, GuildID, cstrRank.cstr());
+	Database->Execute<DB::INSERT>("tw_guilds_ranks", "(ID, Rights, GuildID, Name) VALUES ('{}', '{}', '{}', '{}')", InitID, (int)GUILD_RANK_RIGHT_DEFAULT, GuildID, cstrRank.cstr());
 	m_aRanks.emplace_back(new CRank(InitID, cstrRank.cstr(), GUILD_RANK_RIGHT_DEFAULT, m_pGuild));
 
 	// send messages
@@ -482,7 +482,7 @@ GuildResult CGuild::CRanksManager::Remove(const std::string& Rank)
 	}
 
 	// implement removal
-	Database->Execute<DB::REMOVE>("tw_guilds_ranks", "WHERE ID = '%d'", pRank->GetID());
+	Database->Execute<DB::REMOVE>("tw_guilds_ranks", "WHERE ID = '{}'", pRank->GetID());
 	m_aRanks.erase(std::find(m_aRanks.begin(), m_aRanks.end(), pRank));
 	delete pRank;
 
@@ -767,7 +767,7 @@ void CGuild::CMembersManager::Save() const
 	}
 
 	// Update the guild data in the database
-	Database->Execute<DB::UPDATE, 300>(TW_GUILDS_TABLE, "DefaultRankID = '%d', Members = '%s' WHERE ID = '%d'",
+	Database->Execute<DB::UPDATE, 300>(TW_GUILDS_TABLE, "DefaultRankID = '{}', Members = '{}' WHERE ID = '{}'",
 		m_pGuild->GetRanks()->GetDefaultRank()->GetID(), MembersData.dump().c_str(), m_pGuild->GetID());
 }
 
@@ -797,7 +797,7 @@ CGuild::CRequestsManager::~CRequestsManager()
 void CGuild::CRequestsManager::Init()
 {
 	// Execute a database query to get the rank data for the guild
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d'", m_pGuild->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}'", m_pGuild->GetID());
 	while(pRes->next())
 	{
 		// Get the rank ID, name, and access level from the database query result
@@ -825,7 +825,7 @@ GuildResult CGuild::CRequestsManager::Request(int FromUID)
 	m_aRequestsJoin.push_back(new RequestData(FromUID));
 
 	// Insert the invite into the database
-	Database->Execute<DB::INSERT>(TW_GUILDS_INVITES_TABLE, "(GuildID, UserID) VALUES ('%d', '%d')", m_pGuild->GetID(), FromUID);
+	Database->Execute<DB::INSERT>(TW_GUILDS_INVITES_TABLE, "(GuildID, UserID) VALUES ('{}', '{}')", m_pGuild->GetID(), FromUID);
 	return GuildResult::MEMBER_SUCCESSFUL;
 }
 
@@ -841,7 +841,7 @@ GuildResult CGuild::CRequestsManager::Accept(int UserID, const CMember* pFromMem
 	if(Iter != m_aRequestsJoin.end())
 	{
 		// Remove the request from the database and delete it from memory
-		Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d' AND UserID = '%d'", m_pGuild->GetID(), (*Iter)->GetFromUID());
+		Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}' AND UserID = '{}'", m_pGuild->GetID(), (*Iter)->GetFromUID());
 		delete (*Iter);
 		m_aRequestsJoin.erase(Iter);
 
@@ -876,7 +876,7 @@ void CGuild::CRequestsManager::Deny(int UserID, const CMember* pFromMember)
 	if(Iter != m_aRequestsJoin.end())
 	{
 		// Remove the request from the database
-		Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '%d' AND UserID = '%d'", m_pGuild->GetID(), (*Iter)->GetFromUID());
+		Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}' AND UserID = '{}'", m_pGuild->GetID(), (*Iter)->GetFromUID());
 
 		// If pFromMember exists
 		if(pFromMember)

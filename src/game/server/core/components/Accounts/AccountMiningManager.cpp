@@ -30,7 +30,7 @@ void CAccountMiningManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	// try load from database
 	auto& refMiningDbField = pPlayer->Account()->m_MiningData;
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mining", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	if (pRes->next())
 	{
 		refMiningDbField.initFields(&pRes);
@@ -41,7 +41,7 @@ void CAccountMiningManager::OnPlayerLogin(CPlayer* pPlayer)
 	refMiningDbField(JOB_LEVEL, 1).m_Value = 1;
 	refMiningDbField(JOB_EXPERIENCE, 0).m_Value = 0;
 	refMiningDbField(JOB_UPGRADES, 0).m_Value = 0;
-	Database->Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('%d')", pPlayer->Account()->GetID());
+	Database->Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('{}')", pPlayer->Account()->GetID());
 }
 
 CItemDescription* CAccountMiningManager::GetMiningItemInfoByPos(vec2 Pos) const

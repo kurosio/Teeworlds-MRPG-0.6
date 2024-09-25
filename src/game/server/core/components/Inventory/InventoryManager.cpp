@@ -74,7 +74,7 @@ void CInventoryManager::OnInit()
 void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '%d'", pPlayer->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
 		ItemIdentifier ItemID = pRes->getInt("ItemID");
@@ -287,7 +287,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 void CInventoryManager::RepairDurabilityItems(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '%d'", pPlayer->Account()->GetID());
+	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
 		Item.m_Durability = 100;
 }
@@ -481,15 +481,15 @@ void CInventoryManager::AddItemSleep(int AccountID, ItemIdentifier ItemID, int V
 			return;
 		}
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("Value", "tw_accounts_items", "WHERE ItemID = '%d' AND UserID = '%d'", ItemID, AccountID);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("Value", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", ItemID, AccountID);
 		if(pRes->next())
 		{
 			const int ReallyValue = pRes->getInt("Value") + Value;
-			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '%d' WHERE UserID = '%d' AND ItemID = '%d'", ReallyValue, AccountID, ItemID);
+			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}' WHERE UserID = '{}' AND ItemID = '{}'", ReallyValue, AccountID, ItemID);
 			lock_sleep.unlock();
 			return;
 		}
-		Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('%d', '%d', '%d', '0', '0')", ItemID, AccountID, Value);
+		Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '0', '0')", ItemID, AccountID, Value);
 		lock_sleep.unlock();
 	});
 	Thread.detach();

@@ -499,7 +499,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 
 	if(Table == SAVE_STATS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '%d', Exp = '%d', Bank = '%s' WHERE ID = '%d'", 
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '{}', Exp = '{}', Bank = '{}' WHERE ID = '{}'", 
 			pAcc->GetLevel(), pAcc->GetExperience(), pAcc->GetBank().to_string().c_str(), pAcc->GetID());
 	}
 	else if(Table == SAVE_UPGRADES)
@@ -515,22 +515,22 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 			}
 		}
 
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '%d' %s WHERE ID = '%d'", pAcc->m_Upgrade, Buffer.buffer(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '{}' {} WHERE ID = '{}'", pAcc->m_Upgrade, Buffer.buffer(), pAcc->GetID());
 		Buffer.clear();
 	}
 	else if(Table == SAVE_FARMING_DATA)
 	{
 		std::string Fields = pAcc->m_FarmingData.getUpdateField();
-		Database->Execute<DB::UPDATE>("tw_accounts_farming", "%s WHERE UserID = '%d'", Fields.c_str(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_farming", "{} WHERE UserID = '{}'", Fields.c_str(), pAcc->GetID());
 	}
 	else if(Table == SAVE_MINING_DATA)
 	{
 		std::string Fields = pAcc->m_MiningData.getUpdateField();
-		Database->Execute<DB::UPDATE>("tw_accounts_mining", "%s WHERE UserID = '%d'", Fields.c_str(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_mining", "{} WHERE UserID = '{}'", Fields.c_str(), pAcc->GetID());
 	}
 	else if(Table == SAVE_SOCIAL_STATUS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '%d' WHERE ID = '%d'",
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '{}' WHERE ID = '{}'",
 			pAcc->GetCrimeScore(), pAcc->GetID());
 	}
 	else if(Table == SAVE_GUILD_DATA)
@@ -540,32 +540,32 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	else if(Table == SAVE_POSITION)
 	{
 		const int LatestCorrectWorldID = AccountManager()->GetLastVisitedWorldID(pPlayer);
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '%d' WHERE ID = '%d'", LatestCorrectWorldID, pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '{}' WHERE ID = '{}'", LatestCorrectWorldID, pAcc->GetID());
 	}
 	else if(Table == SAVE_TIME_PERIODS)
 	{
 		time_t Daily = pAcc->m_Periods.m_DailyStamp;
 		time_t Week = pAcc->m_Periods.m_WeekStamp;
 		time_t Month = pAcc->m_Periods.m_MonthStamp;
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '%llu', WeekStamp = '%llu', MonthStamp = '%llu' WHERE ID = '%d'", Daily, Week, Month, pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '{}', WeekStamp = '{}', MonthStamp = '{}' WHERE ID = '{}'", Daily, Week, Month, pAcc->GetID());
 	}
 	else if(Table == SAVE_LANGUAGE)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '%s' WHERE ID = '%d'", pPlayer->GetLanguage(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '{}' WHERE ID = '{}'", pPlayer->GetLanguage(), pAcc->GetID());
 	}
 	else if(Table == SAVE_ACHIEVEMENTS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '%s' WHERE ID = '%d'", pAcc->GetAchievementsData().dump().c_str(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '{}' WHERE ID = '{}'", pAcc->GetAchievementsData().dump().c_str(), pAcc->GetID());
 	}
 	else
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '%s' WHERE ID = '%d'", pAcc->GetLogin(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '{}' WHERE ID = '{}'", pAcc->GetLogin(), pAcc->GetID());
 	}
 }
 
 void CMmoController::LoadLogicWorld() const
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_logics_worlds", "WHERE WorldID = '%d'", GS()->GetWorldID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_logics_worlds", "WHERE WorldID = '{}'", GS()->GetWorldID());
 	while(pRes->next())
 	{
 		const int Type = pRes->getInt("MobID"), Mode = pRes->getInt("Mode"), Health = pRes->getInt("ParseInt");
@@ -588,7 +588,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 		if(pWrapper)
 			pWrapper->SetTitle("Top 10 guilds leveling");
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT %d", Rows);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
 			char NameGuild[64];
@@ -608,7 +608,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 		if(pWrapper)
 			pWrapper->SetTitle("Top 10 guilds wealthy");
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT %d", Rows);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
 			char NameGuild[64];
@@ -627,7 +627,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 		if(pWrapper)
 			pWrapper->SetTitle("Top 10 players leveling");
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT %d", Rows);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
 			char Nick[64];
@@ -647,7 +647,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 		if(pWrapper)
 			pWrapper->SetTitle("Top 10 players wealthy");
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '%d' ORDER BY Value DESC LIMIT %d", (ItemIdentifier)itGold, Rows);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '{}' ORDER BY Value DESC LIMIT {}", (ItemIdentifier)itGold, Rows);
 		while(pRes->next())
 		{
 			char Nick[64];
@@ -669,7 +669,7 @@ void CMmoController::AsyncClientEnterMsgInfo(const std::string ClientName, int C
 	CSqlString<MAX_NAME_LENGTH> PlayerName(ClientName.c_str());
 
 	// create new thread
-	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '%s'", PlayerName.cstr());
+	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '{}'", PlayerName.cstr());
 	AsyncEnterRes->AtExecute([PlayerName = std::string(PlayerName.cstr()), ClientID](ResultPtr pRes)
 	{
 		CGS* pGS = (CGS*)Instance::Server()->GameServerPlayer(ClientID);

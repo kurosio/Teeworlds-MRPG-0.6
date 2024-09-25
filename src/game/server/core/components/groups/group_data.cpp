@@ -86,7 +86,7 @@ bool GroupData::Remove(int AccountID)
 void GroupData::Disband() const
 {
 	m_pData.erase(m_ID);
-	Database->Execute<DB::REMOVE>(TW_GROUPS_TABLE, "WHERE ID = '%d'", m_ID);
+	Database->Execute<DB::REMOVE>(TW_GROUPS_TABLE, "WHERE ID = '{}'", m_ID);
 }
 
 void GroupData::ChangeOwner(int AccountID)
@@ -163,6 +163,6 @@ void GroupData::Save() const
 		StrAccountIds.pop_back();
 
 	// update group data
-	Database->Execute<DB::UPDATE>(TW_GROUPS_TABLE, "AccountIDs = '%s', GetOwnerUID = '%d' WHERE ID = '%d'", 
+	Database->Execute<DB::UPDATE>(TW_GROUPS_TABLE, "AccountIDs = '{}', GetOwnerUID = '{}' WHERE ID = '{}'", 
 		StrAccountIds.c_str(), m_LeaderUID, m_ID);
 }

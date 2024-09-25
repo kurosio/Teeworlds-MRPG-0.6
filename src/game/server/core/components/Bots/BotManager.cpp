@@ -305,17 +305,17 @@ void CBotManager::ConAddCharacterBot(int ClientID, const char* pCharacter)
 
 	// check the nick
 	CSqlString<16> cNick = CSqlString<16>(pCharacter);
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_info", "WHERE Name = '%s'", cNick.cstr());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_info", "WHERE Name = '{}'", cNick.cstr());
 	if(pRes->next())
 	{
 		// if the nickname is not in the database
 		const int ID = pRes->getInt("ID");
-		Database->Execute<DB::UPDATE>("tw_bots_info", "JsonTeeInfo = '%s' WHERE ID = '%d'", JsonTeeInfo.dump().c_str(), ID);
+		Database->Execute<DB::UPDATE>("tw_bots_info", "JsonTeeInfo = '{}' WHERE ID = '{}'", JsonTeeInfo.dump().c_str(), ID);
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Updated character bot!");
 		return;
 	}
 
 	// add a new bot
-	Database->Execute<DB::INSERT>("tw_bots_info", "(Name, JsonTeeInfo) VALUES ('%s', '%s')", cNick.cstr(), JsonTeeInfo.dump().c_str());
+	Database->Execute<DB::INSERT>("tw_bots_info", "(Name, JsonTeeInfo) VALUES ('{}', '{}')", cNick.cstr(), JsonTeeInfo.dump().c_str());
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Added new character bot!");
 }

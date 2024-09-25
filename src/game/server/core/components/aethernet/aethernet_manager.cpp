@@ -45,7 +45,7 @@ void CAethernetManager::OnInit()
 void CAethernetManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	// Initialize the player's aether data
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_ACCOUNTS_AETHERS, "WHERE UserID = '%d'", pPlayer->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_ACCOUNTS_AETHERS, "WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
 		AetherIdentifier ID = pRes->getInt("AetherID");
@@ -168,7 +168,7 @@ void CAethernetManager::UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const
 	// Unlock the Aether for the player
 	if(pAether && !pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
 	{
-		Database->Execute<DB::INSERT>(TW_ACCOUNTS_AETHERS, "(UserID, AetherID) VALUES ('%d', '%d')", pPlayer->Account()->GetID(), pAether->GetID());
+		Database->Execute<DB::INSERT>(TW_ACCOUNTS_AETHERS, "(UserID, AetherID) VALUES ('{}', '{}')", pPlayer->Account()->GetID(), pAether->GetID());
 
 		pPlayer->Account()->AddAether(pAether->GetID());
 		GS()->Chat(ClientID, "You now have Aethernet access to the {}.", pAether->GetName());
