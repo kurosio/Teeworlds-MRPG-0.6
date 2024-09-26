@@ -1177,7 +1177,7 @@ BigInt BigInt::operator/(const BigInt& num) const {
         return -(*this);
 
     BigInt quotient;
-    if (abs_dividend <= LLONG_MAX || abs_divisor <= LLONG_MAX)
+    if (abs_dividend <= LLONG_MAX && abs_divisor <= LLONG_MAX)
         quotient = std::stoll(abs_dividend.value) / std::stoll(abs_divisor.value);
     else if (abs_dividend == abs_divisor)
         quotient = 1;
