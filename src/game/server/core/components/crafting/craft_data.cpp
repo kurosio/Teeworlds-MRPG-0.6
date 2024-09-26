@@ -2,9 +2,9 @@
 
 #include <game/server/player.h>
 
-int CCraftItem::GetPrice(CPlayer* pPlayer) const
+intbig CCraftItem::GetPrice(CPlayer* pPlayer) const
 {
-	int Discount = 0;
+	intbig Discount = 0;
 
 	if(pPlayer)
 	{
@@ -20,5 +20,5 @@ int CCraftItem::GetPrice(CPlayer* pPlayer) const
 		}
 	}
 
-	return maximum(m_Price - Discount, 0);
+	return maximum(m_Price - Discount, (intbig)0);
 }

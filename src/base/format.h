@@ -91,7 +91,7 @@ class CFormatter
 	{
 		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
 			return { type_floating, std::to_string(Value) };
-		else if constexpr(std::is_same_v<T, BigInt>)
+		else if constexpr(std::is_same_v<T, intbig>)
 			return { type_big_integers, Value.to_string() };
 		else if constexpr(std::is_arithmetic_v<T>)
 			return { type_integers, std::to_string(Value) };

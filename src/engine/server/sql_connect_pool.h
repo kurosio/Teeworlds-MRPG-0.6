@@ -55,16 +55,16 @@ public:
 	size_t rowsCount() const { return m_pResult->rowsCount(); }
 	size_t getRow() const { return m_pResult->getRow(); }
 
-	BigInt getBigInt(const SQLString& column) const
+	intbig getBigInt(const SQLString& column) const
 	{
 		try
 		{
 			const std::string stringValue = m_pResult->getString(column).c_str();
-			return BigInt(stringValue);
+			return intbig(stringValue);
 		}
 		catch(const SQLException& e)
 		{
-			throw std::runtime_error("Failed to convert column '" + std::string(column.c_str()) + "' to BigInt: " + e.what());
+			throw std::runtime_error("Failed to convert column '" + std::string(column.c_str()) + "' to intbig: " + e.what());
 		}
 	}
 

@@ -508,7 +508,7 @@ CGuild::CRank* CGuild::CRanksManager::Get(GuildRankIdentifier ID) const
  * Members impl
  * ------------------------------------- */
 CGS* CGuild::CMember::GS() const { return m_pGuild->GS(); }
-CGuild::CMember::CMember(CGuild* pGuild, int AccountID, CRank* pRank, const BigInt Deposit) : m_pGuild(pGuild), m_pRank(pRank)
+CGuild::CMember::CMember(CGuild* pGuild, int AccountID, CRank* pRank, const intbig Deposit) : m_pGuild(pGuild), m_pRank(pRank)
 {
 	m_AccountID = AccountID;
 	m_Deposit = Deposit;
@@ -744,7 +744,7 @@ void CGuild::CMembersManager::Init(const std::string& JsonMembers)
 			{
 				// Get the rank ID and deposit for the member
 				int RID = pMember.value("rank_id", -1);
-				BigInt Deposit(pMember.value("deposit", "0"));
+				intbig Deposit(pMember.value("deposit", "0"));
 
 				// Create a new member data object and add it to the member list
 				m_apMembers[UID] = (new CMember(m_pGuild, UID, m_pGuild->GetRanks()->Get(RID), Deposit));

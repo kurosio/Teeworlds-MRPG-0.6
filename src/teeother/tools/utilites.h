@@ -11,22 +11,22 @@ using ByteArray = std::basic_string<std::byte>;
  * This function overload nlohmann json checks if the JSON value is either a string or a number.
  * If the value is a string, it directly converts it to BigInt.
  */
-inline void from_json(const nlohmann::json& j, BigInt& value)
+inline void from_json(const nlohmann::json& j, intbig& value)
 {
 	if(j.is_string())
 	{
-		value = BigInt(j.get<std::string>());
+		value = intbig(j.get<std::string>());
 	}
 	else if(j.is_number())
 	{
-		value = BigInt(j.dump());
+		value = intbig(j.dump());
 	}
 	else
 	{
 		throw std::invalid_argument("Unsupported JSON type for BigInt");
 	}
 }
-inline void to_json(nlohmann::json& j, const BigInt& value)
+inline void to_json(nlohmann::json& j, const intbig& value)
 {
 	j = value.to_string();
 }
