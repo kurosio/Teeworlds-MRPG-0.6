@@ -427,8 +427,8 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	{
 		// initialize variables
 		const int CurrentGold = pPlayer->Account()->GetGold();
-		const intbig CurrentBankGold = pPlayer->Account()->GetBank();
-		const intbig TotalGold = pPlayer->Account()->GetTotalGold();
+		const BigInt CurrentBankGold = pPlayer->Account()->GetBank();
+		const BigInt TotalGold = pPlayer->Account()->GetTotalGold();
 
 		MotdMenu MBonuses(ClientID,  "Here you can securely store or retrieve your gold. Remember, gold in the Bank is protected and will never be lost, even in death.");
 		MBonuses.AddText("Bank Management \u2697");
@@ -445,7 +445,8 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 
 		// withdraw
 		MBonuses.AddText("Gold from Bank");
-		MBonuses.Add("BANK_WITHDRAW", (int)CurrentBankGold, "Withdraw All");
+		int WithdrawAll = CurrentBankGold.to_int();
+		MBonuses.Add("BANK_WITHDRAW", WithdrawAll, "Withdraw All");
 		MBonuses.Send(MOTD_MENU_BANK_MANAGER);
 		return true;
 	}

@@ -48,10 +48,10 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 	m_ClassGroup = (ClassGroup)pResult->getInt("Class");
-	m_Bank = pResult->getBigInt("Bank");
+	m_Bank = pResult->getString("Bank").c_str();
 
 	// achievements data
-	InitAchievements(pResult->getString("Achievements"));
+	InitAchievements(pResult->getString("Achievements").c_str());
 
 	// time periods
 	m_Periods.m_DailyStamp = pResult->getInt64("DailyStamp");
@@ -203,10 +203,10 @@ int CAccountData::GetGold() const
 	return pPlayer ? pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
-intbig CAccountData::GetTotalGold() const
+BigInt CAccountData::GetTotalGold() const
 {
 	CPlayer* pPlayer = GetPlayer();
-	return pPlayer ? m_Bank + intbig(pPlayer->GetItem(itGold)->GetValue()) : intbig(0);
+	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
 void CAccountData::AddExperience(int Value)
@@ -328,10 +328,10 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 	// gold with bank
 	if(CurrencyItemID == itGold)
 	{
-		intbig TotalCurrency = m_Bank + pCurrencyItem->GetValue();
+		BigInt TotalCurrency = m_Bank + pCurrencyItem->GetValue();
 		if(PlayerCurrency < Price)
 		{
-			GS()->Chat(m_ClientID, "Required {$}, but you only have {$} {} (including bank)!", Price, TotalCurrency, pCurrencyItem->Info()->GetName());
+			GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, PlayerCurrency, pCurrencyItem->Info()->GetName());
 			return false;
 		}
 

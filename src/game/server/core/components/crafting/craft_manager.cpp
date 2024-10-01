@@ -14,7 +14,7 @@ void CCraftManager::OnInit()
 	{
 		int ItemID = pRes->getInt("ItemID");
 		int ItemValue = pRes->getInt("ItemValue");
-		intbig Price = pRes->getBigInt("Price");
+		BigInt Price = pRes->getBigInt("Price");
 		int WorldID = pRes->getInt("WorldID");
 
 		// initialize required ingredients
@@ -28,7 +28,7 @@ void CCraftManager::OnInit()
 		// initialize new craft element
 		CraftIdentifier ID = pRes->getInt("ID");
 		auto* pCraftItem = CCraftItem::CreateElement(ID);
-		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), 100, WorldID);
 	}
 
 	// sort craft item's by function
@@ -77,8 +77,8 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	}
 
 	// checking to see if there are enough funds for crafting
-	const intbig craftPrice = pCraft->GetPrice(pPlayer);
-	if(!pPlayer->Account()->SpendCurrency((int)craftPrice))
+	const int craftPrice = pCraft->GetPrice(pPlayer);
+	if(!pPlayer->Account()->SpendCurrency(craftPrice))
 		return;
 
 	// if a discount ticket is used, delete it and apply the discount
@@ -188,7 +188,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		VCraftRequired.BeginDepth();
 
 		// required gold
-		intbig CraftPrice = pCraft->GetPrice(pPlayer);
+		int CraftPrice = pCraft->GetPrice(pPlayer);
 		if(CraftPrice > 0)
 		{
 			auto playerGold = pPlayer->Account()->GetTotalGold();
@@ -250,7 +250,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 
 		CraftIdentifier ID = pCraft->GetID();
 		ItemIdentifier ItemID = pCraft->GetItem()->GetID();
-		const intbig Price = pCraft->GetPrice(pPlayer);
+		const int Price = pCraft->GetPrice(pPlayer);
 
 		// set title name by enchant type (or stack item, or only once)
 		if(pCraftItemInfo->IsEnchantable())

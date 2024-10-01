@@ -1,6 +1,28 @@
 ﻿#include "format.h"
 #include <base/system.h>
 
+std::string pluralize(const BigInt& count, const std::vector<std::string>& forms)
+{
+	// initialize variables
+	const size_t numForms = forms.size();
+
+	// special case for exactly 2 forms (singular and plural)
+	if(numForms == 2)
+		return (count == 1) ? forms[0] : forms[1];
+
+	// based on typical plural rules in many languages
+	if(numForms == 3)
+	{
+		if(forms.size() == 1 || (count % 10 == 1 && count % 100 != 11))
+			return forms[0];
+		if(forms.size() == 2 || (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)))
+			return forms[1];
+		return forms[2];
+	}
+
+	return "";
+}
+
 std::vector<std::string> collect_argument_plural(size_t startPos, const std::string& Argument)
 {
 	// initialize variables
@@ -61,6 +83,10 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 			if(iterChar == '~')
 				argumentType = arg_truncate;
 
+			// plural type
+			if(iterChar == '#')
+				argumentType = arg_plural;
+
 			// skip handle type
 			if(iterChar == '-')
 				argumentType = arg_skip_handle;
@@ -117,6 +143,50 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 					{
 						const size_t dotPos = argumentResult.find(truncationAfterChar) + 1;
 						argumentResult = argumentResult.substr(0, dotPos + truncateNum);
+					}
+				}
+				// plural type
+				else if(argumentType == arg_plural)
+				{
+					if(argumentTypename == type_integers || argumentTypename == type_big_integers)
+					{
+						// initialize variables
+						bool parsePlural = false;
+						std::string resultPlural {};
+						std::string variantPlural {};
+						BigInt numberPlural(argumentResult);
+
+						// parse plural description 
+						for(auto& c : argument)
+						{
+							// plural argument position
+							if(c == '#')
+							{
+								handleArguments(argumentTypename, argumentResult, argumentResult);
+								resultPlural += argumentResult;
+							}
+							else if(c == '(')
+							{
+								parsePlural = true;
+							}
+							else if(c == ')')
+							{
+								resultPlural += pluralize(numberPlural, collect_argument_plural(0, variantPlural));
+								parsePlural = false;
+								variantPlural.clear();
+							}
+							else if(!parsePlural)
+							{
+								resultPlural += c;
+							}
+							else
+							{
+								variantPlural += c;
+							}
+						}
+
+						// update argument result by plural result
+						argumentResult = resultPlural;
 					}
 				}
 

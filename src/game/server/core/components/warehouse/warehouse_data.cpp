@@ -96,7 +96,7 @@ void CWarehouse::InitProperties(const std::string& Properties)
 
 			// initialize storage
 			auto JsonStorage = pJson["storage"];
-			m_Storage.m_Value = JsonStorage.value("value", intbig());
+			m_Storage.m_Value = JsonStorage.value("value", BigInt(0));
 			m_Storage.m_TextPos = vec2(JsonStorage.value("x", 0), JsonStorage.value("y", 0));
 			m_Storage.m_pWarehouse = this;
 		}

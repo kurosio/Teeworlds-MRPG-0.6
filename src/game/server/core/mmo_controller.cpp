@@ -651,7 +651,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 		while(pRes->next())
 		{
 			char Nick[64];
-			int Gold = pRes->getInt("Value");
+			BigInt Gold = pRes->getInt("Value");
 			const int Rank = pRes->getRow();
 			const int UserID = pRes->getInt("UserID");
 			str_copy(Nick, Instance::Server()->GetAccountNickname(UserID), sizeof(Nick));

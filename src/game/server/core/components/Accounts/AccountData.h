@@ -35,7 +35,7 @@ class CAccountData
 	nlohmann::json m_AchievementsData { };
 	CBonusManager m_BonusManager{};
 	CPrisonManager m_PrisonManager{};
-	intbig m_Bank {};
+	BigInt m_Bank {};
 
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
@@ -89,9 +89,9 @@ public:
 	int GetCrimeScore() const { return m_CrimeScore; }
 	void ResetCrimeScore();
 
-	intbig GetBank() const { return m_Bank; }
+	BigInt GetBank() const { return m_Bank; }
 	int GetGold() const;
-	intbig GetTotalGold() const;
+	BigInt GetTotalGold() const;
 	int GetGoldCapacity() const;
 
 	void AddExperience(int Value); // Adds the specified value to the player's experience points

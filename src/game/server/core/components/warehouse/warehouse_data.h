@@ -60,13 +60,13 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 	class CStorage
 	{
 		friend class CWarehouse;
-		intbig m_Value {};
+		BigInt m_Value {};
 		vec2 m_TextPos {};
 		CWarehouse* m_pWarehouse {};
 
 	public:
 		// remove storage value
-		bool Remove(const intbig& Value)
+		bool Remove(const BigInt& Value)
 		{
 			if(m_pWarehouse->IsHasFlag(WF_STORAGE) && m_Value >= Value)
 			{
@@ -78,7 +78,7 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 		}
 
 		// add storage value
-		void Add(const intbig& Value)
+		void Add(const BigInt& Value)
 		{
 			if(m_pWarehouse->IsHasFlag(WF_STORAGE))
 			{
@@ -88,7 +88,7 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 		}
 
 		void UpdateText(int LifeTime) const;
-		intbig GetValue() const { return m_Value; }
+		BigInt GetValue() const { return m_Value; }
 	};
 
 	nlohmann::json m_Properties {};

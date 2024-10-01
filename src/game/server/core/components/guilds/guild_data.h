@@ -212,16 +212,16 @@ public:
 		CGuild* m_pGuild {};
 		CRank* m_pRank {};
 		int m_AccountID {};
-		intbig m_Deposit {};
+		BigInt m_Deposit {};
 
 	public:
-		CMember(CGuild* pGuild, int AccountID, CRank* pRank, intbig Deposit = 0);
+		CMember(CGuild* pGuild, int AccountID, CRank* pRank, BigInt Deposit = 0);
 		~CMember();
 
 		bool IsOnline() const;
 		int GetAccountID() const { return m_AccountID; }                                    // Get the account ID of the guild member
-		intbig GetDeposit() const { return m_Deposit; }                                   // Get the amount of gold deposited by the guild member
-		void SetDeposit(intbig Deposit) { m_Deposit = Deposit; }                            // Set the amount of gold deposited by the guild member
+		BigInt GetDeposit() const { return m_Deposit; }                                   // Get the amount of gold deposited by the guild member
+		void SetDeposit(BigInt Deposit) { m_Deposit = Deposit; }                            // Set the amount of gold deposited by the guild member
 		CRank* GetRank() const { return m_pRank; }                                          // Get the rank of the guild member
 		[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);                             // Set the rank of the guild member using the rank ID
 		[[nodiscard]] bool SetRank(CRank* pRank);                                           // Set the rank of the guild member using a rank object

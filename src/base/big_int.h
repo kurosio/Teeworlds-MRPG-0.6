@@ -1,216 +1,117 @@
+/*
+    BigInt
+    ------
+    Arbitrary-sized integer class for C++.
+    
+    Version: 0.5.0-dev
+    Released on: 05 October 2020 23:15 IST
+    Author: Syed Faheel Ahmad (faheel@live.in)
+    Project on GitHub: https://github.com/faheel/BigInt
+    License: MIT
+*/
+
+/*
+    ===========================================================================
+    BigInt
+    ===========================================================================
+    Definition for the BigInt class.
+*/
+
 #ifndef BASE_BIG_INT_H
 #define BASE_BIG_INT_H
 
-template <typename T>
-concept BigIntConcept = std::integral<T> || std::floating_point<T>;
+#include <iostream>
 
-class intbig
-{
-	double m_Value;
+class BigInt {
+    std::string value;
+    char sign;
 
-public:
-	// constructors
-	intbig() : m_Value(0.0) {}
+    public:
+        // Constructors:
+        BigInt();
+        BigInt(const BigInt&);
+        BigInt(const long long&);
+        BigInt(const std::string&);
 
-	template<BigIntConcept T>
-	intbig(T v) : m_Value(static_cast<double>(v)) {}
+        // Assignment operators:
+        BigInt& operator=(const BigInt&);
+        BigInt& operator=(const long long&);
+        BigInt& operator=(const std::string&);
 
-	intbig(const std::string& str)
-	{
-		std::string filteredStr;
-		for(const char ch : str)
-		{
-			if(std::isdigit(ch) || ch == '.' || ch == '-')
-				filteredStr += ch;
-		}
+        // Unary arithmetic operators:
+        BigInt operator+() const;   // unary +
+        BigInt operator-() const;   // unary -
 
-		// is has only
-		if(filteredStr.empty() || filteredStr == "-" || filteredStr == ".")
-		{
-			m_Value = 0.0;
-			return;
-		}
+        // Binary arithmetic operators:
+        BigInt operator+(const BigInt&) const;
+        BigInt operator-(const BigInt&) const;
+        BigInt operator*(const BigInt&) const;
+        BigInt operator/(const BigInt&) const;
+        BigInt operator%(const BigInt&) const;
+        BigInt operator+(const long long&) const;
+        BigInt operator-(const long long&) const;
+        BigInt operator*(const long long&) const;
+        BigInt operator/(const long long&) const;
+        BigInt operator%(const long long&) const;
+        BigInt operator+(const std::string&) const;
+        BigInt operator-(const std::string&) const;
+        BigInt operator*(const std::string&) const;
+        BigInt operator/(const std::string&) const;
+        BigInt operator%(const std::string&) const;
 
-		// try conversion
-		try
-		{
-			m_Value = std::stod(filteredStr);
-		}
-		catch(...)
-		{
-			m_Value = 0.0;
-		}
-	}
+        // Arithmetic-assignment operators:
+        BigInt& operator+=(const BigInt&);
+        BigInt& operator-=(const BigInt&);
+        BigInt& operator*=(const BigInt&);
+        BigInt& operator/=(const BigInt&);
+        BigInt& operator%=(const BigInt&);
+        BigInt& operator+=(const long long&);
+        BigInt& operator-=(const long long&);
+        BigInt& operator*=(const long long&);
+        BigInt& operator/=(const long long&);
+        BigInt& operator%=(const long long&);
+        BigInt& operator+=(const std::string&);
+        BigInt& operator-=(const std::string&);
+        BigInt& operator*=(const std::string&);
+        BigInt& operator/=(const std::string&);
+        BigInt& operator%=(const std::string&);
 
-	// conversion operators
-	std::string to_string() const 
-	{
-		std::string resultStr = std::to_string(m_Value);
+        // Increment and decrement operators:
+        BigInt& operator++();       // pre-increment
+        BigInt& operator--();       // pre-decrement
+        BigInt operator++(int);     // post-increment
+        BigInt operator--(int);     // post-decrement
 
-		if(const size_t pos = resultStr.find('.'); pos != std::string::npos)
-		{
-			const size_t lastNonZero = resultStr.find_last_not_of('0');
-			if(lastNonZero == pos)
-			{
-				// erase comma
-				resultStr.erase(pos);
-			}
-			else
-			{
-				// erase null
-				resultStr.erase(lastNonZero + 1);
-			}
-		}
+        // Relational operators:
+        bool operator<(const BigInt&) const;
+        bool operator>(const BigInt&) const;
+        bool operator<=(const BigInt&) const;
+        bool operator>=(const BigInt&) const;
+        bool operator==(const BigInt&) const;
+        bool operator!=(const BigInt&) const;
+        bool operator<(const long long&) const;
+        bool operator>(const long long&) const;
+        bool operator<=(const long long&) const;
+        bool operator>=(const long long&) const;
+        bool operator==(const long long&) const;
+        bool operator!=(const long long&) const;
+        bool operator<(const std::string&) const;
+        bool operator>(const std::string&) const;
+        bool operator<=(const std::string&) const;
+        bool operator>=(const std::string&) const;
+        bool operator==(const std::string&) const;
+        bool operator!=(const std::string&) const;
 
-		return resultStr;
-	}
+        // Conversion functions:
+        std::string to_string() const;
+        int to_int() const;
+        long to_long() const;
+        long long to_long_long() const;
 
-	// implicit
-	operator int() const { return static_cast<int>(m_Value); }
-	operator float() const { return static_cast<float>(m_Value); }
-	operator double() const { return m_Value; }
-	operator long() const { return static_cast<long>(m_Value); }
-	operator unsigned int() const { return static_cast<unsigned int>(m_Value); }
-	operator long long() const { return static_cast<long long>(m_Value); }
-	operator unsigned long long() const { return static_cast<unsigned long long>(m_Value); }
+        operator std::string() const { return to_string(); }
 
-	// compare operators
-	template<BigIntConcept T>
-	std::partial_ordering operator<=>(T other) const
-	{
-		return this->m_Value <=> static_cast<double>(other);
-	}
-
-	std::partial_ordering operator<=>(const intbig& other) const
-	{
-		return this->m_Value <=> other.m_Value;
-	}
-
-	template<BigIntConcept T>
-	bool operator==(T other) const
-	{
-		return std::fabs(this->m_Value - static_cast<double>(other)) < std::numeric_limits<double>::epsilon();
-	}
-
-	bool operator==(const intbig& other) const
-	{
-		return std::fabs(this->m_Value - other.m_Value) < std::numeric_limits<double>::epsilon();
-	}
-
-
-	// operators integral
-	template<BigIntConcept T>
-	intbig operator+(T other) const
-	{
-		return intbig(this->m_Value + static_cast<double>(other));
-	}
-
-	template<BigIntConcept T>
-	intbig& operator+=(T other)
-	{
-		this->m_Value += static_cast<double>(other);
-		return *this;
-	}
-
-	template<BigIntConcept T>
-	intbig operator-(T other) const
-	{
-		return intbig(this->m_Value - static_cast<double>(other));
-	}
-
-	template<BigIntConcept T>
-	intbig& operator-=(T other)
-	{
-		this->m_Value -= static_cast<double>(other);
-		return *this;
-	}
-
-	template<BigIntConcept T>
-	intbig operator*(T other) const
-	{
-		return intbig(this->m_Value * static_cast<double>(other));
-	}
-
-	template<BigIntConcept T>
-	intbig& operator*=(T other)
-	{
-		this->m_Value *= static_cast<double>(other);
-		return *this;
-	}
-
-	template<BigIntConcept T>
-	intbig operator/(T other) const
-	{
-		if(other == 0)
-		{
-			throw std::overflow_error("Division by zero!");
-		}
-		return intbig(this->m_Value / static_cast<double>(other));
-	}
-
-	template<BigIntConcept T>
-	intbig& operator/=(T other)
-	{
-		if(other == 0)
-		{
-			throw std::overflow_error("Division by zero!");
-		}
-		this->m_Value /= static_cast<double>(other);
-		return *this;
-	}
-
-	// operators bigint
-	intbig operator+(const intbig& other) const
-	{
-		return { this->m_Value + other.m_Value };
-	}
-
-	intbig& operator+=(const intbig& other)
-	{
-		this->m_Value += other.m_Value;
-		return *this;
-	}
-
-	intbig operator-(const intbig& other) const
-	{
-		return { this->m_Value - other.m_Value };
-	}
-
-	intbig& operator-=(const intbig& other)
-	{
-		this->m_Value -= other.m_Value;
-		return *this;
-	}
-
-	intbig operator*(const intbig& other) const
-	{
-		return { this->m_Value * other.m_Value };
-	}
-
-	intbig& operator*=(const intbig& other)
-	{
-		this->m_Value *= other.m_Value;
-		return *this;
-	}
-
-	intbig operator/(const intbig& other) const
-	{
-		if(other.m_Value == 0.0)
-		{
-			throw std::overflow_error("Division by zero!");
-		}
-		return { this->m_Value / other.m_Value };
-	}
-
-	intbig& operator/=(const intbig& other)
-	{
-		if(other.m_Value == 0.0)
-		{
-			throw std::overflow_error("Division by zero!");
-		}
-		this->m_Value /= other.m_Value;
-		return *this;
-	}
+        // Random number generating functions:
+        friend BigInt big_random(size_t);
 };
 
 #endif  // BASE_BIG_INT_H

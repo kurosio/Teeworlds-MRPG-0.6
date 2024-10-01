@@ -10,7 +10,7 @@ class CCraftItem : public MultiworldIdentifiableData< std::deque<CCraftItem*> >
 	CraftIdentifier m_ID {};
 	CItem m_Item {};
 	CItemsContainer m_RequiredItem;
-	intbig m_Price {};
+	int m_Price {};
 	int m_WorldID {};
 
 public:
@@ -25,7 +25,7 @@ public:
 	}
 
 	// initialize
-	void Init(CItemsContainer RequiredContainer, CItem Item, intbig Price, int WorldID)
+	void Init(CItemsContainer RequiredContainer, CItem Item, int Price, int WorldID)
 	{
 		m_RequiredItem = std::move(RequiredContainer);
 		m_Item = std::move(Item);
@@ -39,7 +39,7 @@ public:
 	const CItem* GetItem() const { return &m_Item; }                           // Get a constant pointer to the crafted item
 	CItemsContainer& GetRequiredItems() { return m_RequiredItem; }             // Get a reference to the required items container
 	const CItemsContainer& GetRequiredItems() const { return m_RequiredItem; } // Get a constant reference to the required items container
-	intbig GetPrice(class CPlayer* pPlayer) const;                                // Get the price of the craft item for a given player
+	int GetPrice(class CPlayer* pPlayer) const;                                // Get the price of the craft item for a given player
 	int GetWorldID() const { return m_WorldID; }                               // Get the world ID of the craft item
 };
 

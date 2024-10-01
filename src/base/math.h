@@ -174,38 +174,115 @@ public:
 	bool operator()() const { return m_State; }
 };
 
+
 // Concept arithmetic type
 template <typename T>
-concept PercentArithmetic = (std::is_arithmetic_v<T> || std::is_same_v<T, intbig>) && !std::is_same_v<T, char>;
+concept PercentCompatible = std::is_arithmetic_v<T> || std::is_same_v<T, BigInt>;
 
 // derive from the number of percent e.g. ((100, 10%) = 10)
-template <PercentArithmetic T>
+template <PercentCompatible T>
 T translate_to_percent_rest(T value, float percent)
 {
-	return static_cast<T>((static_cast<double>(value) * percent) / 100.0);
+	if constexpr(std::is_same_v<T, BigInt>)
+	{
+		try
+		{
+			// try to convert BigInt to double and perform calculation
+			const double value_double = std::stod(value.to_string());
+			const double result = (value_double * percent) / 100.0;
+
+			// convert result to string and find the decimal point
+			std::string resultStr = std::to_string(result);
+			if(const size_t pos = resultStr.find('.'); pos != std::string::npos)
+			{
+				return BigInt(resultStr.substr(0, pos));
+			}
+
+			dbg_msg("math", "no decimal point found in result string. BigInt(0).");
+			return BigInt(0);
+		}
+		catch(...)
+		{
+			dbg_msg("math", "Error during BigInt to double conversion.");
+			return BigInt(0);
+		}
+	}
+	else
+	{
+		return static_cast<T>((static_cast<double>(value) * percent) / 100.0);
+	}
 }
 
 // add to the number a percentage e.g. ((100, 10%) = 110)
-template <PercentArithmetic T>
+template <PercentCompatible T>
 T add_percent_to_source(T* pvalue, float percent)
 {
 	if(pvalue)
-		*pvalue = static_cast<T>(static_cast<double>(*pvalue) * (1.0 + (percent / 100.0)));
+	{
+		if constexpr(std::is_same_v<T, BigInt>)
+		{
+			BigInt result = translate_to_percent_rest1(*pvalue, percent);
+			*pvalue += result;
+		}
+		else
+		{
+			T result = translate_to_percent_rest1(*pvalue, percent);
+			*pvalue += result;
+		}
+	}
 	return *pvalue;
 }
 
 // translate from the first to the second in percent e.g. ((10, 5) = 50%)
-template <PercentArithmetic T>
-T translate_to_percent(T from, T value)
+template <PercentCompatible T>
+float translate_to_percent(T from, T value)
 {
-	return static_cast<T>((static_cast<double>(value) * 100.0) / static_cast<double>(from));
+	constexpr double min_value = std::numeric_limits<double>::epsilon();
+
+	if constexpr(std::is_same_v<T, BigInt>)
+	{
+		try
+		{
+			const double safe_from = maximum(min_value, std::stod(from.to_string()));
+			const double safe_value = maximum(min_value, std::stod(value.to_string()));
+			return (float)((safe_value * 100.0) / safe_from);
+		}
+		catch(...)
+		{
+			return std::numeric_limits<float>::quiet_NaN();
+		}
+	}
+	else
+	{
+		const double safe_from = std::max(min_value, static_cast<double>(from));
+		return (float)((value * 100.0) / safe_from);
+	}
 }
 
 // translate from the first to the second in percent e.g. ((10, 5, 50) = 25%)
-template <PercentArithmetic T>
-T translate_to_percent(T from, T value, float maximum_percent)
+template <PercentCompatible T>
+float translate_to_percent(T from, T value, float maximum_percent)
 {
-	return static_cast<T>((static_cast<double>(value) * maximum_percent) / static_cast<double>(from));
+	constexpr double min_value = std::numeric_limits<double>::epsilon();
+
+	if constexpr(std::is_same_v<T, BigInt>)
+	{
+		try
+		{
+			const double safe_from = maximum(min_value, std::stod(from.to_string()));
+			const double safe_value = maximum(min_value, std::stod(value.to_string()));
+			return (float)((safe_value * maximum_percent) / safe_from);
+		}
+		catch(...)
+		{
+			return std::numeric_limits<float>::quiet_NaN();
+		}
+	}
+	else
+	{
+		double safe_from = std::max(min_value, static_cast<double>(from));
+		return (float)((value * maximum_percent) / safe_from);
+	}
 }
 
 constexpr inline unsigned long long computeExperience(unsigned Level)
