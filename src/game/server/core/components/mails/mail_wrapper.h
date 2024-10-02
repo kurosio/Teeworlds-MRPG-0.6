@@ -19,13 +19,13 @@ public:
 	{
 		m_Sender = pFrom;
 		m_AccountID = AccountID;
-		m_Title = fmt(pTitle, args...);
+		m_Title = fmt_default(pTitle, args...);
 	}
 
 	template <typename ... Ts>
 	MailWrapper& AddDescLine(const char* pDescline, const Ts&... args)
 	{
-		m_vDescriptionLines.push_back(fmt(pDescline, args...));
+		m_vDescriptionLines.push_back(fmt_default(pDescline, args...));
 		return *this;
 	}
 

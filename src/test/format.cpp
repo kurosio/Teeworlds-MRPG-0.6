@@ -26,10 +26,10 @@ TEST(FormatTest, FmtBigDigit)
 TEST(FormatTest, Fmt)
 {
 	// Test formatting with arguments
-	EXPECT_EQ(fmt("Hello, {0}!", "World"), "Hello, World!");
+	EXPECT_EQ(fmt_default("Hello, {0}!", "World"), "Hello, World!");
 
 	// Test formatting without arguments
-	EXPECT_EQ(fmt("Hello, World!"), "Hello, World!");
+	EXPECT_EQ(fmt_default("Hello, World!"), "Hello, World!");
 }
 
 std::string fmt_handler(int, const char* text, void*)
@@ -86,5 +86,5 @@ TEST(FormatTest, FmtBigDigitCommas)
 TEST(FormatTest, FmtMissedArgs)
 {
 	// Test formatting with missed arguments
-	EXPECT_EQ(fmt("Hello, {0}!"), "Hello, {0}!");
+	EXPECT_EQ(fmt_default("Hello, {0}!"), "Hello, {0}!");
 }

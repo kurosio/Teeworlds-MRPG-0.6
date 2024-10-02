@@ -33,12 +33,35 @@ public:
 	bool Load(IStorageEngine* pStorage);
 	void Unload();
 
-	IEngineMap* GetMap() const { return m_pMap; }
-	bool IsLoaded() const { return m_pMap != nullptr; }
-	unsigned GetCrc() const { return m_aCrc; }
-	const SHA256_DIGEST& GetSha256() const { return m_aSha256; }
-	unsigned char* GetData() const { return m_apData; }
-	unsigned int GetSize() const { return m_aSize; }
+	IEngineMap* GetMap() const
+	{
+		return m_pMap;
+	}
+
+	bool IsLoaded() const
+	{
+		return m_pMap != nullptr;
+	}
+
+	unsigned GetCrc() const
+	{
+		return m_aCrc;
+	}
+
+	const SHA256_DIGEST& GetSha256() const
+	{
+		return m_aSha256;
+	}
+
+	unsigned char* GetData() const
+	{
+		return m_apData;
+	}
+
+	unsigned int GetSize() const
+	{
+		return m_aSize;
+	}
 };
 
 class CWorld
@@ -53,10 +76,10 @@ class CWorld
 	CWorldDetail m_Detail{};
 
 public:
-	CWorld(int WorldID, const std::string& Name, const std::string& Path, CWorldDetail&& Data)
+	CWorld(int WorldID, const std::string& Name, const std::string& Path, const CWorldDetail& Data)
 	{
 		m_WorldID = WorldID;
-		m_Detail = std::move(Data);
+		m_Detail = Data;
 		m_pMapDetail = new CMapDetail(this);
 
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
@@ -64,12 +87,30 @@ public:
 	}
 	~CWorld();
 
-	IGameServer* GameServer() const { return m_pGameServer; }
-	CMapDetail* MapDetail() const { return m_pMapDetail; }
+	IGameServer* GameServer() const
+	{
+		return m_pGameServer;
+	}
 
-	const char* GetName() const { return m_aName; }
-	const char* GetPath() const { return m_aPath; }
-	CWorldDetail* GetDetail() { return &m_Detail; }
+	CMapDetail* MapDetail() const
+	{
+		return m_pMapDetail;
+	}
+
+	const char* GetName() const
+	{
+		return m_aName;
+	}
+
+	const char* GetPath() const
+	{
+		return m_aPath;
+	}
+
+	CWorldDetail* GetDetail()
+	{
+		return &m_Detail;
+	}
 };
 
 class CMultiWorlds
@@ -88,14 +129,27 @@ public:
 	{
 		Clear(true);
 	}
-	
-	CWorld* GetWorld(int WorldID) const { return m_apWorlds[WorldID]; }
-	bool IsValid(int WorldID) const { return WorldID >= 0 && WorldID < ENGINE_MAX_WORLDS && m_apWorlds[WorldID] && m_apWorlds[WorldID]->m_pGameServer; }
-	int GetSizeInitilized() const { return m_WasInitilized; }
-	bool LoadWorlds(class IKernel* pKernel, class IStorageEngine* pStorage, class IConsole* pConsole);
+
+	bool LoadFromDB(IKernel* pKernel);
+
+	CWorld* GetWorld(int WorldID) const
+	{
+		return m_apWorlds[WorldID];
+	}
+
+	bool IsValid(int WorldID) const
+	{
+		return WorldID >= 0 && WorldID < ENGINE_MAX_WORLDS
+			&& m_apWorlds[WorldID] && m_apWorlds[WorldID]->m_pGameServer;
+	}
+
+	int GetSizeInitilized() const
+	{
+		return m_WasInitilized;
+	}
 
 private:
-	bool Init(CWorld* pNewWorld, class IKernel* pKernel);
+	bool Init(CWorld* pNewWorld, IKernel* pKernel);
 	void Clear(bool Shutdown = true);
 };
 

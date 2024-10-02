@@ -136,8 +136,8 @@ private:
 		template<typename... Ts>
 		CResultSelect& UpdateQuery(const char* pSelect, const char* pTable, const char* pBuffer, Ts&&... args)
 		{
-			std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
-			m_Query = fmt("SELECT {} FROM {} {};", pSelect, pTable, strQuery);
+			std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
+			m_Query = fmt_default("SELECT {} FROM {} {};", pSelect, pTable, strQuery);
 			return *this;
 		}
 
@@ -209,14 +209,14 @@ private:
 		template <typename ... Ts>
 		CResultQuery& UpdateQuery(const char* pTable, const char* pBuffer, Ts&&... args)
 		{
-			std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
+			std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 
 			if(m_TypeQuery == DB::INSERT)
-				m_Query = fmt("INSERT INTO {} {};", pTable, strQuery);
+				m_Query = fmt_default("INSERT INTO {} {};", pTable, strQuery);
 			else if(m_TypeQuery == DB::UPDATE)
-				m_Query = fmt("UPDATE {} SET {};", pTable, strQuery);
+				m_Query = fmt_default("UPDATE {} SET {};", pTable, strQuery);
 			else if(m_TypeQuery == DB::REMOVE)
-				m_Query = fmt("DELETE FROM {} {};", pTable, strQuery);
+				m_Query = fmt_default("DELETE FROM {} {};", pTable, strQuery);
 
 			return *this;
 		}
@@ -265,7 +265,7 @@ private:
 		template <typename... Ts>
 		CResultQueryCustom& UpdateQuery(const char* pBuffer, Ts&&... args)
 		{
-			std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
+			std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 			m_Query = strQuery + ";";
 			return *this;
 		}
@@ -292,7 +292,7 @@ public:
 	template<DB T, typename... Ts>
 	static std::enable_if_t<T == DB::SELECT, std::unique_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable, const char* pBuffer, Ts&&... args)
 	{
-		std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
+		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 		return std::move(PrepareQuerySelect(T, pSelect, pTable, strQuery));
 	}
 
@@ -304,7 +304,7 @@ public:
 	template<DB T, typename... Ts>
 	static std::enable_if_t<T == DB::SELECT, ResultPtr> Execute(const char* pSelect, const char* pTable, const char* pBuffer, Ts&&... args)
 	{
-		std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
+		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 		return PrepareQuerySelect(T, pSelect, pTable, strQuery)->Execute();
 	}
 
@@ -325,7 +325,7 @@ public:
 	template<DB T, int Milliseconds = 0, typename... Ts>
 	static std::enable_if_t<T == DB::OTHER, void> Execute(const char* pBuffer, Ts&&... args)
 	{
-		std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
+		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 		PrepareQueryCustom(T, strQuery)->Execute(Milliseconds);
 	}
 
@@ -351,7 +351,7 @@ public:
 	template<DB T, int Milliseconds = 0, typename... Ts>
 	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), void> Execute(const char* pTable, const char* pBuffer, Ts&&... args)
 	{
-		std::string strQuery = fmt(pBuffer, std::forward<Ts>(args)...);
+		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 		PrepareQueryInsertUpdateDelete(T, pTable, strQuery)->Execute(Milliseconds);
 	}
 };

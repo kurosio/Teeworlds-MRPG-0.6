@@ -1,6 +1,5 @@
 #include "multi_worlds.h"
 
-#include <engine/console.h>
 #include <engine/map.h>
 #include <engine/server.h>
 #include <engine/storage.h>
@@ -13,7 +12,7 @@ CMapDetail::~CMapDetail()
 
 bool CMapDetail::Load(IStorageEngine* pStorage)
 {
-	char aBuf[512];
+	char aBuf[IO_MAX_PATH_LENGTH];
 	str_format(aBuf, sizeof(aBuf), "maps/%s", m_pWorldDetail->GetPath());
 
 	if(!m_pMap->Load(aBuf))
@@ -72,7 +71,7 @@ bool CMultiWorlds::Init(CWorld* pNewWorld, IKernel* pKernel)
 	return RegisterFail;
 }
 
-bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConsole* pConsole)
+bool CMultiWorlds::LoadFromDB(IKernel* pKernel)
 {
 	// clear old worlds
 	 Clear(false);
@@ -83,12 +82,12 @@ bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConso
 		const int WorldID = pRes->getInt("WorldID");
 		dbg_assert(WorldID < ENGINE_MAX_WORLDS, "exceeded pool of allocated memory for worlds");
 
-		std::string Name = pRes->getString("Name").c_str();
-		std::string Path = pRes->getString("Path").c_str();
-		std::string Type = pRes->getString("Type").c_str();
-		int RespawnWorldID = pRes->getInt("RespawnWorldID");
-		int JailWorldID = pRes->getInt("JailWorldID");
-		int RequiredLevel = pRes->getInt("RequiredLevel");
+		std::string Name = pRes->getString("Name");
+		std::string Path = pRes->getString("Path");
+		std::string Type = pRes->getString("Type");
+		const int RespawnWorldID = pRes->getInt("RespawnWorldID");
+		const int JailWorldID = pRes->getInt("JailWorldID");
+		const int RequiredLevel = pRes->getInt("RequiredLevel");
 
 		CWorldDetail WorldDetail(Type, RespawnWorldID, JailWorldID, RequiredLevel);
 		if(m_apWorlds[WorldID])
@@ -100,8 +99,9 @@ bool CMultiWorlds::LoadWorlds(IKernel* pKernel, IStorageEngine* pStorage, IConso
 		}
 		else
 		{
-			m_apWorlds[WorldID] = new CWorld(WorldID, Name, Path, std::move(WorldDetail));
+			m_apWorlds[WorldID] = new CWorld(WorldID, Name, Path, WorldDetail);
 		}
+
 		Init(m_apWorlds[WorldID], pKernel);
 
 	}

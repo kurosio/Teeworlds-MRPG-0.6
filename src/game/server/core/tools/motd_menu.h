@@ -54,11 +54,11 @@ public:
 
 	template <typename... Ts>
 	MotdMenu(int ClientID, const char* pDesc, const Ts&... args)
-		: m_ClientID(ClientID), m_Description(fmt(pDesc, args...)) {}
+		: m_ClientID(ClientID), m_Description(fmt_localize(ClientID, pDesc, args...)) {}
 
 	template <typename... Ts>
 	MotdMenu(int ClientID, int Flags, const char* pDesc, const Ts&... args)
-		: m_Flags(Flags), m_ClientID(ClientID), m_Description(fmt(pDesc, args...)) {}
+		: m_Flags(Flags), m_ClientID(ClientID), m_Description(fmt_localize(ClientID, pDesc, args...)) {}
 
 	template <typename... Ts>
 	void AddText(std::string_view description, const Ts&... args)
@@ -104,9 +104,21 @@ public:
 
 	void Tick();
 	void Send(int Menulist);
-	int GetLastMenulist() const { return m_LastMenulist; }
-	int GetMenulist() const { return m_Menulist; }
-	void SetLastMenulist(int Menulist) { m_LastMenulist = Menulist; }
+	int GetLastMenulist() const
+	{
+		return m_LastMenulist;
+	}
+
+	int GetMenulist() const
+	{
+		return m_Menulist;
+	}
+
+	void SetLastMenulist(int Menulist)
+	{
+		m_LastMenulist = Menulist;
+	}
+
 	void ClearMotd(CGS* pGS, CPlayer* pPlayer);
 
 private:

@@ -14,24 +14,45 @@ class CWorldDetail
 
 public:
 	CWorldDetail() = default;
-	CWorldDetail(const std::string& Type, int RespawnWorldID, int JailWorldID, int RequiredLevel)
+	CWorldDetail(const std::string_view& Type, int RespawnWorldID, int JailWorldID, int RequiredLevel)
 	{
 		if(Type == "default")
+		{
 			m_Type = WorldType::Default;
+		}
 		else if(Type == "dungeon")
+		{
 			m_Type = WorldType::Dungeon;
+		}
 		else if(Type == "tutorial")
+		{
 			m_Type = WorldType::Tutorial;
+		}
 
 		m_RespawnWorldID = RespawnWorldID;
 		m_JailWorldID = JailWorldID;
 		m_RequiredLevel = RequiredLevel;
 	}
 
-	int GetRespawnWorldID() const { return m_RespawnWorldID; }
-	int GetJailWorldID() const { return m_JailWorldID; }
-	int GetRequiredLevel() const { return m_RequiredLevel; }
-	WorldType GetType() const { return m_Type; }
+	int GetRespawnWorldID() const
+	{
+		return m_RespawnWorldID;
+	}
+
+	int GetJailWorldID() const
+	{
+		return m_JailWorldID;
+	}
+
+	int GetRequiredLevel() const
+	{
+		return m_RequiredLevel;
+	}
+
+	WorldType GetType() const
+	{
+		return m_Type;
+	}
 };
 
 #endif

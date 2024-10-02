@@ -228,7 +228,7 @@ void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth
 
 		if(ShowRestoreHealth)
 		{
-			pBase->GS()->EntityManager()->Text(pBase->GetPos() + vec2(0, -96), 40, fmt("{}HP", HealthRestored).c_str());
+			pBase->GS()->EntityManager()->Text(pBase->GetPos() + vec2(0, -96), 40, fmt_default("{}HP", HealthRestored).c_str());
 		}
 	});
 

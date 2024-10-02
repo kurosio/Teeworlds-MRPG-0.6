@@ -51,7 +51,7 @@ void CPrisonManager::Free()
         }
 
         IStorageEngine* pStorage = GS()->Storage();
-        const std::string filePath = fmt("server_data/account_prison/{}.txt", pPlayer->Account()->GetID());
+        const std::string filePath = fmt_default("server_data/account_prison/{}.txt", pPlayer->Account()->GetID());
         pStorage->RemoveFile(filePath.c_str(), IStorageEngine::TYPE_ABSOLUTE);
     }
 }
@@ -107,7 +107,7 @@ void CPrisonManager::LoadPrisonData()
     IStorageEngine* pStorage = GS()->Storage();
     const time_t currentTime = time(nullptr);
 
-    if(const auto File = pStorage->OpenFile(fmt("server_data/account_prison/{}.txt", pPlayer->Account()->GetID()).c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
+    if(const auto File = pStorage->OpenFile(fmt_default("server_data/account_prison/{}.txt", pPlayer->Account()->GetID()).c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
     {
         char* pResult = io_read_all_str(File);
         io_close(File);
@@ -141,7 +141,7 @@ void CPrisonManager::SavePrisonData() const
 
     IStorageEngine* pStorage = GS()->Storage();
 
-    if(const auto File = pStorage->OpenFile(fmt("server_data/account_prison/{}.txt", pPlayer->Account()->GetID()).c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
+    if(const auto File = pStorage->OpenFile(fmt_default("server_data/account_prison/{}.txt", pPlayer->Account()->GetID()).c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
     {
         char buffer[128];
 #if defined(__GNUC__) && __WORDSIZE == 64

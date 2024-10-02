@@ -27,7 +27,7 @@ public:
 			{
 				std::string m_Hash {};
 				std::string m_Text {};
-				std::string m_End {};
+				std::string m_Result {};
 			};
 			CLanguage* m_pLanguage {};
 			std::vector<Element> m_vElements {};

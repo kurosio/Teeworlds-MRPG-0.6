@@ -14,6 +14,7 @@
 #include <future>
 #include <queue>
 #include <set>
+#include <ranges>
 #include <optional>
 #include <variant>
 

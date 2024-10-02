@@ -59,9 +59,13 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 		{
 			argumentHandled = true;
 			if(argumentTypename == type_integers || argumentTypename == type_big_integers)
+			{
 				argumentResult = argumentType == arg_big_digit ? fmt_big_digit(std::move(argumentFrom)) : fmt_digit(std::move(argumentFrom));
+			}
 			else if(argumentTypename == type_string)
+			{
 				argumentResult = handle(argumentFrom);
+			}
 		}
 	};
 
@@ -79,21 +83,14 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 		// get argument type
 		if(argumentType == arg_default)
 		{
-			// truncate type
-			if(iterChar == '~')
-				argumentType = arg_truncate;
-
-			// plural type
-			if(iterChar == '#')
-				argumentType = arg_plural;
-
-			// skip handle type
-			if(iterChar == '-')
-				argumentType = arg_skip_handle;
-
-			// big digit
-			if(iterChar == '$')
-				argumentType = arg_big_digit;
+			switch(iterChar)
+			{
+				case '~': argumentType = arg_truncate; break;
+				case '#': argumentType = arg_plural; break;
+				case '-': argumentType = arg_skip_handle; break;
+				case '$': argumentType = arg_big_digit; break;
+				default: break;
+			}
 		}
 
 		// end argument processing
@@ -204,8 +201,12 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 
 		// collect
 		if(argumentProcessing)
+		{
 			argument += iterChar;
+		}
 		else
+		{
 			(*pResult) += iterChar;
+		}
 	}
 }

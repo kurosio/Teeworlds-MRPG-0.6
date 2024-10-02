@@ -181,7 +181,7 @@ namespace mystd
 				}
 				catch(nlohmann::json::exception& s)
 				{
-					dbg_assert(false, fmt("[json parse] Invalid json: {}", s.what()).c_str());
+					dbg_assert(false, fmt_default("[json parse] Invalid json: {}", s.what()).c_str());
 				}
 			}
 		}
@@ -365,7 +365,7 @@ namespace mystd
 				if(std::holds_alternative<T>(it->second))
 					return std::get<T>(it->second);
 
-				dbg_assert(false, fmt("Type mismatch for key: {}", key).c_str());
+				dbg_assert(false, fmt_default("Type mismatch for key: {}", key).c_str());
 			}
 			return defaultValue;
 		}
@@ -376,7 +376,7 @@ namespace mystd
 			auto& variant = m_umConfig[key];
 			if(!std::holds_alternative<T>(variant))
 			{
-				dbg_assert(false, fmt("Type mismatch for key: {}\n", key).c_str());
+				dbg_assert(false, fmt_default("Type mismatch for key: {}\n", key).c_str());
 				variant = defaultValue;
 			}
 

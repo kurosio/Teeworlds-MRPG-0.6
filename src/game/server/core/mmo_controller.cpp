@@ -701,8 +701,8 @@ void CMmoController::SyncLocalizations() const
 	{
 		// prepare
 		auto* pLanguage = GS()->Server()->Localization()->m_pLanguages[i];
-
 		pLanguage->Updater().Prepare();
+
 		for (const auto& [ID, p] : QuestBotInfo::ms_aQuestBot)
 		{
 			int DialogNum = 0;

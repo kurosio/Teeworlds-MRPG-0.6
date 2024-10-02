@@ -1813,7 +1813,7 @@ int CServer::Run(ILogger* pLogger)
 	// initilize instance data
 	Instance::Data::g_pServer = static_cast<IServer*>(this);
 
-	// initialize fmt localize function
+	// initialize fmt_default localize function
 	g_fmt_localize.use_flags(FMTFLAG_HANDLE_ARGS);
 	g_fmt_localize.init(&CServer::CallbackLocalize, this);
 
@@ -2011,7 +2011,8 @@ int CServer::Run(ILogger* pLogger)
 
 			if(NewTicks)
 			{
-				// Check if the server is non-active and if the current game tick has exceeded the specified number of days for a hard reset, or if a heavy reload is requested.
+				// Check if the server is non-active and if the current game tick has exceeded the specified number of
+				// days for a hard reset, or if a heavy reload is requested.
 				if((NonActive && m_CurrentGameTick > (g_Config.m_SvHardresetAfterDays * 4320000)) || m_HeavyReload)
 				{
 					m_CurrentGameTick = 0;
@@ -2027,7 +2028,7 @@ int CServer::Run(ILogger* pLogger)
 					}
 
 					// Check if the worlds were loaded successfully
-					if(!MultiWorlds()->LoadWorlds(Kernel(), Storage(), Console()))
+					if(!MultiWorlds()->LoadFromDB(Kernel()))
 					{
 						log_error("server", "interfaces for heavy reload could not be updated.");
 						return -1;

@@ -740,11 +740,11 @@ void CGuild::CMembersManager::Init(const std::string& JsonMembers)
 		{
 			// Check if the member ID is valid and not already in the member list
 			int UID = pMember.value("id", -1);
-			if(m_apMembers.find(UID) == m_apMembers.end())
+			if(!m_apMembers.contains(UID))
 			{
 				// Get the rank ID and deposit for the member
 				int RID = pMember.value("rank_id", -1);
-				BigInt Deposit(pMember.value("deposit", "0"));
+				BigInt Deposit(pMember.value("deposit", BigInt(0)));
 
 				// Create a new member data object and add it to the member list
 				m_apMembers[UID] = (new CMember(m_pGuild, UID, m_pGuild->GetRanks()->Get(RID), Deposit));

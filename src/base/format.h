@@ -2,53 +2,57 @@
 #define BASE_FORMAT_H
 
 template <char separator = '.'>
-std::string fmt_big_digit( std::string numberStr)
+constexpr std::string fmt_big_digit(std::string_view numberStr)
 {
-	// intiailize variables
-	double number = strtod(numberStr.c_str(), nullptr);
-	const std::vector<std::string> vSuffixes =
+	constexpr std::array<std::string_view, 25> vSuffixes =
 	{
 		"", "k", "m", "b", "t", "qa", "qi", "sx", "sp", "oc",
-		"no", "dc", "ud", "dd", "td", "qad", "qid",
-		"sxd", "spd", "ocd", "nod", "vg", "uvg", "dvg", "tvg"
+		"no", "dc", "ud", "dd", "td", "qad", "qid", "sxd", "spd",
+		"ocd", "nod", "vg", "uvg", "dvg", "tvg"
 	};
 
-	// check is less default number
-	if(floor(number) == number && number < 1000)
-		return std::to_string(static_cast<int>(number));
+	size_t length = numberStr.size();
+	size_t suffixIndex = std::clamp((length - 1) / 3, (size_t)0, vSuffixes.size() - 1);
+	size_t significantDigitsCount = length % 3 == 0 ? 3 : length % 3;
 
-	// get suffix index
-	size_t index = 0;
-	while(number >= 1000 && index < vSuffixes.size() - 1)
+	std::string result;
+	result.reserve(5 + vSuffixes[suffixIndex].size());
+	result.append(numberStr.substr(0, significantDigitsCount));
+
+	if(length > 3)
 	{
-		number /= 1000;
-		index++;
+		result.push_back(separator);
+
+		size_t decimalDigitsCount = std::min<size_t>(2, length - significantDigitsCount);
+		auto decimals = numberStr.substr(significantDigitsCount, decimalDigitsCount);
+		//auto filteredDecimals = decimals | std::views::reverse | std::views::drop_while([](char c) { return c == '0'; }) | std::views::reverse;
+
+		result.append(decimals);
 	}
 
-	// format the number with two decimal places
-	std::string numberResult = std::to_string(round(number * 100) / 100);
-	if(auto pos = numberResult.find(separator); pos != std::string::npos)
-	{
-		numberResult.erase(numberResult.find_last_not_of('0') + 1, std::string::npos);
-		if(numberResult.back() == separator)
-			numberResult.pop_back();
-	}
-
-	// result
-	return numberResult + vSuffixes[index];
+	result.append(vSuffixes[suffixIndex]);
+	return result;
 }
 
-template<typename T, const char separator = '.', const unsigned num = 3>
-inline std::string fmt_digit(T Value)
+template<typename T, const char separator = '.'>
+constexpr std::string fmt_digit(T Value)
 {
 	// coverting the value to string
 	std::string conversionString;
+	constexpr unsigned num = 3;
+
 	if constexpr(std::is_same_v<std::string, T>)
+	{
 		conversionString = Value;
+	}
 	else if constexpr(std::is_arithmetic_v<T>)
+	{
 		conversionString = std::to_string(Value);
+	}
 	else
+	{
 		conversionString(Value);
+	}
 
 	// prepare digit
 	if(conversionString.length() > (num + 1))
@@ -70,19 +74,33 @@ enum
 
 // implement format
 typedef std::string(HandlerFmtCallbackFunc)(int, const char*, void*);
-typedef struct { HandlerFmtCallbackFunc* m_pCallback; void* m_pData; } HandlerFmtCallback;
+typedef struct
+{
+	HandlerFmtCallbackFunc* m_pCallback;
+	void* m_pData;
+} HandlerFmtCallback;
+
 class CFormatter
 {
-	enum { type_unknown, type_string, type_integers, type_big_integers, type_floating };
-	struct Config { int m_Definer; };
+	enum
+	{
+		type_unknown,
+		type_string,
+		type_integers,
+		type_big_integers,
+		type_floating
+	};
+
 	HandlerFmtCallback m_pCallback {};
-	Config m_Config {};
+	int m_Definer {};
 	int m_Flags {};
 
 	std::string handle(const std::string& Text) const
 	{
 		if(m_pCallback.m_pCallback)
-			return m_pCallback.m_pCallback(m_Config.m_Definer, Text.c_str(), m_pCallback.m_pData);
+		{
+			return m_pCallback.m_pCallback(m_Definer, Text.c_str(), m_pCallback.m_pData);
+		}
 		return Text;
 	}
 
@@ -90,13 +108,21 @@ class CFormatter
 	std::pair<int, std::string> to_string(const T& Value)
 	{
 		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
+		{
 			return { type_floating, std::to_string(Value) };
+		}
 		else if constexpr(std::is_same_v<T, BigInt>)
+		{
 			return { type_big_integers, Value.to_string() };
+		}
 		else if constexpr(std::is_arithmetic_v<T>)
+		{
 			return { type_integers, std::to_string(Value) };
+		}
 		else if constexpr(std::is_convertible_v<T, std::string>)
+		{
 			return { type_string, std::string(Value) };
+		}
 		else
 		{
 			static_assert(!std::is_same_v<T, T>, "One of the passed arguments cannot be converted to a string");
@@ -112,9 +138,20 @@ public:
 		m_pCallback.m_pData = pData;
 	}
 
-	void set_definer(int definer) { m_Config.m_Definer = definer; }
-	void use_flags(int flags) { m_Flags = flags; }
-	int get_flags() const { return m_Flags; }
+	void set_definer(int definer)
+	{
+		m_Definer = definer;
+	}
+
+	void use_flags(int flags)
+	{
+		m_Flags = flags;
+	}
+
+	int get_flags() const
+	{
+		return m_Flags;
+	}
 
 	// implementation for default format
 	template<typename... Ts>
@@ -133,9 +170,12 @@ public:
 
 		// prepare result
 		std::string Result;
-		Result.reserve(Text.size() + std::accumulate(vPack.begin(), vPack.end(), std::size_t { 0 }, [](std::size_t acc, const auto& s) { return acc + s.second.size(); }));
+		Result.reserve(Text.size() + std::accumulate(vPack.begin(), vPack.end(), std::size_t { 0 }, [](std::size_t acc, const auto& s)
+		{
+			return acc + s.second.size();
+		}));
 		prepare_result(Text, &Result, vPack);
-		m_Config.m_Definer = {};
+		m_Definer = {};
 		return Result;
 	}
 
@@ -146,7 +186,7 @@ public:
 			return "";
 
 		std::string Result = std::move(handle(pText));
-		m_Config.m_Definer = {};
+		m_Definer = {};
 		return std::move(Result);
 	}
 };
@@ -155,17 +195,9 @@ inline CFormatter g_fmt_default {};
 inline CFormatter g_fmt_localize {};
 
 template <typename ... Ts>
-std::string fmt(const char* pText, const Ts& ... args)
+std::string fmt_default(const char* pText, const Ts& ... args)
 {
 	return g_fmt_default(pText, args...);
-}
-
-template <typename ... Ts>
-std::string fmt_self(int flags, const char* pText, const Ts& ... args)
-{
-	CFormatter fmt;
-	fmt.use_flags(flags);
-	return fmt(pText, args...);
 }
 
 template <typename ... Ts>

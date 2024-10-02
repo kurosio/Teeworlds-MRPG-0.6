@@ -1,6 +1,5 @@
 #include "localization.h"
 
-#include <engine/storage.h>
 #include <engine/shared/linereader.h>
 
 constexpr auto g_pMotherLanguageFile = "en";
@@ -24,7 +23,7 @@ bool CLocalization::Init()
 
 	try
 	{
-		nlohmann::json json = nlohmann::json::parse((char*)RawData.data());
+		auto json = nlohmann::json::parse((char*)RawData.data());
 		for(const auto& jsonLang : json["language indices"])
 		{
 			std::string Name = jsonLang.value("name", "");
@@ -33,8 +32,11 @@ bool CLocalization::Init()
 
 			CLanguage*& pLanguage = m_pLanguages.increment();
 			pLanguage = new CLanguage(Name, File, Parent);
+
 			if(str_comp(g_Config.m_SvDefaultLanguage, pLanguage->GetFilename()) == 0)
+			{
 				m_pMainLanguage = pLanguage;
+			}
 		}
 	}
 	catch(const std::exception& e)
@@ -49,7 +51,10 @@ bool CLocalization::Init()
 bool CLocalization::Reload()
 {
 	for(int i = 0; i < m_pLanguages.size(); i++)
+	{
 		delete m_pLanguages[i];
+	}
+
 	m_pLanguages.clear();
 	m_pMainLanguage = nullptr;
 	return Init();
@@ -73,19 +78,27 @@ const char* CLocalization::LocalizeWithDepth(const char* pLanguageFile, const ch
 
 	// if no language is found or is mother language
 	if(!pLanguage || str_comp(pLanguage->GetFilename(), g_pMotherLanguageFile) == 0)
+	{
 		return pText;
+	}
 
 	// load and initilize language if is not loaded
 	if(!pLanguage->IsLoaded())
+	{
 		pLanguage->Load();
+	}
 
 	// found result in hash map
 	if(const char* pResult = pLanguage->Localize(pText))
+	{
 		return pResult;
+	}
 
-	// localize with depth
+	// recursive localize with depth
 	if(pLanguage->GetParentFilename()[0] && Depth < 4)
+	{
 		return LocalizeWithDepth(pLanguage->GetParentFilename(), pText, Depth + 1);
+	}
 
 	// return default text
 	return pText;
@@ -103,6 +116,7 @@ CLocalization::CLanguage::CLanguage(const std::string& Name, const std::string& 
 	m_Filename = Filename;
 	m_ParentFilename = ParentFilename;
 	m_Updater.m_pLanguage = this;
+
 	Load();
 }
 
@@ -112,7 +126,10 @@ CLocalization::CLanguage::~CLanguage()
 	while(Iter != m_Translations.end())
 	{
 		if(Iter.data())
+		{
 			Iter.data()->Free();
+		}
+
 		++Iter;
 	}
 }
@@ -123,7 +140,6 @@ void CLocalization::CLanguage::Load()
     if (m_Filename == "en")
     {
         m_Loaded = true;
-        dbg_msg("localization", "language '%s' does not require loading", m_Filename.c_str());
         return;
     }
 
@@ -142,13 +158,19 @@ void CLocalization::CLanguage::Load()
 		if(CEntry* pEntry = m_Translations.set(p.m_Text.c_str()))
 		{
 			if(pEntry->m_apVersions)
+			{
 				free(pEntry->m_apVersions);
-			const int Length = p.m_End.length() + 1;
+			}
+
+			const int Length = p.m_Result.length() + 1;
 			pEntry->m_apVersions = (char*)malloc(Length);
 			if(pEntry->m_apVersions)
-				str_copy(pEntry->m_apVersions, p.m_End.c_str(), Length);
+			{
+				str_copy(pEntry->m_apVersions, p.m_Result.c_str(), Length);
+			}
 		}
 	}
+
 	m_Loaded = true;
 }
 
@@ -157,6 +179,7 @@ const char* CLocalization::CLanguage::Localize(const char* pText) const
 	const CEntry* pEntry = m_Translations.get(pText);
 	if(!pEntry)
 		return nullptr;
+
 	return pEntry->m_apVersions;
 }
 
@@ -175,7 +198,7 @@ bool CLocalization::CLanguage::CUpdater::LoadDefault(std::vector<Element>& vElem
 bool CLocalization::CLanguage::CUpdater::Prepare()
 {
 	// try load language file
-	std::string aDirLanguageFile = std::string("./server_lang/") + m_pLanguage->GetFilename() + ".txt";
+	std::string aDirLanguageFile = fmt_default("./server_lang/{}.txt", m_pLanguage->GetFilename());
 	IOHANDLE File = io_open(aDirLanguageFile.c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM);
 	if(!File)
 		return false;
@@ -225,12 +248,12 @@ bool CLocalization::CLanguage::CUpdater::Prepare()
 
 		// initialize element
 		const char* pReplacement = (pLine + 3);
-		Temp.m_End = pReplacement;
+		Temp.m_Result = pReplacement;
 		m_vElements.push_back(Temp);
 
 		// clear tempary data
 		Temp.m_Text.clear();
-		Temp.m_End.clear();
+		Temp.m_Result.clear();
 		Temp.m_Hash.clear();
 	}
 
@@ -248,14 +271,22 @@ void CLocalization::CLanguage::CUpdater::Push(const char* pTextKey, const char* 
 	// update localize element
 	std::string Hash(pUnique + std::to_string(ID));
 	auto iter = std::ranges::find_if(m_vElements, [&Hash](const Element& pItem)
-	                                 { return pItem.m_Hash == Hash; });
+	{
+		return pItem.m_Hash == Hash;
+	});
+
 	if (iter != m_vElements.end())
 	{
-		if(auto& pLocalize = *iter; pLocalize.m_Text != pTextKey)
-			pLocalize.m_Text = pLocalize.m_End = pTextKey;
+		auto& pLocalize = *iter;
+		if(pLocalize.m_Text != pTextKey)
+		{
+			pLocalize.m_Text = pLocalize.m_Result = pTextKey;
+		}
 	}
 	else
+	{
 		m_vElements.push_back({ Hash, pTextKey, pTextKey });
+	}
 }
 
 void CLocalization::CLanguage::CUpdater::Finish()
@@ -265,19 +296,21 @@ void CLocalization::CLanguage::CUpdater::Finish()
 		return;
 
 	// order non updated translated to up
-	std::sort(m_vElements.begin(), m_vElements.end(), [](const Element& p1, const Element& p2)
+	std::ranges::sort(m_vElements, [](const Element& p1, const Element& p2)
 	{
-		return p1.m_End == p1.m_Text && p2.m_End != p2.m_Text;
+		return p1.m_Result == p1.m_Text && p2.m_Result != p2.m_Text;
 	});
 
 	// save file
 	std::string Data;
 	for (const auto& p : m_vElements)
 	{
-		if (!p.m_Hash.empty())
+		if(!p.m_Hash.empty())
+		{
 			Data += "$" + p.m_Hash + "\n";
+		}
 		Data += p.m_Text + "\n";
-		Data += "== " + p.m_End;
+		Data += "== " + p.m_Result;
 		Data += "\n\n";
 	}
 
@@ -287,7 +320,7 @@ void CLocalization::CLanguage::CUpdater::Finish()
 	m_vElements.shrink_to_fit();
 
 	// save
-	std::string aDirLanguageFile = std::string("./server_lang/") + m_pLanguage->GetFilename() + ".txt";
+	std::string aDirLanguageFile = fmt_default("./server_lang/{}.txt", m_pLanguage->GetFilename());
 	mystd::file::save(aDirLanguageFile.c_str(), (void*)Data.data(), (unsigned)Data.size());
 	dbg_msg("localization", "language file %s has been updated!", m_pLanguage->GetFilename());
 }
