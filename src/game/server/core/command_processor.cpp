@@ -165,7 +165,7 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 	}
 
 	// Guild command list
-	pGS->Chat(ClientID, mystd::aesthetic::boardPillar<7>("Guild system").c_str());
+	pGS->Chat(ClientID, mystd::aesthetic::boardPillar("Guild system", 7).c_str());
 	pGS->Chat(ClientID, "/guild create <name> - create a new guild");
 	pGS->Chat(ClientID, "/guild leave - leave the guild");
 
@@ -207,7 +207,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		// If the command element is "list", list all the doors in the house
 		if(pSubElem.compare(0, 4, "list") == 0)
 		{
-			pGS->Chat(ClientID, mystd::aesthetic::boardPillar<7>("Door list").c_str());
+			pGS->Chat(ClientID, mystd::aesthetic::boardPillar("Door list", 7).c_str());
 			for(const auto& [Number, Door] : pDoorManager->GetContainer())
 			{
 				bool State = pDoorManager->GetContainer()[Number]->IsClosed();
@@ -264,7 +264,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			return;
 		}
 
-		pGS->Chat(ClientID, mystd::aesthetic::boardPillar<6>("Door controls").c_str());
+		pGS->Chat(ClientID, mystd::aesthetic::boardPillar("Door controls", 6).c_str());
 		pGS->Chat(ClientID, "/house doors list - list door's and ids");
 		pGS->Chat(ClientID, "/house doors open_all - open all door's");
 		pGS->Chat(ClientID, "/house doors close_all - close all door's");
@@ -273,7 +273,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 		return;
 	}
 
-	pGS->Chat(ClientID, mystd::aesthetic::boardPillar<7>("House system").c_str());
+	pGS->Chat(ClientID, mystd::aesthetic::boardPillar("House system", 7).c_str());
 	pGS->Chat(ClientID, "/house doors - settings door's");
 	pGS->Chat(ClientID, "/house sell - sell the house to the state");
 }
@@ -371,7 +371,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		}
 
 		// Display the group list for the player
-		pGS->Chat(ClientID, mystd::aesthetic::boardPillar<5>("Group membership list").c_str());
+		pGS->Chat(ClientID, mystd::aesthetic::boardPillar("Group membership list", 5).c_str());
 		for(const auto& AID : pGroup->GetAccounts())
 		{
 			const char* Prefix = (pGroup->GetOwnerUID() == AID) ? "O: " : "\0";
@@ -382,7 +382,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 	}
 
 	const char* Status = (pGroup ? Instance::Localize(ClientID, "in a group") : Instance::Localize(ClientID, "not in a group"));
-	pGS->Chat(ClientID, mystd::aesthetic::boardPillar<8>("Group system").c_str());
+	pGS->Chat(ClientID, mystd::aesthetic::boardPillar("Group system", 8).c_str());
 	pGS->Chat(ClientID, "Current status: {}!", Status);
 	pGS->Chat(ClientID, "/group create - create a new group");
 	pGS->Chat(ClientID, "/group list - group membership list");
@@ -440,7 +440,7 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 
 	constexpr int MaxPage = 2;
 	const int Page = clamp(pResult->GetInteger(0), 1, MaxPage);
-	pGS->Chat(ClientID, mystd::aesthetic::boardPillar<6>(fmt_localize(ClientID, "Command list [{} of {}]", Page, MaxPage)).c_str());
+	pGS->Chat(ClientID, mystd::aesthetic::boardPillar(fmt_localize(ClientID, "Command list [{} of {}]", Page, MaxPage), 6).c_str());
 	if(Page == 1)
 	{
 		pGS->Chat(ClientID, "/register <name> <pass> - new account.");

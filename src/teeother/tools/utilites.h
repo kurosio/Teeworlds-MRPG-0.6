@@ -249,8 +249,7 @@ namespace mystd
 	namespace aesthetic
 	{
 		// Example: ───※ ·· ※───
-		template<int iter = 5>
-		inline std::string boardPillar(const std::string_view& text)
+		inline std::string boardPillar(const std::string_view& text, int iter = 5)
 		{
 			std::string result;
 			result.reserve(iter * 2 + text.size() + 10);
@@ -280,8 +279,7 @@ namespace mystd
 		}
 
 		// Example: ──⇌ • • ⇋──
-		template<int iter = 5>
-		inline std::string boardConfident(const std::string_view& text)
+		inline std::string boardConfident(const std::string_view& text, int iter = 5)
 		{
 			std::string result;
 			result.reserve(iter * 2 + text.size() + 10);
@@ -313,17 +311,15 @@ namespace mystd
 
 		/* WRAP LINES */
 		// Example:  ────⇌ • • ⇋────
-		template <int iter>
-		inline std::string wrapLineConfident()
+		inline std::string wrapLineConfident(int iter)
 		{
-			return boardConfident<iter>("");
+			return boardConfident("", iter);
 		}
 
 		// Example: ───※ ·· ※───
-		template <int iter>
-		inline std::string wrapLinePillar()
+		inline std::string wrapLinePillar(int iter)
 		{
-			return boardPillar<iter>("");
+			return boardPillar("", iter);
 		}
 
 		/* QUOTES */

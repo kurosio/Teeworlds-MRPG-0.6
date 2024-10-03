@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "character.h"
 #include <generated/server_data.h>
@@ -1141,14 +1141,22 @@ void CCharacter::HandleTiles()
 		// zone information
 		if(m_pTilesHandler->IsActive(TILE_ZONE))
 		{
-			if(const char* pName = GS()->Collision()->GetZonename(m_Core.m_Pos); pName && m_Zonename != pName)
+			const auto pZone = GS()->Collision()->GetZonedetail(m_Core.m_Pos);
+			if(pZone && m_Zonename != pZone->GetName())
 			{
-				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 50, "You're in {}!", pName);
-				m_Zonename = pName;
+				const auto infoZone = fmt_default("{}. ({})", pZone->GetName(), pZone->IsPVP() ? "PVP" : "Safe");
+				const int wrapLength = infoZone.length() / 2;
+				const auto result = fmt_default("{}\n{}\n{}",
+					mystd::aesthetic::wrapLineConfident(wrapLength), infoZone, mystd::aesthetic::wrapLineConfident(wrapLength));
+
+				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 150, result.c_str());
+				m_Zonename = pZone->GetName();
 			}
 		}
 		else if(m_pTilesHandler->IsExit(TILE_ZONE))
+		{
 			m_Zonename = "unknown";
+		}
 
 		// check from components
 		GS()->Core()->OnCharacterTile(this);

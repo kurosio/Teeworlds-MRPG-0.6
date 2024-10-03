@@ -153,10 +153,23 @@ void CCollision::InitExtra()
 
 		if(Type == TILE_ZONE)
 		{
+			if(m_vZoneDetail.contains(Number))
+				continue;
+
+			std::string Name {};
+			bool AntiPVP = false;
+
 			if(auto name = mystd::loadSetting<std::string>("#zone_name", settings, { Number }))
-				m_vZoneNames[Number] = name.value();
+			{
+				Name = name.value();
+			}
 			if(auto pvp = mystd::loadSetting<int>("#zone_pvp", settings, { Number }); (!pvp.has_value() || pvp <= 0))
+			{
+				AntiPVP = true;
 				m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
+			}
+
+			m_vZoneDetail[Number].Init(AntiPVP, Name);
 		}
 		else if(Type == TILE_INTERACT_OBJECT)
 		{
@@ -225,15 +238,19 @@ int CCollision::GetExtraTileIndex(float x, float y) const
 	return m_pExtra[Ny * m_Width + Nx].m_Type;
 }
 
-const char* CCollision::GetZonename(vec2 Pos) const
+std::optional<CCollision::ZoneDetail> CCollision::GetZonedetail(vec2 Pos) const
 {
 	if(!m_pExtra)
-		return nullptr;
+		return std::nullopt;
 
 	int Nx = clamp(round_to_int(Pos.x) / 32, 0, m_Width - 1);
 	int Ny = clamp(round_to_int(Pos.y) / 32, 0, m_Height - 1);
 	int Number = m_pExtra[Ny * m_Width + Nx].m_Number;
-	return m_vZoneNames.contains(Number) ? m_vZoneNames.at(Number).c_str() : nullptr;
+
+	if(m_vZoneDetail.contains(Number))
+		return m_vZoneDetail.at(Number);
+
+	return std::nullopt;
 }
 
 std::optional<std::pair<vec2, bool>> CCollision::TryGetFixedCamPos(vec2 currentPos) const

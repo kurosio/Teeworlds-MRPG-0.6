@@ -29,6 +29,28 @@ public:
 		COLFLAG_SAFE = 1 << 3,
 		COLFLAG_DISALLOW_MOVE = 1 << 4,
 	};
+	class ZoneDetail
+	{
+		bool m_AntiPVP{};
+		std::string m_Name{};
+
+	public:
+		void Init(bool AntiPvp, const std::string& Name)
+		{
+			m_AntiPVP = AntiPvp;
+			m_Name = Name;
+		}
+
+		bool IsPVP() const
+		{
+			return !m_AntiPVP;
+		}
+
+		std::string GetName() const
+		{
+			return m_Name;
+		}
+	};
 
 private:
 	int m_Width{};
@@ -49,7 +71,7 @@ private:
 	std::map<int, std::vector<vec2>> m_vTeleOuts {};
 	std::vector<FixedCamZoneData> m_vFixedCamZones {};
 	std::map<std::string, vec2> m_vInteractObjects {};
-	std::map<int, std::string> m_vZoneNames {};
+	std::map<int, ZoneDetail> m_vZoneDetail {};
 
 	// initialization
 	void InitTiles(CTile* pTiles);
@@ -104,7 +126,7 @@ public:
 	int GetFlagsAt(vec2 Pos) const { return GetFlagsAt(Pos.x, Pos.y); }
 
 	// self
-	const char* GetZonename(vec2 Pos) const;
+	std::optional<ZoneDetail> GetZonedetail(vec2 Pos) const;
 	std::optional<vec2> TryGetTeleportOut(vec2 currentPos);
 	std::optional<std::pair<vec2, bool>> TryGetFixedCamPos(vec2 currentPos) const;
 
