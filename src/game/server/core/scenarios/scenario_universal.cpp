@@ -42,41 +42,32 @@ void CUniversalScenario::InitStep(const nlohmann::json& step)
 	std::string action = step["action"];
 
 	// message
-	if(action == "message")
+	if(action == "game_message")
 	{
 		const int delay = step.value("delay", 0);
-		const auto text = step.value("text", "");
+		const auto chatText = step.value("chat", "\0");
+		const auto broadcastText = step.value("broadcast", "\0");
+		const int emoteType = step.value("emote", -1);
+		const int emoticonType = step.value("emoticon", -1);
 
-		Message(delay, text);
-	}
-	// emote message
-	else if(action == "emote_message")
-	{
-		const int delay = step.value("delay", 0);
-		const int emoteType = step.value("emote_type", (int)EMOTE_NORMAL);
-		const int emoticonType = step.value("emoticon_type", -1);
-		const auto text = step.value("text", "");
-
-		EmoteMessage(delay, emoteType, emoticonType, text);
+		Message(delay, chatText, broadcastText, emoteType, emoticonType);
 	}
 	// teleport
 	else if(action == "teleport")
 	{
 		const int delay = step.value("delay", 0);
 		const vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
-		const auto text = step.value("text", "");
 
-		Teleport(delay, position, text);
+		Teleport(delay, position);
 	}
 	// fixed cam
 	else if(action == "fixed_cam")
 	{
 		const int delay = step.value("delay", 0);
 		const vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
-		const auto startText = step.value("start_text", "");
-		const auto endText = step.value("end_text", "");
+		const auto whenActiveBroadcastText = step.value("text", "");
 
-		FixedCam(delay, position, startText, endText);
+		FixedCam(delay, position, whenActiveBroadcastText);
 	}
 	// check quest accepted
 	else if(action == "check_quest_accepted")
@@ -123,52 +114,55 @@ void CUniversalScenario::InitStep(const nlohmann::json& step)
 	}
 }
 
-void CUniversalScenario::FixedCam(int delay, const vec2& pos, const std::string& startMsg, const std::string& endMsg)
+void CUniversalScenario::FixedCam(int delay, const vec2& pos, const std::string& whenActiveBroadcast)
 {
 	auto& step = AddStep(delay);
-	step.WhenActive([this, pos, startMsg](auto*)
+	step.WhenActive([this, pos, whenActiveBroadcast](auto*)
 	{
 		GetPlayer()->LockedView().ViewLock(pos, true);
-		SendBroadcast(startMsg);
+		SendBroadcast(whenActiveBroadcast);
 	});
-
-	if(!endMsg.empty())
-	{
-		step.WhenFinished([this, endMsg](auto*)
-		{
-			SendBroadcast(endMsg);
-		});
-	}
 }
 
-void CUniversalScenario::Teleport(int delay, const vec2& pos, const std::string& text)
+void CUniversalScenario::Teleport(int delay, const vec2& pos)
 {
 	auto& teleportStep = AddStep(delay);
-	teleportStep.WhenStarted([this, pos, text](auto*)
+	teleportStep.WhenStarted([this, pos](auto*)
 	{
 		GetCharacter()->ChangePosition(pos);
-		SendBroadcast(text);
 	});
 }
 
-void CUniversalScenario::Message(int delay, const std::string& text)
+void CUniversalScenario::Message(int delay, const std::string& chatText, const std::string& broadcastText, int emote, int emoticon)
 {
 	auto& messageStep = AddStep(delay);
-	messageStep.WhenStarted([this, text](auto*)
+	messageStep.WhenStarted([this, chatText, broadcastText, emote, emoticon](auto*)
 	{
-		SendBroadcast(text);
+		if(!chatText.empty())
+		{
+			SendChat(chatText);
+		}
+
+		if(!broadcastText.empty())
+		{
+			SendBroadcast(broadcastText);
+		}
+
+		if(emote != -1)
+		{
+			GetCharacter()->SetEmote(emote, 1, false);
+		}
+
+		if(emoticon != -1)
+		{
+			GS()->SendEmoticon(GetClientID(), emoticon);
+		}
 	});
 }
 
-void CUniversalScenario::EmoteMessage(int delay, int emoteType, int emoticonType, const std::string& text)
+void CUniversalScenario::SendChat(const std::string& text) const
 {
-	auto& emoteMessageStep = AddStep(delay);
-	emoteMessageStep.WhenStarted([this, emoteType, emoticonType, text](auto*)
-	{
-		GetCharacter()->SetEmote(emoteType, 1, false);
-		GS()->SendEmoticon(GetClientID(), emoticonType);
-		SendBroadcast(text);
-	});
+	GS()->Chat(GetClientID(), text.c_str());
 }
 
 void CUniversalScenario::SendBroadcast(const std::string& text) const
