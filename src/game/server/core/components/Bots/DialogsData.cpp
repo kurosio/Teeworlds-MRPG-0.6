@@ -384,24 +384,6 @@ void CPlayerDialog::PostNext()
 		return;
 	}
 
-	// Handle dialog actions
-	if(pCurrent->IsRequestAction())
-	{
-		if(m_BotType == TYPE_BOT_QUEST)
-		{
-			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-			pQuest->GetStepByMob(m_MobID)->CreateVarietyTypesRequiredItems();
-
-			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
-			if(!pStep->m_TaskListReceived)
-			{
-				pStep->m_TaskListReceived = true;
-				pStep->UpdateTaskMoveTo();
-			}
-		}
-	}
-
 	// Show next dialog
 	ShowCurrentDialog();
 }
@@ -456,18 +438,23 @@ void CPlayerDialog::ShowCurrentDialog() const
 {
 	CDialogElem* pCurrent = GetCurrent();
 
-	if(m_BotType == TYPE_BOT_QUEST && pCurrent->IsRequestAction())
+	// Handle dialog actions
+	if(pCurrent->IsRequestAction())
 	{
-		int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-		CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
-
-		if(!pStep->m_TaskListReceived)
+		if(m_BotType == TYPE_BOT_QUEST)
 		{
-			pStep->m_TaskListReceived = true;
-			pStep->UpdateTaskMoveTo();
+			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+			pQuest->GetStepByMob(m_MobID)->CreateVarietyTypesRequiredItems();
 
-			StartDialogScenario(DialogScenarioPos::OnRecieveTask);
+			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
+			if(!pStep->m_TaskListReceived)
+			{
+				pStep->m_TaskListReceived = true;
+				pStep->UpdateTaskMoveTo();
+
+				StartDialogScenario(DialogScenarioPos::OnRecieveTask);
+			}
 		}
 	}
 
