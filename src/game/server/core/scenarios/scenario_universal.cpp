@@ -2,8 +2,6 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/entities/projectile.h>
-
 CUniversalScenario::CUniversalScenario(const nlohmann::json& jsonArrayData)
 	: ScenarioBase(SCENARIO_UNIVERSAL)
 {
@@ -35,7 +33,7 @@ void CUniversalScenario::InitStep(const nlohmann::json& step)
 {
 	if(!step.contains("action") || !step["action"].is_string())
 	{
-		dbg_msg("scenario-tutorial", "Missing or invalid 'action' key in JSON");
+		dbg_msg("scenario-universal", "Missing or invalid 'action' key in JSON");
 		return;
 	}
 
@@ -110,7 +108,7 @@ void CUniversalScenario::InitStep(const nlohmann::json& step)
 	}
 	else
 	{
-		dbg_msg("scenario-tutorial", "Unknown action: %s", action.c_str());
+		dbg_msg("scenario-universal", "Unknown action: %s", action.c_str());
 	}
 }
 
