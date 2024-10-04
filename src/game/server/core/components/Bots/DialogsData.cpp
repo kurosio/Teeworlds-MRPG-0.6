@@ -5,6 +5,8 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/quests/quest_manager.h>
 
+#include <game/server/core/scenarios/scenario_universal.h>
+
 void CDialogElem::Init(int BotID, const nlohmann::json& JsonDialog)
 {
 	// initialize variables
@@ -349,7 +351,7 @@ void CPlayerDialog::Next()
 			}
 
 			GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
-			DialogEvents(DIALOGEVENTCUR::ON_COMPLETE_TASK);
+			StartDialogScenario(DialogScenarioPos::OnCompleteTask);
 		}
 	}
 
@@ -370,11 +372,11 @@ void CPlayerDialog::PostNext()
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
 			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			bool RunEndDialogEvent = m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish();
+			bool RunEndDialogScenario = m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish();
 
-			if(RunEndDialogEvent)
+			if(RunEndDialogScenario)
 			{
-				DialogEvents(DIALOGEVENTCUR::ON_END);
+				StartDialogScenario(DialogScenarioPos::OnEnd);
 			}
 		}
 
@@ -419,73 +421,34 @@ void CPlayerDialog::Clear()
 	ClearText();
 }
 
-void CPlayerDialog::DialogEvents(DIALOGEVENTCUR Pos) const
+void CPlayerDialog::StartDialogScenario(DialogScenarioPos Pos) const
 {
-	std::string EventData;
+	// load scenario
+	std::string scenarioJson;
+
 	if(m_BotType == TYPE_BOT_QUEST)
 	{
-		EventData = QuestBotInfo::ms_aQuestBot[m_MobID].m_EventJsonData;
+		scenarioJson = QuestBotInfo::ms_aQuestBot[m_MobID].m_ScenarioJson;
 	}
 
-	mystd::json::parse(EventData, [Pos, this](nlohmann::json& pJson) 
+	if(scenarioJson.empty())
+		return;
+
+	// parse scenario
+	mystd::json::parse(scenarioJson, [Pos, this](nlohmann::json& pJson)
 	{
-		const char* pElem = nullptr;
+		const char* pElem;
+
 		switch(Pos)
 		{
-			case DIALOGEVENTCUR::ON_RECIEVE_TASK: pElem = "on_recieve_task"; break;
-			case DIALOGEVENTCUR::ON_COMPLETE_TASK: pElem = "on_complete_task"; break;
+			case DialogScenarioPos::OnRecieveTask: pElem = "on_recieve_task"; break;
+			case DialogScenarioPos::OnCompleteTask: pElem = "on_complete_task"; break;
 			default: pElem = "on_end"; break;
 		}
 
-		const auto& pEventObjectJson = pJson[pElem];
-		const int ClientID = m_pPlayer->GetCID();
-
-		// Handle messages
-		if(pEventObjectJson.contains("messages"))
-		{
-			const auto& pChatArrayJson = pEventObjectJson["messages"];
-
-			for(const auto& p : pChatArrayJson)
-			{
-				std::string Text = p.value("text", "\0");
-
-				if(p.contains("broadcast") && p.value("broadcast", false))
-				{
-					GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 300, Text.c_str());
-				}
-				else
-				{
-					GS()->Chat(ClientID, Text.c_str());
-				}
-			}
-		}
-
-		// Handle effects
-		if(pEventObjectJson.contains("effect"))
-		{
-			const auto& pEffectObjectJson = pEventObjectJson["effect"];
-			std::string Effect = pEffectObjectJson.value("name", "\0");
-			int Seconds = pEffectObjectJson.value("seconds", 0);
-			if(!Effect.empty())
-			{
-				m_pPlayer->GiveEffect(Effect.c_str(), Seconds);
-			}
-		}
-
-		// Handle teleport
-		if(Pos == DIALOGEVENTCUR::ON_END && pEventObjectJson.contains("teleport"))
-		{
-			const auto& pTeleport = pEventObjectJson["teleport"];
-			vec2 Position(pTeleport.value("x", -1.0f), pTeleport.value("y", -1.0f));
-
-			if(pTeleport.find("world_id") != pTeleport.end() && m_pPlayer->GetPlayerWorldID() != pTeleport.value("world_id", MAIN_WORLD_ID))
-			{
-				m_pPlayer->ChangeWorld(pTeleport.value("world_id", MAIN_WORLD_ID), Position);
-				return;
-			}
-
-			m_pPlayer->GetCharacter()->ChangePosition(Position);
-		}
+		// start scenario
+		const auto& scenarioJsonData = pJson5[pElem];
+		m_pPlayer->Scenarios().Start(std::make_unique< CUniversalScenario>(scenarioJsonData));
 	});
 }
 
@@ -504,7 +467,7 @@ void CPlayerDialog::ShowCurrentDialog() const
 			pStep->m_TaskListReceived = true;
 			pStep->UpdateTaskMoveTo();
 
-			DialogEvents(DIALOGEVENTCUR::ON_RECIEVE_TASK);
+			StartDialogScenario(DialogScenarioPos::OnRecieveTask);
 		}
 	}
 

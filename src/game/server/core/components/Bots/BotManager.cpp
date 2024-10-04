@@ -118,14 +118,14 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_StepPos = pRes->getInt("Step");
 		QuestBot.m_WorldID = pRes->getInt("WorldID");
 		QuestBot.m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
-		QuestBot.m_EventJsonData = pRes->getString("EventData").c_str();
+		QuestBot.m_ScenarioJson = pRes->getString("ScenarioData");
 
 		// tasks initilized
-		std::string TasksData = pRes->getString("TasksData").c_str();
+		std::string TasksData = pRes->getString("TasksData");
 		QuestBot.InitTasksFromJSON(TasksData);
 
 		// dialog initilizer
-		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
+		std::string DialogJsonStr = pRes->getString("DialogData");
 		auto [hasAction, vDialogs] = DialogsInitilizer(QuestBot.m_BotID, DialogJsonStr);
 		QuestBot.m_HasAction = hasAction;
 		QuestBot.m_aDialogs = vDialogs;

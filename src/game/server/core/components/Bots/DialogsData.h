@@ -32,13 +32,19 @@ public:
 	void Tick();
 
 private:
+	enum class DialogScenarioPos
+	{
+		OnRecieveTask,
+		OnCompleteTask,
+		OnEnd
+	};
+
 	void FormatText(const class CDialogElem* pDialog, const char* pLeftNickname, const char* pRightNickname);
 	const char* GetCurrentText() const { return m_aFormatedText; }
 	void ClearText();
 
 	class CDialogElem* GetCurrent() const;
-	enum class DIALOGEVENTCUR { ON_RECIEVE_TASK, ON_COMPLETE_TASK, ON_END };
-	void DialogEvents(DIALOGEVENTCUR Pos) const;
+	void StartDialogScenario(DialogScenarioPos Pos) const;
 	void ShowCurrentDialog() const;
 	void PostNext();
 	void Clear();

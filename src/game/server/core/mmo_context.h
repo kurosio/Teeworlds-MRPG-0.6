@@ -285,7 +285,8 @@ enum MenuList
 // player scenarios
 enum
 {
-	SCENARIO_TUTORIAL = 1,
+	SCENARIO_UNIVERSAL = 1,
+	SCENARIO_TUTORIAL,
 	SCENARIO_EIDOLON,
 };
 
