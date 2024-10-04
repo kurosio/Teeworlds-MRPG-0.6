@@ -447,7 +447,7 @@ void CPlayerDialog::StartDialogScenario(DialogScenarioPos Pos) const
 		}
 
 		// start scenario
-		const auto& scenarioJsonData = pJson5[pElem];
+		const auto& scenarioJsonData = pJson[pElem];
 		m_pPlayer->Scenarios().Start(std::make_unique< CUniversalScenario>(scenarioJsonData));
 	});
 }
