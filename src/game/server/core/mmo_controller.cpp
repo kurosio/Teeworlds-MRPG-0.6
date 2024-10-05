@@ -153,14 +153,14 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	// main menu
 	if(Menulist == MENU_MAIN)
 	{
+		const auto expForLevel = computeExperience(pPlayer->Account()->GetLevel());
+		const char* pLastLoginDate = pPlayer->Account()->GetLastLoginDate();
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// statistics menu
-		const int ExpForLevel = computeExperience(pPlayer->Account()->GetLevel());
-		const char* pStrLastLoginDate = pPlayer->Account()->GetLastLoginDate();
 		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Account info");
-		VMain.Add("Last log in: {}", pStrLastLoginDate);
-		VMain.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), ExpForLevel);
+		VMain.Add("Last log in: {}", pLastLoginDate);
+		VMain.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
 		VMain.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
 		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VoteWrapper::AddEmptyline(ClientID);

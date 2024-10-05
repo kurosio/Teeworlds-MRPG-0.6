@@ -107,17 +107,17 @@ class CFormatter
 	template<typename T>
 	std::pair<int, std::string> to_string(const T& Value)
 	{
-		if constexpr(std::is_same_v<T, double> || std::is_same_v<T, float>)
-		{
-			return { type_floating, std::to_string(Value) };
-		}
-		else if constexpr(std::is_same_v<T, BigInt>)
+		if constexpr(std::is_same_v<T, BigInt>)
 		{
 			return { type_big_integers, Value.to_string() };
 		}
-		else if constexpr(std::is_arithmetic_v<T>)
+		else if constexpr(std::is_integral_v<T>)
 		{
 			return { type_integers, std::to_string(Value) };
+		}
+		else if constexpr(std::is_floating_point_v<T>)
+		{
+			return { type_floating, std::to_string(Value) };
 		}
 		else if constexpr(std::is_convertible_v<T, std::string>)
 		{
