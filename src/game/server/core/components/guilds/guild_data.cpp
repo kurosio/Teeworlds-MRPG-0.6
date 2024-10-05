@@ -68,7 +68,7 @@ void CGuild::AddExperience(uint64_t Experience)
 	// update table
 	if(rand() % 10 == 2 || UpdateTable)
 	{
-		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '{}', Experience = '{}' WHERE ID = '{}'", m_Level, m_Experience, m_ID);
+		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '{}', Exp = '{}' WHERE ID = '{}'", m_Level, m_Experience, m_ID);
 	}
 }
 
