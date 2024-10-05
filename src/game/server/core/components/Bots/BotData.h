@@ -37,7 +37,7 @@ public:
 	int m_BotID {};
 	int m_Function {};
 	int m_GiveQuestID {};
-	std::vector<CDialogElem> m_aDialogs {};
+	std::vector<CDialogStep> m_aDialogs {};
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsValid(int MobID) { return ms_aNpcBot.find(MobID) != ms_aNpcBot.end() && DataBotInfo::IsDataBotValid(ms_aNpcBot[MobID].m_BotID); }
@@ -62,7 +62,7 @@ public:
 	bool m_GenerateNick {};
 	bool m_HasAction {};
 	std::string m_ScenarioJson {};
-	std::vector<CDialogElem> m_aDialogs {};
+	std::vector<CDialogStep> m_aDialogs {};
 
 	CItemsContainer m_RewardItems;
 

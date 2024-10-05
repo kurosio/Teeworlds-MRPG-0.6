@@ -14,7 +14,7 @@
  * "right_speaker_id: (14 - bot id, player, empty)
  */
 // dialogue initilizer
-typedef std::pair < bool, std::vector<CDialogElem> > DialogsInitilizerType;
+typedef std::pair < bool, std::vector<CDialogStep> > DialogsInitilizerType;
 static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string& JsonDialogData)
 {
 	DialogsInitilizerType Value{false, {}};
@@ -22,7 +22,7 @@ static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string&
 	{
 		for(auto& pItem : pJson)
 		{
-			CDialogElem Dialogue;
+			CDialogStep Dialogue;
 			Dialogue.Init(DataBotID, pItem);
 			if(Dialogue.IsRequestAction())
 				Value.first = true;
@@ -32,7 +32,7 @@ static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string&
 	// useless dialogue
 	if(Value.second.empty())
 	{
-		CDialogElem Dialogue;
+		CDialogStep Dialogue;
 
 		// json sturcture
 		nlohmann::json JsonDialog;

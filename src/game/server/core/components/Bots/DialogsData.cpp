@@ -7,7 +7,7 @@
 
 #include <game/server/core/scenarios/scenario_universal.h>
 
-void CDialogElem::Init(int BotID, const nlohmann::json& JsonDialog)
+void CDialogStep::Init(int BotID, const nlohmann::json& JsonDialog)
 {
 	// initialize variables
 	const std::string Side = JsonDialog.value("side", "left");
@@ -33,11 +33,11 @@ void CDialogElem::Init(int BotID, const nlohmann::json& JsonDialog)
 		else if(LeftSpeakerID == 0)
 		{
 			m_Flags |= DIALOGFLAG_LEFT_BOT;
-			m_LeftSide = BotID;
+			m_BotLeftSideID = BotID;
 		}
 		else
 		{
-			m_LeftSide = LeftSpeakerID;
+			m_BotLeftSideID = LeftSpeakerID;
 			m_Flags |= DIALOGFLAG_LEFT_BOT;
 		}
 
@@ -53,11 +53,11 @@ void CDialogElem::Init(int BotID, const nlohmann::json& JsonDialog)
 	else if(LeftSpeakerID == 0)
 	{
 		m_Flags |= DIALOGFLAG_LEFT_BOT;
-		m_LeftSide = BotID;
+		m_BotLeftSideID = BotID;
 	}
 	else
 	{
-		m_LeftSide = LeftSpeakerID;
+		m_BotLeftSideID = LeftSpeakerID;
 		m_Flags |= DIALOGFLAG_LEFT_BOT;
 	}
 
@@ -69,19 +69,22 @@ void CDialogElem::Init(int BotID, const nlohmann::json& JsonDialog)
 	else if(RightSpeakerID == 0)
 	{
 		m_Flags |= DIALOGFLAG_RIGHT_BOT;
-		m_RightSide = BotID;
+		m_BotRightSideID = BotID;
 	}
 	else
 	{
 		m_Flags |= DIALOGFLAG_RIGHT_BOT;
-		m_RightSide = RightSpeakerID;
+		m_BotRightSideID = RightSpeakerID;
 	}
 }
 
-void CDialogElem::Show(CGS* pGS, int ClientID) const
+void CDialogStep::Show(int ClientID) const
 {
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID, true);
-	if(!pPlayer) return;
+	auto* pGS = (CGS*)Instance::GameServerPlayer(ClientID);
+	auto* pPlayer = pGS->GetPlayer(ClientID, true);
+
+	if(!pPlayer)
+		return;
 
 	// Determine nicknames based on flags
 	const char* pLeftNickname = nullptr;
@@ -93,29 +96,44 @@ void CDialogElem::Show(CGS* pGS, int ClientID) const
 	}
 	else
 	{
+		// get nickname left side
 		if(m_Flags & DIALOGFLAG_LEFT_PLAYER)
+		{
 			pLeftNickname = pGS->Server()->ClientName(ClientID);
+		}
 		else if(m_Flags & DIALOGFLAG_LEFT_BOT)
-			pLeftNickname = DataBotInfo::ms_aDataBot[m_LeftSide].m_aNameBot;
+		{
+			pLeftNickname = DataBotInfo::ms_aDataBot[m_BotLeftSideID].m_aNameBot;
+		}
 
+		// get nickname rightside
 		if(m_Flags & DIALOGFLAG_RIGHT_PLAYER)
+		{
 			pRightNickname = pGS->Server()->ClientName(ClientID);
+		}
 		else if(m_Flags & DIALOGFLAG_RIGHT_BOT)
-			pRightNickname = DataBotInfo::ms_aDataBot[m_RightSide].m_aNameBot;
+		{
+			pRightNickname = DataBotInfo::ms_aDataBot[m_BotRightSideID].m_aNameBot;
+		}
 	}
 
 	// Show dialog
-	pPlayer->m_Dialog.FormatText(this, pLeftNickname, pRightNickname);
+	pPlayer->m_Dialog.PrepareDialog(this, pLeftNickname, pRightNickname);
 	pGS->Motd(ClientID, pPlayer->m_Dialog.GetCurrentText());
 }
 
-CDialogElem* CPlayerDialog::GetCurrent() const
+CDialogStep* CPlayerDialog::GetCurrent() const
 {
-	std::vector<CDialogElem>* pDialogsVector;
+	std::vector<CDialogStep>* pDialogsVector;
+
 	if(m_BotType == TYPE_BOT_QUEST)
+	{
 		pDialogsVector = &QuestBotInfo::ms_aQuestBot[m_MobID].m_aDialogs;
+	}
 	else
+	{
 		pDialogsVector = &NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs;
+	}
 
 	if(m_Step < 0 || m_Step >= static_cast<int>(pDialogsVector->size()))
 		return nullptr;
@@ -123,7 +141,11 @@ CDialogElem* CPlayerDialog::GetCurrent() const
 	return &(*pDialogsVector)[m_Step];
 }
 
-CGS* CPlayerDialog::GS() const { return m_pPlayer->GS(); }
+CGS* CPlayerDialog::GS() const
+{
+	return m_pPlayer->GS();
+}
+
 void CPlayerDialog::Start(int BotCID)
 {
 	// Assert player
@@ -131,7 +153,8 @@ void CPlayerDialog::Start(int BotCID)
 
 	// Check if bot is valid
 	const auto pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(BotCID));
-	if(!pPlayerBot) return;
+	if(!pPlayerBot) 
+		return;
 
 	// Initialize variables
 	Clear();
@@ -141,10 +164,10 @@ void CPlayerDialog::Start(int BotCID)
 	m_MobID = pPlayerBot->GetBotMobID();
 
 	// Show current dialog or meaningless dialog
-	CDialogElem* pDialog = GetCurrent();
+	CDialogStep* pDialog = GetCurrent();
 	if(!pDialog)
 	{
-		CDialogElem MeaninglessDialog;
+		CDialogStep MeaninglessDialog;
 		const char* pTalking[] = {
 			"<player>, do you have any questions? I'm sorry, can't help you.",
 			"What a beautiful <time>. I don't have anything for you <player>.",
@@ -161,7 +184,7 @@ void CPlayerDialog::Start(int BotCID)
 
 		// initialize and show dialogue
 		MeaninglessDialog.Init(pPlayerBot->GetBotID(), JsonDialog);
-		MeaninglessDialog.Show(GS(), m_pPlayer->GetCID());
+		MeaninglessDialog.Show(m_pPlayer->GetCID());
 		return;
 	}
 
@@ -196,7 +219,7 @@ void CPlayerDialog::Tick()
 	}
 }
 
-void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNickname, const char* pRightNickname)
+void CPlayerDialog::PrepareDialog(const CDialogStep* pDialog, const char* pLeftNickname, const char* pRightNickname)
 {
 	if(!pDialog || !m_pPlayer || m_aFormatedText[0] != '\0')
 		return;
@@ -231,20 +254,30 @@ void CPlayerDialog::FormatText(const CDialogElem* pDialog, const char* pLeftNick
 	if(IsVanillaClient && !IsSpeakAuthor)
 	{
 		if(pLeftNickname && pRightNickname)
+		{
 			str_format(aBufNickname, sizeof(aBufNickname), "* %s says to %s:\n", pLeftNickname, pRightNickname);
+		}
 		else if(pRightNickname)
+		{
 			str_format(aBufNickname, sizeof(aBufNickname), "* %s:\n", pRightNickname);
+		}
 		else if(pLeftNickname)
+		{
 			str_format(aBufNickname, sizeof(aBufNickname), "* %s:\n", pLeftNickname);
+		}
 	}
 
 	char aBufPosition[128];
 	{
 		int PageNum = m_Step;
 		if(m_BotType == TYPE_BOT_QUEST)
+		{
 			PageNum = static_cast<int>(QuestBotInfo::ms_aQuestBot[m_MobID].m_aDialogs.size());
+		}
 		else if(m_BotType == TYPE_BOT_NPC)
+		{
 			PageNum = static_cast<int>(NpcBotInfo::ms_aNpcBot[m_MobID].m_aDialogs.size());
+		}
 
 		const char* pNicknameTalked = IsSpeakAuthor ? "..." : pLeftNickname;
 		str_format(aBufPosition, sizeof(aBufPosition), "\u2500\u2500\u2500\u2500 | %d of %d | %s.\n", (m_Step + 1), maximum(1, PageNum), pNicknameTalked);
@@ -313,79 +346,92 @@ void CPlayerDialog::Init(CPlayer* pPlayer)
 
 void CPlayerDialog::Next()
 {
-	CDialogElem* pDialog = GetCurrent();
-	if(!pDialog || !m_pPlayer)
+	if(!m_pPlayer)
+		return;
+
+	// check valid dialog
+	const auto* pDialog = GetCurrent();
+	if(!pDialog)
 	{
 		Clear();
 		return;
 	}
 
-	// Request action handling
-	if(pDialog->IsRequestAction())
-	{
-		// Handle NPC bot type
-		if(m_BotType == TYPE_BOT_NPC)
-		{
-			const auto* pNpcInfo = &NpcBotInfo::ms_aNpcBot[m_MobID];
-			if(pNpcInfo->m_Function == FUNCTION_NPC_GIVE_QUEST)
-			{
-				int QuestID = pNpcInfo->m_GiveQuestID;
-				m_pPlayer->GetQuest(QuestID)->Accept();
-			}
-		}
-		// Handle Quest bot type
-		else if(m_BotType == TYPE_BOT_QUEST)
-		{
-			int ClientID = m_pPlayer->GetCID();
-			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+	// check action completion
+	if(pDialog->IsRequestAction() && !CheckActionCompletion())
+		return;
 
-			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
-			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
-			if(!pStep) return;
-
-			if(!pStep->IsComplete())
-			{
-				GS()->Chat(ClientID, "The tasks haven't been completed yet!");
-				ShowCurrentDialog();
-				return;
-			}
-
-			GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
-			StartDialogScenario(DialogScenarioPos::OnCompleteTask);
-		}
-	}
-
-	// Move to next step
+	// update dialog step
 	m_Step++;
 	ClearText();
-	PostNext();
+
+	// check next step dialog
+	pDialog = GetCurrent();
+	if(pDialog)
+	{
+		ShowCurrentDialog();
+	}
+	else
+	{
+		End();
+	}
 }
 
-void CPlayerDialog::PostNext()
+bool CPlayerDialog::CheckActionCompletion() const
 {
-	CDialogElem* pCurrent = GetCurrent();
-
-	// Check if last dialog
-	if(!pCurrent)
+	// npc bot type
+	if(m_BotType == TYPE_BOT_NPC)
 	{
-		// Handle end of quest
-		if(m_BotType == TYPE_BOT_QUEST)
+		const auto* pNpcInfo = &NpcBotInfo::ms_aNpcBot[m_MobID];
+
+		if(pNpcInfo->m_Function == FUNCTION_NPC_GIVE_QUEST)
 		{
-			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			bool RunEndDialogScenario = m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish();
-
-			if(RunEndDialogScenario)
-			{
-				StartDialogScenario(DialogScenarioPos::OnEnd);
-			}
+			const int QuestID = pNpcInfo->m_GiveQuestID;
+			m_pPlayer->GetQuest(QuestID)->Accept();
 		}
-
-		Clear();
-		return;
+		return true;
 	}
 
-	// Show next dialog
-	ShowCurrentDialog();
+	// quest bot type
+	if(m_BotType == TYPE_BOT_QUEST)
+	{
+		const int ClientID = m_pPlayer->GetCID();
+		const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+		auto* pQuest = m_pPlayer->GetQuest(QuestID);
+		auto* pStep = pQuest->GetStepByMob(m_MobID);
+
+		if(!pStep)
+			return false;
+
+		if(!pStep->IsComplete())
+		{
+			GS()->Chat(ClientID, "The tasks haven't been completed yet!");
+			ShowCurrentDialog();
+			return false;
+		}
+
+		GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
+		StartDialogScenario(DialogScenarioPos::OnCompleteTask);
+		return true;
+	}
+
+	return true;
+}
+
+void CPlayerDialog::End()
+{
+	// handle end of quest
+	if(m_BotType == TYPE_BOT_QUEST)
+	{
+		const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+
+		if(m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish())
+		{
+			StartDialogScenario(DialogScenarioPos::OnEnd);
+		}
+	}
+
+	Clear();
 }
 
 void CPlayerDialog::Clear()
@@ -436,14 +482,14 @@ void CPlayerDialog::StartDialogScenario(DialogScenarioPos Pos) const
 
 void CPlayerDialog::ShowCurrentDialog() const
 {
-	CDialogElem* pCurrent = GetCurrent();
+	CDialogStep* pCurrent = GetCurrent();
 
 	// Handle dialog actions
 	if(pCurrent->IsRequestAction())
 	{
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
-			int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+			const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
 			pQuest->GetStepByMob(m_MobID)->CreateVarietyTypesRequiredItems();
 
@@ -458,5 +504,5 @@ void CPlayerDialog::ShowCurrentDialog() const
 		}
 	}
 
-	pCurrent->Show(GS(), m_pPlayer->GetCID());
+	pCurrent->Show(m_pPlayer->GetCID());
 }
