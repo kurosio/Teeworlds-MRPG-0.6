@@ -139,7 +139,12 @@ namespace mystd
 		constexpr T maxChunkSize = std::numeric_limits<T>::max();
 		while(total > 0)
 		{
-			T currentChunk = static_cast<T>(std::min(total, static_cast<BigInt>(maxChunkSize)));
+			T currentChunk = maxChunkSize;
+			if(total < maxChunkSize)
+			{
+				// always true
+				currentChunk = total.to_int();
+			}
 			processChunk(currentChunk);
 			total -= currentChunk;
 		}

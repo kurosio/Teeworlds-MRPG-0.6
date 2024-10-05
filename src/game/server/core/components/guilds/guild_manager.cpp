@@ -20,7 +20,7 @@ void CGuildManager::OnInit()
 		const auto DefaultRankID = pRes->getInt("DefaultRankID");
 		const auto LeaderUID = pRes->getInt("LeaderUID");
 		const auto Level = pRes->getInt("Level");
-		const auto Experience = pRes->getUInt64("Experience");
+		const auto Experience = pRes->getUInt64("Exp");
 		const auto Bank = pRes->getBigInt("Bank");
 		const auto Score = pRes->getInt("Score");
 		const auto LogFlag = pRes->getInt64("LogFlag");
@@ -1103,7 +1103,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	// Guild information
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "{}", pGuild->GetName());
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
-	VInfo.Add("Level: {} Experience: {}/{}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
+	VInfo.Add("Level: {} Exp: {}/{}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	VInfo.Add("Members: {} of {}", MemberUsedSlots, MemberMaxSlots);
 	VInfo.Add("Bank: {$} gold", pGuild->GetBank()->Get());
 	VoteWrapper::AddEmptyline(ClientID);

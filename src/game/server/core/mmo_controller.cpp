@@ -586,80 +586,99 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 	if(Type == ToplistType::GUILDS_LEVELING)
 	{
 		if(pWrapper)
+		{
 			pWrapper->SetTitle("Top 10 guilds leveling");
+		}
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Experience DESC LIMIT {}", Rows);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Exp DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
-			char NameGuild[64];
-			const int Rank = pRes->getRow();
+			const auto Rank = pRes->getRow();
 			const int Level = pRes->getInt("Level");
-			const int Experience = pRes->getInt("Experience");
-			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
+			const auto Experience = pRes->getUInt64("Exp");
+			const auto Guildname = pRes->getString("Name");
 
 			if(pWrapper)
-				pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, NameGuild, Level, Experience);
+			{
+				pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, Guildname, Level, Experience);
+			}
 			else
-				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, NameGuild, Level, Experience);
+			{
+				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, Guildname, Level, Experience);
+			}
 		}
 	}
 	else if(Type == ToplistType::GUILDS_WEALTHY)
 	{
 		if(pWrapper)
+		{
 			pWrapper->SetTitle("Top 10 guilds wealthy");
+		}
 
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
-			char NameGuild[64];
-			const int Rank = pRes->getRow();
+			const auto Rank = pRes->getRow();
 			const int Gold = pRes->getInt("Bank");
-			str_copy(NameGuild, pRes->getString("Name").c_str(), sizeof(NameGuild));
+			const auto Guildname = pRes->getString("Name");
 
 			if(pWrapper)
-				pWrapper->Add("{}. {} :: Gold {$}", Rank, NameGuild, Gold);
+			{
+				pWrapper->Add("{}. {} :: Gold {$}", Rank, Guildname, Gold);
+			}
 			else
-				GS()->Chat(ClientID, "{}. {} :: Gold {$}", Rank, NameGuild, Gold);
+			{
+				GS()->Chat(ClientID, "{}. {} :: Gold {$}", Rank, Guildname, Gold);
+			}
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_LEVELING)
 	{
 		if(pWrapper)
+		{
 			pWrapper->SetTitle("Top 10 players leveling");
+		}
 
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
-			char Nick[64];
-			const int Rank = pRes->getRow();
+			const auto Rank = pRes->getRow();
 			const int Level = pRes->getInt("Level");
-			const int Experience = pRes->getInt("Exp");
-			str_copy(Nick, pRes->getString("Nick").c_str(), sizeof(Nick));
+			const auto Experience = pRes->getUInt64("Exp");
+			const auto Nickname = pRes->getString("Nick");
 
 			if(pWrapper)
-				pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, Nick, Level, Experience);
+			{
+				pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, Nickname, Level, Experience);
+			}
 			else
-				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, Nick, Level, Experience);
+			{
+				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, Nickname, Level, Experience);
+			}
 		}
 	}
 	else if(Type == ToplistType::PLAYERS_WEALTHY)
 	{
 		if(pWrapper)
+		{
 			pWrapper->SetTitle("Top 10 players wealthy");
+		}
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE ItemID = '{}' ORDER BY Value DESC LIMIT {}", (ItemIdentifier)itGold, Rows);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Bank DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
-			char Nick[64];
-			BigInt Gold = pRes->getInt("Value");
-			const int Rank = pRes->getRow();
-			const int UserID = pRes->getInt("UserID");
-			str_copy(Nick, Instance::Server()->GetAccountNickname(UserID), sizeof(Nick));
+			const auto Rank = pRes->getRow();
+			const auto Bank = pRes->getBigInt("Bank");
+			const auto Nickname = pRes->getString("Nick");
 
 			if(pWrapper)
-				pWrapper->Add("{}. {} :: Gold {$}", Rank, Nick, Gold);
+			{
+				pWrapper->Add("{}. {} :: Wealthy(bank) {$} golds", Rank, Nickname, Bank);
+			}
 			else
-				GS()->Chat(ClientID, "{}. {} :: Gold {$}", Rank, Nick, Gold);
+			{
+				GS()->Chat(ClientID, "{}. {} :: Wealthy(bank) {$} golds", Rank, Nickname, Bank);
+			}
 		}
 	}
 }
