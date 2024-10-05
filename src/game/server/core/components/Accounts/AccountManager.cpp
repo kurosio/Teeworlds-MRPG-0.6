@@ -438,15 +438,8 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MBonuses.AddText("Total: {$}", TotalGold);
 		MBonuses.AddText("Commision rate: {}%", g_Config.m_SvBankCommissionRate);
 		MBonuses.AddSeparateLine();
-
-		// depoosit
-		MBonuses.AddText("Gold to Bank");
 		MBonuses.Add("BANK_DEPOSIT", CurrentGold, "Deposit All");
-		MBonuses.AddLine();
-
-		// withdraw
-		MBonuses.AddText("Gold from Bank");
-		int WithdrawAll = CurrentBankGold.to_int();
+		int WithdrawAll = pPlayer->Account()->GetGoldCapacity();
 		MBonuses.Add("BANK_WITHDRAW", WithdrawAll, "Withdraw All");
 		MBonuses.Send(MOTD_MENU_BANK_MANAGER);
 		return true;
