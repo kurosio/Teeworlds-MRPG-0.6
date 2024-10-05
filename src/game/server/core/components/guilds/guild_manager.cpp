@@ -15,15 +15,15 @@ void CGuildManager::OnInit()
 	{
 		// initialize variables
 		GuildIdentifier ID = pRes->getInt("ID");
-		std::string Name = pRes->getString("Name").c_str();
-		std::string JsonMembers = pRes->getString("Members").c_str();
-		GuildRankIdentifier DefaultRankID = pRes->getInt("DefaultRankID");
-		int LeaderUID = pRes->getInt("LeaderUID");
-		int Level = pRes->getInt("Level");
-		int Experience = pRes->getInt("Experience");
-		int Bank = pRes->getInt("Bank");
-		int Score = pRes->getInt("Score");
-		int64_t LogFlag = pRes->getInt64("LogFlag");
+		const auto Name = pRes->getString("Name");
+		const auto JsonMembers = pRes->getString("Members");
+		const auto DefaultRankID = pRes->getInt("DefaultRankID");
+		const auto LeaderUID = pRes->getInt("LeaderUID");
+		const auto Level = pRes->getInt("Level");
+		const auto Experience = pRes->getUInt64("Experience");
+		const auto Bank = pRes->getBigInt("Bank");
+		const auto Score = pRes->getInt("Score");
+		const auto LogFlag = pRes->getInt64("LogFlag");
 
 		// initialize guild
 		CGuild::CreateElement(ID)->Init(Name, JsonMembers, DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
@@ -43,9 +43,9 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		GuildIdentifier GuildID = pRes->getInt("GuildID");
 		int InitialFee = pRes->getInt("InitialFee");
 		int RentDays = pRes->getInt("RentDays");
-		std::string JsonDoors = pRes->getString("Doors").c_str();
-		std::string JsonFarmzones = pRes->getString("Farmzones").c_str();
-		std::string JsonPropersties = pRes->getString("Properties").c_str();
+		std::string JsonDoors = pRes->getString("Doors");
+		std::string JsonFarmzones = pRes->getString("Farmzones");
+		std::string JsonPropersties = pRes->getString("Properties");
 
 		// initialize guild houses
 		CGuild* pGuild = GetGuildByID(GuildID);
@@ -1062,10 +1062,13 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	}
 
 	// send mail
-	const int ReturnsGold = maximum(1, pGuild->GetBank()->Get());
+	BigInt ReturnsGold = std::max((BigInt)1, pGuild->GetBank()->Get());
 	MailWrapper Mail("System", pGuild->GetLeaderUID(), "Your guild was disbanded.");
 	Mail.AddDescLine("We returned some gold from your guild.");
-	Mail.AttachItem(CItem(itGold, ReturnsGold));
+	mystd::process_bigint_in_chunks<int>(ReturnsGold, [&Mail](int chunk)
+	{
+		Mail.AttachItem(CItem(itGold, chunk));
+	});
 	Mail.Send();
 	GS()->Chat(-1, "The {} guild has been disbanded.", pGuild->GetName());
 
@@ -1093,7 +1096,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		return;
 
 	bool HasHouse = pGuild->HasHouse();
-	int ExpNeed = (int)computeExperience(pGuild->GetLevel());
+	const auto ExpNeed = computeExperience(pGuild->GetLevel());
 	const int MemberUsedSlots = (int)pGuild->GetMembers()->GetContainer().size();
 	const int MemberMaxSlots = pGuild->GetUpgrades(GuildUpgrade::AVAILABLE_SLOTS)->m_Value;
 

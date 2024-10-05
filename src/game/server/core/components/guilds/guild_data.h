@@ -113,14 +113,19 @@ public:
 	{
 		CGS* GS() const;
 		CGuild* m_pGuild {};
-		int m_Bank {};
+		BigInt m_Bank {};
 
 	public:
-		CBank(int Bank, CGuild* pGuild) : m_pGuild(pGuild), m_Bank(Bank) {}
+		CBank(const BigInt& Bank, CGuild* pGuild)
+			: m_pGuild(pGuild), m_Bank(Bank) {}
 
-		const int& Get() const { return m_Bank; }                                           // Get value inside bank
-		void Add(int Value);                                                                // Add value to bank
-		[[nodiscard]] bool Spend(int Value);                                                // Spend from bank return boolean
+		const BigInt& Get() const
+		{
+			return m_Bank;
+		}
+
+		void Add(const BigInt& Value);
+		[[nodiscard]] bool Spend(const BigInt& Value);
 	};
 
 	/* -------------------------------------
@@ -219,15 +224,32 @@ public:
 		~CMember();
 
 		bool IsOnline() const;
-		int GetAccountID() const { return m_AccountID; }                                    // Get the account ID of the guild member
-		BigInt GetDeposit() const { return m_Deposit; }                                   // Get the amount of gold deposited by the guild member
-		void SetDeposit(BigInt Deposit) { m_Deposit = Deposit; }                            // Set the amount of gold deposited by the guild member
-		CRank* GetRank() const { return m_pRank; }                                          // Get the rank of the guild member
-		[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);                             // Set the rank of the guild member using the rank ID
-		[[nodiscard]] bool SetRank(CRank* pRank);                                           // Set the rank of the guild member using a rank object
-		[[nodiscard]] bool DepositInBank(int Golds);                                        // Deposit gold in the guild bank
-		[[nodiscard]] bool WithdrawFromBank(int Golds);                                     // Withdraw gold from the guild bank
-		[[nodiscard]] bool CheckAccess(GuildRankRights RequiredAccess) const;               // Check if a member has the required access level
+
+		int GetAccountID() const
+		{
+			return m_AccountID;
+		}
+
+		BigInt GetDeposit() const
+		{
+			return m_Deposit;
+		}
+
+		void SetDeposit(const BigInt& Deposit)
+		{
+			m_Deposit = Deposit;
+		}
+
+		CRank* GetRank() const
+		{
+			return m_pRank;
+		}
+
+		[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);
+		[[nodiscard]] bool SetRank(CRank* pRank);
+		[[nodiscard]] bool DepositInBank(int Value);
+		[[nodiscard]] bool WithdrawFromBank(int Value);
+		[[nodiscard]] bool CheckAccess(GuildRankRights RequiredAccess) const;
 	};
 
 	using MembersContainer = std::map<int, CMember*>;
@@ -297,7 +319,7 @@ private:
 	std::string m_Name {};
 	int m_LeaderUID {};
 	int m_Level {};
-	int m_Experience {};
+	uint64_t m_Experience {};
 	int m_Score {};
 
 	DBFieldContainer m_UpgradesData
@@ -324,7 +346,8 @@ public:
 		return m_pData.emplace_back(pData);
 	}
 
-	void Init(const std::string& Name, const std::string& JsonMembers, GuildRankIdentifier DefaultRankID, int Level, int Experience, int Score, int LeaderUID, int Bank, int64_t Logflag, ResultPtr* pRes)
+	void Init(const std::string& Name, const std::string& JsonMembers, GuildRankIdentifier DefaultRankID, int Level, 
+		uint64_t Experience, int Score, int LeaderUID, const BigInt& Bank, int64_t Logflag, ResultPtr* pRes)
 	{
 		m_Name = Name;
 		m_LeaderUID = LeaderUID;
@@ -352,13 +375,13 @@ public:
 	const char* GetName() const { return m_Name.c_str(); }
 	int GetLeaderUID() const { return m_LeaderUID; }
 	int GetLevel() const { return m_Level; }
-	int GetExperience() const { return m_Experience; }
+	uint64_t GetExperience() const { return m_Experience; }
 	int GetScore() const { return m_Score; }
 	bool HasHouse() const { return m_pHouse != nullptr; }
 	int GetUpgradePrice(GuildUpgrade Type);
 
 	// functions
-	void AddExperience(int Experience);
+	void AddExperience(uint64_t Experience);
 	[[nodiscard]] bool Upgrade(GuildUpgrade Type);
 	[[nodiscard]] GuildResult SetLeader(int AccountID);
 	[[nodiscard]] GuildResult BuyHouse(int HouseID);

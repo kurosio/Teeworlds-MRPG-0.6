@@ -133,6 +133,17 @@ namespace mystd
 		return std::nullopt;
 	}
 
+	template <typename T> requires std::is_arithmetic_v<T>
+	void process_bigint_in_chunks(BigInt total, std::invocable<T> auto processChunk)
+	{
+		constexpr T maxChunkSize = std::numeric_limits<T>::max();
+		while(total > 0)
+		{
+			T currentChunk = static_cast<T>(std::min(total, static_cast<BigInt>(maxChunkSize)));
+			processChunk(currentChunk);
+			total -= currentChunk;
+		}
+	}
 
 	/**
 	 * @namespace string

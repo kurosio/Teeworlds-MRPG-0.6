@@ -40,11 +40,11 @@ bool CGuild::Upgrade(GuildUpgrade Type)
 	return false;
 }
 
-void CGuild::AddExperience(int Experience)
+void CGuild::AddExperience(uint64_t Experience)
 {
 	// initialize variables
 	bool UpdateTable = false;
-	int ExperienceNeed = (int)computeExperience(m_Level);
+	auto ExperienceNeed = computeExperience(m_Level);
 
 	// add experience
 	m_Experience += Experience;
@@ -61,7 +61,7 @@ void CGuild::AddExperience(int Experience)
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Guild raised level to '%d'.", m_Level);
 
 		// recompute experience
-		ExperienceNeed = (int)computeExperience(m_Level);
+		ExperienceNeed = computeExperience(m_Level);
 		UpdateTable = true;
 	}
 
@@ -218,15 +218,18 @@ bool CGuild::IsAccountMemberGuild(int AccountID)
 /* -------------------------------------
  * Bank impl
  * ------------------------------------- */
-CGS* CGuild::CBank::GS() const { return m_pGuild->GS(); }
+CGS* CGuild::CBank::GS() const
+{
+	return m_pGuild->GS();
+}
 
-void CGuild::CBank::Add(int Value)
+void CGuild::CBank::Add(const BigInt& Value)
 {
 	m_Bank += Value;
 	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pGuild->GetID());
 }
 
-bool CGuild::CBank::Spend(int Value)
+bool CGuild::CBank::Spend(const BigInt& Value)
 {
 	if(m_Bank <= 0 || m_Bank < Value)
 		return false;
@@ -561,25 +564,25 @@ bool CGuild::CMember::SetRank(CRank* pRank)
 	return true;
 }
 
-bool CGuild::CMember::DepositInBank(int Golds)
+bool CGuild::CMember::DepositInBank(int Value)
 {
 	// check player validity
-	auto* pPlayer = GS()->GetPlayerByUserID(m_AccountID);
+	const auto* pPlayer = GS()->GetPlayerByUserID(m_AccountID);
 	if(!pPlayer)
 		return false;
 
 	// try spend from player
-	if(pPlayer->Account()->SpendCurrency(Golds))
+	if(pPlayer->Account()->SpendCurrency(Value))
 	{
 		// implement deposit
-		m_Deposit += Golds;
-		m_pGuild->GetBank()->Add(Golds);
+		m_Deposit += Value;
+		m_pGuild->GetBank()->Add(Value);
 		m_pGuild->GetMembers()->Save();
 
 		// send messages
 		const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
-		m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' deposit '%d' in the guild safe.", pNickname, Golds);
-		GS()->ChatGuild(m_pGuild->GetID(), "'{}' deposit {} gold in the safe, now {}!", pNickname, Golds, m_pGuild->GetBank()->Get());
+		m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' deposit '%d' in the guild safe.", pNickname, Value);
+		GS()->ChatGuild(m_pGuild->GetID(), "'{}' deposit {} gold in the safe, now {}!", pNickname, Value, m_pGuild->GetBank()->Get());
 		return true;
 	}
 
