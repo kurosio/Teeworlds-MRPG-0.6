@@ -190,7 +190,7 @@ bool CGuild::StartWar(CGuild* pTargetGuild)
 		return false;
 	
 	CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
-	time_t TimeUntilEnd = time(nullptr) + (g_Config.m_SvGuildWarDuration * 60);
+	time_t TimeUntilEnd = time(nullptr) + (g_Config.m_SvGuildWarDurationMinutes * 60);
 	pWarHandler->Init({ this, pTargetGuild, 0 }, { pTargetGuild, this, 0 }, TimeUntilEnd);
 	return true;
 }
@@ -200,9 +200,9 @@ int CGuild::GetUpgradePrice(GuildUpgrade Type)
 	int EndPrice = 0;
 
 	if(Type == GuildUpgrade::AVAILABLE_SLOTS)
-		EndPrice = m_UpgradesData((int)Type, 0).m_Value * g_Config.m_SvPriceUpgradeGuildSlot;
+		EndPrice = m_UpgradesData((int)Type, 0).m_Value * g_Config.m_SvGuildSlotUpgradePrice;
 	else if(Type == GuildUpgrade::HOUSE_CHAIR_EXPERIENCE)
-		EndPrice = m_UpgradesData((int)Type, 0).m_Value * g_Config.m_SvPriceUpgradeGuildAnother;
+		EndPrice = m_UpgradesData((int)Type, 0).m_Value * g_Config.m_SvGuildAnotherUpgradePrice;
 
 	return EndPrice;
 }

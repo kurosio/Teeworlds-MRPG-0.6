@@ -46,13 +46,13 @@ void CGameControllerDefault::OnEntity(int Index, vec2 Pos, int Flags)
 
 	// calculate polar coordinates
 	const vec2 roundPos = vec2((float)(round_to_int(Pos.x) / 32 * 32), (float)(round_to_int(Pos.y) / 32 * 32));
-	const float iter = 16.f / (float)g_Config.m_SvAmountHarvestingOnTile;
+	const float iter = 16.f / (float)g_Config.m_SvHarvestingItemsPerTile;
 	const float multiplier = iter * 2;
 
 	// entity farming point
 	if(Index == ENTITY_FARMING)
 	{
-		for(int i = 0; i < g_Config.m_SvAmountHarvestingOnTile; i++)
+		for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
 		{
 			// calculate polar coordinates
 			const float calculate = iter + (float)i * multiplier;
@@ -77,7 +77,7 @@ void CGameControllerDefault::OnEntity(int Index, vec2 Pos, int Flags)
 	// entity mining point
 	if(Index == ENTITY_MINING)
 	{
-		for(int i = 0; i < g_Config.m_SvAmountHarvestingOnTile; i++)
+		for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
 		{
 			// calculate polar coordinates
 			const float calculate = iter + (float)i * multiplier;

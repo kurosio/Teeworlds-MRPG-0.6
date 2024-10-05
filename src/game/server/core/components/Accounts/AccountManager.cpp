@@ -436,6 +436,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MBonuses.AddText("Gold: {$}", CurrentGold);
 		MBonuses.AddText("Bank: {$}", CurrentBankGold);
 		MBonuses.AddText("Total: {$}", TotalGold);
+		MBonuses.AddText("Commision rate: {}%", g_Config.m_SvBankCommissionRate);
 		MBonuses.AddSeparateLine();
 
 		// depoosit
@@ -494,7 +495,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 				continue;
 
 			CPlayerItem* pItemGold = pPl->GetItem(itGold);
-			const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+			const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldOnDeath), pItemGold->GetValue());
 			MWanted.AddText(Server()->ClientName(i));
 			MWanted.AddText("Reward: {$} gold", Reward);
 			MWanted.AddText("Last seen in : {}", Server()->GetWorldName(pPl->GetPlayerWorldID()));
@@ -521,7 +522,9 @@ bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, co
 	if(strcmp(pCmd, "BANK_DEPOSIT") == 0)
 	{
 		if(pPlayer->Account()->DepositGoldToBank(ExtraValue))
+		{
 			GS()->SendMenuMotd(pPlayer, MOTD_MENU_BANK_MANAGER);
+		}
 		return true;
 	}
 

@@ -227,11 +227,11 @@ void CAccountData::AddExperience(uint64_t Value)
 		m_Upgrade += 1;
 
 		// increase skill points
-		if(g_Config.m_SvSPEachLevel > 0)
+		if(g_Config.m_SvSkillPointsPerLevel > 0)
 		{
 			auto* pSkillPoint = pPlayer->GetItem(itSkillPoint);
-			pSkillPoint->Add(g_Config.m_SvSPEachLevel);
-			GS()->Chat(m_ClientID, "You have earned {} Skill Points! You now have {} SP!", g_Config.m_SvSPEachLevel, pSkillPoint->GetValue());
+			pSkillPoint->Add(g_Config.m_SvSkillPointsPerLevel);
+			GS()->Chat(m_ClientID, "You have earned {} Skill Points! You now have {} SP!", g_Config.m_SvSkillPointsPerLevel, pSkillPoint->GetValue());
 		}
 
 		// effects & information
@@ -372,19 +372,23 @@ bool CAccountData::DepositGoldToBank(int Amount)
 	CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
 	int CurrentGold = pItemGold->GetValue();
 
-	// check enough gold in inventory
+	// check amount
 	if(CurrentGold < Amount)
 	{
 		GS()->Chat(m_ClientID, "You don't have enough gold in your inventory. You only have {$} gold.", CurrentGold);
 		return false;
 	}
 
-	// remove gold and add to bank
+	// remove gold from player
 	if(pItemGold->Remove(Amount))
 	{
-		m_Bank += Amount;
+		const int Commission = translate_to_percent_rest(Amount, g_Config.m_SvBankCommissionRate);
+		const int FinalAmount = Amount - Commission;
+
+		m_Bank += FinalAmount;
 		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-		GS()->Chat(m_ClientID, "You have deposited {$} gold into your bank.", Amount);
+
+		GS()->Chat(m_ClientID, "You have deposited {$} gold into your bank (Commission: {$}).", FinalAmount, Commission);
 		return true;
 	}
 

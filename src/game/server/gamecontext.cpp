@@ -747,7 +747,7 @@ void CGS::OnTick()
 void CGS::OnTickGlobal()
 {
 	// check if it's time to check the player's time period based on the configured interval
-	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvCheckPlayerTimePeriod) == 0)
+	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvPlayerPeriodCheckInterval) == 0)
 	{
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
@@ -757,7 +757,7 @@ void CGS::OnTickGlobal()
 	}
 
 	// check if the current tick is a multiple of the specified chat message time interval
-	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatMessageTime) == 0)
+	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatMessageInterval) == 0)
 	{
 		// Create a deque (double-ended queue) to hold the chat messages
 		std::deque<std::string> vMsg
@@ -774,7 +774,7 @@ void CGS::OnTickGlobal()
 	}
 
 	// check if it's time to display the top message based on the configured interval
-	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvInfoChatTopMessageTime) == 0)
+	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatTopMessageInterval) == 0)
 	{
 		// generate a random top list type
 		ToplistType RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
@@ -1282,7 +1282,7 @@ void CGS::UpdateExpMultiplier()
 	// is dungeon
 	if(IsWorldType(WorldType::Dungeon))
 	{
-		m_MultiplierExp = g_Config.m_SvMultiplierExpRaidDungeon;
+		m_MultiplierExp = g_Config.m_SvRaidDungeonExpMultiplier;
 		return;
 	}
 

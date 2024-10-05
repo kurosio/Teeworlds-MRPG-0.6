@@ -92,7 +92,7 @@ void CAccountFarmingManager::Procces(CPlayer* pPlayer, int Level) const
 {
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
-	const int MultiplierExperience = maximum(1, (int)computeExperience(Level) / g_Config.m_SvFarmingIncreaseLevel);
+	const int MultiplierExperience = maximum(1, (int)computeExperience(Level) / g_Config.m_SvFarmingLevelIncrease);
 	int& refLevel = pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value;
 	int& refExperience = pPlayer->Account()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value;
 	int& refUpgrade = pPlayer->Account()->m_FarmingData(JOB_UPGRADES, 0).m_Value;

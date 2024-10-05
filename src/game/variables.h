@@ -13,7 +13,6 @@ MACRO_CONFIG_INT(ClNameplatesAlways, cl_nameplates_always, 1, 0, 1, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClNameplatesTeamcolors, cl_nameplates_teamcolors, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Use team colors for name plates")
 MACRO_CONFIG_INT(ClNameplatesSize, cl_nameplates_size, 30, 0, 100, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Size of the name plates from 0 to 100%")
 MACRO_CONFIG_INT(ClAutoswitchWeapons, cl_autoswitch_weapons, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Auto switch weapon on pickup")
-
 MACRO_CONFIG_INT(ClShowhud, cl_showhud, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show ingame HUD")
 MACRO_CONFIG_INT(ClShowChat, cl_showchat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show chat")
 MACRO_CONFIG_INT(ClFilterchat, cl_filterchat, 0, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show chat messages from: 0=all, 1=friends only, 2=no one")
@@ -21,17 +20,13 @@ MACRO_CONFIG_INT(ClShowsocial, cl_showsocial, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SA
 MACRO_CONFIG_INT(ClShowfps, cl_showfps, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show ingame FPS counter")
 MACRO_CONFIG_INT(ClDisableWhisper, cl_disable_whisper, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable completely the whisper feature.")
 MACRO_CONFIG_INT(ClWarningTeambalance, cl_warning_teambalance, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Warn about team balance")
-
 MACRO_CONFIG_INT(ClDynamicCamera, cl_dynamic_camera, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Switches camera mode. 0=static camera, 1=dynamic camera")
 MACRO_CONFIG_INT(ClMouseDeadzone, cl_mouse_deadzone, 300, 0, 0, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Zone that doesn't trigger the dynamic camera")
 MACRO_CONFIG_INT(ClMouseFollowfactor, cl_mouse_followfactor, 60, 0, 200, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Trigger amount for the dynamic camera")
 MACRO_CONFIG_INT(ClMouseMaxDistanceDynamic, cl_mouse_max_distance_dynamic, 1000, 1, 2000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse max distance, in dynamic camera mode")
 MACRO_CONFIG_INT(ClMouseMaxDistanceStatic, cl_mouse_max_distance_static, 400, 1, 2000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse max distance, in static camera mode")
-
 MACRO_CONFIG_INT(ClCustomizeSkin, cl_customize_skin, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Use a customized skin")
 MACRO_CONFIG_INT(ClShowUserId, cl_show_user_id, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show the ID for every user")
-
-// MRPG
 MACRO_CONFIG_INT(ClDialogsSpeedNPC, cl_mmo_dialogs_speeed_npc, 80, 80, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "dialoges speed with npc (mrpg)")
 MACRO_CONFIG_INT(ClShowMEffects, cl_mmo_effects, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable effects (mrpg)")
 MACRO_CONFIG_INT(ClShowAuthMenu, cl_mmo_show_auth_menu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show auth menu (mrpg)")
@@ -43,25 +38,17 @@ MACRO_CONFIG_STR(GameCursor, mmo_cursor_texture, 255, "\0", CFGFLAG_CLIENT | CFG
 MACRO_CONFIG_STR(GameEntities, mmo_entities_texture, 255, "\0", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Entities texture")
 MACRO_CONFIG_INT(ClGBrowser, cl_gbrowser, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Gamer server browser")
 MACRO_CONFIG_INT(HdColorProgress, hud_color_progress, 48127, 0, 16777215, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color progress bar hud")
-
-// dune
 MACRO_CONFIG_INT(ClAdaptivePickups, cl_adaptive_pickups, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make pickups grey when you don't need them")
-
-// curl http download
 MACRO_CONFIG_INT(ClHTTPConnectTimeoutMs, cl_http_connect_timeout_ms, 2000, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "HTTP downloads: timeout for the connect phase in milliseconds (0 to disable)")
 MACRO_CONFIG_INT(ClHTTPLowSpeedLimit, cl_http_low_speed_limit, 500, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "HTTP downloads: Set low speed limit in bytes per second (0 to disable)")
 MACRO_CONFIG_INT(ClHTTPLowSpeedTime, cl_http_low_speed_time, 5, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "HTTP downloads: Set low speed limit time period (0 to disable)")
-
 MACRO_CONFIG_INT(ClShowWelcome, cl_show_welcome, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show initial set-up dialog")
 MACRO_CONFIG_INT(ClMotdTime, cl_motd_time, 5, 0, 100, CFGFLAG_CLIENT|CFGFLAG_SAVE, "How long to show the server message of the day")
 MACRO_CONFIG_INT(ClShowXmasHats, cl_show_xmas_hats, 1, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "0=never, 1=during christmas, 2=always")
 MACRO_CONFIG_INT(ClShowEasterEggs, cl_show_easter_eggs, 1, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "0=never, 1=during easter, 2=always")
-
 MACRO_CONFIG_STR(ClVersionServer, cl_version_server, 100, "version.teeworlds.com", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Server to use to check for new versions")
-
 MACRO_CONFIG_STR(ClFontfile, cl_fontfile, 255, "DejaVuSans.ttf", CFGFLAG_CLIENT|CFGFLAG_SAVE, "What font file to use")
 MACRO_CONFIG_STR(ClLanguagefile, cl_languagefile, 255, "", CFGFLAG_CLIENT|CFGFLAG_SAVE, "What language file to use")
-
 MACRO_CONFIG_INT(UiBrowserPage, ui_browser_page, 5, 5, 9, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Interface serverbrowser page")
 MACRO_CONFIG_INT(UiSettingsPage, ui_settings_page, 0, 0, 6, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Interface settings page")
 MACRO_CONFIG_STR(UiInternetServerAddress, ui_internet_server_address, 64, "localhost:8303", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Interface server address (Internet page)")
@@ -69,92 +56,105 @@ MACRO_CONFIG_STR(UiLanServerAddress, ui_lan_server_address, 64, "localhost:8303"
 MACRO_CONFIG_INT(UiMousesens, ui_mousesens, 100, 1, 100000, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Mouse sensitivity for menus/editor")
 MACRO_CONFIG_INT(UiJoystickSens, ui_joystick_sens, 100, 1, 100000, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Joystick sensitivity for menus/editor")
 MACRO_CONFIG_INT(UiAutoswitchInfotab, ui_autoswitch_infotab, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Switch to the info tab when clicking on a server")
-
 MACRO_CONFIG_INT(GfxNoclip, gfx_noclip, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable clipping")
-
 MACRO_CONFIG_STR(ClMenuMap, cl_menu_map, 64, "mmo", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Background map in the menu, auto = automatic based on season")
 MACRO_CONFIG_INT(ClShowMenuMap, cl_show_menu_map, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Display background map in the menu")
 MACRO_CONFIG_INT(ClMenuAlpha, cl_menu_alpha, 40, 0, 75, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Transparency of the menu background")
 MACRO_CONFIG_INT(ClRotationRadius, cl_rotation_radius, 30, 1, 500, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Menu camera rotation radius")
 MACRO_CONFIG_INT(ClRotationSpeed, cl_rotation_speed, 40, 1, 120, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Menu camera rotations in seconds")
 MACRO_CONFIG_INT(ClCameraSpeed, cl_camera_speed, 5, 1, 10, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Menu camera speed")
-
 MACRO_CONFIG_INT(ClShowStartMenuImages, cl_show_start_menu_images, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show start menu images")
 MACRO_CONFIG_INT(ClSkipStartMenu, cl_skip_start_menu, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Skip the start menu")
-
 MACRO_CONFIG_INT(ClStatboardInfos, cl_statboard_infos, 1259, 1, 2047, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mask of info to display on the global statboard")
 
-// server
-MACRO_CONFIG_INT(SvTimePeriodCheckTime, sv_time_period_check_timer, 5, 1, 60, CFGFLAG_SERVER, "Value in minutes")
+// -----------------------
+// Time and Periodic Events Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvTimePeriodCheckTime, sv_time_period_check_timer, 5, 1, 60, CFGFLAG_SERVER, "Time period check interval (in minutes)")
+MACRO_CONFIG_INT(SvInfoChangeDelay, sv_info_change_delay, 5, 0, 9999, CFGFLAG_SERVER, "Delay (in seconds) between info changes (skin/color), set high to avoid rapid changes")
+
+// -----------------------
+// Message Configuration
+// -----------------------
 MACRO_CONFIG_STR(SvMotd, sv_motd, 900, "", CFGFLAG_SERVER, "Message of the day to display for the clients")
-MACRO_CONFIG_INT(SvInfoChangeDelay, sv_info_change_delay, 5, 0, 9999, CFGFLAG_SERVER, "The time in seconds between info changes (skin/color), to avoid ranbow mod set this to a very high time")
 
-MACRO_CONFIG_INT(SvInactiveKickTime, sv_inactivekick_time, 3, 0, 1000, CFGFLAG_SERVER, "How many minutes to wait before taking care of inactive clients")
-MACRO_CONFIG_INT(SvInactiveKick, sv_inactivekick, 2, 0, 3, CFGFLAG_SERVER, "How to deal with inactive clients (0=move player to spectator, 1=move player to spectator and kick spectator, 2=move to free spectator slot/kick, 3=kick)")
+// -----------------------
+// Inactivity and Kick Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvInactiveKickTime, sv_inactivekick_time, 3, 0, 1000, CFGFLAG_SERVER, "Time in minutes to wait before handling inactive clients")
+MACRO_CONFIG_INT(SvInactiveKick, sv_inactivekick, 2, 0, 3, CFGFLAG_SERVER, "How to deal with inactive clients (0=move to spectator, 1=move to spectator and kick, 2=kick or move to free spectator slot, 3=kick directly)")
 
-// balance
-MACRO_CONFIG_INT(SvSPEachLevel, sv_sp_each_level, 10, 0, 100, CFGFLAG_SERVER, "Gives a set number of Skill Points for each level up")
-MACRO_CONFIG_INT(SvSPChanceDropMob, sv_sp_chance_drop_mob, 5, 0, 100, CFGFLAG_SERVER, "Chance (in percent) to drop Skill Points when killing a regular mob")
-MACRO_CONFIG_INT(SvSPChanceDropRareMob, sv_sp_chance_drop_rare_mob, 10, 0, 100, CFGFLAG_SERVER, "Chance (in percent) to drop Skill Points when killing a rare mob")
+// -----------------------
+// Skill Points Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvSkillPointsPerLevel, sv_skill_points_per_level, 10, 0, 100, CFGFLAG_SERVER, "Number of Skill Points awarded per level up")
+MACRO_CONFIG_INT(SvSkillPointsDropChanceMob, sv_skill_points_drop_chance_mob, 5, 0, 100, CFGFLAG_SERVER, "Chance (in percent) for Skill Points to drop from regular mobs")
+MACRO_CONFIG_INT(SvSkillPointsDropChanceRareMob, sv_skill_points_drop_chance_rare_mob, 10, 0, 100, CFGFLAG_SERVER, "Chance (in percent) for Skill Points to drop from rare mobs")
 
-// another config
-MACRO_CONFIG_INT(SvAetherFee, sv_aether_fee, 12, 0, 10000, CFGFLAG_SERVER, "Price for teleport * world distance")
-MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERVER, "Door radius hit.")
-MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50, 10, 100000, CFGFLAG_SERVER, "The size of the product is how much the player can wear.")
-MACRO_CONFIG_INT(SvDailyQuestAlliedSealsReward, sv_daily_quest_allied_seals_reward, 100, 5, 100000, CFGFLAG_SERVER, "Reward allied seals each daily quest.")
-MACRO_CONFIG_INT(SvAmountHarvestingOnTile, sv_amount_harvesting_on_tile, 2, 1, 4, CFGFLAG_SERVER, "Amount harvesting item on tile.")
-MACRO_CONFIG_INT(SvUpdateEntityTextNames, sv_update_ent_text_names, 50, 25, 1000, CFGFLAG_SERVER, "Update entities text names.")
+// -----------------------
+// Teleportation and Interaction Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvTeleportFeePerDistance, sv_teleport_fee_per_distance, 12, 0, 10000, CFGFLAG_SERVER, "Teleportation fee per unit of world distance")
+MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERVER, "Door radius for interaction")
 
-// auction
-MACRO_CONFIG_INT(SvMaxAuctionPlayerSlots, sv_max_auction_player_slots, 5, 1, 1000, CFGFLAG_SERVER, "Max player auction slots")
-MACRO_CONFIG_INT(SvAuctionSlotTaxPrice, sv_auction_slot_tax_price, 10, 0, 100, CFGFLAG_SERVER, "Price tax for added new slot auction in percent")
-MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_auction_max_slots, 50, 10, 300, CFGFLAG_SERVER, "Max massive auction slots")
+// -----------------------
+// Inventory and Resource Management Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50, 10, 100000, CFGFLAG_SERVER, "Maximum amount of products a player can carry from the warehouse")
+MACRO_CONFIG_INT(SvHarvestingItemsPerTile, sv_harvesting_items_per_tile, 2, 1, 4, CFGFLAG_SERVER, "Number of items that can be harvested from a single tile")
+MACRO_CONFIG_INT(SvDailyQuestSealReward, sv_daily_quest_seal_reward, 100, 5, 100000, CFGFLAG_SERVER, "Number of allied seals rewarded for completing a daily quest")
+MACRO_CONFIG_INT(SvUpdateEntityTextNames, sv_update_ent_text_names, 50, 25, 1000, CFGFLAG_SERVER, "Frequency of updating entity text names")
 
-// member group
-MACRO_CONFIG_INT(SvPriceUpgradeGuildSlot, sv_price_member_slot, 4100, 100, 9000000, CFGFLAG_SERVER, "Price for upgrade member slots")
-MACRO_CONFIG_INT(SvPriceUpgradeGuildAnother, sv_price_member_another, 16800, 100, 9000000, CFGFLAG_SERVER, "Price for upgrade member another")
-MACRO_CONFIG_INT(SvGuildWarDuration, sv_guild_war_duration, 30, 1, 240, CFGFLAG_SERVER, "Guild war duration in minutes")
+// -----------------------
+// Auction System Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvMaxPlayerAuctionSlots, sv_max_player_auction_slots, 5, 1, 1000, CFGFLAG_SERVER, "Maximum number of auction slots available to a player")
+MACRO_CONFIG_INT(SvAuctionSlotTaxRate, sv_auction_slot_tax_rate, 10, 0, 100, CFGFLAG_SERVER, "Tax rate (in percent) for adding a new auction slot")
+MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_max_auction_slots, 50, 10, 300, CFGFLAG_SERVER, "Maximum number of total auction slots")
 
-// leveling
-MACRO_CONFIG_INT(SvKillmobsExpFactor, sv_killmobs_exp_factor, 1000, 100, 5000, CFGFLAG_SERVER, "Kill mobs factor experience.")
-MACRO_CONFIG_INT(SvChairExpFactor, sv_chair_exp_factor, 10000, 1000, 50000, CFGFLAG_SERVER, "Chair factor experience.")
+// -----------------------
+// Guild System Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvGuildSlotUpgradePrice, sv_guild_slot_upgrade_price, 4100, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading guild member slots")
+MACRO_CONFIG_INT(SvGuildAnotherUpgradePrice, sv_guild_another_upgrade_price, 16800, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading additional guild features")
+MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 30, 1, 240, CFGFLAG_SERVER, "Duration of a guild war in minutes")
 
-MACRO_CONFIG_INT(SvKillmobsGoldFactor, sv_killmobs_gold_factor, 1200, 100, 5000, CFGFLAG_SERVER, "Kill mobs factor gold.")
-MACRO_CONFIG_INT(SvChairGoldFactor, sv_chair_gold_factor, 12000, 1, 50000, CFGFLAG_SERVER, "Chair factor gold.")
+// -----------------------
+// PvP Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvAntiPvPLevelDifference, sv_anti_pvp_level_difference, 50, 0, 10000, CFGFLAG_SERVER, "Maximum level difference allowed for PvP")
 
-MACRO_CONFIG_INT(SvMiningIncreaseLevel, sv_mining_increase_level, 80, 0, 100000, CFGFLAG_SERVER, "Mining items own level to increase")
-MACRO_CONFIG_INT(SvFarmingIncreaseLevel, sv_farming_increase_level, 80, 0, 100000, CFGFLAG_SERVER, "Farming items own level to increase")
-MACRO_CONFIG_INT(SvMultiplierExpRaidDungeon, sv_multiplier_exp_raid_dungeon, 150, 100, 1000, CFGFLAG_SERVER, "Dungeon experience multiplier")
-MACRO_CONFIG_INT(SvLossGoldAtDeath, sv_loss_gold_at_death, 5, 0, 100, CFGFLAG_SERVER, "Gold loss on death from a player in %")
-MACRO_CONFIG_INT(SvArrestGoldAtDeath, sv_arrest_gold_at_death, 30, 0, 100, CFGFLAG_SERVER, "Gold loss on death from the kill list")
-MACRO_CONFIG_INT(SvMaxIncreasedChairGolds, sv_max_increased_chair_golds, 10000, 1000, 10000000, CFGFLAG_SERVER, "Max can increased chair golds by multiplier")
-MACRO_CONFIG_INT(SvStrongAntiPVP, sv_strong_anti_pvp, 50, 0, 10000, CFGFLAG_SERVER, "Anti-PVP Difference classing leveling for denied.")
+// -----------------------
+// Experience and Gold Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvMobKillExpFactor, sv_mob_kill_exp_factor, 1000, 100, 5000, CFGFLAG_SERVER, "Experience multiplier for killing mobs")
+MACRO_CONFIG_INT(SvChairExpFactor, sv_chair_exp_factor, 10000, 1000, 50000, CFGFLAG_SERVER, "Experience multiplier for using a chair")
+MACRO_CONFIG_INT(SvMobKillGoldFactor, sv_mob_kill_gold_factor, 1200, 100, 5000, CFGFLAG_SERVER, "Gold multiplier for killing mobs")
+MACRO_CONFIG_INT(SvChairGoldFactor, sv_chair_gold_factor, 12000, 1, 50000, CFGFLAG_SERVER, "Gold multiplier for using a chair")
 
-// world time
-MACRO_CONFIG_INT(SvTimeWaitingsDungeon, sv_waiting_dungeon_time, 180, 0, 1020, CFGFLAG_SERVER, "Watining time dungeon on secound")
-MACRO_CONFIG_INT(SvInfoChatMessageTime, sv_chat_message_time, 600, 0, 14400, CFGFLAG_SERVER, "Time chat message time in seconds")
-MACRO_CONFIG_INT(SvInfoChatTopMessageTime, sv_chat_message_time, 900, 0, 14400, CFGFLAG_SERVER, "Time chat toplist message time in seconds")
-MACRO_CONFIG_INT(SvCheckPlayerTimePeriod, sv_check_player_timeperiod, 1440, 0, 14400, CFGFLAG_SERVER, "Check player changes on time period")
+// -----------------------
+// Crafting and Resource Leveling Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvMiningLevelIncrease, sv_mining_level_increase, 80, 0, 100000, CFGFLAG_SERVER, "Amount of experience required to level up mining")
+MACRO_CONFIG_INT(SvFarmingLevelIncrease, sv_farming_level_increase, 80, 0, 100000, CFGFLAG_SERVER, "Amount of experience required to level up farming")
+MACRO_CONFIG_INT(SvRaidDungeonExpMultiplier, sv_raid_dungeon_exp_multiplier, 150, 100, 1000, CFGFLAG_SERVER, "Experience multiplier for completing raid dungeons")
 
-// house
-MACRO_CONFIG_INT(SvLimitDecoration, sv_limit_decorations, 10, 5, 20, CFGFLAG_SERVER, "Limit objects for decoration")
+// -----------------------
+// Death Penalty and Financial Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvGoldLossOnDeath, sv_gold_loss_on_death, 5, 0, 100, CFGFLAG_SERVER, "Percentage of gold lost upon death")
+MACRO_CONFIG_INT(SvArrestGoldOnDeath, sv_arrest_gold_on_death, 30, 0, 100, CFGFLAG_SERVER, "Percentage of gold confiscated upon death from kill list")
+MACRO_CONFIG_INT(SvBankCommissionRate, sv_bank_commission_rate, 5, 0, 100, CFGFLAG_SERVER, "Commission rate for bank transactions (in percentage)")
 
-// discord
-MACRO_CONFIG_INT(SvCreateDiscordBot, sv_discord_bot, 1, 0, 1, CFGFLAG_SERVER, "Create discord bot")
-MACRO_CONFIG_STR(SvDiscordToken, sv_discord_token, 256, "", CFGFLAG_SERVER, "Discord Token")
-MACRO_CONFIG_STR(SvDiscordApplicationID, sv_discord_app_id, 256, "", CFGFLAG_SERVER, "Discord application id")
+// -----------------------
+// Miscellaneous Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvDungeonWaitingTime, sv_dungeon_waiting_time, 180, 0, 1020, CFGFLAG_SERVER, "Waiting time for dungeon entry (in seconds)")
+MACRO_CONFIG_INT(SvChatMessageInterval, sv_chat_message_interval, 600, 0, 14400, CFGFLAG_SERVER, "Interval for displaying chat messages (in seconds)")
+MACRO_CONFIG_INT(SvChatTopMessageInterval, sv_chat_top_message_interval, 900, 0, 14400, CFGFLAG_SERVER, "Interval for displaying chat toplist messages (in seconds)")
+MACRO_CONFIG_INT(SvPlayerPeriodCheckInterval, sv_player_check_interval, 1440, 0, 14400, CFGFLAG_SERVER, "Time interval for checking player status (in seconds)")
+MACRO_CONFIG_INT(SvLimitDecoration, sv_limit_decorations, 10, 5, 20, CFGFLAG_SERVER, "Maximum number of decoration objects allowed")
 MACRO_CONFIG_STR(SvDiscordInviteLink, sv_discord_invite_link, 32, "nope", CFGFLAG_SERVER, "Link to server invitation")
-MACRO_CONFIG_STR(SvDiscordGenerateURL, sv_discord_generateurl, 128, "nope", CFGFLAG_SERVER, "Path folder generate image. Example 'submodules/generator'.")
-MACRO_CONFIG_STR(SvSiteUrl, sv_site_url, 128, "nope", CFGFLAG_SERVER, "Url site. Example 'https://mrpg.teeworlds.dev'")
-
-// discord roles
-MACRO_CONFIG_STR(SvDiscordWelcomeRole, sv_discord_welcome_role, 128, "", CFGFLAG_SERVER, "Discord role that gives when member joins.")
-
-// discord channels
-MACRO_CONFIG_STR(SvDiscordWelcomeChannel, sv_discord_welcome_channel, 128, "", CFGFLAG_SERVER, "Discord welcome channel")
-MACRO_CONFIG_STR(SvDiscordServerChatChannel, sv_discord_server_chat_channel, 128, "", CFGFLAG_SERVER, "Discord server chat channel")
-MACRO_CONFIG_STR(SvDiscordSuggestionChannel, sv_discord_suggestion_channel, 128, "", CFGFLAG_SERVER, "Discord suggestions channel")
-MACRO_CONFIG_STR(SvDiscordAdminChannel, sv_discord_admin_channel, 128, "", CFGFLAG_SERVER, "Discord admin channel")
 
 // mysql
 MACRO_CONFIG_STR(SvMySqlHost, sv_sql_host, 32, "localhost", CFGFLAG_SERVER, "MySQL Host")
@@ -164,15 +164,13 @@ MACRO_CONFIG_STR(SvMySqlPassword, sv_sql_password, 32, "", CFGFLAG_SERVER, "MySQ
 MACRO_CONFIG_INT(SvMySqlPort, sv_sql_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL Port")
 MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 3, 2, 12, CFGFLAG_SERVER, "MySQL Pool size");
 
+// settings
 MACRO_CONFIG_INT(SvLoltextHspace, sv_loltext_hspace, 7, 7, 25, CFGFLAG_SERVER, "horizontal offset between loltext 'pixels'")
 MACRO_CONFIG_INT(SvLoltextVspace, sv_loltext_vspace, 7, 7, 25, CFGFLAG_SERVER, "vertical offset between loltext 'pixels'")
 
 // ui
 MACRO_CONFIG_INT(ClNotifyWindow, cl_notify_window, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allow client to notify you on chat highlights")
-
-// performance
 MACRO_CONFIG_INT(ClInactiveRendering, cl_inactive_rendering, 1, 0, 2, CFGFLAG_CLIENT, "0 = Always render, 1 = Stop rendering when minimized, 2 = Stop rendering when window is inactive")
-
 MACRO_CONFIG_INT(SvMapDistanceActveBot, sv_map_distance_active_bot, 1000, 400, 10000, CFGFLAG_SERVER, "max distance for active bot")
 MACRO_CONFIG_INT(SvMapUpdateRate, sv_mapupdaterate, 5, 1, 100, CFGFLAG_SERVER, "64 player id <-> vanilla id players map update rate")
 

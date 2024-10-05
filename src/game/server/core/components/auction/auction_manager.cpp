@@ -74,7 +74,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show your auction list
-	VoteWrapper VSelf(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Your auction slots {} of {}", UsedsSlots, g_Config.m_SvMaxAuctionPlayerSlots);
+	VoteWrapper VSelf(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Your auction slots {} of {}", UsedsSlots, g_Config.m_SvMaxPlayerAuctionSlots);
 	for(auto& pSlot : CAuctionSlot::Data())
 	{
 		// self slots
@@ -251,7 +251,7 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 	int AccountID = pPlayer->Account()->GetID();
 
 	// check player slots
-	if(GetSlotsCountByAccountID(AccountID) >= g_Config.m_SvMaxAuctionPlayerSlots)
+	if(GetSlotsCountByAccountID(AccountID) >= g_Config.m_SvMaxPlayerAuctionSlots)
 	{
 		GS()->Chat(ClientID, "You have reached the maximum number of slots in the auction!");
 		return;
@@ -291,7 +291,7 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 			CAuctionSlot::CreateElement(InitID)->Init(*pItem, pAuctionData->GetPrice(), AccountID);
 
 			// send messages
-			const int AvailableSlots = g_Config.m_SvMaxAuctionPlayerSlots - GetSlotsCountByAccountID(AccountID);
+			const int AvailableSlots = g_Config.m_SvMaxPlayerAuctionSlots - GetSlotsCountByAccountID(AccountID);
 			GS()->Chat(-1, "{} created a slot [{}x{}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
 			GS()->Chat(ClientID, "Still available {} slots!", AvailableSlots);
 		}

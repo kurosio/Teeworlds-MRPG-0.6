@@ -787,19 +787,19 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
 
 	// loss gold at death
-	if(g_Config.m_SvLossGoldAtDeath)
+	if(g_Config.m_SvGoldLossOnDeath)
 	{
-		const int LossGold = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvLossGoldAtDeath), pItemGold->GetValue());
+		const int LossGold = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvGoldLossOnDeath), pItemGold->GetValue());
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
 		{
 			GS()->EntityManager()->DropItem(m_Pos, Killer >= MAX_PLAYERS ? -1 : Killer, { itGold, LossGold }, Force);
 			if(KillerIsPlayer)
 			{
-				GS()->Chat(m_ClientID, "You lost {}% ({$}) gold, killer {}!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+				GS()->Chat(m_ClientID, "You lost {}% ({$}) gold, killer {}!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
 			}
 			else
 			{
-				GS()->Chat(m_ClientID, "You lost {}% ({$}) gold due to death!", g_Config.m_SvLossGoldAtDeath, LossGold, Server()->ClientName(Killer));
+				GS()->Chat(m_ClientID, "You lost {}% ({$}) gold due to death!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
 			}
 		}
 	}
@@ -807,7 +807,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	// Crime score system
 	if(m_pPlayer->Account()->IsCrimeScoreMaxedOut() && (KillerIsGuardian || KillerIsPlayer))
 	{
-		const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldAtDeath), pItemGold->GetValue());
+		const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldOnDeath), pItemGold->GetValue());
 		if(Arrest > 0 && pItemGold->Remove(Arrest))
 		{
 			if(KillerIsPlayer)
@@ -817,7 +817,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 					Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 			}
 
-			GS()->Chat(m_ClientID, "Treasury confiscates {}% ({$}) of your gold.", g_Config.m_SvArrestGoldAtDeath, Arrest);
+			GS()->Chat(m_ClientID, "Treasury confiscates {}% ({$}) of your gold.", g_Config.m_SvArrestGoldOnDeath, Arrest);
 			m_pPlayer->Account()->GetPrisonManager().Imprison(360);
 		}
 

@@ -174,7 +174,7 @@ void CPlayerQuest::UpdateStepPosition()
 	// handle type daily quest
 	if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
 	{
-		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestAlliedSealsReward);
+		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestSealReward);
 		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// handle type weekly quest

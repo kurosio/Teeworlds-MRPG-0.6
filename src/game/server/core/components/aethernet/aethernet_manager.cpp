@@ -148,7 +148,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 			{
 				if(pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
 				{
-					const int Fee = g_Config.m_SvAetherFee * (pAether->GetWorldID() + 1);
+					const int Fee = g_Config.m_SvTeleportFeePerDistance * (pAether->GetWorldID() + 1);
 					VAetherElem.AddOption("AETHER_TELEPORT", pAether->GetID(), Fee, "{} (Fee {$} gold)", pAether->GetName(), Fee);
 					UnlockedPlayerZoneAethers++;
 				}

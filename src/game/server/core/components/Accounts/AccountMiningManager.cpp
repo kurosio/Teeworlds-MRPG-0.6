@@ -93,7 +93,7 @@ void CAccountMiningManager::Process(CPlayer *pPlayer, int Level) const
 {
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
-	const int MultiplierExperience = maximum(1, (int)computeExperience(Level) / g_Config.m_SvMiningIncreaseLevel);
+	const int MultiplierExperience = maximum(1, (int)computeExperience(Level) / g_Config.m_SvMiningLevelIncrease);
 	int& refLevel = pPlayer->Account()->m_MiningData(JOB_LEVEL, 0).m_Value;
 	int& refExperience = pPlayer->Account()->m_MiningData(JOB_EXPERIENCE, 0).m_Value;
 	int& refUpgrade = pPlayer->Account()->m_MiningData(JOB_UPGRADES, 0).m_Value;

@@ -73,7 +73,7 @@ void CGameControllerDungeon::ChangeState(int State)
 	else if(State == DUNGEON_WAITING_START)
 	{
 		m_SyncDungeon = GetSyncFactor();
-		m_StartingTick = Server()->TickSpeed() * g_Config.m_SvTimeWaitingsDungeon;
+		m_StartingTick = Server()->TickSpeed() * g_Config.m_SvDungeonWaitingTime;
 
 		SetMobsSpawn(false);
 	}

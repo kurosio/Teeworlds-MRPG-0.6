@@ -50,7 +50,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	{
 		if(pPlayer->Account()->GetGold() < pPlayer->Account()->GetGoldCapacity())
 		{
-			const int goldGain = calculate_gold_gain(g_Config.m_SvKillmobsGoldFactor, PlayerLevel, MobLevel, true);
+			const int goldGain = calculate_gold_gain(g_Config.m_SvMobKillGoldFactor, PlayerLevel, MobLevel, true);
 
 			if(showMessages)
 			{
@@ -63,7 +63,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// grinding experience
 	{
-		int expGain = calculate_exp_gain(g_Config.m_SvKillmobsExpFactor, PlayerLevel, MobLevel);
+		int expGain = calculate_exp_gain(g_Config.m_SvMobKillExpFactor, PlayerLevel, MobLevel);
 		const int expBonusDrop = maximum(expGain / 3, 1);
 
 		GS()->ApplyExperienceMultiplier(&expGain);
@@ -101,7 +101,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// skill points
 	{
-		float BaseChance = m_pMobInfo->m_Boss ? g_Config.m_SvSPChanceDropRareMob : g_Config.m_SvSPChanceDropMob;
+		float BaseChance = m_pMobInfo->m_Boss ? g_Config.m_SvSkillPointsDropChanceRareMob : g_Config.m_SvSkillPointsDropChanceMob;
 		const int LevelDifference = PlayerLevel - MobLevel;
 
 		// check leveling difference
