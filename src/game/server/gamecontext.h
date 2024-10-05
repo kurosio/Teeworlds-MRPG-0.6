@@ -137,7 +137,15 @@ public:
 
 	int GetWorldID() const { return m_WorldID; }
 	bool IsWorldType(WorldType Type) const;
-	void ApplyExperienceMultiplier(int* pExperience) const;
+
+	template <typename T> requires std::is_integral_v<T>
+	void ApplyExperienceMultiplier(T* pExperience) const
+	{
+		if(pExperience)
+		{
+			*pExperience = translate_to_percent_rest(*pExperience, (float)m_MultiplierExp);
+		}
+	}
 	bool IsPlayerInWorld(int ClientID, int WorldID = -1) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 	vec2 GetJailPosition() const { return m_JailPosition; }

@@ -578,15 +578,15 @@ int CPlayer::GetTeam()
 /* #########################################################################
 	FUNCTIONS PLAYER HELPER
 ######################################################################### */
-void CPlayer::ProgressBar(const char* Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const
+void CPlayer::ProgressBar(const char* pType, int Lvl, uint64_t Exp, uint64_t ExpNeed, uint64_t GotExp) const
 {
-	char aBufBroadcast[128];
-	const float GetLevelProgress = translate_to_percent((float)ExpNeed, (float)MyExp);
-	const float GetExpProgress = translate_to_percent((float)ExpNeed, (float)GivedExp);
+	const float ExpProgress = translate_to_percent(ExpNeed, Exp);
+	const float GotExpProgress = translate_to_percent(ExpNeed, GotExp);
 
-	std::string ProgressBar = mystd::string::progressBar(100, (int)GetLevelProgress, 10, ":", " ");
-	str_format(aBufBroadcast, sizeof(aBufBroadcast), "Lv%d %s[%s] %0.2f%%+%0.3f%%(%d)XP", MyLevel, Name, ProgressBar.c_str(), GetLevelProgress, GetExpProgress, GivedExp);
-	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, aBufBroadcast);
+	// send and format
+	const auto ProgressBar = mystd::string::progressBar(100, (int)ExpProgress, 10, ":", " ");
+	const auto Result = fmt_default("Lv{lv} {type}[{bar}] {~.2}%+{~.3}%({})XP", Lvl, pType, ProgressBar, ExpProgress, GotExpProgress, GotExp);
+	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, Result.c_str());
 }
 
 bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const
@@ -677,38 +677,54 @@ int64_t CPlayer::GetAfkTime() const
 	return m_Afk ? ((time_get() - m_LastPlaytime) / time_freq()) - g_Config.m_SvMaxAfkTime : 0;
 }
 
-void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr)
+void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr) const
 {
 	if(!IsAuthed() || !m_pCharacter)
 		return;
 
-	const int LevelPercent = translate_to_percent(static_cast<int>(computeExperience(Account()->GetLevel())), Account()->GetExperience());
-	const int MaximumHealth = GetMaxHealth();
-	const int MaximumMana = GetMaxMana();
-	const int Health = m_pCharacter->Health();
-	const int Mana = m_pCharacter->Mana();
-	const auto BankGoldStr = fmt_big_digit(Account()->GetBank().to_string());
-	const auto GoldStr = fmt_big_digit(std::to_string(Account()->GetGold()));
-	const auto GoldCapacityStr = fmt_big_digit(std::to_string(Account()->GetGoldCapacity()));
+	// information
+	const int LevelPercent = round_to_int(translate_to_percent(computeExperience(Account()->GetLevel()), Account()->GetExperience()));
+	const std::string ProgressBar = mystd::string::progressBar(100, LevelPercent, 10, ":", " ");
+	const auto MaxHP = GetMaxHealth();
+	const auto MaxMP = GetMaxMana();
+	const auto HP = m_pCharacter->Health();
+	const auto MP = m_pCharacter->Mana();
+	const auto Bank = Account()->GetBank();
+	const auto Gold = Account()->GetGold();
+	const auto GoldCapacity = Account()->GetGoldCapacity();
+	const auto [BonusActivitiesLines, BonusActivitiesStr] = Account()->GetBonusManager().GetBonusActivitiesString();
 
-	char aRecastInfo[32] = { '\0' };
+	// recast info
+	std::string RecastInfo {};
 	const int PotionRecastTime = m_aPlayerTick[PotionRecast] - Server()->Tick();
 	if(PotionRecastTime > 0)
 	{
-		const int Seconds = maximum(0, PotionRecastTime / Server()->TickSpeed());
-		str_format(aRecastInfo, sizeof(aRecastInfo), "Potion recast: %d", Seconds);
+		const int Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
+		RecastInfo = fmt_localize(m_ClientID, "Potion recast: {}", Seconds);
 	}
 
-	const auto BonusActivities = Account()->GetBonusManager().GetBonusActivitiesString();
-	const int NewlinesNeeded = 7 - BonusActivities.first;
-	std::string AdditionNewlines(NewlinesNeeded > 0 ? NewlinesNeeded : 0, '\n');
-	const std::string ProgressBar = mystd::string::progressBar(100, LevelPercent, 10, ":", " ");
+	// result
+	std::string Result = fmt_localize(m_ClientID, "\n\n\n\n\nLv{}[{}]\nHP {$}/{$}\nMP {$}/{$}\nGold {$} of {$}\nBank {$}",
+		Account()->GetLevel(), ProgressBar, HP, MaxHP, MP, MaxMP, Gold, GoldCapacity, Bank);
 
-	str_format(pBuffer, Size,
-		"\n\n\n\n\nLv%d[%s]\nHP %d/%d\nMP %d/%d\nGold %s of %s\nBank %s\n%s\n%s\n%s\n%-150s",
-		Account()->GetLevel(), ProgressBar.c_str(), Health, MaximumHealth, Mana, MaximumMana,
-		GoldStr.c_str(), GoldCapacityStr.c_str(), BankGoldStr.c_str(),
-		BonusActivities.second.c_str(), aRecastInfo, AdditionNewlines.c_str(), pAppendStr);
+	if(!RecastInfo.empty())
+	{
+		Result += "\n" + RecastInfo;
+	}
+
+	if(!BonusActivitiesStr.empty())
+	{
+		Result += "\n" + BonusActivitiesLines;
+	}
+
+	constexpr int MaxLines = 20;
+	const int Lines = std::ranges::count(Result, '\n');
+	if(Lines < MaxLines)
+	{
+		Result += std::string(MaxLines - Lines, '\n');
+	}
+
+	str_format(pBuffer, Size, "%s%-150s", Result.c_str(), pAppendStr);
 }
 
 /* #########################################################################

@@ -27,7 +27,7 @@ class CAccountData
 	int m_CrimeScore {};
 
 	int m_Level {};
-	int m_Exp {};
+	uint64_t m_Exp {};
 	CHouse* m_pHouseData{};
 	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
@@ -80,7 +80,7 @@ public:
 	 * Group function: getters / setters
 	 */
 	int GetLevel() const { return m_Level; } // Returns the level of the player
-	int GetExperience() const { return m_Exp; } // Returns the experience points of the player
+	uint64_t GetExperience() const { return m_Exp; } // Returns the experience points of the player
 	const char* GetLogin() const { return m_aLogin; } // Returns the login name of the player as a const char pointer
 	const char* GetLastLoginDate() const { return m_aLastLogin; } // Returns the last login date of the player as a const char pointer
 
@@ -94,12 +94,12 @@ public:
 	BigInt GetTotalGold() const;
 	int GetGoldCapacity() const;
 
-	void AddExperience(int Value); // Adds the specified value to the player's experience points
+	void AddExperience(uint64_t Value); // Adds the specified value to the player's experience points
 	void AddGold(int Value, bool ToBank = true, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
 	bool DepositGoldToBank(int Amount);
 	bool WithdrawGoldFromBank(int Amount);
 	bool SpendCurrency(int Price, int CurrencyItemID = 1); // Returns a boolean value indicating whether the currency was successfully spent or not.
-	void HandleChair(int Exp, int Gold);
+	void HandleChair(uint64_t Exp, int Gold);
 
 	// Achievements
 	void InitAchievements(const std::string& Data);

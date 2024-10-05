@@ -174,9 +174,9 @@ void CLocalization::CLanguage::Load()
 	m_Loaded = true;
 }
 
-const char* CLocalization::CLanguage::Localize(const char* pText) const
+const char* CLocalization::CLanguage::Localize(const char* pKey) const
 {
-	const CEntry* pEntry = m_Translations.get(pText);
+	const CEntry* pEntry = m_Translations.get(pKey);
 	if(!pEntry)
 		return nullptr;
 

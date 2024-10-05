@@ -40,7 +40,29 @@ public:
 	void SendInfoAboutActiveBonuses() const;
 	void AddBonus(const TemporaryBonus& bonus);
 	void UpdateBonuses();
-	void ApplyBonuses(int bonusType, int* pValue, int* pBonusValue = nullptr) const;
+
+	template <typename T> requires std::is_integral_v<T>
+	void ApplyBonuses(int bonusType, T* pValue, T* pBonusValue = nullptr) const
+	{
+		T Result = (T)0;
+
+		for(const TemporaryBonus& bonus : m_vTemporaryBonuses)
+		{
+			if(bonus.Type == bonusType)
+			{
+				if(pValue)
+				{
+					Result += maximum((T)1, (T)translate_to_percent_rest(*pValue, bonus.Amount));
+					*pValue += Result;
+				}
+			}
+		}
+
+		if(pBonusValue)
+		{
+			*pBonusValue = Result;
+		}
+	}
 	float GetTotalBonusPercentage(int bonusType) const;
 	std::pair<int, std::string> GetBonusActivitiesString() const;
 	std::vector<TemporaryBonus>& GetTemporaryBonuses() { return m_vTemporaryBonuses; }

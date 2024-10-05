@@ -154,25 +154,6 @@ void CBonusManager::UpdateBonuses()
 	}
 }
 
-void CBonusManager::ApplyBonuses(int bonusType, int* pValue, int* pBonusValue) const
-{
-	int Result = 0;
-	for(const TemporaryBonus& bonus : m_vTemporaryBonuses)
-	{
-		if(bonus.Type == bonusType)
-		{
-			if(pValue)
-			{
-				Result += maximum(1, translate_to_percent_rest(*pValue, bonus.Amount));
-				*pValue += Result;
-			}
-		}
-	}
-
-	if(pBonusValue)
-		*pBonusValue = Result;
-}
-
 float CBonusManager::GetTotalBonusPercentage(int bonusType) const
 {
 	float totalPercentage = 0.0f;

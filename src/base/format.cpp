@@ -57,15 +57,23 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 	{
 		if(argumentType != arg_skip_handle && get_flags() & FMTFLAG_HANDLE_ARGS && !argumentHandled)
 		{
-			argumentHandled = true;
 			if(argumentTypename == type_integers || argumentTypename == type_big_integers)
 			{
-				argumentResult = argumentType == arg_big_digit ? fmt_big_digit(std::move(argumentFrom)) : fmt_digit(std::move(argumentFrom));
+				if(argumentType == arg_big_digit)
+				{
+					argumentResult = fmt_big_digit(std::move(argumentFrom));
+				}
+				else
+				{
+					argumentResult = fmt_digit(std::move(argumentFrom));
+				}
 			}
 			else if(argumentTypename == type_string)
 			{
 				argumentResult = handle(argumentFrom);
 			}
+
+			argumentHandled = true;
 		}
 	};
 
@@ -77,6 +85,7 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 		{
 			argumentType = arg_default;
 			argumentProcessing = true;
+			argumentHandled = false;
 			continue;
 		}
 
@@ -190,8 +199,6 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 				// reset and append handled result
 				handleArguments(argumentTypename, argumentResult, argumentResult);
 				(*pResult) += argumentResult;
-				argumentType = arg_default;
-				argumentHandled = false;
 			}
 
 			// clear argument

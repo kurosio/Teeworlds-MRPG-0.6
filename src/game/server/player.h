@@ -125,7 +125,7 @@ public:
 	bool IsAfk() const { return m_Afk; }
 	int64_t GetAfkTime() const;
 
-	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0");
+	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0") const;
 
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
@@ -168,7 +168,7 @@ public:
 	void OnDirectInput(CNetObj_PlayerInput* pNewInput);
 	void OnPredictedInput(CNetObj_PlayerInput* pNewInput) const;
 
-	void ProgressBar(const char* Name, int MyLevel, int MyExp, int ExpNeed, int GivedExp) const;
+	void ProgressBar(const char* pType, int Lvl, uint64_t Exp, uint64_t ExpNeed, uint64_t GotExp) const;
 	bool Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const;
 	const char* GetLanguage() const;
 	bool IsAuthed() const;

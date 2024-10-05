@@ -48,6 +48,7 @@ public:
 	bool getBoolean(const SQLString& column) const { return m_pResult->getBoolean(column); }
 	int getInt(const SQLString& column) const { return m_pResult->getInt(column); }
 	int64_t getInt64(const SQLString& column) const { return m_pResult->getInt64(column); }
+	uint64_t getUInt64(const SQLString& column) const { return m_pResult->getUInt64(column); }
 	double getDouble(const SQLString& column) const { return m_pResult->getDouble(column); }
 	std::string getString(const SQLString& column) const { return std::string(m_pResult->getString(column).c_str()); }
 	std::string getDateTime(const SQLString& column) const { return std::string(m_pResult->getString(column).c_str()); }

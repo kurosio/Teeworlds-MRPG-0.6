@@ -43,7 +43,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	// base data
 	m_ID = ID;
 	m_Level = pResult->getInt("Level");
-	m_Exp = pResult->getInt("Exp");
+	m_Exp = pResult->getUInt64("Exp");
 	m_Upgrade = pResult->getInt("Upgrade");
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
@@ -209,45 +209,43 @@ BigInt CAccountData::GetTotalGold() const
 	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
-void CAccountData::AddExperience(int Value)
+void CAccountData::AddExperience(uint64_t Value)
 {
-	CPlayer* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
-	// Increase the experience value
+	// increase exp value
 	m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
 	m_Exp += Value;
 
-	// Check if the experience is enough to level up
-	while(m_Exp >= (int)computeExperience(m_Level))
+	// check level up
+	while(m_Exp >= computeExperience(m_Level))
 	{
-		// Reduce the experience and increase the level
-		m_Exp -= (int)computeExperience(m_Level);
+		m_Exp -= computeExperience(m_Level);
 		m_Level++;
 		m_Upgrade += 1;
 
 		// increase skill points
 		if(g_Config.m_SvSPEachLevel > 0)
 		{
-			auto pPlayerItemSP = pPlayer->GetItem(itSkillPoint);
-			pPlayerItemSP->Add(g_Config.m_SvSPEachLevel);
-			GS()->Chat(m_ClientID, "You have earned {} Skill Points! You now have {} SP!", g_Config.m_SvSPEachLevel, pPlayerItemSP->GetValue());
+			auto* pSkillPoint = pPlayer->GetItem(itSkillPoint);
+			pSkillPoint->Add(g_Config.m_SvSPEachLevel);
+			GS()->Chat(m_ClientID, "You have earned {} Skill Points! You now have {} SP!", g_Config.m_SvSPEachLevel, pSkillPoint->GetValue());
 		}
 
-		// effects
+		// effects & information
 		if(const auto* pChar = pPlayer->GetCharacter())
 		{
 			GS()->CreateDeath(pChar->m_Core.m_Pos, m_ClientID);
 			GS()->CreateSound(pChar->m_Core.m_Pos, 4);
 			GS()->EntityManager()->Text(pChar->GetPos() + vec2(0, -40), 30, "level up");
 		}
-
 		GS()->Chat(m_ClientID, "Congratulations. You attain level {}!", m_Level);
 		GS()->Core()->WorldManager()->NotifyUnlockedZonesByLeveling(pPlayer, m_ID);
 
 		// post leveling
-		if(m_Exp < (int)computeExperience(m_Level))
+		if(m_Exp < computeExperience(m_Level))
 		{
 			// Update votes, save stats, and save upgrades
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
@@ -258,7 +256,7 @@ void CAccountData::AddExperience(int Value)
 	}
 
 	// update the progress bar
-	pPlayer->ProgressBar("Account", m_Level, m_Exp, (int)computeExperience(m_Level), Value);
+	pPlayer->ProgressBar("Account", m_Level, m_Exp, computeExperience(m_Level), Value);
 
 	// randomly save the account stats
 	if(rand() % 5 == 0)
@@ -440,7 +438,7 @@ void CAccountData::ResetCrimeScore()
 	GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL_STATUS);
 }
 
-void CAccountData::HandleChair(int Exp, int Gold)
+void CAccountData::HandleChair(uint64_t Exp, int Gold)
 {
 	IServer* pServer = Instance::Server();
 	if(pServer->Tick() % pServer->TickSpeed() != 0)
@@ -450,12 +448,12 @@ void CAccountData::HandleChair(int Exp, int Gold)
 	const int maxGoldCapacity = GetGoldCapacity();
 	const bool isGoldBagFull = (GetGold() >= maxGoldCapacity);
 
-	int expGain = maximum(Exp, (int)calculate_exp_gain(g_Config.m_SvChairExpFactor, m_Level, m_Level + Exp));
-	int goldGain = isGoldBagFull ? 0 : maximum(Gold, (int)calculate_gold_gain(g_Config.m_SvChairGoldFactor, m_Level, m_Level + Gold));
+	const auto expGain = std::max<uint64_t>(Exp, calculate_exp_gain(g_Config.m_SvChairExpFactor, m_Level, Exp + m_Level));
+	const int goldGain = isGoldBagFull ? 0 : maximum(Gold, (int)calculate_gold_gain(g_Config.m_SvChairGoldFactor, m_Level, Gold + m_Level));
 
 	// total percent bonuses
-	int totalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD));
-	int totalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_EXPERIENCE));
+	const int totalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD));
+	const int totalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_EXPERIENCE));
 
 	// add exp & gold
 	AddExperience(expGain);
@@ -479,8 +477,7 @@ void CAccountData::HandleChair(int Exp, int Gold)
 	}
 
 	// send broadcast
-	GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 250,
-		"Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
+	GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 250, "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
 		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), m_Exp, computeExperience(m_Level), expStr.c_str());
 }
 

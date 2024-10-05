@@ -1397,12 +1397,6 @@ bool CGS::TakeItemCharacter(int ClientID)
 	return false;
 }
 
-void CGS::ApplyExperienceMultiplier(int* pExperience) const
-{
-	if(pExperience)
-		*pExperience = translate_to_percent_rest(*pExperience, (float)m_MultiplierExp);
-}
-
 bool CGS::IsWorldType(WorldType Type) const
 {
 	return Server()->IsWorldType(m_WorldID, Type);
