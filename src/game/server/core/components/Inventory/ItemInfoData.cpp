@@ -4,6 +4,8 @@
 
 #include <game/server/gamecontext.h>
 
+#include <game/server/core/scenarios/scenario_universal.h>
+
 int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID) const
 {
 	for (const auto& Att : m_aAttributes)
@@ -60,40 +62,22 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 	return FinishedPrice;
 }
 
-void CItemDescription::RunEvent(CPlayer* pPlayer, int EventID) const
+void CItemDescription::StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Event) const
 {
-	mystd::json::parse(m_Data, [&pPlayer, EventID, this](nlohmann::json& pJson)
+	mystd::json::parse(m_Data, [&pPlayer, Event, this](nlohmann::json& pJson)
 	{
 		const char* pElem;
-		switch(EventID)
+		switch(Event)
 		{
-			case OnEventGot: pElem = "on_event_got"; break;
-			case OnEventLost: pElem = "on_event_lost"; break;
-			case OnEventEquip: pElem = "on_event_equip"; break;
+			case ItemScenarioEvent::OnEventGot: pElem = "on_event_got"; break;
+			case ItemScenarioEvent::OnEventLost: pElem = "on_event_lost"; break;
+			case ItemScenarioEvent::OnEventEquip: pElem = "on_event_equip"; break;
 			default: pElem = "on_event_unequip"; break;
 		}
 
-		CGS* pGS = pPlayer->GS();
-		const auto& pEventObjectJson = pJson[pElem];
-		const int ClientID = pPlayer->GetCID();
-
-		// messages array
-		if(pEventObjectJson.contains("messages"))
-		{
-			const auto& pChatArrayJson = pEventObjectJson["messages"];
-
-			std::string Text;
-			for(const auto& p : pChatArrayJson)
-			{
-				Text = p.value("text", "\0");
-
-				// broadcast type
-				if(p.contains("broadcast") && p.value("broadcast", false))
-					pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 300, Text.c_str());
-				else // chat type
-					pGS->Chat(ClientID, Text.c_str());
-			}
-		}
+		// start scenario
+		const auto& scenarioJsonData = pJson[pElem];
+		pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(scenarioJsonData));
 	});
 }
 

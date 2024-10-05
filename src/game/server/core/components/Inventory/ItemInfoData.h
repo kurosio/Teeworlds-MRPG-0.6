@@ -12,6 +12,14 @@
 
 using ItemIdentifier = int;
 
+enum class ItemScenarioEvent
+{
+	OnEventGot,
+	OnEventLost,
+	OnEventEquip,
+	OnEventUnequip,
+};
+
 class CItemDescription : public MultiworldIdentifiableData < std::map< int, CItemDescription > >
 {
 public:
@@ -19,14 +27,6 @@ public:
 	{
 		int m_Level  {1};
 		int m_Health {100};
-	};
-
-	enum
-	{
-		OnEventGot,
-		OnEventLost,
-		OnEventEquip,
-		OnEventUnequip,
 	};
 	using ContainerAttributes = std::deque< CAttribute >;
 
@@ -78,7 +78,7 @@ public:
 	ItemIdentifier GetID() const { return m_ID; }
 
 	// main functions
-	void RunEvent(CPlayer* pPlayer, int EventID) const;
+	void StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Event) const;
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }

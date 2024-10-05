@@ -3,6 +3,13 @@
 #ifndef GAME_SERVER_COMPONENT_DIALOGS_DATA_H
 #define GAME_SERVER_COMPONENT_DIALOGS_DATA_H
 
+enum class DialogScenarioEvent
+{
+	OnRecieveTask,
+	OnCompleteTask,
+	OnEnd
+};
+
 class CPlayerDialog
 {
 	friend class CDialogStep;
@@ -34,19 +41,12 @@ public:
 	void Tick();
 
 private:
-	enum class DialogScenarioPos
-	{
-		OnRecieveTask,
-		OnCompleteTask,
-		OnEnd
-	};
-
 	void PrepareDialog(const class CDialogStep* pDialog, const char* pLeftNickname, const char* pRightNickname);
 	const char* GetCurrentText() const { return m_aFormatedText; }
 	void ClearText();
 
 	class CDialogStep* GetCurrent() const;
-	void StartDialogScenario(DialogScenarioPos Pos) const;
+	void StartDialogScenario(DialogScenarioEvent Pos) const;
 	void ShowCurrentDialog() const;
 	void Clear();
 };

@@ -411,7 +411,7 @@ bool CPlayerDialog::CheckActionCompletion() const
 		}
 
 		GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
-		StartDialogScenario(DialogScenarioPos::OnCompleteTask);
+		StartDialogScenario(DialogScenarioEvent::OnCompleteTask);
 		return true;
 	}
 
@@ -427,7 +427,7 @@ void CPlayerDialog::End()
 
 		if(m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish())
 		{
-			StartDialogScenario(DialogScenarioPos::OnEnd);
+			StartDialogScenario(DialogScenarioEvent::OnEnd);
 		}
 	}
 
@@ -449,7 +449,7 @@ void CPlayerDialog::Clear()
 	ClearText();
 }
 
-void CPlayerDialog::StartDialogScenario(DialogScenarioPos Pos) const
+void CPlayerDialog::StartDialogScenario(DialogScenarioEvent Pos) const
 {
 	// load scenario
 	std::string scenarioJson;
@@ -469,8 +469,8 @@ void CPlayerDialog::StartDialogScenario(DialogScenarioPos Pos) const
 
 		switch(Pos)
 		{
-			case DialogScenarioPos::OnRecieveTask: pElem = "on_recieve_task"; break;
-			case DialogScenarioPos::OnCompleteTask: pElem = "on_complete_task"; break;
+			case DialogScenarioEvent::OnRecieveTask: pElem = "on_recieve_task"; break;
+			case DialogScenarioEvent::OnCompleteTask: pElem = "on_complete_task"; break;
 			default: pElem = "on_end"; break;
 		}
 
@@ -499,7 +499,7 @@ void CPlayerDialog::ShowCurrentDialog() const
 				pStep->m_TaskListReceived = true;
 				pStep->UpdateTaskMoveTo();
 
-				StartDialogScenario(DialogScenarioPos::OnRecieveTask);
+				StartDialogScenario(DialogScenarioEvent::OnRecieveTask);
 			}
 		}
 	}

@@ -24,7 +24,7 @@ inline int randomRangecount(int startrandom, int endrandom, int count)
 	int result = 0;
 	for(int i = 0; i < count; i++)
 	{
-		int random = startrandom + rand() % (endrandom - startrandom);
+		const int random = startrandom + rand() % (endrandom - startrandom);
 		result += random;
 	}
 	return result;
@@ -32,7 +32,11 @@ inline int randomRangecount(int startrandom, int endrandom, int count)
 
 bool CPlayerItem::SetEnchant(int Enchant)
 {
-	if(m_Value < 1 || !GetPlayer() || !GetPlayer()->IsAuthed())
+	if(m_Value < 1)
+		return false;
+
+	const auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	m_Enchant = Enchant;
@@ -41,7 +45,11 @@ bool CPlayerItem::SetEnchant(int Enchant)
 
 bool CPlayerItem::SetSettings(int Settings)
 {
-	if(m_Value < 1 || !GetPlayer() || !GetPlayer()->IsAuthed())
+	if(m_Value < 1)
+		return false;
+
+	const auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	m_Settings = Settings;
@@ -50,7 +58,11 @@ bool CPlayerItem::SetSettings(int Settings)
 
 bool CPlayerItem::SetDurability(int Durability)
 {
-	if(m_Value < 1 || !GetPlayer() || !GetPlayer()->IsAuthed())
+	if(m_Value < 1)
+		return false;
+
+	const auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	m_Durability = Durability;
@@ -60,17 +72,26 @@ bool CPlayerItem::SetDurability(int Durability)
 bool CPlayerItem::SetValue(int Value)
 {
 	bool Changes = false;
+
 	if(m_Value > Value)
+	{
 		Changes = Remove((m_Value - Value));
+	}
 	else if(m_Value < Value)
+	{
 		Changes = Add((Value - m_Value), m_Settings, m_Enchant, false);
+	}
+
 	return Changes;
 }
 
 bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Message)
 {
-	CPlayer* pPlayer = GetPlayer();
-	if(Value < 1 || !pPlayer || !pPlayer->IsAuthed())
+	if(Value < 1)
+		return false;
+
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	// check enchantable type
@@ -94,9 +115,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	{
 		m_Enchant = StartEnchant;
 		m_Settings = StartSettings;
-
-		// run event got
-		Info()->RunEvent(pPlayer, CItemDescription::OnEventGot);
+		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventGot);
 	}
 
 	m_Value += Value;
@@ -137,16 +156,18 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 bool CPlayerItem::Remove(int Value)
 {
 	Value = minimum(Value, m_Value);
-	if(Value <= 0 || !GetPlayer())
+	if(Value <= 0)
+		return false;
+
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	// unequip if this is the last item
 	if(m_Value <= Value && IsEquipped())
 	{
 		Equip(false);
-
-		// run event lost
-		Info()->RunEvent(GetPlayer(), CItemDescription::OnEventLost);
+		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventLost);
 	}
 
 	m_Value -= Value;
@@ -155,8 +176,11 @@ bool CPlayerItem::Remove(int Value)
 
 bool CPlayerItem::Equip(bool SaveItem)
 {
-	CPlayer* pPlayer = GetPlayer();
-	if(m_Value < 1 || !pPlayer || !pPlayer->IsAuthed())
+	if(m_Value < 1)
+		return false;
+
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	m_Settings ^= true;
@@ -174,13 +198,12 @@ bool CPlayerItem::Equip(bool SaveItem)
 	}
 
 	if(pPlayer->GetCharacter())
+	{
 		pPlayer->GetCharacter()->UpdateEquipingStats(m_ID);
+	}
 
-	// achievement for item
 	pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
-
-	// run event equip and unequip
-	Info()->RunEvent(pPlayer, m_Settings ? CItemDescription::OnEventEquip : CItemDescription::OnEventUnequip);
+	Info()->StartItemScenario(pPlayer, m_Settings ? ItemScenarioEvent::OnEventEquip : ItemScenarioEvent::OnEventUnequip);
 	GS()->MarkUpdatedBroadcast(m_ClientID);
 	return SaveItem ? Save() : true;
 }
@@ -188,15 +211,19 @@ bool CPlayerItem::Equip(bool SaveItem)
 bool CPlayerItem::Use(int Value)
 {
 	Value = Info()->IsFunctional(FUNCTION_ONE_USED) ? 1 : minimum(Value, m_Value);
-	if(Value <= 0 || !GetPlayer() || !GetPlayer()->IsAuthed())
+	if(Value <= 0)
 		return false;
 
-	const int ClientID = GetPlayer()->GetCID();
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return false;
+
+	const int ClientID = pPlayer->GetCID();
 
 	// potion mana regen
 	if(m_ID == itPotionManaRegen && Remove(Value))
 	{
-		GetPlayer()->GiveEffect("RegenMana", 15);
+		pPlayer->GiveEffect("RegenMana", 15);
 		GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
 		return true;
 	}
@@ -211,7 +238,7 @@ bool CPlayerItem::Use(int Value)
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{} used {}x{} and got {} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
-		GetPlayer()->Account()->AddExperience(Getting);
+		pPlayer->Account()->AddExperience(Getting);
 		return true;
 	}
 	// little bag gold
@@ -219,7 +246,7 @@ bool CPlayerItem::Use(int Value)
 	{
 		int Getting = randomRangecount(10, 50, Value);
 		GS()->Chat(-1, "{} used {}x{} and got {} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
-		GetPlayer()->Account()->AddGold(Getting);
+		pPlayer->Account()->AddGold(Getting);
 		return true;
 	}
 	// ticket reset for class stats
@@ -228,20 +255,20 @@ bool CPlayerItem::Use(int Value)
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(pAttribute->HasDatabaseField() && GetPlayer()->Account()->m_aStats[ID] > 0)
+			if(pAttribute->HasDatabaseField() && pPlayer->Account()->m_aStats[ID] > 0)
 			{
 				// skip weapon spreading
 				if(pAttribute->IsGroup(AttributeGroup::Weapon))
 					continue;
 
-				BackUpgrades += GetPlayer()->Account()->m_aStats[ID] * pAttribute->GetUpgradePrice();
-				GetPlayer()->Account()->m_aStats[ID] = 0;
+				BackUpgrades += pPlayer->Account()->m_aStats[ID] * pAttribute->GetUpgradePrice();
+				pPlayer->Account()->m_aStats[ID] = 0;
 			}
 		}
 
 		GS()->Chat(-1, "{} used {} returned {} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
-		GetPlayer()->Account()->m_Upgrade += BackUpgrades;
-		GS()->Core()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
+		pPlayer->Account()->m_Upgrade += BackUpgrades;
+		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 		return true;
 	}
 	// ticket reset for weapons stats
@@ -250,46 +277,46 @@ bool CPlayerItem::Use(int Value)
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
-			if(pAttribute->HasDatabaseField() && GetPlayer()->Account()->m_aStats[ID] > 0)
+			if(pAttribute->HasDatabaseField() && pPlayer->Account()->m_aStats[ID] > 0)
 			{
 				// skip all stats allow only weapons
 				if(pAttribute->GetGroup() != AttributeGroup::Weapon)
 					continue;
 
-				int UpgradeValue = GetPlayer()->Account()->m_aStats[ID];
+				int UpgradeValue = pPlayer->Account()->m_aStats[ID];
 				if(ID == AttributeIdentifier::SpreadShotgun)
-					UpgradeValue = GetPlayer()->Account()->m_aStats[ID] - 3;
+					UpgradeValue = pPlayer->Account()->m_aStats[ID] - 3;
 				else if(ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
-					UpgradeValue = GetPlayer()->Account()->m_aStats[ID] - 1;
+					UpgradeValue = pPlayer->Account()->m_aStats[ID] - 1;
 
 				if(UpgradeValue <= 0)
 					continue;
 
 				BackUpgrades += UpgradeValue * pAttribute->GetUpgradePrice();
-				GetPlayer()->Account()->m_aStats[ID] -= UpgradeValue;
+				pPlayer->Account()->m_aStats[ID] -= UpgradeValue;
 			}
 		}
 
 		GS()->Chat(-1, "{} used {} returned {} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
-		GetPlayer()->Account()->m_Upgrade += BackUpgrades;
-		GS()->Core()->SaveAccount(GetPlayer(), SAVE_UPGRADES);
+		pPlayer->Account()->m_Upgrade += BackUpgrades;
+		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 		return true;
 	}
 
 	// potion health regen
 	if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal)
 	{
-		if(GetPlayer()->m_aPlayerTick[PotionRecast] >= Server()->Tick())
+		if(pPlayer->m_aPlayerTick[PotionRecast] >= Server()->Tick())
 			return true;
 
 		if(Remove(Value))
 		{
 			int PotionTime = pHeal->getTime();
-			GetPlayer()->GiveEffect(pHeal->getEffect(), PotionTime);
-			GetPlayer()->m_aPlayerTick[PotionRecast] = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
+			pPlayer->GiveEffect(pHeal->getEffect(), PotionTime);
+			pPlayer->m_aPlayerTick[PotionRecast] = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 
 			GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
-			GS()->EntityManager()->Text(GetPlayer()->m_ViewPos + vec2(0, -140.0f), 70, pHeal->getEffect());
+			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, pHeal->getEffect());
 		}
 		return true;
 	}
@@ -297,7 +324,7 @@ bool CPlayerItem::Use(int Value)
 	// or if it random box
 	if(Info()->GetRandomBox())
 	{
-		Info()->GetRandomBox()->Start(GetPlayer(), 5, this, Value);
+		Info()->GetRandomBox()->Start(pPlayer, 5, this, Value);
 		return true;
 	}
 
@@ -307,58 +334,66 @@ bool CPlayerItem::Use(int Value)
 bool CPlayerItem::Drop(int Value)
 {
 	Value = minimum(Value, m_Value);
-	if(Value <= 0 || !GetPlayer() || !GetPlayer()->IsAuthed() || !GetPlayer()->GetCharacter())
+	if(Value <= 0)
 		return false;
 
-	CCharacter* m_pCharacter = GetPlayer()->GetCharacter();
-	vec2 Force = vec2(m_pCharacter->m_Core.m_Input.m_TargetX, m_pCharacter->m_Core.m_Input.m_TargetY);
+	const auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->GetCharacter())
+		return false;
+
+	const auto* pChar = pPlayer->GetCharacter();
+	auto Force = vec2(pChar->m_Core.m_Input.m_TargetX, pChar->m_Core.m_Input.m_TargetY);
 	if(length(Force) > 8.0f)
+	{
 		Force = normalize(Force) * 8.0f;
+	}
 
 	CPlayerItem DropItem = *this;
 	if(Remove(Value))
 	{
 		DropItem.m_Value = Value;
-		GS()->EntityManager()->DropItem(m_pCharacter->m_Core.m_Pos, -1, static_cast<CItem>(DropItem), Force);
+		GS()->EntityManager()->DropItem(pChar->m_Core.m_Pos, -1, static_cast<CItem>(DropItem), Force);
 		return true;
 	}
+
 	return false;
 }
 
 bool CPlayerItem::Save()
 {
-	if(GetPlayer() && GetPlayer()->IsAuthed())
-	{
-		int UserID = GetPlayer()->Account()->GetID();
-		const auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", m_ID, UserID);
-		pResCheck->AtExecute([this, UserID](ResultPtr pRes)
-		{
-			// check database value
-			if(pRes->next())
-			{
-				// remove item
-				if(!m_Value)
-				{
-					Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", m_ID, UserID);
-					return;
-				}
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return false;
 
-				// update an item
-				Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
-					m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Account()->GetID(), m_ID);
+	int UserID = pPlayer->Account()->GetID();
+	const auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", m_ID, UserID);
+	pResCheck->AtExecute([this, UserID](ResultPtr pRes)
+	{
+		// check database value
+		if(pRes->next())
+		{
+			// remove item
+			if(!m_Value)
+			{
+				Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", m_ID, UserID);
 				return;
 			}
 
-			// insert item
-			if(m_Value)
-			{
-				m_Durability = 100;
-				Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')", m_ID, UserID, m_Value, m_Settings, m_Enchant);
-			}
-		});
-		return true;
-	}
-	return false;
+			// update an item
+			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
+				m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Account()->GetID(), m_ID);
+			return;
+		}
+
+		// insert item
+		if(m_Value)
+		{
+			m_Durability = 100;
+			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')", m_ID, UserID, m_Value, m_Settings, m_Enchant);
+		}
+	});
+
+	return true;
 }
 
 // helper functions
