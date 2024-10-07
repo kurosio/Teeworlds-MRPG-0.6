@@ -176,10 +176,6 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 						// If the key does not exist, use 10 as the default value
 						DefeatDescription.m_AttributePower = pDefJson.value("attribute_power", 10);
 
-						// Retrieve the value of the "attribute_spread" key from the "defeat_bot" element
-						// If the key does not exist, use 0 as the default value
-						DefeatDescription.m_AttributeSpread = pDefJson.value("attribute_spread", 0);
-
 						// Retrieve the value of the "world_id" key from the "defeat_bot" element
 						// If the key does not exist, use the value of m_WorldID as the default value
 						DefeatDescription.m_WorldID = pDefJson.value("world_id", m_WorldID);

@@ -6,7 +6,10 @@
 #include <game/server/core/scenarios/scenario_eidolon.h>
 
 CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter) {}
+	: CBaseAI(pPlayer, pCharacter)
+{
+	m_CanTakeGotDamage = true;
+}
 
 bool CEidolonAI::CanDamage(CPlayer* pFrom)
 {

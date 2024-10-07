@@ -77,10 +77,12 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 		m_pPlayer->m_VotesData.UpdateCurrentVotes();
 		GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
+
+		const bool Spawned = GS()->m_pController->OnCharacterSpawn(this);
+		return Spawned;
 	}
 
-	const bool Spawned = GS()->m_pController->OnCharacterSpawn(this);
-	return Spawned;
+	return true;
 }
 
 void CCharacter::SetWeapon(int Weapon)
@@ -308,7 +310,7 @@ void CCharacter::FireWeapon()
 		case WEAPON_SHOTGUN:
 		{
 			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
-			const int ShotSpread = 5 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadShotgun), 36);
+			const int ShotSpread = 5;
 			for(int i = 0; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
@@ -335,7 +337,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_GRENADE:
 		{
-			const int ShotSpread = 1 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadGrenade), 21);
+			const int ShotSpread = 1;
 			for(int i = 0; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
@@ -362,7 +364,7 @@ void CCharacter::FireWeapon()
 
 		case WEAPON_LASER:
 		{
-			const int ShotSpread = 1 + minimum(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::SpreadRifle), 36);
+			const int ShotSpread = 1;
 			for(int i = 0; i < ShotSpread; ++i)
 			{
 				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));

@@ -109,7 +109,6 @@ public:
 		{
 			int m_BotID {};
 			int m_AttributePower {};
-			int m_AttributeSpread {};
 			int m_WorldID {};
 		};
 

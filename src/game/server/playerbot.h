@@ -15,7 +15,6 @@ public:
 	int m_QuestStep;
 	int m_MoveToStep;
 	int m_AttributePower;
-	int m_AttributeSpread;
 	int m_WorldID;
 	vec2 m_Position;
 
@@ -27,27 +26,31 @@ class CPlayerBot : public CPlayer
 {
 	MACRO_ALLOC_POOL_ID()
 
-	int m_BotType;
-	int m_BotID;
-	int m_MobID;
-	int m_BotHealth;
-	int m_BotStartHealth;
-	bool m_DisabledBotDamage;
-	int m_DungeonAllowedSpawn;
-	CQuestBotMobInfo m_QuestMobInfo;
+	int m_BotType {};
+	int m_BotID {};
+	int m_MobID {};
+	int m_MaxHealth{};
+	int m_Health{};
+	int m_MaxMana{};
+	int m_Mana{};
+	bool m_DisabledBotDamage{};
+	int m_DungeonAllowedSpawn{};
+	CQuestBotMobInfo m_QuestMobInfo{};
 
 public:
-	int m_LastPosTick;
-	std::optional<vec2> m_TargetPos;
-	vec2 m_OldTargetPos;
-
-	PathRequestHandle m_PathHandle;
+	int m_LastPosTick{};
+	std::optional<vec2> m_TargetPos{};
+	vec2 m_OldTargetPos{};
+	PathRequestHandle m_PathHandle{};
 
 	CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPoint);
 	~CPlayerBot() override;
 
 	void InitQuestBotMobInfo(CQuestBotMobInfo elem);
-	CQuestBotMobInfo& GetQuestBotMobInfo() { return m_QuestMobInfo; }
+	CQuestBotMobInfo& GetQuestBotMobInfo()
+	{
+		return m_QuestMobInfo;
+	}
 
 	int GetTeam() override { return TEAM_BLUE; }
 	bool IsBot() const override { return true; }
@@ -57,12 +60,18 @@ public:
 	int GetPlayerWorldID() const override;
 	CTeeInfo& GetTeeInfo() const override;
 
-	int GetMaxHealth() const override { return m_BotStartHealth; };
-	int GetHealth() const override { return m_BotHealth; }
-	int GetMana() const override { return 999; }
+	void InitBasicStats(int StartHP, int StartMP, int MaxHP, int MaxMP);
+	int GetMaxHealth() const override { return m_MaxHealth; }
+	int GetMaxMana() const override { return m_MaxMana; }
+	int GetHealth() const override { return m_Health; }
+	int GetMana() const override { return m_Mana; }
 
 	void HandleTuningParams() override;
-	void UpdateTempData(int Health, int Mana) override { m_BotHealth = Health; }
+	void UpdateTempData(int Health, int Mana) override
+	{
+		m_Health = Health;
+		m_Mana = Mana;
+	}
 
 	int64_t GetMaskVisibleForClients() const override;
 	StateSnapping IsActiveForClient(int ClientID) const override;

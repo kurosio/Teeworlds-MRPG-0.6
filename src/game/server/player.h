@@ -119,7 +119,7 @@ public:
 	virtual CTeeInfo& GetTeeInfo() const;
 
 	virtual int GetMaxHealth() const;
-	int GetMaxMana() const;
+	virtual int GetMaxMana() const;
 	virtual	int GetHealth() const { return GetTempData().m_TempHealth; }
 	virtual	int GetMana() const { return GetTempData().m_TempMana; }
 	bool IsAfk() const { return m_Afk; }

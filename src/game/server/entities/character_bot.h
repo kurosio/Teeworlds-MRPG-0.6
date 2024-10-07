@@ -36,14 +36,13 @@ private:
 	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon) override;
 	void Die(int Killer, int Weapon) override;
 	void HandleTuning() override;
-
-	bool GiveWeapon(int Weapon, int GiveAmmo) override;
-
 	void ProcessBot();
 
 public:
 	void SelectWeaponAtRandomInterval();
 	void SelectEmoteAtRandomInterval();
+
+	bool GiveWeapon(int Weapon, int GiveAmmo) override;
 
 	bool IsAllowedPVP(int FromID) const override;
 	void UpdateTarget(float Radius) const;

@@ -9,6 +9,8 @@
 #include "core/entities/logic/botwall.h"
 #include "core/components/achievements/achievement_data.h"
 
+#include "entities/character_bot.h"
+
 /*
 	Here you need to put it in order make more events
 	For modes that each map can have one of them
@@ -78,25 +80,14 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 {
 	GS()->EventListener()->Notify<IEventListener::Type::PlayerSpawn>(pChr->GetPlayer());
 
-	// if we spawn the bot
-	if(pChr->GetPlayer()->IsBot())
-	{
-		pChr->IncreaseHealth(pChr->GetPlayer()->GetMaxHealth());
-		pChr->GiveWeapon(WEAPON_HAMMER, -1);
-
-		for(int i = WEAPON_GUN; i < NUM_WEAPONS - 1; i++)
-		{
-			pChr->GiveWeapon(i, 10);
-		}
-		return true;
-	}
-
 	// Health
 	int StartHealth = pChr->GetPlayer()->GetMaxHealth();
 	if(!GS()->IsWorldType(WorldType::Dungeon))
 	{
-		// If the player's health is greater than 0, set StartHealth to the player's health otherwise, set StartHealth to half of its current value
-		StartHealth = (pChr->GetPlayer()->GetHealth() > 0 ? pChr->GetPlayer()->GetHealth() : (StartHealth / 2));
+		if(pChr->GetPlayer()->GetHealth() > 0)
+			StartHealth = pChr->GetPlayer()->GetHealth();
+		else
+			StartHealth /= 2;
 	}
 	pChr->IncreaseHealth(StartHealth);
 
@@ -115,6 +106,30 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 
 	// eidolons
 	pChr->GetPlayer()->TryCreateEidolon();
+	return true;
+}
+
+bool IGameController::OnCharacterBotSpawn(CCharacterBotAI* pChr)
+{
+	auto* pPlayerBot = dynamic_cast<CPlayerBot*>(pChr->GetPlayer());
+
+	const int MaxStartHP = pPlayerBot->GetTotalAttributeValue(AttributeIdentifier::HP);
+	const int MaxStartMP = pPlayerBot->GetTotalAttributeValue(AttributeIdentifier::MP);
+	pPlayerBot->InitBasicStats(MaxStartHP, MaxStartMP, MaxStartHP, MaxStartMP);
+
+	pChr->IncreaseHealth(MaxStartHP);
+	pChr->IncreaseMana(MaxStartMP);
+	pChr->GiveWeapon(WEAPON_HAMMER, -1);
+
+	if(pPlayerBot->IsEquipped(EQUIP_GUN))
+		pChr->GiveWeapon(WEAPON_GUN, 10);
+	if(pPlayerBot->IsEquipped(EQUIP_SHOTGUN))
+		pChr->GiveWeapon(WEAPON_SHOTGUN, 10);
+	if(pPlayerBot->IsEquipped(EQUIP_GRENADE))
+		pChr->GiveWeapon(WEAPON_GRENADE, 10);
+	if(pPlayerBot->IsEquipped(EQUIP_LASER))
+		pChr->GiveWeapon(WEAPON_LASER, 10);
+
 	return true;
 }
 

@@ -11,9 +11,15 @@ int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID) const
 	for (const auto& Att : m_aAttributes)
 	{
 		AttributeIdentifier SearchID = Att.GetID();
-		if(SearchID >= AttributeIdentifier::SpreadShotgun && SearchID < AttributeIdentifier::ATTRIBUTES_NUM && SearchID == ID)
-			return Att.GetValue();
+		if(SearchID != ID)
+			continue;
+
+		if(SearchID < AttributeIdentifier::DMG || SearchID >= AttributeIdentifier::ATTRIBUTES_NUM)
+			continue;
+
+		return Att.GetValue();
 	}
+
 	return 0;
 }
 

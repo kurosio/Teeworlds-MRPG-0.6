@@ -296,37 +296,34 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 {
-	if(!pChr->GetPlayer()->IsBot())
+	if(m_StateDungeon >= DUNGEON_STARTED)
 	{
-		if(m_StateDungeon >= DUNGEON_STARTED)
+		const int ClientID = pChr->GetPlayer()->GetCID();
+
+		// update tanking client status
+		if(pChr->GetPlayer()->GetClass()->GetGroup() == ClassGroup::Tank)
+			pChr->GetPlayer()->m_MoodState = Mood::TANK;
+
+		// player died after the safety timer ended
+		if(!m_SafeTick)
 		{
-			const int ClientID = pChr->GetPlayer()->GetCID();
+			GS()->Chat(ClientID, "You were thrown out of dungeon!");
 
-			// update tanking client status
-			if(pChr->GetPlayer()->GetClass()->GetGroup() == ClassGroup::Tank)
-				pChr->GetPlayer()->m_MoodState = Mood::TANK;
-
-			// player died after the safety timer ended
-			if(!m_SafeTick)
-			{
-				GS()->Chat(ClientID, "You were thrown out of dungeon!");
-
-				const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetLastVisitedWorldID(pChr->GetPlayer());
-				pChr->GetPlayer()->ChangeWorld(LatestCorrectWorldID);
-				return false;
-			}
+			const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetLastVisitedWorldID(pChr->GetPlayer());
+			pChr->GetPlayer()->ChangeWorld(LatestCorrectWorldID);
+			return false;
 		}
-		else
+	}
+	else
+	{
+		// update vote menu for player
+		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			// update vote menu for player
-			for(int i = 0; i < MAX_PLAYERS; i++)
-			{
-				CPlayer* pPlayer = GS()->GetPlayer(i);
-				if(!pPlayer || !GS()->IsPlayerInWorld(i, m_WorldID))
-					continue;
+			CPlayer* pPlayer = GS()->GetPlayer(i);
+			if(!pPlayer || !GS()->IsPlayerInWorld(i, m_WorldID))
+				continue;
 
-				pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
-			}
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 		}
 	}
 

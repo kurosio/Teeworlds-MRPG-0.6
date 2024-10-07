@@ -55,7 +55,9 @@ bool CCharacterBotAI::Spawn(CPlayer* pPlayer, vec2 Pos)
 		}
 
 		m_pAI->OnSpawn();
-		return true;
+
+		const bool Spawned = GS()->m_pController->OnCharacterBotSpawn(this);
+		return Spawned;
 	}
 
 	return false;

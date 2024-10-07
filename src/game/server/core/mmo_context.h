@@ -442,29 +442,26 @@ enum class AttributeGroup : int
 // Attribute context
 enum class AttributeIdentifier : int
 {
-	SpreadShotgun = 1,           // Attribute identifier for spread shotgun
-	SpreadGrenade = 2,           // Attribute identifier for spread grenade
-	SpreadRifle = 3,             // Attribute identifier for spread rifle
-	DMG = 4,                     // Attribute identifier for damage
-	AttackSPD = 5,               // Attribute identifier for attack speed
-	CritDMG = 6,                 // Attribute identifier for critical damage
-	Crit = 7,                    // Attribute identifier for critical chance
-	HP = 8,                      // Attribute identifier for health points
-	Lucky = 9,                   // Attribute identifier for luck
-	MP = 10,                     // Attribute identifier for mana points
-	Vampirism = 11,              // Attribute identifier for vampirism
-	AmmoRegen = 12,              // Attribute identifier for ammo regeneration
-	Ammo = 13,                   // Attribute identifier for ammo
-	Efficiency = 14,             // Attribute identifier for efficiency
-	Extraction = 15,             // Attribute identifier for extraction
-	HammerDMG = 16,              // Attribute identifier for hammer damage
-	GunDMG = 17,                 // Attribute identifier for gun damage
-	ShotgunDMG = 18,             // Attribute identifier for shotgun damage
-	GrenadeDMG = 19,             // Attribute identifier for grenade damage
-	RifleDMG = 20,               // Attribute identifier for rifle damage
-	LuckyDropItem = 21,          // Attribute identifier for lucky drop item
-	EidolonPWR = 22,             // Attribute identifier for eidolon power
-	GoldCapacity = 22,           // Attribute identifier for gold capacity
+	DMG = 1,                     // Attribute identifier for damage
+	AttackSPD = 2,               // Attribute identifier for attack speed
+	CritDMG = 3,                 // Attribute identifier for critical damage
+	Crit = 4,                    // Attribute identifier for critical chance
+	HP = 5,                      // Attribute identifier for health points
+	Lucky = 6,                   // Attribute identifier for luck
+	MP = 7,                      // Attribute identifier for mana points
+	Vampirism = 8,               // Attribute identifier for vampirism
+	AmmoRegen = 9,               // Attribute identifier for ammo regeneration
+	Ammo = 10,                   // Attribute identifier for ammo
+	Efficiency = 11,             // Attribute identifier for efficiency
+	Extraction = 12,             // Attribute identifier for extraction
+	HammerDMG = 13,              // Attribute identifier for hammer damage
+	GunDMG = 14,                 // Attribute identifier for gun damage
+	ShotgunDMG = 15,             // Attribute identifier for shotgun damage
+	GrenadeDMG = 16,             // Attribute identifier for grenade damage
+	RifleDMG = 17,               // Attribute identifier for rifle damage
+	LuckyDropItem = 18,          // Attribute identifier for lucky drop item
+	EidolonPWR = 19,             // Attribute identifier for eidolon power
+	GoldCapacity = 20,           // Attribute identifier for gold capacity
 	ATTRIBUTES_NUM,              // The number of total attributes
 };
 

@@ -6,7 +6,10 @@
 #include <game/server/gamecontext.h>
 
 CMobAI::CMobAI(MobBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter), m_pMobInfo(pNpcInfo) {}
+	: CBaseAI(pPlayer, pCharacter), m_pMobInfo(pNpcInfo)
+{
+	m_CanTakeGotDamage = true;
+}
 
 bool CMobAI::CanDamage(CPlayer* pFrom)
 {
@@ -175,11 +178,7 @@ void CMobAI::Process()
 		m_pPlayer->m_TargetPos.reset();
 	}
 
-	if(m_pMobInfo->m_Spread >= 1)
-	{
-		m_pCharacter->SelectWeaponAtRandomInterval();
-	}
-
+	m_pCharacter->SelectWeaponAtRandomInterval();
 	m_pCharacter->Move();
 
 	if(m_pMobInfo->m_Boss)

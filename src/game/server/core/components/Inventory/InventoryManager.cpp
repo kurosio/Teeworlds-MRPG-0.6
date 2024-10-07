@@ -48,8 +48,9 @@ void CInventoryManager::OnInit()
 			str_format(aAttributeValue, sizeof(aAttributeValue), "AttributeValue%d", i);
 
 			AttributeIdentifier AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
-			int AttributeValue = pRes->getInt(aAttributeValue);
-			if(AttributeID >= AttributeIdentifier::SpreadShotgun && AttributeValue > 0)
+			const int AttributeValue = pRes->getInt(aAttributeValue);
+
+			if(AttributeID >= AttributeIdentifier::DMG && AttributeValue > 0)
 			{
 				aContainerAttributes.emplace_back(AttributeID, AttributeValue);
 			}

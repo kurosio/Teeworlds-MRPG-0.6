@@ -283,12 +283,7 @@ bool CPlayerItem::Use(int Value)
 				if(pAttribute->GetGroup() != AttributeGroup::Weapon)
 					continue;
 
-				int UpgradeValue = pPlayer->Account()->m_aStats[ID];
-				if(ID == AttributeIdentifier::SpreadShotgun)
-					UpgradeValue = pPlayer->Account()->m_aStats[ID] - 3;
-				else if(ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
-					UpgradeValue = pPlayer->Account()->m_aStats[ID] - 1;
-
+				const int UpgradeValue = pPlayer->Account()->m_aStats[ID];
 				if(UpgradeValue <= 0)
 					continue;
 

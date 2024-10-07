@@ -23,7 +23,7 @@ void CAccountFarmingManager::OnInitWorld(const char* pWhereLocalWorld)
 
 		// insert to game base
 		const int ID = pRes->getInt("ID");
-		ms_vmFarmingPoints[ID] = std::move(Point);
+		ms_vmFarmingPoints[ID] = Point;
 	}
 }
 

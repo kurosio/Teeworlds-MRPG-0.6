@@ -192,7 +192,6 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_WorldID = pRes->getInt("WorldID");
 		MobBot.m_Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
 		MobBot.m_Power = pRes->getInt("Power");
-		MobBot.m_Spread = pRes->getInt("Spread");
 		MobBot.m_Boss = pRes->getBoolean("Boss");
 		MobBot.m_Level = pRes->getInt("Level");
 		MobBot.m_RespawnTick = pRes->getInt("Respawn");

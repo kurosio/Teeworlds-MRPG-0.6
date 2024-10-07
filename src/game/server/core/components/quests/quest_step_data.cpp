@@ -335,7 +335,6 @@ void CQuestStep::UpdateTaskMoveTo()
 							m_Bot.m_StepPos,
 							i,
 							defeatMobInfo.m_AttributePower,
-							defeatMobInfo.m_AttributeSpread,
 							defeatMobInfo.m_WorldID,
 							pTaskData->m_Position
 						});

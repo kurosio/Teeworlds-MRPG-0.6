@@ -6,7 +6,11 @@
 //#include <game/server/entities/botai/nurse_heart.h>
 
 CNpcAI::CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo) {}
+	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo)
+{
+	const int Function = m_pNpcInfo->m_Function;
+	m_CanTakeGotDamage = (Function == FUNCTION_NPC_GUARDIAN);
+}
 
 bool CNpcAI::CanDamage(CPlayer* pFrom)
 {

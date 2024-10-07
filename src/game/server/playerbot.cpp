@@ -12,11 +12,10 @@
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPoint)
-	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(MobID), m_BotHealth(0), m_LastPosTick(0)
+	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(MobID)
 {
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
-	m_BotStartHealth = CPlayerBot::GetTotalAttributeValue(AttributeIdentifier::HP);
 	m_Items.reserve(CItemDescription::Data().size());
 	CPlayerBot::PrepareRespawnTick();
 }
@@ -42,8 +41,16 @@ void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 		std::memset(m_QuestMobInfo.m_CompleteClient, 0, MAX_PLAYERS * sizeof(bool));
 
 		// Update the attribute size of the player bot for the attribute identifier HP
-		m_BotStartHealth = CPlayerBot::GetTotalAttributeValue(AttributeIdentifier::HP);
+		m_Health = CPlayerBot::GetTotalAttributeValue(AttributeIdentifier::HP);
 	}
+}
+
+void CPlayerBot::InitBasicStats(int StartHP, int StartMP, int MaxHP, int MaxMP)
+{
+	m_Health = StartHP;
+	m_Mana = StartMP;
+	m_MaxHealth = MaxHP;
+	m_MaxMana = MaxMP;
 }
 
 void CPlayerBot::Tick()
@@ -184,77 +191,81 @@ void CPlayerBot::PrepareRespawnTick()
 
 int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
-	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_EIDOLON || m_BotType == TYPE_BOT_QUEST_MOB ||
-		(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
+	const auto* pChar = dynamic_cast<CCharacterBotAI*>(m_pCharacter);
+
+	if(!pChar->AI()->CanTakeGotDamage())
+		return 10;
+
+	auto CalculateAttribute = [ID, this](int Power, bool Boss) -> int
 	{
-		auto CalculateAttribute = [ID, this](int Power, int Spread, bool Boss) -> int
+		// get stats from the bot's equipment
+		int AttributeValue = Power;
+		for(unsigned i = 0; i < NUM_EQUIPPED; i++)
 		{
-			// get stats from the bot's equipment
-			int Size = Power;
-			for(unsigned i = 0; i < NUM_EQUIPPED; i++)
+			if(const auto ItemID = GetEquippedItemID((ItemFunctional)i))
 			{
-				if(const auto ItemID = GetEquippedItemID((ItemFunctional)i); ItemID.has_value())
-					Size += GS()->GetItemInfo(ItemID.value())->GetInfoEnchantStats(ID);
-			}
-
-			// sync power mobs
-			float Percent = 100.0f;
-			CAttributeDescription* pAttribute = GS()->GetAttributeInfo(ID);
-			if(ID == AttributeIdentifier::SpreadShotgun || ID == AttributeIdentifier::SpreadGrenade || ID == AttributeIdentifier::SpreadRifle)
-				Size = Spread;
-			else if(pAttribute->IsGroup(AttributeGroup::Healer))
-				Percent = 15.0f;
-			else if(pAttribute->IsGroup(AttributeGroup::Hardtype))
-				Percent = 5.0f;
-
-			if(Boss && ID != AttributeIdentifier::HP)
-				Percent /= 10.0f;
-
-			const int SyncPercentSize = maximum(1, translate_to_percent_rest(Size, Percent));
-			return SyncPercentSize;
-		};
-
-		// Initialize Size variable to 0
-		int Size = 0;
-
-		// Check if bot type is TYPE_BOT_EIDOLON
-		if(m_BotType == TYPE_BOT_EIDOLON)
-		{
-			// Check if game is in Dungeon mode
-			if(GS()->IsWorldType(WorldType::Dungeon))
-			{
-				// Calculate Size based on sync factor
-				// Translate the sync factor to percent and then calculate the attribute
-				Size = CalculateAttribute(translate_to_percent_rest(maximum(1, dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor()), 5), 1, false);
-			}
-			else
-			{
-				// Calculate Size based on Eidolon item ID
-				Size = CalculateAttribute(m_EidolonItemID, 1, false);
+				AttributeValue += GS()->GetItemInfo(ItemID.value())->GetInfoEnchantStats(ID);
 			}
 		}
-		// Check if bot type is TYPE_BOT_MOB
-		else if(m_BotType == TYPE_BOT_MOB)
+
+		// sync power mobs
+		float Percent = 100.0f;
+		const auto* pAttribute = GS()->GetAttributeInfo(ID);
+
+		if(pAttribute->IsGroup(AttributeGroup::Healer))
 		{
-			// Calculate Size based on Mob bot info
-			Size = CalculateAttribute(MobBotInfo::ms_aMobBot[m_MobID].m_Power, MobBotInfo::ms_aMobBot[m_MobID].m_Spread, MobBotInfo::ms_aMobBot[m_MobID].m_Boss);
+			Percent = 15.0f;
 		}
-		// Check if bot type is TYPE_BOT_QUEST_MOB
-		else if(m_BotType == TYPE_BOT_QUEST_MOB)
+		else if(pAttribute->IsGroup(AttributeGroup::Hardtype))
 		{
-			// Calculate Size based on Quest Mob info
-			Size = CalculateAttribute(m_QuestMobInfo.m_AttributePower, m_QuestMobInfo.m_AttributeSpread, true);
+			Percent = 5.0f;
 		}
-		// Check if bot type is TYPE_BOT_NPC
-		else if(m_BotType == TYPE_BOT_NPC)
+
+		// downcast for unhardness boss
+		if(Boss && ID != AttributeIdentifier::HP)
 		{
-			// Calculate Size based on Npc info
-			Size = CalculateAttribute(10, 0, true);
+			Percent /= 10.0f;
 		}
-		return Size;
+
+		const int SyncPercentSize = maximum(1, translate_to_percent_rest(AttributeValue, Percent));
+		return SyncPercentSize;
+	};
+
+
+	// initiallize attributeValue by bot type
+	int AttributeValue = 0;
+	if(m_BotType == TYPE_BOT_EIDOLON)
+	{
+		if(GS()->IsWorldType(WorldType::Dungeon))
+		{
+			const int SyncFactor = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor();
+			AttributeValue = CalculateAttribute(translate_to_percent_rest(maximum(1, SyncFactor), 5), false);
+		}
+		else
+		{
+			const auto* pOwner = GetEidolonOwner();
+			AttributeValue = CalculateAttribute(pOwner ? pOwner->GetTotalAttributeValue(AttributeIdentifier::EidolonPWR) : 0, false);
+		}
+	}
+	else if(m_BotType == TYPE_BOT_MOB)
+	{
+		const int PowerMob = MobBotInfo::ms_aMobBot[m_MobID].m_Power;
+		const bool IsBoss = MobBotInfo::ms_aMobBot[m_MobID].m_Boss;
+
+		AttributeValue = CalculateAttribute(PowerMob, IsBoss);
+	}
+	else if(m_BotType == TYPE_BOT_QUEST_MOB)
+	{
+		const int PowerQuestMob = m_QuestMobInfo.m_AttributePower;
+
+		AttributeValue = CalculateAttribute(PowerQuestMob, true);
+	}
+	else if(m_BotType == TYPE_BOT_NPC)
+	{
+		AttributeValue = CalculateAttribute(10, true);
 	}
 
-	return 10;
+	return AttributeValue;
 }
 
 bool CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
@@ -516,9 +527,11 @@ std::optional<int> CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int Ski
 {
 	if((EquipID >= EQUIP_HAMMER && EquipID <= EQUIP_LASER) || EquipID == EQUIP_ARMOR)
 	{
+		// default data bot
 		int itemID = DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];
 		return (itemID > 0) ? std::make_optional(itemID) : std::nullopt;
 	}
+
 	return std::nullopt;
 }
 
