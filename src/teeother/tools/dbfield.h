@@ -25,12 +25,13 @@ class DBField
 	friend class DBFieldContainer;
 
 	size_t m_UniqueID{};
-	char m_aFieldName[128] = {};
-	char m_aDescription[128] = {};
+	std::string_view m_FieldName {};
+	std::string_view m_Description {};
 
 public:
 	DBField() = delete;
-	DBField(size_t UniqueID, const char* pFieldName, const char* pDescription, T DefaultValue = {}) : m_Value(DefaultValue) { init(UniqueID, pFieldName, pDescription); }
+	DBField(size_t UniqueID, const char* pFieldName, const char* pDescription, T DefaultValue = {})
+		: m_Value(DefaultValue) { init(UniqueID, pFieldName, pDescription); }
 
 	T m_Value{};
 
@@ -38,93 +39,164 @@ public:
 	void init(size_t UniqueID, const char* pFieldName, const char* pDescription)
 	{
 		m_UniqueID = UniqueID;
-		str_copy(m_aFieldName, pFieldName, sizeof(m_aFieldName));
-		str_copy(m_aDescription, pDescription, sizeof(m_aDescription));
+		m_FieldName = pFieldName;
+		m_Description = pDescription;
 	}
 
-	const T& getValue() const { return m_Value; }
-	const char* getFieldName() const { return m_aFieldName; };
-	const char* getDescription() const { return m_aDescription; }
+	const T& getValue() const
+	{
+		return m_Value;
+	}
+
+	const char* getFieldName() const
+	{
+		return m_FieldName.data();
+	}
+
+	const char* getDescription() const
+	{
+		return m_Description.data();
+	}
 };
 
 template<class> inline constexpr bool always_false_v = false;
 
 class DBFieldContainer
 {
-	using FieldVariant = std::variant < DBField<int>, DBField<float>, DBField<double>, DBField<std::string> >;
-	std::list < FieldVariant > m_VariantsData;
+    using FieldVariant = std::variant<
+        DBField<int>,
+        DBField<unsigned int>,
+        DBField<int64_t>,
+        DBField<uint64_t>,
+        DBField<float>,
+        DBField<double>,
+        DBField<std::string>,
+        DBField<bool>,
+        DBField<BigInt>
+    >;
+
+    std::list<FieldVariant> m_VariantsData;
 
 public:
-	DBFieldContainer() = default;
-	DBFieldContainer(std::initializer_list<FieldVariant>&& pField) { m_VariantsData.insert(m_VariantsData.end(), pField.begin(), pField.end()); }
+    DBFieldContainer() = default;
+    DBFieldContainer(std::initializer_list<FieldVariant>&& pField)
+    {
+        m_VariantsData.insert(m_VariantsData.end(), pField.begin(), pField.end());
+    }
 
-	template <typename T>
-	bool valid(size_t UniqueID)
-	{
-		return std::any_of(m_VariantsData.begin(), m_VariantsData.end(), [UniqueID](auto& p)
-		{
-			try { return std::get<DBField<T>>(p).m_UniqueID == UniqueID; }
-			catch([[maybe_unused]] const std::bad_variant_access& ex) { return false; }
-		});
-	}
+    template <typename T>
+    T& getRef(size_t UniqueID)
+    {
+        auto it = std::find_if(m_VariantsData.begin(), m_VariantsData.end(), [UniqueID](auto& p)
+        {
+            try
+            {
+                return std::get<DBField<T>>(p).m_UniqueID == UniqueID;
+            }
+            catch(const std::bad_variant_access&)
+            {
+                return false;
+            }
+        });
 
-	template < typename T >
-	DBField<T>& operator()(size_t UniqueID, [[maybe_unused]]T DefaultValue)
-	{
-		auto it = std::find_if(m_VariantsData.begin(), m_VariantsData.end(), [UniqueID](auto& p)
-		{
-			try { return std::get<DBField<T>>(p).m_UniqueID == UniqueID; }
-			catch([[maybe_unused]] const std::bad_variant_access& ex) { return false; }
-		});
+        assert(it != m_VariantsData.end() && "Error: could not find variant data DBField");
+        return std::get<DBField<T>>(*it).m_Value;
+    }
 
-		dbg_assert(it != m_VariantsData.end(), "error get from variant data DBField");
-		return std::get<DBField<T>>(*it);
-	}
-	
-	std::string getUpdateField()
-	{
-		std::string Fields;
-		for(auto& p : m_VariantsData)
-		{
-			std::visit([&Fields](auto&& arg)
-			{
-				using T = std::decay_t<decltype(arg)>;
-				if constexpr(std::is_same_v<T, DBField<int>> || std::is_same_v<T, DBField<float>>|| std::is_same_v<T, DBField<double>>)
-					Fields.append(arg.getFieldName()).append("=").append(std::to_string(arg.m_Value)).append(",");
-				else if constexpr(std::is_same_v<T, DBField<std::string>>)
-					Fields.append(arg.getFieldName()).append("=").append(arg.m_Value).append(",");
-				else
-					dbg_assert(always_false_v<T>, "non-exhaustive visitor!");
-			}, p);
-		}
+    template <typename T>
+    DBField<T>& getField(size_t UniqueID)
+    {
+        auto it = std::find_if(m_VariantsData.begin(), m_VariantsData.end(), [UniqueID](auto& p)
+        {
+            try
+            {
+                return std::get<DBField<T>>(p).m_UniqueID == UniqueID;
+            }
+            catch(const std::bad_variant_access&)
+            {
+                return false;
+            }
+        });
 
-		Fields.pop_back();
-		return Fields;
-	}
+        assert(it != m_VariantsData.end() && "Error: could not find variant data DBField");
+        return std::get<DBField<T>>(*it);
+    }
 
-	void initFields(ResultPtr* pRes)
-	{
-		if(pRes != nullptr)
-		{
-			for(auto& p : m_VariantsData)
-			{
-				std::visit([&pRes](auto&& arg)
-				{
-					using T = std::decay_t<decltype(arg)>;
-					if constexpr(std::is_same_v<T, DBField<int>>)
-						arg.m_Value = pRes->get()->getInt(arg.getFieldName());
-					else if constexpr(std::is_same_v<T, DBField<float>>)
-						arg.m_Value = static_cast<float>(pRes->get()->getDouble(arg.getFieldName()));
-					else if constexpr(std::is_same_v<T, DBField<double>>)
-						arg.m_Value = pRes->get()->getDouble(arg.getFieldName());
-					else if constexpr(std::is_same_v<T, DBField<std::string>>)
-						arg.m_Value = pRes->get()->getString(arg.getFieldName());
-					else
-						dbg_assert(always_false_v<T>, "non-exhaustive visitor!");
-				}, p);
-			}
-		}
-	}
+    std::string getUpdateField()
+    {
+        std::string Fields;
+        for(auto& p : m_VariantsData)
+        {
+            std::visit([&Fields](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr(std::is_same_v<T, DBField<int>> || std::is_same_v<T, DBField<unsigned int>> ||
+                    std::is_same_v<T, DBField<int64_t>> || std::is_same_v<T, DBField<uint64_t>> ||
+                    std::is_same_v<T, DBField<float>> || std::is_same_v<T, DBField<double>>)
+                {
+                    Fields.append(arg.getFieldName()).append("=").append(std::to_string(arg.m_Value)).append(",");
+                }
+                else if constexpr(std::is_same_v<T, DBField<std::string>>)
+                {
+                    Fields.append(arg.getFieldName()).append("=").append(arg.m_Value).append(",");
+                }
+                else if constexpr(std::is_same_v<T, DBField<bool>>)
+                {
+                    Fields.append(arg.getFieldName()).append("=").append(arg.m_Value ? "true" : "false").append(",");
+                }
+                else if constexpr(std::is_same_v<T, DBField<BigInt>>)
+                {
+                    Fields.append(arg.getFieldName()).append("=").append(arg.m_Value.to_string()).append(",");
+                }
+                else
+                {
+                    dbg_assert(always_false_v<T>, "non-exhaustive visitor!");
+                }
+            }, p);
+        }
+
+        Fields.pop_back();
+        return Fields;
+    }
+
+    void initFields(ResultPtr* pRes)
+    {
+        if(pRes != nullptr)
+        {
+            for(auto& p : m_VariantsData)
+            {
+                std::visit([&pRes](auto&& arg)
+                {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr(std::is_same_v<T, DBField<int>>)
+                        arg.m_Value = pRes->get()->getInt(arg.getFieldName());
+                    else if constexpr(std::is_same_v<T, DBField<unsigned int>>)
+                        arg.m_Value = pRes->get()->getUInt(arg.getFieldName());
+                    else if constexpr(std::is_same_v<T, DBField<int64_t>>)
+                        arg.m_Value = pRes->get()->getInt64(arg.getFieldName());
+                    else if constexpr(std::is_same_v<T, DBField<uint64_t>>)
+                        arg.m_Value = pRes->get()->getUInt64(arg.getFieldName());
+                    else if constexpr(std::is_same_v<T, DBField<float>>)
+                        arg.m_Value = static_cast<float>(pRes->get()->getDouble(arg.getFieldName()));
+                    else if constexpr(std::is_same_v<T, DBField<double>>)
+                        arg.m_Value = pRes->get()->getDouble(arg.getFieldName());
+                    else if constexpr(std::is_same_v<T, DBField<std::string>>)
+                        arg.m_Value = pRes->get()->getString(arg.getFieldName());
+                    else if constexpr(std::is_same_v<T, DBField<bool>>)
+                        arg.m_Value = pRes->get()->getBoolean(arg.getFieldName());
+                    else if constexpr(std::is_same_v<T, DBField<BigInt>>)
+                    {
+                        const std::string stringValue = pRes->get()->getString(arg.getFieldName()).c_str();
+                        arg.m_Value = BigInt(stringValue);
+                    }
+                    else
+                    {
+                        dbg_assert(always_false_v<T>, "non-exhaustive visitor!");
+                    }
+                }, p);
+            }
+        }
+    }
 };
 
 #endif

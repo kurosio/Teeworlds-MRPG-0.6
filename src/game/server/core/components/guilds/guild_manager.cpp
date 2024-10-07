@@ -780,7 +780,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		}
 
 		// result
-		GuildUpgrade UpgrID = static_cast<GuildUpgrade>(Extra1);
+		const auto UpgrID = (GuildUpgrade)Extra1;
 		if(!pGuild->Upgrade(UpgrID))
 		{
 			GS()->Chat(ClientID, "Your guild does not have enough gold, or the maximum upgrade level has been reached.");
@@ -1098,7 +1098,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 	bool HasHouse = pGuild->HasHouse();
 	const auto ExpNeed = computeExperience(pGuild->GetLevel());
 	const int MemberUsedSlots = (int)pGuild->GetMembers()->GetContainer().size();
-	const int MemberMaxSlots = pGuild->GetUpgrades(GuildUpgrade::AVAILABLE_SLOTS)->m_Value;
+	const int MemberMaxSlots = pGuild->GetUpgrades().getRef<int>((int)GuildUpgrade::AvailableSlots);
 
 	// Guild information
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "{}", pGuild->GetName());
@@ -1145,8 +1145,9 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	if(!pGuild)
 		return;
 
-	// information
 	int ClientID = pPlayer->GetCID();
+
+	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "\u2324 Guild upgrades (Information)");
 	VInfo.Add("All improvements are solely related to the guild itself.");
 	VInfo.Add("Bank: {}", pGuild->GetBank()->Get());
@@ -1154,11 +1155,13 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 
 	// guild-related upgrades
 	VoteWrapper VUpgr(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2730 Guild-related upgrades");
-	for(int i = (int)GuildUpgrade::START_GUILD_UPGRADES; i < (int)GuildUpgrade::END_GUILD_UPGRADES; i++)
+	for(int i = (int)GuildUpgrade::AvailableSlots; i < (int)GuildUpgrade::NumGuildUpgr; i++)
 	{
-		int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
-		const auto* pUpgrade = pGuild->GetUpgrades(static_cast<GuildUpgrade>(i));
-		VUpgr.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
+		const int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
+		const auto* pUpgradeField = &pGuild->GetUpgrades().getField<int>(i);
+
+		VUpgr.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold",
+			pUpgradeField->getDescription(), pUpgradeField->m_Value, Price);
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -1166,11 +1169,13 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	if(pGuild->HasHouse())
 	{
 		VoteWrapper VUpgrHouse(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2725 House-related upgrades");
-		for(int i = (int)GuildUpgrade::START_GUILD_HOUSE_UPGRADES; i < (int)GuildUpgrade::END_GUILD_HOUSE_UPGRADES; i++)
+		for(int i = (int)GuildUpgrade::ChairExperience; i < (int)GuildUpgrade::NumGuildHouseUpgr; i++)
 		{
 			int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
-			const auto* pUpgrade = pGuild->GetUpgrades(static_cast<GuildUpgrade>(i));
-			VUpgrHouse.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold", pUpgrade->getDescription(), pUpgrade->m_Value, Price);
+			const auto* pUpgrade = &pGuild->GetUpgrades().getField<int>(i);
+
+			VUpgrHouse.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold", 
+				pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 	}

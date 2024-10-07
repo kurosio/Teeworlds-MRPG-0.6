@@ -39,9 +39,9 @@ void CAccountFarmingManager::OnPlayerLogin(CPlayer *pPlayer)
 	}
 
 	// set default values
-	refFarmingDbField(JOB_LEVEL, 1).m_Value = 1;
-	refFarmingDbField(JOB_EXPERIENCE, 0).m_Value = 0;
-	refFarmingDbField(JOB_UPGRADES, 0).m_Value = 0;
+	refFarmingDbField.getRef<int>(JOB_LEVEL) = 1;
+	refFarmingDbField.getRef<uint64_t>(JOB_EXPERIENCE) = 0;
+	refFarmingDbField.getRef<int>(JOB_UPGRADES) = 0;
 	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('{}')", pPlayer->Account()->GetID());
 }
 
@@ -93,15 +93,16 @@ void CAccountFarmingManager::Procces(CPlayer* pPlayer, int Level) const
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
 	const int MultiplierExperience = maximum(1, (int)computeExperience(Level) / g_Config.m_SvFarmingLevelIncrease);
-	int& refLevel = pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value;
-	int& refExperience = pPlayer->Account()->m_FarmingData(JOB_EXPERIENCE, 0).m_Value;
-	int& refUpgrade = pPlayer->Account()->m_FarmingData(JOB_UPGRADES, 0).m_Value;
+
+	int& refLevel = pPlayer->Account()->m_FarmingData.getRef<int>(JOB_LEVEL);
+	auto& refExperience = pPlayer->Account()->m_FarmingData.getRef<uint64_t>(JOB_EXPERIENCE);
+	int& refUpgrade = pPlayer->Account()->m_FarmingData.getRef<int>(JOB_UPGRADES);
 
 	// append experience
 	refExperience += MultiplierExperience;
 
 	// check level up
-	int ExperienceNeed = computeExperience(refLevel);
+	auto ExperienceNeed = computeExperience(refLevel);
 	while(refExperience >= ExperienceNeed)
 	{
 		// implement level up
@@ -129,7 +130,10 @@ bool CAccountFarmingManager::OnPlayerVoteCommand(CPlayer *pPlayer, const char *p
 {
 	if(PPSTR(pCmd, "FARMING_UPGRADE") == 0)
 	{
-		if(pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_FarmingData(Extra1, 0).m_Value, &pPlayer->Account()->m_FarmingData(JOB_UPGRADES, 0).m_Value, Extra2, 3))
+		auto* pUpgrades = &pPlayer->Account()->m_FarmingData.getRef<int>(JOB_UPGRADES);
+		auto* pSelectedUpgr = &pPlayer->Account()->m_FarmingData.getRef<int>(Extra1);
+
+		if(pPlayer->Upgrade(ReasonNumber, pSelectedUpgr, pUpgrades, Extra2, 3))
 		{
 			GS()->Core()->SaveAccount(pPlayer, SAVE_FARMING_DATA);
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_UPGRADES);

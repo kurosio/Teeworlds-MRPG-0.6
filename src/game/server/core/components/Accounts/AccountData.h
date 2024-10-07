@@ -133,16 +133,16 @@ public:
 
 	DBFieldContainer m_MiningData
 	{
-		{ DBField<int>(JOB_LEVEL, "Level", "Miner level") },
-		{ DBField<int>(JOB_EXPERIENCE, "Exp", "Miner experience") },
-		{ DBField<int>(JOB_UPGRADES, "Upgrade", "Miner upgrades") }
+		DBField<int>(JOB_LEVEL, "Level", "Miner level"),
+		DBField<uint64_t>(JOB_EXPERIENCE, "Exp", "Miner experience"),
+		DBField<int>(JOB_UPGRADES, "Upgrade", "Miner upgrades")
 	};
 
 	DBFieldContainer m_FarmingData
 	{
-		{ DBField<int>(JOB_LEVEL, "Level", "Farmer level") },
-		{ DBField<int>(JOB_EXPERIENCE, "Exp", "Farmer experience") },
-		{ DBField<int>(JOB_UPGRADES, "Upgrade", "Farmer upgrades") }
+		DBField<int>(JOB_LEVEL, "Level", "Farmer level"),
+		DBField<uint64_t>(JOB_EXPERIENCE, "Exp", "Farmer experience"),
+		DBField<int>(JOB_UPGRADES, "Upgrade", "Farmer upgrades")
 	};
 
 	static std::map < int, CAccountData > ms_aData;

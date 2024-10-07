@@ -18,22 +18,21 @@ CGuild::~CGuild()
 
 bool CGuild::Upgrade(GuildUpgrade Type)
 {
-	// Check if the type is AVAILABLE_SLOTS and the value of the first upgrade data is greater than or equal to GUILD_MAX_SLOTS
-	auto* pUpgradeData = &m_UpgradesData((int)Type, 0);
-	if(Type == GuildUpgrade::AVAILABLE_SLOTS && pUpgradeData->m_Value >= GUILD_MAX_SLOTS)
+	auto* pUpgradeField = &m_UpgradesData.getField<int>((int)Type);
+
+	// check maximum for available slots
+	if(Type == GuildUpgrade::AvailableSlots && pUpgradeField->m_Value >= GUILD_MAX_SLOTS)
 		return false;
 
-	// Check if the guild has enough money to spend on the upgrade
-	int Price = GetUpgradePrice(Type);
+	const int Price = GetUpgradePrice(Type);
 	if(m_pBank->Spend(Price))
 	{
-		// Increase the value of the upgrade by 1
-		pUpgradeData->m_Value += 1;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "{} = '{}' WHERE ID = '{}'", pUpgradeData->getFieldName(), pUpgradeData->m_Value, m_ID);
+		pUpgradeField->m_Value += 1;
+		Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "{} = '{}' WHERE ID = '{}'", pUpgradeField->getFieldName(), pUpgradeField->m_Value, m_ID);
 
 		// Add and send a history entry for the upgrade
-		m_pLogger->Add(LOGFLAG_UPGRADES_CHANGES, "'%s' upgraded to %d level", pUpgradeData->getDescription(), pUpgradeData->m_Value);
-		GS()->ChatGuild(m_ID, "'{}' upgraded to {} level", pUpgradeData->getDescription(), pUpgradeData->m_Value);
+		m_pLogger->Add(LOGFLAG_UPGRADES_CHANGES, "'%s' upgraded to %d level", pUpgradeField->getDescription(), pUpgradeField->m_Value);
+		GS()->ChatGuild(m_ID, "'{}' upgraded to {} level", pUpgradeField->getDescription(), pUpgradeField->m_Value);
 		return true;
 	}
 
@@ -199,10 +198,16 @@ int CGuild::GetUpgradePrice(GuildUpgrade Type)
 {
 	int EndPrice = 0;
 
-	if(Type == GuildUpgrade::AVAILABLE_SLOTS)
-		EndPrice = m_UpgradesData((int)Type, 0).m_Value * g_Config.m_SvGuildSlotUpgradePrice;
-	else if(Type == GuildUpgrade::HOUSE_CHAIR_EXPERIENCE)
-		EndPrice = m_UpgradesData((int)Type, 0).m_Value * g_Config.m_SvGuildAnotherUpgradePrice;
+	if(Type == GuildUpgrade::AvailableSlots)
+	{
+		const int CurrentPoint = m_UpgradesData.getRef<int>((int)GuildUpgrade::AvailableSlots);
+		EndPrice = CurrentPoint * g_Config.m_SvGuildSlotUpgradePrice;
+	}
+	else
+	{
+		const int CurrentPoint = m_UpgradesData.getRef<int>((int)Type);
+		EndPrice = CurrentPoint * g_Config.m_SvGuildAnotherUpgradePrice;
+	}
 
 	return EndPrice;
 }
@@ -225,17 +230,17 @@ CGS* CGuild::CBank::GS() const
 
 void CGuild::CBank::Add(const BigInt& Value)
 {
-	m_Bank += Value;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pGuild->GetID());
+	m_Value += Value;
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Value, m_pGuild->GetID());
 }
 
 bool CGuild::CBank::Spend(const BigInt& Value)
 {
-	if(m_Bank <= 0 || m_Bank < Value)
+	if(m_Value <= 0 || m_Value < Value)
 		return false;
 
-	m_Bank -= Value;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pGuild->GetID());
+	m_Value -= Value;
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Value, m_pGuild->GetID());
 	return true;
 }
 
@@ -589,7 +594,7 @@ bool CGuild::CMember::DepositInBank(int Value)
 	return false;
 }
 
-bool CGuild::CMember::WithdrawFromBank(int Golds)
+bool CGuild::CMember::WithdrawFromBank(int Value)
 {
 	// check player validity
 	auto* pPlayer = GS()->GetPlayerByUserID(m_AccountID);
@@ -597,17 +602,17 @@ bool CGuild::CMember::WithdrawFromBank(int Golds)
 		return false;
 
 	// try spend from guild bank
-	if(m_pGuild->GetBank()->Spend(Golds))
+	if(m_pGuild->GetBank()->Spend(Value))
 	{
 		// implement the withdraw
-		m_Deposit -= Golds;
-		pPlayer->Account()->AddGold(Golds);
+		m_Deposit -= Value;
+		pPlayer->Account()->AddGold(Value);
 		m_pGuild->GetMembers()->Save();
 
 		// send messages
 		const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
-		m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' withdrawn '%d' from the guild safe.", pNickname, Golds);
-		GS()->ChatGuild(m_pGuild->GetID(), "'{}' withdrawn {} gold from the safe, now {}!", pNickname, Golds, m_pGuild->GetBank()->Get());
+		m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' withdrawn '%d' from the guild safe.", pNickname, Value);
+		GS()->ChatGuild(m_pGuild->GetID(), "'{}' withdrawn {} gold from the safe, now {}!", pNickname, Value, m_pGuild->GetBank()->Get());
 		return true;
 	}
 
@@ -708,12 +713,14 @@ GuildResult CGuild::CMembersManager::Kick(int AccountID)
 
 bool CGuild::CMembersManager::HasFreeSlots() const
 {
-	return (int)m_apMembers.size() < m_pGuild->GetUpgrades(GuildUpgrade::AVAILABLE_SLOTS)->getValue();
+	const int CurrentSlots = m_pGuild->GetUpgrades().getRef<int>((int)GuildUpgrade::AvailableSlots);
+	return (int)m_apMembers.size() < CurrentSlots;
 }
 
 std::pair<int, int> CGuild::CMembersManager::GetCurrentSlots() const
 {
-	return std::pair((int)m_apMembers.size(), m_pGuild->GetUpgrades(GuildUpgrade::AVAILABLE_SLOTS)->getValue());
+	const int CurrentSlots = m_pGuild->GetUpgrades().getRef<int>((int)GuildUpgrade::AvailableSlots);
+	return { (int)m_apMembers.size(), CurrentSlots };
 }
 
 void CGuild::CMembersManager::ResetDeposits()

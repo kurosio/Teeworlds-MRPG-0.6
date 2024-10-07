@@ -520,13 +520,13 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	}
 	else if(Table == SAVE_FARMING_DATA)
 	{
-		std::string Fields = pAcc->m_FarmingData.getUpdateField();
-		Database->Execute<DB::UPDATE>("tw_accounts_farming", "{} WHERE UserID = '{}'", Fields.c_str(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_farming", "{} WHERE UserID = '{}'", 
+			pAcc->m_FarmingData.getUpdateField(), pAcc->GetID());
 	}
 	else if(Table == SAVE_MINING_DATA)
 	{
-		std::string Fields = pAcc->m_MiningData.getUpdateField();
-		Database->Execute<DB::UPDATE>("tw_accounts_mining", "{} WHERE UserID = '{}'", Fields.c_str(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_mining", "{} WHERE UserID = '{}'", 
+			pAcc->m_MiningData.getUpdateField(), pAcc->GetID());
 	}
 	else if(Table == SAVE_SOCIAL_STATUS)
 	{
@@ -547,19 +547,23 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 		time_t Daily = pAcc->m_Periods.m_DailyStamp;
 		time_t Week = pAcc->m_Periods.m_WeekStamp;
 		time_t Month = pAcc->m_Periods.m_MonthStamp;
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '{}', WeekStamp = '{}', MonthStamp = '{}' WHERE ID = '{}'", Daily, Week, Month, pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '{}', WeekStamp = '{}', MonthStamp = '{}' WHERE ID = '{}'", 
+			Daily, Week, Month, pAcc->GetID());
 	}
 	else if(Table == SAVE_LANGUAGE)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '{}' WHERE ID = '{}'", pPlayer->GetLanguage(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '{}' WHERE ID = '{}'", 
+			pPlayer->GetLanguage(), pAcc->GetID());
 	}
 	else if(Table == SAVE_ACHIEVEMENTS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '{}' WHERE ID = '{}'", pAcc->GetAchievementsData().dump().c_str(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '{}' WHERE ID = '{}'", 
+			pAcc->GetAchievementsData().dump().c_str(), pAcc->GetID());
 	}
 	else
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '{}' WHERE ID = '{}'", pAcc->GetLogin(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '{}' WHERE ID = '{}'", 
+			pAcc->GetLogin(), pAcc->GetID());
 	}
 }
 

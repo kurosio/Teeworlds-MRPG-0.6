@@ -139,7 +139,9 @@ bool CEntityHarvestingItem::Interaction(const char* pToolname, AttributeIdentifi
 
 void CEntityHarvestingItem::Mining(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
 {
-	if(Interaction("Pickaxe", AttributeIdentifier::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, pPlayer->Account()->m_MiningData(JOB_LEVEL, 0).m_Value))
+	const int Level = pPlayer->Account()->m_MiningData.getRef<int>(JOB_LEVEL);
+
+	if(Interaction("Pickaxe", AttributeIdentifier::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, Level))
 	{
 		GS()->Core()->AccountMiningManager()->Process(pPlayer, GetItemInfo()->GetHarvestingData().m_Level);
 		pWorkedItem.Add(1 + rand()%2);
@@ -149,7 +151,9 @@ void CEntityHarvestingItem::Mining(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
 
 void CEntityHarvestingItem::Farming(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
 {
-	if(Interaction("Rake", AttributeIdentifier::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, pPlayer->Account()->m_FarmingData(JOB_LEVEL, 0).m_Value))
+	const int Level = pPlayer->Account()->m_MiningData.getRef<int>(JOB_LEVEL);
+
+	if(Interaction("Rake", AttributeIdentifier::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, Level))
 	{
 		GS()->Core()->AccountFarmingManager()->Procces(pPlayer, GetItemInfo()->GetHarvestingData().m_Level);
 		pWorkedItem.Add(1 + rand() % 2);

@@ -38,9 +38,9 @@ void CAccountMiningManager::OnPlayerLogin(CPlayer* pPlayer)
 	}
 
 	// set default values
-	refMiningDbField(JOB_LEVEL, 1).m_Value = 1;
-	refMiningDbField(JOB_EXPERIENCE, 0).m_Value = 0;
-	refMiningDbField(JOB_UPGRADES, 0).m_Value = 0;
+	refMiningDbField.getRef<int>(JOB_LEVEL) = 1;
+	refMiningDbField.getRef<uint64_t>(JOB_EXPERIENCE) = 0;
+	refMiningDbField.getRef<int>(JOB_UPGRADES) = 0;
 	Database->Execute<DB::INSERT>("tw_accounts_mining", "(UserID) VALUES ('{}')", pPlayer->Account()->GetID());
 }
 
@@ -94,15 +94,16 @@ void CAccountMiningManager::Process(CPlayer *pPlayer, int Level) const
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
 	const int MultiplierExperience = maximum(1, (int)computeExperience(Level) / g_Config.m_SvMiningLevelIncrease);
-	int& refLevel = pPlayer->Account()->m_MiningData(JOB_LEVEL, 0).m_Value;
-	int& refExperience = pPlayer->Account()->m_MiningData(JOB_EXPERIENCE, 0).m_Value;
-	int& refUpgrade = pPlayer->Account()->m_MiningData(JOB_UPGRADES, 0).m_Value;
+
+	int& refLevel = pPlayer->Account()->m_MiningData.getRef<int>(JOB_LEVEL);
+	auto& refExperience = pPlayer->Account()->m_MiningData.getRef<uint64_t>(JOB_EXPERIENCE);
+	int& refUpgrade = pPlayer->Account()->m_MiningData.getRef<int>(JOB_UPGRADES);
 
 	// append experience
 	refExperience += MultiplierExperience;
 
 	// check level up
-	int ExperienceNeed = computeExperience(refLevel);
+	auto ExperienceNeed = computeExperience(refLevel);
 	while(refExperience >= ExperienceNeed)
 	{
 		// implement level up
@@ -129,10 +130,12 @@ void CAccountMiningManager::Process(CPlayer *pPlayer, int Level) const
 
 bool CAccountMiningManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
-	const int ClientID = pPlayer->GetCID();
 	if (PPSTR(pCmd, "MINING_UPGRADE") == 0)
 	{
-		if (pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_MiningData(Extra1, 0).m_Value, &pPlayer->Account()->m_MiningData(JOB_UPGRADES, 0).m_Value, Extra2, 3))
+		auto* pUpgrades = &pPlayer->Account()->m_MiningData.getRef<int>(JOB_UPGRADES);
+		auto* pSelectedUpgr = &pPlayer->Account()->m_MiningData.getRef<int>(Extra1);
+
+		if (pPlayer->Upgrade(ReasonNumber, pSelectedUpgr, pUpgrades, Extra2, 3))
 		{
 			GS()->Core()->SaveAccount(pPlayer, SAVE_MINING_DATA);
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_UPGRADES);
