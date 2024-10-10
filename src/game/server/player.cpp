@@ -412,7 +412,7 @@ void CPlayer::RefreshClanString()
 	}
 
 	// location
-	std::string Prepared(Server()->GetWorldName(GetPlayerWorldID()));
+	std::string Prepared(Server()->GetWorldName(GetCurrentWorldID()));
 
 	// title
 	if(const auto TitleItemID = GetEquippedItemID(EQUIP_TITLE); TitleItemID.has_value())
@@ -926,7 +926,7 @@ void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition) con
 	Server()->ChangeWorld(m_ClientID, WorldID);
 }
 
-int CPlayer::GetPlayerWorldID() const
+int CPlayer::GetCurrentWorldID() const
 {
 	return Server()->GetClientWorldID(m_ClientID);
 }

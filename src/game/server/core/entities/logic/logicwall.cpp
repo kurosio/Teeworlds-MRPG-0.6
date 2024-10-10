@@ -323,7 +323,7 @@ bool CLogicDungeonDoorKey::SyncStateChanges()
 	{
 		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if (BotPlayer && BotPlayer->GetCharacter() && BotPlayer->GetBotType() == BotsTypes::TYPE_BOT_MOB
-			&& BotPlayer->GetBotID() == m_BotID && GS()->GetWorldID() == BotPlayer->GetPlayerWorldID())
+			&& BotPlayer->GetBotID() == m_BotID && GS()->GetWorldID() == BotPlayer->GetCurrentWorldID())
 		{
 			m_OpenedDoor = false;
 			return false;

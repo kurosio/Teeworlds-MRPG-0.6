@@ -57,7 +57,7 @@ public:
 	int GetBotID() const override { return m_BotID; }
 	int GetBotType() const override { return m_BotType; }
 	int GetBotMobID() const override { return m_MobID; }
-	int GetPlayerWorldID() const override;
+	int GetCurrentWorldID() const override;
 	CTeeInfo& GetTeeInfo() const override;
 
 	void InitBasicStats(int StartHP, int StartMP, int MaxHP, int MaxMP);
@@ -94,26 +94,23 @@ public:
 	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
 
 	int m_EidolonItemID;
-	class CPlayer* GetEidolonOwner() const;
+	CPlayer* GetEidolonOwner() const;
 	bool IsDisabledBotDamage() const { return m_DisabledBotDamage; }
 
-	class CPlayerItem* GetItem(ItemIdentifier ID) override;
+	CPlayerItem* GetItem(ItemIdentifier ID) override;
 
 private:
 	ska::unordered_map< int, std::unique_ptr<CPlayerItem> > m_Items {};
-	ska::unordered_map < std::string /* effect */, int /* seconds */ > m_aEffects;
+	std::unordered_map < std::string, int > m_aEffects;
 
 	void GetFormatedName(char* aBuffer, int BufferSize) override;
-	int GetBotLevel() const;
+	int GetLevel() const;
 	Mood GetMoodState() const override;
 	const char* GetStatus() const;
 
 	void TryRespawn() override;
 	void HandleEffects() override;
 
-	/***********************************************************************************/
-	/*  Thread path finderdon't want to secure m_TargetPos, or m_WayPoints with mutex  */
-	/***********************************************************************************/
 	void HandlePathFinder();
 };
 

@@ -6,10 +6,7 @@
 #include <game/server/core/scenarios/scenario_eidolon.h>
 
 CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter)
-{
-	m_CanTakeGotDamage = true;
-}
+	: CBaseAI(pPlayer, pCharacter) {}
 
 bool CEidolonAI::CanDamage(CPlayer* pFrom)
 {
@@ -57,10 +54,9 @@ void CEidolonAI::OnTargetRules(float Radius)
 	{
 		pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
 		{
-			const bool DamageDisabled = pOwner->GetCharacter()->m_Core.m_DamageDisabled || pCandidate->IsDisabledBotDamage();
-			const auto* pCandidateChar = dynamic_cast<CCharacterBotAI*>(pCandidate->GetCharacter());
+			const bool DamageDisabled = pOwner->GetCharacter()->m_Core.m_DamageDisabled;
 
-			return !DamageDisabled && CanDamage(pCandidate) && pCandidateChar->AI()->CanDamage(m_pPlayer);
+			return !DamageDisabled && pOwner->GetCharacter()->IsAllowedPVP(pCandidate->GetCID());
 		});
 	}
 

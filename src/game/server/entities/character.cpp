@@ -65,7 +65,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_OldPos = Pos;
 	m_Core.m_DamageDisabled = false;
 	m_Core.m_CollisionDisabled = false;
-	m_Core.m_WorldID = m_pPlayer->GetPlayerWorldID();
+	m_Core.m_WorldID = m_pPlayer->GetCurrentWorldID();
 
 	if(!m_pPlayer->IsBot())
 	{
@@ -846,7 +846,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	Msg.m_Victim = m_pPlayer->GetCID();
 	Msg.m_Weapon = Weapon;
 	Msg.m_ModeSpecial = 0;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, m_pPlayer->GetPlayerWorldID());
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, m_pPlayer->GetCurrentWorldID());
 
 	// respawn
 	m_pPlayer->m_aPlayerTick[TickState::Die] = Server()->Tick() / 2;

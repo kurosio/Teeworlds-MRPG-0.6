@@ -22,25 +22,16 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 
 CPlayerBot::~CPlayerBot()
 {
-	// free data
 	std::memset(DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive, 0, MAX_PLAYERS * sizeof(bool));
 }
 
-// This method is used to initialize the quest bot mob info for the player bot
-// It takes an instance of CQuestBotMobInfo as a parameter
 void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 {
-	// Check if the bot type is TYPE_BOT_QUEST_MOB
 	if(m_BotType == TYPE_BOT_QUEST_MOB)
 	{
-		// Assign the passed CQuestBotMobInfo instance to the member variable m_QuestMobInfo
 		m_QuestMobInfo = elem;
-
-		// Set all elements of m_ActiveForClient m_CompleteClient array to false
 		std::memset(m_QuestMobInfo.m_ActiveForClient, 0, MAX_PLAYERS * sizeof(bool));
 		std::memset(m_QuestMobInfo.m_CompleteClient, 0, MAX_PLAYERS * sizeof(bool));
-
-		// Update the attribute size of the player bot for the attribute identifier HP
 		m_Health = CPlayerBot::GetTotalAttributeValue(AttributeIdentifier::HP);
 	}
 }
@@ -61,7 +52,8 @@ void CPlayerBot::Tick()
 		{
 			if(m_BotType == TYPE_BOT_EIDOLON)
 			{
-				if(const CPlayer* pOwner = GetEidolonOwner(); pOwner && pOwner->GetCharacter() && distance(pOwner->GetCharacter()->GetPos(), m_ViewPos) > 1000.f)
+				const CPlayer* pOwner = GetEidolonOwner();
+				if(pOwner && pOwner->GetCharacter() && distance(pOwner->GetCharacter()->GetPos(), m_ViewPos) > 1000.f)
 				{
 					vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
 					m_pCharacter->ResetDoorHit();
@@ -105,6 +97,7 @@ CPlayer* CPlayerBot::GetEidolonOwner() const
 {
 	if(m_BotType != TYPE_BOT_EIDOLON || m_MobID < 0 || m_MobID >= MAX_PLAYERS)
 		return nullptr;
+
 	return GS()->GetPlayer(m_MobID);
 }
 
@@ -116,9 +109,13 @@ CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
 	if(it == m_Items.end())
 	{
 		if(DataBotInfo::ms_aDataBot[m_BotID].m_EquippedModules.hasSet(std::to_string(ID)))
+		{
 			it = m_Items.emplace(ID, std::make_unique<CPlayerItem>(ID, m_ClientID, 1, 0, 100, 1)).first;
+		}
 		else
+		{
 			it = m_Items.emplace(ID, std::make_unique<CPlayerItem>(ID, m_ClientID, 0, 0, 0, 0)).first;
+		}
 	}
 
 	return it->second.get();
@@ -126,19 +123,16 @@ CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
 
 void CPlayerBot::HandleEffects()
 {
-	if(Server()->Tick() % Server()->TickSpeed() != 0 || m_aEffects.empty())
+	if(m_aEffects.empty())
 		return;
 
-	for(auto pEffect = m_aEffects.begin(); pEffect != m_aEffects.end();)
+	if(Server()->Tick() % Server()->TickSpeed() != 0)
+		return;
+
+	std::erase_if(m_aEffects, [](auto& effect)
 	{
-		pEffect->second--;
-		if(pEffect->second <= 0)
-		{
-			pEffect = m_aEffects.erase(pEffect);
-			continue;
-		}
-		++pEffect;
-	}
+		return --effect.second <= 0;
+	});
 }
 
 bool CPlayerBot::IsActive() const
@@ -191,11 +185,6 @@ void CPlayerBot::PrepareRespawnTick()
 
 int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
-	const auto* pChar = dynamic_cast<CCharacterBotAI*>(m_pCharacter);
-
-	if(!pChar->AI()->CanTakeGotDamage())
-		return 10;
-
 	auto CalculateAttribute = [ID, this](int Power, bool Boss) -> int
 	{
 		// get stats from the bot's equipment
@@ -233,7 +222,7 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 
 
 	// initiallize attributeValue by bot type
-	int AttributeValue = 0;
+	int AttributeValue;
 	if(m_BotType == TYPE_BOT_EIDOLON)
 	{
 		if(GS()->IsWorldType(WorldType::Dungeon))
@@ -264,6 +253,10 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 	{
 		AttributeValue = CalculateAttribute(10, true);
 	}
+	else
+	{
+		AttributeValue = 10;
+	}
 
 	return AttributeValue;
 }
@@ -285,7 +278,7 @@ bool CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
 
 bool CPlayerBot::IsActiveEffect(const char* Potion) const
 {
-	return m_aEffects.find(Potion) != m_aEffects.end();
+	return m_aEffects.contains(Potion);
 }
 
 void CPlayerBot::ClearEffects()
@@ -341,21 +334,13 @@ void CPlayerBot::TryRespawn()
 
 int64_t CPlayerBot::GetMaskVisibleForClients() const
 {
-	// Initialize the mask with the client ID
 	int64_t Mask = 0;
-
-	// Loop through all players
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		// Check if the player is active for the client
 		if(IsActiveForClient(i))
-		{
-			// Add the player's ID to the mask
 			Mask |= CmaskOne(i);
-		}
 	}
 
-	// Return the final mask
 	return Mask;
 }
 
@@ -505,7 +490,7 @@ Mood CPlayerBot::GetMoodState() const
 	return Mood::NORMAL;
 }
 
-int CPlayerBot::GetBotLevel() const
+int CPlayerBot::GetLevel() const
 {
 	return (m_BotType == TYPE_BOT_MOB ? MobBotInfo::ms_aMobBot[m_MobID].m_Level : 1);
 }
@@ -568,7 +553,7 @@ const char* CPlayerBot::GetStatus() const
 	}
 }
 
-int CPlayerBot::GetPlayerWorldID() const
+int CPlayerBot::GetCurrentWorldID() const
 {
 	switch(m_BotType)
 	{

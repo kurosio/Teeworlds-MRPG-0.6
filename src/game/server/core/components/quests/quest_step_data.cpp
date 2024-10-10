@@ -301,7 +301,7 @@ void CQuestStep::UpdateTaskMoveTo()
 				continue;
 
 			// Always creating navigator in other worlds 
-			if(pTaskData->m_WorldID != pPlayer->GetPlayerWorldID())
+			if(pTaskData->m_WorldID != pPlayer->GetCurrentWorldID())
 			{
 				CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, 0.f, CEntityPathArrow::CONDITION_MOVE_TO, i);
 				continue;

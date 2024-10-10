@@ -66,7 +66,7 @@ void CPrisonManager::UpdatePrison()
         return;
 
     const int JailWorldID = GS()->GetWorldData()->GetJailWorld()->GetID();
-    if(pPlayer->GetPlayerWorldID() != JailWorldID)
+    if(pPlayer->GetCurrentWorldID() != JailWorldID)
     {
         pPlayer->ChangeWorld(JailWorldID);
         return;

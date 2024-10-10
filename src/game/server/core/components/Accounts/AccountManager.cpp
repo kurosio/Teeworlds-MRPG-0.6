@@ -491,7 +491,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			const int Reward = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldOnDeath), pItemGold->GetValue());
 			MWanted.AddText(Server()->ClientName(i));
 			MWanted.AddText("Reward: {$} gold", Reward);
-			MWanted.AddText("Last seen in : {}", Server()->GetWorldName(pPl->GetPlayerWorldID()));
+			MWanted.AddText("Last seen in : {}", Server()->GetWorldName(pPl->GetCurrentWorldID()));
 			MWanted.AddSeparateLine();
 			hasWanted = true;
 		}

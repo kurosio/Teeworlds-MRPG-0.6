@@ -193,7 +193,7 @@ void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 void IGameController::OnPlayerConnect(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(Server()->ClientIngame(ClientID) && pPlayer->GetPlayerWorldID() == GS()->GetWorldID())
+	if(Server()->ClientIngame(ClientID) && pPlayer->GetCurrentWorldID() == GS()->GetWorldID())
 	{
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d", ClientID, Server()->ClientName(ClientID), pPlayer->GetTeam());
@@ -205,7 +205,7 @@ void IGameController::OnPlayerConnect(CPlayer* pPlayer)
 void IGameController::OnPlayerDisconnect(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	if(Server()->ClientIngame(ClientID) && pPlayer->GetPlayerWorldID() == GS()->GetWorldID())
+	if(Server()->ClientIngame(ClientID) && pPlayer->GetCurrentWorldID() == GS()->GetWorldID())
 	{
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));

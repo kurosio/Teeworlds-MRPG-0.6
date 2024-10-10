@@ -6,10 +6,7 @@
 #include <game/server/gamecontext.h>
 
 CMobAI::CMobAI(MobBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter), m_pMobInfo(pNpcInfo)
-{
-	m_CanTakeGotDamage = true;
-}
+	: CBaseAI(pPlayer, pCharacter), m_pMobInfo(pNpcInfo) { }
 
 bool CMobAI::CanDamage(CPlayer* pFrom)
 {
@@ -150,10 +147,7 @@ void CMobAI::OnTargetRules(float Radius)
 	{
 		pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
 		{
-			const bool DamageDisabled = pCandidate->IsDisabledBotDamage();
-			const auto* pCandidateChar = dynamic_cast<CCharacterBotAI*>(pCandidate->GetCharacter());
-
-			return !DamageDisabled && CanDamage(pCandidate) && pCandidateChar->AI()->CanDamage(m_pPlayer);
+			return m_pCharacter->IsAllowedPVP(pCandidate->GetCID());
 		});
 	}
 

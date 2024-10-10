@@ -5,10 +5,7 @@
 #include <game/server/gamecontext.h>
 
 CQuestMobAI::CQuestMobAI(CQuestBotMobInfo* pQuestMobInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter), m_pQuestMobInfo(pQuestMobInfo)
-{
-	m_CanTakeGotDamage = true;
-}
+	: CBaseAI(pPlayer, pCharacter), m_pQuestMobInfo(pQuestMobInfo) {}
 
 bool CQuestMobAI::CanDamage(CPlayer* pFrom)
 {

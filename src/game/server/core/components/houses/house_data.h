@@ -113,7 +113,7 @@ public:
 		ska::unordered_set<int> m_vAccessUserIDs {};
 
 	public:
-		CDoorManager(CHouse* pHouse, std::string&& AccessData, std::string&& JsonDoors);
+		CDoorManager(CHouse* pHouse, std::string&& AccessList, std::string&& JsonDoors);
 		~CDoorManager();
 		
 		ska::unordered_set<int>& GetAccesses() { return m_vAccessUserIDs; }               // Get the set of user IDs with access to the house

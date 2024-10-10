@@ -95,7 +95,7 @@ void CHouse::Buy(CPlayer* pPlayer)
 		m_pDoorManager->CloseAll();
 		m_pBank->Reset();
 		pPlayer->Account()->ReinitializeHouse();
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', AccessData = NULL WHERE ID = '{}'", m_AccountID, m_ID);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', AccessList = NULL WHERE ID = '{}'", m_AccountID, m_ID);
 
 		// send information
 		GS()->Chat(-1, "{} becomes the owner of the house class {}", Server()->ClientName(ClientID), GetClassName());
@@ -125,7 +125,7 @@ void CHouse::Sell()
 	m_pDoorManager->CloseAll();
 	m_pBank->Reset();
 	m_AccountID = -1;
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0', AccessData = NULL WHERE ID = '{}'", m_ID);
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0', AccessList = NULL WHERE ID = '{}'", m_ID);
 
 	// send information
 	GS()->ChatAccount(m_AccountID, "Your House is sold!");
@@ -225,7 +225,7 @@ bool CHouse::CBank::Spend(int Value)
  * ------------------------------------- */
 CGS* CHouse::CDoorManager::GS() const { return m_pHouse->GS(); }
 CPlayer* CHouse::CDoorManager::GetPlayer() const { return m_pHouse->GetPlayer(); }
-CHouse::CDoorManager::CDoorManager(CHouse* pHouse, std::string&& AccessData, std::string&& JsonDoors) : m_pHouse(pHouse)
+CHouse::CDoorManager::CDoorManager(CHouse* pHouse, std::string&& AccessList, std::string&& JsonDoors) : m_pHouse(pHouse)
 {
 	// parse doors the JSON string
 	mystd::json::parse(JsonDoors, [this](nlohmann::json& pJson)
@@ -239,7 +239,7 @@ CHouse::CDoorManager::CDoorManager(CHouse* pHouse, std::string&& AccessData, std
 	});
 
 	// initialize access list
-	DBSet m_Set(AccessData);
+	DBSet m_Set(AccessList);
 	m_vAccessUserIDs.reserve(MAX_HOUSE_DOOR_INVITED_PLAYERS);
 	for(auto& p : m_Set.GetDataItems())
 	{
@@ -334,22 +334,22 @@ int CHouse::CDoorManager::GetAvailableAccessSlots() const
 void CHouse::CDoorManager::SaveAccessList() const
 {
 	// initialize variables
-	std::string AccessData;
-	AccessData.reserve(m_vAccessUserIDs.size() * 8);
+	std::string AcessList;
+	AcessList.reserve(m_vAccessUserIDs.size() * 8);
 
 	// parse access user ids to string
 	for(const auto& UID : m_vAccessUserIDs)
 	{
-		AccessData += std::to_string(UID);
-		AccessData += ',';
+		AcessList += std::to_string(UID);
+		AcessList += ',';
 	}
 
 	// remove last comma character
-	if(!AccessData.empty())
-		AccessData.pop_back();
+	if(!AcessList.empty())
+		AcessList.pop_back();
 
 	// update
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "AccessList = '{}' WHERE ID = '{}'", AccessData.c_str(), m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "AccessList = '{}' WHERE ID = '{}'", AcessList.c_str(), m_pHouse->GetID());
 }
 
 void CHouse::CDoorManager::AddDoor(const char* pDoorname, vec2 Position)

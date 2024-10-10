@@ -115,7 +115,7 @@ public:
 	virtual int GetBotID() const { return -1; }
 	virtual int GetBotType() const { return -1; }
 	virtual int GetBotMobID() const { return -1; }
-	virtual	int GetPlayerWorldID() const;
+	virtual	int GetCurrentWorldID() const;
 	virtual CTeeInfo& GetTeeInfo() const;
 
 	virtual int GetMaxHealth() const;

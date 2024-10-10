@@ -6,11 +6,7 @@
 //#include <game/server/entities/botai/nurse_heart.h>
 
 CNpcAI::CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo)
-{
-	const int Function = m_pNpcInfo->m_Function;
-	m_CanTakeGotDamage = (Function == FUNCTION_NPC_GUARDIAN);
-}
+	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo) {}
 
 bool CNpcAI::CanDamage(CPlayer* pFrom)
 {
@@ -93,10 +89,7 @@ void CNpcAI::OnTargetRules(float Radius)
 		{
 			pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
 			{
-				const bool DamageDisabled = pCandidate->IsDisabledBotDamage();
-				const auto* pCandidateChar = dynamic_cast<CCharacterBotAI*>(pCandidate->GetCharacter());
-
-				return !DamageDisabled && CanDamage(pCandidate) && pCandidateChar->AI()->CanDamage(m_pPlayer);
+				return m_pCharacter->IsAllowedPVP(pCandidate->GetCID());
 			});
 		}
 

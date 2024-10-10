@@ -13,7 +13,6 @@ CBaseAI::CBaseAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	m_Target.Init(m_pCharacter);
 	m_SpawnPoint = m_pCharacter->m_Core.m_Pos;
 	m_EmotionStyle = EMOTE_NORMAL;
-	m_CanTakeGotDamage = false;
 }
 
 IServer* CBaseAI::Server() const

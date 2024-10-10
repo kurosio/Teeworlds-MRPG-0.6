@@ -730,7 +730,7 @@ void CGS::OnTick()
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetPlayerWorldID() != m_WorldID)
+		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetCurrentWorldID() != m_WorldID)
 			continue;
 
 		m_apPlayers[i]->Tick();
@@ -805,7 +805,7 @@ void CGS::OnSnap(int ClientID)
 {
 	// check valid player
 	CPlayer* pPlayer = m_apPlayers[ClientID];
-	if(!pPlayer || pPlayer->GetPlayerWorldID() != GetWorldID())
+	if(!pPlayer || pPlayer->GetCurrentWorldID() != GetWorldID())
 		return;
 
 	// snap all objects
@@ -863,7 +863,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(firstChar == '/')
 				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
 			else if(firstChar == '#')
-				ChatWorld(pPlayer->GetPlayerWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
+				ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			else
 				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
 
@@ -1437,7 +1437,7 @@ bool CGS::IsPlayerInWorld(int ClientID, int WorldID) const
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return false;
 
-	int PlayerWorldID = m_apPlayers[ClientID]->GetPlayerWorldID();
+	int PlayerWorldID = m_apPlayers[ClientID]->GetCurrentWorldID();
 	return PlayerWorldID == (WorldID == -1 ? m_WorldID : WorldID);
 }
 

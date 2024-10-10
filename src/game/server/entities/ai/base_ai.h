@@ -29,12 +29,10 @@ public:
 
 	int GetEmotionStyle() const { return m_EmotionStyle; }
 	CTargetAI* GetTarget() { return &m_Target; }
-	bool CanTakeGotDamage() const { return m_CanTakeGotDamage; }
 
 protected:
 	int m_ClientID{};
 	int m_EmotionStyle{};
-	bool m_CanTakeGotDamage {};
 	vec2 m_SpawnPoint{};
 	CPlayerBot* m_pPlayer{};
 	CCharacterBotAI* m_pCharacter{};

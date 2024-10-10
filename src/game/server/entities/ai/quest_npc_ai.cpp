@@ -5,10 +5,7 @@
 #include <game/server/gamecontext.h>
 
 CQuestNpcAI::CQuestNpcAI(QuestBotInfo* pQuestNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter), m_pQuestNpcInfo(pQuestNpcInfo)
-{
-	m_CanTakeGotDamage = false;
-}
+	: CBaseAI(pPlayer, pCharacter), m_pQuestNpcInfo(pQuestNpcInfo) {}
 
 bool CQuestNpcAI::CanDamage(CPlayer* pFrom)
 {

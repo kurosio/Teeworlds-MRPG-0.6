@@ -73,11 +73,11 @@ void CCharacterBotAI::GiveRandomEffects(int ClientID)
 
 bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
-	if(!m_pBotPlayer->IsActive() || m_pBotPlayer->IsDisabledBotDamage())
+	if(!m_pBotPlayer->IsActive())
 		return false;
 
 	CPlayer* pFrom = GS()->GetPlayer(From, false, true);
-	if(!pFrom)
+	if(!pFrom || !IsAllowedPVP(From))
 		return false;
 
 	// Between player damage disabled
@@ -125,7 +125,7 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 			if(!pPlayer)
 				continue;
 
-			if(!GS()->IsPlayerInWorld(ClientID, m_pBotPlayer->GetPlayerWorldID()))
+			if(!GS()->IsPlayerInWorld(ClientID, m_pBotPlayer->GetCurrentWorldID()))
 				continue;
 
 			if(distance(pPlayer->m_ViewPos, m_Core.m_Pos) > 1000.0f)
@@ -198,6 +198,8 @@ void CCharacterBotAI::SelectEmoteAtRandomInterval()
 bool CCharacterBotAI::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID);
+	if(!pFrom || FromID == m_pBotPlayer->GetCID())
+		return false;
 
 	// Check if damage is disabled for the current object or the object it is interacting with
 	if(m_Core.m_DamageDisabled || pFrom->GetCharacter()->m_Core.m_DamageDisabled)
