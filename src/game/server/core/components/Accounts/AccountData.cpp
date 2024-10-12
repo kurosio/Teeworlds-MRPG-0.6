@@ -44,14 +44,14 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	m_ID = ID;
 	m_Level = pResult->getInt("Level");
 	m_Exp = pResult->getUInt64("Exp");
-	m_Upgrade = pResult->getInt("Upgrade");
+	m_UpgradePoint = pResult->getInt("Upgrade");
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
-	m_ClassGroup = (ClassGroup)pResult->getInt("Class");
-	m_Bank = pResult->getString("Bank").c_str();
+	m_Class = (ClassGroup)pResult->getInt("Class");
+	m_Bank = pResult->getString("Bank");
 
 	// achievements data
-	InitAchievements(pResult->getString("Achievements").c_str());
+	InitAchievements(pResult->getString("Achievements"));
 
 	// time periods
 	m_Periods.m_DailyStamp = pResult->getInt64("DailyStamp");
@@ -62,7 +62,9 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	for(const auto& [AttrbiteID, pAttribute] : CAttributeDescription::Data())
 	{
 		if(pAttribute->HasDatabaseField())
+		{
 			m_aStats[AttrbiteID] = pResult->getInt(pAttribute->GetFieldName());
+		}
 	}
 
 	pServer->SetClientLanguage(m_ClientID, Language.c_str());
@@ -224,7 +226,7 @@ void CAccountData::AddExperience(uint64_t Value)
 	{
 		m_Exp -= computeExperience(m_Level);
 		m_Level++;
-		m_Upgrade += 1;
+		m_UpgradePoint += 1;
 
 		// increase skill points
 		if(g_Config.m_SvSkillPointsPerLevel > 0)

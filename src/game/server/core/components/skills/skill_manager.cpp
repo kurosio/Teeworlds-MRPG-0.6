@@ -64,14 +64,13 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// Skill list by class type
 		int Skilltype = SKILL_TYPE_TANK;
 		const char* pTypename = "Defensive skill's";
-		const ClassGroup& Class = pPlayer->GetClass()->GetGroup();
 
-		if(Class == ClassGroup::Dps)
+		if(pPlayer->GetClassData().IsGroup(ClassGroup::Dps))
 		{
 			Skilltype = SKILL_TYPE_DPS;
 			pTypename = "Attacking skill's";
 		}
-		else if(Class == ClassGroup::Healer)
+		else if(pPlayer->GetClassData().IsGroup(ClassGroup::Healer))
 		{
 			Skilltype = SKILL_TYPE_HEALER;
 			pTypename = "Healing skill's";
@@ -83,7 +82,7 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// Skill selected detail information
-	if(Menulist == MENU_SKILL_SELECTED)
+	if(Menulist == MENU_SKILL_SELECT)
 	{
 		// Set last menu skill list
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SKILL_LIST);
@@ -114,7 +113,7 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillTyp
 		if(Skill.m_Type == Type)
 		{
 			CSkill* pSkill = pPlayer->GetSkill(ID);
-			VSkills.AddMenu(MENU_SKILL_SELECTED, ID, "{} - {}SP {}", Skill.GetName(), Skill.GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
+			VSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", Skill.GetName(), Skill.GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
 		}
 	}
 

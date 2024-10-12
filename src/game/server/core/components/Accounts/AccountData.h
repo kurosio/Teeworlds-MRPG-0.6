@@ -31,7 +31,7 @@ class CAccountData
 	CHouse* m_pHouseData{};
 	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
-	ClassGroup m_ClassGroup {};
+	ClassGroup m_Class {};
 	nlohmann::json m_AchievementsData { };
 	CBonusManager m_BonusManager{};
 	CPrisonManager m_PrisonManager{};
@@ -112,7 +112,8 @@ public:
 	void RemoveAether(int AetherID) { m_aAetherLocation.erase(AetherID); }
 	ska::unordered_set< int >& GetAethers() { return m_aAetherLocation; }
 
-	bool IsClassSelected() const { return m_ClassGroup != ClassGroup::None; }
+	bool IsClassSelected() const { return m_Class != ClassGroup::None; }
+	ClassGroup GetClass() const { return m_Class; }
 
 	struct TimePeriods
 	{
@@ -126,7 +127,7 @@ public:
 	std::list< int > m_aHistoryWorld {};
 
 	// upgrades
-	int m_Upgrade {};
+	int m_UpgradePoint {};
 	std::map< AttributeIdentifier, int > m_aStats {};
 
 	CTeeInfo m_TeeInfos {};

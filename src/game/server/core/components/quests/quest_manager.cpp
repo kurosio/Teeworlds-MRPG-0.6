@@ -111,7 +111,7 @@ bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// quest board selected
-	if(Menulist == MENU_BOARD_QUEST_SELECTED)
+	if(Menulist == MENU_BOARD_QUEST_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_BOARD);
 
@@ -134,7 +134,7 @@ bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// quest journal information
-	if(Menulist == MENU_JOURNAL_QUEST_SELECTED)
+	if(Menulist == MENU_JOURNAL_QUEST_DETAILS)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_JOURNAL_MAIN);
 
@@ -235,7 +235,7 @@ void CQuestManager::ShowQuestsTabList(const char* pTabname, CPlayer* pPlayer, Qu
 	{
 		auto pPlayerQuest = pPlayer->GetQuest(ID);
 		if(pPlayerQuest->GetState() == State)
-			VTab.AddMenu(MENU_JOURNAL_QUEST_SELECTED, ID, "{}", pQuestInfo->GetName());
+			VTab.AddMenu(MENU_JOURNAL_QUEST_DETAILS, ID, "{}", pQuestInfo->GetName());
 	}
 
 	VoteWrapper::AddEmptyline(ClientID);
@@ -297,7 +297,7 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 				// add menu
 				const char* StateIndicator = (pQuest->IsAccepted() ? "✔" : "✖");
 				const char* QuestName = pQuestInfo->GetName();
-				VGroup.AddMenu(MENU_BOARD_QUEST_SELECTED, pQuestInfo->GetID(), "({}) {}", StateIndicator, QuestName);
+				VGroup.AddMenu(MENU_BOARD_QUEST_SELECT, pQuestInfo->GetID(), "({}) {}", StateIndicator, QuestName);
 			}
 			VoteWrapper::AddEmptyline(pPlayer->GetCID());
 		}
@@ -439,7 +439,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 	VoteWrapper VButtons(ClientID);
 	const auto* pNextQuest = pQuest->GetNextQuest();
 	const auto* pPreviousQuest = pQuest->GetPreviousQuest();
-	const int Menulist = fromBoard ? MENU_BOARD_QUEST_SELECTED : MENU_JOURNAL_QUEST_SELECTED;
+	const int Menulist = fromBoard ? MENU_BOARD_QUEST_SELECT : MENU_JOURNAL_QUEST_DETAILS;
 
 	if(pNextQuest)
 	{

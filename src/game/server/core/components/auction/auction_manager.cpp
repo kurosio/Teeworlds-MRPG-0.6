@@ -43,7 +43,7 @@ bool CAuctionManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	if(Menulist == MENU_AUCTION_SLOT_SELECTED)
+	if(Menulist == MENU_AUCTION_SLOT_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_AUCTION_LIST);
 		ShowAuctionSlot(pPlayer, pPlayer->m_VotesData.GetExtraID());
@@ -94,7 +94,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer) const
 		if(pSlot->GetOwnerID() != pPlayer->Account()->GetID())
 		{
 			const CItem* pItem = pSlot->GetItem();
-			VList.AddMenu(MENU_AUCTION_SLOT_SELECTED, pSlot->GetID(), "{}. {}x{} Seller: {}",
+			VList.AddMenu(MENU_AUCTION_SLOT_SELECT, pSlot->GetID(), "{}. {}x{} Seller: {}",
 				VList.NextPos(), pItem->Info()->GetName(), pItem->GetValue(), Server()->GetAccountNickname(pSlot->GetOwnerID()));
 		}
 	}

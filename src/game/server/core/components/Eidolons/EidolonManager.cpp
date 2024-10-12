@@ -15,8 +15,8 @@ bool CEidolonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, in
 	{
 		m_EidolonItemSelected[ClientID] = Extra1;
 
-		//pPlayer->m_TempMenuValue = MENU_EIDOLON_COLLECTION_SELECTED;
-		pPlayer->m_VotesData.UpdateVotes(MENU_EIDOLON_COLLECTION_SELECTED);
+		//pPlayer->m_TempMenuValue = MENU_EIDOLON_SELECT;
+		pPlayer->m_VotesData.UpdateVotes(MENU_EIDOLON_SELECT);
 		return true;
 	}
 
@@ -27,7 +27,7 @@ bool CEidolonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	if(Menulist == MENU_EIDOLON_COLLECTION)
+	if(Menulist == MENU_EIDOLON)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
@@ -43,16 +43,16 @@ bool CEidolonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolon.GetItemID());
 			const char* pCollectedInfo = (pPlayerItem->HasItem() ? "✔" : "\0");
 			const char* pUsedAtMoment = pPlayerItem->IsEquipped() ? Instance::Localize(pPlayer->GetCID(), "[summoned by you]") : "\0";
-			VEidolon.AddMenu(MENU_EIDOLON_COLLECTION_SELECTED, pEidolon.GetItemID(), "{} {} {}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
+			VEidolon.AddMenu(MENU_EIDOLON_SELECT, pEidolon.GetItemID(), "{} {} {}", pEidolon.GetDataBot()->m_aNameBot, pCollectedInfo, pUsedAtMoment);
 		}
 
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
-	if(Menulist == MENU_EIDOLON_COLLECTION_SELECTED)
+	if(Menulist == MENU_EIDOLON_SELECT)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_EIDOLON_COLLECTION);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_EIDOLON);
 
 		int EidolonID = pPlayer->m_VotesData.GetExtraID();
 		if(CEidolonInfoData* pEidolonInfo = GS()->GetEidolonByItemID(EidolonID))

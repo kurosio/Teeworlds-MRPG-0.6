@@ -301,8 +301,10 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		const int ClientID = pChr->GetPlayer()->GetCID();
 
 		// update tanking client status
-		if(pChr->GetPlayer()->GetClass()->GetGroup() == ClassGroup::Tank)
+		if(pChr->GetPlayer()->GetClassData().IsGroup(ClassGroup::Tank))
+		{
 			pChr->GetPlayer()->m_MoodState = Mood::TANK;
+		}
 
 		// player died after the safety timer ended
 		if(!m_SafeTick)
@@ -438,7 +440,7 @@ int CGameControllerDungeon::GetSyncFactor() const
 	return (MaxFactor + MinFactor) / 2;
 }
 
-int CGameControllerDungeon::GetAttributeDungeonSync(const CPlayer* pPlayer, AttributeIdentifier ID) const
+int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ClassGroup ClassID, AttributeIdentifier ID) const
 {
 	float Percent = 0.0f;
 	const float ActiveAttribute = m_SyncDungeon / 2.0f;
@@ -446,7 +448,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(const CPlayer* pPlayer, Attr
 
 	// - - - - - - - - -- - - -
 	// balance tanks
-	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Tank)
+	if(ClassID == ClassGroup::Tank)
 	{
 		// basic default tank upgrades
 		if(Type == AttributeGroup::Tank)
@@ -459,7 +461,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(const CPlayer* pPlayer, Attr
 
 	// - - - - - - - - - - - - -
 	// balance dps
-	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Dps)
+	if(ClassID == ClassGroup::Dps)
 	{
 		// basic default dps upgrades
 		if(Type == AttributeGroup::Dps || Type == AttributeGroup::Hardtype)
@@ -472,7 +474,7 @@ int CGameControllerDungeon::GetAttributeDungeonSync(const CPlayer* pPlayer, Attr
 
 	// - - - - - - - - - - - - -
 	// balance healer
-	if(pPlayer->GetClass()->GetGroup() == ClassGroup::Healer)
+	if(ClassID == ClassGroup::Healer)
 	{
 		// basic default healer upgrades
 		if(Type == AttributeGroup::Healer)

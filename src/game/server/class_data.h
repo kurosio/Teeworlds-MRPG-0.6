@@ -13,9 +13,12 @@ public:
 	void Init(ClassGroup Class);
 
 	ClassGroup GetGroup() const { return m_Class; }
+	bool IsGroup(ClassGroup forCheck) const { return m_Class == forCheck; }
 	float GetExtraHP() const;
 	float GetExtraDMG() const;
 	float GetExtraMP() const;
+
+	const char* GetName() const;
 
 	void SetClassSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const;
 };

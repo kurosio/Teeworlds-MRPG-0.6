@@ -50,7 +50,7 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// menu achievements group selected
-	if(Menulist == MENU_ACHIEVEMENTS_SELECTED)
+	if(Menulist == MENU_ACHIEVEMENTS_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_ACHIEVEMENTS);
 		ShowGroupMenu(pPlayer, pPlayer->m_VotesData.GetExtraID());
@@ -83,15 +83,15 @@ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2059 Achievements groups");
 	int CompletedGeneral = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_GENERAL);
 	int TotalGeneral = GetCountByGroup(ACHIEVEMENT_GROUP_GENERAL);
-	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_GENERAL, "General ({} of {})", CompletedGeneral, TotalGeneral);
+	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, ACHIEVEMENT_GROUP_GENERAL, "General ({} of {})", CompletedGeneral, TotalGeneral);
 
 	int CompletedBattle = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_BATTLE);
 	int TotalBattle = GetCountByGroup(ACHIEVEMENT_GROUP_BATTLE);
-	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_BATTLE, "Battle ({} of {})", CompletedBattle, TotalBattle);
+	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, ACHIEVEMENT_GROUP_BATTLE, "Battle ({} of {})", CompletedBattle, TotalBattle);
 
 	int CompletedItems = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_ITEMS);
 	int TotalItems = GetCountByGroup(ACHIEVEMENT_GROUP_ITEMS);
-	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECTED, ACHIEVEMENT_GROUP_ITEMS, "Items ({} of {})", CompletedItems, TotalItems);
+	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, ACHIEVEMENT_GROUP_ITEMS, "Items ({} of {})", CompletedItems, TotalItems);
 }
 
 void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int groupID) const

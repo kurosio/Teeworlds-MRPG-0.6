@@ -29,6 +29,21 @@ float CClassData::GetExtraMP() const
 	return 0;
 }
 
+const char* CClassData::GetName() const
+{
+	switch(m_Class)
+	{
+		case ClassGroup::Tank:
+			return "Tank";
+		case ClassGroup::Healer:
+			return "Healer";
+		case ClassGroup::Dps:
+			return "Dps";
+		default:
+			return "Class";
+	}
+}
+
 void CClassData::SetClassSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const
 {
 	if(HasCustomizer)

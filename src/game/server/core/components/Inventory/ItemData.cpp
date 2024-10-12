@@ -267,7 +267,7 @@ bool CPlayerItem::Use(int Value)
 		}
 
 		GS()->Chat(-1, "{} used {} returned {} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
-		pPlayer->Account()->m_Upgrade += BackUpgrades;
+		pPlayer->Account()->m_UpgradePoint += BackUpgrades;
 		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 		return true;
 	}
@@ -293,7 +293,7 @@ bool CPlayerItem::Use(int Value)
 		}
 
 		GS()->Chat(-1, "{} used {} returned {} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
-		pPlayer->Account()->m_Upgrade += BackUpgrades;
+		pPlayer->Account()->m_UpgradePoint += BackUpgrades;
 		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 		return true;
 	}

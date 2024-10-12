@@ -62,14 +62,13 @@ protected:
 	bool m_Afk;
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
-	CClassData m_Class {};
+	CClassData m_ClassData {};
 	FixedViewCam m_FixedView {};
 	ScenarioManager m_Scenarios {};
 
 public:
 	CGS* GS() const { return m_pGS; }
-	CClassData* GetClass() { return &m_Class; }
-	const CClassData* GetClass() const { return &m_Class; }
+	CClassData& GetClassData() { return m_ClassData; }
 	FixedViewCam& LockedView() { return m_FixedView; }
 	ScenarioManager& Scenarios() { return m_Scenarios; }
 
@@ -84,7 +83,6 @@ public:
 	std::unique_ptr<MotdMenu> m_pMotdMenu{};
 
 	char m_aLastMsg[256]{};
-	int m_TutorialStep{};
 
 	StructLatency m_Latency;
 	StructLastAction m_LatestActivity;
@@ -181,8 +179,8 @@ public:
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
 	CAccountData* Account() const { return &CAccountData::ms_aData[m_ClientID]; }
 
-	int GetTotalAttributesInGroup(AttributeGroup Type);
-	int GetTotalAttributes();
+	int GetTotalAttributesInGroup(AttributeGroup Type) const;
+	int GetTotalAttributes() const;
 
 	void SetSnapHealthTick(int Sec);
 	bool IsSameMotdMenu(int Menulist) const { return m_pMotdMenu && m_pMotdMenu->GetMenulist() == Menulist; }

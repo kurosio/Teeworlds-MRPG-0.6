@@ -46,7 +46,7 @@ bool CMailboxManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// menu mailbox selected mail
-	if(Menulist == MENU_MAILBOX_SELECTED)
+	if(Menulist == MENU_MAILBOX_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAILBOX);
 
@@ -110,13 +110,13 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 	// unreaded mails
 	VoteWrapper VUnreadList(ClientID, VWF_OPEN, "\u2709 List of unread mails ({} of {})", (int)vUnreadMails.size(), (int)MAIL_MAX_CAPACITY);
 	for(auto& p : vUnreadMails)
-		VUnreadList.AddMenu(MENU_MAILBOX_SELECTED, p.m_ID, "{} (UID:{})", p.m_Name,p.m_ID);
+		VUnreadList.AddMenu(MENU_MAILBOX_SELECT, p.m_ID, "{} (UID:{})", p.m_Name,p.m_ID);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// readed mails
 	VoteWrapper VReadList(ClientID, VWF_OPEN, "\u2709 List of read mails ({} of {})", (int)vReadedMails.size(), (int)MAIL_MAX_CAPACITY);
 	for(auto& p : vReadedMails)
-		VReadList.AddMenu(MENU_MAILBOX_SELECTED, p.m_ID, "{} (UID:{})", p.m_Name, p.m_ID);
+		VReadList.AddMenu(MENU_MAILBOX_SELECT, p.m_ID, "{} (UID:{})", p.m_Name, p.m_ID);
 	VoteWrapper::AddEmptyline(ClientID);
 }
 

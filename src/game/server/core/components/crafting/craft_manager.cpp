@@ -45,7 +45,7 @@ void CCraftManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_CRAFT_ZONE, MENU_CRAFT_LIST, {}, {});
+	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_CRAFT_ZONE, MENU_CRAFTING_LIST, {}, {});
 }
 
 void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
@@ -131,7 +131,7 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	const int ClientID = pPlayer->GetCID();
 
 	// craft list menu
-	if(Menulist == MENU_CRAFT_LIST)
+	if(Menulist == MENU_CRAFTING_LIST)
 	{
 		// show information
 		VoteWrapper VCraftInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
@@ -152,9 +152,9 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// craft selected item
-	if(Menulist == MENU_CRAFT_SELECTED)
+	if(Menulist == MENU_CRAFTING_SELECT)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_CRAFT_LIST);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_CRAFTING_LIST);
 
 		// show craft by id
 		int CraftID = pPlayer->m_VotesData.GetExtraID();
@@ -255,12 +255,12 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 		// set title name by enchant type (or stack item, or only once)
 		if(pCraftItemInfo->IsEnchantable())
 		{
-			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "{}{} - {} gold", 
+			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {} gold", 
 				(pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		}
 		else
 		{
-			VCraftList.AddMenu(MENU_CRAFT_SELECTED, ID, "[{}]{}x{} - {} gold",
+			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{}x{} - {} gold",
 				pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}

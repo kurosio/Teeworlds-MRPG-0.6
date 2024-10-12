@@ -63,7 +63,7 @@ bool CWarehouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	if(Menulist == MENU_WAREHOUSE_BUY_ITEM_SELECTED)
+	if(Menulist == MENU_WAREHOUSE_ITEM_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_WAREHOUSE);
 
@@ -287,12 +287,12 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 		if(pItem->Info()->IsEnchantable())
 		{
 			const bool HasItem = pPlayer->GetItem(*pItem)->HasItem();
-			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{}] {} {} - {$} {}", (HasItem ? "✔" : "×"),
+			VItems.AddMenu(MENU_WAREHOUSE_ITEM_SELECT, Trade.GetID(), "[{}] {} {} - {$} {}", (HasItem ? "✔" : "×"),
 				pItem->Info()->GetName(), pItem->GetStringEnchantLevel().c_str(), Price, pCurrency->GetName());
 		}
 		else
 		{
-			VItems.AddMenu(MENU_WAREHOUSE_BUY_ITEM_SELECTED, Trade.GetID(), "[{}] {}x{} - {$} {}",
+			VItems.AddMenu(MENU_WAREHOUSE_ITEM_SELECT, Trade.GetID(), "[{}] {}x{} - {$} {}",
 				pPlayer->GetItem(*pItem)->GetValue(), pItem->Info()->GetName(), pItem->GetValue(), Price, pCurrency->GetName());
 		}
 	}

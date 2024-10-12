@@ -249,8 +249,8 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// game settings
 		VoteWrapper VMain(ClientID, VWF_OPEN, "\u2699 Main settings");
-		VMain.AddMenu(MENU_SETTINGS_TITLE_SELECT, "Select personal title");
-		VMain.AddMenu(MENU_SETTINGS_LANGUAGE_SELECT, "Settings language");
+		VMain.AddMenu(MENU_SETTINGS_TITLE, "Select personal title");
+		VMain.AddMenu(MENU_SETTINGS_LANGUAGE, "Settings language");
 		VMain.AddMenu(MENU_SETTINGS_ACCOUNT, "Settings account");
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -300,7 +300,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// language selection
-	if(Menulist == MENU_SETTINGS_LANGUAGE_SELECT)
+	if(Menulist == MENU_SETTINGS_LANGUAGE)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
@@ -331,7 +331,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// title selection
-	if(Menulist == MENU_SETTINGS_TITLE_SELECT)
+	if(Menulist == MENU_SETTINGS_TITLE)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
@@ -389,7 +389,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		const char* pSelectedLanguage = Server()->Localization()->m_pLanguages[Extra1]->GetFilename();
 		Server()->SetClientLanguage(ClientID, pSelectedLanguage);
 		GS()->Chat(ClientID, "You have chosen a language \"{}\".", pSelectedLanguage);
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_SETTINGS_LANGUAGE_SELECT);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_SETTINGS_LANGUAGE);
 		Core()->SaveAccount(pPlayer, SAVE_LANGUAGE);
 		return true;
 	}
@@ -397,7 +397,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// upgrade command
 	if(PPSTR(pCmd, "UPGRADE") == 0)
 	{
-		if(pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_aStats[(AttributeIdentifier)Extra1], &pPlayer->Account()->m_Upgrade, Extra2, 1000))
+		if(pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_aStats[(AttributeIdentifier)Extra1], &pPlayer->Account()->m_UpgradePoint, Extra2, 1000))
 		{
 			GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 			pPlayer->m_VotesData.UpdateVotes(MENU_UPGRADES);
@@ -413,8 +413,8 @@ void CAccountManager::OnCharacterTile(CCharacter* pChr)
 	CPlayer* pPlayer = pChr->GetPlayer();
 	int ClientID = pPlayer->GetCID();
 	
-	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_ABOUT_BONUSES)
-	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_ABOUT_WANTED)
+	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_BONUSES_INFO)
+	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_WANTED_INFO)
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_BANK_MANAGER, MOTD_MENU_BANK_MANAGER)
 }
 
@@ -446,7 +446,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	}
 
 	// motd menu about bonuses
-	if(Menulist == MOTD_MENU_ABOUT_BONUSES)
+	if(Menulist == MOTD_MENU_BONUSES_INFO)
 	{
 		int position = 1;
 		MotdMenu MBonuses(ClientID, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
@@ -470,12 +470,12 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			MBonuses.AddSeparateLine();
 		}
 
-		MBonuses.Send(MOTD_MENU_ABOUT_BONUSES);
+		MBonuses.Send(MOTD_MENU_BONUSES_INFO);
 		return true;
 	}
 
 	// motd menu about wanted
-	if(Menulist == MOTD_MENU_ABOUT_WANTED)
+	if(Menulist == MOTD_MENU_WANTED_INFO)
 	{
 		bool hasWanted = false;
 		MotdMenu MWanted(ClientID, "A list of wanted players for whom bounties have been assigned. To get the bounty you need to kill a player from the list.");
@@ -502,7 +502,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			MWanted.AddSeparateLine();
 		}
 
-		MWanted.Send(MOTD_MENU_ABOUT_WANTED);
+		MWanted.Send(MOTD_MENU_WANTED_INFO);
 		return true;
 	}
 
@@ -583,7 +583,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 		if(Money > 0)
 			pPlayer->Account()->AddGold(Money);
 		if(Upgrade > 0)
-			pPlayer->Account()->m_Upgrade += Upgrade;
+			pPlayer->Account()->m_UpgradePoint += Upgrade;
 
 		if(JsonData.find("items") != JsonData.end() && JsonData["items"].is_array())
 		{

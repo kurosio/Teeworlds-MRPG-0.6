@@ -42,7 +42,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
 	{
-		m_TutorialStep = 1;
 		m_MoodState = Mood::NORMAL;
 		GS()->SendTuningParams(ClientID);
 
@@ -431,16 +430,9 @@ void CPlayer::RefreshClanString()
 	}
 
 	// class
-	const char* pClassName;
-	switch(m_Class.GetGroup())
-	{
-		case ClassGroup::Healer: pClassName = "_Healer_"; break;
-		case ClassGroup::Dps: pClassName = "_DPS_"; break;
-		case ClassGroup::Tank: pClassName = "_Tank_"; break;
-		default: pClassName = "_Class_"; break;
-	}
 	char aBufClass[64];
-	str_format(aBufClass, sizeof(aBufClass), "%-*s", 10 - str_length(pClassName), pClassName);
+	const char* pClassName = GetClassData().GetName();
+	str_format(aBufClass, sizeof(aBufClass), "_%-*s_", 8 - str_length(pClassName), pClassName);
 	Prepared += " | ";
 	Prepared += aBufClass;
 
@@ -475,6 +467,8 @@ void CPlayer::TryRespawn()
 	// Check if the controller allows spawning of the given spawn type at the specified position
 	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
 	{
+		m_ClassData.Init(Account()->GetClass());
+
 		vec2 TeleportPosition = GetTempData().GetTeleportPosition();
 		bool CanSelfCordSpawn = !is_negative_vec(TeleportPosition) && !GS()->Collision()->CheckPoint(TeleportPosition);
 
@@ -659,7 +653,7 @@ bool CPlayer::IsAuthed() const
 int CPlayer::GetMaxHealth() const
 {
 	int DefaultHP = 10 + GetTotalAttributeValue(AttributeIdentifier::HP);
-	DefaultHP += translate_to_percent_rest(DefaultHP, m_Class.GetExtraHP());
+	DefaultHP += translate_to_percent_rest(DefaultHP, m_ClassData.GetExtraHP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_HP, &DefaultHP);
 	return DefaultHP;
 }
@@ -667,7 +661,7 @@ int CPlayer::GetMaxHealth() const
 int CPlayer::GetMaxMana() const
 {
 	int DefaultMP = 10 + GetTotalAttributeValue(AttributeIdentifier::MP);
-	DefaultMP += translate_to_percent_rest(DefaultMP, m_Class.GetExtraMP());
+	DefaultMP += translate_to_percent_rest(DefaultMP, m_ClassData.GetExtraMP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_MP, &DefaultMP);
 	return DefaultMP;
 }
@@ -833,7 +827,9 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	{
 		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
 		if(pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[pDungeon->GetDungeonID()].IsDungeonPlaying())
-			return pDungeon->GetAttributeDungeonSync(this, ID);
+		{
+			return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetClass(), ID);
+		}
 	}
 
 	// counting attributes from equipped items
@@ -880,7 +876,7 @@ float CPlayer::GetAttributeChance(AttributeIdentifier ID) const
 	return chance;
 }
 
-int CPlayer::GetTotalAttributesInGroup(AttributeGroup Type)
+int CPlayer::GetTotalAttributesInGroup(AttributeGroup Type) const
 {
 	int totalSize = 0;
 	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
@@ -893,7 +889,7 @@ int CPlayer::GetTotalAttributesInGroup(AttributeGroup Type)
 	return totalSize;
 }
 
-int CPlayer::GetTotalAttributes()
+int CPlayer::GetTotalAttributes() const
 {
 	int totalSize = 0;
 	for(const auto& [ID, Attribute] : CAttributeDescription::Data())

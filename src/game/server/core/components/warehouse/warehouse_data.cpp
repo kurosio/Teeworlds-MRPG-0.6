@@ -36,11 +36,26 @@ void CWarehouse::InitProperties(const std::string& Properties)
 		dbg_assert(!Type.empty(), "The 'type' property is missing or empty");
 
 		// intialize warehouse flags
-		if(Type == "buying")               m_Flags = WF_BUY;
-		else if(Type == "selling")         m_Flags = WF_SELL;
-		else if(Type == "buying_storage")  m_Flags = WF_BUY_STORAGE;
-		else if(Type == "selling_storage") m_Flags = WF_SELL_STORAGE;
-		else dbg_assert(false, "Invalid warehouse type");
+		if(Type == "buying")
+		{
+			m_Flags = WF_BUY;
+		}
+		else if(Type == "selling")
+		{
+			m_Flags = WF_SELL;
+		}
+		else if(Type == "buying_storage")
+		{
+			m_Flags = WF_BUY_STORAGE;
+		}
+		else if(Type == "selling_storage")
+		{
+			m_Flags = WF_SELL_STORAGE;
+		}
+		else
+		{
+			dbg_assert(false, "Invalid warehouse type");
+		}
 
 		// initialize trade list
 		if(m_Flags & (WF_BUY | WF_SELL))
@@ -55,14 +70,19 @@ void CWarehouse::InitProperties(const std::string& Properties)
 
 					// by type or function collection
 					if(CollectType == "type")
+					{
 						vItems = CInventoryManager::GetItemIDsCollection(static_cast<ItemType>(pItem.value("value", -1)));
+					}
 					else
+					{
 						vItems = CInventoryManager::GetItemIDsCollectionByFunction(static_cast<ItemFunctional>(pItem.value("value", -1)));
+					}
 
 					// adding all item's from collection to trade list
 					for(const int ItemID : vItems)
 					{
-						if(CItem Item(ItemID, 1, 0); Item.IsValid() && Item.Info()->GetInitialPrice() > 0)
+						CItem Item(ItemID, 1, 0);
+						if(Item.IsValid() && Item.Info()->GetInitialPrice() > 0)
 						{
 							m_vTradingList.emplace_back(m_vTradingList.size(), std::move(Item), Item.Info()->GetInitialPrice());
 						}
@@ -79,8 +99,9 @@ void CWarehouse::InitProperties(const std::string& Properties)
 					const int Value = pItem.value("value", 1);
 					const int Enchant = pItem.value("enchant", 0);
 					const int Price = pItem.value("price", 0);
+					CItem Item(ItemID, Value, Enchant);
 
-					if(CItem Item(ItemID, Value, Enchant); Item.IsValid() && Price > 0)
+					if(Item.IsValid() && Price > 0)
 					{
 						m_vTradingList.emplace_back(m_vTradingList.size(), std::move(Item), Price);
 					}

@@ -897,17 +897,27 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
 		if(Weapon == WEAPON_GUN)
+		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::GunDMG);
+		}
 		else if(Weapon == WEAPON_SHOTGUN)
+		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::ShotgunDMG);
+		}
 		else if(Weapon == WEAPON_GRENADE)
+		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::GrenadeDMG);
+		}
 		else if(Weapon == WEAPON_LASER)
+		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::RifleDMG);
+		}
 		else
+		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::HammerDMG);
+		}
 
-		const int EnchantBonus = translate_to_percent_rest(pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG), pFrom->GetClass()->GetExtraDMG());
+		const int EnchantBonus = translate_to_percent_rest(pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG), pFrom->GetClassData().GetExtraDMG());
 		Dmg += EnchantBonus;
 
 		// vampirism replenish your health

@@ -80,7 +80,7 @@ void CGuildManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 
-	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_GUILD_HOUSE, MENU_GUILD_HOUSE_PURCHASE, {}, {});
+	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_GUILD_HOUSE, MENU_GUILD_BUY_HOUSE, {}, {});
 
 	if(pChr->GetTiles()->IsActive(TILE_GUILD_CHAIR))
 	{
@@ -180,7 +180,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			case GuildResult::SET_LEADER_NON_GUILD_PLAYER: GS()->Chat(ClientID, "The player is not a member of your guild"); break;
 			case GuildResult::SET_LEADER_PLAYER_ALREADY_LEADER: GS()->Chat(ClientID, "The player is already a leader"); break;
 			case GuildResult::SUCCESSFUL: 
-				GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
+				GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBER_LIST);
 				pPlayer->m_VotesData.UpdateCurrentVotes();
 			break;
 		}
@@ -211,7 +211,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		}
 
 		// succesful
-		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBER_LIST);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -264,8 +264,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			case GuildResult::MEMBER_KICK_IS_OWNER: GS()->Chat(ClientID, "You can't kick a leader"); break;
 			case GuildResult::MEMBER_KICK_DOES_NOT_EXIST: GS()->Chat(ClientID, "The player is no longer on the guild membership lists"); break;
 			case GuildResult::MEMBER_SUCCESSFUL: 
-				GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
-				pPlayer->m_VotesData.UpdateVotes(MENU_GUILD_MEMBERSHIP_LIST);
+				GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBER_LIST);
+				pPlayer->m_VotesData.UpdateVotes(MENU_GUILD_MEMBER_LIST);
 			break;
 		}
 		return true;
@@ -417,7 +417,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::RANK_RENAME_ALREADY_NAME_EXISTS: GS()->Chat(ClientID, "The name is already in use by another rank"); break;
 			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16."); break;
-			case GuildResult::RANK_SUCCESSFUL: GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_SELECTED); break;
+			case GuildResult::RANK_SUCCESSFUL: GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_SELECT); break;
 		}
 		return true;
 	}
@@ -450,7 +450,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			case GuildResult::RANK_REMOVE_DOES_NOT_EXIST: GS()->Chat(ClientID, "There is no such rank"); break;
 			case GuildResult::RANK_SUCCESSFUL:
 				pPlayer->m_VotesData.UpdateVotes(MENU_GUILD_RANK_LIST);
-				GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_SELECTED);
+				GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_SELECT);
 			break;
 		}
 		return true;
@@ -486,7 +486,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 
 		// update rights
 		pRank->SetRights(Rights);
-		GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_SELECTED);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_SELECT);
 		return true;
 	}
 
@@ -508,8 +508,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			case GuildResult::MEMBER_JOIN_ALREADY_IN_GUILD: GS()->Chat(ClientID, "The player is already in a guild"); break;
 			case GuildResult::MEMBER_NO_AVAILABLE_SLOTS: GS()->Chat(ClientID, "No guild slots available."); break;
 			case GuildResult::MEMBER_SUCCESSFUL:
-				GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
-				GS()->UpdateVotesIfForAll(MENU_GUILD_INVITES);
+				GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBER_LIST);
+				GS()->UpdateVotesIfForAll(MENU_GUILD_INVITATIONS);
 			break;
 		}
 		return true;
@@ -528,8 +528,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 
 		// deny the request
 		pGuild->GetMembers()->GetRequests()->Deny(Extra1, pPlayer->Account()->GetGuildMember());
-		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBERSHIP_LIST);
-		GS()->UpdateVotesIfForAll(MENU_GUILD_INVITES);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBER_LIST);
+		GS()->UpdateVotesIfForAll(MENU_GUILD_INVITATIONS);
 		return true;
 	}
 
@@ -712,7 +712,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			{
 				GS()->Chat(ClientID, "You failed plant to farm zone.");
 			}
-			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_FARMZONE_SELECTED);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_FARMZONE_SELECT);
 		}
 
 		return true;
@@ -823,7 +823,7 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
-	if(Menulist == MENU_GUILD_FINDER_SELECTED)
+	if(Menulist == MENU_GUILD_FINDER_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_FINDER);
 		ShowFinderDetail(pPlayer, pPlayer->m_VotesData.GetExtraID());
@@ -859,7 +859,7 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// menu guild house sell
-	if(Menulist == MENU_GUILD_HOUSE_SELL)
+	if(Menulist == MENU_GUILD_SELL_HOUSE)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowHouseSell(pPlayer);
@@ -868,7 +868,7 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// menu guild house purchase
-	if(Menulist == MENU_GUILD_HOUSE_PURCHASE)
+	if(Menulist == MENU_GUILD_BUY_HOUSE)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 		CCharacter* pChr = pPlayer->GetCharacter();
@@ -895,7 +895,7 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// menu guild invites
-	if(Menulist == MENU_GUILD_INVITES)
+	if(Menulist == MENU_GUILD_INVITATIONS)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowRequests(pPlayer);
@@ -913,16 +913,16 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// menu guild membership
-	if(Menulist == MENU_GUILD_MEMBERSHIP_LIST)
+	if(Menulist == MENU_GUILD_MEMBER_LIST)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
 		ShowMembershipList(pPlayer);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
-	if(Menulist == MENU_GUILD_MEMBERSHIP_SELECTED)
+	if(Menulist == MENU_GUILD_MEMBER_SELECT)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_MEMBERSHIP_LIST);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_MEMBER_LIST);
 		ShowMembershipEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -936,7 +936,7 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
-	if(Menulist == MENU_GUILD_RANK_SELECTED)
+	if(Menulist == MENU_GUILD_RANK_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_RANK_LIST);
 		ShowRankEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
@@ -952,7 +952,7 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
-	if(Menulist == MENU_GUILD_HOUSE_FARMZONE_SELECTED)
+	if(Menulist == MENU_GUILD_HOUSE_FARMZONE_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_HOUSE_FARMZONE_LIST);
 		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
@@ -1114,8 +1114,8 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VManagement.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 	VManagement.AddLine();
 	VManagement.AddMenu(MENU_GUILD_UPGRADES, "Improvements & Upgrades");
-	VManagement.AddMenu(MENU_GUILD_MEMBERSHIP_LIST, "Membership list");
-	VManagement.AddMenu(MENU_GUILD_INVITES, "Membership requests");
+	VManagement.AddMenu(MENU_GUILD_MEMBER_LIST, "Membership list");
+	VManagement.AddMenu(MENU_GUILD_INVITATIONS, "Membership requests");
 	VManagement.AddMenu(MENU_GUILD_RANK_LIST, "Rank management");
 	VManagement.AddMenu(MENU_GUILD_LOGS, "Logs of activity");
 	VManagement.AddMenu(MENU_GUILD_WARS, "Guild wars");
@@ -1135,7 +1135,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_FARMZONE_LIST, "Farms");
 		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
-		VHouse.AddMenu(MENU_GUILD_HOUSE_SELL, "Sell");
+		VHouse.AddMenu(MENU_GUILD_SELL_HOUSE, "Sell");
 	}
 }
 
@@ -1243,7 +1243,7 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 		auto pMember = pIterMember.second;
 		const int& UID = pMember->GetAccountID();
 		const char* pNickname = Server()->GetAccountNickname(UID);
-		VList.AddMenu(MENU_GUILD_MEMBERSHIP_SELECTED, UID, "{}. {} {} Deposit: {}", 
+		VList.AddMenu(MENU_GUILD_MEMBER_SELECT, UID, "{}. {} {} Deposit: {}", 
 			VList.NextPos(), pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1327,7 +1327,7 @@ void CGuildManager::ShowRanksList(CPlayer* pPlayer) const
 		GuildRankIdentifier ID = pRank->GetID();
 		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank());
 		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetRightsName());
-		VList.MarkList().AddMenu(MENU_GUILD_RANK_SELECTED, ID, "{} {}", pRank->GetName(), StrAppendRankInfo.c_str());
+		VList.MarkList().AddMenu(MENU_GUILD_RANK_SELECT, ID, "{} {}", pRank->GetName(), StrAppendRankInfo.c_str());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1445,7 +1445,7 @@ void CGuildManager::ShowFarmzonesControl(CPlayer* pPlayer) const
 	// farm zones control
 	VoteWrapper VFarmzones(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2743 Farm zone's control");
 	for(auto& [ID, Farmzone] : pHouse->GetFarmzonesManager()->GetContainer())
-		VFarmzones.AddMenu(MENU_GUILD_HOUSE_FARMZONE_SELECTED, ID, "Farm {} zone / {}", Farmzone.GetName(), GS()->GetItemInfo(Farmzone.GetItemID())->GetName());
+		VFarmzones.AddMenu(MENU_GUILD_HOUSE_FARMZONE_SELECT, ID, "Farm {} zone / {}", Farmzone.GetName(), GS()->GetItemInfo(Farmzone.GetItemID())->GetName());
 
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1510,7 +1510,7 @@ void CGuildManager::ShowFinder(CPlayer* pPlayer) const
 		if(pPlayer->GetTempData().m_aGuildSearchBuf[0] == '\0' || str_utf8_find_nocase(pGuild->GetName(), pPlayer->GetTempData().m_aGuildSearchBuf) != nullptr)
 		{
 			int OwnerUID = pGuild->GetLeaderUID();
-			VList.AddMenu(MENU_GUILD_FINDER_SELECTED, pGuild->GetID(), "{} (leader {})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
+			VList.AddMenu(MENU_GUILD_FINDER_SELECT, pGuild->GetID(), "{} (leader {})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
 		}
 	}
 	VoteWrapper::AddEmptyline(ClientID);

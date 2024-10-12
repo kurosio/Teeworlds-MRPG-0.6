@@ -34,13 +34,10 @@ inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, Vo
 		{
 			if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
 			{
-				// if upgrades are cheap, they have a division of statistics
+				char aBuf[64] {};
 				const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
 
-				// percent data TODO: extract percent attributes
-				char aBuf[64] {};
-				float Percent = pPlayer->GetAttributeChance(ID);
-				if(Percent)
+				if(const float Percent = pPlayer->GetAttributeChance(ID))
 				{
 					str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
 				}
@@ -154,41 +151,83 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_MAIN)
 	{
 		const auto expForLevel = computeExperience(pPlayer->Account()->GetLevel());
-		const char* pLastLoginDate = pPlayer->Account()->GetLastLoginDate();
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// statistics menu
 		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Account info");
-		VMain.Add("Last log in: {}", pLastLoginDate);
 		VMain.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
 		VMain.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
 		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// personal menu
-		VoteWrapper VPersonal(ClientID, VWF_ALIGN_TITLE, "\u262A PERSONAL");
+		// Personal Menu
+		VoteWrapper VPersonal(ClientID, VWF_ALIGN_TITLE, "\u262A Personal Menu");
+		VPersonal.AddMenu(MENU_ACCOUNT_INFO, "\u2698 Account Information");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
-		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades({}p)", pPlayer->Account()->m_Upgrade);
+		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades ({}p)", pPlayer->Account()->m_UpgradePoint);
 		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
-		VPersonal.AddMenu(MENU_EIDOLON_COLLECTION, "\u2727 Eidolon Collection");
+		VPersonal.AddMenu(MENU_EIDOLON, "\u2727 Eidolons");
 		VPersonal.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
 		VPersonal.AddMenu(MENU_GROUP, "\u2042 Group");
 		VPersonal.AddMenu(MENU_SETTINGS, "\u2699 Settings");
 		VPersonal.AddMenu(MENU_MAILBOX, "\u2709 Mailbox");
 		VPersonal.AddMenu(MENU_JOURNAL_MAIN, "\u270D Journal");
+
 		if(pPlayer->Account()->HasHouse())
+		{
 			VPersonal.AddMenu(MENU_HOUSE, "\u2302 House");
-		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
+		}
+
+		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild Finder");
+
 		if(pPlayer->Account()->HasGuild())
+		{
 			VPersonal.AddMenu(MENU_GUILD, "\u32E1 Guild");
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// info menu
-		VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE, "\u262A INFORMATION");
-		VInfo.AddMenu(MENU_GUIDE_GRINDING, "\u10D3 Wiki / Grinding Guide ");
-		VInfo.AddMenu(MENU_TOP_LIST, "\u21F0 Ranking guilds and players");
+		// Information Menu
+		VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE, "\u262A Information Menu");
+		VInfo.AddMenu(MENU_GUIDE, "\u10D3 Wiki / Grinding Guide");
+		VInfo.AddMenu(MENU_LEADERBOARD, "\u21F0 Rankings: Guilds & Players");
+
 		return true;
+	}
+
+	// account information
+	if(Menulist == MENU_ACCOUNT_INFO)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
+
+		const char* pLastLoginDate = pPlayer->Account()->GetLastLoginDate();
+
+		// Account information
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Information");
+		VInfo.Add("Last login: {}", pLastLoginDate);
+		VInfo.Add("Account ID: {}", pPlayer->Account()->GetID());
+		VInfo.Add("Login: {}", pPlayer->Account()->GetLogin());
+		VInfo.Add("Class: {}", pPlayer->GetClassData().GetName());
+		VInfo.Add("Crime score: {}", pPlayer->Account()->GetCrimeScore());
+		VInfo.Add("Gold capacity: {}", pPlayer->Account()->GetGoldCapacity());
+		VInfo.Add("Has house: {}", pPlayer->Account()->HasHouse() ? "yes" : "no");
+		VInfo.Add("Has guild: {}", pPlayer->Account()->HasGuild() ? "yes" : "no");
+		VInfo.Add("In group: {}", pPlayer->Account()->HasGroup() ? "yes" : "no");
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// Currency information
+		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
+		VCurrency.Add("Bank: {}", pPlayer->Account()->GetBank());
+
+		for(int itemID : {itGold, itAchievementPoint, itSkillPoint, itAlliedSeals, itMaterial, itProduct})
+		{
+			VCurrency.Add("{}: {}", pPlayer->GetItem(itemID)->Info()->GetName(), pPlayer->GetItem(itemID)->GetValue());
+		}
+
+		VCurrency.Add("Upgrade point: {}", pPlayer->Account()->m_UpgradePoint);
+
+		// Add backpage
+		VoteWrapper::AddBackpage(ClientID);
 	}
 
 	// player upgrades
@@ -196,11 +235,11 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		const char* paGroupNames[] = {
+		const char* paGroupNames[] = 
+		{
 			Instance::Localize(ClientID, "\u2699 Disciple of Tank"),
 			Instance::Localize(ClientID, "\u2696 Disciple of Healer"),
-			Instance::Localize(ClientID, "\u2694 Disciple of War"),
-			Instance::Localize(ClientID, "\u2690 Weapons / Ammo")
+			Instance::Localize(ClientID, "\u2694 Disciple of War")
 		};
 
 		// information
@@ -208,28 +247,32 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VUpgrInfo.Add("You can upgrade your character's statistics.");
 		VUpgrInfo.Add("Each update costs differently point.");
 		VUpgrInfo.Add("You can get points by leveling up.");
-		VUpgrInfo.Add("Upgrade Point's: {}P", pPlayer->Account()->m_Upgrade);
+		VUpgrInfo.Add("Upgrade Point's: {}P", pPlayer->Account()->m_UpgradePoint);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// upgrade group's
-		const ClassGroup& Class = pPlayer->GetClass()->GetGroup();
-		VoteWrapper VUpgrGroupSelect(ClientID, VWF_OPEN, "Select a type of upgrades");
-		if(Class == ClassGroup::Dps)
-			VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
-		else if(Class == ClassGroup::Tank)
-			VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
-		else if(Class == ClassGroup::Healer)
-			VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
-		VUpgrGroupSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Weapon, paGroupNames[(int)AttributeGroup::Weapon]);
+		VoteWrapper VUpgrSelect(ClientID, VWF_OPEN, "Select a type of upgrades");
+		if(pPlayer->GetClassData().IsGroup(ClassGroup::Dps))
+		{
+			VUpgrSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
+		}
+		else if(pPlayer->GetClassData().IsGroup(ClassGroup::Tank))
+		{
+			VUpgrSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
+		}
+		else if(pPlayer->GetClassData().IsGroup(ClassGroup::Healer))
+		{
+			VUpgrSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Upgrades by group
 		if(pPlayer->m_VotesData.GetExtraID() >= 0)
 		{
-			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetExtraID(), (int)AttributeGroup::Tank, (int)AttributeGroup::Weapon);
+			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetExtraID(), (int)AttributeGroup::Tank, (int)AttributeGroup::Dps);
 			const char* pGroupName = paGroupNames[(int)Group];
 
-			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "{} : Strength {}", pGroupName, pPlayer->GetTotalAttributesInGroup(Group));
+			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} : Strength {}", pGroupName, pPlayer->GetTotalAttributesInGroup(Group));
 			InsertUpgradesVotes(pPlayer, Group, &VUpgrGroup);
 			VUpgrGroup.AddLine();
 		}
@@ -240,7 +283,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// top list
-	if(Menulist == MENU_TOP_LIST)
+	if(Menulist == MENU_LEADERBOARD)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
@@ -251,10 +294,10 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// select type list
 		VoteWrapper VTopSelect(ClientID, VWF_OPEN, "Select a type of ranking");
-		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::GUILDS_LEVELING, "Top 10 guilds leveling");
-		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::GUILDS_WEALTHY, "Top 10 guilds wealthy");
-		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::PLAYERS_LEVELING, "Top 10 players leveling");
-		VTopSelect.AddMenu(MENU_TOP_LIST, (int)ToplistType::PLAYERS_WEALTHY, "Top 10 players wealthy");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GUILDS_LEVELING, "Top 10 guilds leveling");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GUILDS_WEALTHY, "Top 10 guilds wealthy");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PLAYERS_LEVELING, "Top 10 players leveling");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PLAYERS_WEALTHY, "Top 10 players wealthy");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show top list
@@ -268,7 +311,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// grinding guide
-	if(Menulist == MENU_GUIDE_GRINDING)
+	if(Menulist == MENU_GUIDE)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
@@ -284,7 +327,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// show all world's
 		VoteWrapper VGrindingSelect(ClientID, VWF_SEPARATE_OPEN, "Select a zone to view information");
 		for(int ID = MAIN_WORLD_ID; ID < GS()->Server()->GetWorldsSize(); ID++)
-			VGrindingSelect.AddMenu(MENU_GUIDE_GRINDING_SELECT, ID, "{}", GS()->Server()->GetWorldName(ID));
+			VGrindingSelect.AddMenu(MENU_GUIDE_SELECT, ID, "{}", GS()->Server()->GetWorldName(ID));
 
 		// add back page
 		VoteWrapper::AddBackpage(ClientID);
@@ -292,9 +335,9 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// grinding guide selected
-	if(Menulist == MENU_GUIDE_GRINDING_SELECT)
+	if(Menulist == MENU_GUIDE_SELECT)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_GUIDE_GRINDING);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUIDE);
 
 		const int WorldID = pPlayer->m_VotesData.GetExtraID();
 
@@ -515,7 +558,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 			}
 		}
 
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '{}' {} WHERE ID = '{}'", pAcc->m_Upgrade, Buffer.buffer(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '{}' {} WHERE ID = '{}'", pAcc->m_UpgradePoint, Buffer.buffer(), pAcc->GetID());
 		Buffer.clear();
 	}
 	else if(Table == SAVE_FARMING_DATA)

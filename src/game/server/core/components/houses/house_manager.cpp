@@ -107,7 +107,7 @@ bool CHouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	// menu house farm zone selected
-	if(Menulist == MENU_HOUSE_FARMZONE_SELECTED)
+	if(Menulist == MENU_HOUSE_FARMZONE_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_HOUSE_FARMZONE_LIST);
 		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
@@ -204,7 +204,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 			{
 				GS()->Chat(ClientID, "You failed plant to farm zone.");
 			}
-			pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_FARMZONE_SELECTED);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_FARMZONE_SELECT);
 		}
 
 		return true;
@@ -473,7 +473,7 @@ void CHouseManager::ShowFarmzonesControl(CPlayer* pPlayer) const
 	// farm zones control
 	VoteWrapper VFarmzones(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "\u2743 Farm zone's control");
 	for(auto& [ID, Farmzone] : pHouse->GetFarmzonesManager()->GetContainer())
-		VFarmzones.AddMenu(MENU_HOUSE_FARMZONE_SELECTED, ID, "Farm {} zone / {}", Farmzone.GetName(), GS()->GetItemInfo(Farmzone.GetItemID())->GetName());
+		VFarmzones.AddMenu(MENU_HOUSE_FARMZONE_SELECT, ID, "Farm {} zone / {}", Farmzone.GetName(), GS()->GetItemInfo(Farmzone.GetItemID())->GetName());
 
 	VoteWrapper::AddEmptyline(ClientID);
 }
