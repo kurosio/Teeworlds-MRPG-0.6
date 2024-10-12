@@ -14,7 +14,7 @@ class CSkillManager : public MmoComponent
 		mystd::freeContainer(CSkill::Data(), CSkillDescription::Data());
 	}
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnPlayerLogin(CPlayer* pPlayer) override;
 	void OnClientReset(int ClientID) override;
 	void OnCharacterTile(CCharacter* pChr) override;

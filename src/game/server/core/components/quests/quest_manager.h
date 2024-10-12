@@ -21,7 +21,7 @@ class CQuestManager : public MmoComponent
 		mystd::freeContainer(CQuestDescription::Data(), CPlayerQuest::Data());
 	}
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnPlayerLogin(CPlayer* pPlayer) override;
 	void OnClientReset(int ClientID) override;
 	void OnCharacterTile(CCharacter* pChr) override;

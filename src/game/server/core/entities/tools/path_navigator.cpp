@@ -9,8 +9,14 @@
 CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_NAVIGATOR, FromPos)
 {
-	GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos, &m_PosTo);
+	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos);
+	if(!PosTo.has_value())
+	{
+		MarkForDestroy();
+		return;
+	}
 
+	m_PosTo = PosTo.value();
 	m_Mask = Mask;
 	m_StepPos = 0;
 	m_pParent = pParent;

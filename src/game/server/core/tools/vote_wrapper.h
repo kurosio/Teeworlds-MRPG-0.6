@@ -318,7 +318,7 @@ class CVotePlayerData
 	CPlayer* m_pPlayer {};
 	int m_LastMenuID{};
 	int m_CurrentMenuID{};
-	int m_ExtraID {};
+	std::optional<int> m_ExtraID {};
 	std::thread m_VoteUpdater {};
 	enum class STATE_UPDATER { WAITING, RUNNING, DONE };
 	std::atomic<STATE_UPDATER> m_VoteUpdaterStatus{ STATE_UPDATER::WAITING };
@@ -362,7 +362,7 @@ public:
 
 	void SetCurrentMenuID(int MenuID) { m_CurrentMenuID = MenuID; }
 	int GetCurrentMenuID() const { return m_CurrentMenuID; }
-	int GetExtraID() const { return m_ExtraID; }
+	std::optional<int> GetExtraID() const { return m_ExtraID; }
 
 	void SetLastMenuID(int MenuID) { m_LastMenuID = MenuID; }
 	int GetLastMenuID() const { return m_LastMenuID; }

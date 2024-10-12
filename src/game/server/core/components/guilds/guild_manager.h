@@ -14,7 +14,7 @@ class CGuildManager : public MmoComponent
 		mystd::freeContainer(CGuildHouse::Data(), CGuild::Data(), CGuildWarHandler::Data());
 	};
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 	void OnTick() override;
 	void OnCharacterTile(CCharacter* pChr) override;

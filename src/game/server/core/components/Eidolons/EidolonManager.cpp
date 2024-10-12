@@ -52,37 +52,55 @@ bool CEidolonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 	if(Menulist == MENU_EIDOLON_SELECT)
 	{
+		const auto EidolonID = pPlayer->m_VotesData.GetExtraID();
 		pPlayer->m_VotesData.SetLastMenuID(MENU_EIDOLON);
 
-		int EidolonID = pPlayer->m_VotesData.GetExtraID();
-		if(CEidolonInfoData* pEidolonInfo = GS()->GetEidolonByItemID(EidolonID))
+		// check is selection valid
+		if(!EidolonID.has_value())
 		{
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
-			VoteWrapper VDesc(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Descriptions of eidolon ({})", pEidolonInfo->GetDataBot()->m_aNameBot);
-			for(auto& Line : pEidolonInfo->GetLinesDescription())
-			{
-				VDesc.Add(Line.c_str());
-			}
-			VDesc.AddLine();
-			if(pPlayerItem->Info()->HasAttributes())
-			{
-				VDesc.Add(pPlayerItem->GetStringAttributesInfo(pPlayer).c_str());
-			}
-			VDesc.AddLine();
+			VoteWrapper::AddBackpage(ClientID);
+			return true;
+		}
 
-			VoteWrapper VEnchancement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Unlocking Enhancements");
-			VEnchancement.Add("Available soon.");
-			VEnchancement.AddLine();
+		// check valid eidolon info
+		const auto* pEidolonInfo = GS()->GetEidolonByItemID(EidolonID.value());
+		if(!pEidolonInfo)
+		{
+			VoteWrapper::AddBackpage(ClientID);
+			return true;
+		}
 
-			if(pPlayerItem->HasItem())
-			{
-				const char* pStateSummon = Instance::Localize(pPlayer->GetCID(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
-				VoteWrapper(ClientID).AddOption("EQUIP_ITEM", pEidolonInfo->GetItemID(), NOPE, "{} {}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
-			}
-			else
-			{
-				VoteWrapper(ClientID).Add("To summon it, you must first get it");
-			}
+		// description about eidolon
+		const auto* pPlayerItem = pPlayer->GetItem(pEidolonInfo->GetItemID());
+		VoteWrapper VDesc(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Descriptions of eidolon ({})", pEidolonInfo->GetDataBot()->m_aNameBot);
+		for(auto& Line : pEidolonInfo->GetLinesDescription())
+		{
+			VDesc.Add(Line.c_str());
+		}
+
+		VDesc.AddLine();
+
+		if(pPlayerItem->Info()->HasAttributes())
+		{
+			VDesc.Add(pPlayerItem->GetStringAttributesInfo(pPlayer).c_str());
+		}
+
+		VDesc.AddLine();
+
+		// enchancements
+		VoteWrapper VEnchancement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Unlocking Enhancements");
+		VEnchancement.Add("Available soon.");
+		VEnchancement.AddLine();
+
+		// summoning
+		if(pPlayerItem->HasItem())
+		{
+			const char* pStateSummon = Instance::Localize(pPlayer->GetCID(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
+			VoteWrapper(ClientID).AddOption("EQUIP_ITEM", pEidolonInfo->GetItemID(), NOPE, "{} {}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
+		}
+		else
+		{
+			VoteWrapper(ClientID).Add("To summon it, you must first get it");
 		}
 
 		VoteWrapper::AddBackpage(ClientID);

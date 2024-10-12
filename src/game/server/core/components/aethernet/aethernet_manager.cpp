@@ -6,7 +6,7 @@
 
 #include <game/server/core/components/guilds/guild_manager.h>
 
-void CAethernetManager::OnInit()
+void CAethernetManager::OnPreInit()
 {
 	// Load aether data from the database
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AETHERS);

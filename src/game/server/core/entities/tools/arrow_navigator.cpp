@@ -10,7 +10,13 @@
 CEntityArrowNavigator::CEntityArrowNavigator(CGameWorld* pGameWorld, int ClientID, vec2 Position, int WorldID)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_FINDER, Position, 0, ClientID)
 {
-	GS()->Core()->WorldManager()->FindPosition(WorldID, m_Pos, &m_PosTo);
+	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, Position);
+	if(!PosTo.has_value())
+	{
+		MarkForDestroy();
+		return;
+	}
+	m_PosTo = PosTo.value();
 	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
 	GameWorld()->InsertEntity(this);
 

@@ -5,13 +5,12 @@
 
 #include <game/server/core/components/Inventory/ItemData.h>
 
+class CTrade;
+class CWarehouseStorage;
+using ContainerTradingList = std::deque<CTrade>;
 constexpr auto TW_WAREHOUSE_TABLE = "tw_warehouses";
-using WarehouseIdentifier = int;
-using TradeIdentifier = int;
 
-/*
- * Warehouse flags
- */
+// warehouse flags
 enum WarehouseFlags
 {
 	WF_NONE = 0,
@@ -22,24 +21,42 @@ enum WarehouseFlags
 	WF_SELL_STORAGE = WF_SELL | WF_STORAGE
 };
 
-/*
- * Trading slot
- *
- */
+// trade slot
 class CTrade
 {
-	TradeIdentifier m_ID {};
+	int m_ID {};
 	CItem m_Item {};
 	int m_Price {};
 
 public:
-	CTrade(TradeIdentifier ID, CItem&& pItem, int Price) : m_ID(ID), m_Item(std::move(pItem)), m_Price(Price) {}
+	CTrade(int ID, CItem&& pItem, int Price)
+		: m_ID(ID), m_Item(std::move(pItem)), m_Price(Price) {}
 
-	// default getters and setters
-	TradeIdentifier GetID() const { return m_ID; }
-	CItem* GetItem() { return &m_Item; }
-	const CItem* GetItem() const { return &m_Item; }
-	int GetPrice() const { return m_Price; }
+	// get trade identifier
+	int GetID() const
+	{
+		return m_ID;
+	}
+
+	// get trade item
+	CItem* GetItem()
+	{
+		return &m_Item;
+	}
+
+	// get trade item
+	const CItem* GetItem() const
+	{
+		return &m_Item;
+	}
+
+	// get price
+	int GetPrice() const
+	{
+		return m_Price;
+	}
+
+	// get product cost
 	int GetProductsCost() const
 	{
 		auto Cost = m_Item.Info()->GetDysenthis(m_Item.GetEnchant());
@@ -48,21 +65,16 @@ public:
 	}
 };
 
-/*
- * Warehouse
- *
- */
-class CWarehouseStorage;
-using ContainerTradingList = std::deque<CTrade>;
+// warehouse
 class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 {
 	// storage inner structure
 	class CStorage
 	{
 		friend class CWarehouse;
+		CWarehouse* m_pWarehouse {};
 		BigInt m_Value {};
 		vec2 m_TextPos {};
-		CWarehouse* m_pWarehouse {};
 
 	public:
 		// remove storage value
@@ -87,12 +99,18 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 			}
 		}
 
+		// get value
+		BigInt GetValue() const
+		{
+			return m_Value;
+		}
+
+		// update text storage product value
 		void UpdateText(int LifeTime) const;
-		BigInt GetValue() const { return m_Value; }
+
 	};
 
-	nlohmann::json m_Properties {};
-	WarehouseIdentifier m_ID {};
+	int m_ID {};
 	int64_t m_Flags {};
 	char m_aName[32] {};
 	vec2 m_Pos {};
@@ -100,32 +118,73 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 	int m_WorldID {};
 	CStorage m_Storage {};
 	ContainerTradingList m_vTradingList {};
+	nlohmann::json m_Properties {};
 
 public:
 	CWarehouse() = default;
 
-	static CWarehouse* CreateElement(const WarehouseIdentifier& ID) noexcept
+	static CWarehouse* CreateElement(const int WarehouseID) noexcept
 	{
 		auto pData = new CWarehouse;
-		pData->m_ID = ID;
+		pData->m_ID = WarehouseID;
 		return m_pData.emplace_back(pData);
 	}
 
-	// functions
+	// initialize
 	void Init(const std::string& Name, const std::string& Properties, vec2 Pos, int Currency, int WorldID);
 	void InitProperties(const std::string& Properties);
 	void SaveProperties();
 
-	// getters and setters
-	WarehouseIdentifier GetID() const { return m_ID; }
-	bool IsHasFlag(int Flag) const { return m_Flags & Flag; }
-	const char* GetName() const { return m_aName; }
-	vec2 GetPos() const { return m_Pos; }
-	CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_Currency]; }
-	int GetWorldID() const { return m_WorldID; }
-	CStorage& Storage() { return m_Storage; }
-	CTrade* GetTrade(TradeIdentifier ID);
-	const ContainerTradingList& GetTradingList() const { return m_vTradingList; }
+	// get identificator
+	int GetID() const
+	{
+		return m_ID;
+	}
+
+	// check flag is enabled
+	bool IsHasFlag(int Flag) const
+	{
+		return m_Flags & Flag;
+	}
+
+	// get warehouse name
+	const char* GetName() const
+	{
+		return m_aName;
+	}
+
+	// get warehouse position
+	vec2 GetPos() const
+	{
+		return m_Pos;
+	}
+
+	// get currency
+	CItemDescription* GetCurrency() const
+	{
+		return &CItemDescription::Data()[m_Currency];
+	}
+
+	// get location world id
+	int GetWorldID() const
+	{
+		return m_WorldID;
+	}
+
+	// get storage
+	CStorage& Storage()
+	{
+		return m_Storage;
+	}
+
+	// get trade element
+	CTrade* GetTrade(int TradeID);
+
+	// get trade container
+	const ContainerTradingList& GetTradingList() const
+	{
+		return m_vTradingList;
+	}
 };
 
 #endif

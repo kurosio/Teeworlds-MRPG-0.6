@@ -26,7 +26,7 @@ void ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, c
 }
 
 using namespace sqlstr;
-void CInventoryManager::OnInit()
+void CInventoryManager::OnPreInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_items_list");
 	while(pRes->next())
@@ -101,11 +101,13 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
+		// information
 		VoteWrapper VInventoryInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Inventory Information");
 		VInventoryInfo.Add("Choose the type of items you want to show");
 		VInventoryInfo.Add("After, need select item to interact");
 		VoteWrapper::AddEmptyline(ClientID);
 
+		// inventory tabs
 		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "\u270C Used ({})", GetCountItemsType(pPlayer, ItemType::TYPE_USED));
 		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "\u2692 Craft ({})", GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT));
@@ -116,12 +118,19 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort inventory
+		const auto itemTypeSelected = pPlayer->m_VotesData.GetExtraID();
 		VoteWrapper VInfo(ClientID);
-		if(pPlayer->m_VotesData.GetExtraID() < 0)
+		if(itemTypeSelected.has_value())
+		{
+			if(!ListInventory(ClientID, (ItemType)itemTypeSelected.value()))
+				VInfo.Add("The selected list is empty");
+		}
+		else
+		{
 			VInfo.Add("Select the required tab");
-		else if(!ListInventory(ClientID, (ItemType)pPlayer->m_VotesData.GetExtraID()))
-			VInfo.Add("The selected list is empty");
+		}
 
+		// add backpage
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -131,11 +140,13 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
+		// information
 		VoteWrapper VEquipInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2604 Equipment Information");
 		VEquipInfo.Add("Select the type of equipment you want to show");
 		VEquipInfo.Add("After, need select item to interact");
 		VoteWrapper::AddEmptyline(ClientID);
 
+		// equip tabs
 		VoteWrapper VEquipTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2604 Equipment tabs");
 		const char* paTypeNames[NUM_EQUIPPED] = {
 			"Hammer",
@@ -152,46 +163,57 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			"Potion special",
 			"Title"
 		};
-		for(int i = 0; i < NUM_EQUIPPED; i++)
+
+		for(int equipID = 0; equipID < NUM_EQUIPPED; equipID++)
 		{
 			// append another menu
-			if(i == EQUIP_TITLE)
+			if(equipID == EQUIP_TITLE)
 				continue;
 
 			// check is equipped
-			const auto ItemID = pPlayer->GetEquippedItemID((ItemFunctional)i);
+			const auto ItemID = pPlayer->GetEquippedItemID((ItemFunctional)equipID);
 			if(!ItemID.has_value() || !pPlayer->GetItem(ItemID.value())->IsEquipped())
 			{
-				VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} not equipped", paTypeNames[i]);
+				VEquipTabs.AddMenu(MENU_EQUIPMENT, equipID, "{} not equipped", paTypeNames[equipID]);
 				continue;
 			}
 
 			// add information
 			const auto pPlayerItem = pPlayer->GetItem(ItemID.value());
-			if(i == EQUIP_POTION_HEAL || i == EQUIP_POTION_MANA || i == EQUIP_POTION_SPECIAL)
+			if(equipID == EQUIP_POTION_HEAL || equipID == EQUIP_POTION_MANA || equipID == EQUIP_POTION_SPECIAL)
 			{
 				if(const auto pHealInfo = PotionTools::Heal::getHealInfo(ItemID.value()))
-					VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} (recast {} hp {}) x{}", 
+				{
+					VEquipTabs.AddMenu(MENU_EQUIPMENT, equipID, "{} (recast {} hp {}) x{}",
 						pPlayerItem->Info()->GetName(), pHealInfo->getTime(), pHealInfo->getRecovery(), pPlayerItem->GetValue());
+				}
 				else
-					VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} x{}", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
-
+				{
+					VEquipTabs.AddMenu(MENU_EQUIPMENT, equipID, "{} x{}", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+				}
 			}
 			else
 			{
-				std::string strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayer->GetItem(ItemID.value())->GetStringAttributesInfo(pPlayer) : "unattributed";
-				VEquipTabs.AddMenu(MENU_EQUIPMENT, i, "{} * {}", pPlayerItem->Info()->GetName(), strAttributes.c_str());
+				const auto strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
+				VEquipTabs.AddMenu(MENU_EQUIPMENT, equipID, "{} * {}", pPlayerItem->Info()->GetName(), strAttributes.c_str());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort equipment
+		const auto itemFunctionalSelected = pPlayer->m_VotesData.GetExtraID();
 		VoteWrapper VInfo(ClientID);
-		if(pPlayer->m_VotesData.GetExtraID() < 0)
-			VInfo.Add("Select the required tab"); 
-		else if(!ListInventory(ClientID, (ItemFunctional)pPlayer->m_VotesData.GetExtraID()))
-			VInfo.Add("The selected list is empty");
+		if(itemFunctionalSelected.has_value())
+		{
+			if(!ListInventory(ClientID, (ItemFunctional)itemFunctionalSelected.value()))
+				VInfo.Add("The selected list is empty");
+		}
+		else
+		{
+			VInfo.Add("Select the required tab");
+		}
 
+		// add backpage
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;

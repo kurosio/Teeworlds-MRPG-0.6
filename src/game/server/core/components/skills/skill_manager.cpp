@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 #include "skill_data.h"
 
-void CSkillManager::OnInit()
+void CSkillManager::OnPreInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_skills_list");
 	while (pRes->next())
@@ -84,12 +84,12 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	// Skill selected detail information
 	if(Menulist == MENU_SKILL_SELECT)
 	{
-		// Set last menu skill list
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SKILL_LIST);
 
-		// Show selected skill
-		if(pPlayer->m_VotesData.GetExtraID() >= 0)
-			ShowSkill(pPlayer, pPlayer->m_VotesData.GetExtraID());
+		if(const auto SkillID = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowSkill(pPlayer, SkillID.value());
+		}
 
 		// Add backpage
 		VoteWrapper::AddBackpage(pPlayer->GetCID());

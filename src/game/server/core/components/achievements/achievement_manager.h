@@ -14,7 +14,7 @@ class CAchievementManager : public MmoComponent
 		mystd::freeContainer(CAchievement::Data(), CAchievementInfo::Data());
 	};
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnClientReset(int ClientID) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 

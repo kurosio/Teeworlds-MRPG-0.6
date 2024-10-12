@@ -14,7 +14,7 @@ class CBotManager : public MmoComponent
 		mystd::freeContainer(DataBotInfo::ms_aDataBot, QuestBotInfo::ms_aQuestBot, NpcBotInfo::ms_aNpcBot, MobBotInfo::ms_aMobBot);
 	};
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID) override;
 

@@ -49,7 +49,7 @@ static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string&
 	return Value;
 }
 
-void CBotManager::OnInit()
+void CBotManager::OnPreInit()
 {
 	// init bot datas
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_info");

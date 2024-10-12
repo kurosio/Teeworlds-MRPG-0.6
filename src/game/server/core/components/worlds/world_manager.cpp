@@ -9,92 +9,91 @@
 void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 {
 	std::deque<CWorldSwapData> vSwappers{};
+	const auto formatWhere = fmt_default("{} OR `TwoWorldID` = '{}'", pWhereLocalWorld, GS()->GetWorldID());
 
-	/*
-	 *	load world swappers
-	 */
-	char aFormatWhere[1024];
-	str_format(aFormatWhere, sizeof(aFormatWhere), "%s OR `TwoWorldID`='%d'", pWhereLocalWorld, GS()->GetWorldID());
-	ResultPtr pResSwap = Database->Execute<DB::SELECT>("*", "tw_world_swap", aFormatWhere);
+	// initializing world swappers from the database
+	ResultPtr pResSwap = Database->Execute<DB::SELECT>("*", "tw_world_swap", formatWhere.c_str());
 	while(pResSwap->next())
 	{
-		bool SecondLocalWorld = pResSwap->getInt("TwoWorldID") == GS()->GetWorldID();
-		std::pair<vec2, vec2> Positions;
-		std::pair<int, int> Worlds;
+		const bool IsSecondLocalWorld = pResSwap->getInt("TwoWorldID") == GS()->GetWorldID();
 
-		if(SecondLocalWorld)
-		{
-			Positions = { vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")),
-						  vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")) };
-			Worlds = { pResSwap->getInt("TwoWorldID"), pResSwap->getInt("WorldID") };
-		}
-		else
-		{
-			Positions = { vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")),
-						  vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")) };
-			Worlds = { pResSwap->getInt("WorldID"), pResSwap->getInt("TwoWorldID") };
-		}
+		auto [pos1, pos2] = IsSecondLocalWorld
+			? std::make_pair(vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")),
+				vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")))
+			: std::make_pair(vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")),
+				vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")));
 
-		vSwappers.emplace_back(std::move(Positions), std::move(Worlds));
+		auto [world1, world2] = IsSecondLocalWorld
+			? std::make_pair(pResSwap->getInt("TwoWorldID"), pResSwap->getInt("WorldID"))
+			: std::make_pair(pResSwap->getInt("WorldID"), pResSwap->getInt("TwoWorldID"));
+
+		vSwappers.emplace_back(std::make_pair(pos1, pos2), std::make_pair(world1, world2));
 	}
 
-	/*
-	 * init world data
-	 */
-	for(int i = 0; i < Server()->GetWorldsSize(); i++)
+	// initializing world data
+	for(int i = 0; i < Server()->GetWorldsSize(); ++i)
 	{
-		CWorldDetail* pDetail = Server()->GetWorldDetail(i);
-		dbg_assert(pDetail != nullptr, "detail data inside world initilized invalid");
-		CWorldData::CreateElement(i)->Init(pDetail->GetRespawnWorldID(), pDetail->GetJailWorldID(), pDetail->GetRequiredLevel(), std::move(vSwappers));
+		const auto* pDetail = Server()->GetWorldDetail(i);
+		dbg_assert(pDetail != nullptr, "detail data inside world initialized invalid");
+
+		CWorldData::CreateElement(i)->Init(pDetail->GetRespawnWorldID(), pDetail->GetJailWorldID(),
+			pDetail->GetRequiredLevel(), std::move(vSwappers));
 	}
 }
 
-void CWorldManager::FindPosition(int WorldID, vec2 Pos, vec2* OutPos)
+void CWorldManager::OnPostInit()
 {
-	// there's no need to search for paths between worlds
-	int CurrentWorldID = GS()->GetWorldID();
-	if(CurrentWorldID == WorldID)
+	// initialize bfs edges
+	m_PathFinderBFS.init((int)CWorldData::Data().size());
+	for(const auto& pw : CWorldData::Data())
 	{
-		*OutPos = Pos;
-		return;
-	}
-
-	// initialize if not initialized 
-	if(!m_PathFinderBFS.isInitilized())
-	{
-		m_PathFinderBFS.init((int)CWorldData::Data().size());
-		for(const auto& pw : CWorldData::Data())
+		for(auto& p : pw->GetSwappers())
 		{
-			for(auto& p : pw->GetSwappers())
-				m_PathFinderBFS.addEdge(p.GetFirstWorldID(), p.GetSecondWorldID());
+			m_PathFinderBFS.addEdge(p.GetFirstWorldID(), p.GetSecondWorldID());
 		}
 	}
+}
 
-	// search path and got first and second path
-	std::vector vNodeSteps = m_PathFinderBFS.findPath(GS()->GetWorldID(), WorldID);
+std::optional<vec2> CWorldManager::FindPosition(int WorldID, vec2 Pos) const
+{
+	// default path
+	int CurrentWorldID = GS()->GetWorldID();
+	if(CurrentWorldID == WorldID)
+		return Pos;
+
+	// search path between worlds
+	const auto vNodeSteps = m_PathFinderBFS.findPath(CurrentWorldID, WorldID);
 	if(vNodeSteps.size() >= 2)
 	{
 		const int NextRightWorldID = vNodeSteps[1];
-		auto& rSwapers = CWorldData::Data()[CurrentWorldID]->GetSwappers();
-		const auto Iter = std::find_if(rSwapers.begin(), rSwapers.end(), [&](const CWorldSwapData& p) { return NextRightWorldID == p.GetSecondWorldID(); });
-		if(Iter != rSwapers.end())
-		{
-			*OutPos = (*Iter).GetFirstSwapPosition();
-		}
+		auto& rSwappers = CWorldData::Data()[CurrentWorldID]->GetSwappers();
 
-		dbg_msg("cross-world pathfinder", "Found from %d to %d.", CurrentWorldID, NextRightWorldID);
+		// search path
+		if(const auto Iter = std::ranges::find_if(rSwappers, [&](const CWorldSwapData& p)
+		{
+			return NextRightWorldID == p.GetSecondWorldID();
+		}); Iter != rSwappers.end())
+		{
+			dbg_msg("cross-world pathfinder", "Found from %d to %d.", CurrentWorldID, NextRightWorldID);
+			return Iter->GetFirstSwapPosition();
+		}
 	}
+
+	return std::nullopt;
 }
 
-void CWorldManager::NotifyUnlockedZonesByLeveling(CPlayer* pPlayer, int Level) const
+void CWorldManager::NotifyUnlockedZonesByLeveling(CPlayer* pPlayer) const
 {
 	const int ClientID = pPlayer->GetCID();
+	const int PlayerLevel = pPlayer->Account()->GetLevel();
+
 	for(const auto& pData : CWorldData::Data())
 	{
-		if(pPlayer->Account()->GetLevel() == Level)
-		{
-			GS()->Chat(-1, "{} initiated area ({})!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
-			pPlayer->UpdateAchievement(AchievementType::UnlockWorld, GS()->GetWorldID(), 1, PROGRESS_ABSOLUTE);
-		}
+		const int RequiredLevel = pData->GetRequiredLevel();
+		if(PlayerLevel != RequiredLevel)
+			continue;
+
+		GS()->Chat(-1, "{} initiated area ({})!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
+		pPlayer->UpdateAchievement(AchievementType::UnlockWorld, GS()->GetWorldID(), 1, PROGRESS_ABSOLUTE);
 	}
 }

@@ -17,19 +17,17 @@ void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
 	{
 		HouseIdentifier ID = pRes->getInt("ID");
 		int AccountID = pRes->getInt("UserID");
-		std::string ClassName = pRes->getString("Class").c_str();
+		std::string ClassName = pRes->getString("Class");
 		int Price = pRes->getInt("Price");
 		int Bank = pRes->getInt("Bank");
 		int WorldID = pRes->getInt("WorldID");
-		std::string AccessList = pRes->getString("AccessList").c_str();
-		std::string JsonDoors = pRes->getString("Doors").c_str();
-		std::string JsonFarmzones = pRes->getString("Farmzones").c_str();
-		std::string JsonProperties = pRes->getString("Properties").c_str();
+		std::string AccessList = pRes->getString("AccessList");
+		std::string JsonDoors = pRes->getString("Doors");
+		std::string JsonFarmzones = pRes->getString("Farmzones");
+		std::string JsonProperties = pRes->getString("Properties");
 
 		CHouse::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, WorldID, std::move(AccessList), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonProperties));
 	}
-
-	Core()->ShowLoadingProgress("Houses", CHouse::Data().size());
 }
 
 void CHouseManager::OnTick()
@@ -110,7 +108,12 @@ bool CHouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_HOUSE_FARMZONE_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_HOUSE_FARMZONE_LIST);
-		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
+
+		if(const auto FarmzoneID = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowFarmzoneEdit(pPlayer, FarmzoneID.value());
+		}
+
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

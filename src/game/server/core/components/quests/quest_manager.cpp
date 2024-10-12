@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-void CQuestManager::OnInit()
+void CQuestManager::OnPreInit()
 {
 	// Load quests
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_quests_list");
@@ -115,9 +115,13 @@ bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_BOARD);
 
-		// show quest board element
-		ShowQuestInfo(pPlayer, GS()->GetQuestInfo(pPlayer->m_VotesData.GetExtraID()), true);
-		VoteWrapper::AddEmptyline(ClientID);
+		if(const auto QuestID = pPlayer->m_VotesData.GetExtraID())
+		{
+			auto* pQuestInfo = GS()->GetQuestInfo(QuestID.value());
+			ShowQuestInfo(pPlayer, pQuestInfo, true);
+			VoteWrapper::AddEmptyline(ClientID);
+		}
+
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -138,9 +142,13 @@ bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_JOURNAL_MAIN);
 
-		// show quest element
-		ShowQuestInfo(pPlayer, GS()->GetQuestInfo(pPlayer->m_VotesData.GetExtraID()), false);
-		VoteWrapper::AddEmptyline(ClientID);
+		if(const auto QuestID = pPlayer->m_VotesData.GetExtraID())
+		{
+			auto* pQuestInfo = GS()->GetQuestInfo(QuestID.value());
+			ShowQuestInfo(pPlayer, pQuestInfo, false);
+			VoteWrapper::AddEmptyline(ClientID);
+		}
+
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

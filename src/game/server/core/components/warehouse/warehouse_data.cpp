@@ -81,7 +81,8 @@ void CWarehouse::InitProperties(const std::string& Properties)
 					// adding all item's from collection to trade list
 					for(const int ItemID : vItems)
 					{
-						CItem Item(ItemID, 1, 0);
+						auto Item = CItem(ItemID, 1, 0);
+
 						if(Item.IsValid() && Item.Info()->GetInitialPrice() > 0)
 						{
 							m_vTradingList.emplace_back(m_vTradingList.size(), std::move(Item), Item.Info()->GetInitialPrice());
@@ -99,7 +100,7 @@ void CWarehouse::InitProperties(const std::string& Properties)
 					const int Value = pItem.value("value", 1);
 					const int Enchant = pItem.value("enchant", 0);
 					const int Price = pItem.value("price", 0);
-					CItem Item(ItemID, Value, Enchant);
+					auto Item = CItem(ItemID, Value, Enchant);
 
 					if(Item.IsValid() && Price > 0)
 					{
@@ -116,7 +117,7 @@ void CWarehouse::InitProperties(const std::string& Properties)
 			dbg_assert(pJson.contains("storage"), "The warehouse is flagged as storage, but no storage data provided");
 
 			// initialize storage
-			auto JsonStorage = pJson["storage"];
+			const auto JsonStorage = pJson["storage"];
 			m_Storage.m_Value = JsonStorage.value("value", BigInt(0));
 			m_Storage.m_TextPos = vec2(JsonStorage.value("x", 0), JsonStorage.value("y", 0));
 			m_Storage.m_pWarehouse = this;
@@ -147,17 +148,19 @@ void CWarehouse::SaveProperties()
 	Database->Execute<DB::UPDATE>(TW_WAREHOUSE_TABLE, "Properties = '{}' WHERE ID = '{}'", m_Properties.dump().c_str(), m_ID);
 }
 
-CTrade* CWarehouse::GetTrade(int ID)
+CTrade* CWarehouse::GetTrade(int TradeID)
 {
-	const auto iter = std::ranges::find_if(m_vTradingList, [ID](const CTrade& Trade)
+	const auto iter = std::ranges::find_if(m_vTradingList, [TradeID](const CTrade& Trade)
 	{
-		return Trade.GetID() == ID;
+		return Trade.GetID() == TradeID;
 	});
+
 	return iter != m_vTradingList.end() ? &(*iter) : nullptr;
 }
 
 void CWarehouse::CStorage::UpdateText(int LifeTime) const
 {
 	const auto* pGS = (CGS*)Instance::GameServer(m_pWarehouse->m_WorldID);
+
 	pGS->EntityManager()->Text(m_TextPos, LifeTime, m_Value.to_string().c_str());
 }

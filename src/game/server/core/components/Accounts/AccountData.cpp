@@ -243,8 +243,9 @@ void CAccountData::AddExperience(uint64_t Value)
 			GS()->CreateSound(pChar->m_Core.m_Pos, 4);
 			GS()->EntityManager()->Text(pChar->GetPos() + vec2(0, -40), 30, "level up");
 		}
+
 		GS()->Chat(m_ClientID, "Congratulations. You attain level {}!", m_Level);
-		GS()->Core()->WorldManager()->NotifyUnlockedZonesByLeveling(pPlayer, m_ID);
+		GS()->Core()->WorldManager()->NotifyUnlockedZonesByLeveling(pPlayer);
 
 		// post leveling
 		if(m_Exp < computeExperience(m_Level))

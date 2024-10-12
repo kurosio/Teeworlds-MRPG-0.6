@@ -478,7 +478,7 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, co
 	// command menu
 	if(PPSTR(pCmd, "MENU") == 0)
 	{
-		m_ExtraID = Extra2;
+		m_ExtraID = Extra2 <= NOPE ? std::nullopt : std::make_optional(Extra2);
 
 		ResetHidden(Extra1);
 		UpdateVotes(Extra1);

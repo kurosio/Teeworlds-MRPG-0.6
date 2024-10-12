@@ -9,7 +9,7 @@ class CAuctionManager : public MmoComponent
 {
 	~CAuctionManager() override = default;
 
-	void OnInit() override;
+	void OnPreInit() override;
 
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;

@@ -10,33 +10,30 @@ class CWarehouseManager : public MmoComponent
 {
 	~CWarehouseManager() override
 	{
-		// free data
 		mystd::freeContainer(CWarehouse::Data());
 	}
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnTick() override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
-	// vote list's menus
+	// vote menus
 	void ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehouse) const;
 	void ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemType Type) const;
-	void ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, const TradeIdentifier& TradeID) const;
+	void ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID) const;
 
-	// buy item for player from warehouse
-	bool BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID) const;
-
-	// sell item for warehouse from player
-	bool SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, TradeIdentifier ID, int Value) const;
+	// functions
+	bool BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID) const;
+	bool SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID, int Value) const;
 
 public:
 	// finding a warehouse by position
 	CWarehouse* GetWarehouse(vec2 Pos) const;
 
 	// finding a warehouse by ID
-	CWarehouse* GetWarehouse(WarehouseIdentifier ID) const;
+	CWarehouse* GetWarehouse(int WarehouseID) const;
 };
 
 #endif

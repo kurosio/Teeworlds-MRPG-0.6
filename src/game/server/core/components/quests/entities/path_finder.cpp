@@ -11,9 +11,13 @@ CEntityPathArrow::CEntityPathArrow(CGameWorld* pGameWorld, int ClientID, float A
 									const std::weak_ptr<CQuestStep>& pStep, int ConditionType, int ConditionIndex)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_FINDER, SearchPos, 0, ClientID), m_ConditionType(ConditionType), m_ConditionIndex(ConditionIndex), m_pStep(pStep)
 {
-	vec2 GetterPos{0,0};
-	GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos, &GetterPos);
-	m_PosTo = GetterPos;
+	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos);
+	if(!PosTo.has_value())
+	{
+		MarkForDestroy();
+		return;
+	}
+	m_PosTo = PosTo.value();
 	m_AreaClipped = AreaClipped;
 	GameWorld()->InsertEntity(this);
 

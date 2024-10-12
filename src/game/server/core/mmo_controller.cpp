@@ -91,7 +91,7 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 		pComponent->m_pServer = pGameServer->Server();
 
 		if(m_pGameServer->GetWorldID() == MAIN_WORLD_ID)
-			pComponent->OnInit();
+			pComponent->OnPreInit();
 
 		char aLocalSelect[64];
 		str_format(aLocalSelect, sizeof(aLocalSelect), "WHERE WorldID = '%d'", m_pGameServer->GetWorldID());
@@ -267,9 +267,9 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Upgrades by group
-		if(pPlayer->m_VotesData.GetExtraID() >= 0)
+		if(const auto UpgradeGroup = pPlayer->m_VotesData.GetExtraID())
 		{
-			auto Group = (AttributeGroup)clamp(pPlayer->m_VotesData.GetExtraID(), (int)AttributeGroup::Tank, (int)AttributeGroup::Dps);
+			auto Group = (AttributeGroup)clamp(UpgradeGroup.value(), (int)AttributeGroup::Tank, (int)AttributeGroup::Dps);
 			const char* pGroupName = paGroupNames[(int)Group];
 
 			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} : Strength {}", pGroupName, pPlayer->GetTotalAttributesInGroup(Group));
@@ -302,8 +302,11 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// show top list
 		VoteWrapper VTopList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE);
-		if(const int& TemporaryInteger = pPlayer->m_VotesData.GetExtraID(); TemporaryInteger >= 0)
-			ShowTopList(ClientID, (ToplistType)TemporaryInteger, 10, &VTopList);
+		if(const auto Toplist = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowTopList(ClientID, (ToplistType)Toplist.value(), 10, &VTopList);
+
+		}
 
 		// backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -339,27 +342,38 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUIDE);
 
-		const int WorldID = pPlayer->m_VotesData.GetExtraID();
+		const auto WorldID = pPlayer->m_VotesData.GetExtraID();
+		if(!WorldID.has_value())
+		{
+			VoteWrapper::AddBackpage(ClientID);
+			return true;
+		}
 
 		// ores information detail
 		VoteWrapper VMiningPoints(ClientID, VWF_STYLE_STRICT_BOLD);
-		VMiningPoints.AddLine().Add("Mining point's from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
-		if(!AccountMiningManager()->InsertItemsDetailVotes(pPlayer, WorldID))
+		VMiningPoints.AddLine().Add("Mining point's from ({})", Instance::Server()->GetWorldName(*WorldID)).AddLine();
+		if(!AccountMiningManager()->InsertItemsDetailVotes(pPlayer, *WorldID))
+		{
 			VoteWrapper(ClientID).Add("No mining point's in this world");
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// farm information detail
 		VoteWrapper VFarmingPoints(ClientID, VWF_STYLE_STRICT_BOLD);
-		VFarmingPoints.AddLine().Add("Farming point's from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
-		if(!AccountFarmingManager()->InsertItemsDetailVotes(pPlayer, WorldID))
+		VFarmingPoints.AddLine().Add("Farming point's from ({})", Instance::Server()->GetWorldName(*WorldID)).AddLine();
+		if(!AccountFarmingManager()->InsertItemsDetailVotes(pPlayer, *WorldID))
+		{
 			VoteWrapper(ClientID).Add("No farm point's in this world");
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// mobs information detail
 		VoteWrapper VMobsPoints(ClientID, VWF_STYLE_STRICT_BOLD);
-		VMobsPoints.AddLine().Add("Mob point's from ({})", Instance::Server()->GetWorldName(WorldID)).AddLine();
-		if(!BotManager()->InsertItemsDetailVotes(pPlayer, WorldID))
+		VMobsPoints.AddLine().Add("Mob point's from ({})", Instance::Server()->GetWorldName(*WorldID)).AddLine();
+		if(!BotManager()->InsertItemsDetailVotes(pPlayer, *WorldID))
+		{
 			VoteWrapper(ClientID).Add("No mob point's in this world");
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		VoteWrapper::AddBackpage(ClientID);
@@ -733,12 +747,11 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 void CMmoController::AsyncClientEnterMsgInfo(const std::string ClientName, int ClientID)
 {
 	CSqlString<MAX_NAME_LENGTH> PlayerName(ClientName.c_str());
-
-	// create new thread
 	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '{}'", PlayerName.cstr());
+
 	AsyncEnterRes->AtExecute([PlayerName = std::string(PlayerName.cstr()), ClientID](ResultPtr pRes)
 	{
-		CGS* pGS = (CGS*)Instance::Server()->GameServerPlayer(ClientID);
+		auto* pGS = (CGS*)Instance::Server()->GameServerPlayer(ClientID);
 
 		if(!pRes->next())
 		{

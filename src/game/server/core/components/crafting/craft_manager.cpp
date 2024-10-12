@@ -6,7 +6,7 @@
 
 #include "../achievements/achievement_data.h"
 
-void CCraftManager::OnInit()
+void CCraftManager::OnPreInit()
 {
 	// load crafts
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_crafts_list");
@@ -36,9 +36,6 @@ void CCraftManager::OnInit()
 	{
 		return p1->GetItem()->Info()->GetFunctional() > p2->GetItem()->Info()->GetFunctional();
 	});
-
-	// show information about initilized craft item's
-	Core()->ShowLoadingProgress("Craft items", (int)CCraftItem::Data().size());
 }
 
 void CCraftManager::OnCharacterTile(CCharacter* pChr)
@@ -156,9 +153,14 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_CRAFTING_LIST);
 
-		// show craft by id
-		int CraftID = pPlayer->m_VotesData.GetExtraID();
-		ShowCraftItem(pPlayer, GetCraftByID(CraftID));
+		if(const auto CraftID = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowCraftItem(pPlayer, GetCraftByID(CraftID.value()));
+			VoteWrapper::AddEmptyline(ClientID);
+		}
+
+		// add backpage
+		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
@@ -219,9 +221,6 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		VoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({} gold)", pCraft->GetPrice(pPlayer));
 	}
 
-	// add backpage
-	VoteWrapper::AddEmptyline(ClientID);
-	VoteWrapper::AddBackpage(ClientID);
 }
 
 void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const

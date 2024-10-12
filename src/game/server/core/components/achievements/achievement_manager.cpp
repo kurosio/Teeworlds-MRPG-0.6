@@ -5,7 +5,7 @@
 #include <game/server/core/components/crafting/craft_manager.h>
 #include <game/server/gamecontext.h>
 
-void CAchievementManager::OnInit()
+void CAchievementManager::OnPreInit()
 {
 	ResultPtr pResult = Database->Execute<DB::SELECT>("*", TW_ACHIEVEMENTS);
 	while(pResult->next())
@@ -53,8 +53,13 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_ACHIEVEMENTS_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_ACHIEVEMENTS);
-		ShowGroupMenu(pPlayer, pPlayer->m_VotesData.GetExtraID());
-		VoteWrapper::AddEmptyline(ClientID);
+
+		if(const auto GroupID = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowGroupMenu(pPlayer, GroupID.value());
+			VoteWrapper::AddEmptyline(ClientID);
+		}
+
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

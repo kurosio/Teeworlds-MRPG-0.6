@@ -16,7 +16,7 @@ class CAethernetManager : public MmoComponent
 		mystd::freeContainer(CAetherData::Data(), s_vpAetherSortedList);
 	};
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnPlayerLogin(CPlayer* pPlayer) override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;

@@ -8,7 +8,7 @@
 #include <game/server/core/components/Inventory/InventoryManager.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
-void CGuildManager::OnInit()
+void CGuildManager::OnPreInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE);
 	while(pRes->next())
@@ -30,7 +30,6 @@ void CGuildManager::OnInit()
 	}
 
 	InitWars();
-	Core()->ShowLoadingProgress("Guilds", CGuild::Data().size());
 }
 
 void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
@@ -51,8 +50,6 @@ void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
 		CGuild* pGuild = GetGuildByID(GuildID);
 		CGuildHouse::CreateElement(ID)->Init(pGuild, RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonPropersties));
 	}
-
-	Core()->ShowLoadingProgress("Guild houses", CGuildHouse::Data().size());
 }
 
 void CGuildManager::OnTick()
@@ -826,7 +823,12 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_FINDER_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_FINDER);
-		ShowFinderDetail(pPlayer, pPlayer->m_VotesData.GetExtraID());
+
+		if(const auto GuildID = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowFinderDetail(pPlayer, GuildID.value());
+		}
+
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -923,7 +925,12 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_MEMBER_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_MEMBER_LIST);
-		ShowMembershipEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
+
+		if(const auto AccountID = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowMembershipEdit(pPlayer, AccountID.value());
+		}
+
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -939,7 +946,12 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_RANK_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_RANK_LIST);
-		ShowRankEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
+
+		if(const auto RankID = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowRankEdit(pPlayer, RankID.value());
+		}
+
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -955,7 +967,12 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_HOUSE_FARMZONE_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD_HOUSE_FARMZONE_LIST);
-		ShowFarmzoneEdit(pPlayer, pPlayer->m_VotesData.GetExtraID());
+
+		if(const auto FarmzoneID = pPlayer->m_VotesData.GetExtraID())
+		{
+			ShowFarmzoneEdit(pPlayer, FarmzoneID.value());
+		}
+
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

@@ -1,10 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "engine/server.h"
-
 #include "world_data.h"
 
-#include "game/server/gamecontext.h"
+#include <engine/server.h>
+#include <game/server/gamecontext.h>
 
 void CWorldData::Init(int RespawnWorldID, int JailWorldID, int RequiredLevel, std::deque<CWorldSwapData>&& Worlds)
 {
@@ -17,19 +16,24 @@ void CWorldData::Init(int RespawnWorldID, int JailWorldID, int RequiredLevel, st
 
 void CWorldData::Move(CPlayer* pPlayer)
 {
+	// check if the player is valid
 	if(!pPlayer || !pPlayer->GetCharacter())
 		return;
 
-	CGS* pGS = dynamic_cast<CGS*>(Server()->GameServerPlayer(pPlayer->GetCID()));
-	CWorldSwapData* pSwapper = GetSwapperByPos(pPlayer->GetCharacter()->GetPos());
+	auto* pGS = (CGS*)Server()->GameServerPlayer(pPlayer->GetCID());
+	const auto* pSwapper = GetSwapperByPos(pPlayer->GetCharacter()->GetPos());
+
+	// check if the swapper is valid
 	if(!pGS || !pSwapper)
 		return;
 
-	int ClientID = pPlayer->GetCID();
-	CWorldData* pSecondWorldData = pGS->GetWorldData(pSwapper->GetSecondWorldID());
+	const int ClientID = pPlayer->GetCID();
+	const auto* pSecondWorldData = pGS->GetWorldData(pSwapper->GetSecondWorldID());
+
+	// check if the player has the required level to move
 	if(pSecondWorldData && pPlayer->Account()->GetLevel() < m_RequiredLevel)
 	{
-		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "You must be at least level {} to moved!", m_RequiredLevel);
+		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "You must be at least level {} to move!", m_RequiredLevel);
 		return;
 	}
 
@@ -38,8 +42,11 @@ void CWorldData::Move(CPlayer* pPlayer)
 
 CWorldSwapData* CWorldData::GetSwapperByPos(vec2 Pos)
 {
-	auto pWorld = std::find_if(m_Swappers.begin(), m_Swappers.end(), [&](const CWorldSwapData& pItem)
-	{ return pItem.GetFirstWorldID() == m_ID && distance(pItem.GetFirstSwapPosition(), Pos) < 400; });
+	const auto pWorld = std::ranges::find_if(m_Swappers, [&](const CWorldSwapData& pItem)
+	{
+		return pItem.GetFirstWorldID() == m_ID && distance(pItem.GetFirstSwapPosition(), Pos) < 400;
+	});
+
 	return (pWorld != m_Swappers.end()) ? &(*pWorld) : nullptr;
 }
 

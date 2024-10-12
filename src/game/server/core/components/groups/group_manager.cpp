@@ -6,7 +6,7 @@
 #include <game/server/core/tools/vote_optional.h>
 #include <game/server/gamecontext.h>
 
-void CGroupManager::OnInit()
+void CGroupManager::OnPreInit()
 {
 	// Create a pointer to store the result of the database query
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_groups");

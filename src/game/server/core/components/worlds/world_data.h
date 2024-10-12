@@ -3,39 +3,49 @@
 #ifndef GAME_SERVER_COMPONENT_WORLDDATA_H
 #define GAME_SERVER_COMPONENT_WORLDDATA_H
 
-using WorldIdentifier = int;
+class CPlayer;
 using WorldDataPtr = std::shared_ptr< class CWorldData >;
 
-/*
- * World Swapper
- */
+// World swap data
 class CWorldSwapData
 {
 	std::pair<vec2, vec2> m_Positions {};
 	std::pair<int, int> m_Worlds {};
 
 public:
-	// Default constructor
 	CWorldSwapData() = default;
-
-	// Parameterized constructor
 	CWorldSwapData(const std::pair<vec2, vec2> Positions, const std::pair<int, int> Worlds)
 		: m_Positions(Positions), m_Worlds(Worlds) {}
 
-	// Getter methods for world swap element
-	vec2 GetFirstSwapPosition() const { return m_Positions.first; }     // Get the first swap position
-	vec2 GetSecondSwapPosition() const { return m_Positions.second; }   // Get the second swap position
+	// Get the first swap position
+	vec2 GetFirstSwapPosition() const
+	{
+		return m_Positions.first;
+	}
 
-	int GetFirstWorldID() const { return m_Worlds.first; }              // Get the first world ID
-	int GetSecondWorldID() const { return m_Worlds.second; }            // Get the second world ID
+	// Get the second swap position
+	vec2 GetSecondSwapPosition() const
+	{
+		return m_Positions.second;
+	}
+
+	// Get the first world ID
+	int GetFirstWorldID() const
+	{
+		return m_Worlds.first;
+	}
+
+	// Get the second world ID
+	int GetSecondWorldID() const
+	{
+		return m_Worlds.second;
+	}
 };
 
-/*
- * World Data
- */
+// World data
 class CWorldData : public MultiworldIdentifiableData< std::deque< WorldDataPtr > >
 {
-	WorldIdentifier m_ID {};
+	int m_ID {};
 	char m_aName[64] {};
 	int m_RequiredLevel {};
 	int m_RespawnWorldID {};
@@ -47,27 +57,51 @@ public:
 	CWorldData() = default;
 
 	// Create a new instance of CWorldData and return its pointer as a shared_ptr
-	static WorldDataPtr CreateElement(WorldIdentifier ID)
+	static WorldDataPtr CreateElement(int ID)
 	{
-		WorldDataPtr pData = std::make_shared<CWorldData>();
+		auto pData = std::make_shared<CWorldData>();
 		pData->m_ID = ID;
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	// Initialize the CWorldData instance with the specified parameters
+	// initialize the world data
 	void Init(int RespawnWorldID, int JailWorldID, int RequiredLevel, std::deque <CWorldSwapData>&& Worlds);
 
-	// Move the player to a different world
-	void Move(class CPlayer* pPlayer);
+	// move player to another world
+	void Move(CPlayer* pPlayer);
 
-	// Getter methods for world data
-	WorldIdentifier GetID() const { return m_ID; }                     // Return the identifier of the world
-	const char* GetName() const { return m_aName; }                    // Return the name of the world
-	int GetRequiredLevel() const { return m_RequiredLevel; };          // Return the required quest for the world
-	CWorldData* GetRespawnWorld() const;                               // Return the respawn world data
-	CWorldData* GetJailWorld() const;                                  // Return the respawn world data
-	CWorldSwapData* GetSwapperByPos(vec2 Pos);                         // Return the world swapper data based on a position
-	std::deque <CWorldSwapData>& GetSwappers() { return m_Swappers; }  // Return the collection of world swappers
+	// get identifier of the world
+	int GetID() const
+	{
+		return m_ID;
+	}
+
+	// get name of the world
+	const char* GetName() const
+	{
+		return m_aName;
+	}
+
+	// get required level of the world
+	int GetRequiredLevel() const
+	{
+		return m_RequiredLevel;
+	}
+
+	// get respawn world data
+	CWorldData* GetRespawnWorld() const;
+
+	// get jail world data
+	CWorldData* GetJailWorld() const;
+
+	// get swapper by position
+	CWorldSwapData* GetSwapperByPos(vec2 Pos);
+
+	// get collection of world swappers
+	std::deque <CWorldSwapData>& GetSwappers()
+	{
+		return m_Swappers;
+	}
 };
 
 #endif

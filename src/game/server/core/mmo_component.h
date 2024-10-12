@@ -53,7 +53,7 @@ private:
     /**
      * @brief Initializes the MMO component.
      */
-    virtual void OnInit() {}
+    virtual void OnPreInit() {}
 
     /**
      * @brief Initializes the MMO component for a specific world.
@@ -61,6 +61,11 @@ private:
      * @param pSqlQueryWhereWorld The location of the local world.
      */
     virtual void OnInitWorld(const char* pSqlQueryWhereWorld) {}
+
+	/**
+	 * @brief Initializes the MMO component post init.
+	 */
+	virtual void OnPostInit() {}
 
     /**
      * @brief Called when a time period occurs.

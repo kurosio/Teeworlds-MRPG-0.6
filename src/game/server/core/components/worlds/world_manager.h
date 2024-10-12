@@ -14,19 +14,18 @@ class CWorldManager : public MmoComponent
 
 	~CWorldManager() override
 	{
-		// free data
 		mystd::freeContainer(CWorldData::Data());
 	}
 
-	// init world id
 	void OnInitWorld(const char* pWhereLocalWorld) override;
+	void OnPostInit() override;
 
 public:
-	// Find the position of a world given its ID
-	void FindPosition(int WorldID, vec2 Pos, vec2* OutPos);
+	// Find a path to position by a given world ID
+	std::optional<vec2> FindPosition(int WorldID, vec2 Pos) const;
 
-	// Notify the player of unlocked zones by a given quest
-	void NotifyUnlockedZonesByLeveling(CPlayer* pPlayer, int QuestID) const;
+	// Notify the player of unlocked zones by a leveling
+	void NotifyUnlockedZonesByLeveling(CPlayer* pPlayer) const;
 };
 
 #endif

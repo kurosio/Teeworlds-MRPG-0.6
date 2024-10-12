@@ -14,7 +14,7 @@ class CGroupManager : public MmoComponent
 		mystd::freeContainer(GroupData::Data());
 	}
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnPlayerLogin(CPlayer* pPlayer) override;
 	void ShowGroupMenu(CPlayer* pPlayer) const;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;

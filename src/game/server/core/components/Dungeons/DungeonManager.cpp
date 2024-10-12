@@ -8,7 +8,7 @@
 
 #include "game/server/worldmodes/dungeon.h"
 
-void CDungeonManager::OnInit()
+void CDungeonManager::OnPreInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons");
 	while(pRes->next())

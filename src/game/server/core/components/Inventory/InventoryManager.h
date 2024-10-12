@@ -14,7 +14,7 @@ class CInventoryManager : public MmoComponent
 		mystd::freeContainer(CAttributeDescription::Data(), CItemDescription::Data(), CPlayerItem::Data());
 	}
 
-	void OnInit() override;
+	void OnPreInit() override;
 	void OnPlayerLogin(class CPlayer* pPlayer) override;
 	void OnClientReset(int ClientID) override;
 	bool OnPlayerVoteCommand(class CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
