@@ -126,12 +126,6 @@ public:
 	}
 };
 
-template<typename T1, typename T2>
-constexpr inline T1 minimum(T1 a, T2 b)
-{
-	return a < b ? a : b;
-}
-
 template<typename T>
 constexpr inline T minimum(T a, T b)
 {
