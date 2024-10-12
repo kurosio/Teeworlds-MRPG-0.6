@@ -108,6 +108,25 @@ class BigInt {
         long to_long() const;
         long long to_long_long() const;
 
+        template <typename T> requires std::is_integral_v<T>
+		T to_clamp()
+        {
+            constexpr T maxChunkSize = std::numeric_limits<T>::max();
+            constexpr T minChunkSize = std::numeric_limits<T>::min();
+
+        	if(*this > maxChunkSize)
+            {
+                return maxChunkSize;
+            }
+
+        	if(*this < minChunkSize)
+            {
+                return minChunkSize;
+            }
+
+            return static_cast<T>(to_long_long());
+        }
+
         operator std::string() const { return to_string(); }
 
         // Random number generating functions:
