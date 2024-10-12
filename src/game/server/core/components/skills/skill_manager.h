@@ -10,7 +10,6 @@ class CSkillManager : public MmoComponent
 {
 	~CSkillManager() override
 	{
-		// free data
 		mystd::freeContainer(CSkill::Data(), CSkillDescription::Data());
 	}
 

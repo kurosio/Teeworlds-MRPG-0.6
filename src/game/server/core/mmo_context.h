@@ -49,6 +49,16 @@ enum ETimePeriod
 	NUM_STAMPS
 };
 
+// special sounds
+enum ESpecialSound
+{
+	SOUND_VOTE_SELECT = SOUND_MENU + 1,
+	SOUND_ITEM_EQUIP,
+	SOUND_ITEM_SELL_BUY,
+	SOUND_USE_POTION,
+};
+
+
 // laser orbite types
 enum class LaserOrbiteType : unsigned char
 {
@@ -71,7 +81,7 @@ enum class Mood : short
 };
 
 // account harvesting stats
-enum AccountHarvestingStats
+enum EAccountHarvestingStats
 {
 	JOB_LEVEL = 0,
 	JOB_EXPERIENCE = 1,
@@ -80,7 +90,7 @@ enum AccountHarvestingStats
 };
 
 // player ticks
-enum TickState
+enum ETickState
 {
 	Die = 1,
 	Respawn,
@@ -99,7 +109,7 @@ enum TickState
 };
 
 // skills
-enum Skill
+enum ESkill
 {
 	SkillHeartTurret = 1,	// health recovery turret
 	SkillSleepyGravity = 2, // mobbing
@@ -173,7 +183,7 @@ enum class QuestState : int
 };
 
 // npc functions
-enum FunctionsNPC
+enum EFunctionsNPC
 {
 	FUNCTION_NPC_NURSE,
 	FUNCTION_NPC_GIVE_QUEST,
@@ -181,7 +191,7 @@ enum FunctionsNPC
 };
 
 // menu list
-enum MenuList
+enum EMenuList
 {
 	// Main menu
 	MENU_MAIN = 1,
@@ -368,7 +378,7 @@ enum class BroadcastPriority
 };
 
 // spawn types
-enum SpawnTypes
+enum ESpawnType
 {
 	SPAWN_HUMAN = 0,        // Spawn a human player
 	SPAWN_BOT = 1,          // Spawn a bot player
@@ -378,7 +388,7 @@ enum SpawnTypes
 };
 
 // bot types
-enum BotsTypes
+enum EBotsType
 {
 	TYPE_BOT_MOB = 1,       // type for mob bots
 	TYPE_BOT_QUEST = 2,     // type for quest bots

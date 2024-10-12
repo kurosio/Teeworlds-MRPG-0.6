@@ -96,6 +96,9 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 		char aLocalSelect[64];
 		str_format(aLocalSelect, sizeof(aLocalSelect), "WHERE WorldID = '%d'", m_pGameServer->GetWorldID());
 		pComponent->OnInitWorld(aLocalSelect);
+
+		if(m_pGameServer->GetWorldID() == (Instance::Server()->GetWorldsSize() - 1))
+			pComponent->OnPostInit();
 	}
 
 	// update language data

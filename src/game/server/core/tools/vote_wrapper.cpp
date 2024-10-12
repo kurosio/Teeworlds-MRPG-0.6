@@ -473,7 +473,7 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, co
 		return true;
 
 	// sound effect
-	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_PICKUP_ARMOR);
+	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_SELECT);
 
 	// command menu
 	if(PPSTR(pCmd, "MENU") == 0)

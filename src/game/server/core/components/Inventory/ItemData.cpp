@@ -202,6 +202,7 @@ bool CPlayerItem::Equip(bool SaveItem)
 		pPlayer->GetCharacter()->UpdateEquipingStats(m_ID);
 	}
 
+	GS()->CreatePlayerSound(m_ClientID, SOUND_ITEM_EQUIP);
 	pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
 	Info()->StartItemScenario(pPlayer, m_Settings ? ItemScenarioEvent::OnEventEquip : ItemScenarioEvent::OnEventUnequip);
 	GS()->MarkUpdatedBroadcast(m_ClientID);

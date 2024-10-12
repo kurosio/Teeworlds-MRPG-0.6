@@ -28,7 +28,7 @@ bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	if(Menulist == MenuList::MENU_DUNGEONS)
+	if(Menulist == EMenuList::MENU_DUNGEONS)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 

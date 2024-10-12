@@ -223,7 +223,7 @@ void IGameController::OnReset()
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(CPlayer* pPlayer = GS()->GetPlayer(i))
-			pPlayer->m_aPlayerTick[TickState::Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
+			pPlayer->m_aPlayerTick[ETickState::Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
 	}
 }
 
