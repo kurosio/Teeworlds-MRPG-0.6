@@ -358,6 +358,7 @@ enum
 	// weapons
 	itHammer = 2,						// Equipment Hammers
 	itLampHammer = 99,					// Equipment Lamp hammer
+	itBlastHammer = 102,				// Equipment Blast hammer
 
 	itGun = 3,							// Equipment Gun
 

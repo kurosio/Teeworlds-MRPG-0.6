@@ -307,6 +307,28 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		return true;
 	}
 
+	// blast hammer
+	if(EquippedItem == itBlastHammer)
+	{
+		constexpr float Radius = 128.0f;
+		constexpr int MaxDamage = 10;
+
+		// apply damage and force to all nearby characters
+		for(auto* pTarget = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pTarget; pTarget = (CCharacter*)pTarget->TypeNext())
+		{
+			if(!pTarget->IsAllowedPVP(m_ClientID) || pTarget->GetClientID() == m_ClientID)
+				continue;
+				
+			const auto Dist = distance(pTarget->m_Pos, m_Pos);
+			if(Dist < Radius)
+				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, MaxDamage);
+		}
+
+		// move and visual effect
+		m_Core.m_Vel += Direction * 2.5f;
+		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, 0);
+	}
+
 	// default hammer
 	constexpr float Radius = 3.2f;
 	CCharacter* apEnts[MAX_CLIENTS];
@@ -327,7 +349,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
 		const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
 
-		pTarget->TakeDamage(Force, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);
+		pTarget->TakeDamage(Force, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_ClientID, m_Core.m_ActiveWeapon);
 		GS()->CreateHammerHit(HammerHitPos);
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 	}
@@ -428,7 +450,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 	if(EquippedItem == itPizdamet)
 	{
 		// initialize group & config
-		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, m_ClientID);
+		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_PROJECTILE, m_ClientID);
 		const auto pFire = groupPtr->CreatePickup(ProjStartPos, POWERUP_HEALTH);
 
 		// initialize element & config
@@ -508,7 +530,7 @@ bool CCharacter::FireLaser(vec2 Direction, vec2 ProjStartPos)
 	if(EquippedItem == itWallPusher)
 	{
 		// initialize group & config
-		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, m_ClientID);
+		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_LASER, m_ClientID);
 		const auto pFire = groupPtr->CreateLaser(ProjStartPos, ProjStartPos);
 
 		// initialize element & config

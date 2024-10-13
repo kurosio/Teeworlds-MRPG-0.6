@@ -210,7 +210,7 @@ void IGameController::OnPlayerDisconnect(CPlayer* pPlayer)
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
-		GS()->Core()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
+		GS()->Core()->SaveAccount(pPlayer, SAVE_POSITION);
 	}
 
 	pPlayer->OnDisconnect();
@@ -223,7 +223,7 @@ void IGameController::OnReset()
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(CPlayer* pPlayer = GS()->GetPlayer(i))
-			pPlayer->m_aPlayerTick[ETickState::Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
+			pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
 	}
 }
 
