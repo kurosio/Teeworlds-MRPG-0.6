@@ -367,6 +367,7 @@ enum
 	itPizdamet = 100,					// Equipment Pizdamet
 
 	itLaser = 6,						// Equipment Laser
+	itWallPusher = 101,					// Equipment Plazma wall
 
 	// decoration items
 	itPickupHealth = 18,				// Pickup heart

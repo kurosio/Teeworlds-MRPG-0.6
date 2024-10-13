@@ -202,11 +202,7 @@ void CCharacter::FireWeapon()
 	// Check if the character has learned the skill for using weapons in full auto mode
 	const bool IsCharBot = m_pPlayer->IsBot();
 	bool FullAuto = (IsCharBot || m_pPlayer->GetSkill(SkillMasterWeapon)->IsLearned());
-
-	// Check if the character will fire their weapon
 	bool WillFire = CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses;
-
-	// Check if the player has the FullAuto skill, the fire button is pressed, and there is ammo in the active weapon
 	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 	{
 		WillFire = true;
@@ -438,7 +434,6 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 		// initialize element & config
 		Direction = vec2(m_Core.m_Input.m_TargetX + rand() % 50 - rand() % 100, m_Core.m_Input.m_TargetY + rand() % 50 - rand() % 100);
 		pFire->SetConfig("direction", Direction);
-		pFire->SetConfig("fire_count", 0);
 		pFire->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 		{
 			CCharacter* pResultChar = nullptr;
@@ -507,6 +502,75 @@ bool CCharacter::FireLaser(vec2 Direction, vec2 ProjStartPos)
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a laser equipped.");
 		return false;
+	}
+
+	// plazma wall
+	if(EquippedItem == itWallPusher)
+	{
+		// initialize group & config
+		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, m_ClientID);
+		const auto pFire = groupPtr->CreateLaser(ProjStartPos, ProjStartPos);
+
+		// initialize element & config
+		pFire->SetConfig("direction", Direction);
+		pFire->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+		{
+			const auto Direction = pBase->GetConfig("direction", vec2());
+			const auto NormalizedDirection = normalize(Direction);
+			const auto IsCollide = pBase->GS()->Collision()->CheckPoint(pBase->GetPos()) && pBase->GS()->Collision()->CheckPoint(pBase->GetPosTo());
+			const auto PrevPos = pBase->GetPos();
+			const auto DistanceBetwenPoint = distance(pBase->GetPos(), pBase->GetPosTo());
+
+			// increase length & move
+			if(DistanceBetwenPoint < 240.f)
+			{
+				const auto PerpendicularDirection = vec2(-NormalizedDirection.y, NormalizedDirection.x);
+				pBase->SetPos(pBase->GetPos() + PerpendicularDirection * 2.0f);
+				pBase->SetPosTo(pBase->GetPosTo() - PerpendicularDirection * 2.0f);
+			}
+			pBase->SetPos(pBase->GetPos() + NormalizedDirection * 10.f);
+			pBase->SetPosTo(pBase->GetPosTo() + NormalizedDirection * 10.f);
+
+			// hit character
+			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+			{
+				if(!pChar->IsAllowedPVP(pBase->GetClientID()))
+					continue;
+
+				vec2 IntersectPos;
+				if(closest_point_on_line(pBase->GetPos(), pBase->GetPosTo(), pChar->m_Core.m_Pos, IntersectPos))
+				{
+					const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
+					if(Distance <= g_Config.m_SvDoorRadiusHit * 3)
+					{
+						const auto WallMovement = pBase->GetPos() - PrevPos;
+						const auto PredictedPos = pChar->m_Core.m_Pos + WallMovement;
+						const auto WallCollide = pBase->GS()->Collision()->TestBox(PredictedPos, vec2(pChar->ms_PhysSize, pChar->ms_PhysSize));
+
+						if(WallCollide)
+						{
+							pChar->TakeDamage({}, 1, pBase->GetClientID(), WEAPON_LASER);
+						}
+						else
+						{
+							pChar->m_Core.m_Pos = PredictedPos;
+							pChar->m_Core.m_Vel = {};
+						}
+					}
+				}
+			}
+
+			// check collide
+			if(IsCollide)
+			{
+				pBase->GS()->CreateDeath(pBase->GetPos(), pBase->GetClientID());
+				pBase->GS()->CreateDeath(pBase->GetPosTo(), pBase->GetClientID());
+				pBase->MarkForDestroy();
+			}
+		});
+
+		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
+		return true;
 	}
 
 	/*
