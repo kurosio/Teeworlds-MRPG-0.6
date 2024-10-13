@@ -277,7 +277,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// lamp hammer
-	if(EquippedItem == itLampHammer)
+	if(EquippedItem == itHammerLamp)
 	{
 		CCharacter* apEnts[MAX_CLIENTS];
 		const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * 128.f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
@@ -308,7 +308,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// blast hammer
-	if(EquippedItem == itBlastHammer)
+	if(EquippedItem == itHammerBlast)
 	{
 		constexpr float Radius = 128.0f;
 		constexpr int MaxDamage = 10;
@@ -527,7 +527,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// plazma wall
-	if(EquippedItem == itWallPusher)
+	if(EquippedItem == itRifleWallPusher)
 	{
 		// initialize group & config
 		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_LASER, m_ClientID);
@@ -607,13 +607,13 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// Magnetic pulse rifle
-	if(EquippedItem == itMagneticPulseRifle)
+	if(EquippedItem == itRifleMagneticPulse)
 	{
 		enum
 		{
-			IDS_PROJ_CYRCLE = 2,
-			IDS_CYRCLE = 8,
-			NUM_IDS = IDS_PROJ_CYRCLE + IDS_CYRCLE,
+			NUM_IDS_PROJ_CYRCLE = 2,
+			NUM_IDS_CYRCLE = 8,
+			NUM_IDS = NUM_IDS_PROJ_CYRCLE + NUM_IDS_CYRCLE,
 		};
 
 		// initialize group & config
@@ -657,7 +657,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 					// lifetime
 					if(!LifeTimeRef)
 					{
-						pBase->GS()->CreateCyrcleExplosion(8, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_LASER, 10);
+						pBase->GS()->CreateCyrcleExplosion(NUM_IDS_CYRCLE, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_LASER, 10);
 						pBase->MarkForDestroy();
 						return;
 					}
@@ -680,10 +680,10 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 				pResult->RegisterEvent(CBaseEntity::EventSnap, NUM_IDS, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 				{
 					const auto Radius = pBase->GetConfig("radius", 0.f);
-					constexpr float AngleStep = 2.0f * pi / static_cast<float>(IDS_CYRCLE);
+					constexpr float AngleStep = 2.0f * pi / static_cast<float>(NUM_IDS_CYRCLE);
 
 					// snap inside cyrcle
-					for(int i = 0; i < IDS_PROJ_CYRCLE; i++)
+					for(int i = 0; i < NUM_IDS_PROJ_CYRCLE; i++)
 					{
 						const auto RangeRandomPos = random_range_pos(pBase->GetPos(), Radius);
 						if(!pBase->GS()->SnapProjectile(SnappingClient, vIds[i], RangeRandomPos, {}, pBase->Server()->Tick(), WEAPON_HAMMER, pBase->GetClientID()))
@@ -691,13 +691,13 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 					}
 
 					// snap cyrcle connect
-					for(int i = 0; i < IDS_CYRCLE; ++i)
+					for(int i = 0; i < NUM_IDS_CYRCLE; ++i)
 					{
-						const auto nextIndex = (i + 1) % IDS_CYRCLE;
+						const auto nextIndex = (i + 1) % NUM_IDS_CYRCLE;
 						const auto CurrentPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
 						const auto NextPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * nextIndex), Radius * sin(AngleStep * nextIndex));
 
-						if(!pBase->GS()->SnapLaser(SnappingClient, vIds[IDS_PROJ_CYRCLE + i], CurrentPos, NextPos, pBase->Server()->Tick() - 1))
+						if(!pBase->GS()->SnapLaser(SnappingClient, vIds[NUM_IDS_PROJ_CYRCLE + i], CurrentPos, NextPos, pBase->Server()->Tick() - 1))
 							return;
 					}
 				});

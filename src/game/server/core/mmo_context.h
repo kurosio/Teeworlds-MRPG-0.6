@@ -357,8 +357,8 @@ enum
 
 	// weapons
 	itHammer = 2,						// Equipment Hammers
-	itLampHammer = 99,					// Equipment Lamp hammer
-	itBlastHammer = 102,				// Equipment Blast hammer
+	itHammerLamp = 99,					// Equipment Lamp hammer
+	itHammerBlast = 102,				// Equipment Blast hammer
 
 	itGun = 3,							// Equipment Gun
 
@@ -367,9 +367,9 @@ enum
 	itGrenade = 5,						// Equipment Grenade
 	itPizdamet = 100,					// Equipment Pizdamet
 
-	itLaser = 6,						// Equipment Laser
-	itWallPusher = 101,					// Equipment Plazma wall
-	itMagneticPulseRifle = 103,			// Equpment Magnetic pulse rifle
+	itLaser = 6,						// Equipment Rifle
+	itRifleWallPusher = 101,			// Equipment Rifle Plazma wall
+	itRifleMagneticPulse = 103,			// Equpment Magnetic pulse rifle
 
 	// decoration items
 	itPickupHealth = 18,				// Pickup heart
