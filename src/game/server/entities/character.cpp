@@ -513,8 +513,19 @@ bool CCharacter::FireLaser(vec2 Direction, vec2 ProjStartPos)
 
 		// initialize element & config
 		pFire->SetConfig("direction", Direction);
+		pFire->SetConfig("lifetime", Server()->TickSpeed() * 5);
 		pFire->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 		{
+			// lifetime
+			auto& LifeTimeRef = pBase->GetRefConfig("lifetime", 0);
+			if(!LifeTimeRef)
+			{
+				pBase->MarkForDestroy();
+				return;
+			}
+			LifeTimeRef--;
+
+			// initialize variables
 			const auto Direction = pBase->GetConfig("direction", vec2());
 			const auto NormalizedDirection = normalize(Direction);
 			const auto IsCollide = pBase->GS()->Collision()->CheckPoint(pBase->GetPos()) && pBase->GS()->Collision()->CheckPoint(pBase->GetPosTo());
@@ -525,8 +536,8 @@ bool CCharacter::FireLaser(vec2 Direction, vec2 ProjStartPos)
 			if(DistanceBetwenPoint < 240.f)
 			{
 				const auto PerpendicularDirection = vec2(-NormalizedDirection.y, NormalizedDirection.x);
-				pBase->SetPos(pBase->GetPos() + PerpendicularDirection * 2.0f);
-				pBase->SetPosTo(pBase->GetPosTo() - PerpendicularDirection * 2.0f);
+				pBase->SetPos(pBase->GetPos() + PerpendicularDirection * 3.0f);
+				pBase->SetPosTo(pBase->GetPosTo() - PerpendicularDirection * 3.0f);
 			}
 			pBase->SetPos(pBase->GetPos() + NormalizedDirection * 10.f);
 			pBase->SetPosTo(pBase->GetPosTo() + NormalizedDirection * 10.f);
