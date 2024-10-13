@@ -44,10 +44,16 @@ class CCharacter : public CEntity
 	void HandleWeaponSwitch();
 	void DoWeaponSwitch();
 	void HandleHookActions();
-	bool InteractiveHammer(vec2 Direction, vec2 ProjStartPos);
+	bool HandleHammerActions(vec2 Direction, vec2 ProjStartPos);
 	void HandleBuff(CTuningParams* TuningParams);
 	void HandlePlayer();
 	bool IsWorldAccessible() const;
+
+	bool FireHammer(vec2 Direction, vec2 ProjStartPos);
+	bool FireGun(vec2 Direction, vec2 ProjStartPos);
+	bool FireShotgun(vec2 Direction, vec2 ProjStartPos);
+	bool FireGrenade(vec2 Direction, vec2 ProjStartPos);
+	bool FireLaser(vec2 Direction, vec2 ProjStartPos);
 
 protected:
 	bool m_Alive {};

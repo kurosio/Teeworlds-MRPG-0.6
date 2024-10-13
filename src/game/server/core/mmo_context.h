@@ -5,6 +5,16 @@
 
 #include "tools/path_finder_result.h"
 
+// special sounds
+enum ESpecialSound
+{
+	SOUND_NOPE = -1,
+	SOUND_VOTE_SELECT = SOUND_MENU + 1,
+	SOUND_ITEM_EQUIP,
+	SOUND_ITEM_SELL_BUY,
+	SOUND_USE_POTION,
+};
+
 // skin data
 struct CTeeInfo
 {
@@ -48,16 +58,6 @@ enum ETimePeriod
 	MONTH_STAMP,
 	NUM_STAMPS
 };
-
-// special sounds
-enum ESpecialSound
-{
-	SOUND_VOTE_SELECT = SOUND_MENU + 1,
-	SOUND_ITEM_EQUIP,
-	SOUND_ITEM_SELL_BUY,
-	SOUND_USE_POTION,
-};
-
 
 // laser orbite types
 enum class LaserOrbiteType : unsigned char
@@ -317,44 +317,56 @@ enum
 	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
 
-	// settings items
-	itShowEquipmentDescription = 25,	// Description setting
-	itShowCriticalDamage = 34,			// Critical damage setting
-	itShowQuestStarNavigator = 93,		// Show quest path when idle
-	itShowDetailGainMessages = 98,      // Show detail gain messages
-
 	// items
 	NOPE = -1,
+	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
+	itLittleBagGold = 17,				// Gives 10-50 gold
+	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
+	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
+	itTicketDiscountCraft = 24,			// Discount ticket for crafting
+	itRandomHomeDecoration = 26,		// Random home decor
+	itRandomRelicsBox = 58,				// Random Relics box
+
+	// potions
+	itPotionManaRegen = 14,				// Mana regeneration potion
+	itTinyHealthPotion = 15,			// Tiny health potion
+
+	// eidolons
+	itEidolonOtohime = 57,				// Eidolon
+	itEidolonMerrilee = 59,				// Eidolon
+	itEidolonDryad = 80,				// Eidolon
+	itEidolonPigQueen = 88,				// Eidolon
+
+	// currency
 	itGold = 1,							// Money ordinary currency
-	itHammer = 2,						// Equipment Hammers
 	itMaterial = 7,						// Scraping material
 	itProduct = 8,						// Scraping material
 	itSkillPoint = 9,					// Skillpoint
 	itAchievementPoint = 10,			// Achievement point
-	itPotionManaRegen = 14,				// Mana regeneration potion
-	itTinyHealthPotion = 15,			// Tiny health potion
-	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
-	itLittleBagGold = 17,				// Gives 10-50 gold
+	itAlliedSeals = 30,					// Allied seals
+	itTicketGuild = 95,					// Ticket for the creation of the guild
+
+	// modules
 	itExplosiveGun = 19,				// Explosion for gun
 	itExplosiveShotgun = 20,			// Explosion for shotgun
-	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
-	itPermissionExceedLimits = 22,		// Reserve
-	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
-	itTicketDiscountCraft = 24,			// Discount ticket for crafting
-	itRandomHomeDecoration = 26,		// Random home decor
-	itAlliedSeals = 30,					// Allied seals
-	itEidolonOtohime = 57,				// Eidolon
-	itRandomRelicsBox = 58,				// Random Relics box
-	itEidolonMerrilee = 59,				// Eidolon
 	itPoisonHook = 64,					// Poison hook
 	itExplodeHook = 65,					// Explode hook
 	itSpiderHook = 66,					// Spider hook
-	itEidolonDryad = 80,				// Eidolon
-	itEidolonPigQueen = 88,				// Eidolon
-	itAdventurersBadge = 92,			// The adventurer's badge
-	itTicketGuild = 95,					// Ticket for the creation of the guild
 	itCustomizer = 96,                  // Curomizer for personal skins
 	itDamageEqualizer = 97,				// Module for dissable self dmg
+
+	// weapons
+	itHammer = 2,						// Equipment Hammers
+	itLampHammer = 99,					// Equipment Lamp hammer
+
+	itGun = 3,							// Equipment Gun
+
+	itShotgun = 4,						// Equipment Shotgun
+
+	itGrenade = 5,						// Equipment Grenade
+	itPizdamet = 100,					// Equipment Pizdamet
+
+	itLaser = 6,						// Equipment Laser
 
 	// decoration items
 	itPickupHealth = 18,				// Pickup heart
@@ -362,6 +374,12 @@ enum
 	itPickupShotgun = 11,				// Pickup shotgun
 	itPickupGrenade = 12,				// Pickup grenade
 	itPickupLaser = 94,				    // Pickup laser
+
+	// settings items
+	itShowEquipmentDescription = 25,	// Description setting
+	itShowCriticalDamage = 34,			// Critical damage setting
+	itShowQuestStarNavigator = 93,		// Show quest path when idle
+	itShowDetailGainMessages = 98,      // Show detail gain messages
 };
 
 // broadcast

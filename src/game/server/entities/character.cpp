@@ -16,8 +16,10 @@
 #include <game/server/core/components/quests/quest_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
 
+#include <game/server/core/entities/group/entitiy_group.h>
 #include <game/server/core/entities/items/harvesting_item.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>
+#include <game/server/core/entities/tools/flying_point.h>
 
 #include "character_bot.h"
 
@@ -232,147 +234,11 @@ void CCharacter::FireWeapon()
 	const vec2 ProjStartPos = m_Pos + Direction * GetRadius() * 0.75f;
 	switch(m_Core.m_ActiveWeapon)
 	{
-		case WEAPON_HAMMER:
-		{
-			if(InteractiveHammer(Direction, ProjStartPos))
-			{
-				m_ReloadTimer = Server()->TickSpeed() / 3;
-				return;
-			}
-
-			bool Hits = false;
-			constexpr float Radius = 3.2f;
-			GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
-
-			CCharacter* apEnts[MAX_CLIENTS];
-			const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-			for(int i = 0; i < Num; ++i)
-			{
-				CCharacter* pTarget = apEnts[i];
-				if((pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
-					continue;
-
-				// talking wth bot
-				if(StartConversation(pTarget->GetPlayer()))
-				{
-					GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_PLAYER_SPAWN);
-					GS()->CreateHammerHit(ProjStartPos);
-					Hits = true;
-
-					const int BotID = pTarget->GetPlayer()->GetBotID();
-					GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
-					break;
-				}
-
-				// dissalow hammer hit from self eidolon
-				if(m_pPlayer->GetEidolon() && m_pPlayer->GetEidolon()->GetCID() == pTarget->GetPlayer()->GetCID())
-					continue;
-
-				if(pTarget->m_Core.m_CollisionDisabled)
-					continue;
-
-				if(length(pTarget->m_Pos - ProjStartPos) > 0.0f)
-					GS()->CreateHammerHit(pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * GetRadius() * Radius);
-				else
-					GS()->CreateHammerHit(ProjStartPos);
-
-				vec2 Dir = vec2(0.f, -1.f);
-				if(length(pTarget->m_Pos - m_Pos) > 0.0f)
-					Dir = normalize(pTarget->m_Pos - m_Pos);
-
-				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);
-				Hits = true;
-			}
-			if(Hits)
-				m_ReloadTimer = Server()->TickSpeed() / 3;
-		} break;
-
-		case WEAPON_GUN:
-		{
-			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveGun)->IsEquipped();
-			new CProjectile(
-				GameWorld(), 
-				WEAPON_GUN, 
-				m_pPlayer->GetCID(), 
-				ProjStartPos, 
-				Direction, 
-				(int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime),
-				g_pData->m_Weapons.m_Gun.m_pBase->m_Damage, 
-				IsExplosive, 
-				0, 
-				-1,
-				MouseTarget,
-				WEAPON_GUN);
-
-			GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
-		} break;
-
-		case WEAPON_SHOTGUN:
-		{
-			const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
-			const int ShotSpread = 5;
-			for(int i = 0; i < ShotSpread; ++i)
-			{
-				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
-				const float a = angle(Direction) + Spreading;
-				const float Speed = (float)GS()->Tuning()->m_ShotgunSpeeddiff + random_float(0.2f);
-				vec2 TargetPos = MouseTarget + vec2(cosf(a), sinf(a)) * (Speed * 500.0f);
-
-				new CProjectile(
-					GameWorld(), 
-					WEAPON_SHOTGUN, 
-					m_pPlayer->GetCID(), 
-					ProjStartPos,
-					vec2(cosf(a), sinf(a)) * Speed,
-					(int)(Server()->TickSpeed() * GS()->Tuning()->m_ShotgunLifetime),
-					g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage, 
-					IsExplosive, 
-					0, 
-					15,
-					TargetPos,
-					WEAPON_SHOTGUN);
-			}
-			GS()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
-		} break;
-
-		case WEAPON_GRENADE:
-		{
-			const int ShotSpread = 1;
-			for(int i = 0; i < ShotSpread; ++i)
-			{
-				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
-				const float a = angle(Direction) + Spreading;
-				const float Speed = (float)GS()->Tuning()->m_GrenadeSpeed + random_float(0.2f);
-				vec2 TargetPos = MouseTarget + vec2(cosf(a), sinf(a)) * (Speed * 500.0f);
-
-				new CProjectile(
-					GameWorld(), 
-					WEAPON_GRENADE, 
-					m_pPlayer->GetCID(), 
-					ProjStartPos,
-					vec2(cosf(a), sinf(a)),
-					(int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime),
-					g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage, 
-					true, 
-					0, 
-					SOUND_GRENADE_EXPLODE,
-					TargetPos,
-					WEAPON_GRENADE);
-			}
-			GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
-		} break;
-
-		case WEAPON_LASER:
-		{
-			const int ShotSpread = 1;
-			for(int i = 0; i < ShotSpread; ++i)
-			{
-				const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
-				const float a = angle(Direction) + Spreading;
-				new CLaser(GameWorld(), m_Pos, vec2(cosf(a), sinf(a)), GS()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
-			}
-			GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
-		} break;
+		case WEAPON_HAMMER: FireHammer(Direction, ProjStartPos); break;
+		case WEAPON_GUN: FireGun(Direction, ProjStartPos); break;
+		case WEAPON_SHOTGUN: FireShotgun(Direction, ProjStartPos); break;
+		case WEAPON_GRENADE: FireGrenade(Direction, ProjStartPos); break;
+		case WEAPON_LASER: FireLaser(Direction, ProjStartPos); break;
 
 		case WEAPON_NINJA:
 		{
@@ -381,7 +247,8 @@ void CCharacter::FireWeapon()
 			m_Ninja.m_OldVelAmount = length(m_Core.m_Vel);
 
 			GS()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
-		} break;
+		}
+		break;
 	}
 
 	m_AttackTick = Server()->Tick();
@@ -394,6 +261,262 @@ void CCharacter::FireWeapon()
 		const int ReloadArt = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AttackSPD);
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 + ReloadArt);
 	}
+}
+
+bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
+{
+	// check equip state
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_HAMMER);
+	if(!EquippedItem.has_value())
+	{
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a hammer equipped.");
+		return false;
+	}
+
+	// handle hammer actions
+	if(HandleHammerActions(Direction, ProjStartPos))
+	{
+		m_ReloadTimer = Server()->TickSpeed() / 3;
+		return true;
+	}
+
+	// lamp hammer
+	if(EquippedItem == itLampHammer)
+	{
+		CCharacter* apEnts[MAX_CLIENTS];
+		const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * 128.f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		for(int i = 0; i < Num; ++i)
+		{
+			const auto* pTarget = apEnts[i];
+			if((pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
+				continue;
+
+			if(!pTarget->IsAllowedPVP(m_ClientID))
+				continue;
+
+			const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
+			const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
+			auto* pPoint = new CEntityFlyingPoint(&GS()->m_World, ProjStartPos, Force, pTarget->GetClientID(), m_ClientID);
+
+			pPoint->Register([this, Force](CPlayer* pFrom, CPlayer* pPlayer)
+			{
+				auto* pChar = pPlayer->GetCharacter();
+				GS()->CreateDeath(pChar->GetPos(), pPlayer->GetCID());
+				pChar->TakeDamage(Force, 2, pFrom->GetCID(), WEAPON_HAMMER);
+			});
+			m_ReloadTimer = Server()->TickSpeed() / 3;
+		}
+
+		GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
+		return true;
+	}
+
+	// default hammer
+	constexpr float Radius = 3.2f;
+	CCharacter* apEnts[MAX_CLIENTS];
+
+	const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+	for(int i = 0; i < Num; ++i)
+	{
+		auto* pTarget = apEnts[i];
+		if((pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
+			continue;
+
+		if(!pTarget->IsAllowedPVP(m_ClientID) || pTarget->m_Core.m_CollisionDisabled)
+			continue;
+
+		const auto HammerHitPos = length(pTarget->m_Pos - ProjStartPos) > 0.0f
+			? pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * GetRadius() * Radius : ProjStartPos;
+			GS()->CreateHammerHit(pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * GetRadius() * Radius);
+		const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
+		const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
+
+		pTarget->TakeDamage(Force, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_pPlayer->GetCID(), m_Core.m_ActiveWeapon);
+		GS()->CreateHammerHit(HammerHitPos);
+		m_ReloadTimer = Server()->TickSpeed() / 3;
+	}
+
+	GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
+	return true;
+}
+
+bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
+{
+	// check equip state
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_GUN);
+	if(!EquippedItem.has_value())
+	{
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a gun equipped.");
+		return false;
+	}
+
+	/*
+	 * Here weapons can be modified to have different behavior
+	 */
+
+	// default gun
+	vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
+	const int Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
+	new CProjectile(
+		GameWorld(),
+		WEAPON_GUN,
+		m_pPlayer->GetCID(),
+		ProjStartPos,
+		Direction,
+		Lifetime,
+		g_pData->m_Weapons.m_Gun.m_pBase->m_Damage,
+		false,
+		0,
+		-1,
+		MouseTarget,
+		WEAPON_GUN);
+
+	GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
+	return true;
+}
+
+bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
+{
+	// check equip state
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_SHOTGUN);
+	if(!EquippedItem.has_value())
+	{
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a shotgun equipped.");
+		return false;
+	}
+
+	/*
+	 * Here weapons can be modified to have different behavior
+	 */
+
+	// default shotgun
+	constexpr int ShotSpread = 5;
+	const int Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_ShotgunLifetime);
+	const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
+	for(int i = 0; i < ShotSpread; ++i)
+	{
+		const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
+		const float a = angle(Direction) + Spreading;
+		const float Speed = (float)GS()->Tuning()->m_ShotgunSpeeddiff + random_float(0.2f);
+		vec2 TargetPos = Direction + vec2(cosf(a), sinf(a)) * (Speed * 500.0f);
+
+		new CProjectile(GameWorld(),
+			WEAPON_SHOTGUN,
+			m_pPlayer->GetCID(),
+			ProjStartPos,
+			vec2(cosf(a), sinf(a)) * Speed,
+			Lifetime,
+			g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage,
+			IsExplosive,
+			0,
+			15,
+			TargetPos,
+			WEAPON_SHOTGUN);
+	}
+
+	GS()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
+	return true;
+}
+
+bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
+{
+	// check equip state
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_GRENADE);
+	if(!EquippedItem.has_value())
+	{
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a grenade equipped.");
+		return false;
+	}
+
+	// pizdamet
+	if(EquippedItem == itPizdamet)
+	{
+		// initialize group & config
+		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, m_ClientID);
+		const auto pFire = groupPtr->CreatePickup(ProjStartPos, POWERUP_HEALTH);
+
+		// initialize element & config
+		Direction = vec2(m_Core.m_Input.m_TargetX + rand() % 50 - rand() % 100, m_Core.m_Input.m_TargetY + rand() % 50 - rand() % 100);
+		pFire->SetConfig("direction", Direction);
+		pFire->SetConfig("fire_count", 0);
+		pFire->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+		{
+			CCharacter* pResultChar = nullptr;
+			auto& DirectionRef = pBase->GetRefConfig("direction", vec2());
+			pBase->SetPos(pBase->GetPos() + normalize(DirectionRef) * 18.0f);
+
+			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+			{
+				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID() || !pChar->IsAllowedPVP(pBase->GetClientID()))
+					continue;
+
+				// check distance
+				const float Distance = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
+				if(Distance < 64.f)
+				{
+					pResultChar = pChar;
+					break;
+				}
+
+				// smooth navigate to target
+				if(Distance < 300.0f)
+				{
+					vec2 ToEnemy = normalize(pChar->m_Core.m_Pos - pBase->GetPos());
+					DirectionRef = normalize(DirectionRef + ToEnemy * 0.05f);
+				}
+			}
+
+			// destroy and explosion
+			if(pResultChar != nullptr || pBase->GS()->Collision()->CheckPoint(pBase->GetPos()))
+			{
+				pBase->GS()->CreateRandomRadiusExplosion(7, 180.f, pBase->GetPos(), pBase->GetClientID(), WEAPON_GRENADE, 5);
+				pBase->MarkForDestroy();
+			}
+		});
+
+		m_ReloadTimer = Server()->TickSpeed() / 8;
+		GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
+		return true;
+	}
+
+	// default grenade
+	vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
+	new CProjectile(
+		GameWorld(),
+		WEAPON_GRENADE,
+		m_pPlayer->GetCID(),
+		ProjStartPos,
+		Direction,
+		(int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime),
+		g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage,
+		true,
+		0,
+		SOUND_GRENADE_EXPLODE,
+		MouseTarget,
+		WEAPON_GRENADE);
+
+	GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
+	return true;
+}
+
+bool CCharacter::FireLaser(vec2 Direction, vec2 ProjStartPos)
+{
+	// check equip state
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_LASER);
+	if(!EquippedItem.has_value())
+	{
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a laser equipped.");
+		return false;
+	}
+
+	/*
+	 * Here weapons can be modified to have different behavior
+	 */
+
+	// default laser
+	new CLaser(GameWorld(), m_Pos, Direction, GS()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
+	GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
+	return true;
 }
 
 void CCharacter::HandleWeapons()
@@ -896,27 +1019,19 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 	CPlayer* pFrom = GS()->GetPlayer(FromCID);
 	if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
+		// by attribute damage
 		if(Weapon == WEAPON_GUN)
-		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::GunDMG);
-		}
 		else if(Weapon == WEAPON_SHOTGUN)
-		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::ShotgunDMG);
-		}
 		else if(Weapon == WEAPON_GRENADE)
-		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::GrenadeDMG);
-		}
 		else if(Weapon == WEAPON_LASER)
-		{
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::RifleDMG);
-		}
-		else
-		{
+		else if(Weapon == WEAPON_HAMMER)
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::HammerDMG);
-		}
 
+		// apply extra damage by class
 		const int EnchantBonus = translate_to_percent_rest(pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG), pFrom->GetClassData().GetExtraDMG());
 		Dmg += EnchantBonus;
 
@@ -937,7 +1052,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		}
 
 		// critical damage
-		if(Dmg && !pFrom->IsBot() && m_pPlayer->GetAttributeChance(AttributeIdentifier::Crit) > random_float(100.0f))
+		if(Dmg && m_pPlayer->GetAttributeChance(AttributeIdentifier::Crit) > random_float(100.0f))
 		{
 			CritDamage = 100 + maximum(pFrom->GetTotalAttributeValue(AttributeIdentifier::CritDMG), 1);
 			const float CritDamageFormula = (float)Dmg + ((float)CritDamage * ((float)Dmg / 100.0f));
@@ -947,15 +1062,11 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 			pFrom->GetCharacter()->SetEmote(EMOTE_ANGRY, 2, true);
 		}
 
-		// fix quick killer spread players
-		if(pFrom->GetCharacter()->m_Core.m_ActiveWeapon != WEAPON_HAMMER &&
-			distance(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos) < ms_PhysSize + 90.0f)
-			Dmg = maximum(1, Dmg / 3);
-
 		// give effects from player or bot to who got damage
 		pFrom->GetCharacter()->GiveRandomEffects(m_pPlayer->GetCID());
 		m_LastDamageTakenTick[FromCID] = Server()->Tick();
 	}
+
 	Dmg = (FromCID == m_pPlayer->GetCID() ? maximum(1, Dmg / 2) : maximum(1, Dmg));
 
 	// update health
@@ -1196,20 +1307,45 @@ void CCharacter::GiveRandomEffects(int To)
 	// Here effects ( buffs ) from player for TO
 }
 
-bool CCharacter::InteractiveHammer(vec2 Direction, vec2 ProjStartPos)
+bool CCharacter::HandleHammerActions(vec2 Direction, vec2 ProjStartPos)
 {
 	if(m_pPlayer->IsBot())
 		return false;
 
+	// take items from ground
 	if(GS()->TakeItemCharacter(m_pPlayer->GetCID()))
 		return true;
 
+	// try start dialogue
+	for(const auto* pTarget = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pTarget; pTarget = (CCharacter*)pTarget->TypeNext())
+	{
+		if(pTarget == this || !pTarget->GetPlayer()->IsBot())
+			continue;
+
+		// check distance valid
+		if(distance(pTarget->m_Core.m_Pos, m_Core.m_Pos) > 40.0f)
+			continue;
+
+		// talking wth bot
+		if(StartConversation(pTarget->GetPlayer()))
+		{
+			GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_TEE_CRY);
+			GS()->CreateHammerHit(ProjStartPos);
+
+			const int BotID = pTarget->GetPlayer()->GetBotID();
+			GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
+			return true;
+		}
+	}
+
+	// harvesting items
 	if(CEntityHarvestingItem* pJobItem = (CEntityHarvestingItem*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_HERVESTING_ITEM, nullptr))
 	{
 		pJobItem->Process(m_pPlayer->GetCID());
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 		return true;
 	}
+
 	return false;
 }
 

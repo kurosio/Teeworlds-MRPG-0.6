@@ -206,10 +206,6 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 		CCharacter* pChar = apEnts[i];
 		vec2 Diff = pChar->GetPos() - Pos;
 		const float Length = length(Diff);
-
-		if(Length == 0)
-			continue;
-
 		vec2 ForceDir = normalize(Diff);
 
 		// calculate damage factor
