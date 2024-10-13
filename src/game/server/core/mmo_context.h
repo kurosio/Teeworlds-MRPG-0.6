@@ -369,6 +369,7 @@ enum
 
 	itLaser = 6,						// Equipment Laser
 	itWallPusher = 101,					// Equipment Plazma wall
+	itMagneticPulseRifle = 103,			// Equpment Magnetic pulse rifle
 
 	// decoration items
 	itPickupHealth = 18,				// Pickup heart

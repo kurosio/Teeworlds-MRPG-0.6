@@ -234,7 +234,7 @@ void CCharacter::FireWeapon()
 		case WEAPON_GUN: FireGun(Direction, ProjStartPos); break;
 		case WEAPON_SHOTGUN: FireShotgun(Direction, ProjStartPos); break;
 		case WEAPON_GRENADE: FireGrenade(Direction, ProjStartPos); break;
-		case WEAPON_LASER: FireLaser(Direction, ProjStartPos); break;
+		case WEAPON_LASER: FireRifle(Direction, ProjStartPos); break;
 
 		case WEAPON_NINJA:
 		{
@@ -516,7 +516,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 	return true;
 }
 
-bool CCharacter::FireLaser(vec2 Direction, vec2 ProjStartPos)
+bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
 	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_LASER);
@@ -603,6 +603,112 @@ bool CCharacter::FireLaser(vec2 Direction, vec2 ProjStartPos)
 		});
 
 		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
+		return true;
+	}
+
+	// Magnetic pulse rifle
+	if(EquippedItem == itMagneticPulseRifle)
+	{
+		enum
+		{
+			IDS_PROJ_CYRCLE = 2,
+			IDS_CYRCLE = 8,
+			NUM_IDS = IDS_PROJ_CYRCLE + IDS_CYRCLE,
+		};
+
+		// initialize group & config
+		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_LASER, m_ClientID);
+		const auto pFire = groupPtr->CreateLaser(ProjStartPos, ProjStartPos);
+
+		// initialize element & config
+		pFire->SetConfig("direction", Direction);
+		pFire->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+		{
+			// initialize variables
+			const auto Direction = pBase->GetConfig("direction", vec2());
+			const auto NormalizedDirection = normalize(Direction);
+			const auto OldPos = pBase->GetPos();
+
+			// move
+			pBase->SetPos(pBase->GetPos() + NormalizedDirection * 10.f);
+			pBase->SetPosTo(OldPos);
+
+			// hit character
+			for(const auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+			{
+				if(!pChar->IsAllowedPVP(pBase->GetClientID()))
+					continue;
+
+				const auto Distance = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
+				const auto Run = Distance <= 64.f || pBase->GS()->Collision()->CheckPoint(pBase->GetPos());
+
+				if(!Run)
+					continue;
+
+				// create magnetic cyrcle
+				const auto pResult = pBase->GetGroup()->CreateBase(pBase->GetPos(), CGameWorld::ENTTYPE_LASER);
+				pResult->SetConfig("radius", 128.f);
+				pResult->SetConfig("lifetime", pBase->Server()->TickSpeed());
+				pResult->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+				{
+					const auto Radius = pBase->GetConfig("radius", 0.f);
+					auto& LifeTimeRef = pBase->GetRefConfig("lifetime", 0);
+
+					// lifetime
+					if(!LifeTimeRef)
+					{
+						pBase->GS()->CreateCyrcleExplosion(8, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_LASER, 10);
+						pBase->MarkForDestroy();
+						return;
+					}
+					LifeTimeRef--;
+
+					// magnetic
+					for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+					{
+						const float Dist = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
+						if(Dist > Radius || Dist < 24.0f)
+							continue;
+
+						if(pChar->IsAllowedPVP(pBase->GetClientID()))
+						{
+							vec2 Dir = normalize(pChar->m_Core.m_Pos - pBase->GetPos());
+							pChar->m_Core.m_Vel -= Dir * 5.f;
+						}
+					}
+				});
+				pResult->RegisterEvent(CBaseEntity::EventSnap, NUM_IDS, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
+				{
+					const auto Radius = pBase->GetConfig("radius", 0.f);
+					constexpr float AngleStep = 2.0f * pi / static_cast<float>(IDS_CYRCLE);
+
+					// snap inside cyrcle
+					for(int i = 0; i < IDS_PROJ_CYRCLE; i++)
+					{
+						const auto RangeRandomPos = random_range_pos(pBase->GetPos(), Radius);
+						if(!pBase->GS()->SnapProjectile(SnappingClient, vIds[i], RangeRandomPos, {}, pBase->Server()->Tick(), WEAPON_HAMMER, pBase->GetClientID()))
+							return;
+					}
+
+					// snap cyrcle connect
+					for(int i = 0; i < IDS_CYRCLE; ++i)
+					{
+						const auto nextIndex = (i + 1) % IDS_CYRCLE;
+						const auto CurrentPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
+						const auto NextPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * nextIndex), Radius * sin(AngleStep * nextIndex));
+
+						if(!pBase->GS()->SnapLaser(SnappingClient, vIds[IDS_PROJ_CYRCLE + i], CurrentPos, NextPos, pBase->Server()->Tick() - 1))
+							return;
+					}
+				});
+
+				// destroy
+				pBase->GS()->CreateDeath(pBase->GetPos(), pBase->GetClientID());
+				pBase->MarkForDestroy();
+				return;
+			}
+		});
+
 		return true;
 	}
 

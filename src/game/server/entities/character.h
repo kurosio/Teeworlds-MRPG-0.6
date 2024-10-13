@@ -53,7 +53,7 @@ class CCharacter : public CEntity
 	bool FireGun(vec2 Direction, vec2 ProjStartPos);
 	bool FireShotgun(vec2 Direction, vec2 ProjStartPos);
 	bool FireGrenade(vec2 Direction, vec2 ProjStartPos);
-	bool FireLaser(vec2 Direction, vec2 ProjStartPos);
+	bool FireRifle(vec2 Direction, vec2 ProjStartPos);
 
 protected:
 	bool m_Alive {};
