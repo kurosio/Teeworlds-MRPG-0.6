@@ -33,11 +33,12 @@ class MotdMenu
 	struct Point
 	{
 		int m_Extra{};
+		int m_Extra2 {};
 		std::string m_Command{"NULL"};
 		char m_aDesc[32]{};
 	};
 
-	int m_MenuExtra {NOPE};
+	std::optional<int> m_MenuExtra {};
 	int m_LastMenulist{NOPE};
 	int m_Menulist {NOPE};
 	int m_Flags {};
@@ -63,43 +64,42 @@ public:
 	template <typename... Ts>
 	void AddText(std::string_view description, const Ts&... args)
 	{
-		AddImpl(NOPE, "NULL", fmt_localize(m_ClientID, description.data(), args...));
+		AddImpl(NOPE, NOPE, "NULL", fmt_localize(m_ClientID, description.data(), args...));
 	}
 
 	template <typename... Ts>
 	void Add(std::string_view command, std::string_view description, const Ts&... args)
 	{
-		AddImpl(NOPE, command, fmt_localize(m_ClientID, description.data(), args...));
+		AddImpl(NOPE, NOPE, command, fmt_localize(m_ClientID, description.data(), args...));
 	}
 
 	template <typename... Ts>
 	void Add(std::string_view command, int extra, std::string_view description, const Ts&... args)
 	{
-		AddImpl(extra, command, fmt_localize(m_ClientID, description.data(), args...));
+		AddImpl(extra, NOPE, command, fmt_localize(m_ClientID, description.data(), args...));
 	}
 
 	template <typename... Ts>
 	void AddMenu(int MenuID, int Extra, std::string_view description, const Ts&... args)
 	{
-		m_MenuExtra = Extra;
-		AddImpl(MenuID, "MENU", fmt_localize(m_ClientID, description.data(), args...));
+		AddImpl(MenuID, Extra, "MENU", fmt_localize(m_ClientID, description.data(), args...));
 	}
 
 	void AddLine()
 	{
-		AddImpl(NOPE, "NULL", "");
+		AddImpl(NOPE, NOPE, "NULL", "");
 	}
 
 	void AddSeparateLine()
 	{
-		AddImpl(NOPE, "NULL", "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+		AddImpl(NOPE, NOPE, "NULL", "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
 			"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
 			"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500");
 	}
 
 	void AddBackpage()
 	{
-		AddImpl(NOPE, "BACKPAGE", "<<< Backpage");
+		AddImpl(NOPE, NOPE,"BACKPAGE", "<<< Backpage");
 	}
 
 	void Tick();
@@ -119,10 +119,16 @@ public:
 		m_LastMenulist = Menulist;
 	}
 
+	std::optional<int> GetMenuExtra() const
+	{
+		return m_MenuExtra;
+	}
+
 	void ClearMotd(CGS* pGS, CPlayer* pPlayer);
 
 private:
-	void AddImpl(int extra, std::string_view command, const std::string& description);
+	void UpdateMotd(IServer* pServer, CGS* pGS, CPlayer* pPlayer);
+	void AddImpl(int extra, int extra2, std::string_view command, const std::string& description);
 };
 
 #endif

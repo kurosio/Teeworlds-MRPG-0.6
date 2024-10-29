@@ -2,13 +2,14 @@
 
 #include <game/server/gamecontext.h>
 
-void MotdMenu::AddImpl(int extra, std::string_view command, const std::string& description)
+void MotdMenu::AddImpl(int extra, int extra2, std::string_view command, const std::string& description)
 {
 	Point p;
 	str_copy(p.m_aDesc, description.c_str(), sizeof(p.m_aDesc));
 	str_utf8_fix_truncation(p.m_aDesc);
 	p.m_Command = command;
 	p.m_Extra = extra;
+	p.m_Extra2 = extra2;
 	m_Points.push_back(p);
 	m_ScrollManager.SetMaxScrollPos(static_cast<int>(m_Points.size()));
 }
@@ -106,6 +107,7 @@ void MotdMenu::Tick()
 		// is hovered and clicked
 		if(isSelected && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
 		{
+			bool updatedMotd = false;
 			const auto& extra = m_Points[i].m_Extra;
 
 			if(command == "CLOSE")
@@ -114,30 +116,33 @@ void MotdMenu::Tick()
 				return;
 			}
 
+			if(command == "MENU")
+			{
+				updatedMotd = true;
+				m_Menulist = extra;
+				m_MenuExtra = m_Points[i].m_Extra2 <= NOPE ? std::nullopt : std::make_optional<int>(m_Points[i].m_Extra2);
+			}
+
+			if(command == "BACKPAGE")
+			{
+				updatedMotd = true;
+				m_Menulist = m_LastMenulist;
+			}
+
 			if(pGS->OnClientMotdCommand(m_ClientID, command.c_str(), extra))
 			{
-				if(m_Flags & MTFLAG_CLOSE_LAST_MENU_ON_SELECT)
-				{
-					if(m_LastMenulist != NOPE)
-					{
-						pGS->SendMenuMotd(pChar->GetPlayer(), m_LastMenulist);
-					}
-					else
-					{
-						ClearMotd(pGS, pChar->GetPlayer());
-					}
-				}
-				else if(m_Flags & MTFLAG_CLOSE_ON_SELECT)
+				if(m_Flags & MTFLAG_CLOSE_ON_SELECT)
 				{
 					ClearMotd(pGS, pChar->GetPlayer());
+					return;
 				}
-				else
-				{
-					ScrollManager oldScrollData = m_ScrollManager;
-					pGS->SendMenuMotd(pChar->GetPlayer(), m_Menulist);
-					oldScrollData.SetMaxScrollPos((int)pChar->GetPlayer()->m_pMotdMenu->m_Points.size());
-					pChar->GetPlayer()->m_pMotdMenu->m_ScrollManager = oldScrollData;
-				}
+
+				updatedMotd = true;
+			}
+
+			if(updatedMotd)
+			{
+				UpdateMotd(pServer, pGS, pChar->GetPlayer());
 				return;
 			}
 		}
@@ -155,11 +160,8 @@ void MotdMenu::Tick()
 	}
 	else if(pServer->Tick() >= m_ResendMotdTick)
 	{
-		ScrollManager oldScrollData = m_ScrollManager;
 		m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
-		pGS->SendMenuMotd(pChar->GetPlayer(), m_Menulist);
-		oldScrollData.SetMaxScrollPos((int)pChar->GetPlayer()->m_pMotdMenu->m_Points.size());
-		pChar->GetPlayer()->m_pMotdMenu->m_ScrollManager = oldScrollData;
+		UpdateMotd(pServer, pGS, pChar->GetPlayer());
 	}
 }
 
@@ -168,7 +170,7 @@ void MotdMenu::Send(int Menulist)
 	// add close button if necessary
 	if(m_Flags & MTFLAG_CLOSE_BUTTON)
 	{
-		AddImpl(NOPE, "CLOSE", "Close");
+		AddImpl(NOPE, NOPE, "CLOSE", "Close");
 	}
 
 	// reinitialize player motd menu
@@ -192,4 +194,15 @@ void MotdMenu::ClearMotd(CGS* pGS, CPlayer* pPlayer)
 	{
 		pPlayer->m_pMotdMenu.reset();
 	}
+}
+
+void MotdMenu::UpdateMotd(IServer* pServer, CGS* pGS, CPlayer* pPlayer)
+{
+	ScrollManager oldScrollData = m_ScrollManager;
+	const auto oldMenuExtra = m_MenuExtra;
+	m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
+	pGS->SendMenuMotd(pPlayer, m_Menulist);
+	oldScrollData.SetMaxScrollPos((int)pPlayer->m_pMotdMenu->m_Points.size());
+	pPlayer->m_pMotdMenu->m_ScrollManager = oldScrollData;
+	pPlayer->m_pMotdMenu->m_MenuExtra = oldMenuExtra;
 }

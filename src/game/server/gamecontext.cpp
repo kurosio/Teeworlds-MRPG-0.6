@@ -1325,18 +1325,8 @@ bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd, int Extra)
 		return true;
 	}
 
-	if(PPSTR(pCmd, "BACKPAGE") == 0)
-	{
-		if(pPlayer->m_pMotdMenu && pPlayer->m_pMotdMenu->GetLastMenulist() != NOPE)
-			SendMenuMotd(pPlayer, pPlayer->m_pMotdMenu->GetLastMenulist());
+	if(PPSTR(pCmd, "BACKPAGE") == 0 || PPSTR(pCmd, "MENU") == 0)
 		return true;
-	}
-
-	if(PPSTR(pCmd, "MENU") == 0)
-	{
-		SendMenuMotd(pPlayer, Extra);
-		return true;
-	}
 
 	const bool Result = Core()->OnPlayerMotdCommand(pPlayer, pCmd, Extra);
 	if(Result)
