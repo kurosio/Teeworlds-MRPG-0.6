@@ -13,14 +13,13 @@ enum SkillType
 	SKILL_TYPE_TANK,
 	NUM_SKILL_TYPES,
 };
-using SkillIdentifier = int;
 
 // skill description
-class CSkillDescription : public MultiworldIdentifiableData< std::map < SkillIdentifier, CSkillDescription > >
+class CSkillDescription : public MultiworldIdentifiableData< std::map < int, CSkillDescription > >
 {
 	friend class CSkillManager;
 
-	SkillIdentifier m_ID {};
+	int m_ID {};
 	char m_aName[32] {};
 	char m_aDescription[64] {};
 	char m_aBoostName[64] {};
@@ -34,7 +33,7 @@ class CSkillDescription : public MultiworldIdentifiableData< std::map < SkillIde
 public:
 	// constructors
 	CSkillDescription() = default;
-	CSkillDescription(SkillIdentifier ID) : m_ID(ID) {}
+	CSkillDescription(int ID) : m_ID(ID) {}
 
 	// intialize skill description
 	void Init(const std::string& Name, const std::string& Description, const std::string& BonusName, int BonusDefault, SkillType Type, int PercentageCost, int PriceSP, int MaxLevel, bool Passive)
@@ -52,16 +51,56 @@ public:
 	}
 
 	// getters and setters
-	SkillIdentifier GetID() const { return m_ID; }
-	const char* GetName() const { return m_aName; }
-	const char* GetDescription() const { return m_aDescription; }
-	const char* GetBoostName() const { return m_aBoostName; }
-	int GetBoostDefault() const { return m_BoostDefault; }
-	SkillType GetType() const { return m_Type; }
-	int GetPercentageCost() const { return m_PercentageCost; }
-	int GetPriceSP() const { return m_PriceSP; }
-	int GetMaxLevel() const { return m_MaxLevel; }
-	bool IsPassive() const { return m_Passive; }
+	int GetID() const
+	{
+		return m_ID;
+	}
+
+	const char* GetName() const
+	{
+		return m_aName;
+	}
+
+	const char* GetDescription() const
+	{
+		return m_aDescription;
+	}
+
+	const char* GetBoostName() const
+	{
+		return m_aBoostName;
+	}
+
+	int GetBoostDefault() const
+	{
+		return m_BoostDefault;
+	}
+
+	SkillType GetType() const
+	{
+		return m_Type;
+	}
+
+	int GetPercentageCost() const
+	{
+		return m_PercentageCost;
+	}
+
+	int GetPriceSP() const
+	{
+		return m_PriceSP;
+	}
+
+	int GetMaxLevel() const
+	{
+		return m_MaxLevel;
+	}
+
+	bool IsPassive() const
+	{
+		return m_Passive;
+	}
+
 	static const char* GetEmoticonName(int EmoticionID);
 };
 
@@ -73,7 +112,7 @@ class CSkill : public MultiworldIdentifiableData< std::map< int, std::deque < CS
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
 
-	SkillIdentifier m_ID{};
+	int m_ID{};
 	int m_ClientID{};
 	int m_Level{};
 	int m_SelectedEmoticion{};
@@ -83,10 +122,10 @@ public:
 	CSkill() = default;
 
 	// create a new instance of CSkill
-	static CSkill* CreateElement(int ClientID, const SkillIdentifier& ID) noexcept
+	static CSkill* CreateElement(int ClientID, const int& SkillID) noexcept
 	{
 		auto pData = new CSkill;
-		pData->m_ID = ID;
+		pData->m_ID = SkillID;
 		pData->m_ClientID = ClientID;
 		return m_pData[ClientID].emplace_back(pData);
 	}
@@ -99,15 +138,42 @@ public:
 	}
 
 	// getters setters
-	void SetID(SkillIdentifier ID) { m_ID = ID; }
-	SkillIdentifier GetID() const { return m_ID; }
-	bool IsLearned() const { return m_Level > 0; }
-	int GetLevel() const { return m_Level; }
-	int GetBonus() const { return m_Level * Info()->GetBoostDefault(); }
-	const char* GetSelectedEmoticonName() const { return Info()->GetEmoticonName(m_SelectedEmoticion); }
-	std::string GetStringLevelStatus() const;
-	CSkillDescription* Info() const { return &CSkillDescription::Data()[m_ID]; }
+	void SetID(int SkillID)
+	{
+		m_ID = SkillID;
+	}
 
+	int GetID() const
+	{
+		return m_ID;
+	}
+
+	bool IsLearned() const
+	{
+		return m_Level > 0;
+	}
+
+	int GetLevel() const
+	{
+		return m_Level;
+	}
+
+	int GetBonus() const
+	{
+		return m_Level * Info()->GetBoostDefault();
+	}
+
+	const char* GetSelectedEmoticonName() const
+	{
+		return Info()->GetEmoticonName(m_SelectedEmoticion);
+	}
+
+	CSkillDescription* Info() const
+	{
+		return &CSkillDescription::Data()[m_ID];
+	}
+
+	std::string GetStringLevelStatus() const;
 	std::weak_ptr<CEntityGroup> m_pEntitySkill{};
 
 	// functions

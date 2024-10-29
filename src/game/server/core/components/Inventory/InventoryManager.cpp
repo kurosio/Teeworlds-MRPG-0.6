@@ -11,7 +11,6 @@
 template < typename T >
 void ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, const std::function<void(const CPlayerItem&)> pFunc)
 {
-	bool Found = false;
 	for(const auto& [ItemID, ItemData] : paItems)
 	{
 		bool ActivateCallback = false;
@@ -31,14 +30,14 @@ void CInventoryManager::OnPreInit()
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_items_list");
 	while(pRes->next())
 	{
-		const int ID = pRes->getInt("ID");
-		std::string Name = pRes->getString("Name").c_str();
-		std::string Description = pRes->getString("Description").c_str();
-		std::string Data = pRes->getString("Data").c_str();
-		ItemType Type = (ItemType)pRes->getInt("Type");
-		ItemFunctional Function = (ItemFunctional)pRes->getInt("Function");
-		int InitialPrice = pRes->getInt("InitialPrice");
-		int Dysenthis = pRes->getInt("Desynthesis");
+		const auto ItemID = pRes->getInt("ID");
+		const auto Name = pRes->getString("Name");
+		const auto Description = pRes->getString("Description");
+		const auto Type = (ItemType)pRes->getInt("Type");
+		const auto Function = (ItemFunctional)pRes->getInt("Function");
+		const auto InitialPrice = pRes->getInt("InitialPrice");
+		const auto Dysenthis = pRes->getInt("Desynthesis");
+		auto Data = pRes->getString("Data");
 
 		CItemDescription::ContainerAttributes aContainerAttributes;
 		for(int i = 0; i < MAX_ATTRIBUTES_FOR_ITEM; i++)
@@ -47,8 +46,8 @@ void CInventoryManager::OnPreInit()
 			str_format(aAttributeID, sizeof(aAttributeID), "Attribute%d", i);
 			str_format(aAttributeValue, sizeof(aAttributeValue), "AttributeValue%d", i);
 
-			AttributeIdentifier AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
-			const int AttributeValue = pRes->getInt(aAttributeValue);
+			const auto AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
+			const auto AttributeValue = pRes->getInt(aAttributeValue);
 
 			if(AttributeID >= AttributeIdentifier::DMG && AttributeValue > 0)
 			{
@@ -56,17 +55,17 @@ void CInventoryManager::OnPreInit()
 			}
 		}
 
-		CItemDescription(ID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, std::move(Data));
+		CItemDescription(ItemID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, std::move(Data));
 	}
 
 	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributs");
 	while(pResAtt->next())
 	{
-		const AttributeIdentifier ID = (AttributeIdentifier)pResAtt->getInt("ID");
-		std::string Name = pResAtt->getString("Name").c_str();
-		std::string FieldName = pResAtt->getString("FieldName").c_str();
-		int UpgradePrice = pResAtt->getInt("Price");
-		AttributeGroup Group = (AttributeGroup)pResAtt->getInt("Group");
+		const auto ID = (AttributeIdentifier)pResAtt->getInt("ID");
+		const auto Name = pResAtt->getString("Name");
+		const auto FieldName = pResAtt->getString("FieldName");
+		const auto UpgradePrice = pResAtt->getInt("Price");
+		const auto Group = (AttributeGroup)pResAtt->getInt("Group");
 
 		CAttributeDescription::CreateElement(ID)->Init(Name, FieldName, UpgradePrice, Group);
 	}
@@ -78,11 +77,11 @@ void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
-		ItemIdentifier ItemID = pRes->getInt("ItemID");
-		int Value = pRes->getInt("Value");
-		int Settings = pRes->getInt("Settings");
-		int Enchant = pRes->getInt("Enchant");
-		int Durability = pRes->getInt("Durability");
+		const auto ItemID = pRes->getInt("ItemID");
+		const auto Value = pRes->getInt("Value");
+		const auto Settings = pRes->getInt("Settings");
+		const auto Enchant = pRes->getInt("Enchant");
+		const auto Durability = pRes->getInt("Durability");
 
 		CPlayerItem(ItemID, ClientID).Init(Value, Enchant, Durability, Settings);
 	}
@@ -100,12 +99,6 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_INVENTORY)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-
-		// information
-		VoteWrapper VInventoryInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Inventory Information");
-		VInventoryInfo.Add("Choose the type of items you want to show");
-		VInventoryInfo.Add("After, need select item to interact");
-		VoteWrapper::AddEmptyline(ClientID);
 
 		// inventory tabs
 		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
@@ -140,64 +133,62 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		// information
-		VoteWrapper VEquipInfo(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2604 Equipment Information");
-		VEquipInfo.Add("Select the type of equipment you want to show");
-		VEquipInfo.Add("After, need select item to interact");
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// equip tabs
-		VoteWrapper VEquipTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2604 Equipment tabs");
-		const char* paTypeNames[NUM_EQUIPPED] = {
-			"Hammer",
-			"Gun",
-			"Shotgun",
-			"Grenade",
-			"Rifle",
-			"Pickaxe",
-			"Rake",
-			"Armor",
-			"Eidolon",
-			"Potion healing",
-			"Potion mana",
-			"Potion special",
-			"Title"
-		};
-
-		for(int equipID = 0; equipID < NUM_EQUIPPED; equipID++)
+		// lambda equipment
+		auto addEquipmentFieldFunc = [&](VoteWrapper& Wrapper, ItemFunctional EquipID) -> bool
 		{
-			// append another menu
-			if(equipID == EQUIP_TITLE)
-				continue;
-
-			// check is equipped
-			const auto ItemID = pPlayer->GetEquippedItemID((ItemFunctional)equipID);
+			// check if equipped
+			const auto ItemID = pPlayer->GetEquippedItemID(EquipID);
 			if(!ItemID.has_value() || !pPlayer->GetItem(ItemID.value())->IsEquipped())
 			{
-				VEquipTabs.AddMenu(MENU_EQUIPMENT, equipID, "{} not equipped", paTypeNames[equipID]);
-				continue;
+				Wrapper.AddMenu(MENU_EQUIPMENT, EquipID, "{} not equipped", ItemFunctionalString[EquipID]);
+				return false;
 			}
 
-			// add information
+			// handle potion information
 			const auto pPlayerItem = pPlayer->GetItem(ItemID.value());
-			if(equipID == EQUIP_POTION_HEAL || equipID == EQUIP_POTION_MANA || equipID == EQUIP_POTION_SPECIAL)
+			if(EquipID == EQUIP_POTION_HEAL || EquipID == EQUIP_POTION_MANA)
 			{
-				if(const auto pHealInfo = PotionTools::Heal::getHealInfo(ItemID.value()))
+				if(const auto optPotionContext = pPlayerItem->Info()->GetPotionContext())
 				{
-					VEquipTabs.AddMenu(MENU_EQUIPMENT, equipID, "{} (recast {} hp {}) x{}",
-						pPlayerItem->Info()->GetName(), pHealInfo->getTime(), pHealInfo->getRecovery(), pPlayerItem->GetValue());
+					const auto RecastTotal = optPotionContext->Lifetime + POTION_RECAST_APPEND_TIME;
+					Wrapper.AddMenu(MENU_EQUIPMENT, EquipID, "{} (recast {} / +{}) x{}",
+						pPlayerItem->Info()->GetName(), RecastTotal, optPotionContext->Value, pPlayerItem->GetValue());
 				}
 				else
 				{
-					VEquipTabs.AddMenu(MENU_EQUIPMENT, equipID, "{} x{}", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+					Wrapper.AddMenu(MENU_EQUIPMENT, EquipID, "{} x{}", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 				}
+				return true;
 			}
-			else
-			{
-				const auto strAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
-				VEquipTabs.AddMenu(MENU_EQUIPMENT, equipID, "{} * {}", pPlayerItem->Info()->GetName(), strAttributes.c_str());
-			}
-		}
+
+			// handle other equipment
+			const auto strAttributes = pPlayerItem->GetStringAttributesInfo(pPlayer);
+			Wrapper.AddMenu(MENU_EQUIPMENT, EquipID, "{} / {}", pPlayerItem->Info()->GetName(), strAttributes);
+			return true;
+		};
+
+		// weapons equipment
+		VoteWrapper VWeapons(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Weapons");
+		addEquipmentFieldFunc(VWeapons, EQUIP_HAMMER);
+		addEquipmentFieldFunc(VWeapons, EQUIP_GUN);
+		addEquipmentFieldFunc(VWeapons, EQUIP_SHOTGUN);
+		addEquipmentFieldFunc(VWeapons, EQUIP_GRENADE);
+		addEquipmentFieldFunc(VWeapons, EQUIP_LASER);
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// general equipment (tools and armor)
+		VoteWrapper VEquipment(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: General");
+		addEquipmentFieldFunc(VEquipment, EQUIP_EIDOLON);
+		addEquipmentFieldFunc(VEquipment, EQUIP_ARMOR);
+		addEquipmentFieldFunc(VEquipment, EQUIP_PICKAXE);
+		addEquipmentFieldFunc(VEquipment, EQUIP_RAKE);
+		VEquipment.AddMenu(MENU_MODULES, ">>> Manage Modules <<<");
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// potions equipment
+		VoteWrapper VPotions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Potions");
+		addEquipmentFieldFunc(VPotions, EQUIP_POTION_HEAL);
+		addEquipmentFieldFunc(VPotions, EQUIP_POTION_MANA);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort equipment
@@ -211,6 +202,59 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		else
 		{
 			VInfo.Add("Select the required tab");
+		}
+
+		// add backpage
+		VoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	if(Menulist == MENU_MODULES)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_EQUIPMENT);
+
+		const auto& PlayerItems = CPlayerItem::Data()[ClientID];
+
+		// weapons equipment
+		VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Functional");
+		auto functionalModules = PlayerItems | std::views::filter([](const auto& pair) 
+		{
+			return pair.second.Info()->IsType(ItemType::TYPE_MODULE) && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
+		});
+
+		for(const auto& [ItemID, PlayerItem] : functionalModules)
+		{
+			const auto* pItemInfo = PlayerItem.Info();
+			const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
+
+			VFunctional.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
+		}
+
+		if(VFunctional.IsEmpty())
+		{
+			VFunctional.Add("No modules available");
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// weapons equipment
+		VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Stats");
+		auto statModules = PlayerItems | std::views::filter([](const auto& pair) 
+		{
+			return pair.second.Info()->IsType(ItemType::TYPE_MODULE) && pair.second.Info()->HasAttributes() && pair.second.HasItem();
+		});
+
+		for(const auto& [ItemID, PlayerItem] : statModules)
+		{
+			const auto* pItemInfo = PlayerItem.Info();
+			const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
+
+			VStats.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), PlayerItem.GetStringAttributesInfo(pPlayer));
+		}
+
+		if(VStats.IsEmpty())
+		{
+			VStats.Add("No modules available");
 		}
 
 		// add backpage

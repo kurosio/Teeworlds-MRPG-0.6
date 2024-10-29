@@ -156,81 +156,55 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		const auto expForLevel = computeExperience(pPlayer->Account()->GetLevel());
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		// statistics menu
-		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Account info");
-		VMain.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
-		VMain.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
-		VMain.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
+		// Statistics menu
+		VoteWrapper VStatistics(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Statistics");
+		VStatistics.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
+		VStatistics.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
+		VStatistics.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Personal Menu
 		VoteWrapper VPersonal(ClientID, VWF_ALIGN_TITLE, "\u262A Personal Menu");
 		VPersonal.AddMenu(MENU_ACCOUNT_INFO, "\u2698 Account Information");
+		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
-		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades ({}p)", pPlayer->Account()->m_UpgradePoint);
-		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		VPersonal.AddMenu(MENU_EIDOLON, "\u2727 Eidolons");
-		VPersonal.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
-		VPersonal.AddMenu(MENU_GROUP, "\u2042 Group");
-		VPersonal.AddMenu(MENU_SETTINGS, "\u2699 Settings");
-		VPersonal.AddMenu(MENU_MAILBOX, "\u2709 Mailbox");
-		VPersonal.AddMenu(MENU_JOURNAL_MAIN, "\u270D Journal");
+		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades ({}p)", pPlayer->Account()->m_UpgradePoint);
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// Group & Social
+		VoteWrapper VGroup(ClientID, VWF_ALIGN_TITLE, "\u2605 Social & Group Menu");
+		VGroup.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
+		VGroup.AddMenu(MENU_GROUP, "\u2042 Group");
+		VGroup.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild Finder");
+
+		if(pPlayer->Account()->HasGuild())
+		{
+			VGroup.AddMenu(MENU_GUILD, "\u32E1 Guild");
+		}
 
 		if(pPlayer->Account()->HasHouse())
 		{
 			VPersonal.AddMenu(MENU_HOUSE, "\u2302 House");
 		}
 
-		VPersonal.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild Finder");
+		VGroup.AddMenu(MENU_MAILBOX, "\u2709 Mailbox");
+		VoteWrapper::AddEmptyline(ClientID);
 
-		if(pPlayer->Account()->HasGuild())
-		{
-			VPersonal.AddMenu(MENU_GUILD, "\u32E1 Guild");
-		}
+		// Settings & Journal
+		VoteWrapper VSettings(ClientID, VWF_ALIGN_TITLE, "\u2699 Settings & Journal");
+		VSettings.AddMenu(MENU_SETTINGS, "\u2699 Settings");
+		VSettings.AddMenu(MENU_JOURNAL_MAIN, "\u270D Journal");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Information Menu
 		VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE, "\u262A Information Menu");
 		VInfo.AddMenu(MENU_GUIDE, "\u10D3 Wiki / Grinding Guide");
 		VInfo.AddMenu(MENU_LEADERBOARD, "\u21F0 Rankings: Guilds & Players");
-
-		return true;
-	}
-
-	// account information
-	if(Menulist == MENU_ACCOUNT_INFO)
-	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-
-		const char* pLastLoginDate = pPlayer->Account()->GetLastLoginDate();
-
-		// Account information
-		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Information");
-		VInfo.Add("Last login: {}", pLastLoginDate);
-		VInfo.Add("Account ID: {}", pPlayer->Account()->GetID());
-		VInfo.Add("Login: {}", pPlayer->Account()->GetLogin());
-		VInfo.Add("Class: {}", pPlayer->GetClassData().GetName());
-		VInfo.Add("Crime score: {}", pPlayer->Account()->GetCrimeScore());
-		VInfo.Add("Gold capacity: {}", pPlayer->Account()->GetGoldCapacity());
-		VInfo.Add("Has house: {}", pPlayer->Account()->HasHouse() ? "yes" : "no");
-		VInfo.Add("Has guild: {}", pPlayer->Account()->HasGuild() ? "yes" : "no");
-		VInfo.Add("In group: {}", pPlayer->Account()->HasGroup() ? "yes" : "no");
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// Currency information
-		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
-		VCurrency.Add("Bank: {}", pPlayer->Account()->GetBank());
-
-		for(int itemID : {itGold, itAchievementPoint, itSkillPoint, itAlliedSeals, itMaterial, itProduct})
-		{
-			VCurrency.Add("{}: {}", pPlayer->GetItem(itemID)->Info()->GetName(), pPlayer->GetItem(itemID)->GetValue());
-		}
-
-		VCurrency.Add("Upgrade point: {}", pPlayer->Account()->m_UpgradePoint);
-
-		// Add backpage
-		VoteWrapper::AddBackpage(ClientID);
+		return true;
 	}
 
 	// player upgrades

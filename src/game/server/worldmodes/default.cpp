@@ -12,15 +12,19 @@
 
 #include "game/server/core/components/guilds/guild_manager.h"
 #include "game/server/core/components/guilds/guild_house_data.h"
+#include "game/server/core/tools/path_finder.h"
+#include "game/server/entities/pickup.h"
 
-CGameControllerDefault::CGameControllerDefault(class CGS *pGS)
+CGameControllerDefault::CGameControllerDefault(CGS *pGS)
 : IGameController(pGS)
 {
 	m_GameFlags = 0;
+	m_MoneyBagTick = Server()->Tick() + (Server()->TickSpeed() * g_Config.m_SvGenerateMoneyBagPerMinute * 60);
 }
 
 void CGameControllerDefault::Tick()
 {
+	TryGenerateMoneyBags(1);
 	IGameController::Tick();
 }
 
@@ -92,12 +96,24 @@ void CGameControllerDefault::OnEntity(int Index, vec2 Pos, int Flags)
 	}
 }
 
-void CGameControllerDefault::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
+void CGameControllerDefault::TryGenerateMoneyBags(int Num)
 {
-	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
-}
+	// try get prepared path
+	if(m_PathMoneyBag.TryGetPath())
+	{
+		new CPickup(&GS()->m_World, WEAPON_LASER, m_PathMoneyBag.vPath.back());
+		m_PathMoneyBag.Reset();
+	}
 
-void CGameControllerDefault::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
-{
-	IGameController::OnCharacterDamage(pFrom, pTo, Damage);
+	// prepare random getter pos
+	if(m_MoneyBagTick < Server()->Tick())
+	{
+		vec2 Pos;
+		CanSpawn(SPAWN_HUMAN, &Pos);
+		const auto Radius = (float)(GS()->Collision()->GetHeight() * GS()->Collision()->GetWidth());
+
+		GS()->PathFinder()->RequestRandomPath(m_PathMoneyBag, Pos, Radius);
+		m_MoneyBagTick = Server()->Tick() + (Server()->TickSpeed() * g_Config.m_SvGenerateMoneyBagPerMinute * 60);
+		GS()->Chat(-1, "A Money Bag has appeared in the area! Who will claim it?");
+	}
 }

@@ -7,6 +7,9 @@
 
 class CGameControllerDefault : public IGameController
 {
+	int m_MoneyBagTick {};
+	PathRequestHandle m_PathMoneyBag {};
+
 public:
 	CGameControllerDefault(class CGS *pGameServer);
 
@@ -14,7 +17,6 @@ public:
 	void OnEntity(int Index, vec2 Pos, int Flags) override;
 	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override;
 
-	void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) override;
-	void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) override;
+	void TryGenerateMoneyBags(int Num);
 };
 #endif

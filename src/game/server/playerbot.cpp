@@ -17,6 +17,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 	m_OldTargetPos = vec2(0, 0);
 	m_DungeonAllowedSpawn = false;
 	m_Items.reserve(CItemDescription::Data().size());
+
 	CPlayerBot::PrepareRespawnTick();
 }
 
@@ -32,7 +33,6 @@ void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 		m_QuestMobInfo = elem;
 		std::memset(m_QuestMobInfo.m_ActiveForClient, 0, MAX_PLAYERS * sizeof(bool));
 		std::memset(m_QuestMobInfo.m_CompleteClient, 0, MAX_PLAYERS * sizeof(bool));
-		m_Health = CPlayerBot::GetTotalAttributeValue(AttributeIdentifier::HP);
 	}
 }
 
@@ -52,7 +52,7 @@ void CPlayerBot::Tick()
 		{
 			if(m_BotType == TYPE_BOT_EIDOLON)
 			{
-				const CPlayer* pOwner = GetEidolonOwner();
+				const auto* pOwner = GetEidolonOwner();
 				if(pOwner && pOwner->GetCharacter() && distance(pOwner->GetCharacter()->GetPos(), m_ViewPos) > 1000.f)
 				{
 					vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
@@ -95,7 +95,10 @@ void CPlayerBot::PostTick()
 
 CPlayer* CPlayerBot::GetEidolonOwner() const
 {
-	if(m_BotType != TYPE_BOT_EIDOLON || m_MobID < 0 || m_MobID >= MAX_PLAYERS)
+	if(m_MobID < 0 || m_MobID >= MAX_PLAYERS)
+		return nullptr;
+
+	if(m_BotType != TYPE_BOT_EIDOLON)
 		return nullptr;
 
 	return GS()->GetPlayer(m_MobID);
@@ -106,6 +109,7 @@ CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
 	dbg_assert(CItemDescription::Data().find(ID) != CItemDescription::Data().end(), "invalid referring to the CPlayerItem (from playerbot.h)");
 
 	auto it = m_Items.find(ID);
+
 	if(it == m_Items.end())
 	{
 		if(DataBotInfo::ms_aDataBot[m_BotID].m_EquippedModules.hasSet(std::to_string(ID)))

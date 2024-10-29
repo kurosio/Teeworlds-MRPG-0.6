@@ -149,6 +149,7 @@ MACRO_CONFIG_INT(SvBankCommissionRate, sv_bank_commission_rate, 5, 0, 100, CFGFL
 // -----------------------
 // Miscellaneous Configuration
 // -----------------------
+MACRO_CONFIG_INT(SvGenerateMoneyBagPerMinute, sv_generate_money_bag_per_minute, 15, 0, 1020, CFGFLAG_SERVER, "Generate money bag per minute (in minutes)")
 MACRO_CONFIG_INT(SvDungeonWaitingTime, sv_dungeon_waiting_time, 180, 0, 1020, CFGFLAG_SERVER, "Waiting time for dungeon entry (in seconds)")
 MACRO_CONFIG_INT(SvChatMessageInterval, sv_chat_message_interval, 600, 0, 14400, CFGFLAG_SERVER, "Interval for displaying chat messages (in seconds)")
 MACRO_CONFIG_INT(SvChatTopMessageInterval, sv_chat_top_message_interval, 900, 0, 14400, CFGFLAG_SERVER, "Interval for displaying chat toplist messages (in seconds)")

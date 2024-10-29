@@ -1104,15 +1104,15 @@ bool CCharacter::IncreaseMana(int Amount)
 
 void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 {
-	CPlayer* pKiller = GS()->GetPlayer(Killer);
+	// check valid killer
+	auto* pKiller = GS()->GetPlayer(Killer);
 	if(!pKiller || (Killer == m_ClientID))
 		return;
 
-	// initialize variables
-	bool KillerIsGuardian = (pKiller->IsBot() && dynamic_cast<CPlayerBot*>(pKiller)->GetBotType() == TYPE_BOT_NPC &&
+	const bool KillerIsGuardian = (pKiller->IsBot() && dynamic_cast<CPlayerBot*>(pKiller)->GetBotType() == TYPE_BOT_NPC &&
 		NpcBotInfo::ms_aNpcBot[dynamic_cast<CPlayerBot*>(pKiller)->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN);
-	bool KillerIsPlayer = !pKiller->IsBot();
-	CPlayerItem* pItemGold = m_pPlayer->GetItem(itGold);
+	const bool KillerIsPlayer = !pKiller->IsBot();
+	auto* pItemGold = m_pPlayer->GetItem(itGold);
 
 	// loss gold at death
 	if(g_Config.m_SvGoldLossOnDeath)
@@ -1153,8 +1153,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	}
 	else if(KillerIsPlayer)
 	{
-		// Increase the relations of the player identified by the "Killer" index by 25
-		pKiller->Account()->IncreaseCrimeScore(25);
+		pKiller->Account()->IncreaseCrimeScore(20);
 	}
 }
 
@@ -1184,23 +1183,49 @@ void CCharacter::Die(int Killer, int Weapon)
 
 void CCharacter::AutoUseHealingPotionIfNeeded() const
 {
-	// automatically use equipped heal potion if conditions are met
-	if(m_pPlayer->m_aPlayerTick[PotionRecast] >= Server()->Tick() || m_Health > m_pPlayer->GetMaxHealth() / 3)
+	// check recast time
+	if(m_pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick())
 		return;
 
+	// check required for heal
+	if(m_Health > m_pPlayer->GetMaxHealth() / 3)
+		return;
+
+	// check for equippement potion
 	const auto equippedHeal = m_pPlayer->GetEquippedItemID(EQUIP_POTION_HEAL);
-	if(!equippedHeal)
+	TryUsePotion(equippedHeal);
+}
+
+void CCharacter::AutoUseManaPotionIfNeeded() const
+{
+	// check recast time
+	if(m_pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick())
 		return;
 
-	const auto potion = PotionTools::Heal::getHealInfo(equippedHeal.value());
-	if(!potion)
+	// check required for mana restore
+	if(m_Mana > m_pPlayer->GetMaxMana() / 3)
 		return;
 
-	const auto pPlayerItem = m_pPlayer->GetItem(potion->getItemID());
-	if(m_pPlayer->IsActiveEffect(potion->getEffect()) || !pPlayerItem->IsEquipped())
+	// check for equippement potion
+	const auto equippedMana = m_pPlayer->GetEquippedItemID(EQUIP_POTION_MANA);
+	TryUsePotion(equippedMana);
+}
+
+void CCharacter::TryUsePotion(std::optional<int> optItemID) const
+{
+	if(!optItemID.has_value())
 		return;
 
-	pPlayerItem->Use(1);
+	// try apply potion effect
+	auto* pPlayerItem = m_pPlayer->GetItem(*optItemID);
+	if(const auto optPotionContext = pPlayerItem->Info()->GetPotionContext())
+	{
+		const auto EffectName = optPotionContext->Effect.c_str();
+		if(!m_pPlayer->IsActiveEffect(EffectName) && pPlayerItem->IsEquipped())
+		{
+			pPlayerItem->Use(1);
+		}
+	}
 }
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
@@ -1542,9 +1567,9 @@ bool CCharacter::HandleHammerActions(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// harvesting items
-	if(CEntityHarvestingItem* pJobItem = (CEntityHarvestingItem*)GameWorld()->ClosestEntity(m_Pos, 15, CGameWorld::ENTTYPE_HERVESTING_ITEM, nullptr))
+	if(auto* pEntJobItem = (CEntityHarvestingItem*)GameWorld()->ClosestEntity(m_Pos, 14.f, CGameWorld::ENTTYPE_HERVESTING_ITEM, nullptr))
 	{
-		pJobItem->Process(m_pPlayer->GetCID());
+		pEntJobItem->Process(m_pPlayer->GetCID());
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 		return true;
 	}
@@ -1633,7 +1658,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		TuningParams->m_HookLength = 0.0f;
 	}
 
-	// poisons
+	// buffs
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 	{
 		if(m_pPlayer->IsActiveEffect("Fire"))
@@ -1642,22 +1667,32 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 			GS()->CreateExplosion(m_Core.m_Pos, m_pPlayer->GetCID(), WEAPON_GRENADE, 0);
 			TakeDamage(vec2(0, 0), ExplodeDamageSize, m_pPlayer->GetCID(), WEAPON_SELF);
 		}
+
 		if(m_pPlayer->IsActiveEffect("Poison"))
 		{
 			const int PoisonSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
 			TakeDamage(vec2(0, 0), PoisonSize, m_pPlayer->GetCID(), WEAPON_SELF);
 		}
-		if(m_pPlayer->IsActiveEffect("RegenMana"))
-		{
-			const int RestoreMana = translate_to_percent_rest(m_pPlayer->GetMaxMana(), 5);
-			IncreaseMana(RestoreMana);
-		}
 
-		// worker health potions
-		std::ranges::for_each(PotionTools::Heal::getList(), [this](const PotionTools::Heal& p)
+		// handle potions
+		std::ranges::for_each(CItemDescription::s_vTotalPotionByItemIDList, [this](const auto& potion)
 		{
-			if(m_pPlayer->IsActiveEffect(p.getEffect()))
-				IncreaseHealth(p.getRecovery());
+			const auto ItemID = potion.first;
+			const auto& PotionContext = potion.second;
+			const auto Functional = GS()->GetItemInfo(ItemID)->GetFunctional();
+
+			// increase by equip type
+			if(m_pPlayer->IsActiveEffect(PotionContext.Effect.c_str()))
+			{
+				if(Functional == EQUIP_POTION_HEAL)
+				{
+					IncreaseHealth(PotionContext.Value);
+				}
+				else if(Functional == EQUIP_POTION_MANA)
+				{
+					IncreaseMana(PotionContext.Value);
+				}
+			}
 		});
 	}
 }
@@ -1689,54 +1724,60 @@ void CCharacter::HandleSafeFlags()
 	}
 }
 
-void CCharacter::UpdateEquipingStats(int ItemID)
+void CCharacter::UpdateEquippedStats(int ItemID)
 {
 	if(!m_Alive || !m_pPlayer->IsAuthed())
 		return;
 
-	// health check
-	if(m_Health > m_pPlayer->GetMaxHealth())
+	// check and adjust health if necessary
+	const auto MaxHealth = m_pPlayer->GetMaxHealth();
+	if(m_Health > MaxHealth)
 	{
 		GS()->Chat(m_pPlayer->GetCID(), "Your health has been reduced.");
-		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that gave it away.");
-		m_Health = m_pPlayer->GetMaxHealth();
+		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that increased it.");
+		m_Health = MaxHealth;
 	}
 
-	// mana check
-	if(m_Mana > m_pPlayer->GetMaxMana())
+	// check and adjust mana if necessary
+	const auto MaxMana = m_pPlayer->GetMaxMana();
+	if(m_Mana > MaxMana)
 	{
 		GS()->Chat(m_pPlayer->GetCID(), "Your mana has been reduced.");
-		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that gave it away.");
-		m_Mana = m_pPlayer->GetMaxMana();
+		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that increased it.");
+		m_Mana = MaxMana;
 	}
 
-	// checking and limiting the gold capacity
-	int currentGold = m_pPlayer->Account()->GetGold();
-	int maxGoldCapacity = m_pPlayer->Account()->GetGoldCapacity();
-	if(currentGold > maxGoldCapacity)
+	// check and limit gold capacity
+	const auto CurrentGold = m_pPlayer->Account()->GetGold();
+	const auto MaxGoldCapacity = m_pPlayer->Account()->GetGoldCapacity();
+	if(CurrentGold > MaxGoldCapacity)
 	{
-		const int excessGold = currentGold - maxGoldCapacity;
+		const int excessGold = CurrentGold - MaxGoldCapacity;
 		m_pPlayer->Account()->DepositGoldToBank(excessGold);
 		GS()->Chat(m_pPlayer->GetCID(), "Your gold has been reduced to the maximum capacity.");
 	}
 
-	// weapon update if the item is functional as a weapon
-	CItemDescription* pItemInfo = GS()->GetItemInfo(ItemID);
-	if(pItemInfo->GetFunctional() >= EQUIP_HAMMER && pItemInfo->GetFunctional() <= EQUIP_LASER)
+	// get item info only once
+	const auto* pItemInfo = GS()->GetItemInfo(ItemID);
+	const auto Functional = pItemInfo->GetFunctional();
+	if(Functional >= EQUIP_HAMMER && Functional <= EQUIP_LASER)
 	{
-		m_pPlayer->GetCharacter()->GiveWeapon(pItemInfo->GetFunctional(), 3);
+		m_pPlayer->GetCharacter()->GiveWeapon(Functional, 3);
 	}
 
-	// eidolon functional processing
-	if(pItemInfo->GetFunctional() == EQUIP_EIDOLON)
+	// process eidolon if applicable
+	if(Functional == EQUIP_EIDOLON)
 	{
 		m_pPlayer->TryRemoveEidolon();
 		m_pPlayer->TryCreateEidolon();
 	}
 
-	// update ammo regeneration
-	if(pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen) > 0)
+	// update ammo regeneration if applicable
+	const int AmmoRegen = pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen);
+	if(AmmoRegen > 0)
+	{
 		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
+	}
 }
 
 void CCharacter::SetDoorHit(vec2 Start, vec2 End)
@@ -1846,11 +1887,8 @@ bool CCharacter::CheckFailMana(int Mana)
 
 	m_Mana -= Mana;
 
-	// try auto use regen mana
-	if(m_Mana <= m_pPlayer->GetMaxMana() / 5 && !m_pPlayer->IsActiveEffect("RegenMana") && m_pPlayer->GetItem(itPotionManaRegen)->IsEquipped())
-		m_pPlayer->GetItem(itPotionManaRegen)->Use(1);
-
 	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
+	AutoUseManaPotionIfNeeded();
 	return false;
 }
 

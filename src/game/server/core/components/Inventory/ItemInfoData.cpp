@@ -68,6 +68,41 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 	return FinishedPrice;
 }
 
+void CItemDescription::InitJsonData()
+{
+	mystd::json::parse(m_Data, [this](nlohmann::json& pJson)
+	{
+		// try to initialize harversing
+		if(const auto& pHarvestingJson = pJson["harvesting"]; !pHarvestingJson.is_null())
+		{
+			HarvestingContext Harvesting;
+			Harvesting.Level = pHarvestingJson.value("level", 1);
+			Harvesting.Health = pHarvestingJson.value("health", 100);
+			m_HarvestingContext = Harvesting;
+		}
+
+		// try to initialize potion
+		if(const auto& pPotionJson = pJson["potion"]; !pPotionJson.is_null())
+		{
+			PotionContext Potion;
+			Potion.Effect = pPotionJson.value("effect", "");
+			Potion.Value = pPotionJson.value("value", 0);
+			Potion.Lifetime = pPotionJson.value("lifetime", 0);
+			s_vTotalPotionByItemIDList[m_ID] = Potion;
+			m_PotionContext = Potion;
+		}
+
+		// try to initialize random box
+		for(auto& p : pJson["random_box"])
+		{
+			const auto ItemID = p.value("item_id", -1);
+			const auto Value = p.value("value", 1);
+			const auto Chance = p.value("chance", 100.0f);
+			m_RandomBox.Add(ItemID, Value, Chance);
+		}
+	});
+}
+
 void CItemDescription::StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Event) const
 {
 	mystd::json::parse(m_Data, [&pPlayer, Event, this](nlohmann::json& pJson)

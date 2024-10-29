@@ -42,82 +42,96 @@ CGS* CSkill::GS() const
 
 CPlayer* CSkill::GetPlayer() const
 {
-	if(m_ClientID >= 0 && m_ClientID < MAX_PLAYERS)
-	{
-		return GS()->GetPlayer(m_ClientID);
-	}
-	return nullptr;
+	return GS()->GetPlayer(m_ClientID);
 }
 
 std::string CSkill::GetStringLevelStatus() const
 {
+	// is not learned
 	if(!IsLearned())
+	{
 		return "(not learned)";
+	}
+
+	// is not maximal level
 	if(m_Level < Info()->GetMaxLevel())
+	{
 		return "(" + std::to_string(m_Level) + " of " + std::to_string(Info()->GetMaxLevel()) + ")";
+	}
+
+	// max level
 	return "(max)";
 }
 
 void CSkill::SelectNextControlEmote()
 {
-	if(!GetPlayer() || !GetPlayer()->IsAuthed())
+	const auto* pPlayer = GetPlayer();
+	if(!pPlayer)
 		return;
 
-	m_SelectedEmoticion++;
-	if(m_SelectedEmoticion >= NUM_EMOTICONS)
-		m_SelectedEmoticion = -1;
-
-	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '{}' WHERE SkillID = '{}' AND UserID = '{}'", m_SelectedEmoticion, m_ID, GetPlayer()->Account()->GetID());
+	m_SelectedEmoticion = (m_SelectedEmoticion + 1) % (NUM_EMOTICONS + 1) - 1;
+	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '{}' WHERE SkillID = '{}' AND UserID = '{}'", 
+		m_SelectedEmoticion, m_ID, pPlayer->Account()->GetID());
 }
 
 bool CSkill::Use()
 {
-	if(!GetPlayer() || !GetPlayer()->IsAuthed() || !GetPlayer()->GetCharacter() || m_Level <= 0)
+	// check is learned
+	if(m_Level <= 0)
+		return false;
+
+	// check player valid
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return false;
+
+	// check character valid
+	auto* pChar = pPlayer->GetCharacter();
+	if(!pChar)
 		return false;
 
 	// initialize variables
-	const int ClientID = GetPlayer()->GetCID();
-	const int ManaCost = maximum(1, translate_to_percent_rest(GetPlayer()->GetMaxMana(), Info()->GetPercentageCost()));
-	CCharacter* pChr = GetPlayer()->GetCharacter();
-	const vec2 PlayerPosition = pChr->GetPos();
+	const int ClientID = pPlayer->GetCID();
+	const int ManaCost = maximum(1, translate_to_percent_rest(pPlayer->GetMaxMana(), Info()->GetPercentageCost()));
+	const vec2 PlayerPosition = pChar->GetPos();
 
 	if(m_ID == SkillAttackTeleport)
 	{
 		// check mana
-		if(pChr->CheckFailMana(ManaCost))
+		if(pChar->CheckFailMana(ManaCost))
 			return false;
 
 		// create attack teleport
-		new CAttackTeleport(&GS()->m_World, PlayerPosition, GetPlayer(), GetBonus());
+		new CAttackTeleport(&GS()->m_World, PlayerPosition, pPlayer, GetBonus());
 		return true;
 	}
 
 	if(m_ID == SkillCureI)
 	{
 		// check mana
-		if(pChr->CheckFailMana(ManaCost))
+		if(pChar->CheckFailMana(ManaCost))
 			return false;
 
 		// cure near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			// check player
-			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
-			if(!pPlayer || !GS()->IsPlayerInWorld(i))
+			auto* pSearchPl = GS()->GetPlayer(i, true, true);
+			if(!pSearchPl || !GS()->IsPlayerInWorld(i))
 				continue;
 
 			// check distance
-			if(distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800)
+			if(distance(PlayerPosition, pSearchPl->GetCharacter()->GetPos()) > 800)
 				continue;
 
 			// dissalow heal for pvp clients
-			if(pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID)
+			if(pSearchPl->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID)
 				continue;
 
 			// create healt
 			const int PowerLevel = maximum(ManaCost + translate_to_percent_rest(ManaCost, minimum(GetBonus(), 100)), 1);
-			new CHeartHealer(&GS()->m_World, PlayerPosition, pPlayer, PowerLevel, pPlayer->GetCharacter()->m_Core.m_Vel, true);
-			GS()->CreateDeath(pPlayer->GetCharacter()->GetPos(), i);
+			new CHeartHealer(&GS()->m_World, PlayerPosition, pSearchPl, PowerLevel, pSearchPl->GetCharacter()->m_Core.m_Vel, true);
+			GS()->CreateDeath(pSearchPl->GetCharacter()->GetPos(), i);
 		}
 
 		GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
@@ -127,24 +141,40 @@ bool CSkill::Use()
 	if(m_ID == SkillBlessingGodWar)
 	{
 		// check mana
-		if(pChr->CheckFailMana(ManaCost))
+		if(pChar->CheckFailMana(ManaCost))
 			return false;
 
 		// blessing near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			CPlayer* pPlayer = GS()->GetPlayer(i, true, true);
-			if(!pPlayer || !GS()->IsPlayerInWorld(i) || distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800
-				|| (pPlayer->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID))
+			// check valid player
+			auto* pSearchPl = GS()->GetPlayer(i);
+			if(!pSearchPl || !GS()->IsPlayerInWorld(i))
 				continue;
 
-			const int RealAmmo = 10 + pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
+			// check valid character
+			auto* pSearchChar = pSearchPl->GetCharacter();
+			if(!pSearchChar)
+				continue;
+
+			// check valid distance
+			if(distance(PlayerPosition, pSearchChar->GetPos()) > 800)
+				continue;
+
+			// check allow for pvp
+			if(i != ClientID && pSearchChar->IsAllowedPVP(ClientID))
+				continue;
+
+			// restore ammo
+			const int RealAmmo = 10 + pSearchPl->GetTotalAttributeValue(AttributeIdentifier::Ammo);
 			const int RestoreAmmo = translate_to_percent_rest(RealAmmo, minimum(GetBonus(), 100));
+
 			for(int j = WEAPON_GUN; j <= WEAPON_LASER; j++)
 			{
-				pPlayer->GetCharacter()->GiveWeapon(j, RestoreAmmo);
+				pSearchChar->GiveWeapon(j, RestoreAmmo);
 				GS()->CreateDeath(PlayerPosition, i);
 			}
+
 			GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
 		}
 
@@ -155,31 +185,35 @@ bool CSkill::Use()
 	if(m_ID == SkillProvoke)
 	{
 		// check mana
-		if(pChr->CheckFailMana(ManaCost))
+		if(pChar->CheckFailMana(ManaCost))
 			return false;
 
 		// provoke mobs
 		bool MissedProvoked = false;
 		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 		{
-			// check player
-			CPlayerBot* pPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i, false, true));
-			if(!pPlayer || !GS()->IsPlayerInWorld(i))
+			// check player valid
+			auto* pSearchPl = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
+			if(!pSearchPl || !GS()->IsPlayerInWorld(i))
+				continue;
+
+			// check character valid
+			auto* pSearchChar = dynamic_cast<CCharacterBotAI*>(pSearchPl->GetCharacter());
+			if(!pSearchChar)
 				continue;
 
 			// check distance
-			if(distance(PlayerPosition, pPlayer->GetCharacter()->GetPos()) > 800)
+			if(distance(PlayerPosition, pSearchChar->GetPos()) > 800)
 				continue;
 
 			// check allowed pvp
-			if(!pPlayer->GetCharacter()->IsAllowedPVP(ClientID))
+			if(!pSearchChar->IsAllowedPVP(ClientID))
 				continue;
 
 			// check target upper agression
-			CCharacterBotAI* pCharacterBotAI = dynamic_cast<CCharacterBotAI*>(pPlayer->GetCharacter());
-			if(CPlayer* pPlayerAgr = GS()->GetPlayer(pCharacterBotAI->AI()->GetTarget()->GetCID(), false, true))
+			if(const auto* pTargetPl = GS()->GetPlayer(pSearchChar->AI()->GetTarget()->GetCID(), false, true))
 			{
-				if(pPlayerAgr->GetMaxHealth() > GetPlayer()->GetMaxHealth())
+				if(pTargetPl->GetMaxHealth() > pPlayer->GetMaxHealth())
 				{
 					MissedProvoked = true;
 					continue;
@@ -187,10 +221,10 @@ bool CSkill::Use()
 			}
 
 			// set agression
-			pCharacterBotAI->AI()->GetTarget()->Set(ClientID, GetBonus());
-			GS()->CreatePlayerSpawn(pPlayer->GetCharacter()->GetPos());
-			pPlayer->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
-			GS()->EntityManager()->FlyingPoint(PlayerPosition, i, pPlayer->GetCharacter()->m_Core.m_Vel);
+			pSearchChar->AI()->GetTarget()->Set(ClientID, GetBonus());
+			GS()->EntityManager()->FlyingPoint(PlayerPosition, i, pSearchPl->GetCharacter()->m_Core.m_Vel);
+			GS()->CreatePlayerSpawn(pSearchPl->GetCharacter()->GetPos());
+			pSearchPl->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
 		}
 
 		// some effects
@@ -262,7 +296,7 @@ bool CSkill::Use()
 		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
 
 		// enable shield
-		const int StartHealth = maximum(1, translate_to_percent_rest(GetPlayer()->GetMaxHealth(), GetBonus()));
+		const int StartHealth = maximum(1, translate_to_percent_rest(pPlayer->GetMaxHealth(), GetBonus()));
 		GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth, &m_pEntitySkill);
 		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been enabled! Health: {}!", StartHealth);
 		return true;
@@ -274,11 +308,12 @@ bool CSkill::Use()
 bool CSkill::Upgrade()
 {
 	// check player exists
-	if(!GetPlayer() || !GetPlayer()->IsAuthed())
+	const auto* pPlayer = GetPlayer();
+	if(!pPlayer)
 		return false;
 
 	// check for maximal leveling
-	const int ClientID = GetPlayer()->GetCID();
+	const int ClientID = pPlayer->GetCID();
 	if(m_Level >= Info()->GetMaxLevel())
 	{
 		GS()->Chat(ClientID, "You've already reached the maximum level");
@@ -286,22 +321,22 @@ bool CSkill::Upgrade()
 	}
 
 	// try spend skill points
-	if(!GetPlayer()->Account()->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
+	if(!pPlayer->Account()->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
 		return false;
 
 	// update level
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '{}' AND UserID = '{}'", m_ID, GetPlayer()->Account()->GetID());
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '{}' AND UserID = '{}'", m_ID, pPlayer->Account()->GetID());
 	if(pRes->next())
 	{
 		m_Level++;
-		Database->Execute<DB::UPDATE>("tw_accounts_skills", "Level = '{}' WHERE SkillID = '{}' AND UserID = '{}'", m_Level, m_ID, GetPlayer()->Account()->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_skills", "Level = '{}' WHERE SkillID = '{}' AND UserID = '{}'", m_Level, m_ID, pPlayer->Account()->GetID());
 		GS()->Chat(ClientID, "Increased the skill [{} level to {}]", Info()->GetName(), m_Level);
 	}
 	else
 	{
 		m_Level = 1;
 		m_SelectedEmoticion = -1;
-		Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('{}', '{}', '1');", m_ID, GetPlayer()->Account()->GetID());
+		Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('{}', '{}', '1');", m_ID, pPlayer->Account()->GetID());
 		GS()->Chat(ClientID, "Learned a new skill [{}]", Info()->GetName());
 	}
 

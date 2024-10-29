@@ -10,12 +10,9 @@
 
 class CWorldManager : public MmoComponent
 {
-	PathFinderVertex m_PathFinderBFS {};
+	inline static PathFinderVertex m_PathFinderBFS {};
 
-	~CWorldManager() override
-	{
-		mystd::freeContainer(CWorldData::Data());
-	}
+	~CWorldManager();
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 	void OnPostInit() override;

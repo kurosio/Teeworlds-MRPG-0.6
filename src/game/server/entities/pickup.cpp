@@ -7,21 +7,37 @@
 #include "character.h"
 
 CPickup::CPickup(CGameWorld *pGameWorld, int Type, int SubType, vec2 Pos)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP, Pos, PickupPhysSize)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP, Pos, 14.f)
+{
+	Init(Type, SubType, false);
+	GameWorld()->InsertEntity(this);
+}
+
+CPickup::CPickup(CGameWorld *pGameWorld, int ProjType, vec2 Pos)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP, Pos, 14.f)
+{
+	Init(ProjType, 0, true);
+	GameWorld()->InsertEntity(this);
+}
+
+void CPickup::Init(int Type, int Subtype, bool Projectile)
 {
 	m_Type = Type;
-	m_SubType = SubType;
-
+	m_SubType = Subtype;
+	m_Projectile = Projectile;
 	CPickup::Reset();
-	GameWorld()->InsertEntity(this);
 }
 
 void CPickup::Reset()
 {
-	if (g_pData->m_aPickups[m_Type].m_Spawndelay > 0)
+	if(g_pData->m_aPickups[m_Type].m_Spawndelay > 0)
+	{
 		m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * g_pData->m_aPickups[m_Type].m_Spawndelay;
+	}
 	else
+	{
 		m_SpawnTick = -1;
+	}
 }
 
 void CPickup::Tick()
@@ -29,83 +45,90 @@ void CPickup::Tick()
 	// wait for respawn
 	if(m_SpawnTick > 0)
 	{
-		if(Server()->Tick() > m_SpawnTick)
-		{
-			m_SpawnTick = -1;
-			if(m_Type == POWERUP_ARMOR_GRENADE || m_Type == POWERUP_ARMOR_SHOTGUN || m_Type == POWERUP_ARMOR_LASER)
-				GS()->CreateSound(m_Pos, SOUND_WEAPON_SPAWN);
-		}
-		else
+		if(Server()->Tick() < m_SpawnTick)
 			return;
+
+		m_SpawnTick = -1;
+		if(m_Type == POWERUP_ARMOR_GRENADE || m_Type == POWERUP_ARMOR_SHOTGUN || m_Type == POWERUP_ARMOR_LASER)
+		{
+			GS()->CreateSound(m_Pos, SOUND_WEAPON_SPAWN);
+		}
 	}
 
-	CCharacter *pChr = (CCharacter *)GS()->m_World.ClosestEntity(m_Pos, 20.0f, CGameWorld::ENTTYPE_CHARACTER, 0);
-	if(!pChr || !pChr->IsAlive() || pChr->GetPlayer()->IsBot())
+	auto* pChar = (CCharacter *)GS()->m_World.ClosestEntity(m_Pos, 20.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
+	if(!pChar || !pChar->IsAlive() || pChar->GetPlayer()->IsBot())
 		return;
 
 	bool Picked = false;
-	if(m_Type == POWERUP_HEALTH)
+	auto* pPlayer = pChar->GetPlayer();
+
+	if(m_Type == POWERUP_HEALTH && !m_Projectile)
 	{
-		const int RestoreHealth = translate_to_percent_rest(pChr->GetPlayer()->GetMaxHealth(), 1);
-		if(pChr->IncreaseHealth(RestoreHealth))
+		const auto RestoreHealth = translate_to_percent_rest(pPlayer->GetMaxHealth(), 1);
+		if(pChar->IncreaseHealth(RestoreHealth))
 		{
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);
 			Picked = true;
 		}
 	}
-	else if(m_Type == POWERUP_ARMOR)
+	else if(m_Type == POWERUP_ARMOR && !m_Projectile)
 	{
-		const int RestoreMana = translate_to_percent_rest(pChr->GetPlayer()->GetMaxMana(), 1);
-		if(pChr->IncreaseMana(RestoreMana))
+		const auto RestoreMana = translate_to_percent_rest(pPlayer->GetMaxMana(), 1);
+		if(pChar->IncreaseMana(RestoreMana))
 		{
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH);
 			Picked = true;
 		}
 	}
-	else if(m_Type == POWERUP_WEAPON && m_SubType == WEAPON_SHOTGUN)
+	else if(m_Type == POWERUP_WEAPON && m_SubType == WEAPON_SHOTGUN && !m_Projectile)
 	{
-		const int RealAmmo = 10 + pChr->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::Ammo);
-		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
-		if(pChr->GiveWeapon(WEAPON_SHOTGUN, RestoreAmmo))
+		const auto RealAmmo = 10 + pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
+		const auto RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
+		if(pChar->GiveWeapon(WEAPON_SHOTGUN, RestoreAmmo))
 		{
 			Picked = true;
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
 		}
 	}
-	else if(m_Type == POWERUP_WEAPON && m_SubType == WEAPON_GRENADE)
+	else if(m_Type == POWERUP_WEAPON && m_SubType == WEAPON_GRENADE && !m_Projectile)
 	{
-		const int RealAmmo = 10 + pChr->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::Ammo);
-		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
-		if(pChr->GiveWeapon(WEAPON_GRENADE, RestoreAmmo))
+		const auto RealAmmo = 10 + pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
+		const auto RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
+		if(pChar->GiveWeapon(WEAPON_GRENADE, RestoreAmmo))
 		{
 			Picked = true;
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_GRENADE);
 
 		}
 	}
-	else if(m_Type == POWERUP_WEAPON && m_SubType == WEAPON_LASER)
+	else if(m_Type == POWERUP_WEAPON && m_SubType == WEAPON_LASER && !m_Projectile)
 	{
-		const int RealAmmo = 10 + pChr->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::Ammo);
-		const int RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
-		if(pChr->GiveWeapon(WEAPON_LASER, RestoreAmmo))
+		const auto RealAmmo = 10 + pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
+		const auto RestoreAmmo = translate_to_percent_rest(RealAmmo, 40);
+		if(pChar->GiveWeapon(WEAPON_LASER, RestoreAmmo))
 		{
 			Picked = true;
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
 		}
 	}
+	else if(m_Type == WEAPON_LASER && m_Projectile)
+	{
+		const int RandomMoney = 1 + rand() % 500;
+
+		pPlayer->Account()->AddGold(RandomMoney, false);
+		GS()->Chat(-1, "Player {} has found money bag with {$} golds", Server()->ClientName(pPlayer->GetCID()), RandomMoney);
+		GS()->CreateDeath(m_Pos, pPlayer->GetCID());
+		MarkForDestroy();
+	}
 
 	if(Picked)
 	{
-		int RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
+		const auto RespawnTime = g_pData->m_aPickups[m_Type].m_Respawntime;
 		if(RespawnTime >= 0)
+		{
 			m_SpawnTick = Server()->Tick() + Server()->TickSpeed() * RespawnTime;
+		}
 	}
-}
-
-void CPickup::TickPaused()
-{
-	if(m_SpawnTick != -1)
-		++m_SpawnTick;
 }
 
 void CPickup::Snap(int SnappingClient)
@@ -113,12 +136,14 @@ void CPickup::Snap(int SnappingClient)
 	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient, (m_SpawnTick == -1)))
 		return;
 
-	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
-	if(!pP)
-		return;
-
-	pP->m_X = (int)m_Pos.x;
-	pP->m_Y = (int)m_Pos.y;
-	pP->m_Type = m_Type;
-	pP->m_Subtype = m_SubType;
+	if(m_Projectile)
+	{
+		if(!GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick() - 4, m_Type))
+			return;
+	}
+	else
+	{
+		if(!GS()->SnapPickup(SnappingClient, GetID(), m_Pos, m_Type, m_SubType))
+			return;
+	}
 }

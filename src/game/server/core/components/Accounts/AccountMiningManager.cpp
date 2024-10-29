@@ -77,7 +77,7 @@ bool CAccountMiningManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID
 		VOres.MarkList().Add("Description");
 		{
 			VOres.BeginDepth();
-			//VOres.Add("Level: {}", Ore.m_Level);
+			//VOres.Add("Level: {}", Ore.Level);
 			//VOres.Add("Health: {}P", Ore.m_StartHealth);
 			VOres.Add("Distance of distribution: {}P", Ore.m_Distance);
 			VOres.EndDepth();

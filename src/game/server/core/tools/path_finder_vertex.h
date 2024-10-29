@@ -11,6 +11,13 @@ class PathFinderVertex
     // Breadth-First Search Algorithm
     bool algoritmBFS(int startVertex, int endVertex, std::vector<int>& paPath) const
     {
+        // check if start and end vertices are valid
+        if(startVertex < 0 || startVertex >= m_numVertices || endVertex < 0 || endVertex >= m_numVertices)
+        {
+            dbg_msg("BFS", "invalid start (%d) or end (%d) vertex", startVertex, endVertex);
+            return false;
+        }
+
         std::vector visited(m_numVertices, false);
         visited[startVertex] = true;
 
@@ -33,7 +40,7 @@ class PathFinderVertex
                     node = parent[node];
                 }
 
-                std::reverse(paPath.begin(), paPath.end());
+                std::ranges::reverse(paPath);
                 return true;
             }
 
@@ -53,6 +60,10 @@ class PathFinderVertex
 
 public:
     PathFinderVertex() = default;
+    ~PathFinderVertex()
+    {
+        clear();
+    }
 
 	// initialize the graph with the given number of vertices
 	void init(int vertices)
@@ -60,6 +71,14 @@ public:
 		m_initilized = true;
 		m_numVertices = vertices;
 		m_adjLists = new std::list<int>[m_numVertices];
+	}
+
+    // clear all data and change state to uninitilized
+    void clear()
+	{
+        m_initilized = false;
+        m_numVertices = 0;
+        delete m_adjLists;
 	}
 
 	// add an edge between two vertices (undirected)

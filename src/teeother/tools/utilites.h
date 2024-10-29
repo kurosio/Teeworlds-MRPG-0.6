@@ -159,20 +159,24 @@ namespace mystd
 	 */
 	namespace string
 	{
-		inline std::string progressBar(int max_value, int current_value, int step, const std::string& UTF_fill_symbol, const std::string& UTF_empty_symbol)
+		inline std::string progressBar(uint64_t maxValue, uint64_t currentValue, int totalSteps, const std::string& Fillsymbols, const std::string& EmptySymbols)
 		{
-			std::string ProgressBar;
-			int numFilled = current_value / step;
-			int numEmpty = max_value / step - numFilled;
-			ProgressBar.reserve(numFilled + numEmpty);
+			std::string resutStr;
+			const auto numFilled = currentValue / totalSteps;
+			const auto numEmpty = maxValue / totalSteps - numFilled;
+			resutStr.reserve(numFilled + numEmpty);
 
 			for(int i = 0; i < numFilled; i++)
-				ProgressBar += UTF_fill_symbol;
+			{
+				resutStr += Fillsymbols;
+			}
 
 			for(int i = 0; i < numEmpty; i++)
-				ProgressBar += UTF_empty_symbol;
+			{
+				resutStr += EmptySymbols;
+			}
 
-			return ProgressBar;
+			return resutStr;
 		}
 	}
 

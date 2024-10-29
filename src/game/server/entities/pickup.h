@@ -4,22 +4,23 @@
 #define GAME_SERVER_ENTITIES_PICKUP_H
 #include <game/server/entity.h>
 
-const int PickupPhysSize = 14;
-
 class CPickup : public CEntity
 {
-public:
-	CPickup(CGameWorld *pGameWorld, int Type, int SubType, vec2 Pos);
-
-	void Reset() override;
-	void Tick() override;
-	virtual void TickPaused();
-	void Snap(int SnappingClient) override;
-
-private:
 	int m_Type;
 	int m_SubType;
 	int m_SpawnTick;
+	bool m_Projectile;
+
+public:
+	CPickup(CGameWorld *pGameWorld, int Type, int SubType, vec2 Pos);
+	CPickup(CGameWorld *pGameWorld, int ProjType, vec2 Pos);
+
+	void Reset() override;
+	void Tick() override;
+	void Snap(int SnappingClient) override;
+
+private:
+	void Init(int Type, int Subtype, bool Projectile);
 };
 
 #endif

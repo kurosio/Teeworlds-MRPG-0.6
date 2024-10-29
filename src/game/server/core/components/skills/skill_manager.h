@@ -22,7 +22,7 @@ class CSkillManager : public MmoComponent
 
 	// vote list's menus
 	void ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillType Type) const;
-	void ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const;
+	void ShowSkill(CPlayer* pPlayer, int SkillID) const;
 
 public:
 	// use skills by emoticion

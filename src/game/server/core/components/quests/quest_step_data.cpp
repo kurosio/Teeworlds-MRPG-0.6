@@ -7,7 +7,7 @@
 #include "quest_manager.h"
 
 #include <game/server/core/entities/items/drop_quest_items.h>
-#include <game/server/core/entities/tools/arrow_navigator.h>
+#include <game/server/core/entities/tools/dir_navigator.h>
 #include <game/server/core/entities/tools/laser_orbite.h>
 
 #include "entities/move_action.h"
@@ -261,7 +261,7 @@ void CQuestStep::UpdatePathNavigator()
 	else if(DependLife && !Exists)
 	{
 		dbg_msg("test", "create navigator");
-		m_pEntNavigator = new CEntityArrowNavigator(&GS()->m_World, m_ClientID, m_Bot.m_Position, m_Bot.m_WorldID);
+		m_pEntNavigator = new CEntityDirectionNavigator(&GS()->m_World, m_ClientID, m_Bot.m_Position, m_Bot.m_WorldID);
 	}
 }
 

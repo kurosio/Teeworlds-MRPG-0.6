@@ -6,6 +6,12 @@
 
 #include "../achievements/achievement_data.h"
 
+CWorldManager::~CWorldManager()
+{
+	mystd::freeContainer(CWorldData::Data());
+	m_PathFinderBFS.clear();
+}
+
 void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
 {
 	std::deque<CWorldSwapData> vSwappers{};

@@ -134,8 +134,8 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	}
 
 	// Update player account information from the database
-	std::string Language = pResCheck->getString("Language").c_str();
-	std::string LoginDate = pResCheck->getString("LoginDate").c_str();
+	const auto Language = pResCheck->getString("Language");
+	const auto LoginDate = pResCheck->getString("LoginDate");
 	pPlayer->Account()->Init(AccountID, ClientID, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
 
 	// Send success messages to the client
@@ -237,6 +237,62 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
 
+	// account information
+	if(Menulist == MENU_ACCOUNT_INFO)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
+
+		auto* pAccount = pPlayer->Account();
+		const char* pLastLoginDate = pAccount->GetLastLoginDate();
+
+		// Account information
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Information");
+		VInfo.Add("Last login: {}", pLastLoginDate);
+		VInfo.Add("Account ID: {}", pAccount->GetID());
+		VInfo.Add("Login: {}", pAccount->GetLogin());
+		VInfo.Add("Class: {}", pPlayer->GetClassData().GetName());
+		VInfo.Add("Crime score: {}", pAccount->GetCrimeScore());
+		VInfo.Add("Gold capacity: {}", pAccount->GetGoldCapacity());
+		VInfo.Add("Has house: {}", pAccount->HasHouse() ? "yes" : "no");
+		VInfo.Add("Has guild: {}", pAccount->HasGuild() ? "yes" : "no");
+		VInfo.Add("In group: {}", pAccount->HasGroup() ? "yes" : "no");
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// Leveling information
+		VoteWrapper VLeveling(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling Infromation");
+
+		auto addLevelingInfo = [&](int level, uint64_t experience, const std::string& name)
+		{
+			const auto expNeed = computeExperience(level);
+			const auto progress = translate_to_percent(expNeed, experience);
+			const auto progressBar = mystd::string::progressBar(100, progress, 10, "\u25B0", "\u25B1");
+
+			VLeveling.MarkList().Add(name.c_str());
+			VLeveling.Add("[Lvl {}] Exp {$}/{$}", level, experience, expNeed);
+			VLeveling.Add("{} - {~.2}%", progressBar, progress);
+			VLeveling.AddLine();
+		};
+
+		addLevelingInfo(pAccount->GetLevel(), pAccount->GetExperience(), pPlayer->GetClassData().GetName());
+		addLevelingInfo(pAccount->m_MiningData.getRef<int>(JOB_LEVEL), pAccount->m_MiningData.getRef<uint64_t>(JOB_EXPERIENCE), "Miner's job");
+		addLevelingInfo(pAccount->m_FarmingData.getRef<int>(JOB_LEVEL), pAccount->m_FarmingData.getRef<uint64_t>(JOB_EXPERIENCE), "Farmer's work");
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// Currency information
+		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
+		VCurrency.Add("Bank: {}", pAccount->GetBank());
+
+		for(int itemID : {itGold, itAchievementPoint, itSkillPoint, itAlliedSeals, itMaterial, itProduct})
+		{
+			VCurrency.Add("{}: {}", pPlayer->GetItem(itemID)->Info()->GetName(), pPlayer->GetItem(itemID)->GetValue());
+		}
+
+		VCurrency.Add("Upgrade point: {}", pAccount->m_UpgradePoint);
+
+		// Add backpage
+		VoteWrapper::AddBackpage(ClientID);
+	}
+
 	// settings
 	if(Menulist == MENU_SETTINGS)
 	{
@@ -252,20 +308,6 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VMain.AddMenu(MENU_SETTINGS_TITLE, "Select personal title");
 		VMain.AddMenu(MENU_SETTINGS_LANGUAGE, "Settings language");
 		VMain.AddMenu(MENU_SETTINGS_ACCOUNT, "Settings account");
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// equipment modules
-		VoteWrapper VModules(ClientID, VWF_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Modules settings");
-		for(auto& iter : CPlayerItem::Data()[ClientID])
-		{
-			CPlayerItem* pPlayerItem = &iter.second;
-			CItemDescription* pItemInfo = pPlayerItem->Info();
-			if(!pItemInfo->IsType(ItemType::TYPE_MODULE) || !pPlayerItem->HasItem())
-				continue;
-
-			std::string StrAttributeInfo = pItemInfo->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : pItemInfo->GetDescription();
-			VModules.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", pPlayerItem->IsEquipped() ? "✔" : "\0", pItemInfo->GetName(), StrAttributeInfo);
-		}
 
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);

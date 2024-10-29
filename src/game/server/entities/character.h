@@ -82,7 +82,10 @@ protected:
 	void HandleSafeFlags();
 	bool StartConversation(CPlayer* pTarget) const;
 	void HandleEventsDeath(int Killer, vec2 Force) const;
+
 	void AutoUseHealingPotionIfNeeded() const;
+	void AutoUseManaPotionIfNeeded() const;
+	void TryUsePotion(std::optional<int> optItemID) const;
 
 public:
 	// these are non-heldback inputs
@@ -141,7 +144,7 @@ public:
 	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
 	void ChangePosition(vec2 NewPos);
-	void UpdateEquipingStats(int ItemID);
+	void UpdateEquippedStats(int ItemID);
 	void SetDoorHit(vec2 Start, vec2 End);
 	void HandleDoorHit();
 	void ResetDoorHit() { m_NormalDoorHit = vec2(0, 0); }

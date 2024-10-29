@@ -95,8 +95,8 @@ public:
 	CPlayerDialog m_Dialog;
 
 	bool m_WantSpawn;
-	bool m_ActivedGroupColors;
-	int m_TickActivedGroupColors;
+	bool m_ActivatedGroupColour;
+	int m_TickActivatedGroupColour;
 	std::optional<int> m_EidolonCID;
 
 	/* ==========================================================
@@ -174,7 +174,7 @@ public:
 
 	CPlayerItem* GetItem(const CItem& Item) { return GetItem(Item.GetID()); }
 	virtual CPlayerItem* GetItem(ItemIdentifier ID);
-	CSkill* GetSkill(SkillIdentifier ID);
+	CSkill* GetSkill(int SkillID) const;
 	CPlayerQuest* GetQuest(QuestIdentifier ID) const;
 	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
 	CAccountData* Account() const { return &CAccountData::ms_aData[m_ClientID]; }

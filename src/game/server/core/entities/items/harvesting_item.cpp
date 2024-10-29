@@ -54,8 +54,11 @@ void CEntityHarvestingItem::SpawnPositions()
 
 void CEntityHarvestingItem::SetSpawn(int Sec)
 {
-	m_SpawnTick = Server()->Tick() + (Server()->TickSpeed()*Sec);
-	m_Damage = GetItemInfo()->GetHarvestingData().m_Health;
+	if(const auto optHarvestingContext = GetItemInfo()->GetHarvestingContext())
+	{
+		m_SpawnTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
+		m_Damage = optHarvestingContext->Health;
+	}
 }
 
 void CEntityHarvestingItem::Process(int ClientID)
@@ -65,12 +68,16 @@ void CEntityHarvestingItem::Process(int ClientID)
 	if(!pPlayer)
 		return;
 
+	// check valid harvesting data
+	const auto optHarvestingContext = GetItemInfo()->GetHarvestingContext();
+	dbg_assert(optHarvestingContext.has_value(), "harvesting context is not valid");
+
 	// check count damage
-	if(m_Damage >= GetItemInfo()->GetHarvestingData().m_Health)
+	if(m_Damage >= optHarvestingContext->Health)
 		return;
 
 	// not allowed un owner house job
-	auto* pHouse = GS()->Core()->HouseManager()->GetHouse(m_HouseID);
+	const auto* pHouse = GS()->Core()->HouseManager()->GetHouse(m_HouseID);
 	if(pHouse && !pHouse->HasOwner())
 	{
 		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "It is forbidden to collect farming.");
@@ -81,29 +88,38 @@ void CEntityHarvestingItem::Process(int ClientID)
 	auto* pPlayerItem = pPlayer->GetItem(GetItemInfo()->GetID());
 	if(m_Type == HARVESTINGITEM_TYPE_MINING)
 	{
-		Mining(pPlayer, *pPlayerItem);
+		const int Level = pPlayer->Account()->m_MiningData.getRef<int>(JOB_LEVEL);
+		if(TakeDamage(AttributeIdentifier::Efficiency, pPlayer, pPlayerItem, EQUIP_PICKAXE, Level))
+		{
+			GS()->Core()->AccountMiningManager()->Process(pPlayer, optHarvestingContext->Level);
+			pPlayerItem->Add(1 + rand() % 2);
+			SetSpawn(20);
+		}
 	}
 	else if(m_Type == HARVESTINGITEM_TYPE_FARMING)
 	{
-		Farming(pPlayer, *pPlayerItem);
+		const int Level = pPlayer->Account()->m_FarmingData.getRef<int>(JOB_LEVEL);
+		if(TakeDamage(AttributeIdentifier::Extraction, pPlayer, pPlayerItem, EQUIP_RAKE, Level))
+		{
+			GS()->Core()->AccountFarmingManager()->Procces(pPlayer, optHarvestingContext->Level);
+			pPlayerItem->Add(1 + rand() % 2);
+			SetSpawn(20);
+		}
 	}
 }
 
-bool CEntityHarvestingItem::Interaction(const char* pToolname, AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemFunctional EquipID, int SelfLevel)
+bool CEntityHarvestingItem::TakeDamage(AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemFunctional EquipID, int SelfLevel)
 {
-	// initialize variables
-	const int ClientID = pPlayer->GetCID();
-	const auto EquipItemID = pPlayer->GetEquippedItemID(EquipID);
-	const int& Level = GetItemInfo()->GetHarvestingData().m_Level;
-	const int& Health = GetItemInfo()->GetHarvestingData().m_Health;
-
-	// check equipped
-	if(!EquipItemID.has_value())
-	{
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need equip {}!", 
-			Instance::Localize(pPlayer->GetCID(), pToolname));
+	// check valid harvesting data
+	const auto optHarvestingContext = GetItemInfo()->GetHarvestingContext();
+	if(!optHarvestingContext.has_value())
 		return false;
-	}
+
+	// initialize variables
+	const auto optEquipItemID = pPlayer->GetEquippedItemID(EquipID);
+	const int ClientID = pPlayer->GetCID();
+	const int& Level = optHarvestingContext->Level;
+	const int& Health = optHarvestingContext->Health;
 
 	// check level
 	if(SelfLevel < Level)
@@ -112,53 +128,42 @@ bool CEntityHarvestingItem::Interaction(const char* pToolname, AttributeIdentifi
 		return false;
 	}
 
-	// check durability
-	auto* pEquippedItem = pPlayer->GetItem(EquipItemID.value());
-	const int Durability = pEquippedItem->GetDurability();
-	if(Durability <= 0)
+	// with equipped item
+	if(optEquipItemID.has_value())
 	{
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Need repair \"{}\"!", pEquippedItem->Info()->GetName());
-		return false;
+		// initializae variables
+		auto* pEquippedItem = pPlayer->GetItem(optEquipItemID.value());
+		const int Durability = pEquippedItem->GetDurability();
+		const bool RequiredRepair = Durability <= 0;
+
+		// check required repair
+		if(!RequiredRepair && rand() % 10 == 0)
+		{
+			pEquippedItem->SetDurability(Durability - 1);
+		}
+
+		// damage
+		m_Damage += 3 + pPlayer->GetTotalAttributeValue(Attribute);
+		GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
+
+		// send message
+		const auto Poffix = RequiredRepair ? "broken" : "";
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{} [{}/{}P] : {} ({}/100%){}",
+			pWorkedItem->Info()->GetName(), minimum(m_Damage, Health), Health, pEquippedItem->Info()->GetName(), Durability, Poffix);
 	}
+	else
+	{
+		// damage
+		m_Damage += 1;
+		GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
 
-	// lower the durability
-	if(rand() % 10 == 0)
-		pEquippedItem->SetDurability(Durability - 1);
-
-	// damage
-	m_Damage += 3 + pPlayer->GetTotalAttributeValue(Attribute);
-	GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
-
-	// send message
-	GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{} [{}/{}P] : {} ({}/100%)",
-		pWorkedItem->Info()->GetName(), minimum(m_Damage, Health), Health, pEquippedItem->Info()->GetName(), Durability);
+		// send message
+		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{} [{}/{}P] : Hand (\u221e/\u221e)",
+			pWorkedItem->Info()->GetName(), minimum(m_Damage, Health), Health);
+	}
 
 	// check health
 	return m_Damage >= Health;
-}
-
-void CEntityHarvestingItem::Mining(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
-{
-	const int Level = pPlayer->Account()->m_MiningData.getRef<int>(JOB_LEVEL);
-
-	if(Interaction("Pickaxe", AttributeIdentifier::Efficiency, pPlayer, &pWorkedItem, EQUIP_PICKAXE, Level))
-	{
-		GS()->Core()->AccountMiningManager()->Process(pPlayer, GetItemInfo()->GetHarvestingData().m_Level);
-		pWorkedItem.Add(1 + rand()%2);
-		SetSpawn(20);
-	}
-}
-
-void CEntityHarvestingItem::Farming(CPlayer* pPlayer, CPlayerItem& pWorkedItem)
-{
-	const int Level = pPlayer->Account()->m_MiningData.getRef<int>(JOB_LEVEL);
-
-	if(Interaction("Rake", AttributeIdentifier::Extraction, pPlayer, &pWorkedItem, EQUIP_RAKE, Level))
-	{
-		GS()->Core()->AccountFarmingManager()->Procces(pPlayer, GetItemInfo()->GetHarvestingData().m_Level);
-		pWorkedItem.Add(1 + rand() % 2);
-		SetSpawn(20);		
-	}
 }
 
 int CEntityHarvestingItem::GetPickupType() const

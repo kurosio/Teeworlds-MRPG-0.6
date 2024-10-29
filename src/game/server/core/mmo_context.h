@@ -102,7 +102,8 @@ enum ETickState
 	LastVote,
 	LastDialog,
 	LastRandomBox,
-	PotionRecast,
+	HealPotionRecast,
+	ManaPotionRecast,
 	RefreshClanTitle,
 	RefreshNickLeveling,
 	NUM_TICK,
@@ -132,33 +133,6 @@ enum class ToplistType : int
 	NUM_TOPLIST_TYPES
 };
 
-// item functionals
-enum ItemFunctional : int
-{
-	EQUIP_HAMMER = 0,
-	EQUIP_GUN,
-	EQUIP_SHOTGUN,
-	EQUIP_GRENADE,
-	EQUIP_LASER,
-	EQUIP_PICKAXE,
-	EQUIP_RAKE,
-	EQUIP_ARMOR,
-	EQUIP_EIDOLON,
-	EQUIP_POTION_HEAL,
-	EQUIP_POTION_MANA,
-	EQUIP_POTION_SPECIAL,
-	EQUIP_TITLE,
-	NUM_EQUIPPED,
-
-
-	FUNCTION_ONE_USED,
-	FUNCTION_USED,
-	FUNCTION_SETTINGS,
-	FUNCTION_FARMING,
-	FUNCTION_MINING,
-	NUM_FUNCTIONS,
-};
-
 // item types
 enum class ItemType : short
 {
@@ -172,6 +146,58 @@ enum class ItemType : short
 	TYPE_DECORATION,
 	TYPE_POTION,
 	NUM_TYPES,
+};
+
+// enum for item functional types
+enum ItemFunctional : int
+{
+	// equipped items
+	EQUIP_HAMMER = 0,
+	EQUIP_GUN,
+	EQUIP_SHOTGUN,
+	EQUIP_GRENADE,
+	EQUIP_LASER,
+	EQUIP_PICKAXE,
+	EQUIP_RAKE,
+	EQUIP_ARMOR,
+	EQUIP_EIDOLON,
+	EQUIP_POTION_HEAL,
+	EQUIP_POTION_MANA,
+	EQUIP_TITLE,
+	NUM_EQUIPPED,
+
+	// functional categories
+	FUNCTION_ONE_USED = NUM_EQUIPPED,
+	FUNCTION_USED,
+	FUNCTION_SETTINGS,
+	FUNCTION_FARMING,
+	FUNCTION_MINING,
+	NUM_FUNCTIONS
+};
+
+// names for all items and functions
+constexpr std::string_view ItemFunctionalString[NUM_FUNCTIONS] =
+{
+	// equipped items
+	"Hammer",
+	"Gun",
+	"Shotgun",
+	"Grenade",
+	"Laser",
+	"Pickaxe",
+	"Rake",
+	"Armor",
+	"Eidolon",
+	"Potion healing",
+	"Potion mana",
+	"Title",
+
+	// functional categories
+	"One Used",
+	"Used",
+	"Settings",
+	"Farming",
+	"Mining"
 };
 
 // quest state
@@ -199,6 +225,7 @@ enum EMenuList
 	MENU_EQUIPMENT,
 	MENU_INVENTORY,
 	MENU_UPGRADES,
+	MENU_MODULES,
 
 	// Settings
 	MENU_SETTINGS,
@@ -494,41 +521,6 @@ enum class AttributeIdentifier : int
 	EidolonPWR = 19,             // Attribute identifier for eidolon power
 	GoldCapacity = 20,           // Attribute identifier for gold capacity
 	ATTRIBUTES_NUM,              // The number of total attributes
-};
-
-// todo use template class 
-class PotionTools
-{
-public:
-	class Heal
-	{
-		int m_ItemID {};
-		std::string m_Effect {};
-		int m_Recovery {};
-		int m_Time {};
-
-	public:
-		Heal() = delete;
-		Heal(int ItemID, std::string Effect, int Recovery, int Time) : m_ItemID(ItemID), m_Effect(Effect), m_Recovery(Recovery), m_Time(Time) {}
-
-		static const Heal* getHealInfo(int ItemID)
-		{
-			auto p = std::ranges::find_if(m_PotionHealthInfo, [ItemID](const Heal& p){ return p.m_ItemID == ItemID; });
-			return p != m_PotionHealthInfo.end() ? p : nullptr;
-		}
-		static std::initializer_list<Heal>& getList() { return m_PotionHealthInfo; }
-
-		int getItemID() const { return m_ItemID; }
-		const char* getEffect() const { return m_Effect.c_str(); }
-		int getRecovery() const { return m_Recovery; }
-		int getTime() const { return m_Time; }
-	};
-
-private:
-	inline static std::initializer_list<Heal> m_PotionHealthInfo
-	{
-		{ itTinyHealthPotion, "TinyHP", 7, 15 }
-	};
 };
 
 class IServer;

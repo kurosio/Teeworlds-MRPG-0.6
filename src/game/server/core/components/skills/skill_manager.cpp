@@ -10,33 +10,32 @@ void CSkillManager::OnPreInit()
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_skills_list");
 	while (pRes->next())
 	{
-		std::string Name = pRes->getString("Name").c_str();
-		std::string Description = pRes->getString("Description").c_str();
-		std::string BoostName = pRes->getString("BoostName").c_str();
-		int BoostValue = pRes->getInt("BoostValue");
-		int PercentageCost = pRes->getInt("PercentageCost");
-		int PriceSP = pRes->getInt("PriceSP");
-		int MaxLevel = pRes->getInt("MaxLevel");
-		bool Passive = pRes->getBoolean("Passive");
-		SkillType Type = (SkillType)pRes->getInt("Type");
+		const auto ID = pRes->getInt("ID");
+		const auto Name = pRes->getString("Name");
+		const auto Description = pRes->getString("Description");
+		const auto BoostName = pRes->getString("BoostName");
+		const auto BoostValue = pRes->getInt("BoostValue");
+		const auto PercentageCost = pRes->getInt("PercentageCost");
+		const auto PriceSP = pRes->getInt("PriceSP");
+		const auto MaxLevel = pRes->getInt("MaxLevel");
+		const auto Passive = pRes->getBoolean("Passive");
+		const auto Type = (SkillType)pRes->getInt("Type");
 
-		SkillIdentifier ID = pRes->getInt("ID");
 		CSkillDescription(ID).Init(Name, Description, BoostName, BoostValue, Type, PercentageCost, PriceSP, MaxLevel, Passive);
 	}
 }
 
 void CSkillManager::OnPlayerLogin(CPlayer *pPlayer)
 {
-	const int ClientID = pPlayer->GetCID();
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	while(pRes->next())
 	{
-		SkillIdentifier ID = pRes->getInt("SkillID");
-		int Level = pRes->getInt("Level");
-		int SelectedEmoticion = pRes->getInt("UsedByEmoticon");
+		const auto ID = pRes->getInt("SkillID");
+		const auto Level = pRes->getInt("Level");
+		const auto SelectedEmoticion = pRes->getInt("UsedByEmoticon");
 
 		// init by server
-		CSkill::CreateElement(ClientID, ID)->Init(Level, SelectedEmoticion);
+		CSkill::CreateElement(pPlayer->GetCID(), ID)->Init(Level, SelectedEmoticion);
 	}
 }
 
@@ -121,35 +120,36 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillTyp
 	VoteWrapper::AddLine(ClientID);
 }
 
-void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
+void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID) const
 {
-	const int ClientID = pPlayer->GetCID();
-	CSkill* pSkill = pPlayer->GetSkill(ID);
-	CSkillDescription* pInfo = pSkill->Info();
-	const bool IsLearned = pSkill->IsLearned();
-	const bool IsPassive = pInfo->IsPassive();
-	const bool IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
+	const auto ClientID = pPlayer->GetCID();
+	const auto* pSkill = pPlayer->GetSkill(SkillID);
+	const auto* pInfo = pSkill->Info();
+	const auto* pPlayerSkillPoints = pPlayer->GetItem(itSkillPoint);
+	const auto IsLearned = pSkill->IsLearned();
+	const auto IsPassive = pInfo->IsPassive();
+	const auto IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
+	const auto MarkHas = pPlayerSkillPoints->GetValue() >= pInfo->GetPriceSP();
 
 	// skill want learn information
 	VoteWrapper VSkillWant(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want learn?");
 	VSkillWant.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
 	if(IsLearned)
+	{
 		VSkillWant.Add("{} {} (each level +{})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
+	}
 	if(!IsPassive)
+	{
 		VSkillWant.Add("Mana required {}%", pInfo->GetPercentageCost());
+	}
 	VSkillWant.AddLine();
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// required sp for learn
 	VoteWrapper VRequired(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Required");
-	VRequired.ReinitNumeralDepthStyles(
-		{
-			{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }
-		}
-	);
-	CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
-	bool MarkHas = pPlayerItem->GetValue() >= pInfo->GetPriceSP();
-	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", pPlayerItem->Info()->GetName(), pInfo->GetPriceSP(), pPlayerItem->GetValue());
+	VRequired.ReinitNumeralDepthStyles({{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }});
+	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", 
+		pPlayerSkillPoints->Info()->GetName(), pInfo->GetPriceSP(), pPlayerSkillPoints->GetValue());
 	VRequired.AddLine();
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -157,19 +157,25 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, SkillIdentifier ID) const
 	if(!IsPassive && IsLearned)
 	{
 		VoteWrapper VUsage(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Usage");
-		VUsage.Add("F1 Bind: (bind 'key' say \"/useskill {}\")", ID);
-		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICION", ID, "Used on {}", pSkill->GetSelectedEmoticonName());
+		VUsage.Add("F1 Bind: (bind 'key' say \"/useskill {}\")", SkillID);
+		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICION", SkillID, "Used on {}", pSkill->GetSelectedEmoticonName());
 		VUsage.AddLine();
 		VoteWrapper::AddEmptyline(ClientID);
 	}
 
 	// show status and button buy
 	if(IsMaximumLevel)
+	{
 		VoteWrapper(ClientID).Add("- Already been improved to maximum level");
+	}
 	else if(!MarkHas)
+	{
 		VoteWrapper(ClientID).Add("- Not enough skill point's to learn");
+	}
 	else
-		VoteWrapper(ClientID).AddOption("SKILL_LEARN", ID, "\u2726 Learn ({} of {} level)", pSkill->GetLevel(), pInfo->GetMaxLevel());
+	{
+		VoteWrapper(ClientID).AddOption("SKILL_LEARN", SkillID, "\u2726 Learn ({} of {} level)", pSkill->GetLevel(), pInfo->GetMaxLevel());
+	}
 
 	// add emptyline
 	VoteWrapper::AddEmptyline(ClientID);

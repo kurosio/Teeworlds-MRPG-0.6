@@ -23,11 +23,19 @@ enum class ItemScenarioEvent
 class CItemDescription : public MultiworldIdentifiableData < std::map< int, CItemDescription > >
 {
 public:
-	struct HarvestingData
+	struct HarvestingContext
 	{
-		int m_Level  {1};
-		int m_Health {100};
+		int Level  {1};
+		int Health {100};
 	};
+
+	struct PotionContext
+	{
+		std::string Effect {};
+		int Value {};
+		int Lifetime {};
+	};
+
 	using ContainerAttributes = std::deque< CAttribute >;
 
 private:
@@ -43,7 +51,8 @@ private:
 	ContainerAttributes m_aAttributes {};
 	std::string m_Data {};
 	CRandomBox m_RandomBox {};
-	HarvestingData m_Harvesting {};
+	std::optional<HarvestingContext> m_HarvestingContext {};
+	std::optional<PotionContext> m_PotionContext {};
 
 public:
 	CItemDescription() = default;
@@ -55,7 +64,7 @@ public:
 		mystd::json::parse(m_Data, [this](nlohmann::json& pJson)
 		{
 			// try to initialize harversing
-			m_Harvesting = HarvestingData{
+			m_HarvestingContext = HarvestingContext{
 				pJson.value("harvesting", nlohmann::json::object()).value("level", 1),
 				pJson.value("harvesting", nlohmann::json::object()).value("health", 100)
 			};
@@ -72,8 +81,11 @@ public:
 		m_InitialPrice = InitialPrice;
 		m_Function = Function;
 		m_aAttributes = std::move(aAttributes);
-		CItemDescription::m_pData[m_ID] = *this;
+
+		m_pData[m_ID] = *this;
+		m_pData[m_ID].InitJsonData();
 	}
+	void InitJsonData();
 
 	ItemIdentifier GetID() const { return m_ID; }
 
@@ -89,7 +101,8 @@ public:
 	bool IsType(ItemType Type) const { return m_Type == Type; }
 	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
-	HarvestingData& GetHarvestingData() { return m_Harvesting; }
+	std::optional<HarvestingContext>& GetHarvestingContext() { return m_HarvestingContext; }
+	std::optional<PotionContext>& GetPotionContext() { return m_PotionContext; }
 
 	bool IsEnchantable() const;
 	bool IsEnchantMaxLevel(int Enchant) const;
@@ -101,6 +114,9 @@ public:
 	int GetEnchantPrice(int EnchantLevel) const;
 	std::string GetStringAttributesInfo(CPlayer* pPlayer, int Enchant) const;
 	std::string GetStringEnchantLevel(int Enchant) const;
+
+	// total data
+	inline static std::unordered_map<int, PotionContext> s_vTotalPotionByItemIDList{};
 };
 
 #endif

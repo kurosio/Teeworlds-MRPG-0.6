@@ -118,10 +118,10 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int groupID) const
 		if(pInfo->GetGroup() != groupID)
 			continue;
 
-		int progress = pAchievement->GetProgress();
-		int required = pInfo->GetRequired();
-		bool completed = pAchievement->IsCompleted();
-		bool rewardExists = pInfo->RewardExists();
+		const auto progress = pAchievement->GetProgress();
+		const auto required = pInfo->GetRequired();
+		const bool completed = pAchievement->IsCompleted();
+		const bool rewardExists = pInfo->RewardExists();
 
 		VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} ({}AP) {}{}",
 			completed ? "✔" : "×",
@@ -135,40 +135,53 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int groupID) const
 
 void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required) const
 {
+	auto addProgressInfo = [&](VoteWrapper& wrapper, auto progress, auto required, std::string action, std::string needed = {})
+	{
+		const auto progressAchievement = translate_to_percent(Required, Progress);
+		const auto progressBar = mystd::string::progressBar(100, (int)progressAchievement, 10, "\u25B0", "\u25B1");
+
+		wrapper.Add("Progress: {} - {~.2}%", progressBar, progressAchievement);
+		if(needed.empty())
+			wrapper.Add("{} {}/{}", action, progress, required);
+		else
+			wrapper.Add("{} {}/{} {}", action, progress, required, needed);
+	};
+
 	switch(const auto Type = pInfo->GetType())
 	{
 		case AchievementType::ReceiveItem:
 		case AchievementType::HaveItem:
 		{
-			CItemDescription* pItem = GS()->GetItemInfo(pInfo->GetCriteria());
-			VAchievement.Add("{} {}/{} {}", Type == AchievementType::ReceiveItem ? "Receive" : "Have", Progress, Required, pItem->GetName());
+			const auto* pItem = GS()->GetItemInfo(pInfo->GetCriteria());
+			const auto Action = Type == AchievementType::ReceiveItem ? "Receive" : "Have";
+			addProgressInfo(VAchievement, Progress, Required, Action, pItem->GetName());
 			break;
 		}
 		case AchievementType::TotalDamage:
 		{
-			VAchievement.Add("Total damage {}/{}", Progress, Required);
+			addProgressInfo(VAchievement, Progress, Required, "Total damage");
 			break;
 		}
 		case AchievementType::Death:
 		{
-			VAchievement.Add("Deaths {}/{}", Progress, Required);
+			addProgressInfo(VAchievement, Progress, Required, "Deaths");
 			break;
 		}
 		case AchievementType::DefeatMob:
 		{
-			int botID = pInfo->GetCriteria();
-			std::string botName = DataBotInfo::ms_aDataBot[botID].m_aNameBot;
-			VAchievement.Add("Defeat {}/{} {}", Progress, Required, botName);
+			const auto botID = pInfo->GetCriteria();
+			const auto botName = DataBotInfo::ms_aDataBot[botID].m_aNameBot;
+			addProgressInfo(VAchievement, Progress, Required, "Defeat", botName);
 			break;
 		}
 		case AchievementType::DefeatPVE:
 		{
-			VAchievement.Add("Defeat {}/{} enemies", Progress, Required);
+			addProgressInfo(VAchievement, Progress, Required, "Defeat", "enemies");
 			break;
 		}
 		case AchievementType::DefeatPVP:
 		{
-			VAchievement.Add("Defeat {}/{} players", Progress, Required);
+			addProgressInfo(VAchievement, Progress, Required, "Defeat", "players");
 			break;
 		}
 		case AchievementType::Equip:
@@ -185,14 +198,15 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 		}
 		case AchievementType::Leveling:
 		{
-			VAchievement.Add("Reach {}/{} levels", Progress, Required);
+			addProgressInfo(VAchievement, Progress, Required, "Reach", "levels");
 			break;
 		}
 		case AchievementType::CraftItem:
 		{
 			if(CCraftItem* pItem = Core()->CraftManager()->GetCraftByID(pInfo->GetCriteria()))
-				VAchievement.Add("Craft {}/{} {}", Progress, Required, pItem->GetItem()->Info()->GetName());
-			break;
+			{
+				addProgressInfo(VAchievement, Progress, Required, "Craft", pItem->GetItem()->Info()->GetName());
+			} break;
 		}
 	}
 }

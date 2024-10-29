@@ -199,7 +199,7 @@ bool CPlayerItem::Equip(bool SaveItem)
 
 	if(pPlayer->GetCharacter())
 	{
-		pPlayer->GetCharacter()->UpdateEquipingStats(m_ID);
+		pPlayer->GetCharacter()->UpdateEquippedStats(m_ID);
 	}
 
 	GS()->CreatePlayerSound(m_ClientID, SOUND_ITEM_EQUIP);
@@ -221,13 +221,6 @@ bool CPlayerItem::Use(int Value)
 
 	const int ClientID = pPlayer->GetCID();
 
-	// potion mana regen
-	if(m_ID == itPotionManaRegen && Remove(Value))
-	{
-		pPlayer->GiveEffect("RegenMana", 15);
-		GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
-		return true;
-	}
 	// ticket discount craft
 	if(m_ID == itTicketDiscountCraft)
 	{
@@ -300,20 +293,31 @@ bool CPlayerItem::Use(int Value)
 	}
 
 	// potion health regen
-	if(const PotionTools::Heal* pHeal = PotionTools::Heal::getHealInfo(m_ID); pHeal)
+	if(const auto optPotionContext = Info()->GetPotionContext())
 	{
-		if(pPlayer->m_aPlayerTick[PotionRecast] >= Server()->Tick())
+		// check potion recast time
+		const auto Function = Info()->GetFunctional();
+		if((Function == EQUIP_POTION_HEAL && pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick()) ||
+			(Function == EQUIP_POTION_MANA && pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick()))
+		{
 			return true;
+		}
 
+		// try use
 		if(Remove(Value))
 		{
-			int PotionTime = pHeal->getTime();
-			pPlayer->GiveEffect(pHeal->getEffect(), PotionTime);
-			pPlayer->m_aPlayerTick[PotionRecast] = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
+			const auto PotionTime = optPotionContext->Lifetime;
+			const auto EffectName = optPotionContext->Effect.c_str();
 
+			pPlayer->GiveEffect(EffectName, PotionTime);
 			GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
-			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, pHeal->getEffect());
+			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName);
+
+			// Update the recast time based on potion type
+			auto& recastTick = (Function == EQUIP_POTION_HEAL) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
+			recastTick = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 		}
+
 		return true;
 	}
 

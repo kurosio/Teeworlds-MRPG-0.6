@@ -123,6 +123,10 @@ class CFormatter
 		{
 			return { type_string, std::string(Value) };
 		}
+		else if constexpr(std::is_same_v<T, std::string_view>)
+		{
+			return { type_string, Value.data() };
+		}
 		else
 		{
 			static_assert(!std::is_same_v<T, T>, "One of the passed arguments cannot be converted to a string");

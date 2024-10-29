@@ -24,13 +24,13 @@ private:
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
-class CEntityArrowNavigator;
+class CEntityDirectionNavigator;
 class CQuestStep : public CQuestStepBase, public std::enable_shared_from_this<CQuestStep>
 {
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
 
-	CEntityArrowNavigator* m_pEntNavigator{};
+	CEntityDirectionNavigator* m_pEntNavigator{};
 
 	struct MobProgressStatus
 	{

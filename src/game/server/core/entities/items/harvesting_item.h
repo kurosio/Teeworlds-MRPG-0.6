@@ -12,9 +12,11 @@ constexpr int PickupPhysSize = 14;
 
 class CEntityHarvestingItem : public CEntity
 {
-	int m_Damage;
+	int m_Level{};
+	int m_Health{};
+	int m_Damage{};
 	int m_SpawnTick{};
-	int m_Type;
+	int m_Type{};
 
 public:
 	int m_ItemID {};
@@ -38,9 +40,7 @@ public:
 	void SpawnPositions();
 
 private:
-	void Farming(CPlayer* pPlayer, CPlayerItem& pWorkedItem);
-	void Mining(CPlayer* pPlayer, CPlayerItem& pWorkedItem);
-	bool Interaction(const char* pToolname, AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemFunctional EquipID, int SelfLevel);
+	bool TakeDamage(AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemFunctional EquipID, int SelfLevel);
 	int GetPickupType() const;
 	CItemDescription* GetItemInfo() const;
 };

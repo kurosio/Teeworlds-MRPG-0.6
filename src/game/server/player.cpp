@@ -260,11 +260,11 @@ void CPlayer::HandleEffects()
 
 void CPlayer::HandleScoreboardColors()
 {
-	if(m_TickActivedGroupColors > Server()->Tick())
+	if(m_TickActivatedGroupColour > Server()->Tick())
 		return;
 
 	bool ScoreboardActive = m_PlayerFlags & PLAYERFLAG_SCOREBOARD;
-	if(ScoreboardActive != m_ActivedGroupColors)
+	if(ScoreboardActive != m_ActivatedGroupColour)
 	{
 		CMsgPacker Msg(NETMSGTYPE_SV_TEAMSSTATE);
 		CMsgPacker MsgLegacy(NETMSGTYPE_SV_TEAMSSTATELEGACY);
@@ -285,8 +285,8 @@ void CPlayer::HandleScoreboardColors()
 		if(VERSION_DDRACE < ClientVersion && ClientVersion < VERSION_DDNET_MSG_LEGACY)
 			Server()->SendMsg(&MsgLegacy, MSGFLAG_VITAL, m_ClientID);
 
-		m_ActivedGroupColors = ScoreboardActive;
-		m_TickActivedGroupColors = Server()->Tick() + (Server()->TickSpeed() / 4);
+		m_ActivatedGroupColour = ScoreboardActive;
+		m_TickActivatedGroupColour = Server()->Tick() + (Server()->TickSpeed() / 4);
 	}
 }
 
@@ -673,7 +673,7 @@ int64_t CPlayer::GetAfkTime() const
 
 void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr) const
 {
-	if(!IsAuthed() || !m_pCharacter)
+	if(!IsAuthed() || !m_pCharacter || m_PlayerFlags & PLAYERFLAG_IN_MENU)
 		return;
 
 	// information
@@ -688,22 +688,24 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const auto GoldCapacity = Account()->GetGoldCapacity();
 	const auto [BonusActivitiesLines, BonusActivitiesStr] = Account()->GetBonusManager().GetBonusActivitiesString();
 
-	// recast info
-	std::string RecastInfo {};
-	const int PotionRecastTime = m_aPlayerTick[PotionRecast] - Server()->Tick();
-	if(PotionRecastTime > 0)
-	{
-		const int Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
-		RecastInfo = fmt_localize(m_ClientID, "Potion recast: {}", Seconds);
-	}
-
 	// result
 	std::string Result = fmt_localize(m_ClientID, "\n\n\n\n\nLv{}[{}]\nHP {$}/{$}\nMP {$}/{$}\nGold {$} of {$}\nBank {$}",
 		Account()->GetLevel(), ProgressBar, HP, MaxHP, MP, MaxMP, Gold, GoldCapacity, Bank);
 
-	if(!RecastInfo.empty())
+	// recast heal info
+	int PotionRecastTime = m_aPlayerTick[HealPotionRecast] - Server()->Tick();
+	if(PotionRecastTime > 0)
 	{
-		Result += "\n" + RecastInfo;
+		const int Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
+		Result += "\n" + fmt_localize(m_ClientID, "Potion HP recast: {}", Seconds);
+	}
+
+	// recast mana info
+	PotionRecastTime = m_aPlayerTick[ManaPotionRecast] - Server()->Tick();
+	if(PotionRecastTime > 0)
+	{
+		const int Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
+		Result += "\n" + fmt_localize(m_ClientID, "Potion MP recast: {}", Seconds);
 	}
 
 	if(!BonusActivitiesStr.empty())
@@ -775,7 +777,7 @@ CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)
 {
 	dbg_assert(CItemDescription::Data().find(ID) != CItemDescription::Data().end(), "invalid referring to the CPlayerItem");
 
-	if(CPlayerItem::Data()[m_ClientID].find(ID) == CPlayerItem::Data()[m_ClientID].end())
+	if(!CPlayerItem::Data()[m_ClientID].contains(ID))
 	{
 		CPlayerItem(ID, m_ClientID).Init({}, {}, {}, {});
 		return &CPlayerItem::Data()[m_ClientID][ID];
@@ -784,20 +786,28 @@ CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)
 	return &CPlayerItem::Data()[m_ClientID][ID];
 }
 
-CSkill* CPlayer::GetSkill(SkillIdentifier ID)
+CSkill* CPlayer::GetSkill(int SkillID) const
 {
-	dbg_assert(CSkillDescription::Data().find(ID) != CSkillDescription::Data().end(), "invalid referring to the CSkillData");
+	dbg_assert(CSkillDescription::Data().find(SkillID) != CSkillDescription::Data().end(), "invalid referring to the CSkillData");
 
 	const auto& playerSkills = CSkill::Data()[m_ClientID];
-	auto iter = std::find_if(playerSkills.begin(), playerSkills.end(), [&ID](CSkill* pSkill){ return pSkill->GetID() == ID; });
-	return (iter == playerSkills.end() ? CSkill::CreateElement(m_ClientID, ID) : *iter);
+	const auto iter = std::ranges::find_if(playerSkills, [&SkillID](const auto* pSkill)
+	{
+		return pSkill->GetID() == SkillID;
+	});
+
+	return (iter == playerSkills.end() ? CSkill::CreateElement(m_ClientID, SkillID) : *iter);
 }
 
 CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 {
 	dbg_assert(CQuestDescription::Data().find(ID) != CQuestDescription::Data().end(), "invalid referring to the CPlayerQuest");
-	if(CPlayerQuest::Data()[m_ClientID].find(ID) == CPlayerQuest::Data()[m_ClientID].end())
+
+	if(!CPlayerQuest::Data()[m_ClientID].contains(ID))
+	{
 		CPlayerQuest::CreateElement(ID, m_ClientID);
+	}
+
 	return CPlayerQuest::Data()[m_ClientID][ID];
 }
 
@@ -806,15 +816,28 @@ std::optional<int> CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipIt
 	const auto& playerItems = CPlayerItem::Data()[m_ClientID];
 	for(const auto& [itemID, item] : playerItems)
 	{
-		if(item.HasItem() && item.IsEquipped() && item.Info()->IsFunctional(EquipID) && itemID != SkipItemID)
-			return itemID;
+		if(itemID == SkipItemID)
+			continue;
+
+		if(!item.HasItem())
+			continue;
+
+		if(!item.IsEquipped())
+			continue;
+
+		if(!item.Info()->IsFunctional(EquipID))
+			continue;
+
+		return itemID;
 	}
+
 	return std::nullopt;
 }
 
 bool CPlayer::IsEquipped(ItemFunctional EquipID) const
 {
-	return GetEquippedItemID(EquipID, -1) != std::nullopt;
+	const auto& optItemID = GetEquippedItemID(EquipID, -1);
+	return optItemID.has_value();
 }
 
 int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
@@ -836,6 +859,11 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	int totalValue = 0;
 	for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[m_ClientID])
 	{
+		// required repair
+		if(ItemData.GetDurability() <= 0)
+			continue;
+
+		// if is equipped and enchantable add attribute
 		if(ItemData.IsEquipped() && ItemData.Info()->IsEnchantable() && ItemData.Info()->GetInfoEnchantStats(ID))
 		{
 			totalValue += ItemData.GetEnchantStats(ID);
