@@ -61,7 +61,7 @@ bool CQuestStepBase::IsActiveStep() const
 			continue;
 
 		CPlayerQuest* pQuest = pPlayer->GetQuest(QuestID);
-		if(!pQuest || pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Bot.m_StepPos)
+		if(!pQuest || pQuest->GetState() != QuestState::Accepted || pQuest->GetStepPos() != m_Bot.m_StepPos)
 			continue;
 
 		CQuestStep* pStep = pQuest->GetStepByMob(QuestBotID);
@@ -221,7 +221,7 @@ void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 
 	// check quest action
 	CPlayerQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Bot.m_StepPos)
+	if(pQuest->GetState() != QuestState::Accepted || pQuest->GetStepPos() != m_Bot.m_StepPos)
 		return;
 
 	// check complecte mob
@@ -274,7 +274,7 @@ void CQuestStep::UpdateTaskMoveTo()
 
 	// check quest action
 	CPlayerQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Bot.m_StepPos)
+	if(pQuest->GetState() != QuestState::Accepted || pQuest->GetStepPos() != m_Bot.m_StepPos)
 		return;
 
 	// check and mark required mob's
@@ -369,7 +369,7 @@ void CQuestStep::CreateVarietyTypesRequiredItems()
 
 	// check quest action
 	CPlayerQuest* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Bot.m_StepPos)
+	if(pQuest->GetState() != QuestState::Accepted || pQuest->GetStepPos() != m_Bot.m_StepPos)
 		return;
 
 	// create variety types
@@ -540,7 +540,7 @@ void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 			CEntityLaserOrbite* pEntOrbite;
 			constexpr float Radius = 400.f;
 			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
-				LaserOrbiteType::INSIDE_ORBITE, 0.f, pSharedAction->GetRadius(), LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+				LaserOrbiteType::InsideOrbite, 0.f, pSharedAction->GetRadius(), LASERTYPE_FREEZE, CmaskOne(m_ClientID));
 
 			CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, Radius, CEntityPathArrow::CONDITION_MOVE_TO, MoveToIndex);
 		}
@@ -549,7 +549,7 @@ void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 			CEntityLaserOrbite* pEntOrbite;
 			const float Radius = 400.f + random_float(2000.f);
 			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
-				LaserOrbiteType::INSIDE_ORBITE_RANDOM, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+				LaserOrbiteType::InsideOrbiteRandom, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
 
 			CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, Radius, CEntityPathArrow::CONDITION_MOVE_TO, MoveToIndex);
 		}

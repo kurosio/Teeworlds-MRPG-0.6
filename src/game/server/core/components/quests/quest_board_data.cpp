@@ -11,7 +11,7 @@ int CQuestsBoard::CountAvailableDailyQuests(CPlayer* pPlayer)
 		if(p->HasFlag(QUEST_FLAG_TYPE_DAILY))
 		{
 			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-			return pQuest->GetState() != QuestState::FINISHED;
+			return pQuest->GetState() != QuestState::Finished;
 		}
 		return false;
 	});
@@ -24,7 +24,7 @@ int CQuestsBoard::CountAvailableWeeklyQuests(CPlayer* pPlayer)
 		if(p->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
 		{
 			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-			return pQuest->GetState() != QuestState::FINISHED;
+			return pQuest->GetState() != QuestState::Finished;
 		}
 		return false;
 	});
@@ -38,7 +38,7 @@ int CQuestsBoard::CountAvailableRepeatableQuests(CPlayer* pPlayer)
 		if(p->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
 		{
 			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-			return pQuest->GetState() != QuestState::FINISHED;
+			return pQuest->GetState() != QuestState::Finished;
 		}
 		return false;
 	});
@@ -51,7 +51,7 @@ int CQuestsBoard::CountAvailableSideQuests(CPlayer* pPlayer)
 		if(p->HasFlag(QUEST_FLAG_TYPE_SIDE))
 		{
 			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-			return pQuest->GetState() != QuestState::FINISHED;
+			return pQuest->GetState() != QuestState::Finished;
 		}
 		return false;
 	});

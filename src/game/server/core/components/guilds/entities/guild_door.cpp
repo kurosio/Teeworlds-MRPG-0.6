@@ -18,7 +18,7 @@ CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouse* pHouse, 
 	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
 	m_PosControll = Pos;
 	m_State = CLOSED;
-	GS()->EntityManager()->LaserOrbite(this, 4, LaserOrbiteType::DEFAULT, 0.f, 16.f, LASERTYPE_DOOR);
+	GS()->EntityManager()->LaserOrbite(this, 4, LaserOrbiteType::Default, 0.f, 16.f, LASERTYPE_DOOR);
 
 	// insert the entity into the game world
 	GameWorld()->InsertEntity(this);
@@ -59,12 +59,12 @@ void CEntityGuildDoor::Tick()
                     Reverse();
 
                 // send information
-                GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Use hammer 'fire.' To operate the door '{}'!", m_Name);
+                GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 10, "Use hammer 'fire.' To operate the door '{}'!", m_Name);
             }
             else
             {
                 // send information
-                GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 10, "You do not have access to '{}' door!", m_Name);
+                GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 10, "You do not have access to '{}' door!", m_Name);
             }
         }
 

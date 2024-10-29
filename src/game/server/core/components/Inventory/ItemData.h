@@ -77,8 +77,8 @@ public:
 	int GetDysenthis() const { return Info()->GetDysenthis(m_Enchant); }
 	bool IsEquipped() const
 	{
-		return m_Value > 0 && m_Settings > 0 && (Info()->IsType(ItemType::TYPE_POTION) || Info()->IsType(ItemType::TYPE_SETTINGS) 
-			|| Info()->IsType(ItemType::TYPE_MODULE) || Info()->IsType(ItemType::TYPE_EQUIP));
+		return m_Value > 0 && m_Settings > 0 && (Info()->IsType(ItemType::Potion) || Info()->IsType(ItemType::Setting) 
+			|| Info()->IsType(ItemType::Module) || Info()->IsType(ItemType::Equipment));
 	}
 	bool IsEnchantMaxLevel() const { return Info()->IsEnchantMaxLevel(m_Enchant); }
 	bool HasItem() const { return m_Value > 0; }

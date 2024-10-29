@@ -73,12 +73,12 @@ bool CPlayerQuest::Accept()
 {
 	// check valid player and quest state
 	CPlayer* pPlayer = GetPlayer();
-	if(m_State != QuestState::NO_ACCEPT || !pPlayer)
+	if(m_State != QuestState::NoAccepted || !pPlayer)
 		return false;
 
 	// initialize
 	m_Step = 1;
-	m_State = QuestState::ACCEPT;
+	m_State = QuestState::Accepted;
 	m_Datafile.Create();
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
@@ -110,7 +110,7 @@ bool CPlayerQuest::Accept()
 	}
 
 	// accepted effects
-	GS()->Broadcast(ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Accepted");
+	GS()->Broadcast(ClientID, BroadcastPriority::TitleInformation, 100, "Quest Accepted");
 	GS()->CreatePlayerSound(ClientID, SOUND_CTF_GRAB_EN);
 	return true;
 }
@@ -118,7 +118,7 @@ bool CPlayerQuest::Accept()
 void CPlayerQuest::Refuse()
 {
 	CPlayer* pPlayer = GetPlayer();
-	if(m_State != QuestState::ACCEPT || !pPlayer)
+	if(m_State != QuestState::Accepted || !pPlayer)
 		return;
 
 	// refuse quest
@@ -129,7 +129,7 @@ void CPlayerQuest::Refuse()
 void CPlayerQuest::Reset()
 {
 	m_Step = 0;
-	m_State = QuestState::NO_ACCEPT;
+	m_State = QuestState::NoAccepted;
 	for(const auto& pStep : m_vSteps)
 	{
 		pStep->Update();
@@ -159,7 +159,7 @@ void CPlayerQuest::UpdateStepPosition()
 	Info()->Reward().ApplyReward(pPlayer);
 
 	// completion effects
-	GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 100, "Quest Complete");
+	GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 100, "Quest Complete");
 	GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
 	GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
 
@@ -194,7 +194,7 @@ void CPlayerQuest::UpdateStepPosition()
 	}
 
 	// update quest state in database
-	m_State = QuestState::FINISHED;
+	m_State = QuestState::Finished;
 	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '{}' WHERE QuestID = '{}' AND UserID = '{}'", (int)m_State, m_ID, pPlayer->Account()->GetID());
 	m_Datafile.Delete();
 

@@ -88,7 +88,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 		GS()->ChatWorld(m_WorldID, "Dungeon:", "The security timer is enabled for 30 seconds!");
 		GS()->ChatWorld(m_WorldID, "Dungeon:", "You are given 10 minutes to complete of dungeon!");
-		GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon started!");
+		GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon started!");
 
 		SetMobsSpawn(true);
 		KillAllPlayers();
@@ -197,7 +197,7 @@ void CGameControllerDungeon::StateTick()
 
 			// output before the start of the passage
 			const int Time = m_StartingTick / Server()->TickSpeed();
-			GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'", Time, PlayersReadyState, Players);
+			GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'", Time, PlayersReadyState, Players);
 
 			m_StartingTick--;
 			if(!m_StartingTick)
@@ -243,7 +243,7 @@ void CGameControllerDungeon::StateTick()
 		if(m_FinishedTick)
 		{
 			const int Time = m_FinishedTick / Server()->TickSpeed();
-			GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VERY_IMPORTANT, 500, "Dungeon ended {} sec!", Time);
+			GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon ended {} sec!", Time);
 
 			m_FinishedTick--;
 		}
@@ -263,7 +263,7 @@ void CGameControllerDungeon::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int
 	 */
 
 	// if it's tank passage get how got size damage
-	if(pFrom->IsBot() && pTo->m_MoodState == Mood::TANK)
+	if(pFrom->IsBot() && pTo->m_MoodState == Mood::Tank)
 	{
 		const int ClientID = pTo->GetCID();
 		m_Records[ClientID].m_PassageHelp += Damage;
@@ -303,7 +303,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		// update tanking client status
 		if(pChr->GetPlayer()->GetClassData().IsGroup(ClassGroup::Tank))
 		{
-			pChr->GetPlayer()->m_MoodState = Mood::TANK;
+			pChr->GetPlayer()->m_MoodState = Mood::Tank;
 		}
 
 		// player died after the safety timer ended

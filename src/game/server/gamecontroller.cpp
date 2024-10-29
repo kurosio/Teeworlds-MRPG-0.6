@@ -121,13 +121,13 @@ bool IGameController::OnCharacterBotSpawn(CCharacterBotAI* pChr)
 	pChr->IncreaseMana(MaxStartMP);
 	pChr->GiveWeapon(WEAPON_HAMMER, -1);
 
-	if(pPlayerBot->IsEquipped(EQUIP_GUN))
+	if(pPlayerBot->IsEquipped(EquipGun))
 		pChr->GiveWeapon(WEAPON_GUN, 10);
-	if(pPlayerBot->IsEquipped(EQUIP_SHOTGUN))
+	if(pPlayerBot->IsEquipped(EquipShotgun))
 		pChr->GiveWeapon(WEAPON_SHOTGUN, 10);
-	if(pPlayerBot->IsEquipped(EQUIP_GRENADE))
+	if(pPlayerBot->IsEquipped(EquipShotgun))
 		pChr->GiveWeapon(WEAPON_GRENADE, 10);
-	if(pPlayerBot->IsEquipped(EQUIP_LASER))
+	if(pPlayerBot->IsEquipped(EquipLaser))
 		pChr->GiveWeapon(WEAPON_LASER, 10);
 
 	return true;

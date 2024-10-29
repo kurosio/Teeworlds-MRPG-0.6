@@ -100,8 +100,6 @@ public:
 	{
 		return m_Passive;
 	}
-
-	static const char* GetEmoticonName(int EmoticionID);
 };
 
 // skill data
@@ -165,7 +163,7 @@ public:
 
 	const char* GetSelectedEmoticonName() const
 	{
-		return Info()->GetEmoticonName(m_SelectedEmoticion);
+		return GetEmoticonNameById(m_SelectedEmoticion);
 	}
 
 	CSkillDescription* Info() const

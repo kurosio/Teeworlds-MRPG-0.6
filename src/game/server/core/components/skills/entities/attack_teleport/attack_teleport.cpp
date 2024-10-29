@@ -92,7 +92,7 @@ void CAttackTeleport::Tick()
 		if(!m_vMovingMap.empty() && m_SecondPartTimeleft > 0)
 		{
 			// information about second part
-			GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, Server()->TickSpeed(), "Press fire for attacks by skill: {} attacks!", m_SecondPartCombo);
+			GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, Server()->TickSpeed(), "Press fire for attacks by skill: {} attacks!", m_SecondPartCombo);
 			pOwnerChar->SetSafeFlags();
 			m_SecondPartTimeleft--;
 

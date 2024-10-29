@@ -14,7 +14,7 @@ bool CRandomBox::Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesIt
 	// Check if the last random box is still opening
 	if(pPlayer->m_aPlayerTick[LastRandomBox] > pPlayer->GS()->Server()->Tick())
 	{
-		pPlayer->GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, "Wait until the last random box opens!");
+		pPlayer->GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 100, "Wait until the last random box opens!");
 		return false;
 	}
 

@@ -11,30 +11,6 @@
 #include "entities/attack_teleport/attack_teleport.h"
 #include "entities/heart_healer.h"
 
-const char* CSkillDescription::GetEmoticonName(int EmoticionID)
-{
-	switch(EmoticionID)
-	{
-		case EMOTICON_OOP: return "Emoticion Ooop";
-		case EMOTICON_EXCLAMATION: return "Emoticion Exclamation";
-		case EMOTICON_HEARTS: return "Emoticion Hearts";
-		case EMOTICON_DROP: return "Emoticion Drop";
-		case EMOTICON_DOTDOT: return "Emoticion ...";
-		case EMOTICON_MUSIC: return "Emoticion Music";
-		case EMOTICON_SORRY: return "Emoticion Sorry";
-		case EMOTICON_GHOST: return "Emoticion Ghost";
-		case EMOTICON_SUSHI: return "Emoticion Sushi";
-		case EMOTICON_SPLATTEE: return "Emoticion Splatee";
-		case EMOTICON_DEVILTEE: return "Emoticion Deviltee";
-		case EMOTICON_ZOMG: return "Emoticion Zomg";
-		case EMOTICON_ZZZ: return "Emoticion Zzz";
-		case EMOTICON_WTF: return "Emoticion Wtf";
-		case EMOTICON_EYES: return "Emoticion Eyes";
-		case EMOTICON_QUESTION: return "Emoticion Question";
-		default: return "Not selected";
-	}
-}
-
 CGS* CSkill::GS() const
 {
 	return (CGS*)Instance::Server()->GameServerPlayer(m_ClientID);
@@ -95,7 +71,7 @@ bool CSkill::Use()
 	const int ManaCost = maximum(1, translate_to_percent_rest(pPlayer->GetMaxMana(), Info()->GetPercentageCost()));
 	const vec2 PlayerPosition = pChar->GetPos();
 
-	if(m_ID == SkillAttackTeleport)
+	if(m_ID == SKILL_ATTACK_TELEPORT)
 	{
 		// check mana
 		if(pChar->CheckFailMana(ManaCost))
@@ -106,7 +82,7 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == SkillCureI)
+	if(m_ID == SKILL_CURE_I)
 	{
 		// check mana
 		if(pChar->CheckFailMana(ManaCost))
@@ -138,7 +114,7 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == SkillBlessingGodWar)
+	if(m_ID == SKILL_BLESSING_GOD_WAR)
 	{
 		// check mana
 		if(pChar->CheckFailMana(ManaCost))
@@ -182,7 +158,7 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == SkillProvoke)
+	if(m_ID == SKILL_PROVOKE)
 	{
 		// check mana
 		if(pChar->CheckFailMana(ManaCost))
@@ -238,7 +214,7 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == SkillSleepyGravity)
+	if(m_ID == SKILL_SLEEPY_GRAVITY)
 	{
 		// check mana
 		//if(pChr->CheckFailMana(ManaCost))
@@ -261,7 +237,7 @@ bool CSkill::Use()
 	}
 
 	// Skill heart turret
-	if(m_ID == SkillHeartTurret)
+	if(m_ID == SKILL_HEART_TURRET)
 	{
 		// check mana
 		//if(pChr->CheckFailMana(ManaCost))
@@ -279,12 +255,12 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == SkillEnergyShield)
+	if(m_ID == SKILL_ENERGY_SHIELD)
 	{
 		// disable energy shield
 		if(const auto groupPtr = m_pEntitySkill.lock())
 		{
-			GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been disabled!");
+			GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, 100, "The energy shield has been disabled!");
 			groupPtr->Clear();
 			return true;
 		}
@@ -298,7 +274,7 @@ bool CSkill::Use()
 		// enable shield
 		const int StartHealth = maximum(1, translate_to_percent_rest(pPlayer->GetMaxHealth(), GetBonus()));
 		GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth, &m_pEntitySkill);
-		GS()->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "The energy shield has been enabled! Health: {}!", StartHealth);
+		GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, 100, "The energy shield has been enabled! Health: {}!", StartHealth);
 		return true;
 	}
 

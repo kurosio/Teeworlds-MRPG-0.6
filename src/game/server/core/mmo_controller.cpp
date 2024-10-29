@@ -271,10 +271,10 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// select type list
 		VoteWrapper VTopSelect(ClientID, VWF_OPEN, "Select a type of ranking");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GUILDS_LEVELING, "Top 10 guilds leveling");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GUILDS_WEALTHY, "Top 10 guilds wealthy");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PLAYERS_LEVELING, "Top 10 players leveling");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PLAYERS_WEALTHY, "Top 10 players wealthy");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildLeveling, "Top 10 guilds leveling");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildWealthy, "Top 10 guilds wealthy");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerLeveling, "Top 10 players leveling");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerWealthy, "Top 10 players wealthy");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show top list
@@ -621,7 +621,7 @@ void CMmoController::ShowLoadingProgress(const char* pLoading, size_t Size) cons
 
 void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteWrapper* pWrapper) const
 {
-	if(Type == ToplistType::GUILDS_LEVELING)
+	if(Type == ToplistType::GuildLeveling)
 	{
 		if(pWrapper)
 		{
@@ -646,7 +646,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 			}
 		}
 	}
-	else if(Type == ToplistType::GUILDS_WEALTHY)
+	else if(Type == ToplistType::GuildWealthy)
 	{
 		if(pWrapper)
 		{
@@ -670,7 +670,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 			}
 		}
 	}
-	else if(Type == ToplistType::PLAYERS_LEVELING)
+	else if(Type == ToplistType::PlayerLeveling)
 	{
 		if(pWrapper)
 		{
@@ -695,7 +695,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 			}
 		}
 	}
-	else if(Type == ToplistType::PLAYERS_WEALTHY)
+	else if(Type == ToplistType::PlayerWealthy)
 	{
 		if(pWrapper)
 		{

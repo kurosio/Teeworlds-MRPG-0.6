@@ -362,7 +362,7 @@ StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 	{
 		// Check if the quest state for the snapping player is not ACCEPT
 		const QuestIdentifier QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		if(pSnappingPlayer->GetQuest(QuestID)->GetState() != QuestState::ACCEPT)
+		if(pSnappingPlayer->GetQuest(QuestID)->GetState() != QuestState::Accepted)
 			return STATE_SNAPPING_NONE;
 
 		// Check if the current step of the quest bot is not the same as the current step of the snapping player's quest
@@ -391,7 +391,7 @@ StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 		// Check if the NPC's function is to give a quest and if the player has already accepted the quest
 		const int GivesQuest = GS()->Core()->BotManager()->GetQuestNPC(m_MobID);
 		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GIVE_QUEST
-			&& pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NO_ACCEPT)
+			&& pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NoAccepted)
 			return STATE_SNAPPING_ONLY_CHARACTER;
 	}
 
@@ -468,30 +468,30 @@ Mood CPlayerBot::GetMoodState() const
 {
 	CCharacterBotAI* pChar = (CCharacterBotAI*)m_pCharacter;
 	if(!pChar)
-		return Mood::NORMAL;
+		return Mood::Normal;
 
 	if(GetBotType() == TYPE_BOT_MOB && !pChar->AI()->GetTarget()->IsEmpty())
-		return Mood::ANGRY;
+		return Mood::Angry;
 
 	if(GetBotType() == TYPE_BOT_QUEST_MOB && !pChar->AI()->GetTarget()->IsEmpty())
-		return Mood::ANGRY;
+		return Mood::Angry;
 
 	if(GetBotType() == TYPE_BOT_EIDOLON)
-		return Mood::FRIENDLY;
+		return Mood::Friendly;
 
 	if(GetBotType() == TYPE_BOT_QUEST)
-		return Mood::QUEST;
+		return Mood::Quest;
 
 	if(GetBotType() == TYPE_BOT_NPC)
 	{
 		bool IsGuardian = NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN;
 		if(IsGuardian && !pChar->AI()->GetTarget()->IsEmpty())
-			return Mood::AGRESSED;
+			return Mood::Agressed;
 
-		return Mood::FRIENDLY;
+		return Mood::Friendly;
 	}
 
-	return Mood::NORMAL;
+	return Mood::Normal;
 }
 
 int CPlayerBot::GetLevel() const
@@ -514,7 +514,7 @@ void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 
 std::optional<int> CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
 {
-	if((EquipID >= EQUIP_HAMMER && EquipID <= EQUIP_LASER) || EquipID == EQUIP_ARMOR)
+	if((EquipID >= EquipHammer && EquipID <= EquipLaser) || EquipID == EquipArmor)
 	{
 		// default data bot
 		int itemID = DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];
@@ -542,19 +542,14 @@ const char* CPlayerBot::GetStatus() const
 		return Server()->ClientName(OwnerID);
 	}
 
-	switch(GetMoodState())
+	const Mood State = GetMoodState();
+	if(State == Mood::Quest)
 	{
-		default:
-		case Mood::NORMAL: return "\0";
-		case Mood::FRIENDLY: return "Friendly";
-		case Mood::QUEST:
-		{
-			const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			return GS()->GetQuestInfo(QuestID)->GetName();
-		}
-		case Mood::ANGRY: return "Angry";
-		case Mood::AGRESSED: return "Aggressive";
+		const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+		return GS()->GetQuestInfo(QuestID)->GetName();
 	}
+
+	return GetMoodName(State);
 }
 
 int CPlayerBot::GetCurrentWorldID() const

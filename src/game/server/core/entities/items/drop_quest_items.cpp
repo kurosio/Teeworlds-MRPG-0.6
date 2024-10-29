@@ -49,7 +49,7 @@ void CDropQuestItem::Tick()
 
 	CPlayerItem* pItem = pPlayer->GetItem(m_ItemID);
 	const CPlayerQuest* pQuest = pPlayer->GetQuest(m_QuestID);
-	if(pQuest->GetState() != QuestState::ACCEPT || pQuest->GetStepPos() != m_Step || pItem->GetValue() >= m_Needed)
+	if(pQuest->GetState() != QuestState::Accepted || pQuest->GetStepPos() != m_Step || pItem->GetValue() >= m_Needed)
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -66,7 +66,7 @@ void CDropQuestItem::Tick()
 			return;
 		}
 
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 10, "Press hammer 'Fire', to pick up an item");
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 10, "Press hammer 'Fire', to pick up an item");
 	}
 }
 

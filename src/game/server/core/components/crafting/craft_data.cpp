@@ -9,7 +9,7 @@ int CCraftItem::GetPrice(CPlayer* pPlayer) const
 	if(pPlayer)
 	{
 		// passive skill discount
-		int skillLevel = pPlayer->GetSkill(SkillCraftDiscount)->GetLevel();
+		int skillLevel = pPlayer->GetSkill(SKILL_CRAFT_DISCOUNT)->GetLevel();
 		Discount += translate_to_percent_rest(m_Price, skillLevel);
 
 		// discount from a special item

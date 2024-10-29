@@ -86,7 +86,7 @@ void CPrisonManager::UpdatePrison()
     }
     else
     {
-        GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 50, "Remaining prison time: {} seconds.", Remaining);
+        GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 50, "Remaining prison time: {} seconds.", Remaining);
     }
 }
 

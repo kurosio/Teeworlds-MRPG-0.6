@@ -102,12 +102,12 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// inventory tabs
 		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_USED, "\u270C Used ({})", GetCountItemsType(pPlayer, ItemType::TYPE_USED));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_CRAFT, "\u2692 Craft ({})", GetCountItemsType(pPlayer, ItemType::TYPE_CRAFT));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_EQUIP, "\u26B0 Equipment ({})", GetCountItemsType(pPlayer, ItemType::TYPE_EQUIP));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_MODULE, "\u2693 Modules ({})", GetCountItemsType(pPlayer, ItemType::TYPE_MODULE));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_POTION, "\u26B1 Potion ({})", GetCountItemsType(pPlayer, ItemType::TYPE_POTION));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::TYPE_OTHER, "\u26C3 Other ({})", GetCountItemsType(pPlayer, ItemType::TYPE_OTHER));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Usable, "\u270C Used ({})", GetCountItemsType(pPlayer, ItemType::Usable));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::CraftingMaterial, "\u2692 Craft ({})", GetCountItemsType(pPlayer, ItemType::CraftingMaterial));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Equipment, "\u26B0 Equipment ({})", GetCountItemsType(pPlayer, ItemType::Equipment));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Module, "\u2693 Modules ({})", GetCountItemsType(pPlayer, ItemType::Module));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Potion, "\u26B1 Potion ({})", GetCountItemsType(pPlayer, ItemType::Potion));
+		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Other, "\u26C3 Other ({})", GetCountItemsType(pPlayer, ItemType::Other));
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort inventory
@@ -140,13 +140,13 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			const auto ItemID = pPlayer->GetEquippedItemID(EquipID);
 			if(!ItemID.has_value() || !pPlayer->GetItem(ItemID.value())->IsEquipped())
 			{
-				Wrapper.AddMenu(MENU_EQUIPMENT, EquipID, "{} not equipped", ItemFunctionalString[EquipID]);
+				Wrapper.AddMenu(MENU_EQUIPMENT, EquipID, "{} not equipped", GetFunctionalItemName(EquipID));
 				return false;
 			}
 
 			// handle potion information
 			const auto pPlayerItem = pPlayer->GetItem(ItemID.value());
-			if(EquipID == EQUIP_POTION_HEAL || EquipID == EQUIP_POTION_MANA)
+			if(EquipID == EquipPotionHeal || EquipID == EquipPotionMana)
 			{
 				if(const auto optPotionContext = pPlayerItem->Info()->GetPotionContext())
 				{
@@ -169,26 +169,26 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// weapons equipment
 		VoteWrapper VWeapons(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Weapons");
-		addEquipmentFieldFunc(VWeapons, EQUIP_HAMMER);
-		addEquipmentFieldFunc(VWeapons, EQUIP_GUN);
-		addEquipmentFieldFunc(VWeapons, EQUIP_SHOTGUN);
-		addEquipmentFieldFunc(VWeapons, EQUIP_GRENADE);
-		addEquipmentFieldFunc(VWeapons, EQUIP_LASER);
+		addEquipmentFieldFunc(VWeapons, EquipHammer);
+		addEquipmentFieldFunc(VWeapons, EquipGun);
+		addEquipmentFieldFunc(VWeapons, EquipShotgun);
+		addEquipmentFieldFunc(VWeapons, EquipGrenade);
+		addEquipmentFieldFunc(VWeapons, EquipLaser);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// general equipment (tools and armor)
 		VoteWrapper VEquipment(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: General");
-		addEquipmentFieldFunc(VEquipment, EQUIP_EIDOLON);
-		addEquipmentFieldFunc(VEquipment, EQUIP_ARMOR);
-		addEquipmentFieldFunc(VEquipment, EQUIP_PICKAXE);
-		addEquipmentFieldFunc(VEquipment, EQUIP_RAKE);
+		addEquipmentFieldFunc(VEquipment, EquipEidolon);
+		addEquipmentFieldFunc(VEquipment, EquipArmor);
+		addEquipmentFieldFunc(VEquipment, EquipPickaxe);
+		addEquipmentFieldFunc(VEquipment, EquipRake);
 		VEquipment.AddMenu(MENU_MODULES, ">>> Manage Modules <<<");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// potions equipment
 		VoteWrapper VPotions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Potions");
-		addEquipmentFieldFunc(VPotions, EQUIP_POTION_HEAL);
-		addEquipmentFieldFunc(VPotions, EQUIP_POTION_MANA);
+		addEquipmentFieldFunc(VPotions, EquipPotionHeal);
+		addEquipmentFieldFunc(VPotions, EquipPotionMana);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort equipment
@@ -220,7 +220,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Functional");
 		auto functionalModules = PlayerItems | std::views::filter([](const auto& pair) 
 		{
-			return pair.second.Info()->IsType(ItemType::TYPE_MODULE) && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
+			return pair.second.Info()->IsType(ItemType::Module) && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
 		});
 
 		for(const auto& [ItemID, PlayerItem] : functionalModules)
@@ -241,7 +241,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Stats");
 		auto statModules = PlayerItems | std::views::filter([](const auto& pair) 
 		{
-			return pair.second.Info()->IsType(ItemType::TYPE_MODULE) && pair.second.Info()->HasAttributes() && pair.second.HasItem();
+			return pair.second.Info()->IsType(ItemType::Module) && pair.second.Info()->HasAttributes() && pair.second.HasItem();
 		});
 
 		for(const auto& [ItemID, PlayerItem] : statModules)
@@ -280,7 +280,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
 		pPlayerItem->Drop(Get);
 
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You drop {}x{}", pPlayerItem->Info()->GetName(), Get);
+		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {}x{}", pPlayerItem->Info()->GetName(), Get);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -471,28 +471,28 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	}
 
 	// is used item
-	if(pInfo->m_Function == FUNCTION_ONE_USED || pInfo->m_Function == FUNCTION_USED)
+	if(pInfo->m_Function == UseSingle || pInfo->m_Function == UseMultiple)
 	{
 		VItem.AddOption("IUSE", ItemID, "Use");
 	}
 
 	// is potion
-	if(pInfo->m_Type == ItemType::TYPE_POTION)
+	if(pInfo->m_Type == ItemType::Potion)
 	{
 		VItem.AddOption("EQUIP_ITEM", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
 	}
 
 	// is decoration
-	if(pInfo->m_Type == ItemType::TYPE_DECORATION)
+	if(pInfo->m_Type == ItemType::Decoration)
 	{
 		VItem.AddOption("DECORATION_HOUSE_ADD", ItemID, "Start drawing near house");
 		VItem.AddOption("GUILD_HOUSE_DECORATION", ItemID, "Start drawing near guild house");
 	}
 
 	// is equipped
-	if(pInfo->m_Type == ItemType::TYPE_EQUIP || pInfo->m_Function == FUNCTION_SETTINGS)
+	if(pInfo->m_Type == ItemType::Equipment || pInfo->m_Function == Setting)
 	{
-		if(pInfo->m_Function == EQUIP_HAMMER && pItem->IsEquipped())
+		if(pInfo->m_Function == EquipHammer && pItem->IsEquipped())
 			VItem.Add("You can not undress equipping hammer");
 		else
 			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->m_Settings ? "Undress" : "Equip"));
@@ -506,7 +506,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	}
 
 	// not allowed drop equipped hammer
-	if(ItemID != pPlayer->GetEquippedItemID(EQUIP_HAMMER))
+	if(ItemID != pPlayer->GetEquippedItemID(EquipHammer))
 	{
 		// can dysenthis
 		if(pItem->GetDysenthis() > 0)

@@ -125,7 +125,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	pPlayer->UpdateAchievement(AchievementType::HaveItem, m_ID, m_Value, PROGRESS_ABSOLUTE);
 
 	// check the empty slot if yes then put the item on
-	if((Info()->IsType(ItemType::TYPE_EQUIP) && !pPlayer->GetEquippedItemID(Info()->GetFunctional()).has_value()) || Info()->IsType(ItemType::TYPE_MODULE))
+	if((Info()->IsType(ItemType::Equipment) && !pPlayer->GetEquippedItemID(Info()->GetFunctional()).has_value()) || Info()->IsType(ItemType::Module))
 	{
 		if(!IsEquipped())
 			Equip(false);
@@ -133,13 +133,13 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		GS()->Chat(ClientID, "Auto equip {} - {}", Info()->GetName(), GetStringAttributesInfo(pPlayer));
 	}
 
-	if(!Message || Info()->IsType(ItemType::TYPE_SETTINGS) || Info()->IsType(ItemType::TYPE_INVISIBLE))
+	if(!Message || Info()->IsType(ItemType::Setting) || Info()->IsType(ItemType::Invisible))
 		return Save();
 
-	if(Info()->IsType(ItemType::TYPE_EQUIP) || Info()->IsType(ItemType::TYPE_MODULE))
+	if(Info()->IsType(ItemType::Equipment) || Info()->IsType(ItemType::Module))
 	{
 		GS()->Chat(-1, "{} got of the {}.", GS()->Server()->ClientName(ClientID), Info()->GetName());
-		if(Info()->IsFunctional(EQUIP_EIDOLON))
+		if(Info()->IsFunctional(EquipEidolon))
 		{
 			std::pair EidolonSize = GS()->Core()->EidolonManager()->GetEidolonsSize(ClientID);
 			GS()->Chat(-1, "{} has a collection {} out of {} eidolons.", GS()->Server()->ClientName(ClientID), EidolonSize.first, EidolonSize.second);
@@ -185,7 +185,7 @@ bool CPlayerItem::Equip(bool SaveItem)
 
 	m_Settings ^= true;
 
-	if(Info()->IsType(ItemType::TYPE_EQUIP))
+	if(Info()->IsType(ItemType::Equipment))
 	{
 		const ItemFunctional EquipID = Info()->GetFunctional();
 		auto ItemID = pPlayer->GetEquippedItemID(EquipID, m_ID);
@@ -211,7 +211,7 @@ bool CPlayerItem::Equip(bool SaveItem)
 
 bool CPlayerItem::Use(int Value)
 {
-	Value = Info()->IsFunctional(FUNCTION_ONE_USED) ? 1 : minimum(Value, m_Value);
+	Value = Info()->IsFunctional(UseSingle) ? 1 : minimum(Value, m_Value);
 	if(Value <= 0)
 		return false;
 
@@ -297,8 +297,8 @@ bool CPlayerItem::Use(int Value)
 	{
 		// check potion recast time
 		const auto Function = Info()->GetFunctional();
-		if((Function == EQUIP_POTION_HEAL && pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick()) ||
-			(Function == EQUIP_POTION_MANA && pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick()))
+		if((Function == EquipPotionHeal && pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick()) ||
+			(Function == EquipPotionMana && pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick()))
 		{
 			return true;
 		}
@@ -314,7 +314,7 @@ bool CPlayerItem::Use(int Value)
 			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName);
 
 			// Update the recast time based on potion type
-			auto& recastTick = (Function == EQUIP_POTION_HEAL) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
+			auto& recastTick = (Function == EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
 			recastTick = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 		}
 

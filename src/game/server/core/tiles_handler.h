@@ -8,17 +8,17 @@ constexpr int TILES_LAYER_NUM = 3;
 #define HANDLE_TILE_MOTD_MENU(pPlayer, pChr, tile, motdMenu) \
 	if(pChr->GetTiles()->IsEnter(tile)) \
 	{ \
-		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 50, "Welcome! Press the 'self kill' key to open the menu."); \
+		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameInformation, 50, "Welcome! Press the 'self kill' key to open the menu."); \
 	} \
 	else if(pChr->GetTiles()->IsExit(tile) && pPlayer->IsSameMotdMenu(motdMenu)) \
 	{ \
-		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 50, "Goodbye!"); \
+		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 50, "Goodbye!"); \
 		pPlayer->CloseMotdMenu(); \
 	} \
 	else if(pChr->GetTiles()->IsActive(tile)) \
 	{ \
 		if (Server()->Tick() % Server()->TickSpeed() == 0) \
-			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GAME_INFORMATION, 50, "Welcome! Press the 'self kill' key to open the menu."); \
+			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameInformation, 50, "Welcome! Press the 'self kill' key to open the menu."); \
 		\
 		if (Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_SELF_KILL)) \
 		{ \
@@ -30,13 +30,13 @@ constexpr int TILES_LAYER_NUM = 3;
 #define HANDLE_TILE_VOTE_MENU(pPlayer, pChr, tile, voteMenu, enterActions, exitActions) \
 	if (pChr->GetTiles()->IsEnter(tile)) \
 	{ \
-		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You can see menu in the votes!"); \
+		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 70, "You can see menu in the votes!"); \
 		pPlayer->m_VotesData.UpdateVotes(voteMenu); \
 		enterActions \
 	} \
 	else if (pChr->GetTiles()->IsExit(tile)) \
 	{ \
-		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 70, "You have left the active zone!"); \
+		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 70, "You have left the active zone!"); \
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN); \
 		exitActions \
 	}

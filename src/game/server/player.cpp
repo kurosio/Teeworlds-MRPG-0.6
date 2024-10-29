@@ -42,7 +42,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
 	{
-		m_MoodState = Mood::NORMAL;
+		m_MoodState = Mood::Normal;
 		GS()->SendTuningParams(ClientID);
 
 		m_Afk = false;
@@ -206,7 +206,7 @@ void CPlayer::TryCreateEidolon()
 		return;
 
 	// check valid equppied item id
-	const auto eidolonItemID = GetEquippedItemID(EQUIP_EIDOLON);
+	const auto eidolonItemID = GetEquippedItemID(EquipEidolon);
 	if(!eidolonItemID.has_value())
 		return;
 
@@ -414,7 +414,7 @@ void CPlayer::RefreshClanString()
 	std::string Prepared(Server()->GetWorldName(GetCurrentWorldID()));
 
 	// title
-	if(const auto TitleItemID = GetEquippedItemID(EQUIP_TITLE); TitleItemID.has_value())
+	if(const auto TitleItemID = GetEquippedItemID(EquipTitle); TitleItemID.has_value())
 	{
 		Prepared += " | ";
 		Prepared += GetItem(TitleItemID.value())->Info()->GetName();
@@ -580,7 +580,7 @@ void CPlayer::ProgressBar(const char* pType, int Lvl, uint64_t Exp, uint64_t Exp
 	// send and format
 	const auto ProgressBar = mystd::string::progressBar(100, (int)ExpProgress, 10, ":", " ");
 	const auto Result = fmt_default("Lv{lv} {type}[{bar}] {~.2}%+{~.3}%({})XP", Lvl, pType, ProgressBar, ExpProgress, GotExpProgress, GotExp);
-	GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_INFORMATION, 100, Result.c_str());
+	GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 100, Result.c_str());
 }
 
 bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const
@@ -588,13 +588,13 @@ bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int Maxi
 	const int UpgradeNeed = Price * Value;
 	if((*Upgrade + Value) > MaximalUpgrade)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_WARNING, 100, "Upgrade has a maximum level.");
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "Upgrade has a maximum level.");
 		return false;
 	}
 
 	if(*Useless < UpgradeNeed)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GAME_WARNING, 100, "Not upgrade points for +{}. Required {}.", Value, UpgradeNeed);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "Not upgrade points for +{}. Required {}.", Value, UpgradeNeed);
 		return false;
 	}
 

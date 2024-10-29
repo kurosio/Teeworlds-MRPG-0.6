@@ -484,7 +484,7 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 	}
 
 	// send broadcast
-	GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 250, "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
+	GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 250, "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
 		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), m_Exp, computeExperience(m_Level), expStr.c_str());
 }
 

@@ -11,7 +11,7 @@
 void QuestDatafile::Create() const
 {
 	// check if the quest state is not ACCEPT or if the player does not exist
-	if(!m_pQuest || m_pQuest->m_State != QuestState::ACCEPT || !m_pQuest->GetPlayer())
+	if(!m_pQuest || m_pQuest->m_State != QuestState::Accepted || !m_pQuest->GetPlayer())
 		return;
 
 	// json structuring
@@ -53,7 +53,7 @@ void QuestDatafile::Create() const
 void QuestDatafile::Load() const
 {
 	// only for accept state
-	if(!m_pQuest || m_pQuest->m_State != QuestState::ACCEPT)
+	if(!m_pQuest || m_pQuest->m_State != QuestState::Accepted)
 		return;
 
 	// loading file is not open pereinitilized steps
@@ -144,7 +144,7 @@ void QuestDatafile::Load() const
 bool QuestDatafile::Save() const
 {
 	// Check if the current state of the quest is not "ACCEPT"
-	if(!m_pQuest || m_pQuest->m_State != QuestState::ACCEPT)
+	if(!m_pQuest || m_pQuest->m_State != QuestState::Accepted)
 		return false;
 
 	// json structuring

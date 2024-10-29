@@ -137,14 +137,14 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VCraftInfo.AddItemValue(itGold);
 
 		// show craft tabs
-		ShowCraftList(pPlayer, "Can be used's", ItemType::TYPE_USED);
-		ShowCraftList(pPlayer, "Potion's", ItemType::TYPE_POTION);
-		ShowCraftList(pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
-		ShowCraftList(pPlayer, "Module's", ItemType::TYPE_MODULE);
-		ShowCraftList(pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
-		ShowCraftList(pPlayer, "Craft's", ItemType::TYPE_CRAFT);
-		ShowCraftList(pPlayer, "Other's", ItemType::TYPE_OTHER);
-		ShowCraftList(pPlayer, "Quest and all the rest's", ItemType::TYPE_INVISIBLE);
+		ShowCraftList(pPlayer, "Can be used's", ItemType::Usable);
+		ShowCraftList(pPlayer, "Potion's", ItemType::Potion);
+		ShowCraftList(pPlayer, "Equipment's", ItemType::Equipment);
+		ShowCraftList(pPlayer, "Module's", ItemType::Module);
+		ShowCraftList(pPlayer, "Decoration's", ItemType::Decoration);
+		ShowCraftList(pPlayer, "Craft's", ItemType::CraftingMaterial);
+		ShowCraftList(pPlayer, "Other's", ItemType::Other);
+		ShowCraftList(pPlayer, "Quest and all the rest's", ItemType::Invisible);
 		return true;
 	}
 

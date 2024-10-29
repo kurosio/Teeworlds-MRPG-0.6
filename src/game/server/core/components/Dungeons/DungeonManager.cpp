@@ -86,7 +86,7 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		if(!GS()->IsWorldType(WorldType::Dungeon))
 		{
 			pPlayer->GetTempData().SetTeleportPosition(pPlayer->GetCharacter()->m_Core.m_Pos);
-			GS()->Core()->SaveAccount(pPlayer, SaveType::SAVE_POSITION);
+			GS()->Core()->SaveAccount(pPlayer, ESaveType::SAVE_POSITION);
 		}
 
 		GS()->Chat(-1, "{} joined to Dungeon {}!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[Extra1].m_aName);

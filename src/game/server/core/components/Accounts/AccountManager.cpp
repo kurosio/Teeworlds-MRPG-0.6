@@ -155,7 +155,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// Broadcast a message to the player with their current location
 	const int ClientID = pPlayer->GetCID();
-	GS()->Broadcast(ClientID, BroadcastPriority::VERY_IMPORTANT, 200, "You are currently positioned at {}({})!",
+	GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 200, "You are currently positioned at {}({})!",
 		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"));
 
 	// Check if it is not the first initialization
@@ -329,7 +329,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		const auto& PlayerItems = CPlayerItem::Data()[ClientID];
 		for(const auto& [ItemID, ItemData] : PlayerItems)
 		{
-			if(ItemData.Info()->IsType(ItemType::TYPE_SETTINGS) && ItemData.HasItem())
+			if(ItemData.Info()->IsType(ItemType::Setting) && ItemData.HasItem())
 			{
 				const char* Status = ItemData.GetSettings() ? "Enabled" : "Disabled";
 				VAccount.AddOption("EQUIP_ITEM", ItemID, "[{}] {}", Status, ItemData.Info()->GetName());
@@ -378,7 +378,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// initialize variables
-		const auto EquippedTitleItemID = pPlayer->GetEquippedItemID(EQUIP_TITLE);
+		const auto EquippedTitleItemID = pPlayer->GetEquippedItemID(EquipTitle);
 		const char* pCurrentTitle = EquippedTitleItemID.has_value() ? pPlayer->GetItem(EquippedTitleItemID.value())->Info()->GetName() : "title is not used";
 
 		// title information
@@ -392,7 +392,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		for(auto& pairItem : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &pairItem.second;
-			if(pPlayerItem->Info()->IsFunctional(EQUIP_TITLE) && pPlayerItem->HasItem())
+			if(pPlayerItem->Info()->IsFunctional(EquipTitle) && pPlayerItem->HasItem())
 			{
 				// initialize variables
 				bool IsEquipped = pPlayerItem->IsEquipped();

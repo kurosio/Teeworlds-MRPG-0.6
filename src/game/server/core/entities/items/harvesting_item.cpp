@@ -80,7 +80,7 @@ void CEntityHarvestingItem::Process(int ClientID)
 	const auto* pHouse = GS()->Core()->HouseManager()->GetHouse(m_HouseID);
 	if(pHouse && !pHouse->HasOwner())
 	{
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "It is forbidden to collect farming.");
+		GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, 100, "It is forbidden to collect farming.");
 		return;
 	}
 
@@ -89,7 +89,7 @@ void CEntityHarvestingItem::Process(int ClientID)
 	if(m_Type == HARVESTINGITEM_TYPE_MINING)
 	{
 		const int Level = pPlayer->Account()->m_MiningData.getRef<int>(JOB_LEVEL);
-		if(TakeDamage(AttributeIdentifier::Efficiency, pPlayer, pPlayerItem, EQUIP_PICKAXE, Level))
+		if(TakeDamage(AttributeIdentifier::Efficiency, pPlayer, pPlayerItem, EquipPickaxe, Level))
 		{
 			GS()->Core()->AccountMiningManager()->Process(pPlayer, optHarvestingContext->Level);
 			pPlayerItem->Add(1 + rand() % 2);
@@ -99,7 +99,7 @@ void CEntityHarvestingItem::Process(int ClientID)
 	else if(m_Type == HARVESTINGITEM_TYPE_FARMING)
 	{
 		const int Level = pPlayer->Account()->m_FarmingData.getRef<int>(JOB_LEVEL);
-		if(TakeDamage(AttributeIdentifier::Extraction, pPlayer, pPlayerItem, EQUIP_RAKE, Level))
+		if(TakeDamage(AttributeIdentifier::Extraction, pPlayer, pPlayerItem, EquipRake, Level))
 		{
 			GS()->Core()->AccountFarmingManager()->Procces(pPlayer, optHarvestingContext->Level);
 			pPlayerItem->Add(1 + rand() % 2);
@@ -124,7 +124,7 @@ bool CEntityHarvestingItem::TakeDamage(AttributeIdentifier Attribute, CPlayer* p
 	// check level
 	if(SelfLevel < Level)
 	{
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 100, "Your level low. {} {} Level", pWorkedItem->Info()->GetName(), Level);
+		GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, 100, "Your level low. {} {} Level", pWorkedItem->Info()->GetName(), Level);
 		return false;
 	}
 
@@ -148,7 +148,7 @@ bool CEntityHarvestingItem::TakeDamage(AttributeIdentifier Attribute, CPlayer* p
 
 		// send message
 		const auto Poffix = RequiredRepair ? "broken" : "";
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{} [{}/{}P] : {} ({}/100%){}",
+		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{} [{}/{}P] : {} ({}/100%){}",
 			pWorkedItem->Info()->GetName(), minimum(m_Damage, Health), Health, pEquippedItem->Info()->GetName(), Durability, Poffix);
 	}
 	else
@@ -158,7 +158,7 @@ bool CEntityHarvestingItem::TakeDamage(AttributeIdentifier Attribute, CPlayer* p
 		GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
 
 		// send message
-		GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{} [{}/{}P] : Hand (\u221e/\u221e)",
+		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{} [{}/{}P] : Hand (\u221e/\u221e)",
 			pWorkedItem->Info()->GetName(), minimum(m_Damage, Health), Health);
 	}
 

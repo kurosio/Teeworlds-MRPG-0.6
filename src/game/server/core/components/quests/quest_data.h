@@ -156,8 +156,8 @@ public:
 	CQuestDescription* Info() const;
 	QuestIdentifier GetID() const { return m_ID; }
 	QuestState GetState() const { return m_State; }
-	bool IsCompleted() const { return m_State == QuestState::FINISHED; }
-	bool IsAccepted() const { return m_State == QuestState::ACCEPT; }
+	bool IsCompleted() const { return m_State == QuestState::Finished; }
+	bool IsAccepted() const { return m_State == QuestState::Accepted; }
 	bool HasUnfinishedSteps() const;
 	int GetStepPos() const { return m_Step; }
 	CQuestStep* GetStepByMob(int MobID);

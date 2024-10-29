@@ -33,7 +33,7 @@ void CWorldData::Move(CPlayer* pPlayer)
 	// check if the player has the required level to move
 	if(pSecondWorldData && pPlayer->Account()->GetLevel() < m_RequiredLevel)
 	{
-		pGS->Broadcast(ClientID, BroadcastPriority::MAIN_INFORMATION, 100, "You must be at least level {} to move!", m_RequiredLevel);
+		pGS->Broadcast(ClientID, BroadcastPriority::MainInformation, 100, "You must be at least level {} to move!", m_RequiredLevel);
 		return;
 	}
 

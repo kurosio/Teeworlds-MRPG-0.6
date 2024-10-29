@@ -164,7 +164,7 @@ void CNpcAI::ProcessDefaultNPC()
 			m_pCharacter->m_Input.m_Direction = 0;
 			HasPlayerNearby = true;
 
-			GS()->Broadcast(CandidateCID, BroadcastPriority::GAME_INFORMATION, 10, "Begin dialogue: \"hammer hit\"");
+			GS()->Broadcast(CandidateCID, BroadcastPriority::GameInformation, 10, "Begin dialogue: \"hammer hit\"");
 		}
 		return false;
 	});

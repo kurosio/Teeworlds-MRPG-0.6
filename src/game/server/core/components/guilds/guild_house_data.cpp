@@ -253,7 +253,7 @@ bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEv
 	const int& ClientID = pPlayer->GetCID();
 
 	// event point add
-	if(Event == DrawboardToolEvent::ON_POINT_ADD && pPoint)
+	if(Event == DrawboardToolEvent::OnPointAdd && pPoint)
 	{
 		// check if there are free slots
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
@@ -274,7 +274,7 @@ bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEv
 	}
 
 	// event point erase
-	if(Event == DrawboardToolEvent::ON_POINT_ERASE && pPoint)
+	if(Event == DrawboardToolEvent::OnPointErase && pPoint)
 	{
 		// try to remove the point
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
@@ -288,7 +288,7 @@ bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEv
 	}
 
 	// event end
-	if(Event == DrawboardToolEvent::ON_END)
+	if(Event == DrawboardToolEvent::OnEnd)
 	{
 		pHouse->GS()->Chat(ClientID, "You have finished decorating your house!");
 		return true;

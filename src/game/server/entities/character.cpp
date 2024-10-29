@@ -201,7 +201,7 @@ void CCharacter::FireWeapon()
 
 	// Check if the character has learned the skill for using weapons in full auto mode
 	const bool IsCharBot = m_pPlayer->IsBot();
-	bool FullAuto = (IsCharBot || m_pPlayer->GetSkill(SkillMasterWeapon)->IsLearned());
+	bool FullAuto = (IsCharBot || m_pPlayer->GetSkill(SKILL_MASTER_WEAPON)->IsLearned());
 	bool WillFire = CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses;
 	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 	{
@@ -262,10 +262,10 @@ void CCharacter::FireWeapon()
 bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_HAMMER);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipHammer);
 	if(!EquippedItem.has_value())
 	{
-		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a hammer equipped.");
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a hammer equipped.");
 		return false;
 	}
 
@@ -361,10 +361,10 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_GUN);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipGun);
 	if(!EquippedItem.has_value())
 	{
-		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a gun equipped.");
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a gun equipped.");
 		return false;
 	}
 
@@ -396,10 +396,10 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_SHOTGUN);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipShotgun);
 	if(!EquippedItem.has_value())
 	{
-		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a shotgun equipped.");
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a shotgun equipped.");
 		return false;
 	}
 
@@ -439,10 +439,10 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_GRENADE);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipShotgun);
 	if(!EquippedItem.has_value())
 	{
-		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a grenade equipped.");
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a grenade equipped.");
 		return false;
 	}
 
@@ -519,10 +519,10 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EQUIP_LASER);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipLaser);
 	if(!EquippedItem.has_value())
 	{
-		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 2, "You don't have a laser equipped.");
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a laser equipped.");
 		return false;
 	}
 
@@ -1192,7 +1192,7 @@ void CCharacter::AutoUseHealingPotionIfNeeded() const
 		return;
 
 	// check for equippement potion
-	const auto equippedHeal = m_pPlayer->GetEquippedItemID(EQUIP_POTION_HEAL);
+	const auto equippedHeal = m_pPlayer->GetEquippedItemID(EquipPotionHeal);
 	TryUsePotion(equippedHeal);
 }
 
@@ -1207,7 +1207,7 @@ void CCharacter::AutoUseManaPotionIfNeeded() const
 		return;
 
 	// check for equippement potion
-	const auto equippedMana = m_pPlayer->GetEquippedItemID(EQUIP_POTION_MANA);
+	const auto equippedMana = m_pPlayer->GetEquippedItemID(EquipPotionMana);
 	TryUsePotion(equippedMana);
 }
 
@@ -1476,7 +1476,7 @@ void CCharacter::HandleTiles()
 	{
 		if(const auto outsPos = GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos))
 		{
-			GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, Server()->TickSpeed(), "Use the hammer to enter");
+			GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, Server()->TickSpeed(), "Use the hammer to enter");
 			if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_ReloadTimer)
 				ChangePosition(outsPos.value());
 		}
@@ -1500,7 +1500,7 @@ void CCharacter::HandleTiles()
 				const auto result = fmt_default("{}\n{}\n{}",
 					mystd::aesthetic::wrapLineConfident(wrapLength), infoZone, mystd::aesthetic::wrapLineConfident(wrapLength));
 
-				GS()->Broadcast(m_ClientID, BroadcastPriority::TITLE_INFORMATION, 150, result.c_str());
+				GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 150, result.c_str());
 				m_Zonename = pZone->GetName();
 			}
 		}
@@ -1684,11 +1684,11 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 			// increase by equip type
 			if(m_pPlayer->IsActiveEffect(PotionContext.Effect.c_str()))
 			{
-				if(Functional == EQUIP_POTION_HEAL)
+				if(Functional == EquipPotionHeal)
 				{
 					IncreaseHealth(PotionContext.Value);
 				}
-				else if(Functional == EQUIP_POTION_MANA)
+				else if(Functional == EquipPotionMana)
 				{
 					IncreaseMana(PotionContext.Value);
 				}
@@ -1760,13 +1760,13 @@ void CCharacter::UpdateEquippedStats(int ItemID)
 	// get item info only once
 	const auto* pItemInfo = GS()->GetItemInfo(ItemID);
 	const auto Functional = pItemInfo->GetFunctional();
-	if(Functional >= EQUIP_HAMMER && Functional <= EQUIP_LASER)
+	if(Functional >= EquipHammer && Functional <= EquipLaser)
 	{
 		m_pPlayer->GetCharacter()->GiveWeapon(Functional, 3);
 	}
 
 	// process eidolon if applicable
-	if(Functional == EQUIP_EIDOLON)
+	if(Functional == EquipEidolon)
 	{
 		m_pPlayer->TryRemoveEidolon();
 		m_pPlayer->TryCreateEidolon();
@@ -1881,7 +1881,7 @@ bool CCharacter::CheckFailMana(int Mana)
 {
 	if(m_Mana < Mana)
 	{
-		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GAME_WARNING, 100, "Mana is required for the casting or continuation of this spell.");
+		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 100, "Mana is required for the casting or continuation of this spell.");
 		return true;
 	}
 

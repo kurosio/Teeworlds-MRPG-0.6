@@ -426,7 +426,7 @@ bool CHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent E
 	if(pPoint)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
-		if(Event == DrawboardToolEvent::ON_POINT_ADD)
+		if(Event == DrawboardToolEvent::OnPointAdd)
 		{
 			if(!pHouse->GetDecorationManager()->HasFreeSlots())
 			{
@@ -443,7 +443,7 @@ bool CHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent E
 			return false;
 		}
 
-		if(Event == DrawboardToolEvent::ON_POINT_ERASE)
+		if(Event == DrawboardToolEvent::OnPointErase)
 		{
 			if(pHouse->GetDecorationManager()->Remove(pPoint))
 			{
@@ -455,7 +455,7 @@ bool CHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent E
 		}
 	}
 
-	if(Event == DrawboardToolEvent::ON_END)
+	if(Event == DrawboardToolEvent::OnEnd)
 	{
 		pHouse->GS()->Chat(ClientID, "You have finished decorating your house!");
 		return true;

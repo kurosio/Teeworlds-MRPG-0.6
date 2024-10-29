@@ -47,7 +47,7 @@ CBrush::~CBrush()
 
 void CBrush::InitBrushCollection()
 {
-	m_vBrushItemsCollection = GS()->Core()->InventoryManager()->GetItemIDsCollection(ItemType::TYPE_DECORATION);
+	m_vBrushItemsCollection = GS()->Core()->InventoryManager()->GetItemIDsCollection(ItemType::Decoration);
 	m_BrushItem = m_vBrushItemsCollection.begin();
 }
 
@@ -105,7 +105,7 @@ void CBrush::SendBroadcast() const
 	}
 
 	// send broadcast
-	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 50, "Drawing with: {} | {}"
+	GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::MainInformation, 50, "Drawing with: {} | {}"
 		"\n{}"
 		"\n\n- \"Fire\" add item"
 		"\n- \"Hook\" erase item"
@@ -233,14 +233,14 @@ bool CEntityDrawboard::StartDrawing(CPlayer* pPlayer)
 		return false;
 
 	auto* pBrush = new CBrush(pPlayer, this, &m_ToolEvent);
-	if(!pBrush->ProccessEvent(DrawboardToolEvent::ON_START, nullptr))
+	if(!pBrush->ProccessEvent(DrawboardToolEvent::OnStart, nullptr))
 	{
 		delete pBrush;
 		return false;
 	}
 
 	if(!m_pOrbite)
-		m_pOrbite = new CEntityLaserOrbite(GameWorld(), -1, nullptr, 15, LaserOrbiteType::INSIDE_ORBITE, 0.f, m_Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
+		m_pOrbite = new CEntityLaserOrbite(GameWorld(), -1, nullptr, 15, LaserOrbiteType::InsideOrbite, 0.f, m_Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
 	else
 		m_pOrbite->AddClientMask(pPlayer->GetCID());
 
@@ -254,7 +254,7 @@ void CEntityDrawboard::EndDrawing(CPlayer* pPlayer)
 	if(iterBrush == m_vBrushes.end())
 		return;
 
-	if((*iterBrush)->ProccessEvent(DrawboardToolEvent::ON_END, nullptr))
+	if((*iterBrush)->ProccessEvent(DrawboardToolEvent::OnEnd, nullptr))
 	{
 		delete* iterBrush;
 		m_vBrushes.erase(iterBrush);
@@ -275,7 +275,7 @@ bool CEntityDrawboard::Draw(CBrush* pBrush, EntityPoint* pPoint)
 			return false;
 		}
 
-		if(pBrush->ProccessEvent(DrawboardToolEvent::ON_POINT_ADD, pPoint))
+		if(pBrush->ProccessEvent(DrawboardToolEvent::OnPointAdd, pPoint))
 		{
 			m_vEntities.push_back(pPoint);
 			pPlayerItem->Remove(1);
@@ -285,7 +285,7 @@ bool CEntityDrawboard::Draw(CBrush* pBrush, EntityPoint* pPoint)
 		return false;
 	}
 
-	if(pBrush->ProccessEvent(DrawboardToolEvent::ON_POINT_ADD, pPoint))
+	if(pBrush->ProccessEvent(DrawboardToolEvent::OnPointAdd, pPoint))
 	{
 		m_vEntities.push_back(pPoint);
 		return true;
@@ -300,7 +300,7 @@ bool CEntityDrawboard::Erase(CBrush* pBrush, vec2 Pos)
 	if(!pBrush || iterEntity == m_vEntities.end())
 		return false;
 
-	if(pBrush->ProccessEvent(DrawboardToolEvent::ON_POINT_ERASE, *iterEntity))
+	if(pBrush->ProccessEvent(DrawboardToolEvent::OnPointErase, *iterEntity))
 	{
 		if(m_Flags & DRAWBOARDFLAG_PLAYER_ITEMS)
 		{

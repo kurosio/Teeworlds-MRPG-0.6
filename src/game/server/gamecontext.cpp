@@ -521,8 +521,8 @@ void CGS::BroadcastTick(int ClientID)
 		//Send broadcast only if the message is different, or to fight auto-fading
 		if(Broadcast.m_Updated || str_comp(Broadcast.m_PrevMessage, Broadcast.m_NextMessage) != 0 || Broadcast.m_NoChangeTick < Server()->Tick())
 		{
-			// Check if the timed priority of the broadcast is less than MAIN_INFORMATION
-			if(Broadcast.m_TimedPriority < BroadcastPriority::MAIN_INFORMATION)
+			// Check if the timed priority of the broadcast is less than MainInformation
+			if(Broadcast.m_TimedPriority < BroadcastPriority::MainInformation)
 			{
 				// Format the broadcast message with basic player stats and append pAppend
 				const char* pAppend = m_apPlayers[ClientID]->m_PlayerFlags & PLAYERFLAG_CHATTING ? "\0" : Broadcast.m_NextMessage;
@@ -557,18 +557,18 @@ void CGS::BroadcastTick(int ClientID)
 		{
 			// Check if the lifespan tick is less than or equal to 0
 			Broadcast.m_TimedMessage[0] = 0;
-			Broadcast.m_TimedPriority = BroadcastPriority::LOWER;
+			Broadcast.m_TimedPriority = BroadcastPriority::Lower;
 		}
 
 		Broadcast.m_NextMessage[0] = 0;
-		Broadcast.m_NextPriority = BroadcastPriority::LOWER;
+		Broadcast.m_NextPriority = BroadcastPriority::Lower;
 	}
 	else
 	{
 		// Full reset
 		m_aBroadcastStates[ClientID].m_LifeSpanTick = 0;
-		m_aBroadcastStates[ClientID].m_NextPriority = BroadcastPriority::LOWER;
-		m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::LOWER;
+		m_aBroadcastStates[ClientID].m_NextPriority = BroadcastPriority::Lower;
+		m_aBroadcastStates[ClientID].m_TimedPriority = BroadcastPriority::Lower;
 		m_aBroadcastStates[ClientID].m_PrevMessage[0] = 0;
 		m_aBroadcastStates[ClientID].m_NextMessage[0] = 0;
 		m_aBroadcastStates[ClientID].m_TimedMessage[0] = 0;
@@ -778,13 +778,13 @@ void CGS::OnTickGlobal()
 		// determine the appropriate message based on the random top list type
 		switch(RandomType)
 		{
-			case ToplistType::GUILDS_LEVELING:
+			case ToplistType::GuildLeveling:
 				Chat(-1, "---- [Top 5 guilds by leveling] ----");
 				break;
-			case ToplistType::GUILDS_WEALTHY:
+			case ToplistType::GuildWealthy:
 				Chat(-1, "---- [Top 5 guilds by gold] ----");
 				break;
-			case ToplistType::PLAYERS_LEVELING:
+			case ToplistType::PlayerLeveling:
 				Chat(-1, "---- [Top 5 players by leveling] ----");
 				break;
 			default:
@@ -914,7 +914,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 			pPlayer->m_aPlayerTick[LastChangeTeam] = Server()->Tick() + Server()->TickSpeed();
 			const char* pMsgText = !pPlayer->IsAuthed() ? "Use /register <name> <pass>\nOr /login <name> <pass>." : "Team change is not allowed.";
-			Broadcast(pPlayer->GetCID(), BroadcastPriority::MAIN_INFORMATION, 100, pMsgText);
+			Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 100, pMsgText);
 			return;
 		}
 

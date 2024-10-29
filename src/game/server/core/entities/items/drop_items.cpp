@@ -43,7 +43,7 @@ bool CDropItem::TakeItem(int ClientID)
 
 	// simple subject delivery
 	pPlayerItem->Add(m_DropItem.GetValue(), 0, m_DropItem.GetEnchant());
-	GS()->Broadcast(ClientID, BroadcastPriority::GAME_WARNING, 10, "\0");
+	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, 10, "\0");
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
 	GameWorld()->DestroyEntity(this);
@@ -80,18 +80,18 @@ void CDropItem::Tick()
 		{
 			if(pPlayerItem->GetValue() > 0)
 			{
-				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "You have: {}{}\nReplace with: {}{} {}",
+				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You have: {}{}\nReplace with: {}{} {}",
 					pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel().c_str(), m_DropItem.Info()->GetName(), m_DropItem.GetStringEnchantLevel().c_str(), pOwnerNick);
 			}
 			else
 			{
-				GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{}(+{}) {}",
+				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{}(+{}) {}",
 					m_DropItem.Info()->GetName(), m_DropItem.GetEnchant(), pOwnerNick);
 			}
 		}
 		else
 		{
-			GS()->Broadcast(ClientID, BroadcastPriority::GAME_INFORMATION, 100, "{}x{} {}",
+			GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{}x{} {}",
 				m_DropItem.Info()->GetName(), m_DropItem.GetValue(), pOwnerNick);
 		}
 	}

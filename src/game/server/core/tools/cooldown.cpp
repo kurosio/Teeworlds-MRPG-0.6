@@ -81,7 +81,7 @@ void CCooldown::EndCooldown(const char* pMessage)
 	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 
 	m_IsCooldownActive = false;
-	pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 50, pMessage);
+	pGS->Broadcast(m_ClientID, BroadcastPriority::VeryImportant, 50, pMessage);
 	pGS->CreatePlayerSpawn(m_StartPos, CmaskOne(m_ClientID));
 }
 
@@ -107,5 +107,5 @@ void CCooldown::BroadcastCooldown(IServer* pServer) const
 	std::string progressBar = mystd::string::progressBar(100, static_cast<int>(currentProgress), 10, "\u25B0", "\u25B1");
 
 	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	pGS->Broadcast(m_ClientID, BroadcastPriority::VERY_IMPORTANT, 10, "{}\n< {} > {} - Action", m_Name, timeFormat, progressBar);
+	pGS->Broadcast(m_ClientID, BroadcastPriority::VeryImportant, 10, "{}\n< {} > {} - Action", m_Name, timeFormat, progressBar);
 }

@@ -5,6 +5,15 @@
 
 #include "tools/path_finder_result.h"
 
+// skin data
+struct CTeeInfo
+{
+	char m_aSkinName[64];
+	int m_UseCustomColor;
+	int m_ColorBody;
+	int m_ColorFeet;
+};
+
 // special sounds
 enum ESpecialSound
 {
@@ -15,69 +24,65 @@ enum ESpecialSound
 	SOUND_USE_POTION,
 };
 
-// skin data
-struct CTeeInfo
+
+// spawn types
+enum ESpawnType
 {
-	char m_aSkinName[64]; // name of the skin
-	int m_UseCustomColor; // flag indicating whether custom colors are used
-	int m_ColorBody; // color value for the body part
-	int m_ColorFeet; // color value for the feet part
+	SPAWN_HUMAN = 0,        // Spawn a human player
+	SPAWN_BOT = 1,          // Spawn a bot player
+	SPAWN_HUMAN_TREATMENT = 2,   // Spawn a human player in a safe location
+	SPAWN_HUMAN_PRISON = 3, // Spawn a human prison
+	SPAWN_NUM               // The total number of spawn types available
 };
 
-// world types
-enum class WorldType : int
+// bot types
+enum EBotsType
 {
-	Default,
-	Dungeon,
-	Tutorial,
+	TYPE_BOT_MOB = 1,       // type for mob bots
+	TYPE_BOT_QUEST = 2,     // type for quest bots
+	TYPE_BOT_NPC = 3,       // type for NPC bots
+	TYPE_BOT_FAKE = 4,      // type for fake bots
+	TYPE_BOT_EIDOLON = 5,   // type for eidolon bots
+	TYPE_BOT_QUEST_MOB = 6, // type for quest mob bots
 };
 
-// drawboard events
-enum class DrawboardToolEvent : int
+// save types
+enum ESaveType
 {
-	ON_START,
-	ON_POINT_ADD,
-	ON_POINT_ERASE,
-	ON_END,
+	SAVE_ACCOUNT,			// Save Login Password Data
+	SAVE_STATS,				// Save Stats Level Exp and other this type
+	SAVE_UPGRADES,			// Save Upgrades Damage and other this type
+	SAVE_FARMING_DATA,		// Save Farming Account
+	SAVE_MINING_DATA,		// Save Mining Account
+	SAVE_GUILD_DATA,		// Save Guild Data
+	SAVE_SOCIAL_STATUS,		// Save Social status
+	SAVE_POSITION,			// Save Position Player
+	SAVE_LANGUAGE,			// Save Language Client
+	SAVE_TIME_PERIODS,		// Save Time Periods
+	SAVE_ACHIEVEMENTS,		// Save Achievements
 };
 
-// class groups
-enum class ClassGroup : int
+// world day types
+enum EDayType
 {
-	None,
-	Tank,
-	Dps,
-	Healer
+	NIGHT_TYPE = 0,
+	MORNING_TYPE = 1,
+	DAY_TYPE = 2,
+	EVENING_TYPE = 3
 };
 
-// time period
-enum ETimePeriod
+// skills
+enum ESkill
 {
-	DAILY_STAMP,
-	WEEK_STAMP,
-	MONTH_STAMP,
-	NUM_STAMPS
-};
-
-// laser orbite types
-enum class LaserOrbiteType : unsigned char
-{
-	DEFAULT,
-	MOVE_LEFT,
-	MOVE_RIGHT,
-	INSIDE_ORBITE,
-	INSIDE_ORBITE_RANDOM,
-};
-
-// mood type
-enum class Mood : short
-{
-	NORMAL = 0,
-	ANGRY,
-	AGRESSED,
-	FRIENDLY,
-	QUEST,
-	TANK,
+	SKILL_HEART_TURRET = 1,	// health recovery turret
+	SKILL_SLEEPY_GRAVITY = 2, // mobbing
+	SKILL_CRAFT_DISCOUNT = 3, // discount on crafting
+	SKILL_MASTER_WEAPON = 4, // automatic gunfire
+	SKILL_BLESSING_GOD_WAR = 5, // refill ammunition
+	SKILL_ATTACK_TELEPORT = 6, // ?knockout? teleport
+	SKILL_CURE_I = 7, // health recovery cure
+	SKILL_PROVOKE = 8, // provoke
+	SKILL_ENERGY_SHIELD = 9, // energy shield
 };
 
 // account harvesting stats
@@ -109,104 +114,189 @@ enum ETickState
 	NUM_TICK,
 };
 
-// skills
-enum ESkill
+// time period
+enum ETimePeriod
 {
-	SkillHeartTurret = 1,	// health recovery turret
-	SkillSleepyGravity = 2, // mobbing
-	SkillCraftDiscount = 3, // discount on crafting
-	SkillMasterWeapon = 4, // automatic gunfire
-	SkillBlessingGodWar = 5, // refill ammunition
-	SkillAttackTeleport = 6, // ?knockout? teleport
-	SkillCureI = 7, // health recovery cure
-	SkillProvoke = 8, // provoke
-	SkillEnergyShield = 9, // energy shield
+	DAILY_STAMP,
+	WEEK_STAMP,
+	MONTH_STAMP,
+	NUM_STAMPS
 };
+
+// world types
+enum class WorldType : int
+{
+	Default,
+	Dungeon,
+	Tutorial,
+};
+
+// drawboard events
+enum class DrawboardToolEvent : int
+{
+	OnStart,
+	OnPointAdd,
+	OnPointErase,
+	OnEnd,
+};
+
+// class groups
+enum class ClassGroup : int
+{
+	None,
+	Tank,
+	Dps,
+	Healer
+};
+
+// laser orbite types
+enum class LaserOrbiteType : unsigned char
+{
+	Default,
+	MoveLeft,
+	MoveRight,
+	InsideOrbite,
+	InsideOrbiteRandom,
+};
+
+// mood type
+enum class Mood : short
+{
+	Normal = 0,
+	Angry,
+	Agressed,
+	Friendly,
+	Quest,
+	Tank,
+};
+
+constexpr const char* GetMoodName(Mood mood) noexcept
+{
+	switch(mood)
+	{
+		case Mood::Normal:    return "Normal";
+		case Mood::Angry:     return "Angry";
+		case Mood::Agressed:  return "Agressed";
+		case Mood::Friendly:  return "Friendly";
+		case Mood::Quest:     return "Quest";
+		case Mood::Tank:      return "Tank";
+		default:              return "Unknown";
+	}
+}
 
 // toplist types
 enum class ToplistType : int
 {
-	GUILDS_LEVELING,
-	GUILDS_WEALTHY,
-	PLAYERS_LEVELING,
-	PLAYERS_WEALTHY,
+	GuildLeveling,
+	GuildWealthy,
+	PlayerLeveling,
+	PlayerWealthy,
 	NUM_TOPLIST_TYPES
 };
 
 // item types
 enum class ItemType : short
 {
-	TYPE_INVISIBLE = 0,
-	TYPE_USED,
-	TYPE_CRAFT,
-	TYPE_MODULE,
-	TYPE_OTHER,
-	TYPE_SETTINGS,
-	TYPE_EQUIP,
-	TYPE_DECORATION,
-	TYPE_POTION,
+	Invisible = 0,
+	Usable,
+	CraftingMaterial,
+	Module,
+	Other,
+	Setting,
+	Equipment,
+	Decoration,
+	Potion,
 	NUM_TYPES,
 };
 
-// enum for item functional types
-enum ItemFunctional : int
+constexpr const char* GetTypeItemName(ItemType type) noexcept
+{
+	switch(type)
+	{
+		case ItemType::Invisible:        return "Invisible";
+		case ItemType::Usable:           return "Usable";
+		case ItemType::CraftingMaterial: return "Crafting material";
+		case ItemType::Module:           return "Module";
+		case ItemType::Other:            return "Other";
+		case ItemType::Setting:          return "Setting";
+		case ItemType::Equipment:        return "Equipment";
+		case ItemType::Decoration:       return "Decoration";
+		case ItemType::Potion:           return "Potion";
+		default:                         return "Unknown";
+	}
+
+}
+
+// item functional
+enum ItemFunctional : short
 {
 	// equipped items
-	EQUIP_HAMMER = 0,
-	EQUIP_GUN,
-	EQUIP_SHOTGUN,
-	EQUIP_GRENADE,
-	EQUIP_LASER,
-	EQUIP_PICKAXE,
-	EQUIP_RAKE,
-	EQUIP_ARMOR,
-	EQUIP_EIDOLON,
-	EQUIP_POTION_HEAL,
-	EQUIP_POTION_MANA,
-	EQUIP_TITLE,
+	EquipHammer = 0,
+	EquipGun,
+	EquipShotgun,
+	EquipGrenade,
+	EquipLaser,
+	EquipPickaxe,
+	EquipRake,
+	EquipArmor,
+	EquipEidolon,
+	EquipPotionHeal,
+	EquipPotionMana,
+	EquipTitle,
 	NUM_EQUIPPED,
 
 	// functional categories
-	FUNCTION_ONE_USED = NUM_EQUIPPED,
-	FUNCTION_USED,
-	FUNCTION_SETTINGS,
-	FUNCTION_FARMING,
-	FUNCTION_MINING,
+	UseSingle = NUM_EQUIPPED,
+	UseMultiple,
+	Setting,
+	ResourceHarvestable,
+	ResourceMineable,
 	NUM_FUNCTIONS
 };
 
-// names for all items and functions
-constexpr std::string_view ItemFunctionalString[NUM_FUNCTIONS] =
+constexpr const char* GetFunctionalItemName(ItemFunctional functional) noexcept
 {
-	// equipped items
-	"Hammer",
-	"Gun",
-	"Shotgun",
-	"Grenade",
-	"Laser",
-	"Pickaxe",
-	"Rake",
-	"Armor",
-	"Eidolon",
-	"Potion healing",
-	"Potion mana",
-	"Title",
+	switch(functional)
+	{
+		case EquipHammer:         return "Hammer";
+		case EquipGun:            return "Gun";
+		case EquipShotgun:        return "Shotgun";
+		case EquipGrenade:        return "Grenade";
+		case EquipLaser:          return "Laser";
+		case EquipPickaxe:        return "Pickaxe";
+		case EquipRake:           return "Rake";
+		case EquipArmor:          return "Armor";
+		case EquipEidolon:        return "Eidolon";
+		case EquipPotionHeal:     return "Potion Heal";
+		case EquipPotionMana:     return "Potion Mana";
+		case EquipTitle:          return "Title";
+		case UseSingle:           return "Use Single";
+		case UseMultiple:         return "Use Multiple";
+		case Setting:             return "Setting";
+		case ResourceHarvestable: return "Resource Harvestable";
+		case ResourceMineable:    return "Resource Mineable";
+		default:                  return "Unknown";
+	}
 
-	// functional categories
-	"One Used",
-	"Used",
-	"Settings",
-	"Farming",
-	"Mining"
-};
+}
 
-// quest state
 enum class QuestState : int
 {
-	NO_ACCEPT = 0,
-	ACCEPT,
-	FINISHED,
+	NoAccepted = 0,
+	Accepted,
+	Finished,
 };
+
+constexpr const char* GetQustStateName(QuestState state) noexcept
+{
+	switch(state)
+	{
+		case QuestState::NoAccepted: return "No accepted";
+		case QuestState::Accepted:   return "Accepted";
+		case QuestState::Finished:   return "Finished";
+		default:                     return "Unknown";
+	}
+}
 
 // npc functions
 enum EFunctionsNPC
@@ -343,6 +433,7 @@ enum
 	DEFAULT_MAX_PLAYER_BAG_GOLD = 5000,		// player gold limit
 	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
 	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
+	MAX_DROPPED_FROM_MOBS = 5,              // maximum number of items dropped from mobs
 
 	// items
 	NOPE = -1,
@@ -415,86 +506,26 @@ enum
 // broadcast
 enum class BroadcastPriority
 {
-	LOWER,
-	GAME_BASIC_STATS,
-	GAME_INFORMATION,
-	GAME_PRIORITY,
-	GAME_WARNING,
-	MAIN_INFORMATION,
-	TITLE_INFORMATION,
-	VERY_IMPORTANT,
+	Lower,
+	GameBasicStats,
+	GameInformation,
+	GamePriority,
+	GameWarning,
+	MainInformation,
+	TitleInformation,
+	VeryImportant,
 };
 
-// spawn types
-enum ESpawnType
-{
-	SPAWN_HUMAN = 0,        // Spawn a human player
-	SPAWN_BOT = 1,          // Spawn a bot player
-	SPAWN_HUMAN_TREATMENT = 2,   // Spawn a human player in a safe location
-	SPAWN_HUMAN_PRISON = 3, // Spawn a human prison
-	SPAWN_NUM               // The total number of spawn types available
-};
-
-// bot types
-enum EBotsType
-{
-	TYPE_BOT_MOB = 1,       // type for mob bots
-	TYPE_BOT_QUEST = 2,     // type for quest bots
-	TYPE_BOT_NPC = 3,       // type for NPC bots
-	TYPE_BOT_FAKE = 4,      // type for fake bots
-	TYPE_BOT_EIDOLON = 5,   // type for eidolon bots
-	TYPE_BOT_QUEST_MOB = 6, // type for quest mob bots
-};
-
-// save types
-enum SaveType
-{
-	SAVE_ACCOUNT,			// Save Login Password Data
-	SAVE_STATS,				// Save Stats Level Exp and other this type
-	SAVE_UPGRADES,			// Save Upgrades Damage and other this type
-	SAVE_FARMING_DATA,		// Save Farming Account
-	SAVE_MINING_DATA,		// Save Mining Account
-	SAVE_GUILD_DATA,		// Save Guild Data
-	SAVE_SOCIAL_STATUS,		// Save Social status
-	SAVE_POSITION,			// Save Position Player
-	SAVE_LANGUAGE,			// Save Language Client
-	SAVE_TIME_PERIODS,		// Save Time Periods
-	SAVE_ACHIEVEMENTS,		// Save Achievements
-};
-
-// world day types
-enum DayType
-{
-	NIGHT_TYPE = 0,
-	MORNING_TYPE = 1,
-	DAY_TYPE = 2,
-	EVENING_TYPE = 3
-};
-
-/*
-	Basic kernel server settings
-	This is where the most basic server settings are stored
-*/
-enum
-{
-	MAX_DROPPED_FROM_MOBS = 5,  // maximum number of items that can be dropped by mobs
-};
-
-enum CDataList
-{
-	MMO_DATA_INVENTORY_INFORMATION = 0,
-};
-
-// Enum class declaration for different attribute types
+// attribute groups
 enum class AttributeGroup : int
 {
-	Tank,      // Tank attribute
-	Healer,    // Healer attribute
-	Dps,       // Damage Per Second attribute
-	Weapon,    // Weapon attribute
-	Hardtype,  // Hard type attribute
-	Job,       // Job attribute
-	Other,     // Other attribute
+	Tank,
+	Healer,
+	Dps,
+	Weapon,
+	Hardtype,
+	Job,
+	Other,
 };
 
 // Attribute context
@@ -523,6 +554,50 @@ enum class AttributeIdentifier : int
 	ATTRIBUTES_NUM,              // The number of total attributes
 };
 
+
+/*
+ * Enum default naming conventions
+ */
+constexpr const char* GetEmoteNameById(int emoteId) noexcept
+{
+	switch(emoteId)
+	{
+		case EMOTE_PAIN:         return "Pain";
+		case EMOTE_HAPPY:        return "Happy";
+		case EMOTE_SURPRISE:     return "Surprise";
+		case EMOTE_ANGRY:        return "Angry";
+		case EMOTE_BLINK:        return "Blink";
+		default:                 return "Normal";
+	}
+}
+
+constexpr const char* GetEmoticonNameById(int emoticonId) noexcept
+{
+	switch(emoticonId)
+	{
+		case EMOTICON_OOP:          return "Emoticon Ooop";
+		case EMOTICON_EXCLAMATION:  return "Emoticon Exclamation";
+		case EMOTICON_HEARTS:       return "Emoticon Hearts";
+		case EMOTICON_DROP:         return "Emoticon Drop";
+		case EMOTICON_DOTDOT:       return "Emoticon ...";
+		case EMOTICON_MUSIC:        return "Emoticon Music";
+		case EMOTICON_SORRY:        return "Emoticon Sorry";
+		case EMOTICON_GHOST:        return "Emoticon Ghost";
+		case EMOTICON_SUSHI:        return "Emoticon Sushi";
+		case EMOTICON_SPLATTEE:     return "Emoticon Splatee";
+		case EMOTICON_DEVILTEE:     return "Emoticon Deviltee";
+		case EMOTICON_ZOMG:         return "Emoticon Zomg";
+		case EMOTICON_ZZZ:          return "Emoticon Zzz";
+		case EMOTICON_WTF:          return "Emoticon Wtf";
+		case EMOTICON_EYES:         return "Emoticon Eyes";
+		case EMOTICON_QUESTION:     return "Emoticon Question";
+		default:                    return "Not selected";
+	}
+}
+
+/*
+ * MultiworldIdentifiableData
+ */
 class IServer;
 namespace detail
 {

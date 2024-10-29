@@ -243,14 +243,14 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
 
 	// show trade list by groups
-	ShowTradeList(pWarehouse, pPlayer, "Can be used's", ItemType::TYPE_USED);
-	ShowTradeList(pWarehouse, pPlayer, "Potion's", ItemType::TYPE_POTION);
-	ShowTradeList(pWarehouse, pPlayer, "Equipment's", ItemType::TYPE_EQUIP);
-	ShowTradeList(pWarehouse, pPlayer, "Module's", ItemType::TYPE_MODULE);
-	ShowTradeList(pWarehouse, pPlayer, "Decoration's", ItemType::TYPE_DECORATION);
-	ShowTradeList(pWarehouse, pPlayer, "Craft's", ItemType::TYPE_CRAFT);
-	ShowTradeList(pWarehouse, pPlayer, "Other's", ItemType::TYPE_OTHER);
-	ShowTradeList(pWarehouse, pPlayer, "Quest and all the rest's", ItemType::TYPE_INVISIBLE);
+	ShowTradeList(pWarehouse, pPlayer, "Can be used's", ItemType::Usable);
+	ShowTradeList(pWarehouse, pPlayer, "Potion's", ItemType::Potion);
+	ShowTradeList(pWarehouse, pPlayer, "Equipment's", ItemType::Equipment);
+	ShowTradeList(pWarehouse, pPlayer, "Module's", ItemType::Module);
+	ShowTradeList(pWarehouse, pPlayer, "Decoration's", ItemType::Decoration);
+	ShowTradeList(pWarehouse, pPlayer, "Craft's", ItemType::CraftingMaterial);
+	ShowTradeList(pWarehouse, pPlayer, "Other's", ItemType::Other);
+	ShowTradeList(pWarehouse, pPlayer, "Quest and all the rest's", ItemType::Invisible);
 
 	// selling list
 	if(pWarehouse->IsHasFlag(WF_SELL))

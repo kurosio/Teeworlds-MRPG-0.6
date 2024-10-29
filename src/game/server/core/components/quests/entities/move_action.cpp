@@ -310,11 +310,11 @@ void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskActi
 	// send broadcast
 	if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Click the highlighted area with the hammer to interact.\n{}", strBuffer.c_str());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10, "Click the highlighted area with the hammer to interact.\n{}", strBuffer.c_str());
 	}
 	else if(Type & (QuestBotInfo::TaskAction::Types::PICKUP_ITEM | QuestBotInfo::TaskAction::Types::REQUIRED_ITEM))
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MAIN_INFORMATION, 10, "Press 'Fire' with the hammer to interact.\n{}", strBuffer.c_str());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10, "Press 'Fire' with the hammer to interact.\n{}", strBuffer.c_str());
 	}
 
 }

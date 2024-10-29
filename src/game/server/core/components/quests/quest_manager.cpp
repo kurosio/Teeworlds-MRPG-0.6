@@ -201,17 +201,6 @@ void CQuestManager::OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period)
 	}
 }
 
-// function to get the name of a quest state based on the given quest state
-static const char* GetStateName(QuestState State)
-{
-	switch(State)
-	{
-		case QuestState::ACCEPT: return "Active";
-		case QuestState::FINISHED: return "Finished";
-		default: return "Not active";
-	}
-}
-
 void CQuestManager::ShowQuestList(CPlayer* pPlayer) const
 {
 	// Initialize variables
@@ -229,8 +218,8 @@ void CQuestManager::ShowQuestList(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Tabs with quests
-	ShowQuestsTabList("\u2833 Accepted", pPlayer, QuestState::ACCEPT);
-	ShowQuestsTabList("\u2634 Completed", pPlayer, QuestState::FINISHED);
+	ShowQuestsTabList("\u2833 Accepted", pPlayer, QuestState::Accepted);
+	ShowQuestsTabList("\u2634 Completed", pPlayer, QuestState::Finished);
 }
 
 
@@ -264,7 +253,7 @@ void CQuestManager::TryAppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 	for(auto& [ID, pQuest] : CPlayerQuest::Data()[ClientID])
 	{
 		// only for accepted quests
-		if(pQuest->GetState() != QuestState::ACCEPT)
+		if(pQuest->GetState() != QuestState::Accepted)
 			continue;
 
 		// check current steps and append
@@ -527,7 +516,7 @@ void CQuestManager::Update(CPlayer* pPlayer)
 	// try update quests
 	for(auto& [ID, pQuest] : vPlayerQuests)
 	{
-		if(pQuest->GetState() == QuestState::ACCEPT)
+		if(pQuest->GetState() == QuestState::Accepted)
 			pQuest->Update();
 	}
 }
@@ -543,7 +532,7 @@ void CQuestManager::TryAcceptNextQuestChain(CPlayer* pPlayer, int BaseQuestID) c
 	if(const auto* pNextQuest = pVerifyQuestInfo->GetNextQuest())
 	{
 		auto* pPlayerNextQuest = pPlayer->GetQuest(pNextQuest->GetID());
-		if(pPlayerNextQuest && pPlayerNextQuest->GetState() == QuestState::NO_ACCEPT)
+		if(pPlayerNextQuest && pPlayerNextQuest->GetState() == QuestState::NoAccepted)
 			pPlayerNextQuest->Accept();
 	}
 }
@@ -557,7 +546,7 @@ void CQuestManager::TryAcceptNextQuestChainAll(CPlayer* pPlayer) const
 	// try to accept next quest
 	std::ranges::for_each(vPlayerQuests, [this, pPlayer](const auto& pair) 
 	{
-		if(pair.second->GetState() == QuestState::FINISHED)
+		if(pair.second->GetState() == QuestState::Finished)
 			TryAcceptNextQuestChain(pPlayer, pair.first);
 	});
 }
@@ -568,7 +557,7 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const
 	int AvailableValue = pPlayer->GetItem(ItemID)->GetValue();
 	for(const auto& [ID, pQuest] : CPlayerQuest::Data()[ClientID])
 	{
-		if(pQuest->GetState() != QuestState::ACCEPT)
+		if(pQuest->GetState() != QuestState::Accepted)
 			continue;
 
 		/*for(auto& pStepBot : pQuest->m_vSteps)

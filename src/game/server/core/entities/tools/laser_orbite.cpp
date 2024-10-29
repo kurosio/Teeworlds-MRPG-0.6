@@ -17,7 +17,7 @@ CEntityLaserOrbite::CEntityLaserOrbite(CGameWorld* pGameWorld, int ClientID, CEn
 	if(m_pEntParent)
 	{
 		m_AppendPos = vec2(centrelized_frandom(0.f, m_Radius / 1.5f), centrelized_frandom(0.f, m_Radius / 1.5f));
-		m_Pos = pEntParent->GetPos() + (Type == LaserOrbiteType::INSIDE_ORBITE_RANDOM ? m_AppendPos : vec2(0.f, 0.f));
+		m_Pos = pEntParent->GetPos() + (Type == LaserOrbiteType::InsideOrbiteRandom ? m_AppendPos : vec2(0.f, 0.f));
 	}
 	GameWorld()->InsertEntity(this);
 
@@ -44,7 +44,7 @@ void CEntityLaserOrbite::Tick()
 
 	if(m_pEntParent)
 	{
-		if(m_Type == LaserOrbiteType::INSIDE_ORBITE_RANDOM)
+		if(m_Type == LaserOrbiteType::InsideOrbiteRandom)
 			m_Pos = m_pEntParent->GetPos() + m_AppendPos;
 		else
 			m_Pos = m_pEntParent->GetPos();
@@ -59,9 +59,9 @@ vec2 CEntityLaserOrbite::UtilityOrbitePos(int PosID) const
 {
 	float AngleStart = 2.0f * pi;
 	float AngleStep = 2.0f * pi / (float)m_IDs.size();
-	if(m_Type == LaserOrbiteType::MOVE_LEFT)
+	if(m_Type == LaserOrbiteType::MoveLeft)
 		AngleStart = -(AngleStart * (float)Server()->Tick() / (float)Server()->TickSpeed()) * m_MoveSpeed;
-	else if(m_Type == LaserOrbiteType::MOVE_RIGHT)
+	else if(m_Type == LaserOrbiteType::MoveRight)
 		AngleStart = (AngleStart * (float)Server()->Tick() / (float)Server()->TickSpeed()) * m_MoveSpeed;
 
 	float DynamicRadius = m_Radius * (1.0f + 0.05f * sin((float)Server()->Tick() / (float)Server()->TickSpeed()));

@@ -193,7 +193,7 @@ void CMobAI::ShowHealth() const
 	{
 		if(GS()->GetPlayer(ClientID, true))
 		{
-			GS()->Broadcast(ClientID, BroadcastPriority::GAME_PRIORITY, 100, "{} {}({}/{})",
+			GS()->Broadcast(ClientID, BroadcastPriority::GamePriority, 100, "{} {}({}/{})",
 				DataBotInfo::ms_aDataBot[BotID].m_aNameBot, ProgressBar.c_str(), Health, StartHealth);
 		}
 	}

@@ -165,5 +165,5 @@ void CUniversalScenario::SendChat(const std::string& text) const
 
 void CUniversalScenario::SendBroadcast(const std::string& text) const
 {
-	GS()->Broadcast(GetClientID(), BroadcastPriority::VERY_IMPORTANT, 300, text.c_str());
+	GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, 300, text.c_str());
 }
