@@ -100,14 +100,22 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
+		std::vector<std::pair<ItemType, std::string>> vMenuItems = 
+		{
+			{ ItemType::Usable,           "\u270C" },
+			{ ItemType::CraftingMaterial, "\u2692" },
+			{ ItemType::Equipment,        "\u26B0" },
+			{ ItemType::Module,           "\u2693" },
+			{ ItemType::Potion,           "\u26B1" },
+			{ ItemType::Other,            "\u26C3" }
+		};
+
 		// inventory tabs
 		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Usable, "\u270C Used ({})", GetCountItemsType(pPlayer, ItemType::Usable));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::CraftingMaterial, "\u2692 Craft ({})", GetCountItemsType(pPlayer, ItemType::CraftingMaterial));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Equipment, "\u26B0 Equipment ({})", GetCountItemsType(pPlayer, ItemType::Equipment));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Module, "\u2693 Modules ({})", GetCountItemsType(pPlayer, ItemType::Module));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Potion, "\u26B1 Potion ({})", GetCountItemsType(pPlayer, ItemType::Potion));
-		VInventoryTabs.AddMenu(MENU_INVENTORY, (int)ItemType::Other, "\u26C3 Other ({})", GetCountItemsType(pPlayer, ItemType::Other));
+		for(const auto& [Type, Icon] : vMenuItems)
+		{
+			VInventoryTabs.AddMenu(MENU_INVENTORY, (int)Type, "{} {} ({})", Icon, GetTypeItemName(Type), GetCountItemsType(pPlayer, Type));
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort inventory
@@ -116,7 +124,9 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		if(itemTypeSelected.has_value())
 		{
 			if(!ListInventory(ClientID, (ItemType)itemTypeSelected.value()))
+			{
 				VInfo.Add("The selected list is empty");
+			}
 		}
 		else
 		{
