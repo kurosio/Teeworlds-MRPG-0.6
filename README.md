@@ -5,7 +5,7 @@ Wiki about maintaining mod: https://github.com/kurosio/Teeworlds-MRPG-0.6/wiki
 
 `readme will be changed over time`
 
-# The development is closed indefinitely
+# Not frozen but extremely rare development due to a lot of things to do besides MRPG
 
 A retro multiplayer shooter
 --------------------------- 
