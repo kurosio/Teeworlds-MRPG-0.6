@@ -52,7 +52,7 @@ void CEntityDropBonuses::Tick()
 				GS()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
 			}
 			// grenade
-			else if (m_Subtype == WEAPON_GRENADE && pChar->GetPlayer()->IsEquipped(EquipShotgun))
+			else if (m_Subtype == WEAPON_GRENADE && pChar->GetPlayer()->IsEquipped(EquipGrenade))
 			{
 				pChar->GiveWeapon(m_Subtype, m_Value);
 				GS()->CreateSound(m_Pos, SOUND_PICKUP_GRENADE);

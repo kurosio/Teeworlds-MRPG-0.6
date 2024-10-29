@@ -62,7 +62,7 @@ void CBotManager::OnPreInit()
 		BotInfo.m_aEquipSlot[EquipHammer] = pRes->getInt("SlotHammer");
 		BotInfo.m_aEquipSlot[EquipGun] = pRes->getInt("SlotGun");
 		BotInfo.m_aEquipSlot[EquipShotgun] = pRes->getInt("SlotShotgun");
-		BotInfo.m_aEquipSlot[EquipShotgun] = pRes->getInt("SlotGrenade");
+		BotInfo.m_aEquipSlot[EquipGrenade] = pRes->getInt("SlotGrenade");
 		BotInfo.m_aEquipSlot[EquipLaser] = pRes->getInt("SlotRifle");
 		BotInfo.m_aEquipSlot[EquipArmor] = pRes->getInt("SlotArmor");
 		BotInfo.m_aEquipSlot[EquipPickaxe] = 0;

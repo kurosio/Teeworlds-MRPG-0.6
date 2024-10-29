@@ -439,7 +439,7 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipShotgun);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipGrenade);
 	if(!EquippedItem.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a grenade equipped.");

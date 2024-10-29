@@ -125,7 +125,7 @@ bool IGameController::OnCharacterBotSpawn(CCharacterBotAI* pChr)
 		pChr->GiveWeapon(WEAPON_GUN, 10);
 	if(pPlayerBot->IsEquipped(EquipShotgun))
 		pChr->GiveWeapon(WEAPON_SHOTGUN, 10);
-	if(pPlayerBot->IsEquipped(EquipShotgun))
+	if(pPlayerBot->IsEquipped(EquipGrenade))
 		pChr->GiveWeapon(WEAPON_GRENADE, 10);
 	if(pPlayerBot->IsEquipped(EquipLaser))
 		pChr->GiveWeapon(WEAPON_LASER, 10);
