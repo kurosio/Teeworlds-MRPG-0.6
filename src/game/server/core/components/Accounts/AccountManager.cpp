@@ -335,7 +335,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// professions
-		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Active profession");
+		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Upgrade professions");
 		for(auto& Prof : pPlayer->Account()->GetProfessions())
 		{
 			if((pClassProf && pClassProf->GetProfessionID() == Prof.GetProfessionID()) || Prof.IsProfessionType(PROFESSION_TYPE_OTHER))

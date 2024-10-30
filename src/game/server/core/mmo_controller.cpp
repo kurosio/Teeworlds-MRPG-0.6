@@ -137,11 +137,12 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	// main menu
 	if(Menulist == MENU_MAIN)
 	{
+		const auto pProfName = GetProfessionName(pPlayer->Account()->GetClass().GetProfessionID());
 		const auto expForLevel = computeExperience(pPlayer->Account()->GetLevel());
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// Statistics menu
-		VoteWrapper VStatistics(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Statistics");
+		VoteWrapper VStatistics(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Class profession: {}", pProfName);
 		VStatistics.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
 		VStatistics.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
 		VStatistics.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());

@@ -46,19 +46,19 @@ void CSkillManager::OnClientReset(int ClientID)
 
 bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
-	// Main menu skill list
+	// menu skill list
 	if(Menulist == MENU_SKILL_LIST)
 	{
 		const int ClientID = pPlayer->GetCID();
 
 		// Information
-		VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT, "Skill master information");
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT, "Skill master information");
 		VInfo.AddLine();
 		VInfo.Add("Here you can learn passive and active skills");
 		VInfo.Add("You can bind active skill any button using the console");
 		VInfo.AddLine();
 		VInfo.AddItemValue(itSkillPoint);
-		VInfo.AddLine();
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// Skill list by class type
 		const auto ProfID = pPlayer->Account()->GetClass().GetProfessionID();
@@ -67,6 +67,7 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		if(pPlayer->Account()->GetClass().HasProfession())
 		{
 			ShowSkillList(pPlayer, Title.c_str(), ProfID);
+			VoteWrapper::AddEmptyline(ClientID);
 		}
 		ShowSkillList(pPlayer, "Improving skill's", ProfessionIdentifier::None);
 		return true;
@@ -94,11 +95,8 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, Professi
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// add empty line
-	VoteWrapper::AddEmptyline(ClientID);
-
 	// iterate skill's for list
-	VoteWrapper VSkills(ClientID, VWF_SEPARATE_OPEN, pTitle);
+	VoteWrapper VSkills(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, pTitle);
 	for(const auto& [ID, Skill] : CSkillDescription::Data())
 	{
 		if(Skill.m_ProfessionID != ProfID)
@@ -107,9 +105,6 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, Professi
 		const auto* pSkill = pPlayer->GetSkill(ID);
 		VSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", Skill.GetName(), Skill.GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
 	}
-
-	// add line
-	VoteWrapper::AddLine(ClientID);
 }
 
 void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID) const
