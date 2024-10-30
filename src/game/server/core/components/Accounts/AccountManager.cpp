@@ -223,7 +223,7 @@ bool CAccountManager::ChangeNickname(const std::string& newNickname, int ClientI
 
 int CAccountManager::GetRank(int AccountID)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Rank FROM (SELECT ID, RANK() OVER (ORDER BY Level DESC, Exp DESC) AS Rank", "tw_accounts_data", ") AS RankedData WHERE ID = {}", AccountID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Rank FROM (SELECT ID, RANK() OVER (ORDER BY Bank DESC) AS Rank", "tw_accounts_data", ") AS RankedData WHERE ID = {}", AccountID);
 	return pRes->next() ? pRes->getInt("Rank") : -1;
 }
 
@@ -258,36 +258,51 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VInfo.Add("In group: {}", pAccount->HasGroup() ? "yes" : "no");
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// Leveling information
-		VoteWrapper VLeveling(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling Infromation");
-
-		auto addLevelingInfo = [&](int level, uint64_t experience, const std::string& name)
+		auto addLevelingInfo = [&](VoteWrapper& Wrapper, const CProfession* pProfession, const std::string& name)
 		{
-			const auto expNeed = computeExperience(level);
-			const auto progress = translate_to_percent(expNeed, experience);
+			const auto expNeed = pProfession->GetExpForNextLevel();
+			const auto progress = translate_to_percent(expNeed, pProfession->GetExperience());
 			const auto progressBar = mystd::string::progressBar(100, progress, 10, "\u25B0", "\u25B1");
 
-			VLeveling.MarkList().Add(name.c_str());
-			VLeveling.Add("[Lvl {}] Exp {$}/{$}", level, experience, expNeed);
-			VLeveling.Add("{} - {~.2}%", progressBar, progress);
-			VLeveling.AddLine();
+			Wrapper.MarkList().Add(name.c_str());
+			Wrapper.Add("[Lvl {}] Exp {$}/{$}", pProfession->GetLevel(), pProfession->GetExperience(), expNeed);
+			Wrapper.Add("{} - {~.2}%", progressBar, progress);
+			Wrapper.AddLine();
 		};
 
-		addLevelingInfo(pAccount->GetLevel(), pAccount->GetExperience(), pPlayer->GetClassData().GetName());
-		addLevelingInfo(pAccount->m_MiningData.getRef<int>(JOB_LEVEL), pAccount->m_MiningData.getRef<uint64_t>(JOB_EXPERIENCE), "Miner's job");
-		addLevelingInfo(pAccount->m_FarmingData.getRef<int>(JOB_LEVEL), pAccount->m_FarmingData.getRef<uint64_t>(JOB_EXPERIENCE), "Farmer's work");
+		// Leveling information (war)
+		VoteWrapper VLevelingWar(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling Information (War professions)");
+		for(auto& Profession : pPlayer->Account()->GetProfessions())
+		{
+			if(Profession.GetProfessionType() == PROFESSION_TYPE_WAR)
+			{
+				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfession()));
+				const auto Title = "Profession " + pProfessionName;
+				addLevelingInfo(VLevelingWar , &Profession, Title);
+			}
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// Leveling information (work)
+		VoteWrapper VLevelingWork(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling Infromation (Work professions)");
+		for(auto& Profession : pPlayer->Account()->GetProfessions())
+		{
+			if(Profession.GetProfessionType() == PROFESSION_TYPE_OTHER)
+			{
+				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfession()));
+				const auto Title = "Profession " + pProfessionName;
+				addLevelingInfo(VLevelingWork, &Profession, Title);
+			}
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Currency information
 		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
 		VCurrency.Add("Bank: {}", pAccount->GetBank());
-
 		for(int itemID : {itGold, itAchievementPoint, itSkillPoint, itAlliedSeals, itMaterial, itProduct})
 		{
 			VCurrency.Add("{}: {}", pPlayer->GetItem(itemID)->Info()->GetName(), pPlayer->GetItem(itemID)->GetValue());
 		}
-
-		VCurrency.Add("Upgrade point: {}", pAccount->m_UpgradePoint);
 
 		// Add backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -439,11 +454,28 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// upgrade command
 	if(PPSTR(pCmd, "UPGRADE") == 0)
 	{
-		if(pPlayer->Upgrade(ReasonNumber, &pPlayer->Account()->m_aStats[(AttributeIdentifier)Extra1], &pPlayer->Account()->m_UpgradePoint, Extra2, 1000))
+		const auto ProfessionID = (Professions)Extra1;
+		const auto AttributeID = (AttributeIdentifier)Extra2;
+
+		// check valid profession
+		auto* pProfession = pPlayer->Account()->GetProfession(ProfessionID);
+		if(!pProfession)
+			return false;
+
+		// check valid attribute
+		const auto* pAttributeInfo = GS()->GetAttributeInfo(AttributeID);
+		if(!pAttributeInfo)
+			return false;
+
+		// upgrade
+		if(pProfession->Upgrade(AttributeID, ReasonNumber, 1))
 		{
-			GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
-			pPlayer->m_VotesData.UpdateVotes(MENU_UPGRADES);
+			const auto nowValue = pProfession->GetAttributeValue(AttributeID);
+			const auto pProfessionName = GetProfessionName(ProfessionID);
+			GS()->Chat(ClientID, "[{}] Attribute '{}' enhanced to {}p!", pProfessionName, pAttributeInfo->GetName(), nowValue);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
+
 		return true;
 	}
 
@@ -618,14 +650,11 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 
 		const int Exp = JsonData.value("exp", 0);
 		const int Money = JsonData.value("money", 0);
-		const int Upgrade = JsonData.value("upgrade", 0);
 
 		if(Exp > 0)
 			pPlayer->Account()->AddExperience(Exp);
 		if(Money > 0)
 			pPlayer->Account()->AddGold(Money);
-		if(Upgrade > 0)
-			pPlayer->Account()->m_UpgradePoint += Upgrade;
 
 		if(JsonData.find("items") != JsonData.end() && JsonData["items"].is_array())
 		{

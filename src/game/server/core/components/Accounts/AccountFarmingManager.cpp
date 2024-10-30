@@ -27,24 +27,6 @@ void CAccountFarmingManager::OnInitWorld(const char* pWhereLocalWorld)
 	}
 }
 
-void CAccountFarmingManager::OnPlayerLogin(CPlayer *pPlayer)
-{
-	// try load from database
-	auto& refFarmingDbField = pPlayer->Account()->m_FarmingData;
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_farming", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
-	if(pRes->next())
-	{
-		refFarmingDbField.initFields(&pRes);
-		return;
-	}
-
-	// set default values
-	refFarmingDbField.getRef<int>(JOB_LEVEL) = 1;
-	refFarmingDbField.getRef<uint64_t>(JOB_EXPERIENCE) = 0;
-	refFarmingDbField.getRef<int>(JOB_UPGRADES) = 0;
-	Database->Execute<DB::INSERT>("tw_accounts_farming", "(UserID) VALUES ('{}')", pPlayer->Account()->GetID());
-}
-
 CItemDescription* CAccountFarmingManager::GetFarmingItemInfoByPos(vec2 Pos) const
 {
 	// search farming item by position
@@ -86,60 +68,4 @@ bool CAccountFarmingManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldI
 	}
 
 	return Found;
-}
-
-void CAccountFarmingManager::Procces(CPlayer* pPlayer, int Level) const
-{
-	// initialize variables
-	const int ClientID = pPlayer->GetCID();
-	const int MultiplierExperience = maximum(1, (int)computeExperience(Level) / g_Config.m_SvFarmingLevelIncrease);
-
-	int& refLevel = pPlayer->Account()->m_FarmingData.getRef<int>(JOB_LEVEL);
-	auto& refExperience = pPlayer->Account()->m_FarmingData.getRef<uint64_t>(JOB_EXPERIENCE);
-	int& refUpgrade = pPlayer->Account()->m_FarmingData.getRef<int>(JOB_UPGRADES);
-
-	// append experience
-	refExperience += MultiplierExperience;
-
-	// check level up
-	auto ExperienceNeed = computeExperience(refLevel);
-	while(refExperience >= ExperienceNeed)
-	{
-		// implement level up
-		refExperience -= ExperienceNeed;
-		refLevel++;
-		refUpgrade++;
-		ExperienceNeed = computeExperience(refLevel);
-
-		// visual effects and messages
-		if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())
-		{
-			GS()->CreateSound(pPlayer->GetCharacter()->m_Core.m_Pos, 4);
-			GS()->CreateDeath(pPlayer->GetCharacter()->m_Core.m_Pos, ClientID);
-			GS()->EntityManager()->Text(pPlayer->GetCharacter()->m_Core.m_Pos + vec2(0, -40), 40, "farming up");
-		}
-		GS()->Chat(ClientID, "Farming Level UP. Now Level {}!", refLevel);
-	}
-
-	// progress bar
-	pPlayer->ProgressBar("Farming", refLevel, refExperience, ExperienceNeed, MultiplierExperience);
-	Core()->SaveAccount(pPlayer, SAVE_FARMING_DATA);
-}
-
-bool CAccountFarmingManager::OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char *pReason)
-{
-	if(PPSTR(pCmd, "FARMING_UPGRADE") == 0)
-	{
-		auto* pUpgrades = &pPlayer->Account()->m_FarmingData.getRef<int>(JOB_UPGRADES);
-		auto* pSelectedUpgr = &pPlayer->Account()->m_FarmingData.getRef<int>(Extra1);
-
-		if(pPlayer->Upgrade(ReasonNumber, pSelectedUpgr, pUpgrades, Extra2, 3))
-		{
-			GS()->Core()->SaveAccount(pPlayer, SAVE_FARMING_DATA);
-			pPlayer->m_VotesData.UpdateVotesIf(MENU_UPGRADES);
-		}
-		return true;
-	}
-
-	return false;
 }

@@ -22,16 +22,12 @@ class CAccountMiningManager : public MmoComponent
 	};
 	static std::map < int, MiningPoint > ms_vmMiningPoints;
 
-	void OnPlayerLogin(CPlayer* pPlayer) override;
 	void OnInitWorld(const char* pWhereLocalWorld) override;
-	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 public:
 	CItemDescription* GetMiningItemInfoByPos(vec2 Pos) const;
 
 	//void ShowMenu(CPlayer *pPlayer) const;
-	void Process(CPlayer *pPlayer, int Exp) const;
-
 	bool InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const;
 };
 

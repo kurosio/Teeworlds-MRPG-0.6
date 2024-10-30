@@ -28,6 +28,18 @@ int CAccountData::GetGoldCapacity() const
 	return DEFAULT_MAX_PLAYER_BAG_GOLD + GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);
 }
 
+void CAccountData::ApplyClass(ClassGroup Class)
+{
+	m_Class = Class;
+	switch(m_Class)
+	{
+		case ClassGroup::Tank: m_pClassProfession = GetProfession(Professions::Tank); break;
+		case ClassGroup::Dps: m_pClassProfession = GetProfession(Professions::Dps); break;
+		case ClassGroup::Healer: m_pClassProfession = GetProfession(Professions::Healer); break;
+		default: m_pClassProfession = nullptr;
+	}
+}
+
 // Set the ID of the account
 void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
 {
@@ -42,33 +54,20 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 
 	// base data
 	m_ID = ID;
-	m_Level = pResult->getInt("Level");
-	m_Exp = pResult->getUInt64("Exp");
-	m_UpgradePoint = pResult->getInt("Upgrade");
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 	m_Class = (ClassGroup)pResult->getInt("Class");
 	m_Bank = pResult->getString("Bank");
-
-	// achievements data
-	InitAchievements(pResult->getString("Achievements"));
 
 	// time periods
 	m_Periods.m_DailyStamp = pResult->getInt64("DailyStamp");
 	m_Periods.m_WeekStamp = pResult->getInt64("WeekStamp");
 	m_Periods.m_MonthStamp = pResult->getInt64("MonthStamp");
 
-	// upgrades data
-	for(const auto& [AttrbiteID, pAttribute] : CAttributeDescription::Data())
-	{
-		if(pAttribute->HasDatabaseField())
-		{
-			m_aStats[AttrbiteID] = pResult->getInt(pAttribute->GetFieldName());
-		}
-	}
-
+	// initialize data
+	InitProfessions();
+	InitAchievements(pResult->getString("Achievements"));
 	pServer->SetClientLanguage(m_ClientID, Language.c_str());
-	pServer->SetClientScore(m_ClientID, m_Level);
 
 	// Execute a database update query to update the "tw_accounts" table
 	// Set the LoginDate to the current timestamp and LoginIP to the client address
@@ -85,6 +84,35 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	ReinitializeGuild();
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
+}
+
+void CAccountData::InitProfessions()
+{
+	// initialize base professions
+	m_vProfessions.push_back(CTankProfession());
+	m_vProfessions.push_back(CDPSProfession());
+	m_vProfessions.push_back(CHealerProfession());
+	m_vProfessions.push_back(CFarmerProfession());
+	m_vProfessions.push_back(CMinerProfession());
+
+	// load professions data
+	std::map<Professions, std::string> vmProfessionsData {};
+	const auto pResult = Database->Execute<DB::SELECT>("*", "tw_accounts_professions", "WHERE UserID = '{}'", m_ID);
+	while(pResult->next())
+	{
+		const auto ProfessionID = (Professions)pResult->getInt("ProfessionID");
+		vmProfessionsData[ProfessionID] = pResult->getString("Data");
+	}
+
+	for(auto& Profession : m_vProfessions)
+	{
+		const auto& ProfessionID = Profession.GetProfession();
+		const auto it = vmProfessionsData.find(ProfessionID);
+		const auto optData = it != vmProfessionsData.end() ? std::make_optional<std::string>(it->second) : std::nullopt;
+		Profession.Init(m_ClientID, optData);
+	}
+
+	ApplyClass(m_Class);
 }
 
 void CAccountData::InitAchievements(const std::string& Data)
@@ -211,23 +239,25 @@ BigInt CAccountData::GetTotalGold() const
 	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
-void CAccountData::AddExperience(uint64_t Value)
+void CAccountData::AddExperience(uint64_t Value) const
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
-	// increase exp value
-	m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
-	m_Exp += Value;
-
-	// check level up
-	while(m_Exp >= computeExperience(m_Level))
+	// check valid active profession
+	if(!m_pClassProfession)
 	{
-		m_Exp -= computeExperience(m_Level);
-		m_Level++;
-		m_UpgradePoint += 1;
+		GS()->Chat(m_ClientID, "You don't have an active profession to gain experience!");
+		return;
+	}
 
+	// increase exp value
+	const auto OldLevel = m_pClassProfession->GetLevel();
+	m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
+	m_pClassProfession->AddExperience(Value);
+	if(m_pClassProfession->GetLevel() > OldLevel)
+	{
 		// increase skill points
 		if(g_Config.m_SvSkillPointsPerLevel > 0)
 		{
@@ -236,35 +266,8 @@ void CAccountData::AddExperience(uint64_t Value)
 			GS()->Chat(m_ClientID, "You have earned {} Skill Points! You now have {} SP!", g_Config.m_SvSkillPointsPerLevel, pSkillPoint->GetValue());
 		}
 
-		// effects & information
-		if(const auto* pChar = pPlayer->GetCharacter())
-		{
-			GS()->CreateDeath(pChar->m_Core.m_Pos, m_ClientID);
-			GS()->CreateSound(pChar->m_Core.m_Pos, 4);
-			GS()->EntityManager()->Text(pChar->GetPos() + vec2(0, -40), 30, "level up");
-		}
-
-		GS()->Chat(m_ClientID, "Congratulations. You attain level {}!", m_Level);
 		GS()->Core()->WorldManager()->NotifyUnlockedZonesByLeveling(pPlayer);
-
-		// post leveling
-		if(m_Exp < computeExperience(m_Level))
-		{
-			// Update votes, save stats, and save upgrades
-			pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
-			GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-			GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
-			pPlayer->UpdateAchievement(AchievementType::Leveling, NOPE, m_Level, PROGRESS_ABSOLUTE);
-		}
-	}
-
-	// update the progress bar
-	pPlayer->ProgressBar("Account", m_Level, m_Exp, computeExperience(m_Level), Value);
-
-	// randomly save the account stats
-	if(rand() % 5 == 0)
-	{
-		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
+		//pPlayer->UpdateAchievement(AchievementType::Leveling, NOPE, m_Level, PROGRESS_ABSOLUTE); TODO fix for all classes
 	}
 
 	// add experience to the guild member
@@ -451,12 +454,20 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 	if(pServer->Tick() % pServer->TickSpeed() != 0)
 		return;
 
+	// check active profession
+	if(!m_pClassProfession)
+	{
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "You don't have an active profession to gain experience!");
+		return;
+	}
+
 	// initialize variables
+	const int Level = m_pClassProfession->GetLevel();
 	const int maxGoldCapacity = GetGoldCapacity();
 	const bool isGoldBagFull = (GetGold() >= maxGoldCapacity);
 
-	const auto expGain = std::max<uint64_t>(Exp, calculate_exp_gain(g_Config.m_SvChairExpFactor, m_Level, Exp + m_Level));
-	const int goldGain = isGoldBagFull ? 0 : maximum(Gold, (int)calculate_gold_gain(g_Config.m_SvChairGoldFactor, m_Level, Gold + m_Level));
+	const auto expGain = std::max<uint64_t>(Exp, calculate_exp_gain(g_Config.m_SvChairExpFactor, Level, Exp + Level));
+	const int goldGain = isGoldBagFull ? 0 : maximum(Gold, (int)calculate_gold_gain(g_Config.m_SvChairGoldFactor, Level, Gold + Level));
 
 	// total percent bonuses
 	const int totalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD));
@@ -485,7 +496,8 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 
 	// send broadcast
 	GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 250, "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
-		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), m_Exp, computeExperience(m_Level), expStr.c_str());
+		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), m_pClassProfession->GetExperience(), 
+		m_pClassProfession->GetExpForNextLevel(), expStr.c_str());
 }
 
 void CAccountData::UpdateAchievementProgress(int AchievementID, int Progress, bool Completed)

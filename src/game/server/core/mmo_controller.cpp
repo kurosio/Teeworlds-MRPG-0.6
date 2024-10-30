@@ -26,41 +26,6 @@
 #include "components/worlds/world_manager.h"
 #include <teeother/components/localization.h>
 
-inline static void InsertUpgradesVotes(CPlayer* pPlayer, AttributeGroup Type, VoteWrapper* pWrapper)
-{
-	pWrapper->MarkList().Add("Total statistics:");
-	{
-		pWrapper->BeginDepth();
-		for(auto& [ID, pAttribute] : CAttributeDescription::Data())
-		{
-			if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
-			{
-				char aBuf[64] {};
-				const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
-
-				if(const float Percent = pPlayer->GetAttributeChance(ID))
-				{
-					str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
-				}
-				pWrapper->Add("{} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
-			}
-		}
-		pWrapper->EndDepth();
-	}
-	pWrapper->AddLine();
-	pWrapper->MarkList().Add("Upgrading:");
-	{
-		pWrapper->BeginDepth();
-		for(auto& [ID, pAttribute] : CAttributeDescription::Data())
-		{
-			if(pAttribute->IsGroup(Type) && pAttribute->HasDatabaseField())
-				pWrapper->AddOption("UPGRADE", (int)ID, pAttribute->GetUpgradePrice(), "{} - {} (cost {} point)",
-					pAttribute->GetName(), pPlayer->Account()->m_aStats[ID], pAttribute->GetUpgradePrice());
-		}
-		pWrapper->EndDepth();
-	}
-}
-
 CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
@@ -187,7 +152,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
 		VPersonal.AddMenu(MENU_EIDOLON, "\u2727 Eidolons");
-		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades ({}p)", pPlayer->Account()->m_UpgradePoint);
+		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades ({}p)", pPlayer->Account()->GetTotalProfessionsUpgradePoints());
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Group & Social
@@ -241,34 +206,64 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VUpgrInfo.Add("You can upgrade your character's statistics.");
 		VUpgrInfo.Add("Each update costs differently point.");
 		VUpgrInfo.Add("You can get points by leveling up.");
-		VUpgrInfo.Add("Upgrade Point's: {}P", pPlayer->Account()->m_UpgradePoint);
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// upgrade group's
-		VoteWrapper VUpgrSelect(ClientID, VWF_OPEN, "Select a type of upgrades");
-		if(pPlayer->GetClassData().IsGroup(ClassGroup::Dps))
+		// war professions
+		VoteWrapper VWarSelect(ClientID, VWF_OPEN, "\u2694 War professions");
+		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
-			VUpgrSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Dps, paGroupNames[(int)AttributeGroup::Dps]);
-		}
-		else if(pPlayer->GetClassData().IsGroup(ClassGroup::Tank))
-		{
-			VUpgrSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Tank, paGroupNames[(int)AttributeGroup::Tank]);
-		}
-		else if(pPlayer->GetClassData().IsGroup(ClassGroup::Healer))
-		{
-			VUpgrSelect.AddMenu(MENU_UPGRADES, (int)AttributeGroup::Healer, paGroupNames[(int)AttributeGroup::Healer]);
+			if(!Profession.GetAttributes().empty() && Profession.GetProfessionType() == PROFESSION_TYPE_WAR)
+			{
+				const auto ProfessionID = Profession.GetProfession();
+				VWarSelect.AddMenu(MENU_UPGRADES, (int)ProfessionID, "{} (UP {})", GetProfessionName(ProfessionID), Profession.GetUpgradePoint());
+			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// Upgrades by group
-		if(const auto UpgradeGroup = pPlayer->m_VotesData.GetExtraID())
+		// other professions
+		VoteWrapper VOtherSelect(ClientID, VWF_OPEN, "\u2699 Other professions");
+		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
-			auto Group = (AttributeGroup)clamp(UpgradeGroup.value(), (int)AttributeGroup::Tank, (int)AttributeGroup::Dps);
-			const char* pGroupName = paGroupNames[(int)Group];
+			if(!Profession.GetAttributes().empty() && Profession.GetProfessionType() == PROFESSION_TYPE_OTHER)
+			{
+				const auto ProfessionID = Profession.GetProfession();
+				VOtherSelect.AddMenu(MENU_UPGRADES, (int)ProfessionID, "{} (UP {})", GetProfessionName(ProfessionID), Profession.GetUpgradePoint());
+			}
+		}
+		VoteWrapper::AddEmptyline(ClientID);
 
-			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} : Strength {}", pGroupName, pPlayer->GetTotalAttributesInGroup(Group));
-			InsertUpgradesVotes(pPlayer, Group, &VUpgrGroup);
+		// list upgrades by profession
+		if(const auto ProfessionID = pPlayer->m_VotesData.GetExtraID())
+		{
+			const auto* pProfession = pPlayer->Account()->GetProfession((Professions)ProfessionID.value());
+			if(!pProfession)
+				return false;
+
+			const char* pProfessionName = GetProfessionName(pProfession->GetProfession());
+			VoteWrapper VUpgrGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{}", pProfessionName);
+			{
+				for(const auto& ID : pProfession->GetAttributes() | std::views::keys)
+				{
+					const auto* pAttribute = GS()->GetAttributeInfo(ID);
+					const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
+					const float Percent = pPlayer->GetAttributeChance(ID);
+
+					char aBuf[64] {};
+					if(Percent)
+					{
+						str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
+					}
+					VUpgrGroup.Add("Total {} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
+				}
+			}
 			VUpgrGroup.AddLine();
+			{
+				for(auto& [ID, Value] : pProfession->GetAttributes())
+				{
+					const auto* pAttribute = GS()->GetAttributeInfo(ID);
+					VUpgrGroup.AddOption("UPGRADE", ProfessionID.value(), (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
+				}
+			}
 		}
 
 		// Add back page
@@ -550,39 +545,11 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 
 	if(Table == SAVE_STATS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Level = '{}', Exp = '{}', Bank = '{}' WHERE ID = '{}'", 
-			pAcc->GetLevel(), pAcc->GetExperience(), pAcc->GetBank().to_string().c_str(), pAcc->GetID());
-	}
-	else if(Table == SAVE_UPGRADES)
-	{
-		dynamic_string Buffer;
-		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
-		{
-			if(pAttribute->HasDatabaseField())
-			{
-				char aBuf[64];
-				str_format(aBuf, sizeof(aBuf), ", %s = '%d' ", pAttribute->GetFieldName(), pAcc->m_aStats[ID]);
-				Buffer.append_at(Buffer.length(), aBuf);
-			}
-		}
-
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Upgrade = '{}' {} WHERE ID = '{}'", pAcc->m_UpgradePoint, Buffer.buffer(), pAcc->GetID());
-		Buffer.clear();
-	}
-	else if(Table == SAVE_FARMING_DATA)
-	{
-		Database->Execute<DB::UPDATE>("tw_accounts_farming", "{} WHERE UserID = '{}'", 
-			pAcc->m_FarmingData.getUpdateField(), pAcc->GetID());
-	}
-	else if(Table == SAVE_MINING_DATA)
-	{
-		Database->Execute<DB::UPDATE>("tw_accounts_mining", "{} WHERE UserID = '{}'", 
-			pAcc->m_MiningData.getUpdateField(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Bank = '{}' WHERE ID = '{}'", pAcc->GetBank().to_string().c_str(), pAcc->GetID());
 	}
 	else if(Table == SAVE_SOCIAL_STATUS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '{}' WHERE ID = '{}'",
-			pAcc->GetCrimeScore(), pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '{}' WHERE ID = '{}'", pAcc->GetCrimeScore(), pAcc->GetID());
 	}
 	else if(Table == SAVE_GUILD_DATA)
 	{
@@ -686,7 +653,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 				GS()->Chat(ClientID, "{}. {} :: Gold {$}", Rank, Guildname, Gold);
 			}
 		}
-	}
+	}/*
 	else if(Type == ToplistType::PlayerLeveling)
 	{
 		if(pWrapper)
@@ -711,7 +678,7 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, Nickname, Level, Experience);
 			}
 		}
-	}
+	}*/
 	else if(Type == ToplistType::PlayerWealthy)
 	{
 		if(pWrapper)

@@ -159,6 +159,30 @@ enum class LaserOrbiteType : unsigned char
 	InsideOrbiteRandom,
 };
 
+// professions
+enum class Professions : int
+{
+	Dps,
+	Healer,
+	Tank,
+	Miner,
+	Farmer,
+	NUM_PROFESSIONS,
+};
+
+constexpr const char* GetProfessionName(Professions profession) noexcept
+{
+	switch(profession)
+	{
+		case Professions::Dps:    return "Dps";
+		case Professions::Healer: return "Healer";
+		case Professions::Tank:   return "Tank";
+		case Professions::Miner:  return "Miner";
+		case Professions::Farmer: return "Farmer";
+		default:                  return "Unknown";
+	}
+}
+
 // mood type
 enum class Mood : short
 {

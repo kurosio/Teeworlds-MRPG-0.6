@@ -244,7 +244,7 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 	// ticket reset for class stats
-	if(m_ID == itTicketResetClassStats && Remove(Value))
+	/*if(m_ID == itTicketResetClassStats && Remove(Value))
 	{
 		int BackUpgrades = 0;
 		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
@@ -290,7 +290,7 @@ bool CPlayerItem::Use(int Value)
 		pPlayer->Account()->m_UpgradePoint += BackUpgrades;
 		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 		return true;
-	}
+	} TODO FIX Reset stats*/
 
 	// potion health regen
 	if(const auto optPotionContext = Info()->GetPotionContext())

@@ -88,20 +88,28 @@ void CEntityHarvestingItem::Process(int ClientID)
 	auto* pPlayerItem = pPlayer->GetItem(GetItemInfo()->GetID());
 	if(m_Type == HARVESTINGITEM_TYPE_MINING)
 	{
-		const int Level = pPlayer->Account()->m_MiningData.getRef<int>(JOB_LEVEL);
-		if(TakeDamage(AttributeIdentifier::Efficiency, pPlayer, pPlayerItem, EquipPickaxe, Level))
+		auto* pMinerProfession = pPlayer->Account()->GetProfession(Professions::Miner);
+		if(!pMinerProfession)
+			return;
+
+		if(TakeDamage(AttributeIdentifier::Efficiency, pPlayer, pPlayerItem, EquipPickaxe, pMinerProfession->GetLevel()))
 		{
-			GS()->Core()->AccountMiningManager()->Process(pPlayer, optHarvestingContext->Level);
+			const auto Value = 1 + rand() % 2;
+			pMinerProfession->AddExperience(Value);
 			pPlayerItem->Add(1 + rand() % 2);
 			SetSpawn(20);
 		}
 	}
 	else if(m_Type == HARVESTINGITEM_TYPE_FARMING)
 	{
-		const int Level = pPlayer->Account()->m_FarmingData.getRef<int>(JOB_LEVEL);
-		if(TakeDamage(AttributeIdentifier::Extraction, pPlayer, pPlayerItem, EquipRake, Level))
+		auto* pFarmerProfession = pPlayer->Account()->GetProfession(Professions::Farmer);
+		if(!pFarmerProfession)
+			return;
+
+		if(TakeDamage(AttributeIdentifier::Extraction, pPlayer, pPlayerItem, EquipRake, pFarmerProfession->GetLevel()))
 		{
-			GS()->Core()->AccountFarmingManager()->Procces(pPlayer, optHarvestingContext->Level);
+			const auto Value = 1 + rand() % 2;
+			pFarmerProfession->AddExperience(Value);
 			pPlayerItem->Add(1 + rand() % 2);
 			SetSpawn(20);
 		}

@@ -37,7 +37,8 @@ public:
 
 		std::vector< MmoComponent* > m_vComponents;
 	};
-	virtual ~MmoComponent();
+
+	virtual ~MmoComponent() = default;
 
 protected:
 	friend CMmoController;

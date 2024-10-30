@@ -6,6 +6,7 @@
 // TODO: fully rework structures
 #include "bonus_manager.h"
 #include "prison_manager.h"
+#include "profession.h"
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
 
@@ -19,6 +20,7 @@ class CGuildMemberData;
 class CAccountData
 {
 	ska::unordered_set< int > m_aAetherLocation {};
+	std::vector<CProfession> m_vProfessions {};
 
 	int m_ID {};
 	int m_ClientID {};
@@ -26,9 +28,8 @@ class CAccountData
 	char m_aLastLogin[64] {};
 	int m_CrimeScore {};
 
-	int m_Level {};
-	uint64_t m_Exp {};
 	CHouse* m_pHouseData{};
+	CProfession* m_pClassProfession{};
 	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
 	ClassGroup m_Class {};
@@ -46,10 +47,38 @@ public:
 	CBonusManager& GetBonusManager() { return m_BonusManager; }
 	const CBonusManager& GetBonusManager() const { return m_BonusManager; }
 
+	void ApplyClass(ClassGroup Class);
+
+	bool IsActiveClassProfession(Professions Profession) const
+	{
+		return m_pClassProfession && m_pClassProfession->GetProfession() == Profession;
+	}
+
+	CProfession* GetClassProfession() const
+	{
+		return m_pClassProfession;
+	}
+
+	CProfession* GetProfession(Professions Profession)
+	{
+		const auto it = std::ranges::find_if(m_vProfessions, [Profession](const CProfession& Prof)
+		{
+			return Prof.GetProfession() == Profession;
+		});
+
+		return it != m_vProfessions.end() ? &(*it) : nullptr;
+	}
+
+	std::vector<CProfession>& GetProfessions()
+	{
+		return m_vProfessions;
+	}
+
 	/*
 	 * Group functions: initialize or uniques from function
 	 */
 	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult);
+	void InitProfessions();
 	int GetID() const { return m_ID; }
 
 	/*
@@ -79,10 +108,33 @@ public:
 	/*
 	 * Group function: getters / setters
 	 */
-	int GetLevel() const { return m_Level; } // Returns the level of the player
-	uint64_t GetExperience() const { return m_Exp; } // Returns the experience points of the player
-	const char* GetLogin() const { return m_aLogin; } // Returns the login name of the player as a const char pointer
-	const char* GetLastLoginDate() const { return m_aLastLogin; } // Returns the last login date of the player as a const char pointer
+	int GetLevel() const
+	{
+		return m_pClassProfession ? m_pClassProfession->GetLevel() : 1;
+	}
+
+	uint64_t GetExperience() const
+	{
+		return m_pClassProfession ? m_pClassProfession->GetExperience() : 0;
+	}
+
+	int GetTotalProfessionsUpgradePoints() const
+	{
+		return std::accumulate(m_vProfessions.begin(), m_vProfessions.end(), 0, [](int Total, const CProfession& Prof)
+		{
+			return Total + Prof.GetUpgradePoint();
+		});
+	}
+
+	const char* GetLogin() const
+	{
+		return m_aLogin;
+	}
+
+	const char* GetLastLoginDate() const
+	{
+		return m_aLastLogin;
+	}
 
 	void IncreaseCrimeScore(int Score);
 	bool IsCrimeScoreMaxedOut() const { return m_CrimeScore >= 100; }
@@ -94,7 +146,7 @@ public:
 	BigInt GetTotalGold() const;
 	int GetGoldCapacity() const;
 
-	void AddExperience(uint64_t Value); // Adds the specified value to the player's experience points
+	void AddExperience(uint64_t Value) const;
 	void AddGold(int Value, bool ToBank = true, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
 	bool DepositGoldToBank(int Amount);
 	bool WithdrawGoldFromBank(int Amount);
@@ -126,26 +178,7 @@ public:
 	TimePeriods m_Periods {};
 	std::list< int > m_aHistoryWorld {};
 
-	// upgrades
-	int m_UpgradePoint {};
-	std::map< AttributeIdentifier, int > m_aStats {};
-
 	CTeeInfo m_TeeInfos {};
-
-	DBFieldContainer m_MiningData
-	{
-		DBField<int>(JOB_LEVEL, "Level", "Miner level"),
-		DBField<uint64_t>(JOB_EXPERIENCE, "Exp", "Miner experience"),
-		DBField<int>(JOB_UPGRADES, "Upgrade", "Miner upgrades")
-	};
-
-	DBFieldContainer m_FarmingData
-	{
-		DBField<int>(JOB_LEVEL, "Level", "Farmer level"),
-		DBField<uint64_t>(JOB_EXPERIENCE, "Exp", "Farmer experience"),
-		DBField<int>(JOB_UPGRADES, "Upgrade", "Farmer upgrades")
-	};
-
 	static std::map < int, CAccountData > ms_aData;
 };
 

@@ -12,7 +12,7 @@ class CWorldManager : public MmoComponent
 {
 	inline static PathFinderVertex m_PathFinderBFS {};
 
-	~CWorldManager();
+	~CWorldManager() override;
 
 	void OnInitWorld(const char* pWhereLocalWorld) override;
 	void OnPostInit() override;
