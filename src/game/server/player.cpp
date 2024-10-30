@@ -431,8 +431,8 @@ void CPlayer::RefreshClanString()
 
 	// class
 	char aBufClass[64];
-	const char* pClassName = GetClassData().GetName();
-	str_format(aBufClass, sizeof(aBufClass), "_%-*s_", 8 - str_length(pClassName), pClassName);
+	const char* pProfessionName = GetProfessionName(Account()->GetClassProfession()->GetProfession());
+	str_format(aBufClass, sizeof(aBufClass), "_%-*s_", 8 - str_length(pProfessionName), pProfessionName);
 	Prepared += " | ";
 	Prepared += aBufClass;
 
@@ -467,8 +467,6 @@ void CPlayer::TryRespawn()
 	// Check if the controller allows spawning of the given spawn type at the specified position
 	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
 	{
-		m_ClassData.Init(Account()->GetClass());
-
 		vec2 TeleportPosition = GetTempData().GetTeleportPosition();
 		bool CanSelfCordSpawn = !is_negative_vec(TeleportPosition) && !GS()->Collision()->CheckPoint(TeleportPosition);
 
@@ -655,7 +653,7 @@ bool CPlayer::IsAuthed() const
 int CPlayer::GetMaxHealth() const
 {
 	int DefaultHP = 10 + GetTotalAttributeValue(AttributeIdentifier::HP);
-	DefaultHP += translate_to_percent_rest(DefaultHP, m_ClassData.GetExtraHP());
+	DefaultHP += translate_to_percent_rest(DefaultHP, Account()->GetClass().GetExtraHP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_HP, &DefaultHP);
 	return DefaultHP;
 }
@@ -663,7 +661,7 @@ int CPlayer::GetMaxHealth() const
 int CPlayer::GetMaxMana() const
 {
 	int DefaultMP = 10 + GetTotalAttributeValue(AttributeIdentifier::MP);
-	DefaultMP += translate_to_percent_rest(DefaultMP, m_ClassData.GetExtraMP());
+	DefaultMP += translate_to_percent_rest(DefaultMP, Account()->GetClass().GetExtraMP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_MP, &DefaultMP);
 	return DefaultMP;
 }
@@ -853,7 +851,7 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
 		if(pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[pDungeon->GetDungeonID()].IsDungeonPlaying())
 		{
-			return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetClass(), ID);
+			return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetClass().GetProfessionID(), ID);
 		}
 	}
 

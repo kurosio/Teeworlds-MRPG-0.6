@@ -1260,7 +1260,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::HammerDMG);
 
 		// apply extra damage by class
-		const int EnchantBonus = translate_to_percent_rest(pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG), pFrom->GetClassData().GetExtraDMG());
+		const int EnchantBonus = translate_to_percent_rest(pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG), pFrom->Account()->GetClass().GetExtraDMG());
 		Dmg += EnchantBonus;
 
 		// vampirism replenish your health
@@ -1866,7 +1866,7 @@ bool CCharacter::IsWorldAccessible() const
 		}
 
 		// check finished tutorial
-		if(!pAccount->IsClassSelected() && !GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID))
+		if(!pAccount->GetClass().HasProfession() && !GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID))
 		{
 			m_pPlayer->GetTempData().ClearTeleportPosition();
 			GS()->Chat(m_pPlayer->GetCID(), "You will need to take the training and select a class!");

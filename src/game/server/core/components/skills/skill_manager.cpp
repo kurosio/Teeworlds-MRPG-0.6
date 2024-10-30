@@ -64,12 +64,12 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		int Skilltype = SKILL_TYPE_TANK;
 		const char* pTypename = "Defensive skill's";
 
-		if(pPlayer->GetClassData().IsGroup(ClassGroup::Dps))
+		if(pPlayer->Account()->GetClass().IsProfession(Professions::Dps))
 		{
 			Skilltype = SKILL_TYPE_DPS;
 			pTypename = "Attacking skill's";
 		}
-		else if(pPlayer->GetClassData().IsGroup(ClassGroup::Healer))
+		else if(pPlayer->Account()->GetClass().IsProfession(Professions::Healer))
 		{
 			Skilltype = SKILL_TYPE_HEALER;
 			pTypename = "Healing skill's";

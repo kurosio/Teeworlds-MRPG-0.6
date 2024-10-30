@@ -9,6 +9,7 @@
 #include "profession.h"
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
+#include <game/server/class_data.h>
 
 class CGS;
 class CPlayer;
@@ -20,7 +21,7 @@ class CGuildMemberData;
 class CAccountData
 {
 	ska::unordered_set< int > m_aAetherLocation {};
-	std::vector<CProfession> m_vProfessions {};
+	mutable std::vector<CProfession> m_vProfessions {};
 
 	int m_ID {};
 	int m_ClientID {};
@@ -29,10 +30,9 @@ class CAccountData
 	int m_CrimeScore {};
 
 	CHouse* m_pHouseData{};
-	CProfession* m_pClassProfession{};
 	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
-	ClassGroup m_Class {};
+	CClassData m_Class {};
 	nlohmann::json m_AchievementsData { };
 	CBonusManager m_BonusManager{};
 	CPrisonManager m_PrisonManager{};
@@ -46,20 +46,15 @@ public:
 	const CPrisonManager& GetPrisonManager() const { return m_PrisonManager; }
 	CBonusManager& GetBonusManager() { return m_BonusManager; }
 	const CBonusManager& GetBonusManager() const { return m_BonusManager; }
-
-	void ApplyClass(ClassGroup Class);
-
-	bool IsActiveClassProfession(Professions Profession) const
-	{
-		return m_pClassProfession && m_pClassProfession->GetProfession() == Profession;
-	}
+	CClassData& GetClass() { return m_Class; }
+	const CClassData& GetClass() const { return m_Class; }
 
 	CProfession* GetClassProfession() const
 	{
-		return m_pClassProfession;
+		return GetProfession(m_Class.GetProfessionID());
 	}
 
-	CProfession* GetProfession(Professions Profession)
+	CProfession* GetProfession(Professions Profession) const
 	{
 		const auto it = std::ranges::find_if(m_vProfessions, [Profession](const CProfession& Prof)
 		{
@@ -69,7 +64,7 @@ public:
 		return it != m_vProfessions.end() ? &(*it) : nullptr;
 	}
 
-	std::vector<CProfession>& GetProfessions()
+	std::vector<CProfession>& GetProfessions() const
 	{
 		return m_vProfessions;
 	}
@@ -110,12 +105,14 @@ public:
 	 */
 	int GetLevel() const
 	{
-		return m_pClassProfession ? m_pClassProfession->GetLevel() : 1;
+		const auto* pClassProfession = GetClassProfession();
+		return pClassProfession ? pClassProfession->GetLevel() : 1;
 	}
 
 	uint64_t GetExperience() const
 	{
-		return m_pClassProfession ? m_pClassProfession->GetExperience() : 0;
+		const auto* pClassProfession = GetClassProfession();
+		return pClassProfession ? pClassProfession->GetExperience() : 0;
 	}
 
 	int GetTotalProfessionsUpgradePoints() const
@@ -146,7 +143,7 @@ public:
 	BigInt GetTotalGold() const;
 	int GetGoldCapacity() const;
 
-	void AddExperience(uint64_t Value) const;
+	void AddExperience(uint64_t Value);
 	void AddGold(int Value, bool ToBank = true, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
 	bool DepositGoldToBank(int Amount);
 	bool WithdrawGoldFromBank(int Amount);
@@ -163,9 +160,6 @@ public:
 	void AddAether(int AetherID) { m_aAetherLocation.insert(AetherID); }
 	void RemoveAether(int AetherID) { m_aAetherLocation.erase(AetherID); }
 	ska::unordered_set< int >& GetAethers() { return m_aAetherLocation; }
-
-	bool IsClassSelected() const { return m_Class != ClassGroup::None; }
-	ClassGroup GetClass() const { return m_Class; }
 
 	struct TimePeriods
 	{

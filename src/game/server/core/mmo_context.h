@@ -140,15 +140,6 @@ enum class DrawboardToolEvent : int
 	OnEnd,
 };
 
-// class groups
-enum class ClassGroup : int
-{
-	None,
-	Tank,
-	Dps,
-	Healer
-};
-
 // laser orbite types
 enum class LaserOrbiteType : unsigned char
 {
@@ -162,6 +153,7 @@ enum class LaserOrbiteType : unsigned char
 // professions
 enum class Professions : int
 {
+	None = -1,
 	Dps,
 	Healer,
 	Tank,

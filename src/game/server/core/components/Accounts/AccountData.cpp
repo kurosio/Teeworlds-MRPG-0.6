@@ -28,18 +28,6 @@ int CAccountData::GetGoldCapacity() const
 	return DEFAULT_MAX_PLAYER_BAG_GOLD + GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);
 }
 
-void CAccountData::ApplyClass(ClassGroup Class)
-{
-	m_Class = Class;
-	switch(m_Class)
-	{
-		case ClassGroup::Tank: m_pClassProfession = GetProfession(Professions::Tank); break;
-		case ClassGroup::Dps: m_pClassProfession = GetProfession(Professions::Dps); break;
-		case ClassGroup::Healer: m_pClassProfession = GetProfession(Professions::Healer); break;
-		default: m_pClassProfession = nullptr;
-	}
-}
-
 // Set the ID of the account
 void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
 {
@@ -56,7 +44,6 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	m_ID = ID;
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
-	m_Class = (ClassGroup)pResult->getInt("Class");
 	m_Bank = pResult->getString("Bank");
 
 	// time periods
@@ -68,6 +55,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	InitProfessions();
 	InitAchievements(pResult->getString("Achievements"));
 	pServer->SetClientLanguage(m_ClientID, Language.c_str());
+	m_Class.SetProfessionID((Professions)pResult->getInt("Profession"));
 
 	// Execute a database update query to update the "tw_accounts" table
 	// Set the LoginDate to the current timestamp and LoginIP to the client address
@@ -111,8 +99,6 @@ void CAccountData::InitProfessions()
 		const auto optData = it != vmProfessionsData.end() ? std::make_optional<std::string>(it->second) : std::nullopt;
 		Profession.Init(m_ClientID, optData);
 	}
-
-	ApplyClass(m_Class);
 }
 
 void CAccountData::InitAchievements(const std::string& Data)
@@ -239,24 +225,25 @@ BigInt CAccountData::GetTotalGold() const
 	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
-void CAccountData::AddExperience(uint64_t Value) const
+void CAccountData::AddExperience(uint64_t Value)
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
 	// check valid active profession
-	if(!m_pClassProfession)
+	const auto pClassProfession = GetClassProfession();
+	if(!pClassProfession)
 	{
 		GS()->Chat(m_ClientID, "You don't have an active profession to gain experience!");
 		return;
 	}
 
 	// increase exp value
-	const auto OldLevel = m_pClassProfession->GetLevel();
+	const auto OldLevel = pClassProfession->GetLevel();
 	m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
-	m_pClassProfession->AddExperience(Value);
-	if(m_pClassProfession->GetLevel() > OldLevel)
+	pClassProfession->AddExperience(Value);
+	if(pClassProfession->GetLevel() > OldLevel)
 	{
 		// increase skill points
 		if(g_Config.m_SvSkillPointsPerLevel > 0)
@@ -455,14 +442,15 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 		return;
 
 	// check active profession
-	if(!m_pClassProfession)
+	const auto* pClassProfession = GetClassProfession();
+	if(!pClassProfession)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "You don't have an active profession to gain experience!");
 		return;
 	}
 
 	// initialize variables
-	const int Level = m_pClassProfession->GetLevel();
+	const int Level = pClassProfession->GetLevel();
 	const int maxGoldCapacity = GetGoldCapacity();
 	const bool isGoldBagFull = (GetGold() >= maxGoldCapacity);
 
@@ -496,8 +484,8 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 
 	// send broadcast
 	GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 250, "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
-		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), m_pClassProfession->GetExperience(), 
-		m_pClassProfession->GetExpForNextLevel(), expStr.c_str());
+		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), pClassProfession->GetExperience(),
+		pClassProfession->GetExpForNextLevel(), expStr.c_str());
 }
 
 void CAccountData::UpdateAchievementProgress(int AchievementID, int Progress, bool Completed)

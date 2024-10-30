@@ -2,69 +2,60 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "class_data.h"
 
-void CClassData::Init(ClassGroup Class)
+void CClassData::SetProfessionID(Professions ProfID)
 {
-	m_Class = Class;
+	m_ProfessionID = ProfID;
 }
 
 float CClassData::GetExtraHP() const
 {
-	if(m_Class == ClassGroup::Tank)
+	if(m_ProfessionID == Professions::Tank)
 		return 30.f;
-	if(m_Class == ClassGroup::Healer)
+	if(m_ProfessionID == Professions::Healer)
 		return 15.f;
-	if(m_Class == ClassGroup::Dps)
+	if(m_ProfessionID == Professions::Dps)
 		return 5.f;
 	return 0.f;
 }
 
 float CClassData::GetExtraMP() const
 {
-	if(m_Class == ClassGroup::Tank)
+	if(m_ProfessionID == Professions::Tank)
 		return 5.f;
-	if(m_Class == ClassGroup::Healer)
+	if(m_ProfessionID == Professions::Healer)
 		return 30.f;
-	if(m_Class == ClassGroup::Dps)
+	if(m_ProfessionID == Professions::Dps)
 		return 15.f;
 	return 0;
 }
 
-const char* CClassData::GetName() const
+float CClassData::GetExtraDMG() const
 {
-	switch(m_Class)
-	{
-		case ClassGroup::Tank:
-			return "Tank";
-		case ClassGroup::Healer:
-			return "Healer";
-		case ClassGroup::Dps:
-			return "Dps";
-		default:
-			return "Class";
-	}
+	if(m_ProfessionID == Professions::Tank)
+		return 10.f;
+	if(m_ProfessionID == Professions::Healer)
+		return 5.f;
+	if(m_ProfessionID == Professions::Dps)
+		return 30.f;
+	return 0;
 }
 
-void CClassData::SetClassSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const
+void CClassData::SetProfessionSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const
 {
 	if(HasCustomizer)
 		return;
 
-	if(m_Class == ClassGroup::Tank)
+	if(m_ProfessionID == Professions::Tank)
+	{
 		str_copy(TeeInfo.m_aSkinName, "red_panda", sizeof(TeeInfo.m_aSkinName));
-	else if(m_Class == ClassGroup::Healer)
+	}
+	else if(m_ProfessionID == Professions::Healer)
+	{
 		str_copy(TeeInfo.m_aSkinName, "Empieza", sizeof(TeeInfo.m_aSkinName));
-	else if(m_Class == ClassGroup::Dps)
+	}
+	else if(m_ProfessionID == Professions::Dps)
+	{
 		str_copy(TeeInfo.m_aSkinName, "flokes", sizeof(TeeInfo.m_aSkinName));
+	}
 	TeeInfo.m_UseCustomColor = 0;
-}
-
-float CClassData::GetExtraDMG() const
-{
-	if(m_Class == ClassGroup::Tank)
-		return 10.f;
-	if(m_Class == ClassGroup::Healer)
-		return 5.f;
-	if(m_Class == ClassGroup::Dps)
-		return 30.f;
-	return 0;
 }

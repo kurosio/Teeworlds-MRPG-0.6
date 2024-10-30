@@ -359,6 +359,7 @@ public:
 	void UpdateVotesIf(int MenuID);
 	void UpdateCurrentVotes() { UpdateVotes(m_CurrentMenuID); }
 	void ClearVotes() const;
+	void ResetExtraID() { m_ExtraID.reset(); }
 
 	void SetCurrentMenuID(int MenuID) { m_CurrentMenuID = MenuID; }
 	int GetCurrentMenuID() const { return m_CurrentMenuID; }

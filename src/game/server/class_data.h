@@ -5,22 +5,41 @@
 
 class CClassData
 {
-	ClassGroup m_Class {};
+	Professions m_ProfessionID;
 
 public:
-	CClassData() {}
+	CClassData()
+	{
+		m_ProfessionID = Professions::None;
+	}
 
-	void Init(ClassGroup Class);
+	void SetProfessionID(Professions ProfID);
 
-	ClassGroup GetGroup() const { return m_Class; }
-	bool IsGroup(ClassGroup forCheck) const { return m_Class == forCheck; }
+	bool HasProfession() const
+	{
+		return m_ProfessionID != Professions::None;
+	}
+
+	Professions GetProfessionID() const
+	{
+		return m_ProfessionID;
+	}
+
+	bool IsProfession(Professions ProfID) const
+	{
+		return m_ProfessionID == ProfID;
+	}
+
+	const char* GetName() const
+	{
+		return GetProfessionName(m_ProfessionID);
+	};
+
 	float GetExtraHP() const;
 	float GetExtraDMG() const;
 	float GetExtraMP() const;
 
-	const char* GetName() const;
-
-	void SetClassSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const;
+	void SetProfessionSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const;
 };
 
 #endif

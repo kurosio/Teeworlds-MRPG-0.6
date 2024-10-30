@@ -62,13 +62,11 @@ protected:
 	bool m_Afk;
 	bool m_LastInputInit;
 	int64_t m_LastPlaytime;
-	CClassData m_ClassData {};
 	FixedViewCam m_FixedView {};
 	ScenarioManager m_Scenarios {};
 
 public:
 	CGS* GS() const { return m_pGS; }
-	CClassData& GetClassData() { return m_ClassData; }
 	FixedViewCam& LockedView() { return m_FixedView; }
 	ScenarioManager& Scenarios() { return m_Scenarios; }
 
