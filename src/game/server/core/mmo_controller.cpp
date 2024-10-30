@@ -194,22 +194,8 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		const char* paGroupNames[] = 
-		{
-			Instance::Localize(ClientID, "\u2699 Disciple of Tank"),
-			Instance::Localize(ClientID, "\u2696 Disciple of Healer"),
-			Instance::Localize(ClientID, "\u2694 Disciple of War")
-		};
-
-		// information
-		VoteWrapper VUpgrInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Upgrades Information");
-		VUpgrInfo.Add("You can upgrade your character's statistics.");
-		VUpgrInfo.Add("Each update costs differently point.");
-		VUpgrInfo.Add("You can get points by leveling up.");
-		VoteWrapper::AddEmptyline(ClientID);
-
 		// war professions
-		VoteWrapper VWarSelect(ClientID, VWF_OPEN, "\u2694 War professions");
+		VoteWrapper VWarSelect(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 War professions");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
 			if(!Profession.GetAttributes().empty() && Profession.GetProfessionType() == PROFESSION_TYPE_WAR)
@@ -221,7 +207,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// other professions
-		VoteWrapper VOtherSelect(ClientID, VWF_OPEN, "\u2699 Other professions");
+		VoteWrapper VOtherSelect(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2699 Other professions");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
 			if(!Profession.GetAttributes().empty() && Profession.GetProfessionType() == PROFESSION_TYPE_OTHER)

@@ -485,6 +485,8 @@ void CPlayer::TryRespawn()
 		GS()->CreatePlayerSpawn(SpawnPos);
 		GetTempData().ClearTeleportPosition();
 		m_WantSpawn = false;
+
+		GS()->SendMenuMotd(this, MOTD_MENU_WIKI_INFO);
 	}
 }
 
@@ -871,9 +873,9 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	}
 
 	// add attribute value from player's improvements
-	if(pAtt->HasDatabaseField())
+	for(auto& Profession : Account()->GetProfessions())
 	{
-		totalValue += Account()->m_aStats[ID];
+		totalValue += Profession.GetAttributeValue(ID);
 	}
 
 	return totalValue;
