@@ -27,14 +27,15 @@
 
 CGS::CGS()
 {
+	m_pEntityManager = new CEntityManager(this);
+	m_pMmoController = new CMmoController(this);
+
 	m_MultiplierExp = 0;
 	m_pStorage = nullptr;
 	m_pServer = nullptr;
 	m_pController = nullptr;
-	m_pMmoController = nullptr;
 	m_pCommandProcessor = nullptr;
 	m_pPathFinder = nullptr;
-	m_pEntityManager = nullptr;
 	mem_zero(m_apPlayers, sizeof(m_apPlayers));
 	mem_zero(m_aBroadcastStates, sizeof(m_aBroadcastStates));
 }
@@ -663,18 +664,17 @@ void CGS::OnInit(int WorldID)
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pStorage = Kernel()->RequestInterface<IStorageEngine>();
-	m_World.SetGameServer(this);
-	m_Events.SetGameServer(this);
+
 	m_WorldID = WorldID;
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
 
-	// create controller
+	// initialize controller
+	m_World.SetGameServer(this);
+	m_Events.SetGameServer(this);
 	m_Collision.Init(Kernel(), WorldID);
-	m_pEntityManager = new CEntityManager(this);
-	m_pMmoController = new CMmoController(this);
-	m_pMmoController->LoadLogicWorld();
+	m_pMmoController->OnInit(m_pServer, m_pConsole, m_pStorage);
 	InitWorld();
 
 	// initialize cores
@@ -690,7 +690,9 @@ void CGS::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
+
 	RconProcessor::Init(this, m_pConsole, m_pServer);
+	m_pMmoController->OnConsoleInit(m_pConsole);
 }
 
 void CGS::OnDaytypeChange(int NewDaytype)

@@ -85,12 +85,18 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_System.add(m_pMailboxManager = new CMailboxManager);
 	m_System.add(new CWikiManager);
 
+}
+
+void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine* pStorage)
+{
 	// initialize components
 	for(auto& pComponent : m_System.m_vComponents)
 	{
 		pComponent->m_Core = this;
-		pComponent->m_GameServer = pGameServer;
-		pComponent->m_pServer = pGameServer->Server();
+		pComponent->m_GameServer = m_pGameServer;
+		pComponent->m_pServer = pServer;
+		pComponent->m_pConsole = pConsole;
+		pComponent->m_pStorage = pStorage;
 
 		if(m_pGameServer->GetWorldID() == MAIN_WORLD_ID)
 			pComponent->OnPreInit();
@@ -103,8 +109,17 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 			pComponent->OnPostInit();
 	}
 
-	// update language data
 	SyncLocalizations();
+	LoadLogicWorld();
+}
+
+void CMmoController::OnConsoleInit(IConsole* pConsole)
+{
+	for(auto& pComponent : m_System.m_vComponents)
+	{
+		pComponent->m_pConsole = pConsole;
+		pComponent->OnConsoleInit();
+	}
 }
 
 void CMmoController::OnTick()

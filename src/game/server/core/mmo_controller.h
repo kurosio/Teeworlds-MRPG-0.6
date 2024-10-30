@@ -52,6 +52,8 @@ public:
 	CWorldManager *WorldManager() const { return m_pWorldManager; }
 
 	// global systems
+	void OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine* pStorage);
+	void OnConsoleInit(IConsole* pConsole);
 	void OnTick();
 	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID);
 	void OnPlayerLogin(CPlayer* pPlayer);

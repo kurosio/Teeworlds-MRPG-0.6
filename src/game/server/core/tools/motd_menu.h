@@ -6,8 +6,7 @@ class CPlayer;
 enum MotdMenuFlags
 {
 	MTFLAG_CLOSE_BUTTON = 1 << 0,
-	MTFLAG_CLOSE_LAST_MENU_ON_SELECT = 1 << 2,
-	MTFLAG_CLOSE_ON_SELECT = 1 << 2,
+	MTFLAG_CLOSE_ON_SELECT = 1 << 1,
 };
 
 class MotdMenu

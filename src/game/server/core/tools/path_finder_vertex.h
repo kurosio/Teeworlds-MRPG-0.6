@@ -4,66 +4,66 @@
 // vertex graph
 class PathFinderVertex
 {
-    int m_numVertices{};
-    bool m_initilized{};
-    std::list<int>* m_adjLists{};
+	int m_numVertices{};
+	bool m_initilized{};
+	std::list<int>* m_adjLists{};
 
-    // Breadth-First Search Algorithm
-    bool algoritmBFS(int startVertex, int endVertex, std::vector<int>& paPath) const
-    {
-        // check if start and end vertices are valid
-        if(startVertex < 0 || startVertex >= m_numVertices || endVertex < 0 || endVertex >= m_numVertices)
-        {
-            dbg_msg("BFS", "invalid start (%d) or end (%d) vertex", startVertex, endVertex);
-            return false;
-        }
+	// Breadth-First Search Algorithm
+	bool algoritmBFS(int startVertex, int endVertex, std::vector<int>& paPath) const
+	{
+		// check if start and end vertices are valid
+		if(startVertex < 0 || startVertex >= m_numVertices || endVertex < 0 || endVertex >= m_numVertices)
+		{
+			dbg_msg("BFS", "invalid start (%d) or end (%d) vertex", startVertex, endVertex);
+			return false;
+		}
 
-        std::vector visited(m_numVertices, false);
-        visited[startVertex] = true;
+		std::vector visited(m_numVertices, false);
+		visited[startVertex] = true;
 
-        std::queue<int> queue;
-    	queue.push(startVertex);
+		std::queue<int> queue;
+		queue.push(startVertex);
 
-        std::vector parent(m_numVertices, -1);
-        while(!queue.empty())
-        {
-	        const int currVertex = queue.front();
-            queue.pop();
+		std::vector parent(m_numVertices, -1);
+		while(!queue.empty())
+		{
+			const int currVertex = queue.front();
+			queue.pop();
 
-            if(currVertex == endVertex)
-            {
-                int node = currVertex;
+			if(currVertex == endVertex)
+			{
+				int node = currVertex;
 
-            	while(node != -1)
-                {
-                    paPath.push_back(node);
-                    node = parent[node];
-                }
+				while(node != -1)
+				{
+					paPath.push_back(node);
+					node = parent[node];
+				}
 
-                std::ranges::reverse(paPath);
-                return true;
-            }
+				std::ranges::reverse(paPath);
+				return true;
+			}
 
-            for(int adjVertex : m_adjLists[currVertex])
-            {
-                if(!visited[adjVertex])
-                {
-                    visited[adjVertex] = true;
-                    queue.push(adjVertex);
-                    parent[adjVertex] = currVertex;
-                }
-            }
-        }
+			for(int adjVertex : m_adjLists[currVertex])
+			{
+				if(!visited[adjVertex])
+				{
+					visited[adjVertex] = true;
+					queue.push(adjVertex);
+					parent[adjVertex] = currVertex;
+				}
+			}
+		}
 
-        return false;
-    }
+		return false;
+	}
 
 public:
-    PathFinderVertex() = default;
-    ~PathFinderVertex()
-    {
-        clear();
-    }
+	PathFinderVertex() = default;
+	~PathFinderVertex()
+	{
+		clear();
+	}
 
 	// initialize the graph with the given number of vertices
 	void init(int vertices)
@@ -73,12 +73,17 @@ public:
 		m_adjLists = new std::list<int>[m_numVertices];
 	}
 
-    // clear all data and change state to uninitilized
-    void clear()
+	// clear all data and change state to uninitilized
+	void clear()
 	{
-        m_initilized = false;
-        m_numVertices = 0;
-        delete m_adjLists;
+		m_initilized = false;
+		m_numVertices = 0;
+
+		if(m_adjLists)
+		{
+			delete[] m_adjLists;
+			m_adjLists = nullptr;
+		}
 	}
 
 	// add an edge between two vertices (undirected)

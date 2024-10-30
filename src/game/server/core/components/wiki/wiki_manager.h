@@ -7,11 +7,17 @@
 
 class CWikiManager : public MmoComponent
 {
-public:
+	~CWikiManager() override
+	{
+		mystd::freeContainer(CWikiData::Data());
+	}
+
 	void OnPreInit() override;
+	void OnConsoleInit() override;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 
 	CWikiData* GetWikiData(int ID) const;
+	static void ConReloadWiki(IConsole::IResult* pResult, void* pUserData);
 };
 
 #endif

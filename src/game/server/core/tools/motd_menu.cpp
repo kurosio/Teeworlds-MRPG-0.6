@@ -200,9 +200,11 @@ void MotdMenu::UpdateMotd(IServer* pServer, CGS* pGS, CPlayer* pPlayer)
 {
 	ScrollManager oldScrollData = m_ScrollManager;
 	const auto oldMenuExtra = m_MenuExtra;
+
 	m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
 	pGS->SendMenuMotd(pPlayer, m_Menulist);
 	oldScrollData.SetMaxScrollPos((int)pPlayer->m_pMotdMenu->m_Points.size());
+
 	pPlayer->m_pMotdMenu->m_ScrollManager = oldScrollData;
 	pPlayer->m_pMotdMenu->m_MenuExtra = oldMenuExtra;
 }
