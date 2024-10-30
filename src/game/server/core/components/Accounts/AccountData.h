@@ -42,12 +42,35 @@ class CAccountData
 	CPlayer* GetPlayer() const;
 
 public:
-	CPrisonManager& GetPrisonManager() { return m_PrisonManager; }
-	const CPrisonManager& GetPrisonManager() const { return m_PrisonManager; }
-	CBonusManager& GetBonusManager() { return m_BonusManager; }
-	const CBonusManager& GetBonusManager() const { return m_BonusManager; }
-	CClassData& GetClass() { return m_Class; }
-	const CClassData& GetClass() const { return m_Class; }
+	CPrisonManager& GetPrisonManager()
+	{
+		return m_PrisonManager;
+	}
+
+	const CPrisonManager& GetPrisonManager() const
+	{
+		return m_PrisonManager;
+	}
+
+	CBonusManager& GetBonusManager()
+	{
+		return m_BonusManager;
+	}
+
+	const CBonusManager& GetBonusManager() const
+	{
+		return m_BonusManager;
+	}
+
+	CClassData& GetClass()
+	{
+		return m_Class;
+	}
+
+	const CClassData& GetClass() const
+	{
+		return m_Class;
+	}
 
 	CProfession* GetClassProfession() const
 	{
@@ -68,6 +91,8 @@ public:
 	{
 		return m_vProfessions;
 	}
+
+	int CalculateRankPoints() const;
 
 	/*
 	 * Group functions: initialize or uniques from function

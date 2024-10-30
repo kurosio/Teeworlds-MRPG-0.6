@@ -113,13 +113,15 @@ bool CMmoController::OnClientMessage(int MsgID, void* pRawMsg, int ClientID)
 
 void CMmoController::OnPlayerLogin(CPlayer* pPlayer)
 {
-	for(auto& pComponent : m_System.m_vComponents)
+	for(const auto& pComponent : m_System.m_vComponents)
+	{
 		pComponent->OnPlayerLogin(pPlayer);
+	}
 }
 
 bool CMmoController::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 {
-	for(auto& pComponent : m_System.m_vComponents)
+	for(const auto& pComponent : m_System.m_vComponents)
 	{
 		if(pComponent->OnSendMenuMotd(pPlayer, Menulist))
 			return true;
@@ -147,16 +149,16 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// Personal Menu
 		VoteWrapper VPersonal(ClientID, VWF_ALIGN_TITLE, "\u262A Personal Menu");
+		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades & Professions ({}p)", pPlayer->Account()->GetTotalProfessionsUpgradePoints());
 		VPersonal.AddMenu(MENU_ACCOUNT_INFO, "\u2698 Account Information");
 		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
 		VPersonal.AddMenu(MENU_EIDOLON, "\u2727 Eidolons");
-		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades ({}p)", pPlayer->Account()->GetTotalProfessionsUpgradePoints());
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Group & Social
-		VoteWrapper VGroup(ClientID, VWF_ALIGN_TITLE, "\u2605 Social & Group Menu");
+		VoteWrapper VGroup(ClientID, VWF_ALIGN_TITLE, "\u2600 Social & Group Menu");
 		VGroup.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
 		VGroup.AddMenu(MENU_GROUP, "\u2042 Group");
 		VGroup.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild Finder");
@@ -201,10 +203,10 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// select type list
 		VoteWrapper VTopSelect(ClientID, VWF_OPEN, "Select a type of ranking");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildLeveling, "Top 10 guilds leveling");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildWealthy, "Top 10 guilds wealthy");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerLeveling, "Top 10 players leveling");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerWealthy, "Top 10 players wealthy");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildLeveling, "Top 10 guilds by leveling");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildWealthy, "Top 10 guilds by wealthy");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerRankPoints, "Top 10 players by rank points");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerWealthy, "Top 10 players by wealthy");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show top list
@@ -459,47 +461,66 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	if(!pPlayer->IsAuthed())
 		return;
 
-	CAccountData* pAcc = pPlayer->Account();
+	CAccountData* pAccount = pPlayer->Account();
+	const auto AccountID = pAccount->GetID();
 
+	// save account base
 	if(Table == SAVE_STATS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Bank = '{}' WHERE ID = '{}'", pAcc->GetBank().to_string().c_str(), pAcc->GetID());
+		const auto Bank = pAccount->GetBank().to_string();
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Bank = '{}' WHERE ID = '{}'", Bank, AccountID);
 	}
-	else if(Table == SAVE_SOCIAL_STATUS)
+
+	// save social
+	else if(Table == SAVE_SOCIAL)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '{}' WHERE ID = '{}'", pAcc->GetCrimeScore(), pAcc->GetID());
+		const auto CrimeScore = pAccount->GetCrimeScore();
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '{}' WHERE ID = '{}'", CrimeScore, AccountID);
 	}
-	else if(Table == SAVE_GUILD_DATA)
+
+	// save profession
+	else if(Table == SAVE_PROFESSION)
 	{
-		//
+		const auto ProfessionID = (int)pAccount->GetClass().GetProfessionID();
+		const auto RankPoints = pAccount->CalculateRankPoints();
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "RankPoints = '{}', Profession = '{}' WHERE ID = '{}'", RankPoints, ProfessionID, AccountID);
 	}
+
+	// save world position
 	else if(Table == SAVE_POSITION)
 	{
 		const int LatestCorrectWorldID = AccountManager()->GetLastVisitedWorldID(pPlayer);
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '{}' WHERE ID = '{}'", LatestCorrectWorldID, pAcc->GetID());
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '{}' WHERE ID = '{}'", LatestCorrectWorldID, AccountID);
 	}
+
+	// save time periods
 	else if(Table == SAVE_TIME_PERIODS)
 	{
-		time_t Daily = pAcc->m_Periods.m_DailyStamp;
-		time_t Week = pAcc->m_Periods.m_WeekStamp;
-		time_t Month = pAcc->m_Periods.m_MonthStamp;
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '{}', WeekStamp = '{}', MonthStamp = '{}' WHERE ID = '{}'", 
-			Daily, Week, Month, pAcc->GetID());
+		const auto Daily = pAccount->m_Periods.m_DailyStamp;
+		const auto Week = pAccount->m_Periods.m_WeekStamp;
+		const auto Month = pAccount->m_Periods.m_MonthStamp;
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '{}', WeekStamp = '{}', MonthStamp = '{}' WHERE ID = '{}'", Daily, Week, Month, AccountID);
 	}
-	else if(Table == SAVE_LANGUAGE)
-	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '{}' WHERE ID = '{}'", 
-			pPlayer->GetLanguage(), pAcc->GetID());
-	}
+
+	// save achievements
 	else if(Table == SAVE_ACHIEVEMENTS)
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '{}' WHERE ID = '{}'", 
-			pAcc->GetAchievementsData().dump().c_str(), pAcc->GetID());
+		const auto AchievementsData = pAccount->GetAchievementsData().dump();
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '{}' WHERE ID = '{}'", AchievementsData, AccountID);
 	}
+
+	// save language
+	else if(Table == SAVE_LANGUAGE)
+	{
+		const char* pLanguage = pPlayer->GetLanguage();
+		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '{}' WHERE ID = '{}'", pLanguage, AccountID);
+	}
+
+	// main data
 	else
 	{
-		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '{}' WHERE ID = '{}'", 
-			pAcc->GetLogin(), pAcc->GetID());
+		const auto pLogin = pAccount->GetLogin();
+		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '{}' WHERE ID = '{}'", pLogin, AccountID);
 	}
 }
 
@@ -571,32 +592,31 @@ void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteW
 				GS()->Chat(ClientID, "{}. {} :: Gold {$}", Rank, Guildname, Gold);
 			}
 		}
-	}/*
-	else if(Type == ToplistType::PlayerLeveling)
+	}
+	else if(Type == ToplistType::PlayerRankPoints)
 	{
 		if(pWrapper)
 		{
-			pWrapper->SetTitle("Top 10 players leveling");
+			pWrapper->SetTitle("Top 10 players rank points");
 		}
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Level DESC, Exp DESC LIMIT {}", Rows);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY RankPoints DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
 			const auto Rank = pRes->getRow();
-			const int Level = pRes->getInt("Level");
-			const auto Experience = pRes->getUInt64("Exp");
+			const auto RankPoints = pRes->getInt("RankPoints");
 			const auto Nickname = pRes->getString("Nick");
 
 			if(pWrapper)
 			{
-				pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, Nickname, Level, Experience);
+				pWrapper->Add("{}. {} :: Rank points {}", Rank, Nickname, RankPoints);
 			}
 			else
 			{
-				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, Nickname, Level, Experience);
+				GS()->Chat(ClientID, "{}. {} :: Rank points {}", Rank, Nickname, RankPoints);
 			}
 		}
-	}*/
+	}
 	else if(Type == ToplistType::PlayerWealthy)
 	{
 		if(pWrapper)

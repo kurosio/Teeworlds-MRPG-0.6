@@ -786,7 +786,7 @@ void CGS::OnTickGlobal()
 			case ToplistType::GuildWealthy:
 				Chat(-1, "---- [Top 5 guilds by gold] ----");
 				break;
-			case ToplistType::PlayerLeveling:
+			case ToplistType::PlayerRankPoints:
 				Chat(-1, "---- [Top 5 players by leveling] ----");
 				break;
 			default:

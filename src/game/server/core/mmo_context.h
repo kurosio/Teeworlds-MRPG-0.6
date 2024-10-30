@@ -49,17 +49,15 @@ enum EBotsType
 // save types
 enum ESaveType
 {
-	SAVE_ACCOUNT,			// Save Login Password Data
-	SAVE_STATS,				// Save Stats Level Exp and other this type
-	SAVE_UPGRADES,			// Save Upgrades Damage and other this type
-	SAVE_FARMING_DATA,		// Save Farming Account
-	SAVE_MINING_DATA,		// Save Mining Account
-	SAVE_GUILD_DATA,		// Save Guild Data
-	SAVE_SOCIAL_STATUS,		// Save Social status
-	SAVE_POSITION,			// Save Position Player
-	SAVE_LANGUAGE,			// Save Language Client
-	SAVE_TIME_PERIODS,		// Save Time Periods
-	SAVE_ACHIEVEMENTS,		// Save Achievements
+	SAVE_ACCOUNT,           // Save Login Password Data
+	SAVE_STATS,             // Save Stats Level Exp and other this type
+	SAVE_SOCIAL,            // Save Social Data
+	SAVE_PROFESSION,	    // Save Profession Data
+	SAVE_UPGRADES,          // Save Upgrades Damage and other this type
+	SAVE_POSITION,          // Save Position Player
+	SAVE_LANGUAGE,          // Save Language Client
+	SAVE_TIME_PERIODS,      // Save Time Periods
+	SAVE_ACHIEVEMENTS,      // Save Achievements
 };
 
 // world day types
@@ -205,7 +203,7 @@ enum class ToplistType : int
 {
 	GuildLeveling,
 	GuildWealthy,
-	PlayerLeveling,
+	PlayerRankPoints,
 	PlayerWealthy,
 	NUM_TOPLIST_TYPES
 };

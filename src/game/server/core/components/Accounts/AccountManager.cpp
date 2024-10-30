@@ -223,7 +223,7 @@ bool CAccountManager::ChangeNickname(const std::string& newNickname, int ClientI
 
 int CAccountManager::GetRank(int AccountID)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Rank FROM (SELECT ID, RANK() OVER (ORDER BY Bank DESC) AS Rank", "tw_accounts_data", ") AS RankedData WHERE ID = {}", AccountID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("Rank FROM (SELECT ID, RANK() OVER (ORDER BY RankPoints DESC) AS Rank", "tw_accounts_data", ") AS RankedData WHERE ID = {}", AccountID);
 	return pRes->next() ? pRes->getInt("Rank") : -1;
 }
 
@@ -271,27 +271,28 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		};
 
 		// Leveling information (war)
-		VoteWrapper VLevelingWar(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling Information (War professions)");
+		VoteWrapper VLevelingWar(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling (War professions)");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
 			if(Profession.GetProfessionType() == PROFESSION_TYPE_WAR)
 			{
+				const auto AppendActiveStatus = pPlayer->Account()->GetClass().IsProfession(Profession.GetProfessionID()) ? " (active)" : "";
 				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
-				const auto Title = "Profession " + pProfessionName;
+				const auto Title = "Profession " + pProfessionName + AppendActiveStatus;
 				addLevelingInfo(VLevelingWar , &Profession, Title);
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Leveling information (work)
-		VoteWrapper VLevelingWork(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling Infromation (Work professions)");
+		VoteWrapper VLevelingOther(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling (Other professions)");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
 			if(Profession.GetProfessionType() == PROFESSION_TYPE_OTHER)
 			{
 				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
 				const auto Title = "Profession " + pProfessionName;
-				addLevelingInfo(VLevelingWork, &Profession, Title);
+				addLevelingInfo(VLevelingOther, &Profession, Title);
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
@@ -306,6 +307,82 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// Add backpage
 		VoteWrapper::AddBackpage(ClientID);
+	}
+
+	// menu upgrades
+	if(Menulist == MENU_UPGRADES)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
+
+		const auto* pClassProfession = pPlayer->Account()->GetClassProfession();
+
+		// select war profession
+		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Change class profession");
+		for(auto& Prof : pPlayer->Account()->GetProfessions())
+		{
+			if(Prof.GetProfessionType() == PROFESSION_TYPE_WAR)
+			{
+				const auto StrActiveFlag = pClassProfession && pClassProfession->GetProfessionID() == Prof.GetProfessionID() ? "\u2713" : "\u2715";
+				const char* pProfName = GetProfessionName(Prof.GetProfessionID());
+				const auto expNeed = Prof.GetExpForNextLevel();
+				const auto progress = translate_to_percent(expNeed, Prof.GetExperience());
+				const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
+
+				VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfessionID(), "({}) {} [Lv{} {} {~.1}%] ({}P)",
+					StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
+			}
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// professions
+		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Active profession");
+		for(auto& Profession : pPlayer->Account()->GetProfessions())
+		{
+			if((pClassProfession && pClassProfession->GetProfessionID() == Profession.GetProfessionID()) || Profession.GetProfessionType() != PROFESSION_TYPE_WAR)
+			{
+				const auto ProfessionID = Profession.GetProfessionID();
+				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} ({}P)", GetProfessionName(ProfessionID), Profession.GetUpgradePoint());
+			}
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// list upgrades by profession
+		if(const auto ProfessionID = pPlayer->m_VotesData.GetExtraID())
+		{
+			const auto* pProfession = pPlayer->Account()->GetProfession((Professions)ProfessionID.value());
+			if(!pProfession)
+				return false;
+
+			const char* pProfessionName = GetProfessionName(pProfession->GetProfessionID());
+			VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{}", pProfessionName);
+			{
+				for(const auto& ID : pProfession->GetAttributes() | std::views::keys)
+				{
+					const auto* pAttribute = GS()->GetAttributeInfo(ID);
+					const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
+					const float Percent = pPlayer->GetAttributeChance(ID);
+
+					char aBuf[64] {};
+					if(Percent)
+					{
+						str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
+					}
+					VUpgrades.Add("Total {} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
+				}
+			}
+			VUpgrades.AddLine();
+			{
+				for(auto& [ID, Value] : pProfession->GetAttributes())
+				{
+					const auto* pAttribute = GS()->GetAttributeInfo(ID);
+					VUpgrades.AddOption("UPGRADE", ProfessionID.value(), (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
+				}
+			}
+		}
+
+		// Add back page
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
 	}
 
 	// settings
@@ -433,82 +510,6 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddBackpage(ClientID);
 	}
 
-	// player upgrades
-	if(Menulist == MENU_UPGRADES)
-	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-
-		const auto* pClassProfession = pPlayer->Account()->GetClassProfession();
-
-		// select war profession
-		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Change class profession");
-		for(auto& Prof : pPlayer->Account()->GetProfessions())
-		{
-			if(Prof.GetProfessionType() != PROFESSION_TYPE_WAR)
-				continue;
-
-			const auto StrActiveFlag = pClassProfession && pClassProfession->GetProfessionID() == Prof.GetProfessionID() ? "\u2713" : "\u2715";
-			const char* pProfName = GetProfessionName(Prof.GetProfessionID());
-			const auto expNeed = Prof.GetExpForNextLevel();
-			const auto progress = translate_to_percent(expNeed, Prof.GetExperience());
-			const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
-
-			VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfessionID(), "({}) {} [Lvl {} {} {~.1}%] ({}P)", 
-				StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
-		}
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// professions
-		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Active profession");
-		for(auto& Profession : pPlayer->Account()->GetProfessions())
-		{
-			if((pClassProfession && pClassProfession->GetProfessionID() == Profession.GetProfessionID()) || Profession.GetProfessionType() != PROFESSION_TYPE_WAR)
-			{
-				const auto ProfessionID = Profession.GetProfessionID();
-				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} ({}P)", GetProfessionName(ProfessionID), Profession.GetUpgradePoint());
-			}
-		}
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// list upgrades by profession
-		if(const auto ProfessionID = pPlayer->m_VotesData.GetExtraID())
-		{
-			const auto* pProfession = pPlayer->Account()->GetProfession((Professions)ProfessionID.value());
-			if(!pProfession)
-				return false;
-
-			const char* pProfessionName = GetProfessionName(pProfession->GetProfessionID());
-			VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{}", pProfessionName);
-			{
-				for(const auto& ID : pProfession->GetAttributes() | std::views::keys)
-				{
-					const auto* pAttribute = GS()->GetAttributeInfo(ID);
-					const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
-					const float Percent = pPlayer->GetAttributeChance(ID);
-
-					char aBuf[64] {};
-					if(Percent)
-					{
-						str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
-					}
-					VUpgrades.Add("Total {} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
-				}
-			}
-			VUpgrades.AddLine();
-			{
-				for(auto& [ID, Value] : pProfession->GetAttributes())
-				{
-					const auto* pAttribute = GS()->GetAttributeInfo(ID);
-					VUpgrades.AddOption("UPGRADE", ProfessionID.value(), (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
-				}
-			}
-		}
-
-		// Add back page
-		VoteWrapper::AddBackpage(ClientID);
-		return true;
-	}
-
 	return false;
 }
 
@@ -563,6 +564,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		pPlayer->Account()->GetClass().SetProfessionID(ProfessionID);
 		pPlayer->m_VotesData.ResetExtraID();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
+		Core()->SaveAccount(pPlayer, SAVE_PROFESSION);
 		return true;
 	}
 

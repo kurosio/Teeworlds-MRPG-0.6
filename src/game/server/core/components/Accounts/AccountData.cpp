@@ -29,6 +29,18 @@ int CAccountData::GetGoldCapacity() const
 	return DEFAULT_MAX_PLAYER_BAG_GOLD + TotalByAttribute;
 }
 
+int CAccountData::CalculateRankPoints() const
+{
+	int ResultRankPoints = 0;
+
+	for(auto& Prof : m_vProfessions)
+	{
+		ResultRankPoints += Prof.GetLevel();
+	}
+
+	return ResultRankPoints;
+}
+
 void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
 {
 	// Check if the ID has already been set
@@ -210,7 +222,7 @@ void CAccountData::IncreaseCrimeScore(int Score)
 		GS()->Chat(m_ClientID, "You have reached the maximum 'Crime Score' and are now a wanted criminal! Be cautious, as law enforcers are actively searching for you.");
 	}
 
-	GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL_STATUS);
+	GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
 }
 
 int CAccountData::GetGold() const
@@ -433,12 +445,13 @@ void CAccountData::ResetCrimeScore()
 		return;
 
 	m_CrimeScore = 0;
-	GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL_STATUS);
+	GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
 }
 
 void CAccountData::HandleChair(uint64_t Exp, int Gold)
 {
-	IServer* pServer = Instance::Server();
+	// per every sec
+	const auto* pServer = Instance::Server();
 	if(pServer->Tick() % pServer->TickSpeed() != 0)
 		return;
 
