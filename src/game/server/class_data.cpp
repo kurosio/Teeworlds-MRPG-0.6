@@ -2,9 +2,13 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "class_data.h"
 
+#include <engine/server.h>
+#include <game/server/gamecontext.h>
+
 void CClassData::SetProfessionID(Professions ProfID)
 {
 	m_ProfessionID = ProfID;
+	UpdateProfessionSkin();
 }
 
 float CClassData::GetExtraHP() const
@@ -40,22 +44,31 @@ float CClassData::GetExtraDMG() const
 	return 0;
 }
 
-void CClassData::SetProfessionSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const
+void CClassData::UpdateProfessionSkin() const
 {
-	if(HasCustomizer)
+	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+
+	// check valid player
+	auto* pPlayer = pGS->GetPlayer(m_ClientID);
+	if(!pPlayer)
 		return;
 
+	// check customizer
+	if(pPlayer->GetItem(itCustomizer)->IsEquipped())
+		return;
+
+	// update tee info
 	if(m_ProfessionID == Professions::Tank)
 	{
-		str_copy(TeeInfo.m_aSkinName, "red_panda", sizeof(TeeInfo.m_aSkinName));
+		str_copy(pPlayer->Account()->m_TeeInfos.m_aSkinName, "red_panda", sizeof(pPlayer->Account()->m_TeeInfos.m_aSkinName));
 	}
 	else if(m_ProfessionID == Professions::Healer)
 	{
-		str_copy(TeeInfo.m_aSkinName, "Empieza", sizeof(TeeInfo.m_aSkinName));
+		str_copy(pPlayer->Account()->m_TeeInfos.m_aSkinName, "Empieza", sizeof(pPlayer->Account()->m_TeeInfos.m_aSkinName));
 	}
 	else if(m_ProfessionID == Professions::Dps)
 	{
-		str_copy(TeeInfo.m_aSkinName, "flokes", sizeof(TeeInfo.m_aSkinName));
+		str_copy(pPlayer->Account()->m_TeeInfos.m_aSkinName, "flokes", sizeof(pPlayer->Account()->m_TeeInfos.m_aSkinName));
 	}
-	TeeInfo.m_UseCustomColor = 0;
+	pPlayer->Account()->m_TeeInfos.m_UseCustomColor = 0;
 }

@@ -5,12 +5,19 @@
 
 class CClassData
 {
-	Professions m_ProfessionID;
+	int m_ClientID{};
+	Professions m_ProfessionID{};
 
 public:
 	CClassData()
 	{
 		m_ProfessionID = Professions::None;
+	}
+
+	void Init(int ClientID, Professions ProfID)
+	{
+		m_ClientID = ClientID;
+		SetProfessionID(ProfID);
 	}
 
 	void SetProfessionID(Professions ProfID);
@@ -39,7 +46,7 @@ public:
 	float GetExtraDMG() const;
 	float GetExtraMP() const;
 
-	void SetProfessionSkin(CTeeInfo& TeeInfo, bool HasCustomizer) const;
+	void UpdateProfessionSkin() const;
 };
 
 #endif

@@ -453,8 +453,8 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 				const auto progress = translate_to_percent(expNeed, Prof.GetExperience());
 				const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
 
-				VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfession(), "({}) {} - Lvl {} {} {~.1}%", 
-					StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress);
+				VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfession(), "({}) {} [Lvl {} {} {~.1}%] (UP{})", 
+					StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);

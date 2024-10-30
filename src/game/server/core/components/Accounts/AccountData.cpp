@@ -55,7 +55,6 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	InitProfessions();
 	InitAchievements(pResult->getString("Achievements"));
 	pServer->SetClientLanguage(m_ClientID, Language.c_str());
-	m_Class.SetProfessionID((Professions)pResult->getInt("Profession"));
 
 	// Execute a database update query to update the "tw_accounts" table
 	// Set the LoginDate to the current timestamp and LoginIP to the client address
@@ -70,6 +69,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	*/
 	ReinitializeHouse();
 	ReinitializeGuild();
+	m_Class.Init(m_ClientID, (Professions)pResult->getInt("Profession"));
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
 }

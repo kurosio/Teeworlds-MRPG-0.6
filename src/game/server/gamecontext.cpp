@@ -944,7 +944,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
 			pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
-			pPlayer->Account()->GetClass().SetProfessionSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
+			pPlayer->Account()->GetClass().UpdateProfessionSkin();
 
 			// expire server info
 			Server()->ExpireServerInfo();
@@ -1095,7 +1095,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			pPlayer->GetTeeInfo().m_UseCustomColor = pMsg->m_UseCustomColor;
 			pPlayer->GetTeeInfo().m_ColorBody = pMsg->m_ColorBody;
 			pPlayer->GetTeeInfo().m_ColorFeet = pMsg->m_ColorFeet;
-			pPlayer->Account()->GetClass().SetProfessionSkin(pPlayer->Account()->m_TeeInfos, pPlayer->GetItem(itCustomizer)->IsEquipped());
+			pPlayer->Account()->GetClass().UpdateProfessionSkin();
 
 			// send ready to enter
 			CNetMsg_Sv_ReadyToEnter m;
