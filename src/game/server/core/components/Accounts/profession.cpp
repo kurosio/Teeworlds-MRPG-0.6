@@ -1,8 +1,9 @@
 #include "profession.h"
-
 #include <engine/server.h>
+
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
+#include <game/server/core/components/achievements/achievement_data.h>
 
 CGS* CProfession::GS() const
 {
@@ -19,7 +20,7 @@ CProfession::CProfession(Professions Profession, int ProfessionType)
 	m_Level = 1;
 	m_Experience = 0;
 	m_UpgradePoint = 0;
-	m_Profession = Profession;
+	m_ProfessionID = Profession;
 	m_ProfessionType = ProfessionType;
 }
 
@@ -32,7 +33,7 @@ void CProfession::Init(int ClientID, const std::optional<std::string>& jsonData)
 	{
 		const auto Data = GetPreparedJsonString();
 		const auto AccountID = GetPlayer()->Account()->GetID();
-		Database->Execute<DB::INSERT>("tw_accounts_professions", "(UserID, ProfessionID, Data) VALUES ('{}', '{}', '{}')", AccountID, (int)m_Profession, Data);
+		Database->Execute<DB::INSERT>("tw_accounts_professions", "(UserID, ProfessionID, Data) VALUES ('{}', '{}', '{}')", AccountID, (int)m_ProfessionID, Data);
 		return;
 	}
 
@@ -55,14 +56,14 @@ void CProfession::Save()
 	const auto* pPlayer = GetPlayer();
 	const auto Data = GetPreparedJsonString();
 	const auto AccountID = pPlayer->Account()->GetID();
-	Database->Execute<DB::UPDATE>("tw_accounts_professions", "Data = '{}' WHERE ProfessionID = '{}' AND UserID = '{}'", Data, (int)m_Profession, AccountID);
+	Database->Execute<DB::UPDATE>("tw_accounts_professions", "Data = '{}' WHERE ProfessionID = '{}' AND UserID = '{}'", Data, (int)m_ProfessionID, AccountID);
 }
 
 void CProfession::AddExperience(uint64_t Experience)
 {
-	const auto* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	auto ExperienceNeed = computeExperience(m_Level);
-	const char* pProfessionName = GetProfessionName(m_Profession);
+	const char* pProfessionName = GetProfessionName(m_ProfessionID);
 
 	// append experience
 	m_Experience += Experience;
@@ -86,6 +87,7 @@ void CProfession::AddExperience(uint64_t Experience)
 				GS()->EntityManager()->Text(pPlayer->GetCharacter()->m_Core.m_Pos + vec2(0, -40), 40, pProfessionName);
 			}
 
+			pPlayer->UpdateAchievement(AchievementType::Leveling, (int)m_ProfessionID, m_Level, PROGRESS_ABSOLUTE);
 			GS()->Chat(m_ClientID, "{} Level UP. Now Level {}!", pProfessionName, m_Level);
 			Save();
 		}

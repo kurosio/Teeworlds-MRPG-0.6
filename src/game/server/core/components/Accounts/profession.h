@@ -16,7 +16,7 @@ class CProfession
 	uint64_t m_Experience {};
 	int m_UpgradePoint {};
 	int m_ClientID {};
-	Professions m_Profession {};
+	Professions m_ProfessionID {};
 	int m_ProfessionType {};
 
 protected:
@@ -53,9 +53,9 @@ public:
 		return m_UpgradePoint;
 	}
 
-	Professions GetProfession() const
+	Professions GetProfessionID() const
 	{
-		return m_Profession;
+		return m_ProfessionID;
 	}
 
 	int GetProfessionType() const

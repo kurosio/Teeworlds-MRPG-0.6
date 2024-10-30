@@ -58,7 +58,7 @@ public:
 	{
 		const auto it = std::ranges::find_if(m_vProfessions, [Profession](const CProfession& Prof)
 		{
-			return Prof.GetProfession() == Profession;
+			return Prof.GetProfessionID() == Profession;
 		});
 
 		return it != m_vProfessions.end() ? &(*it) : nullptr;
@@ -143,7 +143,7 @@ public:
 	BigInt GetTotalGold() const;
 	int GetGoldCapacity() const;
 
-	void AddExperience(uint64_t Value);
+	void AddExperience(uint64_t Value) const;
 	void AddGold(int Value, bool ToBank = true, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
 	bool DepositGoldToBank(int Amount);
 	bool WithdrawGoldFromBank(int Amount);

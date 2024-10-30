@@ -94,7 +94,7 @@ void CAccountData::InitProfessions()
 
 	for(auto& Profession : m_vProfessions)
 	{
-		const auto& ProfessionID = Profession.GetProfession();
+		const auto& ProfessionID = Profession.GetProfessionID();
 		const auto it = vmProfessionsData.find(ProfessionID);
 		const auto optData = it != vmProfessionsData.end() ? std::make_optional<std::string>(it->second) : std::nullopt;
 		Profession.Init(m_ClientID, optData);
@@ -225,7 +225,7 @@ BigInt CAccountData::GetTotalGold() const
 	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
-void CAccountData::AddExperience(uint64_t Value)
+void CAccountData::AddExperience(uint64_t Value) const
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
@@ -253,11 +253,11 @@ void CAccountData::AddExperience(uint64_t Value)
 			GS()->Chat(m_ClientID, "You have earned {} Skill Points! You now have {} SP!", g_Config.m_SvSkillPointsPerLevel, pSkillPoint->GetValue());
 		}
 
+		// notify about new zones
 		GS()->Core()->WorldManager()->NotifyUnlockedZonesByLeveling(pPlayer);
-		//pPlayer->UpdateAchievement(AchievementType::Leveling, NOPE, m_Level, PROGRESS_ABSOLUTE); TODO fix for all classes
 	}
 
-	// add experience to the guild member
+	// add experience to the guild
 	if(HasGuild())
 	{
 		m_pGuildData->AddExperience(1);
@@ -266,7 +266,8 @@ void CAccountData::AddExperience(uint64_t Value)
 
 void CAccountData::AddGold(int Value, bool ToBank, bool ApplyBonuses)
 {
-	CPlayer* pPlayer = GetPlayer();
+	// check valid player
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 

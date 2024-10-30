@@ -431,7 +431,7 @@ void CPlayer::RefreshClanString()
 
 	// class
 	char aBufClass[64];
-	const char* pProfessionName = GetProfessionName(Account()->GetClassProfession()->GetProfession());
+	const char* pProfessionName = GetProfessionName(Account()->GetClass().GetProfessionID());
 	str_format(aBufClass, sizeof(aBufClass), "_%-*s_", 8 - str_length(pProfessionName), pProfessionName);
 	Prepared += " | ";
 	Prepared += aBufClass;

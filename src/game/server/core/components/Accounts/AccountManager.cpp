@@ -276,7 +276,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		{
 			if(Profession.GetProfessionType() == PROFESSION_TYPE_WAR)
 			{
-				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfession()));
+				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
 				const auto Title = "Profession " + pProfessionName;
 				addLevelingInfo(VLevelingWar , &Profession, Title);
 			}
@@ -289,7 +289,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		{
 			if(Profession.GetProfessionType() == PROFESSION_TYPE_OTHER)
 			{
-				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfession()));
+				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
 				const auto Title = "Profession " + pProfessionName;
 				addLevelingInfo(VLevelingWork, &Profession, Title);
 			}
@@ -444,18 +444,17 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Change class profession");
 		for(auto& Prof : pPlayer->Account()->GetProfessions())
 		{
-			if(Prof.GetProfessionType() == PROFESSION_TYPE_WAR)
-			{
-				const bool IsActive = pClassProfession && pClassProfession->GetProfession() == Prof.GetProfession();
-				const auto StrActiveFlag = IsActive ? "\u2713" : "\u2715";
-				const char* pProfName = GetProfessionName(Prof.GetProfession());
-				const auto expNeed = Prof.GetExpForNextLevel();
-				const auto progress = translate_to_percent(expNeed, Prof.GetExperience());
-				const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
+			if(Prof.GetProfessionType() != PROFESSION_TYPE_WAR)
+				continue;
 
-				VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfession(), "({}) {} [Lvl {} {} {~.1}%] (UP{})", 
-					StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
-			}
+			const auto StrActiveFlag = pClassProfession && pClassProfession->GetProfessionID() == Prof.GetProfessionID() ? "\u2713" : "\u2715";
+			const char* pProfName = GetProfessionName(Prof.GetProfessionID());
+			const auto expNeed = Prof.GetExpForNextLevel();
+			const auto progress = translate_to_percent(expNeed, Prof.GetExperience());
+			const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
+
+			VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfessionID(), "({}) {} [Lvl {} {} {~.1}%] (UP{})", 
+				StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -463,9 +462,9 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Active profession");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
-			if((pClassProfession && pClassProfession->GetProfession() == Profession.GetProfession()) || Profession.GetProfessionType() != PROFESSION_TYPE_WAR)
+			if((pClassProfession && pClassProfession->GetProfessionID() == Profession.GetProfessionID()) || Profession.GetProfessionType() != PROFESSION_TYPE_WAR)
 			{
-				const auto ProfessionID = Profession.GetProfession();
+				const auto ProfessionID = Profession.GetProfessionID();
 				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} (UP {})", GetProfessionName(ProfessionID), Profession.GetUpgradePoint());
 			}
 		}
@@ -478,7 +477,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			if(!pProfession)
 				return false;
 
-			const char* pProfessionName = GetProfessionName(pProfession->GetProfession());
+			const char* pProfessionName = GetProfessionName(pProfession->GetProfessionID());
 			VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{}", pProfessionName);
 			{
 				for(const auto& ID : pProfession->GetAttributes() | std::views::keys)

@@ -198,7 +198,9 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 		}
 		case AchievementType::Leveling:
 		{
-			addProgressInfo(VAchievement, Progress, Required, "Reach", "levels");
+			const auto ProfessionName = std::string(GetProfessionName((Professions)pInfo->GetCriteria()));
+			const auto ActionStr = "Reach " + ProfessionName;
+			addProgressInfo(VAchievement, Progress, Required, ActionStr, "levels");
 			break;
 		}
 		case AchievementType::CraftItem:
