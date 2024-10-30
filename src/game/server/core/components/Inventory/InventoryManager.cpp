@@ -51,23 +51,23 @@ void CInventoryManager::OnPreInit()
 
 			if(AttributeID >= AttributeIdentifier::DMG && AttributeValue > 0)
 			{
-				aContainerAttributes.emplace_back(AttributeID, AttributeValue);
+				CAttribute Attribute(AttributeID, AttributeValue);
+				aContainerAttributes.emplace_back(Attribute);
 			}
 		}
 
 		CItemDescription(ItemID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, std::move(Data));
 	}
 
-	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributs");
+	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributes");
 	while(pResAtt->next())
 	{
 		const auto ID = (AttributeIdentifier)pResAtt->getInt("ID");
 		const auto Name = pResAtt->getString("Name");
-		const auto FieldName = pResAtt->getString("FieldName");
 		const auto UpgradePrice = pResAtt->getInt("Price");
 		const auto Group = (AttributeGroup)pResAtt->getInt("Group");
 
-		CAttributeDescription::CreateElement(ID)->Init(Name, FieldName, UpgradePrice, Group);
+		CAttributeDescription::CreateElement(ID)->Init(Name, UpgradePrice, Group);
 	}
 }
 

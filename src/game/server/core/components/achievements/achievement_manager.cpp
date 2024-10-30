@@ -15,8 +15,8 @@ void CAchievementManager::OnPreInit()
 		int Type = pResult->getInt("Type");
 		int Criteria = pResult->getInt("Criteria");
 		int Required = pResult->getInt("Required");
-		std::string Name = pResult->getString("Name").c_str();
-		std::string Reward = pResult->getString("Reward").c_str();
+		std::string Name = pResult->getString("Name");
+		std::string Reward = pResult->getString("Reward");
 		int AchievementPoint = pResult->getInt("AchievementPoint");
 
 		// create element

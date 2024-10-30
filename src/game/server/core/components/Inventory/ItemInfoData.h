@@ -7,7 +7,7 @@
 #define PERCENT_OF_ENCHANT 8
 #define PERCENT_MAXIMUM_ENCHANT 40
 
-#include "AttributeData.h"
+#include "attribute_data.h"
 #include "RandomBox/RandomBoxData.h"
 
 using ItemIdentifier = int;

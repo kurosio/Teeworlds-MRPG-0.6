@@ -25,10 +25,10 @@ CPlayer* CAccountData::GetPlayer() const
 
 int CAccountData::GetGoldCapacity() const
 {
-	return DEFAULT_MAX_PLAYER_BAG_GOLD + GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);
+	const auto TotalByAttribute = GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);
+	return DEFAULT_MAX_PLAYER_BAG_GOLD + TotalByAttribute;
 }
 
-// Set the ID of the account
 void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
 {
 	// Check if the ID has already been set
@@ -451,12 +451,11 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 	}
 
 	// initialize variables
-	const int Level = pClassProfession->GetLevel();
+	const int level = pClassProfession->GetLevel();
 	const int maxGoldCapacity = GetGoldCapacity();
 	const bool isGoldBagFull = (GetGold() >= maxGoldCapacity);
-
-	const auto expGain = std::max<uint64_t>(Exp, calculate_exp_gain(g_Config.m_SvChairExpFactor, Level, Exp + Level));
-	const int goldGain = isGoldBagFull ? 0 : maximum(Gold, (int)calculate_gold_gain(g_Config.m_SvChairGoldFactor, Level, Gold + Level));
+	const auto expGain = std::max<uint64_t>(Exp, calculate_exp_gain(g_Config.m_SvChairExpFactor, level, Exp + level));
+	const int goldGain = isGoldBagFull ? 0 : maximum(Gold, (int)calculate_gold_gain(g_Config.m_SvChairGoldFactor, level, Gold + level));
 
 	// total percent bonuses
 	const int totalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD));

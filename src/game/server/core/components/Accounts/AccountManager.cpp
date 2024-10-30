@@ -453,7 +453,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			const auto progress = translate_to_percent(expNeed, Prof.GetExperience());
 			const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
 
-			VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfessionID(), "({}) {} [Lvl {} {} {~.1}%] (UP{})", 
+			VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfessionID(), "({}) {} [Lvl {} {} {~.1}%] ({}P)", 
 				StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
 		}
 		VoteWrapper::AddEmptyline(ClientID);
@@ -465,7 +465,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			if((pClassProfession && pClassProfession->GetProfessionID() == Profession.GetProfessionID()) || Profession.GetProfessionType() != PROFESSION_TYPE_WAR)
 			{
 				const auto ProfessionID = Profession.GetProfessionID();
-				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} (UP {})", GetProfessionName(ProfessionID), Profession.GetUpgradePoint());
+				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} ({}P)", GetProfessionName(ProfessionID), Profession.GetUpgradePoint());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
@@ -544,7 +544,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 			return false;
 
 		// upgrade
-		if(pProfession->Upgrade(AttributeID, ReasonNumber, 1))
+		if(pProfession->Upgrade(AttributeID, ReasonNumber, pAttributeInfo->GetUpgradePrice()))
 		{
 			const auto nowValue = pProfession->GetAttributeValue(AttributeID);
 			const auto pProfessionName = GetProfessionName(ProfessionID);
