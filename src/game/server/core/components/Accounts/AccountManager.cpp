@@ -349,12 +349,17 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// list upgrades by profession
 		if(const auto ProfessionID = pPlayer->m_VotesData.GetExtraID())
 		{
+			// check valid profession
 			const auto* pProfession = pPlayer->Account()->GetProfession((Professions)ProfessionID.value());
 			if(!pProfession)
-				return false;
+			{
+				VoteWrapper::AddBackpage(ClientID);
+				return true;
+			}
 
+			// add profession upgrades
 			const char* pProfessionName = GetProfessionName(pProfession->GetProfessionID());
-			VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{}", pProfessionName);
+			VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} upgrades", pProfessionName);
 			{
 				for(const auto& ID : pProfession->GetAttributes() | std::views::keys)
 				{
