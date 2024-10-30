@@ -6,33 +6,33 @@
 class CClassData
 {
 	int m_ClientID{};
-	Professions m_ProfessionID{};
+	ProfessionIdentifier m_ProfessionID{};
 
 public:
 	CClassData()
 	{
-		m_ProfessionID = Professions::None;
+		m_ProfessionID = ProfessionIdentifier::None;
 	}
 
-	void Init(int ClientID, Professions ProfID)
+	void Init(int ClientID, ProfessionIdentifier ProfID)
 	{
 		m_ClientID = ClientID;
 		SetProfessionID(ProfID);
 	}
 
-	void SetProfessionID(Professions ProfID);
+	void SetProfessionID(ProfessionIdentifier ProfID);
 
 	bool HasProfession() const
 	{
-		return m_ProfessionID != Professions::None;
+		return m_ProfessionID != ProfessionIdentifier::None;
 	}
 
-	Professions GetProfessionID() const
+	ProfessionIdentifier GetProfessionID() const
 	{
 		return m_ProfessionID;
 	}
 
-	bool IsProfession(Professions ProfID) const
+	bool IsProfession(ProfessionIdentifier ProfID) const
 	{
 		return m_ProfessionID == ProfID;
 	}

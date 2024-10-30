@@ -12,11 +12,11 @@ enum EProfessionType
 
 class CProfession
 {
+	int m_ClientID {};
 	int m_Level {};
 	uint64_t m_Experience {};
 	int m_UpgradePoint {};
-	int m_ClientID {};
-	Professions m_ProfessionID {};
+	ProfessionIdentifier m_ProfessionID {};
 	int m_ProfessionType {};
 
 protected:
@@ -25,7 +25,7 @@ protected:
 	std::unordered_map<AttributeIdentifier, int> m_Attributes;
 
 public:
-	CProfession(Professions Profession, int ProfessionType);
+	CProfession(ProfessionIdentifier ProfID, int ProfessionType);
 
 	void Init(int ClientID, const std::optional<std::string>& jsonData);
 	void Save();
@@ -53,14 +53,14 @@ public:
 		return m_UpgradePoint;
 	}
 
-	Professions GetProfessionID() const
+	ProfessionIdentifier GetProfessionID() const
 	{
 		return m_ProfessionID;
 	}
 
-	int GetProfessionType() const
+	bool IsProfessionType(int ProfessionType) const
 	{
-		return m_ProfessionType;
+		return m_ProfessionType == ProfessionType;
 	}
 
 	const std::unordered_map<AttributeIdentifier, int>& GetAttributes() const
@@ -82,20 +82,26 @@ private:
 	std::string GetPreparedJsonString() const;
 };
 
+/*
+ * Tank profession
+ */
 class CTankProfession : public CProfession
 {
 public:
-	CTankProfession() : CProfession(Professions::Tank, PROFESSION_TYPE_WAR)
+	CTankProfession() : CProfession(ProfessionIdentifier::Tank, PROFESSION_TYPE_WAR)
 	{
 		m_Attributes[AttributeIdentifier::HP] = 0;
 		m_Attributes[AttributeIdentifier::Lucky] = 0;
 	}
 };
 
+/*
+ * DPS profession
+ */
 class CDPSProfession : public CProfession
 {
 public:
-	CDPSProfession() : CProfession(Professions::Dps, PROFESSION_TYPE_WAR)
+	CDPSProfession() : CProfession(ProfessionIdentifier::Dps, PROFESSION_TYPE_WAR)
 	{
 		m_Attributes[AttributeIdentifier::Crit] = 0;
 		m_Attributes[AttributeIdentifier::CritDMG] = 0;
@@ -103,29 +109,41 @@ public:
 	}
 };
 
+/*
+ * Healer profession
+ */
 class CHealerProfession : public CProfession
 {
 public:
-	CHealerProfession() : CProfession(Professions::Healer, PROFESSION_TYPE_WAR)
+	CHealerProfession()
+		: CProfession(ProfessionIdentifier::Healer, PROFESSION_TYPE_WAR)
 	{
 		m_Attributes[AttributeIdentifier::MP] = 0;
 		m_Attributes[AttributeIdentifier::Vampirism] = 0;
 	}
 };
 
+/*
+ * Farmer profession
+ */
 class CFarmerProfession : public CProfession
 {
 public:
-	CFarmerProfession() : CProfession(Professions::Farmer, PROFESSION_TYPE_OTHER)
+	CFarmerProfession()
+		: CProfession(ProfessionIdentifier::Farmer, PROFESSION_TYPE_OTHER)
 	{
 		m_Attributes[AttributeIdentifier::Extraction] = 1;
 	}
 };
 
+/*
+ * Miner profession
+ */
 class CMinerProfession : public CProfession
 {
 public:
-	CMinerProfession() : CProfession(Professions::Miner, PROFESSION_TYPE_OTHER)
+	CMinerProfession()
+		: CProfession(ProfessionIdentifier::Miner, PROFESSION_TYPE_OTHER)
 	{
 		m_Attributes[AttributeIdentifier::Efficiency] = 1;
 	}

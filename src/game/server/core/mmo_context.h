@@ -149,7 +149,7 @@ enum class LaserOrbiteType : unsigned char
 };
 
 // professions
-enum class Professions : int
+enum class ProfessionIdentifier : int
 {
 	None = -1,
 	Tank,
@@ -160,15 +160,15 @@ enum class Professions : int
 	NUM_PROFESSIONS,
 };
 
-constexpr const char* GetProfessionName(Professions profession) noexcept
+constexpr const char* GetProfessionName(ProfessionIdentifier profID) noexcept
 {
-	switch(profession)
+	switch(profID)
 	{
-		case Professions::Tank:   return "Tank";
-		case Professions::Dps:    return "Dps";
-		case Professions::Healer: return "Healer";
-		case Professions::Miner:  return "Miner";
-		case Professions::Farmer: return "Farmer";
+		case ProfessionIdentifier::Tank:   return "Tank";
+		case ProfessionIdentifier::Dps:    return "Dps";
+		case ProfessionIdentifier::Healer: return "Healer";
+		case ProfessionIdentifier::Miner:  return "Miner";
+		case ProfessionIdentifier::Farmer: return "Farmer";
 		default:                  return "None";
 	}
 }

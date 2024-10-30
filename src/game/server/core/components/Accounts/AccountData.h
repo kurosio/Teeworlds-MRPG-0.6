@@ -77,7 +77,7 @@ public:
 		return GetProfession(m_Class.GetProfessionID());
 	}
 
-	CProfession* GetProfession(Professions Profession) const
+	CProfession* GetProfession(ProfessionIdentifier Profession) const
 	{
 		const auto it = std::ranges::find_if(m_vProfessions, [Profession](const CProfession& Prof)
 		{

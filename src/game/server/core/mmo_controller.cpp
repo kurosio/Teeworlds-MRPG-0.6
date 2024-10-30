@@ -483,7 +483,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	{
 		const auto ProfessionID = (int)pAccount->GetClass().GetProfessionID();
 		const auto RankPoints = pAccount->CalculateRankPoints();
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "RankPoints = '{}', Profession = '{}' WHERE ID = '{}'", RankPoints, ProfessionID, AccountID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "RankPoints = '{}', ProfessionID = '{}' WHERE ID = '{}'", RankPoints, ProfessionID, AccountID);
 	}
 
 	// save world position

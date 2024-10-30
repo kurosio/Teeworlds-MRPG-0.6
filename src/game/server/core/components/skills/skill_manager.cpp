@@ -19,9 +19,9 @@ void CSkillManager::OnPreInit()
 		const auto PriceSP = pRes->getInt("PriceSP");
 		const auto MaxLevel = pRes->getInt("MaxLevel");
 		const auto Passive = pRes->getBoolean("Passive");
-		const auto Type = (SkillType)pRes->getInt("Type");
+		const auto ProfID = (ProfessionIdentifier)pRes->getInt("ProfessionID");
 
-		CSkillDescription(ID).Init(Name, Description, BoostName, BoostValue, Type, PercentageCost, PriceSP, MaxLevel, Passive);
+		CSkillDescription(ID).Init(Name, Description, BoostName, BoostValue, ProfID, PercentageCost, PriceSP, MaxLevel, Passive);
 	}
 }
 
@@ -61,22 +61,14 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VInfo.AddLine();
 
 		// Skill list by class type
-		int Skilltype = SKILL_TYPE_TANK;
-		const char* pTypename = "Defensive skill's";
+		const auto ProfID = pPlayer->Account()->GetClass().GetProfessionID();
+		const auto Title = std::string(GetProfessionName(ProfID)) + " skill's";
 
-		if(pPlayer->Account()->GetClass().IsProfession(Professions::Dps))
+		if(pPlayer->Account()->GetClass().HasProfession())
 		{
-			Skilltype = SKILL_TYPE_DPS;
-			pTypename = "Attacking skill's";
+			ShowSkillList(pPlayer, Title.c_str(), ProfID);
 		}
-		else if(pPlayer->Account()->GetClass().IsProfession(Professions::Healer))
-		{
-			Skilltype = SKILL_TYPE_HEALER;
-			pTypename = "Healing skill's";
-		}
-
-		ShowSkillList(pPlayer, pTypename, (SkillType)Skilltype);
-		ShowSkillList(pPlayer, "Improving", SkillType::SKILL_TYPE_IMPROVEMENTS);
+		ShowSkillList(pPlayer, "Improving skill's", ProfessionIdentifier::None);
 		return true;
 	}
 
@@ -98,7 +90,7 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillType Type) const
+void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, ProfessionIdentifier ProfID) const
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -109,11 +101,11 @@ void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillTyp
 	VoteWrapper VSkills(ClientID, VWF_SEPARATE_OPEN, pTitle);
 	for(const auto& [ID, Skill] : CSkillDescription::Data())
 	{
-		if(Skill.m_Type == Type)
-		{
-			CSkill* pSkill = pPlayer->GetSkill(ID);
-			VSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", Skill.GetName(), Skill.GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
-		}
+		if(Skill.m_ProfessionID != ProfID)
+			continue;
+
+		const auto* pSkill = pPlayer->GetSkill(ID);
+		VSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", Skill.GetName(), Skill.GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
 	}
 
 	// add line

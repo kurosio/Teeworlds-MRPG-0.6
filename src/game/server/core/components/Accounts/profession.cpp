@@ -15,12 +15,12 @@ CPlayer* CProfession::GetPlayer() const
 	return GS()->GetPlayer(m_ClientID);
 }
 
-CProfession::CProfession(Professions Profession, int ProfessionType)
+CProfession::CProfession(ProfessionIdentifier ProfID, int ProfessionType)
 {
 	m_Level = 1;
 	m_Experience = 0;
 	m_UpgradePoint = 0;
-	m_ProfessionID = Profession;
+	m_ProfessionID = ProfID;
 	m_ProfessionType = ProfessionType;
 }
 

@@ -274,7 +274,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VLevelingWar(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling (War professions)");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
-			if(Profession.GetProfessionType() == PROFESSION_TYPE_WAR)
+			if(Profession.IsProfessionType(PROFESSION_TYPE_WAR))
 			{
 				const auto AppendActiveStatus = pPlayer->Account()->GetClass().IsProfession(Profession.GetProfessionID()) ? " (active)" : "";
 				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
@@ -288,7 +288,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VLevelingOther(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling (Other professions)");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
-			if(Profession.GetProfessionType() == PROFESSION_TYPE_OTHER)
+			if(Profession.IsProfessionType(PROFESSION_TYPE_OTHER))
 			{
 				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
 				const auto Title = "Profession " + pProfessionName;
@@ -314,15 +314,15 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		const auto* pClassProfession = pPlayer->Account()->GetClassProfession();
+		const auto* pClassProf = pPlayer->Account()->GetClassProfession();
 
 		// select war profession
 		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Change class profession");
 		for(auto& Prof : pPlayer->Account()->GetProfessions())
 		{
-			if(Prof.GetProfessionType() == PROFESSION_TYPE_WAR)
+			if(Prof.IsProfessionType(PROFESSION_TYPE_WAR))
 			{
-				const auto StrActiveFlag = pClassProfession && pClassProfession->GetProfessionID() == Prof.GetProfessionID() ? "\u2713" : "\u2715";
+				const auto StrActiveFlag = pClassProf && pClassProf->GetProfessionID() == Prof.GetProfessionID() ? "\u2713" : "\u2715";
 				const char* pProfName = GetProfessionName(Prof.GetProfessionID());
 				const auto expNeed = Prof.GetExpForNextLevel();
 				const auto progress = translate_to_percent(expNeed, Prof.GetExperience());
@@ -336,32 +336,32 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// professions
 		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Active profession");
-		for(auto& Profession : pPlayer->Account()->GetProfessions())
+		for(auto& Prof : pPlayer->Account()->GetProfessions())
 		{
-			if((pClassProfession && pClassProfession->GetProfessionID() == Profession.GetProfessionID()) || Profession.GetProfessionType() != PROFESSION_TYPE_WAR)
+			if((pClassProf && pClassProf->GetProfessionID() == Prof.GetProfessionID()) || Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
 			{
-				const auto ProfessionID = Profession.GetProfessionID();
-				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} ({}P)", GetProfessionName(ProfessionID), Profession.GetUpgradePoint());
+				const auto ProfessionID = Prof.GetProfessionID();
+				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} ({}P)", GetProfessionName(ProfessionID), Prof.GetUpgradePoint());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// list upgrades by profession
-		if(const auto ProfessionID = pPlayer->m_VotesData.GetExtraID())
+		if(const auto ProfID = pPlayer->m_VotesData.GetExtraID())
 		{
 			// check valid profession
-			const auto* pProfession = pPlayer->Account()->GetProfession((Professions)ProfessionID.value());
-			if(!pProfession)
+			const auto* pProf = pPlayer->Account()->GetProfession((ProfessionIdentifier)ProfID.value());
+			if(!pProf)
 			{
 				VoteWrapper::AddBackpage(ClientID);
 				return true;
 			}
 
 			// add profession upgrades
-			const char* pProfessionName = GetProfessionName(pProfession->GetProfessionID());
-			VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} upgrades", pProfessionName);
+			const char* pProfName = GetProfessionName(pProf->GetProfessionID());
+			VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} upgrades", pProfName);
 			{
-				for(const auto& ID : pProfession->GetAttributes() | std::views::keys)
+				for(const auto& ID : pProf->GetAttributes() | std::views::keys)
 				{
 					const auto* pAttribute = GS()->GetAttributeInfo(ID);
 					const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
@@ -377,10 +377,10 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			}
 			VUpgrades.AddLine();
 			{
-				for(auto& [ID, Value] : pProfession->GetAttributes())
+				for(auto& [ID, Value] : pProf->GetAttributes())
 				{
 					const auto* pAttribute = GS()->GetAttributeInfo(ID);
-					VUpgrades.AddOption("UPGRADE", ProfessionID.value(), (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
+					VUpgrades.AddOption("UPGRADE", ProfID.value(), (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
 				}
 			}
 		}
@@ -536,7 +536,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// upgrade command
 	if(PPSTR(pCmd, "UPGRADE") == 0)
 	{
-		const auto ProfessionID = (Professions)Extra1;
+		const auto ProfessionID = (ProfessionIdentifier)Extra1;
 		const auto AttributeID = (AttributeIdentifier)Extra2;
 
 		// check valid profession
@@ -564,7 +564,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// select class
 	if(PPSTR(pCmd, "SELECT_CLASS") == 0)
 	{
-		const auto ProfessionID = (Professions)Extra1;
+		const auto ProfessionID = (ProfessionIdentifier)Extra1;
 
 		pPlayer->Account()->GetClass().SetProfessionID(ProfessionID);
 		pPlayer->m_VotesData.ResetExtraID();

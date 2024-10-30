@@ -88,7 +88,7 @@ void CEntityHarvestingItem::Process(int ClientID)
 	auto* pPlayerItem = pPlayer->GetItem(GetItemInfo()->GetID());
 	if(m_Type == HARVESTINGITEM_TYPE_MINING)
 	{
-		auto* pMinerProfession = pPlayer->Account()->GetProfession(Professions::Miner);
+		auto* pMinerProfession = pPlayer->Account()->GetProfession(ProfessionIdentifier::Miner);
 		if(!pMinerProfession)
 			return;
 
@@ -102,7 +102,7 @@ void CEntityHarvestingItem::Process(int ClientID)
 	}
 	else if(m_Type == HARVESTINGITEM_TYPE_FARMING)
 	{
-		auto* pFarmerProfession = pPlayer->Account()->GetProfession(Professions::Farmer);
+		auto* pFarmerProfession = pPlayer->Account()->GetProfession(ProfessionIdentifier::Farmer);
 		if(!pFarmerProfession)
 			return;
 

@@ -81,7 +81,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	*/
 	ReinitializeHouse();
 	ReinitializeGuild();
-	m_Class.Init(m_ClientID, (Professions)pResult->getInt("Profession"));
+	m_Class.Init(m_ClientID, (ProfessionIdentifier)pResult->getInt("ProfessionID"));
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
 }
@@ -96,11 +96,11 @@ void CAccountData::InitProfessions()
 	m_vProfessions.push_back(CMinerProfession());
 
 	// load professions data
-	std::map<Professions, std::string> vmProfessionsData {};
+	std::map<ProfessionIdentifier, std::string> vmProfessionsData {};
 	const auto pResult = Database->Execute<DB::SELECT>("*", "tw_accounts_professions", "WHERE UserID = '{}'", m_ID);
 	while(pResult->next())
 	{
-		const auto ProfessionID = (Professions)pResult->getInt("ProfessionID");
+		const auto ProfessionID = (ProfessionIdentifier)pResult->getInt("ProfessionID");
 		vmProfessionsData[ProfessionID] = pResult->getString("Data");
 	}
 

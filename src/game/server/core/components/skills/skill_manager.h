@@ -21,7 +21,7 @@ class CSkillManager : public MmoComponent
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 
 	// vote list's menus
-	void ShowSkillList(CPlayer* pPlayer, const char* pTitle, SkillType Type) const;
+	void ShowSkillList(CPlayer* pPlayer, const char* pTitle, ProfessionIdentifier ProfID) const;
 	void ShowSkill(CPlayer* pPlayer, int SkillID) const;
 
 public:

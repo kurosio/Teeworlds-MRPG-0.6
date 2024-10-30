@@ -301,7 +301,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		const int ClientID = pChr->GetPlayer()->GetCID();
 
 		// update tanking client status
-		if(pChr->GetPlayer()->Account()->GetClass().IsProfession(Professions::Tank))
+		if(pChr->GetPlayer()->Account()->GetClass().IsProfession(ProfessionIdentifier::Tank))
 		{
 			pChr->GetPlayer()->m_MoodState = Mood::Tank;
 		}
@@ -440,7 +440,7 @@ int CGameControllerDungeon::GetSyncFactor() const
 	return (MaxFactor + MinFactor) / 2;
 }
 
-int CGameControllerDungeon::GetAttributeDungeonSyncByClass(Professions ProfID, AttributeIdentifier ID) const
+int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ProfessionIdentifier ProfID, AttributeIdentifier ID) const
 {
 	float Percent = 0.0f;
 	const float ActiveAttribute = m_SyncDungeon / 2.0f;
@@ -448,7 +448,7 @@ int CGameControllerDungeon::GetAttributeDungeonSyncByClass(Professions ProfID, A
 
 	// - - - - - - - - -- - - -
 	// balance tanks
-	if(ProfID == Professions::Tank)
+	if(ProfID == ProfessionIdentifier::Tank)
 	{
 		// basic default tank upgrades
 		if(Type == AttributeGroup::Tank)
@@ -461,7 +461,7 @@ int CGameControllerDungeon::GetAttributeDungeonSyncByClass(Professions ProfID, A
 
 	// - - - - - - - - - - - - -
 	// balance dps
-	if(ProfID == Professions::Dps)
+	if(ProfID == ProfessionIdentifier::Dps)
 	{
 		// basic default dps upgrades
 		if(Type == AttributeGroup::Dps || Type == AttributeGroup::Hardtype)
@@ -474,7 +474,7 @@ int CGameControllerDungeon::GetAttributeDungeonSyncByClass(Professions ProfID, A
 
 	// - - - - - - - - - - - - -
 	// balance healer
-	if(ProfID == Professions::Healer)
+	if(ProfID == ProfessionIdentifier::Healer)
 	{
 		// basic default healer upgrades
 		if(Type == AttributeGroup::Healer)

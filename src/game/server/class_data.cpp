@@ -5,7 +5,7 @@
 #include <engine/server.h>
 #include <game/server/gamecontext.h>
 
-void CClassData::SetProfessionID(Professions ProfID)
+void CClassData::SetProfessionID(ProfessionIdentifier ProfID)
 {
 	m_ProfessionID = ProfID;
 	UpdateProfessionSkin();
@@ -13,33 +13,33 @@ void CClassData::SetProfessionID(Professions ProfID)
 
 float CClassData::GetExtraHP() const
 {
-	if(m_ProfessionID == Professions::Tank)
+	if(m_ProfessionID == ProfessionIdentifier::Tank)
 		return 30.f;
-	if(m_ProfessionID == Professions::Healer)
+	if(m_ProfessionID == ProfessionIdentifier::Healer)
 		return 15.f;
-	if(m_ProfessionID == Professions::Dps)
+	if(m_ProfessionID == ProfessionIdentifier::Dps)
 		return 5.f;
 	return 0.f;
 }
 
 float CClassData::GetExtraMP() const
 {
-	if(m_ProfessionID == Professions::Tank)
+	if(m_ProfessionID == ProfessionIdentifier::Tank)
 		return 5.f;
-	if(m_ProfessionID == Professions::Healer)
+	if(m_ProfessionID == ProfessionIdentifier::Healer)
 		return 30.f;
-	if(m_ProfessionID == Professions::Dps)
+	if(m_ProfessionID == ProfessionIdentifier::Dps)
 		return 15.f;
 	return 0;
 }
 
 float CClassData::GetExtraDMG() const
 {
-	if(m_ProfessionID == Professions::Tank)
+	if(m_ProfessionID == ProfessionIdentifier::Tank)
 		return 10.f;
-	if(m_ProfessionID == Professions::Healer)
+	if(m_ProfessionID == ProfessionIdentifier::Healer)
 		return 5.f;
-	if(m_ProfessionID == Professions::Dps)
+	if(m_ProfessionID == ProfessionIdentifier::Dps)
 		return 30.f;
 	return 0;
 }
@@ -58,15 +58,15 @@ void CClassData::UpdateProfessionSkin() const
 		return;
 
 	// update tee info
-	if(m_ProfessionID == Professions::Tank)
+	if(m_ProfessionID == ProfessionIdentifier::Tank)
 	{
 		str_copy(pPlayer->Account()->m_TeeInfos.m_aSkinName, "red_panda", sizeof(pPlayer->Account()->m_TeeInfos.m_aSkinName));
 	}
-	else if(m_ProfessionID == Professions::Healer)
+	else if(m_ProfessionID == ProfessionIdentifier::Healer)
 	{
 		str_copy(pPlayer->Account()->m_TeeInfos.m_aSkinName, "Empieza", sizeof(pPlayer->Account()->m_TeeInfos.m_aSkinName));
 	}
-	else if(m_ProfessionID == Professions::Dps)
+	else if(m_ProfessionID == ProfessionIdentifier::Dps)
 	{
 		str_copy(pPlayer->Account()->m_TeeInfos.m_aSkinName, "flokes", sizeof(pPlayer->Account()->m_TeeInfos.m_aSkinName));
 	}

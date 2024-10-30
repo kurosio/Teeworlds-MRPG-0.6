@@ -66,6 +66,15 @@ bool CSkill::Use()
 	if(!pChar)
 		return false;
 
+	// check profession skill
+	const auto ProfID = Info()->GetProfessionID();
+	if(ProfID != ProfessionIdentifier::None && !pPlayer->Account()->GetClass().IsProfession(ProfID))
+	{
+		const char* pProfName = GetProfessionName(ProfID);
+		GS()->Chat(m_ClientID, "You can use this skill with '{}' profession.", pProfName);
+		return false;
+	}
+
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
 	const int ManaCost = maximum(1, translate_to_percent_rest(pPlayer->GetMaxMana(), Info()->GetPercentageCost()));

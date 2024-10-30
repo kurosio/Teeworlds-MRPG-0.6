@@ -5,15 +5,6 @@
 
 class CEntityGroup;
 
-enum SkillType
-{
-	SKILL_TYPE_IMPROVEMENTS,
-	SKILL_TYPE_HEALER,
-	SKILL_TYPE_DPS,
-	SKILL_TYPE_TANK,
-	NUM_SKILL_TYPES,
-};
-
 // skill description
 class CSkillDescription : public MultiworldIdentifiableData< std::map < int, CSkillDescription > >
 {
@@ -24,7 +15,7 @@ class CSkillDescription : public MultiworldIdentifiableData< std::map < int, CSk
 	char m_aDescription[64] {};
 	char m_aBoostName[64] {};
 	int m_BoostDefault {};
-	SkillType m_Type {};
+	ProfessionIdentifier m_ProfessionID{};
 	int m_PercentageCost {};
 	int m_PriceSP {};
 	int m_MaxLevel {};
@@ -36,13 +27,14 @@ public:
 	CSkillDescription(int ID) : m_ID(ID) {}
 
 	// intialize skill description
-	void Init(const std::string& Name, const std::string& Description, const std::string& BonusName, int BonusDefault, SkillType Type, int PercentageCost, int PriceSP, int MaxLevel, bool Passive)
+	void Init(const std::string& Name, const std::string& Description, const std::string& BonusName, int BonusDefault, 
+		ProfessionIdentifier ProfID, int PercentageCost, int PriceSP, int MaxLevel, bool Passive)
 	{
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
 		str_copy(m_aBoostName, BonusName.c_str(), sizeof(m_aBoostName));
 		m_BoostDefault = BonusDefault;
-		m_Type = Type;
+		m_ProfessionID = ProfID;
 		m_PercentageCost = PercentageCost;
 		m_PriceSP = PriceSP;
 		m_MaxLevel = MaxLevel;
@@ -76,9 +68,9 @@ public:
 		return m_BoostDefault;
 	}
 
-	SkillType GetType() const
+	ProfessionIdentifier GetProfessionID() const
 	{
-		return m_Type;
+		return m_ProfessionID;
 	}
 
 	int GetPercentageCost() const
