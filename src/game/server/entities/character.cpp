@@ -320,7 +320,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 				
 			const auto Dist = distance(pTarget->m_Pos, m_Pos);
 			if(Dist < Radius)
-				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, 3);
+				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, 1);
 		}
 
 		// move and visual effect
