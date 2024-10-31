@@ -566,7 +566,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	{
 		const auto ProfessionID = (ProfessionIdentifier)Extra1;
 
-		if(pPlayer->m_aPlayerTick[LastDamage] < (Server()->Tick() + Server()->TickSpeed() * 5))
+		if((pPlayer->m_aPlayerTick[LastDamage] + Server()->TickSpeed() * 5) > Server()->Tick())
 		{
 			GS()->Chat(ClientID, "Wait a couple of seconds, your player is currently in combat or taking damage");
 			return true;
