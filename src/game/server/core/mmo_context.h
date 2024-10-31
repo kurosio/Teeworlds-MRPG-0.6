@@ -81,6 +81,7 @@ enum ESkill
 	SKILL_CURE_I = 7, // health recovery cure
 	SKILL_PROVOKE = 8, // provoke
 	SKILL_ENERGY_SHIELD = 9, // energy shield
+	NUM_SKILLS,
 };
 
 // account harvesting stats

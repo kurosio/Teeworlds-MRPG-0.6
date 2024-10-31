@@ -79,24 +79,18 @@ bool CSkill::Use()
 	const int ClientID = pPlayer->GetCID();
 	const int ManaCost = maximum(1, translate_to_percent_rest(pPlayer->GetMaxMana(), Info()->GetPercentageCost()));
 	const vec2 PlayerPosition = pChar->GetPos();
+	auto& pEntSkillPtr = m_apEntSkillPtrs[m_ID];
 
-	if(m_ID == SKILL_ATTACK_TELEPORT)
+	// Attack teleport
+	if(IsActivated(pChar, ManaCost, SKILL_ATTACK_TELEPORT))
 	{
-		// check mana
-		if(pChar->CheckFailMana(ManaCost))
-			return false;
-
-		// create attack teleport
 		new CAttackTeleport(&GS()->m_World, PlayerPosition, pPlayer, GetBonus());
 		return true;
 	}
 
-	if(m_ID == SKILL_CURE_I)
+	// Cure I
+	if(IsActivated(pChar, ManaCost, SKILL_CURE_I))
 	{
-		// check mana
-		if(pChar->CheckFailMana(ManaCost))
-			return false;
-
 		// cure near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
@@ -123,12 +117,9 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == SKILL_BLESSING_GOD_WAR)
+	// Blessing god war
+	if(IsActivated(pChar, ManaCost, SKILL_BLESSING_GOD_WAR))
 	{
-		// check mana
-		if(pChar->CheckFailMana(ManaCost))
-			return false;
-
 		// blessing near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
@@ -167,12 +158,9 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == SKILL_PROVOKE)
+	// Provoke
+	if(IsActivated(pChar, ManaCost, SKILL_PROVOKE))
 	{
-		// check mana
-		if(pChar->CheckFailMana(ManaCost))
-			return false;
-
 		// provoke mobs
 		bool MissedProvoked = false;
 		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
@@ -223,71 +211,81 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(m_ID == SKILL_SLEEPY_GRAVITY)
+	// Skill sleepy gravity
+	if(IsActivated(pChar, ManaCost, SKILL_SLEEPY_GRAVITY, SKILL_USAGE_RESET))
 	{
-		// check mana
-		//if(pChr->CheckFailMana(ManaCost))
-		//	return false;
-
-		if(auto groupPtr = m_pEntitySkill.lock())
-			groupPtr->Clear();
-
-		int Damage = 15;
-		int Lifetime = 1000;
-		float Speed = 2.0f;
-		float Radius = 300.0f;
 		//GS()->EntityManager()->Tornado(ClientID, PlayerPosition, Damage, Lifetime, Speed, Radius);
-
-
 		//GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, 320.f, 1000, 10);
 
-		//GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, minimum(200.f + GetBonus(), 400.f), 10 * Server()->TickSpeed(), ManaCost, &m_pEntitySkill);
+		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, minimum(200.f + GetBonus(), 400.f), 10 * Server()->TickSpeed(), 
+			ManaCost, &pEntSkillPtr);
 		return true;
 	}
 
 	// Skill heart turret
-	if(m_ID == SKILL_HEART_TURRET)
+	if(IsActivated(pChar, ManaCost, SKILL_HEART_TURRET, SKILL_USAGE_RESET))
 	{
-		// check mana
-		//if(pChr->CheckFailMana(ManaCost))
-		//	return false;
-
-		if(auto groupPtr = m_pEntitySkill.lock())
-			groupPtr->Clear();
-
 		//GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
 		//GS()->EntityManager()->FrostNova(ClientID, PlayerPosition, 120.f, 12, 5);
-		GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, 320.f, 1000, 10);
-		GS()->EntityManager()->Bow(ClientID, 5, 25, 160.f, 16);
+		//GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, 320.f, 1000, 10);
+		//GS()->EntityManager()->Bow(ClientID, 5, 25, 160.f, 16);
 
-		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, (10 + GetBonus()) * Server()->TickSpeed(), 2 * Server()->TickSpeed(), &m_pEntitySkill);
+		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, (10 + GetBonus()) * Server()->TickSpeed(), 2 * Server()->TickSpeed(), &pEntSkillPtr);
 		return true;
 	}
 
-	if(m_ID == SKILL_ENERGY_SHIELD)
+	// Skill energy shield
+	if(IsActivated(pChar, ManaCost, SKILL_ENERGY_SHIELD, SKILL_USAGE_TOGGLE))
 	{
-		// disable energy shield
-		if(const auto groupPtr = m_pEntitySkill.lock())
-		{
-			GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, 100, "The energy shield has been disabled!");
-			groupPtr->Clear();
-			return true;
-		}
-
-		// check mana
-		//if(pChr->CheckFailMana(ManaCost))
-		//	return false;
-
-		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
+		//GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
 
 		// enable shield
 		const int StartHealth = maximum(1, translate_to_percent_rest(pPlayer->GetMaxHealth(), GetBonus()));
-		GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth, &m_pEntitySkill);
+		GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth, &pEntSkillPtr);
 		GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, 100, "The energy shield has been enabled! Health: {}!", StartHealth);
 		return true;
 	}
 
 	return false;
+}
+
+bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int SkillUsage) const
+{
+	if(m_ID != SkillID)
+		return false;
+
+	auto& skillEntityPtr = m_apEntSkillPtrs[m_ID];
+
+	// reset skill when use
+	if(SkillUsage == SKILL_USAGE_RESET)
+	{
+		if(pChar->CheckFailMana(Manacost))
+			return false;
+
+		if(const auto groupPtr = skillEntityPtr.lock())
+			groupPtr->Clear();
+
+		return true;
+	}
+
+	// toggle skill when use
+	if(SkillUsage == SKILL_USAGE_TOGGLE)
+	{
+		if(const auto groupPtr = skillEntityPtr.lock())
+		{
+			GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 100, "The {} has been disabled!", Info()->GetName());
+			groupPtr->Clear();
+			return false;
+		}
+
+		if(pChar->CheckFailMana(Manacost))
+			return false;
+
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 100, "The {} has been enabled!", Info()->GetName());
+		return true;
+	}
+
+	return !pChar->CheckFailMana(Manacost);
 }
 
 bool CSkill::Upgrade()

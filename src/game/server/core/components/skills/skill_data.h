@@ -106,6 +106,7 @@ class CSkill : public MultiworldIdentifiableData< std::map< int, std::deque < CS
 	int m_ClientID{};
 	int m_Level{};
 	int m_SelectedEmoticion{};
+	std::array< std::weak_ptr<CEntityGroup>, NUM_SKILLS > m_apEntSkillPtrs {};
 
 public:
 	// constructors
@@ -164,12 +165,20 @@ public:
 	}
 
 	std::string GetStringLevelStatus() const;
-	std::weak_ptr<CEntityGroup> m_pEntitySkill{};
 
 	// functions
 	void SelectNextControlEmote();
 	bool Upgrade();
 	bool Use();
+
+private:
+	enum
+	{
+		SKILL_USAGE_NONE,
+		SKILL_USAGE_RESET,
+		SKILL_USAGE_TOGGLE,
+	};
+	bool IsActivated(CCharacter* pChar, int Manacost, int SkillID, int SkillUsage = SKILL_USAGE_NONE) const;
 };
 
 #endif
