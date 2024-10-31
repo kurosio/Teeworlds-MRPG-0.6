@@ -129,7 +129,7 @@ void CAttackTeleport::Tick()
 					vec2 Force = normalize(Diff) * 16.0f;
 					pNextChar->TakeDamage(Force * 12.0f, MaximalDamageSize, ClientID, WEAPON_NINJA);
 					GS()->CreateExplosion(SearchPos, pOwnerChar->GetPlayer()->GetCID(), WEAPON_GRENADE, 0);
-					pNextPlayer->GiveEffect("Stun", 1, 100);
+					pNextPlayer->GiveEffect("Stun", 1);
 					pOwnerChar->ChangePosition(pNextChar->GetPos());
 
 					GS()->CreateSound(SearchPos, SOUND_NINJA_FIRE);

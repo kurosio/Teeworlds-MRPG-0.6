@@ -87,8 +87,7 @@ void CEntityPathArrow::Snap(int SnappingClient)
 
 	vec2 CorePos = pPlayer->GetCharacter()->m_Core.m_Pos;
 	m_Pos = CorePos - normalize(CorePos - m_PosTo) * clamp(distance(m_Pos, m_PosTo), 32.0f, 90.0f);
-	if(!GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_ARMOR))
-		return;
+	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_ARMOR);
 }
 
 CPlayer* CEntityPathArrow::GetPlayer() const

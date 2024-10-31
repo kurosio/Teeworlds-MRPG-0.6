@@ -234,15 +234,13 @@ bool CSkill::Use()
 		return true;
 	}
 
-	// Skill energy shield
-	if(IsActivated(pChar, ManaCost, SKILL_ENERGY_SHIELD, SKILL_USAGE_TOGGLE))
+	// Skill last stand
+	if(IsActivated(pChar, 0, SKILL_LAST_STAND, SKILL_USAGE_TOGGLE))
 	{
 		//GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
 
 		// enable shield
-		const int StartHealth = maximum(1, translate_to_percent_rest(pPlayer->GetMaxHealth(), GetBonus()));
-		GS()->EntityManager()->EnergyShield(ClientID, PlayerPosition, StartHealth, &pEntSkillPtr);
-		GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, 100, "The energy shield has been enabled! Health: {}!", StartHealth);
+		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, ManaCost, &pEntSkillPtr);
 		return true;
 	}
 

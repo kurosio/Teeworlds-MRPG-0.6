@@ -13,8 +13,7 @@ void CPickupEntity::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	if(!GS()->SnapPickup(SnappingClient, GetID(), m_Pos, m_Options.Type, m_Options.Subtype))
-		return;
+	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, m_Options.Type, m_Options.Subtype);
 
 	CBaseEntity::Snap(SnappingClient);
 }

@@ -18,6 +18,53 @@
 class CPlayerBot;
 enum class AchievementType;
 
+/*class CEffectManager
+{
+	int m_ClientID {};
+	ska::unordered_map<std::string, int> m_vmEffects {};
+
+public:
+	void Init(int ClientID)
+	{
+		m_ClientID = ClientID;
+	}
+
+	bool Add(const char* pEffect, int Sec, float Chance = 100.f)
+	{
+		const float RandomChance = random_float(100.0f);
+		if(RandomChance < Chance)
+		{
+			m_vmEffects[pEffect] = Sec;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool Remove(const char* pEffect)
+	{
+		if(m_vmEffects.erase(pEffect) > 0)
+			return true;
+
+		return false;
+	}
+
+	void Tick()
+	{
+		for(auto it = m_vmEffects.begin(); it != m_vmEffects.end();)
+		{
+			if(--it->second <= 0)
+			{
+				it = m_vmEffects.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+};*/
+
 enum
 {
 	WEAPON_SELF = -2, // self die
@@ -132,7 +179,8 @@ public:
 	float GetAttributeChance(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);
 
-	virtual bool GiveEffect(const char* Potion, int Sec, float Chance = 100.0f);
+	virtual bool GiveEffect(const char* pEffect, int Sec, bool Silent = false, float Chance = 100.f);
+	virtual bool RemoveEffect(const char* pEffect, bool Silent = false);
 	virtual bool IsActiveEffect(const char* Potion) const;
 	virtual void ClearEffects();
 

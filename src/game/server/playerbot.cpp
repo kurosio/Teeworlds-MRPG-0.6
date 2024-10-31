@@ -265,7 +265,7 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 	return AttributeValue;
 }
 
-bool CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
+bool CPlayerBot::GiveEffect(const char* Potion, int Sec, bool, float Chance)
 {
 	if(!m_pCharacter || !m_pCharacter->IsAlive())
 		return false;
@@ -274,6 +274,17 @@ bool CPlayerBot::GiveEffect(const char* Potion, int Sec, float Chance)
 	if(RandomChance < Chance)
 	{
 		m_aEffects[Potion] = Sec;
+		return true;
+	}
+
+	return false;
+}
+
+bool CPlayerBot::RemoveEffect(const char* pEffect, bool)
+{
+	if(m_aEffects.contains(pEffect))
+	{
+		m_aEffects.erase(pEffect);
 		return true;
 	}
 

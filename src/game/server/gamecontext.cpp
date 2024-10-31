@@ -283,13 +283,13 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 	}
 }
 
-bool CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick, int LaserType, int Subtype, int Owner, int Flags) const
+void CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick, int LaserType, int Subtype, int Owner, int Flags) const
 {
 	if(GetClientVersion(SnappingClient) >= VERSION_DDNET_MULTI_LASER)
 	{
 		CNetObj_DDNetLaser* pObj = Server()->SnapNewItem<CNetObj_DDNetLaser>(ID);
 		if(!pObj)
-			return false;
+			return;
 
 		pObj->m_ToX = (int)To.x;
 		pObj->m_ToY = (int)To.y;
@@ -306,7 +306,7 @@ bool CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From
 	{
 		CNetObj_Laser* pObj = Server()->SnapNewItem<CNetObj_Laser>(ID);
 		if(!pObj)
-			return false;
+			return;
 
 		pObj->m_X = (int)To.x;
 		pObj->m_Y = (int)To.y;
@@ -314,17 +314,15 @@ bool CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From
 		pObj->m_FromY = (int)From.y;
 		pObj->m_StartTick = StartTick;
 	}
-
-	return true;
 }
 
-bool CGS::SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type, int SubType) const
+void CGS::SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type, int SubType) const
 {
 	if(GetClientVersion(SnappingClient) >= VERSION_DDNET_ENTITY_NETOBJS)
 	{
 		CNetObj_DDNetPickup* pPickup = Server()->SnapNewItem<CNetObj_DDNetPickup>(ID);
 		if(!pPickup)
-			return false;
+			return;
 
 		pPickup->m_X = (int)Pos.x;
 		pPickup->m_Y = (int)Pos.y;
@@ -336,7 +334,7 @@ bool CGS::SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type, int 
 	{
 		CNetObj_Pickup* pPickup = Server()->SnapNewItem<CNetObj_Pickup>(ID);
 		if(!pPickup)
-			return false;
+			return;
 
 		pPickup->m_X = (int)Pos.x;
 		pPickup->m_Y = (int)Pos.y;
@@ -348,11 +346,9 @@ bool CGS::SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type, int 
 		}
 		pPickup->m_Subtype = SubType;
 	}
-
-	return true;
 }
 
-bool CGS::SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2& Vel, int StartTick, int Type, int Owner, int Flags) const
+void CGS::SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2& Vel, int StartTick, int Type, int Owner, int Flags) const
 {
 	const int SnappingClientVersion = GetClientVersion(SnappingClient);
 
@@ -360,7 +356,7 @@ bool CGS::SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2
 	{
 		CNetObj_DDNetProjectile* pProj = Server()->SnapNewItem<CNetObj_DDNetProjectile>(ID);
 		if(!pProj)
-			return false;
+			return;
 
 		pProj->m_X = round_to_int(Pos.x * 100.0f);
 		pProj->m_Y = round_to_int(Pos.y * 100.0f);
@@ -377,7 +373,7 @@ bool CGS::SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2
 	{
 		CNetObj_DDRaceProjectile* pProj = Server()->SnapNewItem<CNetObj_DDRaceProjectile>(ID);
 		if(!pProj)
-			return false;
+			return;
 
 		float Angle = -std::atan2(Vel.x, Vel.y);
 		pProj->m_X = (int)(Pos.x * 100.0f);
@@ -391,7 +387,7 @@ bool CGS::SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2
 	{
 		CNetObj_Projectile* pProj = Server()->SnapNewItem<CNetObj_Projectile>(ID);
 		if(!pProj)
-			return false;
+			return;
 
 		pProj->m_X = (int)Pos.x;
 		pProj->m_Y = (int)Pos.y;
@@ -400,8 +396,6 @@ bool CGS::SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2
 		pProj->m_StartTick = StartTick;
 		pProj->m_Type = Type;
 	}
-
-	return true;
 }
 
 void CGS::SendChatTarget(int ClientID, const char* pText) const

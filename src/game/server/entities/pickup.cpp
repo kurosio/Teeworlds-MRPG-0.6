@@ -138,12 +138,10 @@ void CPickup::Snap(int SnappingClient)
 
 	if(m_Projectile)
 	{
-		if(!GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick() - 4, m_Type))
-			return;
+		GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick() - 4, m_Type);
 	}
 	else
 	{
-		if(!GS()->SnapPickup(SnappingClient, GetID(), m_Pos, m_Type, m_SubType))
-			return;
+		GS()->SnapPickup(SnappingClient, GetID(), m_Pos, m_Type, m_SubType);
 	}
 }

@@ -606,17 +606,38 @@ bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int Maxi
 /* #########################################################################
 	FUNCTIONS PLAYER ACCOUNT
 ######################################################################### */
-bool CPlayer::GiveEffect(const char* Potion, int Sec, float Chance)
+bool CPlayer::GiveEffect(const char* pEffect, int Sec, bool Silent, float Chance)
 {
-	if(m_pCharacter && m_pCharacter->IsAlive())
+	if(!m_pCharacter || !m_pCharacter->IsAlive())
+		return false;
+
+	const float RandomChance = random_float(100.0f);
+	if(RandomChance < Chance)
 	{
-		const float RandomChance = random_float(100.0f);
-		if(RandomChance < Chance)
+		if(!Silent)
 		{
-			GS()->Chat(m_ClientID, "You got the effect {} time {} seconds.", Potion, Sec);
-			CGS::ms_aEffects[m_ClientID][Potion] = Sec;
-			return true;
+			GS()->Chat(m_ClientID, "You got the effect {} time {} seconds.", pEffect, Sec);
 		}
+		CGS::ms_aEffects[m_ClientID][pEffect] = Sec;
+		return true;
+	}
+
+	return false;
+}
+
+bool CPlayer::RemoveEffect(const char* pEffect, bool Silent)
+{
+	if(!m_pCharacter || !m_pCharacter->IsAlive())
+		return false;
+
+	if(CGS::ms_aEffects[m_ClientID].count(pEffect) > 0)
+	{
+		if(!Silent)
+		{
+			GS()->Chat(m_ClientID, "You lost the effect {}.", pEffect);
+		}
+		CGS::ms_aEffects[m_ClientID].erase(pEffect);
+		return true;
 	}
 
 	return false;

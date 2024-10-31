@@ -236,8 +236,7 @@ void CEntityQuestAction::Snap(int SnappingClient)
 	for(int i = 0; i < m_IDs.size(); i++)
 	{
 		vec2 randomRangePos = random_range_pos(m_Pos, m_Radius);
-		if(!GS()->SnapProjectile(SnappingClient, m_IDs[i], randomRangePos, { }, Server()->Tick() - 3, WEAPON_HAMMER, m_ClientID))
-			break;
+		GS()->SnapProjectile(SnappingClient, m_IDs[i], randomRangePos, { }, Server()->Tick() - 3, WEAPON_HAMMER, m_ClientID);
 	}
 }
 

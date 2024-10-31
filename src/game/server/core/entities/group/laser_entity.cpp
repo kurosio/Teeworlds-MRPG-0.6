@@ -13,9 +13,8 @@ void CLaserEntity::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, m_PosTo))
 		return;
 
-	if(!GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - m_Options.StartTickShift, 
-		m_Options.LaserType, m_Options.LaserSubtype, m_ClientID, m_Options.LaserFlags))
-		return;
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - m_Options.StartTickShift,
+		m_Options.LaserType, m_Options.LaserSubtype, m_ClientID, m_Options.LaserFlags);
 
 	CBaseEntity::Snap(SnappingClient);
 }

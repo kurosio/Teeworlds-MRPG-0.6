@@ -682,8 +682,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 					for(int i = 0; i < NUM_IDS_PROJ_CYRCLE; i++)
 					{
 						const auto RangeRandomPos = random_range_pos(pBase->GetPos(), Radius);
-						if(!pBase->GS()->SnapProjectile(SnappingClient, vIds[i], RangeRandomPos, {}, pBase->Server()->Tick(), WEAPON_HAMMER, pBase->GetClientID()))
-							return;
+						pBase->GS()->SnapProjectile(SnappingClient, vIds[i], RangeRandomPos, {}, pBase->Server()->Tick(), WEAPON_HAMMER, pBase->GetClientID());
 					}
 
 					// snap cyrcle connect
@@ -692,9 +691,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 						const auto nextIndex = (i + 1) % NUM_IDS_CYRCLE;
 						const auto CurrentPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
 						const auto NextPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * nextIndex), Radius * sin(AngleStep * nextIndex));
-
-						if(!pBase->GS()->SnapLaser(SnappingClient, vIds[NUM_IDS_PROJ_CYRCLE + i], CurrentPos, NextPos, pBase->Server()->Tick() - 1))
-							return;
+						pBase->GS()->SnapLaser(SnappingClient, vIds[NUM_IDS_PROJ_CYRCLE + i], CurrentPos, NextPos, pBase->Server()->Tick() - 1);
 					}
 				});
 
@@ -1318,6 +1315,11 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	m_pPlayer->m_aPlayerTick[LastDamage] = Server()->Tick();
 	dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d", 
 		Damage, IsCriticalDamage, pFrom->GetCharacter()->m_Core.m_ActiveWeapon, pFrom->IsBot() ? "bot" : "player", m_pPlayer->IsBot() ? "bot" : "player", StarNum);
+
+	if(m_pPlayer->IsActiveEffect("LastStand"))
+	{
+		m_Health = maximum(1, m_Health);
+	}
 
 	if(FromCID != m_pPlayer->GetCID())
 	{

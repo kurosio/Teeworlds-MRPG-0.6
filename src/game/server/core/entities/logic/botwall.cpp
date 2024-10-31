@@ -67,6 +67,5 @@ void CBotWall::Snap(int SnappingClient)
 	if(!m_Active || NetworkClipped(SnappingClient))
 		return;
 
-	if(!GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 4, LASERTYPE_FREEZE, LASERTYPE_DOOR))
-		return;
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 4, LASERTYPE_FREEZE, LASERTYPE_DOOR);
 }

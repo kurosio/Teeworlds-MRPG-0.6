@@ -11,6 +11,7 @@ class CEntity;
 class CPlayer;
 class CEntityGroup;
 class CEntityLaserOrbite;
+using EntGroupWeakPtr = std::weak_ptr<CEntityGroup>;
 
 class CEntityManager
 {
@@ -38,29 +39,29 @@ public:
 	void LaserOrbite(CEntityLaserOrbite*& pOut, CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
 
 	// skills
-	void GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
-	void GravityDisruption(vec2 Position, float Radius, int Lifetime, int Damage, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const
+	void GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage, EntGroupWeakPtr* pPtr = nullptr) const;
+	void GravityDisruption(vec2 Position, float Radius, int Lifetime, int Damage, EntGroupWeakPtr* pPtr = nullptr) const
 	{
 		GravityDisruption(-1, Position, Radius, Lifetime, Damage);
 	}
-	void HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
-	void HealthTurret(vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const
+	void HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, EntGroupWeakPtr* pPtr = nullptr) const;
+	void HealthTurret(vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, EntGroupWeakPtr* pPtr = nullptr) const
 	{
 		HealthTurret(-1, Position, RestoreHealth, Lifetime, InitialReloadtick, pPtr);
 	}
-	void EnergyShield(int ClientID, vec2 Position, int Health, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
-	void FlameWall(int ClientID, vec2 Position, float Radius, int Lifetime, int DamagePerTick, float SlowDownFactor, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
-	void FlameWall(vec2 Position, float Radius, int Lifetime, int DamagePerTick, float SlowDownFactor, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const
+	void LastStand(int ClientID, vec2 Position, float Radius, int ManaCostPerSec, EntGroupWeakPtr* pPtr = nullptr) const;
+	void FlameWall(int ClientID, vec2 Position, float Radius, int Lifetime, int DamagePerTick, float SlowDownFactor, EntGroupWeakPtr* pPtr = nullptr) const;
+	void FlameWall(vec2 Position, float Radius, int Lifetime, int DamagePerTick, float SlowDownFactor, EntGroupWeakPtr* pPtr = nullptr) const
 	{
 		FlameWall(-1, Position, Radius, Lifetime, DamagePerTick, SlowDownFactor, pPtr);
 	}
-	void HealingAura(int ClientID, vec2 Position, float Radius, int Lifetime, int HealPerTick, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
-	void HealingAura(vec2 Position, float Radius, int Lifetime, int HealPerTick, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const
+	void HealingAura(int ClientID, vec2 Position, float Radius, int Lifetime, int HealPerTick, EntGroupWeakPtr* pPtr = nullptr) const;
+	void HealingAura(vec2 Position, float Radius, int Lifetime, int HealPerTick, EntGroupWeakPtr* pPtr = nullptr) const
 	{
 		HealingAura(-1, Position, Radius, Lifetime, HealPerTick, pPtr);
 	}
-	void FrostNova(int ClientID, vec2 Position, float Radius, int Damage, int FreezeTime, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
-	void Bow(int ClientID, int Damage, int FireCount, float ExplosionRadius, int ExplosionCount, std::weak_ptr<CEntityGroup>* pPtr = nullptr) const;
+	void FrostNova(int ClientID, vec2 Position, float Radius, int Damage, int FreezeTime, EntGroupWeakPtr* pPtr = nullptr) const;
+	void Bow(int ClientID, int Damage, int FireCount, float ExplosionRadius, int ExplosionCount, EntGroupWeakPtr* pPtr = nullptr) const;
 
 	// effect's
 	void EffectCircleDamage(int ClientID, int DelayImpulse, int DelayBetweenImpulses, int Repeat = -1) const;

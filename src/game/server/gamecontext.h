@@ -88,10 +88,10 @@ public:
 	void CreateSound(vec2 Pos, int Sound, int64_t Mask = -1);
 	void CreatePlayerSound(int ClientID, int Sound);
 
-	bool SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick, 
+	void SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick, 
 		int LaserType = LASERTYPE_RIFLE, int Subtype = 0, int Owner = -1, int Flags = 0) const;
-	bool SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type = POWERUP_HEALTH, int SubType = 0) const;
-	bool SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2& Vel, int StartTick, 
+	void SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type = POWERUP_HEALTH, int SubType = 0) const;
+	void SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2& Vel, int StartTick,
 		int Type = WEAPON_HAMMER, int Owner = -1, int Flags = 0) const;
 
 	void AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priority, int LifeSpan);

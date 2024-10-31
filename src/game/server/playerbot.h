@@ -78,7 +78,8 @@ public:
 	std::optional<int> GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetTotalAttributeValue(AttributeIdentifier ID) const override;
 
-	bool GiveEffect(const char* Potion, int Sec, float Chance = 100.0f) override;
+	bool GiveEffect(const char* pEffect, int Sec, bool Silent = false, float Chance = 100.f) override;
+	bool RemoveEffect(const char* pEffect, bool Silent = false) override;
 	bool IsActiveEffect(const char* Potion) const override;
 	void ClearEffects() override;
 

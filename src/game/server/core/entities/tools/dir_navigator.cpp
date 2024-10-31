@@ -36,6 +36,5 @@ void CEntityDirectionNavigator::Snap(int SnappingClient)
 	m_Pos = m_pPlayer->GetCharacter()->m_Core.m_Pos;
 
 	const auto FinalPos = m_Pos - normalize(m_Pos - m_PosTo) * clamp(distance(m_Pos, m_PosTo), 32.0f, 90.0f);
-	if(!GS()->SnapPickup(SnappingClient, GetID(), FinalPos))
-		return;
+	GS()->SnapPickup(SnappingClient, GetID(), FinalPos);
 }
