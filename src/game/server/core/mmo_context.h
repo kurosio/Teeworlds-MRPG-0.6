@@ -97,6 +97,7 @@ enum ETickState
 {
 	Die = 1,
 	Respawn,
+	LastDamage,
 	LastSelfKill,
 	LastEmote,
 	LastChangeInfo,

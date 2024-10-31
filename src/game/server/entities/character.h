@@ -22,7 +22,6 @@ class CCharacter : public CEntity
 
 	class CPlayer* m_pPlayer {};
 	CTileHandler* m_pTilesHandler {};
-	int m_LastDamageTakenTick[MAX_CLIENTS];
 
 	int m_LastWeapon {};
 	int m_QueuedWeapon {};
@@ -54,6 +53,8 @@ class CCharacter : public CEntity
 	bool FireShotgun(vec2 Direction, vec2 ProjStartPos);
 	bool FireGrenade(vec2 Direction, vec2 ProjStartPos);
 	bool FireRifle(vec2 Direction, vec2 ProjStartPos);
+
+	int GetTotalDamageByWeapon(int Weapon) const;
 
 protected:
 	bool m_Alive {};
@@ -114,7 +115,7 @@ public:
 
 	virtual bool Spawn(class CPlayer* pPlayer, vec2 Pos);
 	virtual void GiveRandomEffects(int To);
-	virtual bool TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon);
+	virtual bool TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon);
 	virtual void Die(int Killer, int Weapon);
 	virtual void HandleTuning();
 

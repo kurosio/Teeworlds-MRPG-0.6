@@ -6,7 +6,7 @@
 #include "character.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-		int Damage, bool Explosive, float Force, int SoundImpact, vec2 InitDir, int Weapon)
+	bool Explosive, float Force, int SoundImpact, vec2 InitDir, int Weapon)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE, Pos)
 {
 	m_Type = Type;
@@ -14,7 +14,6 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_LifeSpan = Span;
 	m_Owner = Owner;
 	m_Force = Force;
-	m_Damage = Damage;
 	m_SoundImpact = SoundImpact;
 	m_Weapon = Weapon;
 	m_StartTick = Server()->Tick();
@@ -70,7 +69,7 @@ void CProjectile::Tick()
 	if (!pOwner || !pOwner->GetCharacter())
 	{
 		if (m_Explosive)
-			GS()->CreateExplosion(CurPos, -1, m_Weapon, m_Damage);
+			GS()->CreateExplosion(CurPos, -1, m_Weapon, 3);
 
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -85,14 +84,19 @@ void CProjectile::Tick()
 	// check collide span and target
 	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && !TargetChr->m_Core.m_CollisionDisabled && TargetChr->IsAllowedPVP(OwnerChar->GetPlayer()->GetCID())))
 	{
-		if (m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
+		if(m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
+		{
 			GS()->CreateSound(CurPos, m_SoundImpact);
+		}
 
-		if (m_Explosive)
-			GS()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage);
-
-		else if (TargetChr)
-			TargetChr->TakeDamage(m_Direction * maximum(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
+		if(m_Explosive)
+		{
+			GS()->CreateExplosion(CurPos, m_Owner, m_Weapon, 3);
+		}
+		else if(TargetChr)
+		{
+			TargetChr->TakeDamage(m_Direction * maximum(0.001f, m_Force), 0, m_Owner, m_Weapon);
+		}
 
 		GameWorld()->DestroyEntity(this);
 	}

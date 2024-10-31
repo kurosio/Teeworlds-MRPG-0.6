@@ -76,7 +76,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if(!m_pBotPlayer->IsActive())
 		return false;
 
-	CPlayer* pFrom = GS()->GetPlayer(From, false, true);
+	auto* pFrom = GS()->GetPlayer(From, false, true);
 	if(!pFrom || !IsAllowedPVP(From))
 		return false;
 
@@ -84,9 +84,10 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
 		return false;
 
+	// Take damage
 	CCharacter::TakeDamage(Force, Dmg, From, Weapon);
 
-	// Update for from eidolon damage
+	// Convert from (eidolon to eidolon owner)
 	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
 	{
 		if(const auto* pFromBot = dynamic_cast<CPlayerBot*>(pFrom))

@@ -298,7 +298,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 			{
 				auto* pChar = pPlayer->GetCharacter();
 				GS()->CreateDeath(pChar->GetPos(), pPlayer->GetCID());
-				pChar->TakeDamage(Force, 2, pFrom->GetCID(), WEAPON_HAMMER);
+				pChar->TakeDamage(Force, 0, pFrom->GetCID(), WEAPON_HAMMER);
 			});
 			m_ReloadTimer = Server()->TickSpeed() / 3;
 		}
@@ -311,7 +311,6 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	if(EquippedItem == itHammerBlast)
 	{
 		constexpr float Radius = 128.0f;
-		constexpr int MaxDamage = 10;
 
 		// apply damage and force to all nearby characters
 		for(auto* pTarget = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pTarget; pTarget = (CCharacter*)pTarget->TypeNext())
@@ -321,7 +320,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 				
 			const auto Dist = distance(pTarget->m_Pos, m_Pos);
 			if(Dist < Radius)
-				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, MaxDamage);
+				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, 3);
 		}
 
 		// move and visual effect
@@ -349,7 +348,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
 		const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
 
-		pTarget->TakeDamage(Force, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage, m_ClientID, m_Core.m_ActiveWeapon);
+		pTarget->TakeDamage(Force, 0, m_ClientID, WEAPON_HAMMER);
 		GS()->CreateHammerHit(HammerHitPos);
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 	}
@@ -382,7 +381,6 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 		ProjStartPos,
 		Direction,
 		Lifetime,
-		g_pData->m_Weapons.m_Gun.m_pBase->m_Damage,
 		false,
 		0,
 		-1,
@@ -424,7 +422,6 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 			ProjStartPos,
 			vec2(cosf(a), sinf(a)) * Speed,
 			Lifetime,
-			g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage,
 			IsExplosive,
 			0,
 			15,
@@ -486,7 +483,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 			// destroy and explosion
 			if(pResultChar != nullptr || pBase->GS()->Collision()->CheckPoint(pBase->GetPos()))
 			{
-				pBase->GS()->CreateRandomRadiusExplosion(7, 180.f, pBase->GetPos(), pBase->GetClientID(), WEAPON_GRENADE, 5);
+				pBase->GS()->CreateRandomRadiusExplosion(4, 120.f, pBase->GetPos(), pBase->GetClientID(), WEAPON_GRENADE, 0);
 				pBase->MarkForDestroy();
 			}
 		});
@@ -505,7 +502,6 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 		ProjStartPos,
 		Direction,
 		(int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime),
-		g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage,
 		true,
 		0,
 		SOUND_GRENADE_EXPLODE,
@@ -657,7 +653,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 					// lifetime
 					if(!LifeTimeRef)
 					{
-						pBase->GS()->CreateCyrcleExplosion(NUM_IDS_CYRCLE, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_LASER, 10);
+						pBase->GS()->CreateCyrcleExplosion(NUM_IDS_CYRCLE, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_LASER, 1);
 						pBase->MarkForDestroy();
 						return;
 					}
@@ -814,7 +810,9 @@ void CCharacter::HandleHookActions()
 	if((m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_GROUND && distance(m_Core.m_HookPos, m_Core.m_Pos) > 48.0f) || m_Core.m_TriggeredEvents & COREEVENT_HOOK_ATTACH_PLAYER)
 	{
 		if(m_pPlayer->GetItem(itExplodeHook)->IsEquipped())
-			GS()->CreateExplosion(m_Core.m_HookPos, m_ClientID, WEAPON_GRENADE, 1);
+		{
+			GS()->CreateExplosion(m_Core.m_HookPos, m_ClientID, WEAPON_GUN, 0);
+		}
 	}
 }
 
@@ -1228,11 +1226,30 @@ void CCharacter::TryUsePotion(std::optional<int> optItemID) const
 	}
 }
 
-bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
+int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 {
-	// force
+	int Damage = 0;
+
+	switch(Weapon)
+	{
+		case WEAPON_GUN: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::GunDMG); break;
+		case WEAPON_SHOTGUN: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::ShotgunDMG); break;
+		case WEAPON_GRENADE: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::GrenadeDMG); break;
+		case WEAPON_LASER: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::RifleDMG); break;
+		case WEAPON_HAMMER: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::HammerDMG); break;
+		default: break;
+	}
+
+	// apply extra damage by class
+	const int EnchantBonus = translate_to_percent_rest(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG), m_pPlayer->Account()->GetClass().GetExtraDMG());
+	return Damage + EnchantBonus;
+}
+
+bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
+{
+	// clamp force vel
 	m_Core.m_Vel += Force;
-	const float MaximumVel = GS()->IsWorldType(WorldType::Dungeon) ? 16.0f : 24.0f;
+	constexpr float MaximumVel = 24.f;
 	if(length(m_Core.m_Vel) > MaximumVel)
 	{
 		m_Core.m_Vel = normalize(m_Core.m_Vel) * MaximumVel;
@@ -1240,36 +1257,32 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 
 	// check disallow damage
 	if(!IsAllowedPVP(FromCID))
-		return false;
-
-	// calculate damage
-	int CritDamage = 0;
-	CPlayer* pFrom = GS()->GetPlayer(FromCID);
-	if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
 	{
-		// by attribute damage
-		if(Weapon == WEAPON_GUN)
-			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::GunDMG);
-		else if(Weapon == WEAPON_SHOTGUN)
-			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::ShotgunDMG);
-		else if(Weapon == WEAPON_GRENADE)
-			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::GrenadeDMG);
-		else if(Weapon == WEAPON_LASER)
-			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::RifleDMG);
-		else if(Weapon == WEAPON_HAMMER)
-			Dmg = pFrom->GetTotalAttributeValue(AttributeIdentifier::HammerDMG);
+		return false;
+	}
 
-		// apply extra damage by class
-		const int EnchantBonus = translate_to_percent_rest(pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG), pFrom->Account()->GetClass().GetExtraDMG());
-		Dmg += EnchantBonus;
+	// check valid from
+	auto* pFrom = GS()->GetPlayer(FromCID);
+	if(!pFrom || !pFrom->GetCharacter())
+	{
+		return false;
+	}
 
+	// damage calculation
+	Damage += pFrom->GetCharacter()->GetTotalDamageByWeapon(Weapon);
+	Damage = (FromCID == m_pPlayer->GetCID() ? maximum(1, Damage / 2) : maximum(1, Damage));
+
+	// chances of effects
+	int CritDamage = 0;
+	if(FromCID != m_pPlayer->GetCID())
+	{
 		// vampirism replenish your health
 		if(m_pPlayer->GetAttributeChance(AttributeIdentifier::Vampirism) > random_float(100.0f))
 		{
-			const int Recovery = maximum(1, Dmg / 2);
-			GS()->Chat(FromCID, ":: Vampirism stolen: {}HP.", Recovery);
+			const auto Recovery = maximum(1, Damage / 2);
 			pFrom->GetCharacter()->IncreaseHealth(Recovery);
 			GS()->SendEmoticon(FromCID, EMOTICON_DROP);
+			GS()->Chat(FromCID, ":: Vampirism stolen: {}HP.", Recovery);
 		}
 
 		// miss out on damage
@@ -1280,53 +1293,54 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int FromCID, int Weapon)
 		}
 
 		// critical damage
-		if(Dmg && m_pPlayer->GetAttributeChance(AttributeIdentifier::Crit) > random_float(100.0f))
+		if(m_pPlayer->GetAttributeChance(AttributeIdentifier::Crit) > random_float(100.0f))
 		{
-			CritDamage = 100 + maximum(pFrom->GetTotalAttributeValue(AttributeIdentifier::CritDMG), 1);
-			const float CritDamageFormula = (float)Dmg + ((float)CritDamage * ((float)Dmg / 100.0f));
-			const float CritRange = (CritDamageFormula + (CritDamageFormula / 2.0f) / 2.0f);
-			Dmg = (int)CritDamageFormula + rand() % (int)CritRange;
-
+			const int CritAttributeDMG = maximum(pFrom->GetTotalAttributeValue(AttributeIdentifier::CritDMG), 1);
+			CritDamage = (CritAttributeDMG / 2) + rand() % CritAttributeDMG;
 			pFrom->GetCharacter()->SetEmote(EMOTE_ANGRY, 2, true);
 		}
 
 		// give effects from player or bot to who got damage
 		pFrom->GetCharacter()->GiveRandomEffects(m_pPlayer->GetCID());
-		m_LastDamageTakenTick[FromCID] = Server()->Tick();
 	}
 
-	Dmg = (FromCID == m_pPlayer->GetCID() ? maximum(1, Dmg / 2) : maximum(1, Dmg));
-
-	// update health
-	const int OldHealth = m_Health;
-	if(Dmg)
-	{
-		GS()->m_pController->OnCharacterDamage(pFrom, m_pPlayer, minimum(Dmg, m_Health));
-		m_Health -= Dmg;
-		GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
-		m_pPlayer->SetSnapHealthTick(2);
-	}
-
-	// create healthmod indicator & effects
+	// update health & send effects
 	const bool IsCriticalDamage = (CritDamage > 0);
-	GS()->CreateDamage(m_Pos, FromCID, OldHealth - m_Health, IsCriticalDamage);
-	GS()->CreateSound(m_Pos, IsCriticalDamage ? (int)SOUND_PLAYER_PAIN_LONG : (int)SOUND_PLAYER_PAIN_SHORT);
+	const auto MaxHealth = m_pPlayer->GetMaxHealth();
+	const auto StarNum = maximum(1, round_to_int(translate_to_percent(MaxHealth, Damage) * 0.1f));
+	const auto DamageSoundId = IsCriticalDamage ? (int)SOUND_PLAYER_PAIN_LONG : (int)SOUND_PLAYER_PAIN_SHORT;
+
+	Damage += CritDamage;
+	m_Health -= Damage;
 	m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
+	m_pPlayer->SetSnapHealthTick(2);
+	m_pPlayer->m_aPlayerTick[LastDamage] = Server()->Tick();
+	dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d", 
+		Damage, IsCriticalDamage, pFrom->GetCharacter()->m_Core.m_ActiveWeapon, pFrom->IsBot() ? "bot" : "player", m_pPlayer->IsBot() ? "bot" : "player", StarNum);
+
 	if(FromCID != m_pPlayer->GetCID())
+	{
+		pFrom->m_aPlayerTick[LastDamage] = Server()->Tick();
 		GS()->CreatePlayerSound(FromCID, SOUND_HIT);
+	}
+	GS()->CreateSound(m_Pos, DamageSoundId);
+	GS()->CreateDamage(m_Pos, FromCID, StarNum, IsCriticalDamage);
+	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
+	GS()->m_pController->OnCharacterDamage(pFrom, m_pPlayer, minimum(Damage, m_Health));
 
 	// verify death
 	if(m_Health <= 0)
 	{
 		if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
+		{
 			pFrom->GetCharacter()->SetEmote(EMOTE_HAPPY, 1, false);
+		}
 
 		// do not kill the bot it is still running in CCharacterBotAI::TakeDamage
 		if(m_pPlayer->IsBot())
 			return false;
 
-		m_Health = 0;
 		HandleEventsDeath(FromCID, Force);
 		Die(FromCID, Weapon);
 		return false;

@@ -301,8 +301,8 @@ void CTutorialScenario::CreateEntityShootmarkersTask(const vec2& pos, int health
 		{
 			if(distance(pBase->GetPos(), pProj->GetCurrentPos()) < 48.f)
 			{
-				Health -= pProj->GetDamage();
-				pBase->GS()->CreateDamage(pBase->GetPos(), pBase->GetClientID(), pProj->GetDamage(), false, random_angle(), CmaskOne(pBase->GetClientID()));
+				Health -= 1; // TODO fix
+				pBase->GS()->CreateDamage(pBase->GetPos(), pBase->GetClientID(), 1, false, random_angle(), CmaskOne(pBase->GetClientID()));
 				pProj->MarkForDestroy();
 			}
 		}

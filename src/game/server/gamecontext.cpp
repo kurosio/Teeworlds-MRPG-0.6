@@ -212,19 +212,20 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 		// calculate damage factor
 		const float Factor = 1.0f - clamp((Length - InnerRadius) / (Radius - InnerRadius), 0.0f, 1.0f);
 		const int Damage = static_cast<int>(Factor * MaxDamage);
+		float Strength = 0.0f;
 
+		// calculate explosion strength
 		if(Damage > 0)
 		{
-			// calculate explosion strength
-			float Strength = 0.5f;
+			Strength = 0.5f;
 			if(Owner != -1 && m_apPlayers[Owner])
 			{
 				Strength = m_apPlayers[Owner]->m_NextTuningParams.m_ExplosionStrength;
 			}
-
-			// Apply damage and force
-			pChar->TakeDamage(ForceDir * (Strength * Length), Damage, Owner, Weapon);
 		}
+
+		// Apply damage and force
+		pChar->TakeDamage(ForceDir * (Strength * Length), Damage, Owner, Weapon);
 	}
 }
 

@@ -303,7 +303,7 @@ void CEntityManager::EnergyShield(int ClientID, vec2 Position, int Health, std::
 				if(pProj->GetOwner() != pBase->GetPlayer()->GetCID() &&
 					is_within_distance_on_line(48.0f, pBase->GetPos(), pBase->GetPosTo(), pProj->GetCurrentPos()))
 				{
-					Health -= pProj->GetDamage();
+					Health -= 1; // TODO fix
 					pBase->GS()->CreateHammerHit(pProj->GetCurrentPos());
 					pProj->MarkForDestroy();
 				}

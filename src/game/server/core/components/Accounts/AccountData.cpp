@@ -188,7 +188,10 @@ void CAccountData::ReinitializeGuild(bool SetNull)
 
 CGuild::CMember* CAccountData::GetGuildMember() const
 {
-	return m_pGuildData ? m_pGuildData->GetMembers()->Get(m_ID) : nullptr;
+	if(!m_pGuildData)
+		return nullptr;
+
+	return m_pGuildData->GetMembers()->Get(m_ID);
 }
 
 bool CAccountData::IsClientSameGuild(int ClientID) const
@@ -196,45 +199,54 @@ bool CAccountData::IsClientSameGuild(int ClientID) const
 	if(!m_pGuildData)
 		return false;
 
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	return pPlayer && pPlayer->Account()->GetGuild() && pPlayer->Account()->GetGuild()->GetID() == m_pGuildData->GetID();
+	// check valid from player
+	const auto* pPlayer = GS()->GetPlayer(ClientID, true);
+	if(!pPlayer)
+		return false;
+
+	// check valid guild data
+	const auto pGuildData = pPlayer->Account()->GetGuild();
+	if(!pGuildData)
+		return false;
+
+	return pGuildData->GetID() == m_pGuildData->GetID();
 }
 
 bool CAccountData::IsSameGuild(int GuildID) const
 {
-	return m_pGuildData && m_pGuildData->GetID() == GuildID;
+	if(!m_pGuildData)
+		return false;
+
+	return m_pGuildData->GetID() == GuildID;
 }
 
 void CAccountData::IncreaseCrimeScore(int Score)
 {
-	if(IsCrimeScoreMaxedOut())
-		return;
-
-	CPlayer* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
 	m_CrimeScore = minimum(m_CrimeScore + Score, 100);
-	GS()->Chat(m_ClientID, "Your 'Crime Score' has increased to {}%!", m_CrimeScore);
-
-	if(m_CrimeScore >= 100)
-	{
-		GS()->Chat(m_ClientID, "You have reached the maximum 'Crime Score' and are now a wanted criminal! Be cautious, as law enforcers are actively searching for you.");
-	}
-
+	GS()->Chat(m_ClientID, "Your 'Crime Score' has increased to {}p!", m_CrimeScore);
 	GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
 }
 
 int CAccountData::GetGold() const
 {
-	CPlayer* pPlayer = GetPlayer();
-	return pPlayer ? pPlayer->GetItem(itGold)->GetValue() : 0;
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return 0;
+
+	return pPlayer->GetItem(itGold)->GetValue();
 }
 
 BigInt CAccountData::GetTotalGold() const
 {
-	CPlayer* pPlayer = GetPlayer();
-	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return 0;
+
+	return m_Bank + pPlayer->GetItem(itGold)->GetValue();
 }
 
 void CAccountData::AddExperience(uint64_t Value) const
@@ -298,9 +310,9 @@ void CAccountData::AddGold(int Value, bool ToBank, bool ApplyBonuses)
 	}
 
 	// initialize variables
-	CPlayerItem* pGoldItem = pPlayer->GetItem(itGold);
-	const int CurrentGold = pGoldItem->GetValue();
-	const int FreeSpace = GetGoldCapacity() - CurrentGold;
+	auto* pGoldItem = pPlayer->GetItem(itGold);
+	const auto CurrentGold = pGoldItem->GetValue();
+	const auto FreeSpace = GetGoldCapacity() - CurrentGold;
 
 	// add golds
 	if(Value > FreeSpace)
@@ -317,33 +329,37 @@ void CAccountData::AddGold(int Value, bool ToBank, bool ApplyBonuses)
 
 bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 {
-	CPlayer* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return false;
 
 	// check is free
 	if(Price <= 0)
+	{
 		return true;
+	}
 
 	// initialize variables
-	CPlayerItem* pCurrencyItem = pPlayer->GetItem(CurrencyItemID);
-	const int PlayerCurrency = pCurrencyItem->GetValue();
+	auto* pCurrencyItem = pPlayer->GetItem(CurrencyItemID);
+	const auto CurrencyValue = pCurrencyItem->GetValue();
 
 	// gold with bank
 	if(CurrencyItemID == itGold)
 	{
-		BigInt TotalCurrency = m_Bank + pCurrencyItem->GetValue();
-		if(PlayerCurrency < Price)
+		const auto TotalCurrency = m_Bank + pCurrencyItem->GetValue();
+
+		// check amount
+		if(CurrencyValue < Price)
 		{
-			GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, PlayerCurrency, pCurrencyItem->Info()->GetName());
+			GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, CurrencyValue, pCurrencyItem->Info()->GetName());
 			return false;
 		}
 
 		// first, spend currency from player's hand
 		int RemainingPrice = Price;
-		if(PlayerCurrency > 0)
+		if(CurrencyValue > 0)
 		{
-			int ToSpendFromHands = minimum(PlayerCurrency, RemainingPrice);
+			const auto ToSpendFromHands = minimum(CurrencyValue, RemainingPrice);
 			pCurrencyItem->Remove(ToSpendFromHands);
 			RemainingPrice -= ToSpendFromHands;
 		}
@@ -359,9 +375,9 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 	}
 
 	// other currency
-	if(PlayerCurrency < Price)
+	if(CurrencyValue < Price)
 	{
-		GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, PlayerCurrency, pCurrencyItem->Info()->GetName());
+		GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, CurrencyValue, pCurrencyItem->Info()->GetName());
 		return false;
 	}
 
@@ -370,18 +386,21 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 
 bool CAccountData::DepositGoldToBank(int Amount)
 {
-	CPlayer* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return false;
 
 	// initialize variables
-	CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
-	int CurrentGold = pItemGold->GetValue();
+	auto* pItemGold = pPlayer->GetItem(itGold);
+	const auto CurrentGold = pItemGold->GetValue();
+	const auto Capacity = GetGoldCapacity();
+	Amount = minimum(Capacity - CurrentGold, Amount);
+	Amount = minimum(CurrentGold, Amount);
 
 	// check amount
-	if(CurrentGold < Amount)
+	if(Amount <= 0)
 	{
-		GS()->Chat(m_ClientID, "You don't have enough gold in your inventory. You only have {$} gold.", CurrentGold);
+		GS()->Chat(m_ClientID, "You don't have enough space in your inventory to deposit gold into the bank!");
 		return false;
 	}
 
@@ -391,10 +410,9 @@ bool CAccountData::DepositGoldToBank(int Amount)
 		const int Commission = translate_to_percent_rest(Amount, g_Config.m_SvBankCommissionRate);
 		const int FinalAmount = Amount - Commission;
 
+		GS()->Chat(m_ClientID, "You have deposited {$} gold into your bank (Commission: {$}).", FinalAmount, Commission);
 		m_Bank += FinalAmount;
 		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-
-		GS()->Chat(m_ClientID, "You have deposited {$} gold into your bank (Commission: {$}).", FinalAmount, Commission);
 		return true;
 	}
 
@@ -403,14 +421,15 @@ bool CAccountData::DepositGoldToBank(int Amount)
 
 bool CAccountData::WithdrawGoldFromBank(int Amount)
 {
-	CPlayer* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return false;
 
 	// initialize variables
-	CPlayerItem* pItemGold = pPlayer->GetItem(itGold);
-	int CurrentGold = pItemGold->GetValue();
-	int AvailableSpace = GetGoldCapacity() - CurrentGold;
+	auto* pItemGold = pPlayer->GetItem(itGold);
+	const auto CurrentGold = pItemGold->GetValue();
+	const auto AvailableSpace = GetGoldCapacity() - CurrentGold;
+	const auto GoldToWithdraw = minimum(Amount, AvailableSpace);
 
 	// check bank amount
 	if(m_Bank < Amount)
@@ -420,27 +439,22 @@ bool CAccountData::WithdrawGoldFromBank(int Amount)
 	}
 
 	// calculate gold for withdraw
-	int GoldToWithdraw = minimum(Amount, AvailableSpace);
-
-	if(GoldToWithdraw > 0)
+	if(GoldToWithdraw <= 0)
 	{
-		pItemGold->Add(GoldToWithdraw);
-		m_Bank -= GoldToWithdraw;
-		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-		GS()->Chat(m_ClientID, "You have withdrawn {$} gold from your bank to your inventory.", GoldToWithdraw);
+		GS()->Chat(m_ClientID, "You don't have enough space in your inventory to withdraw {$} gold!", Amount);
+		return false;
 	}
 
-	if(GoldToWithdraw < Amount)
-	{
-		GS()->Chat(m_ClientID, "Your inventory is full. You could only withdraw {$} gold.", GoldToWithdraw);
-	}
-
+	pItemGold->Add(GoldToWithdraw);
+	m_Bank -= GoldToWithdraw;
+	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
+	GS()->Chat(m_ClientID, "You have withdrawn {$} gold from your bank to your inventory.", GoldToWithdraw);
 	return true;
 }
 
 void CAccountData::ResetCrimeScore()
 {
-	CPlayer* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
@@ -496,7 +510,7 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 	}
 
 	// send broadcast
-	GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 250, "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
+	GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 50, "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
 		GetGold(), maxGoldCapacity, GetTotalGold(), goldStr.c_str(), pClassProfession->GetExperience(),
 		pClassProfession->GetExpForNextLevel(), expStr.c_str());
 }

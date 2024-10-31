@@ -11,7 +11,6 @@ class CProjectile : public CEntity
 	int m_LifeSpan;
 	int m_Owner;
 	int m_Type;
-	int m_Damage;
 	int m_SoundImpact;
 	int m_Weapon;
 	float m_Force;
@@ -21,12 +20,11 @@ class CProjectile : public CEntity
 
 public:
 	CProjectile(CGameWorld* pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
-		int Damage, bool Explosive, float Force, int SoundImpact, vec2 InitDir, int Weapon);
+		bool Explosive, float Force, int SoundImpact, vec2 InitDir, int Weapon);
 
 	vec2 GetPos(float Time);
 	vec2 GetCurrentPos() const { return m_CurrentPos; }
 	int GetOwner() const { return m_Owner; }
-	int GetDamage() const { return m_Damage; }
 
 	void Reset() override;
 	void Tick() override;
