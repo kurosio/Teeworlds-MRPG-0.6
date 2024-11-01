@@ -267,14 +267,17 @@ void CEntityManager::LastStand(int ClientID, vec2 Position, float Radius, int Ma
 		{
 			if(pChar->CheckFailMana(ManaCostPerSec))
 			{
-				pChar->GetPlayer()->m_Effects.Remove("LastStand");
+				if(pChar->GetPlayer()->m_Effects.Remove("LastStand"))
+				{
+					pBase->GS()->Chat(pBase->GetClientID(), "Last Stand effect has been removed.");
+				}
 				pBase->GS()->Broadcast(pBase->GetClientID(), BroadcastPriority::MainInformation, 100, "Not enough mana to maintain the shield.");
 				pBase->MarkForDestroy();
 				return;
 			}
 
 			const auto LastStandTime = pBase->Server()->TickSpeed() * 3;
-			pChar->GetPlayer()->m_Effects.Add("LastStand", LastStandTime, true);
+			pChar->GetPlayer()->m_Effects.Add("LastStand", LastStandTime);
 		}
 
 		pBase->SetPos(pChar->GetPos());
