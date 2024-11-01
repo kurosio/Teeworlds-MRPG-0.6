@@ -23,8 +23,8 @@ public:
 	CEntityManager(CGS* pGS);
 
 	void DropBonus(vec2 Pos, int Type, int Subtype, int Value, int NumDrop = 1, vec2 Force = vec2(0.0f, 0.0f)) const;
-	void DropItem(vec2 Pos, int ClientID, CItem Item, vec2 Force = vec2(0.0f, 0.0f)) const;
-	void RandomDropItem(vec2 Pos, int ClientID, float Chance, CItem Item, vec2 Force = vec2(0.0f, 0.0f)) const;
+	void DropItem(vec2 Pos, int ClientID, const CItem& Item, vec2 Force = vec2(0.0f, 0.0f)) const;
+	void RandomDropItem(vec2 Pos, int ClientID, float Chance, const CItem& Item, vec2 Force = vec2(0.0f, 0.0f)) const;
 	void FlyingPoint(vec2 Pos, int ClientID, vec2 Force = vec2(0.0f, 0.0f)) const;
 	void ExpFlyingPoint(vec2 Pos, int ClientID, int Exp, vec2 Force = vec2(0.0f, 0.0f)) const;
 
@@ -40,26 +40,10 @@ public:
 
 	// skills
 	void GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage, EntGroupWeakPtr* pPtr = nullptr) const;
-	void GravityDisruption(vec2 Position, float Radius, int Lifetime, int Damage, EntGroupWeakPtr* pPtr = nullptr) const
-	{
-		GravityDisruption(-1, Position, Radius, Lifetime, Damage);
-	}
 	void HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, EntGroupWeakPtr* pPtr = nullptr) const;
-	void HealthTurret(vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, EntGroupWeakPtr* pPtr = nullptr) const
-	{
-		HealthTurret(-1, Position, RestoreHealth, Lifetime, InitialReloadtick, pPtr);
-	}
 	void LastStand(int ClientID, vec2 Position, float Radius, int ManaCostPerSec, EntGroupWeakPtr* pPtr = nullptr) const;
 	void FlameWall(int ClientID, vec2 Position, float Radius, int Lifetime, int DamagePerTick, float SlowDownFactor, EntGroupWeakPtr* pPtr = nullptr) const;
-	void FlameWall(vec2 Position, float Radius, int Lifetime, int DamagePerTick, float SlowDownFactor, EntGroupWeakPtr* pPtr = nullptr) const
-	{
-		FlameWall(-1, Position, Radius, Lifetime, DamagePerTick, SlowDownFactor, pPtr);
-	}
 	void HealingAura(int ClientID, vec2 Position, float Radius, int Lifetime, int HealPerTick, EntGroupWeakPtr* pPtr = nullptr) const;
-	void HealingAura(vec2 Position, float Radius, int Lifetime, int HealPerTick, EntGroupWeakPtr* pPtr = nullptr) const
-	{
-		HealingAura(-1, Position, Radius, Lifetime, HealPerTick, pPtr);
-	}
 	void FrostNova(int ClientID, vec2 Position, float Radius, int Damage, int FreezeTime, EntGroupWeakPtr* pPtr = nullptr) const;
 	void Bow(int ClientID, int Damage, int FireCount, float ExplosionRadius, int ExplosionCount, EntGroupWeakPtr* pPtr = nullptr) const;
 

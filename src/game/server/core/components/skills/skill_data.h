@@ -4,6 +4,7 @@
 #define GAME_SERVER_CORE_COMPONENTS_SKILLS_SKILL_DATA_H
 
 class CEntityGroup;
+class CCharacter;
 
 // skill description
 class CSkillDescription : public MultiworldIdentifiableData< std::map < int, CSkillDescription > >
