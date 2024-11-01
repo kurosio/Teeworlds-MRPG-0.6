@@ -240,7 +240,8 @@ bool CSkill::Use()
 		//GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
 
 		// enable shield
-		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, ManaCost, &pEntSkillPtr);
+		const int ManaPerSeconds = ManaCost - GetBonus();
+		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, ManaPerSeconds, &pEntSkillPtr);
 		return true;
 	}
 
@@ -271,7 +272,7 @@ bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int Skill
 	{
 		if(const auto groupPtr = skillEntityPtr.lock())
 		{
-			GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 100, "The {} has been disabled!", Info()->GetName());
+			GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "The {} has been disabled!", Info()->GetName());
 			groupPtr->Clear();
 			return false;
 		}
@@ -279,7 +280,7 @@ bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int Skill
 		if(pChar->CheckFailMana(Manacost))
 			return false;
 
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 100, "The {} has been enabled!", Info()->GetName());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "The {} has been enabled!", Info()->GetName());
 		return true;
 	}
 
