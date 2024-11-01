@@ -1216,7 +1216,7 @@ void CCharacter::TryUsePotion(std::optional<int> optItemID) const
 	if(const auto optPotionContext = pPlayerItem->Info()->GetPotionContext())
 	{
 		const auto EffectName = optPotionContext->Effect.c_str();
-		if(!m_pPlayer->IsActiveEffect(EffectName) && pPlayerItem->IsEquipped())
+		if(!m_pPlayer->m_Effects.IsActive(EffectName) && pPlayerItem->IsEquipped())
 		{
 			pPlayerItem->Use(1);
 		}
@@ -1316,7 +1316,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d", 
 		Damage, IsCriticalDamage, pFrom->GetCharacter()->m_Core.m_ActiveWeapon, pFrom->IsBot() ? "bot" : "player", m_pPlayer->IsBot() ? "bot" : "player", StarNum);
 
-	if(m_pPlayer->IsActiveEffect("LastStand"))
+	if(m_pPlayer->m_Effects.IsActive("LastStand"))
 	{
 		m_Health = maximum(1, m_Health);
 	}
@@ -1646,7 +1646,7 @@ void CCharacter::HandleIndependentTuning()
 
 void CCharacter::HandleBuff(CTuningParams* TuningParams)
 {
-	if(m_pPlayer->IsActiveEffect("Slowdown"))
+	if(m_pPlayer->m_Effects.IsActive("Slowdown"))
 	{
 		TuningParams->m_Gravity = 0.35f;
 		TuningParams->m_GroundFriction = 0.45f;
@@ -1660,7 +1660,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		TuningParams->m_HookLength = 0.0f;
 	}
 
-	if(m_pPlayer->IsActiveEffect("Stun"))
+	if(m_pPlayer->m_Effects.IsActive("Stun"))
 	{
 		TuningParams->m_Gravity = 0.25f;
 		TuningParams->m_GroundFriction = 0.45f;
@@ -1677,14 +1677,14 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 	// buffs
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 	{
-		if(m_pPlayer->IsActiveEffect("Fire"))
+		if(m_pPlayer->m_Effects.IsActive("Fire"))
 		{
 			const int ExplodeDamageSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
 			GS()->CreateExplosion(m_Core.m_Pos, m_pPlayer->GetCID(), WEAPON_GRENADE, 0);
 			TakeDamage(vec2(0, 0), ExplodeDamageSize, m_pPlayer->GetCID(), WEAPON_SELF);
 		}
 
-		if(m_pPlayer->IsActiveEffect("Poison"))
+		if(m_pPlayer->m_Effects.IsActive("Poison"))
 		{
 			const int PoisonSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
 			TakeDamage(vec2(0, 0), PoisonSize, m_pPlayer->GetCID(), WEAPON_SELF);
@@ -1698,7 +1698,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 			const auto Functional = GS()->GetItemInfo(ItemID)->GetFunctional();
 
 			// increase by equip type
-			if(m_pPlayer->IsActiveEffect(PotionContext.Effect.c_str()))
+			if(m_pPlayer->m_Effects.IsActive(PotionContext.Effect.c_str()))
 			{
 				if(Functional == EquipPotionHeal)
 				{

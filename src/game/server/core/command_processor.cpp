@@ -308,13 +308,24 @@ void CCommandProcessor::ConChatSound(IConsole::IResult* pResult, void* pUser)
 
 void CCommandProcessor::ConChatGiveEffect(IConsole::IResult* pResult, void* pUser)
 {
-	const int ClientID = pResult->GetClientID();
-	IServer* pServer = (IServer*)pUser;
-	CGS* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+	// initialize variables
+	const auto ClientID = pResult->GetClientID();
+	const auto* pServer = (IServer*)pUser;
+	auto* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+	auto* pPlayer = pGS->GetPlayer(ClientID, true);
 
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
-	if(pPlayer && pPlayer->IsAuthed() && pGS->Server()->IsAuthed(ClientID))
-		pPlayer->GiveEffect(pResult->GetString(0), pResult->GetInteger(1));
+	// check auth state and valid player
+	if(!pPlayer || !pGS->Server()->IsAuthed(ClientID))
+		return;
+
+	// give effect
+	const char* pEffect = pResult->GetString(0);
+	const auto Seconds = pResult->GetInteger(1) * pServer->TickSpeed();
+	if(pPlayer->m_Effects.Add(pEffect, Seconds))
+	{
+		pGS->Chat(ClientID, "You have received the effect {} for {} seconds.", pEffect, Seconds);
+		dbg_msg("cmd_auth", "%s got %s (%d sec) by auth command!", pServer->ClientName(ClientID), pEffect, Seconds);
+	}
 }
 
 void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)

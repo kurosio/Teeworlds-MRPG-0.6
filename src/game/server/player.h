@@ -10,60 +10,13 @@
 
 #include "entities/character.h"
 #include "core/tools/cooldown.h"
+#include "core/tools/effect_manager.h"
 #include "core/tools/motd_menu.h"
 #include "core/tools/scenario_manager.h"
 #include "core/tools/vote_wrapper.h"
-#include "class_data.h"
 
 class CPlayerBot;
 enum class AchievementType;
-
-/*class CEffectManager
-{
-	int m_ClientID {};
-	ska::unordered_map<std::string, int> m_vmEffects {};
-
-public:
-	void Init(int ClientID)
-	{
-		m_ClientID = ClientID;
-	}
-
-	bool Add(const char* pEffect, int Sec, float Chance = 100.f)
-	{
-		const float RandomChance = random_float(100.0f);
-		if(RandomChance < Chance)
-		{
-			m_vmEffects[pEffect] = Sec;
-			return true;
-		}
-
-		return false;
-	}
-
-	bool Remove(const char* pEffect)
-	{
-		if(m_vmEffects.erase(pEffect) > 0)
-			return true;
-
-		return false;
-	}
-
-	void Tick()
-	{
-		for(auto it = m_vmEffects.begin(); it != m_vmEffects.end();)
-		{
-			if(--it->second <= 0)
-			{
-				it = m_vmEffects.erase(it);
-			}
-			else
-			{
-				++it;
-			}
-		}
-	}
-};*/
 
 enum
 {
@@ -123,21 +76,21 @@ public:
 	int m_aPlayerTick[NUM_TICK]{};
 	char m_aRotateClanBuffer[128]{};
 	Mood m_MoodState{};
-	CCooldown m_Cooldown{};
-	CVotePlayerData m_VotesData{};
 	std::unique_ptr<MotdMenu> m_pMotdMenu{};
 
 	char m_aLastMsg[256]{};
-
 	StructLatency m_Latency;
 	StructLastAction m_LatestActivity;
 
 	/* ==========================================================
 		VAR AND OBJECTS PLAYER MMO
 	========================================================== */
+	CCooldown m_Cooldown {};
+	CVotePlayerData m_VotesData {};
+	CPlayerDialog m_Dialog;
+	CEffectManager m_Effects {};
 	CTuningParams m_PrevTuningParams;
 	CTuningParams m_NextTuningParams;
-	CPlayerDialog m_Dialog;
 
 	bool m_WantSpawn;
 	bool m_ActivatedGroupColour;
@@ -179,11 +132,6 @@ public:
 	float GetAttributeChance(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);
 
-	virtual bool GiveEffect(const char* pEffect, int Sec, bool Silent = false, float Chance = 100.f);
-	virtual bool RemoveEffect(const char* pEffect, bool Silent = false);
-	virtual bool IsActiveEffect(const char* Potion) const;
-	virtual void ClearEffects();
-
 	virtual void Tick();
 	virtual void PostTick();
 	virtual void Snap(int SnappingClient);
@@ -200,7 +148,6 @@ public:
 
 private:
 	virtual void GetFormatedName(char* aBuffer, int BufferSize);
-	virtual void HandleEffects();
 	virtual void TryRespawn();
 	void HandleScoreboardColors();
 

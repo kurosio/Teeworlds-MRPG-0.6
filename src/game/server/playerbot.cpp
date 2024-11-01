@@ -89,7 +89,7 @@ void CPlayerBot::Tick()
 void CPlayerBot::PostTick()
 {
 	HandleTuningParams();
-	HandleEffects();
+	m_Effects.PostTick();
 	m_Scenarios.PostTick();
 }
 
@@ -123,20 +123,6 @@ CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
 	}
 
 	return it->second.get();
-}
-
-void CPlayerBot::HandleEffects()
-{
-	if(m_aEffects.empty())
-		return;
-
-	if(Server()->Tick() % Server()->TickSpeed() != 0)
-		return;
-
-	std::erase_if(m_aEffects, [](auto& effect)
-	{
-		return --effect.second <= 0;
-	});
 }
 
 bool CPlayerBot::IsActive() const
@@ -263,42 +249,6 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 	}
 
 	return AttributeValue;
-}
-
-bool CPlayerBot::GiveEffect(const char* Potion, int Sec, bool, float Chance)
-{
-	if(!m_pCharacter || !m_pCharacter->IsAlive())
-		return false;
-
-	const float RandomChance = random_float(100.0f);
-	if(RandomChance < Chance)
-	{
-		m_aEffects[Potion] = Sec;
-		return true;
-	}
-
-	return false;
-}
-
-bool CPlayerBot::RemoveEffect(const char* pEffect, bool)
-{
-	if(m_aEffects.contains(pEffect))
-	{
-		m_aEffects.erase(pEffect);
-		return true;
-	}
-
-	return false;
-}
-
-bool CPlayerBot::IsActiveEffect(const char* Potion) const
-{
-	return m_aEffects.contains(Potion);
-}
-
-void CPlayerBot::ClearEffects()
-{
-	m_aEffects.clear();
 }
 
 void CPlayerBot::TryRespawn()

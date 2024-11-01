@@ -124,12 +124,18 @@ void CAttackTeleport::Tick()
 				if(pNextChar)
 				{
 					// take damage and some buffs
-					vec2 SearchPos = pNextChar->GetPos();
-					vec2 Diff = SearchPos - m_Pos;
-					vec2 Force = normalize(Diff) * 16.0f;
+					const auto SearchPos = pNextChar->GetPos();
+					const auto Diff = SearchPos - m_Pos;
+					const auto Force = normalize(Diff) * 16.0f;
+					const auto StunTime = Server()->TickSpeed();
+
+					if(pNextPlayer->m_Effects.Add("Stun", StunTime))
+					{
+						GS()->Chat(ClientID, "You have been stunned for {} seconds!", StunTime);
+					}
+
 					pNextChar->TakeDamage(Force * 12.0f, MaximalDamageSize, ClientID, WEAPON_NINJA);
 					GS()->CreateExplosion(SearchPos, pOwnerChar->GetPlayer()->GetCID(), WEAPON_GRENADE, 0);
-					pNextPlayer->GiveEffect("Stun", 1);
 					pOwnerChar->ChangePosition(pNextChar->GetPos());
 
 					GS()->CreateSound(SearchPos, SOUND_NINJA_FIRE);

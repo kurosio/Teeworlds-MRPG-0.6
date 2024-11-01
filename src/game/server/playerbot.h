@@ -78,11 +78,6 @@ public:
 	std::optional<int> GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetTotalAttributeValue(AttributeIdentifier ID) const override;
 
-	bool GiveEffect(const char* pEffect, int Sec, bool Silent = false, float Chance = 100.f) override;
-	bool RemoveEffect(const char* pEffect, bool Silent = false) override;
-	bool IsActiveEffect(const char* Potion) const override;
-	void ClearEffects() override;
-
 	void Tick() override;
 	void PostTick() override;
 	void Snap(int SnappingClient) override;
@@ -102,7 +97,6 @@ public:
 
 private:
 	ska::unordered_map< int, std::unique_ptr<CPlayerItem> > m_Items {};
-	std::unordered_map < std::string, int > m_aEffects;
 
 	void GetFormatedName(char* aBuffer, int BufferSize) override;
 	int GetLevel() const;
@@ -110,7 +104,6 @@ private:
 	const char* GetStatus() const;
 
 	void TryRespawn() override;
-	void HandleEffects() override;
 
 	void HandlePathFinder();
 };

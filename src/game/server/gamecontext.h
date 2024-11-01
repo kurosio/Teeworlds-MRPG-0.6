@@ -63,7 +63,6 @@ public:
 	CEventHandler m_Events;
 	IGameController* m_pController;
 	CGameWorld m_World;
-	inline static ska::unordered_map < std::string /* effect */, int /* seconds */ > ms_aEffects[MAX_PLAYERS];
 
 	CGS();
 	~CGS() override;

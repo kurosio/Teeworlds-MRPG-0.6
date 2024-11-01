@@ -70,7 +70,7 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 		// Clear all effects on the player
 		if(Weapon != WEAPON_WORLD)
 		{
-			pVictim->ClearEffects();
+			pVictim->m_Effects.RemoveAll();
 			pVictim->UpdateTempData(0, 0);
 		}
 	}

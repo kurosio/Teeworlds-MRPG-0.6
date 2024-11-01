@@ -309,7 +309,7 @@ bool CPlayerItem::Use(int Value)
 			const auto PotionTime = optPotionContext->Lifetime;
 			const auto EffectName = optPotionContext->Effect.c_str();
 
-			pPlayer->GiveEffect(EffectName, PotionTime);
+			pPlayer->m_Effects.Add(EffectName, PotionTime * Server()->TickSpeed());
 			GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
 			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName);
 

@@ -174,11 +174,11 @@ void CPlayer::PostTick()
 			GetTempData().m_TempPing = m_Latency.m_Min;
 
 		// handlers
-		HandleEffects();
 		HandleTuningParams();
 		CVoteOptional::HandleVoteOptionals(m_ClientID);
 		Account()->GetBonusManager().UpdateBonuses();
 		Account()->GetPrisonManager().UpdatePrison();
+		m_Effects.PostTick();
 		m_Scenarios.PostTick();
 	}
 
@@ -237,25 +237,6 @@ void CPlayer::TryRemoveEidolon()
 void CPlayer::UpdateAchievement(AchievementType Type, int Criteria, int Progress, int ProgressType)
 {
 	GS()->Core()->AchievementManager()->UpdateAchievement(this, Type, Criteria, Progress, ProgressType);
-}
-
-void CPlayer::HandleEffects()
-{
-	if(Server()->Tick() % Server()->TickSpeed() != 0 || CGS::ms_aEffects[m_ClientID].empty())
-		return;
-
-	for(auto pEffect = CGS::ms_aEffects[m_ClientID].begin(); pEffect != CGS::ms_aEffects[m_ClientID].end();)
-	{
-		pEffect->second--;
-		if(pEffect->second <= 0)
-		{
-			GS()->Chat(m_ClientID, "You lost the {} effect.", pEffect->first.c_str());
-			pEffect = CGS::ms_aEffects[m_ClientID].erase(pEffect);
-			continue;
-		}
-
-		++pEffect;
-	}
 }
 
 void CPlayer::HandleScoreboardColors()
@@ -606,53 +587,6 @@ bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int Maxi
 /* #########################################################################
 	FUNCTIONS PLAYER ACCOUNT
 ######################################################################### */
-bool CPlayer::GiveEffect(const char* pEffect, int Sec, bool Silent, float Chance)
-{
-	if(!m_pCharacter || !m_pCharacter->IsAlive())
-		return false;
-
-	const float RandomChance = random_float(100.0f);
-	if(RandomChance < Chance)
-	{
-		if(!Silent)
-		{
-			GS()->Chat(m_ClientID, "You got the effect {} time {} seconds.", pEffect, Sec);
-		}
-		CGS::ms_aEffects[m_ClientID][pEffect] = Sec;
-		return true;
-	}
-
-	return false;
-}
-
-bool CPlayer::RemoveEffect(const char* pEffect, bool Silent)
-{
-	if(!m_pCharacter || !m_pCharacter->IsAlive())
-		return false;
-
-	if(CGS::ms_aEffects[m_ClientID].count(pEffect) > 0)
-	{
-		if(!Silent)
-		{
-			GS()->Chat(m_ClientID, "You lost the effect {}.", pEffect);
-		}
-		CGS::ms_aEffects[m_ClientID].erase(pEffect);
-		return true;
-	}
-
-	return false;
-}
-
-bool CPlayer::IsActiveEffect(const char* Potion) const
-{
-	return CGS::ms_aEffects[m_ClientID].count(Potion) > 0;
-}
-
-void CPlayer::ClearEffects()
-{
-	CGS::ms_aEffects[m_ClientID].clear();
-}
-
 const char* CPlayer::GetLanguage() const
 {
 	return Server()->GetClientLanguage(m_ClientID);

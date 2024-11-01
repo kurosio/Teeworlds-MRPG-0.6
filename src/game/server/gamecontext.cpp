@@ -42,8 +42,6 @@ CGS::CGS()
 
 CGS::~CGS()
 {
-	for(auto& vClientEffects : ms_aEffects)
-		vClientEffects.clear();
 	m_Events.Clear();
 	for(auto& pPlayer : m_apPlayers)
 	{
@@ -1258,7 +1256,6 @@ void CGS::OnClearClientData(int ClientID)
 {
 	Core()->OnResetClientData(ClientID);
 	VoteWrapper::Data()[ClientID].clear();
-	ms_aEffects[ClientID].clear();
 
 	// clear active snap bots for player
 	for(auto& pActiveSnap : DataBotInfo::ms_aDataBot)
