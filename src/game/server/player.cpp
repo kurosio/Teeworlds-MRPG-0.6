@@ -295,14 +295,10 @@ void CPlayer::Snap(int SnappingClient)
 		{
 			const auto clanStringSize = str_utf8_fix_truncation(m_aRotateClanBuffer);
 			std::rotate(m_aRotateClanBuffer, m_aRotateClanBuffer + str_utf8_forward(m_aRotateClanBuffer, 0), m_aRotateClanBuffer + clanStringSize);
+			m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (m_aRotateClanBuffer[0] == '|' ? Server()->TickSpeed() : Server()->TickSpeed() / 8);
 
-			// set the next tick for refreshing the clan title
-			m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aRotateClanBuffer[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 8));
-
-			// If the clan string size is less than 10
-			if(clanStringSize < 10)
+			if(m_aInitialClanBuffer[0] == '\0' || str_comp_nocase(m_aRotateClanBuffer, m_aInitialClanBuffer) == 0)
 			{
-				m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + Server()->TickSpeed();
 				RefreshClanString();
 			}
 		}
@@ -392,7 +388,7 @@ void CPlayer::RefreshClanString()
 	}
 
 	// location
-	auto prepared = std::string(Server()->GetWorldName(GetCurrentWorldID()));
+	auto prepared = " | " + std::string(Server()->GetWorldName(GetCurrentWorldID()));
 
 	// title
 	if(const auto titleItemID = GetEquippedItemID(EquipTitle); titleItemID.has_value())
@@ -413,12 +409,13 @@ void CPlayer::RefreshClanString()
 	// class
 	char classBuffer[64];
 	const char* professionName = GetProfessionName(Account()->GetClass().GetProfessionID());
-	str_format(classBuffer, sizeof(classBuffer), "_%-*s_", 8 - str_length(professionName), professionName);
+	str_format(classBuffer, sizeof(classBuffer), " %-*s ", 8 - str_length(professionName), professionName);
 	prepared += " | ";
 	prepared += classBuffer;
 
 	// end format
 	str_format(m_aRotateClanBuffer, sizeof(m_aRotateClanBuffer), "%s", prepared.c_str());
+	str_format(m_aInitialClanBuffer, sizeof(m_aInitialClanBuffer), "%s", prepared.c_str());
 }
 
 CCharacter* CPlayer::GetCharacter() const
