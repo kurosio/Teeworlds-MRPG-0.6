@@ -801,16 +801,16 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 
 	// counting attributes from equipped items
 	int totalValue = 0;
-	for(const auto& ItemData : CPlayerItem::Data()[m_ClientID])
+	for(const auto& [ItemID, PlayerItem] : CPlayerItem::Data()[m_ClientID])
 	{
 		// required repair
-		if(ItemData.second.GetDurability() <= 0)
+		if(PlayerItem.GetDurability() <= 0)
 			continue;
 
 		// if is equipped and enchantable add attribute
-		if(ItemData.second.IsEquipped() && ItemData.second.Info()->IsEnchantable() && ItemData.second.Info()->GetInfoEnchantStats(ID))
+		if(PlayerItem.IsEquipped() && PlayerItem.Info()->IsEnchantable() && PlayerItem.Info()->GetInfoEnchantStats(ID))
 		{
-			totalValue += ItemData.second.GetEnchantStats(ID);
+			totalValue += PlayerItem.GetEnchantStats(ID);
 		}
 	}
 
@@ -818,6 +818,13 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	if(const auto* pClassProf = Account()->GetClassProfession())
 	{
 		totalValue += pClassProf->GetAttributeValue(ID);
+	}
+
+	// add attribute for other profession
+	for(const auto& Prof : Account()->GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
+			totalValue += Prof.GetAttributeValue(ID);
 	}
 
 	return totalValue;
