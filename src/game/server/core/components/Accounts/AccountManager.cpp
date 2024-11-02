@@ -233,6 +233,39 @@ void CAccountManager::OnClientReset(int ClientID)
 	CAccountData::ms_aData.erase(ClientID);
 }
 
+void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const
+{
+	const char* pProfName = GetProfessionName(pProf->GetProfessionID());
+	const auto ClientID = pPlayer->GetCID();
+	const auto ProfID = pProf->GetProfessionID();
+
+	VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} upgrades", pProfName);
+	{
+		for(const auto& ID : pProf->GetAttributes() | std::views::keys)
+		{
+			const auto* pAttribute = GS()->GetAttributeInfo(ID);
+			const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
+			const float Percent = pPlayer->GetAttributeChance(ID);
+
+			char aBuf[64] {};
+			if(Percent)
+			{
+				str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
+			}
+			VUpgrades.Add("Total {} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
+		}
+	}
+	VUpgrades.AddLine();
+	{
+		for(auto& [ID, Value] : pProf->GetAttributes())
+		{
+			const auto* pAttribute = GS()->GetAttributeInfo(ID);
+			VUpgrades.AddOption("UPGRADE", (int)ProfID, (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
+		}
+	}
+	VoteWrapper::AddEmptyline(ClientID);
+}
+
 bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -314,7 +347,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		const auto* pClassProf = pPlayer->Account()->GetClassProfession();
+		auto* pClassProf = pPlayer->Account()->GetClassProfession();
 
 		// select war profession
 		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Change class profession");
@@ -334,11 +367,17 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
+		// add upgrades by class profession
+		if(pClassProf)
+		{
+			AddMenuProfessionUpgrades(pPlayer, pClassProf);
+		}
+
 		// professions
 		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Upgrade professions");
 		for(auto& Prof : pPlayer->Account()->GetProfessions())
 		{
-			if((pClassProf && pClassProf->GetProfessionID() == Prof.GetProfessionID()) || Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
+			if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
 			{
 				const auto ProfessionID = Prof.GetProfessionID();
 				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} ({}P)", GetProfessionName(ProfessionID), Prof.GetUpgradePoint());
@@ -350,7 +389,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		if(const auto ProfID = pPlayer->m_VotesData.GetExtraID())
 		{
 			// check valid profession
-			const auto* pProf = pPlayer->Account()->GetProfession((ProfessionIdentifier)ProfID.value());
+			auto* pProf = pPlayer->Account()->GetProfession((ProfessionIdentifier)ProfID.value());
 			if(!pProf)
 			{
 				VoteWrapper::AddBackpage(ClientID);
@@ -358,31 +397,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			}
 
 			// add profession upgrades
-			const char* pProfName = GetProfessionName(pProf->GetProfessionID());
-			VoteWrapper VUpgrades(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "{} upgrades", pProfName);
-			{
-				for(const auto& ID : pProf->GetAttributes() | std::views::keys)
-				{
-					const auto* pAttribute = GS()->GetAttributeInfo(ID);
-					const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
-					const float Percent = pPlayer->GetAttributeChance(ID);
-
-					char aBuf[64] {};
-					if(Percent)
-					{
-						str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
-					}
-					VUpgrades.Add("Total {} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
-				}
-			}
-			VUpgrades.AddLine();
-			{
-				for(auto& [ID, Value] : pProf->GetAttributes())
-				{
-					const auto* pAttribute = GS()->GetAttributeInfo(ID);
-					VUpgrades.AddOption("UPGRADE", ProfID.value(), (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
-				}
-			}
+			AddMenuProfessionUpgrades(pPlayer, pProf);
 		}
 
 		// Add back page

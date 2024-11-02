@@ -628,7 +628,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const auto [BonusActivitiesLines, BonusActivitiesStr] = Account()->GetBonusManager().GetBonusActivitiesString();
 
 	// result
-	auto Result = fmt_localize(m_ClientID, "\n\n\n\n\nLv{}[{}]\nHP {}/{}\nMP {}/{}\nGold {} of {}\nBank {}",
+	auto Result = fmt_localize(m_ClientID, "\n\n\n\n\nLv{}[{}]\nHP {$}/{$}\nMP {$}/{$}\nGold {$} of {$}\nBank {$}",
 		Account()->GetLevel(), ProgressBar, HP, MaxHP, MP, MaxMP, Gold, GoldCapacity, Bank);
 
 	// recast heal info

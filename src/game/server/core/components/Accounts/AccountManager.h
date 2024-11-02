@@ -49,6 +49,9 @@ public:
 
 	static std::string HashPassword(const std::string& Password, const std::string& Salt);
 	void UseVoucher(int ClientID, const char* pVoucher) const;
+
+private:
+	void AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const;
 };
 
 #endif
