@@ -30,8 +30,8 @@ class IGameController
 		float m_Score;
 	};
 
-	vec2 m_aaSpawnPoints[SPAWN_NUM][64];
-	int m_aNumSpawnPoints[SPAWN_NUM];
+	vec2 m_aaSpawnPoints[NUM_SPAWN][64];
+	int m_aNumSpawnPoints[NUM_SPAWN];
 
 	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const;
 	void EvaluateSpawnType(CSpawnEval *pEval, int Type, std::pair<vec2, float> LimiterSpread) const;

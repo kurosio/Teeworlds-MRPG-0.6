@@ -309,7 +309,7 @@ int64_t CPlayerBot::GetMaskVisibleForClients() const
 	return Mask;
 }
 
-StateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
+EStateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 {
 	// Get the snapping player
 	CPlayer* pSnappingPlayer = GS()->GetPlayer(ClientID);

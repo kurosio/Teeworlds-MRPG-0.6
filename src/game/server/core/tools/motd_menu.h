@@ -5,7 +5,7 @@ class CGS;
 class CPlayer;
 enum MotdMenuFlags
 {
-	MTFLAG_CLOSE_BUTTON = 1 << 0,
+	MTFLAG_CLOSE_BUTTON    = 1 << 0,
 	MTFLAG_CLOSE_ON_SELECT = 1 << 1,
 };
 

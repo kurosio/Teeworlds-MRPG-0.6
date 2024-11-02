@@ -18,19 +18,6 @@
 class CPlayerBot;
 enum class AchievementType;
 
-enum
-{
-	WEAPON_SELF = -2, // self die
-	WEAPON_WORLD = -1, // swap world etc
-};
-
-enum StateSnapping
-{
-	STATE_SNAPPING_NONE = 0,
-	STATE_SNAPPING_ONLY_CHARACTER,
-	STATE_SNAPPING_FULL,
-};
-
 class CPlayer
 {
 	MACRO_ALLOC_POOL_ID()
@@ -71,7 +58,6 @@ public:
 	ScenarioManager& Scenarios() { return m_Scenarios; }
 
 	vec2 m_ViewPos{};
-	int m_SpecChar{-1};
 	int m_PlayerFlags{};
 	int m_aPlayerTick[NUM_TICK]{};
 	char m_aRotateClanBuffer[128]{};
@@ -125,7 +111,7 @@ public:
 
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
-	virtual StateSnapping IsActiveForClient(int ClientID) const { return STATE_SNAPPING_FULL; }
+	virtual EStateSnapping IsActiveForClient(int ClientID) const { return STATE_SNAPPING_FULL; }
 	virtual std::optional<int> GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
 	virtual bool IsEquipped(ItemFunctional EquipID) const;
 	virtual int GetTotalAttributeValue(AttributeIdentifier ID) const;
@@ -159,8 +145,7 @@ public:
 	void OnDirectInput(CNetObj_PlayerInput* pNewInput);
 	void OnPredictedInput(CNetObj_PlayerInput* pNewInput) const;
 
-	void ProgressBar(const char* pType, int Lvl, uint64_t Exp, uint64_t ExpNeed, uint64_t GotExp) const;
-	bool Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const;
+	void ProgressBar(const char* pType, int Level, uint64_t Exp, uint64_t ExpNeeded, uint64_t GainedExp) const;
 	const char* GetLanguage() const;
 	bool IsAuthed() const;
 	bool ParseVoteOptionResult(int Vote);

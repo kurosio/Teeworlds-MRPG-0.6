@@ -6,7 +6,6 @@
 #include "worldmodes/dungeon.h"
 
 #include "core/components/Accounts/AccountManager.h"
-#include "core/components/Accounts/AccountMiningManager.h"
 #include "core/components/achievements/achievement_manager.h"
 #include "core/components/Bots/BotManager.h"
 #include "core/components/Dungeons/DungeonData.h"
@@ -21,7 +20,7 @@
 
 #include "core/tools/vote_optional.h"
 
-MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
+MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
 IServer* CPlayer::Server() const { return m_pGS->Server(); };
 
@@ -65,22 +64,20 @@ CPlayer::~CPlayer()
 
 void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 {
-	bool isChatting = m_PlayerFlags & PLAYERFLAG_CHATTING;
-	bool isAuthed = IsAuthed();
-	int currentTick = Server()->Tick();
-	int tickSpeed = Server()->TickSpeed();
+	const auto isChatting = m_PlayerFlags & PLAYERFLAG_CHATTING;
+	const auto isAuthed = IsAuthed();
+	const auto currentTick = Server()->Tick();
+	const auto tickSpeed = Server()->TickSpeed();
 
 	// Player is not chatting and health nickname tick is valid
 	if(!isChatting && currentTick < m_SnapHealthNicknameTick)
 	{
-		int PercentHP = translate_to_percent(GetMaxHealth(), GetHealth());
 		char aHealthProgressBuf[6];
-		str_format(aHealthProgressBuf, sizeof(aHealthProgressBuf), ":%d%%", clamp(PercentHP, 1, 100));
-
 		char aNicknameBuf[MAX_NAME_LENGTH];
-		str_utf8_truncate(aNicknameBuf, sizeof(aNicknameBuf), Server()->ClientName(m_ClientID),
-			(int)((MAX_NAME_LENGTH - 1) - str_length(aHealthProgressBuf)));
+		const int PercentHP = round_to_int(translate_to_percent(GetMaxHealth(), GetHealth()));
 
+		str_format(aHealthProgressBuf, sizeof(aHealthProgressBuf), ":%d%%", clamp(PercentHP, 1, 100));
+		str_utf8_truncate(aNicknameBuf, sizeof(aNicknameBuf), Server()->ClientName(m_ClientID), MAX_NAME_LENGTH - 1 - str_length(aHealthProgressBuf));
 		str_format(aBuffer, BufferSize, "%s%s", aNicknameBuf, aHealthProgressBuf);
 		return;
 	}
@@ -290,101 +287,104 @@ void CPlayer::HandleTuningParams()
 
 void CPlayer::Snap(int SnappingClient)
 {
-	CNetObj_ClientInfo* pClientInfo = Server()->SnapNewItem<CNetObj_ClientInfo>(m_ClientID);
-	if(!pClientInfo)
-		return;
-
-	// Check if it's time to refresh the clan title
-	if(m_aPlayerTick[RefreshClanTitle] < Server()->Tick())
+	// client info
+	if(auto* pClientInfo = Server()->SnapNewItem<CNetObj_ClientInfo>(m_ClientID))
 	{
-		// Rotate the clan string by the length of the first character
-		int clanStringSize = str_utf8_fix_truncation(m_aRotateClanBuffer);
-		std::ranges::rotate(m_aRotateClanBuffer, std::begin(m_aRotateClanBuffer) + str_utf8_forward(m_aRotateClanBuffer, 0));
-
-		// Set the next tick for refreshing the clan title
-		m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aRotateClanBuffer[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 8));
-
-		// If the clan string size is less than 10
-		if(clanStringSize < 10)
+		// prepare clan string
+		if(m_aPlayerTick[RefreshClanTitle] < Server()->Tick())
 		{
-			m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + Server()->TickSpeed();
-			RefreshClanString();
+			const auto clanStringSize = str_utf8_fix_truncation(m_aRotateClanBuffer);
+			std::rotate(m_aRotateClanBuffer, m_aRotateClanBuffer + str_utf8_forward(m_aRotateClanBuffer, 0), m_aRotateClanBuffer + clanStringSize);
+
+			// set the next tick for refreshing the clan title
+			m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + (((m_aRotateClanBuffer[0] == '|') || (clanStringSize - 1 < 10)) ? Server()->TickSpeed() : (Server()->TickSpeed() / 8));
+
+			// If the clan string size is less than 10
+			if(clanStringSize < 10)
+			{
+				m_aPlayerTick[RefreshClanTitle] = Server()->Tick() + Server()->TickSpeed();
+				RefreshClanString();
+			}
 		}
+
+		char aNameBuf[MAX_NAME_LENGTH];
+		GetFormatedName(aNameBuf, sizeof(aNameBuf));
+		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
+		StrToInts(&pClientInfo->m_Clan0, 3, m_aRotateClanBuffer);
+		pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
+		StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
+		pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
+		pClientInfo->m_ColorBody = GetTeeInfo().m_ColorBody;
+		pClientInfo->m_ColorFeet = GetTeeInfo().m_ColorFeet;
 	}
 
-	char aNameBuf[MAX_NAME_LENGTH];
-	GetFormatedName(aNameBuf, sizeof(aNameBuf));
-	StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
-	StrToInts(&pClientInfo->m_Clan0, 3, m_aRotateClanBuffer);
-	pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-	StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
-	pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
-	pClientInfo->m_ColorBody = GetTeeInfo().m_ColorBody;
-	pClientInfo->m_ColorFeet = GetTeeInfo().m_ColorFeet;
-
-	CNetObj_PlayerInfo* pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(m_ClientID);
-	if(!pPlayerInfo)
-		return;
-
-	const bool localClient = m_ClientID == SnappingClient;
-	pPlayerInfo->m_Local = localClient;
-	pPlayerInfo->m_ClientId = m_ClientID;
-	pPlayerInfo->m_Team = GetTeam();
-	pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
-	pPlayerInfo->m_Score = Account()->GetLevel();
-
-	const bool isViewLocked = m_FixedView.GetCurrentView().has_value();
-	if(auto pDDNetPlayer = Server()->SnapNewItem<CNetObj_DDNetPlayer>(m_ClientID))
+	// player info
+	if(auto* pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(m_ClientID))
 	{
-		pDDNetPlayer->m_AuthLevel = Server()->GetAuthedState(m_ClientID);
-		pDDNetPlayer->m_Flags = isViewLocked ? EXPLAYERFLAG_SPEC : 0;
-	}
+		const bool localClient = m_ClientID == SnappingClient;
+		const bool isViewLocked = m_FixedView.GetCurrentView().has_value();
 
-	if(localClient && (GetTeam() == TEAM_SPECTATORS || isViewLocked))
-	{
-		CNetObj_SpectatorInfo* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(m_ClientID);
-		if(!pSpectatorInfo)
-			return;
+		pPlayerInfo->m_Local = localClient;
+		pPlayerInfo->m_ClientId = m_ClientID;
+		pPlayerInfo->m_Team = GetTeam();
+		pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
+		pPlayerInfo->m_Score = Account()->GetLevel();
 
-		pSpectatorInfo->m_X = m_ViewPos.x;
-		pSpectatorInfo->m_Y = m_ViewPos.y;
-		pSpectatorInfo->m_SpectatorId = (isViewLocked ? m_ClientID : -1);
-		m_FixedView.Reset();
+		// ddnet player
+		if(auto* pDDNetPlayer = Server()->SnapNewItem<CNetObj_DDNetPlayer>(m_ClientID))
+		{
+			pDDNetPlayer->m_AuthLevel = Server()->GetAuthedState(m_ClientID);
+			pDDNetPlayer->m_Flags = isViewLocked ? EXPLAYERFLAG_SPEC : 0;
+		}
+
+		// spectator info
+		if(localClient && (GetTeam() == TEAM_SPECTATORS || isViewLocked))
+		{
+			if(auto* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(m_ClientID))
+			{
+				pSpectatorInfo->m_X = m_ViewPos.x;
+				pSpectatorInfo->m_Y = m_ViewPos.y;
+				pSpectatorInfo->m_SpectatorId = (isViewLocked ? m_ClientID : -1);
+				m_FixedView.Reset();
+			}
+		}
 	}
 }
 
 void CPlayer::FakeSnap()
 {
-	int FakeID = VANILLA_MAX_CLIENTS - 1;
-	CNetObj_ClientInfo* pClientInfo = Server()->SnapNewItem<CNetObj_ClientInfo>(FakeID);
-	if(!pClientInfo)
-		return;
+	constexpr int FakeID = VANILLA_MAX_CLIENTS - 1;
 
-	StrToInts(&pClientInfo->m_Name0, 4, " ");
-	StrToInts(&pClientInfo->m_Clan0, 3, "");
-	StrToInts(&pClientInfo->m_Skin0, 6, "default");
+	// client info
+	if(auto* pClientInfo = Server()->SnapNewItem<CNetObj_ClientInfo>(FakeID))
+	{
+		StrToInts(&pClientInfo->m_Name0, 4, " ");
+		StrToInts(&pClientInfo->m_Clan0, 3, "");
+		StrToInts(&pClientInfo->m_Skin0, 6, "default");
+	}
 
-	CNetObj_PlayerInfo* pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(FakeID);
-	if(!pPlayerInfo)
-		return;
+	// player info
+	if(auto* pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(FakeID))
+	{
+		pPlayerInfo->m_Latency = m_Latency.m_Min;
+		pPlayerInfo->m_Local = 1;
+		pPlayerInfo->m_ClientId = FakeID;
+		pPlayerInfo->m_Score = -9999;
+		pPlayerInfo->m_Team = TEAM_SPECTATORS;
+	}
 
-	pPlayerInfo->m_Latency = m_Latency.m_Min;
-	pPlayerInfo->m_Local = 1;
-	pPlayerInfo->m_ClientId = FakeID;
-	pPlayerInfo->m_Score = -9999;
-	pPlayerInfo->m_Team = TEAM_SPECTATORS;
-
-	CNetObj_SpectatorInfo* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(FakeID);
-	if(!pSpectatorInfo)
-		return;
-
-	pSpectatorInfo->m_SpectatorId = -1;
-	pSpectatorInfo->m_X = m_ViewPos.x;
-	pSpectatorInfo->m_Y = m_ViewPos.y;
+	// spectator info
+	if(auto* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(FakeID))
+	{
+		pSpectatorInfo->m_SpectatorId = -1;
+		pSpectatorInfo->m_X = m_ViewPos.x;
+		pSpectatorInfo->m_Y = m_ViewPos.y;
+	}
 }
 
 void CPlayer::RefreshClanString()
 {
+	// is not authed send only clan
 	if(!IsAuthed())
 	{
 		str_copy(m_aRotateClanBuffer, Server()->ClientClan(m_ClientID), sizeof(m_aRotateClanBuffer));
@@ -392,33 +392,33 @@ void CPlayer::RefreshClanString()
 	}
 
 	// location
-	std::string Prepared(Server()->GetWorldName(GetCurrentWorldID()));
+	auto prepared = std::string(Server()->GetWorldName(GetCurrentWorldID()));
 
 	// title
-	if(const auto TitleItemID = GetEquippedItemID(EquipTitle); TitleItemID.has_value())
+	if(const auto titleItemID = GetEquippedItemID(EquipTitle); titleItemID.has_value())
 	{
-		Prepared += " | ";
-		Prepared += GetItem(TitleItemID.value())->Info()->GetName();
+		prepared += " | ";
+		prepared += GetItem(titleItemID.value())->Info()->GetName();
 	}
 
 	// guild
-	if(const CGuild* pGuild = Account()->GetGuild())
+	if(const auto* pGuild = Account()->GetGuild())
 	{
-		Prepared += " | ";
-		Prepared += pGuild->GetName();
-		Prepared += " : ";
-		Prepared += Account()->GetGuildMember()->GetRank()->GetName();
+		prepared += " | ";
+		prepared += pGuild->GetName();
+		prepared += " : ";
+		prepared += Account()->GetGuildMember()->GetRank()->GetName();
 	}
 
 	// class
-	char aBufClass[64];
-	const char* pProfessionName = GetProfessionName(Account()->GetClass().GetProfessionID());
-	str_format(aBufClass, sizeof(aBufClass), "_%-*s_", 8 - str_length(pProfessionName), pProfessionName);
-	Prepared += " | ";
-	Prepared += aBufClass;
+	char classBuffer[64];
+	const char* professionName = GetProfessionName(Account()->GetClass().GetProfessionID());
+	str_format(classBuffer, sizeof(classBuffer), "_%-*s_", 8 - str_length(professionName), professionName);
+	prepared += " | ";
+	prepared += classBuffer;
 
 	// end format
-	str_format(m_aRotateClanBuffer, sizeof(m_aRotateClanBuffer), "%s", Prepared.c_str());
+	str_format(m_aRotateClanBuffer, sizeof(m_aRotateClanBuffer), "%s", prepared.c_str());
 }
 
 CCharacter* CPlayer::GetCharacter() const
@@ -553,35 +553,15 @@ int CPlayer::GetTeam()
 /* #########################################################################
 	FUNCTIONS PLAYER HELPER
 ######################################################################### */
-void CPlayer::ProgressBar(const char* pType, int Lvl, uint64_t Exp, uint64_t ExpNeed, uint64_t GotExp) const
+void CPlayer::ProgressBar(const char* pType, int Level, uint64_t Exp, uint64_t ExpNeeded, uint64_t GainedExp) const
 {
-	const float ExpProgress = translate_to_percent(ExpNeed, Exp);
-	const float GotExpProgress = translate_to_percent(ExpNeed, GotExp);
+	const auto ExpProgress = translate_to_percent(ExpNeeded, Exp);
+	const auto GainedExpProgress = translate_to_percent(ExpNeeded, GainedExp);
 
 	// send and format
-	const auto ProgressBar = mystd::string::progressBar(100, (int)ExpProgress, 10, ":", " ");
-	const auto Result = fmt_default("Lv{lv} {type}[{bar}] {~.2}%+{~.3}%({})XP", Lvl, pType, ProgressBar, ExpProgress, GotExpProgress, GotExp);
+	const auto ProgressBar = mystd::string::progressBar(100, static_cast<int>(ExpProgress), 10, ":", " ");
+	const auto Result = fmt_default("Lv{lv} {type}[{bar}] {~.2f}%+{~.3f}%({})XP", Level, pType, ProgressBar, ExpProgress, GainedExpProgress, GainedExp);
 	GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 100, Result.c_str());
-}
-
-bool CPlayer::Upgrade(int Value, int* Upgrade, int* Useless, int Price, int MaximalUpgrade) const
-{
-	const int UpgradeNeed = Price * Value;
-	if((*Upgrade + Value) > MaximalUpgrade)
-	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "Upgrade has a maximum level.");
-		return false;
-	}
-
-	if(*Useless < UpgradeNeed)
-	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "Not upgrade points for +{}. Required {}.", Value, UpgradeNeed);
-		return false;
-	}
-
-	*Useless -= UpgradeNeed;
-	*Upgrade += Value;
-	return true;
 }
 
 /* #########################################################################
@@ -594,20 +574,24 @@ const char* CPlayer::GetLanguage() const
 
 void CPlayer::UpdateTempData(int Health, int Mana)
 {
-	GetTempData().m_TempHealth = Health;
-	GetTempData().m_TempMana = Mana;
+	auto& TempData = GetTempData();
+	TempData.m_TempHealth = Health;
+	TempData.m_TempMana = Mana;
 }
 
 bool CPlayer::IsAuthed() const
 {
-	if(GS()->Core()->AccountManager()->IsActive(m_ClientID))
+	const auto* pAccountManager = GS()->Core()->AccountManager();
+	if(pAccountManager->IsActive(m_ClientID))
+	{
 		return Account()->GetID() > 0;
+	}
 	return false;
 }
 
 int CPlayer::GetMaxHealth() const
 {
-	int DefaultHP = 10 + GetTotalAttributeValue(AttributeIdentifier::HP);
+	auto DefaultHP = 10 + GetTotalAttributeValue(AttributeIdentifier::HP);
 	DefaultHP += translate_to_percent_rest(DefaultHP, Account()->GetClass().GetExtraHP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_HP, &DefaultHP);
 	return DefaultHP;
@@ -615,7 +599,7 @@ int CPlayer::GetMaxHealth() const
 
 int CPlayer::GetMaxMana() const
 {
-	int DefaultMP = 10 + GetTotalAttributeValue(AttributeIdentifier::MP);
+	auto DefaultMP = 10 + GetTotalAttributeValue(AttributeIdentifier::MP);
 	DefaultMP += translate_to_percent_rest(DefaultMP, Account()->GetClass().GetExtraMP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_MP, &DefaultMP);
 	return DefaultMP;
@@ -633,7 +617,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 
 	// information
 	const int LevelPercent = round_to_int(translate_to_percent(computeExperience(Account()->GetLevel()), Account()->GetExperience()));
-	const std::string ProgressBar = mystd::string::progressBar(100, LevelPercent, 10, ":", " ");
+	const auto ProgressBar = mystd::string::progressBar(100, LevelPercent, 10, ":", " ");
 	const auto MaxHP = GetMaxHealth();
 	const auto MaxMP = GetMaxMana();
 	const auto HP = m_pCharacter->Health();
@@ -644,14 +628,14 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const auto [BonusActivitiesLines, BonusActivitiesStr] = Account()->GetBonusManager().GetBonusActivitiesString();
 
 	// result
-	std::string Result = fmt_localize(m_ClientID, "\n\n\n\n\nLv{}[{}]\nHP {$}/{$}\nMP {$}/{$}\nGold {$} of {$}\nBank {$}",
+	auto Result = fmt_localize(m_ClientID, "\n\n\n\n\nLv{}[{}]\nHP {}/{}\nMP {}/{}\nGold {} of {}\nBank {}",
 		Account()->GetLevel(), ProgressBar, HP, MaxHP, MP, MaxMP, Gold, GoldCapacity, Bank);
 
 	// recast heal info
-	int PotionRecastTime = m_aPlayerTick[HealPotionRecast] - Server()->Tick();
+	auto PotionRecastTime = m_aPlayerTick[HealPotionRecast] - Server()->Tick();
 	if(PotionRecastTime > 0)
 	{
-		const int Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
+		const auto Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
 		Result += "\n" + fmt_localize(m_ClientID, "Potion HP recast: {}", Seconds);
 	}
 
@@ -659,7 +643,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	PotionRecastTime = m_aPlayerTick[ManaPotionRecast] - Server()->Tick();
 	if(PotionRecastTime > 0)
 	{
-		const int Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
+		const auto Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
 		Result += "\n" + fmt_localize(m_ClientID, "Potion MP recast: {}", Seconds);
 	}
 
@@ -669,10 +653,10 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	}
 
 	constexpr int MaxLines = 20;
-	const int Lines = std::ranges::count(Result, '\n');
+	const auto Lines = std::ranges::count(Result, '\n');
 	if(Lines < MaxLines)
 	{
-		Result += std::string(MaxLines - Lines, '\n');
+		Result.append(MaxLines - Lines, '\n');
 	}
 
 	str_format(pBuffer, Size, "%s%-150s", Result.c_str(), pAppendStr);
@@ -683,37 +667,38 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 ######################################################################### */
 bool CPlayer::ParseVoteOptionResult(int Vote)
 {
+	// check valid character
 	if(!m_pCharacter)
 	{
 		GS()->Chat(m_ClientID, "Use it when you're not dead!");
 		return true;
 	}
 
-	if(!CVoteOptional::Data()[m_ClientID].empty())
+	// execute is exist vote optional
+	auto& voteOptions = CVoteOptional::Data()[m_ClientID];
+	if(!voteOptions.empty())
 	{
-		CVoteOptional* pOptional = &CVoteOptional::Data()[m_ClientID].front();
+		CVoteOptional* pOptional = &voteOptions.front();
 		pOptional->ExecuteVote(Vote == 1);
 	}
 
-	// - - - - - F3- - - - - - -
 	if(Vote == 1)
 	{
+		// dungeon change ready state
 		if(GS()->IsWorldType(WorldType::Dungeon))
 		{
 			const int DungeonID = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetDungeonID();
 			if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
 			{
-				GetTempData().m_TempDungeonReady ^= true;
+				GetTempData().m_TempDungeonReady = !GetTempData().m_TempDungeonReady;
 				GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
 			}
 			return true;
 		}
-
 	}
-	// - - - - - F4- - - - - - -
 	else
 	{
-		// conversations
+		// continue dialog
 		if(m_Dialog.IsActive())
 		{
 			if(m_aPlayerTick[LastDialog] && m_aPlayerTick[LastDialog] > GS()->Server()->Tick())
@@ -730,23 +715,25 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 
 CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)
 {
-	dbg_assert(CItemDescription::Data().find(ID) != CItemDescription::Data().end(), "invalid referring to the CPlayerItem");
+	const auto& itemsDescription = CItemDescription::Data();
+	dbg_assert(itemsDescription.contains(ID), "invalid referring to the CPlayerItem");
 
-	if(!CPlayerItem::Data()[m_ClientID].contains(ID))
+	auto& playerItems = CPlayerItem::Data()[m_ClientID];
+	if(!playerItems.contains(ID))
 	{
 		CPlayerItem(ID, m_ClientID).Init({}, {}, {}, {});
-		return &CPlayerItem::Data()[m_ClientID][ID];
 	}
 
-	return &CPlayerItem::Data()[m_ClientID][ID];
+	return &playerItems[ID];
 }
 
 CSkill* CPlayer::GetSkill(int SkillID) const
 {
-	dbg_assert(CSkillDescription::Data().find(SkillID) != CSkillDescription::Data().end(), "invalid referring to the CSkillData");
+	const auto& skillsDescription = CSkillDescription::Data();
+	dbg_assert(skillsDescription.contains(SkillID), "invalid referring to the CSkill");
 
-	const auto& playerSkills = CSkill::Data()[m_ClientID];
-	const auto iter = std::ranges::find_if(playerSkills, [&SkillID](const auto* pSkill)
+	auto& playerSkills = CSkill::Data()[m_ClientID];
+	const auto iter = std::ranges::find_if(playerSkills, [SkillID](const auto* pSkill)
 	{
 		return pSkill->GetID() == SkillID;
 	});
@@ -756,14 +743,16 @@ CSkill* CPlayer::GetSkill(int SkillID) const
 
 CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 {
-	dbg_assert(CQuestDescription::Data().find(ID) != CQuestDescription::Data().end(), "invalid referring to the CPlayerQuest");
+	const auto& questsDescription = CQuestDescription::Data();
+	dbg_assert(questsDescription.contains(ID), "invalid referring to the CPlayerQuest");
 
-	if(!CPlayerQuest::Data()[m_ClientID].contains(ID))
+	auto& questData = CPlayerQuest::Data()[m_ClientID];
+	if(!questData.contains(ID))
 	{
 		CPlayerQuest::CreateElement(ID, m_ClientID);
 	}
 
-	return CPlayerQuest::Data()[m_ClientID][ID];
+	return questData[ID];
 }
 
 std::optional<int> CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
@@ -798,12 +787,12 @@ bool CPlayer::IsEquipped(ItemFunctional EquipID) const
 int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
 	// initialize variables
-	const CAttributeDescription* pAtt = GS()->GetAttributeInfo(ID);
+	const auto* pAtt = GS()->GetAttributeInfo(ID);
 
 	// check if the player is in a dungeon and the attribute has a low improvement cost
 	if(GS()->IsWorldType(WorldType::Dungeon))
 	{
-		const CGameControllerDungeon* pDungeon = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
+		const auto* pDungeon = dynamic_cast<const CGameControllerDungeon*>(GS()->m_pController);
 		if(pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[pDungeon->GetDungeonID()].IsDungeonPlaying())
 		{
 			return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetClass().GetProfessionID(), ID);
@@ -812,21 +801,21 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 
 	// counting attributes from equipped items
 	int totalValue = 0;
-	for(const auto& [ItemID, ItemData] : CPlayerItem::Data()[m_ClientID])
+	for(const auto& ItemData : CPlayerItem::Data()[m_ClientID])
 	{
 		// required repair
-		if(ItemData.GetDurability() <= 0)
+		if(ItemData.second.GetDurability() <= 0)
 			continue;
 
 		// if is equipped and enchantable add attribute
-		if(ItemData.IsEquipped() && ItemData.Info()->IsEnchantable() && ItemData.Info()->GetInfoEnchantStats(ID))
+		if(ItemData.second.IsEquipped() && ItemData.second.Info()->IsEnchantable() && ItemData.second.Info()->GetInfoEnchantStats(ID))
 		{
-			totalValue += ItemData.GetEnchantStats(ID);
+			totalValue += ItemData.second.GetEnchantStats(ID);
 		}
 	}
 
 	// add attribute value from player's improvements
-	for(auto& Profession : Account()->GetProfessions())
+	for(const auto& Profession : Account()->GetProfessions())
 	{
 		totalValue += Profession.GetAttributeValue(ID);
 	}
@@ -836,32 +825,33 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 
 float CPlayer::GetAttributeChance(AttributeIdentifier ID) const
 {
-	// initialize variables
+	// use a lambda to calculate chance
 	int attributeValue = GetTotalAttributeValue(ID);
-	float chance = 0.0f;
+	auto calculateChance = [attributeValue](float base, float multiplier, float max)
+	{
+		return std::min(base + static_cast<float>(attributeValue) * multiplier, max);
+	};
 
 	// chance
 	switch(ID)
 	{
 		case AttributeIdentifier::Vampirism:
 		case AttributeIdentifier::Crit:
-			chance = std::min(8.0f + static_cast<float>(attributeValue) * 0.0015f, 30.0f);
-			break;
+			return calculateChance(8.0f, 0.0015f, 30.0f);
 
 		case AttributeIdentifier::Lucky:
-			chance = std::min(5.0f + static_cast<float>(attributeValue) * 0.0015f, 20.0f);
-			break;
+			return calculateChance(5.0f, 0.0015f, 20.0f);
 
 		default:
-			break;
+			return 0.f;
 	}
-
-	return chance;
 }
 
 int CPlayer::GetTotalAttributesInGroup(AttributeGroup Type) const
 {
 	int totalSize = 0;
+
+	// iterate over all attributes by group and sum their values
 	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 	{
 		if(pAttribute->IsGroup(Type))
@@ -875,10 +865,13 @@ int CPlayer::GetTotalAttributesInGroup(AttributeGroup Type) const
 int CPlayer::GetTotalAttributes() const
 {
 	int totalSize = 0;
-	for(const auto& [ID, Attribute] : CAttributeDescription::Data())
+
+	// iterate over all attributes and sum their values
+	for(const auto& attributeID : CAttributeDescription::Data() | std::views::keys)
 	{
-		totalSize += GetTotalAttributeValue(ID);
+		totalSize += GetTotalAttributeValue(attributeID);
 	}
+
 	return totalSize;
 }
 

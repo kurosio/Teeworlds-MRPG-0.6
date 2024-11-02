@@ -28,21 +28,21 @@ enum ESpecialSound
 // spawn types
 enum ESpawnType
 {
-	SPAWN_HUMAN = 0,        // Spawn a human player
-	SPAWN_BOT = 1,          // Spawn a bot player
-	SPAWN_HUMAN_TREATMENT = 2,   // Spawn a human player in a safe location
-	SPAWN_HUMAN_PRISON = 3, // Spawn a human prison
-	SPAWN_NUM               // The total number of spawn types available
+	SPAWN_HUMAN           = 0, // Spawn a human player
+	SPAWN_BOT             = 1, // Spawn a bot player
+	SPAWN_HUMAN_TREATMENT = 2, // Spawn a human player in a safe location
+	SPAWN_HUMAN_PRISON    = 3, // Spawn a human prison
+	NUM_SPAWN
 };
 
 // bot types
 enum EBotsType
 {
-	TYPE_BOT_MOB = 1,       // type for mob bots
-	TYPE_BOT_QUEST = 2,     // type for quest bots
-	TYPE_BOT_NPC = 3,       // type for NPC bots
-	TYPE_BOT_FAKE = 4,      // type for fake bots
-	TYPE_BOT_EIDOLON = 5,   // type for eidolon bots
+	TYPE_BOT_MOB       = 1, // type for mob bots
+	TYPE_BOT_QUEST     = 2, // type for quest bots
+	TYPE_BOT_NPC       = 3, // type for NPC bots
+	TYPE_BOT_FAKE      = 4, // type for fake bots
+	TYPE_BOT_EIDOLON   = 5, // type for eidolon bots
 	TYPE_BOT_QUEST_MOB = 6, // type for quest mob bots
 };
 
@@ -63,34 +63,25 @@ enum ESaveType
 // world day types
 enum EDayType
 {
-	NIGHT_TYPE = 0,
+	NIGHT_TYPE   = 0,
 	MORNING_TYPE = 1,
-	DAY_TYPE = 2,
+	DAY_TYPE     = 2,
 	EVENING_TYPE = 3
 };
 
 // skills
 enum ESkill
 {
-	SKILL_HEART_TURRET = 1,	// health recovery turret
-	SKILL_SLEEPY_GRAVITY = 2, // mobbing
-	SKILL_CRAFT_DISCOUNT = 3, // discount on crafting
-	SKILL_MASTER_WEAPON = 4, // automatic gunfire
+	SKILL_HEART_TURRET     = 1, // health recovery turret
+	SKILL_SLEEPY_GRAVITY   = 2, // mobbing
+	SKILL_CRAFT_DISCOUNT   = 3, // discount on crafting
+	SKILL_MASTER_WEAPON    = 4, // automatic gunfire
 	SKILL_BLESSING_GOD_WAR = 5, // refill ammunition
-	SKILL_ATTACK_TELEPORT = 6, // ?knockout? teleport
-	SKILL_CURE_I = 7, // health recovery cure
-	SKILL_PROVOKE = 8, // provoke
-	SKILL_LAST_STAND = 9, // energy shield
+	SKILL_ATTACK_TELEPORT  = 6, // ?knockout? teleport
+	SKILL_CURE_I           = 7, // health recovery cure
+	SKILL_PROVOKE          = 8, // provoke
+	SKILL_LAST_STAND       = 9, // energy shield
 	NUM_SKILLS,
-};
-
-// account harvesting stats
-enum EAccountHarvestingStats
-{
-	JOB_LEVEL = 0,
-	JOB_EXPERIENCE = 1,
-	JOB_UPGRADES = 2,
-	NUM_JOB_ACCOUNTS_STATS
 };
 
 // player ticks
@@ -171,7 +162,7 @@ constexpr const char* GetProfessionName(ProfessionIdentifier profID) noexcept
 		case ProfessionIdentifier::Healer: return "Healer";
 		case ProfessionIdentifier::Miner:  return "Miner";
 		case ProfessionIdentifier::Farmer: return "Farmer";
-		default:                  return "None";
+		default:                           return "None";
 	}
 }
 
@@ -443,83 +434,79 @@ enum
 		Basic kernel server settings
 		This is where the most basic server settings are stored
 	*/
-	MAX_GROUP_MEMBERS = 4,					// maximum number of players in a group
+	MAX_GROUP_MEMBERS              = 4,     // maximum number of players in a group
 	MAX_HOUSE_DOOR_INVITED_PLAYERS = 3,		// maximum player what can have access for house door
-	MAX_DECORATIONS_PER_HOUSE = 20,			// maximum decorations for houses
-	MAIL_MAX_CAPACITY = 10,					// maximum number of emails what is displayed
-	MAX_ATTRIBUTES_FOR_ITEM = 2,			// maximum number of stats per item
-	POTION_RECAST_APPEND_TIME = 15,			// recast append time for potion in seconds
-	DEFAULT_MAX_PLAYER_BAG_GOLD = 5000,		// player gold limit
-	MIN_SKINCHANGE_CLIENTVERSION = 0x0703,	// minimum client version for skin change
-	MIN_RACE_CLIENTVERSION = 0x0704,		// minimum client version for race type
-	MAX_DROPPED_FROM_MOBS = 5,              // maximum number of items dropped from mobs
+	MAX_DECORATIONS_PER_HOUSE      = 20,    // maximum decorations for houses
+	MAIL_MAX_CAPACITY              = 10,    // maximum number of emails what is displayed
+	MAX_ATTRIBUTES_FOR_ITEM        = 2,	    // maximum number of stats per item
+	POTION_RECAST_APPEND_TIME      = 15,    // recast append time for potion in seconds
+	DEFAULT_MAX_PLAYER_BAG_GOLD    = 5000,  // player gold limit
+	MIN_SKINCHANGE_CLIENTVERSION   = 0x0703,// minimum client version for skin change
+	MIN_RACE_CLIENTVERSION         = 0x0704,// minimum client version for race type
+	MAX_DROPPED_FROM_MOBS          = 5,     // maximum number of items dropped from mobs
 
 	// items
-	NOPE = -1,
-	itCapsuleSurvivalExperience = 16,	// Gives 10-50 experience
-	itLittleBagGold = 17,				// Gives 10-50 gold
-	itTicketResetClassStats = 21,		// Ticket to reset the statistics of class upgrades
-	itTicketResetWeaponStats = 23,		// Ticket to reset the statistics cartridge upgrade
-	itTicketDiscountCraft = 24,			// Discount ticket for crafting
-	itRandomHomeDecoration = 26,		// Random home decor
-	itRandomRelicsBox = 58,				// Random Relics box
+	NOPE                           = -1,
+	itCapsuleSurvivalExperience    = 16,    // Gives 10-50 experience
+	itLittleBagGold                = 17,    // Gives 10-50 gold
+	itTicketResetClassStats        = 21,    // Ticket to reset the statistics of class upgrades
+	itTicketResetWeaponStats       = 23,    // Ticket to reset the statistics cartridge upgrade
+	itTicketDiscountCraft          = 24,    // Discount ticket for crafting
+	itRandomHomeDecoration         = 26,    // Random home decor
+	itRandomRelicsBox              = 58,    // Random Relics box
 
 	// potions
-	itPotionManaRegen = 14,				// Mana regeneration potion
-	itTinyHealthPotion = 15,			// Tiny health potion
+	itPotionManaRegen              = 14,    // Mana regeneration potion
+	itTinyHealthPotion             = 15,    // Tiny health potion
 
 	// eidolons
-	itEidolonOtohime = 57,				// Eidolon
-	itEidolonMerrilee = 59,				// Eidolon
-	itEidolonDryad = 80,				// Eidolon
-	itEidolonPigQueen = 88,				// Eidolon
+	itEidolonOtohime               = 57,    // Eidolon
+	itEidolonMerrilee              = 59,    // Eidolon
+	itEidolonDryad                 = 80,    // Eidolon
+	itEidolonPigQueen              = 88,    // Eidolon
 
 	// currency
-	itGold = 1,							// Money ordinary currency
-	itMaterial = 7,						// Scraping material
-	itProduct = 8,						// Scraping material
-	itSkillPoint = 9,					// Skillpoint
-	itAchievementPoint = 10,			// Achievement point
-	itAlliedSeals = 30,					// Allied seals
-	itTicketGuild = 95,					// Ticket for the creation of the guild
+	itGold                         = 1,     // Money ordinary currency
+	itMaterial                     = 7,     // Scraping material
+	itProduct                      = 8,     // Scraping material
+	itSkillPoint                   = 9,     // Skillpoint
+	itAchievementPoint             = 10,    // Achievement point
+	itAlliedSeals                  = 30,    // Allied seals
+	itTicketGuild                  = 95,    // Ticket for the creation of the guild
 
 	// modules
-	itExplosiveGun = 19,				// Explosion for gun
-	itExplosiveShotgun = 20,			// Explosion for shotgun
-	itPoisonHook = 64,					// Poison hook
-	itExplodeHook = 65,					// Explode hook
-	itSpiderHook = 66,					// Spider hook
-	itCustomizer = 96,                  // Curomizer for personal skins
-	itDamageEqualizer = 97,				// Module for dissable self dmg
+	itExplosiveGun                 = 19,    // Explosion for gun
+	itExplosiveShotgun             = 20,    // Explosion for shotgun
+	itPoisonHook                   = 64,    // Poison hook
+	itExplodeHook                  = 65,    // Explode hook
+	itSpiderHook                   = 66,    // Spider hook
+	itCustomizer                   = 96,    // Curomizer for personal skins
+	itDamageEqualizer              = 97,    // Module for dissable self dmg
 
 	// weapons
-	itHammer = 2,						// Equipment Hammers
-	itHammerLamp = 99,					// Equipment Lamp hammer
-	itHammerBlast = 102,				// Equipment Blast hammer
-
-	itGun = 3,							// Equipment Gun
-
-	itShotgun = 4,						// Equipment Shotgun
-
-	itGrenade = 5,						// Equipment Grenade
-	itPizdamet = 100,					// Equipment Pizdamet
-
-	itLaser = 6,						// Equipment Rifle
-	itRifleWallPusher = 101,			// Equipment Rifle Plazma wall
-	itRifleMagneticPulse = 103,			// Equpment Magnetic pulse rifle
+	itHammer                       = 2,     // Equipment Hammers
+	itHammerLamp                   = 99,    // Equipment Lamp hammer
+	itHammerBlast                  = 102,   // Equipment Blast hammer
+	itGun                          = 3,     // Equipment Gun
+	itShotgun                      = 4,     // Equipment Shotgun
+	itGrenade                      = 5,     // Equipment Grenade
+	itPizdamet                     = 100,   // Equipment Pizdamet
+	itLaser                        = 6,     // Equipment Rifle
+	itRifleWallPusher              = 101,   // Equipment Rifle Plazma wall
+	itRifleMagneticPulse           = 103,   // Equpment Magnetic pulse rifle
 
 	// decoration items
-	itPickupHealth = 18,				// Pickup heart
-	itPickupMana = 13,					// Pickup mana
-	itPickupShotgun = 11,				// Pickup shotgun
-	itPickupGrenade = 12,				// Pickup grenade
-	itPickupLaser = 94,				    // Pickup laser
+	itPickupHealth                 = 18,    // Pickup heart
+	itPickupMana                   = 13,    // Pickup mana
+	itPickupShotgun                = 11,    // Pickup shotgun
+	itPickupGrenade                = 12,    // Pickup grenade
+	itPickupLaser                  = 94,    // Pickup laser
 
 	// settings items
-	itShowEquipmentDescription = 25,	// Description setting
-	itShowCriticalDamage = 34,			// Critical damage setting
-	itShowQuestStarNavigator = 93,		// Show quest path when idle
-	itShowDetailGainMessages = 98,      // Show detail gain messages
+	itShowEquipmentDescription     = 25,    // Description setting
+	itShowCriticalDamage           = 34,    // Critical damage setting
+	itShowQuestStarNavigator       = 93,    // Show quest path when idle
+	itShowDetailGainMessages       = 98,    // Show detail gain messages
 };
 
 // broadcast
@@ -575,8 +562,22 @@ enum class AttributeIdentifier : int
 
 
 /*
- * Enum default naming conventions
+ * Enum default
  */
+enum
+{
+	WEAPON_SELF = -2,
+	WEAPON_WORLD = -1,
+};
+
+// snapping state personal for player
+enum EStateSnapping
+{
+	STATE_SNAPPING_NONE = 0,
+	STATE_SNAPPING_ONLY_CHARACTER,
+	STATE_SNAPPING_FULL,
+};
+
 constexpr const char* GetEmoteNameById(int emoteId) noexcept
 {
 	switch(emoteId)

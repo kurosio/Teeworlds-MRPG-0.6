@@ -51,7 +51,7 @@ protected:
 public:
 	enum
 	{
-		FLAG_NONE = 0,
+		FLAG_NONE       = 0,
 		FLAG_REPEATABLE = 1 << 0,
 	};
 

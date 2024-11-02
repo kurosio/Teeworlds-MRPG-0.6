@@ -22,7 +22,7 @@ IGameController::IGameController(CGS* pGS)
 	m_GameFlags = 0;
 	m_pServer = m_pGS->Server();
 
-	for(int i = 0; i < SPAWN_NUM; i++)
+	for(int i = 0; i < NUM_SPAWN; i++)
 		m_aNumSpawnPoints[i] = 0;
 }
 
@@ -287,7 +287,7 @@ void IGameController::UpdateGameInfo(int ClientID)
 
 bool IGameController::CanSpawn(int SpawnType, vec2* pOutPos, std::pair<vec2, float> LimiterSpread) const
 {
-	if(SpawnType < SPAWN_HUMAN || SpawnType >= SPAWN_NUM)
+	if(SpawnType < SPAWN_HUMAN || SpawnType >= NUM_SPAWN)
 		return false;
 
 	CSpawnEval Eval;
