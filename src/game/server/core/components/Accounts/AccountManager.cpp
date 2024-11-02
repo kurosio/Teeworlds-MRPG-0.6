@@ -235,6 +235,9 @@ void CAccountManager::OnClientReset(int ClientID)
 
 void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const
 {
+	if(!pProf || !pPlayer)
+		return;
+
 	const char* pProfName = GetProfessionName(pProf->GetProfessionID());
 	const auto ClientID = pPlayer->GetCID();
 	const auto ProfID = pProf->GetProfessionID();
@@ -351,31 +354,28 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// select war profession
 		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Change class profession");
-		for(auto& Prof : pPlayer->Account()->GetProfessions())
+		for(const auto& Prof : pPlayer->Account()->GetProfessions())
 		{
 			if(Prof.IsProfessionType(PROFESSION_TYPE_WAR))
 			{
-				const auto StrActiveFlag = pClassProf && pClassProf->GetProfessionID() == Prof.GetProfessionID() ? "\u2713" : "\u2715";
+				const char* StrActiveFlag = (pClassProf && pClassProf->GetProfessionID() == Prof.GetProfessionID()) ? "\u2713" : "\u2715";
 				const char* pProfName = GetProfessionName(Prof.GetProfessionID());
 				const auto expNeed = Prof.GetExpForNextLevel();
-				const auto progress = translate_to_percent(expNeed, Prof.GetExperience());
+				const int progress = round_to_int(translate_to_percent(expNeed, Prof.GetExperience()));
 				const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
 
-				VClassSelector.AddOption("SELECT_CLASS", (int)Prof.GetProfessionID(), "({}) {} [Lv{} {} {~.1}%] ({}P)",
+				VClassSelector.AddOption("SELECT_CLASS", static_cast<int>(Prof.GetProfessionID()), "({}) {} [Lv{} {} {~.1}%] ({}P)",
 					StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// add upgrades by class profession
-		if(pClassProf)
-		{
-			AddMenuProfessionUpgrades(pPlayer, pClassProf);
-		}
+		AddMenuProfessionUpgrades(pPlayer, pClassProf);
 
 		// professions
-		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Upgrade professions");
-		for(auto& Prof : pPlayer->Account()->GetProfessions())
+		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Upgrade other professions");
+		for(const auto& Prof : pPlayer->Account()->GetProfessions())
 		{
 			if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
 			{

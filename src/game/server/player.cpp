@@ -815,9 +815,9 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	}
 
 	// add attribute value from player's improvements
-	for(const auto& Profession : Account()->GetProfessions())
+	if(const auto* pClassProf = Account()->GetClassProfession())
 	{
-		totalValue += Profession.GetAttributeValue(ID);
+		totalValue += pClassProf->GetAttributeValue(ID);
 	}
 
 	return totalValue;
