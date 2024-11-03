@@ -30,7 +30,7 @@ void MotdMenu::Tick()
 
 	// initialize variables
 	constexpr int lineSizeY = 20;
-	constexpr int startLineY = -280;
+	constexpr int startLineY = -284;
 	const int targetX = pChar->m_Core.m_Input.m_TargetX;
 	const int targetY = pChar->m_Core.m_Input.m_TargetY;
 
@@ -67,8 +67,8 @@ void MotdMenu::Tick()
 	};
 
 	// key events and freeze input is hovered worked area
-	const int startWorkedAreaY = startLineY + linePos * lineSizeY;
-	const int endWorkedAreaY = startLineY + (linePos + m_ScrollManager.GetMaxVisibleItems()) * lineSizeY;
+	const int startWorkedAreaY = startLineY;
+	const int endWorkedAreaY = startLineY + 24 * lineSizeY;
 	if((targetX > -196 && targetX < 196 && targetY >= startWorkedAreaY && targetY < endWorkedAreaY))
 	{
 		// handle scrolling with key events
